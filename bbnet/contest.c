@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.7 2003-04-15 15:45:08 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.8 2003-04-15 16:26:11 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -32,24 +32,6 @@ static char rcsid[] = "$Id: contest.c,v 1.7 2003-04-15 15:45:08 henrik Exp $";
 #define DEF_TIMEOUT 10			/* seconds */
 #define DEF_MAX_OPENS  (FD_SETSIZE / 4)	/* Max number of simultaneous open connections */
 #define MAX_BANNER 1024
-
-typedef struct {
-	char *svcname;
-	char *sendtxt;
-	int  grabbanner;
-} svcinfo_t;
-
-typedef struct {
-	struct sockaddr_in addr;	/* Address (IP+port) to test */
-	int  fd;			/* Socket filedescriptor */
-	int  open;			/* Result - is it open? */
-	int  connres;			/* connect() status returned */
-	struct timeval timestart, duration;
-	svcinfo_t *svcinfo;		/* Points to svcinfo_t for service */
-	int  readpending;		/* Temp status while reading banner */
-	char *banner;			/* Banner text from service */
-	void *next;
-} test_t;
 
 static test_t *thead = NULL;
 
@@ -81,7 +63,7 @@ static svcinfo_t svcinfo[] = {
 };
 
 
-void add_test(char *ip, int port, char *service)
+test_t *add_test(char *ip, int port, char *service, int silent)
 {
 	test_t *newtest;
 	int i;
@@ -101,11 +83,13 @@ void add_test(char *ip, int port, char *service)
 	for (i=0; (svcinfo[i].svcname && (strcmp(service, svcinfo[i].svcname) != 0)); i++) ;
 	newtest->svcinfo = &svcinfo[i];
 
+	newtest->silenttest = silent;
 	newtest->readpending = 0;
 	newtest->banner = NULL;
 	newtest->next = thead;
 
 	thead = newtest;
+	return newtest;
 }
 
 
@@ -317,7 +301,7 @@ void do_conn(int conntimeout, int concurrency)
 								item->duration.tv_sec--;
 								item->duration.tv_usec += 1000000;
 							}
-							if (item->svcinfo->sendtxt) {
+							if (item->svcinfo->sendtxt && !item->silenttest) {
 								/*
 								 * It may be that we cannot write all of the
 								 * data we want to. Tough ... 
@@ -325,7 +309,7 @@ void do_conn(int conntimeout, int concurrency)
 								res = write(item->fd, item->svcinfo->sendtxt,
 									strlen(item->svcinfo->sendtxt));
 							}
-							item->readpending = item->svcinfo->grabbanner;
+							item->readpending = (!item->silenttest && item->svcinfo->grabbanner);
 						}
 
 						/* If closed and/or no bannergrabbing, shut down socket */
@@ -370,7 +354,7 @@ void show_conn_res(void)
 	test_t *item;
 
 	for (item = thead; (item); item = item->next) {
-		printf("Address=%s:%d, open=%d, res=%d, time=%ld.%ld, banner='%s'\n", 
+		printf("Address=%s:%d, open=%d, res=%d, time=%ld.%06ld, banner='%s'\n", 
 				inet_ntoa(item->addr.sin_addr), 
 				ntohs(item->addr.sin_port),
 				item->open, item->connres, 
@@ -382,16 +366,16 @@ void show_conn_res(void)
 int main(int argc, char *argv[])
 {
 
-	add_test("172.16.10.254", 628, "qmtp");
-	add_test("172.16.10.254", 23, "telnet");
-	add_test("130.228.2.150", 139, "smb");
-	add_test("172.16.10.254", 22, "ssh");
-	add_test("172.16.10.2", 22, "ssh");
-	add_test("172.16.10.1", 22, "ssh");
-	add_test("172.16.10.1", 25, "smtp");
-	add_test("130.228.2.150", 23, "telnet");
-	add_test("130.228.2.150", 21, "ftp");
-	add_test("172.16.10.101", 22, "ssh");
+	add_test("172.16.10.254", 628, "qmtp", 1);
+	add_test("172.16.10.254", 23, "telnet", 0);
+	add_test("130.228.2.150", 139, "smb", 0);
+	add_test("172.16.10.254", 22, "ssh", 0);
+	add_test("172.16.10.2", 22, "ssh", 0);
+	add_test("172.16.10.1", 22, "ssh", 0);
+	add_test("172.16.10.1", 25, "smtp", 0);
+	add_test("130.228.2.150", 23, "telnet", 0);
+	add_test("130.228.2.150", 21, "ftp", 0);
+	add_test("172.16.10.101", 22, "ssh", 0);
 
 	do_conn(0, 0);
 	show_conn_res();
