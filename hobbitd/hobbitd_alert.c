@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.26 2004-11-25 22:08:40 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.27 2004-11-26 12:32:59 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -161,6 +161,11 @@ void load_checkpoint(char *filename)
 			p = gettok(NULL, "|");
 		}
 
+		if (i == 9) {
+			/* There was no ack message */
+			item[i++] = "";
+		}
+
 		if (i > 9) {
 			activealerts_t *newalert = (activealerts_t *)malloc(sizeof(activealerts_t));
 			newalert->hostname = find_name(&hostnames, item[0]);
@@ -174,9 +179,14 @@ void load_checkpoint(char *filename)
 			while (strcmp(item[7], statename[newalert->state]) && (newalert->state < A_DEAD)) 
 				newalert->state++;
 			newalert->pagemessage = newalert->ackmessage = NULL;
-			nldecode(item[8]); nldecode(item[9]);
-			if (strlen(item[8])) newalert->pagemessage = strdup(item[8]);
-			if (strlen(item[9])) newalert->ackmessage = strdup(item[9]);
+			if (strlen(item[8])) {
+				nldecode(item[8]);
+				newalert->pagemessage = strdup(item[8]);
+			}
+			if (strlen(item[9])) {
+				nldecode(item[9]);
+				newalert->ackmessage = strdup(item[9]);
+			}
 			newalert->next = ahead;
 			ahead = newalert;
 		}
