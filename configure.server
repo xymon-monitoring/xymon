@@ -237,6 +237,17 @@ else
 		echo "** After installing, see $BBTOPDIR/server/etc/hobbit-apache.conf for an example configuration."
 		echo ""; echo ""
 
+		echo "To generate Hobbit availability reports, your webserver"
+		echo "must have write-access to a directory below the Hobbit"
+		echo "top-level directory. I can set this up if you tell me"
+		echo "what group-ID your webserver runs with. This is typically"
+		echo "'nobody' or 'apache' or 'www-data'"
+		echo "If you dont know, just hit ENTER and we will handle it later."
+		echo ""
+		echo "What group-ID does your webserver use ?"
+		read HTTPDGID
+		echo ""; echo ""
+
 		echo "Where to put the Hobbit logfiles [/var/log/hobbit] ? "
 		read BBLOGDIR
 		if test -z "$BBLOGDIR"
@@ -398,6 +409,10 @@ else
 		echo "BBHOSTURL = $BBHOSTURL"    >>Makefile
 		echo "# URL for Hobbit CGIs"     >>Makefile
 		echo "BBCGIURL = $BBCGIURL"      >>Makefile
+
+		echo ""                          >>Makefile
+		echo "# Webserver group-ID"      >>Makefile
+		echo "HTTPDGID=$HTTPDGID"        >>Makefile
 
 		echo ""                          >>Makefile
 		echo "# RRDtool settings"        >>Makefile
