@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.41 2004-12-03 12:04:24 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.42 2004-12-05 21:23:45 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -64,6 +64,80 @@ rrdlayout_t rrdnames[] = {
 	{ "bea",	NULL,        0 },
 	{ NULL,      	NULL,        0 }
 };
+
+typedef struct larrd_dirstack_t {
+	char *dirname;
+	DIR *rrddir;
+	struct larrd_dirstack_t *next;
+} larrd_dirstack_t;
+larrd_dirstack_t *dirs = NULL;
+
+static larrd_dirstack_t *larrd_opendir(char *dirname)
+{
+	larrd_dirstack_t *newdir;
+	DIR *d;
+
+	d = opendir(dirname);
+	if (d == NULL) return NULL;
+
+	newdir = (larrd_dirstack_t *)malloc(sizeof(larrd_dirstack_t));
+	newdir->dirname = strdup(dirname);
+	newdir->rrddir = d;
+	newdir->next = NULL;
+
+	if (dirs == NULL) {
+		dirs = newdir;
+	}
+	else {
+		newdir->next = dirs;
+		dirs = newdir;
+	}
+
+	return newdir;
+}
+
+static void larrd_closedir(void)
+{
+	larrd_dirstack_t *tmp = dirs;
+
+	if (dirs && dirs->rrddir) {
+		dirs = dirs->next;
+
+		closedir(tmp->rrddir);
+		free(tmp->dirname);
+		free(tmp);
+	}
+}
+
+static char *larrd_readdir(void)
+{
+	static char fname[PATH_MAX];
+	struct dirent *d;
+	struct stat st;
+
+	if (dirs == NULL) return NULL;
+
+	do {
+		d = readdir(dirs->rrddir);
+		if (d == NULL) {
+			larrd_closedir();
+		}
+		else if (*(d->d_name) == '.') {
+			d = NULL;
+		}
+		else {
+			sprintf(fname, "%s/%s", dirs->dirname, d->d_name);
+			if ((stat(fname, &st) == 0) && (S_ISDIR(st.st_mode))) {
+				larrd_opendir(fname);
+				d = NULL;
+			}
+		}
+	} while (dirs && (d == NULL));
+
+	if (d == NULL) return NULL;
+
+	if (strncmp(fname, "./", 2) == 0) return (fname + 2); else return fname;
+}
 
 
 static char *rrdlink_url(char *hostname, char *dispname, rrd_t *rrd, int larrd043)
@@ -245,9 +319,7 @@ static char *rrdlink_text(host_t *host, rrd_t *rrd, int larrd043)
 
 int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend)
 {
-	DIR *rrddir;
-	struct dirent *d;
-	char fn[PATH_MAX];
+	char *fn;
 	hostlist_t *hostwalk;
 	rrd_t *rwalk;
 	char *allrrdlinks;
@@ -275,16 +347,10 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 	 */
 
 	chdir(rrddirname);
-	rrddir = opendir(rrddirname);
-	if (!rrddir) {
-		errprintf("Cannot access RRD directory\n");
-		return 1;
-	}
+	larrd_opendir(".");
 
-	while ((d = readdir(rrddir))) {
-		strcpy(fn, d->d_name);
-
-		if ((strlen(fn) > 4) && (strcmp(fn+strlen(fn)-4, ".rrd") == 0) && (fn[0] != '.')) {
+	while ((fn = larrd_readdir())) {
+		if ((strlen(fn) > 4) && (strcmp(fn+strlen(fn)-4, ".rrd") == 0)) {
 			char *p, *rrdname;
 			rrdlayout_t *r = NULL;
 			int found, hostfound;
@@ -292,10 +358,8 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 
 			dprintf("Got RRD %s\n", fn);
 
-			/* Logfiles use ',' instead of '.' in FQDN hostnames */
-			for (p=fn; *p; p++) {
-				if (*p == ',') *p = '.';
-			}
+			/* Some logfiles use ',' instead of '.' in FQDN hostnames */
+			p = fn; while ( (p = strchr(p, ',')) != NULL) *p = '.';
 
 			/* Is this a known host? */
 			hostwalk = hosthead; found = hostfound = 0;
@@ -303,7 +367,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 				if (strncmp(hostwalk->hostentry->hostname, fn, strlen(hostwalk->hostentry->hostname)) == 0) {
 
 					p = fn + strlen(hostwalk->hostentry->hostname);
-					hostfound = ( (*p == '.') || (*p = ',') );
+					hostfound = ( (*p == '.') || (*p == ',') || (*p == '/') );
 
 					/* First part of filename matches.
 					 * Now check that there is a valid RRD id next -
@@ -350,7 +414,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 
 			if (!hostfound && log_nohost_rrds) {
 				/* This rrd file has no matching host. */
-				errprintf("No host record for rrd %s\n", d->d_name);
+				errprintf("No host record for rrd %s\n", fn);
 			}
 		}
 	}
@@ -384,7 +448,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 
 	if (bbgend) combo_end();
 
-	closedir(rrddir);
+	larrd_closedir();
 	free(allrrdlinks);
 	return 0;
 }
