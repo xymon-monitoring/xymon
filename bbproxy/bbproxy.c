@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.22 2004-09-21 20:21:14 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.23 2004-09-21 20:59:19 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -103,28 +103,35 @@ typedef struct conn_t {
 int keeprunning = 1;
 time_t laststatus = 0;
 char *logfile = NULL;
+int logdetails = 0;
 unsigned long msgs_timeout_from[P_CLEANUP+1] = { 0, };
 
-void sigterm_handler(int signum)
-{
-	errprintf("Caught TERM signal, terminating\n");
-	keeprunning = 0;
-}
 
-void sighup_handler(int signum)
+void sigmisc_handler(int signum)
 {
-	FILE *logfd;
+	switch (signum) {
+	  case SIGTERM:
+		errprintf("Caught TERM signal, terminating\n");
+		keeprunning = 0;
+		break;
 
-	if (logfile) {
-		if (signum) errprintf("Caught SIGHUP, reopening logfile\n");
-		logfd = freopen(logfile, "a", stderr);
+	  case SIGHUP:
+		if (logfile) {
+			FILE *logfd = freopen(logfile, "a", stderr);
+			errprintf("Caught SIGHUP, reopening logfile\n");
+		}
+		break;
+
+	  case SIGUSR1:
+		/* Trigger a status update */
+		laststatus = 0;
+		break;
+
+	  case SIGUSR2:
+		logdetails = (1 - logdetails);
+		errprintf("Log details is %sabled\n", (logdetails ? "en" : "dis"));
+		break;
 	}
-}
-
-void sigusr1_handler(int signum)
-{
-	/* Trigger a status update */
-	laststatus = 0;
 }
 
 int overdue(struct timeval *now, struct timeval *limit)
@@ -186,6 +193,25 @@ static int do_write(int sockfd, char *addr, conn_t *conn, enum phase_t completed
 	}
 
 	return 0;
+}
+
+void do_log(conn_t *conn)
+{
+	char *rq, *eol, *delim;
+	char savechar;
+
+	rq = conn->buf+6;
+	if (strncmp(rq, "combo\n", 6) == 0) rq += 6;
+
+	eol = strchr(rq, '\n'); if (eol) *eol = '\0';
+	for (delim = rq; (*delim && isalpha(*delim)); delim++);
+	for (; (*delim && isspace(*delim)); delim++);
+	for (; (*delim && !isspace(*delim)); delim++);
+	savechar = *delim; *delim = '\0';
+
+	errprintf("%s : %s\n", conn->clientip, rq);
+	*delim = savechar;
+	if (eol) *eol = '\n';
 }
 
 int main(int argc, char *argv[])
@@ -276,6 +302,9 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[opt], "--logfile=")) {
 			char *p = strchr(argv[opt], '=');
 			logfile = strdup(p+1);
+		}
+		else if (strcmp(argv[opt], "--log-details") == 0) {
+			logdetails = 1;
 		}
 		else if (argnmatch(argv[opt], "--report=")) {
 			char *p1 = strchr(argv[opt], '=')+1;
@@ -376,7 +405,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Redirect logging to the logfile, if requested */
-	sighup_handler(0);
+	sigmisc_handler(SIGHUP);
 
 	errprintf("bbproxy version %s starting\n", VERSION);
 	errprintf("Listening on %s port %d\n", locaddr, locport);
@@ -407,9 +436,10 @@ int main(int argc, char *argv[])
 	}
 
 	setup_signalhandler(proxynamesvc);
-	signal(SIGHUP, sighup_handler);
-	signal(SIGTERM, sigterm_handler);
-	signal(SIGUSR1, sigusr1_handler);
+	signal(SIGHUP, sigmisc_handler);
+	signal(SIGTERM, sigmisc_handler);
+	signal(SIGUSR1, sigmisc_handler);
+	signal(SIGUSR2, sigmisc_handler);
 
 	do {
 		fd_set fdread, fdwrite;
@@ -485,6 +515,7 @@ int main(int argc, char *argv[])
 				break;
 
 			  case P_REQ_READY:
+				if (logdetails) do_log(cwalk);
 				cwalk->conntries = CONNECT_TRIES;
 				cwalk->sendtries = SEND_TRIES;
 				cwalk->conntime = 0;
@@ -838,9 +869,6 @@ int main(int argc, char *argv[])
 							cwalk->state = P_REQ_CONNECTING;
 							cwalk->conntries = CONNECT_TRIES;
 							cwalk->conntime = time(NULL);
-						}
-						else {
-							errprintf("Message lost during delivery to server\n");
 						}
 					}
 					break;
