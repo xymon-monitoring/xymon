@@ -194,6 +194,7 @@ state_t *init_state(const char *filename, int dopurple)
 
 	host = find_host(hostname);
 	newstate->entry->alert = checkalert(host, testname);
+	newstate->entry->sumurl = NULL;
 
 	stat(filename, &st);
 	fd = fopen(filename, "r");

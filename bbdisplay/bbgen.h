@@ -138,6 +138,7 @@ typedef struct {
 	int	oldage;
 	int	acked;
 	int	alert;
+	char 	*sumurl;
 	void	*next;
 } entry_t;
 
