@@ -44,11 +44,12 @@ group_t *init_group(const char *title)
 	return newgroup;
 }
 
-host_t *init_host(const char *hostname)
+host_t *init_host(const char *hostname, const int ip1, const int ip2, const int ip3, const int ip4)
 {
 	host_t *newhost = malloc(sizeof(host_t));
 
 	strcpy(newhost->hostname, hostname);
+	sprintf(newhost->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 	newhost->link = find_link(hostname);
 	newhost->entries = NULL;
 	newhost->next = NULL;
@@ -205,7 +206,7 @@ page_t *load_bbhosts(void)
 		}
 		else if (sscanf(l, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
 			if (curhost == NULL) {
-				curhost = init_host(hostname);
+				curhost = init_host(hostname, ip1, ip2, ip3, ip4);
 				if (curgroup != NULL) {
 					curgroup->hosts = curhost;
 				} else if (cursubpage != NULL) {
@@ -220,7 +221,7 @@ page_t *load_bbhosts(void)
 				}
 			}
 			else {
-				curhost = curhost->next = init_host(hostname);
+				curhost = curhost->next = init_host(hostname, ip1, ip2, ip3, ip4);
 			}
 		}
 		else {
@@ -237,7 +238,7 @@ void dumphosts(host_t *head, char *format)
 	host_t *h;
 
 	for (h = head; (h); h = h->next) {
-		printf(format, h->hostname, h->link->filename);
+		printf(format, h->hostname, h->ip, h->link->filename);
 	}
 }
 
@@ -266,14 +267,14 @@ int main(int argc, char *argv[])
 		printf("Page: %s, title=%s\n", p->name, p->title);
 		for (q = p->subpages; (q); q = q->next) {
 			printf("\tSubpage: %s, title=%s\n", q->name, q->title);
-			dumpgroups(q->groups, "\t\tGroup: %s\n", "\t\t    Host: %s, link:%s\n");
-			dumphosts(q->hosts, "\t    Host: %s, link: %s\n");
+			dumpgroups(q->groups, "\t\tGroup: %s\n", "\t\t    Host: %s, ip: %s, link:%s\n");
+			dumphosts(q->hosts, "\t    Host: %s, ip: %s, link: %s\n");
 		}
 
-		dumpgroups(p->groups, "\tGroup: %s\n","\t    Host: %s, link: %s\n");
-		dumphosts(p->hosts, "    Host: %s, link: %s\n");
+		dumpgroups(p->groups, "\tGroup: %s\n","\t    Host: %s, ip: %s, link: %s\n");
+		dumphosts(p->hosts, "    Host: %s, ip: %s, link: %s\n");
 	}
-	dumphosts(pagehead->hosts, "Host: %s, link: %s\n");
+	dumphosts(pagehead->hosts, "Host: %s, ip: %s, link: %s\n");
 	return 0;
 }
 

@@ -38,6 +38,7 @@ typedef struct {
 
 typedef struct {
 	char	hostname[60];
+	char	ip[16];
 	link_t	*link;
 	entry_t	*entries;
 	void	*next;
