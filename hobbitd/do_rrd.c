@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.17 2005-03-06 07:20:21 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.18 2005-03-22 17:55:30 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -21,6 +21,7 @@ static char rcsid[] = "$Id: do_rrd.c,v 1.17 2005-03-06 07:20:21 henrik Exp $";
 #include <errno.h>
 
 #include <rrd.h>
+#include <pcre.h>
 
 #include "libbbgen.h"
 

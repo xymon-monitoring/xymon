@@ -40,7 +40,7 @@ hobbitd_alert: $(ALERTOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(RPATHOPT) $(ALERTOBJS) $(LIBOBJS) $(PCRELIBS)
 
 hobbitd_larrd: $(LARRDOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(RPATHOPT) $(LARRDOBJS) $(LIBOBJS) $(RRDLIBS) $(NETLIBS)
+	$(CC) -o $@ $(RPATHOPT) $(LARRDOBJS) $(LIBOBJS) $(RRDLIBS) $(PCRELIBS) $(NETLIBS)
 
 hobbitd_filter: $(FILTEROBJS) $(LIBOBJS)
 	$(CC) -o $@ $(RPATHOPT) $(FILTEROBJS) $(LIBOBJS)
@@ -49,7 +49,7 @@ do_alert.o: do_alert.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ do_alert.c
 
 do_larrd.o: do_larrd.c do_larrd.h larrd/*.c
-	$(CC) $(CFLAGS) $(RRDINCDIR) -c -o $@ do_larrd.c
+	$(CC) $(CFLAGS) $(RRDINCDIR) $(PCREINCDIR) -c -o $@ do_larrd.c
 
 hobbitd_sample: $(SAMPLEOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(RPATHOPT) $(SAMPLEOBJS) $(LIBOBJS)
