@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.16 2005-03-25 07:40:15 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.17 2005-03-25 08:33:05 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -109,90 +109,90 @@ struct timeval *tvdiff(struct timeval *tstart, struct timeval *tend, struct time
 static int minutes(char *p)
 {
 	/* Converts string HHMM to number indicating minutes since midnight (0-1440) */
-	return (10*(*(p+0)-'0')+(*(p+1)-'0'))*60 + (10*(*(p+2)-'0')+(*(p+3)-'0'));
+	if (isdigit((int)*(p+0)) && isdigit((int)*(p+1)) && isdigit((int)*(p+2)) && isdigit((int)*(p+3))) {
+		return (10*(*(p+0)-'0')+(*(p+1)-'0'))*60 + (10*(*(p+2)-'0')+(*(p+3)-'0'));
+	}
+	else {
+		errprintf("Invalid timespec - expected 4 digits, got: '%s'\n", p);
+		return 0;
+	}
 }
 
 int within_sla(char *timespec, int defresult)
 {
 	/*
-	 * Usage: slatime hostline
-	 *    SLASPEC is of the form SLA=W:HHMM:HHMM[,WXHHMM:HHMM]*
+	 *    timespec is of the form W:HHMM:HHMM[,W:HHMM:HHMM]*
 	 *    "W" = weekday : '*' = all, 'W' = Monday-Friday, '0'..'6' = Sunday ..Saturday
 	 */
 
-	char *slaspec = NULL;
-	char *endofslaspec = NULL;
-
+	int found = 0;
 	time_t tnow;
 	struct tm *now;
+	int curtime;
+	char *onesla;
 
-	int result = 0;
-	int found = 0;
-	int starttime,endtime,curtime;
+	if (!timespec) return defresult;
 
-	if (timespec) {
-		slaspec = timespec;
-		endofslaspec = slaspec + strcspn(slaspec, " \t\r\n");
-		tnow = time(NULL);
-		now = localtime(&tnow);
+	tnow = time(NULL);
+	now = localtime(&tnow);
+	curtime = now->tm_hour*60+now->tm_min;
 
-		/*
-		 * Now find the appropriate SLA definition.
-		 * We take advantage of the fixed (11 bytes + delimiter) length of each entry.
-		 */
-		while ( (!found) && slaspec && (slaspec < endofslaspec) )
-		{
-			int wdaymatch = 0;
-			dprintf("Now checking slaspec='%s'\n", slaspec);
+	onesla = timespec;
+	while (!found && onesla) {
 
-			if (*slaspec == '*') {
-				wdaymatch = 1;
-			}
-			else if ((toupper((int)*slaspec) == 'W') && (now->tm_wday >= 1) && (now->tm_wday <=5)) {
-				wdaymatch = 1;
-			}
-			else {
-				char *wday;
+		int wdaymatch = 0;
+		char *endsla, *starttimep, *endtimep;
+		int starttime, endtime;
 
-				for (wday = slaspec; ((wday < endofslaspec) && (*wday != ':')); wday++) {
-					if (*wday == (now->tm_wday+'0')) wdaymatch = 1;
-				}
-			}
+		endsla = strchr(onesla, ','); if (endsla) *endsla = '\0';
 
-			if (wdaymatch) {
-				/* Weekday matches */
-				starttime = minutes(slaspec+2);
-				endtime = minutes(slaspec+7);
-				curtime = now->tm_hour*60+now->tm_min;
-				if (endtime > starttime) {
-					/* *:0200:0400 */
-					found = ((curtime >= starttime) && (curtime <= endtime));
-				}
-				else {
-					/* The period crosses over midnight: *:2330:0400 */
-					found = ((curtime >= starttime) || (curtime <= endtime));
-				}
-
-				dprintf("\tstart,end,current time = %d, %d, %d - found=%d\n", 
-					starttime,endtime,curtime,found);
-			}
-			else {
-				dprintf("\tWeekday does not match\n");
-			}
-
-			if (!found) {
-				slaspec = strchr(slaspec, ',');
-				if (slaspec) slaspec++;
-			};
+		if (*onesla == '*') {
+			wdaymatch = 1;
 		}
-		result = found;
-	}
-	else {
-		/* No SLA -> use the default */
-		result = defresult;
+		else if ((toupper((int)*onesla) == 'W') && (now->tm_wday >= 1) && (now->tm_wday <=5)) {
+			wdaymatch = 1;
+		}
+		else {
+			char *wday;
+			for (wday = onesla; ((*wday >= '0') && (*wday <= '6')); wday++) {
+				if (*wday == (now->tm_wday+'0')) wdaymatch = 1;
+			}
+			if (*wday != ':') errprintf("Bad timespec (missing colon or wrong weekdays): %s\n", onesla);
+		}
+
+		if (wdaymatch) {
+			/* Weekday matches */
+			starttimep = strchr(onesla, ':');
+			if (starttimep) {
+				starttime = minutes(starttimep+1);
+				endtimep = strchr(starttimep+1, ':');
+				if (endtimep) {
+					endtime = minutes(endtimep+1);
+					if (endtime > starttime) {
+						/* *:0200:0400 */
+						found = ((curtime >= starttime) && (curtime <= endtime));
+					}
+					else {
+						/* The period crosses over midnight: *:2330:0400 */
+						found = ((curtime >= starttime) || (curtime <= endtime));
+					}
+					dprintf("\tstart,end,current time = %d, %d, %d - found=%d\n", 
+						starttime,endtime,curtime,found);
+				}
+				else errprintf("Bad timespec (missing colon or no endtime): %s\n", onesla);
+			}
+			else errprintf("Bad timespec (missing colon or no starttime): %s\n", onesla);
+		}
+		else {
+			dprintf("\tWeekday does not match\n");
+		}
+
+		/* Go to next SLA spec. */
+		if (endsla) *endsla = ',';
+		onesla = (endsla ? (endsla + 1) : NULL);
 	}
 
-	return result;
+	return found;
 }
 
 
