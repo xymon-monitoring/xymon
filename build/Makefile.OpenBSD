@@ -1,0 +1,14 @@
+# bbgen compile-time settings for OpenBSD systems
+
+OSDEF = -DBSD
+
+# NETLIBS: None needed
+NETLIBS =
+
+# Compile flags for normal build
+CC = gcc
+CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT -I/usr/local/include -L/usr/local/lib
+
+# Compile flags for debugging
+# CFLAGS = -g -DDEBUG -Wall -D_REENTRANT -I/usr/local/include -L/usr/local/lib
+
