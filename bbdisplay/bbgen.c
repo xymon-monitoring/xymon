@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.69 2003-02-09 13:50:05 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.70 2003-02-10 09:12:47 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -153,6 +153,11 @@ int main(int argc, char *argv[])
 			ignorecolumns = malloc(strlen(lp)+2);
 			sprintf(ignorecolumns, ",%s,", (lp+1));
 		}
+		else if (strncmp(argv[i], "--includecolumns=", 17) == 0) {
+			char *lp = strchr(argv[i], '=');
+			includecolumns = malloc(strlen(lp)+2);
+			sprintf(includecolumns, ",%s,", (lp+1));
+		}
 		else if ((strncmp(argv[i], "--noprop=", 9) == 0) || (strncmp(argv[i], "--nopropyellow=", 15) == 0)) {
 			char *lp = strchr(argv[i], '=');
 			nopropyellowdefault = malloc(strlen(lp)+2);
@@ -181,31 +186,36 @@ int main(int argc, char *argv[])
 		else if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-?") == 0)) {
 			printf("Usage: %s [options] [WebpageDirectory]\n", argv[0]);
 			printf("Options:\n");
-			printf("    --nopurple             : Disable purple status-updates\n");
-			printf("    --purplelifetime=N     : Purple messages have a lifetime of N minutes\n");
+			printf("    --nopurple                  : Disable purple status-updates\n");
+			printf("    --purplelifetime=N          : Purple messages have a lifetime of N minutes\n");
+			printf("    --ignorecolumns=test[,test] : Completely ignore these columns\n");
+			printf("    --includecolumns=test[,test]: Always include these columns on bb2 page\n");
 			printf("\nPage layout options:\n");
-			printf("    --pages-last           : Put page- and subpage-links after hosts (as BB does)\n");
-			printf("    --pages-first          : Put page- and subpage-links before hosts (default)\n");
-			printf("    --subpagecolumns=N     : Number of columns for links to pages and subpages\n");
-			printf("    --recentgifs           : Use xxx-recent.gif icons for newly changed tests\n");
+			printf("    --pages-last                : Put page- and subpage-links after hosts (as BB does)\n");
+			printf("    --pages-first               : Put page- and subpage-links before hosts (default)\n");
+			printf("    --subpagecolumns=N          : Number of columns for links to pages and subpages\n");
+			printf("    --recentgifs                : Use xxx-recent.gif icons for newly changed tests\n");
 			printf("\nStatus propagation control options:\n");
-			printf("    --noprop=test[,test]   : Disable upwards status propagation when YELLOW\n");
-			printf("    --nopropred=test[,test]: Disable upwards status propagation when RED or YELLOW\n");
+			printf("    --noprop=test[,test]        : Disable upwards status propagation when YELLOW\n");
+			printf("    --nopropred=test[,test]     : Disable upwards status propagation when RED or YELLOW\n");
 			printf("\nInfo column options:\n");
-			printf("    --info[=INFOCOLUMN]    : Generate INFO data in column INFOCOLUMN\n");
-			printf("    --infoupdate=N         : time between updates of INFO column pages in seconds\n");
+			printf("    --info[=INFOCOLUMN]         : Generate INFO data in column INFOCOLUMN\n");
+			printf("    --infoupdate=N              : time between updates of INFO column pages in seconds\n");
 			printf("\nLARRD support options:\n");
-			printf("    --larrd[=LARRDCOLUMN]  : LARRD data in column LARRDCOLUMN, and handle larrd-html\n");
-			printf("    --larrdupdate=N        : time between updates of LARRD pages in seconds\n");
-			printf("    --rrddir=RRD-directory : Directory for LARRD RRD files\n");
+			printf("    --larrd[=LARRDCOLUMN]       : LARRD data in column LARRDCOLUMN, and handle larrd-html\n");
+			printf("    --larrdupdate=N             : time between updates of LARRD pages in seconds\n");
+			printf("    --rrddir=RRD-directory      : Directory for LARRD RRD files\n");
 			printf("\nAlternate pageset generation support:\n");
-			printf("    --bbpageONLY           : Generate the standard (bb.html) page only\n");
-			printf("    --template=TEMPLATE    : template for header and footer files\n");
+			printf("    --bbpageONLY                : Generate the standard (bb.html) page only\n");
+			printf("    --template=TEMPLATE         : template for header and footer files\n");
 #ifdef DEBUG
 			printf("\n");
-			printf("    --debug                : Dumps internal state-table\n");
+			printf("    --debug                     : Dumps internal state-table\n");
 #endif
 			exit(1);
+		}
+		else if (strncmp(argv[i], "-", 1) == 0) {
+			printf("Unknown option : %s\n", argv[i]);
 		}
 		else {
 			/* Last argument is pagedir */

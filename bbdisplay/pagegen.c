@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.17 2003-02-08 08:26:24 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.18 2003-02-10 09:12:47 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -38,6 +38,8 @@ static char rcsid[] = "$Id: pagegen.c,v 1.17 2003-02-08 08:26:24 henrik Exp $";
 char *bb_headfoot = "bb";
 int  subpagecolumns=1;
 int  hostsbeforepages = 0;
+char *includecolumns = NULL;
+
 
 int interesting_column(int pagetype, int color, int alert, char *columnname, char *onlycols)
 {
@@ -48,6 +50,19 @@ int interesting_column(int pagetype, int color, int alert, char *columnname, cha
 		sprintf(search, "|%s|", columnname);
 		if (strstr(onlycols, search) == NULL) {
 			return 0;
+		}
+	}
+
+	if (includecolumns) {
+		char *col1 = malloc(strlen(columnname)+3); /* 3 = 2 commas and a NULL */
+
+		sprintf(col1, ",%s,", columnname);
+		if (strstr(includecolumns, col1)) {
+			free(col1);
+			return 1;
+		}
+		else {
+			free(col1);
 		}
 	}
 
