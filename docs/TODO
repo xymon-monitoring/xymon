@@ -3,11 +3,13 @@ Definitely
 
 Probably
 --------
-* Convert the acklog.sh extension for bb2.html
 * Convert the mkbwml.sh script to generate WAP pages
 
 Probably not
 ------------
 * Handle modem banks
 * Handle "group" properly
+* Convert the acklog.sh extension for bb2.html. This does
+  not load the system a great deal (at least for me), so
+  doing it via the existing script as an extension is OK.
 
