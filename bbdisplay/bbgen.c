@@ -112,7 +112,7 @@ char *dotgiffilename(entry_t *e)
 
 	strcpy(filename, colorname(e->color));
 	if (e->acked) {
-		strcat(filename, "-acked");
+		strcat(filename, "-ack");
 	}
 	else {
 		strcat(filename, (e->oldage ? "" : "-recent"));
@@ -353,6 +353,7 @@ state_t *init_state(const char *filename, int dopurple)
 	char	*p;
 	char	hostname[60];
 	char	testname[20];
+	char	ackfilename[256];
 	state_t *newstate;
 	char	l[200];
 	host_t	*host;
@@ -389,7 +390,10 @@ state_t *init_state(const char *filename, int dopurple)
 
 	newstate->entry->column = find_or_create_column(testname);
 	newstate->entry->color = -1;
-	newstate->entry->acked = 0;	/* FIXME */
+
+	/* Acked column ? */
+	sprintf(ackfilename, "%s/ack.%s.%s", getenv("BBACKS"), hostname, testname);
+	newstate->entry->acked = (stat(ackfilename, &st) == 0);
 
 	host = find_host(hostname);
 	stat(filename, &st);
