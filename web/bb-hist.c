@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.16 2003-07-11 11:38:45 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.17 2003-07-18 15:10:20 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -106,13 +106,13 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 	fprintf(htmlrep, "<TR>\n");
 
 	fprintf(htmlrep, "<TD WIDTH=\"50%%\" ALIGN=LEFT>");
-	if (colorlog && colorlog->starttime <= yesterday) fprintf(htmlrep, "<A HREF=\"%s&OFFSET=%d\">", selfurl, startoffset+1);
+	if (colorlog && colorlog->starttime <= yesterday) fprintf(htmlrep, "<A HREF=\"%s&amp;OFFSET=%d\">", selfurl, startoffset+1);
 	fprintf(htmlrep, "<B>%s</B>", ctime(&yesterday));
 	if (colorlog && colorlog->starttime <= yesterday) fprintf(htmlrep, "</A>");
 	fprintf(htmlrep, "</TD>\n");
 
 	fprintf(htmlrep, "<TD WIDTH=\"50%%\" ALIGN=RIGHT>\n");
-	if (startoffset > 0) fprintf(htmlrep, "<A HREF=\"%s&OFFSET=%d\">", selfurl, startoffset-1);
+	if (startoffset > 0) fprintf(htmlrep, "<A HREF=\"%s&amp;OFFSET=%d\">", selfurl, startoffset-1);
 	fprintf(htmlrep, "<B>%s</B>\n", ctime(&today));
 	if (startoffset > 0) fprintf(htmlrep, "</A>");
 	fprintf(htmlrep, "</TD>\n");
@@ -137,7 +137,6 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 	/* The actual color bar */
 	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 BGCOLOR=\"#000033\">\n");
 	fprintf(htmlrep, "<TR>\n");
-	fprintf(htmlrep, "<FONT SIZE=1>\n");
 
 	/* First entry may not start at our report-start time */
 	if (colorlog == NULL) {
@@ -160,19 +159,16 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 	}
 
 	fprintf(htmlrep, "<!-- pctsum = %d -->\n", pctsum);
-	fprintf(htmlrep, "</FONT></TR>\n");
+	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "</TABLE>\n");
 
 	fprintf(htmlrep, "</TD></TR></TABLE>\n");
 
 
 	fprintf(htmlrep, "<CENTER>\n");
-	fprintf(htmlrep, "<BR><FONT %s><H2>%s - %s</H2></FONT>\n", getenv("MKBBROWFONT"), hostname, service);
+	fprintf(htmlrep, "<BR><FONT %s><B>%s - %s</B></FONT>\n", getenv("MKBBROWFONT"), hostname, service);
 	fprintf(htmlrep, "<TABLE BORDER=0 BGCOLOR=\"#333333\" CELLPADDING=3>\n");
-	fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
-	fprintf(htmlrep, "</TR>\n");
-	fprintf(htmlrep, "<TR></TR>\n");
-	fprintf(htmlrep, "<TR><TD COLSPAN=6 ALIGN=CENTER><B>%s</B></TD></TR>\n",
+	fprintf(htmlrep, "<TR><TD COLSPAN=6 ALIGN=CENTER><BR><B>%s</B></TD></TR>\n",
 		(startoffset ? "24 hour statistics" : "Last 24 hours"));
 	fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
 	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
@@ -198,7 +194,7 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
 	fprintf(htmlrep, "<TD COLSPAN=6 ALIGN=CENTER>\n");
-	fprintf(htmlrep, "<FONT %s><B>[Total may not equal 100%%]</B></TD> </TR>\n", getenv("MKBBCOLFONT"));
+	fprintf(htmlrep, "<FONT %s><B>[Total may not equal 100%%]</B></FONT></TD> </TR>\n", getenv("MKBBCOLFONT"));
 	fprintf(htmlrep, "</TABLE>\n");
 	fprintf(htmlrep, "</CENTER>\n");
 
@@ -211,7 +207,7 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 	fprintf(htmlrep, "<TR>\n");
 	if (entrycount) {
 		fprintf(htmlrep, "<TD COLSPAN=3 ALIGN=CENTER><B>Last %d log entries</B> ", entrycount);
-		fprintf(htmlrep, "<A HREF=\"%s/bb-hist.sh?HISTFILE=%s.%s&ENTRIES=all\">(Full HTML log)</A></TD>\n", 
+		fprintf(htmlrep, "<A HREF=\"%s/bb-hist.sh?HISTFILE=%s.%s&amp;ENTRIES=all\">(Full HTML log)</A></TD>\n", 
 			getenv("CGIBINURL"), commafy(hostname), service);
 	}
 	else {
@@ -219,9 +215,9 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 	}
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "<TR BGCOLOR=\"#333333\">\n");
-	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Date</B></TD>\n", getenv("MKBBCOLFONT"));
-	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Status</B></TD>\n", getenv("MKBBCOLFONT"));
-	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Duration</B></TD>\n", getenv("MKBBCOLFONT"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Date</B></FONT></TD>\n", getenv("MKBBCOLFONT"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Status</B></FONT></TD>\n", getenv("MKBBCOLFONT"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Duration</B></FONT></TD>\n", getenv("MKBBCOLFONT"));
 	fprintf(htmlrep, "</TR>\n");
 
 	for (walk = loghead; (walk); walk = walk->next) {
@@ -232,12 +228,12 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 		fprintf(htmlrep, "<TR BGCOLOR=%s>\n", bgcols[curbg]); curbg = (1-curbg);
 		fprintf(htmlrep, "<TD ALIGN=LEFT NOWRAP>%s</TD>\n", start);
 		fprintf(htmlrep, "<TD ALIGN=CENTER BGCOLOR=\"#000000\">");
-		fprintf(htmlrep, "<A HREF=\"%s/bb-histlog.sh?HOST=%s&SERVICE=%s&TIMEBUF=%s\">", 
+		fprintf(htmlrep, "<A HREF=\"%s/bb-histlog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s\">", 
 			getenv("CGIBINURL"), hostname, service, walk->timespec);
 		fprintf(htmlrep, "<IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0>", 
 			getenv("BBSKIN"), dotgiffilename(walk->color, 0, 1), colorname(walk->color),
 			getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
-		fprintf(htmlrep, "</TD>\n");
+		fprintf(htmlrep, "</A></TD>\n");
 
 		fprintf(htmlrep, "<TD ALIGN=CENTER>%s</TD>\n", durationstr(walk->duration));
 		fprintf(htmlrep, "</TR>\n\n");
@@ -245,7 +241,7 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 
 
 	fprintf(htmlrep, "</TABLE>\n");
-
+	fprintf(htmlrep, "</CENTER>\n");
 
 	fprintf(htmlrep, "<BR><BR>\n");
 
@@ -366,19 +362,19 @@ int main(int argc, char *argv[])
 	sprintf(selfurl, "%s/bb-hist.sh?HISTFILE=%s.%s", getenv("CGIBINURL"), commafy(hostname), service);
 
 	if (strlen(ip)) {
-		strcat(selfurl, "&IP=");
+		strcat(selfurl, "&amp;IP=");
 		strcat(selfurl, ip);
 	}
 
 	if (entrycount) {
 		char *p = selfurl + strlen(selfurl);
-		sprintf(p, "&ENTRIES=%d", entrycount);
+		sprintf(p, "&amp;ENTRIES=%d", entrycount);
 	}
-	else strcat(selfurl, "&ENTRIES=ALL");
+	else strcat(selfurl, "&amp;ENTRIES=ALL");
 
 	if (!usepct) {
 		char *p = selfurl + strlen(selfurl);
-		sprintf(p, "&PIXELS=%d", pixels);
+		sprintf(p, "&amp;PIXELS=%d", pixels);
 	}
 
 
