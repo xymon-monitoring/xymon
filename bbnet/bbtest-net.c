@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.109 2003-09-05 16:51:11 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.110 2003-09-05 17:22:05 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -410,6 +410,7 @@ void load_tests(void)
 					else if (routestring && (strncasecmp(testspec, routestring, strlen(routestring)) == 0)) {
 						specialtag = 1;
 						h->routerdeps = malcop(testspec+strlen(routestring));
+						dprintf("host %s has routerdeps %s\n", h->hostname, h->routerdeps);
 					}
 					else if (strncmp(testspec, "TIMEOUT:", 8) == 0) {
 						specialtag = 1;
