@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.19 2004-10-10 17:40:51 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.20 2004-10-11 09:34:38 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -89,6 +89,17 @@ int alertcolors = ( (1 << COL_RED) | (1 << COL_YELLOW) | (1 << COL_PURPLE) );
 int ghosthandling = -1;
 char *checkpointfn = NULL;
 
+#if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
+/* union semun is defined by including <sys/sem.h> */
+#else
+/* according to X/OPEN we have to define it ourselves */
+union semun {
+	int val;                  /* value for SETVAL */
+	struct semid_ds *buf;     /* buffer for IPC_STAT, IPC_SET */
+	unsigned short *array;    /* array for GETALL, SETALL */
+};
+#endif
+
 void posttochannel(bbd_channel_t *channel, char *channelmarker, 
 		   char *msg, char *sender, char *hostname, void *arg, char *readymsg)
 {
@@ -100,6 +111,7 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 	int n;
 	struct timeval tstamp;
 	struct timezone tz;
+	union semun su;
 
 	/* First see how many users are on this channel */
 	n = shmctl(channel->shmid, IPC_STAT, &chninfo);
@@ -193,6 +205,16 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 	dprintf("Posting message %u to %d readers\n", channel->seq, clients);
 	s.sem_num = BOARDBUSY; s.sem_op = clients; s.sem_flg = 0;		/* Up BOARDBUSY */
 	n = semop(channel->semid, &s, 1);
+
+	/* Make sure GOCLIENT is 0 */
+	n = semctl(channel->semid, GOCLIENT, GETVAL);
+	if (n > 0) {
+		errprintf("Oops ... GOCLIENT is high, forcing low\n");
+		su.val = 0;
+		n = semctl(channel->semid, GOCLIENT, SETVAL, &su);
+		usleep(1000);
+	}
+
 	s.sem_num = GOCLIENT; s.sem_op = clients; s.sem_flg = 0; 		/* Up GOCLIENT */
 	n = semop(channel->semid, &s, 1);
 	dprintf("Message posted\n");
@@ -1294,24 +1316,11 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	setup_signalhandler("bbd_net");
-	signal(SIGINT, sig_handler);
-	signal(SIGTERM, sig_handler);
-	signal(SIGUSR1, sig_handler);
-	signal(SIGCHLD, sig_handler);
-
-	statuschn = setup_channel(C_STATUS, (IPC_CREAT|0600));
-	stachgchn = setup_channel(C_STACHG, (IPC_CREAT|0600));
-	pagechn   = setup_channel(C_PAGE, (IPC_CREAT|0600));
-	datachn   = setup_channel(C_DATA, (IPC_CREAT|0600));
-	noteschn  = setup_channel(C_NOTES, (IPC_CREAT|0600));
-
 	/* Go daemon */
 	if (daemonize) {
 		pid_t childpid;
 
 		fclose(stdin);
-		if (!debug) fclose(stdout);
 
 		/* Become a daemon */
 		childpid = fork();
@@ -1333,6 +1342,18 @@ int main(int argc, char *argv[])
 		setsid();
 	}
 
+	setup_signalhandler("bbd_net");
+	signal(SIGINT, sig_handler);
+	signal(SIGTERM, sig_handler);
+	signal(SIGUSR1, sig_handler);
+	signal(SIGCHLD, sig_handler);
+
+	statuschn = setup_channel(C_STATUS, (IPC_CREAT|0600));
+	stachgchn = setup_channel(C_STACHG, (IPC_CREAT|0600));
+	pagechn   = setup_channel(C_PAGE, (IPC_CREAT|0600));
+	datachn   = setup_channel(C_DATA, (IPC_CREAT|0600));
+	noteschn  = setup_channel(C_NOTES, (IPC_CREAT|0600));
+
 	do {
 		fd_set fdread, fdwrite;
 		int maxfd, n;
@@ -1348,6 +1369,7 @@ int main(int argc, char *argv[])
 			pid_t childpid;
 
 			nextcheckpoint = now + checkpointinterval;
+#if 0
 			childpid = fork();
 			if (childpid == -1) {
 				errprintf("Could not fork checkpoing child:%s\n", strerror(errno));
@@ -1356,6 +1378,9 @@ int main(int argc, char *argv[])
 				save_checkpoint();
 				exit(0);
 			}
+#else
+			save_checkpoint();
+#endif
 		}
 
 		FD_ZERO(&fdread); FD_ZERO(&fdwrite);
