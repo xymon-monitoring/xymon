@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.73 2005-02-15 11:25:26 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.74 2005-02-19 22:59:18 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -28,6 +28,10 @@ static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.73 2005-02-15 11:25:26 henrik E
 #include <netdb.h>
 
 #include "libbbgen.h"
+
+#ifdef HOBBIT
+#include "hobbitd_alert.h"
+#endif
 
 static namelist_t *hosthead = NULL;
 
@@ -80,6 +84,114 @@ static void timespec_text(char *spec, char **infobuf, int *infobuflen)
 	xfree(sCopy);
 }
 
+#ifdef HOBBIT
+int test_name_compare(const void *v1, const void *v2)
+{
+	htnames_t *r1 = (htnames_t *)v1;
+	htnames_t *r2 = (htnames_t *)v2;
+
+	return strcmp(r1->name, r2->name);
+}
+
+void generate_hobbit_alertinfo(char *hostname, char **buf, int *buflen, char *columnname)
+{
+	static int gotconfig = 0;
+	static char *statuslist = NULL;
+
+	namelist_t *hi = hostinfo(hostname);
+	htnames_t hname, lname;
+	activealerts_t alert;
+	char *key, *walk;
+	htnames_t *tnames = NULL;
+	int testsz, testcount, i, rcount;
+	char l[1024];
+
+	if (!gotconfig) {
+		char configfn[PATH_MAX];
+		int alertcolors = ( (1 << COL_RED) | (1 << COL_YELLOW) | (1 << COL_PURPLE) );
+		int alertinterval = 60*30;
+
+		sprintf(configfn, "%s/etc/hobbit-alerts.cfg", xgetenv("BBHOME"));
+		load_alertconfig(configfn, alertcolors, alertinterval);
+		gotconfig = 1;
+
+		if (sendmessage("hobbitdlist", NULL, NULL, &statuslist, 1, 30) != BB_OK) {
+			errprintf("Could not get the Hobbit statuslog-list\n");
+			statuslist = NULL;
+			return;
+		}
+	}
+
+	if (statuslist == NULL) return;
+
+	testsz = 10;
+	tnames = (htnames_t *)malloc(testsz * sizeof(htnames_t));
+
+	key = (char *)malloc(1 + strlen(hostname) + 1);
+	sprintf(key, "%s|", hostname);
+	walk = statuslist;
+	testcount = 0;
+	while ((walk = strstr(walk, key)) != NULL) {
+		char *eol, *t;
+
+		eol = strchr(walk+strlen(key), '\n'); if (eol) *eol = '\0';
+		t = (walk+strlen(key));
+
+		if ( (strcmp(t, columnname) != 0) &&
+		     (strcmp(t, "trends") != 0)   &&
+		     (strcmp(t, "graphs") != 0)   &&
+		     (strcmp(t, "larrd") != 0) ) {
+			tnames[testcount].name = strdup(t);
+			tnames[testcount].next = NULL;
+			testcount++;
+			if (testcount == testsz) {
+				testsz += 10;
+				tnames = (htnames_t *)realloc(tnames, (testsz * sizeof(htnames_t)));
+			}
+		}
+
+		if (eol) *eol = '\n';
+		walk += strlen(key);
+	}
+	free(key);
+
+	/* Sort them so the display looks prettier */
+	qsort(&tnames[0], testcount, sizeof(htnames_t), test_name_compare);
+
+	sprintf(l, "<table summary=\"%s Alerts\" border=1>\n", hostname);
+	addtobuffer(buf, buflen, l);
+	addtobuffer(buf, buflen, "<tr><th>Service</th><th>Recipient</th><th>Wait before 1st</th><th>Stop after</th><th>Repeat</th><th>Time of Day</th><th>Colors</th><th>Recovery message</th><th>Stoprule</th></tr>\n");
+
+	hname.name = hostname; hname.next = NULL;
+	lname.name = (hi ? hi->page->pagepath : ""); lname.next = NULL;
+	alert.hostname = &hname;
+	alert.location = &lname;
+	strcpy(alert.ip, "127.0.0.1");
+	alert.color = COL_RED;
+	alert.pagemessage = "";
+	alert.ackmessage = NULL;
+	alert.eventstart = 0;
+	alert.nextalerttime = 0;
+	alert.state = A_PAGING;
+	alert.cookie = 12345;
+	alert.next = NULL;
+	rcount = 0;
+
+	for (i = 0; (i < testcount); i++) {
+		alert.testname = &tnames[i];
+		if (have_recipient(&alert)) { rcount++; print_alert_recipients(&alert, buf, buflen); }
+		free(tnames[i].name);
+	}
+	free(tnames);
+
+	if (rcount == 0) {
+		/* No alerts defined. */
+		addtobuffer(buf, buflen, "<tr><td colspan=9 align=center><b><i>No alerts defined</i></b></td></tr>\n");
+	}
+	addtobuffer(buf, buflen, "</table>\n");
+}
+#endif
+
 int generate_info(char *infocolumn, char *documentationurl, int hobbitd, int sendmetainfo)
 {
 	char *infobuf = NULL;
@@ -110,7 +222,7 @@ int generate_info(char *infocolumn, char *documentationurl, int hobbitd, int sen
 			continue;	/* Skip this host */
 		}
 
-		addtobuffer(&infobuf, &infobuflen, "<table width=\"100%\">\n");
+		addtobuffer(&infobuf, &infobuflen, "<table width=\"100%\" summary=\"Host Information\">\n");
 
 		sprintf(l, "<Hostname>%s</Hostname>\n", hostwalk->bbhostname);
 		addtobuffer(&metabuf, &metabuflen, l);
@@ -400,16 +512,19 @@ int generate_info(char *infocolumn, char *documentationurl, int hobbitd, int sen
 		if (!first) addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
 		addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
-		alerts = (hobbitd ? NULL : bbfind_alert(hostwalk->bbhostname, 0, 0));
 		if (!bbh_item(hostwalk, BBH_FLAG_DIALUP)) {
 			if (hobbitd) {
-				addtobuffer(&infobuf, &infobuflen, "<tr><th colspan=2 align=left>Hobbit alert configuration not yet supported</th></tr>\n");
+#ifdef HOBBIT
+				addtobuffer(&infobuf, &infobuflen, "<tr><th align=left valign=top>Alerting:</th><td align=left>\n");
+				generate_hobbit_alertinfo(hostwalk->bbhostname, &infobuf, &infobuflen, infocolumn);
+				addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
+#endif
 			}
-			else if (alerts) {
+			else if ( (alerts = bbfind_alert(hostwalk->bbhostname, 0, 0)) != NULL) {
 				int wantedstate = 0;  /* Start with the normal rules */
 				int firstinverse = 1;
 
-				addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>E-mail/SMS alerting:</th><td align=left>\n");
+				addtobuffer(&infobuf, &infobuflen, "<tr><th align=left valign=top>Alerting:</th><td align=left>\n");
 				addtobuffer(&infobuf, &infobuflen, "<table width=\"100%%\" border=1>\n");
 				addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>Services</th><th align=left>Ex.Services</th><th align=left>Weekdays</th><th align=left>Time</th><th align=left>Recipients</th></tr>\n");
 				while (alerts) {
@@ -463,7 +578,7 @@ int generate_info(char *infocolumn, char *documentationurl, int hobbitd, int sen
 				addtobuffer(&infobuf, &infobuflen, l);
 			}
 			else {
-				addtobuffer(&infobuf, &infobuflen, "<tr><th colspan=2 align=left>No e-mail/SMS alerting defined</th></tr>\n");
+				addtobuffer(&infobuf, &infobuflen, "<tr><th colspan=2 align=left>No alerts defined</th></tr>\n");
 			}
 		}
 		addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
