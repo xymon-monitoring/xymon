@@ -6,6 +6,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 typedef struct entry_t {
 	char *name;
@@ -21,16 +23,19 @@ int main(int argc, char *argv[])
 {
 	char *curfn, *curbckfn, *srcfn;
 	FILE *curfd, *curbckfd, *srcfd;
-	char delim = '=';
+	struct stat st;
 	char l[32768];
 	entry_t *ewalk;
 	entry_t *newent = NULL;
 	int adding = 0;
+	int showit = 1;
 
 	srcfn = strdup(argv[1]);
 	curfn = strdup(argv[2]);
 	curbckfn = (char *)malloc(strlen(curfn) + 5);
 	sprintf(curbckfn, "%s.bak", curfn);
+
+	if (stat(curfn, &st) == -1) { showit = 0; goto nooriginal; }
 
 	curfd = fopen(curfn, "r");
 	unlink(curbckfn); curbckfd = fopen(curbckfn, "w");
@@ -69,6 +74,7 @@ int main(int argc, char *argv[])
 	fclose(curfd);
 	fclose(curbckfd);
 
+nooriginal:
 	srcfd = fopen(srcfn, "r");
 	unlink(curfn); curfd = fopen(curfn, "w");
 	if (srcfd == NULL) { printf("Cannot open template file %s\n", srcfn); return 1; }
@@ -90,7 +96,7 @@ int main(int argc, char *argv[])
 				adding = 0;
 			}
 			else {
-				printf("Adding new entry to %s: %s", curfn, l);
+				if (showit) printf("Adding new entry to %s: %s", curfn, l);
 				fprintf(curfd, "%s", l);
 				adding = 1;
 			}

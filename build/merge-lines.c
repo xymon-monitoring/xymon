@@ -6,6 +6,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 typedef struct entry_t {
 	char *name;
@@ -24,11 +26,17 @@ int main(int argc, char *argv[])
 	char delim = '=';
 	char l[32768];
 	entry_t *ewalk;
+	struct stat st;
+	int showit = 1;
 
 	srcfn = strdup(argv[1]);
 	curfn = strdup(argv[2]);
 	curbckfn = (char *)malloc(strlen(curfn) + 5);
 	sprintf(curbckfn, "%s.bak", curfn);
+
+	if (strstr(srcfn, ".csv")) delim = ';';
+
+	if (stat(curfn, &st) == -1) { showit = 0; goto nooriginal; }
 
 	curfd = fopen(curfn, "r");
 	unlink(curbckfn); curbckfd = fopen(curbckfn, "w");
@@ -43,14 +51,14 @@ int main(int argc, char *argv[])
 		bol = l + strspn(l, " \t\r\n");
 		if ((*bol == '#') || (*bol == '\0')) continue;
 
-		p = strchr(bol, '=');
+		p = strchr(bol, delim);
 		if (p) {
 			entry_t *newent;
 
 			*p = '\0';
 			newent = (entry_t *)malloc(sizeof(entry_t));
 			newent->name = strdup(bol);
-			*p = '=';
+			*p = delim;
 			newent->val = strdup(l);
 			newent->copied = 0;
 
@@ -66,6 +74,7 @@ int main(int argc, char *argv[])
 	fclose(curfd);
 	fclose(curbckfd);
 
+nooriginal:
 	srcfd = fopen(srcfn, "r");
 	unlink(curfn); curfd = fopen(curfn, "w");
 	if (srcfd == NULL) { printf("Cannot open template file %s\n", srcfn); return 1; }
@@ -79,18 +88,18 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		p = strchr(bol, '=');
+		p = strchr(bol, delim);
 		if (p) {
 			*p = '\0';
 			for (ewalk = head; (ewalk && strcmp(ewalk->name, bol)); ewalk = ewalk->next) ;
-			*p = '=';
+			*p = delim;
 
 			if (ewalk) {
 				fprintf(curfd, "%s", ewalk->val);
 				ewalk->copied = 1;
 			}
 			else {
-				printf("Adding new entry to %s: %s", curfn, l);
+				if (showit) printf("Adding new entry to %s: %s", curfn, l);
 				fprintf(curfd, "%s", l);
 			}
 		}
