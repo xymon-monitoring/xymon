@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.94 2005-01-14 09:51:20 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.95 2005-01-14 10:13:43 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -187,6 +187,7 @@ hobbitd_statistics_t hobbitd_stats[] = {
 	{ "hobbitdlog", 0 },
 	{ "drop", 0 },
 	{ "rename", 0 },
+	{ "dummy", 0 },
 	{ NULL, 0 }
 };
 
@@ -234,6 +235,8 @@ char *generate_stats(void)
 		bufp += sprintf(bufp, "- %-20s : %10ld\n", hobbitd_stats[i].cmd, hobbitd_stats[i].count);
 		i++;
 	}
+	bufp += sprintf(bufp, "- %-20s : %10ld\n", "Bogus messages", hobbitd_stats[i].count);
+
 	if ((now > last_stats_time) && (last_stats_time > 0)) {
 		bufp += sprintf(bufp, "Incoming messages/sec  : %10ld (average last %d seconds)\n", 
 			((msgs_total - msgs_total_last) / (now - last_stats_time)), 
