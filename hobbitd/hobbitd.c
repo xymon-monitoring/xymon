@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.126 2005-03-07 08:02:25 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.127 2005-03-07 14:08:54 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -2173,7 +2173,7 @@ void check_purple_status(void)
 				}
 				else {
 					hobbitd_log_t *tmp;
-					int newcolor;
+					int newcolor = COL_PURPLE;
 
 					/*
 					 * See if this is a host where the "conn" test shows it is down.
