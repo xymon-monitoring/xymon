@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.20 2004-11-13 09:07:16 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.21 2004-11-14 14:03:13 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -231,6 +231,9 @@ int main(int argc, char *argv[])
 			load_alertconfig(configfn, alertcolors);
 			dump_alertconfig();
 			return 0;
+		}
+		else {
+			errprintf("Unknown option '%s'\n", argv[argi]);
 		}
 	}
 
