@@ -65,6 +65,12 @@ Format of the text message with the alert. Default is "TEXT" (suitable for e-mai
 .sp
 .BR "REPEAT=time"
 How often an alert gets repeated. As with DURATION, time is a number optionally followed by 'm', 'h' or 'd'.
+.sp
+.BR UNMATCHED
+The alert is sent to this recipient ONLY if no other recipients received an alert for this event.
+.sp
+.BR STOP
+Stop looking for more recipients after this one matches.
 
 .SH MACROS
 It is possible to use \fBmacros\fR in the configuration file. To define a macro:
