@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.142 2004-08-04 12:32:02 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.143 2004-08-04 13:37:22 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -69,6 +69,7 @@ char *reqenv[] = {
 
 service_t	*svchead = NULL;		/* Head of all known services */
 service_t	*pingtest = NULL;		/* Identifies the pingtest within svchead list */
+int		pingcount = 0;
 service_t	*dnstest = NULL;		/* Identifies the dnstest within svchead list */
 service_t	*digtest = NULL;		/* Identifies the digtest within svchead list */
 service_t	*httptest = NULL;		/* Identifies the httptest within svchead list */
@@ -1248,9 +1249,11 @@ int run_fping_service(service_t *service)
 		errprintf("Could not run the fping command %s\n", cmd);
 		return -1;
 	}
+	pingcount = 0;
 	for (t=service->items; (t); t = t->next) {
 		if (!t->host->dnserror && !t->host->noping) {
 			fprintf(cmdpipe, "%s\n", t->host->ip);
+			pingcount++;
 		}
 	}
 	fpingstatus = pclose(cmdpipe);
@@ -2163,8 +2166,11 @@ int main(int argc, char *argv[])
 
 	/* Ping checks first */
 	if (pingtest && pingtest->items) {
+		char msg[512];
+
 		run_fping_service(pingtest); 
-		add_timestamp("PING test completed");
+		sprintf(msg, "PING test completed (%d hosts)", pingcount);
+		add_timestamp(msg);
 		combo_start();
 		send_results(pingtest, failgoesclear);
 		if (selectedhosts == 0) save_fping_status();
