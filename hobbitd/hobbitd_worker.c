@@ -5,12 +5,102 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include <unistd.h>
+#include <sys/select.h>
+#include <sys/time.h>
+
 /* These are dummy vars needed by stuff in util.c */
 hostlist_t      *hosthead = NULL;
 link_t          *linkhead = NULL;
 link_t  null_link = { "", "", "", NULL };
 
-unsigned char *get_bbgend_message(char *id, int *seq)
+static int didtimeout = 0;
+
+static char *readlntimed(char *buffer, size_t bufsize, struct timeval *timeout)
+{
+	static char stdinbuf[SHAREDBUFSZ];
+	static int stdinbuflen = 0;
+	struct timeval cutoff, now, tmo;
+	struct timezone tz;
+	char *eoln;
+	fd_set fdread;
+	int n;
+
+	if (timeout) {
+		gettimeofday(&cutoff, &tz);
+		cutoff.tv_sec += timeout->tv_sec;
+		cutoff.tv_usec += timeout->tv_usec;
+		if (cutoff.tv_usec > 1000000) {
+			cutoff.tv_sec += 1;
+			cutoff.tv_usec -= 1000000;
+		}
+	}
+
+	didtimeout = 0;
+
+	while (1) {
+		/* We might have some goodies in the buffer already */
+		if ((stdinbuflen > 0) && ((eoln = strchr(stdinbuf, '\n')) != NULL)) {
+			int bytestocopy;
+
+			n = (eoln - stdinbuf + 1);
+			bytestocopy = ((n < bufsize) ? n : bufsize-1);
+			memcpy(buffer, stdinbuf, bytestocopy);
+			*(buffer + bytestocopy) = '\0';
+
+			stdinbuflen -= n;
+			if (stdinbuflen > 0) memmove(stdinbuf, eoln+1, stdinbuflen);
+			*(stdinbuf + stdinbuflen) = '\0';
+
+			return buffer;
+		}
+
+		if (timeout) {
+			gettimeofday(&now, &tz);
+			tmo.tv_sec = cutoff.tv_sec - now.tv_sec;
+			tmo.tv_usec = cutoff.tv_usec - now.tv_usec;
+			if (tmo.tv_usec < 0) {
+				tmo.tv_sec--;
+				tmo.tv_usec += 1000000;
+			}
+		}
+
+		FD_ZERO(&fdread);
+		FD_SET(STDIN_FILENO, &fdread);
+
+		n = select(STDIN_FILENO+1, &fdread, NULL, NULL, (timeout ? &tmo : NULL));
+
+		if (n == -1) {
+			/* Some error happened */
+			return NULL;
+		}
+		else if (n == 0) {
+			/* Timeout */
+			didtimeout = 1;
+			return NULL;
+		}
+		else if (FD_ISSET(STDIN_FILENO, &fdread)) {
+			n = read(STDIN_FILENO, (stdinbuf+stdinbuflen), (sizeof(stdinbuf) - stdinbuflen));
+			if (n <= 0) {
+				/* read() returns 0 --> End-of-file */
+				return NULL;
+			}
+			else {
+				/* Got data */
+				stdinbuflen += n;
+			}
+		}
+		else {
+			/* Cannot happen */
+		}
+	}
+
+	/* We never go here */
+	return NULL;
+}
+
+
+unsigned char *get_bbgend_message(char *id, int *seq, struct timeval *timeout)
 {
 	static unsigned int seqnum = 0;
 	static unsigned char buf[SHAREDBUFSZ];
@@ -25,7 +115,18 @@ startagain:
 	buflen = 0;
 	complete = 0;
 
-	while (!complete && fgets(bufp, (bufsz - buflen), stdin)) {
+	while (!complete) {
+		if (readlntimed(bufp, (bufsz - buflen), timeout) == NULL) {
+			if (didtimeout) {
+				*seq = 0;
+				strcpy(buf, "@@idle\n");
+				return buf;
+			}
+			else {
+				return NULL;
+			}
+		}
+
 		if (strcmp(bufp, "@@\n") == 0) {
 			/* "@@\n" marks the end of a multi-line message */
 			bufp--; /* Backup over the final \n */
@@ -141,7 +242,7 @@ void nldecode(unsigned char *msg)
 	unsigned char *outp = msg;
 	int n;
 
-	if (msg == NULL) return "";
+	if (msg == NULL) return;
 
 	while (*inp) {
 		n = strcspn(inp, "\\");

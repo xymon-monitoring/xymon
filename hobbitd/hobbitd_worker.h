@@ -7,7 +7,7 @@
 #include "bbd_net.h"
 #include "bbdutil.h"
 
-extern unsigned char *get_bbgend_message(char *id, int *seq);
+extern unsigned char *get_bbgend_message(char *id, int *seq, struct timeval *timeout);
 extern unsigned char *nlencode(unsigned char *msg);
 extern void nldecode(unsigned char *msg);
 
