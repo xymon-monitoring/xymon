@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.115 2003-11-13 14:03:23 hstoerne Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.116 2003-11-18 21:57:55 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -387,36 +387,6 @@ link_t *init_link(char *filename, const char *urlprefix)
 	return newlink;
 }
 
-bbgen_col_t *find_or_create_column(const char *testname)
-{
-	static bbgen_col_t *lastcol = NULL;	/* Cache the last lookup */
-	bbgen_col_t *newcol;
-
-	dprintf("find_or_create_column(%s)\n", textornull(testname));
-	if (lastcol && (strcmp(testname, lastcol->name) == 0))
-		return lastcol;
-
-	for (newcol = colhead; (newcol && (strcmp(testname, newcol->name) != 0)); newcol = newcol->next);
-	if (newcol == NULL) {
-		newcol = (bbgen_col_t *) malloc(sizeof(bbgen_col_t));
-		newcol->name = malcop(testname);
-		newcol->link = find_link(testname);
-
-		/* No need to maintain this list in order */
-		if (colhead == NULL) {
-			colhead = newcol;
-			newcol->next = NULL;
-		}
-		else {
-			newcol->next = colhead;
-			colhead = newcol;
-		}
-	}
-	lastcol = newcol;
-
-	return newcol;
-}
-
 char *parse_testflags(char *l)
 {
 	char *result = NULL;
@@ -541,7 +511,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	newstate->entry = (entry_t *) malloc(sizeof(entry_t));
 	newstate->next = NULL;
 
-	newstate->entry->column = find_or_create_column(testname);
+	newstate->entry->column = find_or_create_column(testname, 1);
 	newstate->entry->color = -1;
 	strcpy(newstate->entry->age, "");
 	newstate->entry->oldage = 0;

@@ -70,6 +70,7 @@ extern char *urldoclink(const char *docurl, const char *hostname);
 extern char *cleanurl(char *url);
 
 extern host_t *find_host(const char *hostname);
+extern bbgen_col_t *find_or_create_column(const char *testname, int create);
 extern char *histlogurl(char *hostname, char *service, time_t histtime);
 
 extern int within_sla(char *hostline, char *tag, int defresult);

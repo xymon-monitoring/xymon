@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.162 2003-10-21 21:09:42 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.163 2003-11-18 21:56:13 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -45,7 +45,6 @@ bbgen_page_t	*pagehead = NULL;			/* Head of page list */
 link_t  	*linkhead = NULL;			/* Head of links list */
 hostlist_t	*hosthead = NULL;			/* Head of hosts list */
 state_t		*statehead = NULL;			/* Head of list of all state entries */
-bbgen_col_t   	*colhead = NULL;			/* Head of column-name list */
 summary_t	*sumhead = NULL;			/* Summaries we send out */
 dispsummary_t	*dispsums = NULL;			/* Summaries we received and display */
 int		bb_color, bb2_color, bbnk_color;	/* Top-level page colors */

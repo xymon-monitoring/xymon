@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.105 2003-11-11 13:01:56 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.106 2003-11-18 21:56:13 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -850,6 +850,40 @@ host_t *find_host(const char *hostname)
 	lastsearch = l;
 
 	return (l ? l->hostentry : NULL);
+}
+
+
+bbgen_col_t *find_or_create_column(const char *testname, int create)
+{
+	static bbgen_col_t *colhead = NULL;	/* Head of column-name list */
+	static bbgen_col_t *lastcol = NULL;	/* Cache the last lookup */
+	bbgen_col_t *newcol;
+
+	dprintf("find_or_create_column(%s)\n", textornull(testname));
+	if (lastcol && (strcmp(testname, lastcol->name) == 0))
+		return lastcol;
+
+	for (newcol = colhead; (newcol && (strcmp(testname, newcol->name) != 0)); newcol = newcol->next);
+	if (newcol == NULL) {
+		if (!create) return NULL;
+
+		newcol = (bbgen_col_t *) malloc(sizeof(bbgen_col_t));
+		newcol->name = malcop(testname);
+		newcol->link = find_link(testname);
+
+		/* No need to maintain this list in order */
+		if (colhead == NULL) {
+			colhead = newcol;
+			newcol->next = NULL;
+		}
+		else {
+			newcol->next = colhead;
+			colhead = newcol;
+		}
+	}
+	lastcol = newcol;
+
+	return newcol;
 }
 
 
