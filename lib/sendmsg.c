@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.26 2004-09-01 11:58:34 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.27 2004-09-25 15:14:49 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -349,6 +349,7 @@ retry_connect:
 					}
 				}
 				else rdone = 1;
+				if (rdone) shutdown(sockfd, SHUT_RD);
 			}
 
 			if (!wdone && FD_ISSET(sockfd, &writefds)) {
@@ -363,6 +364,7 @@ retry_connect:
 					dprintf("Sent %d bytes\n", res);
 					msgptr += res;
 					wdone = (strlen(msgptr) == 0);
+					if (wdone) shutdown(sockfd, SHUT_WR);
 				}
 			}
 		}
