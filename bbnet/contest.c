@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.28 2003-08-18 06:53:52 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.29 2003-08-18 09:27:49 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -45,25 +45,25 @@ static test_t *thead = NULL;
  * banner or not.
  */
 static svcinfo_t svcinfo[] = {
-	{ "ftp",     "quit\r\n",          "220",	1 },
-	{ "ssh",     NULL,                "SSH",	1 },
-	{ "ssh1",    NULL,                "SSH",	1 },
-	{ "ssh2",    NULL,                "SSH",	1 },
-	{ "telnet",  NULL,                NULL,		0 },
-	{ "smtp",    "mail\r\nquit\r\n",  "220",	1 }, /* Send "MAIL" to avoid sendmail NOQUEUE logs */
-	{ "pop",     "quit\r\n",          "+OK",	1 },
-	{ "pop2",    "quit\r\n",          "+OK",	1 },
-	{ "pop-2",   "quit\r\n",          "+OK",	1 },
-	{ "pop3",    "quit\r\n",          "+OK",	1 },
-	{ "pop-3",   "quit\r\n",          "+OK",	1 },
-	{ "imap",    "ABC123 LOGOUT\r\n", "* OK",	1 },
-	{ "imap2",   "ABC123 LOGOUT\r\n", "* OK",	1 },
-	{ "imap3",   "ABC123 LOGOUT\r\n", "* OK",	1 },
-	{ "imap4",   "ABC123 LOGOUT\r\n", "* OK",	1 },
-	{ "nntp",    "quit\r\n",          "200",	1 },
-	{ "rsync",   NULL,                "@RSYNCD",	1 },
-	{ "bbd",     "dummy",             NULL,		0 },
-	{ NULL,      NULL,                NULL,		0 }	/* Default behaviour: Dont send anything, dont expect anything, dont grab banner */
+	{ "ftp",     "quit\r\n",          "220",	1, 0 },
+	{ "ssh",     NULL,                "SSH",	1, 0 },
+	{ "ssh1",    NULL,                "SSH",	1, 0 },
+	{ "ssh2",    NULL,                "SSH",	1, 0 },
+	{ "telnet",  NULL,                NULL,		1, 1 },
+	{ "smtp",    "mail\r\nquit\r\n",  "220",	1, 0 }, /* Send "MAIL" to avoid sendmail NOQUEUE logs */
+	{ "pop",     "quit\r\n",          "+OK",	1, 0 },
+	{ "pop2",    "quit\r\n",          "+OK",	1, 0 },
+	{ "pop-2",   "quit\r\n",          "+OK",	1, 0 },
+	{ "pop3",    "quit\r\n",          "+OK",	1, 0 },
+	{ "pop-3",   "quit\r\n",          "+OK",	1, 0 },
+	{ "imap",    "ABC123 LOGOUT\r\n", "* OK",	1, 0 },
+	{ "imap2",   "ABC123 LOGOUT\r\n", "* OK",	1, 0 },
+	{ "imap3",   "ABC123 LOGOUT\r\n", "* OK",	1, 0 },
+	{ "imap4",   "ABC123 LOGOUT\r\n", "* OK",	1, 0 },
+	{ "nntp",    "quit\r\n",          "200",	1, 0 },
+	{ "rsync",   NULL,                "@RSYNCD",	1, 0 },
+	{ "bbd",     "dummy",             NULL,		0, 0 },
+	{ NULL,      NULL,                NULL,		0, 0 }	/* Default behaviour: Dont send anything, dont expect anything, dont grab banner */
 };
 
 
@@ -97,11 +97,71 @@ test_t *add_tcp_test(char *ip, int port, char *service, int silent)
 
 	newtest->silenttest = silent;
 	newtest->readpending = 0;
+	newtest->telnetnegotiate = (svcinfo[i].istelnet && !silent);
+	newtest->telnetbuf = NULL;
+	newtest->telnetbuflen = 0;
 	newtest->banner = NULL;
 	newtest->next = thead;
 
 	thead = newtest;
 	return newtest;
+}
+
+
+static int do_telnet_options(test_t *item)
+{
+	/*
+	 * Handle telnet options.
+	 *
+	 * This code was taken from the sources for "netcat" version 1.10
+	 * by "Hobbit" <hobbit@avian.org>.
+	 */
+
+	unsigned char *obuf = (unsigned char *)malloc(item->telnetbuflen);
+	int remain;
+	unsigned char y;
+	unsigned char *inp;
+	unsigned char *outp;
+	int result = 0;
+
+	y = 0;
+	inp = item->telnetbuf;
+	remain = item->telnetbuflen;
+	outp = obuf;
+
+	while (remain > 0) {
+		if (*inp != 255) {                     /* IAC? */
+			/*
+			 * End of options. 
+			 * We probably have the banner in the remainder of the
+			 * buffer, so copy it over, and return it.
+			 */
+			item->banner = malcop(inp);
+			item->telnetbuflen = 0;
+			free(obuf);
+			return 0;
+		}
+	        *outp = 255; outp++;
+		inp++; remain--;
+		if ((*inp == 251) || (*inp == 252))     /* WILL or WONT */
+			y = 254;                          /* -> DONT */
+		if ((*inp == 253) || (*inp == 254))     /* DO or DONT */
+			y = 252;                          /* -> WONT */
+		if (y) {
+			*outp = y; outp++;
+			inp++; remain--;
+			*outp = *inp; outp++;		/* copy actual option byte */
+			y = 0;
+			result = 1;
+		} /* if y */
+notiac:
+		inp++; remain--;
+	} /* while remain */
+
+	item->telnetbuflen = (outp-obuf);
+	memcpy(item->telnetbuf, obuf, item->telnetbuflen);
+	free(obuf);
+	return result;
 }
 
 
@@ -316,6 +376,9 @@ void do_tcp_tests(int conntimeout, int concurrency)
 						item->open = (item->connres == 0);
 
 						if (item->open) {
+							unsigned char *outbuf = NULL;
+							unsigned int outlen;
+
 							/*
 							 * Connection succeeded - port is open. Determine connection time,
 							 * and if we have anything to send then send it.
@@ -329,14 +392,25 @@ void do_tcp_tests(int conntimeout, int concurrency)
 								item->duration.tv_usec += 1000000;
 							}
 
+							if (item->telnetnegotiate && item->telnetbuflen) {
+								/*
+								 * Return the negotiate data response
+								 */
+								outbuf = item->telnetbuf;
+								outlen = item->telnetbuflen;
+							}
+							else if (item->svcinfo->sendtxt && !item->silenttest) {
+								outbuf = item->svcinfo->sendtxt;
+								outlen = strlen(outbuf);
+							}
+
 							item->readpending = (!item->silenttest && item->svcinfo->grabbanner);
-							if (item->svcinfo->sendtxt && !item->silenttest) {
+							if (outbuf) {
 								/*
 								 * It may be that we cannot write all of the
 								 * data we want to. Tough ... 
 								 */
-								res = write(item->fd, item->svcinfo->sendtxt,
-									strlen(item->svcinfo->sendtxt));
+								res = write(item->fd, outbuf, outlen);
 								if (res == -1) {
 									/* Write failed - this socket is done. */
 									dprintf("write failed\n");
@@ -362,18 +436,44 @@ void do_tcp_tests(int conntimeout, int concurrency)
 						 * for other tests), so if the banner takes more
 						 * than one cycle to arrive, too bad!
 						 */
+						int wantmoredata = 0;
+
 						res = read(item->fd, msgbuf, sizeof(msgbuf)-1);
 						if (res > 0) {
 							msgbuf[res] = '\0';
 							item->banner = malcop(msgbuf);
 						}
-						shutdown(item->fd, SHUT_RDWR);
-						item->readpending = 0;
-						close(item->fd);
-						item->fd = -1;
-						activesockets--;
-						pending--;
-						if (item == firstactive) firstactive = item->next;
+
+						if (item->telnetnegotiate) {
+							/*
+							 * telnet data has telnet options first.
+							 * We must negotiate the session before we
+							 * get the banner.
+							 */
+							item->telnetbuf = item->banner;
+							item->telnetbuflen = res;
+
+							if (do_telnet_options(item)) {
+								/* Still havent seen the session banner */
+								item->banner = NULL;
+								item->readpending = 0;
+								wantmoredata = 1;
+							}
+							else {
+								/* No more options - we have the banner */
+								item->telnetnegotiate = 0;
+							}
+						}
+
+						if (!wantmoredata) {
+							shutdown(item->fd, SHUT_RDWR);
+							item->readpending = 0;
+							close(item->fd);
+							item->fd = -1;
+							activesockets--;
+							pending--;
+							if (item == firstactive) firstactive = item->next;
+						}
 					}
 				}
 			}
@@ -416,19 +516,12 @@ link_t  null_link = { "", "", "", NULL };
 
 int main(int argc, char *argv[])
 {
-	add_tcp_test("172.16.10.254", 628, "qmtp", 1);
-	add_tcp_test("172.16.10.254", 23, "telnet", 0);
-	add_tcp_test("130.228.2.150", 139, "smb", 0);
-	add_tcp_test("172.16.10.254", 22, "ssh", 0);
-	add_tcp_test("172.16.10.2", 22, "ssh", 0);
-	add_tcp_test("172.16.10.1", 22, "ssh", 0);
-	add_tcp_test("172.16.10.1", 25, "smtp", 0);
-	add_tcp_test("130.228.2.150", 23, "telnet", 0);
-	add_tcp_test("130.228.2.150", 21, "ftp", 0);
-	add_tcp_test("172.16.10.101", 22, "ssh", 0);
+	add_tcp_test("172.16.10.100", 23, "telnet", 0);
+	add_tcp_test("172.16.10.100", 22, "ssh", 0);
+	add_tcp_test("172.16.10.100", 21, "ftp", 0);
 
 	do_tcp_tests(0, 0);
-
+	show_tcp_test_results();
 	return 0;
 }
 #endif
