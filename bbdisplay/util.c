@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.52 2003-06-07 12:07:08 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.53 2003-06-07 15:52:33 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1135,6 +1135,8 @@ void setup_signalhandler(char *programname)
 		(getenv("MACHINE") ? getenv("MACHINE") : "BBDISPLAY"), programname);
 
 	signal(SIGSEGV, sigsegv_handler);
+#ifdef SIGBUS
 	signal(SIGBUS, sigsegv_handler);
+#endif
 }
 
