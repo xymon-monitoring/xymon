@@ -382,9 +382,17 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 			bgcolor = ((bgcolor + 1) % 2);
 
 			fprintf(output, "<TD ALIGN=CENTER>%s</TD>\n", ctime(&events[num].eventtime));
-			fprintf(output, "<TD ALIGN=CENTER BGCOLOR=%s><FONT COLOR=black>%s</FONT></TD>\n",
-				(events[num].newcolor == COL_CLEAR) ? "black" : colorname(events[num].newcolor),
-				events[num].hostname);
+
+			if (events[num].newcolor == COL_CLEAR) {
+				fprintf(output, "<TD ALIGN=CENTER BGCOLOR=black><FONT COLOR=white>%s</FONT></TD>\n",
+					events[num].hostname);
+			}
+			else {
+				fprintf(output, "<TD ALIGN=CENTER BGCOLOR=%s><FONT COLOR=black>%s</FONT></TD>\n",
+					colorname(events[num].newcolor),
+					events[num].hostname);
+			}
+
 			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", events[num].service);
 			fprintf(output, "<TD><A HREF=\"%s\">\n", 
 				histlogurl(events[num].hostname, events[num].service, events[num].changetime));
