@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: digest.c,v 1.7 2005-01-20 22:02:23 henrik Exp $";
+static char rcsid[] = "$Id: digest.c,v 1.8 2005-02-21 07:43:22 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -37,8 +37,7 @@ digestctx_t *digest_init(char *digest)
 	}
 
 	ctx = (digestctx_t *) malloc(sizeof(digestctx_t));
-	ctx->digestname = (char *)malloc(strlen(digest)+1);
-	strcpy(ctx->digestname, digest);
+	ctx->digestname = strdup(digest);
 	md = EVP_get_digestbyname(ctx->digestname);
 
 	if (!md) {
@@ -55,7 +54,16 @@ digestctx_t *digest_init(char *digest)
 #endif
 
 #else
-	errprintf("digest_init failure: bbgen was compiled without OpenSSL support\n");
+	if (strcmp(digest, "md5") != 0) {
+		errprintf("digest_init failure: bbgen was compiled without OpenSSL support\n");
+		return NULL;
+	}
+
+	/* Use the built in MD5 routines */
+	ctx = (digestctx_t *) malloc(sizeof(digestctx_t));
+	ctx->digestname = strdup(digest);
+	ctx->mdctx = (void *)malloc(sizeof(md5_state_t));
+	md5_init((md5_state_t *)ctx->mdctx);
 #endif
 
 	return ctx;
@@ -66,6 +74,8 @@ int digest_data(digestctx_t *ctx, char *buf, int buflen)
 {
 #ifdef BBGEN_SSL
 	EVP_DigestUpdate(ctx->mdctx, buf, buflen);
+#else
+	md5_append((md5_state_t *)ctx->mdctx, (const md5_byte_t *)buf, buflen);
 #endif
 	return 0;
 }
@@ -74,19 +84,34 @@ int digest_data(digestctx_t *ctx, char *buf, int buflen)
 char *digest_done(digestctx_t *ctx)
 {
 	char *result = NULL;
-
-#ifdef BBGEN_SSL
-	char md_string[2*EVP_MAX_MD_SIZE+128];
-	unsigned char md_value[EVP_MAX_MD_SIZE];
-	int md_len, i;
+	int i, md_len = 0;
 	char *p;
 
-	MEMDEFINE(md_string); MEMDEFINE(md_value);
+#ifdef BBGEN_SSL
+	unsigned char md_value[EVP_MAX_MD_SIZE];
+	char md_string[2*EVP_MAX_MD_SIZE+128];
+
+	MEMDEFINE(md_string); 
+	MEMDEFINE(md_value);
 
 #if OPENSSL_VERSION_NUMBER >= 0x00907000L
 	EVP_DigestFinal_ex(ctx->mdctx, md_value, &md_len);
+	EVP_MD_CTX_cleanup(ctx->mdctx);
 #else
 	EVP_DigestFinal(ctx->mdctx, md_value, &md_len);
+	EVP_cleanup();
+#endif
+
+	MEMUNDEFINE(md_value);
+
+#else
+	/* Built in MD5 hash */
+	md5_byte_t md_value[16];
+	char md_string[33];
+
+	MEMDEFINE(md_string); 
+	md5_finish((md5_state_t *)ctx->mdctx, md_value);
+	md_len = sizeof(md_value);
 #endif
 
 	sprintf(md_string, "%s:", ctx->digestname);
@@ -94,21 +119,12 @@ char *digest_done(digestctx_t *ctx)
 		p += sprintf(p, "%02x", md_value[i]);
 		*p = '\0';
 	}
-
-#if OPENSSL_VERSION_NUMBER >= 0x00907000L
-	EVP_MD_CTX_cleanup(ctx->mdctx);
-#else
-	EVP_cleanup();
-#endif
+	result = strdup(md_string);
 
 	xfree(ctx->mdctx);
 	xfree(ctx);
 
-	result = (char *) malloc(strlen(md_string)+1);
-	strcpy(result, md_string);
-
-	MEMUNDEFINE(md_string); MEMUNDEFINE(md_value);
-#endif
+	MEMUNDEFINE(md_string); 
 
 	return result;
 }
