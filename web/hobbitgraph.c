@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.17 2005-02-13 13:17:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.18 2005-02-13 17:09:47 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -396,7 +396,7 @@ void graph_link(FILE *output, char *uri, char *grtype, time_t seconds)
 		if (graphstart == 0) gstart = gend - persecs; else gstart = graphstart;
 
 		fprintf(output, "  <td align=\"left\"><img id='zoomGraphImage' src=\"%s&amp;graph=%s&amp;action=view&amp;graph_start=%u&amp;graph_end=%u&amp;graph_height=120&amp;graph_width=575\" alt=\"Zoom source image\"></td>\n",
-			uri, grtype, gstart, gend);
+			uri, grtype, (int) gstart, (int) gend);
 		break;
 
 	  case ACT_VIEW:
