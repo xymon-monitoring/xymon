@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.63 2005-03-24 07:23:05 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.64 2005-04-03 16:23:38 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -28,16 +28,6 @@ static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.63 2005-03-24 07:23:05 henrik
 #include <utime.h>
 
 #include "libbbgen.h"
-
-int		log_nohost_rrds = 0;
-namelist_t	*hosthead = NULL;
-char		*larrdgraphs_default = NULL;;
-
-#ifdef HOBBITD
-int		sendmetainfo = 1;
-#else
-int		sendmetainfo = 0;
-#endif
 
 typedef struct graph_t {
 	larrdgraph_t *gdef;
@@ -129,7 +119,6 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, int larrd043, int hobb
 
 	hostdisplayname = bbh_item(host, BBH_DISPLAYNAME);
 	hostlarrdgraphs = bbh_item(host, BBH_LARRD);
-	if (hostlarrdgraphs == NULL) hostlarrdgraphs = larrdgraphs_default;
 
 	dprintf("rrdlink_text: host %s, rrd %s, larrd043=%d\n", host->bbhostname, rrd->gdef->larrdrrdname, larrd043);
 
@@ -230,286 +219,80 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, int larrd043, int hobb
 }
 
 
-int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int hobbitd)
+char *generate_trends(char *hostname)
 {
+	namelist_t *myhost;
+	char hostrrddir[PATH_MAX];
 	char *fn;
-	namelist_t *hostwalk;
-	graph_t *rwalk;
-	char *allrrdlinks, *allrrdlinksend;
-	unsigned int allrrdlinksize;
-	char *allmeta, *allmetaend;
-	unsigned int allmetasize;
 	int anyrrds = 0;
+	larrdgraph_t *graph;
+	graph_t *rwalk;
+	char *allrrdlinks = NULL, *allrrdlinksend;
+	unsigned int allrrdlinksize = 0;
 
-	dprintf("generate_larrd(rrddirname=%s, larrcolumn=%s, larrd043=%d\n",
-		 rrddirname, larrdcolumn, larrd043);
+	myhost = hostinfo(hostname);
+	if (!myhost) return NULL;
 
-	allrrdlinksize = 16384;
-	allrrdlinks = (char *) malloc(allrrdlinksize);
-	allrrdlinksend = allrrdlinks;
-	allmetasize = 16384;
-	allmeta = (char *) malloc(allmetasize);
-	allmetaend = allmeta;
-
-	/*
-	 * General idea: Scan the RRD directory for all RRD files, and 
-	 * pick up which RRD's are present for each host.
-	 * Since there are only a limited set of possible RRD links to
-	 * generate, this does not take up a huge hunk of memory.
-	 * Then, loop over the list of hosts, and generate a log
-	 * file and an html file for the larrd column.
-	 */
-
-	chdir(rrddirname);
+	sprintf(hostrrddir, "%s/%s", xgetenv("BBRRDS"), hostname);
+	chdir(hostrrddir);
 	larrd_opendir(".");
 
 	while ((fn = larrd_readdir())) {
-		if ((strlen(fn) > 4) && (strcmp(fn+strlen(fn)-4, ".rrd") == 0)) {
-			char *p, *rrdname;
-			larrdgraph_t *r = NULL;
-			int found, hostfound;
+		/* Check if the filename ends in ".rrd", and we know how to handle this RRD */
+		if ((strlen(fn) <= 4) || (strcmp(fn+strlen(fn)-4, ".rrd") != 0)) continue;
+		graph = find_larrd_graph(fn); if (!graph) continue;
 
-			dprintf("Got RRD %s\n", fn);
-			anyrrds++;
+		dprintf("Got RRD %s\n", fn);
+		anyrrds++;
 
-			/* Some logfiles use ',' instead of '.' in FQDN hostnames */
-			p = fn; while ( (p = strchr(p, ',')) != NULL) *p = '.';
+		for (rwalk = (graph_t *)myhost->data; (rwalk && (rwalk->gdef != graph)); rwalk = rwalk->next) ;
+		if (rwalk == NULL) {
+			graph_t *newrrd = (graph_t *) malloc(sizeof(graph_t));
 
-			/* Is this a known host? */
-			hostwalk = hosthead; found = hostfound = 0;
-			while (hostwalk && (!found)) {
-				if (strncmp(hostwalk->bbhostname, fn, strlen(hostwalk->bbhostname)) == 0) {
+			newrrd->gdef = graph;
+			newrrd->count = 1;
+			newrrd->next = (graph_t *)myhost->data;
+			myhost->data = (void *)newrrd;
+			rwalk = newrrd;
+			dprintf("larrd: New rrd for host:%s, rrd:%s\n", hostname, graph->larrdrrdname);
+		}
+		else {
+			rwalk->count++;
 
-					p = fn + strlen(hostwalk->bbhostname);
-					hostfound = ( (*p == '.') || (*p == ',') || (*p == '/') );
-
-					/* First part of filename matches.
-					 * Now check that there is a valid RRD id next -
-					 * if not, then we may have hit a partial hostname 
-					 */
-
-					rrdname = fn + strlen(hostwalk->bbhostname) + 1;
-					r = find_larrd_graph(rrdname);
-					found = (r != NULL);
-				}
-
-				if (!found) {
-					hostwalk = hostwalk->next;
-				}
-			}
-
-			if (found) {
-				/* hostwalk now points to the host owning this RRD */
-				for (rwalk = (graph_t *)hostwalk->data; (rwalk && (rwalk->gdef != r)); rwalk = rwalk->next) ;
-				if (rwalk == NULL) {
-					graph_t *newrrd = (graph_t *) malloc(sizeof(graph_t));
-
-					newrrd->gdef = r;
-					newrrd->count = 1;
-					newrrd->next = (graph_t *)hostwalk->data;
-					hostwalk->data = (void *)newrrd;
-					rwalk = newrrd;
-					dprintf("larrd: New rrd for host:%s, rrd:%s\n",
-						hostwalk->bbhostname, r->larrdrrdname);
-				}
-				else {
-					rwalk->count++;
-
-					dprintf("larrd: Extra RRD for host %s, rrd %s   count:%d\n", 
-						hostwalk->bbhostname, 
-						rwalk->gdef->larrdrrdname, rwalk->count);
-				}
-			}
-
-			if (!hostfound && log_nohost_rrds) {
-				/* This rrd file has no matching host. */
-				errprintf("No host record for rrd %s\n", fn);
-			}
+			dprintf("larrd: Extra RRD for host %s, rrd %s   count:%d\n", 
+				hostname, 
+				rwalk->gdef->larrdrrdname, rwalk->count);
 		}
 	}
-	if (!anyrrds) goto done;
-
-	chdir(xgetenv("BBLOGS"));
-
-	if (hobbitd) {
-		combo_start();
-		if (sendmetainfo) meta_start();
-	}
-
-	for (hostwalk=hosthead; (hostwalk); hostwalk = hostwalk->next) {
-		larrdgraph_t *graph;
-		char *rrdlink;
-
-		*allrrdlinks = '\0';
-		allrrdlinksend = allrrdlinks;
-		*allmeta = '\0';
-		allmetaend = allmeta;
-
-		graph = larrdgraphs;
-		while (graph->larrdrrdname) {
-			for (rwalk = (graph_t *)hostwalk->data; (rwalk && (rwalk->gdef->larrdrrdname != graph->larrdrrdname)); rwalk = rwalk->next) ;
-			if (rwalk) {
-				int buflen;
-
-				buflen = (allrrdlinksend - allrrdlinks);
-				rrdlink = rrdlink_text(hostwalk, rwalk, larrd043, hobbitd, 0);
-				if ((buflen + strlen(rrdlink)) >= allrrdlinksize) {
-					allrrdlinksize += (strlen(rrdlink) + 4096);
-					allrrdlinks = (char *) realloc(allrrdlinks, allrrdlinksize);
-					allrrdlinksend = allrrdlinks + buflen;
-				}
-				allrrdlinksend += sprintf(allrrdlinksend, "%s", rrdlink);
-
-				if (hobbitd && sendmetainfo) {
-					buflen = (allrrdlinksend - allrrdlinks);
-					rrdlink = rrdlink_text(hostwalk, rwalk, larrd043, hobbitd, 1);
-					if ((buflen + strlen(rrdlink)) >= allmetasize) {
-						allmetasize += (strlen(rrdlink) + 4096);
-						allmeta = (char *) realloc(allmeta, allmetasize);
-						allmetaend = allmeta + buflen;
-					}
-					allmetaend += sprintf(allmetaend, "%s", rrdlink);
-				}
-			}
-
-			graph++;
-		}
-
-		if (strlen(allrrdlinks) > 0) {
-			do_savelog(hostwalk->bbhostname, hostwalk->ip, 
-				larrdcolumn, allrrdlinks, hobbitd);
-		}
-
-		if (sendmetainfo && (strlen(allmeta) > 0)) {
-			do_savemeta(hostwalk->bbhostname, larrdcolumn, "Graphs", allmeta);
-		}
-	}
-
-	if (hobbitd) {
-		combo_end();
-		if (sendmetainfo) meta_end();
-	}
-
-done:
 	larrd_closedir();
-	xfree(allrrdlinks);
-	xfree(allmeta);
-	return 0;
-}
 
+	if (!anyrrds) return NULL;
 
-int main(int argc, char *argv[])
-{
-	int argi;
-	char *bbhostsfn = NULL;
-	char *rrddir = NULL;
-	char *larrdcol = NULL;
-	int usehobbitd = 0;
+	allrrdlinksize = 16384;
+	allrrdlinks = (char *) malloc(allrrdlinksize);
+	*allrrdlinks = '\0';
+	allrrdlinksend = allrrdlinks;
 
-	getenv_default("USEHOBBITD", "FALSE", NULL);
-	usehobbitd = (strcmp(xgetenv("USEHOBBITD"), "TRUE") == 0);
-	larrdcol = xgetenv("LARRDCOLUMN");
+	graph = larrdgraphs;
+	while (graph->larrdrrdname) {
+		for (rwalk = (graph_t *)myhost->data; (rwalk && (rwalk->gdef->larrdrrdname != graph->larrdrrdname)); rwalk = rwalk->next) ;
+		if (rwalk) {
+			int buflen;
+			char *onelink;
 
-	for (argi=1; (argi < argc); argi++) {
-		if (strcmp(argv[argi], "--debug") == 0) {
-			debug = dontsendmessages = 1;
-		}
-		else if (argnmatch(argv[argi], "--larrdgraphs=")) {
-			char *p = strchr(argv[argi], '=');
-			larrdgraphs_default = strdup(p+1);
-		}
-		else if (argnmatch(argv[argi], "--bbhosts=")) {
-			char *p = strchr(argv[argi], '=');
-			bbhostsfn = strdup(p+1);
-		}
-		else if (argnmatch(argv[argi], "--rrddir=")) {
-			char *p = strchr(argv[argi], '=');
-			rrddir = strdup(p+1);
-		}
-		else if (argnmatch(argv[argi], "--column=")) {
-			char *p = strchr(argv[argi], '=');
-			larrdcol = strdup(p+1);
-		}
-		else if (strcmp(argv[argi], "--hobbitd") == 0) {
-			usehobbitd = 1;
-		}
-		else if (strcmp(argv[argi], "--meta") == 0) {
-			sendmetainfo = 1;
-		}
-		else if (strcmp(argv[argi], "--no-meta") == 0) {
-			sendmetainfo = 0;
-		}
-		else if (strcmp(argv[argi], "--no-update") == 0) {
-			dontsendmessages = 1;
-		}
-	}
-
-	if (bbhostsfn == NULL) bbhostsfn = xgetenv("BBHOSTS");
-	if (rrddir == NULL) {
-		char dname[PATH_MAX];
-
-		sprintf(dname, "%s/rrd", xgetenv("BBVAR"));
-		rrddir = strdup(dname);
-	}
-
-	hosthead = load_hostnames(bbhostsfn, NULL, get_fqdn(), NULL);
-
-	/* First, generate the "trends" column for all hosts */
-	generate_larrd(rrddir, larrdcol, 1, usehobbitd);
-
-	/* Next, generate the per-host-per-status meta-info about graphs */
-	if (usehobbitd && sendmetainfo) {
-		char *statuslist = NULL;
-
-		if ((sendmessage("hobbitdboard fields=hostname,testname", NULL, NULL, &statuslist, 1, BBTALK_TIMEOUT) == BB_OK) &&
-		    (strlen(statuslist) > 0)) {
-			char *curr, *next;
-			char *host, *test, *graphlinks;
-			larrdrrd_t *larrd = NULL;
-			larrdgraph_t *graph = NULL;
-			char *msgfmt = "%s";
-			namelist_t *hostwalk;
-			graph_t *rwalk;
-			int linecount;
-
-			meta_start();
-
-			curr = statuslist;
-			while (curr && (*curr != '\0')) {
-				next = strchr(curr, '\n'); if (next) { *next = '\0'; next++; }
-
-				host = curr;
-				test = strchr(curr, '|');
-				curr = next;
-
-				if (test == NULL) continue;
-				*test = '\0'; test++;
-
-				larrd = find_larrd_rrd(test, NULL);
-				if (larrd == NULL) continue;
-				graph = find_larrd_graph(larrd->larrdrrdname);
-				if (graph == NULL) continue;
-
-				/* Lookup the data we collected previously for this host */
-				rwalk = NULL;
-				for (hostwalk=hosthead; (hostwalk && strcmp(hostwalk->bbhostname, host)); hostwalk = hostwalk->next) ;
-				if (hostwalk) for (rwalk = (graph_t *)hostwalk->data; (rwalk && (rwalk->gdef != graph)); rwalk = rwalk->next) ;
-				if (rwalk) linecount = rwalk->count; else linecount = 1;
-
-				graphlinks =  larrd_graph_data(host, host, test, graph, linecount, 1, 1, 1);
-				if (strlen(graphlinks) > 0) {
-					char *msg = (char *)malloc(strlen(graphlinks) + strlen(msgfmt) + 1);
-
-					sprintf(msg, msgfmt, graphlinks);
-					do_savemeta(host, test, "Graphs", msg);
-					xfree(msg);
-				}
+			buflen = (allrrdlinksend - allrrdlinks);
+			onelink = rrdlink_text(myhost, rwalk, 0, 1, 0);
+			if ((buflen + strlen(onelink)) >= allrrdlinksize) {
+				allrrdlinksize += (strlen(onelink) + 4096);
+				allrrdlinks = (char *) realloc(allrrdlinks, allrrdlinksize);
+				allrrdlinksend = allrrdlinks + buflen;
 			}
-
-			meta_end();
+			allrrdlinksend += sprintf(allrrdlinksend, "%s", onelink);
 		}
+
+		graph++;
 	}
 
-	return 0;
+	return allrrdlinks;
 }
 
