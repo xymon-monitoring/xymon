@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.25 2003-08-16 06:59:26 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.26 2003-08-16 07:10:38 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -26,7 +26,6 @@ static char rcsid[] = "$Id: contest.c,v 1.25 2003-08-16 06:59:26 henrik Exp $";
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <signal.h>
 
 #include "bbtest-net.h"
 #include "contest.h"
@@ -123,15 +122,6 @@ void do_tcp_tests(int conntimeout, int concurrency)
 	int		res;
 	socklen_t	connressize;
 	char		msgbuf[MAX_BANNER];
-
-	/*
-	 * After lengthy debugging and perusing of mail archives:
-	 * Need to block SIGPIPE since FreeBSD (and others?) can throw this
-	 * on a write() instead of simply returning -EPIPE like any sane
-	 * OS would.
-	 * Sometime they may implement the setsockopt(fd, SO_NOSIGPIPE) from MacOS X ...
-	 */
-	signal(SIGPIPE, SIG_IGN);
 
 	/* If conntimeout or concurrency are 0, set them to reasonable defaults */
 	if (conntimeout == 0) conntimeout = DEF_TIMEOUT;

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.81 2003-08-14 21:50:58 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.82 2003-08-16 07:10:38 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1232,6 +1232,14 @@ void setup_signalhandler(char *programname)
 #ifdef SIGBUS
 	signal(SIGBUS, sigsegv_handler);
 #endif
+
+	/*
+	 * After lengthy debugging and perusing of mail archives:
+	 * Need to block SIGPIPE since FreeBSD (and others?) can throw this
+	 * on a write() instead of simply returning -EPIPE like any sane
+	 * OS would.
+	 */
+	signal(SIGPIPE, SIG_IGN);
 }
 
 
