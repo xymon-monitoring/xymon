@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.135 2004-10-25 15:33:45 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.136 2004-10-26 21:48:42 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -358,9 +358,11 @@ char *colorname(int color)
 int parse_color(char *colortext)
 {
 	char inpcolor[10];
+	int n;
 
 	strncpy(inpcolor, colortext, 7);
-	inpcolor[7] = '\0';
+	n = strspn(inpcolor, "abcdefghijklmnopqrstuvwxyz");
+	inpcolor[n] = '\0';
 	strcat(inpcolor, " ");
 
 	if (strncmp(inpcolor, "green ", 6) == 0) {
