@@ -5,6 +5,11 @@
 
 set -e
 
+# Substitute in the values from the debconf db.
+CONFIGFILE=/etc/hobbit/hobbitserver.conf
+. /usr/share/debconf/confmodule
+
+
 # summary of how this script can be called:
 #        * <postinst> `configure' <most-recently-configured-version>
 #        * <old-postinst> `abort-upgrade' <new version>
@@ -34,6 +39,20 @@ case "$1" in
 	#cd /usr/lib/hobbit/server/ext; chown hobbit:hobbit . *
 	#cd /usr/lib/hobbit/server/web; chown hobbit:hobbit . *
 	update-rc.d hobbit defaults >/dev/null 2>&1
+
+	# Do the debconf stuff
+	db_get hobbit/BBHOSTNAME
+	BBHOSTNAME="$RET"
+	db_get hobbit/BBHOSTIP
+	BBHOSTIP="$RET"
+
+	# Update configuration file
+	cp -a -f $CONFIGFILE $CONFIGFILE.tmp
+	sed -e s/^BBSERVERHOSTNAME=.*/BBSERVERHOSTNAME=${BBHOSTNAME}/ \
+	    -e s/^BBSERVERWWWNAME=.*/BBSERVERWWWNAME=${BBHOSTNAME}/   \
+	    -e s/^BBSERVERIP=.*/BBSERVERIP=${BBHOSTIP}/               \
+	    < $CONFIGFILE > $CONFIGFILE.tmp
+	mv -f $CONFIGFILE.tmp $CONFIGFILE
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
