@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.37 2004-10-31 11:38:38 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.38 2004-10-31 11:51:21 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -440,7 +440,7 @@ static int sendstatus(char *bbdisp, char *msg, int timeout)
 	if (getenv("BBPAGE") == NULL) return statusresult;
 
 	/* If we're using bbgend, drop the page message */
-	if (strcmp(getenv_default("USEBBGEND", "FALSE", NULL), "TRUE") == 0)) return statusresult;
+	if (strcmp(getenv_default("USEBBGEND", "FALSE", NULL), "TRUE") == 0) return statusresult;
 
 	/* Check if we should send a "page" message also */
 	pagelevels = strdup(getenv("PAGELEVELS") ? getenv("PAGELEVELS") : PAGELEVELSDEFAULT);
