@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.79 2004-12-10 07:39:30 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.80 2004-12-10 12:53:36 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -432,13 +432,16 @@ void posttochannel(bbgend_channel_t *channel, char *channelmarker,
 					(int) log->acktime, msg);
 			}
 			else {
+				namelist_t *hi = hostinfo(hostname);
+
 				n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
 					"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d\n%s\n@@\n", 
 					channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 					sender, hostname, 
 					log->test->testname, log->host->ip, (int) log->validtime, 
 					colnames[log->color], colnames[log->oldcolor], (int) log->lastchange,
-					hostpagename(hostname), log->cookie, msg);
+					(hi ? hi->page->pagename : ""), 
+					log->cookie, msg);
 			}
 			*(channel->channelbuf + n) = '\0';
 			break;

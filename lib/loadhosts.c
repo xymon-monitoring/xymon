@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.6 2004-11-23 21:46:50 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.7 2004-12-10 12:53:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -24,20 +24,6 @@ static char rcsid[] = "$Id: loadhosts.c,v 1.6 2004-11-23 21:46:50 henrik Exp $";
 
 #include "loadhosts.h"
 
-typedef struct pagelist_t {
-	char *pagename;
-	struct pagelist_t *next;
-} pagelist_t;
-
-typedef struct namelist_t {
-	char ip[16];
-	char *bbhostname;	/* Name for item 2 of bb-hosts */
-	char *clientname;	/* CLIENT: tag - host alias */
-	char *displayname;	/* NAME: tag - display purpose only */
-	char *downtime;
-	struct pagelist_t *page;
-	struct namelist_t *next;
-} namelist_t;
 static pagelist_t *pghead = NULL;
 static namelist_t *namehead = NULL;
 
@@ -73,6 +59,7 @@ void load_hostnames(char *bbhostsfn, int fqdn)
 		if (walk->clientname) free(walk->clientname);
 		if (walk->displayname) free(walk->displayname);
 		if (walk->downtime) free(walk->downtime);
+		if (walk->data) dprintf("Possible memory leak - data is non-NULL\n");
 		free(walk);
 	}
 
@@ -160,6 +147,7 @@ void load_hostnames(char *bbhostsfn, int fqdn)
 			newitem->downtime = NULL;
 			newitem->displayname = NULL;
 			newitem->page = curpage;
+			newitem->data = NULL;
 			newitem->next = namehead;
 			namehead = newitem;
 
@@ -245,19 +233,11 @@ char *knownhost(char *hostname, char *hostip, int ghosthandling, int *maybedown)
 	return (walk ? result : NULL);
 }
 
-char *hostdispname(char *hostname)
+namelist_t *hostinfo(char *hostname)
 {
 	namelist_t *walk;
 
 	for (walk = namehead; (walk && (strcmp(walk->bbhostname, hostname) != 0)); walk = walk->next);
-	return ((walk && walk->displayname) ? walk->displayname : hostname);
-}
-
-char *hostpagename(char *hostname)
-{
-	namelist_t *walk;
-
-	for (walk = namehead; (walk && (strcmp(walk->bbhostname, hostname) != 0)); walk = walk->next);
-	return (walk ? walk->page->pagename : "");
+	return walk;
 }
 
