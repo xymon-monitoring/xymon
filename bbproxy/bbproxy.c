@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.24 2004-09-23 08:43:02 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.25 2004-09-24 07:23:19 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -640,18 +640,26 @@ int main(int argc, char *argv[])
 				memset(cwalk->buf, 0, cwalk->bufsize);
 				if (!cwalk->dontcount) {
 					struct timeval departure;
-					gettimeofday(&departure, &tz);
+
+					msgs_delivered++;
+
 					if (cwalk->sendtries < SEND_TRIES) {
 						errprintf("Recovered from write error after %d retries\n", 
 								(SEND_TRIES - cwalk->sendtries));
 						msgs_recovered++;
 					}
-					msgs_delivered++;
-					timeinqueue.tv_sec += (departure.tv_sec - cwalk->arrival.tv_sec);
-					timeinqueue.tv_usec += (departure.tv_usec - cwalk->arrival.tv_usec);
-					if (timeinqueue.tv_usec > 1000000) {
-						timeinqueue.tv_sec++;
-						timeinqueue.tv_usec -= 1000000;
+
+					if (cwalk->arrival.tv_sec > 0) {
+						gettimeofday(&departure, &tz);
+						timeinqueue.tv_sec += (departure.tv_sec - cwalk->arrival.tv_sec);
+						timeinqueue.tv_usec += (departure.tv_usec - cwalk->arrival.tv_usec);
+						if (timeinqueue.tv_usec > 1000000) {
+							timeinqueue.tv_sec++;
+							timeinqueue.tv_usec -= 1000000;
+						}
+					}
+					else {
+						errprintf("Odd ... this message was not timestamped\n");
 					}
 				}
 				if (cwalk->csocket < 0) {
@@ -709,6 +717,7 @@ int main(int argc, char *argv[])
 					close(cwalk->ssocket); sockcount--;
 					cwalk->ssocket = -1;
 				}
+				cwalk->arrival.tv_sec = cwalk->arrival.tv_usec = 0;
 				cwalk->bufp = cwalk->bufp; 
 				cwalk->buflen = 0;
 				memset(cwalk->buf, 0, cwalk->bufsize);
@@ -931,6 +940,7 @@ int main(int argc, char *argv[])
 				newconn->serverip = NULL;
 				newconn->conntries = 0;
 				newconn->sendtries = 0;
+				newconn->timelimit.tv_sec = newconn->timelimit.tv_usec = 0;
 
 				/*
 				 * Why this ? Because we like to merge small status messages
