@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.114 2004-08-02 13:21:27 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.115 2004-08-05 22:16:19 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1637,7 +1637,7 @@ void addtobuffer(char **buf, int *buflen, char *newtext)
 }
 
 
-int run_command(char *cmd, char *errortext, char **banner, int showcmd)
+int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int showcmd)
 {
 	FILE	*cmdpipe;
 	char	l[1024];
@@ -1675,6 +1675,7 @@ int run_command(char *cmd, char *errortext, char **banner, int showcmd)
 		result = 1;
 	}
 
+	if (bannerbytes) *bannerbytes = strlen(*banner);
 	return result;
 }
 
