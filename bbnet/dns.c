@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.22 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.23 2005-02-15 09:29:26 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -27,6 +27,11 @@ static char rcsid[] = "$Id: dns.c,v 1.22 2005-01-20 10:45:44 henrik Exp $";
 #include "dns2.h"
 
 #include <ares.h>
+
+#ifdef HPUX
+/* Doesn't have hstrerror */
+char *hstrerror(int err) { return ""; }
+#endif
 
 static ares_channel stdchannel;
 static int stdchannelactive = 0;
