@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.176 2004-09-13 08:28:59 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.177 2004-09-13 20:41:18 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -2100,6 +2100,10 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--no-ares") == 0) {
 			use_ares_lookup = 0;
 		}
+		else if (argnmatch(argv[argi], "--maxdnsqueue=")) {
+			char *p = strchr(argv[argi], '=');
+			max_dns_per_run = atoi(p+1);
+		}
 		else if (argnmatch(argv[argi], "--report=") || (strcmp(argv[argi], "--report") == 0)) {
 			char *p = strchr(argv[argi], '=');
 			if (p) {
@@ -2249,6 +2253,7 @@ int main(int argc, char *argv[])
 			printf("    --timing                    : Trace the amount of time spent on each series of tests\n");
 			printf("    --debug                     : Output debugging information\n");
 			printf("    --dump[=before|=after|=all] : Dump internal memory structures before/after tests run\n");
+			printf("    --maxdnsqueue=N             : Only queue N DNS lookups at a time\n");
 			printf("\nInformational options:\n");
 			printf("    --services                  : Dump list of known services and exit\n");
 			printf("    --version                   : Show program version and exit\n");

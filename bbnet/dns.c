@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.15 2004-09-13 19:53:19 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.16 2004-09-13 20:41:18 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -37,6 +37,11 @@ int dns_stats_success = 0;
 int dns_stats_failed  = 0;
 int dns_stats_lookups = 0;
 int dnstimeout        = 30;
+
+static int pending_dns_count = 0;
+int max_dns_per_run = 5;
+
+static void dns_queue_run(ares_channel channel);
 
 typedef struct dnsitem_t {
 	char *name;
@@ -94,11 +99,17 @@ void add_host_to_dns_queue(char *hostname)
 {
 	struct timezone tz;
 
+	if (stdchannelactive && (pending_dns_count >= max_dns_per_run)) {
+		dns_queue_run(stdchannel);
+		pending_dns_count = 0;
+	}
+
 	if (find_dnscache(hostname) == NULL) {
 		/* New hostname */
 		dnsitem_t *dnsc = (dnsitem_t *)calloc(1, sizeof(dnsitem_t));
 
 		dprintf("Adding hostname '%s' to resolver queue\n", hostname);
+		pending_dns_count++;
 
 		if (use_ares_lookup && !stdchannelactive) {
 			int status;
@@ -170,6 +181,7 @@ static void dns_queue_run(ares_channel channel)
 	struct timeval cutoff, now;
 	struct timezone tz;
 
+	dprintf("Processing %d DNS lookups with ARES\n", pending_dns_count);
 	gettimeofday(&cutoff, &tz);
 	cutoff.tv_sec += dnstimeout + 1;
 
@@ -204,6 +216,9 @@ static void dns_queue_run(ares_channel channel)
 	} while (progress && (now.tv_sec < cutoff.tv_sec));
 
 	ares_destroy(channel);
+	if (stdchannelactive && (channel == stdchannel)) {
+		stdchannelactive = 0;
+	}
 }
 
 char *dnsresolve(char *hostname)

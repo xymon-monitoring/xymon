@@ -17,12 +17,13 @@
 #define IP_ONLY         2	/* IP only - dont do DNS lookups */
 
 extern int use_ares_lookup;
+extern int max_dns_per_run;
+extern int dnstimeout;
 
 extern int dns_stats_total;
 extern int dns_stats_success;
 extern int dns_stats_failed;
 extern int dns_stats_lookups;
-extern int dnstimeout;
 
 extern void add_host_to_dns_queue(char *hostname);
 extern void add_url_to_dns_queue(char *hostname);
