@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.50 2003-06-01 21:44:55 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.51 2003-06-01 21:48:12 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -885,7 +885,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 				 * Need to de-code the ackmsg - it may have been entered
 				 * via a web page that did "%asciival" encoding.
 				 */
-				if ((*p == '%') && (strlen(p) >= 3) && isxdigit(*(p+1)) && isxdigit(*(p+2))) {
+				if ((*p == '%') && (strlen(p) >= 3) && isxdigit((int)*(p+1)) && isxdigit((int)*(p+2))) {
 					char hexnum[3];
 
 					hexnum[0] = *(p+1);
