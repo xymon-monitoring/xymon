@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.23 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.24 2005-01-31 22:30:23 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 
 	/* Each network test tagged with NET:locationname */
 	p = xgetenv("BBLOCATION");
-	if (p) netstring = strdup(p);
+	if (p && strlen(p)) netstring = strdup(p);
 
 	hwalk = hostlist;
 	while (hwalk) {
@@ -93,7 +93,9 @@ int main(int argc, char *argv[])
 		char *curname = bbh_item(hwalk, BBH_HOSTNAME);
 
 		/* Only look at the hosts whose NET: definition matches the wanted one */
-		if ( (netstring == NULL) || (strcmp(curnet, netstring) == 0) || (testuntagged && (curnet == NULL)) ) {
+		if ( (netstring == NULL) || 
+		     (curnet && netstring && (strcmp(curnet, netstring) == 0)) || 
+		     (testuntagged && (curnet == NULL)) ) {
 			char *item;
 			char wantedtags[MAX_LINE_LEN];
 
