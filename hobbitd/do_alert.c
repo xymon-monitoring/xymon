@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.54 2005-03-06 16:18:17 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.55 2005-03-09 12:32:46 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -914,13 +914,16 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 		if (rulecrit) {
 			int n = (crit ? crit->sendnotice : -1);
 			traceprintf("Checking NOTICE setting %d (rule:%d)\n", n, rulecrit->sendnotice);
-			if (crit && (crit->sendnotice == SR_NOTWANTED)) return 0;	/* Explicit NONOTICE */
-			else if (crit && (crit->sendnotice == SR_WANTED)) return 1;	/* Explicit NOTICE */
-			else return (rulecrit->sendnotice == SR_WANTED);		/* Not set, but rule has NOTICE */
+			if (crit && (crit->sendnotice == SR_NOTWANTED)) result = 0;	/* Explicit NONOTICE */
+			else if (crit && (crit->sendnotice == SR_WANTED)) result = 1;	/* Explicit NOTICE */
+			else result = (rulecrit->sendnotice == SR_WANTED);		/* Not set, but rule has NOTICE */
 		}
 		else {
-			return 1;
+			result = 1;
 		}
+
+		if (!result) traceprintf("Failed (notice not wanted)\n");
+		return result;
 	}
 
 	duration = (time(NULL) - alert->eventstart);
@@ -939,6 +942,20 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 		if (!printmode) return 0; 
 	}
 
+	/* Check color. For RECOVERED messages, this holds the color of the alert, not the recovery state */
+	if (crit && crit->colors) {
+		result = (((1 << alert->color) & crit->colors) != 0);
+		if (printmode) return 1;
+	}
+	else {
+		result = (((1 << alert->color) & defaultcolors) != 0);
+		if (printmode) return 1;
+	}
+	if (!result) {
+		traceprintf("Failed (color)\n");
+		return result;
+	}
+
 	if (alert->state == A_RECOVERED) {
 		/*
 		 * Dont do the check until we are checking individual recipients (rulecrit is set).
@@ -949,29 +966,20 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 		if (rulecrit) {
 			int n = (crit ? crit->sendrecovered : -1);
 			traceprintf("Checking recovered setting %d (rule:%d)\n", n, rulecrit->sendrecovered);
-			if (crit && (crit->sendrecovered == SR_NOTWANTED)) return 0;	/* Explicit NORECOVERED */
-			else if (crit && (crit->sendrecovered == SR_WANTED)) return 1;	/* Explicit RECOVERED */
-			else return (rulecrit->sendrecovered == SR_WANTED);	/* Not set, but rule has RECOVERED */
+			if (crit && (crit->sendrecovered == SR_NOTWANTED)) result = 0;		/* Explicit NORECOVERED */
+			else if (crit && (crit->sendrecovered == SR_WANTED)) result = 1;	/* Explicit RECOVERED */
+			else result = (rulecrit->sendrecovered == SR_WANTED);	/* Not set, but rule has RECOVERED */
 		}
 		else {
-			return 1;
+			result = 1;
 		}
+
+		if (printmode) return result;
 	}
 
-	/* We now know that the state is not A_RECOVERED, so final check is to match against the colors. */
-	if (crit && crit->colors) {
-		result = (((1 << alert->color) & crit->colors) != 0);
-		if (printmode) return 1;
-	}
-	else {
-		result = (((1 << alert->color) & defaultcolors) != 0);
-		if (printmode) return 1;
-	}
-
-	if (result)
+	if (result) {
 		traceprintf("*** Match with '%s' ***\n", (crit ? crit->cfline : "<rule line>"));
-	else
-		traceprintf("%s\n", "Failed (color)");
+	}
 
 	return result;
 }
@@ -1059,62 +1067,48 @@ static repeat_t *find_repeatinfo(activealerts_t *alert, recip_t *recip, int crea
 static char *message_subject(activealerts_t *alert, recip_t *recip)
 {
 	static char subj[250];
+	static char *sevtxt[COL_COUNT] = {
+		"is GREEN", 
+		"has no data (CLEAR)", 
+		"is disabled (BLUE)", 
+		"stopped reporting (PURPLE)", 
+		"warning (YELLOW)", 
+		"CRITICAL (RED)" 
+	};
 	char *sev = "";
+	char *subjfmt = NULL;
+
+	/* Only subjects on FRM_TEXT and FRM_PLAIN messages */
+	if ((recip->format != FRM_TEXT) && (recip->format != FRM_PLAIN)) return NULL;
 
 	MEMDEFINE(subj);
 
-	switch (alert->color) {
-	  case COL_RED:
-		  sev = "is RED";
-		  break;
-	  case COL_YELLOW:
-		  sev = "is YELLOW";
-		  break;
-	  case COL_CLEAR:
-		  sev = "has no data (CLEAR)";
-		  break;
-	  case COL_PURPLE:
-		  sev = "stopped reporting (PURPLE)";
-		  break;
-	  case COL_GREEN:
-		  sev = "recovered";
-		  break;
-	  case COL_BLUE:
-		  sev = "is disabled";
-		  break;
+	if ((alert->color >= 0) && (alert->color < COL_COUNT)) sev = sevtxt[alert->color];
+
+	switch (alert->state) {
+	  case A_PAGING:
+		subjfmt = (include_configid ? "Hobbit [%d] %s:%s %s [cfid:%d]" :  "Hobbit [%d] %s:%s %s");
+		snprintf(subj, sizeof(subj)-1, subjfmt, 
+			 alert->cookie, alert->hostname->name, alert->testname->name, sev, recip->cfid);
+		break;
+
+	  case A_NOTIFY:
+		subjfmt = (include_configid ? "Hobbit %s:%s NOTICE [cfid:%d]" :  "Hobbit %s:%s NOTICE");
+		snprintf(subj, sizeof(subj)-1, subjfmt, 
+			 alert->hostname->name, alert->testname->name, recip->cfid);
+		break;
+
+	  case A_RECOVERED:
+		subjfmt = (include_configid ? "Hobbit %s:%s recovered [cfid:%d]" :  "Hobbit %s:%s recovered");
+		snprintf(subj, sizeof(subj)-1, subjfmt, 
+			 alert->hostname->name, alert->testname->name, recip->cfid);
+		break;
 	}
 
-	if (alert->state == A_NOTIFY) sev = "information";
-
-	switch (recip->format) {
-	  case FRM_TEXT:
-	  case FRM_PLAIN:
-		if (include_configid) {
-			snprintf(subj, sizeof(subj)-1, "Hobbit [%d] %s:%s %s [cfid:%d]",
-				 alert->cookie, alert->hostname->name, alert->testname->name, sev, recip->cfid);
-		}
-		else {
-			snprintf(subj, sizeof(subj)-1, "Hobbit [%d] %s:%s %s",
-				 alert->cookie, alert->hostname->name, alert->testname->name, sev);
-		}
-		MEMUNDEFINE(subj);
-		return subj;
-
-	 case FRM_SMS:
-		MEMUNDEFINE(subj);
-		return NULL;
-
-	 case FRM_PAGER:
-		MEMUNDEFINE(subj);
-		return NULL;
-
-	 case FRM_SCRIPT:
-		MEMUNDEFINE(subj);
-		return NULL;
-	}
+	*(subj + sizeof(subj) - 1) = '\0';
 
 	MEMUNDEFINE(subj);
-	return NULL;
+	return subj;
 }
 
 static char *message_text(activealerts_t *alert, recip_t *recip)
