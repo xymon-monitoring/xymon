@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char temperature_rcsid[] = "$Id: do_temperature.c,v 1.3 2005-02-08 07:57:22 henrik Exp $";
+static char temperature_rcsid[] = "$Id: do_temperature.c,v 1.4 2005-02-25 07:18:18 henrik Exp $";
 
 static char *temperature_params[] = { "rrdcreate", rrdfn, 
 				      "DS:temperature:GAUGE:600:1:U",
@@ -44,7 +44,7 @@ Status green: All devices look okay
 
 int do_temperature_larrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
-	char *bol, *eol, *p;
+	char *bol, *eol, *comment, *p;
 	int tmpF, tmpC;
 
 	bol = eol = msg;
@@ -53,6 +53,11 @@ int do_temperature_larrd(char *hostname, char *testname, char *msg, time_t tstam
 
 		bol = p + 1;
 		eol = strchr(bol, '\n'); if (eol) *eol = '\0';
+
+		/* See if there's a comment in parenthesis */
+		comment = strchr(bol, '('); /* Begin comment */
+		p = strchr(bol, ')');       /* End comment */
+		if (comment && p && (comment < p)) *comment = '\0'; /* Cut off the comment */
 
 		if      (strncmp(bol, "&green", 6) == 0)  { bol += 6; gotone = 1; }
 		else if (strncmp(bol, "&yellow", 7) == 0) { bol += 7; gotone = 1; }
@@ -82,6 +87,7 @@ int do_temperature_larrd(char *hostname, char *testname, char *msg, time_t tstam
 			create_and_update_rrd(hostname, rrdfn, temperature_params, update_params);
 		}
 
+		if (comment) *comment = '(';
 		if (eol) *eol = '\n';
 	}
 
