@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.72 2003-07-06 15:55:10 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.73 2003-07-09 14:51:14 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -258,6 +258,8 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *testspec
 	newtest->open = 0;
 	newtest->testresult = NULL;
 	newtest->banner = NULL;
+	newtest->downcount = 0;
+	newtest->badtest[0] = newtest->badtest[1] = newtest->badtest[2] = 0;
 	newtest->next = NULL;
 
 	return newtest;
@@ -317,6 +319,7 @@ void load_tests(void)
 			if (wanted_host(l, netstring, hostname)) {
 
 				char *testspec;
+				char *badsaves;
 				testedhost_t *h;
 				testitem_t *newtest;
 				int anytests = 0;
@@ -334,8 +337,9 @@ void load_tests(void)
 				}
 
 				h = init_testedhost(hostname, timeout, conntimeout, 
-						    (strstr(p, "SLA=") ? within_sla(p, "SLA") : !within_sla(p, "DOWNTIME")) );
+						    (strstr(p, "SLA=") ? within_sla(p, "SLA", 1) : !within_sla(p, "DOWNTIME", 0)) );
 				anytests = 0;
+				badsaves = malloc(strlen(p)+1); *badsaves = '\0';
 
 				testspec = strtok(p, "\t ");
 				while (testspec) {
@@ -352,6 +356,11 @@ void load_tests(void)
 
 						specialtag = 1;
 						if (p) sscanf(p, ":%d:%d:%d", &h->badconn[0], &h->badconn[1], &h->badconn[2]);
+					}
+					else if (strncmp(testspec, "bad", 3) == 0) {
+						if (strlen(badsaves)) strcat(badsaves, " ");
+						strcat(badsaves, testspec);
+						specialtag = 1;
 					}
 					else if (strncmp(testspec, "route:", 6) == 0) {
 						specialtag = 1;
@@ -491,6 +500,65 @@ void load_tests(void)
 					h->dodns = 1;
 				}
 
+				/* 
+				 * Setup badXXX values.
+				 *
+				 * We need to do this last, because the testitem_t records do
+				 * not exist until the test has been created.
+				 *
+				 * So after parsing the badFOO tag, we must find the testitem_t
+				 * record created earlier for this test (it may not exist).
+				 */
+				testspec = strtok(badsaves, " ");
+				while (testspec) {
+					char *testname, *timespec, *badcounts;
+					int badclear, badyellow, badred;
+					int inscope;
+					testitem_t *twalk;
+					service_t *swalk;
+
+					badclear = badyellow = badred = 0;
+					inscope = 1;
+
+					testname = testspec+strlen("bad");
+					badcounts = strchr(testspec, ':');
+					if (badcounts) {
+						*badcounts = '\0';
+						badcounts++;
+						if (sscanf(badcounts, "%d:%d:%d", &badclear, &badyellow, &badred) != 3) {
+							errprintf("Incorrect 'bad' counts: '%s'\n", badcounts);
+							badcounts = NULL;
+						}
+					}
+					timespec = strchr(testspec, '-');
+					if (timespec) inscope = periodcoversnow(timespec);
+
+					if (strlen(testname) && badcounts && inscope) {
+						twalk = NULL;
+
+						for (swalk=svchead; (swalk && (strcmp(swalk->testname, testname) != 0)); swalk = swalk->next) ;
+						if (swalk) {
+							if (swalk == httptest) twalk = h->firsthttp;
+							else {
+								for (twalk = swalk->items; (twalk && (twalk->host != h)); twalk = twalk->next) ;
+							}
+						}
+
+						if (twalk) {
+							twalk->badtest[0] = badclear;
+							twalk->badtest[1] = badyellow;
+							twalk->badtest[2] = badred;
+						}
+						else {
+							dprintf("No test for badtest spec host=%s, test=%s\n",
+								h->hostname, testname);
+						}
+					}
+
+					testspec = strtok(NULL, " ");
+				}
+				free(badsaves);
+
 				if (anytests) {
 					sprintf(h->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 					h->next = testhosthead;
@@ -498,6 +566,7 @@ void load_tests(void)
 				}
 				else {
 					/* No network tests for this host, so ignore it */
+					dprintf("Did not find any network tests for host %s\n", h->hostname);
 					free(h);
 					notesthostcount++;
 				}
@@ -604,6 +673,62 @@ void save_fping_status(void)
 	}
 
 	fclose(statusfd);
+}
+
+void load_test_status(service_t *test)
+{
+	FILE *statusfd;
+	char statusfn[MAX_PATH];
+	char l[MAX_LINE_LEN];
+	char host[MAX_LINE_LEN];
+	int  downcount;
+	time_t downstart;
+	testedhost_t *h;
+	testitem_t *walk;
+
+	sprintf(statusfn, "%s/%s.%s.status", getenv("BBTMP"), test->testname, location);
+	statusfd = fopen(statusfn, "r");
+	if (statusfd == NULL) return;
+
+	while (fgets(l, sizeof(l), statusfd)) {
+		if (sscanf(l, "%s %d %lu", host, &downcount, &downstart) == 3) {
+			for (h=testhosthead; (h && (strcmp(h->hostname, host) != 0)); h = h->next) ;
+			if (h) {
+				if (test == httptest) walk = h->firsthttp;
+				else for (walk = test->items; (walk && (walk->host != h)); walk = walk->next) ;
+
+				if (walk) {
+					walk->downcount = downcount;
+					walk->downstart = downstart;
+				}
+			}
+		}
+	}
+
+	fclose(statusfd);
+}
+
+void save_test_status(service_t *test)
+{
+	FILE *statusfd;
+	char statusfn[MAX_PATH];
+	testitem_t *t;
+	int didany = 0;
+
+	sprintf(statusfn, "%s/%s.%s.status", getenv("BBTMP"), test->testname, location);
+	statusfd = fopen(statusfn, "w");
+	if (statusfd == NULL) return;
+
+	for (t=test->items; (t); t = t->next) {
+		if (t->downcount) {
+			if (t->downcount == 1) t->downstart = time(NULL);
+			fprintf(statusfd, "%s %d %lu\n", t->host->hostname, t->downcount, t->downstart);
+			didany = 1;
+		}
+	}
+
+	fclose(statusfd);
+	if (!didany) unlink(statusfn);
 }
 
 
@@ -860,6 +985,9 @@ void send_results(service_t *service)
 				}
 			}
 
+			/* Update the failure count */
+			if ((color == COL_RED) || (color == COL_CLEAR)) t->downcount++;
+
 			/* Dialup hosts and dialup tests report red as clear */
 			if ( ((color == COL_RED) || (color == COL_YELLOW)) && (t->host->dialup || t->dialup) ) color = COL_CLEAR;
 
@@ -877,7 +1005,13 @@ void send_results(service_t *service)
 			if      (t->host->downcount >= t->host->badconn[1]) color = COL_YELLOW;
 			else if (t->host->downcount >= t->host->badconn[0]) color = COL_CLEAR;
 			else                                                color = COL_GREEN;
+		}
 
+		/* Handle the "badtest" stuff for other tests */
+		if ((color == COL_RED) && (t->downcount < t->badtest[2])) {
+			if      (t->downcount >= t->badtest[1]) color = COL_YELLOW;
+			else if (t->downcount >= t->badtest[0]) color = COL_CLEAR;
+			else                                    color = COL_GREEN;
 		}
 
 		/* Handle test dependencies */
@@ -1168,6 +1302,9 @@ int main(int argc, char *argv[])
 	}
 
 
+	/* Load current status files */
+	for (s = svchead; (s); s = s->next) { if (s != pingtest) load_test_status(s); }
+
 	/* First run the standard TCP/IP tests */
 	for (s = svchead; (s); s = s->next) {
 		if ((s->items) && (s->toolid == TOOL_CONTEST)) {
@@ -1256,6 +1393,9 @@ int main(int argc, char *argv[])
 
 	combo_end();
 	add_timestamp("Test results transmitted");
+
+	/* Save current status files */
+	for (s = svchead; (s); s = s->next) { if (s != pingtest) save_test_status(s); }
 
 	shutdown_http_library();
 	add_timestamp("bbtest-net completed");

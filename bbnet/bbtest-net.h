@@ -95,6 +95,9 @@ typedef struct {
 	int		open;		/* Is the service open ? NB: Shows true state of service, ignores flags */
 	test_t		*testresult;	/* Banner and duration of test */
 	char		*banner;
+	time_t		downstart;
+	int		downcount;	/* Number of polls when down. */
+	int		badtest[3];
 	void		*next;
 } testitem_t;
 

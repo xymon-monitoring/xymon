@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.27 2003-07-09 08:50:04 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.28 2003-07-09 14:51:14 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -528,8 +528,10 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 	int 	contentnum = 0;
 	char 	*conttest = malloc(strlen(contenttestname)+5);
 	time_t  now = time(NULL);
+	testitem_t *http1 = host->firsthttp;
+	int	anydown = 0;
 
-	if (host->firsthttp == NULL) return;
+	if (http1 == NULL) return;
 
 	/* Check if this service is a NOPAGENET service. */
 	nopagename = malloc(strlen(httptest->testname)+3);
@@ -543,6 +545,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 		http_data_t *req = t->private;
 
 		req->httpcolor = statuscolor(host, req->httpstatus);
+		if (req->httpcolor == COL_RED) anydown++;
 
 		/* Dialup hosts and dialup tests report red as clear */
 		if ((req->httpcolor != COL_GREEN) && (host->dialup || t->dialup)) req->httpcolor = COL_CLEAR;
@@ -583,6 +586,15 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 			strcat(msgtext, firstline);
 			*(firstline+len) = savechar;
 		}
+	}
+
+	if (anydown) http1->downcount++;
+
+	/* Handle the "badtest" stuff for http tests */
+	if ((color == COL_RED) && (http1->downcount < http1->badtest[2])) {
+		if      (http1->downcount >= http1->badtest[1]) color = COL_YELLOW;
+		else if (http1->downcount >= http1->badtest[0]) color = COL_CLEAR;
+		else                                            color = COL_GREEN;
 	}
 
 	if (nopage && (color == COL_RED)) color = COL_YELLOW;
