@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.62 2004-08-05 08:22:35 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.63 2004-08-17 20:23:59 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -19,81 +19,597 @@ static char rcsid[] = "$Id: httptest.c,v 1.62 2004-08-05 08:22:35 henrik Exp $";
 #include <regex.h>
 #include <ctype.h>
 #include <sys/stat.h>
+#include <netdb.h>
 
 #include "bbgen.h"
 #include "util.h"
-#include "sendmsg.h"
 #include "debug.h"
 #include "bbtest-net.h"
+#include "contest.h"
 #include "httptest.h"
-#include "digest.h"
 
-#define MAXPARALLELS 40
+typedef struct cookielist_t {
+	char *host;
+	int  tailmatch;
+	char *path;
+	int  secure;
+	char *name;
+	char *value;
+	struct cookielist_t *next;
+} cookielist_t;
 
-char *http_library_version = NULL;
+static cookielist_t *cookiehead = NULL;
 
-static int can_ssl = 1;
-static FILE *logfd = NULL;
-static int logverbose = 0;
+typedef struct loginlist_t {
+	char *host;
+	char *auth;
+	struct loginlist_t *next;
+} loginlist_t;
 
-int init_http_library(void)
+static loginlist_t *loginhead = NULL;
+
+
+static void load_cookies(void)
 {
-	if (curl_global_init(CURL_GLOBAL_DEFAULT)) {
-		errprintf("FATAL: Cannot initialize libcurl!\n");
-		return 1;
+	static int loaded = 0;
+
+	char cookiefn[MAX_PATH];
+	FILE *fd;
+	char l[4096];
+	char *c_host, *c_path, *c_name, *c_value;
+	int c_tailmatch, c_secure;
+	time_t c_expire;
+	char *p;
+
+	if (loaded) return;
+	loaded = 1;
+
+	sprintf(cookiefn, "%s/etc/cookies", getenv("BBHOME"));
+	fd = fopen(cookiefn, "r");
+	if (fd == NULL) return;
+
+	c_host = c_path = c_name = c_value = NULL;
+	c_tailmatch = c_secure = 0;
+	c_expire = 0;
+
+	while (fgets(l, sizeof(l), fd)) {
+		p = strchr(l, '\n'); 
+		if (p) {
+			*p = '\0';
+			p--;
+			if ((p > l) && (*p == '\r')) *p = '\0';
+		}
+
+		if ((l[0] != '#') && strlen(l)) {
+			int fieldcount = 0;
+			p = strtok(l, "\t");
+			if (p) { fieldcount++; c_host = p; p = strtok(NULL, "\t"); }
+			if (p) { fieldcount++; c_tailmatch = (strcmp(p, "TRUE") == 0); p = strtok(NULL, "\t"); }
+			if (p) { fieldcount++; c_path = p; p = strtok(NULL, "\t"); }
+			if (p) { fieldcount++; c_secure = (strcmp(p, "TRUE") == 0); p = strtok(NULL, "\t"); }
+			if (p) { fieldcount++; c_expire = atol(p); p = strtok(NULL, "\t"); }
+			if (p) { fieldcount++; c_name = p; p = strtok(NULL, "\t"); }
+			if (p) { fieldcount++; c_value = p; p = strtok(NULL, "\t"); }
+			if ((fieldcount == 7) && (c_expire > time(NULL))) {
+				/* We have a valid cookie */
+				cookielist_t *ck = (cookielist_t *)malloc(sizeof(cookielist_t));
+				ck->host = malcop(c_host);
+				ck->tailmatch = c_tailmatch;
+				ck->path = malcop(c_path);
+				ck->secure = c_secure;
+				ck->name = malcop(c_name);
+				ck->value = malcop(c_value);
+				ck->next = cookiehead;
+				cookiehead = ck;
+			}
+		}
 	}
 
-	http_library_version = malcop(curl_version());
-
-#if (LIBCURL_VERSION_NUM >= 0x070a00)
-	{
-		curl_version_info_data *curlver;
-		int i;
-
-		/* Check libcurl version */
-		curlver = curl_version_info(CURLVERSION_NOW);
-		if (curlver->age != CURLVERSION_NOW) {
-			errprintf("Unknown libcurl version - please recompile bbtest-net\n");
-			return 1;
-		}
-
-		if (curlver->ssl_version_num == 0) {
-			errprintf("WARNING: No SSL support in libcurl - https tests disabled\n");
-			can_ssl = 0;
-		}
-
-		if (curlver->version_num < LIBCURL_VERSION_NUM) {
-			errprintf("WARNING: Compiled against libcurl %s, but running on version %s\n",
-				LIBCURL_VERSION, curlver->version);
-		}
-
-		for (i=0; (curlver->protocols[i]); i++) {
-			dprintf("Curl supports %s\n", curlver->protocols[i]);
-		}
-	}
-#else
-
-/*
- * Many systems (e.g. Debian) have version 7.9.5, so try to work
- * with what we have but give a warning about some features not
- * being supported.
- */
-#warning libcurl older than 7.10.x is not supported - trying to build anyway
-#warning SSL certificate checks will NOT work.
-#warning Use of the ~/.netrc for usernames and passwords will NOT work.
-
-#if (LIBCURL_VERSION_NUM < 0x070907)
-#define CURLOPT_WRITEDATA CURLOPT_FILE
-#endif
-
-#endif
-
-	return 0;
+	fclose(fd);
 }
 
-void shutdown_http_library(void)
+static void load_netrc(void)
 {
-	curl_global_cleanup();
+
+#define WANT_TOKEN   0
+#define MACHINEVAL   1
+#define LOGINVAL     2
+#define PASSVAL      3
+#define OTHERVAL     4
+
+	static int loaded = 0;
+
+	char netrcfn[MAX_PATH];
+	FILE *fd;
+	char l[4096];
+	char *host, *login, *password, *p;
+	int state = WANT_TOKEN;
+
+	if (loaded) return;
+	loaded = 1;
+
+	sprintf(netrcfn, "%s/.netrc", getenv("HOME"));
+	fd = fopen(netrcfn, "r");
+	if (fd == NULL) return;
+
+	host = login = password = NULL;
+	while (fgets(l, sizeof(l), fd)) {
+		p = strchr(l, '\n'); 
+		if (p) {
+			*p = '\0';
+			p--;
+			if ((p > l) && (*p == '\r')) *p = '\0';
+		}
+
+		if ((l[0] != '#') && strlen(l)) {
+			p = strtok(l, " \t");
+			while (p) {
+				switch (state) {
+				  case WANT_TOKEN:
+					if (strcmp(p, "machine") == 0) state = MACHINEVAL;
+					else if (strcmp(p, "login") == 0) state = LOGINVAL;
+					else if (strcmp(p, "password") == 0) state = PASSVAL;
+					else if (strcmp(p, "account") == 0) state = OTHERVAL;
+					else if (strcmp(p, "macdef") == 0) state = OTHERVAL;
+					else if (strcmp(p, "default") == 0) { host = ""; state = WANT_TOKEN; }
+					else state = WANT_TOKEN;
+					break;
+
+				  case MACHINEVAL:
+					host = malcop(p); state = WANT_TOKEN; break;
+
+				  case LOGINVAL:
+					login = malcop(p); state = WANT_TOKEN; break;
+
+				  case PASSVAL:
+					password = malcop(p); state = WANT_TOKEN; break;
+
+				  case OTHERVAL:
+				  	state = WANT_TOKEN; break;
+				}
+
+				if (host && login && password) {
+					loginlist_t *item = (loginlist_t *) malloc(sizeof(loginlist_t));
+
+					item->host = host;
+					item->auth = (char *) malloc(strlen(login) + strlen(password) + 2);
+					sprintf(item->auth, "%s:%s", login, password);
+					item->next = loginhead;
+					loginhead = item;
+					host = login = password = NULL;
+				}
+
+				p = strtok(NULL, " \t");
+			}
+		}
+	}
+
+	fclose(fd);
+}
+
+int parse_url(url_t *url, char *inputurl)
+{
+	/*
+	 * See RFC1808 for guidelines to parsing a URL
+	 */
+
+	char *tempurl = malcop(inputurl);
+	char *fragment = NULL;
+	char *scheme;
+	char *netloc;
+	char *startp, *p;
+	int result = 0;
+
+	fragment = strchr(tempurl, '#'); if (fragment) *fragment = '\0';
+
+	startp = tempurl;
+	p = strchr(startp, ':');
+	if (p) {
+		scheme = startp;
+		*p = '\0';
+		startp = (p+1);
+	}
+	else scheme = "http";
+
+	if (strncmp(startp, "//", 2) == 0) {
+		startp += 2;
+		netloc = startp;
+
+		p = strchr(startp, '/');
+		if (p) {
+			*p = '\0';
+			startp = (p+1);
+		}
+		else startp += strlen(startp);
+	}
+	else {
+		result = 1;
+		netloc = "";
+		errprintf("Malformed URL missing '//' in '%s'\n", inputurl);
+	}
+
+	url->protocol = malcop(scheme);
+
+	/* netloc is [username:password@]hostname[:port] */
+	url->auth = NULL; url->port = ((strcmp(scheme, "https") == 0) ? 443 : 80);
+	p = strchr(netloc, '@');
+	if (p) {
+		*p = '\0';
+		url->auth = malcop(netloc);
+		netloc = (p+1);
+	}
+	p = strchr(netloc, ':');
+	if (p) {
+		*p = '\0';
+		url->port = atoi(p+1);
+	}
+
+	url->ip = "";
+	url->host = malcop(netloc);
+
+	if (strlen(url->host)) {
+		struct in_addr inp;
+		struct hostent *hent;
+
+		if (inet_aton(url->host, &inp) != 0) {
+			/* It is an IP, so just use that */
+			url->ip = url->host;
+		}
+		else {
+			hent = gethostbyname(url->host);
+			if (hent) {
+				memcpy(&inp, *(hent->h_addr_list), sizeof(inp));
+				url->ip = malcop(inet_ntoa(inp));
+			}
+			else {
+				result = 2;
+				dprintf("Could not resolve URL hostname '%s'\n", url->host);
+			}
+		}
+	}
+
+	if (fragment) *fragment = '#';
+	url->relurl = malloc(strlen(startp) + 2);
+	sprintf(url->relurl, "/%s", startp);
+
+	if (url->auth == NULL) {
+		/* See if we have it in the .netrc list */
+		loginlist_t *walk;
+
+		for (walk = loginhead; (walk && (strcmp(walk->host, url->host) != 0)); walk = walk->next) ;
+		if (walk) url->auth = walk->auth;
+	}
+
+	free(tempurl);
+	return result;
+}
+
+
+char *base64encode(unsigned char *buf)
+{
+	static char b64chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	unsigned char c0, c1, c2;
+	unsigned int n0, n1, n2, n3;
+	unsigned char *inp, *outp;
+	unsigned char *result;
+
+	result = malloc(4*(strlen(buf)/3 + 1) + 1);
+	inp = buf; outp=result;
+
+	while (strlen(inp) >= 3) {
+		c0 = *inp; c1 = *(inp+1); c2 = *(inp+2);
+
+		n0 = (c0 >> 2);				/* 6 bits from c0 */
+		n1 = ((c0 & 3) << 4) + (c1 >> 4);	/* 2 bits from c0, 4 bits from c1 */
+		n2 = ((c1 & 15) << 2) + (c2 >> 6);	/* 4 bits from c1, 2 bits from c2 */
+		n3 = (c2 & 63);				/* 6 bits from c2 */
+
+		*outp = b64chars[n0]; outp++;
+		*outp = b64chars[n1]; outp++;
+		*outp = b64chars[n2]; outp++;
+		*outp = b64chars[n3]; outp++;
+
+		inp += 3;
+	}
+
+	if (strlen(inp) == 1) {
+		c0 = *inp; c1 = 0;
+		n0 = (c0 >> 2);				/* 6 bits from c0 */
+		n1 = ((c0 & 3) << 4) + (c1 >> 4);	/* 2 bits from c0, 4 bits from c1 */
+
+		*outp = b64chars[n0]; outp++;
+		*outp = b64chars[n1]; outp++;
+		*outp = '='; outp++;
+		*outp = '='; outp++;
+	}
+	else if (strlen(inp) == 2) {
+		c0 = *inp; c1 = *(inp+1); c2 = 0;
+
+		n0 = (c0 >> 2);				/* 6 bits from c0 */
+		n1 = ((c0 & 3) << 4) + (c1 >> 4);	/* 2 bits from c0, 4 bits from c1 */
+		n2 = ((c1 & 15) << 2) + (c2 >> 6);	/* 4 bits from c1, 2 bits from c2 */
+
+		*outp = b64chars[n0]; outp++;
+		*outp = b64chars[n1]; outp++;
+		*outp = b64chars[n2]; outp++;
+		*outp = '='; outp++;
+	}
+
+	*outp = '\0';
+
+	return result;
+}
+
+
+int tcp_http_data_callback(unsigned char *buf, unsigned int len, void *priv)
+{
+	/*
+	 * This callback receives data from HTTP servers.
+	 * While doing that, it splits out the data into a
+	 * buffer for the HTTP headers, and a buffer for the
+	 * HTTP content-data.
+	 */
+
+	http_data_t *item = (http_data_t *) priv;
+
+	if (item->gotheaders) {
+		unsigned int len1chunk = 0;
+		int i;
+
+		/*
+		 * We already have the headers, so just stash away the data
+		 */
+
+
+		while (len > 0) {
+			dprintf("HDC IN : state=%d, leftinchunk=%d, len=%d\n", item->chunkstate, item->leftinchunk, len);
+			switch (item->chunkstate) {
+			  case CHUNK_NOTCHUNKED:
+				len1chunk = len;
+				if ((item->contlen > 0) && (item->contlen >= len)) item->contlen -= len;
+				break;
+
+			  case CHUNK_INIT:
+				/* We're about to pick up a chunk length */
+				item->leftinchunk = 0;
+				item->chunkstate = CHUNK_GETLEN;
+				len1chunk = 0;
+				break;
+
+			  case CHUNK_GETLEN:
+				/* We are collecting the length of the chunk */
+				i = hexvalue(*buf);
+				if (i == -1) {
+					item->chunkstate = CHUNK_SKIPLENCR;
+				}
+				else {
+					item->leftinchunk = item->leftinchunk*16 + i;
+					buf++; len--;
+				}
+				len1chunk = 0;
+				break;
+				
+			  case CHUNK_SKIPLENCR:
+				/* We've got the length, now skip to the next LF */
+				if (*buf == '\n') {
+					buf++; len--; 
+					item->chunkstate = ((item->leftinchunk > 0) ? CHUNK_DATA : CHUNK_NOMORE);
+				}
+				else if ((*buf == '\r') || (*buf == ' ')) {
+					buf++; len--;
+				}
+				else {
+					errprintf("Yikes - strange data following chunk len. Saw a '%c'\n", *buf);
+					buf++; len--;
+				}
+				len1chunk = 0;
+				break;
+
+			  case CHUNK_DATA:
+				/* Passing off the data */
+				if (len > item->leftinchunk) len1chunk = item->leftinchunk;
+				else len1chunk = len;
+				item->leftinchunk -= len1chunk;
+				if (item->leftinchunk == 0) item->chunkstate = CHUNK_SKIPENDCR;
+				break;
+
+			  case CHUNK_SKIPENDCR:
+				/* Skip CR/LF after a chunk */
+				if (*buf == '\n') {
+					buf++; len--; item->chunkstate = CHUNK_DONE;
+				}
+				else if (*buf == '\r') {
+					buf++; len--;
+				}
+				else {
+					errprintf("Yikes - strange data following chunk data. Saw a '%c'\n", *buf);
+					buf++; len--;
+				}
+				len1chunk = 0;
+				break;
+
+			  case CHUNK_DONE:
+				/* One chunk is done, continue with the next */
+				len1chunk = 0;
+				item->chunkstate = CHUNK_GETLEN;
+				break;
+
+			  case CHUNK_NOMORE:
+				/* All chunks done. Skip the rest (trailers) */
+				len1chunk = 0;
+				len = 0;
+			}
+
+			if (len1chunk > 0) {
+				switch (item->contentcheck) {
+				  case CONTENTCHECK_NONE:
+				  case CONTENTCHECK_CONTENTTYPE:
+					/* No need to save output - just drop it */
+					break;
+
+				  case CONTENTCHECK_REGEX:
+				  case CONTENTCHECK_NOREGEX:
+					/* Save the full data */
+					if ((item->output == NULL) || (item->outlen == 0)) {
+						item->output = (unsigned char *)malloc(len1chunk+1);
+					}
+					else {
+						item->output = (unsigned char *)realloc(item->output, item->outlen+len1chunk+1);
+					}
+
+					memcpy(item->output+item->outlen, buf, len1chunk);
+					item->outlen += len1chunk;
+					*(item->output + item->outlen) = '\0'; /* Just in case ... */
+					break;
+
+				  case CONTENTCHECK_DIGEST:
+					/* Run the data through our digest routine, but discard the raw data */
+					if ((item->digestctx == NULL) || (digest_data(item->digestctx, buf, len1chunk) != 0)) {
+						errprintf("Failed to hash data for digest\n");
+					}
+					break;
+				}
+
+				buf += len1chunk;
+				len -= len1chunk;
+				dprintf("HDC OUT: state=%d, leftinchunk=%d, len=%d\n", item->chunkstate, item->leftinchunk, len);
+			}
+		}
+	}
+	else {
+		/*
+		 * Havent seen the end of headers yet.
+		 */
+		unsigned char *p;
+
+		/* First, add this to the header-buffer */
+		if (item->headers == NULL) {
+			item->headers = (unsigned char *) malloc(len+1);
+		}
+		else {
+			item->headers = (unsigned char *) realloc(item->headers, item->hdrlen+len+1);
+		}
+
+		memcpy(item->headers+item->hdrlen, buf, len);
+		item->hdrlen += len;
+		*(item->headers + item->hdrlen) = '\0';
+
+		/* 
+		 * Now see if we have the end-of-headers delimiter.
+		 * This SHOULD be <cr><lf><cr><lf>, but RFC 2616 says
+		 * you SHOULD recognize just plain <lf><lf>.
+		 * So we loop, looking for the next LF in the input,
+		 * if there is one and the next is <cr> then just skip
+		 * the <cr>; repeat until a second <lf> is seen or we
+		 * hit end-of-buffer.
+		 */
+		p=item->headers;
+		do {
+			p = strchr(p, '\n');
+			if (p) {
+				p++;
+				if (*p == '\r') p++;
+			}
+		} while (p && (*p != '\n'));
+
+		if (p) {
+			unsigned int bytesinheaders, bytesindata;
+			unsigned int delimchars = 1;
+			char *p1, *xferencoding;
+			int contlen;
+
+			/* We did find the end-of-header delim. */
+			item->gotheaders = 1;
+			if (*(p-1) == '\r') { *(p-1) = '\0'; delimchars++; } /* NULL-terminate the headers. */
+			*p = '\0';
+			p++;
+
+			/* See if the transfer uses chunks */
+			p1 = item->headers; xferencoding = NULL; contlen = 0;
+			do {
+				if (strncasecmp(p1, "Transfer-encoding:", 18) == 0) {
+					p1 += 18; while (isspace(*p1)) p1++;
+					xferencoding = p1;
+				}
+				else if (strncasecmp(p1, "Content-Length:", 15) == 0) {
+					p1 += 15; while (isspace(*p1)) p1++;
+					contlen = atoi(p1);
+				}
+				else {
+					p1 = strchr(p1, '\n'); if (p1) p1++;
+				}
+			} while (p1 && (xferencoding == NULL));
+
+			if (xferencoding && (strncasecmp(xferencoding, "chunked", 7) == 0)) {
+				item->chunkstate = CHUNK_INIT;
+			}
+			item->contlen = (contlen ? contlen : -1);
+
+			bytesinheaders = ((p - item->headers) - delimchars);
+			bytesindata = item->hdrlen - bytesinheaders - delimchars;
+			item->hdrlen = bytesinheaders;
+			if (*p) {
+				/* 
+				 * We received some content data together with the
+				 * headers. Save these to the content-data area.
+				 */
+				tcp_http_data_callback(p, bytesindata, priv);
+			}
+		}
+	}
+
+	if (item->chunkstate == CHUNK_NOTCHUNKED) 
+		/* Not chunked - we're done if contlen reaches 0 */
+		return (item->contlen == 0);
+	else 
+		/* Chunked - we're done if we reach state NOMORE*/
+		return (item->chunkstate == CHUNK_NOMORE);
+}
+
+void tcp_http_final_callback(void *priv)
+{
+	/*
+	 * This callback is invoked when a HTTP request is
+	 * complete (when the socket is closed).
+	 * We use it to pickup some information from the raw
+	 * HTTP response, and parse it into some easier to
+	 * handle properties.
+	 */
+
+	http_data_t *item = (http_data_t *) priv;
+
+	if ((item->contentcheck == CONTENTCHECK_DIGEST) && item->digestctx) {
+		item->digest = digest_done(item->digestctx);
+	}
+
+	if (item->headers) {
+		int http1subver;
+		char *p;
+
+		sscanf(item->headers, "HTTP/1.%d %ld", &http1subver, &item->httpstatus);
+
+		item->contenttype = NULL;
+		p = item->headers;
+		do {
+			if (strncasecmp(p, "Content-Type:", 13) == 0) {
+				char *p2, savechar;
+
+				p += 13; while (isspace(*p)) p++;
+				p2 = (p + strcspn(p, "\r\n ;"));
+				savechar = *p2; *p2 = '\0';
+				item->contenttype = malcop(p);
+				*p2 = savechar;
+			}
+			else {
+				p = strchr(p, '\n'); if (p) p++;
+			}
+		} while ((item->contenttype == NULL) && p);
+	}
+
+	if (item->tcptest->errcode != CONTEST_ENOERROR) {
+		/* Flag error by setting httpstatus to 0 */
+		item->httpstatus = 0;
+	}
 }
 
 
@@ -103,13 +619,28 @@ void add_http_test(testitem_t *t)
 	static char *ciphersmedium = "MEDIUM";	/* Must be formatted for openssl library */
 	static char *ciphershigh = "HIGH";	/* Must be formatted for openssl library */
 
-	http_data_t *req;
+	http_data_t *httptest;
+
 	char *proto = NULL;
+	int  httpversion = HTTPVER_11;
+	char *postdata = NULL;
+
+	ssloptions_t *sslopt = NULL;
+	char *sslopt_ciphers = NULL;
+	int sslopt_version = SSLVERSION_DEFAULT;
+
 	char *proxy = NULL;
-	char *proxyuserpwd = NULL;
-	char *ip = NULL;
-	char *hosthdr = NULL;
-	int status;
+	char *proxyauth = NULL;
+
+	char *forcedip = NULL;
+
+	char *httprequest = NULL;
+	int httprequestlen;
+	url_t url, proxyurl;
+	int proxystatus, urlstatus;
+
+	cookielist_t *ck;
+	int firstcookie = 1;
 
 	/* 
 	 * t->testspec containts the full testspec
@@ -117,51 +648,28 @@ void add_http_test(testitem_t *t)
 	 * "cont;URL;expected_data", "post;URL;postdata;expected_data"
 	 */
 
+	load_cookies();
+	load_netrc();
+
 	/* Allocate the private data and initialize it */
-	req = (http_data_t *) malloc(sizeof(http_data_t));
-	t->privdata = (void *) req;
-	req->url = malcop(realurl(t->testspec, &proxy, &proxyuserpwd, &ip, &hosthdr));
+	httptest = (http_data_t *) calloc(1, sizeof(http_data_t));
+	t->privdata = (void *) httptest;
 
-	if (proxy) {
-		req->proxy = malcop(proxy); 
-		req->proxyuserpwd = malcop(proxyuserpwd);
-	}
-	else req->proxy = req->proxyuserpwd = NULL;
+	httptest->url = malcop(realurl(t->testspec, &proxy, &proxyauth, &forcedip, NULL));
+	proxystatus = urlstatus = 0;
+	if (proxy) proxystatus = parse_url(&proxyurl, proxy);
+	urlstatus = parse_url(&url, httptest->url);
+	httptest->parsestatus = (proxystatus ? proxystatus : urlstatus);
+	httptest->contlen = -1;
 
-	if (ip) req->ip = malcop(ip); else req->ip = NULL;
-	if (hosthdr) req->hosthdr = malcop(hosthdr); else req->hosthdr = NULL;
-	req->is_ftp = (strncmp(req->url, "ftp:", 4) == 0);
-	req->httpver = HTTPVER_ANY;
-	req->postdata = NULL;
-	req->sslversion = 0;
-	req->ciphers = NULL;
-	req->curl = NULL;
-	req->slist = NULL;
-	req->res = CURL_LAST;
-	req->errorbuffer[0] = '\0';
-	req->httpstatus = 0;
-	req->contstatus = 0;
-	req->headers = NULL;
-	req->contenttype = NULL;
-	req->output = NULL;
-	req->digest = NULL;
-	req->digestctx = NULL;
-	req->httpcolor = -1;
-	req->faileddeps = NULL;
-	req->logcert = 0;
-	req->certinfo = NULL;
-	req->certexpires = 0;
-	req->totaltime = 0.0;
-	req->contentcheck = CONTENTCHECK_NONE;
-	req->exp = NULL;
-
-	if ((strncmp(req->url, "https", 5) == 0) && !can_ssl) {
-		/* Cannot check HTTPS without a working SSL-enabled curl */
-		strcpy(req->errorbuffer, "Run-time libcurl does not support SSL tests");
-		return;
-	}
-
-	/* Determine the content data to look for (if any) */
+	/* 
+	 * Determine the content- and post-data (if any).
+	 * Sets:
+	 *   httptest->contentcheck
+	 *   httptest->exp
+	 *   proto
+	 *   postdata
+	 */
 	if (strncmp(t->testspec, "content=", 8) == 0) {
 		FILE *contentfd;
 		char contentfn[200];
@@ -172,59 +680,71 @@ void add_http_test(testitem_t *t)
 		contentfd = fopen(contentfn, "r");
 		if (contentfd) {
 			if (fgets(l, sizeof(l), contentfd)) {
+				int status;
+
 				p = strchr(l, '\n'); if (p) { *p = '\0'; };
-				req->exp = (void *) malloc(sizeof(regex_t));
-				status = regcomp((regex_t *)req->exp, l, REG_EXTENDED|REG_NOSUB);
+				httptest->exp = (void *) malloc(sizeof(regex_t));
+				status = regcomp((regex_t *)httptest->exp, l, REG_EXTENDED|REG_NOSUB);
 				if (status) {
-					errprintf("Failed to compile regexp '%s' for URL %s\n", p, req->url);
-					req->contstatus = STATUS_CONTENTMATCH_BADREGEX;
+					errprintf("Failed to compile regexp '%s' for URL %s\n", p, httptest->url);
+					httptest->contstatus = STATUS_CONTENTMATCH_BADREGEX;
 				}
 			}
 			else {
-				req->contstatus = STATUS_CONTENTMATCH_NOFILE;
+				httptest->contstatus = STATUS_CONTENTMATCH_NOFILE;
 			}
 			fclose(contentfd);
 		}
 		else {
-			req->contstatus = STATUS_CONTENTMATCH_NOFILE;
+			httptest->contstatus = STATUS_CONTENTMATCH_NOFILE;
 		}
 		proto = t->testspec + 8;
-		req->contentcheck = CONTENTCHECK_REGEX;
+		httptest->contentcheck = CONTENTCHECK_REGEX;
 	}
 	else if (strncmp(t->testspec, "cont;", 5) == 0) {
 		char *p = strrchr(t->testspec, ';');
 		if (p) {
 			if ( *(p+1) == '#' ) {
-				req->contentcheck = CONTENTCHECK_DIGEST;
-				req->exp = (void *) malcop(p+2);
+				char *q;
+
+				httptest->contentcheck = CONTENTCHECK_DIGEST;
+				httptest->exp = (void *) malcop(p+2);
+				q = strchr(httptest->exp, ':');
+				if (q) {
+					*q = '\0';
+					httptest->digestctx = digest_init(httptest->exp);
+					*q = ':';
+				}
 			}
 			else {
-				req->contentcheck = CONTENTCHECK_REGEX;
+				int status;
 
-				req->exp = (void *) malloc(sizeof(regex_t));
-				status = regcomp((regex_t *)req->exp, p+1, REG_EXTENDED|REG_NOSUB);
+				httptest->contentcheck = CONTENTCHECK_REGEX;
+				httptest->exp = (void *) malloc(sizeof(regex_t));
+				status = regcomp((regex_t *)httptest->exp, p+1, REG_EXTENDED|REG_NOSUB);
 				if (status) {
-					errprintf("Failed to compile regexp '%s' for URL %s\n", p+1, req->url);
-					req->contstatus = STATUS_CONTENTMATCH_BADREGEX;
+					errprintf("Failed to compile regexp '%s' for URL %s\n", p+1, httptest->url);
+					httptest->contstatus = STATUS_CONTENTMATCH_BADREGEX;
 				}
 			}
 		}
-		else req->contstatus = STATUS_CONTENTMATCH_NOFILE;
+		else httptest->contstatus = STATUS_CONTENTMATCH_NOFILE;
 		proto = t->testspec+5;
 	}
 	else if (strncmp(t->testspec, "nocont;", 7) == 0) {
 		char *p = strrchr(t->testspec, ';');
 		if (p) {
-			req->contentcheck = CONTENTCHECK_NOREGEX;
+			int status;
 
-			req->exp = (void *) malloc(sizeof(regex_t));
-			status = regcomp((regex_t *)req->exp, p+1, REG_EXTENDED|REG_NOSUB);
+			httptest->contentcheck = CONTENTCHECK_NOREGEX;
+			httptest->exp = (void *) malloc(sizeof(regex_t));
+			status = regcomp((regex_t *)httptest->exp, p+1, REG_EXTENDED|REG_NOSUB);
 			if (status) {
-				errprintf("Failed to compile regexp '%s' for URL %s\n", p+1, req->url);
-				req->contstatus = STATUS_CONTENTMATCH_BADREGEX;
+				errprintf("Failed to compile regexp '%s' for URL %s\n", p+1, httptest->url);
+				httptest->contstatus = STATUS_CONTENTMATCH_BADREGEX;
 			}
 		}
-		else req->contstatus = STATUS_CONTENTMATCH_NOFILE;
+		else httptest->contstatus = STATUS_CONTENTMATCH_NOFILE;
 		proto = t->testspec+5;
 	}
 	else if (strncmp(t->testspec, "post;", 5) == 0) {
@@ -238,26 +758,36 @@ void add_http_test(testitem_t *t)
 			/* It is legal not to specify anything for the expected output from a POST */
 			if (strlen(p+1) > 0) {
 				if (*(p+1) == '#') {
-					req->contentcheck = CONTENTCHECK_DIGEST;
-					req->exp = (void *) malcop(p+2);
+					char *q;
+
+					httptest->contentcheck = CONTENTCHECK_DIGEST;
+					httptest->exp = (void *) malcop(p+2);
+					q = strchr(httptest->exp, ':');
+					if (q) {
+						*q = '\0';
+						httptest->digestctx = digest_init(httptest->exp);
+						*q = ':';
+					}
 				}
 				else {
-					req->contentcheck = CONTENTCHECK_REGEX;
-					req->exp = (void *) malloc(sizeof(regex_t));
-					status = regcomp((regex_t *)req->exp, p+1, REG_EXTENDED|REG_NOSUB);
+					int status;
+
+					httptest->contentcheck = CONTENTCHECK_REGEX;
+					httptest->exp = (void *) malloc(sizeof(regex_t));
+					status = regcomp((regex_t *)httptest->exp, p+1, REG_EXTENDED|REG_NOSUB);
 					if (status) {
-						errprintf("Failed to compile regexp '%s' for URL %s\n", p+1, req->url);
-						req->contstatus = STATUS_CONTENTMATCH_BADREGEX;
+						errprintf("Failed to compile regexp '%s' for URL %s\n", p+1, httptest->url);
+						httptest->contstatus = STATUS_CONTENTMATCH_BADREGEX;
 					}
 				}
 			}
 		}
-		else req->contstatus = STATUS_CONTENTMATCH_NOFILE;
+		else httptest->contstatus = STATUS_CONTENTMATCH_NOFILE;
 
 		if (p) {
 			*p = '\0';  /* Cut off expected data */
 			q = strrchr(t->testspec, ';');
-			if (q) req->postdata = malcop(q+1);
+			if (q) postdata = malcop(q+1);
 			*p = ';';  /* Restore testspec */
 		}
 
@@ -273,21 +803,23 @@ void add_http_test(testitem_t *t)
 		if (p) {
 			/* It is legal not to specify anything for the expected output from a POST */
 			if (strlen(p+1) > 0) {
-				req->contentcheck = CONTENTCHECK_NOREGEX;
-				req->exp = (void *) malloc(sizeof(regex_t));
-				status = regcomp((regex_t *)req->exp, p+1, REG_EXTENDED|REG_NOSUB);
+				int status;
+
+				httptest->contentcheck = CONTENTCHECK_NOREGEX;
+				httptest->exp = (void *) malloc(sizeof(regex_t));
+				status = regcomp((regex_t *)httptest->exp, p+1, REG_EXTENDED|REG_NOSUB);
 				if (status) {
-					errprintf("Failed to compile regexp '%s' for URL %s\n", p+1, req->url);
-					req->contstatus = STATUS_CONTENTMATCH_BADREGEX;
+					errprintf("Failed to compile regexp '%s' for URL %s\n", p+1, httptest->url);
+					httptest->contstatus = STATUS_CONTENTMATCH_BADREGEX;
 				}
 			}
 		}
-		else req->contstatus = STATUS_CONTENTMATCH_NOFILE;
+		else httptest->contstatus = STATUS_CONTENTMATCH_NOFILE;
 
 		if (p) {
 			*p = '\0';  /* Cut off expected data */
 			q = strrchr(t->testspec, ';');
-			if (q) req->postdata = malcop(q+1);
+			if (q) postdata = malcop(q+1);
 			*p = ';';  /* Restore testspec */
 		}
 
@@ -296,831 +828,149 @@ void add_http_test(testitem_t *t)
 	else if (strncmp(t->testspec, "type;", 5) == 0) {
 		char *p = strrchr(t->testspec, ';');
 		if (p) {
-			req->contentcheck = CONTENTCHECK_CONTENTTYPE;
-			req->exp = (void *) malcop(p+1);
+			httptest->contentcheck = CONTENTCHECK_CONTENTTYPE;
+			httptest->exp = (void *) malcop(p+1);
 		}
-		else req->contstatus = STATUS_CONTENTMATCH_NOFILE;
+		else httptest->contstatus = STATUS_CONTENTMATCH_NOFILE;
 		proto = t->testspec+5;
 	}
 	else {
 		proto = t->testspec;
 	}
 
-	if      (strncmp(proto, "https3:", 7) == 0)      req->sslversion = 3;
-	else if (strncmp(proto, "https2:", 7) == 0)      req->sslversion = 2;
-	else if (strncmp(proto, "httpsh:", 7) == 0)      req->ciphers = ciphershigh;
-	else if (strncmp(proto, "httpsm:", 7) == 0)      req->ciphers = ciphersmedium;
-	else if (strncmp(proto, "http10:", 7) == 0)      req->httpver = HTTPVER_10;
-	else if (strncmp(proto, "http11:", 7) == 0)      req->httpver = HTTPVER_11;
-}
+	if      (strncmp(proto, "https3:", 7) == 0)      sslopt_version = SSLVERSION_V3;
+	else if (strncmp(proto, "https2:", 7) == 0)      sslopt_version = SSLVERSION_V2;
+	else if (strncmp(proto, "httpsh:", 7) == 0)      sslopt_ciphers = ciphershigh;
+	else if (strncmp(proto, "httpsm:", 7) == 0)      sslopt_ciphers = ciphersmedium;
+	else if (strncmp(proto, "http10:", 7) == 0)      httpversion    = HTTPVER_10;
+	else if (strncmp(proto, "http11:", 7) == 0)      httpversion    = HTTPVER_11;
 
-
-
-static int statuscolor(testedhost_t *h, long status)
-{
-	int result;
-
-	switch(status) {
-	  case 000:			/* curl reports error */
-		result = (h->dialup ? COL_CLEAR : COL_RED);
-		break;
-	  case 200:
-	  case 301:
-	  case 302:
-	  case 401:
-	  case 403:			/* Is "Forbidden" an OK status ? */
-		result = COL_GREEN;
-		break;
-	  case 400:
-	  case 404:
-		result = COL_RED;	/* Trouble getting page */
-		break;
-	  case 500:
-	  case 501:
-	  case 502:  /* Proxy error */
-	  case 503:
-		result = COL_RED;	/* Server error */
-		break;
-	  case STATUS_CONTENTMATCH_FAILED:
-		result = COL_RED;		/* Pseudo status: content match fails */
-		break;
-	  case STATUS_CONTENTMATCH_BADREGEX:	/* Pseudo status: bad regex to match against */
-	  case STATUS_CONTENTMATCH_NOFILE:	/* Pseudo status: content match requested, but no match-file */
-		result = COL_YELLOW;
-		break;
-	  default:
-		result = COL_YELLOW;	/* Unknown status */
-		break;
+	if (sslopt_ciphers || (sslopt_version != SSLVERSION_DEFAULT)){
+		sslopt = (ssloptions_t *) malloc(sizeof(ssloptions_t));
+		sslopt->cipherlist = sslopt_ciphers;
+		sslopt->sslversion = sslopt_version;
 	}
 
-	/* Drop failures if not inside SLA window */
-	if ((result >= COL_YELLOW) && (!h->okexpected)) {
-		result = COL_BLUE;
-	}
+	/* Generate the request */
+	addtobuffer(&httprequest, &httprequestlen, (postdata ? "POST " : "GET "));
+	switch (httpversion) {
+		case HTTPVER_10: 
+			addtobuffer(&httprequest, &httprequestlen, (proxy ? httptest->url : url.relurl));
+			addtobuffer(&httprequest, &httprequestlen, " HTTP/1.0\r\n"); 
+			break;
 
-	return result;
-}
-
-
-static size_t hdr_callback(void *ptr, size_t size, size_t nmemb, void *stream)
-{
-	/* 
-	 * Gets called with all header lines, one line at a time 
-	 * "stream" points to the http_data_t record.
-	 */
-
-	http_data_t *req = stream;
-	size_t count = size*nmemb;
-
-	if (logverbose && logfd) fprintf(logfd, "%s", (char *)ptr);
-
-	if (req->headers == NULL) {
-		req->headers = (char *) malloc(count+1);
-		memcpy(req->headers, ptr, count);
-		*(req->headers+count) = '\0';
-	}
-	else {
-		size_t buflen = strlen(req->headers);
-		req->headers = (char *) realloc(req->headers, buflen+count+1);
-		memcpy(req->headers+buflen, ptr, count);
-		*(req->headers+buflen+count) = '\0';
-	}
-
-	return count;
-}
-
-
-static size_t data_callback(void *ptr, size_t size, size_t nmemb, void *stream)
-{
-	/* 
-	 * Gets called with page data from the webserver.
-	 * "stream" points to the http_data_t record.
-	 */
-
-	http_data_t *req = stream;
-	size_t count = size*nmemb;
-
-	if (logverbose && logfd) fprintf(logfd, "%s", (char *)ptr);
-
-	switch (req->contentcheck) {
-	  case CONTENTCHECK_NONE:
-	  case CONTENTCHECK_CONTENTTYPE:
-		/* No need to save output - just drop it */
-		break;
-
-	  case CONTENTCHECK_REGEX:
-	  case CONTENTCHECK_NOREGEX:
-		if (req->output == NULL) {
-			req->output = (char *) malloc(count+1);
-			memcpy(req->output, ptr, count);
-			*(req->output+count) = '\0';
-		}
-		else {
-			size_t buflen = strlen(req->output);
-			req->output = (char *) realloc(req->output, buflen+count+1);
-			memcpy(req->output+buflen, ptr, count);
-			*(req->output+buflen+count) = '\0';
-		}
-		break;
-
-	  case CONTENTCHECK_DIGEST:
-		if (digest_data(req->digestctx, ptr, count) != 0) {
-			errprintf("Failed to hash data for digest\n");
-		}
-		break;
-	}
-
-	return count;
-}
-
-
-#if (LIBCURL_VERSION_NUM >= 0x070a00)
-static int debug_callback(CURL *handle, curl_infotype type, char *data, size_t size, void *userp)
-{
-	http_data_t *req = userp;
-	char *p;
-
-	if ((req->certexpires == 0) && (type == CURLINFO_TEXT)) {
-		if (strncmp(data, "Server certificate:", 19) == 0) req->logcert = 1;
-		else if (*data != '\t') req->logcert = 0;
-
-		if (req->logcert) {
-			if (req->certinfo == NULL) {
-				req->certinfo = (char *) malloc(size+1);
-				memcpy(req->certinfo, data, size);
-				*(req->certinfo+size) = '\0';
-			}
-			else {
-				size_t buflen = strlen(req->certinfo);
-				req->certinfo = (char *) realloc(req->certinfo, buflen+size+1);
-				memcpy(req->certinfo+buflen, data, size);
-				*(req->certinfo+buflen+size) = '\0';
-			}
-		}
-
-		p = strstr(data, "expire date:");
-		if (p) req->certexpires = sslcert_expiretime(p + strlen("expire date:"));
-	}
-
-	return 0;
-}
-#endif
-
-void run_http_tests(service_t *httptest, long followlocations, char *logfile, int sslcertcheck)
-{
-	http_data_t *req;
-	testitem_t *t;
-	char useragent[100];
-	char *cookiefn = NULL;
-	struct timeval tm1, tm2, tmdif;
-	struct timezone tz;
-	struct stat st;
-
-#ifdef MULTICURL
-	testitem_t *firstitem = NULL;
-	CURLM *multihandle;
-	int multiactive;
-	int testcount = 0;
-#endif
-
-	if (logfile) {
-		logfd = fopen(logfile, "a");
-		if (logfd) fprintf(logfd, "*** Starting web checks at %s ***\n", timestamp);
-	}
-	sprintf(useragent, "BigBrother bbtest-net/%s curl/%s-%s", VERSION, LIBCURL_VERSION, curl_version());
-
-	cookiefn = (char *) malloc(strlen(getenv("BBHOME")) + strlen("/etc/cookies") + 1);
-	sprintf(cookiefn, "%s/etc/cookies", getenv("BBHOME"));
-	if (stat(cookiefn, &st) != 0) {
-		free(cookiefn);
-		cookiefn = NULL;
-	}
-
-	for (t = httptest->items; (t); t = t->next) {
-		req = (http_data_t *) t->privdata;
-		
-		req->curl = curl_easy_init();
-		if (req->curl == NULL) {
-			errprintf("ERROR: Cannot initialize curl session\n");
-			return;
-		}
-
-		if (req->ip && req->hosthdr) {
+		case HTTPVER_11: 
 			/*
-			 * libcurl has no support for testing a specific IP-address.
-			 * So we need to fake that: Substitute the hostname with the
-			 * IP-address inside the URL, and set a "Host:" header
-			 * so that virtual webhosts will work.
+			 * Experience shows that even though HTTP/1.1 says you should send the
+			 * full URL, some servers (e.g. SunOne App server 7) choke on it.
+			 * So just send the good-old relative URL unless we're proxying.
 			 */
-			curl_easy_setopt(req->curl, CURLOPT_URL, urlip(req->url, req->ip, NULL));
-			req->slist = curl_slist_append(req->slist, req->hosthdr);
-			curl_easy_setopt(req->curl, CURLOPT_HTTPHEADER, req->slist);
+			addtobuffer(&httprequest, &httprequestlen, (proxy ? httptest->url : url.relurl));
+			addtobuffer(&httprequest, &httprequestlen, " HTTP/1.1\r\n"); 
+			addtobuffer(&httprequest, &httprequestlen, "Connection: close\r\n"); 
+			break;
+	}
+
+	addtobuffer(&httprequest, &httprequestlen, "Host: ");
+	addtobuffer(&httprequest, &httprequestlen, url.host);
+	addtobuffer(&httprequest, &httprequestlen, "\r\n");
+
+	if (postdata) {
+		char contlenhdr[100];
+
+		sprintf(contlenhdr, "Content-Length: %d\r\n", strlen(postdata));
+		addtobuffer(&httprequest, &httprequestlen, contlenhdr);
+		addtobuffer(&httprequest, &httprequestlen, "Content-Type: application/x-www-form-urlencoded\r\n");
+	}
+	{
+		char useragent[100];
+
+		sprintf(useragent, "User-Agent: BigBrother bbtest-net/%s\r\n", VERSION);
+		addtobuffer(&httprequest, &httprequestlen, useragent);
+	}
+	if (url.auth) {
+		addtobuffer(&httprequest, &httprequestlen, "Authorization: Basic ");
+		addtobuffer(&httprequest, &httprequestlen, base64encode(url.auth));
+		addtobuffer(&httprequest, &httprequestlen, "\r\n");
+	}
+	if (proxy && proxyauth) {
+		addtobuffer(&httprequest, &httprequestlen, "Proxy-Authorization: ");
+		addtobuffer(&httprequest, &httprequestlen, base64encode(proxyauth));
+		addtobuffer(&httprequest, &httprequestlen, "\r\n");
+	}
+	for (ck = cookiehead; (ck); ck = ck->next) {
+		int useit = 0;
+
+		if (ck->tailmatch) {
+			int startpos = strlen(url.host) - strlen(ck->host);
+
+			if (startpos > 0) useit = (strcmp(url.host+startpos, ck->host) == 0);
 		}
-		else {
-			curl_easy_setopt(req->curl, CURLOPT_URL, req->url);
+		else useit = (strcmp(url.host, ck->host) == 0);
+		if (useit) useit = (strncmp(ck->path, url.relurl, strlen(ck->path)) == 0);
+
+		if (useit) {
+			if (firstcookie) {
+				addtobuffer(&httprequest, &httprequestlen, "Cookie: ");
+				firstcookie = 0;
+			}
+			addtobuffer(&httprequest, &httprequestlen, ck->name);
+			addtobuffer(&httprequest, &httprequestlen, "=");
+			addtobuffer(&httprequest, &httprequestlen, ck->value);
+			addtobuffer(&httprequest, &httprequestlen, "\r\n");
 		}
+	}
 
-		curl_easy_setopt(req->curl, CURLOPT_NOPROGRESS, 1);
-		curl_easy_setopt(req->curl, CURLOPT_USERAGENT, useragent);
+	/* The final blank line terminates the headers */
+	addtobuffer(&httprequest, &httprequestlen, "\r\n");
 
-		/* Dont check if peer name in certificate is OK */
-    		curl_easy_setopt(req->curl, CURLOPT_SSL_VERIFYPEER, 0);
-    		curl_easy_setopt(req->curl, CURLOPT_SSL_VERIFYHOST, 0);
+	/* Post data goes last */
+	if (postdata) addtobuffer(&httprequest, &httprequestlen, postdata);
 
-		curl_easy_setopt(req->curl, CURLOPT_TIMEOUT, (t->host->timeout ? t->host->timeout : DEF_TIMEOUT));
-		curl_easy_setopt(req->curl, CURLOPT_CONNECTTIMEOUT, (t->host->conntimeout ? t->host->conntimeout : DEF_CONNECT_TIMEOUT));
+	/* Add to TCP test queue */
+	httptest->tcptest = add_tcp_test((proxy ? proxyurl.ip       : (forcedip ? forcedip : url.ip)), 
+					 (proxy ? proxyurl.port     : url.port), 
+				    	 (proxy ? proxyurl.protocol : url.protocol), 
+					 sslopt, 0, httprequest, 
+					 httptest, tcp_http_data_callback, tcp_http_final_callback);
+}
 
-		/* Activate our callbacks */
-		curl_easy_setopt(req->curl, CURLOPT_WRITEHEADER, req);
-		curl_easy_setopt(req->curl, CURLOPT_HEADERFUNCTION, hdr_callback);
-		curl_easy_setopt(req->curl, CURLOPT_WRITEDATA, req);
-		curl_easy_setopt(req->curl, CURLOPT_WRITEFUNCTION, data_callback);
-		curl_easy_setopt(req->curl, CURLOPT_ERRORBUFFER, &req->errorbuffer);
+#ifdef STANDALONE
+testitem_t testitem;
+testedhost_t hostitem;
 
-#if (LIBCURL_VERSION_NUM >= 0x070a00)
-		if (sslcertcheck && (!t->host->nosslcert) && (strncmp(req->url, "https:", 6) == 0)) {
-			curl_easy_setopt(req->curl, CURLOPT_VERBOSE, 1);
-			curl_easy_setopt(req->curl, CURLOPT_DEBUGDATA, req);
-			curl_easy_setopt(req->curl, CURLOPT_DEBUGFUNCTION, debug_callback);
-		}
+void http_test_init(void)
+{
+	http_data_t *httptest;
+	cookielist_t *ck;
 
-		/* If needed, get username/password from $HOME/.netrc */
-		curl_easy_setopt(req->curl, CURLOPT_NETRC, CURL_NETRC_OPTIONAL);
+	char bbreq[] = "cont;http://www.sslug.dk/;hswn";
+	// char bbreq[] = "cont;http://www.groklaw.net/;GROK";
+	// char bbreq[] = "cont;http://www.hswn.dk/;HSWN";
+
+	testitem.host = &hostitem;
+	testitem.testspec = bbreq;
+	strcpy(hostitem.ip, "0.0.0.0");
+	hostitem.testip = hostitem.dialup = hostitem.nosslcert = 0;
+
+	add_http_test(&testitem);
+
+	httptest = (http_data_t *)testitem.privdata;
+	printf("TCP connection goes to %s:%d\n", 
+		inet_ntoa(httptest->tcptest->addr.sin_addr), 
+		ntohs(httptest->tcptest->addr.sin_port));
+	printf("Request:\n%s\n", httptest->tcptest->sendtxt);
+}
+
+void http_test_show(void)
+{
+	http_data_t *httptest = (http_data_t *)testitem.privdata;
+
+	printf("httpstatus = %ld, open=%d, errcode=%d, parsestatus=%d\n", 
+		httptest->httpstatus, httptest->tcptest->open, httptest->tcptest->errcode, httptest->parsestatus);
+	printf("Response:\n");
+	if (httptest->headers) printf("%s\n", httptest->headers); else printf("(no headers)\n");
+	if (httptest->output) printf("%s", httptest->output);
+}
 #endif
-
-		/* Follow Location: headers for redirects? */
-		if (followlocations) {
-			curl_easy_setopt(req->curl, CURLOPT_FOLLOWLOCATION, 1);
-			curl_easy_setopt(req->curl, CURLOPT_MAXREDIRS, followlocations);
-		}
-
-		/* Any post data ? */
-		if (req->postdata) curl_easy_setopt(req->curl, CURLOPT_POSTFIELDS, req->postdata);
-
-		/* Select HTTP version, if requested */
-		switch (req->httpver) {
-			case HTTPVER_ANY:
-				break;
-			case HTTPVER_10:
-				curl_easy_setopt(req->curl,CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-				break;
-			case HTTPVER_11:
-				curl_easy_setopt(req->curl,CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-				break;
-		}
-
-		/* Select SSL version, if requested */
-		if (req->sslversion > 0) curl_easy_setopt(req->curl, CURLOPT_SSLVERSION, req->sslversion);
-
-		/* Select SSL ciphers, if requested */
-		if (req->ciphers) curl_easy_setopt(req->curl, CURLOPT_SSL_CIPHER_LIST, req->ciphers);
-
-		/* Select proxy, if requested */
-		if (req->proxy) {
-			curl_easy_setopt(req->curl, CURLOPT_PROXY, req->proxy);
-
-			/* Default only - may be overridden by specifying ":portnumber" in the proxy string. */
-			curl_easy_setopt(req->curl, CURLOPT_PROXYPORT, 80);
-
-			/* For proxies requiring authentication... */
-			if (req->proxyuserpwd) {
-				curl_easy_setopt(req->curl, CURLOPT_PROXYUSERPWD, req->proxyuserpwd);
-			}
-		}
-
-		/* Cookies may be needed */
-		if (cookiefn) curl_easy_setopt(req->curl, CURLOPT_COOKIEFILE, cookiefn);
-
-		if (req->contentcheck == CONTENTCHECK_DIGEST) {
-			char *p;
-
-			/* Setup the digest hash */
-			p = strchr((char *)req->exp, ':');
-			if (p) *p = '\0';
-			req->digestctx = digest_init((char *) req->exp);
-			if (p) *p = ':';
-		}
-
-	}
-
-#ifndef MULTICURL
-	for (t = httptest->items; (t); t = t->next) {
-		/* Let's do it ... */
-		req = (http_data_t *) t->privdata;
-
-		if (logfd) {
-			fprintf(logfd, "\n*** Checking URL: %s ***\n", req->url);
-		}
-
-		if (logfd) gettimeofday(&tm1, &tz);
-		req->res = curl_easy_perform(req->curl);
-		if (logfd) {
-			gettimeofday(&tm2, &tz);
-			tmdif.tv_sec = tm2.tv_sec - tm1.tv_sec;
-			tmdif.tv_usec = tm2.tv_usec - tm1.tv_usec;
-			if (tm2.tv_usec < tm1.tv_usec) { tmdif.tv_sec--; tmdif.tv_usec += 1000000; }
- 
-			fprintf(logfd, "   Time: %10lu.%06lu\n", tmdif.tv_sec, tmdif.tv_usec);
-		}
-	}
-
-#else
-	multihandle = NULL;
-
-	for (t = httptest->items, testcount=0; (t); t = t->next) {
-		CURLMsg *msg;
-		int msgsleft;
-
-		/* Setup the multi handle with all of the individual http transfers */
-		if (multihandle == NULL) {
-			multihandle = curl_multi_init();
-
-			if (multihandle == NULL) {
-				errprintf("Cannot initiate CURL multi handle - aborting HTTP tests\n");
-				return;
-			}
-		}
-
-		if (firstitem == NULL) firstitem = t;
-
-		req = (http_data_t *) t->privdata;
-		curl_multi_add_handle(multihandle, req->curl);
-		testcount++;
-
-		dprintf("Multi-add %s\n", req->url);
-		if ((testcount < MAXPARALLELS) && (t->next != NULL)) continue;
-
-		dprintf("Starting %d transfers\n", testcount);
-
-		/* Do the transfers */
-		while (curl_multi_perform(multihandle, &multiactive) == CURLM_CALL_MULTI_PERFORM);
-		while (multiactive) {
-			struct timeval tmo;
-			fd_set fdread;
-			fd_set fdwrite;
-			fd_set fdexcep;
-			int maxfd, selres;
-
-			/* Setup the file descriptors */
-			FD_ZERO(&fdread); FD_ZERO(&fdwrite); FD_ZERO(&fdexcep);
-			curl_multi_fdset(multihandle, &fdread, &fdwrite, &fdexcep, &maxfd);
-
-			/* This timeout does not relate to any of the specific timeouts for a URL */
-			tmo.tv_sec = 1;
-			tmo.tv_usec = 0;
-
-			dprintf("curl_multi select with %d handles active\n", multiactive);
-			selres = select(maxfd+1, &fdread, &fdwrite, &fdexcep, &tmo);
-
-			switch (selres) {
-				case -1:
-					errprintf("select() returned an error - aborting http tests\n");
-					multiactive = 0;
-					testcount = 0;
-					break;
-
-				case 0:
-					/*
-					 * Timeout: We must still call curl_multi_perform()
-					 * for the library to fill in information about how the
-					 * timeout occurred (dns tmo, connect tmo, tmo waiting for data ...)
-					 */
-					dprintf("timeout waiting for http requests\n");
-					while (curl_multi_perform(multihandle, &multiactive) == CURLM_CALL_MULTI_PERFORM);
-					break;
-	
-				default:
-					/* Do some data processing */
-					while (curl_multi_perform(multihandle, &multiactive) == CURLM_CALL_MULTI_PERFORM);
-					break;
-			}
-		}
-	
-		/* Pick up the result codes. Odd way of doing it, but so says libcurl */
-		msg = curl_multi_info_read(multihandle, &msgsleft); 
-		dprintf("Got %d+%d messages\n", (msg ? 1 : 0), msgsleft);
-		while (msg) {
-			if (msg == NULL) {
-				dprintf("Oops - got a NULL msg\n");
-			} else if (msg->msg == CURLMSG_DONE) {
-				int found = 0;
-				testitem_t *r;
-
-				for (r = firstitem; (r && !found); r = r->next) {
-					req = (http_data_t *) r->privdata;
-
-					found = (req->curl == msg->easy_handle);
-					if (found) {
-						req->res = msg->data.result;
-						dprintf("Got result for %s\n", req->url);
-						testcount--;
-					}
-					else {
-						dprintf("Cannot find handle for a message\n");
-					}
-				}
-			}
-			else {
-				dprintf("Huh ? Got a msg %d\n", msg->msg);
-			}
-
-		     msg = curl_multi_info_read(multihandle, &msgsleft);
-		}
-
-		/* Debug */
-		if (testcount != 0) {
-			errprintf("Whoa! Ended up with testcount=%d - we failed to pick up status for some tests\n", testcount);
-		}
-	
-		curl_multi_cleanup(multihandle);
-		multihandle = NULL;
-		testcount = 0;
-		firstitem = NULL;
-	}
-#endif
-
-	for (t = httptest->items; (t); t = t->next) {
-		req = (http_data_t *) t->privdata;
-
-		if (req->res != CURLE_OK) {
-			/* Some error occurred */
-			req->headers = (char *) malloc(strlen(req->errorbuffer) + 20);
-			sprintf(req->headers, "Error %3d: %s\n\n", req->res, req->errorbuffer);
-			if (logfd) fprintf(logfd, "Error %d: %s\n", req->res, req->errorbuffer);
-			t->open = 0;
-		}
-		else {
-			double t1, t2;
-			char *contenttype;
-
-			if (req->is_ftp) req->httpstatus = 200;  /* HACK */
-			else curl_easy_getinfo(req->curl, CURLINFO_HTTP_CODE, &req->httpstatus);
-
-			curl_easy_getinfo(req->curl, CURLINFO_CONNECT_TIME, &t1);
-			curl_easy_getinfo(req->curl, CURLINFO_TOTAL_TIME, &t2);
-			curl_easy_getinfo(req->curl, CURLINFO_CONTENT_TYPE, &contenttype);
-			req->totaltime = t1+t2;
-			req->errorbuffer[0] = '\0';
-			req->contenttype = (contenttype ? malcop(contenttype) : "");
-			t->open = 1;
-
-			if (req->contentcheck == CONTENTCHECK_DIGEST) {
-				req->digest = digest_done(req->digestctx);
-			}
-		}
-
-
-		if (req->slist) curl_slist_free_all(req->slist);
-		curl_easy_cleanup(req->curl);
-	}
-
-	if (logfd) fclose(logfd);
-	if (cookiefn) free(cookiefn);
-}
-
-
-void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firsttest,
-		       char *nonetpage, int failgoesclear)
-{
-	testitem_t *t;
-	int	color = -1;
-	char    *svcname;
-	char	msgline[MAXMSG];
-	char	msgtext[MAXMSG];
-	char    *nopagename;
-	int     nopage = 0;
-	int	anydown = 0;
-
-	if (firsttest == NULL) return;
-
-	svcname = malcop(httptest->testname);
-	if (httptest->namelen) svcname[httptest->namelen] = '\0';
-
-	/* Check if this service is a NOPAGENET service. */
-	nopagename = (char *) malloc(strlen(svcname)+3);
-	sprintf(nopagename, ",%s,", svcname);
-	nopage = (strstr(nonetpage, svcname) != NULL);
-	free(nopagename);
-
-	dprintf("Calc http color host %s : ", host->hostname);
-	msgtext[0] = '\0';
-	for (t=firsttest; (t && (t->host == host)); t = t->next) {
-		http_data_t *req = (http_data_t *) t->privdata;
-
-		req->httpcolor = statuscolor(host, req->httpstatus);
-		if (req->httpcolor == COL_RED) anydown++;
-
-		/* Dialup hosts and dialup tests report red as clear */
-		if ((req->httpcolor != COL_GREEN) && (host->dialup || t->dialup)) req->httpcolor = COL_CLEAR;
-
-		/* If ping failed, report CLEAR unless alwaystrue */
-		if ( ((req->httpcolor == COL_RED) || (req->httpcolor == COL_YELLOW)) && /* Test failed */
-		     (host->downcount > 0)                   && /* The ping check did fail */
-		     (!host->noping && !host->noconn)        && /* We are doing a ping test */
-		     (failgoesclear)                         &&
-		     (!t->alwaystrue)                           )  /* No "~testname" flag */ {
-			req->httpcolor = COL_CLEAR;
-		}
-
-		/* If test we depend on has failed, report CLEAR unless alwaystrue */
-		if ( ((req->httpcolor == COL_RED) || (req->httpcolor == COL_YELLOW)) && /* Test failed */
-		      failgoesclear && !t->alwaystrue )  /* No "~testname" flag */ {
-			char *faileddeps = deptest_failed(host, t->service->testname);
-
-			if (faileddeps) {
-				req->httpcolor = COL_CLEAR;
-				req->faileddeps = malcop(faileddeps);
-			}
-		}
-
-		dprintf("%s(%s) ", t->testspec, colorname(req->httpcolor));
-		if (req->httpcolor > color) color = req->httpcolor;
-
-		if (req->headers) {
-			char    	*firstline;
-			unsigned int	len;
-			char		savechar;
-
-			strcat(msgtext, (strlen(msgtext) ? " ; " : ": ") );
-			for (firstline = req->headers; (*firstline && isspace((int) *firstline)); firstline++);
-			len = strcspn(firstline, "\r\n");
-			if (len  > (sizeof(msgtext)-strlen(msgtext)-2)) len = sizeof(msgtext) - strlen(msgtext) - 2;
-			savechar = *(firstline+len);
-			*(firstline+len) = '\0';
-			strcat(msgtext, firstline);
-			*(firstline+len) = savechar;
-		}
-	}
-
-	if (anydown) {
-		firsttest->downcount++; 
-		if(firsttest->downcount == 1) firsttest->downstart = time(NULL);
-	} 
-	else firsttest->downcount = 0;
-
-	/* Handle the "badtest" stuff for http tests */
-	if ((color == COL_RED) && (firsttest->downcount < firsttest->badtest[2])) {
-		if      (firsttest->downcount >= firsttest->badtest[1]) color = COL_YELLOW;
-		else if (firsttest->downcount >= firsttest->badtest[0]) color = COL_CLEAR;
-		else                                                    color = COL_GREEN;
-	}
-
-	if (nopage && (color == COL_RED)) color = COL_YELLOW;
-	dprintf(" --> %s\n", colorname(color));
-
-	/* Send off the http status report */
-	init_status(color);
-	sprintf(msgline, "status %s.%s %s %s", 
-		commafy(host->hostname), svcname, colorname(color), timestamp);
-	addtostatus(msgline);
-	addtostatus(msgtext);
-	addtostatus("\n");
-
-	for (t=firsttest; (t && (t->host == host)); t = t->next) {
-		http_data_t *req = (http_data_t *) t->privdata;
-
-		if (req->ip == NULL) {
-			sprintf(msgline, "\n&%s %s - %s\n", colorname(req->httpcolor), req->url,
-				((req->httpcolor != COL_GREEN) ? "failed" : "OK"));
-		}
-		else {
-			sprintf(msgline, "\n&%s (IP: %s) %s - %s\n", colorname(req->httpcolor), 
-				req->url, req->ip,
-				((req->httpcolor != COL_GREEN) ? "failed" : "OK"));
-		}
-		addtostatus(msgline);
-		sprintf(msgline, "\n%s", req->headers);
-		addtostatus(msgline);
-		if (req->faileddeps) addtostatus(req->faileddeps);
-
-		sprintf(msgline, "Seconds: %5.2f\n", req->totaltime);
-		addtostatus(msgline);
-	}
-	addtostatus("\n\n");
-	finish_status();
-
-	free(svcname);
-}
-
-
-static testitem_t *nextcontenttest(service_t *httptest, service_t *ftptest, testedhost_t *host, testitem_t *current)
-{
-	testitem_t *result;
-
-	result = current->next;
-
-	if ((result == NULL) || (result->host != host)) {
-		if (current->service == httptest) result = host->firstftp;
-		if (current->service == ftptest)  result = NULL;
-	}
-
-	return result;
-}
-
-void send_content_results(service_t *httptest, service_t *ftptest, testedhost_t *host,
-			  char *nonetpage, char *contenttestname, int failgoesclear)
-{
-	testitem_t *t, *firsttest;
-	int	color = -1;
-	char	msgline[MAXMSG];
-	char	msgtext[MAXMSG];
-	char    *nopagename;
-	int     nopage = 0;
-	char    *conttest;
-	int 	contentnum = 0;
-	conttest = (char *) malloc(strlen(contenttestname)+5);
-
-	if ((host->firsthttp == NULL) && (host->firstftp == NULL)) return;
-
-	/* Check if this service is a NOPAGENET service. */
-	nopagename = (char *) malloc(strlen(contenttestname)+3);
-	sprintf(nopagename, ",%s,", contenttestname);
-	nopage = (strstr(nonetpage, contenttestname) != NULL);
-	free(nopagename);
-
-	dprintf("Calc http color host %s : ", host->hostname);
-	msgtext[0] = '\0';
-
-	firsttest = host->firsthttp;
-	if (firsttest == NULL) firsttest = host->firstftp;
-
-	for (t=firsttest; (t && (t->host == host)); t = nextcontenttest(httptest, ftptest, host, t)) {
-		http_data_t *req = (http_data_t *) t->privdata;
-		char cause[100];
-		int got_data = 1;
-
-		strcpy(cause, "Content OK");
-		if (req->contentcheck) {
-			/* We have a content check */
-			if (req->contstatus == 0) {
-				/* The content check passed initial checks of regexp etc. */
-				color = statuscolor(t->host, req->httpstatus);
-				if (color == COL_GREEN) {
-					/* We got the data from the server */
-					int status = 0;
-
-					switch (req->contentcheck) {
-					  case CONTENTCHECK_REGEX:
-						if (req->output) {
-							regmatch_t foo[1];
-
-							status = regexec((regex_t *) req->exp, req->output, 0, foo, 0);
-							regfree((regex_t *) req->exp);
-						}
-						else {
-							/* output may be null if we only got a redirect */
-							status = STATUS_CONTENTMATCH_FAILED;
-						}
-						break;
-
-					  case CONTENTCHECK_NOREGEX:
-						if (req->output) {
-							regmatch_t foo[1];
-
-							status = (!regexec((regex_t *) req->exp, req->output, 0, foo, 0));
-							regfree((regex_t *) req->exp);
-						}
-						else {
-							/* output may be null if we only got a redirect */
-							status = STATUS_CONTENTMATCH_FAILED;
-						}
-						break;
-
-					  case CONTENTCHECK_DIGEST:
-						if (req->digest == NULL) req->digest = malcop("");
-						if (strcmp(req->digest, (char *)req->exp) != 0) {
-							status = STATUS_CONTENTMATCH_FAILED;
-						}
-						else status = 0;
-
-						req->output = (char *) malloc(strlen(req->digest)+strlen((char *)req->exp)+strlen("Expected:\nGot     :\n")+1);
-						sprintf(req->output, "Expected:%s\nGot     :%s\n", 
-							(char *)req->exp, req->digest);
-						break;
-
-					  case CONTENTCHECK_CONTENTTYPE:
-						if (req->contenttype && (strcasecmp(req->contenttype, (char *)req->exp) == 0)) {
-							status = 0;
-						}
-						else {
-							status = STATUS_CONTENTMATCH_FAILED;
-						}
-
-						if (req->contenttype == NULL) req->contenttype = malcop("No content-type provdied");
-
-						req->output = (char *) malloc(strlen(req->contenttype)+strlen((char *)req->exp)+strlen("Expected content-type: %s\nGot content-type     : %s\n")+1);
-						sprintf(req->output, "Expected content-type: %s\nGot content-type     : %s\n",
-							(char *)req->exp, req->contenttype);
-						break;
-					}
-
-					req->contstatus = ((status == 0)  ? 200 : STATUS_CONTENTMATCH_FAILED);
-					color = statuscolor(t->host, req->contstatus);
-					if (color != COL_GREEN) strcpy(cause, "Content match failed");
-				}
-				else {
-					/*
-					 * Failed to retrieve the webpage.
-					 * Report CLEAR, unless "alwaystrue" is set.
-					 */
-					if (failgoesclear && !t->alwaystrue) color = COL_CLEAR;
-					got_data = 0;
-					strcpy(cause, "Failed to get webpage");
-				}
-
-				/* If not inside SLA and non-green, report as BLUE */
-				if (!t->host->okexpected && (color != COL_GREEN)) color = COL_BLUE;
-
-				if (nopage && (color == COL_RED)) color = COL_YELLOW;
-			}
-			else {
-				/* This only happens upon internal errors in BB test system */
-				color = statuscolor(t->host, req->contstatus);
-				strcpy(cause, "Internal BB error");
-			}
-
-			/* Send the content status message */
-			dprintf("Content check on %s is %s\n", req->url, colorname(color));
-
-			if (contentnum > 0) sprintf(conttest, "%s%d", contenttestname, contentnum);
-			else strcpy(conttest, contenttestname);
-
-			init_status(color);
-			sprintf(msgline, "status %s.%s %s %s: %s\n", 
-				commafy(host->hostname), conttest, colorname(color), timestamp, cause);
-			addtostatus(msgline);
-
-			if (!got_data) {
-				sprintf(msgline, "\nAn error occurred while testing <a href=\"%s\">URL %s</a>\n", 
-					req->url, req->url);
-			}
-			else {
-				sprintf(msgline, "\n&%s %s - Testing <a href=\"%s\">URL</a> yields:\n",
-					colorname(color), req->url, req->url);
-			}
-			addtostatus(msgline);
-
-			if (req->output) {
-				if ( (req->contenttype && (strncasecmp(req->contenttype, "text/html", 9) == 0)) ||
-				     (strncasecmp(req->output, "<html", 5) == 0) ) {
-					char *bodystart = NULL;
-					char *bodyend = NULL;
-
-					bodystart = strstr(req->output, "<body");
-					if (bodystart == NULL) bodystart = strstr(req->output, "<BODY");
-					if (bodystart) {
-						char *p;
-
-						p = strchr(bodystart, '>');
-						if (p) bodystart = (p+1);
-					}
-					else bodystart = req->output;
-
-					bodyend = strstr(bodystart, "</body");
-					if (bodyend == NULL) bodyend = strstr(bodystart, "</BODY");
-					if (bodyend) {
-						*bodyend = '\0';
-					}
-
-					addtostatus("<div>\n");
-					addtostatus(bodystart);
-					addtostatus("\n</div>\n");
-				}
-				else {
-					addtostatus(req->output);
-				}
-			}
-			else {
-				addtostatus("\nNo output received from server\n\n");
-			}
-
-			addtostatus("\n\n");
-			finish_status();
-
-			contentnum++;
-		}
-	}
-
-	free(conttest);
-}
-
-
-void show_http_test_results(service_t *httptest)
-{
-	http_data_t *req;
-	testitem_t *t;
-
-	for (t = httptest->items; (t); t = t->next) {
-		req = (http_data_t *) t->privdata;
-
-		printf("URL                      : %s\n", req->url);
-		printf("Req. SSL version/ciphers : %d/%s\n", req->sslversion, textornull(req->ciphers));
-		printf("HTTP status              : %lu\n", req->httpstatus);
-		printf("Time spent               : %f\n", req->totaltime);
-		printf("HTTP headers\n%s\n", textornull(req->headers));
-		printf("HTTP output\n%s\n", textornull(req->output));
-		printf("curl error data:\n%s\n", req->errorbuffer);
-		printf("------------------------------------------------------\n");
-	}
-}
 

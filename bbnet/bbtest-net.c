@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.148 2004-08-07 11:10:41 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.149 2004-08-17 20:23:59 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -32,6 +32,7 @@ static char rcsid[] = "$Id: bbtest-net.c,v 1.148 2004-08-07 11:10:41 henrik Exp 
 #include "bbtest-net.h"
 #include "contest.h"
 #include "httptest.h"
+#include "httpresult.h"
 #include "ldaptest.h"
 
 /* These are dummy vars needed by stuff in util.c */
@@ -81,8 +82,6 @@ testedhost_t	*testhosthead = NULL;		/* Head of all hosts */
 char		*nonetpage = NULL;		/* The "NONETPAGE" env. variable */
 int		dnsmethod = DNS_THEN_IP;	/* How to do DNS lookups */
 int 		timeout=0;
-int 		conntimeout=0;
-int		dnstimeout=30;
 long		followlocations = 0;		/* Follow Location: redirects in HTTP? */
 char		*contenttestname = "content";   /* Name of the content checks column */
 char		*ssltestname = "sslcert";       /* Name of the SSL certificate checks column */
@@ -113,7 +112,6 @@ void dump_hostlist(void)
 		printf("Hostname: %s\n", textornull(walk->hostname));
 		printf("\tIP           : %s\n", textornull(walk->ip));
 		printf("\tHosttype     : %s\n", textornull(walk->hosttype));
-		printf("\tTimeouts     : %d:%d\n", walk->conntimeout, walk->timeout);
 
 		printf("\tFlags        :");
 		if (walk->testip) printf(" testip");
@@ -319,7 +317,7 @@ void load_services(void)
 }
 
 
-testedhost_t *init_testedhost(char *hostname, int timeout, int conntimeout, int okexpected)
+testedhost_t *init_testedhost(char *hostname, int okexpected)
 {
 	testedhost_t *newhost;
 
@@ -328,8 +326,6 @@ testedhost_t *init_testedhost(char *hostname, int timeout, int conntimeout, int 
 	newhost->hostname = malcop(hostname);
 	newhost->ip[0] = '\0';
 	newhost->hosttype = NULL;
-	newhost->conntimeout = conntimeout;
-	newhost->timeout = timeout;
 
 	newhost->dialup = 0;
 	newhost->testip = 0;
@@ -481,7 +477,7 @@ void load_tests(void)
 					p = "";
 				}
 
-				h = init_testedhost(hostname, timeout, conntimeout, 
+				h = init_testedhost(hostname, 
 						    (strstr(p, "SLA=") ? within_sla(p, "SLA", 1) : !within_sla(p, "DOWNTIME", 0)) );
 				anytests = 0;
 				badsaves = (char *) malloc(strlen(p)+1); *badsaves = '\0';
@@ -516,14 +512,6 @@ void load_tests(void)
 						specialtag = 1;
 						h->routerdeps = malcop(testspec+strlen(routestring));
 						dprintf("host %s has routerdeps %s\n", h->hostname, h->routerdeps);
-					}
-					else if (argnmatch(testspec, "TIMEOUT:")) {
-						specialtag = 1;
-
-						if (sscanf(testspec, "TIMEOUT:%d:%d", &h->conntimeout, &h->timeout) != 2) {
-							h->timeout = timeout;
-							h->conntimeout = 0;
-						}
 					}
 					else if (strcmp(testspec, "noconn") == 0)  { specialtag = 1; h->noconn = 1; }
 					else if (strcmp(testspec, "noping") == 0)  { specialtag = 1; h->noping = 1; }
@@ -1940,11 +1928,6 @@ int main(int argc, char *argv[])
 	int runtimewarn;		/* 300 = default BBSLEEP setting */
 	int servicedumponly = 0;
 
-	if (init_http_library() != 0) {
-		errprintf("Failed to initialize http library\n");
-		return 1;
-	}
-
 	if (init_ldap_library() != 0) {
 		errprintf("Failed to initialize ldap library\n");
 		return 1;
@@ -2050,10 +2033,6 @@ int main(int argc, char *argv[])
 		}
 
 		/* Options for HTTP tests */
-		else if (argnmatch(argv[argi], "--conntimeout=")) {
-			char *p = strchr(argv[argi], '=');
-			p++; conntimeout = atoi(p);
-		}
 		else if (argnmatch(argv[argi], "--content=")) {
 			char *p = strchr(argv[argi], '=');
 			contenttestname = malcop(p+1);
@@ -2088,7 +2067,6 @@ int main(int argc, char *argv[])
 		/* Informational options */
 		else if (strcmp(argv[argi], "--version") == 0) {
 			printf("bbtest-net version %s\n", VERSION);
-			if (http_library_version) printf("HTTP library: %s\n", http_library_version);
 			if (ldap_library_version) printf("LDAP library: %s\n", ldap_library_version);
 			printf("Compile settings: MAXMSG=%d, BBDPORTNUMBER=%d", MAXMSG, BBDPORTNUMBER);
 #ifdef DEBUG
@@ -2117,7 +2095,6 @@ int main(int argc, char *argv[])
 			printf("    --ping[=COLUMNNAME]         : Enable ping checking, default columname is \"conn\"\n");
 			printf("    --noping                    : Disable ping checking\n");
 			printf("\nOptions for HTTP/HTTPS (Web) tests:\n");
-			printf("    --conntimeout=N             : Timeout for the connection to the server to succeed\n");
 			printf("    --content=COLUMNNAME        : Define columnname for CONTENT checks (content)\n");
 			printf("    --ssl=COLUMNNAME            : Define columnname for SSL certificate checks (sslcert)\n");
 			printf("    --sslwarn=N                 : Go yellow if certificate expires in less than N days (default:30)\n");
@@ -2212,22 +2189,29 @@ int main(int argc, char *argv[])
 	/* Load current status files */
 	for (s = svchead; (s); s = s->next) { if (s != pingtest) load_test_status(s); }
 
-	/* First run the standard TCP/IP tests */
+	/* First run the TCP/IP and HTTP tests */
 	for (s = svchead; (s); s = s->next) {
 		if ((s->items) && (s->toolid == TOOL_CONTEST)) {
 			for (t = s->items; (t); t = t->next) {
 				if (!t->host->dnserror) {
-					t->privdata = (void *)add_tcp_test(t->host->ip, s->portnum, s->testname, t->silenttest);
+					t->privdata = (void *)add_tcp_test(t->host->ip, s->portnum, s->testname, NULL, 
+									   t->silenttest, NULL, 
+									   NULL, NULL, NULL);
 				}
 			}
 		}
 	}
-	add_timestamp("TCP test engine setup completed");
+	for (t = httptest->items; (t); t = t->next) add_http_test(t);
+	add_timestamp("Test engine setup completed");
 
 	do_tcp_tests(timeout, concurrency);
 	add_timestamp("TCP tests executed");
 
-	if (debug) show_tcp_test_results();
+	if (debug) {
+		show_tcp_test_results();
+		show_http_test_results(httptest);
+	}
+
 	for (s = svchead; (s); s = s->next) {
 		if ((s->items) && (s->toolid == TOOL_CONTEST)) {
 			for (t = s->items; (t); t = t->next) { 
@@ -2257,26 +2241,18 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-	add_timestamp("TCP tests result collection completed");
-
-	/* Run the http tests */
-	for (t = httptest->items; (t); t = t->next) add_http_test(t);
-	add_timestamp("HTTP test engine setup completed");
-
-	run_http_tests(httptest, followlocations, logfile, (ssltestname != NULL));
-	add_timestamp("HTTP tests executed");
-
-	if (debug) show_http_test_results(httptest);
 	for (t = httptest->items; (t); t = t->next) {
 		if (t->privdata) {
 			http_data_t *testresult = (http_data_t *)t->privdata;
 
-			t->certinfo = testresult->certinfo;
-			t->certexpires = testresult->certexpires;
+			t->certinfo = testresult->tcptest->certinfo;
+			t->certexpires = testresult->tcptest->certexpires;
 		}
 	}
-	add_timestamp("HTTP tests result collection completed");
 
+	add_timestamp("Test result collection completed");
+
+#if 0
 	/* Run the ftpurl tests */
 	for (t = ftptest->items; (t); t = t->next) add_http_test(t);
 	add_timestamp("FTPURL test engine setup completed");
@@ -2294,12 +2270,13 @@ int main(int argc, char *argv[])
 		}
 	}
 	add_timestamp("FTPURL tests result collection completed");
+#endif
 
 	/* Run the ldap tests */
 	for (t = ldaptest->items; (t); t = t->next) add_ldap_test(t);
 	add_timestamp("LDAP test engine setup completed");
 
-	run_ldap_tests(ldaptest, (ssltestname != NULL));
+	run_ldap_tests(ldaptest, (ssltestname != NULL), timeout);
 	add_timestamp("LDAP tests executed");
 
 	if (debug) show_ldap_test_results(ldaptest);
@@ -2401,7 +2378,6 @@ int main(int argc, char *argv[])
 	}
 
 	shutdown_ldap_library();
-	shutdown_http_library();
 	add_timestamp("bbtest-net completed");
 
 	if (dumpdata & 2) { dump_hostlist(); dump_testitems(); }
@@ -2425,10 +2401,6 @@ int main(int argc, char *argv[])
 
 		sprintf(msgline, "bbtest-net version %s\n", VERSION);
 		addtostatus(msgline);
-		if (http_library_version) {
-			sprintf(msgline, "HTTP library: %s\n", http_library_version);
-			addtostatus(msgline);
-		}
 		if (ldap_library_version) {
 			sprintf(msgline, "LDAP library: %s\n", ldap_library_version);
 			addtostatus(msgline);

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.45 2004-08-07 11:45:25 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.46 2004-08-17 20:23:59 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -32,6 +32,8 @@ static char rcsid[] = "$Id: contest.c,v 1.45 2004-08-07 11:45:25 henrik Exp $";
 
 #include "bbtest-net.h"
 #include "contest.h"
+#include "httptest.h"
+
 #include "bbgen.h"
 #include "debug.h"
 #include "util.h"
@@ -41,9 +43,7 @@ static char rcsid[] = "$Id: contest.c,v 1.45 2004-08-07 11:45:25 henrik Exp $";
 #define RLIMIT_NOFILE RLIMIT_OFILE
 #endif
 
-#define MAX_BANNER 1024
 #define MAX_TELNET_CYCLES 5		/* Max loops with telnet options before aborting banner */
-
 #define SSLSETUP_PENDING -1		/* Magic value for test_t->sslrunning while handshaking */
 
 static test_t *thead = NULL;
@@ -88,6 +88,9 @@ static svcinfo_t default_svcinfo[] = {
 };
 
 static svcinfo_t *svcinfo = default_svcinfo;
+static svcinfo_t svcinfo_http  = { "http", NULL, 0, NULL, 0, 0, (TCP_GET_BANNER|TCP_HTTP), 80 };
+static svcinfo_t svcinfo_https = { "https", NULL, 0, NULL, 0, 0, (TCP_GET_BANNER|TCP_HTTP|TCP_SSL), 443 };
+static ssloptions_t default_sslopt = { NULL, SSLVERSION_DEFAULT };
 
 typedef struct svclist_t {
 	struct svcinfo_t *rec;
@@ -352,10 +355,35 @@ void dump_tcp_services(void)
 	printf("\n");
 }
 
-test_t *add_tcp_test(char *ip, int port, char *service, int silent)
+
+static int tcp_callback(unsigned char *buf, unsigned int len, void *priv)
+{
+	/*
+	 * The default data callback function for simple TCP tests.
+	 */
+
+	test_t *item = (test_t *) priv;
+
+	if (item->banner == NULL) {
+		item->banner = (unsigned char *)malloc(len+1);
+	}
+	else {
+		item->banner = (unsigned char *)realloc(item->banner, item->bannerbytes+len+1);
+	}
+
+	memcpy(item->banner+item->bannerbytes, buf, len);
+	item->bannerbytes += len;
+	*(item->banner + item->bannerbytes) = '\0';
+
+	return 1;	/* We always just grab the first bit of data for TCP tests */
+}
+
+
+test_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
+		     int silent, unsigned char *reqmsg, 
+		     void *priv, f_callback_data datacallback, f_callback_final finalcallback)
 {
 	test_t *newtest;
-	int i;
 
 	dprintf("Adding tcp test IP=%s, port=%d, service=%s, silent=%d\n", ip, port, service, silent);
 
@@ -367,36 +395,74 @@ test_t *add_tcp_test(char *ip, int port, char *service, int silent)
 
 	newtest = (test_t *) malloc(sizeof(test_t));
 
-	memset(&newtest->addr, 0, sizeof(newtest->addr));
-	newtest->addr.sin_family = PF_INET;
-	newtest->addr.sin_port = htons(port);
-	inet_aton(ip, (struct in_addr *) &newtest->addr.sin_addr.s_addr);
-
 	newtest->fd = -1;
 	newtest->open = 0;
 	newtest->connres = -1;
+	newtest->errcode = CONTEST_ENOERROR;
 	newtest->duration.tv_sec = newtest->duration.tv_usec = 0;
+	newtest->totaltime.tv_sec = newtest->totaltime.tv_usec = 0;
 
-	for (i=0; (svcinfo[i].svcname && (strcmp(service, svcinfo[i].svcname) != 0)); i++) ;
-	newtest->svcinfo = &svcinfo[i];
+	memset(&newtest->addr, 0, sizeof(newtest->addr));
+	newtest->addr.sin_family = PF_INET;
+	newtest->addr.sin_port = htons(port);
+	if ((strlen(ip) == 0) || (inet_aton(ip, (struct in_addr *) &newtest->addr.sin_addr.s_addr) == 0)) {
+		newtest->errcode = CONTEST_EDNS;
+	}
+
+	if (strcmp(service, "http") == 0)
+		newtest->svcinfo = &svcinfo_http;
+	else if (strcmp(service, "https") == 0)
+		newtest->svcinfo = &svcinfo_https;
+	else {
+		int i;
+
+		for (i=0; (svcinfo[i].svcname && (strcmp(service, svcinfo[i].svcname) != 0)); i++) ;
+		newtest->svcinfo = &svcinfo[i];
+	}
+
+	newtest->sendtxt = (reqmsg ? reqmsg : newtest->svcinfo->sendtxt);
+	newtest->sendlen = (reqmsg ? strlen(reqmsg) : newtest->svcinfo->sendlen);
 
 	newtest->silenttest = silent;
 	newtest->readpending = 0;
-	newtest->telnetnegotiate = (((svcinfo[i].flags & TCP_TELNET) && !silent) ? MAX_TELNET_CYCLES : 0);
+	newtest->telnetnegotiate = (((newtest->svcinfo->flags & TCP_TELNET) && !silent) ? MAX_TELNET_CYCLES : 0);
 	newtest->telnetbuf = NULL;
 	newtest->telnetbuflen = 0;
 
+	newtest->ssloptions = (sslopt ? sslopt : &default_sslopt);
 	newtest->sslctx = NULL;
 	newtest->ssldata = NULL;
 	newtest->certinfo = NULL;
 	newtest->certexpires = 0;
-	newtest->sslrunning = ((svcinfo[i].flags & TCP_SSL) ? SSLSETUP_PENDING : 0);
+	newtest->sslrunning = ((newtest->svcinfo->flags & TCP_SSL) ? SSLSETUP_PENDING : 0);
+	newtest->sslagain = 0;
 
 	newtest->banner = NULL;
 	newtest->bannerbytes = 0;
-	newtest->next = thead;
 
-	thead = newtest;
+	if (datacallback == NULL) {
+		/*
+		 * Use the default callback-routine, which expects 
+		 * "priv" to point at the test item.
+		 */
+		newtest->priv = newtest;
+		newtest->datacallback = tcp_callback;
+	}
+	else {
+		/*
+		 * Custom callback - handles data output by itself.
+		 */
+		newtest->priv = priv;
+		newtest->datacallback = datacallback;
+	}
+
+	newtest->finalcallback = finalcallback;
+
+	if (newtest->errcode == CONTEST_ENOERROR) {
+		newtest->next = thead;
+		thead = newtest;
+	}
+
 	return newtest;
 }
 
@@ -408,6 +474,16 @@ static void get_connectiontime(test_t *item, struct timeval *timestamp)
 	if (item->duration.tv_usec < 0) {
 		item->duration.tv_sec--;
 		item->duration.tv_usec += 1000000;
+	}
+}
+
+static void get_totaltime(test_t *item, struct timeval *timestamp)
+{
+	item->totaltime.tv_sec = timestamp->tv_sec - item->timestart.tv_sec;
+	item->totaltime.tv_usec = timestamp->tv_usec - item->timestart.tv_usec;
+	if (item->totaltime.tv_usec < 0) {
+		item->totaltime.tv_sec--;
+		item->totaltime.tv_usec += 1000000;
 	}
 }
 
@@ -484,17 +560,17 @@ static void setup_ssl(test_t *item)
 	item->sslrunning = 0;
 }
 
-int socket_write(test_t *item, unsigned char *outbuf, int outlen)
+static int socket_write(test_t *item, unsigned char *outbuf, int outlen)
 {
 	return write(item->fd, outbuf, outlen);
 }
 
-int socket_read(test_t *item, unsigned char *inbuf, int inbufsize)
+static int socket_read(test_t *item, unsigned char *inbuf, int inbufsize)
 {
 	return read(item->fd, inbuf, inbufsize);
 }
 
-void socket_shutdown(test_t *item)
+static void socket_shutdown(test_t *item)
 {
 	shutdown(item->fd, SHUT_RDWR);
 }
@@ -542,8 +618,8 @@ static char *bbgen_ASN1_UTCTIME(ASN1_UTCTIME *tm)
 static void setup_ssl(test_t *item)
 {
 	static int ssl_init_complete = 0;
-	X509 *peercert;
 	struct servent *sp;
+	X509 *peercert;
 	char *certcn, *certstart, *certend;
 	int err;
 
@@ -567,6 +643,7 @@ static void setup_ssl(test_t *item)
 			RAND_write_file(RAND_file_name(path, sizeof (path)));
 			if (RAND_status() != 1) {
 				errprintf("Failed to find enough entropy on your system");
+				item->errcode = CONTEST_ESSL;
 				return;
 			}
 		}
@@ -576,18 +653,32 @@ static void setup_ssl(test_t *item)
 		ssl_init_complete = 1;
 	}
 
-	sp = getservbyport(item->addr.sin_port, "tcp");
 	if (item->sslctx == NULL) {
-		item->sslctx = SSL_CTX_new(SSLv23_client_method());
+		switch (item->ssloptions->sslversion) {
+		  case SSLVERSION_V2:
+			item->sslctx = SSL_CTX_new(SSLv2_client_method()); break;
+		  case SSLVERSION_V3:
+			item->sslctx = SSL_CTX_new(SSLv3_client_method()); break;
+		  case SSLVERSION_TLS1:
+			item->sslctx = SSL_CTX_new(TLSv1_client_method()); break;
+		  default:
+			item->sslctx = SSL_CTX_new(SSLv23_client_method()); break;
+		}
+
 		if (!item->sslctx) {
 			errprintf("Cannot create SSL context\n");
 			item->sslrunning = 0;
+			item->errcode = CONTEST_ESSL;
 			return;
 		}
 
 		/* Workaround SSL bugs */
 		SSL_CTX_set_options(item->sslctx, SSL_OP_ALL);
 		SSL_CTX_set_quiet_shutdown(item->sslctx, 1);
+
+		/* Limit set of ciphers, if user wants to */
+		if (item->ssloptions->cipherlist) 
+			SSL_CTX_set_cipher_list(item->sslctx, item->ssloptions->cipherlist);
 	}
 
 	if (item->ssldata == NULL) {
@@ -596,6 +687,7 @@ static void setup_ssl(test_t *item)
 			errprintf("SSL_new failed\n");
 			item->sslrunning = 0;
 			SSL_CTX_free(item->sslctx);
+			item->errcode = CONTEST_ESSL;
 			return;
 		}
 
@@ -603,10 +695,12 @@ static void setup_ssl(test_t *item)
 			errprintf("Could not initiate SSL on connection\n");
 			item->sslrunning = 0;
 			SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
+			item->errcode = CONTEST_ESSL;
 			return;
 		}
 	}
 
+	sp = getservbyport(item->addr.sin_port, "tcp");
 	if ((err = SSL_connect(item->ssldata)) != 1) {
 		switch (SSL_get_error (item->ssldata, err)) {
 		  case SSL_ERROR_WANT_READ:
@@ -616,16 +710,19 @@ static void setup_ssl(test_t *item)
 		  case SSL_ERROR_SYSCALL:
 			errprintf("IO error in SSL_connect to %s on host %s\n",
 				  sp->s_name, inet_ntoa(item->addr.sin_addr));
+			item->errcode = CONTEST_ESSL;
 			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
 			break;
 		  case SSL_ERROR_SSL:
 			errprintf("Unspecified SSL error in SSL_connect to %s on host %s\n",
 				  sp->s_name, inet_ntoa(item->addr.sin_addr));
+			item->errcode = CONTEST_ESSL;
 			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
 			break;
 		  default:
 			errprintf("Unknown error %d in SSL_connect to %s on host %s\n",
 				  err, sp->s_name, inet_ntoa(item->addr.sin_addr));
+			item->errcode = CONTEST_ESSL;
 			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
 			break;
 		}
@@ -638,6 +735,7 @@ static void setup_ssl(test_t *item)
 	if (!peercert) {
 		errprintf("Cannot get peer certificate for %s on host %s\n",
 			  sp->s_name, inet_ntoa(item->addr.sin_addr));
+		item->errcode = CONTEST_ESSL;
 		item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
 		return;
 	}
@@ -656,12 +754,20 @@ static void setup_ssl(test_t *item)
 	X509_free(peercert);
 }
 
-int socket_write(test_t *item, char *outbuf, int outlen)
+static int socket_write(test_t *item, char *outbuf, int outlen)
 {
 	int res = 0;
 
 	if (item->sslrunning) {
 		res = SSL_write(item->ssldata, outbuf, outlen);
+		if (res < 0) {
+			switch (SSL_get_error (item->ssldata, res)) {
+			  case SSL_ERROR_WANT_READ:
+			  case SSL_ERROR_WANT_WRITE:
+				  res = 0;
+				  break;
+			}
+		}
 	}
 	else {
 		res = write(item->fd, outbuf, outlen);
@@ -670,13 +776,22 @@ int socket_write(test_t *item, char *outbuf, int outlen)
 	return res;
 }
 
-int socket_read(test_t *item, char *inbuf, int inbufsize)
+static int socket_read(test_t *item, char *inbuf, int inbufsize)
 {
 	int res = 0;
 
 	if (item->svcinfo->flags & TCP_SSL) {
 		if (item->sslrunning) {
+			item->sslagain = 0;
 			res = SSL_read(item->ssldata, inbuf, inbufsize);
+			if (res < 0) {
+				switch (SSL_get_error (item->ssldata, res)) {
+				  case SSL_ERROR_WANT_READ:
+				  case SSL_ERROR_WANT_WRITE:
+					  item->sslagain = 1;
+					  break;
+				}
+			}
 		}
 		else {
 			/* SSL setup failed - flag 0 bytes read. */
@@ -688,7 +803,7 @@ int socket_read(test_t *item, char *inbuf, int inbufsize)
 	return res;
 }
 
-void socket_shutdown(test_t *item)
+static void socket_shutdown(test_t *item)
 {
 	if (item->sslrunning) {
 		SSL_shutdown(item->ssldata);
@@ -700,11 +815,11 @@ void socket_shutdown(test_t *item)
 #endif
 
 
-void do_tcp_tests(int conntimeout, int concurrency)
+void do_tcp_tests(int timeout, int concurrency)
 {
 	int		selres;
 	fd_set		readfds, writefds;
-	struct timeval	tmo, timestamp;
+	struct timeval	tmo, timestamp, cutoff;
 
 	int		activesockets = 0; /* Number of allocated sockets */
 	int		pending = 0;	   /* Total number of tests */
@@ -716,12 +831,12 @@ void do_tcp_tests(int conntimeout, int concurrency)
 	int		maxfd;
 	int		res;
 	socklen_t	connressize;
-	char		msgbuf[MAX_BANNER];
+	char		msgbuf[4096];
 
 	struct timezone tz;
 
-	/* If conntimeout or concurrency are 0, set them to reasonable defaults */
-	if (conntimeout == 0) conntimeout = DEF_TIMEOUT;
+	/* If timeout or concurrency are 0, set them to reasonable defaults */
+	if (timeout == 0) timeout = 60;	/* seconds */
 	if (concurrency == 0) {
 		struct rlimit lim;
 
@@ -761,6 +876,8 @@ void do_tcp_tests(int conntimeout, int concurrency)
 					 */
 					gettimeofday(&nextinqueue->timestart, &tz);
 					res = connect(nextinqueue->fd, (struct sockaddr *)&nextinqueue->addr, sizeof(nextinqueue->addr));
+					cutoff.tv_sec = nextinqueue->timestart.tv_sec + timeout + 1;
+					cutoff.tv_usec = 0;
 
 					/*
 					 * Did it work ?
@@ -773,6 +890,7 @@ void do_tcp_tests(int conntimeout, int concurrency)
 						/* connect() failed. Flag the item as "not open" */
 						nextinqueue->connres = errno;
 						nextinqueue->open = 0;
+						nextinqueue->errcode = CONTEST_ENOCONN;
 						close(nextinqueue->fd);
 						nextinqueue->fd = -1;
 						pending--;
@@ -859,7 +977,8 @@ void do_tcp_tests(int conntimeout, int concurrency)
 		 * Wait for something to happen: connect, timeout, banner arrives ...
 		 */
 		dprintf("Doing select\n");
-		tmo.tv_sec = conntimeout; tmo.tv_usec = 0;
+		gettimeofday(&timestamp, &tz);
+		tmo.tv_sec = (1 + cutoff.tv_sec - timestamp.tv_sec); tmo.tv_usec = 0;
 		selres = select((maxfd+1), &readfds, &writefds, NULL, &tmo);
 		dprintf("select returned %d\n", selres);
 		if (selres == -1) {
@@ -887,7 +1006,7 @@ void do_tcp_tests(int conntimeout, int concurrency)
 		/* Now find out which connections had something happen to them */
 		for (item=firstactive; (item != nextinqueue); item=item->next) {
 			if (item->fd > -1) {		/* Only active sockets have this */
-				if (selres == 0) {
+				if ((selres == 0) || (timestamp.tv_sec >= cutoff.tv_sec)) {
 					/* 
 					 * Timeout on all active connection attempts.
 					 * Close all sockets.
@@ -895,12 +1014,15 @@ void do_tcp_tests(int conntimeout, int concurrency)
 					if (item->readpending) {
 						/* Final read timeout - just shut this socket */
 						socket_shutdown(item);
+						item->errcode = CONTEST_ETIMEOUT;
 					}
 					else {
 						/* Connection timeout */
 						item->open = 0;
 						item->connres = ETIMEDOUT;
+						item->errcode = CONTEST_ENOCONN;
 					}
+					get_totaltime(item, &timestamp);
 					close(item->fd);
 					item->fd = -1;
 					activesockets--;
@@ -968,9 +1090,9 @@ void do_tcp_tests(int conntimeout, int concurrency)
 								outbuf = item->telnetbuf;
 								outlen = item->telnetbuflen;
 							}
-							else if (item->svcinfo->sendtxt && !item->silenttest) {
-								outbuf = item->svcinfo->sendtxt;
-								outlen = (item->svcinfo->sendlen ? item->svcinfo->sendlen : strlen(outbuf));
+							else if (item->sendtxt && !item->silenttest) {
+								outbuf = item->sendtxt;
+								outlen = (item->sendlen ? item->sendlen : strlen(outbuf));
 							}
 
 							if (outbuf && outlen) {
@@ -983,6 +1105,17 @@ void do_tcp_tests(int conntimeout, int concurrency)
 									/* Write failed - this socket is done. */
 									dprintf("write failed\n");
 									item->readpending = 0;
+									item->errcode = CONTEST_EIO;
+								}
+								else if (item->svcinfo->flags & TCP_HTTP) {
+									/*
+									 * HTTP tests require us to send the full buffer.
+									 * So adjust sendtxt/sendlen accordingly.
+									 * If no more to send, switch to read-mode.
+									 */
+									item->sendtxt += res;
+									item->sendlen -= res;
+									item->readpending = (item->sendlen == 0);
 								}
 							}
 						}
@@ -994,6 +1127,8 @@ void do_tcp_tests(int conntimeout, int concurrency)
 									socket_shutdown(item);
 								}
 								close(item->fd);
+								get_totaltime(item, &timestamp);
+								if (item->finalcallback) item->finalcallback(item->priv);
 								item->fd = -1;
 								activesockets--;
 								pending--;
@@ -1009,6 +1144,7 @@ void do_tcp_tests(int conntimeout, int concurrency)
 						 * than one cycle to arrive, too bad!
 						 */
 						int wantmoredata = 0;
+						int datadone = 0;
 
 						/*
 						 * We may be in the process of setting up an SSL connection
@@ -1022,21 +1158,11 @@ void do_tcp_tests(int conntimeout, int concurrency)
 						res = socket_read(item, msgbuf, sizeof(msgbuf)-1);
 						dprintf("read %d bytes from socket\n", res);
 
-						if (res) {
-							msgbuf[res] = '\0';
-							if (item->banner == NULL) {
-								item->banner = (unsigned char *)malloc(res+1);
-								memcpy(item->banner, msgbuf, res+1);
-								item->bannerbytes += res;
-							}
-							else {
-								item->banner = (unsigned char *)realloc(item->banner, item->bannerbytes+res+1);
-								memcpy(item->banner+item->bannerbytes, msgbuf, res+1);
-								item->bannerbytes += res;
-							}
+						if ((res > 0) && item->datacallback) {
+							datadone = item->datacallback(msgbuf, res, item->priv);
 						}
 
-						if (res && item->telnetnegotiate) {
+						if ((res > 0) && item->telnetnegotiate) {
 							/*
 							 * telnet data has telnet options first.
 							 * We must negotiate the session before we
@@ -1071,12 +1197,23 @@ void do_tcp_tests(int conntimeout, int concurrency)
 							}
 						}
 
+						if ((item->svcinfo->flags & TCP_HTTP) && 
+						    ((res > 0) || item->sslagain)     &&
+						    (!datadone) ) {
+							/*
+							 * HTTP : Grab the entire response.
+							 */
+							wantmoredata = 1;
+						}
+
 						if (!wantmoredata) {
 							if (item->open) {
 								socket_shutdown(item);
 							}
 							item->readpending = 0;
 							close(item->fd);
+							get_totaltime(item, &timestamp);
+							if (item->finalcallback) item->finalcallback(item->priv);
 							item->fd = -1;
 							activesockets--;
 							pending--;
@@ -1097,11 +1234,12 @@ void show_tcp_test_results(void)
 	test_t *item;
 
 	for (item = thead; (item); item = item->next) {
-		printf("Address=%s:%d, open=%d, res=%d, time=%ld.%06ld, ",
+		printf("Address=%s:%d, open=%d, res=%d, err=%d, connecttime=%ld.%06ld, totaltime=%ld.%06ld, ",
 				inet_ntoa(item->addr.sin_addr), 
 				ntohs(item->addr.sin_port),
-				item->open, item->connres, 
-				item->duration.tv_sec, item->duration.tv_usec);
+				item->open, item->connres, item->errcode,
+				item->duration.tv_sec, item->duration.tv_usec,
+				item->totaltime.tv_sec, item->totaltime.tv_usec);
 
 		if (item->banner && (item->bannerbytes == strlen(item->banner))) {
 			printf("banner='%s' (%d bytes)",
@@ -1154,17 +1292,34 @@ hostlist_t      *hosthead = NULL;
 link_t          *linkhead = NULL;
 link_t  null_link = { "", "", "", NULL };
 
+extern void http_test_init();
+extern void http_test_show();
+
 int main(int argc, char *argv[])
 {
+	http_data_t http1 = { 0, };
+	http_data_t http2 = { 0, };
+
 	if ((argc > 1) && (strcmp(argv[1], "--debug") == 0)) debug = 1;
 
-	add_tcp_test("172.16.10.100", 23, "telnet", 0);
-	add_tcp_test("172.16.10.100", 22, "ssh", 0);
-	add_tcp_test("172.16.10.1", 993, "imaps", 0);
-	add_tcp_test("172.16.10.1", 995, "pop3s", 0);
+	init_tcp_services();
 
-	do_tcp_tests(0, 0);
+	//add_tcp_test("172.16.10.100", 23, "telnet", 0, NULL, NULL, NULL);
+	//add_tcp_test("172.16.10.100", 22, "ssh", 0, NULL, NULL, NULL);
+	//add_tcp_test("172.16.10.2", 143, "imap", 0, NULL, NULL, NULL);
+	//add_tcp_test("172.16.10.2", 110, "pop3", 0, NULL, NULL, NULL);
+	//add_tcp_test("207.46.249.252", 80, "http", 0, "GET / HTTP/1.0\r\n\r\n", &http1, httpcallback);
+	//add_tcp_test("172.16.10.2", 80, "http", NULL, 0, "GET / HTTP/1.0\r\nHost: www.hswn.dk\r\n\r\n", 
+	//	     &http2, tcp_http_data_callback, tcp_http_final_callback);
+	//http1.contentcheck = CONTENTCHECK_DIGEST; http1.digestctx = digest_init("md5");
+	//http2.contentcheck = CONTENTCHECK_DIGEST; http2.digestctx = digest_init("md5");
+
+	http_test_init();
+
+	do_tcp_tests(10, 0);
+
 	show_tcp_test_results();
+	http_test_show();
 	return 0;
 }
 #endif
