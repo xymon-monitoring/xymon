@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.4 2003-07-01 14:17:44 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.5 2003-07-01 20:52:22 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -239,19 +239,23 @@ int main(int argc, char *argv[])
 {
 	testspec_t *t;
 	int argi, pending;
+	int showeval = 1;
 
 	for (argi = 1; (argi < argc); argi++) {
 		if ((strcmp(argv[argi], "--help") == 0)) {
-			printf("Usage:\n%s [--debug]\n", argv[0]);
-			exit(1);
+			printf("bbcombotest version %s\n\n", VERSION);
+			printf("Usage:\n%s [--debug] [--quiet]\n", argv[0]);
+			exit(0);
 		}
-
 		else if ((strcmp(argv[argi], "--version") == 0)) {
 			printf("bbcombotest version %s\n", VERSION);
 			exit(0);
 		}
 		else if ((strcmp(argv[argi], "--debug") == 0)) {
 			debug = 1;
+		}
+		else if ((strcmp(argv[argi], "--quiet") == 0)) {
+			showeval = 0;
 		}
 	}
 
@@ -285,11 +289,14 @@ int main(int argc, char *argv[])
 		sprintf(msgline, "status %s.%s %s %s\n\n", commafy(t->reshostname), t->restestname, colorname(color), timestamp);
 		addtostatus(msgline);
 		if (t->comment) { addtostatus(t->comment); addtostatus("\n\n"); }
-		sprintf(msgline, "%s = %s = %ld\n", t->expression, t->resultexpr, t->result);
-		addtostatus(msgline);
-		for (vwalk = t->valuelist; (vwalk); vwalk = vwalk->next) {
-			sprintf(msgline, "&%s %s\n", colorname(vwalk->color), vwalk->symbol);
+		if (showeval) {
+			sprintf(msgline, "%s = %s = %ld\n", t->expression, t->resultexpr, t->result);
 			addtostatus(msgline);
+
+			for (vwalk = t->valuelist; (vwalk); vwalk = vwalk->next) {
+				sprintf(msgline, "&%s %s\n", colorname(vwalk->color), vwalk->symbol);
+				addtostatus(msgline);
+			}
 		}
 		finish_status();
 	}
