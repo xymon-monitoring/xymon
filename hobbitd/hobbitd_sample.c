@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_sample.c,v 1.9 2004-10-31 11:44:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_sample.c,v 1.10 2004-11-05 07:16:33 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -77,6 +77,10 @@ int main(int argc, char *argv[])
 
 	running = 1;
 	while (running) {
+		char *eoln, *restofmsg, *p;
+		char *metadata[MAX_META+1];
+		int metacount;
+
 		/*
 		 * get_bbgend_message() gets the next message from the queue.
 		 * The message buffer is allocated and managed by the get_bbgend_message()
@@ -118,11 +122,6 @@ int main(int argc, char *argv[])
 		 * list of meta-data about the message. After the first
 		 * line, the content varies by channel.
 		 */
-
-		char *eoln, *restofmsg;
-		char *metadata[MAX_META+1];
-		int metacount;
-		char *p;
 
 		/* Split the message in the first line (with meta-data), and the rest */
  		eoln = strchr(msg, '\n');
