@@ -55,8 +55,8 @@
                       |                    entries ---------> entry_t
                       |                    dialup               column -------> bbgen_col_t
                       |                    larrdgraphs          color             name
-                      |                    next                 age            +- link
-                      |                                         oldage         |  next
+                      |                    reportwarnlevel      age            +- link
+                      |                    next                 oldage         |  next
                       |                                         acked          |
                       |                                         alert          |
                       |                                         onwap          |
@@ -239,6 +239,7 @@ typedef struct {
 	char    *larrdgraphs;
 	char	*pretitle;
 	void	*parent;
+	double  reportwarnlevel;
 	void	*next;
 } host_t;
 

@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.8 2003-06-24 09:40:48 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.9 2003-06-24 20:53:30 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -257,7 +257,6 @@ hostlist_t      *hosthead = NULL;
 link_t          *linkhead = NULL;
 link_t  null_link = { "", "", "", NULL };
 
-/* These are needed, but not actually used */
 double reportgreenlevel = 99.995;
 double reportwarnlevel = 98.0;
 
@@ -372,13 +371,13 @@ int main(int argc, char *argv[])
 	}
 	now = time(NULL) - startoffset*86400;
 
-	parse_historyfile(fd, &repinfo, NULL, NULL, now-86400, now, 1);
+	parse_historyfile(fd, &repinfo, NULL, NULL, now-86400, now, 1, reportwarnlevel, reportgreenlevel);
 	log24hours = save_replogs();
 
 	if (entrycount == 0) {
 		/* All entries - just rewind the history file and do all of them */
 		rewind(fd);
-		parse_historyfile(fd, &dummyrep, NULL, NULL, 0, time(NULL), 1);
+		parse_historyfile(fd, &dummyrep, NULL, NULL, 0, time(NULL), 1, reportwarnlevel, reportgreenlevel);
 		fclose(fd);
 	}
 	else {
@@ -387,7 +386,7 @@ int main(int argc, char *argv[])
 		sprintf(tailcmd, "tail -%d %s", entrycount, histlogfn);
 		fd = popen(tailcmd, "r");
 		if (fd == NULL) errormsg("Cannot run tail on the histfile");
-		parse_historyfile(fd, &dummyrep, NULL, NULL, 0, time(NULL), 1);
+		parse_historyfile(fd, &dummyrep, NULL, NULL, 0, time(NULL), 1, reportwarnlevel, reportgreenlevel);
 		pclose(fd);
 	}
 

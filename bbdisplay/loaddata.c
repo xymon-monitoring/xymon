@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.88 2003-06-23 14:59:46 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.89 2003-06-24 20:53:30 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -181,8 +181,8 @@ group_t *init_group(const char *title, const char *onlycols)
 
 host_t *init_host(const char *hostname, const char *displayname,
 		  const int ip1, const int ip2, const int ip3, const int ip4, 
-		  const int dialup, const int prefer, const char *alerts, const char *waps,
-		  char *tags,
+		  const int dialup, const int prefer, const double warnpct,
+		  const char *alerts, const char *waps, char *tags,
 		  const char *nopropyellowtests, const char *nopropredtests,
 		  const char *larrdgraphs)
 {
@@ -205,6 +205,7 @@ host_t *init_host(const char *hostname, const char *displayname,
 	newhost->oldage = 1;
 	newhost->prefer = prefer;
 	newhost->dialup = dialup;
+	newhost->reportwarnlevel = warnpct;
 	if (alerts) {
 		char *p;
 		p = skipword(alerts); if (*p) *p = '\0'; else p = NULL;
@@ -524,7 +525,8 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		newstate->entry->repinfo = calloc(1, sizeof(reportinfo_t));
 		newstate->entry->color = parse_historyfile(fd, newstate->entry->repinfo, 
 				(dynamicreport ? NULL: hostname), (dynamicreport ? NULL : testname), 
-				reportstart, reportend, 0);
+				reportstart, reportend, 0, 
+				(host ? host->reportwarnlevel : reportwarnlevel), reportgreenlevel);
 		newstate->entry->causes = (dynamicreport ? NULL : save_replogs());
 		newstate->entry->testflags = NULL;
 	}
@@ -1099,6 +1101,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			int dialup = 0;
 			int prefer = 0;
 			int nodisp = 0;
+			double warnpct = reportwarnlevel;
 			char *alertlist, *onwaplist, *nopropyellowlist, *nopropredlist, *larrdgraphs;
 			char *displayname;
 			char *targetpagelist[MAX_TARGETPAGES_PER_HOST];
@@ -1158,6 +1161,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 						strcpy(displayname, p);
 					}
 				}
+				else if (argnmatch(tag, "WARNPCT:")) 
+					warnpct = atof(tag+8);
 				else if (argnmatch(tag, hosttag)) {
 					targetpagelist[targetpagecount++] = malcop(tag+strlen(hosttag));
 				}
@@ -1177,7 +1182,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				 */
 				if (curhost == NULL) {
 					curhost = init_host(hostname, displayname,
-							    ip1, ip2, ip3, ip4, dialup, prefer, 
+							    ip1, ip2, ip3, ip4, dialup, prefer, warnpct,
 							    alertlist, onwaplist,
 							    startoftags, nopropyellowlist, nopropredlist,
 							    larrdgraphs);
@@ -1199,7 +1204,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				}
 				else {
 					curhost = curhost->next = init_host(hostname, displayname,
-									    ip1, ip2, ip3, ip4, dialup, prefer,
+									    ip1, ip2, ip3, ip4, dialup, prefer, warnpct,
 									    alertlist, onwaplist,
 									    startoftags, nopropyellowlist,nopropredlist,
 									    larrdgraphs);
@@ -1240,7 +1245,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 					}
 					else {
 						host_t *newhost = init_host(hostname, displayname,
-									    ip1, ip2, ip3, ip4, dialup, prefer,
+									    ip1, ip2, ip3, ip4, dialup, prefer, warnpct,
 									    alertlist, onwaplist,
 									    startoftags, nopropyellowlist,nopropredlist,
 									    larrdgraphs);

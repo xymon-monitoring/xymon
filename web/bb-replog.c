@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.8 2003-06-23 20:54:59 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.9 2003-06-24 20:53:30 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -389,7 +389,7 @@ int main(int argc, char *argv[])
 		errormsg("Cannot open history file");
 	}
 
-	parse_historyfile(fd, &repinfo, hostname, service, st, end, 0);
+	parse_historyfile(fd, &repinfo, hostname, service, st, end, 0, reportwarnlevel, reportgreenlevel);
 	fclose(fd);
 
 	sprintf(textrepfn, "avail-%s-%s-%lu-%u.txt", hostname, service, time(NULL), (int)getpid());

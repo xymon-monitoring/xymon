@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.15 2003-06-23 20:54:00 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.16 2003-06-24 20:53:30 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -190,7 +190,8 @@ int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 
 
 int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *servicename, 
-			time_t fromtime, time_t totime, int for_history)
+			time_t fromtime, time_t totime, int for_history, 
+			double warnlevel, double greenlevel)
 {
 	char l[MAX_LINE_LEN];
 	time_t starttime, duration;
@@ -298,8 +299,8 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 	}
 	repinfo->availability = 100.0 - repinfo->pct[COL_RED];
 
-	if (repinfo->availability > reportgreenlevel) color = COL_GREEN;
-	else if (repinfo->availability >= reportwarnlevel) color = COL_YELLOW;
+	if (repinfo->availability > greenlevel) color = COL_GREEN;
+	else if (repinfo->availability >= warnlevel) color = COL_YELLOW;
 	else color = COL_RED;
 
 	if (fileerrors) repinfo->fstate = "NOTOK";
@@ -353,7 +354,7 @@ int main(int argc, char *argv[])
 	p = strrchr(hostsvc, '/'); host = p+1;
 	while ((p = strchr(host, ','))) *p = '.';
 
-	color = parse_historyfile(fd, &repinfo, host, svc, reportstart, reportend);
+	color = parse_historyfile(fd, &repinfo, host, svc, reportstart, reportend, reportwarnlevel, reportgreenlevel);
 
 	for (i=0; (i<COL_COUNT); i++) {
 		dprintf("Color %d: Count=%d, pct=%.2f\n", i, repinfo.count[i], repinfo.pct[i]);
