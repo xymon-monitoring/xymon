@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.19 2004-12-20 11:22:12 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.20 2004-12-27 10:16:06 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -85,10 +85,7 @@ int main(int argc, char *argv[])
 
 	/* Each network test tagged with NET:locationname */
 	p = getenv("BBLOCATION");
-	if (p) {
-		netstring = (char *) malloc(strlen(p)+5);
-		sprintf(netstring, "NET:%s", p);
-	}
+	if (p) netstring = strdup(p);
 
 	hwalk = hostlist;
 	while (hwalk) {
