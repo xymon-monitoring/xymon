@@ -41,6 +41,13 @@ The \fBcommand\fR is defined by the \fbCMD\fR keyword. This is
 the full command including any options you want to use for this 
 task. This is required for all tasks.
 
+The \fBDISABLED\fR keyword means that this command is disabled.
+hobbitlaunch will not start this task. It is recommended that 
+you use this to disable standard tasks, instead of removing them
+or commenting them out. Upgrades to Hobbit will add standard
+tasks back into the file, so unless you have them listed as DISABLED
+then tasks may re-appear unexpectedly after an upgrade.
+
 The \fBNEEDS\fR instructs hobbitlaunch not to run this task unless
 the task defined by the NEEDS keyword is already running. This
 is used e.g. to delay the start of some application until the
