@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.99 2003-07-19 20:46:46 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.100 2003-07-22 06:58:22 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1147,6 +1147,18 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			char *tag;
 			char *startoftags = strchr(l, '#');
 
+			displayname = NULL;
+
+			/* If FQDN is not set, strip any domain off the hostname */
+			if (!fqdn) {
+				char *p = strchr(hostname, '.');
+				if (p) {
+					/* Save full name as "displayname", and modify hostname to be with no domain */
+					displayname = malcop(hostname);
+					*p = '\0';
+				}
+			}
+
 			if (startoftags) {
 				strcpy(lcop, startoftags+1);
 				tag = strtok(lcop, " \t\r\n");
@@ -1154,7 +1166,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			else tag = NULL;
 
 			alertlist = onwaplist = nopropyellowlist = nopropredlist = larrdgraphs = reporttime = NULL;
-			displayname = comment = NULL;
+			comment = NULL;
 			for (targetpagecount=0; (targetpagecount < MAX_TARGETPAGES_PER_HOST); targetpagecount++) 
 				targetpagelist[targetpagecount] = NULL;
 			targetpagecount = 0;

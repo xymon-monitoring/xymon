@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.140 2003-07-19 16:28:01 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.141 2003-07-22 06:58:22 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -47,6 +47,7 @@ bbgen_col_t   	*colhead = NULL;			/* Head of column-name list */
 summary_t	*sumhead = NULL;			/* Summaries we send out */
 dispsummary_t	*dispsums = NULL;			/* Summaries we received and display */
 int		bb_color, bb2_color, bbnk_color;	/* Top-level page colors */
+int		fqdn = 1;				/* BB FQDN setting */
 
 time_t		reportstart = 0;
 time_t		reportend = 0;
@@ -112,6 +113,7 @@ int main(int argc, char *argv[])
 	bb_color = bb2_color = bbnk_color = -1;
 	pagedir = rrddir = NULL;
 	init_timestamp();
+	fqdn = get_fqdn();
 
 	for (i = 1; (i < argc); i++) {
 		if (strcmp(argv[i], "--nopurple") == 0) {

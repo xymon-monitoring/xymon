@@ -32,6 +32,7 @@ extern int stackfclose(FILE *fd);
 extern char *stackfgets(char *buffer, unsigned int bufferlen, char *includetag);
 
 extern char *malcop(const char *s);
+extern int get_fqdn(void);
 extern void init_timestamp(void);
 extern int argnmatch(char *arg, char *match);
 extern char *skipword(const char *l);

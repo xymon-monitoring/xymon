@@ -339,6 +339,7 @@ extern time_t		reportstart, reportend;
 extern double           reportwarnlevel, reportgreenlevel;
 extern int		reportstyle;
 extern int		dynamicreport;
+extern int              fqdn;
 
 #endif
 

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.83 2003-07-19 16:28:30 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.84 2003-07-22 06:59:02 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -80,6 +80,7 @@ char		**selectedhosts;
 int		selectedcount = 0;
 time_t		frequenttestlimit = 1800;	/* Interval (seconds) when failing hosts are retried frequently */
 int		checktcpresponse = 0;
+int		fqdn = 1;
 
 testitem_t *find_test(char *hostname, char *testname)
 {
@@ -319,6 +320,15 @@ void load_tests(void)
 			/* Do nothing - it's a comment or empty line */
 		}
 		else if (sscanf(l, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
+
+			if (!fqdn) {
+				/* FQDN=OFF means strip the domain part of the hostname */
+				char *p = strchr(hostname, '.');
+
+				if (p) {
+					*p = '\0';
+				}
+			}
 
 			if (wanted_host(l, netstring, hostname)) {
 
@@ -1360,6 +1370,7 @@ int main(int argc, char *argv[])
 
 	init_timestamp();
 	envcheck(reqenv);
+	fqdn = get_fqdn();
 	if (getenv("BBLOCATION")) location = malcop(getenv("BBLOCATION"));
 	if (pingtest && getenv("IPTEST_2_CLEAR_ON_FAILED_CONN")) {
 		failgoesclear = (strcmp(getenv("IPTEST_2_CLEAR_ON_FAILED_CONN"), "TRUE") == 0);

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.75 2003-07-19 16:28:01 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.76 2003-07-22 06:58:22 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -210,6 +210,23 @@ void init_timestamp(void)
         strcpy(timestamp, ctime(&now));
         timestamp[strlen(timestamp)-1] = '\0';
 
+}
+
+int get_fqdn(void)
+{
+	int result = 1;
+
+	/* Get FQDN setting */
+	if (getenv("FQDN")) {
+		if (strcmp(getenv("FQDN"), "TRUE") == 0) {
+			result = 1;
+		}
+		else {
+			result = 0;
+		}
+	}
+
+	return result;
 }
 
 char *skipword(const char *l)
