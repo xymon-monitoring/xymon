@@ -11,15 +11,9 @@
 #ifndef __BBDWORKER_H__
 #define __BBDWORKER_H__
 
-#include "bbgen.h"
-#include "util.h"
-#include "debug.h"
-#include "bbgend.h"
-#include "bbdutil.h"
+#include <sys/time.h>
 
 extern unsigned char *get_bbgend_message(char *id, int *seq, struct timeval *timeout);
-extern unsigned char *nlencode(unsigned char *msg);
-extern void nldecode(unsigned char *msg);
 
 #endif
 
