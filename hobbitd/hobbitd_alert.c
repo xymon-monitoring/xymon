@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.24 2004-11-18 14:13:23 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.25 2004-11-25 21:31:21 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -92,7 +92,7 @@ activealerts_t *find_active(char *hostname, char *testname)
 	for (twalk = testnames; (twalk && strcmp(testname, twalk->name)); twalk = twalk->next) ;
 	if (twalk == NULL) return NULL;
 
-	for (awalk = ahead; (awalk && (awalk->hostname != hwalk) && (awalk->testname != twalk)); awalk=awalk->next) ;
+	for (awalk = ahead; (awalk && ((awalk->hostname != hwalk) || (awalk->testname != twalk))); awalk=awalk->next) ;
 	return awalk;
 }
 
