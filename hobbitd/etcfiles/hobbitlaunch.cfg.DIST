@@ -144,6 +144,15 @@
 	LOGFILE $BBSERVERLOGS/bb-display.log
 	INTERVAL 15m
 
+# bbcombotest is an extension script for the Hobbit display server. It generates
+# status messages that are combined from the status of one or more normal statuses.
+# It is controlled via the bbcombotest.cfg file.
+[bbcombotest]
+	ENVFILE /usr/local/hobbit/server/etc/hobbitserver.cfg
+	NEEDS hobbitd
+	CMD $BBHOME/ext/bbcombotest --hobbitd
+	LOGFILE $BBSERVERLOGS/bbcombotest.log
+	INTERVAL 5m
 
 # "bbnet" runs the bbtest-net tool to perform the network based tests - i.e. http, smtp, ssh, dns and
 # all of the various network protocols we need to test.
