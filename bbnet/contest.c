@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.47 2004-08-18 21:36:26 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.48 2004-08-20 20:54:49 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -37,6 +37,7 @@ static char rcsid[] = "$Id: contest.c,v 1.47 2004-08-18 21:36:26 henrik Exp $";
 #include "bbgen.h"
 #include "debug.h"
 #include "util.h"
+#include "dns.h"
 
 /* BSD uses RLIMIT_OFILE */
 #if defined(RLIMIT_OFILE) && !defined(RLIMIT_NOFILE)
@@ -1280,6 +1281,16 @@ void show_tcp_test_results(void)
 				((item->certexpires > time(NULL)) ? "valid" : "expired"));
 		}
 		printf("\n");
+
+		if ((item->svcinfo == &svcinfo_http) || (item->svcinfo == &svcinfo_https)) {
+			http_data_t *httptest = (http_data_t *) item->priv;
+
+			printf("httpstatus = %ld, open=%d, errcode=%d, parsestatus=%d\n",
+				httptest->httpstatus, httptest->tcptest->open, httptest->tcptest->errcode, httptest->parsestatus);
+			printf("Response:\n");
+				if (httptest->headers) printf("%s\n", httptest->headers); else printf("(no headers)\n");
+				if (httptest->output) printf("%s", httptest->output);
+		}
 	}
 }
 
@@ -1311,34 +1322,84 @@ hostlist_t      *hosthead = NULL;
 link_t          *linkhead = NULL;
 link_t  null_link = { "", "", "", NULL };
 
-extern void http_test_init();
-extern void http_test_show();
-
 int main(int argc, char *argv[])
 {
-	http_data_t http1 = { 0, };
-	http_data_t http2 = { 0, };
-
-	if ((argc > 1) && (strcmp(argv[1], "--debug") == 0)) debug = 1;
+	int argi;
+	char *argp, *p;
+	testitem_t *thead = NULL;
+	int timeout = 10;
 
 	init_tcp_services();
 
-	//add_tcp_test("172.16.10.100", 23, "telnet", 0, NULL, NULL, NULL);
-	//add_tcp_test("172.16.10.100", 22, "ssh", 0, NULL, NULL, NULL);
-	//add_tcp_test("172.16.10.2", 143, "imap", 0, NULL, NULL, NULL);
-	//add_tcp_test("172.16.10.2", 110, "pop3", 0, NULL, NULL, NULL);
-	//add_tcp_test("207.46.249.252", 80, "http", 0, "GET / HTTP/1.0\r\n\r\n", &http1, httpcallback);
-	//add_tcp_test("172.16.10.2", 80, "http", NULL, 0, "GET / HTTP/1.0\r\nHost: www.hswn.dk\r\n\r\n", 
-	//	     &http2, tcp_http_data_callback, tcp_http_final_callback);
-	//http1.contentcheck = CONTENTCHECK_DIGEST; http1.digestctx = digest_init("md5");
-	//http2.contentcheck = CONTENTCHECK_DIGEST; http2.digestctx = digest_init("md5");
+	for (argi=1; (argi<argc); argi++) {
+		if (strcmp(argv[argi], "--debug") == 0) {
+			debug = 1;
+		}
+		else if (strncmp(argv[argi], "--timeout=", 10) == 0) {
+			p = strchr(argv[argi], '=');
+			timeout = atoi(p+1);
+			if (timeout <= 0) timeout = 10;
+		}
+		else {
+			char *ip;
+			char *port;
+			char *testspec;
 
-	http_test_init();
+			argp = argv[argi]; ip = port = testspec = NULL;
+
+			p = strchr(argp, '/');
+			ip = argp;
+			if (p) {
+				*p = '\0'; argp = (p+1); 
+				p = strchr(argp, '/');
+				if (p) {
+					port = argp; *p = '\0'; argp = (p+1);
+				}
+				else {
+					port = "0";
+				}
+				testspec = argp;
+			}
+
+			if (ip && port && testspec) {
+				if ( 	(strncmp(argp, "http", 4) == 0) ||
+					(strncmp(argp, "cont;", 5) == 0) ||
+					(strncmp(argp, "post;", 5) == 0) ||
+					(strncmp(argp, "nocont;", 7) == 0) ||
+					(strncmp(argp, "nopost;", 7) == 0) ||
+					(strncmp(argp, "type;", 5) == 0) ) {
+
+					testitem_t *testitem = calloc(1, sizeof(testitem_t));
+					testedhost_t *hostitem = calloc(1, sizeof(testedhost_t));
+					http_data_t *httptest;
+
+					testitem->host = hostitem;
+					testitem->testspec = testspec;
+					strcpy(hostitem->ip, ip);
+					add_url_to_dns_queue(testspec);
+					add_http_test(testitem);
+
+					testitem->next = NULL;
+					thead = testitem;
+
+					httptest = (http_data_t *)testitem->privdata;
+					printf("TCP connection goes to %s:%d\n",
+						inet_ntoa(httptest->tcptest->addr.sin_addr),
+						ntohs(httptest->tcptest->addr.sin_port));
+					printf("Request:\n%s\n", httptest->tcptest->sendtxt);
+				}
+				else {
+					add_tcp_test(ip, atoi(port), testspec, NULL, 0, NULL, NULL, NULL, NULL);
+				}
+			}
+			else {
+				printf("Invalid testspec '%s'\n", argv[argi]);
+			}
+		}
+	}
 
 	do_tcp_tests(10, 0);
-
 	show_tcp_test_results();
-	http_test_show();
 	return 0;
 }
 #endif
