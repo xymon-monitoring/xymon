@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.160 2003-10-01 07:24:24 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.161 2003-10-02 20:34:01 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -404,6 +404,13 @@ int main(int argc, char *argv[])
 			}
 			else egocolumn = "bbgen";
 			timing = 1;
+		}
+		else if (argnmatch(argv[i], "--nklog=") || (strcmp(argv[i], "--nklog") == 0)) {
+			char *lp = strchr(argv[i], '=');
+			if (lp) {
+				lognkstatus = malcop(lp+1);
+			}
+			else lognkstatus = "nk";
 		}
 		else if (strcmp(argv[i], "--timing") == 0) {
 			timing = 1;

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.100 2003-09-27 09:50:55 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.101 2003-10-02 20:34:01 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -40,6 +40,7 @@ static char rcsid[] = "$Id: pagegen.c,v 1.100 2003-09-27 09:50:55 henrik Exp $";
 #include "acklog.h"
 #include "bb-replog.h"
 #include "reportdata.h"
+#include "sendmsg.h"
 
 int  subpagecolumns = 1;
 int  hostsbeforepages = 0;
@@ -57,6 +58,7 @@ int  bb2eventlog = 1;
 int  bb2acklog = 1;
 int  bb2eventlogmaxcount = 100;
 int  bb2eventlogmaxtime = 240;
+char *lognkstatus = NULL;
 
 /* Format strings for htaccess files */
 char *htaccess = NULL;
@@ -131,7 +133,11 @@ int interesting_column(int pagetype, int color, int alert, char *columnname, cha
 		   */
 		if (alert) {
 			if (color == COL_RED)  return 1;
-			if ( (color == COL_YELLOW) || (color == COL_CLEAR) ) return (strcmp(columnname, "conn") != 0);
+			if ( (color == COL_YELLOW) || (color == COL_CLEAR) ) {
+				if (strcmp(columnname, "conn") == 0) return 0;
+				if (lognkstatus && (strcmp(columnname, lognkstatus) == 0)) return 0;
+				return 1;
+			}
 		}
 		break;
 	}
@@ -1127,6 +1133,57 @@ int do_bb2_page(char *filename, int summarytype)
 	}
 
 	free(tmpfilename);
+
+	if (lognkstatus && (summarytype == PAGE_NK)) {
+		host_t *hwalk;
+		entry_t *ewalk;
+		char *msgptr;
+		char msgline[MAX_LINE_LEN];
+		FILE *nklog;
+		char nklogfn[MAX_PATH];
+		char svcspace;
+
+		sprintf(nklogfn, "%s/nkstatus.log", getenv("BBHOME"));
+		nklog = fopen(nklogfn, "a");
+		if (nklog == NULL) {
+			errprintf("Cannot log NK status to %s\n", nklogfn);
+		}
+
+		init_timestamp();
+		combo_start();
+		init_status(bb2page.color);
+		sprintf(msgline, "status %s.%s %s %s NK page %s\n\n", getenv("MACHINE"), 
+			lognkstatus, colorname(bb2page.color), timestamp, colorname(bb2page.color));
+		addtostatus(msgline);
+
+		if (nklog) fprintf(nklog, "%u\t%s\t", (unsigned int)time(NULL), colorname(bb2page.color));
+
+		for (hwalk = bb2page.hosts; hwalk; hwalk = hwalk->next) {
+			msgptr = msgline;
+			msgptr += sprintf(msgline, "&%s %s :", colorname(hwalk->color), hwalk->hostname);
+			if (nklog) fprintf(nklog, "%s ", hwalk->hostname);
+			svcspace = '(';
+
+			for (ewalk = hwalk->entries; (ewalk); ewalk = ewalk->next) {
+				if ((ewalk->color == COL_RED) || (ewalk->color == COL_YELLOW)) {
+					msgptr += sprintf(msgptr, "%s", ewalk->column->name);
+					if (nklog) fprintf(nklog, "%c%s:%s", svcspace, ewalk->column->name, colorname(ewalk->color));
+					svcspace = ' ';
+				}
+			}
+			strcpy(msgptr, "\n");
+			addtostatus(msgline);
+
+			if (nklog) fprintf(nklog, ")\t");
+		}
+		finish_status();
+		combo_end();
+
+		if (nklog) {
+			fprintf(nklog, "\n");
+			fclose(nklog);
+		}
+	}
 
 	{
 		/* Free temporary hostlist */
