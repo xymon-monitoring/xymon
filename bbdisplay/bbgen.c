@@ -1134,10 +1134,13 @@ void do_subpage(page_t *page, char *filename, char *upperpagename)
 char *histlogurl(char *hostname, char *service, time_t histtime)
 {
 	static char url[512];
+	char timestr[40];
 
-	strcpy(url, "");
-
-/* <TD><A HREF=\"$CGIBINURL/bb-histlog.sh?HOST=$HOSTDIR&SERVICE=$SERVICE&TIMEBUF=${1}_${2}_${3}_${4}_${5}\"> */
+	/* cgi-bin/bb-histlog.sh?HOST=SLS-P-CE1.slsdomain.sls.dk&SERVICE=msgs&TIMEBUF=Fri_Nov_22_16:01:08_2002 */
+	
+	strftime(timestr, sizeof(timestr), "%a_%b_%d_%H:%M:%S_%Y", localtime(&histtime));
+	sprintf(url, "%s/bb-histlog.sh?HOST=%s&SERVICE=%s&TIMEBUF=%s", 
+		getenv("CGIBINURL"), hostname, service, timestr);
 
 	return url;
 }
@@ -1217,7 +1220,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 		fprintf(output, "<BR><BR>\n");
         	fprintf(output, "<TABLE SUMMARY=\"$EVENTSTITLE\" BORDER=0>\n");
 		fprintf(output, "<TR BGCOLOR=\"333333\">\n");
-		fprintf(output, "<TD ALIGN=CENTER COLSPAN=5><FONT SIZE=-1 COLOR=\"teal\">%s</FONT></TD></TR>\n", title);
+		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"teal\">%s</FONT></TD></TR>\n", title);
 
 		for (num = lastevent; (num != firstevent); num = ((num == 0) ? (maxcount-1) : (num - 1)) ) {
 			fprintf(output, "<TR BGCOLOR=%s>\n", bgcolors[bgcolor]);
@@ -1234,6 +1237,8 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 				getenv("BBSKIN"), colorname(events[num].oldcolor), 
 				getenv("DOTHEIGHT"), getenv("DOTWIDTH"), 
 				colorname(events[num].oldcolor));
+			fprintf(output, "<IMG SRC=\"%s/arrow.gif\" BORDER=0 ALT=\"From -&gt; To\">\n", 
+				getenv("BBSKIN"));
 			fprintf(output, "<TD><A HREF=\"%s\">\n", 
 				histlogurl(events[num].hostname, events[num].service, events[num].eventtime));
 			fprintf(output, "<IMG SRC=\"%s/%s.gif\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=%s></A>\n", 
