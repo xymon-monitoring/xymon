@@ -10,7 +10,7 @@
 
 * Ny bbd implementerer en samlet BBDISPLAY+BBPAGER. Separat BBPAGER
   server understøttes ikke. Der konstrueres en ny forsimplet protokol 
-  "sack" til at registrere acknowledgements.
+  "bbgendack" til at registrere acknowledgements.
   Det betyder at "online", "offline", "page" og "ack" beskeder
   ignoreres. 
 
@@ -31,20 +31,100 @@
                status-farven skifter.
   - "page"   : Fødes med indholdet af "status" beskeder hvor
                status skifter mellem en ikke-alarm farve og en
-	       alarm-farve, samt med "sack" beskeder.
+	       alarm-farve, samt med "bbgendack" beskeder.
   - "data"   : Fødes med indholdet af "data" beskeder
   - "notes"  : Fødes med indholdet af "notes" beskeder
 
 * Der startes et antal hjælpe-processer til at håndtere I/O og
   andre "tunge" tasks:
-  - statuslog: Abonnerer på "status". Opdaterer bbvar/logs/ filer.
-  - htmllog  : Abonnerer på "status". Opdaterer bb/www/html/ filer.
+  - alert    : Abonnerer på "page". Udsender alarmer.
   - history  : Abonnerer på "stachg". Opdaterer bbvar/hist/allevents,
                bbvar/hist/{HOST,HOST.TEST}, bbvar/histlogs/HOST/TEST/*
-  - alert    : Abonnerer på "page". Udsender alarmer via e-mail.
-               Opdaterer bbvar/acks/{notifications,recoveries}.log.
   - datastore: Abonnerer på "data". Opdaterer bbvar/data/ filer.
   - infostore: Abonnerer på "notes". Opdaterer bbvar/notes/ filer.
-  - larrd    : Abonnerer på "status" og "data". Opdaterer LARRD
-               datafiler. Prioritet 2.
+  - larrd*2  : Abonnerer på "status" og "data". Opdaterer LARRD.
+  - htmllog  : Abonnerer på "status". Opdaterer bb/www/html/ filer.
+  - statuslog: Abonnerer på "status". Opdaterer bbvar/logs/ filer.
+
+* kanal protokoller
+
+  status
+  ------
+  @@status|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage
+  <status message>
+
+  stachg
+  ------
+  @@stachg|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime
+
+  page
+  ----
+  @@page|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime
+  <message>
+
+  @@ack|timestamp|sender|hostname|testname|expiretime
+  <ack message>
+
+  Note that "page" modules get messages whenever the alert-state of a test
+  changes. I.e. a message is generated whenever a test goes from a color
+  that is non-alerting to a color that is alerting, or vice versa.
+
+  How does the pager know when a test is disabled ? It will get a "page"
+  message with color=blue, if the old color of the test was in an alert
+  state. (If it wasn't, the pager module does not need to know that the
+  test has been disabled). It should then clear any stored info about
+  active alerts for this host.test combination.
+
+  data
+  ----
+  @@data|timestamp|sender|hostname|testname
+  <message>
+
+  notes
+  -----
+  @@notes|timestamp|sender|hostname
+  <message>
+
+  Alle kanaler
+  ------------
+  @@drophost|timestamp|hostname
+  @@droptest|timestamp|hostname|testname
+  @@renamehost|timestamp|oldhostname|newhostname
+  @@renametest|timestamp|oldhostname|oldtestname|newtestname
+
+
+* Simpel "ack" protokol.
+  - De gamle "security codes" er væk.
+  - bbd udsteder en "cookie" som svar på en "bbgendcookie HOST.TEST"
+    request. [Hvordan sikres adgangen til cookies ? Via web adgangs-
+    kontrol, og "bbgendcookie" requests tillades kun fra 1 IP, default
+    127.0.0.1]
+  - En cookie er et tilfældigt tal, og gælder i 5 minutter. bbd holder
+    rede på udstedte cookies og hvilken host.test kombination den gælder
+    til.
+  - "bbgendack cookie duration [ack message]" checker cookie, og hvis
+    den er gyldig sættes ack-flaget på den pågældende statuslog. Denne
+    besked videresendes på "page" kanalen så alarmerings-moduler ved
+    om en status er ack'ed.
+  - En "ack" logges i bbd_net med expire-time og tekst. Disse videresendes i
+    status-beskeder.
+
+* "bbgendlog HOST.TEST" request returnerer den aktuelle statuslog for en
+  host.test kombination.
+
+* "bbgendboard" request returnerer 1 linie per statuslog med opsummering af
+  status, d.v.s. al information pånær fritekst fra logfilen. Indeholder
+  også "meta" information såsom hvor den kom fra, tid for sidste status
+  skift osv. Alt det der tidligere aflæstes fra bbvar/logs/ filerne.
+
+* "bbgenddrop HOSTNAME [TESTNAME]" drops all information about a host, 
+  or a host.test combination. This propagates a "drophost" / "droptest"
+  message to all workers, so they can delete permanent storage. This
+  will enable a simple "bbrm" implementation.
+
+* "bbgendrename OLDHOSTNAME NEWHOSTNAME" renames a host. This propagates
+  a "renamehost" message to all workers.
+
+* "bbgendrename HOSTNAME OLDTEST NEWTEST" renames a test. This propagates
+  a "renametest" message to all workers.
 
