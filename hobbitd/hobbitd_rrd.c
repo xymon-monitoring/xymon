@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.4 2004-11-18 13:22:30 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.5 2004-11-24 12:39:58 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -90,7 +90,6 @@ int main(int argc, char *argv[])
 		metadata[metacount] = NULL;
 
 		if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
-			printf("Shutting down\n");
 			running = 0;
 			continue;
 		}
