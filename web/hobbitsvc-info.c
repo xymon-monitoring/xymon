@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.38 2003-11-21 13:22:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.39 2004-02-23 15:00:59 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -282,6 +282,7 @@ int generate_info(char *infocolumn)
 		while (p) {
 			if ( (strncmp(p, "content=", 8) == 0) ||
 			     (strncmp(p, "cont;", 5) == 0)    ||
+			     (strncmp(p, "nocont;", 7) == 0)    ||
 			     (strncmp(p, "post;", 5) == 0)       ) {
 
 				if (firstcontent) {
@@ -293,12 +294,13 @@ int generate_info(char *infocolumn)
 					realurl(p, NULL, NULL, NULL, NULL), 
 					realurl(p, NULL, NULL, NULL, NULL)); 
 				addtobuffer(&infobuf, &infobuflen, l);
-				if ((strncmp(p, "cont;", 5) == 0) || (strncmp(p, "post;", 5) == 0)) {
+				if ((strncmp(p, "cont;", 5) == 0) || (strncmp(p, "nocont;", 7) == 0) || (strncmp(p, "post;", 5) == 0)) {
 					char *wanted = strrchr(p, ';');
 
 					if (wanted) {
 						wanted++;
-						sprintf(l, "&nbsp; must return '%s'", wanted);
+						sprintf(l, "&nbsp; %s return '%s'", 
+							((strncmp(p, "nocont;", 7) == 0) ? "cannot" : "must"), wanted);
 						addtobuffer(&infobuf, &infobuflen, l);
 					}
 				}

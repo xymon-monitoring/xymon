@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.56 2004-01-26 15:01:48 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.57 2004-02-23 15:01:33 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -207,6 +207,21 @@ void add_http_test(testitem_t *t)
 		else req->contstatus = STATUS_CONTENTMATCH_NOFILE;
 		proto = t->testspec+5;
 	}
+	else if (strncmp(t->testspec, "nocont;", 7) == 0) {
+		char *p = strrchr(t->testspec, ';');
+		if (p) {
+			req->contentcheck = CONTENTCHECK_NOREGEX;
+
+			req->exp = (void *) malloc(sizeof(regex_t));
+			status = regcomp((regex_t *)req->exp, p+1, REG_EXTENDED|REG_NOSUB);
+			if (status) {
+				errprintf("Failed to compile regexp '%s' for URL %s\n", p+1, req->url);
+				req->contstatus = STATUS_CONTENTMATCH_BADREGEX;
+			}
+		}
+		else req->contstatus = STATUS_CONTENTMATCH_NOFILE;
+		proto = t->testspec+5;
+	}
 	else if (strncmp(t->testspec, "post;", 5) == 0) {
 		/* POST request - whee! */
 
@@ -349,6 +364,7 @@ static size_t data_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 		break;
 
 	  case CONTENTCHECK_REGEX:
+	  case CONTENTCHECK_NOREGEX:
 		if (req->output == NULL) {
 			req->output = (char *) malloc(count+1);
 			memcpy(req->output, ptr, count);
@@ -754,6 +770,19 @@ void send_content_results(service_t *httptest, service_t *ftptest, testedhost_t 
 							regmatch_t foo[1];
 
 							status = regexec((regex_t *) req->exp, req->output, 0, foo, 0);
+							regfree((regex_t *) req->exp);
+						}
+						else {
+							/* output may be null if we only got a redirect */
+							status = STATUS_CONTENTMATCH_FAILED;
+						}
+						break;
+
+					  case CONTENTCHECK_NOREGEX:
+						if (req->output) {
+							regmatch_t foo[1];
+
+							status = (!regexec((regex_t *) req->exp, req->output, 0, foo, 0));
 							regfree((regex_t *) req->exp);
 						}
 						else {

@@ -872,6 +872,13 @@ in knowing if it is possible to submit the form (but don't care
 about the data), this can be an empty string - but the ';' at the 
 end is required.
 
+.IP nocont;URL;forbidden_data_regexp
+This tag works just like "cont" tag, but reverses the test. 
+It is green when the "forbidden_data_regexp" is NOT found in
+the response, and red when it IS found. So it can be used to 
+watch for data that should NOT be present in the response,
+e.g. a server error message.
+
 .SH FILES
 .I $BBHOME/etc/bb-hosts
 
