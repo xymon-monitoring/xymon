@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.125 2005-03-06 07:25:07 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.126 2005-03-07 08:02:25 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -2173,14 +2173,26 @@ void check_purple_status(void)
 				}
 				else {
 					hobbitd_log_t *tmp;
-					int newcolor = COL_PURPLE;
+					int newcolor;
 
 					/*
-					 * See if this is a (client) test where we have a red "conn" test.
+					 * See if this is a host where the "conn" test shows it is down.
 					 * If yes, then go CLEAR, instead of PURPLE.
 					 */
 					for (tmp = hwalk->logs; (tmp && strcmp(tmp->test->testname, xgetenv("PINGCOLUMN"))); tmp = tmp->next) ;
-					if (tmp && (tmp->color == COL_RED)) newcolor = COL_CLEAR;
+					if (tmp) {
+						switch (tmp->color) {
+						  case COL_RED:
+						  case COL_YELLOW:
+						  case COL_BLUE:
+							newcolor = COL_CLEAR;
+							break;
+
+						  default:
+							newcolor = COL_PURPLE;
+							break;
+						}
+					}
 
 					handle_status(lwalk->message, "hobbitd", 
 						hwalk->hostname, lwalk->test->testname, lwalk, newcolor);
