@@ -19,6 +19,10 @@ BBSERVERCGIURL="@BBCGIURL@"		# The URL for the Hobbit CGI scripts.
 # as well as the BBHOME/bin directory where all of the Hobbit programs reside.
 PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:@BBHOME@/bin"
 
+# Some systems need extra settings e.g. to locate run-time libraries.
+# You can add these extra settings here:
+@RUNTIMEDEFS@
+
 
 ##### Normally you do not need to modify anything below this point #####
 

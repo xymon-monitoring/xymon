@@ -22,7 +22,7 @@ fi
 
 case "$1" in
    "start")
-	@BBHOME@/bin/hobbitlaunch --config=@BBHOME@/etc/hobbitlaunch.cfg --env=@BBHOME@/etc/hobbitserver.cfg --log=@BBLOGDIR@/hobbitlaunch.log --pidfile=@BBLOGDIR@/hobbitlaunch.pid
+	@RUNTIMEDEFS@ @BBHOME@/bin/hobbitlaunch --config=@BBHOME@/etc/hobbitlaunch.cfg --env=@BBHOME@/etc/hobbitserver.cfg --log=@BBLOGDIR@/hobbitlaunch.log --pidfile=@BBLOGDIR@/hobbitlaunch.pid
 	echo "Hobbit started"
 	;;
 
