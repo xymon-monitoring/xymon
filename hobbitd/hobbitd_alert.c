@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.2 2004-10-16 12:37:14 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.3 2004-10-16 12:44:44 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -48,7 +48,6 @@ static char rcsid[] = "$Id: hobbitd_alert.c,v 1.2 2004-10-16 12:37:14 henrik Exp
 
 #include "bbdworker.h"
 #include "bbd_alert.h"
-#include "alert_simple.h"
 
 static volatile int running = 1;
 
