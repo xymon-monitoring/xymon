@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.32 2004-10-24 07:07:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.33 2004-10-24 12:55:27 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -939,6 +939,8 @@ void do_message(conn_t *msg)
 		/* 
 		 * Request for a single status log
 		 * bbgendlog HOST.TEST
+		 *
+		 * hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|ackmsg|dismsg
 		 */
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 0, 0);
 		if (log) {
@@ -954,11 +956,12 @@ void do_message(conn_t *msg)
 			bufp = buf = (char *)malloc(bufsz);
 			buflen = 0;
 
-			bufp += sprintf(bufp, "%s|%s|%s|%s|%d|%d|%d|%s|%d", 
+			bufp += sprintf(bufp, "%s|%s|%s|%s|%d|%d|%d|%d|%d|%s|%d", 
 					h->hostname, log->test->testname, 
 					colnames[log->color], 
 					(log->testflags ? log->testflags : ""),
-					(int) log->logtime, (int) log->lastchange, (int) log->validtime, 
+					(int) log->lastchange, (int) log->logtime, (int) log->validtime, 
+					(int) log->acktime, (int) log->enabletime,
 					log->sender, log->cookie);
 
 			if (log->ackmsg && (log->acktime > now)) ackmsg = nlencode(log->ackmsg);
@@ -975,7 +978,11 @@ void do_message(conn_t *msg)
 		}
 	}
 	else if (strncmp(msg->buf, "bbgendboard", 11) == 0) {
-		/* Request for a summmary of all known status logs */
+		/* 
+		 * Request for a summmary of all known status logs
+		 *
+		 * hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|1st line of message
+		 */
 		bbd_hostlist_t *hwalk;
 		bbd_log_t *lwalk;
 		char *buf, *bufp;
@@ -996,11 +1003,13 @@ void do_message(conn_t *msg)
 					buf = (char *)realloc(buf, bufsz);
 					bufp = buf + buflen;
 				}
-				n = sprintf(bufp, "%s|%s|%s|%s|%d|%d|%d|%s|%d|%s\n", 
+				n = sprintf(bufp, "%s|%s|%s|%s|%d|%d|%d|%d|%d|%s|%d|%s\n", 
 					hwalk->hostname, lwalk->test->testname, 
 					colnames[lwalk->color], 
 					(lwalk->testflags ? lwalk->testflags : ""),
-					(int) lwalk->logtime, (int) lwalk->lastchange, (int) lwalk->validtime,
+					(int) lwalk->lastchange, 
+					(int) lwalk->logtime, (int) lwalk->validtime,
+					(int) lwalk->acktime, (int) lwalk->enabletime,
 					lwalk->sender, lwalk->cookie, msg_data(lwalk->message));
 				bufp += n;
 				buflen += n;
