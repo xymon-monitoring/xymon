@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.24 2003-06-30 13:37:49 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.25 2003-07-17 21:06:16 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -372,7 +372,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043)
 				fprintf(fd, "\n");
 				fprintf(fd, "<CENTER><TABLE ALIGN=CENTER BORDER=0>\n");
 				fprintf(fd, "<TR><TH><FONT %s>\n", getenv("MKBBROWFONT"));
-				fprintf(fd, "%s - %s<BR><HR WIDTH=60%%></TH>\n", hostwalk->hostentry->hostname, larrdcolumn);
+				fprintf(fd, "%s - %s<BR><HR WIDTH=\"60%%\"></TH>\n", hostwalk->hostentry->hostname, larrdcolumn);
 				fprintf(fd, "<TR><TD><H3>\n");
 				fprintf(fd, "green %s - larrd is accumulating <center><BR>\n", timestamp);
 				fprintf(fd, "</H3><PRE>\n");

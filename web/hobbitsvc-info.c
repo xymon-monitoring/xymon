@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.25 2003-07-09 10:44:09 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.26 2003-07-17 21:06:16 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -302,7 +302,7 @@ int generate_info(char *infocolumn)
 			fprintf(fd, "\n");
 			fprintf(fd, "<CENTER><TABLE ALIGN=CENTER BORDER=0>\n");
 			fprintf(fd, "<TR><TH ALIGN=CENTER><FONT %s>\n", getenv("MKBBROWFONT"));
-			fprintf(fd, "%s - %s<BR><HR WIDTH=60%%></FONT></TH>\n", hostwalk->hostentry->hostname, infocolumn);
+			fprintf(fd, "%s - %s<BR><HR WIDTH=\"60%%\"></FONT></TH>\n", hostwalk->hostentry->hostname, infocolumn);
 
 			fprintf(fd, "<TR><TD ALIGN=LEFT>\n<br>%s\n</TD></TR>\n", infobuf);
 			fprintf(fd, "\n");

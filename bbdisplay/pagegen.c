@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.80 2003-07-15 18:33:19 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.81 2003-07-17 21:06:16 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -328,7 +328,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 	if (groupcols) {
 
 		/* Start the table ... */
-		fprintf(output, "<CENTER><TABLE SUMMARY=\"Group Block\" BORDER=0>\n");
+		fprintf(output, "<CENTER><TABLE SUMMARY=\"Group Block\" BORDER=0 CELLPADDING=2>\n");
 
 		/* Generate the host rows */
 		for (h = head; (h); h = h->next) {
@@ -336,13 +336,13 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 			dprintf("Host:%s, pretitle:%s\n", h->hostname, textornull(h->pretitle));
 
 			if (h->pretitle) {
-				fprintf(output, "<tr><td colspan=%d align=center valign=middle cellpadding=2><br><font %s>%s</font></td></tr>\n", 
+				fprintf(output, "<tr><td colspan=%d align=center valign=middle><br><font %s>%s</font></td></tr>\n", 
 						columncount+1, getenv("MKBBTITLE"), h->pretitle);
 			}
 
 			if (h->pretitle || (h == head)) {
 				/* output group title and column headings */
-				fprintf(output, "<TR><TD VALIGN=MIDDLE ROWSPAN=2 CELLPADDING=2><CENTER><FONT %s>%s</FONT></CENTER></TD>\n", 
+				fprintf(output, "<TR><TD VALIGN=MIDDLE ROWSPAN=2><CENTER><FONT %s>%s</FONT></CENTER></TD>\n", 
 					getenv("MKBBTITLE"), grouptitle);
 				for (gc=groupcols; (gc); gc = gc->next) {
 					fprintf(output, " <TD ALIGN=CENTER VALIGN=BOTTOM WIDTH=45>\n");
@@ -350,10 +350,10 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 						columnlink(gc->column->link, gc->column->name), 
 						getenv("MKBBCOLFONT"), gc->column->name);
 				}
-				fprintf(output, "</TR> \n<TR><TD COLSPAN=%d><HR WIDTH=100%%></TD></TR>\n\n", columncount);
+				fprintf(output, "</TR> \n<TR><TD COLSPAN=%d><HR WIDTH=\"100%%\"></TD></TR>\n\n", columncount);
 			}
 
-			fprintf(output, "<TR>\n <TD NOWRAP><A NAME=\"%s\">\n", h->hostname);
+			fprintf(output, "<TR>\n <TD NOWRAP><A NAME=\"%s\">&nbsp;</A>\n", h->hostname);
 
 			/* First the hostname and a notes-link.
 			 *
@@ -537,7 +537,7 @@ void do_groups(group_t *head, FILE *output, char *pagepath)
 		if (g->hosts && g->pretitle) {
 			fprintf(output, "<CENTER><TABLE BORDER=0>\n");
 			fprintf(output, "  <TR><TD><CENTER><FONT %s>%s</FONT></CENTER></TD></TR>\n", getenv("MKBBTITLE"), g->pretitle);
-			fprintf(output, "  <TR><TD><HR WIDTH=100%%></TD></TR>\n");
+			fprintf(output, "  <TR><TD><HR WIDTH=\"100%%\"></TD></TR>\n");
 			fprintf(output, "</TABLE></CENTER>\n");
 		}
 
@@ -626,13 +626,13 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 		}
 	}
 
-	fprintf(output, "<A NAME=\"summaries-blk\">\n");
+	fprintf(output, "<A NAME=\"summaries-blk\">&nbsp;</A>\n");
 	fprintf(output, "<CENTER>\n");
 	fprintf(output, "<TABLE SUMMARY=\"Summary Block\" BORDER=0><TR><TD>\n");
 	fprintf(output, "<CENTER><FONT %s>\n", getenv("MKBBTITLE"));
 	fprintf(output, "%s\n", getenv("MKBBREMOTE"));
 	fprintf(output, "</FONT></CENTER></TD></TR><TR><TD>\n");
-	fprintf(output, "<HR WIDTH=100%%></TD></TR>\n");
+	fprintf(output, "<HR WIDTH=\"100%%\"></TD></TR>\n");
 	fprintf(output, "<TR><TD>\n");
 
 	do_hosts(sumhosts, NULL, output, "", 0, NULL);
@@ -654,7 +654,7 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *pagepath)
 	char	pagelink[MAX_PATH];
 
 	if (subs) {
-		fprintf(output, "<A NAME=\"pages-blk\">\n");
+		fprintf(output, "<A NAME=\"pages-blk\">&nbsp;</A>\n");
 
 		fprintf(output, "<BR>\n<CENTER>\n");
 		fprintf(output, "<TABLE SUMMARY=\"Page Block\" BORDER=0>\n");
@@ -674,7 +674,7 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *pagepath)
 						(2*subpagecolumns + (subpagecolumns - 1)), getenv("MKBBTITLE"));
 				fprintf(output, "   <br>%s\n", p->pretitle);
 				fprintf(output, "</FONT></CENTER></TD></TR>\n");
-				fprintf(output, "<TR><TD COLSPAN=%d><HR WIDTH=100%%></TD></TR>\n", 
+				fprintf(output, "<TR><TD COLSPAN=%d><HR WIDTH=\"100%%\"></TD></TR>\n", 
 						(2*subpagecolumns + (subpagecolumns - 1)));
 			}
 
@@ -704,7 +704,7 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *pagepath)
 			}
 			else {
 				/* Need to have a little space between columns */
-				fprintf(output, "<TD WIDTH=%s>&nbsp;</TD>", getenv("DOTWIDTH"));
+				fprintf(output, "<TD WIDTH=\"%s\">&nbsp;</TD>", getenv("DOTWIDTH"));
 				currentcolumn++;
 			}
 		}
@@ -804,7 +804,7 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 		fprintf(output, "  <TR><TD><br><CENTER><FONT %s>%s</FONT></CENTER></TD></TR>\n", 
 			getenv("MKBBTITLE"), 
 			(page->pretitle ? page->pretitle : (defaultpagetitle ? defaultpagetitle : getenv("MKBBLOCAL"))));
-		fprintf(output, "  <TR><TD><HR WIDTH=100%%></TD></TR>\n");
+		fprintf(output, "  <TR><TD><HR WIDTH=\"100%%\"></TD></TR>\n");
 		fprintf(output, "</TABLE></CENTER>\n");
 	}
 

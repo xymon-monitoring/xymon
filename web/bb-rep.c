@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.10 2003-07-08 09:04:41 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.11 2003-07-17 21:06:16 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -244,7 +244,7 @@ int main(int argc, char *argv[])
 
 	strftime(startstr, sizeof(startstr), "%b %d %Y", localtime(&starttime));
 	strftime(endstr, sizeof(endstr), "%b %d %Y", localtime(&endtime));
-	printf("<CENTER><A NAME=begindata>\n");
+	printf("<CENTER><A NAME=begindata>&nbsp;</A>\n");
 	printf("<BR><BR><BR><BR>\n");
 	printf("<H3>Generating report for the period: %s - %s (%s)<BR>\n", startstr, endstr, style);
 	printf("<P><P>\n");

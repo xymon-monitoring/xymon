@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-snapshot.c,v 1.1 2003-07-14 11:12:58 henrik Exp $";
+static char rcsid[] = "$Id: bb-snapshot.c,v 1.2 2003-07-17 21:06:16 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
 	headfoot(stdout, "bbrep", "", "header", COL_BLUE);
 
 	strftime(startstr, sizeof(startstr), "%b %d %Y", localtime(&starttime));
-	printf("<CENTER><A NAME=begindata>\n");
+	printf("<CENTER><A NAME=begindata>&nbsp;</A>\n");
 	printf("<BR><BR><BR><BR>\n");
 	printf("<H3>Generating snapshot: %s<BR>\n", startstr);
 	printf("<P><P>\n");
