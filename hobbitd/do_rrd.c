@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.6 2004-11-13 21:59:46 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.7 2004-11-25 15:07:21 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -99,6 +99,7 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 #include "larrd/do_bind.c"
 #include "larrd/do_sendmail.c"
 #include "larrd/do_mailq.c"
+#include "larrd/do_bea.c"
 
 #include "larrd/do_net.c"
 
@@ -127,6 +128,7 @@ void update_larrd(char *hostname, char *testname, char *msg, time_t tstamp, larr
 	else if (strcmp(id, "bind") == 0)     res = do_bind_larrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "sendmail") == 0) res = do_sendmail_larrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "mailq") == 0)    res = do_mailq_larrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "bea") == 0)      res = do_bea_larrd(hostname, testname, msg, tstamp);
 
 	else if (ldef) {
 		/* Assume anything else with a known LARRD definition is a network test */
