@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.50 2003-09-12 11:23:34 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.51 2003-09-13 16:02:23 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -25,6 +25,7 @@ static char rcsid[] = "$Id: httptest.c,v 1.50 2003-09-12 11:23:34 henrik Exp $";
 #include "debug.h"
 #include "bbtest-net.h"
 #include "httptest.h"
+#include "digest.h"
 
 char *http_library_version = NULL;
 
@@ -140,11 +141,11 @@ void add_http_test(testitem_t *t)
 	req->output = NULL;
 	req->httpcolor = -1;
 	req->faileddeps = NULL;
-	req->sslcolor = -1;
 	req->logcert = 0;
 	req->certinfo = NULL;
 	req->certexpires = 0;
 	req->totaltime = 0.0;
+	req->contentcheck = CONTENTCHECK_NONE;
 	req->exp = NULL;
 
 	if ((strncmp(req->url, "https", 5) == 0) && !can_ssl) {
@@ -165,8 +166,8 @@ void add_http_test(testitem_t *t)
 		if (contentfd) {
 			if (fgets(l, sizeof(l), contentfd)) {
 				p = strchr(l, '\n'); if (p) { *p = '\0'; };
-				req->exp = (regex_t *) malloc(sizeof(regex_t));
-				status = regcomp(req->exp, l, REG_EXTENDED|REG_NOSUB);
+				req->exp = (void *) malloc(sizeof(regex_t));
+				status = regcomp((regex_t *)req->exp, l, REG_EXTENDED|REG_NOSUB);
 				if (status) {
 					errprintf("Failed to compile regexp '%s' for URL %s\n", p, req->url);
 					req->contstatus = STATUS_CONTENTMATCH_BADREGEX;
@@ -181,15 +182,24 @@ void add_http_test(testitem_t *t)
 			req->contstatus = STATUS_CONTENTMATCH_NOFILE;
 		}
 		proto = t->testspec + 8;
+		req->contentcheck = CONTENTCHECK_REGEX;
 	}
 	else if (strncmp(t->testspec, "cont;", 5) == 0) {
 		char *p = strrchr(t->testspec, ';');
 		if (p) {
-			req->exp = (regex_t *) malloc(sizeof(regex_t));
-			status = regcomp(req->exp, p+1, REG_EXTENDED|REG_NOSUB);
-			if (status) {
-				errprintf("Failed to compile regexp '%s' for URL %s\n", p+1, req->url);
-				req->contstatus = STATUS_CONTENTMATCH_BADREGEX;
+			if ( *(p+1) == '#' ) {
+				req->contentcheck = CONTENTCHECK_DIGEST;
+				req->exp = (void *) malcop(p+2);
+			}
+			else {
+				req->contentcheck = CONTENTCHECK_REGEX;
+
+				req->exp = (void *) malloc(sizeof(regex_t));
+				status = regcomp((regex_t *)req->exp, p+1, REG_EXTENDED|REG_NOSUB);
+				if (status) {
+					errprintf("Failed to compile regexp '%s' for URL %s\n", p+1, req->url);
+					req->contstatus = STATUS_CONTENTMATCH_BADREGEX;
+				}
 			}
 		}
 		else req->contstatus = STATUS_CONTENTMATCH_NOFILE;
@@ -205,11 +215,18 @@ void add_http_test(testitem_t *t)
 		if (p) {
 			/* It is legal not to specify anything for the expected output from a POST */
 			if (strlen(p+1) > 0) {
-				req->exp = (regex_t *) malloc(sizeof(regex_t));
-				status = regcomp(req->exp, p+1, REG_EXTENDED|REG_NOSUB);
-				if (status) {
-					errprintf("Failed to compile regexp '%s' for URL %s\n", p+1, req->url);
-					req->contstatus = STATUS_CONTENTMATCH_BADREGEX;
+				if (*(p+1) == '#') {
+					req->contentcheck = CONTENTCHECK_DIGEST;
+					req->exp = (void *) malcop(p+2);
+				}
+				else {
+					req->contentcheck = CONTENTCHECK_REGEX;
+					req->exp = (void *) malloc(sizeof(regex_t));
+					status = regcomp((regex_t *)req->exp, p+1, REG_EXTENDED|REG_NOSUB);
+					if (status) {
+						errprintf("Failed to compile regexp '%s' for URL %s\n", p+1, req->url);
+						req->contstatus = STATUS_CONTENTMATCH_BADREGEX;
+					}
 				}
 			}
 		}
@@ -322,21 +339,30 @@ static size_t data_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 
 	if (logfd) fprintf(logfd, "%s", (char *)ptr);
 
-	if (req->exp == NULL) {
+	switch (req->contentcheck) {
+	  case CONTENTCHECK_NONE:
 		/* No need to save output - just drop it */
-		return count;
-	}
+		break;
 
-	if (req->output == NULL) {
-		req->output = (char *) malloc(count+1);
-		memcpy(req->output, ptr, count);
-		*(req->output+count) = '\0';
-	}
-	else {
-		size_t buflen = strlen(req->output);
-		req->output = (char *) realloc(req->output, buflen+count+1);
-		memcpy(req->output+buflen, ptr, count);
-		*(req->output+buflen+count) = '\0';
+	  case CONTENTCHECK_REGEX:
+		if (req->output == NULL) {
+			req->output = (char *) malloc(count+1);
+			memcpy(req->output, ptr, count);
+			*(req->output+count) = '\0';
+		}
+		else {
+			size_t buflen = strlen(req->output);
+			req->output = (char *) realloc(req->output, buflen+count+1);
+			memcpy(req->output+buflen, ptr, count);
+			*(req->output+buflen+count) = '\0';
+		}
+		break;
+
+	  case CONTENTCHECK_DIGEST:
+		if (digest_data(ptr, count) != 0) {
+			errprintf("Failed to hash data for digest\n");
+		}
+		break;
 	}
 
 	return count;
@@ -381,11 +407,6 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 	testitem_t *t;
 	char useragent[100];
 	int maxtimeout = DEF_TIMEOUT;
-
-#ifdef MULTICURL
-	CURLM *multihandle;
-	int multiactive;
-#endif
 
 	if (logfile) {
 		logfd = fopen(logfile, "a");
@@ -475,101 +496,31 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 		}
 	}
 
-#ifndef MULTICURL
 	for (t = httptest->items; (t); t = t->next) {
-
 		/* Let's do it ... */
-
 		req = (http_data_t *) t->privdata;
 
 		if (logfd) fprintf(logfd, "\n*** Checking URL: %s ***\n", req->url);
+
+		if (req->contentcheck == CONTENTCHECK_DIGEST) {
+			char *p;
+
+			/* Setup the digest hash */
+			p = strchr((char *)req->exp, ':');
+			if (p) *p = '\0';
+			digest_init((char *) req->exp);
+			if (p) *p = ':';
+		}
+
 		req->res = curl_easy_perform(req->curl);
-	}
-#else
-	/* Setup the multi handle with all of the individual http transfers */
-	multihandle = curl_multi_init();
-	if (multihandle == NULL) {
-		errprintf("Cannot initiate CURL multi handle - aborting HTTP tests\n");
-		return;
-	}
-	for (t = httptest->items; (t); t = t->next) {
-		req = (http_data_t *) t->privdata;
 
-		curl_multi_add_handle(multihandle, req->curl);
-	}
-
-	/* Do the transfers */
-	while (curl_multi_perform(multihandle, &multiactive) == CURLM_CALL_MULTI_PERFORM);
-	while (multiactive) {
-		struct timeval tmo;
-		fd_set fdread;
-		fd_set fdwrite;
-		fd_set fdexcep;
-		int maxfd, selres, msgsleft;
-		CURLMsg *msg;
-
-		/* Setup the file descriptors */
-		FD_ZERO(&fdread); FD_ZERO(&fdwrite); FD_ZERO(&fdexcep);
-		curl_multi_fdset(multihandle, &fdread, &fdwrite, &fdexcep, &maxfd);
-
-		/* 
-		 * Setup the timeout.
-		 * It seems this should be slightly more than the longest timeout
-		 * for any of the individual transfers. A smaller value causes
-		 * us to get "timeout" responses for lots of transfers from libcurl.
-		 */
-		tmo.tv_sec = maxtimeout+5;
-		tmo.tv_usec = 0;
-
-		dprintf("curl_multi select with %d handles active\n", multiactive);
-		selres = select(maxfd+1, &fdread, &fdwrite, &fdexcep, &tmo);
-
-		switch (selres) {
-			case -1:
-				errprintf("select() returned an error - aborting http tests\n");
-				multiactive = 0;
-				break;
-
-			case 0:
-				/*
-				 * Timeout: We must still call curl_multi_perform()
-				 * for the library to fill in information about how the
-				 * timeout occurred (dns tmo, connect tmo, tmo waiting for data ...)
-				 * So fall through to the default handler!
-				 */
-				dprintf("timeout waiting for http requests\n");
-			default:
-				/* Do some data processing */
-				while (curl_multi_perform(multihandle, &multiactive) == CURLM_CALL_MULTI_PERFORM);
-				break;
-		}
-
-		/* Pick up the result codes. Odd way of doing it, but so says libcurl */
-		while ((msg = curl_multi_info_read(multihandle, &msgsleft))) {
-			if (msg->msg == CURLMSG_DONE) {
-				int found = 0;
-
-				for (t = httptest->items; (t && !found); t = t->next) {
-					req = (http_data_t *) t->privdata;
-
-					found = (req->curl == msg->easy_handle);
-					if (found) req->res = msg->data.result;
-				}
-			}
+		if (req->contentcheck == CONTENTCHECK_DIGEST) {
+			req->output = malcop(digest_done());
 		}
 	}
-
-	curl_multi_cleanup(multihandle);
-#endif
 
 	for (t = httptest->items; (t); t = t->next) {
 		req = (http_data_t *) t->privdata;
-
-		if (req->res == CURL_LAST) {
-			errprintf("libcurl never provided a result for %s - assuming timeout\n", req->url);
-			req->res = CURLE_OPERATION_TIMEOUTED;
-			strcpy(req->errorbuffer, "libcurl weirdness - assuming timeout");
-		}
 
 		if (req->res != CURLE_OK) {
 			/* Some error occurred */
@@ -593,6 +544,7 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 			req->contenttype = (contenttype ? malcop(contenttype) : "");
 			t->open = 1;
 		}
+
 
 		if (req->slist) curl_slist_free_all(req->slist);
 		curl_easy_cleanup(req->curl);
@@ -769,24 +721,46 @@ void send_content_results(service_t *httptest, service_t *ftptest, testedhost_t 
 		int got_data = 1;
 
 		strcpy(cause, "Content OK");
-		if (req->exp) {
+		if (req->contentcheck) {
 			/* We have a content check */
 			if (req->contstatus == 0) {
 				/* The content check passed initial checks of regexp etc. */
 				color = statuscolor(t->host, req->httpstatus);
 				if (color == COL_GREEN) {
 					/* We got the data from the server */
-					regmatch_t foo[1];
-					int status;
+					int status = 0;
+					char *dgst;
 
-					if (req->output) {
-						status = regexec(req->exp, req->output, 0, foo, 0);
-						regfree(req->exp);
+					switch (req->contentcheck) {
+					  case CONTENTCHECK_REGEX:
+						if (req->output) {
+							regmatch_t foo[1];
+
+							status = regexec((regex_t *) req->exp, req->output, 0, foo, 0);
+							regfree((regex_t *) req->exp);
+						}
+						else {
+							/* output may be null if we only got a redirect */
+							status = STATUS_CONTENTMATCH_FAILED;
+						}
+						break;
+
+					  case CONTENTCHECK_DIGEST:
+						dgst = req->output;
+
+						if (strcmp(req->output, (char *)req->exp) != 0) {
+							status = STATUS_CONTENTMATCH_FAILED;
+						}
+						else status = 0;
+
+						req->output = (char *) malloc(strlen(dgst)+strlen((char *)req->exp)+strlen("Expected:\nGot     :\n")+1);
+						sprintf(req->output, "Expected:%s\nGot     :%s\n", 
+							(char *)req->exp, dgst);
+
+						free(dgst);
+						break;
 					}
-					else {
-						/* output may be null if we only got a redirect */
-						status = STATUS_CONTENTMATCH_FAILED;
-					}
+
 					req->contstatus = ((status == 0)  ? 200 : STATUS_CONTENTMATCH_FAILED);
 					color = statuscolor(t->host, req->contstatus);
 					if (color != COL_GREEN) strcpy(cause, "Content match failed");
@@ -812,7 +786,7 @@ void send_content_results(service_t *httptest, service_t *ftptest, testedhost_t 
 				strcpy(cause, "Internal BB error");
 			}
 
-			/* Send of the status */
+			/* Send the content status message */
 			dprintf("Content check on %s is %s\n", req->url, colorname(color));
 
 			if (contentnum > 0) sprintf(conttest, "%s%d", contenttestname, contentnum);

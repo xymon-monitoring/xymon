@@ -21,6 +21,9 @@
 #include <time.h>
 #include <regex.h>
 
+#define CONTENTCHECK_NONE   0
+#define CONTENTCHECK_REGEX  1
+#define CONTENTCHECK_DIGEST 2
 
 typedef struct {
 	char   *url;                    /* URL to request, stripped of BB'isms */
@@ -43,12 +46,12 @@ typedef struct {
 	char   *output;                 /* Data from server */
 	int    logcert;
 	char   *certinfo;               /* Data about SSL certificate */
-	time_t certexpires;              /* Expiry time for SSL cert */
+	time_t certexpires;		/* Expiry time for SSL cert */
 	int    httpcolor;
 	char   *faileddeps;
-	int    sslcolor;
 	double totaltime;		/* Time spent doing request */
-	regex_t *exp;			/* regexp data for content match */
+	int    contentcheck;            /* 0=no content check, 1=regex check, 2=digest check */
+	void   *exp;			/* data for content match (digest, or regexp data) */
 } http_data_t;
 
 extern char *http_library_version;
