@@ -13,4 +13,4 @@ bbtest: $(TESTOBJS)
 	gcc -Wall -c -g -o $@ $<
 
 clean:
-	rm -f $(GENOBJS) $(TESTOBJS) $(LARRDOBJS) bbgen bbtest
+	rm -f *.o *~ bbgen bbtest
