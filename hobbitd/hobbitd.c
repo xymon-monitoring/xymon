@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.20 2004-10-11 09:34:38 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.21 2004-10-11 11:39:07 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -114,8 +114,7 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 	union semun su;
 
 	/* First see how many users are on this channel */
-	n = shmctl(channel->shmid, IPC_STAT, &chninfo);
-	clients = chninfo.shm_nattch-1;
+	clients = semctl(channel->semid, CLIENTCOUNT, GETVAL);
 	if (clients == 0) {
 		dprintf("Dropping message - no readers\n");
 		return;
@@ -126,13 +125,16 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 	n = semop(channel->semid, &s, 1);
 
 	/* All clear, post the message */
+	if (channel->seq == 999999) channel->seq = 0;
+	channel->seq++;
+	gettimeofday(&tstamp, &tz);
 	if (readymsg) {
-		strcpy(channel->channelbuf, readymsg);
+		n = sprintf(channel->channelbuf, 
+			    "@@%s#%u|%d.%06d|%s|%s\n@@\n", 
+			    channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender,
+			    readymsg);
 	}
 	else {
-		if (channel->seq == 999999) channel->seq = 0;
-		channel->seq++;
-		gettimeofday(&tstamp, &tz);
 		switch(channel->channelid) {
 		  case C_STATUS:
 			log = (bbd_log_t *)arg;
@@ -657,8 +659,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	bbd_testlist_t *twalk, *newt;
 	bbd_log_t *lwalk;
 	char msgbuf[MAXMSG];
-	struct timeval tstamp;
-	struct timezone tz;
+	char *marker = NULL;
 
 	msgbuf[0] = '\0';
 	hostname = knownhost(hostname, sender, ghosthandling, &maybedown);
@@ -667,7 +668,6 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	for (hwalk = hosts; (hwalk && strcasecmp(hostname, hwalk->hostname)); hwalk = hwalk->next) ;
 	if (hwalk == NULL) return;
 
-	gettimeofday(&tstamp, &tz);
 	switch (cmd) {
 	  case CMD_DROPTEST:
 		for (twalk = tests; (twalk && strcasecmp(n1, twalk->testname)); twalk = twalk->next) ;
@@ -687,8 +687,8 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		if (lwalk->dismsg) free(lwalk->dismsg);
 		if (lwalk->ackmsg) free(lwalk->ackmsg);
 		free(lwalk);
-		sprintf(msgbuf, "@@droptest|%d.%06d|%s|%s|%s\n@@\n", 
-			(int)tstamp.tv_sec, (int)tstamp.tv_usec, sender, hostname, n1);
+		marker = "droptest";
+		sprintf(msgbuf, "|%s|%s", hostname, n1);
 		break;
 
 	  case CMD_DROPHOST:
@@ -717,8 +717,8 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 
 		/* Free the hostlist entry */
 		free(hwalk);
-		sprintf(msgbuf, "@@drophost|%d.%06d|%s|%s\n@@\n", 
-			(int)tstamp.tv_sec, (int)tstamp.tv_usec, sender, hostname);
+		marker = "drophost";
+		sprintf(msgbuf, "|%s", hostname);
 		break;
 
 	  case CMD_RENAMEHOST:
@@ -729,8 +729,8 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			free(hwalk->hostname);
 			hwalk->hostname = strdup(n1);
 		}
-		sprintf(msgbuf, "@@renamehost|%d.%06d|%s|%s|%s\n@@\n", 
-			(int)tstamp.tv_sec, (int)tstamp.tv_usec, sender, hostname, n1);
+		marker = "renamehost";
+		sprintf(msgbuf, "|%s|%s", hostname, n1);
 		break;
 
 	  case CMD_RENAMETEST:
@@ -746,18 +746,18 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			tests = newt;
 		}
 		lwalk->test = newt;
-		sprintf(msgbuf, "@@renametest|%d.%06d|%s|%s|%s|%s\n@@\n", 
-			(int)tstamp.tv_sec, (int)tstamp.tv_usec, sender, hostname, n1, n2);
+		marker = "renametest";
+		sprintf(msgbuf, "|%s|%s|%s", hostname, n1, n2);
 		break;
 	}
 
 	if (strlen(msgbuf)) {
 		/* Tell the workers */
-		posttochannel(statuschn, NULL, NULL, NULL, NULL, NULL, msgbuf);
-		posttochannel(stachgchn, NULL, NULL, NULL, NULL, NULL, msgbuf);
-		posttochannel(pagechn, NULL, NULL, NULL, NULL, NULL, msgbuf);
-		posttochannel(datachn, NULL, NULL, NULL, NULL, NULL, msgbuf);
-		posttochannel(noteschn, NULL, NULL, NULL, NULL, NULL, msgbuf);
+		posttochannel(statuschn, marker, NULL, sender, NULL, NULL, msgbuf);
+		posttochannel(stachgchn, marker, NULL, sender, NULL, NULL, msgbuf);
+		posttochannel(pagechn, marker, NULL, sender, NULL, NULL, msgbuf);
+		posttochannel(datachn, marker, NULL, sender, NULL, NULL, msgbuf);
+		posttochannel(noteschn, marker, NULL, sender, NULL, NULL, msgbuf);
 	}
 }
 
@@ -1348,11 +1348,16 @@ int main(int argc, char *argv[])
 	signal(SIGUSR1, sig_handler);
 	signal(SIGCHLD, sig_handler);
 
-	statuschn = setup_channel(C_STATUS, (IPC_CREAT|0600));
-	stachgchn = setup_channel(C_STACHG, (IPC_CREAT|0600));
-	pagechn   = setup_channel(C_PAGE, (IPC_CREAT|0600));
-	datachn   = setup_channel(C_DATA, (IPC_CREAT|0600));
-	noteschn  = setup_channel(C_NOTES, (IPC_CREAT|0600));
+	statuschn = setup_channel(C_STATUS, CHAN_MASTER);
+	if (statuschn == NULL) { errprintf("Cannot setup status channel\n"); return 1; }
+	stachgchn = setup_channel(C_STACHG, CHAN_MASTER);
+	if (stachgchn == NULL) { errprintf("Cannot setup stachg channel\n"); return 1; }
+	pagechn   = setup_channel(C_PAGE, CHAN_MASTER);
+	if (pagechn == NULL) { errprintf("Cannot setup page channel\n"); return 1; }
+	datachn   = setup_channel(C_DATA, CHAN_MASTER);
+	if (datachn == NULL) { errprintf("Cannot setup data channel\n"); return 1; }
+	noteschn  = setup_channel(C_NOTES, CHAN_MASTER);
+	if (noteschn == NULL) { errprintf("Cannot setup notes channel\n"); return 1; }
 
 	do {
 		fd_set fdread, fdwrite;
@@ -1369,7 +1374,6 @@ int main(int argc, char *argv[])
 			pid_t childpid;
 
 			nextcheckpoint = now + checkpointinterval;
-#if 0
 			childpid = fork();
 			if (childpid == -1) {
 				errprintf("Could not fork checkpoing child:%s\n", strerror(errno));
@@ -1378,9 +1382,6 @@ int main(int argc, char *argv[])
 				save_checkpoint();
 				exit(0);
 			}
-#else
-			save_checkpoint();
-#endif
 		}
 
 		FD_ZERO(&fdread); FD_ZERO(&fdwrite);
@@ -1499,11 +1500,11 @@ int main(int argc, char *argv[])
 		}
 	} while (running);
 
-	close_channel(statuschn, 1);
-	close_channel(stachgchn, 1);
-	close_channel(pagechn, 1);
-	close_channel(datachn, 1);
-	close_channel(noteschn, 1);
+	close_channel(statuschn, CHAN_MASTER);
+	close_channel(stachgchn, CHAN_MASTER);
+	close_channel(pagechn, CHAN_MASTER);
+	close_channel(datachn, CHAN_MASTER);
+	close_channel(noteschn, CHAN_MASTER);
 	save_checkpoint();
 
 	return 0;
