@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.196 2005-02-09 20:56:42 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.197 2005-02-17 12:31:36 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -576,6 +576,9 @@ void load_tests(void)
 #else
 					errprintf("ldap test requested, but bbgen was built with no ldap support\n");
 #endif
+				}
+				else if ((strcmp(testspec, "http") == 0) || (strcmp(testspec, "https") == 0)) {
+					errprintf("http/https tests requires a full URL\n");
 				}
 				else if ( argnmatch(testspec, "http")         ||
 					  argnmatch(testspec, "content=http") ||
