@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.79 2003-07-14 11:08:42 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.80 2003-07-15 18:33:19 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -616,6 +616,9 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 					newentry->sumurl = s2->url;
 					newentry->skin = NULL;
 					newentry->testflags = NULL;
+					newentry->repinfo = NULL;
+					newentry->causes = NULL;
+					newentry->histlogname = NULL;
 					newentry->next = newhost->entries;
 					newhost->entries = newentry;
 				}
