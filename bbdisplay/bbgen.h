@@ -11,8 +11,8 @@
 /*                                                                            */
 /* Copyright (C) 2002 Henrik Storner <henrik@storner.dk>                      */
 /*                                                                            */
-/* This program is released under the GNU Public License (GPL), version 2.    */
-/* See the file "COPYING" for details.                                        */
+/* This program is released under the GNU General Public License (GPL),       */
+/* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
