@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.23 2003-08-12 21:16:05 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.24 2003-08-14 14:53:35 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -125,8 +125,6 @@ void do_tcp_tests(int conntimeout, int concurrency)
 	socklen_t	connressize;
 	char		msgbuf[MAX_BANNER];
 
-	void		*oldsigpipe;
-
 	/*
 	 * After lengthy debugging and perusing of mail archives:
 	 * Need to block SIGPIPE since FreeBSD (and others?) can throw this
@@ -134,7 +132,7 @@ void do_tcp_tests(int conntimeout, int concurrency)
 	 * OS would.
 	 * Sometime they may implement the setsockopt(fd, SO_NOSIGPIPE) from MacOS X ...
 	 */
-	oldsigpipe = signal(SIGPIPE, SIG_IGN);
+	signal(SIGPIPE, SIG_IGN);
 
 	/* If conntimeout or concurrency are 0, set them to reasonable defaults */
 	if (conntimeout == 0) conntimeout = DEF_TIMEOUT;
@@ -390,9 +388,6 @@ void do_tcp_tests(int conntimeout, int concurrency)
 			}
 		}  /* end for loop */
 	} /* end while (pending) */
-
-	/* Restore SIGPIPE handler */
-	signal(SIGPIPE, oldsigpipe);
 
 	dprintf("TCP tests completed normally\n");
 }
