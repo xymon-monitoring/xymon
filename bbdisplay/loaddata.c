@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.112 2003-10-14 21:07:45 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.113 2003-10-17 06:21:11 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -481,13 +481,13 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 
 		/* 
 		 * We may not be running with --larrd; in that case
-		 * larrdcol is the default ("larrd") but if we are
-		 * running LARRD 0.43, then it is generating 
-		 * "trends". Avoid stumbling over those.
+		 * larrdcol is the default ("larrd" or "trends").
+		 * Avoid stumbling over those.
 		 * From Tom Schmidt.
 		 */
-		if (strcmp(p, "larrd") == 0) return NULL;
-		if (strcmp(p, "trends") == 0) return NULL;
+		if (!enable_larrdgen && ((strcmp(p, "larrd") == 0) || (strcmp(p, "trends") == 0))) {
+			return NULL;
+		}
 	}
 
 	sprintf(fullfn, "%s/%s", getenv(((reportstart || snapshot) ? "BBHIST" : "BBLOGS")), filename);
@@ -584,6 +584,16 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		newstate->entry->testflags = parse_testflags(l);
 		if (testflag_set(newstate->entry, 'D')) newstate->entry->skin = dialupskin;
 		if (testflag_set(newstate->entry, 'R')) newstate->entry->skin = reverseskin;
+	}
+	else if (!enable_larrdgen && ((strcmp(testname, "larrd") == 0) || (strcmp(testname, "trends") == 0))) {
+		/* 
+		 * Unreadable LARRD file without us doing larrd -->
+		 * it's the standard larrd-html.pl script building
+		 * files while we run. Don't complain about these,
+		 * just assume they are green.
+		 * Spotted by Tom Schmidt.
+		 */
+		newstate->entry->color = COL_GREEN;
 	}
 	else {
 		errprintf("Empty or unreadable status file %s/%s\n", ((reportstart || snapshot) ? "BBHIST" : "BBLOGS"), filename);
