@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.32 2003-04-23 15:29:25 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.33 2003-04-24 12:09:58 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -216,7 +216,7 @@ char *hostpage_name(host_t *host)
 	char tmpname[MAX_PATH];
 	bbgen_page_t *pgwalk;
 
-	if (strlen(((bbgen_page_t *)host->parent)->name) > 0) {
+	if (host->parent && (strlen(((bbgen_page_t *)host->parent)->name) > 0)) {
 		pagename[0] = '\0';
 		for (pgwalk = host->parent; (pgwalk); pgwalk = pgwalk->parent) {
 			if (strlen(pgwalk->name)) {
