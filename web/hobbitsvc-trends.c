@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.35 2004-09-23 10:18:30 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.36 2004-10-13 12:18:53 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -371,12 +371,12 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043)
 		sprintf(logfn, "%s/%s.%s", getenv("BBLOGS"), 
 			commafy(hostwalk->hostentry->hostname), larrdcolumn);
 		if (getenv("BBHTML")) {
-			sprintf(htmlfn,"%s/%s.%s.html", getenv("BBHTML"), 
-				hostwalk->hostentry->hostname, larrdcolumn);
+			sprintf(htmlfn,"%s/%s.%s%s", getenv("BBHTML"), 
+				hostwalk->hostentry->hostname, larrdcolumn, htmlextension);
 		}
 		else {
-			sprintf(htmlfn,"%s/www/html/%s.%s.html", getenv("BBHOME"), 
-				hostwalk->hostentry->hostname, larrdcolumn);
+			sprintf(htmlfn,"%s/www/html/%s.%s%s", getenv("BBHOME"), 
+				hostwalk->hostentry->hostname, larrdcolumn, htmlextension);
 		}
 
 
