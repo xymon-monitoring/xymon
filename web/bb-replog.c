@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.27 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.28 2005-02-03 15:02:50 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -49,7 +49,7 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 
 	fprintf(htmlrep, "<CENTER>\n");
 	fprintf(htmlrep, "<BR><FONT %s><B>%s - %s</B></FONT>\n", xgetenv("MKBBROWFONT"), hostname, service);
-	fprintf(htmlrep, "<TABLE BORDER=0 BGCOLOR=\"#333333\" CELLPADDING=3>\n");
+	fprintf(htmlrep, "<TABLE BORDER=0 BGCOLOR=\"#333333\" CELLPADDING=3 SUMMARY=\"Availability percentages\">\n");
 	fprintf(htmlrep, "<TR>\n");
 
 	if (repinfo->withreport) {
@@ -169,7 +169,7 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 
 
 	fprintf(htmlrep, "<CENTER>\n");
-	fprintf(htmlrep, "<TABLE BORDER=0 BGCOLOR=\"#333333\" CELLSPACING=3>\n");
+	fprintf(htmlrep, "<TABLE BORDER=0 BGCOLOR=\"#333333\" CELLSPACING=3 SUMMARY=\"Event table\">\n");
 	fprintf(htmlrep, "<TR>\n");
 	fprintf(htmlrep, "<TD COLSPAN=5><CENTER>Event logs for the given period</CENTER></TD>\n");
 	fprintf(htmlrep, "</TR>\n");
