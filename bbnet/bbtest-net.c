@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.84 2003-07-22 06:59:02 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.85 2003-07-27 10:52:06 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1247,6 +1247,9 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
 		}
+		else if (strcmp(argv[argi], "--no-update") == 0) {
+			dontsendmessages = 1;
+		}
 		else if (strcmp(argv[argi], "--timing") == 0) {
 			timing = 1;
 		}
@@ -1350,6 +1353,7 @@ int main(int argc, char *argv[])
 			printf("    --follow[=N]                : Follow redirects for N levels (default: N=3).\n");
 			printf("\nDebugging options:\n");
 			printf("    --debug                     : Output debugging information\n");
+			printf("    --no-update                 : Send status messages to stdout instead of to bbd\n");
 			printf("    --log=FILENAME              : Output trace of HTTP tests to a file.\n");
 			printf("    --timing                    : Trace the amount of time spent on each series of tests\n");
 
