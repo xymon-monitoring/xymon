@@ -1,0 +1,63 @@
+.TH BB-SNAPSHOT.CGI 1 "Version 2.6: 20 Jul 2003" "bbgen toolkit"
+.SH NAME
+bb-snapshot.cgi \- CGI program to rebuild the Big Brother pages for a specific point in time.
+.SH SYNOPSIS
+.B "bb-snapshot.cgi"
+
+.SH DESCRIPTION
+.I bb-snapshot.cgi
+is invoked as a CGI script via the bb-snapshot.sh CGI wrapper.
+It rebuilds the Big Brother web pages to the look they had 
+at a particular point in time, based upon the historical information
+logged about events.
+
+bb-snapshot.cgi is passed a QUERY_STRING environment variable with the
+following parameters:
+
+   mon (Start month of the snapshot)
+   day (Start day-of-month of the snapshot)
+   yr  (Start year of the snapshot)
+   hour (Start hour of the snapshot)
+   min  (Start minute of the snapshot)
+   sec  (Start second of the snapshot)
+
+The "month" parameters must be specified as the three-letter
+english month name abbreviation: Jan, Feb, Mar ...
+
+"day" must be in the range 1..31; "yr" must be specified 
+including century (e.g. "2003"). "hour" must be specified 
+using a 24-hour clock.
+
+All of the processing involved in generating the report is done 
+by invoking 
+.I bbgen(1)
+with the proper "--snapshot" option.
+
+.SH OPTIONS
+bb-snapshot.cgi does not take any options by itself. Instead, all
+options passed to bb-snapshot.cgi are passed on to the 
+.I bbgen(1)
+program building the snapshot files.
+
+.SH ENVIRONMENT VARIABLES
+.IP BBGENSNAPOPTS
+bbgen options passed by default to the bb-snapshot.cgi script. 
+This happens in the bb-snapshot.sh CGI wrapper script.
+.IP BBHOME
+Home directory of the Big Brother files
+.IP BBSNAP
+Directory where generated snapshots are stored. This directory must
+be writable by the userid executing the CGI script, typically
+"www", "apache" or "nobody". Default: $BBHOME/www/snap/
+.br
+NB: This directory is not created automatically when you install 
+Big Brother or bbgen - it must be created by hand and the 
+permissions set correctly.
+.IP BBSNAPURL
+The URL prefix to use when accessing the reports via a browser.
+Default: $BBWEB/snap
+
+
+.SH "SEE ALSO"
+bbgen(1), bb-hosts(5), bb-environ(5)
+

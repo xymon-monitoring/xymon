@@ -1,0 +1,609 @@
+.TH BB-HOSTS 5 "Version 2.6: 20 Jul 2003" "bbgen toolkit"
+.SH NAME
+bb-hosts \- Big Brother main configuration file
+
+.SH SYNOPSIS
+.I $BBHOME/etc/bb-hosts
+
+.SH DESCRIPTION
+The
+.I bb-hosts
+file is the most important configuration file for all of the
+Big Brother programs, and hence also for the bbgen toolkit.
+This file contains the full list of all the systems monitored
+by Big Brother, including the set of tests and other configuration
+items stored for each host.
+
+.SH FILE FORMAT
+Each line of the file defines a host. Blank lines and lines
+starting with a hash mark (#) are treated as comments and ignored.
+.sp
+The format of an entry in the bb-hosts file is as follows:
+.br
+   IP-address hostname # tag1 tag2 ...
+.sp
+The IP-address and hostname are mandatory; all of the tags are optional.
+Listing a host with only IP-address and hostname will cause a network
+test to be executed for the host - the connectivity test is enabled
+by default, but no other tests.
+
+The optional tags are then used to define which tests are 
+relevant for the host, and also to set e.g. the time-interval used
+for availability reporting by
+.I bbgen(1)
+
+A more detailed description of the bb-hosts file is in the
+Big Brother documentation. The following describes the bbgen specific
+tags implemented for hosts in the bb-hosts file.
+
+.SH TAGS RECOGNIZED BY ALL TOOLS
+
+.IP "include filename"
+This tag is used to include another file into the bb-hosts
+file at run-time, allowing for a large bb-hosts file to be
+split up into more manageable pieces.
+
+The "filename" argument should point to a file that uses the
+same syntax as bb-hosts. The filename can be an absolute 
+filename (if it begins with a '/'), or a relative filename -
+relative filenames are prefixed with the directory where
+the main bb-hosts file is located (usually $BBHOME/etc/).
+
+You can nest include tags, i.e. a file that is included 
+from the main bb-hosts file can itself include other files.
+
+CAVEAT: Many Big Brother extensions parse the bb-hosts file
+by themselves, and it is very likely that they do not know
+about the "include" tag. If you move hosts out of the main
+bb-hosts file and into included files, the extensions will
+therefore not pickup these hosts (since the extension script
+does not look at the included files). I therefore recommend
+that you either use the "include" tag only for setting up 
+secondary pagesets, OR that you use only the bbgen and 
+bbtest-net tools without any extra extensions,
+OR that you change your extension scripts to use the 
+.I bbhostgrep(1)
+utility to pick out the relevant entries from the bb-hosts file.
+
+
+.SH BBGEN DISPLAY OPTIONS
+These tags are processed by the BBDISPLAY server when generating 
+the Big Brother webpages or reports.
+
+.IP NAME:hostname
+Overrides the default hostname used on the overview web pages
+(the detailed status page still shows the normal hostname).
+If "hostname" contains spaces, it must be enclosed in double
+quotes, e.g. NAME:"R&D Oracle Server"
+
+.IP "subparent parentpage newpage [Page-title]"
+This is used to define subpages in whatever levels you may
+wish. Just like the standard "subpage" tag, "subparent" defines a
+new BB webpage; however with "subparent" you explicitly
+list which page it should go as a subpage to. You can pick
+any page as the parent - pages, subpages or even other
+subparent pages. So this allows you to define any tree
+structure of pages that you like.
+
+E.g. with this in bb-hosts:
+
+   page USA United States
+   subpage NY New York
+   subparent NY manhattan Manhattan data centers
+   subparent manhattan wallstreet Wall Street center
+
+you get this hierarchy of pages:
+
+   USA (United States)
+     NY (New York)
+       manhattan (Manhattan data centers)
+          wallstreet (Wall Street center)
+
+Note: The parent page must be defined before you define
+the subparent. If not, the page will not be generated,
+and you get a message in the log file.
+
+Note: bbgen is case-sensitive, when trying to match the
+name of the parent page.
+
+The inspiration for this came from Craig Cook's mkbb.pl
+script, and I am grateful to Craig for suggesting that
+I implement it in bbgen. The idea to explicitly list
+the parent page in the "subparent" tag was what made
+it easy to implement.
+
+.IP nodisp
+This tag tells bbgen to ignore this host definition when 
+building webpages. It is useful if you have hosts that you want 
+to monitor, but that should not appear on the web pages. It 
+has also been used in a multi-BB-server setup to define the 
+Big Brother BBDISPLAY, BBNET and BBPAGER hosts as "nodisp", and then
+have a master file included with the normal host definitions
+of the BB servers.
+
+.IP prefer
+When a single host is defined multiple time in the bb-hosts file,
+bbgen tries to guess which definition is the best to use for
+the information used on the "info" column, or for the NOPROPRED
+and other bbgen-specific settings. Host definitions that have
+a "noconn" tag or an IP of 0.0.0.0 get lower priority.
+
+By using the "prefer" tag you tell bbgen that this host definition
+should be used.
+
+Note: This only applies to hosts that are defined multiple
+times in the bb-hosts file, although it will not hurt to add it
+on other hosts as well.
+
+.IP LARRD:[*,][![larrdgraph,...]]
+Defines the LARRD graphs to include in the LARRD column
+generated by bbgen.  This option syntax is complex.
+.br
+If this option is not present, bbgen defaults to the
+behaviour of larrd 0.42 and includes the following
+graphs: la, disk, memory, users, vmstat, iostat, netstat,
+tcp, bind, apache, sendmail
+.br
+* If this option is specified, the list of graphs to
+include start out as being empty (no graphs).
+.br
+* To include all default graphs, use an asterisk.  E.g. "LARRD:*"
+.br
+* To exclude a certain graph, speficy it prefixed with '!'. E.g. 
+to see all graphs except users: "LARRD=*,!users"
+.br
+* The netstat, vmstat and tcp graphs have many "subgraphs".
+Which of these are shown can be speficied like this:
+"LARRD=*,netstat:netstat2|netstat3,tcp:http|smtp|conn"
+This will show all graphs, but instead of the normal 
+netstat graph, there will be two: The netstat2 and
+netstat3 graphs. Instead of the combined tcp graphs showing
+all services, there will be three: One for each of
+the http, conn and smtp services.
+
+.SH BBGEN TAGS FOR THE NK OVERVIEW PAGE
+bbgen will create three sets of pages: The main page bb.html,
+the all-non-green-statuses page (bb2.html), and a specially
+reduced version of bb2.html with only selected tests (bbnk.html).
+This page includes selected tests that currently have a red
+or yellow status.
+
+(Historical note: The name "NK" comes from an in-house 
+danish abbreviation for our network monitoring center, 
+"Net Kontrollen").
+
+.IP NK:testname[,testname]
+Define the tests that you want included on the bbnk page.
+E.g. if you have a host where you only want to see the 
+http tests on bbnk.html, you specify it as
+
+  12.34.56.78  www.acme.com  # http://www.acme.com/ NK:http
+
+If you want multiple tests for a host to show up on the
+bbnk.html page, specify all the tests separated by commas.
+The test names correspond to the column names (e.g. 
+https tests are covered by an "NK:http" tag).
+
+.IP NKTIME=day:starttime:endtime[,day:starttime:endtime]
+This tag limits the time when an active alert is presented
+on the NK webpage.
+
+By default, tests with a red or yellow status that are listed
+in the "NK:testname" tag will appear on the NK page. However,
+you may not want the test to be shown outside of normal
+working hours - if, for example, the host is not being
+serviced during week-ends.
+
+You can then use the NKTIME tag to define the time periods
+where the alert will show up on the NK page. 
+
+The timespecification consists of
+.br
+* day-of-week: 'W' means Mon-Fri ("weekdays"), '*' means all days, '0' .. '6' = Sunday .. Monday
+.br
+* starttime: Time to start showing errors, HHMM hours/minutes. E.g. "8 am" is "0800", "9.30 pm" is "2130"
+.br
+* endtime: Time to stop showing errors.
+
+If necessary, multiple periods can be specified. E.g. to
+monitor a site 24x7, except between noon and 1 pm, use
+NKTIME=*:0000:1159,*:1300:2359
+
+.SH BBGEN TAGS FOR THE WML (WAP) CARDS
+If bbgen is run with the "--wml" option, it will generate a
+set of WAP-format output "cards" that can be viewed with a
+WAP-capable device, e.g. a PDA or cell-phone.
+
+.IP WML:[+|-]testname[,[+|-]testname]
+This tag determines which tests for this hosts are included
+in the WML (WAP) page. Syntax is identical to the NK: tag.  
+
+The default set of WML tests are taken from the --wml
+commandline option.  If no "WML:" tag is specified, the 
+"NK:" tag is used if present.
+
+.SH BBGEN STATUS PROPAGATION OPTIONS
+These tags affect how a status propagates upwards from a single
+test to the page and higher. This can also be done with the 
+command-line options --nopropyellow and --nopropred, but the tags 
+apply to individual hosts, whereas the command line options are global.
+
+.IP NOPROPRED:[+|-]testname[,[+|-]testname]
+This tag is used to inhibit a yellow or red status from
+propagating upwards - i.e. from a test status color to
+the (sub)page status color, and further on to bb.html
+or bb2.html
+
+If a host-specific tag begins with a '-' or a '+', the
+host-specific tags are removed/added to the default 
+setting from the command-line option. If the host-specific
+tag does not begin with a '+' or a '-', the default setting
+is ignored for this host and the NOPROPRED applies to the
+tests given with this tag.
+
+E.g.: bbgen runs with "--nopropred=ftp,smtp".
+"NOPROPRED:+dns,-smtp" gives a NOPROPRED setting of "ftp,dns"
+(dns is added to the default, ftp is removed).
+"NOPROPRED:dns" gives a setting of "dns" only (the default
+is ignored).
+
+.IP NOPROPYELLOW:[+|-]testname[,[+|-]testname]
+Similar to NOPROPRED: tag, but applies to propagating a yellow
+status upwards.
+
+
+.SH BBGEN AVAILABILITY REPORT OPTIONS
+These options affect the way the Big Brother availability
+reports are processed (see
+.I bb-rep.cgi(1)
+for details about Big Brother reports).
+
+.IP REPORTTIME=day:starttime:endtime[,day:starttime:endtime]
+This tag defines the time interval where you measure uptime
+of a service for reporting purposes.
+
+When bbgen generates a report, it computes the availability
+of each service - i.e. the percentage of time that the 
+service is reported as available (meaning: not red).
+
+By default, this calculation is done on a 24x7 basis, so
+no matter when an outage occurs, it counts as downtime.
+
+The REPORTTIME tag allows you to specify a period of time
+other than 24x7 for the service availability calculation.
+If you have systems where you only guarantee availability
+from e.g. 7 AM to 8 PM on weekdays, you can use
+.br
+  REPORTTIME=W:0700:2000
+.br
+and the availability calculation will only be performed
+for the service with measurements from this time interval.
+
+The syntax for REPORTTIME is the same as the one used
+by the NKTIME parameter.
+
+When REPORTTIME is specified, the availability calculation
+happens like this:
+
+* Only measurements done during the given time period is used for the calculation.
+.br
+* "blue" time reduces the length of the report interval,
+so if you are generating a report for a 10-hour period 
+and there are 20 minutes of "blue" time, then the
+availability calculation will consider the reporting 
+period to be 580 minutes (10 hours minus 20 minutes).
+This allows you to have scheduled downtime during the
+REPORTTIME interval without hurting your availability;
+this is (I believe) the whole idea of the downtime being
+"planned".
+.br
+* "red" and "clear" status counts as downtime; "yellow"
+and "green" count as uptime. "purple" time is ignored.
+
+The availability calculation correctly handles status changes
+that cross into/out of a REPORTTIME interval.
+
+If no REPORTTIME is given, the standard 24x7 calculation is
+used, similar to the standard Big Brother reports.
+
+.IP WARNPCT:percentage
+BB's reporting facility uses a computed availability threshold
+to color services green (100% available), yellow (above threshold,
+but less than 100%), or red (below threshold) in the reports.
+
+This option allows you to set the threshold value on a host-by-host
+basis, instead of using a global setting for all hosts. The
+threshold is defined as the percentage of the time that the host
+must be available, e.g. "WARNPCT:98.5" if you want the threshold to
+be at 98.5%
+
+
+.SH BBTEST-NET GENERIC TAGS
+.IP NET:location
+This tag defines the host as being on a specific network.
+If bbtest-net sees that the environment variable BBLOCATION
+is set, it will only test the hosts that have a matching
+"NET:location" tag in the bb-hosts file. So this tag is useful
+if you have more than one BBNET system, but you still want
+to keep a consolidated bb-hosts file for all your systems.
+
+.IP DOWNTIME=day:starttime:endtime[,day:starttime:endtime]
+This tag can be used to ignore failed checks during
+specific times of the day - e.g. if you run services that
+are only monitored e.g. Mon-Fri 8am-5pm, or you always 
+reboot a server every Monday between 5 and 6 pm.
+
+What happens is that if a test fails during the specified time, 
+it is reported with status BLUE instead of yellow or red. Thus 
+you can still see when the service was unavailable, but alarms 
+will not be triggered and the downtime is not counted in the 
+availability calculations generated by the BB reports.
+
+The syntax for DOWNTIME is the same as the one used
+by the NKTIME parameter.
+
+.IP SLA=day:starttime:endtime[,day:starttime:endtime]
+This tag is now deprecated. Use the DOWNTIME tag instead.
+
+This tag works the opposite of the DOWNTIME tag - you use 
+it to specify the periods of the day that the service should be 
+green. Failures OUTSIDE the SLA interval are reported as blue.
+
+.IP depends=(testA:host1/test1,host2/test2),(testB:host3/test3),[...]
+This tag allows you to define dependencies betweeen tests.
+If "testA" for the current host depends on "test1" for host "host1"
+and test "test2" for "host2", this can be defined with
+
+   depends=(testA:host1/test1,host2/test2)
+
+When deciding the color to report for testA, if either host1/test1
+failed or host2/test2 failed, if testA has failed also then the color 
+of testA will be "clear" instead of red or yellow.
+
+Since all tests are actually run before the dependencies are evaluated,
+you can use any host/test in the dependency - regardless of the actual
+sequence that the hosts are listed, or the tests run. It is also valid
+to use tests from the same host that the dependency is for. E.g.
+
+   1.2.3.4  foo # http://foo/ webmin depends=(webmin:foo/http)
+
+is valid; if both the http and the webmin tests fail, then webmin
+will be reported as clear.
+
+.IP badTEST[-weekdays-starttime-endtime]:x:y:z
+Normally when a network test fails, the status changes to
+red immediately.  With a "badTEST:x:y:z" tag this behaviour changes:
+.br
+* While fewer than "x" successive tests fail, the column stays GREEN.
+.br
+* While "x" or more successive tests fail, but fewer than "y", the column goes CLEAR.
+.br
+* While "y" or more successive tests fail, but fewer than "z", the column goes YELLOW.
+.br
+* While "z" or more successive tests fail, the column goes RED.
+
+The optional timespecification can be used to limit this
+"badTEST" setting to a particular time of day, e.g. to 
+require a longer period of downtime before raising an
+alarm during out-of-office hours. The time-specification
+uses:
+.br
+* Weekdays: The weekdays this badTEST tag applies, from
+0 (Sunday) through 6 (Saturday). Putting "W" here counts
+as "12345", i.e. all working days. Putting "*" here 
+counts as all days of the week, equivalent to "0123456".
+.br
+* starttime and endtime are specified using 24-hour clocks,
+e.g. "badTEST-W-0900-2000" is valid for working days
+between 9 AM (09:00) and 8 PM (20:00).
+
+When using multiple badTEST tags, the LAST one specified
+with a matching time-spec is used.
+
+Note: The "TEST" is replaced by the name of the test, e.g.
+
+ 12.34.56.78  www.foo.com  # http://www.foo.com/ badhttp:1:2:4
+
+defines a http test that goes "clear" after the first failure,
+"yellow" after two successive failures, and "red" after four
+successive failures.
+
+For the other network tests, use "badftp", "badssh" etc.
+
+
+.SH BBTEST-NET TAGS FOR NON-STANDARD TESTS
+These tags define network tests that are implemented by bbtest-net,
+but not by the standard Big Brother bb-network.sh script.
+
+.IP ntp
+Check for a running NTP (Network Time Protocol) server on this
+host. This test uses the "ntpdate" utility to check for a
+NTP server - you should either have ntpdate in your PATH, or
+set the location of the ntpdate program in $BBHOME/etc/bbsys.local
+
+.SH BBTEST-NET TAGS FOR CONNECTIVITY TEST
+These tags affect the behaviour of the bbtest-net connectivity
+test.
+
+.IP conn
+The "conn" test (which does a ping of the host) is enabled
+for all hosts by default, and normally you just want to
+disable it using "noconn" or "noping". However, on the 
+rare occasion where you may want to check that a host is
+NOT up, you can specify it as an explicit test, and use
+the normal test modifiers, e.g. "!conn" will be green 
+when the host is NOT up, and red if it does appear on
+the network.
+
+The actual name of the tag - "conn" by default - depends
+on the "--ping=TESTNAME" option for bbtest-net, as that
+decides the testname for the connectivity test.
+
+.IP badconn[-weekdays-starttime-endtime]:x:y:z
+This is taken directly from the "fping.sh" connectivity-
+testing script, and is used by bbtest-net when it runs
+with ping testing enabled (the default). See the description
+of the "badTEST" tag.
+
+.IP route:router1,router2,....
+This tag is taken from the "fping.sh" script, and is used
+by bbtest-net when run with the "--ping" option to enable
+ping testing.
+
+The router1,router2,... is a comma-separated list of hosts
+elsewhere in the bb-hosts file. You cannot have any spaces
+in the list - separate hosts with commas.
+
+This tag changes the color reported for a ping check that
+fails, when one or more of the hosts in the "route" list
+is also down. A "red" status becomes "yellow" - other colors
+are unchanged. The status message will include information 
+about the hosts in the router-list that are down, to aid
+tracking down which router is the root cause of the problem.
+
+Note: Internally, the ping test will still be handled as
+"failed", and therefore any other tests run for this host
+will report a status of "clear".
+
+
+.SH BBTEST-NET TAGS FOR HTTP (WEB) TESTS
+These tags affect the way a http check is performed.
+
+.IP "TIMEOUT:N1:N2"
+Defines the timeout settings for a web (http)check. N1 is the 
+maximum time to establish a connection; N2 is the maximum
+time to wait for a response from a webserver. 
+N1 is the connection timeout, i.e. the time it takes to
+just connect to the webserver. N2 is the timeout for
+the entire exchange with the webserver, i.e. the 
+time it takes to connect to the server, send the request,
+and get the server response returned.
+
+Note: This option is ignored for simple network tests
+done by bbtest-net. bbtest-net only allows for a common
+timeout setting for all tests, see the "--timeout" option in
+.I bbtest-net(1)
+
+.IP nosslcert
+Disables the standard check of the SSL certificate for
+https sites on this host.
+
+.IP "Extended syntax for https URLs"
+Some SSL sites will only allow you to connect, if you use
+specific "dialects" of SSL. Normally this is auto-negotiated,
+but experience shows that this fails on some systems.
+
+bbtest-net can be told to use specific SSL dialects, by using
+something else instead of "https:" in the URL: 
+
+* https2://www.sample.com/ : use only SSLv2
+.br
+* https3://www.sample.com/ : use only SSLv3
+.br
+* httpsm://www.sample.com/ : use only 128-bit ciphers
+.br
+* httpsh://www.sample.com/ : use only >128-bit ciphers
+
+You cannot mix these, e.g. "httpsm2" does not work.
+
+
+.SH BBTEST-NET TAGS FOR WEB CONTENT CHECKS
+.IP cont;URL;expected_data_regexp
+This tag is used to specify a http/https check, where 
+it is also checked that a pre-defined string is present in
+the webserver response.
+
+The data that must be present on the webpage is specified
+as a regular expression - except that <space> is not allowed.
+
+"cont" tags in bb-hosts result in two status reports: One
+status with the "http" check, and another with the "content" 
+check.
+
+As with normal web URL's, the extended syntax described above
+can be used e.g. when testing SSL sites that require the use of 
+SSLv2 or strong ciphers.
+
+The column name for the result of the content check is by default
+called "content" - you can change the default with the "--content=NAME"
+option to bbtest-net. See 
+.I bbtest-net(1)
+for a description of this option.
+
+If more than one content check is present for a host, the first
+content check is reported in the column "content", the second is
+reported in the column "content1", the third in "content2" etc.
+
+.IP content=URL
+This syntax is deprecated. You should use the "cont"
+tag instead, see above.
+
+This tag can be used to specify a http/https check, where
+it is also checked that a pre-defined string is present in
+the webserver response.
+
+There must be a file $BBHOME/content/HOSTNAME.substring with
+a single line of text. This text must be present in the 
+webserver response.
+
+NB: The content filename must be HOSTNAME.substring, where
+HOSTNAME is the name of the hosts, with dots replaced by
+commas if fully qualified domain names are used.
+
+E.g. if you have this line in your bb-hosts
+
+   12.34.56.78 www.acme.com  # content=http://www.acme.com/index.html
+
+then there must be a file $BBHOME/content/www,acme,com.substring
+with the text that you are looking for in the webserver response.
+
+"content" tags in bb-hosts result in two status reports: One
+status with the "http" check, and another with the "content" 
+check.
+
+As with normal web URL's, the extended syntax described above
+can be used when testing SSL sites that require the use of SSLv2
+or strong ciphers.
+
+.IP post;URL;form-data;expected_data_regexp
+This tag can be used to test web pages, that use an input
+form. Data can be posted to the form by specifying them 
+in the form-data field, and the result can be checked
+as if it was a normal content check.
+
+The form-data field must be entered in "application/x-www-form-urlencoded"
+format, which is the most commonly used format for web
+forms.
+
+E.g. if you have a web form defined like this:
+
+   <form action="/cgi-bin/form.cgi" method="post">
+.br
+     <p>Given name<input type="text" name="givenname"></p>
+.br
+     <p>Surname<input type="text" name="surname"></p>
+.br
+     <input type="submit" value="Send">
+.br
+   </form>
+
+and you want to post the value "John" to the first field
+and "Doe Jr." to the second field, then the formdata field
+would be
+
+    givenname=John&surname=Doe+Jr.
+
+Note that any spaces in the input value is replaced with '+'.
+
+The expected_data_regexp is a regular expresssion that
+describes the expected output from the form submission.
+If you are only interested in knowing if it is possible to
+submit the form (but don't care about the data), this
+can be an empty string - but the ';' at the end is required.
+
+.SH FILES
+.I $BBHOME/etc/bb-hosts
+
+.SH "SEE ALSO"
+bbgen(1), bbtest-net(1), bbgen-intro(7)
+

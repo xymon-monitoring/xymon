@@ -1,0 +1,298 @@
+.TH BBGEN-INTRO 7 "Version 2.6: 20 Jul 2003" "bbgen toolkit"
+.SH NAME
+bbgen-intro \- introduction to the bbgen toolkit
+
+.SH OVERVIEW
+The Big Brother monitoring system - available from
+BB4 Technologies at http://bb4.com/ - is a flexible
+system for monitoring the health of networked systems
+and services. With an easy-to-use web-based user interface
+and support for a large number of the systems commonly
+used today, it offers and effective framework for monitoring
+your IT infrastructure to the network- and system-administrators.
+
+Big Brother will run on anything that has the slightest
+resemblance with a Unix system, due to the fact that it
+is almost entirely implemented as Unix shellscripts. However,
+this flexibility comes at a cost: The performance of the
+Big Brother scripts is abysmal, when you need to monitor
+more than just a handful of systems.
+
+The bbgen toolkit was created to solve this problem. By
+re-implementing the core functionality of the Big Brother
+shell scripts in C, a huge performance boost was achieved
+while maintaining compatibility with the data-files and
+extension interfaces that standard Big Brother defines.
+This makes it possible to drop the bbgen tools into an
+existing Big Brother installation without having to change
+any configuration files, and also to use the existing 
+historical data collected by the standard Big Brother
+tools after switching to bbgen. Should you decide to
+un-install bbgen, you will be able to go back to using
+the standard Big Brother tools - the bbgen tools does not
+in any way change the historical monitoring data stored 
+on-disk.
+
+.SH FEATURES
+The main feature of these tools is speed. My BB installation currently
+has about 350 hosts, spread over 50 pages and subpages. The time
+to generate the pages with the standard Big Brother web-page script
+bb-display.sh was about 12 minutes. bbgen does it in less than 5 seconds.
+
+The network test tool bbtest-net also gives significant speed improvements 
+for large sites. One site reported that the runtime for their network tests 
+dropped from 1000 seconds to about 30.
+
+Apart from the performance improvements, the bbgen tools also
+implement quite a few new features not found in the standard
+Big Brother tools:
+
+.IP "Unlimited subpage level"
+bbgen allows you to have any tree-structure of your webpages you
+may wish.
+
+.IP "Multiple pageset support"
+bbgen can generate multiple views of the same data, allowing you 
+to present the hosts you monitor in different ways for different
+groups of people. E.g. you can have one set of pages structured 
+by customer, and another set of pages structured by support group - 
+both using data for the same hosts.
+
+.IP "Flexible on-line documentation"
+bbgen can link to on-line documentation via a CGI script, allowing
+you to e.g. provide access to an in-house documentation database
+with the information about the hosts or services monitored.
+
+.IP "Improved webpages"
+Many small improvements to the Big Brother webpages are included
+in bbgen, e.g. different icons can be used for recently changed statuses;
+links to subpages can be listed in multiple columns; different icons
+can be used for dialup-tests or reverse-tests; selected columns
+can be dropped or unconditionally included on the webpages to
+eliminate unwanted information, or always include certain information;
+user-friendly names can be shown for hosts regardless of their true
+hostname.
+
+.IP "Special alerts-only webpage"
+Alerts can be configured to appear on a special webpage which 
+shows only active alerts. This gives your operations center
+an easy to use interface for detecting problems that require
+immediate attention, by eliminating all of the non-critical
+issues.
+
+.IP "LARRD support"
+The LARRD trend analysis package is a popular add-on to Big Brother.
+bbgen will work with the standard LARRD package - both version 
+0.42 and 0.43 - and can be used to generate the HTML files used
+to link the Big Brother webpages to the LARRD graphs. Which graphs
+to include can also be customized on a per-host basis.
+
+.IP "WAP support for PDAs and cell-phones"
+bbgen can produce output for mobile devices such as PDA's or cell-
+phones, allowing you to access information about critical systems
+from this type of devices.
+
+.IP "Service Level Agreement reporting"
+bbgen can produce availability reports for use in Service Level
+Agreement reporting. You can configure planned downtime, agreed
+service availability level, and agreed service availability time 
+and generate availability reports directly showing the actual
+availability measured against the agreed SLA.
+
+.IP "Pre-built reports"
+Availability reports can be pre-generated and exported to e.g.
+portal sites, so users without direct access to the Big Brother
+website can view the report data.
+
+.IP "Flexible alert reduction"
+All network tests can be set not to change status to red
+immediately following a failure, but to gradually go
+through one or more of green -> clear -> yellow -> red.
+This cuts down on the number of false alarms, if you have a
+network or service that often sees brief outages, e.g.
+due to load or other intermittent problems.
+
+.IP "https websites"
+bbtest-net directly supports monitoring of https-websites.
+
+.IP "Content checking of websites"
+bbtest-net supports checking not only that a website responds,
+but also that certain content is found on the webpage.
+
+.IP "SSL certificate expiration"
+bbtest-net automatically checks the expiration date of SSL
+certificates, and warns you when the certificate is about
+to expire.
+
+.IP "One configuration file for network tests in complex networks"
+Hosts can be tagged as belonging to specific networks, allowing
+you to have one configuration file for all Big Brother systems,
+even when you have more than one network test engine to perform
+the tests. Each network test engine will perform only the tests
+relevant for the network segment, it has access to.
+
+.IP "Flexible configuration for large sites"
+The
+.I bb-hosts(5)
+file can be split up into smaller pieces, which the tools will
+then automatically re-assemble when running tests or building
+webpages.
+
+.IP "Combination tests and dependent tests"
+You can build complex tests from the simple test results already
+in the Big Brother system with the
+.I bbcombotest(1)
+tool. Tests can also be configured to depend on other tests, 
+making it easier to spot the root cause of a complex problem.
+
+.SH THE BBGEN TOOLKIT
+The tools included in the bbgen toolkit are as follows:
+
+.I bbgen(1)
+is a drop-in replacement for the bb-display.sh webpage generator
+script from the Big Brother monitoring tool.  It can also replace 
+part of the LARRD tool that is often used with Big Brother.
+
+.I bbtest-net(1)
+is a drop-in replacement for the bb-network.sh network 
+test script in Big Brother.
+
+.I bbretest-net.sh(1)
+is a Big Brother extension script for re-doing failed
+network tests with a higher frequency than the normal
+network tests. This allows Big Brother to pick up a
+the recovery of a network service as soon as it happens,
+resulting in less downtime being recorded.
+
+.I bbhostgrep(1)
+is a utility for use by BB extension scripts. It
+allows an extension script to easily pick out the hosts that
+are relevant to the script, so it need not parse a huge
+bb-hosts file with lots of unwanted test-specifications.
+
+.I bbhostshow(1)
+is a utility to dump the full
+.I bb-hosts(5)
+file following any "include" statements.
+
+.I bbcombotest(1)
+is a Big Brother extension script for the BBDISPLAY server,
+allowing you to build complicated tests from simpler
+BB test results. E.g. you can define a test that uses the results
+from testing your webserver, DB server and router to have a 
+single test showing the availability of your enterprise web
+application.
+
+.I bb-rep.cgi(1)
+is a drop-in replacement for the bb-rep.sh script included in
+the standard Big Brother package. This CGI program 
+triggers the generation of Big Brother availability reports, 
+using
+.I bbgen(1)
+as the reporting back-end engine.
+
+.I bb-replog.cgi(1)
+is a drop-in replacement for the bb-replog.sh script included in
+the standard Big Brother package. This CGI program generates
+the detailed availability report for a particular host+service
+combination.
+
+.I bb-hist.cgi(1)
+is a drop-in replacement for the bb-hist.sh script included
+in the standard Big Brother package. This CGI program generates
+a webpage with the most recent history of a particular host+service
+combination.
+
+.I bb-snapshot.cgi(1)
+is a CGI program to build the Big Brother webpages in a "snapshot"
+mode, showing the look of the webpages at a particular point 
+in time. It uses
+.I bbgen(1)
+as the back-end engine.
+
+.SH REQUIREMENTS
+What you need to install bbgen:
+
+.IP "A Big Brother installation"
+A working Big Brother installation. Get BB up and running first,
+then you can drop in the bbgen tools to speed things up. The bbgen
+tools are known to work with Big Brother 1.8 and 1.9 - older versions
+may also work, but this has not been tested.
+.br
+Of course, you can install everything in one go, but it makes 
+troubleshooting easier when you have only one set of programs 
+to struggle with, instead of two.
+
+.IP fping
+For network connectivity tests, the fping utility must be 
+installed. This tool is available from www.fping.org.
+
+.IP libcurl
+The network test tools use the "curl" library, available from 
+http://curl.haxx.se/
+.br
+Many Linux distributions include curl as part of the standard
+software - make sure you have the development files installed
+as well. You should use version 7.9.8 or later of the library,
+as some features needed by bbtest-net are not available in earlier
+versions.
+
+.IP openssl
+The OpenSSL library is used by libcurl for checking https websites,
+and should be installed before you install libcurl. If your
+system does not already have openssl installed, you can pick it
+up from http://www.openssl.org/
+
+
+.SH COMPATIBILITY
+The bbgen toolkit is intended to be a drop-in replacement 
+for the tools in Big Brother version 1.9c, with the following 
+exceptions:
+
+.IP "group directive"
+A "group" directive in the 
+.I bb-hosts(5)
+file is treated as a "group-compress".
+
+.IP "dialup directive"
+The "dialup" directive in standard Big Brother allows
+you to test a modem-bank by pinging a range of IP-adresses.
+This feature is not implemented in the bbgen toolkit.
+.br
+Note: This only applies to the entries in bb-hosts that
+*begin* with the "dialup" keyword, and is used to test
+a range of IP-adresses. The "dialup" flag on a host is
+implemented, as is the "?" modifier on a network test that 
+flags it as a "dialup" service, i.e. a service that may
+be down without generating an alert.
+
+.IP ":q and :Q modifiers"
+The ":q" and ":Q" modifiers on individual tests are ignored.
+These modifiers are only relevant for the standard Big 
+Brother network test tool bbnet, which is not used when
+you install the bbgen network test tools.
+
+.IP "Hosts not in bb-hosts are ignored"
+Standard Big Brother will process status-logs from unknown
+hosts, and these can cause the web pages to have a purple
+background color. The bbgen toolkit ignores logs from hosts
+not listed in the bb-hosts file.
+
+
+.SH COPYRIGHT
+All tools are 
+.br
+  Copyright (C) 2002-2003, Henrik Storner <henrik@storner.dk> 
+.br
+All files are released under the GNU General Public License version 2, 
+with the additional exemption that compiling, linking, and/or using OpenSSL 
+is allowed.  See the file COPYING for details.
+
+.SH DEMONSTRATION SITE
+A site running this software can be seen at http://www.hswn.dk/bb/
+
+.SH "SEE ALSO"
+bbgen(1), bbtest-net(1), bbretest-net.sh(1), bbcombotest(1)
+bbhostgrep(1), bbhostshow(1),
+bb-rep.cgi(1), bb-replog.cgi(1), bb-hist.cgi(1), bb-snapshot.cgi(1),
+bb-hosts(5), bb-environ(5), bbcombotest.cfg(5)

@@ -1,0 +1,35 @@
+.TH BB-HIST.CGI 1 "Version 2.6: 20 Jul 2003" "bbgen toolkit"
+.SH NAME
+bb-hist.cgi \- CGI program to display service history
+.SH SYNOPSIS
+.B "bb-hist.cgi"
+
+.SH DESCRIPTION
+.I bb-hist.cgi
+is invoked as a CGI script via the bb-hist.sh CGI wrapper.
+It is passed a QUERY_STRING environment variable with the
+following parameters (also provided by standard Big Brother
+scripts):
+
+   HISTFILE (a Big Brother service history file)
+   ENTRIES (the number of entries to show)
+ 
+The following non-standard parameters are handled by the
+bbgen version of bb-hist.cgi:
+
+   IP (IP address of host - for display purposes only)
+   PIXELS (width of colorbar when in pixel-mode)
+   OFFSET (offset of when the colorbar begins, in days)
+
+bb-hist.cgi analyses the service history file for changes that have
+occurred within the past 24 hours, and build a colorbar
+showing the status of the service over this period of time.
+A statistics summary is also produced, listing the amount
+of time for each status (green, yellow, red, purple, blue, clear).
+
+Finally, a summary of the last N events is given, with links to
+the actual event logs.
+
+.SH "SEE ALSO"
+bb-hosts(5), bb-environ(5)
+

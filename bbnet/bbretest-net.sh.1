@@ -1,0 +1,50 @@
+.TH BBRETEST-NET.SH 1 "Version 2.6: 20 Jul 2003" "bbgen toolkit"
+.SH NAME
+bbretest-net.sh \- Big Brother network re-test tool
+.SH SYNOPSIS
+.B "bbretest-net.sh"
+
+.SH DESCRIPTION
+.I bbretest-net.sh
+is a BB extension script that runs on the BBNET server. 
+It picks up the failing network tests executed by the 
+.I bbtest-net(1)
+program, and repeats these tests with a faster test cycle
+than the normal bbtest-net schedule. This means that when
+the server recovers and the network service becomes available
+again, this is detected quicker resulting in less reported
+downtime.
+
+Only tests whose first failure occurred within 30 minutes
+are included in the tests that are run by bbretest-net.sh.
+The 30 minute limit is there to avoid hosts that are down for
+longer periods of time to bog down bbretest-net.sh.  You can change 
+this limit with the "--frequenttestlimit=SECONDS" when you run
+bbtest-net.
+
+
+.SH INSTALLATION
+The bbretest-net.sh script must be listed in your
+.I $BBHOME/etc/bb-bbexttab
+file for the BBNET server.  E.g. if you run network 
+tests from the "bbnet.foo.com" server, your bb-bbexttab
+entry would be
+
+  bbnet.foo.com : : bbretest-net.sh;60
+
+The Big Brother service must be restarted to pick up
+this change.
+
+
+.SH FILES
+.IP $BBHOME/etc/bb-bbexttab
+Big Brother extension-scripts file. bbretest-net.sh must be added to this file
+on the BBNET server so it will run as a Big Brother extension script.
+.IP $BBTMP/TESTNAME.LOCATION.status
+Temporary status file managed by bbtest-net with status of tests that have currently failed.
+.IP $BBTMP/frequenttests.LOCATION
+Temporary file managed by bbtest-net with the hostnames that bbretest-net.sh should test.
+
+.SH "SEE ALSO"
+bbtest-net(1)
+
