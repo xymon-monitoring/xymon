@@ -22,7 +22,7 @@
 #include <time.h>
 #include <stddef.h>
 
-#define VERSION "2.14"
+#define VERSION "2.15"
 
 /* Structure defs for bbgen */
 
@@ -44,6 +44,8 @@
      next     |         next               ip                  |
       ^       +------------------------>   color               |
       |                                    oldage              |
+      |                                    bb2color            |
+      |                                    bbnkcolor           |
       +---------------------------------   parent              |
                                            alerts              |
                                            waps                |
@@ -242,6 +244,7 @@ typedef struct host_t {
 	struct entry_t	*entries;
 	int	color;		/* Calculated */
 	int	bb2color;	/* Calculated */
+	int	bbnkcolor;	/* Calculated */
 	int     oldage;
 	int	prefer;
 	char	*alerts;
