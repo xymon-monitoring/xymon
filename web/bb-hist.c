@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.2 2003-06-23 20:55:47 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.3 2003-06-23 21:04:38 hstoerne Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -100,8 +100,11 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 		walk = tmp;
 	}
 	for (walk = colorlog; (walk); walk = walk->next) {
-		fprintf(htmlrep, "<TD WIDTH=%ld%% BGCOLOR=%s NOWRAP>&nbsp</TD>\n", 
-			(walk->duration / 864), colorname(walk->color));
+		int pct = (walk->duration / 864);
+
+		if (pct == 0) pct = 1;
+		fprintf(htmlrep, "<TD WIDTH=%d%% BGCOLOR=%s NOWRAP>&nbsp</TD>\n", 
+			pct, colorname(walk->color));
 	}
 
 	fprintf(htmlrep, "</FONT></TR>\n");
