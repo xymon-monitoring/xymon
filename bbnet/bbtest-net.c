@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.100 2003-08-30 10:16:17 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.101 2003-08-30 15:07:55 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -19,6 +19,11 @@ static char rcsid[] = "$Id: bbtest-net.c,v 1.100 2003-08-30 10:16:17 henrik Exp 
 #include <ctype.h>
 #include <netdb.h>
 #include <sys/wait.h>
+#include <rpc/rpc.h>
+
+#ifdef HAVE_RPCENT
+#include <rpc/rpcent.h>
+#endif
 
 #include "bbgen.h"
 #include "util.h"
@@ -55,6 +60,7 @@ char *reqenv[] = {
 #define TOOL_CURL       5
 #define TOOL_MODEMBANK  6
 #define TOOL_LDAP	7
+#define TOOL_RPCINFO	8
 
 /* dnslookup values */
 #define DNS_THEN_IP     0	/* Try DNS - if it fails, use IP from bb-hosts */
@@ -65,6 +71,7 @@ service_t	*svchead = NULL;		/* Head of all known services */
 service_t	*pingtest = NULL;		/* Identifies the pingtest within svchead list */
 service_t	*httptest = NULL;		/* Identifies the httptest within svchead list */
 service_t	*ldaptest = NULL;		/* Identifies the ldaptest within svchead list */
+service_t	*rpctest = NULL;		/* Identifies the rpctest within svchead list */
 service_t	*modembanktest = NULL;		/* Identifies the modembank test within svchead list */
 testedhost_t	*testhosthead = NULL;		/* Head of all hosts */
 char		*nonetpage = NULL;		/* The "NONETPAGE" env. variable */
@@ -477,6 +484,13 @@ void load_tests(void)
 						s = httptest;
 						savedspec = malcop(testspec);
 					}
+					else if (strncmp(testspec, "rpc", 3) == 0) {
+						/*
+						 * rpc check via rpcinfo
+						 */
+						s = rpctest;
+						savedspec = malcop(testspec);
+					}
 					else {
 						/* 
 						 * Simple TCP connect test. 
@@ -850,9 +864,14 @@ int run_command(char *cmd, char *errortext, char **banner)
 	char	l[1024];
 	int	result;
 	int	piperes;
+	int	bannersize = 0;
 
 	result = 0;
-	if (banner) { *banner = (char *) malloc(1024); sprintf(*banner, "Command: %s\n\n", cmd); }
+	if (banner) { 
+		bannersize = 4096;
+		*banner = (char *) malloc(bannersize); 
+		sprintf(*banner, "Command: %s\n\n", cmd); 
+	}
 	cmdpipe = popen(cmd, "r");
 	if (cmdpipe == NULL) {
 		errprintf("Could not open pipe for command %s\n", cmd);
@@ -861,8 +880,14 @@ int run_command(char *cmd, char *errortext, char **banner)
 	}
 
 	while (fgets(l, sizeof(l), cmdpipe)) {
-		if (banner && ((strlen(l) + strlen(*banner)) < 1024)) strcat(*banner, l);
-		if (strstr(l, errortext) != NULL) result = 1;
+		if (banner) {
+			if ((strlen(l) + strlen(*banner)) > bannersize) {
+				bannersize += strlen(l) + 4096;
+				*banner = (char *) realloc(*banner, bannersize);
+			}
+			strcat(*banner, l);
+		}
+		if (errortext && (strstr(l, errortext) != NULL)) result = 1;
 	}
 	piperes = pclose(cmdpipe);
 	if (!WIFEXITED(piperes) || (WEXITSTATUS(piperes) != 0)) {
@@ -922,6 +947,24 @@ void run_ntp_service(service_t *service)
 		if (!t->host->dnserror) {
 			sprintf(cmd, "%s -u -q -p 2 %s 2>&1", cmdpath, t->host->ip);
 			t->open = (run_command(cmd, "no server suitable for synchronization", &t->banner) == 0);
+		}
+	}
+}
+
+
+void run_rpcinfo_service(service_t *service)
+{
+	testitem_t	*t;
+	char		cmd[1024];
+	char		*p;
+	char		cmdpath[MAX_PATH];
+
+	p = getenv("RPCINFO");
+	strcpy(cmdpath, (p ? p : "rpcinfo"));
+	for (t=service->items; (t); t = t->next) {
+		if (!t->host->dnserror) {
+			sprintf(cmd, "%s -p %s 2>&1", cmdpath, t->host->ip);
+			t->open = (run_command(cmd, NULL, &t->banner) == 0);
 		}
 	}
 }
@@ -1386,6 +1429,109 @@ void send_modembank_results(service_t *service)
 	}
 }
 
+
+void send_rpcinfo_results(service_t *service)
+{
+	testitem_t	*t;
+	int		color;
+	char		msgline[1024];
+	char		*msgbuf;
+	
+	msgbuf = (char *)malloc(4096);
+
+	for (t=service->items; (t); t = t->next) {
+		char *wantedrpcsvcs = NULL;
+		char *p;
+
+		/* First see if the rpcinfo command succeeded */
+		*msgbuf = '\0';
+
+		color = (t->open ? COL_GREEN : COL_RED);
+		p = strchr(t->testspec, '=');
+		if (p) wantedrpcsvcs = malcop(p+1);
+
+		if (t->open && t->banner && wantedrpcsvcs) {
+			char *rpcsvc, *aline;
+
+			rpcsvc = strtok(wantedrpcsvcs, ",");
+			while (rpcsvc) {
+				struct rpcent *rpcinfo;
+				int  svcfound = 0;
+				int  aprogram;
+				int  aversion;
+				char aprotocol[10];
+				int  aport;
+
+				rpcinfo = getrpcbyname(rpcsvc);
+				aline = t->banner; 
+				while ((!svcfound) && rpcinfo && aline && (*aline != '\0')) {
+					p = strchr(aline, '\n');
+					if (p) *p = '\0';
+
+					if (sscanf(aline, "%d %d %s %d", &aprogram, &aversion, aprotocol, &aport) == 4) {
+						svcfound = (aprogram == rpcinfo->r_number);
+					}
+
+					aline = p;
+					if (p) {
+						*p = '\n';
+						aline++;
+					}
+				}
+
+				if (svcfound) {
+					sprintf(msgline, "&%s Service %s (ID: %d) found on port %d\n", 
+						colorname(COL_GREEN), rpcsvc, rpcinfo->r_number, aport);
+				}
+				else if (rpcinfo) {
+					color = COL_RED;
+					sprintf(msgline, "&%s Service %s (ID: %d) NOT found\n", 
+						colorname(COL_RED), rpcsvc, rpcinfo->r_number);
+				}
+				else {
+					color = COL_RED;
+					sprintf(msgline, "&%s Unknown RPC service %s\n",
+						colorname(COL_RED), rpcsvc);
+				}
+				strcat(msgbuf, msgline);
+
+				rpcsvc = strtok(NULL, ",");
+			}
+		}
+
+		if (wantedrpcsvcs) free(wantedrpcsvcs);
+
+		init_status(color);
+		sprintf(msgline, "status %s.%s %s %s %s %s\n\n", 
+			commafy(t->host->hostname), service->testname, colorname(color), timestamp, 
+			service->testname, ( ((color == COL_RED) || (color == COL_YELLOW)) ? "NOT ok" : "ok"));
+		addtostatus(msgline);
+
+		/* The summary of wanted RPC services */
+		addtostatus(msgbuf);
+
+		/* rpcinfo output */
+		if (t->open) {
+			if (t->banner) {
+				addtostatus("\n\n");
+				addtostatus(t->banner);
+			}
+			else {
+				sprintf(msgline, "\n\nNo output from rpcinfo -p %s\n", t->host->ip);
+				addtostatus(msgline);
+			}
+		}
+		else {
+			addtostatus("\n\nCould not connect to the portmapper service\n");
+			if (t->banner) addtostatus(t->banner);
+		}
+		finish_status();
+	}
+
+	free(msgbuf);
+}
+
+
 void send_sslcert_status(testedhost_t *host)
 {
 	int color = -1;
@@ -1637,6 +1783,7 @@ int main(int argc, char *argv[])
 	add_service("dns", getportnumber("domain"), 0, TOOL_NSLOOKUP);
 	add_service("dig", getportnumber("domain"), 0, TOOL_DIG);
 	add_service("ntp", getportnumber("ntp"),    0, TOOL_NTP);
+	rpctest  = add_service("rpc", getportnumber("sunrpc"), 0, TOOL_RPCINFO);
 	httptest = add_service("http", getportnumber("http"),  0, TOOL_CURL);
 	ldaptest = add_service("ldap", getportnumber("ldap"),  0, TOOL_LDAP);
 	if (pingcolumn) pingtest = add_service(pingcolumn, 0, 0, TOOL_FPING);
@@ -1753,6 +1900,10 @@ int main(int argc, char *argv[])
 					run_ntp_service(s); 
 					add_timestamp("NTP tests executed");
 					break;
+				case TOOL_RPCINFO:
+					run_rpcinfo_service(s); 
+					add_timestamp("RPC tests executed");
+					break;
 				case TOOL_MODEMBANK:
 					run_modembank_service(s); 
 					add_timestamp("Modembank tests executed");
@@ -1774,10 +1925,15 @@ int main(int argc, char *argv[])
 			case TOOL_FPING:
 			case TOOL_CURL:
 			case TOOL_LDAP:
+				/* These handle result-transmission internally */
 				break;
 
 			case TOOL_MODEMBANK:
 				send_modembank_results(s);
+				break;
+
+			case TOOL_RPCINFO:
+				send_rpcinfo_results(s);
 				break;
 		}
 	}
