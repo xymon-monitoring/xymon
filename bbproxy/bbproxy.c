@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.16 2004-09-20 22:24:01 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.17 2004-09-21 09:17:51 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -84,6 +84,7 @@ typedef struct conn_t {
 	char *serverip;
 	int ssocket;
 	int conntries;
+	int connectpending;
 	time_t conntime;
 	int madetocombo;
 	struct timeval timelimit;
@@ -471,11 +472,22 @@ int main(int argc, char *argv[])
 				break;
 
 			  case P_REQ_READY:
-				cwalk->bufp = cwalk->buf;
 				cwalk->conntries = CONNECT_TRIES;
 				cwalk->conntime = 0;
 
-				if ((strncmp(cwalk->buf, "query", 5) == 0) || (strncmp(cwalk->buf, "config", 6) == 0)) {
+				/*
+				 * We now want to find out what kind of message we've got.
+				 * If it's NOT a "status" message, just pass it along.
+				 * For "status" messages, we want to try and merge many small
+				 * messages into a "combo" message - so send those off the the
+				 * P_REQ_COMBINING state for a while.
+				 * If we are not going to send back a response to the client, we
+				 * also close the client socket since it is no longer needed.
+				 * Note that since we started out as optimists and put a "combo\n"
+				 * at the front of the buffer, we need to skip that when looking at
+				 * what type of message it is. Hence the "cwalk->buf+6".
+				 */
+				if ((strncmp(cwalk->buf+6, "query", 5) == 0) || (strncmp(cwalk->buf+6, "config", 6) == 0)) {
 					shutdown(cwalk->csocket, SHUT_RD);
 					if (!cwalk->dontcount) msgs_other++;
 				}
@@ -484,7 +496,7 @@ int main(int argc, char *argv[])
 					close(cwalk->csocket); sockcount--;
 					cwalk->csocket = -1;
 
-					if (strncmp(cwalk->buf, "status", 6) == 0) {
+					if (strncmp(cwalk->buf+6, "status", 6) == 0) {
 						if (!cwalk->dontcount) msgs_status++;
 						gettimeofday(&cwalk->timelimit, &tz);
 						cwalk->timelimit.tv_usec += COMBO_DELAY;
@@ -495,16 +507,22 @@ int main(int argc, char *argv[])
 						cwalk->state = P_REQ_COMBINING;
 						break;
 					}
-					else if (strncmp(cwalk->buf, "combo", 5) == 0) {
+					else if (strncmp(cwalk->buf+6, "combo", 5) == 0) {
 						if (!cwalk->dontcount) msgs_combo++;
 					}
-					else if (strncmp(cwalk->buf, "page", 4) == 0) {
+					else if (strncmp(cwalk->buf+6, "page", 4) == 0) {
 						if (!cwalk->dontcount) msgs_page++;
 					}
 					else {
 						if (!cwalk->dontcount) msgs_other++;
 					}
 				}
+				/* 
+				 * This wont be made into a combo message, so skip the "combo\n" 
+				 * and go off to send the message to the server.
+				 */
+				cwalk->bufp = cwalk->buf+6;
+				cwalk->buflen -= 6;
 				cwalk->state = P_REQ_CONNECTING;
 				/* Fall through for non-status messages */
 
@@ -542,6 +560,7 @@ int main(int argc, char *argv[])
 
 				if ((n == 0) || ((n == -1) && (errno == EINPROGRESS))) {
 					cwalk->state = P_REQ_SENDING;
+					cwalk->connectpending = 1;
 					gettimeofday(&cwalk->timelimit, &tz);
 					cwalk->timelimit.tv_sec += timeout;
 					/* Fallthrough */
@@ -648,13 +667,27 @@ int main(int argc, char *argv[])
 						 * Yep. It might be worthwhile to go for a combo.
 						 */
 						while (cextra && (cwalk->buflen < (MAXMSG-20))) {
-							if (strncmp(cextra->buf, "status", 6) == 0) {
-								int newsize = cwalk->buflen + cextra->buflen + 2;
+							if (strncmp(cextra->buf+6, "status", 6) == 0) {
+								int newsize;
+								
+								/*
+								 * Size of the new message - if the cextra one
+								 * is merged - is the cwalk buffer, plus the
+								 * two newlines separating messages in combo's,
+								 * plus the cextra buffer except the leading
+								 * "combo\n" of 6 bytes.
+								 */
+								newsize = cwalk->buflen + 2 + (cextra->buflen - 6);
 
 								if ((newsize < cwalk->bufsize) && (newsize < MAXMSG)) {
+									/*
+									 * There's room for it. Add it to the
+									 * cwalk buffer, but without the leading
+									 * "combo\n" (we already have one of those).
+									 */
 									cwalk->madetocombo++;
 									strcat(cwalk->buf, "\n\n");
-									strcat(cwalk->buf, cextra->buf);
+									strcat(cwalk->buf, cextra->buf+6);
 									cwalk->buflen = newsize;
 									cextra->state = P_CLEANUP;
 									dprintf("Merged combo\n");
@@ -674,16 +707,23 @@ int main(int argc, char *argv[])
 					cwalk->state = P_REQ_CONNECTING;
 
 					if (cwalk->madetocombo) {
+						/*
+						 * Point the outgoing buffer pointer to the full
+						 * message, including the "combo\n"
+						 */
+						cwalk->bufp = cwalk->buf;
 						cwalk->madetocombo++;
-						memmove(cwalk->buf+6, cwalk->buf, cwalk->buflen);
-						memcpy(cwalk->buf, "combo\n", 6);
-						cwalk->buflen += 6;
 						msgs_merged++; /* Count the proginal message also */
 						msgs_combined++;
 						dprintf("Now going to send combo from %d messages\n%s\n", 
 							cwalk->madetocombo, cwalk->buf);
 					}
 					else {
+						/*
+						 * Skip sending the "combo\n" at start of buffer.
+						 */
+						cwalk->bufp = cwalk->buf+6;
+						cwalk->buflen -= 6;
 						dprintf("No messages to combine - sending unchanged\n");
 					}
 				}
@@ -746,10 +786,11 @@ int main(int argc, char *argv[])
 
 				  case P_REQ_SENDING:
 					if (FD_ISSET(cwalk->ssocket, &fdwrite)) {
-						if (cwalk->bufp == cwalk->buf) {
+						if (cwalk->connectpending) {
 							int connres, connressize;
 
 							/* First time ready for write - check connect status */
+							cwalk->connectpending = 0;
 							connressize = sizeof(connres);
 							n = getsockopt(cwalk->ssocket, SOL_SOCKET, SO_ERROR, &connres, &connressize);
 							if (connres != 0) {
@@ -802,13 +843,22 @@ int main(int argc, char *argv[])
 					newconn->buf = newconn->bufp = malloc(newconn->bufsize);
 				}
 
+				newconn->connectpending = 0;
 				newconn->madetocombo = 0;
 				newconn->dontcount = 0;
 				newconn->ssocket = -1;
 				newconn->serverip = NULL;
 				newconn->conntries = 0;
-				newconn->buflen = 0;
-				*newconn->buf = '\0';
+
+				/*
+				 * Why this ? Because we like to merge small status messages
+				 * into larger combo messages. So put a "combo\n" at the start 
+				 * of the buffer, and then don't send it if we decide it won't
+				 * be a combo-message after all.
+				 */
+				strcpy(newconn->buf, "combo\n");
+				newconn->buflen = 6;
+				newconn->bufp = newconn->buf+6;
 
 				caddrsize = sizeof(newconn->caddr);
 				newconn->csocket = accept(lsocket, (struct sockaddr *)&newconn->caddr, &caddrsize);
