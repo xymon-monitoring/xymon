@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.54 2004-11-13 22:41:32 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.55 2004-11-14 16:50:16 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1611,7 +1611,7 @@ int main(int argc, char *argv[])
 	}
 
 	nextcheckpoint = time(NULL) + checkpointinterval;
-	nextpurpleupdate = time(NULL) + 600;	/* Wait 10 minutes the first time, then do it every 5. */
+	nextpurpleupdate = time(NULL) + 600;	/* Wait 10 minutes the first time */
 
 	/* Set up a socket to listen for new connections */
 	memset(&laddr, 0, sizeof(laddr));
@@ -1707,6 +1707,7 @@ int main(int argc, char *argv[])
 		}
 
 		if (do_purples && (now > nextpurpleupdate)) {
+			nextpurpleupdate = time(NULL) + 60;
 			check_purple_status();
 		}
 
