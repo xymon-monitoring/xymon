@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.53 2005-03-03 21:19:01 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.54 2005-03-06 16:18:17 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -1058,7 +1058,7 @@ static repeat_t *find_repeatinfo(activealerts_t *alert, recip_t *recip, int crea
 
 static char *message_subject(activealerts_t *alert, recip_t *recip)
 {
-	static char subj[150];
+	static char subj[250];
 	char *sev = "";
 
 	MEMDEFINE(subj);
@@ -1071,10 +1071,10 @@ static char *message_subject(activealerts_t *alert, recip_t *recip)
 		  sev = "is YELLOW";
 		  break;
 	  case COL_CLEAR:
-		  sev = "has no data";
+		  sev = "has no data (CLEAR)";
 		  break;
 	  case COL_PURPLE:
-		  sev = "stopped reporting to BB";
+		  sev = "stopped reporting (PURPLE)";
 		  break;
 	  case COL_GREEN:
 		  sev = "recovered";
@@ -1090,11 +1090,11 @@ static char *message_subject(activealerts_t *alert, recip_t *recip)
 	  case FRM_TEXT:
 	  case FRM_PLAIN:
 		if (include_configid) {
-			snprintf(subj, sizeof(subj)-1, "BB [%d] %s:%s %s [cfid:%d]",
+			snprintf(subj, sizeof(subj)-1, "Hobbit [%d] %s:%s %s [cfid:%d]",
 				 alert->cookie, alert->hostname->name, alert->testname->name, sev, recip->cfid);
 		}
 		else {
-			snprintf(subj, sizeof(subj)-1, "BB [%d] %s:%s %s",
+			snprintf(subj, sizeof(subj)-1, "Hobbit [%d] %s:%s %s",
 				 alert->cookie, alert->hostname->name, alert->testname->name, sev);
 		}
 		MEMUNDEFINE(subj);
