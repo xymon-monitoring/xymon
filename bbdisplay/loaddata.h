@@ -47,5 +47,6 @@ extern char	*larrdgraphs_default;
 extern int	enable_purpleupd;
 extern int	purpledelay;
 extern char     *ignorecolumns;
+extern char     *wapcolumns;
 
 #endif

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: wmlgen.c,v 1.11 2003-05-23 09:28:35 henrik Exp $";
+static char rcsid[] = "$Id: wmlgen.c,v 1.12 2003-05-23 09:59:43 henrik Exp $";
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -32,6 +32,7 @@ static char rcsid[] = "$Id: wmlgen.c,v 1.11 2003-05-23 09:28:35 henrik Exp $";
 #include "util.h"
 #include "wmlgen.h"
 
+int enable_wmlgen = 0;
 static char wmldir[MAX_PATH];
 
 static void delete_old_cards(char *dirname)

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.110 2003-05-23 09:27:50 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.111 2003-05-23 09:59:43 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -123,6 +123,12 @@ int main(int argc, char *argv[])
 		else if (strncmp(argv[i], "--htmlextension=", 16) == 0) {
 			char *lp = strchr(argv[i], '=');
 			htmlextension = malcop(lp+1);
+		}
+		else if (strncmp(argv[i], "--wml", 5) == 0) {
+			char *lp = strchr(argv[i], '=');
+			wapcolumns = malloc(strlen(lp)+2);
+			sprintf(wapcolumns, ",%s,", (lp+1));
+			enable_wmlgen = 1;
 		}
 
 		else if (strcmp(argv[i], "--pages-first") == 0) {
@@ -263,6 +269,7 @@ int main(int argc, char *argv[])
 			printf("    --includecolumns=test[,test]: Always include these columns on bb2 page\n");
 			printf("    --doccgi=cgibinURL          : Hostnames link to a general CGI script for docs\n");
 			printf("    --htmlextension=.EXT        : Sets filename extension for generated file (default: .html\n");
+			printf("    --wml[=test1,test2,...]     : Generate a small (bb2-style) WML page\n");
 			printf("\nPage layout options:\n");
 			printf("    --pages-last                : Put page- and subpage-links after hosts (as BB does)\n");
 			printf("    --pages-first               : Put page- and subpage-links before hosts (default)\n");
@@ -321,11 +328,11 @@ int main(int argc, char *argv[])
 
 	/*
 	 * When doing alternate pagesets, disable some stuff:
-	 * No LARRD, no INFO, no purple updates 
+	 * No LARRD, no INFO, no purple updates, no WML 
 	 * If we did those, we would send double purple updates, 
 	 * generate wrong links for info pages etc.
 	 */
-	if (pageset) enable_purpleupd = enable_larrdgen = enable_infogen = 0;
+	if (pageset) enable_purpleupd = enable_larrdgen = enable_infogen = enable_wmlgen = 0;
 
 	/* Load all data from the various files */
 	linkhead = load_all_links();
@@ -398,12 +405,11 @@ int main(int argc, char *argv[])
 		add_timestamp("Summary transmission done");
 	}
 
-	/* Generate a hosts file for the WML generator */
-	if ((pageset == NULL) && getenv("WML_OUTPUT") && (strcmp(getenv("WML_OUTPUT"), "TRUE") == 0)) {
-		do_wml_cards(pagedir);
-		add_timestamp("WML generation done");
-	}
+	/* Generate WML cards */
+	do_wml_cards(pagedir);
+	add_timestamp("WML generation done");
 
+	/* Need to do this before sending in our report */
 	add_timestamp("Run completed");
 
 	/* Tell about us */

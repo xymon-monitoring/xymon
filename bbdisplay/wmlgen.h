@@ -19,6 +19,7 @@
 #ifndef __WMLGEN_H__
 #define __WMLGEN_H__
 
+extern int enable_wmlgen;
 extern void do_wml_cards(char *webdir);
 
 #endif

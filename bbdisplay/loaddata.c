@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.69 2003-05-23 09:27:50 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.70 2003-05-23 09:59:43 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -42,6 +42,7 @@ int     enable_purpleupd = 1;
 int	purpledelay = 0;			/* Lifetime of purple status-messages. Default 0 for
 						   compatibility with standard bb-display.sh behaviour */
 char	*ignorecolumns = NULL;			/* Columns that will be ignored totally */
+char    *wapcolumns = NULL;                     /* Default columns included in WAP cards */
 
 link_t  null_link = { "", "", "", NULL };	/* Null link for pages/hosts/whatever with no link */
 bbgen_col_t   null_column = { "", NULL };		/* Null column */
@@ -223,17 +224,31 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	}
 	newhost->anywaps = 0;
 	newhost->wapcolor = -1;
+
+	/* Wap set is :
+	 * - Specific WAP: tag
+	 * - NK: tag
+	 * - --wap=COLUMN cmdline option
+	 * - NULL
+	 */
 	if (waps) {
 		char *p;
-		p = skipword(waps); if (*p) *p = '\0'; else p = NULL;
 
+		p = skipword(waps); if (*p) *p = '\0'; else p = NULL;
 		newhost->waps = malloc(strlen(waps)+3);
 		sprintf(newhost->waps, ",%s,", waps);
 		if (p) *p = ' ';
 	}
+	else if (alerts) {
+		newhost->waps = newhost->alerts;
+	}
+	else if (wapcolumns) {
+		newhost->waps = wapcolumns;
+	}
 	else {
 		newhost->waps = NULL;
 	}
+
 	if (nopropyellowtests) {
 		char *p;
 		p = skipword(nopropyellowtests); if (*p) *p = '\0'; else p = NULL;
@@ -408,7 +423,9 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	host = find_host(hostname);
 	if (host) {
 		newstate->entry->alert = checkalert(host->alerts, testname);
-		newstate->entry->onwap = checkalert(host->waps, testname);
+
+		/* If no WAP's specified, default all tests to be on WAP page */
+		newstate->entry->onwap = (host->waps ? checkalert(host->waps, testname) : 1);
 	}
 	else {
 		dprintf("   hostname %s not found\n", hostname);
@@ -987,7 +1004,6 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			if (startoftags && (onwaplist = strstr(startoftags, "WAP:"))) {
 				onwaplist += 3;
 			}
-			else onwaplist = alertlist;
 
 			if (startoftags && (nopropyellowlist = strstr(startoftags, "NOPROP:"))) {
 				nopropyellowlist += 7;
