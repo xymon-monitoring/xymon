@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.37 2003-04-28 08:12:02 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.38 2003-04-28 08:17:17 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -778,7 +778,7 @@ int main(int argc, char *argv[])
 	/* Ping checks first */
 	if (pingtest && pingtest->items) {
 		run_fping_service(pingtest); 
-		combo_start()
+		combo_start();
 		send_results(pingtest);
 		combo_end();
 	}
