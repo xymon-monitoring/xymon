@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.64 2003-07-06 15:53:35 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.65 2003-07-07 19:59:01 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -816,7 +816,7 @@ int within_sla(char *l, char *tag)
 		{
 			if ( (*slaspec == '*') || 						/* Any day */
                              (*slaspec == now->tm_wday+'0') ||					/* This day */
-                             ((*slaspec == 'W') && (now->tm_wday >= 1) && (now->tm_wday <=5)) )	/* Monday thru Friday */
+                             ((toupper((int)*slaspec) == 'W') && (now->tm_wday >= 1) && (now->tm_wday <=5)) )	/* Monday thru Friday */
 			{
 				/* Weekday matches */
 				// printf("Now checking slaspec=%s\n", slaspec);
