@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.1 2004-12-25 23:31:42 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.2 2004-12-25 23:57:02 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -68,6 +68,7 @@ char **rrdparams = NULL;
 int rrdfncount = 0;
 int rrdfnsize = 0;
 int rrdidx = 0;
+int paramlen = 0;
 
 void errormsg(char *msg)
 {
@@ -231,8 +232,8 @@ char *expand_tokens(char *tpl)
 			inp += 7;
 			outp += strlen(outp);
 		}
-		else if (strncmp(inp, "@RRDPARAM@", 10) == 0) {
-			strcpy(outp, rrdparams[rrdidx]);
+		else if ((strncmp(inp, "@RRDPARAM@", 10) == 0) && rrdparams[rrdidx]) {
+			sprintf(outp, "%-*s", paramlen, rrdparams[rrdidx]);
 			inp += 10;
 			outp += strlen(outp);
 		}
@@ -379,6 +380,7 @@ int main(int argc, char *argv[])
 				rrdfns[rrdfncount] = strdup(d->d_name);
 				if (pcre_copy_substring(d->d_name, ovector, result, 1, param, sizeof(param)) > 0) {
 					rrdparams[rrdfncount] = strdup(param);
+					if (strlen(param) > paramlen) paramlen = strlen(param);
 				}
 				else {
 					rrdparams[rrdfncount] = NULL;
