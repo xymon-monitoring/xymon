@@ -64,6 +64,7 @@ typedef struct {
 	int dodns;              /* set while loading tests if we need to do a DNS lookup */
 	int dnserror;		/* set internally if we cannot find the host's IP */
 	int okexpected;		/* set internally if outside DOWNTIME period. If not, failed tests are blue */
+	int repeattest;         /* Set if this host goes on the quick poll list */
 
 	/* The following are for the connectivity test */
 	int noconn;		/* noconn flag (dont report "conn" at all */
