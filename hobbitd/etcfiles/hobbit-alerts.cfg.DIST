@@ -76,6 +76,8 @@
 #                DURARION<30 (only sends alerts the first 30 minutes).
 #    RECOVERED - Rule matches if the alert has recovered from an 
 #                alert state.
+#    NOTICE    - Rule matches if the message is a "notify" message
+#                (typically sent when a status is enabled or disabled).
 #    MAIL      - Recipient who receives an e-mail alert. This takes
 #                one parameter, the e-mail address.
 #    SCRIPT    - Recipient that invokes a script. This takes two
@@ -86,6 +88,10 @@
 #                a short message with no subject for SMS alerts.
 #                "SCRIPT" is a brief message template for scripts.
 #    REPEAT    - How often an alert gets repeated, in minutes.
+#    STOP      - Valid for a recipient: If this recipient gets an
+#                alert, recipients further down in hobbit-alerts.cfg
+#                are ignored.
+#    UNMATCHED - Matches if no alerts have been sent so far.
 #
 #
 # Script get the following environment variables pre-defined so
