@@ -48,20 +48,6 @@ checkpoint. When starting up, hobbitd will restore its internal state
 from the information in this file. You can use the same filename for
 "--checkpoint-file" and "--restart".
 
-.IP "--alertcolors=COLOR[,COLOR]"
-Specifies which colors should trigger an alert. The 
-.I hobbitd_alert(8)
-module can then further filter alert events based on a separate alert
-configuration, but you should still list the possible alert colors here.
-The default setting is "--alertcolors=red,yellow,purple".
-
-.IP "--okcolors=COLOR[,COLOR]"
-Specifies which colors indicate an OK status. The 
-.I hobbitd_alert(8)
-module can then further filter alert events based on a separate alert
-configuration, but you should still list the possible OK colors here.
-The default setting is "--okcolors=green,blue,clear".
-
 .IP "--ghosts={allow|drop|log}"
 How to handle status messages from unknown hosts. The "allow" setting
 accepts all status messages, regardless of whether the host is known
@@ -162,8 +148,8 @@ dump all traffic from a single host to the file "/tmp/hobbitd.dbg".
 
 .SH HOW ALERTS TRIGGER
 When a status arrives, hobbitd matches the old and new color against
-the "alert" colors (from the --alertcolors" option) and the "OK" colors 
-(from the "--okcolors" option). The old and new color falls into one of three
+the "alert" colors (from the "ALERTCOLORS" setting) and the "OK" colors 
+(from the "OKCOLORS" setting). The old and new color falls into one of three
 categories:
 .sp
 .BR OK:
