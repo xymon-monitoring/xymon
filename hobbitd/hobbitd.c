@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.67 2004-11-25 15:10:49 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.68 2004-11-25 17:13:07 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1528,6 +1528,9 @@ void do_message(conn_t *msg)
 			/* Test rename */
 			handle_dropnrename(CMD_RENAMETEST, sender, hostname, n1, n2);
 		}
+	}
+	else if (strncmp(msg->buf, "dummy", 5) == 0) {
+		/* Do nothing */
 	}
 
 done:
