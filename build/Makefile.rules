@@ -18,7 +18,7 @@ ifdef HOBBITD
 	INSTALLTARGETS += install-hobbitd install-docs
 	INSTALLNOCGITARGETS += install-hobbitd install-docs
 endif
-BBHOMEDIRS = bin etc ext tmp web www www/gifs www/help www/html www/menu www/notes www/rep www/wml
+BBHOMEDIRS = bin etc ext tmp web www www/gifs www/help www/html www/menu www/notes www/rep www/snap www/wml
 BBVARDIRS = acks data disabled hist histlogs logs rrd
 
 all: $(BUILDTARGETS)
@@ -89,9 +89,9 @@ ifdef HOBBITD
 	cd $(BBHOME); mkdir -p $(BBHOMEDIRS); chown $(BBUSER) $(BBHOMEDIRS); chgrp ` id -g $(BBUSER)` $(BBHOMEDIRS)
 	cd $(BBVAR); mkdir -p $(BBVARDIRS); chown $(BBUSER) $(BBVARDIRS); chgrp ` id -g $(BBUSER)` $(BBVARDIRS)
 ifdef HTTPDGID
-	chgrp $(HTTPDGID) $(BBHOME)/www/rep
+	chgrp $(HTTPDGID) $(BBHOME)/www/rep $(BBHOME)/www/snap
 endif
-	chmod g+w $(BBHOME)/www/rep
+	chmod g+w $(BBHOME)/www/rep $(BBHOME)/www/snap
 endif
 
 install-common: install-dirs
@@ -127,12 +127,10 @@ install-docs:
 setup: install
 	BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" CGIDIR="$(CGIDIR)" BBLOGDIR="$(BBLOGDIR)" BBUSER="$(BBUSER)" $(MAKE) -C hobbitd  setup
 	@echo ""
-	@echo "Setup complete."
+	@echo "Hobbit setup is complete."
 	@echo ""
 	@echo "You must configure your webserver for the Hobbit webpages and CGI-scripts."
 	@echo "A sample Apache configuration is in ${BBHOME}/etc/hobbit-apache.conf"
-	@echo ""
-	@echo "For availability reports, change the group-ID of ${BBHOME}/www/rep to your webservers group-ID"
 	@echo ""
 	@echo "To start Hobbit, as the $(BBUSER) user run '${BBHOME}/bin/starthobbit.sh start'"
 	@echo "To view the Hobbit webpages, go to http://${BBHOSTNAME}${BBHOSTURL}"
