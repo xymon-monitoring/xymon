@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.55 2004-11-14 16:50:16 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.56 2004-11-16 21:34:16 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -114,6 +114,7 @@ enum droprencmd_t { CMD_DROPHOST, CMD_DROPTEST, CMD_RENAMEHOST, CMD_RENAMETEST }
 static volatile int running = 1;
 static volatile int reloadconfig = 1;
 static volatile time_t nextcheckpoint = 0;
+static volatile int dologswitch = 0;
 
 /* Our channels to worker modules */
 bbgend_channel_t *statuschn = NULL;	/* Receives full "status" messages */
@@ -1463,6 +1464,7 @@ void sig_handler(int signum)
 
 	  case SIGHUP:
 		reloadconfig = 1;
+		dologswitch = 1;
 		break;
 
 	  case SIGUSR1:
@@ -1484,6 +1486,7 @@ int main(int argc, char *argv[])
 	int listenport = 1984;
 	char *bbhostsfn = NULL;
 	char *restartfn = NULL;
+	char *logfn = NULL;
 	int checkpointinterval = 900;
 	int do_purples = 1;
 	time_t nextpurpleupdate;
@@ -1493,8 +1496,8 @@ int main(int argc, char *argv[])
 	int argi;
 	struct timeval tv;
 	struct timezone tz;
-	int daemonize = 1;
-	char *pidfile = "/var/run/bbgend.pid";
+	int daemonize = 0;
+	char *pidfile = NULL;
 
 	colnames[COL_GREEN] = "green";
 	colnames[COL_YELLOW] = "yellow";
@@ -1581,6 +1584,10 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			pidfile = strdup(p+1);
 		}
+		else if (argnmatch(argv[argi], "--log=")) {
+			char *p = strchr(argv[argi], '=');
+			logfn = strdup(p+1);
+		}
 		else if (argnmatch(argv[argi], "--help")) {
 			printf("Options:\n");
 			printf("\t--listen=IP:PORT              : The address the daemon listens on\n");
@@ -1639,8 +1646,6 @@ int main(int argc, char *argv[])
 	if (daemonize) {
 		pid_t childpid;
 
-		fclose(stdin);
-
 		/* Become a daemon */
 		childpid = fork();
 		if (childpid < 0) {
@@ -1680,11 +1685,23 @@ int main(int argc, char *argv[])
 	enadischn  = setup_channel(C_ENADIS, CHAN_MASTER);
 	if (enadischn == NULL) { errprintf("Cannot setup enadis channel\n"); return 1; }
 
+	freopen("/dev/null", "r", stdin);
+	if (logfn) {
+		freopen(logfn, "a", stdout);
+		freopen(logfn, "a", stderr);
+	}
+
 	do {
 		fd_set fdread, fdwrite;
 		int maxfd, n;
 		conn_t *cwalk;
 		time_t now = time(NULL);
+
+		if (logfn && dologswitch) {
+			freopen(logfn, "a", stdout);
+			freopen(logfn, "a", stderr);
+			dologswitch = 0;
+		}
 
 		if (reloadconfig && bbhostsfn) {
 			reloadconfig = 0;
