@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.40 2003-04-27 10:02:42 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.41 2003-04-27 12:44:27 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -879,10 +879,23 @@ char *realurl(char *url, char **proxy)
 	if (strncmp(p, "content=", 8) == 0) {
 		p += 8;
 	}
-	if (strncmp(p, "cont;", 5) == 0) {
+	else if (strncmp(p, "cont;", 5) == 0) {
 		p += 5;
 		restorechar = strrchr(p, ';');
 		if (restorechar) *restorechar = '\0';
+	}
+	else if (strncmp(p, "post;", 5) == 0) {
+		p += 5;
+		restorechar = strrchr(p, ';');
+		if (restorechar) {
+			/* Go back 2 ';' for a post-test */
+			char *rest2char = restorechar;
+
+			*restorechar = '\0'; /* Cut off the expected data */
+			restorechar = strrchr(p, ';');
+			*rest2char = ';';
+			if (restorechar) *restorechar = '\0';
+		}
 	}
 
 	/* Check if there is a proxy spec in there */
