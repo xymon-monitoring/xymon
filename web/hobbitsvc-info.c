@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.43 2004-03-18 10:11:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.44 2004-04-23 08:58:58 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -346,6 +346,7 @@ int generate_info(char *infocolumn)
 			if ( (strncmp(p, "content=", 8) == 0) ||
 			     (strncmp(p, "cont;", 5) == 0)    ||
 			     (strncmp(p, "nocont;", 7) == 0)  ||
+			     (strncmp(p, "type;", 5) == 0)    ||
 			     (strncmp(p, "post;", 5) == 0)    ||
 			     (strncmp(p, "nopost;", 7) == 0) ) {
 
@@ -359,13 +360,16 @@ int generate_info(char *infocolumn)
 					realurl(p, NULL, NULL, NULL, NULL)); 
 				addtobuffer(&infobuf, &infobuflen, l);
 				if ((strncmp(p, "cont;", 5) == 0) || (strncmp(p, "nocont;", 7) == 0) || 
+				    (strncmp(p, "type;", 5) == 0) ||
 				    (strncmp(p, "post;", 5) == 0) || (strncmp(p, "nopost;", 7) == 0)) {
 					char *wanted = strrchr(p, ';');
 
 					if (wanted) {
 						wanted++;
-						sprintf(l, "&nbsp; %s return '%s'", 
-							((strncmp(p, "no", 2) == 0) ? "cannot" : "must"), wanted);
+						sprintf(l, "&nbsp; %s return %s'%s'", 
+							((strncmp(p, "no", 2) == 0) ? "cannot" : "must"), 
+							((strncmp(p, "type;", 5) == 0) ? "content-type " : ""),
+							wanted);
 						addtobuffer(&infobuf, &infobuflen, l);
 					}
 				}
@@ -461,6 +465,7 @@ int generate_info(char *infocolumn)
 				&&	(strncmp(p, "nocont;", 7)  != 0)
 				&&	(strncmp(p, "post;", 5)  != 0)
 				&&	(strncmp(p, "nopost;", 7)  != 0)
+				&&	(strncmp(p, "type;", 5)  != 0)
 				&&	(strncmp(p, "testip", 6) != 0)
 				&&	(strncmp(p, "dialup", 6) != 0)
 				&&	(strncmp(p, "noconn", 6) != 0)
