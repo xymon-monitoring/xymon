@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: url.c,v 1.4 2004-11-04 21:39:42 henrik Exp $";
+static char rcsid[] = "$Id: url.c,v 1.5 2004-11-04 21:52:11 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -25,6 +25,7 @@ static char rcsid[] = "$Id: url.c,v 1.4 2004-11-04 21:39:42 henrik Exp $";
 #include "misc.h"
 #include "url.h"
 
+/* This is used for loading a .netrc file with hostnames and authentication tokens. */
 typedef struct loginlist_t {
 	char *host;
 	char *auth;
@@ -34,6 +35,10 @@ typedef struct loginlist_t {
 static loginlist_t *loginhead = NULL;
 
 
+/*
+ * Convert a URL with "%XX" hexadecimal escaped style bytes into normal form.
+ * Result length will always be <= source length.
+ */
 char *urlunescape(char *url)
 {
 	static char *result = NULL;
@@ -41,7 +46,7 @@ char *urlunescape(char *url)
 
 	pin = url;
 	if (result) free(result);
-	pout = result = (char *) malloc(strlen(pin) + 1);
+	pout = result = (char *) malloc(strlen(url) + 1);
 	while (*pin) {
 		if (*pin == '+') {
 			*pout = ' ';
@@ -71,6 +76,9 @@ char *urlunescape(char *url)
 	return result;
 }
 
+/*
+ * Get an environment variable (eg: QUERY_STRING) and do CGI decoding of it.
+ */
 char *urldecode(char *envvar)
 {
 	if (getenv(envvar) == NULL) return NULL;
@@ -78,6 +86,9 @@ char *urldecode(char *envvar)
 	return urlunescape(getenv(envvar));
 }
 
+/*
+ * Do a CGI encoding of a URL, i.e. unusual chars are converted to %XX.
+ */
 char *urlencode(char *s)
 {
 	static char *result = NULL;
@@ -115,6 +126,11 @@ char *urlencode(char *s)
 	return result;
 }
 
+/*
+ * Check if a URL contains only safe characters.
+ * This is not really needed any more, since there are no more CGI
+ * shell-scripts that directly process the QUERY_STRING parameter.
+ */
 int urlvalidate(char *query, char *validchars)
 {
 	static int valid;
@@ -129,6 +145,9 @@ int urlvalidate(char *query, char *validchars)
 	return valid;
 }
 
+/*
+ * Load the $HOME/.netrc file with authentication tokens for HTTP tests.
+ */
 static void load_netrc(void)
 {
 
@@ -208,7 +227,9 @@ static void load_netrc(void)
 	fclose(fd);
 }
 
-
+/*
+ * Clean a URL of double-slashes.
+ */
 char *cleanurl(char *url)
 {
 	static char *cleaned = NULL;
@@ -241,11 +262,13 @@ char *cleanurl(char *url)
 }
 
 
+/*
+ * Parse a URL into components, following the guidelines in RFC 1808.
+ * This fills out a urlelem_t struct with the elements, and also
+ * constructs a canonical form of the URL.
+ */
 void parse_url(char *inputurl, urlelem_t *url)
 {
-	/*
-	 * See RFC1808 for guidelines to parsing a URL
-	 */
 
 	char *tempurl;
 	char *fragment = NULL;
@@ -385,7 +408,9 @@ void parse_url(char *inputurl, urlelem_t *url)
 	return;
 }
 
-
+/*
+ * If a column name is column=NAME, pick out NAME.
+ */
 static char *gethttpcolumn(char *inp, char **name)
 {
 	char *nstart, *nend;
@@ -405,17 +430,18 @@ static char *gethttpcolumn(char *inp, char **name)
 }
 
 
+/* 
+ * Split a BB test-specification with a URL and optional 
+ * post-data/expect-data/expect-type data into the URL itself 
+ * and the other elements.
+ * Un-escape data in the post- and expect-data.
+ * Parse the URL.
+ */
 char *decode_url(char *testspec, bburl_t *bburl)
 {
 	static bburl_t bburlbuf;
 	static urlelem_t desturlbuf, proxyurlbuf;
 
-	/* 
-	 * Split a BB test-specification with a URL and optional post-data/expect-data/expect-type data
-	 * into the URL itself and the other elements.
-	 * Un-escape data in the post- and expect-data.
-	 * Parse the URL.
-	 */
 	char *inp, *p;
 	char *urlstart, *poststart, *expstart, *proxystart;
 	urlstart = poststart = expstart = proxystart = NULL;
