@@ -3,6 +3,7 @@
 <HEAD>
 <META HTTP-EQUIV="REFRESH" CONTENT="60">
 <META HTTP-EQUIV="EXPIRES" CONTENT="Sat, 01 Jan 2001 00:00:00 GMT">
+<META HTTP-EQUIV="Set-Cookie" CONTENT="pagepath=&BBPAGEPATH; path=/">
 <TITLE>&BBBACKGROUND : Hobbit - Status @ &BBDATE</TITLE>
 
 <!-- Styles for the menu bar -->
