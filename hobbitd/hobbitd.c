@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.101 2005-01-19 11:59:01 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.102 2005-01-19 21:47:52 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -719,6 +719,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	log->logtime = now;
 	log->validtime = now + validity*60;
 	strncpy(log->sender, sender, sizeof(log->sender)-1);
+	*(log->sender + sizeof(log->sender) - 1) = '\0';
 	log->oldcolor = log->color;
 	log->color = newcolor;
 	oldalertstatus = decide_alertstate(log->oldcolor);
@@ -907,6 +908,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 		strncpy(firstline, msg, sizeof(firstline)-1);
 		*p = '\n';
 	}
+	*(firstline + sizeof(firstline) - 1) = '\0';
 	assignments = sscanf(firstline, "%*s %199s %99s", hosttest, durstr);
 	if (assignments < 1) return;
 	duration = durationvalue(durstr);
