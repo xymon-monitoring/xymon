@@ -7,7 +7,13 @@
 
 case "$1" in
    "start")
-	@BBHOME@/bin/bblaunch --config=@BBHOME@/etc/bbtasks.cfg --env=@BBHOME@/etc/bbserver.env --log=@BBLOGDIR@/bblaunch.log --pidfile=@BBLOGDIR@/bblaunch.pid
+	if test `id -un` != @BBUSER@
+	then
+		echo "BB must be started as the @BBUSER user"
+		exit 1
+	else
+		@BBHOME@/bin/bblaunch --config=@BBHOME@/etc/bbtasks.cfg --env=@BBHOME@/etc/bbserver.env --log=@BBLOGDIR@/bblaunch.log --pidfile=@BBLOGDIR@/bblaunch.pid
+	fi
 	;;
 
    "stop")
