@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.25 2004-11-25 21:31:21 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.26 2004-11-25 22:08:40 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -421,30 +421,21 @@ int main(int argc, char *argv[])
 			/* @@droptest|timestamp|sender|hostname|testname */
 
 			awalk = find_active(hostname, testname);
-			if (awalk) {
-				if (awalk == ahead) {
-					ahead = ahead->next;
-				}
-				else {
-					activealerts_t *prev;
-
-					for (prev = ahead; (prev->next != awalk); prev = prev->next) ;
-					prev->next = awalk->next;
-				}
-
-				if (awalk->pagemessage) free(awalk->pagemessage);
-				free(awalk);
-			}
+			if (awalk) awalk->state = A_DEAD;
 		}
 		else if ((metacount > 4) && (strncmp(metadata[0], "@@renamehost", 12) == 0)) {
 			/* @@renamehost|timestamp|sender|hostname|newhostname */
 			htnames_t *hwalk;
 			char *newhostname = metadata[4];
 
+			/* 
+			 * We handle rename's simply by dropping the alert. If there is still an
+			 * active alert for the host, it will have to be dealt with when the next
+			 * status update arrives.
+			 */
 			for (hwalk = hostnames; (hwalk && strcmp(hostname, hwalk->name)); hwalk = hwalk->next) ;
-			if (hwalk) {
-				free(hwalk->name);
-				hwalk->name = strdup(newhostname);
+			for (awalk = ahead; (awalk); awalk = awalk->next) {
+				if (awalk->hostname == hwalk) awalk->state = A_DEAD;
 			}
 		}
 		else if ((metacount > 5) && (strncmp(metadata[0], "@@renametest", 12) == 0)) {
@@ -452,18 +443,13 @@ int main(int argc, char *argv[])
 			htnames_t *newtest;
 			char *newtestname = metadata[5];
 
+			/* 
+			 * We handle rename's simply by dropping the alert. If there is still an
+			 * active alert for the host, it will have to be dealt with when the next
+			 * status update arrives.
+			 */
 			awalk = find_active(hostname, testname);
-			if (awalk) {
-				for (newtest = testnames; (newtest && strcmp(newtestname, newtest->name)); newtest = newtest->next); 
-				if (newtest == NULL) {
-					/* The new testname does not exist. */
-					newtest = (htnames_t *) malloc(sizeof(htnames_t));
-					newtest->name = strdup(newtestname);
-					newtest->next = testnames;
-					testnames = newtest;
-				}
-				awalk->testname = newtest;
-			}
+			if (awalk) awalk->state = A_DEAD;
 		}
 		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			running = 0;
