@@ -1014,6 +1014,34 @@ search of the directory, the ldap status is normally reported
 as "red" (alarm). This tag reduces a search failure to a 
 "yellow" (warning) status.
 
+.SH PERFORMANCE MONITORING TESTS
+.IP apache
+If you are running an Apache webserver, adding this tag makes
+.I bbtest-net(1)
+collect performance statistics from the Apache webserver by
+querying the URL \fBhttp://IP.ADDRESS.OF.HOST/server-status?auto\fR.
+The response is sent as a data-report and processed by the Hobbit
+hobbitd_larrd module into an RRD file and an "apache" graph.
+Note that you need to enable the server-status URL in your
+Apache configuration. The following configuration is needed:
+.sp
+    <Location /server-status>
+.br
+        SetHandler server-status
+.br
+        Order deny,allow
+.br
+        Deny from all
+.br
+        allow from 127.0.0.1
+.br
+    </Location>
+.br
+    ExtendedStatus On
+.sp
+Change "127.0.0.1" to the IP-address of the server that runs your
+network tests.
+
 .SH FILES
 .BR ~hobbit/server/etc/bb-hosts
 .sp
