@@ -2,11 +2,14 @@
 
 	echo "Checking for fping ..."
 
-	for DIR in /bin /usr/bin /sbin /usr/sbin /usr/local/bin /usr/local/sbin /opt/bin /usr/pkg/bin
+	for DIR in / /usr /usr/local /opt /usr/pkg /opt/csw
 	do
-		if test -x $DIR/fping
+		if test -x $DIR/bin/fping
 		then
-			FPING=$DIR/fping
+			FPING=$DIR/bin/fping
+		elif test -x $DIR/sbin/fping
+		then
+			FPING=$DIR/sbin/fping
 		fi
 	done
 
