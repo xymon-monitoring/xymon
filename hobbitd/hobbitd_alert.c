@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.46 2005-02-26 16:29:04 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.47 2005-02-26 22:49:54 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -504,7 +504,7 @@ int main(int argc, char *argv[])
 
 			htnames_t *hwalk = find_name(&hostnames, hostname);
 			htnames_t *twalk = find_name(&testnames, testname);
-			htnames_t *pwalk = find_name(&locations, metadata[4]);
+			htnames_t *pwalk = find_name(&locations, (metadata[5] ? metadata[5] : ""));
 
 			awalk = (activealerts_t *)malloc(sizeof(activealerts_t));
 			awalk->hostname = hwalk;
