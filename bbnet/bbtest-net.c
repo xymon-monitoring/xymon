@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.34 2003-04-27 20:15:07 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.35 2003-04-27 20:50:54 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -55,6 +55,7 @@ int		dnsmethod = DNS_THEN_IP;	/* How to do DNS lookups */
 int 		timeout=0;
 long		followlocations = 0;		/* Follow Location: redirects in HTTP? */
 char		*contenttestname = "content";   /* Name of the content checks column */
+char		*location = "";			/* BBLOCATION value */
 
 service_t *add_service(char *name, int port, int namelen, int toolid)
 {
@@ -388,7 +389,7 @@ void load_fping_status(void)
 	time_t downstart;
 	testedhost_t *h;
 
-	sprintf(statusfn, "%s/fping.status", getenv("BBTMP"));
+	sprintf(statusfn, "%s/fping.%s.status", getenv("BBTMP"), location);
 	statusfd = fopen(statusfn, "r");
 	if (statusfd == NULL) return;
 
@@ -411,7 +412,7 @@ void save_fping_status(void)
 	char statusfn[MAX_PATH];
 	testitem_t *t;
 
-	sprintf(statusfn, "%s/fping.status", getenv("BBTMP"));
+	sprintf(statusfn, "%s/fping.%s.status", getenv("BBTMP"), location);
 	statusfd = fopen(statusfn, "w");
 	if (statusfd == NULL) return;
 
@@ -756,6 +757,7 @@ int main(int argc, char *argv[])
 	}
 
 	init_timestamp();
+	if (getenv("BBLOCATION")) location = malcop(getenv("BBLOCATION"));
 
 	load_services();
 	add_service("dns", getportnumber("domain"), 0, TOOL_NSLOOKUP);
