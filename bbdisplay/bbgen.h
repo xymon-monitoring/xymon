@@ -24,26 +24,32 @@
 /* Structure defs for bbgen */
 
 /*
+   This "drawing" depicts the relations between the various data objects used by bbgen.
+   Think of this as doing object-oriented programming in plain C.
+
+
+
    page_t                                hostlist_t          state_t
      name                                  hostentry --+       hostname
      title                                 next        |       entry --+
      color                                             |       next    |
      subpages                              +-----------+               |
      groups -------> group_t               |                   +-------+
-     hosts              title              V                   |
-     next               color                                  |
-                        hosts ---------> host_t                |
-                        next               hostname            |
-                                           ip                  |
-                                           dialup              |
-                      +------------------- link                V
-                      |                    color
+     hosts ---+         title              V                   |
+     next     |         color                                  |
+              |         hosts ---------> host_t                |
+              |         next   +------->   hostname            |
+              |                |           ip                  |
+              +----------------+           dialup              |
+                                           color               |
+                      +------------------  link                V
                       |                    entries ---------> entry_t
                       |                    next                 column -------> col_t
                       |                                         color             name
                       |                                         age            +- link
                       |                                         oldage         |  next
                       |                                         acked          |
+                      |                                         alert          |
                       |                                         next           |
                       |                                                        |
                       |+-------------------------------------------------------+
@@ -53,6 +59,41 @@
                       name
                       filename
                       urlprefix
+
+
+  page_t structure holds data about one BB page - the first record in this list
+  represents the top-level bb.html page. Other pages in the list are defined
+  using the bb-hosts "page" directive and access via the page->next link.
+
+  subpages are stored in page_t structures also. Accessible via the "subpages"
+  link from a page.
+
+  group_t structure holds the data from a "group" directive. groups belong to
+  pages or subpages. A group has an associated color, calculated as the
+  most critical color of the hosts within the group.
+  Currently, all groups act as "group-compress" directive.
+
+  host_t structure holds all data about a given host. "color" is calculated as
+  the most critical color of the individual entries belonging to this host.
+  Individual tests are connected to the host via the "entries" link.
+
+  hostlist_t is a simple 1-dimensional list of all the hosts, for easier
+  traversal of the host list.
+
+  entry_t holds the data for a given test (basically, a file in $BBLOGS).
+  test-names are not stored directly, but in the linked "col_t" list.
+  "age" is the "Status unchanged in X" text from the logfile. "oldage" is
+  a boolean indicating if "age" is more than 1 day. "alert" means this 
+  test belongs on the reduced summary (alerts) page.
+
+  state_t is a simple 1-dimensional list of all tests (entry_t records).
+
+  link_t is a simple way of storing all links to /help/ and /notes/ URL's,
+  so they can be pre-loaded to avoid doing a lot of file lookups while
+  generating the webpages.
+  "name" is the text that finds the link (e.g. a pagename, a hostname or
+  a testname); "filename" is the filename for the link, and "urlprefix"
+  contains "help" or "notes" depending on where the file is located.
 */
 
 #define COL_GREEN	0
