@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.107 2003-09-08 11:49:40 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.108 2003-09-08 12:40:48 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1345,7 +1345,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 					}
 				}
 				else if (argnmatch(tag, "DESCR:")) {
-					p = tag+strlen("DESCRCOMMENT:");
+					p = tag+strlen("DESCR:");
 					description = (char *) malloc(strlen(l));
 					if (*p == '\"') {
 						p++;
