@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.77 2003-07-09 10:44:09 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.78 2003-07-11 12:03:55 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -114,16 +114,15 @@ int interesting_column(int pagetype, int color, int alert, char *columnname, cha
 	switch (pagetype) {
 	  case PAGE_BB2:
 		  /* Include all non-green tests */
-		  return ((color == COL_RED) || (color == COL_YELLOW) || (color == COL_PURPLE));
+		  return ((color == COL_RED) || (color == COL_YELLOW) || (color == COL_PURPLE) || (color == COL_CLEAR) );
 
 	  case PAGE_NK:
 		  /* Include only RED or YELLOW tests with "alert" property set. 
 		   * Even then, the "conn" test is included only when RED.
 		   */
 		if (alert) {
-			if ( (color == COL_RED) || ((color == COL_YELLOW) && (strcmp(columnname, "conn") != 0)) ) {
-				return 1;
-			}
+			if (color == COL_RED)  return 1;
+			if ( (color == COL_YELLOW) || (color == COL_CLEAR) ) return (strcmp(columnname, "conn") != 0);
 		}
 		break;
 	}
@@ -1195,7 +1194,7 @@ int do_bb2_page(char *filename, int summarytype)
 
 		  case PAGE_NK:
 			/* The NK page */
-			for (useit=0, e=h->hostentry->entries; (h->hostentry->nktime && e && !useit); e=e->next) {
+			for (useit=0, e=h->hostentry->entries; (e && !useit); e=e->next) {
 				useit = (e->alert && (!e->acked) && ((e->color == COL_RED) || ((e->color == COL_YELLOW) && (strcmp(e->column->name, "conn") != 0))));
 			}
 			break;
