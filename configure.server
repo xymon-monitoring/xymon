@@ -24,6 +24,8 @@ else
 	then
 		echo "Checking pre-requisites for building Hobbit"
 		echo ""
+		. build/fping.sh
+		echo ""; echo ""
 		. build/rrd.sh
 		echo ""; echo ""
 		. build/pcre.sh
@@ -31,6 +33,8 @@ else
 	else
 		echo "Checking pre-requisites for standard BB build"
 		echo ""
+		. build/fping.sh 
+		echo ""; echo ""
 	fi
 
 	. build/ssl.sh
@@ -373,6 +377,8 @@ else
 	echo "MANROOT = $MANROOT"                >>Makefile
 	echo "# Default history graph setting"   >>Makefile
 	echo "HISTGRAPHDEF = $HISTGRAPHDEF $BARSUMDEF"   >>Makefile
+	echo "# How to run fping"                >>Makefile
+	echo "FPING=$FPING"                      >>Makefile
 	echo ""                                  >>Makefile
 	if test "$TARGET" = "hobbit"
 	then
