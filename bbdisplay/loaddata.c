@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.74 2003-06-02 16:07:01 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.75 2003-06-06 08:10:07 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -877,12 +877,11 @@ link_t *load_all_links(void)
 bbgen_page_t *load_bbhosts(char *pgset)
 {
 	FILE 	*bbhosts;
-	char 	l[MAX_LINE_LEN];
+	char 	l[MAX_LINE_LEN], lcop[MAX_LINE_LEN];
 	char	pagetag[100], subpagetag[100], subparenttag[100], 
 		grouptag[100], summarytag[100], titletag[100], hosttag[100];
 	char 	*name, *link, *onlycols;
 	char 	hostname[MAX_LINE_LEN];
-	char 	displayname[MAX_LINE_LEN];
 	bbgen_page_t 	*toppage, *curpage, *cursubpage, *cursubparent;
 	group_t *curgroup;
 	host_t	*curhost;
@@ -1020,51 +1019,62 @@ bbgen_page_t *load_bbhosts(char *pgset)
 		}
 		else if (sscanf(l, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
 			int dialup = 0;
+			char *alertlist, *onwaplist, *nopropyellowlist, *nopropredlist, *larrdgraphs;
+			char *displayname, *targetpagename;
+			char *tag;
 			char *startoftags = strchr(l, '#');
-			char *alertlist, *onwaplist, *nopropyellowlist, *nopropredlist;
-			char *larrdgraphs;
-			char *targetpagename;
+
+			if (startoftags) {
+				strcpy(lcop, startoftags+1);
+				tag = strtok(lcop, " \t\r\n");
+			}
+			else tag = NULL;
 
 			alertlist = onwaplist = nopropyellowlist = nopropredlist = larrdgraphs = NULL;
+			targetpagename = displayname = NULL;
 
-			if (startoftags && strstr(startoftags, " dialup")) dialup=1;
-
-			if (startoftags && (alertlist = strstr(startoftags, "NK:"))) {
-				alertlist += 3;
-			}
-			if (startoftags && (onwaplist = strstr(startoftags, "WML:"))) {
-				onwaplist += 3;
-			}
-
-			if (startoftags && (nopropyellowlist = strstr(startoftags, "NOPROP:"))) {
-				nopropyellowlist += 7;
-			}
-
-			if (startoftags && (nopropyellowlist = strstr(startoftags, "NOPROPYELLOW:"))) {
-				nopropyellowlist += 7;
-			}
-
-			if (startoftags && (nopropredlist = strstr(startoftags, "NOPROPRED:"))) {
-				nopropredlist += 10;
-			}
-			if (startoftags && (larrdgraphs = strstr(startoftags, "LARRD:"))) {
-				larrdgraphs += 6;
-			}
-			if (startoftags && (p = strstr(startoftags, "NAME:"))) {
-				p += 5;
-				if (*p == '\"') {
-					p++;
-					strcpy(displayname, p);
-					p = strchr(displayname, '\"');
-					if (p) *p = '\0';
+			while (tag) {
+				if (strcmp(tag, "dialup") == 0) 
+					dialup = 1;
+				else if (argnmatch(tag, "NK:")) 
+					alertlist = malcop(tag+strlen("NK:"));
+				else if (argnmatch(tag, "WML:")) 
+					onwaplist = malcop(tag+strlen("WML:"));
+				else if (argnmatch(tag, "NOPROP:")) 
+					nopropyellowlist = malcop(tag+strlen("NOPROP:"));
+				else if (argnmatch(tag, "NOPROPYELLOW:")) 
+					nopropyellowlist = malcop(tag+strlen("NOPROPYELLOW:"));
+				else if (argnmatch(tag, "NOPROPRED:")) 
+					nopropredlist = malcop(tag+strlen("NOPROPRED:"));
+				else if (argnmatch(tag, "LARRD:")) 
+					larrdgraphs = malcop(tag+strlen("LARRD:"));
+				else if (argnmatch(tag, "NAME:")) {
+					p = tag+strlen("NAME:");
+					displayname = malloc(strlen(l));
+					if (*p == '\"') {
+						p++;
+						strcpy(displayname, p);
+						p = strchr(displayname, '\"');
+						if (p) *p = '\0'; 
+						else {
+							/* Scan forward to next " in input stream */
+							tag = strtok(NULL, "\"\r\n");
+							if (tag) {
+								strcat(displayname, " ");
+								strcat(displayname, tag);
+							}
+						}
+					}
+					else {
+						strcpy(displayname, p);
+					}
 				}
-				else {
-					strcpy(displayname, p);
-					for (p=displayname; (*p && !isspace((int) *p)); p++) ;
-					*p = '\0';
+				else if (argnmatch(tag, hosttag)) {
+					targetpagename = malcop(tag+strlen(hosttag));
 				}
+
+				if (tag) tag = strtok(NULL, " \t\r\n");
 			}
-			else strcpy(displayname, hostname);
 
 			if (strlen(pgset) == 0) {
 				/*
@@ -1102,19 +1112,22 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				curhost->parent = (cursubparent ? cursubparent : (cursubpage ? cursubpage : curpage));
 				if (curtitle) { curhost->pretitle = curtitle; curtitle = NULL; }
 			}
-			else if (startoftags && ((targetpagename = strstr(startoftags, hosttag)) != NULL)) {
+			else if (targetpagename) {
 
 				char savechar;
-				pagelist_t *targetpage = NULL;
 				int wantedgroup = 0;
+				pagelist_t *targetpage = NULL;
 
 				/* Put the host into the page specified by the PGSET: tag */
-				targetpagename += strlen(hosttag);
-				for (p=targetpagename; (*p && (*p != ' ') && (*p != '\t') && (*p != ',')); p++) ;
-				savechar = *p; *p = '\0';
-
-				if (savechar == ',') {
+				p = strchr(targetpagename, ',');
+				if (p) {
+					savechar = *p;
+					*p = '\0';
 					wantedgroup = atoi(p+1);
+				}
+				else {
+					savechar = '\0';
+					p = targetpagename + strlen(targetpagename);
 				}
 
 				/* Find the page */
@@ -1167,6 +1180,13 @@ bbgen_page_t *load_bbhosts(char *pgset)
 					if (curtitle) { newhost->pretitle = curtitle; curtitle = NULL; }
 				}
 			}
+
+			if (alertlist) free(alertlist);
+			if (onwaplist) free(onwaplist);
+			if (nopropyellowlist) free(nopropyellowlist);
+			if (nopropredlist) free(nopropredlist);
+			if (larrdgraphs) free(larrdgraphs);
+			if (targetpagename) free(targetpagename);
 		}
 		else if (strncmp(l, summarytag, strlen(summarytag)) == 0) {
 			/* summary row.column      IP-ADDRESS-OF-PARENT    http://bb4.com/ */
