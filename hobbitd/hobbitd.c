@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.3 2004-10-04 21:30:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.4 2004-10-05 11:43:36 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -34,17 +34,7 @@ static char rcsid[] = "$Id: hobbitd.c,v 1.3 2004-10-04 21:30:44 henrik Exp $";
 #include <sys/sem.h>
 #include <sys/msg.h>
 #include <sys/shm.h>
-
-#if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
-/* union semun is defined by including <sys/sem.h> */
-#else
-/* according to X/OPEN we have to define it ourselves */
-union semun {
-	int val;                  /* value for SETVAL */
-	struct semid_ds *buf;     /* buffer for IPC_STAT, IPC_SET */
-	unsigned short *array;    /* array for GETALL, SETALL */
-};
-#endif
+#include <sys/wait.h>
 
 #include "bbgen.h"
 #include "util.h"
@@ -59,35 +49,40 @@ link_t          *linkhead = NULL;
 link_t  null_link = { "", "", "", NULL };
 
 
-bbd_hostlist_t *hosts = NULL;
-bbd_testlist_t *tests = NULL;
-bbd_log_t *logs = NULL;
+bbd_hostlist_t *hosts = NULL;		/* The hosts we have reports from */
+bbd_testlist_t *tests = NULL;		/* The tests we have seen */
+bbd_log_t *logs = NULL;			/* The current logs we have (equivalent to bbvar/logs/ */
 
 #define NOTALK 0
 #define RECEIVING 1
 #define RESPONDING 2
 
+/* This struct describes an active connection with a BB client */
 typedef struct conn_t {
-	int sock;
-	struct sockaddr_in addr;
-	unsigned char *buf, *bufp;
-	int buflen, bufsz;
-	int doingwhat;
+	int sock;			/* Communications socket */
+	struct sockaddr_in addr;	/* Client source address */
+	unsigned char *buf, *bufp;	/* Message buffer and pointer */
+	int buflen, bufsz;		/* Active and maximum length of buffer */
+	int doingwhat;			/* Communications state (NOTALK, READING, RESPONDING) */
 	struct conn_t *next;
 } conn_t;
 
 static volatile int running = 1;
 static volatile int reloadconfig = 1;
-bbd_channel_t *statuschn = NULL;
-bbd_channel_t *stachgchn = NULL;
-bbd_channel_t *pagechn   = NULL;
-bbd_channel_t *datachn   = NULL;
-bbd_channel_t *noteschn  = NULL;
+static volatile time_t nextcheckpoint = 0;
+
+/* Our channels to worker modules */
+bbd_channel_t *statuschn = NULL;	/* Receives full "status" messages */
+bbd_channel_t *stachgchn = NULL;	/* Receives brief message about a status change */
+bbd_channel_t *pagechn   = NULL;	/* Receives alert messages (triggered from status changes) */
+bbd_channel_t *datachn   = NULL;	/* Receives raw "data" messages */
+bbd_channel_t *noteschn  = NULL;	/* Receives raw "notes" messages */
 
 #define NO_COLOR (COL_COUNT)
 static char *colnames[COL_COUNT+1];
 int alertcolors = ( (1 << COL_RED) | (1 << COL_YELLOW) | (1 << COL_PURPLE) );
 int ghosthandling = -1;
+char *checkpointfn = NULL;
 
 void posttochannel(bbd_channel_t *channel, char *msg, int msglen, 
 		   char *sender, char *hostname, char *testname, time_t validity, 
@@ -141,6 +136,7 @@ void posttochannel(bbd_channel_t *channel, char *msg, int msglen,
 
 	return;
 }
+
 
 char *msg_data(char *msg)
 {
@@ -206,11 +202,10 @@ void get_hts(char *msg, char *sender,
 	hostname = knownhost(hostname, sender, ghosthandling, &maybedown);
 	if (hostname == NULL) return;
 
-	for (hwalk = hosts; (hwalk && strcasecmp(hostname, hwalk->hostname) && strcasecmp(hostname, hwalk->alias)); hwalk = hwalk->next) ;
+	for (hwalk = hosts; (hwalk && strcasecmp(hostname, hwalk->hostname)); hwalk = hwalk->next) ;
 	if (createhost && (hwalk == NULL)) {
 		hwalk = (bbd_hostlist_t *)malloc(sizeof(bbd_hostlist_t));
 		hwalk->hostname = strdup(hostname);
-		hwalk->alias = "";
 		hwalk->logs = NULL;
 		hwalk->next = hosts;
 		hosts = hwalk;
@@ -346,6 +341,7 @@ void handle_enadis(int enabled, char *msg, int msglen, char *sender)
 	bbd_testlist_t *twalk = NULL;
 	bbd_log_t *log;
 	char *p;
+	int maybedown;
 
 	p = strchr(msg, '\n'); 
 	if (p == NULL) {
@@ -375,7 +371,12 @@ void handle_enadis(int enabled, char *msg, int msglen, char *sender)
 	}
 	p = hosttest; while ((p = strchr(p, ',')) != NULL) *p = '.';
 
-	for (hwalk = hosts; (hwalk && strcasecmp(hosttest, hwalk->hostname) && strcasecmp(hosttest, hwalk->alias)); hwalk = hwalk->next) ;
+
+	p = knownhost(hosttest, sender, ghosthandling, &maybedown);
+	if (p == NULL) return;
+	strcpy(hosttest, p);
+
+	for (hwalk = hosts; (hwalk && strcasecmp(hosttest, hwalk->hostname)); hwalk = hwalk->next) ;
 	if (hwalk == NULL) {
 		/* Unknown host */
 		return;
@@ -606,8 +607,141 @@ void do_message(conn_t *msg)
 }
 
 
+void save_checkpoint(void)
+{
+	char *tempfn;
+	FILE *fd;
+	bbd_hostlist_t *hwalk;
+	bbd_log_t *lwalk;
+	time_t now = time(NULL);
+
+	if (checkpointfn == NULL) return;
+
+	tempfn = malloc(strlen(checkpointfn) + 20);
+	sprintf(tempfn, "%s.%d\n", checkpointfn, (int)now);
+	fd = fopen(tempfn, "w");
+	if (fd == NULL) {
+		errprintf("Cannot open checkpoint file %s\n", tempfn);
+		free(tempfn);
+		return;
+	}
+
+	for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
+		for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
+			char *statusmsg = base64encode(lwalk->message);
+			char *disablemsg = NULL;
+			
+			if (lwalk->dismsg) disablemsg = base64encode(lwalk->dismsg);
+
+			fprintf(fd, "@@BBGENDCHK|%s|%s|%s|%d|%d|%d|%s|%s\n", 
+				hwalk->hostname, lwalk->test->testname, colnames[lwalk->color],
+				(int) lwalk->lastchange, (int) lwalk->validtime, (int) lwalk->enabletime,
+				statusmsg, (disablemsg ? disablemsg : ""));
+
+			if (disablemsg) free(disablemsg);
+			free(statusmsg);
+		}
+	}
+
+	fclose(fd);
+	rename(tempfn, checkpointfn);
+	free(tempfn);
+}
+
+
+void load_checkpoint(char *fn)
+{
+	FILE *fd;
+	char l[3*MAXMSG];
+	char *item;
+	int i, err;
+	bbd_hostlist_t *htail = NULL;
+	bbd_testlist_t *t = NULL;
+	bbd_log_t *ltail = NULL;
+	char *hostname, *testname, *statusmsg, *disablemsg;
+	time_t lastchange, validtime, enabletime;
+	int color;
+
+	fd = fopen(fn, "r");
+	if (fd == NULL) {
+		errprintf("Cannot access checkpoint file %s for restore\n", fn);
+		return;
+	}
+
+	while (fgets(l, sizeof(l)-1, fd)) {
+		hostname = testname = statusmsg = disablemsg = NULL;
+		lastchange = validtime = enabletime = 0;
+		err =0;
+
+		item = strtok(l, "|\n"); i = 0;
+		while (item && !err) {
+			switch (i) {
+			  case 0: err = (strcmp(item, "@@BBGENDCHK") != 0); break;
+			  case 1: hostname = item; break;
+			  case 2: testname = item; break;
+			  case 3: color = parse_color(item); if (color == -1) err = 1; break;
+			  case 4: lastchange = atoi(item); break;
+			  case 5: validtime = atoi(item); break;
+			  case 6: enabletime = atoi(item); break;
+			  case 7: statusmsg = item; break;
+			  case 8: disablemsg = item; break;
+			  default: err = 1;
+			}
+
+			item = strtok(NULL, "|\n"); i++;
+		}
+
+		if (err) continue;
+
+		if ((hosts == NULL) || (strcmp(hostname, htail->hostname) != 0)) {
+			/* New host */
+			if (hosts == NULL) {
+				htail = hosts = (bbd_hostlist_t *) malloc(sizeof(bbd_hostlist_t));
+			}
+			else {
+				htail->next = (bbd_hostlist_t *) malloc(sizeof(bbd_hostlist_t));
+				htail = htail->next;
+			}
+			htail->hostname = strdup(hostname);
+			htail->logs = NULL;
+			htail->next = NULL;
+		}
+
+		for (t=tests; (t && (strcmp(t->testname, testname) != 0)); t = t->next) ;
+		if (t == NULL) {
+			t = (bbd_testlist_t *) malloc(sizeof(bbd_testlist_t));
+			t->testname = strdup(testname);
+			t->next = tests;
+			tests = t;
+		}
+
+		if (htail->logs == NULL) {
+			ltail = htail->logs = (bbd_log_t *) malloc(sizeof(bbd_log_t));
+		}
+		else {
+			ltail->next = (bbd_log_t *)malloc(sizeof(bbd_log_t));
+			ltail = ltail->next;
+		}
+
+		ltail->test = t;
+		ltail->color = color;
+		ltail->lastchange = lastchange;
+		ltail->validtime = validtime;
+		ltail->enabletime = enabletime;
+		ltail->message = base64decode(statusmsg);
+		ltail->msgsz = strlen(ltail->message);
+		ltail->dismsg = ( (disablemsg && strlen(disablemsg)) ? base64decode(disablemsg) : NULL);
+		ltail->next = NULL;
+	}
+
+	fclose(fd);
+}
+
+
 void sig_handler(int signum)
 {
+	int status;
+
 	switch (signum) {
 	  case SIGTERM:
 	  case SIGINT:
@@ -616,6 +750,15 @@ void sig_handler(int signum)
 
 	  case SIGHUP:
 		reloadconfig = 1;
+		break;
+
+	  case SIGUSR1:
+		nextcheckpoint = 0;
+		break;
+
+	  case SIGCHLD:
+		/* A child exited. Pick up status so we dont leave zombies around */
+		wait(&status);
 		break;
 	}
 }
@@ -627,11 +770,12 @@ int main(int argc, char *argv[])
 	char *listenip = "0.0.0.0";
 	int listenport = 1984;
 	char *bbhostsfn = NULL;
+	int checkpointinterval = 300;
 	struct sockaddr_in laddr;
 	int lsocket, opt;
 	int listenq = 512;
 	int argi;
-
+		
 	colnames[COL_GREEN] = "green";
 	colnames[COL_YELLOW] = "yellow";
 	colnames[COL_RED] = "red";
@@ -654,9 +798,21 @@ int main(int argc, char *argv[])
 				listenport = atoi(p+1);
 			}
 		}
-		else if (strncmp(argv[argi], "--bbhosts=", 9) == 0) {
+		else if (strncmp(argv[argi], "--bbhosts=", 10) == 0) {
 			char *p = strchr(argv[argi], '=') + 1;
 			bbhostsfn = strdup(p);
+		}
+		else if (strncmp(argv[argi], "--checkpoint-file=", 18) == 0) {
+			char *p = strchr(argv[argi], '=') + 1;
+			checkpointfn = strdup(p);
+		}
+		else if (strncmp(argv[argi], "--checkpoint-interval=", 22) == 0) {
+			char *p = strchr(argv[argi], '=') + 1;
+			checkpointinterval = atoi(p);
+		}
+		else if (strncmp(argv[argi], "--restart=", 10) == 0) {
+			char *p = strchr(argv[argi], '=') + 1;
+			load_checkpoint(p);
 		}
 		else if (strncmp(argv[argi], "--alertcolors=", 14) == 0) {
 			char *colspec = strchr(argv[argi], '=') + 1;
@@ -680,6 +836,14 @@ int main(int argc, char *argv[])
 			else if (strcmp(p, "drop") == 0) ghosthandling = 1;
 			else if (strcmp(p, "log") == 0) ghosthandling = 2;
 		}
+		else if (strcmp(argv[argi], "--help") == 0) {
+			printf("Options:\n");
+			printf("\t--listen=IP:PORT              : The address the daemon listens on\n");
+			printf("\t--bbhosts=FILENAME            : The bb-hosts file\n");
+			printf("\t--ghosts=allow|drop|log       : How to handle unknown hosts\n");
+			printf("\t--alertcolors=COLOR[,COLOR]   : What colors trigger an alert\n");
+			return 1;
+		}
 	}
 
 	if (getenv("BBHOSTS") && (bbhostsfn == NULL)) {
@@ -690,6 +854,12 @@ int main(int argc, char *argv[])
 		if (getenv("BBGHOSTS")) ghosthandling = atoi(getenv("BBGHOSTS"));
 		else ghosthandling = 0;
 	}
+
+	if (ghosthandling && (bbhostsfn == NULL)) {
+		errprintf("No bb-hosts file specified, required when using ghosthandling\n");
+		exit(1);
+	}
+	nextcheckpoint = time(NULL) + checkpointinterval;
 
 	/* Set up a socket to listen for new connections */
 	memset(&laddr, 0, sizeof(laddr));
@@ -713,9 +883,11 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	signal(SIGPIPE, SIG_IGN);
+	setup_signalhandler("bbd_net");
 	signal(SIGINT, sig_handler);
 	signal(SIGTERM, sig_handler);
+	signal(SIGUSR1, sig_handler);
+	signal(SIGCHLD, sig_handler);
 
 	statuschn = setup_channel(C_STATUS, (IPC_CREAT|0600));
 	stachgchn = setup_channel(C_STACHG, (IPC_CREAT|0600));
@@ -728,9 +900,23 @@ int main(int argc, char *argv[])
 		int maxfd, n;
 		conn_t *cwalk;
 
-		if (reloadconfig) {
+		if (reloadconfig && bbhostsfn) {
 			reloadconfig = 0;
 			load_hostnames(bbhostsfn, 1);
+		}
+
+		if (time(NULL) > nextcheckpoint) {
+			pid_t childpid;
+
+			nextcheckpoint = time(NULL) + checkpointinterval;
+			childpid = fork();
+			if (childpid == -1) {
+				errprintf("Could not fork checkpoing child:%s\n", strerror(errno));
+			}
+			else if (childpid == 0) {
+				save_checkpoint();
+				exit(0);
+			}
 		}
 
 		FD_ZERO(&fdread); FD_ZERO(&fdwrite);
@@ -750,7 +936,14 @@ int main(int argc, char *argv[])
 		}
 
 		n = select(maxfd+1, &fdread, &fdwrite, NULL, NULL);
-		if (n <= 0) break;
+		if (n <= 0) {
+			if (errno == EINTR) 
+				continue;
+			else {
+				errprintf("Fatal error in select: %s\n", strerror(errno));
+				break;
+			}
+		}
 
 		for (cwalk = chead; (cwalk); cwalk = cwalk->next) {
 			switch (cwalk->doingwhat) {
