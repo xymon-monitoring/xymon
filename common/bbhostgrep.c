@@ -128,8 +128,8 @@ int main(int argc, char *argv[])
 			printf("%d.%d.%d.%d %s #%s", ip1, ip2, ip3, ip4, hostname, wantedtags);
 			switch (sla) {
 			  case -1: printf("\n"); break;
-			  case  0: printf("OUTSIDESLA\n"); break;
-			  case  1: printf("INSIDESLA\n"); break;
+			  case  0: printf(" OUTSIDESLA\n"); break;
+			  case  1: printf(" INSIDESLA\n"); break;
 			}
 		}
 	}
