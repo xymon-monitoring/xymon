@@ -74,7 +74,7 @@ bbcombotest: $(COMBOTESTOBJS)
 # TEST programs
 ################################################
 alert: alert.c debug.c util.c
-	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ alert.c debug.c util.c
+	$(CC) $(CFLAGS) -g -DSTANDALONE -DDEBUG -Wall -o $@ alert.c debug.c util.c
 
 contest: contest.c debug.c util.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -o $@ contest.c debug.c util.c $(CURLLIB) $(SSLLIBS) $(NETLIBS)
@@ -91,6 +91,8 @@ reptest: reportdata.c debug.c util.c
 sendmsg: sendmsg.c debug.c util.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ sendmsg.c debug.c util.c $(NETLIBS)
 
+bbtest-local: bbtest-local.c bbtest-local-linux.c bbtest-local-sunos.c bbtest-local-hpux.c bbtest-local-bsd.c debug.c util.c sendmsg.c
+	$(CC) $(CFLAGS) $(OSDEF) -g -DDEBUG -Wall -o $@ bbtest-local.c debug.c util.c sendmsg.c
 
 ################################################
 # Objects requiring special compile flags 
@@ -160,7 +162,7 @@ distclean: clean
 	rm -f Makefile
 
 clean:
-	rm -f *.o *~ $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) alert contest reptest calc sendmsg ldaptest libares.a
+	rm -f *.o *~ $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) alert contest reptest calc sendmsg ldaptest libares.a bbtest-local
 	rm -rf ares-1.1.1/
 
 install-bin: $(PROGRAMS)
