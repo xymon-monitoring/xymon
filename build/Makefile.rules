@@ -79,11 +79,14 @@ reptest: reportdata.c debug.c util.c
 sendmsg: sendmsg.c debug.c util.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ sendmsg.c debug.c util.c $(NETLIBS)
 
+bbtest-net.o: bbtest-net.c bbtest-net.h
+	$(CC) $(CFLAGS) $(LDAPFLAGS) -c -o $@ bbtest-net.c
+
 httptest.o: httptest.c httptest.h
 	$(CC) $(CFLAGS) $(CURLINCLUDE) $(USEMULTI) -c -o $@ httptest.c
 
 ldaptest.o: ldaptest.c ldaptest.h
-	$(CC) $(CFLAGS) $(LDAPINCLUDE) -c -o $@ ldaptest.c
+	$(CC) $(CFLAGS) $(LDAPFLAGS) $(LDAPINCLUDE) -c -o $@ ldaptest.c
 
 contest.o: contest.c contest.h
 	$(CC) $(CFLAGS) $(CURLINCLUDE) $(SSLFLAGS) $(SSLINCLUDE) -c -o $@ contest.c
