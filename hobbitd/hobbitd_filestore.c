@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
 			p = gettok(NULL, "|");
 		}
 
-		if ((role == ROLE_STATUS) && (metacount > 13) && (strncmp(items[0], "@@status", 8) == 0)) {
+		if ((role == ROLE_STATUS) && (metacount >= 13) && (strncmp(items[0], "@@status", 8) == 0)) {
 			/* @@status|timestamp|sender|hostname|testname|expiretime|color|testflags|prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage */
 			time_t timesincechange;
 
@@ -241,6 +241,9 @@ int main(int argc, char *argv[])
 			sprintf(logfn, "%s/%s.%s", filedir, hostname, testname);
 			sprintf(newfn, "%s/%s.%s", filedir, hostname, newtestname);
 			rename(logfn, newfn);
+		}
+		else {
+			errprintf("Dropping message type %s, metacount=%d\n", items[0], metacount);
 		}
 	}
 
