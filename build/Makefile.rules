@@ -1,4 +1,4 @@
-all: bbgen bbgmchosts bbnethosts bbtest-web
+all: bbgen bbgmchosts bbnethosts bbtest-web bbtest-net
 
 CC=gcc
 
@@ -9,15 +9,19 @@ CFLAGS=-O2 -Wall -Wno-unused
 # CFLAGS=-g -DDEBUG -Wall
 
 GENOBJS = bbgen.o debug.o loaddata.o larrdgen.o pagegen.o process.o util.o infogen.o alert.o wmlgen.o
-TESTOBJS = bbtest-web.o util.o debug.o
+WEBTESTOBJS = bbtest-web.o util.o debug.o
+NETTESTOBJS = bbtest-net.o util.o debug.o
 NETOBJS = bbnethosts.o
 GMCOBJS = bbgmchosts.o
 
 bbgen: $(GENOBJS)
 	$(CC) $(CFLAGS) -o bbgen $(GENOBJS)
 
-bbtest-web: $(TESTOBJS)
-	$(CC) $(CFLAGS) -o bbtest-web $(TESTOBJS)
+bbtest-web: $(WEBTESTOBJS)
+	$(CC) $(CFLAGS) -o bbtest-web $(WEBTESTOBJS)
+
+bbtest-net: $(NETTESTOBJS)
+	$(CC) $(CFLAGS) -o bbtest-net $(NETTESTOBJS)
 
 bbnethosts: $(NETOBJS)
 	$(CC) $(CFLAGS) -o bbnethosts $(NETOBJS)
