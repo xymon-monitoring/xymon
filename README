@@ -151,6 +151,11 @@ The "info" column is always included in the bb2.html and in the
 non-standard bbnk.html page, so the information is available to
 the people troubleshooting a problem with a service or host.
 
+NB: The code to generate the "info" column assumes you have
+installed the bbgen patches needed for the LARRD support 
+(see the "INSTALL" file). If you haven't made these modifications,
+the info-pages will have a very odd-looking background color.
+
 As with the LARRD option, generating the info-column pages do add
 to the time it takes to run bbgen. The info column pages are only 
 updated when the bb-hosts, bbwarnsetup.cfg or bbwarnrules.cfg
@@ -198,5 +203,5 @@ See the "TODO" file.
 
 
 Henrik Storner <henrik@storner.dk>
-Feb 10, 2003
+Feb 11, 2003
 
