@@ -16,7 +16,9 @@
 
 extern char *rssfilename;
 extern char *rssversion;
+extern int  rsscolorlimit;
 extern char *nssidebarfilename;
+extern int  nssidebarcolorlimit;
 
 extern void do_rss_feed(void);
 extern void do_netscape_sidebar(void);

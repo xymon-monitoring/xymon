@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: rssgen.c,v 1.3 2003-08-11 21:32:43 henrik Exp $";
+static char rcsid[] = "$Id: rssgen.c,v 1.4 2004-07-27 20:37:22 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -24,6 +24,8 @@ static char rcsid[] = "$Id: rssgen.c,v 1.3 2003-08-11 21:32:43 henrik Exp $";
 char *rssfilename = NULL;
 char *rssversion = "0.91";
 char *nssidebarfilename = NULL;
+int  rsscolorlimit = COL_RED;
+int  nssidebarcolorlimit = COL_RED;
 
 #define RSS091 0
 #define RSS092 1
@@ -53,8 +55,17 @@ void do_rss_feed(void)
 
 	ttlvalue = (getenv("BBSLEEP") ? (atoi(getenv("BBSLEEP")) / 60) : 5);
 
-	sprintf(tmpfn, "%s/www/%s.tmp", getenv("BBHOME"), rssfilename);
-	sprintf(destfn, "%s/www/%s", getenv("BBHOME"), rssfilename);
+	if (*rssfilename == '/') {
+		/* Absolute filename */
+		sprintf(tmpfn, "%s.tmp", rssfilename);
+		sprintf(destfn, "%s", rssfilename);
+	}
+	else {
+		/* Filename is relative to $BBHOME/www/ */
+		sprintf(tmpfn, "%s/www/%s.tmp", getenv("BBHOME"), rssfilename);
+		sprintf(destfn, "%s/www/%s", getenv("BBHOME"), rssfilename);
+	}
+
 	fd = fopen(tmpfn, "w");
 	if (fd == NULL) {
 		errprintf("Cannot create RSS/RDF outputfile %s\n", tmpfn);
@@ -106,9 +117,9 @@ void do_rss_feed(void)
 	for (h=hosthead, anyshown=0; (h); h=h->next) {
 		entry_t *e;
 
-		if (h->hostentry->color == COL_RED) {
+		if (h->hostentry->color >= rsscolorlimit) {
 			for (e=h->hostentry->entries; (e); e=e->next) {
-				if (e->color == COL_RED) {
+				if (e->color >= rsscolorlimit) {
 					anyshown = 1;
 
 					switch (rssver) {
@@ -189,8 +200,14 @@ void do_netscape_sidebar(void)
 
 	ttlvalue = (getenv("BBSLEEP") ? atoi(getenv("BBSLEEP")) : 300);
 
-	sprintf(tmpfn, "%s/www/%s.tmp", getenv("BBHOME"), nssidebarfilename);
-	sprintf(destfn, "%s/www/%s", getenv("BBHOME"), nssidebarfilename);
+	if (*nssidebarfilename == '/') {
+		sprintf(tmpfn, "%s.tmp", nssidebarfilename);
+		sprintf(destfn, "%s", nssidebarfilename);
+	}
+	else {
+		sprintf(tmpfn, "%s/www/%s.tmp", getenv("BBHOME"), nssidebarfilename);
+		sprintf(destfn, "%s/www/%s", getenv("BBHOME"), nssidebarfilename);
+	}
 	fd = fopen(tmpfn, "w");
 	if (fd == NULL) {
 		errprintf("Cannot create Netscape sidebar outputfile %s\n", tmpfn);
@@ -212,9 +229,9 @@ void do_netscape_sidebar(void)
 	for (h=hosthead, anyshown=0; (h); h=h->next) {
 		entry_t *e;
 
-		if (h->hostentry->color == COL_RED) {
+		if (h->hostentry->color >= nssidebarcolorlimit) {
 			for (e=h->hostentry->entries; (e); e=e->next) {
-				if (e->color == COL_RED) {
+				if (e->color >= nssidebarcolorlimit) {
 					anyshown = 1;
 
 					fprintf(fd, "      <LI>\n");

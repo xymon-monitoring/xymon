@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.168 2004-03-18 10:03:15 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.169 2004-07-27 20:37:22 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -197,6 +197,10 @@ int main(int argc, char *argv[])
 			if (strlen(lp+1) > 0) nssidebarfilename = malcop(lp+1);
 			else errprintf("--nstab requires a filename\n");
 		}
+		else if (argnmatch(argv[i], "--nslimit=")) {
+			char *lp = strchr(argv[i], '=');
+			nssidebarcolorlimit = parse_color(lp+1);
+		}
 		else if (argnmatch(argv[i], "--rss=")) {
 			char *lp = strchr(argv[i], '=');
 
@@ -207,6 +211,10 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 
 			rssversion = malcop(lp+1);
+		}
+		else if (argnmatch(argv[i], "--rsslimit=")) {
+			char *lp = strchr(argv[i], '=');
+			rsscolorlimit = parse_color(lp+1);
 		}
 		else if (argnmatch(argv[i], "--reportopts=")) {
 			char style[MAX_LINE_LEN];
@@ -501,8 +509,10 @@ int main(int argc, char *argv[])
 			printf("\nAlternate output formats:\n");
 			printf("    --wml[=test1,test2,...]     : Generate a small (bb2-style) WML page\n");
 			printf("    --nstab=FILENAME            : Generate a Netscape Sidebar feed\n");
+			printf("    --nslimit=COLOR             : Minimum color to include on Netscape sidebar\n");
 			printf("    --rss=FILENME               : Generate a RSS/RDF feed of alerts\n");
 			printf("    --rssversion={0.91|0.92|1.0|2.0} : Specify RSS/RDF version (default: 0.91)\n");
+			printf("    --rsslimit=COLOR            : Minimum color to include on RSS feed\n");
 			printf("\nDebugging/troubleshooting options:\n");
 			printf("    --timing                    : Collect timing information\n");
 			printf("    --debug                     : Debugging information\n");
