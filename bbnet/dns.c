@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.19 2004-10-30 15:46:20 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.20 2004-12-03 12:04:24 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -56,7 +56,6 @@ static dnsitem_t *dnscache = NULL;
 static char *find_dnscache(char *hostname)
 {
 	struct in_addr inp;
-	struct hostent *hent;
 	dnsitem_t *dnsc;
 
 	if (inet_aton(hostname, &inp) != 0) {
@@ -173,7 +172,7 @@ void add_url_to_dns_queue(char *url)
 
 static void dns_queue_run(ares_channel channel)
 {
-	int status, nfds, selres;
+	int nfds, selres;
 	fd_set read_fds, write_fds;
 	struct timeval *tvp, tv;
 	int progress = 10;

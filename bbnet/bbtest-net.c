@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.183 2004-11-17 08:49:34 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.184 2004-12-03 12:04:24 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -453,7 +453,6 @@ void load_tests(void)
 				char *badsaves;
 				testedhost_t *h;
 				testitem_t *newtest;
-				extraping_t *extraping = NULL;
 				int anytests = 0;
 				int ping_dialuptest = 0;
 				int ping_reversetest = 0;
@@ -1129,7 +1128,6 @@ void save_frequenttestlist(int argc, char *argv[])
 void run_nslookup_service(service_t *service)
 {
 	testitem_t	*t;
-	char		*p;
 	char		*lookup;
 
 	for (t=service->items; (t); t = t->next) {

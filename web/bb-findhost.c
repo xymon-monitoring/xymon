@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.9 2004-11-20 22:31:08 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.10 2004-12-03 12:04:24 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -138,7 +138,6 @@ int main(int argc, char *argv[])
 {
 	char *pageset = NULL;
 	hostlist_t *hostwalk, *clonewalk;
-	int i;
 	int argi;
 
 	int gotany = 0;
@@ -167,7 +166,6 @@ int main(int argc, char *argv[])
 		formfile = open(formfn, O_RDONLY);
 
 		if (formfile >= 0) {
-			int n;
 			char *inbuf;
 			struct stat st;
 

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-snapshot.c,v 1.5 2004-11-18 15:40:08 henrik Exp $";
+static char rcsid[] = "$Id: bb-snapshot.c,v 1.6 2004-12-03 12:04:24 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -158,7 +158,6 @@ int main(int argc, char *argv[])
 	char bbwebenv[PATH_MAX];
 	char bbgentimeopt[100];
 	char *bbgen_argv[20];
-	int i;
 	pid_t childpid;
 	int childstat;
 	char htmldelim[20];

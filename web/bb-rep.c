@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.20 2004-11-20 22:31:22 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.21 2004-12-03 12:04:24 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -246,7 +246,6 @@ int main(int argc, char *argv[])
 		formfile = open(formfn, O_RDONLY);
 
 		if (formfile >= 0) {
-			int n;
 			char *inbuf;
 			struct stat st;
 

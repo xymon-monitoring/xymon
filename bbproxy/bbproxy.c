@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.38 2004-11-19 22:35:46 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.39 2004-12-03 12:04:24 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -112,7 +112,7 @@ void sigmisc_handler(int signum)
 
 	  case SIGHUP:
 		if (logfile) {
-			FILE *logfd = freopen(logfile, "a", stderr);
+			freopen(logfile, "a", stderr);
 			errprintf("Caught SIGHUP, reopening logfile\n");
 		}
 		break;
