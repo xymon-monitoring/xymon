@@ -1,0 +1,460 @@
+/*----------------------------------------------------------------------------*/
+/* Big Brother network test tool.                                             */
+/*                                                                            */
+/* This is used to implement the testing of HTTP service.                     */
+/*                                                                            */
+/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/*                                                                            */
+/* This program is released under the GNU General Public License (GPL),       */
+/* version 2. See the file "COPYING" for details.                             */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+static char rcsid[] = "$Id: httpresult.c,v 1.1 2004-08-17 20:37:41 henrik Exp $";
+
+#include <sys/types.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <regex.h>
+#include <ctype.h>
+#include <sys/stat.h>
+
+#include "bbgen.h"
+#include "util.h"
+#include "sendmsg.h"
+#include "debug.h"
+#include "bbtest-net.h"
+#include "contest.h"
+#include "httpresult.h"
+
+static int statuscolor(testedhost_t *h, long status)
+{
+	int result;
+
+	switch(status) {
+	  case 000:			/* transportlayer reports error */
+		result = (h->dialup ? COL_CLEAR : COL_RED);
+		break;
+	  case 200: case 201: case 202: case 203: case 204: case 205: case 206:
+	  case 301: case 302: case 303: case 307:
+	  case 401: case 403: 		/* Is "Forbidden" an OK status ? */
+		result = COL_GREEN;
+		break;
+	  case 400: case 404: case 405: case 406:
+		result = COL_RED;	/* Trouble getting page */
+		break;
+	  case 500:
+	  case 501:
+	  case 502:  /* Proxy error */
+	  case 503:
+	  case 504:
+	  case 505:
+		result = COL_RED;	/* Server error */
+		break;
+	  case STATUS_CONTENTMATCH_FAILED:
+		result = COL_RED;		/* Pseudo status: content match fails */
+		break;
+	  case STATUS_CONTENTMATCH_BADREGEX:	/* Pseudo status: bad regex to match against */
+	  case STATUS_CONTENTMATCH_NOFILE:	/* Pseudo status: content match requested, but no match-file */
+		result = COL_YELLOW;
+		break;
+	  default:
+		result = COL_YELLOW;	/* Unknown status */
+		break;
+	}
+
+	/* Drop failures if not inside SLA window */
+	if ((result >= COL_YELLOW) && (!h->okexpected)) {
+		result = COL_BLUE;
+	}
+
+	return result;
+}
+
+
+void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firsttest,
+		       char *nonetpage, int failgoesclear)
+{
+	testitem_t *t;
+	int	color = -1;
+	char    *svcname;
+	char	msgline[MAXMSG];
+	char	msgtext[MAXMSG];
+	char    *nopagename;
+	int     nopage = 0;
+	int	anydown = 0;
+
+	if (firsttest == NULL) return;
+
+	svcname = malcop(httptest->testname);
+	if (httptest->namelen) svcname[httptest->namelen] = '\0';
+
+	/* Check if this service is a NOPAGENET service. */
+	nopagename = (char *) malloc(strlen(svcname)+3);
+	sprintf(nopagename, ",%s,", svcname);
+	nopage = (strstr(nonetpage, svcname) != NULL);
+	free(nopagename);
+
+	dprintf("Calc http color host %s : ", host->hostname);
+	msgtext[0] = '\0';
+	for (t=firsttest; (t && (t->host == host)); t = t->next) {
+		http_data_t *req = (http_data_t *) t->privdata;
+
+		req->httpcolor = statuscolor(host, req->httpstatus);
+		if (req->httpcolor == COL_RED) anydown++;
+
+		/* Dialup hosts and dialup tests report red as clear */
+		if ((req->httpcolor != COL_GREEN) && (host->dialup || t->dialup)) req->httpcolor = COL_CLEAR;
+
+		/* If ping failed, report CLEAR unless alwaystrue */
+		if ( ((req->httpcolor == COL_RED) || (req->httpcolor == COL_YELLOW)) && /* Test failed */
+		     (host->downcount > 0)                   && /* The ping check did fail */
+		     (!host->noping && !host->noconn)        && /* We are doing a ping test */
+		     (failgoesclear)                         &&
+		     (!t->alwaystrue)                           )  /* No "~testname" flag */ {
+			req->httpcolor = COL_CLEAR;
+		}
+
+		/* If test we depend on has failed, report CLEAR unless alwaystrue */
+		if ( ((req->httpcolor == COL_RED) || (req->httpcolor == COL_YELLOW)) && /* Test failed */
+		      failgoesclear && !t->alwaystrue )  /* No "~testname" flag */ {
+			char *faileddeps = deptest_failed(host, t->service->testname);
+
+			if (faileddeps) {
+				req->httpcolor = COL_CLEAR;
+				req->faileddeps = malcop(faileddeps);
+			}
+		}
+
+		dprintf("%s(%s) ", t->testspec, colorname(req->httpcolor));
+		if (req->httpcolor > color) color = req->httpcolor;
+
+		/* Build the short msgtext which goes on line 1 of the status message. */
+		strcat(msgtext, (strlen(msgtext) ? " ; " : ": ") );
+		if (req->tcptest->errcode != CONTEST_ENOERROR) {
+			switch (req->tcptest->errcode) {
+			  case CONTEST_ETIMEOUT: 
+				  req->errorcause = "Server timeout"; break;
+			  case CONTEST_ENOCONN : 
+				  req->errorcause =  "No connection"; break;
+			  case CONTEST_EDNS    : 
+				  switch (req->parsestatus) {
+					  case 1 : req->errorcause =  "Invalid URL"; break;
+					  case 2 : req->errorcause =  "Hostname not in DNS"; break;
+					  default: req->errorcause =  "DNS error"; break;
+				  }
+				  break;
+			  case CONTEST_EIO     : 
+				  req->errorcause =  "I/O error"; break;
+			  case CONTEST_ESSL    : 
+				  req->errorcause =  "SSL error"; break;
+			  default: 
+				  req->errorcause =  "Xfer failed";
+			}
+
+			strcat(msgtext, req->errorcause);
+		} 
+		else if (req->tcptest->open == 0) {
+			req->errorcause = "Connect failed";
+			strcat(msgtext, req->errorcause);
+		}
+		else if ((req->httpcolor == COL_RED) || (req->httpcolor == COL_YELLOW)) {
+			char m1[100];
+
+			if (req->headers) {
+				unsigned char *p1, *p2;
+				unsigned char savechar = '\0';
+
+				p1 = strchr(req->headers, '\n');
+				if (p1 && (*(p1-1) == '\r')) p1--;
+				if (p1) { savechar = *p1; *p1 = '\0'; }
+				p2 = skipword(req->headers);
+				p2 = skipwhitespace(p2);
+				p2 = skipword(p2);
+				p2 = skipwhitespace(p2);
+				strcpy(m1, p2);
+				if (p1) *p1 = savechar;
+			}
+			else {
+				sprintf(m1, "HTTP error %ld", req->httpstatus);
+			}
+			strcat(msgtext, m1);
+			req->errorcause = malcop(m1);
+		}
+		else {
+			strcat(msgtext, "OK");
+		}
+	}
+
+	if (anydown) {
+		firsttest->downcount++; 
+		if(firsttest->downcount == 1) firsttest->downstart = time(NULL);
+	} 
+	else firsttest->downcount = 0;
+
+	/* Handle the "badtest" stuff for http tests */
+	if ((color == COL_RED) && (firsttest->downcount < firsttest->badtest[2])) {
+		if      (firsttest->downcount >= firsttest->badtest[1]) color = COL_YELLOW;
+		else if (firsttest->downcount >= firsttest->badtest[0]) color = COL_CLEAR;
+		else                                                    color = COL_GREEN;
+	}
+
+	if (nopage && (color == COL_RED)) color = COL_YELLOW;
+	dprintf(" --> %s\n", colorname(color));
+
+	/* Send off the http status report */
+	init_status(color);
+	sprintf(msgline, "status %s.%s %s %s", 
+		commafy(host->hostname), svcname, colorname(color), timestamp);
+	addtostatus(msgline);
+	addtostatus(msgtext);
+	addtostatus("\n");
+
+	for (t=firsttest; (t && (t->host == host)); t = t->next) {
+		http_data_t *req = (http_data_t *) t->privdata;
+
+		sprintf(msgline, "\n&%s %s - ", colorname(req->httpcolor), req->url);
+		if (req->httpcolor == COL_GREEN) strcat(msgline, "OK");
+		else {
+			if (req->errorcause) strcat(msgline, req->errorcause);
+			else strcat(msgline, "failed");
+		}
+		strcat(msgline, "\n");
+		addtostatus(msgline);
+
+		if (req->headers) {
+			sprintf(msgline, "\n%s", req->headers);
+			addtostatus(msgline);
+		}
+		if (req->faileddeps) addtostatus(req->faileddeps);
+
+		sprintf(msgline, "\nSeconds: %5d.%02d\n\n", 
+			(unsigned int)req->tcptest->totaltime.tv_sec, 
+			(unsigned int)req->tcptest->totaltime.tv_usec / 10000 );
+		addtostatus(msgline);
+	}
+	addtostatus("\n\n");
+	finish_status();
+
+	free(svcname);
+}
+
+
+static testitem_t *nextcontenttest(service_t *httptest, service_t *ftptest, testedhost_t *host, testitem_t *current)
+{
+	testitem_t *result;
+
+	result = current->next;
+
+	if ((result == NULL) || (result->host != host)) {
+		if (current->service == httptest) result = host->firstftp;
+		if (current->service == ftptest)  result = NULL;
+	}
+
+	return result;
+}
+
+void send_content_results(service_t *httptest, service_t *ftptest, testedhost_t *host,
+			  char *nonetpage, char *contenttestname, int failgoesclear)
+{
+	testitem_t *t, *firsttest;
+	int	color = -1;
+	char	msgline[MAXMSG];
+	char	msgtext[MAXMSG];
+	char    *nopagename;
+	int     nopage = 0;
+	char    *conttest;
+	int 	contentnum = 0;
+	conttest = (char *) malloc(strlen(contenttestname)+5);
+
+	if ((host->firsthttp == NULL) && (host->firstftp == NULL)) return;
+
+	/* Check if this service is a NOPAGENET service. */
+	nopagename = (char *) malloc(strlen(contenttestname)+3);
+	sprintf(nopagename, ",%s,", contenttestname);
+	nopage = (strstr(nonetpage, contenttestname) != NULL);
+	free(nopagename);
+
+	dprintf("Calc http color host %s : ", host->hostname);
+	msgtext[0] = '\0';
+
+	firsttest = host->firsthttp;
+	if (firsttest == NULL) firsttest = host->firstftp;
+
+	for (t=firsttest; (t && (t->host == host)); t = nextcontenttest(httptest, ftptest, host, t)) {
+		http_data_t *req = (http_data_t *) t->privdata;
+		char cause[100];
+		int got_data = 1;
+
+		strcpy(cause, "Content OK");
+		if (req->contentcheck) {
+			/* We have a content check */
+			if (req->contstatus == 0) {
+				/* The content check passed initial checks of regexp etc. */
+				color = statuscolor(t->host, req->httpstatus);
+				if (color == COL_GREEN) {
+					/* We got the data from the server */
+					int status = 0;
+
+					switch (req->contentcheck) {
+					  case CONTENTCHECK_REGEX:
+						if (req->output) {
+							regmatch_t foo[1];
+
+							status = regexec((regex_t *) req->exp, req->output, 0, foo, 0);
+							regfree((regex_t *) req->exp);
+						}
+						else {
+							/* output may be null if we only got a redirect */
+							status = STATUS_CONTENTMATCH_FAILED;
+						}
+						break;
+
+					  case CONTENTCHECK_NOREGEX:
+						if (req->output) {
+							regmatch_t foo[1];
+
+							status = (!regexec((regex_t *) req->exp, req->output, 0, foo, 0));
+							regfree((regex_t *) req->exp);
+						}
+						else {
+							/* output may be null if we only got a redirect */
+							status = STATUS_CONTENTMATCH_FAILED;
+						}
+						break;
+
+					  case CONTENTCHECK_DIGEST:
+						if (req->digest == NULL) req->digest = malcop("");
+						if (strcmp(req->digest, (char *)req->exp) != 0) {
+							status = STATUS_CONTENTMATCH_FAILED;
+						}
+						else status = 0;
+
+						req->output = (char *) malloc(strlen(req->digest)+strlen((char *)req->exp)+strlen("Expected:\nGot     :\n")+1);
+						sprintf(req->output, "Expected:%s\nGot     :%s\n", 
+							(char *)req->exp, req->digest);
+						break;
+
+					  case CONTENTCHECK_CONTENTTYPE:
+						if (req->contenttype && (strcasecmp(req->contenttype, (char *)req->exp) == 0)) {
+							status = 0;
+						}
+						else {
+							status = STATUS_CONTENTMATCH_FAILED;
+						}
+
+						if (req->contenttype == NULL) req->contenttype = malcop("No content-type provdied");
+
+						req->output = (char *) malloc(strlen(req->contenttype)+strlen((char *)req->exp)+strlen("Expected content-type: %s\nGot content-type     : %s\n")+1);
+						sprintf(req->output, "Expected content-type: %s\nGot content-type     : %s\n",
+							(char *)req->exp, req->contenttype);
+						break;
+					}
+
+					req->contstatus = ((status == 0)  ? 200 : STATUS_CONTENTMATCH_FAILED);
+					color = statuscolor(t->host, req->contstatus);
+					if (color != COL_GREEN) strcpy(cause, "Content match failed");
+				}
+				else {
+					/*
+					 * Failed to retrieve the webpage.
+					 * Report CLEAR, unless "alwaystrue" is set.
+					 */
+					if (failgoesclear && !t->alwaystrue) color = COL_CLEAR;
+					got_data = 0;
+					strcpy(cause, "Failed to get webpage");
+				}
+
+				/* If not inside SLA and non-green, report as BLUE */
+				if (!t->host->okexpected && (color != COL_GREEN)) color = COL_BLUE;
+
+				if (nopage && (color == COL_RED)) color = COL_YELLOW;
+			}
+			else {
+				/* This only happens upon internal errors in BB test system */
+				color = statuscolor(t->host, req->contstatus);
+				strcpy(cause, "Internal BB error");
+			}
+
+			/* Send the content status message */
+			dprintf("Content check on %s is %s\n", req->url, colorname(color));
+
+			if (contentnum > 0) sprintf(conttest, "%s%d", contenttestname, contentnum);
+			else strcpy(conttest, contenttestname);
+
+			init_status(color);
+			sprintf(msgline, "status %s.%s %s %s: %s\n", 
+				commafy(host->hostname), conttest, colorname(color), timestamp, cause);
+			addtostatus(msgline);
+
+			if (!got_data) {
+				sprintf(msgline, "\nAn error occurred while testing <a href=\"%s\">URL %s</a>\n", 
+					req->url, req->url);
+			}
+			else {
+				sprintf(msgline, "\n&%s %s - Testing <a href=\"%s\">URL</a> yields:\n",
+					colorname(color), req->url, req->url);
+			}
+			addtostatus(msgline);
+
+			if (req->output) {
+				if ( (req->contenttype && (strncasecmp(req->contenttype, "text/html", 9) == 0)) ||
+				     (strncasecmp(req->output, "<html", 5) == 0) ) {
+					char *bodystart = NULL;
+					char *bodyend = NULL;
+
+					bodystart = strstr(req->output, "<body");
+					if (bodystart == NULL) bodystart = strstr(req->output, "<BODY");
+					if (bodystart) {
+						char *p;
+
+						p = strchr(bodystart, '>');
+						if (p) bodystart = (p+1);
+					}
+					else bodystart = req->output;
+
+					bodyend = strstr(bodystart, "</body");
+					if (bodyend == NULL) bodyend = strstr(bodystart, "</BODY");
+					if (bodyend) {
+						*bodyend = '\0';
+					}
+
+					addtostatus("<div>\n");
+					addtostatus(bodystart);
+					addtostatus("\n</div>\n");
+				}
+				else {
+					addtostatus(req->output);
+				}
+			}
+			else {
+				addtostatus("\nNo output received from server\n\n");
+			}
+
+			addtostatus("\n\n");
+			finish_status();
+
+			contentnum++;
+		}
+	}
+
+	free(conttest);
+}
+
+
+void show_http_test_results(service_t *httptest)
+{
+	http_data_t *req;
+	testitem_t *t;
+
+	for (t = httptest->items; (t); t = t->next) {
+		req = (http_data_t *) t->privdata;
+
+		printf("URL                      : %s\n", req->url);
+		printf("HTTP status              : %lu\n", req->httpstatus);
+		printf("HTTP headers\n%s\n", textornull(req->headers));
+		printf("HTTP output\n%s\n", textornull(req->output));
+		printf("------------------------------------------------------\n");
+	}
+}
