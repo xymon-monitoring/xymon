@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.44 2003-03-02 12:38:47 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.45 2003-03-03 22:51:04 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -44,7 +44,7 @@ char	*ignorecolumns = NULL;			/* Columns that will be ignored totally */
 
 link_t  null_link = { "", "", "", NULL };	/* Null link for pages/hosts/whatever with no link */
 col_t   null_column = { "", NULL };		/* Null column */
-
+char	*null_text = "";
 
 char *skipword(const char *l)
 {
@@ -73,7 +73,7 @@ bbgen_page_t *init_page(const char *name, const char *title)
 	if (name) {
 		newpage->name = malloc(strlen(name)+1); strcpy(newpage->name, name);
 	}
-	else name = "";
+	else name = null_text;
 
 	if (title) {
 		newpage->title = malloc(strlen(title)+1); strcpy(newpage->title, title);
@@ -99,7 +99,7 @@ group_t *init_group(const char *title, const char *onlycols)
 	if (title) {
 		newgroup->title = malloc(strlen(title)+1); strcpy(newgroup->title, title);
 	}
-	else title = "";
+	else title = null_text;
 
 	if (onlycols) {
 		newgroup->onlycols = malloc(strlen(onlycols)+3); /* Add a '|' at start and end */
@@ -162,7 +162,7 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	if (tags) {
 		newhost->rawentry = malloc(strlen(tags)+1); strcpy(newhost->rawentry, tags);
 	}
-	else tags = "";
+	else newhost->rawentry = null_text;
 	newhost->parent = newhost->next = NULL;
 	newhost->rrds = NULL;
 
@@ -574,8 +574,8 @@ void getnamelink(char *l, char **name, char **link)
 
 	dprintf("getnamelink(%s, ...)\n", textornull(l));
 
-	*name = "";
-	*link = "";
+	*name = null_text;
+	*link = null_text;
 
 	/* Skip page/subpage keyword, and whitespace after that */
 	p = skipwhitespace(skipword(l));
@@ -591,7 +591,7 @@ void getnamelink(char *l, char **name, char **link)
 
 void getgrouptitle(char *l, char **title, char **onlycols)
 {
-	*title = "";
+	*title = null_text;
 	*onlycols = NULL;
 
 	dprintf("getgrouptitle(%s, ...)\n", textornull(l));
