@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.12 2005-02-21 16:36:32 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.13 2005-02-27 11:35:26 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -116,6 +116,7 @@ const static struct {
 	{ "MKBBTITLE", "COLOR=\"ivory\" SIZE=\"+1\"" },
 	{ "BBDATEFORMAT", "%a %b %d %H:%M:%S %Y" },
 	{ "BBRSSTITLE", "Hobbit Alerts" },
+	{ "ACKUNTILMSG", "Next update at: %H:%M %Y-%m-%d" },
 	{ "WMLMAXCHARS", "1500"	},
 	{ "BBREPWARN", "97" },
 	{ "BBGENREPOPTS", "--recentgifs --subpagecolumns=2" },
