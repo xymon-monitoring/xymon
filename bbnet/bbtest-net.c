@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.167 2004-08-28 07:23:41 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.168 2004-08-28 11:47:33 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1948,48 +1948,27 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			p++; timeout = atoi(p);
 		}
+		else if (argnmatch(argv[argi], "--conntimeout=")) {
+			int newtimeout;
+			char *p = strchr(argv[argi], '=');
+			p++; newtimeout = atoi(p);
+			if (newtimeout > timeout) timeout = newtimeout;
+			errprintf("Deprecated option '--conntimeout' should not be used\n");
+		}
+		else if (argnmatch(argv[argi], "--concurrency=")) {
+			char *p = strchr(argv[argi], '=');
+			p++; concurrency = atoi(p);
+		}
+		else if (argnmatch(argv[argi], "--dns-timeout=") || argnmatch(argv[argi], "--dns-max-all=")) {
+			char *p = strchr(argv[argi], '=');
+			p++; dnstimeout = atoi(p);
+		}
 		else if (argnmatch(argv[argi], "--dns=")) {
 			char *p = strchr(argv[argi], '=');
 			p++;
 			if (strcmp(p, "only") == 0)      dnsmethod = DNS_ONLY;
 			else if (strcmp(p, "ip") == 0)   dnsmethod = IP_ONLY;
 			else                             dnsmethod = DNS_THEN_IP;
-		}
-		else if (strcmp(argv[argi], "--test-untagged") == 0) {
-			testuntagged = 1;
-		}
-		else if (strcmp(argv[argi], "--timelimit=") == 0) {
-			char *p = strchr(argv[argi], '=');
-			p++; runtimewarn = atol(p);
-		}
-		else if (strcmp(argv[argi], "--no-flags") == 0) {
-			dosendflags = 0;
-		}
-
-		/* Debugging options */
-		else if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
-		else if (strcmp(argv[argi], "--services") == 0) {
-			servicedumponly = 1;
-		}
-		else if (argnmatch(argv[argi], "--dump")) {
-			char *p = strchr(argv[argi], '=');
-
-			if (p) {
-				if (strcmp(p, "=before") == 0) dumpdata = 1;
-				else if (strcmp(p, "=after") == 0) dumpdata = 2;
-				else dumpdata = 3;
-			}
-			else dumpdata = 2;
-
-			debug = 1;
-		}
-		else if (strcmp(argv[argi], "--no-update") == 0) {
-			dontsendmessages = 1;
-		}
-		else if (strcmp(argv[argi], "--timing") == 0) {
-			timing = 1;
 		}
 		else if (argnmatch(argv[argi], "--report=") || (strcmp(argv[argi], "--report") == 0)) {
 			char *p = strchr(argv[argi], '=');
@@ -1999,22 +1978,24 @@ int main(int argc, char *argv[])
 			else egocolumn = "bbtest";
 			timing = 1;
 		}
+		else if (strcmp(argv[argi], "--test-untagged") == 0) {
+			testuntagged = 1;
+		}
 		else if (argnmatch(argv[argi], "--frequenttestlimit=")) {
 			char *p = strchr(argv[argi], '=');
 			p++; frequenttestlimit = atoi(p);
 		}
-		else if (argnmatch(argv[argi], "--dns-max-all=") || argnmatch(argv[argi], "--dns-timeout=")) {
+		else if (strcmp(argv[argi], "--timelimit=") == 0) {
 			char *p = strchr(argv[argi], '=');
-			p++; dnstimeout = atoi(p);
+			p++; runtimewarn = atol(p);
 		}
 
 		/* Options for TCP tests */
-		else if (argnmatch(argv[argi], "--concurrency=")) {
-			char *p = strchr(argv[argi], '=');
-			p++; concurrency = atoi(p);
-		}
 		else if (strcmp(argv[argi], "--checkresponse") == 0) {
 			checktcpresponse = 1;
+		}
+		else if (strcmp(argv[argi], "--no-flags") == 0) {
+			dosendflags = 0;
 		}
 
 		/* Options for PING tests */
@@ -2036,17 +2017,12 @@ int main(int argc, char *argv[])
 		}
 
 		/* Options for HTTP tests */
-		else if (argnmatch(argv[argi], "--conntimeout=")) {
-			int newtimeout;
-			char *p = strchr(argv[argi], '=');
-			p++; newtimeout = atoi(p);
-			if (newtimeout > timeout) timeout = newtimeout;
-			errprintf("Deprecated option '--conntimeout' should not be used\n");
-		}
 		else if (argnmatch(argv[argi], "--content=")) {
 			char *p = strchr(argv[argi], '=');
 			contenttestname = malcop(p+1);
 		}
+
+		/* Options for SSL certificates */
 		else if (argnmatch(argv[argi], "--ssl=")) {
 			char *p = strchr(argv[argi], '=');
 			ssltestname = malcop(p+1);
@@ -2063,7 +2039,33 @@ int main(int argc, char *argv[])
 			p++; sslalarmdays = atoi(p);
 		}
 
+		/* Debugging options */
+		else if (strcmp(argv[argi], "--debug") == 0) {
+			debug = 1;
+		}
+		else if (argnmatch(argv[argi], "--dump")) {
+			char *p = strchr(argv[argi], '=');
+
+			if (p) {
+				if (strcmp(p, "=before") == 0) dumpdata = 1;
+				else if (strcmp(p, "=after") == 0) dumpdata = 2;
+				else dumpdata = 3;
+			}
+			else dumpdata = 2;
+
+			debug = 1;
+		}
+		else if (strcmp(argv[argi], "--no-update") == 0) {
+			dontsendmessages = 1;
+		}
+		else if (strcmp(argv[argi], "--timing") == 0) {
+			timing = 1;
+		}
+
 		/* Informational options */
+		else if (strcmp(argv[argi], "--services") == 0) {
+			servicedumponly = 1;
+		}
 		else if (strcmp(argv[argi], "--version") == 0) {
 			printf("bbtest-net version %s\n", VERSION);
 			if (ssl_library_version) printf("SSL library : %s\n", ssl_library_version);
@@ -2078,33 +2080,39 @@ int main(int argc, char *argv[])
 		else if ((strcmp(argv[argi], "--help") == 0) || (strcmp(argv[argi], "-?") == 0)) {
 			printf("bbtest-net version %s\n\n", VERSION);
 			printf("Usage: %s [options] [host1 host2 host3 ...]\n", argv[0]);
-			printf("Options:\n");
+			printf("General options:\n");
 			printf("    --timeout=N                 : Timeout (in seconds) for service tests\n");
+			printf("    --concurrency=N             : Number of tests run in parallel\n");
+			printf("    --dns-timeout=N             : DNS lookups timeout and fail after N seconds [30]\n");
 			printf("    --dns=[only|ip|standard]    : How IP's are decided\n");
-			printf("    --test-untagged             : Include hosts without a NET: tag in the test\n");
 			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbtest-net\n");
+			printf("    --test-untagged             : Include hosts without a NET: tag in the test\n");
 			printf("    --frequenttestlimit=N       : Seconds after detecting failures in which we poll frequently\n");
 			printf("    --timelimit=N               : Warns if the complete test run takes longer than N seconds [BBSLEEP]\n");
-			printf("    --dns-timeout=N             : DNS lookups timeout and fail after N seconds [30]\n");
-			printf("    --no-flags                  : Dont send extra bbgen test flags\n");
-			printf("\nOptions for services in BBNETSVCS (tcp tests):\n");
-			printf("    --concurrency=N             : Number of tests run in parallel\n");
+			printf("\nOptions for simple TCP service tests:\n");
 			printf("    --checkresponse             : Check response from known services\n");
+			printf("    --no-flags                  : Dont send extra bbgen test flags\n");
 			printf("\nOptions for PING (connectivity) tests:\n");
 			printf("    --ping[=COLUMNNAME]         : Enable ping checking, default columname is \"conn\"\n");
 			printf("    --noping                    : Disable ping checking\n");
+			printf("    --trace                     : Run traceroute on all hosts where ping fails\n");
+			printf("    --notrace                   : Disable traceroute when ping fails (default)\n");
 			printf("\nOptions for HTTP/HTTPS (Web) tests:\n");
 			printf("    --content=COLUMNNAME        : Define columnname for CONTENT checks (content)\n");
+			printf("\nOptions for SSL certificate tests:\n");
 			printf("    --ssl=COLUMNNAME            : Define columnname for SSL certificate checks (sslcert)\n");
+			printf("    --no-ssl                    : Disable SSL certificate check\n");
 			printf("    --sslwarn=N                 : Go yellow if certificate expires in less than N days (default:30)\n");
 			printf("    --sslalarm=N                : Go red if certificate expires in less than N days (default:10)\n");
-			printf("    --no-ssl                    : Disable SSL certificate check\n");
 			printf("\nDebugging options:\n");
-			printf("    --debug                     : Output debugging information\n");
-			printf("    --dump[=before|=after|=all] : Dump internal memory structures before/after tests run\n");
 			printf("    --no-update                 : Send status messages to stdout instead of to bbd\n");
 			printf("    --timing                    : Trace the amount of time spent on each series of tests\n");
+			printf("    --debug                     : Output debugging information\n");
+			printf("    --dump[=before|=after|=all] : Dump internal memory structures before/after tests run\n");
+			printf("\nInformational options:\n");
 			printf("    --services                  : Dump list of known services and exit\n");
+			printf("    --version                   : Show program version and exit\n");
+			printf("    --help                      : Show help text and exit\n");
 
 			return 0;
 		}

@@ -59,16 +59,6 @@ test can be determined by your /etc/hosts file or DNS.
 
 .SH GENERAL OPTIONS
 
-.IP "--help or -?"
-Provide a summary of available commandline options.
-
-.IP "--version"
-Prints the version number of bbtest-net
-
-.IP --services
-Dump the list of defined TCP services bbtest-net knows
-how to test. Do not run any tests.
-
 .IP --timeout=N
 Determines the timeout (in seconds) for each
 service that is tested. For TCP tests (those from BBNETSVCS),
@@ -79,6 +69,10 @@ to the webserver (the time needed to connect to the server,
 plus the time it takes the server to respond to the request).
 Default: 10 seconds
 
+.IP --conntimeout=N
+This option is deprecated, and will be ignored. Use the
+--timeout option instead.
+
 .IP --concurrency=N 
 Determines the number of network tests that
 run in parallel. Default is operating system dependent,
@@ -86,9 +80,19 @@ but will usually be 256. If bbtest-net begins to complain
 about not being able to get a "socket", try running
 bbtest-net with a lower value like 50 or 100.
 
-.IP --dns=[ip|only]
+.IP "--dns-timeout=N (default: 30 seconds)"
+bbtest-net will timeout all DNS lookups after N seconds.
+Any pending DNS lookups are regarded as failed, i.e. the
+network tests that depend on this DNS lookup will report
+an error.
+
+.IP --dns-max-all=N
+Same as "--dns-timeout=N". The "--dns-max-all" option is 
+deprecated and should not be used.
+
+.IP --dns=[ip|only|standard]
 Determines how bbtest-net finds the IP adresses of the hosts to test. 
-By default, bbtest-net does a DNS lookup of the hostname 
+By default (the "standard"), bbtest-net does a DNS lookup of the hostname 
 to determine the IP address, unless the host has the "testip" 
 tag, or the DNS lookup fails.
 .br
@@ -105,15 +109,11 @@ lookup for the hostname given in the URL; see the
 "bbtest-net tags for HTTP tests" section in
 .I bb-hosts(5)
 
-.IP "--dns-timeout=N (default: 30 seconds)"
-bbtest-net will timeout all DNS lookups after N seconds.
-Any pending DNS lookups are regarded as failed, i.e. the
-network tests that depend on this DNS lookup will report
-an error.
-
-.IP --dns-max-all=N
-Same as "--dns-timeout=N". The "--dns-max-all" option is 
-deprecated and should not be used.
+.IP --report[=COLUMNNAME]
+With this option, bbtest-net will send a status message with details 
+of how many hosts were processed, how many tests were generated, 
+any errors that occurred during the run, and some timing statistics. 
+The default columnname is "bbtest".
 
 .IP --test-untagged
 When using the BBLOCATION environment variable to test
@@ -126,37 +126,38 @@ With this option, hosts with no NET: tag are included
 in the test, so that all hosts that either have a
 matching NET: tag, or no NET: tag at all are tested.
 
-.IP --debug
-Dumps a bunch of status about the tests as they
-progress to stdout.
-
-.IP --no-update
-Don't send any status updates to the BBDISPLAY server. Instead,
-all messages are dumped to stdout.
-
-.IP --report[=COLUMNNAME]
-With this option, bbtest-net will send a status message with details 
-of how many hosts were processed, how many tests were generated, 
-any errors that occurred during the run, and some timing statistics. 
-The default columnname is "bbtest".
-
-.IP --timing
-Causes bbtest-net to collect information about
-the time spent in different parts of the program.
-The information is printed on stdout just before
-the program ends. Note that this information is also
-included in the status report sent with the "--report"
-option.
+.IP --frequenttestlimit=N
+Used with the
+.I bbretest-net.sh(1)
+bbgen extension. This option determines how long failed tests
+remain in the frequent-test queue. The default is 1800
+seconds (30 minutes).
 
 .IP --timelimit=N
 Causes bbtest-net to generate a warning if the run-time
 of bbtest-net exceeds N seconds. By default N is set to
 the value of BBSLEEP, so a warning triggers if the
 network tests cannot complete in the time given for one
-cycle of the BB server. Apart from the warning, this 
+cycle of the BBNET server. Apart from the warning, this 
 option has no effect, i.e. it will not terminate bbtest-net
 prematurely. So to eliminate any such warnings, use this
 option with a very high value of N.
+
+
+.SH OPTIONS FOR TESTS OF THE SIMPLE TCP SERVICES
+.IP --checkresponse
+When testing well-known services (e.g. FTP, SSH, SMTP, POP-2, POP-3, 
+IMAP, NNTP and rsync), bbtest-net will look for a valid service-specific
+"OK" response. If another reponse is seen, this will cause
+the test to report a warning (yellow) status. Without this
+option, the response from the service is ignored.
+
+.IP --no-flags
+By default, bbtest-net sends some extra information in the
+status messages, called "flags". These are used by bbgen
+e.g. to pick different icons for reversed tests when
+generating the Big Brother webpages. This option makes
+bbtest-net omit these flags from the status messages.
 
 
 .SH OPTIONS FOR THE PING TEST
@@ -193,31 +194,62 @@ the default becomes to run traceroute on all hosts where
 the ping test fails; you can then disable it on specific 
 hosts by putting a "notrace" tag on the host-entry.
 
-.SH OPTIONS FOR THE SIMPLE TCP SERVICES
-.IP --checkresponse
-When testing FTP, SSH, SMTP, POP-2, POP-3, IMAP, NNTP and rsync
-services, bbtest-net will look for a valid service-specific
-"OK" response. If another reponse is seen, this will cause
-the test to report a warning (yellow) status.
-
-.IP --no-flags
-By default, bbtest-net sends some extra information in the
-status messages, called "flags". These are used by bbgen
-e.g. to pick different icons for reversed tests when
-generating the Big Brother webpages. This option makes
-bbtest-net omit these flags from the status messages.
-
 
 .SH OPTIONS FOR HTTP (WEB) TESTS
-.IP --conntimeout=N
-This option is deprecated, and will be ignored. Use the
---timeout option instead.
-
 .IP --content=CONTENTTESTNAME 
 Determines the name of the column BB displays for content checks. 
 The default is "content".  If you have used the "cont.sh" or "cont2.sh" 
 scripts earlier, you may want to use "--content=cont" to report content
 checks using the same test name as these scripts do.
+
+
+.SH OPTIONS FOR SSL CERTIFICATE TESTS
+.IP --ssl=SSLCERTTESTNAME
+Determines the name of the column BB displays for the SSL certificate checks.
+The default is "sslcert".
+.IP --no-ssl
+Disables reporting of the SSL certificate check.
+
+.IP --sslwarn=N
+.IP --sslalarm=N
+Determines the number of days before an SSL certificate
+expires, where bbtest-net will generate a warning or
+alarm status for the SSL certificate column.
+
+
+.SH DEBUGGING OPTIONS
+.IP --no-update
+Don't send any status updates to the BBDISPLAY server. Instead,
+all messages are dumped to stdout.
+
+.IP --timing
+Causes bbtest-net to collect information about
+the time spent in different parts of the program.
+The information is printed on stdout just before
+the program ends. Note that this information is also
+included in the status report sent with the "--report"
+option.
+
+.IP --debug
+Dumps a bunch of status about the tests as they
+progress to stdout.
+
+.IP --dump[=before|=after|=both]
+Dumps internal memory structures before and/or after the
+tests have executed.
+
+
+.SH INFORMATIONAL OPTIONS
+.IP "--help or -?"
+Provide a summary of available commandline options.
+
+.IP "--version"
+Prints the version number of bbtest-net
+
+.IP --services
+Dump the list of defined TCP services bbtest-net knows
+how to test. Do not run any tests.
+
 
 .SH USING COOKIES IN WEB TESTS
 If the file $BBHOME/etc/cookies exist, cookies will be read from
@@ -229,7 +261,8 @@ on this format. The
 utility can output a file in this format if run with the "--cookie-jar FILENAME"
 option.
 
-.SH SSL CERTIFICATE CHECKS
+
+.SH ABOUT SSL CERTIFICATE CHECKS
 When bbtest-net tests services that use SSL- or TLS-based protocols,
 it will check that the server certificate has not expired. This check
 happens automatically for https (secure web), pop3s, imaps, nntps
@@ -243,17 +276,6 @@ Jan 19th, 2038. If your certificate is valid after this date, bbtest-net
 will report it as valid only until Jan 19, 2038. This is due to
 limitations in your operating system C library.
 
-.IP --ssl=SSLCERTTESTNAME
-determines the name of the column BB displays for the SSL certificate checks.
-The default is "sslcert".
-.IP --no-ssl
-Disables reporting of the SSL certificate check.
-
-.IP --sslwarn=N
-.IP --sslalarm=N
-Determines the number of days before an SSL certificate
-expires, where bbtest-net will generate a warning or
-alarm status for the SSL certificate column.
 
 .SH LDAP TESTS
 ldap testing can be done in two ways. If you just put an "ldap" or
