@@ -73,6 +73,7 @@ typedef struct namelist_t {
 	int banksize;		/* For modem-bank entries only */
 	pagelist_t *page;	/* Host location in the page/subpage/subparent tree */
 	void *data;		/* Misc. data supplied by the user of this library function */
+	struct namelist_t *defaulthost;	/* Points to the latest ".default." host */
 	struct namelist_t *next;
 
 	char *rawentry;		/* The raw bb-hosts entry for this host. */

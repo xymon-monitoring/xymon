@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.7 2005-03-30 15:41:20 henrik Exp $";
+static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.8 2005-04-03 12:28:53 henrik Exp $";
 
 
 static int get_page_name_title(char *buf, char *key, char **name, char **title)
@@ -214,10 +214,16 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 			newitem->clientname = bbh_find_item(newitem, BBH_CLIENTALIAS);
 			if (newitem->clientname == NULL) newitem->clientname = newitem->bbhostname;
 			newitem->downtime = bbh_find_item(newitem, BBH_DOWNTIME);
+			newitem->defaulthost = defaulthost;
 
 			/* See if this host is defined before */
 			for (iwalk = namehead, iprev = NULL; (iwalk && strcmp(iwalk->bbhostname, newitem->bbhostname)); iprev = iwalk, iwalk = iwalk->next) ;
-			if (iwalk == NULL) {
+			if (strcasecmp(newitem->bbhostname, ".default.") == 0) {
+				/* The pseudo DEFAULT host */
+				newitem->next = NULL;
+				defaulthost = newitem;
+			}
+			else if (iwalk == NULL) {
 				/* New item, so add to end of list */
 				newitem->next = NULL;
 				if (namehead == NULL) 

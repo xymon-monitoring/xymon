@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.28 2005-04-03 10:49:27 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.29 2005-04-03 12:28:53 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -27,6 +27,7 @@ static pagelist_t *pghead = NULL;
 static namelist_t *namehead = NULL;
 static const char *bbh_item_key[BBH_LAST];
 static char *documentation_url = NULL;
+static namelist_t *defaulthost = NULL;
 
 static void bbh_item_list_setup(void)
 {
@@ -85,16 +86,32 @@ static void bbh_item_list_setup(void)
 static char *bbh_find_item(namelist_t *host, enum bbh_item_t item)
 {
 	int i;
+	char *result;
 
 	bbh_item_list_setup();
 	i = 0;
 	while (host->elems[i] && strncasecmp(host->elems[i], bbh_item_key[item], strlen(bbh_item_key[item]))) i++;
-	return (host->elems[i] ? (host->elems[i] + strlen(bbh_item_key[item])) : NULL);
+	result = (host->elems[i] ? (host->elems[i] + strlen(bbh_item_key[item])) : NULL);
+
+	if (result || !host->defaulthost || (strcasecmp(host->bbhostname, ".default.") == 0))
+		return result;
+	else
+		return bbh_find_item(host->defaulthost, item);
 }
 
 static void initialize_hostlist(char *docurl)
 {
 	if (documentation_url) xfree(documentation_url); documentation_url = NULL;
+
+	while (defaulthost) {
+		namelist_t *walk = defaulthost;
+		defaulthost = defaulthost->defaulthost;
+
+		if (walk->bbhostname) xfree(walk->bbhostname);
+		if (walk->allelems) xfree(walk->allelems);
+		if (walk->elems) xfree(walk->elems);
+		xfree(walk);
+	}
 
 	while (namehead) {
 		namelist_t *walk = namehead;
@@ -202,9 +219,6 @@ char *bbh_item(namelist_t *host, enum bbh_item_t item)
 	  case BBH_CLIENTALIAS: 
 		  return host->clientname;
 
-	  case BBH_DOWNTIME:
-		  return host->downtime;
-
 	  case BBH_IP:
 		  return host->ip;
 
@@ -240,6 +254,14 @@ char *bbh_item(namelist_t *host, enum bbh_item_t item)
 		  }
 		  else
 			return NULL;
+
+	  case BBH_DOWNTIME:
+		  if (host->downtime)
+			  return host->downtime;
+		  else if (host->defaulthost)
+			  return host->defaulthost->downtime;
+		  else
+			  return NULL;
 
 	  default:
 		  return bbh_find_item(host, item);
