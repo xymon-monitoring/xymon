@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcmd.c,v 1.1 2004-11-18 08:09:10 henrik Exp $";
+static char rcsid[] = "$Id: bbcmd.c,v 1.2 2004-11-21 10:48:49 henrik Exp $";
 
 #include <sys/types.h>
 #include <string.h>
@@ -39,10 +39,10 @@ int main(int argc, char *argv[])
 		}
 		else {
 			if (argcount == 0) {
-				cmdargs[0] = cmd = argv[argi];
+				cmdargs[0] = cmd = strdup(expand_env(argv[argi]));
 				argcount = 1;
 			}
-			else cmdargs[argcount++] = argv[argi];
+			else cmdargs[argcount++] = strdup(expand_env(argv[argi]));
 		}
 	}
 
