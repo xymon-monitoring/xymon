@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.116 2005-02-27 11:50:11 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.117 2005-02-27 12:00:50 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -757,7 +757,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	if (log->acktime) {
 		/* Handling of ack'ed tests */
 
-		if (newcolor == COL_GREEN) {
+		if (decide_alertstate(newcolor) == A_OK) {
 			/* The test recovered. Clear the ack. */
 			log->acktime = 0;
 		}
