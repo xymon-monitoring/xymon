@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.33 2005-03-22 09:03:37 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.34 2005-04-03 15:50:54 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -24,8 +24,10 @@ static char rcsid[] = "$Id: hobbitsvc.c,v 1.33 2005-03-22 09:03:37 henrik Exp $"
 
 #include "libbbgen.h"
 #include "version.h"
+#include "hobbitsvc-info.h"
+#include "hobbitsvc-trends.h"
 
-enum source_t { SRC_BBLOGS, SRC_HOBBITD, SRC_HISTLOGS, SRC_MEM };
+enum source_t { SRC_HOBBITD, SRC_HISTLOGS, SRC_MEM };
 
 /*
  * This program is invoked via CGI with QUERY_STRING containing:
@@ -118,12 +120,9 @@ int main(int argc, char *argv[])
 	char *sender;
 	char *flags;
 	char *ackmsg = NULL, *dismsg = NULL;
-	enum source_t source = SRC_BBLOGS;
+	enum source_t source = SRC_HOBBITD;
 	int wantserviceid = 1;
 	char *multigraphs = ",disk,inode,qtree,";
-
-	getenv_default("USEHOBBITD", "FALSE", NULL);
-	if (strcmp(xgetenv("USEHOBBITD"), "TRUE") == 0) source = SRC_HOBBITD;
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--historical") == 0) {
@@ -164,9 +163,29 @@ int main(int argc, char *argv[])
 	envcheck(reqenv);
 	parse_query();
 
-	if (source == SRC_HOBBITD) {
+	if ((strcmp(service, xgetenv("LARRDCOLUMN")) == 0) || (strcmp(service, xgetenv("INFOCOLUMN")) == 0)) {
+		load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+		sethostenv_refresh(600);
+		color = COL_GREEN;
+		sender = "Hobbit";
+		flags = "";
+		logtime = time(NULL);
+		strcpy(timesincechange, "0 minutes");
+		firstline = "";
+
+		if (strcmp(service, xgetenv("LARRDCOLUMN")) == 0) {
+			restofmsg = generate_trends(hostname);
+		}
+		else if (strcmp(service, xgetenv("INFOCOLUMN")) == 0) {
+			restofmsg = generate_info(hostname);
+		}
+
+		if (!restofmsg) restofmsg = "";
+	}
+	else if (source == SRC_HOBBITD) {
 		time_t logage;
 
+		sethostenv_refresh(60);
 		sprintf(hobbitdreq, "hobbitdlog %s.%s", hostname, service);
 		hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &log, 1, 30);
 		if ((hobbitdresult != BB_OK) || (log == NULL) || (strlen(log) == 0)) {
@@ -212,27 +231,22 @@ int main(int argc, char *argv[])
 		if (items[12] && strlen(items[12])) dismsg = items[12];
 		if (dismsg) nldecode(dismsg);
 	}
-	else {
+	else if (source == SRC_HISTLOGS) {
 		char logfn[PATH_MAX];
 		struct stat st;
 		int fd;
 		char *receivedfromtext = "\nMessage received from ";
 		char *statusunchangedtext = "\nStatus unchanged in ";
-		char *p, *unchangedstr, *receivedfromstr;
+		char *p, *unchangedstr, *receivedfromstr, *hostnamedash;
 		int n;
 
-		if (source == SRC_BBLOGS) {
-			sprintf(logfn, "%s/%s.%s", xgetenv("BBLOGS"), commafy(hostname), service);
-		}
-		else if (source == SRC_HISTLOGS) {
-			char *hostnamedash = strdup(hostname);
-			p = hostnamedash; while ((p = strchr(p, '.')) != NULL) *p = '_';
-			p = hostnamedash; while ((p = strchr(p, ',')) != NULL) *p = '_';
-			sprintf(logfn, "%s/%s/%s/%s", xgetenv("BBHISTLOGS"), hostnamedash, service, tstamp);
-			xfree(hostnamedash);
-			p = tstamp; while ((p = strchr(p, '_')) != NULL) *p = ' ';
-			sethostenv_histlog(tstamp);
-		}
+		hostnamedash = strdup(hostname);
+		p = hostnamedash; while ((p = strchr(p, '.')) != NULL) *p = '_';
+		p = hostnamedash; while ((p = strchr(p, ',')) != NULL) *p = '_';
+		sprintf(logfn, "%s/%s/%s/%s", xgetenv("BBHISTLOGS"), hostnamedash, service, tstamp);
+		xfree(hostnamedash);
+		p = tstamp; while ((p = strchr(p, '_')) != NULL) *p = ' ';
+		sethostenv_histlog(tstamp);
 
 		if (stat(logfn, &st) == -1) {
 			errormsg("No such host/service\n");
@@ -299,18 +313,6 @@ int main(int argc, char *argv[])
 
 	fprintf(stdout, "Content-type: text/html\n\n");
 
-	/* No need to refresh every minute for "trends" or "info" columns */
-	if ((strcmp(service, "trends") == 0) ||
-	    (strcmp(service, "graphs") == 0) ||
-	    (strcmp(service, "larrd") == 0)  ||
-	    (strcmp(service, "info") == 0)) {
-		sethostenv_refresh(600);
-	}
-	else {
-		/* Refresh once a minute to pick up changes quickly. */
-		sethostenv_refresh(60);
-	}
-
 	generate_html_log(hostname, displayname, service, ip, 
 		          color, sender, flags, 
 		          logtime, timesincechange, 
@@ -319,7 +321,7 @@ int main(int argc, char *argv[])
 			  disabletime, dismsg,
 		          (source == SRC_HISTLOGS), 
 			  wantserviceid, 
-			  (strcmp(service, "info") == 0),
+			  (strcmp(service, xgetenv("INFOCOLUMN")) == 0),
 			  (source == SRC_HOBBITD),
 			  multigraphs,
 			  stdout);
