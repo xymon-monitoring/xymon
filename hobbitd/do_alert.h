@@ -26,7 +26,7 @@ typedef struct activealerts_t {
 	struct activealerts_t *next;
 } activealerts_t;
 
-
+extern void load_alertconfig(void);
 extern void send_alert(activealerts_t *awalk);
 extern time_t next_alert(activealerts_t *awalk);
 

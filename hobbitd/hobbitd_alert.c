@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.3 2004-10-16 12:44:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.4 2004-10-16 13:01:47 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -310,7 +310,10 @@ int main(int argc, char *argv[])
 		dprintf("%d alerts to go\n", anytogo);
 
 		if (anytogo) {
-			pid_t childpid = fork();
+			pid_t childpid;
+
+			load_alertconfig();
+			childpid = fork();
 
 			if (childpid == 0) {
 				/* The child */
