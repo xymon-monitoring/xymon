@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.5 2004-10-16 16:07:20 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.6 2004-10-17 06:05:54 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -319,6 +319,7 @@ int main(int argc, char *argv[])
 
 			if (childpid == 0) {
 				/* The child */
+				start_alerts();
 				for (awalk = ahead; (awalk); awalk = awalk->next) {
 					if ( ((awalk->nextalerttime <= now) && (awalk->state == A_PAGING)) ||
 					     (awalk->state == A_RECOVERED)                                 ||
@@ -326,6 +327,7 @@ int main(int argc, char *argv[])
 						send_alert(awalk);
 					}
 				}
+				finish_alerts();
 				/* Child does not continue */
 				exit(0);
 			}
