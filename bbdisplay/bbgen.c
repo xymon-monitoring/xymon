@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.158 2003-09-27 09:49:34 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.159 2003-09-27 09:53:02 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -86,6 +86,7 @@ char *reqenv[] = {
 "MACHINEADDR",
 "MKBBCOLFONT",
 "MKBBLOCAL",
+"MKBBSUBLOCAL",
 "MKBBREMOTE",
 "MKBBROWFONT",
 "MKBBTITLE",
