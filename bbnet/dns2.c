@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns2.c,v 1.2 2004-08-28 07:12:30 henrik Exp $";
+static char rcsid[] = "$Id: dns2.c,v 1.3 2004-08-29 19:04:17 henrik Exp $";
 
 /*
  * All of the code for parsing DNS responses and formatting these into
@@ -160,10 +160,57 @@ void dns_detail_callback(void *arg, int status, unsigned char *abuf, int alen)
 	 * we actually didn't get an answer buffer.
 	 */
 	msgstatus = status;
-	if (status != ARES_SUCCESS) {
-		sprintf(msg, "%s\n", ares_strerror(status));
-		addtobuffer(&msgbuf, &msglen, msg);
-		if (!abuf) return;
+	switch (status) {
+	  case ARES_SUCCESS: 
+		  break;
+	  case ARES_ENODATA:
+		  addtobuffer(&msgbuf, &msglen, "No data returned from server\n");
+		  if (!abuf) return;
+		  break;
+	  case ARES_EFORMERR:
+		  addtobuffer(&msgbuf, &msglen, "Server could not understand query\n");
+		  if (!abuf) return;
+		  break;
+	  case ARES_ESERVFAIL:
+		  addtobuffer(&msgbuf, &msglen, "Server failed\n");
+		  if (!abuf) return;
+		  break;
+	  case ARES_ENOTFOUND:
+		  addtobuffer(&msgbuf, &msglen, "Name not found\n");
+		  if (!abuf) return;
+		  break;
+	  case ARES_ENOTIMP:
+		  addtobuffer(&msgbuf, &msglen, "Not implemented\n");
+		  if (!abuf) return;
+		  break;
+	  case ARES_EREFUSED:
+		  addtobuffer(&msgbuf, &msglen, "Server refused query\n");
+		  if (!abuf) return;
+		  break;
+	  case ARES_EBADNAME:
+		  addtobuffer(&msgbuf, &msglen, "Invalid name in query\n");
+		  if (!abuf) return;
+		  break;
+	  case ARES_ETIMEOUT:
+		  addtobuffer(&msgbuf, &msglen, "Timeout\n");
+		  if (!abuf) return;
+		  break;
+	  case ARES_ECONNREFUSED:
+		  addtobuffer(&msgbuf, &msglen, "Server unavailable\n");
+		  if (!abuf) return;
+		  break;
+	  case ARES_ENOMEM:
+		  addtobuffer(&msgbuf, &msglen, "Out of memory\n");
+		  if (!abuf) return;
+		  break;
+	  case ARES_EDESTRUCTION:
+		  addtobuffer(&msgbuf, &msglen, "Timeout (channel destroyed)\n");
+		  if (!abuf) return;
+		  break;
+	  default:
+		  addtobuffer(&msgbuf, &msglen, "Undocumented ARES return code\n");
+		  if (!abuf) return;
+		  break;
 	}
 
 	/* Won't happen, but check anyway, for safety. */
