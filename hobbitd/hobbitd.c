@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.62 2004-11-22 21:48:52 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.63 2004-11-22 22:09:45 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1129,7 +1129,7 @@ void do_message(conn_t *msg)
 	else if (strncmp(msg->buf, "config", 6) == 0) {
 		char conffn[1024];
 
-		if (!oksender(adminsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender(statussenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		if ( (sscanf(msg->buf, "config %1023s", conffn) == 1) &&
 		     (strstr("../", conffn) == NULL) && (get_config(conffn, msg) == 0) ) {
@@ -1138,9 +1138,9 @@ void do_message(conn_t *msg)
 		}
 	}
 	else if (strncmp(msg->buf, "query ", 6) == 0) {
-		if (!oksender(adminsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
-
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 0, 0);
+		if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, msg->buf)) goto done;
+
 		if (log) {
 			msg->doingwhat = RESPONDING;
 			if (log->message) {
