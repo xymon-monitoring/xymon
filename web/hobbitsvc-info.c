@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.32 2003-09-08 11:49:40 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.33 2003-09-09 08:53:14 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -329,7 +329,7 @@ int generate_info(char *infocolumn)
 				addtobuffer(&infobuf, &infobuflen, l);
 			}
 			else {
-				addtobuffer(&infobuf, &infobuflen, "<tr><th colspan=2>No e-mail/SMS alerting defined</th></tr>\n");
+				addtobuffer(&infobuf, &infobuflen, "<tr><th colspan=2 align=left>No e-mail/SMS alerting defined</th></tr>\n");
 			}
 		}
 		addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
