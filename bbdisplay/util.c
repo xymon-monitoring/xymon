@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.127 2004-10-05 11:04:35 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.128 2004-10-07 21:17:30 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -2065,3 +2065,21 @@ char *decode_url(char *testspec, bburl_t *bburl)
 	return bburl->desturl->origform;
 }
  
+
+char *msg_data(char *msg)
+{
+	/* Find the start position of the data following the "status host.test " message */
+	char *result;
+
+	result = strchr(msg, '.');              /* Hits the '.' in "host.test" */
+	if (!result) {
+		dprintf("Msg was not what I expected: '%s'\n", msg);
+		return msg;
+	}
+
+	result += strcspn(result, " \t\n");     /* Skip anything until we see a space, TAB or NL */
+	result += strspn(result, " \t");        /* Skip all whitespace */
+
+	return result;
+}
+
