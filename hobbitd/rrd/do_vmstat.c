@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.10 2005-01-26 21:24:21 henrik Exp $";
+static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.11 2005-01-27 22:11:53 henrik Exp $";
 
 typedef struct vmstat_layout_t {
 	int index;
@@ -16,6 +16,7 @@ typedef struct vmstat_layout_t {
 } vmstat_layout_t;
 
 /* This one matches the vmstat output from Solaris 8, possibly earlier ones as well */
+/* LARRD 0.43c compatible. */
 static vmstat_layout_t vmstat_solaris_layout[] = {
 	{ 0, "cpu_r" },
 	{ 1, "cpu_b" },
@@ -36,7 +37,8 @@ static vmstat_layout_t vmstat_solaris_layout[] = {
 	{ -1, NULL }
 };
 
-/* This one for OSF, taken from LARRD 0.43c */
+/* This one for OSF */
+/* LARRD 0.43c compatible */
 static vmstat_layout_t vmstat_osf_layout[] = {
 	{ 0, "cpu_r" },
 	{ 1, "cpu_b" },
@@ -54,7 +56,8 @@ static vmstat_layout_t vmstat_osf_layout[] = {
 	{ -1, NULL }
 };
 
-/* This one for AIX, taken from LARRD 0.43c */
+/* This one for AIX */
+/* LARRD 0.43c compatible */
 static vmstat_layout_t vmstat_aix_layout[] = {
 	{ 0, "cpu_r" },
 	{ 1, "cpu_b" },
@@ -76,7 +79,58 @@ static vmstat_layout_t vmstat_aix_layout[] = {
 	{ -1, NULL }
 };
 
-/* This one for HP/UX, taken from LARRD 0.43c */
+/* This one matches FreeBSD 4.10 */
+/* LARRD 0.43c compatible */
+static vmstat_layout_t vmstat_freebsd_layout[] = {
+	{ 0, "cpu_r" },
+	{ 1, "cpu_b" },
+	{ 2, "cpu_w" },
+	{ 3, "mem_avm" },
+	{ 4, "mem_free" },
+	{ 5, "mem_flt" },
+	{ 6, "mem_re" },
+	{ 7, "mem_pi" },
+	{ 8, "mem_po" },
+	{ 9, "mem_fr" },
+	{ 10, "sr" },
+	{ 11, "dsk_da0" },
+	{ 12, "dsk_fd0" },
+	{ 13, "cpu_int" },
+	{ 15, "cpu_csw" },
+	{ 16, "cpu_sys" },
+	{ 17, "cpu_usr" },
+	{ 18, "cpu_idl" },
+	{ -1, NULL }
+};
+
+/* This one matches NetBSD 2.0 */
+/* LARRD 0.43c does not support NetBSD */
+static vmstat_layout_t vmstat_netbsd_layout[] = {
+	{ 0, "cpu_r" },
+	{ 1, "cpu_b" },
+	{ 2, "cpu_w" },
+	{ 3, "mem_avm" },
+	{ 4, "mem_free" },
+	{ 5, "mem_flt" },
+	{ 6, "mem_re" },
+	{ 7, "mem_pi" },
+	{ 8, "mem_po" },
+	{ 9, "mem_fr" },
+	{ 10, "sr" },
+	{ 11, "dsk_f0" },
+	{ 12, "dsk_m0" },
+	{ 13, "dsk_w0" },
+	{ 14, "cpu_int" },
+	{ 15, "cpu_syc" },
+	{ 16, "cpu_csw" },
+	{ 17, "cpu_usr" },
+	{ 18, "cpu_sys" },
+	{ 19, "cpu_idl" },
+	{ -1, NULL }
+};
+
+/* This one for HP/UX */
+/* LARRD 0.43c does not support HP-UX */
 static vmstat_layout_t vmstat_hpux_layout[] = {
 	{ 0, "cpu_r" },
 	{ 1, "cpu_b" },
@@ -98,6 +152,7 @@ static vmstat_layout_t vmstat_hpux_layout[] = {
 };
 
 /* This one is all newer Linux procps versions, with kernel 2.4+ */
+/* NOT compatible with LARRD 0.43c */
 static vmstat_layout_t vmstat_linux_layout[] = {
 	{ 0, "cpu_r" },
 	{ 1, "cpu_b" },
@@ -123,6 +178,7 @@ static vmstat_layout_t vmstat_linux_layout[] = {
  * This one is for Red Hat Enterprise Linux 3. Identical to the "linux" layout,
  * except Red Hat for some reason decided to swap the cpu_wait and cpu_idle columns.
  */
+/* NOT compatible with LARRD 0.43c */
 static vmstat_layout_t vmstat_rhel3_layout[] = {
 	{ 0, "cpu_r" },
 	{ 1, "cpu_b" },
@@ -145,6 +201,7 @@ static vmstat_layout_t vmstat_rhel3_layout[] = {
 };
 
 /* This one is for Debian 3.0 (Woody), and possibly others with a Linux 2.2 kernel */
+/* NOT compatible with LARRD 0.43c */
 static vmstat_layout_t vmstat_debian3_layout[] = {
 	{ 0, "cpu_r" },
 	{ 1, "cpu_b" },
@@ -163,29 +220,6 @@ static vmstat_layout_t vmstat_debian3_layout[] = {
 	{ 14, "cpu_sys" },
 	{ 15, "cpu_idl" },
 	{ -1, "cpu_wait" },
-	{ -1, NULL }
-};
-
-/* This one matched FreeBSD 4.10 */
-static vmstat_layout_t vmstat_freebsd_layout[] = {
-	{ 0, "cpu_r" },
-	{ 1, "cpu_b" },
-	{ 2, "cpu_w" },
-	{ 3, "mem_avm" },
-	{ 4, "mem_free" },
-	{ 5, "mem_flt" },
-	{ 6, "mem_re" },
-	{ 7, "mem_pi" },
-	{ 8, "mem_po" },
-	{ 9, "mem_fr" },
-	{ 10, "sr" },
-	{ 11, "dsk_da0" },
-	{ 12, "dsk_fd0" },
-	{ 13, "cpu_int" },
-	{ 15, "cpu_csw" },
-	{ 16, "cpu_sys" },
-	{ 17, "cpu_usr" },
-	{ 18, "cpu_idl" },
 	{ -1, NULL }
 };
 
@@ -238,6 +272,10 @@ int do_vmstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		layout = vmstat_osf_layout; break;
 	  case OS_AIX: 
 		layout = vmstat_aix_layout; break;
+	  case OS_FREEBSD:
+		layout = vmstat_freebsd_layout; break;
+	  case OS_NETBSD:
+		layout = vmstat_netbsd_layout; break;
 	  case OS_HPUX: 
 		layout = vmstat_hpux_layout; break;
 	  case OS_LINUX:
@@ -248,8 +286,6 @@ int do_vmstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		layout = vmstat_rhel3_layout; break;
 	  case OS_DEBIAN3:
 		layout = vmstat_debian3_layout; break;
-	  case OS_FREEBSD:
-		layout = vmstat_freebsd_layout; break;
 	  case OS_SCO:
 		errprintf("Cannot handle sco vmstat from host '%s' \n", hostname);
 		return -1;
