@@ -1,3 +1,20 @@
+/*----------------------------------------------------------------------------*/
+/* Big Brother message daemon.                                                */
+/*                                                                            */
+/* This module receives messages from one channel of the bbgend master daemon.*/
+/* These messages are then forwarded to the actual worker process via stdin;  */
+/* the worker process can process the messages without having to care about   */
+/* the tricky details in the bbgend/bbd_channel communications.               */
+/*                                                                            */
+/* This program is released under the GNU General Public License (GPL),       */
+/* version 2. See the file "COPYING" for details.                             */
+/*                                                                            */
+/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.11 2004-10-27 10:46:15 henrik Exp $";
+
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
@@ -14,7 +31,7 @@
 #include "bbgen.h"
 #include "debug.h"
 #include "util.h"
-#include "bbd_net.h"
+#include "bbgend.h"
 #include "bbdutil.h"
 
 
