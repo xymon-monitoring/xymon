@@ -20,6 +20,7 @@ extern struct timeval *tvdiff(struct timeval *tstart, struct timeval *tend, stru
 extern int within_sla(char *l, char *tag, int defresult);
 extern int periodcoversnow(char *tag);
 extern char *histlogtime(time_t histtime);
+extern int durationvalue(char *dur);
 
 #endif
 

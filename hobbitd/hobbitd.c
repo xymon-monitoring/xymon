@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.89 2005-01-01 14:26:19 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.90 2005-01-01 19:48:56 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -484,47 +484,6 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 	dprintf("Message posted\n");
 
 	return;
-}
-
-
-int durationvalue(char *dur)
-{
-	/* 
-	 * Calculate a duration, taking special modifiers into consideration.
-	 * Return the duration as number of minutes.
-	 */
-
-	int result = 0;
-	char *p;
-	char modifier;
-	struct tm *nowtm;
-	time_t now;
-	
-	p = dur + strspn(dur, "0123456789");
-	modifier = *p;
-	*p = '\0';
-	result = atoi(dur);
-	*p = modifier;
-
-	switch (modifier) {
-	  case 'h': result *= 60; break;	/* hours */
-	  case 'd': result *= 1440; break;	/* days */
-	  case 'w': result *= 10080; break;	/* weeks */
-	  case 'm': 
-		    now = time(NULL);
-		    nowtm = localtime(&now);
-		    nowtm->tm_mon += result;
-		    result = (mktime(nowtm) - now) / 60;
-		    break;
-	  case 'y': 
-		    now = time(NULL);
-		    nowtm = localtime(&now);
-		    nowtm->tm_year += result;
-		    result = (mktime(nowtm) - now) / 60;
-		    break;
-	}
-
-	return result;
 }
 
 

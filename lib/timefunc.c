@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.4 2004-11-17 16:23:52 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.5 2005-01-01 19:48:19 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -280,6 +280,47 @@ char *histlogtime(time_t histtime)
         strftime(d3, sizeof(d3), "_%H:%M:%S_%Y", localtime(&histtime));
 
 	snprintf(result, sizeof(result)-1, "%s%s%s", d1, d2, d3);
+
+	return result;
+}
+
+
+int durationvalue(char *dur)
+{
+	/* 
+	 * Calculate a duration, taking special modifiers into consideration.
+	 * Return the duration as number of minutes.
+	 */
+
+	int result = 0;
+	char *p;
+	char modifier;
+	struct tm *nowtm;
+	time_t now;
+	
+	p = dur + strspn(dur, "0123456789");
+	modifier = *p;
+	*p = '\0';
+	result = atoi(dur);
+	*p = modifier;
+
+	switch (modifier) {
+	  case 'h': result *= 60; break;	/* hours */
+	  case 'd': result *= 1440; break;	/* days */
+	  case 'w': result *= 10080; break;	/* weeks */
+	  case 'm': 
+		    now = time(NULL);
+		    nowtm = localtime(&now);
+		    nowtm->tm_mon += result;
+		    result = (mktime(nowtm) - now) / 60;
+		    break;
+	  case 'y': 
+		    now = time(NULL);
+		    nowtm = localtime(&now);
+		    nowtm->tm_year += result;
+		    result = (mktime(nowtm) - now) / 60;
+		    break;
+	}
 
 	return result;
 }
