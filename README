@@ -115,6 +115,33 @@ generation, by commenting out this line in larrd.pl:
 # `$ENV{'LARRDHOME'}/larrd-html.pl >> $ENV{'LARRDLOG'} 2>&1`;
 # Disabled - bbgen does this.
 
+
+While implementing this, I found out that there is some
+confusion in the standard BB handling about the use of skins,
+and handling of the BBBACKGROUND tag in the BB header files.
+In some cases, BBBACKGROUND is expanded only to the background
+color name - "green", "red" - where in others it is expanded 
+to the full GIF filename - e.g. $BBSKINS/bkg-green.gif.
+
+This needs to be cleaned up when you enable bbgen's LARRD
+support, so you need to change a couple of files in your BB
+installation. I have made the change consistent, so it should
+not break your existing BB setup.
+
+Assuming you have the bbgen larrd-*.patch files in /tmp:
+
+* $BBHOME/web/ : Some header files need changing. 
+  cd $BBHOME/web; patch -p1 </tmp/larrd-web.patch
+
+* $BBHOME/src/ : dohostsvc.c need changing.
+  cd $BBHOME/src; patch -p1 </tmp/larrd-src.patch; make; make install
+
+* cgi-bin directory: A couple of scripts need changing.
+  cd to your webservers cgi-bin directory; patch -p1 </tmp/larrd-cgi.patch
+
+Note: The change to src/dohostsvc.c changes the BB daemon, bbd,
+so you need to restart your BB display server after this change.
+
 Enabling the LARRD support does increase the run-time of bbgen.
 On my system, it approximately doubles the time to run bbgen,
 compared to the time it takes without LARRD support. It is still
