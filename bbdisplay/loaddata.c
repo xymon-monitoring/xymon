@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.39 2003-02-14 21:44:36 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.40 2003-02-25 08:31:53 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -459,50 +459,62 @@ dispsummary_t *init_displaysummary(char *fn)
 	return newsum;
 }
 
+char *skipword(char *l)
+{
+	char *p;
+
+	for (p=l; (*p && (!isspace(*p))); p++) ;
+	return p;
+}
+
+
+char *skipwhitespace(char *l)
+{
+	char *p;
+
+	for (p=l; (*p && (isspace(*p))); p++) ;
+	return p;
+}
+
+
 void getnamelink(char *l, char **name, char **link)
 {
+	/* "page NAME title-or-link" splitup */
 	unsigned char *p;
 
 	*name = "";
 	*link = "";
 
-	/* Find first space and skip spaces */
-	for (p=strchr(l, ' '); (p && (isspace (*p))); p++) ;
+	/* Skip page/subpage keyword, and whitespace after that */
+	p = skipwhitespace(skipword(l));
 
-	*name = p; p = strchr(*name, ' ');
-	if (p) {
+	*name = p; p = skipword(p);
+	if (*p) {
 		*p = '\0'; /* Null-terminate pagename */
-		for (p++; (isspace(*p)); p++) ;
-		*link = p;
+		p++;
+		*link = skipwhitespace(p);
 	}
 }
 
 
 void getgrouptitle(char *l, char **title, char **onlycols)
 {
-	unsigned char *p;
-
 	*title = "";
 	*onlycols = NULL;
 
 	if (strncmp(l, "group-only", 10) == 0) {
-		/* Find first space and skip spaces */
-		for (p=strchr(l, ' '); (p && (isspace (*p))); p++) ;
-		*onlycols = p;
+		unsigned char *p;
 
-		/* Find next space and skip spaces */
-		p = strchr(*onlycols, ' ');
-		if (p) {
-			*p = '\0';
-			for (p++; isspace (*p); p++) ;
-			*title = p;
+		*onlycols = skipwhitespace(skipword(l));
+
+		p = skipword(*onlycols);
+		if (*p) {
+			*p = '\0'; p++;
+			*title = skipwhitespace(p);
 		}
 	}
 	else if (strncmp(l, "group", 5) == 0) {
-		/* Find first space and skip spaces */
-		for (p=strchr(l, ' '); (p && (isspace (*p))); p++) ;
-
-		*title = p;
+		*title = skipwhitespace(skipword(l));
 	}
 }
 
