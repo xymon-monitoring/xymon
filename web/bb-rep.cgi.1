@@ -5,7 +5,7 @@ bb-rep.cgi \- CGI front-end to bbgen reporting
 .B "bb-rep.cgi [--noclean] [bbgen-options]"
 
 .SH DESCRIPTION
-.I bb-rep.cgi
+\fBbb-rep.cgi\fR
 is invoked as a CGI script via the bb-rep.sh CGI wrapper.
 It triggers the generation of a Big Brother availability
 report for the timeperiod specified by the CGI paramaters.
@@ -37,7 +37,7 @@ End-times beyond the current time are silently replaced with
 the current time.
 
 The "style" parameter is passed directly to 
-.I bbgen
+.I bbgen(1)
 and should be "crit", "non-crit" or "all". Other values result
 in undefined behaviour.
 
