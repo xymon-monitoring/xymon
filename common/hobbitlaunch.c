@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.1 2004-11-16 16:03:53 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.2 2004-11-16 16:45:07 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -60,6 +60,7 @@ tasklist_t *tasktail = NULL;
 
 volatile time_t nextcfgload = 0;
 volatile int running = 1;
+volatile int dologswitch = 0;
 
 void update_task(tasklist_t *newtask)
 {
@@ -293,6 +294,7 @@ void sig_handler(int signum)
 
 	  case SIGHUP:
 		nextcfgload = 0;
+		dologswitch = 1;
 		break;
 
 	  case SIGTERM:
@@ -307,6 +309,7 @@ int main(int argc, char *argv[])
 	int argi;
 	int daemonize = 1;
 	char *config = "/etc/bbtasks.cfg";
+	char *logfn = NULL;
 	pid_t cpid;
 	int status;
 
@@ -321,14 +324,15 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			config = strdup(p+1);
 		}
+		else if (argnmatch(argv[argi], "--log=")) {
+			char *p = strchr(argv[argi], '=');
+			logfn = strdup(p+1);
+		}
 	}
 
 	/* Go daemon */
 	if (daemonize) {
 		pid_t childpid;
-
-		/* We dont want stdin lying around */
-		fclose(stdin);
 
 		/* Become a daemon */
 		childpid = fork();
@@ -345,6 +349,14 @@ int main(int argc, char *argv[])
 		setsid();
 	}
 
+	/* If using a logfile, switch stdout and stderr to go there */
+	if (logfn) {
+		/* Should we close stdin here ? No ... */
+		freopen("/dev/null", "r", stdin);
+		freopen(logfn, "a", stdout);
+		freopen(logfn, "a", stderr);
+	}
+
 	save_errbuf = 0;
 	setup_signalhandler("bblaunch");
 	signal(SIGCHLD, sig_handler);
@@ -358,6 +370,11 @@ int main(int argc, char *argv[])
 			dprintf("Loading configuration file\n");
 			load_config(config);
 			nextcfgload = (now + 30);
+		}
+
+		if (logfn && dologswitch) {
+			freopen(logfn, "a", stdout);
+			freopen(logfn, "a", stderr);
 		}
 
 		/* Pick up children that have terminated */
