@@ -100,5 +100,7 @@ extern char *u32toIP(unsigned int ip32);
 
 extern void addtobuffer(char **buf, int *buflen, char *newtext);
 extern int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int showcmd);
+
+extern struct timeval *tvdiff(struct timeval *tstart, struct timeval *tend, struct timeval *result);
 #endif
 

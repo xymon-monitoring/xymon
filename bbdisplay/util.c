@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.120 2004-08-24 20:04:43 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.121 2004-08-28 06:40:01 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1709,6 +1709,24 @@ int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int
 	}
 
 	if (bannerbytes) *bannerbytes = strlen(*banner);
+	return result;
+}
+
+struct timeval *tvdiff(struct timeval *tstart, struct timeval *tend, struct timeval *result)
+{
+	static struct timeval resbuf;
+
+	if (result == NULL) result = &resbuf;
+
+	result->tv_sec = tend->tv_sec;
+	result->tv_usec = tend->tv_usec;
+	if (result->tv_usec < tstart->tv_usec) {
+		result->tv_sec--;
+		result->tv_usec += 1000000;
+	}
+	result->tv_sec  -= tstart->tv_sec;
+	result->tv_usec -= tstart->tv_usec;
+
 	return result;
 }
 
