@@ -13,6 +13,13 @@
 #ifndef __CONTEST_H_
 #define __CONTEST_H_
 
+/* All of this just for struct sockaddr_in on FreeBSD */
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 typedef struct {
 	char *svcname;
 	char *sendtxt;
