@@ -179,6 +179,13 @@ typedef struct {
 	char		*faileddeps;		/* List of failed dependency checks */
 } http_data_t;
 
+extern unsigned long tcp_stats_read;
+extern unsigned long tcp_stats_written;
+extern unsigned int tcp_stats_total;
+extern unsigned int tcp_stats_http;
+extern unsigned int tcp_stats_plain;
+extern unsigned int tcp_stats_connects;
+
 extern char *init_tcp_services(void);
 extern int default_tcp_port(char *svcname);
 extern void dump_tcp_services(void);

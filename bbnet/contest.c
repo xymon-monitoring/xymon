@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.46 2004-08-17 20:23:59 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.47 2004-08-18 21:36:26 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -45,6 +45,13 @@ static char rcsid[] = "$Id: contest.c,v 1.46 2004-08-17 20:23:59 henrik Exp $";
 
 #define MAX_TELNET_CYCLES 5		/* Max loops with telnet options before aborting banner */
 #define SSLSETUP_PENDING -1		/* Magic value for test_t->sslrunning while handshaking */
+
+unsigned int tcp_stats_total    = 0;
+unsigned int tcp_stats_http     = 0;
+unsigned int tcp_stats_plain    = 0;
+unsigned int tcp_stats_connects = 0;
+unsigned long tcp_stats_read    = 0;
+unsigned long tcp_stats_written = 0;
 
 static test_t *thead = NULL;
 
@@ -393,6 +400,7 @@ test_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 		return NULL;
 	}
 
+	tcp_stats_total++;
 	newtest = (test_t *) malloc(sizeof(test_t));
 
 	newtest->fd = -1;
@@ -409,15 +417,20 @@ test_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 		newtest->errcode = CONTEST_EDNS;
 	}
 
-	if (strcmp(service, "http") == 0)
+	if (strcmp(service, "http") == 0) {
 		newtest->svcinfo = &svcinfo_http;
-	else if (strcmp(service, "https") == 0)
+		tcp_stats_http++;
+	}
+	else if (strcmp(service, "https") == 0) {
 		newtest->svcinfo = &svcinfo_https;
+		tcp_stats_http++;
+	}
 	else {
 		int i;
 
 		for (i=0; (svcinfo[i].svcname && (strcmp(service, svcinfo[i].svcname) != 0)); i++) ;
 		newtest->svcinfo = &svcinfo[i];
+		tcp_stats_plain++;
 	}
 
 	newtest->sendtxt = (reqmsg ? reqmsg : newtest->svcinfo->sendtxt);
@@ -666,7 +679,8 @@ static void setup_ssl(test_t *item)
 		}
 
 		if (!item->sslctx) {
-			errprintf("Cannot create SSL context\n");
+			errprintf("Cannot create SSL context - IP %s, service %s\n", 
+				   inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname);
 			item->sslrunning = 0;
 			item->errcode = CONTEST_ESSL;
 			return;
@@ -684,7 +698,8 @@ static void setup_ssl(test_t *item)
 	if (item->ssldata == NULL) {
 		item->ssldata = SSL_new(item->sslctx);
 		if (!item->ssldata) {
-			errprintf("SSL_new failed\n");
+			errprintf("SSL_new failed - IP %s, service %s\n", 
+				   inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname);
 			item->sslrunning = 0;
 			SSL_CTX_free(item->sslctx);
 			item->errcode = CONTEST_ESSL;
@@ -692,7 +707,8 @@ static void setup_ssl(test_t *item)
 		}
 
 		if (SSL_set_fd(item->ssldata, item->fd) != 1) {
-			errprintf("Could not initiate SSL on connection\n");
+			errprintf("Could not initiate SSL on connection - IP %s, service %s\n", 
+				   inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname);
 			item->sslrunning = 0;
 			SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
 			item->errcode = CONTEST_ESSL;
@@ -885,6 +901,7 @@ void do_tcp_tests(int timeout, int concurrency)
 					if ((res == 0) || ((res == -1) && (errno == EINPROGRESS))) {
 						/* This is OK - EINPROGRES and res=0 pick up status in select() */
 						activesockets++;
+						tcp_stats_connects++;
 					}
 					else if (res == -1) {
 						/* connect() failed. Flag the item as "not open" */
@@ -1101,6 +1118,7 @@ void do_tcp_tests(int timeout, int concurrency)
 								 * data we want to. Tough ... 
 								 */
 								res = socket_write(item, outbuf, outlen);
+								tcp_stats_written += res;
 								if (res == -1) {
 									/* Write failed - this socket is done. */
 									dprintf("write failed\n");
@@ -1156,6 +1174,7 @@ void do_tcp_tests(int timeout, int concurrency)
 						 * Connection is ready - plain or SSL. Read data.
 						 */
 						res = socket_read(item, msgbuf, sizeof(msgbuf)-1);
+						tcp_stats_read += res;
 						dprintf("read %d bytes from socket\n", res);
 
 						if ((res > 0) && item->datacallback) {
