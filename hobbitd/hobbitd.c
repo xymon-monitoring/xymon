@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.46 2004-10-31 11:47:25 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.47 2004-10-31 11:56:21 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -415,8 +415,8 @@ bbd_log_t *find_cookie(int cookie)
 	 * Find a cookie we have issued.
 	 */
 	bbd_log_t *result = NULL;
-	bbd_hostlist_t *hwalk;
-	bbd_log_t *lwalk;
+	bbd_hostlist_t *hwalk = NULL;
+	bbd_log_t *lwalk = NULL;
 	int found = 0;
 
 	for (hwalk = hosts; (hwalk && !found); hwalk = hwalk->next) {
