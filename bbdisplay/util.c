@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.13 2003-01-28 06:44:45 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.14 2003-01-30 22:38:39 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -124,6 +124,100 @@ char *alttag(entry_t *e)
 	return tag;
 }
 
+
+char *weekday_text(char *dayspec)
+{
+	static char result[80];
+	static char *dayname[7] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+	char *p;
+
+	if (strcmp(dayspec, "*") == 0) {
+		strcpy(result, "All days");
+		return result;
+	}
+
+	result[0] = '\0';
+	for (p=dayspec; (*p); p++) {
+		switch (*p) {
+			case '0': case '1': case '2':
+			case '3': case '4': case '5':
+			case '6':
+				strcat(result, dayname[(*p)-'0']);
+				break;
+			case '-':
+				strcat(result, "-");
+				break;
+			case ',':
+				strcat(result, ",");
+				break;
+		}
+	}
+	return result;
+}
+
+
+char *time_text(char *timespec)
+{
+	static char result[80];
+
+	if (strcmp(timespec, "*") == 0) {
+		strcpy(result, "0000-2359");
+	}
+	else {
+		strcpy(result, timespec);
+	}
+
+	return result;
+}
+
+
+char *hostpage_link(host_t *host)
+{
+
+	/* Provide a link to the page where this host lives */
+	static char pagelink[150];
+
+	if (((page_t *)host->parent)->parent) {
+		page_t *parentpage, *parentsubpage;
+
+		parentsubpage = host->parent;
+		parentpage = parentsubpage->parent;
+
+		/* "/bb/sdm/customer/customer.html" */
+		sprintf(pagelink, "%s/%s/%s.html",
+			parentpage->name, parentsubpage->name, parentsubpage->name);
+	}
+	else {
+		/* "/bb/sdm/sdm.html" */
+		sprintf(pagelink, "%s/%s.html",
+			((page_t *)host->parent)->name, ((page_t *)host->parent)->name);
+	}
+
+	return pagelink;
+}
+
+
+char *hostpage_name(host_t *host)
+{
+	/* Provide a link to the page where this host lives */
+	static char pagename[150];
+
+	if (((page_t *)host->parent)->parent) {
+		page_t *parentpage, *parentsubpage;
+
+		parentsubpage = host->parent;
+		parentpage = parentsubpage->parent;
+
+		/* "sdm/customer" */
+		sprintf(pagename, "%s/%s", parentpage->title, parentsubpage->title);
+	}
+	else {
+		/* "sdm" */
+		sprintf(pagename, "%s", ((page_t *)host->parent)->title);
+	}
+
+	return pagename;
+}
 
 char *commafy(char *hostname)
 {

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.3 2003-01-30 17:23:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.4 2003-01-30 22:38:39 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -66,18 +66,21 @@ void generate_info(char *infocolumn)
 		infobuf[0] = '\0';
 		hostname = strstr(hostwalk->hostentry->rawentry, "NAME:");
 		if (!hostname) {
-			sprintf(l, "Hostname : %s<br>\n", hostwalk->hostentry->hostname);
+			sprintf(l, "<b>Hostname</b> : %s<br>\n", hostwalk->hostentry->hostname);
 		}
 		else {
 			hostname += 5;
 			p = strchr(hostname, ' ');
 			if (p) *p = '\0';
-			sprintf(l, "Hostname : %s<br>\n", hostname);
+			sprintf(l, "<b>Hostname</b> : %s<br>\n", hostname);
 			if (p) *p = ' ';
 		}
 		strcat(infobuf, l);
 
-		sprintf(l, "IP : %s<br>\n", hostwalk->hostentry->ip); strcat(infobuf, l);
+		sprintf(l, "<b>IP</b> : %s<br>\n", hostwalk->hostentry->ip); strcat(infobuf, l);
+		sprintf(l, "<b>Page/subpage</b> : <a href=\"%s\">%s</a><br>\n", 
+			hostpage_link(hostwalk->hostentry), hostpage_name(hostwalk->hostentry));
+		strcat(infobuf, l);
 		strcat(infobuf, "<br>\n");
 
 		p = hostwalk->hostentry->alerts;
@@ -86,18 +89,18 @@ void generate_info(char *infocolumn)
 			p = alertspec + strlen(alertspec) - 1; /* Point to trailing comma */
 			if (*p == ',') *p = '\0'; else p = NULL;
 
-			sprintf(l, "NK Alerts : %s<br>\n", alertspec); strcat(infobuf, l);
+			sprintf(l, "<b>NK Alerts</b> : %s<br>\n", alertspec); strcat(infobuf, l);
 			if (p) *p = ',';
 		}
 		else {
-			strcat(infobuf, "NK alerts : None<br>\n");
+			strcat(infobuf, "<b>NK alerts</b> : None<br>\n");
 		}
 		slaspec = strstr(hostwalk->hostentry->rawentry, "SLA=");
 		if (slaspec) {
 			slaspec +=4;
 			p = strchr(slaspec, ' ');
 			if (p) *p = '\0';
-			sprintf(l, "Alert times : %s<br>\n", slaspec); strcat(infobuf, l);
+			sprintf(l, "<b>Alert times</b> : %s<br>\n", slaspec); strcat(infobuf, l);
 			if (p) *p = ' ';
 		}
 		if (hostwalk->hostentry->nopropyellowtests) {
@@ -105,7 +108,7 @@ void generate_info(char *infocolumn)
 			p = noprop + strlen(noprop) - 1; /* Point to trailing comma */
 			if (*p == ',') *p = '\0'; else p = NULL;
 
-			sprintf(l, "Suppressed warnings (yellow) : %s<br>\n", noprop);
+			sprintf(l, "<b>Suppressed warnings (yellow)</b> : %s<br>\n", noprop);
 			strcat(infobuf, l);
 			if (p) *p = ',';
 		}
@@ -114,7 +117,7 @@ void generate_info(char *infocolumn)
 			p = noprop + strlen(noprop) - 1; /* Point to trailing comma */
 			if (*p == ',') *p = '\0'; else p = NULL;
 
-			sprintf(l, "Suppressed alarms (red) : %s<br>\n", noprop);
+			sprintf(l, "<b>Suppressed alarms (red)</b> : %s<br>\n", noprop);
 			strcat(infobuf, l);
 			if (p) *p = ',';
 		}
@@ -126,7 +129,7 @@ void generate_info(char *infocolumn)
 			p += 4; location = p;
 			p = strchr(location, ' ');
 			if (p) *p = '\0';
-			sprintf(l, "Tested from network : %s<br>\n", location); strcat(infobuf, l);
+			sprintf(l, "<b>Tested from network</b> : %s<br>\n", location); strcat(infobuf, l);
 			if (p) *p = ' ';
 		}
 
@@ -136,17 +139,17 @@ void generate_info(char *infocolumn)
 
 		testip = 0;
 		if (strstr(hostwalk->hostentry->rawentry, "testip")) testip = 1;
-		sprintf(l, "Network tests use : %s<br>\n", (testip ? "IP-address" : "hostname")); strcat(infobuf, l);
+		sprintf(l, "<b>Network tests use</b> : %s<br>\n", (testip ? "IP-address" : "hostname")); strcat(infobuf, l);
 
 		ping = 1;
 		if (strstr(hostwalk->hostentry->rawentry, "noping")) ping = 0;
 		if (strstr(hostwalk->hostentry->rawentry, "noconn")) ping = 0;
-		sprintf(l, "Checked with ping : %s<br>\n", (ping ? "Yes" : "No")); strcat(infobuf, l);
+		sprintf(l, "<b>Checked with ping</b> : %s<br>\n", (ping ? "Yes" : "No")); strcat(infobuf, l);
 		strcat(infobuf, "<br>\n");
 
 		url = strstr(hostwalk->hostentry->rawentry, " http");
 		if (url) {
-			strcat(infobuf, "URL checks:<br>\n");
+			strcat(infobuf, "<b>URL checks</b>:<br>\n");
 
 			while (url) {
 				url++;  /* Skip space */
@@ -167,7 +170,7 @@ void generate_info(char *infocolumn)
 
 		url = strstr(hostwalk->hostentry->rawentry, " content=");
 		if (url) {
-			strcat(infobuf, "Content checks:<br>\n");
+			strcat(infobuf, "<b>Content checks</b>:<br>\n");
 
 			while (url) {
 				url+=9;  /* Skip " content=" */
@@ -189,9 +192,9 @@ void generate_info(char *infocolumn)
 		alerts = find_alert(hostwalk->hostentry->hostname, 0);
 		if (!dialup) {
 			if (alerts) {
-				strcat(infobuf, "E-mail/SMS alerting:<br>\n");
-				sprintf(l, "&nbsp;&nbsp;Weekdays: %s<br>\n", alerts->items[4]); strcat(infobuf, l);
-				sprintf(l, "&nbsp;&nbsp;Time of day:%s<br>\n", alerts->items[5]); strcat(infobuf, l);
+				strcat(infobuf, "<b>E-mail/SMS alerting</b>:<br>\n");
+				sprintf(l, "&nbsp;&nbsp;Weekdays: %s<br>\n", weekday_text(alerts->items[4])); strcat(infobuf, l);
+				sprintf(l, "&nbsp;&nbsp;Time of day:%s<br>\n", time_text(alerts->items[5])); strcat(infobuf, l);
 				sprintf(l, "&nbsp;&nbsp;Recipients: %s<br>\n", alerts->items[6]); strcat(infobuf, l);
 			}
 			else {
@@ -200,7 +203,7 @@ void generate_info(char *infocolumn)
 		}
 		strcat(infobuf, "<br>\n");
 
-		strcat(infobuf, "Other tags : ");
+		strcat(infobuf, "<b>Other tags</b> : ");
 		p = strtok(hostwalk->hostentry->rawentry, " \t");
 		while (p) {
 			if (

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.11 2003-01-28 21:39:53 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.12 2003-01-30 22:38:39 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -166,27 +166,8 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 			}
 			else if (pagetype != PAGE_BB) {
 				/* Provide a link to the page where this host lives */
-				char pagelink[80];
-
-				if (((page_t *)h->parent)->parent) {
-					page_t *parentpage, *parentsubpage;
-
-					parentsubpage = h->parent;
-					parentpage = parentsubpage->parent;
-
-					/* "/bb/sdm/customer/customer.html" */
-					sprintf(pagelink, "%s/%s/%s.html", 
-						parentpage->name, parentsubpage->name, parentsubpage->name);
-				}
-				else {
-					/* "/bb/sdm/sdm.html" */
-					sprintf(pagelink, "%s/%s.html", 
-						((page_t *)h->parent)->name,
-						((page_t *)h->parent)->name);
-				}
-
 				fprintf(output, "<A HREF=\"%s/%s\" TARGET=\"_blank\"><FONT %s>%s</FONT></A>\n </TD>",
-					getenv("BBWEB"), pagelink,
+					getenv("BBWEB"), hostpage_link(h),
 					getenv("MKBBROWFONT"), h->hostname);
 			}
 			else {
