@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.19 2003-02-11 16:29:52 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.20 2003-02-11 16:59:47 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -645,7 +645,7 @@ void do_bb2_page(char *filename, int summarytype)
 	bbgen_page_t	bb2page;
 	hostlist_t *h;
 	entry_t	*e;
-	int	useit;
+	int	useit = 0;
 	char    *hf_prefix[2] = { "bb2", "bbnk" };
 
 	/* Build a "page" with the hosts that should be included in bb2 page */

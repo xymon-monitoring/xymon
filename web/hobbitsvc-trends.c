@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.11 2003-01-31 08:37:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.12 2003-02-11 16:59:47 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -87,7 +87,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn)
 
 		if ((strlen(fn) > 4) && (strcmp(fn+strlen(fn)-4, ".rrd") == 0)) {
 			char *p, *rrdname;
-			char *r;
+			char *r = NULL;
 			int found;
 			int i;
 

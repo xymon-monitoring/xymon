@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.37 2003-02-11 16:29:52 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.38 2003-02-11 16:59:47 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -634,6 +634,8 @@ bbgen_page_t *load_bbhosts(void)
 			int dialup = 0;
 			char *startoftags = strchr(l, '#');
 			char *alertlist, *nopropyellowlist, *nopropredlist;
+
+			alertlist = nopropyellowlist = nopropredlist = NULL;
 
 			if (startoftags && strstr(startoftags, " dialup")) dialup=1;
 
