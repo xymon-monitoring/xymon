@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.122 2003-09-21 09:48:39 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.123 2003-09-28 09:36:08 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1825,9 +1825,6 @@ int main(int argc, char *argv[])
 	int failgoesclear = 0;		/* IPTEST_2_CLEAR_ON_FAILED_CONN */
 	int dumpdata = 0;
 
-	/* Setup SEGV handler */
-	setup_signalhandler("bbtest");
-
 	if (init_http_library() != 0) {
 		errprintf("Failed to initialize http library\n");
 		return 1;
@@ -1997,12 +1994,13 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	/* In case they changed the name of our column ... */
-	if (egocolumn) setup_signalhandler(egocolumn);
-
 	init_timestamp();
 	envcheck(reqenv);
 	fqdn = get_fqdn();
+
+	/* Setup SEGV handler */
+	setup_signalhandler(egocolumn ? egocolumn : "bbtest");
+
 	if (getenv("BBLOCATION")) location = malcop(getenv("BBLOCATION"));
 	if (pingcolumn && getenv("IPTEST_2_CLEAR_ON_FAILED_CONN")) {
 		failgoesclear = (strcmp(getenv("IPTEST_2_CLEAR_ON_FAILED_CONN"), "TRUE") == 0);
