@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.67 2004-08-23 14:03:31 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.68 2004-08-24 11:43:06 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -690,7 +690,7 @@ void add_http_test(testitem_t *t, ssloptions_t *sslopt)
 		httptest->contentcheck = CONTENTCHECK_REGEX;
 	}
 	else if (strncmp(t->testspec, "cont;", 5) == 0) {
-		char *p = strrchr(t->testspec, ';');
+		char *p = strchr(t->testspec+5, ';');
 		if (p) {
 			if ( *(p+1) == '#' ) {
 				char *q;
@@ -720,7 +720,7 @@ void add_http_test(testitem_t *t, ssloptions_t *sslopt)
 		proto = t->testspec+5;
 	}
 	else if (strncmp(t->testspec, "nocont;", 7) == 0) {
-		char *p = strrchr(t->testspec, ';');
+		char *p = strchr(t->testspec+7, ';');
 		if (p) {
 			int status;
 
@@ -739,7 +739,7 @@ void add_http_test(testitem_t *t, ssloptions_t *sslopt)
 		/* POST request - whee! */
 
 		/* First grab data we expect back, like with "cont;" */
-		char *p = strrchr(t->testspec, ';');
+		char *p = strchr(t->testspec+5, ';');
 		char *q;
 
 		if (p) {
@@ -785,7 +785,7 @@ void add_http_test(testitem_t *t, ssloptions_t *sslopt)
 		/* POST request - whee! */
 
 		/* First grab data we expect back, like with "cont;" */
-		char *p = strrchr(t->testspec, ';');
+		char *p = strchr(t->testspec+7, ';');
 		char *q;
 
 		if (p) {
@@ -814,7 +814,7 @@ void add_http_test(testitem_t *t, ssloptions_t *sslopt)
 		proto = t->testspec+7;
 	}
 	else if (strncmp(t->testspec, "type;", 5) == 0) {
-		char *p = strrchr(t->testspec, ';');
+		char *p = strchr(t->testspec+5, ';');
 		if (p) {
 			httptest->contentcheck = CONTENTCHECK_CONTENTTYPE;
 			httptest->exp = (void *) malcop(p+1);
