@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.45 2003-03-03 22:51:04 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.46 2003-03-04 12:23:03 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -507,12 +507,19 @@ dispsummary_t *init_displaysummary(char *fn)
 	dprintf("init_displaysummary(%s)\n", textornull(fn));
 
 	sprintf(sumfn, "%s/%s", getenv("BBLOGS"), fn);
+
 	/* Check that we can access this file */
 	if ( (stat(sumfn, &st) == -1)          || 
 	     (!S_ISREG(st.st_mode))            ||     /* Not a regular file */
-	     (st.st_mtime < time(NULL))        ||     /* stale summary file */
 	     ((fd = fopen(sumfn, "r")) == NULL)   ) {
 		printf("Weird summary file BBLOGS/%s skipped\n", fn);
+		return NULL;
+	}
+
+	if (st.st_mtime < time(NULL)) {
+		/* Stale summary file - ignore and delete */
+		printf("Stale summary file BBLOGS/%s - deleted\n", fn);
+		unlink(sumfn);
 		return NULL;
 	}
 
