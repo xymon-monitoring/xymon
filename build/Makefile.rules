@@ -6,7 +6,7 @@ CFLAGS += -DMAXMSG=$(MAXMSG)
 
 PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bb-rep.cgi bb-replog.cgi bb-hist.cgi
 CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh
-EXTENSIONS = bbcombotest
+EXTENSIONS = bbcombotest bbretest-net.sh
 
 all: $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS)
 	@echo ""
