@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.13 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.14 2005-01-19 12:02:39 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -85,6 +85,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		       int color, char *sender, char *flags, 
 		       time_t logtime, char *timesincechange, 
 		       char *firstline, char *restofmsg, char *ackmsg, 
+		       time_t disabletime, char *dismsg,
 		       int is_history, int wantserviceid, int htmlfmt, int hobbitd,
 		       FILE *output)
 {
@@ -129,7 +130,17 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 	fprintf(output, "<CENTER><TABLE ALIGN=CENTER BORDER=0>\n");
 	if (wantserviceid) fprintf(output, "<TR><TH><FONT %s>%s - %s</FONT><BR><HR WIDTH=\"60%%\"></TH></TR>\n", rowfont, displayname, service);
-	fprintf(output, "<TR><TD><H3>%s</H3>\n", skipword(firstline));	/* Drop the color */
+
+	if (disabletime > 0) {
+		fprintf(output, "<TR><TD><H3>Disabled until %s</H3></TD></TR>\n", ctime(&disabletime));
+		fprintf(output, "<TR><TD><PRE>%s</PRE></TD></TR>\n", dismsg);
+		fprintf(output, "<TR><TD><BR><HR>Current status message follows:<HR><BR></TD></TR>\n");
+		fprintf(output, "<TR><TD><H3>%s</H3>\n", firstline);	/* Drop the color */
+	}
+	else {
+		fprintf(output, "<TR><TD><H3>%s</H3>\n", skipword(firstline));	/* Drop the color */
+	}
+
 	if (!htmlfmt) fprintf(output, "<PRE>\n");
 
 	do {
