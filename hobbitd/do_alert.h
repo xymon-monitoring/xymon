@@ -12,6 +12,7 @@
 #define __BBGEND_ALERT_H__
 
 #include <time.h>
+#include <stdio.h>
 
 enum astate_t { A_PAGING, A_ACKED, A_RECOVERED, A_DEAD };
 
@@ -20,6 +21,7 @@ typedef struct activealerts_t {
 	htnames_t *hostname;
 	htnames_t *testname;
 	htnames_t *location;
+	char ip[16];
 
 	/* Alert status */
 	int color;
@@ -42,7 +44,7 @@ extern void cleanup_alert(activealerts_t *alert);
 extern void clear_interval(activealerts_t *alert);
 
 extern void start_alerts(void);
-extern void send_alert(activealerts_t *alert);
+extern void send_alert(activealerts_t *alert, FILE *logfd);
 extern void finish_alerts(void);
 
 extern void load_state(char *filename);

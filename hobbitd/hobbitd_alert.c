@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.22 2004-11-14 16:57:32 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.23 2004-11-18 11:53:35 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -46,6 +46,8 @@ static char rcsid[] = "$Id: hobbitd_alert.c,v 1.22 2004-11-14 16:57:32 henrik Ex
 #include <signal.h>
 #include <sys/wait.h>
 #include <time.h>
+#include <limits.h>
+
 #include "libbbgen.h"
 
 #include "bbgend_worker.h"
@@ -120,8 +122,8 @@ void save_checkpoint(char *filename)
 	if (fd == NULL) return;
 
 	for (awalk = ahead; (awalk); awalk = awalk->next) {
-		fprintf(fd, "%s|%s|%s|%s|%d|%d|%s|",
-			awalk->hostname->name, awalk->testname->name, awalk->location->name,
+		fprintf(fd, "%s|%s|%s|%s|%s|%d|%d|%s|",
+			awalk->hostname->name, awalk->testname->name, awalk->location->name, awalk->ip,
 			colorname(awalk->color),
 			(int) awalk->eventstart,
 			(int) awalk->nextalerttime,
@@ -159,21 +161,22 @@ void load_checkpoint(char *filename)
 			p = gettok(NULL, "|");
 		}
 
-		if (i > 8) {
+		if (i > 9) {
 			activealerts_t *newalert = (activealerts_t *)malloc(sizeof(activealerts_t));
 			newalert->hostname = find_name(&hostnames, item[0]);
 			newalert->testname = find_name(&testnames, item[1]);
 			newalert->location = find_name(&locations, item[2]);
-			newalert->color = parse_color(item[3]);
-			newalert->eventstart = (time_t) atoi(item[4]);
-			newalert->nextalerttime = (time_t) atoi(item[5]);
+			strcpy(newalert->ip, item[3]);
+			newalert->color = parse_color(item[4]);
+			newalert->eventstart = (time_t) atoi(item[5]);
+			newalert->nextalerttime = (time_t) atoi(item[6]);
 			newalert->state = A_PAGING;
-			while (strcmp(item[6], statename[newalert->state]) && (newalert->state < A_DEAD)) 
+			while (strcmp(item[7], statename[newalert->state]) && (newalert->state < A_DEAD)) 
 				newalert->state++;
 			newalert->pagemessage = newalert->ackmessage = NULL;
-			nldecode(item[7]); nldecode(item[8]);
-			if (strlen(item[7])) newalert->pagemessage = strdup(item[7]);
-			if (strlen(item[8])) newalert->ackmessage = strdup(item[8]);
+			nldecode(item[8]); nldecode(item[9]);
+			if (strlen(item[8])) newalert->pagemessage = strdup(item[8]);
+			if (strlen(item[9])) newalert->ackmessage = strdup(item[9]);
 			newalert->next = ahead;
 			ahead = newalert;
 		}
@@ -196,6 +199,10 @@ int main(int argc, char *argv[])
 	char *checkfn = NULL;
 	int checkpointinterval = 900;
 	time_t nextcheckpoint = 0;
+	char acklogfn[PATH_MAX];
+	FILE *acklogfd = NULL;
+	char notiflogfn[PATH_MAX];
+	FILE *notiflogfd = NULL;
 
 	/* Dont save the error buffer */
 	save_errbuf = 0;
@@ -255,6 +262,13 @@ int main(int argc, char *argv[])
 	signal(SIGTERM, sig_handler);
 	signal(SIGINT, sig_handler);
 
+	if (getenv("BBACKS")) {
+		sprintf(acklogfn, "%s/acklog", getenv("BBACKS"));
+		acklogfd = fopen(acklogfn, "a");
+		sprintf(notiflogfn, "%s/notifications.log", getenv("BBACKS"));
+		notiflogfd = fopen(notiflogfn, "a");
+	}
+
 	while (running) {
 		char *eoln, *restofmsg;
 		char *metadata[20];
@@ -270,8 +284,12 @@ int main(int argc, char *argv[])
 			dprintf("Saving checkpoint\n");
 			nextcheckpoint = time(NULL)+checkpointinterval;
 			save_checkpoint(checkfn);
+
+			if (acklogfd) acklogfd = freopen(acklogfn, "a", acklogfd);
+			if (notiflogfd) notiflogfd = freopen(notiflogfn, "a", notiflogfd);
 		}
 
+		now = time(NULL);
 		timeout.tv_sec = 60; timeout.tv_usec = 0;
 		msg = get_bbgend_message("bbgend_alert", &seq, &timeout);
 		if (msg == NULL) {
@@ -308,7 +326,7 @@ int main(int argc, char *argv[])
 
 
 		if ((metacount > 10) && (strncmp(metadata[0], "@@page", 6) == 0)) {
-			/* @@page|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime|location|cookie */
+			/* @@page|timestamp|sender|hostname|testname|hostip|expiretime|color|prevcolor|changetime|location|cookie */
 
 			int newcolor, newalertstatus, oldalertstatus;
 
@@ -317,11 +335,12 @@ int main(int argc, char *argv[])
 			if (awalk == NULL) {
 				htnames_t *hwalk = find_name(&hostnames, hostname);
 				htnames_t *twalk = find_name(&testnames, testname);
-				htnames_t *pwalk = find_name(&locations, metadata[9]);
+				htnames_t *pwalk = find_name(&locations, metadata[10]);
 
 				awalk = (activealerts_t *)malloc(sizeof(activealerts_t));
 				awalk->hostname = hwalk;
 				awalk->testname = twalk;
+				awalk->ip[0] = '\0';
 				awalk->location = pwalk;
 				awalk->color = 0;
 				awalk->cookie = -1;
@@ -334,7 +353,7 @@ int main(int argc, char *argv[])
 				ahead = awalk;
 			}
 
-			newcolor = parse_color(metadata[6]);
+			newcolor = parse_color(metadata[7]);
 			oldalertstatus = ((alertcolors & (1 << awalk->color)) != 0);
 			newalertstatus = ((alertcolors & (1 << newcolor)) != 0);
 			awalk->color = newcolor;
@@ -352,23 +371,36 @@ int main(int argc, char *argv[])
 				clear_interval(awalk);
 			}
 
-			awalk->cookie = atoi(metadata[10]);
+			strcpy(awalk->ip, metadata[5]);
+			awalk->cookie = atoi(metadata[11]);
 
 			if (awalk->pagemessage) free(awalk->pagemessage);
 			awalk->pagemessage = strdup(restofmsg);
 		}
 		else if ((metacount > 5) && (strncmp(metadata[0], "@@ack", 5) == 0)) {
- 			/* @@ack|timestamp|sender|hostname|testname|expiretime */
+ 			/* @@ack|timestamp|sender|hostname|testname|hostip|expiretime */
 
 			/*
 			 * An ack is handled simply by setting the next
 			 * alert-time to when the ack expires.
 			 */
+			time_t nextalert = atoi(metadata[6]);
+
 			dprintf("Got ack message from %s:%s\n", hostname, testname);
 			awalk = find_active(hostname, testname);
 			if (awalk && (awalk->state == A_PAGING)) {
+				if (acklogfd) {
+					fprintf(acklogfd, "%d\t%d\t%d\t%d\t%s\t%s.%s\t%s\t%s\n",
+						(int)now, awalk->cookie, 
+						(int)((nextalert - now) / 60), awalk->cookie,
+						"np_filename_not_used", 
+						hostname, testname, 
+						colorname(awalk->color),
+						restofmsg);
+					fflush(acklogfd);
+				}
 				awalk->state = A_ACKED;
-				awalk->nextalerttime = atoi(metadata[5]);
+				awalk->nextalerttime = nextalert;
 				if (awalk->ackmessage) free(awalk->ackmessage);
 				awalk->ackmessage = strdup(restofmsg);
 			}
@@ -439,7 +471,7 @@ int main(int argc, char *argv[])
 		}
 
 		/* Loop through the activealerts list and see if anything is pending */
-		now = time(NULL); anytogo = 0;
+		anytogo = 0;
 		for (awalk = ahead; (awalk); awalk = awalk->next) {
 			if ((awalk->nextalerttime <= now) && (awalk->state == A_PAGING)) {
 				if (awalk->ackmessage) {
@@ -468,7 +500,7 @@ int main(int argc, char *argv[])
 					if ( ((awalk->nextalerttime <= now) && (awalk->state == A_PAGING)) ||
 					     (awalk->state == A_ACKED)                                     ||
 					     (awalk->state == A_RECOVERED)                                    ) {
-						send_alert(awalk);
+						send_alert(awalk, notiflogfd);
 					}
 				}
 				finish_alerts();
@@ -561,6 +593,9 @@ int main(int argc, char *argv[])
 	}
 
 	if (checkfn) save_checkpoint(checkfn);
+	if (acklogfd) fclose(acklogfd);
+	if (notiflogfd) fclose(notiflogfd);
+
 	return 0;
 }
 
