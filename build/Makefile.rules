@@ -1,17 +1,16 @@
-all: bbgen bbgmchosts bbnethosts bbtest-web bbtest-net
+all: bbgen bbgmchosts bbtest-web bbtest-net
 
 CC=gcc
 
 # Compile flags for normal build
-# CFLAGS=-O2 -Wall -Wno-unused
+CFLAGS=-O2 -Wall -Wno-unused
 
 # Compile flags for debugging
-CFLAGS=-g -DDEBUG -Wall
+# CFLAGS=-g -DDEBUG -Wall
 
 GENOBJS = bbgen.o debug.o loaddata.o larrdgen.o pagegen.o process.o util.o infogen.o alert.o wmlgen.o
 WEBTESTOBJS = bbtest-web.o util.o debug.o
 NETTESTOBJS = bbtest-net.o util.o debug.o contest.o
-NETOBJS = bbnethosts.o debug.o
 GMCOBJS = bbgmchosts.o debug.o
 
 LIBRESOLV := $(shell if [ `uname -s` = "SunOS" ]; then echo "-lresolv"; fi)
@@ -24,9 +23,6 @@ bbtest-web: $(WEBTESTOBJS)
 
 bbtest-net: $(NETTESTOBJS)
 	$(CC) $(CFLAGS) -o bbtest-net $(NETTESTOBJS) $(LIBRESOLV)
-
-bbnethosts: $(NETOBJS)
-	$(CC) $(CFLAGS) -o bbnethosts $(NETOBJS)
 
 bbgmchosts: $(GMCOBJS)
 	$(CC) $(CFLAGS) -o bbgmchosts $(GMCOBJS)
@@ -41,4 +37,4 @@ contest: contest.c debug.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f *.o *~ bbgen bbtest-web bbtest-net bbnethosts bbgmchosts alert
+	rm -f *.o *~ bbgen bbtest-web bbtest-net bbgmchosts alert contest
