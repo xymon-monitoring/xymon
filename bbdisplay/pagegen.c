@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.57 2003-06-12 21:10:27 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.58 2003-06-18 14:08:31 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -317,7 +317,8 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 				if (e == NULL) {
 					fprintf(output, "-");
 				}
-				else {
+				else if (reportstart != 0) {
+					/* Standard webpage */
 					char *skin;
 
 					skin = (e->skin ? e->skin : bbskin);
@@ -343,6 +344,24 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 						skin, dotgiffilename(e->color, e->acked, e->oldage),
 						alttag(e),
 						getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+				}
+				else {
+					/* Report format output */
+					fprintf(output, "<A HREF=\"%s/bb-replog.sh?HOSTSVC=%s.%s",
+						getenv("CGIBINURL"), commafy(h->hostname), e->column->name);
+					fprintf(output, "&COLOR=%s&PCT=%.2f&ST=%lu&END=%lu",
+						colorname(e->color), e->repinfo->availability, reportstart, reportend);
+					fprintf(output, "&RED=%.2f&YEL=%.2f&GRE=%.2f&PUR=%.2f&CLE=%.2f&BLU=%.2f",
+						e->repinfo->redpct, e->repinfo->yellowpct, e->repinfo->greenpct,
+						e->repinfo->purplepct, e->repinfo->clearpct, e->repinfo->bluepct);
+					fprintf(output, "&STYLE=%s&FSTATE=%s",
+						e->repinfo->style, e->repinfo->fstate);
+					fprintf(output, "&REDCNT=%d&YELCNT=%d&GRECNT=%d&PURCNT=%d&CLECNT=%d&BLUCNT=%d",
+						e->repinfo->redcount, e->repinfo->yellowcount, e->repinfo->greencount,
+						e->repinfo->purplecount, e->repinfo->clearcount, e->repinfo->bluecount);
+					fprintf(output, "\">\n");
+					fprintf(output, "<FONT SIZE=-1 COLOR=%s><B>%.2f</B></FONT></A>\n",
+						colorname(e->color), e->repinfo->availability);
 				}
 				fprintf(output, "</TD>\n");
 			}
@@ -1119,7 +1138,7 @@ int do_bb2_page(char *filename, int summarytype)
 	if (output == NULL) {
 		errprintf("Cannot open file %s", tmpfilename);
 		free(tmpfilename);
-		exit(1);
+		return bb2page.color;
 	}
 
 	headfoot(output, hf_prefix[summarytype], "", "header", bb2page.color);
