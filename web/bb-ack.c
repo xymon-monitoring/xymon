@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.4 2004-11-20 22:31:08 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.5 2004-11-21 12:59:49 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -151,9 +151,9 @@ int main(int argc, char *argv[])
 
 	fprintf(stdout, "Content-type: text/html\n\n");
 	
-	headfoot(stdout, "maint", "", "header", COL_BLUE);
+	headfoot(stdout, "acknowledge", "", "header", COL_RED);
 	fprintf(stdout, "%s", respmsg);
-	headfoot(stdout, "maint", "", "footer", COL_BLUE);
+	headfoot(stdout, "acknowledge", "", "footer", COL_RED);
 
 	return 0;
 }
