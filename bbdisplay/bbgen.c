@@ -1156,7 +1156,7 @@ void do_bb2_page(char *filename)
 
 	for (h=hosthead; (h); h=h->next) {
 		if ((h->hostentry->color == COL_RED) || (h->hostentry->color == COL_YELLOW) || (h->hostentry->color == COL_PURPLE)) {
-			host_t *newhost;
+			host_t *newhost, *walk;
 
 			if (h->hostentry->color > bb2page.color) bb2page.color = h->hostentry->color;
 
@@ -1164,9 +1164,24 @@ void do_bb2_page(char *filename)
 			/* as we will diddle with the pointers */
 			newhost = malloc(sizeof(host_t));
 			memcpy(newhost, h->hostentry, sizeof(host_t));
+			newhost->next = NULL;
 
-			newhost->next = bb2page.hosts;
-			bb2page.hosts = newhost;
+			/* Insert into sorted host list */
+			if ((!bb2page.hosts) || (strcmp(newhost->hostname, bb2page.hosts->hostname) < 0)) {
+				/* Empty list, or new entry goes before list head item */
+				newhost->next = bb2page.hosts;
+				bb2page.hosts = newhost;
+			}
+			else {
+				/* Walk list until we find element that goes after new item */
+				for (walk = bb2page.hosts; 
+				      (walk->next && (strcmp(newhost->hostname, ((host_t *)walk->next)->hostname) > 0)); 
+				      walk = walk->next) ;
+
+				/* "walk" points to element before the new item */
+				newhost->next = walk->next;
+				walk->next = newhost;
+			}
 		}
 	}
 
