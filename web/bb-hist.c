@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.7 2003-06-24 09:31:47 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.8 2003-06-24 09:40:48 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,13 +29,16 @@ static char rcsid[] = "$Id: bb-hist.c,v 1.7 2003-06-24 09:31:47 henrik Exp $";
 
 static char selfurl[MAX_PATH];
 static int startoffset = 0;
+
+#ifndef DEFPIXELS
 static int usepct = 1;
 static int factor = 864;	/* (100 * x) / 86400 = (x / 864) */
-
-static int pixels = 960;
-
-#define PIXELS 960	/* 864 ? */
-#define FACTOR 90	/* 86400 / PIXELS */
+static int pixels = 100;
+#else
+static int usepct = 0;
+static int factor = (86400 / DEFPIXELS);
+static int pixels = DEFPIXELS;
+#endif
 
 void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, int entrycount, time_t today,
 		      reportinfo_t *repinfo, replog_t *log24hours, replog_t *loghead)
