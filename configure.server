@@ -5,9 +5,9 @@
 # This is a quick hack to make things work on the systems I use
 # personally, without having to do the full GNU Autoconf thing.
 
-if test -r Makefile.local
+if test -r Makefile.settings
 then
-	echo "Already configured - remove Makefile.local to re-configure"
+	echo "Already configured - remove Makefile.settings to re-configure"
 else
 	echo "Where is your Big Brother BBHOME directory [/usr/local/bb] ? "
 	read BBHOME
@@ -24,6 +24,23 @@ else
 		echo "I trust you know better, so I will use that setting anyway."
 	fi
 	echo ""
+
+	echo "Trying to determine your BB MAXLINE setting"
+	if test -r $BBHOME/src/bb.h
+	then
+		MAXLINE=`grep "^#define.*MAXLINE.*[0-9]*" $BBHOME/src/bb.h 2>/dev/null`
+		if test "$MAXLINE" != ""
+		then
+			MAXMSG=`echo $MAXLINE | awk '{print $3}'`
+			echo "Found your BB MAXLINE to be $MAXMSG"
+		else
+			MAXMSG="8192"
+			echo "Could not determine the MAXMSG setting"
+		fi
+	else
+		MAXMSG="8192"
+		echo "Could not determine the MAXMSG setting ($BBHOME/src/bb.h not found)"
+	fi
 
 	echo "Where is your Webserver CGI-BIN directory [/var/apache/cgi-bin] ? "
 	read CGIDIR
@@ -71,26 +88,27 @@ else
 		HISTGRAPHDEF=""
 	fi
 
-	echo "# configure settings" >Makefile.local
-	echo "BBHOME = $BBHOME"             >>Makefile.local
-	echo "CGIDIR = $CGIDIR"             >>Makefile.local
-	echo "HISTGRAPHDEF = $HISTGRAPHDEF" >> Makefile.local
+	echo "# configure settings"                        > Makefile.settings
+	echo "BBHOME = $BBHOME"                            >>Makefile.settings
+	echo "CGIDIR = $CGIDIR"                            >>Makefile.settings
+	echo "HISTGRAPHDEF = $HISTGRAPHDEF"                >>Makefile.settings
+	echo "MAXMSG = $MAXMSG"                            >>Makefile.settings
+	echo "# Add local CFLAGS etc. settings below here" >>Makefile.settings
 
 	if test -r Makefile.`uname -s`
 	then
-		cat Makefile.`uname -s` >>Makefile.local
+		echo "include Makefile.`uname -s`" >>Makefile.settings
 		echo ""
 		echo "Using `uname -s` Makefile settings"
 		echo ""
 	else
-		cat Makefile.generic >>Makefile.local
+		echo "include Makefile.generic" >>Makefile.settings
 		echo ""
 		echo "Using GENERIC Makefile settings"
 		echo ""
-		echo "If this fails, change the compile settings in Makefile.local"
+		echo "If this fails, change the compile settings in Makefile.settings"
 		echo ""
-		echo "When it works, copy Makefile.local to Makefile.`uname -s`"
-		echo "I would appreciate it if you send the result to"
+		echo "I would appreciate it if you send the changes to"
 		echo "bbgen@storner.dk so I can include it in the next version."
 		echo ""
 	fi
