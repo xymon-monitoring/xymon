@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.32 2003-09-10 21:31:48 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.33 2003-09-12 11:43:29 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -274,59 +274,59 @@ static void generate_colorbar(
 	}
 
 	/* Beginning of page */
-	fprintf(htmlrep, "<TABLE WIDTH=\"%d%s\" BORDER=0 BGCOLOR=\"#666666\">\n", pixels, pctstr);
-	fprintf(htmlrep, "<TR><TD ALIGN=CENTER>\n");
+	fprintf(htmlrep, "<TABLE SUMMARY=\"Bounding rectangle\" WIDTH=\"%d%s\" BORDER=0 BGCOLOR=\"#666666\">\n", pixels, pctstr);
+	fprintf(htmlrep, "<TR><TD>\n");
 
 
 	/* The date stamps, percent summaries and zoom/reset links */
-	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 FRAME=VOID CELLSPACING=0 CELLPADDING=1 BGCOLOR=\"#000033\">\n");
-	fprintf(htmlrep, "<TR BGCOLOR=%s>\n", barbkgcolor);
+	fprintf(htmlrep, "<TABLE SUMMARY=\"%s\" WIDTH=\"100%%\" BORDER=0 FRAME=VOID CELLSPACING=0 CELLPADDING=1 BGCOLOR=\"#000033\">\n", caption);
+	fprintf(htmlrep, "<TR BGCOLOR=%s><TD>\n", barbkgcolor);
 
-	fprintf(htmlrep, "<TD ALIGN=LEFT VALIGN=BOTTOM>\n");
+	fprintf(htmlrep, "  <TABLE SUMMARY=\"Adjustment, Past navigation\" WIDTH=\"100%%\" BORDER=0 CELLSPACING=0 CELLPADDING=0>\n");
+	if (usepct) {
+		fprintf(htmlrep, "  <TR><TD ALIGN=RIGHT VALIGN=TOP><A HREF=\"%s&amp&amp;PIXELS=%d\">Time reset</A></TD></TR>\n", 
+			selfurl, (usepct ? 0 : pixels));
+	}
+	else {
+		fprintf(htmlrep, "  <TR><TD ALIGN=RIGHT VALIGN=TOP><A HREF=\"%s&amp;ENDTIME=%u&amp;PIXELS=%d\">Zoom +</A></TD></TR>\n", 
+			selfurl, (unsigned int)endtime, pixels+200);
+		if (pixels > 200) {
+			fprintf(htmlrep, "  <TR><TD ALIGN=RIGHT VALIGN=TOP><A HREF=\"%s&amp;ENDTIME=%u&amp;PIXELS=%d\">Zoom -</A></TD></TR>\n", 
+				selfurl, (unsigned int)endtime, pixels-200);
+		}
+	}
+	fprintf(htmlrep, "  <TR><TD ALIGN=LEFT VALIGN=BOTTOM><BR>\n");
+	
 	if (colorlog && colorlog->starttime <= begintime) {
 		fprintf(htmlrep, "<A HREF=\"%s&amp;ENDTIME=%u&amp;PIXELS=%d\">", 
 			selfurl, calc_time(endtime, -changeval, changealign, END_UNCHANGED), (usepct ? 0 : pixels));
 	}
 	fprintf(htmlrep, "<B>%s</B>", ctime(&begintime));
-	if (colorlog && colorlog->starttime <= begintime) fprintf(htmlrep, "</A>\n");
-	fprintf(htmlrep, "</TD>\n");
-
-	fprintf(htmlrep, "<TD ALIGN=CENTER>\n");
-	fprintf(htmlrep, "  <TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0>\n");
-	if (usepct) {
-		fprintf(htmlrep, "  <TR><TD ALIGN=CENTER><A HREF=\"%s&amp&amp;PIXELS=%d\">Time reset</A></TD></TR>\n", 
-			selfurl, (usepct ? 0 : pixels));
-	}
-	else {
-		fprintf(htmlrep, "  <TR><TD ALIGN=CENTER><A HREF=\"%s&amp;ENDTIME=%u&amp;PIXELS=%d\">Zoom +</A></TD></TR>\n", 
-			selfurl, (unsigned int)endtime, pixels+200);
-		if (pixels > 200) {
-			fprintf(htmlrep, "  <TR><TD ALIGN=CENTER><A HREF=\"%s&amp;ENDTIME=%u&amp;PIXELS=%d\">Zoom -</A></TD></TR>\n", 
-				selfurl, (unsigned int)endtime, pixels-200);
-		}
-	}
+	if (colorlog && colorlog->starttime <= begintime) fprintf(htmlrep, "</A>");
+	fprintf(htmlrep, "\n  </TD></TR>\n");
 	fprintf(htmlrep, "  </TABLE>\n");
 	fprintf(htmlrep, "</TD>\n");
+	
 	fprintf(htmlrep, "<TD ALIGN=CENTER>\n");
 	generate_pct_summary(htmlrep, hostname, service, caption, repinfo, secsperpixel);
 	fprintf(htmlrep, "</TD>\n");
 
-	fprintf(htmlrep, "<TD ALIGN=CENTER>\n");
-	fprintf(htmlrep, "  <TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0>\n");
-	fprintf(htmlrep, "  <TR><TD ALIGN=CENTER><A HREF=\"%s&amp&amp;PIXELS=%d\">Time reset</A></TD></TR>\n", 
+	fprintf(htmlrep, "<TD>\n");
+	fprintf(htmlrep, "  <TABLE SUMMARY=\"Adjustment, Future navigation\" WIDTH=\"100%%\" BORDER=0 CELLSPACING=0 CELLPADDING=0>\n");
+	fprintf(htmlrep, "  <TR><TD ALIGN=LEFT VALIGN=TOP><A HREF=\"%s&amp&amp;PIXELS=%d\">Time reset</A></TD></TR>\n", 
 		selfurl, (usepct ? 0 : pixels));
 	if (!usepct) {
-		fprintf(htmlrep, "  <TR><TD ALIGN=CENTER><A HREF=\"%s&amp;ENDTIME=%u&amp;PIXELS=%d\">Zoom reset</A></TD></TR>\n", 
+		fprintf(htmlrep, "  <TR><TD ALIGN=LEFT VALIGN=TOP><A HREF=\"%s&amp;ENDTIME=%u&amp;PIXELS=%d\">Zoom reset</A></TD></TR>\n", 
 			selfurl, (unsigned int)endtime, DEFPIXELS);
 	}
-	fprintf(htmlrep, "  </TABLE>\n");
-	fprintf(htmlrep, "</TD>\n");
 
-	fprintf(htmlrep, "<TD ALIGN=RIGHT VALIGN=BOTTOM>\n");
-	fprintf(htmlrep, "<A HREF=\"%s&amp;ENDTIME=%d&amp;PIXELS=%d\">", selfurl, 
+	fprintf(htmlrep, "  <TR><TD ALIGN=RIGHT VALIGN=BOTTOM><BR>\n");
+	fprintf(htmlrep, "  <A HREF=\"%s&amp;ENDTIME=%d&amp;PIXELS=%d\">", selfurl, 
 		calc_time(endtime, +changeval, changealign, END_UNCHANGED), (usepct ? 0 : pixels));
-	fprintf(htmlrep, "<B>%s</B>\n", ctime(&endtime));
+	fprintf(htmlrep, "<B>%s</B>", ctime(&endtime));
 	fprintf(htmlrep, "</A>\n");
+	fprintf(htmlrep, "  </TD></TR>\n");
+	fprintf(htmlrep, "  </TABLE>\n");
 	fprintf(htmlrep, "</TD>\n");
 
 	fprintf(htmlrep, "</TR>\n");
@@ -335,7 +335,7 @@ static void generate_colorbar(
 
 
 	/* The period marker line */
-	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 FRAME=VOID CELLSPACING=0 CELLPADDING=0 BGCOLOR=\"#000033\">\n");
+	fprintf(htmlrep, "<TABLE SUMMARY=\"Periods\" WIDTH=\"100%%\" BORDER=0 FRAME=VOID CELLSPACING=0 CELLPADDING=0 BGCOLOR=\"#000033\">\n");
 	fprintf(htmlrep, "<TR>\n");
 
 	{
@@ -391,6 +391,16 @@ static void generate_colorbar(
 			fprintf(htmlrep, "</TD>\n");
 
 			curbg = (1 - curbg);
+
+			if ((endofinterval + 1) <= begininterval) {
+				/*
+				 * This should not happen!
+				 */
+				fprintf(htmlrep, "Time moves backwards! begintime=%u, alignment=%d, begininterval=%u\n",
+					  (unsigned int)begintime, alignment, (unsigned int)begininterval);
+				begininterval = endtime;
+			}
+
 			begininterval = endofinterval + 1;
 		} while (begininterval < endtime);
 	}
@@ -399,7 +409,7 @@ static void generate_colorbar(
 
 
 	/* The actual color bar */
-	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 FRAME=VOID CELLSPACING=0 CELLPADDING=0 BGCOLOR=\"#000033\">\n");
+	fprintf(htmlrep, "<TABLE SUMMARY=\"Color status graph\" WIDTH=\"100%%\" BORDER=0 FRAME=VOID CELLSPACING=0 CELLPADDING=0 BGCOLOR=\"#000033\">\n");
 	fprintf(htmlrep, "<TR>\n");
 
 	/* First entry may not start at our report-start time */
