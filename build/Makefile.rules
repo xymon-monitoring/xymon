@@ -1,16 +1,13 @@
 # bbgen main Makefile
 #
-# This Makefile picks up system-specific settings from Makefile.settings
-# This file is defined by the configure script
-#
-include Makefile.settings
+# This file is included from the Makefile created by the "configure" script
 
 CFLAGS += -DMAXMSG=$(MAXMSG)
 
 PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bb-rep.cgi bb-replog.cgi bb-hist.cgi
 CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh
 
-all: Makefile.settings $(PROGRAMS) $(CGISCRIPTS)
+all: $(PROGRAMS) $(CGISCRIPTS)
 	@echo ""
 	@echo "Build complete"
 	@echo ""
@@ -27,10 +24,6 @@ HOSTSHOWOBJS = bbhostshow.o util.o debug.o
 REPOBJS = bb-rep.o debug.o util.o
 REPLOGOBJS = bb-replog-cgi.o reportdata.o debug.o util.o
 HISTOBJS = bb-hist.o reportdata.o debug.o util.o
-
-Makefile.settings:
-	@echo "Please run configure first"
-	@exit 1
 
 bbgen: $(GENOBJS)
 	$(CC) $(CFLAGS) -o $@ $(GENOBJS)
@@ -79,7 +72,7 @@ bb-hist.o: bb-hist.c
 	chmod 755 $@
 
 distclean: clean
-	rm -f Makefile.local
+	rm -f Makefile
 
 clean:
 	rm -f *.o *~ $(PROGRAMS) $(CGISCRIPTS) alert contest reptest
