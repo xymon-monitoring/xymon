@@ -53,4 +53,6 @@ extern int have_recipient(activealerts_t *alert);
 extern void load_state(char *filename);
 extern void save_state(char *filename);
 
+extern void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen);
+
 #endif
