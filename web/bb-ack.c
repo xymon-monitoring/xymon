@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.1 2004-11-18 17:02:40 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.2 2004-11-18 23:22:27 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -93,6 +93,33 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
 		}
+	}
+
+	if ((getenv("QUERY_STRING") == NULL) || (strlen(getenv("QUERY_STRING")) == 0)) {
+		/* Present the query form */
+		FILE *formfile;
+		char formfn[PATH_MAX];
+
+		sprintf(formfn, "%s/web/acknowledge_form", getenv("BBHOME"));
+		formfile = fopen(formfn, "r");
+
+		if (formfile) {
+			int n;
+			char inbuf[8192];
+
+			printf("Content-Type: text/html\n\n");
+			sethostenv("", "", "", colorname(COL_BLUE));
+
+			headfoot(stdout, "acknowledge", "", "header", COL_BLUE);
+			do {
+				n = fread(inbuf, 1, sizeof(inbuf), formfile);
+				if (n > 0) fwrite(inbuf, 1, n, stdout);
+			} while (n == sizeof(inbuf));
+			headfoot(stdout, "acknowledge", "", "footer", COL_BLUE);
+
+			fclose(formfile);
+		}
+		return 0;
 	}
 
 	envcheck(reqenv);
