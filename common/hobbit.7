@@ -142,8 +142,15 @@ but also that certain content is found on the webpage.
 
 .IP "Support for SSL-enabled protocols"
 Standard protocols wrapped into an SSL encryption - e.g.
-imaps, pop3s, nntps - are directly supported by the 
+imaps, pop3s, nntps, telnets - are directly supported by the 
 bbtest-net network test tool.
+
+.IP "LDAP testing"
+bbtest-net has support for testing LDAP servers by performing
+an LDAP search transaction (requires ldap library, e.g. OpenLDAP).
+
+.IP "RPC service testing"
+bbtest-net can check for the availability of selected RPC services.
 
 .IP "SSL certificate expiration"
 bbtest-net automatically checks the expiration date of SSL
