@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.10 2005-02-15 12:56:27 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.11 2005-02-20 12:28:41 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -87,11 +87,15 @@ int main(int argc, char *argv[])
 	int argi, bbresult;
 	char bbmsg[MAXMSG];
 	char *respmsg = "";
+	int hobbitd = 0;
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
 			loadenv(p+1);
+		}
+		else if (strcmp(argv[argi], "--hobbitd") == 0) {
+			hobbitd = 1;
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
@@ -143,7 +147,9 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		sprintf(bbmsg, "ack ack_event %d %d %s %s", acknum, validity, ackmsg, acking_user);
+		sprintf(bbmsg, "%s %d %d %s %s", 
+			(hobbitd ? "hobbitdack" : "ack ack_event"),
+			acknum, validity, ackmsg, acking_user);
 		bbresult = sendmessage(bbmsg, NULL, NULL, NULL, 0, 30);
 		if (bbresult != BB_OK) {
 			respmsg = "<center><h4>Could not contact BB servers</h4></center>\n";
