@@ -1,4 +1,4 @@
-PROGRAMS = hobbitd hobbitd_channel hobbitd_filter hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_larrd hobbitd_sample starthobbit.sh hobbitgraph.cgi
+PROGRAMS = hobbitd hobbitd_channel hobbitd_filter hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_larrd hobbitd_sample starthobbit.sh hobbitgraph.cgi hobbit-mailack
 CGISCRIPTS = hobbitgraph.sh
 SECCGISCRIPTS = bb-ack.sh maint.pl
 
@@ -15,6 +15,7 @@ ALERTOBJS     = hobbitd_alert.o     hobbitd_worker.o do_alert.o
 LARRDOBJS     = hobbitd_larrd.o     hobbitd_worker.o do_larrd.o
 SAMPLEOBJS    = hobbitd_sample.o    hobbitd_worker.o
 HOBBITGRAPHOBJS= hobbitgraph.o
+MAILACKOBJS   = hobbit-mailack.o
 
 IDTOOL := $(shell if test `uname -s` = "SunOS"; then echo /usr/xpg4/bin/id; else echo id; fi)
 
@@ -58,6 +59,12 @@ hobbitgraph.o: hobbitgraph.c
 
 hobbitgraph.cgi: $(HOBBITGRAPHOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(HOBBITGRAPHOBJS) $(LIBOBJS) $(PCRELIBS) $(RRDLIBS) $(NETLIBS)
+
+hobbit-mailack.o: hobbit-mailack.c
+	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ hobbit-mailack.c
+
+hobbit-mailack: $(MAILACKOBJS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(MAILACKOBJS) $(LIBOBJS) $(PCRELIBS)
 
 starthobbit.sh: starthobbit.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g' | sed -e 's!@BBUSER@!$(BBUSER)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
