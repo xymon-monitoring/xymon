@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.108 2003-09-01 20:45:41 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.109 2003-09-05 16:51:11 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -253,6 +253,9 @@ testedhost_t *init_testedhost(char *hostname, int timeout, int conntimeout, int 
 	newhost->ldapuser = NULL;
 	newhost->ldappasswd = NULL;
 
+	newhost->sslwarndays = sslwarndays;
+	newhost->sslalarmdays = sslwarndays;
+
 	newhost->deptests = NULL;
 
 	newhost->next = NULL;
@@ -404,7 +407,7 @@ void load_tests(void)
 						specialtag = 1;
 						h->routerdeps = malcop(testspec+6);
 					}
-					else if (routestring && (strncmp(testspec, routestring, strlen(routestring)) == 0)) {
+					else if (routestring && (strncasecmp(testspec, routestring, strlen(routestring)) == 0)) {
 						specialtag = 1;
 						h->routerdeps = malcop(testspec+strlen(routestring));
 					}
@@ -421,6 +424,14 @@ void load_tests(void)
 					else if (strcmp(testspec, "testip") == 0) { specialtag = 1; h->testip = 1; }
 					else if (strcmp(testspec, "dialup") == 0) { specialtag = 1; h->dialup = 1; }
 					else if (strcmp(testspec, "nosslcert") == 0) { specialtag = 1; h->nosslcert = 1; }
+					else if (strncmp(testspec, "ssldays=", 8) == 0) {
+						int warndays, alarmdays;
+
+						if (sscanf(testspec, "ssldays=%d:%d", &warndays, &alarmdays) == 2) {
+							h->sslwarndays = warndays;
+							h->sslalarmdays = alarmdays;
+						}
+					}
 					else if (strncmp(testspec, "depends=", 8) == 0) {
 						specialtag = 1;
 						h->deptests = malcop(testspec+8);
@@ -1585,8 +1596,8 @@ void send_sslcert_status(testedhost_t *host)
 				if (s == httptest) certowner = ((http_data_t *)t->privdata)->url;
 				else if (s == ldaptest) certowner = t->testspec;
 
-				if (t->certexpires < (now+sslwarndays*86400)) sslcolor = COL_YELLOW;
-				if (t->certexpires < (now+sslalarmdays*86400)) sslcolor = COL_RED;
+				if (t->certexpires < (now+host->sslwarndays*86400)) sslcolor = COL_YELLOW;
+				if (t->certexpires < (now+host->sslalarmdays*86400)) sslcolor = COL_RED;
 				if (sslcolor > color) color = sslcolor;
 
 				if (t->certexpires > now) {

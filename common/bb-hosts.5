@@ -352,6 +352,15 @@ a second test result is generated with information about
 the SSL certificate - this tag disables the SSL certificate
 checks for the host.
 
+.IP "ssldays=WARNDAYS:ALARMDAYS"
+Define the number of days before an SSL certificate expires,
+in which the sslcert status shows a warning (yellow) or
+alarm (red) status. These default to the values from the
+"--sslwarndays" and "--sslalarmdays" options for the
+.I bbtest-net(1)
+tool; the values specified in the "ssldays" tag overrides
+the default.
+
 .IP DOWNTIME=day:starttime:endtime[,day:starttime:endtime]
 This tag can be used to ignore failed checks during
 specific times of the day - e.g. if you run services that

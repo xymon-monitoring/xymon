@@ -77,6 +77,10 @@ typedef struct testedhost_t {
 	char   *ldapuser;		/* Username */
 	char   *ldappasswd;		/* Password */
 
+	/* The following is for the SSL certificate checks */
+	int  sslwarndays;
+	int  sslalarmdays;
+
 	/* For storing the test dependency tag. */
 	char *deptests;
 
