@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.52 2004-11-13 08:19:57 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.53 2004-11-13 08:51:13 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -60,15 +60,15 @@ static char rcsid[] = "$Id: hobbitd.c,v 1.52 2004-11-13 08:19:57 henrik Exp $";
 #include "loadhosts.h"
 
 /* This holds the names of the tests we have seen reports for */
-typedef struct bbd_testlist_t {
+typedef struct bbgend_testlist_t {
 	char *testname;
-	struct bbd_testlist_t *next;
-} bbd_testlist_t;
+	struct bbgend_testlist_t *next;
+} bbgend_testlist_t;
 
 /* This holds all information about a single status */
-typedef struct bbd_log_t {
-	struct bbd_hostlist_t *host;
-	struct bbd_testlist_t *test;
+typedef struct bbgend_log_t {
+	struct bbgend_hostlist_t *host;
+	struct bbgend_testlist_t *test;
 	int color, oldcolor;
 	char *testflags;
 	char sender[16];
@@ -82,18 +82,18 @@ typedef struct bbd_log_t {
 	unsigned char *dismsg, *ackmsg;
 	int cookie;
 	time_t cookieexpires;
-	struct bbd_log_t *next;
-} bbd_log_t;
+	struct bbgend_log_t *next;
+} bbgend_log_t;
 
 /* This is a list of the hosts we have seen reports for, and links to their status logs */
-typedef struct bbd_hostlist_t {
+typedef struct bbgend_hostlist_t {
 	char *hostname;
-	bbd_log_t *logs;
-	struct bbd_hostlist_t *next;
-} bbd_hostlist_t;
+	bbgend_log_t *logs;
+	struct bbgend_hostlist_t *next;
+} bbgend_hostlist_t;
 
-bbd_hostlist_t *hosts = NULL;		/* The hosts we have reports from */
-bbd_testlist_t *tests = NULL;		/* The tests we have seen */
+bbgend_hostlist_t *hosts = NULL;		/* The hosts we have reports from */
+bbgend_testlist_t *tests = NULL;		/* The tests we have seen */
 
 #define NOTALK 0
 #define RECEIVING 1
@@ -116,12 +116,12 @@ static volatile int reloadconfig = 1;
 static volatile time_t nextcheckpoint = 0;
 
 /* Our channels to worker modules */
-bbd_channel_t *statuschn = NULL;	/* Receives full "status" messages */
-bbd_channel_t *stachgchn = NULL;	/* Receives brief message about a status change */
-bbd_channel_t *pagechn   = NULL;	/* Receives alert messages (triggered from status changes) */
-bbd_channel_t *datachn   = NULL;	/* Receives raw "data" messages */
-bbd_channel_t *noteschn  = NULL;	/* Receives raw "notes" messages */
-bbd_channel_t *enadischn = NULL;	/* Receives "enable" and "disable" messages */
+bbgend_channel_t *statuschn = NULL;	/* Receives full "status" messages */
+bbgend_channel_t *stachgchn = NULL;	/* Receives brief message about a status change */
+bbgend_channel_t *pagechn   = NULL;	/* Receives alert messages (triggered from status changes) */
+bbgend_channel_t *datachn   = NULL;	/* Receives raw "data" messages */
+bbgend_channel_t *noteschn  = NULL;	/* Receives raw "notes" messages */
+bbgend_channel_t *enadischn = NULL;	/* Receives "enable" and "disable" messages */
 
 #define NO_COLOR (COL_COUNT)
 static char *colnames[COL_COUNT+1];
@@ -130,10 +130,10 @@ int ghosthandling = -1;
 char *checkpointfn = NULL;
 char *purpleclientconn = NULL;
 
-void posttochannel(bbd_channel_t *channel, char *channelmarker, 
+void posttochannel(bbgend_channel_t *channel, char *channelmarker, 
 		   char *msg, char *sender, char *hostname, void *arg, char *readymsg)
 {
-	bbd_log_t *log;
+	bbgend_log_t *log;
 	char *testname;
 	struct sembuf s;
 	struct shmid_ds chninfo;
@@ -182,7 +182,7 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 	else {
 		switch(channel->channelid) {
 		  case C_STATUS:
-			log = (bbd_log_t *)arg;
+			log = (bbgend_log_t *)arg;
 			n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
 				"@@%s#%u|%d.%06d|%s|%s|%s|%d|%s|%s|%s|%d", 
 				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
@@ -200,7 +200,7 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 			break;
 
 		  case C_STACHG:
-			log = (bbd_log_t *)arg;
+			log = (bbgend_log_t *)arg;
 			n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
 				"@@%s#%u|%d.%06d|%s|%s|%s|%d|%s|%s|%d\n%s\n@@\n", 
 				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
@@ -212,7 +212,7 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 			break;
 
 		  case C_PAGE:
-			log = (bbd_log_t *)arg;
+			log = (bbgend_log_t *)arg;
 			if (strcmp(channelmarker, "ack") == 0) {
 				n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
 					"@@%s#%u|%d.%06d|%s|%s|%s|%d\n%s\n@@\n", 
@@ -250,7 +250,7 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 			break;
 
 		  case C_ENADIS:
-			log = (bbd_log_t *)arg;
+			log = (bbgend_log_t *)arg;
 			n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
 				"@@%s#%u|%d.%06d|%s|%s|%s|%d\n@@\n",
 				channelmarker, channel->seq, (int) tstamp.tv_sec, (int)tstamp.tv_usec,
@@ -323,7 +323,7 @@ int durationvalue(char *dur)
 
 
 void get_hts(char *msg, char *sender, 
-	     bbd_hostlist_t **host, bbd_testlist_t **test, bbd_log_t **log, 
+	     bbgend_hostlist_t **host, bbgend_testlist_t **test, bbgend_log_t **log, 
 	     int *color, int createhost, int createlog)
 {
 	/*
@@ -335,9 +335,9 @@ void get_hts(char *msg, char *sender,
 
 	char *firstline, *p;
 	char *hosttest, *hostname, *testname, *colstr;
-	bbd_hostlist_t *hwalk = NULL;
-	bbd_testlist_t *twalk = NULL;
-	bbd_log_t *lwalk = NULL;
+	bbgend_hostlist_t *hwalk = NULL;
+	bbgend_testlist_t *twalk = NULL;
+	bbgend_log_t *lwalk = NULL;
 	int maybedown = 0;
 
 	*host = NULL;
@@ -379,7 +379,7 @@ void get_hts(char *msg, char *sender,
 
 	for (hwalk = hosts; (hwalk && strcasecmp(hostname, hwalk->hostname)); hwalk = hwalk->next) ;
 	if (createhost && (hwalk == NULL)) {
-		hwalk = (bbd_hostlist_t *)malloc(sizeof(bbd_hostlist_t));
+		hwalk = (bbgend_hostlist_t *)malloc(sizeof(bbgend_hostlist_t));
 		hwalk->hostname = strdup(hostname);
 		hwalk->logs = NULL;
 		hwalk->next = hosts;
@@ -387,7 +387,7 @@ void get_hts(char *msg, char *sender,
 	}
 	for (twalk = tests; (twalk && strcasecmp(testname, twalk->testname)); twalk = twalk->next);
 	if (createlog && (twalk == NULL)) {
-		twalk = (bbd_testlist_t *)malloc(sizeof(bbd_testlist_t));
+		twalk = (bbgend_testlist_t *)malloc(sizeof(bbgend_testlist_t));
 		twalk->testname = strdup(testname);
 		twalk->next = tests;
 		tests = twalk;
@@ -395,7 +395,7 @@ void get_hts(char *msg, char *sender,
 	if (hwalk && twalk) {
 		for (lwalk = hwalk->logs; (lwalk && (lwalk->test != twalk)); lwalk = lwalk->next);
 		if (createlog && (lwalk == NULL)) {
-			lwalk = (bbd_log_t *)malloc(sizeof(bbd_log_t));
+			lwalk = (bbgend_log_t *)malloc(sizeof(bbgend_log_t));
 			lwalk->color = lwalk->oldcolor = NO_COLOR;
 			lwalk->testflags = NULL;
 			lwalk->sender[0] = '\0';
@@ -426,14 +426,14 @@ done:
 }
 
 
-bbd_log_t *find_cookie(int cookie)
+bbgend_log_t *find_cookie(int cookie)
 {
 	/*
 	 * Find a cookie we have issued.
 	 */
-	bbd_log_t *result = NULL;
-	bbd_hostlist_t *hwalk = NULL;
-	bbd_log_t *lwalk = NULL;
+	bbgend_log_t *result = NULL;
+	bbgend_hostlist_t *hwalk = NULL;
+	bbgend_log_t *lwalk = NULL;
 	int found = 0;
 
 	for (hwalk = hosts; (hwalk && !found); hwalk = hwalk->next) {
@@ -449,7 +449,7 @@ bbd_log_t *find_cookie(int cookie)
 }
 
 
-void handle_status(unsigned char *msg, char *sender, char *hostname, char *testname, bbd_log_t *log, int newcolor)
+void handle_status(unsigned char *msg, char *sender, char *hostname, char *testname, bbgend_log_t *log, int newcolor)
 {
 	int validity = 30;	/* validity is counted in minutes */
 	time_t now = time(NULL);
@@ -622,9 +622,9 @@ void handle_enadis(int enabled, char *msg, char *sender)
 	int duration = 0;
 	int assignments;
 	int alltests = 0;
-	bbd_hostlist_t *hwalk = NULL;
-	bbd_testlist_t *twalk = NULL;
-	bbd_log_t *log;
+	bbgend_hostlist_t *hwalk = NULL;
+	bbgend_testlist_t *twalk = NULL;
+	bbgend_log_t *log;
 	char *p;
 	int maybedown;
 
@@ -747,7 +747,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 }
 
 
-void handle_ack(char *msg, char *sender, bbd_log_t *log, int duration)
+void handle_ack(char *msg, char *sender, bbgend_log_t *log, int duration)
 {
 	char *p;
 
@@ -766,7 +766,7 @@ void handle_ack(char *msg, char *sender, bbd_log_t *log, int duration)
 }
 
 
-void free_log_t(bbd_log_t *zombie)
+void free_log_t(bbgend_log_t *zombie)
 {
 	if (zombie->message) free(zombie->message);
 	if (zombie->dismsg) free(zombie->dismsg);
@@ -777,9 +777,9 @@ void free_log_t(bbd_log_t *zombie)
 void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, char *n1, char *n2)
 {
 	int maybedown;
-	bbd_hostlist_t *hwalk;
-	bbd_testlist_t *twalk, *newt;
-	bbd_log_t *lwalk;
+	bbgend_hostlist_t *hwalk;
+	bbgend_testlist_t *twalk, *newt;
+	bbgend_log_t *lwalk;
 	char msgbuf[MAXMSG];
 	char *marker = NULL;
 
@@ -841,7 +841,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			hwalk->logs = hwalk->logs->next;
 		}
 		else {
-			bbd_log_t *plog;
+			bbgend_log_t *plog;
 			for (plog = hwalk->logs; (plog->next != lwalk); plog = plog->next) ;
 			plog->next = lwalk->next;
 		}
@@ -854,7 +854,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			hosts = hosts->next;
 		}
 		else {
-			bbd_hostlist_t *phost;
+			bbgend_hostlist_t *phost;
 
 			for (phost = hosts; (phost->next != hwalk); phost = phost->next) ;
 			phost->next = hwalk->next;
@@ -863,7 +863,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		/* Loop through the host logs and free them */
 		lwalk = hwalk->logs;
 		while (lwalk) {
-			bbd_log_t *tmp = lwalk;
+			bbgend_log_t *tmp = lwalk;
 			lwalk = lwalk->next;
 
 			free_log_t(tmp);
@@ -890,7 +890,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		if (lwalk == NULL) return;
 		for (newt = tests; (newt && strcasecmp(n2, newt->testname)); newt = newt->next) ;
 		if (newt == NULL) {
-			newt = (bbd_testlist_t *) malloc(sizeof(bbd_testlist_t));
+			newt = (bbgend_testlist_t *) malloc(sizeof(bbgend_testlist_t));
 			newt->testname = strdup(n2);
 			newt->next = tests;
 			tests = newt;
@@ -933,9 +933,9 @@ int get_config(char *fn, conn_t *msg)
 
 void do_message(conn_t *msg)
 {
-	bbd_hostlist_t *h;
-	bbd_testlist_t *t;
-	bbd_log_t *log;
+	bbgend_hostlist_t *h;
+	bbgend_testlist_t *t;
+	bbgend_log_t *log;
 	int color;
 	char sender[20];
 	time_t now;
@@ -1101,8 +1101,8 @@ void do_message(conn_t *msg)
 		 *
 		 * hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|1st line of message
 		 */
-		bbd_hostlist_t *hwalk;
-		bbd_log_t *lwalk;
+		bbgend_hostlist_t *hwalk;
+		bbgend_log_t *lwalk;
 		char *buf, *bufp;
 		int bufsz, buflen;
 		int n;
@@ -1151,7 +1151,7 @@ void do_message(conn_t *msg)
 		char *p;
 		int cookie, duration;
 		char durstr[100];
-		bbd_log_t *lwalk;
+		bbgend_log_t *lwalk;
 
 		/*
 		 * For just a bit of compatibility with the old BB system,
@@ -1223,8 +1223,8 @@ void save_checkpoint(void)
 {
 	char *tempfn;
 	FILE *fd;
-	bbd_hostlist_t *hwalk;
-	bbd_log_t *lwalk;
+	bbgend_hostlist_t *hwalk;
+	bbgend_log_t *lwalk;
 	time_t now = time(NULL);
 
 	if (checkpointfn == NULL) return;
@@ -1277,9 +1277,9 @@ void load_checkpoint(char *fn)
 	char l[4*MAXMSG];
 	char *item;
 	int i, err, maybedown;
-	bbd_hostlist_t *htail = NULL;
-	bbd_testlist_t *t = NULL;
-	bbd_log_t *ltail = NULL;
+	bbgend_hostlist_t *htail = NULL;
+	bbgend_testlist_t *t = NULL;
+	bbgend_log_t *ltail = NULL;
 	char *hostname = NULL, *testname = NULL, *sender = NULL, *testflags = NULL; 
 	char *statusmsg = NULL, *disablemsg = NULL, *ackmsg = NULL;
 	time_t logtime = 0, lastchange = 0, validtime = 0, enabletime = 0, acktime = 0, cookieexpires = 0;
@@ -1336,10 +1336,10 @@ void load_checkpoint(char *fn)
 		if ((hosts == NULL) || (strcmp(hostname, htail->hostname) != 0)) {
 			/* New host */
 			if (hosts == NULL) {
-				htail = hosts = (bbd_hostlist_t *) malloc(sizeof(bbd_hostlist_t));
+				htail = hosts = (bbgend_hostlist_t *) malloc(sizeof(bbgend_hostlist_t));
 			}
 			else {
-				htail->next = (bbd_hostlist_t *) malloc(sizeof(bbd_hostlist_t));
+				htail->next = (bbgend_hostlist_t *) malloc(sizeof(bbgend_hostlist_t));
 				htail = htail->next;
 			}
 			htail->hostname = strdup(hostname);
@@ -1349,17 +1349,17 @@ void load_checkpoint(char *fn)
 
 		for (t=tests; (t && (strcmp(t->testname, testname) != 0)); t = t->next) ;
 		if (t == NULL) {
-			t = (bbd_testlist_t *) malloc(sizeof(bbd_testlist_t));
+			t = (bbgend_testlist_t *) malloc(sizeof(bbgend_testlist_t));
 			t->testname = strdup(testname);
 			t->next = tests;
 			tests = t;
 		}
 
 		if (htail->logs == NULL) {
-			ltail = htail->logs = (bbd_log_t *) malloc(sizeof(bbd_log_t));
+			ltail = htail->logs = (bbgend_log_t *) malloc(sizeof(bbgend_log_t));
 		}
 		else {
-			ltail->next = (bbd_log_t *)malloc(sizeof(bbd_log_t));
+			ltail->next = (bbgend_log_t *)malloc(sizeof(bbgend_log_t));
 			ltail = ltail->next;
 		}
 
@@ -1400,8 +1400,8 @@ void load_checkpoint(char *fn)
 
 void check_purple_status(void)
 {
-	bbd_hostlist_t *hwalk;
-	bbd_log_t *lwalk;
+	bbgend_hostlist_t *hwalk;
+	bbgend_log_t *lwalk;
 	time_t now = time(NULL);
 
 	for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
@@ -1412,7 +1412,7 @@ void check_purple_status(void)
 					/*
 					 * A summary has gone stale. Drop it.
 					 */
-					bbd_log_t *tmp;
+					bbgend_log_t *tmp;
 
 					if (lwalk == hwalk->logs) {
 						tmp = hwalk->logs;
@@ -1428,7 +1428,7 @@ void check_purple_status(void)
 					free_log_t(tmp);
 				}
 				else {
-					bbd_log_t *tmp;
+					bbgend_log_t *tmp;
 					int newcolor = COL_PURPLE;
 
 					if (purpleclientconn) {
@@ -1494,7 +1494,7 @@ int main(int argc, char *argv[])
 	struct timeval tv;
 	struct timezone tz;
 	int daemonize = 1;
-	char *pidfile = "/var/run/bbd_net.pid";
+	char *pidfile = "/var/run/bbgend.pid";
 
 	colnames[COL_GREEN] = "green";
 	colnames[COL_YELLOW] = "yellow";
@@ -1661,7 +1661,7 @@ int main(int argc, char *argv[])
 		setsid();
 	}
 
-	setup_signalhandler("bbd_net");
+	setup_signalhandler("bbgend");
 	signal(SIGINT, sig_handler);
 	signal(SIGTERM, sig_handler);
 	signal(SIGUSR1, sig_handler);
