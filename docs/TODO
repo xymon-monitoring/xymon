@@ -15,8 +15,6 @@ Suggestions from users
 
 Ideas of my own
 ---------------
-* Switch httptest to use the libcurl "multi" interface
-  for multiple concurrent web checks.
 * Check of RPC services using getrpcent and rpcinfo
 * Implement the "local" tests (cpu, disk, memory,
   process, services - NOT logs) as network tests
