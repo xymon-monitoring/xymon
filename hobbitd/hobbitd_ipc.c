@@ -1,3 +1,29 @@
+/*----------------------------------------------------------------------------*/
+/* Big Brother message daemon.                                                */
+/*                                                                            */
+/* This module implements the setup/teardown of the bbgend communications     */
+/* channel, using standard System V IPC mechanisms: Shared memory and         */
+/* semaphores.                                                                */
+/*                                                                            */
+/* The concept is to use a shared memory segment for each "channel" that      */
+/* bbgend supports. This memory segment is then used to pass a single bbgend  */
+/* message between the bbgend master daemon, and the bbd_channel workers.     */
+/* Two semaphores are used to synchronize between the master daemon and the   */
+/* workers, i.e. the workers wait for a semaphore to go up indicating that a  */
+/* new message has arrived, and the master daemon then waits for the other    */
+/* semaphore to go 0 indicating that the workers have read the message. A     */
+/* third semaphore is used as a simple counter to tell how many workers have  */
+/* attached to a channel.                                                     */
+/*                                                                            */
+/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/*                                                                            */
+/* This program is released under the GNU General Public License (GPL),       */
+/* version 2. See the file "COPYING" for details.                             */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.7 2004-10-27 10:47:12 henrik Exp $";
+
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -12,7 +38,7 @@
 #include "bbgen.h"
 #include "debug.h"
 #include "util.h"
-#include "bbd_net.h"
+#include "bbgend.h"
 #include "bbdutil.h"
 
 char *channelnames[] = {
