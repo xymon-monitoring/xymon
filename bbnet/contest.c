@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.34 2003-08-26 21:08:19 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.35 2003-08-28 06:54:49 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -66,11 +66,13 @@ static svcinfo_t svcinfo[] = {
 	{ "nntp",    "quit\r\n",          "200",	(TCP_GET_BANNER) },
 	{ "rsync",   NULL,                "@RSYNCD",	(TCP_GET_BANNER) },
 	{ "bbd",     "dummy",             NULL,		(0) },
-	{ "smtps",   "mail\r\nquit\r\n",  "220",	(TCP_GET_BANNER|TCP_SSL) },
+	{ "ftps",    "quit\r\n",          "220",	(TCP_GET_BANNER|TCP_SSL) },
+	{ "telnets", NULL,                NULL, 	(TCP_GET_BANNER|TCP_TELNET|TCP_SSL) },
+	{ "smtps",   "mail\r\nquit\r\n",  "220",	(TCP_GET_BANNER|TCP_SSL) }, /* Non-standard - IANA */
 	{ "pop3s",   "quit\r\n",          "+OK",	(TCP_GET_BANNER|TCP_SSL) },
 	{ "imaps",   "ABC123 LOGOUT\r\n", "* OK",	(TCP_GET_BANNER|TCP_SSL) },
 	{ "nntps",   "quit\r\n",          "200",	(TCP_GET_BANNER|TCP_SSL) },
-	{ NULL,      NULL,                NULL,		(0) }	/* Default behaviour: Dont send anything, dont expect anything, dont grab banner */
+	{ NULL,      NULL,                NULL,		(0) }	/* Default behaviour: Just try a connect */
 };
 
 
