@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.45 2003-05-10 22:33:30 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.46 2003-05-20 21:14:12 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -63,6 +63,7 @@ testedhost_t	*testhosthead = NULL;		/* Head of all hosts */
 char		*nonetpage = NULL;		/* The "NONETPAGE" env. variable */
 int		dnsmethod = DNS_THEN_IP;	/* How to do DNS lookups */
 int 		timeout=0;
+int 		conntimeout=0;
 long		followlocations = 0;		/* Follow Location: redirects in HTTP? */
 char		*contenttestname = "content";   /* Name of the content checks column */
 char		*ssltestname = "sslcert";       /* Name of the SSL certificate checks column */
@@ -198,14 +199,14 @@ void load_services(void)
 }
 
 
-testedhost_t *init_testedhost(char *hostname, int timeout, int in_sla)
+testedhost_t *init_testedhost(char *hostname, int timeout, int conntimeout, int in_sla)
 {
 	testedhost_t *newhost;
 
 	newhost = malloc(sizeof(testedhost_t));
 	newhost->hostname = malcop(hostname);
 	newhost->ip[0] = '\0';
-	newhost->conntimeout = 0;
+	newhost->conntimeout = conntimeout;
 	newhost->timeout = timeout;
 
 	newhost->dialup = 0;
@@ -299,7 +300,7 @@ void load_tests(void)
 				p = strchr(l, '#'); p++;
 				while (isspace((unsigned int) *p)) p++;
 
-				h = init_testedhost(hostname, timeout, within_sla(p));
+				h = init_testedhost(hostname, timeout, conntimeout, within_sla(p));
 				anytests = 0;
 
 				testspec = strtok(p, "\t ");
@@ -940,6 +941,10 @@ int main(int argc, char *argv[])
 		}
 
 		/* Options for HTTP tests */
+		else if (strncmp(argv[argi], "--conntimeout=", 14) == 0) {
+			char *p = strchr(argv[argi], '=');
+			p++; conntimeout = atoi(p);
+		}
 		else if (strncmp(argv[argi], "--content=", 10) == 0) {
 			char *p = strchr(argv[argi], '=');
 			contenttestname = malcop(p+1);
@@ -989,6 +994,7 @@ int main(int argc, char *argv[])
 			printf("    --ping[=COLUMNNAME]         : Enable ping checking, default columname is \"conn\"\n");
 			printf("    --noping                    : Disable ping checking\n");
 			printf("\nOptions for HTTP/HTTPS (Web) tests:\n");
+			printf("    --conntimeout=N             : Timeout for the connection to the server to succeed\n");
 			printf("    --content=COLUMNNAME        : Define columnname for CONTENT checks (content)\n");
 			printf("    --ssl=COLUMNNAME            : Define columnname for SSL certificate checks (sslcert)\n");
 			printf("    --sslwarn=N                 : Go yellow if certificate expires in less than N days (default:30\n");
