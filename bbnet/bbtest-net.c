@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.195 2005-02-09 08:17:14 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.196 2005-02-09 20:56:42 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -368,7 +368,7 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *testspec
 	newtest->alwaystrue = alwaystruetest;
 	newtest->silenttest = silenttest;
 	newtest->senddata = sendasdata;
-	newtest->testspec = strdup(testspec);
+	newtest->testspec = (testspec ? strdup(testspec) : NULL);
 	newtest->privdata = NULL;
 	newtest->open = 0;
 	newtest->banner = NULL;
