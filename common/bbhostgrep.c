@@ -106,8 +106,8 @@ int main(int argc, char *argv[])
 
 				if (extras && (strcasecmp(realitem, "dialup") == 0)) strcat(wantedtags, " dialup");
 				else if (extras && (strcasecmp(realitem, "testip") == 0)) strcat(wantedtags, " testip");
-				else if (extras && (strncasecmp(realitem, "SLA=", 4) == 0)) sla = within_sla(l, "SLA");
-				else if (extras && (strncasecmp(realitem, "DOWNTIME=", 9) == 0)) sla = !within_sla(l, "DOWNTIME");
+				else if (extras && (strncasecmp(realitem, "SLA=", 4) == 0)) sla = within_sla(l, "SLA", 1);
+				else if (extras && (strncasecmp(realitem, "DOWNTIME=", 9) == 0)) sla = !within_sla(l, "DOWNTIME", 0);
 				else {
 					int i;
 

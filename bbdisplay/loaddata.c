@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.94 2003-07-09 10:44:09 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.95 2003-07-09 14:15:11 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1153,7 +1153,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				else if (argnmatch(tag, "NK:")) 
 					alertlist = malcop(tag+strlen("NK:"));
 				else if (argnmatch(tag, "NKTIME=")) 
-					nktime = within_sla(tag, "NKTIME");
+					nktime = within_sla(tag, "NKTIME", 1);
 				else if (argnmatch(tag, "WML:")) 
 					onwaplist = malcop(tag+strlen("WML:"));
 				else if (argnmatch(tag, "NOPROP:")) 

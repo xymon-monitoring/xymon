@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.68 2003-07-09 12:24:01 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.69 2003-07-09 14:15:11 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -781,7 +781,7 @@ static int minutes(char *p)
 	return (10*(*(p+0)-'0')+(*(p+1)-'0'))*60 + (10*(*(p+2)-'0')+(*(p+3)-'0'));
 }
 
-int within_sla(char *l, char *tag)
+int within_sla(char *l, char *tag, int defresult)
 {
 	/*
 	 * Usage: slatime hostline
@@ -835,7 +835,7 @@ int within_sla(char *l, char *tag)
 	}
 	else {
 		/* No SLA -> default to always included */
-		result = 1;
+		result = defresult;
 	}
 	free(tagspec);
 
