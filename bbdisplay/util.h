@@ -132,6 +132,8 @@ extern char *base64decode(unsigned char *buf);
 extern void getescapestring(char *msg, unsigned char **buf, int *buflen);
 extern char *decode_url(char *inputurl, bburl_t *bburl);
 extern char *msg_data(char *msg);
+extern void getenv_default(char *envname, char *envdefault, char **buf);
+
 
 #endif
 

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.128 2004-10-07 21:17:30 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.129 2004-10-08 12:23:46 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1682,7 +1682,7 @@ char *base64decode(unsigned char *buf)
 		int i;
 
 		bvalinit = 1;
-		for (i=0; (i < strlen(b64chars)); i++) bval[b64chars[i]] = i;
+		for (i=0; (i < strlen(b64chars)); i++) bval[(int)b64chars[i]] = i;
 	}
 
 	result = malloc(3*(bytesleft/4 + 1) + 1);
@@ -2081,5 +2081,21 @@ char *msg_data(char *msg)
 	result += strspn(result, " \t");        /* Skip all whitespace */
 
 	return result;
+}
+
+void getenv_default(char *envname, char *envdefault, char **buf)
+{
+	char *val;
+
+	val = getenv(envname);
+	if (!val) {
+		val = (char *)malloc(strlen(envname) + strlen(envdefault) + 2);
+		sprintf(val, "%s=%s", envname, envdefault);
+		putenv(val);
+		/* Dont free the string - it must be kept for the environment to work */
+		val = getenv(envname);
+	}
+
+	if (buf) *buf = val;
 }
 
