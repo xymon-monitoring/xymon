@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.166 2003-12-10 20:55:00 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.167 2004-01-25 22:21:12 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -538,8 +538,13 @@ int main(int argc, char *argv[])
 	setup_signalhandler("bbgen");
 
 	if (pagedir == NULL) {
-		pagedir = (char *) malloc(strlen(getenv("BBHOME"))+5);
-		sprintf(pagedir, "%s/www", getenv("BBHOME"));
+		if (getenv("BBWWW")) {
+			pagedir = malcop(getenv("BBWWW"));
+		}
+		else {
+			pagedir = (char *) malloc(strlen(getenv("BBHOME"))+5);
+			sprintf(pagedir, "%s/www", getenv("BBHOME"));
+		}
 	}
 	if (rrddir == NULL) {
 		rrddir = (char *) malloc(strlen(getenv("BBVAR"))+5);
