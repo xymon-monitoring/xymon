@@ -21,7 +21,7 @@
 #define CHAN_MASTER 0
 #define CHAN_CLIENT 1
 
-enum msgchannels_t { C_STATUS, C_STACHG, C_PAGE, C_DATA, C_NOTES, C_ENADIS };
+enum msgchannels_t { C_STATUS=1, C_STACHG, C_PAGE, C_DATA, C_NOTES, C_ENADIS };
 
 typedef struct hobbitd_channel_t {
 	enum msgchannels_t channelid;
