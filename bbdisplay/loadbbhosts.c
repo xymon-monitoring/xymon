@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.13 2004-12-17 22:38:21 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.14 2004-12-18 08:56:34 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -172,7 +172,7 @@ group_t *init_group(const char *title, const char *onlycols)
 host_t *init_host(const char *hostname, const char *displayname, const char *clientalias,
 		  const char *comment, const char *description,
 		  const int ip1, const int ip2, const int ip3, const int ip4, 
-		  const int dialup, const int prefer, const double warnpct, const char *reporttime,
+		  const int dialup, const double warnpct, const char *reporttime,
 		  char *alerts, int nktime, char *waps, char *tags,
 		  char *nopropyellowtests, char *nopropredtests, char *noproppurpletests, char *nopropacktests,
 		  int modembanksize)
@@ -183,7 +183,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	hostcount++;
 	dprintf("init_host(%s, %d,%d,%d.%d, %d, %d, %s, %s, %s, %s, %s %s)\n", 
 		textornull(hostname), ip1, ip2, ip3, ip4,
-		dialup, prefer, textornull(alerts), textornull(tags),
+		dialup, textornull(alerts), textornull(tags),
 		textornull(nopropyellowtests), textornull(nopropredtests), 
 		textornull(noproppurpletests), textornull(nopropacktests));
 
@@ -197,7 +197,6 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	newhost->entries = NULL;
 	newhost->color = -1;
 	newhost->oldage = 1;
-	newhost->prefer = prefer;
 	newhost->dialup = dialup;
 	newhost->reportwarnlevel = warnpct;
 	newhost->reporttime = (reporttime ? strdup(reporttime) : NULL);
@@ -306,45 +305,14 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 		hosthead = newlist;
 	}
 	else {
-		int usenew = 0;
 		hostlist_t *clone = (hostlist_t *) malloc(sizeof(hostlist_t));
 
 		dprintf("Duplicate host definition for host '%s'\n", hostname);
 
-		if (newhost->prefer && !oldlist->hostentry->prefer) {
-			usenew = 1;
-			dprintf("Using new entry as it has 'prefer' tag and old entry does not\n");
-		}
-		else if (newhost->prefer && oldlist->hostentry->prefer) {
-			usenew = 0;
-			errprintf("Warning: Multiple prefer entries for host %s - using first one\n", hostname);
-		}
-		else if (!newhost->prefer && !oldlist->hostentry->prefer) {
-			if ( (strcmp(oldlist->hostentry->ip, "0.0.0.0") == 0) && (strcmp(newhost->ip, "0.0.0.0") != 0) ) {
-				usenew = 1;
-				dprintf("Using new entry as old one has IP 0.0.0.0\n");
-			}
-
-			if ( strstr(oldlist->hostentry->rawentry, "noconn") && (strstr(newhost->rawentry, "noconn") == NULL) ) {
-				usenew = 1;
-				dprintf("Using new entry as old one has noconn\n");
-			}
-		}
-
-		if (usenew) {
-			clone->hostentry = oldlist->hostentry;
-			clone->clones = NULL;
-			clone->next = oldlist->clones;
-			oldlist->clones = clone;
-
-			oldlist->hostentry = newhost;
-		}
-		else {
-			clone->hostentry = newhost;
-			clone->clones = NULL;
-			clone->next = oldlist->clones;
-			oldlist->clones = clone;
-		}
+		clone->hostentry = newhost;
+		clone->clones = NULL;
+		clone->next = oldlist->clones;
+		oldlist->clones = clone;
 	}
 
 	return newhost;
@@ -631,7 +599,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			char *displayname, *clientalias, *comment, *description;
 			char *alertlist, *onwaplist, *reporttime;
 			char *nopropyellowlist, *nopropredlist, *noproppurplelist, *nopropacklist;
-			int nodisp = 0, prefer = 0;
+			int nodisp = 0;
 			char *targetpagelist[MAX_TARGETPAGES_PER_HOST];
 			int targetpagecount;
 			char *bbval, *startoftags, *tag;
@@ -665,7 +633,24 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			clientalias = bbh_item(bbhost, BBH_CLIENTALIAS);
 			if (bbhost && (strcmp(bbh_item(bbhost, BBH_HOSTNAME), clientalias) == 0)) clientalias = NULL;
 
-			/* We need to re-scan the input line to look for "prefer" and target-page tags */
+			if (bbhost && (strlen(pgset) > 0)) {
+				/* Walk the clone-list and pick up the target pages for this host */
+				namelist_t *cwalk = bbhost;
+				do {
+					bbval = bbh_item_walk(cwalk);
+					while (bbval) {
+						if (strncasecmp(bbval, hosttag, strlen(hosttag)) == 0)
+							targetpagelist[targetpagecount++] = strdup(bbval+strlen(hosttag));
+						bbval = bbh_item_walk(NULL);
+					}
+
+					cwalk = cwalk->next;
+				} while (cwalk && 
+					 (strcmp(cwalk->bbhostname, bbhost->bbhostname) == 0) &&
+					 (targetpagecount < MAX_TARGETPAGES_PER_HOST) );
+			}
+
+			/* We need to re-scan the input line to look for "nodisp" and target-page tags */
 			startoftags = strchr(l, '#');
 			if (startoftags == NULL) startoftags = ""; else startoftags++;
 			startoftags += strspn(startoftags, " \t\r\n");
@@ -700,14 +685,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				}
 
 				/* Look for the stuff we want */
-				if (strcasecmp(item, "prefer") == 0) 
-					prefer = 1;
-				else if (strcasecmp(item, "nodisp") == 0) 
+				if (strcasecmp(item, "nodisp") == 0) {
 					nodisp = 1;
-				else if ( (strlen(pgset) > 0) &&
-					  (targetpagecount < MAX_TARGETPAGES_PER_HOST) && 
-					  (strncasecmp(item, hosttag, strlen(hosttag)) == 0) ) {
-					targetpagelist[targetpagecount++] = strdup(item+strlen(hosttag));
 				}
 
 				if (tag) tag += strspn(tag, " \t\r\n");
@@ -726,7 +705,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				if (curhost == NULL) {
 					curhost = init_host(hostname, displayname, clientalias,
 							    comment, description,
-							    ip1, ip2, ip3, ip4, dialup, prefer, 
+							    ip1, ip2, ip3, ip4, dialup, 
 							    warnpct, reporttime,
 							    alertlist, nktime, onwaplist,
 							    startoftags, 
@@ -751,7 +730,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				else {
 					curhost = curhost->next = init_host(hostname, displayname, clientalias,
 									    comment, description,
-									    ip1, ip2, ip3, ip4, dialup, prefer, 
+									    ip1, ip2, ip3, ip4, dialup,
 									    warnpct, reporttime,
 									    alertlist, nktime, onwaplist,
 									    startoftags, 
@@ -800,7 +779,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 					else {
 						host_t *newhost = init_host(hostname, displayname, clientalias,
 									    comment, description,
-									    ip1, ip2, ip3, ip4, dialup, prefer, 
+									    ip1, ip2, ip3, ip4, dialup,
 									    warnpct, reporttime,
 									    alertlist, nktime, onwaplist,
 									    startoftags, 
