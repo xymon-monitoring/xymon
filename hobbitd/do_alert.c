@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.43 2005-02-22 21:48:35 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.44 2005-02-23 21:15:19 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -502,6 +502,22 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				currule->criteria->sendrecovered = SR_WANTED;
 				crit->sendrecovered = SR_WANTED;
 			}
+			else if ((pstate == P_RECIP) && (strncasecmp(p, "FORMAT=", 7) == 0)) {
+				if      (strcasecmp(p+7, "TEXT") == 0) currcp->format = FRM_TEXT;
+				else if (strcasecmp(p+7, "PLAIN") == 0) currcp->format = FRM_PLAIN;
+				else if (strcasecmp(p+7, "SMS") == 0) currcp->format = FRM_SMS;
+				else if (strcasecmp(p+7, "PAGER") == 0) currcp->format = FRM_PAGER;
+				else if (strcasecmp(p+7, "SCRIPT") == 0) currcp->format = FRM_SCRIPT;
+			}
+			else if ((pstate == P_RECIP) && (strncasecmp(p, "REPEAT=", 7) == 0)) {
+				currcp->interval = 60*durationvalue(p+7);
+			}
+			else if ((pstate == P_RECIP) && (strcasecmp(p, "STOP") == 0)) {
+				currcp->stoprule = 1;
+			}
+			else if ((pstate == P_RECIP) && (strcasecmp(p, "UNMATCHED") == 0)) {
+				currcp->unmatchedonly = 1;
+			}
 			else if (currule && ((strncasecmp(p, "MAIL", 4) == 0) || mailcmdactive) ) {
 				recip_t *newrcp;
 
@@ -518,10 +534,16 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				newrcp->criteria = NULL;
 				newrcp->recipient = NULL;
 				newrcp->scriptname = NULL;
+
 				if (strncasecmp(p, "MAIL=", 5) == 0) {
 					p += 5;
 				}
-				else if (strchr(p, '@') == NULL) p = strtok(NULL, " \t");
+				else if (strcasecmp(p, "MAIL") == 0) {
+					p = strtok(NULL, " \t");
+				}
+				else {
+					/* Second recipient on a rule - do nothing */
+				}
 
 				if (p) {
 					newrcp->recipient = strdup(p);
@@ -562,12 +584,22 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 
 				if (strncasecmp(p, "SCRIPT=", 7) == 0) {
 					p += 7;
-				}
-				else p = strtok(NULL, " \t");
-
-				if (p) {
 					newrcp->scriptname = strdup(p);
-					p = strtok(NULL, " ");
+					p = strtok(NULL, " \t");
+				}
+				else if (strcasecmp(p, "SCRIPT") == 0) {
+					p = strtok(NULL, " \t");
+					if (p) {
+						newrcp->scriptname = strdup(p);
+						p = strtok(NULL, " \t");
+					}
+					else {
+						errprintf("Invalid SCRIPT command at line %d\n", cfid);
+					}
+				}
+				else {
+					/* A second recipient for the same script as the previous one */
+					newrcp->scriptname = strdup(currcp->scriptname);
 				}
 
 				if (p) {
@@ -591,22 +623,6 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 					if (newrcp->scriptname) xfree(newrcp->scriptname);
 					xfree(newrcp);
 				}
-			}
-			else if ((pstate == P_RECIP) && (strncasecmp(p, "FORMAT=", 7) == 0)) {
-				if      (strcmp(p+7, "TEXT") == 0) currcp->format = FRM_TEXT;
-				else if (strcmp(p+7, "PLAIN") == 0) currcp->format = FRM_PLAIN;
-				else if (strcmp(p+7, "SMS") == 0) currcp->format = FRM_SMS;
-				else if (strcmp(p+7, "PAGER") == 0) currcp->format = FRM_PAGER;
-				else if (strcmp(p+7, "SCRIPT") == 0) currcp->format = FRM_SCRIPT;
-			}
-			else if ((pstate == P_RECIP) && (strncasecmp(p, "REPEAT=", 7) == 0)) {
-				currcp->interval = 60*durationvalue(p+7);
-			}
-			else if ((pstate == P_RECIP) && (strcasecmp(p, "STOP") == 0)) {
-				currcp->stoprule = 1;
-			}
-			else if ((pstate == P_RECIP) && (strcasecmp(p, "UNMATCHED") == 0)) {
-				currcp->unmatchedonly = 1;
 			}
 
 			if (p) p = strtok(NULL, " ");
