@@ -126,6 +126,7 @@ static vmstat_layout_t vmstat_debian3_layout[] = {
 	{ -1, NULL }
 };
 
+/* This one matched FreeBSD 4.10 */
 static vmstat_layout_t vmstat_freebsd_layout[] = {
 	{ 0, "cpu_r" },
 	{ 1, "cpu_b" },
