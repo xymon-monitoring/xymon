@@ -89,10 +89,12 @@ diagnose the problem being reported.
 
 .IP "page HOSTNAME.TESTNAME COLOR <additional text>"
 This triggers the paging facility, generating a page following the
-rules defined for this particular host/test combination. Clients
-will not normally need to use this command, since a "status" message
-where the color is red, yellow or purple will automatically (in the
-bb program) result in a "page" message being sent as well.
+rules defined for this particular host/test combination. NOTE: 
+The Hobbit daemon ignores such messages; this is provided only for
+compatibility with BB servers. Clients will not normally need to use 
+this command, since a "status" message where the color is red, yellow 
+or purple will automatically (in the bb program) result in a "page" 
+message being sent as well.
 
 .IP "data HOSTNAME.DATANAME<newline><additional text>"
 The "data" message allows tools to send data about a host, without
