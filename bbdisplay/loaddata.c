@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.145 2005-03-21 14:52:28 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.146 2005-03-21 15:05:00 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -678,7 +678,7 @@ state_t *load_state(dispsummary_t **sumhead)
 		int hobbitdresult;
 
 		if (!reportstart && !snapshot) {
-			hobbitdresult = sendmessage("hobbitdboard", NULL, NULL, &board, 1, 30);
+			hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1", NULL, NULL, &board, 1, 30);
 		}
 		else {
 			hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname", NULL, NULL, &board, 1, 30);
