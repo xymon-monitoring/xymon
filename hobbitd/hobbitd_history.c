@@ -205,15 +205,17 @@ int main(int argc, char *argv[])
 					int gotit;
 
 					fseek(statuslogfd, 0, SEEK_END);
-					if (ftell(statuslogfd) > 512) 
-						/* Go back 512 from EOF */
+					if (ftell(statuslogfd) > 512) {
+						/* Go back 512 from EOF, and skip to start of a line */
 						fseek(statuslogfd, -512, SEEK_END);
-					else
+						gotit = (fgets(l, sizeof(l)-1, statuslogfd) == NULL);
+					}
+					else {
 						/* Read from beginning of file */
 						fseek(statuslogfd, 0, SEEK_SET);
+						gotit = 0;
+					}
 
-					/* Skip to start of a line */
-					gotit = (fgets(l, sizeof(l)-1, statuslogfd) == NULL);
 
 					while (!gotit) {
 						long tmppos = ftell(statuslogfd);
@@ -316,7 +318,7 @@ int main(int argc, char *argv[])
 				fflush(alleventsfd);
 			}
 		}
-		else if ((metacount > 3) && ((strncmp(items[0], "@@drophost", 10) == 0) && (fork() == 0))) {
+		else if ((metacount > 3) && ((strncmp(items[0], "@@drophost", 10) == 0))) {
 			/* @@drophost|timestamp|sender|hostname */
 
 			hostname = items[3];
@@ -370,10 +372,8 @@ int main(int argc, char *argv[])
 				free(hostlead);
 				free(hostnamecommas);
 			}
-
-			exit(0);	/* Child exits */
 		}
-		else if ((metacount > 4) && ((strncmp(items[0], "@@droptest", 10) == 0) && (fork() == 0))) {
+		else if ((metacount > 4) && ((strncmp(items[0], "@@droptest", 10) == 0))) {
 			/* @@droptest|timestamp|sender|hostname|testname */
 
 			hostname = items[3];
@@ -399,10 +399,8 @@ int main(int argc, char *argv[])
 				if ((stat(statuslogfn, &st) == 0) && S_ISREG(st.st_mode)) unlink(statuslogfn);
 				free(hostnamecommas);
 			}
-
-			exit(0);	/* Child exits */
 		}
-		else if ((metacount > 4) && ((strncmp(items[0], "@@renamehost", 12) == 0) && (fork() == 0))) {
+		else if ((metacount > 4) && ((strncmp(items[0], "@@renamehost", 12) == 0))) {
 			/* @@renamehost|timestamp|sender|hostname|newhostname */
 			char *newhostname;
 
