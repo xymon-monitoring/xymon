@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.32 2003-04-27 12:45:17 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.33 2003-04-27 16:16:42 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -587,6 +587,8 @@ void send_results(service_t *service)
 	char		*nopagename;
 	int		nopage = 0;
 
+	combo_start();
+
 	svcname = malloc(strlen(service->testname)+1);
 	strcpy(svcname, service->testname);
 	if (service->namelen) svcname[service->namelen] = '\0';
@@ -704,6 +706,8 @@ void send_results(service_t *service)
 		addtostatus("\n\n");
 		finish_status();
 	}
+
+	combo_end();
 }
 
 int main(int argc, char *argv[])
@@ -776,7 +780,6 @@ int main(int argc, char *argv[])
 			h->hostname, h->dnserror, h->ip, h->dialup, h->testip);
 	}
 
-	combo_start();
 	dprintf("\nTest services\n");
 
 
@@ -826,7 +829,11 @@ int main(int argc, char *argv[])
 	for (t = httptest->items; (t); t = t->next) add_http_test(t);
 	run_http_tests(httptest, followlocations);
 	if (debug) show_http_test_results(httptest);
-	for (h=testhosthead; (h); h = h->next) send_http_results(httptest, h, nonetpage, contenttestname);
+	combo_start();
+	for (h=testhosthead; (h); h = h->next) {
+		send_http_results(httptest, h, nonetpage, contenttestname);
+	}
+	combo_end();
 
 
 	/* dns, dig, ntp tests */
@@ -848,8 +855,6 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-
-	combo_end();
 
 	return 0;
 }
