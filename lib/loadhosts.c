@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.19 2004-12-30 22:25:34 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.20 2005-01-14 09:50:48 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -140,13 +140,21 @@ char *knownhost(char *hostname, char *hostip, int ghosthandling, int *maybedown)
 	namelist_t *walk = NULL;
 	static char result[MAXMSG];
 
-	strcpy(result, hostname);
-	*maybedown = 0;
-	*hostip = '\0';
-
 	/* Find the host */
 	for (walk = namehead; (walk && (strcasecmp(walk->bbhostname, hostname) != 0) && (strcasecmp(walk->clientname, hostname) != 0)); walk = walk->next);
-	if (walk) strcpy(hostip, walk->ip);
+	if (walk) {
+		/*
+		 * Force our version of the hostname. Done here so CLIENT works always.
+		 */
+		strcpy(hostip, walk->ip);
+		strcpy(result, walk->bbhostname);
+		if (walk->downtime) *maybedown = within_sla(walk->downtime, "DOWNTIME", 0);
+	}
+	else {
+		strcpy(result, hostname);
+		*maybedown = 0;
+		*hostip = '\0';
+	}
 
 	/* If default method, just say yes */
 	if (ghosthandling == 0) return result;
@@ -154,15 +162,6 @@ char *knownhost(char *hostname, char *hostip, int ghosthandling, int *maybedown)
 	/* Allow all summaries and modembanks */
 	if (strcmp(hostname, "summary") == 0) return result;
 	if (strcmp(hostname, "dialup") == 0) return result;
-
-	/* See if we know this hostname */
-	if (walk) {
-		/*
-		 * Force our version of the hostname
-		 */
-		strcpy(result, walk->bbhostname);
-		if (walk->downtime) *maybedown = within_sla(walk->downtime, "DOWNTIME", 0);
-	}
 
 	return (walk ? result : NULL);
 }
