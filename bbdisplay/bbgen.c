@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.112 2003-05-23 10:08:01 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.113 2003-05-23 11:03:37 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -402,15 +402,15 @@ int main(int argc, char *argv[])
 	bbnk_color = do_bb2_page(bbnkfilename, PAGE_NK);
 	add_timestamp("BBNK generation done");
 
+	/* Generate WML cards - must do before sending summaries */
+	do_wml_cards(pagedir);
+	add_timestamp("WML generation done");
+
 	/* Send summary notices - only once, so not on pagesets */
 	if (pageset == NULL) {
 		send_summaries(sumhead);
 		add_timestamp("Summary transmission done");
 	}
-
-	/* Generate WML cards */
-	do_wml_cards(pagedir);
-	add_timestamp("WML generation done");
 
 	/* Need to do this before sending in our report */
 	add_timestamp("Run completed");
