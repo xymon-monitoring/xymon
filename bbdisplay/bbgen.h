@@ -219,6 +219,7 @@ typedef struct {
 	char	*testflags;
 	reportinfo_t *repinfo;
 	replog_t *causes;
+	char    *histlogname;
 	void	*next;
 } entry_t;
 
