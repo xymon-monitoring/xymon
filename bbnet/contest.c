@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.62 2004-09-10 20:11:32 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.63 2004-09-10 21:33:04 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1373,14 +1373,19 @@ int tcp_got_expected(tcptest_t *test)
 {
 	if (test == NULL) return 1;
 
-	if (test->banner && test->svcinfo && test->svcinfo->exptext) {
+	if (test->svcinfo && test->svcinfo->exptext) {
 		int compbytes; /* Number of bytes to compare */
 
-		compbytes = (test->svcinfo->explen ? test->svcinfo->explen : strlen(test->svcinfo->exptext));
 
 		/* Did we get enough data? */
+		if (test->banner == NULL) {
+			dprintf("tcp_got_expected: No data in banner\n");
+			return 0;
+		}
+
+		compbytes = (test->svcinfo->explen ? test->svcinfo->explen : strlen(test->svcinfo->exptext));
 		if ((test->svcinfo->expofs + compbytes) > test->bannerbytes) {
-			dprintf("tcp_got_expected: Not enough data");
+			dprintf("tcp_got_expected: Not enough data\n");
 			return 0;
 		}
 
