@@ -64,6 +64,15 @@ case "$1" in
 	fi
 	;;
 
+   "reload")
+	if test -s @BBLOGDIR@/hobbitd.pid
+	then
+		kill -HUP `cat @BBLOGDIR@/hobbitd.pid`
+	else
+		echo "hobbitd not running (no PID file)"
+	fi
+	;;
+
    *)
    	echo "Usage: $0 start|stop|restart|status"
 	break;
