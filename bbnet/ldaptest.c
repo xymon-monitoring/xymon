@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.3 2003-08-29 21:48:11 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.4 2003-08-30 10:16:17 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -27,10 +27,11 @@ static char rcsid[] = "$Id: ldaptest.c,v 1.3 2003-08-29 21:48:11 henrik Exp $";
 #include "ldaptest.h"
 
 #define BBGEN_LDAP_OK 		0
-#define BBGEN_LDAP_INITFAIL	1
-#define BBGEN_LDAP_BINDFAIL	2
-#define BBGEN_LDAP_TIMEOUT	3
-#define BBGEN_LDAP_SEARCHFAILED	4
+#define BBGEN_LDAP_INITFAIL	10
+#define BBGEN_LDAP_TLSFAIL	11
+#define BBGEN_LDAP_BINDFAIL	20
+#define BBGEN_LDAP_TIMEOUT	30
+#define BBGEN_LDAP_SEARCHFAILED	40
 
 char *ldap_library_version = NULL;
 
@@ -53,7 +54,7 @@ void shutdown_ldap_library(void)
 #endif
 }
 
-void add_ldap_test(testitem_t *t)
+int add_ldap_test(testitem_t *t)
 {
 #ifdef BBGEN_LDAP
 	ldap_data_t *req;
@@ -62,26 +63,25 @@ void add_ldap_test(testitem_t *t)
 
 	/* 
 	 * t->testspec containts the full testspec
+	 * We need to remove any URL-encoding.
 	 */
-
+	for (p=t->testspec; (*p); p++) if (*p == '+') *p = ' ';
 	if (ldap_url_parse(t->testspec, &ludp) != 0) {
 		errprintf("Invalid LDAP URL %s\n", t->testspec);
-		return;
+		return 1;
 	}
 
 	/* Allocate the private data and initialize it */
-	req = (ldap_data_t *) malloc(sizeof(ldap_data_t));
-	t->privdata = (void *) req;
-
-	req->url = malcop(t->testspec);
-	for (p=req->url; (*p); p++) if (*p == '+') *p = ' ';
-
-	/* req->scheme = malcop(ludp->lud_scheme); -- not available on Solaris' LDAP */
-	req->ldaphost = malcop(ludp->lud_host);
-	req->portnumber = ludp->lud_port;
-
-	ldap_free_urldesc(ludp);
-
+	t->privdata = (void *) malloc(sizeof(ldap_data_t)); 
+	req = (ldap_data_t *) t->privdata;
+	req->ldapdesc = (void *) ludp;
+	req->usetls = (strncmp(t->testspec, "ldaps:", 6) == 0);
+#ifdef BBGEN_LDAP_USESTARTTLS
+	if (req->usetls && (ludp->lud_port == LDAPS_PORT)) {
+		dprintf("Forcing port %d for ldaps with STARTTLS\n", LDAP_PORT );
+		ludp->lud_port = LDAP_PORT;
+	}
+#endif
 	req->ldapstatus = 0;
 	req->output = NULL;
 	req->ldapcolor = -1;
@@ -90,6 +90,8 @@ void add_ldap_test(testitem_t *t)
 	req->certinfo = NULL;
 	req->certexpires = 0;
 #endif
+
+	return 0;
 }
 
 
@@ -107,6 +109,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 		int		rc, msgID, i, rc2;
 		LDAPMessage	*result;
 		LDAPMessage	*e;
+		LDAPURLDesc	*ludp;
 		BerElement	*ber;
 		char		*attribute;
 		char		**vals;
@@ -116,15 +119,48 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 		char		buf[MAX_LINE_LEN];
 
 		req = (ldap_data_t *) t->privdata;
+		ludp = (LDAPURLDesc *) req->ldapdesc;
 
 		gettimeofday(&starttime, &tz);
 
 		/* Initiate session with the LDAP server */
-		if( (ld = ldap_init(req->ldaphost, req->portnumber)) == NULL ) {
+		dprintf("Initiating LDAP session for host %s port %d\n",
+			ludp->lud_host, ludp->lud_port);
+
+		if( (ld = ldap_init(ludp->lud_host, ludp->lud_port)) == NULL ) {
 			dprintf("ldap_init failed\n");
 			req->ldapstatus = BBGEN_LDAP_INITFAIL;
 			break;
 		}
+
+#ifdef BBGEN_LDAP_USESTARTTLS
+		/*
+		 * This is completely undocumented in the OpenLDAP docs.
+		 *
+		 * Both of these routines appear in the <ldap.h> file 
+		 * from OpenLDAP 2.1.22. Their use to enable TLS has
+		 * been deciphered from the ldapsearch() utility
+		 * sourcecode.
+		 *
+		 */
+		if (req->usetls) {
+			int protocol = 3;
+
+			dprintf("Attempting to select LDAPv3 for TLS\n");
+			if(ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &protocol) != LDAP_OPT_SUCCESS) {
+				dprintf("Failed to force protocol 3\n");
+				req->ldapstatus = BBGEN_LDAP_TLSFAIL;
+				break;
+			}
+
+			dprintf("Trying to enable TLS for session\n");
+			if (ldap_start_tls_s(ld, NULL, NULL) != LDAP_SUCCESS) {
+				dprintf("ldap_start_tls failed\n");
+				req->ldapstatus = BBGEN_LDAP_TLSFAIL;
+				break;
+			}
+		}
+#endif
 
 		/* Bind to the server - we do an anonymous bind, asynchronous */
 		msgID = ldap_simple_bind(ld, "", "");
@@ -135,6 +171,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 		timeout.tv_usec = 0L;
 		while( ! finished ) {
 			rc = ldap_result(ld, msgID, LDAP_MSG_ONE, &timeout, &result);
+			dprintf("ldap_result returned %d for ldap_simple_bind()\n", rc);
 			if(rc == -1) {
 				finished = 1;
 				rc2 = ldap_result2error(ld, result, 1);
@@ -146,7 +183,11 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 			if( rc >= 0 ) {
 				finished = 1;
 				if (result == NULL) {
-					errprintf("LDAP library problem\n");
+					errprintf("LDAP library problem - got a NULL resultcode\n");
+					req->ldapstatus = BBGEN_LDAP_BINDFAIL;
+					req->output = "LDAP library problem: ldap_result2error returned a NULL result\n";
+					ldap_unbind(ld);
+					break;
 				}
 				else {
 					rc2 = ldap_result2error(ld, result, 1);
@@ -163,7 +204,8 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 		/* Now do the search. With a timeout again */
 		timeout.tv_sec = (t->host->timeout ? t->host->timeout : DEF_TIMEOUT);
 		timeout.tv_usec = 0L;
-		rc = ldap_url_search_st(ld, req->url, 0, &timeout, &result);
+		rc = ldap_search_st(ld, ludp->lud_dn, ludp->lud_scope, ludp->lud_filter, ludp->lud_attrs, 0, &timeout, &result);
+
 		if(rc == LDAP_TIMEOUT) {
 			req->ldapstatus = BBGEN_LDAP_TIMEOUT;
 			req->output = malcop(ldap_err2string(rc));
@@ -180,7 +222,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 		gettimeofday(&endtime, &tz);
 
 		sprintf(response, "Searching LDAP for %s yields %d results:\n\n", 
-			req->url, ldap_count_entries(ld, result));
+			t->testspec, ldap_count_entries(ld, result));
 		for(e = ldap_first_entry(ld, result); (e != NULL); e = ldap_next_entry(ld, e) ) {
 			sprintf(buf, "DN: %s\n", ldap_get_dn(ld, e)); strcat(response, buf);
 
@@ -212,7 +254,8 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 		}
 
 		ldap_msgfree(result);
-		ldap_unbind( ld );
+		ldap_unbind(ld);
+		ldap_free_urldesc(ludp);
 	}
 #endif
 }
@@ -225,10 +268,11 @@ static int statuscolor(testedhost_t *host, int ldapstatus)
 		return COL_GREEN;
 
 	  case BBGEN_LDAP_INITFAIL:
+	  case BBGEN_LDAP_TLSFAIL:
 	  case BBGEN_LDAP_BINDFAIL:
+	  case BBGEN_LDAP_TIMEOUT:
 		return COL_RED;
 
-	  case BBGEN_LDAP_TIMEOUT:
 	  case BBGEN_LDAP_SEARCHFAILED:
 		return COL_YELLOW;
 	}
@@ -285,7 +329,7 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 			}
 		}
 
-		dprintf("%s(%s) ", req->url, colorname(req->ldapcolor));
+		dprintf("%s(%s) ", t->testspec, colorname(req->ldapcolor));
 		if (req->ldapcolor > color) color = req->ldapcolor;
 	}
 
@@ -310,7 +354,7 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 	for (t=host->firstldap; (t && (t->host == host)); t = t->next) {
 		ldap_data_t *req = (ldap_data_t *) t->privdata;
 
-		sprintf(msgline, "\n&%s %s - %s\n\n", colorname(req->ldapcolor), req->url,
+		sprintf(msgline, "\n&%s %s - %s\n\n", colorname(req->ldapcolor), t->testspec,
 			((req->ldapcolor != COL_GREEN) ? "failed" : "OK"));
 		addtostatus(msgline);
 
@@ -338,7 +382,7 @@ void show_ldap_test_results(service_t *ldaptest)
 	for (t = ldaptest->items; (t); t = t->next) {
 		req = (ldap_data_t *) t->privdata;
 
-		printf("URL        : %s\n", req->url);
+		printf("URL        : %s\n", t->testspec);
 		printf("Time spent : %ld.%03ld\n", req->duration.tv_sec, req->duration.tv_usec / 1000);
 		printf("LDAP output:\n%s\n", textornull(req->output));
 		printf("------------------------------------------------------\n");
@@ -364,12 +408,22 @@ int main(int argc, char *argv[])
 	testedhost_t host;
 	service_t ldapservice;
 	int argi = 1;
+	int ldapdebug = 0;
 
-	if ((argc > 1) && (strcmp(argv[argi], "--debug") == 0)) {
-		dontsendmessages = debug = 1;
-		if (getenv("BBDISP") == NULL) putenv("BBDISP=127.0.0.1");
+	while ((argi < argc) && (strncmp(argv[argi], "--", 2) == 0)) {
+		if (strcmp(argv[argi], "--debug") == 0) {
+			debug = 1;
+		}
+		else if (strncmp(argv[argi], "--ldapdebug=", strlen("--ldapdebug=")) == 0) {
+			char *p = strchr(argv[argi], '=');
+			ldapdebug = atoi(p+1);
+		}
 		argi++;
 	}
+
+	/* For testing, dont crash in sendmsg when no BBDISP defined */
+	dontsendmessages = 1;
+	if (getenv("BBDISP") == NULL) putenv("BBDISP=127.0.0.1");
 
 	memset(&item, 0, sizeof(item));
 	memset(&host, 0, sizeof(host));
@@ -391,11 +445,22 @@ int main(int argc, char *argv[])
 	host.hostname = "ldaptest.bbgen";
 
 	init_ldap_library();
-	add_ldap_test(&item);
-	run_ldap_tests(&ldapservice, 0);
-	combo_start();
-	send_ldap_results(&ldapservice, &host, "", 0);
-	combo_end();
+
+	if (ldapdebug) {
+#if defined(LBER_OPT_DEBUG_LEVEL) && defined(LDAP_OPT_DEBUG_LEVEL)
+		ber_set_option(NULL, LBER_OPT_DEBUG_LEVEL, &ldapdebug);
+		ldap_set_option(NULL, LDAP_OPT_DEBUG_LEVEL, &ldapdebug);
+#else
+		printf("LDAP library does not support change of debug level\n");
+#endif
+	}
+
+	if (add_ldap_test(&item) == 0) {
+		run_ldap_tests(&ldapservice, 0);
+		combo_start();
+		send_ldap_results(&ldapservice, &host, "", 0);
+		combo_end();
+	}
 
 	shutdown_ldap_library();
 	return 0;

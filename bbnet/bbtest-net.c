@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.99 2003-08-29 21:47:37 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.100 2003-08-30 10:16:17 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1409,7 +1409,7 @@ void send_sslcert_status(testedhost_t *host)
 				int sslcolor = COL_GREEN;
 
 				if (s == httptest) certowner = ((http_data_t *)t->privdata)->url;
-				else if (s == ldaptest) certowner = ((ldap_data_t *)t->privdata)->url;
+				else if (s == ldaptest) certowner = t->testspec;
 
 				if (t->certexpires < (now+sslwarndays*86400)) sslcolor = COL_YELLOW;
 				if (t->certexpires < (now+sslalarmdays*86400)) sslcolor = COL_RED;
