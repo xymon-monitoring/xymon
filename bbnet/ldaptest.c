@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.21 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.22 2005-01-25 13:23:37 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -159,27 +159,38 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 		signal(SIGALRM, ldap_alarmhandler);
 		alarm(querytimeout);
 
-#ifdef BBGEN_LDAP_USESTARTTLS
 		/*
 		 * This is completely undocumented in the OpenLDAP docs.
+		 * But apparently it is documented in 
+		 * http://www.ietf.org/proceedings/99jul/I-D/draft-ietf-ldapext-ldap-c-api-03.txt
 		 *
 		 * Both of these routines appear in the <ldap.h> file 
 		 * from OpenLDAP 2.1.22. Their use to enable TLS has
 		 * been deciphered from the ldapsearch() utility
 		 * sourcecode.
 		 *
+		 * According to Manon Goo <manon@manon.de>, recent (Jan. 2005)
+		 * OpenLDAP implementations refuse to talk LDAPv2.
 		 */
-		if (req->usetls) {
-			int protocol = 3;
+#ifdef LDAP_OPT_PROTOCOL_VERSION 
+		{
+			int protocol = LDAP_VERSION3;
 
-			dprintf("Attempting to select LDAPv3 for TLS\n");
-			if ((rc = ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &protocol)) != LDAP_OPT_SUCCESS) {
-				dprintf("Failed to force protocol 3\n");
-				req->output = strdup(ldap_err2string(rc));
-				req->ldapstatus = BBGEN_LDAP_TLSFAIL;
+			dprintf("Attempting to select LDAPv3\n");
+			if ((rc = ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &protocol)) != LDAP_SUCCESS) {
+				dprintf("Failed to select LDAPv3, trying LDAPv2\n");
+				protocol = LDAP_VERSION2;
+				if ((rc = ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &protocol)) != LDAP_SUCCESS) {
+					req->output = strdup(ldap_err2string(rc));
+					req->ldapstatus = BBGEN_LDAP_TLSFAIL;
+				}
 				continue;
 			}
+		}
+#endif
 
+#ifdef BBGEN_LDAP_USESTARTTLS
+		if (req->usetls) {
 			dprintf("Trying to enable TLS for session\n");
 			if ((rc = ldap_start_tls_s(ld, NULL, NULL)) != LDAP_SUCCESS) {
 				dprintf("ldap_start_tls failed\n");
