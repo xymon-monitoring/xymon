@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.4 2002-12-19 13:01:20 hstoerne Exp $";
+static char rcsid[] = "$Id: util.c,v 1.5 2002-12-20 08:49:27 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -33,7 +33,6 @@ static char rcsid[] = "$Id: util.c,v 1.4 2002-12-19 13:01:20 hstoerne Exp $";
 
 int	use_recentgifs = 0;
 
-static char *emptyenv = "";
 static char hostenv_svc[20];
 static char hostenv_host[200];
 static char hostenv_ip[20];
