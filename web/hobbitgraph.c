@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.14 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.15 2005-01-20 10:45:44 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -106,33 +106,33 @@ void parse_query(void)
 		char *val;
 		val = strchr(token, '='); if (val) { *val = '\0'; val++; }
 		if (strcmp(token, "host") == 0) {
-			hostname = xstrdup(val);
+			hostname = strdup(val);
 		}
 		else if (strcmp(token, "service") == 0) {
-			service = xstrdup(val);
+			service = strdup(val);
 		}
 		else if (strcmp(token, "disp") == 0) {
-			displayname = xstrdup(val);
+			displayname = strdup(val);
 		}
 		else if (strcmp(token, "graph") == 0) {
 			if (strcmp(val, "hourly") == 0) {
 				period = HOUR_GRAPH;
-				gtype = xstrdup(val);
+				gtype = strdup(val);
 				glegend = "Last 48 Hours";
 			}
 			else if (strcmp(val, "daily") == 0) {
 				period = DAY_GRAPH;
-				gtype = xstrdup(val);
+				gtype = strdup(val);
 				glegend = "Last 12 Days";
 			}
 			else if (strcmp(val, "weekly") == 0) {
 				period = WEEK_GRAPH;
-				gtype = xstrdup(val);
+				gtype = strdup(val);
 				glegend = "Last 48 Days";
 			}
 			else if (strcmp(val, "monthly") == 0) {
 				period = MONTH_GRAPH;
-				gtype = xstrdup(val);
+				gtype = strdup(val);
 				glegend = "Last 576 Days";
 			}
 		}
@@ -177,36 +177,36 @@ void load_gdefs(char *fn)
 				newitem->next = gdefs;
 				gdefs = newitem;
 			}
-			newitem = xcalloc(1, sizeof(gdef_t));
+			newitem = calloc(1, sizeof(gdef_t));
 			delim = strchr(p, ']'); if (delim) *delim = '\0';
-			newitem->name = xstrdup(p+1);
+			newitem->name = strdup(p+1);
 			alldefcount = 10;
-			alldefs = (char **)xmalloc((alldefcount+1) * sizeof(char *));
+			alldefs = (char **)malloc((alldefcount+1) * sizeof(char *));
 			alldefidx = 0;
 		}
 		else if (strncmp(p, "FNPATTERN", 9) == 0) {
 			p += 9; p += strspn(p, " \t");
-			newitem->fnpat = xstrdup(p);
+			newitem->fnpat = strdup(p);
 		}
 		else if (strncmp(p, "EXFNPATTERN", 11) == 0) {
 			p += 11; p += strspn(p, " \t");
-			newitem->exfnpat = xstrdup(p);
+			newitem->exfnpat = strdup(p);
 		}
 		else if (strncmp(p, "TITLE", 5) == 0) {
 			p += 5; p += strspn(p, " \t");
-			newitem->title = xstrdup(p);
+			newitem->title = strdup(p);
 		}
 		else if (strncmp(p, "YAXIS", 5) == 0) {
 			p += 5; p += strspn(p, " \t");
-			newitem->yaxis = xstrdup(p);
+			newitem->yaxis = strdup(p);
 		}
 		else {
 			if (alldefidx == alldefcount) {
 				/* Must expand alldefs */
 				alldefcount += 5;
-				alldefs = (char **)xrealloc(alldefs, (alldefcount+1) * sizeof(char *));
+				alldefs = (char **)realloc(alldefs, (alldefcount+1) * sizeof(char *));
 			}
-			alldefs[alldefidx++] = xstrdup(p);
+			alldefs[alldefidx++] = strdup(p);
 		}
 	}
 
@@ -232,7 +232,7 @@ char *colon_escape(char *buf)
 	if (count == 0) return buf;
 
 	if (result) xfree(result);
-	result = (char *) xmalloc(strlen(buf) + count + 1);
+	result = (char *) malloc(strlen(buf) + count + 1);
 	*result = '\0';
 
 	inp = buf; outp = result;
@@ -367,15 +367,15 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--rrddir=")) {
 			char *p = strchr(argv[argi], '=');
-			rrddir = xstrdup(p+1);
+			rrddir = strdup(p+1);
 		}
 		else if (argnmatch(argv[argi], "--config=")) {
 			char *p = strchr(argv[argi], '=');
-			gdeffn = xstrdup(p+1);
+			gdeffn = strdup(p+1);
 		}
 		else if (strcmp(argv[argi], "--save=") == 0) {
 			char *p = strchr(argv[argi], '=');
-			graphfn = xstrdup(p+1);
+			graphfn = strdup(p+1);
 		}
 	}
 
@@ -411,7 +411,7 @@ int main(int argc, char *argv[])
 	if (gdeffn == NULL) {
 		char fnam[PATH_MAX];
 		sprintf(fnam, "%s/etc/hobbitgraph.cfg", xgetenv("BBHOME"));
-		gdeffn = xstrdup(fnam);
+		gdeffn = strdup(fnam);
 	}
 	load_gdefs(gdeffn);
 
@@ -425,7 +425,7 @@ int main(int argc, char *argv[])
 		if (xgetenv("BBRRDS")) sprintf(dnam, "%s/%s", xgetenv("BBRRDS"), hostname);
 		else sprintf(dnam, "%s/rrd/%s", xgetenv("BBVAR"), hostname);
 
-		rrddir = xstrdup(dnam);
+		rrddir = strdup(dnam);
 	}
 	if (chdir(rrddir)) errormsg("Cannot access RRD directory");
 
@@ -439,7 +439,7 @@ int main(int argc, char *argv[])
 		char *realservice;
 
 		*delim = '\0';
-		realservice = xstrdup(delim+1);
+		realservice = strdup(delim+1);
 
 		/* The requested gdef only acts as a fall-back solution so dont set gdef here. */
 		for (gdefuser = gdefs; (gdefuser && strcmp(service, gdefuser->name)); gdefuser = gdefuser->next) ;
@@ -477,10 +477,10 @@ int main(int argc, char *argv[])
 		 * in the graph definition.
 		 */
 		rrddbcount = rrddbsize = 1;
-		rrddbs = (rrddb_t *)xmalloc((rrddbsize + 1) * sizeof(rrddb_t));
+		rrddbs = (rrddb_t *)malloc((rrddbsize + 1) * sizeof(rrddb_t));
 
-		rrddbs[0].key = xstrdup(service);
-		rrddbs[0].rrdfn = (char *)xmalloc(strlen(gdef->name) + strlen(".rrd") + 1);
+		rrddbs[0].key = strdup(service);
+		rrddbs[0].rrdfn = (char *)malloc(strlen(gdef->name) + strlen(".rrd") + 1);
 		sprintf(rrddbs[0].rrdfn, "%s.rrd", gdef->name);
 		rrddbs[0].rrdparam = NULL;
 	}
@@ -500,7 +500,7 @@ int main(int argc, char *argv[])
 
 		/* Allocate an initial filename table */
 		rrddbsize = 5;
-		rrddbs = (rrddb_t *) xmalloc((rrddbsize+1) * sizeof(rrddb_t));
+		rrddbs = (rrddb_t *) malloc((rrddbsize+1) * sizeof(rrddb_t));
 
 		while ((d = readdir(dir)) != NULL) {
 			char *ext;
@@ -529,38 +529,38 @@ int main(int argc, char *argv[])
 			}
 
 			/* We have a matching file! */
-			rrddbs[rrddbcount].rrdfn = xstrdup(d->d_name);
+			rrddbs[rrddbcount].rrdfn = strdup(d->d_name);
 			if (pcre_copy_substring(d->d_name, ovector, result, 1, param, sizeof(param)) > 0) {
 				/*
 				 * This is ugly, but I cannot find a pretty way of un-mangling
 				 * the disk- and http-data that has been molested by the back-end.
 				 */
 				if ((strcmp(gdef->name, "disk") == 0) && (strcmp(param, ",root") == 0)) {
-					rrddbs[rrddbcount].rrdparam = xstrdup(",");
+					rrddbs[rrddbcount].rrdparam = strdup(",");
 				}
 				else if ((strcmp(gdef->name, "http") == 0) && (strncmp(param, "http", 4) != 0)) {
-					rrddbs[rrddbcount].rrdparam = (char *)xmalloc(strlen("http://")+strlen(param)+1);
+					rrddbs[rrddbcount].rrdparam = (char *)malloc(strlen("http://")+strlen(param)+1);
 					sprintf(rrddbs[rrddbcount].rrdparam, "http://%s", param);
 				}
 				else {
-					rrddbs[rrddbcount].rrdparam = xstrdup(param);
+					rrddbs[rrddbcount].rrdparam = strdup(param);
 				}
 
 				if (strlen(rrddbs[rrddbcount].rrdparam) > paramlen) {
 					paramlen = strlen(rrddbs[rrddbcount].rrdparam);
 				}
 
-				rrddbs[rrddbcount].key = xstrdup(rrddbs[rrddbcount].rrdparam);
+				rrddbs[rrddbcount].key = strdup(rrddbs[rrddbcount].rrdparam);
 			}
 			else {
-				rrddbs[rrddbcount].key = xstrdup(d->d_name);
+				rrddbs[rrddbcount].key = strdup(d->d_name);
 				rrddbs[rrddbcount].rrdparam = NULL;
 			}
 
 			rrddbcount++;
 			if (rrddbcount == rrddbsize) {
 				rrddbsize += 5;
-				rrddbs = (rrddb_t *)xrealloc(rrddbs, (rrddbsize+1) * sizeof(rrddb_t));
+				rrddbs = (rrddb_t *)realloc(rrddbs, (rrddbsize+1) * sizeof(rrddb_t));
 			}
 		}
 		pcre_free(pat);
@@ -583,7 +583,7 @@ int main(int argc, char *argv[])
 	 */
 	for (pcount = 0; (gdef->defs[pcount]); pcount++) ;
 	argcount = (11 + pcount*rrddbcount + 1); argi = 0;
-	rrdargs = (char **) xcalloc(argcount+1, sizeof(char *));
+	rrdargs = (char **) calloc(argcount+1, sizeof(char *));
 	rrdargs[argi++]  = "rrdgraph";
 	rrdargs[argi++]  = graphfn;
 	rrdargs[argi++]  = "-s";
@@ -598,11 +598,11 @@ int main(int argc, char *argv[])
 	for (rrdidx=0; (rrdidx < rrddbcount); rrdidx++) {
 		if ((firstidx == -1) || ((rrdidx >= firstidx) && (rrdidx <= lastidx))) {
 			int i;
-			for (i=0; (gdef->defs[i]); i++) rrdargs[argi++] = xstrdup(expand_tokens(gdef->defs[i]));
+			for (i=0; (gdef->defs[i]); i++) rrdargs[argi++] = strdup(expand_tokens(gdef->defs[i]));
 		}
 	}
 	strftime(timestamp, sizeof(timestamp), "COMMENT:Updated: %d-%b-%Y %H:%M:%S", localtime(&now));
-	rrdargs[argi++] = xstrdup(timestamp);
+	rrdargs[argi++] = strdup(timestamp);
 	rrdargcount = argi; rrdargs[argi++] = NULL;
 
 	if (debug) { for (argi=0; (argi < rrdargcount); argi++) dprintf("%s\n", rrdargs[argi]); }

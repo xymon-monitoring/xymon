@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-webpage.c,v 1.2 2005-01-15 17:38:55 henrik Exp $";
+static char rcsid[] = "$Id: bb-webpage.c,v 1.3 2005-01-20 10:45:44 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--hffile=")) {
 			char *p = strchr(argv[argi], '=');
-			hffile = xstrdup(p+1);
+			hffile = strdup(p+1);
 		}
 		else if (argnmatch(argv[argi], "--color=")) {
 			char *p = strchr(argv[argi], '=');

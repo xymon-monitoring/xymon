@@ -42,7 +42,7 @@ typedef struct RbtTag {
 RbtHandle rbtNew(int(*rbtCompare)(void *a, void *b)) {
     RbtType *rbt;
     
-    if ((rbt = (RbtType *)xmalloc(sizeof(RbtType))) == NULL) {
+    if ((rbt = (RbtType *)malloc(sizeof(RbtType))) == NULL) {
         return NULL;
     }
 
@@ -202,7 +202,7 @@ RbtStatus rbtInsert(RbtHandle h, void *key, void *val) {
     }
 
     // setup new node
-    if ((x = xmalloc (sizeof(*x))) == 0)
+    if ((x = malloc (sizeof(*x))) == 0)
         return RBT_STATUS_MEM_EXHAUSTED;
     x->parent = parent;
     x->left = SENTINEL;

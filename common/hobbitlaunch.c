@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.20 2005-01-20 10:12:16 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.21 2005-01-20 10:45:44 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -127,9 +127,9 @@ void update_task(tasklist_t *newtask)
 		xfree(twalk->cmd); 
 		if (twalk->logfile) xfree(twalk->logfile);
 		if (twalk->envfile) xfree(twalk->envfile);
-		twalk->cmd = xstrdup(newtask->cmd);
-		if (newtask->logfile) twalk->logfile = xstrdup(newtask->logfile); else twalk->logfile = NULL;
-		if (newtask->envfile) twalk->envfile = xstrdup(newtask->envfile); else twalk->envfile = NULL;
+		twalk->cmd = strdup(newtask->cmd);
+		if (newtask->logfile) twalk->logfile = strdup(newtask->logfile); else twalk->logfile = NULL;
+		if (newtask->envfile) twalk->envfile = strdup(newtask->envfile); else twalk->envfile = NULL;
 
 		/* Must bounce the task */
 		twalk->cfload = 1;
@@ -198,13 +198,13 @@ void load_config(char *conffn)
 			if (endp == NULL) continue;
 			*endp = '\0';
 
-			curtask = (tasklist_t *)xcalloc(1, sizeof(tasklist_t));
-			curtask->key = xstrdup(p);
+			curtask = (tasklist_t *)calloc(1, sizeof(tasklist_t));
+			curtask->key = strdup(p);
 		}
 		else if (curtask && (strncasecmp(p, "CMD ", 4) == 0)) {
 			p += 3;
 			p += strspn(p, " \t");
-			curtask->cmd = xstrdup(p);
+			curtask->cmd = strdup(p);
 		}
 		else if (strncasecmp(p, "GROUP ", 6) == 0) {
 			/* Note: GROUP can be used by itself to define a group, or inside a task definition */
@@ -221,8 +221,8 @@ void load_config(char *conffn)
 			/* Find or create the grouplist entry */
 			for (gwalk = grouphead; (gwalk && (strcmp(gwalk->groupname, groupname))); gwalk = gwalk->next);
 			if (gwalk == NULL) {
-				gwalk = (grouplist_t *)xmalloc(sizeof(grouplist_t));
-				gwalk->groupname = xstrdup(groupname);
+				gwalk = (grouplist_t *)malloc(sizeof(grouplist_t));
+				gwalk->groupname = strdup(groupname);
 				gwalk->maxuse = maxuse;
 				gwalk->currentuse = 0;
 				gwalk->next = grouphead;
@@ -245,7 +245,7 @@ void load_config(char *conffn)
 		else if (curtask && (strncasecmp(p, "LOGFILE ", 8) == 0)) {
 			p += 7;
 			p += strspn(p, " \t");
-			curtask->logfile = xstrdup(p);
+			curtask->logfile = strdup(p);
 		}
 		else if (curtask && (strncasecmp(p, "NEEDS ", 6) == 0)) {
 			p += 6;
@@ -261,7 +261,7 @@ void load_config(char *conffn)
 		else if (curtask && (strncasecmp(p, "ENVFILE ", 8) == 0)) {
 			p += 7;
 			p += strspn(p, " \t");
-			curtask->envfile = xstrdup(p);
+			curtask->envfile = strdup(p);
 		}
 		else if (curtask && (strncasecmp(p, "HEARTBEAT", 9) == 0)) {
 			curtask->heartbeat = &heartbeat;
@@ -381,11 +381,11 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--config=")) {
 			char *p = strchr(argv[argi], '=');
-			config = xstrdup(expand_env(p+1));
+			config = strdup(expand_env(p+1));
 		}
 		else if (argnmatch(argv[argi], "--log=")) {
 			char *p = strchr(argv[argi], '=');
-			logfn = xstrdup(expand_env(p+1));
+			logfn = strdup(expand_env(p+1));
 		}
 		else if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
@@ -393,7 +393,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--pidfile=")) {
 			char *p = strchr(argv[argi], '=');
-			pidfn = xstrdup(expand_env(p+1));
+			pidfn = strdup(expand_env(p+1));
 		}
 		else if (strcmp(argv[argi], "--dump") == 0) {
 			/* Dump configuration */

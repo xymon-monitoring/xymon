@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.42 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.43 2005-01-20 10:45:44 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -142,7 +142,7 @@ static int do_read(int sockfd, struct in_addr *addr, conn_t *conn, enum phase_t 
 
 	if ((conn->buflen + BUFSZ_READ + 1) > conn->bufsize) {
 		conn->bufsize += BUFSZ_INC;
-		conn->buf = xrealloc(conn->buf, conn->bufsize);
+		conn->buf = realloc(conn->buf, conn->bufsize);
 		conn->bufp = conn->buf + conn->buflen;
 	}
 
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
 			char *ips, *ip1;
 			int port1;
 
-			ips = xstrdup(strchr(argv[opt], '=')+1);
+			ips = strdup(strchr(argv[opt], '=')+1);
 
 			ip1 = strtok(ips, ",");
 			while (ip1) {
@@ -299,7 +299,7 @@ int main(int argc, char *argv[])
 			char *ips, *ip1;
 			int port1;
 
-			ips = xstrdup(strchr(argv[opt], '=')+1);
+			ips = strdup(strchr(argv[opt], '=')+1);
 
 			ip1 = strtok(ips, ",");
 			while (ip1) {
@@ -340,11 +340,11 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[opt], "--pidfile=")) {
 			char *p = strchr(argv[opt], '=');
-			pidfile = xstrdup(p+1);
+			pidfile = strdup(p+1);
 		}
 		else if (argnmatch(argv[opt], "--logfile=")) {
 			char *p = strchr(argv[opt], '=');
-			logfile = xstrdup(p+1);
+			logfile = strdup(p+1);
 		}
 		else if (strcmp(argv[opt], "--log-details") == 0) {
 			logdetails = 1;
@@ -358,14 +358,14 @@ int main(int argc, char *argv[])
 					return 1;
 				}
 
-				proxyname = xstrdup(xgetenv("MACHINE"));
-				proxyname = (char *)xrealloc(proxyname, strlen(proxyname) + strlen(p1) + 1);
+				proxyname = strdup(xgetenv("MACHINE"));
+				proxyname = (char *)realloc(proxyname, strlen(proxyname) + strlen(p1) + 1);
 				strcat(proxyname, ".");
 				strcat(proxyname, p1);
-				proxynamesvc = xstrdup(p1);
+				proxynamesvc = strdup(p1);
 			}
 			else {
-				proxyname = xstrdup(p1);
+				proxyname = strdup(p1);
 				proxynamesvc = strchr(p1, '.')+1;
 			}
 		}
@@ -509,7 +509,7 @@ int main(int argc, char *argv[])
 			unsigned long msgs_sent = msgs_total - msgs_total_last;
 
 			/* Setup a conn_t struct for the status message */
-			stentry = (conn_t *)xcalloc(1, sizeof(conn_t));
+			stentry = (conn_t *)calloc(1, sizeof(conn_t));
 			stentry->state = P_REQ_READY;
 			stentry->csocket = stentry->ssocket = -1;
 			stentry->clientip = &stentry->caddr.sin_addr;
@@ -517,7 +517,7 @@ int main(int argc, char *argv[])
 			stentry->timelimit.tv_sec = stentry->arrival.tv_sec + timeout;
 			stentry->timelimit.tv_usec = stentry->arrival.tv_usec;
 			stentry->bufsize = BUFSZ_INC;
-			stentry->buf = (char *)xmalloc(stentry->bufsize);
+			stentry->buf = (char *)malloc(stentry->bufsize);
 			stentry->next = chead;
 			chead = stentry;
 
@@ -672,10 +672,10 @@ int main(int argc, char *argv[])
 							if (nextmsg) { *(nextmsg+1) = '\0'; nextmsg += 2; }
 
 							/* Create a duplicate conn_t record for all embedded messages */
-							ctmp = (conn_t *)xmalloc(sizeof(conn_t));
+							ctmp = (conn_t *)malloc(sizeof(conn_t));
 							memcpy(ctmp, cwalk, sizeof(conn_t));
 							ctmp->bufsize = BUFSZ_INC*(((6 + strlen(currmsg) + 50) / BUFSZ_INC) + 1);
-							ctmp->buf = (char *)xmalloc(ctmp->bufsize);
+							ctmp->buf = (char *)malloc(ctmp->bufsize);
 							if (usehobbitd) {
 								ctmp->buflen = sprintf(ctmp->buf, 
 									"combo\n%s\nStatus message received from %s\n", 
@@ -1100,11 +1100,11 @@ int main(int argc, char *argv[])
 					newconn = cwalk;
 				}
 				else {
-					newconn = xmalloc(sizeof(conn_t));
+					newconn = malloc(sizeof(conn_t));
 					newconn->next = chead;
 					chead = newconn;
 					newconn->bufsize = BUFSZ_INC;
-					newconn->buf = newconn->bufp = xmalloc(newconn->bufsize);
+					newconn->buf = newconn->bufp = malloc(newconn->bufsize);
 				}
 
 				newconn->connectpending = 0;

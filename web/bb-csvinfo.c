@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-csvinfo.c,v 1.9 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: bb-csvinfo.c,v 1.10 2005-01-20 10:45:44 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -60,7 +60,7 @@ void parse_query(void)
                 val = strchr(token, '='); if (val) { *val = '\0'; val++; }
 
 		if (argnmatch(token, "key")) {
-			wantedname = xstrdup(val);
+			wantedname = strdup(val);
 		}
 		else if (argnmatch(token, "db")) {
 			char *p;
@@ -69,7 +69,7 @@ void parse_query(void)
 			p = strrchr(val, '/');
 			if (p) val = (p+1);
 
-			srcdb = xstrdup(val);
+			srcdb = strdup(val);
 		}
 		else if (argnmatch(token, "column")) {
 			keycolumn = atoi(val);
@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--hffile=")) {
 			char *p = strchr(argv[argi], '=');
-			hffile = xstrdup(p+1);
+			hffile = strdup(p+1);
 		}
 		else if (argnmatch(argv[argi], "--color=")) {
 			char *p = strchr(argv[argi], '=');
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
 
 		for (i=0, p1=buf, p2=strchr(buf, delimiter); (p1 && p2 && strlen(p1)); i++,p1=p2+1,p2=strchr(p1, delimiter)) {
 			*p2 = '\0';
-			headers[i] = xstrdup(p1);
+			headers[i] = strdup(p1);
 		}
 	}
 
@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 	 * Pre-allocate the buffer space for the items - we weill be stuffing data
 	 * into these while scanning for the right item.
 	 */
-	for (i=0; i<MAXCOLUMNS; i++) items[i] = xmalloc(MAX_LINE_LEN);
+	for (i=0; i<MAXCOLUMNS; i++) items[i] = malloc(MAX_LINE_LEN);
 
 	found = 0;
 	while (!found && fgets(buf, sizeof(buf), db)) {

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: stackio.c,v 1.2 2005-01-15 17:39:50 henrik Exp $";
+static char rcsid[] = "$Id: stackio.c,v 1.3 2005-01-20 10:45:44 henrik Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -55,7 +55,7 @@ FILE *stackfopen(char *filename, char *mode)
 
 	newfd = fopen(stackfd_filename, stackfd_mode);
 	if (newfd != NULL) {
-		newitem = (stackfd_t *) xmalloc(sizeof(stackfd_t));
+		newitem = (stackfd_t *) malloc(sizeof(stackfd_t));
 		newitem->fd = newfd;
 		newitem->next = fdhead;
 		fdhead = newitem;
@@ -113,7 +113,7 @@ static char *read_line_1(struct linebuf_t *buffer, FILE *stream, int *docontinue
 
 	if ((strlen(start) + strlen(buffer->buf) + 2) > buffer->buflen) {
 		buffer->buflen += MAX_LINE_LEN;
-		buffer->buf = (char *)xrealloc(buffer->buf, buffer->buflen);
+		buffer->buf = (char *)realloc(buffer->buf, buffer->buflen);
 	}
 
 	strcat(buffer->buf, start);
@@ -128,7 +128,7 @@ char *read_line(struct linebuf_t *buffer, FILE *stream)
 
 	if (buffer->buf == NULL) {
 		buffer->buflen = MAX_LINE_LEN;
-		buffer->buf = (char *)xmalloc(buffer->buflen);
+		buffer->buf = (char *)malloc(buffer->buflen);
 	}
 	*(buffer->buf) = '\0';
 

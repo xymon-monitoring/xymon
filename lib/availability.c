@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.33 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.34 2005-01-20 10:45:44 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -75,7 +75,7 @@ void build_reportspecs(char *reporttime)
 
 	reptimecnt = 0;
 	spec = strchr(reporttime, '=');
-	timespec = xstrdup(spec ? (spec+1) : reporttime); 
+	timespec = strdup(spec ? (spec+1) : reporttime); 
 	
 	spec = strtok(timespec, ",");
 	while (spec) {
@@ -210,7 +210,7 @@ char *parse_histlogfile(char *hostname, char *servicename, char *timespec)
 		strcpy(cause, "No historical status available");
 	}
 
-	return xstrdup(cause);
+	return strdup(cause);
 }
 
 int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
@@ -409,7 +409,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 				replog_t *newentry;
 				char *timespec = timename(l);
 
-				newentry = (replog_t *) xmalloc(sizeof(replog_t));
+				newentry = (replog_t *) malloc(sizeof(replog_t));
 				newentry->starttime = starttime;
 				newentry->duration = duration;
 				newentry->color = color;
@@ -420,7 +420,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 				}
 				else newentry->cause = "";
 
-				newentry->timespec = xstrdup(timespec);
+				newentry->timespec = strdup(timespec);
 				newentry->next = reploghead;
 				reploghead = newentry;
 			}
@@ -511,7 +511,7 @@ int history_color(FILE *fd, time_t snapshot, time_t *starttime, char **histlogna
 		color = -2;
 	}
 
-	*histlogname = xstrdup(timename(l));
+	*histlogname = strdup(timename(l));
 
 	return color;
 }
@@ -539,7 +539,7 @@ int main(int argc, char *argv[])
 	reportstart = atol(argv[2]);
 	reportend = atol(argv[3]);
 
-	hostsvc = xstrdup(argv[1]);
+	hostsvc = strdup(argv[1]);
 	p = strrchr(hostsvc, '.');
 	*p = '\0'; svc = p+1;
 	p = strrchr(hostsvc, '/'); host = p+1;

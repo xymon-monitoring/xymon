@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.12 2005-01-19 21:54:15 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.13 2005-01-20 10:45:44 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -71,13 +71,13 @@ void sethostenv_snapshot(time_t snapshot)
 void sethostenv_histlog(char *histtime)
 {
 	if (hostenv_logtime) xfree(hostenv_logtime);
-	hostenv_logtime = xstrdup(histtime);
+	hostenv_logtime = strdup(histtime);
 }
 
 void sethostenv_template(char *dir)
 {
 	if (hostenv_templatedir) xfree(hostenv_templatedir);
-	hostenv_templatedir = xstrdup(dir);
+	hostenv_templatedir = strdup(dir);
 }
 
 void sethostenv_refresh(int n)
@@ -241,7 +241,7 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 	char	*hfpath;
 
 	if (xgetenv("HOBBITDREL") == NULL) {
-		char *hobbitdrel = (char *)xmalloc(12+strlen(VERSION));
+		char *hobbitdrel = (char *)malloc(12+strlen(VERSION));
 		sprintf(hobbitdrel, "HOBBITDREL=%s", VERSION);
 		putenv(hobbitdrel);
 	}
@@ -257,7 +257,7 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 	 * most detailed one, and working up towards the standard "web/bb_TYPE" file.
 	 */
 
-	hfpath = xstrdup(pagepath); 
+	hfpath = strdup(pagepath); 
 	/* Trim off excess trailing slashes */
 	while (*(hfpath + strlen(hfpath) - 1) == '/') {
 		*(hfpath + strlen(hfpath) - 1) = '\0';
@@ -314,7 +314,7 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 
 	if (fd != -1) {
 		fstat(fd, &st);
-		templatedata = (char *) xmalloc(st.st_size + 1);
+		templatedata = (char *) malloc(st.st_size + 1);
 		read(fd, templatedata, st.st_size);
 		templatedata[st.st_size] = '\0';
 		close(fd);

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.200 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.201 2005-01-20 10:45:44 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 
 		else if (argnmatch(argv[i], "--ignorecolumns=")) {
 			char *lp = strchr(argv[i], '=');
-			ignorecolumns = (char *) xmalloc(strlen(lp)+2);
+			ignorecolumns = (char *) malloc(strlen(lp)+2);
 			sprintf(ignorecolumns, ",%s,", (lp+1));
 		}
 		else if (argnmatch(argv[i], "--nk-reds-only")) {
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[i], "--bb2-ignorecolumns=")) {
 			char *lp = strchr(argv[i], '=');
-			bb2ignorecolumns = (char *) xmalloc(strlen(lp)+2);
+			bb2ignorecolumns = (char *) malloc(strlen(lp)+2);
 			sprintf(bb2ignorecolumns, ",%s,", (lp+1));
 		}
 		else if (argnmatch(argv[i], "--bb2-ignorepurples")) {
@@ -165,40 +165,40 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[i], "--includecolumns=")) {
 			char *lp = strchr(argv[i], '=');
-			includecolumns = (char *) xmalloc(strlen(lp)+2);
+			includecolumns = (char *) malloc(strlen(lp)+2);
 			sprintf(includecolumns, ",%s,", (lp+1));
 		}
 		else if (argnmatch(argv[i], "--eventignore=")) {
 			char *lp = strchr(argv[i], '=');
-			eventignorecolumns = (char *) xmalloc(strlen(lp)+2);
+			eventignorecolumns = (char *) malloc(strlen(lp)+2);
 			sprintf(eventignorecolumns, ",%s,", (lp+1));
 		}
 		else if (argnmatch(argv[i], "--doccgi=")) {
 			char *lp = strchr(argv[i], '=');
-			documentationurl = (char *)xmalloc(strlen(xgetenv("CGIBINURL"))+strlen(lp+1)+2);
+			documentationurl = (char *)malloc(strlen(xgetenv("CGIBINURL"))+strlen(lp+1)+2);
 			sprintf(documentationurl, "%s/%s", xgetenv("CGIBINURL"), lp+1);
 		}
 		else if (argnmatch(argv[i], "--docurl=")) {
 			char *lp = strchr(argv[i], '=');
-			documentationurl = xstrdup(lp+1);
+			documentationurl = strdup(lp+1);
 		}
 		else if (argnmatch(argv[i], "--no-doc-window")) {
 			doctargetspec = "";
 		}
 		else if (argnmatch(argv[i], "--htmlextension=")) {
 			char *lp = strchr(argv[i], '=');
-			htmlextension = xstrdup(lp+1);
+			htmlextension = strdup(lp+1);
 		}
 		else if (argnmatch(argv[i], "--htaccess")) {
 			char *lp = strchr(argv[i], '=');
-			if (lp) htaccess = xstrdup(lp+1);
+			if (lp) htaccess = strdup(lp+1);
 			else htaccess = ".htaccess";
 		}
 		else if ((strcmp(argv[i], "--wml") == 0) || argnmatch(argv[i], "--wml=")) {
 			char *lp = strchr(argv[i], '=');
 
 			if (lp) {
-				wapcolumns = (char *) xmalloc(strlen(lp)+2);
+				wapcolumns = (char *) malloc(strlen(lp)+2);
 				sprintf(wapcolumns, ",%s,", (lp+1));
 			}
 			enable_wmlgen = 1;
@@ -207,7 +207,7 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 
 			if (strlen(lp+1) > 0) {
-				nssidebarfilename = xstrdup(lp+1);
+				nssidebarfilename = strdup(lp+1);
 			}
 			else errprintf("--nstab requires a filename\n");
 		}
@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[i], "--rssversion=")) {
 			char *lp = strchr(argv[i], '=');
 
-			rssversion = xstrdup(lp+1);
+			rssversion = strdup(lp+1);
 		}
 		else if (argnmatch(argv[i], "--rsslimit=")) {
 			char *lp = strchr(argv[i], '=');
@@ -229,7 +229,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[i], "--rssextension=")) {
 			char *lp = strchr(argv[i], '=');
-			rssextension = xstrdup(lp+1);
+			rssextension = strdup(lp+1);
 		}
 		else if (argnmatch(argv[i], "--reportopts=")) {
 			char style[MAX_LINE_LEN];
@@ -295,17 +295,17 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[i], "--page-title=")) {
 			char *lp = strchr(argv[i], '=');
 
-			defaultpagetitle = xstrdup(lp+1);
+			defaultpagetitle = strdup(lp+1);
 		}
 		else if (argnmatch(argv[i], "--dialupskin=")) {
 			char *lp = strchr(argv[i], '=');
 
-			dialupskin = xstrdup(lp+1);
+			dialupskin = strdup(lp+1);
 		}
 		else if (argnmatch(argv[i], "--reverseskin=")) {
 			char *lp = strchr(argv[i], '=');
 
-			reverseskin = xstrdup(lp+1);
+			reverseskin = strdup(lp+1);
 		}
 		else if (strcmp(argv[i], "--pagetitle-links") == 0) {
 			pagetitlelinks = 1;
@@ -341,43 +341,43 @@ int main(int argc, char *argv[])
 
 		else if (argnmatch(argv[i], "--noprop=")) {
 			char *lp = strchr(argv[i], '=');
-			nopropyellowdefault = (char *) xmalloc(strlen(lp)+2);
+			nopropyellowdefault = (char *) malloc(strlen(lp)+2);
 			sprintf(nopropyellowdefault, ",%s,", (lp+1));
 			errprintf("--noprop is deprecated - use --nopropyellow instead\n");
 		}
 		else if (argnmatch(argv[i], "--nopropyellow=")) {
 			char *lp = strchr(argv[i], '=');
-			nopropyellowdefault = (char *) xmalloc(strlen(lp)+2);
+			nopropyellowdefault = (char *) malloc(strlen(lp)+2);
 			sprintf(nopropyellowdefault, ",%s,", (lp+1));
 		}
 		else if (argnmatch(argv[i], "--nopropred=")) {
 			char *lp = strchr(argv[i], '=');
-			nopropreddefault = (char *) xmalloc(strlen(lp)+2);
+			nopropreddefault = (char *) malloc(strlen(lp)+2);
 			sprintf(nopropreddefault, ",%s,", (lp+1));
 		}
 		else if (argnmatch(argv[i], "--noproppurple=")) {
 			char *lp = strchr(argv[i], '=');
-			noproppurpledefault = (char *) xmalloc(strlen(lp)+2);
+			noproppurpledefault = (char *) malloc(strlen(lp)+2);
 			sprintf(noproppurpledefault, ",%s,", (lp+1));
 		}
 		else if (argnmatch(argv[i], "--nopropack=")) {
 			char *lp = strchr(argv[i], '=');
-			nopropackdefault = (char *) xmalloc(strlen(lp)+2);
+			nopropackdefault = (char *) malloc(strlen(lp)+2);
 			sprintf(nopropackdefault, ",%s,", (lp+1));
 		}
 
 		else if (argnmatch(argv[i], "--info=")) {
 			char *lp = strchr(argv[i], '=');
-			if (lp) infocol = xstrdup(lp+1);
+			if (lp) infocol = strdup(lp+1);
 		}
 
 		else if (argnmatch(argv[i], "--larrd043=") || (strcmp(argv[i], "--larrd043") == 0)) {
 			char *lp = strchr(argv[i], '=');
-			if (lp) larrdcol = xstrdup(lp+1); else larrdcol = "trends";
+			if (lp) larrdcol = strdup(lp+1); else larrdcol = "trends";
 		}
 		else if (argnmatch(argv[i], "--larrd=") || (strcmp(argv[i], "--larrd") == 0)) {
 			char *lp = strchr(argv[i], '=');
-			if (lp) larrdcol = xstrdup(lp+1); else larrdcol = "larrd";
+			if (lp) larrdcol = strdup(lp+1); else larrdcol = "larrd";
 		}
 
 		else if (strcmp(argv[i], "--bbpageONLY") == 0) {
@@ -389,7 +389,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[i], "--pageset=")) {
 			char *lp = strchr(argv[i], '=');
-			pageset = xstrdup(lp+1);
+			pageset = strdup(lp+1);
 		}
 		else if (argnmatch(argv[i], "--template=")) {
 			char *lp = strchr(argv[i], '=');
@@ -399,16 +399,16 @@ int main(int argc, char *argv[])
 
 		else if (argnmatch(argv[i], "--purplelog=")) {
 			char *lp = strchr(argv[i], '=');
-			if (*(lp+1) == '/') purplelogfn = xstrdup(lp+1);
+			if (*(lp+1) == '/') purplelogfn = strdup(lp+1);
 			else {
-				purplelogfn = (char *) xmalloc(strlen(xgetenv("BBHOME"))+1+strlen(lp+1)+1);
+				purplelogfn = (char *) malloc(strlen(xgetenv("BBHOME"))+1+strlen(lp+1)+1);
 				sprintf(purplelogfn, "%s/%s", xgetenv("BBHOME"), (lp+1));
 			}
 		}
 		else if (argnmatch(argv[i], "--report=") || (strcmp(argv[i], "--report") == 0)) {
 			char *lp = strchr(argv[i], '=');
 			if (lp) {
-				egocolumn = xstrdup(lp+1);
+				egocolumn = strdup(lp+1);
 			}
 			else egocolumn = "bbgen";
 			timing = 1;
@@ -416,7 +416,7 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[i], "--nklog=") || (strcmp(argv[i], "--nklog") == 0)) {
 			char *lp = strchr(argv[i], '=');
 			if (lp) {
-				lognkstatus = xstrdup(lp+1);
+				lognkstatus = strdup(lp+1);
 			}
 			else lognkstatus = "nk";
 		}
@@ -510,7 +510,7 @@ int main(int argc, char *argv[])
 
 		else {
 			/* Last argument is pagedir */
-			pagedir = xstrdup(argv[i]);
+			pagedir = strdup(argv[i]);
 		}
 	}
 
@@ -536,17 +536,17 @@ int main(int argc, char *argv[])
 
 	if (pagedir == NULL) {
 		if (xgetenv("BBWWW")) {
-			pagedir = xstrdup(xgetenv("BBWWW"));
+			pagedir = strdup(xgetenv("BBWWW"));
 		}
 		else {
-			pagedir = (char *) xmalloc(strlen(xgetenv("BBHOME"))+5);
+			pagedir = (char *) malloc(strlen(xgetenv("BBHOME"))+5);
 			sprintf(pagedir, "%s/www", xgetenv("BBHOME"));
 		}
 	}
 
-	if (xgetenv("BBHTACCESS")) bbhtaccess = xstrdup(xgetenv("BBHTACCESS"));
-	if (xgetenv("BBPAGEHTACCESS")) bbpagehtaccess = xstrdup(xgetenv("BBPAGEHTACCESS"));
-	if (xgetenv("BBSUBPAGEHTACCESS")) bbsubpagehtaccess = xstrdup(xgetenv("BBSUBPAGEHTACCESS"));
+	if (xgetenv("BBHTACCESS")) bbhtaccess = strdup(xgetenv("BBHTACCESS"));
+	if (xgetenv("BBPAGEHTACCESS")) bbpagehtaccess = strdup(xgetenv("BBPAGEHTACCESS"));
+	if (xgetenv("BBSUBPAGEHTACCESS")) bbsubpagehtaccess = strdup(xgetenv("BBSUBPAGEHTACCESS"));
 
 	/*
 	 * When doing alternate pagesets, disable some stuff:

@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.15 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.16 2005-01-20 10:45:44 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -97,9 +97,9 @@ void parse_query(void)
 
 				/* 
 				 * [wm] maybe we should use strndup
-				 *      or use xmalloc and strncpy to be safer 
+				 *      or use malloc and strncpy to be safer 
 				 */
-				if (  (pSearchPat = (char *)xstrdup (pValue)) == NULL ){
+				if (  (pSearchPat = (char *)strdup (pValue)) == NULL ){
 					errormsg("Insufficient memory to allocate search pattern");
 					return; 	/* never comes here than errormsg does exit */
 				}	
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
 			struct stat st;
 
 			fstat(formfile, &st);
-			inbuf = (char *) xmalloc(st.st_size + 1);
+			inbuf = (char *) malloc(st.st_size + 1);
 			read(formfile, inbuf, st.st_size);
 			inbuf[st.st_size] = '\0';
 			close(formfile);
@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
 
         headfoot(stdout, "findhost", "", "footer", COL_BLUE);
 
-	/* [wm] - Free the xstrdup allocated memory */
+	/* [wm] - Free the strdup allocated memory */
 	if (pSearchPat) xfree(pSearchPat);
 
 	return 0;

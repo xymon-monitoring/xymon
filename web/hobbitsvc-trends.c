@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.57 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.58 2005-01-20 10:45:44 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -51,8 +51,8 @@ static larrd_dirstack_t *larrd_opendir(char *dirname)
 	d = opendir(dirname);
 	if (d == NULL) return NULL;
 
-	newdir = (larrd_dirstack_t *)xmalloc(sizeof(larrd_dirstack_t));
-	newdir->dirname = xstrdup(dirname);
+	newdir = (larrd_dirstack_t *)malloc(sizeof(larrd_dirstack_t));
+	newdir->dirname = strdup(dirname);
 	newdir->rrddir = d;
 	newdir->next = NULL;
 
@@ -162,7 +162,7 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, int larrd043, int hobb
 	/* It must be included. */
 	if (rrdlink == NULL) {
 		rrdlinksize = 4096;
-		rrdlink = (char *)xmalloc(rrdlinksize);
+		rrdlink = (char *)malloc(rrdlinksize);
 	}
 
 	*rrdlink = '\0';
@@ -175,8 +175,8 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, int larrd043, int hobb
 		graph_t *myrrd;
 		char *partlink;
 
-		myrrd = (graph_t *) xmalloc(sizeof(graph_t));
-		myrrd->gdef = (larrdgraph_t *) xcalloc(1, sizeof(larrdgraph_t));
+		myrrd = (graph_t *) malloc(sizeof(graph_t));
+		myrrd->gdef = (larrdgraph_t *) calloc(1, sizeof(larrdgraph_t));
 
 		/* First, null-terminate this graph definition so we only look at the active RRD */
 		enddef = strchr(graphdef, ',');
@@ -196,7 +196,7 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, int larrd043, int hobb
 			partlink = larrd_graph_data(host->bbhostname, hostdisplayname, NULL, myrrd->gdef, myrrd->count, larrd043, hobbitd, wantmeta);
 			if ((strlen(rrdlink) + strlen(partlink) + 1) >= rrdlinksize) {
 				rrdlinksize += strlen(partlink) + 4096;
-				rrdlink = (char *)xrealloc(rrdlink, rrdlinksize);
+				rrdlink = (char *)realloc(rrdlink, rrdlinksize);
 			}
 			strcat(rrdlink, partlink);
 			*p = savechar;
@@ -235,10 +235,10 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int hobbit
 		 rrddirname, larrdcolumn, larrd043);
 
 	allrrdlinksize = 16384;
-	allrrdlinks = (char *) xmalloc(allrrdlinksize);
+	allrrdlinks = (char *) malloc(allrrdlinksize);
 	allrrdlinksend = allrrdlinks;
 	allmetasize = 16384;
-	allmeta = (char *) xmalloc(allmetasize);
+	allmeta = (char *) malloc(allmetasize);
 	allmetaend = allmeta;
 
 	/*
@@ -291,7 +291,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int hobbit
 				/* hostwalk now points to the host owning this RRD */
 				for (rwalk = (graph_t *)hostwalk->data; (rwalk && (rwalk->gdef != r)); rwalk = rwalk->next) ;
 				if (rwalk == NULL) {
-					graph_t *newrrd = (graph_t *) xmalloc(sizeof(graph_t));
+					graph_t *newrrd = (graph_t *) malloc(sizeof(graph_t));
 
 					newrrd->gdef = r;
 					newrrd->count = 1;
@@ -343,7 +343,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int hobbit
 				rrdlink = rrdlink_text(hostwalk, rwalk, larrd043, hobbitd, 0);
 				if ((buflen + strlen(rrdlink)) >= allrrdlinksize) {
 					allrrdlinksize += (strlen(rrdlink) + 4096);
-					allrrdlinks = (char *) xrealloc(allrrdlinks, allrrdlinksize);
+					allrrdlinks = (char *) realloc(allrrdlinks, allrrdlinksize);
 					allrrdlinksend = allrrdlinks + buflen;
 				}
 				allrrdlinksend += sprintf(allrrdlinksend, "%s", rrdlink);
@@ -353,7 +353,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int hobbit
 					rrdlink = rrdlink_text(hostwalk, rwalk, larrd043, hobbitd, 1);
 					if ((buflen + strlen(rrdlink)) >= allmetasize) {
 						allmetasize += (strlen(rrdlink) + 4096);
-						allmeta = (char *) xrealloc(allmeta, allmetasize);
+						allmeta = (char *) realloc(allmeta, allmetasize);
 						allmetaend = allmeta + buflen;
 					}
 					allmetaend += sprintf(allmetaend, "%s", rrdlink);
@@ -402,19 +402,19 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--larrdgraphs=")) {
 			char *p = strchr(argv[argi], '=');
-			larrdgraphs_default = xstrdup(p+1);
+			larrdgraphs_default = strdup(p+1);
 		}
 		else if (argnmatch(argv[argi], "--bbhosts=")) {
 			char *p = strchr(argv[argi], '=');
-			bbhostsfn = xstrdup(p+1);
+			bbhostsfn = strdup(p+1);
 		}
 		else if (argnmatch(argv[argi], "--rrddir=")) {
 			char *p = strchr(argv[argi], '=');
-			rrddir = xstrdup(p+1);
+			rrddir = strdup(p+1);
 		}
 		else if (argnmatch(argv[argi], "--column=")) {
 			char *p = strchr(argv[argi], '=');
-			larrdcol = xstrdup(p+1);
+			larrdcol = strdup(p+1);
 		}
 		else if (strcmp(argv[argi], "--hobbitd") == 0) {
 			usehobbitd = 1;
@@ -432,7 +432,7 @@ int main(int argc, char *argv[])
 		char dname[PATH_MAX];
 
 		sprintf(dname, "%s/rrd", xgetenv("BBVAR"));
-		rrddir = xstrdup(dname);
+		rrddir = strdup(dname);
 	}
 	if (larrdcol == NULL) larrdcol = "trends";
 
@@ -481,7 +481,7 @@ int main(int argc, char *argv[])
 
 				graphlinks =  larrd_graph_data(host, host, test, graph, linecount, 1, 1, 1);
 				if (strlen(graphlinks) > 0) {
-					char *msg = (char *)xmalloc(strlen(graphlinks) + strlen(msgfmt) + 1);
+					char *msg = (char *)malloc(strlen(graphlinks) + strlen(msgfmt) + 1);
 
 					sprintf(msg, msgfmt, graphlinks);
 					do_savemeta(host, test, "Graphs", msg);

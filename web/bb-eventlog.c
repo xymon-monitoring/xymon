@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-eventlog.c,v 1.12 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: bb-eventlog.c,v 1.13 2005-01-20 10:45:44 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -123,7 +123,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
 		     (allowallhosts || (eventhost && !eventhost->nobb2)) && 
 		     (wanted_eventcolumn(svcname)) ) {
 
-			newevent = (event_t *) xmalloc(sizeof(event_t));
+			newevent = (event_t *) malloc(sizeof(event_t));
 			newevent->host       = eventhost;
 			newevent->service    = eventcolumn;
 			newevent->eventtime  = eventtime;

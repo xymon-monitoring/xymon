@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.27 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.28 2005-01-20 10:45:44 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -147,14 +147,14 @@ static criteria_t *setup_criteria(rule_t **currule, recip_t **currcp)
 
 	switch (pstate) {
 	  case P_NONE:
-		*currule = (rule_t *)xcalloc(1, sizeof(rule_t));
+		*currule = (rule_t *)calloc(1, sizeof(rule_t));
 		(*currule)->cfid = cfid;
 		pstate = P_RULE;
 		/* Fall through */
 
 	  case P_RULE:
 		if (!(*currule)->criteria) 
-			(*currule)->criteria = (criteria_t *)xcalloc(1, sizeof(criteria_t));
+			(*currule)->criteria = (criteria_t *)calloc(1, sizeof(criteria_t));
 		crit = (*currule)->criteria;
 		crit->cfid = cfid;
 		*currcp = NULL;
@@ -162,7 +162,7 @@ static criteria_t *setup_criteria(rule_t **currule, recip_t **currcp)
 
 	  case P_RECIP:
 		if (!(*currcp)->criteria)
-			(*currcp)->criteria = (criteria_t *)xcalloc(1, sizeof(criteria_t));
+			(*currcp)->criteria = (criteria_t *)calloc(1, sizeof(criteria_t));
 		crit = (*currcp)->criteria;
 		crit->cfid = cfid;
 		crit->colors = (*currule)->criteria->colors;
@@ -182,7 +182,7 @@ static char *preprocess(char *buf)
 
 	if (result == NULL) {
 		reslen = 8192;
-		result = (char *)xmalloc(reslen);
+		result = (char *)malloc(reslen);
 	}
 	inp = buf;
 	outp = result;
@@ -350,13 +350,13 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 
 		if ((*l == '$') && strchr(l, '=')) {
 			/* Define a macro */
-			token_t *newtok = (token_t *) xmalloc(sizeof(token_t));
+			token_t *newtok = (token_t *) malloc(sizeof(token_t));
 			char *delim;
 
 			delim = strchr(l, '=');
 			*delim = '\0';
-			newtok->name = xstrdup(l);
-			newtok->value = xstrdup(delim+1);
+			newtok->name = strdup(l);
+			newtok->value = strdup(delim+1);
 			newtok->next = tokhead;
 			tokhead = newtok;
 			continue;
@@ -372,7 +372,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
 				val = strchr(p, '=')+1;
 				crit = setup_criteria(&currule, &currcp);
-				crit->pagespec = xstrdup(val);
+				crit->pagespec = strdup(val);
 				if (*(crit->pagespec) == '%') crit->pagespecre = compileregex(crit->pagespec+1);
 			}
 			else if ((strncasecmp(p, "EXPAGE=", 7) == 0) || (strncasecmp(p, "EXPAGES=", 8) == 0)) {
@@ -382,7 +382,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
 				val = strchr(p, '=')+1;
 				crit = setup_criteria(&currule, &currcp);
-				crit->expagespec = xstrdup(val);
+				crit->expagespec = strdup(val);
 				if (*(crit->expagespec) == '%') crit->expagespecre = compileregex(crit->expagespec+1);
 			}
 			else if ((strncasecmp(p, "HOST=", 5) == 0) || (strncasecmp(p, "HOSTS=", 6) == 0)) {
@@ -392,7 +392,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
 				val = strchr(p, '=')+1;
 				crit = setup_criteria(&currule, &currcp);
-				crit->hostspec = xstrdup(val);
+				crit->hostspec = strdup(val);
 				if (*(crit->hostspec) == '%') crit->hostspecre = compileregex(crit->hostspec+1);
 			}
 			else if ((strncasecmp(p, "EXHOST=", 7) == 0) || (strncasecmp(p, "EXHOSTS=", 8) == 0)) {
@@ -402,7 +402,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
 				val = strchr(p, '=')+1;
 				crit = setup_criteria(&currule, &currcp);
-				crit->exhostspec = xstrdup(val);
+				crit->exhostspec = strdup(val);
 				if (*(crit->exhostspec) == '%') crit->exhostspecre = compileregex(crit->exhostspec+1);
 			}
 			else if ((strncasecmp(p, "SERVICE=", 8) == 0) || (strncasecmp(p, "SERVICES=", 9) == 0)) {
@@ -412,7 +412,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
 				val = strchr(p, '=')+1;
 				crit = setup_criteria(&currule, &currcp);
-				crit->svcspec = xstrdup(val);
+				crit->svcspec = strdup(val);
 				if (*(crit->svcspec) == '%') crit->svcspecre = compileregex(crit->svcspec+1);
 			}
 			else if ((strncasecmp(p, "EXSERVICE=", 10) == 0) || (strncasecmp(p, "EXSERVICES=", 11) == 0)) {
@@ -422,7 +422,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
 				val = strchr(p, '=')+1;
 				crit = setup_criteria(&currule, &currcp);
-				crit->exsvcspec = xstrdup(val);
+				crit->exsvcspec = strdup(val);
 				if (*(crit->exsvcspec) == '%') crit->exsvcspecre = compileregex(crit->exsvcspec+1);
 			}
 			else if ((strncasecmp(p, "COLOR=", 6) == 0) || (strncasecmp(p, "COLORS=", 7) == 0)) {
@@ -465,7 +465,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
 				val = strchr(p, '=')+1;
 				crit = setup_criteria(&currule, &currcp);
-				crit->timespec = xstrdup(val);
+				crit->timespec = strdup(val);
 			}
 			else if (strncasecmp(p, "DURATION", 8) == 0) {
 				criteria_t *crit;
@@ -491,7 +491,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 					continue;
 				}
 
-				newrcp = (recip_t *)xmalloc(sizeof(recip_t));
+				newrcp = (recip_t *)malloc(sizeof(recip_t));
 				newrcp->cfid = cfid;
 				newrcp->method = M_MAIL;
 				newrcp->format = FRM_TEXT;
@@ -500,7 +500,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				newrcp->scriptname = NULL;
 				if (strchr(p, '@') == NULL) p = strtok(NULL, " ");
 				if (p) {
-					newrcp->recipient = xstrdup(p);
+					newrcp->recipient = strdup(p);
 					newrcp->interval = defaultinterval;
 					newrcp->next = NULL;
 					currcp = newrcp;
@@ -525,7 +525,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 					continue;
 				}
 
-				newrcp = (recip_t *)xmalloc(sizeof(recip_t));
+				newrcp = (recip_t *)malloc(sizeof(recip_t));
 				newrcp->cfid = cfid;
 				newrcp->method = M_SCRIPT;
 				newrcp->format = FRM_SCRIPT;
@@ -533,12 +533,12 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				newrcp->scriptname = NULL;
 				p = strtok(NULL, " ");
 				if (p) {
-					newrcp->scriptname = xstrdup(p);
+					newrcp->scriptname = strdup(p);
 					p = strtok(NULL, " ");
 				}
 
 				if (p) {
-					newrcp->recipient = xstrdup(p);
+					newrcp->recipient = strdup(p);
 					newrcp->interval = defaultinterval;
 					newrcp->next = NULL;
 					currcp = newrcp;
@@ -656,11 +656,11 @@ static int servicecode(char *testname)
 	if (svccodes == NULL) {
 		p = xgetenv("SVCCODES");
 		if (p == NULL) p = "none";
-		svccodes = (char *)xmalloc(strlen(p)+2);
+		svccodes = (char *)malloc(strlen(p)+2);
 		sprintf(svccodes, ",%s", p);
 	}
 
-	tname = (char *)xmalloc(strlen(testname)+3);
+	tname = (char *)malloc(strlen(testname)+3);
 	sprintf(tname, ",%s:", testname);
 	p = strstr(svccodes, tname);
 	xfree(tname);
@@ -695,9 +695,9 @@ static int namematch(char *needle, char *haystack, pcre *pcrecode)
 	}
 
 	/* Implement a simple, no-wildcard match */
-	xhay = xmalloc(strlen(haystack) + 3);
+	xhay = malloc(strlen(haystack) + 3);
 	sprintf(xhay, ",%s,", haystack);
-	xneedle = xmalloc(strlen(needle)+2);
+	xneedle = malloc(strlen(needle)+2);
 	sprintf(xneedle, "%s,", needle);
 
 	match = strstr(xhay, xneedle);
@@ -971,12 +971,12 @@ static repeat_t *find_repeatinfo(activealerts_t *alert, recip_t *recip, int crea
 	  case M_SCRIPT: method = "script"; break;
 	}
 
-	id = (char *) xmalloc(strlen(alert->hostname->name) + strlen(alert->testname->name) + strlen(method) + strlen(recip->recipient) + 4);
+	id = (char *) malloc(strlen(alert->hostname->name) + strlen(alert->testname->name) + strlen(method) + strlen(recip->recipient) + 4);
 	sprintf(id, "%s|%s|%s|%s", alert->hostname->name, alert->testname->name, method, recip->recipient);
 	for (walk = rpthead; (walk && strcmp(walk->recipid, id)); walk = walk->next);
 
 	if ((walk == NULL) && create) {
-		walk = (repeat_t *)xmalloc(sizeof(repeat_t));
+		walk = (repeat_t *)malloc(sizeof(repeat_t));
 		walk->recipid = id;
 		walk->nextalert = 0;
 		walk->next = rpthead;
@@ -1167,31 +1167,31 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 				pid_t scriptpid;
 
 				p = message_text(alert, recip);
-				bbalphamsg = (char *)xmalloc(strlen("BBALPHAMSG=") + strlen(p) + 1);
+				bbalphamsg = (char *)malloc(strlen("BBALPHAMSG=") + strlen(p) + 1);
 				sprintf(bbalphamsg, "BBALPHAMSG=%s", p);
 				putenv(bbalphamsg);
 
-				ackcode = (char *)xmalloc(strlen("ACKCODE=") + 10);
+				ackcode = (char *)malloc(strlen("ACKCODE=") + 10);
 				sprintf(ackcode, "ACKCODE=%d", alert->cookie);
 				putenv(ackcode);
 
-				rcpt = (char *)xmalloc(strlen("RCPT=") + strlen(recip->recipient) + 1);
+				rcpt = (char *)malloc(strlen("RCPT=") + strlen(recip->recipient) + 1);
 				sprintf(rcpt, "RCPT=%s", recip->recipient);
 				putenv(rcpt);
 
-				bbhostname = (char *)xmalloc(strlen("BBHOSTNAME=") + strlen(alert->hostname->name) + 1);
+				bbhostname = (char *)malloc(strlen("BBHOSTNAME=") + strlen(alert->hostname->name) + 1);
 				sprintf(bbhostname, "BBHOSTNAME=%s", alert->hostname->name);
 				putenv(bbhostname);
 
-				bbhostsvc = (char *)xmalloc(strlen("BBHOSTSVC=") + strlen(alert->hostname->name) + 1 + strlen(alert->testname->name) + 1);
+				bbhostsvc = (char *)malloc(strlen("BBHOSTSVC=") + strlen(alert->hostname->name) + 1 + strlen(alert->testname->name) + 1);
 				sprintf(bbhostsvc, "BBHOSTSVC=%s.%s", alert->hostname->name, alert->testname->name);
 				putenv(bbhostsvc);
 
-				bbhostsvccommas = (char *)xmalloc(strlen("BBHOSTSVCCOMMAS=") + strlen(alert->hostname->name) + 1 + strlen(alert->testname->name) + 1);
+				bbhostsvccommas = (char *)malloc(strlen("BBHOSTSVCCOMMAS=") + strlen(alert->hostname->name) + 1 + strlen(alert->testname->name) + 1);
 				sprintf(bbhostsvccommas, "BBHOSTSVCCOMMAS=%s.%s", commafy(alert->hostname->name), alert->testname->name);
 				putenv(bbhostsvccommas);
 
-				bbnumeric = (char *)xmalloc(strlen("BBNUMERIC=") + 22 + 1);
+				bbnumeric = (char *)malloc(strlen("BBNUMERIC=") + 22 + 1);
 				p = bbnumeric;
 				p += sprintf(p, "BBNUMERIC=");
 				p += sprintf(p, "%03d", servicecode(alert->testname->name));
@@ -1200,36 +1200,36 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 				p += sprintf(p, "%d", alert->cookie);
 				putenv(bbnumeric);
 
-				machip = (char *)xmalloc(strlen("MACHIP=") + 13);
+				machip = (char *)malloc(strlen("MACHIP=") + 13);
 				sprintf(machip, "MACHIP=%03d%03d%03d%03d", ip1, ip2, ip3, ip4);
 				putenv(machip);
 
-				bbsvcname = (char *)xmalloc(strlen("BBSVCNAME=") + strlen(alert->testname->name) + 1);
+				bbsvcname = (char *)malloc(strlen("BBSVCNAME=") + strlen(alert->testname->name) + 1);
 				sprintf(bbsvcname, "BBSVCNAME=%s", alert->testname->name);
 				putenv(bbsvcname);
 
-				bbsvcnum = (char *)xmalloc(strlen("BBSVCNUM=") + 10);
+				bbsvcnum = (char *)malloc(strlen("BBSVCNUM=") + 10);
 				sprintf(bbsvcnum, "BBSVCNUM=%d", servicecode(alert->testname->name));
 				putenv(bbsvcnum);
 
-				bbcolorlevel = (char *)xmalloc(strlen("BBCOLORLEVEL=") + strlen(colorname(alert->color)) + 1);
+				bbcolorlevel = (char *)malloc(strlen("BBCOLORLEVEL=") + strlen(colorname(alert->color)) + 1);
 				sprintf(bbcolorlevel, "BBCOLORLEVEL=%s", colorname(alert->color));
 				putenv(bbcolorlevel);
 
-				recovered = (char *)xmalloc(strlen("RECOVERED=") + 2);
+				recovered = (char *)malloc(strlen("RECOVERED=") + 2);
 				sprintf(recovered, "RECOVERED=%d", ((alert->state == A_RECOVERED) ? 1 : 0));
 				putenv(recovered);
 
-				downsecs = (char *)xmalloc(strlen("DOWNSECS=") + 20);
+				downsecs = (char *)malloc(strlen("DOWNSECS=") + 20);
 				sprintf(downsecs, "DOWNSECS=%d", (int)(time(NULL) - alert->eventstart));
 				putenv(downsecs);
 
 				if (alert->state == A_RECOVERED) {
-					downsecsmsg = (char *)xmalloc(strlen("DOWNSECSMSG=Event duration :") + 20);
+					downsecsmsg = (char *)malloc(strlen("DOWNSECSMSG=Event duration :") + 20);
 					sprintf(downsecsmsg, "DOWNSECSMSG=Event duration : %d", (int)(time(NULL) - alert->eventstart));
 				}
 				else {
-					downsecsmsg = xstrdup("DOWNSECSMSG=");
+					downsecsmsg = strdup("DOWNSECSMSG=");
 				}
 				putenv(downsecsmsg);
 
@@ -1329,7 +1329,7 @@ void cleanup_alert(activealerts_t *alert)
 
 	dprintf("cleanup_alert called for host %s, test %s\n", alert->hostname->name, alert->testname->name);
 
-	id = (char *)xmalloc(strlen(alert->hostname->name)+strlen(alert->testname->name)+3);
+	id = (char *)malloc(strlen(alert->hostname->name)+strlen(alert->testname->name)+3);
 	sprintf(id, "%s|%s|", alert->hostname->name, alert->testname->name);
 	rptwalk = rpthead; rptprev = NULL;
 	while (rptwalk) {
@@ -1400,8 +1400,8 @@ void load_state(char *filename)
 
 			*p = '\0';
 			if (atoi(l) > time(NULL)) {
-				newrpt = (repeat_t *)xmalloc(sizeof(repeat_t));
-				newrpt->recipid = xstrdup(p+1);
+				newrpt = (repeat_t *)malloc(sizeof(repeat_t));
+				newrpt->recipid = strdup(p+1);
 				newrpt->nextalert = atoi(l);
 				newrpt->next = rpthead;
 				rpthead = newrpt;

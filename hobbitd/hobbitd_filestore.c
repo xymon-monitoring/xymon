@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.30 2005-01-19 12:00:55 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.31 2005-01-20 10:45:44 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -85,7 +85,7 @@ void update_htmlfile(char *fn, char *msg,
 	char *ip = "";
 	char timestr[100];
 
-	tmpfn = (char *) xmalloc(strlen(fn)+5);
+	tmpfn = (char *) malloc(strlen(fn)+5);
 	sprintf(tmpfn, "%s.tmp", fn);
 	output = fopen(tmpfn, "w");
 
@@ -148,7 +148,7 @@ static int wantedtest(char *wanted, char *key)
 
 	if (wanted == NULL) return 1;
 
-	ckey = (char *)xmalloc(strlen(key) + 3);
+	ckey = (char *)malloc(strlen(key) + 3);
 	sprintf(ckey, ",%s,", key);
 	p = strstr(wanted, ckey);
 	xfree(ckey);
@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--only=")) {
 			char *p = strchr(argv[argi], '=') + 1;
-			onlytests = (char *)xmalloc(3 + strlen(p));
+			onlytests = (char *)malloc(3 + strlen(p));
 			sprintf(onlytests, ",%s,", p);
 		}
 	}
@@ -312,7 +312,7 @@ int main(int argc, char *argv[])
 			char *hostlead;
 
 			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
-			hostlead = xmalloc(strlen(hostname) + 2);
+			hostlead = malloc(strlen(hostname) + 2);
 			strcpy(hostlead, hostname); strcat(hostlead, ".");
 
 			dirfd = opendir(filedir);
@@ -344,7 +344,7 @@ int main(int argc, char *argv[])
 			char newlogfn[PATH_MAX];
 
 			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
-			hostlead = xmalloc(strlen(hostname) + 2);
+			hostlead = malloc(strlen(hostname) + 2);
 			strcpy(hostlead, hostname); strcat(hostlead, ".");
 			p = newhostname = items[4]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.140 2005-01-19 21:54:15 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.141 2005-01-20 10:45:44 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -83,7 +83,7 @@ char *parse_testflags(char *l)
 
 		if (flagend) {
 			*flagend = '\0';
-			result = xstrdup(flagstart);
+			result = strdup(flagstart);
 			*flagend = ']';
 		}
 	}
@@ -152,8 +152,8 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 	}
 
 	if (usehobbitd && !(reportstart || snapshot)) {
-		hostname = xstrdup(log->hostname);
-		testname = xstrdup(log->testname);
+		hostname = strdup(log->hostname);
+		testname = strdup(log->testname);
 		logexpired = (log->validtime < now);
 	}
 	else {
@@ -169,14 +169,14 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 
 		/* Pick out host- and test-name */
 		logexpired = (log_st.st_mtime < now);
-		hostname = xstrdup(filename);
+		hostname = strdup(filename);
 		p = strrchr(hostname, '.');
 
 		/* Skip files that have no '.' in filename */
 		if (p) {
 			/* Pick out the testname ... */
 			*p = '\0'; p++;
-			testname = xstrdup(p);
+			testname = strdup(p);
 	
 			/* ... and change hostname back into normal form */
 			for (p=hostname; (*p); p++) {
@@ -206,8 +206,8 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 		return NULL;
 	}
 
-	newstate = (state_t *) xmalloc(sizeof(state_t));
-	newstate->entry = (entry_t *) xmalloc(sizeof(entry_t));
+	newstate = (state_t *) malloc(sizeof(state_t));
+	newstate->entry = (entry_t *) malloc(sizeof(entry_t));
 	newstate->next = NULL;
 
 	newstate->entry->column = find_or_create_column(testname, 1);
@@ -237,7 +237,7 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 
 	if (reportstart) {
 		/* Determine "color" for this test from the historical data */
-		newstate->entry->repinfo = (reportinfo_t *) xcalloc(1, sizeof(reportinfo_t));
+		newstate->entry->repinfo = (reportinfo_t *) calloc(1, sizeof(reportinfo_t));
 		newstate->entry->color = parse_historyfile(fd, newstate->entry->repinfo, 
 				(dynamicreport ? NULL: hostname), (dynamicreport ? NULL : testname), 
 				reportstart, reportend, 0, 
@@ -251,21 +251,21 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 	}
 	else if (usehobbitd) {
 		newstate->entry->color = log->color;
-		newstate->entry->testflags = xstrdup(log->testflags);
+		newstate->entry->testflags = strdup(log->testflags);
 		if (testflag_set(newstate->entry, 'D')) newstate->entry->skin = dialupskin;
 		if (testflag_set(newstate->entry, 'R')) newstate->entry->skin = reverseskin;
-		newstate->entry->shorttext = xstrdup(log->msg);
+		newstate->entry->shorttext = strdup(log->msg);
 	}
 	else if (fgets(l, sizeof(l), fd)) {
 		char *flags = parse_testflags(l);
 
 		newstate->entry->color = parse_color(l);
 		if (flags) {
-			newstate->entry->testflags = xstrdup(flags);
+			newstate->entry->testflags = strdup(flags);
 			if (testflag_set(newstate->entry, 'D')) newstate->entry->skin = dialupskin;
 			if (testflag_set(newstate->entry, 'R')) newstate->entry->skin = reverseskin;
 		}
-		newstate->entry->shorttext = xstrdup(l);
+		newstate->entry->shorttext = strdup(l);
 	}
 	else if ((strcmp(testname, "larrd") == 0) || (strcmp(testname, "trends") == 0)) {
 		/* 
@@ -357,7 +357,7 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 
 		for (p = strchr(l, ' '); (p && (*p == ' ')); p++); /* Skip old color */
 
-		purplemsg = (char *) xmalloc(bufleft);
+		purplemsg = (char *) malloc(bufleft);
 		sprintf(purplemsg, "status+%d %s.%s %s %s", purpledelay,
 			commafy(hostname), testname,
                         colorname(newstate->entry->color), (p ? p : ""));
@@ -524,22 +524,22 @@ dispsummary_t *init_displaysummary(char *fn, logdata_t *log)
 
 	if (strlen(l)) {
 		char *p;
-		char *color = (char *) xmalloc(strlen(l));
+		char *color = (char *) malloc(strlen(l));
 
-		newsum = (dispsummary_t *) xmalloc(sizeof(dispsummary_t));
-		newsum->url = (char *) xmalloc(strlen(l));
+		newsum = (dispsummary_t *) malloc(sizeof(dispsummary_t));
+		newsum->url = (char *) malloc(strlen(l));
 
 		if (sscanf(l, "%s %s", color, newsum->url) == 2) {
 			char *rowcol;
 			newsum->color = parse_color(color);
 
-			rowcol = (char *) xmalloc(strlen(fn) + 1);
+			rowcol = (char *) malloc(strlen(fn) + 1);
 			strcpy(rowcol, fn+8);
 			p = strrchr(rowcol, '.');
 			if (p) *p = ' ';
 
-			newsum->column = (char *) xmalloc(strlen(rowcol)+1);
-			newsum->row = (char *) xmalloc(strlen(rowcol)+1);
+			newsum->column = (char *) malloc(strlen(rowcol)+1);
+			newsum->row = (char *) malloc(strlen(rowcol)+1);
 			sscanf(rowcol, "%s %s", newsum->row, newsum->column);
 			newsum->next = NULL;
 

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.77 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.78 2005-01-20 10:45:44 henrik Exp $";
 
 #include <sys/types.h>
 #include <limits.h>
@@ -85,13 +85,13 @@ static void load_cookies(void)
 			if (p) { fieldcount++; c_value = p; p = strtok(NULL, "\t"); }
 			if ((fieldcount == 7) && (c_expire > time(NULL))) {
 				/* We have a valid cookie */
-				cookielist_t *ck = (cookielist_t *)xmalloc(sizeof(cookielist_t));
-				ck->host = xstrdup(c_host);
+				cookielist_t *ck = (cookielist_t *)malloc(sizeof(cookielist_t));
+				ck->host = strdup(c_host);
 				ck->tailmatch = c_tailmatch;
-				ck->path = xstrdup(c_path);
+				ck->path = strdup(c_path);
 				ck->secure = c_secure;
-				ck->name = xstrdup(c_name);
-				ck->value = xstrdup(c_value);
+				ck->name = strdup(c_name);
+				ck->value = strdup(c_value);
 				ck->next = cookiehead;
 				cookiehead = ck;
 			}
@@ -212,10 +212,10 @@ int tcp_http_data_callback(unsigned char *buf, unsigned int len, void *priv)
 				  case CONTENTCHECK_NOREGEX:
 					/* Save the full data */
 					if ((item->output == NULL) || (item->outlen == 0)) {
-						item->output = (unsigned char *)xmalloc(len1chunk+1);
+						item->output = (unsigned char *)malloc(len1chunk+1);
 					}
 					else {
-						item->output = (unsigned char *)xrealloc(item->output, item->outlen+len1chunk+1);
+						item->output = (unsigned char *)realloc(item->output, item->outlen+len1chunk+1);
 					}
 
 					memcpy(item->output+item->outlen, buf, len1chunk);
@@ -245,10 +245,10 @@ int tcp_http_data_callback(unsigned char *buf, unsigned int len, void *priv)
 
 		/* First, add this to the header-buffer */
 		if (item->headers == NULL) {
-			item->headers = (unsigned char *) xmalloc(len+1);
+			item->headers = (unsigned char *) malloc(len+1);
 		}
 		else {
-			item->headers = (unsigned char *) xrealloc(item->headers, item->hdrlen+len+1);
+			item->headers = (unsigned char *) realloc(item->headers, item->hdrlen+len+1);
 		}
 
 		memcpy(item->headers+item->hdrlen, buf, len);
@@ -380,7 +380,7 @@ void tcp_http_final_callback(void *priv)
 				p += 13; while (isspace((int)*p)) p++;
 				p2 = (p + strcspn(p, "\r\n ;"));
 				savechar = *p2; *p2 = '\0';
-				item->contenttype = xstrdup(p);
+				item->contenttype = strdup(p);
 				*p2 = savechar;
 			}
 			else {
@@ -412,10 +412,10 @@ void add_http_test(testitem_t *t)
 	int httprequestlen = 0;
 
 	/* Allocate the private data and initialize it */
-	httptest = (http_data_t *) xcalloc(1, sizeof(http_data_t));
+	httptest = (http_data_t *) calloc(1, sizeof(http_data_t));
 	t->privdata = (void *) httptest;
 
-	httptest->url = xstrdup(decode_url(t->testspec, &httptest->bburl));
+	httptest->url = strdup(decode_url(t->testspec, &httptest->bburl));
 	httptest->contlen = -1;
 	httptest->parsestatus = (httptest->bburl.proxyurl ? httptest->bburl.proxyurl->parseerror : httptest->bburl.desturl->parseerror);
 
@@ -426,7 +426,7 @@ void add_http_test(testitem_t *t)
 	if (httptest->bburl.proxyurl && (httptest->bburl.proxyurl->ip == NULL)) {
 		dnsip = dnsresolve(httptest->bburl.proxyurl->host);
 		if (dnsip) {
-			httptest->bburl.proxyurl->ip = xstrdup(dnsip);
+			httptest->bburl.proxyurl->ip = strdup(dnsip);
 		}
 		else {
 			dprintf("Could not resolve URL hostname '%s'\n", httptest->bburl.proxyurl->host);
@@ -435,7 +435,7 @@ void add_http_test(testitem_t *t)
 	else if (httptest->bburl.desturl->ip == NULL) {
 		dnsip = dnsresolve(httptest->bburl.desturl->host);
 		if (dnsip) {
-			httptest->bburl.desturl->ip = xstrdup(dnsip);
+			httptest->bburl.desturl->ip = strdup(dnsip);
 		}
 		else {
 			dprintf("Could not resolve URL hostname '%s'\n", httptest->bburl.desturl->host);
@@ -459,7 +459,7 @@ void add_http_test(testitem_t *t)
 
 				if (fgets(l, sizeof(l), contentfd)) {
 					p = strchr(l, '\n'); if (p) { *p = '\0'; };
-					httptest->bburl.expdata = xstrdup(l);
+					httptest->bburl.expdata = strdup(l);
 				}
 				else {
 					httptest->contstatus = STATUS_CONTENTMATCH_NOFILE;
@@ -510,7 +510,7 @@ void add_http_test(testitem_t *t)
 		{
 			char *hashfunc;
 
-			httptest->exp = (void *) xstrdup(httptest->bburl.expdata+1);
+			httptest->exp = (void *) strdup(httptest->bburl.expdata+1);
 			hashfunc = strchr(httptest->exp, ':');
 			if (hashfunc) {
 				*hashfunc = '\0';
@@ -525,7 +525,7 @@ void add_http_test(testitem_t *t)
 		{
 			int status;
 
-			httptest->exp = (void *) xmalloc(sizeof(regex_t));
+			httptest->exp = (void *) malloc(sizeof(regex_t));
 			status = regcomp((regex_t *)httptest->exp, httptest->bburl.expdata, REG_EXTENDED|REG_NOSUB);
 			if (status) {
 				errprintf("Failed to compile regexp '%s' for URL %s\n", httptest->bburl.expdata, httptest->url);
@@ -640,7 +640,7 @@ void add_http_test(testitem_t *t)
 
 	/* Pickup any SSL options the user wants */
 	if (sslopt_ciphers || (sslopt_version != SSLVERSION_DEFAULT) || sslopt_clientcert){
-		sslopt = (ssloptions_t *) xmalloc(sizeof(ssloptions_t));
+		sslopt = (ssloptions_t *) malloc(sizeof(ssloptions_t));
 		sslopt->cipherlist = sslopt_ciphers;
 		sslopt->sslversion = sslopt_version;
 		sslopt->clientcert = sslopt_clientcert;

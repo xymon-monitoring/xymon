@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.21 2005-01-15 17:39:50 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.22 2005-01-20 10:45:44 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -114,12 +114,12 @@ static void initialize_hostlist(char *docurl)
 		xfree(walk);
 	}
 
-	if (docurl) documentation_url = xstrdup(docurl);
+	if (docurl) documentation_url = strdup(docurl);
 
 	/* Setup the top-level page */
-	pghead = (pagelist_t *) xmalloc(sizeof(pagelist_t));
-	pghead->pagepath = xstrdup("");
-	pghead->pagetitle = xstrdup("");
+	pghead = (pagelist_t *) malloc(sizeof(pagelist_t));
+	pghead->pagepath = strdup("");
+	pghead->pagetitle = strdup("");
 	pghead->next = NULL;
 }
 
@@ -218,7 +218,7 @@ char *bbh_item(namelist_t *host, enum bbh_item_t item)
 	  case BBH_DOCURL:
 		  if (documentation_url) {
 			if (result) xfree(result);
-			result = (char *)xmalloc(strlen(documentation_url) + strlen(host->bbhostname) + 1);
+			result = (char *)malloc(strlen(documentation_url) + strlen(host->bbhostname) + 1);
 			sprintf(result, documentation_url, host->bbhostname);
 		  	return result;
 		  }

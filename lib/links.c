@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: links.c,v 1.5 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: links.c,v 1.6 2005-01-20 10:45:44 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -43,8 +43,8 @@ static link_t *init_link(char *filename, char *urlprefix)
 
 	dprintf("init_link(%s, %s)\n", textornull(filename), textornull(urlprefix));
 
-	newlink = (link_t *) xmalloc(sizeof(link_t));
-	newlink->filename = xstrdup(filename);
+	newlink = (link_t *) malloc(sizeof(link_t));
+	newlink->filename = strdup(filename);
 	newlink->urlprefix = urlprefix;
 	newlink->next = NULL;
 
@@ -64,7 +64,7 @@ static link_t *init_link(char *filename, char *urlprefix)
 	}
 
 	/* Without extension, this time */
-	newlink->name = xstrdup(filename);
+	newlink->name = strdup(filename);
 
 	return newlink;
 }
@@ -114,19 +114,19 @@ void load_all_links(void)
 	if (helpskin) { xfree(helpskin); helpskin = NULL; }
 	if (columndocurl) { xfree(columndocurl); columndocurl = NULL; }
 
-	if (xgetenv("BBNOTESSKIN")) notesskin = xstrdup(xgetenv("BBNOTESSKIN"));
+	if (xgetenv("BBNOTESSKIN")) notesskin = strdup(xgetenv("BBNOTESSKIN"));
 	else { 
-		notesskin = (char *) xmalloc(strlen(xgetenv("BBWEB")) + strlen("/notes") + 1);
+		notesskin = (char *) malloc(strlen(xgetenv("BBWEB")) + strlen("/notes") + 1);
 		sprintf(notesskin, "%s/notes", xgetenv("BBWEB"));
 	}
 
-	if (xgetenv("BBHELPSKIN")) helpskin = xstrdup(xgetenv("BBHELPSKIN"));
+	if (xgetenv("BBHELPSKIN")) helpskin = strdup(xgetenv("BBHELPSKIN"));
 	else { 
-		helpskin = (char *) xmalloc(strlen(xgetenv("BBWEB")) + strlen("/help") + 1);
+		helpskin = (char *) malloc(strlen(xgetenv("BBWEB")) + strlen("/help") + 1);
 		sprintf(helpskin, "%s/help", xgetenv("BBWEB"));
 	}
 
-	if (xgetenv("COLUMNDOCURL")) columndocurl = xstrdup(xgetenv("COLUMNDOCURL"));
+	if (xgetenv("COLUMNDOCURL")) columndocurl = strdup(xgetenv("COLUMNDOCURL"));
 
 	strcpy(dirname, xgetenv("BBNOTES"));
 	head1 = load_links(dirname, notesskin);

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.21 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.22 2005-01-20 10:45:44 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -88,11 +88,11 @@ char *commafy(char *hostname)
 	char *p;
 
 	if (s == NULL) {
-		s = xstrdup(hostname);
+		s = strdup(hostname);
 	}
 	else if (strlen(hostname) > strlen(s)) {
 		xfree(s);
-		s = xstrdup(hostname);
+		s = strdup(hostname);
 	}
 	else {
 		strcpy(s, hostname);
@@ -131,12 +131,12 @@ void addtobuffer(char **buf, int *bufsz, char *newtext)
 {
 	if (*buf == NULL) {
 		*bufsz = strlen(newtext) + 4096;
-		*buf = (char *) xmalloc(*bufsz);
+		*buf = (char *) malloc(*bufsz);
 		**buf = '\0';
 	}
 	else if ((strlen(*buf) + strlen(newtext) + 1) > *bufsz) {
 		*bufsz += strlen(newtext) + 4096;
-		*buf = (char *) xrealloc(*buf, *bufsz);
+		*buf = (char *) realloc(*buf, *bufsz);
 	}
 
 	strcat(*buf, newtext);
@@ -290,7 +290,7 @@ int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int
 	result = 0;
 	if (banner) { 
 		bannersize = 4096;
-		*banner = (char *) xmalloc(bannersize); 
+		*banner = (char *) malloc(bannersize); 
 		**banner = '\0';
 		if (showcmd) sprintf(*banner, "Command: %s\n\n", cmd); 
 	}
@@ -305,7 +305,7 @@ int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int
 		if (banner) {
 			if ((strlen(l) + strlen(*banner)) > bannersize) {
 				bannersize += strlen(l) + 4096;
-				*banner = (char *) xrealloc(*banner, bannersize);
+				*banner = (char *) realloc(*banner, bannersize);
 			}
 			strcat(*banner, l);
 		}
@@ -340,7 +340,7 @@ void do_bbext(FILE *output, char *extenv, char *family)
 		return;
 	}
 
-	bbexts = xstrdup(p);
+	bbexts = strdup(p);
 	p = strtok(bbexts, "\t ");
 
 	while (p) {
@@ -379,8 +379,8 @@ char **setup_commandargs(char *cmdline, char **cmd)
 	int argdone, inquote, inhyphen;
 	char savech;
 
-	argsz = 1; cmdargs = (char **) xmalloc((1+argsz)*sizeof(char *)); argi = 0;
-	cmdcp = xstrdup(expand_env(cmdline));
+	argsz = 1; cmdargs = (char **) malloc((1+argsz)*sizeof(char *)); argi = 0;
+	cmdcp = strdup(expand_env(cmdline));
 
 	barg = cmdcp;
 	do {
@@ -402,14 +402,14 @@ char **setup_commandargs(char *cmdline, char **cmd)
 		if (eqchar && (eqchar == (barg + strspn(barg, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")))) {
 			/* It's an environment definition */
 			dprintf("Setting environment: %s\n", barg);
-			envsetting = xstrdup(barg);
+			envsetting = strdup(barg);
 			putenv(envsetting);
 		}
 		else {
 			if (argi == argsz) {
-				argsz++; cmdargs = (char **) xrealloc(cmdargs, (1+argsz)*sizeof(char *));
+				argsz++; cmdargs = (char **) realloc(cmdargs, (1+argsz)*sizeof(char *));
 			}
-			cmdargs[argi++] = xstrdup(barg);
+			cmdargs[argi++] = strdup(barg);
 		}
 
 		*earg = savech;

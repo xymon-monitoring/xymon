@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: encoding.c,v 1.5 2005-01-17 21:51:02 henrik Exp $";
+static char rcsid[] = "$Id: encoding.c,v 1.6 2005-01-20 10:45:44 henrik Exp $";
 
 #include <stdlib.h>
 #include <ctype.h>
@@ -28,7 +28,7 @@ char *base64encode(unsigned char *buf)
 	unsigned char *inp, *outp;
 	unsigned char *result;
 
-	result = xmalloc(4*(strlen(buf)/3 + 1) + 1);
+	result = malloc(4*(strlen(buf)/3 + 1) + 1);
 	inp = buf; outp=result;
 
 	while (strlen(inp) >= 3) {
@@ -92,7 +92,7 @@ char *base64decode(unsigned char *buf)
 		for (i=0; (i < strlen(b64chars)); i++) bval[(int)b64chars[i]] = i;
 	}
 
-	result = xmalloc(3*(bytesleft/4 + 1) + 1);
+	result = malloc(3*(bytesleft/4 + 1) + 1);
 	inp = buf; outp=result;
 
 	while (bytesleft >= 4) {
@@ -122,7 +122,7 @@ void getescapestring(char *msg, unsigned char **buf, int *buflen)
 	inp = msg;
 	if (*inp == '\"') inp++; /* Skip the quote */
 
-	outp = *buf = xmalloc(strlen(msg)+1);
+	outp = *buf = malloc(strlen(msg)+1);
 	while (*inp && (*inp != '\"')) {
 		if (*inp == '\\') {
 			inp++;
@@ -184,11 +184,11 @@ unsigned char *nlencode(unsigned char *msg)
 
 	if (buf == NULL) {
 		bufsz = maxneeded;
-		buf = (char *)xmalloc(bufsz);
+		buf = (char *)malloc(bufsz);
 	}
 	else if (bufsz < maxneeded) {
 		bufsz = maxneeded;
-		buf = (char *)xrealloc(buf, bufsz);
+		buf = (char *)realloc(buf, bufsz);
 	}
 
 	inp = msg;

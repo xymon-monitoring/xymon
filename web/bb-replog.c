@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.26 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.27 2005-01-20 10:45:44 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -404,15 +404,15 @@ static void parse_query(void)
 		if (argnmatch(token, "HOSTSVC")) {
 			char *p = strrchr(val, '.');
 
-			if (p) { *p = '\0'; service = xstrdup(p+1); }
-			hostname = xstrdup(val);
+			if (p) { *p = '\0'; service = strdup(p+1); }
+			hostname = strdup(val);
 			while ((p = strchr(hostname, ','))) *p = '.';
 		}
 		else if (argnmatch(token, "IP")) {
-			ip = xstrdup(val);
+			ip = strdup(val);
 		}
 		else if (argnmatch(token, "REPORTTIME")) {
-			reporttime = (char *) xmalloc(strlen(val)+strlen("REPORTTIME=")+1);
+			reporttime = (char *) malloc(strlen(val)+strlen("REPORTTIME=")+1);
 			sprintf(reporttime, "REPORTTIME=%s", val);
 		}
 		else if (argnmatch(token, "WARNPCT")) {
@@ -431,7 +431,7 @@ static void parse_query(void)
 			end = atol(val);
 		}
 		else if (argnmatch(token, "COLOR")) {
-			char *colstr = (char *) xmalloc(strlen(val)+2);
+			char *colstr = (char *) malloc(strlen(val)+2);
 			sprintf(colstr, "%s ", val);
 			color = parse_color(colstr);
 			xfree(colstr);

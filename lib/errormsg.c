@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: errormsg.c,v 1.3 2005-01-15 17:39:50 henrik Exp $";
+static char rcsid[] = "$Id: errormsg.c,v 1.4 2005-01-20 10:45:44 henrik Exp $";
 
 #include <string.h>
 #include <time.h>
@@ -53,12 +53,12 @@ void errprintf(const char *fmt, ...)
 	if (save_errbuf) {
 		if (errbuf == NULL) {
 			errbufsize = 8192;
-			errbuf = (char *) xmalloc(errbufsize);
+			errbuf = (char *) malloc(errbufsize);
 			*errbuf = '\0';
 		}
 		else if ((strlen(errbuf) + strlen(msg)) > errbufsize) {
 			errbufsize += 8192;
-			errbuf = (char *) xrealloc(errbuf, errbufsize);
+			errbuf = (char *) realloc(errbuf, errbufsize);
 		}
 
 		strcat(errbuf, msg);

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbconvert.c,v 1.8 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: bbconvert.c,v 1.9 2005-01-20 10:45:44 henrik Exp $";
 
 #include <limits.h>
 #include <sys/types.h>
@@ -60,7 +60,7 @@ void dump_hobbitdchk(void)
 			if (stat(logfn, &st) == -1) continue;
 			logfd = fopen(logfn, "r");
 			if (logfd == NULL) continue;
-			logbuf = (char *)xmalloc(st.st_size+1);
+			logbuf = (char *)malloc(st.st_size+1);
 			n = fread(logbuf, 1, st.st_size, logfd);
 			fclose(logfd);
 			if (n == -1) {
@@ -80,7 +80,7 @@ void dump_hobbitdchk(void)
 				n = strspn(p, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
 				savech = *(p+n);
 				*(p+n) = '\0';
-				flags = xstrdup(p);
+				flags = strdup(p);
 				*(p+n) = savech;
 			}
 

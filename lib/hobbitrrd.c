@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.15 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.16 2005-01-20 10:45:44 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -84,21 +84,21 @@ static void larrd_setup(void)
 
 	/* Setup the larrdrrds table, mapping test-names to RRD files */
 	getenv_default("LARRDS", default_rrds, NULL);
-	lenv = xstrdup(xgetenv("LARRDS"));
+	lenv = strdup(xgetenv("LARRDS"));
 	p = lenv+strlen(lenv)-1; if (*p == ',') *p = '\0';	/* Drop a trailing comma */
 	count = 0; p = lenv; do { count++; p = strchr(p+1, ','); } while (p);
-	larrdrrds = (larrdrrd_t *)xcalloc(sizeof(larrdrrd_t), (count+1));
+	larrdrrds = (larrdrrd_t *)calloc(sizeof(larrdrrd_t), (count+1));
 
 	lrec = larrdrrds; ldef = strtok(lenv, ",");
 	while (ldef) {
 		p = strchr(ldef, '=');
 		if (p) {
 			*p = '\0'; 
-			lrec->bbsvcname = xstrdup(ldef);
-			lrec->larrdrrdname = xstrdup(p+1);
+			lrec->bbsvcname = strdup(ldef);
+			lrec->larrdrrdname = strdup(p+1);
 		}
 		else {
-			lrec->bbsvcname = lrec->larrdrrdname = xstrdup(ldef);
+			lrec->bbsvcname = lrec->larrdrrdname = strdup(ldef);
 		}
 
 		ldef = strtok(NULL, ",");
@@ -108,18 +108,18 @@ static void larrd_setup(void)
 
 	/* Setup the larrdgraphs table, describing how to make graphs from an RRD */
 	getenv_default("GRAPHS", default_graphs, NULL);
-	lenv = xstrdup(xgetenv("GRAPHS"));
+	lenv = strdup(xgetenv("GRAPHS"));
 	p = lenv+strlen(lenv)-1; if (*p == ',') *p = '\0';	/* Drop a trailing comma */
 	count = 0; p = lenv; do { count++; p = strchr(p+1, ','); } while (p);
-	larrdgraphs = (larrdgraph_t *)xcalloc(sizeof(larrdgraph_t), (count+1));
+	larrdgraphs = (larrdgraph_t *)calloc(sizeof(larrdgraph_t), (count+1));
 
 	grec = larrdgraphs; ldef = strtok(lenv, ",");
 	while (ldef) {
 		p = strchr(ldef, ':');
 		if (p) {
 			*p = '\0'; 
-			grec->larrdrrdname = xstrdup(ldef);
-			grec->larrdpartname = xstrdup(p+1);
+			grec->larrdrrdname = strdup(ldef);
+			grec->larrdpartname = strdup(p+1);
 			p = strchr(grec->larrdpartname, ':');
 			if (p) {
 				*p = '\0';
@@ -131,7 +131,7 @@ static void larrd_setup(void)
 			}
 		}
 		else {
-			grec->larrdrrdname = xstrdup(ldef);
+			grec->larrdrrdname = strdup(ldef);
 		}
 
 		ldef = strtok(NULL, ",");
@@ -210,7 +210,7 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 		    strlen(hostname)            + 
 		    strlen(rrdservicename)  + 
 		    (dispname ? strlen(urlencode(dispname)) : 0);
-	svcurl = (char *) xmalloc(svcurllen);
+	svcurl = (char *) malloc(svcurllen);
 
 	rrdparturlsize = 2048 +
 			 strlen(fmt)        +
@@ -219,7 +219,7 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 
 	if (rrdurl == NULL) {
 		rrdurlsize = rrdparturlsize;
-		rrdurl = (char *) xmalloc(rrdurlsize);
+		rrdurl = (char *) malloc(rrdurlsize);
 	}
 	*rrdurl = '\0';
 
@@ -233,7 +233,7 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 			step = (itemcount / gcount);
 		}
 
-		rrdparturl = (char *) xmalloc(rrdparturlsize);
+		rrdparturl = (char *) malloc(rrdparturlsize);
 		do {
 			if (itemcount > 0) {
 				sprintf(svcurl, "%s/hobbitgraph.sh?host=%s&amp;service=%s&amp;first=%d&amp;count=%d", 
@@ -252,7 +252,7 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 			sprintf(rrdparturl, fmt, svcurl, svcurl, rrdservicename);
 			if ((strlen(rrdparturl) + strlen(rrdurl) + 1) >= rrdurlsize) {
 				rrdurlsize += (4096 + (itemcount - (first+step-1))*rrdparturlsize);
-				rrdurl = (char *) xrealloc(rrdurl, rrdurlsize);
+				rrdurl = (char *) realloc(rrdurl, rrdurlsize);
 			}
 			strcat(rrdurl, rrdparturl);
 			first += step;
@@ -263,7 +263,7 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 		char *rrdparturl;
 		int first = 0;
 
-		rrdparturl = (char *) xmalloc(rrdparturlsize);
+		rrdparturl = (char *) malloc(rrdparturlsize);
 		do {
 			int last;
 			
@@ -279,7 +279,7 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 			sprintf(rrdparturl, fmt, svcurl, svcurl, rrdservicename);
 			if ((strlen(rrdparturl) + strlen(rrdurl) + 1) >= rrdurlsize) {
 				rrdurlsize += (4096 + (itemcount - last)*rrdparturlsize);
-				rrdurl = (char *) xrealloc(rrdurl, rrdurlsize);
+				rrdurl = (char *) realloc(rrdurl, rrdurlsize);
 			}
 			strcat(rrdurl, rrdparturl);
 			first = last+1;

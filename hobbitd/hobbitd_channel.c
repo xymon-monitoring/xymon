@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.31 2005-01-18 21:41:57 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.32 2005-01-20 10:45:44 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -124,11 +124,11 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--pidfile=")) {
 			char *p = strchr(argv[argi], '=');
-			pidfile = xstrdup(p+1);
+			pidfile = strdup(p+1);
 		}
 		else if (argnmatch(argv[argi], "--log=")) {
 			char *p = strchr(argv[argi], '=');
-			logfn = xstrdup(p+1);
+			logfn = strdup(p+1);
 		}
 		else if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
 		else {
 			int i = 0;
 			childcmd = argv[argi];
-			childargs = (char **) xcalloc((1 + argc - argi), sizeof(char *));
+			childargs = (char **) calloc((1 + argc - argi), sizeof(char *));
 			while (argi < argc) { childargs[i++] = argv[argi++]; }
 		}
 	}
@@ -289,8 +289,8 @@ int main(int argc, char *argv[])
 			/*
 			 * Put the new message on our outbound queue.
 			 */
-			newmsg = (hobbit_msg_t *) xmalloc(sizeof(hobbit_msg_t));
-			newmsg->buf = xstrdup(buf);
+			newmsg = (hobbit_msg_t *) malloc(sizeof(hobbit_msg_t));
+			newmsg->buf = strdup(buf);
 			newmsg->bufp = newmsg->buf;
 			newmsg->buflen = strlen(buf);
 			newmsg->next = NULL;

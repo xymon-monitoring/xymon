@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.14 2005-01-19 12:02:39 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.15 2005-01-20 10:45:44 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -46,7 +46,7 @@ static void hostsvc_setup(void)
 	getenv_default("MKBBROWFONT", "SIZE=+1 COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\"", &rowfont);
 	getenv_default("BBWEB", "/bb", NULL);
 	{
-		char *dbuf = xmalloc(strlen(xgetenv("BBWEB")) + 6);
+		char *dbuf = malloc(strlen(xgetenv("BBWEB")) + 6);
 		sprintf(dbuf, "%s/gifs", xgetenv("BBWEB"));
 		getenv_default("BBSKIN", dbuf, NULL);
 		xfree(dbuf);
@@ -59,10 +59,10 @@ static void hostsvc_setup(void)
 static void historybutton(char *cgibinurl, char *hostname, char *service, char *ip, FILE *output) 
 {
 	char *tmp1;
-	char *tmp2 = (char *)xmalloc(strlen(service)+3);
+	char *tmp2 = (char *)malloc(strlen(service)+3);
 
 	getenv_default("NONHISTS", "info,larrd,trends", NULL);
-	tmp1 =  (char *)xmalloc(strlen(xgetenv("NONHISTS"))+3);
+	tmp1 =  (char *)malloc(strlen(xgetenv("NONHISTS"))+3);
 
 	sprintf(tmp1, ",%s,", xgetenv("NONHISTS"));
 	sprintf(tmp2, ",%s,", service);

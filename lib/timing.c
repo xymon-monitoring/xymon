@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timing.c,v 1.2 2005-01-15 17:39:50 henrik Exp $";
+static char rcsid[] = "$Id: timing.c,v 1.3 2005-01-20 10:45:44 henrik Exp $";
 
 #include <stdlib.h>
 #include <string.h>
@@ -38,10 +38,10 @@ void add_timestamp(const char *msg)
 	struct timezone tz;
 
 	if (timing) {
-		timestamp_t *newstamp = (timestamp_t *) xmalloc(sizeof(timestamp_t));
+		timestamp_t *newstamp = (timestamp_t *) malloc(sizeof(timestamp_t));
 
 		gettimeofday(&newstamp->eventtime, &tz);
-		newstamp->eventtext = xstrdup(msg);
+		newstamp->eventtext = strdup(msg);
 
 		if (stamphead == NULL) {
 			newstamp->next = newstamp->prev = NULL;
@@ -60,7 +60,7 @@ void show_timestamps(char **buffer)
 {
 	timestamp_t *s;
 	struct timeval dif;
-	char *outbuf = (char *) xmalloc(4096);
+	char *outbuf = (char *) malloc(4096);
 	int outbuflen = 4096;
 	char buf1[80];
 
@@ -86,7 +86,7 @@ void show_timestamps(char **buffer)
 
 		if ((outbuflen - strlen(outbuf)) < 200) {
 			outbuflen += 4096;
-			outbuf = (char *) xrealloc(outbuf, outbuflen);
+			outbuf = (char *) realloc(outbuf, outbuflen);
 		}
 	}
 

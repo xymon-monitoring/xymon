@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: url.c,v 1.7 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: url.c,v 1.8 2005-01-20 10:45:44 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -43,7 +43,7 @@ char *urlunescape(char *url)
 
 	pin = url;
 	if (result) xfree(result);
-	pout = result = (char *) xmalloc(strlen(url) + 1);
+	pout = result = (char *) malloc(strlen(url) + 1);
 	while (*pin) {
 		if (*pin == '+') {
 			*pout = ' ';
@@ -93,7 +93,7 @@ char *urlencode(char *s)
 	char *inp, *outp;
 
 	if (result == NULL) {
-		result = (char *)xmalloc(1024);
+		result = (char *)malloc(1024);
 		resbufsz = 1024;
 	}
 	outp = result;
@@ -103,7 +103,7 @@ char *urlencode(char *s)
 			int offset = (outp - result);
 
 			resbufsz += 1024;
-			result = (char *)xrealloc(result, resbufsz);
+			result = (char *)realloc(result, resbufsz);
 			outp = result + offset;
 		}
 
@@ -193,23 +193,23 @@ static void load_netrc(void)
 					break;
 
 				  case MACHINEVAL:
-					host = xstrdup(p); state = WANT_TOKEN; break;
+					host = strdup(p); state = WANT_TOKEN; break;
 
 				  case LOGINVAL:
-					login = xstrdup(p); state = WANT_TOKEN; break;
+					login = strdup(p); state = WANT_TOKEN; break;
 
 				  case PASSVAL:
-					password = xstrdup(p); state = WANT_TOKEN; break;
+					password = strdup(p); state = WANT_TOKEN; break;
 
 				  case OTHERVAL:
 				  	state = WANT_TOKEN; break;
 				}
 
 				if (host && login && password) {
-					loginlist_t *item = (loginlist_t *) xmalloc(sizeof(loginlist_t));
+					loginlist_t *item = (loginlist_t *) malloc(sizeof(loginlist_t));
 
 					item->host = host;
-					item->auth = (char *) xmalloc(strlen(login) + strlen(password) + 2);
+					item->auth = (char *) malloc(strlen(login) + strlen(password) + 2);
 					sprintf(item->auth, "%s:%s", login, password);
 					item->next = loginhead;
 					loginhead = item;
@@ -234,9 +234,9 @@ char *cleanurl(char *url)
 	int  lastwasslash = 0;
 
 	if (cleaned == NULL)
-		cleaned = (char *)xmalloc(strlen(url)+1);
+		cleaned = (char *)malloc(strlen(url)+1);
 	else {
-		cleaned = (char *)xrealloc(cleaned, strlen(url)+1);
+		cleaned = (char *)realloc(cleaned, strlen(url)+1);
 	}
 
 	for (pin=url, pout=cleaned, lastwasslash=0; (*pin); pin++) {
@@ -279,7 +279,7 @@ void parse_url(char *inputurl, urlelem_t *url)
 	url->scheme = url->host = url->relurl = "";
 
 	/* Get a temp. buffer we can molest */
-	tempurl = xstrdup(inputurl);
+	tempurl = strdup(inputurl);
 
 	/* First cut off any fragment specifier */
 	fragment = strchr(tempurl, '#'); if (fragment) *fragment = '\0';
@@ -292,11 +292,11 @@ void parse_url(char *inputurl, urlelem_t *url)
 		if (strncmp(startp, "https", 5) == 0) {
 			url->scheme = "https";
 			url->port = 443;
-			if (strlen(startp) > 5) url->schemeopts = xstrdup(startp+5);
+			if (strlen(startp) > 5) url->schemeopts = strdup(startp+5);
 		} else if (strncmp(startp, "http", 4) == 0) {
 			url->scheme = "http";
 			url->port = 80;
-			if (strlen(startp) > 4) url->schemeopts = xstrdup(startp+4);
+			if (strlen(startp) > 4) url->schemeopts = strdup(startp+4);
 		} else if (strcmp(startp, "ftp") == 0) {
 			url->scheme = "ftp";
 			url->port = 21;
@@ -310,7 +310,7 @@ void parse_url(char *inputurl, urlelem_t *url)
 		else {
 			/* Unknown scheme! */
 			errprintf("Unknown URL scheme '%s' in URL '%s'\n", startp, inputurl);
-			url->scheme = xstrdup(startp);
+			url->scheme = strdup(startp);
 			url->port = 0;
 		}
 		startp = (p+1);
@@ -342,12 +342,12 @@ void parse_url(char *inputurl, urlelem_t *url)
 	p = strchr(netloc, '@');
 	if (p) {
 		*p = '\0';
-		url->auth = xstrdup(netloc);
+		url->auth = strdup(netloc);
 		netloc = (p+1);
 	}
 	p = strchr(netloc, '=');
 	if (p) {
-		url->ip = xstrdup(p+1);
+		url->ip = strdup(p+1);
 		*p = '\0';
 	}
 	p = strchr(netloc, ':');
@@ -357,7 +357,7 @@ void parse_url(char *inputurl, urlelem_t *url)
 		url->port = atoi(p+1);
 	}
 
-	url->host = xstrdup(netloc);
+	url->host = strdup(netloc);
 	if (url->port == 0) {
 		struct servent *svc = getservbyname(url->scheme, NULL);
 		if (svc) url->port = ntohs(svc->s_port);
@@ -369,7 +369,7 @@ void parse_url(char *inputurl, urlelem_t *url)
 	}
 
 	if (fragment) *fragment = '#';
-	url->relurl = xmalloc(strlen(startp) + 2);
+	url->relurl = malloc(strlen(startp) + 2);
 	sprintf(url->relurl, "/%s", startp);
 
 	if (url->auth == NULL) {
@@ -388,7 +388,7 @@ void parse_url(char *inputurl, urlelem_t *url)
 	canonurllen += 6; 			/* Max. length of a port spec. */
 	canonurllen += strlen(url->relurl);
 
-	p = canonurl = (char *)xmalloc(canonurllen);
+	p = canonurl = (char *)malloc(canonurllen);
 	p += sprintf(p, "%s://", url->scheme);
 	/*
 	 * Dont include authentication here, since it 
@@ -420,7 +420,7 @@ static char *gethttpcolumn(char *inp, char **name)
 	}
 
 	*nend = '\0';
-	*name = xstrdup(nstart);
+	*name = strdup(nstart);
 	*nend = ';';
 
 	return nend+1;
@@ -455,11 +455,11 @@ char *decode_url(char *testspec, bburl_t *bburl)
 	}
 	else {
 		memset(bburl, 0, sizeof(bburl_t));
-		bburl->desturl = (urlelem_t*) xcalloc(1, sizeof(urlelem_t));
+		bburl->desturl = (urlelem_t*) calloc(1, sizeof(urlelem_t));
 		bburl->proxyurl = NULL;
 	}
 
-	inp = xstrdup(testspec);
+	inp = strdup(testspec);
 
 	if (strncmp(inp, "content=", 8) == 0) {
 		bburl->testtype = BBTEST_CONTENT;
@@ -562,7 +562,7 @@ char *decode_url(char *testspec, bburl_t *bburl)
 		}
 		else {
 			/* User allocated buffers */
-			bburl->proxyurl = (urlelem_t *)xmalloc(sizeof(urlelem_t));
+			bburl->proxyurl = (urlelem_t *)malloc(sizeof(urlelem_t));
 		}
 
 		parse_url(proxystart, bburl->proxyurl);

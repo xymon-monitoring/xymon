@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.12 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.13 2005-01-20 10:45:44 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -53,12 +53,12 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--rrddir=")) {
 			char *p = strchr(argv[argi], '=');
-			rrddir = xstrdup(p+1);
+			rrddir = strdup(p+1);
 		}
 	}
 
 	if ((rrddir == NULL) && xgetenv("BBRRDS")) {
-		rrddir = xstrdup(xgetenv("BBRRDS"));
+		rrddir = strdup(xgetenv("BBRRDS"));
 	}
 
 	save_errbuf = 0;

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.29 2005-01-19 21:58:05 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.30 2005-01-20 10:45:44 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -75,24 +75,24 @@ static void parse_query(void)
 		if (argnmatch(token, "HOSTSVC")) {
 			char *p = strrchr(val, '.');
 
-			if (p) { *p = '\0'; service = xstrdup(p+1); }
-			hostname = xstrdup(val);
+			if (p) { *p = '\0'; service = strdup(p+1); }
+			hostname = strdup(val);
 			while ((p = strchr(hostname, ','))) *p = '.';
 		}
 		else if (argnmatch(token, "IP")) {
-			ip = xstrdup(val);
+			ip = strdup(val);
 		}
 		else if (argnmatch(token, "DISPLAYNAME")) {
-			displayname = xstrdup(val);
+			displayname = strdup(val);
 		}
 		else if (argnmatch(token, "HOST")) {
-			hostname = xstrdup(val);
+			hostname = strdup(val);
 		}
 		else if (argnmatch(token, "SERVICE")) {
-			service = xstrdup(val);
+			service = strdup(val);
 		}
 		else if (argnmatch(token, "TIMEBUF")) {
-			tstamp = xstrdup(val);
+			tstamp = strdup(val);
 		}
 
 		token = strtok(NULL, "&");
@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
 		}
 		else { 
 			*p = '\0'; 
-			firstline = xstrdup(msg); 
+			firstline = strdup(msg); 
 			restofmsg = (p+1);
 			*p = '\n'; 
 		}
@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
 			sprintf(logfn, "%s/%s.%s", xgetenv("BBLOGS"), commafy(hostname), service);
 		}
 		else if (source == SRC_HISTLOGS) {
-			char *hostnamedash = xstrdup(hostname);
+			char *hostnamedash = strdup(hostname);
 			p = hostnamedash; while ((p = strchr(p, '.')) != NULL) *p = '_';
 			p = hostnamedash; while ((p = strchr(p, ',')) != NULL) *p = '_';
 			sprintf(logfn, "%s/%s/%s/%s", xgetenv("BBHISTLOGS"), hostnamedash, service, tstamp);
@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
 			errormsg("Unable to access logfile\n");
 			return 1;
 		}
-		log = (char *)xmalloc(st.st_size+1);
+		log = (char *)malloc(st.st_size+1);
 		read(fd, log, st.st_size);
 		close(fd);
 		firstline = log;
@@ -255,7 +255,7 @@ int main(int argc, char *argv[])
 		if (p) {
 			p += strlen("<!-- [flags:");
 			n = strspn(p, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
-			flags = (char *)xmalloc(n+1);
+			flags = (char *)malloc(n+1);
 			strncpy(flags, p, n);
 			*(flags + n) = '\0';
 		}
@@ -276,7 +276,7 @@ int main(int argc, char *argv[])
 		if (p) {
 			p += strlen(receivedfromtext);
 			n = strspn(p, "0123456789.");
-			sender = (char *)xmalloc(n+1);
+			sender = (char *)malloc(n+1);
 			strncpy(sender, p, n);
 			*(sender+n) = '\0';
 		}

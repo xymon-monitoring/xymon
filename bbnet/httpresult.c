@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.9 2005-01-15 17:39:01 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.10 2005-01-20 10:45:44 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -85,11 +85,11 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 	if (firsttest == NULL) return;
 
-	svcname = xstrdup(httptest->testname);
+	svcname = strdup(httptest->testname);
 	if (httptest->namelen) svcname[httptest->namelen] = '\0';
 
 	/* Check if this service is a NOPAGENET service. */
-	nopagename = (char *) xmalloc(strlen(svcname)+3);
+	nopagename = (char *) malloc(strlen(svcname)+3);
 	sprintf(nopagename, ",%s,", svcname);
 	nopage = (strstr(nonetpage, svcname) != NULL);
 	xfree(nopagename);
@@ -124,7 +124,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 			if (faileddeps) {
 				req->httpcolor = COL_CLEAR;
-				req->faileddeps = xstrdup(faileddeps);
+				req->faileddeps = strdup(faileddeps);
 			}
 		}
 
@@ -138,7 +138,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 			  case CONTEST_ETIMEOUT: 
 				  req->errorcause = "Server timeout"; break;
 			  case CONTEST_ENOCONN : 
-				  req->errorcause =  xstrdup(strerror(req->tcptest->connres)); break;
+				  req->errorcause =  strdup(strerror(req->tcptest->connres)); break;
 			  case CONTEST_EDNS    : 
 				  switch (req->parsestatus) {
 					  case 1 : req->errorcause =  "Invalid URL"; break;
@@ -181,7 +181,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 				sprintf(m1, "HTTP error %ld", req->httpstatus);
 			}
 			strcat(msgtext, m1);
-			req->errorcause = xstrdup(m1);
+			req->errorcause = strdup(m1);
 		}
 		else {
 			strcat(msgtext, "OK");
@@ -282,12 +282,12 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 	int     nopage = 0;
 	char    *conttest;
 	int 	contentnum = 0;
-	conttest = (char *) xmalloc(128);
+	conttest = (char *) malloc(128);
 
 	if (host->firsthttp == NULL) return;
 
 	/* Check if this service is a NOPAGENET service. */
-	nopagename = (char *) xmalloc(strlen(contenttestname)+3);
+	nopagename = (char *) malloc(strlen(contenttestname)+3);
 	sprintf(nopagename, ",%s,", contenttestname);
 	nopage = (strstr(nonetpage, contenttestname) != NULL);
 	xfree(nopagename);
@@ -343,13 +343,13 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 						break;
 
 					  case CONTENTCHECK_DIGEST:
-						if (req->digest == NULL) req->digest = xstrdup("");
+						if (req->digest == NULL) req->digest = strdup("");
 						if (strcmp(req->digest, (char *)req->exp) != 0) {
 							status = STATUS_CONTENTMATCH_FAILED;
 						}
 						else status = 0;
 
-						req->output = (char *) xmalloc(strlen(req->digest)+strlen((char *)req->exp)+strlen("Expected:\nGot     :\n")+1);
+						req->output = (char *) malloc(strlen(req->digest)+strlen((char *)req->exp)+strlen("Expected:\nGot     :\n")+1);
 						sprintf(req->output, "Expected:%s\nGot     :%s\n", 
 							(char *)req->exp, req->digest);
 						break;
@@ -362,9 +362,9 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 							status = STATUS_CONTENTMATCH_FAILED;
 						}
 
-						if (req->contenttype == NULL) req->contenttype = xstrdup("No content-type provdied");
+						if (req->contenttype == NULL) req->contenttype = strdup("No content-type provdied");
 
-						req->output = (char *) xmalloc(strlen(req->contenttype)+strlen((char *)req->exp)+strlen("Expected content-type: %s\nGot content-type     : %s\n")+1);
+						req->output = (char *) malloc(strlen(req->contenttype)+strlen((char *)req->exp)+strlen("Expected content-type: %s\nGot content-type     : %s\n")+1);
 						sprintf(req->output, "Expected content-type: %s\nGot content-type     : %s\n",
 							(char *)req->exp, req->contenttype);
 						break;

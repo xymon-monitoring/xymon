@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: acklog.c,v 1.10 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: acklog.c,v 1.11 2005-01-20 10:45:44 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -71,7 +71,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 		}
 	}
 
-	acks = (ack_t *) xmalloc(maxcount*sizeof(ack_t));
+	acks = (ack_t *) malloc(maxcount*sizeof(ack_t));
 	ackintime_count = num = 0;
 
 	while (fgets(l, sizeof(l), acklog)) {
@@ -143,17 +143,17 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 					if (strncmp(ackerp, "np_", 3) == 0) ackerp += 3;
 					p = strrchr(ackerp, '_');
 					if (p > ackerp) *p = '\0';
-					acks[num].ackedby = xstrdup(ackerp);
+					acks[num].ackedby = strdup(ackerp);
 				}
 				else {
 					/* hobbitd's alert module does not (cannot) log this. */
 					acks[num].ackedby = "";
 				}
 
-				acks[num].hostname = xstrdup(hosttest);
-				acks[num].testname = xstrdup(testname);
+				acks[num].hostname = strdup(hosttest);
+				acks[num].testname = strdup(testname);
 				strcat(color, " "); acks[num].color = parse_color(color);
-				acks[num].ackmsg = xstrdup(ackmsg);
+				acks[num].ackmsg = strdup(ackmsg);
 				ackintime_count++;
 
 				num = (num + 1) % maxcount;

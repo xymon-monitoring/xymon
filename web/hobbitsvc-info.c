@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.70 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.71 2005-01-20 10:45:44 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -38,7 +38,7 @@ static void timespec_text(char *spec, char **infobuf, int *infobuflen)
 	char *sCopy;
 	char *sItem;
 
-	sCopy = xstrdup(spec);
+	sCopy = strdup(spec);
 	sCopy[strcspn(sCopy, " \t\r\n")] = '\0';
 	sItem = strtok(sCopy, ",");
 	while (sItem) {
@@ -393,7 +393,7 @@ int generate_info(char *infocolumn, char *documentationurl, int hobbitd, int sen
 							addtobuffer(&infobuf, &infobuflen, "<tr><th colspan=5 align=center><i>Exceptions</i></th></tr>\n");
 						}
 
-						recips = xstrdup(alerts->items[6]);
+						recips = strdup(alerts->items[6]);
 						addtobuffer(&infobuf, &infobuflen, "<tr>\n");
 
 						sprintf(l, "<td align=left>%s</td>\n", service_text(alerts->items[2]));
@@ -507,15 +507,15 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--bbhosts=")) {
 			char *p = strchr(argv[argi], '=');
-			bbhostsfn = xstrdup(p+1);
+			bbhostsfn = strdup(p+1);
 		}
 		else if (argnmatch(argv[argi], "--column=")) {
 			char *p = strchr(argv[argi], '=');
-			infocol = xstrdup(p+1);
+			infocol = strdup(p+1);
 		}
 		else if (argnmatch(argv[argi], "--docurl=")) {
 			char *p = strchr(argv[argi], '=');
-			docurl = xstrdup(p+1);
+			docurl = strdup(p+1);
 		}
 		else if (strcmp(argv[argi], "--hobbitd") == 0) {
 			usehobbitd = 1;

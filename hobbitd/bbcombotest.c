@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.33 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.34 2005-01-20 10:45:44 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -111,15 +111,15 @@ static void loadtests(void)
 		if (strlen(inp)) memmove(outp, inp, strlen(inp)+1);
 
 		if (strlen(l) && (l[0] != '#') && (p = strchr(l, '=')) ) {
-			testspec_t *newtest = (testspec_t *) xmalloc(sizeof(testspec_t));
+			testspec_t *newtest = (testspec_t *) malloc(sizeof(testspec_t));
 
 			*p = '\0';
 			comment = strchr(p+1, '#');
 			if (comment) *comment = '\0';
-			newtest->reshostname = xstrdup(gethname(l));
-			newtest->restestname = xstrdup(gettname(l));
-			newtest->expression = xstrdup(p+1);
-			newtest->comment = (comment ? xstrdup(comment+1) : NULL);
+			newtest->reshostname = strdup(gethname(l));
+			newtest->restestname = strdup(gettname(l));
+			newtest->expression = strdup(p+1);
+			newtest->comment = (comment ? strdup(comment+1) : NULL);
 			newtest->resultexpr = NULL;
 			newtest->valuelist = NULL;
 			newtest->result = -1;
@@ -193,7 +193,7 @@ static int gethobbitdvalue(char *hostname, char *testname, char **errptr)
 		}
 	}
 
-	pattern = (char *)xmalloc(1 + strlen(hostname) + 1 + strlen(testname) + 1 + 1);
+	pattern = (char *)malloc(1 + strlen(hostname) + 1 + strlen(testname) + 1 + 1);
 	sprintf(pattern, "\n%s|%s|", hostname, testname);
 
 	if (strncmp(board, pattern+1, strlen(pattern+1)) == 0) {
@@ -245,9 +245,9 @@ static long getvalue(char *hostname, char *testname, int *color, char **errbuf)
 	/* Save error messages */
 	if (strlen(errtext) > 0) {
 		if (*errbuf == NULL)
-			*errbuf = xstrdup(errtext);
+			*errbuf = strdup(errtext);
 		else {
-			*errbuf = (char *)xrealloc(*errbuf, strlen(*errbuf)+strlen(errtext)+1);
+			*errbuf = (char *)realloc(*errbuf, strlen(*errbuf)+strlen(errtext)+1);
 			strcat(*errbuf, errtext);
 		}
 	}
@@ -292,8 +292,8 @@ static long evaluate(char *symbolicexpr, char **resultexpr, value_t **valuelist,
 				sprintf(outp, "%ld", oneval);
 				outp += strlen(outp);
 
-				newval = (value_t *) xmalloc(sizeof(value_t));
-				newval->symbol = xstrdup(symbol);
+				newval = (value_t *) malloc(sizeof(value_t));
+				newval->symbol = strdup(symbol);
 				newval->color = onecolor;
 				newval->next = NULL;
 				if (valhead == NULL) {
@@ -313,7 +313,7 @@ static long evaluate(char *symbolicexpr, char **resultexpr, value_t **valuelist,
 
 	*outp = '\0';
 
-	if (resultexpr) *resultexpr = xstrdup(expr);
+	if (resultexpr) *resultexpr = strdup(expr);
 	dprintf("Symbolic '%s' converted to '%s'\n", symbolicexpr, expr);
 
 	error = 0; 
@@ -322,10 +322,10 @@ static long evaluate(char *symbolicexpr, char **resultexpr, value_t **valuelist,
 	if (error) {
 		sprintf(errtext, "compute(%s) returned error %d\n", expr, error);
 		if (*errbuf == NULL) {
-			*errbuf = xstrdup(errtext);
+			*errbuf = strdup(errtext);
 		}
 		else {
-			*errbuf = (char *)xrealloc(*errbuf, strlen(*errbuf)+strlen(errtext)+1);
+			*errbuf = (char *)realloc(*errbuf, strlen(*errbuf)+strlen(errtext)+1);
 			strcat(*errbuf, errtext);
 		}
 	}

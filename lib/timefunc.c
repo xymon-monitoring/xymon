@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.7 2005-01-15 17:39:50 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.8 2005-01-20 10:45:44 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -127,12 +127,12 @@ int within_sla(char *l, char *tag, int defresult)
 	int starttime,endtime,curtime;
 
 	if (strlen(tag)) {
-		tagspec = (char *) xmalloc(strlen(tag)+2);
+		tagspec = (char *) malloc(strlen(tag)+2);
 		sprintf(tagspec, "%s=", tag);
 		p = strstr(l, tagspec);
 	}
 	else {
-		tagspec = xstrdup("");
+		tagspec = strdup("");
 		p = l;
 	}
 
@@ -208,9 +208,9 @@ int periodcoversnow(char *tag)
 
         if ((tag == NULL) || (*tag != '-')) return 1;
 
-	dayspec = (char *) xmalloc(strlen(tag)+1+12); /* Leave room for expanding 'W' and '*' */
-	starttime = (char *) xmalloc(strlen(tag)+1); 
-	endtime = (char *) xmalloc(strlen(tag)+1); 
+	dayspec = (char *) malloc(strlen(tag)+1+12); /* Leave room for expanding 'W' and '*' */
+	starttime = (char *) malloc(strlen(tag)+1); 
+	endtime = (char *) malloc(strlen(tag)+1); 
 
 	strcpy(dayspec, (tag+1));
 	for (p=dayspec; ((*p == 'W') || (*p == '*') || ((*p >= '0') && (*p <= '6'))); p++) ;

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.5 2005-01-19 21:46:58 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.6 2005-01-20 10:45:44 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -146,7 +146,7 @@ char *xgetenv(const char *name)
 		 * If we got a result, put it into the environment so it will stay there.
 		 * Allocate memory for this new environment string - this stays allocated.
 		 */
-		newstr = xmalloc(strlen(name) + strlen(result) + 2);
+		newstr = malloc(strlen(name) + strlen(result) + 2);
 		sprintf(newstr, "%s=%s", name, result);
 		putenv(newstr);
 
@@ -190,7 +190,7 @@ void loadenv(char *envfile)
 			grok_input(l);
 
 			if (strlen(l) && strchr(l, '=')) {
-				oneenv = xstrdup(expand_env(l));
+				oneenv = strdup(expand_env(l));
 				p = strchr(oneenv, '=');
 				if (*(p+1) == '"') {
 					/* Move string over the first '"' */
@@ -207,7 +207,7 @@ void loadenv(char *envfile)
 		if (getenv("MACHINE") == NULL && xgetenv("MACHINEDOTS")) {
 			sprintf(l, "MACHINE=%s", xgetenv("MACHINEDOTS"));
 			p = l; while ((p = strchr(p, '.')) != NULL) *p = ',';
-			oneenv = xstrdup(l);
+			oneenv = strdup(l);
 			putenv(oneenv);
 		}
 	}
@@ -222,7 +222,7 @@ char *getenv_default(char *envname, char *envdefault, char **buf)
 
 	val = getenv(envname);	/* Dont use xgetenv() here! */
 	if (!val) {
-		val = (char *)xmalloc(strlen(envname) + strlen(envdefault) + 2);
+		val = (char *)malloc(strlen(envname) + strlen(envdefault) + 2);
 		sprintf(val, "%s=%s", envname, envdefault);
 		putenv(val);
 		/* Dont free the string - it must be kept for the environment to work */
@@ -252,15 +252,15 @@ char *expand_env(char *s)
 	if ((depth == 0) && res) xfree(res);
 	depth++;
 
-	myxp = (envxp_t *)xmalloc(sizeof(envxp_t));
+	myxp = (envxp_t *)malloc(sizeof(envxp_t));
 	myxp->next = xps;
 	xps = myxp;
 
 	myxp->resultlen = 4096;
-	myxp->result = (char *)xmalloc(myxp->resultlen);
+	myxp->result = (char *)malloc(myxp->resultlen);
 	*(myxp->result) = '\0';
 
-	sCopy = xstrdup(s);
+	sCopy = strdup(s);
 	bot = sCopy;
 	do {
 		tstart = strchr(bot, '$');
@@ -268,7 +268,7 @@ char *expand_env(char *s)
 
 		if ((strlen(myxp->result) + strlen(bot) + 1) > myxp->resultlen) {
 			myxp->resultlen += strlen(bot) + 4096;
-			myxp->result = (char *)xrealloc(myxp->result, myxp->resultlen);
+			myxp->result = (char *)realloc(myxp->result, myxp->resultlen);
 		}
 		strcat(myxp->result, bot);
 
@@ -301,7 +301,7 @@ char *expand_env(char *s)
 			if (envval) {
 				if ((strlen(myxp->result) + strlen(envval) + 1) > myxp->resultlen) {
 					myxp->resultlen += strlen(envval) + 4096;
-					myxp->result = (char *)xrealloc(myxp->result, myxp->resultlen);
+					myxp->result = (char *)realloc(myxp->result, myxp->resultlen);
 				}
 				strcat(myxp->result, envval);
 			}

@@ -22,7 +22,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.14 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.15 2005-01-20 10:45:44 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -63,7 +63,7 @@ hobbitd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	}
 
 	key = ftok(xgetenv("BBHOME"), chnid);
-	newch = (hobbitd_channel_t *)xmalloc(sizeof(hobbitd_channel_t));
+	newch = (hobbitd_channel_t *)malloc(sizeof(hobbitd_channel_t));
 
 	newch->seq = 0;
 	newch->channelid = chnid;

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.191 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.192 2005-01-20 10:45:44 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -202,7 +202,7 @@ char *deptest_failed(testedhost_t *host, char *testname)
 
 	if (host->deptests == NULL) return NULL;
 
-	depcopy = xstrdup(host->deptests);
+	depcopy = strdup(host->deptests);
 	sprintf(depitem, "(%s:", testname);
 	p = strstr(depcopy, depitem);
 	if (p == NULL) { xfree(depcopy); return NULL; }
@@ -260,9 +260,9 @@ service_t *add_service(char *name, int port, int namelen, int toolid)
 	for (svc=svchead; (svc && (strcmp(svc->testname, name) != 0)); svc = svc->next);
 	if (svc) return svc;
 
-	svc = (service_t *) xmalloc(sizeof(service_t));
+	svc = (service_t *) malloc(sizeof(service_t));
 	svc->portnum = port;
-	svc->testname = xstrdup(name); 
+	svc->testname = strdup(name); 
 	svc->toolid = toolid;
 	svc->namelen = namelen;
 	svc->items = NULL;
@@ -301,7 +301,7 @@ void load_services(void)
 	xfree(netsvcs);
 
 	/* Save NONETPAGE env. var in ",test1,test2," format for easy and safe grepping */
-	nonetpage = (char *) xmalloc(strlen(xgetenv("NONETPAGE"))+3);
+	nonetpage = (char *) malloc(strlen(xgetenv("NONETPAGE"))+3);
 	sprintf(nonetpage, ",%s,", xgetenv("NONETPAGE"));
 	for (p=nonetpage; (*p); p++) if (*p == ' ') *p = ',';
 }
@@ -312,8 +312,8 @@ testedhost_t *init_testedhost(char *hostname, int okexpected)
 	testedhost_t *newhost;
 
 	hostcount++;
-	newhost = (testedhost_t *) xcalloc(1, sizeof(testedhost_t));
-	newhost->hostname = xstrdup(hostname);
+	newhost = (testedhost_t *) calloc(1, sizeof(testedhost_t));
+	newhost->hostname = strdup(hostname);
 	newhost->ip[0] = '\0';
 	newhost->hosttype = NULL;
 
@@ -360,7 +360,7 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *testspec
 	testitem_t *newtest;
 
 	testcount++;
-	newtest = (testitem_t *) xmalloc(sizeof(testitem_t));
+	newtest = (testitem_t *) malloc(sizeof(testitem_t));
 	newtest->host = host;
 	newtest->service = service;
 	newtest->dialup = dialuptest;
@@ -419,7 +419,7 @@ void load_tests(void)
 
 	/* Each network test tagged with NET:locationname */
 	if (strlen(location) > 0) {
-		routestring = (char *) xmalloc(strlen(location)+strlen("route_:")+1);
+		routestring = (char *) malloc(strlen(location)+strlen("route_:")+1);
 		sprintf(routestring, "route_%s:", location);
 	}
 
@@ -446,12 +446,12 @@ void load_tests(void)
 			newtest->next = modembanktest->items;
 			modembanktest->items = newtest;
 
-			newtest->privdata = (void *)xmalloc(sizeof(modembank_t));
+			newtest->privdata = (void *)malloc(sizeof(modembank_t));
 			newentry = (modembank_t *)newtest->privdata;
 			newentry->hostname = realname;
 			newentry->startip = IPtou32(ip1, ip2, ip3, ip4);
 			newentry->banksize = banksize;
-			newentry->responses = (int *) xmalloc(banksize * sizeof(int));
+			newentry->responses = (int *) malloc(banksize * sizeof(int));
 			for (i=0; i<banksize; i++) newentry->responses[i] = 0;
 
 			/* No more to do for modembanks */
@@ -490,7 +490,7 @@ void load_tests(void)
 
 		p = bbh_item(hwalk, BBH_LDAPLOGIN);
 		if (p) {
-			h->ldapuser = xstrdup(p);
+			h->ldapuser = strdup(p);
 			h->ldappasswd = (strchr(h->ldapuser, ':'));
 			if (h->ldappasswd) {
 				*h->ldappasswd = '\0';
@@ -500,7 +500,7 @@ void load_tests(void)
 
 		p = bbh_item(hwalk, BBH_DESCRIPTION);
 		if (p) {
-			h->hosttype = xstrdup(p);
+			h->hosttype = strdup(p);
 			p = strchr(h->hosttype, ':');
 			if (p) *p = '\0';
 		}
@@ -536,23 +536,23 @@ void load_tests(void)
 						char *ips;
 
 						/* Extra ping tests - save them for later */
-						h->extrapings = (extraping_t *)xmalloc(sizeof(extraping_t));
+						h->extrapings = (extraping_t *)malloc(sizeof(extraping_t));
 						h->extrapings->iplist = NULL;
 						if (argnmatch(p, "=worst,")) {
 							h->extrapings->matchtype = MULTIPING_WORST;
-							ips = xstrdup(p+7);
+							ips = strdup(p+7);
 						}
 						else if (argnmatch(p, "=best,")) {
 							h->extrapings->matchtype = MULTIPING_BEST;
-							ips = xstrdup(p+6);
+							ips = strdup(p+6);
 						}
 						else {
 							h->extrapings->matchtype = MULTIPING_BEST;
-							ips = xstrdup(p+1);
+							ips = strdup(p+1);
 						}
 
 						do {
-							ipping_t *newping = (ipping_t *)xmalloc(sizeof(ipping_t));
+							ipping_t *newping = (ipping_t *)malloc(sizeof(ipping_t));
 
 							newping->ip = ips;
 							newping->open = 0;
@@ -667,7 +667,7 @@ void load_tests(void)
 						}
 
 						if (specialport) {
-							specialname = (char *) xmalloc(strlen(s->testname)+10);
+							specialname = (char *) malloc(strlen(s->testname)+10);
 							sprintf(specialname, "%s_%d", s->testname, specialport);
 							s = add_service(specialname, specialport, strlen(s->testname), TOOL_CONTEST);
 							xfree(specialname);
@@ -1056,8 +1056,8 @@ int start_fping_service(service_t *service)
 	 * The output is then picked up by the finish_fping_service().
 	 */
 
-	fpingcmd = xstrdup(getenv_default("FPING", "fping", NULL));
-	fpingcmd = xrealloc(fpingcmd, strlen(fpingcmd)+5);
+	fpingcmd = strdup(getenv_default("FPING", "fping", NULL));
+	fpingcmd = realloc(fpingcmd, strlen(fpingcmd)+5);
 	strcat(fpingcmd, " -Ae");
 
 	sprintf(fpinglog, "%s/fping-stdout.%lu", xgetenv("BBTMP"), (unsigned long)getpid());
@@ -1190,7 +1190,7 @@ int finish_fping_service(service_t *service)
 				if (strcmp(t->host->ip, pingip) == 0) {
 					if (t->open) dprintf("More than one ping result for %s\n", pingip);
 					t->open = (strstr(l, "is alive") != NULL);
-					t->banner = xstrdup(l);
+					t->banner = strdup(l);
 					t->bannerbytes = strlen(l);
 				}
 
@@ -1200,7 +1200,7 @@ int finish_fping_service(service_t *service)
 						if (strcmp(walk->ip, pingip) == 0) {
 							if (t->open) dprintf("More than one ping result for %s\n", pingip);
 							walk->open = (strstr(l, "is alive") != NULL);
-							walk->banner = xstrdup(l);
+							walk->banner = strdup(l);
 							walk->bannerbytes = strlen(l);
 						}
 					}
@@ -1490,7 +1490,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 		char *nopagename;
 
 		/* Check if this service is a NOPAGENET service. */
-		nopagename = (char *) xmalloc(strlen(svcname)+3);
+		nopagename = (char *) malloc(strlen(svcname)+3);
 		sprintf(nopagename, ",%s,", svcname);
 		if (strstr(nonetpage, svcname) != NULL) color = COL_YELLOW;
 		xfree(nopagename);
@@ -1523,7 +1523,7 @@ void send_results(service_t *service, int failgoesclear)
 	char		causetext[1024];
 	char		*svcname;
 
-	svcname = xstrdup(service->testname);
+	svcname = strdup(service->testname);
 	if (service->namelen) svcname[service->namelen] = '\0';
 
 	dprintf("Sending results for service %s\n", svcname);
@@ -1738,7 +1738,7 @@ void send_rpcinfo_results(service_t *service, int failgoesclear)
 	char		*msgbuf;
 	char		causetext[1024];
 
-	msgbuf = (char *)xmalloc(4096);
+	msgbuf = (char *)malloc(4096);
 
 	for (t=service->items; (t); t = t->next) {
 		char *wantedrpcsvcs = NULL;
@@ -1749,7 +1749,7 @@ void send_rpcinfo_results(service_t *service, int failgoesclear)
 
 		color = decide_color(service, service->testname, t, failgoesclear, causetext);
 		p = strchr(t->testspec, '=');
-		if (p) wantedrpcsvcs = xstrdup(p+1);
+		if (p) wantedrpcsvcs = strdup(p+1);
 
 		if ((color == COL_GREEN) && t->banner && wantedrpcsvcs) {
 			char *rpcsvc, *aline;
@@ -1847,7 +1847,7 @@ void send_sslcert_status(testedhost_t *host)
 	char *certowner;
 
 	sslmsgsize = 4096;
-	sslmsg = (char *)xmalloc(sslmsgsize);
+	sslmsg = (char *)malloc(sslmsgsize);
 	*sslmsg = '\0';
 
 	for (s=svchead; (s); s = s->next) {
@@ -1877,7 +1877,7 @@ void send_sslcert_status(testedhost_t *host)
 
 				if ((strlen(msgline)+strlen(sslmsg) + strlen(t->certinfo)) > sslmsgsize) {
 					sslmsgsize += (4096 + strlen(t->certinfo) + strlen(msgline));
-					sslmsg = (char *)xrealloc(sslmsg, sslmsgsize);
+					sslmsg = (char *)realloc(sslmsg, sslmsgsize);
 				}
 				strcat(sslmsg, msgline);
 				strcat(sslmsg, t->certinfo);
@@ -1959,7 +1959,7 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--report=") || (strcmp(argv[argi], "--report") == 0)) {
 			char *p = strchr(argv[argi], '=');
 			if (p) {
-				egocolumn = xstrdup(p+1);
+				egocolumn = strdup(p+1);
 			}
 			else egocolumn = "bbtest";
 			timing = 1;
@@ -2014,13 +2014,13 @@ int main(int argc, char *argv[])
 		/* Options for HTTP tests */
 		else if (argnmatch(argv[argi], "--content=")) {
 			char *p = strchr(argv[argi], '=');
-			contenttestname = xstrdup(p+1);
+			contenttestname = strdup(p+1);
 		}
 
 		/* Options for SSL certificates */
 		else if (argnmatch(argv[argi], "--ssl=")) {
 			char *p = strchr(argv[argi], '=');
-			ssltestname = xstrdup(p+1);
+			ssltestname = strdup(p+1);
 		}
 		else if (strcmp(argv[argi], "--no-ssl") == 0) {
 			ssltestname = NULL;
@@ -2118,8 +2118,8 @@ int main(int argc, char *argv[])
 		}
 		else {
 			/* Must be a hostname */
-			if (selectedcount == 0) selectedhosts = (char **) xmalloc(argc*sizeof(char *));
-			selectedhosts[selectedcount++] = xstrdup(argv[argi]);
+			if (selectedcount == 0) selectedhosts = (char **) malloc(argc*sizeof(char *));
+			selectedhosts[selectedcount++] = strdup(argv[argi]);
 		}
 	}
 
@@ -2130,7 +2130,7 @@ int main(int argc, char *argv[])
 	/* Setup SEGV handler */
 	setup_signalhandler(egocolumn ? egocolumn : "bbtest");
 
-	if (xgetenv("BBLOCATION")) location = xstrdup(xgetenv("BBLOCATION"));
+	if (xgetenv("BBLOCATION")) location = strdup(xgetenv("BBLOCATION"));
 	if (pingcolumn && xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN")) {
 		failgoesclear = (strcmp(xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN"), "TRUE") == 0);
 	}
