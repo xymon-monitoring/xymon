@@ -14,7 +14,10 @@ messages to the BBDISPLAY server directly.
 
 bbproxy serves three purposes. First, it acts as a regular
 proxy server, allowing clients that cannot connect directly to 
-the BBDISPLAY or BBPAGER servers to send status messages.
+the BBDISPLAY or BBPAGER servers to send messages to the
+Big Brother servers. Although bbproxy is optimized for handling
+status messages, it will forward all types of messages, including
+notes- and data-messages.
 The standard Big Brother daemon,
 .I bbd(1)
 can also do this via the BBRELAY setting. However, bbproxy
