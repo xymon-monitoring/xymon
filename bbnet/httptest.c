@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.65 2004-08-19 11:47:24 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.66 2004-08-20 20:53:29 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -931,43 +931,3 @@ void add_http_test(testitem_t *t)
 					 sslopt, 0, httprequest, 
 					 httptest, tcp_http_data_callback, tcp_http_final_callback);
 }
-
-#ifdef STANDALONE
-testitem_t testitem;
-testedhost_t hostitem;
-
-void http_test_init(void)
-{
-	http_data_t *httptest;
-	cookielist_t *ck;
-
-	char bbreq[] = "cont;http://www.sslug.dk/;hswn";
-	// char bbreq[] = "cont;http://www.groklaw.net/;GROK";
-	// char bbreq[] = "cont;http://www.hswn.dk/;HSWN";
-
-	testitem.host = &hostitem;
-	testitem.testspec = bbreq;
-	strcpy(hostitem.ip, "0.0.0.0");
-	hostitem.testip = hostitem.dialup = hostitem.nosslcert = 0;
-
-	add_http_test(&testitem);
-
-	httptest = (http_data_t *)testitem.privdata;
-	printf("TCP connection goes to %s:%d\n", 
-		inet_ntoa(httptest->tcptest->addr.sin_addr), 
-		ntohs(httptest->tcptest->addr.sin_port));
-	printf("Request:\n%s\n", httptest->tcptest->sendtxt);
-}
-
-void http_test_show(void)
-{
-	http_data_t *httptest = (http_data_t *)testitem.privdata;
-
-	printf("httpstatus = %ld, open=%d, errcode=%d, parsestatus=%d\n", 
-		httptest->httpstatus, httptest->tcptest->open, httptest->tcptest->errcode, httptest->parsestatus);
-	printf("Response:\n");
-	if (httptest->headers) printf("%s\n", httptest->headers); else printf("(no headers)\n");
-	if (httptest->output) printf("%s", httptest->output);
-}
-#endif
-
