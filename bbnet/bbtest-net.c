@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.168 2004-08-28 11:47:33 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.169 2004-08-29 07:04:13 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1472,15 +1472,26 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 						tcptest_t *tcptest = (tcptest_t *)test->privdata;
 
 						strcpy(cause, "Service unavailable");
-						switch (tcptest->errcode) {
-						  case CONTEST_ETIMEOUT: strcat(cause, " (connect timeout)"); break;
-						  case CONTEST_ENOCONN : strcat(cause, " (");
-									 strcat(cause, strerror(tcptest->connres));
-									 strcat(cause, ")");
-									 break;
-						  case CONTEST_EDNS    : strcat(cause, " (DNS error)"); break;
-						  case CONTEST_EIO     : strcat(cause, " (I/O error)"); break;
-						  case CONTEST_ESSL    : strcat(cause, " (SSL error)"); break;
+						if (tcptest) {
+							switch (tcptest->errcode) {
+							  case CONTEST_ETIMEOUT: 
+								strcat(cause, " (connect timeout)"); 
+								break;
+							  case CONTEST_ENOCONN : 
+								strcat(cause, " (");
+								strcat(cause, strerror(tcptest->connres));
+								strcat(cause, ")");
+								break;
+							  case CONTEST_EDNS    : 
+								strcat(cause, " (DNS error)"); 
+								break;
+							  case CONTEST_EIO     : 
+								strcat(cause, " (I/O error)"); 
+								break;
+							  case CONTEST_ESSL    : 
+								strcat(cause, " (SSL error)"); 
+								break;
+							}
 						}
 						color = COL_RED; countasdown = 1;
 					}
