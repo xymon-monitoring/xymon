@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.43 2005-02-22 14:35:38 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.44 2005-02-22 16:53:39 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -291,6 +291,7 @@ int main(int argc, char *argv[])
 
 			logfd = fopen("/dev/null", "w");
 			tracefd = stdout;
+			testonly = 1;
 
 			load_alertconfig(configfn, alertcolors, alertinterval);
 			send_alert(awalk, logfd);
