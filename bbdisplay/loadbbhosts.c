@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.11 2004-12-17 21:52:43 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.12 2004-12-17 22:17:45 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -700,9 +700,11 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				}
 
 				/* Look for the stuff we want */
-				if (strcmp(item, "prefer") == 0) 
+				if (strcasecmp(item, "prefer") == 0) 
 					prefer = 1;
-				else if (argnmatch(item, hosttag)) {
+				else if (strcasecmp(item, "nodisp") == 0) 
+					nodisp = 1;
+				else if (strncasecmp(item, hosttag, strlen(hosttag))) {
 					targetpagelist[targetpagecount++] = strdup(item+strlen(hosttag));
 				}
 
