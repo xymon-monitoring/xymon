@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.33 2005-01-22 08:49:37 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.34 2005-01-24 17:27:26 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--channel=")) {
 			char *cn = strchr(argv[argi], '=') + 1;
 
-			for (cnid = 0; (channelnames[cnid] && strcmp(channelnames[cnid], cn)); cnid++) ;
+			for (cnid = C_STATUS; (channelnames[cnid] && strcmp(channelnames[cnid], cn)); cnid++) ;
 			if (channelnames[cnid] == NULL) cnid = -1;
 		}
 		else if (argnmatch(argv[argi], "--daemon")) {
