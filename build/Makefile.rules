@@ -122,6 +122,6 @@ setup: install
 	@echo ""
 	@echo "For availability reports, change the group-ID of ${BBHOME}/www/rep to your webservers group-ID"
 	@echo ""
-	@echo "To start bbgend, run '${BBHOME}/bb/bin/startbb.sh start'"
+	@echo "To start bbgend, as the $(BBUSER) user run '${BBHOME}/bb/bin/startbb.sh start'"
 	@echo "To view the BB webpages, go to http://${BBHOSTNAME}/bb/"
 
