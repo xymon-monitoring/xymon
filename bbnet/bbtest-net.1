@@ -136,6 +136,18 @@ fping.sh uses, see
 .IP --noping
 Disable the connectivity test.
 
+.IP "--trace"
+.IP "--notrace"
+Enable/disable the use of traceroute when a ping-test fails.
+Performing a traceroute for failed ping tests is a slow
+operation, so the default is not to do any traceroute, unless
+it is requested on a per-host basis via the "trace" tag in the 
+.I bb-hosts(5) 
+entry for each host. The "--trace" option changes this, so 
+the default becomes to run traceroute on all hosts where
+the ping test fails; you can then disable it on specific 
+hosts by putting a "notrace" tag on the host-entry.
+
 .SH OPTIONS FOR THE SIMPLE TCP SERVICES
 .IP --checkresponse
 When testing FTP, SSH, SMTP, POP-2, POP-3, IMAP, NNTP and rsync
@@ -250,9 +262,13 @@ can explain how to get the OpenLDAP library to support it. This method was never
 formally described in an RFC, and implementations of it are non-standard.
 
 For a discussion of the various ways of running encrypted ldap, see
+.br
 http://www.openldap.org/lists/openldap-software/200305/msg00079.html
+.br
 http://www.openldap.org/lists/openldap-software/200305/msg00084.html
+.br
 http://www.openldap.org/lists/openldap-software/200201/msg00042.html
+.br
 http://www.openldap.org/lists/openldap-software/200206/msg00387.html
 
 When testing LDAP URI's, all of the communications are handled 
@@ -381,10 +397,16 @@ the "dns" service.
 Location of the dig(1) utility. Used by bbtest-net when checking 
 the "dig" service.
 
+.IP TRACEROUTE
+Location of the traceroute(8) utility, or an equivalent tool e.g.
+.I mtr(8).
+Optionally used when a connectivity test fails to pinpoint the
+network location that is causing the failure.
+
 .SH FILES
-.IP $HOME/.netrc - authentication data for password-protected webs
+.IP "~/.netrc - authentication data for password-protected webs"
 bbtest-net uses the CURL library, which supports the use of a
-~/.netrc file. If you have password-protected sites, you can put 
+$HOME/.netrc file. If you have password-protected sites, you can put 
 the username and password into the ".netrc" file in the bb users' 
 home-directory. See 
 .I curl(1)
@@ -399,7 +421,7 @@ use for the system-name in Big Brother.
 This works for web-sites that use the "Basic" authentication
 scheme in HTTP.
 .sp
-.IP $BBTMP/*.status - test status summary
+.IP "$BBTMP/*.status - test status summary"
 Each time bbtest-net runs, if any tests fail (i.e. they result
 in a red status) then they will be listed in a file name
 TESTNAME.[LOCATION].status. The LOCATION part may be null. This
