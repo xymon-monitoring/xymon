@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.80 2004-12-10 12:53:36 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.81 2004-12-12 21:52:21 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -57,7 +57,6 @@ static char rcsid[] = "$Id: hobbitd.c,v 1.80 2004-12-10 12:53:36 henrik Exp $";
 #include "libbbgen.h"
 
 #include "bbgend_ipc.h"
-#include "loadhosts.h"
 
 /* This holds the names of the tests we have seen reports for */
 typedef struct bbgend_testlist_t {
