@@ -23,6 +23,58 @@ else
 		TARGET="bbgend"
 	fi
 
+	echo "Checking pre-requisites for bbgen/bbgend build"
+	echo ""
+
+	. build/ssl.sh
+	echo "bbgen can use the OpenSSL library to test SSL-enabled services"
+	echo "like POP3S, IMAPS, NNTPS and TELNETS. If you have the OpenSSL"
+	echo "library installed, I recommend that you enable this."
+	echo ""
+	echo "Do you want to be able to test SSL-enabled services (y) ?"
+	read ENABLESSL
+	if test "$ENABLESSL" = "" -o "$ENABLESSL" = "y"
+	then
+		SSLDEF="-DBBGEN_SSL"
+	else
+		SSLDEF=""
+	fi
+	echo ""
+
+	. build/ldap.sh
+	echo "bbgen can use a LDAP client library to test LDAP servers."
+	echo "If you have e.g. the OpenLDAP libraries on your system (it is"
+	echo "standard e.g. on Solaris 8), it is recommended that you"
+	echo "enable this."
+	echo ""
+	echo "Do you want to be able to test LDAP servers (y) ?"
+	read ENABLELDAP
+	if test "$ENABLELDAP" = "" -o "$ENABLELDAP" = "y"
+	then
+		echo "Enable experimental support for LDAP/SSL (OpenLDAP 2.x only) (y) ?"
+		read ENABLELDAPSSL
+		if test "$ENABLELDAPSSL" = "" -o "$ENABLELDAPSSL" = "y"
+		then
+			LDAPDEF="-DBBGEN_LDAP -DBBGEN_LDAP_USESTARTTLS"
+		else
+			LDAPDEF="-DBBGEN_LDAP"
+		fi
+	else
+		LDAPDEF=""
+	fi
+	echo ""
+
+	if test "$TARGET" = "bbgend"
+	then
+		. build/rrd.sh
+		echo ""
+		. build/pcre.sh
+		echo ""
+	fi
+
+	echo "All pre-requisites passed."
+	echo ""
+
 	if test "$TARGET" != "bbgend"
 	then
 		echo "Setting up for use with standard Big Brother"
@@ -182,6 +234,13 @@ else
 		MAXMSG=32768
 	fi
 
+	echo "Where should I install the bbgen man-pages (/usr/local/man) ?"
+	read MANROOT
+	if test -z "$MANROOT"
+	then
+		MANROOT=/usr/local/man
+	fi
+
 	echo "The bbgen history CGI replacement by default displays a 1-day"
 	echo "graph of the history. It can also show a 1-week, 4-weeks and"
 	echo "1-year graphs, or any combination of these."
@@ -259,115 +318,6 @@ else
 	fi
 	echo ""
 
-	OSSLINC=""
-	OSSLLIB=""
-	for DIR in /usr/local/ssl /usr/local /usr
-	do
-		if test -d $DIR/include/openssl
-		then
-			OSSLINC=$DIR/include
-		fi
-
-		if test -f $DIR/lib/libcrypto.so
-		then
-			OSSLLIB=$DIR/lib
-		fi
-		if test -f $DIR/lib/libcrypto.a
-		then
-			OSSLLIB=$DIR/lib
-		fi
-	done
-
-	if test "$OSSLINC" != "" -a "$OSSLLIB" != ""
-	then
-		echo "Found OpenSSL include files in $OSSLINC"
-		echo "Found OpenSSL libraries in $OSSLLIB"
-	else
-		echo "*************************"
-		echo "*** OpenSSL not found ***"
-		echo "*************************"
-	fi
-	echo "bbgen can use the OpenSSL library to test SSL-enabled services"
-	echo "like POP3S, IMAPS, NNTPS and TELNETS. If you have the OpenSSL"
-	echo "library installed, I recommend that you enable this."
-	echo ""
-	echo "Do you want to be able to test SSL-enabled services (y) ?"
-	read ENABLESSL
-	if test "$ENABLESSL" = "" -o "$ENABLESSL" = "y"
-	then
-		echo "NB: You must define services in BBNETSVCS (BBHOME/etc/bbdef.sh) also."
-		SSLDEF="-DBBGEN_SSL"
-	else
-		SSLDEF=""
-	fi
-	echo ""
-
-	for DIR in /usr/local /usr
-	do
-		if test -f $DIR/include/ldap.h
-		then
-			LDAPINC=$DIR/include
-		fi
-
-		if test -f $DIR/lib/libldap.so
-		then
-			LDAPLIB=$DIR/lib
-		fi
-		if test -f $DIR/lib/libldap.a
-		then
-			LDAPLIB=$DIR/lib
-		fi
-	done
-	#
-	# Some systems require liblber also
-	#
-	if test -f $LDAPLIB/liblber.a
-	then
-		LDAPLBER=-llber
-	fi
-	if test -f $LDAPLIB/liblber.so
-	then
-		LDAPLBER=-llber
-	fi
-
-	if test "$LDAPINC" != "" -a "$LDAPLIB" != ""
-	then
-		echo "Found LDAP include files in $LDAPINC"
-		echo "Found LDAP libraries in $LDAPLIB"
-	else
-		echo "******************************"
-		echo "*** LDAP library not found ***"
-		echo "******************************"
-	fi
-	echo "bbgen can use a LDAP client library to test LDAP servers."
-	echo "If you have e.g. the OpenLDAP libraries on your system (it is"
-	echo "standard e.g. on Solaris 8), it is recommended that you"
-	echo "enable this."
-	echo ""
-	echo "Do you want to be able to test LDAP servers (y) ?"
-	read ENABLELDAP
-	if test "$ENABLELDAP" = "" -o "$ENABLELDAP" = "y"
-	then
-		echo "Enable experimental support for LDAP/SSL (OpenLDAP 2.x only) (y) ?"
-		read ENABLELDAPSSL
-		if test "$ENABLELDAPSSL" = "" -o "$ENABLELDAPSSL" = "y"
-		then
-			LDAPDEF="-DBBGEN_LDAP -DBBGEN_LDAP_USESTARTTLS"
-		else
-			LDAPDEF="-DBBGEN_LDAP"
-		fi
-	else
-		LDAPDEF=""
-	fi
-	echo ""
-
-	echo "Where should I install the bbgen man-pages (/usr/local/man) ?"
-	read MANROOT
-	if test -z "$MANROOT"
-	then
-		MANROOT=/usr/local/man
-	fi
-
 	echo "# Toplevel Makefile for bbgen"     > Makefile
 
 	echo "BUILDTOPDIR=\`pwd\`"               >>Makefile
@@ -409,6 +359,12 @@ else
 		echo "BBHOSTURL = $BBHOSTURL"    >>Makefile
 		echo "# URL for BB CGIs"         >>Makefile
 		echo "BBCGIURL = $BBCGIURL"      >>Makefile
+		echo "# RRDtool settings"        >>Makefile
+		echo "RRDINCDIR = -I$RRDINC"     >>Makefile
+		echo "RRDLIBS = -L$RRDLIB -lrrd" >>Makefile
+		echo "# PCRE settings"           >>Makefile
+		echo "PCREINCDIR = -I$PCREINC"   >>Makefile
+		echo "PCRELIBS = -L$PCRELIB -lpcre" >>Makefile
 	fi
 	echo "#"                                 >>Makefile
 	echo "# OpenSSL settings"                >>Makefile
