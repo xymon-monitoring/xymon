@@ -1,19 +1,19 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother bb-hosts file grep'er                                          */
+/* Hobbit bb-hosts file grep'er                                               */
 /*                                                                            */
 /* This tool will pick out the hosts from a bb-hosts file that has one of the */
 /* tags given on the command line. This allows an extension script to deal    */
 /* with only the relevant parts of the bb-hosts file, instead of having to    */
 /* parse the entire file.                                                     */
 /*                                                                            */
-/* Copyright (C) 2003 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2003-2005 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.25 2005-03-25 07:40:15 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.26 2005-03-25 21:09:39 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>

@@ -1,17 +1,17 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother application launcher.                                          */
+/* Hobbit application launcher.                                               */
 /*                                                                            */
-/* This is used to launch a single BB application, with the environment that  */
-/* would normally be established by hobbitlaunch.                             */
+/* This is used to launch a single Hobbit application, with the environment   */
+/* that would normally be established by hobbitlaunch.                        */
 /*                                                                            */
-/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2004-2005 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcmd.c,v 1.7 2005-03-06 10:40:49 henrik Exp $";
+static char rcsid[] = "$Id: bbcmd.c,v 1.8 2005-03-25 21:09:39 henrik Exp $";
 
 #include <sys/types.h>
 #include <string.h>
