@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.21 2004-09-21 20:04:40 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.22 2004-09-21 20:21:14 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -38,8 +38,6 @@ static char rcsid[] = "$Id: bbproxy.c,v 1.21 2004-09-21 20:04:40 henrik Exp $";
 hostlist_t      *hosthead = NULL;
 link_t          *linkhead = NULL;
 link_t  null_link = { "", "", "", NULL };
-
-static const char *VERSION_STRING = "1.0";
 
 enum phase_t {
 	P_IDLE, 
@@ -303,11 +301,11 @@ int main(int argc, char *argv[])
 			debug = 1;
 		}
 		else if (strcmp(argv[opt], "--version") == 0) {
-			printf("bbproxy version %s\n", VERSION_STRING);
+			printf("bbproxy version %s\n", VERSION);
 			return 0;
 		}
 		else if (strcmp(argv[opt], "--help") == 0) {
-			printf("bbproxy version %s\n", VERSION_STRING);
+			printf("bbproxy version %s\n", VERSION);
 			printf("\nOptions:\n");
 			printf("\t--listen=IP[:port]          : Listen address and portnumber\n");
 			printf("\t--bbdisplay=IP[:port]       : BBDISPLAY server address and portnumber\n");
@@ -380,7 +378,7 @@ int main(int argc, char *argv[])
 	/* Redirect logging to the logfile, if requested */
 	sighup_handler(0);
 
-	errprintf("bbproxy version %s starting\n", VERSION_STRING);
+	errprintf("bbproxy version %s starting\n", VERSION);
 	errprintf("Listening on %s port %d\n", locaddr, locport);
 	errprintf("Sending to BBDISPLAY at %s port %d\n", bbdispip, bbdispport);
 	errprintf("Sending to BBPAGER at %s port %d\n", bbpagerip, bbpagerport);
