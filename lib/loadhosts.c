@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.10 2004-12-13 21:58:20 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.11 2004-12-13 23:07:49 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -26,6 +26,57 @@ static char rcsid[] = "$Id: loadhosts.c,v 1.10 2004-12-13 21:58:20 henrik Exp $"
 
 static pagelist_t *pghead = NULL;
 static namelist_t *namehead = NULL;
+
+static const char *bbh_item_key[BBH_LAST];
+
+static void bbh_item_list_setup(void)
+{
+	static int setupdone = 0;
+	int i;
+
+	if (setupdone) return;
+
+	/* Doing it this way makes sure the index matches the value */
+	setupdone = 1;
+	memset(bbh_item_key, 0, sizeof(bbh_item_key));
+	bbh_item_key[BBH_NET] = "NET:";
+	bbh_item_key[BBH_DISPLAYNAME] = "NAME:";
+	bbh_item_key[BBH_CLIENTALIAS] = "CLIENT:";
+	bbh_item_key[BBH_COMMENT] = "COMMENT:";
+	bbh_item_key[BBH_DESCRIPTION] = "DESCR:";
+	bbh_item_key[BBH_NK] = "NK:";
+	bbh_item_key[BBH_NKTIME] = "NKTIME=";
+	bbh_item_key[BBH_LARRD] = "LARRD:";
+	bbh_item_key[BBH_WML] = "WML:";
+	bbh_item_key[BBH_NOPROPRED] = "NOPROPRED:";
+	bbh_item_key[BBH_NOPROPYELLOW] = "NOPROPYELLOW:";
+	bbh_item_key[BBH_NOPROPPURPLE] = "NOPROPPURPLE:";
+	bbh_item_key[BBH_NOPROPACK] = "NOPROPACK:";
+	bbh_item_key[BBH_REPORTTIME] = "REPORTTIME=";
+	bbh_item_key[BBH_WARNPCT] = "WARNPCT:";
+	bbh_item_key[BBH_DOWNTIME] = "DOWNTIME=";
+	bbh_item_key[BBH_SSLDAYS] = "ssldays=";
+	bbh_item_key[BBH_DEPENDS] = "depends=";
+	bbh_item_key[BBH_FLAG_NODISP] = "nodisp";
+	bbh_item_key[BBH_FLAG_NOBB2] = "nobb2";
+	bbh_item_key[BBH_FLAG_PREFER] = "prefer";
+	bbh_item_key[BBH_FLAG_NOSSLCERT] = "nosslcert";
+	bbh_item_key[BBH_FLAG_TRACE] = "trace";
+	bbh_item_key[BBH_FLAG_NOTRACE] = "notrace";
+	bbh_item_key[BBH_FLAG_NOCONN] = "noconn";
+	bbh_item_key[BBH_FLAG_NOPING] = "noping";
+	bbh_item_key[BBH_FLAG_DIALUP] = "dialup";
+	bbh_item_key[BBH_FLAG_TESTIP] = "testip";
+	bbh_item_key[BBH_FLAG_BBDISPLAY] = "BBDISPLAY";
+	bbh_item_key[BBH_FLAG_BBNET] = "BBNET";
+	bbh_item_key[BBH_FLAG_BBPAGER] = "BBPAGER";
+
+	i = 0; while (bbh_item_key[i]) i++;
+	if (i != BBH_RAW) {
+		errprintf("ERROR: Setup failure in bbh_item_key position %d\n", i);
+	}
+}
+
 
 static int pagematch(pagelist_t *pg, char *name)
 {
@@ -41,54 +92,12 @@ static int pagematch(pagelist_t *pg, char *name)
 
 static char *bbh_find_item(namelist_t *host, enum bbh_item_t item)
 {
-	static const char *bbh_item_key[BBH_LAST];
-	static int setupdone = 0;
 	int i;
 
-	if (!setupdone) {
-		/* Doing it this way makes sure the index matches the value */
-		setupdone = 1;
-		memset(bbh_item_key, 0, sizeof(bbh_item_key));
-		bbh_item_key[BBH_NET] = "NET:";
-		bbh_item_key[BBH_DISPLAYNAME] = "NAME:";
-		bbh_item_key[BBH_CLIENTALIAS] = "CLIENT:";
-		bbh_item_key[BBH_COMMENT] = "COMMENT:";
-		bbh_item_key[BBH_DESCRIPTION] = "DESCR:";
-		bbh_item_key[BBH_NK] = "NK:";
-		bbh_item_key[BBH_NKTIME] = "NKTIME=";
-		bbh_item_key[BBH_LARRD] = "LARRD:";
-		bbh_item_key[BBH_WML] = "WML:";
-		bbh_item_key[BBH_NOPROPRED] = "NOPROPRED:";
-		bbh_item_key[BBH_NOPROPYELLOW] = "NOPROPYELLOW:";
-		bbh_item_key[BBH_NOPROPPURPLE] = "NOPROPPURPLE:";
-		bbh_item_key[BBH_NOPROPACK] = "NOPROPACK:";
-		bbh_item_key[BBH_REPORTTIME] = "REPORTTIME=";
-		bbh_item_key[BBH_WARNPCT] = "WARNPCT:";
-		bbh_item_key[BBH_DOWNTIME] = "DOWNTIME=";
-		bbh_item_key[BBH_SSLDAYS] = "ssldays=";
-		bbh_item_key[BBH_DEPENDS] = "depends=";
-		bbh_item_key[BBH_FLAG_NODISP] = "nodisp";
-		bbh_item_key[BBH_FLAG_NOBB2] = "nobb2";
-		bbh_item_key[BBH_FLAG_PREFER] = "prefer";
-		bbh_item_key[BBH_FLAG_NOSSLCERT] = "nosslcert";
-		bbh_item_key[BBH_FLAG_TRACE] = "trace";
-		bbh_item_key[BBH_FLAG_NOTRACE] = "notrace";
-		bbh_item_key[BBH_FLAG_NOCONN] = "noconn";
-		bbh_item_key[BBH_FLAG_NOPING] = "noping";
-		bbh_item_key[BBH_FLAG_DIALUP] = "dialup";
-		bbh_item_key[BBH_FLAG_BBDISPLAY] = "BBDISPLAY";
-		bbh_item_key[BBH_FLAG_BBNET] = "BBNET";
-		bbh_item_key[BBH_FLAG_BBPAGER] = "BBPAGER";
-
-		i = 0; while (bbh_item_key[i]) i++;
-		if (i != BBH_RAW) {
-			errprintf("ERROR: Setup failure in bbh_item_key position %d\n", i);
-		}
-	}
-
+	bbh_item_list_setup();
 	i = 0;
 	while (host->elems[i] && strncmp(host->elems[i], bbh_item_key[item], strlen(bbh_item_key[item]))) i++;
-	return host->elems[i];
+	return (host->elems[i] ? (host->elems[i] + strlen(bbh_item_key[item])) : NULL);
 }
 
 namelist_t *load_hostnames(char *bbhostsfn, int fqdn)
@@ -373,6 +382,17 @@ char *bbh_item_walk(namelist_t *host)
 	return result;
 }
 
+int bbh_item_idx(char *value)
+{
+	int i;
+
+	bbh_item_list_setup();
+	i = 0;
+	while (bbh_item_key[i] && strncmp(bbh_item_key[i], value, strlen(bbh_item_key[i]))) i++;
+	return (bbh_item_key[i] ? i : -1);
+}
+
+
 #ifdef STANDALONE
 
 int main(int argc, char *argv[])
@@ -401,6 +421,8 @@ int main(int argc, char *argv[])
 		val = bbh_item(h, BBH_NET);
 		if (val) printf("\tBBH_NET is %s\n", val);
 	}
+
+	return 0;
 }
 
 #endif

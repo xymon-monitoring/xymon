@@ -39,6 +39,7 @@ enum bbh_item_t {
 	BBH_FLAG_NOCONN,
 	BBH_FLAG_NOPING,
 	BBH_FLAG_DIALUP,
+	BBH_FLAG_TESTIP,
 	BBH_FLAG_BBDISPLAY,
 	BBH_FLAG_BBNET,
 	BBH_FLAG_BBPAGER,
@@ -82,6 +83,7 @@ extern char *knownhost(char *filename, char *hostip, int ghosthandling, int *may
 extern namelist_t *hostinfo(char *hostname);
 extern char *bbh_item(namelist_t *host, enum bbh_item_t item);
 extern char *bbh_item_walk(namelist_t *host);
+extern int bbh_item_idx(char *value);
 
 #endif
 
