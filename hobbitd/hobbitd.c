@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.123 2005-03-04 08:19:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.124 2005-03-04 08:33:41 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -2485,15 +2485,17 @@ int main(int argc, char *argv[])
 	}
 
 	/* Save PID */
-	FILE *fd = fopen(pidfile, "w");
-	if (fd) {
-		if (fprintf(fd, "%d\n", (int)getpid()) <= 0) {
-			errprintf("Error writing PID file %s: %s\n", pidfile, strerror(errno));
+	{
+		FILE *fd = fopen(pidfile, "w");
+		if (fd) {
+			if (fprintf(fd, "%d\n", (int)getpid()) <= 0) {
+				errprintf("Error writing PID file %s: %s\n", pidfile, strerror(errno));
+			}
+			fclose(fd);
 		}
-		fclose(fd);
-	}
-	else {
-		errprintf("Cannot open PID file %s: %s\n", pidfile, strerror(errno));
+		else {
+			errprintf("Cannot open PID file %s: %s\n", pidfile, strerror(errno));
+		}
 	}
 
 	errprintf("Setting up signal handlers\n");
