@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.110 2003-09-05 17:22:05 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.111 2003-09-07 07:21:36 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -94,6 +94,85 @@ int		testuntagged = 0;
 time_t		frequenttestlimit = 1800;	/* Interval (seconds) when failing hosts are retried frequently */
 int		checktcpresponse = 0;
 int		fqdn = 1;
+
+void dump_hostlist(void)
+{
+#ifdef DEBUG
+	testedhost_t *walk;
+
+	for (walk = testhosthead; (walk); walk = walk->next) {
+		printf("Hostname: %s\n", textornull(walk->hostname));
+		printf("\tIP           : %s\n", textornull(walk->ip));
+		printf("\tconntimeout  : %d\n", walk->conntimeout);
+		printf("\ttimeout      : %d\n", walk->timeout);
+
+		printf("\tFlags        :");
+		if (walk->testip) printf(" testip");
+		if (walk->dialup) printf(" dialup");
+		if (walk->nosslcert) printf(" nosslcert");
+		if (walk->dodns) printf(" dodns");
+		if (walk->dnserror) printf(" dnserror");
+		if (walk->okexpected) printf(" okexpected");
+		if (walk->repeattest) printf(" repeattest");
+		if (walk->noconn) printf(" noconn");
+		if (walk->noping) printf(" noping");
+		printf("\n");
+
+		printf("\tbadconn      : %d:%d:%d\n", walk->badconn[0], walk->badconn[1], walk->badconn[2]);
+		printf("\tdowncount    : %d started %s", walk->downcount, ctime(&walk->downstart));
+		printf("\trouterdeps   : %s\n", textornull(walk->routerdeps));
+		printf("\tdeprouterdown: %s\n", (walk->deprouterdown ? textornull(walk->deprouterdown->hostname) : ""));
+		printf("\tldapauth     : '%s' '%s'\n", textornull(walk->ldapuser), textornull(walk->ldappasswd));
+		printf("\tSSL alerts   : %d:%d\n", walk->sslwarndays, walk->sslalarmdays);
+		printf("\n");
+	}
+#endif
+}
+void dump_testitems(void)
+{
+#ifdef DEBUG
+	service_t *swalk;
+	testitem_t *iwalk;
+
+	for (swalk = svchead; (swalk); swalk = swalk->next) {
+		printf("Service %s, port %d, toolid %d\n", swalk->testname, swalk->portnum, swalk->toolid);
+
+		for (iwalk = swalk->items; (iwalk); iwalk = iwalk->next) {
+			if (swalk == modembanktest) {
+				modembank_t *mentry;
+				int i;
+
+				mentry = iwalk->privdata;
+				printf("\tModembank   : %s\n", textornull(mentry->hostname));
+				printf("\tStart-IP    : %s\n", u32toIP(mentry->startip));
+				printf("\tBanksize    : %d\n", mentry->banksize);
+				printf("\tOpen        :");
+				for (i=0; i<mentry->banksize; i++) printf(" %d", mentry->responses[i]);
+				printf("\n");
+			}
+			else {
+				printf("\tHost        : %s\n", textornull(iwalk->host->hostname));
+				printf("\ttestspec    : %s\n", textornull(iwalk->testspec));
+				printf("\tFlags       :");
+				if (iwalk->dialup) printf(" dialup");
+				if (iwalk->reverse) printf(" reverse");
+				if (iwalk->silenttest) printf(" silenttest");
+				if (iwalk->alwaystrue) printf(" alwaystrue");
+				printf("\n");
+				printf("\tOpen        : %d\n", iwalk->open);
+				printf("\tBanner      : %s\n", textornull(iwalk->banner));
+				printf("\tcertinfo    : %s\n", textornull(iwalk->certinfo));
+				printf("\tDuration    : %ld.%06ld\n", iwalk->duration.tv_sec, iwalk->duration.tv_usec);
+				printf("\tbadtest     : %d:%d:%d\n", iwalk->badtest[0], iwalk->badtest[1], iwalk->badtest[2]);
+				printf("\tdowncount    : %d started %s", iwalk->downcount, ctime(&iwalk->downstart));
+				printf("\n");
+			}
+		}
+
+		printf("\n");
+	}
+#endif
+}
 
 testitem_t *find_test(char *hostname, char *testname)
 {
@@ -1646,6 +1725,7 @@ int main(int argc, char *argv[])
 	char *pingcolumn = "conn";
 	char *egocolumn = NULL;
 	int failgoesclear = 0;		/* IPTEST_2_CLEAR_ON_FAILED_CONN */
+	int dumpdata = 0;
 
 	/* Setup SEGV handler */
 	setup_signalhandler("bbtest");
@@ -1680,6 +1760,18 @@ int main(int argc, char *argv[])
 
 		/* Debugging options */
 		else if (strcmp(argv[argi], "--debug") == 0) {
+			debug = 1;
+		}
+		else if (argnmatch(argv[argi], "--dump")) {
+			char *p = strchr(argv[argi], '=');
+
+			if (p) {
+				if (strcmp(p, "=before") == 0) dumpdata = 1;
+				else if (strcmp(p, "=after") == 0) dumpdata = 2;
+				else dumpdata = 3;
+			}
+			else dumpdata = 2;
+
 			debug = 1;
 		}
 		else if (strcmp(argv[argi], "--no-update") == 0) {
@@ -1790,6 +1882,7 @@ int main(int argc, char *argv[])
 			printf("    --follow[=N]                : Follow redirects for N levels (default: N=3).\n");
 			printf("\nDebugging options:\n");
 			printf("    --debug                     : Output debugging information\n");
+			printf("    --dump[=before|=after|=all] : Dump internal memory structures before/after tests run\n");
 			printf("    --no-update                 : Send status messages to stdout instead of to bbd\n");
 			printf("    --log=FILENAME              : Output trace of HTTP tests to a file.\n");
 			printf("    --timing                    : Trace the amount of time spent on each series of tests\n");
@@ -1839,6 +1932,8 @@ int main(int argc, char *argv[])
 
 	dns_resolve();
 	add_timestamp("DNS lookups completed");
+
+	if (dumpdata & 1) { dump_hostlist(); dump_testitems(); }
 
 	/* Ping checks first */
 	if (pingtest && pingtest->items) {
@@ -2015,6 +2110,8 @@ int main(int argc, char *argv[])
 	shutdown_ldap_library();
 	shutdown_http_library();
 	add_timestamp("bbtest-net completed");
+
+	if (dumpdata & 2) { dump_hostlist(); dump_testitems(); }
 
 	/* Tell about us */
 	if (egocolumn) {
