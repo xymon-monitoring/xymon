@@ -8,8 +8,8 @@ DNSLIB = -L./c-ares-1.2.0 -lcares
 
 CFLAGS += -DMAXMSG=$(MAXMSG) -DBBDPORTNUMBER=$(BBPORT)
 
-PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bbdigest bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi bb-findhost.cgi bb-csvinfo.cgi bb bbproxy
-CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh bb-findhost.sh bb-csvinfo.sh bbmessage.cgi
+PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bbdigest bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi bb-findhost.cgi bb-csvinfo.cgi bb-hostsvc.cgi bb bbproxy
+CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh bb-findhost.sh bb-csvinfo.sh bbmessage.cgi bb-hostsvc.sh bb-histlog.sh
 EXTENSIONS = bbcombotest bbretest-net.sh
 HTMLPAGES = bb-findhost.html
 MAN1PAGES = bbgen.1 bbtest-net.1 bbhostgrep.1 bbhostshow.1 bbdigest.1 bb-rep.cgi.1 bb-replog.cgi.1 bb-hist.cgi.1 bb-snapshot.cgi.1 bb-eventlog.cgi.1 bbcombotest.1 bbretest-net.sh.1 bb-findhost.cgi.1 bb-csvinfo.cgi.1 bb.1 bbmessage.cgi.1 bbproxy.1
@@ -43,6 +43,7 @@ FINDHOSTOBJS = bb-findhost.o loadhosts.o debug.o util.o
 CSVINFOOBJS = bb-csvinfo.o debug.o util.o
 MSGOBJS = sendmsg-std.o debug.o util.o
 MESSAGECGIOBJS = sendmsg-cgi.o debug.o util.o
+HOSTSVCCGIOBJS = bb-hostsvc.o debug.o util.o sendmsg.o
 PROXYOBJS = bbproxy.o debug.o util.o
 
 bbgen: $(GENOBJS)
@@ -86,6 +87,9 @@ bbcombotest: $(COMBOTESTOBJS)
 
 bbmessage.cgi: $(MESSAGECGIOBJS)
 	$(CC) $(CFLAGS) -o $@ $(MESSAGECGIOBJS) $(NETLIBS)
+
+bb-hostsvc.cgi: $(HOSTSVCCGIOBJS)
+	$(CC) $(CFLAGS) -o $@ $(HOSTSVCCGIOBJS) $(NETLIBS)
 
 bb: $(MSGOBJS)
 	$(CC) $(CFLAGS) -o $@ $(MSGOBJS) $(NETLIBS)
@@ -173,6 +177,8 @@ sendmsg-std.o: sendmsg.c sendmsg.h
 sendmsg-cgi.o: sendmsg.c sendmsg.h
 	$(CC) $(CFLAGS) -DCGI -c -o $@ sendmsg.c
 
+bb-hostsvc.o: bb-hostsvc.c
+	$(CC) $(CFLAGS) -DCGI -c -o $@ bb-hostsvc.c
 
 ################################################
 # Default compilation rules
