@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.173 2004-08-11 12:54:33 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.174 2004-08-11 13:00:35 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -213,6 +213,10 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[i], "--rss")) {
 			wantrss = 1;
+		}
+		else if (argnmatch(argv[i], "--rssextension=")) {
+			char *lp = strchr(argv[i], '=');
+			rssextension = malcop(lp+1);
 		}
 		else if (argnmatch(argv[i], "--reportopts=")) {
 			char style[MAX_LINE_LEN];
@@ -514,6 +518,7 @@ int main(int argc, char *argv[])
 			printf("    --nstab=FILENAME            : Generate a Netscape Sidebar feed\n");
 			printf("    --nslimit=COLOR             : Minimum color to include on Netscape sidebar\n");
 			printf("    --rss                       : Generate a RSS/RDF feed of alerts\n");
+			printf("    --rssextension=.EXT         : Sets filename extension for RSS files (default: .rss\n");
 			printf("    --rssversion={0.91|0.92|1.0|2.0} : Specify RSS/RDF version (default: 0.91)\n");
 			printf("    --rsslimit=COLOR            : Minimum color to include on RSS feed\n");
 			printf("\nDebugging/troubleshooting options:\n");
