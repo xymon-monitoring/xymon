@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.14 2004-01-25 22:22:05 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.15 2004-08-17 20:06:40 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -107,7 +107,7 @@ static void ldap_alarmhandler(int signum)
 	connect_timeout = 1;
 }
 
-void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
+void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 {
 #ifdef BBGEN_LDAP
 	ldap_data_t *req;
@@ -115,6 +115,9 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 	struct timeval starttime;
 	struct timeval endtime;
 	struct timezone tz;
+
+	/* Pick a sensible default for the timeout setting */
+	if (querytimeout == 0) querytimeout = 30;
 
 	for (t = ldaptest->items; (t); t = t->next) {
 		LDAPURLDesc	*ludp;
@@ -156,7 +159,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 		 */
 		connect_timeout = 0;
 		signal(SIGALRM, ldap_alarmhandler);
-		alarm(t->host->conntimeout ? t->host->conntimeout : DEF_CONNECT_TIMEOUT);
+		alarm(querytimeout);
 
 #ifdef BBGEN_LDAP_USESTARTTLS
 		/*
@@ -207,7 +210,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 
 		/* Wait for bind to complete */
 		rc = 0; finished = 0; 
-		timeout.tv_sec = (t->host->conntimeout ? t->host->conntimeout : DEF_CONNECT_TIMEOUT);
+		timeout.tv_sec = querytimeout;
 		timeout.tv_usec = 0L;
 		while( ! finished ) {
 			int rc2;
@@ -220,14 +223,12 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 				req->ldapstatus = BBGEN_LDAP_BINDFAIL;
 				req->output = malcop(ldap_err2string(rc2));
 				ldap_unbind(ld);
-				continue;
 			}
 			if (rc == 0) {
 				finished = 1;
 				req->ldapstatus = BBGEN_LDAP_BINDFAIL;
 				req->output = "Connection timeout";
 				ldap_unbind(ld);
-				continue;
 			}
 			if( rc > 0 ) {
 				finished = 1;
@@ -236,7 +237,6 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 					req->ldapstatus = BBGEN_LDAP_BINDFAIL;
 					req->output = "LDAP library problem: ldap_result2error returned a NULL result for status %d\n";
 					ldap_unbind(ld);
-					continue;
 				}
 				else {
 					rc2 = ldap_result2error(ld, result, 1);
@@ -244,14 +244,16 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 						req->ldapstatus = BBGEN_LDAP_BINDFAIL;
 						req->output = malcop(ldap_err2string(rc));
 						ldap_unbind(ld);
-						continue;
 					}
 				}
 			}
-		}
+		} /* ... while() */
+
+		/* We're done connecting. If something went wrong, go to next query. */
+		if (req->ldapstatus != 0) continue;
 
 		/* Now do the search. With a timeout */
-		timeout.tv_sec = (t->host->timeout ? t->host->timeout : DEF_TIMEOUT);
+		timeout.tv_sec = querytimeout;
 		timeout.tv_usec = 0L;
 		rc = ldap_search_st(ld, ludp->lud_dn, ludp->lud_scope, ludp->lud_filter, ludp->lud_attrs, 0, &timeout, &result);
 
@@ -506,8 +508,6 @@ int main(int argc, char *argv[])
 	item.testspec = urlunescape(argv[argi]);
 
 	host.firstldap = &item;
-	host.conntimeout = 5;
-	host.timeout = 10;
 	host.hostname = "ldaptest.bbgen";
 	host.ldapuser = NULL;
 	host.ldappasswd = NULL;
@@ -524,7 +524,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (add_ldap_test(&item) == 0) {
-		run_ldap_tests(&ldapservice, 0);
+		run_ldap_tests(&ldapservice, 0, 10);
 		combo_start();
 		send_ldap_results(&ldapservice, &host, "", 0);
 		combo_end();
