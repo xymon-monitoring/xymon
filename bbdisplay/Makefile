@@ -113,13 +113,17 @@ clean:
 install: install-nocgi install-cgi
 
 ifdef HOBBITD
-install-nocgi: install-bin install-exts install-man 
+install-nocgi: install-bin install-exts install-man install-obsoleted
 else
 install-nocgi: install-bin install-exts install-man install-html install-gif install-templates
 endif
 
 install-bin: $(PROGRAMS)
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
+
+install-obsoleted:
+	rm -f $(INSTALLROOT)$(INSTALLBINDIR)/bb-infocolumn || true
+	rm -f $(INSTALLROOT)$(INSTALLBINDIR)/bb-larrdcolumn || true
 
 install-exts: $(EXTENSIONS)
 	cp -fp $(EXTENSIONS) $(INSTALLROOT)$(INSTALLEXTDIR)/
