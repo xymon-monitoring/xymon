@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.34 2003-03-15 16:01:36 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.35 2003-04-22 09:18:02 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -36,6 +36,30 @@ static char rcsid[] = "$Id: pagegen.c,v 1.34 2003-03-15 16:01:36 henrik Exp $";
 #include "larrdgen.h"
 #include "infogen.h"
 
+/*
+ * Some explanation is needed for my own sake on what happens here:
+ *
+ * bbgen::main() calls:
+ * - do_bb_page() to generate bb.html
+ *   - do_hosts() to show all hosts on the page that do not belong to a group
+ *   - do_groups() to show all groups on the page
+ *     - do_hosts() to show hosts in the group
+ *   - do_page_subpages() to link to all pages below the page
+ *   - do_bb_ext() for extension scripts
+ *   - do_summaries to show summary statuses
+ *
+ * - do_page() to generate all pages linked from bb.html
+ *   - do_hosts() to show all hosts on the page that do not belong to a group
+ *   - do_groups() to show all groups on the page
+ *     - do_hosts() to show hosts in the group
+ *   - do_page_subpages() to link to all pages below the page
+ *
+ * - do_subpage() to generate all subpages linked from pages linked from bb.html
+ *   - do_hosts() to show all hosts on the page that do not belong to a group
+ *   - do_groups() to show all groups on the page
+ *     - do_hosts() to show hosts in the group
+ */
+
 int  subpagecolumns = 1;
 int  hostsbeforepages = 0;
 char *includecolumns = NULL;
@@ -54,6 +78,10 @@ void select_headers_and_footers(char *prefix)
 
 int interesting_column(int pagetype, int color, int alert, char *columnname, char *onlycols)
 {
+	/*
+	 * Decides if a given column is to be included on a page.
+	 */
+
 	if (pagetype == PAGE_BB) {
 		/* Fast-path the BB page. */
 
@@ -74,6 +102,7 @@ int interesting_column(int pagetype, int color, int alert, char *columnname, cha
 		return result;
 	}
 
+	/* pagetype is now known NOT to be PAGE_BB */
 
 	/* LARRD and INFO columns are always included on non-BB pages */
 	if (larrdcol && (strcmp(columnname, larrdcol) == 0)) return 1;
@@ -210,6 +239,12 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 
 void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int pagetype)
 {
+	/*
+	 * This routine outputs the host part of a page or a group.
+	 * I.e. it generates buttons and links to all the tests for
+	 * a host, and the host docs.
+	 */
+
 	host_t	*h;
 	entry_t	*e;
 	col_list_t *groupcols, *gc;
@@ -317,6 +352,12 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 
 void do_groups(group_t *head, FILE *output)
 {
+	/*
+	 * This routine generates all the groups on a given page.
+	 * It also triggers generating host output for hosts
+	 * within the groups.
+	 */
+
 	group_t *g;
 
 	if (head == NULL)
@@ -332,6 +373,10 @@ void do_groups(group_t *head, FILE *output)
 
 void do_summaries(dispsummary_t *sums, FILE *output)
 {
+	/*
+	 * Generates output for summary statuses received from others.
+	 */
+
 	dispsummary_t *s;
 	host_t *sumhosts = NULL;
 	host_t *walk;
@@ -449,6 +494,12 @@ void do_bbext(FILE *output, char *extenv)
 
 void do_page_subpages(FILE *output, bbgen_page_t *subs, char *mklocaltitle, char *upperpagename)
 {
+	/*
+	 * This routine does NOT generate subpages!
+	 * Instead, it generates the LINKS to the subpages below
+	 * any given page.
+	 */
+
 	bbgen_page_t	*p;
 	link_t  *link;
 	int	currentcolumn;
@@ -517,6 +568,10 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *mklocaltitle, char
 
 void do_bb_page(bbgen_page_t *page, dispsummary_t *sums, char *filename)
 {
+	/*
+	 * This generates the top-level BB page bb.html
+	 */
+
 	FILE	*output;
 	char	*tmpfilename = malloc(strlen(filename)+5);
 
@@ -550,10 +605,14 @@ void do_bb_page(bbgen_page_t *page, dispsummary_t *sums, char *filename)
 }
 
 
-void do_page(bbgen_page_t *page, char *filename, char *upperpagename)
+void do_page(bbgen_page_t *page, char *filename, char *upperpagename, int level)
 {
+	/*
+	 * This generates pages that live directly beneath bb.html
+	 */
+
 	FILE	*output;
-	char	*tmpfilename = malloc(strlen(filename)+5);
+	char	*tmpfilename = malloc(strlen(filename)+5);	/* 5 = ".tmp" and a NULL */
 
 	sprintf(tmpfilename, "%s.tmp", filename);
 	output = fopen(tmpfilename, "w");
@@ -563,7 +622,7 @@ void do_page(bbgen_page_t *page, char *filename, char *upperpagename)
 		return;
 	}
 
-	headfoot(output, hf_prefix[PAGE_BB], page->name, "", "header", page->color);
+	headfoot(output, hf_prefix[PAGE_BB], page->name, "", "header", page->color); /* for pages */
 
 	if (!hostsbeforepages) do_page_subpages(output, page->subpages, "MKBBSUBLOCAL", upperpagename);
 	do_hosts(page->hosts, NULL, output, "", PAGE_BB);
@@ -582,6 +641,10 @@ void do_page(bbgen_page_t *page, char *filename, char *upperpagename)
 
 void do_subpage(bbgen_page_t *page, char *filename, char *upperpagename)
 {
+	/*
+	 * This generates subpages that are on level 2 beneath bb.html
+	 */
+
 	FILE	*output;
 	char	*tmpfilename = malloc(strlen(filename)+5);
 
