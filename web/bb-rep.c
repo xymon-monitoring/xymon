@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.1 2003-06-20 22:56:58 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.2 2003-06-21 14:35:22 henrik Exp $";
 
 #include <stdio.h>
 #include <stdio.h>
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
 
 	sprintf(bbgencmd, "%s/bin/bbgen", getenv("BBHOME"));
 	bbgen_argv[0] = bbgencmd;
-	sprintf(bbgentimeopt, "--reporttime=%lu:%lu:%s", starttime, endtime, style);
+	sprintf(bbgentimeopt, "--reportopts=%lu:%lu:1:%s", starttime, endtime, style);
 	bbgen_argv[1] = bbgentimeopt;
 	for (i=1; (i<argc); i++) bbgen_argv[i+1] = argv[i];
 	bbgen_argv[1+argc] = outdir;
