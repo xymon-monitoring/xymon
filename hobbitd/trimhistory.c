@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: trimhistory.c,v 1.2 2005-03-30 08:56:54 henrik Exp $";
+static char rcsid[] = "$Id: trimhistory.c,v 1.3 2005-03-30 09:12:19 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -109,6 +109,11 @@ void trim_history(FILE *infd, FILE *outfd, enum ftype_t ftype, time_t cutoff)
 			  case F_ALLEVENTS:
 				copying = (!cols[3] || (atoi(cols[3]) >= cutoff));
 				break;
+
+			  case F_DROPIT:
+				/* Cannot happen */
+				errprintf("Impossible - F_DROPIT in trim_history\n");
+				return;
 			}
 
 			/* If we switched to copy-mode, start by outputting the previous and the current lines */
