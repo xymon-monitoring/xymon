@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include <unistd.h>
 
@@ -130,7 +131,7 @@ col_t *find_or_create_column(const char *testname)
 	return newcol;
 }
 
-state_t *init_state(const char *filename)
+state_t *init_state(const char *filename, int dopurple)
 {
 	FILE *fd;
 	char	*p;
@@ -139,12 +140,20 @@ state_t *init_state(const char *filename)
 	state_t *newstate;
 	char	l[200];
 	host_t	*host;
+	struct stat st;
+	time_t	now = time(NULL);
 
+	/* Ignore summary files and dot-files */
+	if ( (strncmp(filename, "summary.", 8) == 0) || (filename[0] == '.')) {
+		return NULL;
+	}
+
+	/* Pick out host- and test-name */
 	strcpy(hostname, filename);
 	p = strrchr(hostname, '.');
 
-	/* Skip files that have no '.' in filename, or begin with a '.' */
-	if (p && (p > hostname)) {	
+	/* Skip files that have no '.' in filename */
+	if (p) {
 		/* Pick out the testname ... */
 		*p = '\0';
 		strcpy(testname, p+1);
@@ -165,7 +174,10 @@ state_t *init_state(const char *filename)
 	newstate->entry->column = find_or_create_column(testname);
 	newstate->entry->color = -1;
 
+	host = find_host(hostname);
+	stat(filename, &st);
 	fd = fopen(filename, "r");
+
 	if (fd && fgets(l, sizeof(l), fd)) {
 		if (strncmp(l, "green ", 6) == 0) {
 			newstate->entry->color = COL_GREEN;
@@ -187,12 +199,36 @@ state_t *init_state(const char *filename)
 		}
 	}
 
-	newstate->entry->age = 0;	/* FIXME */
+	if (st.st_mtime <= now) {
+		/* PURPLE test! */
+		if (host && host->dialup) {
+			/* Dialup hosts go clear, not purple */
+			newstate->entry->color = COL_CLEAR;
+		}
+		else {
+			/* Not in bb-hosts, or logfile too old */
+			newstate->entry->color = COL_PURPLE;
+		}
+
+		/* FIXME : Need to send a bbd update of status to purple */
+	}
+
+	while (fgets(l, sizeof(l), fd) && (strncmp(l, "Status unchanged in ", 20) != 0)) ;
+	if (strncmp(l, "Status unchanged in ", 20) == 0) {
+		char *p = strchr(l, '\n');
+		*p = '\0';
+
+		strcpy(newstate->entry->age, l+20);
+		newstate->entry->oldage = (strstr(l+20, "days") != NULL);
+	}
+	else {
+		strcpy(newstate->entry->age, "");
+		newstate->entry->oldage = 0;
+	}
 
 	fclose(fd);
 
 
-	host = find_host(hostname);
 	if (host) {
 		newstate->hostname = host->hostname;
 		newstate->entry->next = host->entries;
@@ -200,8 +236,6 @@ state_t *init_state(const char *filename)
 	}
 	else {
 		/* No host for this test - must be missing from bb-hosts */
-		/* FIXME: send update to purple for this host, with message "no longer listed" */
-		/*        Or maybe just delete the file? */
 		newstate->entry->next = NULL;
 
 		/* Need to malloc() room for the hostname */
@@ -406,8 +440,19 @@ state_t *load_state(void)
 	DIR		*bblogs;
 	struct dirent 	*d;
 	state_t		*newstate, *topstate;
+	int		dopurple;
+	struct stat	st;
 
 	chdir(getenv("BBLOGS"));
+	if (stat(".bbstartup", &st) == -1) {
+		/* Do purple if no ".bbstartup" file */
+		dopurple = 1;
+	}
+	else {
+		/* Don't do purple hosts ("avoid purple explosion on startup") */
+		dopurple = 0;
+		remove(".bbstartup");
+	}
 
 	topstate = NULL;
 	bblogs = opendir(getenv("BBLOGS"));
@@ -418,7 +463,7 @@ state_t *load_state(void)
 
 	while ((d = readdir(bblogs))) {
 		if (d->d_name[0] != '.') {
-			newstate = init_state(d->d_name);
+			newstate = init_state(d->d_name, dopurple);
 			if (newstate) {
 				newstate->next = topstate;
 				topstate = newstate;
@@ -495,11 +540,6 @@ void calc_pagecolors(page_t *phead, char *indent1)
 		toppage->color = color;
 		/* printf("%s pagecolor: %d\n", indent1, color); */
 	}
-
-	/* For the ultimate top-page */
-	for (toppage=phead; (toppage); toppage = toppage->next) {
-		if (toppage->color > phead->color) phead->color = toppage->color;
-	}
 }
 
 
@@ -525,7 +565,8 @@ void dumphosts(host_t *head, char *prefix)
 	for (h = head; (h); h = h->next) {
 		printf(format, h->hostname, h->ip, h->color, h->link->filename);
 		for (e = h->entries; (e); e = e->next) {
-			printf("\t\t\t\t\tTest: %s, state %d\n", e->column->name, e->color);
+			printf("\t\t\t\t\tTest: %s, state %d, age: %s, oldage: %d\n", 
+				e->column->name, e->color, e->age, e->oldage);
 		}
 	}
 }
@@ -559,10 +600,12 @@ void dumpstatelist(state_t *head)
 	state_t *s;
 
 	for (s=statehead; (s); s=s->next) {
-		printf("Host: %s, test:%s, state: %d\n",
+		printf("Host: %s, test:%s, state: %d, oldage: %d, age: %s\n",
 			s->hostname,
 			s->entry->column->name,
-			s->entry->color);
+			s->entry->color,
+			s->entry->oldage,
+			s->entry->age);
 	}
 }
 
@@ -577,10 +620,15 @@ int main(int argc, char *argv[])
 	/* dumphostlist(hosthead); */
 
 	statehead = load_state();
-	dumpstatelist(statehead);
+	/* dumpstatelist(statehead); */
 
 	calc_hostcolors(hosthead);
+
 	calc_pagecolors(pagehead, "");
+	/* For the ultimate top-page */
+	for (p=pagehead; (p); p = p->next) {
+		if (p->color > pagehead->color) pagehead->color = p->color;
+	}
 
 
 	for (p=pagehead; p; p = p->next) {

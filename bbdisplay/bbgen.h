@@ -33,7 +33,8 @@ typedef struct {
 typedef struct {
 	col_t	*column;
 	int	color;
-	time_t	age;
+	char	age[20];
+	int	oldage;
 	void	*next;
 } entry_t;
 
