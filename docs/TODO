@@ -1,6 +1,12 @@
+* Copy existing .htaccess files when generating reports, instead
+  of re-generating them from the env. variable templates. Useful
+  when people setup their htaccess by hand and want them to be
+  applied to reports as well.
+
 Suggestions from users
 ----------------------
 * Handle the missing fping.sh extensions ("range" and "list" tags).
+  These are useful for hosts with multiple IP's, e.g. routers.
 
 If I have too much time someday
 -------------------------------
