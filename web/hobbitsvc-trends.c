@@ -1,9 +1,13 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother network test tool.                                             */
+/* Big Brother webpage generator tool.                                        */
 /*                                                                            */
-/* This is a replacement for the "bb-network.sh" scripts from the             */
+/* This is a replacement for the "mkbb.sh" and "mkbb2.sh" scripts from the    */
 /* "Big Brother" monitoring tool from BB4 Technologies.                       */
 /*                                                                            */
+/* Primary reason for doing this: Shell scripts perform badly, and with a     */
+/* medium-sized installation (~150 hosts) it takes several minutes to         */
+/* generate the webpages. This is a problem, when the pages are used for      */
+/* 24x7 monitoring of the system status.                                      */
 /*                                                                            */
 /* Copyright (C) 2002 Henrik Storner <henrik@storner.dk>                      */
 /*                                                                            */
@@ -12,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.1 2002-12-19 13:02:18 hstoerne Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.2 2002-12-19 14:13:23 hstoerne Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -24,21 +28,12 @@ static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.1 2002-12-19 13:02:18 hstoern
 #include <unistd.h>
 #include <utime.h>
 
-
 #include "bbgen.h"
 #include "util.h"
 #include "loaddata.h"
 
-/* Global vars */
-page_t		*pagehead = NULL;			/* Head of page list */
-hostlist_t	*hosthead = NULL;			/* Head of hosts list */
-col_t		*colhead  = NULL;
-link_t		*linkhead = NULL;
-summary_t	*sumhead  = NULL;
-
-int main(int argc, char *argv[])
+void generate_larrd(char *rrddirname, char *larrdcolumn)
 {
-	char rrddirname[256];
 	DIR *rrddir;
 	struct dirent *d;
 	char fn[256];
@@ -60,21 +55,12 @@ int main(int argc, char *argv[])
 	i = atoi(getenv("PURPLEDELAY"));
 	logfiletime.actime = logfiletime.modtime = now + i*60;
 
-	/* Load all data from the various files */
-	pagehead = load_bbhosts();
 
-	if (argc > 1) {
-		strcpy(rrddirname, argv[1]);
-	}
-	else {
-		sprintf(rrddirname, "%s/rrd", getenv("BBVAR"));
-	}
 	chdir(rrddirname);
-
 	rrddir = opendir(rrddirname);
 	if (!rrddir) {
 		perror("Cannot access RRD directory");
-		return 1;
+		exit(1);
 	}
 
 	while ((d = readdir(rrddir))) {
@@ -134,12 +120,12 @@ int main(int argc, char *argv[])
 		FILE *fd;
 		int i;
 
-		sprintf(logfn, "%s/%s.%s", getenv("BBLOGS"), hostwalk->hostentry->hostname, "graphs");
+		sprintf(logfn, "%s/%s.%s", getenv("BBLOGS"), hostwalk->hostentry->hostname, larrdcolumn);
 		if (getenv("BBHTML")) {
-			sprintf(htmlfn,"%s/%s.%s.html", getenv("BBHTML"), hostwalk->hostentry->hostname, "graphs");
+			sprintf(htmlfn,"%s/%s.%s.html", getenv("BBHTML"), hostwalk->hostentry->hostname, larrdcolumn);
 		}
 		else {
-			sprintf(htmlfn,"%s/www/html/%s.%s.html", getenv("BBHOME"), hostwalk->hostentry->hostname, "graphs");
+			sprintf(htmlfn,"%s/www/html/%s.%s.html", getenv("BBHOME"), hostwalk->hostentry->hostname, larrdcolumn);
 		}
 
 
@@ -148,13 +134,12 @@ int main(int argc, char *argv[])
 		for (i=0; rrdnames[i]; i++) {
 			for (rwalk = hostwalk->hostentry->rrds; (rwalk && (rwalk->rrdname != rrdnames[i])); rwalk = rwalk->next) ;
 			if (rwalk) {
-				sprintf(rrdlink, "<p><A HREF=\"%s/larrd-grapher.cgi?host=%s&service=%s\"><IMG SRC=\"%s/larrd-grapher.cgi?host=%s&service=%s&graph=hourly\" ALT=\"larrd is accumulating %s\" BORDER=0></A>",
+				sprintf(rrdlink, "<p><A HREF=\"%s/larrd-grapher.cgi?host=%s&service=%s\"><IMG SRC=\"%s/larrd-grapher.cgi?host=%s&service=%s&graph=hourly\" ALT=\"larrd is accumulating %s\" BORDER=0></A>\n\n",
 					getenv("CGIBINURL"), hostwalk->hostentry->hostname, rwalk->rrdname,
 					getenv("CGIBINURL"), hostwalk->hostentry->hostname, rwalk->rrdname,
 					rwalk->rrdname);
 
 				strcat(allrrdlinks, rrdlink);
-				strcat(allrrdlinks, "\n");
 			}
 		}
 
@@ -162,7 +147,7 @@ int main(int argc, char *argv[])
 		fd = fopen(logfn, "w");
 		if (!fd) {
 			perror("Cannot open logfile");
-			return 1;
+			exit(1);
 		}
 
 		fprintf(fd, "green %s - larrd is accumulating <center><BR>\n", timestamp);
@@ -171,7 +156,7 @@ int main(int argc, char *argv[])
 		fclose(fd);
 		utime(logfn, &logfiletime);
 
-		sethostenv(hostwalk->hostentry->hostname, hostwalk->hostentry->ip, "graphs", "green");
+		sethostenv(hostwalk->hostentry->hostname, hostwalk->hostentry->ip, larrdcolumn, "green");
 		fd = fopen(htmlfn, "w");
  		headfoot(fd, "hostsvc", "", "", "header", COL_GREEN);
 
@@ -181,11 +166,11 @@ int main(int argc, char *argv[])
 
 <CENTER><TABLE ALIGN=CENTER BORDER=0>
 <TR><TH><FONT SIZE=+1 COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\">
-%s - graphs<BR><HR WIDTH=60%%></TH>
+%s - %s<BR><HR WIDTH=60%%></TH>
 <TR><TD><H3>
 green %s - larrd is accumulating <center><BR>
 </H3><PRE>",
-		hostwalk->hostentry->hostname, timestamp);
+		hostwalk->hostentry->hostname, larrdcolumn, timestamp);
 
 		fprintf(fd, "%s\n", allrrdlinks);
 		fprintf(fd, "
@@ -208,6 +193,5 @@ green %s - larrd is accumulating <center><BR>
 
 	closedir(rrddir);
 	free(allrrdlinks);
-	return 0;
 }
 

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.50 2002-11-27 13:13:41 hstoerne Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.51 2002-12-19 14:13:23 hstoerne Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -30,6 +30,7 @@ static char rcsid[] = "$Id: bbgen.c,v 1.50 2002-11-27 13:13:41 hstoerne Exp $";
 #include "loaddata.h"
 #include "process.h"
 #include "pagegen.h"
+#include "larrdgen.h"
 
 /* Global vars */
 page_t		*pagehead = NULL;			/* Head of page list */
@@ -44,11 +45,13 @@ dispsummary_t	*dispsums = NULL;			/* Summaries we received and display */
 int main(int argc, char *argv[])
 {
 	char		pagedir[256];
+	char		rrddir[256];
 	page_t 		*p, *q;
 	dispsummary_t	*s;
 	int		i;
 
 	sprintf(pagedir, "%s/www", getenv("BBHOME"));
+	sprintf(rrddir, "%s/rrd", getenv("BBVAR"));
 
 	for (i = 1; (i < argc); i++) {
 		if (strcmp(argv[i], "--recentgifs") == 0) {
@@ -58,15 +61,20 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 			strcpy(larrdcol, (lp+1));
 		}
+		else if (strncmp(argv[i], "--rrddir=", 8) == 0) {
+			char *lp = strchr(argv[i], '=');
+			strcpy(rrddir, (lp+1));
+		}
 		else if (strcmp(argv[i], "--nopurple") == 0) {
 			enable_purpleupd = 0;
 		}
 		else if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-?") == 0)) {
 			printf("Usage: %s [--options] [WebpageDirectory]\n", argv[0]);
 			printf("Options:\n");
-			printf("    --recentgifs        : Use xxx-recent.gif images\n");
-			printf("    --larrd=LARRDCOLUMN]: LARRD data in column LARRDCOLUMN never goes purple\n");
-			printf("    --nopurple          : Disable all purple updates\n");
+			printf("    --recentgifs           : Use xxx-recent.gif images\n");
+			printf("    --larrd=LARRDCOLUMN    : LARRD data in column LARRDCOLUMN never goes purple\n");
+			printf("    --rrddir=RRD-directory : Directory for LARRD RRD files\n");
+			printf("    --nopurple             : Disable all purple updates\n");
 			exit(1);
 		}
 		else {
@@ -78,6 +86,10 @@ int main(int argc, char *argv[])
 	/* Load all data from the various files */
 	linkhead = load_all_links();
 	pagehead = load_bbhosts();
+
+	/* Generate the LARRD pages before loading state */
+	generate_larrd(rrddir, larrdcol);
+
 	statehead = load_state();
 
 	/* Calculate colors of hosts and pages */
