@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.5 2002-12-20 08:49:27 hstoerne Exp $";
+static char rcsid[] = "$Id: util.c,v 1.6 2003-01-02 16:06:51 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -27,6 +27,7 @@ static char rcsid[] = "$Id: util.c,v 1.5 2002-12-20 08:49:27 hstoerne Exp $";
 #include <dirent.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <time.h>
 
 #include "bbgen.h"
 #include "util.h"
@@ -251,4 +252,70 @@ char *histlogurl(char *hostname, char *service, time_t histtime)
 	return url;
 }
 
+
+static int minutes(char *p)
+{
+	/* Converts string HHMM to number indicating minutes since midnight (0-1440) */
+	return (10*(*(p+0)-'0')+(*(p+1)-'0'))*60 + (10*(*(p+2)-'0')+(*(p+3)-'0'));
+}
+
+int within_sla(char *l)
+{
+	/*
+	 * Usage: slatime hostline
+	 *    SLASPEC is of the form SLA=W:HHMM:HHMM[,WXHHMM:HHMM]*
+	 *    "W" = weekday : '*' = all, 'W' = Monday-Friday, '0'..'6' = Sunday ..Saturday
+	 */
+
+	char *p;
+	char *slaspec = NULL;
+
+	time_t tnow;
+	struct tm *now;
+
+	int result = 0;
+	int found = 0;
+	int starttime,endtime,curtime;
+
+	p = strstr(l, "SLA=");
+	if (p) {
+		slaspec = p + 4;
+		tnow = time(NULL);
+		now = localtime(&tnow);
+
+		// printf("SLA er %s\n", slaspec);
+		// printf("Now is weekday %d, time is %d:%d\n", now->tm_wday, now->tm_hour, now->tm_min);
+
+		/*
+		 * Now find the appropriate SLA definition.
+		 * We take advantage of the fixed (11 bytes + delimiter) length of each entry.
+		 */
+		while ( (!found) && (*slaspec != '\0') && (!isspace((unsigned int)*slaspec)) )
+		{
+			if ( (*slaspec == '*') || 						/* Any day */
+                             (*slaspec == now->tm_wday+'0') ||					/* This day */
+                             ((*slaspec == 'W') && (now->tm_wday >= 1) && (now->tm_wday <=5)) )	/* Monday thru Friday */
+			{
+				/* Weekday matches */
+				// printf("Now checking slaspec=%s\n", slaspec);
+				starttime = minutes(slaspec+2);
+				endtime = minutes(slaspec+7);
+				curtime = now->tm_hour*60+now->tm_min;
+				// printf("start,end,current time = %d, %d, %d\n\n", starttime,endtime,curtime);
+				found = ((curtime >= starttime) && (curtime <= endtime));
+			};
+
+			if (!found) {
+				slaspec +=12;
+			};
+		}
+		result = found;
+	}
+	else {
+		/* No SLA -> default to always included */
+		result = 1;
+	}
+
+	return result;
+}
 

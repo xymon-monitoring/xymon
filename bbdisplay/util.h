@@ -37,5 +37,7 @@ extern char *hostlink(link_t *link);
 extern host_t *find_host(const char *hostname);
 extern char *histlogurl(char *hostname, char *service, time_t histtime);
 
+extern int within_sla(char *hostline);
+
 #endif
 
