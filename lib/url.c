@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: url.c,v 1.3 2004-11-04 16:09:53 henrik Exp $";
+static char rcsid[] = "$Id: url.c,v 1.4 2004-11-04 21:39:42 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -81,12 +81,24 @@ char *urldecode(char *envvar)
 char *urlencode(char *s)
 {
 	static char *result = NULL;
+	static int resbufsz = 0;
 	char *inp, *outp;
 
-	if (result) free(result);
-	outp = result = (char *)malloc(strlen(s)+1);
+	if (result == NULL) {
+		result = (char *)malloc(1024);
+		resbufsz = 1024;
+	}
+	outp = result;
 
-	for (inp = s; (inp && *inp && (outp-result < sizeof(result)) ); inp++) {
+	for (inp = s; (*inp); inp++) {
+		if ((outp - result) > (resbufsz - 5)) {
+			int offset = (outp - result);
+
+			resbufsz += 1024;
+			result = (char *)realloc(result, resbufsz);
+			outp = result + offset;
+		}
+
 		if ( ( (*inp >= 'a') && (*inp <= 'z') ) ||
 		     ( (*inp >= 'A') && (*inp <= 'Z') ) ||
 		     ( (*inp >= '0') && (*inp <= '9') ) ) {
