@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.71 2004-11-30 22:37:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.72 2004-12-03 10:31:57 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -341,7 +341,6 @@ int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgb
 void posttochannel(bbgend_channel_t *channel, char *channelmarker, 
 		   char *msg, char *sender, char *hostname, bbgend_log_t *log, char *readymsg)
 {
-	char *testname;
 	struct sembuf s;
 	struct shmid_ds chninfo;
 	int clients;
@@ -1643,7 +1642,7 @@ void load_checkpoint(char *fn)
 		while (item && !err) {
 			switch (i) {
 			  case 0: err = (strcmp(item, "@@BBGENDCHK-V1") != 0); break;
-			  case 1: if (strlen(item)) originname = item; else err=1; break;
+			  case 1: originname = item; break;
 			  case 2: if (strlen(item)) hostname = item; else err=1; break;
 			  case 3: if (strlen(item)) testname = item; else err=1; break;
 			  case 4: sender = item; break;
