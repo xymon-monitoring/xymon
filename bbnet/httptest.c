@@ -381,9 +381,24 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 		http_data_t *req = t->private;
 
 		int httpcolor = statuscolor(host, req->httpstatus);
+
+		/* Dialup hosts and dialup tests report red as clear */
+		if ((httpcolor != COL_GREEN) && (t->host->dialup || t->dialup)) color = COL_CLEAR;
+
+		/* If ping failed, report CLEAR unless alwaystrue */
+		if ( ((color == COL_RED) || (color == COL_YELLOW)) && /* Test failed */
+		     (t->host->downcount > 0)                      && /* The ping check did fail */
+		     (!t->alwaystrue)                              )  /* No "~testname" flag */ {
+			color = COL_CLEAR;
+		}
+
 		dprintf("%s(%s) ", t->testspec, colorname(httpcolor));
 		if (httpcolor > color) color = httpcolor;
 	}
+
+	/* If not inside SLA and non-green, report as BLUE */
+	if (!t->host->in_sla && (color != COL_GREEN)) color = COL_BLUE;
+
 	if (nopage && (color == COL_RED)) color = COL_YELLOW;
 	dprintf(" --> %s\n", colorname(color));
 
@@ -417,7 +432,8 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 			/* We have a content check */
 			if (req->contstatus == 0) {
 				/* The content check passed initial checks of regexp etc. */
-				if (statuscolor(t->host, req->httpstatus) == COL_GREEN) {
+				color = statuscolor(t->host, req->httpstatus);
+				if (color == COL_GREEN) {
 					/* We got the data from the server */
 					regmatch_t foo[1];
 					int status;
@@ -434,11 +450,22 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 					color = statuscolor(t->host, req->contstatus);
 				}
 				else {
-					/* Failed to retrieve the webpage */
-					color = COL_CLEAR;
+					/*
+					 * Failed to retrieve the webpage.
+					 * Report CLEAR, unless "alwaystrue" is set.
+					 */
+					if (!t->alwaystrue) color = COL_CLEAR;
 				}
+
+				/* If not inside SLA and non-green, report as BLUE */
+				if (!t->host->in_sla && (color != COL_GREEN)) color = COL_BLUE;
+
+				if (nopage && (color == COL_RED)) color = COL_YELLOW;
 			}
-			else color = statuscolor(t->host, req->contstatus);
+			else {
+				/* This only happens upon internal errors in BB test system */
+				color = statuscolor(t->host, req->contstatus);
+			}
 
 			/* Send of the status */
 			dprintf("Content check on %s is %s\n", req->url, colorname(color));
