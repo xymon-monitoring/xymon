@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: rssgen.c,v 1.2 2003-08-11 20:12:25 henrik Exp $";
+static char rcsid[] = "$Id: rssgen.c,v 1.3 2003-08-11 21:32:43 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -193,10 +193,11 @@ void do_netscape_sidebar(void)
 	sprintf(destfn, "%s/www/%s", getenv("BBHOME"), nssidebarfilename);
 	fd = fopen(tmpfn, "w");
 	if (fd == NULL) {
-		errprintf("Cannot create RSS/RDF outputfile %s\n", tmpfn);
+		errprintf("Cannot create Netscape sidebar outputfile %s\n", tmpfn);
 		return;
 	}
 
+	fprintf(fd, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n");
 	fprintf(fd, "<HTML>\n");
 	fprintf(fd, "  <HEAD>\n");
 	fprintf(fd, "    <TITLE>Big Brother Critical Alerts</TITLE>\n");
