@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns2.c,v 1.5 2004-09-11 15:53:51 henrik Exp $";
+static char rcsid[] = "$Id: dns2.c,v 1.6 2004-09-25 15:41:20 henrik Exp $";
 
 /*
  * All of the code for parsing DNS responses and formatting these into
@@ -48,6 +48,11 @@ static char rcsid[] = "$Id: dns2.c,v 1.5 2004-09-11 15:53:51 henrik Exp $";
 
 #include "ares.h"
 #include "ares_dns.h"
+
+/* Some systems (AIX, HP-UX) dont know the DNS T_SRV record */
+#ifndef T_SRV
+#define T_SRV 33
+#endif
 
 static char msg[1024];
 
