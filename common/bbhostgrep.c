@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.26 2005-03-25 21:09:39 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.27 2005-04-03 15:39:02 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 		exit(2);
 	}
 
-	hostlist = load_hostnames(bbhostsfn, include2, get_fqdn(), NULL);
+	hostlist = load_hostnames(bbhostsfn, include2, get_fqdn());
 	if (hostlist == NULL) {
 		errprintf("Cannot load bb-hosts, or file is empty\n");
 		exit(3);

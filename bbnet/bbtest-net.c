@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.209 2005-03-31 17:19:36 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.210 2005-04-03 15:39:02 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -411,7 +411,7 @@ void load_tests(void)
 	namelist_t *hosts, *hwalk;
 	testedhost_t *h;
 
-	hosts = load_hostnames(xgetenv("BBHOSTS"), "netinclude", get_fqdn(), NULL);
+	hosts = load_hostnames(xgetenv("BBHOSTS"), "netinclude", get_fqdn());
 	if (hosts == NULL) {
 		errprintf("Cannot load bb-hosts\n");
 		return;

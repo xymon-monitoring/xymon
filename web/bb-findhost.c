@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.18 2005-03-22 09:03:37 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.19 2005-04-03 15:39:02 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
         sethostenv("", "", "", colorname(COL_BLUE));
         headfoot(stdout, "findhost", "", "header", COL_BLUE);
 
-	hosthead = load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn(), NULL);
+	hosthead = load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 
 	printf("<br><br><CENTER><TABLE CELLPADDING=5 SUMMARY=\"Hostlist\">\n");
 	printf("<tr><th align=left>Hostname (DisplayName)</th><th align=left>Location (Group Name)</th></tr>\n");

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.21 2005-04-03 12:14:22 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.22 2005-04-03 15:39:02 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -436,7 +436,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	char	*p;
 	namelist_t *allhosts;
 
-	allhosts = load_hostnames(xgetenv("BBHOSTS"), "dispinclude", get_fqdn(), NULL);
+	allhosts = load_hostnames(xgetenv("BBHOSTS"), "dispinclude", get_fqdn());
 
 	dprintf("load_bbhosts(pgset=%s)\n", textornull(pgset));
 
