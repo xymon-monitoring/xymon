@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.202 2005-02-18 17:04:36 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.203 2005-02-23 22:57:39 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -372,11 +372,6 @@ int main(int argc, char *argv[])
 			sprintf(nopropackdefault, ",%s,", (lp+1));
 		}
 
-		else if (argnmatch(argv[i], "--info=")) {
-			char *lp = strchr(argv[i], '=');
-			if (lp) infocol = strdup(lp+1);
-		}
-
 		else if (argnmatch(argv[i], "--larrd043=") || (strcmp(argv[i], "--larrd043") == 0)) {
 			char *lp = strchr(argv[i], '=');
 			if (lp) larrdcol = strdup(lp+1); else larrdcol = "trends";
@@ -485,9 +480,6 @@ int main(int argc, char *argv[])
 			printf("    --noprop=test[,test]        : Disable upwards status propagation when YELLOW\n");
 			printf("    --nopropred=test[,test]     : Disable upwards status propagation when RED or YELLOW\n");
 			printf("    --noproppurple=test[,test]  : Disable upwards status propagation when PURPLE\n");
-			printf("\nInfo column options:\n");
-			printf("    --info[=INFOCOLUMN]         : Generate INFO data in column INFOCOLUMN\n");
-			printf("    --infoupdate=N              : time between updates of INFO column pages in seconds\n");
 			printf("\nLARRD support options:\n");
 			printf("    --larrd[=LARRDCOLUMN]       : LARRD data in column LARRDCOLUMN (default:larrd)\n");
 			printf("    --larrd043[=LARRDCOLUMN]    : LARRD data in column LARRDCOLUMN (default:trends)\n");

@@ -257,29 +257,6 @@ Update the LARRD column pages every N seconds (default: N=300)
 .IP "--rrddir=RRD-directory"
 Specifies the directory path for the LARRD RRD files (default is $BBVAR/rrd/).
 
-.SH INFO COLUMN OPTIONS
-bbgen can produce an always-green status column for all hosts,
-showing information from the Big Brother configuration for this
-host. This includes the hostname, IP-adress, whether network tests 
-use the hostname or IP-adress, if the host is a dialup host, if it 
-is checked with ping, the web URL's checked for this host (if any), 
-and all of the other configuration information used by Big Brother. 
-.sp
-The "info" column is always included in the bb2.html and in the
-non-standard bbnk.html page, so the information is available to
-the people troubleshooting a problem with a service or host.
-.sp
-NB: The code to generate the "info" column assumes you have
-installed the bbgen patches needed for the LARRD support
-If you haven't made these modifications, the info-pages will have 
-a very odd-looking background color.
-.sp
-.IP "--info[=INFOCOLUMN]"
-Generate INFO data in column INFOCOLUMN
-.sp
-.IP "--infoupdate=N"
-Time between updates of INFO column pages (seconds)
-
 .SH PURPLE STATUS OPTIONS
 Purple statuses occur when reporting of a test status stops.
 A test status is valid for a limited amount of time - normally
