@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.11 2003-04-27 09:07:38 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.12 2003-05-07 09:07:48 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -67,6 +67,11 @@ test_t *add_tcp_test(char *ip, int port, char *service, int silent)
 {
 	test_t *newtest;
 	int i;
+
+	if (port == 0) {
+		printf("WHOA there - trying to scan port 0 for service %s\n", service);
+		return NULL;
+	}
 
 	newtest = (test_t *) malloc(sizeof(test_t));
 
