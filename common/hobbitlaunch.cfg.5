@@ -25,6 +25,8 @@ An entry looks like this:
 .br
           NEEDS bbgend
 .br
+          GROUP webupdates
+.br
           INTERVAL 5m
 .br
           ENVFILE /usr/local/bb/bb/etc/bbserver.env
@@ -44,6 +46,14 @@ the task defined by the NEEDS keyword is already running. This
 is used e.g. to delay the start of some application until the
 needed daemons have been started. The task that must be running
 is defined by its \fBkey\fR.
+
+The \fBGROUP\fR keyword can be used to limit the number of tasks 
+that may run simultaneously. E.g. if you are generating multiple
+pagesets of webpages, you dont want them to run at the same time.
+Putting them into a GROUP will cause bblaunch to delay the start
+of new tasks, so that only one task will run per group. You can
+change the limit by defining the group before the tasks, with
+a "GROUP groupname maxtasks" line.
 
 The \fBINTERVAL\fR keyword defines how often this command is
 executed. The example shows a command that runs every 5 minutes.
