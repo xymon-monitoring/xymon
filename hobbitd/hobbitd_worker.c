@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <sys/select.h>
 #include <sys/time.h>
+#include <errno.h>
 
 /* These are dummy vars needed by stuff in util.c */
 hostlist_t      *hosthead = NULL;
@@ -72,7 +73,7 @@ static char *readlntimed(char *buffer, size_t bufsize, struct timeval *timeout)
 
 		if (n == -1) {
 			/* Some error happened */
-			return NULL;
+			if (errno != EINTR) return NULL;
 		}
 		else if (n == 0) {
 			/* Timeout */
