@@ -71,7 +71,7 @@ cfgfiles:
 
 clean:
 	rm -f $(PROGRAMS) $(CGISCRIPTS) *.o *~ larrd/*~ 
-	rm -f etcfiles/{bb-apache.conf,bbserver.env,bb-hosts,bb-alerts.cfg,bbtasks.cfg}
+	rm -f etcfiles/bb-apache.conf etcfiles/bbserver.env etcfiles/bb-hosts etcfiles/bb-alerts.cfg etcfiles/bbtasks.cfg
 	rm -f wwwfiles/menu/menu_items.js
 	(find etcfiles/ -name "*~"; find wwwfiles/ -name "*~"; find webfiles/ -name "*~") | xargs rm -f
 
@@ -99,5 +99,6 @@ setup:
 	cd webfiles; tar cf - . | (cd $(BBHOME)/web/; tar xf -)
 	cd etcfiles; ../../build/install-nooverwrite.sh etc/ bb-apache.conf bbserver.env bb-hosts bb-alerts.cfg bbtasks.cfg
 	mkdir -p $(BBLOGDIR)
-	chown $(BBUSER) $(BBLOGDIR)
+	chown $(BBUSER)         $(BBLOGDIR) $(BBHOME) $(BBHOME)/* $(BBHOME)/bin/* $(BBHOME)/etc/* $(BBHOME)/ext/* $(BBHOME)/web/* $(BBHOME)/www/gifs $(BBHOME)/www/gifs/* $(BBHOME)/www/menu $(BBHOME)/www/menu/* $(BBHOME)/www/help $(BBHOME)/www/help/* $(BBHOME)/www/notes $(BBHOME)/www/html $(BBHOME)/www/wml $(BBVAR) $(BBVAR)/* $(CGIDIR) $(CGIDIR)/*
+	chgrp `id -g $(BBUSER)` $(BBLOGDIR) $(BBHOME) $(BBHOME)/* $(BBHOME)/bin/* $(BBHOME)/etc/* $(BBHOME)/ext/* $(BBHOME)/web/* $(BBHOME)/www/gifs $(BBHOME)/www/gifs/* $(BBHOME)/www/menu $(BBHOME)/www/menu/* $(BBHOME)/www/help $(BBHOME)/www/help/* $(BBHOME)/www/notes $(BBHOME)/www/html $(BBHOME)/www/wml $(BBVAR) $(BBVAR)/* $(CGIDIR) $(CGIDIR)/*
 
