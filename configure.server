@@ -161,21 +161,23 @@ else
 	fi
 	echo ""
 
-	#echo "bbgen normally uses the nslookup and dig tools to test DNS servers."
-	#echo "However, it can now use a built-in resolver library (ares) - this"
-	#echo "is faster and allows more flexible tests, but the output is different."
-	#echo ""
-	#echo "Do you want to use the ares DNS library ?"
-	#read ENABLEARES
-	#if test "$ENABLEARES" = "" -o "$ENABLEARES" = "y"
-	#then
-	#	ARESDEF="-DUSE_ARES -I./ares-1.1.1/"
-	#	ARESLIB="libares.a"
-	#else
+	echo "bbgen normally uses the nslookup and dig tools to test DNS servers."
+	echo "However, it can now use a built-in resolver library (ares) - this"
+	echo "is faster and allows more flexible tests, but the output looks" 
+	echo "different than the normal nslookup/dig output."
+	echo "Also, ares does not support name lookups via NIS/NIS+ (YP)."
+	echo ""
+	echo "Do you want to use the ares DNS library ?"
+	read ENABLEARES
+	if test "$ENABLEARES" = "" -o "$ENABLEARES" = "y"
+	then
+		ARESDEF="-DUSE_ARES -I./ares-1.1.1/"
+		ARESLIB="libares.a"
+	else
 		ARESDEF=""
 		ARESLIB=""
-	#fi
-	#echo ""
+	fi
+	echo ""
 
 
 	echo "bbgen uses the CURL library for http and https tests."
@@ -298,7 +300,7 @@ else
 	read ENABLELDAP
 	if test "$ENABLELDAP" = "" -o "$ENABLELDAP" = "y"
 	then
-		echo "Enable experimental support for LDAP/SSL (LDAPv3 servers only) (y) ?"
+		echo "Enable experimental support for LDAP/SSL (OpenLDAP 2.x only) (y) ?"
 		read ENABLELDAPSSL
 		if test "$ENABLELDAPSSL" = "" -o "$ENABLELDAPSSL" = "y"
 		then

@@ -80,6 +80,19 @@ lookup for the hostname given in the URL; see the
 "bbtest-net tags for HTTP tests" section in
 .I bb-hosts(5)
 
+.IP "--dnstimeout=N"
+Determines the timeout for the DNS lookups performed by
+bbtest-net - N is the number of seconds to wait for all
+DNS lookups to complete. The default is 30 seconds.
+
+This only affects the DNS lookups done by bbtest-net 
+in order to find the IP adresses of the hosts to test;
+it does not affect the timeout setting of the "dns" or
+"dig" tests (they use the setting from the TIMEOUT tag).
+
+Note: This option is only available if bbtest-net was
+compiled with the ARES resolver library.
+
 .IP --test-untagged
 When using the BBLOCATION environment variable to test
 only hosts on a particular network segment, bbtest-net

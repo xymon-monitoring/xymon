@@ -137,9 +137,9 @@ bbdigest.o: digest.c digest.h
 libares.a: ares-1.1.1/libares.a
 	cp -p ares-1.1.1/libares.a .
 
-ares-1.1.1/libares.a: ares-1.1.1.tar
+ares-1.1.1/libares.a: ares-1.1.1.tar.gz
 	@echo "Building the ARES resolver library"
-	tar xf ares-1.1.1.tar
+	gzip -dc ares-1.1.1.tar.gz | tar xf -
 	sh -c 'cd ares-1.1.1; ./configure; make libares.a'
 
 ################################################
