@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.134 2003-11-03 09:04:31 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.135 2003-11-27 09:53:24 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -848,9 +848,19 @@ void load_tests(void)
 				free(badsaves);
 
 				if (anytests) {
-					sprintf(h->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
-					h->next = testhosthead;
-					testhosthead = h;
+					testedhost_t *walk;
+
+					/* Check for a duplicate host def. Causes all sorts of funny problems. */
+					for (walk=testhosthead; (walk && (strcmp(hostname, walk->hostname) != 0)); walk = walk->next);
+					if (walk) {
+						errprintf("Host %s appears twice in bb-hosts! Ignoring secondary definitions.\n", hostname);
+						free(h);
+					}
+					else {
+						sprintf(h->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+						h->next = testhosthead;
+						testhosthead = h;
+					}
 				}
 				else {
 					/* No network tests for this host, so ignore it */
