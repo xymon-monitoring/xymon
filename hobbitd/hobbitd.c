@@ -1,6 +1,23 @@
 /*----------------------------------------------------------------------------*/
 /* Big Brother message daemon.                                                */
 /*                                                                            */
+/* This is the master daemon, bbgend.                                         */
+/*                                                                            */
+/* This is a daemon that implements the Big Brother network protocol, with    */
+/* additional protocol items implemented for bbgen.                           */
+/*                                                                            */
+/* This daemon maintains the full state of the BB system in memory, elimi-    */
+/* nating the need for file-based storage of e.g. status logs. The web        */
+/* frontend programs (bbgen, bbcombotest, bb-hostsvc.cgi etc) can retrieve    */
+/* current statuslogs from this daemon to build the BB webpages. However,     */
+/* a "plugin" mechanism is also implemented to allow "worker modules" to      */
+/* pickup various types of events that occur in the BB system. This allows    */
+/* such modules to e.g. maintain the standard BB file-based storage, or       */
+/* implement history logging or RRD database updates. This plugin mechanism   */
+/* uses System V IPC mechanisms for a high-performance/low-latency communi-   */
+/* cation between bbgend and the worker modules - under no circumstances      */
+/* should the daemon be tasked with storing data to a low-bandwidth channel.  */
+/*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
@@ -8,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.40 2004-10-26 05:52:29 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.41 2004-10-27 10:49:25 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -39,7 +56,7 @@ static char rcsid[] = "$Id: hobbitd.c,v 1.40 2004-10-26 05:52:29 henrik Exp $";
 #include "bbgen.h"
 #include "util.h"
 #include "debug.h"
-#include "bbd_net.h"
+#include "bbgend.h"
 #include "bbdutil.h"
 #include "bbdworker.h"
 #include "loadhosts.h"
@@ -146,7 +163,7 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 		switch(channel->channelid) {
 		  case C_STATUS:
 			log = (bbd_log_t *)arg;
-			n = sprintf(channel->channelbuf, 
+			n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
 				"@@%s#%u|%d.%06d|%s|%s|%s|%d|%s|%s|%s|%d", 
 				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 				sender, hostname, 
@@ -154,35 +171,37 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 				colnames[log->color], 
 				(log->testflags ? log->testflags : ""),
 				colnames[log->oldcolor], (int) log->lastchange); 
-			n += sprintf(channel->channelbuf+n, "|%d|%s",
+			n += snprintf(channel->channelbuf+n, (SHAREDBUFSZ-n-1), "|%d|%s",
 				(int)log->acktime, nlencode(log->ackmsg));
-			n += sprintf(channel->channelbuf+n, "|%d|%s",
+			n += snprintf(channel->channelbuf+n, (SHAREDBUFSZ-n-1), "|%d|%s",
 				(int)log->enabletime, nlencode(log->dismsg));
-			n += sprintf(channel->channelbuf+n, "\n%s\n@@\n", msg);
+			n += snprintf(channel->channelbuf+n, (SHAREDBUFSZ-n-1), "\n%s\n@@\n", msg);
+			*(channel->channelbuf + n) = '\0';
 			break;
 
 		  case C_STACHG:
 			log = (bbd_log_t *)arg;
-			sprintf(channel->channelbuf, 
+			n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
 				"@@%s#%u|%d.%06d|%s|%s|%s|%d|%s|%s|%d\n%s\n@@\n", 
 				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 				sender, hostname, 
 				log->test->testname, (int) log->validtime, 
 				colnames[log->color], colnames[log->oldcolor], (int) log->lastchange, 
 				msg);
+			*(channel->channelbuf + n) = '\0';
 			break;
 
 		  case C_PAGE:
 			log = (bbd_log_t *)arg;
 			if (strcmp(channelmarker, "ack") == 0) {
-				sprintf(channel->channelbuf, 
+				n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
 					"@@%s#%u|%d.%06d|%s|%s|%s|%d\n%s\n@@\n", 
 					channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 					sender, hostname, 
 					log->test->testname, (int) log->acktime, msg);
 			}
 			else {
-				sprintf(channel->channelbuf, 
+				n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
 					"@@%s#%u|%d.%06d|%s|%s|%s|%d|%s|%s|%d|%s|%d\n%s\n@@\n", 
 					channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 					sender, hostname, 
@@ -190,29 +209,34 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 					colnames[log->color], colnames[log->oldcolor], (int) log->lastchange,
 					hostpagename(hostname), log->cookie, msg);
 			}
+			*(channel->channelbuf + n) = '\0';
 			break;
 
 		  case C_DATA:
 			testname = (char *)arg;
-			sprintf(channel->channelbuf, 
+			n = snprintf(channel->channelbuf,  (SHAREDBUFSZ-1),
 				"@@%s#%u|%d.%06d|%s|%s|%s\n%s\n@@\n", 
 				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 				sender, hostname, testname, msg);
+			*(channel->channelbuf + n) = '\0';
 			break;
 
 		  case C_NOTES:
-			sprintf(channel->channelbuf, 
+			n = snprintf(channel->channelbuf,  (SHAREDBUFSZ-1),
 				"@@%s#%u|%d.%06d|%s|%s\n%s\n@@\n", 
 				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 				sender, hostname, msg);
+			*(channel->channelbuf + n) = '\0';
 			break;
 
 		  case C_ENADIS:
 			log = (bbd_log_t *)arg;
-			sprintf(channel->channelbuf,
+			n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
 				"@@%s#%u|%d.%06d|%s|%s|%s|%d\n@@\n",
 				channelmarker, channel->seq, (int) tstamp.tv_sec, (int)tstamp.tv_usec,
 				sender, hostname, log->test->testname, (int) log->enabletime);
+			*(channel->channelbuf + n) = '\0';
+			break;
 		}
 	}
 
@@ -285,7 +309,13 @@ void get_hts(char *msg, char *sender,
 	     bbd_hostlist_t **host, bbd_testlist_t **test, bbd_log_t **log, 
 	     int *color, int createhost, int createlog)
 {
-	/* "msg" contains an incoming message. First list is of the form "KEYWORD host,domain.test COLOR" */
+	/*
+	 * This routine takes care of finding existing status log records, or
+	 * (if they dont exist) creating new ones for an incoming status.
+	 *
+	 * "msg" contains an incoming message. First list is of the form "KEYWORD host,domain.test COLOR"
+	 */
+
 	char *firstline, *p;
 	char *hosttest, *hostname, *testname, *colstr;
 	bbd_hostlist_t *hwalk = NULL;
@@ -378,8 +408,12 @@ done:
 	free(firstline);
 }
 
-bbd_log_t * find_cookie(int cookie)
+
+bbd_log_t *find_cookie(int cookie)
 {
+	/*
+	 * Find a cookie we have issued.
+	 */
 	bbd_log_t *result = NULL;
 	bbd_hostlist_t *hwalk;
 	bbd_log_t *lwalk;
@@ -396,6 +430,7 @@ bbd_log_t * find_cookie(int cookie)
 
 	return result;
 }
+
 
 void handle_status(unsigned char *msg, char *sender, char *hostname, char *testname, bbd_log_t *log, int newcolor)
 {
@@ -563,7 +598,7 @@ void handle_notes(char *msg, char *sender, char *hostname)
 
 void handle_enadis(int enabled, char *msg, char *sender)
 {
-	char firstline[200];
+	char firstline[MAXMSG];
 	char hosttest[200];
 	char *tname = NULL;
 	char durstr[100];
@@ -977,11 +1012,11 @@ void do_message(conn_t *msg)
 				log->message = strdup("");
 			}
 
-			free(msg->buf);
 			bufsz = 1024 + strlen(log->message);
 			if (log->ackmsg) bufsz += 2*strlen(log->ackmsg);
 			if (log->dismsg) bufsz += 2*strlen(log->dismsg);
 
+			free(msg->buf);
 			bufp = buf = (char *)malloc(bufsz);
 			buflen = 0;
 
@@ -1018,7 +1053,7 @@ void do_message(conn_t *msg)
 		int bufsz, buflen;
 		int n;
 
-		bufsz = MAXMSG;
+		bufsz = 16384;
 		bufp = buf = (char *)malloc(bufsz);
 		buflen = 0;
 
@@ -1095,7 +1130,7 @@ void do_message(conn_t *msg)
 	else if (strncmp(msg->buf, "bbgenddrop ", 11) == 0) {
 		char hostname[200];
 		char testname[200];
-		int n = sscanf(msg->buf, "bbgenddrop %s %s", hostname, testname);
+		int n = sscanf(msg->buf, "bbgenddrop %199s %199s", hostname, testname);
 
 		if (n == 1) {
 			handle_dropnrename(CMD_DROPHOST, sender, hostname, NULL, NULL);
@@ -1107,7 +1142,7 @@ void do_message(conn_t *msg)
 	else if (strncmp(msg->buf, "bbgendrename ", 13) == 0) {
 		char hostname[200];
 		char n1[200], n2[200];
-		int n = sscanf(msg->buf, "bbgendrename %s %s %s", hostname, n1, n2);
+		int n = sscanf(msg->buf, "bbgendrename %199s %199s %199s", hostname, n1, n2);
 
 		if (n == 2) {
 			/* Host rename */
@@ -1636,13 +1671,49 @@ int main(int argc, char *argv[])
 		}
 
 		/* Clean up conn structs that are no longer used */
-		while (connhead && (connhead->doingwhat == NOTALK)) {
-			conn_t *tmp = connhead;
-			connhead = connhead->next;
-			free(tmp->buf);
-			free(tmp);
+		{
+			conn_t *tmp, *khead;
+
+			khead = NULL; cwalk = connhead;
+			while (cwalk) {
+				if ((cwalk == connhead) && (cwalk->doingwhat == NOTALK)) {
+					/* head of chain is dead */
+					tmp = connhead;
+					connhead = connhead->next;
+					tmp->next = khead;
+					khead = tmp;
+
+					cwalk = connhead;
+				}
+				else if (cwalk->next && (cwalk->next->doingwhat == NOTALK)) {
+					tmp = cwalk->next;
+					cwalk->next = tmp->next;
+					tmp->next = khead;
+					khead = tmp;
+
+					/* cwalk is unchanged */
+				}
+				else {
+					cwalk = cwalk->next;
+				}
+			}
+			if (connhead == NULL) {
+				conntail = NULL;
+			}
+			else {
+				cwalk = connhead->next;
+				while (cwalk->next) cwalk = cwalk->next;
+				conntail = cwalk;
+			}
+
+			while (khead) {
+				tmp = khead;
+				khead = khead->next;
+
+				if (tmp->buf) free(tmp->buf);
+				free(tmp);
+			}
 		}
-		if (connhead == NULL) conntail = NULL;
 
 		/* Pick up new connections */
 		if (FD_ISSET(lsocket, &fdread)) {
@@ -1662,8 +1733,8 @@ int main(int argc, char *argv[])
 				conntail->sock = sock;
 				memcpy(&conntail->addr, &addr, sizeof(conntail->addr));
 				conntail->doingwhat = RECEIVING;
-				conntail->buf = (unsigned char *)malloc(MAXMSG);
-				conntail->bufsz = MAXMSG;
+				conntail->bufsz = MAXMSG+2048;
+				conntail->buf = (unsigned char *)malloc(conntail->bufsz);
 				conntail->bufp = conntail->buf;
 				conntail->buflen = 0;
 				conntail->next = NULL;
