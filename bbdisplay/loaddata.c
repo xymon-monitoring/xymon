@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.98 2003-07-14 11:10:47 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.99 2003-07-19 20:46:46 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -30,6 +30,7 @@ static char rcsid[] = "$Id: loaddata.c,v 1.98 2003-07-14 11:10:47 henrik Exp $";
 
 #include "bbgen.h"
 #include "util.h"
+#include "sendmsg.h"
 #include "loaddata.h"
 #include "reportdata.h"
 #include "larrdgen.h"
@@ -512,7 +513,6 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	newstate->entry->propagate = 1;
 	newstate->entry->testflags = NULL;
 	newstate->entry->skin = NULL;
-	newstate->entry->testflags = NULL;
 	newstate->entry->repinfo = NULL;
 	newstate->entry->causes = NULL;
 	newstate->entry->histlogname = NULL;
