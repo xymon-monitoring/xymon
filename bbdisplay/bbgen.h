@@ -205,6 +205,7 @@ typedef struct {
 	int	color;		/* Calculated */
 	char	*alerts;
 	int	anywaps;
+	int	wapcolor;
 	char	*waps;
 	char    *nopropyellowtests;
 	char    *nopropredtests;
