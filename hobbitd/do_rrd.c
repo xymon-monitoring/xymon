@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.14 2005-02-06 07:21:46 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.15 2005-02-22 14:15:40 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -148,6 +148,10 @@ void update_larrd(char *hostname, char *testname, char *msg, time_t tstamp, larr
 	else if (strcmp(id, "netstat") == 0)     res = do_netstat_larrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "vmstat") == 0)      res = do_vmstat_larrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "iostat") == 0)      res = do_iostat_larrd(hostname, testname, msg, tstamp);
+
+	/* These two come from the filerstats2bb.pl script. The reports are in disk-format */
+	else if (strcmp(id, "inode") == 0)       res = do_disk_larrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "qtree") == 0)       res = do_disk_larrd(hostname, testname, msg, tstamp);
 
 	else if (strcmp(id, "apache") == 0)      res = do_apache_larrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "bind") == 0)        res = do_bind_larrd(hostname, testname, msg, tstamp);
