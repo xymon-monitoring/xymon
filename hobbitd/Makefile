@@ -8,8 +8,9 @@ CHANNELOBJS = bbd_channel.o bbdutil.o
 SAMPLEOBJS = bbd_sample.o bbdworker.o
 FILESTOREOBJS = bbd_filestore.o bbdworker.o
 HISTORYOBJS = bbd_history.o bbdworker.o
+ALERTOBJS = bbd_alert.o bbdworker.o alert_simple.o
 
-all: bbd_net bbd_channel bbd_filestore bbd_history
+all: bbd_net bbd_channel bbd_filestore bbd_history bbd_alert
 
 bbd_net: $(BBDOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(BBDOBJS) $(LIBOBJS)
@@ -26,9 +27,12 @@ bbd_filestore: $(FILESTOREOBJS) $(LIBOBJS)
 bbd_history: $(HISTORYOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(HISTORYOBJS) $(LIBOBJS)
 
+bbd_alert: $(ALERTOBJS) $(LIBOBJS)
+	$(CC) -o $@ $(ALERTOBJS) $(LIBOBJS)
+
 %.o: %.c bbd_net.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f bbd_net bbd_channel bbd_sample bbd_filestore bbd_history *.o *~
+	rm -f bbd_net bbd_channel bbd_sample bbd_filestore bbd_history bbd_alert *.o *~
 
