@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.80 2005-03-13 06:27:40 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.81 2005-03-13 06:33:03 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -693,7 +693,7 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--repeat=")) {
 			char *p = strchr(argv[argi], '=') + 1;
 
-			alertinterval = atoi(p);
+			alertinterval = 60*atoi(p);
 		}
 	}
 
