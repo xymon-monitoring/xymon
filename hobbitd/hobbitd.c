@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.112 2005-02-20 12:34:46 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.113 2005-02-21 15:31:49 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -162,7 +162,6 @@ int ghosthandling = -1;
 ghostlist_t *ghostlist = NULL;
 
 char *checkpointfn = NULL;
-char *purpleclientconn = NULL;
 FILE *dbgfd = NULL;
 char *dbghost = NULL;
 time_t boottime;
@@ -2110,13 +2109,12 @@ void check_purple_status(void)
 					hobbitd_log_t *tmp;
 					int newcolor = COL_PURPLE;
 
-					if (purpleclientconn) {
-						/*
-						 * See if this is a (client) test where we have a red "conn" test.
-						 */
-						for (tmp = hwalk->logs; (tmp && strcmp(tmp->test->testname, purpleclientconn)); tmp = tmp->next) ;
-						if (tmp && (tmp->color == COL_RED)) newcolor = COL_CLEAR;
-					}
+					/*
+					 * See if this is a (client) test where we have a red "conn" test.
+					 * If yes, then go CLEAR, instead of PURPLE.
+					 */
+					for (tmp = hwalk->logs; (tmp && strcmp(tmp->test->testname, xgetenv("PINGCOLUMN"))); tmp = tmp->next) ;
+					if (tmp && (tmp->color == COL_RED)) newcolor = COL_CLEAR;
 
 					handle_status(lwalk->message, "hobbitd", 
 						hwalk->hostname, lwalk->test->testname, lwalk, newcolor);
@@ -2279,10 +2277,6 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--no-purple")) {
 			do_purples = 0;
 		}
-		else if (argnmatch(argv[argi], "--purple-conn=")) {
-			char *p = strchr(argv[argi], '=');
-			purpleclientconn = strdup(p+1);
-		}
 		else if (argnmatch(argv[argi], "--daemon")) {
 			daemonize = 1;
 		}
@@ -2334,6 +2328,9 @@ int main(int argc, char *argv[])
 			printf("\t--alertcolors=COLOR[,COLOR]   : What colors trigger an alert\n");
 			printf("\t--okcolors=COLOR[,COLOR]      : What colors trigger an recovery alert\n");
 			return 1;
+		}
+		else {
+			errprintf("Unknown option '%s' - ignored\n", argv[argi]);
 		}
 	}
 
