@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.15 2004-12-17 21:47:33 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.16 2004-12-18 10:24:47 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -122,7 +122,7 @@ static int get_page_name_title(char *buf, char *key, char **name, char **title)
 	return 1;
 }
 
-namelist_t *load_hostnames(char *bbhostsfn, int fqdn, char *docurl)
+namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *docurl)
 {
 	FILE *bbhosts;
 	int ip1, ip2, ip3, ip4, banksize;
@@ -162,7 +162,7 @@ namelist_t *load_hostnames(char *bbhostsfn, int fqdn, char *docurl)
 	curpage = curtoppage = pghead;
 
 	bbhosts = stackfopen(bbhostsfn, "r");
-	while (stackfgets(l, sizeof(l), "include", NULL)) {
+	while (stackfgets(l, sizeof(l), "include", extrainclude)) {
 		char *eoln;
 
 		eoln = strchr(l, '\n'); if (eoln) *eoln = '\0';
@@ -223,6 +223,9 @@ namelist_t *load_hostnames(char *bbhostsfn, int fqdn, char *docurl)
 
 			namelist_t *newitem = malloc(sizeof(namelist_t));
 			namelist_t *iwalk, *iprev;
+
+			/* Hostname beginning with '@' are "no-display" hosts. But we still want them. */
+			if (*hostname == '@') memmove(hostname, hostname+1, strlen(hostname));
 
 			if (!fqdn) {
 				/* Strip any domain from the hostname */
@@ -491,7 +494,7 @@ int main(int argc, char *argv[])
 	namelist_t *hosts, *h;
 	char *val;
 
-	hosts = load_hostnames(argv[1], 1, NULL);
+	hosts = load_hostnames(argv[1], NULL, 1, NULL);
 
 	for (argi = 2; (argi < argc); argi++) {
 		h = hostinfo(argv[argi]);
