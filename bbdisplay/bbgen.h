@@ -115,6 +115,11 @@ typedef struct {
 	void	*next;
 } link_t;
 
+typedef struct {
+	char	*rrdname;
+	void	*next;
+} rrd_t;
+
 /* Column definitions.                     */
 /* Basically a list of all possible column */
 /* names with links to their help-texts    */
@@ -158,6 +163,7 @@ typedef struct {
 	entry_t	*entries;
 	int	color;		/* Calculated */
 	char	*alerts;
+	rrd_t	*rrds;
 	void	*parent;
 	void	*next;
 } host_t;
