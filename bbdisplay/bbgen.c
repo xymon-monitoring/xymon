@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.60 2003-01-28 21:29:48 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.61 2003-01-30 17:23:18 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -32,6 +32,7 @@ static char rcsid[] = "$Id: bbgen.c,v 1.60 2003-01-28 21:29:48 henrik Exp $";
 #include "pagegen.h"
 #include "larrdgen.h"
 #include "infogen.h"
+#include "alert.h"
 #include "debug.h"
 
 /* Global vars */
@@ -176,6 +177,7 @@ int main(int argc, char *argv[])
 	/* Load all data from the various files */
 	linkhead = load_all_links();
 	pagehead = load_bbhosts();
+	load_alerts();
 
 	/* Generate the LARRD pages before loading state */
 	generate_larrd(rrddir, larrdcol);

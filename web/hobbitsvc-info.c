@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.2 2003-01-28 06:47:51 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.3 2003-01-30 17:23:18 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -30,6 +30,7 @@ static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.2 2003-01-28 06:47:51 henrik Ex
 #include "bbgen.h"
 #include "util.h"
 #include "infogen.h"
+#include "alert.h"
 
 char infocol[20] = "info";
 int enable_infogen = 0;
@@ -41,7 +42,8 @@ void generate_info(char *infocolumn)
 	struct utimbuf logfiletime;
 	char infobuf[8192];
 	char l[512];
-	int ping, testip;
+	int ping, testip, dialup;
+	alertrec_t *alerts;
 
 	if (!run_columngen("info", info_update_interval, enable_infogen))
 		return;
@@ -128,6 +130,10 @@ void generate_info(char *infocolumn)
 			if (p) *p = ' ';
 		}
 
+		dialup = 0;
+		if (strstr(hostwalk->hostentry->rawentry, "dialup")) dialup = 1;
+		if (dialup) strcat(infobuf, "Host downtime does not trigger alarms (dialup host)<br>\n");
+
 		testip = 0;
 		if (strstr(hostwalk->hostentry->rawentry, "testip")) testip = 1;
 		sprintf(l, "Network tests use : %s<br>\n", (testip ? "IP-address" : "hostname")); strcat(infobuf, l);
@@ -180,6 +186,20 @@ void generate_info(char *infocolumn)
 			strcat(infobuf, "<br>\n");
 		}
 
+		alerts = find_alert(hostwalk->hostentry->hostname, 0);
+		if (!dialup) {
+			if (alerts) {
+				strcat(infobuf, "E-mail/SMS alerting:<br>\n");
+				sprintf(l, "&nbsp;&nbsp;Weekdays: %s<br>\n", alerts->items[4]); strcat(infobuf, l);
+				sprintf(l, "&nbsp;&nbsp;Time of day:%s<br>\n", alerts->items[5]); strcat(infobuf, l);
+				sprintf(l, "&nbsp;&nbsp;Recipients: %s<br>\n", alerts->items[6]); strcat(infobuf, l);
+			}
+			else {
+				strcat(infobuf, "No e-mail/SMS alerting defined<br>\n");
+			}
+		}
+		strcat(infobuf, "<br>\n");
+
 		strcat(infobuf, "Other tags : ");
 		p = strtok(hostwalk->hostentry->rawentry, " \t");
 		while (p) {
@@ -194,6 +214,7 @@ void generate_info(char *infocolumn)
 				&&	(strncmp(p, "http", 4) != 0)
 				&&	(strncmp(p, "content=", 8) != 0)
 				&&	(strncmp(p, "testip", 6) != 0)
+				&&	(strncmp(p, "dialup", 6) != 0)
 				&&	(strncmp(p, "noconn", 6) != 0)
 				&&	(strncmp(p, "noping", 6) != 0)
 			   )  {
