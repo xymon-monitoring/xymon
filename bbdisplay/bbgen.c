@@ -246,7 +246,7 @@ link_t *load_links(void)
 	struct dirent 	*d;
 	link_t		*curlink, *toplink, *newlink;
 
-	toplink = NULL;
+	toplink = curlink = NULL;
 	bblinks = opendir(getenv("BBNOTES"));
 	if (!bblinks) {
 		perror("No notes");
