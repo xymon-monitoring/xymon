@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.19 2003-08-05 09:52:15 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.20 2003-08-05 15:24:28 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -110,15 +110,15 @@ static void generate_colorbar(
 	fprintf(htmlrep, "<TR><TD ALIGN=CENTER>\n");
 
 	/* The date stamps */
-	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 FRAME=NONE CELLSPACING=0 CELLPADDING=1 BGCOLOR=\"#000033\">\n");
+	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 FRAME=VOID CELLSPACING=0 CELLPADDING=1 BGCOLOR=\"#000033\">\n");
 	fprintf(htmlrep, "<TR>\n");
 
-	fprintf(htmlrep, "<TD WIDTH=\"34%%\" ALIGN=LEFT>");
+	fprintf(htmlrep, "<TD WIDTH=\"34%%\" ALIGN=LEFT>\n");
 	if (colorlog && colorlog->starttime <= startofbar) {
 		fprintf(htmlrep, "<A HREF=\"%s&amp;OFFSET=%ld\">", selfurl, startoffset+(periodlen*periodcount/86400));
 	}
 	fprintf(htmlrep, "<B>%s</B>", ctime(&startofbar));
-	if (colorlog && colorlog->starttime <= startofbar) fprintf(htmlrep, "</A>");
+	if (colorlog && colorlog->starttime <= startofbar) fprintf(htmlrep, "</A>\n");
 	fprintf(htmlrep, "</TD>\n");
 
 	fprintf(htmlrep, "<TH ALIGN=CENTER WIDTH=\"32%%\">%s</TH>\n", caption);
@@ -128,7 +128,7 @@ static void generate_colorbar(
 		fprintf(htmlrep, "<A HREF=\"%s&amp;OFFSET=%ld\">", selfurl, startoffset-(periodlen*periodcount/86400));
 	}
 	fprintf(htmlrep, "<B>%s</B>\n", ctime(&today));
-	if (startoffset > 0) fprintf(htmlrep, "</A>");
+	if (startoffset > 0) fprintf(htmlrep, "</A>\n");
 	fprintf(htmlrep, "</TD>\n");
 
 	fprintf(htmlrep, "</TR>\n");
@@ -137,7 +137,7 @@ static void generate_colorbar(
 
 	/* The period marker line */
 	pixelssum = pixelsfirst + pixelslast;
-	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 FRAME=NONE CELLSPACING=0 CELLPADDING=0 BGCOLOR=\"#000033\">\n");
+	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 FRAME=VOID CELLSPACING=0 CELLPADDING=0 BGCOLOR=\"#000033\">\n");
 	fprintf(htmlrep, "<TR>\n");
 	fprintf(htmlrep, "<TD WIDTH=\"%d%s\" ALIGN=CENTER BGCOLOR=\"#000000\"><B>&nbsp;</B></TD>\n", pixelsfirst, pctstr);
 	{
@@ -168,7 +168,7 @@ static void generate_colorbar(
 
 
 	/* The actual color bar */
-	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 FRAME=NONE CELLSPACING=0 CELLPADDING=0 BGCOLOR=\"#000033\">\n");
+	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 FRAME=VOID CELLSPACING=0 CELLPADDING=0 BGCOLOR=\"#000033\">\n");
 	fprintf(htmlrep, "<TR>\n");
 	pixelssum = 0;
 
@@ -208,7 +208,9 @@ static void generate_colorbar(
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "</TABLE>\n");
 
-	fprintf(htmlrep, "</TD></TR></TABLE>\n");
+	fprintf(htmlrep, "</TD>\n");
+	fprintf(htmlrep, "</TR>\n");
+	fprintf(htmlrep, "</TABLE>\n");
 	fprintf(htmlrep, "<BR><BR>\n");
 
 }
@@ -252,8 +254,8 @@ static void generate_pct_summary(
 	fprintf(htmlrep, "</TR>\n");
 
 	if (last) {
-		fprintf(htmlrep, "</TD></TR>\n");
 		fprintf(htmlrep, "</TABLE>\n");
+		fprintf(htmlrep, "</TD></TR>\n");
 
 		fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
 		fprintf(htmlrep, "<TD ALIGN=CENTER>\n");
@@ -261,7 +263,7 @@ static void generate_pct_summary(
 		fprintf(htmlrep, "</TABLE>\n");
 	}
 	else {
-		fprintf(htmlrep, "<TR BGCOLOR=\"#000000\" BORDER=0><TD COLSPAN=6>&nbsp;</TD></TR>\n");
+		fprintf(htmlrep, "<TR BGCOLOR=\"#000000\"><TD COLSPAN=6>&nbsp;</TD></TR>\n");
 	}
 }
 
