@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.132 2003-06-21 15:10:20 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.133 2003-06-21 18:33:10 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -163,6 +163,9 @@ int main(int argc, char *argv[])
 				else if (strcmp(style, stylenames[STYLE_NONGR]) == 0) reportstyle = STYLE_NONGR;
 				else reportstyle = STYLE_OTHER;
 			}
+
+			if (reportstart < 788918400) reportstart = 788918400;
+			if (reportend > time(NULL)) reportend = time(NULL);
 
 			if (getenv("BBREPWARN")) reportwarnlevel = atof(getenv("BBREPWARN"));
 			if (getenv("BBREPGREEN")) reportgreenlevel = atof(getenv("BBREPGREEN"));
