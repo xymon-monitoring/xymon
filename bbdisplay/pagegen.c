@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.32 2003-03-04 11:24:20 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.33 2003-03-06 22:17:50 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -811,13 +811,18 @@ int do_bb2_page(char *filename, int summarytype)
 		 		 * Check for duplicate hosts. We can have a host on two normal BB
 		 		 * pages, but in the BB2 page we want it only once.
 		 		 */
-				if (strcmp(walk->hostname, newhost->hostname) != 0) {
-					newhost->next = walk->next;
-					walk->next = newhost;
+				if (strcmp(walk->hostname, newhost->hostname) == 0) {
+					/* Duplicate at start of list */
+					free(newhost);
+				}
+				else if (walk->next && (strcmp(((host_t *)walk->next)->hostname, newhost->hostname) == 0)) {
+					/* Duplicate inside list */
+					free(newhost);
 				}
 				else {
-					/* Its a duplicate */
-					free(newhost);
+					/* New host */
+					newhost->next = walk->next;
+					walk->next = newhost;
 				}
 			}
 		}
