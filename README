@@ -1,4 +1,4 @@
-README file for bbgen version 1.2
+README file for bbgen version 1.4
 =================================
 
 bbgen is a drop-in replacement for the bb-display.sh script that 
@@ -30,6 +30,10 @@ do not need to run the larrd-html.pl script. This gives the
 other LARRD scripts more time to handle the import of data
 for your trend graphs, instead of wasting it with generation
 of the web pages. See the "LARRD support" section below.
+
+There are a couple of non-standard tags in bb-hosts that bbgen
+will recognize. See the "bbhost-extensions.txt" file for a 
+detailed description of these.
 
 
 Requirements
@@ -66,18 +70,24 @@ directory than your production pages, you can run it like this:
 
 This puts the webpages into "bbtest/" below your webservers'
 webroot. The "BBWEB=/bbtest" is needed to have the proper 
-URL's generated that link to "/bbtest".
+URL's generated that link to "/bbtest". Make sure you have the
+necessary permissions to write files into this directory.
 
 For testing, you may also want to use the "--nopurple" option;
 this disables the update of a status log that bbgen transmits 
 when it sees a status logfile that is too old.
 
-When you feel confident that bbgen works, change $BBHOME/runbb.sh
-to run "bbgen" instead of "bb-display.sh".
+When you feel confident that bbgen works, change 
+$BBHOME/bin/bb-display.sh to run "bbgen" instead of "mkbb.sh" 
+and "mkbb2.sh".
+
+(Earlier, I suggested that you call bbgen directly from runbb.sh - 
+however, this does not work if you need to use options with bbgen. 
+So I recommend that you call bbgen from bb-display.sh).
 
 
-Special display for newly changed items
----------------------------------------
+Special display for newly changed items (--recentgifs option)
+-------------------------------------------------------------
 
 bbgen supports the use of an alternate set of BB red/yellow/green
 icons for status items, that have changed within the past 24 
@@ -91,8 +101,8 @@ I find it quite handy to see what systems have had any problems
 recently.
 
 
-LARRD support
--------------
+LARRD support (--larrd option)
+------------------------------
 
 bbgen has built-in support for handling some of the trivial tasks
 that the LARRD trend-graphing package has: Generation of the
@@ -148,6 +158,46 @@ compared to the time it takes without LARRD support. It is still
 much faster than the standard bb-display.sh and larrd-html.pl
 scripts, though.
 
+If you want the LARRD column pages to be updated more or less
+frequently, the interval between updates can be set with the
+--larrdupdate option.
+
+
+BB Info column (--info option)
+------------------------------
+
+With a large number of systems - and in my case, the same systems tested
+from multiple network locations - it can get to be a bit difficult to
+remember the configuration details for all of the hosts. And having to
+grep through bb-hosts is annoying when you already have the web page
+in your browser.
+
+If you run bbgen with the "--info" option, it will generate an
+always-green column for all hosts, where the actual configuration
+for that host is displayed. This includes the hostname, IP-adress,
+whether network tests use the hostname or IP-adress, if the host 
+is a dialup host, if it is checked with ping, the web URL's
+checked for this host (if any), and all of the other configuration
+information used by Big Brother. If you use any of my non-standard
+bb-hosts extensions (see the bbhost-extenstions.txt file), these
+will also show up here.
+
+Paging configuration is currently not included in the "info" column
+display - this will be added as soon as possible.
+
+The "info" column is always included in the bb2.html and in the
+non-standard bbnk.html page, so the information is available to
+the people troubleshooting a problem with a service or host.
+
+As with the LARRD option, generating the info-column pages do add
+to the time it takes to run bbgen. By default, the info column pages
+are only updated every 5 minutes, which should not be a problem unless
+you have a very large number of hosts.
+
+As with the LARRD column, the "info" column name can be specified in
+the "--info=COLUMNNAME" option, and the interval between updates of
+the info column pages can be set with the "--infoupdate" option.
+
 
 Limitations
 -----------
@@ -160,7 +210,8 @@ in bbgen:
   directive.
 
 * Modem banks are not handled at all by bbgen. This directive
-  is simply ignored.
+  is simply ignored - if you have a pressing need for bbgen
+  to support it, let me know.
 
 
 Bugs
@@ -172,13 +223,16 @@ It works for me, and I think I have taken care of all the
 little details, but do not be surprised if it crashes when you
 try to run it.
 
-The first thing you should check is, if you have all of the BB
-environment variables setup (see "Installation") - if any of 
-these are not defined, you will most likely see bbgen crash
-with a segfault.
+bbgen now (from version 1.4) checks that all needed environment
+variables have been defined, and will complain if any are 
+missing. You must have loaded all of the BB environment:
 
-Also check that you have write access to the directory, where
-you try to store the generated webpages.
+    BBHOME=/path/to/bb/home
+    export BBHOME
+    . $BBHOME/etc/bbdef.sh
+
+You should also check that you have write access to the 
+BBTMP and BBWEB directories.
 
 If it still fails, feel free to debug the problem and send me
 patches :-) Or if your C coding is a bit rusty, e-mail we and
