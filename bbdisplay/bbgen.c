@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.177 2004-10-24 20:45:53 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.178 2004-10-26 15:50:21 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -468,6 +468,7 @@ int main(int argc, char *argv[])
 
 		else if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-?") == 0)) {
 			printf("bbgen version %s\n\n", VERSION);
+			if (usebbgend) printf("Using bbgend interface\n");
 			printf("Usage: %s [options] [WebpageDirectory]\n", argv[0]);
 			printf("Options:\n");
 			printf("    --nopurple                  : Disable purple status-updates\n");
@@ -715,7 +716,7 @@ int main(int argc, char *argv[])
 		sprintf(msgline, "status %s.%s %s %s\n\n", getenv("MACHINE"), egocolumn, colorname(color), timestamp);
 		addtostatus(msgline);
 
-		sprintf(msgline, "bbgen version %s\n", VERSION);
+		sprintf(msgline, "bbgen version %s %s\n", VERSION, (usebbgend ? "with bbgend" : ""));
 		addtostatus(msgline);
 
 		sprintf(msgline, "\nStatistics:\n Hosts               : %5d\n Status messages     : %5d\n Purple messages     : %5d\n Pages               : %5d\n", 
