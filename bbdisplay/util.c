@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.28 2003-04-22 15:53:45 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.29 2003-04-22 21:56:01 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -177,24 +177,23 @@ char *time_text(char *timespec)
 
 char *hostpage_link(host_t *host)
 {
+	/* Provide a link to the page where this host lives, relative to BBWEB */
 
-	/* Provide a link to the page where this host lives */
 	static char pagelink[MAX_PATH];
+	char tmppath[MAX_PATH];
+	bbgen_page_t *pgwalk;
 
-	if (((bbgen_page_t *)host->parent)->parent) {
-		bbgen_page_t *parentpage, *parentsubpage;
-
-		parentsubpage = host->parent;
-		parentpage = parentsubpage->parent;
-
-		/* "/bb/sdm/customer/customer.html" */
-		sprintf(pagelink, "%s/%s/%s.html",
-			parentpage->name, parentsubpage->name, parentsubpage->name);
+	if (strlen(((bbgen_page_t *)host->parent)->name) > 0) {
+		sprintf(pagelink, "%s.html", ((bbgen_page_t *)host->parent)->name);
+		for (pgwalk = host->parent; (pgwalk); pgwalk = pgwalk->parent) {
+			if (strlen(pgwalk->name)) {
+				sprintf(tmppath, "%s/%s", pgwalk->name, pagelink);
+				strcpy(pagelink, tmppath);
+			}
+		}
 	}
 	else {
-		/* "/bb/sdm/sdm.html" */
-		sprintf(pagelink, "%s/%s.html",
-			((bbgen_page_t *)host->parent)->name, ((bbgen_page_t *)host->parent)->name);
+		sprintf(pagelink, "bb.html");
 	}
 
 	return pagelink;
@@ -204,20 +203,26 @@ char *hostpage_link(host_t *host)
 char *hostpage_name(host_t *host)
 {
 	/* Provide a link to the page where this host lives */
+
 	static char pagename[MAX_PATH];
+	char tmpname[MAX_PATH];
+	bbgen_page_t *pgwalk;
 
-	if (((bbgen_page_t *)host->parent)->parent) {
-		bbgen_page_t *parentpage, *parentsubpage;
-
-		parentsubpage = host->parent;
-		parentpage = parentsubpage->parent;
-
-		/* "sdm/customer" */
-		sprintf(pagename, "%s/%s", parentpage->title, parentsubpage->title);
+	if (strlen(((bbgen_page_t *)host->parent)->name) > 0) {
+		pagename[0] = '\0';
+		for (pgwalk = host->parent; (pgwalk); pgwalk = pgwalk->parent) {
+			if (strlen(pgwalk->name)) {
+				strcpy(tmpname, pgwalk->title);
+				if (strlen(pagename)) {
+					strcat(tmpname, "/");
+					strcat(tmpname, pagename);
+				}
+				strcpy(pagename, tmpname);
+			}
+		}
 	}
 	else {
-		/* "sdm" */
-		sprintf(pagename, "%s", ((bbgen_page_t *)host->parent)->title);
+		sprintf(pagename, "Top page");
 	}
 
 	return pagename;
