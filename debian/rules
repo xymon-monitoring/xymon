@@ -44,6 +44,7 @@ Makefile: configure
 	PIXELCOUNT=960 \
 	INSTALLBINDIR=/usr/lib/hobbit/server/bin \
 	INSTALLETCDIR=/etc/hobbit \
+	INSTALLWEBDIR=/etc/hobbit/web \
 	INSTALLEXTDIR=/usr/lib/hobbit/server/ext \
 	INSTALLTMPDIR=/var/lib/hobbit/tmp \
 	INSTALLWWWDIR=/var/lib/hobbit/www \
