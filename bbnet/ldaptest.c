@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.4 2003-08-30 10:16:17 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.5 2003-08-30 23:04:56 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -130,7 +130,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 		if( (ld = ldap_init(ludp->lud_host, ludp->lud_port)) == NULL ) {
 			dprintf("ldap_init failed\n");
 			req->ldapstatus = BBGEN_LDAP_INITFAIL;
-			break;
+			continue;
 		}
 
 #ifdef BBGEN_LDAP_USESTARTTLS
@@ -150,14 +150,14 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 			if(ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &protocol) != LDAP_OPT_SUCCESS) {
 				dprintf("Failed to force protocol 3\n");
 				req->ldapstatus = BBGEN_LDAP_TLSFAIL;
-				break;
+				continue;
 			}
 
 			dprintf("Trying to enable TLS for session\n");
 			if (ldap_start_tls_s(ld, NULL, NULL) != LDAP_SUCCESS) {
 				dprintf("ldap_start_tls failed\n");
 				req->ldapstatus = BBGEN_LDAP_TLSFAIL;
-				break;
+				continue;
 			}
 		}
 #endif
@@ -178,7 +178,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 				req->ldapstatus = BBGEN_LDAP_BINDFAIL;
 				req->output = malcop(ldap_err2string(rc2));
 				ldap_unbind(ld);
-				break;
+				continue;
 			}
 			if( rc >= 0 ) {
 				finished = 1;
@@ -187,7 +187,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 					req->ldapstatus = BBGEN_LDAP_BINDFAIL;
 					req->output = "LDAP library problem: ldap_result2error returned a NULL result\n";
 					ldap_unbind(ld);
-					break;
+					continue;
 				}
 				else {
 					rc2 = ldap_result2error(ld, result, 1);
@@ -195,7 +195,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 						req->ldapstatus = BBGEN_LDAP_BINDFAIL;
 						req->output = malcop(ldap_err2string(rc));
 						ldap_unbind(ld);
-						break;
+						continue;
 					}
 				}
 			}
@@ -210,13 +210,13 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 			req->ldapstatus = BBGEN_LDAP_TIMEOUT;
 			req->output = malcop(ldap_err2string(rc));
 	  		ldap_unbind(ld);
-			break;
+			continue;
 		}
 		if( rc != LDAP_SUCCESS ) {
 			req->ldapstatus = BBGEN_LDAP_SEARCHFAILED;
 			req->output = malcop(ldap_err2string(rc));
 	  		ldap_unbind(ld);
-			break;
+			continue;
 		}
 
 		gettimeofday(&endtime, &tz);
