@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.9 2004-10-30 22:20:36 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.10 2004-11-13 07:57:20 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -76,12 +76,18 @@ static token_t *tokhead = NULL;
 
 /* These are the criteria we use when matching an alert. Used both generally for a rule, and for recipients */
 typedef struct criteria_t {
-	char *pagespec;
+	char *pagespec;		/* Pages to include */
 	pcre *pagespecre;
-	char *hostspec;
+	char *expagespec;	/* Pages to exclude */
+	pcre *expagespecre;
+	char *hostspec;		/* Hosts to include */
 	pcre *hostspecre;
-	char *svcspec;
+	char *exhostspec;	/* Hosts to exclude */
+	pcre *exhostspecre;
+	char *svcspec;		/* Services to include */
 	pcre *svcspecre;
+	char *exsvcspec;	/* Services to exclude */
+	pcre *exsvcspecre;
 	int colors;
 	char *timespec;
 	int minduration, maxduration;
@@ -241,10 +247,16 @@ void load_alertconfig(char *configfn, int defcolors)
 		if (rulehead->criteria) {
 			if (rulehead->criteria->pagespec) free(rulehead->criteria->pagespec);
 			if (rulehead->criteria->pagespecre) pcre_free(rulehead->criteria->pagespecre);
+			if (rulehead->criteria->expagespec) free(rulehead->criteria->expagespec);
+			if (rulehead->criteria->expagespecre) pcre_free(rulehead->criteria->expagespecre);
 			if (rulehead->criteria->hostspec) free(rulehead->criteria->hostspec);
 			if (rulehead->criteria->hostspecre) pcre_free(rulehead->criteria->hostspecre);
+			if (rulehead->criteria->exhostspec) free(rulehead->criteria->exhostspec);
+			if (rulehead->criteria->exhostspecre) pcre_free(rulehead->criteria->exhostspecre);
 			if (rulehead->criteria->svcspec)  free(rulehead->criteria->svcspec);
 			if (rulehead->criteria->svcspecre) pcre_free(rulehead->criteria->svcspecre);
+			if (rulehead->criteria->exsvcspec)  free(rulehead->criteria->exsvcspec);
+			if (rulehead->criteria->exsvcspecre) pcre_free(rulehead->criteria->exsvcspecre);
 			if (rulehead->criteria->timespec) free(rulehead->criteria->timespec);
 			free(rulehead->criteria);
 		}
@@ -255,10 +267,16 @@ void load_alertconfig(char *configfn, int defcolors)
 			if (trecip->criteria) {
 				if (trecip->criteria->pagespec) free(trecip->criteria->pagespec);
 				if (trecip->criteria->pagespecre) pcre_free(trecip->criteria->pagespecre);
+				if (trecip->criteria->expagespec) free(trecip->criteria->expagespec);
+				if (trecip->criteria->expagespecre) pcre_free(trecip->criteria->expagespecre);
 				if (trecip->criteria->hostspec) free(trecip->criteria->hostspec);
 				if (trecip->criteria->hostspecre) pcre_free(trecip->criteria->hostspecre);
+				if (trecip->criteria->exhostspec) free(trecip->criteria->exhostspec);
+				if (trecip->criteria->exhostspecre) pcre_free(trecip->criteria->exhostspecre);
 				if (trecip->criteria->svcspec)  free(trecip->criteria->svcspec);
 				if (trecip->criteria->svcspecre) pcre_free(trecip->criteria->svcspecre);
+				if (trecip->criteria->exsvcspec)  free(trecip->criteria->exsvcspec);
+				if (trecip->criteria->exsvcspecre) pcre_free(trecip->criteria->exsvcspecre);
 				if (trecip->criteria->timespec) free(trecip->criteria->timespec);
 				free(trecip->criteria);
 			}
@@ -331,17 +349,35 @@ void load_alertconfig(char *configfn, int defcolors)
 				crit->pagespec = strdup(val);
 				if (*(crit->pagespec) == '%') crit->pagespecre = compileregex(crit->pagespec+1);
 			}
+			else if ((strncmp(p, "EXPAGE=", 7) == 0) || (strncmp(p, "EXPAGES=", 8) == 0)) {
+				char *val = strchr(p, '=')+1;
+				criteria_t *crit = setup_criteria(&currule, &currcp);
+				crit->expagespec = strdup(val);
+				if (*(crit->expagespec) == '%') crit->expagespecre = compileregex(crit->expagespec+1);
+			}
 			else if ((strncmp(p, "HOST=", 5) == 0) || (strncmp(p, "HOSTS=", 6) == 0)) {
 				char *val = strchr(p, '=')+1;
 				criteria_t *crit = setup_criteria(&currule, &currcp);
 				crit->hostspec = strdup(val);
 				if (*(crit->hostspec) == '%') crit->hostspecre = compileregex(crit->hostspec+1);
 			}
+			else if ((strncmp(p, "EXHOST=", 7) == 0) || (strncmp(p, "EXHOSTS=", 8) == 0)) {
+				char *val = strchr(p, '=')+1;
+				criteria_t *crit = setup_criteria(&currule, &currcp);
+				crit->exhostspec = strdup(val);
+				if (*(crit->exhostspec) == '%') crit->exhostspecre = compileregex(crit->exhostspec+1);
+			}
 			else if ((strncmp(p, "SERVICE=", 8) == 0) || (strncmp(p, "SERVICES=", 9) == 0)) {
 				char *val = strchr(p, '=')+1;
 				criteria_t *crit = setup_criteria(&currule, &currcp);
 				crit->svcspec = strdup(val);
 				if (*(crit->svcspec) == '%') crit->svcspecre = compileregex(crit->svcspec+1);
+			}
+			else if ((strncmp(p, "EXSERVICE=", 10) == 0) || (strncmp(p, "EXSERVICES=", 11) == 0)) {
+				char *val = strchr(p, '=')+1;
+				criteria_t *crit = setup_criteria(&currule, &currcp);
+				crit->exsvcspec = strdup(val);
+				if (*(crit->exsvcspec) == '%') crit->exsvcspecre = compileregex(crit->exsvcspec+1);
 			}
 			else if ((strncmp(p, "COLOR=", 6) == 0) || (strncmp(p, "COLORS=", 7) == 0)) {
 				criteria_t *crit = setup_criteria(&currule, &currcp);
@@ -461,8 +497,11 @@ void load_alertconfig(char *configfn, int defcolors)
 static void dump_criteria(criteria_t *crit, int isrecip)
 {
 	if (crit->pagespec) printf("PAGE=%s ", crit->pagespec);
+	if (crit->expagespec) printf("EXPAGE=%s ", crit->expagespec);
 	if (crit->hostspec) printf("HOST=%s ", crit->hostspec);
+	if (crit->exhostspec) printf("EXHOST=%s ", crit->exhostspec);
 	if (crit->svcspec) printf("SERVICE=%s ", crit->svcspec);
+	if (crit->exsvcspec) printf("EXSERVICE=%s ", crit->exsvcspec);
 	if (crit->colors) {
 		int i, first = 1;
 
@@ -531,11 +570,8 @@ static int namematch(char *needle, char *haystack, pcre *pcrecode)
 	char *match;
 	int result = 0;
 
-	if (*haystack == '%') {
-		dprintf("Regex matching, pcrecode is %s\n", (pcrecode ? "ok" : "NULL"));
-	}
-
-	if (pcrecode && (*haystack == '%')) {
+	if (pcrecode) {
+		/* Do regex matching. The regex has already been compiled for us. */
 		int ovector[30];
 		result = pcre_exec(pcrecode, NULL, needle, strlen(needle), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
 		dprintf("pcre_exec returned %d\n", result);
@@ -617,14 +653,26 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit)
 		dprintf("failed pagespec\n"); 
 		return 0; 
 	}
+	if (crit->expagespec && namematch(alert->location->name, crit->expagespec, crit->expagespecre)) { 
+		dprintf("matched expagespec, so drop it\n"); 
+		return 0; 
+	}
 
 	if (crit->hostspec && !namematch(alert->hostname->name, crit->hostspec, crit->hostspecre)) { 
 		dprintf("failed hostspec\n"); 
 		return 0; 
 	}
+	if (crit->exhostspec && namematch(alert->hostname->name, crit->exhostspec, crit->exhostspecre)) { 
+		dprintf("matched exhostspec, so drop it\n"); 
+		return 0; 
+	}
 
 	if (crit->svcspec && !namematch(alert->testname->name, crit->svcspec, crit->svcspecre))  { 
 		dprintf("failed svcspec\n"); 
+		return 0; 
+	}
+	if (crit->exsvcspec && namematch(alert->testname->name, crit->exsvcspec, crit->exsvcspecre))  { 
+		dprintf("matched exsvcspec, so drop it\n"); 
 		return 0; 
 	}
 
@@ -734,7 +782,7 @@ static char *message_subject(activealerts_t *alert, recip_t *recip)
 		  sev = "has no data";
 		  break;
 	  case COL_PURPLE:
-		  sev = "disappeared from BB";
+		  sev = "stopped reporting to BB";
 		  break;
 	  case COL_GREEN:
 		  sev = "recovered";
