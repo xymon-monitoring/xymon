@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.101 2003-10-21 08:35:39 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.102 2003-10-22 11:20:53 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -183,12 +183,13 @@ static char *read_line_1(struct linebuf_t *buffer, FILE *stream, int *docontinue
 	}
 	*(p+1) = '\0';
 
-	if ((strlen(start) + strlen(buffer->buf) + 1) > buffer->buflen) {
+	if ((strlen(start) + strlen(buffer->buf) + 2) > buffer->buflen) {
 		buffer->buflen += MAX_LINE_LEN;
 		buffer->buf = (char *)realloc(buffer->buf, buffer->buflen);
 	}
 
 	strcat(buffer->buf, start);
+	if (docontinue) strcat(buffer->buf, " ");
 	return buffer->buf;
 }
 
