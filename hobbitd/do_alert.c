@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.44 2005-02-23 21:15:19 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.45 2005-02-23 21:35:38 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -627,6 +627,18 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 
 			if (p) p = strtok(NULL, " ");
 			firsttoken = 0;
+		}
+
+		if (currcp && currule && (mailcmdactive || scriptcmdactive) && (currule->recipients != currcp)) {
+			/* We have multiple recipients on one line. Make sure criteria etc. get copied */
+			recip_t *rwalk;
+
+			/* All criteria etc. have been set on the last recipient (currcp) */
+			for (rwalk = currule->recipients; (rwalk != currcp); rwalk = rwalk->next) {
+				rwalk->format = currcp->format;
+				rwalk->interval = currcp->interval;
+				rwalk->criteria = currcp->criteria;
+			}
 		}
 	}
 
