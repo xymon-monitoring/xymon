@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.178 2004-09-24 16:11:48 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.179 2004-10-01 16:02:12 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -96,6 +96,7 @@ int		fqdn = 1;
 int		dosendflags = 1;
 char		fpingcmd[MAX_PATH];
 char		fpinglog[MAX_PATH];
+char		fpingerrlog[MAX_PATH];
 int		respcheck_color = COL_YELLOW;
 
 void dump_hostlist(void)
@@ -1212,7 +1213,8 @@ int start_fping_service(service_t *service)
 
 	p = getenv("FPING");
 	strcpy(fpingcmd, (p ? p : "fping"));
-	sprintf(fpinglog, "%s/fping.%lu", getenv("BBTMP"), (unsigned long)getpid());
+	sprintf(fpinglog, "%s/fping-stdout.%lu", getenv("BBTMP"), (unsigned long)getpid());
+	sprintf(fpingerrlog, "%s/fping-stderr.%lu", getenv("BBTMP"), (unsigned long)getpid());
 
 	/* $FPING may contain arguments, so we need to split those up for execlp() */
 	memset(fpingargs, 0, sizeof(fpingargs));
@@ -1241,14 +1243,24 @@ int start_fping_service(service_t *service)
 		 * child must have
 		 *  - stdin fed from the parent
 		 *  - stdout going to a file
-		 *  - stderr going to stdout (the file)
+		 *  - stderr going to another file. This is important, as
+		 *    putting it together with stdout will wreak havoc when 
+		 *    we start parsing the output later on. We could just 
+		 *    dump it to /dev/null, but it might be useful to see
+		 *    what went wrong.
 		 */
 		int outfile = open(fpinglog, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
+		int errfile = open(fpingerrlog, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
+
+		if ((outfile == -1) || (errfile == -1)) {
+			/* Ouch - cannot create our output files. Abort. */
+			exit(98);
+		}
 
 		status = dup2(pfd[0], STDIN_FILENO);
 		status = dup2(outfile, STDOUT_FILENO);
-		status = dup2(STDOUT_FILENO, STDERR_FILENO);
-		close(pfd[0]); close(pfd[1]); close(outfile);
+		status = dup2(errfile, STDERR_FILENO);
+		close(pfd[0]); close(pfd[1]); close(outfile); close(errfile);
 
 		/* We use fping's numeric output format, -Ae */
 		execlp(fpingargs[0], "fping", "-Ae", 
@@ -1359,7 +1371,10 @@ int finish_fping_service(service_t *service)
 		}
 	}
 	fclose(logfd);
-	if (!debug) unlink(fpinglog);
+	if (!debug) {
+		unlink(fpinglog);
+		unlink(fpingerrlog);
+	}
 
 	/* 
 	 * Handle the router dependency stuff. I.e. for all hosts
