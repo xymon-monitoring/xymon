@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char external_rcsid[] = "$Id: do_external.c,v 1.2 2005-02-06 08:49:02 henrik Exp $";
+static char external_rcsid[] = "$Id: do_external.c,v 1.3 2005-02-06 13:31:44 henrik Exp $";
 
 
 int do_external_larrd(char *hostname, char *testname, char *msg, time_t tstamp) 
@@ -24,7 +24,7 @@ int do_external_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		errprintf("Cannot create temp file %s\n", fn);
 		return 1;
 	}
-	if (fwrite(msg, strlen(msg), 1, fd) == 0) {
+	if (fwrite(msg, strlen(msg), 1, fd) != 1) {
 		errprintf("Error writing to file %s: %s\n", fn, strerror(errno));
 		return 2;
 	}
@@ -111,6 +111,13 @@ int do_external_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		}
 		else {
 			errprintf("Pipe open of RRD handler failed: %s\n", strerror(errno));
+		}
+
+		if (params) {
+			for (paridx=2; (params[paridx] != NULL); paridx++) {
+				if (strncasecmp(params[paridx], "DS:", 3) == 0) xfree(params[paridx]);
+			}
+			xfree(params);
 		}
 
 		unlink(fn);
