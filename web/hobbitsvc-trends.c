@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.52 2004-12-18 10:24:17 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.53 2004-12-26 23:28:16 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -111,7 +111,7 @@ static char *larrd_readdir(void)
 }
 
 
-static char *rrdlink_text(namelist_t *host, graph_t *rrd, int larrd043, int wantmeta)
+static char *rrdlink_text(namelist_t *host, graph_t *rrd, int larrd043, int bbgend, int wantmeta)
 {
 	static char *rrdlink = NULL;
 	static int rrdlinksize = 0;
@@ -127,7 +127,7 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, int larrd043, int want
 	/* If no larrdgraphs definition, include all with default links */
 	if (hostlarrdgraphs == NULL) {
 		dprintf("rrdlink_text: Standard URL (no larrdgraphs)\n");
-		return larrd_graph_data(host->bbhostname, hostdisplayname, NULL, rrd->gdef, rrd->count, larrd043, wantmeta);
+		return larrd_graph_data(host->bbhostname, hostdisplayname, NULL, rrd->gdef, rrd->count, larrd043, bbgend, wantmeta);
 	}
 
 	/* Find this rrd definition in the larrdgraphs */
@@ -142,7 +142,7 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, int larrd043, int want
 			dprintf("rrdlink_text: Default URL included\n");
 
 			/* Yes, return default link for this RRD */
-			return larrd_graph_data(host->bbhostname, hostdisplayname, NULL, rrd->gdef, rrd->count, larrd043, wantmeta);
+			return larrd_graph_data(host->bbhostname, hostdisplayname, NULL, rrd->gdef, rrd->count, larrd043, bbgend, wantmeta);
 		}
 		else {
 			dprintf("rrdlink_text: Default URL NOT included\n");
@@ -193,7 +193,7 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, int larrd043, int want
 			myrrd->gdef->maxgraphs = 999;
 			myrrd->count = 1;
 			myrrd->next = NULL;
-			partlink = larrd_graph_data(host->bbhostname, hostdisplayname, NULL, myrrd->gdef, myrrd->count, larrd043, wantmeta);
+			partlink = larrd_graph_data(host->bbhostname, hostdisplayname, NULL, myrrd->gdef, myrrd->count, larrd043, bbgend, wantmeta);
 			if ((strlen(rrdlink) + strlen(partlink) + 1) >= rrdlinksize) {
 				rrdlinksize += strlen(partlink) + 4096;
 				rrdlink = (char *)realloc(rrdlink, rrdlinksize);
@@ -214,7 +214,7 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, int larrd043, int want
 	}
 	else {
 		/* It is included with the default graph */
-		return larrd_graph_data(host->bbhostname, hostdisplayname, NULL, rrd->gdef, rrd->count, larrd043, wantmeta);
+		return larrd_graph_data(host->bbhostname, hostdisplayname, NULL, rrd->gdef, rrd->count, larrd043, bbgend, wantmeta);
 	}
 
 	return "";
@@ -340,7 +340,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 				int buflen;
 
 				buflen = (allrrdlinksend - allrrdlinks);
-				rrdlink = rrdlink_text(hostwalk, rwalk, larrd043, 0);
+				rrdlink = rrdlink_text(hostwalk, rwalk, larrd043, bbgend, 0);
 				if ((buflen + strlen(rrdlink)) >= allrrdlinksize) {
 					allrrdlinksize += (strlen(rrdlink) + 4096);
 					allrrdlinks = (char *) realloc(allrrdlinks, allrrdlinksize);
@@ -350,7 +350,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 
 				if (bbgend && sendmetainfo) {
 					buflen = (allrrdlinksend - allrrdlinks);
-					rrdlink = rrdlink_text(hostwalk, rwalk, larrd043, 1);
+					rrdlink = rrdlink_text(hostwalk, rwalk, larrd043, bbgend, 1);
 					if ((buflen + strlen(rrdlink)) >= allmetasize) {
 						allmetasize += (strlen(rrdlink) + 4096);
 						allmeta = (char *) realloc(allmeta, allmetasize);
@@ -479,7 +479,7 @@ int main(int argc, char *argv[])
 				if (hostwalk) for (rwalk = (graph_t *)hostwalk->data; (rwalk && (rwalk->gdef != graph)); rwalk = rwalk->next) ;
 				if (rwalk) linecount = rwalk->count; else linecount = 1;
 
-				graphlinks =  larrd_graph_data(host, host, test, graph, linecount, 1, 1);
+				graphlinks =  larrd_graph_data(host, host, test, graph, linecount, 1, 1, 1);
 				if (strlen(graphlinks) > 0) {
 					char *msg = (char *)malloc(strlen(graphlinks) + strlen(msgfmt) + 1);
 
