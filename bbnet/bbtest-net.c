@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.63 2003-06-04 06:49:28 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.64 2003-06-07 12:08:46 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -968,6 +968,9 @@ int main(int argc, char *argv[])
 	int concurrency = 0;
 	char *pingcolumn = NULL;
 	char *egocolumn = NULL;
+
+	/* Setup SEGV handler */
+	setup_signalhandler("bbtest");
 
 	if (init_http_library() != 0) {
 		errprintf("Failed to initialize http library\n");
