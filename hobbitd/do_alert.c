@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.7 2004-10-22 15:15:12 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.8 2004-10-30 15:55:05 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -54,13 +54,13 @@ static char rcsid[] = "$Id: do_alert.c,v 1.7 2004-10-22 15:15:12 henrik Exp $";
 #include <unistd.h>
 #include <stdlib.h>
 #include <time.h>
+#include <limits.h>
 
 #include <pcre.h>
 
+#include "libbbgen.h"
+
 #include "bbd_alert.h"
-#include "bbgen.h"
-#include "util.h"
-#include "debug.h"
 
 enum method_t { M_MAIL, M_SCRIPT, M_BBSCRIPT };
 enum msgformat_t { FRM_TEXT, FRM_SMS, FRM_PAGER };
@@ -219,7 +219,7 @@ pcre *compileregex(char *pattern)
 void load_alertconfig(char *configfn, int defcolors)
 {
 	/* (Re)load the configuration file without leaking memory */
-	char fn[MAX_PATH];
+	char fn[PATH_MAX];
 	struct stat st;
 	FILE *fd;
 	char l[8192];
@@ -746,8 +746,8 @@ static char *message_subject(activealerts_t *alert, recip_t *recip)
 
 	switch (recip->format) {
 	  case FRM_TEXT:
-		snprintf(subj, sizeof(subj)-1, "BB: %s:%s %s",
-			 alert->hostname->name, alert->testname->name, sev);
+		snprintf(subj, sizeof(subj)-1, "BB [%d] %s:%s %s",
+			 alert->cookie, alert->hostname->name, alert->testname->name, sev);
 		return subj;
 
 	 case FRM_SMS:
@@ -765,6 +765,7 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 	static char *buf = NULL;
 	static int buflen = 0;
 	char *eoln, *bom;
+	char info[100];
 
 	switch (recip->format) {
 	  case FRM_TEXT:
@@ -772,19 +773,21 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 
 	  case FRM_SMS:
 		/*
-		 * Send a report containing the first line,
-		 * and any lines below that begin with a "&COLOR"
+		 * Send a report containing a brief alert
+		 * and any lines that begin with a "&COLOR"
 		 */
+		sprintf(info, "%s:%s %s [%d]", 
+			alert->hostname->name, alert->testname->name, 
+			colorname(alert->color), alert->cookie);
+		addtobuffer(&buf, &buflen, info);
 		bom = msg_data(alert->pagemessage);
 		eoln = strchr(bom, '\n');
-		if (eoln) *eoln = '\0';
-		addtobuffer(&buf, &buflen, bom);
-		if (eoln) *eoln = '\n';
 		if (eoln) {
 			bom = eoln;
 			while ((bom = strstr(bom, "\n&")) != NULL) {
 				eoln = strchr(bom+1, '\n'); if (eoln) *eoln = '\0';
-				addtobuffer(&buf, &buflen, bom);
+				if ((strncmp(bom, "&red", 4) == 0) || (strncmp(bom, "&yellow", 7) == 0)) 
+					addtobuffer(&buf, &buflen, bom);
 				if (eoln) *eoln = '\n';
 				bom = (eoln ? eoln+1 : "");
 			}
