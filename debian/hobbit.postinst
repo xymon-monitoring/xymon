@@ -33,7 +33,7 @@ case "$1" in
 	#cd /usr/lib/hobbit/server/etc; chown hobbit:hobbit . *
 	#cd /usr/lib/hobbit/server/ext; chown hobbit:hobbit . *
 	#cd /usr/lib/hobbit/server/web; chown hobbit:hobbit . *
-	update-rc.d hobbit defaults
+	update-rc.d hobbit defaults >/dev/null 2>&1
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
