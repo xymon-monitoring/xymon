@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.6 2003-07-19 20:46:18 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.7 2003-07-19 21:00:59 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -65,7 +65,11 @@ static int sendtobbd(char *recipient, char *message)
 				(unsigned char) hent->h_addr_list[0][1],
 				(unsigned char) hent->h_addr_list[0][2],
 				(unsigned char) hent->h_addr_list[0][3]);
-			if (inet_aton(hostip, &addr) == 0) return 1;
+			if (inet_aton(hostip, &addr) == 0) return BB_EBADIP;
+		}
+		else {
+			errprintf("Cannot determine IP address of message recipient %s\n", recipient);
+			return BB_EIPUNKNOWN;
 		}
 	}
 	memset(&saddr, 0, sizeof(saddr));
@@ -75,14 +79,14 @@ static int sendtobbd(char *recipient, char *message)
 
 	/* Get a non-blocking socket */
 	sockfd = socket(PF_INET, SOCK_STREAM, 0);
-	if (sockfd == -1) return 2;
+	if (sockfd == -1) return BB_ENOSOCKET;
 	res = fcntl(sockfd, F_SETFL, O_NONBLOCK);
-	if (res != 0) return 3;
+	if (res != 0) return BB_ECANNOTDONONBLOCK;
 
 	res = connect(sockfd, (struct sockaddr *)&saddr, sizeof(saddr));
 	if ((res == -1) && (errno != EINPROGRESS)) {
 		close(sockfd);
-		return 4;
+		return BB_ECONNFAILED;
 	}
 
 	isconnected = done = 0;
@@ -94,13 +98,13 @@ static int sendtobbd(char *recipient, char *message)
 		if (res == -1) {
 			errprintf("Select failure while sending to bbd!\n");
 			shutdown(sockfd, SHUT_RDWR); close(sockfd);
-			return 5;
+			return BB_ESELFAILED;
 		}
 		else if (res == 0) {
 			/* Timeout! */
 			errprintf("Timeout while talking to bbd!\n");
 			close(sockfd);
-			return 6;
+			return BB_ETIMEOUT;
 		}
 		else if (FD_ISSET(sockfd, &writefds)) {
 			if (!isconnected) {
@@ -113,7 +117,7 @@ static int sendtobbd(char *recipient, char *message)
 				if (!isconnected) {
 					close(sockfd);
 					errprintf("Could not connect to bbd!\n");
-					return 7;
+					return BB_ECONNFAILED;
 				}
 			}
 			else {
@@ -122,7 +126,7 @@ static int sendtobbd(char *recipient, char *message)
 				if (res == -1) {
 					shutdown(sockfd, SHUT_RDWR); close(sockfd);
 					errprintf("Write error while sending message to bbd\n");
-					return 8;
+					return BB_EWRITEERROR;
 				}
 				else {
 					msgptr += res;
@@ -138,7 +142,7 @@ static int sendtobbd(char *recipient, char *message)
 
 	shutdown(sockfd, SHUT_RDWR);
 	close(sockfd);
-	return 0;
+	return BB_OK;
 }
 
 static int sendtomany(char *onercpt, char *morercpts, char *msg)
@@ -234,7 +238,7 @@ int sendmessage(char *msg, char *recipient)
 		res = sendtobbd(recipient, msg);
 	}
 
-	if (res != 0) {
+	if (res != BB_OK) {
 		errprintf("%s: Whoops ! bb failed to send message - returns status %d\n", timestamp, res);
 	}
 
@@ -261,7 +265,7 @@ void combo_flush(void)
 {
 
 	if (!bbmsgqueued) {
-		if (debug) printf("Flush, but bbmsg is empty\n");
+		dprintf("Flush, but bbmsg is empty\n");
 		return;
 	}
 
@@ -308,10 +312,8 @@ void combo_add(char *buf)
 void combo_end(void)
 {
 	combo_flush();
-	if (debug) {
-		printf("%s: %d status messages merged into %d transmissions\n", 
-			timestamp, bbstatuscount, bbmsgcount);
-	}
+	dprintf("%s: %d status messages merged into %d transmissions\n", 
+		timestamp, bbstatuscount, bbmsgcount);
 }
 
 
@@ -337,7 +339,7 @@ void finish_status(void)
 		char *p = strchr(msgbuf, '\n');
 
 		if (p) *p = '\0';
-		printf("Adding to combo msg: %s\n", msgbuf);
+		dprintf("Adding to combo msg: %s\n", msgbuf);
 		if (p) *p = '\n';
 	}
 

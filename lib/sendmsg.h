@@ -14,6 +14,16 @@
 #define BBDPORTNUMBER 1984
 #define PAGELEVELSDEFAULT "red purple"
 
+#define BB_OK			0
+#define BB_EBADIP		1
+#define BB_EIPUNKNOWN		2
+#define BB_ENOSOCKET 		3
+#define BB_ECANNOTDONONBLOCK	4
+#define BB_ECONNFAILED		5
+#define BB_ESELFAILED		6
+#define BB_ETIMEOUT		7
+#define BB_EWRITEERROR		8
+
 extern int bbmsgcount;
 extern int bbstatuscount;
 extern int bbnocombocount;
