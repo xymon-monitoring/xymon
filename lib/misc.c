@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.18 2005-01-15 17:39:50 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.19 2005-01-16 11:37:21 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -388,48 +388,6 @@ void grok_input(char *l)
 	/* Remove trailing whitespace */
 	while ((outp > l) && (isspace((int) *(outp-1)))) outp--;
 	*outp = '\0';
-}
-
-char *getword(char *buf)
-{
-	static char *startpos = NULL;
-	int n, insideword;
-	char savech;
-	char *beginquote = NULL, *endquote = NULL;
-	char *endpos, *result;
-
-	if (startpos == NULL) {
-		if (buf == NULL) return NULL;
-		startpos = buf;
-	}
-
-	/* Skip leading whitespace */
-	n = strspn(startpos, " \t\r\n");
-	startpos += n;
-	if (*startpos == '\0') return NULL;
-	result = startpos;
-
-	/* How long is the next word ? */
-	insideword = 1;
-	while (insideword) {
-		n = strcspn(startpos, " \t\r\n");
-		endpos = startpos + n;
-		savech = *endpos;
-		*endpos = '\0';
-		beginquote = strchr(startpos, '"');
-		*endpos = savech;
-		if (beginquote) {
-			memmove(beginquote, beginquote+1, strlen(beginquote));
-			endquote = strchr(beginquote, '"');
-			if (endquote) memmove(endquote, endquote+1, strlen(endquote));
-			endpos = endquote;
-			startpos = endquote+1;
-			insideword = (strcspn(startpos, " \t\r\n") > 0);
-		}
-	}
-	*endpos = '\0';
-
-	return result;
 }
 
 unsigned int IPtou32(int ip1, int ip2, int ip3, int ip4)
