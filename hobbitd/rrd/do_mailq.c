@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char mailq_rcsid[] = "$Id: do_mailq.c,v 1.5 2004-11-13 22:01:47 henrik Exp $";
+static char mailq_rcsid[] = "$Id: do_mailq.c,v 1.6 2004-12-03 10:30:44 henrik Exp $";
 
 static char *mailq_params[]       = { "rrdcreate", rrdfn, "DS:mailq:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
@@ -25,7 +25,7 @@ int do_mailq_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 		sprintf(rrdfn, "mailq.rrd");
 		sprintf(rrdvalues, "%d:%df", (int)tstamp, mailq);
-		return create_and_update_rrd(hostname, rrdfn, bbgen_params, update_params);
+		return create_and_update_rrd(hostname, rrdfn, mailq_params, update_params);
 	}
 
 	return 0;
