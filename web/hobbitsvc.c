@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.8 2004-10-22 20:29:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.9 2004-10-23 07:18:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -33,6 +33,40 @@ typedef struct {
 } larrdsvc_t;
 
 static larrdsvc_t *larrdsvcs = NULL;
+
+void nldecode(unsigned char *msg)
+{
+	unsigned char *inp = msg;
+	unsigned char *outp = msg;
+	int n;
+
+	if (msg == NULL) return;
+
+	while (*inp) {
+		n = strcspn(inp, "\\");
+		if ((n > 0) && (inp != outp)) {
+			memmove(outp, inp, n);
+			inp += n;
+			outp += n;
+		}
+
+		if (*inp == '\\') {
+			inp++;
+			switch (*inp) {
+			  case 'p': *outp = '|';  outp++; inp++; break;
+			  case 'r': *outp = '\r'; outp++; inp++; break;
+			  case 'n': *outp = '\n'; outp++; inp++; break;
+			  case 't': *outp = '\t'; outp++; inp++; break;
+			  case '\\': *outp = '\\'; outp++; inp++; break;
+			}
+		}
+		else if (*inp) {
+			*outp = *inp;
+			outp++; inp++;
+		}
+	}
+	*outp = '\0';
+}
 
 larrdsvc_t *find_larrd(char *service, char *flags)
 {
@@ -174,6 +208,7 @@ int main(int argc, char *argv[])
 	time_t logtime = 0;
 	char *sender;
 	char *flags;
+	char *ackmsg = NULL, *dismsg = NULL;
 	larrdsvc_t *larrd = NULL;
 	char *cgibinurl, *colfont, *rowfont;
 	enum source_t source = SRC_BBLOGS;
@@ -232,13 +267,14 @@ int main(int argc, char *argv[])
 			*p = '\n'; 
 		}
 
+		memset(items, 0, sizeof(items));
 		p = gettok(sumline, "|"); icount = 0;
 		while (p && (icount < 20)) {
 			items[icount++] = p;
 			p = gettok(NULL, "|");
 		}
 
-		/* hostname|testname|color|testflags|logtime|lastchange|expires|sender|cookie */
+		/* hostname|testname|color|testflags|logtime|lastchange|expires|sender|cookie|ackmsg|dismsg */
 		color = parse_color(items[2]);
 		flags = items[3];
 		logtime = atoi(items[4]);
@@ -248,6 +284,11 @@ int main(int argc, char *argv[])
 		p += sprintf(p, "%d hours, %d minutes", (int) ((logage % 86400) / 3600), (int) ((logage % 3600) / 60));
 		sender = items[7];
 
+		if (items[9] && strlen(items[9])) ackmsg = items[9];
+		if (ackmsg) nldecode(ackmsg);
+
+		if (items[10] && strlen(items[10])) dismsg = items[10];
+		if (dismsg) nldecode(dismsg);
 	}
 	else {
 		char logfn[MAX_PATH];
@@ -262,9 +303,11 @@ int main(int argc, char *argv[])
 			sprintf(logfn, "%s/%s.%s", getenv("BBLOGS"), commafy(hostname), service);
 		}
 		else if (source == SRC_HISTLOGS) {
-			p = hostname; while ((p = strchr(p, '.')) != NULL) *p = '_';
-			p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '_';
-			sprintf(logfn, "%s/%s/%s/%s", getenv("BBHISTLOGS"), hostname, service, tstamp);
+			char *hostnamedash = strdup(hostname);
+			p = hostnamedash; while ((p = strchr(p, '.')) != NULL) *p = '_';
+			p = hostnamedash; while ((p = strchr(p, ',')) != NULL) *p = '_';
+			sprintf(logfn, "%s/%s/%s/%s", getenv("BBHISTLOGS"), hostnamedash, service, tstamp);
+			free(hostnamedash);
 			p = tstamp; while ((p = strchr(p, '_')) != NULL) *p = ' ';
 			sethostenv_histlog(tstamp);
 		}
@@ -389,7 +432,8 @@ int main(int argc, char *argv[])
 	fprintf(stdout, "<table align=\"center\" border=0>\n");
 	fprintf(stdout, "<tr><td align=\"center\"><font %s>", colfont);
 	if (strlen(timesincechange)) fprintf(stdout, "Status unchanged in %s<br>\n", timesincechange);
-	if (sender) fprintf(stdout, "Status message received from %s\n", sender);
+	if (sender) fprintf(stdout, "Status message received from %s<br>\n", sender);
+	if (ackmsg) fprintf(stdout, "Current acknowledgment: %s<br>\n", ackmsg);
 	fprintf(stdout, "</font></td></tr>\n");
 	fprintf(stdout, "</table>\n");
 
