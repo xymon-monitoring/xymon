@@ -1,6 +1,6 @@
 # bb-service
 #
-# $Id: bb-services,v 1.6 2005-02-20 22:00:58 henrik Exp $
+# $Id: bb-services,v 1.7 2005-03-08 11:32:53 henrik Exp $
 #
 # This file defines the way TCP services are tested by bbtest-net
 # (part of the bbgen toolkit).
@@ -147,6 +147,12 @@
    send "PING\r\n"
    expect "PONG"
    port 3310
+
+# SpamAssassin spamd
+[spamd]
+   send "PING SPAMC/Hobbit"
+   export "PONG"
+   port 783
 
 # From http://www.mail-archive.com/whatsup_forum@list.ipswitch.com/msg06678.html
 [oratns]
