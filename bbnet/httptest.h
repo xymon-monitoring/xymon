@@ -15,6 +15,10 @@
 
 #include "bbtest-net.h"
 
+extern char *http_library_version;
+extern int  init_http_library(void);
+extern void shutdown_http_library(void);
+
 extern void add_http_test(testitem_t *t);
 extern void run_http_tests(service_t *httptest, long followlocations, char *logfile, int sslcertcheck);
 extern void show_http_test_results(service_t *httptest);

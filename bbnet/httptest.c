@@ -25,7 +25,6 @@
 #include "debug.h"
 #include "bbtest-net.h"
 
-
 typedef struct {
 	char   *url;                    /* URL to request, stripped of BB'isms */
 	char   *proxy;                  /* Proxy host CURLOPT_PROXY */
@@ -47,6 +46,53 @@ typedef struct {
 } http_data_t;
 
 static FILE *logfd = NULL;
+
+
+char *http_library_version = NULL;
+static int can_ssl = 1;
+static int can_ldap = 0;
+
+int init_http_library(void)
+{
+	curl_version_info_data *curlver;
+	int i;
+
+	if (curl_global_init(CURL_GLOBAL_DEFAULT)) {
+		printf("FATAL: Cannot initialize libcurl!\n");
+		return 1;
+	}
+
+	/* Check libcurl version */
+	http_library_version = malcop(curl_version());
+	curlver = curl_version_info(CURLVERSION_NOW);
+	if (curlver->age != CURLVERSION_NOW) {
+		printf("Unknown libcurl version - please recompile bbtest-net\n");
+		return 1;
+	}
+
+	if (curlver->ssl_version_num == 0) {
+		printf("WARNING: No SSL support in libcurl - https tests disabled\n");
+		can_ssl = 0;
+		return 1;
+	}
+
+	if (curlver->version_num < LIBCURL_VERSION_NUM) {
+		printf("WARNING: Compiled against libcurl %s, but running on version %s\n",
+			LIBCURL_VERSION, curlver->version);
+	}
+
+	for (i=0; (curlver->protocols[i]); i++) {
+		dprintf("Curl supports %s\n", curlver->protocols[i]);
+		if (strcmp(curlver->protocols[i], "ldap") == 0) can_ldap = 1;
+	}
+
+	return 0;
+}
+
+void shutdown_http_library(void)
+{
+	curl_global_cleanup();
+}
 
 
 void add_http_test(testitem_t *t)
@@ -84,6 +130,12 @@ void add_http_test(testitem_t *t)
 	req->sslexpire = 0;
 	req->totaltime = 0.0;
 	req->exp = NULL;
+
+	if ((strncmp(req->url, "https", 5) == 0) && !can_ssl) {
+		/* Cannot check HTTPS without a working SSL-enabled curl */
+		strcpy(req->errorbuffer, "Run-time libcurl does not support SSL tests");
+		return;
+	}
 
 	/* Determine the content data to look for (if any) */
 	if (strncmp(t->testspec, "content=", 8) == 0) {
@@ -338,11 +390,6 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 	testitem_t *t;
 	CURLcode res;
 
-	if (curl_global_init(CURL_GLOBAL_DEFAULT)) {
-		printf("FATAL: Cannot initialize libcurl!\n");
-		return;
-	}
-
 	if (logfile) {
 		logfd = fopen(logfile, "a");
 		if (logfd) fprintf(logfd, "*** Starting web checks at %s ***\n", timestamp);
@@ -423,7 +470,6 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 		curl_easy_cleanup(req->curl);
 	}
 
-	curl_global_cleanup();
 	if (logfd) fclose(logfd);
 }
 
