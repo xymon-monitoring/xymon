@@ -213,10 +213,8 @@ Default: 10 seconds
 
 .SH OPTIONS FOR HTTP (WEB) TESTS
 .IP --conntimeout=N
-Determines the connection timeout for a HTTP test. This only 
-applies to HTTP tests, and sets a limit for the time it takes 
-to just initiate the connection to the webserver. It must be 
-less than the "--timeout" setting. Default: 5 seconds.
+This option is deprecated, and will be ignored. Use the
+--timeout option instead.
 
 .IP --content=CONTENTTESTNAME 
 Determines the name of the column BB displays for content checks. 
@@ -470,7 +468,7 @@ bbtest-net uses the CURL library, which supports the use of a
 $HOME/.netrc file. If you have password-protected sites, you can put 
 the username and password into the ".netrc" file in the bb users' 
 home-directory. See 
-.I curl(1)
+.I ftp(1)
 for details - a sample entry would look like this
 .br
    machine www.acme.com login fred password Wilma1
@@ -510,6 +508,6 @@ test tool. It is updated only by bbtest-net during the normal
 runs, and read by bbretest-net.sh.
 
 .SH "SEE ALSO"
-bb-hosts(5), bb-services(5), bb-environ(5), curl(1), fping(1), 
-nslookup(1), dig(1), ntpdate(1)
+bb-hosts(5), bb-services(5), bb-environ(5), curl(1), ftp(1), 
+fping(1), nslookup(1), dig(1), ntpdate(1)
 
