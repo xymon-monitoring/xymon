@@ -140,6 +140,13 @@ in total takes more than N seconds. This will also cause
 bbtest-net to disable further DNS lookups, and run as if
 all hosts had the "testip" tag.
 
+.IP --no-flags
+By default, bbtest-net sends some extra information in the
+status messages, called "flags". These are used by bbgen
+e.g. to pick different icons for reversed tests when
+generating the Big Brother webpages. This option makes
+bbtest-net omit these flags from the status messages.
+
 
 .SH OPTIONS FOR THE PING TEST
 .IP --ping[=conn-column-name]
