@@ -260,6 +260,7 @@ extern state_t		*statehead;
 extern col_t		*colhead, null_column;
 extern summary_t	*sumhead;
 extern dispsummary_t	*dispsums;
+extern int		bb_color, bb2_color, bbnk_color;
 
 #endif
 

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.83 2003-03-03 16:01:01 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.84 2003-03-04 11:24:20 henrik Exp $";
 
 #define VERSION "1.8-pre2003.03.02.18.40"
 
@@ -46,6 +46,7 @@ state_t		*statehead = NULL;			/* Head of list of all state entries */
 col_t   	*colhead = NULL;			/* Head of column-name list */
 summary_t	*sumhead = NULL;			/* Summaries we send out */
 dispsummary_t	*dispsums = NULL;			/* Summaries we received and display */
+int		bb_color, bb2_color, bbnk_color;	/* Top-level page colors */
 
 char *reqenv[] = {
 "BB",
@@ -91,6 +92,7 @@ int main(int argc, char *argv[])
 	int		pagegenstat;
 	int		bbpageONLY = 0;
 
+	bb_color = bb2_color = bbnk_color = -1;
 	pagedir = rrddir = NULL;
 	init_timestamp();
 	select_headers_and_footers("bb");
@@ -296,6 +298,10 @@ int main(int argc, char *argv[])
 		add_timestamp("INFO generate done");
 	}
 
+	/* Remove old acknowledgements */
+	if (!bbpageONLY) delete_old_acks();
+	add_timestamp("ACK removal done");
+
 	statehead = load_state(&dispsums);
 	add_timestamp("Load STATE done");
 
@@ -307,22 +313,18 @@ int main(int argc, char *argv[])
 	for (p=pagehead; (p); p = p->next) {
 		if (p->color > pagehead->color) pagehead->color = p->color;
 	}
-	add_timestamp("Color calculation done");
+	bb_color = pagehead->color;
 
-	/* Remove old acknowledgements */
-	if (!bbpageONLY) delete_old_acks();
-	add_timestamp("ACK removal done");
-
-	/* Send summary notices */
-	if (!bbpageONLY) {
-		send_summaries(sumhead);
-		add_timestamp("Summary transmission done");
-	}
-
-	/* Recalc topmost page (background color for bb.html) */
+	/*
+	 * Displayed summaries affect the BB page only, 
+	 * but should not go into the color we report to
+	 * others.
+	 */
 	for (s=dispsums; (s); s = s->next) {
 		if (s->color > pagehead->color) pagehead->color = s->color;
 	}
+	add_timestamp("Color calculation done");
+
 
 	if (debug) dumpall(pagehead);
 
@@ -364,14 +366,20 @@ int main(int argc, char *argv[])
 
 	/* The full summary page - bb2.html */
 	if (!bbpageONLY) {
-		do_bb2_page("bb2.html", PAGE_BB2);
+		bb2_color = do_bb2_page("bb2.html", PAGE_BB2);
 		add_timestamp("BB2 generation done");
 	}
 
 	/* Reduced summary (alerts) page - bbnk.html */
 	if (!bbpageONLY) {
-		do_bb2_page("bbnk.html", PAGE_NK);
+		bbnk_color = do_bb2_page("bbnk.html", PAGE_NK);
 		add_timestamp("BBNK generation done");
+	}
+
+	/* Send summary notices */
+	if (!bbpageONLY) {
+		send_summaries(sumhead);
+		add_timestamp("Summary transmission done");
 	}
 
 #ifdef WMLSUPPORT

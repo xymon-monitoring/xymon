@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.31 2003-03-04 08:29:21 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.32 2003-03-04 11:24:20 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -737,7 +737,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 	fclose(eventlog);
 }
 
-void do_bb2_page(char *filename, int summarytype)
+int do_bb2_page(char *filename, int summarytype)
 {
 	bbgen_page_t	bb2page;
 	FILE		*output;
@@ -870,4 +870,6 @@ void do_bb2_page(char *filename, int summarytype)
 			free(h2);
 		}
 	}
+
+	return bb2page.color;
 }

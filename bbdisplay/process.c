@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.9 2003-03-01 22:29:36 henrik Exp $";
+static char rcsid[] = "$Id: process.c,v 1.10 2003-03-04 11:24:20 henrik Exp $";
 
 #include <string.h>
 #include <sys/types.h>
@@ -30,6 +30,7 @@ static char rcsid[] = "$Id: process.c,v 1.9 2003-03-01 22:29:36 henrik Exp $";
 #include "bbgen.h"
 #include "process.h"
 #include "util.h"
+#include "debug.h"
 
 static int wantedcolumn(char *current, char *wanted)
 {
@@ -177,45 +178,62 @@ void send_summaries(summary_t *sumhead)
 		int summarycolor = -1;
 		char summsg[MAXMSG];
 
-		suburl = strstr(s->url, ".html");
-		if (suburl) {
-			suburl = strstr(s->url, getenv("BBWEB"));
-			if (suburl) suburl += strlen(getenv("BBWEB"));
-			if (suburl && (*suburl == '/')) suburl++;
+		/* Decide which page to pick the color from for this summary. */
+		suburl = s->url;
+		if (strncmp(suburl, "http://", 7) == 0) {
+			char *p;
 
-			if ( suburl && 
-			     (strcmp(suburl, "bb.html") != 0) &&
-			     (strcmp(suburl, "bb2.html") != 0) &&
-			     (strcmp(suburl, "index.html") != 0) ) {
+			/* Skip hostname part */
+			suburl += 7;			/* Skip "http://" */
+			p = strchr(suburl, '/');	/* Find next '/' */
+			if (p) suburl = p;
+		}
+		if (strncmp(suburl, getenv("BBWEB"), strlen(getenv("BBWEB"))) == 0) 
+			suburl += strlen(getenv("BBWEB"));
+		if (*suburl == '/') suburl++;
 
-				/* Specific page  - "suburl" is now either */
-				/* "pagename.html" or "pagename/subpage.html" */
-				char *p, *pg, *subpg;
-				bbgen_page_t *pg1, *pg2;
+		if (debug) printf("summ1: s->url=%s, suburl=%s\n", s->url, suburl);
 
-				pg = subpg = NULL;
-				pg1 = pg2 = NULL;
+		if      (strcmp(suburl, "bb.html") == 0) summarycolor = bb_color;
+		else if (strcmp(suburl, "index.html") == 0) summarycolor = bb_color;
+		else if (strcmp(suburl, "bb2.html") == 0) summarycolor = bb2_color;
+		else if (strcmp(suburl, "bbnk.html") == 0) summarycolor = bbnk_color;
+		else {
+			/* 
+			 * Specific page  - "suburl" is now either
+			 * "pagename.html" or "pagename/subpage.html"
+			 */
+			char *p, *pg, *subpg;
+			bbgen_page_t *pg1, *pg2;
 
-				pg = suburl; p = strchr(pg, '/');
-				if (p) {
-					*p = '\0';
-					subpg = (p+1);
-				}
-				else
-					subpg = NULL;
+			pg = subpg = NULL;
+			pg1 = pg2 = NULL;
 
-				for (pg1 = pagehead; (pg1 && (strcmp(pg1->name, pg) != 0)); pg1 = pg1->next) ;
-				if (pg1 && subpg) {
-					for (pg2 = pg1->subpages; (pg2 && (strcmp(pg2->name, subpg) != 0)); pg2 = pg2->next) ;
-				}
-
-				if (pg2) summarycolor = pg2->color;
-				else if (pg1) summarycolor = pg1->color;
-				else summarycolor = pagehead->color;
+			pg = suburl; p = strchr(pg, '/');
+			if (p) {
+				*p = '\0';
+				subpg = (p+1);
 			}
+			else
+				subpg = NULL;
+
+			if (debug) printf("pg=%s, subpg=%s\n", textornull(pg), textornull(subpg));
+
+			for (pg1 = pagehead; (pg1 && (strcmp(pg1->name, pg) != 0)); pg1 = pg1->next) ;
+			if (pg1 && subpg) {
+				for (pg2 = pg1->subpages; (pg2 && (strcmp(pg2->name, subpg) != 0)); pg2 = pg2->next) ;
+			}
+
+			/* Make sure s->url is put back as it was */
+			if (p) *p = '/';
+
+			if (pg2) summarycolor = pg2->color;
+			else if (pg1) summarycolor = pg1->color;
+			else summarycolor = pagehead->color;
 		}
 
 		if (summarycolor == -1) {
+			printf("Could not determine sourcepage for summary %s\n", s->url);
 			summarycolor = pagehead->color;
 		}
 
