@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.39 2003-12-20 10:30:53 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.40 2004-06-24 08:16:40 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -80,6 +80,7 @@ static svcinfo_t svcinfo[] = {
 	{ "imaps",   "ABC123 LOGOUT\r\n", "* OK",	(TCP_GET_BANNER|TCP_SSL) },
 	{ "nntps",   "quit\r\n",          "200",	(TCP_GET_BANNER|TCP_SSL) },
 	{ "ldaps",   NULL,                NULL,         (TCP_SSL) },
+	{ "clamd",   "PING\r\n"           "PONG",       (0) },
 	{ NULL,      NULL,                NULL,		(0) }	/* Default behaviour: Just try a connect */
 };
 
