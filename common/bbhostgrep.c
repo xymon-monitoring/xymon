@@ -33,15 +33,22 @@ int main(int argc, char *argv[])
 	char l[MAX_LINE_LEN];
 	char *netstring = NULL;
 	char *p;
+	int extras = 1;
+	int argi;
 
 	if ((argc <= 1) || (strcmp(argv[1], "--help") == 0)) {
 		printf("Usage:\n%s test1 [test1] [test2] ... \n", argv[0]);
 		exit(1);
 	}
 
-	if ((strcmp(argv[1], "--version") == 0)) {
-		printf("bbhostgrep version %s\n", VERSION);
-		exit(0);
+	for (argi=1; (argi < argc); argi++) {
+		if (strcmp(argv[argi], "--noextras") == 0) {
+			extras = 0;
+		}
+		else if (strcmp(argv[argi], "--version") == 0) {
+			printf("bbhostgrep version %s\n", VERSION);
+			exit(0);
+		}
 	}
 
 	if (getenv("BBHOSTS") == NULL) {
@@ -97,10 +104,10 @@ int main(int argc, char *argv[])
 			while (item) {
 				if ((*item == '!') || (*item == '~') || (*item == '?')) realitem++;
 
-				if (strcasecmp(realitem, "dialup") == 0) strcat(wantedtags, " dialup");
-				else if (strcasecmp(realitem, "testip") == 0) strcat(wantedtags, " testip");
-				else if (strncasecmp(realitem, "SLA=", 4) == 0) sla = within_sla(l, "SLA");
-				else if (strncasecmp(realitem, "DOWNTIME=", 9) == 0) sla = !within_sla(l, "DOWNTIME");
+				if (extras && (strcasecmp(realitem, "dialup") == 0)) strcat(wantedtags, " dialup");
+				else if (extras && (strcasecmp(realitem, "testip") == 0)) strcat(wantedtags, " testip");
+				else if (extras && (strncasecmp(realitem, "SLA=", 4) == 0)) sla = within_sla(l, "SLA");
+				else if (extras && (strncasecmp(realitem, "DOWNTIME=", 9) == 0)) sla = !within_sla(l, "DOWNTIME");
 				else {
 					int i;
 
@@ -108,13 +115,13 @@ int main(int argc, char *argv[])
 						if (argv[i][strlen(argv[i])-1] == '*') {
 							if (strncasecmp(realitem, argv[i], strlen(argv[i])-1) == 0) {
 								strcat(wantedtags, " ");
-								strcat(wantedtags, item);
+								strcat(wantedtags, (extras ? item : realitem));
 								wanted = 1;
 							}
 						}
 						else if (strcasecmp(realitem, argv[i]) == 0) {
 							strcat(wantedtags, " ");
-							strcat(wantedtags, item);
+							strcat(wantedtags, (extras ? item : realitem));
 							wanted = 1;
 						}
 					}
