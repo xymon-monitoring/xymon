@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.66 2003-06-08 19:22:00 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.67 2003-06-08 20:09:46 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -75,6 +75,8 @@ char		*logfile = NULL;
 int		hostcount = 0;
 int		testcount = 0;
 int		notesthostcount = 0;
+char		**selectedhosts;
+int		selectedcount = 0;
 
 testitem_t *find_test(char *hostname, char *testname)
 {
@@ -262,6 +264,22 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *testspec
 }
 
 
+int wanted_host(char *l, char *netstring, char *hostname)
+{
+	if (selectedcount == 0)
+		return ((netstring == NULL) || (strstr(l, netstring) != NULL));
+	else {
+		int i;
+
+		for (i=0; (i < selectedcount); i++) {
+			if (strcmp(selectedhosts[i], hostname) == 0) return 1;
+		}
+	}
+
+	return 0;
+}
+
+
 void load_tests(void)
 {
 	FILE 	*bbhosts;
@@ -295,10 +313,10 @@ void load_tests(void)
 			/* Do nothing - it's a comment or empty line */
 		}
 		else if (sscanf(l, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
-			char *testspec;
 
-			if ((netstring == NULL) || (strstr(l, netstring) != NULL)) {
+			if (wanted_host(l, netstring, hostname)) {
 
+				char *testspec;
 				testedhost_t *h;
 				testitem_t *newtest;
 				int anytests = 0;
@@ -1069,7 +1087,7 @@ int main(int argc, char *argv[])
 		}
 		else if ((strcmp(argv[argi], "--help") == 0) || (strcmp(argv[argi], "-?") == 0)) {
 			printf("bbtest-net version %s\n\n", VERSION);
-			printf("Usage: %s [options]\n", argv[0]);
+			printf("Usage: %s [options] [host1 host2 host3 ...]\n", argv[0]);
 			printf("Options:\n");
 			printf("    --timeout=N                 : Timeout (in seconds) for service tests\n");
 			printf("    --dns=[only|ip|standard]    : How IP's are decided\n");
@@ -1094,8 +1112,13 @@ int main(int argc, char *argv[])
 
 			return 0;
 		}
-		else {
+		else if (strncmp(argv[argi], "-", 1) == 0) {
 			errprintf("Unknown option %s - try --help\n", argv[argi]);
+		}
+		else {
+			/* Must be a hostname */
+			if (selectedcount == 0) selectedhosts = malloc(argc*sizeof(char *));
+			selectedhosts[selectedcount++] = malcop(argv[argi]);
 		}
 	}
 
