@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.59 2005-03-25 21:13:41 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.60 2005-03-27 06:58:46 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -1641,7 +1641,7 @@ void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
 	char l[4096];
 	int count = 0;
 	char *p, *fontspec;
-	char codes[10];
+	char codes[20];
 
 	MEMDEFINE(l);
 	MEMDEFINE(codes);
@@ -1695,6 +1695,7 @@ void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
 		if (recovered && !recip->noalerts) { if (strlen(codes)) strcat(codes, ",R"); else strcat(codes, "R"); }
 		if (notice) { if (strlen(codes)) strcat(codes, ",N"); else strcat(codes, "N"); }
 		if (recip->stoprule) { if (strlen(codes)) strcat(codes, ",S"); else strcat(codes, "S"); }
+		if (recip->unmatchedonly) { if (strlen(codes)) strcat(codes, ",U"); else strcat(codes, "U"); }
 
 		if (strlen(codes) == 0)
 			sprintf(l, "<td><font %s>%s</font></td>", fontspec, recip->recipient);
