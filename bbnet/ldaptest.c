@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.1 2003-08-29 21:16:45 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.2 2003-08-29 21:26:19 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -234,7 +234,6 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 	testitem_t *t;
 	int	color = -1;
 	char	msgline[MAXMSG];
-	char	msgtext[MAXMSG];
 	char    *nopagename;
 	int     nopage = 0;
 	testitem_t *ldap1 = host->firstldap;
@@ -249,7 +248,6 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 	free(nopagename);
 
 	dprintf("Calc ldap color host %s : ", host->hostname);
-	msgtext[0] = '\0';
 	for (t=host->firstldap; (t && (t->host == host)); t = t->next) {
 		ldap_data_t *req = (ldap_data_t *) t->privdata;
 
@@ -300,14 +298,13 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 	sprintf(msgline, "status %s.%s %s %s", 
 		commafy(host->hostname), ldaptest->testname, colorname(color), timestamp);
 	addtostatus(msgline);
-	addtostatus(msgtext);
-	addtostatus("\n");
 
 	for (t=host->firstldap; (t && (t->host == host)); t = t->next) {
 		ldap_data_t *req = (ldap_data_t *) t->privdata;
 
 		sprintf(msgline, "\n&%s %s - %s\n\n", colorname(req->ldapcolor), req->url,
 			((req->ldapcolor != COL_GREEN) ? "failed" : "OK"));
+		addtostatus(msgline);
 
 		if (req->output) {
 			addtostatus(req->output);
@@ -315,7 +312,7 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 		}
 		if (req->faileddeps) addtostatus(req->faileddeps);
 
-		sprintf(msgtext, "\nSeconds: %ld.%03ld\n",
+		sprintf(msgline, "\nSeconds: %ld.%03ld\n",
 			req->duration.tv_sec, req->duration.tv_usec / 1000);
 
 		addtostatus(msgline);
