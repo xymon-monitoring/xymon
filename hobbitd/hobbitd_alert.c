@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.53 2005-03-28 06:29:35 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.54 2005-04-03 15:41:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -67,8 +67,6 @@ activealerts_t *ahead = NULL;
 char *statename[] = {
 	"paging", "acked", "recovered", "dead"
 };
-
-int alertinterval = 30*60; /* By default, repeat an alert every 30 minutes. */
 
 htnames_t *find_name(htnames_t **head, char *name)
 {
@@ -210,7 +208,7 @@ int main(int argc, char *argv[])
 	char *msg;
 	int seq;
 	int argi;
-	int alertcolors = ( (1 << COL_RED) | (1 << COL_YELLOW) | (1 << COL_PURPLE) );
+	int alertcolors, alertinterval;
 	char *configfn = NULL;
 	char *checkfn = NULL;
 	int checkpointinterval = 900;
@@ -228,28 +226,13 @@ int main(int argc, char *argv[])
 	/* Dont save the error buffer */
 	save_errbuf = 0;
 
+	/* Load alert config */
+	alertcolors = colorset(xgetenv("ALERTCOLORS"), ((1 << COL_GREEN) | (1 << COL_BLUE)));
+	alertinterval = 60*atoi(xgetenv("ALERTREPEAT"));
+
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--debug")) {
 			debug = 1;
-		}
-		else if (argnmatch(argv[argi], "--alertcolors=")) {
-			char *colspec = strchr(argv[argi], '=') + 1;
-			int c, ac;
-			char *p;
-
-			p = strtok(colspec, ",");
-			ac = 0;
-			while (p) {
-				c = parse_color(p);
-				if (c != -1) ac = (ac | (1 << c));
-				p = strtok(NULL, ",");
-			}
-
-			alertcolors = ac;
-		}
-		else if (argnmatch(argv[argi], "--repeat=")) {
-			char *p = strchr(argv[argi], '=') + 1;
-			alertinterval = 60*durationvalue(p);
 		}
 		else if (argnmatch(argv[argi], "--config=")) {
 			configfn = strdup(strchr(argv[argi], '=')+1);
