@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.39 2004-10-30 15:41:02 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.40 2004-11-25 12:35:35 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -61,6 +61,7 @@ rrdlayout_t rrdnames[] = {
 	{ "bbtest",	NULL,        0 },
 	{ "bbproxy",	NULL,        0 },
 	{ "bbgen",	NULL,        0 },
+	{ "bea",	NULL,        0 },
 	{ NULL,      	NULL,        0 }
 };
 
