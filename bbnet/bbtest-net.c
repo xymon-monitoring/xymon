@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.175 2004-09-11 07:14:43 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.176 2004-09-13 08:28:59 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -96,6 +96,7 @@ int		fqdn = 1;
 int		dosendflags = 1;
 char		fpingcmd[MAX_PATH];
 char		fpinglog[MAX_PATH];
+int		respcheck_color = COL_YELLOW;
 
 void dump_hostlist(void)
 {
@@ -1599,7 +1600,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 					/* Check if we got the expected data */
 					if (checktcpresponse && (service->toolid == TOOL_CONTEST) && !tcp_got_expected((tcptest_t *)test->privdata)) {
 						strcpy(cause, "Unexpected service response");
-						color = COL_YELLOW; countasdown = 1;
+						color = respcheck_color; countasdown = 1;
 					}
 				}
 			}
@@ -2122,6 +2123,15 @@ int main(int argc, char *argv[])
 		/* Options for TCP tests */
 		else if (strcmp(argv[argi], "--checkresponse") == 0) {
 			checktcpresponse = 1;
+		}
+		else if (argnmatch(argv[argi], "--checkresponse=")) {
+			char *p = strchr(argv[argi], '=');
+			checktcpresponse = 1;
+			respcheck_color = parse_color(p+1);
+			if (respcheck_color == -1) {
+				errprintf("Invalid colorname in '%s' - using yellow\n", argv[argi]);
+				respcheck_color = COL_YELLOW;
+			}
 		}
 		else if (strcmp(argv[argi], "--no-flags") == 0) {
 			dosendflags = 0;
