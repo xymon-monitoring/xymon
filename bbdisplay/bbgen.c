@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.65 2003-02-05 15:55:49 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.66 2003-02-07 13:10:24 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -92,10 +92,22 @@ int main(int argc, char *argv[])
 		if (strcmp(argv[i], "--recentgifs") == 0) {
 			use_recentgifs = 1;
 		}
+		else if (strncmp(argv[i], "--purplelifetime=", 17) == 0) {
+			char *lp = strchr(argv[i], '=');
+
+			purpledelay = atoi(lp+1);
+			if (purpledelay < 0) purpledelay=0;
+		}
+		else if (strncmp(argv[i], "--subpagecolumns=", 17) == 0) {
+			char *lp = strchr(argv[i], '=');
+
+			subpagecolumns = atoi(lp+1);
+			if (subpagecolumns < 1) subpagecolumns=1;
+		}
 		else if (strncmp(argv[i], "--larrdupdate=", 14) == 0) {
 			char *lp = strchr(argv[i], '=');
 
-			larrd_update_interval = atoi(lp);
+			larrd_update_interval = atoi(lp+1);
 			if (larrd_update_interval <= 0) enable_larrdgen=0;
 			else enable_larrdgen = 1;
 		}
@@ -112,7 +124,7 @@ int main(int argc, char *argv[])
 		else if (strncmp(argv[i], "--infoupdate=", 13) == 0) {
 			char *lp = strchr(argv[i], '=');
 
-			info_update_interval = atoi(lp);
+			info_update_interval = atoi(lp+1);
 			if (info_update_interval <= 0) enable_infogen=0;
 			else enable_infogen = 1;
 		}
@@ -159,6 +171,8 @@ int main(int argc, char *argv[])
 			printf("Usage: %s [options] [WebpageDirectory]\n", argv[0]);
 			printf("Options:\n");
 			printf("    --nopurple             : Disable purple status-updates\n");
+			printf("    --purplelifetime=N     : Purple messages have a lifetime of N minutes\n");
+			printf("    --subpagecolumns=N     : Number of columns for links to pages and subpages\n");
 			printf("    --recentgifs           : Use xxx-recent.gif icons for newly changed tests\n");
 			printf("    --info[=INFOCOLUMN]    : Generate INFO data in column INFOCOLUMN\n");
 			printf("    --infoupdate=N         : time between updates of INFO column pages in seconds\n");
