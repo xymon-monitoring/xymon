@@ -886,6 +886,13 @@ the response, and red when it IS found. So it can be used to
 watch for data that should NOT be present in the response,
 e.g. a server error message.
 
+.IP type;URL;expected_content_type
+This is a variant of the content check - instead of checking
+the content data, it checks the type of the data as given by 
+the HTTP Content-Type: header. This can used to check if a
+URL returns e.g. a PDF file, regardless of what is inside the
+PDF file.
+
 .SH FILES
 .I $BBHOME/etc/bb-hosts
 
