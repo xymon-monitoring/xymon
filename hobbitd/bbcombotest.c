@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.12 2003-09-25 20:38:11 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.13 2003-09-29 20:17:05 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -149,6 +149,10 @@ static long getvalue(char *hostname, char *testname, int *color)
 	}
 
 	sprintf(fn, "%s/%s.%s", getenv("BBLOGS"), commafy(hostname), testname);
+	if (stat(fn, &st)) {
+		/* No file ? Maybe it is using the wrong (non-commafied) hostname */
+		sprintf(fn, "%s/%s.%s", getenv("BBLOGS"), hostname, testname);
+	}
 	if (stat(fn, &st)) {
 		dprintf("No status file for host=%s, test=%s\n", hostname, testname);
 	}
