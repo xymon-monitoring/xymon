@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.87 2003-08-06 10:43:12 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.88 2003-08-11 06:55:53 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -362,6 +362,7 @@ void load_tests(void)
 					int dialuptest = 0;
 					int reversetest = 0;
 					int alwaystruetest = 0;
+					int silenttest = 0;
 					int specialtag = 0;
 					char *savedspec = NULL;
 
@@ -479,9 +480,28 @@ void load_tests(void)
 							 */
 							int specialport;
 							char *specialname;
+							char *opt2 = strrchr(option, ':');
 
-							specialport = atoi(option);
-							if ((s->portnum == 0) && (specialport > 0)) {
+							if (opt2) {
+								if (strcmp(opt2, ":s") == 0) {
+									/* option = "portnumber:s" */
+									silenttest = 1;
+									*opt2 = '\0';
+									specialport = atoi(option);
+									*opt2 = ':';
+								}
+							}
+							else if (strcmp(option, "s") == 0) {
+								/* option = "s" */
+								silenttest = 1;
+								specialport = 0;
+							}
+							else {
+								/* option = "portnumber" */
+								specialport = atoi(option);
+							}
+
+							if (specialport) {
 								specialname = malloc(strlen(s->testname)+10);
 								sprintf(specialname, "%s_%d", s->testname, specialport);
 								s = add_service(specialname, specialport, strlen(s->testname), TOOL_CONTEST);
@@ -495,7 +515,7 @@ void load_tests(void)
 
 					if (s) {
 						anytests = 1;
-						newtest = init_testitem(h, s, savedspec, dialuptest, reversetest, alwaystruetest, 0);
+						newtest = init_testitem(h, s, savedspec, dialuptest, reversetest, alwaystruetest, silenttest);
 						newtest->next = s->items;
 						s->items = newtest;
 
