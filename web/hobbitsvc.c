@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.6 2004-10-16 16:28:43 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.7 2004-10-21 21:31:06 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -171,6 +171,7 @@ int main(int argc, char *argv[])
 	int argi, icount, linecount;
 	int color;
 	char timesincechange[100];
+	time_t logtime = 0;
 	char *sender;
 	char *flags;
 	larrdsvc_t *larrd = NULL;
@@ -237,13 +238,16 @@ int main(int argc, char *argv[])
 			p = gettok(NULL, "|");
 		}
 
+		/* hostname|testname|color|testflags|logtime|lastchange|expires|sender */
 		color = parse_color(items[2]);
 		flags = items[3];
-		logage = time(NULL) - atoi(items[4]);
+		logtime = atoi(items[4]);
+		logage = time(NULL) - atoi(items[5]);
 		timesincechange[0] = '\0'; p = timesincechange;
 		if (logage > 86400) p += sprintf(p, "%d days,", (int) (logage / 86400));
 		p += sprintf(p, "%d hours, %d minutes", (int) ((logage % 86400) / 3600), (int) ((logage % 3600) / 60));
-		sender = items[6];
+		sender = items[7];
+
 	}
 	else {
 		char logfn[MAX_PATH];
@@ -338,6 +342,7 @@ int main(int argc, char *argv[])
 	} while (p && (*p));
 
 	sethostenv(displayname, ip, service, colorname(color));
+	if (logtime) sethostenv_snapshot(logtime);
 	fprintf(stdout, "Content-type: text/html\n\n");
 
 	headfoot(stdout, ((source == SRC_HISTLOGS) ? "histlog" : "hostsvc"), "", "header", color);
