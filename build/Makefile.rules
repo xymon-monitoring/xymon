@@ -88,6 +88,9 @@ clean:
 
 install: $(INSTALLTARGETS)
 ifdef HOBBITD
+	@echo ""
+	@echo "Installation complete."
+	@echo ""
 	@echo "You must configure your webserver for the Hobbit webpages and CGI-scripts."
 	@echo "A sample Apache configuration is in ${BBHOME}/etc/hobbit-apache.conf"
 	@echo "If you have your Administration CGI scripts in a separate directory,"
@@ -126,7 +129,7 @@ install-bbproxy: install-common
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbproxy install
 
 install-hobbitd: install-common
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" BBTOPDIR="$(BBTOPDIR)" BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" $(MAKE) -C hobbitd install
+	MANROOT="$(MANROOT)" BBTOPDIR="$(BBTOPDIR)" BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" BBLOGDIR="$(BBLOGDIR)" BBUSER="$(BBUSER)" $(MAKE) -C hobbitd install
 
 
 # NOTE: This one is normally not used - man-page install is done by the sub-Makefiles during "make install"
