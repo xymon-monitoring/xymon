@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.2 2003-07-19 16:40:08 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.3 2003-07-19 16:43:07 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -218,10 +218,10 @@ int sendstatus(char *bbdisp, char *msg)
 }
 
 
-void sendmessage(char *msg, char *recipient)
+int sendmessage(char *msg, char *recipient)
 {
 	static char *bbdisp = NULL;
-	int res;
+	int res = 0;
 
 	if (bbdisp == NULL) bbdisp = malcop(getenv("BBDISP"));
 
@@ -239,6 +239,7 @@ void sendmessage(char *msg, char *recipient)
 	/* Give it a break */
 	if (sleepbetweenmsgs) usleep(sleepbetweenmsgs);
 	bbmsgcount++;
+	return res;
 }
 
 
@@ -363,8 +364,7 @@ int main(int argc, char *argv[])
 	int result;
 
 	result = sendmessage(argv[2], argv[1]);
-	printf("sendstatus returned %d\n", result);
-	return 0;
+	return result;
 }
 #endif
 

@@ -19,7 +19,7 @@ extern int bbstatuscount;
 extern int bbnocombocount;
 
 extern int sendstatus(char *bbdisp, char *msg);
-extern void sendmessage(char *msg, char *recipient);
+extern int sendmessage(char *msg, char *recipient);
 
 extern void combo_start(void);
 extern void combo_end(void);
