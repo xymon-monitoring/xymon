@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: memory.c,v 1.6 2005-02-08 09:32:19 henrik Exp $";
+static char rcsid[] = "$Id: memory.c,v 1.7 2005-03-01 14:35:52 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -216,24 +216,28 @@ char *xstrcat(char *dest, const char *src)
 char *xstrncat(char *dest, const char *src, size_t maxlen)
 {
 	if (src == NULL) {
-		errprintf("xstrcat: NULL destination\n");
+		errprintf("xstrncat: NULL destination\n");
 		abort();
 	}
 
 	if (dest == NULL) {
-		errprintf("xstrcat: NULL destination\n");
+		errprintf("xstrncat: NULL destination\n");
 		abort();
 	}
 
 #ifdef MEMORY_DEBUG
 	dmem = find_in_memlist(dest);
 	if (dmem == NULL) {
-		errprintf("xstrcat: Bogus destination\n");
+		errprintf("xstrncat: Bogus destination\n");
 		abort();
 	}
 
 	allocend = dmem->sdata + dmem->ssize - 1;
-	copyend = dest + strlen(dest) + maxlen;
+	if (strlen(src) <= maxlen)
+		copyend = dest + strlen(dest) + strlen(src);
+	else
+		copyend = dest + strlen(dest) + maxlen;
+
 	if ((void *)copyend > (void *)allocend) {
 		errprintf("xstrncat: Potential overwrite of %d bytes\n", (copyend - allocend));
 		abort();
@@ -299,7 +303,10 @@ char *xstrncpy(char *dest, const char *src, size_t maxlen)
 	}
 
 	allocend = dmem->sdata + dmem->ssize - 1;
-	copyend = dest + maxlen;
+	if (strlen(src) <= maxlen)
+		copyend = dest + strlen(src);
+	else
+		copyend = dest + maxlen;
 	if ((void *)copyend > (void *)allocend) {
 		errprintf("xstrncpy: Potential overwrite of %d bytes\n", (copyend - allocend));
 		abort();
