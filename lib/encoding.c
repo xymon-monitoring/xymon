@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: encoding.c,v 1.1 2004-10-30 15:27:06 henrik Exp $";
+static char rcsid[] = "$Id: encoding.c,v 1.2 2004-10-31 07:56:19 henrik Exp $";
 
 #include <stdlib.h>
 #include <ctype.h>
@@ -116,7 +116,7 @@ char *base64decode(unsigned char *buf)
 	return result;
 }
 
-void getescapestring(char *msg, char **buf, int *buflen)
+void getescapestring(char *msg, unsigned char **buf, int *buflen)
 {
 	char *inp, *outp;
 	int outlen = 0;
