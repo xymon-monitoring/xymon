@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.2 2004-11-06 16:25:44 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.3 2004-11-07 07:44:35 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -61,7 +61,7 @@ static int create_and_update_rrd(char *fn, char *creparams[], char *updparams[])
 	rrd_clear_error();
 	result = rrd_update(pcount, updparams);
 	if (result != 0) {
-		errprintf("RRD error updating %d: %s\n", fn, rrd_get_error());
+		errprintf("RRD error updating %s: %s\n", fn, rrd_get_error());
 		return 2;
 	}
 
