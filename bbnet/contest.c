@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.38 2003-09-29 11:16:08 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.39 2003-12-20 10:30:53 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -27,6 +27,7 @@ static char rcsid[] = "$Id: contest.c,v 1.38 2003-09-29 11:16:08 henrik Exp $";
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <netdb.h>
 
 #include "bbtest-net.h"
 #include "contest.h"
@@ -272,6 +273,7 @@ static void setup_ssl(test_t *item)
 {
 	static int ssl_init_complete = 0;
 	X509 *peercert;
+	struct servent *sp;
 	char *certcn, *certstart, *certend;
 	int err;
 
@@ -304,6 +306,7 @@ static void setup_ssl(test_t *item)
 		ssl_init_complete = 1;
 	}
 
+	sp = getservbyport(item->addr.sin_port, "tcp");
 	if (item->sslctx == NULL) {
 		item->sslctx = SSL_CTX_new(SSLv23_client_method());
 		if (!item->sslctx) {
@@ -341,15 +344,18 @@ static void setup_ssl(test_t *item)
 			item->sslrunning = SSLSETUP_PENDING;
 			break;
 		  case SSL_ERROR_SYSCALL:
-			errprintf("IO error in SSL_connect\n");
+			errprintf("IO error in SSL_connect to %s on host %s\n",
+				  sp->s_name, inet_ntoa(item->addr.sin_addr));
 			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
 			break;
 		  case SSL_ERROR_SSL:
-			errprintf("Unspecified SSL error in SSL_connect\n");
+			errprintf("Unspecified SSL error in SSL_connect to %s on host %s\n",
+				  sp->s_name, inet_ntoa(item->addr.sin_addr));
 			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
 			break;
 		  default:
-			errprintf("Unknown error %d in SSL_connect\n", err);
+			errprintf("Unknown error %d in SSL_connect to %s on host %s\n",
+				  err, sp->s_name, inet_ntoa(item->addr.sin_addr));
 			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
 			break;
 		}
@@ -360,7 +366,8 @@ static void setup_ssl(test_t *item)
 	/* If we get this far, the SSL handshake has completed. So grab the certificate */
 	peercert = SSL_get_peer_certificate(item->ssldata);
 	if (!peercert) {
-		errprintf("Cannot get peer certificate\n");
+		errprintf("Cannot get peer certificate for %s on host %s\n",
+			  sp->s_name, inet_ntoa(item->addr.sin_addr));
 		item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
 		return;
 	}
