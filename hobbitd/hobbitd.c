@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.9 2004-10-06 15:09:55 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.10 2004-10-06 19:34:36 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -143,7 +143,7 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 			if (log->ackmsg) ackmsg = base64encode(log->ackmsg);
 			if (log->dismsg) dismsg = base64encode(log->dismsg);
 			sprintf(channel->channelbuf, 
-				"@@%s|%d.%06d|%s|%s|%s|%d|%s|%s|%d|%d|%s|%d|%s\n%s\n", 
+				"@@%s|%d.%06d|%s|%s|%s|%d|%s|%s|%d|%d|%s|%d|%s\n%s\n@@\n", 
 				channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
 				log->test->testname, (int) log->validtime, 
 				colnames[log->color], colnames[log->oldcolor], (int) log->lastchange, 
@@ -168,13 +168,13 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 			log = (bbd_log_t *)arg;
 			if (strcmp(channelmarker, "ack") == 0) {
 				sprintf(channel->channelbuf, 
-					"@@%s|%d.%06d|%s|%s|%s|%d\n%s\n", 
+					"@@%s|%d.%06d|%s|%s|%s|%d\n%s\n@@\n", 
 					channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
 					log->test->testname, (int) log->acktime, msg);
 			}
 			else {
 				sprintf(channel->channelbuf, 
-					"@@%s|%d.%06d|%s|%s|%s|%d|%s|%s|%d\n%s\n", 
+					"@@%s|%d.%06d|%s|%s|%s|%d|%s|%s|%d\n%s\n@@\n", 
 					channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
 					log->test->testname, (int) log->validtime, 
 					colnames[log->color], colnames[log->oldcolor], (int) log->lastchange,
@@ -185,14 +185,14 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 		  case C_DATA:
 			testname = (char *)arg;
 			sprintf(channel->channelbuf, 
-				"@@%s|%d.%06d|%s|%s|%s\n%s\n", 
+				"@@%s|%d.%06d|%s|%s|%s\n%s\n@@\n", 
 				channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
 				testname, msg);
 			break;
 
 		  case C_NOTES:
 			sprintf(channel->channelbuf, 
-				"@@%s|%d.%06d|%s|%s\n%s\n", 
+				"@@%s|%d.%06d|%s|%s\n%s\n@@\n", 
 				channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
 				msg);
 			break;
@@ -653,7 +653,8 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		if (lwalk->ackmsg) free(lwalk->ackmsg);
 		free(lwalk);
 		if (hwalk->logs != NULL) {
-			sprintf(msgbuf, "droptest|%d.%06d|%s|%s\n", (int)tstamp.tv_sec, (int)tstamp.tv_usec, hostname, n1);
+			sprintf(msgbuf, "@@droptest|%d.%06d|%s|%s\n", 
+				(int)tstamp.tv_sec, (int)tstamp.tv_usec, hostname, n1);
 			break;
 		}
 		/* Fallthrough and drop the host when it has no more log entries */
@@ -684,7 +685,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 
 		/* Free the hostlist entry */
 		free(hwalk);
-		sprintf(msgbuf, "drophost|%d.%06d|%s\n", (int)tstamp.tv_sec, (int)tstamp.tv_usec, hostname);
+		sprintf(msgbuf, "@@drophost|%d.%06d|%s\n", (int)tstamp.tv_sec, (int)tstamp.tv_usec, hostname);
 		break;
 
 	  case CMD_RENAMEHOST:
@@ -695,7 +696,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			free(hwalk->hostname);
 			hwalk->hostname = strdup(n1);
 		}
-		sprintf(msgbuf, "renamehost|%d.%06d|%s|%s\n", (int)tstamp.tv_sec, (int)tstamp.tv_usec, hostname, n1);
+		sprintf(msgbuf, "@@renamehost|%d.%06d|%s|%s\n", (int)tstamp.tv_sec, (int)tstamp.tv_usec, hostname, n1);
 		break;
 
 	  case CMD_RENAMETEST:
@@ -711,7 +712,8 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			tests = newt;
 		}
 		lwalk->test = newt;
-		sprintf(msgbuf, "renametest|%d.%06d|%s|%s|%s\n", (int)tstamp.tv_sec, (int)tstamp.tv_usec, hostname, n1, n2);
+		sprintf(msgbuf, "@@renametest|%d.%06d|%s|%s|%s\n", 
+			(int)tstamp.tv_sec, (int)tstamp.tv_usec, hostname, n1, n2);
 		break;
 	}
 
@@ -801,8 +803,13 @@ void do_message(conn_t *msg)
 		}
 	}
 	else if (strncmp(msg->buf, "notes", 5) == 0) {
-		get_hts(msg->buf, sender, &h, &t, &log, &color, 1, 0);
-		if (h) handle_notes(msg->buf, msg->buflen, sender, h->hostname);
+		char tok[MAXMSG];
+		char *hostname;
+		int maybedown;
+		if (sscanf(msg->buf, "notes %s\n", tok) == 1) {
+			hostname  = knownhost(tok, sender, ghosthandling, &maybedown);
+			if (hostname) handle_notes(msg->buf, msg->buflen, sender, hostname);
+		}
 	}
 	else if (strncmp(msg->buf, "enable", 6) == 0) {
 		handle_enadis(1, msg->buf, msg->buflen, sender);
