@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.68 2003-06-11 06:34:42 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.69 2003-06-18 20:19:50 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -796,6 +796,8 @@ void send_results(service_t *service)
 	sprintf(nopagename, ",%s,", svcname);
 	nopage = (strstr(nonetpage, svcname) != NULL);
 	free(nopagename);
+
+	dprintf("Sending results for service %s\n", svcname);
 
 	for (t=service->items; (t); t = t->next) {
 		char flags[10];
