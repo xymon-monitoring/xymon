@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.24 2005-03-25 21:09:39 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.25 2005-04-01 09:47:51 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -574,12 +574,17 @@ int main(int argc, char *argv[])
 					/* Exec the task */
 					char *cmd;
 					char **cmdargs = NULL;
+					static char bbsleepenv[20];
 
 					/* Setup environment */
 					if (twalk->envfile) {
 						dprintf("%s -> Loading environment from %s\n", twalk->key, expand_env(twalk->envfile));
 						loadenv(expand_env(twalk->envfile));
 					}
+
+					/* Setup BBSLEEP to match the interval */
+					sprintf(bbsleepenv, "BBSLEEP=%d", twalk->interval);
+					putenv(bbsleepenv);
 
 					/* Setup command line and arguments */
 					cmdargs = setup_commandargs(twalk->cmd, &cmd);
