@@ -57,6 +57,15 @@ in a specific order, use parentheses to group the expressions together.
 If the expression comes out as "0", the combined test goes red. If it comes 
 out as non-zero, the combined test is green.
 
+Note: If the expression involves hostnames with a character that is also
+an operator - e.g. if you have a host "t1-router-newyork.foo.com" with a
+dash in the hostname - then the operator-character must be escaped with
+a backslash '\\' in the expression, or it will be interpreted as an operator. 
+E.g. like this:
+
+ nyc.conn = (t1\\-router\\-nyc.conn || backup\\-router\\-nyc.conn)
+
+
 .SH EXAMPLE
 WebCluster.http = (Web1.http || Web2.http)
 .br
