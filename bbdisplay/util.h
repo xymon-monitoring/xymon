@@ -39,9 +39,6 @@ extern bbgen_col_t *find_or_create_column(const char *testname, int create);
 extern char *histlogurl(char *hostname, char *service, time_t histtime);
 extern int run_columngen(char *column, int update_interval, int enabled);
 extern void drop_genstatfiles(void);
-extern int generate_static(void);
-extern time_t sslcert_expiretime(char *timestr);
-extern void do_bbext(FILE *output, char *extenv, char *family);
 
 #endif
 
