@@ -22,7 +22,7 @@
 #include <time.h>
 #include <stddef.h>
 
-#define VERSION "2.2"
+#define VERSION "2.3pre"
 
 /* Structure defs for bbgen */
 
