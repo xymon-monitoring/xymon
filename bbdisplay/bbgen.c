@@ -21,7 +21,7 @@ col_t   	*colhead = NULL;
 col_t		null_column = { "", NULL };
 
 
-col_list_t *gen_column_list(host_t *hostlist, col_list_t *currentlist)
+col_list_t *gen_column_list(host_t *hostlist, int crit_only)
 {
 #undef DEBUG
 	/*
@@ -37,46 +37,43 @@ col_list_t *gen_column_list(host_t *hostlist, col_list_t *currentlist)
 
 	/* Code de-obfuscation trick: Add a null record as the head item */
 	/* Simplifies handling since head != NULL and we never have to insert at head of list */
-	if (currentlist == NULL) {
-		head = malloc(sizeof(col_list_t));
-		head->column = &null_column;
-		head->next = NULL;
-	}
-	else {
-		head = currentlist;
-	}
+	head = malloc(sizeof(col_list_t));
+	head->column = &null_column;
+	head->next = NULL;
 
 	for (h = hostlist; (h); h = h->next) {
 		for (e = h->entries; (e); e = e->next) {
+			if ((!crit_only) || (e->color == COL_RED) || (e->color == COL_YELLOW) || (e->color == COL_PURPLE)) {
 #ifdef DEBUG
-			printf("Inserting %s\n", e->column->name);
+				printf("Inserting %s\n", e->column->name);
 #endif
-			/* See where e->column should go in list */
-			collist_walk = head; 
-			while ( (collist_walk->next && 
-                               	strcmp(e->column->name, ((col_list_t *)(collist_walk->next))->column->name) > 0) ) {
-				collist_walk = collist_walk->next;
-			}
+				/* See where e->column should go in list */
+				collist_walk = head; 
+				while ( (collist_walk->next && 
+                               		strcmp(e->column->name, ((col_list_t *)(collist_walk->next))->column->name) > 0) ) {
+					collist_walk = collist_walk->next;
+				}
 
 #ifdef DEBUG
-			printf("collist_walk is %s\n", collist_walk->column->name);
+				printf("collist_walk is %s\n", collist_walk->column->name);
 #endif
-			if ((collist_walk->next == NULL) || ((col_list_t *)(collist_walk->next))->column != e->column) {
-				/* collist_walk points to the entry before the new one */
-				newlistitem = malloc(sizeof(col_list_t));
-				newlistitem->column = e->column;
-				newlistitem->next = collist_walk->next;
-				collist_walk->next = newlistitem;
-			}
-#ifdef DEBUG
-			{
-				col_list_t *cl;
-				for (cl = head; (cl); cl = cl->next) {
-					printf("%s ", cl->column->name);
+				if ((collist_walk->next == NULL) || ((col_list_t *)(collist_walk->next))->column != e->column) {
+					/* collist_walk points to the entry before the new one */
+					newlistitem = malloc(sizeof(col_list_t));
+					newlistitem->column = e->column;
+					newlistitem->next = collist_walk->next;
+					collist_walk->next = newlistitem;
 				}
-				printf("\n");
-			}
+#ifdef DEBUG
+				{
+					col_list_t *cl;
+					for (cl = head; (cl); cl = cl->next) {
+						printf("%s ", cl->column->name);
+					}
+					printf("\n");
+				}
 #endif
+			}
 		}
 	}
 
@@ -918,7 +915,7 @@ void dumpall(void)
 }
 
 
-void do_hosts(host_t *head, FILE *output, char *grouptitle)
+void do_hosts(host_t *head, FILE *output, char *grouptitle, int summarypage)
 {
 	host_t	*h;
 	entry_t	*e;
@@ -933,7 +930,7 @@ void do_hosts(host_t *head, FILE *output, char *grouptitle)
 
 	fprintf(output, "<A NAME=hosts-blk>&nbsp;</A>\n\n");
 
-	groupcols = gen_column_list(head, NULL);
+	groupcols = gen_column_list(head, summarypage);
 	if (groupcols) {
 		fprintf(output, "<TABLE SUMMARY=\"Group Block\" BORDER=0> \n <TR><TD VALIGN=MIDDLE ROWSPAN=2 CELLPADDING=2><CENTER><FONT %s>%s</FONT></CENTER></TD>\n", getenv("MKBBTITLE"), grouptitle);
 
@@ -1000,7 +997,7 @@ void do_groups(group_t *head, FILE *output)
 	fprintf(output, "<CENTER> \n\n<A NAME=begindata>&nbsp;</A>\n");
 
 	for (g = head; (g); g = g->next) {
-		do_hosts(g->hosts, output, g->title);
+		do_hosts(g->hosts, output, g->title, 0);
 	}
 	fprintf(output, "\n</CENTER>\n");
 }
@@ -1055,7 +1052,7 @@ void do_bb_page(page_t *page, char *filename)
 		fprintf(output, "</CENTER>\n");
 	}
 
-	do_hosts(page->hosts, output, "");
+	do_hosts(page->hosts, output, "", 0);
 	do_groups(page->groups, output);
 
 	headfoot(output, "bb", "", "", "footer", page->color);
@@ -1114,7 +1111,7 @@ void do_page(page_t *page, char *filename, char *upperpagename)
 		fprintf(output, "</CENTER>\n");
 	}
 
-	do_hosts(page->hosts, output, "");
+	do_hosts(page->hosts, output, "", 0);
 	do_groups(page->groups, output);
 
 	headfoot(output, "bb", page->name, "", "footer", page->color);
@@ -1134,7 +1131,7 @@ void do_subpage(page_t *page, char *filename, char *upperpagename)
 
 	headfoot(output, "bb", upperpagename, page->name, "header", page->color);
 
-	do_hosts(page->hosts, output, "");
+	do_hosts(page->hosts, output, "", 0);
 	do_groups(page->groups, output);
 
 	headfoot(output, "bb", upperpagename, page->name, "footer", page->color);
@@ -1181,16 +1178,18 @@ void do_bb2_page(char *filename)
 
 	headfoot(output, "bb2", "", "", "header", bb2page.color);
 
+	fprintf(output, "<center>\n");
 	fprintf(output, "\n<A NAME=begindata>&nbsp;</A> \n<A NAME=\"hosts-blk\">&nbsp;</A>\n");
 
 	if (bb2page.hosts) {
-		do_hosts(bb2page.hosts, output, "");
+		do_hosts(bb2page.hosts, output, "", 1);
 	}
 	else {
 		/* "All Monitored Systems OK */
 		fprintf(output, "<FONT SIZE=+2 FACE=\"Arial, Helvetica\"><BR><BR><I>All Monitored Systems OK</I></FONT><BR><BR>");
 	}
 
+	fprintf(output, "</center>\n");
 	headfoot(output, "bb2", "", "", "footer", bb2page.color);
 
 	fclose(output);
