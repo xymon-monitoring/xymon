@@ -11,11 +11,13 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: color.c,v 1.1 2004-10-30 15:18:10 henrik Exp $";
+static char rcsid[] = "$Id: color.c,v 1.2 2004-10-31 07:25:39 henrik Exp $";
 
 #include <string.h>
 
 #include "color.h"
+
+int use_recentgifs = 0;
 
 char *colorname(int color)
 {
@@ -77,5 +79,21 @@ int eventcolor(char *colortext)
 	else if (strcmp(colortext, "ye") == 0)	return COL_YELLOW;
 	else if (strcmp(colortext, "re") == 0)	return COL_RED;
 	else return -1;
+}
+
+char *dotgiffilename(int color, int acked, int oldage)
+{
+	static char filename[20]; /* yellow-recent.gif */
+
+	strcpy(filename, colorname(color));
+	if (acked) {
+		strcat(filename, "-ack");
+	}
+	else if (use_recentgifs) {
+		strcat(filename, (oldage ? "" : "-recent"));
+	}
+	strcat(filename, ".gif");
+
+	return filename;
 }
 
