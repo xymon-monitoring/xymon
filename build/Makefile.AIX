@@ -10,7 +10,7 @@ NETLIBS =
 
 # Compile flags for normal build with IBM compiler
 CC = cc
-CFLAGS = -O3 -qstrict -qcpluscmt -D_REENTRANT
+CFLAGS = -g -O3 -qstrict -qcpluscmt -D_REENTRANT
 
 # Compile flags for debugging
 # CFLAGS = -g -DDEBUG -D_REENTRANT
