@@ -5,7 +5,7 @@ BBGENLIBOBJS = bbalert.o bblarrd.o calc.o color.o digest.o encoding.o errormsg.o
 
 CFLAGS += -I. -I../include 
 
-all: libbbgen.a
+all: libbbgen.a loadhosts
 
 libbbgen.a: $(BBGENLIBOBJS)
 	ar cr libbbgen.a $(BBGENLIBOBJS)
