@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.16 2005-03-01 14:38:21 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.17 2005-03-06 07:20:21 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -37,6 +37,8 @@ static char rra2[] = "RRA:AVERAGE:0.5:6:576";
 static char rra3[] = "RRA:AVERAGE:0.5:24:576";
 static char rra4[] = "RRA:AVERAGE:0.5:288:576";
 static char *update_params[]      = { "rrdupdate", rrdfn, rrdvalues, NULL };
+
+static char *senderip = NULL;
 
 void setup_exthandler(char *handlerpath, char *ids)
 {
@@ -103,7 +105,9 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 	rrd_clear_error();
 	result = rrd_update(pcount, updparams);
 	if (result != 0) {
-		errprintf("RRD error updating %s: %s\n", filedir, rrd_get_error());
+		errprintf("RRD error updating %s from %s: %s\n", 
+			  filedir, (senderip ? senderip : "unknown"), 
+			  rrd_get_error());
 		MEMUNDEFINE(filedir);
 		MEMUNDEFINE(rrdvalues); MEMUNDEFINE(rrdfn);
 		return 2;
@@ -144,7 +148,7 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 #include "larrd/do_external.c"
 
 
-void update_larrd(char *hostname, char *testname, char *msg, time_t tstamp, larrdrrd_t *ldef)
+void update_larrd(char *hostname, char *testname, char *msg, time_t tstamp, char *sender, larrdrrd_t *ldef)
 {
 	int res = 0;
 	char *id;
@@ -152,6 +156,7 @@ void update_larrd(char *hostname, char *testname, char *msg, time_t tstamp, larr
 	MEMDEFINE(rrdvalues); MEMDEFINE(rrdfn);
 
 	if (ldef) id = ldef->larrdrrdname; else id = testname;
+	senderip = sender;
 
 	if      (strcmp(id, "bbgen") == 0)       res = do_bbgen_larrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "bbtest") == 0)      res = do_bbtest_larrd(hostname, testname, msg, tstamp);
@@ -188,6 +193,8 @@ void update_larrd(char *hostname, char *testname, char *msg, time_t tstamp, larr
 
 		if (extids[i]) res = do_external_larrd(hostname, testname, msg, tstamp);
 	}
+
+	senderip = NULL;
 
 	MEMUNDEFINE(rrdvalues); MEMUNDEFINE(rrdfn);
 }

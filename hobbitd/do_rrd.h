@@ -17,7 +17,7 @@
 
 extern char *rrddir;
 extern void setup_exthandler(char *handlerpath, char *ids);
-extern void update_larrd(char *hostname, char *testname, char *restofmsg, time_t tstamp, larrdrrd_t *ldef);
+extern void update_larrd(char *hostname, char *testname, char *restofmsg, time_t tstamp, char *sender, larrdrrd_t *ldef);
 
 #endif
 
