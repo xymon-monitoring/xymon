@@ -35,7 +35,10 @@ The \fBRECIPIENT\fR parameter may be a URL for a webserver
 that has the bbmessage.cgi or similar script installed. This
 tunnels the Big Brother messages to the BBDISPLAY server 
 using standard HTTP protocol. Note that this is an extension
-available only with the bbgen replacement for the bb tool.
+available only with the bbgen replacement for the bb tool. The 
+.I bbmessage.cgi(1)
+CGI script provided as part of the bbgen toolkit must be
+installed on the webserver for the HTTP transport to work.
 .br
 
 The \fBmessage\fR parameter is the message to be sent across
@@ -153,9 +156,18 @@ if we get a response):
      fi
 
 .SH NOTES
-This man-page describes the bb client program as per
-version 1.9e-BTF of the Big Brother package, with the
-extensions provided by the bbgen bbd-features patch.
+This man-page describes the bb client program provided
+as part of the bbgen toolkit. This implementation of
+the bb client provides features not present in the 
+standard Big Brother bb client - specifically, the
+support for sending messages over HTTP, and the 
+"query" and "config" commands are not part of the 
+standard bb client. The two extra commands also
+require that the bbd daemon has been upgraded with the
+bbd-features patch from the bbgen toolkit.
+
+The bbgen version of the bb client program is compatible
+with version 1.9e-BTF of the Big Brother bb client.
 
 .SH "SEE ALSO"
 bbcombotest(1), bb-hosts(5), bb-environ(5), 
