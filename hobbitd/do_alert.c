@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.18 2004-11-28 22:00:33 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.19 2004-11-29 18:56:00 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -826,18 +826,30 @@ static recip_t *next_recipient(activealerts_t *alert, int *first)
 		static recip_t bbresult;
 		char timespec[100];
 		alertrec_t *bbalertdef;
-		int continued;
+		int continued, wantdefault;
 		char *p, *q;
 
-		if (*first) continued = 0; else continued = 1;
+		if (*first) {
+			continued = 0; 
+			wantdefault = 1;
+		}
+		else {
+			/*
+			 * We only want the default alert recipient the first time - if there are
+			 * recipient defined, we dont want to see the default recipient.
+			 */
+			continued = 1;
+			wantdefault = 0;
+		}
+
 		*first = 0;
+
 bbagain:
 		/* 
 		 * Find the (next) BB alert definition. 
-		 * We only want the default alert recipient the first time - if there are
-		 * recipient defined, we dont want to see the default recipient.
 		 */
-		bbalertdef = bbfind_alert(alert->hostname->name, (continued == 0), continued);
+		bbalertdef = bbfind_alert(alert->hostname->name, wantdefault, continued);
+		wantdefault = 0;
 		if (bbalertdef == NULL) return NULL;
 
 		/* Check bbalertdef against service specs and time limits */
@@ -868,26 +880,21 @@ bbagain:
 
 		p = strchr(bbalertdef->items[6], ':');
 		if (p) {
-			if (*(p+1) == '~') {
-				/* Initial delay */
+			if ((*(p+1) == '~') || (*(p+1) == '^')) {
+				/* Initial or acknowledgement delay */
 				char initialdelay = 60*atoi(p+1);
 				p++;
 				p += strspn(p, "0123456789");
 
 				if ((time(NULL) - alert->eventstart) < initialdelay) goto bbagain;
 			}
-			else if (*(p+1) == '^') {
-				/* Acknowledge interval. We dont handle that. */
-				p++;
-				p += strspn(p, "0123456789");
-			}
-
-			if (p && ((*p == ':') || (*p == '-'))) {
-				bbresult.interval = 60*atoi(p+1);
-			}
-			else {
-				bbresult.interval = 60*bbpagedelay;
-			}
+		}
+		/* Set the repeat interval */
+		if (p && ((*p == ':') || (*p == '-'))) {
+			bbresult.interval = 60*atoi(p+1);
+		}
+		else {
+			bbresult.interval = 60*bbpagedelay;
 		}
 
 		/* Create a recip_t struct from the bbalertdef contents */
