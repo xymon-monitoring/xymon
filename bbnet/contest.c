@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid = "$Id: contest.c,v 1.6 2003-04-15 15:25:04 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.7 2003-04-15 15:45:08 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -40,16 +40,14 @@ typedef struct {
 } svcinfo_t;
 
 typedef struct {
-	char textaddr[25];
-	struct sockaddr_in addr;
-	int  tested;
-	int  fd;
-	int  open;
-	int  readpending;
-	int  connres;
+	struct sockaddr_in addr;	/* Address (IP+port) to test */
+	int  fd;			/* Socket filedescriptor */
+	int  open;			/* Result - is it open? */
+	int  connres;			/* connect() status returned */
 	struct timeval timestart, duration;
-	svcinfo_t *svcinfo;
-	char *banner;
+	svcinfo_t *svcinfo;		/* Points to svcinfo_t for service */
+	int  readpending;		/* Temp status while reading banner */
+	char *banner;			/* Banner text from service */
 	void *next;
 } test_t;
 
@@ -88,25 +86,25 @@ void add_test(char *ip, int port, char *service)
 	test_t *newtest;
 	int i;
 
-	for (i=0; (svcinfo[i].svcname && (strcmp(service, svcinfo[i].svcname) != 0)); i++) ;
-
 	newtest = (test_t *) malloc(sizeof(test_t));
-	sprintf(newtest->textaddr, "%s:%d", ip, port);
-	newtest->tested = 0;
 
 	memset(&newtest->addr, 0, sizeof(newtest->addr));
-	newtest->addr.sin_port = htons(port);
 	newtest->addr.sin_family = PF_INET;
+	newtest->addr.sin_port = htons(port);
 	inet_aton(ip, (struct in_addr *) &newtest->addr.sin_addr.s_addr);
 
 	newtest->fd = -1;
 	newtest->open = 0;
-	newtest->readpending = 0;
 	newtest->connres = -1;
 	newtest->duration.tv_sec = newtest->duration.tv_usec = 0;
+
+	for (i=0; (svcinfo[i].svcname && (strcmp(service, svcinfo[i].svcname) != 0)); i++) ;
 	newtest->svcinfo = &svcinfo[i];
+
+	newtest->readpending = 0;
 	newtest->banner = NULL;
 	newtest->next = thead;
+
 	thead = newtest;
 }
 
@@ -133,6 +131,10 @@ void do_conn(int conntimeout, int concurrency)
 	/* If conntimeout or concurrency are 0, set them to reasonable defaults */
 	if (conntimeout == 0) conntimeout = DEF_TIMEOUT;
 	if (concurrency == 0) concurrency = DEF_MAX_OPENS;
+	if (concurrency > (FD_SETSIZE-10)) {
+		concurrency = FD_SETSIZE - 10;	/* Allow a bit for stdin, stdout and such */
+		printf("bbtest-net: concurrency reduced to FD_SETSIZE-10 (%d)\n", concurrency);
+	}
 
 	/* How many tests to do ? */
 	for (item = thead; (item); item = item->next) pending++; 
@@ -156,7 +158,6 @@ void do_conn(int conntimeout, int concurrency)
 					 * Initiate the connection attempt ... 
 					 */
 					gettimeofday(&nextinqueue->timestart, &tz);
-					nextinqueue->tested = 1;
 					res = connect(nextinqueue->fd, (struct sockaddr *)&nextinqueue->addr, sizeof(nextinqueue->addr));
 
 					/*
@@ -369,9 +370,10 @@ void show_conn_res(void)
 	test_t *item;
 
 	for (item = thead; (item); item = item->next) {
-		printf("Address=%s, tested=%d, open=%d, res=%d, time=%ld.%ld, banner='%s'\n", 
-				item->textaddr, 
-				item->tested, item->open, item->connres, 
+		printf("Address=%s:%d, open=%d, res=%d, time=%ld.%ld, banner='%s'\n", 
+				inet_ntoa(item->addr.sin_addr), 
+				ntohs(item->addr.sin_port),
+				item->open, item->connres, 
 				item->duration.tv_sec, item->duration.tv_usec, textornull(item->banner));
 	}
 }
@@ -391,7 +393,7 @@ int main(int argc, char *argv[])
 	add_test("130.228.2.150", 21, "ftp");
 	add_test("172.16.10.101", 22, "ssh");
 
-	do_conn(0);
+	do_conn(0, 0);
 	show_conn_res();
 
 	return 0;
