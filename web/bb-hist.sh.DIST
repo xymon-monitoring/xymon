@@ -1,8 +1,0 @@
-#!/bin/sh
-
-# This is the bbgen drop-in replacement for the Big Brother history
-# script, bb-hist.sh
-# It is the Hobbit version.
-
-@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-hist.cgi --env=@BBHOME@/etc/hobbitserver.cfg
-

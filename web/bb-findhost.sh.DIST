@@ -1,9 +1,0 @@
-#!/bin/sh
-
-# This is the bbgen CGI script interface to bb-findhost.CGI
-# It is the Hobbit version.
-#
-# Install this script in your webservers' cgi-bin directory
-
-@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-findhost.cgi --env=@BBHOME@/etc/hobbitserver.cfg
-

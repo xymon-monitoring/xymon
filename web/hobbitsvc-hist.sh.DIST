@@ -1,8 +1,0 @@
-#!/bin/sh
-
-# This is the bbgen drop-in replacement for the Big Brother histlog
-# script, bb-histlog.sh
-# It is the Hobbit version.
-
-@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-hostsvc.cgi --env=@BBHOME@/etc/hobbitserver.cfg --historical
-
