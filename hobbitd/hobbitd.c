@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.24 2004-10-12 10:24:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.25 2004-10-15 13:50:44 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -82,6 +82,7 @@ bbd_channel_t *stachgchn = NULL;	/* Receives brief message about a status change
 bbd_channel_t *pagechn   = NULL;	/* Receives alert messages (triggered from status changes) */
 bbd_channel_t *datachn   = NULL;	/* Receives raw "data" messages */
 bbd_channel_t *noteschn  = NULL;	/* Receives raw "notes" messages */
+bbd_channel_t *enadischn = NULL;	/* Receives "enable" and "disable" messages */
 
 #define NO_COLOR (COL_COUNT)
 static char *colnames[COL_COUNT+1];
@@ -214,6 +215,13 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 				sender, hostname, msg);
 			break;
+
+		  case C_ENADIS:
+			log = (bbd_log_t *)arg;
+			sprintf(channel->channelbuf,
+				"@@%s#%u|%d.%06d|%s|%s|%s|%d\n@@\n",
+				channelmarker, channel->seq, (int) tstamp.tv_sec, (int)tstamp.tv_usec,
+				sender, hostname, log->test->testname, (int) log->enabletime);
 		}
 	}
 
@@ -600,6 +608,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 					free(log->dismsg);
 					log->dismsg = NULL;
 				}
+				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, (void *)log, NULL);
 			}
 		}
 		else {
@@ -610,6 +619,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 					free(log->dismsg);
 					log->dismsg = NULL;
 				}
+				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, (void *)log, NULL);
 			}
 		}
 	}
@@ -634,6 +644,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 					if (log->dismsg) free(log->dismsg);
 					log->dismsg = strdup(dismsg);
 				}
+				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, (void *)log, NULL);
 			}
 		}
 		else {
@@ -644,6 +655,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 					if (log->dismsg) free(log->dismsg);
 					log->dismsg = strdup(dismsg);
 				}
+				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, (void *)log, NULL);
 			}
 		}
 
@@ -781,6 +793,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		posttochannel(pagechn, marker, NULL, sender, NULL, NULL, msgbuf);
 		posttochannel(datachn, marker, NULL, sender, NULL, NULL, msgbuf);
 		posttochannel(noteschn, marker, NULL, sender, NULL, NULL, msgbuf);
+		posttochannel(enadischn, marker, NULL, sender, NULL, NULL, msgbuf);
 	}
 }
 
@@ -1381,6 +1394,8 @@ int main(int argc, char *argv[])
 	if (datachn == NULL) { errprintf("Cannot setup data channel\n"); return 1; }
 	noteschn  = setup_channel(C_NOTES, CHAN_MASTER);
 	if (noteschn == NULL) { errprintf("Cannot setup notes channel\n"); return 1; }
+	enadischn  = setup_channel(C_ENADIS, CHAN_MASTER);
+	if (enadischn == NULL) { errprintf("Cannot setup enadis channel\n"); return 1; }
 
 	do {
 		fd_set fdread, fdwrite;
@@ -1528,6 +1543,7 @@ int main(int argc, char *argv[])
 	close_channel(pagechn, CHAN_MASTER);
 	close_channel(datachn, CHAN_MASTER);
 	close_channel(noteschn, CHAN_MASTER);
+	close_channel(enadischn, CHAN_MASTER);
 	save_checkpoint();
 
 	return 0;
