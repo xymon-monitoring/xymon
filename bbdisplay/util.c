@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.125 2004-10-03 06:38:58 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.126 2004-10-04 21:57:03 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1008,7 +1008,7 @@ int within_sla(char *l, char *tag, int defresult)
 		 */
 		while ( (!found) && slaspec && (*slaspec != '\0') && (!isspace((unsigned int)*slaspec)) )
 		{
-			dprintf("Now checking slaspec='%s'", slaspec);
+			dprintf("Now checking slaspec='%s'\n", slaspec);
 
 			if ( (*slaspec == '*') || 						/* Any day */
                              (*slaspec == now->tm_wday+'0') ||					/* This day */
