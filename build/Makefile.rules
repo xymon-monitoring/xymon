@@ -49,6 +49,9 @@ reptest: reportdata.c debug.c util.c
 httptest.o: httptest.c httptest.h
 	$(CC) $(CFLAGS) $(CURLINCLUDE) -c -o $@ httptest.c
 
+bb-hist.o: bb-hist.c
+	$(CC) $(CFLAGS) -DDEFPIXELS=960 -c -o $@ $<
+
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
