@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.78 2003-07-11 12:03:55 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.79 2003-07-14 11:08:42 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -396,6 +396,16 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 				if (e == NULL) {
 					fprintf(output, "-");
 				}
+				else if (e->histlogname) {
+					/* Snapshot points to historical logfile */
+					fprintf(output, "<A HREF=\"%s/bb-histlog.sh?HOST=%s&SERVICE=%s&TIMEBUF=%s\">", 
+						getenv("CGIBINURL"), h->hostname, e->column->name, e->histlogname);
+
+					fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
+						bbskin, dotgiffilename(e->color, e->acked, e->oldage),
+						alttag(e),
+						getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+				}
 				else if (reportstart == 0) {
 					/* Standard webpage */
 					char *skin;
@@ -768,7 +778,8 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 			 */
 			strcpy(indexfilename, filename);
 			p = strrchr(indexfilename, '/'); 
-			sprintf(p, "/index%s", htmlextension);
+			if (p) p++; else p = indexfilename;
+			sprintf(p, "index%s", htmlextension);
 			sprintf(pagebasename, "%s%s", page->name, htmlextension);
 			res = symlink(pagebasename, indexfilename);
 			dprintf("Symlinking %s->%s : %d/%d\n", pagebasename, indexfilename, res, errno);
@@ -1266,7 +1277,7 @@ int do_bb2_page(char *filename, int summarytype)
 		fprintf(output, "<FONT SIZE=+2 FACE=\"Arial, Helvetica\"><BR><BR><I>All Monitored Systems OK</I></FONT><BR><BR>");
 	}
 
-	if (summarytype == PAGE_BB2) {
+	if ((snapshot == 0) && (summarytype == PAGE_BB2)) {
 		do_eventlog(output, 0, 240);
 		do_acklog(output, 25, 240);
 		do_bbext(output, "BBMKBB2EXT", "mkbb");
