@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.7 2004-08-28 06:43:54 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.8 2004-08-28 07:17:22 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -184,7 +184,7 @@ static void dns_queue_run(ares_channel channel)
 	int status, nfds, selres;
 	fd_set read_fds, write_fds;
 	struct timeval *tvp, tv;
-	int progress;
+	int progress = 10;
 	int loops = 0;
 	struct timeval cutoff, now;
 	struct timezone tz;
