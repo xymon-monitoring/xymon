@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.1 2003-07-19 16:36:49 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.2 2003-07-19 16:40:08 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -362,7 +362,7 @@ int main(int argc, char *argv[])
 {
 	int result;
 
-	result = sendstatus(argv[1], argv[2]);
+	result = sendmessage(argv[2], argv[1]);
 	printf("sendstatus returned %d\n", result);
 	return 0;
 }
