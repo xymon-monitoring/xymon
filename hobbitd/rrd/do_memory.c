@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char memory_rcsid[] = "$Id: do_memory.c,v 1.6 2004-11-13 22:02:00 henrik Exp $";
+static char memory_rcsid[] = "$Id: do_memory.c,v 1.7 2004-12-28 21:13:44 henrik Exp $";
 
 static char *memory_params[]      = { "rrdcreate", rrdfn, "DS:realmempct:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
@@ -35,7 +35,7 @@ static int get_mem_percent(char *l)
 	return atoi(p+1);
 }
 
-void do_memory_larrd_update(time_t tstamp, char *hostname, int physval, int swapval)
+void do_memory_larrd_update(time_t tstamp, char *hostname, int physval, int swapval, int actval)
 {
 	sprintf(rrdfn, "memory.real.rrd");
 	sprintf(rrdvalues, "%d:%d", (int)tstamp, physval);
@@ -44,12 +44,19 @@ void do_memory_larrd_update(time_t tstamp, char *hostname, int physval, int swap
 	sprintf(rrdfn, "memory.swap.rrd");
 	sprintf(rrdvalues, "%d:%d", (int)tstamp, swapval);
 	create_and_update_rrd(hostname, rrdfn, memory_params, update_params);
+
+	if ((actval >= 0) && (actval <= 100)) {
+		sprintf(rrdfn, "memory.actual.rrd");
+		sprintf(rrdvalues, "%d:%d", (int)tstamp, actval);
+		create_and_update_rrd(hostname, rrdfn, memory_params, update_params);
+	}
 }
 
 int do_memory_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
 	char *phys = NULL;
 	char *swap = NULL;
+	char *actual = NULL;
 	RbtIterator hwalk;
 
 	/* Log this hostname in the list of hosts we get true "memory" reports from. */
@@ -64,10 +71,11 @@ int do_memory_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 	phys = strstr(msg, "Physical"); if (phys == NULL) phys = strstr(msg, "Real");
 	swap = strstr(msg, "Swap"); if (swap == NULL) swap = strstr(msg, "Page");
+	actual = strstr(msg, "Actual");
 
 	if (phys && swap) {
 		char *eoln;
-		int physval, swapval;
+		int physval = -1, swapval = -1, actval = -1;
 
 		eoln = strchr(phys, '\n'); if (eoln) *eoln = '\0';
 		physval = get_mem_percent(phys);
@@ -77,7 +85,13 @@ int do_memory_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		swapval = get_mem_percent(swap);
 		if (eoln) *eoln = '\n';
 
-		do_memory_larrd_update(tstamp, hostname, physval, swapval);
+		if (actual) {
+			eoln = strchr(actual, '\n'); if (eoln) *eoln = '\0';
+			actval = get_mem_percent(actual);
+			if (eoln) *eoln = '\n';
+		}
+
+		do_memory_larrd_update(tstamp, hostname, physval, swapval, actval);
 	}
 
 	return 0;
