@@ -1,8 +1,6 @@
 #!/bin/sh
 
-# This is the bbgen drop-in replacement for the Big Brother hostsvc
-# script, bb-hostsvc.sh
-# It is the Hobbit version
+# This is a wrapper for the Hobbit hobbitsvc.cgi script
 
-@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-hostsvc.cgi --env=@BBHOME@/etc/hobbitserver.cfg --hobbitd --no-svcid --history=top
+@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbitsvc.cgi --env=@BBHOME@/etc/hobbitserver.cfg --hobbitd --no-svcid --history=top
 
