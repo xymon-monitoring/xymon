@@ -1,3 +1,10 @@
+hobbit (4.0.1-1) unstable; urgency=low
+
+  * Build problems fixed on Solaris, HP-UX
+  * Zoomed graphs could lose the hostname in the title.
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Fri,  1 Apr 2005 07:43:42 +0200
+
 hobbit (4.0-1) unstable; urgency=low
 
   * Upstream release of version 4.0
