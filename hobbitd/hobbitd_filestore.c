@@ -1,3 +1,21 @@
+/*----------------------------------------------------------------------------*/
+/* Big Brother message daemon.                                                */
+/*                                                                            */
+/* This is a bbgend worker module, it should be run off bbd_channel.          */
+/*                                                                            */
+/* This module implements the traditional Big Brother filebased storage of    */
+/* incoming status messages to the bbvar/logs/, bbvar/data/, bb/www/notes/    */
+/* and bbvar/disabled/ directories.                                           */
+/*                                                                            */
+/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/*                                                                            */
+/* This program is released under the GNU General Public License (GPL),       */
+/* version 2. See the file "COPYING" for details.                             */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.13 2004-10-27 10:46:46 henrik Exp $";
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -6,13 +24,6 @@
 #include <dirent.h>
 
 #include "bbdworker.h"
-
-/*
- * This is a bbgend worker module.
- * It hangs off the "status", "data" or "notes" channels 
- * (fed via bbd_channel), and saves incoming messages to 
- * physical storage.
- */
 
 enum role_t { ROLE_STATUS, ROLE_DATA, ROLE_NOTES, ROLE_ENADIS};
 

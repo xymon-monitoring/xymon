@@ -1,3 +1,19 @@
+/*----------------------------------------------------------------------------*/
+/* Big Brother message daemon.                                                */
+/*                                                                            */
+/* This is a library module for bbgend, responsible for loading the bb-hosts  */
+/* file and keeping track of what hosts are known, their aliases and planned  */
+/* downtime settings etc.                                                     */
+/*                                                                            */
+/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/*                                                                            */
+/* This program is released under the GNU General Public License (GPL),       */
+/* version 2. See the file "COPYING" for details.                             */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+static char rcsid[] = "$Id: loadhosts.c,v 1.3 2004-10-27 10:47:42 henrik Exp $";
+
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>

@@ -1,3 +1,19 @@
+/*----------------------------------------------------------------------------*/
+/* Big Brother message daemon.                                                */
+/*                                                                            */
+/* This is a small library for bbgend worker modules, to read a new message   */
+/* from the bbd_channel process, and also do the decoding of messages that    */
+/* are passed on the "meta-data" first line of such a message.                */
+/*                                                                            */
+/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/*                                                                            */
+/* This program is released under the GNU General Public License (GPL),       */
+/* version 2. See the file "COPYING" for details.                             */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+static char rcsid[] = "$Id: hobbitd_worker.c,v 1.11 2004-10-27 10:47:30 henrik Exp $";
+
 #include "bbdworker.h"
 
 #include <stdio.h>

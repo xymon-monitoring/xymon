@@ -1,3 +1,20 @@
+/*----------------------------------------------------------------------------*/
+/* Big Brother message daemon.                                                */
+/*                                                                            */
+/* This is a bbgend worker module for the "stachg" channel.                   */
+/* This module implements the Big Brother file-based history logging, and     */
+/* keeps the historical logfiles in bbvar/hist/ and bbvar/histlogs/ updated   */
+/* to keep track of the status changes.                                       */
+/*                                                                            */
+/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/*                                                                            */
+/* This program is released under the GNU General Public License (GPL),       */
+/* version 2. See the file "COPYING" for details.                             */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.13 2004-10-27 10:47:00 henrik Exp $";
+
 #include <sys/types.h>
 #include <stdio.h>
 #include <string.h>
@@ -10,12 +27,6 @@
 #include <sys/wait.h>
 
 #include "bbdworker.h"
-
-/*
- * This is a bbgend worker module.
- * It hangs off the "stachg" channel (fed via bbd_channel), 
- * and updates the standard BB history files.
- */
 
 static void dropdirectory(char *dirfn)
 {
