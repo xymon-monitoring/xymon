@@ -547,7 +547,7 @@ else
 	then
 		echo "# Change the following line if compiler complains about a missing ssl.h" >>Makefile
 		echo "SSLINCDIR = -I$OSSLINC"    >>Makefile
-		echo "SSLLIBS = -L$OSSLLIB -lcrypto -lssl" >>Makefile
+		echo "SSLLIBS = -L$OSSLLIB -lssl -lcrypto" >>Makefile
 		echo "RPATHVAL += ${OSSLLIB}"    >>Makefile
 	fi
 	echo "#"                                 >>Makefile
