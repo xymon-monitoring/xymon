@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.30 2003-04-25 16:49:09 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.31 2003-04-27 09:21:43 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -23,7 +23,9 @@ static char rcsid[] = "$Id: bbtest-net.c,v 1.30 2003-04-25 16:49:09 henrik Exp $
 #include "bbgen.h"
 #include "util.h"
 #include "debug.h"
+#include "bbtest-net.h"
 #include "contest.h"
+#include "httptest.h"
 
 /* These are dummy vars needed by stuff in util.c */
 hostlist_t      *hosthead = NULL;
@@ -36,61 +38,22 @@ link_t  null_link = { "", "", "", NULL };
 #define TOOL_DIG	2
 #define TOOL_NTP        3
 #define TOOL_FPING      4
+#define TOOL_CURL       5
 
 /* dnslookup values */
 #define DNS_THEN_IP     0	/* Try DNS - if it fails, use IP from bb-hosts */
 #define DNS_ONLY        1	/* DNS only - if it fails, report service down */
 #define IP_ONLY         2	/* IP only - dont do DNS lookups */
 
-typedef struct {
-	char *testname;		/* Name of the test = column name in BB report */
-	int namelen;		/* Length of name - "testname:port" has this as strlen(testname), others 0 */
-	int portnum;		/* Port number this service runs on */
-	int toolid;		/* Which tool to use */
-	void *items;		/* testitem_t linked list of tests for this service */
-	void *next;
-} service_t;
-
-typedef struct {
-	char *hostname;
-	char ip[16];
-
-	int dialup;		/* dialup flag (if set, failed tests report as clear) */
-	int testip;		/* testip flag (dont do dns lookups on hostname) */
-	int dnserror;		/* set internally if we cannot find the host's IP */
-	int in_sla;		/* set internally if inside SLA period. If not, failed tests are blue */
-
-	/* The following are for the connectivity test */
-	int noconn;		/* noconn flag (dont report "conn" at all */
-	int noping;		/* noping flag (report "conn" as clear=disabled */
-	int badconn[3];		/* badconn:x:y:z flag */
-	int downcount;		/* number of successive failed conn tests */
-	time_t downstart;	/* time() of first conn failure */
-
-	void *next;
-} testedhost_t;
-
-typedef struct {
-	testedhost_t	*host;		/* Pointer to testedhost_t record for this host */
-	service_t	*service;	/* Pointer to service_t record for the service to test */
-	int		reverse;	/* "!testname" flag */
-	int		dialup;		/* "?testname" flag */
-	int		alwaystrue;	/* "~testname" flag */
-	int		silenttest;	/* "testname:s" flag */
-	int		open;		/* Is the service open ? NB: Shows true state of service, ignores flags */
-	test_t		*testresult;	/* Banner and duration of test */
-	char		*banner;
-	void		*next;
-} testitem_t;
-
-
 service_t	*svchead = NULL;		/* Head of all known services */
 service_t	*pingtest = NULL;		/* Identifies the pingtest within svchead list */
+service_t	*httptest = NULL;		/* Identifies the httptest within svchead list */
 testedhost_t	*testhosthead = NULL;		/* Head of all hosts */
 testitem_t	*testhead = NULL;		/* Head of all tests */
 char		*nonetpage = NULL;		/* The "NONETPAGE" env. variable */
 int		dnsmethod = DNS_THEN_IP;	/* How to do DNS lookups */
-
+int 		timeout=0;
+char		*contenttestname = "content";   /* Name of the content checks column */
 
 service_t *add_service(char *name, int port, int namelen, int toolid)
 {
@@ -139,7 +102,8 @@ void load_services(void)
 }
 
 
-testitem_t *init_testitem(testedhost_t *host, service_t *service, int dialuptest, int reversetest, int alwaystruetest, int silenttest)
+testitem_t *init_testitem(testedhost_t *host, service_t *service, char *testspec, 
+                          int dialuptest, int reversetest, int alwaystruetest, int silenttest)
 {
 	testitem_t *newtest;
 
@@ -150,6 +114,8 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, int dialuptest
 	newtest->reverse = reversetest;
 	newtest->alwaystrue = alwaystruetest;
 	newtest->silenttest = silenttest;
+	newtest->testspec = testspec;
+	newtest->private = NULL;
 	newtest->open = 0;
 	newtest->testresult = NULL;
 	newtest->banner = NULL;
@@ -186,9 +152,10 @@ void load_tests(void)
 
 	while (stackfgets(l, sizeof(l), "include")) {
 		p = strchr(l, '\n'); if (p) { *p = '\0'; };
+		for (p=l; (*p && isspace((int) *p)); p++) ;
 
-		if ((l[0] == '#') || (strlen(l) == 0)) {
-			/* Do nothing - it's a comment */
+		if ((*p == '#') || (*p == '\0')) {
+			/* Do nothing - it's a comment or empty line */
 		}
 		else if (sscanf(l, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
 			char *testspec;
@@ -208,15 +175,18 @@ void load_tests(void)
 				p = strchr(l, '#'); p++;
 				while (isspace((unsigned int) *p)) p++;
 
-				h->dialup = (strstr(p, "dialup") != NULL);
-				h->testip = (strstr(p, "testip") != NULL);
-				h->noconn = (strstr(p, "noconn") != NULL);
-				h->noping = (strstr(p, "noping") != NULL);
+				h->dialup = 0;
+				h->testip = 0;
+				h->noconn = 0;
+				h->noping = 0;
+				h->timeout = timeout;
+				h->conntimeout = 0;
 				h->badconn[0] = h->badconn[1] = h->badconn[2] = 0;
 				h->downcount = 0;
 				h->in_sla = within_sla(p);
 				h->ip[0] = '\0';
 				h->dnserror = 0;
+				h->firsthttp = NULL;
 				anytests = 0;
 
 				testspec = strtok(p, "\t ");
@@ -227,17 +197,21 @@ void load_tests(void)
 					int reversetest;
 					int alwaystruetest;
 					char *option;
+					char *savedspec = NULL;
 
 					if (strncmp(testspec, "badconn:", 8) == 0) {
 						sscanf(testspec, "badconn:%d:%d:%d", &h->badconn[0], &h->badconn[1], &h->badconn[2]);
 					}
-
-					/* Remove any trailing ":s", ":q", ":Q", ":portnumber" */
-					option = strchr(testspec, ':'); 
-					if (option) { 
-						*option = '\0'; 
-						option++; 
+					else if (strncmp(testspec, "TIMEOUT:", 8) == 0) {
+						if (sscanf(testspec, "TIMEOUT:%d:%d", &h->conntimeout, &h->timeout) != 2) {
+							h->timeout = timeout;
+							h->conntimeout = 0;
+						}
 					}
+					else if (strcmp(testspec, "noconn") == 0) h->noconn = 1;
+					else if (strcmp(testspec, "noping") == 0) h->noping = 1;
+					else if (strcmp(testspec, "testip") == 0) h->testip = 1;
+					else if (strcmp(testspec, "dialup") == 0) h->dialup = 1;
 
 					/* Test prefixes:
 					 * - '?' denotes dialup test, i.e. report failures as clear.
@@ -252,40 +226,81 @@ void load_tests(void)
 					if (*testspec == '~') { alwaystruetest=1; testspec++; }
 
 					if (pingtest && (strcmp(testspec, pingtest->testname) == 0)) {
+						/*
+						 * Ping/conn test. Save any modifier flags for later use.
+						 */
 						ping_dialuptest = dialuptest;
 						ping_reversetest = reversetest;
+						s = NULL; /* Dont add the test now - ping is special (enabled by default) */
 					}
-
-					/* Find the service */
-					for (s=svchead; (s && (strcmp(s->testname, testspec) != 0)); s = s->next) ;
-
-					if (option && s) {
+					else if (strncmp(testspec, "http", 4) == 0) {
 						/*
-						 * Check if it is a service with an explicit portnumber.
-						 * If it is, then create a new service record named
-						 * "SERVICE_PORT" so we can merge tests for this service+port
-						 * combination for multiple hosts.
-						 *
-						 * According to BB docs, this type of services must be in
-						 * BBNETSVCS - so it is known already.
+						 * HTTP test. This uses ':' a lot, so save it here.
 						 */
-						int specialport;
-						char *specialname;
+						s = httptest;
+						savedspec = malcop(testspec);
+					}
+					else if (strncmp(testspec, "content=", 8) == 0) {
+						/*
+						 * Content check. Like http above.
+						 */
+						s = httptest;
+						savedspec = malcop(testspec);
+					}
+					else if (strncmp(testspec, "cont;", 5) == 0) {
+						/*
+						 * Content check, "cont.sh" style. Like http above.
+						 */
+						s = httptest;
+						savedspec = malcop(testspec);
+					}
+					else {
+						/* 
+						 * Simple TCP connect test. 
+						 */
 
-						specialport = atoi(option);
-						if ((s->portnum == 0) && (specialport > 0)) {
-							specialname = malloc(strlen(s->testname)+10);
-							sprintf(specialname, "%s_%d", s->testname, specialport);
-							s = add_service(specialname, specialport, strlen(s->testname), TOOL_CONTEST);
-							free(specialname);
+						/* Remove any trailing ":s", ":q", ":Q", ":portnumber" */
+						option = strchr(testspec, ':'); 
+						if (option) { 
+							*option = '\0'; 
+							option++; 
 						}
+	
+						/* Find the service */
+						for (s=svchead; (s && (strcmp(s->testname, testspec) != 0)); s = s->next) ;
+
+						if (option && s) {
+							/*
+							 * Check if it is a service with an explicit portnumber.
+							 * If it is, then create a new service record named
+							 * "SERVICE_PORT" so we can merge tests for this service+port
+							 * combination for multiple hosts.
+							 *
+							 * According to BB docs, this type of services must be in
+							 * BBNETSVCS - so it is known already.
+							 */
+							int specialport;
+							char *specialname;
+
+							specialport = atoi(option);
+							if ((s->portnum == 0) && (specialport > 0)) {
+								specialname = malloc(strlen(s->testname)+10);
+								sprintf(specialname, "%s_%d", s->testname, specialport);
+								s = add_service(specialname, specialport, strlen(s->testname), TOOL_CONTEST);
+								free(specialname);
+							}
+						}
+
+						if (option) *(option-1) = ':';
 					}
 
 					if (s) {
 						anytests = 1;
-						newtest = init_testitem(h, s, dialuptest, reversetest, alwaystruetest, 0);
+						newtest = init_testitem(h, s, savedspec, dialuptest, reversetest, alwaystruetest, 0);
 						newtest->next = s->items;
 						s->items = newtest;
+
+						if (s == httptest) h->firsthttp = newtest;
 					}
 
 					testspec = strtok(NULL, "\t ");
@@ -294,7 +309,7 @@ void load_tests(void)
 				if (pingtest && !h->noconn) {
 					/* Add the ping check */
 					anytests = 1;
-					newtest = init_testitem(h, pingtest, ping_dialuptest, ping_reversetest, 1, 0);
+					newtest = init_testitem(h, pingtest, NULL, ping_dialuptest, ping_reversetest, 1, 0);
 					newtest->next = pingtest->items;
 					pingtest->items = newtest;
 				}
@@ -340,10 +355,9 @@ void load_tests(void)
 					testhosthead = h;
 				}
 				else {
-					/* No network tests for this host, so drop it */
+					/* No network tests for this host, so ignore it */
 					free(h);
 				}
-
 			}
 		}
 		else {
@@ -690,7 +704,6 @@ int main(int argc, char *argv[])
 	testedhost_t *h;
 	testitem_t *t;
 	int argi;
-	int timeout=0;
 	int concurrency=0;
 	char *pingcolumn = NULL;
 
@@ -724,6 +737,10 @@ int main(int argc, char *argv[])
 			}
 			else pingcolumn = "conn";
 		}
+		else if (strncmp(argv[argi], "--content=", 10) == 0) {
+			char *p = strchr(argv[argi], '=');
+			contenttestname = malcop(p+1);
+		}
 		else if (strcmp(argv[argi], "--noping") == 0) {
 			pingcolumn = NULL;
 		}
@@ -734,11 +751,12 @@ int main(int argc, char *argv[])
 	load_services();
 	add_service("dns", getportnumber("domain"), 0, TOOL_NSLOOKUP);
 	add_service("dig", getportnumber("domain"), 0, TOOL_DIG);
-	add_service("ntp", getportnumber("ntp"), 0, TOOL_NTP);
+	add_service("ntp", getportnumber("ntp"),    0, TOOL_NTP);
+	httptest = add_service("http", getportnumber("http"),  0, TOOL_CURL);
 	if (pingcolumn) pingtest = add_service(pingcolumn, 0, 0, TOOL_FPING);
 
 	for (s = svchead; (s); s = s->next) {
-		dprintf("Service %s port %d\n", s->testname, s->portnum);
+		dprintf("Service %s port %d tool %d\n", s->testname, s->portnum, s->toolid);
 	}
 
 	load_tests();
@@ -750,18 +768,20 @@ int main(int argc, char *argv[])
 	combo_start();
 	dprintf("\nTest services\n");
 
+
 	/* Ping checks first */
 	if (pingtest && pingtest->items) {
 		run_fping_service(pingtest); 
 		send_results(pingtest);
 	}
 
+
 	/* First run the standard TCP/IP tests */
 	for (s = svchead; (s); s = s->next) {
 		if ((s->items) && (s->toolid == TOOL_CONTEST)) {
 			for (t = s->items; (t); t = t->next) {
 				if (!t->host->dnserror) {
-					t->testresult = add_test(t->host->ip, s->portnum, s->testname, t->silenttest);
+					t->testresult = add_tcp_test(t->host->ip, s->portnum, s->testname, t->silenttest);
 				}
 				else {
 					t->testresult = NULL;
@@ -769,8 +789,8 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-	do_conn(timeout, concurrency);
-	if (debug) show_conn_res();
+	do_tcp_tests(timeout, concurrency);
+	if (debug) show_tcp_test_results();
 	for (s = svchead; (s); s = s->next) {
 		if ((s->items) && (s->toolid == TOOL_CONTEST)) {
 			for (t = s->items; (t); t = t->next) { 
@@ -789,6 +809,14 @@ int main(int argc, char *argv[])
 			send_results(s);
 		}
 	}
+
+
+	/* Run the http tests */
+	for (t = httptest->items; (t); t = t->next) add_http_test(t);
+	run_http_tests(httptest);
+	if (debug) show_http_test_results(httptest);
+	for (h=testhosthead; (h); h = h->next) send_http_results(httptest, h, nonetpage, contenttestname);
+
 
 	/* dns, dig, ntp tests */
 	for (s = svchead; (s); s = s->next) {
