@@ -83,7 +83,7 @@ cfgfiles:
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f $(PROGRAMS) $(CGISCRIPTS) *.o *~ larrd/*~ 
+	rm -f $(PROGRAMS) $(CGISCRIPTS) *.o *~ larrd/*~ moverrd.sh
 	rm -f etcfiles/hobbit-apache.conf etcfiles/hobbitserver.cfg etcfiles/bb-hosts etcfiles/hobbit-alerts.cfg etcfiles/hobbitlaunch.cfg
 	rm -f wwwfiles/menu/menu_items.js
 	(find etcfiles/ -name "*~"; find wwwfiles/ -name "*~"; find webfiles/ -name "*~") | xargs rm -f
