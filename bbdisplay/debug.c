@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.28 2004-08-02 13:20:31 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.29 2004-08-04 11:31:38 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -47,6 +47,13 @@ void dprintf(const char *fmt, ...)
 	va_list args;
 
 	if (debug) {
+		char timestr[30];
+		time_t now = time(NULL);
+
+		strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S",
+			 localtime(&now));
+		printf("%s ", timestr);
+
 		va_start(args, fmt);
 		vprintf(fmt, args);
 		va_end(args);
