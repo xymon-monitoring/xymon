@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.26 2004-09-24 16:10:42 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.27 2004-09-25 16:18:24 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -415,6 +415,9 @@ int main(int argc, char *argv[])
 
 	if (daemonize) {
 		pid_t childpid;
+
+		fclose(stdin);
+		fclose(stdout);
 
 		/* Become a daemon */
 		childpid = fork();
