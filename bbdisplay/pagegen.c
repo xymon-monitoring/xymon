@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.137 2005-03-16 07:43:32 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.138 2005-03-16 07:53:32 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -299,7 +299,7 @@ void setup_htaccess(const char *pagepath)
 			fclose(fd);
 		}
 		else {
-			errprintf("Cannot create %s\n", htaccessfn);
+			errprintf("Cannot create %s: %s\n", htaccessfn, strerror(errno));
 		}
 	}
 }
@@ -845,9 +845,11 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 	char	tmpfilename[PATH_MAX];
 	char	rssfilename[PATH_MAX];
 	char	tmprssfilename[PATH_MAX];
+	char	curdir[PATH_MAX];
 	char	*dirdelim;
 	char	*mkbblocal;
 
+	getcwd(curdir, sizeof(curdir));
 	mkbblocal = strdup(xgetenv((page->parent ? "MKBBSUBLOCAL" : "MKBBLOCAL")));
 
 	pagepath[0] = '\0';
@@ -897,7 +899,8 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 			while ((dirdelim = strchr(dirdelim, '/')) != NULL) {
 				*dirdelim = '\0';
 				if (mkdir(tmpfilename, 0755) == -1) {
-					errprintf("Cannot create directory %s: %s\n", tmpfilename, strerror(errno));
+					errprintf("Cannot create directory %s (in %s): %s\n", 
+						   tmpfilename, curdir, strerror(errno));
 				}
 				*dirdelim = '/';
 				dirdelim++;
@@ -906,7 +909,8 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 			/* We've created the directories. Now retry creating the file. */
 			output = fopen(tmpfilename, "w");
 			if (output == NULL) {
-				errprintf("Cannot open file %s: %s\n", tmpfilename, strerror(errno));
+				errprintf("Cannot open file %s (in %s): %s\n", 
+					  tmpfilename, curdir, strerror(errno));
 			}
 
 			/* 
@@ -918,8 +922,10 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 			if (p) p++; else p = indexfilename;
 			sprintf(p, "index%s", htmlextension);
 			sprintf(pagebasename, "%s%s", page->name, htmlextension);
-			res = symlink(pagebasename, indexfilename);
-			dprintf("Symlinking %s->%s : %d/%d\n", pagebasename, indexfilename, res, errno);
+			if ((symlink(pagebasename, indexfilename) == -1) && ((res = errno) != EEXIST)) {
+				errprintf("Cannot create symlink %s->%s (in %s): %s\n", 
+					  indexfilename, pagebasename, curdir, strerror(res));
+			}
 
 			if (output == NULL) {
 				return;
@@ -1170,7 +1176,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 	sprintf(tmpfilename, "%s.tmp", filename);
 	output = fopen(tmpfilename, "w");
 	if (output == NULL) {
-		errprintf("Cannot open file %s\n", tmpfilename);
+		errprintf("Cannot create file %s: %s\n", tmpfilename, strerror(errno));
 		return bb2page.color;
 	}
 
@@ -1178,7 +1184,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 		sprintf(tmprssfilename, "%s.tmp", rssfilename);
 		rssoutput = fopen(tmprssfilename, "w");
 		if (rssoutput == NULL) {
-			errprintf("Cannot open RSS file %s\n", tmpfilename);
+			errprintf("Cannot create RSS file %s: %s\n", tmpfilename, strerror(errno));
 			return bb2page.color;
 		}
 	}
@@ -1235,7 +1241,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 		sprintf(nklogfn, "%s/nkstatus.log", xgetenv("BBHOME"));
 		nklog = fopen(nklogfn, "a");
 		if (nklog == NULL) {
-			errprintf("Cannot log NK status to %s\n", nklogfn);
+			errprintf("Cannot log NK status to %s: %s\n", nklogfn, strerror(errno));
 		}
 
 		init_timestamp();
