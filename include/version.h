@@ -11,7 +11,7 @@
 #ifndef __VERSION_H__
 #define __VERSION_H__
 
-#define VERSION "3.4"
+#define VERSION "4.0-beta2"
 
 #endif
 
