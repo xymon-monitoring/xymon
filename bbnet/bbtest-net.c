@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.188 2004-12-18 10:24:17 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.189 2004-12-19 21:27:19 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -88,7 +88,7 @@ int		checktcpresponse = 0;
 int		dotraceroute = 0;
 int		fqdn = 1;
 int		dosendflags = 1;
-char		fpingcmd[PATH_MAX];
+char		*fpingcmd = NULL;
 char		fpinglog[PATH_MAX];
 char		fpingerrlog[PATH_MAX];
 int		respcheck_color = COL_YELLOW;
@@ -1037,13 +1037,11 @@ void run_rpcinfo_service(service_t *service)
 
 int start_fping_service(service_t *service)
 {
-#define MAXFPINGARGS 9
 	testitem_t *t;
-	char *p;
+	char *cmd;
+	char **cmdargs;
 	int pfd[2];
 	int status;
-	char *fpingargs[MAXFPINGARGS];
-	int argi = 0;
 
 	/*
 	 * The idea here is to run fping in a separate process, in parallel
@@ -1058,19 +1056,15 @@ int start_fping_service(service_t *service)
 	 * The output is then picked up by the finish_fping_service().
 	 */
 
-	p = getenv("FPING");
-	strcpy(fpingcmd, (p ? p : "fping"));
+	fpingcmd = strdup(getenv_default("FPING", "fping", NULL));
+	fpingcmd = realloc(fpingcmd, strlen(fpingcmd)+5);
+	strcat(fpingcmd, " -Ae");
+
 	sprintf(fpinglog, "%s/fping-stdout.%lu", getenv("BBTMP"), (unsigned long)getpid());
 	sprintf(fpingerrlog, "%s/fping-stderr.%lu", getenv("BBTMP"), (unsigned long)getpid());
 
-	/* $FPING may contain arguments, so we need to split those up for execlp() */
-	memset(fpingargs, 0, sizeof(fpingargs));
-	p = strtok(fpingcmd, " ");
-	while (p && (argi < MAXFPINGARGS)) {
-		fpingargs[argi] = p;
-		argi++;
-		p = strtok(NULL, " ");
-	}
+	/* Setup command line and arguments */
+	cmdargs = setup_commandargs(fpingcmd, &cmd);
 
 	/* Get a pipe FD */
 	status = pipe(pfd);
@@ -1109,10 +1103,7 @@ int start_fping_service(service_t *service)
 		status = dup2(errfile, STDERR_FILENO);
 		close(pfd[0]); close(pfd[1]); close(outfile); close(errfile);
 
-		/* We use fping's numeric output format, -Ae */
-		execlp(fpingargs[0], "fping", "-Ae", 
-		       fpingargs[1], fpingargs[2], fpingargs[3], fpingargs[4],
-		       fpingargs[5], fpingargs[6], fpingargs[7], fpingargs[8], NULL);
+		execvp(cmd, cmdargs);
 
 		/* Should never go here ... just kill the child */
 		exit(99);
