@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-snapshot.c,v 1.6 2004-12-03 12:04:24 henrik Exp $";
+static char rcsid[] = "$Id: bb-snapshot.c,v 1.7 2005-01-09 21:35:41 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -17,6 +17,7 @@ static char rcsid[] = "$Id: bb-snapshot.c,v 1.6 2004-12-03 12:04:24 henrik Exp $
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <fcntl.h>
 #include <sys/wait.h>
 #include <dirent.h>
 #include <time.h>
@@ -83,8 +84,13 @@ void parse_query(void)
 			day = atoi(val);
 		}
 		else if (argnmatch(token, "mon")) {
-			for (mon=0; (monthnames[mon] && strcmp(val, monthnames[mon])); mon++) ;
-			if (mon >= 12) mon = -1;
+			char *errptr;
+
+			mon = strtol(val, &errptr, 10) - 1;
+			if (errptr == val) {
+				for (mon=0; (monthnames[mon] && strcmp(val, monthnames[mon])); mon++) ;
+				if (mon >= 12) mon = -1;
+			}
 		}
 		else if (argnmatch(token, "yr")) {
 			year = atoi(val);
@@ -179,6 +185,36 @@ int main(int argc, char *argv[])
 	}
 	bbgen_argv[newargi++] = outdir;
 	bbgen_argv[newargi++] = NULL;
+
+	if ((getenv("QUERY_STRING") == NULL) || (strlen(getenv("QUERY_STRING")) == 0)) {
+		/* Present the query form */
+		int formfile;
+		char formfn[PATH_MAX];
+
+		sprintf(formfn, "%s/web/snapshot_form", getenv("BBHOME"));
+		formfile = open(formfn, O_RDONLY);
+
+		if (formfile >= 0) {
+			char *inbuf;
+			struct stat st;
+
+			fstat(formfile, &st);
+			inbuf = (char *) malloc(st.st_size + 1);
+			read(formfile, inbuf, st.st_size);
+			inbuf[st.st_size] = '\0';
+			close(formfile);
+
+			printf("Content-Type: text/html\n\n");
+			sethostenv("", "", "", colorname(COL_BLUE));
+
+			headfoot(stdout, "snapshot", "", "header", COL_BLUE);
+			output_parsed(stdout, inbuf, COL_BLUE, "report");
+			headfoot(stdout, "snapshot", "", "footer", COL_BLUE);
+
+			free(inbuf);
+		}
+		return 0;
+	}
 
 	envcheck(reqenv);
 	parse_query();
