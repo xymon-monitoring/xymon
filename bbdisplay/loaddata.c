@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.80 2003-06-18 08:53:04 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.81 2003-06-19 12:01:44 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -31,6 +31,7 @@ static char rcsid[] = "$Id: loaddata.c,v 1.80 2003-06-18 08:53:04 henrik Exp $";
 #include "bbgen.h"
 #include "util.h"
 #include "loaddata.h"
+#include "reportdata.h"
 #include "larrdgen.h"
 #include "infogen.h"
 #include "debug.h"
@@ -60,6 +61,8 @@ char	*purplelogfn = NULL;
 static FILE *purplelog = NULL;
 
 static pagelist_t *pagelisthead = NULL;
+
+static time_t oldestentry;
 
 
 char *skipword(const char *l)
@@ -434,6 +437,7 @@ int testflag_set(entry_t *e, char flag)
 		return 0;
 }
 
+
 state_t *init_state(const char *filename, int dopurple, int *is_purple)
 {
 	FILE 		*fd;
@@ -442,6 +446,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	char		*testname;
 	state_t 	*newstate;
 	char		l[MAXMSG];
+	char		fullfn[MAX_PATH];
 	host_t		*host;
 	struct stat 	log_st;
 	time_t		now = time(NULL);
@@ -456,11 +461,22 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		return NULL;
 	}
 
+	if (reportstart) {
+		/* Dont do reports for info- and larrd-columns */
+		p = strrchr(filename, '.');
+		if (p == NULL) return NULL;
+		p++;
+		if (strcmp(p, infocol) == 0) return NULL;
+		if (strcmp(p, larrdcol) == 0) return NULL;
+	}
+
+	sprintf(fullfn, "%s/%s", getenv((reportstart ? "BBHIST" : "BBLOGS")), filename);
+
 	/* Check that we can access this file */
-	if ( (stat(filename, &log_st) == -1)       || 
+	if ( (stat(fullfn, &log_st) == -1)       || 
 	     (!S_ISREG(log_st.st_mode))            ||
-	     ((fd = fopen(filename, "r")) == NULL)   ) {
-		errprintf("Weird file BBLOGS/%s skipped\n", filename);
+	     ((fd = fopen(fullfn, "r")) == NULL)   ) {
+		errprintf("Weird file %s/%s skipped\n", fullfn);
 		return NULL;
 	}
 
@@ -504,6 +520,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	newstate->entry->propagate = 1;
 	newstate->entry->skin = NULL;
 	newstate->entry->testflags = NULL;
+	newstate->entry->repinfo = NULL;
 
 	host = find_host(hostname);
 	if (host) {
@@ -519,14 +536,25 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 
 	newstate->entry->sumurl = NULL;
 
-	if (fgets(l, sizeof(l), fd)) {
+	if (reportstart) {
+		/* Determine "color" for this test from the historical data */
+		newstate->entry->repinfo = calloc(1, sizeof(reportinfo_t));
+		newstate->entry->color = parse_historyfile(fd, newstate->entry->repinfo);
+		newstate->entry->testflags = NULL;
+	}
+	else if (fgets(l, sizeof(l), fd)) {
 		newstate->entry->color = parse_color(l);
 		newstate->entry->testflags = parse_testflags(l);
 		if (testflag_set(newstate->entry, 'D')) newstate->entry->skin = dialupskin;
 		if (testflag_set(newstate->entry, 'R')) newstate->entry->skin = reverseskin;
 	}
+	else {
+		errprintf("Empty or unreadable status file %s/%s\n", (reportstart ? "BBHIST" : "BBLOGS"), filename);
+		newstate->entry->color = COL_CLEAR;
+		newstate->entry->testflags = NULL;
+	}
 
-	if ( (log_st.st_mtime <= now) && (strcmp(testname, larrdcol) != 0) && (strcmp(testname, infocol) != 0) ) {
+	if ( (!reportstart) && (log_st.st_mtime <= now) && (strcmp(testname, larrdcol) != 0) && (strcmp(testname, infocol) != 0) ) {
 		/* Log file too old = go purple */
 
 		if (host && host->dialup) {
@@ -544,7 +572,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	}
 
 	/* Acked column ? */
-	if (newstate->entry->color != COL_GREEN) {
+	if (!reportstart && (newstate->entry->color != COL_GREEN)) {
 		struct stat ack_st;
 		char ackfilename[MAX_PATH];
 
@@ -557,7 +585,10 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 
 	newstate->entry->propagate = checkpropagation(host, testname, newstate->entry->color);
 
-	if (dopurple && *is_purple) {
+	if (reportstart) {
+		/* Reports have no purple handling */
+	}
+	else if (dopurple && *is_purple) {
 		/* Send a message to update status to purple */
 
 		char *p;
@@ -955,7 +986,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	bbhosts = stackfopen(getenv("BBHOSTS"), "r");
 	if (bbhosts == NULL) {
 		errprintf("Cannot open the BBHOSTS file '%s'\n", getenv("BBHOSTS"));
-		exit(1);
+		return NULL;
 	}
 
 	if (pgset == NULL) pgset = "";
@@ -1315,48 +1346,61 @@ state_t *load_state(dispsummary_t **sumhead)
 
 	dprintf("load_state()\n");
 
-	chdir(getenv("BBLOGS"));
-	if (stat(".bbstartup", &st) == -1) {
-		/* Do purple if no ".bbstartup" file */
-		dopurple = enable_purpleupd;
+	if (chdir(getenv("BBLOGS")) != 0) {
+		errprintf("Cannot access the BBLOGS directory %s\n", getenv("BBLOGS"));
+		return NULL;
+	}
+
+	if (reportstart) {
+		dopurple = 0;
+		purplelog = NULL;
+		oldestentry = time(NULL);
 	}
 	else {
-		time_t now;
-
-		/* Starting up - don't do purple hosts ("avoid purple explosion on startup") */
-		dopurple = 0;
-
-		/* Check if enough time has passed to remove the startup file */
-		time(&now);
-		if ((now - st.st_mtime) > 300) {
-			remove(".bbstartup");
+		if (stat(".bbstartup", &st) == -1) {
+			/* Do purple if no ".bbstartup" file */
+			dopurple = enable_purpleupd;
 		}
-	}
+		else {
+			time_t now;
 
-	if (purplelogfn) {
-		purplelog = fopen(purplelogfn, "w");
-		if (purplelog == NULL) errprintf("Cannot open purplelog file %s\n", purplelogfn);
-		else fprintf(purplelog, "Stale (purple) logfiles as of %s\n\n", timestamp);
+			/* Starting up - don't do purple hosts ("avoid purple explosion on startup") */
+			dopurple = 0;
+
+			/* Check if enough time has passed to remove the startup file */
+			time(&now);
+			if ((now - st.st_mtime) > 300) {
+				remove(".bbstartup");
+			}
+		}
+
+		if (purplelogfn) {
+			purplelog = fopen(purplelogfn, "w");
+			if (purplelog == NULL) errprintf("Cannot open purplelog file %s\n", purplelogfn);
+			else fprintf(purplelog, "Stale (purple) logfiles as of %s\n\n", timestamp);
+		}
+		if (dopurple) combo_start();
 	}
-	if (dopurple) combo_start();
 
 	topstate = NULL;
 	topsum = NULL;
 
 	bblogs = opendir(getenv("BBLOGS"));
 	if (!bblogs) {
-		errprintf("No logs! Cannot cd to the BBLOGS directory %s\n", getenv("BBLOGS"));
-		exit(1);
+		errprintf("No logs! Cannot read the BBLOGS directory %s\n", getenv("BBLOGS"));
+		return NULL;
 	}
 
 	while ((d = readdir(bblogs))) {
 		strcpy(fn, d->d_name);
 
 		if (strncmp(fn, "summary.", 8) == 0) {
-			newsum = init_displaysummary(fn);
-			if (newsum) {
-				newsum->next = topsum;
-				topsum = newsum;
+			if (!reportstart) {
+				newsum = init_displaysummary(fn);
+				if (newsum) {
+					newsum->next = topsum;
+					topsum = newsum;
+				}
 			}
 		}
 		else {
@@ -1366,6 +1410,9 @@ state_t *load_state(dispsummary_t **sumhead)
 			if (newstate) {
 				newstate->next = topstate;
 				topstate = newstate;
+				if (reportstart && (newstate->entry->repinfo->reportstart < oldestentry)) {
+					oldestentry = newstate->entry->repinfo->reportstart;
+				}
 			}
 
 			if (dopurple) {
@@ -1381,6 +1428,7 @@ state_t *load_state(dispsummary_t **sumhead)
 
 	closedir(bblogs);
 
+	if (reportstart) sethostenv_report(oldestentry, reportend);
 	if (dopurple) combo_end();
 	if (purplelog) fclose(purplelog);
 

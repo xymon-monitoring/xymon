@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.128 2003-06-18 14:07:15 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.129 2003-06-19 12:01:44 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -49,6 +49,8 @@ int		bb_color, bb2_color, bbnk_color;	/* Top-level page colors */
 time_t		reportstart = 0;
 time_t		reportend = 0;
 double		reportwarnlevel = 97.0;
+double		reportpaniclevel = 99.995;
+char		*reportstyle = "crit";
 
 char *reqenv[] = {
 "BB",
@@ -145,14 +147,22 @@ int main(int argc, char *argv[])
 			enable_wmlgen = 1;
 		}
 		else if (argnmatch(argv[i], "--reporttime=")) {
-			int count = sscanf(argv[i], "--reporttime=%lu:%lu", &reportstart, &reportend);
+			char style[MAX_LINE_LEN];
+
+			int count = sscanf(argv[i], "--reporttime=%lu:%lu:%s", &reportstart, &reportend, style);
 
 			if (count < 1) reportstart = 788918400;	/* 01-Jan-1995 00:00 GMT */
 			if (count < 2) reportend = time(NULL);
+			if (count == 3) reportstyle = malcop(style);
 
-			if (getenv("BBREPWARN")) reportwarnlevel = atoi(getenv("BBREPWARN"));
+			if (getenv("BBREPWARN")) reportwarnlevel = atof(getenv("BBREPWARN"));
+			if (getenv("BBREPPANIC")) reportpaniclevel = atof(getenv("BBREPPANIC"));
 
-			if ((reportwarnlevel < 0) || (reportwarnlevel > 100)) reportwarnlevel = 97.0;
+			if ((reportwarnlevel < 0.0) || (reportwarnlevel > 100.0)) reportwarnlevel = 97.0;
+			if ((reportpaniclevel < 0.0) || (reportpaniclevel > 100.0)) reportpaniclevel = 99.995;
+
+			select_headers_and_footers("bbrep");
+			sethostenv_report(reportstart, reportend);
 		}
 
 		else if (strcmp(argv[i], "--pages-first") == 0) {

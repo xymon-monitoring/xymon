@@ -112,6 +112,7 @@
 #define COL_PURPLE 	3
 #define COL_YELLOW	4
 #define COL_RED		5
+#define COL_COUNT       (COL_RED+1)
 
 #define PAGE_BB		0
 #define PAGE_BB2	1
@@ -174,9 +175,10 @@ typedef struct {
 
 typedef struct {
 	double availability;
-	double greenpct, yellowpct, redpct, purplepct, clearpct, bluepct;
-	int greencount, yellowcount, redcount, purplecount, clearcount, bluecount;
-	char *style, *fstate;
+	time_t reportstart;
+	double pct[COL_COUNT];
+	int count[COL_COUNT];
+	char *fstate;
 } reportinfo_t;
 
 /* Measurement entry definition               */
@@ -308,7 +310,8 @@ extern summary_t	*sumhead;
 extern dispsummary_t	*dispsums;
 extern int		bb_color, bb2_color, bbnk_color;
 extern time_t		reportstart, reportend;
-extern double           reportwarnlevel;
+extern double           reportwarnlevel, reportpaniclevel;
+extern char		*reportstyle;
 
 #endif
 
