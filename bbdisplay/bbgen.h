@@ -37,8 +37,8 @@
 |    groups -------> group_t               |                   |
 |    hosts ---+         title              V                   |
 +--- parent   |         hosts ---------> host_t                |
-     next     |         next               group               |
-      ^       |                            hostname            |
+     next     |         onlycols           group               |
+      ^       |         next               hostname            |
       |       +------------------------>   ip                  |
       |                                    dialup              |
       +---------------------------------   parent              |
