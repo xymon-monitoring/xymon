@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.41 2004-10-27 10:49:25 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.42 2004-10-27 11:21:43 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1701,9 +1701,12 @@ int main(int argc, char *argv[])
 				conntail = NULL;
 			}
 			else {
+				conntail = connhead;
 				cwalk = connhead->next;
-				while (cwalk->next) cwalk = cwalk->next;
-				conntail = cwalk;
+				if (cwalk) {
+					while (cwalk->next) cwalk = cwalk->next;
+					conntail = cwalk;
+				}
 			}
 
 			while (khead) {
@@ -1743,12 +1746,14 @@ int main(int argc, char *argv[])
 	} while (running);
 
 	/* Tell the workers we to shutdown also */
-	posttochannel(statuschn, "@@shutdown", NULL, "bbgend", NULL, NULL, "");
-	posttochannel(stachgchn, "@@shutdown", NULL, "bbgend", NULL, NULL, "");
-	posttochannel(pagechn, "@@shutdown", NULL, "bbgend", NULL, NULL, "");
-	posttochannel(datachn, "@@shutdown", NULL, "bbgend", NULL, NULL, "");
-	posttochannel(noteschn, "@@shutdown", NULL, "bbgend", NULL, NULL, "");
-	posttochannel(enadischn, "@@shutdown", NULL, "bbgend", NULL, NULL, "");
+	running = 1;   /* Kludge, but it's the only way to get posttochannel to do something. */
+	posttochannel(statuschn, "shutdown", NULL, "bbgend", NULL, NULL, "");
+	posttochannel(stachgchn, "shutdown", NULL, "bbgend", NULL, NULL, "");
+	posttochannel(pagechn, "shutdown", NULL, "bbgend", NULL, NULL, "");
+	posttochannel(datachn, "shutdown", NULL, "bbgend", NULL, NULL, "");
+	posttochannel(noteschn, "shutdown", NULL, "bbgend", NULL, NULL, "");
+	posttochannel(enadischn, "shutdown", NULL, "bbgend", NULL, NULL, "");
+	running = 0;
 
 	/* Close the channels */
 	close_channel(statuschn, CHAN_MASTER);
