@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns2.c,v 1.3 2004-08-29 19:04:17 henrik Exp $";
+static char rcsid[] = "$Id: dns2.c,v 1.4 2004-08-29 22:26:45 henrik Exp $";
 
 /*
  * All of the code for parsing DNS responses and formatting these into
@@ -33,6 +33,7 @@ static char rcsid[] = "$Id: dns2.c,v 1.3 2004-08-29 19:04:17 henrik Exp $";
  * --------------------------------------------------------------------
  */
 
+#include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <arpa/nameser.h>
