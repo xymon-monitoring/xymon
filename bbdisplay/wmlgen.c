@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: wmlgen.c,v 1.15 2004-10-30 15:38:42 henrik Exp $";
+static char rcsid[] = "$Id: wmlgen.c,v 1.16 2004-10-31 12:54:10 henrik Exp $";
 
 #include <limits.h>
 #include <stdlib.h>
@@ -90,23 +90,65 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 {
 	char fn[PATH_MAX];
 	FILE *fd;
-	char logfn[PATH_MAX];
-	FILE *logfd;
+	char *msg = NULL, *logbuf = NULL;
 	char l[MAX_LINE_LEN], lineout[MAX_LINE_LEN];
-	char *p, *outp;
-	int linecount;
+	char *p, *outp, *nextline;
 
-	sprintf(logfn, "%s/%s.%s", getenv("BBLOGS"), commafy(host->hostname), entry->column->name);
-	logfd = fopen(logfn, "r");
-	if (logfd == NULL) {
-		errprintf("Cannot open file %s\n", logfn);
-		return;
+	if (!usebbgend) {
+		char logfn[PATH_MAX];
+		FILE *logfd = NULL;
+		struct stat st;
+		int n;
+
+		sprintf(logfn, "%s/%s.%s", getenv("BBLOGS"), commafy(host->hostname), entry->column->name);
+		if (stat(logfn, &st) == -1) {
+			errprintf("WML: Cannot stat file %s\n", logfn);
+			return;
+		}
+
+		logfd = fopen(logfn, "r");
+		if (logfd == NULL) {
+			errprintf("WML: Cannot open file %s\n", logfn);
+			return;
+		}
+
+		msg = logbuf = (char *)malloc(st.st_size+1);
+		n = fread(logbuf, st.st_size, 1, logfd);
+		if (n == -1) {
+			errprintf("WML: I/O error while reading logfile %s\n", logfn);
+			fclose(logfd);
+			free(logbuf);
+			return;
+		}
+		fclose(logfd);
 	}
+	else {
+		char bbgendreq[1024];
+		int bbgendresult;
+
+		sprintf(bbgendreq, "bbgendlog %s.%s", host->hostname, entry->column->name);
+		bbgendresult = sendmessage(bbgendreq, NULL, NULL, &logbuf, 1, 30);
+		if ((bbgendresult != BB_OK) || (logbuf == NULL) || (strlen(logbuf) == 0)) {
+			errprintf("WML: Status not available\n");
+			return;
+		}
+
+		msg = strchr(logbuf, '\n');
+		if (msg) {
+			msg++;
+		}
+		else {
+			errprintf("WML: Unable to parse log data\n");
+			free(logbuf);
+			return;
+		}
+	}
+
+	nextline = msg;
 
 	sprintf(fn, "%s/%s.%s.wml", wmldir, host->hostname, entry->column->name);
 	fd = fopen(fn, "w");
 	if (fd == NULL) {
-		fclose(logfd);
 		errprintf("Cannot create file %s\n", fn);
 		return;
 	}
@@ -131,13 +173,14 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 	 * "&COLOR" is replaced with the shortname color
 	 * "<", ">", "&", "\"" and "\'" are replaced with the coded name so they display correctly.
 	 */
-	linecount = 0;
-	while ( (linecount < 14) && (fgets(l, sizeof(l), logfd))) {
+	while (nextline) {
+		p = strchr(nextline, '\n'); if (p) *p = '\0';
+		strcpy(l, nextline);
+		if (p) nextline = p+1; else nextline = NULL;
+
 		outp = lineout;
 
-		p = strchr(l, '\n'); if (p) *p = '\0';
 		for (p=l; (*p && isspace((int) *p)); p++) ;
-
 		if (strlen(p) == 0) {
 			/* Empty line - ignore */
 		}
@@ -227,8 +270,8 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 	}
 	fprintf(fd, "<br/> </p> </card> </wml>\n");
 
-	fclose(logfd);
 	fclose(fd);
+	if (logbuf) free(logbuf);
 }
 
 
