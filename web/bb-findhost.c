@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.10 2004-12-03 12:04:24 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.11 2004-12-12 21:54:28 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -55,7 +55,7 @@ static char rcsid[] = "$Id: bb-findhost.c,v 1.10 2004-12-03 12:04:24 henrik Exp 
 
 #include "bbgen.h"
 #include "util.h"
-#include "loadhosts.h"
+#include "loadbbhosts.h"
 
 /* Global vars */
 bbgen_page_t    *pagehead = NULL;                       /* Head of page list */
