@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.74 2003-07-10 09:11:44 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.75 2003-07-10 10:41:04 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -848,7 +848,7 @@ void run_ntp_service(service_t *service)
 }
 
 
-int run_fping_service(service_t *service)
+int run_fping_service(service_t *service, int updatestatus)
 {
 	testitem_t	*t;
 	char		cmd[1024];
@@ -907,7 +907,7 @@ int run_fping_service(service_t *service)
 	fclose(logfd);
 	if (!debug) unlink(logfn);
 
-	save_fping_status();
+	if (updatestatus) save_fping_status();
 
 	/* 
 	 * Handle the router dependency stuff. I.e. for all hosts
@@ -1337,7 +1337,7 @@ int main(int argc, char *argv[])
 
 	/* Ping checks first */
 	if (pingtest && pingtest->items) {
-		run_fping_service(pingtest); 
+		run_fping_service(pingtest, (selectedcount == 0)); 
 		add_timestamp("PING test completed");
 	}
 
@@ -1434,9 +1434,6 @@ int main(int argc, char *argv[])
 	combo_end();
 	add_timestamp("Test results transmitted");
 
-	/* Save current status files */
-	for (s = svchead; (s); s = s->next) { if (s != pingtest) save_test_status(s); }
-
 	/*
 	 * The list of hosts to test frequently because of a failure must
 	 * be saved - it is then picked up by the frequent-test ext script
@@ -1452,7 +1449,12 @@ int main(int argc, char *argv[])
 	 *
 	 * So for now update the list only if we ran with no host-parameters.
 	 */
-	if (selectedcount == 0) save_frequenttestlist(argc, argv);
+	if (selectedcount == 0) {
+		/* Save current status files */
+		for (s = svchead; (s); s = s->next) { if (s != pingtest) save_test_status(s); }
+		/* Save frequent-test list */
+		save_frequenttestlist(argc, argv);
+	}
 
 	shutdown_http_library();
 	add_timestamp("bbtest-net completed");
