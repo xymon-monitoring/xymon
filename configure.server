@@ -150,6 +150,23 @@ else
 	fi
 	echo ""
 
+	echo "bbgen normally uses the nslookup and dig tools to test DNS servers."
+	echo "However, it can now use a built-in resolver library (ares) - this"
+	echo "is faster and allows more flexible tests, but the output is different."
+	echo ""
+	echo "Do you want to use the ares DNS library ?"
+	read ENABLEARES
+	if test "$ENABLEARES" = "" -o "$ENABLEARES" = "y"
+	then
+		ARESDEF="-DUSE_ARES"
+		ARESLIB="libares.a"
+	else
+		ARESDEF=""
+		ARESLIB=""
+	fi
+	echo ""
+
+
 	echo "bbgen uses the CURL library for http and https tests."
 	echo "I will try to find your curl library and headers with curl-config"
 	CURLVER=`curl-config --version`
@@ -286,11 +303,14 @@ else
 	echo "MAXMSG = $MAXMSG"               >>Makefile
 	echo "MANROOT = $MANROOT"             >>Makefile
 	echo "#"                              >>Makefile
+	echo "# ARES settings"                >>Makefile
+	echo "ARESFLAGS = $ARESDEF -I./ares-1.1.1/"        >>Makefile
+	echo "ARESLIB = $ARESLIB"             >>Makefile
+	echo "#"                              >>Makefile
 	echo "# $CURLMSG"                     >>Makefile
 	echo "CC = $CURLCC"                   >>Makefile
 	echo "CURLINCLUDE = $CURLINCLUDE"     >>Makefile
 	echo "CURLLIB = $CURLLIBS"            >>Makefile
-	echo "USEMULTI ="                     >>Makefile
 	echo "#"                              >>Makefile
 	echo "# OpenSSL settings"             >>Makefile
 	echo "SSLFLAGS = $SSLDEF"             >>Makefile
