@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.9 2004-08-31 20:38:21 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.10 2004-09-07 17:06:20 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -228,7 +228,9 @@ int dns_test_server(char *serverip, char *hostname, char **banner, int *bannerby
 	}
 
 	gettimeofday(&starttime, &tz);
-	ares_query(channel, hostname, C_IN, T_A, dns_detail_callback, NULL);
+	dprintf("ares_search: hostname='%s', class=%d, type=%d\n",
+		hostname, C_IN, T_A);
+	ares_search(channel, hostname, C_IN, T_A, dns_detail_callback, NULL);
 	dns_queue_run(channel);
 	gettimeofday(&endtime, &tz);
 	tspent = tvdiff(&starttime, &endtime, NULL);
