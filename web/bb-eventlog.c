@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-eventlog.c,v 1.10 2004-12-06 12:40:20 henrik Exp $";
+static char rcsid[] = "$Id: bb-eventlog.c,v 1.11 2005-01-15 17:38:55 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -123,7 +123,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
 		     (allowallhosts || (eventhost && !eventhost->nobb2)) && 
 		     (wanted_eventcolumn(svcname)) ) {
 
-			newevent = (event_t *) malloc(sizeof(event_t));
+			newevent = (event_t *) xmalloc(sizeof(event_t));
 			newevent->host       = eventhost;
 			newevent->service    = eventcolumn;
 			newevent->eventtime  = eventtime;
@@ -199,7 +199,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
 			struct event_t *tmp = walk;
 
 			walk = walk->next;
-			free(tmp);
+			xfree(tmp);
 		} while (walk);
 	}
 	else {
@@ -279,7 +279,7 @@ static void parse_query(void)
 		token = strtok(NULL, "&");
 	}
 
-	free(query);
+	xfree(query);
 }
 
 int main(int argc, char *argv[])

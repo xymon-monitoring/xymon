@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: errormsg.c,v 1.2 2004-11-23 21:45:47 henrik Exp $";
+static char rcsid[] = "$Id: errormsg.c,v 1.3 2005-01-15 17:39:50 henrik Exp $";
 
 #include <string.h>
 #include <time.h>
@@ -19,7 +19,7 @@ static char rcsid[] = "$Id: errormsg.c,v 1.2 2004-11-23 21:45:47 henrik Exp $";
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "errormsg.h"
+#include "libbbgen.h"
 
 char *errbuf = NULL;
 int save_errbuf = 1;
@@ -53,12 +53,12 @@ void errprintf(const char *fmt, ...)
 	if (save_errbuf) {
 		if (errbuf == NULL) {
 			errbufsize = 8192;
-			errbuf = (char *) malloc(errbufsize);
+			errbuf = (char *) xmalloc(errbufsize);
 			*errbuf = '\0';
 		}
 		else if ((strlen(errbuf) + strlen(msg)) > errbufsize) {
 			errbufsize += 8192;
-			errbuf = (char *) realloc(errbuf, errbufsize);
+			errbuf = (char *) xrealloc(errbuf, errbufsize);
 		}
 
 		strcat(errbuf, msg);
@@ -87,7 +87,7 @@ void dprintf(const char *fmt, ...)
 
 void flush_errbuf(void)
 {
-	if (errbuf) free(errbuf);
+	if (errbuf) xfree(errbuf);
 	errbuf = NULL;
 }
 

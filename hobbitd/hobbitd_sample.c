@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_sample.c,v 1.12 2004-12-30 22:25:34 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_sample.c,v 1.13 2005-01-15 17:38:28 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 			 * message with sequence number 0.
 			 * If you dont want a timeout, just pass a NULL for the timeout parameter.
 			 */
-			timeout = (struct timeval *)(malloc(sizeof(struct timeval)));
+			timeout = (struct timeval *)(xmalloc(sizeof(struct timeval)));
 			timeout->tv_sec = (atoi(argv[argi]+10));
 			timeout->tv_usec = 0;
 		}

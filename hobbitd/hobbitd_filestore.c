@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.27 2004-12-30 22:25:34 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.28 2005-01-15 17:38:28 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -84,7 +84,7 @@ void update_htmlfile(char *fn, char *msg,
 	char *ip = "";
 	char timestr[100];
 
-	tmpfn = (char *) malloc(strlen(fn)+5);
+	tmpfn = (char *) xmalloc(strlen(fn)+5);
 	sprintf(tmpfn, "%s.tmp", fn);
 	output = fopen(tmpfn, "w");
 
@@ -116,7 +116,7 @@ void update_htmlfile(char *fn, char *msg,
 		rename(tmpfn, fn);
 	}
 
-	free(tmpfn);
+	xfree(tmpfn);
 }
 
 void update_enable(char *fn, time_t expiretime)
@@ -146,10 +146,10 @@ static int wantedtest(char *wanted, char *key)
 
 	if (wanted == NULL) return 1;
 
-	ckey = (char *)malloc(strlen(key) + 3);
+	ckey = (char *)xmalloc(strlen(key) + 3);
 	sprintf(ckey, ",%s,", key);
 	p = strstr(wanted, ckey);
-	free(ckey);
+	xfree(ckey);
 
 	return (p != NULL);
 }
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--only=")) {
 			char *p = strchr(argv[argi], '=') + 1;
-			onlytests = (char *)malloc(3 + strlen(p));
+			onlytests = (char *)xmalloc(3 + strlen(p));
 			sprintf(onlytests, ",%s,", p);
 		}
 	}
@@ -304,7 +304,7 @@ int main(int argc, char *argv[])
 			char *hostlead;
 
 			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
-			hostlead = malloc(strlen(hostname) + 2);
+			hostlead = xmalloc(strlen(hostname) + 2);
 			strcpy(hostlead, hostname); strcat(hostlead, ".");
 
 			dirfd = opendir(filedir);
@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
 				closedir(dirfd);
 			}
 
-			free(hostlead);
+			xfree(hostlead);
 		}
 		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (metacount > 4) && (strncmp(items[0], "@@droptest", 10) == 0)) {
 			/* @@droptest|timestamp|sender|hostname|testname */
@@ -336,7 +336,7 @@ int main(int argc, char *argv[])
 			char newlogfn[PATH_MAX];
 
 			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
-			hostlead = malloc(strlen(hostname) + 2);
+			hostlead = xmalloc(strlen(hostname) + 2);
 			strcpy(hostlead, hostname); strcat(hostlead, ".");
 			p = newhostname = items[4]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 
@@ -352,7 +352,7 @@ int main(int argc, char *argv[])
 				}
 				closedir(dirfd);
 			}
-			free(hostlead);
+			xfree(hostlead);
 		}
 		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (metacount > 5) && (strncmp(items[0], "@@renametest", 12) == 0)) {
 			/* @@renametest|timestamp|sender|hostname|oldtestname|newtestname */

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char iostat_rcsid[] = "$Id: do_iostat.c,v 1.5 2004-11-13 22:01:17 henrik Exp $";
+static char iostat_rcsid[] = "$Id: do_iostat.c,v 1.6 2005-01-15 17:38:33 henrik Exp $";
 
 /*
  * BEGINKEY
@@ -64,34 +64,34 @@ int do_iostat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				break;
 
 			  case S_KEYS:
-				buf = strdup(curline);
-				newkey = (iostatkey_t *)calloc(1, sizeof(iostatkey_t));
+				buf = xstrdup(curline);
+				newkey = (iostatkey_t *)xcalloc(1, sizeof(iostatkey_t));
 
 				p = strtok(buf, " "); 
-				if (p) newkey->key = strdup(p);
+				if (p) newkey->key = xstrdup(p);
 
 				p = strtok(NULL, " "); 
 				if (p) {
-					if (strcmp(p, "/") == 0) newkey->value = strdup(",root");
+					if (strcmp(p, "/") == 0) newkey->value = xstrdup(",root");
 					else {
-						newkey->value = strdup(p);
+						newkey->value = xstrdup(p);
 						p = newkey->value; while ((p = strchr(p, '/')) != NULL) *p = ',';
 					}
 				}
-				free(buf);
+				xfree(buf);
 
 				if (newkey->key && newkey->value) {
 					newkey->next = keyhead; keyhead = newkey;
 				}
 				else {
-					if (newkey->key) free(newkey->key);
-					if (newkey->value) free(newkey->value);
-					free(newkey);
+					if (newkey->key) xfree(newkey->key);
+					if (newkey->value) xfree(newkey->value);
+					xfree(newkey);
 				}
 				break;
 
 			  case S_DATA:
-				buf = strdup(curline);
+				buf = xstrdup(curline);
 				if (sscanf(buf, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %s",
 					   &v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6],
 					   &v[7], &v[8], &v[9], &v[10], &v[11], &v[12], &v[13], marker) == 15) {
@@ -108,7 +108,7 @@ int do_iostat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 						create_and_update_rrd(hostname, rrdfn, iostat_params, update_params);
 					}
 				}
-				free(buf);
+				xfree(buf);
 				break;
 			}
 		}
@@ -121,9 +121,9 @@ int do_iostat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	while (keyhead) {
 		newkey = keyhead;
 		keyhead = keyhead->next;
-		if (newkey->key) free(newkey->key);
-		if (newkey->value) free(newkey->value);
-		free(newkey);
+		if (newkey->key) xfree(newkey->key);
+		if (newkey->value) xfree(newkey->value);
+		xfree(newkey);
 	}
 
 	return 0;

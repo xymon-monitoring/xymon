@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.24 2004-10-30 15:39:39 henrik Exp $";
+static char rcsid[] = "$Id: process.c,v 1.25 2005-01-15 17:38:55 henrik Exp $";
 
 #include <limits.h>
 #include <string.h>
@@ -36,11 +36,11 @@ static int wantedcolumn(char *current, char *wanted)
 	char *tag;
 	int result;
 
-	tag = (char *) malloc(strlen(current)+3);
+	tag = (char *) xmalloc(strlen(current)+3);
 	sprintf(tag, "|%s|", current);
 	result = (strstr(wanted, tag) != NULL);
 
-	free(tag);
+	xfree(tag);
 	return result;
 }
 
@@ -222,7 +222,7 @@ void send_summaries(summary_t *sumhead)
 			char *p, *pg;
 			bbgen_page_t *pgwalk;
 			bbgen_page_t *sourcepg = NULL;
-			char *urlcopy = strdup(suburl);
+			char *urlcopy = xstrdup(suburl);
 
 			/*
 			 * Walk the page tree
@@ -248,7 +248,7 @@ void send_summaries(summary_t *sumhead)
 			dprintf("Summary search for %s found page %s (title:%s), color %d\n",
 				suburl, sourcepg->name, sourcepg->title, sourcepg->color);
 			summarycolor = sourcepg->color;
-			free(urlcopy);
+			xfree(urlcopy);
 		}
 
 		if (summarycolor == -1) {

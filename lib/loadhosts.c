@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.20 2005-01-14 09:50:48 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.21 2005-01-15 17:39:50 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -92,34 +92,34 @@ static char *bbh_find_item(namelist_t *host, enum bbh_item_t item)
 
 static void initialize_hostlist(char *docurl)
 {
-	if (documentation_url) free(documentation_url); documentation_url = NULL;
+	if (documentation_url) xfree(documentation_url); documentation_url = NULL;
 
 	while (namehead) {
 		namelist_t *walk = namehead;
 
 		namehead = namehead->next;
 
-		if (walk->bbhostname) free(walk->bbhostname);
-		if (walk->allelems) free(walk->allelems);
-		if (walk->elems) free(walk->elems);
-		free(walk);
+		if (walk->bbhostname) xfree(walk->bbhostname);
+		if (walk->allelems) xfree(walk->allelems);
+		if (walk->elems) xfree(walk->elems);
+		xfree(walk);
 	}
 
 	while (pghead) {
 		pagelist_t *walk = pghead;
 
 		pghead = pghead->next;
-		if (walk->pagepath) free(walk->pagepath);
-		if (walk->pagetitle) free(walk->pagetitle);
-		free(walk);
+		if (walk->pagepath) xfree(walk->pagepath);
+		if (walk->pagetitle) xfree(walk->pagetitle);
+		xfree(walk);
 	}
 
-	if (docurl) documentation_url = strdup(docurl);
+	if (docurl) documentation_url = xstrdup(docurl);
 
 	/* Setup the top-level page */
-	pghead = (pagelist_t *) malloc(sizeof(pagelist_t));
-	pghead->pagepath = strdup("");
-	pghead->pagetitle = strdup("");
+	pghead = (pagelist_t *) xmalloc(sizeof(pagelist_t));
+	pghead->pagepath = xstrdup("");
+	pghead->pagetitle = xstrdup("");
 	pghead->next = NULL;
 }
 
@@ -217,8 +217,8 @@ char *bbh_item(namelist_t *host, enum bbh_item_t item)
 
 	  case BBH_DOCURL:
 		  if (documentation_url) {
-			if (result) free(result);
-			result = (char *)malloc(strlen(documentation_url) + strlen(host->bbhostname) + 1);
+			if (result) xfree(result);
+			result = (char *)xmalloc(strlen(documentation_url) + strlen(host->bbhostname) + 1);
 			sprintf(result, documentation_url, host->bbhostname);
 		  	return result;
 		  }

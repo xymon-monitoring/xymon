@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timing.c,v 1.1 2004-10-30 15:32:43 henrik Exp $";
+static char rcsid[] = "$Id: timing.c,v 1.2 2005-01-15 17:39:50 henrik Exp $";
 
 #include <stdlib.h>
 #include <string.h>
@@ -19,8 +19,7 @@ static char rcsid[] = "$Id: timing.c,v 1.1 2004-10-30 15:32:43 henrik Exp $";
 #include <sys/time.h>
 #include <stdio.h>
 
-#include "timefunc.h"
-#include "timing.h"
+#include "libbbgen.h"
 
 int timing = 0;
 
@@ -39,10 +38,10 @@ void add_timestamp(const char *msg)
 	struct timezone tz;
 
 	if (timing) {
-		timestamp_t *newstamp = (timestamp_t *) malloc(sizeof(timestamp_t));
+		timestamp_t *newstamp = (timestamp_t *) xmalloc(sizeof(timestamp_t));
 
 		gettimeofday(&newstamp->eventtime, &tz);
-		newstamp->eventtext = strdup(msg);
+		newstamp->eventtext = xstrdup(msg);
 
 		if (stamphead == NULL) {
 			newstamp->next = newstamp->prev = NULL;
@@ -61,7 +60,7 @@ void show_timestamps(char **buffer)
 {
 	timestamp_t *s;
 	struct timeval dif;
-	char *outbuf = (char *) malloc(4096);
+	char *outbuf = (char *) xmalloc(4096);
 	int outbuflen = 4096;
 	char buf1[80];
 
@@ -87,7 +86,7 @@ void show_timestamps(char **buffer)
 
 		if ((outbuflen - strlen(outbuf)) < 200) {
 			outbuflen += 4096;
-			outbuf = (char *) realloc(outbuf, outbuflen);
+			outbuf = (char *) xrealloc(outbuf, outbuflen);
 		}
 	}
 
@@ -99,7 +98,7 @@ void show_timestamps(char **buffer)
 
 	if (buffer == NULL) {
 		printf("%s", outbuf);
-		free(outbuf);
+		xfree(outbuf);
 	}
 	else *buffer = outbuf;
 }

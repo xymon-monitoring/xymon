@@ -22,7 +22,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.12 2004-12-30 22:25:34 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.13 2005-01-15 17:38:28 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -63,7 +63,7 @@ hobbitd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	}
 
 	key = ftok(getenv("BBHOME"), chnid);
-	newch = (hobbitd_channel_t *)malloc(sizeof(hobbitd_channel_t));
+	newch = (hobbitd_channel_t *)xmalloc(sizeof(hobbitd_channel_t));
 
 	newch->seq = 0;
 	newch->channelid = chnid;
@@ -71,21 +71,21 @@ hobbitd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	newch->shmid = shmget(key, SHAREDBUFSZ, flags);
 	if (newch->shmid == -1) {
 		errprintf("Could not get shm %s\n", strerror(errno));
-		free(newch);
+		xfree(newch);
 		return NULL;
 	}
 
 	newch->channelbuf = (char *) shmat(newch->shmid, NULL, 0);
 	if (newch->channelbuf == (char *)-1) {
 		errprintf("Could not attach shm %s\n", strerror(errno));
-		free(newch);
+		xfree(newch);
 		return NULL;
 	}
 
 	newch->semid = semget(key, 3, flags);
 	if (newch->semid == -1) {
 		errprintf("Could not get sem %s\n", strerror(errno));
-		free(newch);
+		xfree(newch);
 		return NULL;
 	}
 

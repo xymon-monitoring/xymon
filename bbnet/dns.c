@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.20 2004-12-03 12:04:24 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.21 2005-01-15 17:39:01 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -105,7 +105,7 @@ void add_host_to_dns_queue(char *hostname)
 
 	if (find_dnscache(hostname) == NULL) {
 		/* New hostname */
-		dnsitem_t *dnsc = (dnsitem_t *)calloc(1, sizeof(dnsitem_t));
+		dnsitem_t *dnsc = (dnsitem_t *)xcalloc(1, sizeof(dnsitem_t));
 
 		dprintf("Adding hostname '%s' to resolver queue\n", hostname);
 		pending_dns_count++;
@@ -123,7 +123,7 @@ void add_host_to_dns_queue(char *hostname)
 			}
 		}
 
-		dnsc->name = strdup(hostname);
+		dnsc->name = xstrdup(hostname);
 		dnsc->failed = 0;
 		dnsc->next = dnscache;
 		gettimeofday(&dnsc->resolvetime, &tz);
@@ -272,11 +272,11 @@ int dns_test_server(char *serverip, char *hostname, char **banner, int *bannerby
 		return 1;
 	}
 
-	tspec = strdup(hostname);
+	tspec = xstrdup(hostname);
 	gettimeofday(&starttime, &tz);
 	tst = strtok(tspec, ",");
 	do {
-		dns_resp_t *newtest = (dns_resp_t *)malloc(sizeof(dns_resp_t));
+		dns_resp_t *newtest = (dns_resp_t *)xmalloc(sizeof(dns_resp_t));
 		char *p, *tlookup;
 		int atype = T_A;
 
@@ -307,10 +307,10 @@ int dns_test_server(char *serverip, char *hostname, char **banner, int *bannerby
 		}
 		addtobuffer(banner, bannerbytes, walk->msgbuf);
 		if (walk->msgstatus != ARES_SUCCESS) status = walk->msgstatus;
-		free(walk->msgbuf);
+		xfree(walk->msgbuf);
 		tst = strtok(NULL, ",");
 	}
-	free(tspec);
+	xfree(tspec);
 	sprintf(msg, "\nSeconds: %u.%03u\n", (unsigned int)tspent->tv_sec, (unsigned int)tspent->tv_usec/1000);
 	addtobuffer(banner, bannerbytes, msg);
 

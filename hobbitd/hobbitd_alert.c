@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.33 2005-01-12 21:15:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.34 2005-01-15 17:38:28 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -73,8 +73,8 @@ htnames_t *find_name(htnames_t **head, char *name)
 
 	for (walk = *head; (walk && strcmp(name, walk->name)); walk = walk->next) ;
 	if (walk == NULL) {
-		walk = (htnames_t *)malloc(sizeof(htnames_t));
-		walk->name = strdup(name);
+		walk = (htnames_t *)xmalloc(sizeof(htnames_t));
+		walk->name = xstrdup(name);
 		walk->next = *head;
 		*head = walk;
 	}
@@ -133,10 +133,10 @@ void save_checkpoint(char *filename)
 	}
 	fclose(fd);
 
-	subfn = (char *)malloc(strlen(filename)+5);
+	subfn = (char *)xmalloc(strlen(filename)+5);
 	sprintf(subfn, "%s.sub", filename);
 	save_state(subfn);
-	free(subfn);
+	xfree(subfn);
 }
 
 void load_checkpoint(char *filename)
@@ -165,7 +165,7 @@ void load_checkpoint(char *filename)
 		}
 
 		if (i > 9) {
-			activealerts_t *newalert = (activealerts_t *)malloc(sizeof(activealerts_t));
+			activealerts_t *newalert = (activealerts_t *)xmalloc(sizeof(activealerts_t));
 			newalert->hostname = find_name(&hostnames, item[0]);
 			newalert->testname = find_name(&testnames, item[1]);
 			newalert->location = find_name(&locations, item[2]);
@@ -179,11 +179,11 @@ void load_checkpoint(char *filename)
 			newalert->pagemessage = newalert->ackmessage = NULL;
 			if (strlen(item[8])) {
 				nldecode(item[8]);
-				newalert->pagemessage = strdup(item[8]);
+				newalert->pagemessage = xstrdup(item[8]);
 			}
 			if (strlen(item[9])) {
 				nldecode(item[9]);
-				newalert->ackmessage = strdup(item[9]);
+				newalert->ackmessage = xstrdup(item[9]);
 			}
 			newalert->next = ahead;
 			ahead = newalert;
@@ -191,10 +191,10 @@ void load_checkpoint(char *filename)
 	}
 	fclose(fd);
 
-	subfn = (char *)malloc(strlen(filename)+5);
+	subfn = (char *)xmalloc(strlen(filename)+5);
 	sprintf(subfn, "%s.sub", filename);
 	load_state(subfn);
-	free(subfn);
+	xfree(subfn);
 }
 
 int main(int argc, char *argv[])
@@ -240,10 +240,10 @@ int main(int argc, char *argv[])
 			alertinterval = 60*durationvalue(p);
 		}
 		else if (argnmatch(argv[argi], "--config=")) {
-			configfn = strdup(strchr(argv[argi], '=')+1);
+			configfn = xstrdup(strchr(argv[argi], '=')+1);
 		}
 		else if (argnmatch(argv[argi], "--checkpoint-file=")) {
-			checkfn = strdup(strchr(argv[argi], '=')+1);
+			checkfn = xstrdup(strchr(argv[argi], '=')+1);
 		}
 		else if (argnmatch(argv[argi], "--checkpoint-interval=")) {
 			char *p = strchr(argv[argi], '=') + 1;
@@ -356,7 +356,7 @@ int main(int argc, char *argv[])
 				htnames_t *twalk = find_name(&testnames, testname);
 				htnames_t *pwalk = find_name(&locations, metadata[10]);
 
-				awalk = (activealerts_t *)malloc(sizeof(activealerts_t));
+				awalk = (activealerts_t *)xmalloc(sizeof(activealerts_t));
 				awalk->hostname = hwalk;
 				awalk->testname = twalk;
 				awalk->ip[0] = '\0';
@@ -393,8 +393,8 @@ int main(int argc, char *argv[])
 			strcpy(awalk->ip, metadata[5]);
 			awalk->cookie = atoi(metadata[11]);
 
-			if (awalk->pagemessage) free(awalk->pagemessage);
-			awalk->pagemessage = strdup(restofmsg);
+			if (awalk->pagemessage) xfree(awalk->pagemessage);
+			awalk->pagemessage = xstrdup(restofmsg);
 		}
 		else if ((metacount > 5) && (strncmp(metadata[0], "@@ack", 5) == 0)) {
  			/* @@ack|timestamp|sender|hostname|testname|hostip|expiretime */
@@ -420,8 +420,8 @@ int main(int argc, char *argv[])
 				}
 				awalk->state = A_ACKED;
 				awalk->nextalerttime = nextalert;
-				if (awalk->ackmessage) free(awalk->ackmessage);
-				awalk->ackmessage = strdup(restofmsg);
+				if (awalk->ackmessage) xfree(awalk->ackmessage);
+				awalk->ackmessage = xstrdup(restofmsg);
 			}
 		}
 		else if ((metacount > 3) && (strncmp(metadata[0], "@@drophost", 10) == 0)) {
@@ -478,7 +478,7 @@ int main(int argc, char *argv[])
 			if ((awalk->nextalerttime <= now) && (awalk->state == A_PAGING)) {
 				if (awalk->ackmessage) {
 					/* An ack has expired, so drop the ack message */
-					free(awalk->ackmessage);
+					xfree(awalk->ackmessage);
 					awalk->ackmessage = NULL;
 				}
 				anytogo++;
@@ -588,9 +588,9 @@ int main(int argc, char *argv[])
 			tmp = khead;
 			khead = khead->next;
 
-			if (tmp->pagemessage) free(tmp->pagemessage);
-			if (tmp->ackmessage) free(tmp->ackmessage);
-			free(tmp);
+			if (tmp->pagemessage) xfree(tmp->pagemessage);
+			if (tmp->ackmessage) xfree(tmp->ackmessage);
+			xfree(tmp);
 		}
 
 		/* Pickup any finished child processes to avoid zombies */

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.48 2004-12-30 22:25:34 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.49 2005-01-15 17:39:50 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -30,10 +30,7 @@ static char rcsid[] = "$Id: sendmsg.c,v 1.48 2004-12-30 22:25:34 henrik Exp $";
 #include <fcntl.h>
 #include <stdio.h>
 
-#include "color.h"
-#include "errormsg.h"
-#include "misc.h"
-#include "sendmsg.h"
+#include "libbbgen.h"
 
 #define BBSENDRETRIES 2
 
@@ -78,7 +75,7 @@ static void setup_transport(char *recipient)
 		if (proxysetting) {
 			char *p;
 
-			bbdispproxyhost = strdup(proxysetting);
+			bbdispproxyhost = xstrdup(proxysetting);
 			if (strncmp(bbdispproxyhost, "http://", 7) == 0) bbdispproxyhost += strlen("http://");
  
 			p = strchr(bbdispproxyhost, ':');
@@ -153,7 +150,7 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 
 	if (strncmp(recipient, "http://", strlen("http://")) != 0) {
 		/* Standard BB communications, directly to bbd */
-		rcptip = strdup(recipient);
+		rcptip = xstrdup(recipient);
 		rcptport = bbdportnumber;
 		p = strchr(rcptip, ':');
 		if (p) {
@@ -174,12 +171,12 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 			 * Strip off "http://", and point "posturl" to the part after the hostname.
 			 * If a portnumber is present, strip it off and update rcptport.
 			 */
-			rcptip = strdup(recipient+strlen("http://"));
+			rcptip = xstrdup(recipient+strlen("http://"));
 			rcptport = bbdportnumber;
 
 			p = strchr(rcptip, '/');
 			if (p) {
-				posturl = strdup(p);
+				posturl = xstrdup(p);
 				*p = '\0';
 			}
 
@@ -190,7 +187,7 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 				rcptport = atoi(p);
 			}
 
-			posthost = strdup(rcptip);
+			posthost = xstrdup(rcptip);
 
 			dprintf("BB-HTTP protocol directly to host %s\n", posthost);
 		}
@@ -200,15 +197,15 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 			/*
 			 * With proxy. The full "recipient" must be in the POST request.
 			 */
-			rcptip = strdup(bbdispproxyhost);
+			rcptip = xstrdup(bbdispproxyhost);
 			rcptport = bbdispproxyport;
 
-			posturl = strdup(recipient);
+			posturl = xstrdup(recipient);
 
 			p = strchr(recipient + strlen("http://"), '/');
 			if (p) {
 				*p = '\0';
-				posthost = strdup(recipient + strlen("http://"));
+				posthost = xstrdup(recipient + strlen("http://"));
 				*p = '/';
 
 				p = strchr(posthost, ':');
@@ -223,7 +220,7 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 			return BB_EBADURL;
 		}
 
-		bufp = msgptr = httpmessage = malloc(strlen(message)+1024);
+		bufp = msgptr = httpmessage = xmalloc(strlen(message)+1024);
 		bufp += sprintf(httpmessage, "POST %s HTTP/1.0\n", posturl);
 		bufp += sprintf(bufp, "MIME-version: 1.0\n");
 		bufp += sprintf(bufp, "Content-Type: application/octet-stream\n");
@@ -231,8 +228,8 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 		bufp += sprintf(bufp, "Host: %s\n", posthost);
 		bufp += sprintf(bufp, "\n%s", message);
 
-		if (posturl) free(posturl);
-		if (posthost) free(posthost);
+		if (posturl) xfree(posturl);
+		if (posthost) xfree(posthost);
 		haveseenhttphdrs = 0;
 
 		dprintf("BB-HTTP message is:\n%s\n", httpmessage);
@@ -361,11 +358,11 @@ retry_connect:
 
 							if (respstrsz == 0) {
 								respstrsz = (n+MAXMSG);
-								*respstr = (char *)malloc(respstrsz);
+								*respstr = (char *)xmalloc(respstrsz);
 							}
 							else if ((n+respstrlen) >= respstrsz) {
 								respstrsz += (n+MAXMSG);
-								*respstr = (char *)realloc(*respstr, respstrsz);
+								*respstr = (char *)xrealloc(*respstr, respstrsz);
 							}
 							respend = (*respstr) + respstrlen;
 							memcpy(respend, outp, n);
@@ -402,8 +399,8 @@ retry_connect:
 	dprintf("Closing connection\n");
 	shutdown(sockfd, SHUT_RDWR);
 	close(sockfd);
-	free(rcptip);
-	if (httpmessage) free(httpmessage);
+	xfree(rcptip);
+	if (httpmessage) xfree(httpmessage);
 	return BB_OK;
 }
 
@@ -416,14 +413,14 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg, int timeout)
 	else if (morercpts) {
 		char *bbdlist, *rcpt;
 
-		bbdlist = strdup(morercpts);
+		bbdlist = xstrdup(morercpts);
 		rcpt = strtok(bbdlist, " \t");
 		while (rcpt) {
 			result += sendtobbd(rcpt, msg, NULL, NULL, 0, timeout);
 			rcpt = strtok(NULL, " \t");
 		}
 
-		free(bbdlist);
+		xfree(bbdlist);
 	}
 	else {
 		errprintf("No recipients for message - oneaddr=%s, moreaddrs is NULL\n", onercpt);
@@ -448,11 +445,11 @@ static int sendstatus(char *bbdisp, char *msg, int timeout)
 	if (strcmp(getenv_default("USEHOBBITD", "FALSE", NULL), "TRUE") == 0) return statusresult;
 
 	/* Check if we should send a "page" message also */
-	pagelevels = strdup(getenv("PAGELEVELS") ? getenv("PAGELEVELS") : PAGELEVELSDEFAULT);
+	pagelevels = xstrdup(getenv("PAGELEVELS") ? getenv("PAGELEVELS") : PAGELEVELSDEFAULT);
 	sscanf(msg, "%*s %*s %255s", statuscolor);
 	if (strstr(pagelevels, statuscolor)) {
 		/* Reformat the message into a "page" message */
-		char *pagemsg = (char *) malloc(strlen(msg)+1);
+		char *pagemsg = (char *) xmalloc(strlen(msg)+1);
 		char *firstnl;
 		char *inp, *outp;
 
@@ -481,10 +478,10 @@ static int sendstatus(char *bbdisp, char *msg, int timeout)
 
 		if (firstnl) { *firstnl = '\n'; strcat(pagemsg, firstnl); }
 		pageresult = sendtomany(getenv("BBPAGE"), getenv("BBPAGERS"), pagemsg, timeout);
-		free(pagemsg);
+		xfree(pagemsg);
 	}
 
-	free(pagelevels);
+	xfree(pagelevels);
 	return statusresult;
 }
 
@@ -494,7 +491,7 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 	static char *bbdisp = NULL;
 	int res = 0;
 
- 	if ((bbdisp == NULL) && getenv("BBDISP")) bbdisp = strdup(getenv("BBDISP"));
+ 	if ((bbdisp == NULL) && getenv("BBDISP")) bbdisp = xstrdup(getenv("BBDISP"));
 	if (recipient == NULL) recipient = bbdisp;
 	if (recipient == NULL) {
 		errprintf("No recipient for message\n");

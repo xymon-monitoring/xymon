@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: wmlgen.c,v 1.17 2004-12-30 22:25:34 henrik Exp $";
+static char rcsid[] = "$Id: wmlgen.c,v 1.18 2005-01-15 17:38:55 henrik Exp $";
 
 #include <limits.h>
 #include <stdlib.h>
@@ -112,12 +112,12 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 			return;
 		}
 
-		msg = logbuf = (char *)malloc(st.st_size+1);
+		msg = logbuf = (char *)xmalloc(st.st_size+1);
 		n = fread(logbuf, st.st_size, 1, logfd);
 		if (n == -1) {
 			errprintf("WML: I/O error while reading logfile %s\n", logfn);
 			fclose(logfd);
-			free(logbuf);
+			xfree(logbuf);
 			return;
 		}
 		fclose(logfd);
@@ -139,7 +139,7 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 		}
 		else {
 			errprintf("WML: Unable to parse log data\n");
-			free(logbuf);
+			xfree(logbuf);
 			return;
 		}
 	}
@@ -271,7 +271,7 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 	fprintf(fd, "<br/> </p> </card> </wml>\n");
 
 	fclose(fd);
-	if (logbuf) free(logbuf);
+	if (logbuf) xfree(logbuf);
 }
 
 

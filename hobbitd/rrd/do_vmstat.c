@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.7 2004-11-25 11:46:42 henrik Exp $";
+static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.8 2005-01-15 17:38:33 henrik Exp $";
 
 typedef struct vmstat_layout_t {
 	int index;
@@ -246,11 +246,11 @@ int do_vmstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	}
 
 	/* Setup the create-parameters */
-	creparams = (char **)malloc((vcount+7)*sizeof(char *));
+	creparams = (char **)xmalloc((vcount+7)*sizeof(char *));
 	creparams[0] = "rrdcreate";
 	creparams[1] = rrdfn;
 	for (i=0; (i < vcount); i++) {
-		creparams[2+i] = (char *)malloc(strlen(layout[i].name) + strlen("DS::GAUGE:600:0:U") + 1);
+		creparams[2+i] = (char *)xmalloc(strlen(layout[i].name) + strlen("DS::GAUGE:600:0:U") + 1);
 		sprintf(creparams[2+i], "DS:%s:GAUGE:600:0:U", layout[i].name);
 	}
 	creparams[2+vcount+0] = rra1;
@@ -268,8 +268,8 @@ int do_vmstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	sprintf(rrdfn, "vmstat.rrd");
 	result = create_and_update_rrd(hostname, rrdfn, creparams, update_params);
 
-	for (i=0; (i < vcount); i++) free(creparams[2+i]);
-	free(creparams);
+	for (i=0; (i < vcount); i++) xfree(creparams[2+i]);
+	xfree(creparams);
 
 	return result;
 }

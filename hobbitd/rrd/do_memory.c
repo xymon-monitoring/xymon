@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char memory_rcsid[] = "$Id: do_memory.c,v 1.8 2004-12-28 21:50:30 henrik Exp $";
+static char memory_rcsid[] = "$Id: do_memory.c,v 1.9 2005-01-15 17:38:33 henrik Exp $";
 
 static char *memory_params[]      = { "rrdcreate", rrdfn, "DS:realmempct:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
@@ -63,7 +63,7 @@ int do_memory_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	if (!memhosts_init) { memhosts = rbtNew(string_compare); memhosts_init = 1; }
 	hwalk = rbtFind(memhosts, hostname);
 	if (hwalk == rbtEnd(memhosts)) {
-		char *keyp = strdup(hostname);
+		char *keyp = xstrdup(hostname);
 		if (rbtInsert(memhosts, keyp, NULL)) {
 			errprintf("Insert into memhosts failed\n");
 		}

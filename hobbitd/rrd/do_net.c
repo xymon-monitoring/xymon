@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbnet_rcsid[] = "$Id: do_net.c,v 1.6 2004-12-03 10:31:03 henrik Exp $";
+static char bbnet_rcsid[] = "$Id: do_net.c,v 1.7 2005-01-15 17:38:33 henrik Exp $";
 
 static char *bbnet_params[]       = { "rrdcreate", rrdfn, "DS:sec:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
@@ -30,7 +30,7 @@ int do_net_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			     (strncmp(line1, "&red", 4) == 0) ) {
 				p = strstr(line1, "http");
 				if (p) {
-					url = strdup(p);
+					url = xstrdup(p);
 					p = strchr(url, ' ');
 					if (p) *p = '\0';
 				}
@@ -43,13 +43,13 @@ int do_net_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				sprintf(rrdfn, "tcp.http.%s.rrd", urlfn);
 				sprintf(rrdvalues, "%d:%.2f", (int)tstamp, seconds);
 				create_and_update_rrd(hostname, rrdfn, bbnet_params, update_params);
-				free(url); url = NULL;
+				xfree(url); url = NULL;
 			}
 
 			if (eoln) *eoln = '\n';
 		}
 
-		if (url) free(url);
+		if (url) xfree(url);
 	}
 	else if ((strcmp(testname, "conn") == 0) || (strcmp(testname, "ping") == 0) || (strcmp(testname, "fping") == 0)) {
 		/*

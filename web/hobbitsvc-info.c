@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.68 2004-12-30 22:25:34 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.69 2005-01-15 17:38:55 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -38,7 +38,7 @@ static void timespec_text(char *spec, char **infobuf, int *infobuflen)
 	char *sCopy;
 	char *sItem;
 
-	sCopy = strdup(spec);
+	sCopy = xstrdup(spec);
 	sCopy[strcspn(sCopy, " \t\r\n")] = '\0';
 	sItem = strtok(sCopy, ",");
 	while (sItem) {
@@ -71,7 +71,7 @@ static void timespec_text(char *spec, char **infobuf, int *infobuflen)
 		if (sItem) strcat(l, ", ");
 		addtobuffer(infobuf, infobuflen, l);
 	}
-	free(sCopy);
+	xfree(sCopy);
 }
 
 int generate_info(char *infocolumn, char *documentationurl, int hobbitd, int sendmetainfo)
@@ -393,7 +393,7 @@ int generate_info(char *infocolumn, char *documentationurl, int hobbitd, int sen
 							addtobuffer(&infobuf, &infobuflen, "<tr><th colspan=5 align=center><i>Exceptions</i></th></tr>\n");
 						}
 
-						recips = strdup(alerts->items[6]);
+						recips = xstrdup(alerts->items[6]);
 						addtobuffer(&infobuf, &infobuflen, "<tr>\n");
 
 						sprintf(l, "<td align=left>%s</td>\n", service_text(alerts->items[2]));
@@ -483,8 +483,8 @@ int generate_info(char *infocolumn, char *documentationurl, int hobbitd, int sen
 		if (sendmetainfo) meta_end();
 	}
 
-	if (infobuf) free(infobuf);
-	if (metabuf) free(metabuf);
+	if (infobuf) xfree(infobuf);
+	if (metabuf) xfree(metabuf);
 
 	return 0;
 }
@@ -507,15 +507,15 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--bbhosts=")) {
 			char *p = strchr(argv[argi], '=');
-			bbhostsfn = strdup(p+1);
+			bbhostsfn = xstrdup(p+1);
 		}
 		else if (argnmatch(argv[argi], "--column=")) {
 			char *p = strchr(argv[argi], '=');
-			infocol = strdup(p+1);
+			infocol = xstrdup(p+1);
 		}
 		else if (argnmatch(argv[argi], "--docurl=")) {
 			char *p = strchr(argv[argi], '=');
-			docurl = strdup(p+1);
+			docurl = xstrdup(p+1);
 		}
 		else if (strcmp(argv[argi], "--hobbitd") == 0) {
 			usehobbitd = 1;

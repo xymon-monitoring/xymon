@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: links.c,v 1.3 2005-01-04 13:57:43 henrik Exp $";
+static char rcsid[] = "$Id: links.c,v 1.4 2005-01-15 17:39:50 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -21,10 +21,7 @@ static char rcsid[] = "$Id: links.c,v 1.3 2005-01-04 13:57:43 henrik Exp $";
 #include <limits.h>
 #include <dirent.h>
 
-#include "errormsg.h"
-#include "misc.h"
-
-#include "links.h"
+#include "libbbgen.h"
 
 /* Info-link definitions. */
 typedef struct link_t {
@@ -46,8 +43,8 @@ static link_t *init_link(char *filename, char *urlprefix)
 
 	dprintf("init_link(%s, %s)\n", textornull(filename), textornull(urlprefix));
 
-	newlink = (link_t *) malloc(sizeof(link_t));
-	newlink->filename = strdup(filename);
+	newlink = (link_t *) xmalloc(sizeof(link_t));
+	newlink->filename = xstrdup(filename);
 	newlink->urlprefix = urlprefix;
 	newlink->next = NULL;
 
@@ -67,7 +64,7 @@ static link_t *init_link(char *filename, char *urlprefix)
 	}
 
 	/* Without extension, this time */
-	newlink->name = strdup(filename);
+	newlink->name = xstrdup(filename);
 
 	return newlink;
 }
@@ -113,23 +110,23 @@ void load_all_links(void)
 
 	dprintf("load_all_links()\n");
 
-	if (notesskin) { free(notesskin); notesskin = NULL; }
-	if (helpskin) { free(helpskin); helpskin = NULL; }
-	if (columndocurl) { free(columndocurl); columndocurl = NULL; }
+	if (notesskin) { xfree(notesskin); notesskin = NULL; }
+	if (helpskin) { xfree(helpskin); helpskin = NULL; }
+	if (columndocurl) { xfree(columndocurl); columndocurl = NULL; }
 
-	if (getenv("BBNOTESSKIN")) notesskin = strdup(getenv("BBNOTESSKIN"));
+	if (getenv("BBNOTESSKIN")) notesskin = xstrdup(getenv("BBNOTESSKIN"));
 	else { 
-		notesskin = (char *) malloc(strlen(getenv("BBWEB")) + strlen("/notes") + 1);
+		notesskin = (char *) xmalloc(strlen(getenv("BBWEB")) + strlen("/notes") + 1);
 		sprintf(notesskin, "%s/notes", getenv("BBWEB"));
 	}
 
-	if (getenv("BBHELPSKIN")) helpskin = strdup(getenv("BBHELPSKIN"));
+	if (getenv("BBHELPSKIN")) helpskin = xstrdup(getenv("BBHELPSKIN"));
 	else { 
-		helpskin = (char *) malloc(strlen(getenv("BBWEB")) + strlen("/help") + 1);
+		helpskin = (char *) xmalloc(strlen(getenv("BBWEB")) + strlen("/help") + 1);
 		sprintf(helpskin, "%s/help", getenv("BBWEB"));
 	}
 
-	if (getenv("COLUMNDOCURL")) columndocurl = strdup(getenv("COLUMNDOCURL"));
+	if (getenv("COLUMNDOCURL")) columndocurl = xstrdup(getenv("COLUMNDOCURL"));
 
 	strcpy(dirname, getenv("BBNOTES"));
 	head1 = load_links(dirname, notesskin);

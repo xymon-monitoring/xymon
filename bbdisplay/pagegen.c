@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.127 2005-01-09 21:35:07 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.128 2005-01-15 17:38:55 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -74,9 +74,9 @@ char *hf_prefix[3];            /* header/footer prefixes for BB, BB2, BBNK pages
 
 void select_headers_and_footers(char *prefix)
 {
-	hf_prefix[PAGE_BB]  = (char *) malloc(strlen(prefix)+1); sprintf(hf_prefix[PAGE_BB],  "%s",   prefix);
-	hf_prefix[PAGE_BB2] = (char *) malloc(strlen(prefix)+2); sprintf(hf_prefix[PAGE_BB2], "%s2",  prefix);
-	hf_prefix[PAGE_NK]  = (char *) malloc(strlen(prefix)+3); sprintf(hf_prefix[PAGE_NK],  "%snk", prefix);
+	hf_prefix[PAGE_BB]  = (char *) xmalloc(strlen(prefix)+1); sprintf(hf_prefix[PAGE_BB],  "%s",   prefix);
+	hf_prefix[PAGE_BB2] = (char *) xmalloc(strlen(prefix)+2); sprintf(hf_prefix[PAGE_BB2], "%s2",  prefix);
+	hf_prefix[PAGE_NK]  = (char *) xmalloc(strlen(prefix)+3); sprintf(hf_prefix[PAGE_NK],  "%snk", prefix);
 }
 
 
@@ -96,10 +96,10 @@ int interesting_column(int pagetype, int color, int alert, bbgen_col_t *column, 
 			char *search;
 
 			/* loaddata::init_group guarantees that onlycols start and end with a '|' */
-			search = (char *) malloc(strlen(column->name)+3);
+			search = (char *) xmalloc(strlen(column->name)+3);
 			sprintf(search, "|%s|", column->name);
 			result = (strstr(onlycols, search) != NULL);
-			free(search);
+			xfree(search);
 		}
 
 		/* This is final. */
@@ -164,7 +164,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 
 	/* Code de-obfuscation trick: Add a null record as the head item */
 	/* Simplifies handling since head != NULL and we never have to insert at head of list */
-	head = (col_list_t *) malloc(sizeof(col_list_t));
+	head = (col_list_t *) xmalloc(sizeof(col_list_t));
 	head->column = &null_column;
 	head->next = NULL;
 
@@ -193,7 +193,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 
 				col = find_or_create_column(p1, 0);
 				if (col) {
-					newlistitem = (col_list_t *) malloc(sizeof(col_list_t));
+					newlistitem = (col_list_t *) xmalloc(sizeof(col_list_t));
 					newlistitem->column = col;
 					newlistitem->next = NULL;
 					collist_walk->next = newlistitem;
@@ -206,7 +206,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 		} while (p1 != NULL);
 
 		/* Skip the dummy record */
-		collist_walk = head; head = head->next; free(collist_walk);
+		collist_walk = head; head = head->next; xfree(collist_walk);
 
 		/* We're done - dont even look at the actual test data. */
 		return (head);
@@ -231,7 +231,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 
 				if ((collist_walk->next == NULL) || ((col_list_t *)(collist_walk->next))->column != e->column) {
 					/* collist_walk points to the entry before the new one */
-					newlistitem = (col_list_t *) malloc(sizeof(col_list_t));
+					newlistitem = (col_list_t *) xmalloc(sizeof(col_list_t));
 					newlistitem->column = e->column;
 					newlistitem->next = collist_walk->next;
 					collist_walk->next = newlistitem;
@@ -241,7 +241,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 	}
 
 	/* Skip the dummy record */
-	collist_walk = head; head = head->next; free(collist_walk);
+	collist_walk = head; head = head->next; xfree(collist_walk);
 	return (head);
 }
 
@@ -261,7 +261,7 @@ void setup_htaccess(const char *pagepath)
 	}
 	else {
 		char *pagename, *subpagename, *p;
-		char *path = strdup(pagepath);
+		char *path = xstrdup(pagepath);
 
 		for (p = path + strlen(path) - 1; ((p > path) && (*p == '/')); p--) *p = '\0';
 
@@ -280,7 +280,7 @@ void setup_htaccess(const char *pagepath)
 			if (bbpagehtaccess) sprintf(htaccesscontent, bbpagehtaccess, pagename);
 		}
 
-		free(path);
+		xfree(path);
 	}
 
 	if (strlen(htaccesscontent)) {
@@ -338,7 +338,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char 
 	if (head == NULL)
 		return;
 
-	bbskin = strdup(getenv("BBSKIN"));
+	bbskin = xstrdup(getenv("BBSKIN"));
 
 	/* Generate static or dynamic links (from BBLOGSTATUS) ? */
 	genstatic = generate_static();
@@ -619,10 +619,10 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char 
 	while (groupcols) {
 		gc = groupcols;
 		groupcols = groupcols->next;
-		free(gc);
+		xfree(gc);
 	}
 
-	free(bbskin);
+	xfree(bbskin);
 }
 
 void do_groups(group_t *head, FILE *output, FILE *rssoutput, char *pagepath)
@@ -710,7 +710,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 			for (s2 = sums; (s2); s2 = s2->next) {
 				
 				if (strcmp(s2->row, s->row) == 0) {
-					newentry = (entry_t *) malloc(sizeof(entry_t));
+					newentry = (entry_t *) xmalloc(sizeof(entry_t));
 
 					newentry->column = find_or_create_column(s2->column, 1);
 					newentry->color = s2->color;
@@ -842,7 +842,7 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 	char	*dirdelim;
 	char	*mkbblocal;
 
-	mkbblocal = strdup(getenv((page->parent ? "MKBBSUBLOCAL" : "MKBBLOCAL")));
+	mkbblocal = xstrdup(getenv((page->parent ? "MKBBSUBLOCAL" : "MKBBLOCAL")));
 
 	pagepath[0] = '\0';
 	if (embedded) {
@@ -972,7 +972,7 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 		}
 	}
 
-	free(mkbblocal);
+	xfree(mkbblocal);
 }
 
 
@@ -1005,7 +1005,7 @@ static void do_bb2ext(FILE *output, char *extenv, char *family)
 		return;
 	}
 
-	bbexts = strdup(p);
+	bbexts = xstrdup(p);
 	p = strtok(bbexts, "\t ");
 
 	while (p) {
@@ -1028,7 +1028,7 @@ static void do_bb2ext(FILE *output, char *extenv, char *family)
 		p = strtok(NULL, "\t ");
 	}
 
-	free(bbexts);
+	xfree(bbexts);
 }
 
 int do_bb2_page(char *nssidebarfilename, int summarytype)
@@ -1107,7 +1107,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 
 			/* We need to create a copy of the original record, */
 			/* as we will diddle with the pointers */
-			newhost = (host_t *) malloc(sizeof(host_t));
+			newhost = (host_t *) xmalloc(sizeof(host_t));
 			memcpy(newhost, h->hostentry, sizeof(host_t));
 			newhost->next = NULL;
 
@@ -1130,11 +1130,11 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 		 		 */
 				if (strcmp(walk->hostname, newhost->hostname) == 0) {
 					/* Duplicate at start of list */
-					free(newhost);
+					xfree(newhost);
 				}
 				else if (walk->next && (strcmp(((host_t *)walk->next)->hostname, newhost->hostname) == 0)) {
 					/* Duplicate inside list */
-					free(newhost);
+					xfree(newhost);
 				}
 				else {
 					/* New host */
@@ -1273,7 +1273,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 		while (h1) {
 			h2 = h1;
 			h1 = h1->next;
-			free(h2);
+			xfree(h2);
 		}
 	}
 

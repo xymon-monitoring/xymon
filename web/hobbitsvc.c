@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.25 2004-12-30 22:25:34 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.26 2005-01-15 17:38:55 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -75,30 +75,30 @@ static void parse_query(void)
 		if (argnmatch(token, "HOSTSVC")) {
 			char *p = strrchr(val, '.');
 
-			if (p) { *p = '\0'; service = strdup(p+1); }
-			hostname = strdup(val);
+			if (p) { *p = '\0'; service = xstrdup(p+1); }
+			hostname = xstrdup(val);
 			while ((p = strchr(hostname, ','))) *p = '.';
 		}
 		else if (argnmatch(token, "IP")) {
-			ip = strdup(val);
+			ip = xstrdup(val);
 		}
 		else if (argnmatch(token, "DISPLAYNAME")) {
-			displayname = strdup(val);
+			displayname = xstrdup(val);
 		}
 		else if (argnmatch(token, "HOST")) {
-			hostname = strdup(val);
+			hostname = xstrdup(val);
 		}
 		else if (argnmatch(token, "SERVICE")) {
-			service = strdup(val);
+			service = xstrdup(val);
 		}
 		else if (argnmatch(token, "TIMEBUF")) {
-			tstamp = strdup(val);
+			tstamp = xstrdup(val);
 		}
 
 		token = strtok(NULL, "&");
 	}
 
-        free(query);
+        xfree(query);
 
 	if (strcmp(displayname, "") == 0) displayname = hostname;
 }
@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
 		}
 		else { 
 			*p = '\0'; 
-			firstline = strdup(msg); 
+			firstline = xstrdup(msg); 
 			restofmsg = (p+1);
 			*p = '\n'; 
 		}
@@ -216,11 +216,11 @@ int main(int argc, char *argv[])
 			sprintf(logfn, "%s/%s.%s", getenv("BBLOGS"), commafy(hostname), service);
 		}
 		else if (source == SRC_HISTLOGS) {
-			char *hostnamedash = strdup(hostname);
+			char *hostnamedash = xstrdup(hostname);
 			p = hostnamedash; while ((p = strchr(p, '.')) != NULL) *p = '_';
 			p = hostnamedash; while ((p = strchr(p, ',')) != NULL) *p = '_';
 			sprintf(logfn, "%s/%s/%s/%s", getenv("BBHISTLOGS"), hostnamedash, service, tstamp);
-			free(hostnamedash);
+			xfree(hostnamedash);
 			p = tstamp; while ((p = strchr(p, '_')) != NULL) *p = ' ';
 			sethostenv_histlog(tstamp);
 		}
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
 			errormsg("Unable to access logfile\n");
 			return 1;
 		}
-		log = (char *)malloc(st.st_size+1);
+		log = (char *)xmalloc(st.st_size+1);
 		read(fd, log, st.st_size);
 		close(fd);
 		firstline = log;
@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
 		if (p) {
 			p += strlen("<!-- [flags:");
 			n = strspn(p, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
-			flags = (char *)malloc(n+1);
+			flags = (char *)xmalloc(n+1);
 			strncpy(flags, p, n);
 		}
 		else {
@@ -274,7 +274,7 @@ int main(int argc, char *argv[])
 		if (p) {
 			p += strlen(receivedfromtext);
 			n = strspn(p, "0123456789.");
-			sender = (char *)malloc(n);
+			sender = (char *)xmalloc(n+1);
 			strncpy(sender, p, n);
 			*(sender+n) = '\0';
 		}

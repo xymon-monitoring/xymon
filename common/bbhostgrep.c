@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.20 2004-12-27 10:16:06 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.21 2005-01-15 17:39:19 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	lookv = (char **)malloc(argc*sizeof(char *));
+	lookv = (char **)xmalloc(argc*sizeof(char *));
 	lookc = 0;
 
 	bbhostsfn = getenv("BBHOSTS");
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
 			bbhostsfn = strchr(argv[argi], '=') + 1;
 		}
 		else {
-			lookv[lookc] = strdup(argv[argi]);
+			lookv[lookc] = xstrdup(argv[argi]);
 			lookc++;
 		}
 	}
@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 
 	/* Each network test tagged with NET:locationname */
 	p = getenv("BBLOCATION");
-	if (p) netstring = strdup(p);
+	if (p) netstring = xstrdup(p);
 
 	hwalk = hostlist;
 	while (hwalk) {

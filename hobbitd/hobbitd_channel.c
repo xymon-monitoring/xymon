@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.27 2005-01-14 10:22:11 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.28 2005-01-15 17:38:28 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -116,11 +116,11 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--pidfile=")) {
 			char *p = strchr(argv[argi], '=');
-			pidfile = strdup(p+1);
+			pidfile = xstrdup(p+1);
 		}
 		else if (argnmatch(argv[argi], "--log=")) {
 			char *p = strchr(argv[argi], '=');
-			logfn = strdup(p+1);
+			logfn = xstrdup(p+1);
 		}
 		else if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 		else {
 			int i = 0;
 			childcmd = argv[argi];
-			childargs = (char **) calloc((1 + argc - argi), sizeof(char *));
+			childargs = (char **) xcalloc((1 + argc - argi), sizeof(char *));
 			while (argi < argc) { childargs[i++] = argv[argi++]; }
 		}
 	}
@@ -265,8 +265,8 @@ int main(int argc, char *argv[])
 			/*
 			 * Put the new message on our outbound queue.
 			 */
-			newmsg = (hobbit_msg_t *) malloc(sizeof(hobbit_msg_t));
-			newmsg->buf = strdup(buf);
+			newmsg = (hobbit_msg_t *) xmalloc(sizeof(hobbit_msg_t));
+			newmsg->buf = xstrdup(buf);
 			newmsg->bufp = newmsg->buf;
 			newmsg->buflen = strlen(buf);
 			newmsg->next = NULL;
@@ -309,8 +309,8 @@ int main(int argc, char *argv[])
 				if (head->buflen == 0) {
 					hobbit_msg_t *tmp = head;
 					head = head->next;
-					free(tmp->buf);
-					free(tmp);
+					xfree(tmp->buf);
+					xfree(tmp);
 				}
 			}
 			else if (errno == EAGAIN) {
@@ -330,8 +330,8 @@ int main(int argc, char *argv[])
 				errprintf("Our child has failed and will not talk to us\n");
 				tmp = head;
 				head = head->next;
-				free(tmp->buf);
-				free(tmp);
+				xfree(tmp->buf);
+				xfree(tmp);
 				canwrite = 0;
 			}
 		}

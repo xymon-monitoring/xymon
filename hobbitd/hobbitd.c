@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.97 2005-01-15 15:17:26 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.98 2005-01-15 17:38:28 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -220,7 +220,7 @@ char *generate_stats(void)
 
 	if (statsbuf == NULL) {
 		statsbuflen = 8192;
-		statsbuf = (char *)malloc(statsbuflen);
+		statsbuf = (char *)xmalloc(statsbuflen);
 	}
 	bufp = statsbuf;
 
@@ -267,20 +267,20 @@ char *generate_stats(void)
 			if ((statsbuflen - (bufp - statsbuf)) < 512) {
 				/* Less than 512 bytes left in buffer - expand it */
 				statsbuflen += 4096;
-				statsbuf = (char *)realloc(statsbuf, statsbuflen);
+				statsbuf = (char *)xrealloc(statsbuf, statsbuflen);
 				bufp = statsbuf + strlen(statsbuf);
 			}
 			bufp += sprintf(bufp, "  %-15s reported host %s\n", ghostlist->sender, ghostlist->name);
 			tmp = ghostlist;
 			ghostlist = ghostlist->next;
-			free(tmp->name); free(tmp->sender); free(tmp);
+			xfree(tmp->name); xfree(tmp->sender); xfree(tmp);
 		}
 	}
 
 	if (errbuf) {
 		if ((strlen(statsbuf) + strlen(errbuf) + 1024) > statsbuflen) {
 			statsbuflen = strlen(statsbuf) + strlen(errbuf) + 1024;
-			statsbuf = (char *)realloc(statsbuf, statsbuflen);
+			statsbuf = (char *)xrealloc(statsbuf, statsbuflen);
 			bufp = statsbuf + strlen(statsbuf);
 		}
 
@@ -298,7 +298,7 @@ sender_t *getsenderlist(char *iplist)
 	int count;
 
 	count = 0; p = iplist; do { count++; p = strchr(p, ','); if (p) p++; } while (p);
-	result = (sender_t *) calloc(1, sizeof(sender_t) * (count+1));
+	result = (sender_t *) xcalloc(1, sizeof(sender_t) * (count+1));
 
 	tok = strtok(iplist, ","); count = 0;
 	while (tok) {
@@ -515,9 +515,9 @@ void log_ghost(char *hostname, char *sender, char *msg)
 
 	for (gwalk = ghostlist; (gwalk && (strcmp(gwalk->name, hostname) != 0)); gwalk = gwalk->next) ;
 	if (gwalk == NULL) {
-		gwalk = (ghostlist_t *)malloc(sizeof(ghostlist_t));
-		gwalk->name = strdup(hostname);
-		gwalk->sender = strdup(sender);
+		gwalk = (ghostlist_t *)xmalloc(sizeof(ghostlist_t));
+		gwalk->name = xstrdup(hostname);
+		gwalk->sender = xstrdup(sender);
 		gwalk->next = ghostlist;
 		ghostlist = gwalk;
 	}
@@ -551,11 +551,11 @@ void get_hts(char *msg, char *sender, char *origin,
 	hosttest = hostname = testname = colstr = NULL;
 	p = strchr(msg, '\n');
 	if (p == NULL) {
-		firstline = strdup(msg);
+		firstline = xstrdup(msg);
 	}
 	else {
 		*p = '\0';
-		firstline = strdup(msg); 
+		firstline = xstrdup(msg); 
 		*p = '\n';
 	}
 
@@ -588,8 +588,8 @@ void get_hts(char *msg, char *sender, char *origin,
 
 	for (hwalk = hosts; (hwalk && strcasecmp(hostname, hwalk->hostname)); hwalk = hwalk->next) ;
 	if (createhost && (hwalk == NULL)) {
-		hwalk = (hobbitd_hostlist_t *)malloc(sizeof(hobbitd_hostlist_t));
-		hwalk->hostname = strdup(hostname);
+		hwalk = (hobbitd_hostlist_t *)xmalloc(sizeof(hobbitd_hostlist_t));
+		hwalk->hostname = xstrdup(hostname);
 		strcpy(hwalk->ip, hostip);
 		hwalk->logs = NULL;
 		hwalk->next = hosts;
@@ -597,21 +597,21 @@ void get_hts(char *msg, char *sender, char *origin,
 	}
 	for (twalk = tests; (twalk && strcasecmp(testname, twalk->testname)); twalk = twalk->next);
 	if (createlog && (twalk == NULL)) {
-		twalk = (hobbitd_testlist_t *)malloc(sizeof(hobbitd_testlist_t));
-		twalk->testname = strdup(testname);
+		twalk = (hobbitd_testlist_t *)xmalloc(sizeof(hobbitd_testlist_t));
+		twalk->testname = xstrdup(testname);
 		twalk->next = tests;
 		tests = twalk;
 	}
 	for (owalk = origins; (owalk && strcasecmp(origin, owalk->name)); owalk = owalk->next);
 	if (createlog && (owalk == NULL)) {
-		owalk = (htnames_t *)malloc(sizeof(htnames_t));
-		owalk->name = strdup(origin);
+		owalk = (htnames_t *)xmalloc(sizeof(htnames_t));
+		owalk->name = xstrdup(origin);
 		origins = owalk;
 	}
 	if (hwalk && twalk && owalk) {
 		for (lwalk = hwalk->logs; (lwalk && ((lwalk->test != twalk) || (lwalk->origin != owalk))); lwalk = lwalk->next);
 		if (createlog && (lwalk == NULL)) {
-			lwalk = (hobbitd_log_t *)malloc(sizeof(hobbitd_log_t));
+			lwalk = (hobbitd_log_t *)xmalloc(sizeof(hobbitd_log_t));
 			lwalk->color = lwalk->oldcolor = NO_COLOR;
 			lwalk->activealert = 0;
 			lwalk->testflags = NULL;
@@ -641,7 +641,7 @@ done:
 			*color = COL_BLUE;
 		}
 	}
-	free(firstline);
+	xfree(firstline);
 }
 
 
@@ -694,7 +694,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	else if (log->enabletime) {
 		/* A disable has expired. Clear the timestamp and the message buffer */
 		log->enabletime = 0;
-		if (log->dismsg) { free(log->dismsg); log->dismsg = NULL; }
+		if (log->dismsg) { xfree(log->dismsg); log->dismsg = NULL; }
 		posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, log, NULL);
 	}
 
@@ -712,7 +712,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		else {
 			/* The acknowledge has expired. Clear the timestamp and the message buffer */
 			log->acktime = 0;
-			if (log->ackmsg) { free(log->ackmsg); log->ackmsg = NULL; }
+			if (log->ackmsg) { xfree(log->ackmsg); log->ackmsg = NULL; }
 		}
 	}
 
@@ -734,7 +734,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		 */
 		if ((log->message == NULL) || (log->msgsz == 0)) {
 			/* No buffer - get one */
-			log->message = (unsigned char *)malloc(msglen+1);
+			log->message = (unsigned char *)xmalloc(msglen+1);
 			memcpy(log->message, msg, msglen+1);
 			log->msgsz = msglen+1;
 		}
@@ -744,7 +744,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		}
 		else {
 			/* Message does not fit into existing buffer. Grow it. */
-			log->message = (unsigned char *)realloc(log->message, msglen+1);
+			log->message = (unsigned char *)xrealloc(log->message, msglen+1);
 			memcpy(log->message, msg, msglen+1);
 			log->msgsz = msglen+1;
 		}
@@ -765,11 +765,11 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 			if (flagend) {
 				*flagend = '\0';
 				if (log->testflags == NULL)
-					log->testflags = strdup(flagstart);
+					log->testflags = xstrdup(flagstart);
 				else if (strlen(log->testflags) >= strlen(flagstart))
 					strcpy(log->testflags, flagstart);
 				else {
-					log->testflags = realloc(log->testflags, strlen(flagstart));
+					log->testflags = xrealloc(log->testflags, strlen(flagstart));
 					strcpy(log->testflags, flagstart);
 				}
 				*flagend = ']';
@@ -848,35 +848,35 @@ void handle_meta(char *msg, hobbitd_log_t *log)
 
 	for (nwalk = metanames; (nwalk && strcmp(nwalk->name, metaname)); nwalk = nwalk->next) ;
 	if (nwalk == NULL) {
-		nwalk = (htnames_t *)malloc(sizeof(htnames_t));
-		nwalk->name = strdup(metaname);
+		nwalk = (htnames_t *)xmalloc(sizeof(htnames_t));
+		nwalk->name = xstrdup(metaname);
 		nwalk->next = metanames;
 		metanames = nwalk;
 	}
 
 	for (mwalk = log->metas; (mwalk && (mwalk->metaname != nwalk)); mwalk = mwalk->next);
 	if (mwalk == NULL) {
-		mwalk = (hobbitd_meta_t *)malloc(sizeof(hobbitd_meta_t));
+		mwalk = (hobbitd_meta_t *)xmalloc(sizeof(hobbitd_meta_t));
 		mwalk->metaname = nwalk;
-		mwalk->value = strdup(eoln+1);
+		mwalk->value = xstrdup(eoln+1);
 		mwalk->next = log->metas;
 		log->metas = mwalk;
 	}
 	else {
-		if (mwalk->value) free(mwalk->value);
-		mwalk->value = strdup(eoln+1);
+		if (mwalk->value) xfree(mwalk->value);
+		mwalk->value = xstrdup(eoln+1);
 	}
 	if (eoln) *eoln = '\n';
 }
 
 void handle_data(char *msg, char *sender, char *origin, char *hostname, char *testname)
 {
-	char *chnbuf = (char *)malloc(strlen(origin) + strlen(hostname) + strlen(testname) + strlen(msg) + 4);
+	char *chnbuf = (char *)xmalloc(strlen(origin) + strlen(hostname) + strlen(testname) + strlen(msg) + 4);
 
 	sprintf(chnbuf, "%s|%s|%s\n%s",
 		origin, hostname, testname, msg);
 	posttochannel(datachn, channelnames[C_DATA], msg, sender, hostname, NULL, chnbuf);
-	free(chnbuf);
+	xfree(chnbuf);
 }
 
 void handle_notes(char *msg, char *sender, char *hostname)
@@ -954,7 +954,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 			for (log = hwalk->logs; (log); log = log->next) {
 				log->enabletime = 0;
 				if (log->dismsg) {
-					free(log->dismsg);
+					xfree(log->dismsg);
 					log->dismsg = NULL;
 				}
 				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, log, NULL);
@@ -965,7 +965,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 			if (log) {
 				log->enabletime = 0;
 				if (log->dismsg) {
-					free(log->dismsg);
+					xfree(log->dismsg);
 					log->dismsg = NULL;
 				}
 				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, log, NULL);
@@ -990,8 +990,8 @@ void handle_enadis(int enabled, char *msg, char *sender)
 			for (log = hwalk->logs; (log); log = log->next) {
 				log->enabletime = expires;
 				if (dismsg) {
-					if (log->dismsg) free(log->dismsg);
-					log->dismsg = strdup(dismsg);
+					if (log->dismsg) xfree(log->dismsg);
+					log->dismsg = xstrdup(dismsg);
 				}
 				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, log, NULL);
 				/* Trigger an immediate status update */
@@ -1003,8 +1003,8 @@ void handle_enadis(int enabled, char *msg, char *sender)
 			if (log) {
 				log->enabletime = expires;
 				if (dismsg) {
-					if (log->dismsg) free(log->dismsg);
-					log->dismsg = strdup(dismsg);
+					if (log->dismsg) xfree(log->dismsg);
+					log->dismsg = xstrdup(dismsg);
 				}
 				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, log, NULL);
 
@@ -1030,7 +1030,7 @@ void handle_ack(char *msg, char *sender, hobbitd_log_t *log, int duration)
 	p += strspn(p, " \t");			/* and the space ... */
 	p += strspn(p, "0123456789hdwmy");	/* and the duration ... */
 	p += strspn(p, " \t");			/* and the space ... */
-	log->ackmsg = strdup(p);
+	log->ackmsg = xstrdup(p);
 
 	/* Tell the pagers */
 	posttochannel(pagechn, "ack", log->ackmsg, sender, log->host->hostname, log, NULL);
@@ -1047,14 +1047,14 @@ void free_log_t(hobbitd_log_t *zombie)
 		mtmp = mwalk;
 		mwalk = mwalk->next;
 
-		if (mtmp->value) free(mtmp->value);
-		free(mtmp);
+		if (mtmp->value) xfree(mtmp->value);
+		xfree(mtmp);
 	}
 
-	if (zombie->message) free(zombie->message);
-	if (zombie->dismsg) free(zombie->dismsg);
-	if (zombie->ackmsg) free(zombie->ackmsg);
-	free(zombie);
+	if (zombie->message) xfree(zombie->message);
+	if (zombie->dismsg) xfree(zombie->dismsg);
+	if (zombie->ackmsg) xfree(zombie->ackmsg);
+	xfree(zombie);
 }
 
 void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, char *n1, char *n2)
@@ -1154,7 +1154,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		}
 
 		/* Free the hostlist entry */
-		free(hwalk);
+		xfree(hwalk);
 		break;
 
 	  case CMD_RENAMEHOST:
@@ -1162,8 +1162,8 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			strcpy(hwalk->hostname, n1);
 		}
 		else {
-			free(hwalk->hostname);
-			hwalk->hostname = strdup(n1);
+			xfree(hwalk->hostname);
+			hwalk->hostname = xstrdup(n1);
 		}
 		break;
 
@@ -1174,8 +1174,8 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		if (lwalk == NULL) return;
 		for (newt = tests; (newt && strcasecmp(n2, newt->testname)); newt = newt->next) ;
 		if (newt == NULL) {
-			newt = (hobbitd_testlist_t *) malloc(sizeof(hobbitd_testlist_t));
-			newt->testname = strdup(n2);
+			newt = (hobbitd_testlist_t *) xmalloc(sizeof(hobbitd_testlist_t));
+			newt->testname = xstrdup(n2);
 			newt->next = tests;
 			tests = newt;
 		}
@@ -1200,7 +1200,7 @@ int get_config(char *fn, conn_t *msg)
 	do {
 		if ((msg->bufsz - msg->buflen) < 1024) {
 			msg->bufsz += 4096;
-			msg->buf = realloc(msg->buf, msg->bufsz);
+			msg->buf = xrealloc(msg->buf, msg->bufsz);
 			msg->bufp = msg->buf + msg->buflen;
 		}
 		done = (stackfgets(msg->bufp, (msg->bufsz - msg->buflen), "include", NULL) == NULL);
@@ -1399,7 +1399,7 @@ void do_message(conn_t *msg, char *origin)
 				if (eoln) *eoln = '\n';
 			}
 			else {
-				msg->buf = msg->bufp = strdup("");
+				msg->buf = msg->bufp = xstrdup("");
 				msg->buflen = 0;
 			}
 		}
@@ -1421,15 +1421,15 @@ void do_message(conn_t *msg, char *origin)
 
 			if (log->message == NULL) {
 				errprintf("%s.%s has a NULL message\n", log->host->hostname, log->test->testname);
-				log->message = strdup("");
+				log->message = xstrdup("");
 			}
 
 			bufsz = 1024 + strlen(log->message);
 			if (log->ackmsg) bufsz += 2*strlen(log->ackmsg);
 			if (log->dismsg) bufsz += 2*strlen(log->dismsg);
 
-			free(msg->buf);
-			bufp = buf = (char *)malloc(bufsz);
+			xfree(msg->buf);
+			bufp = buf = (char *)xmalloc(bufsz);
 			buflen = 0;
 
 			bufp += sprintf(bufp, "%s|%s|%s|%s|%d|%d|%d|%d|%d|%s|%d", 
@@ -1469,15 +1469,15 @@ void do_message(conn_t *msg, char *origin)
 
 			if (log->message == NULL) {
 				errprintf("%s.%s has a NULL message\n", log->host->hostname, log->test->testname);
-				log->message = strdup("");
+				log->message = xstrdup("");
 			}
 
 			bufsz = 4096 + strlen(log->message);
 			if (log->ackmsg) bufsz += strlen(log->ackmsg);
 			if (log->dismsg) bufsz += strlen(log->dismsg);
 
-			free(msg->buf);
-			bufp = buf = (char *)malloc(bufsz);
+			xfree(msg->buf);
+			bufp = buf = (char *)xmalloc(bufsz);
 			buflen = 0;
 
 			bufp += sprintf(bufp, "<?xml version='1.0' encoding='ISO-8859-1'?>\n");
@@ -1535,7 +1535,7 @@ void do_message(conn_t *msg, char *origin)
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		bufsz = 16384;
-		bufp = buf = (char *)malloc(bufsz);
+		bufp = buf = (char *)xmalloc(bufsz);
 		buflen = 0;
 
 		for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
@@ -1544,14 +1544,14 @@ void do_message(conn_t *msg, char *origin)
 				
 				if (lwalk->message == NULL) {
 					errprintf("%s.%s has a NULL message\n", lwalk->host->hostname, lwalk->test->testname);
-					lwalk->message = strdup("");
+					lwalk->message = xstrdup("");
 				}
 
 				eoln = strchr(lwalk->message, '\n');
 				if (eoln) *eoln = '\0';
 				if ((bufsz - buflen - strlen(lwalk->message)) < 1024) {
 					bufsz += (16384 + strlen(lwalk->message));
-					buf = (char *)realloc(buf, bufsz);
+					buf = (char *)xrealloc(buf, bufsz);
 					bufp = buf + buflen;
 				}
 				n = sprintf(bufp, "%s|%s|%s|%s|%d|%d|%d|%d|%d|%s|%d|%s\n", 
@@ -1568,7 +1568,7 @@ void do_message(conn_t *msg, char *origin)
 			}
 		}
 
-		free(msg->buf);
+		xfree(msg->buf);
 		msg->doingwhat = RESPONDING;
 		msg->bufp = msg->buf = buf;
 		msg->buflen = buflen;
@@ -1586,7 +1586,7 @@ void do_message(conn_t *msg, char *origin)
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		bufsz = 16384;
-		bufp = buf = (char *)malloc(bufsz);
+		bufp = buf = (char *)xmalloc(bufsz);
 
 		bufp += sprintf(bufp, "<?xml version='1.0' encoding='ISO-8859-1'?>\n");
 		bufp += sprintf(bufp, "<StatusBoard>\n");
@@ -1598,14 +1598,14 @@ void do_message(conn_t *msg, char *origin)
 				
 				if (lwalk->message == NULL) {
 					errprintf("%s.%s has a NULL message\n", lwalk->host->hostname, lwalk->test->testname);
-					lwalk->message = strdup("");
+					lwalk->message = xstrdup("");
 				}
 
 				eoln = strchr(lwalk->message, '\n');
 				if (eoln) *eoln = '\0';
 				if ((bufsz - buflen - strlen(lwalk->message)) < 4096) {
 					bufsz += (16384 + strlen(lwalk->message));
-					buf = (char *)realloc(buf, bufsz);
+					buf = (char *)xrealloc(buf, bufsz);
 					bufp = buf + buflen;
 				}
 
@@ -1633,7 +1633,7 @@ void do_message(conn_t *msg, char *origin)
 		}
 		bufp += sprintf(bufp, "</StatusBoard>\n");
 
-		free(msg->buf);
+		xfree(msg->buf);
 		msg->doingwhat = RESPONDING;
 		msg->bufp = msg->buf = buf;
 		msg->buflen = (bufp - buf);
@@ -1653,14 +1653,14 @@ void do_message(conn_t *msg, char *origin)
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		bufsz = 16384;
-		bufp = buf = (char *)malloc(bufsz);
+		bufp = buf = (char *)xmalloc(bufsz);
 		buflen = 0;
 
 		for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
 			for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
 				if ((bufsz - buflen - strlen(lwalk->message)) < 1024) {
 					bufsz += 16384;
-					buf = (char *)realloc(buf, bufsz);
+					buf = (char *)xrealloc(buf, bufsz);
 					bufp = buf + buflen;
 				}
 
@@ -1670,7 +1670,7 @@ void do_message(conn_t *msg, char *origin)
 			}
 		}
 
-		free(msg->buf);
+		xfree(msg->buf);
 		msg->doingwhat = RESPONDING;
 		msg->bufp = msg->buf = buf;
 		msg->buflen = buflen;
@@ -1771,24 +1771,24 @@ void save_checkpoint(void)
 	if (checkpointfn == NULL) return;
 
 	dprintf("Start save_checkpoint\n");
-	tempfn = malloc(strlen(checkpointfn) + 20);
+	tempfn = xmalloc(strlen(checkpointfn) + 20);
 	sprintf(tempfn, "%s.%d", checkpointfn, (int)now);
 	fd = fopen(tempfn, "w");
 	if (fd == NULL) {
 		errprintf("Cannot open checkpoint file %s\n", tempfn);
-		free(tempfn);
+		xfree(tempfn);
 		return;
 	}
 
 	for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
 		for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
 			if (lwalk->dismsg && (lwalk->enabletime < now)) {
-				free(lwalk->dismsg);
+				xfree(lwalk->dismsg);
 				lwalk->dismsg = NULL;
 				lwalk->enabletime = 0;
 			}
 			if (lwalk->ackmsg && (lwalk->acktime < now)) {
-				free(lwalk->ackmsg);
+				xfree(lwalk->ackmsg);
 				lwalk->ackmsg = NULL;
 				lwalk->acktime = 0;
 			}
@@ -1809,7 +1809,7 @@ void save_checkpoint(void)
 
 	fclose(fd);
 	rename(tempfn, checkpointfn);
-	free(tempfn);
+	xfree(tempfn);
 	dprintf("End save_checkpoint\n");
 }
 
@@ -1882,13 +1882,13 @@ void load_checkpoint(char *fn)
 		if ((hosts == NULL) || (strcmp(hostname, htail->hostname) != 0)) {
 			/* New host */
 			if (hosts == NULL) {
-				htail = hosts = (hobbitd_hostlist_t *) malloc(sizeof(hobbitd_hostlist_t));
+				htail = hosts = (hobbitd_hostlist_t *) xmalloc(sizeof(hobbitd_hostlist_t));
 			}
 			else {
-				htail->next = (hobbitd_hostlist_t *) malloc(sizeof(hobbitd_hostlist_t));
+				htail->next = (hobbitd_hostlist_t *) xmalloc(sizeof(hobbitd_hostlist_t));
 				htail = htail->next;
 			}
-			htail->hostname = strdup(hostname);
+			htail->hostname = xstrdup(hostname);
 			strcpy(htail->ip, hostip);
 			htail->logs = NULL;
 			htail->next = NULL;
@@ -1896,25 +1896,25 @@ void load_checkpoint(char *fn)
 
 		for (t=tests; (t && (strcmp(t->testname, testname) != 0)); t = t->next) ;
 		if (t == NULL) {
-			t = (hobbitd_testlist_t *) malloc(sizeof(hobbitd_testlist_t));
-			t->testname = strdup(testname);
+			t = (hobbitd_testlist_t *) xmalloc(sizeof(hobbitd_testlist_t));
+			t->testname = xstrdup(testname);
 			t->next = tests;
 			tests = t;
 		}
 
 		for (origin=origins; (origin && (strcmp(origin->name, originname) != 0)); origin = origin->next) ;
 		if (origin == NULL) {
-			origin = (htnames_t *) malloc(sizeof(htnames_t));
-			origin->name = strdup(originname);
+			origin = (htnames_t *) xmalloc(sizeof(htnames_t));
+			origin->name = xstrdup(originname);
 			origin->next = origins;
 			origins = origin;
 		}
 
 		if (htail->logs == NULL) {
-			ltail = htail->logs = (hobbitd_log_t *) malloc(sizeof(hobbitd_log_t));
+			ltail = htail->logs = (hobbitd_log_t *) xmalloc(sizeof(hobbitd_log_t));
 		}
 		else {
-			ltail->next = (hobbitd_log_t *)malloc(sizeof(hobbitd_log_t));
+			ltail->next = (hobbitd_log_t *)xmalloc(sizeof(hobbitd_log_t));
 			ltail = ltail->next;
 		}
 
@@ -1924,7 +1924,7 @@ void load_checkpoint(char *fn)
 		ltail->color = color;
 		ltail->oldcolor = oldcolor;
 		ltail->activealert = 0;
-		ltail->testflags = ( (testflags && strlen(testflags)) ? strdup(testflags) : NULL);
+		ltail->testflags = ( (testflags && strlen(testflags)) ? xstrdup(testflags) : NULL);
 		strcpy(ltail->sender, sender);
 		ltail->logtime = logtime;
 		ltail->lastchange = lastchange;
@@ -1932,17 +1932,17 @@ void load_checkpoint(char *fn)
 		ltail->enabletime = enabletime;
 		ltail->acktime = acktime;
 		nldecode(statusmsg);
-		ltail->message = strdup(statusmsg);
+		ltail->message = xstrdup(statusmsg);
 		ltail->msgsz = strlen(statusmsg)+1;
 		if (disablemsg && strlen(disablemsg)) {
 			nldecode(disablemsg);
-			ltail->dismsg = strdup(disablemsg);
+			ltail->dismsg = xstrdup(disablemsg);
 		}
 		else 
 			ltail->dismsg = NULL;
 		if (ackmsg && strlen(ackmsg)) {
 			nldecode(ackmsg);
-			ltail->ackmsg = strdup(ackmsg);
+			ltail->ackmsg = xstrdup(ackmsg);
 		}
 		else 
 			ltail->ackmsg = NULL;
@@ -2075,7 +2075,7 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--listen=")) {
 			char *p = strchr(argv[argi], '=') + 1;
 
-			listenip = strdup(p);
+			listenip = xstrdup(p);
 			p = strchr(listenip, ':');
 			if (p) {
 				*p = '\0';
@@ -2092,11 +2092,11 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--bbhosts=")) {
 			char *p = strchr(argv[argi], '=') + 1;
-			bbhostsfn = strdup(p);
+			bbhostsfn = xstrdup(p);
 		}
 		else if (argnmatch(argv[argi], "--checkpoint-file=")) {
 			char *p = strchr(argv[argi], '=') + 1;
-			checkpointfn = strdup(p);
+			checkpointfn = xstrdup(p);
 		}
 		else if (argnmatch(argv[argi], "--checkpoint-interval=")) {
 			char *p = strchr(argv[argi], '=') + 1;
@@ -2104,7 +2104,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--restart=")) {
 			char *p = strchr(argv[argi], '=') + 1;
-			restartfn = strdup(p);
+			restartfn = xstrdup(p);
 		}
 		else if (argnmatch(argv[argi], "--alertcolors=")) {
 			char *colspec = strchr(argv[argi], '=') + 1;
@@ -2154,7 +2154,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--purple-conn=")) {
 			char *p = strchr(argv[argi], '=');
-			purpleclientconn = strdup(p+1);
+			purpleclientconn = xstrdup(p+1);
 		}
 		else if (argnmatch(argv[argi], "--daemon")) {
 			daemonize = 1;
@@ -2164,11 +2164,11 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--pidfile=")) {
 			char *p = strchr(argv[argi], '=');
-			pidfile = strdup(p+1);
+			pidfile = xstrdup(p+1);
 		}
 		else if (argnmatch(argv[argi], "--log=")) {
 			char *p = strchr(argv[argi], '=');
-			logfn = strdup(p+1);
+			logfn = xstrdup(p+1);
 		}
 		else if (argnmatch(argv[argi], "--maint-senders=")) {
 			/* Who is allowed to send us "enable", "disable", "ack", "notes" messages */
@@ -2193,7 +2193,7 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--dbghost=")) {
 			char *p = strchr(argv[argi], '=');
 
-			dbghost = strdup(p+1);
+			dbghost = xstrdup(p+1);
 		}
 		else if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
@@ -2211,7 +2211,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (getenv("BBHOSTS") && (bbhostsfn == NULL)) {
-		bbhostsfn = strdup(getenv("BBHOSTS"));
+		bbhostsfn = xstrdup(getenv("BBHOSTS"));
 	}
 
 	if (ghosthandling == -1) {
@@ -2416,7 +2416,7 @@ int main(int argc, char *argv[])
 						*(cwalk->bufp) = '\0';
 						if ((cwalk->bufsz - cwalk->buflen) < 2048) {
 							cwalk->bufsz += 2048;
-							cwalk->buf = (unsigned char *) realloc(cwalk->buf, cwalk->bufsz);
+							cwalk->buf = (unsigned char *) xrealloc(cwalk->buf, cwalk->bufsz);
 							cwalk->bufp = cwalk->buf + cwalk->buflen;
 						}
 					}
@@ -2503,8 +2503,8 @@ int main(int argc, char *argv[])
 				tmp = khead;
 				khead = khead->next;
 
-				if (tmp->buf) free(tmp->buf);
-				free(tmp);
+				if (tmp->buf) xfree(tmp->buf);
+				xfree(tmp);
 			}
 		}
 
@@ -2516,10 +2516,10 @@ int main(int argc, char *argv[])
 
 			if (sock >= 0) {
 				if (connhead == NULL) {
-					connhead = conntail = (conn_t *)malloc(sizeof(conn_t));
+					connhead = conntail = (conn_t *)xmalloc(sizeof(conn_t));
 				}
 				else {
-					conntail->next = (conn_t *)malloc(sizeof(conn_t));
+					conntail->next = (conn_t *)xmalloc(sizeof(conn_t));
 					conntail = conntail->next;
 				}
 
@@ -2527,7 +2527,7 @@ int main(int argc, char *argv[])
 				memcpy(&conntail->addr, &addr, sizeof(conntail->addr));
 				conntail->doingwhat = RECEIVING;
 				conntail->bufsz = MAXMSG+2048;
-				conntail->buf = (unsigned char *)malloc(conntail->bufsz);
+				conntail->buf = (unsigned char *)xmalloc(conntail->bufsz);
 				conntail->bufp = conntail->buf;
 				conntail->buflen = 0;
 				conntail->timeout = now + conn_timeout;

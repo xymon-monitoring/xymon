@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-snapshot.c,v 1.7 2005-01-09 21:35:41 henrik Exp $";
+static char rcsid[] = "$Id: bb-snapshot.c,v 1.8 2005-01-15 17:38:55 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -120,7 +120,7 @@ void parse_query(void)
 
 	if ((starttime == -1) || (starttime > time(NULL))) errormsg("Invalid parameters");
 
-	free(query);
+	xfree(query);
 }
 
 
@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
 			struct stat st;
 
 			fstat(formfile, &st);
-			inbuf = (char *) malloc(st.st_size + 1);
+			inbuf = (char *) xmalloc(st.st_size + 1);
 			read(formfile, inbuf, st.st_size);
 			inbuf[st.st_size] = '\0';
 			close(formfile);
@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
 			output_parsed(stdout, inbuf, COL_BLUE, "report");
 			headfoot(stdout, "snapshot", "", "footer", COL_BLUE);
 
-			free(inbuf);
+			xfree(inbuf);
 		}
 		return 0;
 	}

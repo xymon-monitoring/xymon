@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.15 2004-12-18 11:06:36 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.16 2005-01-15 17:38:55 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -59,7 +59,7 @@ void addtopagelist(bbgen_page_t *page)
 {
 	bbpagelist_t *newitem;
 
-	newitem = (bbpagelist_t *) malloc(sizeof(bbpagelist_t));
+	newitem = (bbpagelist_t *) xmalloc(sizeof(bbpagelist_t));
 	newitem->pageentry = page;
 	newitem->next = pagelisthead;
 	pagelisthead = newitem;
@@ -81,7 +81,7 @@ char *build_noprop(const char *defset, const char *specset)
 		return result;
 	}
 
-	set = strdup(specset);
+	set = xstrdup(specset);
 	strcpy(result, ((defset != NULL) ? defset : ""));
 	item = strtok(set, ",");
 
@@ -114,24 +114,24 @@ char *build_noprop(const char *defset, const char *specset)
 		item = strtok(NULL, ",");
 	}
 
-	free(set);
+	xfree(set);
 	return ((strlen(result) > 0) ? result : NULL);
 }
 
 bbgen_page_t *init_page(const char *name, const char *title)
 {
-	bbgen_page_t *newpage = (bbgen_page_t *) malloc(sizeof(bbgen_page_t));
+	bbgen_page_t *newpage = (bbgen_page_t *) xmalloc(sizeof(bbgen_page_t));
 
 	pagecount++;
 	dprintf("init_page(%s, %s)\n", textornull(name), textornull(title));
 
 	if (name) {
-		newpage->name = strdup(name);
+		newpage->name = xstrdup(name);
 	}
 	else name = null_text;
 
 	if (title) {
-		newpage->title = strdup(title);
+		newpage->title = xstrdup(title);
 	}else
 		title = null_text;
 
@@ -149,17 +149,17 @@ bbgen_page_t *init_page(const char *name, const char *title)
 
 group_t *init_group(const char *title, const char *onlycols)
 {
-	group_t *newgroup = (group_t *) malloc(sizeof(group_t));
+	group_t *newgroup = (group_t *) xmalloc(sizeof(group_t));
 
 	dprintf("init_group(%s, %s)\n", textornull(title), textornull(onlycols));
 
 	if (title) {
-		newgroup->title = strdup(title);
+		newgroup->title = xstrdup(title);
 	}
 	else title = null_text;
 
 	if (onlycols) {
-		newgroup->onlycols = (char *) malloc(strlen(onlycols)+3); /* Add a '|' at start and end */
+		newgroup->onlycols = (char *) xmalloc(strlen(onlycols)+3); /* Add a '|' at start and end */
 		sprintf(newgroup->onlycols, "|%s|", onlycols);
 	}
 	else newgroup->onlycols = NULL;
@@ -177,7 +177,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 		  char *nopropyellowtests, char *nopropredtests, char *noproppurpletests, char *nopropacktests,
 		  int modembanksize)
 {
-	host_t 		*newhost = (host_t *) malloc(sizeof(host_t));
+	host_t 		*newhost = (host_t *) xmalloc(sizeof(host_t));
 	hostlist_t	*oldlist;
 
 	hostcount++;
@@ -187,11 +187,11 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 		textornull(nopropyellowtests), textornull(nopropredtests), 
 		textornull(noproppurpletests), textornull(nopropacktests));
 
-	newhost->hostname = newhost->displayname = strdup(hostname);
-	if (displayname) newhost->displayname = strdup(displayname);
-	newhost->clientalias = (clientalias ? strdup(clientalias) : NULL);
-	newhost->comment = (comment ? strdup(comment) : NULL);
-	newhost->description = (description ? strdup(description) : NULL);
+	newhost->hostname = newhost->displayname = xstrdup(hostname);
+	if (displayname) newhost->displayname = xstrdup(displayname);
+	newhost->clientalias = (clientalias ? xstrdup(clientalias) : NULL);
+	newhost->comment = (comment ? xstrdup(comment) : NULL);
+	newhost->description = (description ? xstrdup(description) : NULL);
 	sprintf(newhost->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 	newhost->pretitle = NULL;
 	newhost->entries = NULL;
@@ -199,12 +199,12 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	newhost->oldage = 1;
 	newhost->dialup = dialup;
 	newhost->reportwarnlevel = warnpct;
-	newhost->reporttime = (reporttime ? strdup(reporttime) : NULL);
+	newhost->reporttime = (reporttime ? xstrdup(reporttime) : NULL);
 	if (alerts && nktime) {
 		char *p;
 		p = skipword(alerts); if (*p) *p = '\0'; else p = NULL;
 
-		newhost->alerts = (char *) malloc(strlen(alerts)+3);
+		newhost->alerts = (char *) xmalloc(strlen(alerts)+3);
 		sprintf(newhost->alerts, ",%s,", alerts);
 		if (p) *p = ' ';
 	}
@@ -223,7 +223,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	if (waps || alerts) {
 		char *p;
 		p = skipword((waps ? waps : alerts)); if (*p) *p = '\0'; else p = NULL;
-		newhost->waps = strdup(build_noprop(wapcolumns, (waps ? waps : alerts)));
+		newhost->waps = xstrdup(build_noprop(wapcolumns, (waps ? waps : alerts)));
 		if (p) *p = ' ';
 	}
 	else {
@@ -233,7 +233,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	if (nopropyellowtests) {
 		char *p;
 		p = skipword(nopropyellowtests); if (*p) *p = '\0'; else p = NULL;
-		newhost->nopropyellowtests = strdup(build_noprop(nopropyellowdefault, nopropyellowtests));
+		newhost->nopropyellowtests = xstrdup(build_noprop(nopropyellowdefault, nopropyellowtests));
 		if (p) *p = ' ';
 	}
 	else {
@@ -242,7 +242,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	if (nopropredtests) {
 		char *p;
 		p = skipword(nopropredtests); if (*p) *p = '\0'; else p = NULL;
-		newhost->nopropredtests = strdup(build_noprop(nopropreddefault, nopropredtests));
+		newhost->nopropredtests = xstrdup(build_noprop(nopropreddefault, nopropredtests));
 		if (p) *p = ' ';
 	}
 	else {
@@ -251,7 +251,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	if (noproppurpletests) {
 		char *p;
 		p = skipword(noproppurpletests); if (*p) *p = '\0'; else p = NULL;
-		newhost->noproppurpletests = strdup(build_noprop(noproppurpledefault, noproppurpletests));
+		newhost->noproppurpletests = xstrdup(build_noprop(noproppurpledefault, noproppurpletests));
 		if (p) *p = ' ';
 	}
 	else {
@@ -260,7 +260,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	if (nopropacktests) {
 		char *p;
 		p = skipword(nopropacktests); if (*p) *p = '\0'; else p = NULL;
-		newhost->nopropacktests = strdup(build_noprop(nopropackdefault, nopropacktests));
+		newhost->nopropacktests = xstrdup(build_noprop(nopropackdefault, nopropacktests));
 		if (p) *p = ' ';
 	}
 	else {
@@ -272,11 +272,11 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	newhost->banksize = modembanksize;
 	if (modembanksize) {
 		int i;
-		newhost->banks = (int *) malloc(modembanksize * sizeof(int));
+		newhost->banks = (int *) xmalloc(modembanksize * sizeof(int));
 		for (i=0; i<modembanksize; i++) newhost->banks[i] = -1;
 
 		if (comment) {
-			newhost->comment = (char *) realloc(newhost->comment, strlen(newhost->comment) + 22);
+			newhost->comment = (char *) xrealloc(newhost->comment, strlen(newhost->comment) + 22);
 			sprintf(newhost->comment+strlen(newhost->comment), " - [%s]", newhost->ip);
 		}
 		else {
@@ -295,14 +295,14 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	if (oldlist == NULL) {
 		hostlist_t *newlist;
 
-		newlist = (hostlist_t *) malloc(sizeof(hostlist_t));
+		newlist = (hostlist_t *) xmalloc(sizeof(hostlist_t));
 		newlist->hostentry = newhost;
 		newlist->clones = NULL;
 		newlist->next = hosthead;
 		hosthead = newlist;
 	}
 	else {
-		hostlist_t *clone = (hostlist_t *) malloc(sizeof(hostlist_t));
+		hostlist_t *clone = (hostlist_t *) xmalloc(sizeof(hostlist_t));
 
 		dprintf("Duplicate host definition for host '%s'\n", hostname);
 
@@ -415,10 +415,10 @@ summary_t *init_summary(char *name, char *receiver, char *url)
 	if ((name == NULL) || (receiver == NULL) || (url == NULL)) 
 		return NULL;
 
-	newsum = (summary_t *) malloc(sizeof(summary_t));
-	newsum->name = strdup(name);
-	newsum->receiver = strdup(receiver);
-	newsum->url = strdup(url);
+	newsum = (summary_t *) xmalloc(sizeof(summary_t));
+	newsum->name = xstrdup(name);
+	newsum->receiver = xstrdup(receiver);
+	newsum->url = xstrdup(url);
 	newsum->next = NULL;
 
 	return newsum;
@@ -639,7 +639,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 					bbval = bbh_item_walk(cwalk);
 					while (bbval) {
 						if (strncasecmp(bbval, hosttag, strlen(hosttag)) == 0)
-							targetpagelist[targetpagecount++] = strdup(bbval+strlen(hosttag));
+							targetpagelist[targetpagecount++] = xstrdup(bbval+strlen(hosttag));
 						bbval = bbh_item_walk(NULL);
 					}
 
@@ -790,7 +790,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 		}
 		else if (strncmp(l, titletag, strlen(titletag)) == 0) {
 			/* Save the title for the next entry */
-			curtitle = strdup(skipwhitespace(skipword(l)));
+			curtitle = xstrdup(skipwhitespace(skipword(l)));
 		}
 		else {
 			/* Probably a comment */

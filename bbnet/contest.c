@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.69 2004-11-17 08:49:58 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.70 2005-01-15 17:39:01 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -174,11 +174,11 @@ char *init_tcp_services(void)
 	fd = fopen(filename, "r");
 	if (fd == NULL) {
 		errprintf("Cannot open TCP service-definitions file %s - using defaults\n", filename);
-		return strdup(getenv("BBNETSVCS"));
+		return xstrdup(getenv("BBNETSVCS"));
 	}
 
-	head = (svclist_t *)malloc(sizeof(svclist_t));
-	head->rec = (svcinfo_t *)calloc(1, sizeof(svcinfo_t));
+	head = (svclist_t *)xmalloc(sizeof(svclist_t));
+	head->rec = (svcinfo_t *)xcalloc(1, sizeof(svcinfo_t));
 	head->next = NULL;
 
 	while (fd && fgets(buf, sizeof(buf), fd)) {
@@ -194,9 +194,9 @@ char *init_tcp_services(void)
 			svcname = strtok(l, "|");
 			first = NULL;
 			while (svcname) {
-				item = (svclist_t *) malloc(sizeof(svclist_t));
-				item->rec = (svcinfo_t *)calloc(1, sizeof(svcinfo_t));
-				item->rec->svcname = strdup(svcname);
+				item = (svclist_t *) xmalloc(sizeof(svclist_t));
+				item->rec = (svcinfo_t *)xcalloc(1, sizeof(svcinfo_t));
+				item->rec->svcname = xstrdup(svcname);
 				svcnamebytes += (strlen(svcname) + 1);
 				item->next = head;
 				head = item;
@@ -256,7 +256,7 @@ char *init_tcp_services(void)
 
 	if (fd) fclose(fd);
 
-	svcinfo = (svcinfo_t *) malloc(svccount * sizeof(svcinfo_t));
+	svcinfo = (svcinfo_t *) xmalloc(svccount * sizeof(svcinfo_t));
 	for (walk=head, i=0; (walk); walk = walk->next, i++) {
 		svcinfo[i].svcname = walk->rec->svcname;
 		svcinfo[i].sendtxt = walk->rec->sendtxt;
@@ -268,8 +268,8 @@ char *init_tcp_services(void)
 		svcinfo[i].port    = walk->rec->port;
 	}
 
-	searchstring = strdup(getenv("BBNETSVCS"));
-	bbnetsvcs = (char *) malloc(strlen(getenv("BBNETSVCS")) + svcnamebytes + 1);
+	searchstring = xstrdup(getenv("BBNETSVCS"));
+	bbnetsvcs = (char *) xmalloc(strlen(getenv("BBNETSVCS")) + svcnamebytes + 1);
 	strcpy(bbnetsvcs, getenv("BBNETSVCS"));
 	for (i=0; (svcinfo[i].svcname); i++) {
 		char *p;
@@ -283,7 +283,7 @@ char *init_tcp_services(void)
 			strcat(bbnetsvcs, svcinfo[i].svcname);
 		}
 	}
-	free(searchstring);
+	xfree(searchstring);
 
 	if (debug) {
 		dump_tcp_services();
@@ -379,10 +379,10 @@ static int tcp_callback(unsigned char *buf, unsigned int len, void *priv)
 	tcptest_t *item = (tcptest_t *) priv;
 
 	if (item->banner == NULL) {
-		item->banner = (unsigned char *)malloc(len+1);
+		item->banner = (unsigned char *)xmalloc(len+1);
 	}
 	else {
-		item->banner = (unsigned char *)realloc(item->banner, item->bannerbytes+len+1);
+		item->banner = (unsigned char *)xrealloc(item->banner, item->bannerbytes+len+1);
 	}
 
 	memcpy(item->banner+item->bannerbytes, buf, len);
@@ -408,7 +408,7 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	}
 
 	tcp_stats_total++;
-	newtest = (tcptest_t *) malloc(sizeof(tcptest_t));
+	newtest = (tcptest_t *) xmalloc(sizeof(tcptest_t));
 
 	newtest->fd = -1;
 	newtest->open = 0;
@@ -518,7 +518,7 @@ static int do_telnet_options(tcptest_t *item)
 		return 0;
 	}
 
-	obuf = (unsigned char *)malloc(item->telnetbuflen);
+	obuf = (unsigned char *)xmalloc(item->telnetbuflen);
 	y = 0;
 	inp = item->telnetbuf;
 	remain = item->telnetbuflen;
@@ -531,10 +531,10 @@ static int do_telnet_options(tcptest_t *item)
 			 * We probably have the banner in the remainder of the
 			 * buffer, so copy it over, and return it.
 			 */
-			item->banner = strdup(inp);
+			item->banner = xstrdup(inp);
 			item->bannerbytes = strlen(inp);
 			item->telnetbuflen = 0;
-			free(obuf);
+			xfree(obuf);
 			return 0;
 		}
 	        *outp = 255; outp++;
@@ -556,7 +556,7 @@ static int do_telnet_options(tcptest_t *item)
 	item->telnetbuflen = (outp-obuf);
 	if (item->telnetbuflen) memcpy(item->telnetbuf, obuf, item->telnetbuflen);
 	item->telnetbuf[item->telnetbuflen] = '\0';
-	free(obuf);
+	xfree(obuf);
 	return result;
 }
 
@@ -860,15 +860,15 @@ static void setup_ssl(tcptest_t *item)
 	}
 
 	certcn = X509_NAME_oneline(X509_get_subject_name(peercert), NULL, 0);
-	certstart = strdup(bbgen_ASN1_UTCTIME(X509_get_notBefore(peercert)));
-	certend = strdup(bbgen_ASN1_UTCTIME(X509_get_notAfter(peercert)));
+	certstart = xstrdup(bbgen_ASN1_UTCTIME(X509_get_notBefore(peercert)));
+	certend = xstrdup(bbgen_ASN1_UTCTIME(X509_get_notAfter(peercert)));
 
-	item->certinfo = (char *) malloc(strlen(certcn)+strlen(certstart)+strlen(certend)+100);
+	item->certinfo = (char *) xmalloc(strlen(certcn)+strlen(certstart)+strlen(certend)+100);
 	sprintf(item->certinfo, 
 		"Server certificate:\n\tsubject:%s\n\tstart date: %s\n\texpire date:%s\n", 
 		certcn, certstart, certend);
 	item->certexpires = sslcert_expiretime(certend);
-	free(certcn); free(certstart); free(certend);
+	xfree(certcn); xfree(certstart); xfree(certend);
 
 	X509_free(peercert);
 }
@@ -1511,8 +1511,8 @@ int main(int argc, char *argv[])
 					(strncmp(argp, "type;", 5) == 0)   ||
 					(strncmp(argp, "type=", 5) == 0) ) {
 
-					testitem_t *testitem = calloc(1, sizeof(testitem_t));
-					testedhost_t *hostitem = calloc(1, sizeof(testedhost_t));
+					testitem_t *testitem = xcalloc(1, sizeof(testitem_t));
+					testedhost_t *hostitem = xcalloc(1, sizeof(testedhost_t));
 					http_data_t *httptest;
 
 					testitem->host = hostitem;

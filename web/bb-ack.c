@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.6 2004-12-03 12:04:24 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.7 2005-01-15 17:38:55 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -64,7 +64,7 @@ static void parse_query(void)
 		char *val;
 		val = strchr(token, '='); if (val) { *val = '\0'; val++; }
 		if (argnmatch(token, "ACTION")) {
-			action = strdup(val);
+			action = xstrdup(val);
 		}
 		else if (argnmatch(token, "NUMBER")) {
 			acknum = atoi(val);
@@ -73,13 +73,13 @@ static void parse_query(void)
 			validity = atoi(val);
 		}
 		else if (argnmatch(token, "MESSAGE")) {
-			ackmsg = strdup(val);
+			ackmsg = xstrdup(val);
 		}
 
 		token = strtok(NULL, "&");
 	}
 
-        free(query);
+        xfree(query);
 }
 
 int main(int argc, char *argv[])
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
 			struct stat st;
 
 			fstat(formfile, &st);
-			inbuf = (char *) malloc(st.st_size + 1);
+			inbuf = (char *) xmalloc(st.st_size + 1);
 			read(formfile, inbuf, st.st_size);
 			inbuf[st.st_size] = '\0';
 			close(formfile);
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 			output_parsed(stdout, inbuf, COL_RED, "acknowledge");
 			headfoot(stdout, "acknowledge", "", "footer", COL_RED);
 
-			free(inbuf);
+			xfree(inbuf);
 		}
 		return 0;
 	}

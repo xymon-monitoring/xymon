@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.143 2004-12-15 21:21:25 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.144 2005-01-15 17:38:55 henrik Exp $";
 
 #include <limits.h>
 #include <sys/types.h>
@@ -112,11 +112,11 @@ int checkalert(char *alertlist, char *test)
 
 	if (!alertlist) return 0;
 
-	testname = (char *) malloc(strlen(test)+3);
+	testname = (char *) xmalloc(strlen(test)+3);
 	sprintf(testname, ",%s,", test);
 	result = (strstr(alertlist, testname) ? 1 : 0);
 
-	free(testname);
+	xfree(testname);
 	return result;
 }
 
@@ -139,7 +139,7 @@ int checkpropagation(host_t *host, char *test, int color, int acked)
 
 	if (!host) return 1;
 
-	testname = (char *) malloc(strlen(test)+3);
+	testname = (char *) xmalloc(strlen(test)+3);
 	sprintf(testname, ",%s,", test);
 	if (acked) {
 		if (checknopropagation(testname, host->nopropacktests)) result = 0;
@@ -158,7 +158,7 @@ int checkpropagation(host_t *host, char *test, int color, int acked)
 		}
 	}
 
-	free(testname);
+	xfree(testname);
 	return result;
 }
 
@@ -217,9 +217,9 @@ bbgen_col_t *find_or_create_column(const char *testname, int create)
 	if (newcol == NULL) {
 		if (!create) return NULL;
 
-		newcol = (bbgen_col_t *) malloc(sizeof(bbgen_col_t));
-		newcol->name = strdup(testname);
-		newcol->listname = (char *)malloc(strlen(testname)+1+2); sprintf(newcol->listname, ",%s,", testname);
+		newcol = (bbgen_col_t *) xmalloc(sizeof(bbgen_col_t));
+		newcol->name = xstrdup(testname);
+		newcol->listname = (char *)xmalloc(strlen(testname)+1+2); sprintf(newcol->listname, ",%s,", testname);
 
 		/* No need to maintain this list in order */
 		if (colhead == NULL) {

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: stackio.c,v 1.1 2004-10-30 15:31:37 henrik Exp $";
+static char rcsid[] = "$Id: stackio.c,v 1.2 2005-01-15 17:39:50 henrik Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -19,9 +19,7 @@ static char rcsid[] = "$Id: stackio.c,v 1.1 2004-10-30 15:31:37 henrik Exp $";
 #include <string.h>
 #include <limits.h>
 
-#include "errormsg.h"
-#include "misc.h"
-#include "stackio.h"
+#include "libbbgen.h"
 
 typedef struct stackfd_t {
 	FILE *fd;
@@ -57,7 +55,7 @@ FILE *stackfopen(char *filename, char *mode)
 
 	newfd = fopen(stackfd_filename, stackfd_mode);
 	if (newfd != NULL) {
-		newitem = (stackfd_t *) malloc(sizeof(stackfd_t));
+		newitem = (stackfd_t *) xmalloc(sizeof(stackfd_t));
 		newitem->fd = newfd;
 		newitem->next = fdhead;
 		fdhead = newitem;
@@ -78,7 +76,7 @@ int stackfclose(FILE *fd)
 			olditem = fdhead;
 			fdhead = fdhead->next;
 			fclose(olditem->fd);
-			free(olditem);
+			xfree(olditem);
 		}
 		stackfd_base[0] = '\0';
 		stackfd_mode[0] = '\0';
@@ -88,7 +86,7 @@ int stackfclose(FILE *fd)
 		olditem = fdhead;
 		fdhead = fdhead->next;
 		result = fclose(olditem->fd);
-		free(olditem);
+		xfree(olditem);
 	}
 
 	return result;
@@ -115,7 +113,7 @@ static char *read_line_1(struct linebuf_t *buffer, FILE *stream, int *docontinue
 
 	if ((strlen(start) + strlen(buffer->buf) + 2) > buffer->buflen) {
 		buffer->buflen += MAX_LINE_LEN;
-		buffer->buf = (char *)realloc(buffer->buf, buffer->buflen);
+		buffer->buf = (char *)xrealloc(buffer->buf, buffer->buflen);
 	}
 
 	strcat(buffer->buf, start);
@@ -130,7 +128,7 @@ char *read_line(struct linebuf_t *buffer, FILE *stream)
 
 	if (buffer->buf == NULL) {
 		buffer->buflen = MAX_LINE_LEN;
-		buffer->buf = (char *)malloc(buffer->buflen);
+		buffer->buf = (char *)xmalloc(buffer->buflen);
 	}
 	*(buffer->buf) = '\0';
 

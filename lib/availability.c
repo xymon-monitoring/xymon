@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.30 2005-01-01 00:45:11 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.31 2005-01-15 17:38:55 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -76,7 +76,7 @@ void build_reportspecs(char *reporttime)
 	spec = strchr(reporttime, '=');
 	if (spec == NULL) return; 
 	
-	timespec = strdup(spec+1);
+	timespec = xstrdup(spec+1);
 	spec = strtok(timespec, ",");
 	while (spec) {
 		if (*spec == '*') {
@@ -98,7 +98,7 @@ void build_reportspecs(char *reporttime)
 		spec = strtok(NULL, ",");
 	}
 
-	free(timespec);
+	xfree(timespec);
 }
 
 unsigned long reportduration_oneday(int eventdow, time_t eventstart, time_t eventend)
@@ -206,7 +206,7 @@ char *parse_histlogfile(char *hostname, char *servicename, char *timespec)
 		strcpy(cause, "No historical status available");
 	}
 
-	return strdup(cause);
+	return xstrdup(cause);
 }
 
 int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
@@ -405,7 +405,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 				replog_t *newentry;
 				char *timespec = timename(l);
 
-				newentry = (replog_t *) malloc(sizeof(replog_t));
+				newentry = (replog_t *) xmalloc(sizeof(replog_t));
 				newentry->starttime = starttime;
 				newentry->duration = duration;
 				newentry->color = color;
@@ -416,7 +416,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 				}
 				else newentry->cause = "";
 
-				newentry->timespec = strdup(timespec);
+				newentry->timespec = xstrdup(timespec);
 				newentry->next = reploghead;
 				reploghead = newentry;
 			}
@@ -498,7 +498,7 @@ int history_color(FILE *fd, time_t snapshot, time_t *starttime, char **histlogna
 		color = -2;
 	}
 
-	*histlogname = strdup(timename(l));
+	*histlogname = xstrdup(timename(l));
 
 	return color;
 }
@@ -526,7 +526,7 @@ int main(int argc, char *argv[])
 	reportstart = atol(argv[2]);
 	reportend = atol(argv[3]);
 
-	hostsvc = strdup(argv[1]);
+	hostsvc = xstrdup(argv[1]);
 	p = strrchr(hostsvc, '.');
 	*p = '\0'; svc = p+1;
 	p = strrchr(hostsvc, '/'); host = p+1;

@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.23 2004-12-29 10:45:01 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.24 2005-01-15 17:38:55 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -125,10 +125,10 @@ void parse_query(void)
 			endyear = atoi(val);
 		}
 		else if (argnmatch(token, "style")) {
-			style = strdup(val);
+			style = xstrdup(val);
 		}
 		else if (argnmatch(token, "suburl")) {
-			suburl = strdup(val);
+			suburl = xstrdup(val);
 		}
 
 		token = strtok(NULL, "&");
@@ -167,7 +167,7 @@ void parse_query(void)
 		starttime = tmp;
 	}
 
-	free(query);
+	xfree(query);
 }
 
 
@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
 			struct stat st;
 
 			fstat(formfile, &st);
-			inbuf = (char *) malloc(st.st_size + 1);
+			inbuf = (char *) xmalloc(st.st_size + 1);
 			read(formfile, inbuf, st.st_size);
 			inbuf[st.st_size] = '\0';
 			close(formfile);
@@ -262,7 +262,7 @@ int main(int argc, char *argv[])
 			output_parsed(stdout, inbuf, COL_BLUE, "report");
 			headfoot(stdout, "report", "", "footer", COL_BLUE);
 
-			free(inbuf);
+			xfree(inbuf);
 		}
 		return 0;
 	}

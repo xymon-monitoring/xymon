@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.24 2004-11-17 16:13:08 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.25 2005-01-15 17:38:55 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -404,15 +404,15 @@ static void parse_query(void)
 		if (argnmatch(token, "HOSTSVC")) {
 			char *p = strrchr(val, '.');
 
-			if (p) { *p = '\0'; service = strdup(p+1); }
-			hostname = strdup(val);
+			if (p) { *p = '\0'; service = xstrdup(p+1); }
+			hostname = xstrdup(val);
 			while ((p = strchr(hostname, ','))) *p = '.';
 		}
 		else if (argnmatch(token, "IP")) {
-			ip = strdup(val);
+			ip = xstrdup(val);
 		}
 		else if (argnmatch(token, "REPORTTIME")) {
-			reporttime = (char *) malloc(strlen(val)+strlen("REPORTTIME=")+1);
+			reporttime = (char *) xmalloc(strlen(val)+strlen("REPORTTIME=")+1);
 			sprintf(reporttime, "REPORTTIME=%s", val);
 		}
 		else if (argnmatch(token, "WARNPCT")) {
@@ -431,10 +431,10 @@ static void parse_query(void)
 			end = atol(val);
 		}
 		else if (argnmatch(token, "COLOR")) {
-			char *colstr = (char *) malloc(strlen(val)+2);
+			char *colstr = (char *) xmalloc(strlen(val)+2);
 			sprintf(colstr, "%s ", val);
 			color = parse_color(colstr);
-			free(colstr);
+			xfree(colstr);
 		}
 		else if (argnmatch(token, "RECENTGIFS")) {
 			use_recentgifs = atoi(val);
@@ -443,7 +443,7 @@ static void parse_query(void)
 		token = strtok(NULL, "&");
 	}
 
-	free(query);
+	xfree(query);
 }
 
 int main(int argc, char *argv[])

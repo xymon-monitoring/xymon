@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.2 2004-12-30 22:25:34 henrik Exp $";
+static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.3 2005-01-15 17:39:50 henrik Exp $";
 
 
 static int get_page_name_title(char *buf, char *key, char **name, char **title)
@@ -69,9 +69,9 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 			char *name, *title;
 
 			if (get_page_name_title(l, "page", &name, &title) == 0) {
-				newp = (pagelist_t *)malloc(sizeof(pagelist_t));
-				newp->pagepath = strdup(name);
-				newp->pagetitle = (title ? strdup(title) : NULL);
+				newp = (pagelist_t *)xmalloc(sizeof(pagelist_t));
+				newp->pagepath = xstrdup(name);
+				newp->pagetitle = (title ? xstrdup(title) : NULL);
 				newp->next = NULL;
 
 				pgtail->next = newp;
@@ -85,10 +85,10 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 			char *name, *title;
 
 			if (get_page_name_title(l, "subpage", &name, &title) == 0) {
-				newp = (pagelist_t *)malloc(sizeof(pagelist_t));
-				newp->pagepath = malloc(strlen(curtoppage->pagepath) + strlen(name) + 2);
+				newp = (pagelist_t *)xmalloc(sizeof(pagelist_t));
+				newp->pagepath = xmalloc(strlen(curtoppage->pagepath) + strlen(name) + 2);
 				sprintf(newp->pagepath, "%s/%s", curtoppage->pagepath, name);
-				newp->pagetitle = malloc(strlen(curtoppage->pagetitle) + strlen(title) + 2);
+				newp->pagetitle = xmalloc(strlen(curtoppage->pagetitle) + strlen(title) + 2);
 				sprintf(newp->pagetitle, "%s/%s", curtoppage->pagetitle, title);
 				newp->next = NULL;
 
@@ -108,10 +108,10 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 			}
 
 			if (parent && (get_page_name_title(title, "", &name, &title) == 0)) {
-				newp = (pagelist_t *)malloc(sizeof(pagelist_t));
-				newp->pagepath = malloc(strlen(parent->pagepath) + strlen(name) + 2);
+				newp = (pagelist_t *)xmalloc(sizeof(pagelist_t));
+				newp->pagepath = xmalloc(strlen(parent->pagepath) + strlen(name) + 2);
 				sprintf(newp->pagepath, "%s/%s", parent->pagepath, name);
-				newp->pagetitle = malloc(strlen(parent->pagetitle) + strlen(title) + 2);
+				newp->pagetitle = xmalloc(strlen(parent->pagetitle) + strlen(title) + 2);
 				sprintf(newp->pagetitle, "%s/%s", parent->pagetitle, title);
 				newp->next = NULL;
 
@@ -127,7 +127,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 			char clientname[4096];
 			char downtime[4096];
 
-			namelist_t *newitem = malloc(sizeof(namelist_t));
+			namelist_t *newitem = xmalloc(sizeof(namelist_t));
 			namelist_t *iwalk, *iprev;
 
 			/* Hostname beginning with '@' are "no-display" hosts. But we still want them. */
@@ -141,7 +141,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 
 			sprintf(newitem->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 
-			newitem->bbhostname = strdup(hostname);
+			newitem->bbhostname = xstrdup(hostname);
 			if (ip1 || ip2 || ip3 || ip4) newitem->preference = 1; else newitem->preference = 0;
 			newitem->clientname = newitem->bbhostname;
 			newitem->downtime = NULL;
@@ -152,15 +152,15 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 			startoftags = strchr(l, '#');
 			if (startoftags == NULL) startoftags = ""; else startoftags++;
 			startoftags += strspn(startoftags, " \t\r\n");
-			newitem->allelems = strdup(startoftags);
+			newitem->allelems = xstrdup(startoftags);
 			elemsize = 5;
-			newitem->elems = (char **)malloc((elemsize+1)*sizeof(char *));
+			newitem->elems = (char **)xmalloc((elemsize+1)*sizeof(char *));
 
 			tag = newitem->allelems; elemidx = 0;
 			while (tag && *tag) {
 				if (elemidx == elemsize) {
 					elemsize += 5;
-					newitem->elems = (char **)realloc(newitem->elems, (elemsize+1)*sizeof(char *));
+					newitem->elems = (char **)xrealloc(newitem->elems, (elemsize+1)*sizeof(char *));
 				}
 				newitem->elems[elemidx] = tag;
 
@@ -237,14 +237,14 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 			}
 		}
 		else if (sscanf(l, "dialup %s %d.%d.%d.%d %d", hostname, &ip1, &ip2, &ip3, &ip4, &banksize) == 6) {
-			namelist_t *newitem = calloc(1, sizeof(namelist_t));
+			namelist_t *newitem = xcalloc(1, sizeof(namelist_t));
 
 			sprintf(newitem->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
-			newitem->bbhostname = (char *)malloc(strlen("@dialup.") + strlen(hostname) + 1);
+			newitem->bbhostname = (char *)xmalloc(strlen("@dialup.") + strlen(hostname) + 1);
 			sprintf(newitem->bbhostname, "@dialup.%s", hostname);
 			newitem->clientname = newitem->bbhostname;
 			newitem->page = curpage;
-			newitem->elems = (char **)malloc(sizeof(char *));
+			newitem->elems = (char **)xmalloc(sizeof(char *));
 			newitem->elems[0] = NULL;
 			newitem->banksize = banksize;
 			newitem->next = NULL;

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns2.c,v 1.7 2004-10-30 15:46:20 henrik Exp $";
+static char rcsid[] = "$Id: dns2.c,v 1.8 2005-01-15 17:39:01 henrik Exp $";
 
 /*
  * All of the code for parsing DNS responses and formatting these into
@@ -286,7 +286,7 @@ static const unsigned char *display_question(const unsigned char *aptr,
 	 * of the question.
 	 */
 	if (aptr + QFIXEDSZ > abuf + alen) {
-		free(name);
+		xfree(name);
 		return NULL;
 	}
 
@@ -307,7 +307,7 @@ static const unsigned char *display_question(const unsigned char *aptr,
 	}
 	sprintf(msg, "\t%s\n", type_name(type));
 	addtobuffer(&response->msgbuf, &response->msglen, msg);
-	free(name);
+	xfree(name);
 	return aptr;
 }
 
@@ -330,7 +330,7 @@ static const unsigned char *display_rr(const unsigned char *aptr,
 	* part of the RR.
 	*/
 	if (aptr + RRFIXEDSZ > abuf + alen) {
-		free(name);
+		xfree(name);
 		return NULL;
 	}
 
@@ -341,7 +341,7 @@ static const unsigned char *display_rr(const unsigned char *aptr,
 	dlen = DNS_RR_LEN(aptr);
 	aptr += RRFIXEDSZ;
 	if (aptr + dlen > abuf + alen) {
-		free(name);
+		xfree(name);
 		return NULL;
 	}
 
@@ -354,7 +354,7 @@ static const unsigned char *display_rr(const unsigned char *aptr,
 	}
 	sprintf(msg, "\t%s", type_name(type));
 	addtobuffer(&response->msgbuf, &response->msglen, msg);
-	free(name);
+	xfree(name);
 
 	/* Display the RR data.  Don't touch aptr. */
 	switch (type) {
@@ -371,7 +371,7 @@ static const unsigned char *display_rr(const unsigned char *aptr,
 		if (status != ARES_SUCCESS) return NULL;
 		sprintf(msg, "\t%s.", name);
 		addtobuffer(&response->msgbuf, &response->msglen, msg);
-		free(name);
+		xfree(name);
 		break;
 
 	  case T_HINFO:
@@ -395,13 +395,13 @@ static const unsigned char *display_rr(const unsigned char *aptr,
 		if (status != ARES_SUCCESS) return NULL;
 		sprintf(msg, "\t%s.", name);
 		addtobuffer(&response->msgbuf, &response->msglen, msg);
-		free(name);
+		xfree(name);
 		p += len;
 		status = ares_expand_name(p, abuf, alen, &name, &len);
 		if (status != ARES_SUCCESS) return NULL;
 		sprintf(msg, "\t%s.", name);
 		addtobuffer(&response->msgbuf, &response->msglen, msg);
-		free(name);
+		xfree(name);
 		break;
 
 	  case T_MX:
@@ -413,7 +413,7 @@ static const unsigned char *display_rr(const unsigned char *aptr,
 		if (status != ARES_SUCCESS) return NULL;
 		sprintf(msg, "\t%s.", name);
 		addtobuffer(&response->msgbuf, &response->msglen, msg);
-		free(name);
+		xfree(name);
 		break;
 
 	  case T_SOA:
@@ -426,13 +426,13 @@ static const unsigned char *display_rr(const unsigned char *aptr,
 		if (status != ARES_SUCCESS) return NULL;
 		sprintf(msg, "\t%s.\n", name);
 		addtobuffer(&response->msgbuf, &response->msglen, msg);
-		free(name);
+		xfree(name);
 		p += len;
 		status = ares_expand_name(p, abuf, alen, &name, &len);
 		if (status != ARES_SUCCESS) return NULL;
 		sprintf(msg, "\t\t\t\t\t\t%s.\n", name);
 		addtobuffer(&response->msgbuf, &response->msglen, msg);
-		free(name);
+		xfree(name);
 		p += len;
 		if (p + 20 > aptr + dlen) return NULL;
 		sprintf(msg, "\t\t\t\t\t\t( %d %d %d %d %d )",
@@ -485,7 +485,7 @@ static const unsigned char *display_rr(const unsigned char *aptr,
 		if (status != ARES_SUCCESS) return NULL;
 		sprintf(msg, "\t%s.", name);
 		addtobuffer(&response->msgbuf, &response->msglen, msg);
-		free(name);
+		xfree(name);
 		break;
       
 	  default:

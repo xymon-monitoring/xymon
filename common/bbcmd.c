@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcmd.c,v 1.3 2004-12-30 22:25:34 henrik Exp $";
+static char rcsid[] = "$Id: bbcmd.c,v 1.4 2005-01-15 17:39:19 henrik Exp $";
 
 #include <sys/types.h>
 #include <string.h>
@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 	char **cmdargs = NULL;
 	int argcount = 0;
 
-	cmdargs = (char **) calloc(argc+2, sizeof(char *));
+	cmdargs = (char **) xcalloc(argc+2, sizeof(char *));
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
@@ -39,10 +39,10 @@ int main(int argc, char *argv[])
 		}
 		else {
 			if (argcount == 0) {
-				cmdargs[0] = cmd = strdup(expand_env(argv[argi]));
+				cmdargs[0] = cmd = xstrdup(expand_env(argv[argi]));
 				argcount = 1;
 			}
-			else cmdargs[argcount++] = strdup(expand_env(argv[argi]));
+			else cmdargs[argcount++] = xstrdup(expand_env(argv[argi]));
 		}
 	}
 

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.7 2005-01-09 21:55:51 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.8 2005-01-15 17:39:50 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -23,9 +23,7 @@ static char rcsid[] = "$Id: headfoot.c,v 1.7 2005-01-09 21:55:51 henrik Exp $";
 #include <string.h>
 #include <fcntl.h>
 
-#include "color.h"
-#include "errormsg.h"
-#include "headfoot.h"
+#include "libbbgen.h"
 #include "version.h"
 
 int	unpatched_bbd = 0;
@@ -68,14 +66,14 @@ void sethostenv_snapshot(time_t snapshot)
 
 void sethostenv_histlog(char *histtime)
 {
-	if (hostenv_logtime) free(hostenv_logtime);
-	hostenv_logtime = strdup(histtime);
+	if (hostenv_logtime) xfree(hostenv_logtime);
+	hostenv_logtime = xstrdup(histtime);
 }
 
 void sethostenv_template(char *dir)
 {
-	if (hostenv_templatedir) free(hostenv_templatedir);
-	hostenv_templatedir = strdup(dir);
+	if (hostenv_templatedir) xfree(hostenv_templatedir);
+	hostenv_templatedir = xstrdup(dir);
 }
 
 void sethostenv_refresh(int n)
@@ -240,7 +238,7 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 	char	*hfpath;
 
 	if (getenv("HOBBITDREL") == NULL) {
-		char *hobbitdrel = (char *)malloc(12+strlen(VERSION));
+		char *hobbitdrel = (char *)xmalloc(12+strlen(VERSION));
 		sprintf(hobbitdrel, "HOBBITDREL=%s", VERSION);
 		putenv(hobbitdrel);
 	}
@@ -256,7 +254,7 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 	 * most detailed one, and working up towards the standard "web/bb_TYPE" file.
 	 */
 
-	hfpath = strdup(pagepath); 
+	hfpath = xstrdup(pagepath); 
 	/* Trim off excess trailing slashes */
 	while (*(hfpath + strlen(hfpath) - 1) == '/') {
 		*(hfpath + strlen(hfpath) - 1) = '\0';
@@ -296,7 +294,7 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 			*p = '\0';
 		}
 	}
-	free(hfpath);
+	xfree(hfpath);
 
 	if (fd == -1) {
 		/* Fall back to default head/foot file. */
@@ -313,14 +311,14 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 
 	if (fd != -1) {
 		fstat(fd, &st);
-		templatedata = (char *) malloc(st.st_size + 1);
+		templatedata = (char *) xmalloc(st.st_size + 1);
 		read(fd, templatedata, st.st_size);
 		templatedata[st.st_size] = '\0';
 		close(fd);
 
 		output_parsed(output, templatedata, bgcolor, pagetype);
 
-		free(templatedata);
+		xfree(templatedata);
 	}
 	else {
 		fprintf(output, "<HTML><BODY> \n <HR size=4> \n <BR>%s is either missing or invalid, please create this file with your custom header<BR> \n<HR size=4>", filename);

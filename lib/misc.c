@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.17 2004-12-30 22:25:34 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.18 2005-01-15 17:39:50 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -21,9 +21,7 @@ static char rcsid[] = "$Id: misc.c,v 1.17 2004-12-30 22:25:34 henrik Exp $";
 #include <limits.h>
 #include <errno.h>
 
-#include "errormsg.h"
-#include "misc.h"
-#include "stackio.h"
+#include "libbbgen.h"
 #include "version.h"
 
 enum ostype_t get_ostype(char *osname)
@@ -115,7 +113,7 @@ void loadenv(char *envfile)
 			grok_input(l);
 
 			if (strlen(l) && strchr(l, '=')) {
-				oneenv = strdup(expand_env(l));
+				oneenv = xstrdup(expand_env(l));
 				p = strchr(oneenv, '=');
 				if (*(p+1) == '"') {
 					/* Move string over the first '"' */
@@ -131,7 +129,7 @@ void loadenv(char *envfile)
 		/* Always provide the HOBBITDREL variable */
 		if (getenv("HOBBITDREL") == NULL) {
 			sprintf(l, "HOBBITDREL=%s", VERSION);
-			oneenv = strdup(l);
+			oneenv = xstrdup(l);
 			putenv(oneenv);
 		}
 
@@ -139,7 +137,7 @@ void loadenv(char *envfile)
 		if (getenv("MACHINE") == NULL && getenv("MACHINEDOTS")) {
 			sprintf(l, "MACHINE=%s", getenv("MACHINEDOTS"));
 			p = l; while ((p = strchr(p, '.')) != NULL) *p = ',';
-			oneenv = strdup(l);
+			oneenv = xstrdup(l);
 			putenv(oneenv);
 		}
 	}
@@ -154,7 +152,7 @@ char *getenv_default(char *envname, char *envdefault, char **buf)
 
 	val = getenv(envname);
 	if (!val) {
-		val = (char *)malloc(strlen(envname) + strlen(envdefault) + 2);
+		val = (char *)xmalloc(strlen(envname) + strlen(envdefault) + 2);
 		sprintf(val, "%s=%s", envname, envdefault);
 		putenv(val);
 		/* Dont free the string - it must be kept for the environment to work */
@@ -175,11 +173,11 @@ char *expand_env(char *s)
 
 	if (result == NULL) {
 		resultlen = 4096;
-		result = (char *)malloc(resultlen);
+		result = (char *)xmalloc(resultlen);
 	}
 	*result = '\0';
 
-	sCopy = strdup(s);
+	sCopy = xstrdup(s);
 	bot = sCopy;
 	do {
 		tstart = strchr(bot, '$');
@@ -187,7 +185,7 @@ char *expand_env(char *s)
 
 		if ((strlen(result) + strlen(bot) + 1) > resultlen) {
 			resultlen += strlen(bot) + 4096;
-			result = (char *)realloc(result, resultlen);
+			result = (char *)xrealloc(result, resultlen);
 		}
 		strcat(result, bot);
 
@@ -220,7 +218,7 @@ char *expand_env(char *s)
 			if (envval) {
 				if ((strlen(result) + strlen(envval) + 1) > resultlen) {
 					resultlen += strlen(envval) + 4096;
-					result = (char *)realloc(result, resultlen);
+					result = (char *)xrealloc(result, resultlen);
 				}
 				strcat(result, envval);
 			}
@@ -229,7 +227,7 @@ char *expand_env(char *s)
 			bot = NULL;
 		}
 	} while (bot);
-	free(sCopy);
+	xfree(sCopy);
 
 	return result;
 }
@@ -240,11 +238,11 @@ char *commafy(char *hostname)
 	char *p;
 
 	if (s == NULL) {
-		s = strdup(hostname);
+		s = xstrdup(hostname);
 	}
 	else if (strlen(hostname) > strlen(s)) {
-		free(s);
-		s = strdup(hostname);
+		xfree(s);
+		s = xstrdup(hostname);
 	}
 	else {
 		strcpy(s, hostname);
@@ -283,12 +281,12 @@ void addtobuffer(char **buf, int *bufsz, char *newtext)
 {
 	if (*buf == NULL) {
 		*bufsz = strlen(newtext) + 4096;
-		*buf = (char *) malloc(*bufsz);
+		*buf = (char *) xmalloc(*bufsz);
 		**buf = '\0';
 	}
 	else if ((strlen(*buf) + strlen(newtext) + 1) > *bufsz) {
 		*bufsz += strlen(newtext) + 4096;
-		*buf = (char *) realloc(*buf, *bufsz);
+		*buf = (char *) xrealloc(*buf, *bufsz);
 	}
 
 	strcat(*buf, newtext);
@@ -484,7 +482,7 @@ int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int
 	result = 0;
 	if (banner) { 
 		bannersize = 4096;
-		*banner = (char *) malloc(bannersize); 
+		*banner = (char *) xmalloc(bannersize); 
 		**banner = '\0';
 		if (showcmd) sprintf(*banner, "Command: %s\n\n", cmd); 
 	}
@@ -499,7 +497,7 @@ int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int
 		if (banner) {
 			if ((strlen(l) + strlen(*banner)) > bannersize) {
 				bannersize += strlen(l) + 4096;
-				*banner = (char *) realloc(*banner, bannersize);
+				*banner = (char *) xrealloc(*banner, bannersize);
 			}
 			strcat(*banner, l);
 		}
@@ -534,7 +532,7 @@ void do_bbext(FILE *output, char *extenv, char *family)
 		return;
 	}
 
-	bbexts = strdup(p);
+	bbexts = xstrdup(p);
 	p = strtok(bbexts, "\t ");
 
 	while (p) {
@@ -552,7 +550,7 @@ void do_bbext(FILE *output, char *extenv, char *family)
 		p = strtok(NULL, "\t ");
 	}
 
-	free(bbexts);
+	xfree(bbexts);
 }
 
 char **setup_commandargs(char *cmdline, char **cmd)
@@ -573,8 +571,8 @@ char **setup_commandargs(char *cmdline, char **cmd)
 	int argdone, inquote, inhyphen;
 	char savech;
 
-	argsz = 1; cmdargs = (char **) malloc((1+argsz)*sizeof(char *)); argi = 0;
-	cmdcp = strdup(expand_env(cmdline));
+	argsz = 1; cmdargs = (char **) xmalloc((1+argsz)*sizeof(char *)); argi = 0;
+	cmdcp = xstrdup(expand_env(cmdline));
 
 	barg = cmdcp;
 	do {
@@ -596,14 +594,14 @@ char **setup_commandargs(char *cmdline, char **cmd)
 		if (eqchar && (eqchar == (barg + strspn(barg, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")))) {
 			/* It's an environment definition */
 			dprintf("Setting environment: %s\n", barg);
-			envsetting = strdup(barg);
+			envsetting = xstrdup(barg);
 			putenv(envsetting);
 		}
 		else {
 			if (argi == argsz) {
-				argsz++; cmdargs = (char **) realloc(cmdargs, (1+argsz)*sizeof(char *));
+				argsz++; cmdargs = (char **) xrealloc(cmdargs, (1+argsz)*sizeof(char *));
 			}
-			cmdargs[argi++] = strdup(barg);
+			cmdargs[argi++] = xstrdup(barg);
 		}
 
 		*earg = savech;
@@ -611,7 +609,7 @@ char **setup_commandargs(char *cmdline, char **cmd)
 	} while (*barg);
 	cmdargs[argi] = NULL;
 
-	free(cmdcp);
+	xfree(cmdcp);
 
 	*cmd = cmdargs[0];
 	return cmdargs;

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.6 2005-01-04 09:39:04 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.7 2005-01-15 17:39:50 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -20,8 +20,7 @@ static char rcsid[] = "$Id: timefunc.c,v 1.6 2005-01-04 09:39:04 henrik Exp $";
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "errormsg.h"
-#include "timefunc.h"
+#include "libbbgen.h"
 
 char timestamp[30];
 void init_timestamp(void)
@@ -128,12 +127,12 @@ int within_sla(char *l, char *tag, int defresult)
 	int starttime,endtime,curtime;
 
 	if (strlen(tag)) {
-		tagspec = (char *) malloc(strlen(tag)+2);
+		tagspec = (char *) xmalloc(strlen(tag)+2);
 		sprintf(tagspec, "%s=", tag);
 		p = strstr(l, tagspec);
 	}
 	else {
-		tagspec = strdup("");
+		tagspec = xstrdup("");
 		p = l;
 	}
 
@@ -186,7 +185,7 @@ int within_sla(char *l, char *tag, int defresult)
 		/* No SLA -> use the default */
 		result = defresult;
 	}
-	free(tagspec);
+	xfree(tagspec);
 
 	return result;
 }
@@ -209,14 +208,14 @@ int periodcoversnow(char *tag)
 
         if ((tag == NULL) || (*tag != '-')) return 1;
 
-	dayspec = (char *) malloc(strlen(tag)+1+12); /* Leave room for expanding 'W' and '*' */
-	starttime = (char *) malloc(strlen(tag)+1); 
-	endtime = (char *) malloc(strlen(tag)+1); 
+	dayspec = (char *) xmalloc(strlen(tag)+1+12); /* Leave room for expanding 'W' and '*' */
+	starttime = (char *) xmalloc(strlen(tag)+1); 
+	endtime = (char *) xmalloc(strlen(tag)+1); 
 
 	strcpy(dayspec, (tag+1));
 	for (p=dayspec; ((*p == 'W') || (*p == '*') || ((*p >= '0') && (*p <= '6'))); p++) ;
 	if (*p != '-') {
-		free(endtime); free(starttime); free(dayspec); return 1;
+		xfree(endtime); xfree(starttime); xfree(dayspec); return 1;
 	}
 	*p = '\0';
 
@@ -267,7 +266,7 @@ int periodcoversnow(char *tag)
 
 	result = 1;
 out:
-	free(endtime); free(starttime); free(dayspec); 
+	xfree(endtime); xfree(starttime); xfree(dayspec); 
 	return result;
 }
 

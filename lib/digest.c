@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: digest.c,v 1.4 2004-12-08 11:51:04 henrik Exp $";
+static char rcsid[] = "$Id: digest.c,v 1.5 2005-01-15 17:39:50 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -21,8 +21,7 @@ static char rcsid[] = "$Id: digest.c,v 1.4 2004-12-08 11:51:04 henrik Exp $";
 #include <openssl/evp.h>
 #endif
 
-#include "digest.h"
-#include "errormsg.h"
+#include "libbbgen.h"
 
 digestctx_t *digest_init(char *digest)
 {
@@ -37,17 +36,17 @@ digestctx_t *digest_init(char *digest)
 		dgst_init_done = 1;
 	}
 
-	ctx = (digestctx_t *) malloc(sizeof(digestctx_t));
-	ctx->digestname = (char *)malloc(strlen(digest)+1);
+	ctx = (digestctx_t *) xmalloc(sizeof(digestctx_t));
+	ctx->digestname = (char *)xmalloc(strlen(digest)+1);
 	strcpy(ctx->digestname, digest);
 	md = EVP_get_digestbyname(ctx->digestname);
 
 	if (!md) {
-		free(ctx);
+		xfree(ctx);
 		return NULL;
         }
 
-	ctx->mdctx = (void *)malloc(sizeof(EVP_MD_CTX));
+	ctx->mdctx = (void *)xmalloc(sizeof(EVP_MD_CTX));
 #if OPENSSL_VERSION_NUMBER >= 0x00907000L
 	EVP_MD_CTX_init(ctx->mdctx);
 	EVP_DigestInit_ex(ctx->mdctx, md, NULL);
@@ -100,10 +99,10 @@ char *digest_done(digestctx_t *ctx)
 	EVP_cleanup();
 #endif
 
-	free(ctx->mdctx);
-	free(ctx);
+	xfree(ctx->mdctx);
+	xfree(ctx);
 
-	result = (char *) malloc(strlen(md_string)+1);
+	result = (char *) xmalloc(strlen(md_string)+1);
 	strcpy(result, md_string);
 #endif
 

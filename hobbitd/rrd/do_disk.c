@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.6 2004-11-24 12:50:51 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.7 2005-01-15 17:38:33 henrik Exp $";
 
 static char *disk_params[] = { "rrdcreate", rrdfn, "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", 
 				rra1, rra2, rra3, rra4, NULL };
@@ -43,32 +43,32 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		if (strstr(curline, " red ") || strstr(curline, " yellow ")) continue;
 
 		for (i=0; (i<20); i++) columns[i] = "";
-		fsline = strdup(curline); i = 0; p = strtok(fsline, " ");
+		fsline = xstrdup(curline); i = 0; p = strtok(fsline, " ");
 		while (p && (i < 20)) { columns[i++] = p; p = strtok(NULL, " "); }
 
 		switch (dsystype) {
 		  case DT_IRIX:
-			diskname = strdup(columns[6]);
+			diskname = xstrdup(columns[6]);
 			p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
 			p = strchr(columns[5], '%'); if (p) *p = ' ';
 			pused = atoi(columns[5]);
 			aused = atoi(columns[3]);
 			break;
 		  case DT_AS400:
-			diskname = strdup(",DASD");
+			diskname = xstrdup(",DASD");
 			p = strchr(columns[12], '%'); if (p) *p = ' ';
 			pused = atoi(columns[12]);
 			aused = 0; /* Not available */
 			break;
 		  case DT_NT:
-			diskname = malloc(strlen(columns[0])+2);
+			diskname = xmalloc(strlen(columns[0])+2);
 			sprintf(diskname, ",%s", columns[0]);
 			p = strchr(columns[4], '%'); if (p) *p = ' ';
 			pused = atoi(columns[4]);
 			aused = atoi(columns[2]);
 			break;
 		  case DT_UNIX:
-			diskname = strdup(columns[5]);
+			diskname = xstrdup(columns[5]);
 			p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
 			p = strchr(columns[4], '%'); if (p) *p = ' ';
 			pused = atoi(columns[4]);
@@ -78,7 +78,7 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 		if (diskname && (pused != -1)) {
 			if (strcmp(diskname, ",") == 0) {
-				diskname = realloc(diskname, 6);
+				diskname = xrealloc(diskname, 6);
 				strcpy(diskname, ",root");
 			}
 
@@ -86,7 +86,7 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			sprintf(rrdvalues, "%d:%d:%lu", (int)tstamp, pused, aused);
 			create_and_update_rrd(hostname, rrdfn, disk_params, update_params);
 		}
-		if (diskname) { free(diskname); diskname = NULL; }
+		if (diskname) { xfree(diskname); diskname = NULL; }
 
 		if (eoln) *eoln = '\n';
 	}

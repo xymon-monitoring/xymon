@@ -17,7 +17,7 @@
 // reentrant red-black tree
 
 #include <stdlib.h>
-#include "rbtr.h"
+#include "libbbgen.h"
 
 typedef enum { BLACK, RED } NodeColor;
 
@@ -42,7 +42,7 @@ typedef struct RbtTag {
 RbtHandle rbtNew(int(*rbtCompare)(void *a, void *b)) {
     RbtType *rbt;
     
-    if ((rbt = (RbtType *)malloc(sizeof(RbtType))) == NULL) {
+    if ((rbt = (RbtType *)xmalloc(sizeof(RbtType))) == NULL) {
         return NULL;
     }
 
@@ -65,14 +65,14 @@ static void deleteTree(RbtHandle h, NodeType *p) {
     if (p == SENTINEL) return;
     deleteTree(h, p->left);
     deleteTree(h, p->right);
-    free(p);
+    xfree(p);
 }
 
 void rbtDelete(RbtHandle h) {
     RbtType *rbt = h;
 
     deleteTree(h, rbt->root);
-    free(rbt);
+    xfree(rbt);
 }
 
 static void rotateLeft(RbtType *rbt, NodeType *x) {
@@ -202,7 +202,7 @@ RbtStatus rbtInsert(RbtHandle h, void *key, void *val) {
     }
 
     // setup new node
-    if ((x = malloc (sizeof(*x))) == 0)
+    if ((x = xmalloc (sizeof(*x))) == 0)
         return RBT_STATUS_MEM_EXHAUSTED;
     x->parent = parent;
     x->left = SENTINEL;
@@ -323,7 +323,7 @@ RbtStatus rbtErase(RbtHandle h, RbtIterator i) {
     if (y->color == BLACK)
         deleteFixup (rbt, x);
 
-    free (y);
+    xfree(y);
 
     return RBT_STATUS_OK;
 }

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: rssgen.c,v 1.10 2004-10-30 15:39:13 henrik Exp $";
+static char rcsid[] = "$Id: rssgen.c,v 1.11 2005-01-15 17:38:55 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -42,7 +42,7 @@ static void initial_rss_setup(void)
 
 	if (hasrun) return;
 
-	if (getenv("BBRSSTITLE")) rsstitle = strdup(getenv("BBRSSTITLE"));
+	if (getenv("BBRSSTITLE")) rsstitle = xstrdup(getenv("BBRSSTITLE"));
 
 	if      (strcmp(rssversion, "0.91") == 0) rssver = RSS091;
 	else if (strcmp(rssversion, "0.92") == 0) rssver = RSS092;
@@ -193,7 +193,7 @@ void do_netscape_sidebar(char *nssidebarfilename, host_t *hosts)
 
 	if (nssidebarfilename == NULL) return;
 
-	if (getenv("BBRSSTITLE")) rsstitle = strdup(getenv("BBRSSTITLE"));
+	if (getenv("BBRSSTITLE")) rsstitle = xstrdup(getenv("BBRSSTITLE"));
 
 	ttlvalue = (getenv("BBSLEEP") ? atoi(getenv("BBSLEEP")) : 300);
 

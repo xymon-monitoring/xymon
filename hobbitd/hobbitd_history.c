@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.26 2004-12-30 22:25:34 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.27 2005-01-15 17:38:28 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (getenv("BBHIST") && (histdir == NULL)) {
-		histdir = strdup(getenv("BBHIST"));
+		histdir = xstrdup(getenv("BBHIST"));
 	}
 	if (histdir == NULL) {
 		errprintf("No history directory given, aborting\n");
@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (save_histlogs && (histlogdir == NULL) && getenv("BBHISTLOGS")) {
-		histlogdir = strdup(getenv("BBHISTLOGS"));
+		histlogdir = xstrdup(getenv("BBHISTLOGS"));
 	}
 	if (save_histlogs && (histlogdir == NULL)) {
 		errprintf("No history-log directory given, aborting\n");
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
 				char fname[PATH_MAX];
 				FILE *histlogfd;
 
-				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
+				p = hostdash = xstrdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
 				sprintf(fname, "%s/%s", histlogdir, hostdash);
 				mkdir(fname, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
 				p = fname + sprintf(fname, "%s/%s/%s", histlogdir, hostdash, testname);
@@ -172,10 +172,10 @@ int main(int argc, char *argv[])
 				else {
 					errprintf("Cannot create histlog file '%s' : %s\n", fname, strerror(errno));
 				}
-				free(hostdash);
+				xfree(hostdash);
 			}
 
-			p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
+			p = hostnamecommas = xstrdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
 
 			if (save_statusevents) {
 				char statuslogfn[PATH_MAX];
@@ -268,7 +268,7 @@ int main(int argc, char *argv[])
 				if (strcmp(oldcol, colorname(newcolor)) == 0) {
 					/* We wont update history unless the color did change. */
 					errprintf("Will not update %s - color unchanged (%s)\n", statuslogfn, oldcol);
-					if (hostnamecommas) free(hostnamecommas);
+					if (hostnamecommas) xfree(hostnamecommas);
 					if (statuslogfd) fclose(statuslogfd);
 					continue;
 				}
@@ -330,7 +330,7 @@ int main(int argc, char *argv[])
 				fflush(alleventsfd);
 			}
 
-			free(hostnamecommas);
+			xfree(hostnamecommas);
 		}
 		else if ((metacount > 3) && ((strncmp(items[0], "@@drophost", 10) == 0))) {
 			/* @@drophost|timestamp|sender|hostname */
@@ -342,10 +342,10 @@ int main(int argc, char *argv[])
 				char testdir[PATH_MAX];
 
 				/* Remove all directories below the host-specific histlog dir */
-				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
+				p = hostdash = xstrdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
 				sprintf(testdir, "%s/%s", histlogdir, hostdash);
 				dropdirectory(testdir, 1);
-				free(hostdash);
+				xfree(hostdash);
 			}
 
 			if (save_hostevents) {
@@ -366,8 +366,8 @@ int main(int argc, char *argv[])
 				struct stat st;
 
 				/* Remove bbvar/hist/host,name.* */
-				p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
-				hostlead = malloc(strlen(hostname) + 2);
+				p = hostnamecommas = xstrdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
+				hostlead = xmalloc(strlen(hostname) + 2);
 				strcpy(hostlead, hostnamecommas); strcat(hostlead, ".");
 
 				dirfd = opendir(histdir);
@@ -383,8 +383,8 @@ int main(int argc, char *argv[])
 					closedir(dirfd);
 				}
 
-				free(hostlead);
-				free(hostnamecommas);
+				xfree(hostlead);
+				xfree(hostnamecommas);
 			}
 		}
 		else if ((metacount > 4) && ((strncmp(items[0], "@@droptest", 10) == 0))) {
@@ -397,10 +397,10 @@ int main(int argc, char *argv[])
 				char *hostdash;
 				char testdir[PATH_MAX];
 
-				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
+				p = hostdash = xstrdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
 				sprintf(testdir, "%s/%s/%s", histlogdir, hostdash, testname);
 				dropdirectory(testdir, 1);
-				free(hostdash);
+				xfree(hostdash);
 			}
 
 			if (save_statusevents) {
@@ -408,10 +408,10 @@ int main(int argc, char *argv[])
 				char statuslogfn[PATH_MAX];
 				struct stat st;
 
-				p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
+				p = hostnamecommas = xstrdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
 				sprintf(statuslogfn, "%s/%s.%s", histdir, hostnamecommas, testname);
 				if ((stat(statuslogfn, &st) == 0) && S_ISREG(st.st_mode)) unlink(statuslogfn);
-				free(hostnamecommas);
+				xfree(hostnamecommas);
 			}
 		}
 		else if ((metacount > 4) && ((strncmp(items[0], "@@renamehost", 12) == 0))) {
@@ -427,13 +427,13 @@ int main(int argc, char *argv[])
 				char olddir[PATH_MAX];
 				char newdir[PATH_MAX];
 
-				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
-				p = newhostdash = strdup(newhostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
+				p = hostdash = xstrdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
+				p = newhostdash = xstrdup(newhostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
 				sprintf(olddir, "%s/%s", histlogdir, hostdash);
 				sprintf(newdir, "%s/%s", histlogdir, newhostdash);
 				rename(olddir, newdir);
-				free(newhostdash);
-				free(hostdash);
+				xfree(newhostdash);
+				xfree(hostdash);
 			}
 
 			if (save_hostevents) {
@@ -453,11 +453,11 @@ int main(int argc, char *argv[])
 				char statuslogfn[PATH_MAX];
 				char newlogfn[PATH_MAX];
 
-				p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
-				hostlead = malloc(strlen(hostname) + 2);
+				p = hostnamecommas = xstrdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
+				hostlead = xmalloc(strlen(hostname) + 2);
 				strcpy(hostlead, hostnamecommas); strcat(hostlead, ".");
 
-				p = newhostnamecommas = strdup(newhostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
+				p = newhostnamecommas = xstrdup(newhostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
 
 
 				dirfd = opendir(histdir);
@@ -473,9 +473,9 @@ int main(int argc, char *argv[])
 					closedir(dirfd);
 				}
 
-				free(newhostnamecommas);
-				free(hostlead);
-				free(hostnamecommas);
+				xfree(newhostnamecommas);
+				xfree(hostlead);
+				xfree(hostnamecommas);
 			}
 		}
 		else if ((metacount > 5) && (strncmp(items[0], "@@renametest", 12) == 0)) {
@@ -491,11 +491,11 @@ int main(int argc, char *argv[])
 				char olddir[PATH_MAX];
 				char newdir[PATH_MAX];
 
-				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
+				p = hostdash = xstrdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
 				sprintf(olddir, "%s/%s/%s", histlogdir, hostdash, testname);
 				sprintf(newdir, "%s/%s/%s", histlogdir, hostdash, newtestname);
 				rename(olddir, newdir);
-				free(hostdash);
+				xfree(hostdash);
 			}
 
 			if (save_statusevents) {
@@ -503,11 +503,11 @@ int main(int argc, char *argv[])
 				char statuslogfn[PATH_MAX];
 				char newstatuslogfn[PATH_MAX];
 
-				p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
+				p = hostnamecommas = xstrdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
 				sprintf(statuslogfn, "%s/%s.%s", histdir, hostnamecommas, testname);
 				sprintf(newstatuslogfn, "%s/%s.%s", histdir, hostnamecommas, newtestname);
 				rename(statuslogfn, newstatuslogfn);
-				free(hostnamecommas);
+				xfree(hostnamecommas);
 			}
 		}
 		else if (strncmp(items[0], "@@shutdown", 10) == 0) {
