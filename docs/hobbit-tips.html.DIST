@@ -5,39 +5,21 @@
 <body>
 <h1>Hobbit Tips and Tricks</h1>
 
-<p>Here you will find out how to do some of the more common things
-with Hobbit.</p>
-
-<h3>Where can I download Hobbit?</h3>
-<p>Hobbit is not yet (January 6, 2005) released. A beta version is 
-available, contact me (henrik@hswn.dk) if you would like to help
-test it.</p>
-<p>The official release is expected by the end of January.</p>
-
-<h3>Hobbit mailing lists</h3>
-<p>There are two mailing lists about Hobbit:
+<p>Here you will find out how to do some common questions
+raised with Hobbit.<br>
 <ul>
-	<li>The <a href="mailto:hobbit@hswn.dk">hobbit@hswn.dk</a>
-	is for general discussion about Hobbit. To subscribe to the list,
-	send e-mail to <a href="mailto:hobbit-subscribe@hswn.dk">hobbit-subscribe@hswn.dk</a>.</li>
-	<li>The <a href="mailto:hobbit-announce@hswn.dk">hobbit-announce@hswn.dk</a>
-	list is an announcement-list where new versions of Hobbit will
-	be announced. You can subscribe to the list by sending an e-mail to
-	<a href="hobbit-announce-subscribe@hswn.dk">hobbit-announce-subscribe@hswn.dk</a>.</li>
-</ul>
+	<li><a href="#noclient">Client side tests are missing</a></li>
+	<li><a href="#clientnames">Clients using odd hostnames</a></li>
+	<li><a href="#droprename">Renaming and deleting hosts</a></li>
+	<li><a href="#updatefreq">Updating more frequently</a></li>
+</ul></p>
 
-<p>If you have a specific problem with something that is not working,
-first check the <a href="known-issues.html">list of known issues</a>.
-If you don't find the answer there, post a message to the Hobbit
-mailing list - I try to answer questions about Hobbit in that forum.</p>
-
-<p><b>Please - do not post Hobbit questions on the Big Brother mailing list.</b>
-The people behind the Big Brother software have stated that they prefer 
-not to have Hobbit discussed on the Big Brother list.</p>
-
-
+<a name="noclient">
 <h3>My client-side tests dont show up on the webpages</h3>
-<p>The two most probable causes for this are:
+<p>Did you install a client ? It is not included with Hobbit, so you
+need to install the Big Brother client for client side tests.</p>
+
+<p>If you did, then the two most probable causes for this are:
 <ul>
 	<li>The client is using another hostname than what is in the bb-hosts file.<br>
 	Hobbit only cares about the hosts that are in the bb-hosts file, and
@@ -58,13 +40,15 @@ not to have Hobbit discussed on the Big Brother list.</p>
 	server.<br>
 	Other methods are also possible, e.g. <em>bbfetch</em> (available from
 	the <a href="http://www.deadcat.net/">www.deadcat.net</a> archive.
-</ul>
+</ul></p>
 
+<a name="clientnames">
 <h3>My silly clients are using a hostname different from the one in bb-hosts</h3>
 <p>Add a <tt>CLIENT:clienthostname</tt> tag to the host entry in the bb-hosts file,
 or re-configure the client to use the proper hostname.</p>
 
 
+<a name="droprename">
 <h3>Where are the bbrm and bbmv commands from Big Brother ?</h3>
 <p>They have been integrated into the Hobbit network daemon. See
 the next two questions.</p>
@@ -96,6 +80,7 @@ Then to move your historical data over to the new name, run
 </pre></p>
 
 
+<a name="updatefreq">
 <h3>I need the web-pages to update more frequently</h3>
 <p>The ~/server/etc/hobbitlaunch.cfg defines the update
 interval for all of the Hobbit programs. The default is for
