@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.46 2004-12-12 18:06:30 hstoerne Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.47 2004-12-21 17:03:18 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -675,6 +675,8 @@ void addtometa(char *p)
 
 void finish_status(void)
 {
+	int usebbgend = (strcmp(getenv_default("USEBBGEND", "FALSE", NULL), "TRUE") == 0);
+
 	if (debug) {
 		char *p = strchr(msgbuf, '\n');
 
@@ -690,13 +692,14 @@ void finish_status(void)
 			combo_add(msgbuf);
 			break;
 		default:
-			if (strcmp(getenv_default("USEBBGEND", "FALSE", NULL), "TRUE") == 0) {
-				/* Red, yellow and purple messages go out NOW. Or we get no alarms ... */
-				bbnocombocount++;
-				sendmessage(msgbuf, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+			if (usebbgend) {
+				/* bbgend takes anything in combos */
+				combo_add(msgbuf);
 			}
 			else {
-				combo_add(msgbuf);
+				/* Old bbd: Red, yellow and purple messages go out NOW. Or we get no alarms ... */
+				bbnocombocount++;
+				sendmessage(msgbuf, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
 			}
 			break;
 	}
