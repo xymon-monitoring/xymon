@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.7 2005-01-11 23:26:35 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.8 2005-02-02 22:16:21 henrik Exp $";
 
 static char *netstat_params[] = { "rrdcreate", rrdfn, 
 	                          "DS:udpInDatagrams:DERIVE:600:0:U", 
@@ -69,7 +69,7 @@ static char *netstat_linux_markers[] = {
 	"failed connection attempts",
 	"connection resets received",
 	"connections established",
-	"segments send out",
+	"segments send out",	/* Yes, they really do write "send" */
 	"segments received",
 	"",
 	"segments retransmited",
@@ -239,12 +239,14 @@ int do_netstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	  case OS_REDHAT:
 	  case OS_DEBIAN:
 	  case OS_DEBIAN3:
+	  case OS_RHEL3:
 		/* These are of the form "<value> <marker" */
 		datapart = strstr(datapart, "\nTcp:");	/* Skip to the start of "Tcp" (udp comes after) */
 		if (datapart) havedata = do_valbeforemarker(netstat_linux_markers, datapart, outp);
 		break;
 
 	  case OS_FREEBSD:
+	  case OS_NETBSD:
 		havedata = do_valbeforemarker(netstat_freebsd_markers, datapart, outp);
 		break;
 
