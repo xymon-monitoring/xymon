@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.78 2003-07-27 11:10:56 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.79 2003-08-04 11:49:15 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1297,6 +1297,29 @@ char *urldecode(char *envvar)
 
 	*pout = '\0';
 
+	return result;
+}
+
+char *urlencode(char *s)
+{
+	static char result[1024];
+	char *inp, *outp;
+
+	outp = result;
+	for (inp = s; (inp && *inp && (outp-result < sizeof(result)) ); inp++) {
+		if ( ( (*inp >= 'a') && (*inp <= 'z') ) ||
+		     ( (*inp >= 'A') && (*inp <= 'Z') ) ||
+		     ( (*inp >= '0') && (*inp <= '9') ) ) {
+			*outp = *inp;
+			outp++;
+		}
+		else {
+			sprintf(outp, "%%%0x", *inp);
+			outp += 3;
+		}
+	}
+
+	*outp = '\0';
 	return result;
 }
 
