@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.11 2004-11-25 15:05:02 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.12 2004-11-25 15:12:16 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -539,6 +539,8 @@ int main(int argc, char *argv[])
 	for (twalk = taskhead; (twalk); twalk = twalk->next) {
 		if (twalk->pid) kill(twalk->pid, SIGTERM);
 	}
+
+	if (pidfn) unlink(pidfn);
 
 	return 0;
 }
