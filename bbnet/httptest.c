@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.45 2003-08-26 21:07:28 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.46 2003-08-29 08:26:25 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -26,11 +26,11 @@ static char rcsid[] = "$Id: httptest.c,v 1.45 2003-08-26 21:07:28 henrik Exp $";
 #include "bbtest-net.h"
 #include "httptest.h"
 
-static FILE *logfd = NULL;
-
 char *http_library_version = NULL;
+
 static int can_ssl = 1;
 static int can_ldap = 0;
+static FILE *logfd = NULL;
 
 int init_http_library(void)
 {
@@ -237,7 +237,7 @@ void add_http_test(testitem_t *t)
 
 
 
-int statuscolor(testedhost_t *h, long status)
+static int statuscolor(testedhost_t *h, long status)
 {
 	int result;
 
