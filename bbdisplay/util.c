@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.104 2003-11-03 09:04:31 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.105 2003-11-11 13:01:56 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -910,23 +910,29 @@ int within_sla(char *l, char *tag, int defresult)
 		 * Now find the appropriate SLA definition.
 		 * We take advantage of the fixed (11 bytes + delimiter) length of each entry.
 		 */
-		while ( (!found) && (*slaspec != '\0') && (!isspace((unsigned int)*slaspec)) )
+		while ( (!found) && slaspec && (*slaspec != '\0') && (!isspace((unsigned int)*slaspec)) )
 		{
+			dprintf("Now checking slaspec='%s'", slaspec);
+
 			if ( (*slaspec == '*') || 						/* Any day */
                              (*slaspec == now->tm_wday+'0') ||					/* This day */
                              ((toupper((int)*slaspec) == 'W') && (now->tm_wday >= 1) && (now->tm_wday <=5)) )	/* Monday thru Friday */
 			{
 				/* Weekday matches */
-				dprintf("Now checking slaspec=%s\n", slaspec);
 				starttime = minutes(slaspec+2);
 				endtime = minutes(slaspec+7);
 				curtime = now->tm_hour*60+now->tm_min;
-				dprintf("start,end,current time = %d, %d, %d\n\n", starttime,endtime,curtime);
 				found = ((curtime >= starttime) && (curtime <= endtime));
-			};
+				dprintf("\tstart,end,current time = %d, %d, %d - found=%d\n", 
+					starttime,endtime,curtime,found);
+			}
+			else {
+				dprintf("\tWeekday does not match\n");
+			}
 
 			if (!found) {
-				slaspec +=12;
+				slaspec = strchr(slaspec, ',');
+				if (slaspec) slaspec++;
 			};
 		}
 		result = found;
