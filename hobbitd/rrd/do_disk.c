@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.15 2005-03-17 21:08:15 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.16 2005-03-22 17:32:02 henrik Exp $";
 
 static char *disk_params[] = { "rrdcreate", rrdfn, "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", 
 				rra1, rra2, rra3, rra4, NULL };
@@ -26,8 +26,8 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	else if (strstr(msg, "Filesystem")) dsystype = DT_NT;
 	else dsystype = DT_UNIX;
 
-	curline = msg; eoln = strchr(curline, '\n');
-	while (eoln) {
+	curline = msg;
+	while (curline)  {
 		char *fsline, *p;
 		char *columns[20];
 		int i;
@@ -35,7 +35,7 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		int pused = -1;
 		unsigned long long aused = 0;
 
-		curline = eoln+1; eoln = strchr(curline, '\n'); if (eoln) *eoln = '\0';
+		eoln = strchr(curline, '\n'); if (eoln) *eoln = '\0';
 
 		/* AS/400 reports must contain the word DASD */
 		if ((dsystype == DT_AS400) && (strstr(curline, "DASD") == NULL)) continue;
@@ -118,6 +118,8 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 		if (eoln) *eoln = '\n';
 		xfree(fsline);
+
+		curline = (eoln ? (eoln+1) : NULL);
 	}
 
 	return 0;
