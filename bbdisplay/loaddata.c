@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.21 2003-01-05 08:19:10 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.22 2003-01-10 08:41:02 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -270,7 +270,7 @@ state_t *init_state(const char *filename, int dopurple)
 
 		p = strchr(l, ' '); /* Skip old color */
 		sprintf(purplemsg, "status+0 %s.%s %s %s", commafy(hostname), testname,
-                        colorname(newstate->entry->color), p);
+                        colorname(newstate->entry->color), (p ? p : ""));
 
 		if (host) {
 			while (fgets(l, sizeof(l), fd)) {
