@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.61 2003-06-19 15:25:10 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.62 2003-06-20 12:29:49 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -354,8 +354,8 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 							getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
 					}
 					else {
-						fprintf(output, "<A HREF=\"%s/bb-replog.sh?HOSTSVC=%s.%s",
-							getenv("CGIBINURL"), commafy(h->hostname), e->column->name);
+						fprintf(output, "<A HREF=\"%s/bb-replog.sh?HOSTSVC=%s.%s&IP=%s",
+							getenv("CGIBINURL"), commafy(h->hostname), e->column->name, h->ip);
 						fprintf(output, "&COLOR=%s&PCT=%.2f&ST=%lu&END=%lu",
 							colorname(e->color), e->repinfo->availability, 
 							e->repinfo->reportstart, reportend);
