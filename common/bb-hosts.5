@@ -419,6 +419,14 @@ to use tests from the same host that the dependency is for. E.g.
 is valid; if both the http and the webmin tests fail, then webmin
 will be reported as clear.
 
+Note: The "depends" tag is evaluated on the BBNET server while
+running the network tests. It can therefore only refer to other
+network tests that are handled by the same BBNET server - there
+is currently no way to use the e.g. the status of locally
+run tests (disk, cpu, msgs) or network tests from other BBNET
+servers in a dependency definition. Such dependencies are
+silently ignored.
+
 .IP badTEST[-weekdays-starttime-endtime]:x:y:z
 Normally when a network test fails, the status changes to
 red immediately.  With a "badTEST:x:y:z" tag this behaviour changes:
