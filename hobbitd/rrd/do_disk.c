@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.17 2005-03-25 21:15:26 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.18 2005-03-28 09:05:19 henrik Exp $";
 
 static char *disk_params[] = { "rrdcreate", rrdfn, "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", 
 				rra1, rra2, rra3, rra4, NULL };
@@ -38,13 +38,13 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		eoln = strchr(curline, '\n'); if (eoln) *eoln = '\0';
 
 		/* AS/400 reports must contain the word DASD */
-		if ((dsystype == DT_AS400) && (strstr(curline, "DASD") == NULL)) continue;
+		if ((dsystype == DT_AS400) && (strstr(curline, "DASD") == NULL)) goto nextline;
 
 		/* All clients except AS/400 report the mount-point with slashes - ALSO Win32 clients. */
-		if ((dsystype != DT_AS400) && (strchr(curline, '/') == NULL)) continue;
+		if ((dsystype != DT_AS400) && (strchr(curline, '/') == NULL)) goto nextline;
 
-		if ((dsystype != DT_NETAPP) && (*curline == '&')) continue; /* red/yellow filesystems show up twice */
-		if ((dsystype != DT_NETAPP) && (strstr(curline, " red ") || strstr(curline, " yellow "))) continue;
+		if ((dsystype != DT_NETAPP) && (*curline == '&')) goto nextline; /* red/yellow filesystems show up twice */
+		if ((dsystype != DT_NETAPP) && (strstr(curline, " red ") || strstr(curline, " yellow "))) goto nextline;
 
 		for (i=0; (i<20); i++) columns[i] = "";
 		fsline = xstrdup(curline); i = 0; p = strtok(fsline, " ");
@@ -119,6 +119,7 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		if (eoln) *eoln = '\n';
 		xfree(fsline);
 
+nextline:
 		curline = (eoln ? (eoln+1) : NULL);
 	}
 
