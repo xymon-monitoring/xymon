@@ -157,6 +157,11 @@ typedef struct modembank_t {
 	int		*responses;
 } modembank_t;
 
+typedef struct dnstest_t {
+	int	testcount;
+	int	okcount;
+} dnstest_t;
+
 extern char *deptest_failed(testedhost_t *host, char *testname);
 
 #endif
