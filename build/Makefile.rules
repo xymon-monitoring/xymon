@@ -36,4 +36,4 @@ alert: alert.c debug.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f *.o *~ bbgen bbtest-web bbnethosts bbgmchosts alert
+	rm -f *.o *~ bbgen bbtest-web bbtest-net bbnethosts bbgmchosts alert
