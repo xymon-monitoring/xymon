@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.109 2005-02-03 22:33:01 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.110 2005-02-16 13:52:06 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -2502,6 +2502,7 @@ int main(int argc, char *argv[])
 		}
 
 		if ((last_stats_time + 300) <= now) {
+			static int msgshown = 0;
 			char *buf;
 			hobbitd_hostlist_t *h;
 			hobbitd_testlist_t *t;
@@ -2509,8 +2510,17 @@ int main(int argc, char *argv[])
 			int color;
 
 			buf = generate_stats();
-			get_hts(buf, "hobbitd", "", &h, &t, &log, &color, 1, 1);
-			handle_status(buf, "hobbitd", h->hostname, t->testname, log, color);
+			if (!h || !t || !log) {
+				if (!msgshown) {
+					errprintf("hobbitd servername MACHINE='%s' not listed in bb-hosts, dropping hobbitd status\n",
+						  xgetenv("MACHINE"));
+					msgshown = 1;
+				}
+			}
+			else {
+				get_hts(buf, "hobbitd", "", &h, &t, &log, &color, 1, 1);
+				handle_status(buf, "hobbitd", h->hostname, t->testname, log, color);
+			}
 			last_stats_time = now;
 			flush_errbuf();
 		}
