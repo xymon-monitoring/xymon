@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.17 2004-10-09 21:45:01 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.18 2004-10-10 09:30:59 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -109,21 +109,9 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 		return;
 	}
 
-	/* If any message is pending, wait until it has been noticed.... */
-	s.sem_num = 0;
-	s.sem_op = 0;  /* wait until all reads are done (semaphore is 0) */
-	s.sem_flg = 0;
-	dprintf("Waiting for readers to notice last message\n");
+	/* Wait for BOARDBUSY to go low */
+	s.sem_num = BOARDBUSY; s.sem_op = 0; s.sem_flg = 0;
 	n = semop(channel->semid, &s, 1);
-	dprintf("All readers have seen it (sem 0 is 0)\n");
-
-	/* ... and picked up. */
-	s.sem_num = 1;
-	s.sem_op = -clients;	/* Each client does an UP, so wait until we get it to 0 */
-	s.sem_flg = 0;
-	dprintf("Waiting for %d readers to finish with message\n", clients);
-	n = semop(channel->semid, &s, 1);
-	dprintf("Readers are done with last message\n");
 
 	/* All clear, post the message */
 	if (readymsg) {
@@ -199,10 +187,12 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 	}
 
 	/* Let the readers know it is there.  */
-	s.sem_num = 0;
-	s.sem_op = clients;
-	s.sem_flg = 0;
+	n = shmctl(channel->shmid, IPC_STAT, &chninfo);
+	clients = chninfo.shm_nattch-1;		/* Get it again, in case someone attached since last check */
 	dprintf("Posting message %u to %d readers\n", channel->seq, clients);
+	s.sem_num = BOARDBUSY; s.sem_op = clients; s.sem_flg = 0;		/* Up BOARDBUSY */
+	n = semop(channel->semid, &s, 1);
+	s.sem_num = GOCLIENT; s.sem_op = clients; s.sem_flg = 0; 		/* Up GOCLIENT */
 	n = semop(channel->semid, &s, 1);
 	dprintf("Message posted\n");
 
@@ -810,6 +800,7 @@ void do_message(conn_t *msg)
 	}
 	else if (strncmp(msg->buf, "summary", 7) == 0) {
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 1, 1);
+		/* FIXME - get_hts fails to pick up the right host/test name */
 		if (log && (color != -1)) {
 			handle_status(msg->buf, sender, h->hostname, t->testname, log, color);
 		}

@@ -4,6 +4,7 @@
 #include <sys/shm.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <sys/wait.h>
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -32,10 +33,22 @@ msg_t *head = NULL;
 msg_t *tail = NULL;
 
 static volatile int running = 1;
+static int childexit = -1;
 bbd_channel_t *channel = NULL;
 
 void sig_handler(int signum)
 {
+	switch (signum) {
+	  case SIGCHLD:
+		/* Our worker child died. Follow it to the grave */
+		wait(&childexit);
+		break;
+
+	  case SIGPIPE:
+		/* We lost the child */
+		break;
+	}
+
 	running = 0;
 }
 
@@ -116,11 +129,15 @@ int main(int argc, char *argv[])
 	}
 	/* Parent process continues */
 	close(pfd[0]);
+
+	/* We dont want to block when writing to the worker */
 	fcntl(pfd[1], F_SETFL, O_NONBLOCK);
 
 	setup_signalhandler("bbd_channel");
+	signal(SIGPIPE, sig_handler);
 	signal(SIGINT, sig_handler);
 	signal(SIGTERM, sig_handler);
+	signal(SIGCHLD, sig_handler);
 
 	/* Attach to the channel */
 	channel = setup_channel(cnid, 0);
@@ -129,26 +146,31 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	/* Start out by signaling that we're ready */
-	s.sem_num = 1; s.sem_op  = +1; s.sem_flg = 0;
-	n = semop(channel->semid, &s, 1); 
-
 	do {
-		/* Wait for a new message */
-		dprintf("Waiting for message\n");
-		s.sem_num = 0; s.sem_op  = -1; s.sem_flg = (head ? IPC_NOWAIT : 0);
+		/* 
+		 * Wait for GOCLIENT to go up.
+		 *
+		 * Note that we use IPC_NOWAIT if there are messages in the
+		 * queue, because then we just want to pick up a message if
+		 * there is one, and if not we want to continue pushing the
+		 * queued data to the worker.
+		 */
+		dprintf("Waiting for goclient\n");
+		s.sem_num = GOCLIENT; s.sem_op  = -1; s.sem_flg = (head ? IPC_NOWAIT : 0);
 		n = semop(channel->semid, &s, 1);
 		if (n == 0) {
-			dprintf("Got it\n");
-
 			/* Copy the message */
 			strcpy(buf, channel->channelbuf);
 
-			/* Let master know we got it */
-			s.sem_num = 1; s.sem_op  = +1; s.sem_flg = 0;
+			/* 
+			 * Let master know we got it by downing BOARDBUSY.
+			 * This should not block, since BOARDBUSY is upped
+			 * by the master just before he ups GOCLIENT.
+			 */
+			s.sem_num = BOARDBUSY; s.sem_op  = -1; s.sem_flg = 0;
 			n = semop(channel->semid, &s, 1);
-	
-			dprintf("Got msg: '%s'\n", buf);
+
+			dprintf("Got msg\n", buf);
 
 			newmsg = (msg_t *) malloc(sizeof(msg_t));
 			newmsg->buf = strdup(buf);
@@ -162,6 +184,15 @@ int main(int argc, char *argv[])
 				tail->next = newmsg;
 				tail = newmsg;
 			}
+
+			/* 
+			 * Wait until other clients on the same channel have picked up 
+			 * this message (GOCLIENT reaches 0).
+			 * This can block, but should not block for very long.
+			 */
+			dprintf("Waiting for goclient to drop\n");
+			s.sem_num = GOCLIENT; s.sem_op = 0; s.sem_flg = 0;
+			n = semop(channel->semid, &s, 1);
 		}
 		else {
 			if (errno != EAGAIN) {
@@ -170,6 +201,17 @@ int main(int argc, char *argv[])
 			}
 		}
 
+		/* 
+		 * We've picked up messages from the master. Now we 
+		 * must push them to the worker process. Since there 
+		 * is no way to hang off both a semaphore and select(),
+		 * this boils down to doing a kind of busy waiting.
+		 * In practice, the queue will be empty most of the
+		 * time and then we will just wait on the GOCHILD 
+		 * semaphore, so it isn't really much of a concern.
+		 *
+		 * Maybe it could be optimized via SIGIO ... 
+		 */
 		if (head) {
 			n = write(pfd[1], head->bufp, head->buflen);
 			if (n >= 0) {
@@ -183,18 +225,26 @@ int main(int argc, char *argv[])
 				}
 			}
 			else if (errno == EAGAIN) {
+				/*
+				 * Wait just a little while so we dont spin out of 
+				 * control when worker child is busy.
+				 */
 				usleep(5000);
 			}
 			else {
 				/* Write failed */
+				errprintf("Our child has failed and will not talk to us\n");
 				msg_t *tmp = head;
 				free(head->buf);
 				head = head->next;
 				free(tmp);
 			}
 		}
-
 	} while (running);
+
+	if (childexit != -1) {
+		errprintf("Worker process died with exit code %d, terminating\n", childexit);
+	}
 
 	/* Detach from channels */
 	close_channel(channel, 0);
