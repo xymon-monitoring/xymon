@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.26 2005-03-23 13:38:26 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.27 2005-03-24 07:24:38 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -35,7 +35,7 @@ static const char *bblinkfmt = "<br><A HREF=\"%s\"><IMG BORDER=0 SRC=\"%s&amp;gr
 
 static const char *hobbitlinkfmt = "<table summary=\"Graph\"><tr><td><A HREF=\"%s&amp;action=menu\"><IMG BORDER=0 SRC=\"%s&amp;graph=hourly&amp;action=view\" ALT=\"hobbit graph %s\"></A></td><td> <td align=\"left\" valign=\"top\"> <a href=\"%s&amp;graph=hourly&amp;action=selzoom\"> <img src=\"%s/zoom.gif\" border=0 alt=\"Zoom graph\" style='padding: 3px'> </a> </td></tr></table>\n";
 
-static const char *metafmt = "<RRDGraph>\n  <GraphLink><![CDATA[%s]]></GraphLink>\n  <GraphImage><![CDATA[%s&graph=hourly]]></GraphImage>\n</RRDGraph>\n";
+static const char *metafmt = "<RRDGraph>\n  <GraphLink><![CDATA[%s]]></GraphLink>\n  <GraphImage><![CDATA[%s&amp;graph=hourly]]></GraphImage>\n</RRDGraph>\n";
 
 /*
  * Define the mapping between BB columns and LARRD graphs.
@@ -317,7 +317,7 @@ char *larrd_graph_data(char *hostname, char *dispname, char *service,
 		      int wantmeta)
 {
 	if (wantmeta)
-		return larrd_graph_text(hostname, dispname, service, graphdef, itemcount, 1, 0, metafmt);
+		return larrd_graph_text(hostname, dispname, service, graphdef, itemcount, 1, 1, metafmt);
 	else if (hobbitd)
 		return larrd_graph_text(hostname, dispname, service, graphdef, itemcount, larrd043, hobbitd, hobbitlinkfmt);
 	else
