@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-csvinfo.c,v 1.10 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: bb-csvinfo.c,v 1.11 2005-02-03 13:56:58 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
         sethostenv(wantedname, "", "", colorname(bgcolor));
         headfoot(stdout, hffile, "", "header", bgcolor);
 
-	printf("<table align=center border=1>\n");
+	printf("<table align=center border=1 summary=\"Information table\">\n");
 
 	for (i=0; (headers[i]); i++) {
 		printf("<tr>\n");
