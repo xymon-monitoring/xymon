@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.14 2005-01-20 22:02:23 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.15 2005-02-09 16:18:59 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -105,7 +105,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 		fprintf(output, "%s", t_start);
 
 		/* Find token */
-		for (t_start = t_next; ((*t_next >= 'A') && (*t_next <= 'Z')); t_next++ ) ;
+		t_start = t_next;
+		t_next += strspn(t_next, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_");
 		savechar = *t_next; *t_next = '\0';
 
 		if (strcmp(t_start, "BBDATE") == 0) {
