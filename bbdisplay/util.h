@@ -41,6 +41,7 @@ extern int checkpropagation(host_t *host, char *test, int color);
 extern link_t *find_link(const char *name);
 extern char *columnlink(link_t *link, char *colname);
 extern char *hostlink(link_t *link);
+extern char *cgidoclink(const char *doccgi, const char *hostname);
 
 extern host_t *find_host(const char *hostname);
 extern char *histlogurl(char *hostname, char *service, time_t histtime);

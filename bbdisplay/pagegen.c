@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.36 2003-04-22 15:53:45 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.37 2003-04-23 10:57:44 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -41,6 +41,7 @@ int  subpagecolumns = 1;
 int  hostsbeforepages = 0;
 char *includecolumns = NULL;
 int  sort_grouponly_items = 0; /* Standard BB behaviour: Dont sort group-only items */
+char *documentationcgi = NULL;
 
 char *hf_prefix[3];            /* header/footer prefixes for BB, BB2, BBNK pages*/
 
@@ -257,16 +258,22 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 
 			/* First the hostname and a notes-link.
 			 *
-			 * If a host has a direct notes-link, use that.
+			 * If a documentation CGI is defined, use that.
 			 *
-			 * If no direct link and we are doing a BB2/BBNK page, 
+			 * else if a host has a direct notes-link, use that.
+			 *
+			 * else if no direct link and we are doing a BB2/BBNK page, 
 			 * provide a link to the main page with this host (there
 			 * may be links to documentation in some page-title).
 			 *
-			 * If no direct link and on a BB page, just put the
-			 * hostname there.
+			 * else just put the hostname there.
 			 */
-			if (h->link != &null_link) {
+			if (documentationcgi) {
+				fprintf(output, "<A HREF=\"%s/%s\" TARGET=\"_blank\"><FONT %s>%s</FONT></A>\n </TD>",
+					getenv("CGIBINURL"), cgidoclink(documentationcgi, h->hostname),
+					getenv("MKBBROWFONT"), h->hostname);
+			}
+			else if (h->link != &null_link) {
 				fprintf(output, "<A HREF=\"%s/%s\" TARGET=\"_blank\"><FONT %s>%s</FONT></A>\n </TD>",
 					getenv("BBWEB"), hostlink(h->link), 
 					getenv("MKBBROWFONT"), h->hostname);

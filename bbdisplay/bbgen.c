@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.91 2003-04-22 15:53:45 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.92 2003-04-23 10:57:44 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -115,6 +115,11 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 			includecolumns = malloc(strlen(lp)+2);
 			sprintf(includecolumns, ",%s,", (lp+1));
+		}
+		else if (strncmp(argv[i], "--doccgi=", 9) == 0) {
+			char *lp = strchr(argv[i], '=');
+			documentationcgi = malloc(strlen(lp));
+			strcpy(documentationcgi, (lp+1));
 		}
 
 		else if (strcmp(argv[i], "--pages-first") == 0) {
@@ -230,6 +235,7 @@ int main(int argc, char *argv[])
 			printf("    --purplelifetime=N          : Purple messages have a lifetime of N minutes\n");
 			printf("    --ignorecolumns=test[,test] : Completely ignore these columns\n");
 			printf("    --includecolumns=test[,test]: Always include these columns on bb2 page\n");
+			printf("    --doccgi=cgibinURL          : Hostnames link to a general CGI script for docs\n");
 			printf("\nPage layout options:\n");
 			printf("    --pages-last                : Put page- and subpage-links after hosts (as BB does)\n");
 			printf("    --pages-first               : Put page- and subpage-links before hosts (default)\n");

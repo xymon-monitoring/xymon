@@ -23,6 +23,7 @@ extern int subpagecolumns;
 extern int hostsbeforepages;
 extern char *includecolumns;
 extern int sort_grouponly_items;
+extern char *documentationcgi;
 
 extern void select_headers_and_footers(char *prefix);
 extern void do_page_with_subs(bbgen_page_t *curpage, dispsummary_t *sums);
