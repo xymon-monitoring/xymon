@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.19 2004-11-29 18:56:00 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.20 2004-12-05 16:23:41 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -963,7 +963,7 @@ bbagain:
 
 static repeat_t *find_repeatinfo(activealerts_t *alert, recip_t *recip, int create)
 {
-	char *id, *method;
+	char *id, *method = "unknown";
 	repeat_t *walk;
 
 	switch (recip->method) {
