@@ -394,10 +394,10 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 
 		dprintf("%s(%s) ", t->testspec, colorname(httpcolor));
 		if (httpcolor > color) color = httpcolor;
-	}
 
-	/* If not inside SLA and non-green, report as BLUE */
-	if (!t->host->in_sla && (color != COL_GREEN)) color = COL_BLUE;
+		/* If not inside SLA and non-green, report as BLUE */
+		if (!t->host->in_sla && (color != COL_GREEN)) color = COL_BLUE;
+	}
 
 	if (nopage && (color == COL_RED)) color = COL_YELLOW;
 	dprintf(" --> %s\n", colorname(color));
