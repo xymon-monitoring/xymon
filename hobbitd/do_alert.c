@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.45 2005-02-23 21:35:38 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.46 2005-02-24 10:34:18 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -356,6 +356,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 	while (fgets(l, sizeof(l), fd)) {
 		int firsttoken = 1;
 		int mailcmdactive = 0, scriptcmdactive = 0;
+		recip_t *curlinerecips = NULL;
 
 		cfid++;
 		grok_input(l);
@@ -552,6 +553,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 					newrcp->unmatchedonly = 0;
 					newrcp->next = NULL;
 					currcp = newrcp;
+					if (curlinerecips == NULL) curlinerecips = newrcp;
 					pstate = P_RECIP;
 
 					if (currule->recipients == NULL)
@@ -609,6 +611,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 					newrcp->unmatchedonly = 0;
 					newrcp->next = NULL;
 					currcp = newrcp;
+					if (curlinerecips == NULL) curlinerecips = newrcp;
 					pstate = P_RECIP;
 
 					if (currule->recipients == NULL)
@@ -629,12 +632,12 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 			firsttoken = 0;
 		}
 
-		if (currcp && currule && (mailcmdactive || scriptcmdactive) && (currule->recipients != currcp)) {
+		if (curlinerecips && currcp && (curlinerecips != currcp)) {
 			/* We have multiple recipients on one line. Make sure criteria etc. get copied */
 			recip_t *rwalk;
 
 			/* All criteria etc. have been set on the last recipient (currcp) */
-			for (rwalk = currule->recipients; (rwalk != currcp); rwalk = rwalk->next) {
+			for (rwalk = curlinerecips; (rwalk != currcp); rwalk = rwalk->next) {
 				rwalk->format = currcp->format;
 				rwalk->interval = currcp->interval;
 				rwalk->criteria = currcp->criteria;
