@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include "bbgen.h"
 
@@ -116,6 +117,7 @@ char *dotgiffilename(entry_t *e)
 	else {
 		strcat(filename, (e->oldage ? "" : "-recent"));
 	}
+	strcat(filename, ".gif");
 
 	return filename;
 }
@@ -143,6 +145,70 @@ char *commafy(char *hostname)
 	for (p = strchr(s, '.'); (p); p = strchr(s, '.')) *p = ',';
 	return s;
 }
+
+char *headfoot(char *pagename, char *subpagename, char *head_or_foot, int bgcolor)
+{
+	int	fd;
+	char 	filename[256];
+	static 	char text[8192];
+	struct stat st;
+	char	*template;
+	char	*t_start, *t_next;
+	char	savechar;
+	time_t	now = time(NULL);
+
+	text[0] = '\0';
+
+	sprintf(filename, "%s/web/%s_%s_%s", getenv("BBHOME"), pagename, subpagename, head_or_foot);
+	fd = open(filename, O_RDONLY);
+	if (fd == -1) {
+		sprintf(filename, "%s/web/%s_%s", getenv("BBHOME"), pagename, head_or_foot);
+		fd = open(filename, O_RDONLY);
+	}
+	if (fd == -1) {
+		sprintf(filename, "%s/web/bb_%s", getenv("BBHOME"), head_or_foot);
+		fd = open(filename, O_RDONLY);
+	}
+
+	if (fd != -1) {
+		fstat(fd, &st);
+		template = malloc(st.st_size);
+		read(fd, template, st.st_size);
+		close(fd);
+
+		for (t_start = template, t_next = strchr(t_start, '&'); (t_next); ) {
+			/* Copy from t_start to t_next unchanged */
+			*t_next = '\0'; t_next++;
+			strcat(text, t_start);
+
+			/* Find token */
+			for (t_start = t_next; ((*t_next >= 'A') && (*t_next <= 'Z')); t_next++ ) ;
+			savechar = *t_next; *t_next = '\0';
+
+			if (strcmp(t_start, "BBREL") == 0)     strcat(text, getenv("BBREL"));
+			if (strcmp(t_start, "BBRELDATE") == 0) strcat(text, getenv("BBRELDATE"));
+			if (strcmp(t_start, "BBSKIN") == 0)    strcat(text, getenv("BBSKIN"));
+			if (strcmp(t_start, "BBWEB") == 0)     strcat(text, getenv("BBWEB"));
+			if (strcmp(t_start, "CGIBINURL") == 0) strcat(text, getenv("CGIBINURL"));
+
+			if (strcmp(t_start, "BBDATE") == 0)          strcat(text, ctime(&now));
+			if (strcmp(t_start, "BBBACKGROUND") == 0)    strcat(text, colorname(bgcolor));
+			
+			*t_next = savechar; t_start = t_next; t_next = strchr(t_start, '&');
+		}
+
+		/* Remainder of file */
+		strcat(text, t_start);
+
+		free(template);
+	}
+	else {
+		sprintf(text, "<HTML><BODY> \n <HR size=4> \n <BR>%s is either missing or invalid, please create this file with your custom header<BR> \n<HR size=4>", filename);
+	}
+
+	return text;
+}
+
 
 link_t *find_link(const char *name)
 {
@@ -849,8 +915,7 @@ void do_bb_page(page_t *page, char *filename)
 		return;
 	}
 
-	fprintf(output, "BB page\n");
-	fprintf(output, "Color: %s\n", colorname(page->color));
+	fprintf(output, "%s", headfoot("", "", "header", page->color));
 
 	for (p = page->next; (p); p = p->next) {
 		fprintf(output, "  page %s - %s\n", p->name, colorname(p->color));
@@ -858,6 +923,8 @@ void do_bb_page(page_t *page, char *filename)
 
 	do_hosts(page->hosts, output, "");
 	do_groups(page->groups, output);
+
+	fprintf(output, "%s", headfoot("", "", "footer", page->color));
 
 	fclose(output);
 }
@@ -874,8 +941,7 @@ void do_page(page_t *page, char *filename)
 		return;
 	}
 
-	fprintf(output, "SDM page %s\n", page->title);
-	fprintf(output, "Color: %s\n", colorname(page->color));
+	fprintf(output, "%s", headfoot(page->name, "", "header", page->color));
 
 	for (p = page->subpages; (p); p = p->next) {
 		fprintf(output, "    subpage %s - %s\n", p->name, colorname(p->color));
@@ -885,10 +951,12 @@ void do_page(page_t *page, char *filename)
 	do_hosts(page->hosts, output, "");
 	do_groups(page->groups, output);
 
+	fprintf(output, "%s", headfoot(page->name, "", "footer", page->color));
+
 	fclose(output);
 }
 
-void do_subpage(page_t *page, char *filename)
+void do_subpage(page_t *page, char *filename, char *upperpagename)
 {
 	FILE	*output;
 
@@ -898,11 +966,12 @@ void do_subpage(page_t *page, char *filename)
 		return;
 	}
 
-	fprintf(output, "SDM subpage %s\n", page->title);
-	fprintf(output, "Color: %s\n", colorname(page->color));
+	fprintf(output, "%s", headfoot(upperpagename, page->name, "header", page->color));
 
 	do_hosts(page->hosts, output, "");
 	do_groups(page->groups, output);
+
+	fprintf(output, "%s", headfoot(upperpagename, page->name, "footer", page->color));
 
 	fclose(output);
 }
@@ -947,7 +1016,7 @@ int main(int argc, char *argv[])
 #endif
 
 	/* Generate pages */
-	chdir("/tmp/www");	/* FIXME: Production should be chdir(getenv("$BBHOME")/www); */
+	chdir("/var/apache/htdocs/bb2");	/* FIXME: Production should be chdir(getenv("$BBHOME")/www); */
 
 	do_bb_page(pagehead, "bb.html");
 	for (p=pagehead->next; (p); p = p->next) {
@@ -963,7 +1032,7 @@ int main(int argc, char *argv[])
 			sprintf(dirfn, "%s/%s", p->name, q->name);
 			mkdir(dirfn, 0755);
 			sprintf(fn, "%s/%s.html", dirfn, q->name);
-			do_subpage(q, fn);
+			do_subpage(q, fn, p->name);
 		}
 	}
 
