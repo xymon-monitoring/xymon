@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char apache_rcsid[] = "$Id: do_apache.c,v 1.2 2004-12-11 15:49:46 henrik Exp $";
+static char apache_rcsid[] = "$Id: do_apache.c,v 1.3 2004-12-11 23:18:28 henrik Exp $";
 
 static char *apache_params[] = { "rrdcreate", rrdfn, 
 				 "DS:TA:DERIVE:600:0:U",
@@ -21,11 +21,10 @@ static char *apache_params[] = { "rrdcreate", rrdfn,
 
 int do_apache_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
-	char *vals[] = { "U", "U", "U", "U", "U", "U", NULL };
 	char *markers[] = { "Total Accesses:", "Total kBytes:", 
 			    "BusyWorkers:", "IdleWorkers:", "CPULoad:", "ReqPerSec:", NULL };
 	int i;
-	char *p, *eoln, *val;
+	char *p, *eoln;
 
 	strcpy(rrdfn, "apache.rrd");
 	sprintf(rrdvalues, "%d", (int)tstamp);
