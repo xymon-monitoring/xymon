@@ -29,11 +29,6 @@ typedef struct svcinfo_t {
 	int port;
 } svcinfo_t;
 
-typedef struct svclist_t {
-	struct svcinfo_t *rec;
-	struct svclist_t *next;
-} svclist_t;
-
 extern char *init_tcp_services(void);
 extern void dump_tcp_services(void);
 extern int default_tcp_port(char *svcname);
