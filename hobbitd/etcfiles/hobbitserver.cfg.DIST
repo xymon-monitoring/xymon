@@ -100,6 +100,9 @@ SAVESTATUSLOG="TRUE"				# Save the detailed status log each time the status chan
 MAILC="@MAILPROGRAM@"				# Command used to send an e-mail with no subject
 MAIL="$MAILC -s"				# Command used to send an e-mail with a subject
 SVCCODES="disk:100,cpu:200,procs:300,svcs:350,msgs:400,conn:500,http:600,dns:800,smtp:725,telnet:723,ftp:721,pop:810,pop3:810,pop-3:810,ssh:722,imap:843,ssh1:722,ssh2:722,imap2:843,imap3:843,imap4:843,pop2:809,pop-2:809,nntp:819,test:901"
+ALERTCOLORS="red,yellow,purple"			# Colors that may trigger an alert message
+OKCOLORS="green,blue,clear"			# Colors that may trigger a recovery message
+ALERTREPEAT="30"				# The default interval between repeated alert-messages (in minutes)
 
 # For bbtest-net
 CONNTEST="TRUE"					# Should we 'ping' hosts ?
@@ -144,6 +147,7 @@ BBRELDATE=""					# Used by the standard BB web headers, not by Hobbit
 DOTHEIGHT="16"					# Height (in pixels) of the color GIF's
 DOTWIDTH="16"					# Width (in pixels) of the color GIF's
 COLUMNDOCURL="$CGIBINURL/hobbitcolumn.sh?%s"	# URL formatting string for column-links
+HOSTDOCURL=""					# URL formatting string for host documentation links
 
 # Fonts and texts
 HOBBITLOGO="Hobbit"                             # HTML inserted on all header pages at top-left corner.
