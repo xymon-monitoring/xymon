@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.64 2003-02-02 21:58:31 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.65 2003-02-05 15:55:49 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -52,7 +52,6 @@ char *reqenv[] = {
 "BBHISTLOGS",
 "BBHOME",
 "BBHOSTS",
-"BBLOCATION",
 "BBLOGS",
 "BBLOGSTATUS",
 "BBNOTES",
