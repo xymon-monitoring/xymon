@@ -5,7 +5,7 @@
 <TITLE>Hobbit - Host Information</TITLE>
 
 <!-- Styles for the menu bar -->
-<link rel="stylesheet" href="&BBMENUSKIN/menu.css">
+<link rel="stylesheet" type="text/css" href="&BBMENUSKIN/menu.css">
 
 </HEAD>
 
