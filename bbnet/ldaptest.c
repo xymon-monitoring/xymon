@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.15 2004-08-17 20:06:40 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.16 2004-08-28 07:12:09 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -309,12 +309,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 		}
 		req->ldapstatus = BBGEN_LDAP_OK;
 		req->output = malcop(response);
-		req->duration.tv_sec = endtime.tv_sec - starttime.tv_sec;
-		req->duration.tv_usec = endtime.tv_usec - starttime.tv_usec;
-		if (req->duration.tv_usec < 0) {
-			req->duration.tv_sec--;
-			req->duration.tv_usec += 1000000;
-		}
+		tvdiff(&starttime, &endtime, &req->duration);
 
 		ldap_msgfree(result);
 		ldap_unbind(ld);
@@ -431,8 +426,8 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 		}
 		if (req->faileddeps) addtostatus(req->faileddeps);
 
-		sprintf(msgline, "\nSeconds: %ld.%03ld\n",
-			req->duration.tv_sec, req->duration.tv_usec / 1000);
+		sprintf(msgline, "\nSeconds: %u.%02u\n",
+			(unsigned int)req->duration.tv_sec, (unsigned int)req->duration.tv_usec / 10000);
 
 		addtostatus(msgline);
 	}
@@ -451,7 +446,9 @@ void show_ldap_test_results(service_t *ldaptest)
 		req = (ldap_data_t *) t->privdata;
 
 		printf("URL        : %s\n", t->testspec);
-		printf("Time spent : %ld.%03ld\n", req->duration.tv_sec, req->duration.tv_usec / 1000);
+		printf("Time spent : %u.%02u\n", 
+			(unsigned int)req->duration.tv_sec, 
+			(unsigned int)req->duration.tv_usec / 10000);
 		printf("LDAP output:\n%s\n", textornull(req->output));
 		printf("------------------------------------------------------\n");
 	}
