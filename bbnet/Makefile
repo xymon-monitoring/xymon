@@ -36,13 +36,14 @@ dns2.o: dns2.c
 	$(CC) $(CFLAGS) $(DNSFLAGS) -c -o $@ dns2.c
 
 libcares.a: c-ares/.libs/libcares.a
+	ranlib c-ares/.libs/libcares.a || echo "ranlib failure - ignored"
 	cp c-ares/.libs/libcares.a .
 
 c-ares/.libs/libcares.a: c-ares/Makefile
 	(cd c-ares && $(MAKE))
 
 c-ares/Makefile: c-ares/configure
-	(cd c-ares && ./configure --disable-shared)
+	(cd c-ares && CFLAGS="$(CFLAGS)" ./configure --disable-shared)
 
 c-ares/configure: c-ares-$(ARESVER).tar.gz
 	gzip -dc $< | tar xf -
