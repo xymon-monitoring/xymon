@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.6 2004-11-13 13:23:47 henrik Exp $";
+static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.7 2004-11-25 11:46:42 henrik Exp $";
 
 typedef struct vmstat_layout_t {
 	int index;
@@ -166,7 +166,7 @@ static vmstat_layout_t vmstat_freebsd_layout[] = {
 int do_vmstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
 	enum ostype_t ostype;
-	vmstat_layout_t *layout;
+	vmstat_layout_t *layout = NULL;
 	char *datapart = msg;
 	int values[MAX_VMSTAT_VALUES];
 	int i, vcount, result;
@@ -223,6 +223,10 @@ int do_vmstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		return -1;
 	  case OS_UNKNOWN:
 		errprintf("Host '%s' reports vmstat for an unknown OS\n", hostname);
+		return -1;
+	}
+
+	if (layout == NULL) {
 		return -1;
 	}
 
