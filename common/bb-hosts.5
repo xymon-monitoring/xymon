@@ -732,7 +732,12 @@ the server response.
 
 The data that must be returned can be specified either
 as a regular expression (except that <space> is not allowed)
-or as a message digest (typically MD5 sum or SHA-1 hash).
+or as a message digest (typically using an MD5 sum or 
+SHA-1 hash).
+
+Note: If you are migrating from the "cont2.sh" script,
+you must change the '_' used as wildcards by cont2.sh 
+into '.' which is the regular-expression wildcard character.
 
 Message digests can use whatever digest algorithms your
 libcrypto implementation (usually OpenSSL) supports. 
