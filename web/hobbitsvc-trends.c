@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.49 2004-12-13 21:59:09 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.50 2004-12-14 16:48:21 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -356,7 +356,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 						allmeta = (char *) realloc(allmeta, allmetasize);
 						allmetaend = allmeta + buflen;
 					}
-					allmetaend += sprintf(allmetaend, "<RRDGraph>\n%s</RRDGraph>\n", rrdlink);
+					allmetaend += sprintf(allmetaend, "%s", rrdlink);
 				}
 			}
 
@@ -450,7 +450,7 @@ int main(int argc, char *argv[])
 			char *host, *test, *graphlinks;
 			larrdrrd_t *larrd = NULL;
 			larrdgraph_t *graph = NULL;
-			char *msgfmt = "<RRDGraph>\n%s</RRDGraph>\n";
+			char *msgfmt = "%s";
 			namelist_t *hostwalk;
 			graph_t *rwalk;
 			int linecount;
