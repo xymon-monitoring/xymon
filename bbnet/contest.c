@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.51 2004-08-23 14:02:38 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.52 2004-08-24 11:33:11 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -46,6 +46,10 @@ static char rcsid[] = "$Id: contest.c,v 1.51 2004-08-23 14:02:38 henrik Exp $";
 
 #define MAX_TELNET_CYCLES 5		/* Max loops with telnet options before aborting banner */
 #define SSLSETUP_PENDING -1		/* Magic value for tcptest_t->sslrunning while handshaking */
+
+/* See http://www.openssl.org/docs/apps/ciphers.html for cipher strings */
+char *ciphersmedium = "MEDIUM";	/* Must be formatted for openssl library */
+char *ciphershigh = "HIGH";	/* Must be formatted for openssl library */
 
 unsigned int tcp_stats_total    = 0;
 unsigned int tcp_stats_http     = 0;
@@ -1403,7 +1407,7 @@ int main(int argc, char *argv[])
 					testitem->testspec = testspec;
 					strcpy(hostitem->ip, ip);
 					add_url_to_dns_queue(testspec);
-					add_http_test(testitem);
+					add_http_test(testitem, NULL);
 
 					testitem->next = NULL;
 					thead = testitem;

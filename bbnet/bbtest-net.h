@@ -13,9 +13,6 @@
 
 #include <sys/time.h>
 
-extern char *ciphersmedium;
-extern char *ciphershigh;
-
 #define STATUS_CONTENTMATCH_NOFILE 901
 #define STATUS_CONTENTMATCH_FAILED 902
 #define STATUS_CONTENTMATCH_BADREGEX 903

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.161 2004-08-23 14:29:14 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.162 2004-08-24 11:33:11 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -36,10 +36,6 @@ static char rcsid[] = "$Id: bbtest-net.c,v 1.161 2004-08-23 14:29:14 henrik Exp 
 #include "httptest.h"
 #include "httpresult.h"
 #include "ldaptest.h"
-
-/* See http://www.openssl.org/docs/apps/ciphers.html for cipher strings */
-char *ciphersmedium = "MEDIUM";	/* Must be formatted for openssl library */
-char *ciphershigh = "HIGH";	/* Must be formatted for openssl library */
 
 /* These are dummy vars needed by stuff in util.c */
 hostlist_t      *hosthead = NULL;

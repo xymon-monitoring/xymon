@@ -57,6 +57,8 @@
 #include "digest.h"
 
 extern char *ssl_library_version;
+extern char *ciphershigh;
+extern char *ciphersmedium;
 
 typedef struct svcinfo_t {
 	char *svcname;
