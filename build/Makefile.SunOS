@@ -1,5 +1,7 @@
 # bbgen compile-time settings for SunOS / Solaris
 
+OSDEF = -DSunOS
+
 # Solaris need this
 NETLIBS = -lresolv -lsocket -lnsl
 

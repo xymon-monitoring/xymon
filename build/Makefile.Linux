@@ -1,5 +1,7 @@
 # bbgen compile-time settings for LINUX systems
 
+OSDEF = -DLINUX
+
 # NETLIBS: None needed on Linux
 NETLIBS =
 

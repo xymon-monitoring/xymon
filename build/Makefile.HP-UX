@@ -1,5 +1,6 @@
 # bbgen compile-time settings for a HP-UX system
-#
+
+OSDEF = -DHPUX
 
 # NETLIBS: You may need to add -lresolv or similar to pick up network libraries
 NETLIBS =

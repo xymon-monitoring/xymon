@@ -1,5 +1,7 @@
 # bbgen compile-time settings for FreeBSD systems
 
+OSDEF = -DBSD
+
 # NETLIBS: None needed
 NETLIBS =
 
