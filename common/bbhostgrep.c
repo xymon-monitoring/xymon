@@ -72,6 +72,14 @@ int main(int argc, char *argv[])
 		int sla=-1;
 		char *startoftags = strchr(l, '#');
 
+		p = strchr(l, '\n');
+		if (p) {
+			*p = '\0';
+		}
+		else {
+			errprintf("Warning: Lines in bb-hosts too long or has no newline: '%s'\n", l);
+		}
+
 		/*
 		 * We don't need to care about entries without a "#" mark in them, as
 		 * we are looking for hosts that have at least one tag.
