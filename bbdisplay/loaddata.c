@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.117 2003-11-21 13:22:13 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.118 2003-11-21 13:48:49 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1180,6 +1180,11 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			addtopagelist(curpage);
 		}
 		else if (strncmp(l, subpagetag, strlen(subpagetag)) == 0) {
+			if (curpage == NULL) {
+				errprintf("'subpage' ignored, no preceding 'page' tag : %s\n", l);
+				continue;
+			}
+
 			getnamelink(l, &name, &link);
 			if (cursubpage == NULL) {
 				cursubpage = curpage->subpages = init_page(name, link);
@@ -1201,6 +1206,11 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			bbgen_page_t *parentpage, *walk;
 
 			getparentnamelink(l, toppage, &parentpage, &name, &link);
+			if (parentpage == NULL) {
+				errprintf("'subparent' ignored, unknown parent page: %s\n", l);
+				continue;
+			}
+
 			cursubparent = init_page(name, link);
 			if (parentpage->subpages == NULL) {
 				parentpage->subpages = cursubparent;
