@@ -372,21 +372,34 @@ would do it with
    </A>
 .sp
 The "add-button.gif" is available from Netscape at
-http://developer.netscape.com/docs/manuals/browser/sidebar/add-button.gif
+http://developer.netscape.com/docs/manuals/browser/sidebar/add-button.gif.
+
+If FILENAME does not begin with a slash, the Netscape sidebar file
+is placed in the $BBHOME/www/ directory.
+
+.IP "--nslimit=COLOR"
+The minimum color to include in the Netscape Sidebar - default is "red",
+meaning only critical alerts are included. If you want to include
+warnings also, use "--nslimit=yellow".
 
 .IP "--rss=FILENAME"
 Generate an RSS/RDF content delivery stream of your critical Big Brother 
 alerts. This output format can be dynamically embedded in other web
-pages, much like the live newsfeeds often seen on web sites. FILENAME 
-is relative to the $BBHOME/www/ directory.
-
-For more information about RSS/RDF content feeds, please see 
+pages, much like the live newsfeeds often seen on web sites. If FILENAME 
+does not begin with a slash, the output file is in the $BBHOME/www/
+directory.  For more information about RSS/RDF content feeds, please see 
 http://www.syndic8.com/.
 .sp
 .IP "--rssversion={0.91|0.92|1.0|2.0}"
 The desired output format of the RSS/RDF feed. Version 0.91 appears to 
 be the most commonly used format, and is the default if this option is
 omitted.
+.sp
+.IP "--rsslimit=COLOR"
+The minimum color to include in the RSS feed - default is "red",
+meaning only critical alerts are included. If you want to include
+warnings also, use "--rsslimit=yellow".
+
 
 .SH OPTIONS USED BY CGI FRONT-ENDS
 .IP "--reportopts=START:END:DYNAMIC:STYLE"
