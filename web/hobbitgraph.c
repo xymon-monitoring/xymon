@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.16 2005-02-03 14:27:10 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.17 2005-02-13 13:17:41 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -37,12 +37,16 @@ char *hostname = NULL;
 char *displayname = NULL;
 char *service = NULL;
 char *period = NULL;
+time_t persecs = 0;
 char *gtype = NULL;
 char *glegend = NULL;
-int  rrd_rigid = 0;
-int  rrd_logarithmic = 0;
-char *upperlimit = NULL;
-char *lowerlimit = NULL;
+enum {ACT_MENU, ACT_SELZOOM, ACT_SHOWZOOM, ACT_VIEW} action = ACT_VIEW;
+time_t graphstart = 0;
+time_t graphend = 0;
+int haveupper = 0;
+double upperlimit = 0.0;
+int havelower = 0;
+double lowerlimit = 0.0;
 
 int coloridx = 0;
 char *colorlist[] = { 
@@ -122,23 +126,33 @@ void parse_query(void)
 		else if (strcmp(token, "graph") == 0) {
 			if (strcmp(val, "hourly") == 0) {
 				period = HOUR_GRAPH;
+				persecs = 48*60*60;
 				gtype = strdup(val);
 				glegend = "Last 48 Hours";
 			}
 			else if (strcmp(val, "daily") == 0) {
 				period = DAY_GRAPH;
+				persecs = 12*24*60*60;
 				gtype = strdup(val);
 				glegend = "Last 12 Days";
 			}
 			else if (strcmp(val, "weekly") == 0) {
 				period = WEEK_GRAPH;
+				persecs = 48*24*60*60;
 				gtype = strdup(val);
 				glegend = "Last 48 Days";
 			}
 			else if (strcmp(val, "monthly") == 0) {
 				period = MONTH_GRAPH;
+				persecs = 576*24*60*60;
 				gtype = strdup(val);
 				glegend = "Last 576 Days";
+			}
+			else if (strcmp(val, "custom") == 0) {
+				period = NULL;
+				persecs = 0;
+				gtype = strdup(val);
+				glegend = "";
 			}
 		}
 		else if (strcmp(token, "first") == 0) {
@@ -148,25 +162,25 @@ void parse_query(void)
 			idxcount = atoi(val);
 			lastidx = firstidx + idxcount - 1;
 		}
-		else if (strcmp(token, "upper") == 0) {
-			if (val && strlen(val)) {
-				upperlimit = (char *)malloc(3 + strlen(val) + 1);
-				sprintf(upperlimit, "-u %s", val);
+		else if (strcmp(token, "action") == 0) {
+			if (val) {
+				if      (strcmp(val, "menu") == 0) action = ACT_MENU;
+				else if (strcmp(val, "selzoom") == 0) action = ACT_SELZOOM;
+				else if (strcmp(val, "showzoom") == 0) action = ACT_SHOWZOOM;
+				else if (strcmp(val, "view") == 0) action = ACT_VIEW;
 			}
+		}
+		else if (strcmp(token, "graph_start") == 0) {
+			if (val) graphstart = atoi(val);
+		}
+		else if (strcmp(token, "graph_end") == 0) {
+			if (val) graphend = atoi(val);
+		}
+		else if (strcmp(token, "upper") == 0) {
+			if (val) { upperlimit = atof(val); haveupper = 1; }
 		}
 		else if (strcmp(token, "lower") == 0) {
-			if (val && strlen(val)) {
-				lowerlimit = (char *)malloc(3 + strlen(val) + 1);
-				sprintf(lowerlimit, "-l %s", val);
-			}
-		}
-		else if (strcmp(token, "rigid") == 0) {
-			if (val) rrd_rigid = (strcmp(val, "on") == 0);
-			else rrd_rigid = 1;
-		}
-		else if (strcmp(token, "logarithmic") == 0) {
-			if (val) rrd_logarithmic = (strcmp(val, "on") == 0);
-			else rrd_logarithmic = 1;
+			if (val) { lowerlimit = atof(val); havelower = 1; }
 		}
 
 		token = strtok(NULL, "&");
@@ -174,6 +188,7 @@ void parse_query(void)
 
 	if ((hostname == NULL) || (service == NULL)) errormsg("Invalid request - no host or service");
 	if (displayname == NULL) displayname = hostname;
+	if (graphstart && graphend) persecs = (graphend - graphstart);
 }
 
 
@@ -361,11 +376,33 @@ int rrd_name_compare(const void *v1, const void *v2)
 	return strcmp(r1->key, r2->key);
 }
 
-void graph_link(FILE *output, char *grtype, char *grtext, char *uri, char *svc)
+void graph_link(FILE *output, char *uri, char *grtype, time_t seconds)
 {
+	time_t gstart, gend;
+
 	fprintf(output, "<tr>\n");
-	fprintf(output, "  <td align=\"left\"><img src=\"%s&amp;graph=%s\" alt=\"%s %s\"></td>\n",
-		uri, grtype, service, grtext);
+
+	switch (action) {
+	  case ACT_MENU:
+		fprintf(output, "  <td align=\"left\"><img src=\"%s&amp;action=view&amp;graph=%s\"></td>\n",
+			uri, grtype);
+		fprintf(output, "  <td align=\"left\" valign=\"top\"> <a href=\"%s&amp;graph=%s&amp;action=selzoom\"> <img src=\"%s/zoom.gif\" border=0 alt=\"Zoom graph\" style='padding: 3px'> </a> </td>\n",
+			uri, grtype, getenv("BBSKIN"));
+		break;
+
+	  case ACT_SELZOOM:
+	  case ACT_SHOWZOOM:
+		if (graphend == 0) gend = time(NULL); else gend = graphend;
+		if (graphstart == 0) gstart = gend - persecs; else gstart = graphstart;
+
+		fprintf(output, "  <td align=\"left\"><img id='zoomGraphImage' src=\"%s&amp;graph=%s&amp;action=view&amp;graph_start=%u&amp;graph_end=%u&amp;graph_height=120&amp;graph_width=575\" alt=\"Zoom source image\"></td>\n",
+			uri, grtype, gstart, gend);
+		break;
+
+	  case ACT_VIEW:
+		break;
+	}
+
 	fprintf(output, "</tr>\n");
 }
 
@@ -385,6 +422,10 @@ int main(int argc, char *argv[])
 	time_t now;
 	char timestamp[100];
 	char graphtitle[1024];
+	char graphopt[30];
+
+	char okuri[32768];
+	char *p;
 
 	/* See what we want to do - i.e. get hostname, service and graph-type */
 	parse_query();
@@ -413,69 +454,75 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	/*
-	 * If no period requested, generate a response that builds a webpage
-	 * with links to all of the period graphs.
-	 */
-	if (period == NULL) {
-		char *requri = xgetenv("REQUEST_URI");
+	strcpy(okuri, xgetenv("REQUEST_URI"));
+	p = strchr(okuri, '?'); if (p) *p = '\0'; else p = okuri + strlen(okuri);
+	p += sprintf(p, "?host=%s&amp;service=%s", hostname, service);
+	if (displayname != hostname) p += sprintf(p, "&amp;disp=%s", displayname);
+	if (firstidx != -1) p += sprintf(p, "&amp;first=%d", firstidx+1);
+	if (idxcount != -1) p += sprintf(p, "&amp;count=%d", idxcount);
 
-		char okuri[32768];
-		char *inp, *outp, *p;
-
-		*okuri = '\0'; inp=requri; outp=okuri; p = strchr(inp, '&');
-		while (p) {
-			*p = '\0';
-			outp += sprintf(outp, "%s&amp;", inp);
-			inp = (p+1);
-			if (strncasecmp(inp, "amp;", 4) == 0) inp += 4;
-			*p = '&';
-			p = strchr(inp, '&');
-		}
-		if (*inp) strcat(outp, inp);
-
+	switch (action) {
+	  case ACT_MENU:
 		fprintf(stdout, "Content-type: text/html\n\n");
 		sethostenv(displayname, "", service, colorname(COL_GREEN));
 		headfoot(stdout, "graphs", "", "header", COL_GREEN);
 
 		fprintf(stdout, "<table align=\"center\" summary=\"Graphs\">\n");
 
-		graph_link(stdout, "hourly", "Hourly", okuri, service);
-		graph_link(stdout, "daily", "Daily", okuri, service);
-		graph_link(stdout, "weekly", "Weekly", okuri, service);
-		graph_link(stdout, "monthly", "Monthly", okuri, service);
-
-		fprintf(stdout, "<tr>\n");
-		fprintf(stdout, "  <td align=\"center\"><br>\n");
-		fprintf(stdout, "    <font size=\"+2\"><u>Custom graph</u></font><br><br>\n");
-		fprintf(stdout, "    <form method=\"GET\" action=\"%s\">\n", okuri);
-		fprintf(stdout, "       <font size=\"+1\">Lower limit</font>\n");
-		fprintf(stdout, "       <INPUT TYPE=\"TEXT\" NAME=\"lower\" VALUE=\"\" MAXLENGTH=10>\n");
-		fprintf(stdout, "       <font size=\"+1\">Upper limit</font>\n");
-		fprintf(stdout, "       <INPUT TYPE=\"TEXT\" NAME=\"upper\" VALUE=\"\" MAXLENGTH=10>\n");
-		fprintf(stdout, "       <font size=\"+1\">Rigid</font>\n");
-		fprintf(stdout, "       <INPUT TYPE=\"CHECKBOX\" NAME=\"rigid\" checked>\n");
-		fprintf(stdout, "       <font size=\"+1\">Logarithmic</font>\n");
-		fprintf(stdout, "       <INPUT TYPE=\"CHECKBOX\" NAME=\"logarithmic\">\n");
-		fprintf(stdout, "       <br>\n");
-		fprintf(stdout, "       <INPUT ID=hgraph TYPE=\"RADIO\" NAME=\"graph\" VALUE=\"hourly\"><label for=hgraph>Last 48 hours</label>\n");
-		fprintf(stdout, "       <INPUT ID=dgraph TYPE=\"RADIO\" NAME=\"graph\" VALUE=\"hourly\"><label for=dgraph>Last 12 days</label>\n");
-		fprintf(stdout, "       <INPUT ID=wgraph TYPE=\"RADIO\" NAME=\"graph\" VALUE=\"weekly\"><label for=wgraph>Last 48 days</label>\n");
-		fprintf(stdout, "       <INPUT ID=mgraph TYPE=\"RADIO\" NAME=\"graph\" VALUE=\"monthly\"><label for=mgraph>Last 576 days</label>\n");
-		fprintf(stdout, "       <INPUT TYPE=\"HIDDEN\" NAME=\"host\" VALUE=\"%s\">\n", hostname);
-		fprintf(stdout, "       <INPUT TYPE=\"HIDDEN\" NAME=\"service\" VALUE=\"%s\">\n", service);
-		if (displayname)    fprintf(stdout, "       <INPUT TYPE=\"HIDDEN\" NAME=\"disp\" VALUE=\"%s\">\n", displayname);
-		if (firstidx != -1) fprintf(stdout, "       <INPUT TYPE=\"HIDDEN\" NAME=\"first\" VALUE=\"%d\">\n", firstidx);
-		if (idxcount != -1) fprintf(stdout, "       <INPUT TYPE=\"HIDDEN\" NAME=\"count\" VALUE=\"%d\">\n", idxcount);
-		fprintf(stdout, "       <br><br><INPUT TYPE=\"SUBMIT\" NAME=\"SUB\" VALUE=\"View\" ALT=\"View\">\n");
-		fprintf(stdout, "    </form>\n");
-		fprintf(stdout, "  </td>\n");
-		fprintf(stdout, "</tr>\n");
+		graph_link(stdout, okuri, "hourly",      48*60*60);
+		graph_link(stdout, okuri, "daily",    12*24*60*60);
+		graph_link(stdout, okuri, "weekly",   48*24*60*60);
+		graph_link(stdout, okuri, "monthly", 576*24*60*60);
 
 		fprintf(stdout, "</table>\n");
 
 		headfoot(stdout, "graphs", "", "footer", COL_GREEN);
 		return 0;
+
+	  case ACT_SELZOOM:
+		fprintf(stdout, "Content-type: text/html\n\n");
+		sethostenv(displayname, "", service, colorname(COL_GREEN));
+		headfoot(stdout, "graphs", "", "header", COL_GREEN);
+
+		fprintf(stdout, "<table align=\"center\" summary=\"Graphs\">\n");
+
+		fprintf(stdout, "  <div id='zoomBox' style='position:absolute; overflow:none; left:0px; top:0px; width:0px; height:0px; visibility:visible; background:red; filter:alpha(opacity=50); -moz-opacity:0.5; -khtml-opacity:0.5'></div>\n");
+		fprintf(stdout, "  <div id='zoomSensitiveZone' style='position:absolute; overflow:none; left:0px; top:0px; width:0px; height:0px; visibility:visible; cursor:crosshair; background:blue; filter:alpha(opacity=0); -moz-opacity:0; -khtml-opacity:0' oncontextmenu='return false'></div>\n");
+		graph_link(stdout, okuri, gtype, 0);
+
+		{
+			char zoomjsfn[PATH_MAX];
+			FILE *fd;
+			char buf[8192];
+			int n;
+
+			sprintf(zoomjsfn, "%s/web/zoom.js", xgetenv("BBHOME"));
+			fd = fopen(zoomjsfn, "r");
+			while (fd && (n = fread(buf, 1, sizeof(buf), fd))) fwrite(buf, 1, n, stdout);
+			if (fd) fclose(fd);
+		}
+
+		fprintf(stdout, "</table>\n");
+
+		headfoot(stdout, "graphs", "", "footer", COL_GREEN);
+		return 0;
+
+	  case ACT_SHOWZOOM:
+		fprintf(stdout, "Content-type: text/html\n\n");
+		sethostenv(displayname, "", service, colorname(COL_GREEN));
+		headfoot(stdout, "graphs", "", "header", COL_GREEN);
+
+		fprintf(stdout, "<table align=\"center\" summary=\"Graphs\">\n");
+
+		graph_link(stdout, okuri, gtype, 0);
+
+		fprintf(stdout, "</table>\n");
+
+		headfoot(stdout, "graphs", "", "footer", COL_GREEN);
+		return 0;
+
+	  case ACT_VIEW:
+		break;
 	}
 
 	/* Find the config-file and load it */
@@ -657,28 +704,47 @@ int main(int argc, char *argv[])
 	rrdargs = (char **) calloc(argcount+1, sizeof(char *));
 	rrdargs[argi++]  = "rrdgraph";
 	rrdargs[argi++]  = graphfn;
-	rrdargs[argi++]  = "-s";
-	rrdargs[argi++]  = period;
 	rrdargs[argi++]  = "--title";
 	rrdargs[argi++]  = graphtitle;
 	rrdargs[argi++]  = "-w576";
+	rrdargs[argi++]  = "-h120";
 	rrdargs[argi++]  = "-v";
 	rrdargs[argi++]  = gdef->yaxis;
 	rrdargs[argi++]  = "-a";
 	rrdargs[argi++] = "PNG";
+
+	if (haveupper) {
+		sprintf(graphopt, "-u %f", upperlimit);
+		rrdargs[argi++] = strdup(graphopt);
+	}
+	if (havelower) {
+		sprintf(graphopt, "-l %f", lowerlimit);
+		rrdargs[argi++] = strdup(graphopt);
+	}
+	if (haveupper || havelower) rrdargs[argi++] = "--rigid";
+
+	if (graphstart) sprintf(graphopt, "-s %u", (unsigned int) graphstart);
+	else sprintf(graphopt, "-s %s", period);
+	rrdargs[argi++] = strdup(graphopt);
+
+	if (graphend) {
+		sprintf(graphopt, "-e %u", (unsigned int) graphend);
+		rrdargs[argi++] = strdup(graphopt);
+	}
+
 	for (rrdidx=0; (rrdidx < rrddbcount); rrdidx++) {
 		if ((firstidx == -1) || ((rrdidx >= firstidx) && (rrdidx <= lastidx))) {
 			int i;
 			for (i=0; (gdef->defs[i]); i++) rrdargs[argi++] = strdup(expand_tokens(gdef->defs[i]));
 		}
 	}
+
 	strftime(timestamp, sizeof(timestamp), "COMMENT:Updated: %d-%b-%Y %H:%M:%S", localtime(&now));
 	rrdargs[argi++] = strdup(timestamp);
-	if (upperlimit) rrdargs[argi++] = strdup(upperlimit);
-	if (lowerlimit) rrdargs[argi++] = strdup(lowerlimit);
-	if (rrd_rigid)  rrdargs[argi++] = "--rigid";
-	if (rrd_logarithmic)  rrdargs[argi++] = "--logarithmic";
+
+
 	rrdargcount = argi; rrdargs[argi++] = NULL;
+
 
 	if (debug) { for (argi=0; (argi < rrdargcount); argi++) dprintf("%s\n", rrdargs[argi]); }
 
