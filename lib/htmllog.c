@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.4 2004-11-18 23:19:01 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.5 2004-11-20 12:37:11 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -26,6 +26,7 @@ static char rcsid[] = "$Id: htmllog.c,v 1.4 2004-11-18 23:19:01 henrik Exp $";
 
 static char *cgibinurl = NULL;
 static char *colfont = NULL;
+static char *ackfont = NULL;
 static char *rowfont = NULL;
 
 enum histbutton_t histlocation = HIST_BOTTOM;
@@ -41,6 +42,7 @@ static void hostsvc_setup(void)
 	getenv_default("BBRELDATE", VERSION, NULL);
 	getenv_default("CGIBINURL", "/cgi-bin", &cgibinurl);
 	getenv_default("MKBBCOLFONT", "COLOR=teal SIZE=-1\"", &colfont);
+	getenv_default("MKBBACKFONT", "COLOR=teal SIZE=-1\"", &ackfont);
 	getenv_default("MKBBROWFONT", "SIZE=+1 COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\"", &rowfont);
 	getenv_default("BBWEB", "/bb", NULL);
 	{
@@ -154,7 +156,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	fprintf(output, "<tr><td align=\"center\"><font %s>", colfont);
 	if (strlen(timesincechange)) fprintf(output, "Status unchanged in %s<br>\n", timesincechange);
 	if (sender) fprintf(output, "Status message received from %s<br>\n", sender);
-	if (ackmsg) fprintf(output, "Current acknowledgment: %s<br>\n", ackmsg);
+	if (ackmsg) fprintf(output, "<font %s>Current acknowledgment: %s</font><br>\n", ackfont, ackmsg);
 	fprintf(output, "</font></td></tr>\n");
 	fprintf(output, "</table>\n");
 
