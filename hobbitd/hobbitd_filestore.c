@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.24 2004-11-30 22:38:53 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.25 2004-12-06 06:45:39 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
 			role = ROLE_DATA;
 			if (!filedir) filedir = getenv("BBDATA");
 		}
-		else if (strcmp(argv[argi], "--notes"), 0) {
+		else if (strcmp(argv[argi], "--notes") == 0) {
 			role = ROLE_NOTES;
 			if (!filedir) filedir = getenv("BBNOTES");
 		}
