@@ -128,6 +128,7 @@ extern int run_command(char *cmd, char *errortext, char **banner, int *bannerbyt
 extern struct timeval *tvdiff(struct timeval *tstart, struct timeval *tend, struct timeval *result);
 
 extern char *base64encode(unsigned char *buf);
+extern char *base64decode(unsigned char *buf);
 extern void getescapestring(char *msg, unsigned char **buf, int *buflen);
 extern char *decode_url(char *inputurl, bburl_t *bburl);
 

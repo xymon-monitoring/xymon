@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.126 2004-10-04 21:57:03 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.127 2004-10-05 11:04:35 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1611,9 +1611,11 @@ static void load_netrc(void)
 	fclose(fd);
 }
 
+
+static char b64chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
 char *base64encode(unsigned char *buf)
 {
-	static char b64chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 	unsigned char c0, c1, c2;
 	unsigned int n0, n1, n2, n3;
 	unsigned char *inp, *outp;
@@ -1661,6 +1663,45 @@ char *base64encode(unsigned char *buf)
 		*outp = '='; outp++;
 	}
 
+	*outp = '\0';
+
+	return result;
+}
+
+char *base64decode(unsigned char *buf)
+{
+	static short bval[128] = { 0, };
+	static short bvalinit = 0;
+	int n0, n1, n2, n3;
+
+	unsigned char *inp, *outp;
+	unsigned char *result;
+	int bytesleft = strlen(buf);
+
+	if (!bvalinit) {
+		int i;
+
+		bvalinit = 1;
+		for (i=0; (i < strlen(b64chars)); i++) bval[b64chars[i]] = i;
+	}
+
+	result = malloc(3*(bytesleft/4 + 1) + 1);
+	inp = buf; outp=result;
+
+	while (bytesleft >= 4) {
+		n0 = bval[*(inp+0)];
+		n1 = bval[*(inp+1)];
+		n2 = bval[*(inp+2)];
+		n3 = bval[*(inp+3)];
+
+		*(outp+0) = (n0 << 2) + (n1 >> 4);		/* 6 bits from n0, 2 from n1 */
+		*(outp+1) = ((n1 & 0x0F) << 4) + (n2 >> 2);	/* 4 bits from n1, 4 from n2 */
+		*(outp+2) = ((n2 & 0x03) << 6) + (n3);		/* 2 bits from n2, 6 from n3 */
+
+		inp += 4;
+		bytesleft -= 4;
+		outp += 3;
+	}
 	*outp = '\0';
 
 	return result;
