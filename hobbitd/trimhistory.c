@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: trimhistory.c,v 1.1 2005-03-30 08:43:29 henrik Exp $";
+static char rcsid[] = "$Id: trimhistory.c,v 1.2 2005-03-30 08:56:54 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -220,6 +220,10 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--help") == 0) {
 			printf("Usage:\n\n\t%s --cutoff=TIME\n\nTIME is in seconds since epoch\n", argv[0]);
 			return 0;
+		}
+		else if (argnmatch(argv[argi], "--env=")) {
+			char *p = strchr(argv[argi], '=');
+			loadenv(p+1);
 		}
 	}
 
