@@ -9,6 +9,8 @@ Source1: hobbit-init.d
 Source2: hobbit.logrotate
 Summary: Hobbit network monitor
 BuildRoot: /tmp/hobbit-root
+Requires: fping
+# BuildRequires: openssl-devel, pcre-devel, rrdtool-devel, openldap-devel
 
 %description
 Hobbit is a system for monitoring your network servers and
