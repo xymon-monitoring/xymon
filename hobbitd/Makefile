@@ -1,5 +1,5 @@
 PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filter hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_larrd hobbitd_sample hobbitgraph.cgi hobbitsvc.cgi hobbit-mailack trimhistory
-CGISCRIPTS = hobbitgraph.sh bb-hostsvc.sh
+CGISCRIPTS = hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh
 SECCGISCRIPTS = bb-ack.sh maint.pl
 
 LIBOBJS = ../lib/libbbgen.a
@@ -88,6 +88,10 @@ hobbitgraph.sh: hobbitgraph.sh.DIST
 	chmod 755 $@
 
 bb-hostsvc.sh: hobbitsvc.sh.DIST
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
+	chmod 755 $@
+
+bb-histlog.sh: hobbitsvc-hist.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
