@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.166 2004-08-28 07:09:36 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.167 2004-08-28 07:23:41 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -2231,7 +2231,7 @@ int main(int argc, char *argv[])
 						char *p;
 						int i;
 						for (i=0, p=t->banner; (i < t->bannerbytes); i++, p++) {
-							if (!isprint(*p)) *p = '.';
+							if (!isprint((int)*p)) *p = '.';
 						}
 					}
 				}

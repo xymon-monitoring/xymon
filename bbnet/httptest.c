@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.68 2004-08-24 11:43:06 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.69 2004-08-28 07:23:41 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -521,11 +521,11 @@ int tcp_http_data_callback(unsigned char *buf, unsigned int len, void *priv)
 			p1 = item->headers; xferencoding = NULL; contlen = 0;
 			do {
 				if (strncasecmp(p1, "Transfer-encoding:", 18) == 0) {
-					p1 += 18; while (isspace(*p1)) p1++;
+					p1 += 18; while (isspace((int)*p1)) p1++;
 					xferencoding = p1;
 				}
 				else if (strncasecmp(p1, "Content-Length:", 15) == 0) {
-					p1 += 15; while (isspace(*p1)) p1++;
+					p1 += 15; while (isspace((int)*p1)) p1++;
 					contlen = atoi(p1);
 				}
 				else {
@@ -587,7 +587,7 @@ void tcp_http_final_callback(void *priv)
 			if (strncasecmp(p, "Content-Type:", 13) == 0) {
 				char *p2, savechar;
 
-				p += 13; while (isspace(*p)) p++;
+				p += 13; while (isspace((int)*p)) p++;
 				p2 = (p + strcspn(p, "\r\n ;"));
 				savechar = *p2; *p2 = '\0';
 				item->contenttype = malcop(p);
