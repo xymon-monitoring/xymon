@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.30 2005-03-31 21:10:51 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.31 2005-04-01 21:39:31 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -204,6 +204,9 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 
 	if ((service != NULL) && (strcmp(graphdef->larrdrrdname, "tcp") == 0)) {
 		sprintf(rrdservicename, "tcp:%s", service);
+	}
+	else if ((service != NULL) && (strcmp(graphdef->larrdrrdname, "ncv") == 0)) {
+		sprintf(rrdservicename, "ncv:%s", service);
 	}
 	else {
 		strcpy(rrdservicename, graphdef->larrdrrdname);
