@@ -11,11 +11,12 @@ is invoked as a CGI script via the bb-ack.sh CGI wrapper.
 bb-ack.cgi is passed a QUERY_STRING environment variable with the
 ACTION, NUMBER, DELAY and MESSAGE parameters. 
 
-The only supported action is "Ack" to acknowledge an alert. The
-original Big Brother script also allowed "WapAck" to acknowledge
-an alert via a WAP/WML interface, and a "PageAdmin" action to
-request the administrator to contact you - these two actions are
-not supported by bb-ack.cgi.
+.SH PARAMETERS
+ACTION is the action to perform. The only supported action is "Ack" 
+to acknowledge an alert. The original Big Brother script also allowed 
+"WapAck" to acknowledge an alert via a WAP/WML interface, and a 
+"PageAdmin" action to request the administrator to contact you. These 
+two actions are not supported by bb-ack.cgi.
 
 NUMBER is the number identifying the host/service to be acknowledged.
 It is included in all alert-messages sent out by Big Brother.
