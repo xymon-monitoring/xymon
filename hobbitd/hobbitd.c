@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.119 2005-03-01 11:46:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.120 2005-03-01 12:55:06 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -614,6 +614,7 @@ void get_hts(char *msg, char *sender, char *origin,
 	int maybedown = 0;
 
 	MEMDEFINE(hostip);
+	*hostip = '\0';
 
 	*host = NULL;
 	*test = NULL;
