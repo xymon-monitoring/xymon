@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.73 2003-07-06 16:20:41 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.74 2003-07-07 14:53:23 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -426,18 +426,20 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 							fprintf(output, "<A HREF=\"%s/bb-replog.sh?HOSTSVC=%s.%s&IP=%s",
 								getenv("CGIBINURL"), commafy(h->hostname), e->column->name, h->ip);
 							fprintf(output, "&COLOR=%s&PCT=%.2f&ST=%lu&END=%lu",
-								colorname(e->color), e->repinfo->availability, 
+								colorname(e->color), e->repinfo->fullavailability, 
 								e->repinfo->reportstart, reportend);
 							fprintf(output, "&RED=%.2f&YEL=%.2f&GRE=%.2f&PUR=%.2f&CLE=%.2f&BLU=%.2f",
-								e->repinfo->pct[COL_RED], e->repinfo->pct[COL_YELLOW], 
-								e->repinfo->pct[COL_GREEN], e->repinfo->pct[COL_PURPLE], 
-								e->repinfo->pct[COL_CLEAR], e->repinfo->pct[COL_BLUE]);
+								e->repinfo->fullpct[COL_RED], e->repinfo->fullpct[COL_YELLOW], 
+								e->repinfo->fullpct[COL_GREEN], e->repinfo->fullpct[COL_PURPLE], 
+								e->repinfo->fullpct[COL_CLEAR], e->repinfo->fullpct[COL_BLUE]);
 							fprintf(output, "&STYLE=%s&FSTATE=%s",
 								stylenames[reportstyle], e->repinfo->fstate);
 							fprintf(output, "&REDCNT=%d&YELCNT=%d&GRECNT=%d&PURCNT=%d&CLECNT=%d&BLUCNT=%d",
 								e->repinfo->count[COL_RED], e->repinfo->count[COL_YELLOW], 
 								e->repinfo->count[COL_GREEN], e->repinfo->count[COL_PURPLE], 
 								e->repinfo->count[COL_CLEAR], e->repinfo->count[COL_BLUE]);
+							if (h->reporttime) fprintf(output, "&REPTIME=%s", h->reporttime);
+							fprintf(output, "&WARNPCT=%.2f", h->reportwarnlevel);
 							fprintf(output, "\">\n");
 						}
 						else {
@@ -472,7 +474,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 								h->hostname, e->column->name, htmlextension);
 						}
 						fprintf(output, "<FONT SIZE=-1 COLOR=%s><B>%.2f</B></FONT></A>\n",
-							colorname(e->color), e->repinfo->availability);
+							colorname(e->color), e->repinfo->fullavailability);
 					}
 				}
 				fprintf(output, "</TD>\n");
