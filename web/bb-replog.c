@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.11 2003-07-07 14:54:23 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.12 2003-07-07 16:49:14 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -138,11 +138,22 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 		fprintf(textrep, "\n");
 		fprintf(textrep, "				%s - %s\n", hostname, service);
 		fprintf(textrep, "\n");
-		fprintf(textrep, "				Availability:	%.2f%%\n", repinfo->fullavailability);
+		if (repinfo->withreport) {
+			fprintf(textrep, "			Availability (24x7) :	%.2f%%\n", repinfo->fullavailability);
+			fprintf(textrep, "			Availability (SLA)  :	%.2f%%\n", repinfo->reportavailability);
+		}
+		else {
+			fprintf(textrep, "				Availability:	%.2f%%\n", repinfo->fullavailability);
+		}
 		fprintf(textrep, "			Red	Yellow	Green	Purple	Clear	Blue\n");
-		fprintf(textrep, "			%.2f%%	%.2f%%	%.2f%%	%.2f%%	%.2f%%	%.2f%%\n",
+		fprintf(textrep, "		24x7	%.2f%%	%.2f%%	%.2f%%	%.2f%%	%.2f%%	%.2f%%\n",
 			repinfo->fullpct[COL_RED], repinfo->fullpct[COL_YELLOW], repinfo->fullpct[COL_GREEN], 
 			repinfo->fullpct[COL_PURPLE], repinfo->fullpct[COL_CLEAR], repinfo->fullpct[COL_BLUE]);
+		if (repinfo->withreport) {
+			fprintf(textrep, "		SLA	%.2f%%	%.2f%%	%.2f%%	   -  	%.2f%%	   -  \n",
+				repinfo->reportpct[COL_RED], repinfo->reportpct[COL_YELLOW], 
+				repinfo->reportpct[COL_GREEN], repinfo->reportpct[COL_CLEAR]);
+		}
 		fprintf(textrep, "		Events	%d	%d	%d	%d	%d	%d\n",
 			repinfo->count[COL_RED], repinfo->count[COL_YELLOW], repinfo->count[COL_GREEN], 
 			repinfo->count[COL_PURPLE], repinfo->count[COL_CLEAR], repinfo->count[COL_BLUE]);
@@ -262,18 +273,30 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 	if (textrep) {
 		fprintf(textrep, "\n");
 		fprintf(textrep, "\n");
-		fprintf(textrep, "				%s %s	(%lu secs)\n",
-			"Time Critical/Offline:", durationstr(repinfo->fullduration[COL_RED]), repinfo->fullduration[COL_RED]);
+		fprintf(textrep, "			%s %s	(%lu secs)\n",
+			"Time Critical/Offline (24x7):", durationstr(repinfo->fullduration[COL_RED]), repinfo->fullduration[COL_RED]);
 
 		if (style != STYLE_CRIT) {
-			fprintf(textrep, "\n");
-			fprintf(textrep, "\n");
-			fprintf(textrep, "				%s %s	(%lu secs)\n",
-				"Time Non-Critical:", 
+			fprintf(textrep, "			%s %s	(%lu secs)\n",
+				"Time Non-Critical (24x7):", 
 				durationstr(repinfo->fullduration[COL_YELLOW] + repinfo->fullduration[COL_PURPLE] +
 					    repinfo->fullduration[COL_CLEAR]  + repinfo->fullduration[COL_BLUE]),
 				(repinfo->fullduration[COL_YELLOW] + repinfo->fullduration[COL_PURPLE] + 
 				 repinfo->fullduration[COL_CLEAR] + repinfo->fullduration[COL_BLUE]));
+		}
+
+
+		if (repinfo->withreport) {
+			fprintf(textrep, "\n");
+			fprintf(textrep, "\n");
+			fprintf(textrep, "			%s %s	(%lu secs)\n",
+				"Time Critical/Offline (SLA) :", durationstr(repinfo->reportduration[COL_RED]), repinfo->reportduration[COL_RED]);
+
+			if (style != STYLE_CRIT) {
+				fprintf(textrep, "			%s %s	(%lu secs)\n",
+					"Time Non-Critical (SLA) :", 
+					durationstr(repinfo->reportduration[COL_YELLOW]), repinfo->fullduration[COL_YELLOW]);
+			}
 		}
 	}
 
