@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.34 2005-01-24 17:27:26 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.35 2005-03-01 14:40:02 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -102,6 +102,8 @@ int main(int argc, char *argv[])
 	struct timezone tz;
 	unsigned long curwait, maxwait = 0;	/* 1 second in microseconds */
 #endif
+
+	MEMDEFINE(buf);
 
 	/* Dont save the error buffer */
 	save_errbuf = 0;
@@ -377,6 +379,8 @@ int main(int argc, char *argv[])
 	close_channel(channel, CHAN_CLIENT);
 
 	if (pidfile) unlink(pidfile);
+
+	MEMUNDEFINE(buf);
 	return (childexit != -1) ? 1 : 0;
 }
 

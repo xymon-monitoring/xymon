@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.47 2005-02-26 22:49:54 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.48 2005-03-01 14:39:38 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -145,10 +145,13 @@ void save_checkpoint(char *filename)
 void load_checkpoint(char *filename)
 {
 	char *subfn;
-	FILE *fd = fopen(filename, "r");
+	FILE *fd;
 	char l[4*MAXMSG+1024];
 
+	fd = fopen(filename, "r");
 	if (fd == NULL) return;
+
+	MEMDEFINE(l);
 
 	while (fgets(l, sizeof(l), fd)) {
 		char *item[20], *p;
@@ -198,6 +201,8 @@ void load_checkpoint(char *filename)
 	sprintf(subfn, "%s.sub", filename);
 	load_state(subfn);
 	xfree(subfn);
+
+	MEMUNDEFINE(l);
 }
 
 int main(int argc, char *argv[])
@@ -215,6 +220,9 @@ int main(int argc, char *argv[])
 	char notiflogfn[PATH_MAX];
 	FILE *notiflogfd = NULL;
 	struct sigaction sa;
+
+	MEMDEFINE(acklogfn);
+	MEMDEFINE(notiflogfn);
 
 	/* Dont save the error buffer */
 	save_errbuf = 0;
@@ -733,6 +741,9 @@ int main(int argc, char *argv[])
 	if (acklogfd) fclose(acklogfd);
 	if (notiflogfd) fclose(notiflogfd);
 	stoptrace();
+
+	MEMUNDEFINE(notiflogfn);
+	MEMUNDEFINE(acklogfn);
 
 	return 0;
 }
