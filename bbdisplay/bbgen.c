@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.174 2004-08-11 13:00:35 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.175 2004-08-12 08:50:05 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -583,7 +583,7 @@ int main(int argc, char *argv[])
 	 * If we did those, we would send double purple updates, 
 	 * generate wrong links for info pages etc.
 	 */
-	if (pageset || embedded || snapshot) enable_purpleupd = enable_larrdgen = enable_infogen = enable_wmlgen = 0;
+	if (pageset || embedded || snapshot) enable_purpleupd = enable_larrdgen = enable_infogen = enable_wmlgen = wantrss = 0;
 	if (embedded) {
 		egocolumn = htaccess = NULL;
 
