@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.2 2005-01-18 13:45:03 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.3 2005-01-18 17:13:50 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -121,13 +121,27 @@ const static struct {
 
 char *xgetenv(const char *name)
 {
-	char *result;
+	char *result, *newstr;
 	int i;
 
 	result = getenv(name);
 	if (result == NULL) {
 		for (i=0; (hobbitenv[i].name && (strcmp(hobbitenv[i].name, name) != 0)); i++) ;
 		if (hobbitenv[i].name) result = expand_env(hobbitenv[i].val);
+		if (result == NULL) return NULL;
+
+		/* 
+		 * If we got a result, put it into the environment so it will stay there.
+		 * Allocate memory for this new environment string - this stays allocated.
+		 */
+		newstr = xmalloc(strlen(name) + strlen(result) + 2);
+		sprintf(newstr, "%s=%s", name, result);
+		putenv(newstr);
+
+		/*
+		 * Return pointer to the environment string.
+		 */
+		result = getenv(name);
 	}
 
 	return result;
@@ -201,13 +215,13 @@ char *getenv_default(char *envname, char *envdefault, char **buf)
 {
 	static char *val;
 
-	val = xgetenv(envname);
+	val = getenv(envname);	/* Dont use xgetenv() here! */
 	if (!val) {
 		val = (char *)xmalloc(strlen(envname) + strlen(envdefault) + 2);
 		sprintf(val, "%s=%s", envname, envdefault);
 		putenv(val);
 		/* Dont free the string - it must be kept for the environment to work */
-		val = xgetenv(envname);
+		val = xgetenv(envname);	/* OK to use xgetenv here */
 	}
 
 	if (buf) *buf = val;
