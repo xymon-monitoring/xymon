@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.9 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.10 2005-01-18 22:37:17 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -206,7 +206,6 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 		}
 		else if (strcmp(t_start, "REPSECLIST") == 0) {
 			int i;
-			struct tm *nowtm = localtime(&yesterday);
 			char *selstr;
 
 			for (i=0; (i <= 59); i++) {
