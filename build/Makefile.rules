@@ -184,8 +184,10 @@ ifndef PKGBUILD
 endif
 
 # The www/rep and www/snap directories must be writable by the apache daemon
+ifndef PKGBUILD
 ifdef HTTPDGID
 	chgrp $(HTTPDGID) $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap
+endif
 endif
 	chmod g+w $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap
 
