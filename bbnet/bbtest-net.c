@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.123 2003-09-28 09:36:08 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.124 2003-09-29 11:31:02 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -29,6 +29,7 @@ static char rcsid[] = "$Id: bbtest-net.c,v 1.123 2003-09-28 09:36:08 henrik Exp 
 #include "util.h"
 #include "sendmsg.h"
 #include "debug.h"
+#include "bbares.h"
 #include "bbtest-net.h"
 #include "contest.h"
 #include "httptest.h"
@@ -69,6 +70,8 @@ char *reqenv[] = {
 
 service_t	*svchead = NULL;		/* Head of all known services */
 service_t	*pingtest = NULL;		/* Identifies the pingtest within svchead list */
+service_t	*dnstest = NULL;		/* Identifies the dnstest within svchead list */
+service_t	*digtest = NULL;		/* Identifies the digtest within svchead list */
 service_t	*httptest = NULL;		/* Identifies the httptest within svchead list */
 service_t	*ftptest = NULL;		/* Identifies the ftptest within svchead list */
 service_t	*ldaptest = NULL;		/* Identifies the ldaptest within svchead list */
@@ -79,6 +82,7 @@ char		*nonetpage = NULL;		/* The "NONETPAGE" env. variable */
 int		dnsmethod = DNS_THEN_IP;	/* How to do DNS lookups */
 int 		timeout=0;
 int 		conntimeout=0;
+int		dnstimeout=30;
 long		followlocations = 0;		/* Follow Location: redirects in HTTP? */
 char		*contenttestname = "content";   /* Name of the content checks column */
 char		*ssltestname = "sslcert";       /* Name of the SSL certificate checks column */
@@ -685,6 +689,14 @@ void load_tests(void)
 						s = rpctest;
 						savedspec = malcop(testspec);
 					}
+					else if (argnmatch(testspec, "dns=")) {
+						s = dnstest;
+						savedspec = malcop(testspec);
+					}
+					else if (argnmatch(testspec, "dig=")) {
+						s = digtest;
+						savedspec = malcop(testspec);
+					}
 					else {
 						/* 
 						 * Simple TCP connect test. 
@@ -832,6 +844,11 @@ void load_tests(void)
 
 				if (anytests) {
 					sprintf(h->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+					if (h->testip && (strcmp(h->ip, "0.0.0.0") == 0)) {
+						errprintf("Host %s has IP 0.0.0.0 - ignoring testip tag\n", h->hostname);
+						h->testip = 0;
+						h->dodns = 1;
+					}
 					h->next = testhosthead;
 					testhosthead = h;
 				}
@@ -874,10 +891,44 @@ void load_tests(void)
 	return;
 }
 
+#ifdef USE_ARES
+static void dns_callback(void *arg, int status, struct hostent *host)
+{
+	testedhost_t *h;
+	struct in_addr addr;
+
+	h = (testedhost_t *) arg;
+
+	if (status != ARES_SUCCESS) {
+		/*
+		 * If using DNS_THEN_IP method, fall back to using the IP address if it is valid.
+		 * If not, then we have an error.
+		 */
+		char *mem;
+
+		if ((dnsmethod != DNS_THEN_IP) || (strcmp(h->ip, "0.0.0.0") == 0)) {
+			errprintf("bbtest-net: IP resolver error for host %s - %s\n", 
+				  h->hostname, ares_strerror(status, &mem));
+			ares_free_errmem(mem);
+
+			h->dnserror = 1;
+		}
+
+		return;
+	}
+
+	memcpy(&addr, *(host->h_addr_list), sizeof(struct in_addr));
+	strcpy(h->ip, inet_ntoa(addr));
+}
+#endif
+
 
 void dns_resolve(void)
 {
 	testedhost_t	*h;
+	struct hostent *hent;
+
+	init_ares(dnstimeout, NULL);
 
 	for (h=testhosthead; (h); h=h->next) {
 		/* 
@@ -885,37 +936,28 @@ void dns_resolve(void)
 		 * to avoid multiple DNS lookups for each service 
 		 * we test on a host.
 		 */
-		if (h->testip || (dnsmethod == IP_ONLY)) {
-			if (strcmp(h->ip, "0.0.0.0") == 0) {
-				errprintf("bbtest-net: %s has IP 0.0.0.0 and testip - dropped\n", h->hostname);
-				h->dnserror = 1;
-			}
-		}
-		else if (h->dodns) {
-			struct hostent *hent;
 
+		if (!h->testip && (h->dodns || (strcmp(h->ip, "0.0.0.0") == 0))) {
+#ifdef USE_ARES
+			ares_gethostbyname(myares_channel, h->hostname, AF_INET, dns_callback, h);
+#else
 			hent = gethostbyname(h->hostname);
 			if (hent) {
-				sprintf(h->ip, "%d.%d.%d.%d", 
-					(unsigned char) hent->h_addr_list[0][0],
-					(unsigned char) hent->h_addr_list[0][1],
-					(unsigned char) hent->h_addr_list[0][2],
-					(unsigned char) hent->h_addr_list[0][3]);
+				struct in_addr addr;
+
+				memcpy(&addr, *(hent->h_addr_list), sizeof(struct in_addr));
+				strcpy(h->ip, inet_ntoa(addr));
 			}
-			else if (dnsmethod == DNS_THEN_IP) {
-				/* Already have the IP setup */
-			}
-			else {
+			else if (dnsmethod != DNS_THEN_IP) {
 				/* Cannot resolve hostname */
 				h->dnserror = 1;
-			}
-
-			if (strcmp(h->ip, "0.0.0.0") == 0) {
 				errprintf("bbtest-net: IP resolver error for host %s\n", h->hostname);
-				h->dnserror = 1;
 			}
+#endif
 		}
 	}
+
+	do_ares();
 }
 
 
@@ -1095,8 +1137,109 @@ int run_command(char *cmd, char *errortext, char **banner)
 	return result;
 }
 
+#ifdef USE_ARES
+static void run_ares_callback(void *arg, int status, struct hostent *host)
+{
+	testitem_t *t;
+	struct timeval tv;
+	struct timezone tz;
+	char msg[MAXMSG];
+
+	t = (testitem_t *)arg;
+
+	gettimeofday(&tv, &tz);
+	tv.tv_sec -= t->duration.tv_sec;
+	tv.tv_usec -= t->duration.tv_usec;
+	if (tv.tv_usec < 0) { tv.tv_sec--; tv.tv_usec += 1000000; }
+	t->duration.tv_sec = tv.tv_sec;
+	t->duration.tv_usec = tv.tv_usec;
+
+	msg[0] = '\0';
+
+	if (t->privdata && (status == ARES_SUCCESS)) {
+		/*
+		 * More than one hostname to lookup for this test.
+		 * We require all to succeed before going green.
+		 */
+		dnstest_t *dnscounts = (dnstest_t *)t->privdata;
+
+		dnscounts->okcount++;
+		t->open = (dnscounts->testcount == dnscounts->okcount);
+	}
+	else {
+		t->open = (status == ARES_SUCCESS);
+	}
+
+	if (status != ARES_SUCCESS) {
+		char *mem;
+
+		sprintf(msg, "&red: DNS lookup failed : %s\n", ares_strerror(status, &mem));
+		ares_free_errmem(mem);
+	}
+	else {
+		struct in_addr addr;
+		char **p, *msgp;
+
+		for (p = host->h_addr_list, msgp=msg; *p; p++) {
+			memcpy(&addr, *p, sizeof(struct in_addr));
+			msgp += sprintf(msgp, "&green %s has IP %s\n", host->h_name, inet_ntoa(addr));
+		}
+	}
+
+	if (t->banner) {
+		t->banner = (char *)realloc(t->banner, strlen(t->banner)+strlen(msg)+1);
+		strcat(t->banner, msg);
+	}
+	else {
+		t->banner = malcop(msg);
+	}
+}
+
+void run_ares_service(service_t *service)
+{
+	struct testitem_t *t;
+	struct timezone tz;
+	char msgline[MAX_LINE_LEN];
+
+	for (t=service->items; (t); t = t->next) {
+		init_ares((t->host->timeout ? t->host->timeout : DEF_TIMEOUT), t->host->ip);
+
+		if (t->testspec && (argnmatch(t->testspec, "dns=") || argnmatch(t->testspec, "dig="))) {
+			char *tests, *p;
+
+			t->privdata = (dnstest_t *)malloc(sizeof(dnstest_t));
+			((dnstest_t *)t->privdata)->testcount = 0;
+			((dnstest_t *)t->privdata)->okcount = 0;
+
+			tests = malcop(t->testspec+4);
+			sprintf(msgline, "Performing DNS lookup of : %s\n\n", tests);
+			t->banner = malcop(msgline);
+			p = strtok(tests, ",");
+			while (p) {
+				((dnstest_t *)t->privdata)->testcount++;
+				ares_gethostbyname(myares_channel, p, AF_INET, run_ares_callback, t);
+				p = strtok(NULL, ",");
+			}
+			free(tests);
+		}
+		else {
+			sprintf(msgline, "Performing DNS lookup of : %s\n\n", t->host->hostname);
+			t->banner = malcop(msgline);
+			ares_gethostbyname(myares_channel, t->host->hostname, AF_INET, run_ares_callback, t);
+		}
+		gettimeofday(&t->duration, &tz);
+
+		do_ares();
+	}
+}
+#endif
+
+
 void run_nslookup_service(service_t *service)
 {
+#ifdef USE_ARES
+	run_ares_service(service);
+#else
 	testitem_t	*t;
 	char		cmd[1024];
 	char		*p;
@@ -1111,10 +1254,14 @@ void run_nslookup_service(service_t *service)
 			t->open = (run_command(cmd, "can't find", &t->banner) == 0);
 		}
 	}
+#endif
 }
 
 void run_dig_service(service_t *service)
 {
+#ifdef USE_ARES
+	run_ares_service(service);
+#else
 	testitem_t	*t;
 	char		cmd[1024];
 	char		*p;
@@ -1129,6 +1276,7 @@ void run_dig_service(service_t *service)
 			t->open = (run_command(cmd, "Bad server", &t->banner) == 0);
 		}
 	}
+#endif
 }
 
 void run_ntp_service(service_t *service)
@@ -1393,7 +1541,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 				}
 				else {
 					/* Check if we got the expected data */
-					if (checktcpresponse && !tcp_got_expected((test_t *)test->privdata)) {
+					if (checktcpresponse && (service->toolid == TOOL_CONTEST) && !tcp_got_expected((test_t *)test->privdata)) {
 						strcpy(cause, "Unexpected service response");
 						color = COL_YELLOW; countasdown = 1;
 					}
@@ -1842,6 +1990,12 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			p++; timeout = atoi(p);
 		}
+#ifdef USE_ARES
+		else if (argnmatch(argv[argi], "--dnstimeout=")) {
+			char *p = strchr(argv[argi], '=');
+			p++; dnstimeout = atoi(p);
+		}
+#endif
 		else if (argnmatch(argv[argi], "--dns=")) {
 			char *p = strchr(argv[argi], '=');
 			p++;
@@ -1950,6 +2104,9 @@ int main(int argc, char *argv[])
 			printf("bbtest-net version %s\n", VERSION);
 			if (http_library_version) printf("HTTP library: %s\n", http_library_version);
 			if (ldap_library_version) printf("LDAP library: %s\n", ldap_library_version);
+#ifdef USE_ARES
+			printf("ARES library used for DNS lookups\n");
+#endif
 			return 0;
 		}
 		else if ((strcmp(argv[argi], "--help") == 0) || (strcmp(argv[argi], "-?") == 0)) {
@@ -1957,6 +2114,9 @@ int main(int argc, char *argv[])
 			printf("Usage: %s [options] [host1 host2 host3 ...]\n", argv[0]);
 			printf("Options:\n");
 			printf("    --timeout=N                 : Timeout (in seconds) for service tests\n");
+#ifdef USE_ARES
+			printf("    --dnstimeout=N              : Timeout (in seconds) for DNS lookups. Default:%d\n", dnstimeout);
+#endif
 			printf("    --dns=[only|ip|standard]    : How IP's are decided\n");
 			printf("    --test-untagged             : Include hosts without a NET: tag in the test\n");
 			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbtest-net\n");
@@ -1971,8 +2131,8 @@ int main(int argc, char *argv[])
 			printf("    --conntimeout=N             : Timeout for the connection to the server to succeed\n");
 			printf("    --content=COLUMNNAME        : Define columnname for CONTENT checks (content)\n");
 			printf("    --ssl=COLUMNNAME            : Define columnname for SSL certificate checks (sslcert)\n");
-			printf("    --sslwarn=N                 : Go yellow if certificate expires in less than N days (default:30\n");
-			printf("    --sslalarm=N                : Go red if certificate expires in less than N days (default:10\n");
+			printf("    --sslwarn=N                 : Go yellow if certificate expires in less than N days (default:30)\n");
+			printf("    --sslalarm=N                : Go red if certificate expires in less than N days (default:10)\n");
 			printf("    --no-ssl                    : Disable SSL certificate check\n");
 			printf("    --follow[=N]                : Follow redirects for N levels (default: N=3).\n");
 			printf("\nDebugging options:\n");
@@ -2024,8 +2184,8 @@ int main(int argc, char *argv[])
 	/* bbd uses 1984 - may not be in /etc/services */
 	add_service("bbd", (getportnumber("bbd") ? getportnumber("bbd") : 1984), 0, TOOL_CONTEST);
 
-	add_service("dns", getportnumber("domain"), 0, TOOL_NSLOOKUP);
-	add_service("dig", getportnumber("domain"), 0, TOOL_DIG);
+	dnstest = add_service("dns", getportnumber("domain"), 0, TOOL_NSLOOKUP);
+	digtest = add_service("dig", getportnumber("domain"), 0, TOOL_DIG);
 	add_service("ntp", getportnumber("ntp"),    0, TOOL_NTP);
 	rpctest  = add_service("rpc", getportnumber("sunrpc"), 0, TOOL_RPCINFO);
 	httptest = add_service("http", getportnumber("http"),  0, TOOL_CURL);
