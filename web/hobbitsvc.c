@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.13 2004-10-26 15:35:25 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.14 2004-10-28 09:37:39 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -34,7 +34,7 @@ typedef struct {
 
 static larrdsvc_t *larrdsvcs = NULL;
 
-void nldecode(unsigned char *msg)
+static void nldecode(unsigned char *msg)
 {
 	unsigned char *inp = msg;
 	unsigned char *outp = msg;
@@ -68,7 +68,7 @@ void nldecode(unsigned char *msg)
 	*outp = '\0';
 }
 
-larrdsvc_t *find_larrd(char *service, char *flags)
+static larrdsvc_t *find_larrd(char *service, char *flags)
 {
 	larrdsvc_t *result;
 	larrdsvc_t *lrec;
@@ -109,6 +109,32 @@ larrdsvc_t *find_larrd(char *service, char *flags)
 	return (lrec->bbsvcname ? lrec : NULL);
 }
 
+static void historybutton(char *cgibinurl, char *hostname, char *service, char *ip) 
+{
+	char *tmp1 = (char *)malloc(strlen(getenv("NONHISTS"))+3);
+	char *tmp2 = (char *)malloc(strlen(service)+3);
+
+	sprintf(tmp1, ",%s,", getenv("NONHISTS"));
+	sprintf(tmp2, ",%s,", service);
+	if (strstr(tmp1, tmp2) == NULL) {
+		fprintf(stdout,"<BR><BR><CENTER><FORM ACTION=\"%s/bb-hist.sh\"> \
+			<INPUT TYPE=SUBMIT VALUE=\"HISTORY\"> \
+			<INPUT TYPE=HIDDEN NAME=\"HISTFILE\" VALUE=\"%s.%s\"> \
+			<INPUT TYPE=HIDDEN NAME=\"ENTRIES\" VALUE=\"50\"> \
+			<INPUT TYPE=HIDDEN NAME=\"IP\" VALUE=\"%s\"> \
+			</FORM></CENTER>\n",
+			cgibinurl, hostname, service, ip);
+	}
+
+	free(tmp2);
+	free(tmp1);
+}
+
+
+enum source_t { SRC_BBLOGS, SRC_BBGEND, SRC_HISTLOGS };
+enum histbutton_t { HIST_TOP, HIST_BOTTOM, HIST_NONE };
+
+#ifdef CGI
 /*
  * This program is invoked via CGI with QUERY_STRING containing:
  *
@@ -120,18 +146,17 @@ hostlist_t      *hosthead = NULL;
 link_t          *linkhead = NULL;
 link_t  null_link = { "", "", "", NULL };
 
-char *hostname = "";
-char *service = "";
-char *ip = "";
-char *displayname = "";
-char *tstamp = "";
-
 char *reqenv[] = {
 	"BBDISP",
 	"BBHOME",
 	NULL 
 };
 
+static char *hostname = "";
+static char *service = "";
+static char *ip = "";
+static char *displayname = "";
+static char *tstamp = "";
 
 static void errormsg(char *msg)
 {
@@ -190,31 +215,6 @@ static void parse_query(void)
 
 	if (strcmp(displayname, "") == 0) displayname = hostname;
 }
-
-void historybutton(char *cgibinurl, char *hostname, char *service, char *ip) 
-{
-	char *tmp1 = (char *)malloc(strlen(getenv("NONHISTS"))+3);
-	char *tmp2 = (char *)malloc(strlen(service)+3);
-
-	sprintf(tmp1, ",%s,", getenv("NONHISTS"));
-	sprintf(tmp2, ",%s,", service);
-	if (strstr(tmp1, tmp2) == NULL) {
-		fprintf(stdout,"<BR><BR><CENTER><FORM ACTION=\"%s/bb-hist.sh\"> \
-			<INPUT TYPE=SUBMIT VALUE=\"HISTORY\"> \
-			<INPUT TYPE=HIDDEN NAME=\"HISTFILE\" VALUE=\"%s.%s\"> \
-			<INPUT TYPE=HIDDEN NAME=\"ENTRIES\" VALUE=\"50\"> \
-			<INPUT TYPE=HIDDEN NAME=\"IP\" VALUE=\"%s\"> \
-			</FORM></CENTER>\n",
-			cgibinurl, hostname, service, ip);
-	}
-
-	free(tmp2);
-	free(tmp1);
-}
-
-
-enum source_t { SRC_BBLOGS, SRC_BBGEND, SRC_HISTLOGS };
-enum histbutton_t { HIST_TOP, HIST_BOTTOM, HIST_NONE };
 
 int main(int argc, char *argv[])
 {
@@ -503,4 +503,4 @@ int main(int argc, char *argv[])
 	headfoot(stdout, ((source == SRC_HISTLOGS) ? "histlog" : "hostsvc"), "", "footer", color);
 	return 0;
 }
-
+#endif
