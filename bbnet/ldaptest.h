@@ -1,0 +1,47 @@
+/*----------------------------------------------------------------------------*/
+/* Big Brother network test tool.                                             */
+/*                                                                            */
+/* This is used to implement the testing of a LDAP service.                   */
+/*                                                                            */
+/* Copyright (C) 2003 Henrik Storner <henrik@hswn.dk>                         */
+/*                                                                            */
+/* This program is released under the GNU General Public License (GPL),       */
+/* version 2. See the file "COPYING" for details.                             */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+#ifndef __LDAPTEST_H_
+#define __LDAPTEST_H_
+
+#include <time.h>
+#include <lber.h>
+#include <ldap.h>
+
+typedef struct {
+	char   *url;                    /* URL to request, stripped of BB'isms */
+	char   *scheme;
+	char   *ldaphost;
+	int    portnumber;
+
+	int    ldapstatus;		/* Status from library of the ldap transaction */
+	char   *output;                 /* Output from ldap query */
+
+	int    ldapcolor;		/* Final color reported */
+	char   *faileddeps;
+	double totaltime;		/* Time spent doing request */
+
+	char   *certinfo;               /* Data about SSL certificate */
+	time_t certexpires;             /* Expiry time for SSL cert */
+} ldap_data_t;
+
+extern char *ldap_library_version;
+extern int  init_ldap_library(void);
+extern void shutdown_ldap_library(void);
+
+extern void add_ldap_test(testitem_t *t);
+extern void run_ldap_tests(service_t *ldaptest, int sslcertcheck);
+extern void show_ldap_test_results(service_t *ldaptest);
+extern void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage, int failgoesclear);
+
+#endif
+
