@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.18 2003-05-22 05:56:18 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.19 2003-05-23 12:09:59 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -450,7 +450,7 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 		curl_easy_setopt(req->curl, CURLOPT_ERRORBUFFER, &req->errorbuffer);
 
 #if (LIBCURL_VERSION_NUM >= 0x070a00)
-		if (sslcertcheck && (strncmp(req->url, "https:", 6) == 0)) {
+		if (sslcertcheck && (!t->host->nosslcert) && (strncmp(req->url, "https:", 6) == 0)) {
 			curl_easy_setopt(req->curl, CURLOPT_VERBOSE, 1);
 			curl_easy_setopt(req->curl, CURLOPT_DEBUGDATA, req);
 			curl_easy_setopt(req->curl, CURLOPT_DEBUGFUNCTION, debug_callback);

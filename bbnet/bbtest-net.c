@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.54 2003-05-23 11:53:55 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.55 2003-05-23 12:09:59 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -215,6 +215,7 @@ testedhost_t *init_testedhost(char *hostname, int timeout, int conntimeout, int 
 
 	newhost->dialup = 0;
 	newhost->testip = 0;
+	newhost->nosslcert = 0;
 	newhost->dnserror = 0;
 	newhost->in_sla = in_sla;
 
@@ -340,6 +341,7 @@ void load_tests(void)
 					else if (strcmp(testspec, "noping") == 0) { specialtag = 1; h->noping = 1; }
 					else if (strcmp(testspec, "testip") == 0) { specialtag = 1; h->testip = 1; }
 					else if (strcmp(testspec, "dialup") == 0) { specialtag = 1; h->dialup = 1; }
+					else if (strcmp(testspec, "nosslcert") == 0) { specialtag = 1; h->nosslcert = 1; }
 					else if (strncmp(testspec, "depends=", 8) == 0) {
 						specialtag = 1;
 						h->deptests = malcop(testspec+8);

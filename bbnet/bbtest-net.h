@@ -60,6 +60,7 @@ typedef struct {
 	int timeout;		/* Host timeout setting (http test only) */
 	int dialup;		/* dialup flag (if set, failed tests report as clear) */
 	int testip;		/* testip flag (dont do dns lookups on hostname) */
+	int nosslcert;		/* nosslcert flag */
 	int dnserror;		/* set internally if we cannot find the host's IP */
 	int in_sla;		/* set internally if inside SLA period. If not, failed tests are blue */
 
