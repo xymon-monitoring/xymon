@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.49 2004-08-27 10:40:36 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.50 2004-08-31 20:39:12 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -319,14 +319,14 @@ int generate_info(char *infocolumn)
 			if (*p == '~') p++;
 
 			if (strncmp(p, "http", 4) == 0) {
+				char *urlstring = decode_url(p, NULL);
+
 				if (firstcontent) {
 					addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>URL checks:</th><td align=left>\n");
 					firstcontent = 0;
 				}
 
-				sprintf(l, "<a href=\"%s\">%s</a><br>\n", 
-					realurl(p, NULL, NULL, NULL, NULL), 
-					realurl(p, NULL, NULL, NULL, NULL)); 
+				sprintf(l, "<a href=\"%s\">%s</a><br>\n", urlstring, urlstring);
 				addtobuffer(&infobuf, &infobuflen, l);
 			}
 			p = strtok(NULL, " \t");
@@ -346,15 +346,18 @@ int generate_info(char *infocolumn)
 			     (strncmp(p, "post;", 5) == 0)    ||
 			     (strncmp(p, "nopost;", 7) == 0) ) {
 
+				bburl_t bburl;
+				char *urlstring = decode_url(p, &bburl);
+
 				if (firstcontent) {
 					addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>Content checks:</th><td align=left>\n");
 					firstcontent = 0;
 				}
 
-				sprintf(l, "<a href=\"%s\">%s</a>", 
-					realurl(p, NULL, NULL, NULL, NULL), 
-					realurl(p, NULL, NULL, NULL, NULL)); 
+				sprintf(l, "<a href=\"%s\">%s</a>", urlstring, urlstring);
 				addtobuffer(&infobuf, &infobuflen, l);
+
+				/* FIXME - this is SOOOO ugly! */
 				if ((strncmp(p, "cont;", 5) == 0) || (strncmp(p, "nocont;", 7) == 0) || 
 				    (strncmp(p, "type;", 5) == 0) ||
 				    (strncmp(p, "post;", 5) == 0) || (strncmp(p, "nopost;", 7) == 0)) {
