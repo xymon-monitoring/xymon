@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.43 2003-04-30 19:42:20 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.44 2003-05-03 06:54:59 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -694,20 +694,20 @@ int periodcoversnow(char *tag)
 	p++;
 	strcpy(starttime, p); p = starttime;
 	if ( (strlen(starttime) < 4) || 
-	     !isdigit(*p)            || 
-	     !isdigit(*(p+1))        ||
-	     !isdigit(*(p+2))        ||
-	     !isdigit(*(p+3))        ||
+	     !isdigit((int) *p)            || 
+	     !isdigit((int) *(p+1))        ||
+	     !isdigit((int) *(p+2))        ||
+	     !isdigit((int) *(p+3))        ||
 	     !(*(p+4) == '-') )          goto out;
 	else *(starttime+4) = '\0';
 
 	p+=5;
 	strcpy(endtime, p); p = endtime;
 	if ( (strlen(endtime) < 4) || 
-	     !isdigit(*p)          || 
-	     !isdigit(*(p+1))      ||
-	     !isdigit(*(p+2))      ||
-	     !isdigit(*(p+3))      ||
+	     !isdigit((int) *p)          || 
+	     !isdigit((int) *(p+1))      ||
+	     !isdigit((int) *(p+2))      ||
+	     !isdigit((int) *(p+3))      ||
 	     !(*(p+4) == ':') )          goto out;
 	else *(endtime+4) = '\0';
 
