@@ -22,7 +22,7 @@ void do_wml_cards(void)
 	sprintf(newbbhosts, "BBHOSTS=%s", fn);
 	fd = fopen(fn, "w");
 	if (fd == NULL) {
-		printf("Cannot open %s\n", fn);
+		errprintf("Cannot open %s\n", fn);
 		return;
 	}
 
@@ -52,7 +52,7 @@ void do_wml_cards(void)
 	sprintf(fn, "%s/.bkg", getenv("BBLOGS"));
 	fd = fopen(fn, "w");
 	if (fd == NULL) {
-		printf("Cannot open %s\n", fn);
+		errprintf("Cannot open %s\n", fn);
 		return;
 	}
 	fprintf(fd, "%s\n", colorname(wapcolor));
@@ -62,7 +62,7 @@ void do_wml_cards(void)
 	sprintf(mkbbwmlcmd, "%s/web/mkbbwml.sh", getenv("BBHOME"));
 	pid = fork();
 	if (pid == -1) {
-		printf("Fork error in forking %s\n", mkbbwmlcmd);
+		errprintf("Fork error in forking %s\n", mkbbwmlcmd);
 		return;
 	}
 	else if (pid == 0) {

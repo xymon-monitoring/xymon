@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.46 2003-05-20 13:02:44 hstoerne Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.47 2003-05-22 05:56:18 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -644,7 +644,7 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums)
 		symlink(pagebasename, indexfilename);
 
 		if (output == NULL) {
-			printf("Cannot open file %s\n", tmpfilename);
+			errprintf("Cannot open file %s\n", tmpfilename);
 			return;
 		}
 	}
@@ -676,7 +676,7 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums)
 
 	fclose(output);
 	if (rename(tmpfilename, filename)) {
-		printf("Cannot rename %s to %s - error %d\n", tmpfilename, filename, errno);
+		errprintf("Cannot rename %s to %s - error %d\n", tmpfilename, filename, errno);
 	}
 }
 
@@ -710,7 +710,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 	sprintf(eventlogfilename, "%s/allevents", getenv("BBHIST"));
 	eventlog = fopen(eventlogfilename, "r");
 	if (!eventlog) {
-		perror("Cannot open eventlog");
+		errprintf("Cannot open eventlog");
 		return;
 	}
 
@@ -913,8 +913,8 @@ int do_bb2_page(char *filename, int summarytype)
 	sprintf(tmpfilename, "%s.tmp", filename);
 	output = fopen(tmpfilename, "w");
 	if (output == NULL) {
+		errprintf("Cannot open file %s", tmpfilename);
 		free(tmpfilename);
-		perror("Cannot open file");
 		exit(1);
 	}
 
@@ -941,7 +941,7 @@ int do_bb2_page(char *filename, int summarytype)
 
 	fclose(output);
 	if (rename(tmpfilename, filename)) {
-		printf("Cannot rename %s to %s - error %d\n", tmpfilename, filename, errno);
+		errprintf("Cannot rename %s to %s - error %d\n", tmpfilename, filename, errno);
 	}
 
 	free(tmpfilename);

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.11 2003-05-20 21:02:53 henrik Exp $";
+static char rcsid[] = "$Id: process.c,v 1.12 2003-05-22 05:56:18 henrik Exp $";
 
 #include <string.h>
 #include <sys/types.h>
@@ -143,8 +143,8 @@ void delete_old_acks(void)
 
 	bbacks = opendir(getenv("BBACKS"));
 	if (!bbacks) {
-		perror("No BBACKS!");
-		exit(1);
+		errprintf("No BBACKS! Cannot cd to directory %s\n", getenv("BBACKS"));
+		return;
         }
 
 	chdir(getenv("BBACKS"));
@@ -169,7 +169,7 @@ void send_summaries(summary_t *sumhead)
 
 	bbcmd = getenv("BB");
 	if (!bbcmd) {
-		printf("BB not defined!");
+		errprintf("BB not defined!");
 		return;
 	}
 
@@ -236,7 +236,7 @@ void send_summaries(summary_t *sumhead)
 		}
 
 		if (summarycolor == -1) {
-			printf("Could not determine sourcepage for summary %s\n", s->url);
+			errprintf("Could not determine sourcepage for summary %s\n", s->url);
 			summarycolor = pagehead->color;
 		}
 
@@ -246,7 +246,7 @@ void send_summaries(summary_t *sumhead)
 
 		childpid = fork();
 		if (childpid == -1) {
-			printf("Fork error\n");
+			errprintf("Fork error while trying to send summary\n");
 		}
 		else if (childpid == 0) {
 			execl(bbcmd, "bb: bbd summary", s->receiver, summsg, NULL);

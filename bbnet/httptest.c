@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.17 2003-05-11 07:00:46 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.18 2003-05-22 05:56:18 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -59,7 +59,7 @@ static int can_ldap = 0;
 int init_http_library(void)
 {
 	if (curl_global_init(CURL_GLOBAL_DEFAULT)) {
-		printf("FATAL: Cannot initialize libcurl!\n");
+		errprintf("FATAL: Cannot initialize libcurl!\n");
 		return 1;
 	}
 
@@ -73,18 +73,18 @@ int init_http_library(void)
 		/* Check libcurl version */
 		curlver = curl_version_info(CURLVERSION_NOW);
 		if (curlver->age != CURLVERSION_NOW) {
-			printf("Unknown libcurl version - please recompile bbtest-net\n");
+			errprintf("Unknown libcurl version - please recompile bbtest-net\n");
 			return 1;
 		}
 
 		if (curlver->ssl_version_num == 0) {
-			printf("WARNING: No SSL support in libcurl - https tests disabled\n");
+			errprintf("WARNING: No SSL support in libcurl - https tests disabled\n");
 			can_ssl = 0;
 			return 1;
 		}
 
 		if (curlver->version_num < LIBCURL_VERSION_NUM) {
-			printf("WARNING: Compiled against libcurl %s, but running on version %s\n",
+			errprintf("WARNING: Compiled against libcurl %s, but running on version %s\n",
 				LIBCURL_VERSION, curlver->version);
 		}
 
@@ -179,7 +179,7 @@ void add_http_test(testitem_t *t)
 				req->exp = malloc(sizeof(regex_t));
 				status = regcomp(req->exp, l, REG_EXTENDED|REG_NOSUB);
 				if (status) {
-					printf("Failed to compile regexp '%s' for URL %s\n", p, req->url);
+					errprintf("Failed to compile regexp '%s' for URL %s\n", p, req->url);
 					req->contstatus = STATUS_CONTENTMATCH_BADREGEX;
 				}
 			}
@@ -199,7 +199,7 @@ void add_http_test(testitem_t *t)
 			req->exp = malloc(sizeof(regex_t));
 			status = regcomp(req->exp, p+1, REG_EXTENDED|REG_NOSUB);
 			if (status) {
-				printf("Failed to compile regexp '%s' for URL %s\n", p+1, req->url);
+				errprintf("Failed to compile regexp '%s' for URL %s\n", p+1, req->url);
 				req->contstatus = STATUS_CONTENTMATCH_BADREGEX;
 			}
 		}
@@ -219,7 +219,7 @@ void add_http_test(testitem_t *t)
 				req->exp = malloc(sizeof(regex_t));
 				status = regcomp(req->exp, p+1, REG_EXTENDED|REG_NOSUB);
 				if (status) {
-					printf("Failed to compile regexp '%s' for URL %s\n", p+1, req->url);
+					errprintf("Failed to compile regexp '%s' for URL %s\n", p+1, req->url);
 					req->contstatus = STATUS_CONTENTMATCH_BADREGEX;
 				}
 			}
@@ -428,7 +428,7 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 		
 		req->curl = curl_easy_init();
 		if (req->curl == NULL) {
-			printf("ERROR: Cannot initialize curl session\n");
+			errprintf("ERROR: Cannot initialize curl session\n");
 			return;
 		}
 

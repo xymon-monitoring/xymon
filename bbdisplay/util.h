@@ -25,6 +25,9 @@ extern int bbmsgcount;
 extern int bbstatuscount;
 extern int bbnocombocount;
 
+extern void errprintf(const char *fmt, ...);
+extern char *errbuf;
+
 extern FILE *stackfopen(char *filename, char *mode);
 extern int stackfclose(FILE *fd);
 extern char *stackfgets(char *buffer, unsigned int bufferlen, char *includetag);

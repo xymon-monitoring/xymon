@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.65 2003-05-20 13:02:44 hstoerne Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.66 2003-05-22 05:56:18 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -46,6 +46,11 @@ char	*ignorecolumns = NULL;			/* Columns that will be ignored totally */
 link_t  null_link = { "", "", "", NULL };	/* Null link for pages/hosts/whatever with no link */
 bbgen_col_t   null_column = { "", NULL };		/* Null column */
 char	*null_text = "";
+
+int	hostcount = 0;
+int	statuscount = 0;
+int	pagecount = 0;
+int	purplecount = 0;
 
 static pagelist_t *pagelisthead = NULL;
 
@@ -135,6 +140,7 @@ bbgen_page_t *init_page(const char *name, const char *title)
 {
 	bbgen_page_t *newpage = malloc(sizeof(bbgen_page_t));
 
+	pagecount++;
 	dprintf("init_page(%s, %s)\n", textornull(name), textornull(title));
 
 	if (name) {
@@ -190,6 +196,7 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	host_t 		*newhost = malloc(sizeof(host_t));
 	hostlist_t	*newlist = malloc(sizeof(hostlist_t));
 
+	hostcount++;
 	dprintf("init_host(%s, %d,%d,%d.%d, %d, %s, %s, %s, %s)\n", 
 		textornull(hostname), ip1, ip2, ip3, ip4,
 		dialup, textornull(alerts), textornull(tags),
@@ -339,6 +346,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	struct stat 	log_st;
 	time_t		now = time(NULL);
 
+	statuscount++;
 	dprintf("init_state(%s, %d, ...)\n", textornull(filename), dopurple);
 
 	*is_purple = 0;
@@ -352,7 +360,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	if ( (stat(filename, &log_st) == -1)       || 
 	     (!S_ISREG(log_st.st_mode))            ||
 	     ((fd = fopen(filename, "r")) == NULL)   ) {
-		printf("Weird file BBLOGS/%s skipped\n", filename);
+		errprintf("Weird file BBLOGS/%s skipped\n", filename);
 		return NULL;
 	}
 
@@ -432,6 +440,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		/* Log file too old = go purple */
 
 		*is_purple = 1;
+		purplecount++;
 
 		if (host && host->dialup) {
 			/* Dialup hosts go clear, not purple */
@@ -621,13 +630,13 @@ dispsummary_t *init_displaysummary(char *fn)
 	if ( (stat(sumfn, &st) == -1)          || 
 	     (!S_ISREG(st.st_mode))            ||     /* Not a regular file */
 	     ((fd = fopen(sumfn, "r")) == NULL)   ) {
-		printf("Weird summary file BBLOGS/%s skipped\n", fn);
+		errprintf("Weird summary file BBLOGS/%s skipped\n", fn);
 		return NULL;
 	}
 
 	if (st.st_mtime < time(NULL)) {
 		/* Stale summary file - ignore and delete */
-		printf("Stale summary file BBLOGS/%s - deleted\n", fn);
+		errprintf("Stale summary file BBLOGS/%s - deleted\n", fn);
 		unlink(sumfn);
 		return NULL;
 	}
@@ -674,7 +683,7 @@ dispsummary_t *init_displaysummary(char *fn)
 		free(rowcol);
 	}
 	else {
-		printf("Read error reading from file %s\n", sumfn);
+		errprintf("Read error reading from file %s\n", sumfn);
 		newsum = NULL;
 	}
 
@@ -737,7 +746,7 @@ void getparentnamelink(char *l, bbgen_page_t *toppage, bbgen_page_t **parent, ch
 		*parent = walk->pageentry;
 	}
 	else {
-		printf("Cannot find parent page '%s'\n", parentname);
+		errprintf("Cannot find parent page '%s'\n", parentname);
 		*parent = NULL;
 	}
 }
@@ -783,7 +792,7 @@ link_t *load_links(const char *directory, const char *urlprefix)
 	toplink = curlink = NULL;
 	bblinks = opendir(directory);
 	if (!bblinks) {
-		printf("Cannot read links in directory %s\n", directory);
+		errprintf("Cannot read links in directory %s\n", directory);
 		return NULL;
 	}
 
@@ -852,7 +861,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 
 	bbhosts = stackfopen(getenv("BBHOSTS"), "r");
 	if (bbhosts == NULL) {
-		printf("Cannot open the BBHOSTS file '%s'\n", getenv("BBHOSTS"));
+		errprintf("Cannot open the BBHOSTS file '%s'\n", getenv("BBHOSTS"));
 		exit(1);
 	}
 
@@ -880,7 +889,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			*p = '\0'; 
 		}
 		else {
-			printf("Warning: Lines in bb-hosts too long or has no newline: '%s'\n", l);
+			errprintf("Warning: Lines in bb-hosts too long or has no newline: '%s'\n", l);
 			fflush(stdout);
 		}
 
@@ -1064,7 +1073,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 
 				*p = savechar;
 				if (targetpage == NULL) {
-					printf("Warning: Cannot find any target page named %s - dropping host %s'\n", 
+					errprintf("Warning: Cannot find any target page named %s - dropping host %s'\n", 
 						targetpagename, hostname);
 				}
 				else {
@@ -1088,7 +1097,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 							}
 						}
 						else {
-							printf("Warning: Cannot find group %d for host %s - dropping host\n",
+							errprintf("Warning: Cannot find group %d for host %s - dropping host\n",
 								wantedgroup, hostname);
 						}
 					}
@@ -1174,7 +1183,7 @@ state_t *load_state(dispsummary_t **sumhead)
 
 	bblogs = opendir(getenv("BBLOGS"));
 	if (!bblogs) {
-		perror("No logs!");
+		errprintf("No logs! Cannot cd to the BBLOGS directory %s\n", getenv("BBLOGS"));
 		exit(1);
 	}
 
@@ -1201,7 +1210,7 @@ state_t *load_state(dispsummary_t **sumhead)
 				if (is_purple) purplecount++;
 				if (purplecount > MAX_PURPLE_PER_RUN) {
 					dopurple = 0;
-					printf("%s : Too many purple updates (>%d) - disabling updates for purple logs\n", 
+					errprintf("%s : Too many purple updates (>%d) - disabling updates for purple logs\n", 
 						timestamp, MAX_PURPLE_PER_RUN);
 				}
 			}

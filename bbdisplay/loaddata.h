@@ -25,6 +25,11 @@ typedef struct {
 	void *next;
 } pagelist_t;
 
+extern int hostcount;
+extern int statuscount;
+extern int pagecount;
+extern int purplecount;
+
 extern bbgen_col_t *find_or_create_column(const char *testname);
 extern link_t *load_all_links(void);
 extern bbgen_page_t *load_bbhosts(char *pgset);

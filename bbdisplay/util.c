@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.46 2003-05-21 22:23:36 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.47 2003-05-22 05:56:18 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -30,6 +30,7 @@ static char rcsid[] = "$Id: util.c,v 1.46 2003-05-21 22:23:36 henrik Exp $";
 #include <time.h>
 #include <sys/wait.h>
 #include <utime.h>
+#include <stdarg.h>
 
 #include "bbgen.h"
 #include "util.h"
@@ -64,6 +65,35 @@ typedef struct {
 static stackfd_t *fdhead = NULL;
 static char stackfd_base[MAX_PATH];
 static char stackfd_mode[10];
+
+char *errbuf = NULL;
+static int errbufsize = 0;
+
+void errprintf(const char *fmt, ...)
+{
+	char msg[1024];
+	va_list args;
+
+	va_start(args, fmt);
+	vsnprintf(msg, sizeof(msg), fmt, args);
+	va_end(args);
+
+	fprintf(stderr, "%s", msg);
+	fflush(stderr);
+
+	if (errbuf == NULL) {
+		errbufsize = 4096;
+		errbuf = malloc(errbufsize);
+		*errbuf = '\0';
+	}
+	else if ((strlen(errbuf) + strlen(msg)) > errbufsize) {
+		errbufsize += 4096;
+		errbuf = realloc(errbuf, errbufsize);
+	}
+
+	strcat(errbuf, msg);
+}
+
 
 FILE *stackfopen(char *filename, char *mode)
 {
@@ -144,7 +174,7 @@ char *stackfgets(char *buffer, unsigned int bufferlen, char *includetag)
 		if (stackfopen(newfn, "r") != NULL) 
 			return stackfgets(buffer, bufferlen, includetag);
 		else {
-			printf("WARNING: Cannot open include file '%s', line was:%s\n", newfn, buffer);
+			errprintf("WARNING: Cannot open include file '%s', line was:%s\n", newfn, buffer);
 			if (eol) *eol = '\n';
 			return result;
 		}
@@ -762,7 +792,7 @@ static void sendmessage(char *msg)
 	
 	childpid = fork();
 	if (childpid == -1) {
-		printf("%s: Fork error\n", timestamp);
+		errprintf("%s: Fork error\n", timestamp);
 	}
 	else if (childpid == 0) {
 		execl(bbcmd, "bb", bbdisp, msg, NULL);
@@ -770,7 +800,7 @@ static void sendmessage(char *msg)
 	else {
 		wait(&childstat);
 		if (WIFEXITED(childstat) && (WEXITSTATUS(childstat) != 0) ) {
-			printf("%s: Whoops ! bb failed to send message - returns status %d\n", 
+			errprintf("%s: Whoops ! bb failed to send message - returns status %d\n", 
 				timestamp, WEXITSTATUS(childstat));
 		}
 	}
@@ -898,13 +928,13 @@ void envcheck(char *envvars[])
 
 	for (i = 0; (envvars[i]); i++) {
 		if (getenv(envvars[i]) == NULL) {
-			fprintf(stderr, "Environment variable %s not defined\n", envvars[i]);
+			errprintf("Environment variable %s not defined\n", envvars[i]);
 			ok = 0;
 		}
 	}
 
 	if (!ok) {
-		fprintf(stderr, "Aborting\n");
+		errprintf("Aborting\n");
 		exit (1);
 	}
 }

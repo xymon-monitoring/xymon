@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.104 2003-05-21 22:23:36 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.105 2003-05-22 05:56:18 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -88,6 +88,7 @@ int main(int argc, char *argv[])
 	char 		bb2filename[MAX_PATH];
 	char 		bbnkfilename[MAX_PATH];
 	int             larrd043 = 0;				/* Set to use LARRD 0.43 disk displays */
+	char		*egocolumn = NULL;
 
 	bb_color = bb2_color = bbnk_color = -1;
 	pagedir = rrddir = NULL;
@@ -152,7 +153,7 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 			nopropyellowdefault = malloc(strlen(lp)+2);
 			sprintf(nopropyellowdefault, ",%s,", (lp+1));
-			printf("--noprop is deprecated - use --nopropyellow instead\n");
+			errprintf("--noprop is deprecated - use --nopropyellow instead\n");
 		}
 		else if (strncmp(argv[i], "--nopropyellow=", 15) == 0) {
 			char *lp = strchr(argv[i], '=');
@@ -221,7 +222,7 @@ int main(int argc, char *argv[])
 
 		else if (strcmp(argv[i], "--bbpageONLY") == 0) {
 			/* Deprecated */
-			printf("--bbpageONLY is deprecated - use --pageset=NAME to generate pagesets\n");
+			errprintf("--bbpageONLY is deprecated - use --pageset=NAME to generate pagesets\n");
 		}
 		else if (strncmp(argv[i], "--pageset=", 10) == 0) {
 			char *lp = strchr(argv[i], '=');
@@ -233,6 +234,14 @@ int main(int argc, char *argv[])
 			select_headers_and_footers(lp);
 		}
 
+		else if (strcmp(argv[i], "--report") == 0) {
+			char *p = strchr(argv[i], '=');
+			if (p) {
+				p++; egocolumn = p;
+			}
+			else egocolumn = "bbgen";
+			timing = 1;
+		}
 		else if (strcmp(argv[i], "--timing") == 0) {
 			timing = 1;
 		}
@@ -285,7 +294,7 @@ int main(int argc, char *argv[])
 			exit(0);
 		}
 		else if (strncmp(argv[i], "-", 1) == 0) {
-			printf("Unknown option : %s\n", argv[i]);
+			errprintf("Unknown option : %s\n", argv[i]);
 		}
 
 		else {
@@ -364,7 +373,7 @@ int main(int argc, char *argv[])
 
 	/* Generate pages */
 	if (chdir(pagedir) != 0) {
-		printf("Cannot change to webpage directory %s\n", pagedir);
+		errprintf("Cannot change to webpage directory %s\n", pagedir);
 		exit(1);
 	}
 
@@ -401,7 +410,35 @@ int main(int argc, char *argv[])
 	}
 
 	add_timestamp("Run completed");
-	show_timestamps(NULL);
+
+	/* Tell about us */
+	if (egocolumn) {
+		char msgline[MAXMSG];
+
+		combo_start();
+		init_status(errbuf ? COL_YELLOW : COL_GREEN);
+		sprintf(msgline, "status %s.%s green %s\n\n", getenv("MACHINE"), egocolumn, timestamp);
+		addtostatus(msgline);
+
+		sprintf(msgline, "bbgen version %s\n", VERSION);
+		addtostatus(msgline);
+
+		sprintf(msgline, "\nStatistics:\n Hosts               : %5d\n Status messages     : %5d\n Purple messages     : %5d\n Pages               : %5d\n", 
+			hostcount, statuscount, purplecount, pagecount);
+		addtostatus(msgline);
+
+		if (errbuf) {
+			addtostatus("\n\nError output:\n");
+			addtostatus(errbuf);
+		}
+
+		show_timestamps(msgline);
+		addtostatus(msgline);
+
+		finish_status();
+		combo_end();
+	}
+	else show_timestamps(NULL);
 
 	return 0;
 }

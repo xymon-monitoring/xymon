@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.14 2003-05-18 14:38:33 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.15 2003-05-22 05:56:18 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -31,6 +31,7 @@ static char rcsid[] = "$Id: contest.c,v 1.14 2003-05-18 14:38:33 henrik Exp $";
 #include "contest.h"
 #include "bbgen.h"
 #include "debug.h"
+#include "util.h"
 
 #define DEF_MAX_OPENS  (FD_SETSIZE / 4)	/* Max number of simultaneous open connections */
 #define MAX_BANNER 1024
@@ -71,8 +72,8 @@ test_t *add_tcp_test(char *ip, int port, char *service, int silent)
 	int i;
 
 	if (port == 0) {
-		printf("WHOA there - trying to scan port 0 for service %s\n", service);
-		printf("You probably need to define the %s service in /etc/services\n", service);
+		errprintf("Trying to scan port 0 for service %s\n", service);
+		errprintf("You probably need to define the %s service in /etc/services\n", service);
 		return NULL;
 	}
 
@@ -125,7 +126,7 @@ void do_tcp_tests(int conntimeout, int concurrency)
 	if (concurrency == 0) concurrency = DEF_MAX_OPENS;
 	if (concurrency > (FD_SETSIZE-10)) {
 		concurrency = FD_SETSIZE - 10;	/* Allow a bit for stdin, stdout and such */
-		printf("bbtest-net: concurrency reduced to FD_SETSIZE-10 (%d)\n", concurrency);
+		errprintf("bbtest-net: concurrency reduced to FD_SETSIZE-10 (%d)\n", concurrency);
 	}
 
 	/* How many tests to do ? */
@@ -177,42 +178,42 @@ void do_tcp_tests(int conntimeout, int concurrency)
 						   case ETIMEDOUT    : break;
 
 						   /* These should not happen. */
-						   case EBADF        : printf("connect returned EBADF!\n"); break;
-						   case ENOTSOCK     : printf("connect returned ENOTSOCK!\n"); break;
-						   case EADDRNOTAVAIL: printf("connect returned EADDRNOTAVAIL!\n"); break;
-						   case EAFNOSUPPORT : printf("connect returned EAFNOSUPPORT!\n"); break;
-						   case EISCONN      : printf("connect returned EISCONN!\n"); break;
-						   case EADDRINUSE   : printf("connect returned EADDRINUSE!\n"); break;
-						   case EFAULT       : printf("connect returned EFAULT!\n"); break;
-						   case EALREADY     : printf("connect returned EALREADY!\n"); break;
-						   default           : printf("connect returned %d, errno=%d\n", res, errno);
+						   case EBADF        : errprintf("connect returned EBADF!\n"); break;
+						   case ENOTSOCK     : errprintf("connect returned ENOTSOCK!\n"); break;
+						   case EADDRNOTAVAIL: errprintf("connect returned EADDRNOTAVAIL!\n"); break;
+						   case EAFNOSUPPORT : errprintf("connect returned EAFNOSUPPORT!\n"); break;
+						   case EISCONN      : errprintf("connect returned EISCONN!\n"); break;
+						   case EADDRINUSE   : errprintf("connect returned EADDRINUSE!\n"); break;
+						   case EFAULT       : errprintf("connect returned EFAULT!\n"); break;
+						   case EALREADY     : errprintf("connect returned EALREADY!\n"); break;
+						   default           : errprintf("connect returned %d, errno=%d\n", res, errno);
 						}
 					}
 					else {
 						/* Should NEVER happen. connect returns 0 or -1 */
-						printf("Strange result from connect: %d, errno=%d\n", res, errno);
+						errprintf("Strange result from connect: %d, errno=%d\n", res, errno);
 					}
 				}
 				else {
 					/* Could net set to non-blocking mode! Hmmm ... */
 					sockok = 0;
-					printf("Cannot set O_NONBLOCK\n");
+					errprintf("Cannot set O_NONBLOCK\n");
 				}
 			}
 			else {
 				/* Could not get a socket */
 				switch (errno) {
-				   case EPROTONOSUPPORT: printf("Cannot get socket - EPROTONOSUPPORT\n"); break;
-				   case EAFNOSUPPORT   : printf("Cannot get socket - EAFNOSUPPORT\n"); break;
-				   case EMFILE         : printf("Cannot get socket - EMFILE\n"); break;
-				   case ENFILE         : printf("Cannot get socket - ENFILE\n"); break;
-				   case EACCES         : printf("Cannot get socket - EACCESS\n"); break;
-				   case ENOBUFS        : printf("Cannot get socket - ENOBUFS\n"); break;
-				   case ENOMEM         : printf("Cannot get socket - ENOMEM\n"); break;
-				   case EINVAL         : printf("Cannot get socket - EINVAL\n"); break;
-				   default             : printf("Cannot get socket - errno=%d\n", errno); break;
+				   case EPROTONOSUPPORT: errprintf("Cannot get socket - EPROTONOSUPPORT\n"); break;
+				   case EAFNOSUPPORT   : errprintf("Cannot get socket - EAFNOSUPPORT\n"); break;
+				   case EMFILE         : errprintf("Cannot get socket - EMFILE\n"); break;
+				   case ENFILE         : errprintf("Cannot get socket - ENFILE\n"); break;
+				   case EACCES         : errprintf("Cannot get socket - EACCESS\n"); break;
+				   case ENOBUFS        : errprintf("Cannot get socket - ENOBUFS\n"); break;
+				   case ENOMEM         : errprintf("Cannot get socket - ENOMEM\n"); break;
+				   case EINVAL         : errprintf("Cannot get socket - EINVAL\n"); break;
+				   default             : errprintf("Cannot get socket - errno=%d\n", errno); break;
 				}
-				printf("Try running with a lower --concurrency setting (currently: %d)\n", concurrency);
+				errprintf("Try running with a lower --concurrency setting (currently: %d)\n", concurrency);
 			}
 		}
 
@@ -251,10 +252,10 @@ void do_tcp_tests(int conntimeout, int concurrency)
 		selres = select((maxfd+1), &readfds, &writefds, NULL, &tmo);
 		if (selres == -1) {
 			switch (errno) {
-			   case EBADF : printf("select failed - EBADF\n"); break;
-			   case EINTR : printf("select failed - EINTR\n"); break;
-			   case EINVAL: printf("select failed - EINVAL\n"); break;
-			   case ENOMEM: printf("select failed - ENOMEM\n"); break;
+			   case EBADF : errprintf("select failed - EBADF\n"); break;
+			   case EINTR : errprintf("select failed - EINTR\n"); break;
+			   case EINVAL: errprintf("select failed - EINVAL\n"); break;
+			   case ENOMEM: errprintf("select failed - ENOMEM\n"); break;
 			}
 			selres = 0;
 		}

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.49 2003-05-21 22:23:36 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.50 2003-05-22 05:56:18 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -270,7 +270,7 @@ void load_tests(void)
 
 	bbhosts = stackfopen(getenv("BBHOSTS"), "r");
 	if (bbhosts == NULL) {
-		perror("No bb-hosts file found");
+		errprintf("No bb-hosts file found");
 		return;
 	}
 
@@ -493,7 +493,7 @@ void dns_resolve(void)
 		 */
 		if (h->testip || (dnsmethod == IP_ONLY)) {
 			if (strcmp(h->ip, "0.0.0.0") == 0) {
-				printf("bbtest-net: %s has IP 0.0.0.0 and testip - dropped\n", h->hostname);
+				errprintf("bbtest-net: %s has IP 0.0.0.0 and testip - dropped\n", h->hostname);
 				h->dnserror = 1;
 			}
 		}
@@ -517,7 +517,7 @@ void dns_resolve(void)
 			}
 
 			if (strcmp(h->ip, "0.0.0.0") == 0) {
-				printf("bbtest-net: IP resolver error for host %s\n", h->hostname);
+				errprintf("bbtest-net: IP resolver error for host %s\n", h->hostname);
 				h->dnserror = 1;
 			}
 		}
@@ -586,6 +586,7 @@ int run_command(char *cmd, char *errortext, char **banner)
 	if (banner) { *banner = malloc(1024); sprintf(*banner, "Command: %s\n\n", cmd); }
 	cmdpipe = popen(cmd, "r");
 	if (cmdpipe == NULL) {
+		errprintf("Could not open pipe for command %s\n", cmd);
 		if (banner) strcat(*banner, "popen() failed to run command\n");
 		return -1;
 	}
@@ -677,7 +678,10 @@ int run_fping_service(service_t *service)
 	sprintf(cmd, "%s -Ae 2>/dev/null 1>%s", cmdpath, logfn);
 
 	cmdpipe = popen(cmd, "w");
-	if (cmdpipe == NULL) return -1;
+	if (cmdpipe == NULL) {
+		errprintf("Could not run the fping command %s\n", cmd);
+		return -1;
+	}
 	for (t=service->items; (t); t = t->next) {
 		if (!t->host->dnserror && !t->host->noping) {
 			fprintf(cmdpipe, "%s\n", t->host->ip);
@@ -689,7 +693,7 @@ int run_fping_service(service_t *service)
 	load_fping_status();
 
 	logfd = fopen(logfn, "r");
-	if (logfd == NULL) { printf("Cannot open fping output file!\n"); return -1; }
+	if (logfd == NULL) { errprintf("Cannot open fping output file!\n"); return -1; }
 	while (fgets(l, sizeof(l), logfd)) {
 		if (sscanf(l, "%d.%d.%d.%d ", &ip1, &ip2, &ip3, &ip4) == 4) {
 			p = strchr(l, ' ');
@@ -916,7 +920,7 @@ int main(int argc, char *argv[])
 	char *egocolumn = NULL;
 
 	if (init_http_library() != 0) {
-		printf("Failed to initialize http library\n");
+		errprintf("Failed to initialize http library\n");
 		return 1;
 	}
 
@@ -1036,7 +1040,7 @@ int main(int argc, char *argv[])
 			return 0;
 		}
 		else {
-			printf("Unknown option %s - try --help\n", argv[argi]);
+			errprintf("Unknown option %s - try --help\n", argv[argi]);
 		}
 	}
 
@@ -1164,7 +1168,7 @@ int main(int argc, char *argv[])
 		char msgline[MAXMSG];
 
 		combo_start();
-		init_status(COL_GREEN);
+		init_status(errbuf ? COL_YELLOW : COL_GREEN);
 		sprintf(msgline, "status %s.%s green %s\n\n", getenv("MACHINE"), egocolumn, timestamp);
 		addtostatus(msgline);
 
@@ -1176,6 +1180,11 @@ int main(int argc, char *argv[])
 		sprintf(msgline, "\nStatistics:\n Hosts total         : %5d\n Hosts with no tests : %5d\n Total test count    : %5d\n Status messages     : %5d\n Alert status msgs   : %5d\n Transmissions       : %5d\n", 
 			hostcount, notesthostcount, testcount, bbstatuscount, bbnocombocount, bbmsgcount);
 		addtostatus(msgline);
+
+		if (errbuf) {
+			addtostatus("\n\nError output:\n");
+			addtostatus(errbuf);
+		}
 
 		show_timestamps(msgline);
 		addtostatus(msgline);
