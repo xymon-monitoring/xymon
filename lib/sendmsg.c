@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.15 2004-07-19 16:06:34 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.16 2004-07-26 13:40:55 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -44,8 +44,67 @@ static int	msgcolor;		/* color of status message in msgbuf */
 static int      maxmsgspercombo = 0;	/* 0 = no limit */
 static int      sleepbetweenmsgs = 0;
 static int      bbdportnumber = 0;
+static char     *bbdispproxyhost = NULL;
+static int      bbdispproxyport = 0;
 
 int dontsendmessages = 0;
+
+static void setup_transport(char *recipient)
+{
+	static int transport_is_setup = 0;
+	int default_port;
+
+	if (transport_is_setup) return;
+	transport_is_setup = 1;
+
+	if (strncmp(recipient, "http://", 7) == 0) {
+		/*
+		 * Send messages via http. This requires e.g. a CGI on the webserver to
+		 * receive the POST we do here.
+		 */
+		default_port = 80;
+
+		if (getenv("http_proxy")) {
+			char *p;
+
+			bbdispproxyhost = malcop(getenv("http_proxy"));
+			if (strncmp(bbdispproxyhost, "http://", 7) == 0) bbdispproxyhost += strlen("http://");
+ 
+			p = strchr(bbdispproxyhost, ':');
+			if (p) {
+				*p = '\0';
+				p++;
+				bbdispproxyport = atoi(p);
+			}
+			else {
+				bbdispproxyport = 8080;
+			}
+		}
+	}
+	else {
+		/* 
+		 * Non-HTTP transport - lookup portnumber in both BBPORT env.
+		 * and the "bbd" entry from /etc/services.
+		 */
+		default_port = BBDPORTNUMBER;
+
+		if (getenv("BBPORT")) bbdportnumber = atoi(getenv("BBPORT"));
+	
+	
+		/* Next is /etc/services "bbd" entry */
+		if ((bbdportnumber <= 0) || (bbdportnumber > 65535)) {
+			struct servent *svcinfo;
+
+			svcinfo = getservbyname("bbd", NULL);
+			if (svcinfo) bbdportnumber = ntohs(svcinfo->s_port);
+		}
+	}
+
+	/* Last resort: The default value */
+	if ((bbdportnumber <= 0) || (bbdportnumber > 65535)) {
+		bbdportnumber = default_port;
+	}
+}
 
 static int sendtobbd(char *recipient, char *message)
 {
@@ -60,42 +119,92 @@ static int sendtobbd(char *recipient, char *message)
 	char *rcptip = NULL;
 	int rcptport = 0;
 	int connretries = BBSENDRETRIES;
+	char *httpmessage = NULL;
 
 	if (dontsendmessages) {
 		printf("%s\n", message);
 		return BB_OK;
 	}
 
-	rcptip = malcop(recipient);
-	rcptport = bbdportnumber;
-	p = strchr(rcptip, ':');
-	if (p) {
-		*p = '\0'; p++; rcptport = atoi(p);
-	}
+	setup_transport(recipient);
 
-	if (rcptport == 0) {
-		/*
-		 * Need to figure out the port number 
-		 * First see if BBPORT is defined; if not, fall back to default.
-		 */
-
-		/* First check for BBPORT */
-		if (getenv("BBPORT")) bbdportnumber = atoi(getenv("BBPORT"));
-
-		/* Next is /etc/services "bbd" entry */
-		if ((bbdportnumber <= 0) || (bbdportnumber > 65535)) {
-			struct servent *svcinfo;
-
-			svcinfo = getservbyname("bbd", NULL);
-			if (svcinfo) bbdportnumber = ntohs(svcinfo->s_port);
-		}
-
-		/* Last resort: The default value */
-		if ((bbdportnumber <= 0) || (bbdportnumber > 65535)) {
-			bbdportnumber = BBDPORTNUMBER;
-		}
-
+	if (strncmp(recipient, "http://", strlen("http://")) != 0) {
+		/* Standard BB communications, directly to bbd */
+		rcptip = malcop(recipient);
 		rcptport = bbdportnumber;
+		p = strchr(rcptip, ':');
+		if (p) {
+			*p = '\0'; p++; rcptport = atoi(p);
+		}
+	}
+	else {
+		char *bufp;
+		char *posturl = NULL;
+		char *posthost = NULL;
+
+		if (bbdispproxyhost == NULL) {
+			char *p;
+
+			/*
+			 * No proxy. "recipient" is "http://host[:port]/url/for/post"
+			 * Strip off "http://", and point "posturl" to the part after the hostname.
+			 * If a portnumber is present, strip it off and update rcptport.
+			 */
+			rcptip = malcop(recipient+strlen("http://"));
+			rcptport = bbdportnumber;
+
+			p = strchr(rcptip, '/');
+			if (p) {
+				posturl = malcop(p);
+				*p = '\0';
+			}
+
+			p = strchr(rcptip, ':');
+			if (p) {
+				*p = '\0';
+				p++;
+				rcptport = atoi(p);
+			}
+
+			posthost = malcop(rcptip);
+		}
+		else {
+			char *p;
+
+			/*
+			 * With proxy. The full "recipient" must be in the POST request.
+			 */
+			rcptip = malcop(bbdispproxyhost);
+			rcptport = bbdispproxyport;
+
+			posturl = malcop(recipient);
+
+			p = strchr(recipient + strlen("http://"), '/');
+			if (p) {
+				*p = '\0';
+				posthost = malcop(recipient + strlen("http://"));
+				*p = '/';
+
+				p = strchr(posthost, ':');
+				if (p) *p = '\0';
+			}
+		}
+
+		if ((posturl == NULL) || (posthost == NULL)) {
+			errprintf("Unable to parse HTTP recipient\n");
+			return BB_EBADURL;
+		}
+
+		bufp = msgptr = httpmessage = malloc(strlen(message)+1024);
+		bufp += sprintf(httpmessage, "POST %s HTTP/1.1\n", posturl);
+		bufp += sprintf(bufp, "MIME-version: 1.0\n");
+		bufp += sprintf(bufp, "Content-Type: application/octet-stream\n");
+		bufp += sprintf(bufp, "Content-Length: %d\n", strlen(message));
+		bufp += sprintf(bufp, "Host: %s\n", posthost);
+		bufp += sprintf(bufp, "\n%s", message);
+
+		if (posturl) free(posturl);
+		if (posthost) free(posthost);
 	}
 
 	if (inet_aton(rcptip, &addr) == 0) {
@@ -196,6 +305,7 @@ retry_connect:
 	shutdown(sockfd, SHUT_RDWR);
 	close(sockfd);
 	free(rcptip);
+	if (httpmessage) free(httpmessage);
 	return BB_OK;
 }
 
@@ -419,9 +529,26 @@ link_t  null_link = { "", "", "", NULL };
 
 int main(int argc, char *argv[])
 {
-	int result;
+	int result = 1;
 
-	result = sendmessage(argv[2], argv[1]);
+	if (argc < 3) {
+		fprintf(stderr, "Invalid call\n\n");
+		fprintf(stderr, "Usage: %s RECIPIENT DATA\n", argv[0]);
+		fprintf(stderr, "  RECIPIENT: IP-address, hostname or URL\n");
+		fprintf(stderr, "  DATA: Message to send, or \"-\" to read from stdin\n");
+		return 1;
+	}
+
+	if (strcmp(argv[2], "-") == 0) {
+		char msg[MAXMSG];
+
+		while (fgets(msg, sizeof(msg), stdin)) {
+			result = sendmessage(msg, argv[1]);
+		}
+	}
+	else
+		result = sendmessage(argv[2], argv[1]);
+
 	return result;
 }
 #endif

@@ -26,6 +26,7 @@
 #define BB_ESELFAILED		6
 #define BB_ETIMEOUT		7
 #define BB_EWRITEERROR		8
+#define BB_EBADURL		9
 
 extern int bbmsgcount;
 extern int bbstatuscount;
