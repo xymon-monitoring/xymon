@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.15 2003-10-28 06:33:36 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.16 2004-08-04 13:57:26 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -206,13 +206,17 @@ int main(int argc, char *argv[])
 	char bbgencmd[MAX_PATH];
 	char bbgentimeopt[100];
 	char *bbgen_argv[20];
-	int i;
+	int i, newargc;
 	pid_t childpid;
 	int childstat;
 	char htmldelim[20];
 	char startstr[20], endstr[20];
+	int cleanupoldreps = 1;
 
 	envcheck(reqenv);
+	if (argc > 1) {
+		if (strcmp(argv[1], "--noclean") == 0) cleanupoldreps = 0;
+	}
 	parse_query();
 
 	sprintf(dirid, "%u-%u", (unsigned int)getpid(), (unsigned int)time(NULL));
@@ -224,12 +228,15 @@ int main(int argc, char *argv[])
 
 	if (getenv("BBGEN")) sprintf(bbgencmd, "%s", getenv("BBGEN"));
 	else sprintf(bbgencmd, "%s/bin/bbgen", getenv("BBHOME"));
-	bbgen_argv[0] = bbgencmd;
+	newargc = 0;
+	bbgen_argv[newargc++] = bbgencmd;
 	sprintf(bbgentimeopt, "--reportopts=%u:%u:1:%s", (unsigned int)starttime, (unsigned int)endtime, style);
-	bbgen_argv[1] = bbgentimeopt;
-	for (i=1; (i<argc); i++) bbgen_argv[i+1] = argv[i];
-	bbgen_argv[1+argc] = outdir;
-	bbgen_argv[2+argc] = NULL;
+	bbgen_argv[newargc++] = bbgentimeopt;
+	for (i=1; (i<argc); i++) {
+		if (strcmp(argv[i], "--noclean") != 0) bbgen_argv[newargc++] = argv[i];
+	}
+	bbgen_argv[newargc++] = outdir;
+	bbgen_argv[newargc++] = NULL;
 
 
 	/* Output the "please wait for report ... " thing */
@@ -283,7 +290,7 @@ int main(int argc, char *argv[])
 			fflush(stdout);
 		}
 
-		cleandir(getenv("BBREP"));
+		if (cleanupoldreps) cleandir(getenv("BBREP"));
 	}
 	else {
 		printf("--%s\n\n", htmldelim);
