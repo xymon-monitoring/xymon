@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.23 2003-08-14 06:28:10 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.24 2003-08-15 11:06:02 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,7 +26,8 @@ static char rcsid[] = "$Id: bb-hist.c,v 1.23 2003-08-14 06:28:10 henrik Exp $";
 #include "debug.h"
 
 static char selfurl[MAX_PATH];
-static int startoffset = 0;
+static time_t req_endtime = 0;
+
 static int len1d = 24;
 static char *bartitle1d = "1 day summary";
 static int len1w = 7;
@@ -72,16 +73,29 @@ static char *tagcolors[COL_COUNT] = {
 #define ALIGN_DAY   1
 #define ALIGN_MONTH 2
 
+#define DAY_BAR 0
+#define WEEK_BAR 1
+#define MONTH_BAR 2
+#define YEAR_BAR 3
+
+#define END_START 0
+#define END_END 1
+#define END_UNCHANGED 2
+
 static void generate_pct_summary(
 			FILE *htmlrep,			/* output file */
 			char *hostname,
 			char *service,
 			char *caption,
-			reportinfo_t *repinfo) 		/* Percent summaries for period */
+			reportinfo_t *repinfo, 		/* Percent summaries for period */
+			time_t secsperpixel)
 {
 	fprintf(htmlrep, "<TABLE BORDER=0 BGCOLOR=%s CELLPADDING=3>\n", barbkgcolor);
 
 	fprintf(htmlrep, "<TR BGCOLOR=\"#333333\"><TD COLSPAN=6 ALIGN=CENTER><FONT SIZE=\"+1\">%s</FONT></TD></TR>\n", caption);
+	fprintf(htmlrep, "<TR BGCOLOR=\"#333333\"><TD COLSPAN=6 ALIGN=CENTER><FONT SIZE=\"-1\">Min. duration shown: %s</FONT></TD></TR>\n", 
+		durationstr(secsperpixel / 2));
+
 	fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
 
 	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
@@ -110,17 +124,84 @@ static void generate_pct_summary(
 
 }
 
+static unsigned int calc_endtime(time_t endtime, int change, int alignment, int endofperiod)
+{
+	int daysinmonth[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+	struct tm *tmbuf;
+	time_t result, now;
+
+	tmbuf = localtime(&endtime);
+	switch (alignment) {
+		case ALIGN_HOUR: 
+			tmbuf->tm_hour += change;
+			if (endofperiod == END_END) {
+				tmbuf->tm_min = tmbuf->tm_sec = 59;
+			}
+			else if (endofperiod == END_START) {
+				tmbuf->tm_min = tmbuf->tm_sec = 0;
+			}
+			break;
+		case ALIGN_DAY:
+			tmbuf->tm_mday += change;
+			if (endofperiod == END_END) {
+				tmbuf->tm_hour = 23;
+				tmbuf->tm_min = 59;
+				tmbuf->tm_sec = 59;
+			}
+			else if (endofperiod == END_START) {
+				tmbuf->tm_hour = tmbuf->tm_min = tmbuf->tm_sec = 0;
+			}
+			break;
+		case ALIGN_MONTH:
+			tmbuf->tm_mon += change;
+
+			if (endofperiod == END_END) {
+				/* Need to find the last day of the month */
+				tmbuf->tm_mday = daysinmonth[tmbuf->tm_mon];
+				if (tmbuf->tm_mon == 2) {
+					if (((tmbuf->tm_year + 1900) % 4) == 0) {
+						tmbuf->tm_mday = 29;
+						if (((tmbuf->tm_year + 1900) % 100) == 0) tmbuf->tm_mday = 28;
+						if (((tmbuf->tm_year + 1900) % 400) == 0) tmbuf->tm_mday = 29;
+					}
+				}
+
+				tmbuf->tm_hour = 23;
+				tmbuf->tm_min = 59;
+				tmbuf->tm_sec = 59;
+			}
+			else if (endofperiod == END_START) {
+				tmbuf->tm_mday = 1;
+				tmbuf->tm_hour = tmbuf->tm_min = tmbuf->tm_sec = 0;
+			}
+			break;
+	}
+	tmbuf->tm_isdst = -1;
+	result = mktime(tmbuf);
+
+	/* Dont try to foresee the future */
+	now = time(NULL);
+	if (result > now) result = now;
+
+	return (unsigned int)result;
+}
+
 static int maxcolor(replog_t *periodlog, time_t begintime, time_t endtime)
 {
 	int result = COL_GREEN;
 	replog_t *walk = periodlog;
 
 	while (walk) {
-		if ( (walk->starttime >= begintime) &&
-		     (walk->starttime < endtime) &&
-		     ((walk->color == COL_RED) || (walk->color == COL_YELLOW)) &&
-		     (walk->color > result)) {
-			result = walk->color;
+		if (walk->color > result) {
+			/*
+			 * We want this event, IF:
+			 * - it starts sometime during begintime -> endtime, or
+			 * - it starts before begintime, but lasts into after begintime.
+			 */
+			if ( ((walk->starttime >= begintime) && (walk->starttime < endtime))  ||
+			     ((walk->starttime <  begintime) && ((walk->starttime + walk->duration) >= begintime)) ) {
+				result = walk->color;
+			}
 		}
 
 		walk = walk->next;
@@ -132,28 +213,20 @@ static int maxcolor(replog_t *periodlog, time_t begintime, time_t endtime)
 
 static void generate_colorbar(
 			FILE *htmlrep,		/* Output file */
-			time_t periodlen, 	/* Length of one peiod on the bar. Usually 1 hour/day/month */
-			int periodcount,	/* # of periodlen items on the bar */
-			time_t startofperiod, 	/* Starttime of the last (incomplete) period */
-			time_t startofbar, 	/* Start of the colorbar */
-			time_t today,		/* End of the colorbar */
-			replog_t *periodlog,	/* Log entries for period */
+			time_t begintime,
+			time_t endtime,
+			int alignment,		/* Align by hour/day/month */
+			int bartype,            /* Day/Week/Month/Year bar */
 			char *hostname,
 			char *service,
 			char *caption,		/* Title */
-			char *tagfmt,		/* strftime() formatstring for tags */
-			reportinfo_t *repinfo, 	/* Info for the percent summary */
-			int  alignment)
+			replog_t *periodlog,	/* Log entries for period */
+			reportinfo_t *repinfo) 	/* Info for the percent summary */
 {
-	/* Generate the colorbar "graph" */
-
-	int secsperpixel, periodpixels, pixelsfirst, pixelslast, pixelssum;
-	replog_t *colorlog, *walk, *tmp;
+	int secsperpixel;
 	char *pctstr = "";
-	int fwdoffset, rewoffset, offsetchange;
-	time_t now = time(NULL);
-	time_t startofbarnice = startofbar;
-	struct tm *tmbuf;
+	replog_t *colorlog, *walk;
+	int changeval, changealign;
 
 	/*
 	 * Pixel-based charts are better, but for backwards
@@ -165,54 +238,45 @@ static void generate_colorbar(
 		pctstr = "%";
 	}
 
-	secsperpixel = (periodlen*periodcount / pixels);	/* How many seconds required for 1 pixel */
-	periodpixels = (pixels / periodcount);			/* Same as: periodlen / secsperpixel */
-
-	/* Compute the percentage of the first and last (incomplete) periods */
-	pixelslast = (today - startofperiod) / secsperpixel;
-	pixelsfirst = periodpixels - pixelslast;
+	/* How many seconds required for 1 pixel */
+	secsperpixel = ((endtime - begintime) / pixels);
 
 	/* Need to re-sort the period-log to chronological order */
 	colorlog = NULL;
-	for (walk = periodlog; (walk); walk = tmp) {
-		tmp = walk->next;
-		walk->next = colorlog;
-		colorlog = walk;
-		walk = tmp;
+	{
+		replog_t *tmp;
+		for (walk = periodlog; (walk); walk = tmp) {
+			tmp = walk->next;
+			walk->next = colorlog;
+			colorlog = walk;
+			walk = tmp;
+		}
 	}
 
-	offsetchange = periodlen*periodcount/86400;
-	rewoffset = startoffset + offsetchange;
-	fwdoffset = startoffset - offsetchange;
-	if (fwdoffset < 0) fwdoffset=0;	/* Dont try to go into the future */
+	/* Determine the back/forward link times */
+	switch (bartype) {
+		case DAY_BAR   : changeval = len1d; changealign = ALIGN_HOUR; break;
+		case WEEK_BAR  : changeval = len1w; changealign = ALIGN_DAY; break;
+		case MONTH_BAR : changeval = len4w; changealign = ALIGN_DAY; break;
+		case YEAR_BAR  : changeval = len1y; changealign = ALIGN_MONTH; break;
+	}
 
+	/* Beginning of page */
 	fprintf(htmlrep, "<TABLE WIDTH=\"%d%s\" BORDER=0 BGCOLOR=\"#666666\">\n", pixels, pctstr);
 	fprintf(htmlrep, "<TR><TD ALIGN=CENTER>\n");
 
 
-	/* The date stamps */
-
-	/*
-	 * Hackish ... when not showing the current-time bar, we want the
-	 * bar to end at 23:59:59 on the day shown. But we don't want it 
-	 * to start at 23:59:59 the day before.
-	 * So if that is the case, just up the start-time shown with 1 sec
-	 * so it rolls over to the next day.
-	 * We cannot just increment startofbar because that messes up the
-	 * tag-calculation code.
-	 */
-	tmbuf = localtime(&startofbarnice);
-	if ((tmbuf->tm_hour == 23) && (tmbuf->tm_min = 59) && (tmbuf->tm_sec == 59)) startofbarnice++;
-
+	/* The date stamps, percent summaries and zoom/reset links */
 	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 FRAME=VOID CELLSPACING=0 CELLPADDING=1 BGCOLOR=\"#000033\">\n");
 	fprintf(htmlrep, "<TR BGCOLOR=%s>\n", barbkgcolor);
 
 	fprintf(htmlrep, "<TD ALIGN=LEFT VALIGN=BOTTOM>\n");
-	if (colorlog && colorlog->starttime <= startofbar) {
-		fprintf(htmlrep, "<A HREF=\"%s&amp;OFFSET=%d&amp;PIXELS=%d\">", selfurl, rewoffset, (usepct ? 0 : pixels));
+	if (colorlog && colorlog->starttime <= begintime) {
+		fprintf(htmlrep, "<A HREF=\"%s&amp;ENDTIME=%u&amp;PIXELS=%d\">", 
+			selfurl, calc_endtime(endtime, -changeval, changealign, END_UNCHANGED), (usepct ? 0 : pixels));
 	}
-	fprintf(htmlrep, "<B>%s</B>", ctime(&startofbarnice));
-	if (colorlog && colorlog->starttime <= startofbar) fprintf(htmlrep, "</A>\n");
+	fprintf(htmlrep, "<B>%s</B>", ctime(&begintime));
+	if (colorlog && colorlog->starttime <= begintime) fprintf(htmlrep, "</A>\n");
 	fprintf(htmlrep, "</TD>\n");
 
 	fprintf(htmlrep, "<TD ALIGN=CENTER>\n");
@@ -221,36 +285,35 @@ static void generate_colorbar(
 	}
 	else {
 		fprintf(htmlrep, "  <TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0>\n");
-		fprintf(htmlrep, "  <TR><TD ALIGN=CENTER><A HREF=\"%s&amp;OFFSET=%d&amp;PIXELS=%d\">Zoom +</A></TD></TR>\n", 
-			selfurl, startoffset, pixels+200);
+		fprintf(htmlrep, "  <TR><TD ALIGN=CENTER><A HREF=\"%s&amp;ENDTIME=%u&amp;PIXELS=%d\">Zoom +</A></TD></TR>\n", 
+			selfurl, (unsigned int)endtime, pixels+200);
 		if (pixels > 200) {
-			fprintf(htmlrep, "  <TR><TD ALIGN=CENTER><A HREF=\"%s&amp;OFFSET=%d&amp;PIXELS=%d\">Zoom -</A></TD></TR>\n", 
-				selfurl, startoffset, pixels-200);
+			fprintf(htmlrep, "  <TR><TD ALIGN=CENTER><A HREF=\"%s&amp;ENDTIME=%u&amp;PIXELS=%d\">Zoom -</A></TD></TR>\n", 
+				selfurl, (unsigned int)endtime, pixels-200);
 		}
 		fprintf(htmlrep, "  </TABLE>\n");
 	}
 	fprintf(htmlrep, "</TD>\n");
 	fprintf(htmlrep, "<TD ALIGN=CENTER>\n");
-	generate_pct_summary(htmlrep, hostname, service, caption, repinfo);
+	generate_pct_summary(htmlrep, hostname, service, caption, repinfo, secsperpixel);
 	fprintf(htmlrep, "</TD>\n");
 
 	fprintf(htmlrep, "<TD ALIGN=CENTER>\n");
 	fprintf(htmlrep, "  <TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0>\n");
-	fprintf(htmlrep, "  <TR><TD ALIGN=CENTER><A HREF=\"%s&amp;OFFSET=0&amp;PIXELS=%d\">Time reset</A></TD></TR>\n", 
+	fprintf(htmlrep, "  <TR><TD ALIGN=CENTER><A HREF=\"%s&amp&amp;PIXELS=%d\">Time reset</A></TD></TR>\n", 
 		selfurl, (usepct ? 0 : pixels));
 	if (!usepct) {
-		fprintf(htmlrep, "  <TR><TD ALIGN=CENTER><A HREF=\"%s&amp;OFFSET=%d&amp;PIXELS=%d\">Zoom reset</A></TD></TR>\n", 
-			selfurl, startoffset, DEFPIXELS);
+		fprintf(htmlrep, "  <TR><TD ALIGN=CENTER><A HREF=\"%s&amp;ENDTIME=%u&amp;PIXELS=%d\">Zoom reset</A></TD></TR>\n", 
+			selfurl, (unsigned int)endtime, DEFPIXELS);
 	}
 	fprintf(htmlrep, "  </TABLE>\n");
 	fprintf(htmlrep, "</TD>\n");
 
 	fprintf(htmlrep, "<TD ALIGN=RIGHT VALIGN=BOTTOM>\n");
-	if (startoffset > 0) {
-		fprintf(htmlrep, "<A HREF=\"%s&amp;OFFSET=%d&amp;PIXELS=%d\">", selfurl, fwdoffset, (usepct ? 0 : pixels));
-	}
-	fprintf(htmlrep, "<B>%s</B>\n", ctime(&today));
-	if (startoffset > 0) fprintf(htmlrep, "</A>\n");
+	fprintf(htmlrep, "<A HREF=\"%s&amp;ENDTIME=%d&amp;PIXELS=%d\">", selfurl, 
+		calc_endtime(endtime, +changeval, changealign, END_UNCHANGED), (usepct ? 0 : pixels));
+	fprintf(htmlrep, "<B>%s</B>\n", ctime(&endtime));
+	fprintf(htmlrep, "</A>\n");
 	fprintf(htmlrep, "</TD>\n");
 
 	fprintf(htmlrep, "</TR>\n");
@@ -259,100 +322,59 @@ static void generate_colorbar(
 
 
 	/* The period marker line */
-	pixelssum = pixelsfirst + pixelslast;
 	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 FRAME=VOID CELLSPACING=0 CELLPADDING=0 BGCOLOR=\"#000033\">\n");
 	fprintf(htmlrep, "<TR>\n");
-	fprintf(htmlrep, "<TD WIDTH=\"%d%s\" ALIGN=CENTER BGCOLOR=\"#000000\"><B>&nbsp;</B></TD>\n", pixelsfirst, pctstr);
+
 	{
-		int i; 
-		time_t markertime;
+		time_t begininterval = begintime;
+		time_t endofinterval;
 		char tag[20];
 		char *bgcols[2] = { "\"#000000\"", "\"#555555\"" };
-		int curbg = 1;
-		time_t dayoffset;
+		int curbg = 0;
+		int intervalpixels, tagcolor;
+		time_t minduration;
 		struct tm *tmbuf;
 
-		/*
-		 * Make "markertime" point to beginning of the interval.
-		 * That way we can decide the tag color by looking at events
-		 * that occurred inside (markertime --> (markertime+periodlen)).
-		 */
-		markertime = startofbar;
-		tmbuf = localtime(&markertime);
-		if (alignment == ALIGN_HOUR) { 
-			tmbuf->tm_hour++;
-			tmbuf->tm_min = tmbuf->tm_sec = 0; 
-		}
-		else if (alignment == ALIGN_DAY) { 
-			tmbuf->tm_mday++;
-			tmbuf->tm_hour = tmbuf->tm_min = tmbuf->tm_sec = 0; 
-		}
-		else if (alignment == ALIGN_MONTH) {
-			tmbuf->tm_mon++;
-			tmbuf->tm_mday = 1; tmbuf->tm_hour = tmbuf->tm_min = tmbuf->tm_sec = 0; 
-		}
-		tmbuf->tm_isdst = -1;
-		markertime = mktime(tmbuf);
+		do {
+			endofinterval = calc_endtime(begininterval, 0, alignment, END_END);
 
-		for (i=1; i<=periodcount; i++) {
-			struct tm *tmbuf;
-			time_t endofperiod;
-			int tagcolor;
-
-			if (alignment == ALIGN_MONTH) {
-				time_t endofmonth;
-
-				/*
-				 * Month alignment must generate offsets that
-				 * point to the last day of the month, so a 
-				 * click on the link shows the full month
-				 * in the 4-week summary.
-				 */
-
-				tmbuf->tm_mday = (usepct ? 33 : 28); 
-				tmbuf->tm_hour = tmbuf->tm_min = tmbuf->tm_sec = 0;
-				endofmonth = mktime(tmbuf);
-
-				if (endofmonth >= now) dayoffset = startoffset;
-				else dayoffset = (now - endofmonth) / 86400;
-
-				/*
-				 * Month changes may be slightly different from periodlen 
-				 * because months do not have the same number of days
-				 */
-				tmbuf = localtime(&markertime);
-				tmbuf->tm_mday = 1; tmbuf->tm_mon++; tmbuf->tm_isdst = -1;
-				endofperiod = mktime(tmbuf);
-			}
-			else {
-				dayoffset = (now - markertime) / 86400;
-				endofperiod = markertime + periodlen;
+			tmbuf = localtime(&begininterval);
+			switch (bartype) {
+				case DAY_BAR   : 
+					minduration = 1800;
+					strftime(tag, sizeof(tag), "%H", tmbuf);
+					break;
+				case WEEK_BAR  : 
+					minduration = 14400;
+					strftime(tag, sizeof(tag), "%a", tmbuf);
+					break;
+				case MONTH_BAR : 
+					minduration = 43200;
+					strftime(tag, sizeof(tag), "%d", tmbuf);
+					break;
+				case YEAR_BAR  : 
+					minduration = 10*86400;
+					strftime(tag, sizeof(tag), "%b", tmbuf);
+					break;
 			}
 
-			tmbuf = localtime(&markertime);
-			strftime(tag, sizeof(tag), tagfmt, tmbuf);
-			tagcolor = maxcolor(colorlog, markertime, endofperiod);
+			intervalpixels = ((endofinterval - begininterval) / secsperpixel);
+			tagcolor = maxcolor(colorlog, begininterval, endofinterval);
 
-			fprintf(htmlrep, "<TD WIDTH=\"%d%s\" ALIGN=CENTER BGCOLOR=%s>",
-				((i<periodcount) ? periodpixels : pixelslast), pctstr, bgcols[curbg]);
-			if ((alignment != ALIGN_HOUR) && (dayoffset != startoffset)) {
-				fprintf(htmlrep, "<A HREF=\"%s&amp;OFFSET=%lu&amp;PIXELS=%d\">", 
-					selfurl, dayoffset, (usepct ? 0 : pixels));
-			}
-			fprintf(htmlrep, "<FONT COLOR=\"%s\"><B>%s</B></FONT>", 
-				tagcolors[tagcolor], tag);
-			if ((alignment != ALIGN_HOUR) && (dayoffset != startoffset)) {
+			fprintf(htmlrep, "<TD WIDTH=\"%d%s\" ALIGN=CENTER BGCOLOR=%s>", intervalpixels, pctstr, bgcols[curbg]);
+			if ((endofinterval - begininterval) > minduration) {
+				fprintf(htmlrep, "<A HREF=\"%s&amp;ENDTIME=%u&amp;PIXELS=%d\">",
+					selfurl, (unsigned int)endofinterval, (usepct ? 0 : pixels));
+				fprintf(htmlrep, "<FONT COLOR=\"%s\"><B>%s</B></FONT>", 
+					tagcolors[tagcolor], tag);
 				fprintf(htmlrep, "</A>");
 			}
 			fprintf(htmlrep, "</TD>\n");
 
-			pixelssum += periodpixels;
-			curbg = (1-curbg);
-
-			markertime = endofperiod;
-		}
+			curbg = (1 - curbg);
+			begininterval = endofinterval + 1;
+		} while (begininterval < endtime);
 	}
-	fprintf(htmlrep, "<!-- pixelssum = %d -->\n", pixelssum);
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "</TABLE>\n");
 
@@ -360,21 +382,18 @@ static void generate_colorbar(
 	/* The actual color bar */
 	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 FRAME=VOID CELLSPACING=0 CELLPADDING=0 BGCOLOR=\"#000033\">\n");
 	fprintf(htmlrep, "<TR>\n");
-	pixelssum = 0;
 
 	/* First entry may not start at our report-start time */
 	if (colorlog == NULL) {
 		/* No data for period - all white */
-		pixelssum += secsperpixel;
-		fprintf(htmlrep, "<TD WIDTH=100%% BGCOLOR=white NOWRAP>&nbsp</TD>\n");
+		fprintf(htmlrep, "<TD WIDTH=\"100%%\" BGCOLOR=white NOWRAP>&nbsp</TD>\n");
 	}
-	else if (colorlog->starttime > startofbar) {
+	else if (colorlog->starttime > begintime) {
 		/* Data starts after the bar does - so a white period in front */
-		int pixels = ((colorlog->starttime - startofbar) / secsperpixel);
+		int pixels = ((colorlog->starttime - begintime) / secsperpixel);
 
-		if (((colorlog->starttime - startofbar) >= (secsperpixel/2)) && (pixels == 0)) pixels = 1;
+		if (((colorlog->starttime - begintime) >= (secsperpixel/2)) && (pixels == 0)) pixels = 1;
 		if (pixels > 0) {
-			pixelssum += pixels;
 			fprintf(htmlrep, "<TD WIDTH=\"%d%s\" BGCOLOR=%s NOWRAP>&nbsp</TD>\n", pixels, pctstr, "white");
 		}
 	}
@@ -388,13 +407,11 @@ static void generate_colorbar(
 		if ((walk->duration >= (secsperpixel/2)) && (pixels == 0)) pixels = 1;
 
 		if (pixels > 0) {
-			pixelssum += pixels;
 			fprintf(htmlrep, "<TD WIDTH=\"%d%s\" BGCOLOR=%s NOWRAP>&nbsp</TD>\n", 
 				pixels, pctstr, ((walk->color == COL_CLEAR) ? "white" : colorname(walk->color)));
 		}
 	}
 
-	fprintf(htmlrep, "<!-- pixelssum = %d -->\n", pixelssum);
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "</TABLE>\n");
 
@@ -417,8 +434,8 @@ static void generate_histlog_table(FILE *htmlrep,
 	fprintf(htmlrep, "<TR>\n");
 	if (entrycount) {
 		fprintf(htmlrep, "<TD COLSPAN=3 ALIGN=CENTER><B>Last %d log entries</B> ", entrycount);
-		fprintf(htmlrep, "<A HREF=\"%s&amp;OFFSET=%d&amp;PIXELS=%d&amp;ENTRIES=all\">(Full HTML log)</A></TD>\n", 
-			selfurl, startoffset, (usepct ? 0 : pixels));
+		fprintf(htmlrep, "<A HREF=\"%s&amp;ENDTIME=%u&amp;PIXELS=%d&amp;ENTRIES=all\">(Full HTML log)</A></TD>\n", 
+			selfurl, (unsigned int)req_endtime, (usepct ? 0 : pixels));
 	}
 	else {
 		fprintf(htmlrep, "<TD COLSPAN=3 ALIGN=CENTER><B>All log entries</B></TD>\n");
@@ -449,7 +466,6 @@ static void generate_histlog_table(FILE *htmlrep,
 		fprintf(htmlrep, "</TR>\n\n");
 	}
 
-
 	fprintf(htmlrep, "</TABLE>\n");
 }
 
@@ -457,7 +473,7 @@ static void generate_histlog_table(FILE *htmlrep,
 void generate_history(FILE *htmlrep, 			/* output file */
 		      char *hostname, char *service, 	/* Host and service we report on */
 		      char *ip, 			/* IP - for the header only */
-		      time_t today,			/* End time of color-bar graphs */
+		      time_t endtime,			/* End time of color-bar graphs */
 
                       time_t start1d,			/* Starttime of 1-day period */
 		      reportinfo_t *repinfo1d, 		/* Percent summaries for 1-day period */
@@ -478,9 +494,6 @@ void generate_history(FILE *htmlrep, 			/* output file */
 		      int entrycount,			/* Log entry maxcount */
 		      replog_t *loghead)		/* Eventlog for entrycount events back */
 {
-	time_t startofperiod;
-	struct tm *tmbuf;
-
 	sethostenv(hostname, ip, service, colorname(COL_GREEN));
 	headfoot(htmlrep, "hist", "", "header", COL_GREEN);
 
@@ -490,42 +503,28 @@ void generate_history(FILE *htmlrep, 			/* output file */
 	fprintf(htmlrep, "<BR><BR>\n");
 
 	/* Create the color-bars */
-
 	if (log1d) {
-		/* 1-day bar: Last period starts at beginning of hour, periods are 1 hour long */
-		tmbuf = localtime(&today); 
-		tmbuf->tm_min = tmbuf->tm_sec = 0; 
-		startofperiod = mktime(tmbuf);
-		generate_colorbar(htmlrep, 3600, len1d, startofperiod, start1d, today, log1d, 
-				  hostname, service, bartitle1d, "%H", repinfo1d, ALIGN_HOUR);
+		/* 1-day bar */
+		generate_colorbar(htmlrep, start1d, endtime, ALIGN_HOUR, DAY_BAR,
+				  hostname, service, bartitle1d, log1d, repinfo1d);
 	}
 
 	if (log1w) {
-		/* 1-week bar: Last period starts at beginning of day, periods are 1 day long */
-		tmbuf = localtime(&today); 
-		tmbuf->tm_hour = tmbuf->tm_min = tmbuf->tm_sec = 0;
-		startofperiod = mktime(tmbuf);
-		generate_colorbar(htmlrep, 86400, len1w, startofperiod, start1w, today, log1w, 
-				  hostname, service, bartitle1w, "%a", repinfo1w, ALIGN_DAY);
+		/* 1-week bar */
+		generate_colorbar(htmlrep, start1w, endtime, ALIGN_DAY, WEEK_BAR,
+				  hostname, service, bartitle1w, log1w, repinfo1w);
 	}
 
 	if (log4w) {
-		/* 4-week bar: Last period starts at beginning of day, periods are 1 day long */
-		tmbuf = localtime(&today); 
-		tmbuf->tm_hour = tmbuf->tm_min = tmbuf->tm_sec = 0;
-		startofperiod = mktime(tmbuf);
-		generate_colorbar(htmlrep, 86400, len4w, startofperiod, start4w, today, log4w, 
-				  hostname, service, bartitle4w, "%d", repinfo4w, ALIGN_DAY);
+		/* 4-week bar */
+		generate_colorbar(htmlrep, start4w, endtime, ALIGN_DAY, MONTH_BAR,
+				  hostname, service, bartitle4w, log4w, repinfo4w);
 	}
 
 	if (log1y) {
-		/* 1-year bar: Last period starts at beginning of month, periods are 30 days long */
-		tmbuf = localtime(&today); 
-		tmbuf->tm_hour = tmbuf->tm_min = tmbuf->tm_sec = 0;
-		tmbuf->tm_mday = 1;
-		startofperiod = mktime(tmbuf);
-		generate_colorbar(htmlrep, 30*86400, len1y, startofperiod, start1y, today, log1y, 
-				  hostname, service, bartitle1y, "%b", repinfo1y, ALIGN_MONTH);
+		/* 1-year bar */
+		generate_colorbar(htmlrep, start1y, endtime, ALIGN_MONTH, YEAR_BAR,
+				  hostname, service, bartitle1y, log1y, repinfo1y);
 	}
 
 	/* Last N histlog entries */
@@ -625,9 +624,9 @@ static void parse_query(void)
 			pixels = atoi(val);
 			if (pixels > 0) usepct = 0; else usepct = 1;
 		}
-		else if (argnmatch(token, "OFFSET")) {
-			startoffset = atoi(val);
-			if (startoffset < 0) errormsg("Invalid parameter");
+		else if (argnmatch(token, "ENDTIME")) {
+			req_endtime = atol(val);
+			if (req_endtime < 0) errormsg("Invalid parameter");
 		}
 		else if (argnmatch(token, "BARSUMS")) {
 			barsums = atoi(val);
@@ -645,11 +644,9 @@ int main(int argc, char *argv[])
 	char histlogfn[MAX_PATH];
 	char tailcmd[MAX_PATH];
 	FILE *fd;
-	reportinfo_t repinfo1d, repinfo1w, repinfo4w, repinfo1y, dummyrep;
-	time_t now;
 	time_t start1d, start1w, start4w, start1y;
+	reportinfo_t repinfo1d, repinfo1w, repinfo4w, repinfo1y, dummyrep;
 	replog_t *log1d, *log1w, *log4w, *log1y;
-	struct tm *starttm;
 	char *p;
 
 	envcheck(reqenv);
@@ -694,47 +691,37 @@ int main(int argc, char *argv[])
 	}
 
 	log1d = log1w = log4w = log1y = NULL;
-	if (startoffset) {
-		struct tm *tmbuf;
-
-		/*
-		 * If not showing status for current time, 
-		 * start all graphs at beginning of day.
-		 */
-		now = time(NULL);
-		tmbuf = localtime(&now);
-		tmbuf->tm_hour = tmbuf->tm_min = tmbuf->tm_sec = 0;
-		tmbuf->tm_isdst = -1;
-		now = mktime(tmbuf) - (startoffset-1)*86400 - 1;
-	}
-	else now = time(NULL);
-
-	starttm = localtime(&now); starttm->tm_hour -= len1d; start1d = mktime(starttm);
-	starttm = localtime(&now); starttm->tm_mday -= len1w; start1w = mktime(starttm);
-	starttm = localtime(&now); starttm->tm_mday -= len4w; start4w = mktime(starttm);
-	starttm = localtime(&now); starttm->tm_mday -= 30*len1y; start1y = mktime(starttm);
+	if (req_endtime == 0) req_endtime = time(NULL);
+	/*
+	 * Calculate the beginning time of each colorbar. We go back the specified length
+	 * of time, except 1 second - so days are from midnight -> 23:59:59 etc.
+	 */
+	start1d = calc_endtime(req_endtime, -len1d, ALIGN_HOUR,  END_UNCHANGED) + 1;
+	start1w = calc_endtime(req_endtime, -len1w, ALIGN_DAY,   END_UNCHANGED) + 1;
+	start4w = calc_endtime(req_endtime, -len4w, ALIGN_DAY,   END_UNCHANGED) + 1;
+	start1y = calc_endtime(req_endtime, -len1y, ALIGN_MONTH, END_UNCHANGED) + 1;
 
 	/*
 	 * Collect data for the color-bars and summaries. Multiple scans over the history file,
 	 * but doing it all in one go would be hideously complex.
 	 */
 	if (barsums & BARSUM_1D) {
-		parse_historyfile(fd, &repinfo1d, NULL, NULL, start1d, now, 1, reportwarnlevel, reportgreenlevel, NULL);
+		parse_historyfile(fd, &repinfo1d, NULL, NULL, start1d, req_endtime, 1, reportwarnlevel, reportgreenlevel, NULL);
 		log1d = save_replogs();
 	}
 
 	if (barsums & BARSUM_1W) {
-		parse_historyfile(fd, &repinfo1w, NULL, NULL, start1w, now, 1, reportwarnlevel, reportgreenlevel, NULL);
+		parse_historyfile(fd, &repinfo1w, NULL, NULL, start1w, req_endtime, 1, reportwarnlevel, reportgreenlevel, NULL);
 		log1w = save_replogs();
 	}
 
 	if (barsums & BARSUM_4W) {
-		parse_historyfile(fd, &repinfo4w, NULL, NULL, start4w, now, 1, reportwarnlevel, reportgreenlevel, NULL);
+		parse_historyfile(fd, &repinfo4w, NULL, NULL, start4w, req_endtime, 1, reportwarnlevel, reportgreenlevel, NULL);
 		log4w = save_replogs();
 	}
 
 	if (barsums & BARSUM_1Y) {
-		parse_historyfile(fd, &repinfo1y, NULL, NULL, start1y, now, 1, reportwarnlevel, reportgreenlevel, NULL);
+		parse_historyfile(fd, &repinfo1y, NULL, NULL, start1y, req_endtime, 1, reportwarnlevel, reportgreenlevel, NULL);
 		log1y = save_replogs();
 	}
 
@@ -759,7 +746,7 @@ int main(int argc, char *argv[])
 	printf("Content-Type: text/html\n\n");
 
 	generate_history(stdout, 
-			 hostname, service, ip, now, 
+			 hostname, service, ip, req_endtime, 
 			 start1d, &repinfo1d, log1d, 
 			 start1w, &repinfo1w, log1w, 
 			 start4w, &repinfo4w, log4w, 
