@@ -13,8 +13,25 @@ then
 else
 	echo "This script asks a few questions and builds a Makefile to compile Hobbit"
 	echo ""
+
+	if test "$MAKE" = ""; then
+		MAKE=make
+	fi
+	echo "Checking your make-utility"
+	MAKEVER=`$MAKE -version 2>&1 | head -1 | awk '{print $1 " " $2}'`
+	if test "$MAKEVER" != "GNU Make"
+	then
+		echo "GNU make is required to build Hobbit."
+		echo "If it is available as \"gmake\", run configure as: \'MAKE=gmake $0\'"
+		exit 1
+	fi
+
+	echo ""
 	echo "Are you setting up a Hobbit server (hobbit), or using Hobbit with BB (bb) [hobbit] ?"
-	read TARGET
+	if test -z "$TARGET"
+	then
+		read TARGET
+	fi
 	if test -z "$TARGET"
 	then
 		TARGET="hobbit"
@@ -49,7 +66,10 @@ else
 		echo "library installed, I recommend that you enable this."
 		echo ""
 		echo "Do you want to be able to test SSL-enabled services (y) ?"
-		read ENABLESSL
+		if test "$ENABLESSL" = ""
+		then
+			read ENABLESSL
+		fi
 		if test "$ENABLESSL" = "" -o "$ENABLESSL" = "y"
 		then
 			SSLDEF="-DBBGEN_SSL"
@@ -70,12 +90,18 @@ else
 		echo "Hobbit can use your $LDAPVENDOR LDAP client library to test LDAP servers."
 		echo ""
 		echo "Do you want to be able to test LDAP servers (y) ?"
-		read ENABLELDAP
+		if test "$ENABLELDAP" = ""
+		then
+			read ENABLELDAP
+		fi
 		if test "$ENABLELDAP" = "" -o "$ENABLELDAP" = "y"
 		then
 			if test "$LDAPVENDOR" = "OpenLDAP"; then
 				echo "Enable experimental support for LDAP/SSL (OpenLDAP 2.x only) (y) ?"
-				read ENABLELDAPSSL
+				if test "$ENABLELDAPSSL" = ""
+				then
+					read ENABLELDAPSSL
+				fi
 			else
 				ENABLELDAPSSL="n"
 			fi
@@ -178,7 +204,10 @@ else
 		echo ""; echo ""
 
 		echo "What userid will be running Hobbit [hobbit] ?"
-		read BBUSER
+		if test -z "$BBUSER"
+		then
+			read BBUSER
+		fi
 		if test -z "$BBUSER"
 		then
 			BBUSER="hobbit"
@@ -195,7 +224,10 @@ else
 
 		HOMEDIR="`echo $USERDATA|cut -d: -f6`"
 		echo "Where do you want the Hobbit installation [${HOMEDIR}] ?"
-		read BBTOPDIR
+		if test -z "$BBTOPDIR"
+		then
+			read BBTOPDIR
+		fi
 		if test -z "$BBTOPDIR"
 		then
 			BBTOPDIR=${HOMEDIR}
@@ -204,13 +236,15 @@ else
 		then
 			echo "OK, will configure to use $BBTOPDIR as the Hobbit toplevel directory"
 		else
-			echo "** FAILURE: $BBTOPDIR does not exist. Create it and try again."
-			exit 1
+			echo "WARNING: $BBTOPDIR does not exist."
 		fi
 		echo ""; echo ""
 
 		echo "What URL will you use for the Hobbit webpages [/hobbit] ? "
-		read BBHOSTURL
+		if test -z "$BBHOSTURL"
+		then
+			read BBHOSTURL
+		fi
 		if test -z "$BBHOSTURL"
 		then
 			BBHOSTURL="/hobbit"
@@ -218,7 +252,10 @@ else
 		echo ""; echo ""
 
 		echo "Where to put the Hobbit CGI scripts [$BBTOPDIR/cgi-bin] ? "
-		read CGIDIR
+		if test -z "$CGIDIR"
+		then
+			read CGIDIR
+		fi
 		if test -z "$CGIDIR"
 		then
 			CGIDIR=$BBTOPDIR/cgi-bin
@@ -226,7 +263,10 @@ else
 		echo ""; echo ""
 
 		echo "What is the URL for the Hobbit CGI directory [/hobbit-cgi] ? "
-		read BBCGIURL
+		if test -z "$BBCGIURL"
+		then
+			read BBCGIURL
+		fi
 		if test -z "$BBCGIURL"
 		then
 			BBCGIURL="/hobbit-cgi"
@@ -245,11 +285,17 @@ else
 		echo "If you dont know, just hit ENTER and we will handle it later."
 		echo ""
 		echo "What group-ID does your webserver use ?"
-		read HTTPDGID
+		if test -z "$HTTPDGID"
+		then
+			read HTTPDGID
+		fi
 		echo ""; echo ""
 
 		echo "Where to put the Hobbit logfiles [/var/log/hobbit] ? "
-		read BBLOGDIR
+		if test -z "$BBLOGDIR"
+		then
+			read BBLOGDIR
+		fi
 		if test -z "$BBLOGDIR"
 		then
 			BBLOGDIR=/var/log/hobbit
@@ -257,7 +303,10 @@ else
 		echo ""; echo ""
 
 		echo "What is the name of this host [`uname -n`] ? "
-		read BBHOSTNAME
+		if test -z "$BBHOSTNAME"
+		then
+			read BBHOSTNAME
+		fi
 		if test -z "$BBHOSTNAME"
 		then
 			BBHOSTNAME=`uname -n`
@@ -265,7 +314,10 @@ else
 		echo ""; echo ""
 
 		echo "What is the IP-address of this host [127.0.0.1] ? "
-		read BBHOSTIP
+		if test -z "$BBHOSTIP"
+		then
+			read BBHOSTIP
+		fi
 		if test -z "$BBHOSTIP"
 		then
 			echo "** NOTE: Using 127.0.0.1 (loopback), but it is probably not what you want **"
@@ -282,7 +334,10 @@ else
 	fi
 
 	echo "Where should I install the Hobbit man-pages (/usr/local/man) ?"
-	read MANROOT
+	if test -z "$MANROOT"
+	then
+		read MANROOT
+	fi
 	if test -z "$MANROOT"
 	then
 		MANROOT=/usr/local/man
@@ -294,7 +349,10 @@ else
 	echo "1-year graphs, or any combination of these."
 	echo ""
 	echo "Which graphs to show by default (1d/1w/4w/1y/all) [all]"
-	read BARS
+	if test -z "$BARS"
+	then
+		read BARS
+	fi
 	if test "$BARS" = "all" -o "$BARS" = ""
 	then
 		BARSUMS=15
@@ -342,7 +400,10 @@ else
 	echo "resizes to fit your browser window."
 	echo ""
 	echo "Use the new detailed Hobbit history graph (y/n) [y] ? "
-	read USENEWHIST
+	if test "$USENEWHIST" = ""
+	then
+		read USENEWHIST
+	fi
 	if test "$USENEWHIST" = "" -o "$USENEWHIST" = "y"
 	then
 		echo "   Tell me the display width (in pixels) to use for"
@@ -352,7 +413,10 @@ else
 		echo "   The default value (960) is good on 1024x768 displays"
 		echo ""
 		echo "   What width should I use for the graph [960] ? "
-		read PIXELCOUNT
+		if test "$PIXELCOUNT" = ""
+		then
+			read PIXELCOUNT
+		fi
 		if test "$PIXELCOUNT" = ""
 		then
 			HISTGRAPHDEF="-DDEFPIXELS=960"
@@ -464,7 +528,7 @@ else
 		echo "If this fails, change the compile settings in Makefile"
 		echo ""
 		echo "I would appreciate it if you send the changes to"
-		echo "hobbit@storner.dk so I can include it in the next version."
+		echo "hobbit-owner@hswn.dk so I can include it in the next version."
 		echo ""
 	fi
 	echo "" >>Makefile
@@ -478,7 +542,7 @@ else
 	echo "Some defaults are used, so do look at the Makefile before continuing."
 	echo ""
 
-	echo "Configuration complete - now run 'make' (GNU make) to build the tools"
+	echo "Configuration complete - now run $MAKE (GNU make) to build the tools"
 fi
 
 exit 0
