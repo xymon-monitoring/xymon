@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.23 2003-05-27 20:34:22 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.24 2003-06-30 13:37:49 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -237,7 +237,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043)
 	while ((d = readdir(rrddir))) {
 		strcpy(fn, d->d_name);
 
-		if ((strlen(fn) > 4) && (strcmp(fn+strlen(fn)-4, ".rrd") == 0)) {
+		if ((strlen(fn) > 4) && (strcmp(fn+strlen(fn)-4, ".rrd") == 0) && (fn[0] != '.')) {
 			char *p, *rrdname;
 			rrdlayout_t *r = NULL;
 			int found, hostfound;
