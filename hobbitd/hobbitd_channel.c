@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
 	signal(SIGCHLD, sig_handler);
 
 	/* Attach to the channel */
-	channel = setup_channel(cnid, 0);
+	channel = setup_channel(cnid, CHAN_CLIENT);
 	if (channel == NULL) {
 		errprintf("Channel not available\n");
 		return 1;
@@ -281,7 +281,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Detach from channels */
-	close_channel(channel, 0);
+	close_channel(channel, CHAN_CLIENT);
 
 	return 0;
 }
