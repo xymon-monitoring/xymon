@@ -54,6 +54,8 @@
 #define SSL void
 #endif
 
+#include "bbgen.h"
+#include "util.h"
 #include "digest.h"
 
 extern char *ssl_library_version;
@@ -160,6 +162,7 @@ typedef struct {
 
 	char		*url;			/* URL to request, stripped of BB'isms */
 	int		parsestatus;
+	bburl_t		bburl;
 
 	int		gotheaders;
 	int		contlen;
