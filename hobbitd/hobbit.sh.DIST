@@ -30,15 +30,18 @@ case "$1" in
 	if test -s @BBLOGDIR@/hobbitlaunch.pid
 	then
 		kill -TERM `cat @BBLOGDIR@/hobbitlaunch.pid`
+		echo "Hobbit stopped"
+	else
+		echo "Hobbit is not running"
 	fi
 	;;
 
    "status")
 	if test -s @BBLOGDIR@/hobbitlaunch.pid
 	then
-		echo "hobbitlaunch running with PID `cat @BBLOGDIR@/hobbitlaunch.pid`"
+		echo "Hobbit (hobbitlaunch) running with PID `cat @BBLOGDIR@/hobbitlaunch.pid`"
 	else
-		echo "hobbitlaunch does not appear to be running"
+		echo "Hobbit (hobbitlaunch) does not appear to be running"
 	fi
 	;;
 
