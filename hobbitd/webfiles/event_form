@@ -1,5 +1,5 @@
 <CENTER>
-<FORM METHOD="GET" ACTION="&CGIBINURL/bb-eventlog.sh">
+<FORM METHOD="GET" ACTION="&REQUEST_URI">
    <TABLE BORDER=0 SUMMARY="Eventlog criteria">
      <TR>
        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>How long to go back in time:</B></FONT></TD>

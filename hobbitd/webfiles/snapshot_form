@@ -12,7 +12,7 @@
        <BR>
        <CENTER>
 
-       <FORM METHOD="GET" ACTION="&CGIBINURL/bb-snapshot.sh">
+       <FORM METHOD="GET" ACTION="&REQUEST_URI">
           <SELECT NAME="mon">
           &REPMONLIST
           </SELECT>
