@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.31 2003-07-19 16:28:01 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.32 2003-07-19 20:45:22 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -413,6 +413,44 @@ static int debug_callback(CURL *handle, curl_infotype type, char *data, size_t s
 }
 #endif
 
+char *urlip(char *url, char *hostip, char *hostname)
+{
+	/* This routine changes the URL to use an IP-address instead of the hostname */
+	static char result[MAX_LINE_LEN];
+	char *p, *hoststart, *restofurl;
+
+	*hostname = '\0';
+	strcpy(result, url);
+
+	/* First find where the hostname starts */
+	p = strstr(url, "://");
+	if (p == NULL) return result;
+
+	hoststart = p+3;
+	result[hoststart-url] = '\0';
+
+	/* Now cut off the part of the URL that is not the hostname */
+	p = strchr(hoststart, '/');
+	if (p) { *p = '\0'; restofurl = p+1; } else restofurl = "";
+
+	/* hoststart points to start of hostname, restofurl to the part after the hostname */
+	p = strchr(hoststart, '@');
+	if (p) {
+		/* URL contains "login:password@" sequence */
+		*p = '\0';
+		strcat(result, hoststart); strcat(result, "@");
+		hoststart = p+1;
+	}
+
+	strcpy(hostname, hoststart);
+	strcat(result, hostip);
+	strcat(result, "/");
+	strcat(result, restofurl);
+
+	return result;
+}
+
+
 void run_http_tests(service_t *httptest, long followlocations, char *logfile, int sslcertcheck)
 {
 	http_data_t *req;
@@ -427,6 +465,8 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 	sprintf(useragent, "BigBrother bbtest-net/%s curl/%s-%s", VERSION, LIBCURL_VERSION, curl_version());
 
 	for (t = httptest->items; (t); t = t->next) {
+		struct curl_slist *slist = NULL;
+
 		req = t->private;
 		
 		req->curl = curl_easy_init();
@@ -435,7 +475,25 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 			return;
 		}
 
-		curl_easy_setopt(req->curl, CURLOPT_URL, req->url);
+		if (t->host->testip) {
+			/*
+			 * libcurl has no support for testing a specific IP-address.
+			 * So we need to fake that: Substitute the hostname with the
+			 * IP-address we have inside the URL, and set a "Host:" header
+			 * so that virtual webhosts will work.
+			 */
+			char hostnamehdr[MAX_LINE_LEN];
+
+			strcpy(hostnamehdr, "Host: ");
+			curl_easy_setopt(req->curl, CURLOPT_URL, urlip(req->url, t->host->ip, hostnamehdr+strlen(hostnamehdr)));
+			slist = curl_slist_append(slist, hostnamehdr);
+
+			curl_easy_setopt(req->curl, CURLOPT_HTTPHEADER, slist);
+		}
+		else {
+			curl_easy_setopt(req->curl, CURLOPT_URL, req->url);
+		}
+
 		curl_easy_setopt(req->curl, CURLOPT_NOPROGRESS, 1);
 		curl_easy_setopt(req->curl, CURLOPT_USERAGENT, useragent);
 
@@ -509,6 +567,7 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 			t->open = 1;
 		}
 
+		if (slist) curl_slist_free_all(slist);
 		curl_easy_cleanup(req->curl);
 	}
 
