@@ -174,6 +174,8 @@ else
 
 		# bbgend defaults to standard port and 32KB message max.
 		BBHOSTOS=`uname -s | tr [A-Z] [a-z]`
+		BBHOSTURL="/bb"
+		BBCGIURL="/bb-cgi"
 		BBHOME=$BBTOPDIR/bb
 		BBVAR=$BBTOPDIR/bbvar
 		BBPORT=1984
@@ -366,40 +368,62 @@ else
 		MANROOT=/usr/local/man
 	fi
 
-	echo "# configure settings for bbgen" > Makefile
+	echo "# Toplevel Makefile for bbgen"     > Makefile
+
+	echo "BUILDTOPDIR=\`pwd\`"               >>Makefile
+	echo ""                                  >>Makefile
+	echo "# configure settings for bbgen"    >>Makefile
+	echo "#"                                 >>Makefile
+	echo "# Toplevel dir with bb/, bbvar/"   >>Makefile
+	echo "BBTOPDIR = $BBTOPDIR"              >>Makefile
+	echo "# BB home dir for etc/, www/"      >>Makefile
+	echo "BBHOME = $BBHOME"                  >>Makefile
+	echo "# BB var dir for data/, hist/"     >>Makefile
+	echo "BBVAR = $BBVAR"                    >>Makefile
+	echo "# BB CGI scripts go in CGIDIR"     >>Makefile
+	echo "CGIDIR = $CGIDIR"                  >>Makefile
+	echo "# Maximum size of a BB status msg" >>Makefile
+	echo "MAXMSG = $MAXMSG"                  >>Makefile
+	echo "# Port number for the BB daemon"   >>Makefile
+	echo "BBPORT = $BBPORT"                  >>Makefile
+	echo "# Where to install manpages"       >>Makefile
+	echo "MANROOT = $MANROOT"                >>Makefile
+	echo "# Default history graph setting"   >>Makefile
+	echo "HISTGRAPHDEF = $HISTGRAPHDEF $BARSUMDEF"   >>Makefile
+	echo ""                                  >>Makefile
 	if test "$TARGET" = "bbgend"
 	then
-		echo "BBGEND = 1"             >>Makefile
-		echo "BBLOGDIR = $BBLOGDIR"   >>Makefile
+		echo "# bbgend settings follows" >>Makefile
+		echo "BBGEND = 1"                >>Makefile
+		echo "# Username running bbgend" >>Makefile
+		echo "BBUSER = $BBUSER"          >>Makefile
+		echo "# Logs from bbgend programs go here" >>Makefile
+		echo "BBLOGDIR = $BBLOGDIR"      >>Makefile
+		echo "# BB server hostname"      >>Makefile
 		echo "BBHOSTNAME = $BBHOSTNAME"  >>Makefile
-		echo "BBHOSTIP = $BBHOSTIP"   >>Makefile
-		echo "BBHOSTOS = $BBHOSTOS"   >>Makefile
+		echo "# BB server IP-address"    >>Makefile
+		echo "BBHOSTIP = $BBHOSTIP"      >>Makefile
+		echo "# BB server OS"            >>Makefile
+		echo "BBHOSTOS = $BBHOSTOS"      >>Makefile
+		echo "# URL for BB webpages"     >>Makefile
+		echo "BBHOSTURL = $BBHOSTURL"    >>Makefile
+		echo "# URL for BB CGIs"         >>Makefile
+		echo "BBCGIURL = $BBCGIURL"      >>Makefile
 	fi
-	echo "BBUSER = $BBUSER"               >>Makefile
-	echo "BBTOPDIR = $BBTOPDIR"           >>Makefile
-	echo "BBHOME = $BBHOME"               >>Makefile
-	echo "BBVAR = $BBVAR"                 >>Makefile
-	echo "CGIDIR = $CGIDIR"               >>Makefile
-	echo "HISTGRAPHDEF = $HISTGRAPHDEF $BARSUMDEF"   >>Makefile
-	echo "MAXMSG = $MAXMSG"               >>Makefile
-	echo "BBPORT = $BBPORT"               >>Makefile
-	echo "MANROOT = $MANROOT"             >>Makefile
-	echo "#"                              >>Makefile
-	echo "CC = cc"                        >>Makefile
-	echo "#"                              >>Makefile
-	echo "# OpenSSL settings"             >>Makefile
-	echo "SSLFLAGS = $SSLDEF"             >>Makefile
+	echo "#"                                 >>Makefile
+	echo "# OpenSSL settings"                >>Makefile
+	echo "SSLFLAGS = $SSLDEF"                >>Makefile
 	echo "# Change the following line if compiler complains about a missing ssl.h" >>Makefile
-	echo "SSLINCDIR = -I$OSSLINC"         >>Makefile
+	echo "SSLINCDIR = -I$OSSLINC"            >>Makefile
 	echo "SSLLIBS = -L$OSSLLIB -lcrypto -lssl" >>Makefile
-	echo "#"                              >>Makefile
-	echo "# OpenLDAP settings"            >>Makefile
-	echo "LDAPFLAGS = $LDAPDEF"           >>Makefile
+	echo "#"                                 >>Makefile
+	echo "# OpenLDAP settings"               >>Makefile
+	echo "LDAPFLAGS = $LDAPDEF"              >>Makefile
 	if test "$LDAPDEF" != ""
 	then
 		if test "$LDAPINC" != ""
 		then
-			echo "LDAPINCDIR = -I$LDAPINC"      >>Makefile
+			echo "LDAPINCDIR = -I$LDAPINC"                >>Makefile
 		fi
 		if test "$LDAPLIB" != ""
 		then
@@ -409,9 +433,7 @@ else
 		fi
 	fi
 
-	echo "BUILDTOPDIR=\`pwd\`" >>Makefile
-	echo "" >> Makefile
-
+	echo "" >>Makefile
 	if test -r build/Makefile.`uname -s`
 	then
 		echo "include build/Makefile.`uname -s`" >>Makefile
@@ -429,12 +451,15 @@ else
 		echo "bbgen@storner.dk so I can include it in the next version."
 		echo ""
 	fi
-	echo "# Add local CFLAGS etc. settings below here" >>Makefile
+	echo "" >>Makefile
+	echo "# Add local CFLAGS etc. settings here" >>Makefile
+	echo "" >>Makefile
 	echo "include build/Makefile.rules" >> Makefile
 	echo "" >> Makefile
 
+	echo ""
 	echo "Created Makefile with the necessary information to build bbgen."
-	echo "If you need to change settings, you should change the Makefile"
+	echo "Some defaults are used, so do look at the Makefile before continuing."
 	echo ""
 
 	echo "Configuration complete - now run 'make' to build the tools"
