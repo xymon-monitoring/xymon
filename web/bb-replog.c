@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.12 2003-07-07 16:49:14 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.13 2003-07-07 16:55:48 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -145,17 +145,17 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 		else {
 			fprintf(textrep, "				Availability:	%.2f%%\n", repinfo->fullavailability);
 		}
-		fprintf(textrep, "			Red	Yellow	Green	Purple	Clear	Blue\n");
+		fprintf(textrep, "			Green	Yellow	Red	Purple	Clear	Blue\n");
 		fprintf(textrep, "		24x7	%.2f%%	%.2f%%	%.2f%%	%.2f%%	%.2f%%	%.2f%%\n",
-			repinfo->fullpct[COL_RED], repinfo->fullpct[COL_YELLOW], repinfo->fullpct[COL_GREEN], 
+			repinfo->fullpct[COL_GREEN], repinfo->fullpct[COL_YELLOW], repinfo->fullpct[COL_RED], 
 			repinfo->fullpct[COL_PURPLE], repinfo->fullpct[COL_CLEAR], repinfo->fullpct[COL_BLUE]);
 		if (repinfo->withreport) {
 			fprintf(textrep, "		SLA	%.2f%%	%.2f%%	%.2f%%	   -  	%.2f%%	   -  \n",
-				repinfo->reportpct[COL_RED], repinfo->reportpct[COL_YELLOW], 
-				repinfo->reportpct[COL_GREEN], repinfo->reportpct[COL_CLEAR]);
+				repinfo->reportpct[COL_GREEN], repinfo->reportpct[COL_YELLOW], 
+				repinfo->reportpct[COL_RED], repinfo->reportpct[COL_CLEAR]);
 		}
 		fprintf(textrep, "		Events	%d	%d	%d	%d	%d	%d\n",
-			repinfo->count[COL_RED], repinfo->count[COL_YELLOW], repinfo->count[COL_GREEN], 
+			repinfo->count[COL_GREEN], repinfo->count[COL_YELLOW], repinfo->count[COL_RED], 
 			repinfo->count[COL_PURPLE], repinfo->count[COL_CLEAR], repinfo->count[COL_BLUE]);
 		fprintf(textrep, "\n");
 		fprintf(textrep, "\n");
@@ -460,7 +460,7 @@ int main(int argc, char *argv[])
 		errormsg("Cannot open history file");
 	}
 
-	parse_historyfile(fd, &repinfo, hostname, service, st, end, 0, reportwarnlevel, reportgreenlevel, reporttime);
+	color = parse_historyfile(fd, &repinfo, hostname, service, st, end, 0, reportwarnlevel, reportgreenlevel, reporttime);
 	fclose(fd);
 
 	sprintf(textrepfn, "avail-%s-%s-%lu-%u.txt", hostname, service, time(NULL), (int)getpid());
