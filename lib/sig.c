@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sig.c,v 1.2 2004-11-04 09:25:00 henrik Exp $";
+static char rcsid[] = "$Id: sig.c,v 1.3 2004-11-18 14:11:07 henrik Exp $";
 
 #include <limits.h>
 #include <signal.h>
@@ -60,6 +60,10 @@ static void sigsegv_handler(int signum)
 void setup_signalhandler(char *programname)
 {
 	struct rlimit lim;
+	struct sigaction sa;
+
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = sigsegv_handler;
 
 	/*
 	 * After lengthy debugging and perusing of mail archives:
@@ -89,9 +93,9 @@ void setup_signalhandler(char *programname)
 	sprintf(signal_msg, "status %s.%s red - Program crashed\n\nFatal signal caught!\n", 
 		(getenv("MACHINE") ? getenv("MACHINE") : "BBDISPLAY"), programname);
 
-	signal(SIGSEGV, sigsegv_handler);
+	sigaction(SIGSEGV, &sa, NULL);
 #ifdef SIGBUS
-	signal(SIGBUS, sigsegv_handler);
+	sigaction(SIGBUS, &sa, NULL);
 #endif
 }
 
