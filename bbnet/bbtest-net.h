@@ -13,9 +13,6 @@
 
 #include <sys/time.h>
 
-#define DEF_TIMEOUT         10
-#define DEF_CONNECT_TIMEOUT 5
-
 #define STATUS_CONTENTMATCH_NOFILE 901
 #define STATUS_CONTENTMATCH_FAILED 902
 #define STATUS_CONTENTMATCH_BADREGEX 903
@@ -30,11 +27,11 @@
  *  |      toolid
  *  |      items --------------> testitem_t  <----------------------------------------------+
  *  |      next             +------- service                                                |
- *  |                       |        host ------------------>testedhost_t <------------+    |
- *  +-----------------------+        testspec                    hostname              |    |
- *                                   dialup                      ip                    |    |
- *                                   reverse                     conntimeout           |    |
- *                                   silenttest                  timeout               |    |
+ *  |                       |        host ---------------+
+ *  +-----------------------+        testspec            |                                  |
+ *                                   dialup              +-->testedhost_t <------------+    |
+ *                                   reverse                     hostname              |    |
+ *                                   silenttest                  ip                    |    |
  *                                   alwaystrue                  dialup                |    |
  *                                   open                        testip                |    |
  *                                   banner                      nosslcert             |    |
@@ -71,8 +68,6 @@ typedef struct service_t {
 typedef struct testedhost_t {
 	char *hostname;
 	char ip[16];
-	int conntimeout;	/* Connection timeout (http test only) */
-	int timeout;		/* Host timeout setting (http test only) */
 	int dialup;		/* dialup flag (if set, failed tests report as clear) */
 	int testip;		/* testip flag (dont do dns lookups on hostname) */
 	int nosslcert;		/* nosslcert flag */
