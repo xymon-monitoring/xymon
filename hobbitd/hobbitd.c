@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.88 2004-12-30 22:25:34 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.89 2005-01-01 14:26:19 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -183,8 +183,8 @@ hobbitd_statistics_t hobbitd_stats[] = {
 	{ "hobbitdboard", 0 },
 	{ "hobbitdlist", 0 },
 	{ "hobbitdlog", 0 },
-	{ "hobbitddrop", 0 },
-	{ "hobbitdrename", 0 },
+	{ "drop", 0 },
+	{ "rename", 0 },
 	{ NULL, 0 }
 };
 
@@ -1422,7 +1422,7 @@ void do_message(conn_t *msg, char *origin)
 			}
 		}
 	}
-	else if (strncmp(msg->buf, "hobbitdlog ", 10) == 0) {
+	else if ((strncmp(msg->buf, "hobbitdlog ", 11) == 0) || (strncmp(msg->buf, "bbgendlog ", 10) == 0)) {
 		/* 
 		 * Request for a single status log
 		 * hobbitdlog HOST.TEST
@@ -1471,7 +1471,7 @@ void do_message(conn_t *msg, char *origin)
 			msg->buflen = (bufp - buf);
 		}
 	}
-	else if (strncmp(msg->buf, "hobbitdxlog ", 11) == 0) {
+	else if ((strncmp(msg->buf, "hobbitdxlog ", 12) == 0) || (strncmp(msg->buf, "bbgendxlog ", 11) == 0)) {
 		/* 
 		 * Request for a single status log in XML format
 		 * hobbitdxlog HOST.TEST
@@ -1538,7 +1538,7 @@ void do_message(conn_t *msg, char *origin)
 			msg->buflen = (bufp - buf);
 		}
 	}
-	else if (strncmp(msg->buf, "hobbitdboard", 11) == 0) {
+	else if ((strncmp(msg->buf, "hobbitdboard", 12) == 0) || (strncmp(msg->buf, "bbgendboard", 11) == 0)) {
 		/* 
 		 * Request for a summmary of all known status logs
 		 *
@@ -1591,7 +1591,7 @@ void do_message(conn_t *msg, char *origin)
 		msg->bufp = msg->buf = buf;
 		msg->buflen = buflen;
 	}
-	else if (strncmp(msg->buf, "hobbitdxboard", 12) == 0) {
+	else if ((strncmp(msg->buf, "hobbitdxboard", 13) == 0) || (strncmp(msg->buf, "bbgendxboard", 12) == 0)) {
 		/* 
 		 * Request for a summmary of all known status logs in XML format
 		 *
@@ -1656,7 +1656,7 @@ void do_message(conn_t *msg, char *origin)
 		msg->bufp = msg->buf = buf;
 		msg->buflen = (bufp - buf);
 	}
-	else if (strncmp(msg->buf, "hobbitdlist", 10) == 0) {
+	else if (strncmp(msg->buf, "hobbitdlist", 11) == 0) {
 		/* 
 		 * Request for a list of all known status logs.
 		 *
@@ -1730,14 +1730,14 @@ void do_message(conn_t *msg, char *origin)
 			}
 		}
 	}
-	else if (strncmp(msg->buf, "hobbitddrop ", 11) == 0) {
+	else if (strncmp(msg->buf, "drop ", 5) == 0) {
 		char hostname[200];
 		char testname[200];
 		int n;
 
 		if (!oksender(adminsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
-		n = sscanf(msg->buf, "hobbitddrop %199s %199s", hostname, testname);
+		n = sscanf(msg->buf, "drop %199s %199s", hostname, testname);
 		if (n == 1) {
 			handle_dropnrename(CMD_DROPHOST, sender, hostname, NULL, NULL);
 		}
@@ -1745,14 +1745,14 @@ void do_message(conn_t *msg, char *origin)
 			handle_dropnrename(CMD_DROPTEST, sender, hostname, testname, NULL);
 		}
 	}
-	else if (strncmp(msg->buf, "hobbitdrename ", 13) == 0) {
+	else if (strncmp(msg->buf, "rename ", 7) == 0) {
 		char hostname[200];
 		char n1[200], n2[200];
 		int n;
 
 		if (!oksender(adminsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
-		n = sscanf(msg->buf, "hobbitdrename %199s %199s %199s", hostname, n1, n2);
+		n = sscanf(msg->buf, "rename %199s %199s %199s", hostname, n1, n2);
 		if (n == 2) {
 			/* Host rename */
 			handle_dropnrename(CMD_RENAMEHOST, sender, hostname, n1, NULL);
