@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.1 2005-01-17 23:12:53 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.2 2005-01-18 13:45:03 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -299,8 +299,16 @@ char *expand_env(char *s)
 		
 		/* Free all xps except the last one (which is myxp) */
 		while (xps->next) { tmp = xps; xps = xps->next; xfree(tmp->result); xfree(tmp); }
+		if (xps != myxp) {
+			errprintf("Assertion failed: xps != myxp\n");
+			abort();
+		}
+
+		/* We KNOW that xps == myxp */
 		res = myxp->result;
-		free(myxp);
+		xfree(myxp); 
+		xps = NULL;
+
 		return res;
 	}
 	else return myxp->result;
