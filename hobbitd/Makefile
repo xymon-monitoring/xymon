@@ -41,7 +41,7 @@ bbd_sample: $(SAMPLEOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f bbgend bbd_channel bbd_sample bbd_filestore bbd_history bbd_alert *.o *~ larrd/*~
+	rm -f $(PROGRAMS) *.o *~ larrd/*~
 
 install: install-bin install-man
 
