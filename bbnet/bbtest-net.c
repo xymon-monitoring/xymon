@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.62 2003-06-02 09:16:14 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.63 2003-06-04 06:49:28 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -217,6 +217,7 @@ testedhost_t *init_testedhost(char *hostname, int timeout, int conntimeout, int 
 	newhost->testip = 0;
 	newhost->nosslcert = 0;
 	newhost->dnserror = 0;
+	newhost->dodns = 0;
 	newhost->in_sla = in_sla;
 
 	newhost->noconn = 0;
@@ -445,6 +446,7 @@ void load_tests(void)
 							}
 						}
 
+						if (s) h->dodns = 1;
 						if (option) *(option-1) = ':';
 					}
 
@@ -466,6 +468,7 @@ void load_tests(void)
 					newtest = init_testitem(h, pingtest, NULL, ping_dialuptest, ping_reversetest, 1, 0);
 					newtest->next = pingtest->items;
 					pingtest->items = newtest;
+					h->dodns = 1;
 				}
 
 				if (anytests) {
@@ -506,7 +509,7 @@ void dns_resolve(void)
 				h->dnserror = 1;
 			}
 		}
-		else {
+		else if (h->dodns) {
 			struct hostent *hent;
 
 			hent = gethostbyname(h->hostname);
@@ -787,6 +790,8 @@ void send_results(service_t *service)
 		flags[i++] = (t->silenttest ? 'S' : 's');
 		flags[i++] = (t->host->testip ? 'T' : 't');
 		flags[i++] = (t->host->in_sla ? 'I' : 'i');
+		flags[i++] = (t->host->dodns ? 'L' : 'l');
+		flags[i++] = (t->host->dnserror ? 'E' : 'e');
 		flags[i++] = '\0';
 
 		if ((service == pingtest) && t->host->noping) {
