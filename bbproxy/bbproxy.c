@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.2 2004-09-19 06:38:59 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.3 2004-09-19 07:18:36 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -29,6 +29,17 @@ static char rcsid[] = "$Id: bbproxy.c,v 1.2 2004-09-19 06:38:59 henrik Exp $";
 #include <ctype.h>
 #include <signal.h>
 
+#include "bbgen.h"
+#include "util.h"
+#include "debug.h"
+
+/* These are dummy vars needed by stuff in util.c */
+hostlist_t      *hosthead = NULL;
+link_t          *linkhead = NULL;
+link_t  null_link = { "", "", "", NULL };
+
+static const char *VERSION_STRING = "1.0";
+
 enum phase_t {
 	P_IDLE, 
 
@@ -47,40 +58,37 @@ enum phase_t {
 	P_CLEANUP
 };
 
+char *statename[] = {
+	"idle",
+	"req_new",
+	"req_reading",
+	"req_ready",
+	"req_connecting",
+	"req_sending",
+	"req_done",
+	"resp_reading",
+	"resp_ready",
+	"resp_sending",
+	"resp_done",
+	"cleanup"
+};
+
 typedef struct conn_t {
 	enum phase_t state;
 	int csocket;
 	struct sockaddr caddr;
 	int ssocket;
 	int conntries;
+	time_t conntime;
 	unsigned char *buf, *bufp;
 	unsigned int bufsize, buflen;
 	struct conn_t *next;
 } conn_t;
 
-#define CONNECT_TRIES 5
-conn_t *chead = NULL;
-
+#define CONNECT_TRIES 3		/* How many connect-attempts against the server */
+#define CONNECT_INTERVAL 8	/* seconds between each connection attempt */
 #define BUFSZ_READ 2048
 #define BUFSZ_INC  8192
-
-static char *statename(enum phase_t state)
-{
-	switch (state) {
-	  case P_IDLE: return "idle";
-	  case P_REQ_NEW: return "req_new";
-	  case P_REQ_READING: return "req_reading";
-	  case P_REQ_READY: return "req_ready";
-	  case P_REQ_CONNECTING: return "req_connecting";
-	  case P_REQ_SENDING: return "req_sending";
-	  case P_REQ_DONE: return "req_done";
-	  case P_RESP_READING: return "resp_reading";
-	  case P_RESP_READY: return "resp_ready";
-	  case P_RESP_SENDING: return "resp_sending";
-	  case P_RESP_DONE: return "resp_done";
-	  case P_CLEANUP: return "cleanup";
-	}
-}
 
 static void do_read(int sockfd, conn_t *conn, enum phase_t completedstate)
 {
@@ -128,10 +136,11 @@ static void do_write(int sockfd, conn_t *conn, enum phase_t completedstate)
 
 int main(int argc, char *argv[])
 {
-	int localport = 1984;
+	int locport = 1984;
+	char *locaddr = "0.0.0.0";
 	int remport = 1984;
-	char *remaddr = "172.16.10.2";
-	int daemonize = 0;
+	char *remaddr = NULL;
+	int daemonize = 1;
 	int timeout = 10;
 	int listenq = 20;
 
@@ -140,20 +149,85 @@ int main(int argc, char *argv[])
 	struct sockaddr_in saddr;
 	int opt;
 
+	conn_t *chead = NULL;
+
+	for (opt=1; (opt < argc); opt++) {
+		if (argnmatch(argv[opt], "--local=")) {
+			char *p = strchr(argv[opt], '=');
+			locaddr = strdup(p+1);
+			p = strchr(locaddr, ':');
+			if (p) {
+				*p = '\0';
+				locport = atoi(p+1);
+			}
+		}
+		else if (argnmatch(argv[opt], "--remote=")) {
+			char *p = strchr(argv[opt], '=');
+			remaddr = strdup(p+1);
+			p = strchr(remaddr, ':');
+			if (p) {
+				*p = '\0';
+				remport = atoi(p+1);
+			}
+		}
+		else if (argnmatch(argv[opt], "--timeout=")) {
+			char *p = strchr(argv[opt], '=');
+			timeout = atoi(p+1);
+		}
+		else if (argnmatch(argv[opt], "--lqueue=")) {
+			char *p = strchr(argv[opt], '=');
+			listenq = atoi(p+1);
+		}
+		else if (strcmp(argv[opt], "--daemon") == 0) {
+			daemonize = 1;
+		}
+		else if (strcmp(argv[opt], "--no-daemon") == 0) {
+			daemonize = 0;
+		}
+		else if (strcmp(argv[opt], "--debug") == 0) {
+			debug = 1;
+		}
+		else if (strcmp(argv[opt], "--version") == 0) {
+			printf("bbproxy version %s\n", VERSION_STRING);
+			return 0;
+		}
+		else if (strcmp(argv[opt], "--help") == 0) {
+			printf("bbproxy version %s\n", VERSION_STRING);
+			printf("\nOptions:\n");
+			printf("\t--local=IP[:port]           : Listen address and portnumber\n");
+			printf("\t--remote=IP[:port]          : Server address and portnumber\n");
+			printf("\t--timeout=N                 : Communications timeout (seconds)\n");
+			printf("\t--lqueue=N                  : Listen-queue size\n");
+			printf("\t--daemon                    : Run as a daemon\n");
+			printf("\t--no-daemon                 : Do not run as a daemon\n");
+			printf("\t--debug                     : Enable debugging output\n");
+			printf("\n");
+			return 0;
+		}
+	}
+
+	if (remaddr == NULL) {
+		errprintf("No remote address given - aborting\n");
+		return 1;
+	}
+
 	/* Set up a socket to listen for new connections */
 	lsocket = socket(AF_INET, SOCK_STREAM, 0);
 	opt = 1;
 	setsockopt(lsocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 	memset(&laddr, 0, sizeof(laddr));
-	laddr.sin_port = htons(localport);
+	laddr.sin_port = htons(locport);
 	laddr.sin_family = AF_INET;
+	inet_aton(locaddr, (struct in_addr *) &laddr.sin_addr.s_addr);
 	bind(lsocket, (struct sockaddr *)&laddr, sizeof(laddr));
 	listen(lsocket, listenq);
+	dprintf("Listening on %s port %d\n", locaddr, locport);
 
 	memset(&saddr, 0, sizeof(saddr));
 	saddr.sin_port = htons(remport);
 	saddr.sin_family = AF_INET;
 	inet_aton(remaddr, (struct in_addr *) &saddr.sin_addr.s_addr);
+	dprintf("Sending to %s port %d\n", remaddr, remport);
 
 	if (daemonize) {
 		pid_t childpid;
@@ -162,6 +236,7 @@ int main(int argc, char *argv[])
 		childpid = fork();
 		if (childpid < 0) {
 			/* Fork failed */
+			errprintf("Could not fork\n");
 			exit(1);
 		}
 		else if (childpid > 0) {
@@ -180,13 +255,14 @@ int main(int argc, char *argv[])
 		struct timeval tmo;
 		int n, idx;
 		conn_t *cwalk;
+		time_t ctime;
 
 		FD_ZERO(&fdread);
 		FD_ZERO(&fdwrite);
 
 		FD_SET(lsocket, &fdread); maxfd = lsocket;
 		for (cwalk = chead, idx=0; (cwalk); cwalk = cwalk->next, idx++) {
-			printf("state %d: %s\n", idx, statename(cwalk->state));
+			dprintf("state %d: %s\n", idx, statename[cwalk->state]);
 
 			switch (cwalk->state) {
 			  case P_REQ_READING:
@@ -199,9 +275,12 @@ int main(int argc, char *argv[])
 				cwalk->bufp = cwalk->buf;
 				cwalk->state = P_REQ_CONNECTING;
 				cwalk->conntries = CONNECT_TRIES;
+				cwalk->conntime = 0;
 				/* Fall through */
 
 			  case P_REQ_CONNECTING:
+				ctime = time(NULL);
+				if (ctime < (cwalk->conntime + CONNECT_INTERVAL)) break;
 				cwalk->ssocket = socket(AF_INET, SOCK_STREAM, 0);
 				if (cwalk->ssocket == -1) break; /* Retry the next time around */
 				fcntl(cwalk->ssocket, F_SETFL, O_NONBLOCK);
@@ -276,6 +355,12 @@ int main(int argc, char *argv[])
 				memset(&cwalk->caddr, 0, sizeof(cwalk->caddr));
 				cwalk->state = P_IDLE;
 				break;
+
+			  case P_IDLE:
+				break;
+
+			  default:
+				break;
 			}
 		}
 
@@ -335,6 +420,9 @@ int main(int argc, char *argv[])
 						do_write(cwalk->csocket, cwalk, P_RESP_DONE);
 					}
 					break;
+
+				  default:
+					break;
 				}
 			}
 
@@ -343,7 +431,7 @@ int main(int argc, char *argv[])
 				conn_t *newconn;
 				int caddrsize = sizeof(newconn->caddr);
 
-				printf("New connection\n");
+				dprintf("New connection\n");
 				for (cwalk = chead; (cwalk && (cwalk->state != P_IDLE)); cwalk = cwalk->next);
 				if (cwalk) {
 					newconn = cwalk;
