@@ -1,0 +1,23 @@
+Source: hobbit
+Section: net
+Priority: optional
+Maintainer: Henrik Stoerner <henrik@hswn.dk>
+Build-Depends: debhelper (>= 4.0.0), librrd0-dev, libssl-dev, libldap2-dev, libpcre3-dev
+Standards-Version: 3.6.1
+
+Package: hobbit
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: The Hobbit network monitor
+ Hobbit is a network- and applications-monitoring system designed
+ for use in large-scale networks. But it will also work just fine
+ on a small network with just a few nodes. It is low-overhead and
+ high-performance, with an easy to use web front-end. It handles
+ monitoring of network services, and through client packages it
+ can also be used to monitor server-specific items. Alerts can
+ trigger when monitoring detects a problem, resulting in e-mails
+ or calls to your pager or mobile phone.
+ .
+ Hobbit has a great deal of inspiration from the non-free Big Brother 
+ package, but does not include any Big Brother code.
+
