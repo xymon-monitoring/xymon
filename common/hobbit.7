@@ -40,8 +40,8 @@ to generate the pages with the standard Big Brother web-page script
 bb-display.sh was about 12 minutes. bbgen does it in less than 5 seconds.
 
 (Historical note: The 350 hosts / 5 seconds was in January 2003.
-At the release of bbgen 2.13 in November 2003, I have 989 hosts, 
-85 pages - bbgen builds all of it in 6 seconds, or 10 seconds when
+At the release of bbgen 2.16 in August 2004, I have 1638 hosts, 
+121 pages - bbgen builds all of it in 20 seconds, or 30 seconds when
 updating the info- or larrd-pages).
 
 The network test tool bbtest-net also gives significant speed improvements 
@@ -186,6 +186,12 @@ in the Big Brother system with the
 tool. Tests can also be configured to depend on other tests, 
 making it easier to spot the root cause of a complex problem.
 
+.IP "bbgen tools can send status messages via HTTP"
+Big Brother uses its own protocol running on port 1984. Some
+paranoid firewall-admins are unhappy to allow connections on
+this port, so the bbgen toolkit has support for sending all 
+status messages via HTTP.
+
 .SH THE BBGEN TOOLKIT
 The tools included in the bbgen toolkit are as follows:
 
@@ -197,6 +203,16 @@ part of the LARRD tool that is often used with Big Brother.
 .I bbtest-net(1)
 is a drop-in replacement for the bb-network.sh network 
 test script in Big Brother.
+
+.I bb(1)
+is a drop-in replacement for the standard Big Brother
+bb client tool. It provides support for HTTP transfer of
+status messages, allows BB clients to query the state
+of tests on the central BBDISPLAY server, and retrieve
+BB configuration files, besides being compatible with the
+standard bb client. The server-side script 
+.I bbmessage.cgi(1) 
+that receives messages sent via HTTP is also included.
 
 .I bbretest-net.sh(1)
 is a Big Brother extension script for re-doing failed
