@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.2 2003-09-08 21:40:09 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.3 2003-11-16 08:01:50 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -55,10 +55,10 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
 {
 	FILE *eventlog;
 	char eventlogfilename[MAX_PATH];
-	char newcol[3], oldcol[3];
+	char hostname[MAX_LINE_LEN], svcname[MAX_LINE_LEN], newcol[MAX_LINE_LEN], oldcol[MAX_LINE_LEN];
 	time_t cutoff;
 	event_t	*events;
-	int num, eventintime_count;
+	int num, eventintime_count, itemsfound;
 	struct stat st;
 	char l[MAX_LINE_LEN];
 	char title[200];
@@ -98,18 +98,26 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
 	}
 	
 	events = (event_t *) malloc(maxcount*sizeof(event_t));
+	for (num=0; (num < maxcount); num++) events[num].hostname = events[num].service = NULL;
 	eventintime_count = num = 0;
 
 	while (fgets(l, sizeof(l), eventlog)) {
 
-		sscanf(l, "%s %s %u %u %u %s %s %d",
-			events[num].hostname, events[num].service,
+		itemsfound = sscanf(l, "%s %s %u %u %u %s %s %d",
+			hostname, svcname,
 			(unsigned int *)&events[num].eventtime, 
 			(unsigned int *)&events[num].changetime, 
 			(unsigned int *)&events[num].duration, 
 			newcol, oldcol, &events[num].state);
 
-		if ((events[num].eventtime > cutoff) && (allowallhosts || find_host(events[num].hostname)) && wanted_eventcolumn(events[num].service)) {
+		if ( (itemsfound == 8) && 
+		     (events[num].eventtime > cutoff) && 
+		     (allowallhosts || find_host(hostname)) && 
+		     (wanted_eventcolumn(svcname)) ) {
+			if (events[num].hostname != NULL) free(events[num].hostname);
+			if (events[num].service != NULL) free(events[num].service);
+			events[num].hostname = malcop(hostname);
+			events[num].service = malcop(svcname);
 			events[num].newcolor = eventcolor(newcol);
 			events[num].oldcolor = eventcolor(oldcol);
 			eventintime_count++;
@@ -129,7 +137,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
 		}
 		else {
 			firstevent = num;
-			lastevent = ( (num == 0) ? maxcount : (num-1));
+			lastevent = ( (num == 0) ? (maxcount-1) : (num-1));
 			eventintime_count = maxcount;
 		}
 
@@ -141,7 +149,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
 		fprintf(output, "<TR BGCOLOR=\"333333\">\n");
 		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"teal\">%s</FONT></TD></TR>\n", title);
 
-		for (num = lastevent; (eventintime_count); eventintime_count--, num = ((num == 0) ? (maxcount-1) : (num - 1)) ) {
+		for (num = lastevent; (eventintime_count); eventintime_count--, num = ((num == 0) ? (maxcount-1) : (num-1)) ) {
 			fprintf(output, "<TR BGCOLOR=%s>\n", bgcolors[bgcolor]);
 			bgcolor = ((bgcolor + 1) % 2);
 
@@ -187,6 +195,11 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
 		fprintf(output, "</TR>\n");
 		fprintf(output, "</TABLE>\n");
 		fprintf(output, "</CENTER>\n");
+	}
+
+	for (num=0; (num < maxcount); num++) {
+		if (events[num].hostname != NULL) free(events[num].hostname);
+		if (events[num].service != NULL) free(events[num].service);
 	}
 
 	free(events);
