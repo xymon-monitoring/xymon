@@ -24,6 +24,6 @@ install-bin:
 	cp -fp $(PROGRAMS) $(BBHOME)/bin/
 
 install-man:
-	mkdir -p $(MANROOT)/man1
-	cp -fp *.1 $(MANROOT)/man1/
+	mkdir -p $(MANROOT)/man8
+	cp -fp *.8 $(MANROOT)/man8/
 
