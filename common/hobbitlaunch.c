@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.7 2004-11-18 14:11:25 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.8 2004-11-20 23:31:42 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -337,6 +337,10 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			logfn = strdup(p+1);
 		}
+		else if (argnmatch(argv[argi], "--env=")) {
+			char *p = strchr(argv[argi], '=');
+			loadenv(p+1);
+		}
 		else if (strcmp(argv[argi], "--dump") == 0) {
 			/* Dump configuration */
 
@@ -463,24 +467,25 @@ int main(int argc, char *argv[])
 					char *cmdcp, *p;
 
 					/* Setup environment */
-					if (twalk->envfile) loadenv(twalk->envfile);
+					if (twalk->envfile) loadenv(expand_env(twalk->envfile));
 
 					/* Count # of arguments in command */
-					cmdcp = strdup(twalk->cmd);
+					cmdcp = strdup(expand_env(twalk->cmd));
+					dprintf("Task '%s' -> '%s'\n", twalk->key, cmdcp);
 					p = strtok(cmdcp, " ");
 					while (p) { argcount++; p = strtok(NULL, " "); }
 					cmdargs = (char **) calloc(argcount+2, sizeof(char *));
 
 					/* Setup cmd and cmdargs */
-					strcpy(cmdcp, twalk->cmd);
+					strcpy(cmdcp, expand_env(twalk->cmd));
 					cmd = strtok(cmdcp, " ");
 					cmdargs[0] = cmd; argcount = 0;
 					while ((p = strtok(NULL, " ")) != NULL) cmdargs[++argcount] = p;
 					
 					/* Point stdout/stderr to a logfile, if requested */
 					if (twalk->logfile) {
-						int fd = open(twalk->logfile, O_WRONLY|O_CREAT|O_APPEND,
-								S_IRUSR|S_IWUSR|S_IRGRP);
+						int fd = open(expand_env(twalk->logfile), 
+								O_WRONLY|O_CREAT|O_APPEND, S_IRUSR|S_IWUSR|S_IRGRP);
 						if (fd) { 
 							dup2(fd, STDOUT_FILENO); 
 							dup2(fd, STDERR_FILENO); 
