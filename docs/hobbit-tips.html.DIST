@@ -21,6 +21,7 @@ raised with Hobbit.</p>
 	<li><a href="#fahrenheit">I want my temperature graphs to show Fahrenheit</a></li>
 	<li><a href="#nohtmllink">How do I remove the HTML links from the alert messages?</a></li>
 	<li><a href="#mancgi">I cannot see the the man-pages on the web</a></li>
+	<li><a href="#maintpl">Enable / Disable does not work</a></li>
 </ul>
 <hr>
 
@@ -194,6 +195,18 @@ scripts. Stephen Beaudry found the solution:</p>
 
    AddHandler cgi-script .cgi     -&gt;to-&gt;    AddHandler cgi-script .cgi$
 </pre>
+
+<hr>
+<h3><a name="maintpl">Enable/Disable does not work</a></h3>
+<p>If you see this error message in your webserver log:</p>
+<p><tt>Insecure directory in $ENV{PATH} while running with -T</tt></p>
+<p>then your webserver is running CGI scripts such as maint.pl without
+setting up a proper PATH for them. Perl complains about this.</p>
+<p>The solution is to setup your webserver so it provides a sane PATH
+setting to CGI scripts. A bit of digging on <a href="http://httpd.apache.org/docs-2.0/mod/mod_env.html#setenv">httpd.apache.org</a> reveals 
+that adding</p>
+<code> SetEnv PATH /bin:/usr/bin:/usr/local/bin</code>
+<p>is the way to set environment variables for CGI scripts.</p>
 
 <hr>
 
