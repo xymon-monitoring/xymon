@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.26 2003-07-18 12:45:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.27 2003-08-04 11:49:38 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -54,7 +54,7 @@ rrdlayout_t rrdnames[] = {
 };
 
 
-static char *rrdlink_url(char *hostname, rrd_t *rrd, int larrd043)
+static char *rrdlink_url(char *hostname, char *dispname, rrd_t *rrd, int larrd043)
 {
 	static char rrdurl[4096];
 	char svcurl[4096];
@@ -78,7 +78,10 @@ static char *rrdlink_url(char *hostname, rrd_t *rrd, int larrd043)
 			sprintf(svcurl, "%s/larrd-grapher.cgi?host=%s&amp;service=%s&amp;%s=%d..%d", 
 				getenv("CGIBINURL"), hostname, rrd->rrdname->name,
 				rrd->rrdname->partname, first, last);
-
+			if (dispname) {
+				strcat(svcurl, "&amp;disp=");
+				strcat(svcurl, urlencode(dispname));
+			}
 			sprintf(rrdparturl, linkfmt, svcurl, svcurl, rrd->rrdname->name);
 			strcat(rrdurl, rrdparturl);
 			first = last+1;
@@ -87,6 +90,10 @@ static char *rrdlink_url(char *hostname, rrd_t *rrd, int larrd043)
 	else {
 		sprintf(svcurl, "%s/larrd-grapher.cgi?host=%s&amp;service=%s", 
 			getenv("CGIBINURL"), hostname, rrd->rrdname->name);
+		if (dispname) {
+			strcat(svcurl, "&amp;disp=");
+			strcat(svcurl, urlencode(dispname));
+		}
 		sprintf(rrdurl, linkfmt, svcurl, svcurl, rrd->rrdname->name);
 	}
 
@@ -105,7 +112,7 @@ static char *rrdlink_text(host_t *host, rrd_t *rrd, int larrd043)
 	/* If no larrdgraphs definition, include all with default links */
 	if (host->larrdgraphs == NULL) {
 		dprintf("rrdlink_text: Standard URL (no larrdgraphs)\n");
-		return rrdlink_url(host->hostname, rrd, larrd043);
+		return rrdlink_url(host->hostname, host->displayname, rrd, larrd043);
 	}
 
 	/* Find this rrd definition in the larrdgraphs */
@@ -120,7 +127,7 @@ static char *rrdlink_text(host_t *host, rrd_t *rrd, int larrd043)
 			dprintf("rrdlink_text: Default URL included\n");
 
 			/* Yes, return default link for this RRD */
-			return rrdlink_url(host->hostname, rrd, larrd043);
+			return rrdlink_url(host->hostname, host->displayname, rrd, larrd043);
 		}
 		else {
 			dprintf("rrdlink_text: Default URL NOT included\n");
@@ -166,7 +173,7 @@ static char *rrdlink_text(host_t *host, rrd_t *rrd, int larrd043)
 			myrrd->rrdname->maxgraphs = 999;
 			myrrd->count = 1;
 			myrrd->next = NULL;
-			strcat(rrdlink, rrdlink_url(host->hostname, myrrd, larrd043));
+			strcat(rrdlink, rrdlink_url(host->hostname, host->displayname, myrrd, larrd043));
 			*p = savechar;
 
 			graphdef = p;
@@ -182,7 +189,7 @@ static char *rrdlink_text(host_t *host, rrd_t *rrd, int larrd043)
 	}
 	else {
 		/* It is included with the default graph */
-		return rrdlink_url(host->hostname, rrd, larrd043);
+		return rrdlink_url(host->hostname, host->displayname, rrd, larrd043);
 	}
 
 	return "";
