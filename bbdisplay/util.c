@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.139 2004-10-30 15:44:12 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.140 2004-10-30 22:26:01 henrik Exp $";
 
 #include <limits.h>
 #include <sys/types.h>
@@ -31,27 +31,10 @@ static char rcsid[] = "$Id: util.c,v 1.139 2004-10-30 15:44:12 henrik Exp $";
 #include "util.h"
 
 char *htmlextension = ".html"; /* Filename extension for generated HTML files */
-int	use_recentgifs = 0;
 hostlist_t      *hosthead = NULL;
 link_t          *linkhead = NULL;
 link_t  null_link = { "", "", "", NULL };
 
-
-char *dotgiffilename(int color, int acked, int oldage)
-{
-	static char filename[20]; /* yellow-recent.gif */
-
-	strcpy(filename, colorname(color));
-	if (acked) {
-		strcat(filename, "-ack");
-	}
-	else if (use_recentgifs) {
-		strcat(filename, (oldage ? "" : "-recent"));
-	}
-	strcat(filename, ".gif");
-
-	return filename;
-}
 
 char *alttag(entry_t *e)
 {

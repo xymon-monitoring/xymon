@@ -20,13 +20,11 @@
 #define __UTIL_H_
 
 extern char *htmlextension;
-extern int use_recentgifs;
 
 extern hostlist_t *hosthead;
 extern link_t *linkhead;
 extern link_t null_link;
 
-extern char *dotgiffilename(int color, int acked, int oldage);
 extern char *alttag(entry_t *e);
 extern char *hostpage_link(host_t *host);
 extern char *hostpage_name(host_t *host);
