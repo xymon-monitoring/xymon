@@ -8,10 +8,11 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.14 2004-09-20 14:52:21 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.15 2004-09-20 15:31:49 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -27,6 +28,7 @@ static char rcsid[] = "$Id: bbproxy.c,v 1.14 2004-09-20 14:52:21 henrik Exp $";
 #include <stdio.h>
 #include <netdb.h>
 #include <ctype.h>
+#include <signal.h>
 
 #include "bbgen.h"
 #include "util.h"
@@ -91,6 +93,25 @@ typedef struct conn_t {
 #define BUFSZ_INC  8192
 #define MAX_OPEN_SOCKS 256
 
+int keeprunning = 1;
+char *logfile = NULL;
+
+void sigterm_handler(int signum)
+{
+	errprintf("Caught TERM signal, terminating\n");
+	keeprunning = 0;
+}
+
+void sighup_handler(int signum)
+{
+	FILE *logfd;
+
+	if (logfile) {
+		if (signum) errprintf("Caught SIGHUP, reopening logfile\n");
+		logfd = freopen(logfile, "a", stderr);
+	}
+}
+
 static void do_read(int sockfd, char *addr, conn_t *conn, enum phase_t completedstate)
 {
 	int n;
@@ -150,6 +171,7 @@ int main(int argc, char *argv[])
 	int listenq = 512;
 	char *pidfile = "/var/run/bbproxy.pid";
 	char *proxyname = NULL;
+	char *proxynamesvc = "bbproxy";
 
 	int sockcount = 0;
 	int lsocket;
@@ -221,9 +243,29 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[opt], '=');
 			pidfile = strdup(p+1);
 		}
-		else if (argnmatch(argv[opt], "--proxyname=")) {
+		else if (argnmatch(argv[opt], "--logfile=")) {
 			char *p = strchr(argv[opt], '=');
-			proxyname = strdup(p+1);
+			logfile = strdup(p+1);
+		}
+		else if (argnmatch(argv[opt], "--report=")) {
+			char *p1 = strchr(argv[opt], '=')+1;
+
+			if (strchr(p1, '.') == NULL) {
+				if (getenv("MACHINE") == NULL) {
+					errprintf("Environment variable MACHINE is undefined\n");
+					return 1;
+				}
+
+				proxyname = strdup(getenv("MACHINE"));
+				proxyname = (char *)realloc(proxyname, strlen(proxyname) + strlen(p1) + 1);
+				strcat(proxyname, ".");
+				strcat(proxyname, p1);
+				proxynamesvc = strdup(p1);
+			}
+			else {
+				proxyname = strdup(p1);
+				proxynamesvc = strchr(p1, '.')+1;
+			}
 		}
 		else if (strcmp(argv[opt], "--debug") == 0) {
 			debug = 1;
@@ -243,7 +285,7 @@ int main(int argc, char *argv[])
 			printf("\t--daemon                    : Run as a daemon\n");
 			printf("\t--no-daemon                 : Do not run as a daemon\n");
 			printf("\t--pidfile=FILENAME          : Save proces-ID of daemon to FILENAME\n");
-			printf("\t--proxyname=PROXY.SERVICE   : Sends a status message about proxy activity\n");
+			printf("\t--proxyname=[HOST.]SERVICE  : Sends a BB status message about proxy activity\n");
 			printf("\t--debug                     : Enable debugging output\n");
 			printf("\n");
 			return 0;
@@ -302,6 +344,10 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	/* Redirect logging to the logfile, if requested */
+	sighup_handler(0);
+
+	errprintf("bbproxy version %s starting\n", VERSION_STRING);
 	errprintf("Listening on %s port %d\n", locaddr, locport);
 	errprintf("Sending to BBDISPLAY at %s port %d\n", bbdispip, bbdispport);
 	errprintf("Sending to BBPAGER at %s port %d\n", bbpagerip, bbpagerport);
@@ -329,7 +375,9 @@ int main(int argc, char *argv[])
 		setsid();
 	}
 
-	setup_signalhandler("bbproxy");
+	setup_signalhandler(proxynamesvc);
+	signal(SIGHUP, sighup_handler);
+	signal(SIGTERM, sigterm_handler);
 
 	do {
 		fd_set fdread, fdwrite;
@@ -666,6 +714,9 @@ int main(int argc, char *argv[])
 				}
 			}
 		}
-	} while (1);
+	} while (keeprunning);
+
+	if (pidfile) unlink(pidfile);
+	return 0;
 }
 
