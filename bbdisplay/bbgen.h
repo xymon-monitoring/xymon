@@ -187,6 +187,8 @@ typedef struct {
 	int	onwap;
 	int	propagate;
 	char 	*sumurl;
+	char	*skin;
+	char	*testflags;
 	void	*next;
 } entry_t;
 
