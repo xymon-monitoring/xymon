@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.1 2003-01-27 23:21:17 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.2 2003-01-28 06:47:51 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -51,7 +51,7 @@ void generate_info(char *infocolumn)
 	for (hostwalk=hosthead; (hostwalk); hostwalk = hostwalk->next) {
 		char logfn[256], htmlfn[256];
 		FILE *fd;
-		char *p, *alertspec, *url, *slaspec, *noprop;
+		char *p, *hostname, *alertspec, *url, *slaspec, *noprop;
 
 		sprintf(logfn, "%s/%s.%s", getenv("BBLOGS"), hostwalk->hostentry->hostname, infocolumn);
 		if (getenv("BBHTML")) {
@@ -62,7 +62,19 @@ void generate_info(char *infocolumn)
 		}
 
 		infobuf[0] = '\0';
-		sprintf(l, "Hostname : %s<br>\n", hostwalk->hostentry->hostname); strcat(infobuf, l);
+		hostname = strstr(hostwalk->hostentry->rawentry, "NAME:");
+		if (!hostname) {
+			sprintf(l, "Hostname : %s<br>\n", hostwalk->hostentry->hostname);
+		}
+		else {
+			hostname += 5;
+			p = strchr(hostname, ' ');
+			if (p) *p = '\0';
+			sprintf(l, "Hostname : %s<br>\n", hostname);
+			if (p) *p = ' ';
+		}
+		strcat(infobuf, l);
+
 		sprintf(l, "IP : %s<br>\n", hostwalk->hostentry->ip); strcat(infobuf, l);
 		strcat(infobuf, "<br>\n");
 
@@ -134,7 +146,8 @@ void generate_info(char *infocolumn)
 				url++;  /* Skip space */
 				p = strchr(url, ' ');
 				if (p) *p = '\0';
-				sprintf(l, "&nbsp;&nbsp;%s<br>\n", url); strcat(infobuf, l);
+				sprintf(l, "&nbsp;&nbsp;<a href=\"%s\">%s</a><br>\n", realurl(url), url); 
+				strcat(infobuf, l);
 				if (p) {
 					*p = ' ';
 					url = strstr(p, " http");
@@ -154,7 +167,8 @@ void generate_info(char *infocolumn)
 				url+=9;  /* Skip " content=" */
 				p = strchr(url, ' ');
 				if (p) *p = '\0';
-				sprintf(l, "&nbsp;&nbsp;%s<br>\n", url); strcat(infobuf, l);
+				sprintf(l, "&nbsp;&nbsp;<a href=\"%s\">%s</a><br>\n", realurl(url), url); 
+				strcat(infobuf, l);
 				if (p) {
 					*p = ' ';
 					url = strstr(p, " content=");
