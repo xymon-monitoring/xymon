@@ -11,6 +11,8 @@
 #ifndef __BBTEST_NET_H__
 #define __BBTEST_NET_H__
 
+#include <sys/time.h>
+
 #ifdef MULTICURL
 /*
  * libcurl multi interface requires longer timeouts.
@@ -69,6 +71,9 @@ typedef struct testedhost_t {
 
 	/* The following is for the HTTP tests */
 	struct testitem_t *firsthttp;	/* First HTTP testitem in testitem list */
+
+	/* The following is for the LDAP tests */
+	struct testitem_t *firstldap;	/* First LDAP testitem in testitem list */
 
 	/* For storing the test dependency tag. */
 	char *deptests;
