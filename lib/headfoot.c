@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.6 2005-01-09 21:36:05 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.7 2005-01-09 21:55:51 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -99,14 +99,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 		for (t_start = t_next; ((*t_next >= 'A') && (*t_next <= 'Z')); t_next++ ) ;
 		savechar = *t_next; *t_next = '\0';
 
-		if (strcmp(t_start, "BBREL") == 0)     		fprintf(output, "%s", getenv("BBREL"));
-		else if (strcmp(t_start, "BBRELDATE") == 0) 	fprintf(output, "%s", getenv("BBRELDATE"));
-		else if (strcmp(t_start, "HOBBITDREL") == 0) 	fprintf(output, "%s", getenv("HOBBITDREL"));
-		else if (strcmp(t_start, "BBSKIN") == 0)    	fprintf(output, "%s", getenv("BBSKIN"));
-		else if (strcmp(t_start, "BBWEB") == 0)     	fprintf(output, "%s", getenv("BBWEB"));
-		else if (strcmp(t_start, "CGIBINURL") == 0) 	fprintf(output, "%s", getenv("CGIBINURL"));
-
-		else if (strcmp(t_start, "BBDATE") == 0) {
+		if (strcmp(t_start, "BBDATE") == 0) {
 			char *bbdatefmt = getenv("BBDATEFORMAT");
 			char datestr[100];
 
@@ -224,7 +217,11 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			}
 		}
 
-		else fprintf(output, "&");			/* No substitution - copy the ampersand */
+		else if (getenv(t_start)) {
+			fprintf(output, "%s", getenv(t_start));
+		}
+
+		else fprintf(output, "&%s", t_start);		/* No substitution - copy all unchanged. */
 			
 		*t_next = savechar; t_start = t_next; t_next = strchr(t_start, '&');
 	}
