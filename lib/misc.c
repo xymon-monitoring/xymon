@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.13 2004-11-20 22:28:27 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.14 2004-11-21 10:47:46 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -125,8 +125,8 @@ void loadenv(char *envfile)
 			*(p+1) = '\0';
 
 			p = l + strspn(l, " \t");
-			if ((*p) && strchr(p, '=')) {
-				oneenv = strdup(p);
+			if ((*p) && (*p != '#') && strchr(p, '=')) {
+				oneenv = strdup(expand_env(p));
 				p = strchr(oneenv, '=');
 				if (*(p+1) == '"') {
 					/* Move string over the first '"' */
@@ -142,6 +142,14 @@ void loadenv(char *envfile)
 		/* Always provide the BBGENDREL variable */
 		if (getenv("BBGENDREL") == NULL) {
 			sprintf(l, "BBGENDREL=%s", VERSION);
+			oneenv = strdup(l);
+			putenv(oneenv);
+		}
+
+		/* If MACHINE is undefined, but MACHINEDOTS is there, create MACHINE  */
+		if (getenv("MACHINE") == NULL && getenv("MACHINEDOTS")) {
+			sprintf(l, "MACHINE=%s", getenv("MACHINEDOTS"));
+			p = l; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			oneenv = strdup(l);
 			putenv(oneenv);
 		}
@@ -168,6 +176,74 @@ char *getenv_default(char *envname, char *envdefault, char **buf)
 	return val;
 }
 
+
+char *expand_env(char *s)
+{
+	static char *result = NULL;
+	static int resultlen = 0;
+	char *sCopy, *bot, *tstart, *tend, *envval;
+	char savech;
+
+	if (result == NULL) {
+		resultlen = 4096;
+		result = (char *)malloc(resultlen);
+	}
+	*result = '\0';
+
+	sCopy = strdup(s);
+	bot = sCopy;
+	do {
+		tstart = strchr(bot, '$');
+		if (tstart) *tstart = '\0'; 
+
+		if ((strlen(result) + strlen(bot) + 1) > resultlen) {
+			resultlen += strlen(bot) + 4096;
+			result = (char *)realloc(result, resultlen);
+		}
+		strcat(result, bot);
+
+		if (tstart) {
+			tstart++;
+			envval = NULL;
+
+			if (*tstart == '{') {
+				tstart++;
+				tend = strchr(tstart, '}');
+				if (tend) { 
+					*tend = '\0'; 
+					envval = getenv(tstart);
+					bot = tend+1;
+				} 
+				else {
+					envval = getenv(tstart);
+					bot = NULL;
+				}
+			}
+			else {
+				tend = tstart + strspn(tstart, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_");
+				savech = *tend;
+				*tend = '\0';
+				envval = getenv(tstart);
+				*tend = savech;
+				bot = tend;
+			}
+
+			if (envval) {
+				if ((strlen(result) + strlen(envval) + 1) > resultlen) {
+					resultlen += strlen(envval) + 4096;
+					result = (char *)realloc(result, resultlen);
+				}
+				strcat(result, envval);
+			}
+		}
+		else {
+			bot = NULL;
+		}
+	} while (bot);
+	free(sCopy);
+
+	return result;
+}
 
 char *commafy(char *hostname)
 {
