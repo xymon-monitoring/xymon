@@ -43,7 +43,7 @@ bb-rep.cgi: $(REPOBJS)
 	$(CC) $(CFLAGS) -o $@ $(REPOBJS)
 
 bb-replog-cgi.o: bb-replog.c
-	$(CC) $(CFLAGS) -DCGI -c -o $@ $<
+	$(CC) $(CFLAGS) -DCGI -c -o $@ bb-replog.c
 
 bb-replog.cgi: $(REPLOGOBJS)
 	$(CC) $(CFLAGS) -o $@ $(REPLOGOBJS)
@@ -70,7 +70,7 @@ httptest.o: httptest.c httptest.h
 	$(CC) $(CFLAGS) $(CURLINCLUDE) -c -o $@ httptest.c
 
 bb-hist.o: bb-hist.c
-	$(CC) $(CFLAGS) $(HISTGRAPHDEF) -c -o $@ $<
+	$(CC) $(CFLAGS) $(HISTGRAPHDEF) -c -o $@ bb-hist.c
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
