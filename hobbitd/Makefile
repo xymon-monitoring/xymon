@@ -90,6 +90,7 @@ install-bin:
 install-cgi:
 	mkdir -p $(CGIDIR)
 	cp -fp $(CGISCRIPTS) $(CGIDIR)/
+	cd etcfiles; ../../build/install-nooverwrite.sh etc/ bb-larrdgraph.cfg
 
 install-man:
 	mkdir -p $(MANROOT)/man8
