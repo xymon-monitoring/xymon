@@ -179,7 +179,8 @@ distclean: clean
 	cd c-ares-1.2.0 && (make distclean || /bin/true)
 
 clean:
-	rm -f *.o *~ $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) alert contest reptest calc ldaptest bbtest-local
+	cd c-ares-1.2.0 && (make clean || /bin/true)
+	rm -f *.o *.a *~ $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) alert contest reptest calc ldaptest bbtest-local
 
 install-bin: $(PROGRAMS)
 	cp -p $(PROGRAMS) $(BBHOME)/bin/
