@@ -57,5 +57,7 @@ extern void finish_status(void);
 
 extern void envcheck(char *envvars[]);
 
+extern int run_columngen(char *column, int update_interval, int enabled);
+
 #endif
 

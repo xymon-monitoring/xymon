@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.25 2003-01-20 09:26:59 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.26 2003-01-27 23:21:17 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -88,6 +88,7 @@ group_t *init_group(const char *title, const char *onlycols)
 
 host_t *init_host(const char *hostname, const int ip1, const int ip2, const int ip3, const int ip4, 
 		  const int dialup, const char *alerts, 
+		  char *tags,
 		  const char *nopropyellowtests, const char *nopropredtests)
 {
 	host_t 		*newhost = malloc(sizeof(host_t));
@@ -128,6 +129,7 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	else {
 		newhost->nopropredtests = nopropreddefault;
 	}
+	newhost->rawentry = malloc(strlen(tags)+1); strcpy(newhost->rawentry, tags);
 	newhost->parent = newhost->next = NULL;
 	newhost->rrds = NULL;
 
@@ -197,7 +199,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	char	testname[20];
 	char	ackfilename[256];
 	state_t *newstate;
-	char	l[200];
+	char	l[512];
 	host_t	*host;
 	struct stat st;
 	time_t	now = time(NULL);
@@ -287,7 +289,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 
 		char *p;
 		char *purplemsg = malloc(st.st_size+1024);
-		char msgline[200];
+		char msgline[512];
 
 		*is_purple = 1;
 
@@ -398,7 +400,7 @@ dispsummary_t *init_displaysummary(char *fn)
 	char sumfn[256];
 	char color[20];
 	dispsummary_t *newsum = NULL;
-	char *p, rowcol[200];
+	char *p, rowcol[512];
 	struct stat st;
 
 	sprintf(sumfn, "%s/%s", getenv("BBLOGS"), fn);
@@ -553,7 +555,7 @@ link_t *load_all_links(void)
 page_t *load_bbhosts(void)
 {
 	FILE 	*bbhosts;
-	char 	l[200];
+	char 	l[512];
 	char 	*name, *link, *onlycols;
 	char 	hostname[65];
 	page_t 	*toppage, *curpage, *cursubpage;
@@ -639,7 +641,7 @@ page_t *load_bbhosts(void)
 
 			if (curhost == NULL) {
 				curhost = init_host(hostname, ip1, ip2, ip3, ip4, dialup, alertlist, 
-						    nopropyellowlist, nopropredlist);
+						    startoftags, nopropyellowlist, nopropredlist);
 				if (curgroup != NULL) {
 					curgroup->hosts = curhost;
 				} else if (cursubpage != NULL) {
@@ -655,7 +657,7 @@ page_t *load_bbhosts(void)
 			}
 			else {
 				curhost = curhost->next = init_host(hostname, ip1, ip2, ip3, ip4, dialup, alertlist, 
-								    nopropyellowlist,nopropredlist);
+								    startoftags, nopropyellowlist,nopropredlist);
 			}
 			curhost->parent = (cursubpage ? cursubpage : curpage);
 		}

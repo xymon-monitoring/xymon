@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.58 2003-01-20 09:33:04 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.59 2003-01-27 23:21:17 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -31,6 +31,7 @@ static char rcsid[] = "$Id: bbgen.c,v 1.58 2003-01-20 09:33:04 henrik Exp $";
 #include "process.h"
 #include "pagegen.h"
 #include "larrdgen.h"
+#include "infogen.h"
 #include "debug.h"
 
 /* Global vars */
@@ -109,6 +110,16 @@ int main(int argc, char *argv[])
 				strcpy(larrdcol, (lp+1));
 			}
 		}
+		else if (strncmp(argv[i], "--info", 6) == 0) {
+			/* "--info" just enable info page generation */
+			/* "--info=xxx" does that, and redefines the info column name */
+			char *lp = strchr(argv[i], '=');
+
+			enable_infogen=1;
+			if (lp) {
+				strcpy(infocol, (lp+1));
+			}
+		}
 		else if (strncmp(argv[i], "--rrddir=", 9) == 0) {
 			char *lp = strchr(argv[i], '=');
 			strcpy(rrddir, (lp+1));
@@ -137,6 +148,7 @@ int main(int argc, char *argv[])
 #ifdef DEBUG
 			printf("    --debug                : Dumps internal state-table\n");
 #endif
+			printf("    --info[=INFOCOLUMN]    : Generate INFO data in column INFOCOLUMN\n");
 			printf("\nLARRD support options:\n");
 			printf("    --larrd[=LARRDCOLUMN]  : LARRD data in column LARRDCOLUMN, and handle larrd-html\n");
 			printf("    --larrdupdate=N        : time between updates of LARRD pages in seconds\n");
@@ -158,6 +170,7 @@ int main(int argc, char *argv[])
 
 	/* Generate the LARRD pages before loading state */
 	generate_larrd(rrddir, larrdcol);
+	generate_info(infocol);
 
 	statehead = load_state();
 

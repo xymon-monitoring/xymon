@@ -45,6 +45,7 @@
                                            color               |
                                            nopropyellowtests   |
                                            nopropredtests      |
+					   rawentry            |
                       +------------------  link                V
                       |                    entries ---------> entry_t
                       |                    next                 column -------> col_t
@@ -172,6 +173,7 @@ typedef struct {
 	char	*alerts;
 	char    *nopropyellowtests;
 	char    *nopropredtests;
+	char    *rawentry;
 	rrd_t	*rrds;
 	void	*parent;
 	void	*next;

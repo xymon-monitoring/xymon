@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.11 2003-01-17 10:00:13 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.12 2003-01-27 23:21:17 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -29,6 +29,7 @@ static char rcsid[] = "$Id: util.c,v 1.11 2003-01-17 10:00:13 henrik Exp $";
 #include <fcntl.h>
 #include <time.h>
 #include <sys/wait.h>
+#include <utime.h>
 
 #include "bbgen.h"
 #include "util.h"
@@ -504,5 +505,40 @@ void envcheck(char *envvars[])
 		fprintf(stderr, "Aborting\n");
 		exit (1);
 	}
+}
+
+
+int run_columngen(char *column, int update_interval, int enabled)
+{
+	/* If updating is enabled, check timestamp of $BBTMP/.COLUMN-gen */
+	/* If older than update_interval, do the update. */
+
+	char	fn[256];
+	struct stat st;
+	FILE    *fd;
+	time_t  now;
+	struct utimbuf filetime;
+
+	if (!enabled)
+		return 0;
+
+	sprintf(fn, "%s/.%s-gen", getenv("BBTMP"), column);
+	if (stat(fn, &st) == -1) {
+		/* No such file - create it, and do the update */
+		fd = fopen(fn, "w");
+		fclose(fd);
+		return 1;
+	}
+	else {
+		/* Check timestamp, and update it if too old */
+		time(&now);
+		if ((now - st.st_ctime) > update_interval) {
+			filetime.actime = filetime.modtime = now;
+			utime(fn, &filetime);
+			return 1;
+		}
+	}
+
+	return 0;
 }
 
