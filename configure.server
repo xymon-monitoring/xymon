@@ -18,62 +18,80 @@ else
 	echo ""
 	echo "Are you using the standard BB, or bbgend [bbgend] ?"
 	read TARGET
-	if test -z "$BBUSER"
+	if test -z "$TARGET"
 	then
 		TARGET="bbgend"
 	fi
 
-	echo "Checking pre-requisites for bbgen/bbgend build"
-	echo ""
-
-	. build/ssl.sh
-	echo "bbgen can use the OpenSSL library to test SSL-enabled services"
-	echo "like POP3S, IMAPS, NNTPS and TELNETS. If you have the OpenSSL"
-	echo "library installed, I recommend that you enable this."
-	echo ""
-	echo "Do you want to be able to test SSL-enabled services (y) ?"
-	read ENABLESSL
-	if test "$ENABLESSL" = "" -o "$ENABLESSL" = "y"
-	then
-		SSLDEF="-DBBGEN_SSL"
-	else
-		SSLDEF=""
-	fi
-	echo ""
-
-	. build/ldap.sh
-	echo "bbgen can use a LDAP client library to test LDAP servers."
-	echo "If you have e.g. the OpenLDAP libraries on your system (it is"
-	echo "standard e.g. on Solaris 8), it is recommended that you"
-	echo "enable this."
-	echo ""
-	echo "Do you want to be able to test LDAP servers (y) ?"
-	read ENABLELDAP
-	if test "$ENABLELDAP" = "" -o "$ENABLELDAP" = "y"
-	then
-		echo "Enable experimental support for LDAP/SSL (OpenLDAP 2.x only) (y) ?"
-		read ENABLELDAPSSL
-		if test "$ENABLELDAPSSL" = "" -o "$ENABLELDAPSSL" = "y"
-		then
-			LDAPDEF="-DBBGEN_LDAP -DBBGEN_LDAP_USESTARTTLS"
-		else
-			LDAPDEF="-DBBGEN_LDAP"
-		fi
-	else
-		LDAPDEF=""
-	fi
-	echo ""
-
 	if test "$TARGET" = "bbgend"
 	then
-		. build/rrd.sh
+		echo "Checking pre-requisites for bbgend build"
 		echo ""
+		. build/rrd.sh
+		echo ""; echo ""
 		. build/pcre.sh
+		echo ""; echo ""
+	else
+		echo "Checking pre-requisites for standard BB build"
 		echo ""
 	fi
 
-	echo "All pre-requisites passed."
-	echo ""
+	. build/ssl.sh
+	if test -z "$OSSLINC" -o -z "$OSSLLIB"
+	then
+		ENABLESSL="n"
+		SSLDEF=""
+	else
+		echo ""
+		echo "bbgen can use the OpenSSL library to test SSL-enabled services"
+		echo "like POP3S, IMAPS, NNTPS and TELNETS. If you have the OpenSSL"
+		echo "library installed, I recommend that you enable this."
+		echo ""
+		echo "Do you want to be able to test SSL-enabled services (y) ?"
+		read ENABLESSL
+		if test "$ENABLESSL" = "" -o "$ENABLESSL" = "y"
+		then
+			SSLDEF="-DBBGEN_SSL"
+		else
+			SSLDEF=""
+		fi
+		echo ""
+	fi
+	echo ""; echo "";
+
+	. build/ldap.sh
+	if test -z "$LDAPINC" -o -z "$LDAPLIB"
+	then
+		ENABLELDAP="n"
+		LDAPDEF=""
+	else
+		echo ""
+		echo "bbgen can use a LDAP client library to test LDAP servers."
+		echo "If you have e.g. the OpenLDAP libraries on your system (it is"
+		echo "standard e.g. on Solaris 8), it is recommended that you"
+		echo "enable this."
+		echo ""
+		echo "Do you want to be able to test LDAP servers (y) ?"
+		read ENABLELDAP
+		if test "$ENABLELDAP" = "" -o "$ENABLELDAP" = "y"
+		then
+			echo "Enable experimental support for LDAP/SSL (OpenLDAP 2.x only) (y) ?"
+			read ENABLELDAPSSL
+			if test "$ENABLELDAPSSL" = "" -o "$ENABLELDAPSSL" = "y"
+			then
+				LDAPDEF="-DBBGEN_LDAP -DBBGEN_LDAP_USESTARTTLS"
+			else
+				LDAPDEF="-DBBGEN_LDAP"
+			fi
+		else
+			LDAPDEF=""
+		fi
+		echo ""
+	fi
+	echo ""; echo "";
+
+	# Pre-requisites completed.
+
 
 	if test "$TARGET" != "bbgend"
 	then
@@ -108,7 +126,7 @@ else
 				echo "Found your BB MAXLINE to be $MAXMSG"
 			else
 				MAXMSG="8192"
-				echo " *** Could not determine the MAXMSG setting ***"
+				echo " *** Could not determine the MAXMSG setting, using 8192 ***"
 			fi
 	
 			PORT=`grep "^#define.*PORT.*[0-9]*" $BBHOME/src/bb.h 2>/dev/null`
@@ -118,12 +136,13 @@ else
 				echo "Found your BB PORT to be $BBPORT"
 			else
 				BBPORT="1984"
-				echo " *** Could not determine the PORT setting ***"
+				echo " *** Could not determine the PORT setting, using 1984 ***"
 			fi
 		else
 			MAXMSG="8192"
 			BBPORT="1984"
 			echo "*** Could not determine the MAXMSG and PORT settings ($BBHOME/src/bb.h not found) ***"
+			echo "*** Using defaults: PORT=1984, MAXMSG=8192"
 		fi
 		echo ""
 
@@ -153,7 +172,7 @@ else
 
 	else
 		echo "Setting up for use with bbgend"
-		echo ""
+		echo ""; echo ""
 
 		echo "What userid will be running bbgend [bb] ?"
 		read BBUSER
@@ -162,11 +181,14 @@ else
 			BBUSER="bb"
 		fi
 		USERDATA=`getent passwd $BBUSER || grep "^${BBUSER}:" /etc/passwd`
-		if test $? -ne 0
+		if test $? -eq 0
 		then
+			echo "Found passwd entry for user $USERDATA"
+		else
 			echo "FAILURE: The user $BBUSER does not exist. Create user and try again."
 			exit 1
 		fi
+		echo ""; echo ""
 
 		HOMEDIR="`echo $USERDATA|cut -d: -f6`"
 		echo "Where do you want the bbgend installation [${HOMEDIR}] ?"
@@ -175,8 +197,6 @@ else
 		then
 			BBTOPDIR=${HOMEDIR}
 		fi
-		echo ""
-
 		if test -d "$BBTOPDIR"
 		then
 			echo "OK, will configure to use $BBTOPDIR as the bbgend toplevel directory"
@@ -184,6 +204,7 @@ else
 			echo "** FAILURE: $BBTOPDIR does not exist. Create it and try again."
 			exit 1
 		fi
+		echo ""; echo ""
 
 		echo "Where to put the bbgend CGI script [$BBTOPDIR/cgi-bin] ? "
 		read CGIDIR
@@ -195,12 +216,11 @@ else
 		if test -d "$CGIDIR"
 		then
 			echo "** NOTE: $CGIDIR must be configured as a CGI directory in your webserver **"
-			echo ""
 		else
 			echo "The $CGIDIR directory does not exist, will create it during installation"
 			echo "** NOTE: $CGIDIR must be configured as a CGI directory in your webserver **"
-			echo ""
 		fi
+		echo ""; echo ""
 
 		echo "Where to put the bbgend logfiles [/var/log/bb] ? "
 		read BBLOGDIR
@@ -208,6 +228,7 @@ else
 		then
 			BBLOGDIR=/var/log/bb
 		fi
+		echo ""; echo ""
 
 		echo "What is the name of this host [`uname -n`] ? "
 		read BBHOSTNAME
@@ -215,6 +236,7 @@ else
 		then
 			BBHOSTNAME=`uname -n`
 		fi
+		echo ""; echo ""
 
 		echo "What is the IP-address of this host [127.0.0.1] ? "
 		read BBHOSTIP
@@ -223,6 +245,7 @@ else
 			echo "** NOTE: Using 127.0.0.1 (loopback), but it is probably not what you want **"
 			BBHOSTIP=127.0.0.1
 		fi
+		echo ""; echo ""
 
 		# bbgend defaults to standard port and 32KB message max.
 		BBHOSTOS=`uname -s | tr [A-Z] [a-z]`
@@ -240,6 +263,7 @@ else
 	then
 		MANROOT=/usr/local/man
 	fi
+	echo ""; echo ""
 
 	echo "The bbgen history CGI replacement by default displays a 1-day"
 	echo "graph of the history. It can also show a 1-week, 4-weeks and"
@@ -285,7 +309,7 @@ else
 	fi
 	BARSUMDEF="-DDEFBARSUMS=$BARSUMS"
 	export BARSUMDEF
-	echo ""
+	echo ""; echo ""
 
 	echo "The bbgen history CGI replacement can use a different method to"
 	echo "create the summary graphs on the history page. This method"
@@ -316,7 +340,7 @@ else
 	else
 		HISTGRAPHDEF=""
 	fi
-	echo ""
+	echo ""; echo ""
 
 	echo "# Toplevel Makefile for bbgen"     > Makefile
 
@@ -413,7 +437,7 @@ else
 	echo "include build/Makefile.rules" >> Makefile
 	echo "" >> Makefile
 
-	echo ""
+	echo ""; echo ""
 	echo "Created Makefile with the necessary information to build bbgen."
 	echo "Some defaults are used, so do look at the Makefile before continuing."
 	echo ""
