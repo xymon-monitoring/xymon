@@ -1,17 +1,17 @@
 /*----------------------------------------------------------------------------*/
-/* bbgen toolkit                                                              */
+/* Hobbit monitor library.                                                    */
 /*                                                                            */
 /* This is a library module, part of libbbgen.                                */
 /* It contains routines for generating HTML version of a status log.          */
 /*                                                                            */
-/* Copyright (C) 2002-2004 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2005 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.22 2005-02-28 22:36:32 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.23 2005-03-22 09:16:49 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>

@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit                                                                     */
+/* Hobbit monitor library.                                                    */
 /*                                                                            */
 /* This is a library module, part of libbbgen.                                */
 /* It contains environment variable handling routines.                        */
@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.15 2005-03-14 11:47:05 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.16 2005-03-22 09:16:49 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>

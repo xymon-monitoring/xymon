@@ -1,17 +1,17 @@
 /*----------------------------------------------------------------------------*/
-/* bbgen toolkit                                                              */
+/* Hobbit monitor library.                                                    */
 /*                                                                            */
 /* This is a library module, part of libbbgen.                                */
 /* It contains routines for sending and receiving data to/from the BB daemon  */
 /*                                                                            */
-/* Copyright (C) 2002-2004 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2005 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.53 2005-03-21 14:53:02 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.54 2005-03-22 09:16:49 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>

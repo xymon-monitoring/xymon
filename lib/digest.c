@@ -1,16 +1,16 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother network test tool.                                             */
+/* Hobbit monitor library.                                                    */
 /*                                                                            */
 /* This is used to implement message digest functions (MD5, SHA1 etc.)        */
 /*                                                                            */
-/* Copyright (C) 2003-2004 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2003-2005 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: digest.c,v 1.8 2005-02-21 07:43:22 henrik Exp $";
+static char rcsid[] = "$Id: digest.c,v 1.9 2005-03-22 09:16:49 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>

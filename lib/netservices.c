@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit                                                                     */
+/* Hobbit monitor library.                                                    */
 /*                                                                            */
 /* This is a library module, part of libbbgen.                                */
 /* It contains routines for parsing the bb-services file.                     */
@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: netservices.c,v 1.5 2005-03-01 14:22:33 henrik Exp $";
+static char rcsid[] = "$Id: netservices.c,v 1.6 2005-03-22 09:16:49 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>

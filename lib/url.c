@@ -1,17 +1,17 @@
 /*----------------------------------------------------------------------------*/
-/* bbgen toolkit                                                              */
+/* Hobbit monitor library.                                                    */
 /*                                                                            */
 /* This is a library module, part of libbbgen.                                */
 /* It contains routines for URL parsing and mangling.                         */
 /*                                                                            */
-/* Copyright (C) 2002-2004 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2005 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: url.c,v 1.11 2005-02-28 22:14:23 henrik Exp $";
+static char rcsid[] = "$Id: url.c,v 1.12 2005-03-22 09:16:49 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>

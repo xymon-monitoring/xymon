@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit                                                                     */
+/* Hobbit monitor library.                                                    */
 /*                                                                            */
 /* This is a library module, part of libbbgen.                                */
 /* It contains memory management routines.                                    */
@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: memory.c,v 1.8 2005-03-02 15:16:37 henrik Exp $";
+static char rcsid[] = "$Id: memory.c,v 1.9 2005-03-22 09:16:49 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>

@@ -1,17 +1,17 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor.                                                            */
+/* Hobbit monitor library.                                                    */
 /*                                                                            */
 /* This is a library module for Hobbit, responsible for loading the host-,    */
 /* page-, and column-links defined in the BB directory structure.             */
 /*                                                                            */
-/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2004-2005 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: links.c,v 1.7 2005-01-20 22:02:23 henrik Exp $";
+static char rcsid[] = "$Id: links.c,v 1.8 2005-03-22 09:16:49 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
