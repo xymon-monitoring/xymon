@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.40 2004-11-17 16:03:00 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.41 2004-11-18 17:11:04 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -284,7 +284,7 @@ retry_connect:
 		tmo.tv_sec = timeout;  tmo.tv_usec = 0;
 		res = select(sockfd+1, &readfds, &writefds, NULL, (timeout ? &tmo : NULL));
 		if (res == -1) {
-			errprintf("Select failure while sending to bbd!\n");
+			errprintf("Select failure while sending to bbd@%s:%d!\n", rcptip, rcptport);
 			shutdown(sockfd, SHUT_RDWR);
 			close(sockfd);
 			return BB_ESELFAILED;
@@ -295,7 +295,7 @@ retry_connect:
 			close(sockfd);
 
 			if (!isconnected && (connretries > 0)) {
-				dprintf("Timeout while talking to bbd - retrying\n");
+				dprintf("Timeout while talking to bbd@%s:%d - retrying\n", rcptip, rcptport);
 				connretries--;
 				sleep(1);
 				goto retry_connect;	/* Yuck! */
@@ -315,7 +315,8 @@ retry_connect:
 				if (!isconnected) {
 					shutdown(sockfd, SHUT_RDWR);
 					close(sockfd);
-					errprintf("Could not connect to bbd - %s\n", strerror(connres));
+					errprintf("Could not connect to bbd@%s:%d - %s\n", 
+						  rcptip, rcptport, strerror(connres));
 					return BB_ECONNFAILED;
 				}
 			}
@@ -381,7 +382,7 @@ retry_connect:
 				res = write(sockfd, msgptr, strlen(msgptr));
 				if (res == -1) {
 					shutdown(sockfd, SHUT_RDWR); close(sockfd);
-					errprintf("Write error while sending message to bbd\n");
+					errprintf("Write error while sending message to bbd@%s:%d\n", rcptip, rcptport);
 					return BB_EWRITEERROR;
 				}
 				else {
