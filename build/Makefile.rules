@@ -123,6 +123,9 @@ bbtest-net.o: bbtest-net.c bbtest-net.h
 ldaptest.o: ldaptest.c ldaptest.h
 	$(CC) $(CFLAGS) $(LDAPFLAGS) $(LDAPINCDIR) -c -o $@ ldaptest.c
 
+httptest.o: httptest.c httptest.h
+	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ httptest.c
+
 contest.o: contest.c contest.h
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ contest.c
 
