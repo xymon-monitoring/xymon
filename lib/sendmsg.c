@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.20 2004-08-04 13:03:49 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.21 2004-08-11 09:17:18 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -46,6 +46,7 @@ static int      sleepbetweenmsgs = 0;
 static int      bbdportnumber = 0;
 static char     *bbdispproxyhost = NULL;
 static int      bbdispproxyport = 0;
+static char	*proxysetting = NULL;
 
 int dontsendmessages = 0;
 
@@ -65,10 +66,11 @@ static void setup_transport(char *recipient)
 		 */
 		default_port = 80;
 
-		if (getenv("http_proxy")) {
+		if (proxysetting == NULL) proxysetting = getenv("http_proxy");
+		if (proxysetting) {
 			char *p;
 
-			bbdispproxyhost = malcop(getenv("http_proxy"));
+			bbdispproxyhost = malcop(proxysetting);
 			if (strncmp(bbdispproxyhost, "http://", 7) == 0) bbdispproxyhost += strlen("http://");
  
 			p = strchr(bbdispproxyhost, ':');
@@ -105,6 +107,11 @@ static void setup_transport(char *recipient)
 	if ((bbdportnumber <= 0) || (bbdportnumber > 65535)) {
 		bbdportnumber = default_port;
 	}
+
+	dprintf("Transport setup is:\n");
+	dprintf("bbdportnumber = %d\n", bbdportnumber),
+	dprintf("bbdispproxyhost = %s\n", (bbdispproxyhost ? bbdispproxyhost : "NONE"));
+	dprintf("bbdispproxyport = %d\n", bbdispproxyport);
 }
 
 static int sendtobbd(char *recipient, char *message, FILE *respfd, int fullresponse)
@@ -132,6 +139,8 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, int fullrespo
 
 	setup_transport(recipient);
 
+	dprintf("Recipient listed as '%s'\n", recipient);
+
 	if (strncmp(recipient, "http://", strlen("http://")) != 0) {
 		/* Standard BB communications, directly to bbd */
 		rcptip = malcop(recipient);
@@ -140,6 +149,7 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, int fullrespo
 		if (p) {
 			*p = '\0'; p++; rcptport = atoi(p);
 		}
+		dprintf("Standard BB protocol on port %d\n", rcptport);
 	}
 	else {
 		char *bufp;
@@ -171,6 +181,8 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, int fullrespo
 			}
 
 			posthost = malcop(rcptip);
+
+			dprintf("BB-HTTP protocol directly to host %s\n", posthost);
 		}
 		else {
 			char *p;
@@ -192,6 +204,8 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, int fullrespo
 				p = strchr(posthost, ':');
 				if (p) *p = '\0';
 			}
+
+			dprintf("BB-HTTP protocol via proxy to host %s\n", posthost);
 		}
 
 		if ((posturl == NULL) || (posthost == NULL)) {
@@ -210,6 +224,8 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, int fullrespo
 		if (posturl) free(posturl);
 		if (posthost) free(posthost);
 		haveseenhttphdrs = 0;
+
+		dprintf("BB-HTTP message is:\n%s\n", httpmessage);
 	}
 
 	if (inet_aton(rcptip, &addr) == 0) {
@@ -230,6 +246,9 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, int fullrespo
 			return BB_EIPUNKNOWN;
 		}
 	}
+
+	dprintf("Will connect to address %s port %d\n", rcptip, rcptport);
+
 	memset(&saddr, 0, sizeof(saddr));
 	saddr.sin_family = AF_INET;
 	saddr.sin_addr.s_addr = addr.s_addr;
@@ -283,6 +302,7 @@ retry_connect:
 				socklen_t connressize = sizeof(connres);
 
 				res = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &connres, &connressize);
+				dprintf("Connect status is %d\n", connres);
 				isconnected = (connres == 0);
 				if (!isconnected) {
 					close(sockfd);
@@ -297,6 +317,7 @@ retry_connect:
 
 				n = recv(sockfd, response, MAXMSG-1, 0);
 				if (n > 0) {
+					dprintf("Read %d bytes\n", n);
 					response[n] = '\0';
 
 					/*
@@ -336,6 +357,7 @@ retry_connect:
 					return BB_EWRITEERROR;
 				}
 				else {
+					dprintf("Sent %d bytes\n", res);
 					msgptr += res;
 					wdone = (strlen(msgptr) == 0);
 				}
@@ -343,6 +365,7 @@ retry_connect:
 		}
 	}
 
+	dprintf("Closing connection");
 	shutdown(sockfd, SHUT_RDWR);
 	close(sockfd);
 	free(rcptip);
@@ -586,27 +609,63 @@ link_t  null_link = { "", "", "", NULL };
 
 int main(int argc, char *argv[])
 {
+	int argi;
+	int showhelp = 0;
 	int result = 1;
-	int cgimode;
-	char *recipient;
+	int cgimode = 0;
+	char *recipient = NULL;
+	char *msg = NULL;
 
 #ifdef CGI
 	cgimode = 1;
 	recipient = "127.0.0.1";
+	msg = "";
 #else
-	if (argc < 3) {
-		fprintf(stderr, "Invalid call\n\n");
-		fprintf(stderr, "Usage: %s RECIPIENT DATA\n", argv[0]);
+	cgimode = 0;
+	for (argi=1; (argi < argc); argi++) {
+		if (strcmp(argv[argi], "--debug") == 0) {
+			debug = 1;
+		}
+		else if (strncmp(argv[argi], "--proxy=", 8) == 0) {
+			char *p = strchr(argv[argi], '=');
+
+			if (p) {
+				p++;
+				proxysetting = p;
+			}
+		}
+		else if (strcmp(argv[argi], "--help") == 0) {
+			showhelp = 1;
+		}
+		else if (strcmp(argv[argi], "-?") == 0) {
+			showhelp = 1;
+		}
+		else if (strncmp(argv[argi], "-", 1) == 0) {
+			fprintf(stderr, "Unknown option %s\n", argv[argi]);
+		}
+		else {
+			/* No more options - pickup recipient and msg */
+			if (recipient == NULL) {
+				recipient = argv[argi];
+			}
+			else if (msg == NULL) {
+				msg = argv[argi];
+			}
+			else {
+				showhelp=1;
+			}
+		}
+	}
+
+	if ((recipient == NULL) || (msg == NULL) || showhelp) {
+		fprintf(stderr, "Usage: %s [--debug] [--proxy=http://ip.of.the.proxy:port/] RECIPIENT DATA\n", argv[0]);
 		fprintf(stderr, "  RECIPIENT: IP-address, hostname or URL\n");
 		fprintf(stderr, "  DATA: Message to send, or \"-\" to read from stdin\n");
 		return 1;
 	}
-
-	cgimode = 0;
-	recipient = argv[1];
 #endif
 
-	if (cgimode || (strcmp(argv[2], "@") == 0)) {
+	if (cgimode || (strcmp(msg, "@") == 0)) {
 		char msg[MAXMSG];
 		char *bufp = msg;
 		int spaceleft = sizeof(msg)-1;
@@ -624,7 +683,7 @@ int main(int argc, char *argv[])
 		if (cgimode) printf("Content-Type: application/octet-stream\n\n");
 		result = sendmessage(msg, recipient, stdout, 1);
 	}
-	else if (strcmp(argv[2], "-") == 0) {
+	else if (strcmp(msg, "-") == 0) {
 		char msg[MAXMSG];
 
 		while (fgets(msg, sizeof(msg), stdin)) {
@@ -632,14 +691,14 @@ int main(int argc, char *argv[])
 		}
 	}
 	else {
-		if (strncmp(argv[2], "query ", 6) == 0) {
-			result = sendmessage(argv[2], recipient, stdout, 0);
+		if (strncmp(msg, "query ", 6) == 0) {
+			result = sendmessage(msg, recipient, stdout, 0);
 		}
-		else if (strncmp(argv[2], "config ", 7) == 0) {
-			result = sendmessage(argv[2], recipient, stdout, 1);
+		else if (strncmp(msg, "config ", 7) == 0) {
+			result = sendmessage(msg, recipient, stdout, 1);
 		}
 		else {
-			result = sendmessage(argv[2], recipient, NULL, 0);
+			result = sendmessage(msg, recipient, NULL, 0);
 		}
 	}
 
