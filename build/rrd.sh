@@ -3,6 +3,7 @@
 	RRDINC=""
 	RRDLIB=""
 	PNGLIB=""
+	ZLIB=""
 	for DIR in /opt/rrdtool* /usr/local/rrdtool* /usr/local /usr
 	do
 		if test -f $DIR/include/rrd.h
@@ -27,6 +28,15 @@
 		then
 			PNGLIB="-L$DIR/lib -lpng"
 		fi
+
+		if test -f $DIR/lib/libz.so
+		then
+			ZLIB="-L$DIR/lib -lz"
+		fi
+		if test -f $DIR/lib/libz.a
+		then
+			ZLIB="-L$DIR/lib -lz"
+		fi
 	done
 
 	if test -z "$RRDINC" -o -z "$RRDLIB"; then
@@ -44,6 +54,11 @@
 			exit 1
 		fi
 
+		OS=`uname -s` RRDLIB="-L$RRDLIB" PNGLIB="$PNGLIB" make -f Makefile.test-rrd test-link 2>/dev/null
+		if [ $? -ne 0 ]; then
+			# Could be that we need -lz for RRD
+			PNGLIB="$PNGLIB $ZLIB"
+		fi
 		OS=`uname -s` RRDLIB="-L$RRDLIB" PNGLIB="$PNGLIB" make -f Makefile.test-rrd test-link 2>/dev/null
 		if [ $? -ne 0 ]; then
 			# Could be that we need -lm for RRD
