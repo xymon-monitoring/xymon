@@ -19,6 +19,22 @@ state_t		*statehead = NULL;
 col_t   	*colhead = NULL;
 
 
+char *colorname(int color)
+{
+	char *cs = "";
+
+	switch (color) {
+	  case COL_CLEAR:  cs = "clear"; break;
+	  case COL_BLUE:   cs = "blue"; break;
+	  case COL_PURPLE: cs = "purple"; break;
+	  case COL_GREEN:  cs = "green"; break;
+	  case COL_YELLOW: cs = "yellow"; break;
+	  case COL_RED:    cs = "red"; break;
+	}
+
+	return cs;
+}
+
 link_t *find_link(const char *name)
 {
 	link_t *l;
@@ -361,7 +377,7 @@ page_t *load_bbhosts(void)
 	if (bbhosts == NULL)
 		exit(1);
 
-	curpage = toppage = init_page("*TOP*", "");
+	curpage = toppage = init_page("", "");
 	while (fgets(l, sizeof(l), bbhosts)) {
 		p = strchr(l, '\n'); if (p) { *p = '\0'; };
 
@@ -641,6 +657,63 @@ void dumpstatelist(state_t *head)
 	}
 }
 
+void do_page(page_t *page, char *filename)
+{
+	FILE	*output;
+	page_t	*p;
+	group_t *g;
+	host_t  *h;
+
+	output = fopen(filename, "w");
+	if (output == NULL) {
+		printf("Cannot open file %s\n", filename);
+		return;
+	}
+
+	fprintf(output, "SDM page %s\n", page->title);
+	fprintf(output, "Color: %s\n", colorname(page->color));
+
+	for (p = page; (p); p = p->next) {
+		fprintf(output, "    subpage %s - %s\n", p->name, colorname(p->color));
+	}
+	fprintf(output, "\n");
+
+	fclose(output);
+}
+
+void do_subpage(page_t *page, char *filename)
+{
+	FILE	*output;
+	page_t	*p;
+	group_t *g;
+	host_t  *h;
+
+	output = fopen(filename, "w");
+	if (output == NULL) {
+		printf("Cannot open file %s\n", filename);
+		return;
+	}
+
+	fprintf(output, "SDM subpage %s\n", page->title);
+	fprintf(output, "Color: %s\n", colorname(page->color));
+
+	for (h = page->hosts; (h); h = h->next) {
+		fprintf(output, "    host %s\n", h->hostname);
+	}
+	fprintf(output, "\n");
+
+	for (g = page->groups; (g); g = g->next) {
+		fprintf(output, "    group %s\n", g->title);
+		for (h = g->hosts; (h); h = h->next) {
+			fprintf(output, "    host %s\n", h->hostname);
+		}
+		fprintf(output, "\n");
+	}
+	fprintf(output, "\n");
+
+	fclose(output);
+}
+
 int main(int argc, char *argv[])
 {
 	page_t *p, *q;
@@ -664,8 +737,10 @@ int main(int argc, char *argv[])
 
 	delete_old_acks();
 
+#if 0
 	for (p=pagehead; p; p = p->next) {
-		printf("Page: %s, color: %d, title=%s\n", p->name, p->color, p->title);
+		printf("%sPage: %s, color: %d, title=%s\n", 
+                       (strlen(p->name) == 0) ? "" : "    ", p->name, p->color, p->title);
 		for (q = p->subpages; (q); q = q->next) {
 			printf("\tSubpage: %s, color=%d, title=%s\n", q->name, q->color, q->title);
 			dumpgroups(q->groups, "\t\t", "\t\t    ");
@@ -676,6 +751,31 @@ int main(int argc, char *argv[])
 		dumphosts(p->hosts, "    ");
 	}
 	dumphosts(pagehead->hosts, "");
+#endif
+
+	/* Generate pages */
+	do_page(pagehead, "/tmp/www/bb.html");
+	for (p=pagehead->next; (p); p = p->next) {
+		char dirfn[256], fn[256];
+
+		/* Do SDM page - contains links to subpages, groups, hosts */
+		sprintf(dirfn, "/tmp/www/%s", p->name);
+		mkdir(dirfn, 0755);
+		sprintf(fn, "%s/%s.html", dirfn, p->name);
+		if (p->subpages) {
+			do_page(p->subpages, fn);
+		}
+
+		for (q = p->subpages; (q); q = q->next) {
+			sprintf(dirfn, "/tmp/www/%s/%s", p->name, q->name);
+			mkdir(dirfn, 0755);
+			sprintf(fn, "%s/%s.html", dirfn, q->name);
+			do_subpage(q, fn);
+		}
+
+		/* Do local hosts */
+		/* Do local groups */
+	}
 
 	return 0;
 }
