@@ -2,7 +2,7 @@
 .SH NAME
 bb \- bb client communication program
 .SH SYNOPSIS
-.B "bb RECIPIENT message"
+.B "bb [options] RECIPIENT message"
 
 .SH DESCRIPTION
 .I bb
@@ -18,7 +18,17 @@ standard commands is given below. The bbgen toolkit
 - in the "bbd-features.patch" - adds some new commands
 to the bb client program, which are documented here.
 
-.SH PARAMETERS
+.SH OPTIONS AND PARAMETERS
+.IP "--debug"
+Enable debugging. This prints out details about how the
+connection to the BBDISPLAY server is being established.
+
+.IP "--proxy=http://PROXYSERVER:PROXYPORT/"
+When sending the status messages via HTTP, use this server
+as an HTTP proxy instead of connecting directly to the BBDISPLAY
+server. This is a bbgen extension.
+
+.IP "RECIPIENT"
 The \fBRECIPIENT\fR parameter defines which server receives
 the message. If RECIPIENT is given as "0.0.0.0", then the
 message is sent to all of the servers listed in the BBDISPLAYS
@@ -41,6 +51,7 @@ CGI script provided as part of the bbgen toolkit must be
 installed on the webserver for the HTTP transport to work.
 .br
 
+.IP MESSAGE
 The \fBmessage\fR parameter is the message to be sent across
 to the Big Brother server. Messages must be enclosed in quotes,
 but by doing so they can span multiple lines. The maximum size
