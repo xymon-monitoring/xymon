@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.8 2004-12-12 22:11:24 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.9 2004-12-15 21:25:52 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -48,10 +48,6 @@ typedef struct bbpagelist_t {
 static bbpagelist_t *pagelisthead = NULL;
 int	pagecount = 0;
 int	hostcount = 0;
-
-/* WEB prefixes for host notes and help-files */
-char *notesskin = NULL;	/* BBNOTESSKIN */
-char *helpskin = NULL;	/* BBHELPSKIN */
 
 char    *wapcolumns = NULL;                     /* Default columns included in WAP cards */
 char    *nopropyellowdefault = NULL;
@@ -197,7 +193,6 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	newhost->comment = (comment ? strdup(comment) : NULL);
 	newhost->description = (description ? strdup(description) : NULL);
 	sprintf(newhost->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
-	newhost->link = find_link(hostname);
 	newhost->pretitle = NULL;
 	newhost->entries = NULL;
 	newhost->color = -1;
@@ -355,38 +350,6 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	return newhost;
 }
 
-link_t *init_link(char *filename, const char *urlprefix)
-{
-	char *p;
-	link_t *newlink = NULL;
-
-	dprintf("init_link(%s, %s)\n", textornull(filename), textornull(urlprefix));
-
-	newlink = (link_t *) malloc(sizeof(link_t));
-	newlink->filename = strdup(filename);
-	newlink->urlprefix = strdup(urlprefix);
-	newlink->next = NULL;
-
-	p = strrchr(filename, '.');
-	if (p == NULL) p = (filename + strlen(filename));
-
-	if ( (strcmp(p, ".php") == 0)    ||
-             (strcmp(p, ".php3") == 0)   ||
-             (strcmp(p, ".asp") == 0)    ||
-             (strcmp(p, ".doc") == 0)    ||
-	     (strcmp(p, ".shtml") == 0)  ||
-	     (strcmp(p, ".phtml") == 0)  ||
-	     (strcmp(p, ".html") == 0)   ||
-	     (strcmp(p, ".htm") == 0))      
-	{
-		*p = '\0';
-	}
-
-	/* Without extension, this time */
-	newlink->name = strdup(filename);
-
-	return newlink;
-}
 
 
 void getnamelink(char *l, char **name, char **link)
@@ -475,79 +438,6 @@ void getgrouptitle(char *l, char *pageset, char **title, char **onlycols)
 	else if (strncmp(l, grouptag, strlen(grouptag)) == 0) {
 		*title = skipwhitespace(skipword(l));
 	}
-}
-
-link_t *load_links(const char *directory, const char *urlprefix)
-{
-	DIR		*bblinks;
-	struct dirent 	*d;
-	char		fn[PATH_MAX];
-	link_t		*curlink, *toplink, *newlink;
-
-	dprintf("load_links(%s, %s)\n", textornull(directory), textornull(urlprefix));
-
-	toplink = curlink = NULL;
-	bblinks = opendir(directory);
-	if (!bblinks) {
-		errprintf("Cannot read links in directory %s\n", directory);
-		return NULL;
-	}
-
-	while ((d = readdir(bblinks))) {
-		strcpy(fn, d->d_name);
-		newlink = init_link(fn, urlprefix);
-		if (newlink) {
-			if (toplink == NULL) {
-				toplink = newlink;
-			}
-			else {
-				curlink->next = newlink;
-			}
-			curlink = newlink;
-		}
-	}
-	closedir(bblinks);
-	return toplink;
-}
-
-link_t *load_all_links(void)
-{
-	link_t *l, *head1, *head2;
-	char dirname[PATH_MAX];
-	char *p;
-
-	dprintf("load_all_links()\n");
-
-	if (getenv("BBNOTESSKIN")) notesskin = strdup(getenv("BBNOTESSKIN"));
-	else { 
-		notesskin = (char *) malloc(strlen(getenv("BBWEB")) + strlen("/notes") + 1);
-		sprintf(notesskin, "%s/notes", getenv("BBWEB"));
-	}
-
-	if (getenv("BBHELPSKIN")) helpskin = strdup(getenv("BBHELPSKIN"));
-	else { 
-		helpskin = (char *) malloc(strlen(getenv("BBWEB")) + strlen("/help") + 1);
-		sprintf(helpskin, "%s/help", getenv("BBWEB"));
-	}
-
-	strcpy(dirname, getenv("BBNOTES"));
-	head1 = load_links(dirname, notesskin);
-
-	/* Change xxx/xxx/xxx/notes into xxx/xxx/xxx/help */
-	p = strrchr(dirname, '/'); *p = '\0'; strcat(dirname, "/help");
-	head2 = load_links(dirname, helpskin);
-
-	if (head1) {
-		/* Append help-links to list of notes-links */
-		for (l = head1; (l->next); l = l->next) ;
-		l->next = head2;
-	}
-	else {
-		/* /notes was empty, so just return the /help list */
-		head1 = head2;
-	}
-
-	return head1;
 }
 
 summary_t *init_summary(char *name, char *receiver, char *url)

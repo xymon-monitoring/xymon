@@ -22,7 +22,6 @@
 extern int hostcount;
 extern int pagecount;
 
-extern link_t *load_all_links(void);
 extern bbgen_page_t *load_bbhosts(char *pgset);
 
 /* Needed by the summary handling */
