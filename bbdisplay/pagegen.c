@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.42 2003-04-24 22:00:38 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.43 2003-05-08 20:07:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -735,7 +735,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 			&events[num].eventtime, &events[num].changetime, &events[num].duration, 
 			newcol, oldcol, &events[num].state);
 
-		if (events[num].eventtime > cutoff) {
+		if ((events[num].eventtime > cutoff) && find_host(events[num].hostname) {
 			events[num].newcolor = eventcolor(newcol);
 			events[num].oldcolor = eventcolor(oldcol);
 			eventintime_count++;
