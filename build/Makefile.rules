@@ -53,4 +53,4 @@ httptest.o: httptest.c httptest.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f *.o *~ bbgen bbtest-net bbhostgrep alert contest
+	rm -f *.o *~ bbgen bbtest-net bbhostgrep bbhostshow alert contest
