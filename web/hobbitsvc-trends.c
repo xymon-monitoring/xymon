@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.47 2004-12-12 22:40:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.48 2004-12-13 13:08:29 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -26,6 +26,7 @@ static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.47 2004-12-12 22:40:06 henrik
 #include "libbbgen.h"
 
 int     log_nohost_rrds = 0;
+int     sendmetainfo = 0;
 namelist_t *hosthead = NULL;
 
 typedef struct graph_t {
@@ -315,7 +316,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 
 	if (bbgend) {
 		combo_start();
-		meta_start();
+		if (sendmetainfo) meta_start();
 	}
 
 	for (hostwalk=hosthead; (hostwalk); hostwalk = hostwalk->next) {
@@ -342,7 +343,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 				}
 				allrrdlinksend += sprintf(allrrdlinksend, "%s", rrdlink);
 
-				if (bbgend) {
+				if (bbgend && sendmetainfo) {
 					buflen = (allrrdlinksend - allrrdlinks);
 					rrdlink = rrdlink_text(hostwalk, rwalk, larrd043, 1);
 					if ((buflen + strlen(rrdlink)) >= allmetasize) {
@@ -357,15 +358,19 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 			graph++;
 		}
 
-		if (strlen(allrrdlinks) > 0) do_savelog(hostwalk->bbhostname, hostwalk->ip, 
-							larrdcolumn, allrrdlinks, bbgend);
+		if (strlen(allrrdlinks) > 0) {
+			do_savelog(hostwalk->bbhostname, hostwalk->ip, 
+				larrdcolumn, allrrdlinks, bbgend);
+		}
 
-		if (strlen(allmeta) > 0) do_savemeta(hostwalk->bbhostname, larrdcolumn, "Graphs", allmeta);
+		if (sendmetainfo && (strlen(allmeta) > 0)) {
+			do_savemeta(hostwalk->bbhostname, larrdcolumn, "Graphs", allmeta);
+		}
 	}
 
 	if (bbgend) {
 		combo_end();
-		meta_end();
+		if (sendmetainfo) meta_end();
 	}
 
 	larrd_closedir();
@@ -373,6 +378,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 	free(allmeta);
 	return 0;
 }
+
 
 int main(int argc, char *argv[])
 {
@@ -408,6 +414,9 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--bbgend") == 0) {
 			usebbgend = 1;
 		}
+		else if (strcmp(argv[argi], "--meta") == 0) {
+			sendmetainfo = 1;
+		}
 		else if (strcmp(argv[argi], "--no-update") == 0) {
 			dontsendmessages = 1;
 		}
@@ -423,7 +432,61 @@ int main(int argc, char *argv[])
 	if (larrdcol == NULL) larrdcol = "trends";
 
 	hosthead = load_hostnames(bbhostsfn, get_fqdn());
+
+	/* First, generate the "trends" column for all hosts */
 	generate_larrd(rrddir, larrdcol, 1, usebbgend);
+
+	/* Next, generate the per-host-per-status meta-info about graphs */
+	if (usebbgend && sendmetainfo) {
+		char *statuslist = NULL;
+
+		if (sendmessage("bbgendlist", NULL, NULL, &statuslist, 1, BBTALK_TIMEOUT) == BB_OK) {
+			char *curr, *next;
+			char *host, *test, *graphlinks;
+			larrdrrd_t *larrd = NULL;
+			larrdgraph_t *graph = NULL;
+			char *msgfmt = "<RRDGraph>\n%s</RRDGraph>\n";
+			namelist_t *hostwalk;
+			graph_t *rwalk;
+			int linecount;
+
+			meta_start();
+
+			curr = statuslist;
+			while (curr && (*curr != '\0')) {
+				next = strchr(curr, '\n'); if (next) { *next = '\0'; next++; }
+
+				host = curr;
+				test = strchr(curr, '|');
+				curr = next;
+
+				if (test == NULL) continue;
+				*test = '\0'; test++;
+
+				larrd = find_larrd_rrd(test, NULL);
+				if (larrd == NULL) continue;
+				graph = find_larrd_graph(larrd->larrdrrdname);
+				if (graph == NULL) continue;
+
+				/* Lookup the data we collected previously for this host */
+				rwalk = NULL;
+				for (hostwalk=hosthead; (hostwalk && strcmp(hostwalk->bbhostname, host)); hostwalk = hostwalk->next) ;
+				if (hostwalk) for (rwalk = (graph_t *)hostwalk->data; (rwalk && (rwalk->gdef != graph)); rwalk = rwalk->next) ;
+				if (rwalk) linecount = rwalk->count; else linecount = 1;
+
+				graphlinks =  larrd_graph_data(host, host, test, graph, linecount, 1, 1);
+				if (strlen(graphlinks) > 0) {
+					char *msg = (char *)malloc(strlen(graphlinks) + strlen(msgfmt) + 1);
+
+					sprintf(msg, msgfmt, graphlinks);
+					do_savemeta(host, test, "Graphs", msg);
+					free(msg);
+				}
+			}
+
+			meta_end();
+		}
+	}
 
 	return 0;
 }
