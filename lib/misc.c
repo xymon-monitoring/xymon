@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.25 2005-01-27 22:12:09 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.26 2005-02-03 21:12:52 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -29,24 +29,25 @@ enum ostype_t get_ostype(char *osname)
 	char savech;
 	enum ostype_t result = OS_UNKNOWN;
 
-	int n = strspn(osname, "abcdefghijklmnopqrstuvwxyz0123456789");
+	int n = strspn(osname, "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	savech = *(osname+n); *(osname+n) = '\0';
 
-	if      (strcmp(osname, "solaris") == 0)     result = OS_SOLARIS;
-	else if (strcmp(osname, "hpux") == 0)        result = OS_HPUX;
-	else if (strcmp(osname, "aix") == 0)         result = OS_AIX;
-	else if (strcmp(osname, "osf") == 0)         result = OS_OSF;
-	else if (strcmp(osname, "sco") == 0)         result = OS_SCO;
-	else if (strcmp(osname, "win32") == 0)       result = OS_WIN32;
-	else if (strcmp(osname, "freebsd") == 0)     result = OS_FREEBSD;
-	else if (strcmp(osname, "netbsd") == 0)      result = OS_NETBSD;
-	else if (strcmp(osname, "redhat") == 0)      result = OS_REDHAT;
-	else if (strcmp(osname, "debian3") == 0)     result = OS_DEBIAN3;
-	else if (strcmp(osname, "debian") == 0)      result = OS_DEBIAN;
-	else if (strcmp(osname, "linux") == 0)       result = OS_LINUX;
-	else if (strcmp(osname, "rhel3") == 0)       result = OS_RHEL3;
-	else if (strcmp(osname, "snmp") == 0)        result = OS_SNMP;
-	else if (strcmp(osname, "snmpnetstat") == 0) result = OS_SNMP;
+	if      (strcasecmp(osname, "solaris") == 0)     result = OS_SOLARIS;
+	else if (strcasecmp(osname, "sunos") == 0)       result = OS_SOLARIS;
+	else if (strcasecmp(osname, "hpux") == 0)        result = OS_HPUX;
+	else if (strcasecmp(osname, "aix") == 0)         result = OS_AIX;
+	else if (strcasecmp(osname, "osf") == 0)         result = OS_OSF;
+	else if (strcasecmp(osname, "sco") == 0)         result = OS_SCO;
+	else if (strcasecmp(osname, "win32") == 0)       result = OS_WIN32;
+	else if (strcasecmp(osname, "freebsd") == 0)     result = OS_FREEBSD;
+	else if (strcasecmp(osname, "netbsd") == 0)      result = OS_NETBSD;
+	else if (strcasecmp(osname, "redhat") == 0)      result = OS_REDHAT;
+	else if (strcasecmp(osname, "debian3") == 0)     result = OS_DEBIAN3;
+	else if (strcasecmp(osname, "debian") == 0)      result = OS_DEBIAN;
+	else if (strcasecmp(osname, "linux") == 0)       result = OS_LINUX;
+	else if (strcasecmp(osname, "rhel3") == 0)       result = OS_RHEL3;
+	else if (strcasecmp(osname, "snmp") == 0)        result = OS_SNMP;
+	else if (strcasecmp(osname, "snmpnetstat") == 0) result = OS_SNMP;
 
 	if (result == OS_UNKNOWN) dprintf("Unknown OS: '%s'\n", osname);
 
