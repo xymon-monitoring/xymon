@@ -1,0 +1,45 @@
+#!/bin/sh
+
+# Script to pick up most of the commands used by BB extension scripts.
+# This is used during installation, to build a hobbitserver.cfg that
+# includes these commands so that extension scripts can run from
+# hobbitserver.cfg without having to do special setups.
+
+findbin() {
+	MYP="`echo ${PATH} | sed -e 's/:/ /g'`"
+
+	for D in $MYP
+	do
+		if test -x $D/$1; then
+			echo "${D}/${1}"
+		fi
+	done
+}
+
+echo ""
+echo "# The following defines a bunch of commands that BB extensions expect to be present."
+echo "# Hobbit does not use them, but they are provided here so if you use BB extension"
+echo "# scripts, then they will hopefully run without having to do a lot of tweaking."
+echo ""
+for CMD in top uptime awk cat cp cut date egrep expr find grep head id ln ls mv rm sed sort tail touch tr uniq who
+do
+	ENVNAME=`echo $CMD | tr "[a-z]" "[A-Z]"`
+	PGM=`findbin $CMD | head -1`
+	echo "${ENVNAME}=${PGM}"
+done
+
+# WC is special
+PGM=`findbin wc | head -1`
+echo "WC=${PGM} -l"
+echo "WCC=${PGM}"
+
+# DFCMD is an alias for DF
+echo "# You should check that this returns diskstats in KB (Posix output)"
+PGM=`findbin df | head -1`
+echo "DF=${PGM} -Pk"
+echo "DFCMD=${PGM} -Pk"
+
+# PS probably needs tweaking
+echo "# Adjust ps output to your liking"
+echo "PS=ps ax"
+
