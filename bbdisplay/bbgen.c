@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.138 2003-07-12 06:10:22 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.139 2003-07-14 11:09:44 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -186,6 +186,13 @@ int main(int argc, char *argv[])
 			select_headers_and_footers("bbrep");
 			sethostenv_report(reportstart, reportend, reportwarnlevel, reportgreenlevel);
 		}
+		else if (argnmatch(argv[i], "--snapshot=")) {
+			char *lp = strchr(argv[i], '=');
+
+			snapshot = atol(lp+1);
+			select_headers_and_footers("bbsnap");
+			sethostenv_snapshot(snapshot);
+		}
 
 		else if (strcmp(argv[i], "--pages-first") == 0) {
 			hostsbeforepages = 0;
@@ -350,6 +357,7 @@ int main(int argc, char *argv[])
 			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbgen\n");
 			printf("    --wml[=test1,test2,...]     : Generate a small (bb2-style) WML page\n");
 			printf("    --reportopts=ST:END:DYN:STL : Run in BB Reporting mode\n");
+			printf("    --snapshot=TIME             : Snapshot mode\n");
 			printf("\nPage layout options:\n");
 			printf("    --pages-last                : Put page- and subpage-links after hosts (as BB does)\n");
 			printf("    --pages-first               : Put page- and subpage-links before hosts (default)\n");
@@ -421,7 +429,7 @@ int main(int argc, char *argv[])
 	 * If we did those, we would send double purple updates, 
 	 * generate wrong links for info pages etc.
 	 */
-	if (pageset || embedded) enable_purpleupd = enable_larrdgen = enable_infogen = enable_wmlgen = 0;
+	if (pageset || embedded || snapshot) enable_purpleupd = enable_larrdgen = enable_infogen = enable_wmlgen = 0;
 	if (embedded) egocolumn = htaccess = NULL;
 
 	/* Load all data from the various files */
@@ -448,7 +456,7 @@ int main(int argc, char *argv[])
 	}
 
 	statehead = load_state(&dispsums);
-	if (embedded) dispsums = NULL;
+	if (embedded || snapshot) dispsums = NULL;
 	add_timestamp("Load STATE done");
 
 	/* Calculate colors of hosts and pages */
@@ -506,6 +514,11 @@ int main(int argc, char *argv[])
 	sprintf(bbnkfilename, "bbnk%s", htmlextension);
 	bbnk_color = do_bb2_page(bbnkfilename, PAGE_NK);
 	add_timestamp("BBNK generation done");
+
+	if (snapshot) {
+		/* Snapshots end here */
+		return 0;
+	}
 
 	/* Send summary notices - only once, so not on pagesets */
 	if (pageset == NULL) {
