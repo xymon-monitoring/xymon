@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.10 2003-04-24 08:00:56 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.11 2003-04-27 09:07:38 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -25,11 +25,11 @@ static char rcsid[] = "$Id: contest.c,v 1.10 2003-04-24 08:00:56 henrik Exp $";
 #include <string.h>
 #include <stdio.h>
 
+#include "bbtest-net.h"
 #include "contest.h"
 #include "bbgen.h"
 #include "debug.h"
 
-#define DEF_TIMEOUT 10			/* seconds */
 #define DEF_MAX_OPENS  (FD_SETSIZE / 4)	/* Max number of simultaneous open connections */
 #define MAX_BANNER 1024
 
@@ -63,7 +63,7 @@ static svcinfo_t svcinfo[] = {
 };
 
 
-test_t *add_test(char *ip, int port, char *service, int silent)
+test_t *add_tcp_test(char *ip, int port, char *service, int silent)
 {
 	test_t *newtest;
 	int i;
@@ -93,7 +93,7 @@ test_t *add_test(char *ip, int port, char *service, int silent)
 }
 
 
-void do_conn(int conntimeout, int concurrency)
+void do_tcp_tests(int conntimeout, int concurrency)
 {
 	int		selres;
 	fd_set		readfds, writefds;
@@ -349,7 +349,8 @@ void do_conn(int conntimeout, int concurrency)
 	} /* end while (pending) */
 }
 
-void show_conn_res(void)
+
+void show_tcp_test_results(void)
 {
 	test_t *item;
 
@@ -371,20 +372,18 @@ link_t  null_link = { "", "", "", NULL };
 
 int main(int argc, char *argv[])
 {
+	add_tcp_test("172.16.10.254", 628, "qmtp", 1);
+	add_tcp_test("172.16.10.254", 23, "telnet", 0);
+	add_tcp_test("130.228.2.150", 139, "smb", 0);
+	add_tcp_test("172.16.10.254", 22, "ssh", 0);
+	add_tcp_test("172.16.10.2", 22, "ssh", 0);
+	add_tcp_test("172.16.10.1", 22, "ssh", 0);
+	add_tcp_test("172.16.10.1", 25, "smtp", 0);
+	add_tcp_test("130.228.2.150", 23, "telnet", 0);
+	add_tcp_test("130.228.2.150", 21, "ftp", 0);
+	add_tcp_test("172.16.10.101", 22, "ssh", 0);
 
-	add_test("172.16.10.254", 628, "qmtp", 1);
-	add_test("172.16.10.254", 23, "telnet", 0);
-	add_test("130.228.2.150", 139, "smb", 0);
-	add_test("172.16.10.254", 22, "ssh", 0);
-	add_test("172.16.10.2", 22, "ssh", 0);
-	add_test("172.16.10.1", 22, "ssh", 0);
-	add_test("172.16.10.1", 25, "smtp", 0);
-	add_test("130.228.2.150", 23, "telnet", 0);
-	add_test("130.228.2.150", 21, "ftp", 0);
-	add_test("172.16.10.101", 22, "ssh", 0);
-
-	do_conn(0, 0);
-	show_conn_res();
+	do_tcp_tests(0, 0);
 
 	return 0;
 }

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.37 2003-04-25 16:49:48 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.38 2003-04-27 09:07:38 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -867,26 +867,40 @@ char *realurl(char *url)
 {
 	static char result[MAX_PATH];
 	char *p;
-	
+	char *restorechar = NULL;
+
+	result[0] = '\0';
 	p = url;
 
 	if (strncmp(p, "content=", 8) == 0) {
 		p += 8;
 	}
+	if (strncmp(p, "cont;", 5) == 0) {
+		p += 5;
+		restorechar = strrchr(p, ';');
+		if (restorechar) *restorechar = '\0';
+	}
 
-	if (strncmp(p, "https2:", 7) == 0) {
+	if        (strncmp(p, "https2:", 7) == 0) {
+		p += 7;
+		sprintf(result, "https:%s", p);
+	} else if (strncmp(p, "https3:", 7) == 0) {
 		p += 7;
 		sprintf(result, "https:%s", p);
 	} else if (strncmp(p, "httpsm:", 7) == 0) {
 		p += 7;
 		sprintf(result, "https:%s", p);
-	} else if (strncmp(p, "https:", 6) == 0) {
+	} else if (strncmp(p, "httpsh:", 7) == 0) {
+		p += 7;
+		sprintf(result, "https:%s", p);
+	} else if (strncmp(p, "https:", 6)  == 0) {
 		p += 6;
 		sprintf(result, "https:%s", p);
-	} else if (strncmp(p, "http:", 5) == 0) {
+	} else if (strncmp(p, "http:", 5)   == 0) {
 		strcpy(result, p);
 	}
 
+	if (restorechar) *restorechar = ';';
 	return result;
 }
 
