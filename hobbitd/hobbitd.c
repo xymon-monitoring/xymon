@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.34 2004-10-25 10:28:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.35 2004-10-25 12:02:53 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1614,12 +1614,22 @@ int main(int argc, char *argv[])
 		}
 	} while (running);
 
+	/* Tell the workers we to shutdown also */
+	posttochannel(statuschn, "@@shutdown", NULL, "bbgend", NULL, NULL, "");
+	posttochannel(stachgchn, "@@shutdown", NULL, "bbgend", NULL, NULL, "");
+	posttochannel(pagechn, "@@shutdown", NULL, "bbgend", NULL, NULL, "");
+	posttochannel(datachn, "@@shutdown", NULL, "bbgend", NULL, NULL, "");
+	posttochannel(noteschn, "@@shutdown", NULL, "bbgend", NULL, NULL, "");
+	posttochannel(enadischn, "@@shutdown", NULL, "bbgend", NULL, NULL, "");
+
+	/* Close the channels */
 	close_channel(statuschn, CHAN_MASTER);
 	close_channel(stachgchn, CHAN_MASTER);
 	close_channel(pagechn, CHAN_MASTER);
 	close_channel(datachn, CHAN_MASTER);
 	close_channel(noteschn, CHAN_MASTER);
 	close_channel(enadischn, CHAN_MASTER);
+
 	save_checkpoint();
 	unlink(pidfile);
 
