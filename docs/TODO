@@ -1,6 +1,5 @@
 Bugfixes
 --------
-* Handle FPING being set to e.g. "sudo fping -r2"
 * It's been reported that bbtest-net crashes when trying
   to do http tests via an MS ISA Proxy server that requires
   authentication. This is still being investigated.
@@ -16,7 +15,7 @@ Improvements
   page we show will link back to the original page for images etc.
 * Provide a way of sending http status-messages with individual
   test (column) names for each URL - apparently, Big Sister does
-  this. Suggested by Darshan Purandare.
+  this. Suggested by Darshan Purandare. Repeated by Scott Walker.
 * Provide a way for a "cont" check to NOT be included in the
   "http" column. Suggested by Kim Scarborough.
 * Allow for enable/disable of TCP response check per host/service.
