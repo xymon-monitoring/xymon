@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.143 2005-02-18 17:04:36 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.144 2005-03-13 07:44:37 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -131,8 +131,8 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 		p = strrchr(filename, '.');
 		if (p == NULL) return NULL;
 		p++;
-		if (strcmp(p, infocol) == 0) return NULL;
-		if (strcmp(p, larrdcol) == 0) return NULL;
+		if (strcmp(p, xgetenv("INFOCOLUMN")) == 0) return NULL;
+		if (strcmp(p, xgetenv("LARRDCOLUMN")) == 0) return NULL;
 
 		/* 
 		 * We may not be running with --larrd; in that case
@@ -140,7 +140,7 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 		 * Avoid stumbling over those.
 		 * From Tom Schmidt.
 		 */
-		if ((strcmp(p, "larrd") == 0) || (strcmp(p, "trends") == 0)) {
+		if ((strcmp(p, "larrd") == 0) || (strcmp(p, "trends") == 0) || (strcmp(p, "info") == 0)) {
 			return NULL;
 		}
 
@@ -268,7 +268,7 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 		}
 		newstate->entry->shorttext = strdup(l);
 	}
-	else if ((strcmp(testname, "larrd") == 0) || (strcmp(testname, "trends") == 0)) {
+	else if (strcmp(testname, xgetenv("LARRDCOLUMN")) == 0) {
 		/* 
 		 * Unreadable LARRD file without us doing larrd -->
 		 * it's another script building files while we run.
@@ -282,7 +282,7 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 		newstate->entry->color = COL_CLEAR;
 	}
 
-	if ( !reportstart && !snapshot && logexpired && (strcmp(testname, larrdcol) != 0) && (strcmp(testname, infocol) != 0) ) {
+	if ( !reportstart && !snapshot && logexpired && (strcmp(testname, xgetenv("LARRDCOLUMN")) != 0) && (strcmp(testname, xgetenv("INFOCOLUMN")) != 0) ) {
 		/* Log file too old = go purple */
 
 		if (host && host->dialup) {
@@ -426,7 +426,7 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 				sprintf(newstate->entry->age, "%.2f minutes", (fileage / 60.0));
 		}
 		else {
-			if ((strcmp(testname, larrdcol) != 0) && (strcmp(testname, infocol) != 0)) {
+			if ((strcmp(testname, xgetenv("INFOCOLUMN")) != 0) && (strcmp(testname, xgetenv("LARRDCOLUMN")) != 0)) {
 				while (fgets(l, sizeof(l), fd) && (strncmp(l, "Status unchanged in ", 20) != 0)) ;
 
 				if (strncmp(l, "Status unchanged in ", 20) == 0) {

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.135 2005-02-21 15:28:07 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.136 2005-03-13 07:44:37 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -110,8 +110,8 @@ int interesting_column(int pagetype, int color, int alert, bbgen_col_t *column, 
 	/* pagetype is now known NOT to be PAGE_BB */
 
 	/* LARRD and INFO columns are always included on non-BB pages */
-	if (larrdcol && (strcmp(column->name, larrdcol) == 0)) return 1;
-	if (infocol && (strcmp(column->name, infocol) == 0)) return 1;
+	if (strcmp(column->name, xgetenv("INFOCOLUMN")) == 0) return 1;
+	if (strcmp(column->name, xgetenv("LARRDCOLUMN")) == 0) return 1;
 
 	if (includecolumns) {
 		int result;

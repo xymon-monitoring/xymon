@@ -114,7 +114,7 @@
 	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	NEEDS hobbitd
 	GROUP generators
-	CMD bb-larrdcolumn --hobbitd --rrddir=$BBVAR/rrd --column=trends
+	CMD bb-larrdcolumn --hobbitd --rrddir=$BBVAR/rrd
 	LOGFILE $BBSERVERLOGS/bb-display.log
 	INTERVAL 15m
 
@@ -127,7 +127,7 @@
 	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	NEEDS hobbitd
 	GROUP generators
-	CMD bb-infocolumn --hobbitd --column=info
+	CMD bb-infocolumn --hobbitd
 	LOGFILE $BBSERVERLOGS/bb-display.log
 	INTERVAL 15m
 

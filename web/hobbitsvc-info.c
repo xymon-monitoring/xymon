@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.81 2005-03-13 06:33:03 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.82 2005-03-13 07:44:37 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -642,13 +642,14 @@ int main(int argc, char *argv[])
 {
 	int argi;
 	char *bbhostsfn = NULL;
-	char *infocol = "info";
+	char *infocol;
 	char *docurl = NULL;
 	int usehobbitd = 0;
 	int sendmeta = 0;
 
 	getenv_default("USEHOBBITD", "FALSE", NULL);
 	usehobbitd = (strcmp(xgetenv("USEHOBBITD"), "TRUE") == 0);
+	infocol = xgetenv("INFOCOLUMN");
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {

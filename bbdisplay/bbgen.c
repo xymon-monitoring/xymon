@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.203 2005-02-23 22:57:39 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.204 2005-03-13 07:44:37 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -48,8 +48,6 @@ dispsummary_t	*dispsums = NULL;			/* Summaries we received and display */
 int		bb_color, bb2_color, bbnk_color;	/* Top-level page colors */
 int		fqdn = 1;				/* BB FQDN setting */
 int		usehobbitd = 0;
-char		*larrdcol = "trends";
-char		*infocol = "info";
 
 time_t		reportstart = 0;
 time_t		reportend = 0;
@@ -372,15 +370,6 @@ int main(int argc, char *argv[])
 			sprintf(nopropackdefault, ",%s,", (lp+1));
 		}
 
-		else if (argnmatch(argv[i], "--larrd043=") || (strcmp(argv[i], "--larrd043") == 0)) {
-			char *lp = strchr(argv[i], '=');
-			if (lp) larrdcol = strdup(lp+1); else larrdcol = "trends";
-		}
-		else if (argnmatch(argv[i], "--larrd=") || (strcmp(argv[i], "--larrd") == 0)) {
-			char *lp = strchr(argv[i], '=');
-			if (lp) larrdcol = strdup(lp+1); else larrdcol = "larrd";
-		}
-
 		else if (strcmp(argv[i], "--bbpageONLY") == 0) {
 			/* Deprecated */
 			errprintf("--bbpageONLY is deprecated - use --pageset=NAME to generate pagesets\n");
@@ -480,9 +469,6 @@ int main(int argc, char *argv[])
 			printf("    --noprop=test[,test]        : Disable upwards status propagation when YELLOW\n");
 			printf("    --nopropred=test[,test]     : Disable upwards status propagation when RED or YELLOW\n");
 			printf("    --noproppurple=test[,test]  : Disable upwards status propagation when PURPLE\n");
-			printf("\nLARRD support options:\n");
-			printf("    --larrd[=LARRDCOLUMN]       : LARRD data in column LARRDCOLUMN (default:larrd)\n");
-			printf("    --larrd043[=LARRDCOLUMN]    : LARRD data in column LARRDCOLUMN (default:trends)\n");
 			printf("\nAlternate pageset generation support:\n");
 			printf("    --pageset=SETNAME           : Generate non-standard pageset with tag SETNAME\n");
 			printf("    --template=TEMPLATE         : template for header and footer files\n");

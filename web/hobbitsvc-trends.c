@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.59 2005-03-12 08:30:37 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.60 2005-03-13 07:44:37 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -399,6 +399,7 @@ int main(int argc, char *argv[])
 
 	getenv_default("USEHOBBITD", "FALSE", NULL);
 	usehobbitd = (strcmp(xgetenv("USEHOBBITD"), "TRUE") == 0);
+	larrdcol = xgetenv("LARRDCOLUMN");
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
@@ -438,7 +439,6 @@ int main(int argc, char *argv[])
 		sprintf(dname, "%s/rrd", xgetenv("BBVAR"));
 		rrddir = strdup(dname);
 	}
-	if (larrdcol == NULL) larrdcol = "trends";
 
 	hosthead = load_hostnames(bbhostsfn, NULL, get_fqdn(), NULL);
 
