@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-snapshot.c,v 1.4 2004-10-30 15:37:36 henrik Exp $";
+static char rcsid[] = "$Id: bb-snapshot.c,v 1.5 2004-11-18 15:40:08 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -163,9 +163,35 @@ int main(int argc, char *argv[])
 	int childstat;
 	char htmldelim[20];
 	char startstr[20];
+	int argi, newargi;
+
+	newargi = 0;
+	bbgen_argv[newargi++] = bbgencmd;
+	bbgen_argv[newargi++] = bbgentimeopt;
+
+	for (argi=1; (argi < argc); argi++) {
+		if (argnmatch(argv[argi], "--env=")) {
+			char *p = strchr(argv[argi], '=');
+			loadenv(p+1);
+		}
+		else {
+			bbgen_argv[newargi++] = argv[argi];
+		}
+	}
+	bbgen_argv[newargi++] = outdir;
+	bbgen_argv[newargi++] = NULL;
 
 	envcheck(reqenv);
 	parse_query();
+
+	/*
+	 * Need to set these up AFTER putting them into bbgen_argv, since we
+	 * need to have option parsing done first.
+	 */
+	if (getenv("BBGEN")) sprintf(bbgencmd, "%s", getenv("BBGEN"));
+	else sprintf(bbgencmd, "%s/bin/bbgen", getenv("BBHOME"));
+
+	sprintf(bbgentimeopt, "--snapshot=%u", (unsigned int)starttime);
 
 	sprintf(dirid, "%u-%u", (unsigned int)getpid(), (unsigned int)time(NULL));
 	sprintf(outdir, "%s/%s", getenv("BBSNAP"), dirid);
@@ -173,17 +199,6 @@ int main(int argc, char *argv[])
 
 	sprintf(bbwebenv, "BBWEB=%s/%s", getenv("BBSNAPURL"), dirid);
 	putenv(bbwebenv);
-
-	if (getenv("BBGEN")) sprintf(bbgencmd, "%s", getenv("BBGEN"));
-	else sprintf(bbgencmd, "%s/bin/bbgen", getenv("BBHOME"));
-
-	bbgen_argv[0] = bbgencmd;
-	sprintf(bbgentimeopt, "--snapshot=%u", (unsigned int)starttime);
-	bbgen_argv[1] = bbgentimeopt;
-	for (i=1; (i<argc); i++) bbgen_argv[i+1] = argv[i];
-	bbgen_argv[1+argc] = outdir;
-	bbgen_argv[2+argc] = NULL;
-
 
 	/* Output the "please wait for report ... " thing */
 	sprintf(htmldelim, "bbrep-%u-%u", (int)getpid(), (unsigned int)time(NULL));
