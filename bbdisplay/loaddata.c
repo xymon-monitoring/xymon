@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.110 2003-09-19 20:10:43 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.111 2003-09-20 06:35:18 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1288,8 +1288,9 @@ bbgen_page_t *load_bbhosts(char *pgset)
 					dialup = 1;
 				else if (strcmp(tag, "prefer") == 0) 
 					prefer = 1;
-				else if ((strcmp(tag, "nodisp") == 0) || (strcmp(tag, "NODISP") == 0))
+				else if ((strcmp(tag, "nodisp") == 0) || (strcmp(tag, "NODISP") == 0)) {
 					if (strlen(pgset) == 0) nodisp = 1;
+				}
 				else if ((strcmp(tag, "nobb2") == 0) || (strcmp(tag, "NOBB2") == 0))
 					nobb2 = 1;
 				else if (argnmatch(tag, "NK:")) 
