@@ -328,10 +328,21 @@ summary_t *init_summary(char *name, char *receiver, char *url)
 dispsummary_t *init_displaysummary(char *fn)
 {
 	FILE *fd;
+	char sumfn[256];
 	char color[20];
 	dispsummary_t *newsum = NULL;
+	char *p, rowcol[200];
+	struct stat st;
 
-	fd = fopen(fn, "r");
+	sprintf(sumfn, "%s/%s", getenv("BBLOGS"), fn);
+	stat(sumfn, &st);
+	if (st.st_mtime < time(NULL)) {
+		/* Drop old summaries */
+		unlink(sumfn);
+		return NULL;
+	}
+
+	fd = fopen(sumfn, "r");
 	if (fd) {
 		newsum = malloc(sizeof(dispsummary_t));
 
@@ -355,7 +366,11 @@ dispsummary_t *init_displaysummary(char *fn)
 			newsum->color = COL_PURPLE;
 		}
 
-		sscanf(fn, "summary.%s.%s", newsum->row, newsum->column);
+		strcpy(rowcol, fn+8);
+		p = strrchr(rowcol, '.');
+		if (p) *p = ' ';
+
+		sscanf(rowcol, "%s %s", newsum->row, newsum->column);
 		newsum->next = NULL;
 		fclose(fd);
 	}
