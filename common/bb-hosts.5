@@ -488,7 +488,7 @@ timeout setting for all tests, see the "--timeout" option in
 Disables the standard check of the SSL certificate for
 https sites on this host.
 
-.IP "Extended syntax for https URLs"
+.IP "Extended URL syntax for SSL (https) tests"
 Some SSL sites will only allow you to connect, if you use
 specific "dialects" of SSL. Normally this is auto-negotiated,
 but experience shows that this fails on some systems.
@@ -505,6 +505,30 @@ something else instead of "https:" in the URL:
 * httpsh://www.sample.com/ : use only >128-bit ciphers
 
 You cannot mix these, e.g. "httpsm2" does not work.
+
+.IP "Extended URL syntax for testing sites by IP-address"
+bbtest-net ignores the "testip" tag normally used to force a 
+test to use the IP-address from the bb-hosts file instead of
+the hostname, when it performs http and https tests.
+
+The reason for this is that it interacts badly with virtual
+hosts, especially if these are IP-based as is common with
+https-websites.
+
+Instead the IP-address to connect to can be overridden by 
+specifying it as:
+
+	http://www.sample.com=1.2.3.4/index.html
+
+The "=1.2.3.4" will case bbtest-net to run the test against
+the IP-address "1.2.3.4", but still trying to access a virtual
+website with the name "www.sample.com".
+
+The "=ip.address.of.host" must be the last part of the hostname,
+so if you need to combine this with e.g. an explicit portnumber,
+it should be done as
+
+	http://www.sample.com:3128=1.2.3.4/index.html
 
 
 .SH BBTEST-NET TAGS FOR WEB CONTENT CHECKS
