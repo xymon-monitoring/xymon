@@ -81,6 +81,7 @@ extern void setup_signalhandler(char *programname);
 
 extern char *urlencode(char *s);
 extern char *urldecode(char *envvar);
+extern char *urlunescape(char *url);
 extern int urlvalidate(char *query, char *validchars);
 extern time_t sslcert_expiretime(char *timestr);
 

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.88 2003-08-30 23:05:31 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.89 2003-08-31 11:43:32 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1303,18 +1303,19 @@ int hexvalue(unsigned char c)
 	return -1;
 }
 
-char *urldecode(char *envvar)
+char *urlunescape(char *url)
 {
-	char *result;
-	char *pin, *pout;
+	char *pin, *pout, *result;
 
-	if (getenv(envvar) == NULL) return NULL;
-
-	pin = getenv(envvar);
+	pin = url;
 	pout = result = (char *) malloc(strlen(pin) + 1);
 	while (*pin) {
 		if (*pin != '%') {
 			*pout = *pin;
+			pin++;
+		}
+		else if (*pin == '+') {
+			*pout = ' ';
 			pin++;
 		}
 		else {
@@ -1335,6 +1336,13 @@ char *urldecode(char *envvar)
 	*pout = '\0';
 
 	return result;
+}
+
+char *urldecode(char *envvar)
+{
+	if (getenv(envvar) == NULL) return NULL;
+
+	return urlunescape(getenv(envvar));
 }
 
 char *urlencode(char *s)
