@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char la_rcsid[] = "$Id: do_la.c,v 1.3 2004-11-08 17:11:41 henrik Exp $";
+static char la_rcsid[] = "$Id: do_la.c,v 1.4 2004-11-12 21:39:20 henrik Exp $";
 
 static char *la_params[]          = { "rrdcreate", rrdfn, "DS:la:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
@@ -17,7 +17,6 @@ int do_la_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	char *p, *eoln;
 	int gotusers=0, gotprocs=0, gotload=0;
 	int users=0, procs=0, load=0;
-	htnames_t *hwalk;
 
 	eoln = strchr(msg, '\n'); if (eoln) *eoln = '\0';
 	p = strstr(msg, "up: ");
@@ -76,8 +75,7 @@ int do_la_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		create_and_update_rrd(hostname, rrdfn, la_params, update_params);
 	}
 
-	for (hwalk = memhosts; (hwalk && strcmp(hwalk->name, hostname)); hwalk = hwalk->next) ;
-	if (hwalk == NULL) {
+	if (memhosts_init && (rbtFind(memhosts, hostname) == rbtEnd(memhosts))) {
 		/* Pick up memory statistics */
 		int found, realuse, swapuse;
 		unsigned long phystotal, physavail, pagetotal, pageavail;

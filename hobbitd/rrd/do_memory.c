@@ -8,11 +8,21 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char memory_rcsid[] = "$Id: do_memory.c,v 1.3 2004-11-08 17:11:41 henrik Exp $";
+static char memory_rcsid[] = "$Id: do_memory.c,v 1.4 2004-11-12 21:39:20 henrik Exp $";
 
 static char *memory_params[]      = { "rrdcreate", rrdfn, "DS:realmempct:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
-static htnames_t *memhosts = NULL;
+/*
+ * Use the R/B tree to hold names of the hosts
+ * that we receive "memory" status from. When handling
+ * "cpu" reports, those hosts that are in the tree do
+ * NOT take memory data from the cpu data.
+ */
+RbtHandle memhosts;
+int memhosts_init = 0;
+static int string_compare(void *a, void *b) {
+	return strcmp((char *)a, (char *)b);
+}
 
 static int get_mem_percent(char *l)
 {
@@ -40,15 +50,16 @@ int do_memory_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
 	char *phys = NULL;
 	char *swap = NULL;
-	htnames_t *hwalk;
+	RbtIterator hwalk;
 
 	/* Log this hostname in the list of hosts we get true "memory" reports from. */
-	for (hwalk = memhosts; (hwalk && strcmp(hwalk->name, hostname)); hwalk = hwalk->next);
-	if (hwalk == NULL) {
-		hwalk = (htnames_t *)malloc(sizeof(htnames_t));
-		hwalk->name = strdup(hostname);
-		hwalk->next = memhosts;
-		memhosts = hwalk;
+	if (!memhosts_init) { memhosts = rbtNew(string_compare); memhosts_init = 1; }
+	hwalk = rbtFind(memhosts, hostname);
+	if (hwalk == rbtEnd(memhosts)) {
+		char *keyp = strdup(hostname);
+		if (rbtInsert(memhosts, keyp, NULL)) {
+			errprintf("Insert into memhosts failed\n");
+		}
 	}
 
 	phys = strstr(msg, "Physical"); if (phys == NULL) phys = strstr(msg, "Real");
