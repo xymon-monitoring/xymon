@@ -17,7 +17,7 @@ all: $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS)
 	@echo ""
 	@echo "Run 'make install' to install programs AND cgi scripts"
 	@echo "    **** This will overwrite your existing cgi scripts ****"
-	@echo "If you dont want to do that, run 'make install-bin' to install programs"
+	@echo "If you dont want to do that, run 'make install-nocgi' to install programs"
 	@echo "and then you can later run 'make install-cgi' to install cgi scripts"
 	@echo ""
 
@@ -123,5 +123,6 @@ install-man7:
 	mkdir -p /usr/local/man/man7 || /bin/true
 	cp -p $(MAN7PAGES) $(MANROOT)/man7/
 
-install: install-bin install-cgi install-exts install-man
+install-nocgi: install-bin install-exts install-man
+install: install-nocgi install-cgi
 
