@@ -188,6 +188,8 @@ state_t *init_state(const char *filename)
 
 	host = find_host(hostname);
 	if (host) {
+		/* Insert into list sorted by test-name */
+
 		newstate->entry->next = host->entries;
 		host->entries = newstate->entry;
 	}
@@ -384,12 +386,26 @@ state_t *load_state(void)
 
 
 
+void dumplinks(link_t *head)
+{
+	link_t *l;
+
+	for (l = head; l; l = l->next) {
+		printf("Link for host %s, filename %s\n", l->name, l->filename);
+	}
+}
+
+
 void dumphosts(host_t *head, char *format)
 {
 	host_t *h;
+	entry_t *e;
 
 	for (h = head; (h); h = h->next) {
 		printf(format, h->hostname, h->ip, h->link->filename);
+		for (e = h->entries; (e); e = e->next) {
+			printf("\t\t\t\t\tTest: %s, state %d\n", e->column->name, e->color);
+		}
 	}
 }
 
@@ -413,7 +429,7 @@ void dumphostlist(hostlist_t *head)
 }
 
 
-void dumpstate(state_t *head)
+void dumpstatelist(state_t *head)
 {
 	state_t *s;
 
@@ -428,15 +444,10 @@ void dumpstate(state_t *head)
 int main(int argc, char *argv[])
 {
 	page_t *p, *q;
-	link_t *l;
 
 	linkhead = load_links();
-	for (l = linkhead; l; l = l->next) {
-		printf("Link for host %s, filename %s\n", l->name, l->filename);
-	}
-
 	pagehead = load_bbhosts();
-	dumphostlist(hosthead);
+	statehead = load_state();
 
 	for (p=pagehead; p; p = p->next) {
 		printf("Page: %s, title=%s\n", p->name, p->title);
@@ -451,8 +462,9 @@ int main(int argc, char *argv[])
 	}
 	dumphosts(pagehead->hosts, "Host: %s, ip: %s, link: %s\n");
 
-	statehead = load_state();
-	dumpstate(statehead);
+	/* dumplinks(linkhead); */
+	/* dumphostlist(hosthead); */
+	dumpstatelist(statehead);
 	return 0;
 }
 
