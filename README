@@ -1,4 +1,4 @@
-README file for bbgen and friends version 2.0
+README file for bbgen and friends version 2.1
 =============================================
 
 bbgen is a drop-in replacement for the bb-display.sh script that 
@@ -10,7 +10,7 @@ bbtest-web and bbtest-net are utilities that can replace the
 bb-network.sh network test utility in Big Brother. See 
 INSTALL.bbtest for details.
 
-bbgen, bbtest-web, bbtest-net and bbgmchosts and sources are 
+bbgen, bbtest-web and bbtest-net are 
 Copyright (C) 2002-2003, Henrik Storner <henrik@storner.dk> 
 All files are released under the GNU General Public License, 
 version 2. See the file COPYING for details.
@@ -55,9 +55,8 @@ things up.
 For testing websites, the "curl" utility must be installed. 
 This tool is available from http://curl.haxx.se/.
 
-For network connectivity tests, the "fping.sh" script must
-be installed. This is available from the Big Brother archive
-on http://www.deadcat.net/
+For network connectivity tests, the fping utility must be 
+installed. This is available from www.fping.org.
 
 
 Compatibility
@@ -93,9 +92,11 @@ in bbgen:
 bbtest-net and bbtest-web are drop-in replacements for the
 standard bb-network.sh script, with the following exceptions:
 
-* ping checks (the "conn" column) are not handled by bbtest-net.
-  You are advised to install the fping.sh script from www.deadcat.net
-  to take care of the connectivity tests.
+* By default bbtest-net does not perform ping checks (the 
+  "conn" column). If you want to do connectivity testing,
+  run bbtest-net with the "--ping" option. Otherwise, use
+  the fping.sh script from www.deadcat.net to take care of 
+  the connectivity tests.
 
 * The ":q" and ":Q" options on individual tests are ignored.
 
@@ -125,5 +126,5 @@ have a feature you would like to see added.
 
 
 Henrik Storner <henrik@storner.dk>
-April 17, 2003
+April 24, 2003
 
