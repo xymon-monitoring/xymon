@@ -21,6 +21,9 @@ Bugfixes
 
 Improvements
 ------------
+* Macros in the bb-hosts file, to avoid repeating common setups.
+* Multi-line macros in hobbit-alerts.cfg
+* Allow for regex's in the TCP response match code.
 * Implement "--follow" in the new HTTP tester.
 * Allow for some tags (e.g. badconn) to be set for all hosts.
 * https proxying (proxy CONNECT protocol)
