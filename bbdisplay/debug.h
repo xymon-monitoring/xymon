@@ -31,7 +31,7 @@ extern void dprintf(const char *fmt, ...);
 #endif
 
 extern void add_timestamp(const char *msg);
-extern void show_timestamps(char *buffer);
+extern void show_timestamps(char **buffer);
 extern const char *textornull(const char *text);
 extern void dumplinks(link_t *head);
 extern void dumphosts(host_t *head, char *prefix);

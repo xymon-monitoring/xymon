@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.19 2003-05-21 22:23:36 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.20 2003-05-23 11:53:55 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -27,6 +27,7 @@ static char rcsid[] = "$Id: debug.c,v 1.19 2003-05-21 22:23:36 henrik Exp $";
 
 #include "bbgen.h"
 #include "debug.h"
+#include "util.h"
 
 int debug = 0;
 int timing = 0;
@@ -34,11 +35,12 @@ int timing = 0;
 typedef struct {
 	char		*eventtext;
 	struct timeval 	eventtime;
+	void		*prev;
+	void		*next;
 } timestamp_t;
 
-#define MAX_DBGTIMES 100
-static timestamp_t dbgtimes[MAX_DBGTIMES];
-static int         dbgtimecount = 0;
+static timestamp_t *stamphead = NULL;
+static timestamp_t *stamptail = NULL;
 
 #ifdef DEBUG
 void dprintf(const char *fmt, ...)
@@ -58,38 +60,48 @@ void add_timestamp(const char *msg)
 {
 	struct timezone tz;
 
-	if (timing && (dbgtimecount < MAX_DBGTIMES)) {
-		gettimeofday(&dbgtimes[dbgtimecount].eventtime, &tz);
-		dbgtimes[dbgtimecount].eventtext = malloc(strlen(msg)+1);
-		strcpy(dbgtimes[dbgtimecount].eventtext,msg);
-		dbgtimecount++;
+	if (timing) {
+		timestamp_t *newstamp = malloc(sizeof(timestamp_t));
+
+		gettimeofday(&newstamp->eventtime, &tz);
+		newstamp->eventtext = malcop(msg);
+
+		if (stamphead == NULL) {
+			newstamp->next = newstamp->prev = NULL;
+			stamphead = newstamp;
+		}
+		else {
+			newstamp->prev = stamptail;
+			newstamp->next = NULL;
+			stamptail->next = newstamp;
+		}
+		stamptail = newstamp;
 	}
 }
 
-void show_timestamps(char *buffer)
+void show_timestamps(char **buffer)
 {
-	int i;
+	timestamp_t *s;
 	long difsec, difusec;
-	char *outbuf;
+	char *outbuf = malloc(4096);
+	int outbuflen = 4096;
 	char buf1[80];
 
-	if (!timing) return;
-
-	outbuf = ((buffer == NULL) ? malloc(80*(dbgtimecount+10)) : buffer);
+	if (!timing || (stamphead == NULL)) return;
 
 	strcpy(outbuf, "\n\nTIME SPENT\n");
 	strcat(outbuf, "Event                                   ");
 	strcat(outbuf, "         Starttime");
 	strcat(outbuf, "          Duration\n");
 
-	for (i=0; (i<dbgtimecount); i++) {
-		sprintf(buf1, "%-40s ", dbgtimes[i].eventtext);
+	for (s=stamphead; (s); s=s->next) {
+		sprintf(buf1, "%-40s ", s->eventtext);
 		strcat(outbuf, buf1);
-		sprintf(buf1, "%10lu.%06lu ", dbgtimes[i].eventtime.tv_sec, dbgtimes[i].eventtime.tv_usec);
+		sprintf(buf1, "%10lu.%06lu ", s->eventtime.tv_sec, s->eventtime.tv_usec);
 		strcat(outbuf, buf1);
-		if (i>0) {
-			difsec  = dbgtimes[i].eventtime.tv_sec - dbgtimes[i-1].eventtime.tv_sec;
-			difusec = dbgtimes[i].eventtime.tv_usec - dbgtimes[i-1].eventtime.tv_usec;
+		if (s->prev) {
+			difsec  = s->eventtime.tv_sec - ((timestamp_t *)s->prev)->eventtime.tv_sec;
+			difusec = s->eventtime.tv_usec - ((timestamp_t *)s->prev)->eventtime.tv_usec;
 			if (difusec < 0) {
 				difsec -= 1;
 				difusec += 1000000;
@@ -99,10 +111,15 @@ void show_timestamps(char *buffer)
 		}
 		else strcat(outbuf, "                -");
 		strcat(outbuf, "\n");
+
+		if ((outbuflen - strlen(outbuf)) < 200) {
+			outbuflen += 4096;
+			outbuf = realloc(outbuf, outbuflen);
+		}
 	}
 
-	difsec  = dbgtimes[dbgtimecount-1].eventtime.tv_sec - dbgtimes[0].eventtime.tv_sec;
-	difusec = dbgtimes[dbgtimecount-1].eventtime.tv_usec - dbgtimes[0].eventtime.tv_usec;
+	difsec  = stamptail->eventtime.tv_sec - stamphead->eventtime.tv_sec;
+	difusec = stamptail->eventtime.tv_usec - stamphead->eventtime.tv_usec;
 	if (difusec < 0) {
 		difsec -= 1;
 		difusec += 1000000;
@@ -116,6 +133,7 @@ void show_timestamps(char *buffer)
 		printf("%s", outbuf);
 		free(outbuf);
 	}
+	else *buffer = outbuf;
 }
 
 
