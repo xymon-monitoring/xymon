@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.53 2003-06-02 13:54:49 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.54 2003-06-02 16:07:01 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -290,22 +290,22 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 			if (documentationcgi) {
 				fprintf(output, "<A HREF=\"%s/%s\" TARGET=\"_blank\"><FONT %s>%s</FONT></A>\n </TD>",
 					getenv("CGIBINURL"), cgidoclink(documentationcgi, h->hostname),
-					getenv("MKBBROWFONT"), h->hostname);
+					getenv("MKBBROWFONT"), h->displayname);
 			}
 			else if (h->link != &null_link) {
 				fprintf(output, "<A HREF=\"%s/%s\" TARGET=\"_blank\"><FONT %s>%s</FONT></A>\n </TD>",
 					getenv("BBWEB"), hostlink(h->link), 
-					getenv("MKBBROWFONT"), h->hostname);
+					getenv("MKBBROWFONT"), h->displayname);
 			}
 			else if (pagetype != PAGE_BB) {
 				/* Provide a link to the page where this host lives */
 				fprintf(output, "<A HREF=\"%s/%s\" TARGET=\"_blank\"><FONT %s>%s</FONT></A>\n </TD>",
 					getenv("BBWEB"), hostpage_link(h),
-					getenv("MKBBROWFONT"), h->hostname);
+					getenv("MKBBROWFONT"), h->displayname);
 			}
 			else {
 				fprintf(output, "<FONT %s>%s</FONT>\n </TD>",
-					getenv("MKBBROWFONT"), h->hostname);
+					getenv("MKBBROWFONT"), h->displayname);
 			}
 
 			/* Then the columns. */
@@ -418,7 +418,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 
 		if (newhost == NULL) {
 			/* New summary "host" */
-			newhost = init_host(s->row, 0,0,0,0, 0, NULL, NULL, NULL, NULL, NULL, NULL);
+			newhost = init_host(s->row, NULL, 0,0,0,0, 0, NULL, NULL, NULL, NULL, NULL, NULL);
 
 			/*
 			 * Cannot have the pseudo host in the official hostlist,

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.19 2003-05-22 05:56:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.20 2003-06-02 16:07:01 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -76,7 +76,7 @@ int generate_info(char *infocolumn)
 	for (hostwalk=hosthead; (hostwalk); hostwalk = hostwalk->next) {
 		char logfn[MAX_PATH], htmlfn[MAX_PATH];
 		FILE *fd;
-		char *p, *hostname, *alertspec, *slaspec, *noprop, *rawcopy;
+		char *p, *alertspec, *slaspec, *noprop, *rawcopy;
 		int firstcontent;
 
 		sprintf(logfn, "%s/%s.%s", getenv("BBLOGS"), 
@@ -91,16 +91,12 @@ int generate_info(char *infocolumn)
 		}
 
 		infobuf[0] = '\0';
-		hostname = strstr(hostwalk->hostentry->rawentry, "NAME:");
-		if (!hostname) {
-			sprintf(l, "<b>Hostname</b> : %s<br>\n", hostwalk->hostentry->hostname);
+		if (hostwalk->hostentry->displayname && (strcmp(hostwalk->hostentry->displayname, hostwalk->hostentry->hostname) != 0)) {
+			sprintf(l, "<b>Hostname</b> : %s (%s)<br>\n", 
+				hostwalk->hostentry->displayname, hostwalk->hostentry->hostname);
 		}
 		else {
-			hostname += 5;
-			p = strchr(hostname, ' ');
-			if (p) *p = '\0';
-			sprintf(l, "<b>Hostname</b> : %s<br>\n", hostname);
-			if (p) *p = ' ';
+			sprintf(l, "<b>Hostname</b> : %s<br>\n", hostwalk->hostentry->hostname);
 		}
 		strcat(infobuf, l);
 

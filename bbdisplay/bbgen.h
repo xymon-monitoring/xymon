@@ -200,6 +200,7 @@ typedef struct {
 
 typedef struct {
 	char	*hostname;
+	char	*displayname;
 	char	ip[16];
 	int	dialup;
 	link_t	*link;

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.73 2003-06-02 06:39:31 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.74 2003-06-02 16:07:01 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -190,7 +190,8 @@ group_t *init_group(const char *title, const char *onlycols)
 	return newgroup;
 }
 
-host_t *init_host(const char *hostname, const int ip1, const int ip2, const int ip3, const int ip4, 
+host_t *init_host(const char *hostname, const char *displayname,
+		  const int ip1, const int ip2, const int ip3, const int ip4, 
 		  const int dialup, const char *alerts, const char *waps,
 		  char *tags,
 		  const char *nopropyellowtests, const char *nopropredtests,
@@ -205,7 +206,8 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 		dialup, textornull(alerts), textornull(tags),
 		textornull(nopropyellowtests), textornull(nopropredtests));
 
-	newhost->hostname = malcop(hostname);
+	newhost->hostname = newhost->displayname = malcop(hostname);
+	if (displayname) newhost->displayname = malcop(displayname);
 	sprintf(newhost->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 	newhost->link = find_link(hostname);
 	newhost->pretitle = NULL;
@@ -880,6 +882,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 		grouptag[100], summarytag[100], titletag[100], hosttag[100];
 	char 	*name, *link, *onlycols;
 	char 	hostname[MAX_LINE_LEN];
+	char 	displayname[MAX_LINE_LEN];
 	bbgen_page_t 	*toppage, *curpage, *cursubpage, *cursubparent;
 	group_t *curgroup;
 	host_t	*curhost;
@@ -1047,6 +1050,21 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			if (startoftags && (larrdgraphs = strstr(startoftags, "LARRD:"))) {
 				larrdgraphs += 6;
 			}
+			if (startoftags && (p = strstr(startoftags, "NAME:"))) {
+				p += 5;
+				if (*p == '\"') {
+					p++;
+					strcpy(displayname, p);
+					p = strchr(displayname, '\"');
+					if (p) *p = '\0';
+				}
+				else {
+					strcpy(displayname, p);
+					for (p=displayname; (*p && !isspace((int) *p)); p++) ;
+					*p = '\0';
+				}
+			}
+			else strcpy(displayname, hostname);
 
 			if (strlen(pgset) == 0) {
 				/*
@@ -1054,7 +1072,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				 * whatever group or page is current.
 				 */
 				if (curhost == NULL) {
-					curhost = init_host(hostname, ip1, ip2, ip3, ip4, dialup, alertlist, onwaplist,
+					curhost = init_host(hostname, displayname,
+							    ip1, ip2, ip3, ip4, dialup, alertlist, onwaplist,
 							    startoftags, nopropyellowlist, nopropredlist,
 							    larrdgraphs);
 					if (curgroup != NULL) {
@@ -1074,7 +1093,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 					}
 				}
 				else {
-					curhost = curhost->next = init_host(hostname, ip1, ip2, ip3, ip4, dialup, 
+					curhost = curhost->next = init_host(hostname, displayname,
+									    ip1, ip2, ip3, ip4, dialup, 
 									    alertlist, onwaplist,
 									    startoftags, nopropyellowlist,nopropredlist,
 									    larrdgraphs);
@@ -1106,7 +1126,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 						targetpagename, hostname);
 				}
 				else {
-					host_t *newhost = init_host(hostname, ip1, ip2, ip3, ip4, dialup, 
+					host_t *newhost = init_host(hostname, displayname,
+								    ip1, ip2, ip3, ip4, dialup, 
 								    alertlist, onwaplist,
 								    startoftags, nopropyellowlist,nopropredlist,
 								    larrdgraphs);
