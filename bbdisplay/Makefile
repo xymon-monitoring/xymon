@@ -2,7 +2,7 @@
 #
 
 
-PROGRAMS = bbgen bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi bb-findhost.cgi bb-csvinfo.cgi bb-hostsvc.cgi bb-ack.cgi bb-webpage
+PROGRAMS = bbgen bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi bb-findhost.cgi bb-csvinfo.cgi bb-hostsvc.cgi bb-ack.cgi bb-webpage bb-larrdcolumn
 
 EXTENSIONS = bbcombotest
 
@@ -10,19 +10,20 @@ CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh bb-
 
 TEMPLATES = acknowledge_header acknowledge_footer acknowledge_form findhost_header findhost_footer findhost_form report_header report_footer report_form
 
-GENOBJS = bbgen.o loadhosts.o loaddata.o reportdata.o bbconvert.o larrdgen.o pagegen.o eventlog.o acklog.o process.o infogen.o savelog.o wmlgen.o rssgen.o bb-replog.o util.o debug.o
+GENOBJS = bbgen.o loadbbhosts.o loaddata.o reportdata.o bbconvert.o pagegen.o eventlog.o acklog.o process.o infogen.o wmlgen.o rssgen.o bb-replog.o util.o debug.o
 COMBOTESTOBJS = bbcombotest.o
 REPOBJS = bb-rep.o
 REPLOGOBJS = bb-replog-cgi.o reportdata.o
 HISTOBJS = bb-hist.o reportdata.o
 SNAPOBJS = bb-snapshot.o
 EVENTLOGOBJS = bb-eventlog.o util.o			# util.o for histlogurl, find_or_create_column
-FINDHOSTOBJS = bb-findhost.o loadhosts.o util.o		# util.o for hostpage_name, hostpage_link, findlink, hosthead
+FINDHOSTOBJS = bb-findhost.o loadbbhosts.o util.o	# util.o for hostpage_name, hostpage_link, findlink, hosthead
 CSVINFOOBJS = bb-csvinfo.o
 MESSAGECGIOBJS = sendmsg-cgi.o
 HOSTSVCCGIOBJS = bb-hostsvc.o
 ACKCGIOBJS = bb-ack.o
 WEBPAGEOBJS = bb-webpage.o
+LARRDCOLUMNOBJS = bb-larrdcolumn.o
 
 HTMLPAGES = bb-findhost.html
 GIFFILES = bbfindhost1.gif bbfindhost2.gif
@@ -69,6 +70,9 @@ bb-ack.cgi: $(ACKCGIOBJS)
 
 bb-webpage: $(WEBPAGEOBJS)
 	$(CC) $(CFLAGS) -o $@ $(WEBPAGEOBJS) ../lib/libbbgen.a
+
+bb-larrdcolumn: $(LARRDCOLUMNOBJS)
+	$(CC) $(CFLAGS) -o $@ $(LARRDCOLUMNOBJS) ../lib/libbbgen.a $(NETLIBS)
 
 
 ################################################
