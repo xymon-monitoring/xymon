@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.21 2003-08-06 06:20:53 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.22 2003-08-06 15:42:08 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,25 +30,21 @@ static char rcsid[] = "$Id: bb-hist.c,v 1.21 2003-08-06 06:20:53 henrik Exp $";
 static char selfurl[MAX_PATH];
 static int startoffset = 0;
 static int len1d = 24;
-static char *bartitle1d = "1 day";
-static char *summarytitle1d = "1 day summary";
+static char *bartitle1d = "1 day summary";
 static int len1w = 7;
-static char *bartitle1w = "1 week";
-static char *summarytitle1w = "1 week summary";
+static char *bartitle1w = "1 week summary";
 static int len4w = 28;
-static char *bartitle4w = "4 weeks";
-static char *summarytitle4w = "4 week summary";
+static char *bartitle4w = "4 week summary";
 static int len1y = 12;
-static char *bartitle1y = "1 year";
-static char *summarytitle1y = "1 year summary";
+static char *bartitle1y = "1 year summary";
 
 #ifndef DEFPIXELS
 static int usepct = 1;
-static int pixels = 100;
+#define DEFPIXELS 0
 #else
 static int usepct = 0;
-static int pixels = DEFPIXELS;
 #endif
+static int pixels = DEFPIXELS;
 
 /* What colorbars and summaries to show by default */
 #define BARSUM_1D 0x0001	/* 1-day bar */
@@ -62,6 +58,45 @@ static int pixels = DEFPIXELS;
 
 static unsigned int barsums = DEFBARSUMS;
 
+static char *barbkgcolor = "\"#000033\"";
+
+static void generate_pct_summary(
+			FILE *htmlrep,			/* output file */
+			char *hostname,
+			char *service,
+			char *caption,
+			reportinfo_t *repinfo) 		/* Percent summaries for period */
+{
+	fprintf(htmlrep, "<TABLE BORDER=0 BGCOLOR=%s CELLPADDING=3>\n", barbkgcolor);
+
+	fprintf(htmlrep, "<TR BGCOLOR=\"#333333\"><TD COLSPAN=6 ALIGN=CENTER><FONT SIZE=\"+1\">%s</FONT></TD></TR>\n", caption);
+	fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
+
+	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
+		getenv("BBSKIN"), dotgiffilename(COL_GREEN, 0, 1), colorname(COL_GREEN), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
+		getenv("BBSKIN"), dotgiffilename(COL_YELLOW, 0, 1), colorname(COL_YELLOW), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
+		getenv("BBSKIN"), dotgiffilename(COL_RED, 0, 1), colorname(COL_RED), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
+		getenv("BBSKIN"), dotgiffilename(COL_PURPLE, 0, 1), colorname(COL_PURPLE), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
+		getenv("BBSKIN"), dotgiffilename(COL_CLEAR, 0, 1), colorname(COL_CLEAR), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
+		getenv("BBSKIN"), dotgiffilename(COL_BLUE, 0, 1), colorname(COL_BLUE), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+	fprintf(htmlrep, "</TR>\n");
+	fprintf(htmlrep, "<TR BGCOLOR=\"#000033\">\n");
+	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_GREEN]);
+	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_YELLOW]);
+	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_RED]);
+	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_PURPLE]);
+	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_CLEAR]);
+	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_BLUE]);
+	fprintf(htmlrep, "</TR>\n");
+
+	fprintf(htmlrep, "</TABLE>\n");
+
+}
 
 static void generate_colorbar(
 			FILE *htmlrep,		/* Output file */
@@ -71,8 +106,11 @@ static void generate_colorbar(
 			time_t startofbar, 	/* Start of the colorbar */
 			time_t today,		/* End of the colorbar */
 			replog_t *periodlog,	/* Log entries for period */
+			char *hostname,
+			char *service,
 			char *caption,		/* Title */
-			char *tagfmt)		/* strftime() formatstring for tags */
+			char *tagfmt,		/* strftime() formatstring for tags */
+			reportinfo_t *repinfo)	/* Info for the percent summary */
 {
 	/* Generate the colorbar "graph" */
 
@@ -117,27 +155,56 @@ static void generate_colorbar(
 
 	/* The date stamps */
 	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 FRAME=VOID CELLSPACING=0 CELLPADDING=1 BGCOLOR=\"#000033\">\n");
-	fprintf(htmlrep, "<TR>\n");
+	fprintf(htmlrep, "<TR BGCOLOR=%s>\n", barbkgcolor);
 
-	fprintf(htmlrep, "<TD WIDTH=\"34%%\" ALIGN=LEFT>\n");
+	fprintf(htmlrep, "<TD ALIGN=LEFT VALIGN=BOTTOM>\n");
 	if (colorlog && colorlog->starttime <= startofbar) {
-		fprintf(htmlrep, "<A HREF=\"%s&amp;OFFSET=%d\">", selfurl, rewoffset);
+		fprintf(htmlrep, "<A HREF=\"%s&amp;OFFSET=%d&amp;PIXELS=%d\">", selfurl, rewoffset, (usepct ? 0 : pixels));
 	}
 	fprintf(htmlrep, "<B>%s</B>", ctime(&startofbar));
 	if (colorlog && colorlog->starttime <= startofbar) fprintf(htmlrep, "</A>\n");
 	fprintf(htmlrep, "</TD>\n");
 
-	fprintf(htmlrep, "<TH ALIGN=CENTER WIDTH=\"32%%\">%s</TH>\n", caption);
+	fprintf(htmlrep, "<TD ALIGN=CENTER>\n");
+	if (usepct) {
+		fprintf(htmlrep, "&nbsp;");
+	}
+	else {
+		fprintf(htmlrep, "  <TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0>\n");
+		fprintf(htmlrep, "  <TR><TD ALIGN=CENTER><A HREF=\"%s&amp;OFFSET=%d&amp;PIXELS=%d\">Zoom +</A></TD></TR>\n", 
+			selfurl, startoffset, pixels+200);
+		if (pixels > 200) {
+			fprintf(htmlrep, "  <TR><TD ALIGN=CENTER><A HREF=\"%s&amp;OFFSET=%d&amp;PIXELS=%d\">Zoom -</A></TD></TR>\n", 
+				selfurl, startoffset, pixels-200);
+		}
+		fprintf(htmlrep, "  </TABLE>\n");
+	}
+	fprintf(htmlrep, "</TD>\n");
+	fprintf(htmlrep, "<TD ALIGN=CENTER>\n");
+	generate_pct_summary(htmlrep, hostname, service, caption, repinfo);
+	fprintf(htmlrep, "</TD>\n");
 
-	fprintf(htmlrep, "<TD WIDTH=\"34%%\" ALIGN=RIGHT>\n");
+	fprintf(htmlrep, "<TD ALIGN=CENTER>\n");
+	fprintf(htmlrep, "  <TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0>\n");
+	fprintf(htmlrep, "  <TR><TD ALIGN=CENTER><A HREF=\"%s&amp;OFFSET=0&amp;PIXELS=%d\">Time reset</A></TD></TR>\n", 
+		selfurl, (usepct ? 0 : pixels));
+	if (!usepct) {
+		fprintf(htmlrep, "  <TR><TD ALIGN=CENTER><A HREF=\"%s&amp;OFFSET=%d&amp;PIXELS=%d\">Zoom reset</A></TD></TR>\n", 
+			selfurl, startoffset, DEFPIXELS);
+	}
+	fprintf(htmlrep, "  </TABLE>\n");
+	fprintf(htmlrep, "</TD>\n");
+
+	fprintf(htmlrep, "<TD ALIGN=RIGHT VALIGN=BOTTOM>\n");
 	if (startoffset > 0) {
-		fprintf(htmlrep, "<A HREF=\"%s&amp;OFFSET=%d\">", selfurl, fwdoffset);
+		fprintf(htmlrep, "<A HREF=\"%s&amp;OFFSET=%d&amp;PIXELS=%d\">", selfurl, fwdoffset, (usepct ? 0 : pixels));
 	}
 	fprintf(htmlrep, "<B>%s</B>\n", ctime(&today));
 	if (startoffset > 0) fprintf(htmlrep, "</A>\n");
 	fprintf(htmlrep, "</TD>\n");
 
 	fprintf(htmlrep, "</TR>\n");
+	fprintf(htmlrep, "<TR BGCOLOR=%s><TD COLSPAN=5><HR></TD></TR>\n", barbkgcolor);
 	fprintf(htmlrep, "</TABLE>\n");
 
 
@@ -221,58 +288,6 @@ static void generate_colorbar(
 
 }
 
-static void generate_pct_summary(
-			FILE *htmlrep,			/* output file */
-			char *hostname,
-			char *service,
-			char *caption,
-			reportinfo_t *repinfo, 		/* Percent summaries for period */
-			int first, int last)
-{
-	if (first) {
-		fprintf(htmlrep, "<TABLE BORDER=0 BGCOLOR=\"#000033\" CELLSPACING=5>\n");
-		fprintf(htmlrep, "<TR><TD>\n");
-		fprintf(htmlrep, "<TABLE BORDER=0 BGCOLOR=\"#000000\" CELLPADDING=3>\n");
-	}
-
-	fprintf(htmlrep, "<TR BGCOLOR=\"#333333\"><TD COLSPAN=6 ALIGN=CENTER><B>%s</B></TD></TR>\n", caption);
-	fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
-	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		getenv("BBSKIN"), dotgiffilename(COL_GREEN, 0, 1), colorname(COL_GREEN), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
-	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		getenv("BBSKIN"), dotgiffilename(COL_YELLOW, 0, 1), colorname(COL_YELLOW), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
-	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		getenv("BBSKIN"), dotgiffilename(COL_RED, 0, 1), colorname(COL_RED), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
-	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		getenv("BBSKIN"), dotgiffilename(COL_PURPLE, 0, 1), colorname(COL_PURPLE), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
-	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		getenv("BBSKIN"), dotgiffilename(COL_CLEAR, 0, 1), colorname(COL_CLEAR), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
-	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		getenv("BBSKIN"), dotgiffilename(COL_BLUE, 0, 1), colorname(COL_BLUE), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
-	fprintf(htmlrep, "</TR>\n");
-	fprintf(htmlrep, "<TR BGCOLOR=\"#000033\">\n");
-	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_GREEN]);
-	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_YELLOW]);
-	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_RED]);
-	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_PURPLE]);
-	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_CLEAR]);
-	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_BLUE]);
-	fprintf(htmlrep, "</TR>\n");
-
-	if (last) {
-		fprintf(htmlrep, "</TABLE>\n");
-		fprintf(htmlrep, "</TD></TR>\n");
-
-		fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
-		fprintf(htmlrep, "<TD ALIGN=CENTER>\n");
-		fprintf(htmlrep, "<FONT %s><B>[Totals may not equal 100%%]</B></FONT></TD> </TR>\n", getenv("MKBBCOLFONT"));
-		fprintf(htmlrep, "</TABLE>\n");
-	}
-	else {
-		fprintf(htmlrep, "<TR BGCOLOR=\"#000000\"><TD COLSPAN=6>&nbsp;</TD></TR>\n");
-	}
-}
-
 
 static void generate_histlog_table(FILE *htmlrep,
 		char *hostname, char *service, int entrycount, replog_t *loghead)
@@ -285,8 +300,8 @@ static void generate_histlog_table(FILE *htmlrep,
 	fprintf(htmlrep, "<TR>\n");
 	if (entrycount) {
 		fprintf(htmlrep, "<TD COLSPAN=3 ALIGN=CENTER><B>Last %d log entries</B> ", entrycount);
-		fprintf(htmlrep, "<A HREF=\"%s/bb-hist.sh?HISTFILE=%s.%s&amp;ENTRIES=all\">(Full HTML log)</A></TD>\n", 
-			getenv("CGIBINURL"), commafy(hostname), service);
+		fprintf(htmlrep, "<A HREF=\"%s&amp;OFFSET=%d&amp;PIXELS=%d&amp;ENTRIES=all\">(Full HTML log)</A></TD>\n", 
+			selfurl, startoffset, (usepct ? 0 : pixels));
 	}
 	else {
 		fprintf(htmlrep, "<TD COLSPAN=3 ALIGN=CENTER><B>All log entries</B></TD>\n");
@@ -364,7 +379,8 @@ void generate_history(FILE *htmlrep, 			/* output file */
 		tmbuf = localtime(&today); 
 		tmbuf->tm_min = tmbuf->tm_sec = 0; 
 		startofperiod = mktime(tmbuf);
-		generate_colorbar(htmlrep, 3600, len1d, startofperiod, start1d, today, log1d, bartitle1d, "%H");
+		generate_colorbar(htmlrep, 3600, len1d, startofperiod, start1d, today, log1d, 
+				  hostname, service, bartitle1d, "%H", repinfo1d);
 	}
 
 	if (log1w) {
@@ -372,7 +388,8 @@ void generate_history(FILE *htmlrep, 			/* output file */
 		tmbuf = localtime(&today); 
 		tmbuf->tm_hour = tmbuf->tm_min = tmbuf->tm_sec = 0;
 		startofperiod = mktime(tmbuf);
-		generate_colorbar(htmlrep, 86400, len1w, startofperiod, start1w, today, log1w, bartitle1w, "%a");
+		generate_colorbar(htmlrep, 86400, len1w, startofperiod, start1w, today, log1w, 
+				  hostname, service, bartitle1w, "%a", repinfo1w);
 	}
 
 	if (log4w) {
@@ -380,7 +397,8 @@ void generate_history(FILE *htmlrep, 			/* output file */
 		tmbuf = localtime(&today); 
 		tmbuf->tm_hour = tmbuf->tm_min = tmbuf->tm_sec = 0;
 		startofperiod = mktime(tmbuf);
-		generate_colorbar(htmlrep, 86400, len4w, startofperiod, start4w, today, log4w, bartitle4w, "%d");
+		generate_colorbar(htmlrep, 86400, len4w, startofperiod, start4w, today, log4w, 
+				  hostname, service, bartitle4w, "%d", repinfo4w);
 	}
 
 	if (log1y) {
@@ -389,49 +407,9 @@ void generate_history(FILE *htmlrep, 			/* output file */
 		tmbuf->tm_hour = tmbuf->tm_min = tmbuf->tm_sec = 0;
 		tmbuf->tm_mday = 1;
 		startofperiod = mktime(tmbuf);
-		generate_colorbar(htmlrep, 30*86400, len1y, startofperiod, start1y, today, log1y, bartitle1y, "%b");
+		generate_colorbar(htmlrep, 30*86400, len1y, startofperiod, start1y, today, log1y, 
+				  hostname, service, bartitle1y, "%b", repinfo1y);
 	}
-
-
-	/* Availability percentage summary */
-	fprintf(htmlrep, "<CENTER>\n");
-	{
-		int isfirst;
-		int islast[4];
-
-		isfirst = 1;
-		islast[0] = islast[1] = islast[2] = islast[3] = 0;
-
-		/*
-		 * We (ab)use the log* params to see if we should generate a summary
-		 * for the period - even though the summary is not using the log* data!
-		 */
-		if (log1y) islast[3] = 1;
-		else if (log4w) islast[2] = 1;
-		else if (log1w) islast[1] = 1;
-		else islast[0] = 1;
-
-		if (log1d) {
-			generate_pct_summary(htmlrep, hostname, service, summarytitle1d, repinfo1d, isfirst, islast[0]);
-			isfirst = 0;
-		}
-		if (log1w) {
-			generate_pct_summary(htmlrep, hostname, service, summarytitle1w, repinfo1w, isfirst, islast[1]);
-			isfirst = 0;
-		}
-		if (log4w) {
-			generate_pct_summary(htmlrep, hostname, service, summarytitle4w, repinfo4w, isfirst, islast[2]);
-			isfirst = 0;
-		}
-		if (log1y) {
-			generate_pct_summary(htmlrep, hostname, service, summarytitle1y, repinfo1y, isfirst, islast[3]);
-			isfirst = 0;
-		}
-	}
-	fprintf(htmlrep, "</CENTER>\n");
-
-	fprintf(htmlrep, "<BR><BR>\n");
-
 
 	/* Last N histlog entries */
 	fprintf(htmlrep, "<CENTER>\n");
@@ -524,6 +502,7 @@ static void parse_query(void)
 		else if (argnmatch(token, "ENTRIES")) {
 			if (strcmp(val, "all") == 0) entrycount = 0;
 			else entrycount = atoi(val);
+			if (entrycount < 0) errormsg("Invalid parameter");
 		}
 		else if (argnmatch(token, "PIXELS")) {
 			pixels = atoi(val);
@@ -531,6 +510,7 @@ static void parse_query(void)
 		}
 		else if (argnmatch(token, "OFFSET")) {
 			startoffset = atoi(val);
+			if (startoffset < 0) errormsg("Invalid parameter");
 		}
 		else if (argnmatch(token, "BARSUMS")) {
 			barsums = atoi(val);
@@ -584,15 +564,10 @@ int main(int argc, char *argv[])
 		 * too large (worst with the 28-day char: 100/28 = 3, last becomes (100-27*3) = 19% wide).
 		 * So adjust the periods to something that matches percent-based calculations better.
 		 */
-		len1d = 25; bartitle1d = "25 hours"; summarytitle1d = "25 hour summary";
-		len1w = 10; bartitle1w = "10 days"; summarytitle1w = "10 day summary";
-		len4w = 33; bartitle4w = "33 days"; summarytitle4w = "33 day summary";
-		len1y = 10; bartitle1y = "10 months"; summarytitle1y = "10 month summary";
-		strcat(selfurl, "&amp;PIXELS=0");
-	}
-	else {
-		p = selfurl + strlen(selfurl);
-		sprintf(p, "&amp;PIXELS=%d", pixels);
+		len1d = 25; bartitle1d = "25 hour summary";
+		len1w = 10; bartitle1w = "10 day summary";
+		len4w = 33; bartitle4w = "33 day summary";
+		len1y = 10; bartitle1y = "10 month summary";
 	}
 
 	sprintf(histlogfn, "%s/%s.%s", getenv("BBHIST"), commafy(hostname), service);
