@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.9 2003-04-22 15:07:01 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.10 2003-04-24 08:00:56 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -363,6 +363,12 @@ void show_conn_res(void)
 }
 
 #ifdef STANDALONE
+
+/* These are dummy vars needed by stuff in util.c */
+hostlist_t      *hosthead = NULL;
+link_t          *linkhead = NULL;
+link_t  null_link = { "", "", "", NULL };
+
 int main(int argc, char *argv[])
 {
 
