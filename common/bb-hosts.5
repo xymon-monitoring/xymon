@@ -702,19 +702,10 @@ default via the --trace option.
 These tags affect the way a http check is performed.
 
 .IP "TIMEOUT:N1:N2"
-Defines the timeout settings for a web (http)check. N1 is the 
-maximum time to establish a connection; N2 is the maximum
-time to wait for a response from a webserver. 
-N1 is the connection timeout, i.e. the time it takes to
-just connect to the webserver. N2 is the timeout for
-the entire exchange with the webserver, i.e. the 
-time it takes to connect to the server, send the request,
-and get the server response returned.
-
-Note: This option is ignored for simple network tests
-done by bbtest-net. bbtest-net only allows for a common
-timeout setting for all tests, see the "--timeout" option in
+This option is deprecated. Use the 
 .I bbtest-net(1)
+option "--timeout=N" to set the timeout for TCP- and 
+HTTP-tests.
 
 .IP "Extended URL syntax for SSL (https) tests"
 Some SSL sites will only allow you to connect, if you use
