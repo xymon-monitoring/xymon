@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.7 2005-01-20 22:02:23 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.8 2005-02-07 09:41:08 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -25,14 +25,15 @@ const static struct {
 	char *val;
 } hobbitenv[] = {
 	{ "HOBBITDREL", VERSION },
-	{ "BBSERVERROOT", "/usr/local/hobbit" },
-	{ "BBSERVERLOGS", "/var/log/hobbit" },
-	{ "BBSERVERHOSTNAME", "localhost" },
-	{ "BBSERVERIP", "127.0.0.1" },
-	{ "BBSERVEROS", "unknown" },
-	{ "BBSERVERWWWNAME", "localhost" },
+	{ "BBSERVERROOT", BBTOPDIR },
+	{ "BBSERVERLOGS", BBLOGDIR },
+	{ "BBSERVERHOSTNAME", BBHOSTNAME },
+	{ "BBSERVERIP", BBHOSTIP },
+	{ "BBSERVEROS", BBHOSTOS },
+	{ "BBSERVERWWWNAME", BBHOSTNAME },
 	{ "BBSERVERWWWURL", "/hobbit" },
 	{ "BBSERVERCGIURL", "/hobbit-cgi" },
+	{ "BBSERVERSECCGIURL", "/hobbit-cgisecure" },
 	{ "BBLOCATION", "" },
 	{ "PATH", "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:$BBSERVERROOT/server/bin" },
 	{ "BBPORT", "1984" },

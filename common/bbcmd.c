@@ -11,13 +11,14 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcmd.c,v 1.5 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: bbcmd.c,v 1.6 2005-02-07 09:41:08 henrik Exp $";
 
 #include <sys/types.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <limits.h>
 
 #include "libbbgen.h"
 
@@ -27,6 +28,7 @@ int main(int argc, char *argv[])
 	char *cmd = NULL;
 	char **cmdargs = NULL;
 	int argcount = 0;
+	int haveenv = 0;
 
 	cmdargs = (char **) calloc(argc+2, sizeof(char *));
 	for (argi=1; (argi < argc); argi++) {
@@ -36,6 +38,7 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
 			loadenv(p+1);
+			haveenv=1;
 		}
 		else {
 			if (argcount == 0) {
@@ -44,6 +47,14 @@ int main(int argc, char *argv[])
 			}
 			else cmdargs[argcount++] = strdup(expand_env(argv[argi]));
 		}
+	}
+
+	if (!haveenv) {
+		char defenvfn[PATH_MAX];
+
+		sprintf(defenvfn, "%s/etc/hobbitserver.cfg", xgetenv("BBHOME"));
+		errprintf("Using default environment file %s\n", defenvfn);
+		loadenv(defenvfn);
 	}
 
 	/* Go! */
