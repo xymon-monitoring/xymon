@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.21 2003-06-09 14:41:57 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.22 2003-07-06 16:31:49 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -92,8 +92,20 @@ int generate_info(char *infocolumn)
 			p = alertspec + strlen(alertspec) - 1; /* Point to trailing comma */
 			if (*p == ',') *p = '\0'; else p = NULL;
 
-			sprintf(l, "<b>NK Alerts</b> : %s<br>\n", alertspec); strcat(infobuf, l);
+			sprintf(l, "<b>NK Alerts</b> : %s", alertspec); strcat(infobuf, l);
 			if (p) *p = ',';
+
+			slaspec = strstr(hostwalk->hostentry->rawentry, "NKTIME=");
+			if (slaspec) {
+				slaspec +=7;
+				p = strchr(slaspec, ' ');
+				if (p) *p = '\0';
+				sprintf(l, " (%s)", slaspec); strcat(infobuf, l);
+				if (p) *p = ' ';
+			}
+			else strcat(infobuf, " (24x7)";
+
+			strcat(infobuf, "<br>\n");
 		}
 		else {
 			strcat(infobuf, "<b>NK alerts</b> : None<br>\n");
@@ -104,6 +116,14 @@ int generate_info(char *infocolumn)
 			p = strchr(slaspec, ' ');
 			if (p) *p = '\0';
 			sprintf(l, "<b>Alert times</b> : %s<br>\n", slaspec); strcat(infobuf, l);
+			if (p) *p = ' ';
+		}
+		slaspec = strstr(hostwalk->hostentry->rawentry, "DOWNTIME=");
+		if (slaspec) {
+			slaspec +=9;
+			p = strchr(slaspec, ' ');
+			if (p) *p = '\0';
+			sprintf(l, "<b>Downtimes</b> : %s<br>\n", slaspec); strcat(infobuf, l);
 			if (p) *p = ' ';
 		}
 		if (hostwalk->hostentry->nopropyellowtests) {
