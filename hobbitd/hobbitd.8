@@ -1,0 +1,79 @@
+.TH BBGEND 8 "Version 3.2:  4 okt 2004" "bbgen toolkit"
+.SH NAME
+bbgend \- Master network daemon for a Big Brother server
+.SH SYNOPSIS
+.B "bbgend [options]"
+
+.SH DESCRIPTION
+bbgend is a replacement for the bbd daemon from the Big
+Brother package. It is designed for large BB installations,
+and has a strong focus on being a high-speed, low-overhead 
+implementation of a Big Brother server.
+
+To achieve this, bbgend stores all information about the state
+of the Big Brother system in memory, instead of storing it in
+the host filesystem. A number of plug-ins can be enabled to
+enhance the basic operation; e.g. a set of plugins are provided
+to implement persistent storage in a way that is compatible 
+with the standard Big Brother daemon. However, even with these
+plugins enabled, bbgend still performs much faster than the
+standard bbd daemon.
+
+.SH OPTIONS
+.IP "--bbhosts=FILENAME"
+Specifies the path to the Big Brother bb-hosts file. This is used
+to check if incoming status messages refer to known hosts; depending
+on the "--ghosts" option, messages for unknown hosts may be dropped.
+If this option is omitted, the default path used is set by the BBHOSTS
+environment variable.
+
+.IP "--checkpoint-file=FILENAME"
+With regular intervals, bbgend will dump all of its internal state 
+to this check-point file.
+
+.IP "--checkpoint-interval=N"
+Specifies the interval (in seconds) between dumps to the check-point
+file. The default is 900 seconds (15 minutes).
+
+.IP "--restart=FILENAME"
+Specifies an existing file containing a previously generated bbgend 
+checkpoint. When starting up, bbgend will restore its internal state
+from the information in this file. You can use the same filename for
+"--checkpoint-file" and "--restart".
+
+.IP "--alertcolors=COLOR[,COLOR]"
+Specifies which colors should trigger an alert. Alerts are triggered
+when a status changes from a non-alert color to an alert-color, or
+vice verse. The 
+.I bbd_alert(8)
+module can then further filter alert events based on a separate alert
+configuration, but you should still list the possible alert colors here.
+The default setting is "--alertcolors=red,yellow,purple".
+
+.IP "--ghosts={allow|drop|log}"
+How to handle status messages from unknown hosts. The "allow" setting
+accepts all status messages, regardless of whether the host is known
+in the bb-hosts file or not. "drop" silently ignores reports from unknown 
+hosts. "log" works like drop, but logs the event in the bbgend output file.
+The default is "allow", unless the BBGHOSTS environment variable is set.
+
+.IP "--no-purple"
+Prevent status messages from going purple when they are no longer valid.
+Unlike the standard bbd daemon, purple-handling is done by bbgend.
+
+.IP "--listen=IP[:PORT]"
+Specifies the IP-address and port where bbgend will listen for incoming
+connections. By default, bbgend listens on IP 0.0.0.0 (i.e. all IP-
+adresses available on the host) and port 1984.
+
+.IP "--no-daemon"
+bbgend normally detaches from the terminal and runs as a background
+proces. This option keeps it running as a foreground proces.
+
+.IP "--pid-file=FILENAME"
+If bbgend runs as a background process, the proces-ID of bbgend will
+be written to this file. This is for use in automated startup scripts.
+
+.SH "SEE ALSO"
+bbgen-intro(7), bb-environ(5).
+
