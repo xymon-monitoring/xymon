@@ -167,6 +167,7 @@ typedef struct {
 
 typedef struct {
 	char	title[200];
+	char	*onlycols;
 	host_t	*hosts;
 	void	*next;
 } group_t;

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.6 2002-11-26 12:03:04 hstoerne Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.7 2002-11-26 14:51:44 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -34,8 +34,18 @@ static char rcsid[] = "$Id: pagegen.c,v 1.6 2002-11-26 12:03:04 hstoerne Exp $";
 #include "loaddata.h"
 #include "pagegen.h"
 
-int interesting_column(int pagetype, int color, int alert, char *columnname)
+int interesting_column(int pagetype, int color, int alert, char *columnname, char *onlycols)
 {
+	if (onlycols) {
+		char search[200];
+
+		/* loaddata::init_group guarantees that onlycols start and end with a '|' */
+		sprintf(search, "|%s|", columnname);
+		if (strstr(onlycols, search) == NULL) {
+			return 0;
+		}
+	}
+
 	switch (pagetype) {
 	  case PAGE_BB:
 		return 1;
@@ -62,7 +72,7 @@ int interesting_column(int pagetype, int color, int alert, char *columnname)
 	return 0;
 }
 
-col_list_t *gen_column_list(host_t *hostlist, int pagetype)
+col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 {
 	/*
 	 * Build a list of the columns that are in use by
@@ -89,7 +99,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype)
 
 	for (h = hostlist; (h); h = h->next) {
 		for (e = h->entries; (e); e = e->next) {
-			if (interesting_column(pagetype, e->color, e->alert, e->column->name)) {
+			if (interesting_column(pagetype, e->color, e->alert, e->column->name, onlycols)) {
 				/* See where e->column should go in list */
 				collist_walk = head; 
 				while ( (collist_walk->next && 
@@ -113,7 +123,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype)
 	return (head);
 }
 
-void do_hosts(host_t *head, FILE *output, char *grouptitle, int pagetype)
+void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int pagetype)
 {
 	host_t	*h;
 	entry_t	*e;
@@ -128,7 +138,7 @@ void do_hosts(host_t *head, FILE *output, char *grouptitle, int pagetype)
 
 	fprintf(output, "<A NAME=hosts-blk>&nbsp;</A>\n\n");
 
-	groupcols = gen_column_list(head, pagetype);
+	groupcols = gen_column_list(head, pagetype, onlycols);
 	if (groupcols) {
 		fprintf(output, "<TABLE SUMMARY=\"Group Block\" BORDER=0> \n <TR><TD VALIGN=MIDDLE ROWSPAN=2 CELLPADDING=2><CENTER><FONT %s>%s</FONT></CENTER></TD>\n", getenv("MKBBTITLE"), grouptitle);
 
@@ -205,7 +215,7 @@ void do_groups(group_t *head, FILE *output)
 	fprintf(output, "<CENTER> \n\n<A NAME=begindata>&nbsp;</A>\n");
 
 	for (g = head; (g); g = g->next) {
-		do_hosts(g->hosts, output, g->title, PAGE_BB);
+		do_hosts(g->hosts, g->onlycols, output, g->title, PAGE_BB);
 	}
 	fprintf(output, "\n</CENTER>\n");
 }
@@ -290,7 +300,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 	fprintf(output, "<HR WIDTH=100%%></TD></TR>\n");
 	fprintf(output, "<TR><TD>\n");
 
-	do_hosts(sumhosts, output, "", 0);
+	do_hosts(sumhosts, NULL, output, "", 0);
 
 	fprintf(output, "</TD></TR></TABLE>\n");
 	fprintf(output, "</CENTER>\n");
@@ -346,7 +356,7 @@ void do_bb_page(page_t *page, dispsummary_t *sums, char *filename)
 		fprintf(output, "</CENTER>\n");
 	}
 
-	do_hosts(page->hosts, output, "", PAGE_BB);
+	do_hosts(page->hosts, NULL, output, "", PAGE_BB);
 	do_groups(page->groups, output);
 	do_summaries(dispsums, output);
 
@@ -406,7 +416,7 @@ void do_page(page_t *page, char *filename, char *upperpagename)
 		fprintf(output, "</CENTER>\n");
 	}
 
-	do_hosts(page->hosts, output, "", PAGE_BB);
+	do_hosts(page->hosts, NULL, output, "", PAGE_BB);
 	do_groups(page->groups, output);
 
 	headfoot(output, "bb", page->name, "", "footer", page->color);
@@ -426,7 +436,7 @@ void do_subpage(page_t *page, char *filename, char *upperpagename)
 
 	headfoot(output, "bb", upperpagename, page->name, "header", page->color);
 
-	do_hosts(page->hosts, output, "", PAGE_BB);
+	do_hosts(page->hosts, NULL, output, "", PAGE_BB);
 	do_groups(page->groups, output);
 
 	headfoot(output, "bb", upperpagename, page->name, "footer", page->color);
@@ -639,7 +649,7 @@ void do_bb2_page(char *filename, int summarytype)
 	fprintf(output, "\n<A NAME=begindata>&nbsp;</A> \n<A NAME=\"hosts-blk\">&nbsp;</A>\n");
 
 	if (bb2page.hosts) {
-		do_hosts(bb2page.hosts, output, "", (1+summarytype));
+		do_hosts(bb2page.hosts, NULL, output, "", (1+summarytype));
 	}
 	else {
 		/* "All Monitored Systems OK */

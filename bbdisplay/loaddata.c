@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.10 2002-11-26 13:52:02 hstoerne Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.11 2002-11-26 14:51:44 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -47,11 +47,16 @@ page_t *init_page(const char *name, const char *title)
 	return newpage;
 }
 
-group_t *init_group(const char *title)
+group_t *init_group(const char *title, const char *onlycols)
 {
 	group_t *newgroup = malloc(sizeof(group_t));
 
 	strcpy(newgroup->title, title);
+	if (onlycols && (strlen(onlycols))) {
+		newgroup->onlycols = malloc(strlen(onlycols)+3); /* Add a '|' at start and end */
+		sprintf(newgroup->onlycols, "|%s|", onlycols);
+	}
+	else newgroup->onlycols = NULL;
 	newgroup->hosts = NULL;
 	newgroup->next = NULL;
 	return newgroup;
@@ -397,18 +402,25 @@ void getnamelink(char *l, char **name, char **link)
 }
 
 
-void getgrouptitle(char *l, char **title)
+void getgrouptitle(char *l, char **title, char **onlycols)
 {
 	unsigned char *p;
 
 	*title = "";
+	*onlycols = NULL;
 
 	if (strncmp(l, "group-only", 10) == 0) {
 		/* Find first space and skip spaces */
 		for (p=strchr(l, ' '); (p && (isspace (*p))); p++) ;
+		*onlycols = p;
+
 		/* Find next space and skip spaces */
-		for (p=strchr(p, ' '); (p && (isspace (*p))); p++) ;
-		*title = p;
+		p = strchr(*onlycols, ' ');
+		if (p) {
+			*p = '\0';
+			for (p++; isspace (*p); p++) ;
+			*title = p;
+		}
 	}
 	else if (strncmp(l, "group", 5) == 0) {
 		/* Find first space and skip spaces */
@@ -480,7 +492,7 @@ page_t *load_bbhosts(void)
 {
 	FILE 	*bbhosts;
 	char 	l[200];
-	char 	*name, *link;
+	char 	*name, *link, *onlycols;
 	char 	hostname[65];
 	page_t 	*toppage, *curpage, *cursubpage;
 	group_t *curgroup;
@@ -521,9 +533,10 @@ page_t *load_bbhosts(void)
 			curhost = NULL;
 		}
 		else if (strncmp(l, "group", 5) == 0) {
-			getgrouptitle(l, &link);
+
+			getgrouptitle(l, &link, &onlycols);
 			if (curgroup == NULL) {
-				curgroup = init_group(link);
+				curgroup = init_group(link, onlycols);
 				if (cursubpage == NULL) {
 					/* We're on a main page */
 					curpage->groups = curgroup;
@@ -534,7 +547,7 @@ page_t *load_bbhosts(void)
 				}
 			}
 			else {
-				curgroup->next = init_group(link);
+				curgroup->next = init_group(link, onlycols);
 				curgroup = curgroup->next;
 			}
 			curhost = NULL;
