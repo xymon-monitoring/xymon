@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.17 2005-01-20 22:02:23 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.18 2005-02-13 13:17:06 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -64,7 +64,8 @@ static char *default_graphs =
 	"bbgen,bbtest,bbproxy,hobbitd,"
 	;
 
-static const char *linkfmt = "<br><A HREF=\"%s\"><IMG BORDER=0 SRC=\"%s&amp;graph=hourly\" ALT=\"larrd is accumulating %s\"></A>\n";
+static const char *bblinkfmt = "<br><A HREF=\"%s\"><IMG BORDER=0 SRC=\"%s&amp;graph=hourly\" ALT=\"larrd is accumulating %s\"></A>\n";
+static const char *hobbitlinkfmt = "<br><A HREF=\"%s&amp;action=menu\"><IMG BORDER=0 SRC=\"%s&amp;graph=hourly&amp;action=view\" ALT=\"hobbit graph %s\"></A>\n";
 static const char *metafmt = "<RRDGraph>\n  <GraphLink><![CDATA[%s]]></GraphLink>\n  <GraphImage><![CDATA[%s&graph=hourly]]></GraphImage>\n</RRDGraph>\n";
 
 /*
@@ -314,7 +315,9 @@ char *larrd_graph_data(char *hostname, char *dispname, char *service,
 {
 	if (wantmeta)
 		return larrd_graph_text(hostname, dispname, service, graphdef, itemcount, 1, 0, metafmt);
+	else if (hobbitd)
+		return larrd_graph_text(hostname, dispname, service, graphdef, itemcount, larrd043, hobbitd, hobbitlinkfmt);
 	else
-		return larrd_graph_text(hostname, dispname, service, graphdef, itemcount, larrd043, hobbitd, linkfmt);
+		return larrd_graph_text(hostname, dispname, service, graphdef, itemcount, larrd043, hobbitd, bblinkfmt);
 }
 
