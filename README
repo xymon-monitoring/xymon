@@ -1,5 +1,5 @@
-README file for bbgen and friends version 2.1
-=============================================
+README file for bbgen, bbtest-net and bbhostgrep version 2.4
+============================================================
 
 bbgen is a drop-in replacement for the bb-display.sh script that 
 ships with the Big Brother monitoring tool.  It can also replace 
@@ -9,9 +9,16 @@ the INSTALL.bbgen for details
 bbtest-net is a utility that can replace the bb-network.sh network 
 test utility in Big Brother. See INSTALL.bbtest for details.
 
-bbgen and bbtest-net are Copyright (C) 2002-2003, Henrik Storner <henrik@storner.dk> 
-All files are released under the GNU General Public License, 
-version 2. See the file COPYING for details.
+bbhostgrep is a utility for use by BB extension scripts. It
+allows an extension script to easily pick out the hosts that
+are relevant to the script, so it need not parse a huge
+bb-hosts file with lots of unwanted test-specifications.
+See README.bbhostgrep for details.
+
+bbgen, bbtest-net and bbhostgrep are Copyright (C) 2002-2003, 
+Henrik Storner <henrik@storner.dk> All files are released under 
+the GNU General Public License, version 2. See the file COPYING 
+for details.
 
 A site running this software can be seen at http://www.hswn.dk/bb/
 
