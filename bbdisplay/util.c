@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.95 2003-09-27 06:00:27 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.96 2003-09-27 06:16:22 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -65,9 +65,11 @@ static char stackfd_mode[10];
 char *errbuf = NULL;
 static int errbufsize = 0;
 
+/* Data used while crashing - cannot depend on the stack being usable */
 static char signal_bbcmd[MAX_PATH];
 static char signal_bbdisp[1024];
 static char signal_msg[1024];
+static char signal_bbtmp[MAX_PATH];
 
 void errprintf(const char *fmt, ...)
 {
@@ -1257,6 +1259,7 @@ void sigsegv_handler(int signum)
 	}
 
 	/* Dump core and abort */
+	chdir(signal_bbtmp);
 	abort();
 }
 
@@ -1275,6 +1278,7 @@ void setup_signalhandler(char *programname)
 
 	strcpy(signal_bbcmd, getenv("BB"));
 	strcpy(signal_bbdisp, getenv("BBDISP"));
+	strcpy(signal_bbtmp, getenv("BBTMP"));
 	sprintf(signal_msg, "status %s.%s red - Program crashed\n\nFatal signal caught!\n", 
 		(getenv("MACHINE") ? getenv("MACHINE") : "BBDISPLAY"), programname);
 
