@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char la_rcsid[] = "$Id: do_la.c,v 1.4 2004-11-12 21:39:20 henrik Exp $";
+static char la_rcsid[] = "$Id: do_la.c,v 1.5 2004-11-13 13:23:47 henrik Exp $";
 
 static char *la_params[]          = { "rrdcreate", rrdfn, "DS:la:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
@@ -58,19 +58,19 @@ int do_la_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	if (eoln) *eoln = '\n';
 
 	if (gotload) {
-		sprintf(rrdfn, "%s.la.rrd", hostname);
+		sprintf(rrdfn, "la.rrd");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, load);
 		create_and_update_rrd(hostname, rrdfn, la_params, update_params);
 	}
 
 	if (gotprocs) {
-		sprintf(rrdfn, "%s.procs.rrd", hostname);
+		sprintf(rrdfn, "procs.rrd");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, procs);
 		create_and_update_rrd(hostname, rrdfn, la_params, update_params);
 	}
 
 	if (gotusers) {
-		sprintf(rrdfn, "%s.users.rrd", hostname);
+		sprintf(rrdfn, "users.rrd");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, users);
 		create_and_update_rrd(hostname, rrdfn, la_params, update_params);
 	}

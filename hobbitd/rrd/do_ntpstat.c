@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ntpstat_rcsid[] = "$Id: do_ntpstat.c,v 1.3 2004-11-08 17:11:41 henrik Exp $";
+static char ntpstat_rcsid[] = "$Id: do_ntpstat.c,v 1.4 2004-11-13 13:23:47 henrik Exp $";
 
 static char *ntpstat_params[]     = { "rrdcreate", rrdfn, "DS:offsetms:GAUGE:600:U:U", rra1, rra2, rra3, rra4, NULL };
 
@@ -19,7 +19,7 @@ int do_ntpstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 	p = strstr(msg, "\nOffset:");
 	if (p && (sscanf(p+1, "Offset: %f", &offset) == 1)) {
-		sprintf(rrdfn, "%s.%s.rrd", commafy(hostname), testname);
+		sprintf(rrdfn, "%s.rrd", testname);
 		sprintf(rrdvalues, "%d:%.6f", (int)tstamp, offset);
 		return create_and_update_rrd(hostname, rrdfn, ntpstat_params, update_params);
 	}

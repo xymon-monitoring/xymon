@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.4 2004-11-10 06:42:57 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.5 2004-11-13 13:23:47 henrik Exp $";
 
 static char *disk_params[] = { "rrdcreate", rrdfn, "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", 
 				rra1, rra2, rra3, rra4, NULL };
@@ -82,7 +82,7 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				strcpy(diskname, ",root");
 			}
 
-			sprintf(rrdfn, "%s.disk%s.rrd", hostname, diskname);
+			sprintf(rrdfn, "disk%s.rrd", diskname);
 			sprintf(rrdvalues, "%d:%d:%lu", (int)tstamp, pused, aused);
 			create_and_update_rrd(hostname, rrdfn, disk_params, update_params);
 			free(diskname); diskname = NULL;

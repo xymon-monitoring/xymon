@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char mailq_rcsid[] = "$Id: do_mailq.c,v 1.3 2004-11-08 17:11:41 henrik Exp $";
+static char mailq_rcsid[] = "$Id: do_mailq.c,v 1.4 2004-11-13 13:23:47 henrik Exp $";
 
 static char *mailq_params[]       = { "rrdcreate", rrdfn, "DS:mailq:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
@@ -23,7 +23,7 @@ int do_mailq_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		while ((p > msg) && (isspace((int) *(p-1)) || isdigit((int) *(p-1)))) p--;
 		mailq = atoi(p);
 
-		sprintf(rrdfn, "%s.%s.rrd", commafy(hostname), testname);
+		sprintf(rrdfn, "%s.rrd", testname);
 		sprintf(rrdvalues, "%d:%df", (int)tstamp, mailq);
 		return create_and_update_rrd(hostname, rrdfn, bbgen_params, update_params);
 	}
