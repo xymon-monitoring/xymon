@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.6 2004-11-17 16:24:28 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.7 2004-11-18 14:11:25 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -320,6 +320,7 @@ int main(int argc, char *argv[])
 	char *logfn = NULL;
 	pid_t cpid;
 	int status;
+	struct sigaction sa;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
@@ -382,9 +383,11 @@ int main(int argc, char *argv[])
 
 	save_errbuf = 0;
 	setup_signalhandler("bblaunch");
-	signal(SIGCHLD, sig_handler);
-	signal(SIGHUP, sig_handler);
-	signal(SIGTERM, sig_handler);
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = sig_handler;
+	sigaction(SIGCHLD, &sa, NULL);
+	sigaction(SIGHUP, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
 
 	while (running) {
 		time_t now = time(NULL);

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.35 2004-11-09 14:58:30 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.36 2004-11-18 14:16:48 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -227,6 +227,7 @@ int main(int argc, char *argv[])
 	int bbpagercount = 0;
 	int opt;
 	conn_t *chead = NULL;
+	struct sigaction sa;
 
 	/* Statistics info */
 	time_t startuptime = time(NULL);
@@ -473,10 +474,12 @@ int main(int argc, char *argv[])
 	}
 
 	setup_signalhandler(proxynamesvc);
-	signal(SIGHUP, sigmisc_handler);
-	signal(SIGTERM, sigmisc_handler);
-	signal(SIGUSR1, sigmisc_handler);
-	signal(SIGUSR2, sigmisc_handler);
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = sigmisc_handler;
+	sigaction(SIGHUP, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGUSR1, &sa, NULL);
+	sigaction(SIGUSR2, &sa, NULL);
 
 	do {
 		fd_set fdread, fdwrite;

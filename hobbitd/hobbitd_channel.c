@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.21 2004-11-17 16:25:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.22 2004-11-18 14:12:13 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -93,6 +93,7 @@ int main(int argc, char *argv[])
 	char *childcmd = "";
 	char **childargs = NULL;
 	int canwrite;
+	struct sigaction sa;
 
 	/* Dont save the error buffer */
 	save_errbuf = 0;
@@ -158,11 +159,13 @@ int main(int argc, char *argv[])
 
 	/* Catch signals */
 	setup_signalhandler("bbgend_channel");
-	signal(SIGPIPE, sig_handler);
-	signal(SIGINT, sig_handler);
-	signal(SIGTERM, sig_handler);
-	signal(SIGCHLD, sig_handler);
-	signal(SIGHUP, sig_handler);
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = sig_handler;
+	sigaction(SIGPIPE, &sa, NULL);
+	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGCHLD, &sa, NULL);
+	sigaction(SIGHUP, &sa, NULL);
 
 	/* Start the channel handler */
 	n = pipe(pfd);

@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.23 2004-11-18 11:53:35 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.24 2004-11-18 14:13:23 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -203,6 +203,7 @@ int main(int argc, char *argv[])
 	FILE *acklogfd = NULL;
 	char notiflogfn[PATH_MAX];
 	FILE *notiflogfd = NULL;
+	struct sigaction sa;
 
 	/* Dont save the error buffer */
 	save_errbuf = 0;
@@ -257,10 +258,12 @@ int main(int argc, char *argv[])
 
 	setup_signalhandler("bbgend_alert");
 	/* Need to handle these ourselves, so we can shutdown and save state-info */
-	signal(SIGCHLD, sig_handler);
-	signal(SIGPIPE, sig_handler);
-	signal(SIGTERM, sig_handler);
-	signal(SIGINT, sig_handler);
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = sig_handler;
+	sigaction(SIGCHLD, &sa, NULL);
+	sigaction(SIGPIPE, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGINT, &sa, NULL);
 
 	if (getenv("BBACKS")) {
 		sprintf(acklogfn, "%s/acklog", getenv("BBACKS"));

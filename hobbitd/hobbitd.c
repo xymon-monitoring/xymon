@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.59 2004-11-18 11:51:57 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.60 2004-11-18 14:11:50 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1544,6 +1544,7 @@ int main(int argc, char *argv[])
 	struct timezone tz;
 	int daemonize = 0;
 	char *pidfile = NULL;
+	struct sigaction sa;
 
 	colnames[COL_GREEN] = "green";
 	colnames[COL_YELLOW] = "yellow";
@@ -1713,10 +1714,12 @@ int main(int argc, char *argv[])
 	}
 
 	setup_signalhandler("bbgend");
-	signal(SIGINT, sig_handler);
-	signal(SIGTERM, sig_handler);
-	signal(SIGUSR1, sig_handler);
-	signal(SIGCHLD, sig_handler);
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = sig_handler;
+	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGUSR1, &sa, NULL);
+	sigaction(SIGCHLD, &sa, NULL);
 
 	statuschn = setup_channel(C_STATUS, CHAN_MASTER);
 	if (statuschn == NULL) { errprintf("Cannot setup status channel\n"); return 1; }
