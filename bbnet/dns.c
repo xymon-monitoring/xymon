@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.1 2004-08-18 21:53:54 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.2 2004-08-19 10:56:59 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -25,16 +25,9 @@ static char rcsid[] = "$Id: dns.c,v 1.1 2004-08-18 21:53:54 henrik Exp $";
 #include "bbtest-net.h"
 #include "dns.h"
 
-#ifdef ARES
 #include <ares.h>
-static ares_channel channel;
-#else
-#define ARES_FAILURE 0
-#define ARES_SUCCESS 1
-#endif
-
-static int channelactive = 0;
-
+static ares_channel stdchannel;
+static int stdchannelactive = 0;
 
 int dns_stats_total   = 0;
 int dns_stats_success = 0;
@@ -45,6 +38,8 @@ typedef struct dnsitem_t {
 	char *name;
 	struct in_addr addr;
 	struct dnsitem_t *next;
+	int failed;
+	struct timeval resolvetime;
 } dnsitem_t;
 
 static dnsitem_t *dnscache = NULL;
@@ -72,21 +67,33 @@ static char *find_dnscache(char *hostname)
 static void dns_callback(void *arg, int status, struct hostent *hent)
 {
 	dnsitem_t *dnsc = (dnsitem_t *) arg;
+	struct timeval etime;
+	struct timezone tz;
+
+	gettimeofday(&etime, &tz);
+	if (etime.tv_usec < dnsc->resolvetime.tv_usec) {
+		etime.tv_sec--;
+		etime.tv_usec += 1000000;
+	}
+	dnsc->resolvetime.tv_sec  = (etime.tv_sec - dnsc->resolvetime.tv_sec);
+	dnsc->resolvetime.tv_usec = (etime.tv_usec - dnsc->resolvetime.tv_usec);
 
 	if (status == ARES_SUCCESS) {
 		memcpy(&dnsc->addr, *(hent->h_addr_list), sizeof(dnsc->addr));
 		dprintf("Got DNS result for host %s : %s\n", dnsc->name, inet_ntoa(dnsc->addr));
-		dns_stats_success++;
+		if (stdchannelactive) dns_stats_success++;
 	}
 	else {
 		memset(&dnsc->addr, 0, sizeof(dnsc->addr));
 		dprintf("DNS lookup failed for %s - status %d\n", dnsc->name, status);
-		dns_stats_failed++;
+		dnsc->failed = 1;
+		if (stdchannelactive) dns_stats_failed++;
 	}
 }
 
 void add_host_to_dns_queue(char *hostname)
 {
+	struct timezone tz;
 
 	if (find_dnscache(hostname) == NULL) {
 		/* New hostname */
@@ -94,26 +101,19 @@ void add_host_to_dns_queue(char *hostname)
 
 		dprintf("Adding hostname '%s' to resolver queue\n", hostname);
 
-		if (!channelactive) {
-#ifdef ARES
+		if (!stdchannelactive) {
 			int status;
-			status = ares_init(&channel);
-			channelactive = 1;
-#endif
+			status = ares_init(&stdchannel);
+			stdchannelactive = 1;
 		}
 
 		dnsc->name = malcop(hostname);
+		dnsc->failed = 0;
 		dnsc->next = dnscache;
+		gettimeofday(&dnsc->resolvetime, &tz);
 		dnscache = dnsc;
 
-#ifdef ARES
-		ares_gethostbyname(channel, hostname, AF_INET, dns_callback, dnsc);
-#else
-		{
-			struct hostent *hent = gethostbyname(hostname);
-			dns_callback(dnsc, (hent ? ARES_SUCCESS : ARES_FAILURE), hent);
-		}
-#endif
+		ares_gethostbyname(stdchannel, hostname, AF_INET, dns_callback, dnsc);
 		dns_stats_total++;
 	}
 }
@@ -174,9 +174,8 @@ void add_url_to_dns_queue(char *url)
 }
 
 
-static void dns_queue_run(void)
+static void dns_queue_run(ares_channel channel)
 {
-#ifdef ARES
 	int status, nfds;
 	fd_set read_fds, write_fds;
 	struct timeval *tvp, tv;
@@ -195,8 +194,6 @@ static void dns_queue_run(void)
 	}
 
 	ares_destroy(channel);
-	channelactive = 0;
-#endif
 }
 
 char *dnsresolve(char *hostname)
@@ -204,11 +201,66 @@ char *dnsresolve(char *hostname)
 	char *result;
 
 	dns_stats_lookups++;
-	if (channelactive) dns_queue_run();
+	if (stdchannelactive) {
+		dns_queue_run(stdchannel);
+		stdchannelactive = 0;
+	}
 
 	result = find_dnscache(hostname);
+	if (result == NULL) {
+		errprintf("dnsresolve - internal error, name '%s' not in cache\n", hostname);
+		return NULL;
+	}
 	if (strcmp(result, "0.0.0.0") == 0) return NULL;
 
 	return result;
+}
+
+int dns_test_server(char *serverip, char *hostname, char **banner, int *bannerbytes)
+{
+	ares_channel channel;
+	struct ares_options options;
+	struct in_addr serveraddr;
+	int status;
+	dnsitem_t dnsc;
+	struct timezone tz;
+
+	if (inet_aton(serverip, &serveraddr) == 0) {
+		errprintf("dns_test_server: serverip '%s' not a valid IP\n", serverip);
+		return 1;
+	}
+
+	options.flags = ARES_OPT_SERVERS;
+	options.servers = &serveraddr;
+	options.nservers = 1;
+
+	status = ares_init_options(&channel, &options, ARES_OPT_SERVERS);
+	if (status != ARES_SUCCESS) {
+		errprintf("Could not initialize ares channel %d\n", status);
+		return 1;
+	}
+
+	dnsc.name = hostname;
+	dnsc.failed = 0;
+	dnsc.next = NULL;
+	gettimeofday(&dnsc.resolvetime, &tz);
+	ares_gethostbyname(channel, hostname, AF_INET, dns_callback, &dnsc);
+	dns_queue_run(channel);
+
+	*banner = NULL;
+	*bannerbytes = 0;
+	if (!dnsc.failed) {
+		char msg[1024];
+
+		sprintf(msg, "Server %s responds\nHost %s has address %s\n",
+			serverip, hostname, inet_ntoa(dnsc.addr));
+		addtobuffer(banner, bannerbytes, msg);
+		sprintf(msg, "\nSeconds: %d.%03d\n",
+			dnsc.resolvetime.tv_sec, dnsc.resolvetime.tv_usec / 1000);
+		addtobuffer(banner, bannerbytes, msg);
+	}
+	else addtobuffer(banner, bannerbytes, "No response from DNS server\n");
+
+	return (dnsc.failed);
 }
 
