@@ -9,5 +9,5 @@ NETLIBS = -lresolv -lsocket -lnsl
 CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT -DHAVE_RPCENT
 
 # Compile flags for debugging
-# CFLAGS = -g -DDEBUG -Wall -D_REENTRANT
+# CFLAGS = -g -DDEBUG -Wall -D_REENTRANT -DHAVE_RPCENT
 
