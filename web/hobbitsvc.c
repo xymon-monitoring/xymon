@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.34 2005-04-03 15:50:54 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.35 2005-04-05 16:37:32 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -235,8 +235,13 @@ int main(int argc, char *argv[])
 		char logfn[PATH_MAX];
 		struct stat st;
 		int fd;
-		char *receivedfromtext = "\nMessage received from ";
-		char *statusunchangedtext = "\nStatus unchanged in ";
+		/*
+		 * Some clients (Unix disk reports) dont have a newline before the
+		 * "Status unchanged in ..." text. Most do, but at least Solaris and
+		 * AIX do not. So just look for the text, not the newline.
+		 */
+		char *statusunchangedtext = "Status unchanged in ";
+		char *receivedfromtext = "Message received from ";
 		char *p, *unchangedstr, *receivedfromstr, *hostnamedash;
 		int n;
 
