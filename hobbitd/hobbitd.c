@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.47 2004-10-31 11:56:21 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.48 2004-11-04 12:20:56 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -758,7 +758,47 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	char msgbuf[MAXMSG];
 	char *marker = NULL;
 
+	/*
+	 * We pass drop- and rename-messages to the workers, whether 
+	 * we know about this host or not. It could be that the drop command
+	 * arrived after we had already re-loaded the bb-hosts file, and 
+	 * so the host is no longer known by us - but there is still some
+	 * data stored about it that needs to be cleaned up.
+	 */
 	msgbuf[0] = '\0';
+	switch (cmd) {
+	  case CMD_DROPTEST:
+		marker = "droptest";
+		sprintf(msgbuf, "%s|%s", hostname, n1);
+		break;
+	  case CMD_DROPHOST:
+		marker = "drophost";
+		sprintf(msgbuf, "%s", hostname);
+		break;
+	  case CMD_RENAMEHOST:
+		marker = "renamehost";
+		sprintf(msgbuf, "%s|%s", hostname, n1);
+		break;
+	  case CMD_RENAMETEST:
+		marker = "renametest";
+		sprintf(msgbuf, "%s|%s|%s", hostname, n1, n2);
+		break;
+	}
+
+	if (strlen(msgbuf)) {
+		/* Tell the workers */
+		posttochannel(statuschn, marker, NULL, sender, NULL, NULL, msgbuf);
+		posttochannel(stachgchn, marker, NULL, sender, NULL, NULL, msgbuf);
+		posttochannel(pagechn, marker, NULL, sender, NULL, NULL, msgbuf);
+		posttochannel(datachn, marker, NULL, sender, NULL, NULL, msgbuf);
+		posttochannel(noteschn, marker, NULL, sender, NULL, NULL, msgbuf);
+		posttochannel(enadischn, marker, NULL, sender, NULL, NULL, msgbuf);
+	}
+
+
+	/*
+	 * Now clean up our internal state info, if there is any.
+	 */
 	hostname = knownhost(hostname, sender, ghosthandling, &maybedown);
 	if (hostname == NULL) return;
 
@@ -784,8 +824,6 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		if (lwalk->dismsg) free(lwalk->dismsg);
 		if (lwalk->ackmsg) free(lwalk->ackmsg);
 		free(lwalk);
-		marker = "droptest";
-		sprintf(msgbuf, "%s|%s", hostname, n1);
 		break;
 
 	  case CMD_DROPHOST:
@@ -814,8 +852,6 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 
 		/* Free the hostlist entry */
 		free(hwalk);
-		marker = "drophost";
-		sprintf(msgbuf, "%s", hostname);
 		break;
 
 	  case CMD_RENAMEHOST:
@@ -826,8 +862,6 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			free(hwalk->hostname);
 			hwalk->hostname = strdup(n1);
 		}
-		marker = "renamehost";
-		sprintf(msgbuf, "%s|%s", hostname, n1);
 		break;
 
 	  case CMD_RENAMETEST:
@@ -843,19 +877,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			tests = newt;
 		}
 		lwalk->test = newt;
-		marker = "renametest";
-		sprintf(msgbuf, "%s|%s|%s", hostname, n1, n2);
 		break;
-	}
-
-	if (strlen(msgbuf)) {
-		/* Tell the workers */
-		posttochannel(statuschn, marker, NULL, sender, NULL, NULL, msgbuf);
-		posttochannel(stachgchn, marker, NULL, sender, NULL, NULL, msgbuf);
-		posttochannel(pagechn, marker, NULL, sender, NULL, NULL, msgbuf);
-		posttochannel(datachn, marker, NULL, sender, NULL, NULL, msgbuf);
-		posttochannel(noteschn, marker, NULL, sender, NULL, NULL, msgbuf);
-		posttochannel(enadischn, marker, NULL, sender, NULL, NULL, msgbuf);
 	}
 }
 
@@ -1222,7 +1244,7 @@ void load_checkpoint(char *fn)
 	FILE *fd;
 	char l[4*MAXMSG];
 	char *item;
-	int i, err;
+	int i, err, maybedown;
 	bbd_hostlist_t *htail = NULL;
 	bbd_testlist_t *t = NULL;
 	bbd_log_t *ltail = NULL;
@@ -1274,6 +1296,10 @@ void load_checkpoint(char *fn)
 		}
 
 		if (err) continue;
+
+		/* Only load hosts we know; they may have been dropped while we were offline */
+		hostname = knownhost(hostname, "bbgendchk", ghosthandling, &maybedown);
+		if (hostname == NULL) continue;
 
 		if ((hosts == NULL) || (strcmp(hostname, htail->hostname) != 0)) {
 			/* New host */
@@ -1389,6 +1415,7 @@ int main(int argc, char *argv[])
 	char *listenip = "0.0.0.0";
 	int listenport = 1984;
 	char *bbhostsfn = NULL;
+	char *restartfn = NULL;
 	int checkpointinterval = 900;
 	int do_purples = 1;
 	time_t nextpurpleupdate;
@@ -1442,7 +1469,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--restart=")) {
 			char *p = strchr(argv[argi], '=') + 1;
-			load_checkpoint(p);
+			restartfn = strdup(p);
 		}
 		else if (argnmatch(argv[argi], "--alertcolors=")) {
 			char *colspec = strchr(argv[argi], '=') + 1;
@@ -1505,6 +1532,12 @@ int main(int argc, char *argv[])
 		errprintf("No bb-hosts file specified, required when using ghosthandling\n");
 		exit(1);
 	}
+
+	if (restartfn) {
+		load_hostnames(bbhostsfn, get_fqdn());
+		load_checkpoint(restartfn);
+	}
+
 	nextcheckpoint = time(NULL) + checkpointinterval;
 	nextpurpleupdate = time(NULL) + 600;	/* Wait 10 minutes the first time, then do it every 5. */
 
@@ -1583,7 +1616,7 @@ int main(int argc, char *argv[])
 
 		if (reloadconfig && bbhostsfn) {
 			reloadconfig = 0;
-			load_hostnames(bbhostsfn, 1);
+			load_hostnames(bbhostsfn, get_fqdn());
 		}
 
 		if (now > nextcheckpoint) {
