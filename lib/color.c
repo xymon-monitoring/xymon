@@ -11,11 +11,11 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: color.c,v 1.2 2004-10-31 07:25:39 henrik Exp $";
+static char rcsid[] = "$Id: color.c,v 1.3 2005-01-18 22:36:41 henrik Exp $";
 
 #include <string.h>
 
-#include "color.h"
+#include "libbbgen.h"
 
 int use_recentgifs = 0;
 

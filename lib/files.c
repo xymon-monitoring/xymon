@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: files.c,v 1.4 2004-11-18 13:25:04 henrik Exp $";
+static char rcsid[] = "$Id: files.c,v 1.5 2005-01-18 22:36:41 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -22,8 +22,7 @@ static char rcsid[] = "$Id: files.c,v 1.4 2004-11-18 13:25:04 henrik Exp $";
 #include <limits.h>
 #include <stdlib.h>
 
-#include "errormsg.h"
-#include "files.h"
+#include "libbbgen.h"
 
 void dropdirectory(char *dirfn, int background)
 {
