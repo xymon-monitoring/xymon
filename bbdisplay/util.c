@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.49 2003-05-23 15:32:54 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.50 2003-06-07 06:02:31 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -975,7 +975,7 @@ int run_columngen(char *column, int update_interval, int enabled)
 	/* If older than update_interval, do the update. */
 
 	char	fn[MAX_PATH];
-	struct stat st;
+	struct stat st, startup_st;
 	FILE    *fd;
 	time_t  now;
 	struct utimbuf filetime;
@@ -999,6 +999,14 @@ int run_columngen(char *column, int update_interval, int enabled)
 			return 1;
 		}
 	}
+
+	/* 
+	 * Check if logfile is older than $BBLOGS/.bbstartup;
+	 * if it is, then we have restarted BB and should
+	 * run the generator.
+	 */
+	sprintf(fn, "%s/.bbstartup", getenv("BBLOGS"));
+	if ((stat(fn, &startup_st) == 0) && (st.st_ctime < startup_st.st_ctime)) return 1;
 
 	return 0;
 }
