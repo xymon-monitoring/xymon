@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.17 2003-07-11 11:38:45 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.18 2003-07-18 15:24:45 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,20 +48,17 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 	fprintf(htmlrep, "\n");
 
 	fprintf(htmlrep, "<CENTER>\n");
-	fprintf(htmlrep, "<BR><FONT %s><H2>%s - %s</H2></FONT>\n", getenv("MKBBROWFONT"), hostname, service);
+	fprintf(htmlrep, "<BR><FONT %s><B>%s - %s</B></FONT>\n", getenv("MKBBROWFONT"), hostname, service);
 	fprintf(htmlrep, "<TABLE BORDER=0 BGCOLOR=\"#333333\" CELLPADDING=3>\n");
-	fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
-	fprintf(htmlrep, "</TR>\n");
-	fprintf(htmlrep, "<TR></TR>\n");
 	fprintf(htmlrep, "<TR>\n");
 
 	if (repinfo->withreport) {
-		fprintf(htmlrep, "<TD COLSPAN=3><CENTER><B>Availability (24x7): %.2f%%</CENTER></TD>\n", repinfo->fullavailability);
+		fprintf(htmlrep, "<TD COLSPAN=3><CENTER><BR><B>Availability (24x7): %.2f%%</B></CENTER></TD>\n", repinfo->fullavailability);
 		fprintf(htmlrep, "<TD>&nbsp;</TD>\n");
-		fprintf(htmlrep, "<TD COLSPAN=3><CENTER><B>Availability (SLA): %.2f%%</CENTER></TD>\n", repinfo->reportavailability);
+		fprintf(htmlrep, "<TD COLSPAN=3><CENTER><B>Availability (SLA): %.2f%%</B></CENTER></TD>\n", repinfo->reportavailability);
 	}
 	else {
-		fprintf(htmlrep, "<TD COLSPAN=7><CENTER><B>Availability: %.2f%%</CENTER></TD>\n", repinfo->fullavailability);
+		fprintf(htmlrep, "<TD COLSPAN=7><CENTER><B><BR>Availability: %.2f%%</B></CENTER></TD>\n", repinfo->fullavailability);
 	}
 	fprintf(htmlrep, "</TR>\n");
 
@@ -110,12 +107,13 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
 	fprintf(htmlrep, "<TD COLSPAN=7 ALIGN=CENTER>\n");
-	fprintf(htmlrep, "<FONT %s><B>[Total may not equal 100%%]</B></TD> </TR>\n", getenv("MKBBCOLFONT"));
+	fprintf(htmlrep, "<FONT %s><B>[Total may not equal 100%%]</B></FONT></TD> </TR>\n", getenv("MKBBCOLFONT"));
 
 	if (strcmp(repinfo->fstate, "NOTOK") == 0) {
 		fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
 		fprintf(htmlrep, "<TD COLSPAN=7 ALIGN=CENTER>\n");
-		fprintf(htmlrep, "<FONT %s><B>[History file contains invalid entries]</B></TD></TR>\n", getenv("MKBBCOLFONT"));
+		fprintf(htmlrep, "<FONT %s><B>[History file contains invalid entries]</B></FONT></TD></TR>\n", 
+			getenv("MKBBCOLFONT"));
 	}
 
 	fprintf(htmlrep, "</TABLE>\n");
@@ -176,11 +174,11 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 	fprintf(htmlrep, "<TD COLSPAN=5><CENTER>Event logs for the given period</CENTER></TD>\n");
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "<TR BGCOLOR=\"#333333\">\n");
-	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Event Start</B></TD>\n", getenv("MKBBCOLFONT"));
-	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Event End</B></TD>\n", getenv("MKBBCOLFONT"));
-	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Status</B></TD>\n", getenv("MKBBCOLFONT"));
-	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Duration</B></TD>\n", getenv("MKBBCOLFONT"));
-	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Cause</B></TD></TR>\n", getenv("MKBBCOLFONT"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Event Start</B></FONT></TD>\n", getenv("MKBBCOLFONT"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Event End</B></FONT></TD>\n", getenv("MKBBCOLFONT"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Status</B></FONT></TD>\n", getenv("MKBBCOLFONT"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Duration</B></FONT></TD>\n", getenv("MKBBCOLFONT"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Cause</B></FONT></TD>\n", getenv("MKBBCOLFONT"));
 	fprintf(htmlrep, "</TR>\n");
 
 	for (walk = reploghead; (walk); walk = walk->next) {
@@ -206,12 +204,12 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 			fprintf(htmlrep, "<TD ALIGN=LEFT NOWRAP>%s</TD>\n", start);
 			fprintf(htmlrep, "<TD ALIGN=RIGHT NOWRAP>%s</TD>\n", end);
 			fprintf(htmlrep, "<TD ALIGN=CENTER BGCOLOR=\"#000000\">");
-			fprintf(htmlrep, "<A HREF=\"%s/bb-histlog.sh?HOST=%s&SERVICE=%s&TIMEBUF=%s\">", 
+			fprintf(htmlrep, "<A HREF=\"%s/bb-histlog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s\">", 
 				getenv("CGIBINURL"), hostname, service, walk->timespec);
 			fprintf(htmlrep, "<IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0>", 
 				getenv("BBSKIN"), dotgiffilename(walk->color, 0, !angrygif), colorname(walk->color),
 				getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
-			fprintf(htmlrep, "</TD>\n");
+			fprintf(htmlrep, "</A></TD>\n");
 
 			fprintf(htmlrep, "<TD ALIGN=CENTER>%s</TD>\n", durationstr(walk->duration));
 			fprintf(htmlrep, "<TD>%s</TD>\n", walk->cause);
