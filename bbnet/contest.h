@@ -20,14 +20,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-/*
- * Flag bits for known TCP services
- */
-#define TCP_GET_BANNER 0x0001
-#define TCP_TELNET     0x0002
-#define TCP_SSL        0x0004
-#define TCP_HTTP       0x0008
-
 #ifdef BBGEN_SSL
 
 /*
@@ -59,16 +51,6 @@
 extern char *ssl_library_version;
 extern char *ciphershigh;
 extern char *ciphersmedium;
-
-typedef struct svcinfo_t {
-	char *svcname;
-	unsigned char *sendtxt;
-	int  sendlen;
-	unsigned char *exptext;
-	int  expofs, explen;
-	unsigned int flags;
-	int port;
-} svcinfo_t;
 
 #define SSLVERSION_DEFAULT 0
 #define SSLVERSION_V2      1
