@@ -302,6 +302,9 @@ else
 		fi
 	fi
 
+	echo "BUILDTOPDIR=\`pwd\`" >>Makefile
+	echo "" >> Makefile
+
 	if test -r Makefile.`uname -s`
 	then
 		echo "include build/Makefile.`uname -s`" >>Makefile
@@ -319,9 +322,9 @@ else
 		echo "bbgen@storner.dk so I can include it in the next version."
 		echo ""
 	fi
+	echo "# Add local CFLAGS etc. settings below here" >>Makefile
 	echo "include build/Makefile.rules" >> Makefile
 	echo "" >> Makefile
-	echo "# Add local CFLAGS etc. settings below here" >>Makefile
 
 	echo "Created Makefile with the necessary information to build bbgen."
 	echo "If you need to change settings, you should change the Makefile"
