@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.6 2003-06-22 20:06:39 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.7 2003-06-22 20:18:23 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -118,12 +118,14 @@ void parse_query(void)
 	tmbuf.tm_mday = startday;
 	tmbuf.tm_mon = startmon;
 	tmbuf.tm_year = startyear - 1900;
+	tmbuf.tm_isdst = -1;		/* Important! Or we mishandle DST periods */
 	starttime = mktime(&tmbuf);
 
 	memset(&tmbuf, 0, sizeof(tmbuf));
 	tmbuf.tm_mday = endday;
 	tmbuf.tm_mon = endmon;
 	tmbuf.tm_year = endyear - 1900;
+	tmbuf.tm_isdst = -1;		/* Important! Or we mishandle DST periods */
 	endtime = mktime(&tmbuf);
 
 	if ((starttime == -1) || (endtime == -1) || (starttime > time(NULL))) errmsg("Invalid parameters");
