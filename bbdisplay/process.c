@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.14 2003-06-17 08:25:08 henrik Exp $";
+static char rcsid[] = "$Id: process.c,v 1.15 2003-07-16 20:41:58 henrik Exp $";
 
 #include <string.h>
 #include <sys/types.h>
@@ -177,15 +177,6 @@ void delete_old_acks(void)
 void send_summaries(summary_t *sumhead)
 {
 	summary_t *s;
-	time_t now = time(NULL);
-	pid_t childpid;
-	char *bbcmd;
-
-	bbcmd = getenv("BB");
-	if (!bbcmd) {
-		errprintf("BB not defined!");
-		return;
-	}
 
 	for (s = sumhead; (s); s = s->next) {
 		char *suburl;
@@ -256,18 +247,8 @@ void send_summaries(summary_t *sumhead)
 
 		/* Send the summary message */
 		sprintf(summsg, "summary summary.%s %s %s %s",
-			s->name, colorname(summarycolor), s->url, ctime(&now));
-
-		childpid = fork();
-		if (childpid == -1) {
-			errprintf("Fork error while trying to send summary\n");
-		}
-		else if (childpid == 0) {
-			execl(bbcmd, "bb: bbd summary", s->receiver, summsg, NULL);
-		}
-		else {
-			wait(NULL);
-		}
+			s->name, colorname(summarycolor), s->url, timestamp);
+		sendmessage(summsg, s->receiver);
 	}
 }
 
