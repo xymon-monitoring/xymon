@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.5 2003-06-24 05:30:10 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.6 2003-06-24 09:24:33 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,33 +27,54 @@ static char rcsid[] = "$Id: bb-hist.c,v 1.5 2003-06-24 05:30:10 henrik Exp $";
 #include "reportdata.h"
 #include "debug.h"
 
+static char selfurl[MAX_PATH];
+static int startoffset = 0;
+static int usepct = 1;
+static int factor = 864;	/* (100 * x) / 86400 = (x / 864) */
+
+static int pixels = 960;
+
 #define PIXELS 960	/* 864 ? */
 #define FACTOR 90	/* 86400 / PIXELS */
 
-void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, int entrycount,
+void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, int entrycount, time_t today,
 		      reportinfo_t *repinfo, replog_t *log24hours, replog_t *loghead)
 {
 	char *bgcols[2] = { "\"#000000\"", "\"#000033\"" };
 	int curbg = 0;
-	time_t yesterday, today;
-	int pctfirst, pctlast, pctsum;
+	time_t yesterday;
+	int pctfirst, pctlast, pctsum, hourpct;
 	struct tm *tmbuf;
 	time_t secs;
 	int starthour, hour;
 	replog_t *colorlog, *walk, *tmp;
+	char *pctstr = "";
 
-	today = time(NULL); yesterday = today-86400;
+	yesterday = today-86400;
+
+	if (usepct) {
+		pixels = 100;
+		pctstr = "%%";
+		hourpct = 4;
+	}
+	else {
+		factor = (86400 / pixels);
+		pctstr = "";
+		hourpct = (3600 / factor);
+	}
 
 	/* Compute the percentage of the first (incomplete) hour */
 	tmbuf = localtime(&yesterday);
 	secs = 3600 - (tmbuf->tm_min*60 + tmbuf->tm_sec);
-	pctfirst = secs / FACTOR;
+	pctfirst = secs / factor;
+	if (usepct && (pctfirst == 0)) pctfirst = 1;
 
 	/* Compute the percentage of the last (incomplete) hour */
 	tmbuf = localtime(&today);
 	starthour = tmbuf->tm_hour;
 	secs = tmbuf->tm_min*60 + tmbuf->tm_sec;
-	pctlast = secs / FACTOR;
+	pctlast = secs / factor;
+	if (usepct && (pctlast == 0)) pctlast = 1;
 
 	sethostenv(hostname, ip, service, colorname(COL_GREEN));
 
@@ -65,14 +86,25 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 	fprintf(htmlrep, "<BR>\n");
 
 	/* Create the color-bar */
-	fprintf(htmlrep, "<TABLE WIDTH=\"%d\" BORDER=0 BGCOLOR=\"#666666\">\n", PIXELS);
+	fprintf(htmlrep, "<TABLE WIDTH=\"%d%s\" BORDER=0 BGCOLOR=\"#666666\">\n", pixels, pctstr);
 	fprintf(htmlrep, "<TR><TD ALIGN=CENTER>\n");
 
 	/* The date stamps */
 	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=1 BGCOLOR=\"#000033\">\n");
 	fprintf(htmlrep, "<TR>\n");
-	fprintf(htmlrep, "<TD WIDTH=\"50%%\" ALIGN=LEFT><B>%s</B></TD>\n", ctime(&yesterday));
-	fprintf(htmlrep, "<TD WIDTH=\"50%%\" ALIGN=RIGHT><B>%s</B></TD>\n", ctime(&today));
+
+	fprintf(htmlrep, "<TD WIDTH=\"50%%\" ALIGN=LEFT>");
+	fprintf(htmlrep, "<A HREF=\"%s&OFFSET=%d\">", selfurl, startoffset+1);
+	fprintf(htmlrep, "<B>%s</B>", ctime(&yesterday));
+	fprintf(htmlrep, "</A>");
+	fprintf(htmlrep, "</TD>\n");
+
+	fprintf(htmlrep, "<TD WIDTH=\"50%%\" ALIGN=RIGHT>\n");
+	if (startoffset > 0) fprintf(htmlrep, "<A HREF=\"%s&OFFSET=%d\">", selfurl, startoffset-1);
+	fprintf(htmlrep, "<B>%s</B>\n", ctime(&today));
+	if (startoffset > 0) fprintf(htmlrep, "</A>");
+	fprintf(htmlrep, "</TD>\n");
+
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "</TABLE>\n");
 
@@ -80,12 +112,12 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 	pctsum = pctfirst + pctlast;
 	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 BGCOLOR=\"#000033\">\n");
 	fprintf(htmlrep, "<TR>\n");
-	fprintf(htmlrep, "<TD WIDTH=%d ALIGN=LEFT><B>&nbsp;</B></TD>\n", pctfirst);
+	fprintf(htmlrep, "<TD WIDTH=%d%s ALIGN=LEFT><B>&nbsp;</B></TD>\n", pctfirst, pctstr);
 	for (hour = ((starthour + 1) % 24); (hour != starthour); hour = ((hour + 1) % 24)) {
-		fprintf(htmlrep, "<TD WIDTH=%d ALIGN=LEFT><B>%d</B></TD>\n", (PIXELS / 24), hour);
-		pctsum += (PIXELS / 24);
+		fprintf(htmlrep, "<TD WIDTH=%d%s ALIGN=LEFT><B>%d</B></TD>\n", hourpct, pctstr, hour);
+		pctsum += hourpct;
 	}
-	fprintf(htmlrep, "<TD WIDTH=%d ALIGN=LEFT><B>%d</B></TD>\n", pctlast, starthour);
+	fprintf(htmlrep, "<TD WIDTH=%d%s ALIGN=LEFT><B>%d</B></TD>\n", pctlast, pctstr, starthour);
 	fprintf(htmlrep, "<!-- pctsum = %d -->\n", pctsum);
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "</TABLE>\n");
@@ -104,11 +136,11 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 		walk = tmp;
 	}
 	for (walk = colorlog; (walk); walk = walk->next) {
-		int pct = (walk->duration / FACTOR);
+		int pct = (walk->duration / factor);
 
 		pctsum += pct;
-		fprintf(htmlrep, "<TD WIDTH=%d BGCOLOR=%s NOWRAP>&nbsp</TD>\n", 
-			pct, colorname(walk->color));
+		fprintf(htmlrep, "<TD WIDTH=%d%s BGCOLOR=%s NOWRAP>&nbsp</TD>\n", 
+			pct, pctstr, colorname(walk->color));
 	}
 
 	fprintf(htmlrep, "<!-- pctsum = %d -->\n", pctsum);
@@ -281,6 +313,13 @@ static void parse_query(void)
 			if (strcmp(val, "all") == 0) entrycount = 0;
 			else entrycount = atoi(val);
 		}
+		else if (argnmatch(token, "PIXELS")) {
+			pixels = atoi(val);
+			usepct = 0;
+		}
+		else if (argnmatch(token, "OFFSET")) {
+			startoffset = atoi(val);
+		}
 
 		token = strtok(NULL, "&");
 	}
@@ -301,12 +340,33 @@ int main(int argc, char *argv[])
 	envcheck(reqenv);
 	parse_query();
 
+
+	/* Build our own URL */
+	sprintf(selfurl, "%s/bb-hist.sh?HISTFILE=%s.%s", getenv("CGIBINURL"), commafy(hostname), service);
+
+	if (strlen(ip)) {
+		strcat(selfurl, "&IP=");
+		strcat(selfurl, ip);
+	}
+
+	if (entrycount) {
+		char *p = selfurl + strlen(selfurl);
+		sprintf(p, "&ENTRIES=%d", entrycount);
+	}
+	else strcat(selfurl, "&ENTRIES=ALL");
+
+	if (!usepct) {
+		char *p = selfurl + strlen(selfurl);
+		sprintf(p, "&PIXELS=%d", pixels);
+	}
+
+
 	sprintf(histlogfn, "%s/%s.%s", getenv("BBHIST"), commafy(hostname), service);
 	fd = fopen(histlogfn, "r");
 	if (fd == NULL) {
 		errormsg("Cannot open history file");
 	}
-	now = time(NULL);
+	now = time(NULL) - startoffset*86400;
 
 	parse_historyfile(fd, &repinfo, NULL, NULL, now-86400, now, 1);
 	log24hours = save_replogs();
@@ -314,7 +374,7 @@ int main(int argc, char *argv[])
 	if (entrycount == 0) {
 		/* All entries - just rewind the history file and do all of them */
 		rewind(fd);
-		parse_historyfile(fd, &dummyrep, NULL, NULL, 0, now, 1);
+		parse_historyfile(fd, &dummyrep, NULL, NULL, 0, time(NULL), 1);
 		fclose(fd);
 	}
 	else {
@@ -323,7 +383,7 @@ int main(int argc, char *argv[])
 		sprintf(tailcmd, "tail -%d %s", entrycount, histlogfn);
 		fd = popen(tailcmd, "r");
 		if (fd == NULL) errormsg("Cannot run tail on the histfile");
-		parse_historyfile(fd, &dummyrep, NULL, NULL, 0, now, 1);
+		parse_historyfile(fd, &dummyrep, NULL, NULL, 0, time(NULL), 1);
 		pclose(fd);
 	}
 
@@ -331,7 +391,7 @@ int main(int argc, char *argv[])
 	/* Now generate the webpage */
 	printf("Content-Type: text/html\n\n");
 
-	generate_history(stdout, hostname, service, ip, entrycount, &repinfo, log24hours, reploghead);
+	generate_history(stdout, hostname, service, ip, entrycount, now, &repinfo, log24hours, reploghead);
 
 	return 0;
 }
