@@ -18,14 +18,14 @@ all: $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS)
 	@echo "and then you can later run 'make install-cgi' to install cgi scripts"
 	@echo ""
 
-GENOBJS = bbgen.o debug.o loaddata.o reportdata.o larrdgen.o pagegen.o process.o util.o infogen.o alert.o wmlgen.o bb-replog.o
-NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o
+GENOBJS = bbgen.o debug.o loaddata.o reportdata.o larrdgen.o pagegen.o process.o util.o infogen.o alert.o wmlgen.o bb-replog.o sendmsg.o
+NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o sendmsg.o
 HOSTGREPOBJS = bbhostgrep.o util.o debug.o
 HOSTSHOWOBJS = bbhostshow.o util.o debug.o
 REPOBJS = bb-rep.o debug.o util.o
 REPLOGOBJS = bb-replog-cgi.o reportdata.o debug.o util.o
 HISTOBJS = bb-hist.o reportdata.o debug.o util.o
-COMBOTESTOBJS = bbcombotest.o util.o debug.o calc.o
+COMBOTESTOBJS = bbcombotest.o util.o debug.o calc.o sendmsg.o
 SNAPOBJS = bb-snapshot.o debug.o util.o
 
 bbgen: $(GENOBJS)
@@ -70,6 +70,9 @@ calc: calc.c
 reptest: reportdata.c debug.c util.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ reportdata.c debug.c util.c
 
+sendmsg: sendmsg.c debug.c util.c
+	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ sendmsg.c debug.c util.c
+
 httptest.o: httptest.c httptest.h
 	$(CC) $(CFLAGS) $(CURLINCLUDE) -c -o $@ httptest.c
 
@@ -87,7 +90,7 @@ distclean: clean
 	rm -f Makefile
 
 clean:
-	rm -f *.o *~ $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) alert contest reptest calc
+	rm -f *.o *~ $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) alert contest reptest calc sendmsg
 
 install-bin: $(PROGRAMS)
 	cp -p $(PROGRAMS) $(BBHOME)/bin/
