@@ -214,14 +214,26 @@ else
 		then
 			CGIDIR=$BBTOPDIR/cgi-bin
 		fi
+		echo ""; echo ""
 
-		if test -d "$CGIDIR"
+		echo "What is the URL for this CGI directory [/bb-cgi] ? "
+		read BBCGIURL
+		if test -z "$BBCGIURL"
 		then
-			echo "** NOTE: $CGIDIR must be configured as a CGI directory in your webserver **"
-		else
-			echo "The $CGIDIR directory does not exist, will create it during installation"
-			echo "** NOTE: $CGIDIR must be configured as a CGI directory in your webserver **"
+			BBCGIURL="/bb-cgi"
 		fi
+		echo ""; echo ""
+
+		echo "What URL will you use for the BB webpages [/bb] ? "
+		read BBHOSTURL
+		if test -z "$BBHOSTURL"
+		then
+			BBHOSTURL="/bb"
+		fi
+		echo ""; echo ""
+
+		echo "** Note that you may need to modify your webserver configuration."
+		echo "** After installing, see $BBHOME/etc/bb-apache.conf for an example configuration."
 		echo ""; echo ""
 
 		echo "Where to put the bbgend logfiles [/var/log/bb] ? "
@@ -251,8 +263,6 @@ else
 
 		# bbgend defaults to standard port and 32KB message max.
 		BBHOSTOS=`uname -s | tr [A-Z] [a-z]`
-		BBHOSTURL="/bb"
-		BBCGIURL="/bb-cgi"
 		BBHOME=$BBTOPDIR/bb
 		BBVAR=$BBTOPDIR/bbvar
 		BBPORT=1984
@@ -313,15 +323,15 @@ else
 	export BARSUMDEF
 	echo ""; echo ""
 
-	echo "The bbgen history CGI replacement can use a different method to"
+	echo "The bbgen history CGI replacement can use a new method to"
 	echo "create the summary graphs on the history page. This method"
 	echo "gives a more accurate view (more detailed), but uses a fixed-width"
 	echo "graph instead of the standard Big Brother graph that automatically"
-	echo "resizes to your browser window."
+	echo "resizes to fit your browser window."
 	echo ""
-	echo "Use the standard Big Brother history graph (y/n) [y] ? "
-	read USEPCTHIST
-	if test "$USEPCTHIST" = "n"
+	echo "Use the new Big Brother history graph (y/n) [y] ? "
+	read USENEWHIST
+	if test "$USENEWHIST" = "" -o "$USENEWHIST" = "y"
 	then
 		echo "   Tell me the display width (in pixels) to use for"
 		echo "   the history graph. This could be anything, but to"
