@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.134 2004-10-19 21:54:27 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.135 2004-10-25 15:33:45 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -995,6 +995,7 @@ int within_sla(char *l, char *tag, int defresult)
 
 	char *p;
 	char *slaspec = NULL;
+	char *endofslaspec = NULL;
 	char *tagspec;
 
 	time_t tnow;
@@ -1016,6 +1017,7 @@ int within_sla(char *l, char *tag, int defresult)
 
 	if (p) {
 		slaspec = p + strlen(tagspec);
+		endofslaspec = slaspec + strcspn(slaspec, " \t\r\n");
 		tnow = time(NULL);
 		now = localtime(&tnow);
 
@@ -1023,7 +1025,7 @@ int within_sla(char *l, char *tag, int defresult)
 		 * Now find the appropriate SLA definition.
 		 * We take advantage of the fixed (11 bytes + delimiter) length of each entry.
 		 */
-		while ( (!found) && slaspec && (*slaspec != '\0') && (!isspace((unsigned int)*slaspec)) )
+		while ( (!found) && slaspec && (slaspec < endofslaspec) )
 		{
 			dprintf("Now checking slaspec='%s'\n", slaspec);
 
