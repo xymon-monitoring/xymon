@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.6 2003-04-13 16:20:57 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.7 2003-04-13 20:04:04 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -208,6 +208,10 @@ void load_tests(void)
 					 */
 					if (h->testip) {
 						sprintf(h->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+						if (strcmp(h->ip, "0.0.0.0") == 0) {
+							printf("bbtest-net: %s has IP 0.0.0.0 and testip - dropped\n", hostname);
+							h->dnserror = 1;
+						}
 					}
 					else {
 						struct hostent *hent;
@@ -226,6 +230,10 @@ void load_tests(void)
 						}
 					}
 
+					if (strcmp(h->ip, "0.0.0.0") == 0) {
+						printf("bbtest-net: IP resolver error for host %s\n", hostname);
+						h->dnserror = 1;
+					}
 					h->next = testhosthead;
 					testhosthead = h;
 				}
@@ -255,6 +263,12 @@ void run_nmap_service(service_t *service)
 	FILE		*logfile;
 	char		l[MAX_LINE_LEN];
 	char 		wantedstatus[80];
+
+	if (service->portnum <= 0) {
+		printf("bbtest-net: Attempt to test service %s on port 0\n",
+			service->testname);
+		return;
+	}
 
 	sprintf(logfn, "%s/nmap_%s_%d.out", getenv("BBTMP"), service->testname, service->portnum);
 
