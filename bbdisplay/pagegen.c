@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.83 2003-08-05 14:39:33 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.84 2003-08-11 06:23:21 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -115,7 +115,7 @@ int interesting_column(int pagetype, int color, int alert, char *columnname, cha
 	switch (pagetype) {
 	  case PAGE_BB2:
 		  /* Include all non-green tests */
-		  return ((color == COL_RED) || (color == COL_YELLOW) || (color == COL_PURPLE) || (color == COL_CLEAR) );
+		  return ((color == COL_RED) || (color == COL_YELLOW) || (color == COL_PURPLE));
 
 	  case PAGE_NK:
 		  /* Include only RED or YELLOW tests with "alert" property set. 
