@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.141 2004-08-02 13:18:52 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.142 2004-08-04 12:32:02 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -99,6 +99,8 @@ time_t		frequenttestlimit = 1800;	/* Interval (seconds) when failing hosts are r
 int		checktcpresponse = 0;
 int		dotraceroute = 0;
 int		fqdn = 1;
+int		dnsmaxperlookup = 5;		/* Max seconds for one DNS lookup */
+int		dnsmaxalllookups = 0;		/* Max seconds for all DNS lookup */
 
 void dump_hostlist(void)
 {
@@ -911,12 +913,17 @@ void dns_resolve(void)
 	testedhost_t	*h;
 	int dnstries = 0;
 	int dnsfails = 0;
-	time_t cycletime, starttime, cutofftime;
+	time_t starttime, cutofftime;
 
 	/* Dont spend more than half our cycle time on DNS lookups */
 	starttime = time(NULL);
-	cycletime = atoi(getenv("BBSLEEP") ? getenv("BBSLEEP") : "300");
-	cutofftime = starttime + (cycletime / 2);
+	if (dnsmaxalllookups > 0) {
+		cutofftime = starttime + dnsmaxalllookups;
+	}
+	else {
+		time_t cycletime = atoi(getenv("BBSLEEP") ? getenv("BBSLEEP") : "300");
+		cutofftime = starttime + (cycletime / 2);
+	}
 
 	for (h=testhosthead; (h); h=h->next) {
 		/* 
@@ -958,7 +965,16 @@ void dns_resolve(void)
 				hent = NULL;
 			}
 			else {
+				time_t dnsstart, dnsend;
+
+				dnsstart = time(NULL);
 				hent = gethostbyname(h->hostname);
+				dnsend = time(NULL);
+
+				if ((dnsend - dnsstart) > dnsmaxperlookup) {
+					errprintf("Slow DNS response %d seconds for %s\n", (dnsend - dnsstart), h->hostname);
+				}
+
 			}
 
 			if (hent) {
@@ -1968,6 +1984,14 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			p++; frequenttestlimit = atoi(p);
 		}
+		else if (argnmatch(argv[argi], "--dns-max-one=")) {
+			char *p = strchr(argv[argi], '=');
+			p++; dnsmaxperlookup = atoi(p);
+		}
+		else if (argnmatch(argv[argi], "--dns-max-all=")) {
+			char *p = strchr(argv[argi], '=');
+			p++; dnsmaxalllookups = atoi(p);
+		}
 
 		/* Options for TCP tests */
 		else if (argnmatch(argv[argi], "--concurrency=")) {
@@ -2053,6 +2077,8 @@ int main(int argc, char *argv[])
 			printf("    --test-untagged             : Include hosts without a NET: tag in the test\n");
 			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbtest-net\n");
 			printf("    --frequenttestlimit=N       : Seconds after detecting failures in which we poll frequently\n");
+			printf("    --dns-max-one=N             : Warns if a single DNS lookup takes more than N seconds [5]\n");
+			printf("    --dns-max-all=N             : Warns if all DNS lookups combined takes more than N seconds [BBSLEP/2]\n");
 			printf("\nOptions for services in BBNETSVCS (tcp tests):\n");
 			printf("    --concurrency=N             : Number of tests run in parallel\n");
 			printf("    --checkresponse             : Check response from known services\n");
