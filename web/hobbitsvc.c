@@ -187,10 +187,10 @@ int main(int argc, char *argv[])
 		*p = '\n'; 
 	}
 
-	p = strtok(sumline, "|"); icount = 0;
+	p = gettok(sumline, "|"); icount = 0;
 	while (p && (icount < 20)) {
 		items[icount++] = p;
-		p = strtok(NULL, "|");
+		p = gettok(NULL, "|");
 	}
 
 	color = parse_color(items[2]);
