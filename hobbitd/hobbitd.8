@@ -64,8 +64,8 @@ Unlike the standard bbd daemon, purple-handling is done by bbgend.
 
 .IP "--purple-conn=CONNTESTCOLUMN"
 When a host goes down that has the BB client installed, you will often
-get alerts both from the network test (ping), and when the client tests
-begin to go purple because they are no longer being updated. With this
+get alerts both from the network test (ping) and from the client tests
+when they go purple because they are no longer being updated. With this
 option you can tell bbgend which test is the "ping" test; when this test
 is red and some other test for the same host should go purple, then
 bbgend will instead make it go "clear". Since a "clear" status does not
