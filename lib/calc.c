@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: calc.c,v 1.2 2003-06-30 21:20:03 henrik Exp $";
+static char rcsid[] = "$Id: calc.c,v 1.3 2003-07-01 15:31:44 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -22,7 +22,7 @@ long compute(char *expression, int *error)
 	 * This routine evaluates an expression.
 	 *
 	 * Expressions are of the form "expr [operator expr]" or "(expr)"
-	 * "operator" is + - / * & | && ||
+	 * "operator" is + - / * % & | && || > >= < <= ==
 	 *
 	 * All operators have equal precedence!
 	 *
@@ -77,6 +77,7 @@ long compute(char *expression, int *error)
 			else if ((op == '|') && (*(operator+1) == '|')) { op = 'o'; operator++; }
 			else if ((op == '>') && (*(operator+1) == '=')) { op = 'g'; operator++; }
 			else if ((op == '<') && (*(operator+1) == '=')) { op = 'l'; operator++; }
+			else if ((op == '=') && (*(operator+1) == '=')) { op = 'e'; operator++; }
 
 			/* Since there is an operator, there must be a value after the operator */
 			startp = operator + 1;
@@ -118,6 +119,7 @@ long compute(char *expression, int *error)
 			  case 'g': xval = (xval >= yval); break;
 			  case '<': xval = (xval < yval);  break;
 			  case 'l': xval = (xval <= yval); break;
+			  case 'e': xval = (xval == yval); break;
 			  default : { *error = 4; return -1; }
 			}
 		}
