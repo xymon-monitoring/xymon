@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.87 2003-03-18 14:26:53 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.88 2003-03-18 22:11:30 henrik Exp $";
 
 #define VERSION "1.9-pre"
 
@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
 
 			enable_larrdgen=1;
 			if (lp) {
-				larrdcol = malloc(strlen(lp));
+				larrdgraphs_default = malloc(strlen(lp));
 				strcpy(larrdgraphs_default, (lp+1));
 			}
 		}
