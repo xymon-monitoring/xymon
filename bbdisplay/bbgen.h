@@ -53,6 +53,7 @@
                                            nopropyellowtests   |
                                            nopropredtests      |
                                            noproppurpletests   |
+                                           nopropacktests      |
 					   rawentry            |
                       +------------------  link                V
                       |                    entries ---------> entry_t
@@ -256,6 +257,7 @@ typedef struct host_t {
 	char    *nopropyellowtests;
 	char    *nopropredtests;
 	char    *noproppurpletests;
+	char    *nopropacktests;
 	char    *rawentry;
 	struct rrd_t	*rrds;
 	char    *larrdgraphs;

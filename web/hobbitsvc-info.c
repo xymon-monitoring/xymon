@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.45 2004-07-19 16:02:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.46 2004-08-02 13:20:49 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -268,6 +268,15 @@ int generate_info(char *infocolumn)
 			if (*p == ',') *p = '\0'; else p = NULL;
 
 			sprintf(l, "<tr><th align=left>Suppressed alarms (purple):</th><td align=left>%s</td></tr>\n", noprop);
+			addtobuffer(&infobuf, &infobuflen, l);
+			if (p) *p = ',';
+		}
+		if (hostwalk->hostentry->nopropacktests) {
+			noprop = (hostwalk->hostentry->nopropacktests+1);
+			p = noprop + strlen(noprop) - 1; /* Point to trailing comma */
+			if (*p == ',') *p = '\0'; else p = NULL;
+
+			sprintf(l, "<tr><th align=left>Suppressed alarms (acked):</th><td align=left>%s</td></tr>\n", noprop);
 			addtobuffer(&infobuf, &infobuflen, l);
 			if (p) *p = ',';
 		}
