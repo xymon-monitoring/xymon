@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-mailack.c,v 1.3 2005-03-06 10:42:16 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-mailack.c,v 1.4 2005-03-06 16:19:18 henrik Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Get the alert cookie */
-	subjexp = pcre_compile(".*BB[ -]+\\[*([0-9]+)[\\]!]*", PCRE_CASELESS, &errmsg, &errofs, NULL);
+	subjexp = pcre_compile(".*(Hobbit|BB)[ -]* \\[*(-*[0-9]+)[\\]!]*", PCRE_CASELESS, &errmsg, &errofs, NULL);
 	if (subjexp == NULL) {
 		dprintf("pcre compile failed - 1\n");
 		return 2;
@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
 		dprintf("Subject line did not match pattern\n");
 		return 3; /* Subject did not match what we expected */
 	}
-	if (pcre_copy_substring(subjectline, ovector, result, 1, cookie, sizeof(cookie)) <= 0) {
+	if (pcre_copy_substring(subjectline, ovector, result, 2, cookie, sizeof(cookie)) <= 0) {
 		dprintf("Could not find cookie value\n");
 		return 4; /* No cookie */
 	}
@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
 
 	/* See if there's a "DELAY=" delay-value also */
 	duration = 30;
-	subjexp = pcre_compile(".*DELAY[= ]*([0-9]+)", PCRE_CASELESS, &errmsg, &errofs, NULL);
+	subjexp = pcre_compile(".*DELAY[ =]+([0-9]+[mhdw]*)", PCRE_CASELESS, &errmsg, &errofs, NULL);
 	if (subjexp == NULL) {
 		dprintf("pcre compile failed - 2\n");
 		return 2;
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 	if (result >= 0) {
 		char delaytxt[4096];
 		if (pcre_copy_substring(subjectline, ovector, result, 1, delaytxt, sizeof(delaytxt)) > 0) {
-			duration = atoi(delaytxt);
+			duration = durationvalue(delaytxt);
 		}
 	}
 	pcre_free(subjexp);
