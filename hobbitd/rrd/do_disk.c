@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.19 2005-03-28 12:04:00 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.20 2005-03-28 12:05:10 henrik Exp $";
 
 static char *disk_params[] = { "rrdcreate", rrdfn, "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", 
 				rra1, rra2, rra3, rra4, NULL };
@@ -104,7 +104,8 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			diskname = xstrdup(columns[1]);
 			p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
 			aused = atoll(columns[3]);
-			pused = atoi(columns[7]);	/* Value without purging purgeable data. */
+			pused = atoi(columns[7]);
+			break;
 		}
 
 		if (diskname && (pused != -1)) {
