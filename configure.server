@@ -22,7 +22,7 @@ else
 	if test "$MAKEVER" != "GNU Make"
 	then
 		echo "GNU make is required to build Hobbit."
-		echo "If it is available as \"gmake\", run configure as: \'MAKE=gmake $0\'"
+		echo "If it is available as \"gmake\", run configure as: 'MAKE=gmake $0'"
 		exit 1
 	fi
 
