@@ -36,6 +36,7 @@ typedef struct activealerts_t {
 } activealerts_t;
 
 extern int include_configid;
+extern int bbcompat_mode;
 
 extern void load_alertconfig(char *configfn, int alertcolors);
 extern void dump_alertconfig(void);
