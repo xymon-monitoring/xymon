@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.35 2003-08-28 06:54:49 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.36 2003-08-29 22:08:21 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -64,6 +64,7 @@ static svcinfo_t svcinfo[] = {
 	{ "imap3",   "ABC123 LOGOUT\r\n", "* OK",	(TCP_GET_BANNER) },
 	{ "imap4",   "ABC123 LOGOUT\r\n", "* OK",	(TCP_GET_BANNER) },
 	{ "nntp",    "quit\r\n",          "200",	(TCP_GET_BANNER) },
+	{ "ldap",    NULL,                NULL,         (0) },
 	{ "rsync",   NULL,                "@RSYNCD",	(TCP_GET_BANNER) },
 	{ "bbd",     "dummy",             NULL,		(0) },
 	{ "ftps",    "quit\r\n",          "220",	(TCP_GET_BANNER|TCP_SSL) },
@@ -72,6 +73,7 @@ static svcinfo_t svcinfo[] = {
 	{ "pop3s",   "quit\r\n",          "+OK",	(TCP_GET_BANNER|TCP_SSL) },
 	{ "imaps",   "ABC123 LOGOUT\r\n", "* OK",	(TCP_GET_BANNER|TCP_SSL) },
 	{ "nntps",   "quit\r\n",          "200",	(TCP_GET_BANNER|TCP_SSL) },
+	{ "ldaps",   NULL,                NULL,         (TCP_SSL) },
 	{ NULL,      NULL,                NULL,		(0) }	/* Default behaviour: Just try a connect */
 };
 
