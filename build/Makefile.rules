@@ -109,7 +109,7 @@ libcheck: bbtest-net
 # Objects requiring special compile flags 
 ################################################
 bbtest-net.o: bbtest-net.c bbtest-net.h
-	$(CC) $(CFLAGS) $(SSLFLAGS) $(LDAPFLAGS) $(SSLINCDIR) $(LDAPINCDIR) -c -o $@ bbtest-net.c
+	$(CC) $(CFLAGS) $(CURLINCLUDE) $(SSLFLAGS) $(LDAPFLAGS) $(SSLINCDIR) $(LDAPINCDIR) -c -o $@ bbtest-net.c
 
 httptest.o: httptest.c httptest.h
 	$(CC) $(CFLAGS) $(CURLINCLUDE) -c -o $@ httptest.c
