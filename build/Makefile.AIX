@@ -15,3 +15,7 @@ CFLAGS = -g -O3 -qstrict -qcpluscmt -D_REENTRANT
 # Compile flags for debugging
 # CFLAGS = -g -DDEBUG -D_REENTRANT
 
+# Mail program: This must support "CMD -s SUBJECT ADDRESS" to send out a mail with a subject
+# Typically, this will be "mail" or "mailx"
+MAILPROGRAM="mail"
+

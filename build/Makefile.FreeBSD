@@ -13,3 +13,7 @@ RPATH = "-Wl,--rpath="
 # Compile flags for debugging
 # CFLAGS = -g -DDEBUG -Wall -D_REENTRANT -I/usr/local/include -L/usr/local/lib
 
+# Mail program: This must support "CMD -s SUBJECT ADDRESS" to send out a mail with a subject
+# Typically, this will be "mail" or "mailx"
+MAILPROGRAM="mail"
+

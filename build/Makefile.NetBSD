@@ -17,3 +17,7 @@ RPATH = "-Wl,--rpath="
 # CFLAGS = -g -DDEBUG -Wall -D_REENTRANT \
        -I${PKGDIR}/include -L${PKGDIR}/lib, -Wl,--rpath=${PKGDIR}/lib
 
+# Mail program: This must support "CMD -s SUBJECT ADDRESS" to send out a mail with a subject
+# Typically, this will be "mail" or "mailx"
+MAILPROGRAM="mail"
+

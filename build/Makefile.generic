@@ -16,3 +16,7 @@ CFLAGS = -g -O -D_REENTRANT
 # runtime libraries located in /opt/lib
 RUNTIMEDEFS = 
 
+# Mail program: This must support "CMD -s SUBJECT ADDRESS" to send out a mail with a subject
+# Typically, this will be "mail" or "mailx"
+MAILPROGRAM="mail"
+

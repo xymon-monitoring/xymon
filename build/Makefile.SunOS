@@ -12,3 +12,7 @@ CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT -DHAVE_RPCENT
 # Compile flags for debugging
 # CFLAGS = -g -DDEBUG -Wall -D_REENTRANT -DHAVE_RPCENT
 
+# Mail program: This must support "CMD -s SUBJECT ADDRESS" to send out a mail with a subject
+# Typically, this will be "mail" or "mailx"
+MAILPROGRAM="mailx"
+
