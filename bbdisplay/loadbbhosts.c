@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.5 2004-10-30 15:39:56 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.6 2004-12-12 13:18:36 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -279,7 +279,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	}
 	else newhost->rawentry = null_text;
 	newhost->parent = NULL;
-	newhost->rrds = NULL;
+	newhost->rrdlist = NULL;
 	newhost->banks = NULL;
 	newhost->banksize = modembanksize;
 	if (modembanksize) {

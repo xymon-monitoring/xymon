@@ -124,18 +124,6 @@ typedef struct link_t {
 	struct link_t	*next;
 } link_t;
 
-typedef struct rrdlayout_t {
-	char *name;
-	char *partname;
-	int  maxgraphs;
-} rrdlayout_t;
-
-typedef struct rrd_t {
-	struct rrdlayout_t *rrdname;
-	int     count;
-	struct rrd_t	*next;
-} rrd_t;
-
 /* Column definitions.                     */
 /* Basically a list of all possible column */
 /* names with links to their help-texts    */
@@ -230,8 +218,8 @@ typedef struct host_t {
 	char    *noproppurpletests;
 	char    *nopropacktests;
 	char    *rawentry;
-	struct rrd_t	*rrds;
-	char    *larrdgraphs;
+	void	*rrdlist;	/* Used while generating the larrd overview page */
+	char    *larrdgraphs;	/* The LARRD entry from bb-hosts */
 	char	*pretitle;
 	struct bbgen_page_t *parent;
 	double  reportwarnlevel;
