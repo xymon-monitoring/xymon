@@ -80,6 +80,13 @@ an easy to use interface for detecting problems that require
 immediate attention, by eliminating all of the non-critical
 issues.
 
+.IP "Modem banks appear where you want them to"
+Big Brother and bbgen supports monitoring of modem-banks, or
+other types of IP-address ranges (e.g. VPN concentrators).
+With bbgen, you can configure these to show up in pages or
+subpages, instead of always placing them on the front page
+like standard BB does.
+
 .IP "LARRD support"
 The LARRD trend analysis package is a popular add-on to Big Brother.
 bbgen will work with the standard LARRD package - both version 
@@ -132,6 +139,11 @@ bbtest-net directly supports monitoring of https-websites.
 .IP "Content checking of websites"
 bbtest-net supports checking not only that a website responds,
 but also that certain content is found on the webpage.
+
+.IP "Support for SSL-enabled protocols"
+Standard protocols wrapped into an SSL encryption - e.g.
+imaps, pop3s, nntps - are directly supported by the 
+bbtest-net network test tool.
 
 .IP "SSL certificate expiration"
 bbtest-net automatically checks the expiration date of SSL
@@ -253,7 +265,7 @@ versions.
 
 .IP openssl
 The OpenSSL library is used for checking https websites and
-other SSL-enabled protocols (imaps, pop3s, nntps, smtps).
+other SSL-enabled protocols (imaps, pop3s, nntps, telnets, ftps).
 It should be installed before you install libcurl. If your
 system does not already have openssl installed, you can pick it
 up from http://www.openssl.org/
@@ -268,6 +280,12 @@ exceptions:
 A "group" directive in the 
 .I bb-hosts(5)
 file is treated as a "group-compress".
+
+.IP Modembanks can be placed in subpages
+Standard BB always displays modem-banks on the front-page
+(bb.html). bbgen treats modembanks like normal hosts, so
+they will appear on a page or subpage according to their
+placement in the bb-hosts file.
 
 .IP Connectivity tests use the hostname
 Standard BB always uses the IP-address listed in the bb-hosts
