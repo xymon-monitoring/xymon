@@ -76,20 +76,20 @@ Overrides the default hostname used on the overview web pages
 If "hostname" contains spaces, it must be enclosed in double
 quotes, e.g. NAME:"R&D Oracle Server"
 
-.IP COMMENT:"Host comment"
+.IP "COMMENT:Host comment"
 Adds a small text after the hostname on the webpage. This can
 be used to describe the host, without completely changing its
 display-name as the NAME: tag does. If the comment includes
-whitespace, it must be in double-quotes.
+whitespace, it must be in double-quotes, e.g. COMMENT:"Sun webserver"
 
-.IP DESCR:"Hosttype:Description"
+.IP "DESCR:Hosttype:Description"
 Define some informational text about the host. The "Hosttype"
 is a text describing the type of this device - "router", "switch",
 "hub", "server" etc. The "Description" is an informational
 text that will be shown on the "Info" column page; this can
 e.g. be used to store information about the physical location
 of the device, contact persons etc. If the text contain whitespace,
-you must enclose it in double-quotes.
+you must enclose it in double-quotes, e.g.  DESCR:"switch:4th floor Marketing switch"
 
 .IP "subparent parentpage newpage [Page-title]"
 This is used to define subpages in whatever levels you may
