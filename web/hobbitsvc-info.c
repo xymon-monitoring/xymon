@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.78 2005-02-23 07:17:28 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.79 2005-02-27 16:11:07 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -33,6 +33,8 @@ static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.78 2005-02-23 07:17:28 henrik E
 #ifdef HOBBIT
 #include "hobbitd_alert.h"
 #endif
+
+static int alertcolors = ( (1 << COL_RED) | (1 << COL_YELLOW) | (1 << COL_PURPLE) );
 
 static namelist_t *hosthead = NULL;
 
@@ -109,7 +111,6 @@ void generate_hobbit_alertinfo(char *hostname, char **buf, int *buflen, char *co
 
 	if (!gotconfig) {
 		char configfn[PATH_MAX];
-		int alertcolors = ( (1 << COL_RED) | (1 << COL_YELLOW) | (1 << COL_PURPLE) );
 		int alertinterval = 60*30;
 
 		sprintf(configfn, "%s/etc/hobbit-alerts.cfg", xgetenv("BBHOME"));
@@ -673,6 +674,21 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--no-update") == 0) {
 			dontsendmessages = 1;
+		}
+		else if (argnmatch(argv[argi], "--alertcolors=")) {
+			char *colspec = strchr(argv[argi], '=') + 1;
+			int c, ac;
+			char *p;
+
+			p = strtok(colspec, ",");
+			ac = 0;
+			while (p) {
+				c = parse_color(p);
+				if (c != -1) ac = (ac | (1 << c));
+				p = strtok(NULL, ",");
+			}
+
+			alertcolors = ac;
 		}
 	}
 
