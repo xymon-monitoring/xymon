@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.12 2003-01-30 22:38:39 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.13 2003-02-02 18:43:57 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -145,7 +145,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 
 	groupcols = gen_column_list(head, pagetype, onlycols);
 	if (groupcols) {
-		fprintf(output, "<TABLE SUMMARY=\"Group Block\" BORDER=0> \n <TR><TD VALIGN=MIDDLE ROWSPAN=2 CELLPADDING=2><CENTER><FONT %s>%s</FONT></CENTER></TD>\n", getenv("MKBBTITLE"), grouptitle);
+		fprintf(output, "<CENTER><TABLE SUMMARY=\"Group Block\" BORDER=0> \n <TR><TD VALIGN=MIDDLE ROWSPAN=2 CELLPADDING=2><CENTER><FONT %s>%s</FONT></CENTER></TD>\n", getenv("MKBBTITLE"), grouptitle);
 
 		columncount = 1; /* Count the title also */
 		for (gc=groupcols; (gc); gc = gc->next, columncount++) {
@@ -206,7 +206,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 			fprintf(output, "</TR>\n\n");
 		}
 
-		fprintf(output, "</TABLE><BR><BR>\n");
+		fprintf(output, "</TABLE></CENTER><BR><BR>\n");
 	}
 
 	while (groupcols) {
