@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.19 2003-01-01 21:31:24 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.20 2003-01-04 23:05:34 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -32,6 +32,7 @@ static char rcsid[] = "$Id: loaddata.c,v 1.19 2003-01-01 21:31:24 henrik Exp $";
 #include "bbgen.h"
 #include "util.h"
 #include "loaddata.h"
+#include "debug.h"
 
 char    larrdcol[20] = "larrd";
 int     enable_purpleupd = 1;
@@ -333,8 +334,20 @@ state_t *init_state(const char *filename, int dopurple)
 
 
 	if (host) {
+        	hostlist_t      *l;
+
+		/* There may be multiple host entries, if a host is
+		 * listed in several locations in bb-hosts (for display purposes).
+		 * This is handled by updating ALL of the hostrecords that match
+		 * this hostname, instead of just the one found by find_host().
+		 * Bug reported by Bluejay Adametz of Fuji.
+		 */
 		newstate->entry->next = host->entries;
-		host->entries = newstate->entry;
+		for (l=hosthead; (l); l = l->next) {
+			if (strcmp(l->hostentry->hostname, host->hostname) == 0) 
+				l->hostentry->entries = newstate->entry;
+		}
+
 	}
 	else {
 		/* No host for this test - must be missing from bb-hosts */
