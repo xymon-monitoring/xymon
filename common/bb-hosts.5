@@ -465,6 +465,10 @@ Note: Internally, the ping test will still be handled as
 "failed", and therefore any other tests run for this host
 will report a status of "clear".
 
+.IP nosslcert
+Disables the standard check of the SSL certificate for
+this host.
+
 
 .SH BBTEST-NET TAGS FOR HTTP (WEB) TESTS
 These tags affect the way a http check is performed.
@@ -483,10 +487,6 @@ Note: This option is ignored for simple network tests
 done by bbtest-net. bbtest-net only allows for a common
 timeout setting for all tests, see the "--timeout" option in
 .I bbtest-net(1)
-
-.IP nosslcert
-Disables the standard check of the SSL certificate for
-https sites on this host.
 
 .IP "Extended URL syntax for SSL (https) tests"
 Some SSL sites will only allow you to connect, if you use
