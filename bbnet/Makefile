@@ -12,7 +12,7 @@ all: $(PROGRAMS) $(EXTENSIONS)
 NETTESTOBJS = bbtest-net.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o
 
 bbtest-net: $(NETTESTOBJS) 
-	$(CC) $(CFLAGS) -o $@ $(NETTESTOBJS) $(LDAPLIBS) $(SSLLIBS) ../lib/libbbgen.a libcares.a $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(NETTESTOBJS) ../lib/libbbgen.a libcares.a $(LDAPLIBS) $(SSLLIBS) $(NETLIBS)
 
 
 bbtest-net.o: bbtest-net.c
