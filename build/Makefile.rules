@@ -59,6 +59,9 @@ alert: alert.c debug.c util.c
 contest: contest.c debug.c util.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ contest.c debug.c util.c $(NETLIBS)
 
+calc: calc.c
+	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ calc.c
+
 reptest: reportdata.c debug.c util.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ reportdata.c debug.c util.c
 
@@ -79,7 +82,7 @@ distclean: clean
 	rm -f Makefile
 
 clean:
-	rm -f *.o *~ $(PROGRAMS) $(CGISCRIPTS) alert contest reptest
+	rm -f *.o *~ $(PROGRAMS) $(CGISCRIPTS) alert contest reptest calc
 
 install-bin: $(PROGRAMS)
 	cp -p $(PROGRAMS) $(BBHOME)/bin/
