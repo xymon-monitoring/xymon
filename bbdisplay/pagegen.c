@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.7 2002-11-26 14:51:44 hstoerne Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.8 2002-12-02 22:35:46 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -157,6 +157,31 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 			if (h->link != &null_link) {
 				fprintf(output, "<A HREF=\"%s/%s\" TARGET=\"_blank\"><FONT %s>%s</FONT></A>\n </TD>",
 					getenv("BBWEB"), hostlink(h->link), 
+					getenv("MKBBROWFONT"), h->hostname);
+			}
+			else if (pagetype != PAGE_BB) {
+				/* Provide a link to the page where this host lives */
+				char pagelink[80];
+
+				if (((page_t *)h->parent)->parent) {
+					page_t *parentpage, *parentsubpage;
+
+					parentsubpage = h->parent;
+					parentpage = parentsubpage->parent;
+
+					/* "/bb/sdm/customer/customer.html" */
+					sprintf(pagelink, "%s/%s/%s.html", 
+						parentpage->name, parentsubpage->name, parentsubpage->name);
+				}
+				else {
+					/* "/bb/sdm/sdm.html" */
+					sprintf(pagelink, "%s/%s.html", 
+						((page_t *)h->parent)->name,
+						((page_t *)h->parent)->name);
+				}
+
+				fprintf(output, "<A HREF=\"%s/%s\" TARGET=\"_blank\"><FONT %s>%s</FONT></A>\n </TD>",
+					getenv("BBWEB"), pagelink,
 					getenv("MKBBROWFONT"), h->hostname);
 			}
 			else {

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.14 2002-11-27 13:19:30 hstoerne Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.15 2002-12-02 22:35:46 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -50,6 +50,7 @@ page_t *init_page(const char *name, const char *title)
 	newpage->subpages = NULL;
 	newpage->groups = NULL;
 	newpage->hosts = NULL;
+	newpage->parent = NULL;
 	return newpage;
 }
 
@@ -87,7 +88,7 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	else {
 		newhost->alerts = NULL;
 	}
-	newhost->next = NULL;
+	newhost->parent = newhost->next = NULL;
 
 	newlist->hostentry = newhost;
 	newlist->next = hosthead;
@@ -538,6 +539,7 @@ page_t *load_bbhosts(void)
 			else {
 				cursubpage = cursubpage->next = init_page(name, link);
 			}
+			cursubpage->parent = curpage;
 			curgroup = NULL;
 			curhost = NULL;
 		}
@@ -598,6 +600,7 @@ page_t *load_bbhosts(void)
 			else {
 				curhost = curhost->next = init_host(hostname, ip1, ip2, ip3, ip4, dialup, alertlist);
 			}
+			curhost->parent = (cursubpage ? cursubpage : curpage);
 		}
 		else if (strncmp(l, "summary", 7) == 0) {
 			/* summary row.column      IP-ADDRESS-OF-PARENT    http://bb4.com/ */

@@ -30,16 +30,18 @@
 
 
    page_t                                hostlist_t          state_t
-     name                                  hostentry --+       entry --+
-     title                                 next        |       next    |
-     color                                             |               |
-     subpages                              +-----------+               |
-     groups -------> group_t               |                   +-------+
-     hosts ---+         title              V                   |
-     next     |         hosts ---------> host_t                |
-              |         next   +------->   hostname            |
-              |                |           ip                  |
-              +----------------+           dialup              |
++->  name                                  hostentry --+       entry --+
+|    title                                 next        |       next    |
+|    color                                             |               |
+|    subpages                              +-----------+       +-------+
+|    groups -------> group_t               |                   |
+|    hosts ---+         title              V                   |
++--- parent   |         hosts ---------> host_t                |
+     next     |         next               group               |
+      ^       |                            hostname            |
+      |       +------------------------>   ip                  |
+      |                                    dialup              |
+      +---------------------------------   parent              |
                                            color               |
                       +------------------  link                V
                       |                    entries ---------> entry_t
@@ -156,6 +158,7 @@ typedef struct {
 	entry_t	*entries;
 	int	color;		/* Calculated */
 	char	*alerts;
+	void	*parent;
 	void	*next;
 } host_t;
 
@@ -179,6 +182,7 @@ typedef struct {
 	int	color;		/* Calculated */
 	void	*next;
 	void	*subpages;
+	void	*parent;
 	group_t	*groups;
 	host_t	*hosts;
 } page_t;
