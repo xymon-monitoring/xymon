@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.1 2004-11-06 10:04:19 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.2 2004-11-13 09:07:16 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -22,7 +22,7 @@ static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.1 2004-11-06 10:04:19 henrik Exp $
 #include <signal.h>
 
 #include "libbbgen.h"
-#include "bbdworker.h"
+#include "bbgend_worker.h"
 
 #include "do_larrd.h"
 
@@ -51,8 +51,8 @@ int main(int argc, char *argv[])
 	}
 
 	save_errbuf = 0;
-	setup_signalhandler("bbd_larrd");
-	signal(SIGCHLD, SIG_IGN);
+	setup_signalhandler("bbgend_larrd");
+	signal(SIGPIPE, SIG_DFL);
 
 	running = 1;
 	while (running) {

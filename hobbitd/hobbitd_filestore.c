@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Big Brother message daemon.                                                */
 /*                                                                            */
-/* This is a bbgend worker module, it should be run off bbd_channel.          */
+/* This is a bbgend worker module, it should be run off bbgend_channel.       */
 /*                                                                            */
 /* This module implements the traditional Big Brother filebased storage of    */
 /* incoming status messages to the bbvar/logs/, bbvar/data/, bb/www/notes/    */
@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.19 2004-11-05 07:54:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.20 2004-11-13 09:07:16 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -26,7 +26,7 @@ static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.19 2004-11-05 07:54:18 henri
 
 #include "libbbgen.h"
 
-#include "bbdworker.h"
+#include "bbgend_worker.h"
 
 enum role_t { ROLE_STATUS, ROLE_DATA, ROLE_NOTES, ROLE_ENADIS};
 
@@ -192,6 +192,10 @@ int main(int argc, char *argv[])
 		errprintf("No directory given, aborting\n");
 		return 1;
 	}
+
+	/* For picking up lost children */
+	setup_signalhandler("bbgend_filestore");
+	signal(SIGPIPE, SIG_DFL);
 
 	while (running) {
 		char *items[20] = { NULL, };

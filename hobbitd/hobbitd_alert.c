@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.19 2004-11-13 08:47:45 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.20 2004-11-13 09:07:16 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -241,7 +241,9 @@ int main(int argc, char *argv[])
 	}
 
 	setup_signalhandler("bbgend_alert");
+	/* Need to handle these ourselves, so we can shutdown and save state-info */
 	signal(SIGCHLD, sig_handler);
+	signal(SIGPIPE, sig_handler);
 	signal(SIGTERM, sig_handler);
 	signal(SIGINT, sig_handler);
 

@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.17 2004-10-31 11:44:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.18 2004-11-13 09:07:16 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -30,7 +30,7 @@ static char rcsid[] = "$Id: hobbitd_history.c,v 1.17 2004-10-31 11:44:41 henrik 
 
 #include "libbbgen.h"
 
-#include "bbdworker.h"
+#include "bbgend_worker.h"
 
 static void dropdirectory(char *dirfn)
 {
@@ -138,8 +138,9 @@ int main(int argc, char *argv[])
 	}
 
 	/* For picking up lost children */
-	setup_signalhandler("bbd_history");
+	setup_signalhandler("bbgend_history");
 	signal(SIGCHLD, sig_handler);
+	signal(SIGPIPE, SIG_DFL);
 
 	while (running) {
 		char *items[20] = { NULL, };
@@ -155,7 +156,7 @@ int main(int argc, char *argv[])
 		char oldcol2[3];
 		int trend;
 
-		msg = get_bbgend_message("bbd_history", &seq, NULL);
+		msg = get_bbgend_message("bbgend_history", &seq, NULL);
 		if (msg == NULL) {
 			running = 0;
 			continue;
@@ -223,12 +224,12 @@ int main(int argc, char *argv[])
 
 				if (logexists) {
 					/*
-					 * There is a fair chance bbd_net has not been
+					 * There is a fair chance bbgend has not been
 					 * running all the time while this system was monitored.
 					 * So get the time of the latest status change from the file,
 					 * instead of relying on the "lastchange" value we get
-					 * from bbd_net. This is also needed when migrating from 
-					 * standard bbd to bbd_net.
+					 * from bbgend. This is also needed when migrating from 
+					 * standard bbd to bbgend.
 					 */
 					long pos = -1;
 					char l[1024];

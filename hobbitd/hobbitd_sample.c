@@ -1,12 +1,12 @@
 /*----------------------------------------------------------------------------*/
 /* Big Brother message daemon.                                                */
 /*                                                                            */
-/* Sample bbd worker module. This module shows how to get messages from one   */
-/* of the bbd_net channels. Worker modules subscribe to a channel and can     */
+/* Sample bbgend worker module. This module shows how to get messages from    */
+/* one of the bbgend channels. Worker modules subscribe to a channel and can  */
 /* use the channel data to implement various types of storage (files, DB) of  */
 /* the Big Brother data, or they can implement actions such as alerting via   */
 /* pager, e-mail, SNMP trap or .... In fact, a worker module can do anything  */
-/* without the master bbd_net daemon having to care about what goes on in the */
+/* without the master bbgend daemon having to care about what goes on in the  */
 /* workers.                                                                   */
 /*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_sample.c,v 1.10 2004-11-05 07:16:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_sample.c,v 1.11 2004-11-13 09:07:16 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -26,7 +26,7 @@ static char rcsid[] = "$Id: hobbitd_sample.c,v 1.10 2004-11-05 07:16:33 henrik E
 #include <signal.h>
 
 #include "libbbgen.h"
-#include "bbdworker.h"
+#include "bbgend_worker.h"
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 		msg = get_bbgend_message(argv[0], &seq, timeout);
 		if (msg == NULL) {
 			/*
-			 * get_bbgend_message will return NULL if bbd_channel closes
+			 * get_bbgend_message will return NULL if bbgend_channel closes
 			 * the input pipe. We should shutdown when that happens.
 			 */
 			running = 0;
