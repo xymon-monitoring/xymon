@@ -98,6 +98,9 @@ standard bb-network.sh script, with the following exceptions:
   the fping.sh script from www.deadcat.net to take care of 
   the connectivity tests.
 
+* The proxy-syntax for testing http URL's that standard
+  Big Brother (bbnet) uses is not supported by bbtest-web.
+
 * The ":q" and ":Q" options on individual tests are ignored.
 
 * Dialup-service and modem bank testing is not supported.
@@ -126,5 +129,5 @@ have a feature you would like to see added.
 
 
 Henrik Storner <henrik@storner.dk>
-April 24, 2003
+April 25, 2003
 
