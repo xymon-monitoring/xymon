@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.31 2005-02-02 22:07:39 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.32 2005-02-05 08:01:04 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -122,7 +122,7 @@ typedef struct rule_t {
 static rule_t *rulehead = NULL;
 static rule_t *ruletail = NULL;
 static int cfid = 0;
-static char cfline[80];
+static char cfline[256];
 static int stoprulefound = 0;
 
 /*
@@ -157,7 +157,7 @@ static criteria_t *setup_criteria(rule_t **currule, recip_t **currcp)
 			(*currule)->criteria = (criteria_t *)calloc(1, sizeof(criteria_t));
 		crit = (*currule)->criteria;
 		crit->cfid = cfid;
-		crit->cfline = strdup(cfline);
+		if (crit->cfline == NULL) crit->cfline = strdup(cfline);
 		*currcp = NULL;
 		break;
 
@@ -166,8 +166,7 @@ static criteria_t *setup_criteria(rule_t **currule, recip_t **currcp)
 			(*currcp)->criteria = (criteria_t *)calloc(1, sizeof(criteria_t));
 		crit = (*currcp)->criteria;
 		crit->cfid = cfid;
-		crit->cfline = strdup(cfline);
-		crit->colors = (*currule)->criteria->colors;
+		if (crit->cfline == NULL) crit->cfline = strdup(cfline);
 		break;
 	}
 
@@ -362,10 +361,8 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 			continue;
 		}
 
-		if (tracefd) {
-			strncpy(cfline, l, (sizeof(cfline)-1));
-			cfline[sizeof(cfline)-1] = '\0';
-		}
+		strncpy(cfline, l, (sizeof(cfline)-1));
+		cfline[sizeof(cfline)-1] = '\0';
 
 		/* Expand macros inside the line before parsing */
 		p = strtok(preprocess(l), " \t");
