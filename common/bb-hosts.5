@@ -1015,13 +1015,22 @@ as "red" (alarm). This tag reduces a search failure to a
 "yellow" (warning) status.
 
 .SH PERFORMANCE MONITORING TESTS
-.IP apache
+.IP apache[=URL]
 If you are running an Apache webserver, adding this tag makes
 .I bbtest-net(1)
 collect performance statistics from the Apache webserver by
 querying the URL \fBhttp://IP.ADDRESS.OF.HOST/server-status?auto\fR.
 The response is sent as a data-report and processed by the Hobbit
-hobbitd_larrd module into an RRD file and an "apache" graph.
+hobbitd_larrd module into an RRD file and an "apache" graph. If
+your webserver requires e.g. authentication, or runs on a different
+URL for the server-status, you can provide the full URL needed to 
+fetch the server-status page, e.g. 
+\fBapache=http://LOGIN:PASSWORD@10.0.0.1/server-status?auto\fR 
+for a password protected server-status page, or
+\fBapache=http://10.0.0.1:8080/apache/server-status?auto\fR 
+for a server listening on port 8080 and with a different path
+to the server-status page.
+
 Note that you need to enable the server-status URL in your
 Apache configuration. The following configuration is needed:
 .sp
