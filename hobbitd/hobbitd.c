@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.49 2004-11-04 22:53:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.50 2004-11-08 22:52:50 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1407,7 +1407,7 @@ void check_purple_status(void)
 						 * See if this is a (client) test where we have a red "conn" test.
 						 */
 						for (tmp = hwalk->logs; (tmp && strcmp(tmp->test->testname, purpleclientconn)); tmp = tmp->next) ;
-						if (tmp->color == COL_RED) newcolor = COL_CLEAR;
+						if (tmp && (tmp->color == COL_RED)) newcolor = COL_CLEAR;
 					}
 
 					handle_status(lwalk->message, "bbgend", 
