@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.19 2004-11-13 16:24:45 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.20 2004-11-18 13:23:01 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -329,7 +329,7 @@ int main(int argc, char *argv[])
 				/* Remove all directories below the host-specific histlog dir */
 				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
 				sprintf(testdir, "%s/%s", histlogdir, hostdash);
-				dropdirectory(testdir);
+				dropdirectory(testdir, 1);
 				free(hostdash);
 			}
 
@@ -384,7 +384,7 @@ int main(int argc, char *argv[])
 
 				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
 				sprintf(testdir, "%s/%s/%s", histlogdir, hostdash, testname);
-				dropdirectory(testdir);
+				dropdirectory(testdir, 1);
 				free(hostdash);
 			}
 
