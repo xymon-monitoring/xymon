@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.44 2004-04-23 08:58:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.45 2004-07-19 16:02:06 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -432,7 +432,9 @@ int generate_info(char *infocolumn)
 		strcpy(rawcopy, hostwalk->hostentry->rawentry); /* Already allocated */
 		p = strtok(rawcopy, " \t");
 		while (p) {
-			if ((strncmp(p, "NAME:", 5) == 0) || (strncmp(p, "COMMENT:", 8) == 0)) {
+			if ((strncmp(p, "NAME:", 5) == 0) || 
+			    (strncmp(p, "COMMENT:", 8) == 0) ||
+			    (strncmp(p, "DESCR:", 8) == 0)) {
 				char *p2 = strchr(p, ':');
 
 				p2++;
