@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.135 2003-07-02 09:41:01 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.136 2003-07-02 11:04:59 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -416,7 +416,7 @@ int main(int argc, char *argv[])
 	 * generate wrong links for info pages etc.
 	 */
 	if (pageset || embedded) enable_purpleupd = enable_larrdgen = enable_infogen = enable_wmlgen = 0;
-	if (embedded) egocolumn = NULL;
+	if (embedded) egocolumn = htaccess = NULL;
 
 	/* Load all data from the various files */
 	linkhead = load_all_links();
