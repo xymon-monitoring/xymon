@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.6 2004-09-19 09:40:36 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.7 2004-09-19 09:41:43 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -460,7 +460,7 @@ int main(int argc, char *argv[])
 					newconn->next = chead;
 					chead = newconn;
 					newconn->bufsize = BUFSZ_INC;
-					newconn->buf = newconn->bufp = malloc(1, newconn->bufsize);
+					newconn->buf = newconn->bufp = malloc(newconn->bufsize);
 				}
 
 				newconn->state = P_REQ_NEW;
