@@ -11,26 +11,16 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: memory.c,v 1.3 2005-01-19 21:48:19 henrik Exp $";
+static char rcsid[] = "$Id: memory.c,v 1.4 2005-01-23 14:41:13 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
 
+#define LIB_MEMORY_C_COMPILE 1
+
 #include "libbbgen.h"
-
-#undef calloc
-#undef malloc
-#undef realloc
-#undef xfree
-
-#undef strdup
-#undef strcat
-#undef strncat
-
-#undef strcpy
-#undef strncpy
 
 
 static xmemory_t *mhead = NULL;

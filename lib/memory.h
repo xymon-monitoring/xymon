@@ -39,6 +39,12 @@ extern int   xsprintf(char *dest, const char *fmt, ...);
 // strlen|strcmp|strncmp|strcasecmp|strncasecmp|strstr|strchr|strrchr|strspn|strcspn|strtok|strftime|strerror
 
 
+#ifndef LIB_MEMORY_C_COMPILE
+#undef calloc
+#undef malloc
+#undef realloc
+#undef strdup
+
 /*
  * This arranges for all memory-allocation routines to
  * go via a wrapper that checks for bogus input data
@@ -50,6 +56,7 @@ extern int   xsprintf(char *dest, const char *fmt, ...);
 #define malloc(N)    xmalloc((N))
 #define realloc(P,S) xrealloc((P), (S))
 #define strdup(P)    xstrdup((P))
+#endif
 
 
 #ifdef MEMORY_DEBUG
@@ -61,17 +68,24 @@ extern int   xsprintf(char *dest, const char *fmt, ...);
  * situations.
  */
 
-#define xfree(P) { remove_from_memlist((P)); free((P)); (P) = NULL; }
-
+#ifndef LIB_MEMORY_C_COMPILE
 #define MEMDEFINE(P) { add_to_memlist((P), sizeof((P))); }
 #define MEMUNDEFINE(P) { remove_from_memlist((P)); }
 
+#define xfree(P) { remove_from_memlist((P)); free((P)); (P) = NULL; }
+
+#undef strcat
+#undef strncat
+#undef strcpy
+#undef strncpy
+#undef sprintf
+
 #define strcat(D,S) xstrcat((D), (S))
 #define strncat(D,S,L) xstrncat((D), (S), (L))
-
 #define strcpy(D,S) xstrcpy((D), (S))
 #define strncpy(D,S,L) xstrncpy((D), (S), (L))
 #define sprintf xsprintf
+#endif
 
 #else
 
