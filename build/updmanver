@@ -10,17 +10,22 @@ then
 	exit 1
 fi
 
-co -l RCS/*.[1-9],v
-for f in *.[1-9]
-do
-   NAME=`head -1 $f | awk '{print $2}'`;
-   SECTION=`head -1 $f | awk '{print $3}'`;
-   (echo ".TH $NAME $SECTION \"Version $VERSION: $DATE\" \"bbgen toolkit\""; tail +2 $f) >$f.new
-   mv $f.new $f
-   ci -u -m"Version update" -q -f $f
-done
+cd $HOME/hobbit || exit 1
 
-co -l bbgen-intro.html
-man2html bbgen-intro.7 >bbgen-intro.html
-ci -u -m"Updated for version $VERSION" -q -f bbgen-intro.html
+for DIR in bbdisplay bbnet bbproxy common hobbitd
+do
+   pushd $DIR
+
+   co -l RCS/*.[1-9],v
+   for f in *.[1-9]
+   do
+      NAME=`head -1 $f | awk '{print $2}'`;
+      SECTION=`head -1 $f | awk '{print $3}'`;
+      (echo ".TH $NAME $SECTION \"Version $VERSION: $DATE\" \"Hobbit Monitor\""; tail +2 $f) >$f.new
+      mv $f.new $f
+      ci -u -m"Version update" -q -f $f
+   done
+
+   popd
+done
 
