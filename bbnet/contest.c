@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.16 2003-06-18 20:06:09 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.17 2003-06-23 15:40:14 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -174,6 +174,7 @@ void do_tcp_tests(int conntimeout, int concurrency)
 						   case ECONNREFUSED : break;
 						   case EHOSTUNREACH : break;
 						   case ENETUNREACH  : break;
+						   case EHOSTDOWN    : break;
 
 						   /* Not likely ... */
 						   case ETIMEDOUT    : break;
