@@ -1,4 +1,5 @@
 .TH BBPROXY 1 "Version 3.0:  6 sep 2004" "bbgen toolkit"
+
 .SH NAME
 bbproxy \- Big Brother message proxy
 .SH SYNOPSIS
@@ -11,12 +12,33 @@ server to another. It will typically be needed if you have
 clients behind a firewall, so they cannot send status
 messages to the BBDISPLAY server directly.
 
+bbproxy serves three purposes. First, it acts as a regular
+proxy server, allowing clients that cannot connect directly to 
+the BBDISPLAY or BBPAGER servers to send status messages.
 The standard Big Brother daemon,
 .I bbd(1)
 can also do this via the BBRELAY setting. However, bbproxy
 has a much lower overhead since it runs as a single-thread
 application and does not launch new processes to handle 
 each incoming message.
+.br
+
+Second it acts as a buffer, smoothing out peak loads if
+many clients try to send status messages simultaneously.
+bbproxy can absorb messages very quickly, but will queue
+them up internally and forward them to the BBDISPLAY server
+at a reasonable pace. This helps smooth out the load on 
+your BBDISPLAY server.
+.br
+
+Third, bbproxy merges small "status" messages into larger
+"combo" messages. This can dramatically decrease the number
+of connections that need to go from bbproxy to the BBDISPLAY
+server, and since each connection to the BBDISPLAY server
+requires a new proces to be started this will also cut down
+on the load on your BBDISPLAY server. The merging of messages
+causes "status" messages to be delayed for up to 0.25 seconds
+before being sent off to the BBDISPLAY server.
 
 .SH OPTIONS
 .IP "--bbdisplay=SERVERIP[:PORT]"
@@ -29,14 +51,14 @@ This option is required.
 
 .IP "--bbpager=SERVERIP[:PORT]"
 Specifies the IP-address and optional portnumber where incoming
-pager messages are forwarded to. The default portnumber is 1984, 
+"page" messages are forwarded to. The default portnumber is 1984, 
 the standard Big Brother port number. If you have setup the normal
 Big Brother environment, you can use "--bbpager=$BBPAGE".
 .br
 If this option is omitted, "page" messages are sent to the
 server listed in --bbdisplay.
 
-.IP "--local=LOCALIP[:PORT]"
+.IP "--listen=LOCALIP[:PORT]"
 Specifies the IP-adress where bbproxy listens for incoming 
 connections. By default, bbproxy listens on all IP-adresses
 assigned to the host. If no portnumber is given, port 1984
@@ -53,7 +75,8 @@ have set the standard Big Brother environment, you can use
 "--report=bbproxy" to have bbproxy report its status to a
 "bbproxy" column in Big Brother. The default for PROXYHOSTNAME
 is the $MACHINE environment variable, i.e. the hostname of the
-server running bbproxy.
+server running bbproxy. See REPORT OUTPUT below for an 
+explanation of the report contents.
 
 .IP "--lqueue=N"
 Size of the listen-queue where incoming connections can
@@ -77,12 +100,106 @@ Sends all logging output to the specified file instead of stderr.
 .IP "--debug"
 Enable debugging output.
 
+.SH "REPORT OUTPUT"
+If enabled via the "--report" option, bbproxy will send a 
+status message about itself to the BBDISPLAY server once
+every 5 minutes, or when it gets a SIGUSR1 signal.
+
+The status message include the following information:
+
+.IP "Incoming messages"
+The total number of connections accepted from clients
+since the proxy started. The "(N msgs/second)" is the 
+average number of messages per second over the past 5 minutes.
+
+.IP "Outbound messages"
+The total number of messages sent to the BBDISPLAY and
+BBPAGER servers. Note that this is probably smaller than
+the number of incoming messages, since bbproxy merges
+messages before sending them.
+
+.IP "Incoming - Combo messages"
+The number of "combo" messages received from a client.
+
+.IP "Incoming - Status messages"
+The number of "status" messages received from a client.
+bbproxy attempts to merge these into "combo" messages. 
+The "Messages merged" is the number of "status" messages
+that were merged into a combo message, the "Resulting combos"
+is the number of "combo" messages that resulted from the
+merging.
+
+.IP "Incoming - Page messages"
+The number of "page" messages received from a client.
+
+.IP "Incoming - Other messages"
+The number of other messages (data, notes, ack, query, ...)
+messages received from a client.
+
+.IP "Proxy ressources - Connection table size"
+This is the number of connection table slots in the proxy.
+This measures the number of simultaneously active requests
+that the proxy has handled, and so gives an idea about the
+peak number of clients that the proxy has handled simultaneously.
+
+.IP "Proxy ressources - Buffer space"
+This is the number of KB memory allocated for network buffers.
+
+.IP "Timeout details - reading from client"
+The number of messages aborting because reading the message
+from the client timed out.
+
+.IP "Timeout details - connecting to server"
+The number of messages aborted, because a connection to the
+BBDISPLAY or BBPAGER server could not be established.
+
+.IP "Timeout details - sending to server"
+The number of messages aborted because the communication
+to the BBDISPLAY/BBPAGER server timed out after a connection
+was established.
+
+.IP "Timeout details - reading from server"
+The number of response messages that timed out while attempting
+to read them from the server. Note that this applies to the
+"config" and "query" messages only, since all other message
+types do not get any response from the servers.
+
+.IP "Timeout details - sending to client"
+The number of response messages that timed out while attempting
+to send them to the client. Note that this applies to the
+"config" and "query" messages only, since all other message
+types do not get any response from the servers.
+
+.SH ""
+If you think the number do not add up, here is how they relate.
+
+The "Incoming messages" should be equal to the sum of the 
+"Incoming - Combo/Status/Page/Other messages", or slightly
+more because messages that are being received are not included
+in the per-type message counts.
+
+The "Outbound messages" should be equal to sum of the
+"Incoming - Combo/Page/Other messages", plus the "Resulting
+combos" count, plus "Incoming Status messages" minus 
+"Messages merged" (this latter number is the number of status
+messages that were NOT merged into combos, but sent directly).
+The "Outbound messages" may be slightly lower than that,
+because messages that are being sent are not included in the
+"Outbound messages" count until they have been fully sent.
+
 .SH SIGNALS
 .IP SIGHUP
 Re-opens the logfile, e.g. after it has been rotated.
 
 .IP SIGTERM
 Shut down the proxy.
+
+.IP SIGUSR1
+Sends a proxy server status message to BBDISPLAY immediately.
+
+.SH BUGS
+The messages/second counter is always 0 when the proxy
+status message is forced with SIGUSR1.
 
 .SH "SEE ALSO"
 bb(1), bbd(1), bbgen-intro(7)
