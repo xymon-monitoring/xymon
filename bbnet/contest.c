@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.31 2003-08-22 15:02:39 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.32 2003-08-23 08:31:25 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -385,7 +385,7 @@ void do_tcp_tests(int conntimeout, int concurrency)
 
 						if (item->open) {
 							unsigned char *outbuf = NULL;
-							unsigned int outlen;
+							unsigned int outlen = 0;
 
 							/*
 							 * Connection succeeded - port is open. Determine connection time,
