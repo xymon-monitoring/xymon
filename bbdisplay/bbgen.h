@@ -51,7 +51,7 @@
 					   rawentry            |
                       +------------------  link                V
                       |                    entries ---------> entry_t
-                      |                    oldage               column -------> col_t
+                      |                    oldage               column -------> bbgen_col_t
                       |                    larrdgraphs          color             name
                       |                    next                 age            +- link
                       |                                         oldage         |  next
@@ -88,7 +88,7 @@
   traversal of the host list.
 
   entry_t holds the data for a given test (basically, a file in $BBLOGS).
-  test-names are not stored directly, but in the linked "col_t" list.
+  test-names are not stored directly, but in the linked "bbgen_col_t" list.
   "age" is the "Status unchanged in X" text from the logfile. "oldage" is
   a boolean indicating if "age" is more than 1 day. "alert" means this 
   test belongs on the reduced summary (alerts) page.
@@ -155,10 +155,10 @@ typedef struct {
 	char	*name;
 	link_t	*link;
 	void	*next;
-} col_t;
+} bbgen_col_t;
 
 typedef struct {
-	col_t	*column;
+	bbgen_col_t	*column;
 	void	*next;
 } col_list_t;
 
@@ -167,7 +167,7 @@ typedef struct {
 /* contains the actual color of a measurement */
 /* Linked list.                               */
 typedef struct {
-	col_t	*column;
+	bbgen_col_t *column;
 	int	color;
 	char	age[20];
 	int	oldage;
@@ -262,7 +262,7 @@ extern bbgen_page_t	*pagehead;
 extern link_t 		*linkhead, null_link;
 extern hostlist_t	*hosthead;
 extern state_t		*statehead;
-extern col_t		*colhead, null_column;
+extern bbgen_col_t	*colhead, null_column;
 extern summary_t	*sumhead;
 extern dispsummary_t	*dispsums;
 extern int		bb_color, bb2_color, bbnk_color;

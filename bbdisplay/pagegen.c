@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.43 2003-05-08 20:07:57 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.44 2003-05-09 21:14:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -154,7 +154,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 
 		char *p1 = onlycols;
 		char *p2;
-		col_t *col;
+		bbgen_col_t *col;
 
 		collist_walk = head;
 		do {
@@ -735,7 +735,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 			&events[num].eventtime, &events[num].changetime, &events[num].duration, 
 			newcol, oldcol, &events[num].state);
 
-		if ((events[num].eventtime > cutoff) && find_host(events[num].hostname) {
+		if ((events[num].eventtime > cutoff) && find_host(events[num].hostname)) {
 			events[num].newcolor = eventcolor(newcol);
 			events[num].oldcolor = eventcolor(oldcol);
 			eventintime_count++;

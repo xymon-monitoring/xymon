@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.58 2003-04-25 11:59:45 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.59 2003-05-09 21:14:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -44,7 +44,7 @@ int	purpledelay = 0;			/* Lifetime of purple status-messages. Default 0 for
 char	*ignorecolumns = NULL;			/* Columns that will be ignored totally */
 
 link_t  null_link = { "", "", "", NULL };	/* Null link for pages/hosts/whatever with no link */
-col_t   null_column = { "", NULL };		/* Null column */
+bbgen_col_t   null_column = { "", NULL };		/* Null column */
 char	*null_text = "";
 
 static pagelist_t *pagelisthead = NULL;
@@ -234,10 +234,10 @@ link_t *init_link(char *filename, const char *urlprefix)
 	return newlink;
 }
 
-col_t *find_or_create_column(const char *testname)
+bbgen_col_t *find_or_create_column(const char *testname)
 {
-	static col_t *lastcol = NULL;	/* Cache the last lookup */
-	col_t	*newcol;
+	static bbgen_col_t *lastcol = NULL;	/* Cache the last lookup */
+	bbgen_col_t *newcol;
 
 	dprintf("find_or_create_column(%s)\n", textornull(testname));
 	if (lastcol && (strcmp(testname, lastcol->name) == 0))
@@ -245,7 +245,7 @@ col_t *find_or_create_column(const char *testname)
 
 	for (newcol = colhead; (newcol && (strcmp(testname, newcol->name) != 0)); newcol = newcol->next);
 	if (newcol == NULL) {
-		newcol = malloc(sizeof(col_t));
+		newcol = malloc(sizeof(bbgen_col_t));
 		newcol->name = malcop(testname);
 		newcol->link = find_link(testname);
 
