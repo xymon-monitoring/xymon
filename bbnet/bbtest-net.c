@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.155 2004-08-19 20:31:11 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.156 2004-08-20 15:00:24 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -60,7 +60,7 @@ char *reqenv[] = {
 #define TOOL_DIG	2
 #define TOOL_NTP        3
 #define TOOL_FPING      4
-#define TOOL_CURL       5
+#define TOOL_HTTP       5
 #define TOOL_MODEMBANK  6
 #define TOOL_LDAP	7
 #define TOOL_RPCINFO	8
@@ -2164,8 +2164,8 @@ int main(int argc, char *argv[])
 	digtest = add_service("dig", getportnumber("domain"), 0, TOOL_DIG);
 	add_service("ntp", getportnumber("ntp"),    0, TOOL_NTP);
 	rpctest  = add_service("rpc", getportnumber("sunrpc"), 0, TOOL_RPCINFO);
-	httptest = add_service("http", getportnumber("http"),  0, TOOL_CURL);
-	ftptest = add_service("ftpurl", getportnumber("ftp"),  strlen("ftp"), TOOL_CURL);
+	httptest = add_service("http", getportnumber("http"),  0, TOOL_HTTP);
+	ftptest = add_service("ftpurl", getportnumber("ftp"),  strlen("ftp"), TOOL_HTTP);
 	ldaptest = add_service("ldapurl", getportnumber("ldap"), strlen("ldap"), TOOL_LDAP);
 	if (pingcolumn) pingtest = add_service(pingcolumn, 0, 0, TOOL_FPING);
 	modembanktest = add_service("dialup", 0, 0, TOOL_MODEMBANK);
@@ -2339,7 +2339,7 @@ int main(int argc, char *argv[])
 				break;
 
 			case TOOL_FPING:
-			case TOOL_CURL:
+			case TOOL_HTTP:
 			case TOOL_LDAP:
 				/* These handle result-transmission internally */
 				break;
