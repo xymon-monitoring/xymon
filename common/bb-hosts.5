@@ -545,10 +545,27 @@ These tags define network tests that are implemented by bbtest-net,
 but not by the standard Big Brother bb-network.sh script.
 
 .IP "dns[=hostname]"
-.IP "dig[=hostname]"
+.IP "dns=TYPE:lookup[,TYPE:lookup...]
 The default DNS tests in Big Brother attempt a DNS lookup
 of the DNS' servers own hostname. You can specify the hostname
 to lookup on a DNS server by listing it on each test.
+
+The second form of the test allows you to perform multiple 
+queries of the DNS server, requesting different types of
+DNS records. The TYPE defines the type of DNS data: A (IP-address),
+MX (Mail eXchanger), PTR (reverse), CNAME (alias), SOA (Start-Of-Authority), 
+NS (Name Server) are among the more common ones used. The
+"lookup" is the query. E.g. to lookup the MX records for the
+"foo.com" domain, you would use "dns=mx:foo.com". Or to lookup
+the nameservers for the "bar.org" domain, "dns=ns:bar.org". 
+You can list multiple lookups, separated by commas. For the
+test to end up with a green status, all lookups must succeed.
+
+.IP dig
+This is an alias for the "dns" test. In bbtest-net, the "dns"
+and "dig" tests are handled identically, so all of the facilities
+for testing described for the "dns" test are also available for
+the "dig" test.
 
 .IP ntp
 Check for a running NTP (Network Time Protocol) server on this
