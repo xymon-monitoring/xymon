@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.78 2003-07-12 06:15:58 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.79 2003-07-12 06:32:11 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1172,7 +1172,7 @@ int main(int argc, char *argv[])
 	testitem_t *t;
 	int argi;
 	int concurrency = 0;
-	char *pingcolumn = NULL;
+	char *pingcolumn = "conn";
 	char *egocolumn = NULL;
 	int failgoesclear = 0;		/* IPTEST_2_CLEAR_ON_FAILED_CONN */
 
@@ -1183,6 +1183,8 @@ int main(int argc, char *argv[])
 		errprintf("Failed to initialize http library\n");
 		return 1;
 	}
+
+	if (getenv("CONNTEST") && (strcmp(getenv("CONNTEST"), "FALSE") == 0)) pingcolumn = NULL;
 
 	for (argi=1; (argi < argc); argi++) {
 		if      (argnmatch(argv[argi], "--timeout=")) {
