@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.52 2005-03-25 21:13:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.53 2005-03-28 06:29:35 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -534,13 +534,17 @@ int main(int argc, char *argv[])
 			awalk->next = ahead;
 			ahead = awalk;
 		}
-		else if ((metacount > 3) && (strncmp(metadata[0], "@@drophost", 10) == 0)) {
+		else if ((metacount > 3) && 
+			 ((strncmp(metadata[0], "@@drophost", 10) == 0) || (strncmp(metadata[0], "@@dropstate", 11) == 0))) {
 			/* @@drophost|timestamp|sender|hostname */
+			/* @@dropstate|timestamp|sender|hostname */
 			htnames_t *hwalk;
 
 			for (hwalk = hostnames; (hwalk && strcmp(hostname, hwalk->name)); hwalk = hwalk->next) ;
-			for (awalk = ahead; (awalk); awalk = awalk->next) {
-				if (awalk->hostname == hwalk) awalk->state = A_DEAD;
+			if (hwalk) {
+				for (awalk = ahead; (awalk); awalk = awalk->next) {
+					if (awalk->hostname == hwalk) awalk->state = A_DEAD;
+				}
 			}
 		}
 		else if ((metacount > 4) && (strncmp(metadata[0], "@@droptest", 10) == 0)) {
