@@ -1,14 +1,14 @@
-.TH BB-HOSTLINK.CGI 1 "Version 2.13: 27 Nov 2003" "bbgen toolkit"
+.TH BB-FINDHOST.CGI 1 "Version 2.13: 27 Nov 2003" "bbgen toolkit"
 .SH NAME
-bb-hostlink.cgi \- Big Brother CGI script to find hosts
+bb-findhost.cgi \- Big Brother CGI script to find hosts
 .SH SYNOPSIS
-.B "bb-hostlink.cgi?host=hostnames"
+.B "bb-findhost.cgi?host=hostnames"
 
 .SH DESCRIPTION
-.I bb-hostlink.cgi
-is invoked as a CGI script via the bb-hostlink.sh CGI wrapper.
+.I bb-findhost.cgi
+is invoked as a CGI script via the bb-findhost.sh CGI wrapper.
 
-bb-hostlink.cgi is passed a QUERY_STRING environment variable with the
+bb-findhost.cgi is passed a QUERY_STRING environment variable with the
 "host=hostname(s)" parameter. Multiple hostnames can be given, they
 should be separated by whitespace.
 
@@ -26,7 +26,7 @@ file.
 
 .SH "ENVIRONMENT VARIABLES"
 .IP BBHOSTS
-bb-hostlink.cgi uses the BBHOSTS environment variable to find the
+bb-findhost.cgi uses the BBHOSTS environment variable to find the
 bb-hosts file listing all known hosts and their page locations.
 
 .SH "SEE ALSO"
