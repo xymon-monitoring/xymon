@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.10 2004-09-07 17:06:20 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.11 2004-09-10 21:35:41 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -83,7 +83,7 @@ static void dns_callback(void *arg, int status, struct hostent *hent)
 	}
 	else {
 		memset(&dnsc->addr, 0, sizeof(dnsc->addr));
-		dprintf("DNS lookup failed for %s - status %d\n", dnsc->name, status);
+		dprintf("DNS lookup failed for %s - status %s (%d)\n", dnsc->name, ares_strerror(status), status);
 		dnsc->failed = 1;
 		if (stdchannelactive) dns_stats_failed++;
 	}
