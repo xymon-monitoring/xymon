@@ -15,10 +15,7 @@
   ignoreres. 
 
 * "disable" beskeder sætter intern status-farve til "blue" og logger
-  beskeden om årsag og varighed. Når der modtages "status" for en
-  disabled test, pre-pendes indholdet af "disable" beskeden til
-  status-beskeden, som så behandles ligesom andre status-beskeder.
-  Den blå status vil også stoppe al alarmering.
+  beskeden om årsag og varighed.
 
 * "enable" beskeder clearer blot flag (varighed) for hvor længe
   en test er disabled. Herefter vil nye status-beskeder automatisk
@@ -34,23 +31,25 @@
 	       alarm-farve, samt med "bbgendack" beskeder.
   - "data"   : Fødes med indholdet af "data" beskeder
   - "notes"  : Fødes med indholdet af "notes" beskeder
+  - "enadis" : Fødes med indholdet af "enable" og "disable" beskeder
 
 * Der startes et antal hjælpe-processer til at håndtere I/O og
   andre "tunge" tasks:
-  - alert    : Abonnerer på "page". Udsender alarmer.
+  - statuslog: Abonnerer på "status". Opdaterer bbvar/logs/ filer.
   - history  : Abonnerer på "stachg". Opdaterer bbvar/hist/allevents,
                bbvar/hist/{HOST,HOST.TEST}, bbvar/histlogs/HOST/TEST/*
   - datastore: Abonnerer på "data". Opdaterer bbvar/data/ filer.
   - infostore: Abonnerer på "notes". Opdaterer bbvar/notes/ filer.
-  - larrd*2  : Abonnerer på "status" og "data". Opdaterer LARRD.
+  - enastore : Abonnerer på "enadis". Opdaterer bbvar/disabled/ filer.
+  - alert    : Abonnerer på "page". Udsender alarmer.
+  - larrd*2  : Abonnerer på "status" og "data". Opdaterer LARRD RRD's.
   - htmllog  : Abonnerer på "status". Opdaterer bb/www/html/ filer.
-  - statuslog: Abonnerer på "status". Opdaterer bbvar/logs/ filer.
 
 * kanal protokoller
 
   status
   ------
-  @@status|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage
+  @@status|timestamp|sender|hostname|testname|expiretime|color|flags|prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage
   <status message>
   @@
 
@@ -92,7 +91,15 @@
   <message>
   @@
 
-  Alle kanaler
+  enadis
+  -----
+  @@enadis|timestamp|sender|hostname|testname|expiretime
+  @@
+
+  "expiretime" is 0 for an "enable" message, >0 for a
+  "disable" message.
+
+  All channels
   ------------
   @@drophost|timestamp|sender|hostname
   @@droptest|timestamp|sender|hostname|testname
@@ -101,14 +108,11 @@
 
 
 * Simpel "ack" protokol.
-  - De gamle "security codes" er væk.
-  - bbd udsteder en "cookie" som svar på en "bbgendcookie HOST.TEST"
-    request. [Hvordan sikres adgangen til cookies ? Via web adgangs-
-    kontrol, og "bbgendcookie" requests tillades kun fra 1 IP, default
-    127.0.0.1]
-  - En cookie er et tilfældigt tal, og gælder i 5 minutter. bbd holder
-    rede på udstedte cookies og hvilken host.test kombination den gælder
-    til.
+  - bbd udsteder en "cookie" når en test går i alert status; den er
+    gyldig lige så længe som status beskeden (default: 30 minutter).
+    Ved udløb fornyes den hvis status fortsat er i alert-tilstand.
+  - En cookie er et tilfældigt 6-cifret tal. bbd holder rede på udstedte 
+    cookies og hvilken host.test kombination den gælder til.
   - "bbgendack cookie duration [ack message]" checker cookie, og hvis
     den er gyldig sættes ack-flaget på den pågældende statuslog. Denne
     besked videresendes på "page" kanalen så alarmerings-moduler ved
@@ -119,10 +123,15 @@
 * "bbgendlog HOST.TEST" request returnerer den aktuelle statuslog for en
   host.test kombination.
 
+  hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|ackmsg|dismsg
+  message
+
 * "bbgendboard" request returnerer 1 linie per statuslog med opsummering af
   status, d.v.s. al information pånær fritekst fra logfilen. Indeholder
   også "meta" information såsom hvor den kom fra, tid for sidste status
   skift osv. Alt det der tidligere aflæstes fra bbvar/logs/ filerne.
+
+  hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|1st line of message
 
 * "bbgenddrop HOSTNAME [TESTNAME]" drops all information about a host, 
   or a host.test combination. This propagates a "drophost" / "droptest"
@@ -134,4 +143,51 @@
 
 * "bbgendrename HOSTNAME OLDTEST NEWTEST" renames a test. This propagates
   a "renametest" message to all workers.
+
+* Master/worker communications
+  - Uses a single shmem segment as a bulletin board for new messages.
+  - Communication synchronized with two semaphores: BOARDBUSY and GOCLIENT.
+  - Number of clients found via registering on a CLIENTCOUNT semaphore
+    (clients up this when registering, and down it when they terminate).
+  - Sequence of events is as follows:
+               MASTER                    CLIENT 1            CLIENT 2
+       Wait BOARDBUSY = 0          Down GOCLIENT          Down GOCLIENT
+       <message arrives>           (block until > 0)      (block until > 0)
+       Up BOARDBUSY (+CLIENTCOUNT)
+       Up GOCLIENT (+CLIENTCOUNT)
+				   Copy message           Copy message
+				   Wait GOCLIENT=0        Wait GOCLIENT=0
+                                   Down BOARDBUSY         Down BOARDBUSY
+
+     The client wait (GOCLIENT=0) is necessary to prevent one client
+     from snatching a message on behalf of the other clients (looping with
+     the same message multiple times).
+
+* Environment settings - bbd_filestore
+  - BBLOGS : Default "--dir" when run with --status
+  - BBDATA : Default "--dir" when run with --data
+  - BBNOTES: Default "--dir" when run with --notes
+
+* Environment settings - bbd_history
+  - BBALLHISTLOG  : If TRUE, the "allevents" file is updated.
+  - BBHOSTHISTLOG : If TRUE, the "hostname" host events file is updated
+  - BBHIST        : Directory for the allevents, host- and status-event logs
+  - SAVESTATUSLOG : If TRUE, the historical full status log is stored
+  - BBHISTLOGS    : Top level directory for the historical full status logs
+
+* Environment settings - bbd_net
+  - BBGHOSTS      : Default "--ghosts" value
+  - BBHOSTS       : Default "--bbhosts" value
+
+* Environment settings - bb-hostsvc.cgi
+  - LARRDS        : Comma-separated list of statuses that have a LARRD graph
+  - NONHISTS      : Comma-separated list of statuses with no History button
+  - USEBBGEND     : If TRUE, get log via the bbgend net-interface instead of files.
+  - CGIBINURL
+  - BBWEB
+  - BBLOGS
+  - BBHISTLOGS
+  - BBSKIN
+  - DOTHEIGHT
+  - DOTWIDTH
 
