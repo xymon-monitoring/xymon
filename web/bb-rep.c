@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.13 2003-08-16 06:59:26 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.14 2003-09-30 16:20:32 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -128,6 +128,9 @@ void parse_query(void)
 	tmbuf.tm_mday = startday;
 	tmbuf.tm_mon = startmon;
 	tmbuf.tm_year = startyear - 1900;
+	tmbuf.tm_hour = 0;
+	tmbuf.tm_min = 0;
+	tmbuf.tm_sec = 0;
 	tmbuf.tm_isdst = -1;		/* Important! Or we mishandle DST periods */
 	starttime = mktime(&tmbuf);
 
@@ -135,15 +138,13 @@ void parse_query(void)
 	tmbuf.tm_mday = endday;
 	tmbuf.tm_mon = endmon;
 	tmbuf.tm_year = endyear - 1900;
+	tmbuf.tm_hour = 23;
+	tmbuf.tm_min = 59;
+	tmbuf.tm_sec = 59;
 	tmbuf.tm_isdst = -1;		/* Important! Or we mishandle DST periods */
 	endtime = mktime(&tmbuf);
 
 	if ((starttime == -1) || (endtime == -1) || (starttime > time(NULL))) errormsg("Invalid parameters");
-
-	if (starttime == endtime) {
-		/* Set end at 23:59:59 same day */
-		endtime += 86399;
-	}
 
 	if (endtime > time(NULL)) endtime = time(NULL);
 
