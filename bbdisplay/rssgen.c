@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: rssgen.c,v 1.6 2004-08-09 11:12:19 henrik Exp $";
+static char rcsid[] = "$Id: rssgen.c,v 1.7 2004-08-11 12:57:31 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -31,17 +31,15 @@ char *rsstitle = "Big Brother Critical Alerts";
 #define RSS10  2
 #define RSS20  3
 
-void do_rss_feed(char *rssfilename, host_t *hosts)
-{
-	FILE *fd;
-	char tmpfn[MAX_PATH];
-	char destfn[MAX_PATH];
-	int rssver = 0;
-	int ttlvalue;
-	host_t *h;
-	int anyshown;
+static int rssver = 0;
+static int ttlvalue = 300;
+static int anyshown = 0;
 
-	if (rssfilename == NULL) return;
+static void initial_rss_setup(void)
+{
+	static int hasrun = 0;
+
+	if (hasrun) return;
 
 	if (getenv("BBRSSTITLE")) rsstitle = malcop(getenv("BBRSSTITLE"));
 
@@ -55,23 +53,14 @@ void do_rss_feed(char *rssfilename, host_t *hosts)
 	}
 
 	ttlvalue = (getenv("BBSLEEP") ? (atoi(getenv("BBSLEEP")) / 60) : 5);
+}
 
-	if (*rssfilename == '/') {
-		/* Absolute filename */
-		sprintf(tmpfn, "%s.tmp", rssfilename);
-		sprintf(destfn, "%s", rssfilename);
-	}
-	else {
-		/* Filename is relative to $BBHOME/www/ */
-		sprintf(tmpfn, "%s/www/%s.tmp", getenv("BBHOME"), rssfilename);
-		sprintf(destfn, "%s/www/%s", getenv("BBHOME"), rssfilename);
-	}
 
-	fd = fopen(tmpfn, "w");
-	if (fd == NULL) {
-		errprintf("Cannot create RSS/RDF outputfile %s\n", tmpfn);
-		return;
-	}
+void do_rss_header(FILE *fd)
+{
+	if (fd == NULL) return;
+
+	initial_rss_setup();
 
 	switch (rssver) {
 	  case RSS091:
@@ -115,53 +104,57 @@ void do_rss_feed(char *rssfilename, host_t *hosts)
 		break;
 	}
 
-	for (h=hosts, anyshown=0; (h); h=h->next) {
-		entry_t *e;
+	anyshown = 0;
+}
 
-		if (h->color >= rsscolorlimit) {
-			for (e=h->entries; (e); e=e->next) {
-				if (e->color >= rsscolorlimit) {
-					anyshown = 1;
 
-					switch (rssver) {
-					  case RSS091:
-					  case RSS092:
-					  case RSS20:
-						fprintf(fd, "  <item>\n");
-						break;
+void do_rss_item(FILE *fd, host_t *h, entry_t *e)
+{
+	if (fd == NULL) return;
+	if (h->color < rsscolorlimit) return;
+	if (e->color < rsscolorlimit) return;
 
-					  case RSS10:
-						fprintf(fd, "  <item rdf:about=\"%s/bb2.html\">\n",
-							getenv("BBWEBHOSTURL"));
-						break;
-					}
+	anyshown = 1;
 
-					fprintf(fd, "    <title>%s (%s)</title>\n",
-						h->hostname, e->column->name);
+	switch (rssver) {
+	  case RSS091:
+	  case RSS092:
+	  case RSS20:
+		fprintf(fd, "  <item>\n");
+		break;
 
-					fprintf(fd, "    <link>");
-					if (generate_static()) {
-						fprintf(fd, "%s/html/%s.%s.html",
-							getenv("BBWEBHOSTURL"), 
-							h->hostname, 
-							e->column->name);
-					}
-					else {
-						fprintf(fd, "%s%s/bb-hostsvc.sh?HOSTSVC=%s.%s",
-							getenv("BBWEBHOST"),
-							getenv("CGIBINURL"),
-							commafy(h->hostname), 
-							e->column->name);
-					}
-					fprintf(fd, "</link>\n");
-
-					if (e->shorttext) fprintf(fd, "<description>%s</description>\n", e->shorttext);
-
-					fprintf(fd, "  </item>\n");
-				}
-			}
-		}
+	  case RSS10:
+		fprintf(fd, "  <item rdf:about=\"%s/bb2.html\">\n", getenv("BBWEBHOSTURL"));
+		break;
 	}
+
+	fprintf(fd, "    <title>%s (%s)</title>\n", h->hostname, e->column->name);
+
+	fprintf(fd, "    <link>");
+	if (generate_static()) {
+		fprintf(fd, "%s/html/%s.%s.html",
+			getenv("BBWEBHOSTURL"), 
+			h->hostname, 
+			e->column->name);
+	}
+	else {
+		fprintf(fd, "%s%s/bb-hostsvc.sh?HOSTSVC=%s.%s",
+			getenv("BBWEBHOST"),
+			getenv("CGIBINURL"),
+			commafy(h->hostname), 
+			e->column->name);
+	}
+	fprintf(fd, "</link>\n");
+
+	if (e->shorttext) fprintf(fd, "<description>%s</description>\n", e->shorttext);
+
+	fprintf(fd, "  </item>\n");
+}
+
+
+void do_rss_footer(FILE *fd)
+{
+	if (fd == NULL) return;
 
 	if (!anyshown) {
 		fprintf(fd, "  <item>\n");
@@ -181,14 +174,9 @@ void do_rss_feed(char *rssfilename, host_t *hosts)
 		fprintf(fd, "</rdf:RDF>\n");
 		break;
 	}
-
-	fclose(fd);
-	if (rename(tmpfn, destfn) != 0) {
-		errprintf("Cannot move file %s to destination %s\n", tmpfn, destfn);
-	}
-
-	return;
 }
+
+
 
 void do_netscape_sidebar(char *nssidebarfilename, host_t *hosts)
 {
