@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: url.c,v 1.2 2004-10-31 11:39:22 henrik Exp $";
+static char rcsid[] = "$Id: url.c,v 1.3 2004-11-04 16:09:53 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -351,9 +351,9 @@ void parse_url(char *inputurl, urlelem_t *url)
 
 	/* Build the canonical form of this URL, free from all BB'isms */
 	canonurllen = 1;
-	canonurllen += strlen(url->scheme+3);
+	canonurllen += strlen(url->scheme)+3;	/* Add room for the "://" */
 	canonurllen += strlen(url->host);
-	canonurllen += 6; /* Max. length of a port spec. */
+	canonurllen += 6; 			/* Max. length of a port spec. */
 	canonurllen += strlen(url->relurl);
 
 	p = canonurl = (char *)malloc(canonurllen);
