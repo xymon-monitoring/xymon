@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.34 2005-01-15 17:38:28 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.35 2005-01-18 21:52:33 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -472,19 +472,34 @@ int main(int argc, char *argv[])
 			/* Timeout */
 		}
 
-		/* Loop through the activealerts list and see if anything is pending */
+		/* 
+		 * Loop through the activealerts list and see if anything is pending.
+		 * This is an optimization, we could just as well just fork off the
+		 * notification child and it it handle all of it. But there is no
+		 * reason to fork a child process unless it is going to do something.
+		 */
 		anytogo = 0;
 		for (awalk = ahead; (awalk); awalk = awalk->next) {
-			if ((awalk->nextalerttime <= now) && (awalk->state == A_PAGING)) {
-				if (awalk->ackmessage) {
-					/* An ack has expired, so drop the ack message */
-					xfree(awalk->ackmessage);
-					awalk->ackmessage = NULL;
+			switch (awalk->state) {
+			  case A_PAGING:
+				if (awalk->nextalerttime <= now) anytogo++;
+				break;
+
+			  case A_ACKED:
+				if (awalk->nextalerttime <= now) {
+					/* An ack has expired, so drop the ack message and switch to A_PAGING */
+					anytogo++;
+					if (awalk->ackmessage) xfree(awalk->ackmessage);
+					awalk->state = A_PAGING;
 				}
+				break;
+
+			  case A_RECOVERED:
 				anytogo++;
-			}
-			else if ((awalk->state == A_RECOVERED) || (awalk->state == A_ACKED)) { 
-				anytogo++;
+				break;
+
+			  case A_DEAD:
+				break;
 			}
 		}
 		dprintf("%d alerts to go\n", anytogo);
@@ -499,29 +514,50 @@ int main(int argc, char *argv[])
 				/* The child */
 				start_alerts();
 				for (awalk = ahead; (awalk); awalk = awalk->next) {
-					if ( ((awalk->nextalerttime <= now) && (awalk->state == A_PAGING)) ||
-					     (awalk->state == A_ACKED)                                     ||
-					     (awalk->state == A_RECOVERED)                                    ) {
+					switch (awalk->state) {
+					  case A_PAGING:
+						if (awalk->nextalerttime <= now) {
+							send_alert(awalk, notiflogfd);
+						}
+						break;
+
+					  case A_ACKED:
+						/* Cannot be A_ACKED unless the ack is still valid, so no alert. */
+						break;
+
+					  case A_RECOVERED:
 						send_alert(awalk, notiflogfd);
+						break;
+
+					  case A_DEAD:
+						break;
 					}
 				}
 				finish_alerts();
+
 				/* Child does not continue */
 				exit(0);
 			}
 			else if (childpid > 0) {
 				/* The parent updates the alert timestamps */
 				for (awalk = ahead; (awalk); awalk = awalk->next) {
-					if ((awalk->nextalerttime <= now) && (awalk->state == A_PAGING)) {
-						awalk->nextalerttime = next_alert(awalk);
-					}
-					else if (awalk->state == A_ACKED) {
-						/*
-						 * Acked alerts go back to state A_PAGING.
-						 * The nextalerttime ensures they wont send out alerts
-						 * until the ack has expired.
-						 */
-						awalk->state = A_PAGING;
+					switch (awalk->state) {
+					  case A_PAGING:
+						if (awalk->nextalerttime <= now) {
+							awalk->nextalerttime = next_alert(awalk);
+						}
+						break;
+
+					  case A_ACKED:
+						/* Still cannot get here except if ack is still valid */
+						break;
+
+					  case A_RECOVERED:
+						awalk->state = A_DEAD;
+						break;
+
+					  case A_DEAD:
+						break;
 					}
 				}
 			}
@@ -533,7 +569,6 @@ int main(int argc, char *argv[])
 		for (awalk = ahead; (awalk); awalk = awalk->next) {
 			switch (awalk->state) {
 			  case A_ACKED: 
-				  /* This really cannot happen */
 				  break;
 
 			  case A_PAGING: 
@@ -547,10 +582,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		/* 
-		 * Cleanup events. Items here are either A_DEAD or A_PAGING.
-		 * All A_DEAD items are deleted.
-		 */
+		/* Two-phase cleanup. All A_DEAD items are deleted. */
 		khead = NULL; awalk = ahead;
 		while (awalk) {
 			if ((awalk == ahead) && (awalk->state == A_DEAD)) {
