@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.8 2005-02-02 22:16:21 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.9 2005-02-02 22:23:49 henrik Exp $";
 
 static char *netstat_params[] = { "rrdcreate", rrdfn, 
 	                          "DS:udpInDatagrams:DERIVE:600:0:U", 
@@ -23,6 +23,10 @@ static char *netstat_params[] = { "rrdcreate", rrdfn,
 	                          "DS:tcpInInorderBytes:DERIVE:600:0:U", 
 	                          "DS:tcpInUnorderBytes:DERIVE:600:0:U", 
 	                          "DS:tcpRetransBytes:DERIVE:600:0:U", 
+	                          "DS:tcpOutDataPackets:DERIVE:600:0:U", 
+	                          "DS:tcpInInorderPackets:DERIVE:600:0:U", 
+	                          "DS:tcpInUnorderPackets:DERIVE:600:0:U", 
+	                          "DS:tcpRetransPackets:DERIVE:600:0:U", 
 				  rra1, rra2, rra3, rra4, NULL };
 
 /* This one matches the netstat output from Solaris 8, and also the hpux and aix from bf-netstat in larrd 0.43c */
@@ -39,6 +43,10 @@ static char *netstat_unix_markers[] = {
 	"tcpInInorderBytes",
 	"tcpInUnorderBytes",
 	"tcpRetransBytes",
+	"tcpOutDataSegs",
+	"tcpInInorderSegs",
+	"tcpInUnorderSegs",
+	"tcpRetransSegs",
 	NULL
 };
 
@@ -52,6 +60,10 @@ static char *netstat_hpux_markers[] = {
 	"",				/* tcpAttemptFails */
 	"",				/* tcpEstabResets */
 	"",				/* tcpCurrEstab */
+	"",
+	"",
+	"",
+	"",
 	"data packets",
 	"received in-sequence",
 	"out of order packets",
@@ -69,6 +81,10 @@ static char *netstat_linux_markers[] = {
 	"failed connection attempts",
 	"connection resets received",
 	"connections established",
+	"",
+	"",
+	"",
+	"",
 	"segments send out",	/* Yes, they really do write "send" */
 	"segments received",
 	"",
@@ -86,6 +102,10 @@ static char *netstat_freebsd_markers[] = {
 	"bad connection attempts",
 	"",  /* Appears not to count resets */
 	"connections established",
+	"",
+	"",
+	"",
+	"",
 	"packets sent",
 	"received in-sequence",
 	"out-of-order packets",
@@ -103,6 +123,10 @@ static char *netstat_snmp_markers[] = {
 	"failed attempts",
 	"resets of established connections",
 	"current established connections",
+	"",
+	"",
+	"",
+	"",
 	"segments sent",
 	"segments received",
 	"",
@@ -120,6 +144,10 @@ static char *netstat_win32_markers[] = {
 	"tcpFailedConnectionAttempts",
 	"tcpResetConnections",
 	"tcpCurrentConnections",
+	"",
+	"",
+	"",
+	"",
 	"tcpSegmentsSent",
 	"tcpSegmentsReceived",
 	"",
