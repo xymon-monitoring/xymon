@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.99 2003-10-01 09:42:05 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.100 2003-10-16 21:49:35 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1479,5 +1479,47 @@ void addtobuffer(char **buf, int *buflen, char *newtext)
 	}
 
 	strcat(*buf, newtext);
+}
+
+
+int run_command(char *cmd, char *errortext, char **banner, int showcmd)
+{
+	FILE	*cmdpipe;
+	char	l[1024];
+	int	result;
+	int	piperes;
+	int	bannersize = 0;
+
+	result = 0;
+	if (banner) { 
+		bannersize = 4096;
+		*banner = (char *) malloc(bannersize); 
+		**banner = '\0';
+		if (showcmd) sprintf(*banner, "Command: %s\n\n", cmd); 
+	}
+	cmdpipe = popen(cmd, "r");
+	if (cmdpipe == NULL) {
+		errprintf("Could not open pipe for command %s\n", cmd);
+		if (banner) strcat(*banner, "popen() failed to run command\n");
+		return -1;
+	}
+
+	while (fgets(l, sizeof(l), cmdpipe)) {
+		if (banner) {
+			if ((strlen(l) + strlen(*banner)) > bannersize) {
+				bannersize += strlen(l) + 4096;
+				*banner = (char *) realloc(*banner, bannersize);
+			}
+			strcat(*banner, l);
+		}
+		if (errortext && (strstr(l, errortext) != NULL)) result = 1;
+	}
+	piperes = pclose(cmdpipe);
+	if (!WIFEXITED(piperes) || (WEXITSTATUS(piperes) != 0)) {
+		/* Something failed */
+		result = 1;
+	}
+
+	return result;
 }
 

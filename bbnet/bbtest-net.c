@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.127 2003-10-08 20:51:50 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.128 2003-10-16 21:49:35 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1125,46 +1125,6 @@ void save_frequenttestlist(int argc, char *argv[])
 }
 
 
-int run_command(char *cmd, char *errortext, char **banner)
-{
-	FILE	*cmdpipe;
-	char	l[1024];
-	int	result;
-	int	piperes;
-	int	bannersize = 0;
-
-	result = 0;
-	if (banner) { 
-		bannersize = 4096;
-		*banner = (char *) malloc(bannersize); 
-		sprintf(*banner, "Command: %s\n\n", cmd); 
-	}
-	cmdpipe = popen(cmd, "r");
-	if (cmdpipe == NULL) {
-		errprintf("Could not open pipe for command %s\n", cmd);
-		if (banner) strcat(*banner, "popen() failed to run command\n");
-		return -1;
-	}
-
-	while (fgets(l, sizeof(l), cmdpipe)) {
-		if (banner) {
-			if ((strlen(l) + strlen(*banner)) > bannersize) {
-				bannersize += strlen(l) + 4096;
-				*banner = (char *) realloc(*banner, bannersize);
-			}
-			strcat(*banner, l);
-		}
-		if (errortext && (strstr(l, errortext) != NULL)) result = 1;
-	}
-	piperes = pclose(cmdpipe);
-	if (!WIFEXITED(piperes) || (WEXITSTATUS(piperes) != 0)) {
-		/* Something failed */
-		result = 1;
-	}
-
-	return result;
-}
-
 #ifdef USE_ARES
 static void run_ares_callback(void *arg, int status, struct hostent *host)
 {
@@ -1279,7 +1239,7 @@ void run_nslookup_service(service_t *service)
 		if (!t->host->dnserror) {
 			sprintf(cmd, "%s %s %s 2>&1", 
 				cmdpath, t->host->hostname, t->host->ip);
-			t->open = (run_command(cmd, "can't find", &t->banner) == 0);
+			t->open = (run_command(cmd, "can't find", &t->banner, 1) == 0);
 		}
 	}
 #endif
@@ -1301,7 +1261,7 @@ void run_dig_service(service_t *service)
 		if (!t->host->dnserror) {
 			sprintf(cmd, "%s @%s %s 2>&1", 
 				cmdpath, t->host->ip, t->host->hostname);
-			t->open = (run_command(cmd, "Bad server", &t->banner) == 0);
+			t->open = (run_command(cmd, "Bad server", &t->banner, 1) == 0);
 		}
 	}
 #endif
@@ -1319,7 +1279,7 @@ void run_ntp_service(service_t *service)
 	for (t=service->items; (t); t = t->next) {
 		if (!t->host->dnserror) {
 			sprintf(cmd, "%s -u -q -p 2 %s 2>&1", cmdpath, t->host->ip);
-			t->open = (run_command(cmd, "no server suitable for synchronization", &t->banner) == 0);
+			t->open = (run_command(cmd, "no server suitable for synchronization", &t->banner, 1) == 0);
 		}
 	}
 }
@@ -1337,7 +1297,7 @@ void run_rpcinfo_service(service_t *service)
 	for (t=service->items; (t); t = t->next) {
 		if (!t->host->dnserror) {
 			sprintf(cmd, "%s -p %s 2>&1", cmdpath, t->host->ip);
-			t->open = (run_command(cmd, NULL, &t->banner) == 0);
+			t->open = (run_command(cmd, NULL, &t->banner, 1) == 0);
 		}
 	}
 }
@@ -1559,7 +1519,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 			else {
 				sprintf(cmd, "traceroute -n -q 2 -w 2 -m 15 %s 2>&1", test->host->hostname);
 			}
-			run_command(cmd, NULL, &test->host->traceroute);
+			run_command(cmd, NULL, &test->host->traceroute, 0);
 		}
 	}
 	else {
