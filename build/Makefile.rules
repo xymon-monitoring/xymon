@@ -68,7 +68,7 @@ contest: contest.c debug.c util.c
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCLUDE) -g -DSTANDALONE -DDEBUG -Wall -o $@ contest.c debug.c util.c $(CURLLIB) $(NETLIBS)
 
 ldaptest: ldaptest.c debug.o util.o sendmsg.o
-	$(CC) $(CFLAGS) $(LDAPINCLUDE) -g -DSTANDALONE -DDEBUG -Wall -o $@ ldaptest.c debug.o util.o sendmsg.o $(LDAPLIBS) $(NETLIBS)
+	$(CC) $(CFLAGS) $(LDAPFLAGS) $(LDAPINCLUDE) -g -DSTANDALONE -DDEBUG -Wall -o $@ ldaptest.c debug.o util.o sendmsg.o $(LDAPLIBS) $(NETLIBS)
 
 calc: calc.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ calc.c
