@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.127 2005-03-07 14:08:54 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.128 2005-03-15 13:46:36 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -1365,6 +1365,27 @@ char *timestr(time_t tstamp)
 	return result;
 }
 
+void setup_filter(char *buf, char **spage, char **shost, char **stest, int *scolor)
+{
+	char *tok;
+
+	*spage = *shost = *stest = NULL;
+	*scolor = -1;
+
+	tok = strtok(buf, " \t\r\n");
+	if (tok) tok = strtok(NULL, " \t\r\n");
+	if (tok) {
+		/* Get filter */
+		if (strncmp(tok, "page=", 5) == 0) {
+			*spage = tok+5;
+			if (strlen(*spage) == 0) *spage = NULL;
+		}
+		else if (strncmp(tok, "host=", 5) == 0) *shost = tok+5;
+		else if (strncmp(tok, "test=", 5) == 0) *stest = tok+5;
+		else if (strncmp(tok, "color=", 6) == 0) *scolor = parse_color(tok+6);
+	}
+}
+
 void do_message(conn_t *msg, char *origin)
 {
 	hobbitd_hostlist_t *h;
@@ -1687,17 +1708,37 @@ void do_message(conn_t *msg, char *origin)
 		char *buf, *bufp;
 		int bufsz, buflen;
 		int n;
+		char *spage = NULL, *shost = NULL, *stest = NULL;
+		int scolor = -1;
+		namelist_t *hi = NULL;
 
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
+		setup_filter(msg->buf, &spage, &shost, &stest, &scolor);
 		bufsz = 16384;
 		bufp = buf = (char *)malloc(bufsz);
 		buflen = 0;
 
 		for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
+
+			/* Host pagename filter */
+			if (spage) {
+				hi = hostinfo(hwalk->hostname);
+				if (hi && (strncmp(hi->page->pagepath, spage, strlen(spage)) != 0)) continue;
+			}
+
+			/* Hostname filter */
+			if (shost && (strcmp(hwalk->hostname, shost) != 0)) continue;
+
 			for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
 				char *eoln;
-				
+
+				/* Testname filter */
+				if (stest && (strcmp(lwalk->test->testname, stest) != 0)) continue;
+
+				/* Color filter */
+				if ((scolor != -1) && (lwalk->color != scolor)) continue;
+
 				if (lwalk->message == NULL) {
 					errprintf("%s.%s has a NULL message\n", lwalk->host->hostname, lwalk->test->testname);
 					lwalk->message = strdup("");
@@ -1738,9 +1779,13 @@ void do_message(conn_t *msg, char *origin)
 		hobbitd_log_t *lwalk;
 		char *buf, *bufp;
 		int bufsz;
+		char *spage = NULL, *shost = NULL, *stest = NULL;
+		int scolor = -1;
+		namelist_t *hi = NULL;
 
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
+		setup_filter(msg->buf, &spage, &shost, &stest, &scolor);
 		bufsz = 16384;
 		bufp = buf = (char *)malloc(bufsz);
 
@@ -1748,10 +1793,26 @@ void do_message(conn_t *msg, char *origin)
 		bufp += sprintf(bufp, "<StatusBoard>\n");
 
 		for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
+
+			/* Host pagename filter */
+			if (spage) {
+				hi = hostinfo(hwalk->hostname);
+				if (hi && (strncmp(hi->page->pagepath, spage, strlen(spage)) != 0)) continue;
+			}
+
+			/* Hostname filter */
+			if (shost && (strcmp(hwalk->hostname, shost) != 0)) continue;
+
 			for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
 				char *eoln;
 				int buflen = (bufp - buf);
 				
+				/* Testname filter */
+				if (stest && (strcmp(lwalk->test->testname, stest) != 0)) continue;
+
+				/* Color filter */
+				if ((scolor != -1) && (lwalk->color != scolor)) continue;
+
 				if (lwalk->message == NULL) {
 					errprintf("%s.%s has a NULL message\n", lwalk->host->hostname, lwalk->test->testname);
 					lwalk->message = strdup("");
@@ -1805,15 +1866,35 @@ void do_message(conn_t *msg, char *origin)
 		char *buf, *bufp;
 		int bufsz, buflen;
 		int n;
+		char *spage = NULL, *shost = NULL, *stest = NULL;
+		int scolor = -1;
+		namelist_t *hi = NULL;
 
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
+		setup_filter(msg->buf, &spage, &shost, &stest, &scolor);
 		bufsz = 16384;
 		bufp = buf = (char *)malloc(bufsz);
 		buflen = 0;
 
 		for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
+
+			/* Host pagename filter */
+			if (spage) {
+				hi = hostinfo(hwalk->hostname);
+				if (hi && (strncmp(hi->page->pagepath, spage, strlen(spage)) != 0)) continue;
+			}
+
+			/* Hostname filter */
+			if (shost && (strcmp(hwalk->hostname, shost) != 0)) continue;
+
 			for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
+				/* Testname filter */
+				if (stest && (strcmp(lwalk->test->testname, stest) != 0)) continue;
+
+				/* Color filter */
+				if ((scolor != -1) && (lwalk->color != scolor)) continue;
+
 				if ((bufsz - buflen - strlen(lwalk->message)) < 1024) {
 					bufsz += 16384;
 					buf = (char *)realloc(buf, bufsz);
