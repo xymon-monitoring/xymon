@@ -1,8 +1,7 @@
-all: bbgen bbtest larrdgen
+all: bbgen bbtest
 
-GENOBJS = bbgen.o debug.o loaddata.o pagegen.o process.o util.o 
+GENOBJS = bbgen.o debug.o loaddata.o larrdgen.o pagegen.o process.o util.o 
 TESTOBJS = bbtest.o debug.o loaddata.o util.o
-LARRDOBJS = larrdgen.o debug.o loaddata.o util.o
 
 bbgen: $(GENOBJS)
 	gcc -g -o bbgen $(GENOBJS)
@@ -10,11 +9,8 @@ bbgen: $(GENOBJS)
 bbtest: $(TESTOBJS)
 	gcc -g -o bbtest $(TESTOBJS)
 
-larrdgen: $(LARRDOBJS)
-	gcc -g -o larrdgen $(LARRDOBJS)
-
 %.o: %.c
 	gcc -Wall -c -g -o $@ $<
 
 clean:
-	rm -f $(GENOBJS) $(TESTOBJS) $(LARRDOBJS) bbgen bbtest larrdgen
+	rm -f $(GENOBJS) $(TESTOBJS) $(LARRDOBJS) bbgen bbtest
