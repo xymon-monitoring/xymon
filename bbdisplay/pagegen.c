@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.59 2003-06-19 12:01:44 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.60 2003-06-19 13:36:50 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -347,10 +347,10 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 				}
 				else {
 					/* Report format output */
-					if (e->color == COL_GREEN) {
+					if ((e->color == COL_GREEN) || (e->color == COL_CLEAR)) {
 						fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
 							bbskin, dotgiffilename(e->color, e->acked, e->oldage),
-							"100% available",
+							"",
 							getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
 
 					}
