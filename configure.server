@@ -73,8 +73,54 @@ else
 	fi
 	echo ""
 
+	echo "The bbgen history CGI replacement by default displays a 1-day"
+	echo "graph of the history. It can also show a 1-week, 4-weeks and"
+	echo "1-year graphs, or any combination of these."
+	echo ""
+	echo "Which graphs to show by default (1d/1w/4w/1y/all) [all]"
+	read BARS
+	if test "$BARS" = "all" -o "$BARS" = ""
+	then
+		BARSUMS=15
+		export BARSUMS
+	else
+		BARSUMS=0
+		export BARSUMS
+
+		echo $BARS | grep -c 1d >/dev/null
+		if test $? -eq 0
+		then
+			BARSUMS=`expr $BARSUMS + 1`
+			export BARSUMS
+		fi
+
+		echo $BARS | grep -c 1w >/dev/null
+		if test $? -eq 0
+		then
+			BARSUMS=`expr $BARSUMS + 2`
+			export BARSUMS
+		fi
+
+		echo $BARS | grep -c 4w >/dev/null
+		if test $? -eq 0
+		then
+			BARSUMS=`expr $BARSUMS + 4`
+			export BARSUMS
+		fi
+
+		echo $BARS | grep -c 1y >/dev/null
+		if test $? -eq 0
+		then
+			BARSUMS=`expr $BARSUMS + 8`
+			export BARSUMS
+		fi
+	fi
+	BARSUMDEF="-DDEFBARSUMS=$BARSUMS"
+	export BARSUMDEF
+	echo ""
+
 	echo "The bbgen history CGI replacement can use a different method to"
-	echo "create the 24-hour summary graph on the history page. This method"
+	echo "create the summary graphs on the history page. This method"
 	echo "gives a more accurate view (more detailed), but uses a fixed-width"
 	echo "graph instead of the standard Big Brother graph that automatically"
 	echo "resizes to your browser window."
@@ -145,7 +191,7 @@ else
 	echo "# configure settings for bbgen" > Makefile
 	echo "BBHOME = $BBHOME"               >>Makefile
 	echo "CGIDIR = $CGIDIR"               >>Makefile
-	echo "HISTGRAPHDEF = $HISTGRAPHDEF"   >>Makefile
+	echo "HISTGRAPHDEF = $HISTGRAPHDEF $BARSUMDEF"   >>Makefile
 	echo "MAXMSG = $MAXMSG"               >>Makefile
 	echo "MANROOT = $MANROOT"             >>Makefile
 	echo "#"                              >>Makefile
