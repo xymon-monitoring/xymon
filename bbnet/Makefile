@@ -1,8 +1,7 @@
 # Hobbit - BBNET Makefile
 
 # ARES settings. c-ares is included
-ARESTGZ = c-ares-$(ARESVER).tar.gz
-DNSFLAGS = -I./$(ARESDIR)
+DNSFLAGS = -I./c-ares
 
 PROGRAMS = bbtest-net
 EXTENSIONS = bbretest-net.sh
@@ -37,17 +36,20 @@ dns.o: libcares.a dns.c
 dns2.o: dns2.c
 	$(CC) $(CFLAGS) $(DNSFLAGS) -c -o $@ dns2.c
 
-libcares.a: $(ARESDIR)/.libs/libcares.a
-	cp $(ARESDIR)/.libs/libcares.a .
+libcares.a: c-ares/.libs/libcares.a
+	cp c-ares/.libs/libcares.a .
 
-$(ARESDIR)/.libs/libcares.a: $(ARESDIR)/Makefile
-	(cd $(ARESDIR) && $(MAKE))
+c-ares/.libs/libcares.a: c-ares/Makefile
+	(cd c-ares && $(MAKE))
 
-$(ARESDIR)/Makefile: $(ARESDIR)/configure
-	(cd $(ARESDIR) && ./configure --disable-shared)
+c-ares/Makefile: c-ares/configure
+	(cd c-ares && ./configure --disable-shared)
 
-$(ARESDIR)/configure: $(ARESTGZ)
-	gzip -dc $(ARESTGZ) | tar xf -
+c-ares/configure: c-ares-$(ARESVER).tar.gz
+	gzip -dc $< | tar xf -
+	mv c-ares-$(ARESVER) c-ares
+	# Must touch "configure", or it will trigger a rebuild because it is older than the tar.gz file.
+	touch c-ares/configure
 
 ################################################
 # Default compilation rules

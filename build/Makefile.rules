@@ -22,7 +22,6 @@ BBHOMEDIRS = bin etc ext tmp web www www/gifs www/help www/html www/menu www/not
 BBVARDIRS = acks data disabled hist histlogs logs rrd
 
 ARESVER = 1.2.1
-ARESDIR = c-ares-1.2.1
 
 all: $(BUILDTARGETS)
 	@echo ""
@@ -46,7 +45,7 @@ endif
 
 
 bbnet-build: lib-build common-build
-	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" LDAPFLAGS="$(LDAPFLAGS)" LDAPINCDIR="$(LDAPINCDIR)" LDAPLIBS="$(LDAPLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" ARESVER="$(ARESVER)" ARESDIR="$(ARESDIR)" $(MAKE) -C bbnet all
+	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" LDAPFLAGS="$(LDAPFLAGS)" LDAPINCDIR="$(LDAPINCDIR)" LDAPLIBS="$(LDAPLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" ARESVER="$(ARESVER)" $(MAKE) -C bbnet all
 
 bbproxy-build: lib-build common-build
 	CC="$(CC)" CFLAGS="$(CFLAGS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" $(MAKE) -C bbproxy all
@@ -63,10 +62,10 @@ docs-build:
 #####################
 distclean: allclean
 	rm -f Makefile
-	rm -rf bbnet/$(ARESDIR)
+	rm -rf bbnet/c-ares
 
 allclean: clean
-	(cd bbnet/$(ARESDIR) && $(MAKE) clean) || true
+	(cd bbnet/c-ares && $(MAKE) clean) || true
 
 clean:
 	$(MAKE) -C lib clean
@@ -107,7 +106,7 @@ install-bbdisplay-nocgi: install-common
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" $(MAKE) -C bbdisplay install-nocgi
 
 install-bbnet: install-common
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbnet install
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" ARESVER="$(ARESVER)" $(MAKE) -C bbnet install
 
 install-bbproxy: install-common
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbproxy install
