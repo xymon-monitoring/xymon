@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.137 2005-01-15 17:38:55 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.138 2005-01-18 14:18:51 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -697,10 +697,14 @@ state_t *load_state(dispsummary_t **sumhead)
 		}
 	}
 
-	if (reportstart || snapshot) {
+	if (reportstart || snapshot || usehobbitd) {
 		dopurple = 0;
-		purplelog = NULL;
+	}
+
+	if (reportstart || snapshot) {
 		oldestentry = time(NULL);
+		purplelog = NULL;
+		purplelogfn = NULL;
 	}
 	else {
 		sprintf(fn, "%s/.bbstartup", logdir);
@@ -782,6 +786,7 @@ state_t *load_state(dispsummary_t **sumhead)
 			strcpy(fn, d->d_name);
 		}
 
+		/* Get the data */
 		if (strncmp(fn, "summary.", 8) == 0) {
 			if (!reportstart && !snapshot) {
 				newsum = init_displaysummary(fn, &log);
