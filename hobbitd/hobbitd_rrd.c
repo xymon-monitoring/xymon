@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.2 2004-11-13 09:07:16 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.3 2004-11-13 21:58:51 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -20,6 +20,7 @@ static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.2 2004-11-13 09:07:16 henrik Exp $
 #include <unistd.h>
 #include <sys/time.h>
 #include <signal.h>
+#include <limits.h>
 
 #include "libbbgen.h"
 #include "bbgend_worker.h"
@@ -93,12 +94,32 @@ int main(int argc, char *argv[])
 			continue;
 		}
 		else if ((metacount > 3) && (strncmp(metadata[0], "@@drophost", 10) == 0)) {
+			char hostdir[PATH_MAX];
+			hostname = metadata[3];
+
+			sprintf(hostdir, "%s/%s", rrddir, hostname);
+			dropdirectory(hostdir);
 		}
 		else if ((metacount > 4) && (strncmp(metadata[0], "@@droptest", 10) == 0)) {
+			/*
+			 * Not implemented. Mappings of testnames -> larrd rrd files is
+			 * too complex, so on the rare occasion that a single test
+			 * is deleted, they will have to delete the rrd files themselves.
+			 */
 		}
 		else if ((metacount > 4) && (strncmp(metadata[0], "@@renamehost", 12) == 0)) {
+			char oldhostdir[PATH_MAX];
+			char newhostdir[PATH_MAX];
+			char *newhostname;
+
+			hostname = metadata[3];
+			newhostname = metadata[4];
+			sprintf(oldhostdir, "%s/%s", rrddir, hostname);
+			sprintf(newhostdir, "%s/%s", rrddir, newhostname);
+			rename(oldhostdir, newhostdir);
 		}
 		else if ((metacount > 5) && (strncmp(metadata[0], "@@renametest", 12) == 0)) {
+			/* Not implemented. See "droptest". */
 		}
 		else if ((metacount >= 13) && (strncmp(metadata[0], "@@status", 8) == 0)) {
 			/*
