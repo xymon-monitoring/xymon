@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.61 2004-11-19 22:13:27 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.62 2004-11-22 21:48:52 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -174,16 +174,32 @@ sender_t *getsenderlist(char *iplist)
 	return result;
 }
 
-int oksender(sender_t *oklist, uint32_t sender)
+int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgbuf)
 {
 	int i;
+	unsigned long int tg_ip;
+	char *eoln;
 
+	/* If oklist is empty, we're not doing any access checks - so return OK */
 	if (oklist == NULL) return 1;
+
+	/* If we know the target, it would be ok for the host to report on itself. */
+	if (targetip) {
+		tg_ip = ntohl(inet_addr(targetip));
+		if (ntohl(sender.s_addr) == tg_ip) return 1;
+	}
+
+	/* It's someone else reporting about the host. Check the access list */
 	i = 0;
 	do {
-		if ((oklist[i].ipval & oklist[i].ipmask) == (ntohl(sender) & oklist[i].ipmask)) return 1;
+		if ((oklist[i].ipval & oklist[i].ipmask) == (ntohl(sender.s_addr) & oklist[i].ipmask)) return 1;
 		i++;
 	} while (oklist[i].ipval != 0);
+
+	/* Refuse and log the message */
+	eoln = strchr(msgbuf, '\n'); if (eoln) *eoln = '\0';
+	errprintf("Refused message from %s: %s\n", inet_ntoa(sender), msgbuf);
+	if (eoln) *eoln = '\n';
 
 	return 0;
 }
@@ -1014,12 +1030,14 @@ void do_message(conn_t *msg)
 	if (strncmp(msg->buf, "combo\n", 6) == 0) {
 		char *currmsg, *nextmsg;
 
-		if (!oksender(statussenders, msg->addr.sin_addr.s_addr)) goto done;
 
 		currmsg = msg->buf+6;
 		do {
 			nextmsg = strstr(currmsg, "\n\nstatus");
 			if (nextmsg) { *(nextmsg+1) = '\0'; nextmsg += 2; }
+
+			get_hts(currmsg, sender, &h, &t, &log, &color, 0, 0);
+			if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, currmsg)) continue;
 
 			get_hts(currmsg, sender, &h, &t, &log, &color, 1, 1);
 			if (h && dbgfd && dbghost && (strcasecmp(h->hostname, dbghost) == 0)) {
@@ -1040,7 +1058,8 @@ void do_message(conn_t *msg)
 		} while (currmsg);
 	}
 	else if (strncmp(msg->buf, "status", 6) == 0) {
-		if (!oksender(statussenders, msg->addr.sin_addr.s_addr)) goto done;
+		get_hts(msg->buf, sender, &h, &t, &log, &color, 0, 0);
+		if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, msg->buf)) goto done;
 
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 1, 1);
 		if (h && dbgfd && dbghost && (strcasecmp(h->hostname, dbghost) == 0)) {
@@ -1063,8 +1082,6 @@ void do_message(conn_t *msg)
 		int maybedown;
 		char hostip[20];
 
-		if (!oksender(statussenders, msg->addr.sin_addr.s_addr)) goto done;
-
 		if (sscanf(msg->buf, "data %s\n", tok) == 1) {
 			if ((testname = strrchr(tok, '.')) != NULL) {
 				char *p;
@@ -1073,12 +1090,13 @@ void do_message(conn_t *msg)
 				p = tok; while ((p = strchr(p, ',')) != NULL) *p = '.';
 				hostname = knownhost(tok, hostip, sender, ghosthandling, &maybedown);
 			}
+
+			if (!oksender(statussenders, hostip, msg->addr.sin_addr, msg->buf)) goto done;
 			if (hostname && testname) handle_data(msg->buf, sender, hostname, testname);
 		}
 	}
 	else if (strncmp(msg->buf, "summary", 7) == 0) {
-		if (!oksender(statussenders, msg->addr.sin_addr.s_addr)) goto done;
-
+		/* Summaries are always allowed. Or should we ? */
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 1, 1);
 		if (log && (color != -1)) {
 			handle_status(msg->buf, sender, h->hostname, t->testname, log, color);
@@ -1090,28 +1108,28 @@ void do_message(conn_t *msg)
 		int maybedown;
 		char hostip[20];
 
-		if (!oksender(maintsenders, msg->addr.sin_addr.s_addr)) goto done;
-
 		if (sscanf(msg->buf, "notes %s\n", tok) == 1) {
 			char *p;
 
 			p = tok; while ((p = strchr(p, ',')) != NULL) *p = '.';
 			hostname = knownhost(tok, hostip, sender, ghosthandling, &maybedown);
+
+			if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 			if (hostname) handle_notes(msg->buf, sender, hostname);
 		}
 	}
 	else if (strncmp(msg->buf, "enable", 6) == 0) {
-		if (!oksender(maintsenders, msg->addr.sin_addr.s_addr)) goto done;
+		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 		handle_enadis(1, msg->buf, sender);
 	}
 	else if (strncmp(msg->buf, "disable", 7) == 0) {
-		if (!oksender(maintsenders, msg->addr.sin_addr.s_addr)) goto done;
+		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 		handle_enadis(0, msg->buf, sender);
 	}
 	else if (strncmp(msg->buf, "config", 6) == 0) {
 		char conffn[1024];
 
-		if (!oksender(adminsenders, msg->addr.sin_addr.s_addr)) goto done;
+		if (!oksender(adminsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		if ( (sscanf(msg->buf, "config %1023s", conffn) == 1) &&
 		     (strstr("../", conffn) == NULL) && (get_config(conffn, msg) == 0) ) {
@@ -1120,7 +1138,7 @@ void do_message(conn_t *msg)
 		}
 	}
 	else if (strncmp(msg->buf, "query ", 6) == 0) {
-		if (!oksender(adminsenders, msg->addr.sin_addr.s_addr)) goto done;
+		if (!oksender(adminsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 0, 0);
 		if (log) {
@@ -1148,7 +1166,7 @@ void do_message(conn_t *msg)
 		 *
 		 * hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|ackmsg|dismsg
 		 */
-		if (!oksender(wwwsenders, msg->addr.sin_addr.s_addr)) goto done;
+		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 0, 0);
 		if (log) {
@@ -1202,7 +1220,7 @@ void do_message(conn_t *msg)
 		int bufsz, buflen;
 		int n;
 
-		if (!oksender(wwwsenders, msg->addr.sin_addr.s_addr)) goto done;
+		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		bufsz = 16384;
 		bufp = buf = (char *)malloc(bufsz);
@@ -1255,7 +1273,7 @@ void do_message(conn_t *msg)
 		int bufsz, buflen;
 		int n;
 
-		if (!oksender(wwwsenders, msg->addr.sin_addr.s_addr)) goto done;
+		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		bufsz = 16384;
 		bufp = buf = (char *)malloc(bufsz);
@@ -1287,7 +1305,7 @@ void do_message(conn_t *msg)
 		char durstr[100];
 		bbgend_log_t *lwalk;
 
-		if (!oksender(maintsenders, msg->addr.sin_addr.s_addr)) goto done;
+		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		/*
 		 * For just a bit of compatibility with the old BB system,
@@ -1322,7 +1340,7 @@ void do_message(conn_t *msg)
 		char testname[200];
 		int n;
 
-		if (!oksender(adminsenders, msg->addr.sin_addr.s_addr)) goto done;
+		if (!oksender(adminsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		n = sscanf(msg->buf, "bbgenddrop %199s %199s", hostname, testname);
 		if (n == 1) {
@@ -1337,7 +1355,7 @@ void do_message(conn_t *msg)
 		char n1[200], n2[200];
 		int n;
 
-		if (!oksender(adminsenders, msg->addr.sin_addr.s_addr)) goto done;
+		if (!oksender(adminsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		n = sscanf(msg->buf, "bbgendrename %199s %199s %199s", hostname, n1, n2);
 		if (n == 2) {
