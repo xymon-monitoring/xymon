@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.13 2003-05-08 20:18:17 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.14 2003-05-18 14:38:33 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -72,6 +72,7 @@ test_t *add_tcp_test(char *ip, int port, char *service, int silent)
 
 	if (port == 0) {
 		printf("WHOA there - trying to scan port 0 for service %s\n", service);
+		printf("You probably need to define the %s service in /etc/services\n", service);
 		return NULL;
 	}
 
@@ -211,6 +212,7 @@ void do_tcp_tests(int conntimeout, int concurrency)
 				   case EINVAL         : printf("Cannot get socket - EINVAL\n"); break;
 				   default             : printf("Cannot get socket - errno=%d\n", errno); break;
 				}
+				printf("Try running with a lower --concurrency setting (currently: %d)\n", concurrency);
 			}
 		}
 
