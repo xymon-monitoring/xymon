@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns2.c,v 1.4 2004-08-29 22:26:45 henrik Exp $";
+static char rcsid[] = "$Id: dns2.c,v 1.5 2004-09-11 15:53:51 henrik Exp $";
 
 /*
  * All of the code for parsing DNS responses and formatting these into
@@ -49,29 +49,14 @@ static char rcsid[] = "$Id: dns2.c,v 1.4 2004-08-29 22:26:45 henrik Exp $";
 #include "ares.h"
 #include "ares_dns.h"
 
-static int msgstatus;
-static char *msgbuf;
-static int msglen;
 static char msg[1024];
 
-char *dns_detail_response(int *status)
-{
-	char *result;
-	
-	result = malcop(msgbuf);
-	free(msgbuf);
-	msgbuf = NULL;
-	msglen = 0;
-
-	if (status != NULL) *status = msgstatus;
-	return result;
-}
-
 static const unsigned char *display_question(const unsigned char *aptr,
-					     const unsigned char *abuf,
-					     int alen);
+					     const unsigned char *abuf, int alen,
+					     dns_resp_t *response);
 static const unsigned char *display_rr(const unsigned char *aptr,
-				       const unsigned char *abuf, int alen);
+				       const unsigned char *abuf, int alen,
+				       dns_resp_t *response);
 static const char *type_name(int type);
 static const char *class_name(int dnsclass);
 
@@ -154,62 +139,63 @@ void dns_detail_callback(void *arg, int status, unsigned char *abuf, int alen)
 	int id, qr, opcode, aa, tc, rd, ra, rcode;
 	unsigned int qdcount, ancount, nscount, arcount, i;
 	const unsigned char *aptr;
-	msgbuf = NULL; msglen = 0;
+	dns_resp_t *response = (dns_resp_t *) arg;
+
+	response->msgbuf = NULL; response->msglen = 0; response->msgstatus = status;
 
 	/*
 	 * Display an error message if there was an error, but only stop if
 	 * we actually didn't get an answer buffer.
 	 */
-	msgstatus = status;
 	switch (status) {
 	  case ARES_SUCCESS: 
 		  break;
 	  case ARES_ENODATA:
-		  addtobuffer(&msgbuf, &msglen, "No data returned from server\n");
+		  addtobuffer(&response->msgbuf, &response->msglen, "No data returned from server\n");
 		  if (!abuf) return;
 		  break;
 	  case ARES_EFORMERR:
-		  addtobuffer(&msgbuf, &msglen, "Server could not understand query\n");
+		  addtobuffer(&response->msgbuf, &response->msglen, "Server could not understand query\n");
 		  if (!abuf) return;
 		  break;
 	  case ARES_ESERVFAIL:
-		  addtobuffer(&msgbuf, &msglen, "Server failed\n");
+		  addtobuffer(&response->msgbuf, &response->msglen, "Server failed\n");
 		  if (!abuf) return;
 		  break;
 	  case ARES_ENOTFOUND:
-		  addtobuffer(&msgbuf, &msglen, "Name not found\n");
+		  addtobuffer(&response->msgbuf, &response->msglen, "Name not found\n");
 		  if (!abuf) return;
 		  break;
 	  case ARES_ENOTIMP:
-		  addtobuffer(&msgbuf, &msglen, "Not implemented\n");
+		  addtobuffer(&response->msgbuf, &response->msglen, "Not implemented\n");
 		  if (!abuf) return;
 		  break;
 	  case ARES_EREFUSED:
-		  addtobuffer(&msgbuf, &msglen, "Server refused query\n");
+		  addtobuffer(&response->msgbuf, &response->msglen, "Server refused query\n");
 		  if (!abuf) return;
 		  break;
 	  case ARES_EBADNAME:
-		  addtobuffer(&msgbuf, &msglen, "Invalid name in query\n");
+		  addtobuffer(&response->msgbuf, &response->msglen, "Invalid name in query\n");
 		  if (!abuf) return;
 		  break;
 	  case ARES_ETIMEOUT:
-		  addtobuffer(&msgbuf, &msglen, "Timeout\n");
+		  addtobuffer(&response->msgbuf, &response->msglen, "Timeout\n");
 		  if (!abuf) return;
 		  break;
 	  case ARES_ECONNREFUSED:
-		  addtobuffer(&msgbuf, &msglen, "Server unavailable\n");
+		  addtobuffer(&response->msgbuf, &response->msglen, "Server unavailable\n");
 		  if (!abuf) return;
 		  break;
 	  case ARES_ENOMEM:
-		  addtobuffer(&msgbuf, &msglen, "Out of memory\n");
+		  addtobuffer(&response->msgbuf, &response->msglen, "Out of memory\n");
 		  if (!abuf) return;
 		  break;
 	  case ARES_EDESTRUCTION:
-		  addtobuffer(&msgbuf, &msglen, "Timeout (channel destroyed)\n");
+		  addtobuffer(&response->msgbuf, &response->msglen, "Timeout (channel destroyed)\n");
 		  if (!abuf) return;
 		  break;
 	  default:
-		  addtobuffer(&msgbuf, &msglen, "Undocumented ARES return code\n");
+		  addtobuffer(&response->msgbuf, &response->msglen, "Undocumented ARES return code\n");
 		  if (!abuf) return;
 		  break;
 	}
@@ -233,45 +219,45 @@ void dns_detail_callback(void *arg, int status, unsigned char *abuf, int alen)
 
 	/* Display the answer header. */
 	sprintf(msg, "id: %d\n", id);
-	addtobuffer(&msgbuf, &msglen, msg);
+	addtobuffer(&response->msgbuf, &response->msglen, msg);
 	sprintf(msg, "flags: %s%s%s%s%s\n",
 		qr ? "qr " : "",
 		aa ? "aa " : "",
 		tc ? "tc " : "",
 		rd ? "rd " : "",
 		ra ? "ra " : "");
-	addtobuffer(&msgbuf, &msglen, msg);
+	addtobuffer(&response->msgbuf, &response->msglen, msg);
 	sprintf(msg, "opcode: %s\n", opcodes[opcode]);
-	addtobuffer(&msgbuf, &msglen, msg);
+	addtobuffer(&response->msgbuf, &response->msglen, msg);
 	sprintf(msg, "rcode: %s\n", rcodes[rcode]);
-	addtobuffer(&msgbuf, &msglen, msg);
+	addtobuffer(&response->msgbuf, &response->msglen, msg);
 
 	/* Display the questions. */
-	addtobuffer(&msgbuf, &msglen, "Questions:\n");
+	addtobuffer(&response->msgbuf, &response->msglen, "Questions:\n");
 	aptr = abuf + HFIXEDSZ;
 	for (i = 0; i < qdcount; i++) {
-		aptr = display_question(aptr, abuf, alen);
+		aptr = display_question(aptr, abuf, alen, response);
 		if (aptr == NULL) return;
 	}
 
 	/* Display the answers. */
-	addtobuffer(&msgbuf, &msglen, "Answers:\n");
+	addtobuffer(&response->msgbuf, &response->msglen, "Answers:\n");
 	for (i = 0; i < ancount; i++) {
-		aptr = display_rr(aptr, abuf, alen);
+		aptr = display_rr(aptr, abuf, alen, response);
 		if (aptr == NULL) return;
 	}
 
 	/* Display the NS records. */
-	addtobuffer(&msgbuf, &msglen, "NS records:\n");
+	addtobuffer(&response->msgbuf, &response->msglen, "NS records:\n");
 	for (i = 0; i < nscount; i++) {
-		aptr = display_rr(aptr, abuf, alen);
+		aptr = display_rr(aptr, abuf, alen, response);
 		if (aptr == NULL) return;
 	}
 
 	/* Display the additional records. */
-	addtobuffer(&msgbuf, &msglen, "Additional records:\n");
+	addtobuffer(&response->msgbuf, &response->msglen, "Additional records:\n");
 	for (i = 0; i < arcount; i++) {
-		aptr = display_rr(aptr, abuf, alen);
+		aptr = display_rr(aptr, abuf, alen, response);
 		if (aptr == NULL) return;
 	}
 
@@ -279,8 +265,8 @@ void dns_detail_callback(void *arg, int status, unsigned char *abuf, int alen)
 }
 
 static const unsigned char *display_question(const unsigned char *aptr,
-					     const unsigned char *abuf,
-					     int alen)
+					     const unsigned char *abuf, int alen,
+					     dns_resp_t *response)
 {
 	char *name;
 	int type, dnsclass, status;
@@ -309,19 +295,20 @@ static const unsigned char *display_question(const unsigned char *aptr,
 	 * display RRs.
 	 */
 	sprintf(msg, "\t%-15s.\t", name);
-	addtobuffer(&msgbuf, &msglen, msg);
+	addtobuffer(&response->msgbuf, &response->msglen, msg);
 	if (dnsclass != C_IN) {
 		sprintf(msg, "\t%s", class_name(dnsclass));
-		addtobuffer(&msgbuf, &msglen, msg);
+		addtobuffer(&response->msgbuf, &response->msglen, msg);
 	}
 	sprintf(msg, "\t%s\n", type_name(type));
-	addtobuffer(&msgbuf, &msglen, msg);
+	addtobuffer(&response->msgbuf, &response->msglen, msg);
 	free(name);
 	return aptr;
 }
 
 static const unsigned char *display_rr(const unsigned char *aptr,
-				       const unsigned char *abuf, int alen)
+				       const unsigned char *abuf, int alen,
+				       dns_resp_t *response)
 {
 	const unsigned char *p;
 	char *name;
@@ -355,13 +342,13 @@ static const unsigned char *display_rr(const unsigned char *aptr,
 
 	/* Display the RR name, class, and type. */
 	sprintf(msg, "\t%-15s.\t%d", name, ttl);
-	addtobuffer(&msgbuf, &msglen, msg);
+	addtobuffer(&response->msgbuf, &response->msglen, msg);
 	if (dnsclass != C_IN) {
 		sprintf(msg, "\t%s", class_name(dnsclass));
-		addtobuffer(&msgbuf, &msglen, msg);
+		addtobuffer(&response->msgbuf, &response->msglen, msg);
 	}
 	sprintf(msg, "\t%s", type_name(type));
-	addtobuffer(&msgbuf, &msglen, msg);
+	addtobuffer(&response->msgbuf, &response->msglen, msg);
 	free(name);
 
 	/* Display the RR data.  Don't touch aptr. */
@@ -378,7 +365,7 @@ static const unsigned char *display_rr(const unsigned char *aptr,
 		status = ares_expand_name(aptr, abuf, alen, &name, &len);
 		if (status != ARES_SUCCESS) return NULL;
 		sprintf(msg, "\t%s.", name);
-		addtobuffer(&msgbuf, &msglen, msg);
+		addtobuffer(&response->msgbuf, &response->msglen, msg);
 		free(name);
 		break;
 
@@ -388,12 +375,12 @@ static const unsigned char *display_rr(const unsigned char *aptr,
 		len = *p;
 		if (p + len + 1 > aptr + dlen) return NULL;
 		sprintf(msg, "\t%.*s", (int) len, p + 1);
-		addtobuffer(&msgbuf, &msglen, msg);
+		addtobuffer(&response->msgbuf, &response->msglen, msg);
 		p += len + 1;
 		len = *p;
 		if (p + len + 1 > aptr + dlen) return NULL;
 		sprintf(msg, "\t%.*s", (int) len, p + 1);
-		addtobuffer(&msgbuf, &msglen, msg);
+		addtobuffer(&response->msgbuf, &response->msglen, msg);
 		break;
 
 	  case T_MINFO:
@@ -402,13 +389,13 @@ static const unsigned char *display_rr(const unsigned char *aptr,
 		status = ares_expand_name(p, abuf, alen, &name, &len);
 		if (status != ARES_SUCCESS) return NULL;
 		sprintf(msg, "\t%s.", name);
-		addtobuffer(&msgbuf, &msglen, msg);
+		addtobuffer(&response->msgbuf, &response->msglen, msg);
 		free(name);
 		p += len;
 		status = ares_expand_name(p, abuf, alen, &name, &len);
 		if (status != ARES_SUCCESS) return NULL;
 		sprintf(msg, "\t%s.", name);
-		addtobuffer(&msgbuf, &msglen, msg);
+		addtobuffer(&response->msgbuf, &response->msglen, msg);
 		free(name);
 		break;
 
@@ -416,11 +403,11 @@ static const unsigned char *display_rr(const unsigned char *aptr,
 		/* The RR data is two bytes giving a preference ordering, and then a domain name.  */
 		if (dlen < 2) return NULL;
 		sprintf(msg, "\t%d", (aptr[0] << 8) | aptr[1]);
-		addtobuffer(&msgbuf, &msglen, msg);
+		addtobuffer(&response->msgbuf, &response->msglen, msg);
 		status = ares_expand_name(aptr + 2, abuf, alen, &name, &len);
 		if (status != ARES_SUCCESS) return NULL;
 		sprintf(msg, "\t%s.", name);
-		addtobuffer(&msgbuf, &msglen, msg);
+		addtobuffer(&response->msgbuf, &response->msglen, msg);
 		free(name);
 		break;
 
@@ -433,13 +420,13 @@ static const unsigned char *display_rr(const unsigned char *aptr,
 		status = ares_expand_name(p, abuf, alen, &name, &len);
 		if (status != ARES_SUCCESS) return NULL;
 		sprintf(msg, "\t%s.\n", name);
-		addtobuffer(&msgbuf, &msglen, msg);
+		addtobuffer(&response->msgbuf, &response->msglen, msg);
 		free(name);
 		p += len;
 		status = ares_expand_name(p, abuf, alen, &name, &len);
 		if (status != ARES_SUCCESS) return NULL;
 		sprintf(msg, "\t\t\t\t\t\t%s.\n", name);
-		addtobuffer(&msgbuf, &msglen, msg);
+		addtobuffer(&response->msgbuf, &response->msglen, msg);
 		free(name);
 		p += len;
 		if (p + 20 > aptr + dlen) return NULL;
@@ -449,7 +436,7 @@ static const unsigned char *display_rr(const unsigned char *aptr,
 			(p[8] << 24) | (p[9] << 16) | (p[10] << 8) | p[11],
 			(p[12] << 24) | (p[13] << 16) | (p[14] << 8) | p[15],
 			(p[16] << 24) | (p[17] << 16) | (p[18] << 8) | p[19]);
-		addtobuffer(&msgbuf, &msglen, msg);
+		addtobuffer(&response->msgbuf, &response->msglen, msg);
 		break;
 
 	  case T_TXT:
@@ -459,7 +446,7 @@ static const unsigned char *display_rr(const unsigned char *aptr,
 			len = *p;
 			if (p + len + 1 > aptr + dlen) return NULL;
 			sprintf(msg, "\t%.*s", (int)len, p + 1);
-			addtobuffer(&msgbuf, &msglen, msg);
+			addtobuffer(&response->msgbuf, &response->msglen, msg);
 			p += len + 1;
 		}
 		break;
@@ -469,7 +456,7 @@ static const unsigned char *display_rr(const unsigned char *aptr,
 		if (dlen != 4) return NULL;
 		memcpy(&addr, aptr, sizeof(struct in_addr));
 		sprintf(msg, "\t%s", inet_ntoa(addr));
-		addtobuffer(&msgbuf, &msglen, msg);
+		addtobuffer(&response->msgbuf, &response->msglen, msg);
 		break;
 
 	  case T_WKS:
@@ -483,25 +470,25 @@ static const unsigned char *display_rr(const unsigned char *aptr,
 		 */
       
 		sprintf(msg, "\t%d", DNS__16BIT(aptr));
-		addtobuffer(&msgbuf, &msglen, msg);
+		addtobuffer(&response->msgbuf, &response->msglen, msg);
 		sprintf(msg, " %d", DNS__16BIT(aptr + 2));
-		addtobuffer(&msgbuf, &msglen, msg);
+		addtobuffer(&response->msgbuf, &response->msglen, msg);
 		sprintf(msg, " %d", DNS__16BIT(aptr + 4));
-		addtobuffer(&msgbuf, &msglen, msg);
+		addtobuffer(&response->msgbuf, &response->msglen, msg);
       
 		status = ares_expand_name(aptr + 6, abuf, alen, &name, &len);
 		if (status != ARES_SUCCESS) return NULL;
 		sprintf(msg, "\t%s.", name);
-		addtobuffer(&msgbuf, &msglen, msg);
+		addtobuffer(&response->msgbuf, &response->msglen, msg);
 		free(name);
 		break;
       
 	  default:
 		sprintf(msg, "\t[Unknown RR; cannot parse]");
-		addtobuffer(&msgbuf, &msglen, msg);
+		addtobuffer(&response->msgbuf, &response->msglen, msg);
 	}
 	sprintf(msg, "\n");
-	addtobuffer(&msgbuf, &msglen, msg);
+	addtobuffer(&response->msgbuf, &response->msglen, msg);
 
 	return aptr + dlen;
 }
@@ -525,3 +512,14 @@ static const char *class_name(int dnsclass)
 	}
 	return "(unknown)";
 }
+
+int dns_name_type(char *name)
+{
+	int i;
+
+	for (i = 0; i < ntypes; i++) {
+		if (strcasecmp(types[i].name, name) == 0) return types[i].value;
+	}
+	return T_A;
+}
+
