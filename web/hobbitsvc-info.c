@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.30 2003-08-27 20:30:08 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.31 2003-08-30 23:06:17 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -36,11 +36,19 @@ char *infocol = "info";
 int enable_infogen = 0;
 int info_update_interval = 300; /* Update INFO pages every N seconds */
 
+static char *service_text(char *svc)
+{
+	if (strlen(svc) == 0) return "&nbsp;";
+
+	if (strcmp(svc, "*") == 0) return "All"; else return svc;
+}
+
 int generate_info(char *infocolumn)
 {
-	hostlist_t *hostwalk;
+	hostlist_t *hostwalk, *clonewalk;
 	struct utimbuf logfiletime;
-	char infobuf[8192];
+	int infobuflen = 0;
+	char *infobuf = NULL;
 	char l[512];
 	int ping, testip, dialup;
 	alertrec_t *alerts;
@@ -52,6 +60,7 @@ int generate_info(char *infocolumn)
 	load_alerts();
 
 	logfiletime.actime = logfiletime.modtime = (time(NULL) + atoi(getenv("PURPLEDELAY"))*60);
+	infobuflen = 4096; infobuf = (char *)malloc(infobuflen); *infobuf = '\0';
 
 	for (hostwalk=hosthead; (hostwalk); hostwalk = hostwalk->next) {
 		char logfn[MAX_PATH], htmlfn[MAX_PATH];
@@ -59,7 +68,7 @@ int generate_info(char *infocolumn)
 		char *p, *alertspec, *slaspec, *noprop, *rawcopy;
 		int firstcontent;
 
-		if (hostwalk->hostentry->banksize > 0) break;	/* No info for modem-banks */
+		if (hostwalk->hostentry->banksize > 0) continue; /* No info for modem-banks */
 
 		sprintf(logfn, "%s/%s.%s", getenv("BBLOGS"), 
 			commafy(hostwalk->hostentry->hostname), infocolumn);
@@ -72,21 +81,30 @@ int generate_info(char *infocolumn)
 				hostwalk->hostentry->hostname, infocolumn);
 		}
 
-		infobuf[0] = '\0';
+		*infobuf = '\0';
+		addtobuffer(&infobuf, &infobuflen, "<table width=\"100%%\">\n");
+
 		if (hostwalk->hostentry->displayname && (strcmp(hostwalk->hostentry->displayname, hostwalk->hostentry->hostname) != 0)) {
-			sprintf(l, "<b>Hostname</b> : %s (%s)<br>\n", 
+			sprintf(l, "<tr><th align=left>Hostname:</th><td align=left>%s (%s)</td></tr>\n", 
 				hostwalk->hostentry->displayname, hostwalk->hostentry->hostname);
 		}
 		else {
-			sprintf(l, "<b>Hostname</b> : %s<br>\n", hostwalk->hostentry->hostname);
+			sprintf(l, "<tr><th align=left>Hostname:</th><td align=left>%s</td></tr>\n", hostwalk->hostentry->hostname);
 		}
-		strcat(infobuf, l);
+		addtobuffer(&infobuf, &infobuflen, l);
 
-		sprintf(l, "<b>IP</b> : %s<br>\n", hostwalk->hostentry->ip); strcat(infobuf, l);
-		sprintf(l, "<b>Page/subpage</b> : <a href=\"%s/%s\">%s</a><br>\n", 
+		sprintf(l, "<tr><th align=left>IP:</th><td align=left>%s</td></tr>\n", hostwalk->hostentry->ip);
+		addtobuffer(&infobuf, &infobuflen, l);
+		sprintf(l, "<tr><th align=left>Page/subpage:</th><td align=left><a href=\"%s/%s\">%s</a>\n", 
 			getenv("BBWEB"), hostpage_link(hostwalk->hostentry), hostpage_name(hostwalk->hostentry));
-		strcat(infobuf, l);
-		strcat(infobuf, "<br>\n");
+		addtobuffer(&infobuf, &infobuflen, l);
+		for (clonewalk = hostwalk->clones; (clonewalk); clonewalk = clonewalk->next) {
+			sprintf(l, "<br><a href=\"%s/%s\">%s</a>\n", 
+				getenv("BBWEB"), hostpage_link(clonewalk->hostentry), hostpage_name(clonewalk->hostentry));
+			addtobuffer(&infobuf, &infobuflen, l);
+		}
+		addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
+		addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
 		p = hostwalk->hostentry->alerts;
 		if (p) {
@@ -94,7 +112,8 @@ int generate_info(char *infocolumn)
 			p = alertspec + strlen(alertspec) - 1; /* Point to trailing comma */
 			if (*p == ',') *p = '\0'; else p = NULL;
 
-			sprintf(l, "<b>NK Alerts</b> : %s", alertspec); strcat(infobuf, l);
+			sprintf(l, "<tr><th align=left>NK Alerts:</th><td align=left>%s", alertspec); 
+			addtobuffer(&infobuf, &infobuflen, l);
 			if (p) *p = ',';
 
 			slaspec = strstr(hostwalk->hostentry->rawentry, "NKTIME=");
@@ -102,22 +121,24 @@ int generate_info(char *infocolumn)
 				slaspec +=7;
 				p = strchr(slaspec, ' ');
 				if (p) *p = '\0';
-				sprintf(l, " (%s)", slaspec); strcat(infobuf, l);
+				sprintf(l, " (%s)", slaspec);
+				addtobuffer(&infobuf, &infobuflen, l);
 				if (p) *p = ' ';
 			}
-			else strcat(infobuf, " (24x7)");
+			else addtobuffer(&infobuf, &infobuflen, " (24x7)");
 
-			strcat(infobuf, "<br>\n");
+			addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
 		}
 		else {
-			strcat(infobuf, "<b>NK alerts</b> : None<br>\n");
+			addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>NK alerts:</th><td align=left>None</td></tr>\n");
 		}
 		slaspec = strstr(hostwalk->hostentry->rawentry, "NKTIME=");
 		if (slaspec) {
 			slaspec +=7;
 			p = strchr(slaspec, ' ');
 			if (p) *p = '\0';
-			sprintf(l, "<b>NK alerts shown</b> : %s<br>\n", slaspec); strcat(infobuf, l);
+			sprintf(l, "<tr><th align=left>NK alerts shown:</th><td align=left>%s</td></tr>\n", slaspec);
+			addtobuffer(&infobuf, &infobuflen, l);
 			if (p) *p = ' ';
 		}
 		slaspec = strstr(hostwalk->hostentry->rawentry, "SLA=");
@@ -125,7 +146,8 @@ int generate_info(char *infocolumn)
 			slaspec +=4;
 			p = strchr(slaspec, ' ');
 			if (p) *p = '\0';
-			sprintf(l, "<b>Alert times</b> : %s<br>\n", slaspec); strcat(infobuf, l);
+			sprintf(l, "<tr><th align=left>Alert times:</th><td align=left>%s</td></tr>\n", slaspec);
+			addtobuffer(&infobuf, &infobuflen, l);
 			if (p) *p = ' ';
 		}
 		slaspec = strstr(hostwalk->hostentry->rawentry, "DOWNTIME=");
@@ -133,7 +155,8 @@ int generate_info(char *infocolumn)
 			slaspec +=9;
 			p = strchr(slaspec, ' ');
 			if (p) *p = '\0';
-			sprintf(l, "<b>Planned downtime</b> : %s<br>\n", slaspec); strcat(infobuf, l);
+			sprintf(l, "<tr><th align=left>Planned downtime:</th><td align=left>%s</td></tr>\n", slaspec);
+			addtobuffer(&infobuf, &infobuflen, l);
 			if (p) *p = ' ';
 		}
 		slaspec = strstr(hostwalk->hostentry->rawentry, "REPORTTIME=");
@@ -141,18 +164,19 @@ int generate_info(char *infocolumn)
 			slaspec +=11;
 			p = strchr(slaspec, ' ');
 			if (p) *p = '\0';
-			sprintf(l, "<b>SLA Report period</b> : %s<br>\n", slaspec); strcat(infobuf, l);
+			sprintf(l, "<tr><th align=left>SLA Report period:</th><td align=left>%s</td></tr>\n", slaspec);
+			addtobuffer(&infobuf, &infobuflen, l);
 			if (p) *p = ' ';
-			sprintf(l, "<b>SLA Availability</b> : %.2f<br>\n", hostwalk->hostentry->reportwarnlevel); 
-			strcat(infobuf, l);
+			sprintf(l, "<tr><th align=left>SLA Availability:</th><td align=left>%.2f</td></tr>\n", hostwalk->hostentry->reportwarnlevel); 
+			addtobuffer(&infobuf, &infobuflen, l);
 		}
 		if (hostwalk->hostentry->nopropyellowtests) {
 			noprop = (hostwalk->hostentry->nopropyellowtests+1);
 			p = noprop + strlen(noprop) - 1; /* Point to trailing comma */
 			if (*p == ',') *p = '\0'; else p = NULL;
 
-			sprintf(l, "<b>Suppressed warnings (yellow)</b> : %s<br>\n", noprop);
-			strcat(infobuf, l);
+			sprintf(l, "<tr><th align=left>Suppressed warnings (yellow):</th><td align=left>%s</td></tr>\n", noprop);
+			addtobuffer(&infobuf, &infobuflen, l);
 			if (p) *p = ',';
 		}
 		if (hostwalk->hostentry->nopropredtests) {
@@ -160,11 +184,11 @@ int generate_info(char *infocolumn)
 			p = noprop + strlen(noprop) - 1; /* Point to trailing comma */
 			if (*p == ',') *p = '\0'; else p = NULL;
 
-			sprintf(l, "<b>Suppressed alarms (red)</b> : %s<br>\n", noprop);
-			strcat(infobuf, l);
+			sprintf(l, "<tr><th align=left>Suppressed alarms (red):</th><td align=left>%s</td></tr>\n", noprop);
+			addtobuffer(&infobuf, &infobuflen, l);
 			if (p) *p = ',';
 		}
-		strcat(infobuf, "<br>\n");
+		addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
 		p = strstr(hostwalk->hostentry->rawentry, "NET:");
 		if (p) {
@@ -172,23 +196,27 @@ int generate_info(char *infocolumn)
 			p += 4; location = p;
 			p = strchr(location, ' ');
 			if (p) *p = '\0';
-			sprintf(l, "<b>Tested from network</b> : %s<br>\n", location); strcat(infobuf, l);
+			sprintf(l, "<tr><th align=left>Tested from network:</th><td align=left>%s</td></tr>\n", location);
+			addtobuffer(&infobuf, &infobuflen, l);
 			if (p) *p = ' ';
 		}
 
 		dialup = 0;
 		if (strstr(hostwalk->hostentry->rawentry, "dialup")) dialup = 1;
-		if (dialup) strcat(infobuf, "Host downtime does not trigger alarms (dialup host)<br>\n");
+		if (dialup) addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2 align=left>Host downtime does not trigger alarms (dialup host)</td></tr>\n");
 
 		testip = 0;
 		if (strstr(hostwalk->hostentry->rawentry, "testip")) testip = 1;
-		sprintf(l, "<b>Network tests use</b> : %s<br>\n", (testip ? "IP-address" : "hostname")); strcat(infobuf, l);
+		sprintf(l, "<tr><th align=left>Network tests use:</th><td align=left>%s</td></tr>\n", 
+			(testip ? "IP-address" : "Hostname"));
+		addtobuffer(&infobuf, &infobuflen, l);
 
 		ping = 1;
 		if (strstr(hostwalk->hostentry->rawentry, "noping")) ping = 0;
 		if (strstr(hostwalk->hostentry->rawentry, "noconn")) ping = 0;
-		sprintf(l, "<b>Checked with ping</b> : %s<br>\n", (ping ? "Yes" : "No")); strcat(infobuf, l);
-		strcat(infobuf, "<br>\n");
+		sprintf(l, "<tr><th align=left>Checked with ping:</th><td align=left>%s</td></tr>\n", (ping ? "Yes" : "No"));
+		addtobuffer(&infobuf, &infobuflen, l);
+		addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
 		rawcopy = malcop(hostwalk->hostentry->rawentry);
 		firstcontent = 1;
@@ -196,60 +224,118 @@ int generate_info(char *infocolumn)
 		while (p) {
 			if (strncmp(p, "http", 4) == 0) {
 				if (firstcontent) {
-					strcat(infobuf, "<b>URL checks</b>:<br>\n");
+					addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>URL checks:</th><td align=left>\n");
 					firstcontent = 0;
 				}
 
-				sprintf(l, "&nbsp;&nbsp;<a href=\"%s\">%s</a><br>\n", 
+				sprintf(l, "<a href=\"%s\">%s</a><br>\n", 
 					realurl(p, NULL, NULL, NULL, NULL), 
 					realurl(p, NULL, NULL, NULL, NULL)); 
-				strcat(infobuf, l);
+				addtobuffer(&infobuf, &infobuflen, l);
 			}
 			p = strtok(NULL, " \t");
 		}
-		if (!firstcontent) strcat(infobuf, "<br>\n");
+		if (!firstcontent) addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
 
 		strcpy(rawcopy, hostwalk->hostentry->rawentry);
 		firstcontent = 1;
 		p = strtok(rawcopy, " \t");
 		while (p) {
 			if ( (strncmp(p, "content=", 8) == 0) ||
-			     (strncmp(p, "cont;", 5) == 0)       ) {
+			     (strncmp(p, "cont;", 5) == 0)    ||
+			     (strncmp(p, "post;", 5) == 0)       ) {
 
 				if (firstcontent) {
-					strcat(infobuf, "<b>Content checks</b>:<br>\n");
+					addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>Content checks:</th><td align=left>\n");
 					firstcontent = 0;
 				}
 
-				sprintf(l, "&nbsp;&nbsp;<a href=\"%s\">%s</a><br>\n", 
+				sprintf(l, "<a href=\"%s\">%s</a>", 
 					realurl(p, NULL, NULL, NULL, NULL), 
 					realurl(p, NULL, NULL, NULL, NULL)); 
-				strcat(infobuf, l);
+				addtobuffer(&infobuf, &infobuflen, l);
+				if ((strncmp(p, "cont;", 5) == 0) || (strncmp(p, "post;", 5) == 0)) {
+					char *wanted = strrchr(p, ';');
+
+					if (wanted) {
+						wanted++;
+						sprintf(l, "&nbsp; must return '%s'", wanted);
+						addtobuffer(&infobuf, &infobuflen, l);
+					}
+				}
+				addtobuffer(&infobuf, &infobuflen, "<br>\n");
 			}
 			p = strtok(NULL, " \t");
 		}
-		if (!firstcontent) strcat(infobuf, "<br>\n");
+		if (!firstcontent) addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
+		addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
-		alerts = find_alert(hostwalk->hostentry->hostname, 0);
+		alerts = find_alert(hostwalk->hostentry->hostname, 0, 0);
 		if (!dialup) {
 			if (alerts) {
-				strcat(infobuf, "<b>E-mail/SMS alerting</b>:<br>\n");
-				sprintf(l, "&nbsp;&nbsp;Default time between each alert: %d minutes<br>\n", pagedelay); strcat(infobuf, l);
-				sprintf(l, "&nbsp;&nbsp;Weekdays: %s<br>\n", weekday_text(alerts->items[4])); strcat(infobuf, l);
-				sprintf(l, "&nbsp;&nbsp;Time of day: %s<br>\n", time_text(alerts->items[5])); strcat(infobuf, l);
-				sprintf(l, "&nbsp;&nbsp;Recipients: %s<br>\n", alerts->items[6]); strcat(infobuf, l);
+				addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>E-mail/SMS alerting:</th><td align=left>\n");
+				addtobuffer(&infobuf, &infobuflen, "<table width=\"100%%\" border=1>\n");
+				addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>Services</th><th align=left>Ex.Services</th><th align=left>Weekdays</th><th align=left>Time</th><th align=left>Recipients</th></tr>\n");
+				while (alerts) {
+					char *recips = malcop(alerts->items[6]);
+					char *onercpt;
+
+					addtobuffer(&infobuf, &infobuflen, "<tr>\n");
+
+					sprintf(l, "<td align=left>%s</td>\n", service_text(alerts->items[2]));
+					addtobuffer(&infobuf, &infobuflen, l);
+					sprintf(l, "<td align=left>%s</td>\n", service_text(alerts->items[3]));
+					addtobuffer(&infobuf, &infobuflen, l);
+					sprintf(l, "<td align=left>%s</td>\n", weekday_text(alerts->items[4]));
+					addtobuffer(&infobuf, &infobuflen, l);
+					sprintf(l, "<td align=left>%s</td>\n", time_text(alerts->items[5]));
+					addtobuffer(&infobuf, &infobuflen, l);
+
+					addtobuffer(&infobuf, &infobuflen, "<td align=left>");
+					onercpt = strtok(recips, " \t");
+					while (onercpt) {
+						addtobuffer(&infobuf, &infobuflen, onercpt);
+						onercpt = strtok(NULL, " \t");
+						if (onercpt) addtobuffer(&infobuf, &infobuflen, "<br>");
+					}
+					addtobuffer(&infobuf, &infobuflen, "</td>\n");
+
+					addtobuffer(&infobuf, &infobuflen, "</tr>\n");
+
+					alerts = find_alert(hostwalk->hostentry->hostname, 0, 1);
+				}
+				addtobuffer(&infobuf, &infobuflen, "</table>\n");
+
+				addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
+
+				sprintf(l, "<tr><th align=left>Default time between each alert:</th><td align=left>%d minutes</td></tr>\n", 
+					pagedelay);
+				addtobuffer(&infobuf, &infobuflen, l);
 			}
 			else {
-				strcat(infobuf, "No e-mail/SMS alerting defined<br>\n");
+				addtobuffer(&infobuf, &infobuflen, "<tr><th colspan=2>No e-mail/SMS alerting defined</th></tr>\n");
 			}
 		}
-		strcat(infobuf, "<br>\n");
+		addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
-		strcat(infobuf, "<b>Other tags</b> : ");
+		addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>Other tags:</th><td align=left>");
 		strcpy(rawcopy, hostwalk->hostentry->rawentry); /* Already allocated */
 		p = strtok(rawcopy, " \t");
 		while (p) {
-			if (
+			if ((strncmp(p, "NAME:", 5) == 0) || (strncmp(p, "COMMENT:", 8) == 0)) {
+				char *p2 = strchr(p, ':');
+
+				p2++;
+				if (*p2 == '"') {
+					/* See if the end '"' is already in the token */
+					p2++;
+					if (strchr(p2, '"') == NULL) {
+						/* Skip to the next '"' or end-of-line */
+						p = strtok(NULL, "\"\r\n");
+					}
+				}
+			}
+			else if (
 					(strncmp(p, "#", 1) != 0)
 				&&	(strncmp(p, "NK:", 3) != 0)
 				&&	(strncmp(p, "NET:", 4) != 0)
@@ -261,8 +347,6 @@ int generate_info(char *infocolumn)
 				&&	(strncmp(p, "DOWNTIME=", 9) != 0)
 				&&	(strncmp(p, "REPORTTIME=", 11) != 0)
 				&&	(strncmp(p, "WARNPCT:", 8) != 0)
-				&&	(strncmp(p, "NAME:", 5) != 0)
-				&&	(strncmp(p, "COMMENT:", 8) != 0)
 				&&	(strncmp(p, "http", 4) != 0)
 				&&	(strncmp(p, "content=", 8) != 0)
 				&&	(strncmp(p, "cont;", 5)  != 0)
@@ -272,12 +356,13 @@ int generate_info(char *infocolumn)
 				&&	(strncmp(p, "noping", 6) != 0)
 			   )  {
 				sprintf(l, "%s ", p);
-				strcat(infobuf, l);
+				addtobuffer(&infobuf, &infobuflen, l);
 			}
 
 			p = strtok(NULL, " \t");
 		}
 		free(rawcopy);
+		addtobuffer(&infobuf, &infobuflen, "</td></tr>\n</table>\n");
 
 		fd = fopen(logfn, "w");
 		if (!fd) {
@@ -304,11 +389,10 @@ int generate_info(char *infocolumn)
 			fprintf(fd, "\n");
 			fprintf(fd, "<A NAME=begindata>&nbsp;</A>\n");
 			fprintf(fd, "\n");
-			fprintf(fd, "<CENTER><TABLE ALIGN=CENTER BORDER=0>\n");
-			fprintf(fd, "<TR><TH ALIGN=CENTER><FONT %s>\n", getenv("MKBBROWFONT"));
-			fprintf(fd, "%s - %s</FONT><BR><HR WIDTH=\"60%%\"></TH>\n", hostwalk->hostentry->hostname, infocolumn);
-
-			fprintf(fd, "<TR><TD ALIGN=LEFT>\n<br>%s\n</TD></TR>\n", infobuf);
+			fprintf(fd, "<CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=\"80%%\">\n");
+			fprintf(fd, "<TR><TH ALIGN=CENTER><FONT %s>", getenv("MKBBROWFONT"));
+			fprintf(fd, "%s - %s</FONT><BR><HR WIDTH=\"100%%\"></TH></TR>\n", hostwalk->hostentry->hostname, infocolumn);
+			fprintf(fd, "<TR><TD>\n%s\n</TD></TR>\n", infobuf);
 			fprintf(fd, "</TABLE>\n");
 			fprintf(fd, "\n");
 			fprintf(fd, "</CENTER>\n");
@@ -320,6 +404,7 @@ int generate_info(char *infocolumn)
 		}
 	}
 
+	free(infobuf);
 	return 0;
 }
 
