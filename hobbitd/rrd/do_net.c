@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbnet_rcsid[] = "$Id: do_net.c,v 1.2 2004-11-07 18:24:24 henrik Exp $";
+static char bbnet_rcsid[] = "$Id: do_net.c,v 1.3 2004-11-08 17:11:41 henrik Exp $";
 
 static char *bbnet_params[]       = { "rrdcreate", rrdfn, "DS:sec:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
@@ -41,9 +41,9 @@ int do_net_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 				if (strncmp(urlfn, "http://", 7) == 0) urlfn += 7;
 				p = urlfn; while ((p = strchr(p, '/')) != NULL) *p = ',';
-				sprintf(rrdfn, "%s/%s.tcp.http.%s.rrd", rrddir, hostname, urlfn);
+				sprintf(rrdfn, "%s.tcp.http.%s.rrd", hostname, urlfn);
 				sprintf(rrdvalues, "%d:%.2f", (int)tstamp, seconds);
-				create_and_update_rrd(rrdfn, bbnet_params, update_params);
+				create_and_update_rrd(hostname, rrdfn, bbnet_params, update_params);
 				free(url); url = NULL;
 			}
 
@@ -72,9 +72,9 @@ int do_net_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		if (strncmp(tmod, "ms", 2) == 0) seconds = seconds / 1000.0;
 		else if (strncmp(tmod, "usec", 4) == 0) seconds = seconds / 1000000.0;
 
-		sprintf(rrdfn, "%s/%s.tcp.%s.rrd", rrddir, hostname, "conn");
+		sprintf(rrdfn, "%s.tcp.%s.rrd", hostname, "conn");
 		sprintf(rrdvalues, "%d:%.6f", (int)tstamp, seconds);
-		return create_and_update_rrd(rrdfn, bbnet_params, update_params);
+		return create_and_update_rrd(hostname, rrdfn, bbnet_params, update_params);
 	}
 	else {
 		/*
@@ -82,9 +82,9 @@ int do_net_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		 */
 		p = strstr(msg, "\nSeconds:");
 		if (p && (sscanf(p+1, "Seconds: %f", &seconds) == 1)) {
-			sprintf(rrdfn, "%s/%s.tcp.%s.rrd", rrddir, hostname, testname);
+			sprintf(rrdfn, "%s.tcp.%s.rrd", hostname, testname);
 			sprintf(rrdvalues, "%d:%.2f", (int)tstamp, seconds);
-			return create_and_update_rrd(rrdfn, bbnet_params, update_params);
+			return create_and_update_rrd(hostname, rrdfn, bbnet_params, update_params);
 		}
 	}
 

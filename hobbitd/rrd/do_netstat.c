@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.3 2004-11-07 21:48:00 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.4 2004-11-08 17:11:41 henrik Exp $";
 
 static char *netstat_params[] = { "rrdcreate", rrdfn, 
 	                          "DS:udpInDatagrams:DERIVE:600:0:U", 
@@ -270,8 +270,8 @@ int do_netstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	}
 
 	if (havedata) {
-		sprintf(rrdfn, "%s/%s.netstat.rrd", rrddir, hostname);
-		return create_and_update_rrd(rrdfn, netstat_params, update_params);
+		sprintf(rrdfn, "%s.netstat.rrd", hostname);
+		return create_and_update_rrd(hostname, rrdfn, netstat_params, update_params);
 	}
 	else {
 		return -1;

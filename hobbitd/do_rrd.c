@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.4 2004-11-07 11:08:32 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.5 2004-11-08 17:11:41 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -18,6 +18,7 @@ static char rcsid[] = "$Id: do_rrd.c,v 1.4 2004-11-07 11:08:32 henrik Exp $";
 #include <unistd.h>
 #include <limits.h>
 #include <ctype.h>
+#include <errno.h>
 
 #include <rrd.h>
 
@@ -35,8 +36,9 @@ static char rra3[] = "RRA:AVERAGE:0.5:24:576";
 static char rra4[] = "RRA:AVERAGE:0.5:288:576";
 static char *update_params[]      = { "rrdupdate", rrdfn, rrdvalues, NULL };
 
-static int create_and_update_rrd(char *fn, char *creparams[], char *updparams[])
+static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], char *updparams[])
 {
+	char filedir[PATH_MAX];
 	struct stat st;
 	int pcount, result;
 
@@ -45,23 +47,33 @@ static int create_and_update_rrd(char *fn, char *creparams[], char *updparams[])
 		return -1;
 	}
 
-	if (stat(fn, &st) == -1) {
-		dprintf("Creating rrd %s\n", fn);
+	sprintf(filedir, "%s/%s", rrddir, hostname);
+	if (stat(filedir, &st) == -1) {
+		if (mkdir(filedir, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH) == -1) {
+			errprintf("Cannot create rrd directory %s : %s\n", filedir, strerror(errno));
+			return -1;
+		}
+	}
+	strcat(filedir, "/"); strcat(filedir, fn);
+	creparams[1] = updparams[1] = filedir;	/* Icky */
+
+	if (stat(filedir, &st) == -1) {
+		dprintf("Creating rrd %s\n", filedir);
 
 		for (pcount = 0; (creparams[pcount]); pcount++);
 		result = rrd_create(pcount, creparams);
 		if (result != 0) {
-			errprintf("RRD error creating %s: %s\n", fn, rrd_get_error());
+			errprintf("RRD error creating %s: %s\n", filedir, rrd_get_error());
 			return 1;
 		}
 	}
 
-	dprintf("Updating %s with '%s'\n", fn, rrdvalues);
+	dprintf("Updating %s with '%s'\n", filedir, rrdvalues);
 	for (pcount = 0; (updparams[pcount]); pcount++);
 	rrd_clear_error();
 	result = rrd_update(pcount, updparams);
 	if (result != 0) {
-		errprintf("RRD error updating %s: %s\n", fn, rrd_get_error());
+		errprintf("RRD error updating %s: %s\n", filedir, rrd_get_error());
 		return 2;
 	}
 

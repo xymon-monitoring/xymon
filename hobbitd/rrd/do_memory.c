@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char memory_rcsid[] = "$Id: do_memory.c,v 1.2 2004-11-07 18:24:24 henrik Exp $";
+static char memory_rcsid[] = "$Id: do_memory.c,v 1.3 2004-11-08 17:11:41 henrik Exp $";
 
 static char *memory_params[]      = { "rrdcreate", rrdfn, "DS:realmempct:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
@@ -27,13 +27,13 @@ static int get_mem_percent(char *l)
 
 void do_memory_larrd_update(time_t tstamp, char *hostname, int physval, int swapval)
 {
-	sprintf(rrdfn, "%s/%s.%s.real.rrd", rrddir, commafy(hostname), "memory");
+	sprintf(rrdfn, "%s.%s.real.rrd", commafy(hostname), "memory");
 	sprintf(rrdvalues, "%d:%d", (int)tstamp, physval);
-	create_and_update_rrd(rrdfn, memory_params, update_params);
+	create_and_update_rrd(hostname, rrdfn, memory_params, update_params);
 
-	sprintf(rrdfn, "%s/%s.%s.swap.rrd", rrddir, commafy(hostname), "memory");
+	sprintf(rrdfn, "%s.%s.swap.rrd", commafy(hostname), "memory");
 	sprintf(rrdvalues, "%d:%d", (int)tstamp, swapval);
-	create_and_update_rrd(rrdfn, memory_params, update_params);
+	create_and_update_rrd(hostname, rrdfn, memory_params, update_params);
 }
 
 int do_memory_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
