@@ -7,7 +7,7 @@
 /*                                                                            */
 /* The concept is to use a shared memory segment for each "channel" that      */
 /* bbgend supports. This memory segment is then used to pass a single bbgend  */
-/* message between the bbgend master daemon, and the bbd_channel workers.     */
+/* message between the bbgend master daemon, and the bbgend_channel workers.  */
 /* Two semaphores are used to synchronize between the master daemon and the   */
 /* workers, i.e. the workers wait for a semaphore to go up indicating that a  */
 /* new message has arrived, and the master daemon then waits for the other    */
@@ -22,7 +22,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.9 2004-11-13 08:18:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.10 2004-11-13 08:53:03 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -49,12 +49,12 @@ char *channelnames[] = {
 	NULL
 };
 
-bbd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
+bbgend_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 {
 	key_t key;
 	struct stat st;
 	struct sembuf s;
-	bbd_channel_t *newch;
+	bbgend_channel_t *newch;
 	int flags = ((role == CHAN_MASTER) ? (IPC_CREAT | 0600) : 0);
 
 	if ( (getenv("BBHOME") == NULL) || (stat(getenv("BBHOME"), &st) == -1) ) {
@@ -63,7 +63,7 @@ bbd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	}
 
 	key = ftok(getenv("BBHOME"), chnid);
-	newch = (bbd_channel_t *)malloc(sizeof(bbd_channel_t));
+	newch = (bbgend_channel_t *)malloc(sizeof(bbgend_channel_t));
 
 	newch->seq = 0;
 	newch->channelid = chnid;
@@ -104,7 +104,7 @@ bbd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 
 		n = semctl(newch->semid, CLIENTCOUNT, GETVAL);
 		if (n > 0) {
-			errprintf("FATAL: bbd_net sees clientcount %d, should be 0\nCheck for hanging bbd_channel processes or stale semaphores\n", n);
+			errprintf("FATAL: bbgend sees clientcount %d, should be 0\nCheck for hanging bbgend_channel processes or stale semaphores\n", n);
 			return NULL;
 		}
 	}
@@ -112,7 +112,7 @@ bbd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	return newch;
 }
 
-void close_channel(bbd_channel_t *chn, int role)
+void close_channel(bbgend_channel_t *chn, int role)
 {
 	if (chn == NULL) return;
 

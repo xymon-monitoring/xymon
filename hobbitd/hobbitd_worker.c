@@ -2,7 +2,7 @@
 /* Big Brother message daemon.                                                */
 /*                                                                            */
 /* This is a small library for bbgend worker modules, to read a new message   */
-/* from the bbd_channel process, and also do the decoding of messages that    */
+/* from the bbgend_channel process, and also do the decoding of messages that */
 /* are passed on the "meta-data" first line of such a message.                */
 /*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_worker.c,v 1.12 2004-10-30 15:54:38 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_worker.c,v 1.13 2004-11-13 08:50:52 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -27,9 +27,8 @@ static char rcsid[] = "$Id: hobbitd_worker.c,v 1.12 2004-10-30 15:54:38 henrik E
 
 #include "libbbgen.h"
 
-#include "bbgend.h"
-#include "bbdutil.h"
-#include "bbdworker.h"
+#include "bbgend_ipc.h"
+#include "bbgend_worker.h"
 
 static int didtimeout = 0;
 static int ioerror = 0;

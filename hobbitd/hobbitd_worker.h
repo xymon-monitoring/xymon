@@ -8,8 +8,8 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __BBDWORKER_H__
-#define __BBDWORKER_H__
+#ifndef __BBGEND_WORKER_H__
+#define __BBGEND_WORKER_H__
 
 #include <sys/time.h>
 

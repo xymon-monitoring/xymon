@@ -4,7 +4,7 @@
 /* This module receives messages from one channel of the bbgend master daemon.*/
 /* These messages are then forwarded to the actual worker process via stdin;  */
 /* the worker process can process the messages without having to care about   */
-/* the tricky details in the bbgend/bbd_channel communications.               */
+/* the tricky details in the bbgend/bbgend_channel communications.            */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.18 2004-11-07 07:47:20 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.19 2004-11-13 08:51:54 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -30,10 +30,10 @@ static char rcsid[] = "$Id: hobbitd_channel.c,v 1.18 2004-11-07 07:47:20 henrik 
 
 #include "libbbgen.h"
 
-#include "bbgend.h"
-#include "bbdutil.h"
+#include "bbgend_ipc.h"
 
 
+/* For our in-memory queue of messages received from bbgend via IPC */
 typedef struct msg_t {
 	char *buf;
 	char *bufp;
@@ -47,7 +47,7 @@ msg_t *tail = NULL;
 static volatile int running = 1;
 static volatile int gotalarm = 0;
 static int childexit = -1;
-bbd_channel_t *channel = NULL;
+bbgend_channel_t *channel = NULL;
 
 void sig_handler(int signum)
 {
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
 		childpid = fork();
 		if (childpid < 0) {
 			/* Fork failed */
-			errprintf("Could not fork\n");
+			errprintf("Could not fork child\n");
 			exit(1);
 		}
 		else if (childpid > 0) {
@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Catch signals */
-	setup_signalhandler("bbd_channel");
+	setup_signalhandler("bbgend_channel");
 	signal(SIGPIPE, sig_handler);
 	signal(SIGINT, sig_handler);
 	signal(SIGTERM, sig_handler);
@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
 	}
 	/* Parent process continues */
 	close(pfd[0]);
-	fclose(stdin);	/* bbd_channel's stdin is not used */
+	fclose(stdin);	/* bbgend_channel's stdin is not used */
 
 	/* We dont want to block when writing to the worker */
 	fcntl(pfd[1], F_SETFL, O_NONBLOCK);
@@ -264,8 +264,8 @@ int main(int argc, char *argv[])
 				head->buflen -= n;
 				if (head->buflen == 0) {
 					msg_t *tmp = head;
-					free(head->buf);
 					head = head->next;
+					free(tmp->buf);
 					free(tmp);
 				}
 			}
@@ -283,8 +283,8 @@ int main(int argc, char *argv[])
 				/* Write failed */
 				errprintf("Our child has failed and will not talk to us\n");
 				msg_t *tmp = head;
-				free(head->buf);
 				head = head->next;
+				free(tmp->buf);
 				free(tmp);
 				canwrite = 0;
 			}

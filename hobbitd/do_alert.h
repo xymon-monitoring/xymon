@@ -8,8 +8,8 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __BBD_ALERT_H__
-#define __BBD_ALERT_H__
+#ifndef __BBGEND_ALERT_H__
+#define __BBGEND_ALERT_H__
 
 #include <time.h>
 

@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Big Brother message daemon.                                                */
 /*                                                                            */
-/* This is part of the bbd_alert worker module.                               */
+/* This is part of the bbgend_alert worker module.                            */
 /* This module implements the standard bbgend alerting function. It loads the */
 /* alert configuration from bb-alerts.cfg, and incoming alerts are then sent  */
 /* according to the rules defined.                                            */
@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.10 2004-11-13 07:57:20 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.11 2004-11-13 08:48:23 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -42,8 +42,8 @@ static char rcsid[] = "$Id: do_alert.c,v 1.10 2004-11-13 07:57:20 henrik Exp $";
  *   Called after all calls to send_alert()
  *
  * load_alertconfig() and next_alert() are called in the context
- * of the main bbd_alert worker.
- * send_alert() runs in a sub-proces forked from bbd_alert.
+ * of the main bbgend_alert worker.
+ * send_alert() runs in a sub-proces forked from bbgend_alert.
  *
  */
 
@@ -60,7 +60,7 @@ static char rcsid[] = "$Id: do_alert.c,v 1.10 2004-11-13 07:57:20 henrik Exp $";
 
 #include "libbbgen.h"
 
-#include "bbd_alert.h"
+#include "bbgend_alert.h"
 
 enum method_t { M_MAIL, M_SCRIPT, M_BBSCRIPT };
 enum msgformat_t { FRM_TEXT, FRM_SMS, FRM_PAGER };

@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Big Brother message daemon.                                                */
 /*                                                                            */
-/* This is the main alert module for bbd_net. It receives alert messages,     */
+/* This is the main alert module for bbgend. It receives alert messages,      */
 /* keeps track of active alerts, enable/disable, acks etc., and triggers      */
 /* outgoing alerts by calling send_alert().                                   */
 /*                                                                            */
@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 /*
- * Information from the bbd docs about "page" modules:
+ * Information from the bbgend docs about "page" modules:
  *
  *   page
  *   ----
@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.18 2004-10-31 11:44:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.19 2004-11-13 08:47:45 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -48,8 +48,8 @@ static char rcsid[] = "$Id: hobbitd_alert.c,v 1.18 2004-10-31 11:44:41 henrik Ex
 #include <time.h>
 #include "libbbgen.h"
 
-#include "bbdworker.h"
-#include "bbd_alert.h"
+#include "bbgend_worker.h"
+#include "bbgend_alert.h"
 
 static volatile int running = 1;
 
@@ -240,7 +240,7 @@ int main(int argc, char *argv[])
 		dprintf("Next checkpoint at %d, interval %d\n", (int) nextcheckpoint, checkpointinterval);
 	}
 
-	setup_signalhandler("bbd_alert");
+	setup_signalhandler("bbgend_alert");
 	signal(SIGCHLD, sig_handler);
 	signal(SIGTERM, sig_handler);
 	signal(SIGINT, sig_handler);
@@ -263,7 +263,7 @@ int main(int argc, char *argv[])
 		}
 
 		timeout.tv_sec = 60; timeout.tv_usec = 0;
-		msg = get_bbgend_message("bbd_alert", &seq, &timeout);
+		msg = get_bbgend_message("bbgend_alert", &seq, &timeout);
 		if (msg == NULL) {
 			running = 0;
 			continue;
