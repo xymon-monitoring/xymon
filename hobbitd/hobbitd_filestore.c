@@ -16,12 +16,23 @@
 
 enum role_t { ROLE_STATUS, ROLE_DATA, ROLE_NOTES};
 
-void update_file(char *fn, char *mode, char *msg, time_t expire)
+void update_file(char *fn, char *mode, char *msg, time_t expire, char *sender, time_t timesincechange, int seq)
 {
 	FILE *logfd;
 
+	dprintf("Updating seq %d file %s\n", seq, fn);
+
 	logfd = fopen(fn, mode);
 	fwrite(msg, strlen(msg), 1, logfd);
+	if (sender) fprintf(logfd, "\n\nMessage received from %s\n", sender);
+	if (timesincechange >= 0) {
+		char timestr[100];
+		char *p = timestr;
+		if (timesincechange > 86400) p += sprintf(p, "%ld days, ", (timesincechange / 86400));
+		p += sprintf(p, "%ld hours, %ld minutes", 
+				((timesincechange % 86400) / 3600), ((timesincechange % 3600) / 60));
+		fprintf(logfd, "Status unchanged in %s\n", timestr);
+	}
 	fclose(logfd);
 
 	if (expire) {
@@ -37,6 +48,7 @@ int main(int argc, char *argv[])
 	char *msg;
 	enum role_t role = ROLE_STATUS;
 	int argi;
+	int seq;
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--status") == 0) {
@@ -64,7 +76,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	while ((msg = get_bbgend_message()) != NULL) {
+	while ((msg = get_bbgend_message("filestore", &seq)) != NULL) {
 		char *items[20] = { NULL, };
 		char *statusdata = "";
 		char *p;
@@ -85,33 +97,37 @@ int main(int argc, char *argv[])
 			p = gettok(NULL, "|");
 		}
 
-		if ((role == ROLE_STATUS) && (strcmp(items[0], "@@status") == 0)) {
+		if ((role == ROLE_STATUS) && (strncmp(items[0], "@@status", 8) == 0)) {
 			/* @@status|timestamp|sender|hostname|testname|expiretime|color|testflags|prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage */
+			time_t timesincechange;
+
 			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			testname = items[4];
 			sprintf(logfn, "%s/%s.%s", filedir, hostname, testname);
 			expiretime = atoi(items[5]);
 			statusdata = msg_data(statusdata);
-			update_file(logfn, "w", statusdata, expiretime);
+			sscanf(items[1], "%d.%*d", (int *) &timesincechange);
+			timesincechange -= atoi(items[9]);
+			update_file(logfn, "w", statusdata, expiretime, items[2], timesincechange, seq);
 		}
-		else if ((role == ROLE_DATA) && (strcmp(items[0], "@@data")) == 0) {
+		else if ((role == ROLE_DATA) && (strncmp(items[0], "@@data", 6)) == 0) {
 			/* @@data|timestamp|sender|hostname|testname */
 			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			testname = items[4];
 			statusdata = msg_data(statusdata); if (*statusdata == '\n') statusdata++;
 			sprintf(logfn, "%s/%s.%s", filedir, hostname, testname);
 			expiretime = 0;
-			update_file(logfn, "a", statusdata, expiretime);
+			update_file(logfn, "a", statusdata, expiretime, NULL, -1, seq);
 		}
-		else if ((role == ROLE_NOTES) && (strcmp(items[0], "@@notes") == 0)) {
+		else if ((role == ROLE_NOTES) && (strncmp(items[0], "@@notes", 7) == 0)) {
 			/* @@notes|timestamp|sender|hostname */
 			hostname = items[3];
 			statusdata = msg_data(statusdata); if (*statusdata == '\n') statusdata++;
 			sprintf(logfn, "%s/%s", filedir, hostname);
 			expiretime = 0;
-			update_file(logfn, "w", statusdata, expiretime);
+			update_file(logfn, "w", statusdata, expiretime, NULL, -1, seq);
 		}
-		else if (((role == ROLE_STATUS) || (role == ROLE_DATA)) && (strcmp(items[0], "@@drophost") == 0)) {
+		else if (((role == ROLE_STATUS) || (role == ROLE_DATA)) && (strncmp(items[0], "@@drophost", 10) == 0)) {
 			/* @@drophost|timestamp|sender|hostname */
 			DIR *dirfd;
 			struct dirent *de;
@@ -134,14 +150,14 @@ int main(int argc, char *argv[])
 
 			free(hostlead);
 		}
-		else if (((role == ROLE_STATUS) || (role == ROLE_DATA)) && (strcmp(items[0], "@@droptest") == 0)) {
+		else if (((role == ROLE_STATUS) || (role == ROLE_DATA)) && (strncmp(items[0], "@@droptest", 10) == 0)) {
 			/* @@droptest|timestamp|sender|hostname|testname */
 			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			testname = items[4];
 			sprintf(logfn, "%s/%s.%s", filedir, hostname, testname);
 			unlink(logfn);
 		}
-		else if (((role == ROLE_STATUS) || (role == ROLE_DATA)) && (strcmp(items[0], "@@renamehost") == 0)) {
+		else if (((role == ROLE_STATUS) || (role == ROLE_DATA)) && (strncmp(items[0], "@@renamehost", 12) == 0)) {
 			/* @@renamehost|timestamp|sender|hostname|newhostname */
 			DIR *dirfd;
 			struct dirent *de;
@@ -168,7 +184,7 @@ int main(int argc, char *argv[])
 			}
 			free(hostlead);
 		}
-		else if (((role == ROLE_STATUS) || (role == ROLE_DATA)) && (strcmp(items[0], "@@renametest") == 0)) {
+		else if (((role == ROLE_STATUS) || (role == ROLE_DATA)) && (strncmp(items[0], "@@renametest", 12) == 0)) {
 			/* @@renametest|timestamp|sender|hostname|oldtestname|newtestname */
 			char *newtestname;
 			char newfn[MAX_PATH];
