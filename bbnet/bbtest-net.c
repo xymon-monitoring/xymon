@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.125 2003-10-01 07:24:24 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.126 2003-10-07 20:20:54 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -98,6 +98,7 @@ int		selectedcount = 0;
 int		testuntagged = 0;
 time_t		frequenttestlimit = 1800;	/* Interval (seconds) when failing hosts are retried frequently */
 int		checktcpresponse = 0;
+int		dotraceroute = 0;
 int		fqdn = 1;
 
 void dump_hostlist(void)
@@ -121,6 +122,7 @@ void dump_hostlist(void)
 		if (walk->repeattest) printf(" repeattest");
 		if (walk->noconn) printf(" noconn");
 		if (walk->noping) printf(" noping");
+		if (walk->dotrace) printf(" dotrace");
 		printf("\n");
 
 		printf("\tbadconn      : %d:%d:%d\n", walk->badconn[0], walk->badconn[1], walk->badconn[2]);
@@ -331,6 +333,8 @@ testedhost_t *init_testedhost(char *hostname, int timeout, int conntimeout, int 
 	newhost->downstart = 0;
 	newhost->routerdeps = NULL;
 	newhost->deprouterdown = NULL;
+	newhost->dotrace = dotraceroute;
+	newhost->traceroute = NULL;
 
 	newhost->firsthttp = NULL;
 	newhost->firstftp = NULL;
@@ -507,10 +511,12 @@ void load_tests(void)
 							h->conntimeout = 0;
 						}
 					}
-					else if (strcmp(testspec, "noconn") == 0) { specialtag = 1; h->noconn = 1; }
-					else if (strcmp(testspec, "noping") == 0) { specialtag = 1; h->noping = 1; }
-					else if (strcmp(testspec, "testip") == 0) { specialtag = 1; h->testip = 1; }
-					else if (strcmp(testspec, "dialup") == 0) { specialtag = 1; h->dialup = 1; }
+					else if (strcmp(testspec, "noconn") == 0)  { specialtag = 1; h->noconn = 1; }
+					else if (strcmp(testspec, "noping") == 0)  { specialtag = 1; h->noping = 1; }
+					else if (strcmp(testspec, "trace") == 0)   { specialtag = 1; h->dotrace = 1; }
+					else if (strcmp(testspec, "notrace") == 0) { specialtag = 1; h->dotrace = 0; }
+					else if (strcmp(testspec, "testip") == 0)  { specialtag = 1; h->testip = 1; }
+					else if (strcmp(testspec, "dialup") == 0)  { specialtag = 1; h->dialup = 1; }
 					else if (strcmp(testspec, "ldapyellowfail") == 0) { specialtag = 1; h->ldapsearchfailyellow = 1; }
 					else if (strcmp(testspec, "nosslcert") == 0) { specialtag = 1; h->nosslcert = 1; }
 					else if (argnmatch(testspec, "ssldays=")) {
@@ -844,11 +850,6 @@ void load_tests(void)
 
 				if (anytests) {
 					sprintf(h->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
-					if (h->testip && (strcmp(h->ip, "0.0.0.0") == 0)) {
-						errprintf("Host %s has IP 0.0.0.0 - ignoring testip tag\n", h->hostname);
-						h->testip = 0;
-						h->dodns = 1;
-					}
 					h->next = testhosthead;
 					testhosthead = h;
 				}
@@ -920,13 +921,11 @@ static void dns_callback(void *arg, int status, struct hostent *host)
 	memcpy(&addr, *(host->h_addr_list), sizeof(struct in_addr));
 	strcpy(h->ip, inet_ntoa(addr));
 }
-#endif
 
 
 void dns_resolve(void)
 {
 	testedhost_t	*h;
-	struct hostent *hent;
 
 	init_ares(dnstimeout, NULL);
 
@@ -938,9 +937,32 @@ void dns_resolve(void)
 		 */
 
 		if (!h->testip && (h->dodns || (strcmp(h->ip, "0.0.0.0") == 0))) {
-#ifdef USE_ARES
 			ares_gethostbyname(myares_channel, h->hostname, AF_INET, dns_callback, h);
+		}
+	}
+
+	do_ares();
+}
 #else
+void dns_resolve(void)
+{
+	testedhost_t	*h;
+
+	for (h=testhosthead; (h); h=h->next) {
+		/* 
+		 * Determine the IP address to test. We do it here,
+		 * to avoid multiple DNS lookups for each service 
+		 * we test on a host.
+		 */
+		if (h->testip || (dnsmethod == IP_ONLY)) {
+			if (strcmp(h->ip, "0.0.0.0") == 0) {
+				errprintf("bbtest-net: %s has IP 0.0.0.0 and testip - dropped\n", h->hostname);
+				h->dnserror = 1;
+			}
+		}
+		else if (h->dodns) {
+			struct hostent *hent;
+
 			hent = gethostbyname(h->hostname);
 			if (hent) {
 				struct in_addr addr;
@@ -948,17 +970,23 @@ void dns_resolve(void)
 				memcpy(&addr, *(hent->h_addr_list), sizeof(struct in_addr));
 				strcpy(h->ip, inet_ntoa(addr));
 			}
-			else if (dnsmethod != DNS_THEN_IP) {
+			else if (dnsmethod == DNS_THEN_IP) {
+				/* Already have the IP setup */
+			}
+			else {
 				/* Cannot resolve hostname */
 				h->dnserror = 1;
-				errprintf("bbtest-net: IP resolver error for host %s\n", h->hostname);
 			}
-#endif
+
+			if (strcmp(h->ip, "0.0.0.0") == 0) {
+				errprintf("bbtest-net: IP resolver error for host %s\n", h->hostname);
+				h->dnserror = 1;
+			}
 		}
 	}
-
-	do_ares();
 }
+#endif
+
 
 
 void load_fping_status(void)
@@ -1327,6 +1355,7 @@ int run_fping_service(service_t *service)
 	char		l[MAX_LINE_LEN];
 	char		hostname[MAX_LINE_LEN];
 	int		ip1, ip2, ip3, ip4;
+	int		fpingstatus;
 
 	/* Run "fping -Ae 2>/dev/null" and feed it all IP's to test */
 	p = getenv("FPING");
@@ -1344,7 +1373,11 @@ int run_fping_service(service_t *service)
 			fprintf(cmdpipe, "%s\n", t->host->ip);
 		}
 	}
-	pclose(cmdpipe);
+	fpingstatus = pclose(cmdpipe);
+	if (fpingstatus) {
+		errprintf("Execution of '%s' failed with errorcode %d\n", 
+				cmd, WEXITSTATUS(fpingstatus));
+	}
 
 	/* Load status of previously failed tests */
 	load_fping_status();
@@ -1504,6 +1537,19 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 			if      (test->host->downcount >= test->host->badconn[1]) color = COL_YELLOW;
 			else if (test->host->downcount >= test->host->badconn[0]) color = COL_CLEAR;
 			else                                                      color = COL_GREEN;
+		}
+
+		/* Run traceroute , but not on dialup or reverse-test hosts */
+		if ((color == COL_RED) && test->host->dotrace && !test->host->dialup && !test->reverse && !test->dialup) {
+			char cmd[MAX_PATH];
+
+			if (getenv("TRACEROUTE")) {
+				sprintf(cmd, "%s %s 2>&1", getenv("TRACEROUTE"), test->host->hostname);
+			}
+			else {
+				sprintf(cmd, "traceroute -n -q 2 -w 2 -m 15 %s 2>&1", test->host->hostname);
+			}
+			run_command(cmd, NULL, &test->host->traceroute);
 		}
 	}
 	else {
@@ -1743,6 +1789,13 @@ void send_results(service_t *service, int failgoesclear)
 		if (t->banner) {
 			addtostatus("\n"); addtostatus(t->banner); addtostatus("\n");
 		}
+
+		if ((service == pingtest) && t->host->traceroute) {
+			addtostatus("Traceroute results:\n");
+			addtostatus(t->host->traceroute);
+			addtostatus("\n");
+		}
+
 		if (t->duration.tv_sec != -1) {
 			sprintf(msgtext, "\nSeconds: %ld.%03ld\n", 
 				t->duration.tv_sec, t->duration.tv_usec / 1000);
@@ -2061,6 +2114,12 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--noping") == 0) {
 			pingcolumn = NULL;
+		}
+		else if (strcmp(argv[argi], "--trace") == 0) {
+			dotraceroute = 1;
+		}
+		else if (strcmp(argv[argi], "--notrace") == 0) {
+			dotraceroute = 0;
 		}
 
 		/* Options for HTTP tests */
