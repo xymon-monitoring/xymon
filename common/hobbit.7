@@ -270,12 +270,17 @@ as well. You should use version 7.9.8 or later of the library,
 as some features needed by bbtest-net are not available in earlier
 versions.
 
-.IP openssl
+.IP OpenSSL
 The OpenSSL library is used for checking https websites and
 other SSL-enabled protocols (imaps, pop3s, nntps, telnets, ftps).
 It should be installed before you install libcurl. If your
 system does not already have openssl installed, you can pick it
 up from http://www.openssl.org/
+
+.IP OpenLDAP
+If you want to test LDAP servers, it is recommended that you
+install an LDAP client library such as OpenLDAP. It is available
+from http://www.openldap.org/
 
 
 .SH COMPATIBILITY
@@ -288,13 +293,15 @@ A "group" directive in the
 .I bb-hosts(5)
 file is treated as a "group-compress".
 
-.IP Modembanks can be placed in subpages
+.IP "Modembanks can be placed in subpages"
 Standard BB always displays modem-banks on the front-page
 (bb.html). bbgen treats modembanks like normal hosts, so
 they will appear on a page or subpage according to their
-placement in the bb-hosts file.
+placement in the bb-hosts file. If you want them on the
+bb.html page, place the "dialup" directive before any
+"page" directives in bb-hosts.
 
-.IP Connectivity tests use the hostname
+.IP "Connectivity tests use the hostname"
 Standard BB always uses the IP-address listed in the bb-hosts
 file for the connectivity (ping) test. bbtest-net will attempt
 a DNS lookup of the hostname to determine the IP-address,
@@ -302,7 +309,7 @@ but fallback to using the IP-address if the DNS lookup fails.
 This behaviour can be changed with the "testip" tag (on a per-host
 basis), or via the "--dns" tag (globally).
 
-.IP ":q and :Q modifiers"
+.IP ":q and :Q modifiers are ignored"
 The ":q" and ":Q" modifiers on individual tests are ignored.
 These modifiers are only relevant for the standard Big 
 Brother network test tool bbnet, which is not used when
@@ -310,9 +317,19 @@ you install the bbgen network test tools.
 
 .IP "Status messages from hosts not in bb-hosts are ignored"
 Standard Big Brother will process status-logs from unknown
-hosts, and these can cause the web pages to have a purple
-background color. The bbgen toolkit ignores logs from hosts
-not listed in the bb-hosts file.
+hosts, and these will affect the background color of the 
+bb.html and bb2.html pages.  The bbgen toolkit ignores logs 
+from hosts not listed in the bb-hosts file.
+
+.IP "The eventlog and ack-log are always generated"
+Standard BB provides two extension-scripts for the bb2.html
+page, which are enabled by default by being listed in the 
+BBMKBB2EXT environment variable: The eventlog.sh script,
+and the acklog.sh script. These have been integrated into
+the bbgen webpage generator, and are therefore always generated,
+regardless of the contents of the BBMKBB2EXT environment 
+variable. Any other extension scripts listed in BBMKBB2EXT
+are therefore shown \fBafter\fP the eventlog and acklog.
 
 .SH DEMONSTRATION SITE
 A site running this software can be seen at http://www.hswn.dk/bb/
