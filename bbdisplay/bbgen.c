@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.49 2002-11-27 10:03:07 hstoerne Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.50 2002-11-27 13:13:41 hstoerne Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -33,20 +33,12 @@ static char rcsid[] = "$Id: bbgen.c,v 1.49 2002-11-27 10:03:07 hstoerne Exp $";
 
 /* Global vars */
 page_t		*pagehead = NULL;			/* Head of page list */
-
 link_t  	*linkhead = NULL;			/* Head of links list */
-link_t		null_link = { "", "", "", NULL };	/* Null link for pages/hosts/whatever with no link */
-
 hostlist_t	*hosthead = NULL;			/* Head of hosts list */
 state_t		*statehead = NULL;			/* Head of list of all state entries */
 col_t   	*colhead = NULL;			/* Head of column-name list */
-col_t		null_column = { "", NULL };		/* Null column */
-
 summary_t	*sumhead = NULL;			/* Summaries we send out */
 dispsummary_t	*dispsums = NULL;			/* Summaries we received and display */
-
-char		larrdcol[20];
-int		enable_purpleupd = 1;
 
 
 int main(int argc, char *argv[])
@@ -57,7 +49,6 @@ int main(int argc, char *argv[])
 	int		i;
 
 	sprintf(pagedir, "%s/www", getenv("BBHOME"));
-	strcpy(larrdcol, "larrd");
 
 	for (i = 1; (i < argc); i++) {
 		if (strcmp(argv[i], "--recentgifs") == 0) {

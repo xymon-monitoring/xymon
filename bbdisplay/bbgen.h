@@ -218,8 +218,6 @@ extern state_t		*statehead;
 extern col_t		*colhead, null_column;
 extern summary_t	*sumhead;
 extern dispsummary_t	*dispsums;
-extern char		larrdcol[];
-extern int		enable_purpleupd;
 
 #endif
 

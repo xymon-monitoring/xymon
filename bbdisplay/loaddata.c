@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.12 2002-11-27 10:03:07 hstoerne Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.13 2002-11-27 13:13:41 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -32,6 +32,12 @@ static char rcsid[] = "$Id: loaddata.c,v 1.12 2002-11-27 10:03:07 hstoerne Exp $
 #include "bbgen.h"
 #include "util.h"
 #include "loaddata.h"
+
+char    larrdcol[20] = "larrd";
+int     enable_purpleupd = 1;
+link_t  null_link = { "", "", "", NULL };	/* Null link for pages/hosts/whatever with no link */
+col_t   null_column = { "", NULL };		/* Null column */
+
 
 page_t *init_page(const char *name, const char *title)
 {
