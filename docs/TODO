@@ -13,3 +13,23 @@ Probably not
   not load the system a great deal (at least for me), so
   doing it via the existing script as an extension is OK.
 
+Suggestions from users
+----------------------
+* Provide a means to add a "text-line" in the middle of a 
+  display group. The text line would look like the group 
+  heading, but allow to have a single display group with
+  common column headings, but still visually split into
+  sets of hosts.
+  This could be implemented by having pseudo "hosts"
+  that would trigger this. Or maybe a new type of group
+  records ?
+* Allow generation of the bb2.html / bbnk.html for 
+  alternate pagesets, and have the eventlog&acklog show only
+  events for the hosts that are part of this pageset.
+  NB: This would require re-doing the acklog as part of
+  bbgen, instead of via the current standard BB extension
+  script.
+* When a host exists on multiple pages, provide links to
+  the other pages showing this host. Maybe from the "info"
+  column view ?
+
