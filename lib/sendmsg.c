@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.16 2004-07-26 13:40:55 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.17 2004-07-26 22:22:01 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -106,13 +106,14 @@ static void setup_transport(char *recipient)
 	}
 }
 
-static int sendtobbd(char *recipient, char *message)
+static int sendtobbd(char *recipient, char *message, FILE *respfd, int fullresponse)
 {
 	struct in_addr addr;
 	struct sockaddr_in saddr;
 	int	sockfd;
+	fd_set	readfds;
 	fd_set	writefds;
-	int	res, isconnected, done;
+	int	res, isconnected, wdone, rdone;
 	struct timeval tmo;
 	char *msgptr = message;
 	char *p;
@@ -120,6 +121,7 @@ static int sendtobbd(char *recipient, char *message)
 	int rcptport = 0;
 	int connretries = BBSENDRETRIES;
 	char *httpmessage = NULL;
+	char response[MAXMSG];
 
 	if (dontsendmessages) {
 		printf("%s\n", message);
@@ -243,12 +245,15 @@ retry_connect:
 		return BB_ECONNFAILED;
 	}
 
-	isconnected = done = 0;
-	while (!done) {
+	rdone = (respfd == NULL);
+	isconnected = wdone = 0;
+	while (!wdone || !rdone) {
 		FD_ZERO(&writefds);
-		FD_SET(sockfd, &writefds);
+		FD_ZERO(&readfds);
+		if (!rdone) FD_SET(sockfd, &readfds);
+		if (!wdone) FD_SET(sockfd, &writefds);
 		tmo.tv_sec = 5;  tmo.tv_usec = 0; /* 5 seconds timeout to connect to bbd */
-		res = select(sockfd+1, NULL, &writefds, NULL, &tmo);
+		res = select(sockfd+1, &readfds, &writefds, NULL, &tmo);
 		if (res == -1) {
 			errprintf("Select failure while sending to bbd!\n");
 			shutdown(sockfd, SHUT_RDWR); close(sockfd);
@@ -268,7 +273,7 @@ retry_connect:
 			errprintf("Timeout while talking to bbd!\n");
 			return BB_ETIMEOUT;
 		}
-		else if (FD_ISSET(sockfd, &writefds)) {
+		else {
 			if (!isconnected) {
 				/* Havent seen our connect() status yet - must be now */
 				int connres;
@@ -282,7 +287,18 @@ retry_connect:
 					return BB_ECONNFAILED;
 				}
 			}
-			else {
+
+			if (!rdone && FD_ISSET(sockfd, &readfds)) {
+				int n = recv(sockfd, response, MAXMSG-1, 0);
+				if (n > 0) {
+					response[n] = '\0';
+					fwrite(response, n, 1, respfd);
+					if (!fullresponse) rdone = (strchr(response, '\n') == NULL);
+				}
+				else rdone = 1;
+			}
+
+			if (!wdone && FD_ISSET(sockfd, &writefds)) {
 				/* Send some data */
 				res = write(sockfd, msgptr, strlen(msgptr));
 				if (res == -1) {
@@ -292,13 +308,9 @@ retry_connect:
 				}
 				else {
 					msgptr += res;
-					done = (strlen(msgptr) == 0);
+					wdone = (strlen(msgptr) == 0);
 				}
 			}
-		}
-		else {
-			/* Should not happen */
-			dprintf("Huh - how did I get here ??\n");
 		}
 	}
 
@@ -314,14 +326,14 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg)
 	int result = 0;
 
 	if (strcmp(onercpt, "0.0.0.0") != 0)
-		result = sendtobbd(onercpt, msg);
+		result = sendtobbd(onercpt, msg, NULL, 0);
 	else if (morercpts) {
 		char *bbdlist, *rcpt;
 
 		bbdlist = malcop(morercpts);
 		rcpt = strtok(bbdlist, " \t");
 		while (rcpt) {
-			result += sendtobbd(rcpt, msg);
+			result += sendtobbd(rcpt, msg, NULL, 0);
 			rcpt = strtok(NULL, " \t");
 		}
 
@@ -388,7 +400,7 @@ int sendstatus(char *bbdisp, char *msg)
 }
 
 
-int sendmessage(char *msg, char *recipient)
+int sendmessage(char *msg, char *recipient, FILE *respfd, int fullresponse)
 {
 	static char *bbdisp = NULL;
 	int res = 0;
@@ -399,7 +411,7 @@ int sendmessage(char *msg, char *recipient)
 		res = sendstatus((recipient ? recipient : bbdisp), msg);
 	}
 	else {
-		res = sendtobbd(recipient, msg);
+		res = sendtobbd(recipient, msg, respfd, fullresponse);
 	}
 
 	if (res != BB_OK) {
@@ -452,7 +464,7 @@ void combo_flush(void)
 		} while (p1 && p2);
 	}
 
-	sendmessage(bbmsg, NULL);
+	sendmessage(bbmsg, NULL, NULL, 0);
 	combo_start();	/* Get ready for the next */
 }
 
@@ -516,7 +528,7 @@ void finish_status(void)
 		default:
 			/* Red, yellow and purple messages go out NOW. Or we get no alarms ... */
 			bbnocombocount++;
-			sendmessage(msgbuf, NULL);
+			sendmessage(msgbuf, NULL, NULL, 0);
 			break;
 	}
 }
@@ -543,11 +555,20 @@ int main(int argc, char *argv[])
 		char msg[MAXMSG];
 
 		while (fgets(msg, sizeof(msg), stdin)) {
-			result = sendmessage(msg, argv[1]);
+			result = sendmessage(msg, argv[1], NULL, 0);
 		}
 	}
-	else
-		result = sendmessage(argv[2], argv[1]);
+	else {
+		if (strncmp(argv[2], "query ", 6) == 0) {
+			result = sendmessage(argv[2], argv[1], stdout, 0);
+		}
+		else if (strncmp(argv[2], "config ", 7) == 0) {
+			result = sendmessage(argv[2], argv[1], stdout, 1);
+		}
+		else {
+			result = sendmessage(argv[2], argv[1], NULL, 0);
+		}
+	}
 
 	return result;
 }

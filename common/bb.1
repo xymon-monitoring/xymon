@@ -2,7 +2,7 @@
 .SH NAME
 bb \- bb client communication program
 .SH SYNOPSIS
-.B "bb SERVERIP message"
+.B "bb RECIPIENT message"
 
 .SH DESCRIPTION
 .I bb
@@ -19,17 +19,23 @@ standard commands is given below. The bbgen toolkit
 to the bb client program, which are documented here.
 
 .SH PARAMETERS
-The \fBSERVERIP\fR parameter defines which server receives
-the message. If SERVERIP is given as "0.0.0.0", then the
+The \fBRECIPIENT\fR parameter defines which server receives
+the message. If RECIPIENT is given as "0.0.0.0", then the
 message is sent to all of the servers listed in the BBDISPLAYS
 or BBPAGERS environment variable (for "status" and "page" messages,
 respectively). 
 
-Usually, a client will use "$BBDISP" for the \fBSERVERIP\fR 
+Usually, a client will use "$BBDISP" for the \fBRECIPIENT\fR 
 parameter, as this is defined by the Big Brother client scripts
 to automatically contain the correct value from the
 .I bb-hosts(5)
 file.
+
+The \fBRECIPIENT\fR parameter may be a URL for a webserver
+that has the bbmessage.cgi or similar script installed. This
+tunnels the Big Brother messages to the BBDISPLAY server 
+using standard HTTP protocol. Note that this is an extension
+available only with the bbgen replacement for the bb tool.
 .br
 
 The \fBmessage\fR parameter is the message to be sent across
@@ -119,6 +125,16 @@ environment variable.
 
 
 .SH EXAMPLE
+
+Send a normal status message to the BBDISPLAY server, using the
+standard Big Brother protocol on TCP port 1984:
+.br
+   $ $BB $BBDISP "status www,foo,com.http green `date` Web OK"
+
+Send the same status message, but using HTTP protocol via the
+webservers' bbmessage.cgi script:
+.br
+   $ $BB http://bb.foo.com/cgi-bin/bbmessage.cgi "status www,foo,com.http green `date` Web OK"
 
 Use "query" message to determine the color of the "www" test, and
 restart Apache if it is red:
