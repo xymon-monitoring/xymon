@@ -44,6 +44,7 @@ typedef struct {
 	char   *headers;                /* HTTP headers from server */
 	char   *contenttype;		/* Content-type: header */
 	char   *output;                 /* Data from server */
+	char   *digest;                 /* Digest of server data */
 	int    logcert;
 	char   *certinfo;               /* Data about SSL certificate */
 	time_t certexpires;		/* Expiry time for SSL cert */

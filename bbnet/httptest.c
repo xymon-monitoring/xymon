@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.51 2003-09-13 16:02:23 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.52 2003-09-28 06:38:19 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -139,6 +139,7 @@ void add_http_test(testitem_t *t)
 	req->headers = NULL;
 	req->contenttype = NULL;
 	req->output = NULL;
+	req->digest = NULL;
 	req->httpcolor = -1;
 	req->faileddeps = NULL;
 	req->logcert = 0;
@@ -514,8 +515,8 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 
 		req->res = curl_easy_perform(req->curl);
 
-		if (req->contentcheck == CONTENTCHECK_DIGEST) {
-			req->output = malcop(digest_done());
+		if ((req->res == CURLE_OK) && (req->contentcheck == CONTENTCHECK_DIGEST)) {
+			req->digest = malcop(digest_done());
 		}
 	}
 
@@ -729,7 +730,6 @@ void send_content_results(service_t *httptest, service_t *ftptest, testedhost_t 
 				if (color == COL_GREEN) {
 					/* We got the data from the server */
 					int status = 0;
-					char *dgst;
 
 					switch (req->contentcheck) {
 					  case CONTENTCHECK_REGEX:
@@ -746,18 +746,14 @@ void send_content_results(service_t *httptest, service_t *ftptest, testedhost_t 
 						break;
 
 					  case CONTENTCHECK_DIGEST:
-						dgst = req->output;
-
-						if (strcmp(req->output, (char *)req->exp) != 0) {
+						if (strcmp(req->digest, (char *)req->exp) != 0) {
 							status = STATUS_CONTENTMATCH_FAILED;
 						}
 						else status = 0;
 
-						req->output = (char *) malloc(strlen(dgst)+strlen((char *)req->exp)+strlen("Expected:\nGot     :\n")+1);
+						req->output = (char *) malloc(strlen(req->digest)+strlen((char *)req->exp)+strlen("Expected:\nGot     :\n")+1);
 						sprintf(req->output, "Expected:%s\nGot     :%s\n", 
-							(char *)req->exp, dgst);
-
-						free(dgst);
+							(char *)req->exp, req->digest);
 						break;
 					}
 
@@ -808,7 +804,7 @@ void send_content_results(service_t *httptest, service_t *ftptest, testedhost_t 
 			addtostatus(msgline);
 
 			if (req->output) {
-				if ( (strncasecmp(req->contenttype, "text/html", 9) == 0) ||
+				if ( (req->contenttype && (strncasecmp(req->contenttype, "text/html", 9) == 0)) ||
 				     (strncasecmp(req->output, "<html", 5) == 0) ) {
 					char *bodystart = NULL;
 					char *bodyend = NULL;
