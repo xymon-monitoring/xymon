@@ -15,9 +15,8 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.5 2003-06-22 09:06:23 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.6 2003-06-22 20:06:39 henrik Exp $";
 
-#include <stdio.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -25,6 +24,9 @@ static char rcsid[] = "$Id: bb-rep.c,v 1.5 2003-06-22 09:06:23 henrik Exp $";
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <dirent.h>
+#include <time.h>
+#include <signal.h>
 
 #include "bbgen.h"
 #include "util.h"
@@ -146,6 +148,38 @@ void parse_query(void)
 }
 
 
+void cleandir(char *dirname)
+{
+	DIR *dir;
+	struct dirent *d;
+	struct stat st;
+	char fn[MAX_PATH];
+	time_t killtime = time(NULL)-86400;
+
+	dir = opendir(dirname);
+	if (dir == NULL) return;
+
+	while ((d = readdir(dir))) {
+		if (d->d_name[0] != '.') {
+			sprintf(fn, "%s/%s", dirname, d->d_name);
+			if ((stat(fn, &st) == 0) && (st.st_mtime < killtime)) {
+				if (S_ISREG(st.st_mode) || S_ISLNK(st.st_mode)) {
+					dprintf("rm %s\n", fn);
+					unlink(fn);
+				}
+				else if (S_ISDIR(st.st_mode)) {
+					dprintf("Cleaning directory %s\n", fn);
+					cleandir(fn);
+					dprintf("rmdir %s\n", fn);
+					rmdir(fn);
+				}
+				else { /* Ignore file */ };
+			}
+		}
+	}
+}
+
+
 /* These are dummy vars needed by stuff in util.c */
 hostlist_t      *hosthead = NULL;
 link_t          *linkhead = NULL;
@@ -212,12 +246,17 @@ int main(int argc, char *argv[])
 	}
 	else if (childpid > 0) {
 		wait(&childstat);
+
+		/* Ignore SIGHUP so we dont get killed during cleanup of BBREP */
+		signal(SIGHUP, SIG_IGN);
+
 		if (WIFEXITED(childstat) && (WEXITSTATUS(childstat) != 0) ) {
 			printf("%s\n\n", htmldelim);
 			printf("Content-Type: text/html\n\n");
 			errmsg("Could not generate report");
 		}
 		else {
+			/* Send the browser off to the report */
 			printf("Done...<P></BODY></HTML>\n");
 			fflush(stdout);
 			printf("%s\n\n", htmldelim);
@@ -228,6 +267,8 @@ int main(int argc, char *argv[])
 			printf("\n%s\n", htmldelim);
 			fflush(stdout);
 		}
+
+		cleandir(getenv("BBREP"));
 	}
 	else {
 		printf("%s\n\n", htmldelim);
