@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char sendmail_rcsid[] = "$Id: do_sendmail.c,v 1.4 2005-02-06 08:49:02 henrik Exp $";
+static char sendmail_rcsid[] = "$Id: do_sendmail.c,v 1.5 2005-03-01 14:37:16 henrik Exp $";
 
 static char *sendmail_params[] = { "rrdcreate", rrdfn, 
 				   "DS:msgsfr:DERIVE:600:0:U",
@@ -41,8 +41,10 @@ int do_sendmail_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	unsigned long msgsfr, bytesfr, msgsto, bytesto, msgsrej, msgsdis;
 	char mailer[1024];
 
+	MEMDEFINE(mailer);
+
 	/* Find the line that begins with "=====" and NULL the message there */
-	eofdata = strstr(msg, "\n=="); if (eofdata) *(eofdata+1) = '\0'; else return -1;
+	eofdata = strstr(msg, "\n=="); if (eofdata) *(eofdata+1) = '\0'; else { MEMUNDEFINE(mailer); return -1; }
 
 	/* Find the start of the Statistics part. */
 	bofdata = strstr(msg, "\nStatistics ");
@@ -91,6 +93,8 @@ int do_sendmail_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	}
 
 	if (eofdata) *(eofdata+1) = '=';
+
+	MEMUNDEFINE(mailer);
 
 	return 0;
 }

@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.36 2005-02-27 11:48:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.37 2005-03-01 14:40:50 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -39,6 +39,8 @@ void update_file(char *fn, char *mode, char *msg, time_t expire, char *sender, t
 	FILE *logfd;
 	char tmpfn[PATH_MAX];
 	char *p;
+
+	MEMDEFINE(tmpfn);
 
 	dprintf("Updating seq %d file %s\n", seq, fn);
 
@@ -72,6 +74,8 @@ void update_file(char *fn, char *mode, char *msg, time_t expire, char *sender, t
 	}
 
 	rename(tmpfn, fn);
+
+	MEMUNDEFINE(tmpfn);
 }
 
 void update_htmlfile(char *fn, char *msg, 
@@ -87,6 +91,8 @@ void update_htmlfile(char *fn, char *msg,
 	char *displayname = hostname;
 	char *ip = "";
 	char timestr[100];
+
+	MEMDEFINE(timestr);
 
 	tmpfn = (char *) malloc(strlen(fn)+5);
 	sprintf(tmpfn, "%s.tmp", fn);
@@ -123,6 +129,7 @@ void update_htmlfile(char *fn, char *msg,
 	}
 
 	xfree(tmpfn);
+	MEMUNDEFINE(timestr);
 }
 
 void update_enable(char *fn, time_t expiretime)
@@ -242,9 +249,12 @@ int main(int argc, char *argv[])
 		time_t expiretime = 0;
 		char logfn[PATH_MAX];
 
+		MEMDEFINE(logfn);
+
 		msg = get_hobbitd_message("filestore", &seq, NULL);
 		if (msg == NULL) {
 			running = 0;
+			MEMUNDEFINE(logfn);
 			continue;
 		}
 
@@ -266,7 +276,10 @@ int main(int argc, char *argv[])
 
 			hostname = items[4];
 			testname = items[5];
-			if (!wantedtest(onlytests, testname)) continue;
+			if (!wantedtest(onlytests, testname)) {
+				MEMUNDEFINE(logfn);
+				continue;
+			}
 
 			sprintf(logfn, "%s/%s.%s", filedir, commafy(hostname), testname);
 			expiretime = atoi(items[6]);
@@ -278,6 +291,8 @@ int main(int argc, char *argv[])
 				char *ackmsg = NULL;
 				char *dismsg = NULL;
 				char htmllogfn[PATH_MAX];
+
+				MEMDEFINE(htmllogfn);
 
 				if (items[11]) acktime = atoi(items[11]);
 				if (items[12] && strlen(items[12])) ackmsg = items[12];
@@ -292,13 +307,18 @@ int main(int argc, char *argv[])
 						     items[2], items[8], logtime, timesincechange, 
 						     acktime, ackmsg,
 						     disabletime, dismsg);
+
+				MEMUNDEFINE(htmllogfn);
 			}
 		}
 		else if ((role == ROLE_DATA) && (metacount > 5) && (strncmp(items[0], "@@data", 6) == 0)) {
 			/* @@data|timestamp|sender|hostname|testname */
 			p = hostname = items[4]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			testname = items[5];
-			if (!wantedtest(onlytests, testname)) continue;
+			if (!wantedtest(onlytests, testname)) {
+				MEMUNDEFINE(logfn);
+				continue;
+			}
 
 			statusdata = msg_data(statusdata); if (*statusdata == '\n') statusdata++;
 			sprintf(logfn, "%s/%s.%s", filedir, hostname, testname);
@@ -359,6 +379,8 @@ int main(int argc, char *argv[])
 			char *newhostname;
 			char newlogfn[PATH_MAX];
 
+			MEMDEFINE(newlogfn);
+
 			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			hostlead = malloc(strlen(hostname) + 2);
 			strcpy(hostlead, hostname); strcat(hostlead, ".");
@@ -377,11 +399,15 @@ int main(int argc, char *argv[])
 				closedir(dirfd);
 			}
 			xfree(hostlead);
+
+			MEMUNDEFINE(newlogfn);
 		}
 		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (metacount > 5) && (strncmp(items[0], "@@renametest", 12) == 0)) {
 			/* @@renametest|timestamp|sender|hostname|oldtestname|newtestname */
 			char *newtestname;
 			char newfn[PATH_MAX];
+
+			MEMDEFINE(newfn);
 
 			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			testname = items[4];
@@ -389,6 +415,8 @@ int main(int argc, char *argv[])
 			sprintf(logfn, "%s/%s.%s", filedir, hostname, testname);
 			sprintf(newfn, "%s/%s.%s", filedir, hostname, newtestname);
 			rename(logfn, newfn);
+
+			MEMUNDEFINE(newfn);
 		}
 		else if (strncmp(items[0], "@@shutdown", 10) == 0) {
 			running = 0;
@@ -396,6 +424,8 @@ int main(int argc, char *argv[])
 		else {
 			errprintf("Dropping message type %s, metacount=%d\n", items[0], metacount);
 		}
+
+		MEMUNDEFINE(logfn);
 	}
 
 	return 0;

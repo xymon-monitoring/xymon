@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_worker.c,v 1.16 2005-02-15 09:23:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_worker.c,v 1.17 2005-03-01 14:41:42 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -50,6 +50,8 @@ static char *readlntimed(char *buffer, size_t bufsize, struct timeval *timeout)
 		errprintf("readlntimed: Will not read past an I/O error\n");
 		return NULL;
 	}
+
+	MEMDEFINE(stdinbuf);
 
 	/* Make sure the stdin buffer is null terminated */
 	stdinbuf[stdinbuflen] = '\0';
@@ -129,9 +131,11 @@ static char *readlntimed(char *buffer, size_t bufsize, struct timeval *timeout)
 			stdinbuf[stdinbuflen] = '\0';
 		}
 
+		MEMUNDEFINE(stdinbuf);
 		return buffer;
 	}
 
+	MEMUNDEFINE(stdinbuf);
 	return NULL;
 }
 
@@ -145,6 +149,8 @@ unsigned char *get_hobbitd_message(char *id, int *seq, struct timeval *timeout)
 	int buflen;
 	int complete;
 	char *p;
+
+	MEMDEFINE(buf);
 
 startagain:
 	bufp = buf;
@@ -219,6 +225,8 @@ startagain:
 		dprintf("%s: Got message with no serial\n", id);
 		*seq = 0;
 	}
+
+	MEMUNDEFINE(buf);
 
 	return ((!complete || (buflen == 0)) ? NULL : buf);
 }

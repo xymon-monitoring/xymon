@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char iostat_rcsid[] = "$Id: do_iostat.c,v 1.7 2005-02-06 08:49:02 henrik Exp $";
+static char iostat_rcsid[] = "$Id: do_iostat.c,v 1.8 2005-03-01 14:37:16 henrik Exp $";
 
 /*
  * BEGINKEY
@@ -49,6 +49,8 @@ int do_iostat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	char *buf, *p;
 	float v[14];
 	char marker[MAX_LINE_LEN];
+
+	MEMDEFINE(marker);
 
 	curline = msg; state = S_NONE;
 	while (curline) {
@@ -125,6 +127,8 @@ int do_iostat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		if (newkey->value) xfree(newkey->value);
 		xfree(newkey);
 	}
+
+	MEMUNDEFINE(marker);
 
 	return 0;
 }
