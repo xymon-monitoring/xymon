@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.5 2004-10-14 14:02:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.6 2004-10-16 16:28:43 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -299,11 +299,12 @@ int main(int argc, char *argv[])
 		}
 
 		timesincechange[0] = '\0';
-		unchangedstr = strstr(restofmsg, statusunchangedtext);
+		p = unchangedstr = strstr(restofmsg, statusunchangedtext);
 		if (p) {
 			p += strlen(statusunchangedtext);
 			n = strcspn(p, "\n");
 			strncpy(timesincechange, p, n);
+			timesincechange[n] = '\0';
 		}
 
 		p = receivedfromstr = strstr(restofmsg, receivedfromtext); 
