@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.13 2003-09-18 21:06:27 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.14 2004-01-25 22:22:05 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -222,12 +222,19 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 				ldap_unbind(ld);
 				continue;
 			}
-			if( rc >= 0 ) {
+			if (rc == 0) {
+				finished = 1;
+				req->ldapstatus = BBGEN_LDAP_BINDFAIL;
+				req->output = "Connection timeout";
+				ldap_unbind(ld);
+				continue;
+			}
+			if( rc > 0 ) {
 				finished = 1;
 				if (result == NULL) {
-					errprintf("LDAP library problem - got a NULL resultcode\n");
+					errprintf("LDAP library problem - got a NULL resultcode for status %d\n", rc);
 					req->ldapstatus = BBGEN_LDAP_BINDFAIL;
-					req->output = "LDAP library problem: ldap_result2error returned a NULL result\n";
+					req->output = "LDAP library problem: ldap_result2error returned a NULL result for status %d\n";
 					ldap_unbind(ld);
 					continue;
 				}
