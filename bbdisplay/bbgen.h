@@ -182,6 +182,15 @@ typedef struct {
 	char *fstate;
 } reportinfo_t;
 
+typedef struct {
+        time_t starttime;
+        time_t duration;
+        int color;
+        char *cause;
+	char *timespec;
+        void *next;
+} replog_t;
+
 /* Measurement entry definition               */
 /* This points to a column definition, and    */
 /* contains the actual color of a measurement */
@@ -199,6 +208,7 @@ typedef struct {
 	char	*skin;
 	char	*testflags;
 	reportinfo_t *repinfo;
+	replog_t *causes;
 	void	*next;
 } entry_t;
 
