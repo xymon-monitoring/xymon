@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.16 2004-09-13 20:41:18 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.17 2004-09-13 20:46:40 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -39,7 +39,7 @@ int dns_stats_lookups = 0;
 int dnstimeout        = 30;
 
 static int pending_dns_count = 0;
-int max_dns_per_run = 5;
+int max_dns_per_run = 500;
 
 static void dns_queue_run(ares_channel channel);
 
