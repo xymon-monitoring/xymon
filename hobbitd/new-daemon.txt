@@ -117,8 +117,11 @@
     den er gyldig sættes ack-flaget på den pågældende statuslog. Denne
     besked videresendes på "page" kanalen så alarmerings-moduler ved
     om en status er ack'ed.
+  - En negativ cookie fungerer som ack af alle udestående alerts på den
+    pågældende host.
   - En "ack" logges i bbd_net med expire-time og tekst. Disse videresendes i
     status-beskeder.
+  - Den gamle "ack ack_event" besked understøttes også.
 
 * "bbgendlog HOST.TEST" request returnerer den aktuelle statuslog for en
   host.test kombination.
