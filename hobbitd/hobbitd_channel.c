@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.14 2004-10-31 11:44:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.15 2004-11-04 12:00:06 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -59,6 +59,7 @@ void sig_handler(int signum)
 	  case SIGCHLD:
 		/* Our worker child died. Follow it to the grave */
 		wait(&childexit);
+		running = 0;
 		break;
 	}
 
@@ -132,6 +133,13 @@ int main(int argc, char *argv[])
 		setsid();
 	}
 
+	/* Catch signals */
+	setup_signalhandler("bbd_channel");
+	signal(SIGPIPE, sig_handler);
+	signal(SIGINT, sig_handler);
+	signal(SIGTERM, sig_handler);
+	signal(SIGCHLD, sig_handler);
+
 	/* Start the channel handler */
 	n = pipe(pfd);
 	if (n == -1) {
@@ -156,12 +164,6 @@ int main(int argc, char *argv[])
 	/* We dont want to block when writing to the worker */
 	fcntl(pfd[1], F_SETFL, O_NONBLOCK);
 
-	setup_signalhandler("bbd_channel");
-	signal(SIGPIPE, sig_handler);
-	signal(SIGINT, sig_handler);
-	signal(SIGTERM, sig_handler);
-	signal(SIGCHLD, sig_handler);
-
 	/* Attach to the channel */
 	channel = setup_channel(cnid, CHAN_CLIENT);
 	if (channel == NULL) {
@@ -169,7 +171,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	do {
+	while (running) {
 		/* 
 		 * Wait for GOCLIENT to go up.
 		 *
@@ -279,7 +281,7 @@ int main(int argc, char *argv[])
 				free(tmp);
 			}
 		}
-	} while (running);
+	}
 
 	if (childexit != -1) {
 		errprintf("Worker process died with exit code %d, terminating\n", childexit);
