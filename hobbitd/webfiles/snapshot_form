@@ -1,19 +1,18 @@
 <BR>
 
 <CENTER>
-  <FONT COLOR="#FF0000" FACE="Arial, Helvetica">
-  <TABLE WIDTH=80% BORDER=0 CELLSPACING=5>
+  <TABLE WIDTH=80% BORDER=0 CELLSPACING=5 SUMMARY="Snapshot selection">
     <TR BGCOLOR="#000033">
-       <TD COLSPAN=2><FONT FACE="Arial, Helvetica"  SIZE="+1">
-           <CENTER><B>Hobbit Snapshot Report</B></CENTER>
+       <TD COLSPAN=2>
+           <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1"><B>Hobbit Snapshot Report</B></FONT></CENTER>
        </TD>
     </TR>
     <TR>
-       <TD BGCOLOR="#333333"><FONT FACE="Arial, Helvetica">
+       <TD BGCOLOR="#333333">
        <BR>
-       <H6><CENTER>
+       <CENTER>
 
-       <FORM ACTION="&CGIBINURL/bb-snapshot.sh">
+       <FORM METHOD="GET" ACTION="&CGIBINURL/bb-snapshot.sh">
           <SELECT NAME="mon">
           &REPMONLIST
           </SELECT>
@@ -39,9 +38,10 @@
           </SELECT>
 
           <BR><BR>
-          <INPUT TYPE="SUBMIT" NAME="SUB" VALUE="Generate Report" ALT="Generate Report" BORDER=0 METHOD="GET">
+          <INPUT TYPE="SUBMIT" NAME="SUB" VALUE="Generate Report" ALT="Generate Report">
        </FORM>
-       </CENTER></H6>
+
+       </CENTER>
        </TD>
       </TR>
    </TABLE>
