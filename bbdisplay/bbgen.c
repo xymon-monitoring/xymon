@@ -7,6 +7,7 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <wait.h>
 
 #include "bbgen.h"
 
@@ -369,9 +370,19 @@ state_t *init_state(const char *filename, int dopurple)
 	struct stat st;
 	time_t	now = time(NULL);
 
+	char	bbcmd[250];
+	char	bbdispaddr[20];
+
 	/* Ignore summary files and dot-files */
 	if ( (strncmp(filename, "summary.", 8) == 0) || (filename[0] == '.')) {
 		return NULL;
+	}
+
+	p = getenv("BB"); if (p) strcpy(bbcmd, p);
+	p = getenv("MACHINEADDR"); if (p) strcpy(bbdispaddr, p);
+	if ( (strlen(bbcmd) == 0) || (strlen(bbdispaddr) == 0) ) {
+		printf("BB and MACHINEADDR not found in environment\n");
+		exit(1);
 	}
 
 	/* Pick out host- and test-name */
@@ -436,10 +447,10 @@ state_t *init_state(const char *filename, int dopurple)
 	if (dopurple && (st.st_mtime <= now)) {
 		/* PURPLE test! */
 
-		FILE *purplefile;
-		char purplefilename[256];
-		char fulllogfilename[256];
 		char *p;
+		char *purplemsg = malloc(st.st_size+1024);
+		char msgline[200];
+		pid_t	childpid;
 
 		if (host && host->dialup) {
 			/* Dialup hosts go clear, not purple */
@@ -450,38 +461,48 @@ state_t *init_state(const char *filename, int dopurple)
 			newstate->entry->color = COL_PURPLE;
 		}
 
-		sprintf(fulllogfilename, "%s/%s", getenv("BBLOGS"), filename);
-		sprintf(purplefilename, "%s/NEW.purple", getenv("BBTMP"));
-		purplefile = fopen(purplefilename, "w");
-		if (purplefile == NULL) {
-			perror("Cannot open purplefile");
-			exit(1);
-		}
 		p = strchr(l, ' '); /* Skip old color */
-		fprintf(purplefile, "%s %s", colorname(newstate->entry->color), p);
+		sprintf(purplemsg, "status+0 %s %s %s", commafy(hostname), colorname(newstate->entry->color), p);
 
 		if (host) {
 			while (fgets(l, sizeof(l), fd)) {
 				if ( (strncmp(l, "Status unchanged", 16) != 0) &&
 				     (strncmp(l, "Encrypted status message", 24) != 0)  &&
 				     (strncmp(l, "Status message received from", 28) != 0) ) {
-					fprintf(purplefile, "%s", l);
+					strcat(purplemsg, l);
 				}
 			}
 		}
 		else {
 			/* No longer in bb-hosts */
-			fprintf(purplefile, "%s\n\n", hostname);
-			fprintf(purplefile, "This entry is no longer listed in %s/etc/bb-hosts.  To remove this\n",
+			sprintf(msgline, "%s\n\n", hostname);
+			strcat(purplemsg, msgline);
+
+			sprintf(msgline, "This entry is no longer listed in %s/etc/bb-hosts.  To remove this\n",
 				getenv("BBHOME"));
-			fprintf(purplefile, "purple message, please delete the log files for this host located in\n");
-			fprintf(purplefile, "%s, %s and %s if this host is no longer monitored.\n",
+			strcat(purplemsg, msgline);
+
+			sprintf(msgline, "purple message, please delete the log files for this host located in\n");
+			strcat(purplemsg, msgline);
+
+			sprintf(msgline, "%s, %s and %s if this host is no longer monitored.\n",
 				getenv("BBLOGS"), getenv("BBHIST"), getenv("BBHISTLOGS"));
+			strcat(purplemsg, msgline);
 		}
 
 		fclose(fd);
-		fclose(purplefile);
-		rename(purplefilename, fulllogfilename);
+
+		childpid = fork();
+		if (childpid == -1) {
+			printf("Fork error\n");
+		}
+		else if (childpid == 0) {
+			execl(bbcmd, "bb: bbd purple update", bbdispaddr, purplemsg, NULL);
+		}
+		else {
+			wait(NULL);
+		}
+		free(purplemsg);
 	}
 	else {
 		while (fgets(l, sizeof(l), fd) && (strncmp(l, "Status unchanged in ", 20) != 0)) ;
