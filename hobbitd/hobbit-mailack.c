@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-mailack.c,v 1.1 2005-02-23 16:16:55 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-mailack.c,v 1.2 2005-02-23 16:41:29 henrik Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -41,6 +41,10 @@ int main(int argc, char *argv[])
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
+		}
+		else if (argnmatch(argv[argi], "--env=")) {
+			char *p = strchr(argv[argi], '=');
+			loadenv(p+1);
 		}
 	}
 
@@ -90,6 +94,11 @@ int main(int argc, char *argv[])
 
 	/* Use the "return-path:" header if we didn't see a From: line */
 	if ((fromline == NULL) && returnpathline) fromline = returnpathline;
+	if (fromline) {
+		/* Remove '<' and '>' from the fromline - they mess up HTML */
+		while ((p = strchr(fromline, '<')) != NULL) *p = ' ';
+		while ((p = strchr(fromline, '>')) != NULL) *p = ' ';
+	}
 
 	/* Setup the acknowledge message */
 	p = buf;
