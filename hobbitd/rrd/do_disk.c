@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.10 2005-02-17 21:54:34 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.11 2005-02-21 14:46:20 henrik Exp $";
 
 static char *disk_params[] = { "rrdcreate", rrdfn, "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", 
 				rra1, rra2, rra3, rra4, NULL };
@@ -37,9 +37,13 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 		curline = eoln+1; eoln = strchr(curline, '\n'); if (eoln) *eoln = '\0';
 
-		if (*curline == '&') continue;	/* red/yellow filesystems show up twice */
-		if ((strchr(curline, '/') == NULL) && (dsystype != DT_AS400)) continue;
+		/* AS/400 reports must contain the word DASD */
 		if ((dsystype == DT_AS400) && (strstr(curline, "DASD") == NULL)) continue;
+
+		/* All clients except AS/400 report the mount-point with slashes - ALSO Win32 clients. */
+		if ((dsystype != DT_AS400) && (strchr(curline, '/') == NULL)) continue;
+
+		if ((dsystype != DT_NETAPP) && (*curline == '&')) continue; /* red/yellow filesystems show up twice */
 		if ((dsystype != DT_NETAPP) && (strstr(curline, " red ") || strstr(curline, " yellow "))) continue;
 
 		for (i=0; (i<20); i++) columns[i] = "";
