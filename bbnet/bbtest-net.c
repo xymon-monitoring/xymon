@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.15 2003-04-15 20:41:30 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.16 2003-04-16 07:03:12 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -327,6 +327,7 @@ void run_nslookup_service(service_t *service)
 			sprintf(cmd, "%s %s %s 2>&1", 
 				cmdpath, t->host->hostname, t->host->ip);
 			t->open = (run_command(cmd, "can't find", NULL) == 0);
+			t->banner = NULL;
 		}
 	}
 }
@@ -345,6 +346,7 @@ void run_dig_service(service_t *service)
 			sprintf(cmd, "%s @%s %s 2>&1", 
 				cmdpath, t->host->ip, t->host->hostname);
 			t->open = (run_command(cmd, "Bad server", NULL) == 0);
+			t->banner = NULL;
 		}
 	}
 }
