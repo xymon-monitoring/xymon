@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.14 2004-12-16 17:00:51 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.15 2004-12-17 21:47:33 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -48,6 +48,7 @@ static void bbh_item_list_setup(void)
 	bbh_item_key[BBH_NKTIME] = "NKTIME=";
 	bbh_item_key[BBH_LARRD] = "LARRD:";
 	bbh_item_key[BBH_WML] = "WML:";
+	bbh_item_key[BBH_NOPROP] = "NOPROP:";
 	bbh_item_key[BBH_NOPROPRED] = "NOPROPRED:";
 	bbh_item_key[BBH_NOPROPYELLOW] = "NOPROPYELLOW:";
 	bbh_item_key[BBH_NOPROPPURPLE] = "NOPROPPURPLE:";
@@ -393,6 +394,8 @@ char *bbh_item(namelist_t *host, enum bbh_item_t item)
 	static char *result;
 	static char inttxt[10];
 	char *p;
+
+	if (host == NULL) return NULL;
 
 	switch (item) {
 	  case BBH_CLIENTALIAS: 
