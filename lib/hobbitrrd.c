@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.19 2005-02-15 12:52:46 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.20 2005-02-21 16:45:43 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -24,45 +24,11 @@ static char rcsid[] = "$Id: hobbitrrd.c,v 1.19 2005-02-15 12:52:46 henrik Exp $"
 
 #include "bblarrd.h"
 
-larrdrrd_t *larrdrrds = NULL;
-larrdgraph_t *larrdgraphs = NULL;
-
 /* This is for mapping a status-name -> RRD file */
-static char *default_rrds =
-        "cpu=la,disk,"						/* BB client status */
-	"memory,"						/* bb-memory status */
-	"conn=tcp,fping=tcp,"					/* bbgen bbtest-net status */
-	"ftp=tcp,ftps=tcp,"					/* bbgen bbtest-net status */
-	"ssh=tcp,ssh1=tcp,ssh2=tcp,"				/* bbgen bbtest-net status */
-	"telnet=tcp,telnets=tcp,"				/* bbgen bbtest-net status */
-	"smtp=tcp,smtps=tcp,"					/* bbgen bbtest-net status */
-	"pop-2=tcp,pop2=tcp,"					/* bbgen bbtest-net status */
-	"pop-3=tcp,pop3=tcp,"					/* bbgen bbtest-net status */
-	"pop=tcp,pop3s=tcp,"					/* bbgen bbtest-net status */
-	"imap=tcp,imap2=tcp,imap3=tcp,imap4=tcp,imaps=tcp,"	/* bbgen bbtest-net status */
-	"nntp=tcp,nntps=tcp,"					/* bbgen bbtest-net status */
-	"ldap=tcp,ldaps=tcp,"					/* bbgen bbtest-net status */
-	"rsync=tcp,bbd=tcp,clamd=tcp,oratns=tcp,"		/* bbgen bbtest-net status */
-	"qmtp=tcp,qmqp=tcp,"					/* bbgen bbtest-net status */
-	"http=tcp,"						/* bbgen bbtest-net status */
-	"apache,"						/* bbgen bbtest-net special apache BF data */
-	"dns=tcp,dig=tcp,time=ntpstat,"				/* bbgen bbtest-net special tests status */
-	"vmstat,iostat,netstat,"				/* LARRD standard bottom-feeders data */
-	"temperature,bind,sendmail,nmailq,socks,"		/* LARRD non-standard bottom-feeders data */
-	"bea,citrix,"						/* bbgen extra bottom-feeders data */
-	"bbgen,bbtest,bbproxy,hobbitd"				/* bbgen report status */
-	;
+larrdrrd_t *larrdrrds = NULL;
 
 /* This is the information needed to generate links to larrd-grapher.cgi */
-static char *default_graphs =
-	"la,disk:disk_part:5,memory,users,"
-	"vmstat,iostat,"
-	"tcp.http,tcp,netstat,"
-	"temperature,ntpstat,"
-	"apache,bind,sendmail,nmailq,socks,"
-	"bea,citrix,"
-	"bbgen,bbtest,bbproxy,hobbitd,"
-	;
+larrdgraph_t *larrdgraphs = NULL;
 
 static const char *bblinkfmt = "<br><A HREF=\"%s\"><IMG BORDER=0 SRC=\"%s&amp;graph=hourly\" ALT=\"larrd is accumulating %s\"></A>\n";
 
@@ -77,18 +43,25 @@ static const char *metafmt = "<RRDGraph>\n  <GraphLink><![CDATA[%s]]></GraphLink
 static void larrd_setup(void)
 {
 	static int setup_done = 0;
-	char *lenv, *ldef, *p;
+	char *lenv, *ldef, *p, *tcptests;
 	int count;
 	larrdrrd_t *lrec;
 	larrdgraph_t *grec;
 
 	if (setup_done) return;
 
+	/* Get the tcp services, and count how many there are */
+	tcptests = strdup(init_tcp_services());
+	count = 0; p = strtok(tcptests, " "); while (p) { count++; p = strtok(NULL, " "); }
+	strcpy(tcptests, init_tcp_services());
 
 	/* Setup the larrdrrds table, mapping test-names to RRD files */
-	getenv_default("LARRDS", default_rrds, NULL);
-	lenv = strdup(xgetenv("LARRDS"));
+	lenv = (char *)malloc(strlen(xgetenv("LARRDS")) + strlen(tcptests) + count*strlen(",=tcp") + 1);
+	strcpy(lenv, xgetenv("LARRDS")); 
 	p = lenv+strlen(lenv)-1; if (*p == ',') *p = '\0';	/* Drop a trailing comma */
+	p = strtok(tcptests, " "); while (p) { sprintf(lenv+strlen(lenv), ",%s=tcp", p); p = strtok(NULL, " "); }
+	xfree(tcptests);
+
 	count = 0; p = lenv; do { count++; p = strchr(p+1, ','); } while (p);
 	larrdrrds = (larrdrrd_t *)calloc(sizeof(larrdrrd_t), (count+1));
 
@@ -110,7 +83,6 @@ static void larrd_setup(void)
 	xfree(lenv);
 
 	/* Setup the larrdgraphs table, describing how to make graphs from an RRD */
-	getenv_default("GRAPHS", default_graphs, NULL);
 	lenv = strdup(xgetenv("GRAPHS"));
 	p = lenv+strlen(lenv)-1; if (*p == ',') *p = '\0';	/* Drop a trailing comma */
 	count = 0; p = lenv; do { count++; p = strchr(p+1, ','); } while (p);
