@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.14 2003-09-29 20:27:48 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.15 2003-09-29 22:18:59 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -281,6 +281,9 @@ int main(int argc, char *argv[])
 		}
 		else if ((strcmp(argv[argi], "--debug") == 0)) {
 			debug = 1;
+		}
+		else if ((strcmp(argv[argi], "--no-update") == 0)) {
+			dontsendmessages = 1;
 		}
 		else if ((strcmp(argv[argi], "--quiet") == 0)) {
 			showeval = 0;
