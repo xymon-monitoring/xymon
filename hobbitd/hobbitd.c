@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.15 2004-10-08 13:11:54 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.16 2004-10-09 20:41:50 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -41,13 +41,8 @@ static char rcsid[] = "$Id: hobbitd.c,v 1.15 2004-10-08 13:11:54 henrik Exp $";
 #include "debug.h"
 #include "bbd_net.h"
 #include "bbdutil.h"
+#include "bbdworker.h"
 #include "loadhosts.h"
-
-/* These are dummy vars needed by stuff in util.c */
-hostlist_t      *hosthead = NULL;
-link_t          *linkhead = NULL;
-link_t  null_link = { "", "", "", NULL };
-
 
 bbd_hostlist_t *hosts = NULL;		/* The hosts we have reports from */
 bbd_testlist_t *tests = NULL;		/* The tests we have seen */
@@ -105,7 +100,6 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 	int n;
 	struct timeval tstamp;
 	struct timezone tz;
-	char *ackmsg = NULL, *dismsg = NULL;
 
 	/* First see how many users are on this channel */
 	n = shmctl(channel->shmid, IPC_STAT, &chninfo);
@@ -140,20 +134,18 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 		switch(channel->channelid) {
 		  case C_STATUS:
 			log = (bbd_log_t *)arg;
-			if (log->ackmsg) ackmsg = base64encode(log->ackmsg);
-			if (log->dismsg) dismsg = base64encode(log->dismsg);
-			sprintf(channel->channelbuf, 
-				"@@%s|%d.%06d|%s|%s|%s|%d|%s|%s|%s|%d|%d|%s|%d|%s\n%s\n@@\n", 
+			n = sprintf(channel->channelbuf, 
+				"@@%s|%d.%06d|%s|%s|%s|%d|%s|%s|%s|%d", 
 				channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
 				log->test->testname, (int) log->validtime, 
 				colnames[log->color], 
 				(log->testflags ? log->testflags : ""),
-				colnames[log->oldcolor], (int) log->lastchange, 
-				(int)log->acktime, (ackmsg ? ackmsg : ""), 
-				(int)log->enabletime, (dismsg ? dismsg : ""),
-				msg);
-			if (dismsg) free(dismsg);
-			if (ackmsg) free(ackmsg);
+				colnames[log->oldcolor], (int) log->lastchange); 
+			n += sprintf(channel->channelbuf+n, "|%d|%s",
+				(int)log->acktime, nlencode(log->ackmsg));
+			n += sprintf(channel->channelbuf+n, "|%d|%s",
+				(int)log->enabletime, nlencode(log->dismsg));
+			n += sprintf(channel->channelbuf+n, "\n%s\n@@\n", msg);
 			break;
 
 		  case C_STACHG:
@@ -363,13 +355,13 @@ void get_cookiedur(char *msg, char *sender, bbd_log_t **log, int *duration)
 	}
 }
 
-void handle_status(unsigned char *msg, int msglen, char *sender, char *hostname, char *testname, 
-		   bbd_log_t *log, int newcolor)
+void handle_status(unsigned char *msg, char *sender, char *hostname, char *testname, bbd_log_t *log, int newcolor)
 {
 	int validity = 30;	/* validity is counted in minutes */
 	int oldcolor;
 	time_t now = time(NULL);
 	char *p;
+	int msglen = strlen(msg);
 
 	if (strncmp(msg, "status+", 7) == 0) {
 		validity = durationvalue(msg+7);
@@ -406,23 +398,31 @@ void handle_status(unsigned char *msg, int msglen, char *sender, char *hostname,
 	log->validtime = now + validity*60;
 	oldcolor = log->color;
 	log->color = newcolor;
-	strcpy(log->sender, sender);
+	strncpy(log->sender, sender, sizeof(log->sender)-1);
+
 	if (msg != log->message) {	/* They can be the same when called from handle_enadis() */
-		if ((log->message == NULL) || (log->msgsz = 0)) {
+		if ((log->message == NULL) || (log->msgsz == 0)) {
 			log->message = strdup(msg);
-			log->msgsz = msglen;
+			log->msgsz = msglen+1;
 		}
-		else if (log->msgsz >= msglen) {
-			strcpy(log->message, msg);
+		else if (log->msgsz > msglen) {
+			strncpy(log->message, msg, msglen);
 		}
 		else {
-			log->message = realloc(log->message, msglen);
-			strcpy(log->message, msg);
-			log->msgsz = msglen;
+			log->message = realloc(log->message, msglen+1);
+			strncpy(log->message, msg, msglen);
+			log->msgsz = msglen+1;
 		}
 
 		/* Get at the test flags. They are immediately after the color */
-		p = msg_data(msg) + strlen(colorname(newcolor));
+		p = msg_data(msg);
+		if (p) {
+			p += strlen(colorname(newcolor));
+		}
+		else {
+			p = "";
+			errprintf("msg_data returned a NULL\n");
+		}
 		if (strncmp(p, " <!-- [flags:", 13) == 0) {
 			char *flagstart = p+13;
 			char *flagend = strchr(flagstart, ']');
@@ -463,19 +463,20 @@ void handle_status(unsigned char *msg, int msglen, char *sender, char *hostname,
 
 	dprintf("posting to status channel\n");
 	posttochannel(statuschn, channelnames[C_STATUS], msg, sender, hostname, (void *) log, NULL);
+	return;
 }
 
-void handle_data(char *msg, int msglen, char *sender, char *hostname, char *testname)
+void handle_data(char *msg, char *sender, char *hostname, char *testname)
 {
 	posttochannel(datachn, channelnames[C_DATA], msg, sender, hostname, (void *)testname, NULL);
 }
 
-void handle_notes(char *msg, int msglen, char *sender, char *hostname)
+void handle_notes(char *msg, char *sender, char *hostname)
 {
 	posttochannel(noteschn, channelnames[C_NOTES], msg, sender, hostname, NULL, NULL);
 }
 
-void handle_enadis(int enabled, char *msg, int msglen, char *sender)
+void handle_enadis(int enabled, char *msg, char *sender)
 {
 	char firstline[200];
 	char hosttest[200];
@@ -595,8 +596,7 @@ void handle_enadis(int enabled, char *msg, int msglen, char *sender)
 		}
 
 		/* Trigger an immediate status update */
-		handle_status(log->message, strlen(log->message), sender, 
-			      log->host->hostname, log->test->testname, log, COL_BLUE);
+		handle_status(log->message, sender, log->host->hostname, log->test->testname, log, COL_BLUE);
 	}
 
 	return;
@@ -787,7 +787,7 @@ void do_message(conn_t *msg)
 
 			get_hts(currmsg, sender, &h, &t, &log, &color, 1, 1);
 			if (log && (color != -1)) {
-				handle_status(currmsg, strlen(currmsg), sender, h->hostname, t->testname, log, color);
+				handle_status(currmsg, sender, h->hostname, t->testname, log, color);
 			}
 
 			currmsg = nextmsg;
@@ -796,17 +796,17 @@ void do_message(conn_t *msg)
 	else if (strncmp(msg->buf, "status", 6) == 0) {
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 1, 1);
 		if (log && (color != -1)) {
-			handle_status(msg->buf, msg->buflen, sender, h->hostname, t->testname, log, color);
+			handle_status(msg->buf, sender, h->hostname, t->testname, log, color);
 		}
 	}
 	else if (strncmp(msg->buf, "data", 4) == 0) {
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 1, 1);
-		if (h && t) handle_data(msg->buf, msg->buflen, sender, h->hostname, t->testname);
+		if (h && t) handle_data(msg->buf, sender, h->hostname, t->testname);
 	}
 	else if (strncmp(msg->buf, "summary", 7) == 0) {
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 1, 1);
 		if (log && (color != -1)) {
-			handle_status(msg->buf, msg->buflen, sender, h->hostname, t->testname, log, color);
+			handle_status(msg->buf, sender, h->hostname, t->testname, log, color);
 		}
 	}
 	else if (strncmp(msg->buf, "notes", 5) == 0) {
@@ -815,14 +815,14 @@ void do_message(conn_t *msg)
 		int maybedown;
 		if (sscanf(msg->buf, "notes %s\n", tok) == 1) {
 			hostname  = knownhost(tok, sender, ghosthandling, &maybedown);
-			if (hostname) handle_notes(msg->buf, msg->buflen, sender, hostname);
+			if (hostname) handle_notes(msg->buf, sender, hostname);
 		}
 	}
 	else if (strncmp(msg->buf, "enable", 6) == 0) {
-		handle_enadis(1, msg->buf, msg->buflen, sender);
+		handle_enadis(1, msg->buf, sender);
 	}
 	else if (strncmp(msg->buf, "disable", 7) == 0) {
-		handle_enadis(0, msg->buf, msg->buflen, sender);
+		handle_enadis(0, msg->buf, sender);
 	}
 	else if (strncmp(msg->buf, "config", 6) == 0) {
 		char conffn[1024];
@@ -982,7 +982,7 @@ void save_checkpoint(void)
 	if (checkpointfn == NULL) return;
 
 	tempfn = malloc(strlen(checkpointfn) + 20);
-	sprintf(tempfn, "%s.%d\n", checkpointfn, (int)now);
+	sprintf(tempfn, "%s.%d", checkpointfn, (int)now);
 	fd = fopen(tempfn, "w");
 	if (fd == NULL) {
 		errprintf("Cannot open checkpoint file %s\n", tempfn);
@@ -992,25 +992,17 @@ void save_checkpoint(void)
 
 	for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
 		for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
-			char *statusmsg = base64encode(lwalk->message);
-			char *disablemsg = NULL;
-			char *ackmsg = NULL;
-			
-			if (lwalk->dismsg) disablemsg = base64encode(lwalk->dismsg);
-			if (lwalk->ackmsg) ackmsg = base64encode(lwalk->ackmsg);
-
-			fprintf(fd, "@@BBGENDCHK-V1|%s|%s|%s|%s|%s|%s|%d|%d|%d|%d|%s|%s|%s\n", 
+			fprintf(fd, "@@BBGENDCHK-V1|%s|%s|%s|%s|%s|%s|%d|%d|%d|%d|%s", 
 				hwalk->hostname, lwalk->test->testname, lwalk->sender,
 				colnames[lwalk->color], 
 				(lwalk->testflags ? lwalk->testflags : ""),
 				colnames[lwalk->oldcolor],
 				(int) lwalk->lastchange, (int) lwalk->validtime, 
 				(int) lwalk->enabletime, (int) lwalk->acktime,
-				statusmsg, (disablemsg ? disablemsg : ""), (ackmsg ? ackmsg : ""));
-
-			if (disablemsg) free(disablemsg);
-			if (ackmsg) free(ackmsg);
-			free(statusmsg);
+				nlencode(lwalk->message));
+			fprintf(fd, "|%s", nlencode(lwalk->dismsg));
+			fprintf(fd, "|%s", nlencode(lwalk->ackmsg));
+			fprintf(fd, "\n");
 		}
 	}
 
@@ -1023,7 +1015,7 @@ void save_checkpoint(void)
 void load_checkpoint(char *fn)
 {
 	FILE *fd;
-	char l[3*MAXMSG];
+	char l[4*MAXMSG];
 	char *item;
 	int i, err;
 	bbd_hostlist_t *htail = NULL;
@@ -1040,7 +1032,7 @@ void load_checkpoint(char *fn)
 	}
 
 	while (fgets(l, sizeof(l)-1, fd)) {
-		hostname = testname = sender = testflags = statusmsg = disablemsg = NULL;
+		hostname = testname = sender = testflags = statusmsg = disablemsg = ackmsg = NULL;
 		lastchange = validtime = enabletime = acktime = 0;
 		err =0;
 
@@ -1048,17 +1040,17 @@ void load_checkpoint(char *fn)
 		while (item && !err) {
 			switch (i) {
 			  case 0: err = (strcmp(item, "@@BBGENDCHK-V1") != 0); break;
-			  case 1: hostname = item; break;
-			  case 2: testname = item; break;
+			  case 1: if (strlen(item)) hostname = item; else err=1; break;
+			  case 2: if (strlen(item)) testname = item; else err=1; break;
 			  case 3: sender = item; break;
 			  case 4: color = parse_color(item); if (color == -1) err = 1; break;
 			  case 5: testflags = item; break;
-			  case 6: oldcolor = parse_color(item); if (color == -1) err = 1; break;
+			  case 6: oldcolor = parse_color(item); if (oldcolor == -1) oldcolor = NO_COLOR; break;
 			  case 7: lastchange = atoi(item); break;
 			  case 8: validtime = atoi(item); break;
 			  case 9: enabletime = atoi(item); break;
 			  case 10: acktime = atoi(item); break;
-			  case 11: statusmsg = item; break;
+			  case 11: if (strlen(item)) statusmsg = item; else err=1; break;
 			  case 12: disablemsg = item; break;
 			  case 13: ackmsg = item; break;
 			  default: err = 1;
@@ -1107,16 +1099,28 @@ void load_checkpoint(char *fn)
 		ltail->test = t;
 		ltail->host = htail;
 		ltail->color = color;
-		strcpy(ltail->sender, sender);
+		ltail->oldcolor = oldcolor;
 		ltail->testflags = ( (testflags && strlen(testflags)) ? strdup(testflags) : NULL);
+		strcpy(ltail->sender, sender);
 		ltail->lastchange = lastchange;
 		ltail->validtime = validtime;
 		ltail->enabletime = enabletime;
 		ltail->acktime = acktime;
-		ltail->message = base64decode(statusmsg);
-		ltail->msgsz = strlen(ltail->message);
-		ltail->dismsg = ( (disablemsg && strlen(disablemsg)) ? base64decode(disablemsg) : NULL);
-		ltail->ackmsg = ( (ackmsg && strlen(ackmsg)) ? base64decode(ackmsg) : NULL);
+		nldecode(statusmsg);
+		ltail->message = strdup(statusmsg);
+		ltail->msgsz = strlen(statusmsg)+1;
+		if (disablemsg && strlen(disablemsg)) {
+			nldecode(disablemsg);
+			ltail->dismsg = strdup(disablemsg);
+		}
+		else 
+			ltail->dismsg = NULL;
+		if (ackmsg && strlen(ackmsg)) {
+			nldecode(ackmsg);
+			ltail->ackmsg = strdup(ackmsg);
+		}
+		else 
+			ltail->ackmsg = NULL;
 		ltail->next = NULL;
 	}
 
@@ -1163,6 +1167,8 @@ int main(int argc, char *argv[])
 	int argi;
 	struct timeval tv;
 	struct timezone tz;
+	int daemonize = 0;
+	char *pidfile = "/var/run/bbd_net.pid";
 
 	colnames[COL_GREEN] = "green";
 	colnames[COL_YELLOW] = "yellow";
@@ -1226,6 +1232,16 @@ int main(int argc, char *argv[])
 			else if (strcmp(p, "drop") == 0) ghosthandling = 1;
 			else if (strcmp(p, "log") == 0) ghosthandling = 2;
 		}
+		else if (strcmp(argv[argi], "--daemon") == 0) {
+			daemonize = 1;
+		}
+		else if (strcmp(argv[argi], "--no-daemon") == 0) {
+			daemonize = 0;
+		}
+		else if (argnmatch(argv[argi], "--pidfile=")) {
+			char *p = strchr(argv[opt], '=');
+			pidfile = strdup(p+1);
+		}
 		else if (strcmp(argv[argi], "--help") == 0) {
 			printf("Options:\n");
 			printf("\t--listen=IP:PORT              : The address the daemon listens on\n");
@@ -1285,6 +1301,33 @@ int main(int argc, char *argv[])
 	datachn   = setup_channel(C_DATA, (IPC_CREAT|0600));
 	noteschn  = setup_channel(C_NOTES, (IPC_CREAT|0600));
 
+	/* Go daemon */
+	if (daemonize) {
+		pid_t childpid;
+
+		fclose(stdin);
+		if (!debug) fclose(stdout);
+
+		/* Become a daemon */
+		childpid = fork();
+		if (childpid < 0) {
+			/* Fork failed */
+			errprintf("Could not fork\n");
+			exit(1);
+		}
+		else if (childpid > 0) {
+			/* Parent - save PID and exit */
+			FILE *fd = fopen(pidfile, "w");
+			if (fd) {
+				fprintf(fd, "%d\n", (int)childpid);
+				fclose(fd);
+			}
+			exit(0);
+		}
+		/* Child (daemon) continues here */
+		setsid();
+	}
+
 	do {
 		fd_set fdread, fdwrite;
 		int maxfd, n;
@@ -1342,7 +1385,9 @@ int main(int argc, char *argv[])
 				if (FD_ISSET(cwalk->sock, &fdread)) {
 					n = read(cwalk->sock, cwalk->bufp, (cwalk->bufsz - cwalk->buflen - 1));
 					if (n <= 0) {
-						if (cwalk->buflen) do_message(cwalk);
+						if (cwalk->buflen) {
+							do_message(cwalk);
+						}
 					}
 					else {
 						cwalk->bufp += n;
@@ -1416,9 +1461,9 @@ int main(int argc, char *argv[])
 				memcpy(&conntail->addr, &addr, sizeof(conntail->addr));
 				conntail->doingwhat = RECEIVING;
 				conntail->buf = (unsigned char *)malloc(MAXMSG);
+				conntail->bufsz = MAXMSG;
 				conntail->bufp = conntail->buf;
 				conntail->buflen = 0;
-				conntail->bufsz = MAXMSG;
 				conntail->next = NULL;
 			}
 		}
