@@ -4,10 +4,11 @@
 
 CFLAGS += -DMAXMSG=$(MAXMSG)
 
-PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bb-rep.cgi bb-replog.cgi bb-hist.cgi bbcombotest
+PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bb-rep.cgi bb-replog.cgi bb-hist.cgi
 CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh
+EXTENSIONS = bbcombotest
 
-all: $(PROGRAMS) $(CGISCRIPTS)
+all: $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS)
 	@echo ""
 	@echo "Build complete"
 	@echo ""
@@ -90,5 +91,8 @@ install-bin: $(PROGRAMS)
 install-cgi: $(CGISCRIPTS)
 	cp -p $(CGISCRIPTS) $(CGIDIR)/
 
-install: install-bin install-cgi
+install-exts: $(EXTENSIONS)
+	cp -p $(EXTENSIONS) $(BBHOME)/ext/
+
+install: install-bin install-cgi install-exts
 
