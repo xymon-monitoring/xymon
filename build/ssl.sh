@@ -19,6 +19,13 @@
 		fi
 	done
 
+	if test "$USEROSSLINC" != ""; then
+		OSSLINC="$USEROSSLINC"
+	fi
+	if test "$USEROSSLLIB" != ""; then
+		OSSLLIB="$USEROSSLLIB"
+	fi
+
 	if test -z "$OSSLINC" -o -z "$OSSLLIB"; then
 		echo "OpenSSL include- or library-files not found."
 		echo "Although you can use Hobbit and bbgen without OpenSSL, you will not"

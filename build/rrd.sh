@@ -39,6 +39,13 @@
 		fi
 	done
 
+	if test "$USERRRDINC" != ""; then
+		RRDINC="$USERRRDINC"
+	fi
+	if test "$USERRRDLIB" != ""; then
+		RRDLIB="$USERRRDLIB"
+	fi
+
 	if test -z "$RRDINC" -o -z "$RRDLIB"; then
 		echo "RRDtool include- or library-files not found. These are REQUIRED for hobbitd"
 		echo "RRDtool can be found at http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/"

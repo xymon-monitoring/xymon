@@ -13,6 +13,11 @@
 		fi
 	done
 
+	if test "$USERFPING" != ""
+	then
+		FPING="$USERFPING"
+	fi
+
 	if test "$FPING" = ""
 	then
 		echo "Hobbit needs the fping utility. What command should it use to run fping ?"

@@ -19,6 +19,13 @@
 		fi
 	done
 
+	if test "$USERLDAPINC" != ""; then
+		LDAPINC="$USERLDAPINC"
+	fi
+	if test "$USERLDAPLIB" != ""; then
+		LDAPLIB="$USERLDAPLIB"
+	fi
+
 	#
 	# Some systems require liblber also
 	#
