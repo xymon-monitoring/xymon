@@ -25,8 +25,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.122 2005-03-03 21:51:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.123 2005-03-04 08:19:06 henrik Exp $";
 
+#include <limits.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
