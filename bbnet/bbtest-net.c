@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.48 2003-05-21 20:14:04 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.49 2003-05-21 22:23:36 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -71,6 +71,9 @@ int             sslwarndays = 30;		/* If cert expires in fewer days, SSL cert co
 int             sslalarmdays = 10;		/* If cert expires in fewer days, SSL cert column = red */
 char		*location = "";			/* BBLOCATION value */
 char		*logfile = NULL;
+int		hostcount = 0;
+int		testcount = 0;
+int		notesthostcount = 0;
 
 testitem_t *find_test(char *hostname, char *testname)
 {
@@ -203,6 +206,7 @@ testedhost_t *init_testedhost(char *hostname, int timeout, int conntimeout, int 
 {
 	testedhost_t *newhost;
 
+	hostcount++;
 	newhost = malloc(sizeof(testedhost_t));
 	newhost->hostname = malcop(hostname);
 	newhost->ip[0] = '\0';
@@ -236,6 +240,7 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *testspec
 {
 	testitem_t *newtest;
 
+	testcount++;
 	newtest = malloc(sizeof(testitem_t));
 	newtest->host = host;
 	newtest->service = service;
@@ -462,6 +467,7 @@ void load_tests(void)
 				else {
 					/* No network tests for this host, so ignore it */
 					free(h);
+					notesthostcount++;
 				}
 			}
 		}
@@ -905,8 +911,9 @@ int main(int argc, char *argv[])
 	testedhost_t *h;
 	testitem_t *t;
 	int argi;
-	int concurrency=0;
+	int concurrency = 0;
 	char *pingcolumn = NULL;
+	char *egocolumn = NULL;
 
 	if (init_http_library() != 0) {
 		printf("Failed to initialize http library\n");
@@ -931,6 +938,14 @@ int main(int argc, char *argv[])
 			debug = 1;
 		}
 		else if (strcmp(argv[argi], "--timing") == 0) {
+			timing = 1;
+		}
+		else if (strcmp(argv[argi], "--report") == 0) {
+			char *p = strchr(argv[argi], '=');
+			if (p) {
+				p++; egocolumn = p;
+			}
+			else egocolumn = "bbtest";
 			timing = 1;
 		}
 
@@ -1137,13 +1152,39 @@ int main(int argc, char *argv[])
 	for (h=testhosthead; (h); h = h->next) {
 		send_http_results(httptest, h, nonetpage, contenttestname, ssltestname, sslwarndays, sslalarmdays);
 	}
+
 	combo_end();
 	add_timestamp("Test results transmitted");
 
 	shutdown_http_library();
 	add_timestamp("bbtest-net completed");
 
-	show_timestamps();
+	/* Tell about us */
+	if (egocolumn) {
+		char msgline[MAXMSG];
+
+		combo_start();
+		init_status(COL_GREEN);
+		sprintf(msgline, "status %s.%s green %s\n\n", getenv("MACHINE"), egocolumn, timestamp);
+		addtostatus(msgline);
+
+		sprintf(msgline, "bbtest-net version %s\n", VERSION);
+		addtostatus(msgline);
+		sprintf(msgline, "HTTP library: %s\n", http_library_version);
+		addtostatus(msgline);
+
+		sprintf(msgline, "\nStatistics:\n Hosts total         : %5d\n Hosts with no tests : %5d\n Total test count    : %5d\n Status messages     : %5d\n Alert status msgs   : %5d\n Transmissions       : %5d\n", 
+			hostcount, notesthostcount, testcount, bbstatuscount, bbnocombocount, bbmsgcount);
+		addtostatus(msgline);
+
+		show_timestamps(msgline);
+		addtostatus(msgline);
+
+		finish_status();
+		combo_end();
+	}
+	else show_timestamps(NULL);
+
 	return 0;
 }
 

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.103 2003-05-20 13:02:44 hstoerne Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.104 2003-05-21 22:23:36 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -401,7 +401,7 @@ int main(int argc, char *argv[])
 	}
 
 	add_timestamp("Run completed");
-	show_timestamps();
+	show_timestamps(NULL);
 
 	return 0;
 }

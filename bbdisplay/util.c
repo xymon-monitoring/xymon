@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.45 2003-05-20 13:02:44 hstoerne Exp $";
+static char rcsid[] = "$Id: util.c,v 1.46 2003-05-21 22:23:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -42,6 +42,7 @@ extern  int debug;
 /* Stuff for combo message handling */
 int		bbmsgcount = 0;		/* Number of messages transmitted */
 int		bbstatuscount = 0;	/* Number of status items reported */
+int		bbnocombocount = 0;	/* Number of status items reported outside combo msgs */
 static int	bbmsgqueued;		/* Anything in the buffer ? */
 static char	bbmsg[MAXMSG];		/* Complete combo message buffer */
 static char	msgbuf[MAXMSG-50];	/* message buffer for one status message */
@@ -884,6 +885,7 @@ void finish_status(void)
 			break;
 		default:
 			/* Red, yellow and purple messages go out NOW. Or we get no alarms ... */
+			bbnocombocount++;
 			sendmessage(msgbuf);
 			break;
 	}

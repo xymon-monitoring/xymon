@@ -21,6 +21,9 @@
 
 extern int use_recentgifs;
 extern char timestamp[];
+extern int bbmsgcount;
+extern int bbstatuscount;
+extern int bbnocombocount;
 
 extern FILE *stackfopen(char *filename, char *mode);
 extern int stackfclose(FILE *fd);

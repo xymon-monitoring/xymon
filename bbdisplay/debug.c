@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.18 2003-04-24 12:09:47 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.19 2003-05-21 22:23:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -66,21 +66,27 @@ void add_timestamp(const char *msg)
 	}
 }
 
-void show_timestamps(void)
+void show_timestamps(char *buffer)
 {
 	int i;
 	long difsec, difusec;
+	char *outbuf;
+	char buf1[80];
 
 	if (!timing) return;
 
-	printf("\n\nTIME SPENT\n");
-	printf("Event                                   ");
-	printf("         Starttime");
-	printf("          Duration\n");
+	outbuf = ((buffer == NULL) ? malloc(80*(dbgtimecount+10)) : buffer);
+
+	strcpy(outbuf, "\n\nTIME SPENT\n");
+	strcat(outbuf, "Event                                   ");
+	strcat(outbuf, "         Starttime");
+	strcat(outbuf, "          Duration\n");
 
 	for (i=0; (i<dbgtimecount); i++) {
-		printf("%-40s ", dbgtimes[i].eventtext);
-		printf("%10lu.%06lu ", dbgtimes[i].eventtime.tv_sec, dbgtimes[i].eventtime.tv_usec);
+		sprintf(buf1, "%-40s ", dbgtimes[i].eventtext);
+		strcat(outbuf, buf1);
+		sprintf(buf1, "%10lu.%06lu ", dbgtimes[i].eventtime.tv_sec, dbgtimes[i].eventtime.tv_usec);
+		strcat(outbuf, buf1);
 		if (i>0) {
 			difsec  = dbgtimes[i].eventtime.tv_sec - dbgtimes[i-1].eventtime.tv_sec;
 			difusec = dbgtimes[i].eventtime.tv_usec - dbgtimes[i-1].eventtime.tv_usec;
@@ -88,10 +94,27 @@ void show_timestamps(void)
 				difsec -= 1;
 				difusec += 1000000;
 			}
-			printf("%10lu.%06lu ", difsec, difusec);
+			sprintf(buf1, "%10lu.%06lu ", difsec, difusec);
+			strcat(outbuf, buf1);
 		}
-		else printf("                -");
-		printf("\n");
+		else strcat(outbuf, "                -");
+		strcat(outbuf, "\n");
+	}
+
+	difsec  = dbgtimes[dbgtimecount-1].eventtime.tv_sec - dbgtimes[0].eventtime.tv_sec;
+	difusec = dbgtimes[dbgtimecount-1].eventtime.tv_usec - dbgtimes[0].eventtime.tv_usec;
+	if (difusec < 0) {
+		difsec -= 1;
+		difusec += 1000000;
+	}
+	sprintf(buf1, "%-40s ", "TIME TOTAL"); strcat(outbuf, buf1);
+	sprintf(buf1, "%-18s", ""); strcat(outbuf, buf1);
+	sprintf(buf1, "%10lu.%06lu ", difsec, difusec); strcat(outbuf, buf1);
+	strcat(outbuf, "\n");
+
+	if (buffer == NULL) {
+		printf("%s", outbuf);
+		free(outbuf);
 	}
 }
 
