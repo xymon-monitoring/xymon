@@ -63,6 +63,9 @@ extern int   xsprintf(char *dest, const char *fmt, ...);
 
 #define xfree(P) { remove_from_memlist((P)); free((P)); (P) = NULL; }
 
+#define MEMDEFINE(P) { add_to_memlist((P), sizeof((P))); }
+#define MEMUNDEFINE(P) { remove_from_memlist((P)); }
+
 #define strcat(D,S) xstrcat((D), (S))
 #define strncat(D,S,L) xstrncat((D), (S), (L))
 
@@ -80,6 +83,9 @@ extern int   xsprintf(char *dest, const char *fmt, ...);
  */
 
 #define xfree(P) { if ((P) == NULL) { errprintf(xfreenullstr); abort(); } free((P)); (P) = NULL; }
+
+#define MEMDEFINE(P) do { } while (0);
+#define MEMUNDEFINE(P) do { } while (0);
 
 #endif
 
