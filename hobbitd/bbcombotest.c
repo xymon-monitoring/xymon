@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.23 2004-10-22 20:29:18 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.24 2004-10-24 12:38:18 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -206,7 +206,7 @@ static int getbbgendvalue(char *hostname, char *testname, char **errptr)
 	}
 
 	if (found) {
-		/* hostname|testname|color|testflags|logtime|lastchange|expires|sender|cookie|1st line of message */
+		/* hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|1st line of message */
 		colstr = found + strlen(pattern);
 		p = strchr(colstr, '|');
 		if (p) {
