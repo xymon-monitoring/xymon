@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.2 2003-06-20 13:07:15 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.3 2003-06-20 14:18:34 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -90,7 +90,10 @@ void parse_query(void)
 {
 	char *query, *token;
 
-	if (getenv("QUERY_STRING") == NULL) errormsg("Invalid request");
+	if (getenv("QUERY_STRING") == NULL) {
+		errormsg("Invalid request");
+		return;
+	}
 	else query = malcop(getenv("QUERY_STRING"));
 
 	token = strtok(query, "&");
@@ -172,7 +175,6 @@ int main(int argc, char *argv[])
 {
 	FILE *fd;
 	char filename[MAX_PATH];
-	int color;
 	reportinfo_t repinfo;
 	replog_t *walk;
 	char *bgcols[2] = { "\"#000000\"", "\"#000033\"" };
@@ -189,7 +191,7 @@ int main(int argc, char *argv[])
 
 	sprintf(filename, "%s/%s.%s", getenv("BBHIST"), commafy(hostname), service);
 	fd = fopen(filename, "r");
-	color = parse_historyfile(fd, &repinfo, hostname, service, st, end);
+	parse_historyfile(fd, &repinfo, hostname, service, st, end);
 	fclose(fd);
 
 	sprintf(textrepfn, "avail-%s-%s-%lu-%u.txt", hostname, service, time(NULL), (int)getpid());
