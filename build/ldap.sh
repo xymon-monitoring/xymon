@@ -53,6 +53,9 @@
 		else
 			echo "WARNING: LDAP library files found in $LDAPLIB, but link fails."
 		fi
+
+		LDAPVENDOR=`./test-ldap`
+
 		OS=`uname -s` make -f Makefile.test-ldap clean
 		cd ..
 	fi
