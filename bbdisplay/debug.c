@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.10 2003-03-02 12:38:03 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.11 2003-03-03 11:16:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -27,6 +27,16 @@ static char rcsid[] = "$Id: debug.c,v 1.10 2003-03-02 12:38:03 henrik Exp $";
 #include "debug.h"
 
 int debug = 0;
+int timing = 0;
+
+typedef struct {
+	char	*eventtext;
+	time_t	eventtime;
+} timestamp_t;
+
+#define MAX_DBGTIMES 20
+static timestamp_t dbgtimes[MAX_DBGTIMES];
+static int         dbgtimecount = 0;
 
 #ifdef DEBUG
 void dprintf(const char *fmt, ...)
@@ -41,6 +51,32 @@ void dprintf(const char *fmt, ...)
 	}
 }
 #endif
+
+void add_timestamp(const char *msg)
+{
+	if (timing && (dbgtimecount < MAX_DBGTIMES)) {
+		dbgtimes[dbgtimecount].eventtime = time(NULL);
+		dbgtimes[dbgtimecount].eventtext = malloc(strlen(msg)+1);
+		strcpy(dbgtimes[dbgtimecount].eventtext,msg);
+		dbgtimecount++;
+	}
+}
+
+void show_timestamps(void)
+{
+	int i;
+
+	if (!timing) return;
+
+	printf("\n\nTIME SPENT\n");
+	printf("Event                                   Starttime Duration\n");
+	for (i=0; (i<dbgtimecount); i++) {
+		printf("%40s ", dbgtimes[i].eventtext);
+		printf("%10lu ", dbgtimes[i].eventtime);
+		printf("%10lu ", dbgtimes[i+1].eventtime-dbgtimes[i].eventtime);
+		printf("\n");
+	}
+}
 
 
 const char *textornull(const char *text)

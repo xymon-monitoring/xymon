@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.80 2003-03-02 17:39:08 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.81 2003-03-03 11:16:57 henrik Exp $";
 
 #define VERSION "1.8-pre2003.03.02.18.40"
 
@@ -90,6 +90,8 @@ int main(int argc, char *argv[])
 	int		i;
 	int		pagegenstat;
 	int		bbpageONLY = 0;
+
+	add_timestamp("Startup");
 
 	pagedir = rrddir = NULL;
 	init_timestamp();
@@ -187,6 +189,9 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[i], "--nopurple") == 0) {
 			enable_purpleupd = 0;
 		}
+		else if (strcmp(argv[i], "--timing") == 0) {
+			timing = 1;
+		}
 		else if (strcmp(argv[i], "--debug") == 0) {
 			debug = 1;
 		}
@@ -225,10 +230,9 @@ int main(int argc, char *argv[])
 			printf("\nAlternate pageset generation support:\n");
 			printf("    --bbpageONLY                : Generate the standard (bb.html) page only\n");
 			printf("    --template=TEMPLATE         : template for header and footer files\n");
-#ifdef DEBUG
 			printf("\n");
-			printf("    --debug                     : Dumps internal state-table\n");
-#endif
+			printf("    --timing                    : Collect timing information\n");
+			printf("    --debug                     : Debugging information\n");
 			exit(0);
 		}
 		else if (strncmp(argv[i], "--version", 9) == 0) {
@@ -266,17 +270,22 @@ int main(int argc, char *argv[])
 
 	/* Load all data from the various files */
 	linkhead = load_all_links();
+	add_timestamp("Load links done");
 	pagehead = load_bbhosts();
+	add_timestamp("Load bbhosts done");
 
 	if (!bbpageONLY) {
 		/* Generate the LARRD pages before loading state */
 		pagegenstat = generate_larrd(rrddir, larrdcol);
+		add_timestamp("LARRD generate done");
 
 		/* Dont generate both LARRD and info in one run */
 		if (pagegenstat) pagegenstat = generate_info(infocol);
+		add_timestamp("INFO generate done");
 	}
 
 	statehead = load_state(&dispsums);
+	add_timestamp("Load STATE done");
 
 	/* Calculate colors of hosts and pages */
 	calc_hostcolors(hosthead);
@@ -286,12 +295,17 @@ int main(int argc, char *argv[])
 	for (p=pagehead; (p); p = p->next) {
 		if (p->color > pagehead->color) pagehead->color = p->color;
 	}
+	add_timestamp("Color calculation done");
 
 	/* Remove old acknowledgements */
 	if (!bbpageONLY) delete_old_acks();
+	add_timestamp("ACK removal done");
 
 	/* Send summary notices */
-	if (!bbpageONLY) send_summaries(sumhead);
+	if (!bbpageONLY) {
+		send_summaries(sumhead);
+		add_timestamp("Summary transmission done");
+	}
 
 	/* Recalc topmost page (background color for bb.html) */
 	for (s=dispsums; (s); s = s->next) {
@@ -307,7 +321,9 @@ int main(int argc, char *argv[])
 	}
 
 	/* The main page - bb.html and pages/subpages thereunder */
+	add_timestamp("BB mainpage start");
 	do_bb_page(pagehead, dispsums, "bb.html");
+	add_timestamp("BB mainpage done");
 
 	/* Do pages - contains links to subpages, groups, hosts */
 	for (p=pagehead->next; (p); p = p->next) {
@@ -326,18 +342,31 @@ int main(int argc, char *argv[])
 			do_subpage(q, fn, p->name);
 		}
 	}
+	add_timestamp("BB subpages done");
 
 	/* The full summary page - bb2.html */
-	if (!bbpageONLY) do_bb2_page("bb2.html", PAGE_BB2);
+	if (!bbpageONLY) {
+		do_bb2_page("bb2.html", PAGE_BB2);
+		add_timestamp("BB2 generation done");
+	}
 
 	/* Reduced summary (alerts) page - bbnk.html */
-	if (!bbpageONLY) do_bb2_page("bbnk.html", PAGE_NK);
+	if (!bbpageONLY) {
+		do_bb2_page("bbnk.html", PAGE_NK);
+		add_timestamp("BBNK generation done");
+	}
 
 #ifdef WMLSUPPORT
 	/* Generate a hosts file for the WML generator */
-	if (!bbpageONLY && (strcmp(getenv("WML_OUTPUT"), "TRUE") == 0)) 
+	if (!bbpageONLY && (strcmp(getenv("WML_OUTPUT"), "TRUE") == 0)) {
 		do_wml_cards(0);
+		add_timestamp("WML generation done");
+	}
 #endif
+
+	add_timestamp("Run completed");
+	show_timestamps();
 
 	return 0;
 }
+

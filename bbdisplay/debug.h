@@ -20,6 +20,7 @@
 #define __DEBUG_H_
 
 extern int debug;
+extern int timing;
 
 #ifdef DEBUG
 extern void dprintf(const char *fmt, ...);
@@ -29,6 +30,8 @@ extern void dprintf(const char *fmt, ...);
 	do { } while (0)
 #endif
 
+extern void add_timestamp(const char *msg);
+extern void show_timestamps(void);
 extern const char *textornull(const char *text);
 extern void dumplinks(link_t *head);
 extern void dumphosts(host_t *head, char *prefix);
