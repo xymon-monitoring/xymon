@@ -16,16 +16,26 @@ link_t          *linkhead = NULL;
 link_t  null_link = { "", "", "", NULL };
 
 static int didtimeout = 0;
+static int ioerror = 0;
 
 static char *readlntimed(char *buffer, size_t bufsize, struct timeval *timeout)
 {
-	static char stdinbuf[SHAREDBUFSZ];
+	static char stdinbuf[SHAREDBUFSZ+1];
 	static int stdinbuflen = 0;
 	struct timeval cutoff, now, tmo;
 	struct timezone tz;
 	char *eoln;
 	fd_set fdread;
-	int n;
+
+	if (ioerror) {
+		errprintf("readlntimed: Will not read past an I/O error\n");
+		return NULL;
+	}
+
+	/* Make sure the stdin buffer is null terminated */
+	stdinbuf[stdinbuflen] = '\0';
+	didtimeout = 0;
+	eoln = NULL;
 
 	if (timeout) {
 		gettimeofday(&cutoff, &tz);
@@ -37,24 +47,9 @@ static char *readlntimed(char *buffer, size_t bufsize, struct timeval *timeout)
 		}
 	}
 
-	didtimeout = 0;
-
-	while (1) {
-		/* We might have some goodies in the buffer already */
-		if ((stdinbuflen > 0) && ((eoln = strchr(stdinbuf, '\n')) != NULL)) {
-			int bytestocopy;
-
-			n = (eoln - stdinbuf + 1);
-			bytestocopy = ((n < bufsize) ? n : bufsize-1);
-			memcpy(buffer, stdinbuf, bytestocopy);
-			*(buffer + bytestocopy) = '\0';
-
-			stdinbuflen -= n;
-			if (stdinbuflen > 0) memmove(stdinbuf, eoln+1, stdinbuflen);
-			*(stdinbuf + stdinbuflen) = '\0';
-
-			return buffer;
-		}
+	/* Loop reading from stdin until we have a newline in the buffer, or we get a timeout */
+	while (((eoln = strchr(stdinbuf, '\n')) == NULL) && !didtimeout && !ioerror) {
+		int res;
 
 		if (timeout) {
 			gettimeofday(&now, &tz);
@@ -69,34 +64,55 @@ static char *readlntimed(char *buffer, size_t bufsize, struct timeval *timeout)
 		FD_ZERO(&fdread);
 		FD_SET(STDIN_FILENO, &fdread);
 
-		n = select(STDIN_FILENO+1, &fdread, NULL, NULL, (timeout ? &tmo : NULL));
+		res = select(STDIN_FILENO+1, &fdread, NULL, NULL, (timeout ? &tmo : NULL));
 
-		if (n == -1) {
+		if (res == -1) {
 			/* Some error happened */
-			if (errno != EINTR) return NULL;
+			if (errno != EINTR) {
+				ioerror = 1;
+			}
 		}
-		else if (n == 0) {
-			/* Timeout */
+		else if (res == 0) {
+			/* Timeout - dont touch stdinbuflen */
 			didtimeout = 1;
-			return NULL;
 		}
 		else if (FD_ISSET(STDIN_FILENO, &fdread)) {
-			n = read(STDIN_FILENO, (stdinbuf+stdinbuflen), (sizeof(stdinbuf) - stdinbuflen));
-			if (n <= 0) {
+			res = read(STDIN_FILENO, (stdinbuf+stdinbuflen), (sizeof(stdinbuf) - stdinbuflen - 1));
+			if (res <= 0) {
 				/* read() returns 0 --> End-of-file */
-				return NULL;
+				ioerror = 1;
 			}
 			else {
 				/* Got data */
-				stdinbuflen += n;
+				stdinbuflen += res;
 			}
+			stdinbuf[stdinbuflen] = '\0';
 		}
 		else {
 			/* Cannot happen */
 		}
 	}
 
-	/* We never go here */
+	if (eoln) {
+		int n;
+
+		/* Copy the first line over to the result buffer */
+		n = (eoln - stdinbuf + 1);
+		memcpy(buffer, stdinbuf, n);
+		*(buffer + n) = '\0';
+		stdinbuflen -= n;
+
+		/* Now see if there is more data that we need to process later */
+		eoln++; /* Skip past the newline */
+		if (stdinbuflen) {
+			/* Move the rest of the data to start of buffer */
+			memmove(stdinbuf, eoln, stdinbuflen);
+			stdinbuf[stdinbuflen] = '\0';
+		}
+
+		return buffer;
+	}
+
 	return NULL;
 }
 
