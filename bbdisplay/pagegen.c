@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.22 2003-02-14 21:44:36 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.23 2003-02-14 22:35:00 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -100,7 +100,8 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 	/*
 	 * Build a list of the columns that are in use by
 	 * hosts in the hostlist passed as parameter.
-	 * The column list must be sorted by column name.
+	 * The column list will be sorted by column name, except 
+	 * if onlycols used (group-only directive).
 	 */
 
 	/* Meaning of pagetype:
@@ -119,6 +120,39 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 	head = malloc(sizeof(col_list_t));
 	head->column = &null_column;
 	head->next = NULL;
+
+	if (onlycols != NULL) {
+		/* For group-only, hand back columns in order given by user */
+		char *p1 = onlycols;
+		char *p2;
+		col_t *col;
+
+		collist_walk = head;
+		do {
+			if (*p1 == '|') p1++;
+
+			p2 = strchr(p1, '|');
+			if (p2) {
+				*p2 = '\0';
+
+				for (col = colhead; (col && (strcmp(p1, col->name) != 0)); col = col->next);
+				if (col) {
+					newlistitem = malloc(sizeof(col_list_t));
+					newlistitem->column = col;
+					newlistitem->next = NULL;
+					collist_walk->next = newlistitem;
+					collist_walk = collist_walk->next;
+				}
+				*p2 = '|';
+			}
+
+			p1 = p2;
+		} while (p1 != NULL);
+
+		/* Skip the dummy record */
+		collist_walk = head; head = head->next; free(collist_walk);
+		return (head);
+	}
 
 	for (h = hostlist; (h); h = h->next) {
 		for (e = h->entries; (e); e = e->next) {
@@ -228,6 +262,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 		fprintf(output, "</TABLE></CENTER><BR><BR>\n");
 	}
 
+	/* Free the columnlist allocated by gen_column_list() */
 	while (groupcols) {
 		gc = groupcols;
 		groupcols = groupcols->next;
