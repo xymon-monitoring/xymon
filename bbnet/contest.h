@@ -59,6 +59,7 @@ typedef struct svcinfo_t {
 	unsigned char *exptext;
 	int  expofs, explen;
 	unsigned int flags;
+	int port;
 } svcinfo_t;
 
 typedef struct test_t {
