@@ -4,8 +4,8 @@ test-compile:
 	@$(CC) $(CFLAGS) $(RRDINC) -o test-rrd.o -c test-rrd.c
 
 test-link:
-	@$(CC) $(CFLAGS) $(RRDLIB) -o test-rrd test-rrd.o -lrrd
+	@$(CC) $(CFLAGS) $(RRDLIB) -o test-rrd test-rrd.o -lrrd $(PNGLIB)
 
 clean:
-	@rm -f test-rrd.o test-rrd
+	@rm -f test-rrd.o test-rrd bbgen.png
 
