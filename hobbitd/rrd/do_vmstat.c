@@ -160,10 +160,16 @@ int do_vmstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	char *p;
 	char **creparams;
 
-	if (strncmp(msg, "status", 6) == 0) {
-		/* Status message - skip the first line. */
+	if ((strncmp(msg, "status", 6) == 0) || (strncmp(msg, "data", 4) == 0)) {
+		/* Full message, including "status" or "data" line - so skip the first line. */
 		datapart = strchr(msg, '\n');
-		if (datapart) datapart++; else datapart = msg;
+		if (datapart) {
+			datapart++; 
+		}
+		else {
+			errprintf("Too few lines (only 1) in vmstat report from %s\n", hostname);
+			return -1;
+		}
 	}
 
 	ostype = get_ostype(datapart);
@@ -172,7 +178,7 @@ int do_vmstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		datapart++; 
 	}
 	else {
-		errprintf("Too few lines in vmstat report from %s\n", hostname);
+		errprintf("Too few lines (only 1 or 2) in vmstat report from %s\n", hostname);
 		return -1;
 	}
 
@@ -194,13 +200,13 @@ int do_vmstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	  case OS_FREEBSD:
 		layout = vmstat_freebsd_layout; break;
 	  case OS_SCO:
-		errprintf("Cannot grok sco vmstat from host '%s' \n", hostname);
+		errprintf("Cannot handle sco vmstat from host '%s' \n", hostname);
 		return -1;
 	  case OS_SNMP:
-		errprintf("Cannot grok SNMP vmstat from host '%s' \n", hostname);
+		errprintf("Cannot handle SNMP vmstat from host '%s' \n", hostname);
 		return -1;
 	  case OS_WIN32:
-		errprintf("Cannot grok Win32 vmstat from host '%s' \n", hostname);
+		errprintf("Cannot handle Win32 vmstat from host '%s' \n", hostname);
 		return -1;
 	  case OS_UNKNOWN:
 		errprintf("Host '%s' reports vmstat for an unknown OS\n", hostname);
@@ -210,7 +216,7 @@ int do_vmstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	/* How many values are in the dataset ? */
 	for (vcount = 0; (layout[vcount].name); vcount++) ;
 
-	/* Pick up the values in the datamsg line. Stop at newline. */
+	/* Pick up the values in the datapart line. Stop at newline. */
 	p = strchr(datapart, '\n'); if (p) *p = '\0';
 	p = strtok(datapart, " "); i = 0;
 	while (p && (i < MAX_VMSTAT_VALUES)) {
