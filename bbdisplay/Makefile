@@ -2,12 +2,12 @@
 #
 
 
-PROGRAMS = bbgen bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi bb-findhost.cgi bb-csvinfo.cgi bb-hostsvc.cgi
+PROGRAMS = bbgen bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi bb-findhost.cgi bb-csvinfo.cgi bb-hostsvc.cgi bb-ack.cgi
 
 EXTENSIONS = bbcombotest
 
 CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh bb-findhost.sh bb-csvinfo.sh bbmessage.cgi bb-hostsvc.sh bb-histlog.sh
-
+# bb-ack.sh
 
 
 GENOBJS = bbgen.o loadhosts.o loaddata.o reportdata.o bbconvert.o larrdgen.o pagegen.o eventlog.o acklog.o process.o infogen.o savelog.o alert.o wmlgen.o rssgen.o bb-replog.o util.o debug.o
@@ -27,7 +27,7 @@ HTMLPAGES = bb-findhost.html
 GIFFILES = bbfindhost1.gif bbfindhost2.gif
 
 
-all: $(PROGRAMS) $(EXTENSIONS) $(CGISCRIPTS) bb-ack.cgi
+all: $(PROGRAMS) $(EXTENSIONS) $(CGISCRIPTS)
 
 
 bbgen: $(GENOBJS)
