@@ -1,0 +1,162 @@
+/*----------------------------------------------------------------------------*/
+/* Big Brother message daemon.                                                */
+/*                                                                            */
+/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/*                                                                            */
+/* This program is released under the GNU General Public License (GPL),       */
+/* version 2. See the file "COPYING" for details.                             */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+static char rcsid[] = "$Id: do_rrd.c,v 1.1 2004-11-06 10:05:34 henrik Exp $";
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <limits.h>
+#include <ctype.h>
+
+#include <rrd.h>
+
+#include "libbbgen.h"
+
+#include "do_larrd.h"
+
+char *rrddir = NULL;
+
+static char rrdfn[PATH_MAX];
+static char rrdvalues[MAX_LINE_LEN];
+static char rra1[] = "RRA:AVERAGE:0.5:1:576";
+static char rra2[] = "RRA:AVERAGE:0.5:6:576";
+static char rra3[] = "RRA:AVERAGE:0.5:24:576";
+static char rra4[] = "RRA:AVERAGE:0.5:288:576";
+static char *update_params[]      = { "rrdupdate", rrdfn, rrdvalues, NULL };
+
+static int create_and_update_rrd(char *fn, char *creparams[], char *updparams[])
+{
+	struct stat st;
+	int pcount, result;
+
+	if ((fn == NULL) || (strlen(fn) == 0)) {
+		errprintf("RRD update for no file\n");
+		return -1;
+	}
+
+	if (stat(fn, &st) == -1) {
+		dprintf("Creating rrd %s\n", fn);
+
+		for (pcount = 0; (creparams[pcount]); pcount++);
+		result = rrd_create(pcount, creparams);
+		if (result != 0) {
+			errprintf("RRD error creating %s: %s\n", fn, rrd_get_error());
+			return 1;
+		}
+	}
+
+	dprintf("Updating %s with '%s'\n", fn, rrdvalues);
+	for (pcount = 0; (updparams[pcount]); pcount++);
+	rrd_clear_error();
+	result = rrd_update(pcount, updparams);
+	if (result != 0) {
+		errprintf("RRD error updating %d: %s\n", fn, rrd_get_error());
+		return 2;
+	}
+
+	return 0;
+}
+
+
+/* Include all of the sub-modules. */
+#include "larrd/do_apache.c"
+#include "larrd/do_bind.c"
+#include "larrd/do_sendmail.c"
+#include "larrd/do_mailq.c"
+
+#include "larrd/do_netstat.c"
+#include "larrd/do_vmstat.c"
+#include "larrd/do_iostat.c"
+
+#include "larrd/do_bbgen.c"
+#include "larrd/do_bbtest.c"
+#include "larrd/do_bbproxy.c"
+#include "larrd/do_citrix.c"
+#include "larrd/do_ntpstat.c"
+
+#include "larrd/do_memory.c"	/* Must go before do_la.c */
+#include "larrd/do_la.c"
+#include "larrd/do_disk.c"
+#include "larrd/do_temperature.c"
+#include "larrd/do_net.c"
+
+
+void update_larrd(char *hostname, char *testname, char *msg, time_t tstamp, larrdsvc_t *ldef)
+{
+	int res = 0;
+	char *id;
+
+	if (ldef) id = ldef->larrdsvcname; else id = testname;
+
+	if (strcmp(id, "apache") == 0) {
+		res = do_apache_larrd(hostname, id, msg, tstamp);
+	}
+	else if (strcmp(id, "bind") == 0) {
+		res = do_bind_larrd(hostname, id, msg, tstamp);
+	}
+	else if (strcmp(id, "sendmail") == 0) {
+		res = do_sendmail_larrd(hostname, id, msg, tstamp);
+	}
+	else if (strcmp(id, "mailq") == 0) {
+		res = do_mailq_larrd(hostname, id, msg, tstamp);
+	}
+
+	else if (strcmp(id, "netstat") == 0) {
+		res = do_netstat_larrd(hostname, id, msg, tstamp);
+	}
+	else if (strcmp(id, "vmstat") == 0) {
+		res = do_vmstat_larrd(hostname, id, msg, tstamp);
+	}
+	else if (strcmp(id, "iostat") == 0) {
+		res = do_iostat_larrd(hostname, id, msg, tstamp);
+	}
+
+	else if (strcmp(id, "bbgen") == 0) {
+		res = do_bbgen_larrd(hostname, id, msg, tstamp);
+	}
+	else if (strcmp(id, "bbtest") == 0) {
+		res = do_bbtest_larrd(hostname, id, msg, tstamp);
+	}
+	else if (strcmp(id, "bbproxy") == 0) {
+		res = do_bbproxy_larrd(hostname, id, msg, tstamp);
+	}
+	else if (strcmp(id, "citrix") == 0) {
+		res = do_citrix_larrd(hostname, id, msg, tstamp);
+	}
+	else if (strcmp(id, "ntpstat") == 0) {
+		res = do_ntpstat_larrd(hostname, id, msg, tstamp);
+	}
+
+	else if (strcmp(id, "la") == 0) {
+		res = do_la_larrd(hostname, id, msg, tstamp);
+	}
+	else if (strcmp(id, "disk") == 0) {
+		res = do_disk_larrd(hostname, id, msg, tstamp);
+	}
+	else if (strcmp(id, "memory") == 0) {
+		res = do_memory_larrd(hostname, id, msg, tstamp);
+	}
+	else if (strcmp(id, "temperature") == 0) {
+		res = do_temperature_larrd(hostname, id, msg, tstamp);
+	}
+	else if (ldef) {
+		/* Assume anything else with a known LARRD definition is a network test */
+		res = do_net_larrd(hostname, id, msg, tstamp);
+	}
+
+	if (res != 0) {
+		errprintf("update_larrd failed for %s:%s, code %d\n", hostname, testname, res);
+	}
+}
+
