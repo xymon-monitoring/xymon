@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.105 2003-08-27 20:30:08 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.106 2003-08-31 08:07:51 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1101,7 +1101,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	FILE 	*bbhosts;
 	char 	l[MAX_LINE_LEN], lcop[MAX_LINE_LEN];
 	char	pagetag[100], subpagetag[100], subparenttag[100], 
-		grouptag[100], summarytag[100], titletag[100], dialuptag[100], hosttag[100];
+		grouptag[100], summarytag[100], titletag[100], hosttag[100];
 	char 	*name, *link, *onlycols;
 	char 	hostname[MAX_LINE_LEN];
 	bbgen_page_t 	*toppage, *curpage, *cursubpage, *cursubparent;
@@ -1109,6 +1109,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	host_t	*curhost;
 	char	*curtitle;
 	int	ip1, ip2, ip3, ip4;
+	int	modembanksize;
 	char	*p;
 
 	dprintf("load_bbhosts(pgset=%s)\n", textornull(pgset));
@@ -1126,7 +1127,6 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	sprintf(grouptag, "%sgroup", pgset);
 	sprintf(summarytag, "%ssummary", pgset);
 	sprintf(titletag, "%stitle", pgset);
-	sprintf(dialuptag, "%sdialup", pgset);
 	sprintf(hosttag, "%s:", pgset); for (p=hosttag; (*p); p++) *p = toupper((int)*p);
 
 	toppage = init_page("", "");
@@ -1149,6 +1149,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 		}
 
 		dprintf("load_bbhosts: -- got line '%s'\n", l);
+
+		modembanksize = 0;
 
 		if ((l[0] == '#') || (strlen(l) == 0)) {
 			/* Do nothing - it's a comment */
@@ -1241,7 +1243,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			curhost = NULL;
 		}
 		else if ( (sscanf(l, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) ||
-		          ((strncmp(l, dialuptag, strlen(dialuptag)) == 0) && !reportstart && !snapshot) ) {
+		          (!reportstart && !snapshot && (sscanf(l, "dialup %s %d.%d.%d.%d %d", hostname, &ip1, &ip2, &ip3, &ip4, &modembanksize) == 6) && (modembanksize > 0)) ) {
 			int dialup = 0;
 			int prefer = 0;
 			int nodisp = 0;
@@ -1253,14 +1255,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			int targetpagecount;
 			char *tag;
 			char *startoftags = strchr(l, '#');
-			int modembanksize = 0;
 
 			displayname = NULL;
-
-		        if (strncmp(l, dialuptag, strlen(dialuptag)) == 0) {
-				/* It's a modem-bank entry. */
-				sscanf(l, "%*s %s %d.%d.%d.%d %d", hostname, &ip1, &ip2, &ip3, &ip4, &modembanksize);
-			}
 
 			/* If FQDN is not set, strip any domain off the hostname */
 			if (!fqdn) {
