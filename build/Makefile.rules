@@ -161,7 +161,7 @@ distclean: clean
 
 clean:
 	rm -f *.o *~ $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) alert contest reptest calc sendmsg ldaptest libares.a
-	rm -rf ares-1.1.1/
+#	rm -rf ares-1.1.1/
 
 install-bin: $(PROGRAMS)
 	cp -p $(PROGRAMS) $(BBHOME)/bin/
