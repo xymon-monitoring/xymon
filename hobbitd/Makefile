@@ -15,7 +15,7 @@ SAMPLEOBJS    = bbgend_sample.o    bbgend_worker.o
 all: $(PROGRAMS)
 
 bbgend: $(BBGENDOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(BBGENDOBJS) $(LIBOBJS)
+	$(CC) -o $@ $(BBGENDOBJS) $(LIBOBJS) $(NETLIBS)
 
 bbgend_channel: $(CHANNELOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(CHANNELOBJS) $(LIBOBJS)
