@@ -771,6 +771,15 @@ a password of "Wilma1", before requesting the proxy to fetch
 the Big Brother homepage.
 
 
+.IP "Extended URL syntax for specifying HTTP protocol version"
+If you happen to have a server that requires that you talk 
+HTTP 1.0 to it, then you can specify the URL as
+.br
+    http10://www.sample.com/
+.br
+This cannot be combined with any other modifiers.
+
+
 .SH BBTEST-NET TAGS FOR CONTENT CHECKS
 .IP cont;URL;[expected_data_regexp|#digesttype:digest]
 This tag is used to specify a http/https check, where 
