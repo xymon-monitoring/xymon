@@ -730,6 +730,16 @@ void dumpstatelist(state_t *head)
 void do_hosts(host_t *head, FILE *output)
 {
 	host_t	*h;
+	col_list_t *groupcols, *gc;
+
+	groupcols = gen_column_list(head, NULL);
+	if (groupcols) {
+		fprintf(output, "    - columns: ");
+		for (gc=groupcols; (gc); gc = gc->next) {
+			fprintf(output, "%s ", gc->column->name);
+		}
+		fprintf(output, "\n");
+	}
 
 	for (h = head; (h); h = h->next) {
 		fprintf(output, "    host %s, color %s\n", h->hostname, colorname(h->color));
@@ -740,19 +750,10 @@ void do_hosts(host_t *head, FILE *output)
 void do_groups(group_t *head, FILE *output)
 {
 	group_t *g;
-	col_list_t *groupcols, *gc;
 
 	for (g = head; (g); g = g->next) {
-		groupcols = gen_column_list(g->hosts, NULL);
 
 		fprintf(output, "    group %s\n", g->title);
-
-		fprintf(output, "    - columns: ");
-		for (gc=groupcols; (gc); gc = gc->next) {
-			fprintf(output, "%s ", gc->column->name);
-		}
-		fprintf(output, "\n");
-
 		do_hosts(g->hosts, output);
 	}
 	fprintf(output, "\n");
