@@ -506,7 +506,10 @@ The syntax is:
 "starttime" and "endtime" are specified as Unix time_t values,
 i.e. seconds since Jan 1st 1970 00:00 GMT. Fortunately, this 
 can easily be computed with the GNU date utility if you use
-the "+%s" output option.
+the "+%s" output option. If you don't have the GNU date
+utility, either pick that up from www.gnu.org; or you can
+use the "etime" utility for the same purpose, which is
+available on the Big Brother archive at www.deadcat.net.
 
 "nodynamic" is either 0 (for dynamic pages, the default) or
 1 (for no dynamic, i.e. pre-generated, pages).
