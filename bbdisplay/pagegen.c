@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.101 2003-10-02 20:34:01 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.102 2003-10-02 20:55:23 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1156,12 +1156,12 @@ int do_bb2_page(char *filename, int summarytype)
 			lognkstatus, colorname(bb2page.color), timestamp, colorname(bb2page.color));
 		addtostatus(msgline);
 
-		if (nklog) fprintf(nklog, "%u\t%s\t", (unsigned int)time(NULL), colorname(bb2page.color));
+		if (nklog) fprintf(nklog, "%u\t%s", (unsigned int)time(NULL), colorname(bb2page.color));
 
 		for (hwalk = bb2page.hosts; hwalk; hwalk = hwalk->next) {
 			msgptr = msgline;
 			msgptr += sprintf(msgline, "&%s %s :", colorname(hwalk->color), hwalk->hostname);
-			if (nklog) fprintf(nklog, "%s ", hwalk->hostname);
+			if (nklog) fprintf(nklog, "\t%s ", hwalk->hostname);
 			svcspace = '(';
 
 			for (ewalk = hwalk->entries; (ewalk); ewalk = ewalk->next) {
@@ -1174,7 +1174,7 @@ int do_bb2_page(char *filename, int summarytype)
 			strcpy(msgptr, "\n");
 			addtostatus(msgline);
 
-			if (nklog) fprintf(nklog, ")\t");
+			if (nklog) fprintf(nklog, ")");
 		}
 		finish_status();
 		combo_end();
