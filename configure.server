@@ -16,73 +16,169 @@ then
 else
 	echo "This script asks a few questions and builds a Makefile to compile bbgen"
 	echo ""
-	echo "Where is your Big Brother BBHOME directory [/usr/local/bb] ? "
-	read BBHOME
-	if test -z "$BBHOME"
+	echo "Are you using the standard BB, or bbgend [bbgend] ?"
+	read TARGET
+	if test -z "$BBUSER"
 	then
-		BBHOME=/usr/local/bb
+		TARGET="bbgend"
 	fi
 
-	if test -r $BBHOME/etc/bbdef.sh
+	if test "$TARGET" != "bbgend"
 	then
-		echo "OK, your BBHOME looks good"
-	else
-		echo "         ********  NB NB NB *********"
-		echo "Ooops ... cannot find the Big Brother configuration in $BBHOME"
-		echo "I trust you know better, so I will use that setting anyway."
-		echo "         ********  NB NB NB *********"
-	fi
-	echo ""
+		echo "Setting up for use with standard Big Brother"
+		echo ""
 
-	echo "Trying to determine your BB MAXLINE and PORT settings"
-	if test -r $BBHOME/src/bb.h
-	then
-		MAXLINE=`grep "^#define.*MAXLINE.*[0-9]*" $BBHOME/src/bb.h 2>/dev/null`
-		if test "$MAXLINE" != ""
+		echo "Where is your Big Brother BBHOME directory [/usr/local/bb/bb] ? "
+		read BBHOME
+		if test -z "$BBHOME"
 		then
-			MAXMSG=`echo $MAXLINE | awk '{print $3}'`
-			echo "Found your BB MAXLINE to be $MAXMSG"
+			BBHOME=/usr/local/bb/bb
+		fi
+
+		if test -r $BBHOME/etc/bbdef.sh
+		then
+			echo "OK, your BBHOME looks good"
+		else
+			echo "         ********  NB NB NB *********"
+			echo "Ooops ... cannot find the Big Brother configuration in $BBHOME"
+			echo "I trust you know better, so I will use that setting anyway."
+			echo "         ********  NB NB NB *********"
+		fi
+		echo ""
+
+		echo "Trying to determine your BB MAXLINE and PORT settings"
+		if test -r $BBHOME/src/bb.h
+		then
+			MAXLINE=`grep "^#define.*MAXLINE.*[0-9]*" $BBHOME/src/bb.h 2>/dev/null`
+			if test "$MAXLINE" != ""
+			then
+				MAXMSG=`echo $MAXLINE | awk '{print $3}'`
+				echo "Found your BB MAXLINE to be $MAXMSG"
+			else
+				MAXMSG="8192"
+				echo " *** Could not determine the MAXMSG setting ***"
+			fi
+	
+			PORT=`grep "^#define.*PORT.*[0-9]*" $BBHOME/src/bb.h 2>/dev/null`
+			if test "$PORT" != ""
+			then
+				BBPORT=`echo $PORT | awk '{print $3}'`
+				echo "Found your BB PORT to be $BBPORT"
+			else
+				BBPORT="1984"
+				echo " *** Could not determine the PORT setting ***"
+			fi
 		else
 			MAXMSG="8192"
-			echo " *** Could not determine the MAXMSG setting ***"
-		fi
-
-		PORT=`grep "^#define.*PORT.*[0-9]*" $BBHOME/src/bb.h 2>/dev/null`
-		if test "$PORT" != ""
-		then
-			BBPORT=`echo $PORT | awk '{print $3}'`
-			echo "Found your BB PORT to be $BBPORT"
-		else
 			BBPORT="1984"
-			echo " *** Could not determine the PORT setting ***"
+			echo "*** Could not determine the MAXMSG and PORT settings ($BBHOME/src/bb.h not found) ***"
 		fi
-	else
-		MAXMSG="8192"
-		BBPORT="1984"
-		echo "*** Could not determine the MAXMSG and PORT settings ($BBHOME/src/bb.h not found) ***"
-	fi
-	echo ""
+		echo ""
 
-	echo "To install the bbgen CGI scripts for history and reporting, I"
-	echo "need to know where you webserver keeps CGI scripts."
-	echo "This setting is only used by \"make install\""
-	echo "Where is your Webserver CGI-BIN directory [/var/apache/cgi-bin] ? "
-	read CGIDIR
-	if test -z "$CGIDIR"
-	then
-		CGIDIR=/var/apache/cgi-bin
-	fi
+		echo "Where is your Big Brother BBVAR directory [/usr/local/bb/bbvar] ? "
+		read BBVAR
+		if test -z "$BBVAR"
+		then
+			BBVAR=/usr/local/bb/bbvar
+		fi
 
-	if test -r $CGIDIR/bb-hist.sh
-	then
-		echo "OK, your CGIDIR looks good"
+		echo "Where is your Webserver CGI-BIN directory [/var/apache/cgi-bin] ? "
+		read CGIDIR
+		if test -z "$CGIDIR"
+		then
+			CGIDIR=/var/apache/cgi-bin
+		fi
+
+		if test -r $CGIDIR/bb-hist.sh
+		then
+			echo "OK, your CGIDIR looks good"
+		else
+			echo "         ********  NB NB NB *********"
+			echo "Ooops ... cannot find the Big Brother CGI scripts in $CGIDIR"
+			echo "I trust you know better, so I will use that setting anyway."
+			echo "         ********  NB NB NB *********"
+		fi
+
 	else
-		echo "         ********  NB NB NB *********"
-		echo "Ooops ... cannot find the Big Brother CGI scripts in $CGIDIR"
-		echo "I trust you know better, so I will use that setting anyway."
-		echo "         ********  NB NB NB *********"
+		echo "Setting up for use with bbgend"
+		echo ""
+
+		echo "What userid will be running bbgend [bb] ?"
+		read BBUSER
+		if test -z "$BBUSER"
+		then
+			BBUSER="bb"
+		fi
+		USERDATA=`getent passwd $BBUSER || grep "^${BBUSER}:" /etc/passwd`
+		if test $? -ne 0
+		then
+			echo "FAILURE: The user $BBUSER does not exist. Create user and try again."
+			exit 1
+		fi
+
+		HOMEDIR="`echo $USERDATA|cut -d: -f6`"
+		echo "Where do you want the bbgend installation [${HOMEDIR}] ?"
+		read BBTOPDIR
+		if test -z "$BBTOPDIR"
+		then
+			BBTOPDIR=${HOMEDIR}
+		fi
+		echo ""
+
+		if test -d "$BBTOPDIR"
+		then
+			echo "OK, will configure to use $BBTOPDIR as the bbgend toplevel directory"
+		else
+			echo "** FAILURE: $BBTOPDIR does not exist. Create it and try again."
+			exit 1
+		fi
+
+		echo "Where to put the bbgend CGI script [$BBTOPDIR/cgi-bin] ? "
+		read CGIDIR
+		if test -z "$CGIDIR"
+		then
+			CGIDIR=$BBTOPDIR/cgi-bin
+		fi
+
+		if test -d "$CGIDIR"
+		then
+			echo "** NOTE: $CGIDIR must be configured as a CGI directory in your webserver **"
+			echo ""
+		else
+			echo "The $CGIDIR directory does not exist, will create it during installation"
+			echo "** NOTE: $CGIDIR must be configured as a CGI directory in your webserver **"
+			echo ""
+		fi
+
+		echo "Where to put the bbgend logfiles [/var/log/bb] ? "
+		read BBLOGDIR
+		if test -z "$BBLOGDIR"
+		then
+			BBLOGDIR=/var/log/bb
+		fi
+
+		echo "What is the name of this host [`uname -n`] ? "
+		read BBHOSTNAME
+		if test -z "$BBHOSTNAME"
+		then
+			BBHOSTNAME=`uname -n`
+		fi
+
+		echo "What is the IP-address of this host [127.0.0.1] ? "
+		read BBHOSTIP
+		if test -z "$BBHOSTIP"
+		then
+			echo "** NOTE: Using 127.0.0.1 (loopback), but it is probably not what you want **"
+			BBHOSTIP=127.0.0.1
+		fi
+
+		# bbgend defaults to standard port and 32KB message max.
+		BBHOSTOS=`uname -s | tr [A-Z] [a-z]`
+		BBHOME=$BBTOPDIR/bb
+		BBVAR=$BBTOPDIR/bbvar
+		BBPORT=1984
+		MAXMSG=32768
 	fi
-	echo ""
 
 	echo "The bbgen history CGI replacement by default displays a 1-day"
 	echo "graph of the history. It can also show a 1-week, 4-weeks and"
@@ -271,7 +367,18 @@ else
 	fi
 
 	echo "# configure settings for bbgen" > Makefile
+	if test "$TARGET" = "bbgend"
+	then
+		echo "BBGEND = 1"             >>Makefile
+		echo "BBLOGDIR = $BBLOGDIR"   >>Makefile
+		echo "BBHOSTNAME = $BBHOSTNAME"  >>Makefile
+		echo "BBHOSTIP = $BBHOSTIP"   >>Makefile
+		echo "BBHOSTOS = $BBHOSTOS"   >>Makefile
+	fi
+	echo "BBUSER = $BBUSER"               >>Makefile
+	echo "BBTOPDIR = $BBTOPDIR"           >>Makefile
 	echo "BBHOME = $BBHOME"               >>Makefile
+	echo "BBVAR = $BBVAR"                 >>Makefile
 	echo "CGIDIR = $CGIDIR"               >>Makefile
 	echo "HISTGRAPHDEF = $HISTGRAPHDEF $BARSUMDEF"   >>Makefile
 	echo "MAXMSG = $MAXMSG"               >>Makefile
