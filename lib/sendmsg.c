@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.10 2003-08-12 21:16:05 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.11 2003-08-27 20:18:18 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -288,11 +288,11 @@ void combo_flush(void)
 			if (p1) {
 				p1++; /* Skip the newline */
 				p2 = strchr(p1, '\n');
-				*p2='\0';
+				if (p2) *p2='\0';
 				printf("      %s\n", p1);
-				*p2='\n';
+				if (p2) *p2='\n';
 			}
-		} while (p1);
+		} while (p1 && p2);
 	}
 
 	sendmessage(bbmsg, NULL);
