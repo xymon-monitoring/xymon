@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: calc.c,v 1.3 2003-07-01 15:31:44 henrik Exp $";
+static char rcsid[] = "$Id: calc.c,v 1.4 2003-07-02 10:54:31 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -28,13 +28,20 @@ long compute(char *expression, int *error)
 	 *
 	 */
 	char *exp, *startp, *operator;
+	char *inp, *outp;
 	char op;
 	long xval, yval, result;
 
 	if (*error) return -1;
 
+	/* Copy expression except whitespace */
 	exp = malloc(strlen(expression)+1);
-	strcpy(exp, expression);
+	inp = expression; outp=exp;
+	do {
+		if (!isspace((int) *inp)) { *outp = *inp; outp++; }
+		inp++;
+	} while (*inp);
+	*outp = '\0';
 
 	/* First find the value of the first sub-expression */
 	startp = exp;
@@ -135,6 +142,7 @@ long compute(char *expression, int *error)
 }
 
 #ifdef STANDALONE
+
 int main(int argc, char *argv[])
 {
 	long result;
