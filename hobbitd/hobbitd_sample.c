@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_sample.c,v 1.6 2004-10-25 11:56:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_sample.c,v 1.7 2004-10-27 10:55:35 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -176,7 +176,7 @@ int main(int argc, char *argv[])
 			printf("Got a 'renamehost' message for host '%s' -> '%s'\n", metadata[3], metadata[4]);
 		}
 		else if ((metacount > 5) && (strncmp(metadata[0], "@@renametest", 12) == 0)) {
-			printf("Got a 'renameetst' message for host '%s' test '%s' -> '%s'\n", 
+			printf("Got a 'renametest' message for host '%s' test '%s' -> '%s'\n", 
 				metadata[3], metadata[4], metadata[5]);
 		}
 
