@@ -21,8 +21,10 @@ typedef struct {
 	int  tested;
 	int  fd;
 	int  open;
+	int  readpending;
 	int  connres;
 	struct timeval timestart, duration;
+	char *banner;
 	void *next;
 } test_t;
 
@@ -43,8 +45,10 @@ void add_test(char *ip, int port)
 
 	newtest->fd = -1;
 	newtest->open = 0;
+	newtest->readpending = 0;
 	newtest->connres = -1;
 	newtest->duration.tv_sec = newtest->duration.tv_usec = 0;
+	newtest->banner = NULL;
 	newtest->next = thead;
 	thead = newtest;
 }
@@ -52,7 +56,7 @@ void add_test(char *ip, int port)
 void do_conn(void)
 {
 	int		selres;
-	fd_set		writefds;
+	fd_set		readfds, writefds;
 	struct timeval	tmo, timeend;
 	struct timezone tz;
 
@@ -62,6 +66,7 @@ void do_conn(void)
 	int		sockok;
 	int		maxfd;
 	int		res, connres, connressize;
+	char		msgbuf[1024];
 
 
 	/* How many tests to do ? */
@@ -103,10 +108,14 @@ void do_conn(void)
 		/*
 		 * Setup the FDSET's
 		 */
-		FD_ZERO(&writefds); maxfd = 0;
+		FD_ZERO(&readfds); FD_ZERO(&writefds); maxfd = 0;
 		for (item=thead; (item != nextinqueue); item=item->next) {
 			if (item->fd > -1) {
-				FD_SET(item->fd, &writefds);
+				if (item->readpending)
+					FD_SET(item->fd, &readfds);
+				else 
+					FD_SET(item->fd, &writefds);
+
 				if (item->fd > maxfd) maxfd = item->fd;
 			}
 		}
@@ -115,7 +124,7 @@ void do_conn(void)
 		 * Wait for something to happen
 		 */
 		tmo.tv_sec = TIMEOUT; tmo.tv_usec = 0;
-		selres = select((maxfd+1), NULL, &writefds, NULL, &tmo);
+		selres = select((maxfd+1), &readfds, &writefds, NULL, &tmo);
 		gettimeofday(&timeend, &tz);
 
 		for (item=thead; (item != nextinqueue); item=item->next) {
@@ -132,28 +141,46 @@ void do_conn(void)
 					activesockets--;
 					pending--;
 				}
-				else if (FD_ISSET(item->fd, &writefds)) {
-					/*
-					 * Active response on this socket - either OK, or 
-					 * connection refused.
-					 */
-					connressize = sizeof(connres);
-					res = getsockopt(item->fd, SOL_SOCKET, SO_ERROR, &connres, &connressize);
-					item->open = (connres == 0);
-					item->connres = connres;
-					if (item->open) {
-						item->duration.tv_sec = timeend.tv_sec - item->timestart.tv_sec;
-						item->duration.tv_usec = timeend.tv_usec - item->timestart.tv_usec;
-						if (item->duration.tv_usec < 0) {
-							item->duration.tv_sec--;
-							item->duration.tv_usec += 1000000;
+				else {
+					if (FD_ISSET(item->fd, &writefds)) {
+						/*
+						 * Active response on this socket - either OK, or 
+						 * connection refused.
+						 */
+						connressize = sizeof(connres);
+						res = getsockopt(item->fd, SOL_SOCKET, SO_ERROR, &connres, &connressize);
+						item->open = (connres == 0);
+						item->connres = connres;
+						if (item->open) {
+							item->duration.tv_sec = timeend.tv_sec - item->timestart.tv_sec;
+							item->duration.tv_usec = timeend.tv_usec - item->timestart.tv_usec;
+							if (item->duration.tv_usec < 0) {
+								item->duration.tv_sec--;
+								item->duration.tv_usec += 1000000;
+							}
+							// shutdown(item->fd, SHUT_RDWR);
+							item->readpending = 1;
+						}
+						// close(item->fd);
+						// item->fd = -1;
+						// activesockets--;
+						// pending--;
+					}
+
+					if (FD_ISSET(item->fd, &readfds)) {
+						res = read(item->fd, msgbuf, sizeof(msgbuf)-1);
+						if (res > 0) {
+							msgbuf[res] = '\0';
+							item->banner = malloc(res+1);
+							strcpy(item->banner, msgbuf);
 						}
 						shutdown(item->fd, SHUT_RDWR);
+						item->readpending = 0;
+						close(item->fd);
+						item->fd = -1;
+						activesockets--;
+						pending--;
 					}
-					close(item->fd);
-					item->fd = -1;
-					activesockets--;
-					pending--;
 				}
 			}
 		}
@@ -176,10 +203,10 @@ int main(int argc, char *argv[])
 	do_conn();
 
 	for (item = thead; (item); item = item->next) {
-		printf("Address=%s, tested=%d, open=%d, res=%d, time=%ld.%ld\n", 
+		printf("Address=%s, tested=%d, open=%d, res=%d, time=%ld.%ld, banner='%s'\n", 
 				item->textaddr, 
 				item->tested, item->open, item->connres, 
-				item->duration.tv_sec, item->duration.tv_usec);
+				item->duration.tv_sec, item->duration.tv_usec, item->banner);
 	}
 
 	return 0;
