@@ -33,7 +33,9 @@ int main(int argc, char *argv[])
 	sprintf(curbckfn, "%s.bak", curfn);
 
 	curfd = fopen(curfn, "r");
-	curbckfd = fopen(curbckfn, "w");
+	unlink(curbckfn); curbckfd = fopen(curbckfn, "w");
+	if (curfd == NULL) { printf("Cannot open configuration file %s\n", curfn); return 1; }
+	if (curbckfd == NULL) { printf("Cannot open backup file %s\n", curbckfn); return 1; }
 
 	while (fgets(l, sizeof(l), curfd)) {
 		char *bol, *p;
@@ -68,7 +70,10 @@ int main(int argc, char *argv[])
 	fclose(curbckfd);
 
 	srcfd = fopen(srcfn, "r");
-	curfd = fopen(curfn, "w");
+	unlink(curfn); curfd = fopen(curfn, "w");
+	if (srcfd == NULL) { printf("Cannot open template file %s\n", srcfn); return 1; }
+	if (curfd == NULL) { printf("Cannot open config file %s\n", curfn); return 1; }
+
 	while (fgets(l, sizeof(l), srcfd)) {
 		char *bol, *p;
 
@@ -85,7 +90,7 @@ int main(int argc, char *argv[])
 				adding = 0;
 			}
 			else {
-				printf("Adding new entry %s", l);
+				printf("Adding new entry to %s: %s", curfn, l);
 				fprintf(curfd, "%s", l);
 				adding = 1;
 			}
