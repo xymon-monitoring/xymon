@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.48 2003-05-22 13:51:22 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.49 2003-05-23 15:32:54 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -207,6 +207,11 @@ void init_timestamp(void)
         strcpy(timestamp, ctime(&now));
         timestamp[strlen(timestamp)-1] = '\0';
 
+}
+
+int argnmatch(char *arg, char *match)
+{
+	return (strncmp(arg, match, strlen(match)) == 0);
 }
 
 char *colorname(int color)

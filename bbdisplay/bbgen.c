@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.117 2003-05-23 11:53:55 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.118 2003-05-23 15:32:54 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -99,32 +99,32 @@ int main(int argc, char *argv[])
 		if (strcmp(argv[i], "--nopurple") == 0) {
 			enable_purpleupd = 0;
 		}
-		else if (strncmp(argv[i], "--purplelifetime=", 17) == 0) {
+		else if (argnmatch(argv[i], "--purplelifetime=")) {
 			char *lp = strchr(argv[i], '=');
 
 			purpledelay = atoi(lp+1);
 			if (purpledelay < 0) purpledelay=0;
 		}
 
-		else if (strncmp(argv[i], "--ignorecolumns=", 16) == 0) {
+		else if (argnmatch(argv[i], "--ignorecolumns=")) {
 			char *lp = strchr(argv[i], '=');
 			ignorecolumns = malloc(strlen(lp)+2);
 			sprintf(ignorecolumns, ",%s,", (lp+1));
 		}
-		else if (strncmp(argv[i], "--includecolumns=", 17) == 0) {
+		else if (argnmatch(argv[i], "--includecolumns=")) {
 			char *lp = strchr(argv[i], '=');
 			includecolumns = malloc(strlen(lp)+2);
 			sprintf(includecolumns, ",%s,", (lp+1));
 		}
-		else if (strncmp(argv[i], "--doccgi=", 9) == 0) {
+		else if (argnmatch(argv[i], "--doccgi=")) {
 			char *lp = strchr(argv[i], '=');
 			documentationcgi = malcop(lp+1);
 		}
-		else if (strncmp(argv[i], "--htmlextension=", 16) == 0) {
+		else if (argnmatch(argv[i], "--htmlextension=")) {
 			char *lp = strchr(argv[i], '=');
 			htmlextension = malcop(lp+1);
 		}
-		else if (strncmp(argv[i], "--wml", 5) == 0) {
+		else if ((strcmp(argv[i], "--wml") == 0) || argnmatch(argv[i], "--wml=")) {
 			char *lp = strchr(argv[i], '=');
 
 			if (lp) {
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[i], "--pages-last") == 0) {
 			hostsbeforepages = 1;
 		}
-		else if (strncmp(argv[i], "--subpagecolumns=", 17) == 0) {
+		else if (argnmatch(argv[i], "--subpagecolumns=")) {
 			char *lp = strchr(argv[i], '=');
 
 			subpagecolumns = atoi(lp+1);
@@ -152,37 +152,37 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[i], "--sort-group-only-items") == 0) {
 			sort_grouponly_items = 1;
 		}
-		else if (strncmp(argv[i], "--page-title=", 13) == 0) {
+		else if (argnmatch(argv[i], "--page-title=")) {
 			char *lp = strchr(argv[i], '=');
 
 			defaultpagetitle = malcop(lp+1);
 		}
 
-		else if (strncmp(argv[i], "--noprop=", 9) == 0) {
+		else if (argnmatch(argv[i], "--noprop=")) {
 			char *lp = strchr(argv[i], '=');
 			nopropyellowdefault = malloc(strlen(lp)+2);
 			sprintf(nopropyellowdefault, ",%s,", (lp+1));
 			errprintf("--noprop is deprecated - use --nopropyellow instead\n");
 		}
-		else if (strncmp(argv[i], "--nopropyellow=", 15) == 0) {
+		else if (argnmatch(argv[i], "--nopropyellow=")) {
 			char *lp = strchr(argv[i], '=');
 			nopropyellowdefault = malloc(strlen(lp)+2);
 			sprintf(nopropyellowdefault, ",%s,", (lp+1));
 		}
-		else if (strncmp(argv[i], "--nopropred=", 12) == 0) {
+		else if (argnmatch(argv[i], "--nopropred=")) {
 			char *lp = strchr(argv[i], '=');
 			nopropreddefault = malloc(strlen(lp)+2);
 			sprintf(nopropreddefault, ",%s,", (lp+1));
 		}
 
-		else if (strncmp(argv[i], "--infoupdate=", 13) == 0) {
+		else if (argnmatch(argv[i], "--infoupdate=")) {
 			char *lp = strchr(argv[i], '=');
 
 			info_update_interval = atoi(lp+1);
 			if (info_update_interval <= 0) enable_infogen=0;
 			else enable_infogen = 1;
 		}
-		else if (strncmp(argv[i], "--info", 6) == 0) {
+		else if ((strcmp(argv[i], "--info") == 0) || argnmatch(argv[i], "--info=")) {
 			/* "--info" just enable info page generation */
 			/* "--info=xxx" does that, and redefines the info column name */
 			char *lp = strchr(argv[i], '=');
@@ -191,20 +191,20 @@ int main(int argc, char *argv[])
 			if (lp) infocol = malcop(lp+1);
 		}
 
-		else if (strncmp(argv[i], "--larrdupdate=", 14) == 0) {
+		else if (argnmatch(argv[i], "--larrdupdate=")) {
 			char *lp = strchr(argv[i], '=');
 
 			larrd_update_interval = atoi(lp+1);
 			if (larrd_update_interval <= 0) enable_larrdgen=0;
 			else enable_larrdgen = 1;
 		}
-		else if (strncmp(argv[i], "--larrdgraphs=", 14) == 0) {
+		else if (argnmatch(argv[i], "--larrdgraphs=")) {
 			char *lp = strchr(argv[i], '=');
 
 			enable_larrdgen=1;
 			if (lp) larrdgraphs_default = malcop(lp+1);
 		}
-		else if (strcmp(argv[i], "--larrd043") == 0) {
+		else if (argnmatch(argv[i], "--larrd043=") || (strcmp(argv[i], "--larrd043") == 0)) {
 			/* "--larrd" just enable larrd page generation */
 			/* "--larrd=xxx" does that, and redefines the larrd column name */
 			char *lp = strchr(argv[i], '=');
@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
 			if (lp) larrdcol = malcop(lp+1); else larrdcol = "trends";
 			larrd043 = 1;
 		}
-		else if (strncmp(argv[i], "--larrd", 7) == 0) {
+		else if (argnmatch(argv[i], "--larrd=") || (strcmp(argv[i], "--larrd") == 0)) {
 			/* "--larrd" just enable larrd page generation */
 			/* "--larrd=xxx" does that, and redefines the larrd column name */
 			char *lp = strchr(argv[i], '=');
@@ -221,11 +221,11 @@ int main(int argc, char *argv[])
 			enable_larrdgen=1;
 			if (lp) larrdcol = malcop(lp+1); else larrdcol = "larrd";
 		}
-		else if (strncmp(argv[i], "--rrddir=", 9) == 0) {
+		else if (argnmatch(argv[i], "--rrddir=")) {
 			char *lp = strchr(argv[i], '=');
 			rrddir = malcop(lp+1);
 		}
-		else if (strncmp(argv[i], "--log-nohost-rrds", 17) == 0) {
+		else if (strcmp(argv[i], "--log-nohost-rrds") == 0) {
 			log_nohost_rrds=1;
 		}
 
@@ -233,17 +233,17 @@ int main(int argc, char *argv[])
 			/* Deprecated */
 			errprintf("--bbpageONLY is deprecated - use --pageset=NAME to generate pagesets\n");
 		}
-		else if (strncmp(argv[i], "--pageset=", 10) == 0) {
+		else if (argnmatch(argv[i], "--pageset=")) {
 			char *lp = strchr(argv[i], '=');
 			pageset = malcop(lp+1);
 		}
-		else if (strncmp(argv[i], "--template=", 11) == 0) {
+		else if (argnmatch(argv[i], "--template=")) {
 			char *lp = strchr(argv[i], '=');
 			lp++;
 			select_headers_and_footers(lp);
 		}
 
-		else if (strcmp(argv[i], "--report") == 0) {
+		else if (argnmatch(argv[i], "--report=") || (strcmp(argv[i], "--report") == 0)) {
 			char *lp = strchr(argv[i], '=');
 			if (lp) {
 				egocolumn = malcop(lp+1);
@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[i], "--debug") == 0) {
 			debug = 1;
 		}
-		else if (strncmp(argv[i], "--version", 9) == 0) {
+		else if (strcmp(argv[i], "--version") == 0) {
 			printf("bbgen version %s\n", VERSION);
 			exit(0);
 		}
@@ -304,7 +304,7 @@ int main(int argc, char *argv[])
 			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbgen\n");
 			exit(0);
 		}
-		else if (strncmp(argv[i], "-", 1) == 0) {
+		else if (argnmatch(argv[i], "-")) {
 			errprintf("Unknown option : %s\n", argv[i]);
 		}
 

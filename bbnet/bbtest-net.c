@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.55 2003-05-23 12:09:59 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.56 2003-05-23 15:32:54 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -927,11 +927,11 @@ int main(int argc, char *argv[])
 	}
 
 	for (argi=1; (argi < argc); argi++) {
-		if      (strncmp(argv[argi], "--timeout=", 10) == 0) {
+		if      (argnmatch(argv[argi], "--timeout=")) {
 			char *p = strchr(argv[argi], '=');
 			p++; timeout = atoi(p);
 		}
-		else if (strncmp(argv[argi], "--dns=", 6) == 0) {
+		else if (argnmatch(argv[argi], "--dns=")) {
 			char *p = strchr(argv[argi], '=');
 			p++;
 			if (strcmp(p, "only") == 0)      dnsmethod = DNS_ONLY;
@@ -946,7 +946,7 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--timing") == 0) {
 			timing = 1;
 		}
-		else if (strcmp(argv[argi], "--report") == 0) {
+		else if (argnmatch(argv[argi], "--report=") || (strcmp(argv[argi], "--report") == 0)) {
 			char *p = strchr(argv[argi], '=');
 			if (p) {
 				egocolumn = malcop(p+1);
@@ -956,13 +956,13 @@ int main(int argc, char *argv[])
 		}
 
 		/* Options for TCP tests */
-		else if (strncmp(argv[argi], "--concurrency=", 14) == 0) {
+		else if (argnmatch(argv[argi], "--concurrency=")) {
 			char *p = strchr(argv[argi], '=');
 			p++; concurrency = atoi(p);
 		}
 
 		/* Options for PING tests */
-		else if (strncmp(argv[argi], "--ping", 6) == 0) {
+		else if (argnmatch(argv[argi], "--ping")) {
 			char *p = strchr(argv[argi], '=');
 			if (p) {
 				p++; pingcolumn = p;
@@ -974,36 +974,36 @@ int main(int argc, char *argv[])
 		}
 
 		/* Options for HTTP tests */
-		else if (strncmp(argv[argi], "--conntimeout=", 14) == 0) {
+		else if (argnmatch(argv[argi], "--conntimeout=")) {
 			char *p = strchr(argv[argi], '=');
 			p++; conntimeout = atoi(p);
 		}
-		else if (strncmp(argv[argi], "--content=", 10) == 0) {
+		else if (argnmatch(argv[argi], "--content=")) {
 			char *p = strchr(argv[argi], '=');
 			contenttestname = malcop(p+1);
 		}
-		else if (strncmp(argv[argi], "--ssl=", 6) == 0) {
+		else if (argnmatch(argv[argi], "--ssl=")) {
 			char *p = strchr(argv[argi], '=');
 			ssltestname = malcop(p+1);
 		}
-		else if (strncmp(argv[argi], "--no-ssl", 8) == 0) {
+		else if (strcmp(argv[argi], "--no-ssl") == 0) {
 			ssltestname = NULL;
 		}
-		else if (strncmp(argv[argi], "--sslwarn=", 10) == 0) {
+		else if (argnmatch(argv[argi], "--sslwarn=")) {
 			char *p = strchr(argv[argi], '=');
 			p++; sslwarndays = atoi(p);
 		}
-		else if (strncmp(argv[argi], "--sslalarm=", 11) == 0) {
+		else if (argnmatch(argv[argi], "--sslalarm=")) {
 			char *p = strchr(argv[argi], '=');
 			p++; sslalarmdays = atoi(p);
 		}
-		else if (strcmp(argv[argi], "--follow") == 0) {
+		else if (argnmatch(argv[argi], "--follow=") || (strcmp(argv[argi], "--follow") == 0)) {
 			char *p = strchr(argv[argi], '=');
 
 			if (p) followlocations = atoi(p+1);
 			else followlocations = 3;
 		}
-		else if (strncmp(argv[argi], "--log=", 6) == 0) {
+		else if (argnmatch(argv[argi], "--log=")) {
 			char *p = strchr(argv[argi], '=');
 
 			logfile = malcop(p+1);

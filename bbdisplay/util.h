@@ -34,6 +34,7 @@ extern char *stackfgets(char *buffer, unsigned int bufferlen, char *includetag);
 
 extern char *malcop(const char *s);
 extern void init_timestamp(void);
+extern int argnmatch(char *arg, char *match);
 
 extern char *colorname(int color);
 extern int parse_color(char *colortext);
