@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.2 2002-11-26 12:03:04 hstoerne Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.3 2003-01-04 22:44:44 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -91,8 +91,7 @@ void dumpstatelist(state_t *head)
 	state_t *s;
 
 	for (s=statehead; (s); s=s->next) {
-		printf("Host: %s, test:%s, state: %d, alert: %d, oldage: %d, age: %s\n",
-			s->hostname,
+		printf("test:%s, state: %d, alert: %d, oldage: %d, age: %s\n",
 			s->entry->column->name,
 			s->entry->color,
 			s->entry->alert,
@@ -102,12 +101,12 @@ void dumpstatelist(state_t *head)
 #endif
 }
 
-void dumpall(void)
+void dumpall(page_t *head)
 {
 #ifdef DEBUG
 	page_t *p, *q;
 
-	for (p=pagehead; p; p = p->next) {
+	for (p=head; p; p = p->next) {
 		printf("%sPage: %s, color: %d, title=%s\n", 
                        (strlen(p->name) == 0) ? "" : "    ", p->name, p->color, p->title);
 		for (q = p->subpages; (q); q = q->next) {
@@ -119,7 +118,7 @@ void dumpall(void)
 		dumpgroups(p->groups, "\t","\t    ");
 		dumphosts(p->hosts, "    ");
 	}
-	dumphosts(pagehead->hosts, "");
+	dumphosts(head->hosts, "");
 #endif
 }
 
