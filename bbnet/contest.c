@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.37 2003-09-28 10:30:16 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.38 2003-09-29 11:16:08 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -836,7 +836,7 @@ int tcp_got_expected(test_t *test)
 {
 	if (test == NULL) return 1;
 
-	if (test->banner && test->svcinfo->exptext) 
+	if (test->banner && test->svcinfo && test->svcinfo->exptext) 
 		return (strncmp(test->svcinfo->exptext, test->banner, strlen(test->svcinfo->exptext)) == 0);
 	else
 		return 1;
