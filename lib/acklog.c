@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: acklog.c,v 1.12 2005-01-25 14:41:08 henrik Exp $";
+static char rcsid[] = "$Id: acklog.c,v 1.13 2005-02-03 13:43:13 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -183,7 +183,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 
 		fprintf(output, "<BR><BR>\n");
 		fprintf(output, "<TABLE SUMMARY=\"%s\" BORDER=0>\n", title);
-		fprintf(output, "<TR BGCOLOR=\"333333\">\n");
+		fprintf(output, "<TR BGCOLOR=\"#333333\">\n");
 		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"teal\">%s</FONT></TD></TR>\n", title);
 
 		for (num = lastack; (ackintime_count); ackintime_count--, num = ((num == 0) ? (maxcount-1) : (num - 1)) ) {
@@ -211,7 +211,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 
 		fprintf(output, "<BR><BR>\n");
 		fprintf(output, "<TABLE SUMMARY=\"%s\" BORDER=0>\n", title);
-		fprintf(output, "<TR BGCOLOR=\"333333\">\n");
+		fprintf(output, "<TR BGCOLOR=\"#333333\">\n");
 		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"teal\">%s</FONT></TD></TR>\n", title);
 	}
 
