@@ -28,5 +28,14 @@ This has been especially important for sites doing many
 http checks, since these typically have much more traffic going on
 while testing than simple TCP services such as smtp.</p>
 
+<h3>Network tests fail on Solaris with "Failed to find enough entropy"</h3>
+<p>OpenSSL uses random data to initialise a key that is negotiated when
+a new SSL-encrypted connection is being setup. Solaris 8 and earlier
+doesn't have a standard way of getting random data, so OpenSSL cannot
+get all of the randomness it needs. Solaris <b>patch 112438</b> solves this
+by adding a /dev/random device that provides random data to applications.<br>
+Thanks to Scott Kelley for the pointer to the Solaris patch.</p>
+
 </body>
 </html>
+
