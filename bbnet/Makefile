@@ -74,7 +74,7 @@ install-ext: $(EXTENSIONS)
 	cp -fp $(EXTENSIONS) $(BBHOME)/ext/
 
 install-config:
-	cp -fp $(CONFIGFILES) $(BBHOME)/etc/
+	../build/install-nooverwrite.sh etc/ $(CONFIGFILES)
 
 install-man:
 	mkdir -p $(MANROOT)/man1 $(MANROOT)/man5
