@@ -35,8 +35,10 @@
  * as some of the routines we use are not available
  * in earlier versions.
  */
+#include <openssl/opensslv.h>
 #include <openssl/ssl.h>
 #include <openssl/rand.h>
+#include <openssl/err.h>
 
 #if !defined(OPENSSL_VERSION_NUMBER) || (OPENSSL_VERSION_NUMBER < 0x00905000L)
 #error SSL-protocol testing requires OpenSSL version 0.9.5 or later
@@ -53,6 +55,8 @@
 #endif
 
 #include "digest.h"
+
+extern char *ssl_library_version;
 
 typedef struct svcinfo_t {
 	char *svcname;

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.50 2004-08-22 08:51:27 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.51 2004-08-23 14:02:38 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -565,6 +565,9 @@ static int do_telnet_options(tcptest_t *item)
 }
 
 #if TCP_SSL <= 0
+
+char *ssl_library_version = NULL;
+
 /*
  * Define stub routines for plain socket operations without SSL
  */
@@ -590,6 +593,8 @@ static void socket_shutdown(tcptest_t *item)
 }
 
 #else
+
+char *ssl_library_version = OPENSSL_VERSION_TEXT;
 
 static char *bbgen_ASN1_UTCTIME(ASN1_UTCTIME *tm)
 {
