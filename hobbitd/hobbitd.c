@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.38 2004-10-25 20:50:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.39 2004-10-25 21:52:49 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -311,8 +311,8 @@ void get_hts(char *msg, char *sender,
 
 	p = strtok(firstline, " \t"); /* Keyword ... */
 	if (p) hosttest = strtok(NULL, " \t"); /* ... HOST.TEST combo ... */
-	if (hosttest) colstr = strtok(NULL, " \t"); /* ... and the color */
-	if ((hosttest == NULL) || (colstr == NULL)) goto done;
+	if (hosttest == NULL) goto done;
+	colstr = strtok(NULL, " \t"); /* ... and the color (if any) */
 
 	if (strncmp(msg, "summary", 7) == 0) {
 		/* Summary messages are handled specially */
@@ -405,6 +405,11 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	int msglen = strlen(msg);
 	int issummary = (strncmp(msg, "summary", 7) == 0);
 	int oldalertstatus, newalertstatus;
+
+	if (msg == NULL) {
+		errprintf("handle_status got a NULL message for %s.%s, sender %s\n", hostname, testname, sender);
+		return;
+	}
 
 	if (strncmp(msg, "status+", 7) == 0) {
 		validity = durationvalue(msg+7);
@@ -885,8 +890,19 @@ void do_message(conn_t *msg)
 		}
 	}
 	else if (strncmp(msg->buf, "data", 4) == 0) {
-		get_hts(msg->buf, sender, &h, &t, &log, &color, 1, 1);
-		if (h && t) handle_data(msg->buf, sender, h->hostname, t->testname);
+		char tok[MAXMSG];
+		char *hostname = NULL, *testname = NULL;
+		int maybedown;
+		if (sscanf(msg->buf, "data %s\n", tok) == 1) {
+			if ((testname = strrchr(tok, '.')) != NULL) {
+				char *p;
+				*testname = '\0'; 
+				testname++; 
+				p = tok; while ((p = strchr(p, ',')) != NULL) *p = '.';
+				hostname = knownhost(tok, sender, ghosthandling, &maybedown);
+			}
+			if (hostname && testname) handle_data(msg->buf, sender, hostname, testname);
+		}
 	}
 	else if (strncmp(msg->buf, "summary", 7) == 0) {
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 1, 1);
@@ -899,6 +915,9 @@ void do_message(conn_t *msg)
 		char *hostname;
 		int maybedown;
 		if (sscanf(msg->buf, "notes %s\n", tok) == 1) {
+			char *p;
+
+			p = tok; while ((p = strchr(p, ',')) != NULL) *p = '.';
 			hostname = knownhost(tok, sender, ghosthandling, &maybedown);
 			if (hostname) handle_notes(msg->buf, sender, hostname);
 		}
@@ -921,14 +940,21 @@ void do_message(conn_t *msg)
 	else if (strncmp(msg->buf, "query ", 6) == 0) {
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 0, 0);
 		if (log) {
-			unsigned char *eoln = strchr(log->message, '\n');
-
 			msg->doingwhat = RESPONDING;
-			if (eoln) *eoln = '\0';
-			strcpy(msg->buf, msg_data(log->message));
-			msg->bufp = msg->buf;
-			msg->buflen = strlen(msg->buf);
-			if (eoln) *eoln = '\n';
+			if (log->message) {
+				unsigned char *eoln;
+
+				eoln = strchr(log->message, '\n');
+				if (eoln) *eoln = '\0';
+				strcpy(msg->buf, msg_data(log->message));
+				msg->bufp = msg->buf;
+				msg->buflen = strlen(msg->buf);
+				if (eoln) *eoln = '\n';
+			}
+			else {
+				msg->buf = msg->bufp = strdup("");
+				msg->buflen = 0;
+			}
 		}
 	}
 	else if (strncmp(msg->buf, "bbgendlog ", 10) == 0) {
@@ -943,6 +969,11 @@ void do_message(conn_t *msg)
 			char *buf, *bufp;
 			int bufsz, buflen;
 			char *ackmsg = "", *dismsg = "";
+
+			if (log->message == NULL) {
+				errprintf("%s.%s has a NULL message\n", log->host->hostname, log->test->testname);
+				log->message = strdup("");
+			}
 
 			free(msg->buf);
 			bufsz = 1024 + strlen(log->message);
@@ -985,14 +1016,20 @@ void do_message(conn_t *msg)
 		int bufsz, buflen;
 		int n;
 
-		bufsz = 16384;
+		bufsz = MAXMSG;
 		bufp = buf = (char *)malloc(bufsz);
 		buflen = 0;
 
 		for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
 			for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
-				char *eoln = strchr(lwalk->message, '\n');
+				char *eoln;
+				
+				if (lwalk->message == NULL) {
+					errprintf("%s.%s has a NULL message\n", lwalk->host->hostname, lwalk->test->testname);
+					lwalk->message = strdup("");
+				}
 
+				eoln = strchr(lwalk->message, '\n');
 				if (eoln) *eoln = '\0';
 				if ((bufsz - buflen - strlen(lwalk->message)) < 1024) {
 					bufsz += 16384;
