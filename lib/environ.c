@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.4 2005-01-18 22:24:35 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.5 2005-01-19 21:46:58 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -24,6 +24,7 @@ const static struct {
 	char *name;
 	char *val;
 } hobbitenv[] = {
+	{ "HOBBITDREL", VERSION },
 	{ "BBSERVERROOT", "/usr/local/hobbit" },
 	{ "BBSERVERLOGS", "/var/log/hobbit" },
 	{ "BBSERVERHOSTNAME", "localhost" },
@@ -91,6 +92,7 @@ const static struct {
 	{ "FPING", "fping" },
 	{ "NTPDATE", "ntpdate" },
 	{ "TRACEROUTE", "traceroute" },
+	{ "RPCINFO", "rpcinfo" },
 	{ "BBROUTERTEXT", "router" },
 	{ "BBRRDS", "$BBVAR/rrd" },
 	{ "LARRDS", "cpu=la,disk,memory,conn=tcp,fping=tcp,ftp=tcp,ftps=tcp,ssh=tcp,ssh1=tcp,ssh2=tcp,telnet=tcp,telnets=tcp,smtp=tcp,smtps=tcp,pop-2=tcp,pop2=tcp,pop-3=tcp,pop3=tcp,pop=tcp,pop3s=tcp,imap=tcp,imap2=tcp,imap3=tcp,imap4=tcp,imaps=tcp,nntp=tcp,nntps=tcp,ldap=tcp,ldaps=tcp,rsync=tcp,bbd=tcp,clamd=tcp,oratns=tcp,qmtp=tcp,qmqp=tcp,http=tcp,dns=tcp,dig=tcp,time=ntpstat,vmstat,iostat,netstat,temperature,apache,bind,sendmail,nmailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd" },
@@ -115,7 +117,14 @@ const static struct {
 	{ "BBREPWARN", "97" },
 	{ "BBGENREPOPTS", "--recentgifs --subpagecolumns=2" },
 	{ "BBGENSNAPOPTS", "--recentgifs --subpagecolumns=2" },
+	{ "BBMKBBEXT", "" },
 	{ "BBHISTEXT", "" },
+	{ "BBSLEEP", "300" },
+	{ "MKBB2COLREPEAT", "0" },
+	{ "BBHTACCESS", "" },
+	{ "BBPAGEHTACCESS", "" },
+	{ "BBSUBPAGEHTACCESS", "" },
+	{ "BBNETSVCS", "smtp telnet ftp pop pop3 pop-3 ssh imap ssh1 ssh2 imap2 imap3 imap4 pop2 pop-2 nntp" },
 	{ NULL, NULL }
 };
 
@@ -194,15 +203,8 @@ void loadenv(char *envfile)
 		}
 		stackfclose(fd);
 
-		/* Always provide the HOBBITDREL variable */
-		if (xgetenv("HOBBITDREL") == NULL) {
-			sprintf(l, "HOBBITDREL=%s", VERSION);
-			oneenv = xstrdup(l);
-			putenv(oneenv);
-		}
-
 		/* If MACHINE is undefined, but MACHINEDOTS is there, create MACHINE  */
-		if (xgetenv("MACHINE") == NULL && xgetenv("MACHINEDOTS")) {
+		if (getenv("MACHINE") == NULL && xgetenv("MACHINEDOTS")) {
 			sprintf(l, "MACHINE=%s", xgetenv("MACHINEDOTS"));
 			p = l; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			oneenv = xstrdup(l);
