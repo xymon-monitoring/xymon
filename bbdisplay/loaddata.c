@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.33 2003-02-05 08:58:22 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.34 2003-02-06 22:24:15 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -277,7 +277,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		/* PURPLE test! */
 
 		char *p;
-		char *purplemsg = malloc(st.st_size+1024);
+		char *purplemsg = malloc(MAXMSG+1024);
 
 		*is_purple = 1;
 
@@ -289,6 +289,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 			/* Not in bb-hosts, or logfile too old */
 			newstate->entry->color = COL_PURPLE;
 		}
+		init_status(newstate->entry->color);
 
 		for (p = strchr(l, ' '); (p && (*p == ' ')); p++); /* Skip old color */
 
@@ -306,7 +307,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 			/* Avoid newlines piling up at end of logfile */
 			for (p = purplemsg + strlen(purplemsg) - 1; 
 				((p > purplemsg) && ((*p == '\n') || (*p == '\r')) ); p--) ;
-			if (p>purplemsg) *p = '\0';
+			if (p>purplemsg) *(p+1) = '\0';
 			strcat(purplemsg, "\n\n");
 		}
 		else {
@@ -328,8 +329,9 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 
 		fclose(fd);
 
-		combo_add(purplemsg);
+		addtostatus(purplemsg);
 		free(purplemsg);
+		finish_status();
 	}
 	else {
 		if ((strcmp(testname, larrdcol) != 0) && (strcmp(testname, infocol) != 0)) {
