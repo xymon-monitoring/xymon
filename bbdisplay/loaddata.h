@@ -22,8 +22,7 @@
 extern col_t *find_or_create_column(const char *testname);
 extern link_t *load_all_links(void);
 extern bbgen_page_t *load_bbhosts(void);
-extern state_t *load_state(void);
-extern dispsummary_t *load_summaries(void);
+extern state_t *load_state(dispsummary_t **sumhead);
 
 extern char	*nopropyellowdefault;
 extern char	*nopropreddefault;

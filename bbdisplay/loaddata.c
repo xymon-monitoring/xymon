@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.43 2003-03-01 22:29:36 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.44 2003-03-02 12:38:47 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -68,8 +68,18 @@ bbgen_page_t *init_page(const char *name, const char *title)
 {
 	bbgen_page_t *newpage = malloc(sizeof(bbgen_page_t));
 
-	newpage->name = malloc(strlen(name)+1); strcpy(newpage->name, name);
-	newpage->title = malloc(strlen(title)+1); strcpy(newpage->title, title);
+	dprintf("init_page(%s, %s)\n", textornull(name), textornull(title));
+
+	if (name) {
+		newpage->name = malloc(strlen(name)+1); strcpy(newpage->name, name);
+	}
+	else name = "";
+
+	if (title) {
+		newpage->title = malloc(strlen(title)+1); strcpy(newpage->title, title);
+	}else
+		title = "";
+
 	newpage->color = -1;
 	newpage->oldage = 1;
 	newpage->next = NULL;
@@ -84,8 +94,14 @@ group_t *init_group(const char *title, const char *onlycols)
 {
 	group_t *newgroup = malloc(sizeof(group_t));
 
-	newgroup->title = malloc(strlen(title)+1); strcpy(newgroup->title, title);
-	if (onlycols && (strlen(onlycols))) {
+	dprintf("init_group(%s, %s)\n", textornull(title), textornull(onlycols));
+
+	if (title) {
+		newgroup->title = malloc(strlen(title)+1); strcpy(newgroup->title, title);
+	}
+	else title = "";
+
+	if (onlycols) {
 		newgroup->onlycols = malloc(strlen(onlycols)+3); /* Add a '|' at start and end */
 		sprintf(newgroup->onlycols, "|%s|", onlycols);
 	}
@@ -102,7 +118,8 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 {
 	host_t 		*newhost = malloc(sizeof(host_t));
 	hostlist_t	*newlist = malloc(sizeof(hostlist_t));
-	char *p;
+
+	dprintf("init_host(%s, ...)\n", textornull(hostname));
 
 	newhost->hostname = malloc(strlen(hostname)+1); strcpy(newhost->hostname, hostname);
 	sprintf(newhost->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
@@ -112,6 +129,7 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	newhost->oldage = 1;
 	newhost->dialup = dialup;
 	if (alerts) {
+		char *p;
 		p = skipword(alerts); if (*p) *p = '\0'; else p = NULL;
 
 		newhost->alerts = malloc(strlen(alerts)+3);
@@ -122,6 +140,7 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 		newhost->alerts = NULL;
 	}
 	if (nopropyellowtests) {
+		char *p;
 		p = skipword(nopropyellowtests); if (*p) *p = '\0'; else p = NULL;
 		newhost->nopropyellowtests = malloc(strlen(nopropyellowtests)+3);
 		sprintf(newhost->nopropyellowtests, ",%s,", nopropyellowtests);
@@ -131,6 +150,7 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 		newhost->nopropyellowtests = nopropyellowdefault;
 	}
 	if (nopropredtests) {
+		char *p;
 		p = skipword(nopropredtests); if (*p) *p = '\0'; else p = NULL;
 		newhost->nopropredtests = malloc(strlen(nopropredtests)+3);
 		sprintf(newhost->nopropredtests, ",%s,", nopropredtests);
@@ -139,7 +159,10 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	else {
 		newhost->nopropredtests = nopropreddefault;
 	}
-	newhost->rawentry = malloc(strlen(tags)+1); strcpy(newhost->rawentry, tags);
+	if (tags) {
+		newhost->rawentry = malloc(strlen(tags)+1); strcpy(newhost->rawentry, tags);
+	}
+	else tags = "";
 	newhost->parent = newhost->next = NULL;
 	newhost->rrds = NULL;
 
@@ -154,6 +177,8 @@ link_t *init_link(char *filename, const char *urlprefix)
 {
 	char *p;
 	link_t *newlink = NULL;
+
+	dprintf("init_link(%s, %s)\n", textornull(filename), textornull(urlprefix));
 
 	newlink = malloc(sizeof(link_t));
 	newlink->filename = malloc(strlen(filename)+1); strcpy(newlink->filename, filename);
@@ -181,6 +206,8 @@ link_t *init_link(char *filename, const char *urlprefix)
 col_t *find_or_create_column(const char *testname)
 {
 	col_t	*newcol;
+
+	dprintf("find_or_create_column(%s)\n", textornull(testname));
 
 	for (newcol = colhead; (newcol && (strcmp(testname, newcol->name) != 0)); newcol = newcol->next);
 	if (newcol == NULL) {
@@ -214,10 +241,20 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	struct stat 	log_st;
 	time_t		now = time(NULL);
 
+	dprintf("init_state(%s, %d, ...)\n", textornull(filename), dopurple);
+
 	*is_purple = 0;
 
-	/* Ignore summary files and dot-files */
+	/* Ignore summary files and dot-files (this catches "." and ".." also) */
 	if ( (strncmp(filename, "summary.", 8) == 0) || (filename[0] == '.')) {
+		return NULL;
+	}
+
+	/* Check that we can access this file */
+	if ( (stat(filename, &log_st) == -1)       || 
+	     (!S_ISREG(log_st.st_mode))            ||
+	     ((fd = fopen(filename, "r")) == NULL)   ) {
+		printf("Weird file BBLOGS/%s skipped\n", filename);
 		return NULL;
 	}
 
@@ -240,6 +277,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	}
 	else {
 		free(hostname);
+		fclose(fd);
 		return NULL;
 	}
 
@@ -247,10 +285,10 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	if (ignorecolumns && strstr(ignorecolumns, l)) {
 		free(hostname);
 		free(testname);
+		fclose(fd);
 		return NULL;	/* Ignore this type of test */
 	}
 
-	stat(filename, &log_st);
 	newstate = malloc(sizeof(state_t));
 	newstate->entry = malloc(sizeof(entry_t));
 	newstate->next = NULL;
@@ -262,12 +300,11 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	newstate->entry->propagate = 1;
 
 	host = find_host(hostname);
+	if (host == NULL) dprintf("   hostname %s not found\n", hostname);
 	newstate->entry->alert = checkalert(host, testname);
 	newstate->entry->sumurl = NULL;
 
-	fd = fopen(filename, "r");
-
-	if (fd && fgets(l, sizeof(l), fd)) {
+	if (fgets(l, sizeof(l), fd)) {
 		if (strncmp(l, "green ", 6) == 0) {
 			newstate->entry->color = COL_GREEN;
 		}
@@ -321,15 +358,18 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		/* Send a message to update status to purple */
 
 		char *p;
-		char *purplemsg = malloc(MAXMSG+1024);
+		char *purplemsg;
+		int bufleft = log_st.st_size + 1024;
 
 		init_status(newstate->entry->color);
 
 		for (p = strchr(l, ' '); (p && (*p == ' ')); p++); /* Skip old color */
 
+		purplemsg = malloc(bufleft);
 		sprintf(purplemsg, "status+%d %s.%s %s %s", purpledelay,
 			commafy(hostname), testname,
                         colorname(newstate->entry->color), (p ? p : ""));
+		bufleft -= strlen(purplemsg);
 
 		if (host) {
 			while (fgets(l, sizeof(l), fd)) {
@@ -337,12 +377,12 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 					char *p;
 
 					p = strchr(l, '\n'); if (p) *p = '\0';
-					strcpy(newstate->entry->age, l+20);
+					strncat(newstate->entry->age, l+20, sizeof(newstate->entry->age)-1);
 					newstate->entry->oldage = (strstr(l+20, "days") != NULL);
 				}
 				else if ( (strncmp(l, "Encrypted status message", 24) != 0)  &&
 				          (strncmp(l, "Status message received from", 28) != 0) ) {
-					strcat(purplemsg, l);
+					strncat(purplemsg, l, bufleft);
 				}
 			}
 			/* Avoid newlines piling up at end of logfile */
@@ -367,8 +407,6 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 				getenv("BBLOGS"), getenv("BBHIST"), getenv("BBHISTLOGS"));
 			strcat(purplemsg, l);
 		}
-
-		fclose(fd);
 
 		addtostatus(purplemsg);
 		free(purplemsg);
@@ -400,7 +438,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 					char *p;
 
 					p = strchr(l, '\n'); if (p) *p = '\0';
-					strcpy(newstate->entry->age, l+20);
+					strncat(newstate->entry->age, l+20, sizeof(newstate->entry->age)-1);
 					newstate->entry->oldage = (strstr(l+20, "days") != NULL);
 				}
 			}
@@ -408,8 +446,6 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 				newstate->entry->oldage = 1;
 			}
 		}
-
-		fclose(fd);
 	}
 
 
@@ -436,6 +472,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 
 	free(hostname);
 	free(testname);
+	fclose(fd);
 
 	return newstate;
 }
@@ -443,6 +480,12 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 summary_t *init_summary(char *name, char *receiver, char *url)
 {
 	summary_t *newsum;
+
+	dprintf("init_summary(%s, %s, %s)\n", textornull(name), textornull(receiver), textornull(url));
+
+	/* Sanity check */
+	if ((name == NULL) || (receiver == NULL) || (url == NULL)) 
+		return NULL;
 
 	newsum = malloc(sizeof(summary_t));
 	newsum->name = malloc(strlen(name)+1); strcpy(newsum->name, name);
@@ -457,24 +500,31 @@ dispsummary_t *init_displaysummary(char *fn)
 {
 	FILE *fd;
 	char sumfn[MAX_PATH];
-	char color[20];
-	dispsummary_t *newsum = NULL;
-	char *p, *rowcol;
 	struct stat st;
+	char l[MAX_LINE_LEN];
+	dispsummary_t *newsum = NULL;
+
+	dprintf("init_displaysummary(%s)\n", textornull(fn));
 
 	sprintf(sumfn, "%s/%s", getenv("BBLOGS"), fn);
-	stat(sumfn, &st);
-	if (st.st_mtime < time(NULL)) {
-		/* Drop old summaries */
-		unlink(sumfn);
+	/* Check that we can access this file */
+	if ( (stat(sumfn, &st) == -1)          || 
+	     (!S_ISREG(st.st_mode))            ||     /* Not a regular file */
+	     (st.st_mtime < time(NULL))        ||     /* stale summary file */
+	     ((fd = fopen(sumfn, "r")) == NULL)   ) {
+		printf("Weird summary file BBLOGS/%s skipped\n", fn);
 		return NULL;
 	}
 
-	fd = fopen(sumfn, "r");
-	if (fd) {
+	if (fgets(l, sizeof(l), fd)) {
+		char *p, *rowcol;
+		char *color = malloc(strlen(l));
+
 		newsum = malloc(sizeof(dispsummary_t));
-		newsum->url = malloc(MAX_LINE_LEN);
-		fscanf(fd, "%s %s", color, newsum->url);
+		newsum->url = malloc(strlen(l));
+
+		sscanf(l, "%s %s", color, newsum->url);
+
 		if (strncmp(color, "green", 5) == 0) {
 			newsum->color = COL_GREEN;
 		}
@@ -503,10 +553,17 @@ dispsummary_t *init_displaysummary(char *fn)
 		newsum->row = malloc(strlen(rowcol)+1);
 		sscanf(rowcol, "%s %s", newsum->row, newsum->column);
 		newsum->next = NULL;
-		fclose(fd);
+
+		free(color);
 		free(rowcol);
 	}
+	else {
+		printf("Read error reading from file %s\n", sumfn);
+		newsum = NULL;
+	}
 
+
+	fclose(fd);
 	return newsum;
 }
 
@@ -514,6 +571,8 @@ void getnamelink(char *l, char **name, char **link)
 {
 	/* "page NAME title-or-link" splitup */
 	unsigned char *p;
+
+	dprintf("getnamelink(%s, ...)\n", textornull(l));
 
 	*name = "";
 	*link = "";
@@ -534,6 +593,8 @@ void getgrouptitle(char *l, char **title, char **onlycols)
 {
 	*title = "";
 	*onlycols = NULL;
+
+	dprintf("getgrouptitle(%s, ...)\n", textornull(l));
 
 	if (strncmp(l, "group-only", 10) == 0) {
 		unsigned char *p;
@@ -558,11 +619,13 @@ link_t *load_links(const char *directory, const char *urlprefix)
 	char		fn[MAX_PATH];
 	link_t		*curlink, *toplink, *newlink;
 
+	dprintf("load_links(%s, %s)\n", textornull(directory), textornull(urlprefix));
+
 	toplink = curlink = NULL;
 	bblinks = opendir(directory);
 	if (!bblinks) {
-		perror("Cannot read directory");
-		exit(1);
+		printf("Cannot read links in directory %s\n", directory);
+		return NULL;
 	}
 
 	while ((d = readdir(bblinks))) {
@@ -587,6 +650,8 @@ link_t *load_all_links(void)
 	link_t *l, *head1, *head2;
 	char dirname[MAX_PATH];
 	char *p;
+
+	dprintf("load_all_links()\n");
 
 	strcpy(dirname, getenv("BBNOTES"));
 	head1 = load_links(dirname, "notes");
@@ -621,6 +686,7 @@ bbgen_page_t *load_bbhosts(void)
 	int	ip1, ip2, ip3, ip4;
 	char	*p;
 
+	dprintf("load_bbhosts()\n");
 
 	bbhosts = fopen(getenv("BBHOSTS"), "r");
 	if (bbhosts == NULL) {
@@ -635,7 +701,15 @@ bbgen_page_t *load_bbhosts(void)
 
 	while (fgets(l, sizeof(l), bbhosts)) {
 		p = strchr(l, '\n'); 
-		if (p) *p = '\0'; else printf("Warning: Too long lines in bb-hosts!\n");
+		if (p) {
+			*p = '\0'; 
+		}
+		else {
+			printf("Warning: Lines in bb-hosts too long or has no newline: '%s'\n", l);
+			fflush(stdout);
+		}
+
+		dprintf("load_bbhosts: -- got line '%s'\n", l);
 
 		if ((l[0] == '#') || (strlen(l) == 0)) {
 			/* Do nothing - it's a comment */
@@ -744,16 +818,19 @@ bbgen_page_t *load_bbhosts(void)
 }
 
 
-state_t *load_state(void)
+state_t *load_state(dispsummary_t **sumhead)
 {
 	DIR		*bblogs;
 	struct dirent 	*d;
 	char		fn[MAX_PATH];
 	state_t		*newstate, *topstate;
+	dispsummary_t	*newsum, *topsum;
 	int		dopurple;
 	struct stat	st;
 	int		purplecount = 0;
 	int		is_purple;
+
+	dprintf("load_state()\n");
 
 	chdir(getenv("BBLOGS"));
 	if (stat(".bbstartup", &st) == -1) {
@@ -776,6 +853,8 @@ state_t *load_state(void)
 	if (dopurple) combo_start();
 
 	topstate = NULL;
+	topsum = NULL;
+
 	bblogs = opendir(getenv("BBLOGS"));
 	if (!bblogs) {
 		perror("No logs!");
@@ -784,19 +863,29 @@ state_t *load_state(void)
 
 	while ((d = readdir(bblogs))) {
 		strcpy(fn, d->d_name);
-		if (fn[0] != '.') {
+
+		if (strncmp(fn, "summary.", 8) == 0) {
+			newsum = init_displaysummary(fn);
+			if (newsum) {
+				newsum->next = topsum;
+				topsum = newsum;
+			}
+		}
+		else {
+			is_purple = 0;
+
 			newstate = init_state(fn, dopurple, &is_purple);
 			if (newstate) {
 				newstate->next = topstate;
 				topstate = newstate;
 			}
-		}
 
-		if (dopurple) {
-			if (is_purple) purplecount++;
-			if (purplecount > MAX_PURPLE_PER_RUN) {
-				dopurple = 0;
-				printf("%s : Too many purple updates - dropped\n", timestamp);
+			if (dopurple) {
+				if (is_purple) purplecount++;
+				if (purplecount > MAX_PURPLE_PER_RUN) {
+					dopurple = 0;
+					printf("%s : Too many purple updates - dropped\n", timestamp);
+				}
 			}
 		}
 	}
@@ -805,37 +894,7 @@ state_t *load_state(void)
 
 	if (dopurple) combo_end();
 
+	*sumhead = topsum;
 	return topstate;
-}
-
-dispsummary_t *load_summaries(void)
-{
-	DIR		*bblogs;
-	struct dirent 	*d;
-	char		fn[MAX_PATH];
-	dispsummary_t	*newsum, *head;
-
-	head = NULL;
-
-	bblogs = opendir(getenv("BBLOGS"));
-	if (!bblogs) {
-		perror("No logs!");
-		exit(1);
-	}
-
-	while ((d = readdir(bblogs))) {
-		strcpy(fn, d->d_name);
-		if (strncmp(fn, "summary.", 8) == 0) {
-			newsum = init_displaysummary(fn);
-			if (newsum) {
-				newsum->next = head;
-				head = newsum;
-			}
-		}
-	}
-
-	closedir(bblogs);
-
-	return head;
 }
 

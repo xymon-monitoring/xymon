@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.78 2003-03-01 22:29:36 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.79 2003-03-02 12:38:47 henrik Exp $";
 
 #define VERSION "1.8"
 
@@ -276,7 +276,7 @@ int main(int argc, char *argv[])
 		if (pagegenstat) pagegenstat = generate_info(infocol);
 	}
 
-	statehead = load_state();
+	statehead = load_state(&dispsums);
 
 	/* Calculate colors of hosts and pages */
 	calc_hostcolors(hosthead);
@@ -292,9 +292,6 @@ int main(int argc, char *argv[])
 
 	/* Send summary notices */
 	if (!bbpageONLY) send_summaries(sumhead);
-
-	/* Load displayed summaries */
-	dispsums = load_summaries();
 
 	/* Recalc topmost page (background color for bb.html) */
 	for (s=dispsums; (s); s = s->next) {
