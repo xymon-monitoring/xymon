@@ -1,7 +1,7 @@
 .TH BBPROXY 1 "Version 3.4: 21 nov 2004" "bbgen toolkit"
 
 .SH NAME
-bbproxy \- Big Brother message proxy
+bbproxy \- Hobbit / Big Brother message proxy
 .SH SYNOPSIS
 .B "bbproxy [options] --bbdisplay=$BBDISP"
 
@@ -44,6 +44,10 @@ causes "status" messages to be delayed for up to 0.25 seconds
 before being sent off to the BBDISPLAY server.
 
 .SH OPTIONS
+.IP "--hobbitd"
+Enable this option when the destination server is a Hobbit server,
+not the Big Brother bbd daemon.
+
 .IP "--bbdisplay=SERVERIP[:PORT][,SERVER2IP[:PORT]]"
 Specifies the IP-address and optional portnumber where incoming
 messages are forwarded to. The default portnumber is 1984, the
@@ -232,5 +236,5 @@ The messages/second counter is always 0 when the proxy
 status message is forced with SIGUSR1.
 
 .SH "SEE ALSO"
-bb(1), bbd(1), bbgen-intro(7)
+bb(1), bbd(1), hobbit(7)
 

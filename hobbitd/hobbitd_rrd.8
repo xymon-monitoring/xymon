@@ -1,6 +1,6 @@
 .TH HOBBITD_LARRD 8 "Version 3.4: 21 nov 2004" "bbgen toolkit"
 .SH NAME
-hobbitd_larrd \- hobbitd worker module for updating LARRD graphs
+hobbitd_larrd \- hobbitd worker module for updating Hobbit RRD files
 .SH SYNOPSIS
 .B "hobbitd_channel --channel=status hobbitd_larrd [options]"
 .br
@@ -17,8 +17,8 @@ the need to store all status- and data-messages to disk, which is
 necessary with the standard LARRD setup.
 
 LARRD can send data to Big Brother using both status- and data-
-messages. So You will probably need to run this module twice, once
-for the "status" channel and once for the "data" channel.
+messages. So you will normally run two instances of this module, 
+once for the "status" channel and once for the "data" channel.
 
 .SH OPTIONS
 .IP "--debug"
@@ -26,13 +26,19 @@ Enable debugging output.
 
 .IP "--rrddir=DIRECTORY"
 Defines the directory where the LARRD RRD-files are stored. hobbitd_larrd
-will use the location pointed to by the BBRRDS environment is this
+will use the location pointed to by the BBRRDS environment if this
 option is not present.
 
 .SH ENVIRONMENT
+.IP LARRDS
+Defines the mapping between a status-log columnname and the corresponding
+RRD database format. This is normally defined in the 
+.I hobbitserver.cfg(5)
+file.
+
 .IP BBRRDS
 Default directory where LARRD RRD files are stored.
 
 .SH "SEE ALSO"
-hobbitd_channel(8), bbgen-intro(7), hobbitd(8)
+hobbitd_channel(8), hobbitd(8), hobbitserver.cfg(5), hobbit(7)
 

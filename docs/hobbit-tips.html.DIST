@@ -1,14 +1,50 @@
 <html>
 <head>
-	<title>Using Hobbit</title>
+	<title>Hobbit Tips and Tricks</title>
 </head>
 <body>
-<h1>Using Hobbit</h1>
+<h1>Hobbit Tips and Tricks</h1>
 
 <p>Here you will find out how to do some of the more common things
-with Hobbit.</p>
+with Hobbit. If you think of something else that should go here,
+please send a note to henrik-bb@hswn.dk and I'll get it included in
+a later version.</p>
 
-<h3>Renaming and deleting rows (hosts) and columns (tests)</h3>
+<p>If you have a specific problem with something that is not working,
+first check the <a href="known-issues.html">list of known issues</a>.
+If you don't find the answer there, post a message to the Big Brother
+mailing list at bb@bb4.com - I try to answer questions about Hobbit
+in that forum.</p>
+
+
+<h4>My client-side tests dont show up on the webpages</h4>
+<p>The two most probable causes for this are:
+<ul>
+	<li>The client is using another hostname than what is in the bb-hosts file.<br>
+	Hobbit only cares about the hosts that are in the bb-hosts file, and
+	discards status-reports from unknown hosts. If you check the "hobbitd"
+	column on the webserver display for the Hobbit server, you will see 
+	a report about these unknown hosts.<br>
+	Either reconfigure the client to use the same hostname as is in the
+	bb-hosts file, or add a <tt>CLIENT:clienthostname</tt> tag in the
+	bb-hosts file so Hobbit knows what host matches the client hostname.</li>
+
+	<li>A firewall is blocking the client access to the Hobbit server.<br>
+	Clients must be able to connect to the Hobbit server on TCP port 1984
+	to send their status reports. If this port is blocked by a firewall,
+	client status reports will not show up.<br>
+	If possible, open up the firewall to allow this access. Alternatively,
+	you may setup a proxy using the <em>bbproxy</em> tool (part of Hobbit)
+	to forward status messages from a protected network to the Hobbit
+	server.<br>
+	Other methods are also possible, e.g. <em>bbfetch</em> (available from
+	the <a href="http://www.deadcat.net/">www.deadcat.net</a> archive.
+</ul>
+
+<h4>My silly clients are using a hostname different from the one in bb-hosts</h4>
+<p>Add a <tt>CLIENT:clienthostname</tt> tag to the host entry in the bb-hosts file,
+or re-configure the client to use the proper hostname.</p>
+
 
 <h4>Where are the bbrm and bbmv commands from Big Brother ?</h4>
 <p>They have been integrated into the Hobbit network daemon. See
@@ -41,7 +77,6 @@ Then to move your historical data over to the new name, run
 </pre></p>
 
 
-<h3>Tweaking the configuration</h3>
 <h4>I need the web-pages to update more frequently</h4>
 <p>The ~/server/etc/hobbitlaunch.cfg defines the update
 interval for all of the Hobbit programs. The default is for

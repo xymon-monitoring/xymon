@@ -1,12 +1,13 @@
 .TH BBRETEST-NET.SH 1 "Version 3.4: 21 nov 2004" "bbgen toolkit"
 .SH NAME
-bbretest-net.sh \- Big Brother network re-test tool
+bbretest-net.sh \- Hobbit / Big Brother network re-test tool
 .SH SYNOPSIS
 .B "bbretest-net.sh"
 
 .SH DESCRIPTION
 .I bbretest-net.sh
-is a BB extension script that runs on the BBNET server. 
+is an extension script for Hobbit that runs on the network
+test server, or for Big Brother where it runs on the BBNET server. 
 It picks up the failing network tests executed by the 
 .I bbtest-net(1)
 program, and repeats these tests with a faster test cycle
@@ -24,9 +25,16 @@ bbtest-net.
 
 
 .SH INSTALLATION
-The bbretest-net.sh script must be listed in your
+For Hobbit, add the script to the
+.I ~hobbit/server/etc/hobbitlaunch.cfg
+file. It is enabled by default on Hobbit installations,
+so you normally do not need to do anything to run it.
+You do not need to restart Hobbit after changing the
+configuration.
+
+For Big Brother, the bbretest-net.sh script must be listed in your
 .I $BBHOME/etc/bb-bbexttab
-file for the BBNET server.  E.g. if you run network 
+file on the BBNET server.  E.g. if you run network 
 tests from the "bbnet.foo.com" server, your bb-bbexttab
 entry would be
 
@@ -37,14 +45,11 @@ this change.
 
 
 .SH FILES
-.IP $BBHOME/etc/bb-bbexttab
-Big Brother extension-scripts file. bbretest-net.sh must be added to this file
-on the BBNET server so it will run as a Big Brother extension script.
 .IP $BBTMP/TESTNAME.LOCATION.status
 Temporary status file managed by bbtest-net with status of tests that have currently failed.
 .IP $BBTMP/frequenttests.LOCATION
 Temporary file managed by bbtest-net with the hostnames that bbretest-net.sh should test.
 
 .SH "SEE ALSO"
-bbtest-net(1)
+bbtest-net(1), hobbit(7), hobbitlaunch.cfg(5)
 

@@ -94,6 +94,54 @@ deal with how the uptime percentage is calculated for availability reports, and
 some keywords - like the <em>bbd</em> and <em>http://...</em> mentioned above -
 describe the network services that are tested for this host.</p>
 
+<h3>Monitoring network services</h3>
+<p>As shown in the example above, adding a network test for a host is as simple as
+putting the right keyword into the bb-hosts file. The default set of network tests
+configured in Hobbit 4.0 is as follows:<br>
+<table align="center" width="80%">
+	<tr><th align="left" valign="top">conn</th><td>Simple ping test. Enabled by default, you can disable it by putting "noconn" into bb-hosts.</td></tr>
+	<tr><th align="left" valign="top">http</th><td>Web-server test. Enter the URL to request from the webserver.</td></tr>
+	<tr><th align="left" valign="top">ftp</th><td>FTP server test.</td></tr>
+	<tr><th align="left" valign="top">ssh</th><td>SSH (Secure Shell) server test. Supports ssh1 and ssh2.</td></tr>
+	<tr><th align="left" valign="top">telnet</th><td>Telnet server test.</td></tr>
+	<tr><th align="left" valign="top">smtp</th><td>SMTP (Mail server) test.</td></tr>
+	<tr><th align="left" valign="top">pop3</th><td>POP-3 test.</td></tr>
+	<tr><th align="left" valign="top">imap</th><td>IMAP test. IMAP version 2 and 4 are supported, for version 3 use "imap3".</td></tr>
+	<tr><th align="left" valign="top">nntp</th><td>NNTP (News) server test.</td></tr>
+	<tr><th align="left" valign="top">ldap</th><td>LDAP (Directory server) test. Enter the full LDAP URI if Hobbit is configured with LDAP support.</td></tr>
+	<tr><th align="left" valign="top">rsync</th><td>rsync server test</td></tr>
+	<tr><th align="left" valign="top">bbd</th><td>Big Brother daemon test. Also works with the Hobbit network daemon.</td></tr>
+	<tr><th align="left" valign="top">clamd</th><td>CLAM anti-virus daemon test.</td></tr>
+	<tr><th align="left" valign="top">oratns</th><td>Oracle TNS listener test. Will attempt to do an oratns "ping".</td></tr>
+	<tr><th align="left" valign="top">qmtp</th><td>QMTP server test. For qmail's qmtpd service.</td></tr>
+	<tr><th align="left" valign="top">qmqp</th><td>QMQP server test. For qmail's qmqpd service.</td></tr>
+</table></p>
+
+<p>If Hobbit is built with OpenSSL support, the following SSL-enabled services can also be checked:<br>
+<table align="center" width="80%">
+	<tr><th align="left" valign="top">https</th><td>Web-server test. Enter the URL to request from the webserver.</td></tr>
+	<tr><th align="left" valign="top">ftps</th><td>Secure FTP server test.</td></tr>
+	<tr><th align="left" valign="top">telnets</th><td>Secure Telnet server test.</td></tr>
+	<tr><th align="left" valign="top">smtps</th><td>Secure SMTP server test.</td></tr>
+	<tr><th align="left" valign="top">pop3s</th><td>Secure POP-3 server test.</td></tr>
+	<tr><th align="left" valign="top">imaps</th><td>Secure IMAP server test.</td></tr>
+	<tr><th align="left" valign="top">nntps</th><td>Secure NNTP (News) server test.</td></tr>
+	<tr><th align="left" valign="top">ldaps</th><td>Secure LDAP (Directory) server test. Enter the full LDAP URI if Hobbit is configured with LDAP support. Note that this is only possible when Hobbit is built with the OpenLDAP v2.x client library, and only for LDAP servers that support the LDAP version 3 and the "starttls" command. LAP server that use the older non-standard method of tunnelling LDAP through SSL on port 636 will not work.</td></tr>
+</table></p>
+
+<h3>Monitoring host-specific data with clients</h3>
+<p>You can install an agent on each of the hosts you monitor, to check 
+host-specific data such as CPU utilisation, disk usage, local logfiles, 
+if certain processes and services are running etc. Hobbit does not 
+include these agents, but since Big Brother and Hobbit are compatible,
+you can use the Big Brother agents even though you are running Hobbit
+on the server.</p>
+
+<p>The Big Brother agents are available for download from the Big Brother
+site <a href="http://bb4.org/">bb4.org</a>. Note that depending on what
+the purpose is of your monitoring, you may have to buy a license to use
+the client software, so check the Big Brother license terms.</p>
+
 </body>
 </html>
 

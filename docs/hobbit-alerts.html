@@ -63,7 +63,7 @@ fills up during the night.</p>
 
 <p>The full set of keywords and their meaning is as follows:<br>
 <table width="80%" align="center">
-	<tr><th align="left" valign="top">PAGE</th><td>rule matching an alert by the name of the page in BB. This is the name following the "page", "subpage" or "subparent" keyword in the bb-hosts file.</td></tr>
+	<tr><th align="left" valign="top">PAGE</th><td>rule matching an alert by the name of the page the host is displayed on. This is the name following the "page", "subpage" or "subparent" keyword in the bb-hosts file.</td></tr>
 	<tr><th align="left" valign="top">EXPAGE</th><td>rule excluding an alert if the pagename matches.</td></tr>
 	<tr><th align="left" valign="top">HOST</th><td>rule matching an alert by the hostname.</td></tr>
 	<tr><th align="left" valign="top">EXHOST</th><td>rule excluding an alert by matching the hostname.</td></tr>
@@ -145,7 +145,7 @@ paging scripts, so you should be able to re-use any paging scripts written for B
 with Hobbit.</p>
 
 <h3>Save on the typing - use macros</h3>
-<p>If you have a long list of hosts or e-mail adresses that you want to use several times throughout the
+<p>Say you have a long list of hosts or e-mail adresses that you want to use several times throughout the
 hobbit-alerts.cfg file. Do you have to write the full list every time ? No:<br>
 <pre>
 	$WEBHOSTS=%(www|intranet|support|mail).foo.com 
@@ -156,7 +156,7 @@ hobbit-alerts.cfg file. Do you have to write the full list every time ? No:<br>
 	HOST=$WEBHOSTS SERVICE=cpu,disk,memory
 		MAIL unixsupport@foo.com
 </pre><br>
-The first line defines a <em>$WEBHOSTS</em> as a <em>macro</em>. So everywhere else in the file,
+The first line defines <em>$WEBHOSTS</em> as a <em>macro</em>. So everywhere else in the file,
 &quot;$WEBHOSTS&quot; is automatically replaced with &quot;&#37;(www|intranet|support|mail).foo.com&quot;
 before the rule is processed. The same method can be used for recipients, e.g. e-mail adresses.
 In fact, you can put an entire line into a macro:<br>
@@ -166,11 +166,12 @@ In fact, you can put an entire line into a macro:<br>
 	HOST=%(www|intranet|support|mail).foo.com 
 		$UNIXSUPPORT
 
-	HOST=dns.foo.com
+	HOST=dns.bar.com
 		$UNIXSUPPORT
 </pre>
 would be a perfectly valid way of specifying that <tt>unixsupport@foo.com</tt> gets 
-e-mailed about cpu-, disk- or memory-problems on the web- and dns-servers.</p>
+e-mailed about cpu-, disk- or memory-problems on the foo.com web-servers, and the
+bar.com dns-servers.</p>
 
 <p>Note: Nesting macros is possible, except that you must define a macro before
 you use it in a subsequent macro definition.</p>

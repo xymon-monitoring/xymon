@@ -1,6 +1,6 @@
 .TH BBTEST-NET 1 "Version 3.4: 21 nov 2004" "bbgen toolkit"
 .SH NAME
-bbtest-net \- Big Brother network test engine
+bbtest-net \- Hobbit / Big Brother network test tool
 .SH SYNOPSIS
 .B "bbtest-net -?"
 .br
@@ -14,16 +14,16 @@ bbtest-net \- Big Brother network test engine
 
 .SH DESCRIPTION
 .I bbtest-net
-is a drop-in replacement for the bb-network.sh network test script 
-provided by Big Brother. bbtest-net implements all of the network
-tests normally performed by the bb-network.sh script, with built-in
-support for a large number of test types that would normally
-require additional add-on extensions.
+handles the network tests of hosts defined in the Hobbit configuration
+file, bb-hosts. It is normally run at regular intervals by 
+.I hobbitlaunch(8)
+via an entry in the
+.I hobbitlaunch.cfg(5)
+file.
 
-Also, bbtest-net executes tests much faster than the standard
-bb-network.sh script.
-
-bbtest-net is normally run from a modified bb-network.sh
+bbtest-net can also act as a drop-in replacement for the 
+Big Brother network test script, bb-network.sh. In this
+setup, bbtest-net is normally run from a modified bb-network.sh
 script; a sample script to accomplish this is shipped with 
 the bbgen distribution.
 
@@ -371,10 +371,10 @@ SSL certificate used by the LDAP server, and it will not show up
 in the "sslcert" column.
 
 
-.SH USING MULTIPLE BBNET SYSTEMS
-If you have more than one BBNET system - e.g. if your network
+.SH USING MULTIPLE NETWORK TEST SYSTEMS
+If you have more than one system running network tests - e.g. if your network
 is separated by firewalls - then is is problematic to maintain
-multiple bb-hosts files for each of the BBNET systems.
+multiple bb-hosts files for each of the systems.
 bbtest-net supports the NET:location tag in
 .I bb-hosts(5)
 to distinguish 
@@ -479,7 +479,7 @@ the value "500000"; a delay of 1 second is achieved by
 setting this to "1000000" (one million).
 
 .IP FPING
-Location of the 
+Command used to run the 
 .I fping(8) 
 utility. Used by bbtest-net for connectivity (ping) testing.  See 
 .I bb-environ(5)
@@ -505,7 +505,8 @@ Location of the
 utility. Used by bbtest-net for the "rpc" service checks.
 
 .SH FILES
-.IP "$BBHOME/etc/bb-services"
+.IP "~/server/etc/bb-services (Hobbit)"
+.IP "$BBHOME/etc/bb-services (Big Brother)"
 This file contains definitions of TCP services that bbtest-net
 can test. Definitions for a default set of common services is built
 into bbtest-net, but these can be overridden or supplemented by

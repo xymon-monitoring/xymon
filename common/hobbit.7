@@ -1,134 +1,104 @@
-.TH BBGEN-INTRO 7 "Version 3.4: 21 nov 2004" "bbgen toolkit"
+.TH HOBBIT 7 "Version 3.4: 21 nov 2004" "bbgen toolkit"
 .SH NAME
-bbgen-intro \- introduction to the bbgen toolkit
+Hobbit \- introduction to the Hobbit Monitor
 
 .SH OVERVIEW
-The Big Brother monitoring system - available from
-BB4 Technologies at http://bb4.com/ - is a flexible
-system for monitoring the health of networked systems
-and services. With an easy-to-use web-based user interface
-and support for a large number of the systems commonly
-used today, it offers an effective framework for monitoring
-your IT infrastructure to the network- and system-administrators.
+Hobbit - previously called "The bbgen toolkit" - is a tool 
+for monitoring the health of your networked servers and 
+the applications running on them.  It provides a simple, 
+intuitive way of checking the health of your systems from 
+a webbrowser, and can also alert you to any problems that 
+arise through alarms sent as e-mail, SMS messages, via a 
+pager or by other means.
 
-Big Brother will run on anything that has the slightest
-resemblance with a Unix system, due to the fact that it
-is almost entirely implemented as Unix shellscripts. However,
-this flexibility comes at a cost: The performance of the
-Big Brother scripts is abysmal, when you need to monitor
+Hobbit is Open Source software, licensed under the GNU GPL.
+This means that you are free to use Hobbit as much as you like,
+and you are free to re-distribute it and change it to suit 
+your specific needs. However, if you change it then you must make 
+your changes available to others on the same terms that you 
+received Hobbit originally. See the file COPYING in the Hobbit
+source-archive for details.
+
+Hobbit initially began life as an enhancement to Big Brother.
+The Big Brother monitoring system - available from BB4 Technologies 
+at http://bb4.com/ - is a flexible system for monitoring the health 
+of networked systems and services. Big Brother will run on anything 
+that has the slightest resemblance with a Unix system, due to the 
+fact that it is almost entirely implemented as Unix shellscripts. 
+However, this flexibility comes at a cost: The performance of the
+Big Brother scripts is abysmal when you need to monitor
 more than just a handful of systems.
 
-The bbgen toolkit was created to solve this problem. By
-re-implementing the core functionality of the Big Brother
-shell scripts in C, a huge performance boost was achieved
-while maintaining compatibility with the data-files and
-extension interfaces that standard Big Brother defines.
-This makes it possible to drop the bbgen tools into an
-existing Big Brother installation without having to change
-any configuration files, and also to use the existing 
-historical data collected by the standard Big Brother
-tools after switching to bbgen. Should you decide to
-un-install bbgen, you will be able to go back to using
-the standard Big Brother tools - the bbgen tools does not
-in any way change the historical monitoring data stored 
-on-disk.
+Hobbit was first created to solve this problem. By re-implementing 
+the core functionality of the Big Brother shell scripts in C, a 
+huge performance boost was achieved while maintaining compatibility 
+with the data-files and extension interfaces that standard Big Brother 
+defines. 
+
+However, it became clear that the original design of Big Brother 
+had some scalability problems that could not be solved without
+a complete re-implementation of the system.  With the introduction 
+of the Hobbit network daemon in version 4, this goal was achieved.
+
+The Hobbit tools store data in a format that is compatible with
+Big Brother, so it is possible to use Hobbit as an add-on to
+an existing Big Brother installation. However, the preferred
+method of installing Hobbit is as a full replacement for the
+Big Brother server. Detailed information about installing
+and configuring Hobbit - with or without Big Brother - is
+available on-line in the web-pages for your Hobbit server
+(under the "Help" menu), or in the Hobbit source-tree in the
+"docs/" directory.
 
 .SH FEATURES
-The main feature of these tools is speed. My BB installation currently
-has about 350 hosts, spread over 50 pages and subpages. The time
-to generate the pages with the standard Big Brother web-page script
-bb-display.sh was about 12 minutes. bbgen does it in less than 5 seconds.
+The Hobbit tools are designed for installations that need to 
+monitor a large number of hosts, with very little overhead on
+the monitoring server. Monitoring of thousands of hosts with
+a single Hobbit server is possible - it was developed to handle
+just this task.
 
-(Historical note: The 350 hosts / 5 seconds was in January 2003.
-At the release of bbgen 2.16 in August 2004, I have 1638 hosts, 
-121 pages - bbgen builds all of it in 20 seconds, or 30 seconds when
-updating the info- or larrd-pages).
+Fortunately, the speed and efficiency of Hobbit does not incur
+a cost in the form of complexity. Setting up a Hobbit server for
+a small network - perhaps just a couple of servers - can be done
+in less than an hour, and the basic concepts for configuring and
+using Hobbit are easily understood. If you are familiar with how
+Big Brother works, you should not have any problems understanding
+Hobbit. In fact, setting up Hobbit is simpler than setting up
+Big Brother because a lot of functionality that requires you to
+install Big Brother add-ons has been integrated into Hobbit and
+is part of the basic installation.
 
-The network test tool bbtest-net also gives significant speed improvements 
-for large sites. One site reported that the runtime for their network tests 
-dropped from 1000 seconds to about 30.
+Apart from the performance improvements, here are some of the
+Hobbit features:
 
-Apart from the performance improvements, the bbgen tools also
-implement quite a few new features not found in the standard
-Big Brother tools:
+.IP "Monitoring of hosts and networks"
+Networked applications can be monitored by mimicking the requests
+sent by an end-user. Hosts can be monitored at the operating system
+level through the use of Big Brother clients installed on each host.
 
-.IP "Unlimited subpage level"
-bbgen allows you to have any tree-structure of your webpages you
-may wish.
+The network test tool knows how to test most commonly used protocols,
+including HTTP, SMTP (e-mail), DNS, LDAP (directory services), and 
+many more. When checking websites, it is possible to not only check
+that the webserver is responding, but also that the response looks
+correct by matching the response against a pre-defined pattern or a
+checksum.
 
-.IP "Multiple pageset support"
-bbgen can generate multiple views of the same data, allowing you 
-to present the hosts you monitor in different ways for different
-groups of people. E.g. you can have one set of pages structured 
-by customer, and another set of pages structured by support group - 
-both using data for the same hosts.
+Protocols that use SSL encryption such as https-websites are also supported, 
+and while checking such services the network tester will automatically run a 
+check of the validity of the SSL server certificate, and warn about 
+certificates that are about to expire.
 
-.IP "Flexible on-line documentation"
-bbgen can link to on-line documentation via a CGI script, allowing
-you to e.g. provide access to an in-house documentation database
-with the information about the hosts or services monitored.
+Hosts can be tagged as belonging to specific networks, allowing
+you to have one configuration file for all Hobbit systems,
+even when you have more than one network test engine to perform
+the tests. Each network test engine will perform only the tests
+relevant for the network segment it has access to.
 
-.IP "Improved webpages"
-Many small improvements to the Big Brother webpages are included
-in bbgen, e.g. different icons can be used for recently changed statuses;
-links to subpages can be listed in multiple columns; different icons
-can be used for dialup-tests or reverse-tests; selected columns
-can be dropped or unconditionally included on the webpages to
-eliminate unwanted information, or always include certain information;
-user-friendly names can be shown for hosts regardless of their true
-hostname.
-
-.IP "Special alerts-only webpage"
-Alerts can be configured to appear on a special webpage which 
-shows only active alerts. This gives your operations center
-an easy to use interface for detecting problems that require
-immediate attention, by eliminating all of the non-critical
-issues.
-
-.IP "Modem banks appear where you want them to"
-Big Brother and bbgen supports monitoring of modem-banks, or
-other types of IP-address ranges (e.g. VPN concentrators).
-With bbgen, you can configure these to show up in pages or
-subpages, instead of always placing them on the front page
-like standard BB does.
-
-.IP "LARRD support"
-The LARRD trend analysis package is a popular add-on to Big Brother.
-bbgen will work with the standard LARRD package - both version 
-0.42 and 0.43 - and can be used to generate the HTML files used
-to link the Big Brother webpages to the LARRD graphs. Which graphs
-to include can also be customized on a per-host basis.
-
-.IP "Improved historical reporting"
-The bbgen version of the Big Brother "History" CGI script allows
-you to browse through the history of a service, and shows the
-service availability on a daily/weekly/monthly/annual basis.
-
-.IP "WAP support for PDAs and cell-phones"
-bbgen can produce output for mobile devices such as PDA's or cell-
-phones, allowing you to access information about critical systems
-from this type of devices.
-
-.IP "RSS/RDF feeds of Big Brother alerts"
-bbgen can produce an RSS/RDF format output file for feeding Big
-Brother alerts into other webpages that use this format.
-
-.IP "Netscape sidebar tag support"
-A Netscape/Mozilla feature is the "sidebar"; bbgen can produce
-a sidebar-compatible file so critical alerts will show up in
-your browser, even if you do not have the Big Brother webpage open.
-
-.IP "Service Level Agreement reporting"
-bbgen can produce availability reports for use in Service Level
-Agreement reporting. You can configure planned downtime, agreed
-service availability level, and agreed service availability time 
-and generate availability reports directly showing the actual
-availability measured against the agreed SLA.
-
-.IP "Pre-built reports"
-Availability reports can be pre-generated and exported to e.g.
-portal sites, so users without direct access to the Big Brother
-website can view the report data.
+If a single test is not enough, combination tests can be defined
+that combine the result of several tests to a single status-report.
+So if you need to monitor that at least 3 out of 5 servers are
+running at any time, Hobbit can do that for you and generate
+the necessary availability report.
 
 .IP "Flexible alert reduction"
 All network tests can be set not to change status to red
@@ -138,136 +108,146 @@ This cuts down on the number of false alarms, if you have a
 network or service that often sees brief outages, e.g.
 due to load or other intermittent problems.
 
-.IP "https websites"
-bbtest-net directly supports monitoring of https-websites.
+Tests can also be configured to depend on each other, so that
+when a critical router goes down you will get alerts only for
+the router - and not from the 200 hosts behind the router.
 
-.IP "Content checking of web- and ftp-sites"
-bbtest-net supports checking not only that a web- or ftp-site 
-responds, but also that certain content is found on the webpage.
-This check can look a specific string inside the response, or
-it can match the entire contents returned against a pre-computed
-message digest checksum.
+.IP "A simple, intuitive web-based front-end"
+"Green is good, red is bad". Using the Hobbit webpages is as simple
+as that. The hosts you monitor can be grouped together in a way that
+makes sense in your organisation and presented in a tree-structure.
+You can have multiple different views of the same hosts for different
+parts of the organisation, e.g. one view for the hardware group,
+and another view for the webmasters. You can have automatic links 
+to on-line documentation, so information about your critical systems
+is just a click or two away.
 
-.IP "Support for SSL-enabled protocols"
-Standard protocols wrapped into an SSL encryption - e.g.
-imaps, pop3s, nntps, telnets - are directly supported by the 
-bbtest-net network test tool.
+The webpages use many techniques to convey information about the monitored
+systems, e.g. different icons can be used for recently changed statuses;
+links to subpages can be listed in multiple columns; different icons
+can be used for dialup-tests or reverse-tests; selected columns
+can be dropped or unconditionally included on the webpages to
+eliminate unwanted information, or always include certain information;
+user-friendly names can be shown for hosts regardless of their true
+hostname.
 
-.IP "LDAP testing"
-bbtest-net has support for testing LDAP servers by performing
-an LDAP search transaction (requires ldap library, e.g. OpenLDAP).
+If you have a dedicated Network Operations Centre, you can configure
+precisely which alerts will appear on their monitors - e.g. a simple
+anomaly in the system logfile need not trigger a call the 3rd-level
+support at 2 AM, but if the on-line shop goes down you do want someone
+to respond immediately. So you put the webcheck for the on-line shop 
+on the NOC monitor page, and leave out the log-file check.
 
-.IP "RPC service testing"
-bbtest-net can check for the availability of selected RPC services.
+.IP "Monitoring data available in many formats"
+Hobbit can natively present the monitoring data not only as HTML
+webpages, but also as data that can be used directly by PDA's and
+cell-phones (WAP/WML format), or an RSS/RDF content-feed. For
+hooking up with other applications, Hobbit can also provide 
+monitoring data in XML format.
 
-.IP "SSL certificate expiration"
-bbtest-net automatically checks the expiration date of SSL
-certificates, and warns you when the certificate is about
-to expire.
+.IP "Integrated trend analysis, historical data and SLA reporting"
+The LARRD trend analysis package is a popular add-on to Big Brother,
+but also fairly complicated to setup. Hobbit includes all of the
+LARRD functionality in the base package, so that the trends data
+for network response-times, disk utilisation etc is automatically
+collected and made available as graphical data.
 
-.IP "One configuration file for network tests in complex networks"
-Hosts can be tagged as belonging to specific networks, allowing
-you to have one configuration file for all Big Brother systems,
-even when you have more than one network test engine to perform
-the tests. Each network test engine will perform only the tests
-relevant for the network segment, it has access to.
+When you need to drill down into events that have occurred, Hobbit
+provides a powerful tool for viewing the event history for each
+statuslog, with overviews of when problems have occurred during the
+past and easy-to-use zoom-in on the event.
 
-.IP "Flexible configuration for large sites"
-The
-.I bb-hosts(5)
-file can be split up into smaller pieces, which the tools will
-then automatically re-assemble when running tests or building
-webpages.
+Reports of service availability can be generated on-the-fly, or
+pre-generated e.g. for monthly reporting of SLA's. Pre-generated
+reports can be exported to e.g. portal sites, so users without
+direct access to the Big Brother website can view the report data.
 
-.IP "Combination tests and dependent tests"
-You can build complex tests from the simple test results already
-in the Big Brother system with the
-.I bbcombotest(1)
-tool. Tests can also be configured to depend on other tests, 
-making it easier to spot the root cause of a complex problem.
+You can configure planned downtime, agreed service availability level 
+service availability time and generate availability reports directly 
+showing the actual availability measured against the agreed SLA.
 
-.IP "bbgen tools can send status messages via HTTP"
-Big Brother uses its own protocol running on port 1984. Some
-paranoid firewall-admins are unhappy to allow connections on
-this port, so the bbgen toolkit has support for sending all 
-status messages via HTTP.
 
-.SH THE BBGEN TOOLKIT
-The tools included in the bbgen toolkit are as follows:
+.SH HOBBIT WEBSERVER TOOLS
+These tools implement the core functionality of the Hobbit server:
+
+.I hobbitlaunch(8)
+is a program scheduler for Hobbit. It acts as a master program
+for running all of the Hobbit tools on a pure-Hobbit server.
+
+.I hobbitd(8)
+is the core network daemon that collects all reports about the
+status of your hosts. It uses a number of helper modules to
+implement certain tasks such as updating logfiles and sending
+out alerts: hobbitd_filestore, hobbitd_history, hobbitd_alert
+and hobbitd_larrd.
+
+.SH HOBBIT TOOLS HANDLING THE WEB USER-INTERFACE
+These tools take care of generating and updating the various
+Hobbit web-pages.
 
 .I bbgen(1)
+takes care of updating the Hobbit / Big Brother webpages. It
 is a drop-in replacement for the bb-display.sh webpage generator
-script from the Big Brother monitoring tool.  It can also replace 
-part of the LARRD tool that is often used with Big Brother.
-
-.I bbtest-net(1)
-is a drop-in replacement for the bb-network.sh network 
-test script in Big Brother.
-
-.I bb(1)
-is a drop-in replacement for the standard Big Brother
-bb client tool. It provides support for HTTP transfer of
-status messages, allows BB clients to query the state
-of tests on the central BBDISPLAY server, and retrieve
-BB configuration files, besides being compatible with the
-standard bb client. The server-side script 
-.I bbmessage.cgi(1) 
-that receives messages sent via HTTP is also included.
-
-.I bbretest-net.sh(1)
-is a Big Brother extension script for re-doing failed
-network tests with a higher frequency than the normal
-network tests. This allows Big Brother to pick up
-the recovery of a network service as soon as it happens,
-resulting in less downtime being recorded.
-
-.I bbhostgrep(1)
-is a utility for use by BB extension scripts. It
-allows an extension script to easily pick out the hosts that
-are relevant to a script, so it need not parse a huge
-bb-hosts file with lots of unwanted test-specifications.
-
-.I bbhostshow(1)
-is a utility to dump the full
-.I bb-hosts(5)
-file following any "include" statements.
-
-.I bbcombotest(1)
-is a Big Brother extension script for the BBDISPLAY server,
-allowing you to build complicated tests from simpler
-BB test results. E.g. you can define a test that uses the results
-from testing your webserver, database server and router to have a 
-single test showing the availability of your enterprise web
-application.
-
-.I bbdigest(1)
-is a utility to compute message digest values for use in
-content checks that use digests.
-
-.I bb-rep.cgi(1)
-is a drop-in replacement for the bb-rep.sh script included in
-the standard Big Brother package. This CGI program 
-triggers the generation of Big Brother availability reports, 
-using
-.I bbgen(1)
-as the reporting back-end engine.
+script from the Big Brother monitoring tool.
 
 .I bb-hostsvc.cgi(1)
-is a drop-in replacement for the bb-hostsvc.sh and bb-histlog.sh
-scripts included in the standard Big Brother package. This CGI
-program generates an HTML view of a single status log.
+This CGI program generates an HTML view of a single status log.
+It is used to present the Hobbit status-logs, and is also a 
+replacement for the bb-hostsvc.sh and bb-histlog.sh scripts included 
+in the standard Big Brother package. 
 
-.I bb-replog.cgi(1)
-is a drop-in replacement for the bb-replog.sh script included in
-the standard Big Brother package. This CGI program generates
-the detailed availability report for a particular host+service
-combination.
+.I hobbitgraph.cgi(1)
+This CGI program generates graphs of the trend-data collected
+by Hobbit. It is available only for pure Hobbit installations,
+not when Hobbit is used on top of Big Brother.
 
 .I bb-hist.cgi(1)
-is a drop-in replacement for the bb-hist.sh script included
-in the standard Big Brother package. This CGI program generates
-a webpage with the most recent history of a particular host+service
-combination.
+This CGI program generates a webpage with the most recent history 
+of a particular host+service combination.
+It is a replacement for the bb-hist.sh script included in the standard 
+Big Brother package. 
+
+.I bb-ack.cgi(1)
+This CGI program allows a user to acknowledge an alert he received
+from Hobbit about a host that is in a critical state. Acknowledging
+an alert serves two purposes: First, it stops more alerts from being
+sent so the technicians are not bothered wit more alerts, and secondly
+it provides feedback to those looking at the Hobbit webpages that the
+problem is being handled.
+
+.I bb-larrdcolumn(1)
+generates a status column for each host, where the available 
+trend graphs can be seen. It replaces the LARRD "larrd-html.pl"
+script.
+
+.I bb-infocolumn(1)
+generates a status column for each host with static information
+about the host such as the IP-address, location on the Hobbit
+webpages, who receives alerts etc.
+
+.I bb-findhost.cgi(1)
+is a CGI program that finds a given host in the Big Brother
+webpages. As you Big Brother installation grows, it can become
+difficult to remember exactly which page a host is on; this CGI
+script lets you find hosts easily.
+
+.I bb-csvinfo.cgi(1)
+is a CGI program to present information about a host. The 
+information is pulled from a CSV (Comma Separated Values)
+file, which is easily exported from any spreadsheet or
+database program.
+
+.I bb-rep.cgi(1)
+This CGI program triggers the generation of Hobbit availability 
+reports, using
+.I bbgen(1)
+as the reporting back-end engine. It is a drop-in replacement for 
+the bb-rep.sh script included in the standard Big Brother package.
+
+.I bb-replog.cgi(1)
+This CGI program generates the detailed availability report for a 
+particular host+service combination. It is a drop-in replacement 
+for the bb-replog.sh script included in the standard Big Brother package. 
 
 .I bb-snapshot.cgi(1)
 is a CGI program to build the Big Brother webpages in a "snapshot"
@@ -282,56 +262,92 @@ the eventlog is included on the bb2.html page, but this CGI
 can be used to have custom eventlog displays e.g. with the
 past 200 events.
 
-.I bb-findhost.cgi(1)
-is a CGI program that finds a given host in the Big Brother
-webpages. As you Big Brother installation grows, it can become
-difficult to remember exactly which page a host is on; this CGI
-script lets you find hosts easily.
+.SH HOBBIT NETWORK TEST SERVER TOOLS
+These tools are used on servers that execute tests of network services.
 
-.I bb-csvinfo.cgi(1)
-is a CGI program to present information about a host. The 
-information is pulled from a CSV (Comma Separated Values)
-file, which is easily exported from any spreadsheet or
-database program.
+.I bbtest-net(1)
+runs the network service tests. It is a drop-in replacement for the 
+bb-network.sh network test script from Big Brother.
+
+.I bbretest-net.sh(1)
+is an extension script for re-doing failed network tests with a higher 
+frequency than the normal network tests. This allows Hobbit to pick up
+the recovery of a network service as soon as it happens, resulting in 
+less downtime being recorded.
+
+.SH OTHER HOBBIT TOOLS
+
+.I bb(1)
+is a drop-in replacement for the standard Big Brother
+bb client tool. It provides support for HTTP transfer of
+status messages, allows BB clients to query the state
+of tests on the central BBDISPLAY server, and retrieve
+BB configuration files, besides being compatible with the
+standard bb client. The server-side script 
+.I bbmessage.cgi(1) 
+that receives messages sent via HTTP is also included.
+
+.I bbhostgrep(1)
+is a utility for use by BB extension scripts. It
+allows an extension script to easily pick out the hosts that
+are relevant to a script, so it need not parse a huge
+bb-hosts file with lots of unwanted test-specifications.
+
+.I bbhostshow(1)
+is a utility to dump the full
+.I bb-hosts(5)
+file following any "include" statements.
+
+.I bbdigest(1)
+is a utility to compute message digest values for use in
+content checks that use digests.
+
+.I bbcombotest(1)
+is a Big Brother extension script for the BBDISPLAY server,
+allowing you to build complicated tests from simpler
+BB test results. E.g. you can define a test that uses the results
+from testing your webserver, database server and router to have a 
+single test showing the availability of your enterprise web
+application.
 
 .I bbproxy(1)
 is a proxy-server that forwards Big Brother messages between
 clients and the BBDISPLAY server.
 
 .SH REQUIREMENTS
-What you need to install bbgen:
+Hobbit runs on Unix-like systems - e.g. Linux, OpenBSD or Solaris.
+It relies on a number of Open-Source libraries and tools:
+.sp
+.BR fping
+This tool is used to efficiently ping hundreds or thousands of hosts.
+.sp
+.BR RRDtool
+This library is used to store and present trend-data.
+.sp
+.BR libpcre
+This library is used for advanced pattern-matching of text strings
+in configuration files.
+.sp
+.BR OpenSSL
+This library is used for communication with SSL-enabled network services,
+and for calculating checksums and message digests when checking that the
+correct content is returned by a server.
+.sp
+.BR OpenLDAP
+This library is used for testing LDAP servers.
 
-.IP "A Big Brother installation"
-A working Big Brother installation. Get BB up and running first,
-then you can drop in the bbgen tools to speed things up. The bbgen
-tools are known to work with Big Brother 1.8 and 1.9 - older versions
-may also work, but this has not been tested.
-.br
-Of course, you can install everything in one go, but it makes 
-troubleshooting easier when you have only one set of programs 
-to struggle with, instead of two.
+You do not need to install any part of the Big Brother package to
+setup a Hobbit server.
 
-.IP fping
-For network connectivity tests, the fping utility must be 
-installed. This tool is available from www.fping.org.
+For more detailed information about Hobbit system requirements and
+how to install Hobbit, refer to the online documentation "Installing
+Hobbit" available from the Hobbit webserver (via the "Help" menu),
+or from the "docs/install.html" file in the Hobbit source archive.
 
-.IP OpenSSL
-The OpenSSL library is used for checking https websites and
-other SSL-enabled protocols (imaps, pop3s, nntps, telnets, ftps),
-as well as for the message digest calculations for content checks.
-If your system does not already have openssl installed, you can pick it
-up from http://www.openssl.org/
-
-.IP "OpenLDAP (optional)"
-If you want to test LDAP servers, it is recommended that you
-install an LDAP client library such as OpenLDAP. It is available
-from http://www.openldap.org/
-
-
-.SH COMPATIBILITY
-The bbgen toolkit is intended to be a drop-in replacement 
-for the tools in Big Brother version 1.9c, with the following 
-exceptions:
+.SH COMPATIBILITY WITH BIG BROTHER
+Hobbit is for the most part fully compatible with Big Brother
+version 1.9c and 1.9e. The following are known differences in
+behaviour between Big Brother and Hobbit:
 
 .IP "group directive"
 A "group" directive in the 
@@ -339,7 +355,7 @@ A "group" directive in the
 file is treated as a "group-compress".
 
 .IP "Page-links are at top of page instead of bottom"
-bbgen defaults to putting page- and subpage-links at the
+Hobbit defaults to putting page- and subpage-links at the
 top of each page, whereas standard Big Brother puts them
 at the bottom of the page. If you prefer the Big Brother
 display style, run bbgen with the "--pages-last" option.
@@ -347,12 +363,12 @@ display style, run bbgen with the "--pages-last" option.
 .IP "Status messages from hosts not in bb-hosts are ignored"
 Standard Big Brother will process status-logs from unknown
 hosts, and these will affect the background color of the 
-bb.html and bb2.html pages.  The bbgen toolkit ignores logs 
+bb.html and bb2.html pages.  Hobbit ignores logs 
 from hosts not listed in the bb-hosts file.
 
 .IP "Modembanks can be placed in subpages"
 Standard BB always displays modem-banks on the front-page
-(bb.html). bbgen treats modembanks like normal hosts, so
+(bb.html). Hobbit treats modembanks like normal hosts, so
 they will appear on a page or subpage according to their
 placement in the bb-hosts file. If you want them on the
 bb.html page, place the "dialup" directive before any
@@ -360,7 +376,7 @@ bb.html page, place the "dialup" directive before any
 
 .IP "Connectivity tests use the hostname"
 Standard BB always uses the IP-address listed in the bb-hosts
-file for the connectivity (ping) test. bbtest-net will attempt
+file for the connectivity (ping) test. Hobbit (bbtest-net) will attempt
 a DNS lookup of the hostname to determine the IP-address,
 but fallback to using the IP-address if the DNS lookup fails.
 This behaviour can be changed with the "testip" tag (on a per-host
@@ -369,13 +385,13 @@ basis), or via the "--dns" tag (globally).
 .IP "Multiple http tests must be separated with spaces"
 Standard Big Brother allows you to define multiple http tests
 in the bb-hosts file separated by a pipe character or space. 
-bbgen requires that you use space.
+Hobbit requires that you use space.
 
 .IP ":q and :Q modifiers are ignored"
 The ":q" and ":Q" modifiers on individual tests are ignored.
 These modifiers are only relevant for the standard Big 
 Brother network test tool bbnet, which is not used when
-you install the bbgen network test tools.
+you install the Hobbit network test tools.
 
 .SH DEMONSTRATION SITE
 A site running this software can be seen at http://www.hswn.dk/bb/
@@ -383,30 +399,32 @@ A site running this software can be seen at http://www.hswn.dk/bb/
 .SH COPYRIGHT
 All tools are 
 .br
-  Copyright (C) 2002-2004, Henrik Storner <henrik@storner.dk> 
+  Copyright (C) 2002-2005, Henrik Storner <henrik@storner.dk> 
 .br
 All files are released under the GNU General Public License version 2, 
 with the additional exemption that compiling, linking, and/or using OpenSSL 
 is allowed.  See the file COPYING for details.
 
 .SH BUGS
-If you find any bugs in the bbgen tools, I would appreciate it if you
+If you find any bugs in the Hobbit tools, I would appreciate it if you
 reported them to me. Either on the "bb" mailing list at bb@bb4.com,
-or directly to bbgen@hswn.dk
+or directly to hobbit@hswn.dk
 
 .SH MAILING LIST
-If you want to be notified of new releases of the bbgen toolkit, please
-subscribe to the bbgen-announce mailing list. This is a moderated list,
-used only to announce new bbgen releases. To be added to the list, send
+If you want to be notified of new releases of Hobbit, please
+subscribe to the hobbit-announce mailing list. This is a moderated list,
+used only to announce new Hobbit releases. To be added to the list, send
 an e-mail to
 .br
-    bbgen-announce-subscribe@hswn.dk
+    hobbit-announce-subscribe@hswn.dk
 
 .SH "SEE ALSO"
-bbgen(1), bbtest-net(1), bb(1), bbproxy(1), 
-bbretest-net.sh(1), bbcombotest(1)
-bbhostgrep(1), bbhostshow(1), bbdigest(1),
-bb-hostsvc.cgi(1), bb-rep.cgi(1), bb-replog.cgi(1), bb-hist.cgi(1), bb-snapshot.cgi(1),
-bb-eventlog.cgi(1), bb-findhost.cgi(1), bb-csvinfo.cgi(1)
-bb-hosts(5), bb-environ(5), bbcombotest.cfg(5)
-
+hobbitlaunch(8), hobbitlaunch.cfg(5), 
+hobbitd(8), hobbitd_filestore(8), hobbitd_history(8), hobbitd_alert(8), hobbitd_larrd(8),
+bbgen(1), bb-hostsvc.cgi(1), hobbitgraph.cgi(1), bb-hist.cgi(1), bb-ack.cgi(1),
+bb-larrdcolumn(1), bb-infocolumn(1), bb-findhost.cgi(1), bb-csvinfo.cgi(1), bb-rep.cgi(1), 
+bb-replog.cgi(1), bb-snapshot.cgi(1), bb-eventlog.cgi(1),
+bbtest-net(1), bbretest-net.sh(1), bb-services(5),
+bb(1), bbmessage.cgi(1), bbhostgrep(1), bbhostshow(1), bbdigest(1), bbcombotest(1), bbcombotest.cfg(5),
+bbproxy(1),
+bb-hosts(5), bb-environ(5)

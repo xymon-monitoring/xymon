@@ -14,10 +14,8 @@ and recovered hosts and services.
 
 The operation of this module is controlled by the
 .I hobbit-alerts.cfg(5)
-file, except when running in "legacy" mode via the "--legacy" option;
-in that mode, it uses the old bbwarnrules.cfg and bbwarnsetup.cfg files
-to determine who should receive alerts.
-
+file. This file holds the definition of rules and recipients,
+that determine who gets alerts, how often, for what servers etc.
 
 .SH OPTIONS
 .IP "--alertcolors=color1[,color2]"
@@ -31,7 +29,8 @@ The default is "--alertcolors=red,yellow,purple".
 .IP "--config=FILENAME"
 Sets the filename for the 
 .I hobbit-alerts.cfg"
-file. The default value is "$BBHOME/etc/hobbit-alerts.cfg".
+file. The default value is "etc/hobbit-alerts.cfg" below the Hobbit
+server directory.
 
 .IP "--dump-config"
 Dumps the configuration after parsing it. May be useful to track
@@ -51,28 +50,8 @@ If this option is present, alert messages will include a line with
 caused this message to be sent. This can be useful to track down
 problems with duplicate alerts.
 
-.IP "--legacy"
-Enable the Big Brother compatible legacy mode.
-
 .IP "--debug"
 Enable debugging output.
-
-.SH "LEGACY MODE"
-When running in legacy mode, hobbitd_alert reads the alert rules defined by 
-the bbwarnsetup.cfg and bbwarnrules.cfg files, as used by the old Big Brother
-bbd daemon.
-
-The legacy mode support the BB host- and page-group definitions; the initial 
-delay and pagedelay settings; the "ignforall" setting, and the rules for 
-host-, service- and time-definitions.
-
-The use of an escalation delay is not supported in legacy mode. 
-
-If a recipient name contains an "@"-sign, the recipient is believed to
-be an e-mail address, and the alert is sent out using as e-mail by hobbitd_alert.
-All other recipients cause the script "$BBHOME/ext/bbcompatalert.sh" to
-be invoked, with the environment definitions setup as for normal external
-paging scripts.
 
 .SH ENVIRONMENT
 .IP MAIL
@@ -88,8 +67,8 @@ add the mail recipients to form the command line used for sending
 out email alerts.
 
 .SH FILES
-.IP "$BBHOME/etc/hobbit-alerts.cfg"
+.IP "~hobbit/server/etc/hobbit-alerts.cfg"
 
 .SH "SEE ALSO"
-hobbitd_channel(8), bbgen-intro(7), hobbitd(8)
+hobbit-alerts.cfg(5), hobbitd(8), hobbitd_channel(8), hobbit(7)
 

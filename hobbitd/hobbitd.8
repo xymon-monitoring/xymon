@@ -5,10 +5,11 @@ hobbitd \- Master network daemon for a Hobbit server
 .B "hobbitd [options]"
 
 .SH DESCRIPTION
-hobbitd is a replacement for the bbd daemon from the Big
-Brother package. It is designed for large BB installations,
-and has a strong focus on being a high-speed, low-overhead 
-implementation of a Big Brother server.
+hobbitd is the core daemon in the Hobbit Monitor, and can act as 
+a replacement for the bbd daemon from the Big Brother package. 
+It is designed to handle monitoring of a large number of hosts, 
+with a strong focus on being a high-speed, low-overhead implementation 
+of a Big Brother compatible server.
 
 To achieve this, hobbitd stores all information about the state
 of the monitored systems in memory, instead of storing it in
@@ -26,7 +27,7 @@ in the hobbitlaunch.cfg file.
 
 .SH OPTIONS
 .IP "--bbhosts=FILENAME"
-Specifies the path to the Big Brother bb-hosts file. This is used
+Specifies the path to the Hobbit / Big Brother bb-hosts file. This is used
 to check if incoming status messages refer to known hosts; depending
 on the "--ghosts" option, messages for unknown hosts may be dropped.
 If this option is omitted, the default path used is set by the BBHOSTS
@@ -143,10 +144,10 @@ to retrieve the state of the BB system so they can generate the BB webpages.
 
 .IP "--admin-senders=IP[/MASK][,IP/MASK]"
 Controls which hosts may send administrative commands to hobbitd. These
-commands are the "hobbitddrop" and "hobbitdrename" commands. Access to these 
-should be restricted, since they provide an un-authenticated means of completely
+commands are the "drop" and "rename" commands. Access to these should be 
+restricted, since they provide an un-authenticated means of completely
 disabling monitoring of a host, and can be used to remove all traces of e.g.
-a system compromise from the Big Brother monitor.
+a system compromise from the Hobbit monitor.
 
 .IP "--debug"
 Enable debugging output.
@@ -156,6 +157,48 @@ For troubleshooting problems with a specific host, it may be useful to track
 the exact communications from a single host. This option causes hobbitd to
 dump all traffic from a single host to the file "/tmp/hobbitd.dbg".
 
+.SH CHANNELS
+A lot of functionality in the Hobbit server is delegated to "worker modules"
+that are fed various events from hobbitd via a "channel". Programs access a
+channel using IPC mechanisms - specifically, shared memory and semaphores -
+or by using an instance of the
+.I hobbitd_channel(8)
+intermediate program. hobbitd_channel enables access to a channel via a
+simple file I/O interface.
+
+A skeleton program for hooking into a hobbitd channel is provided as
+part of Hobbit in the
+.I hobbitd_sample(8)
+program.
+
+The following channels are provided by hobbitd:
+.sp
+.BR status
+This channel is fed the contents of all incoming "status" and
+"summary" messages.
+.sp
+.BR stachg
+This channel is fed information about tests that change status,
+i.e. the color of the status-log changes.
+.sp
+.BR page
+This channel is fed information about tests where the color changes
+between an alert color and a non-alert color. It also receives 
+information about "ack" messages.
+.sp
+.BR data
+This channel is fed information about all "data" messages.
+.sp
+.BR notes
+This channel is fed information about all "notes" messages.
+.sp
+.BR enadis
+This channel is fed information about hosts or tests that are
+being disabled or enabled.
+
+Information about the data stream passed on these channels is
+in the Hobbit source-tree, see the "hobbitd/new-daemon.txt" file.
+
 .SH SIGNALS
 .IP SIGHUP
 Re-read the bb-hosts configuration file.
@@ -164,9 +207,9 @@ Re-read the bb-hosts configuration file.
 Force an immediate dump of the checkpoint file.
 
 .SH FILES
-If ghost-handling is enabled via the "--ghosts" option, the $BBHOSTS
+If ghost-handling is enabled via the "--ghosts" option, the bb-hosts
 file is read to determine the names of all known hosts.
 
 .SH "SEE ALSO"
-bbgen-intro(7), bb-environ(5).
+hobbit(7), bb-environ(5).
 

@@ -1,9 +1,11 @@
 .TH BB-HOSTS 5 "Version 3.4: 21 nov 2004" "bbgen toolkit"
 .SH NAME
-bb-hosts \- Big Brother main configuration file
+bb-hosts \- Hobbit / Big Brother main configuration file
 
 .SH SYNOPSIS
-.I $BBHOME/etc/bb-hosts
+.IP "~hobbit/server/etc/bb-hosts (Hobbit)"
+.br
+.IP "$BBHOME/etc/bb-hosts (Big Brother)"
 
 .SH DESCRIPTION
 The
@@ -11,7 +13,7 @@ The
 file is the most important configuration file for all of the
 Big Brother programs, and hence also for the bbgen toolkit.
 This file contains the full list of all the systems monitored
-by Big Brother, including the set of tests and other configuration
+by Hobbit / Big Brother, including the set of tests and other configuration
 items stored for each host.
 
 .SH FILE FORMAT
@@ -32,9 +34,11 @@ relevant for the host, and also to set e.g. the time-interval used
 for availability reporting by
 .I bbgen(1)
 
-A more detailed description of the bb-hosts file is in the
-Big Brother documentation. The following describes the bbgen specific
-tags implemented for hosts in the bb-hosts file.
+An example of setting up the bb-hosts file is in the Hobbit on-line documentation 
+(from the Help menu, choose "Configuring Monitoring"), or in the Big Brother
+documentation.  The following describes the Hobbit specific tags implemented for 
+hosts in the bb-hosts file.
+
 
 .SH TAGS RECOGNIZED BY ALL TOOLS
 
@@ -75,8 +79,9 @@ Acts like the "include" tag, but only on the BBNET server.
 
 
 .SH BBGEN DISPLAY OPTIONS
-These tags are processed by the BBDISPLAY server when generating 
-the Big Brother webpages or reports.
+These tags are processed by the 
+.I bbgen(1)
+tool when generating the Big Brother webpages or reports.
 
 .IP "subparent parentpage newpage [Page-title]"
 This is used to define subpages in whatever levels you may
@@ -156,7 +161,8 @@ Big Brother setup. It causes incoming status reports with the
 specified hostname to be filed using the hostname defined in
 Big Brother.
 
-Note that this tag requires that you install the bbd-features.patch 
+If you are running Big Brother instead of Hobbit, note that this tag 
+requires that you install the bbd-features.patch 
 for the Big Brother bbd daemon, as the CLIENT tag is handled entirely 
 by the bbd daemon. You must also enable the hostname rewriting
 code by setting BBGHOSTS to a non-zero value (see
@@ -178,17 +184,6 @@ text that will be shown on the "Info" column page; this can
 e.g. be used to store information about the physical location
 of the device, contact persons etc. If the text contain whitespace,
 you must enclose it in double-quotes, e.g.  DESCR:"switch:4th floor Marketing switch"
-
-.IP nodisp
-This tag tells bbgen to ignore this host definition when 
-building webpages. It is useful if you have hosts that you want 
-to monitor, but that should not appear on the web pages; or for
-hosts that you want to appear on one of the alternate pagesets,
-but not on the standard set of web pages generated. It 
-has also been used in a multi-BB-server setup to define the 
-Big Brother BBDISPLAY, BBNET and BBPAGER hosts as "nodisp", and then
-have a master file included with the normal host definitions
-of the BB servers.
 
 .IP nobb2
 Ignore this host on the BB2 page. Even if it has an active alert,
@@ -247,7 +242,7 @@ netstat3 graphs. Instead of the combined tcp graphs showing
 all services, there will be three: One for each of
 the http, conn and smtp services.
 
-.SH BBGEN TAGS FOR THE NK OVERVIEW PAGE
+.SH HOBBIT TAGS FOR THE NK OVERVIEW PAGE
 bbgen will create three sets of pages: The main page bb.html,
 the all-non-green-statuses page (bb2.html), and a specially
 reduced version of bb2.html with only selected tests (bbnk.html).
@@ -295,7 +290,7 @@ If necessary, multiple periods can be specified. E.g. to
 monitor a site 24x7, except between noon and 1 pm, use
 NKTIME=*:0000:1159,*:1300:2359
 
-.SH BBGEN TAGS FOR THE WML (WAP) CARDS
+.SH HOBBIT TAGS FOR THE WML (WAP) CARDS
 If bbgen is run with the "--wml" option, it will generate a
 set of WAP-format output "cards" that can be viewed with a
 WAP-capable device, e.g. a PDA or cell-phone.
@@ -308,7 +303,7 @@ The default set of WML tests are taken from the --wml
 commandline option.  If no "WML:" tag is specified, the 
 "NK:" tag is used if present.
 
-.SH BBGEN STATUS PROPAGATION OPTIONS
+.SH HOBBIT STATUS PROPAGATION OPTIONS
 These tags affect how a status propagates upwards from a single
 test to the page and higher. This can also be done with the 
 command-line options --nopropyellow and --nopropred, but the tags 
@@ -353,11 +348,11 @@ Similar to NOPROPRED: tag, but applies to propagating an
 acknowledged status upwards.
 
 
-.SH BBGEN AVAILABILITY REPORT OPTIONS
-These options affect the way the Big Brother availability
+.SH HOBBIT AVAILABILITY REPORT OPTIONS
+These options affect the way the Hobbit availability
 reports are processed (see
 .I bb-rep.cgi(1)
-for details about Big Brother reports).
+for details about availability reports).
 
 .IP REPORTTIME=day:starttime:endtime[,day:starttime:endtime]
 This tag defines the time interval where you measure uptime
@@ -540,7 +535,7 @@ successive failures.
 For the other network tests, use "badftp", "badssh" etc.
 
 
-.SH BBTEST-NET TAGS FOR NON-STANDARD TESTS
+.SH BBTEST-NET TAGS FOR HOBBIT TESTS
 These tags define network tests that are implemented by bbtest-net,
 but not by the standard Big Brother bb-network.sh script.
 
@@ -647,7 +642,7 @@ RPCINFO environment variable to point at this tool. See
 .I bb-environ(5)
 
 
-.SH BBTEST-NET TAGS FOR CONNECTIVITY TEST
+.SH BBTEST-NET TAGS FOR THE CONNECTIVITY TEST
 These tags affect the behaviour of the bbtest-net connectivity
 test.
 
@@ -997,8 +992,10 @@ URL returns e.g. a PDF file, regardless of what is inside the
 PDF file.
 
 .SH FILES
+.I ~hobbit/server/etc/bb-hosts
+.br
 .I $BBHOME/etc/bb-hosts
 
 .SH "SEE ALSO"
-bbgen(1), bbtest-net(1), bbdigest(1), bbgen-intro(7)
+bbgen(1), bbtest-net(1), bbdigest(1), hobbit(7)
 

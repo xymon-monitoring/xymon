@@ -1,24 +1,28 @@
 .TH BBCMD 1 "Version 3.4: 21 nov 2004" "bbgen toolkit"
 .SH NAME
-bbcmd \- Run a Big Brother command with environment
+bbcmd \- Run a Hobbit command with environment set
 .SH SYNOPSIS
 .B "bbcmd --env=ENVFILE COMMAND"
 
 .SH DESCRIPTION
 .I bbcmd
-is a utility that can setup the Big Brother environment variables
+is a utility that can setup the Hobbit environment variables
 as defined in a 
 .I hobbitlaunch(8)
-compatible environment definition file, and the execute a command
+compatible environment definition file, and then execute a command
 with this environment in place. It is mostly used for testing
 extension scripts or in other situations where you need to run
-a single command with the BB environment in place.
+a single command with the environment in place.
 
 The "--env=ENVFILE" option points bbcmd to the file where the 
 environment definitions are loaded from.
 
 COMMAND is the command to execute after setting up the environment.
 
+If you want to run multiple commands, it is often easiest to just
+use "sh" as the COMMAND - this gives you a sub-shell with the 
+environment defined globally.
+
 .SH "SEE ALSO"
-hobbitlaunch(8), bbgen-intro(7)
+hobbitlaunch(8), hobbit(7)
 

@@ -1,19 +1,20 @@
 .TH BB-ENVIRON 5 "Version 3.4: 21 nov 2004" "bbgen toolkit"
 .SH NAME
-bb-environ \- bbgen specific environment variables
+bb-environ \- Hobbit environment variables
 
 .SH DESCRIPTION
-The bbgen toolkit uses some environment variables beside the
-normal set of variables defined by the Big Brother configuration
-files. This manpage documents these extra environment variables.
+Hobbit programs use multiple environment variables beside the
+normal set of variables. Even when the Hobbit tools are used
+together with a Big Brother server, some additional environment
+variables must be defined.
 
-For a description of the standard Big Brother environment
-variables, please see the Big Brother documentation.
+If running with a full Hobbit server, the environment definitions
+are stored in the ~hobbit/server/etc/hobbitserver.cfg file. 
 
-You will normally need to define the bbgen environment variables in
-your $BBHOME/etc/bbsys.local file, so that they are available
-to the bbgen toolkit programs when they execute as part of
-the Big Brother programs. Note that after defining the variable
+When running Hobbit tools on top of a Big Brother installation,
+the environment definition should be put in your $BBHOME/etc/bbsys.local 
+file, so that they are available to the Hobbit programs when they execute 
+as part of the Big Brother programs. Note that after defining the variable
 you should do an "export" on it to make it available to the
 other Big Brother programs. Like this:
 
@@ -184,7 +185,7 @@ If defined, this is the title of the RSS/RDF documents generated when
 is invoked with the "--rss" option. The default value is "Big Brother
 Critical Alerts".
 
-.IP RUNOPTS
+.IP "RUNOPTS (Big Brother only)"
 This is a standard Big Brother environment variable (from version 
 1.9e-BTF). If the bbd-features patch is installed, two additional
 keywords can be used in this setting: QUERYMSG enables support 
@@ -262,5 +263,6 @@ system).  Note that mtr needs to be installed suid-root
 on most systems.
 
 .SH FILES
+.I "~hobbit/server/etc/hobbitserver.cfg (Hobbit only)"
 .I $BBHOME/etc/bbsys.local
 
