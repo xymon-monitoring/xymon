@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.195 2004-12-13 16:35:07 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.196 2004-12-15 21:27:18 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -566,7 +566,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Load all data from the various files */
-	linkhead = load_all_links();
+	load_all_links();
 	add_timestamp("Load links done");
 	pagehead = load_bbhosts(pageset);
 	add_timestamp("Load bbhosts done");
