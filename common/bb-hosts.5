@@ -1104,6 +1104,11 @@ Apache configuration. The following configuration is needed:
 Change "127.0.0.1" to the IP-address of the server that runs your
 network tests.
 
+.SH DEFAULT HOST
+If you have certain tags that you want to apply to all hosts, you can
+define a host name ".default." and put the tags on that host. Note that
+per-host definitions will override the default ones.
+
 .SH FILES
 .BR ~hobbit/server/etc/bb-hosts
 .sp
