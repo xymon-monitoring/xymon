@@ -78,8 +78,6 @@ install: build
 
 	# Add here commands to install the package into debian/hobbit.
 	INSTALLROOT=$(CURDIR)/debian/hobbit/ $(MAKE) install
-	mkdir -p $(CURDIR)/debian/hobbit/etc/init.d
-	cp $(CURDIR)/debian/init.d $(CURDIR)/debian/hobbit/etc/init.d/hobbit
 
 
 # Build architecture-independent files here.
@@ -95,12 +93,12 @@ binary-arch: build install
 	dh_installexamples
 #	dh_install
 #	dh_installmenu
-#	dh_installdebconf	
-#	dh_installlogrotate
+	dh_installdebconf	
+	dh_installlogrotate
 #	dh_installemacsen
 #	dh_installpam
 #	dh_installmime
-#	dh_installinit
+	dh_installinit
 #	dh_installcron
 #	dh_installinfo
 	dh_installman
