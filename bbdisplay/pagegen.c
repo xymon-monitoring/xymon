@@ -31,12 +31,46 @@
 #include "util.h"
 #include "pagegen.h"
 
+int interesting_column(int pagetype, int color, int alert, char *columnname)
+{
+	switch (pagetype) {
+	  case PAGE_BB:
+		return 1;
+		break;
+
+	  case PAGE_BB2:
+		return ((color == COL_RED) || 
+			(color == COL_YELLOW) ||
+			(color == COL_PURPLE));
+
+	  case PAGE_NK:
+		if (alert) {
+			if (color == COL_RED) {
+				return 1;
+			}
+			else if ((color == COL_YELLOW) &&
+			    (strcmp(columnname, "conn") != 0)) {
+				return 1;
+			}
+		}
+		break;
+	}
+
+	return 0;
+}
+
 col_list_t *gen_column_list(host_t *hostlist, int crit_only)
 {
 	/*
 	 * Build a list of the columns that are in use by
 	 * hosts in the hostlist passed as parameter.
 	 * The column list must be sorted by column name.
+	 */
+
+	/* Meaning of crit_only:
+	     0: Normal pages, include all
+	     1: bb2.html, all non-green
+	     2: bbnk.html, only alert columns
 	 */
 
 	col_list_t	*head;
@@ -52,7 +86,7 @@ col_list_t *gen_column_list(host_t *hostlist, int crit_only)
 
 	for (h = hostlist; (h); h = h->next) {
 		for (e = h->entries; (e); e = e->next) {
-			if ((!crit_only) || (e->color == COL_RED) || (e->color == COL_YELLOW) || (e->color == COL_PURPLE)) {
+			if (interesting_column(crit_only, e->color, e->alert, e->column->name)) {
 				/* See where e->column should go in list */
 				collist_walk = head; 
 				while ( (collist_walk->next && 
@@ -158,7 +192,7 @@ void do_groups(group_t *head, FILE *output)
 	fprintf(output, "<CENTER> \n\n<A NAME=begindata>&nbsp;</A>\n");
 
 	for (g = head; (g); g = g->next) {
-		do_hosts(g->hosts, output, g->title, 0);
+		do_hosts(g->hosts, output, g->title, PAGE_BB);
 	}
 	fprintf(output, "\n</CENTER>\n");
 }
@@ -213,7 +247,7 @@ void do_bb_page(page_t *page, char *filename)
 		fprintf(output, "</CENTER>\n");
 	}
 
-	do_hosts(page->hosts, output, "", 0);
+	do_hosts(page->hosts, output, "", PAGE_BB);
 	do_groups(page->groups, output);
 
 	headfoot(output, "bb", "", "", "footer", page->color);
@@ -272,7 +306,7 @@ void do_page(page_t *page, char *filename, char *upperpagename)
 		fprintf(output, "</CENTER>\n");
 	}
 
-	do_hosts(page->hosts, output, "", 0);
+	do_hosts(page->hosts, output, "", PAGE_BB);
 	do_groups(page->groups, output);
 
 	headfoot(output, "bb", page->name, "", "footer", page->color);
@@ -292,7 +326,7 @@ void do_subpage(page_t *page, char *filename, char *upperpagename)
 
 	headfoot(output, "bb", upperpagename, page->name, "header", page->color);
 
-	do_hosts(page->hosts, output, "", 0);
+	do_hosts(page->hosts, output, "", PAGE_BB);
 	do_groups(page->groups, output);
 
 	headfoot(output, "bb", upperpagename, page->name, "footer", page->color);
@@ -505,7 +539,7 @@ void do_bb2_page(char *filename, int summarytype)
 	fprintf(output, "\n<A NAME=begindata>&nbsp;</A> \n<A NAME=\"hosts-blk\">&nbsp;</A>\n");
 
 	if (bb2page.hosts) {
-		do_hosts(bb2page.hosts, output, "", 1);
+		do_hosts(bb2page.hosts, output, "", (1+summarytype));
 	}
 	else {
 		/* "All Monitored Systems OK */
