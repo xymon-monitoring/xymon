@@ -84,3 +84,15 @@ typedef struct {
 	host_t	*hosts;
 } page_t;
 
+/* Format of records in the $BBHIST/allevents file */
+typedef struct {
+	char	hostname[60];
+	char	service[20];
+	time_t	eventtime;
+	time_t	changetime;
+	time_t	duration;
+	int	newcolor;	/* stored as "re", "ye", "gr" etc. */
+	int	oldcolor;
+	int	state;		/* 2=escalated, 1=recovered, 0=no change */
+} event_t;
+
