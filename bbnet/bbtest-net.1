@@ -80,6 +80,17 @@ lookup for the hostname given in the URL; see the
 "bbtest-net tags for HTTP tests" section in
 .I bb-hosts(5)
 
+.IP --test-untagged
+When using the BBLOCATION environment variable to test
+only hosts on a particular network segment, bbtest-net
+will ignore hosts that do not have any "NET:x" tag.
+So only hosts that have a NET:$BBLOCATION tag will be 
+tested.
+.br
+With this option, hosts with no NET: tag are included
+in the test, so that all hosts that either have a
+matching NET: tag, or no NET: tag at all are tested.
+
 .IP --debug
 Dumps a bunch of status about the tests as they
 progress to stdout.

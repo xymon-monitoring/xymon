@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.105 2003-08-31 08:21:14 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.106 2003-08-31 21:16:15 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -90,6 +90,7 @@ int		testcount = 0;
 int		notesthostcount = 0;
 char		**selectedhosts;
 int		selectedcount = 0;
+int		testuntagged = 0;
 time_t		frequenttestlimit = 1800;	/* Interval (seconds) when failing hosts are retried frequently */
 int		checktcpresponse = 0;
 int		fqdn = 1;
@@ -290,8 +291,11 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *testspec
 int wanted_host(char *l, char *netstring, char *hostname)
 {
 	if (selectedcount == 0)
-		return ((netstring == NULL) || (strstr(l, netstring) != NULL));
+		return ((netstring == NULL) || 				/* No BBLOCATION = do all */
+			(strstr(l, netstring) != NULL) ||		/* BBLOCATION && matching NET: tag */
+			(testuntagged && (strstr(l, "NET:") == NULL))); /* No NET: tag for this host */
 	else {
+		/* User provided an explicit list of hosts to test */
 		int i;
 
 		for (i=0; (i < selectedcount); i++) {
@@ -1657,6 +1661,9 @@ int main(int argc, char *argv[])
 			if (strcmp(p, "only") == 0)      dnsmethod = DNS_ONLY;
 			else if (strcmp(p, "ip") == 0)   dnsmethod = IP_ONLY;
 			else                             dnsmethod = DNS_THEN_IP;
+		}
+		else if (strcmp(argv[argi], "--test-untagged") == 0) {
+			testuntagged = 1;
 		}
 
 		/* Debugging options */
