@@ -77,6 +77,7 @@ extern char *realurl(char *url, char **proxy);
 
 extern int generate_static(void);
 extern int stdout_on_file(char *filename);
+extern void setup_signalhandler(char *programname);
 
 #endif
 

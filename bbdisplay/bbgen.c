@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.121 2003-06-07 06:37:52 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.122 2003-06-07 12:07:08 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -90,10 +90,12 @@ int main(int argc, char *argv[])
 	int             larrd043 = 0;				/* Set to use LARRD 0.43 disk displays */
 	char		*egocolumn = NULL;
 
+	/* Catch a SEGV fault */
+	setup_signalhandler("bbgen");
+
 	bb_color = bb2_color = bbnk_color = -1;
 	pagedir = rrddir = NULL;
 	init_timestamp();
-	select_headers_and_footers("bb");
 
 	for (i = 1; (i < argc); i++) {
 		if (strcmp(argv[i], "--nopurple") == 0) {
@@ -332,6 +334,9 @@ int main(int argc, char *argv[])
 	/* Check that all needed environment vars are defined */
 	envcheck(reqenv);
 
+	/* Setup standard header+footer */
+	select_headers_and_footers("bb");
+
 	if (pagedir == NULL) {
 		pagedir = malloc(strlen(getenv("BBHOME"))+5);
 		sprintf(pagedir, "%s/www", getenv("BBHOME"));
@@ -356,7 +361,7 @@ int main(int argc, char *argv[])
 	pagehead = load_bbhosts(pageset);
 	add_timestamp("Load bbhosts done");
 
-	/* Delete old info- and larrd-files if we have restarted */
+	/* Delete old info- and larrd-timestamp files if we have restarted */
 	drop_genstatfiles();
 
 	/* Generate the LARRD pages before loading state */
@@ -393,7 +398,6 @@ int main(int argc, char *argv[])
 		if (s->color > pagehead->color) pagehead->color = s->color;
 	}
 	add_timestamp("Color calculation done");
-
 
 	if (debug) dumpall(pagehead);
 

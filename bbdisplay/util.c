@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.51 2003-06-07 06:37:52 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.52 2003-06-07 12:07:08 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -31,6 +31,7 @@ static char rcsid[] = "$Id: util.c,v 1.51 2003-06-07 06:37:52 henrik Exp $";
 #include <sys/wait.h>
 #include <utime.h>
 #include <stdarg.h>
+#include <signal.h>
 
 #include "bbgen.h"
 #include "util.h"
@@ -68,6 +69,10 @@ static char stackfd_mode[10];
 
 char *errbuf = NULL;
 static int errbufsize = 0;
+
+static char signal_bbcmd[MAX_PATH];
+static char signal_bbdisp[1024];
+static char signal_msg[1024];
 
 void errprintf(const char *fmt, ...)
 {
@@ -1114,4 +1119,22 @@ int stdout_on_file(char *filename)
 	return 0;
 }
 
+
+
+void sigsegv_handler(int signum)
+{
+	signal(signum, SIG_DFL);
+	execl(signal_bbcmd, "bbgen-signal", signal_bbdisp, signal_msg, NULL);
+}
+
+void setup_signalhandler(char *programname)
+{
+	strcpy(signal_bbcmd, getenv("BB"));
+	strcpy(signal_bbdisp, getenv("BBDISP"));
+	sprintf(signal_msg, "status %s.%s red - Program crashed\n\nFatal signal caught!\n", 
+		(getenv("MACHINE") ? getenv("MACHINE") : "BBDISPLAY"), programname);
+
+	signal(SIGSEGV, sigsegv_handler);
+	signal(SIGBUS, sigsegv_handler);
+}
 
