@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.11 2004-11-20 12:07:05 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.12 2004-11-20 12:48:48 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -111,8 +111,16 @@ void loadenv(char *envfile)
 	fd = stackfopen(envfile, "r");
 	if (fd) {
 		while (stackfgets(l, sizeof(l), "include", NULL)) {
+			/* Kill the newline ... */
 			p = strchr(l, '\n'); if (p) *p = '\0';
+
+			/* ... and any comments ... */
 			p = strchr(l, '#'); if (p) *p = '\0'; /* Kill all comments */
+
+			/* ... and trailing whitespace */
+			p = l + strlen(l) -1; while (isspace((int)*p) && (p >= l)) p--;
+			*(p+1) = '\0';
+
 			p = l + strspn(l, " \t");
 			if ((*p) && strchr(p, '=')) {
 				oneenv = strdup(p);
