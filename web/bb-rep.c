@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.21 2004-12-03 12:04:24 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.22 2004-12-05 16:15:01 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -320,9 +320,11 @@ int main(int argc, char *argv[])
 		signal(SIGHUP, SIG_IGN);
 
 		if (WIFEXITED(childstat) && (WEXITSTATUS(childstat) != 0) ) {
+			char msg[4096];
+
 			printf("--%s\n\n", htmldelim);
-			printf("Content-Type: text/html\n\n");
-			errormsg("Could not generate report");
+			sprintf(msg, "Could not generate report.<br>\nCheck that the %s/www/rep/ directory has permissions '-rwxrwxr-x' (775)<br>\n and that is is set to group %d", getenv("BBHOME"), getgid());
+			errormsg(msg);
 		}
 		else {
 			/* Send the browser off to the report */
