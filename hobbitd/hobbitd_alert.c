@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.28 2004-11-27 08:18:52 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.29 2004-11-28 21:59:12 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -255,14 +255,12 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--cfid")) {
 			include_configid = 1;
 		}
+		else if (argnmatch(argv[argi], "--legacy")) {
+			bbcompat_mode = 1;
+		}
 		else {
 			errprintf("Unknown option '%s'\n", argv[argi]);
 		}
-	}
-
-	if (configfn == NULL) {
-		errprintf("'--config=FILENAME' is needed to find the alert configuration file.\n");
-		exit(1);
 	}
 
 	if (checkfn) {
