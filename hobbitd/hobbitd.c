@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.27 2004-10-16 16:06:31 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.28 2004-10-21 21:30:17 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -447,6 +447,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		}
 	}
 
+	log->logtime = now;
 	log->validtime = now + validity*60;
 	log->oldcolor = log->color;
 	log->color = newcolor;
@@ -924,11 +925,11 @@ void do_message(conn_t *msg)
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 0, 0);
 		if (log) {
 			msg->doingwhat = RESPONDING;
-			sprintf(msg->buf, "%s|%s|%s|%s|%d|%d|%s\n%s", 
+			sprintf(msg->buf, "%s|%s|%s|%s|%d|%d|%d|%s\n%s", 
 				h->hostname, log->test->testname, 
 				colnames[log->color], 
 				(log->testflags ? log->testflags : ""),
-				(int) log->lastchange, (int) log->validtime, log->sender,
+				(int) log->logtime, (int) log->lastchange, (int) log->validtime, log->sender,
 				msg_data(log->message));
 			msg->bufp = msg->buf;
 			msg->buflen = strlen(msg->buf);
@@ -956,11 +957,11 @@ void do_message(conn_t *msg)
 					buf = (char *)realloc(buf, bufsz);
 					bufp = buf + buflen;
 				}
-				n = sprintf(bufp, "%s|%s|%s|%s|%d|%d|%s|%s\n", 
+				n = sprintf(bufp, "%s|%s|%s|%s|%d|%d|%d|%s|%s\n", 
 					hwalk->hostname, lwalk->test->testname, 
 					colnames[lwalk->color], 
 					(lwalk->testflags ? lwalk->testflags : ""),
-					(int) lwalk->lastchange, (int) lwalk->validtime,
+					(int) lwalk->logtime, (int) lwalk->lastchange, (int) lwalk->validtime,
 					lwalk->sender, msg_data(lwalk->message));
 				bufp += n;
 				buflen += n;
@@ -1062,12 +1063,12 @@ void save_checkpoint(void)
 
 	for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
 		for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
-			fprintf(fd, "@@BBGENDCHK-V1|%s|%s|%s|%s|%s|%s|%d|%d|%d|%d|%s", 
+			fprintf(fd, "@@BBGENDCHK-V1|%s|%s|%s|%s|%s|%s|%d|%d|%d|%d|%d|%s", 
 				hwalk->hostname, lwalk->test->testname, lwalk->sender,
 				colnames[lwalk->color], 
 				(lwalk->testflags ? lwalk->testflags : ""),
 				colnames[lwalk->oldcolor],
-				(int) lwalk->lastchange, (int) lwalk->validtime, 
+				(int)lwalk->logtime, (int) lwalk->lastchange, (int) lwalk->validtime, 
 				(int) lwalk->enabletime, (int) lwalk->acktime,
 				nlencode(lwalk->message));
 			fprintf(fd, "|%s", nlencode(lwalk->dismsg));
@@ -1092,7 +1093,7 @@ void load_checkpoint(char *fn)
 	bbd_testlist_t *t = NULL;
 	bbd_log_t *ltail = NULL;
 	char *hostname, *testname, *sender, *testflags, *statusmsg, *disablemsg, *ackmsg;
-	time_t lastchange, validtime, enabletime, acktime;
+	time_t logtime, lastchange, validtime, enabletime, acktime;
 	int color, oldcolor;
 
 	fd = fopen(fn, "r");
@@ -1116,21 +1117,22 @@ void load_checkpoint(char *fn)
 			  case 4: color = parse_color(item); if (color == -1) err = 1; break;
 			  case 5: testflags = item; break;
 			  case 6: oldcolor = parse_color(item); if (oldcolor == -1) oldcolor = NO_COLOR; break;
-			  case 7: lastchange = atoi(item); break;
-			  case 8: validtime = atoi(item); break;
-			  case 9: enabletime = atoi(item); break;
-			  case 10: acktime = atoi(item); break;
-			  case 11: if (strlen(item)) statusmsg = item; else err=1; break;
-			  case 12: disablemsg = item; break;
-			  case 13: ackmsg = item; break;
+			  case 7: logtime = atoi(item); break;
+			  case 8: lastchange = atoi(item); break;
+			  case 9: validtime = atoi(item); break;
+			  case 10: enabletime = atoi(item); break;
+			  case 11: acktime = atoi(item); break;
+			  case 12: if (strlen(item)) statusmsg = item; else err=1; break;
+			  case 13: disablemsg = item; break;
+			  case 14: ackmsg = item; break;
 			  default: err = 1;
 			}
 
 			item = gettok(NULL, "|\n"); i++;
 		}
 
-		if (i < 13) {
-			errprintf("Too few fields in record - found %d, expected 13\n", i);
+		if (i < 14) {
+			errprintf("Too few fields in record - found %d, expected 14\n", i);
 			err = 1;
 		}
 
@@ -1172,6 +1174,7 @@ void load_checkpoint(char *fn)
 		ltail->oldcolor = oldcolor;
 		ltail->testflags = ( (testflags && strlen(testflags)) ? strdup(testflags) : NULL);
 		strcpy(ltail->sender, sender);
+		ltail->logtime = logtime;
 		ltail->lastchange = lastchange;
 		ltail->validtime = validtime;
 		ltail->enabletime = enabletime;
