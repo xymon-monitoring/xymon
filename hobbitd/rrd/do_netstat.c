@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.2 2004-11-07 18:24:24 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.3 2004-11-07 21:48:00 henrik Exp $";
 
 static char *netstat_params[] = { "rrdcreate", rrdfn, 
 	                          "DS:udpInDatagrams:DERIVE:600:0:U", 
@@ -39,6 +39,23 @@ static char *netstat_unix_markers[] = {
 	"tcpInInorderBytes",
 	"tcpInUnorderBytes",
 	"tcpRetransBytes",
+	NULL
+};
+
+/* This is for the native netstat output from HP-UX (and AIX) */
+static char *netstat_hpux_markers[] = {
+	"",				/* udpInDatagrams */
+	"",				/* udpOutDatagrams */
+	"",				/* udpInErrors */
+	"connection requests",
+	"connection accepts",
+	"",				/* tcpAttemptFails */
+	"",				/* tcpEstabResets */
+	"",				/* tcpCurrEstab */
+	"data packets",
+	"received in-sequence",
+	"out of order packets",
+	"retransmitted",
 	NULL
 };
 
@@ -110,7 +127,7 @@ static char *netstat_win32_markers[] = {
 	NULL
 };
 
-static int do_valaftermarkereq(char *layout[], char *msg, char *outp)
+static int do_valaftermarkerequal(char *layout[], char *msg, char *outp)
 {
 	int i, gotany = 0;
 	char *ln;
@@ -194,7 +211,7 @@ int do_netstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		 * TCP     
 		 *	tcpRtoAlgorithm     =     4     tcpRtoMin           =   400
 		 */
-		havedata = do_valaftermarkereq(netstat_unix_markers, datapart, outp);
+		havedata = do_valaftermarkerequal(netstat_unix_markers, datapart, outp);
 		break;
 
 	  case OS_AIX: 
@@ -214,7 +231,8 @@ int do_netstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		 * tcpInUnorderBytes = $tcpInUnorderBytes
 		 * tcpRetransBytes = $tcpRetransBytes
 		 */
-		havedata = do_valaftermarkereq(netstat_unix_markers, datapart, outp);
+		havedata = do_valaftermarkerequal(netstat_unix_markers, datapart, outp);
+		if (!havedata) havedata = do_valbeforemarker(netstat_hpux_markers, datapart, outp);
 		break;
 
 	  case OS_LINUX:
@@ -222,7 +240,7 @@ int do_netstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	  case OS_DEBIAN:
 	  case OS_DEBIAN3:
 		/* These are of the form "<value> <marker" */
-		datapart = strstr(datapart, "\nTcp:");
+		datapart = strstr(datapart, "\nTcp:");	/* Skip to the start of "Tcp" (udp comes after) */
 		if (datapart) havedata = do_valbeforemarker(netstat_linux_markers, datapart, outp);
 		break;
 
