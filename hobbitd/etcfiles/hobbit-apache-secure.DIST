@@ -4,6 +4,13 @@
 # the Hobbit webpages and cgi-scripts available in the
 # "@BBHOSTURL@" and "@BBCGIURL@" URLs.
 
+
+# NB: The "Alias" line below must NOT be used if you have
+#     the Hobbit webfiles as the root URL. In that case,
+#     you should instead set this:
+#
+#          DocumentRoot @BBHOME@/www/
+
 Alias @BBHOSTURL@/  "@BBHOME@/www/"
 <Directory "@BBHOME@/www/">
     Options Indexes FollowSymLinks Includes MultiViews
