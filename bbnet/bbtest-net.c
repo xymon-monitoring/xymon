@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.181 2004-10-30 15:46:20 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.182 2004-11-08 21:18:54 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -1541,10 +1541,10 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 			char cmd[PATH_MAX];
 
 			if (getenv("TRACEROUTE")) {
-				sprintf(cmd, "%s %s 2>&1", getenv("TRACEROUTE"), test->host->hostname);
+				sprintf(cmd, "%s %s 2>&1", getenv("TRACEROUTE"), test->host->ip);
 			}
 			else {
-				sprintf(cmd, "traceroute -n -q 2 -w 2 -m 15 %s 2>&1", test->host->hostname);
+				sprintf(cmd, "traceroute -n -q 2 -w 2 -m 15 %s 2>&1", test->host->ip);
 			}
 			run_command(cmd, NULL, &test->host->traceroute, NULL, 0);
 		}
