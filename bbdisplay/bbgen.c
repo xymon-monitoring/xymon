@@ -662,7 +662,7 @@ void do_hosts(host_t *head, FILE *output)
 	host_t	*h;
 
 	for (h = head; (h); h = h->next) {
-		fprintf(output, "    host %s\n", h->hostname);
+		fprintf(output, "    host %s, color %s\n", h->hostname, colorname(h->color));
 	}
 	fprintf(output, "\n");
 }
@@ -677,6 +677,31 @@ void do_groups(group_t *head, FILE *output)
 	}
 	fprintf(output, "\n");
 }
+
+void do_bb_page(page_t *page, char *filename)
+{
+	FILE	*output;
+	page_t	*p;
+
+	output = fopen(filename, "w");
+	if (output == NULL) {
+		printf("Cannot open file %s\n", filename);
+		return;
+	}
+
+	fprintf(output, "SDM page\n");
+	fprintf(output, "Color: %s\n", colorname(page->color));
+
+	for (p = page->next; (p); p = p->next) {
+		fprintf(output, "  page %s - %s\n", p->name, colorname(p->color));
+	}
+
+	do_hosts(page->hosts, output);
+	do_groups(page->groups, output);
+
+	fclose(output);
+}
+
 
 void do_page(page_t *page, char *filename)
 {
@@ -772,7 +797,7 @@ int main(int argc, char *argv[])
 #endif
 
 	/* Generate pages */
-	do_page(pagehead, "/tmp/www/bb.html");
+	do_bb_page(pagehead, "/tmp/www/bb.html");
 	for (p=pagehead->next; (p); p = p->next) {
 		char dirfn[256], fn[256];
 
