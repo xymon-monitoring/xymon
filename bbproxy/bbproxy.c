@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.34 2004-11-09 12:27:37 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.35 2004-11-09 14:58:30 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -484,63 +484,80 @@ int main(int argc, char *argv[])
 		struct timeval tmo;
 		struct timezone tz;
 		int n, idx;
-		conn_t *cwalk;
+		conn_t *cwalk, *ctmp;
 		time_t ctime;
 		time_t now;
 		int combining = 0;
 
 		/* See if it is time for a status report */
 		if (proxyname && ((now = time(NULL)) >= (laststatus+300))) {
-			conn_t *stentry = NULL;
+			conn_t *stentry;
 			int ccount = 0;
 			unsigned long bufspace = 0;
+			unsigned long avgtime;	/* In millisecs */
 			char runtime_s[30];
 			unsigned long runt = (unsigned long) (now-startuptime);
 			char *p;
+			unsigned long msgs_sent = msgs_total - msgs_total_last;
+
+			/* Setup a conn_t struct for the status message */
+			stentry = (conn_t *)calloc(1, sizeof(conn_t));
+			stentry->state = P_REQ_READY;
+			stentry->csocket = stentry->ssocket = -1;
+			stentry->clientip = &stentry->caddr.sin_addr;
+			gettimeofday(&stentry->arrival, &tz);
+			stentry->timelimit.tv_sec = stentry->arrival.tv_sec + timeout;
+			stentry->timelimit.tv_usec = stentry->arrival.tv_usec;
+			stentry->bufsize = BUFSZ_INC;
+			stentry->buf = (char *)malloc(stentry->bufsize);
+			stentry->next = chead;
+			chead = stentry;
 
 			sprintf(runtime_s, "%lu days, %02lu:%02lu:%02lu",
 				(runt/86400), ((runt % 86400) / 3600),
 				((runt % 3600) / 60), (runt % 60));
+
 			init_timestamp();
+
 			for (cwalk = chead; (cwalk); cwalk = cwalk->next) {
 				ccount++;
 				bufspace += cwalk->bufsize;
-				if (cwalk->state == P_IDLE) stentry = cwalk;
 			}
 
-			if (stentry) {
-				unsigned long avgtime;	/* In millisecs */
-				
-				avgtime = (timeinqueue.tv_sec*1000 + timeinqueue.tv_usec/1000) / (msgs_total - msgs_total_last);
-
-				sprintf(stentry->buf, "combo\nstatus %s green %s Proxy up %s\n\nProxy statistics\n\nIncoming messages        : %10lu (%lu msgs/second)\nOutbound messages        : %10lu\n\nIncoming message distribution\n- Combo messages         : %10lu\n- Status messages        : %10lu\n  Messages merged        : %10lu\n  Resulting combos       : %10lu\n- Page messages          : %10lu\n- Other messages         : %10lu\n\nProxy ressources\n- Connection table size  : %10d\n- Buffer space           : %10lu kByte\n",
-					proxyname, timestamp, runtime_s,
-					msgs_total, (msgs_total - msgs_total_last) / (now - laststatus),
-					msgs_delivered,
-					msgs_combo, 
-					msgs_status, msgs_merged, msgs_combined, 
-					msgs_page, msgs_other,
-					ccount, bufspace / 1024);
-				p = stentry->buf + strlen(stentry->buf);
-				p += sprintf(p, "\nTimeout/failure details\n");
-				p += sprintf(p, "- %-22s : %10lu\n", statename[P_REQ_READING], msgs_timeout_from[P_REQ_READING]);
-				p += sprintf(p, "- %-22s : %10lu\n", statename[P_REQ_CONNECTING], msgs_timeout_from[P_REQ_CONNECTING]);
-				p += sprintf(p, "- %-22s : %10lu\n", statename[P_REQ_SENDING], msgs_timeout_from[P_REQ_SENDING]);
-				p += sprintf(p, "- %-22s : %10lu\n", "recovered", msgs_recovered);
-				p += sprintf(p, "- %-22s : %10lu\n", statename[P_RESP_READING], msgs_timeout_from[P_RESP_READING]);
-				p += sprintf(p, "- %-22s : %10lu\n", statename[P_RESP_SENDING], msgs_timeout_from[P_RESP_SENDING]);
-				p += sprintf(p, "\n%-24s : %10lu.%03lu\n", "Average queue time", 
-						(avgtime / 1000), (avgtime % 1000));
-
-				/* Clear the summary collection totals */
-				laststatus = now;
-				msgs_total_last = msgs_total;
-				timeinqueue.tv_sec = timeinqueue.tv_usec = 0;
-
-				stentry->buflen = strlen(stentry->buf);
-				stentry->bufp = stentry->buf;
-				stentry->state = P_REQ_READY;
+			if (msgs_sent == 0) {
+				avgtime = 0;
 			}
+			else {
+				avgtime = (timeinqueue.tv_sec*1000 + timeinqueue.tv_usec/1000) / msgs_sent;
+			}
+
+			p = stentry->buf;
+			p += sprintf(p, "combo\nstatus %s green %s Proxy up %s\n\nProxy statistics\n\nIncoming messages        : %10lu (%lu msgs/second)\nOutbound messages        : %10lu\n\nIncoming message distribution\n- Combo messages         : %10lu\n- Status messages        : %10lu\n  Messages merged        : %10lu\n  Resulting combos       : %10lu\n- Page messages          : %10lu\n- Other messages         : %10lu\n\nProxy ressources\n- Connection table size  : %10d\n- Buffer space           : %10lu kByte\n",
+				proxyname, timestamp, runtime_s,
+				msgs_total, (msgs_total - msgs_total_last) / (now - laststatus),
+				msgs_delivered,
+				msgs_combo, 
+				msgs_status, msgs_merged, msgs_combined, 
+				msgs_page, msgs_other,
+				ccount, bufspace / 1024);
+			p += sprintf(p, "\nTimeout/failure details\n");
+			p += sprintf(p, "- %-22s : %10lu\n", statename[P_REQ_READING], msgs_timeout_from[P_REQ_READING]);
+			p += sprintf(p, "- %-22s : %10lu\n", statename[P_REQ_CONNECTING], msgs_timeout_from[P_REQ_CONNECTING]);
+			p += sprintf(p, "- %-22s : %10lu\n", statename[P_REQ_SENDING], msgs_timeout_from[P_REQ_SENDING]);
+			p += sprintf(p, "- %-22s : %10lu\n", "recovered", msgs_recovered);
+			p += sprintf(p, "- %-22s : %10lu\n", statename[P_RESP_READING], msgs_timeout_from[P_RESP_READING]);
+			p += sprintf(p, "- %-22s : %10lu\n", statename[P_RESP_SENDING], msgs_timeout_from[P_RESP_SENDING]);
+			p += sprintf(p, "\n%-24s : %10lu.%03lu\n", "Average queue time", 
+					(avgtime / 1000), (avgtime % 1000));
+
+			/* Clear the summary collection totals */
+			laststatus = now;
+			msgs_total_last = msgs_total;
+			timeinqueue.tv_sec = timeinqueue.tv_usec = 0;
+
+			stentry->buflen = strlen(stentry->buf);
+			stentry->bufp = stentry->buf + stentry->buflen;
+			stentry->state = P_REQ_READY;
 		}
 
 		FD_ZERO(&fdread);
@@ -613,8 +630,42 @@ int main(int argc, char *argv[])
 						cwalk->state = P_REQ_COMBINING;
 						break;
 					}
-					else if (strncmp(cwalk->buf+6, "combo", 5) == 0) {
+					else if (strncmp(cwalk->buf+6, "combo\n", 6) == 0) {
+						char *currmsg, *nextmsg;
+
 						msgs_combo++;
+
+						gettimeofday(&cwalk->timelimit, &tz);
+						cwalk->timelimit.tv_usec += COMBO_DELAY;
+						if (cwalk->timelimit.tv_usec >= 1000000) {
+							cwalk->timelimit.tv_sec++;
+							cwalk->timelimit.tv_usec -= 1000000;
+						}
+
+						currmsg = cwalk->buf+12; /* Skip pre-def. "combo\n" and message "combo\n" */
+						do {
+							nextmsg = strstr(currmsg, "\n\nstatus");
+							if (nextmsg) { *(nextmsg+1) = '\0'; nextmsg += 2; }
+
+							/* Create a duplicate conn_t record for all embedded messages */
+							ctmp = (conn_t *)malloc(sizeof(conn_t));
+							memcpy(ctmp, cwalk, sizeof(conn_t));
+							ctmp->bufsize = BUFSZ_INC*(((6 + strlen(currmsg) + 50) / BUFSZ_INC) + 1);
+							ctmp->buf = (char *)malloc(ctmp->bufsize);
+							ctmp->buflen = sprintf(ctmp->buf, 
+								"combo\n%s\nStatus message received from %s\n", 
+								currmsg, inet_ntoa(*cwalk->clientip));
+							ctmp->bufp = ctmp->buf + ctmp->buflen;
+							ctmp->state = P_REQ_COMBINING;
+							ctmp->next = chead;
+							chead = ctmp;
+
+							currmsg = nextmsg;
+						} while (currmsg);
+
+						/* We dont do anymore with this conn_t */
+						cwalk->state = P_CLEANUP;
+						break;
 					}
 					else if (strncmp(cwalk->buf+6, "page", 4) == 0) {
 						cwalk->snum = bbpagercount;
@@ -624,6 +675,7 @@ int main(int argc, char *argv[])
 						msgs_other++;
 					}
 				}
+
 				/* 
 				 * This wont be made into a combo message, so skip the "combo\n" 
 				 * and go off to send the message to the server.
@@ -1056,6 +1108,44 @@ int main(int argc, char *argv[])
 					newconn->timelimit.tv_sec = newconn->arrival.tv_sec + timeout;
 					newconn->timelimit.tv_usec = newconn->arrival.tv_usec;
 				}
+			}
+		}
+
+		/* Clean up unused conn_t's */
+		{
+			conn_t *tmp, *khead;
+
+			khead = NULL; cwalk = chead;
+			while (cwalk) {
+				if ((cwalk == chead) && (cwalk->state == P_IDLE)) {
+					/* head of chain is dead */
+					tmp = chead;
+					chead = chead->next;
+					tmp->next = khead;
+					khead = tmp;
+
+					cwalk = chead;
+				}
+				else if (cwalk->next && (cwalk->next->state == P_IDLE)) {
+					tmp = cwalk->next;
+					cwalk->next = tmp->next;
+					tmp->next = khead;
+					khead = tmp;
+
+					/* cwalk is unchanged */
+				}
+				else {
+					cwalk = cwalk->next;
+				}
+			}
+
+			/* khead now holds a list of P_IDLE conn_t structs */
+			while (khead) {
+				tmp = khead;
+				khead = khead->next;
+
+				if (tmp->buf) free(tmp->buf);
+				free(tmp);
 			}
 		}
 	} while (keeprunning);
