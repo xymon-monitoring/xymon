@@ -110,6 +110,9 @@
 #define PAGE_BB2	1
 #define PAGE_NK		2
 
+/* Max number of purple messages in one run */
+#define MAX_PURPLE_PER_RUN	30
+
 /* Info-link definitions. */
 typedef struct {
 	char	name[64];

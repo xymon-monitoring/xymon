@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.24 2003-01-16 12:34:28 hstoerne Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.25 2003-01-20 09:26:59 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -189,7 +189,7 @@ col_t *find_or_create_column(const char *testname)
 	return newcol;
 }
 
-state_t *init_state(const char *filename, int dopurple)
+state_t *init_state(const char *filename, int dopurple, int *is_purple)
 {
 	FILE *fd;
 	char	*p;
@@ -204,6 +204,8 @@ state_t *init_state(const char *filename, int dopurple)
 
 	char	bbcmd[250];
 	char	bbdispaddr[20];
+
+	*is_purple = 0;
 
 	/* Ignore summary files and dot-files */
 	if ( (strncmp(filename, "summary.", 8) == 0) || (filename[0] == '.')) {
@@ -286,6 +288,8 @@ state_t *init_state(const char *filename, int dopurple)
 		char *p;
 		char *purplemsg = malloc(st.st_size+1024);
 		char msgline[200];
+
+		*is_purple = 1;
 
 		if (host && host->dialup) {
 			/* Dialup hosts go clear, not purple */
@@ -685,6 +689,8 @@ state_t *load_state(void)
 	state_t		*newstate, *topstate;
 	int		dopurple;
 	struct stat	st;
+	int		purplecount = 0;
+	int		is_purple;
 
 	chdir(getenv("BBLOGS"));
 	if (stat(".bbstartup", &st) == -1) {
@@ -692,9 +698,16 @@ state_t *load_state(void)
 		dopurple = enable_purpleupd;
 	}
 	else {
-		/* Don't do purple hosts ("avoid purple explosion on startup") */
+		time_t now;
+
+		/* Starting up - don't do purple hosts ("avoid purple explosion on startup") */
 		dopurple = 0;
-		remove(".bbstartup");
+
+		/* Check if enough time has passed to remove the startup file */
+		time(&now);
+		if ((now - st.st_mtime) > 300) {
+			remove(".bbstartup");
+		}
 	}
 
 	if (dopurple) combo_start();
@@ -709,10 +722,18 @@ state_t *load_state(void)
 	while ((d = readdir(bblogs))) {
 		strcpy(fn, d->d_name);
 		if (fn[0] != '.') {
-			newstate = init_state(fn, dopurple);
+			newstate = init_state(fn, dopurple, &is_purple);
 			if (newstate) {
 				newstate->next = topstate;
 				topstate = newstate;
+			}
+		}
+
+		if (dopurple) {
+			if (is_purple) purplecount++;
+			if (purplecount > MAX_PURPLE_PER_RUN) {
+				dopurple = 0;
+				printf("%s : Too many purple updates - dropped\n", timestamp);
 			}
 		}
 	}
