@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.19 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.20 2005-01-20 10:12:16 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -42,6 +42,8 @@ static char rcsid[] = "$Id: hobbitlaunch.c,v 1.19 2005-01-18 22:25:59 henrik Exp
  */
 
 #define MAX_FAILS 5
+#define HEARTBEAT_CHECK   5	/* How often to check the heartbeat */
+#define HEARTBEAT_TIMEOUT 15	/* Max time between heartbeats. */
 
 typedef struct grouplist_t {
 	char *groupname;
@@ -61,7 +63,9 @@ typedef struct tasklist_t {
 	int exitcode;
 	int failcount;
 	int cfload;	/* Used while reloading a configuration */
+	int beingkilled;
 	struct tasklist_t *depends;
+	time_t *heartbeat;
 	struct tasklist_t *next;
 } tasklist_t;
 tasklist_t *taskhead = NULL;
@@ -71,6 +75,8 @@ grouplist_t *grouphead = NULL;
 volatile time_t nextcfgload = 0;
 volatile int running = 1;
 volatile int dologswitch = 0;
+time_t heartbeat;
+time_t nexthbcheck = 0;
 
 void update_task(tasklist_t *newtask)
 {
@@ -252,10 +258,13 @@ void load_config(char *conffn)
 				errprintf("Configuration error, unknown dependency %s->%s", curtask->key, p);
 			}
 		}
-		else if (curtask && (strncasecmp(p, "ENVFILE ", 4) == 0)) {
+		else if (curtask && (strncasecmp(p, "ENVFILE ", 8) == 0)) {
 			p += 7;
 			p += strspn(p, " \t");
 			curtask->envfile = xstrdup(p);
+		}
+		else if (curtask && (strncasecmp(p, "HEARTBEAT", 9) == 0)) {
+			curtask->heartbeat = &heartbeat;
 		}
 	}
 	if (curtask) update_task(curtask);
@@ -343,12 +352,16 @@ void sig_handler(int signum)
 	  case SIGTERM:
 		running = 0;
 		break;
+
+	  case SIGUSR2:
+		heartbeat = time(NULL);
+		break;
 	}
 }
 
 int main(int argc, char *argv[])
 {
-	tasklist_t *twalk;
+	tasklist_t *twalk, *dwalk;
 	grouplist_t *gwalk;
 	int argi;
 	int daemonize = 1;
@@ -447,8 +460,11 @@ int main(int argc, char *argv[])
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGCHLD, &sa, NULL);
+	sigaction(SIGUSR2, &sa, NULL);
 
 	errprintf("hobbitlaunch starting\n");
+	heartbeat = time(NULL);
+	nexthbcheck = heartbeat + HEARTBEAT_CHECK;
 	while (running) {
 		time_t now = time(NULL);
 
@@ -463,11 +479,24 @@ int main(int argc, char *argv[])
 			dologswitch = 0;
 		}
 
+		if (now >= nexthbcheck) {
+			nexthbcheck = now + HEARTBEAT_CHECK;
+			for (twalk = taskhead; (twalk); twalk = twalk->next) {
+				if (twalk->heartbeat && twalk->pid && ((*(twalk->heartbeat) + HEARTBEAT_TIMEOUT) < now)) {
+					errprintf("Heartbeat lost for task %s, %s it\n", 
+						  twalk->key, (twalk->beingkilled ? "bouncing" : "killing"));
+					kill(twalk->pid, (twalk->beingkilled ? SIGKILL : SIGTERM));
+					twalk->beingkilled = 1;
+				}
+			}
+		}
+
 		/* Pick up children that have terminated */
 		while ((cpid = wait3(&status, WNOHANG, NULL)) > 0) {
 			for (twalk = taskhead; (twalk && (twalk->pid != cpid)); twalk = twalk->next);
 			if (twalk) {
 				twalk->pid = 0;
+				twalk->beingkilled = 0;
 				if (WIFEXITED(status)) {
 					twalk->exitcode = WEXITSTATUS(status);
 					if (twalk->exitcode) {
@@ -487,6 +516,11 @@ int main(int argc, char *argv[])
 				if (twalk->group) twalk->group->currentuse--;
 
 				/* Tasks that depend on this task should be killed ... */
+				for (dwalk = taskhead; (dwalk); dwalk = dwalk->next) {
+					if ((dwalk->depends == twalk) && (dwalk->pid > 0)) {
+						kill(dwalk->pid, SIGTERM);
+					}
+				}
 			}
 		}
 
@@ -569,6 +603,8 @@ int main(int argc, char *argv[])
 				dprintf("Task %s active with PID %d\n", twalk->key, (int)twalk->pid);
 			}
 		}
+
+		dprintf("Heartbeat received at time %d\n", (int) heartbeat);
 
 		sleep(5);
 	}
