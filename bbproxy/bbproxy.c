@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.15 2004-09-20 15:31:49 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.16 2004-09-20 22:24:01 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -47,6 +47,8 @@ enum phase_t {
 	P_REQ_READING,		/* Reading request data */
 	P_REQ_READY, 		/* Done reading request from client */
 
+	P_REQ_COMBINING,
+
 	P_REQ_CONNECTING,	/* Connecting to server */
 	P_REQ_SENDING, 		/* Sending request data */
 	P_REQ_DONE,		/* Done sending request data to server */
@@ -58,17 +60,18 @@ enum phase_t {
 	P_CLEANUP
 };
 
-char *statename[] = {
+char *statename[P_CLEANUP+1] = {
 	"idle",
-	"req_reading",
-	"req_ready",
-	"req_connecting",
-	"req_sending",
-	"req_done",
-	"resp_reading",
-	"resp_ready",
-	"resp_sending",
-	"resp_done",
+	"reading from client",
+	"request from client OK",
+	"request combining",
+	"connecting to server",
+	"sending to server",
+	"request sent",
+	"reading from server",
+	"response from server OK",
+	"sending to client",
+	"response sent",
 	"cleanup"
 };
 
@@ -82,18 +85,23 @@ typedef struct conn_t {
 	int ssocket;
 	int conntries;
 	time_t conntime;
+	int madetocombo;
+	struct timeval timelimit;
 	unsigned char *buf, *bufp;
 	unsigned int bufsize, buflen;
 	struct conn_t *next;
 } conn_t;
 
 #define CONNECT_TRIES 3		/* How many connect-attempts against the server */
-#define CONNECT_INTERVAL 8	/* seconds between each connection attempt */
-#define BUFSZ_READ 2048
-#define BUFSZ_INC  8192
+#define CONNECT_INTERVAL 8	/* Seconds between each connection attempt */
+#define BUFSZ_READ 2048		/* Minimum #bytes that must be free when read'ing into a buffer */
+#define BUFSZ_INC  8192		/* How much to grow the buffer when it is too small */
 #define MAX_OPEN_SOCKS 256
+#define MINIMUM_FOR_COMBO 4096	/* To start merging messages, at least have 4 KB free */
+#define COMBO_DELAY 500000	/* Delay before sending a combo message (in microseconds) */
 
 int keeprunning = 1;
+time_t laststatus = 0;
 char *logfile = NULL;
 
 void sigterm_handler(int signum)
@@ -110,6 +118,19 @@ void sighup_handler(int signum)
 		if (signum) errprintf("Caught SIGHUP, reopening logfile\n");
 		logfd = freopen(logfile, "a", stderr);
 	}
+}
+
+void sigusr1_handler(int signum)
+{
+	/* Trigger a status update */
+	laststatus = 0;
+}
+
+int overdue(struct timeval *now, struct timeval *limit)
+{
+	if (now->tv_sec < limit->tv_sec) return 0;
+	else if (now->tv_sec > limit->tv_sec) return 1;
+	else return (now->tv_usec >= limit->tv_usec);
 }
 
 static void do_read(int sockfd, char *addr, conn_t *conn, enum phase_t completedstate)
@@ -182,16 +203,16 @@ int main(int argc, char *argv[])
 	conn_t *chead = NULL;
 
 	/* Statistics info */
-	time_t laststatus = 0;
 	time_t startuptime = time(NULL);
 	unsigned long msgs_total = 0;
 	unsigned long msgs_total_last = 0;
+	unsigned long msgs_combined = 0;
+	unsigned long msgs_merged = 0;
+	unsigned long msgs_delivered = 0;
 	unsigned long msgs_status = 0;
 	unsigned long msgs_page = 0;
 	unsigned long msgs_combo = 0;
-	unsigned long msgs_delivered = 0;
-	unsigned long msgs_lost = 0;
-	unsigned long msgs_timeout = 0;
+	unsigned long msgs_other = 0;
 	unsigned long msgs_timeout_from[P_CLEANUP+1] = { 0, };
 
 	/* Dont save the output from errprintf() */
@@ -378,15 +399,18 @@ int main(int argc, char *argv[])
 	setup_signalhandler(proxynamesvc);
 	signal(SIGHUP, sighup_handler);
 	signal(SIGTERM, sigterm_handler);
+	signal(SIGUSR1, sigusr1_handler);
 
 	do {
 		fd_set fdread, fdwrite;
 		int maxfd;
 		struct timeval tmo;
+		struct timezone tz;
 		int n, idx;
 		conn_t *cwalk;
 		time_t ctime;
 		time_t now;
+		int combining = 0;
 
 		/* See if it is time for a status report */
 		if (proxyname && ((now = time(NULL)) >= (laststatus+300))) {
@@ -408,25 +432,19 @@ int main(int argc, char *argv[])
 			}
 
 			if (stentry) {
-				sprintf(stentry->buf, "status %s green %s Proxy up %s\n\nProxy statistics\n\nMessages total           : %10lu (%lu msgs/second)\nMessages delivered       : %10lu\nMessages lost (server)   : %10lu\nMessages lost (timeout)  : %10lu\nCombo messages           : %10lu\nStatus messages          : %10lu\nPage messages            : %10lu\n\nConnection table size    : %10d\nBuffer space             : %10lu kByte\n",
-					proxyname,
-					timestamp,
-					runtime_s,
-					msgs_total, 
-					(msgs_total - msgs_total_last) / (now - laststatus),
-					msgs_delivered,
-					msgs_lost,
-					msgs_timeout,
-					msgs_combo,
-					msgs_status,
-					msgs_page,
-					ccount,
-					bufspace / 1024);
+				sprintf(stentry->buf, "status %s green %s Proxy up %s\n\nProxy statistics\n\nIncoming messages        : %10lu (%lu msgs/second)\nMessages merged to combos: %10lu\nResulting combo messages : %10lu\nOutbound messages        : %10lu\n\nIncoming message distribution\n- Combo messages         : %10lu\n- Status messages        : %10lu\n- Page messages          : %10lu\n- Other messages         : %10lu\n\nProxy ressources\n- Connection table size  : %10d\n- Buffer space           : %10lu kByte\n",
+					proxyname, timestamp, runtime_s,
+					msgs_total, (msgs_total - msgs_total_last) / (now - laststatus),
+					msgs_merged, msgs_combined, msgs_delivered,
+					msgs_combo, msgs_status, msgs_page, msgs_other,
+					ccount, bufspace / 1024);
 				p = stentry->buf + strlen(stentry->buf);
 				p += sprintf(p, "\nTimeout details:\n");
-				for (idx = P_IDLE+1; (idx < P_CLEANUP); idx++) {
-					p += sprintf(p, "%-24s : %10lu\n", statename[idx], msgs_timeout_from[idx]);
-				}
+				p += sprintf(p, "- %-22s : %10lu\n", statename[P_REQ_READING], msgs_timeout_from[P_REQ_READING]);
+				p += sprintf(p, "- %-22s : %10lu\n", statename[P_REQ_CONNECTING], msgs_timeout_from[P_REQ_CONNECTING]);
+				p += sprintf(p, "- %-22s : %10lu\n", statename[P_REQ_SENDING], msgs_timeout_from[P_REQ_SENDING]);
+				p += sprintf(p, "- %-22s : %10lu\n", statename[P_RESP_READING], msgs_timeout_from[P_RESP_READING]);
+				p += sprintf(p, "- %-22s : %10lu\n", statename[P_RESP_SENDING], msgs_timeout_from[P_RESP_SENDING]);
 				laststatus = now;
 				msgs_total_last = msgs_total;
 				stentry->dontcount = 1;
@@ -441,6 +459,7 @@ int main(int argc, char *argv[])
 		FD_ZERO(&fdread);
 		FD_ZERO(&fdwrite);
 		maxfd = -1;
+		combining = 0;
 
 		for (cwalk = chead, idx=0; (cwalk); cwalk = cwalk->next, idx++) {
 			dprintf("state %d: %s\n", idx, statename[cwalk->state]);
@@ -452,19 +471,42 @@ int main(int argc, char *argv[])
 				break;
 
 			  case P_REQ_READY:
-				shutdown(cwalk->csocket, SHUT_RD);
-
-				if (!cwalk->dontcount) {
-					if (strncmp(cwalk->buf, "status", 5) == 0) msgs_status++;
-					else if (strncmp(cwalk->buf, "combo", 5) == 0) msgs_combo++;
-					else if (strncmp(cwalk->buf, "page", 4) == 0) msgs_page++;
-				}
-
 				cwalk->bufp = cwalk->buf;
-				cwalk->state = P_REQ_CONNECTING;
 				cwalk->conntries = CONNECT_TRIES;
 				cwalk->conntime = 0;
-				/* Fall through */
+
+				if ((strncmp(cwalk->buf, "query", 5) == 0) || (strncmp(cwalk->buf, "config", 6) == 0)) {
+					shutdown(cwalk->csocket, SHUT_RD);
+					if (!cwalk->dontcount) msgs_other++;
+				}
+				else {
+					shutdown(cwalk->csocket, SHUT_RDWR);
+					close(cwalk->csocket); sockcount--;
+					cwalk->csocket = -1;
+
+					if (strncmp(cwalk->buf, "status", 6) == 0) {
+						if (!cwalk->dontcount) msgs_status++;
+						gettimeofday(&cwalk->timelimit, &tz);
+						cwalk->timelimit.tv_usec += COMBO_DELAY;
+						if (cwalk->timelimit.tv_usec >= 1000000) {
+							cwalk->timelimit.tv_sec++;
+							cwalk->timelimit.tv_usec -= 1000000;
+						}
+						cwalk->state = P_REQ_COMBINING;
+						break;
+					}
+					else if (strncmp(cwalk->buf, "combo", 5) == 0) {
+						if (!cwalk->dontcount) msgs_combo++;
+					}
+					else if (strncmp(cwalk->buf, "page", 4) == 0) {
+						if (!cwalk->dontcount) msgs_page++;
+					}
+					else {
+						if (!cwalk->dontcount) msgs_other++;
+					}
+				}
+				cwalk->state = P_REQ_CONNECTING;
+				/* Fall through for non-status messages */
 
 			  case P_REQ_CONNECTING:
 				ctime = time(NULL);
@@ -477,7 +519,7 @@ int main(int argc, char *argv[])
 				if (cwalk->conntries < 0) {
 					errprintf("Server not responding, message lost\n");
 					cwalk->state = P_CLEANUP;
-					if (!cwalk->dontcount) msgs_lost++;
+					if (!cwalk->dontcount) msgs_timeout_from[P_REQ_CONNECTING]++;
 					break;
 				}
 
@@ -489,17 +531,19 @@ int main(int argc, char *argv[])
 				sockcount++;
 				fcntl(cwalk->ssocket, F_SETFL, O_NONBLOCK);
 
-				if (strncmp(cwalk->buf, "page", 4) != 0) {
-					n = connect(cwalk->ssocket, (struct sockaddr *)&bbdispaddr, sizeof(bbdispaddr));
-					cwalk->serverip = bbdispip;
-				}
-				else {
+				if (strncmp(cwalk->buf, "page", 4) == 0) {
 					n = connect(cwalk->ssocket, (struct sockaddr *)&bbpageraddr, sizeof(bbpageraddr));
 					cwalk->serverip = bbpagerip;
+				}
+				else {
+					n = connect(cwalk->ssocket, (struct sockaddr *)&bbdispaddr, sizeof(bbdispaddr));
+					cwalk->serverip = bbdispip;
 				}
 
 				if ((n == 0) || ((n == -1) && (errno == EINPROGRESS))) {
 					cwalk->state = P_REQ_SENDING;
+					gettimeofday(&cwalk->timelimit, &tz);
+					cwalk->timelimit.tv_sec += timeout;
 					/* Fallthrough */
 				}
 				else {
@@ -521,8 +565,16 @@ int main(int argc, char *argv[])
 				shutdown(cwalk->ssocket, SHUT_WR);
 				cwalk->bufp = cwalk->buf; cwalk->buflen = 0;
 				memset(cwalk->buf, 0, cwalk->bufsize);
-				cwalk->state = P_RESP_READING;
 				if (!cwalk->dontcount) msgs_delivered++;
+				if (cwalk->csocket < 0) {
+					cwalk->state = P_CLEANUP;
+					break;
+				}
+				else {
+					cwalk->state = P_RESP_READING;
+					gettimeofday(&cwalk->timelimit, &tz);
+					cwalk->timelimit.tv_sec += timeout;
+				}
 				/* Fallthrough */
 
 			  case P_RESP_READING:
@@ -536,6 +588,8 @@ int main(int argc, char *argv[])
 				cwalk->ssocket = -1;
 				cwalk->bufp = cwalk->buf;
 				cwalk->state = P_RESP_SENDING;
+				gettimeofday(&cwalk->timelimit, &tz);
+				cwalk->timelimit.tv_sec += timeout;
 				/* Fall through */
 
 			  case P_RESP_SENDING:
@@ -571,10 +625,68 @@ int main(int argc, char *argv[])
 				cwalk->buflen = 0;
 				memset(cwalk->buf, 0, cwalk->bufsize);
 				memset(&cwalk->caddr, 0, sizeof(cwalk->caddr));
+				cwalk->madetocombo = 0;
 				cwalk->state = P_IDLE;
 				break;
 
 			  case P_IDLE:
+				break;
+
+			  case P_REQ_COMBINING:
+				/* See if we can combine some "status" messages into a "combo" */
+				combining++;
+				gettimeofday(&tmo, &tz);
+				if ((cwalk->buflen < MINIMUM_FOR_COMBO) && !overdue(&tmo, &cwalk->timelimit)) {
+					conn_t *cextra;
+
+					/* Are there any other messages in P_COMBINING state ? */
+					cextra = cwalk->next;
+					while (cextra && (cextra->state != P_REQ_COMBINING)) cextra = cextra->next;
+
+					if (cextra) {
+						/*
+						 * Yep. It might be worthwhile to go for a combo.
+						 */
+						while (cextra && (cwalk->buflen < (MAXMSG-20))) {
+							if (strncmp(cextra->buf, "status", 6) == 0) {
+								int newsize = cwalk->buflen + cextra->buflen + 2;
+
+								if ((newsize < cwalk->bufsize) && (newsize < MAXMSG)) {
+									cwalk->madetocombo++;
+									strcat(cwalk->buf, "\n\n");
+									strcat(cwalk->buf, cextra->buf);
+									cwalk->buflen = newsize;
+									cextra->state = P_CLEANUP;
+									dprintf("Merged combo\n");
+									msgs_merged++;
+								}
+							}
+
+							/* Go to the next connection in the right state */
+							do {
+								cextra = cextra->next;
+							} while (cextra && (cextra->state != P_REQ_COMBINING));
+						}
+					}
+				}
+				else {
+					combining--;
+					cwalk->state = P_REQ_CONNECTING;
+
+					if (cwalk->madetocombo) {
+						cwalk->madetocombo++;
+						memmove(cwalk->buf+6, cwalk->buf, cwalk->buflen);
+						memcpy(cwalk->buf, "combo\n", 6);
+						cwalk->buflen += 6;
+						msgs_merged++; /* Count the proginal message also */
+						msgs_combined++;
+						dprintf("Now going to send combo from %d messages\n%s\n", 
+							cwalk->madetocombo, cwalk->buf);
+					}
+					else {
+						dprintf("No messages to combine - sending unchanged\n");
+					}
+				}
 				break;
 
 			  default:
@@ -595,30 +707,30 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		tmo.tv_sec = timeout;
-		tmo.tv_usec = 0;
+		if (combining) {
+			tmo.tv_sec = 0; tmo.tv_usec = COMBO_DELAY;
+		}
+		else {
+			tmo.tv_sec = 1; tmo.tv_usec = 0;
+		}
 		n = select(maxfd+1, &fdread, &fdwrite, NULL, &tmo);
 		if (n <= 0) {
+			gettimeofday(&tmo, &tz);
 			for (cwalk = chead; (cwalk); cwalk = cwalk->next) {
 				switch (cwalk->state) {
-				  case P_IDLE:
-				  case P_CLEANUP:
-					break;
-
 				  case P_REQ_READING:
-				  case P_REQ_READY:
-				  case P_REQ_CONNECTING:
-				  case P_REQ_DONE:
 				  case P_REQ_SENDING:
 				  case P_RESP_READING:
-				  case P_RESP_READY:
 				  case P_RESP_SENDING:
-				  case P_RESP_DONE:
-					if (!cwalk->dontcount) {
-						msgs_timeout++;
-						msgs_timeout_from[cwalk->state]++;
+					if (overdue(&tmo, &cwalk->timelimit)) {
+						cwalk->state = P_CLEANUP;
+						if (!cwalk->dontcount) {
+							msgs_timeout_from[cwalk->state]++;
+						}
 					}
-					cwalk->state = P_CLEANUP;
+					break;
+
+				  default:
 					break;
 				}
 			}
@@ -690,6 +802,7 @@ int main(int argc, char *argv[])
 					newconn->buf = newconn->bufp = malloc(newconn->bufsize);
 				}
 
+				newconn->madetocombo = 0;
 				newconn->dontcount = 0;
 				newconn->ssocket = -1;
 				newconn->serverip = NULL;
@@ -711,6 +824,8 @@ int main(int argc, char *argv[])
 					sockcount++;
 					fcntl(newconn->csocket, F_SETFL, O_NONBLOCK);
 					newconn->state = P_REQ_READING;
+					gettimeofday(&newconn->timelimit, &tz);
+					newconn->timelimit.tv_sec += timeout;
 				}
 			}
 		}
