@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.141 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.142 2005-01-25 21:51:52 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -660,7 +660,7 @@ state_t *load_state(dispsummary_t **sumhead)
 	char		fn[PATH_MAX];
 	state_t		*newstate, *topstate;
 	dispsummary_t	*newsum, *topsum;
-	int		dopurple;
+	int		dopurple = 1;
 	struct stat	st;
 	int		purplecount = 0;
 	int		is_purple;
