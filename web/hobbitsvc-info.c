@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.8 2003-01-31 08:37:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.9 2003-02-02 14:15:15 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -47,6 +47,9 @@ int generate_info(char *infocolumn)
 
 	if (!run_columngen("info", info_update_interval, enable_infogen))
 		return 1;
+
+	/* Load the alert setup */
+	load_alerts();
 
 	logfiletime.actime = logfiletime.modtime = (time(NULL) + atoi(getenv("PURPLEDELAY"))*60);
 

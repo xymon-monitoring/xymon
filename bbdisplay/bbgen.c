@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.62 2003-01-31 08:37:33 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.63 2003-02-02 14:15:15 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -83,6 +83,7 @@ int main(int argc, char *argv[])
 	dispsummary_t	*s;
 	int		i;
 	int		pagegenstat;
+	int		bbpageONLY = 0;
 
 	sprintf(pagedir, "%s/www", getenv("BBHOME"));
 	sprintf(rrddir, "%s/rrd", getenv("BBVAR"));
@@ -146,6 +147,9 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[i], "--debug") == 0) {
 			debug = 1;
 		}
+		else if (strcmp(argv[i], "--bbpageONLY") == 0) {
+			bbpageONLY = 1;
+		}
 		else if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-?") == 0)) {
 			printf("Usage: %s [options] [WebpageDirectory]\n", argv[0]);
 			printf("Options:\n");
@@ -160,6 +164,8 @@ int main(int argc, char *argv[])
 			printf("\nStatus propagation control options:\n");
 			printf("    --noprop=test[,test]   : Disable upwards status propagation when YELLOW\n");
 			printf("    --nopropred=test[,test]: Disable upwards status propagation when RED or YELLOW\n");
+			printf("\n");
+			printf("    --bbpageONLY           : Standard page generation only\n");
 #ifdef DEBUG
 			printf("\n");
 			printf("    --debug                : Dumps internal state-table\n");
@@ -175,16 +181,23 @@ int main(int argc, char *argv[])
 	/* Check that all needed environment vars are defined */
 	envcheck(reqenv);
 
+	/*
+	 * bbpageONLY means ONLY generate the standard pages.
+	 * No NK page, no BB2 page, no LARRD, no INFO, no purple updates 
+	 */
+	if (bbpageONLY) enable_purpleupd = enable_larrdgen = enable_infogen = 0;
+
 	/* Load all data from the various files */
 	linkhead = load_all_links();
 	pagehead = load_bbhosts();
-	load_alerts();
 
-	/* Generate the LARRD pages before loading state */
-	pagegenstat = generate_larrd(rrddir, larrdcol);
+	if (!bbpageONLY) {
+		/* Generate the LARRD pages before loading state */
+		pagegenstat = generate_larrd(rrddir, larrdcol);
 
-	/* Dont generate both LARRD and info in one run */
-	if (pagegenstat) pagegenstat = generate_info(infocol);
+		/* Dont generate both LARRD and info in one run */
+		if (pagegenstat) pagegenstat = generate_info(infocol);
+	}
 
 	statehead = load_state();
 
@@ -198,10 +211,10 @@ int main(int argc, char *argv[])
 	}
 
 	/* Remove old acknowledgements */
-	delete_old_acks();
+	if (!bbpageONLY) delete_old_acks();
 
 	/* Send summary notices */
-	send_summaries(sumhead);
+	if (!bbpageONLY) send_summaries(sumhead);
 
 	/* Load displayed summaries */
 	dispsums = load_summaries();
@@ -241,10 +254,10 @@ int main(int argc, char *argv[])
 	}
 
 	/* The full summary page - bb2.html */
-	do_bb2_page("bb2.html", 0);
+	if (!bbpageONLY) do_bb2_page("bb2.html", 0);
 
 	/* Reduced summary (alerts) page - bbnk.html */
-	do_bb2_page("bbnk.html", 1);
+	if (!bbpageONLY) do_bb2_page("bbnk.html", 1);
 
 	return 0;
 }
