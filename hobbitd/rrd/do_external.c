@@ -8,33 +8,17 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char external_rcsid[] = "$Id: do_external.c,v 1.6 2005-03-25 21:15:26 henrik Exp $";
-
+static char external_rcsid[] = "$Id: do_external.c,v 1.7 2005-04-04 10:53:01 henrik Exp $";
 
 int do_external_larrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
-	FILE *fd;
-	char fn[PATH_MAX];
 	pid_t childpid;
-	enum { R_DEFS, R_FN, R_DATA, R_NEXT } pstate;
-
-	MEMDEFINE(fn);
-	sprintf(fn, "%s/rrd_msg_%d", xgetenv("BBTMP"), (int) getpid());
-	fd = fopen(fn, "w");
-	if (fd == NULL) {
-		errprintf("Cannot create temp file %s\n", fn);
-		MEMUNDEFINE(fn);
-		return 1;
-	}
-	if (fwrite(msg, strlen(msg), 1, fd) != 1) {
-		errprintf("Error writing to file %s: %s\n", fn, strerror(errno));
-		MEMUNDEFINE(fn);
-		return 2;
-	}
-	fclose(fd);
 
 	childpid = fork();
 	if (childpid == 0) {
+		FILE *fd;
+		char fn[PATH_MAX];
+		enum { R_DEFS, R_FN, R_DATA, R_NEXT } pstate;
 		FILE *extfd;
 		char extcmd[2*PATH_MAX];
 		char l[MAXMSG];
@@ -42,7 +26,19 @@ int do_external_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		char **params = NULL;
 		int paridx = 1;
 		
-		MEMDEFINE(extcmd); MEMDEFINE(l);
+		MEMDEFINE(fn); MEMDEFINE(extcmd); MEMDEFINE(l);
+
+		sprintf(fn, "%s/rrd_msg_%d", xgetenv("BBTMP"), (int) getpid());
+		fd = fopen(fn, "w");
+		if (fd == NULL) {
+			errprintf("Cannot create temp file %s\n", fn);
+			exit(1);
+		}
+		if (fwrite(msg, strlen(msg), 1, fd) != 1) {
+			errprintf("Error writing to file %s: %s\n", fn, strerror(errno));
+			exit(1) ;
+		}
+		fclose(fd);
 
 		/* Now call the external helper */
 		sprintf(extcmd, "%s %s %s %s", exthandler, hostname, testname, fn);
@@ -126,7 +122,6 @@ int do_external_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		}
 
 		unlink(fn);
-		MEMUNDEFINE(extcmd); MEMUNDEFINE(l);
 
 		exit(0);
 	}
@@ -135,12 +130,8 @@ int do_external_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	}
 	else {
 		errprintf("Fork failed in RRD handler: %s\n", strerror(errno));
-		unlink(fn);
-		MEMUNDEFINE(fn);
-		return 3;
 	}
 
-	MEMUNDEFINE(fn);
 	return 0;
 }
 
