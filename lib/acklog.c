@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: acklog.c,v 1.13 2005-02-03 13:43:13 henrik Exp $";
+static char rcsid[] = "$Id: acklog.c,v 1.14 2005-02-20 12:29:35 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -84,7 +84,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 
 		if (atol(l) >= cutoff) {
 			int c_used;
-			char *p, *p1;
+			char *p, *p1, *hobbitdacker = NULL;
 
 			sscanf(l, "%u\t%d\t%d\t%d\t%s\t%s\t%s\t%n",
 				(unsigned int *)&acks[num].acktime, &acks[num].acknum,
@@ -113,8 +113,16 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 					p++;
 				}
 			}
+
+			/* Hobbit uses \n in the ack message, for the "acked by" data. Cut it off. */
+			nldecode(ackmsg); p = strchr(ackmsg, '\n'); 
+			if (p) {
+				if (strncmp(p, "\nAcked by:", 10) == 0) hobbitdacker = p+10;
+				*p = '\0';
+			}
+
 			/* Show only the first 30 characters in message */
-			ackmsg[30] = '\0';
+			if (strlen(ackmsg) > 30) ackmsg[30] = '\0';
 
 			sprintf(ackfn, "%s/ack.%s", xgetenv("BBACKS"), hosttest);
 
@@ -147,8 +155,10 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 					if (p > ackerp) *p = '\0';
 					acks[num].ackedby = strdup(ackerp);
 				}
+				else if (hobbitdacker) {
+					acks[num].ackedby = strdup(hobbitdacker);
+				}
 				else {
-					/* hobbitd's alert module does not (cannot) log this. */
 					acks[num].ackedby = "";
 				}
 
@@ -184,7 +194,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 		fprintf(output, "<BR><BR>\n");
 		fprintf(output, "<TABLE SUMMARY=\"%s\" BORDER=0>\n", title);
 		fprintf(output, "<TR BGCOLOR=\"#333333\">\n");
-		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"teal\">%s</FONT></TD></TR>\n", title);
+		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"#33ebf4\">%s</FONT></TD></TR>\n", title);
 
 		for (num = lastack; (ackintime_count); ackintime_count--, num = ((num == 0) ? (maxcount-1) : (num - 1)) ) {
 			fprintf(output, "<TR BGCOLOR=#000000>\n");
@@ -212,7 +222,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 		fprintf(output, "<BR><BR>\n");
 		fprintf(output, "<TABLE SUMMARY=\"%s\" BORDER=0>\n", title);
 		fprintf(output, "<TR BGCOLOR=\"#333333\">\n");
-		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"teal\">%s</FONT></TD></TR>\n", title);
+		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"#33ebf4\">%s</FONT></TD></TR>\n", title);
 	}
 
 	fprintf(output, "</TABLE>\n");
