@@ -3,14 +3,6 @@ Stuff that standard BB does which bbgen/bbtest-net does not
 * Handle the missing fping.sh extensions (IP ranges).
 * Handle modem banks
 * Handle "group" as mkbb.sh does
-* Convert the mkbwml.sh script to generate WAP pages.
-  Does anyone use WAP phones anymore ?
-* Convert the acklog.sh extension for bb2.html. This does
-  not load the system a great deal (at least for me), so
-  doing it via the existing script as an extension is OK.
-  Ought to be converted, especially for use with alternate
-  pagesets (currently, all ack-logs go onto the bb2 page,
-  even for hosts that are not included in the current pageset).
 
 Suggestions from users
 ----------------------
@@ -22,6 +14,7 @@ Suggestions from users
 
 Ideas of my own
 ---------------
+* Check of RPC services using getrpcent and rpcinfo
 * Some way of defining acceptable responsetimes for 
   services, and then go yellow/red if the threshold is 
   exceeded.
@@ -47,6 +40,20 @@ Ideas of my own
 * Fixed schedules. Some hosts may require testing more
   often than others.
 * Use Autoconf. Need to learn how to use it first, though.
+* Communication between BBDISPLAY and BBNET servers.
+  Build a new daemon to run on the BBNET servers. It
+  establishes a persistent connection to bbd using
+  "bbnetd BBLOCATION" message, and then waits for
+  bb-hosts entries to arrive. When one arrives,
+  write it to a temp file and then launch bbtest-net
+  using that file as bb-hosts.
+  On the BBDISPLAY side, fork off a separate process
+  to handle the bbnetd stuff and register the link
+  between the BBLOCATION and the socket so only 
+  relevant stuff is pushed to each bbnetd daemon.
+  Would allow for "Test Now" functionality, and might
+  also be used for pushing config updates to BBNET 
+  servers without having to open up more ports.
 
 If I have too much time someday
 -------------------------------
