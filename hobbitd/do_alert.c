@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.56 2005-03-09 16:54:25 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.57 2005-03-20 13:52:05 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -673,6 +673,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				rwalk->format = currcp->format;
 				rwalk->interval = currcp->interval;
 				rwalk->criteria = currcp->criteria;
+				rwalk->noalerts = currcp->noalerts;
 			}
 		}
 	}
