@@ -237,7 +237,8 @@ state_t *init_state(const char *filename, int dopurple)
 		}
 
 		p = strchr(l, ' '); /* Skip old color */
-		sprintf(purplemsg, "status+0 %s %s %s", commafy(hostname), colorname(newstate->entry->color), p);
+		sprintf(purplemsg, "status+0 %s.%s %s %s", commafy(hostname), testname,
+                        colorname(newstate->entry->color), p);
 
 		if (host) {
 			while (fgets(l, sizeof(l), fd)) {
