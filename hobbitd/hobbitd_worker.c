@@ -123,6 +123,8 @@ void nldecode(unsigned char *msg)
 	unsigned char *outp = msg;
 	int n;
 
+	if (msg == NULL) return "";
+
 	while (*inp) {
 		n = strcspn(inp, "\\");
 		if ((n > 0) && (inp != outp)) {
