@@ -1,12 +1,12 @@
 # bb-service
 #
-# $Id: bb-services,v 1.5 2005-01-22 16:15:41 henrik Exp $
+# $Id: bb-services,v 1.6 2005-02-20 22:00:58 henrik Exp $
 #
 # This file defines the way TCP services are tested by bbtest-net
 # (part of the bbgen toolkit).
 #
 # A service definition looks like this:
-#     service NAME
+#     [NAME]
 #        send "HELLO"
 #        expect "OK"
 #        options banner,ssl,telnet
@@ -14,7 +14,7 @@
 #
 # The NAME is the name of the test, and of the TCP service. If
 # multiple tests share a common definition (e.g. ssh, ssh1, ssh2)
-# then these may be given as "NAME1|NAME2|NAME3"
+# then these may be given as "[NAME1|NAME2|NAME3]"
 #
 # If the send-string is defined, this data is sent to the service
 # immediately after a connect.
@@ -41,130 +41,130 @@
 # converted into a carriage-return (ASCII 13), line-feed (ASCII 10),
 # TAB (ASCII 8), and any byte respectively (NN=hex value).
 
-service ftp
+[ftp]
    send "quit\r\n"
    expect "220"
    options banner
    port 21
 
-service ftps
+[ftps]
    send "quit\r\n"
    expect "220"
    options ssl,banner
    port 990
 
-service ssh|ssh1|ssh2
+[ssh|ssh1|ssh2]
    expect "SSH"
    options banner
    port 22
 
-service telnet
+[telnet]
    options banner,telnet
    port 23
 
-service telnets
+[telnets]
    options ssl,banner,telnet
    port 992
 
-service smtp
+[smtp]
    send "mail\r\nquit\r\n"
    expect "220"
    options banner
    port 25
 
-service smtps
+[smtps]
    send "mail\r\nquit\r\n"
    expect "220"
    options ssl,banner
 #  No default port-number assignment for smtps - nonstandard according to IANA
 
-service pop2|pop-2
+[pop2|pop-2]
    send "quit\r\n"
    expect "+OK"
    options banner
    port 109
 
-service pop|pop3|pop-3
+[pop|pop3|pop-3]
    send "quit\r\n"
    expect "+OK"
    options banner
    port 110
 
-service pop3s
+[pop3s]
    send "quit\r\n"
    expect "+OK"
    options ssl,banner
    port 995
 
-service imap|imap2|imap4
+[imap|imap2|imap4]
    send "ABC123 LOGOUT\r\n"
    expect "* OK"
    options banner
    port 143
 
-service imap3
+[imap3]
    send "ABC123 LOGOUT\r\n"
    expect "* OK"
    options banner
    port 220
 
-service imaps
+[imaps]
    send "ABC123 LOGOUT\r\n"
    expect "* OK"
    options ssl,banner
    port 993
 
-service nntp
+[nntp]
    send "quit\r\n"
    expect "200"
    options banner
    port 119
 
-service nntps
+[nntps]
    send "quit\r\n"
    expect "200"
    options ssl,banner
    port 563
 
-service ldap
+[ldap]
    port 389
 
-service ldaps
+[ldaps]
    options ssl
    port 636
 
-service rsync
+[rsync]
    expect "@RSYNCD"
    options banner
    port 873
 
-service bbd
+[bbd]
    send "dummy"
    port 1984
 
 # The AV scanning daemon from the ClamAV antivirus package
-service clamd
+[clamd]
    send "PING\r\n"
    expect "PONG"
    port 3310
 
 # From http://www.mail-archive.com/whatsup_forum@list.ipswitch.com/msg06678.html
-service oratns
+[oratns]
    send "\x00\x57\x00\x00\x01\x00\x00\x00\x01\x36\x01\x2C\x00\x00\x08\x00\x7F\xFF\xA3\x0A\x00\x00\x01\x00\x00\x1D\x00\x3A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x08\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00(CONNECT_DATA=(COMMAND=ping))"
    options banner
    port 1521
 
 # qmail "Quick Mail Transfer Protocol"
-service qmtp
+[qmtp]
    port 209
 
 # qmail "Quick Mail Queuing Protocol"
-service qmqp
+[qmqp]
    port 628
 
 # vnc "Virtual Network Computing" - method from bb-vnc.tar.gz
 # From Richard Finegold
-service vnc
+[vnc]
    send "RFB 000.000\r\n"
    expect "RFB "
    options banner

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.75 2005-01-27 12:08:36 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.76 2005-02-20 22:00:58 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -183,15 +183,16 @@ char *init_tcp_services(void)
 	head->next = NULL;
 
 	while (fd && fgets(buf, sizeof(buf), fd)) {
-		char *l;
+		char *l, *eol;
 
 		l = strchr(buf, '\n'); if (l) *l = '\0';
 		l = skipwhitespace(buf);
 
-		if (strncmp(l, "service ", 8) == 0) {
+		if (*l == '[') {
 			char *svcname;
 
-			l = skipwhitespace(l+7);
+			eol = strchr(l, ']'); if (eol) *eol = '\0';
+			l = skipwhitespace(l+1);
 			svcname = strtok(l, "|");
 			first = NULL;
 			while (svcname) {

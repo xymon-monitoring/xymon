@@ -5,7 +5,6 @@ DNSFLAGS = -I./c-ares
 
 PROGRAMS = bbtest-net
 EXTENSIONS = bbretest-net.sh
-CONFIGFILES = bb-services
 
 all: $(PROGRAMS) $(EXTENSIONS)
 
@@ -74,7 +73,8 @@ install-ext: $(EXTENSIONS)
 	cp -fp $(EXTENSIONS) $(BBHOME)/ext/
 
 install-config:
-	../build/install-nooverwrite.sh etc/ $(CONFIGFILES)
+	../build/convert-bbservices $(BBHOME)/etc/bb-services
+	../build/merge-sects bb-services $(BBHOME)/etc/bb-services
 
 install-man:
 	mkdir -p $(MANROOT)/man1 $(MANROOT)/man5

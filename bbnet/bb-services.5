@@ -20,7 +20,7 @@ bb-services is a text file. A simple service definition for
 the SMTP service would be this:
 .br
 .sp
-   service smtp
+   [smtp]
 .br
       send "mail\\r\\nquit\\r\\n"
 .br
@@ -37,11 +37,11 @@ and included in the status message.
 .sp
 The full set of commands available for the bb-services file are:
 
-.IP "service NAME"
+.IP "[NAME]"
 Define the name of the TCP service, which will also be the column-name
 in the resulting display on the test status. If multiple tests share 
 a common definition (e.g. ssh, ssh1 and ssh2 are tested identically),
-you may list these in a single "service ssh|ssh1|ssh2" definition,
+you may list these in a single "[ssh|ssh1|ssh2]" definition,
 separating each service-name with a pipe-sign.
 
 .IP "send STRING"
