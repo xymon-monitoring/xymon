@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.204 2005-03-22 22:05:22 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.205 2005-03-22 22:09:15 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -842,7 +842,7 @@ void do_dns_lookups(void)
 		if (!nullip && (h->testip || (dnsmethod == IP_ONLY))) {
 			/* Already have the IP setup */
 		}
-		else {
+		else if (h->dodns) {
 			dnsresult = dnsresolve(h->hostname);
 
 			if (dnsresult) {
