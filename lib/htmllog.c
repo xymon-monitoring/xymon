@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.15 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.16 2005-02-03 12:48:22 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -128,7 +128,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 	if (!is_history && (histlocation == HIST_TOP)) historybutton(cgibinurl, hostname, service, ip, output);
 
-	fprintf(output, "<CENTER><TABLE ALIGN=CENTER BORDER=0>\n");
+	fprintf(output, "<CENTER><TABLE ALIGN=CENTER BORDER=0 SUMMARY=\"Detail Status\">\n");
 	if (wantserviceid) fprintf(output, "<TR><TH><FONT %s>%s - %s</FONT><BR><HR WIDTH=\"60%%\"></TH></TR>\n", rowfont, displayname, service);
 
 	if (disabletime > 0) {
@@ -175,7 +175,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	fprintf(output, "</TD></TR></TABLE>\n");
 
 	fprintf(output, "<br><br>\n");
-	fprintf(output, "<table align=\"center\" border=0>\n");
+	fprintf(output, "<table align=\"center\" border=0 summary=\"Status report info\">\n");
 	fprintf(output, "<tr><td align=\"center\"><font %s>", colfont);
 	if (strlen(timesincechange)) fprintf(output, "Status unchanged in %s<br>\n", timesincechange);
 	if (sender) fprintf(output, "Status message received from %s<br>\n", sender);
