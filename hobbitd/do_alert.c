@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.40 2005-02-20 09:08:57 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.41 2005-02-21 21:02:02 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -355,6 +355,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 	cfid = 0;
 	while (fgets(l, sizeof(l), fd)) {
 		int firsttoken = 1;
+		int mailcmdactive = 0, scriptcmdactive = 0;
 
 		cfid++;
 		grok_input(l);
@@ -501,7 +502,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				currule->criteria->sendrecovered = SR_WANTED;
 				crit->sendrecovered = SR_WANTED;
 			}
-			else if (currule && ((strncasecmp(p, "MAIL", 4) == 0) || strchr(p, '@')) ) {
+			else if (currule && ((strncasecmp(p, "MAIL", 4) == 0) || mailcmdactive) ) {
 				recip_t *newrcp;
 
 				if (currule == NULL) {
@@ -509,6 +510,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 					continue;
 				}
 
+				mailcmdactive = 1;
 				newrcp = (recip_t *)malloc(sizeof(recip_t));
 				newrcp->cfid = cfid;
 				newrcp->method = M_MAIL;
@@ -542,7 +544,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 					xfree(newrcp);
 				}
 			}
-			else if (currule && (strncasecmp(p, "SCRIPT", 6) == 0)) {
+			else if (currule && ((strncasecmp(p, "SCRIPT", 6) == 0) || scriptcmdactive)) {
 				recip_t *newrcp;
 
 				if (currule == NULL) {
@@ -550,6 +552,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 					continue;
 				}
 
+				scriptcmdactive = 1;
 				newrcp = (recip_t *)malloc(sizeof(recip_t));
 				newrcp->cfid = cfid;
 				newrcp->method = M_SCRIPT;
