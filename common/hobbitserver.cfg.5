@@ -12,42 +12,271 @@ If running with a full Hobbit server, the environment definitions
 are stored in the ~hobbit/server/etc/hobbitserver.cfg file. 
 
 When running Hobbit tools on top of a Big Brother installation,
-the environment definition should be put in your $BBHOME/etc/bbsys.local 
-file, so that they are available to the Hobbit programs when they execute 
-as part of the Big Brother programs. Note that after defining the variable
-you should do an "export" on it to make it available to the
-other Big Brother programs. Like this:
-
-.br
-	NTPDATE=/usr/sbin/ntpdate
-.br
-	export NTPDATE
+the environment definition should be put in $BBHOME/etc/bbsys.local .
 
 
-.SH ENVIRONMENT VARIABLES
+.SH GENERAL SETTINGS
+
+.IP BBSERVERHOSTNAME
+The fully-qualified hostname of the server that is running Hobbit.
+
+.IP BBSERVERWWWNAME
+The hostname used to access this servers' web-pages, used to construct
+URL's in the Hobbit webpages. Default is the BBSERVERHOSTNAME.
+
+.IP BBSERVERIP
+The public IP-address of the server that is running Hobbit.
+
+.IP BBSERVEROS
+A name identifying the operating system of the Hobbit server. The 
+known names are currently "linux", "freebsd", "solaris", "hpux",
+"aix" and "osf".
+
+.IP FQDN
+If set to TRUE, Hobbit will use fully-qualified hostnames throughout.
+If set to FALSE, hostnames are stripped of their domain-part before
+being processed. It is \fBhighly recommended\fR that you keep this
+set to TRUE. Default: TRUE.
+
+.IP USEHOBBITD
+If set to TRUE, all programs assume that the system is running Hobbit
+instead of Big Brother. This is equivalent to running all tools with
+the "--hobbitd" option.
+
+.IP BBLOGSTATUS
+Controls how the HTML page for a status log is generated. If set to
+DYNAMIC, the HTML logs are generated on-demand by the 
+.I bb-hostsvc.cgi(1)
+script. If set to STATIC, you must activate the
+.I hobbitd_filestore(8)
+module (through an entry in the
+.I hobbitlaunch.cfg(5)
+file) to create and store the HTML logs whenever a status update is
+received. Setting "BBLOGSTATUS=STATIC" is \fBdiscouraged\fR since the
+I/O load on the Hobbit server will increase significantly.
+
+
+.SH DIRECTORIES
+
+.IP BBSERVERROOT
+The top-level directory for the Hobbit installation. The default 
+is the home-directory for the user running Hobbit.
+
+.IP BBSERVERLOGS
+The directory for the Hobbit's own logfiles (NOT the status-logs
+from the monitored hosts).
+
+.IP BBHOME
+The Hobbit server directory, where programs and configurations are kept.
+Default: $BBSERVERROOT/server/ .
+
+.IP BBTMP
+Directory used for temporary files. Default: $BBHOME/tmp/
+
+.IP BBWWW
+Directory for Hobbit webfiles. The $BBWEB URL must map to this directory.
+Default: $BBHOME/www/
+
+.IP BBNOTES
+Directory for Hobbit notes-files. The $BBNOTESSKIN URL must map to this directory.
+Default: $BBHOME/www/notes/
+
+.IP BBREP
+Directory for Hobbit availability reports. The $BBREPURL URL must map to this directory.
+Note also that your webserver must have write-access to this directory, if you want to
+use the 
+.I bb-rep.cgi(1)
+CGI script to generate reports on-demand. Default: $BBHOME/www/rep/
+
+.IP BBSNAP
+Directory for Hobbit snapshots. The $BBSNAPURL URL must map to this directory.
+Note also that your webserver must have write-access to this directory, if you want to
+use the 
+.I bb-snapshot.cgi(1)
+CGI script to generate snapshots on-demand. Default: $BBHOME/www/snap/
+
+.IP BBVAR
+Directory for all data stored about the monitored items. 
+Default: $BBSERVERROOT/data/
+
+.IP BBLOGS
+Directory for storing the raw status-logs. Not used unless
+"hobbitd_filestore --status" is running, which is \fBdiscouraged\fR
+since it increases the load on the Hobbit server significantly.
+Default: $BBVAR/logs/
+
+.IP BBHTML
+Directory for storing HTML status-logs. Not used unless
+"hobbitd_filestore --status --html" is running, which is \fBdiscouraged\fR
+since it increases the load on the Hobbit server significantly.
+Default: $BBHOME/www/html/
+
+.IP BBHIST
+Directory for storing the history of monitored items.
+Default: $BBVAR/hist/
+
+.IP BBHISTLOGS
+Directory for storing the detailed status-log of historical events.
+Default: $BBVAR/histlogs/
+
+.IP BBACKS
+Directory for storing information about alerts that have been acknowledged.
+Default: $BBVAR/acks/
+
+.IP BBDISABLED
+Directory for storing information about tests that have been disabled.
+Default: $BBVAR/disabled/
+
+.IP BBDATA
+Directory for storing incoming "data" messages.
+Default: $BBVAR/data/
+
+.IP BBRRDS
+Top-level directory for storing RRD files (the databases with
+trend-information used to generate graphs).
+Default: $BBVAR/rrd/
+
+
+.SH SYSTEM FILES
+
+.IP BBHOSTS
+Full path to the Hobbit
+.I bb-hosts(5)
+configuration file. Default: $BBHOME/etc/bb-hosts.
+
+.IP BB
+Full path to the 
+.I bb(1)
+client program. Default: $BBHOME/bin/bb.
 
 .IP BBGEN
-Defines the location of the
+Full path to the
 .I bbgen(1)
-program. 
-.br
-Default: $BBHOME/bin/bbgen
+webpage generator program. Default: $BBHOME/bin/bbgen.
+
+
+.SH URLS
+.IP BBSERVERWWWURL
+The root URL for the Hobbit webpages, without the hostname. This
+URL must be mapped to the ~/server/www/ directory in your webserver
+configuration. See the sample Apache configuration in ~/server/etc/hobbit-apache.conf.
+
+.IP BBSERVERCGIURL
+The root URL for the Hobbit CGI-scripts, without the hostname. This
+directory must be mapped to the ~/cgi-bin/ directory in your webserver
+configuration, and must be flagged as holding executable scripts. See
+the sample Apache configuration in ~/server/etc/hobbit-apache.conf.
+
+.IP BBWEBHOST
+Initial part of the Hobbit URL, including just the protocol and the
+hostname, e.g. "http://www.foo.com"
+
+.IP BBWEBHOSTURL
+Prefix for all of the static Hobbit webpages, e.g. "http://www.foo.com/hobbit"
+
+.IP BBWEBHTMLLOGS
+URL prefix for the static HTML status-logs generated when BBLOGSTATUS=STATIC.
+Note that this setting is \fBdiscouraged\fR so this setting should not be used.
+
+.IP BBWEB
+URL prefix (without hostname) of the Hobbit webpages. E.g. "/hobbit".
+
+.IP BBSKIN
+URL prefix (without hostname) of the Hobbit graphics. E.g. "/hobbit/gifs".
+
+.IP BBHELPSKIN
+URL prefix (without hostname) of the Hobbit on-line help files. E.g "/hobbit/help".
+
+.IP BBNOTESSKIN
+URL prefix (without hostname) of the Hobbit on-line notes files. E.g "/hobbit/notes".
+
+.IP BBREPURL
+URL prefix (without hostname) of the Hobbit availability reports. E.g. "/hobbit/rep".
+
+.IP BBSNAPURL
+URL prefix (without hostname) of the Hobbit snapshots. E.g. "/hobbit/snap".
+
+.IP BBWAP
+URL prefix (without hostname) of the Hobbit WAP/WML files. E.g. "/hobbit/wml".
+
+.IP CGIBINURL
+URL prefix (without hostname) of the Hobbit CGI-scripts. Default: $BBSERVERCGIURL .
+
+.IP COLUMNDOCURL
+Format string used to build a link to the documentation for a column heading.
+Default: "$CGIBINURL/hobbitcolumn.sh?%s", which causes links to use the
+.I hobbitcolumn.sh(1)
+script to document a column.
+
+
+.SH SETTINGS FOR SENDING MESSAGES TO HOBBIT
+.IP BBDISP
+The IP-address used to contact the
+.I hobbitd(8)
+service. Used by clients and the tools that perform network tests.
+Default: $BBSERVERIP
+
+.IP BBDISPLAYS
+List of IP-adresses. Clients and network test tools will try to
+send status reports to a Hobbit server running on each of these
+adresses. This setting is only used if BBDISP=0.0.0.0.
+
+.IP PAGELEVELS
+Compatibility setting for Big Brother: List of colors that are 
+considered "critical" and therefore will trigger an alert. Not
+used by Hobbit.
+
+.IP BBPAGE
+Compatibility setting for Big Brother: This is the IP-address of
+the server where a BBPAGER service is running. It is not used by Hobbit.
+
+.IP BBPAGERS
+Compatibility setting for Big Brother: List of servers running the
+BBPAGER service, used if BBPAGE=0.0.0.0. It is not used by Hobbit.
+
+.IP BBPORT
+The portnumber for used to contact the
+.I hobbitd(8)
+service. Used by clients and the tools that perform network tests.
+Default: 1984.
+
+.IP DOCOMBO
+Compatibility setting for Big Brother. Controls whether so send 
+combo-messages or not. Ignored by Hobbit.
+
+.IP BBMAXMSGSPERCOMBO
+The maximum number of status messages to combine into one
+combo message. You may need to lower this number of your
+BBDISPLAY server has trouble keeping up with the incoming
+status messages from bbtest-net.  Default: 0 (unlimited)
+
+.IP BBSLEEPBETWEENMSGS
+Length of a pause introduced between each successive transmission
+of a combo-message by bbtest-net. You may have to increase this
+value to give your BBDISPLAY server time to process one combo
+message before the next one arrives. This number defines how
+many milliseconds to wait between the messages.
+Default: 0 (send messages as quickly as possible).
+
+
+.SH HOBBITD SETTINGS
 
 .IP BBGHOSTS
-The bbd-features patch for the Big Brother daemon bbd introduces 
-a new way of handling status reports from hosts that are not in the
-.I bb-hosts(5)
-file. What happens is controlled by setting BBGHOSTS to 0, 1 or 2.
-.br
-By default, these status messages are just stored as if
-the hosts were known to the Big Brother system - this behaviour
-is what you get if BBGHOSTS is undefined, or set to 0.
-.br
-BBGHOSTS=1 causes the status report to be silently discarded.
-.br
-BBGHOSTS=2 also discards the status report, but logs a message
-to BBOUT with the hostname that was ignored.
-.br
+Controls how status messages from unknown hosts (i.e. hosts not
+listed in the bb-hosts file) are handled.
+.sp
+.BR BBGHOSTS=0:
+Allow reports from unknown hosts. This is the default behaviour
+in Big Brother.
+.sp
+.BR BBGHOSTS=1:
+Causes the status report to be silently discarded. This is the
+default behaviour in Hobbit.
+.sp
+.BR BBGHOSTS=2: 
+Discards the status report, but keep track of the hostname
+and report it on the hobbitd status page.
+.sp
 When BBGHOSTS is set to 1 or 2, the hostnames in incoming 
 status-messages is matched without any case-sensitivity,
 unlike normal Big Brother which is case-sensitive in
@@ -57,190 +286,104 @@ If necessary, the incoming hostname will be changed
 to match the way it is written in the bb-hosts file,
 changing case as needed.
 
-.IP BBPORT
-The BBPORT variable can be used to override the portnumber
-of the bbd daemon that status messages are sent to. bbgen
-determines the portnumber from the first of these three
-possibilities that yield a valid portnumber:
-.br
-    * the BBPORT environment variable;
-.br
-    * the "bbd" entry in /etc/services;
-.br
-    * the default defined when compiling bbgen
 
-.IP BBMAXMSGSPERCOMBO
-The maximum number of status messages to combine into one
-combo message. You may need to lower this number of your
-BBDISPLAY server has trouble keeping up with the incoming
-status messages from bbtest-net.
-.br
-Default: 0 (unlimited)
+.SH HOBBITD_HISTORY SETTINGS
 
-.IP BBSLEEPBETWEENMSGS
-Length of a pause introduced between each successive transmission
-of a combo-message by bbtest-net. You may have to increase this
-value to give your BBDISPLAY server time to process one combo
-message before the next one arrives. This number defines how
-many milliseconds to wait between the messages.
-.br
-Default: 0 (send messages as quickly as possible).
+.IP BBALLHISTLOG
+If set to TRUE,
+.I hobbitd_history(8)
+will update the $BBHIST/allevents file logging all changes to
+a status. The allevents file is used by the
+.I bb-eventlog.cgi(1)
+tool to show the list of recent events on the BB2 webpage.
 
-.IP BBDATEFORMAT
-On webpages generated by bbgen, the default header includes
-the current date and time. Normally this looks like "Tue Aug 24
-21:59:47 2004". The BBDATEFORMAT controls the format of this
-timestamp - you can define the format using the controls in the 
-.I strftime(3)
-routine. E.g. to have it show up as "2004-08-24 21:59:47 +0200"
-you would set BBDATEFORMAT="%Y-%m-%d %H:%M:%S %z"
+.IP BBHOSTHISTLOG
+If set to TRUE,
+.I hobbitd_history(8)
+will update the host-specific eventlog that keeps record
+of all status changes for a host. This logfile is not used
+by any Hobbit or Big Brother tool.
+
+.IP SAVESTATUSLOG
+If set to TRUE,
+.I hobbitd_history(8)
+will save historical detailed status-logs to the $BBHISTLOGS
+directory.
+
+
+.SH HOBBITD_ALERT SETTINGS
+
+.IP MAIL
+Command used to send alerts via e-mail, including a "Subject:"
+header in the mail. Default: "mail -s"
+
+.IP MAILC
+Command used to send alerts via e-mail in a form that does not
+have a "Subject" in the mail. Default: "mail"
+
+.IP SVCCODES
+Maps status-columns to numeric service-codes. The numeric codes are
+used when sending an alert using a script, where the numeric code of
+the service is provided in the BBSVCNUM variable.
+
+
+.SH HOBBITD_LARRD SETTINGS
+
+.IP LARRDS
+List of "COLUMNNAME[=LARRDSERVICE]" settings, that define which
+status- and data-messages have a corresponding RRD graph. You will 
+normally not need to modify this, unless you have added a
+custom TCP-based test to the bb-services file, and want to collect data about
+the response-time. All TCP tests should have LARRDSERVICE set to "tcp".
+
+This is also used by the 
+.I bb-hostsvc.cgi(1) 
+script to determine if the detailed status view of a test should 
+include a graph.
+
+.IP GRAPHS
+List of the LARRD databases, that should be shown as a graph on
+the "trends" column. This is used by the
+.I bb-larrdcolumn(1)
+tool that generates the "trends" column data.
+
+
+.SH BBTEST-NET NETWORK TEST SETTINGS
+
+.IP BBLOCATION
+If this variable is defined, then only the hosts that have been tagged
+with "NET:$BBLOCATION" will be tested by the bbtest-net tool.
+
+.IP CONNTEST
+If set to TRUE, the connectivity (ping) test will be performed.
+
+.IP IPTEST_2_CLEAR_ON_FAILED_CONN
+If set to TRUE, then failing network tests go CLEAR if the conn-test fails.
+
+.IP NONETPAGE
+List of network services (separated with <space>) that should go yellow
+upon failure instead of red.
 
 .IP BBROUTERTEXT
 When using the "router" or "depends" tags for a host, a failure
-status may include text that an "Intermediate router is down".
+status will include text that an "Intermediate router is down".
 With todays network topologies, the router could be a switch or
 another network device; if you define this environment variable
 the word "router" will be replaced with whatever you put into
 the variable. So to inform the users that an intermediate switch
-or router is down, use BBROUTERTEXT="switch or router".
-.br
-This can also be set on a per-host basis using the "DESCR:hosttype:description"
-tag, see
+or router is down, use BBROUTERTEXT="switch or router".  This can 
+also be set on a per-host basis using the "DESCR:hosttype:description"
+tag in the 
 .I bb-hosts(5)
-
-.IP MKBB2COLREPEAT
-Inspired by Jeff Stoner's col_repeat_patch.tgz patch, this defines
-the maximum number of rows before repeating the column headings
-on a webpage. This sets the default value for the 
-.I bbgen(1)
-"--maxrows" option; if the command-line option is also specifed,
-then it overrides this environment variable. Note that unlike
-Jeff's patch, bbgen implements this for both the bb2.html page
-and all other pages (bb.html, subpages, bbnk.html).
-.br
-Default: 0 (disables the feature)
-
-.IP BBHTACCESS
-Defines the contents of the top-level .htaccess file created by bbgen
-when run with the --htaccess option. This .htaccess file is
-created in the toplevel directory where the bb.html and bb2.html
-files are stored.
-.br
-Default: none
-
-.IP BBPAGEHTACCESS
-Defines the contents of the page-level .htaccess file created by bbgen
-when run with the --htaccess option. This .htaccess file is
-created in the first level directory corresponding the the location
-of the "page" webpages. This setting may include a "%s" tag, which will
-automatically be expanded to the name of the current page.
-.br
-Default: none
-
-.IP BBSUBPAGEHTACCESS
-Defines the contents of the subpage-level .htaccess file created by bbgen
-when run with the --htaccess option. This .htaccess file is
-created below the first level directory corresponding the the location
-of the "subpage" and "subparent" webpages. This setting may include two "%s" 
-tags, which will automatically be expanded to the name of the current page
-and subpage, respectively.
-.br
-Default: none
-
-.IP BBHELPSKIN
-The URL prefix used for accessing the Big Brother on-line helpfiles.
-When generating reports and snapshots, it may be necessary to set
-this to the standard location of the help-files in order for the
-help-links to work.
-
-.IP BBNOTESSKIN
-The URL prefix used for accessing the Big Brother on-line notes.
-When generating reports and snapshots, it may be necessary to set
-this to the standard location of the notes-files in order for the
-notes-links to work.
-
-.IP BBGENREPOPTS
-Default bbgen options used by reports. This will typically include
-such options as "--subpagecolumns", "--larrd", "--info" and also
-"--ignorecolumns" if you wish to exclude certain tests from reports
-by default.
-
-.IP BBGENSNAPOPTS
-Default bbgen options used by snapshots. This should be identical to
-the options you normally used when building Big Brother webpages.
-
-.IP BBSNAP
-The location of files generated by the
-.I bb-snapshot.cgi(1)
-utility.
-
-.IP BBSNAPURL
-The URL prefix used to access files generated by the
-.I bb-snapshot.cgi(1)
-utility.
-
-.IP BBRSSTITLE
-If defined, this is the title of the RSS/RDF documents generated when
-.I bbgen(1)
-is invoked with the "--rss" option. The default value is "Big Brother
-Critical Alerts".
-
-.IP "RUNOPTS (Big Brother only)"
-This is a standard Big Brother environment variable (from version 
-1.9e-BTF). If the bbd-features patch is installed, two additional
-keywords can be used in this setting: QUERYMSG enables support 
-for the "query" command; CONFIGMSG enables support for the "config"
-command, see the
-.I bb(1)
-description of these for more information. These must be enabled
-on the BBDISPLAY server for these commands to work.
+file.
 
 .IP FPING
-Defines the command used to perform ping-tests with the
+The command used to run the
 .I fping(1)
-tool. You can add fping options here if you like, as long
-as you do not change the output format - i.e. do not use
-the "-A" option. 
-
-If you need to use "su", "sudo" or some similar tool to avoid making 
-fping suid-root, you must create a wrapper shellscript to do that,
-e.g. a file /usr/local/bin/runfping.sh
-
-   #!/bin/sh
-.br
-   sudo /usr/local/sbin/fping $*
-
-and then set FPING="/usr/local/bin/runfping.sh"
-
-Default: "fping" (uses PATH setting to find program).
-
-.IP NSLOOKUP
-Defines the location of the
-.I nslookup(1)
-program. 
-.br
-Default: None (uses PATH setting to find program).
-
-.IP DIG
-Defines the location of the
-.I dig(1)
-program. 
-.br
-Default: None (uses PATH setting to find program).
-
-.IP NTPDATE
-Defines the location of the
-.I ntpdate(1)
-program. 
-.br
-Default: None (uses PATH setting to find program).
-
-.IP RPCINFO
-Defines the location of the
-.I rpcinfo(8)
-program.
-.br
-Default: None (uses PATH setting to find program).
+tool for the connectivity test. This may include suid-root wrappers and
+fping options, except that you must not use the fping "-A" option which
+changes the output format.
+Default: "fping"
 
 .IP TRACEROUTE
 Defines the location of the "traceroute" tool and
@@ -252,7 +395,7 @@ network that is causing the problem. By default the
 command executed is "traceroute -n -q 2 -w 2 -m 15"
 (no DNS lookup, max. 2 probes, wait 2 seconds per hop,
 max 15 hops).
-.br
+.sp
 If you have the
 .I mtr(8)
 tool installed - available from http://www.bitwizard.nl/mtr/ - I
@@ -262,10 +405,115 @@ exact path to the mtr utility may be different on your
 system).  Note that mtr needs to be installed suid-root 
 on most systems.
 
-.IP COLUMNDOCURL
-If defined, this is a formatting string that coupled with
-the column-name ("cpu", "disk", "http" etc.) becomes the link
-associated with each of the column headings.
+.IP NTPDATE
+Defines the 
+.I ntpdate(1)
+program used for the "ntp" test.  
+Default: "ntpdate"
+
+.IP RPCINFO
+Defines the
+.I rpcinfo(8)
+program used for "rpc" tests.
+Default: "rpcinfo"
+
+
+.SH BBGEN WEBPAGE GENERATOR SETTINGS
+
+.IP MKBBLOCAL
+The string "Pages hosted locally" that appears above all of the pages
+linked from the main BB page.
+
+.IP MKBBSUBLOCAL
+The string "Subpages hosted locally" that appears above all of the sub-pages
+linked from pages below the main BB page.
+
+.IP MKBBREMOTE
+The string "Remote status display" that appears about the summary
+statuses displayed on the min BB page.
+
+.IP MKBBTITLE
+HTML tags designed to go in a <FONT> tag, to choose the font for 
+titles of the webpages.
+
+.IP MKBBROWFONT
+HTML tags designed to go in a <FONT> tag, to choose the font for 
+row headings (hostnames) on the webpages.
+
+.IP MKBBCOLFONT
+HTML tags designed to go in a <FONT> tag, to chose the font for
+column headings (test names) on the webpages.
+
+.IP MKBBACKFONT
+HTML tags designed to go in a <FONT> tag, to chose the font for
+the acknowledgement text displayed on the status-log HTML page
+for an acknowledged status.
+
+.IP BBDATEFORMAT
+On webpages generated by bbgen, the default header includes
+the current date and time. Normally this looks like "Tue Aug 24
+21:59:47 2004". The BBDATEFORMAT controls the format of this
+timestamp - you can define the format using the controls in the 
+.I strftime(3)
+routine. E.g. to have it show up as "2004-08-24 21:59:47 +0200"
+you would set BBDATEFORMAT="%Y-%m-%d %H:%M:%S %z"
+
+.IP MKBB2COLREPEAT
+Inspired by Jeff Stoner's col_repeat_patch.tgz patch, this defines
+the maximum number of rows before repeating the column headings
+on a webpage. This sets the default value for the 
+.I bbgen(1)
+"--maxrows" option; if the command-line option is also specifed,
+then it overrides this environment variable. Note that unlike
+Jeff's patch, bbgen implements this for both the bb2.html page
+and all other pages (bb.html, subpages, bbnk.html). 
+
+.IP SUMMARY_SET_BKG
+If set to TRUE, then summaries will affect the color of the
+main BB page. Default: FALSE.
+
+.IP DOTHEIGHT
+The height (in pixels) of the icons showing the color of a status.
+Default: 16, which matches the default icons.
+
+.IP DOTWIDTH
+The width (in pixels) of the icons showing the color of a status.
+Default: 16, which matches the default icons.
+
+.IP BBRSSTITLE
+If defined, this is the title of the RSS/RDF documents generated when
+.I bbgen(1)
+is invoked with the "--rss" option. The default value is "Hobbit Alerts".
+
+.IP WMLMAXCHARS
+Maximum size of a WAP/WML output "card" when generating these.
+Default: 1500.
+
+.IP BBMKBB2EXT
+List of scripts to run as extensions to the BB2 page. Note that
+two scripts, "eventlog.sh" and "acklog.sh" are handled specially:
+They are handled internally by bbgen, but the script names must
+be listed in this variable for this function to be enabled.
+
+.IP BBHISTEXT
+List of scripts to run as extensions to a history page.
+
+.IP BBREPWARN
+Default threshold for listing the availability as "critical" (red) when
+generating the availability report. This can be set on a per-host basis
+with the WARNPCT setting in
+.I bb-hosts(5).
+Default: 97 (percent)
+
+.IP BBGENREPOPTS
+Default bbgen options used for reports. This will typically include
+such options as "--subpagecolumns", "--larrd", "--info" and also
+"--ignorecolumns" if you wish to exclude certain tests from reports
+by default.
+
+.IP BBGENSNAPOPTS
+Default bbgen options used by snapshots. This should be identical to
+the options you normally used when building Big Brother webpages.
 
 .SH FILES
 .BR "~hobbit/server/etc/hobbitserver.cfg (Hobbit only)"
