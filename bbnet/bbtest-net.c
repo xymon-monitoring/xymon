@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.156 2004-08-20 15:00:24 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.157 2004-08-20 20:54:09 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -2279,6 +2279,10 @@ int main(int argc, char *argv[])
 		}
 	}
 	add_timestamp("FTPURL tests result collection completed");
+#else
+	if (ftptest->items) {
+		errprintf("Testing of FTP URL's is not implemented for bbtest-net 3.x\n");
+	}
 #endif
 
 	/* Run the ldap tests */
