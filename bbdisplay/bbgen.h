@@ -326,6 +326,7 @@ extern double           reportwarnlevel, reportgreenlevel;
 extern int		reportstyle;
 extern int		dynamicreport;
 extern int              fqdn;
+extern int		usebbgend;
 
 #endif
 

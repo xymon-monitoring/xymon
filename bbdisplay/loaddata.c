@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.130 2004-10-30 15:40:51 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.131 2004-10-31 12:53:15 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -52,8 +52,6 @@ int		purpledelay = 0;			/* Lifetime of purple status-messages. Default 0 for
 int		purplecount = 0;
 char		*purplelogfn = NULL;
 static FILE	*purplelog = NULL;
-
-int		usebbgend = 0;
 
 static time_t oldestentry;
 
