@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.64 2004-12-15 21:28:17 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.65 2004-12-15 21:57:01 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -458,6 +458,7 @@ int main(int argc, char *argv[])
 	if (bbhostsfn == NULL) bbhostsfn = getenv("BBHOSTS");
 
 	hosthead = load_hostnames(bbhostsfn, get_fqdn(), docurl);
+	load_all_links();
 
 	generate_info(infocol, docurl, usebbgend, sendmeta);
 
