@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.6 2004-10-17 06:05:54 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.7 2004-10-17 10:07:23 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -93,6 +93,7 @@ int main(int argc, char *argv[])
 	int seq;
 	int argi;
 	int alertcolors = ( (1 << COL_RED) | (1 << COL_YELLOW) | (1 << COL_PURPLE) );
+	char *configfn = NULL;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
@@ -112,6 +113,14 @@ int main(int argc, char *argv[])
 			}
 
 			alertcolors = ac;
+		}
+		else if (strncmp(argv[argi], "--config=", 9) == 0) {
+			configfn = strdup(strchr(argv[argi], '=')+1);
+		}
+		else if (strcmp(argv[argi], "--dump-config") == 0) {
+			load_alertconfig(configfn);
+			dump_alertconfig();
+			return 0;
 		}
 	}
 
@@ -314,7 +323,7 @@ int main(int argc, char *argv[])
 		if (anytogo) {
 			pid_t childpid;
 
-			load_alertconfig();
+			load_alertconfig(configfn);
 			childpid = fork();
 
 			if (childpid == 0) {
