@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.84 2005-03-22 09:03:37 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.85 2005-03-24 07:21:53 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -32,7 +32,7 @@ static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.84 2005-03-22 09:03:37 henrik E
 
 #include "libbbgen.h"
 
-#ifdef HOBBIT
+#ifdef HOBBITD
 #include "hobbitd_alert.h"
 #endif
 
@@ -90,7 +90,7 @@ static void timespec_text(char *spec, char **infobuf, int *infobuflen)
 	xfree(sCopy);
 }
 
-#ifdef HOBBIT
+#ifdef HOBBITD
 int test_name_compare(const void *v1, const void *v2)
 {
 	htnames_t *r1 = (htnames_t *)v1;
@@ -520,7 +520,7 @@ int generate_info(char *infocolumn, char *documentationurl, int hobbitd, int sen
 
 		if (!bbh_item(hostwalk, BBH_FLAG_DIALUP)) {
 			if (hobbitd) {
-#ifdef HOBBIT
+#ifdef HOBBITD
 				addtobuffer(&infobuf, &infobuflen, "<tr><th align=left valign=top>Alerting:</th><td align=left>\n");
 				generate_hobbit_alertinfo(hostwalk->bbhostname, &infobuf, &infobuflen, infocolumn);
 				addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");

@@ -114,7 +114,7 @@ bb-hostsvc.o: bb-hostsvc.c
 
 ifdef HOBBITD
 bb-infocolumn.o: bb-infocolumn.c
-	$(CC) $(CFLAGS) -DHOBBIT -I../hobbitd -c -o $@ bb-infocolumn.c
+	$(CC) $(CFLAGS) -I../hobbitd -c -o $@ bb-infocolumn.c
 else
 bb-infocolumn.o: bb-infocolumn.c
 	$(CC) $(CFLAGS) -c -o $@ bb-infocolumn.c
