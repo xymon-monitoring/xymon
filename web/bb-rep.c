@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.2 2003-06-21 14:35:22 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.3 2003-06-21 15:13:47 henrik Exp $";
 
 #include <stdio.h>
 #include <stdio.h>
@@ -70,6 +70,8 @@ void parse_query(void)
 	int startday, startmon, startyear;
 	int endday, endmon, endyear;
 	struct tm tmbuf;
+
+	startday = startmon = startyear = endday = endmon = endyear = -1;
 
 	if (getenv("QUERY_STRING") == NULL) {
 		errmsg("Invalid request");
