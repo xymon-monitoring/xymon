@@ -12,6 +12,7 @@
 #include "debug.h"
 #include "util.h"
 #include "bbd_net.h"
+#include "bbdutil.h"
 
 char *channelnames[] = {
 	"status", 
@@ -29,7 +30,7 @@ bbd_channel_t *setup_channel(enum msgchannels_t chnid, int flags)
 	bbd_channel_t *newch = (bbd_channel_t *)malloc(sizeof(bbd_channel_t));
 
 	newch->channelid = chnid;
-	newch->shmid = shmget(key, MAXMSG+1024, flags);
+	newch->shmid = shmget(key, SHAREDBUFSZ, flags);
 	if (newch->shmid == -1) {
 		errprintf("Could not get shm %s\n", strerror(errno));
 		free(newch);
