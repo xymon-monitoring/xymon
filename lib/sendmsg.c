@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.45 2004-12-12 16:17:30 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.46 2004-12-12 18:06:30 hstoerne Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -51,10 +51,10 @@ static int      bbdportnumber = 0;
 static char     *bbdispproxyhost = NULL;
 static int      bbdispproxyport = 0;
 static char	*proxysetting = NULL;
+
 static int	bbmetaqueued;		/* Anything in the buffer ? */
-static char	*metamsg = NULL;
-static char     *metaend;
-static int	metamsgsize = 0;
+static char	metamsg[MAXMSG];
+static char	metabuf[MAXMSG-50];	/* message buffer for one status message */
 
 int dontsendmessages = 0;
 
@@ -550,6 +550,12 @@ void combo_start(void)
 		sleepbetweenmsgs = atoi(getenv("BBSLEEPBETWEENMSGS"));
 }
 
+void meta_start(void)
+{
+	metamsg[0] = '\0';
+	bbmetaqueued = 0;
+}
+
 static void combo_flush(void)
 {
 
@@ -581,6 +587,17 @@ static void combo_flush(void)
 	combo_start();	/* Get ready for the next */
 }
 
+static void meta_flush(void)
+{
+	if (!bbmetaqueued) {
+		dprintf("Flush, but bbmeta is empty\n");
+		return;
+	}
+
+	sendmessage(metamsg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+	meta_start();	/* Get ready for the next */
+}
+
 static void combo_add(char *buf)
 {
 	/* Check if there is room for the message + 2 newlines */
@@ -598,12 +615,33 @@ static void combo_add(char *buf)
 	bbmsgqueued++;
 }
 
+static void meta_add(char *buf)
+{
+	/* Check if there is room for the message + 2 newlines */
+	if ( ((strlen(metamsg) + strlen(buf) + 200) >= MAXMSG) || 
+	     (maxmsgspercombo && (bbmetaqueued >= maxmsgspercombo)) ) {
+		/* Nope ... flush buffer */
+		meta_flush();
+	}
+	else {
+		/* Yep ... add delimiter before new status (but not before the first!) */
+		if (bbmetaqueued) strcat(metamsg, "\n\n");
+	}
+
+	strcat(metamsg, buf);
+	bbmetaqueued++;
+}
+
 void combo_end(void)
 {
 	combo_flush();
 	dprintf("%d status messages merged into %d transmissions\n", bbstatuscount, bbmsgcount);
 }
 
+void meta_end(void)
+{
+	meta_flush();
+}
 
 void init_status(int color)
 {
@@ -612,12 +650,26 @@ void init_status(int color)
 	bbstatuscount++;
 }
 
+void init_meta(char *metaname)
+{
+	metabuf[0] = '\0';
+}
+
 void addtostatus(char *p)
 {
 	if ((strlen(msgbuf) + strlen(p)) < sizeof(msgbuf))
 		strcat(msgbuf, p);
 	else {
 		strncat(msgbuf, p, sizeof(msgbuf)-strlen(msgbuf)-1);
+	}
+}
+
+void addtometa(char *p)
+{
+	if ((strlen(metabuf) + strlen(p)) < sizeof(metabuf))
+		strcat(metabuf, p);
+	else {
+		strncat(metabuf, p, sizeof(metabuf)-strlen(metabuf)-1);
 	}
 }
 
@@ -650,53 +702,9 @@ void finish_status(void)
 	}
 }
 
-void meta_start(void)
-{
-	if (metamsg == NULL) {
-		metamsgsize = 32768;
-		metamsg = (char *)malloc(metamsgsize);
-	}
-
-	*metamsg = '\0';
-	metaend = metamsg;
-	bbmetaqueued = 0;
-}
-
-void meta_end(void)
-{
-	/* Send the message */
-	sendmessage(metamsg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
-
-	free(metamsg);
-	metamsg = 0;
-	metamsgsize = 0;
-	metaend = NULL;
-	bbmetaqueued = 0;
-}
-
-void init_meta(char *metaname)
-{
-	/* Add delimiter if not the first message */
-	if (bbmetaqueued) strcat(metamsg, "\n\n");
-}
-
-void addtometa(char *buf)
-{
-	int used = (metaend - metamsg);
-	int buflen = strlen(buf);
-
-	if ((used + buflen + 1) >= metamsgsize) {
-		metamsgsize += (32768 + buflen);
-		metamsg = (char *)realloc(metamsg, metamsgsize);
-		metaend = metamsg + used;
-	}
-	strcat(metaend, buf);
-	metaend += buflen;
-}
-
 void finish_meta(void)
 {
-	bbmetaqueued++;
+	meta_add(metabuf);
 }
 
 
