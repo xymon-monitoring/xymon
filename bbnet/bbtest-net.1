@@ -117,6 +117,16 @@ the program ends. Note that this information is also
 included in the status report sent with the "--report"
 option.
 
+.IP --timelimit=N
+Causes bbtest-net to generate a warning if the run-time
+of bbtest-net exceeds N seconds. By default N is set to
+the value of BBSLEEP, so a warning triggers if the
+network tests cannot complete in the time given for one
+cycle of the BB server. Apart from the warning, this 
+option has no effect, i.e. it will not terminate bbtest-net
+prematurely. So to eliminate any such warnings, use this
+option with a very high value of N.
+
 
 .SH OPTIONS FOR THE PING TEST
 .IP --ping[=conn-column-name]

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.140 2004-04-23 08:46:16 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.141 2004-08-02 13:18:52 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1899,6 +1899,7 @@ int main(int argc, char *argv[])
 	char *egocolumn = NULL;
 	int failgoesclear = 0;		/* IPTEST_2_CLEAR_ON_FAILED_CONN */
 	int dumpdata = 0;
+	int runtimewarn;		/* 300 = default BBSLEEP setting */
 
 	if (init_http_library() != 0) {
 		errprintf("Failed to initialize http library\n");
@@ -1911,6 +1912,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (getenv("CONNTEST") && (strcmp(getenv("CONNTEST"), "FALSE") == 0)) pingcolumn = NULL;
+	runtimewarn = (getenv("BBSLEEP") ? atol(getenv("BBSLEEP")) : 300);
 
 	for (argi=1; (argi < argc); argi++) {
 		if      (argnmatch(argv[argi], "--timeout=")) {
@@ -1926,6 +1928,10 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--test-untagged") == 0) {
 			testuntagged = 1;
+		}
+		else if (strcmp(argv[argi], "--timelimit=") == 0) {
+			char *p = strchr(argv[argi], '=');
+			p++; runtimewarn = atol(p);
 		}
 
 		/* Debugging options */
@@ -2332,12 +2338,11 @@ int main(int argc, char *argv[])
 	if (egocolumn) {
 		char msgline[MAXMSG];
 		char *timestamps;
-		long bbsleep = (getenv("BBSLEEP") ? atol(getenv("BBSLEEP")) : 300);
 		int color;
 
 		/* Go yellow if it runs for too long */
-		if (total_runtime() > bbsleep) {
-			errprintf("WARNING: Runtime %ld longer than BBSLEEP (%ld)\n", total_runtime(), bbsleep);
+		if (total_runtime() > runtimewarn) {
+			errprintf("WARNING: Runtime %ld longer than time limit (%ld)\n", total_runtime(), runtimewarn);
 		}
 		color = (errbuf ? COL_YELLOW : COL_GREEN);
 
