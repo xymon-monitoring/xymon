@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_sample.c,v 1.3 2004-10-12 14:45:04 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_sample.c,v 1.4 2004-10-14 09:02:46 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -25,6 +25,9 @@ static char rcsid[] = "$Id: hobbitd_sample.c,v 1.3 2004-10-12 14:45:04 henrik Ex
 #include <sys/time.h>
 
 #include "bbdworker.h"
+
+#define MAX_META 20	/* The maximum number of meta-data items in a message */
+
 
 int main(int argc, char *argv[])
 {
@@ -61,11 +64,19 @@ int main(int argc, char *argv[])
 	 *
 	 * All messages have a sequence number ranging from 1-999999.
 	 *
+	 *
 	 * The first parameter is the name of the calling module; this is
 	 * only used for debugging output.
+	 *
 	 * The second parameter must be an (int *), which then receives the
 	 * sequence number of the message returned.
+	 *
+	 * The third parameter is optional; you can pass a filled-in (struct
+	 * timeval) here, which then defines the maximum time get_bbgend_message()
+	 * will wait for a new message. get_bbgend_message() does not modify
+	 * the content of the timeout parameter.
 	 * 
+	 *
 	 * get_bbgend_message() does not return until a message is ready,
 	 * or the timeout setting expires, or the channel is closed.
 	 */
@@ -80,7 +91,7 @@ int main(int argc, char *argv[])
 		 */
 
 		char *eoln, *restofmsg;
-		char *metadata[20];
+		char *metadata[MAX_META+1];
 		char *p;
 		int i;
 
@@ -96,9 +107,8 @@ int main(int argc, char *argv[])
 		 */
 		i = 0; 
 		p = gettok(msg, "|");
-		while (p) {
-			metadata[i] = p;
-			i++;
+		while (p && (i < MAX_META)) {
+			metadata[i++] = p;
 			p = gettok(NULL, "|");
 		}
 		metadata[i] = NULL;
@@ -109,10 +119,8 @@ int main(int argc, char *argv[])
 		 * For this sample module, we'll just print out the data we got.
 		 */
 		printf("Message # %d received at %d\n", seq, (int)time(NULL));
-		i = 0;
-		while (metadata[i]) {
+		for (i=0; (metadata[i]); i++) {
 			printf("   Meta #%2d: %s\n", i, metadata[i]);
-			i++;
 		}
 		printf("\n");
 
