@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.135 2005-03-30 15:05:48 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.136 2005-04-03 15:44:07 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -148,8 +148,7 @@ hobbitd_channel_t *enadischn = NULL;	/* Receives "enable" and "disable" messages
 
 #define NO_COLOR (COL_COUNT)
 static char *colnames[COL_COUNT+1];
-int alertcolors = ( (1 << COL_RED)   | (1 << COL_YELLOW) | (1 << COL_PURPLE) );
-int okcolors    = ( (1 << COL_GREEN) | (1 << COL_BLUE)   | (1 << COL_CLEAR)  );
+int alertcolors, okcolors;
 enum alertstate_t { A_OK, A_ALERT, A_UNDECIDED };
 
 typedef struct ghostlist_t {
@@ -966,15 +965,28 @@ void handle_meta(char *msg, hobbitd_log_t *log)
 	/*
 	 * msg has the format "meta HOST.TEST metaname\nmeta-value\n"
 	 */
-	char *metaname, *eoln;
+	char *metaname = NULL, *eoln, *line1 = NULL;
 	htnames_t *nwalk;
 	hobbitd_meta_t *mwalk;
 
-	eoln = strchr(msg, '\n'); if (eoln) *eoln = '\0';
-	metaname = skipword(msg);
-	metaname = skipwhitespace(metaname);
-	metaname = skipword(metaname);
-	metaname = skipwhitespace(metaname);
+	eoln = strchr(msg, '\n'); 
+	if (eoln) {
+		char *tok;
+
+		*eoln = '\0'; 
+		line1 = strdup(msg);
+		*eoln = '\n';
+
+		tok = strtok(line1, " ");		/* "meta" */
+		if (tok) tok = strtok(NULL, " ");	/* "host.test" */
+		if (tok) tok = strtok(NULL, " ");	/* metaname */
+		if (tok) metaname = tok;
+	}
+	if (!metaname) {
+		if (line1) xfree(line1);
+		errprintf("Malformed 'meta' message: '%s'\n", msg);
+		return;
+	}
 
 	for (nwalk = metanames; (nwalk && strcmp(nwalk->name, metaname)); nwalk = nwalk->next) ;
 	if (nwalk == NULL) {
@@ -996,7 +1008,8 @@ void handle_meta(char *msg, hobbitd_log_t *log)
 		if (mwalk->value) xfree(mwalk->value);
 		mwalk->value = strdup(eoln+1);
 	}
-	if (eoln) *eoln = '\n';
+
+	if (line1) xfree(line1);
 }
 
 void handle_data(char *msg, char *sender, char *origin, char *hostname, char *testname)
@@ -1760,7 +1773,9 @@ void do_message(conn_t *msg, char *origin)
 		 * hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|1st line of message
 		 */
 		hobbitd_hostlist_t *hwalk;
-		hobbitd_log_t *lwalk;
+		hobbitd_log_t *lwalk, *firstlog;
+		hobbitd_log_t infologrec, rrdlogrec;
+		hobbitd_testlist_t infotestrec, rrdtestrec;
 		char *buf, *bufp;
 		int bufsz;
 		char *spage = NULL, *shost = NULL, *stest = NULL, *fields = NULL;
@@ -1773,7 +1788,22 @@ void do_message(conn_t *msg, char *origin)
 		bufsz = 16384;
 		bufp = buf = (char *)malloc(bufsz);
 
+		/* Setup fake log-records for the "info" and "trends" data. */
+		infotestrec.testname = xgetenv("INFOCOLUMN");
+		infotestrec.next = NULL;
+		memset(&infologrec, 0, sizeof(infologrec));
+		infologrec.test = &infotestrec;
+
+		rrdtestrec.testname = xgetenv("LARRDCOLUMN");
+		rrdtestrec.next = NULL;
+		memset(&rrdlogrec, 0, sizeof(rrdlogrec));
+		rrdlogrec.test = &rrdtestrec;
+
+		infologrec.color = rrdlogrec.color = COL_GREEN;
+		infologrec.message = rrdlogrec.message = "";
+
 		for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
+			namelist_t *hinfo;
 
 			/* Host pagename filter */
 			if (spage) {
@@ -1784,7 +1814,15 @@ void do_message(conn_t *msg, char *origin)
 			/* Hostname filter */
 			if (shost && (strcmp(hwalk->hostname, shost) != 0)) continue;
 
-			for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
+			/* Handle NOINFO and NOTRENDS here */
+			hinfo = hostinfo(hwalk->hostname);
+			infologrec.next = &rrdlogrec;
+			rrdlogrec.next = hwalk->logs;
+			firstlog = &infologrec;
+			if (bbh_item(hinfo, BBH_FLAG_NOINFO)) firstlog = firstlog->next;
+			if (bbh_item(hinfo, BBH_FLAG_NOTRENDS)) firstlog = firstlog->next;
+
+			for (lwalk = firstlog; (lwalk); lwalk = lwalk->next) {
 				char *eoln;
 				int f_idx;
 
@@ -2165,6 +2203,10 @@ void load_checkpoint(char *fn)
 		hostname = knownhost(hostname, hostip, ghosthandling, &maybedown);
 		if (hostname == NULL) continue;
 
+		/* Ignore the "info" and "trends" data, since we generate on the fly now. */
+		if (strcmp(testname, xgetenv("INFOCOLUMN")) == 0) continue;
+		if (strcmp(testname, xgetenv("LARRDCOLUMN")) == 0) continue;
+
 		if ((hosts == NULL) || (strcmp(hostname, htail->hostname) != 0)) {
 			/* New host */
 			if (hosts == NULL) {
@@ -2379,6 +2421,10 @@ int main(int argc, char *argv[])
 	gettimeofday(&tv, &tz);
 	srandom(tv.tv_usec);
 
+	/* Load alert config */
+	alertcolors = colorset(xgetenv("ALERTCOLORS"), ((1 << COL_GREEN) | (1 << COL_BLUE)));
+	okcolors = colorset(xgetenv("OKCOLORS"), (1 << COL_RED));
+
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--debug")) {
 			debug = 1;
@@ -2416,42 +2462,6 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--restart=")) {
 			char *p = strchr(argv[argi], '=') + 1;
 			restartfn = strdup(p);
-		}
-		else if (argnmatch(argv[argi], "--alertcolors=")) {
-			char *colspec = strchr(argv[argi], '=') + 1;
-			int c, ac;
-			char *p;
-			int colormask;
-
-			p = strtok(colspec, ",");
-			ac = 0;
-			while (p) {
-				c = parse_color(p);
-				if (c != -1) ac = (ac | (1 << c));
-				p = strtok(NULL, ",");
-			}
-
-			/* green and blue can NEVER be alertcolors */
-			colormask = ~((1 << COL_GREEN) | (1 << COL_BLUE));
-			alertcolors = (ac & colormask);
-		}
-		else if (argnmatch(argv[argi], "--okcolors=")) {
-			char *colspec = strchr(argv[argi], '=') + 1;
-			int c, oc;
-			char *p;
-			int colormask;
-
-			p = strtok(colspec, ",");
-			oc = 0;
-			while (p) {
-				c = parse_color(p);
-				if (c != -1) oc = (oc | (1 << c));
-				p = strtok(NULL, ",");
-			}
-
-			/* red can NEVER be okcolors */
-			colormask = ~((1 << COL_RED));
-			okcolors = (oc & colormask);
 		}
 		else if (argnmatch(argv[argi], "--ghosts=")) {
 			char *p = strchr(argv[argi], '=') + 1;
@@ -2543,7 +2553,7 @@ int main(int argc, char *argv[])
 
 	if (restartfn) {
 		errprintf("Loading hostnames\n");
-		load_hostnames(bbhostsfn, NULL, get_fqdn(), NULL);
+		load_hostnames(bbhostsfn, NULL, get_fqdn());
 		errprintf("Loading saved state\n");
 		load_checkpoint(restartfn);
 	}
@@ -2686,7 +2696,7 @@ int main(int argc, char *argv[])
 			hobbitd_hostlist_t *hwalk, *nexth;
 
 			reloadconfig = 0;
-			load_hostnames(bbhostsfn, NULL, get_fqdn(), NULL);
+			load_hostnames(bbhostsfn, NULL, get_fqdn());
 			for (hwalk = hosts; (hwalk); hwalk = nexth) {
 				nexth = hwalk->next;  /* hwalk might disappear */
 				if (hostinfo(hwalk->hostname) == NULL) {
