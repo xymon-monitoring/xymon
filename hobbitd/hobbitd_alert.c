@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.50 2005-03-06 07:35:03 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.51 2005-03-09 10:18:02 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -449,16 +449,20 @@ int main(int argc, char *argv[])
 			newcolor = parse_color(metadata[7]);
 			oldalertstatus = ((alertcolors & (1 << awalk->color)) != 0);
 			newalertstatus = ((alertcolors & (1 << newcolor)) != 0);
-			awalk->color = newcolor;
 
 			traceprintf("state %d->%d\n", oldalertstatus, newalertstatus);
 
 			if (newalertstatus) {
 				/* It's in an alert state. */
+				awalk->color = newcolor;
 				awalk->state = A_PAGING;
 			}
 			else {
-				/* Send one "recovered" message out now, then go to A_DEAD */
+				/* 
+				 * Send one "recovered" message out now, then go to A_DEAD.
+				 * Dont update the color here - we want recoveries to go out 
+				 * only if the alert color triggered an alert
+				 */
 				awalk->state = A_RECOVERED;
 			}
 
