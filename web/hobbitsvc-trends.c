@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.48 2004-12-13 13:08:29 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.49 2004-12-13 21:59:09 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -25,9 +25,10 @@ static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.48 2004-12-13 13:08:29 henrik
 
 #include "libbbgen.h"
 
-int     log_nohost_rrds = 0;
-int     sendmetainfo = 0;
-namelist_t *hosthead = NULL;
+int		log_nohost_rrds = 0;
+int		sendmetainfo = 0;
+namelist_t	*hosthead = NULL;
+char		*larrdgraphs_default = NULL;;
 
 typedef struct graph_t {
 	larrdgraph_t *gdef;
@@ -115,29 +116,33 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, int larrd043, int want
 	static char *rrdlink = NULL;
 	static int rrdlinksize = 0;
 	char *graphdef, *p;
+	char *hostdisplayname, *hostlarrdgraphs;
 
+	hostdisplayname = bbh_item(host, BBH_DISPLAYNAME);
+	hostlarrdgraphs = bbh_item(host, BBH_LARRD);
+	if (hostlarrdgraphs == NULL) hostlarrdgraphs = larrdgraphs_default;
 
 	dprintf("rrdlink_text: host %s, rrd %s, larrd043=%d\n", host->bbhostname, rrd->gdef->larrdrrdname, larrd043);
 
 	/* If no larrdgraphs definition, include all with default links */
-	if (host->larrdgraphs == NULL) {
+	if (hostlarrdgraphs == NULL) {
 		dprintf("rrdlink_text: Standard URL (no larrdgraphs)\n");
-		return larrd_graph_data(host->bbhostname, host->displayname, NULL, rrd->gdef, rrd->count, larrd043, wantmeta);
+		return larrd_graph_data(host->bbhostname, hostdisplayname, NULL, rrd->gdef, rrd->count, larrd043, wantmeta);
 	}
 
 	/* Find this rrd definition in the larrdgraphs */
-	graphdef = strstr(host->larrdgraphs, rrd->gdef->larrdrrdname);
+	graphdef = strstr(hostlarrdgraphs, rrd->gdef->larrdrrdname);
 
 	/* If not found ... */
 	if (graphdef == NULL) {
 		dprintf("rrdlink_text: NULL graphdef\n");
 
 		/* Do we include all by default ? */
-		if (*(host->larrdgraphs) == '*') {
+		if (*(hostlarrdgraphs) == '*') {
 			dprintf("rrdlink_text: Default URL included\n");
 
 			/* Yes, return default link for this RRD */
-			return larrd_graph_data(host->bbhostname, host->displayname, NULL, rrd->gdef, rrd->count, larrd043, wantmeta);
+			return larrd_graph_data(host->bbhostname, hostdisplayname, NULL, rrd->gdef, rrd->count, larrd043, wantmeta);
 		}
 		else {
 			dprintf("rrdlink_text: Default URL NOT included\n");
@@ -149,7 +154,7 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, int larrd043, int want
 	/* We now know that larrdgraphs explicitly define what to do with this RRD */
 
 	/* Does he want to explicitly exclude this RRD ? */
-	if ((graphdef > host->larrdgraphs) && (*(graphdef-1) == '!')) {
+	if ((graphdef > hostlarrdgraphs) && (*(graphdef-1) == '!')) {
 		dprintf("rrdlink_text: This graph is explicitly excluded\n");
 		return "";
 	}
@@ -188,7 +193,7 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, int larrd043, int want
 			myrrd->gdef->maxgraphs = 999;
 			myrrd->count = 1;
 			myrrd->next = NULL;
-			partlink = larrd_graph_data(host->bbhostname, host->displayname, NULL, myrrd->gdef, myrrd->count, larrd043, wantmeta);
+			partlink = larrd_graph_data(host->bbhostname, hostdisplayname, NULL, myrrd->gdef, myrrd->count, larrd043, wantmeta);
 			if ((strlen(rrdlink) + strlen(partlink) + 1) >= rrdlinksize) {
 				rrdlinksize += strlen(partlink) + 4096;
 				rrdlink = (char *)realloc(rrdlink, rrdlinksize);
@@ -209,7 +214,7 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, int larrd043, int want
 	}
 	else {
 		/* It is included with the default graph */
-		return larrd_graph_data(host->bbhostname, host->displayname, NULL, rrd->gdef, rrd->count, larrd043, wantmeta);
+		return larrd_graph_data(host->bbhostname, hostdisplayname, NULL, rrd->gdef, rrd->count, larrd043, wantmeta);
 	}
 
 	return "";
