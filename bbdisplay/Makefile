@@ -7,9 +7,6 @@ PROGRAMS = bbgen bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlo
 EXTENSIONS = bbcombotest
 
 CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh bb-findhost.sh bb-csvinfo.sh bbmessage.cgi bb-hostsvc.sh bb-histlog.sh
-ifdef BBGEND
-	CGISCRIPTS += bb-ack.sh
-endif
 
 TEMPLATES = acknowledge_header acknowledge_footer acknowledge_form findhost_header findhost_footer findhost_form report_header report_footer report_form
 
@@ -131,11 +128,14 @@ install-exts: $(EXTENSIONS)
 	cp -fp $(EXTENSIONS) $(BBHOME)/ext/
 
 install-cgi: $(CGISCRIPTS)
+ifndef BBGEND
 	@echo ""
 	@echo "  WARNING : About to overwrite any existing Big Brother CGI scripts"
 	@echo "            Hit ctrl-C NOW if you want to save them first!"
 	@echo ""
 	@sleep 5
+endif
+	mkdir -p $(CGIDIR)
 	cp -fp $(CGISCRIPTS) $(CGIDIR)/
 
 install-html: $(HTMLPAGES)
