@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.94 2003-09-15 05:37:27 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.95 2003-09-27 06:00:27 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1247,7 +1247,17 @@ int stdout_on_file(char *filename)
 void sigsegv_handler(int signum)
 {
 	signal(signum, SIG_DFL);
-	execl(signal_bbcmd, "bbgen-signal", signal_bbdisp, signal_msg, NULL);
+
+	/* 
+	 * Try to fork a child to send in an alarm message.
+	 * If the fork fails, then just attempt to exec() the BB command
+	 */
+	if (fork() <= 0) {
+		execl(signal_bbcmd, "bbgen-signal", signal_bbdisp, signal_msg, NULL);
+	}
+
+	/* Dump core and abort */
+	abort();
 }
 
 void setup_signalhandler(char *programname)
