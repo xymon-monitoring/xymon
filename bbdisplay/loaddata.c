@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.23 2003-01-16 11:37:15 hstoerne Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.24 2003-01-16 12:34:28 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -92,6 +92,7 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 {
 	host_t 		*newhost = malloc(sizeof(host_t));
 	hostlist_t	*newlist = malloc(sizeof(hostlist_t));
+	char *p;
 
 	strcpy(newhost->hostname, hostname);
 	sprintf(newhost->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
@@ -100,22 +101,29 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	newhost->color = -1;
 	newhost->dialup = dialup;
 	if (alerts) {
-		newhost->alerts = malloc(strlen(alerts)+1);
-		strcpy(newhost->alerts, alerts);
+		p = strchr(alerts, ' '); if (p) { *p = '\0'; }
+
+		newhost->alerts = malloc(strlen(alerts)+3);
+		sprintf(newhost->alerts, ",%s,", alerts);
+		if (p) *p = ' ';
 	}
 	else {
 		newhost->alerts = NULL;
 	}
 	if (nopropyellowtests) {
-		newhost->nopropyellowtests = malloc(strlen(nopropyellowtests)+1);
-		strcpy(newhost->nopropyellowtests, nopropyellowtests);
+		p = strchr(nopropyellowtests, ' '); if (p) { *p = '\0'; }
+		newhost->nopropyellowtests = malloc(strlen(nopropyellowtests)+3);
+		sprintf(newhost->nopropyellowtests, ",%s,", nopropyellowtests);
+		if (p) *p = ' ';
 	}
 	else {
 		newhost->nopropyellowtests = nopropyellowdefault;
 	}
 	if (nopropredtests) {
-		newhost->nopropredtests = malloc(strlen(nopropredtests)+1);
-		strcpy(newhost->nopropredtests, nopropredtests);
+		p = strchr(nopropredtests, ' '); if (p) { *p = '\0'; }
+		newhost->nopropredtests = malloc(strlen(nopropredtests)+3);
+		sprintf(newhost->nopropredtests, ",%s,", nopropredtests);
+		if (p) *p = ' ';
 	}
 	else {
 		newhost->nopropredtests = nopropreddefault;
@@ -608,45 +616,21 @@ page_t *load_bbhosts(void)
 		}
 		else if (sscanf(l, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
 			int dialup = 0;
-			char *p = strchr(l, '#');
+			char *startoftags = strchr(l, '#');
 			char *alertlist, *nopropyellowlist, *nopropredlist;
 
-			if (p && strstr(p, " dialup")) dialup=1;
+			if (startoftags && strstr(startoftags, " dialup")) dialup=1;
 
-			if (p && (alertlist = strstr(p, "NK:"))) {
-				alertlist += 2;
-				*alertlist = ',';
-				p = strchr(alertlist, ' ');
-				if (p) {
-					*p = ',';
-				}
-				else {
-					strcat(alertlist, ",");
-				}
+			if (startoftags && (alertlist = strstr(startoftags, "NK:"))) {
+				alertlist += 3;
 			}
 
-			if (p && (nopropyellowlist = strstr(p, "NOPROP:"))) {
-				nopropyellowlist += 6;
-				*nopropyellowlist = ',';
-				p = strchr(nopropyellowlist, ' ');
-				if (p) {
-					*p = ',';
-				}
-				else {
-					strcat(nopropyellowlist, ",");
-				}
+			if (startoftags && (nopropyellowlist = strstr(startoftags, "NOPROP:"))) {
+				nopropyellowlist += 7;
 			}
 
-			if (p && (nopropredlist = strstr(p, "NOPROPRED:"))) {
-				nopropredlist += 6;
-				*nopropredlist = ',';
-				p = strchr(nopropredlist, ' ');
-				if (p) {
-					*p = ',';
-				}
-				else {
-					strcat(nopropredlist, ",");
-				}
+			if (startoftags && (nopropredlist = strstr(startoftags, "NOPROPRED:"))) {
+				nopropredlist += 10;
 			}
 
 			if (curhost == NULL) {
