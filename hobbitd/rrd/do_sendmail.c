@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char sendmail_rcsid[] = "$Id: do_sendmail.c,v 1.2 2004-12-28 16:15:47 henrik Exp $";
+static char sendmail_rcsid[] = "$Id: do_sendmail.c,v 1.3 2004-12-28 16:36:29 henrik Exp $";
 
 static char *sendmail_params[] = { "rrdcreate", rrdfn, 
 				   "DS:msgsfr:DERIVE:600:0:U",
@@ -38,7 +38,7 @@ int do_sendmail_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 	char *bofdata, *eofdata, *eoln;
 	int done, found;
-	unsigned int msgsfr, bytesfr, msgsto, bytesto, msgsrej, msgsdis;
+	unsigned long msgsfr, bytesfr, msgsto, bytesto, msgsrej, msgsdis;
 	char mailer[1024];
 
 	/* Find the line that begins with "=====" and NULL the message there */
@@ -61,20 +61,20 @@ int do_sendmail_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		eoln = strchr(bofdata, '\n');
 		if (eoln) {
 			*eoln = '\0';
-			found = sscanf(bofdata, "%u %uK %u %uK %u %u %s", 
+			found = sscanf(bofdata, "%*s %lu %luK %lu %luK %lu %lu %s", 
 					&msgsfr, &bytesfr, &msgsto, &bytesto, &msgsrej, &msgsdis, mailer);
 			if (found == 7) {
-				sprintf(rrdvalues, "%d:%u:%u:%u:%u:%u:%u", 
-					(int)tstamp, msgsfr, bytesfr, msgsto, bytesto, msgsrej, msgsdis);
+				sprintf(rrdvalues, "%d:%lu:%lu:%lu:%lu:%lu:%lu", 
+					(int)tstamp, msgsfr, bytesfr*1024, msgsto, bytesto*1024, msgsrej, msgsdis);
 			}
 			else {
 				msgsrej = msgsdis = 0;
-				found = sscanf(bofdata, "%u %uK %u %uK %s", 
+				found = sscanf(bofdata, "%*s %lu %luK %lu %luK %s", 
 					&msgsfr, &bytesfr, &msgsto, &bytesto, mailer);
 
 				if (found == 5) {
-					sprintf(rrdvalues, "%d:%u:%u:%u:%u:U:U", 
-						(int)tstamp, msgsfr, bytesfr, msgsto, bytesto);
+					sprintf(rrdvalues, "%d:%lu:%lu:%lu:%lu:U:U", 
+						(int)tstamp, msgsfr, bytesfr*1024, msgsto, bytesto*1024);
 				}
 			}
 
