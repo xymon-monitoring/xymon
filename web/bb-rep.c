@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.3 2003-06-21 15:13:47 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.4 2003-06-22 07:30:00 henrik Exp $";
 
 #include <stdio.h>
 #include <stdio.h>
@@ -162,6 +162,8 @@ int main(int argc, char *argv[])
 	int i;
 	pid_t childpid;
 	int childstat;
+	char htmldelim[20];
+	char startstr[20], endstr[20];
 
 	envcheck(reqenv);
 	parse_query();
@@ -181,23 +183,57 @@ int main(int argc, char *argv[])
 	bbgen_argv[1+argc] = outdir;
 	bbgen_argv[2+argc] = NULL;
 
-	childpid = fork();	
+
+	/* Output the "please wait for report ... " thing */
+	sprintf(htmldelim, "bbrep-%u-%lu", (int)getpid(), time(NULL));
+	printf("Content-type: multipart/mixed;boundary=%s\n", htmldelim);
+	printf("\n");
+	printf("%s\n", htmldelim);
+	printf("Content-type: text/html\n\n");
+
+	/* It's ok with these hardcoded values, as they are not used for this page */
+	sethostenv("", "", "", colorname(COL_BLUE));
+	sethostenv_report(starttime, endtime, 97.0, 99.995);
+	headfoot(stdout, "bbrep", "", "header", COL_BLUE);
+
+	strftime(startstr, sizeof(startstr), "%b %d %Y", localtime(&starttime));
+	strftime(endstr, sizeof(endstr), "%b %d %Y", localtime(&endtime));
+	printf("<CENTER><A NAME=begindata>\n");
+	printf("<BR><BR><BR><BR>\n");
+	printf("<H3>Generating report for the period: %s - %s (%s)<BR>\n", startstr, endstr, style);
+	printf("<P><P>\n");
+	fflush(stdout);
+
+
+	/* Go do the report */
+	childpid = fork();
 	if (childpid == 0) {
 		execv(bbgencmd, bbgen_argv);
 	}
 	else if (childpid > 0) {
 		wait(&childstat);
 		if (WIFEXITED(childstat) && (WEXITSTATUS(childstat) != 0) ) {
+			printf("%s\n\n", htmldelim);
+			printf("Content-Type: text/html\n\n");
 			errmsg("Could not generate report");
 		}
 		else {
+			sleep(5);
+			printf("Done...<P></BODY></HTML>\n");
+			fflush(stdout);
+			sleep(5);
+			printf("%s\n\n", htmldelim);
 			printf("Content-Type: text/html\n\n");
 			printf("<HTML><HEAD>\n");
 			printf("<META HTTP-EQUIV=\"REFRESH\" CONTENT=\"0; URL=%s/%s/\"\n", getenv("BBREPURL"), dirid);
 			printf("</HEAD><BODY BGCOLOR=\"000000\"></BODY></HTML>\n");
+			printf("\n%s\n", htmldelim);
+			fflush(stdout);
 		}
 	}
 	else {
+		printf("%s\n\n", htmldelim);
+		printf("Content-Type: text/html\n\n");
 		errmsg("Fork failed");
 	}
 
