@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.3 2004-09-19 07:18:36 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.4 2004-09-19 07:32:15 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -280,21 +280,37 @@ int main(int argc, char *argv[])
 
 			  case P_REQ_CONNECTING:
 				ctime = time(NULL);
-				if (ctime < (cwalk->conntime + CONNECT_INTERVAL)) break;
-				cwalk->ssocket = socket(AF_INET, SOCK_STREAM, 0);
-				if (cwalk->ssocket == -1) break; /* Retry the next time around */
-				fcntl(cwalk->ssocket, F_SETFL, O_NONBLOCK);
+				if (ctime < (cwalk->conntime + CONNECT_INTERVAL)) {
+					dprintf("Delaying retry of connection\n");
+					break;
+				}
+
 				cwalk->conntries--;
+				if (cwalk->conntries < 0) {
+					errprintf("Could not connect to server\n");
+					cwalk->state = P_CLEANUP;
+					break;
+				}
+
+				cwalk->ssocket = socket(AF_INET, SOCK_STREAM, 0);
+				if (cwalk->ssocket == -1) {
+					dprintf("Could not get a socket\n");
+					break; /* Retry the next time around */
+				}
+				fcntl(cwalk->ssocket, F_SETFL, O_NONBLOCK);
+
 				n = connect(cwalk->ssocket, (struct sockaddr *)&saddr, sizeof(saddr));
 				if ((n == 0) || ((n == -1) && (errno == EINPROGRESS))) {
 					cwalk->state = P_REQ_SENDING;
 					/* Fallthrough */
 				}
 				else {
-					/* Could not connect! */
-					cwalk->state = (cwalk->conntries ? P_REQ_CONNECTING : P_CLEANUP);
+					/* Could not connect! Invoke retries */
+					close(cwalk->ssocket);
+					cwalk->ssocket = -1;
 					break;
 				}
+				/* No "break" here! */
 			  
 			  case P_REQ_SENDING:
 				FD_SET(cwalk->ssocket, &fdwrite); 
@@ -398,6 +414,8 @@ int main(int argc, char *argv[])
 							n = getsockopt(cwalk->ssocket, SOL_SOCKET, SO_ERROR, &connres, &connressize);
 							if (connres != 0) {
 								/* Connect failed! Invoke retries. */
+								errprintf("Could not connect to server - retrying %d\n",
+									  cwalk->conntries);
 								close(cwalk->ssocket);
 								cwalk->ssocket = -1;
 								cwalk->state = P_REQ_CONNECTING;
