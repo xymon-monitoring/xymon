@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.13 2004-09-11 15:58:04 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.14 2004-09-12 15:36:07 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -233,7 +233,7 @@ int dns_test_server(char *serverip, char *hostname, char **banner, int *bannerby
 	char msg[100];
 	char *tspec, *tst;
 	dns_resp_t *responses = NULL;
-	dns_resp_t *walk;
+	dns_resp_t *walk = NULL;
 	int i;
 
 	if (inet_aton(serverip, &serveraddr) == 0) {
