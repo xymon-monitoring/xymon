@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char iostat_rcsid[] = "$Id: do_iostat.c,v 1.4 2004-11-13 13:23:47 henrik Exp $";
+static char iostat_rcsid[] = "$Id: do_iostat.c,v 1.5 2004-11-13 22:01:17 henrik Exp $";
 
 /*
  * BEGINKEY
@@ -100,7 +100,7 @@ int do_iostat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 					for (newkey = keyhead; (newkey && strcmp(newkey->key, marker)); newkey = newkey->next) ;
 
 					if (newkey) {
-						sprintf(rrdfn, "%s.%s.rrd", testname, newkey->value);
+						sprintf(rrdfn, "iostat.%s.rrd", newkey->value);
 						sprintf(rrdvalues, "%d:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f",
 							(int) tstamp, 
 							v[0], v[1], v[2], v[3], v[4], v[5], v[6],
