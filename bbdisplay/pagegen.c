@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.136 2005-03-13 07:44:37 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.137 2005-03-16 07:43:32 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -896,13 +896,18 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 			dirdelim = tmpfilename;
 			while ((dirdelim = strchr(dirdelim, '/')) != NULL) {
 				*dirdelim = '\0';
-				mkdir(tmpfilename, 0755);
+				if (mkdir(tmpfilename, 0755) == -1) {
+					errprintf("Cannot create directory %s: %s\n", tmpfilename, strerror(errno));
+				}
 				*dirdelim = '/';
 				dirdelim++;
 			}
 
 			/* We've created the directories. Now retry creating the file. */
 			output = fopen(tmpfilename, "w");
+			if (output == NULL) {
+				errprintf("Cannot open file %s: %s\n", tmpfilename, strerror(errno));
+			}
 
 			/* 
 			 * We had to create the directory. Set up an index.html file for 
@@ -917,7 +922,6 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 			dprintf("Symlinking %s->%s : %d/%d\n", pagebasename, indexfilename, res, errno);
 
 			if (output == NULL) {
-				errprintf("Cannot open file %s\n", tmpfilename);
 				return;
 			}
 		}
@@ -926,7 +930,7 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 			/* Just create the RSS files - all the directory stuff is done */
 			rssoutput = fopen(tmprssfilename, "w");
 			if (rssoutput == NULL) {
-				errprintf("Cannot open RSS file %s\n", tmprssfilename);
+				errprintf("Cannot open RSS file %s: %s\n", tmprssfilename, strerror(errno));
 			}
 		}
 	}
