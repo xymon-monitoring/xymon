@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.49 2004-08-21 10:48:28 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.50 2004-08-22 08:51:27 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -633,6 +633,7 @@ static void setup_ssl(tcptest_t *item)
 {
 	static int ssl_init_complete = 0;
 	struct servent *sp;
+	char portinfo[100];
 	X509 *peercert;
 	char *certcn, *certstart, *certend;
 	int err;
@@ -680,8 +681,11 @@ static void setup_ssl(tcptest_t *item)
 		}
 
 		if (!item->sslctx) {
-			errprintf("Cannot create SSL context - IP %s, service %s\n", 
-				   inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname);
+			char sslerrmsg[256];
+
+			ERR_error_string(ERR_get_error(), sslerrmsg);
+			errprintf("Cannot create SSL context - IP %s, service %s: %s\n", 
+				   inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname, sslerrmsg);
 			item->sslrunning = 0;
 			item->errcode = CONTEST_ESSL;
 			return;
@@ -699,8 +703,11 @@ static void setup_ssl(tcptest_t *item)
 	if (item->ssldata == NULL) {
 		item->ssldata = SSL_new(item->sslctx);
 		if (!item->ssldata) {
-			errprintf("SSL_new failed - IP %s, service %s\n", 
-				   inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname);
+			char sslerrmsg[256];
+
+			ERR_error_string(ERR_get_error(), sslerrmsg);
+			errprintf("SSL_new failed - IP %s, service %s: %s\n", 
+				   inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname, sslerrmsg);
 			item->sslrunning = 0;
 			SSL_CTX_free(item->sslctx);
 			item->errcode = CONTEST_ESSL;
@@ -708,8 +715,11 @@ static void setup_ssl(tcptest_t *item)
 		}
 
 		if (SSL_set_fd(item->ssldata, item->fd) != 1) {
-			errprintf("Could not initiate SSL on connection - IP %s, service %s\n", 
-				   inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname);
+			char sslerrmsg[256];
+
+			ERR_error_string(ERR_get_error(), sslerrmsg);
+			errprintf("Could not initiate SSL on connection - IP %s, service %s: %s\n", 
+				   inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname, sslerrmsg);
 			item->sslrunning = 0;
 			SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
 			item->errcode = CONTEST_ESSL;
@@ -718,27 +728,38 @@ static void setup_ssl(tcptest_t *item)
 	}
 
 	sp = getservbyport(item->addr.sin_port, "tcp");
+	if (sp) {
+		sprintf(portinfo, "%s (%d/tcp)", sp->s_name, item->addr.sin_port);
+	}
+	else {
+		sprintf(portinfo, "%d/tcp", item->addr.sin_port);
+	}
 	if ((err = SSL_connect(item->ssldata)) != 1) {
+		char sslerrmsg[256];
+
 		switch (SSL_get_error (item->ssldata, err)) {
 		  case SSL_ERROR_WANT_READ:
 		  case SSL_ERROR_WANT_WRITE:
 			item->sslrunning = SSLSETUP_PENDING;
 			break;
 		  case SSL_ERROR_SYSCALL:
-			errprintf("IO error in SSL_connect to %s on host %s\n",
-				  sp->s_name, inet_ntoa(item->addr.sin_addr));
+			ERR_error_string(ERR_get_error(), sslerrmsg);
+			errprintf("IO error in SSL_connect to %s on host %s: %s\n",
+				  portinfo, inet_ntoa(item->addr.sin_addr), sslerrmsg);
 			item->errcode = CONTEST_ESSL;
 			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
 			break;
 		  case SSL_ERROR_SSL:
-			errprintf("Unspecified SSL error in SSL_connect to %s on host %s\n",
-				  sp->s_name, inet_ntoa(item->addr.sin_addr));
+			ERR_error_string(ERR_get_error(), sslerrmsg);
+			errprintf("Unspecified SSL error in SSL_connect to %s on host %s: %s\n",
+				  portinfo, inet_ntoa(item->addr.sin_addr), sslerrmsg);
 			item->errcode = CONTEST_ESSL;
 			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
 			break;
 		  default:
-			errprintf("Unknown error %d in SSL_connect to %s on host %s\n",
-				  err, sp->s_name, inet_ntoa(item->addr.sin_addr));
+			ERR_error_string(ERR_get_error(), sslerrmsg);
+			errprintf("Unknown error %d in SSL_connect to %s on host %s: %s\n",
+				  err, portinfo, inet_ntoa(item->addr.sin_addr), sslerrmsg);
 			item->errcode = CONTEST_ESSL;
 			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
 			break;
@@ -751,7 +772,7 @@ static void setup_ssl(tcptest_t *item)
 	peercert = SSL_get_peer_certificate(item->ssldata);
 	if (!peercert) {
 		errprintf("Cannot get peer certificate for %s on host %s\n",
-			  sp->s_name, inet_ntoa(item->addr.sin_addr));
+			  portinfo, inet_ntoa(item->addr.sin_addr));
 		item->errcode = CONTEST_ESSL;
 		item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
 		return;
@@ -872,7 +893,7 @@ void do_tcp_tests(int timeout, int concurrency)
 	/* How many tests to do ? */
 	for (item = thead; (item); item = item->next) pending++; 
 	firstactive = nextinqueue = thead;
-	dprintf("About to do  %d TCP tests\n", pending);
+	dprintf("About to do %d TCP tests\n", pending);
 
 	while (pending > 0) {
 		/*
