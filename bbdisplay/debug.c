@@ -16,17 +16,37 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.9 2003-03-01 22:29:36 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.10 2003-03-02 12:38:03 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdarg.h>
 
 #include "bbgen.h"
 #include "debug.h"
 
 int debug = 0;
 
+#ifdef DEBUG
+void dprintf(const char *fmt, ...)
+{
+	va_list args;
+
+	if (debug) {
+		va_start(args, fmt);
+		vprintf(fmt, args);
+		va_end(args);
+		fflush(stdout);
+	}
+}
+#endif
+
+
+const char *textornull(const char *text)
+{
+	return (text ? text : "(NULL)");
+}
 
 void dumplinks(link_t *head)
 {
