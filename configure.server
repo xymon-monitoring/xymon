@@ -1,12 +1,9 @@
 #!/bin/sh
 
-# Configure script for bbgen.
-#
-# This is a quick hack to make things work on the systems I use
-# personally, without having to do the full GNU Autoconf thing.
+# Configure script for Hobbit
 
 echo ""
-echo "Configuration script for bbgen"
+echo "Configuration script for Hobbit"
 echo ""
 
 if test -r Makefile
@@ -14,18 +11,18 @@ then
 	echo "Already configured - remove Makefile to re-configure"
 	exit 1
 else
-	echo "This script asks a few questions and builds a Makefile to compile bbgen"
+	echo "This script asks a few questions and builds a Makefile to compile Hobbit"
 	echo ""
-	echo "Are you using the standard BB, or bbgend [bbgend] ?"
+	echo "Are you setting up a Hobbit server (hobbit), or using Hobbit with BB (bb) [hobbit] ?"
 	read TARGET
 	if test -z "$TARGET"
 	then
-		TARGET="bbgend"
+		TARGET="hobbit"
 	fi
 
-	if test "$TARGET" = "bbgend"
+	if test "$TARGET" = "hobbit"
 	then
-		echo "Checking pre-requisites for bbgend build"
+		echo "Checking pre-requisites for building Hobbit"
 		echo ""
 		. build/rrd.sh
 		echo ""; echo ""
@@ -43,7 +40,7 @@ else
 		SSLDEF=""
 	else
 		echo ""
-		echo "bbgen can use the OpenSSL library to test SSL-enabled services"
+		echo "Hobbit can use the OpenSSL library to test SSL-enabled services"
 		echo "like POP3S, IMAPS, NNTPS and TELNETS. If you have the OpenSSL"
 		echo "library installed, I recommend that you enable this."
 		echo ""
@@ -66,7 +63,7 @@ else
 		LDAPDEF=""
 	else
 		echo ""
-		echo "bbgen can use your $LDAPVENDOR LDAP client library to test LDAP servers."
+		echo "Hobbit can use your $LDAPVENDOR LDAP client library to test LDAP servers."
 		echo ""
 		echo "Do you want to be able to test LDAP servers (y) ?"
 		read ENABLELDAP
@@ -95,7 +92,7 @@ else
 	# Pre-requisites completed.
 
 
-	if test "$TARGET" != "bbgend"
+	if test "$TARGET" != "hobbit"
 	then
 		echo "Setting up for use with standard Big Brother"
 		echo ""
@@ -173,14 +170,14 @@ else
 		fi
 
 	else
-		echo "Setting up for use with bbgend"
+		echo "Setting up for a Hobbit server"
 		echo ""; echo ""
 
-		echo "What userid will be running bbgend [bb] ?"
+		echo "What userid will be running Hobbit [hobbit] ?"
 		read BBUSER
 		if test -z "$BBUSER"
 		then
-			BBUSER="bb"
+			BBUSER="hobbit"
 		fi
 		USERDATA=`getent passwd $BBUSER || grep "^${BBUSER}:" /etc/passwd`
 		if test $? -eq 0
@@ -193,7 +190,7 @@ else
 		echo ""; echo ""
 
 		HOMEDIR="`echo $USERDATA|cut -d: -f6`"
-		echo "Where do you want the bbgend installation [${HOMEDIR}] ?"
+		echo "Where do you want the Hobbit installation [${HOMEDIR}] ?"
 		read BBTOPDIR
 		if test -z "$BBTOPDIR"
 		then
@@ -201,14 +198,22 @@ else
 		fi
 		if test -d "$BBTOPDIR"
 		then
-			echo "OK, will configure to use $BBTOPDIR as the bbgend toplevel directory"
+			echo "OK, will configure to use $BBTOPDIR as the Hobbit toplevel directory"
 		else
 			echo "** FAILURE: $BBTOPDIR does not exist. Create it and try again."
 			exit 1
 		fi
 		echo ""; echo ""
 
-		echo "Where to put the bbgend CGI script [$BBTOPDIR/cgi-bin] ? "
+		echo "What URL will you use for the Hobbit webpages [/hobbit] ? "
+		read BBHOSTURL
+		if test -z "$BBHOSTURL"
+		then
+			BBHOSTURL="/hobbit"
+		fi
+		echo ""; echo ""
+
+		echo "Where to put the Hobbit CGI scripts [$BBTOPDIR/cgi-bin] ? "
 		read CGIDIR
 		if test -z "$CGIDIR"
 		then
@@ -216,31 +221,23 @@ else
 		fi
 		echo ""; echo ""
 
-		echo "What is the URL for this CGI directory [/bb-cgi] ? "
+		echo "What is the URL for the Hobbit CGI directory [/hobbit-cgi] ? "
 		read BBCGIURL
 		if test -z "$BBCGIURL"
 		then
-			BBCGIURL="/bb-cgi"
-		fi
-		echo ""; echo ""
-
-		echo "What URL will you use for the BB webpages [/bb] ? "
-		read BBHOSTURL
-		if test -z "$BBHOSTURL"
-		then
-			BBHOSTURL="/bb"
+			BBCGIURL="/hobbit-cgi"
 		fi
 		echo ""; echo ""
 
 		echo "** Note that you may need to modify your webserver configuration."
-		echo "** After installing, see $BBHOME/etc/bb-apache.conf for an example configuration."
+		echo "** After installing, see $BBTOPDIR/server/etc/hobbit-apache.conf for an example configuration."
 		echo ""; echo ""
 
-		echo "Where to put the bbgend logfiles [/var/log/bb] ? "
+		echo "Where to put the Hobbit logfiles [/var/log/hobbit] ? "
 		read BBLOGDIR
 		if test -z "$BBLOGDIR"
 		then
-			BBLOGDIR=/var/log/bb
+			BBLOGDIR=/var/log/hobbit
 		fi
 		echo ""; echo ""
 
@@ -261,15 +258,15 @@ else
 		fi
 		echo ""; echo ""
 
-		# bbgend defaults to standard port and 32KB message max.
+		# Hobbit defaults to standard port and 32KB message max.
 		BBHOSTOS=`uname -s | tr [A-Z] [a-z]`
-		BBHOME=$BBTOPDIR/bb
-		BBVAR=$BBTOPDIR/bbvar
+		BBHOME=$BBTOPDIR/server
+		BBVAR=$BBTOPDIR/data
 		BBPORT=1984
 		MAXMSG=32768
 	fi
 
-	echo "Where should I install the bbgen man-pages (/usr/local/man) ?"
+	echo "Where should I install the Hobbit man-pages (/usr/local/man) ?"
 	read MANROOT
 	if test -z "$MANROOT"
 	then
@@ -277,7 +274,7 @@ else
 	fi
 	echo ""; echo ""
 
-	echo "The bbgen history CGI replacement by default displays a 1-day"
+	echo "The Hobbit history webpage by default displays a 1-day"
 	echo "graph of the history. It can also show a 1-week, 4-weeks and"
 	echo "1-year graphs, or any combination of these."
 	echo ""
@@ -323,13 +320,13 @@ else
 	export BARSUMDEF
 	echo ""; echo ""
 
-	echo "The bbgen history CGI replacement can use a new method to"
+	echo "The Hobbit history webpage can use a new method to"
 	echo "create the summary graphs on the history page. This method"
 	echo "gives a more accurate view (more detailed), but uses a fixed-width"
 	echo "graph instead of the standard Big Brother graph that automatically"
 	echo "resizes to fit your browser window."
 	echo ""
-	echo "Use the new Big Brother history graph (y/n) [y] ? "
+	echo "Use the new detailed Hobbit history graph (y/n) [y] ? "
 	read USENEWHIST
 	if test "$USENEWHIST" = "" -o "$USENEWHIST" = "y"
 	then
@@ -354,46 +351,46 @@ else
 	fi
 	echo ""; echo ""
 
-	echo "# Toplevel Makefile for bbgen"     > Makefile
+	echo "# Toplevel Makefile for Hobbit"    > Makefile
 
 	echo "BUILDTOPDIR=\`pwd\`"               >>Makefile
 	echo ""                                  >>Makefile
-	echo "# configure settings for bbgen"    >>Makefile
+	echo "# configure settings for Hobbit"   >>Makefile
 	echo "#"                                 >>Makefile
-	echo "# Toplevel dir with bb/, bbvar/"   >>Makefile
+	echo "# Toplevel dir"                    >>Makefile
 	echo "BBTOPDIR = $BBTOPDIR"              >>Makefile
-	echo "# BB home dir for etc/, www/"      >>Makefile
+	echo "# Server home dir for etc/, www/"  >>Makefile
 	echo "BBHOME = $BBHOME"                  >>Makefile
-	echo "# BB var dir for data/, hist/"     >>Makefile
+	echo "# Server data dir for hist/ et.al." >>Makefile
 	echo "BBVAR = $BBVAR"                    >>Makefile
-	echo "# BB CGI scripts go in CGIDIR"     >>Makefile
+	echo "# CGI scripts go in CGIDIR"        >>Makefile
 	echo "CGIDIR = $CGIDIR"                  >>Makefile
-	echo "# Maximum size of a BB status msg" >>Makefile
+	echo "# Maximum size of a status msg"    >>Makefile
 	echo "MAXMSG = $MAXMSG"                  >>Makefile
-	echo "# Port number for the BB daemon"   >>Makefile
+	echo "# Port number for the daemon"      >>Makefile
 	echo "BBPORT = $BBPORT"                  >>Makefile
 	echo "# Where to install manpages"       >>Makefile
 	echo "MANROOT = $MANROOT"                >>Makefile
 	echo "# Default history graph setting"   >>Makefile
 	echo "HISTGRAPHDEF = $HISTGRAPHDEF $BARSUMDEF"   >>Makefile
 	echo ""                                  >>Makefile
-	if test "$TARGET" = "bbgend"
+	if test "$TARGET" = "hobbit"
 	then
-		echo "# bbgend settings follows" >>Makefile
-		echo "BBGEND = 1"                >>Makefile
-		echo "# Username running bbgend" >>Makefile
+		echo "# hobbit settings follows" >>Makefile
+		echo "HOBBITD = 1"               >>Makefile
+		echo "# Username running hobbit" >>Makefile
 		echo "BBUSER = $BBUSER"          >>Makefile
-		echo "# Logs from bbgend programs go here" >>Makefile
+		echo "# Logs from hobbit programs go here" >>Makefile
 		echo "BBLOGDIR = $BBLOGDIR"      >>Makefile
-		echo "# BB server hostname"      >>Makefile
+		echo "# Hobbit server hostname"  >>Makefile
 		echo "BBHOSTNAME = $BBHOSTNAME"  >>Makefile
-		echo "# BB server IP-address"    >>Makefile
+		echo "# Hobbit server IP-address">>Makefile
 		echo "BBHOSTIP = $BBHOSTIP"      >>Makefile
-		echo "# BB server OS"            >>Makefile
+		echo "# Hobbit server OS"        >>Makefile
 		echo "BBHOSTOS = $BBHOSTOS"      >>Makefile
-		echo "# URL for BB webpages"     >>Makefile
+		echo "# URL for Hobbit webpages" >>Makefile
 		echo "BBHOSTURL = $BBHOSTURL"    >>Makefile
-		echo "# URL for BB CGIs"         >>Makefile
+		echo "# URL for Hobbit CGIs"     >>Makefile
 		echo "BBCGIURL = $BBCGIURL"      >>Makefile
 
 		echo ""                          >>Makefile
@@ -446,7 +443,7 @@ else
 		echo "If this fails, change the compile settings in Makefile"
 		echo ""
 		echo "I would appreciate it if you send the changes to"
-		echo "bbgen@storner.dk so I can include it in the next version."
+		echo "hobbit@storner.dk so I can include it in the next version."
 		echo ""
 	fi
 	echo "" >>Makefile
@@ -456,11 +453,11 @@ else
 	echo "" >> Makefile
 
 	echo ""; echo ""
-	echo "Created Makefile with the necessary information to build bbgen."
+	echo "Created Makefile with the necessary information to build Hobbit"
 	echo "Some defaults are used, so do look at the Makefile before continuing."
 	echo ""
 
-	echo "Configuration complete - now run 'make' to build the tools"
+	echo "Configuration complete - now run 'make' (GNU make) to build the tools"
 fi
 
 exit 0
