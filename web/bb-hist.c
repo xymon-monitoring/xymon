@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.3 2003-06-23 21:04:38 hstoerne Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.4 2003-06-23 22:18:35 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,13 +27,16 @@ static char rcsid[] = "$Id: bb-hist.c,v 1.3 2003-06-23 21:04:38 hstoerne Exp $";
 #include "reportdata.h"
 #include "debug.h"
 
+#define PIXELS 960
+#define FACTOR 90	/* 86400 / 960 */
+
 void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, int entrycount,
 		      reportinfo_t *repinfo, replog_t *log24hours, replog_t *loghead)
 {
 	char *bgcols[2] = { "\"#000000\"", "\"#000033\"" };
 	int curbg = 0;
 	time_t yesterday, today;
-	int pctfirst, pctlast;
+	int pctfirst, pctlast, pctsum;
 	struct tm *tmbuf;
 	time_t secs;
 	int starthour, hour;
@@ -44,15 +47,13 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 	/* Compute the percentage of the first (incomplete) hour */
 	tmbuf = localtime(&yesterday);
 	secs = 3600 - (tmbuf->tm_min*60 + tmbuf->tm_sec);
-	pctfirst = secs / 864;	/* secs * 100 / 86400 */
-	if (pctfirst == 0) pctfirst = 1;
+	pctfirst = secs / FACTOR;
 
 	/* Compute the percentage of the last (incomplete) hour */
 	tmbuf = localtime(&today);
 	starthour = tmbuf->tm_hour;
 	secs = tmbuf->tm_min*60 + tmbuf->tm_sec;
-	pctlast = secs / 864;
-	if (pctlast == 0) pctlast = 1;
+	pctlast = secs / FACTOR;
 
 	sethostenv(hostname, ip, service, colorname(COL_GREEN));
 
@@ -64,7 +65,7 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 	fprintf(htmlrep, "<BR>\n");
 
 	/* Create the color-bar */
-	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 BGCOLOR=\"#666666\">\n");
+	fprintf(htmlrep, "<TABLE WIDTH=\"%d\" BORDER=0 BGCOLOR=\"#666666\">\n", PIXELS);
 	fprintf(htmlrep, "<TR><TD ALIGN=CENTER>\n");
 
 	/* The date stamps */
@@ -76,13 +77,16 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 	fprintf(htmlrep, "</TABLE>\n");
 
 	/* The hour line */
+	pctsum = pctfirst + pctlast;
 	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 BGCOLOR=\"#000033\">\n");
 	fprintf(htmlrep, "<TR>\n");
-	fprintf(htmlrep, "<TD WIDTH=%d%% ALIGN=LEFT><B>&nbsp;</B></TD>\n", pctfirst);
+	fprintf(htmlrep, "<TD WIDTH=%d ALIGN=LEFT><B>&nbsp;</B></TD>\n", pctfirst);
 	for (hour = ((starthour + 1) % 24); (hour != starthour); hour = ((hour + 1) % 24)) {
-		fprintf(htmlrep, "<TD WIDTH=4%% ALIGN=LEFT><B>%d</B></TD>\n", hour);
+		fprintf(htmlrep, "<TD WIDTH=%d ALIGN=LEFT><B>%d</B></TD>\n", (PIXELS / 24), hour);
+		pctsum += (PIXELS / 24);
 	}
-	fprintf(htmlrep, "<TD WIDTH=%d%% ALIGN=LEFT><B>%d</B></TD>\n", pctlast, starthour);
+	fprintf(htmlrep, "<TD WIDTH=%d ALIGN=LEFT><B>%d</B></TD>\n", pctlast, starthour);
+	fprintf(htmlrep, "<!-- pctsum = %d -->\n", pctsum);
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "</TABLE>\n");
 
@@ -92,7 +96,7 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 	fprintf(htmlrep, "<FONT SIZE=1>\n");
 
 	/* Need to re-sort the 24-hour log to chronological order */
-	colorlog = NULL;
+	colorlog = NULL; pctsum = 0;
 	for (walk = log24hours; (walk); walk = tmp) {
 		tmp = walk->next;
 		walk->next = colorlog;
@@ -100,13 +104,14 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 		walk = tmp;
 	}
 	for (walk = colorlog; (walk); walk = walk->next) {
-		int pct = (walk->duration / 864);
+		int pct = (walk->duration / FACTOR);
 
-		if (pct == 0) pct = 1;
-		fprintf(htmlrep, "<TD WIDTH=%d%% BGCOLOR=%s NOWRAP>&nbsp</TD>\n", 
+		pctsum += pct;
+		fprintf(htmlrep, "<TD WIDTH=%d BGCOLOR=%s NOWRAP>&nbsp</TD>\n", 
 			pct, colorname(walk->color));
 	}
 
+	fprintf(htmlrep, "<!-- pctsum = %d -->\n", pctsum);
 	fprintf(htmlrep, "</FONT></TR>\n");
 	fprintf(htmlrep, "</TABLE>\n");
 
