@@ -1,35 +1,29 @@
-<TABLE WIDTH="60%" ALIGN=CENTER>
-<TR WIDTH="100%">
-<TD>
-<FORM ACTION="&CGIBINURL/bb-ack.sh">
+<CENTER>
+<FORM METHOD="GET" ACTION="&CGIBINURL/bb-ack.sh">
    <INPUT TYPE="HIDDEN" NAME="ACTION" VALUE="Ack">
 
-   <FONT FACE="Arial, Helvetica" COLOR="silver">
-   <TABLE>
+   <TABLE SUMMARY="Acknowledge input" BORDER=0>
      <TR>
-       <TD><B>Estimated time to resolve issue: </B></TD>
-       <TD><INPUT TYPE=TEXT NAME="DELAY" VALUE="60" SIZE=4 MAXLENGTH=4> minutes</B></TD>
+          <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Estimated time to resolve issue: </B></FONT></TD>
+          <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><INPUT TYPE=TEXT NAME="DELAY" VALUE="60" SIZE=4 MAXLENGTH=4> minutes</FONT></TD>
      </TR>
 
      <TR>
-        <TD><B>Explanation/Cause of problem: </B></TD>
-        <TD><INPUT TYPE=TEXT NAME="MESSAGE" SIZE=40 MAXLENGTH=80></TD>
+        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Explanation/Cause of problem: </B></FONT></TD>
+        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><INPUT TYPE=TEXT NAME="MESSAGE" SIZE=60 MAXLENGTH=80></FONT></TD>
      </TR>
 
      <TR>
-        <TD><B>Acknowledgment Code: </B></TD>
-        <TD><INPUT TYPE=TEXT NAME="NUMBER" SIZE=7 MAXLENGTH=7></TD>
+        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Acknowledgment Code: </B></FONT></TD>
+        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><INPUT TYPE=TEXT NAME="NUMBER" SIZE=7 MAXLENGTH=7></FONT></TD>
      </TR>
 
      <TR>
         <TD COLSPAN=2 ALIGN=CENTER>
           <BR><BR>
-          <INPUT TYPE="SUBMIT" NAME="Send" VALUE="Send" ALT="Send" BORDER=0 METHOD="GET">
+          <INPUT TYPE="SUBMIT" NAME="Send" VALUE="Send" ALT="Send">
         </TD>
      </TR>
    </TABLE>
-   </FONT>
 </FORM>
-</TD>
-</TR>
-</TABLE>
+</CENTER>
