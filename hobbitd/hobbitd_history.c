@@ -122,10 +122,7 @@ int main(int argc, char *argv[])
 		char *hostname, *hostnamecommas, *testname;
 		time_t tstamp, lastchg;
 		int newcolor, oldcolor;
-		char statuslogfn[MAX_PATH];
-		struct stat st;
-		int logexists;
-		struct tm *tstamptm;
+		struct tm tstamptm;
 		char newcol2[3];
 		char oldcol2[3];
 		int trend;
@@ -141,21 +138,15 @@ int main(int argc, char *argv[])
 			p = gettok(NULL, "|");
 		}
 
-		if (strcmp(items[0], "@@stachg") == 0) {
-			/* @@stachg|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime */
+		if (strncmp(items[0], "@@stachg", 8) == 0) {
+			/* @@stachg#seq|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime */
 			sscanf(items[1], "%d.%*d", (int *)&tstamp);
-			tstamptm = localtime(&tstamp);
+			memcpy(&tstamptm, localtime(&tstamp), sizeof(tstamptm));
 			hostname = items[3];
 			testname = items[4];
 			newcolor = parse_color(items[6]);
 			oldcolor = parse_color(items[7]);
 			lastchg = atoi(items[8]);
-
-			p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
-
-			sprintf(statuslogfn, "%s/%s.%s", histdir, hostnamecommas, testname);
-			logexists = (stat(statuslogfn, &st) == 0);
-			if (lastchg == 0) lastchg = st.st_mtime;
 
 			if (save_histlogs) {
 				char *hostdash;
@@ -168,9 +159,9 @@ int main(int argc, char *argv[])
 				p = fname + sprintf(fname, "%s/%s/%s", histlogdir, hostdash, testname);
 				mkdir(fname, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
 
-				p += strftime(p, sizeof(fname)-(p-fname), "/%a_%b_", tstamptm);
-				p += sprintf(p, "%d", tstamptm->tm_mday);
-				p += strftime(p, sizeof(fname)-(p-fname), "_%H:%M:%S_%Y", tstamptm);
+				p += strftime(p, sizeof(fname)-(p-fname), "/%a_%b_", &tstamptm);
+				p += sprintf(p, "%d", tstamptm.tm_mday);
+				p += strftime(p, sizeof(fname)-(p-fname), "_%H:%M:%S_%Y", &tstamptm);
 				histlogfd = fopen(fname, "w");
 				if (histlogfd) {
 					fwrite(statusdata, strlen(statusdata), 1, histlogfd);
@@ -182,6 +173,113 @@ int main(int argc, char *argv[])
 				free(hostdash);
 			}
 
+			p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
+
+			if (save_statusevents) {
+				char statuslogfn[MAX_PATH];
+				int logexists;
+				FILE *statuslogfd;
+				char oldcol[100];
+				char timestamp[40];
+				struct stat st;
+
+				sprintf(statuslogfn, "%s/%s.%s", histdir, hostnamecommas, testname);
+				stat(statuslogfn, &st);
+				statuslogfd = fopen(statuslogfn, "r+");
+				logexists = (statuslogfd != NULL);
+
+				if (logexists) {
+					/*
+					 * There is a fair chance bbd_net has not been
+					 * running all the time while this system was monitored.
+					 * So get the time of the latest status change from the file,
+					 * instead of relying on the "lastchange" value we get
+					 * from bbd_net. This is also needed when migrating from 
+					 * standard bbd to bbd_net.
+					 */
+					long pos = -1;
+					char l[1024];
+					int gotit;
+
+					fseek(statuslogfd, 0, SEEK_END);
+					if (ftell(statuslogfd) > 512) 
+						/* Go back 512 from EOF */
+						fseek(statuslogfd, -512, SEEK_END);
+					else
+						/* Read from beginning of file */
+						fseek(statuslogfd, 0, SEEK_SET);
+
+					/* Skip to start of a line */
+					gotit = (fgets(l, sizeof(l)-1, statuslogfd) == NULL);
+
+					while (!gotit) {
+						long tmppos = ftell(statuslogfd);
+						time_t dur;
+
+						if (fgets(l, sizeof(l)-1, statuslogfd)) {
+							/* Sun Oct 10 06:49:42 2004 red   1097383782 602 */
+
+							if ((strlen(l) > 24) && 
+							    (sscanf(l+24, " %s %d %d", oldcol, (int *)&lastchg, (int *)&dur) == 2)) {
+								/* 
+								 * Record the start location of the line
+								 */
+								pos = tmppos;
+							}
+						}
+						else {
+							gotit = 1;
+						}
+					}
+
+					if (pos == -1) {
+						/* 
+						 * Couldnt find anything in the log.
+						 * Take lastchg from the timestamp of the logfile,
+						 * and just append the data.
+						 */
+						lastchg = st.st_mtime;
+						fseek(statuslogfd, 0, SEEK_END);
+					}
+					else {
+						/*
+						 * lastchg was updated above.
+						 * Seek to where the last line starts.
+						 */
+						fseek(statuslogfd, pos, SEEK_SET);
+					}
+				}
+				else {
+					/*
+					 * Logfile does not exist.
+					 */
+					lastchg = tstamp;
+					statuslogfd = fopen(statuslogfn, "w");
+				}
+
+				if (statuslogfd) {
+					if (logexists) {
+						struct tm oldtm;
+
+						/* Re-print the old record, now with the final duration */
+						memcpy(&oldtm, localtime(&lastchg), sizeof(oldtm));
+						strftime(timestamp, sizeof(timestamp), "%a %b %e %H:%M:%S %Y", &oldtm);
+						fprintf(statuslogfd, "%s %s %d %d\n", 
+							timestamp, oldcol, (int)lastchg, (int)(tstamp - lastchg));
+					}
+
+					/* And the new record. */
+					strftime(timestamp, sizeof(timestamp), "%a %b %e %H:%M:%S %Y", &tstamptm);
+					fprintf(statuslogfd, "%s %s %d", timestamp, colorname(newcolor), (int)tstamp);
+
+					fclose(statuslogfd);
+				}
+				else {
+					errprintf("Cannot open status historyfile '%s' : %s\n", 
+						statuslogfn, strerror(errno));
+				}
+			}
+
 			strncpy(oldcol2, ((oldcolor >= 0) ? colorname(oldcolor) : "-"), 2);
 			strncpy(newcol2, colorname(newcolor), 2);
 			newcol2[2] = oldcol2[2] = '\0';
@@ -190,14 +288,6 @@ int main(int argc, char *argv[])
 			else if (newcolor > oldcolor) trend = 2;	/* It's getting worse */
 			else if (newcolor < oldcolor) trend = 1;	/* It's getting better */
 			else                          trend = 0;	/* Shouldn't happen ... */
-
-			if (oldcolor == -1) lastchg = tstamp;
-
-			if (save_allevents) {
-				fprintf(alleventsfd, "%s %s %d %d %d %s %s %d\n",
-					hostname, testname, (int)tstamp, (int)lastchg, (int)(tstamp - lastchg),
-					newcol2, oldcol2, trend);
-			}
 
 			if (save_hostevents) {
 				char hostlogfn[MAX_PATH];
@@ -216,25 +306,13 @@ int main(int argc, char *argv[])
 				}
 			}
 
-			if (save_statusevents) {
-				char timestamp[40];
-				FILE *statuslogfd;
-
-				statuslogfd = fopen(statuslogfn, "a");
-				if (statuslogfd) {
-					if (logexists) fprintf(statuslogfd, " %d\n", (int)(tstamp - lastchg));
-
-					strftime(timestamp, sizeof(timestamp), "%a %b %e %H:%M:%S %Y", tstamptm);
-					fprintf(statuslogfd, "%s %s   %d", timestamp, colorname(newcolor), (int)tstamp);
-					fclose(statuslogfd);
-				}
-				else {
-					errprintf("Cannot open status historyfile '%s' : %s\n", 
-						statuslogfn, strerror(errno));
-				}
+			if (save_allevents) {
+				fprintf(alleventsfd, "%s %s %d %d %d %s %s %d\n",
+					hostname, testname, (int)tstamp, (int)lastchg, (int)(tstamp - lastchg),
+					newcol2, oldcol2, trend);
 			}
 		}
-		else if ((strcmp(items[0], "@@drophost") == 0) && (fork() == 0)) {
+		else if ((strncmp(items[0], "@@drophost", 10) == 0) && (fork() == 0)) {
 			/* @@drophost|timestamp|sender|hostname */
 
 			hostname = items[3];
@@ -252,6 +330,7 @@ int main(int argc, char *argv[])
 
 			if (save_hostevents) {
 				char hostlogfn[MAX_PATH];
+				struct stat st;
 
 				sprintf(hostlogfn, "%s/%s", histdir, hostname);
 				if ((stat(hostlogfn, &st) == 0) && S_ISREG(st.st_mode)) {
@@ -263,6 +342,7 @@ int main(int argc, char *argv[])
 				DIR *dirfd;
 				struct dirent *de;
 				char *hostlead;
+				char statuslogfn[MAX_PATH];
 				struct stat st;
 
 				/* Remove bbvar/hist/host,name.* */
@@ -289,7 +369,7 @@ int main(int argc, char *argv[])
 
 			exit(0);	/* Child exits */
 		}
-		else if ((strcmp(items[0], "@@droptest") == 0) && (fork() == 0)) {
+		else if ((strncmp(items[0], "@@droptest", 10) == 0) && (fork() == 0)) {
 			/* @@droptest|timestamp|sender|hostname|testname */
 
 			hostname = items[3];
@@ -307,6 +387,7 @@ int main(int argc, char *argv[])
 
 			if (save_statusevents) {
 				char *hostnamecommas;
+				char statuslogfn[MAX_PATH];
 				struct stat st;
 
 				p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
@@ -317,7 +398,7 @@ int main(int argc, char *argv[])
 
 			exit(0);	/* Child exits */
 		}
-		else if ((strcmp(items[0], "@@renamehost") == 0) && (fork() == 0)) {
+		else if ((strncmp(items[0], "@@renamehost", 12) == 0) && (fork() == 0)) {
 			/* @@renamehost|timestamp|sender|hostname|newhostname */
 			char *newhostname;
 
@@ -353,6 +434,7 @@ int main(int argc, char *argv[])
 				struct dirent *de;
 				char *hostlead;
 				char *newhostnamecommas;
+				char statuslogfn[MAX_PATH];
 				char newlogfn[MAX_PATH];
 
 				p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
@@ -380,7 +462,7 @@ int main(int argc, char *argv[])
 				free(hostnamecommas);
 			}
 		}
-		else if (strcmp(items[0], "@@renametest") == 0) {
+		else if (strncmp(items[0], "@@renametest", 12) == 0) {
 			/* @@renametest|timestamp|sender|hostname|oldtestname|newtestname */
 			char *newtestname;
 
@@ -402,6 +484,7 @@ int main(int argc, char *argv[])
 
 			if (save_statusevents) {
 				char *hostnamecommas;
+				char statuslogfn[MAX_PATH];
 				char newstatuslogfn[MAX_PATH];
 
 				p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
