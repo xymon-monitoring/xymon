@@ -112,6 +112,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* For picking up lost children */
+	setup_signalhandler("bbd_history");
 	signal(SIGCHLD, sig_handler);
 
 	while ((msg = get_bbgend_message("bbd_history", &seq, NULL)) != NULL) {
@@ -138,7 +139,7 @@ int main(int argc, char *argv[])
 			p = gettok(NULL, "|");
 		}
 
-		if (strncmp(items[0], "@@stachg", 8) == 0) {
+		if ((icount > 8) && (strncmp(items[0], "@@stachg", 8) == 0)) {
 			/* @@stachg#seq|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime */
 			sscanf(items[1], "%d.%*d", (int *)&tstamp);
 			memcpy(&tstamptm, localtime(&tstamp), sizeof(tstamptm));
@@ -310,9 +311,10 @@ int main(int argc, char *argv[])
 				fprintf(alleventsfd, "%s %s %d %d %d %s %s %d\n",
 					hostname, testname, (int)tstamp, (int)lastchg, (int)(tstamp - lastchg),
 					newcol2, oldcol2, trend);
+				fflush(alleventsfd);
 			}
 		}
-		else if ((strncmp(items[0], "@@drophost", 10) == 0) && (fork() == 0)) {
+		else if ((icount > 3) && ((strncmp(items[0], "@@drophost", 10) == 0) && (fork() == 0))) {
 			/* @@drophost|timestamp|sender|hostname */
 
 			hostname = items[3];
@@ -369,7 +371,7 @@ int main(int argc, char *argv[])
 
 			exit(0);	/* Child exits */
 		}
-		else if ((strncmp(items[0], "@@droptest", 10) == 0) && (fork() == 0)) {
+		else if ((icount > 4) && ((strncmp(items[0], "@@droptest", 10) == 0) && (fork() == 0))) {
 			/* @@droptest|timestamp|sender|hostname|testname */
 
 			hostname = items[3];
@@ -398,7 +400,7 @@ int main(int argc, char *argv[])
 
 			exit(0);	/* Child exits */
 		}
-		else if ((strncmp(items[0], "@@renamehost", 12) == 0) && (fork() == 0)) {
+		else if ((icount > 4) && ((strncmp(items[0], "@@renamehost", 12) == 0) && (fork() == 0))) {
 			/* @@renamehost|timestamp|sender|hostname|newhostname */
 			char *newhostname;
 
@@ -462,7 +464,7 @@ int main(int argc, char *argv[])
 				free(hostnamecommas);
 			}
 		}
-		else if (strncmp(items[0], "@@renametest", 12) == 0) {
+		else if ((icount > 5) && (strncmp(items[0], "@@renametest", 12) == 0)) {
 			/* @@renametest|timestamp|sender|hostname|oldtestname|newtestname */
 			char *newtestname;
 
