@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.63 2004-09-10 21:33:04 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.64 2004-09-11 07:13:37 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1411,7 +1411,6 @@ int main(int argc, char *argv[])
 	int concurrency = 0;
 
 	if (getenv("BBNETSVCS") == NULL) putenv("BBNETSVCS=");
-	p = getenv("BBNETSVCS");
 	init_tcp_services();
 
 	for (argi=1; (argi<argc); argi++) {
