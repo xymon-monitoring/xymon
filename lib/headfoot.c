@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.18 2005-03-22 09:16:49 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.19 2005-04-06 21:38:25 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -190,6 +190,19 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			}
 
 			MEMUNDEFINE(mname);
+		}
+		else if (strcmp(t_start, "REPWEEKLIST") == 0) {
+			int i;
+			struct tm *nowtm = localtime(&yesterday);
+			char weekstr[5];
+			int weeknum;
+			char *selstr;
+
+			strftime(weekstr, sizeof(weekstr)-1, "%V", nowtm); weeknum = atoi(weekstr);
+			for (i=1; (i <= 53); i++) {
+				if (i == weeknum) selstr = "SELECTED"; else selstr = "";
+				fprintf(output, "<OPTION VALUE=\"%d\" %s>%d\n", i, selstr, i);
+			}
 		}
 		else if (strcmp(t_start, "REPDAYLIST") == 0) {
 			int i;
