@@ -20,8 +20,9 @@ cd debbuild
 tar zcf hobbit-$REL.tar.gz hobbit-$REL
 
 cd ~/hobbit
-find debian | grep -v RCS | cpio -pdvmu ~/hobbit/debbuild/hobbit-$REL/
+find debian | egrep -v "RCS|pkg" | cpio -pdvmu ~/hobbit/debbuild/hobbit-$REL/
 
 cd debbuild/hobbit-$REL
 dpkg-buildpackage -rfakeroot
+mv ../hobbit_$REL-* ../../debian/pkg/
 
