@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.129 2003-10-19 21:00:10 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.130 2003-10-21 21:09:42 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -2136,7 +2136,11 @@ int main(int argc, char *argv[])
 #ifdef USE_ARES
 			printf("ARES library used for DNS lookups\n");
 #endif
-			printf("Compile settings: MAXMSG=%d, BBDPORTNUMBER=%d\n", MAXMSG, BBDPORTNUMBER);
+			printf("Compile settings: MAXMSG=%d, BBDPORTNUMBER=%d", MAXMSG, BBDPORTNUMBER);
+#ifdef DEBUG
+			printf(", DEBUG");
+#endif
+			printf("\n");
 			return 0;
 		}
 		else if ((strcmp(argv[argi], "--help") == 0) || (strcmp(argv[argi], "-?") == 0)) {
