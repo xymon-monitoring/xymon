@@ -13,8 +13,15 @@
 #ifndef __DIGEST_H_
 #define __DIGEST_H_
 
-extern int digest_init(char *digest);
-extern int digest_data(char *buf, int buflen);
-extern char *digest_done(void);
+#include <openssl/evp.h>
+
+typedef struct digestctx_t {
+	char *digestname;
+	EVP_MD_CTX mdctx;
+} digestctx_t;
+
+extern digestctx_t *digest_init(char *digest);
+extern int digest_data(digestctx_t *ctx, char *buf, int buflen);
+extern char *digest_done(digestctx_t *ctx);
 
 #endif
