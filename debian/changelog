@@ -1,3 +1,10 @@
+hobbit (4.0-4) unstable; urgency=low
+
+  * Changes to default web templates to allow easy customization.
+  * Fix init.d script to allow rotating logs.
+
+ -- Henrik Stoerner <henrik@voodoo.hswn.dk>  Mon, 14 Mar 2005 14:14:23 +0100
+
 hobbit (4.0-3) unstable; urgency=low
 
   * Fix preinst script failure when adding group- and user-id.
