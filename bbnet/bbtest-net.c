@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.1 2003-04-13 12:00:24 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.2 2003-04-13 12:39:21 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -20,6 +20,16 @@ static char rcsid[] = "$Id: bbtest-net.c,v 1.1 2003-04-13 12:00:24 henrik Exp $"
 #include <netdb.h>
 
 #define MAX_LINE_LEN 4096
+
+/* Max length of a filename */
+#ifndef MAX_PATH
+#ifndef MAXPATHLEN
+#define MAX_PATH 4096
+#else
+#define MAX_PATH MAXPATHLEN
+#endif
+#endif
+
 
 typedef struct {
 	char *testname;
@@ -152,15 +162,24 @@ void load_tests(int pinginfo)
 					if (*testspec == '?') { dialuptest=1; testspec++; }
 					if (*testspec == '!') { reversetest=1; testspec++; }
 
+					/* Find the service */
 					for (s=svchead; (s && (strcmp(s->testname, testspec) != 0)); s = s->next) ;
 
 					if (option && s) {
+						/*
+						 * Check if it is a service with an explicit portnumber.
+						 * If it is, then create a new service record named
+						 * "SERVICE_PORT" so we can merge tests for this service+port
+						 * combination for multiple hosts.
+						 *
+						 * According to BB docs, this type of services must be in
+						 * BBNETSVCS - so it is known already.
+						 */
 						int specialport;
+						char *specialname;
 
 						specialport = atoi(option);
 						if ((s->portnum == 0) && (specialport > 0)) {
-							char *specialname;
-
 							specialname = malloc(strlen(s->testname)+10);
 							sprintf(specialname, "%s_%d", s->testname, specialport);
 							s = add_service(specialname, specialport);
@@ -183,6 +202,11 @@ void load_tests(int pinginfo)
 				}
 
 				if (anytests) {
+					/* 
+					 * Determine the IP address to test. We do it here,
+					 * to avoid multiple DNS lookups for each service 
+					 * we test on a host.
+					 */
 					if (h->testip) {
 						sprintf(h->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 					}
@@ -197,7 +221,7 @@ void load_tests(int pinginfo)
 						else {
 							sprintf(h->ip, "%d.%d.%d.%d", 
 								(unsigned char) hent->h_addr_list[0][0],
-								(unsigned char) hent->h_addr_list[0][2],
+								(unsigned char) hent->h_addr_list[0][1],
 								(unsigned char) hent->h_addr_list[0][2],
 								(unsigned char) hent->h_addr_list[0][3]);
 						}
@@ -206,7 +230,10 @@ void load_tests(int pinginfo)
 					h->next = hosthead;
 					hosthead = h;
 				}
-				else free(h);
+				else {
+					/* No network tests for this host, so drop it */
+					free(h);
+				}
 
 			}
 		}
@@ -219,6 +246,32 @@ void load_tests(int pinginfo)
 	return;
 }
 
+
+void run_nmap_service(service_t *service)
+{
+	FILE		*nmapin;
+	char		nmapcmd[MAX_PATH+1024];
+	testitem_t	*t;
+
+	/*
+	 * nmap options:
+	 * -sT	: Default TCP connect scan.
+	 * -P0	: Dont ping
+	 * -n	: Dont do DNS lookups
+	 * -iL -: Take IP's from stdin
+	 * -oG  : grep'able output format
+	 * -p   : portnumber to test
+	 */
+	sprintf(nmapcmd, "nmap -sT -P0 -n -iL - -oG %s/nmap_%s_%d.out -p %d >/dev/null", 
+		getenv("BBTMP"), service->testname, service->portnum, service->portnum);
+	nmapin = popen(nmapcmd, "w");
+
+	for (t=service->items; (t); t = t->next) {
+		if (!t->host->dnserror) fprintf(nmapin, "%s\n", t->host->ip);
+	}
+
+	pclose(nmapin);
+}
 
 int main(int argc, char *argv[])
 {
@@ -239,10 +292,13 @@ int main(int argc, char *argv[])
 
 	printf("\nTest services\n");
 	for (s = svchead; (s); s = s->next) {
-		printf("Service %s port %d\n", s->testname, s->portnum);
-		for (t = s->items; (t); t = t->next) {
-			printf("\tHost:%s, reverse:%d, dialup:%d\n",
-				t->host->hostname, t->reverse, t->dialup);
+		if (s->items) {
+			printf("Service %s port %d\n", s->testname, s->portnum);
+			for (t = s->items; (t); t = t->next) {
+				printf("\tHost:%s, ip:%s, reverse:%d, dialup:%d\n",
+					t->host->hostname, t->host->ip, t->reverse, t->dialup);
+			}
+			run_nmap_service(s);
 		}
 	}
 
