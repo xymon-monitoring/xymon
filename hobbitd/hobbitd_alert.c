@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.37 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.38 2005-01-28 22:11:28 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -66,6 +66,7 @@ char *statename[] = {
 
 int include_configid = 0;
 int alertinterval = 30*60; /* By default, repeat an alert every 30 minutes. */
+FILE *tracefd = NULL;	   /* Logfile for tracing. If not NULL, output trace info to troubleshoot alert rules */
 
 htnames_t *find_name(htnames_t **head, char *name)
 {
@@ -257,8 +258,42 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--cfid")) {
 			include_configid = 1;
 		}
-		else if (argnmatch(argv[argi], "--legacy")) {
-			bbcompat_mode = 1;
+		else if (argnmatch(argv[argi], "--test")) {
+			char *testhost = NULL, *testservice = NULL, *testpage = NULL;
+			FILE *logfd = NULL;
+			activealerts_t *awalk = NULL;;
+
+			argi++; if (argi < argc) testhost = argv[argi];
+			argi++; if (argi < argc) testservice = argv[argi];
+			argi++; if (argi < argc) testpage = argv[argi];
+
+			if ((testhost == NULL) || (testservice == NULL)) {
+				printf("Usage: hobbitd_alert --test HOST SERVICE [PAGE]\n");
+				return 1;
+			}
+
+			if (testpage == NULL) testpage = "";
+
+			awalk = (activealerts_t *)malloc(sizeof(activealerts_t));
+			awalk->hostname = find_name(&hostnames, testhost);
+			awalk->testname = find_name(&testnames, testservice);
+			awalk->location = find_name(&locations, testpage);
+			strcpy(awalk->ip, "127.0.0.1");
+			awalk->color = COL_RED;
+			awalk->pagemessage = "Test of the alert configuration";
+			awalk->ackmessage = NULL;
+			awalk->eventstart = time(NULL);
+			awalk->nextalerttime = 0;
+			awalk->state = A_PAGING;
+			awalk->cookie = 12345;
+			awalk->next = NULL;
+
+			logfd = fopen("/dev/null", "w");
+			tracefd = stdout;
+
+			load_alertconfig(configfn, alertcolors, alertinterval);
+			send_alert(awalk, logfd);
+			return 0;
 		}
 		else {
 			errprintf("Unknown option '%s'\n", argv[argi]);
