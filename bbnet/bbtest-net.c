@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.26 2003-04-21 07:36:07 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.27 2003-04-21 07:38:28 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -487,7 +487,7 @@ int run_fping_service(service_t *service)
 	/* Run "fping -Ae 2>/dev/null" and feed it all IP's to test */
 	p = getenv("FPING");
 	strcpy(cmdpath, (p ? p : "fping"));
-	sprintf(logfn, "%s/fping.%u", getenv("BBTMP"), getpid());
+	sprintf(logfn, "%s/fping.%lu", getenv("BBTMP"), getpid());
 	sprintf(cmd, "%s -Ae 2>/dev/null 1>%s", cmdpath, logfn);
 
 	cmdpipe = popen(cmd, "w");
