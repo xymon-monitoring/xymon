@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.56 2003-04-24 10:55:31 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.57 2003-04-24 21:52:01 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -42,7 +42,6 @@ int     enable_purpleupd = 1;
 int	purpledelay = 0;			/* Lifetime of purple status-messages. Default 0 for
 						   compatibility with standard bb-display.sh behaviour */
 char	*ignorecolumns = NULL;			/* Columns that will be ignored totally */
-char	*defaultpagetitle = NULL;
 
 link_t  null_link = { "", "", "", NULL };	/* Null link for pages/hosts/whatever with no link */
 col_t   null_column = { "", NULL };		/* Null column */
@@ -825,7 +824,6 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			if (curpage == NULL) {
 				/* First page - hook it on toppage as a subpage from there */
 				curpage = toppage->subpages = init_page(name, link);
-				curpage->pretitle = defaultpagetitle;
 			}
 			else {
 				curpage = curpage->next = init_page(name, link);
@@ -846,7 +844,6 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			getnamelink(l, &name, &link);
 			if (cursubpage == NULL) {
 				cursubpage = curpage->subpages = init_page(name, link);
-				cursubpage->pretitle = defaultpagetitle;
 			}
 			else {
 				cursubpage = cursubpage->next = init_page(name, link);
@@ -868,7 +865,6 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			cursubparent = init_page(name, link);
 			if (parentpage->subpages == NULL) {
 				parentpage->subpages = cursubparent;
-				cursubparent->pretitle = defaultpagetitle;
 			} 
 			else {
 				for (walk = parentpage->subpages; (walk->next); (walk = walk->next)) ;
