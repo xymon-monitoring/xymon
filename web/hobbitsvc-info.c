@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.10 2003-02-02 19:36:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.11 2003-02-10 22:17:26 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -216,7 +216,7 @@ int generate_info(char *infocolumn)
 		if (!dialup) {
 			if (alerts) {
 				strcat(infobuf, "<b>E-mail/SMS alerting</b>:<br>\n");
-				sprintf(l, "&nbsp;&nbsp;Initial delay before alarm: %d minutes<br>\n", pagedelay); strcat(infobuf, l);
+				sprintf(l, "&nbsp;&nbsp;Default time between each alert: %d minutes<br>\n", pagedelay); strcat(infobuf, l);
 				sprintf(l, "&nbsp;&nbsp;Weekdays: %s<br>\n", weekday_text(alerts->items[4])); strcat(infobuf, l);
 				sprintf(l, "&nbsp;&nbsp;Time of day: %s<br>\n", time_text(alerts->items[5])); strcat(infobuf, l);
 				sprintf(l, "&nbsp;&nbsp;Recipients: %s<br>\n", alerts->items[6]); strcat(infobuf, l);
