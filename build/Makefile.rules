@@ -8,11 +8,11 @@ DNSLIB = -L./c-ares-1.2.0 -lcares
 
 CFLAGS += -DMAXMSG=$(MAXMSG) -DBBDPORTNUMBER=$(BBPORT)
 
-PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bbdigest bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi bb-findhost.cgi bb-csvinfo.cgi bb
+PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bbdigest bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi bb-findhost.cgi bb-csvinfo.cgi bb bbproxy
 CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh bb-findhost.sh bb-csvinfo.sh bbmessage.cgi
 EXTENSIONS = bbcombotest bbretest-net.sh
 HTMLPAGES = bb-findhost.html
-MAN1PAGES = bbgen.1 bbtest-net.1 bbhostgrep.1 bbhostshow.1 bbdigest.1 bb-rep.cgi.1 bb-replog.cgi.1 bb-hist.cgi.1 bb-snapshot.cgi.1 bb-eventlog.cgi.1 bbcombotest.1 bbretest-net.sh.1 bb-findhost.cgi.1 bb-csvinfo.cgi.1 bb.1 bbmessage.cgi.1
+MAN1PAGES = bbgen.1 bbtest-net.1 bbhostgrep.1 bbhostshow.1 bbdigest.1 bb-rep.cgi.1 bb-replog.cgi.1 bb-hist.cgi.1 bb-snapshot.cgi.1 bb-eventlog.cgi.1 bbcombotest.1 bbretest-net.sh.1 bb-findhost.cgi.1 bb-csvinfo.cgi.1 bb.1 bbmessage.cgi.1 bbproxy.1
 MAN5PAGES = bbcombotest.cfg.5 bb-hosts.5 bb-environ.5 bb-services.5
 MAN7PAGES = bbgen-intro.7
 CONFFILES = bb-services
@@ -43,6 +43,7 @@ FINDHOSTOBJS = bb-findhost.o loadhosts.o debug.o util.o
 CSVINFOOBJS = bb-csvinfo.o debug.o util.o
 MSGOBJS = sendmsg-std.o debug.o util.o
 MESSAGECGIOBJS = sendmsg-cgi.o debug.o util.o
+PROXYOBJS = bbproxy.o debug.o util.o
 
 bbgen: $(GENOBJS)
 	$(CC) $(CFLAGS) -o $@ $(GENOBJS) $(NETLIBS)
@@ -88,6 +89,9 @@ bbmessage.cgi: $(MESSAGECGIOBJS)
 
 bb: $(MSGOBJS)
 	$(CC) $(CFLAGS) -o $@ $(MSGOBJS) $(NETLIBS)
+
+bbproxy: $(PROXYOBJS)
+	$(CC) $(CFLAGS) -o $@ $(PROXYOBJS) $(NETLIBS)
 
 
 ################################################
@@ -192,7 +196,7 @@ allclean: clean
 	cd c-ares-1.2.0 && (make clean || /bin/true)
 
 clean:
-	rm -f *.o *.a *~ $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) alert contest reptest calc ldaptest bbtest-local
+	rm -f *.o *.a *~ $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) alert contest reptest calc ldaptest bbtest-local bbproxy
 
 install-bin: $(PROGRAMS)
 	cp -p $(PROGRAMS) $(BBHOME)/bin/
