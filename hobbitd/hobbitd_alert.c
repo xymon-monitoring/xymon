@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.8 2004-10-17 11:57:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.9 2004-10-17 15:04:06 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
 			configfn = strdup(strchr(argv[argi], '=')+1);
 		}
 		else if (strcmp(argv[argi], "--dump-config") == 0) {
-			load_alertconfig(configfn);
+			load_alertconfig(configfn, alertcolors);
 			dump_alertconfig();
 			return 0;
 		}
@@ -147,7 +147,6 @@ int main(int argc, char *argv[])
 			/*
 			 * This will happen when one of our children finishes sending off alarms
 			 */
-			dprintf("Got NULL message, exiting\n");
 			continue;
 		}
 
@@ -173,14 +172,13 @@ int main(int argc, char *argv[])
 		hostname = metadata[3];
 		testname = metadata[4];
 
-		dprintf("Got message from %s:%s\n", hostname, testname);
 
 		if (strncmp(metadata[0], "@@page", 6) == 0) {
 			/* @@page|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime|location */
 
 			int newcolor, newalertstatus;
 
-			dprintf("Incoming alert %s\n", msg);
+			dprintf("Got page message from %s:%s\n", hostname, testname);
 			awalk = find_active(hostname, testname);
 			if (awalk == NULL) {
 				htnames_t *hwalk;
@@ -251,6 +249,7 @@ int main(int argc, char *argv[])
 			 * An ack is handled simply by setting the next
 			 * alert-time to when the ack expires.
 			 */
+			dprintf("Got ack message from %s:%s\n", hostname, testname);
 			awalk = find_active(hostname, testname);
 			if (awalk && (awalk->state == A_PAGING)) {
 				awalk->state = A_ACKED;
@@ -335,7 +334,7 @@ int main(int argc, char *argv[])
 		if (anytogo) {
 			pid_t childpid;
 
-			load_alertconfig(configfn);
+			load_alertconfig(configfn, alertcolors);
 			childpid = fork();
 
 			if (childpid == 0) {
