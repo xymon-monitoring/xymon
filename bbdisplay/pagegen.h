@@ -27,7 +27,6 @@ extern int  bb2includepurples;
 extern int sort_grouponly_items;
 extern char *documentationurl;
 extern char *doctargetspec;
-extern char *htmlextension;
 extern char *rssextension;
 extern char *defaultpagetitle;
 extern char *eventignorecolumns;

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.114 2004-10-08 12:21:50 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.115 2004-10-13 12:19:38 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -50,7 +50,6 @@ char *bb2ignorecolumns = "";
 int  bb2includepurples = 1;
 int  sort_grouponly_items = 0; /* Standard BB behaviour: Dont sort group-only items */
 char *documentationurl = NULL;
-char *htmlextension = ".html"; /* Filename extension for generated HTML files */
 char *rssextension = ".rss"; /* Filename extension for generated RSS files */
 char *doctargetspec = " TARGET=\"_blank\"";
 char *defaultpagetitle = NULL;

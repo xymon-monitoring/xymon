@@ -51,6 +51,8 @@ typedef struct bburl_t {
 	unsigned char *expdata;
 } bburl_t;
 
+extern char *htmlextension;
+
 extern char *read_line(struct linebuf_t *buffer, FILE *stream);
 
 extern int use_recentgifs;
