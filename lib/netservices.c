@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: netservices.c,v 1.1 2005-02-21 16:03:05 henrik Exp $";
+static char rcsid[] = "$Id: netservices.c,v 1.2 2005-02-21 16:36:59 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -104,6 +104,8 @@ static char *binview(unsigned char *buf, int buflen)
 
 char *init_tcp_services(void)
 {
+	static char *bbnetsvcs = NULL;
+
 	char filename[PATH_MAX];
 	FILE *fd = NULL;
 	char buf[MAX_LINE_LEN];
@@ -111,11 +113,12 @@ char *init_tcp_services(void)
 	svclist_t *item = NULL;
 	svclist_t *first = NULL;
 	svclist_t *walk;
-	char *bbnetsvcs = NULL;
 	char *searchstring;
 	int svcnamebytes = 0;
 	int svccount = 1;
 	int i;
+
+	if (bbnetsvcs) return bbnetsvcs;	/* Has already run, so just pickup the result */
 
 	if (xgetenv("BBNETSVCS") == NULL) {
 		putenv("BBNETSVCS=smtp telnet ftp pop pop3 pop-3 ssh imap ssh1 ssh2 imap2 imap3 imap4 pop2 pop-2 nntp");
