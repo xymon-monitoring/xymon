@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.13 2003-04-15 16:25:29 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.14 2003-04-15 16:43:19 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -391,12 +391,24 @@ int main(int argc, char *argv[])
 	testedhost_t *h;
 	testitem_t *t;
 	int argi;
+	int timeout=0;
+	int concurrency=0;
 
 	for (argi=1; (argi < argc); argi++) {
-		if      (strcmp(argv[argi], "--debug") == 0)       debug = 1;
-		else if (strcmp(argv[argi], "--version") == 0)     {
+		if      (strcmp(argv[argi], "--debug") == 0) {
+			debug = 1;
+		}
+		else if (strcmp(argv[argi], "--version") == 0) {
 			printf("bbtest-net version %s\n", VERSION);
 			return 0;
+		}
+		else if (strncmp(argv[argi], "--timeout=", 10) == 0) {
+			char *p = strchr(argv[argi], '=');
+			p++; timeout = atoi(p);
+		}
+		else if (strncmp(argv[argi], "--concurrency=", 14) == 0) {
+			char *p = strchr(argv[argi], '=');
+			p++; concurrency = atoi(p);
 		}
 	}
 
@@ -424,7 +436,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	do_conn(0, 0);
+	do_conn(timeout, concurrency);
 	if (debug) show_conn_res();
 
 	for (s = svchead; (s); s = s->next) {
