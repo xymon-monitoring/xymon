@@ -48,6 +48,9 @@ Rule matcing an alert if the event has lasted longer/shorter than the given dura
 .sp
 .BR RECOVERED
 Rule matches if the alert has recovered from an alert state.
+.sp
+.BR NOTICE
+Rule matches if the message is a "notify" message. This type of message is sent when a host or test is disabled or enabled.
 
 The "targetstring" is either a simple pagename, hostname or servicename, OR a '%' followed by a Perl-compatible regular expression. E.g. "HOST=%www(.*)" will match any hostname that begins with "www".
 
@@ -71,6 +74,9 @@ The alert is sent to this recipient ONLY if no other recipients received an aler
 .sp
 .BR STOP
 Stop looking for more recipients after this one matches.
+.sp
+.BR Rules
+You can specify rules for a recipient also. This limits the alerts sent to this particular recipient.
 
 .SH MACROS
 It is possible to use \fBmacros\fR in the configuration file. To define a macro:
@@ -125,6 +131,10 @@ Number of seconds the service has been down.
 .sp
 .BR DOWNSECSMSG
 When recovered, holds the text "Event duration : N" where N is the DOWNSECS value.
+.sp
+.BR CFID
+Line-number in the hobbit-alerts.cfg file that caused the script to be invoked.
+Can be useful when troubleshooting alert configuration rules.
 
 .SH "SEE ALSO"
 hobbitd_alert(8), hobbitd(8), hobbit(7), the "Configuring Hobbit Alerts"
