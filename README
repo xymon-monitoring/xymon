@@ -1,4 +1,4 @@
-README file for bbgen version 1.7
+README file for bbgen version 1.8
 =================================
 
 bbgen is a drop-in replacement for the bb-display.sh script that 
@@ -198,7 +198,8 @@ and the contents of the bbvar/logs/ directory:
 Planned improvements
 --------------------
 
-See the "TODO" file.
+See the "TODO" file. However, I am open to suggestions if you
+have a feature you would like to see added to bbgen.
 
 
 
