@@ -84,7 +84,10 @@ ifdef HOBBITD
 	mkdir -p $(BBHOME) $(BBVAR)
 	cd $(BBHOME); mkdir -p $(BBHOMEDIRS); chown $(BBUSER) $(BBHOMEDIRS); chgrp ` id -g $(BBUSER)` $(BBHOMEDIRS)
 	cd $(BBVAR); mkdir -p $(BBVARDIRS); chown $(BBUSER) $(BBVARDIRS); chgrp ` id -g $(BBUSER)` $(BBVARDIRS)
-	chmod 775 $(BBHOME)/www/rep
+ifdef HTTPDGID
+	chgrp $(HTTPDGID) $(BBHOME)/www/rep
+endif
+	chmod g+w $(BBHOME)/www/rep
 endif
 
 install-common: install-dirs
