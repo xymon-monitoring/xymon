@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.12 2003-04-15 07:35:41 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.13 2003-04-15 16:25:29 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -31,10 +31,9 @@ link_t          *linkhead = NULL;
 link_t  null_link = { "", "", "", NULL };
 
 /* toolid values */
-#define TOOL_NMAP	0
+#define TOOL_CONTEST	0
 #define TOOL_NSLOOKUP	1
 #define TOOL_DIG	2
-#define TOOL_CONTEST	3
 
 typedef struct {
 	char *testname;
@@ -59,7 +58,9 @@ typedef struct {
 	service_t	*service;
 	int		reverse;
 	int		dialup;
+	int		silenttest;
 	int		open;
+	test_t		*testresult;
 	void		*next;
 } testitem_t;
 
@@ -277,77 +278,6 @@ void load_tests(void)
 }
 
 
-void run_nmap_service(service_t *service)
-{
-	FILE		*nmapin;
-	char		logfn[MAX_PATH];
-	char		nmapcmd[MAX_PATH+1024];
-	testitem_t	*t;
-	FILE		*logfile;
-	char		l[MAX_LINE_LEN];
-	char 		wantedstatus[80];
-
-	if (service->portnum <= 0) {
-		printf("bbtest-net: Attempt to test service %s on port 0\n",
-			service->testname);
-		return;
-	}
-
-	sprintf(logfn, "%s/nmap_%s_%d.out", getenv("BBTMP"), service->testname, service->portnum);
-
-	/*
-	 * nmap options:
-	 * -sT	: Default TCP connect scan.
-	 * -P0	: Dont ping
-	 * -n	: Dont do DNS lookups
-	 * -iL -: Take IP's from stdin
-	 * -oG  : grep'able output format
-	 * -p   : portnumber to test
-	 */
-	sprintf(nmapcmd, "nmap -sT -P0 -n -iL - -oG %s -p %d 2>&1 1>/dev/null", 
-		logfn, service->portnum);
-	nmapin = popen(nmapcmd, "w");
-	if (nmapin == NULL) { perror("Cannot run nmap"); exit(1); }
-
-	for (t=service->items; (t); t = t->next) {
-		if (!t->host->dnserror) fprintf(nmapin, "%s\n", t->host->ip);
-	}
-
-	if (pclose(nmapin) != 0) {
-		printf("bbtest-net: failed to execute nmap\n");
-		exit(1);
-	}
-
-	logfile = fopen(logfn, "r");
-	if (logfile == NULL) {
-		printf("Cannot open logfile %s\n", logfn);
-		exit(1);
-	}
-
-	sprintf(wantedstatus, "%d/open/tcp/", service->portnum);
-	while (fgets(l, sizeof(l), logfile)) {
-		int ip1, ip2, ip3, ip4;
-		char status[MAX_LINE_LEN];
-		char logip[16];
-
-		if ((strncmp(l, "Host:", 5) == 0) && 
-		    (sscanf(l, "Host: %3d.%3d.%3d.%3d () Ports: %s Ignored state:", &ip1, &ip2, &ip3, &ip4, status) == 5)) {
-			sprintf(logip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
-			for (t=service->items; (t && (strcmp(t->host->ip, logip) != 0)); t = t->next) ;
-			if (t) {
-				t->open = (strncmp(wantedstatus, status, strlen(wantedstatus)) == 0);
-			}
-			else {
-				printf("Weird - tested an IP I didnt know: %s\n", logip);
-			}
-		}
-	}
-	fclose(logfile);
-
-	if (!debug) unlink(logfn);
-}
-
-
 int run_command(char *cmd, char *errortext)
 {
 	FILE	*cmdpipe;
@@ -434,8 +364,21 @@ void send_results(service_t *service)
 			sprintf(msgline, "\n&%s Service %s on %s is %s\n",
 				colorname(color), svcname, t->host->hostname,
 				(t->open ? "UP" : "DOWN"));
+
 		}
 		addtostatus(msgline);
+
+		if (t->testresult) {
+			if (t->testresult->banner) {
+				addtostatus("\n<pre>\n");
+				addtostatus(t->testresult->banner);
+				addtostatus("\n</pre>\n");
+			}
+			addtostatus("\n\n");
+			sprintf(msgline, "Seconds: %ld.%02ld\n", 
+				t->testresult->duration.tv_sec, t->testresult->duration.tv_usec / 10000);
+			addtostatus(msgline);
+		}
 		addtostatus("\n\n");
 		finish_status();
 	}
@@ -472,15 +415,32 @@ int main(int argc, char *argv[])
 			h->hostname, h->dnserror, h->ip, h->dialup, h->testip);
 	}
 
-#if 0
+	/* First run the standard TCP/IP tests */
+	for (s = svchead; (s); s = s->next) {
+		if ((s->items) && (s->toolid == TOOL_CONTEST)) {
+			for (t = s->items; (t); t = t->next) {
+				t->testresult = add_test(t->host->ip, s->portnum, s->testname, t->silenttest);
+			}
+		}
+	}
+
+	do_conn(0, 0);
+	if (debug) show_conn_res();
+
+	for (s = svchead; (s); s = s->next) {
+		if ((s->items) && (s->toolid == TOOL_CONTEST)) {
+			for (t = s->items; (t); t = t->next) {
+				t->open = t->testresult->open;
+			}
+			send_results(s);
+		}
+	}
+
 	combo_start();
 	dprintf("\nTest services\n");
 	for (s = svchead; (s); s = s->next) {
 		if (s->items) {
 			switch(s->toolid) {
-				case TOOL_NMAP: 
-					run_nmap_service(s);
-					break;
 				case TOOL_NSLOOKUP:
 					run_nslookup_service(s);
 					break;
@@ -497,16 +457,6 @@ int main(int argc, char *argv[])
 		}
 	}
 	combo_end();
-#else
-	for (s = svchead; (s); s = s->next) {
-		for (t = s->items; (t); t = t->next) {
-			add_test(t->host->ip, s->portnum, s->testname);
-		}
-	}
-
-	do_conn(0);
-	show_conn_res();
-#endif
 
 	return 0;
 }
