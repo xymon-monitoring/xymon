@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.44 2003-05-10 07:37:19 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.45 2003-05-10 22:33:30 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -60,7 +60,6 @@ service_t	*svchead = NULL;		/* Head of all known services */
 service_t	*pingtest = NULL;		/* Identifies the pingtest within svchead list */
 service_t	*httptest = NULL;		/* Identifies the httptest within svchead list */
 testedhost_t	*testhosthead = NULL;		/* Head of all hosts */
-testitem_t	*testhead = NULL;		/* Head of all tests */
 char		*nonetpage = NULL;		/* The "NONETPAGE" env. variable */
 int		dnsmethod = DNS_THEN_IP;	/* How to do DNS lookups */
 int 		timeout=0;
@@ -71,6 +70,86 @@ int             sslwarndays = 30;		/* If cert expires in fewer days, SSL cert co
 int             sslalarmdays = 10;		/* If cert expires in fewer days, SSL cert column = red */
 char		*location = "";			/* BBLOCATION value */
 char		*logfile = NULL;
+
+testitem_t *find_test(char *hostname, char *testname)
+{
+	testedhost_t *h;
+	service_t *s;
+	testitem_t *t;
+
+	for (s=svchead; (s && (strcmp(s->testname, testname) != 0)); s = s->next);
+	if (s == NULL) return NULL;
+
+	for (h=testhosthead; (h && (strcmp(h->hostname, hostname) != 0)); h = h->next) ;
+	if (h == NULL) return NULL;
+
+	for (t=s->items; (t && (t->host != h)); t = t->next) ;
+
+	return t;
+}
+
+
+char *deptest_failed(testedhost_t *host, char *testname)
+{
+	static char result[1024];
+
+	char *depcopy;
+	char depitem[MAX_LINE_LEN];
+	char *p, *q;
+	char *dephostname, *deptestname, *nextdep;
+	testitem_t *t;
+
+	if (host->deptests == NULL) return NULL;
+
+	depcopy = malcop(host->deptests);
+	sprintf(depitem, "(%s:", testname);
+	p = strstr(depcopy, depitem);
+	if (p == NULL) { free(depcopy); return NULL; }
+
+	result[0] = '\0';
+	dephostname = p+strlen(depitem);
+	q = strchr(dephostname, ')');
+	if (q) *q = '\0';
+
+	/* dephostname now points to a list of "host1/test1,host2/test2" dependent tests. */
+	while (dephostname) {
+		p = strchr(dephostname, '/');
+		if (p) {
+			*p = '\0';
+			deptestname = (p+1); 
+		}
+		else deptestname = "";
+
+		p = strchr(deptestname, ',');
+		if (p) {
+			*p = '\0';
+			nextdep = (p+1);
+		}
+		else nextdep = NULL;
+
+		t = find_test(dephostname, deptestname);
+		if (t && !t->open) {
+			if (strlen(result) == 0) {
+				strcpy(result, "\nThis test depends on the following test(s) that failed:\n\n");
+			}
+
+			if ((strlen(result) + strlen(dephostname) + strlen(deptestname) + 2) < sizeof(result)) {
+				strcat(result, dephostname);
+				strcat(result, "/");
+				strcat(result, deptestname);
+				strcat(result, "\n");
+			}
+		}
+
+		dephostname = nextdep;
+	}
+
+	free(depcopy);
+	if (strlen(result)) strcat(result, "\n\n");
+
+	return (strlen(result) ? result : NULL);
+}
+
 
 service_t *add_service(char *name, int port, int namelen, int toolid)
 {
@@ -143,6 +222,8 @@ testedhost_t *init_testedhost(char *hostname, int timeout, int in_sla)
 	newhost->deprouterdown = NULL;
 
 	newhost->firsthttp = NULL;
+
+	newhost->deptests = NULL;
 
 	newhost->next = NULL;
 
@@ -253,6 +334,10 @@ void load_tests(void)
 					else if (strcmp(testspec, "noping") == 0) { specialtag = 1; h->noping = 1; }
 					else if (strcmp(testspec, "testip") == 0) { specialtag = 1; h->testip = 1; }
 					else if (strcmp(testspec, "dialup") == 0) { specialtag = 1; h->dialup = 1; }
+					else if (strncmp(testspec, "depends=", 8) == 0) {
+						specialtag = 1;
+						h->deptests = malcop(testspec+8);
+					}
 
 					if (!specialtag) {
 						/* Test prefixes:
@@ -703,6 +788,13 @@ void send_results(service_t *service)
 			color = COL_CLEAR;
 		}
 
+		/* Handle test dependencies */
+		if ( ((color == COL_RED) || (color == COL_YELLOW)) && /* Test failed */
+		     deptest_failed(t->host, t->service->testname) &&
+		     (!t->alwaystrue)                              )  /* No "~testname" flag */ {
+			color = COL_CLEAR;
+		}
+
 		/* NOPAGENET services that are down are reported as yellow */
 		if (nopage && (color == COL_RED)) color = COL_YELLOW;
 
@@ -765,7 +857,7 @@ void send_results(service_t *service)
 				  }
 				  else {
 					  /* Non-ping test clear: Dialup test or failed ping */
-					  strcat(msgline, "Dialup host/service, or ping check failed\n");
+					  strcat(msgline, "Dialup host/service, or test depends on another failed test\n");
 				  }
 				  break;
 
@@ -941,9 +1033,6 @@ int main(int argc, char *argv[])
 	/* Ping checks first */
 	if (pingtest && pingtest->items) {
 		run_fping_service(pingtest); 
-		combo_start();
-		send_results(pingtest);
-		combo_end();
 	}
 
 
@@ -962,7 +1051,6 @@ int main(int argc, char *argv[])
 	}
 	do_tcp_tests(timeout, concurrency);
 	if (debug) show_tcp_test_results();
-	combo_start();
 	for (s = svchead; (s); s = s->next) {
 		if ((s->items) && (s->toolid == TOOL_CONTEST)) {
 			for (t = s->items; (t); t = t->next) { 
@@ -978,20 +1066,13 @@ int main(int argc, char *argv[])
 					t->banner = NULL;
 				}
 			}
-			send_results(s);
 		}
 	}
-	combo_end();
 
 	/* Run the http tests */
 	for (t = httptest->items; (t); t = t->next) add_http_test(t);
 	run_http_tests(httptest, followlocations, logfile, (ssltestname != NULL));
 	if (debug) show_http_test_results(httptest);
-	combo_start();
-	for (h=testhosthead; (h); h = h->next) {
-		send_http_results(httptest, h, nonetpage, contenttestname, ssltestname, sslwarndays, sslalarmdays);
-	}
-	combo_end();
 
 
 	/* dns, dig, ntp tests */
@@ -1000,25 +1081,36 @@ int main(int argc, char *argv[])
 			switch(s->toolid) {
 				case TOOL_NSLOOKUP:
 					run_nslookup_service(s); 
-					combo_start();
-					send_results(s);
-					combo_end();
 					break;
 				case TOOL_DIG:
 					run_dig_service(s); 
-					combo_start();
-					send_results(s);
-					combo_end();
 					break;
 				case TOOL_NTP:
 					run_ntp_service(s); 
-					combo_start();
-					send_results(s);
-					combo_end();
 					break;
 			}
 		}
 	}
+
+	combo_start();
+	for (s = svchead; (s); s = s->next) {
+		switch (s->toolid) {
+			case TOOL_FPING:
+			case TOOL_CONTEST:
+			case TOOL_NSLOOKUP:
+			case TOOL_DIG:
+			case TOOL_NTP:
+				send_results(s);
+				break;
+
+			case TOOL_CURL:
+				break;
+		}
+	}
+	for (h=testhosthead; (h); h = h->next) {
+		send_http_results(httptest, h, nonetpage, contenttestname, ssltestname, sslwarndays, sslalarmdays);
+	}
+	combo_end();
 
 	shutdown_http_library();
 	return 0;

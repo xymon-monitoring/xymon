@@ -40,6 +40,8 @@ typedef struct {
 	int    logcert;
 	char   *sslinfo;                /* Data about SSL certificate */
 	time_t sslexpire;               /* Expiry time for SSL cert */
+	int    httpcolor;
+	char   *faileddeps;
 	int    sslcolor;
 	double totaltime;		/* Time spent doing request */
 	regex_t *exp;			/* regexp data for content match */
@@ -145,6 +147,9 @@ void add_http_test(testitem_t *t)
 	req->contstatus = 0;
 	req->headers = NULL;
 	req->output = NULL;
+	req->httpcolor = -1;
+	req->faileddeps = NULL;
+	req->sslcolor = -1;
 	req->logcert = 0;
 	req->sslinfo = NULL;
 	req->sslexpire = 0;
@@ -485,6 +490,7 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 			strcat(req->errorbuffer, "\n\n");
 			req->headers = malcop(req->errorbuffer);
 			if (logfd) fprintf(logfd, "Error: %s\n", req->errorbuffer);
+			t->open = 0;
 		}
 		else {
 			double t1, t2;
@@ -494,6 +500,7 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 			curl_easy_getinfo(req->curl, CURLINFO_TOTAL_TIME, &t2);
 			req->totaltime = t1+t2;
 			req->errorbuffer[0] = '\0';
+			t->open = 1;
 		}
 
 		curl_easy_cleanup(req->curl);
@@ -528,24 +535,36 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 	for (t=host->firsthttp; (t && (t->host == host)); t = t->next) {
 		http_data_t *req = t->private;
 
-		int httpcolor = statuscolor(host, req->httpstatus);
+		req->httpcolor = statuscolor(host, req->httpstatus);
 
 		/* Dialup hosts and dialup tests report red as clear */
-		if ((httpcolor != COL_GREEN) && (t->host->dialup || t->dialup)) color = COL_CLEAR;
+		if ((req->httpcolor != COL_GREEN) && (t->host->dialup || t->dialup)) req->httpcolor = COL_CLEAR;
 
 		/* If ping failed, report CLEAR unless alwaystrue */
-		if ( ((color == COL_RED) || (color == COL_YELLOW)) && /* Test failed */
+		if ( ((req->httpcolor == COL_RED) || (req->httpcolor == COL_YELLOW)) && /* Test failed */
 		     (t->host->downcount > 0)                      && /* The ping check did fail */
+		     (!t->host->noping && !t->host->noconn)        && /* We are doing a ping test */
 		     (!t->alwaystrue)                              )  /* No "~testname" flag */ {
-			color = COL_CLEAR;
+			req->httpcolor = COL_CLEAR;
 		}
 
-		dprintf("%s(%s) ", t->testspec, colorname(httpcolor));
-		if (httpcolor > color) color = httpcolor;
+		/* If ping failed, report CLEAR unless alwaystrue */
+		if ( ((req->httpcolor == COL_RED) || (req->httpcolor == COL_YELLOW)) && /* Test failed */
+		     (!t->alwaystrue)                              )  /* No "~testname" flag */ {
+			char *faileddeps = deptest_failed(t->host, t->service->testname);
 
-		/* If not inside SLA and non-green, report as BLUE */
-		if (!t->host->in_sla && (color != COL_GREEN)) color = COL_BLUE;
+			if (faileddeps) {
+				req->httpcolor = COL_CLEAR;
+				req->faileddeps = malcop(faileddeps);
+			}
+		}
+
+		dprintf("%s(%s) ", t->testspec, colorname(req->httpcolor));
+		if (req->httpcolor > color) color = req->httpcolor;
 	}
+
+	/* If not inside SLA and non-green, report failures as BLUE */
+	if (!host->in_sla && ((color == COL_RED) || (color == COL_YELLOW))) color = COL_BLUE;
 
 	if (nopage && (color == COL_RED)) color = COL_YELLOW;
 	dprintf(" --> %s\n", colorname(color));
@@ -559,13 +578,12 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 	for (t=host->firsthttp; (t && (t->host == host)); t = t->next) {
 		http_data_t *req = t->private;
 
-		int httpcolor = statuscolor(host, req->httpstatus);
-
-		sprintf(msgline, "\n&%s %s - %s\n", colorname(httpcolor), req->url,
-			((httpcolor != COL_GREEN) ? "failed" : "OK"));
+		sprintf(msgline, "\n&%s %s - %s\n", colorname(req->httpcolor), req->url,
+			((req->httpcolor != COL_GREEN) ? "failed" : "OK"));
 		addtostatus(msgline);
 		sprintf(msgline, "\n%s", req->headers);
 		addtostatus(msgline);
+		if (req->faileddeps) addtostatus(req->faileddeps);
 
 		sprintf(msgline, "Seconds: %5.2f\n", req->totaltime);
 		addtostatus(msgline);

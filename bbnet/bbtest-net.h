@@ -75,6 +75,9 @@ typedef struct {
 	/* The following is for the HTTP tests */
 	void *firsthttp;	/* First HTTP testitem in testitem list */
 
+	/* For storing the test dependency tag. */
+	char *deptests;
+
 	void *next;
 } testedhost_t;
 
@@ -92,6 +95,8 @@ typedef struct {
 	char		*banner;
 	void		*next;
 } testitem_t;
+
+extern char *deptest_failed(testedhost_t *host, char *testname);
 
 #endif
 
