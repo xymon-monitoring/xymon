@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.14 2003-07-08 09:04:41 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.15 2003-07-11 09:39:36 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -277,6 +277,7 @@ char *hostname = "";
 char *service = "";
 char *ip = "";
 int entrycount = 50;
+int servicehistory = 1;
 
 char *reqenv[] = {
 "BBHIST",
@@ -326,6 +327,9 @@ static void parse_query(void)
 			if (p) { *p = '\0'; service = malcop(p+1); }
 			hostname = malcop(val);
 			while ((p = strchr(hostname, ','))) *p = '.';
+		}
+		else if (argnmatch(token, "DOHOST")) {
+			servicehistory = 0;
 		}
 		else if (argnmatch(token, "IP")) {
 			ip = malcop(val);
@@ -389,13 +393,13 @@ int main(int argc, char *argv[])
 	}
 	now = time(NULL) - startoffset*86400;
 
-	parse_historyfile(fd, &repinfo, NULL, NULL, now-86400, now, 1, reportwarnlevel, reportgreenlevel, NULL);
+	parse_historyfile(fd, &repinfo, NULL, NULL, now-86400, now, 1, reportwarnlevel, reportgreenlevel, NULL, servicehistory);
 	log24hours = save_replogs();
 
 	if (entrycount == 0) {
 		/* All entries - just rewind the history file and do all of them */
 		rewind(fd);
-		parse_historyfile(fd, &dummyrep, NULL, NULL, 0, time(NULL), 1, reportwarnlevel, reportgreenlevel, NULL);
+		parse_historyfile(fd, &dummyrep, NULL, NULL, 0, time(NULL), 1, reportwarnlevel, reportgreenlevel, NULL, servicehistory);
 		fclose(fd);
 	}
 	else {
@@ -404,7 +408,7 @@ int main(int argc, char *argv[])
 		sprintf(tailcmd, "tail -%d %s", entrycount, histlogfn);
 		fd = popen(tailcmd, "r");
 		if (fd == NULL) errormsg("Cannot run tail on the histfile");
-		parse_historyfile(fd, &dummyrep, NULL, NULL, 0, time(NULL), 1, reportwarnlevel, reportgreenlevel, NULL);
+		parse_historyfile(fd, &dummyrep, NULL, NULL, 0, time(NULL), 1, reportwarnlevel, reportgreenlevel, NULL, servicehistory);
 		pclose(fd);
 	}
 

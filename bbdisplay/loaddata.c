@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.95 2003-07-09 14:15:11 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.96 2003-07-11 09:39:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -535,7 +535,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 				reportstart, reportend, 0, 
 				(host ? host->reportwarnlevel : reportwarnlevel), 
 				reportgreenlevel,
-				(host ? host->reporttime : NULL));
+				(host ? host->reporttime : NULL), 1);
 		newstate->entry->causes = (dynamicreport ? NULL : save_replogs());
 		newstate->entry->testflags = NULL;
 	}
