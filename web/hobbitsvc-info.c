@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.4 2003-01-30 22:38:39 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.5 2003-01-30 22:46:53 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -78,8 +78,8 @@ void generate_info(char *infocolumn)
 		strcat(infobuf, l);
 
 		sprintf(l, "<b>IP</b> : %s<br>\n", hostwalk->hostentry->ip); strcat(infobuf, l);
-		sprintf(l, "<b>Page/subpage</b> : <a href=\"%s\">%s</a><br>\n", 
-			hostpage_link(hostwalk->hostentry), hostpage_name(hostwalk->hostentry));
+		sprintf(l, "<b>Page/subpage</b> : <a href=\"%s/%s\">%s</a><br>\n", 
+			getenv("BBWEB"), hostpage_link(hostwalk->hostentry), hostpage_name(hostwalk->hostentry));
 		strcat(infobuf, l);
 		strcat(infobuf, "<br>\n");
 
