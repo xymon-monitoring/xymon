@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.190 2004-11-30 22:59:24 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.191 2004-12-12 21:57:08 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -31,11 +31,10 @@ static char rcsid[] = "$Id: bbgen.c,v 1.190 2004-11-30 22:59:24 henrik Exp $";
 #include "bbgen.h"
 #include "util.h"
 #include "debug.h"
-#include "loadhosts.h"
+#include "loadbbhosts.h"
 #include "loaddata.h"
 #include "process.h"
 #include "pagegen.h"
-#include "larrdgen.h"
 #include "infogen.h"
 #include "wmlgen.h"
 #include "bb-replog.h"
@@ -50,6 +49,7 @@ dispsummary_t	*dispsums = NULL;			/* Summaries we received and display */
 int		bb_color, bb2_color, bbnk_color;	/* Top-level page colors */
 int		fqdn = 1;				/* BB FQDN setting */
 int		usebbgend = 0;
+char		*larrdcol = NULL;
 
 time_t		reportstart = 0;
 time_t		reportend = 0;
@@ -97,14 +97,12 @@ NULL };
 int main(int argc, char *argv[])
 {
 	char		*pagedir;
-	char		*rrddir;
 	bbgen_page_t 	*p;
 	dispsummary_t	*s;
 	int		i;
 	int		pagegenstat;
 	char		*pageset = NULL;
 	char		*nssidebarfilename = NULL;
-	int             larrd043 = 0;				/* Set to use LARRD 0.43 disk displays */
 	char		*egocolumn = NULL;
 	int		embedded = 0;
 	int		bbgenddump = 0;
@@ -113,7 +111,7 @@ int main(int argc, char *argv[])
 	select_headers_and_footers("bb");
 
 	bb_color = bb2_color = bbnk_color = -1;
-	pagedir = rrddir = NULL;
+	pagedir = NULL;
 	init_timestamp();
 	fqdn = get_fqdn();
 
@@ -385,42 +383,17 @@ int main(int argc, char *argv[])
 			if (lp) infocol = strdup(lp+1);
 		}
 
-		else if (argnmatch(argv[i], "--larrdupdate=")) {
-			char *lp = strchr(argv[i], '=');
-
-			larrd_update_interval = atoi(lp+1);
-			if (larrd_update_interval <= 0) enable_larrdgen=0;
-			else enable_larrdgen = 1;
-		}
 		else if (argnmatch(argv[i], "--larrdgraphs=")) {
 			char *lp = strchr(argv[i], '=');
-
-			enable_larrdgen=1;
 			if (lp) larrdgraphs_default = strdup(lp+1);
 		}
 		else if (argnmatch(argv[i], "--larrd043=") || (strcmp(argv[i], "--larrd043") == 0)) {
-			/* "--larrd" just enable larrd page generation */
-			/* "--larrd=xxx" does that, and redefines the larrd column name */
 			char *lp = strchr(argv[i], '=');
-
-			enable_larrdgen=1;
 			if (lp) larrdcol = strdup(lp+1); else larrdcol = "trends";
-			larrd043 = 1;
 		}
 		else if (argnmatch(argv[i], "--larrd=") || (strcmp(argv[i], "--larrd") == 0)) {
-			/* "--larrd" just enable larrd page generation */
-			/* "--larrd=xxx" does that, and redefines the larrd column name */
 			char *lp = strchr(argv[i], '=');
-
-			enable_larrdgen=1;
 			if (lp) larrdcol = strdup(lp+1); else larrdcol = "larrd";
-		}
-		else if (argnmatch(argv[i], "--rrddir=")) {
-			char *lp = strchr(argv[i], '=');
-			rrddir = strdup(lp+1);
-		}
-		else if (strcmp(argv[i], "--log-nohost-rrds") == 0) {
-			log_nohost_rrds=1;
 		}
 
 		else if (strcmp(argv[i], "--bbpageONLY") == 0) {
@@ -526,11 +499,9 @@ int main(int argc, char *argv[])
 			printf("    --info[=INFOCOLUMN]         : Generate INFO data in column INFOCOLUMN\n");
 			printf("    --infoupdate=N              : time between updates of INFO column pages in seconds\n");
 			printf("\nLARRD support options:\n");
-			printf("    --larrd[=LARRDCOLUMN]       : LARRD data in column LARRDCOLUMN, and handle larrd-html for LARRD 0.42\n");
-			printf("    --larrd043[=LARRDCOLUMN]    : LARRD data in column LARRDCOLUMN, and handle larrd-html for LARRD 0.43\n");
+			printf("    --larrd[=LARRDCOLUMN]       : LARRD data in column LARRDCOLUMN (default:larrd)\n");
+			printf("    --larrd043[=LARRDCOLUMN]    : LARRD data in column LARRDCOLUMN (default:trends)\n");
 			printf("    --larrdgraphs=GRAPHSPEC     : Set a default value for the LARRD: bb-hosts tag\n");
-			printf("    --larrdupdate=N             : time between updates of LARRD pages in seconds\n");
-			printf("    --rrddir=RRD-directory      : Directory for LARRD RRD files\n");
 			printf("\nAlternate pageset generation support:\n");
 			printf("    --pageset=SETNAME           : Generate non-standard pageset with tag SETNAME\n");
 			printf("    --template=TEMPLATE         : template for header and footer files\n");
@@ -589,10 +560,6 @@ int main(int argc, char *argv[])
 			sprintf(pagedir, "%s/www", getenv("BBHOME"));
 		}
 	}
-	if (rrddir == NULL) {
-		rrddir = (char *) malloc(strlen(getenv("BBVAR"))+5);
-		sprintf(rrddir, "%s/rrd", getenv("BBVAR"));
-	}
 
 	if (getenv("BBHTACCESS")) bbhtaccess = strdup(getenv("BBHTACCESS"));
 	if (getenv("BBPAGEHTACCESS")) bbpagehtaccess = strdup(getenv("BBPAGEHTACCESS"));
@@ -604,7 +571,7 @@ int main(int argc, char *argv[])
 	 * If we did those, we would send double purple updates, 
 	 * generate wrong links for info pages etc.
 	 */
-	if (pageset || embedded || snapshot) enable_purpleupd = enable_larrdgen = enable_infogen = enable_wmlgen = wantrss = 0;
+	if (pageset || embedded || snapshot) enable_purpleupd = enable_infogen = enable_wmlgen = wantrss = 0;
 	if (embedded) {
 		egocolumn = htaccess = NULL;
 
@@ -622,12 +589,8 @@ int main(int argc, char *argv[])
 	add_timestamp("Load bbhosts done");
 
 	if (!embedded) {
-		/* Delete old info- and larrd-timestamp files if we have restarted */
+		/* Delete old info-timestamp file if we have restarted */
 		drop_genstatfiles();
-
-		/* Generate the LARRD pages before loading state */
-		pagegenstat = generate_larrd(rrddir, larrdcol, larrd043, usebbgend);
-		add_timestamp("LARRD generate done");
 
 		/* Dont generate both LARRD and info in one run */
 		if (pagegenstat) pagegenstat = generate_info(infocol, usebbgend);

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.141 2004-10-31 07:58:46 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.142 2004-12-12 21:57:08 henrik Exp $";
 
 #include <limits.h>
 #include <sys/types.h>
@@ -339,8 +339,6 @@ void drop_genstatfiles(void)
 
 	sprintf(fn, "%s/.bbstartup", getenv("BBLOGS"));
 	if (stat(fn, &st) == 0) {
-		sprintf(fn, "%s/.larrd-gen", getenv("BBTMP"));
-		if ( (stat(fn, &stampst) == 0) && (stampst.st_ctime < st.st_ctime) ) unlink(fn);
 		sprintf(fn, "%s/.info-gen", getenv("BBTMP"));
 		if ( (stat(fn, &stampst) == 0) && (stampst.st_ctime < st.st_ctime) ) unlink(fn);
 	}

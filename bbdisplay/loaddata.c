@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.133 2004-11-17 16:15:40 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.134 2004-12-12 21:57:08 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -31,11 +31,10 @@ static char rcsid[] = "$Id: loaddata.c,v 1.133 2004-11-17 16:15:40 henrik Exp $"
 
 #include "bbgen.h"
 #include "util.h"
-#include "loadhosts.h"
+#include "loadbbhosts.h"
 #include "loaddata.h"
 #include "reportdata.h"
 #include "infogen.h"
-#include "larrdgen.h"
 
 int		statuscount = 0;
 
@@ -141,7 +140,7 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 		 * Avoid stumbling over those.
 		 * From Tom Schmidt.
 		 */
-		if (!enable_larrdgen && ((strcmp(p, "larrd") == 0) || (strcmp(p, "trends") == 0))) {
+		if ((strcmp(p, "larrd") == 0) || (strcmp(p, "trends") == 0)) {
 			return NULL;
 		}
 
@@ -269,12 +268,11 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 		}
 		newstate->entry->shorttext = strdup(l);
 	}
-	else if (!enable_larrdgen && ((strcmp(testname, "larrd") == 0) || (strcmp(testname, "trends") == 0))) {
+	else if ((strcmp(testname, "larrd") == 0) || (strcmp(testname, "trends") == 0)) {
 		/* 
 		 * Unreadable LARRD file without us doing larrd -->
-		 * it's the standard larrd-html.pl script building
-		 * files while we run. Don't complain about these,
-		 * just assume they are green.
+		 * it's another script building files while we run.
+		 * Don't complain about these, just assume they are green.
 		 * Spotted by Tom Schmidt.
 		 */
 		newstate->entry->color = COL_GREEN;
