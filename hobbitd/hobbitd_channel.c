@@ -17,6 +17,8 @@
 #include "bbd_net.h"
 #include "bbdutil.h"
 
+#define SEMDEBUG 1
+
 /* These are dummy vars needed by stuff in util.c */
 hostlist_t      *hosthead = NULL;
 link_t          *linkhead = NULL;
@@ -65,6 +67,8 @@ int main(int argc, char *argv[])
 	int pfd[2];
 	char *childcmd;
 	char **childargs;
+
+	struct timespec tmo;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
@@ -155,20 +159,21 @@ int main(int argc, char *argv[])
 		 * there is one, and if not we want to continue pushing the
 		 * queued data to the worker.
 		 */
+#ifdef SEMDEBUG
 		dprintf("Waiting for goclient\n");
+#endif
+
 		s.sem_num = GOCLIENT; s.sem_op  = -1; s.sem_flg = (head ? IPC_NOWAIT : 0);
 		n = semop(channel->semid, &s, 1);
+
+#ifdef SEMDEBUG
+		dprintf("goclient is now %d, queue is %s\n", 
+			semctl(channel->semid, GOCLIENT, GETVAL), (head ? "busy" : "idle"));
+#endif
+
 		if (n == 0) {
 			/* Copy the message */
 			strcpy(buf, channel->channelbuf);
-
-			/* 
-			 * Let master know we got it by downing BOARDBUSY.
-			 * This should not block, since BOARDBUSY is upped
-			 * by the master just before he ups GOCLIENT.
-			 */
-			s.sem_num = BOARDBUSY; s.sem_op  = -1; s.sem_flg = 0;
-			n = semop(channel->semid, &s, 1);
 
 			dprintf("Got msg\n", buf);
 
@@ -190,9 +195,38 @@ int main(int argc, char *argv[])
 			 * this message (GOCLIENT reaches 0).
 			 * This can block, but should not block for very long.
 			 */
-			dprintf("Waiting for goclient to drop\n");
+#ifdef SEMDEBUG
+			dprintf("Waiting for goclient to drop (is %d)\n", semctl(channel->semid, GOCLIENT, GETVAL));
+#endif
+
 			s.sem_num = GOCLIENT; s.sem_op = 0; s.sem_flg = 0;
+			tmo.tv_sec = 1; tmo.tv_nsec = 0;
+			n = semtimedop(channel->semid, &s, 1, &tmo);
+			if ((n == -1) && (errno == EAGAIN)) {
+				errprintf("Gave up waiting for GOCLIENT to reach 0 (it is %d)\n",
+					  semctl(channel->semid, GOCLIENT, GETVAL));
+			}
+#ifdef SEMDEBUG
+			dprintf("goclient is 0\n");
+#endif
+
+
+			/* 
+			 * Let master know we got it by downing BOARDBUSY.
+			 * This should not block, since BOARDBUSY is upped
+			 * by the master just before he ups GOCLIENT.
+			 */
+#ifdef SEMDEBUG
+			dprintf("About to down BOARDBUSY\n");
+#endif
+
+			s.sem_num = BOARDBUSY; s.sem_op  = -1; s.sem_flg = 0;
 			n = semop(channel->semid, &s, 1);
+
+#ifdef SEMDEBUG
+			dprintf("BOARDBUSY downed\n");
+#endif
+
 		}
 		else {
 			if (errno != EAGAIN) {
