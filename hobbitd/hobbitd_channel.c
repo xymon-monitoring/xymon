@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.19 2004-11-13 08:51:54 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.20 2004-11-16 21:35:15 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -46,6 +46,7 @@ msg_t *tail = NULL;
 
 static volatile int running = 1;
 static volatile int gotalarm = 0;
+static volatile int dologswitch = 0;
 static int childexit = -1;
 bbgend_channel_t *channel = NULL;
 
@@ -68,6 +69,10 @@ void sig_handler(int signum)
 	  case SIGALRM:
 		gotalarm = 0;
 		break;
+
+	  case SIGHUP:
+		dologswitch = 1;
+		break;
 	}
 }
 
@@ -78,7 +83,9 @@ int main(int argc, char *argv[])
 	struct sembuf s;
 	char buf[SHAREDBUFSZ];
 	msg_t *newmsg;
-	int daemonize = 1;
+	int daemonize = 0;
+	char *logfn = NULL;
+	char *pidfile = NULL;
 
 	int cnid = -1;
 	int pfd[2];
@@ -105,6 +112,14 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--no-daemon")) {
 			daemonize = 0;
 		}
+		else if (argnmatch(argv[argi], "--pidfile=")) {
+			char *p = strchr(argv[argi], '=');
+			pidfile = strdup(p+1);
+		}
+		else if (argnmatch(argv[argi], "--log=")) {
+			char *p = strchr(argv[argi], '=');
+			logfn = strdup(p+1);
+		}
 		else {
 			int i = 0;
 			childcmd = argv[argi];
@@ -120,9 +135,6 @@ int main(int argc, char *argv[])
 
 	/* Go daemon */
 	if (daemonize) {
-
-		/* We wont close stdin/stdout/stderr here, since the worker process might need them. */
-
 		/* Become a daemon */
 		childpid = fork();
 		if (childpid < 0) {
@@ -132,6 +144,12 @@ int main(int argc, char *argv[])
 		}
 		else if (childpid > 0) {
 			/* Parent exits */
+			FILE *fd = NULL;
+			if (pidfile) fd = fopen(pidfile, "w");
+			if (fd) {
+				fprintf(fd, "%d\n", (int)childpid);
+				fclose(fd);
+			}
 			exit(0);
 		}
 		/* Child (daemon) continues here */
@@ -144,6 +162,7 @@ int main(int argc, char *argv[])
 	signal(SIGINT, sig_handler);
 	signal(SIGTERM, sig_handler);
 	signal(SIGCHLD, sig_handler);
+	signal(SIGHUP, sig_handler);
 
 	/* Start the channel handler */
 	n = pipe(pfd);
@@ -164,7 +183,6 @@ int main(int argc, char *argv[])
 	}
 	/* Parent process continues */
 	close(pfd[0]);
-	fclose(stdin);	/* bbgend_channel's stdin is not used */
 
 	/* We dont want to block when writing to the worker */
 	fcntl(pfd[1], F_SETFL, O_NONBLOCK);
@@ -176,7 +194,20 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	freopen("/dev/null", "r", stdin);	/* bbgend_channel's stdin is not used */
+	if (logfn) {
+		freopen(logfn, "a", stdout);
+		freopen(logfn, "a", stderr);
+	}
+
 	while (running) {
+
+		if (dologswitch) {
+			freopen(logfn, "a", stdout);
+			freopen(logfn, "a", stderr);
+			dologswitch = 0;
+		}
+
 		/* 
 		 * Wait for GOCLIENT to go up.
 		 *
@@ -301,6 +332,7 @@ int main(int argc, char *argv[])
 	/* Detach from channels */
 	close_channel(channel, CHAN_CLIENT);
 
-	return 0;
+	if (pidfile) unlink(pidfile);
+	return (childexit != -1) ? 1 : 0;
 }
 
