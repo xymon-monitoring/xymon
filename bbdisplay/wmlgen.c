@@ -7,23 +7,37 @@
 #include "util.h"
 #include "wmlgen.h"
 
-void do_wml_cards(void)
+int do_wml_cards(int enable_wmlgen, int wml_update_interval)
 {
 	FILE		*fd;
 	char		fn[MAX_PATH];
 	hostlist_t	*h;
 	entry_t		*t;
-	int		wapcolor, hostcolor;
+	int		oldcolor, wapcolor, hostcolor;
 	pid_t pid;
 	char mkbbwmlcmd[MAX_PATH];
 	char newbbhosts[MAX_PATH];
+	
+	/* Get the current WAP status color */
+	oldcolor = -1;
+	sprintf(fn, "%s/.bkg", getenv("BBLOGS"));
+	fd = fopen(fn, "r");
+	if (fd != NULL) {
+		char l[80];
+
+		l[0] = '\0';
+		fgets(l, sizeof(l), fd);
+		fclose(fd);
+
+		oldcolor = parse_color(l);
+	}
 
 	sprintf(fn, "%s/bb-hosts-wml.tmp", getenv("BBTMP"));
 	sprintf(newbbhosts, "BBHOSTS=%s", fn);
 	fd = fopen(fn, "w");
 	if (fd == NULL) {
 		errprintf("Cannot open %s\n", fn);
-		return;
+		return 0;
 	}
 
 	wapcolor = COL_GREEN;
@@ -53,24 +67,37 @@ void do_wml_cards(void)
 	fd = fopen(fn, "w");
 	if (fd == NULL) {
 		errprintf("Cannot open %s\n", fn);
-		return;
+		return 0;
 	}
-	fprintf(fd, "%s\n", colorname(wapcolor));
+	fprintf(fd, "%s \n", colorname(wapcolor));
 	fclose(fd);
 
-	/* Fork off the WML generator */
-	sprintf(mkbbwmlcmd, "%s/web/mkbbwml.sh", getenv("BBHOME"));
-	pid = fork();
-	if (pid == -1) {
-		errprintf("Fork error in forking %s\n", mkbbwmlcmd);
-		return;
+	/*
+	 * The WML generator does not run too often, as it is slow.
+	 * We run it with the given interval, except if the color
+	 * of the WML frontpage changes - this indicates that something
+	 * is happening, so we want to update sooner.
+	 * If something just goes red and stays there, we will update
+	 * with the normal interval.
+	 */
+	if ((oldcolor != wapcolor) || run_columngen("wml", wml_update_interval, enable_wmlgen)) {
+		/* Fork off the WML generator */
+		sprintf(mkbbwmlcmd, "%s/web/mkbbwml.sh", getenv("BBHOME"));
+		pid = fork();
+		if (pid == -1) {
+			errprintf("Fork error in forking %s\n", mkbbwmlcmd);
+		}
+		else if (pid == 0) {
+			putenv(newbbhosts);
+			execl(mkbbwmlcmd, "mkbbwml.sh",NULL);
+		}
+		else {
+			wait(NULL);
+		}
+
+		return 1;
 	}
-	else if (pid == 0) {
-		putenv(newbbhosts);
-		execl(mkbbwmlcmd, "mkbbwml.sh",NULL);
-	}
-	else {
-		wait(NULL);
-	}
+
+	return 0;
 }
 
