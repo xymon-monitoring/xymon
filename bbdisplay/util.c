@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.18 2003-02-11 16:29:52 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.19 2003-02-12 11:37:54 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -586,9 +586,9 @@ void finish_status(void)
 	if (debug) {
 		char *p = strchr(msgbuf, '\n');
 
-		*p = '\0';
+		if (p) *p = '\0';
 		printf("Adding to combo msg: %s\n", msgbuf);
-		*p = '\n';
+		if (p) *p = '\n';
 	}
 
 	/* Non-green messages go out NOW. Or we get no alarms ... */
