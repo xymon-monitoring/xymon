@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.25 2005-03-22 09:16:49 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.26 2005-03-23 13:38:26 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -231,10 +231,11 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 	if (hobbitd) {
 		char *rrdparturl;
 		int first = 1;
-		int step = 5;
+		int step;
 
-		if (itemcount > 0) {
-			int gcount = (itemcount / 5); if ((gcount*5) != itemcount) gcount++;
+		step = (graphdef->maxgraphs ? graphdef->maxgraphs : 5);
+		if (itemcount) {
+			int gcount = (itemcount / step); if ((gcount*step) != itemcount) gcount++;
 			step = (itemcount / gcount);
 		}
 
