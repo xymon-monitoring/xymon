@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.193 2004-12-12 22:53:39 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.194 2004-12-12 23:02:16 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -49,7 +49,7 @@ dispsummary_t	*dispsums = NULL;			/* Summaries we received and display */
 int		bb_color, bb2_color, bbnk_color;	/* Top-level page colors */
 int		fqdn = 1;				/* BB FQDN setting */
 int		usebbgend = 0;
-char		*larrdcol = NULL;
+char		*larrdcol = "trends";
 
 time_t		reportstart = 0;
 time_t		reportend = 0;
