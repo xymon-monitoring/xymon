@@ -29,3 +29,11 @@ Jeff Stoner
 Christian Thibodeau
 Rob Watson
 
+
+It would have been hard to implement bbgen without the
+existing libraries for lots of stuff:
+
+libCURL
+	http://curl.haxx.se/
+	Daniel Steenberg and others
+
