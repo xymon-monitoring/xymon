@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.106 2005-01-22 08:53:21 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.107 2005-01-25 22:07:20 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -507,6 +507,9 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 				channelmarker, channel->seq, (int) tstamp.tv_sec, (int)tstamp.tv_usec,
 				sender, hostname, log->test->testname, (int) log->enabletime);
 			*(channel->channelbuf + n) = '\0';
+			break;
+
+		  case C_LAST:
 			break;
 		}
 	}
