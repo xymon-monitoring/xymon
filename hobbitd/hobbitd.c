@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.95 2005-01-14 10:13:43 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.96 2005-01-15 08:34:06 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -458,6 +458,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			break;
 
 		  case C_DATA:
+			/* Data channel messages are pre-formatted so we never go here */
 			break;
 
 		  case C_NOTES:
