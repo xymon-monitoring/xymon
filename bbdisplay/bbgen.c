@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.172 2004-08-09 09:49:23 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.173 2004-08-11 12:54:33 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -103,10 +103,6 @@ int main(int argc, char *argv[])
 	int		i;
 	int		pagegenstat;
 	char		*pageset = NULL;
-	char 		bb2filename[MAX_PATH];
-	char 		bbnkfilename[MAX_PATH];
-	char		*bb2rssfilename = NULL;
-	char		*bbnkrssfilename = NULL;
 	char		*nssidebarfilename = NULL;
 	int             larrd043 = 0;				/* Set to use LARRD 0.43 disk displays */
 	char		*egocolumn = NULL;
@@ -216,15 +212,7 @@ int main(int argc, char *argv[])
 			rsscolorlimit = parse_color(lp+1);
 		}
 		else if (argnmatch(argv[i], "--rss")) {
-			char *lp = strchr(argv[i], '=');
-
-			if (strlen(lp+1) > 0) {
-				bb2rssfilename = malcop(lp+1);
-			}
-			else {
-				bb2rssfilename = "bb2.rss";
-			}
-			bbnkrssfilename = "bbnk.rss";
+			wantrss = 1;
 		}
 		else if (argnmatch(argv[i], "--reportopts=")) {
 			char style[MAX_LINE_LEN];
@@ -675,13 +663,11 @@ int main(int argc, char *argv[])
 	}
 
 	/* The full summary page - bb2.html */
-	sprintf(bb2filename, "bb2%s", htmlextension);
-	bb2_color = do_bb2_page(bb2filename, bb2rssfilename, nssidebarfilename, PAGE_BB2);
+	bb2_color = do_bb2_page(nssidebarfilename, PAGE_BB2);
 	add_timestamp("BB2 generation done");
 
 	/* Reduced summary (alerts) page - bbnk.html */
-	sprintf(bbnkfilename, "bbnk%s", htmlextension);
-	bbnk_color = do_bb2_page(bbnkfilename, bbnkrssfilename, NULL, PAGE_NK);
+	bbnk_color = do_bb2_page(NULL, PAGE_NK);
 	add_timestamp("BBNK generation done");
 
 	if (snapshot) {
