@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: trimhistory.c,v 1.5 2005-03-31 17:19:36 henrik Exp $";
+static char rcsid[] = "$Id: trimhistory.c,v 1.6 2005-04-03 15:36:36 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -392,7 +392,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn(), NULL);
+	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 
 	/* First scan the directory for all files, and pick up the ones we want to process */
 	while ((hent = readdir(histdir)) != NULL) {
