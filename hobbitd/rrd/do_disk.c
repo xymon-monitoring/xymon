@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.12 2005-02-22 14:19:30 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.13 2005-02-23 08:16:16 henrik Exp $";
 
 static char *disk_params[] = { "rrdcreate", rrdfn, "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", 
 				rra1, rra2, rra3, rra4, NULL };
@@ -90,7 +90,7 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
 			pused = atoi(columns[5]);
 			p = columns[3] + strspn(columns[3], "0123456789");
-			aused = atoll(columns[3]);
+			aused = strtoll(columns[3], NULL, 10);
 			/* Convert to KB if there's a modifier after the numbers */
 			if (*p == 'M') aused *= 1024;
 			else if (*p == 'G') aused *= (1024*1024);
