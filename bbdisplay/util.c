@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.118 2004-08-14 20:50:38 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.119 2004-08-24 11:42:40 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -76,8 +76,14 @@ static char signal_bbtmp[MAX_PATH];
 
 void errprintf(const char *fmt, ...)
 {
+	char timestr[30];
 	char msg[4096];
 	va_list args;
+
+	time_t now = time(NULL);
+
+	strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S", localtime(&now));
+	fprintf(stderr, "%s ", timestr);
 
 	va_start(args, fmt);
 #ifdef NO_VSNPRINTF
