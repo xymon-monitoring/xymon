@@ -27,10 +27,18 @@
 		echo "OpenSSL can be found at http://www.openssl.org/"
 		echo "Continuing with SSL support disabled."
 	else
+		# Red Hat in their wisdom ships an openssl that depends on Kerberos,
+		# and then puts the Kerberos includes where they are not found automatically.
+		if test "`uname -s`" = "Linux" -a -d /usr/kerberos/include
+		then
+			OSSLINC2="-I/usr/kerberos/include"
+		else
+			OSSLINC2=""
+		fi
 
 		cd build
 		OS=`uname -s` make -f Makefile.test-ssl clean
-		OS=`uname -s` OSSLINC="-I$OSSLINC" make -f Makefile.test-ssl test-compile
+		OS=`uname -s` OSSLINC="-I$OSSLINC $OSSLINC2" make -f Makefile.test-ssl test-compile
 		if [ $? -eq 0 ]; then
 			echo "Found OpenSSL include files in $OSSLINC"
 		else
@@ -46,5 +54,6 @@
 		OS=`uname -s` make -f Makefile.test-ssl clean
 		cd ..
 
+		OSSLINC="$OSSLINC $OSSLINC2"
 	fi
 
