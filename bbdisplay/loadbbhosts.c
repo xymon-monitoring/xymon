@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.12 2004-12-17 22:17:45 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.13 2004-12-17 22:38:21 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -704,7 +704,9 @@ bbgen_page_t *load_bbhosts(char *pgset)
 					prefer = 1;
 				else if (strcasecmp(item, "nodisp") == 0) 
 					nodisp = 1;
-				else if (strncasecmp(item, hosttag, strlen(hosttag))) {
+				else if ( (strlen(pgset) > 0) &&
+					  (targetpagecount < MAX_TARGETPAGES_PER_HOST) && 
+					  (strncasecmp(item, hosttag, strlen(hosttag)) == 0) ) {
 					targetpagelist[targetpagecount++] = strdup(item+strlen(hosttag));
 				}
 
@@ -792,8 +794,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 
 					*p = savechar;
 					if (targetpage == NULL) {
-						errprintf("Warning: Cannot find any target page named %s - dropping host %s'\n", 
-							targetpagename, hostname);
+						errprintf("Warning: Cannot find any target page named '%s' in set '%s' - dropping host '%s'\n", 
+							targetpagename, pgset, hostname);
 					}
 					else {
 						host_t *newhost = init_host(hostname, displayname, clientalias,
