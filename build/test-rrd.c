@@ -4,7 +4,27 @@
 
 int main(int argc, char *argv[])
 {
+	char *rrdargs[] = {
+		"rrdgraph",
+		"bbgen.png",
+		"-s", "e - 48d",
+		"--title", "bbgen runtime last 48 days",
+		"-w576",
+		"-v", "Seconds",
+		"-a", "PNG",
+		"DEF:rt=bbgen.rrd:runtime:AVERAGE",
+		"AREA:rt#00CCCC:Run Time",
+		"COMMENT: Timestamp",
+		NULL
+	};
+	char **calcpr=NULL;
+
+	int pcount, result, xsize, ysize;
+
+	for (pcount = 0; (rrdargs[pcount]); pcount++);
 	rrd_clear_error();
+	result = rrd_graph(pcount, rrdargs, &calcpr, &xsize, &ysize);
+
 	return 0;
 }
 
