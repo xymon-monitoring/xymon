@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: links.c,v 1.2 2004-12-30 22:25:34 henrik Exp $";
+static char rcsid[] = "$Id: links.c,v 1.3 2005-01-04 13:57:43 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -37,6 +37,7 @@ typedef struct link_t {
 static link_t *linkhead = NULL;
 static char *notesskin = NULL;
 static char *helpskin = NULL;
+static char *columndocurl = NULL;
 
 static link_t *init_link(char *filename, char *urlprefix)
 {
@@ -114,6 +115,7 @@ void load_all_links(void)
 
 	if (notesskin) { free(notesskin); notesskin = NULL; }
 	if (helpskin) { free(helpskin); helpskin = NULL; }
+	if (columndocurl) { free(columndocurl); columndocurl = NULL; }
 
 	if (getenv("BBNOTESSKIN")) notesskin = strdup(getenv("BBNOTESSKIN"));
 	else { 
@@ -126,6 +128,8 @@ void load_all_links(void)
 		helpskin = (char *) malloc(strlen(getenv("BBWEB")) + strlen("/help") + 1);
 		sprintf(helpskin, "%s/help", getenv("BBWEB"));
 	}
+
+	if (getenv("COLUMNDOCURL")) columndocurl = strdup(getenv("COLUMNDOCURL"));
 
 	strcpy(dirname, getenv("BBNOTES"));
 	head1 = load_links(dirname, notesskin);
@@ -169,7 +173,10 @@ char *columnlink(char *colname)
 	static char linkurl[PATH_MAX];
 	link_t *link = find_link(colname);
 
-	if (link) {
+	if (columndocurl) {
+		sprintf(linkurl, columndocurl, colname);
+	}
+	else if (link) {
 		sprintf(linkurl, "%s/%s", link->urlprefix, link->filename);
 	}
 	else {
