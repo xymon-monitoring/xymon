@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.133 2004-10-14 13:59:53 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.134 2004-10-19 21:54:27 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1004,9 +1004,16 @@ int within_sla(char *l, char *tag, int defresult)
 	int found = 0;
 	int starttime,endtime,curtime;
 
-	tagspec = (char *) malloc(strlen(tag)+2);
-	sprintf(tagspec, "%s=", tag);
-	p = strstr(l, tagspec);
+	if (strlen(tag)) {
+		tagspec = (char *) malloc(strlen(tag)+2);
+		sprintf(tagspec, "%s=", tag);
+		p = strstr(l, tagspec);
+	}
+	else {
+		tagspec = strdup("");
+		p = l;
+	}
+
 	if (p) {
 		slaspec = p + strlen(tagspec);
 		tnow = time(NULL);
