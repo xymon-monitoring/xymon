@@ -1,8 +1,8 @@
 all:
-	@/bin/true
+	@echo ""
 
 clean:
-	rm -f *~ manpages/index.html* manpages/man1/* manpages/man5/* manpages/man7/* manpages/man8/*
+	rm -f *~
 
 install:
 	mkdir -p $(BBHOME)/www/help/manpages
