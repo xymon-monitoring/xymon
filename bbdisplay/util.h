@@ -85,6 +85,7 @@ extern int stdout_on_file(char *filename);
 extern void setup_signalhandler(char *programname);
 
 extern char *urldecode(char *envvar);
+extern int urlvalidate(char *query, char *validchars);
 
 #endif
 
