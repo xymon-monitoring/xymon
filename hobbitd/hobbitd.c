@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.111 2005-02-18 09:46:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.112 2005-02-20 12:34:46 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1775,7 +1775,7 @@ void do_message(conn_t *msg, char *origin)
 		msg->bufp = msg->buf = buf;
 		msg->buflen = buflen;
 	}
-	else if ((strncmp(msg->buf, "hobbitdack", 9) == 0) || (strncmp(msg->buf, "ack ack_event", 13) == 0)) {
+	else if ((strncmp(msg->buf, "hobbitdack", 10) == 0) || (strncmp(msg->buf, "ack ack_event", 13) == 0)) {
 		/* hobbitdack COOKIE DURATION TEXT */
 		char *p;
 		int cookie, duration;
@@ -1791,7 +1791,7 @@ void do_message(conn_t *msg, char *origin)
 		 * we will accept an "ack ack_event" message. This allows us
 		 * to work with existing acknowledgement scripts.
 		 */
-		if (strncmp(msg->buf, "hobbitdack", 9) == 0) p = msg->buf + 9;
+		if (strncmp(msg->buf, "hobbitdack", 10) == 0) p = msg->buf + 10;
 		else if (strncmp(msg->buf, "ack ack_event", 13) == 0) p = msg->buf + 13;
 		else p = msg->buf;
 
