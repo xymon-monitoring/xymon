@@ -290,6 +290,7 @@ link_t *load_links(const char *directory, const char *urlprefix)
 {
 	DIR		*bblinks;
 	struct dirent 	*d;
+	char		fn[256];
 	link_t		*curlink, *toplink, *newlink;
 
 	toplink = curlink = NULL;
@@ -300,7 +301,8 @@ link_t *load_links(const char *directory, const char *urlprefix)
 	}
 
 	while ((d = readdir(bblinks))) {
-		newlink = init_link(d->d_name, urlprefix);
+		strcpy(fn, d->d_name);
+		newlink = init_link(fn, urlprefix);
 		if (newlink) {
 			if (toplink == NULL) {
 				toplink = newlink;
@@ -439,6 +441,7 @@ state_t *load_state(void)
 {
 	DIR		*bblogs;
 	struct dirent 	*d;
+	char		fn[256];
 	state_t		*newstate, *topstate;
 	int		dopurple;
 	struct stat	st;
@@ -462,8 +465,9 @@ state_t *load_state(void)
 	}
 
 	while ((d = readdir(bblogs))) {
-		if (d->d_name[0] != '.') {
-			newstate = init_state(d->d_name, dopurple);
+		strcpy(fn, d->d_name);
+		if (fn[0] != '.') {
+			newstate = init_state(fn, dopurple);
 			if (newstate) {
 				newstate->next = topstate;
 				topstate = newstate;
@@ -542,6 +546,34 @@ void calc_pagecolors(page_t *phead, char *indent1)
 	}
 }
 
+
+void delete_old_acks(void)
+{
+	DIR             *bbacks;
+	struct dirent   *d;
+	struct stat     st;
+	time_t		now = time(NULL);
+	char		fn[256];
+
+	bbacks = opendir(getenv("BBACKS"));
+	if (!bbacks) {
+		perror("No BBACKS!");
+		exit(1);
+        }
+
+	chdir(getenv("BBACKS"));
+	while ((d = readdir(bbacks))) {
+		strcpy(fn, d->d_name);
+		if (strncmp(fn, "ack.", 4) == 0) {
+			stat(fn, &st);
+			if (S_ISREG(st.st_mode) && (st.st_mtime < now)) {
+				printf("Removing old ack-file %s\n",  fn);
+				unlink(fn);
+			}
+		}
+	}
+	closedir(bbacks);
+}
 
 void dumplinks(link_t *head)
 {
@@ -630,6 +662,7 @@ int main(int argc, char *argv[])
 		if (p->color > pagehead->color) pagehead->color = p->color;
 	}
 
+	delete_old_acks();
 
 	for (p=pagehead; p; p = p->next) {
 		printf("Page: %s, color: %d, title=%s\n", p->name, p->color, p->title);
