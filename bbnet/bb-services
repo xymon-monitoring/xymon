@@ -1,6 +1,6 @@
 # bb-service
 #
-# $Id: bb-services,v 1.8 2005-03-08 21:24:22 henrik Exp $
+# $Id: bb-services,v 1.9 2005-03-08 22:03:14 henrik Exp $
 #
 # This file defines the way TCP services are tested by bbtest-net
 # (part of the bbgen toolkit).
@@ -146,12 +146,14 @@
 [clamd]
    send "PING\n"
    expect "PONG"
+   options banner
    port 3310
 
 # SpamAssassin spamd
 [spamd]
    send "PING SPAMC/Hobbit\n"
-   export "PONG"
+   expect "PONG"
+   options banner
    port 783
 
 # From http://www.mail-archive.com/whatsup_forum@list.ipswitch.com/msg06678.html
