@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.94 2003-09-08 11:49:40 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.95 2003-09-08 20:39:16 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -50,6 +50,7 @@ char *htmlextension = ".html"; /* Filename extension for generated files */
 char *doctargetspec = " TARGET=\"_blank\"";
 char *defaultpagetitle = NULL;
 int  pagetitlelinks = 0;
+int  maxrowsbeforeheading = 0;
 int  bb2eventlog = 1;
 int  bb2acklog = 1;
 
@@ -318,6 +319,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 	char	*bbskin;
 	int	maxbanksize = 0;
 	int	anyplainhosts = 0;
+	int	rowcount = 0;
 
 	if (head == NULL)
 		return;
@@ -364,12 +366,12 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 			/* If there is a host pretitle, show it. */
 			dprintf("Host:%s, pretitle:%s\n", h->hostname, textornull(h->pretitle));
 
-			if (h->pretitle) {
+			if (h->pretitle && (rowcount == 0)) {
 				fprintf(output, "<tr><td colspan=%d align=center valign=middle><br><font %s>%s</font></td></tr>\n", 
 						columncount+1, getenv("MKBBTITLE"), h->pretitle);
 			}
 
-			if (h->pretitle || (h == head)) {
+			if (h->pretitle || (rowcount == 0)) {
 				/* output group title and column headings */
 				fprintf(output, "<TR><TD VALIGN=MIDDLE ROWSPAN=2><CENTER><FONT %s>%s</FONT></CENTER></TD>\n", 
 					getenv("MKBBTITLE"), grouptitle);
@@ -401,6 +403,8 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 			}
 
 			fprintf(output, "<TR>\n <TD NOWRAP><A NAME=\"%s\">&nbsp;</A>\n", h->hostname);
+			if (maxrowsbeforeheading) rowcount = (rowcount + 1) % maxrowsbeforeheading;
+			else rowcount++;
 
 			/* First the hostname and a notes-link.
 			 *

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.149 2003-09-03 20:30:03 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.150 2003-09-08 20:39:16 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -234,6 +234,12 @@ int main(int argc, char *argv[])
 
 			subpagecolumns = atoi(lp+1);
 			if (subpagecolumns < 1) subpagecolumns=1;
+		}
+		else if (argnmatch(argv[i], "--maxrows=")) {
+			char *lp = strchr(argv[i], '=');
+
+			maxrowsbeforeheading = atoi(lp+1);
+			if (maxrowsbeforeheading < 0) maxrowsbeforeheading=0;
 		}
 		else if (strcmp(argv[i], "--recentgifs") == 0) {
 			use_recentgifs = 1;
