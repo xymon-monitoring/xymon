@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.186 2004-12-16 17:01:57 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.187 2004-12-16 22:18:20 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -389,9 +389,9 @@ int wanted_host(namelist_t *host, char *netstring)
 	char *netlocation = bbh_item(host, BBH_NET);
 
 	if (selectedcount == 0)
-		return ((strlen(netstring) == 0) || 				/* No BBLOCATION = do all */
-			(strcmp(netlocation, netstring) == 0) ||		/* BBLOCATION && matching NET: tag */
-			(testuntagged && (netlocation == NULL)));		/* No NET: tag for this host */
+		return ((strlen(netstring) == 0) || 				   /* No BBLOCATION = do all */
+			(netlocation && (strcmp(netlocation, netstring) == 0)) ||  /* BBLOCATION && matching NET: tag */
+			(testuntagged && (netlocation == NULL)));		   /* No NET: tag for this host */
 	else {
 		/* User provided an explicit list of hosts to test */
 		int i;
