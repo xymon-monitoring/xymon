@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.31 2003-10-13 16:54:26 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.32 2003-10-30 12:49:40 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -40,17 +40,19 @@ int 	larrd_update_interval = 300; /* Update LARRD pages every N seconds */
 int     log_nohost_rrds = 0;
 
 rrdlayout_t rrdnames[] = {
-	{ "la",      NULL,        0 },
-	{ "disk",    "disk_part", 5 },
-	{ "memory",  NULL,        0 },
-	{ "tcp",     NULL,        0 },
-	{ "citrix",  NULL,        0 },
-	{ "users",   NULL,        0 },
-	{ "vmstat",  NULL,        0 },
-	{ "netstat", NULL,        0 },
-	{ "iostat",  NULL,        0 },
-	{ "ntpstat", NULL,        0 },
-	{ NULL,      NULL,        0 }
+	{ "la",      	NULL,        0 },
+	{ "disk",    	"disk_part", 5 },
+	{ "memory",  	NULL,        0 },
+	{ "tcp",     	NULL,        0 },
+	{ "citrix",  	NULL,        0 },
+	{ "users",   	NULL,        0 },
+	{ "vmstat",  	NULL,        0 },
+	{ "netstat", 	NULL,        0 },
+	{ "iostat",  	NULL,        0 },
+	{ "ntpstat", 	NULL,        0 },
+	{ "vmio",    	NULL,        0 },
+	{ "temperature",NULL,        0 },
+	{ NULL,      	NULL,        0 }
 };
 
 
