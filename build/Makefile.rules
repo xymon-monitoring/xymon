@@ -82,8 +82,7 @@ clean:
 	$(MAKE) -C bbproxy clean
 	$(MAKE) -C hobbitd clean
 	$(MAKE) -C docs clean
-	rm -f ./*~ include/*~ debian/*~
-	rm -f hobbit_*.dsc  hobbit_*.changes  hobbit_*.deb  hobbit_*.tar.gz
+	rm -f ./*~ include/*~ debian/*~ rpm/*~
 
 
 ####################
