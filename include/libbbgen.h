@@ -26,6 +26,7 @@ typedef struct htnames_t {
 #include "../lib/encoding.h"
 #include "../lib/errormsg.h"
 #include "../lib/headfoot.h"
+#include "../lib/files.h"
 #include "../lib/htmllog.h"
 #include "../lib/misc.h"
 #include "../lib/rbtr.h"
