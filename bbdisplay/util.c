@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.26 2003-04-17 09:00:47 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.27 2003-04-21 07:07:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -619,7 +619,6 @@ void addtostatus(char *p)
 
 void finish_status(void)
 {
-
 	if (debug) {
 		char *p = strchr(msgbuf, '\n');
 
@@ -628,12 +627,16 @@ void finish_status(void)
 		if (p) *p = '\n';
 	}
 
-	/* Non-green messages go out NOW. Or we get no alarms ... */
-	if (msgcolor != COL_GREEN) {
-		sendmessage(msgbuf);
-	}
-	else {
-		combo_add(msgbuf);
+	switch (msgcolor) {
+		case COL_GREEN:
+		case COL_BLUE:
+		case COL_CLEAR:
+			combo_add(msgbuf);
+			break;
+		default:
+			/* Red, yellow and purple messages go out NOW. Or we get no alarms ... */
+			sendmessage(msgbuf);
+			break;
 	}
 }
 
