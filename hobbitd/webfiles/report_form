@@ -13,7 +13,7 @@
        <BR>
        <H6><CENTER>
 
-       <FORM ACTION="/bb-cgi/bb-rep.sh">
+       <FORM ACTION="&CGIBINURL/bb-rep.sh">
           <SELECT NAME="start-mon">
           &REPMONLIST
           </SELECT>
