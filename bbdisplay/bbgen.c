@@ -506,7 +506,7 @@ state_t *init_state(const char *filename, int dopurple)
 
 void getnamelink(char *l, char **name, char **link)
 {
-	char *p;
+	unsigned char *p;
 
 	*name = "";
 	*link = "";
@@ -525,7 +525,7 @@ void getnamelink(char *l, char **name, char **link)
 
 void getgrouptitle(char *l, char **title)
 {
-	char *p;
+	unsigned char *p;
 
 	*title = "";
 
@@ -899,6 +899,26 @@ void dumpstatelist(state_t *head)
 	}
 }
 
+void dumpall(void)
+{
+	page_t *p, *q;
+
+	for (p=pagehead; p; p = p->next) {
+		printf("%sPage: %s, color: %d, title=%s\n", 
+                       (strlen(p->name) == 0) ? "" : "    ", p->name, p->color, p->title);
+		for (q = p->subpages; (q); q = q->next) {
+			printf("\tSubpage: %s, color=%d, title=%s\n", q->name, q->color, q->title);
+			dumpgroups(q->groups, "\t\t", "\t\t    ");
+			dumphosts(q->hosts, "\t    ");
+		}
+
+		dumpgroups(p->groups, "\t","\t    ");
+		dumphosts(p->hosts, "    ");
+	}
+	dumphosts(pagehead->hosts, "");
+}
+
+
 void do_hosts(host_t *head, FILE *output, char *grouptitle)
 {
 	host_t	*h;
@@ -1153,22 +1173,6 @@ int main(int argc, char *argv[])
 	}
 
 	delete_old_acks();
-
-#if 0
-	for (p=pagehead; p; p = p->next) {
-		printf("%sPage: %s, color: %d, title=%s\n", 
-                       (strlen(p->name) == 0) ? "" : "    ", p->name, p->color, p->title);
-		for (q = p->subpages; (q); q = q->next) {
-			printf("\tSubpage: %s, color=%d, title=%s\n", q->name, q->color, q->title);
-			dumpgroups(q->groups, "\t\t", "\t\t    ");
-			dumphosts(q->hosts, "\t    ");
-		}
-
-		dumpgroups(p->groups, "\t","\t    ");
-		dumphosts(p->hosts, "    ");
-	}
-	dumphosts(pagehead->hosts, "");
-#endif
 
 	/* Generate pages */
 	if (chdir(pagedir) != 0) {
