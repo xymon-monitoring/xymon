@@ -21,6 +21,7 @@
 
 extern replog_t *reploghead;
 
+extern char *durationstr(time_t duration);
 extern int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *servicename, time_t fromtime, time_t totime);
 extern replog_t *save_replogs(void);
 extern void restore_replogs(replog_t *head);

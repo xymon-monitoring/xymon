@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.12 2003-06-23 13:44:43 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.13 2003-06-23 14:35:25 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -30,6 +30,29 @@ static char rcsid[] = "$Id: availability.c,v 1.12 2003-06-23 13:44:43 henrik Exp
 #include "reportdata.h"
 
 replog_t *reploghead = NULL;
+
+char *durationstr(time_t duration)
+{
+	static char dur[100];
+	char dhelp[100];
+
+	if (duration <= 0) {
+		strcpy(dur, "none");
+	}
+	else {
+		dur[0] = '\0';
+		if (duration > 86400) {
+			sprintf(dhelp, "%lu days ", (duration / 86400));
+			duration %= 86400;
+			strcpy(dur, dhelp);
+		}
+		sprintf(dhelp, "%lu:%02lu:%02lu", duration / 3600, ((duration % 3600) / 60), (duration % 60));
+		strcat(dur, dhelp);
+	}
+
+	return dur;
+}
+
 
 char *parse_histlogfile(char *hostname, char *servicename, char *timespec)
 {
