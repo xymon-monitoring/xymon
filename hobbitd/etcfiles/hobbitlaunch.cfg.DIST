@@ -119,31 +119,6 @@
 	LOGFILE $BBSERVERLOGS/bb-display.log
 	INTERVAL 1m
 
-# "larrdcolumn" is responsible for updating the contents of the LARRD overview page, found on the
-# "trends" column for each host. Since the set of graphs does not change very often, we run this
-# less frequently than the normal webpage updates. We also make sure (with the "GROUP" setting)
-# that they don't run simultaneously with the infocolumnn and bbdisplay tasks.
-[larrdcolumn]
-	ENVFILE @BBHOME@/etc/hobbitserver.cfg
-	NEEDS hobbitd
-	GROUP generators
-	CMD bb-larrdcolumn --hobbitd --rrddir=$BBVAR/rrd
-	LOGFILE $BBSERVERLOGS/bb-display.log
-	INTERVAL 15m
-
-# "infocolumn" is responsible for updating the contents of the INFO pages, found on the
-# "info" column for each host. Since the content does not change unless there is a 
-# configuration change, we update these less frequently than the normal webpage updates.
-# We also make sure (with the "GROUP" setting) that they don't run simultaneously with 
-# the larrdcolumnn and bbdisplay tasks.
-[infocolumn]
-	ENVFILE @BBHOME@/etc/hobbitserver.cfg
-	NEEDS hobbitd
-	GROUP generators
-	CMD bb-infocolumn --hobbitd
-	LOGFILE $BBSERVERLOGS/bb-display.log
-	INTERVAL 15m
-
 # bbcombotest is an extension script for the Hobbit display server. It generates
 # status messages that are combined from the status of one or more normal statuses.
 # It is controlled via the bbcombotest.cfg file.
