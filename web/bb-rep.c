@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.22 2004-12-05 16:15:01 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.23 2004-12-29 10:45:01 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -323,7 +323,7 @@ int main(int argc, char *argv[])
 			char msg[4096];
 
 			printf("--%s\n\n", htmldelim);
-			sprintf(msg, "Could not generate report.<br>\nCheck that the %s/www/rep/ directory has permissions '-rwxrwxr-x' (775)<br>\n and that is is set to group %d", getenv("BBHOME"), getgid());
+			sprintf(msg, "Could not generate report.<br>\nCheck that the %s/www/rep/ directory has permissions '-rwxrwxr-x' (775)<br>\n and that is is set to group %d", getenv("BBHOME"), (int)getgid());
 			errormsg(msg);
 		}
 		else {
