@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.21 2004-11-13 09:11:43 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.22 2004-11-15 22:05:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -140,11 +140,26 @@ void update_enable(char *fn, time_t expiretime)
 	}
 }
 
+static int wantedtest(char *wanted, char *key)
+{
+	char *p, *ckey;
+
+	if (wanted == NULL) return 1;
+
+	ckey = (char *)malloc(strlen(key) + 3);
+	sprintf(ckey, ",%s,", key);
+	p = strstr(wanted, ckey);
+	free(ckey);
+
+	return (p != NULL);
+}
+
 int main(int argc, char *argv[])
 {
 	char *filedir = NULL;
 	char *htmldir = NULL;
 	char *htmlextension = "html";
+	char *onlytests = NULL;
 	char *msg;
 	enum role_t role = ROLE_STATUS;
 	int argi;
@@ -186,6 +201,11 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--htmlext=")) {
 			htmlextension = strchr(argv[argi], '=')+1;
+		}
+		else if (argnmatch(argv[argi], "--only=")) {
+			char *p = strchr(argv[argi], '=') + 1;
+			onlytests = (char *)malloc(3 + strlen(p));
+			sprintf(onlytests, ",%s,", p);
 		}
 	}
 
@@ -231,6 +251,8 @@ int main(int argc, char *argv[])
 
 			hostname = items[3];
 			testname = items[4];
+			if (!wantedtest(onlytests, testname)) continue;
+
 			sprintf(logfn, "%s/%s.%s", filedir, commafy(hostname), testname);
 			expiretime = atoi(items[5]);
 			statusdata = msg_data(statusdata);
@@ -253,6 +275,8 @@ int main(int argc, char *argv[])
 			/* @@data|timestamp|sender|hostname|testname */
 			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			testname = items[4];
+			if (!wantedtest(onlytests, testname)) continue;
+
 			statusdata = msg_data(statusdata); if (*statusdata == '\n') statusdata++;
 			sprintf(logfn, "%s/%s.%s", filedir, hostname, testname);
 			expiretime = 0;
