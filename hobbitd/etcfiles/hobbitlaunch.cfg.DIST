@@ -97,7 +97,7 @@
 	NEEDS bbgend
 	CMD bbgen --bbgend --recentgifs --info --subpagecolumns=2 --larrd043 --report
 	LOGFILE $BBSERVERLOGS/bb-display.log
-	INTERVAL 5m
+	INTERVAL 1m
 
 
 # "bbnet" runs the bbtest-net tool to perform the network based tests - i.e. http, smtp, ssh, dns and
