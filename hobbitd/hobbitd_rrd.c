@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.6 2004-11-30 22:38:53 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.7 2004-12-11 23:20:48 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
 		int metacount;
 		char *p;
 		char *hostname = NULL, *testname = NULL;
-		larrdsvc_t *ldef = NULL;
+		larrdrrd_t *ldef = NULL;
 		time_t tstamp;
 
 		/* Get next message */
@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 				tstamp = atoi(metadata[1]);
 				hostname = metadata[4]; 
 				testname = metadata[5];
-				ldef = find_larrd(testname, metadata[8]);
+				ldef = find_larrd_rrd(testname, metadata[8]);
 				update_larrd(hostname, testname, restofmsg, tstamp, ldef);
 				break;
 
@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 			tstamp = atoi(metadata[1]);
 			hostname = metadata[4]; 
 			testname = metadata[5];
-			ldef = find_larrd(testname, "");
+			ldef = find_larrd_rrd(testname, "");
 			update_larrd(hostname, testname, restofmsg, tstamp, ldef);
 		}
 	}

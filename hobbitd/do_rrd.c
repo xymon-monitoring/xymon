@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.7 2004-11-25 15:07:21 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.8 2004-12-11 23:20:27 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -104,12 +104,12 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 #include "larrd/do_net.c"
 
 
-void update_larrd(char *hostname, char *testname, char *msg, time_t tstamp, larrdsvc_t *ldef)
+void update_larrd(char *hostname, char *testname, char *msg, time_t tstamp, larrdrrd_t *ldef)
 {
 	int res = 0;
 	char *id;
 
-	if (ldef) id = ldef->larrdsvcname; else id = testname;
+	if (ldef) id = ldef->larrdrrdname; else id = testname;
 
 	if      (strcmp(id, "bbgen") == 0)    res = do_bbgen_larrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "bbtest") == 0)   res = do_bbtest_larrd(hostname, testname, msg, tstamp);
@@ -130,9 +130,6 @@ void update_larrd(char *hostname, char *testname, char *msg, time_t tstamp, larr
 	else if (strcmp(id, "mailq") == 0)    res = do_mailq_larrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "bea") == 0)      res = do_bea_larrd(hostname, testname, msg, tstamp);
 
-	else if (ldef) {
-		/* Assume anything else with a known LARRD definition is a network test */
-		res = do_net_larrd(hostname, testname, msg, tstamp);
-	}
+	else if (strncmp(id, "tcp.", 4) == 0) res = do_net_larrd(hostname, testname, msg, tstamp);
 }
 

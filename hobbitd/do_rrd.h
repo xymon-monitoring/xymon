@@ -17,7 +17,7 @@
 
 extern char *rrddir;
 
-void update_larrd(char *hostname, char *testname, char *restofmsg, time_t tstamp, larrdsvc_t *ldef);
+void update_larrd(char *hostname, char *testname, char *restofmsg, time_t tstamp, larrdrrd_t *ldef);
 
 #endif
 

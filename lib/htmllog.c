@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.5 2004-11-20 12:37:11 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.6 2004-12-11 23:20:27 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -89,7 +89,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 {
 	int linecount;
 	char *p;
-	larrdsvc_t *larrd = NULL;
+	larrdrrd_t *larrd = NULL;
 
 	hostsvc_setup();
 
@@ -161,7 +161,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	fprintf(output, "</table>\n");
 
 	/* larrd stuff here */
-	if (!is_history) larrd = find_larrd(service, flags);
+	if (!is_history) larrd = find_larrd_rrd(service, flags);
 	if (larrd) {
 		/* 
 		 * If this service uses part-names (currently, only disk does),
@@ -173,16 +173,16 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			fprintf(output, "<!-- linecount=%d -->\n", linecount);
 			for (start=0; (start < linecount); start += 6) {
 				fprintf(output,"<BR><BR><CENTER><A HREF=\"%s/larrd-grapher.cgi?host=%s&amp;service=%s&%s=%d..%d&amp;disp=%s\"><IMG SRC=\"%s/larrd-grapher.cgi?host=%s&amp;service=%s&amp;%s=%d..%d&amp;graph=hourly&ampdisp=%s\" ALT=\"&nbsp;\" BORDER=0></A><BR></CENTER>\n",
-					cgibinurl, hostname, larrd->larrdsvcname, larrd->larrdpartname,
+					cgibinurl, hostname, larrd->larrdrrdname, larrd->larrdpartname,
 					start, (((start+5) < linecount) ? start+5 : linecount-1), displayname,
-					cgibinurl, hostname, larrd->larrdsvcname, larrd->larrdpartname,
+					cgibinurl, hostname, larrd->larrdrrdname, larrd->larrdpartname,
 					start, (((start+5) < linecount) ? start+5 : linecount-1), displayname);
 			}
 		}
 		else {
 				fprintf(output,"<BR><BR><CENTER><A HREF=\"%s/larrd-grapher.cgi?host=%s&amp;service=%s&amp;disp=%s\"><IMG SRC=\"%s/larrd-grapher.cgi?host=%s&amp;service=%s&amp;disp=%s&amp;graph=hourly\"ALT=\"&nbsp;\" BORDER=0></A><BR></CENTER>\n",
-					cgibinurl, hostname, larrd->larrdsvcname, displayname,
-					cgibinurl, hostname, larrd->larrdsvcname, displayname);
+					cgibinurl, hostname, larrd->larrdrrdname, displayname,
+					cgibinurl, hostname, larrd->larrdrrdname, displayname);
 		}
 	}
 
