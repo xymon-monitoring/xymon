@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.53 2004-11-13 08:51:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.54 2004-11-13 22:41:32 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -164,7 +164,7 @@ void posttochannel(bbgend_channel_t *channel, char *channelmarker,
 		n = semop(channel->semid, &s, 1);
 		if (n == -1) {
 			semerr = errno;
-			errprintf("semop failed, %s\n", strerror(errno));
+			if (semerr != EINTR) errprintf("semop failed, %s\n", strerror(errno));
 		}
 	} while ((n == -1) && (semerr == EINTR) && running);
 	if (!running) return;
