@@ -147,7 +147,7 @@ install-templates: $(TEMPLATES)
 	BBHOME=$(BBHOME) ../build/install-nooverwrite.sh web $(TEMPLATES)
 
 install-man:
-	mkdir -p $(MANROOT)/man{1,5}
+	mkdir -p $(MANROOT)man1 $(MANROOT)/man5
 	cp -fp *.1 $(MANROOT)/man1/
 	cp -fp *.5 $(MANROOT)/man5/
 
