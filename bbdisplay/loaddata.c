@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.89 2003-06-24 20:53:30 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.90 2003-07-04 09:37:03 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -63,6 +63,11 @@ static FILE *purplelog = NULL;
 static pagelist_t *pagelisthead = NULL;
 
 static time_t oldestentry;
+
+
+/* WEB prefixes for host notes and help-files */
+char *notesskin = NULL;	/* BBNOTESSKIN */
+char *helpskin = NULL;	/* BBHELPSKIN */
 
 
 void addtopagelist(bbgen_page_t *page)
@@ -337,7 +342,7 @@ link_t *init_link(char *filename, const char *urlprefix)
 
 	newlink = malloc(sizeof(link_t));
 	newlink->filename = malcop(filename);
-	newlink->urlprefix = malcop(urlprefix);
+	newlink->urlprefix = urlprefix; /* malcop(urlprefix); */
 	newlink->next = NULL;
 
 	p = strrchr(filename, '.');
@@ -933,12 +938,24 @@ link_t *load_all_links(void)
 
 	dprintf("load_all_links()\n");
 
+	if (getenv("BBNOTESSKIN")) notesskin = malcop(getenv("BBNOTESSKIN"));
+	else { 
+		notesskin = malloc(strlen(getenv("BBWEB")) + strlen("/notes") + 1);
+		sprintf(notesskin, "%s/notes", getenv("BBWEB"));
+	}
+
+	if (getenv("BBHELPSKIN")) helpskin = malcop(getenv("BBHELPSKIN"));
+	else { 
+		helpskin = malloc(strlen(getenv("BBWEB")) + strlen("/help") + 1);
+		sprintf(helpskin, "%s/help", getenv("BBWEB"));
+	}
+
 	strcpy(dirname, getenv("BBNOTES"));
-	head1 = load_links(dirname, "notes");
+	head1 = load_links(dirname, notesskin);
 
 	/* Change xxx/xxx/xxx/notes into xxx/xxx/xxx/help */
 	p = strrchr(dirname, '/'); *p = '\0'; strcat(dirname, "/help");
-	head2 = load_links(dirname, "help");
+	head2 = load_links(dirname, helpskin);
 
 	if (head1) {
 		/* Append help-links to list of notes-links */

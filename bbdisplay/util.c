@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.62 2003-06-24 12:40:11 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.63 2003-07-04 09:37:03 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -670,7 +670,7 @@ char *columnlink(link_t *link, char *colname)
 		sprintf(linkurl, "%s/%s", link->urlprefix, link->filename);
 	}
 	else {
-		sprintf(linkurl, "help/bb-help.html#%s", colname);
+		sprintf(linkurl, "%s/help/bb-help.html#%s", getenv("BBWEB"), colname);
 	}
 	
 	return linkurl;
@@ -684,7 +684,7 @@ char *hostlink(link_t *link)
 		sprintf(linkurl, "%s/%s", link->urlprefix, link->filename);
 	}
 	else {
-		sprintf(linkurl, "bb.html");
+		sprintf(linkurl, "%s/bb.html", getenv("BBWEB"));
 	}
 
 	return linkurl;

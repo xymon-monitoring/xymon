@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.70 2003-07-02 09:41:01 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.71 2003-07-04 09:37:03 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -333,8 +333,8 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 					getenv("MKBBTITLE"), grouptitle);
 				for (gc=groupcols; (gc); gc = gc->next) {
 					fprintf(output, " <TD ALIGN=CENTER VALIGN=BOTTOM WIDTH=45>\n");
-					fprintf(output, " <A HREF=\"%s/%s\"><FONT %s><B>%s</B></FONT></A> </TD>\n", 
-						getenv("BBWEB"), columnlink(gc->column->link, gc->column->name), 
+					fprintf(output, " <A HREF=\"%s\"><FONT %s><B>%s</B></FONT></A> </TD>\n", 
+						columnlink(gc->column->link, gc->column->name), 
 						getenv("MKBBCOLFONT"), gc->column->name);
 				}
 				fprintf(output, "</TR> \n<TR><TD COLSPAN=%d><HR WIDTH=100%%></TD></TR>\n\n", columncount);
@@ -360,9 +360,8 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 					getenv("MKBBROWFONT"), h->displayname);
 			}
 			else if (h->link != &null_link) {
-				fprintf(output, "<A HREF=\"%s/%s\" TARGET=\"_blank\"><FONT %s>%s</FONT></A>\n </TD>",
-					getenv("BBWEB"), hostlink(h->link), 
-					getenv("MKBBROWFONT"), h->displayname);
+				fprintf(output, "<A HREF=\"%s\" TARGET=\"_blank\"><FONT %s>%s</FONT></A>\n </TD>",
+					hostlink(h->link), getenv("MKBBROWFONT"), h->displayname);
 			}
 			else if (pagetype != PAGE_BB) {
 				/* Provide a link to the page where this host lives */
@@ -654,10 +653,8 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *pagepath)
 
 			link = find_link(p->name);
 			if (link != &null_link) {
-				fprintf(output, "<TD><FONT %s><A HREF=\"%s/%s\">%s</A></FONT></TD>\n", 
-					getenv("MKBBROWFONT"),
-					getenv("BBWEB"), hostlink(link), 
-					p->title);
+				fprintf(output, "<TD><FONT %s><A HREF=\"%s\">%s</A></FONT></TD>\n", 
+					getenv("MKBBROWFONT"), hostlink(link), p->title);
 			}
 			else {
 				fprintf(output, "<TD><FONT %s>%s</FONT></TD>\n", getenv("MKBBROWFONT"), p->title);
