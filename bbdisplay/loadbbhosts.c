@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.14 2004-12-18 08:56:34 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.15 2004-12-18 11:06:36 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -173,7 +173,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 		  const char *comment, const char *description,
 		  const int ip1, const int ip2, const int ip3, const int ip4, 
 		  const int dialup, const double warnpct, const char *reporttime,
-		  char *alerts, int nktime, char *waps, char *tags,
+		  char *alerts, int nktime, char *waps,
 		  char *nopropyellowtests, char *nopropredtests, char *noproppurpletests, char *nopropacktests,
 		  int modembanksize)
 {
@@ -181,9 +181,9 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	hostlist_t	*oldlist;
 
 	hostcount++;
-	dprintf("init_host(%s, %d,%d,%d.%d, %d, %d, %s, %s, %s, %s, %s %s)\n", 
+	dprintf("init_host(%s, %d,%d,%d.%d, %d, %d, %s, %s, %s, %s %s)\n", 
 		textornull(hostname), ip1, ip2, ip3, ip4,
-		dialup, textornull(alerts), textornull(tags),
+		dialup, textornull(alerts),
 		textornull(nopropyellowtests), textornull(nopropredtests), 
 		textornull(noproppurpletests), textornull(nopropacktests));
 
@@ -266,10 +266,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	else {
 		newhost->nopropacktests = nopropackdefault;
 	}
-	if (tags) {
-		newhost->rawentry = strdup(tags);
-	}
-	else newhost->rawentry = null_text;
+
 	newhost->parent = NULL;
 	newhost->banks = NULL;
 	newhost->banksize = modembanksize;
@@ -445,7 +442,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	char	*p;
 	namelist_t *allhosts;
 
-	allhosts = load_hostnames(getenv("BBHOSTS"), get_fqdn(), NULL);
+	allhosts = load_hostnames(getenv("BBHOSTS"), "dispinclude", get_fqdn(), NULL);
 
 	dprintf("load_bbhosts(pgset=%s)\n", textornull(pgset));
 
@@ -599,10 +596,12 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			char *displayname, *clientalias, *comment, *description;
 			char *alertlist, *onwaplist, *reporttime;
 			char *nopropyellowlist, *nopropredlist, *noproppurplelist, *nopropacklist;
-			int nodisp = 0;
 			char *targetpagelist[MAX_TARGETPAGES_PER_HOST];
 			int targetpagecount;
-			char *bbval, *startoftags, *tag;
+			char *bbval;
+
+			/* Check for no-display hosts - they are ignored. */
+			if (*hostname == '@') continue;
 
 			if (strncmp(l, "dialup", 6) != 0) {
 				/* Ordinary host - get the info */
@@ -650,54 +649,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 					 (targetpagecount < MAX_TARGETPAGES_PER_HOST) );
 			}
 
-			/* We need to re-scan the input line to look for "nodisp" and target-page tags */
-			startoftags = strchr(l, '#');
-			if (startoftags == NULL) startoftags = ""; else startoftags++;
-			startoftags += strspn(startoftags, " \t\r\n");
-
-			tag = startoftags;
-			while (tag && *tag) {
-				char *item = tag;
-				char *delim;
-
-				/* Skip until we hit a whitespace or a quote */
-				tag += strcspn(tag, " \t\r\n\"");
-				if (*tag == '"') {
-					delim = tag;
-
-					/* Hit a quote - skip until the next matching quote */
-					tag = strchr(tag+1, '"');
-					if (tag != NULL) { 
-						/* Found end-quote, NULL the item here and move on */
-						*tag = '\0'; tag++; 
-					}
-
-					/* Now move quoted data one byte down (including the NUL) to kill quotechar */
-					memmove(delim, delim+1, strlen(delim));
-				}
-				else if (*tag) {
-					/* Normal end of item, NULL it and move on */
-					*tag = '\0'; tag++;
-				}
-				else {
-					/* End of line - no more to do. */
-					tag = NULL;
-				}
-
-				/* Look for the stuff we want */
-				if (strcasecmp(item, "nodisp") == 0) {
-					nodisp = 1;
-				}
-
-				if (tag) tag += strspn(tag, " \t\r\n");
-			}
-
-			if (nodisp) {
-				/*
-				 * Ignore this host.
-				 */
-			}
-			else if (strlen(pgset) == 0) {
+			if (strlen(pgset) == 0) {
 				/*
 				 * Default pageset generated. Put the host into
 				 * whatever group or page is current.
@@ -708,7 +660,6 @@ bbgen_page_t *load_bbhosts(char *pgset)
 							    ip1, ip2, ip3, ip4, dialup, 
 							    warnpct, reporttime,
 							    alertlist, nktime, onwaplist,
-							    startoftags, 
 							    nopropyellowlist, nopropredlist, noproppurplelist, nopropacklist,
 							    modembanksize);
 					if (curgroup != NULL) {
@@ -733,7 +684,6 @@ bbgen_page_t *load_bbhosts(char *pgset)
 									    ip1, ip2, ip3, ip4, dialup,
 									    warnpct, reporttime,
 									    alertlist, nktime, onwaplist,
-									    startoftags, 
 									    nopropyellowlist,nopropredlist, 
 									    noproppurplelist, nopropacklist,
 									    modembanksize);
@@ -782,7 +732,6 @@ bbgen_page_t *load_bbhosts(char *pgset)
 									    ip1, ip2, ip3, ip4, dialup,
 									    warnpct, reporttime,
 									    alertlist, nktime, onwaplist,
-									    startoftags, 
 									    nopropyellowlist,nopropredlist, 
 									    noproppurplelist, nopropacklist,
 									    modembanksize);
@@ -844,6 +793,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			curtitle = strdup(skipwhitespace(skipword(l)));
 		}
 		else {
+			/* Probably a comment */
 		};
 	}
 
