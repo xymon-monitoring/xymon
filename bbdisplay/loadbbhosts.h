@@ -16,14 +16,8 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __LOADHOSTS_H_
-#define __LOADHOSTS_H_
-
-/* List definition to search for page records */
-typedef struct pagelist_t {
-	struct bbgen_page_t *pageentry;
-	struct pagelist_t *next;
-} pagelist_t;
+#ifndef __LOADBBHOSTS_H__
+#define __LOADBBHOSTS_H__
 
 extern int hostcount;
 extern int pagecount;
@@ -50,3 +44,4 @@ extern char     *wapcolumns;
 extern time_t   snapshot;
 
 #endif
+

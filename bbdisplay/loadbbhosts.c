@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.6 2004-12-12 13:18:36 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.7 2004-12-12 21:55:10 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -31,7 +31,7 @@ static char rcsid[] = "$Id: loadbbhosts.c,v 1.6 2004-12-12 13:18:36 henrik Exp $
 
 #include "bbgen.h"
 #include "util.h"
-#include "loadhosts.h"
+#include "loadbbhosts.h"
 
 #define MAX_TARGETPAGES_PER_HOST 10
 
@@ -39,7 +39,13 @@ time_t	snapshot = 0;				/* Set if we are doing a snapshot */
 
 char	*null_text = "";
 
-static pagelist_t *pagelisthead = NULL;
+/* List definition to search for page records */
+typedef struct bbpagelist_t {
+	struct bbgen_page_t *pageentry;
+	struct bbpagelist_t *next;
+} bbpagelist_t;
+
+static bbpagelist_t *pagelisthead = NULL;
 int	pagecount = 0;
 int	hostcount = 0;
 
@@ -56,9 +62,9 @@ char    *nopropackdefault = NULL;
 
 void addtopagelist(bbgen_page_t *page)
 {
-	pagelist_t *newitem;
+	bbpagelist_t *newitem;
 
-	newitem = (pagelist_t *) malloc(sizeof(pagelist_t));
+	newitem = (bbpagelist_t *) malloc(sizeof(bbpagelist_t));
 	newitem->pageentry = page;
 	newitem->next = pagelisthead;
 	pagelisthead = newitem;
@@ -419,7 +425,7 @@ void getparentnamelink(char *l, bbgen_page_t *toppage, bbgen_page_t **parent, ch
 	/* "subparent NAME PARENTNAME title-or-link" splitup */
 	char *p;
 	char *parentname;
-	pagelist_t *walk;
+	bbpagelist_t *walk;
 
 	dprintf("getnamelink(%s, ...)\n", textornull(l));
 
@@ -934,7 +940,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 
 					char savechar;
 					int wantedgroup = 0;
-					pagelist_t *targetpage = NULL;
+					bbpagelist_t *targetpage = NULL;
 
 					/* Put the host into the page specified by the PGSET: tag */
 					p = strchr(targetpagename, ',');
