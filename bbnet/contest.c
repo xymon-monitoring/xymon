@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.58 2004-08-31 20:37:27 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.59 2004-09-01 11:33:15 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1431,10 +1431,15 @@ int main(int argc, char *argv[])
 			if (ip && port && testspec) {
 				if ( 	(strncmp(argp, "http", 4) == 0) ||
 					(strncmp(argp, "cont;", 5) == 0) ||
+					(strncmp(argp, "cont=", 5) == 0) ||
 					(strncmp(argp, "post;", 5) == 0) ||
+					(strncmp(argp, "post=", 5) == 0) ||
 					(strncmp(argp, "nocont;", 7) == 0) ||
+					(strncmp(argp, "nocont=", 7) == 0) ||
 					(strncmp(argp, "nopost;", 7) == 0) ||
-					(strncmp(argp, "type;", 5) == 0) ) {
+					(strncmp(argp, "nopost=", 7) == 0) ||
+					(strncmp(argp, "type;", 5) == 0)   ||
+					(strncmp(argp, "type=", 5) == 0) ) {
 
 					testitem_t *testitem = calloc(1, sizeof(testitem_t));
 					testedhost_t *hostitem = calloc(1, sizeof(testedhost_t));

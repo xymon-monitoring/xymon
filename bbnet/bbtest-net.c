@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.171 2004-08-31 10:51:35 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.172 2004-09-01 11:33:15 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -683,10 +683,15 @@ void load_tests(void)
 					else if ( argnmatch(testspec, "http")         ||
 						  argnmatch(testspec, "content=http") ||
 						  argnmatch(testspec, "cont;http")    ||
+						  argnmatch(testspec, "cont=")        ||
 						  argnmatch(testspec, "nocont;http")  ||
+						  argnmatch(testspec, "nocont=")      ||
 						  argnmatch(testspec, "post;http")    ||
+						  argnmatch(testspec, "post=")        ||
 						  argnmatch(testspec, "nopost;http")  ||
-						  argnmatch(testspec, "type;http")    )      {
+						  argnmatch(testspec, "nopost=")      ||
+						  argnmatch(testspec, "type;http")    ||
+						  argnmatch(testspec, "type=")        )      {
 						/*
 						 * HTTP test. This uses ':' a lot, so save it here.
 						 */
