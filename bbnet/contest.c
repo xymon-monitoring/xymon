@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.43 2004-08-07 11:11:38 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.44 2004-08-07 11:17:26 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -139,7 +139,7 @@ static void getescapestring(char *msg, unsigned char **buf, int *buflen, int *of
 
 	inp = msg;
 	if (*inp != '\"') {
-		errprintf("services.txt error - strings must be in quotes\n");
+		errprintf("bb-services error - strings must be in quotes\n");
 		return;
 	}
 	inp++; /* Skip the quote */
@@ -202,7 +202,7 @@ char *init_tcp_services(void)
 	int svccount = 1;
 	int i;
 
-	sprintf(filename, "%s/etc/services.txt", getenv("BBHOME"));
+	sprintf(filename, "%s/etc/bb-services", getenv("BBHOME"));
 	fd = fopen(filename, "r");
 	if (fd == NULL) {
 		errprintf("Cannot open TCP service-definitions file %s - using defaults\n", filename);
