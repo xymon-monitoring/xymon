@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.6 2004-12-14 16:47:54 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.7 2004-12-19 22:37:23 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -50,7 +50,7 @@ static char *default_rrds =
 	"vmstat,iostat,netstat,"				/* LARRD standard bottom-feeders data */
 	"temperature,bind,sendmail,nmailq,socks,"		/* LARRD non-standard bottom-feeders data */
 	"bea,citrix,"						/* bbgen extra bottom-feeders data */
-	"bbgen,bbtest,bbproxy,"					/* bbgen report status */
+	"bbgen,bbtest,bbproxy,bbgend"				/* bbgen report status */
 	;
 
 /* This is the information needed to generate links to larrd-grapher.cgi */
@@ -61,7 +61,7 @@ static char *default_graphs =
 	"temperature,ntpstat,"
 	"apache,bind,sendmail,nmailq,socks,"
 	"bea,citrix,"
-	"bbgen,bbtest,bbproxy,"
+	"bbgen,bbtest,bbproxy,bbgend,"
 	;
 
 static const char *linkfmt = "<br><A HREF=\"%s\"><IMG BORDER=0 SRC=\"%s&amp;graph=hourly\" ALT=\"larrd is accumulating %s\"></A>\n";
