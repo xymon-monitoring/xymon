@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.5 2003-04-13 15:33:48 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.6 2003-04-13 16:20:57 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -340,7 +340,8 @@ void send_results(service_t *service)
 			sprintf(msgline, "\nUnable to resolve hostname %s\n", t->host->hostname);
 		}
 		else {
-			sprintf(msgline, "\nService %s on %s is %s\n",
+			sprintf(msgline, "\n&%s Service %s on %s is %s\n",
+				colorname(color),
 				t->service->testname, t->host->hostname,
 				(t->open ? "UP" : "DOWN"));
 		}
