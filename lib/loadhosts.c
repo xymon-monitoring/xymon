@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.5 2004-11-18 11:51:57 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.6 2004-11-23 21:46:50 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -208,7 +208,7 @@ void load_hostnames(char *bbhostsfn, int fqdn)
 }
 
 
-char *knownhost(char *hostname, char *hostip, char *srcip, int ghosthandling, int *maybedown)
+char *knownhost(char *hostname, char *hostip, int ghosthandling, int *maybedown)
 {
 	/*
 	 * ghosthandling = 0 : Default BB method (case-sensitive, no logging, keep ghosts)
@@ -240,12 +240,6 @@ char *knownhost(char *hostname, char *hostip, char *srcip, int ghosthandling, in
 		 */
 		strcpy(result, walk->bbhostname);
 		if (walk->downtime) *maybedown = within_sla(walk->downtime, "DOWNTIME", 0);
-	}
-	else {
-		/* Log a ghost. */
-		if (ghosthandling >= 2) {
-			errprintf("Caught a ghost '%s' (IP:%s)\n", hostname, srcip);
-		}
 	}
 
 	return (walk ? result : NULL);

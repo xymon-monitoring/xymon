@@ -12,7 +12,7 @@
 #define __LOADHOSTS_H__
 
 extern void load_hostnames(char *bbhostsfn, int fqdn);
-extern char *knownhost(char *filename, char *hostip, char *srcip, int ghosthandling, int *maybedown);
+extern char *knownhost(char *filename, char *hostip, int ghosthandling, int *maybedown);
 extern char *hostdispname(char *hostname);
 extern char *hostpagename(char *hostname);
 
