@@ -198,6 +198,7 @@ typedef struct {
 	rrd_t	*rrds;
 	char    *larrdgraphs;
 	int     oldage;
+	char	*pretitle;
 	void	*parent;
 	void	*next;
 } host_t;
@@ -212,6 +213,7 @@ typedef struct {
 	char	*title;
 	char	*onlycols;
 	host_t	*hosts;
+	char	*pretitle;
 	void	*next;
 } group_t;
 
@@ -221,6 +223,7 @@ typedef struct {
 	char	*title;
 	int	color;		/* Calculated */
 	int     oldage;
+	char	*pretitle;
 	void	*next;
 	void	*subpages;
 	void	*parent;

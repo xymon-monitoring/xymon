@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.37 2003-04-23 10:57:44 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.38 2003-04-23 16:08:10 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -215,7 +215,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 	return (head);
 }
 
-void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int pagetype)
+void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, char *grouppretitle, int pagetype)
 {
 	/*
 	 * This routine outputs the host part of a page or a group.
@@ -228,6 +228,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 	col_list_t *groupcols, *gc;
 	int	genstatic;
 	int	columncount;
+	char	*currtitle;
 
 	if (head == NULL)
 		return;
@@ -239,21 +240,40 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 
 	groupcols = gen_column_list(head, pagetype, onlycols);
 	if (groupcols) {
-		fprintf(output, "<CENTER><TABLE SUMMARY=\"Group Block\" BORDER=0>\n");
-		fprintf(output, "<TR><TD VALIGN=MIDDLE ROWSPAN=2 CELLPADDING=2><CENTER><FONT %s>%s</FONT></CENTER></TD>\n", getenv("MKBBTITLE"), grouptitle);
 
-		/* Generate the column headings */
-		columncount = 1; /* Count the title also */
-		for (gc=groupcols; (gc); gc = gc->next, columncount++) {
-			fprintf(output, " <TD ALIGN=CENTER VALIGN=BOTTOM WIDTH=45>\n");
-			fprintf(output, " <A HREF=\"%s/%s\"><FONT %s><B>%s</B></FONT></A> </TD>\n", 
-				getenv("BBWEB"), columnlink(gc->column->link, gc->column->name), 
-				getenv("MKBBCOLFONT"), gc->column->name);
+		if (grouppretitle) {
+			fprintf(output, "<TABLE BORDER=0>\n");
+			fprintf(output, "  <TR><TD><CENTER><FONT %s>%s</FONT></CENTER></TD></TR>\n", getenv("MKBBTITLE"), grouppretitle);
+			fprintf(output, "  <TR><TD><HR WIDTH=100%%></TD></TR>\n");
+			fprintf(output, "</TABLE>\n");
 		}
-		fprintf(output, "</TR> \n<TR><TD COLSPAN=%d><HR WIDTH=100%%></TD></TR>\n\n", columncount);
+
+		fprintf(output, "<CENTER><TABLE SUMMARY=\"Group Block\" BORDER=0>\n");
+		currtitle = grouptitle;
 
 		/* Generate the host rows */
 		for (h = head; (h); h = h->next) {
+			/* First time, use the grouptitle. Subsequently use the host pretitle on PAGE_BB pages */
+			if ((h != head) && (pagetype == PAGE_BB)) currtitle = h->pretitle;
+
+			if (currtitle) {
+				/* output any title */
+
+				fprintf(output, "<TR><TD VALIGN=MIDDLE ROWSPAN=2 CELLPADDING=2><CENTER><FONT %s>%s</FONT></CENTER></TD>\n", 
+					getenv("MKBBTITLE"), currtitle);
+
+				/* Generate the column headings */
+				columncount = 1; /* Count the title also */
+				for (gc=groupcols; (gc); gc = gc->next, columncount++) {
+					fprintf(output, " <TD ALIGN=CENTER VALIGN=BOTTOM WIDTH=45>\n");
+					fprintf(output, " <A HREF=\"%s/%s\"><FONT %s><B>%s</B></FONT></A> </TD>\n", 
+						getenv("BBWEB"), columnlink(gc->column->link, gc->column->name), 
+						getenv("MKBBCOLFONT"), gc->column->name);
+				}
+				fprintf(output, "</TR> \n<TR><TD COLSPAN=%d><HR WIDTH=100%%></TD></TR>\n\n", columncount);
+				currtitle = NULL;
+			}
+
 			fprintf(output, "<TR>\n <TD NOWRAP><A NAME=\"%s\">\n", h->hostname);
 
 			/* First the hostname and a notes-link.
@@ -350,7 +370,7 @@ void do_groups(group_t *head, FILE *output)
 	fprintf(output, "<CENTER> \n\n<A NAME=begindata>&nbsp;</A>\n");
 
 	for (g = head; (g); g = g->next) {
-		do_hosts(g->hosts, g->onlycols, output, g->title, PAGE_BB);
+		do_hosts(g->hosts, g->onlycols, output, g->title, g->pretitle, PAGE_BB);
 	}
 	fprintf(output, "\n</CENTER>\n");
 }
@@ -432,7 +452,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 	fprintf(output, "<HR WIDTH=100%%></TD></TR>\n");
 	fprintf(output, "<TR><TD>\n");
 
-	do_hosts(sumhosts, NULL, output, "", 0);
+	do_hosts(sumhosts, NULL, output, "", NULL, 0);
 
 	fprintf(output, "</TD></TR></TABLE>\n");
 	fprintf(output, "</CENTER>\n");
@@ -495,13 +515,33 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *mklocaltitle, char
 
 		fprintf(output, "<TR><TD COLSPAN=%d><CENTER> \n<FONT %s>\n", 
 				(2*subpagecolumns + (subpagecolumns - 1)), getenv("MKBBTITLE"));
-		fprintf(output, "   %s\n", getenv(mklocaltitle));
+		fprintf(output, "   %s\n", mklocaltitle);
 		fprintf(output, "</FONT></CENTER></TD></TR>\n");
 		fprintf(output, "<TR><TD COLSPAN=%d><HR WIDTH=100%%></TD></TR>\n", 
 				(2*subpagecolumns + (subpagecolumns - 1)));
 
 		currentcolumn = 0;
 		for (p = subs; (p); p = p->next) {
+			if (p->pretitle && (p != subs)) {
+				/*
+				 * Output a page-link title text.
+				 *
+				 * The title at the top comes from "mklocaltitle",
+				 * so do this only for page-links in the middle of the page.
+				 * Thus, we have to close off any open <TR>'s.
+				 */
+				if (currentcolumn != 0) {
+					fprintf(output, "</TR>\n");
+					currentcolumn = 0;
+				}
+
+				fprintf(output, "<TR><TD COLSPAN=%d><CENTER> \n<FONT %s>\n", 
+						(2*subpagecolumns + (subpagecolumns - 1)), getenv("MKBBTITLE"));
+				fprintf(output, "   %s\n", p->pretitle);
+				fprintf(output, "</FONT></CENTER></TD></TR>\n");
+				fprintf(output, "<TR><TD COLSPAN=%d><HR WIDTH=100%%></TD></TR>\n", 
+						(2*subpagecolumns + (subpagecolumns - 1)));
+			}
 
 			if (currentcolumn == 0) fprintf(output, "<TR>");
 
@@ -613,14 +653,18 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums)
 	headfoot(output, hf_prefix[PAGE_BB], pagepath, "header", page->color);
 
 	if (!hostsbeforepages && page->subpages) {
-		do_page_subpages(output, page->subpages, "MKBBLOCAL", pagepath);
+		do_page_subpages(output, page->subpages, 
+				 (((bbgen_page_t *)page->subpages)->pretitle ? ((bbgen_page_t *)page->subpages)->pretitle : getenv("MKBBLOCAL")), 
+				 pagepath);
 	}
 
-	do_hosts(page->hosts, NULL, output, "", PAGE_BB);
+	do_hosts(page->hosts, NULL, output, "", NULL, PAGE_BB);
 	do_groups(page->groups, output);
 
 	if (hostsbeforepages && page->subpages) {
-		do_page_subpages(output, page->subpages, "MKBBLOCAL", pagepath);
+		do_page_subpages(output, page->subpages, 
+				 (((bbgen_page_t *)page->subpages)->pretitle ? ((bbgen_page_t *)page->subpages)->pretitle : getenv("MKBBLOCAL")), 
+				 pagepath);
 	}
 
 	/* Summaries and extensions on main page only */
@@ -881,7 +925,7 @@ int do_bb2_page(char *filename, int summarytype)
 	fprintf(output, "\n<A NAME=begindata>&nbsp;</A> \n<A NAME=\"hosts-blk\">&nbsp;</A>\n");
 
 	if (bb2page.hosts) {
-		do_hosts(bb2page.hosts, NULL, output, "", summarytype);
+		do_hosts(bb2page.hosts, NULL, output, "", NULL, summarytype);
 	}
 	else {
 		/* "All Monitored Systems OK */

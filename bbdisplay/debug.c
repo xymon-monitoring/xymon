@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.15 2003-04-22 15:53:45 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.16 2003-04-23 16:08:10 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -121,10 +121,11 @@ void dumphosts(host_t *head, char *prefix)
 	char	format[512];
 
 	strcpy(format, prefix);
-	strcat(format, "Host: %s, ip: %s, color: %d, old: %d, noprop-y: %s, noprop-r: %s, link: %s, graphs: %s\n");
+	strcat(format, "Host: %s, ip: %s, color: %d, old: %d, pretitle: '%s', noprop-y: %s, noprop-r: %s, link: %s, graphs: %s\n");
 
 	for (h = head; (h); h = h->next) {
 		printf(format, h->hostname, h->ip, h->color, h->oldage,
+			(h->pretitle ? h->pretitle : ""),
 			(h->nopropyellowtests ? h->nopropyellowtests : ""), 
 			(h->nopropredtests ? h->nopropredtests : ""), 
 			h->link->filename,
@@ -144,10 +145,10 @@ void dumpgroups(group_t *head, char *prefix, char *hostprefix)
 	char    format[512];
 
 	strcpy(format, prefix);
-	strcat(format, "Group: %s\n");
+	strcat(format, "Group: %s, pretitle: '%s'\n");
 
 	for (g = head; (g); g = g->next) {
-		printf(format, g->title);
+		printf(format, g->title, g->pretitle);
 		dumphosts(g->hosts, hostprefix);
 	}
 #endif
@@ -196,8 +197,8 @@ void dumponepagewithsubs(bbgen_page_t *curpage, char *indent)
 	strcat(newindentextra, "    ");
 
 	for (levelpage = curpage; (levelpage); levelpage = levelpage->next) {
-		printf("%sPage: %s, color=%d, oldage=%d, title=%s\n", 
-			indent, levelpage->name, levelpage->color, levelpage->oldage, levelpage->title);
+		printf("%sPage: %s, color=%d, oldage=%d, title=%s, pretitle=%s\n", 
+			indent, levelpage->name, levelpage->color, levelpage->oldage, levelpage->title, levelpage->pretitle);
 
 		dumpgroups(levelpage->groups, newindent, newindentextra);
 		dumphosts(levelpage->hosts, newindentextra);

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.53 2003-04-22 20:38:49 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.54 2003-04-23 16:08:10 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -85,17 +85,18 @@ bbgen_page_t *init_page(const char *name, const char *title)
 	dprintf("init_page(%s, %s)\n", textornull(name), textornull(title));
 
 	if (name) {
-		newpage->name = malloc(strlen(name)+1); strcpy(newpage->name, name);
+		newpage->name = malcop(name);
 	}
 	else name = null_text;
 
 	if (title) {
-		newpage->title = malloc(strlen(title)+1); strcpy(newpage->title, title);
+		newpage->title = malcop(title);
 	}else
 		title = null_text;
 
 	newpage->color = -1;
 	newpage->oldage = 1;
+	newpage->pretitle = NULL;
 	newpage->groups = NULL;
 	newpage->hosts = NULL;
 	newpage->parent = NULL;
@@ -112,7 +113,7 @@ group_t *init_group(const char *title, const char *onlycols)
 	dprintf("init_group(%s, %s)\n", textornull(title), textornull(onlycols));
 
 	if (title) {
-		newgroup->title = malloc(strlen(title)+1); strcpy(newgroup->title, title);
+		newgroup->title = malcop(title);
 	}
 	else title = null_text;
 
@@ -121,6 +122,7 @@ group_t *init_group(const char *title, const char *onlycols)
 		sprintf(newgroup->onlycols, "|%s|", onlycols);
 	}
 	else newgroup->onlycols = NULL;
+	newgroup->pretitle = NULL;
 	newgroup->hosts = NULL;
 	newgroup->next = NULL;
 	return newgroup;
@@ -140,9 +142,10 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 		dialup, textornull(alerts), textornull(tags),
 		textornull(nopropyellowtests), textornull(nopropredtests));
 
-	newhost->hostname = malloc(strlen(hostname)+1); strcpy(newhost->hostname, hostname);
+	newhost->hostname = malcop(hostname);
 	sprintf(newhost->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 	newhost->link = find_link(hostname);
+	newhost->pretitle = NULL;
 	newhost->entries = NULL;
 	newhost->color = -1;
 	newhost->oldage = 1;
@@ -181,13 +184,12 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	if (larrdgraphs) {
 		char *p;
 		p = skipword(larrdgraphs); if (*p) *p = '\0'; else p = NULL;
-		newhost->larrdgraphs = malloc(strlen(larrdgraphs)+1);
-		strcpy(newhost->larrdgraphs, larrdgraphs);
+		newhost->larrdgraphs = malcop(larrdgraphs);
 		if (p) *p = ' ';
 	}
 	else newhost->larrdgraphs = larrdgraphs_default;
 	if (tags) {
-		newhost->rawentry = malloc(strlen(tags)+1); strcpy(newhost->rawentry, tags);
+		newhost->rawentry = malcop(tags);
 	}
 	else newhost->rawentry = null_text;
 	newhost->parent = newhost->next = NULL;
@@ -208,8 +210,8 @@ link_t *init_link(char *filename, const char *urlprefix)
 	dprintf("init_link(%s, %s)\n", textornull(filename), textornull(urlprefix));
 
 	newlink = malloc(sizeof(link_t));
-	newlink->filename = malloc(strlen(filename)+1); strcpy(newlink->filename, filename);
-	newlink->urlprefix = malloc(strlen(urlprefix)+1); strcpy(newlink->urlprefix, urlprefix);
+	newlink->filename = malcop(filename);
+	newlink->urlprefix = malcop(urlprefix);
 	newlink->next = NULL;
 
 	p = strrchr(filename, '.');
@@ -217,7 +219,9 @@ link_t *init_link(char *filename, const char *urlprefix)
 
 	if ( (strcmp(p, ".php") == 0)    ||
              (strcmp(p, ".php3") == 0)   ||
+             (strcmp(p, ".asp") == 0)    ||
 	     (strcmp(p, ".shtml") == 0)  ||
+	     (strcmp(p, ".phtml") == 0)  ||
 	     (strcmp(p, ".html") == 0)   ||
 	     (strcmp(p, ".htm") == 0))      
 	{
@@ -225,7 +229,7 @@ link_t *init_link(char *filename, const char *urlprefix)
 	}
 
 	/* Without extension, this time */
-	newlink->name = malloc(strlen(filename)+1); strcpy(newlink->name, filename);  
+	newlink->name = malcop(filename);
 
 	return newlink;
 }
@@ -242,7 +246,7 @@ col_t *find_or_create_column(const char *testname)
 	for (newcol = colhead; (newcol && (strcmp(testname, newcol->name) != 0)); newcol = newcol->next);
 	if (newcol == NULL) {
 		newcol = malloc(sizeof(col_t));
-		newcol->name = malloc(strlen(testname)+1); strcpy(newcol->name, testname);
+		newcol->name = malcop(testname);
 		newcol->link = find_link(testname);
 
 		/* No need to maintain this list in order */
@@ -290,16 +294,14 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	}
 
 	/* Pick out host- and test-name */
-	hostname = malloc(strlen(filename) + 1);
-	strcpy(hostname, filename);
+	hostname = malcop(filename);
 	p = strrchr(hostname, '.');
 
 	/* Skip files that have no '.' in filename */
 	if (p) {
 		/* Pick out the testname ... */
 		*p = '\0'; p++;
-		testname = malloc(strlen(p) + 1);
-		strcpy(testname, p);
+		testname = malcop(p);
 
 		/* ... and change hostname back into normal form */
 		for (p=hostname; (*p); p++) {
@@ -525,9 +527,9 @@ summary_t *init_summary(char *name, char *receiver, char *url)
 		return NULL;
 
 	newsum = malloc(sizeof(summary_t));
-	newsum->name = malloc(strlen(name)+1); strcpy(newsum->name, name);
-	newsum->receiver = malloc(strlen(receiver)+1); strcpy(newsum->receiver, receiver);
-	newsum->url = malloc(strlen(url)+1); strcpy(newsum->url, url);
+	newsum->name = malcop(name);
+	newsum->receiver = malcop(receiver);
+	newsum->url = malcop(url);
 	newsum->next = NULL;
 
 	return newsum;
@@ -765,6 +767,7 @@ bbgen_page_t *load_bbhosts(void)
 	bbgen_page_t 	*toppage, *curpage, *cursubpage, *cursubparent;
 	group_t *curgroup;
 	host_t	*curhost;
+	char	*curtitle;
 	int	ip1, ip2, ip3, ip4;
 	char	*p;
 
@@ -783,6 +786,7 @@ bbgen_page_t *load_bbhosts(void)
 	curgroup = NULL;
 	curhost = NULL;
 	cursubparent = NULL;
+	curtitle = NULL;
 
 	while (fgets(l, sizeof(l), bbhosts)) {
 		p = strchr(l, '\n'); 
@@ -810,6 +814,7 @@ bbgen_page_t *load_bbhosts(void)
 			}
 
 			curpage->parent = toppage;
+			if (curtitle) { curpage->pretitle = curtitle; curtitle = NULL; }
 			cursubpage = NULL;
 			cursubparent = NULL;
 			curgroup = NULL;
@@ -825,6 +830,7 @@ bbgen_page_t *load_bbhosts(void)
 				cursubpage = cursubpage->next = init_page(name, link);
 			}
 			cursubpage->parent = curpage;
+			if (curtitle) { cursubpage->pretitle = curtitle; curtitle = NULL; }
 			cursubparent = NULL;
 			curgroup = NULL;
 			curhost = NULL;
@@ -842,6 +848,7 @@ bbgen_page_t *load_bbhosts(void)
 				for (walk = parentpage->subpages; (walk->next); (walk = walk->next)) ;
 				walk->next = cursubparent;
 			}
+			if (curtitle) { cursubparent->pretitle = curtitle; curtitle = NULL; }
 			cursubparent->parent = parentpage;
 			curgroup = NULL;
 			curhost = NULL;
@@ -871,6 +878,7 @@ bbgen_page_t *load_bbhosts(void)
 				curgroup->next = init_group(link, onlycols);
 				curgroup = curgroup->next;
 			}
+			if (curtitle) { curgroup->pretitle = curtitle; curtitle = NULL; }
 			curhost = NULL;
 		}
 		else if (sscanf(l, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
@@ -923,6 +931,7 @@ bbgen_page_t *load_bbhosts(void)
 								    startoftags, nopropyellowlist,nopropredlist,
 								    larrdgraphs);
 			}
+			if (curtitle) { curhost->pretitle = curtitle; curtitle = NULL; }
 			curhost->parent = (cursubparent ? cursubparent : (cursubpage ? cursubpage : curpage));
 		}
 		else if (strncmp(l, "summary", 7) == 0) {
@@ -937,6 +946,10 @@ bbgen_page_t *load_bbhosts(void)
 				newsum->next = sumhead;
 				sumhead = newsum;
 			}
+		}
+		else if (strncmp(l, "title", 5) == 0) {
+			/* Save the title for the next entry */
+			curtitle = malcop(skipwhitespace(skipword(l)));
 		}
 		else {
 		};
