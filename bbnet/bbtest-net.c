@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.101 2003-08-30 15:07:55 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.102 2003-08-30 20:44:34 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1430,13 +1430,14 @@ void send_modembank_results(service_t *service)
 }
 
 
-void send_rpcinfo_results(service_t *service)
+void send_rpcinfo_results(service_t *service, int failgoesclear)
 {
 	testitem_t	*t;
 	int		color;
 	char		msgline[1024];
 	char		*msgbuf;
-	
+	char		causetext[1024];
+
 	msgbuf = (char *)malloc(4096);
 
 	for (t=service->items; (t); t = t->next) {
@@ -1446,11 +1447,11 @@ void send_rpcinfo_results(service_t *service)
 		/* First see if the rpcinfo command succeeded */
 		*msgbuf = '\0';
 
-		color = (t->open ? COL_GREEN : COL_RED);
+		color = decide_color(service, service->testname, t, failgoesclear, causetext);
 		p = strchr(t->testspec, '=');
 		if (p) wantedrpcsvcs = malcop(p+1);
 
-		if (t->open && t->banner && wantedrpcsvcs) {
+		if ((color == COL_GREEN) && t->banner && wantedrpcsvcs) {
 			char *rpcsvc, *aline;
 
 			rpcsvc = strtok(wantedrpcsvcs, ",");
@@ -1502,9 +1503,11 @@ void send_rpcinfo_results(service_t *service)
 		if (wantedrpcsvcs) free(wantedrpcsvcs);
 
 		init_status(color);
-		sprintf(msgline, "status %s.%s %s %s %s %s\n\n", 
+		sprintf(msgline, "status %s.%s %s %s %s %s, %s\n\n", 
 			commafy(t->host->hostname), service->testname, colorname(color), timestamp, 
-			service->testname, ( ((color == COL_RED) || (color == COL_YELLOW)) ? "NOT ok" : "ok"));
+			service->testname, 
+			( ((color == COL_RED) || (color == COL_YELLOW)) ? "NOT ok" : "ok"),
+			causetext);
 		addtostatus(msgline);
 
 		/* The summary of wanted RPC services */
@@ -1933,7 +1936,7 @@ int main(int argc, char *argv[])
 				break;
 
 			case TOOL_RPCINFO:
-				send_rpcinfo_results(s);
+				send_rpcinfo_results(s, failgoesclear);
 				break;
 		}
 	}
