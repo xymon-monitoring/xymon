@@ -52,6 +52,7 @@
   ------
   @@status|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage
   <status message>
+  @@
 
   stachg
   ------
@@ -61,9 +62,11 @@
   ----
   @@page|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime
   <message>
+  @@
 
   @@ack|timestamp|sender|hostname|testname|expiretime
   <ack message>
+  @@
 
   Note that "page" modules get messages whenever the alert-state of a test
   changes. I.e. a message is generated whenever a test goes from a color
@@ -79,11 +82,13 @@
   ----
   @@data|timestamp|sender|hostname|testname
   <message>
+  @@
 
   notes
   -----
   @@notes|timestamp|sender|hostname
   <message>
+  @@
 
   Alle kanaler
   ------------
