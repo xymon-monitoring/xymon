@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.58 2004-03-02 09:49:09 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.59 2004-04-23 08:47:03 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -288,6 +288,15 @@ void add_http_test(testitem_t *t)
 
 		proto = t->testspec+7;
 	}
+	else if (strncmp(t->testspec, "type;", 5) == 0) {
+		char *p = strrchr(t->testspec, ';');
+		if (p) {
+			req->contentcheck = CONTENTCHECK_CONTENTTYPE;
+			req->exp = (void *) malcop(p+1);
+		}
+		else req->contstatus = STATUS_CONTENTMATCH_NOFILE;
+		proto = t->testspec+5;
+	}
 	else {
 		proto = t->testspec;
 	}
@@ -390,6 +399,7 @@ static size_t data_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 
 	switch (req->contentcheck) {
 	  case CONTENTCHECK_NONE:
+	  case CONTENTCHECK_CONTENTTYPE:
 		/* No need to save output - just drop it */
 		break;
 
@@ -830,6 +840,21 @@ void send_content_results(service_t *httptest, service_t *ftptest, testedhost_t 
 						req->output = (char *) malloc(strlen(req->digest)+strlen((char *)req->exp)+strlen("Expected:\nGot     :\n")+1);
 						sprintf(req->output, "Expected:%s\nGot     :%s\n", 
 							(char *)req->exp, req->digest);
+						break;
+
+					  case CONTENTCHECK_CONTENTTYPE:
+						if (req->contenttype && (strcasecmp(req->contenttype, (char *)req->exp) == 0)) {
+							status = 0;
+						}
+						else {
+							status = STATUS_CONTENTMATCH_FAILED;
+						}
+
+						if (req->contenttype == NULL) req->contenttype = malcop("No content-type provdied");
+
+						req->output = (char *) malloc(strlen(req->contenttype)+strlen((char *)req->exp)+strlen("Expected content-type: %s\nGot content-type     : %s\n")+1);
+						sprintf(req->output, "Expected content-type: %s\nGot content-type     : %s\n",
+							(char *)req->exp, req->contenttype);
 						break;
 					}
 
