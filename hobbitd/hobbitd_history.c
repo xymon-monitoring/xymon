@@ -23,27 +23,34 @@ static void dropdirectory(char *dirfn)
 	struct dirent *de;
 	char fn[MAX_PATH];
 	struct stat st;
+	pid_t childpid;
 
-	dprintf("Starting to remove directory %s\n", dirfn);
-	dirfd = opendir(dirfn);
-	if (dirfd) {
-		while ( (de = readdir(dirfd)) != NULL ) {
-			sprintf(fn, "%s/%s", dirfn, de->d_name);
-			if (strcmp(de->d_name, ".") && strcmp(de->d_name, "..") && (stat(fn, &st) == 0)) {
-				if (S_ISREG(st.st_mode)) {
-					dprintf("Removing file %s\n", fn);
-					unlink(fn);
-				}
-				else if (S_ISDIR(st.st_mode)) {
-					dprintf("Recurse into %s\n", fn);
-					dropdirectory(fn);
+	childpid = fork();
+	if (childpid == 0) {
+		dprintf("Starting to remove directory %s\n", dirfn);
+		dirfd = opendir(dirfn);
+		if (dirfd) {
+			while ( (de = readdir(dirfd)) != NULL ) {
+				sprintf(fn, "%s/%s", dirfn, de->d_name);
+				if (strcmp(de->d_name, ".") && strcmp(de->d_name, "..") && (stat(fn, &st) == 0)) {
+					if (S_ISREG(st.st_mode)) {
+						dprintf("Removing file %s\n", fn);
+						unlink(fn);
+					}
+					else if (S_ISDIR(st.st_mode)) {
+						dprintf("Recurse into %s\n", fn);
+						dropdirectory(fn);
+					}
 				}
 			}
+			closedir(dirfd);
 		}
-		closedir(dirfd);
+		dprintf("Removing directory %s\n", dirfn);
+		rmdir(dirfn);
 	}
-	dprintf("Removing directory %s\n", dirfn);
-	rmdir(dirfn);
+	else if (childpid < 0) {
+		errprintf("Could not fork child to remove directory %s\n", dirfn);
+	}
 }
 
 void sig_handler(int signum)
@@ -68,6 +75,7 @@ int main(int argc, char *argv[])
 	int save_statusevents = 1;
 	int save_histlogs = 1;
 	FILE *alleventsfd = NULL;
+	int running = 1;
 
 	if (getenv("BBALLHISTLOG")) save_allevents = (strcmp(getenv("BBALLHISTLOG"), "TRUE") == 0);
 	if (getenv("BBHOSTHISTLOG")) save_hostevents = (strcmp(getenv("BBHOSTHISTLOG"), "TRUE") == 0);
@@ -115,7 +123,7 @@ int main(int argc, char *argv[])
 	setup_signalhandler("bbd_history");
 	signal(SIGCHLD, sig_handler);
 
-	while ((msg = get_bbgend_message("bbd_history", &seq, NULL)) != NULL) {
+	while (running) {
 		char *items[20] = { NULL, };
 		int metacount;
 		char *p;
@@ -127,6 +135,12 @@ int main(int argc, char *argv[])
 		char newcol2[3];
 		char oldcol2[3];
 		int trend;
+
+		msg = get_bbgend_message("bbd_history", &seq, NULL);
+		if (msg == NULL) {
+			running = 0;
+			continue;
+		}
 
 		p = strchr(msg, '\n'); 
 		if (p) {
@@ -495,6 +509,9 @@ int main(int argc, char *argv[])
 				rename(statuslogfn, newstatuslogfn);
 				free(hostnamecommas);
 			}
+		}
+		else if (strncmp(items[0], "@@shutdown", 10) == 0) {
+			running = 0;
 		}
 	}
 
