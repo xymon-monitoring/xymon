@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.16 2003-09-30 07:30:06 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.17 2003-09-30 21:45:51 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -44,6 +44,7 @@ typedef struct testspec_t {
 
 static testspec_t *testhead = NULL;
 static int testcount = 0;
+static int cleanexpr = 0;
 
 static char *gethname(char *spec)
 {
@@ -96,6 +97,7 @@ static void loadtests(void)
 		char *p, *comment;
 		char *inp, *outp;
 
+		p = strchr(l, '\n'); if (p) *p = '\0';
 		/* Strip whitespace */
 		for (inp=outp=l; ((*inp >= ' ') && (*inp != '#')); inp++) {
 			if (isspace((int)*inp)) {
@@ -287,6 +289,50 @@ char *reqenv[] = {
 NULL };
 
 
+char *printify(char *exp)
+{
+	static char result[MAX_LINE_LEN];
+	char *inp, *outp;
+	size_t n;
+
+	if (!cleanexpr) {
+		return exp;
+	}
+
+	inp = exp;
+	outp = result;
+
+	while (*inp) {
+		n = strcspn(inp, "|&");
+		memcpy(outp, inp, n);
+		inp += n; outp += n;
+
+		if (*inp == '|') { 
+			inp++;
+			if (*inp == '|') {
+				inp++;
+				strcpy(outp, " OR "); outp += 4; 
+			}
+			else {
+				strcpy(outp, " bOR "); outp += 5; 
+			}
+		}
+		else if (*inp == '&') { 
+			inp++; 
+			if (*inp == '&') {
+				inp++;
+				strcpy(outp, " AND "); outp += 5; 
+			}
+			else {
+				strcpy(outp, " bAND "); outp += 6;
+			}
+		}
+	}
+
+	*outp = '\0';
+	return result;
+}
+
 int main(int argc, char *argv[])
 {
 	testspec_t *t;
@@ -298,7 +344,7 @@ int main(int argc, char *argv[])
 	for (argi = 1; (argi < argc); argi++) {
 		if ((strcmp(argv[argi], "--help") == 0)) {
 			printf("bbcombotest version %s\n\n", VERSION);
-			printf("Usage:\n%s [--debug] [--quiet]\n", argv[0]);
+			printf("Usage:\n%s [--quiet] [--clean] [--debug] [--no-update]\n", argv[0]);
 			exit(0);
 		}
 		else if ((strcmp(argv[argi], "--version") == 0)) {
@@ -313,6 +359,9 @@ int main(int argc, char *argv[])
 		}
 		else if ((strcmp(argv[argi], "--quiet") == 0)) {
 			showeval = 0;
+		}
+		else if ((strcmp(argv[argi], "--clean") == 0)) {
+			cleanexpr = 1;
 		}
 	}
 
@@ -347,7 +396,11 @@ int main(int argc, char *argv[])
 		addtostatus(msgline);
 		if (t->comment) { addtostatus(t->comment); addtostatus("\n\n"); }
 		if (showeval) {
-			sprintf(msgline, "%s = %s = %ld\n", t->expression, t->resultexpr, t->result);
+			addtostatus(printify(t->expression));
+			addtostatus(" = ");
+			addtostatus(printify(t->resultexpr));
+			addtostatus(" = ");
+			sprintf(msgline, "%ld\n", t->result);
 			addtostatus(msgline);
 
 			for (vwalk = t->valuelist; (vwalk); vwalk = vwalk->next) {

@@ -27,15 +27,27 @@ bbcombotest must be installed on the BBDISPLAY server as an
 extension script, i.e. added to the $BBHOME/etc/bb-bbexttab file.
 
 .SH OPTIONS
-.IP "--debug"
-Provide debugging output for use in troubleshooting problems with
-bbcombotest.
-.sp
 .IP "--quiet"
 Normally, the test status sent by bbcombotest includes information
 about the underlying test results used to determine the current
 value of the combined test. "--quiet" eliminates this information
 from the test status page.
+
+.IP "--clean"
+Big Brother normally does not permit the ampersand and pipe characters
+in status messages, so the status message from bbcombotest may look a
+bit odd. You can either permit all characters in status messages (by
+recompiling the Big Brother daemon with the -DDONTCLEANSTRING option
+enabled), or you can use this option with bbcombotest. It replaces
+"||" with "OR", "&&" with "AND", "|" with "bOR" and "&" with "bAND".
+
+.IP "--debug"
+Provide debugging output for use in troubleshooting problems with
+bbcombotest.
+
+.IP "--no-update"
+Dont send any status messages - instead, the result of the combotests
+is simply dumped to stdout. Useful for debugging.
 
 
 .SH FILES
