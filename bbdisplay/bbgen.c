@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.111 2003-05-23 09:59:43 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.112 2003-05-23 10:08:01 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -126,8 +126,11 @@ int main(int argc, char *argv[])
 		}
 		else if (strncmp(argv[i], "--wml", 5) == 0) {
 			char *lp = strchr(argv[i], '=');
-			wapcolumns = malloc(strlen(lp)+2);
-			sprintf(wapcolumns, ",%s,", (lp+1));
+
+			if (lp) {
+				wapcolumns = malloc(strlen(lp)+2);
+				sprintf(wapcolumns, ",%s,", (lp+1));
+			}
 			enable_wmlgen = 1;
 		}
 
