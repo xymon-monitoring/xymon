@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.67 2003-07-08 10:16:13 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.68 2003-07-09 12:24:01 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1330,7 +1330,7 @@ int urlvalidate(char *query, char *validchars)
 
 	if (validchars == NULL) validchars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ,.-:&_%=*+";
 
-	for (p=query; (valid && *p); p++) {
+	for (p=query, valid=1; (valid && *p); p++) {
 		valid = (strchr(validchars, *p) != NULL);
 	}
 
