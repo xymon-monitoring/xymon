@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.29 2003-08-26 20:45:31 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.30 2003-08-27 20:30:08 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -58,6 +58,8 @@ int generate_info(char *infocolumn)
 		FILE *fd;
 		char *p, *alertspec, *slaspec, *noprop, *rawcopy;
 		int firstcontent;
+
+		if (hostwalk->hostentry->banksize > 0) break;	/* No info for modem-banks */
 
 		sprintf(logfn, "%s/%s.%s", getenv("BBLOGS"), 
 			commafy(hostwalk->hostentry->hostname), infocolumn);

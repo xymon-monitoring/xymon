@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.104 2003-08-14 21:51:40 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.105 2003-08-27 20:30:08 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -190,7 +190,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *com
 		  const int ip1, const int ip2, const int ip3, const int ip4, 
 		  const int dialup, const int prefer, const double warnpct, const char *reporttime,
 		  char *alerts, int nktime, char *waps, char *tags,
-		  char *nopropyellowtests, char *nopropredtests, char *larrdgraphs)
+		  char *nopropyellowtests, char *nopropredtests, char *larrdgraphs, int modembanksize)
 {
 	host_t 		*newhost = (host_t *) malloc(sizeof(host_t));
 	hostlist_t	*oldlist;
@@ -274,8 +274,23 @@ host_t *init_host(const char *hostname, const char *displayname, const char *com
 	}
 	else newhost->rawentry = null_text;
 	newhost->parent = NULL;
-	newhost->next = NULL;
 	newhost->rrds = NULL;
+	newhost->banks = NULL;
+	newhost->banksize = modembanksize;
+	if (modembanksize) {
+		int i;
+		newhost->banks = (int *) malloc(modembanksize * sizeof(int));
+		for (i=0; i<modembanksize; i++) newhost->banks[i] = -1;
+
+		if (comment) {
+			newhost->comment = (char *) realloc(newhost->comment, strlen(newhost->comment) + 22);
+			sprintf(newhost->comment+strlen(newhost->comment), " - [%s]", newhost->ip);
+		}
+		else {
+			newhost->comment = newhost->ip;
+		}
+	}
+	newhost->next = NULL;
 
 	/*
 	 * Add this host to the hostlist_t list of known hosts.
@@ -502,6 +517,14 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		return NULL;	/* Ignore this type of test */
 	}
 
+	host = find_host(hostname);
+
+	/* If the host is a modem-bank host, dont mix in normal status messages */
+	if (host && (host->banksize > 0)) {
+		errprintf("Modembank %s has additional status-logs - ignored\n", hostname);
+		return NULL;
+	}
+
 	newstate = (state_t *) malloc(sizeof(state_t));
 	newstate->entry = (entry_t *) malloc(sizeof(entry_t));
 	newstate->next = NULL;
@@ -517,7 +540,6 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	newstate->entry->causes = NULL;
 	newstate->entry->histlogname = NULL;
 
-	host = find_host(hostname);
 	if (host) {
 		newstate->entry->alert = checkalert(host->alerts, testname);
 
@@ -829,6 +851,89 @@ dispsummary_t *init_displaysummary(char *fn)
 	return newsum;
 }
 
+void init_modembank_status(char *fn)
+{
+	FILE *fd;
+	char statusfn[MAX_PATH];
+	struct stat st;
+	char l[MAXMSG];
+	host_t *targethost;
+
+	dprintf("init_modembank_status(%s)\n", textornull(fn));
+
+	sprintf(statusfn, "%s/%s", getenv("BBLOGS"), fn);
+
+	/* Check that we can access this file */
+	if ( (stat(statusfn, &st) == -1)          || 
+	     (!S_ISREG(st.st_mode))            ||     /* Not a regular file */
+	     ((fd = fopen(statusfn, "r")) == NULL)   ) {
+		errprintf("Weird modembank/dialup logfile BBLOGS/%s skipped\n", fn);
+		return;
+	}
+
+	if (st.st_mtime < time(NULL)) {
+		/* Stale summary file - ignore and delete */
+		errprintf("Stale modembank summary file BBLOGS/%s - deleted\n", fn);
+		fclose(fd);
+		unlink(statusfn);
+		return;
+	}
+
+	targethost = find_host(fn+strlen("dialup."));
+	if (targethost == NULL) {
+		dprintf("Modembank status from unknown host %s - ignored\n", fn+strlen("dialup."));
+		fclose(fd);
+		return;
+	}
+
+	if (fgets(l, sizeof(l), fd)) {
+		char *startip, *endip, *tag;
+		int idx = -1;
+
+		startip = endip = NULL;
+		tag = strtok(l, " \n");
+		while (tag) {
+			if (idx >= 0) {
+				/* Next result */
+				if (idx < targethost->banksize) targethost->banks[idx] = parse_color(tag);
+				idx++;
+			}
+			else if (strcmp(tag, "DATA") == 0) {
+				if (startip && endip) idx = 0;
+				else errprintf("Invalid modembank status logfile %s (missing FROM and/or TO)\n", fn);
+			}
+			else if (strcmp(tag, "FROM") == 0) {
+				tag = strtok(NULL, " \n");
+
+				if (tag) {
+					startip = tag;
+					if (strcmp(startip, targethost->ip) != 0) {
+						errprintf("Modembank in bb-hosts begins with %s, but logfile begins with %s\n",
+						  	targethost->ip, startip);
+					}
+				} else errprintf("Invalid modembank status logfile %s (truncated)\n", fn);
+			}
+			else if (strcmp(tag, "TO") == 0) {
+				tag = strtok(NULL, " \n");
+
+				if (tag) {
+					if (startip) endip = tag;
+					else errprintf("Invalid modembank status logfile %s (no FROM)\n", fn);
+				} else errprintf("Invalid modembank status logfile %s (truncated)\n", fn);
+			}
+
+			if (tag) tag = strtok(NULL, " \n");
+		}
+
+		if ((idx >= 0) && (idx != targethost->banksize)) {
+			errprintf("Modembank status log %s has more entries (%d) than expected (%d)\n", 
+				  fn, (idx-1), targethost->banksize);
+		}
+	}
+
+	fclose(fd);
+}
+
 void getnamelink(char *l, char **name, char **link)
 {
 	/* "page NAME title-or-link" splitup */
@@ -996,7 +1101,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	FILE 	*bbhosts;
 	char 	l[MAX_LINE_LEN], lcop[MAX_LINE_LEN];
 	char	pagetag[100], subpagetag[100], subparenttag[100], 
-		grouptag[100], summarytag[100], titletag[100], hosttag[100];
+		grouptag[100], summarytag[100], titletag[100], dialuptag[100], hosttag[100];
 	char 	*name, *link, *onlycols;
 	char 	hostname[MAX_LINE_LEN];
 	bbgen_page_t 	*toppage, *curpage, *cursubpage, *cursubparent;
@@ -1021,6 +1126,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	sprintf(grouptag, "%sgroup", pgset);
 	sprintf(summarytag, "%ssummary", pgset);
 	sprintf(titletag, "%stitle", pgset);
+	sprintf(dialuptag, "%sdialup", pgset);
 	sprintf(hosttag, "%s:", pgset); for (p=hosttag; (*p); p++) *p = toupper((int)*p);
 
 	toppage = init_page("", "");
@@ -1134,7 +1240,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			if (curtitle) { curgroup->pretitle = curtitle; curtitle = NULL; }
 			curhost = NULL;
 		}
-		else if (sscanf(l, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
+		else if ( (sscanf(l, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) ||
+		          ((strncmp(l, dialuptag, strlen(dialuptag)) == 0) && !reportstart && !snapshot) ) {
 			int dialup = 0;
 			int prefer = 0;
 			int nodisp = 0;
@@ -1146,8 +1253,14 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			int targetpagecount;
 			char *tag;
 			char *startoftags = strchr(l, '#');
+			int modembanksize = 0;
 
 			displayname = NULL;
+
+		        if (strncmp(l, dialuptag, strlen(dialuptag)) == 0) {
+				/* It's a modem-bank entry. */
+				sscanf(l, "%*s %s %d.%d.%d.%d %d", hostname, &ip1, &ip2, &ip3, &ip4, &modembanksize);
+			}
 
 			/* If FQDN is not set, strip any domain off the hostname */
 			if (!fqdn) {
@@ -1261,7 +1374,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 							    warnpct, reporttime,
 							    alertlist, nktime, onwaplist,
 							    startoftags, nopropyellowlist, nopropredlist,
-							    larrdgraphs);
+							    larrdgraphs, modembanksize);
 					if (curgroup != NULL) {
 						curgroup->hosts = curhost;
 					}
@@ -1284,7 +1397,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 									    warnpct, reporttime,
 									    alertlist, nktime, onwaplist,
 									    startoftags, nopropyellowlist,nopropredlist,
-									    larrdgraphs);
+									    larrdgraphs, modembanksize);
 				}
 				curhost->parent = (cursubparent ? cursubparent : (cursubpage ? cursubpage : curpage));
 				if (curtitle) { curhost->pretitle = curtitle; curtitle = NULL; }
@@ -1326,7 +1439,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 									    warnpct, reporttime,
 									    alertlist, nktime, onwaplist,
 									    startoftags, nopropyellowlist,nopropredlist,
-									    larrdgraphs);
+									    larrdgraphs, modembanksize);
 
 						if (wantedgroup > 0) {
 							group_t *gwalk;
@@ -1474,6 +1587,9 @@ state_t *load_state(dispsummary_t **sumhead)
 					topsum = newsum;
 				}
 			}
+		}
+		else if (strncmp(fn, "dialup.", 7) == 0) {
+			init_modembank_status(fn);
 		}
 		else {
 			is_purple = 0;

@@ -57,9 +57,9 @@
                       |                    larrdgraphs          color             name
                       |                    reportwarnlevel      age            +- link
                       |                    comment              oldage         |  next
-                      |                    next                 acked          |
-                      |                                         alert          |
-                      |                                         onwap          |
+                      |                    banks                acked          |
+                      |                    banksize             alert          |
+                      |                    next                 onwap          |
                       |                                         propagate      |
                       |                                         reportinfo     |
                       |                                         next           |
@@ -254,6 +254,8 @@ typedef struct host_t {
 	struct bbgen_page_t *parent;
 	double  reportwarnlevel;
 	char	*reporttime;
+	int     *banks;
+	int     banksize;
 	struct host_t	*next;
 } host_t;
 

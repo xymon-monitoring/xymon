@@ -42,7 +42,7 @@ extern host_t *init_host(const char *hostname, const char *displayname, const ch
 			 const int dialup, const int prefer, 
 			 const double warnpct, const char *reporttime,
 			 char *alerts, int nktime, char *waps, char *tags, 
-			 char *nopropyellowtests, char *nopropredtests, char *larrdgraphs);
+			 char *nopropyellowtests, char *nopropredtests, char *larrdgraphs, int modembanksize);
 
 extern char	*nopropyellowdefault;
 extern char	*nopropreddefault;
