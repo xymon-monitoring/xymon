@@ -161,21 +161,21 @@ else
 	fi
 	echo ""
 
-	echo "bbgen normally uses the nslookup and dig tools to test DNS servers."
-	echo "However, it can now use a built-in resolver library (ares) - this"
-	echo "is faster and allows more flexible tests, but the output is different."
-	echo ""
-	echo "Do you want to use the ares DNS library ?"
-	read ENABLEARES
-	if test "$ENABLEARES" = "" -o "$ENABLEARES" = "y"
-	then
-		ARESDEF="-DUSE_ARES"
-		ARESLIB="libares.a"
-	else
+	#echo "bbgen normally uses the nslookup and dig tools to test DNS servers."
+	#echo "However, it can now use a built-in resolver library (ares) - this"
+	#echo "is faster and allows more flexible tests, but the output is different."
+	#echo ""
+	#echo "Do you want to use the ares DNS library ?"
+	#read ENABLEARES
+	#if test "$ENABLEARES" = "" -o "$ENABLEARES" = "y"
+	#then
+	#	ARESDEF="-DUSE_ARES"
+	#	ARESLIB="libares.a"
+	#else
 		ARESDEF=""
 		ARESLIB=""
-	fi
-	echo ""
+	#fi
+	#echo ""
 
 
 	echo "bbgen uses the CURL library for http and https tests."

@@ -497,15 +497,6 @@ For the other network tests, use "badftp", "badssh" etc.
 These tags define network tests that are implemented by bbtest-net,
 but not by the standard Big Brother bb-network.sh script.
 
-.IP "dns=hostname[,hostname,...]"
-.IP "dig=hostname[,hostname,...]"
-The default DNS tests in Big Brother attempt a DNS lookup
-of the DNS' servers own hostname. If the ARES library was
-enabled during bbgen configuration, you can instead specify
-the hostname(s) to lookup on a DNS server by listing them
-on each test. All lookups must succeed for the test to
-be green.
-
 .IP ntp
 Check for a running NTP (Network Time Protocol) server on this
 host. This test uses the "ntpdate" utility to check for a
