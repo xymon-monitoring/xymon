@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.16 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.17 2005-02-16 13:53:34 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -205,13 +205,15 @@ int main(int argc, char *argv[])
 			 *	Maybe this should be implemented by changing the HTML form, but until than..
 			 * we're supposing that hostname will NEVER be null	
 			 */
-			char *hostname, *displayname, *comment;
+			char *hostname, *displayname, *comment, *ip;
 
 			hostname = bbh_item(hostwalk, BBH_HOSTNAME);
 			displayname = bbh_item(hostwalk, BBH_DISPLAYNAME);
 			comment = bbh_item(hostwalk, BBH_COMMENT);
+			ip = bbh_item(hostwalk, BBH_IP);
 
 	       		if ( regexec (&re, hostname, (size_t)0, NULL, 0) == 0  ||
+				(regexec(&re, ip, (size_t)0, NULL, 0) == 0)    ||
 	       			(displayname && regexec (&re, displayname, (size_t)0, NULL, 0) == 0) ||
 				(comment     && regexec (&re, comment, 	   (size_t)0, NULL, 0) == 0)   ) {
 	
