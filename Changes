@@ -1,4 +1,11 @@
-Changes from RC-6
+Changes from 4.0 -> 4.0.1
+-------------------------
+Bugfixes:
+* Compiling Hobbit on some platforms would fail due to a couple
+  of missing standard include files not being pulled in.
+
+
+Changes from RC-6 -> 4.0
 -------------------------
 Bugfixes:
 * DOWNTIME handling was broken in some cases. While fixing this,
