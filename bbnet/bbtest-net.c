@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.94 2003-08-27 20:20:48 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.95 2003-08-28 09:35:01 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -611,22 +611,24 @@ void load_tests(void)
 		else if (sscanf(l, "dialup %s %3d.%3d.%3d.%3d %d", hostname, &ip1, &ip2, &ip3, &ip4, &banksize) == 6) {
 			/* Modembank entry: "dialup displayname startIP count" */
 
-			testitem_t *newtest;
-			modembank_t *newentry;
-			int i;
+			if (wanted_host (l, netstring, hostname)) {
+				testitem_t *newtest;
+				modembank_t *newentry;
+				int i;
 
-			newtest = init_testitem(NULL, modembanktest, NULL, 0, 0, 0, 0);
-			newtest->next = modembanktest->items;
-			modembanktest->items = newtest;
+				newtest = init_testitem(NULL, modembanktest, NULL, 0, 0, 0, 0);
+				newtest->next = modembanktest->items;
+				modembanktest->items = newtest;
 
-			newtest->privdata = (void *)malloc(sizeof(modembank_t));
-			newentry = (modembank_t *)newtest->privdata;
+				newtest->privdata = (void *)malloc(sizeof(modembank_t));
+				newentry = (modembank_t *)newtest->privdata;
 
-			newentry->hostname = malcop(hostname);
-			newentry->startip = IPtou32(ip1, ip2, ip3, ip4);
-			newentry->banksize = banksize;
-			newentry->responses = (int *) malloc(banksize * sizeof(int));
-			for (i=0; i<banksize; i++) newentry->responses[i] = 0;
+				newentry->hostname = malcop(hostname);
+				newentry->startip = IPtou32(ip1, ip2, ip3, ip4);
+				newentry->banksize = banksize;
+				newentry->responses = (int *) malloc(banksize * sizeof(int));
+				for (i=0; i<banksize; i++) newentry->responses[i] = 0;
+			}
 		}
 		else {
 			/* Other bb-hosts line - ignored */
