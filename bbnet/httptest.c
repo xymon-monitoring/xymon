@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.66 2004-08-20 20:53:29 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.67 2004-08-23 14:03:31 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -606,19 +606,14 @@ void tcp_http_final_callback(void *priv)
 }
 
 
-void add_http_test(testitem_t *t)
+void add_http_test(testitem_t *t, ssloptions_t *sslopt)
 {
-	/* See http://www.openssl.org/docs/apps/ciphers.html for cipher strings */
-	static char *ciphersmedium = "MEDIUM";	/* Must be formatted for openssl library */
-	static char *ciphershigh = "HIGH";	/* Must be formatted for openssl library */
-
 	http_data_t *httptest;
 
 	char *proto = NULL;
 	int  httpversion = HTTPVER_11;
 	char *postdata = NULL;
 
-	ssloptions_t *sslopt = NULL;
 	char *sslopt_ciphers = NULL;
 	int sslopt_version = SSLVERSION_DEFAULT;
 
@@ -628,7 +623,7 @@ void add_http_test(testitem_t *t)
 	char *forcedip = NULL;
 
 	char *httprequest = NULL;
-	int httprequestlen;
+	int httprequestlen = 0;
 	url_t url, proxyurl;
 	int proxystatus, urlstatus;
 
@@ -839,7 +834,7 @@ void add_http_test(testitem_t *t)
 	else if (strncmp(proto, "http11:", 7) == 0)      httpversion    = HTTPVER_11;
 
 	if (sslopt_ciphers || (sslopt_version != SSLVERSION_DEFAULT)){
-		sslopt = (ssloptions_t *) malloc(sizeof(ssloptions_t));
+		if (sslopt == NULL) sslopt = (ssloptions_t *) malloc(sizeof(ssloptions_t));
 		sslopt->cipherlist = sslopt_ciphers;
 		sslopt->sslversion = sslopt_version;
 	}
