@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.9 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.10 2005-02-15 12:56:27 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -132,7 +132,18 @@ int main(int argc, char *argv[])
 	parse_query();
 
 	if (strcasecmp(action, "ack") == 0) {
-		sprintf(bbmsg, "ack ack_event %d %d %s", acknum, validity, ackmsg);
+		char *acking_user = "";
+
+		if (getenv("REMOTE_USER")) {
+			acking_user = (char *)malloc(50 + strlen(getenv("REMOTE_USER")));
+			sprintf(acking_user, "\nAcked by: %s", getenv("REMOTE_USER"));
+			if (getenv("REMOTE_ADDR")) {
+				char *p = acking_user + strlen(acking_user);
+				sprintf(p, " (%s)", getenv("REMOTE_ADDR"));
+			}
+		}
+
+		sprintf(bbmsg, "ack ack_event %d %d %s %s", acknum, validity, ackmsg, acking_user);
 		bbresult = sendmessage(bbmsg, NULL, NULL, NULL, 0, 30);
 		if (bbresult != BB_OK) {
 			respmsg = "<center><h4>Could not contact BB servers</h4></center>\n";
@@ -140,6 +151,8 @@ int main(int argc, char *argv[])
 		else {
 			respmsg = "<center><h4>Acknowledgment sent to BB servers</h4></center>\n";
 		}
+
+		if (strlen(acking_user)) xfree(acking_user);
 	}
 	else if (strcasecmp(action, "page") == 0) {
 		respmsg = "<center><h4>This system does not support paging the operator</h4></center>\n";

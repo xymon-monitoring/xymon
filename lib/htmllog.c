@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.17 2005-02-03 13:09:12 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.18 2005-02-15 12:56:27 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -187,7 +187,21 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	fprintf(output, "<tr><td align=\"center\"><font %s>", colfont);
 	if (strlen(timesincechange)) fprintf(output, "Status unchanged in %s<br>\n", timesincechange);
 	if (sender) fprintf(output, "Status message received from %s<br>\n", sender);
-	if (ackmsg) fprintf(output, "<font %s>Current acknowledgment: %s</font><br>\n", ackfont, ackmsg);
+	if (ackmsg) {
+		char *ackedby;
+		
+		ackedby = strstr(ackmsg, "\nAcked by:");
+		if (ackedby) {
+			*ackedby = '\0';
+			fprintf(output, "<font %s>Current acknowledgment: %s<br>%s</font><br>\n", 
+				ackfont, ackmsg, (ackedby+1));
+			*ackedby = '\n';
+		}
+		else {
+			fprintf(output, "<font %s>Current acknowledgment: %s</font><br>\n", ackfont, ackmsg);
+		}
+	}
+		
 	fprintf(output, "</font></td></tr>\n");
 	fprintf(output, "</table>\n");
 
