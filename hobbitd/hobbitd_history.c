@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 	/* For picking up lost children */
 	signal(SIGCHLD, sig_handler);
 
-	while ((msg = get_bbgend_message("bbd_history", &seq)) != NULL) {
+	while ((msg = get_bbgend_message("bbd_history", &seq, NULL)) != NULL) {
 		char *items[20] = { NULL, };
 		int icount;
 		char *p;

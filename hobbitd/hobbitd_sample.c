@@ -16,22 +16,43 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_sample.c,v 1.2 2004-10-12 10:20:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_sample.c,v 1.3 2004-10-12 14:45:04 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 #include "bbdworker.h"
 
 int main(int argc, char *argv[])
 {
 	char *msg;
-	int seq;
+	int argi, seq;
+	struct timeval *timeout = NULL;
 
-	/* Handle program options. Maybe we want debug output enabled ? */
-	if ((argc > 1) && (strcmp(argv[1], "--debug") == 0)) debug = 1;
+	/* Handle program options. */
+	for (argi = 1; (argi < argc); argi++) {
+		if (strcmp(argv[argi], "--debug") == 0) {
+			/*
+			 * A global "debug" variable is available. If
+			 * it is set, then "dprintf()" outputs debug messages.
+			 */
+			debug = 1;
+		}
+		else if (strncmp(argv[argi], "--timeout=", 10) == 0) {
+			/*
+			 * You can have a timeout when waiting for new
+			 * messages. If it happens, you will get a "@@idle\n"
+			 * message with sequence number 0.
+			 * If you dont want a timeout, just pass a NULL for the timeout parameter.
+			 */
+			timeout = (struct timeval *)(malloc(sizeof(struct timeval)));
+			timeout->tv_sec = (atoi(argv[argi]+10));
+			timeout->tv_usec = 0;
+		}
+	}
 
 	/*
 	 * get_bbgend_message() gets the next message from the queue.
@@ -46,9 +67,9 @@ int main(int argc, char *argv[])
 	 * sequence number of the message returned.
 	 * 
 	 * get_bbgend_message() does not return until a message is ready,
-	 * or the channel is closed.
+	 * or the timeout setting expires, or the channel is closed.
 	 */
-	while ((msg = get_bbgend_message(argv[0], &seq)) != NULL) {
+	while ((msg = get_bbgend_message(argv[0], &seq, timeout)) != NULL) {
 
 		/*
 		 * Now we have a message. So do something with it.
@@ -87,7 +108,7 @@ int main(int argc, char *argv[])
 		 *
 		 * For this sample module, we'll just print out the data we got.
 		 */
-		printf("Message # %d\n", seq);
+		printf("Message # %d received at %d\n", seq, (int)time(NULL));
 		i = 0;
 		while (metadata[i]) {
 			printf("   Meta #%2d: %s\n", i, metadata[i]);

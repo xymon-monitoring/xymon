@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	while ((msg = get_bbgend_message("filestore", &seq)) != NULL) {
+	while ((msg = get_bbgend_message("filestore", &seq, NULL)) != NULL) {
 		char *items[20] = { NULL, };
 		char *statusdata = "";
 		char *p;
