@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.35 2005-02-13 11:46:14 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.36 2005-02-15 12:58:06 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -66,7 +66,7 @@ static char rcsid[] = "$Id: do_alert.c,v 1.35 2005-02-13 11:46:14 henrik Exp $";
 #include "hobbitd_alert.h"
 
 enum method_t { M_MAIL, M_SCRIPT };
-enum msgformat_t { FRM_TEXT, FRM_SMS, FRM_PAGER, FRM_SCRIPT };
+enum msgformat_t { FRM_TEXT, FRM_PLAIN, FRM_SMS, FRM_PAGER, FRM_SCRIPT };
 enum recovermsg_t { SR_UNKNOWN, SR_NOTWANTED, SR_WANTED };
 
 /* token's are the pre-processor macros we expand while parsing the config file */
@@ -586,6 +586,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 			}
 			else if ((pstate == P_RECIP) && (strncasecmp(p, "FORMAT=", 7) == 0)) {
 				if      (strcmp(p+7, "TEXT") == 0) currcp->format = FRM_TEXT;
+				else if (strcmp(p+7, "PLAIN") == 0) currcp->format = FRM_PLAIN;
 				else if (strcmp(p+7, "SMS") == 0) currcp->format = FRM_SMS;
 				else if (strcmp(p+7, "PAGER") == 0) currcp->format = FRM_PAGER;
 				else if (strcmp(p+7, "SCRIPT") == 0) currcp->format = FRM_SCRIPT;
@@ -658,7 +659,8 @@ void dump_alertconfig(void)
 			  case M_SCRIPT : printf("SCRIPT %s %s ", recipwalk->scriptname, recipwalk->recipient); break;
 			}
 			switch (recipwalk->format) {
-			  case FRM_TEXT  : break;
+			  case FRM_TEXT  : printf("FORMAT=TEXT "); break;
+			  case FRM_PLAIN : printf("FORMAT=PLAIN "); break;
 			  case FRM_SMS   : printf("FORMAT=SMS "); break;
 			  case FRM_PAGER : printf("FORMAT=PAGER "); break;
 			  case FRM_SCRIPT: printf("FORMAT=SCRIPT "); break;
@@ -984,6 +986,7 @@ static char *message_subject(activealerts_t *alert, recip_t *recip)
 
 	switch (recip->format) {
 	  case FRM_TEXT:
+	  case FRM_PLAIN:
 		if (include_configid) {
 			snprintf(subj, sizeof(subj)-1, "BB [%d] %s:%s %s [cfid:%d]",
 				 alert->cookie, alert->hostname->name, alert->testname->name, sev, recip->cfid);
@@ -1011,19 +1014,44 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 {
 	static char *buf = NULL;
 	static int buflen = 0;
-	char *eoln, *bom;
+	char *eoln, *bom, *p;
 	char info[4096];
 
 	if (buf) *buf = '\0';
 
 	switch (recip->format) {
 	  case FRM_TEXT:
-		addtobuffer(&buf, &buflen, msg_data(alert->pagemessage));
+	  case FRM_PLAIN:
+		bom = msg_data(alert->pagemessage);
+		eoln = strchr(bom, '\n'); if (eoln) *eoln = '\0';
+
+		/* If there's a "<-- flags:.... -->" then remove it from the message */
+		if ((p = strstr(bom, "<!--")) != NULL) {
+			/* Add the part of line 1 before the flags ... */
+			*p = '\0'; addtobuffer(&buf, &buflen, bom); *p = '<'; 
+
+			/* And the part of line 1 after the flags ... */
+			p = strstr(p, "-->"); if (p) addtobuffer(&buf, &buflen, p+3);
+
+			/* And if there is more than line 1, add it as well */
+			if (eoln) {
+				*eoln = '\n';
+				addtobuffer(&buf, &buflen, eoln);
+			}
+		}
+		else {
+			if (eoln) *eoln = '\n';
+			addtobuffer(&buf, &buflen, bom);
+		}
+
 		addtobuffer(&buf, &buflen, "\n");
-		sprintf(info, "See %s%s/bb-hostsvc.sh?HOSTSVC=%s.%s\n", 
-			xgetenv("BBWEBHOST"), xgetenv("CGIBINURL"), 
-			commafy(alert->hostname->name), alert->testname->name);
-		addtobuffer(&buf, &buflen, info);
+
+		if (recip->format == FRM_TEXT) {
+			sprintf(info, "See %s%s/bb-hostsvc.sh?HOSTSVC=%s.%s\n", 
+				xgetenv("BBWEBHOST"), xgetenv("CGIBINURL"), 
+				commafy(alert->hostname->name), alert->testname->name);
+			addtobuffer(&buf, &buflen, info);
+		}
 		return buf;
 
 	  case FRM_SMS:
