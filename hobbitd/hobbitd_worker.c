@@ -14,11 +14,16 @@ unsigned char *get_bbgend_message(char *id, int *seq)
 {
 	static unsigned int seqnum = 0;
 	static unsigned char buf[SHAREDBUFSZ];
-	unsigned char *bufp = buf;
-	int bufsz = SHAREDBUFSZ;
-	int buflen = 0;
-	int complete = 0;
+	static int bufsz = SHAREDBUFSZ;
+	unsigned char *bufp;
+	int buflen;
+	int complete;
 	char *p;
+
+startagain:
+	bufp = buf;
+	buflen = 0;
+	complete = 0;
 
 	while (!complete && fgets(bufp, (bufsz - buflen), stdin)) {
 		if (strcmp(bufp, "@@\n") == 0) {
@@ -35,9 +40,15 @@ unsigned char *get_bbgend_message(char *id, int *seq)
 			int n = strlen(bufp);
 			buflen += n;
 			bufp += n;
+			if (buflen >= (bufsz-1)) {
+				/* Buffer is full - force message complete */
+				errprintf("%s: Buffer full, forcing message to complete\n", id);
+				complete = 1;
+			}
 		}
 	}
 
+	/* Make sure buffer is NULL terminated */
 	*bufp = '\0';
 
 	p = buf + strcspn(buf, "0123456789|");
@@ -51,18 +62,25 @@ unsigned char *get_bbgend_message(char *id, int *seq)
 		}
 
 		if ((seqnum == 0) || (*seq == (seqnum + 1))) {
+			/* First message, or the correct sequence # */
 			seqnum = *seq;
-			if (seqnum == 99) seqnum = 0;
+		}
+		else if (*seq == seqnum) {
+			/* Duplicate message - drop it */
+			errprintf("%s: Duplicate message %d dropped\n", id, *seq);
+			goto startagain;
 		}
 		else {
+			/* Out-of-sequence message. Cant do much except accept it */
 			errprintf("%s: Got message %u, expected %u\n", id, *seq, seqnum+1);
 			seqnum = *seq;
-			if (seqnum == 999999) seqnum = 0;
 		}
+
+		if (seqnum == 999999) seqnum = 0;
 	}
 	else {
 		dprintf("%s: Got message with no serial\n", id);
-		*seq = -1;
+		*seq = 0;
 	}
 
 	return ((!complete || (buflen == 0)) ? NULL : buf);
