@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.86 2003-06-21 07:34:52 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.87 2003-06-21 18:33:58 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -503,6 +503,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	newstate->entry->skin = NULL;
 	newstate->entry->testflags = NULL;
 	newstate->entry->repinfo = NULL;
+	newstate->entry->causes = NULL;
 
 	host = find_host(hostname);
 	if (host) {
@@ -521,7 +522,10 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	if (reportstart) {
 		/* Determine "color" for this test from the historical data */
 		newstate->entry->repinfo = calloc(1, sizeof(reportinfo_t));
-		newstate->entry->color = parse_historyfile(fd, newstate->entry->repinfo, NULL, NULL, reportstart, reportend);
+		newstate->entry->color = parse_historyfile(fd, newstate->entry->repinfo, 
+				(dynamicreport ? NULL: hostname), (dynamicreport ? NULL : testname), 
+				reportstart, reportend);
+		newstate->entry->causes = (dynamicreport ? NULL : save_replogs());
 		newstate->entry->testflags = NULL;
 	}
 	else if (fgets(l, sizeof(l), fd)) {
