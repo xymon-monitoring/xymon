@@ -5,5 +5,5 @@
 # It is the Hobbit version
 
 . @BBHOME@/etc/hobbitserver.cfg
-exec @BBHOME@/bin/bb-rep.cgi --env=@BBHOME@/etc/hobbitserver.cfg $BBGENREPOPTS
+@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-rep.cgi --env=@BBHOME@/etc/hobbitserver.cfg $BBGENREPOPTS
 

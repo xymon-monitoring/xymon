@@ -4,5 +4,5 @@
 # script, bb-hostsvc.sh
 # It is the Hobbit version
 
-exec @BBHOME@/bin/bb-hostsvc.cgi --env=@BBHOME@/etc/hobbitserver.cfg --hobbitd --no-svcid --history=top
+@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-hostsvc.cgi --env=@BBHOME@/etc/hobbitserver.cfg --hobbitd --no-svcid --history=top
 

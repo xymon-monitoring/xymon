@@ -6,6 +6,5 @@
 # Install this script in your webservers' cgi-bin directory, where you
 # already have a bb-rep.sh script.
 
-
-exec @BBHOME@/bin/bb-csvinfo.cgi --env=@BBHOME@/etc/hobbitserver.cfg
+@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-csvinfo.cgi --env=@BBHOME@/etc/hobbitserver.cfg
 

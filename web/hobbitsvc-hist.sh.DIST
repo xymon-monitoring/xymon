@@ -4,5 +4,5 @@
 # script, bb-histlog.sh
 # It is the Hobbit version.
 
-exec @BBHOME@/bin/bb-hostsvc.cgi --env=@BBHOME@/etc/hobbitserver.cfg --historical
+@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-hostsvc.cgi --env=@BBHOME@/etc/hobbitserver.cfg --historical
 
