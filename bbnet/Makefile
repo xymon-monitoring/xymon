@@ -40,7 +40,7 @@ libcares.a: c-ares-1.2.0/libcares.a
 	cp c-ares-1.2.0/libcares.a .
 
 c-ares-1.2.0/libcares.a: c-ares-1.2.0/Makefile
-	(cd c-ares-1.2.0 && make libcares.a)
+	(cd c-ares-1.2.0 && $(MAKE) libcares.a)
 
 c-ares-1.2.0/Makefile:
 	(cd c-ares-1.2.0 && ./configure)
@@ -71,7 +71,7 @@ install-config:
 	cp -fp $(CONFIGFILES) $(BBHOME)/etc/
 
 install-man:
-	mkdir -p $(MANROOT)/man{1,5}
+	mkdir -p $(MANROOT)/man1 $(MANROOT)/man5
 	cp -fp *.1 $(MANROOT)/man1/
 	cp -fp *.5 $(MANROOT)/man5/
 
