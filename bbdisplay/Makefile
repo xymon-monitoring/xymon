@@ -152,10 +152,10 @@ install-nocgi: install-bin install-exts install-man install-html install-gif ins
 endif
 
 install-bin: $(PROGRAMS)
-	cp -fp $(PROGRAMS) $(INSTALLROOT)$(BBHOME)/bin/
+	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
 
 install-exts: $(EXTENSIONS)
-	cp -fp $(EXTENSIONS) $(INSTALLROOT)$(BBHOME)/ext/
+	cp -fp $(EXTENSIONS) $(INSTALLROOT)$(INSTALLEXTDIR)/
 
 install-cgi: $(CGISCRIPTS)
 ifndef HOBBITD

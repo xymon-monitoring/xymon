@@ -113,7 +113,7 @@ clean:
 install: install-bin install-cgi install-man install-cfg
 
 install-bin:
-	cp -fp $(PROGRAMS) $(INSTALLROOT)$(BBHOME)/bin/
+	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
 
 install-cgi:
 	mkdir -p $(INSTALLROOT)$(CGIDIR)
@@ -128,16 +128,16 @@ install-man:
 	cp -fp *.8 $(INSTALLROOT)$(MANROOT)/man8/
 
 install-cfg:
-	cd etcfiles; ../../build/merge-lines hobbitserver.cfg $(INSTALLROOT)$(BBHOME)/etc/hobbitserver.cfg
-	cd etcfiles; ../../build/merge-sects hobbitlaunch.cfg $(INSTALLROOT)$(BBHOME)/etc/hobbitlaunch.cfg
-	cd etcfiles; ../../build/merge-sects hobbitgraph.cfg $(INSTALLROOT)$(BBHOME)/etc/hobbitgraph.cfg
-	cd etcfiles; ../../build/merge-lines columndoc.csv $(INSTALLROOT)$(BBHOME)/etc/columndoc.csv
-	cd etcfiles; (echo "bb-hosts"; echo "hobbit-alerts.cfg") | ../../build/setup-newfiles $(INSTALLROOT)$(BBHOME)/etc/
-	cd etcfiles; cp -fp hobbit-apache.conf $(INSTALLROOT)$(BBHOME)/etc/hobbit-apache.conf
+	cd etcfiles; ../../build/merge-lines hobbitserver.cfg $(INSTALLROOT)$(INSTALLETCDIR)/hobbitserver.cfg
+	cd etcfiles; ../../build/merge-sects hobbitlaunch.cfg $(INSTALLROOT)$(INSTALLETCDIR)/hobbitlaunch.cfg
+	cd etcfiles; ../../build/merge-sects hobbitgraph.cfg $(INSTALLROOT)$(INSTALLETCDIR)/hobbitgraph.cfg
+	cd etcfiles; ../../build/merge-lines columndoc.csv $(INSTALLROOT)$(INSTALLETCDIR)/columndoc.csv
+	cd etcfiles; (echo "bb-hosts"; echo "hobbit-alerts.cfg") | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLETCDIR)/
+	cd etcfiles; cp -fp hobbit-apache.conf $(INSTALLROOT)$(INSTALLETCDIR)/hobbit-apache.conf
 	cd $(INSTALLROOT)$(BBHOME); rm -f hobbit.sh; ln -sf bin/hobbit.sh .
-	cd wwwfiles; find . | grep -v RCS | grep -v DIST | ../../build/setup-newfiles $(INSTALLROOT)$(BBHOME)/www/ ../../build/md5.dat
-	cd webfiles; find . | grep -v RCS | grep -v DIST | ../../build/setup-newfiles $(INSTALLROOT)$(BBHOME)/web/ ../../build/md5.dat
+	cd wwwfiles; find . | grep -v RCS | grep -v DIST | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLWWWDIR)/ ../../build/md5.dat
+	cd webfiles; find . | grep -v RCS | grep -v DIST | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLWEBDIR)/ ../../build/md5.dat
 	mkdir -p $(INSTALLROOT)$(BBLOGDIR)
-	chown $(BBUSER) $(INSTALLROOT)$(BBLOGDIR) $(INSTALLROOT)$(BBHOME) $(INSTALLROOT)$(BBHOME)/* $(INSTALLROOT)$(BBHOME)/bin/* $(INSTALLROOT)$(BBHOME)/etc/* $(INSTALLROOT)$(BBHOME)/ext/* $(INSTALLROOT)$(BBHOME)/web/* $(INSTALLROOT)$(BBHOME)/www/gifs $(INSTALLROOT)$(BBHOME)/www/gifs/* $(INSTALLROOT)$(BBHOME)/www/menu $(INSTALLROOT)$(BBHOME)/www/menu/* $(INSTALLROOT)$(BBHOME)/www/help $(INSTALLROOT)$(BBHOME)/www/notes $(INSTALLROOT)$(BBHOME)/www/html $(INSTALLROOT)$(BBHOME)/www/wml $(INSTALLROOT)$(BBVAR) $(INSTALLROOT)$(BBVAR)/* $(INSTALLROOT)$(CGIDIR) $(INSTALLROOT)$(CGIDIR)/* $(INSTALLROOT)$(SECURECGIDIR) $(INSTALLROOT)$(SECURECGIDIR)/*
-	chgrp `$(IDTOOL) -g $(BBUSER)` $(INSTALLROOT)$(BBLOGDIR) $(INSTALLROOT)$(BBHOME) $(INSTALLROOT)$(BBHOME)/* $(INSTALLROOT)$(BBHOME)/bin/* $(INSTALLROOT)$(BBHOME)/etc/* $(INSTALLROOT)$(BBHOME)/ext/* $(INSTALLROOT)$(BBHOME)/web/* $(INSTALLROOT)$(BBHOME)/www/gifs $(INSTALLROOT)$(BBHOME)/www/gifs/* $(INSTALLROOT)$(BBHOME)/www/menu $(INSTALLROOT)$(BBHOME)/www/menu/* $(INSTALLROOT)$(BBHOME)/www/help $(INSTALLROOT)$(BBHOME)/www/notes $(INSTALLROOT)$(BBHOME)/www/html $(INSTALLROOT)$(BBHOME)/www/wml $(INSTALLROOT)$(BBVAR) $(INSTALLROOT)$(BBVAR)/* $(INSTALLROOT)$(CGIDIR) $(INSTALLROOT)$(CGIDIR)/* $(INSTALLROOT)$(SECURECGIDIR) $(INSTALLROOT)$(SECURECGIDIR)/*
+	chown $(BBUSER) $(INSTALLROOT)$(BBLOGDIR) $(INSTALLROOT)$(BBHOME) $(INSTALLROOT)$(BBHOME)/* $(INSTALLROOT)$(INSTALLBINDIR)/* $(INSTALLROOT)$(INSTALLETCDIR)/* $(INSTALLROOT)$(INSTALLEXTDIR)/* $(INSTALLROOT)$(INSTALLWEBDIR)/* $(INSTALLROOT)$(INSTALLWWWDIR)/gifs $(INSTALLROOT)$(INSTALLWWWDIR)/gifs/* $(INSTALLROOT)$(INSTALLWWWDIR)/menu $(INSTALLROOT)$(INSTALLWWWDIR)/menu/* $(INSTALLROOT)$(INSTALLWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(INSTALLWWWDIR)/wml $(INSTALLROOT)$(BBVAR) $(INSTALLROOT)$(BBVAR)/* $(INSTALLROOT)$(CGIDIR) $(INSTALLROOT)$(CGIDIR)/* $(INSTALLROOT)$(SECURECGIDIR) $(INSTALLROOT)$(SECURECGIDIR)/*
+	chgrp `$(IDTOOL) -g $(BBUSER)` $(INSTALLROOT)$(BBLOGDIR) $(INSTALLROOT)$(BBHOME) $(INSTALLROOT)$(BBHOME)/* $(INSTALLROOT)$(INSTALLBINDIR)/* $(INSTALLROOT)$(INSTALLETCDIR)/* $(INSTALLROOT)$(INSTALLEXTDIR)/* $(INSTALLROOT)$(INSTALLWEBDIR)/* $(INSTALLROOT)$(INSTALLWWWDIR)/gifs $(INSTALLROOT)$(INSTALLWWWDIR)/gifs/* $(INSTALLROOT)$(INSTALLWWWDIR)/menu $(INSTALLROOT)$(INSTALLWWWDIR)/menu/* $(INSTALLROOT)$(INSTALLWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(INSTALLWWWDIR)/wml $(INSTALLROOT)$(BBVAR) $(INSTALLROOT)$(BBVAR)/* $(INSTALLROOT)$(CGIDIR) $(INSTALLROOT)$(CGIDIR)/* $(INSTALLROOT)$(SECURECGIDIR) $(INSTALLROOT)$(SECURECGIDIR)/*
 

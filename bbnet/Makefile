@@ -67,14 +67,14 @@ clean:
 install: install-bin install-ext install-config install-man
 
 install-bin: $(PROGRAMS)
-	cp -fp $(PROGRAMS) $(INSTALLROOT)$(BBHOME)/bin/
+	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
 
 install-ext: $(EXTENSIONS)
-	cp -fp $(EXTENSIONS) $(INSTALLROOT)$(BBHOME)/ext/
+	cp -fp $(EXTENSIONS) $(INSTALLROOT)$(INSTALLEXTDIR)/
 
 install-config:
-	../build/convert-bbservices $(INSTALLROOT)$(BBHOME)/etc/bb-services
-	../build/merge-sects bb-services $(INSTALLROOT)$(BBHOME)/etc/bb-services
+	../build/convert-bbservices $(INSTALLROOT)$(INSTALLETCDIR)/bb-services
+	../build/merge-sects bb-services $(INSTALLROOT)$(INSTALLETCDIR)/bb-services
 
 install-man:
 	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5

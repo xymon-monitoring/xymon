@@ -47,7 +47,7 @@ clean:
 install: install-bin install-man
 
 install-bin: $(PROGRAMS)
-	cp -fp $(PROGRAMS) $(INSTALLROOT)$(BBHOME)/bin/
+	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
 
 install-man:
 	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man7 $(INSTALLROOT)$(MANROOT)/man8
