@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.157 2004-08-20 20:54:09 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.158 2004-08-21 10:48:28 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1491,7 +1491,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 				}
 				else {
 					/* Check if we got the expected data */
-					if (checktcpresponse && (service->toolid == TOOL_CONTEST) && !tcp_got_expected((test_t *)test->privdata)) {
+					if (checktcpresponse && (service->toolid == TOOL_CONTEST) && !tcp_got_expected((tcptest_t *)test->privdata)) {
 						strcpy(cause, "Unexpected service response");
 						color = COL_YELLOW; countasdown = 1;
 					}
@@ -2228,7 +2228,7 @@ int main(int argc, char *argv[])
 				 * If the test fails due to DNS error, t->privdata is NULL
 				 */
 				if (t->privdata) {
-					test_t *testresult = (test_t *)t->privdata;
+					tcptest_t *testresult = (tcptest_t *)t->privdata;
 
 					t->open = testresult->open;
 					t->banner = testresult->banner;

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.48 2004-08-20 20:54:49 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.49 2004-08-21 10:48:28 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -45,7 +45,7 @@ static char rcsid[] = "$Id: contest.c,v 1.48 2004-08-20 20:54:49 henrik Exp $";
 #endif
 
 #define MAX_TELNET_CYCLES 5		/* Max loops with telnet options before aborting banner */
-#define SSLSETUP_PENDING -1		/* Magic value for test_t->sslrunning while handshaking */
+#define SSLSETUP_PENDING -1		/* Magic value for tcptest_t->sslrunning while handshaking */
 
 unsigned int tcp_stats_total    = 0;
 unsigned int tcp_stats_http     = 0;
@@ -54,7 +54,7 @@ unsigned int tcp_stats_connects = 0;
 unsigned long tcp_stats_read    = 0;
 unsigned long tcp_stats_written = 0;
 
-static test_t *thead = NULL;
+static tcptest_t *thead = NULL;
 
 /*
  * Services we know how to handle:
@@ -370,7 +370,7 @@ static int tcp_callback(unsigned char *buf, unsigned int len, void *priv)
 	 * The default data callback function for simple TCP tests.
 	 */
 
-	test_t *item = (test_t *) priv;
+	tcptest_t *item = (tcptest_t *) priv;
 
 	if (item->banner == NULL) {
 		item->banner = (unsigned char *)malloc(len+1);
@@ -387,11 +387,11 @@ static int tcp_callback(unsigned char *buf, unsigned int len, void *priv)
 }
 
 
-test_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
-		     int silent, unsigned char *reqmsg, 
+tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
+			int silent, unsigned char *reqmsg, 
 		     void *priv, f_callback_data datacallback, f_callback_final finalcallback)
 {
-	test_t *newtest;
+	tcptest_t *newtest;
 
 	dprintf("Adding tcp test IP=%s, port=%d, service=%s, silent=%d\n", ip, port, service, silent);
 
@@ -402,7 +402,7 @@ test_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	}
 
 	tcp_stats_total++;
-	newtest = (test_t *) malloc(sizeof(test_t));
+	newtest = (tcptest_t *) malloc(sizeof(tcptest_t));
 
 	newtest->fd = -1;
 	newtest->open = 0;
@@ -481,7 +481,7 @@ test_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 }
 
 
-static void get_connectiontime(test_t *item, struct timeval *timestamp)
+static void get_connectiontime(tcptest_t *item, struct timeval *timestamp)
 {
 	item->duration.tv_sec = timestamp->tv_sec - item->timestart.tv_sec;
 	item->duration.tv_usec = timestamp->tv_usec - item->timestart.tv_usec;
@@ -491,7 +491,7 @@ static void get_connectiontime(test_t *item, struct timeval *timestamp)
 	}
 }
 
-static void get_totaltime(test_t *item, struct timeval *timestamp)
+static void get_totaltime(tcptest_t *item, struct timeval *timestamp)
 {
 	item->totaltime.tv_sec = timestamp->tv_sec - item->timestart.tv_sec;
 	item->totaltime.tv_usec = timestamp->tv_usec - item->timestart.tv_usec;
@@ -501,7 +501,7 @@ static void get_totaltime(test_t *item, struct timeval *timestamp)
 	}
 }
 
-static int do_telnet_options(test_t *item)
+static int do_telnet_options(tcptest_t *item)
 {
 	/*
 	 * Handle telnet options.
@@ -568,23 +568,23 @@ static int do_telnet_options(test_t *item)
 /*
  * Define stub routines for plain socket operations without SSL
  */
-static void setup_ssl(test_t *item)
+static void setup_ssl(tcptest_t *item)
 {
 	dprintf("SSL service checked as simple TCP test - bbtest-net compiled without SSL\n");
 	item->sslrunning = 0;
 }
 
-static int socket_write(test_t *item, unsigned char *outbuf, int outlen)
+static int socket_write(tcptest_t *item, unsigned char *outbuf, int outlen)
 {
 	return write(item->fd, outbuf, outlen);
 }
 
-static int socket_read(test_t *item, unsigned char *inbuf, int inbufsize)
+static int socket_read(tcptest_t *item, unsigned char *inbuf, int inbufsize)
 {
 	return read(item->fd, inbuf, inbufsize);
 }
 
-static void socket_shutdown(test_t *item)
+static void socket_shutdown(tcptest_t *item)
 {
 	shutdown(item->fd, SHUT_RDWR);
 }
@@ -629,7 +629,7 @@ static char *bbgen_ASN1_UTCTIME(ASN1_UTCTIME *tm)
 }
 
 
-static void setup_ssl(test_t *item)
+static void setup_ssl(tcptest_t *item)
 {
 	static int ssl_init_complete = 0;
 	struct servent *sp;
@@ -771,7 +771,7 @@ static void setup_ssl(test_t *item)
 	X509_free(peercert);
 }
 
-static int socket_write(test_t *item, char *outbuf, int outlen)
+static int socket_write(tcptest_t *item, char *outbuf, int outlen)
 {
 	int res = 0;
 
@@ -793,7 +793,7 @@ static int socket_write(test_t *item, char *outbuf, int outlen)
 	return res;
 }
 
-static int socket_read(test_t *item, char *inbuf, int inbufsize)
+static int socket_read(tcptest_t *item, char *inbuf, int inbufsize)
 {
 	int res = 0;
 
@@ -820,7 +820,7 @@ static int socket_read(test_t *item, char *inbuf, int inbufsize)
 	return res;
 }
 
-static void socket_shutdown(test_t *item)
+static void socket_shutdown(tcptest_t *item)
 {
 	if (item->sslrunning) {
 		SSL_shutdown(item->ssldata);
@@ -840,10 +840,10 @@ void do_tcp_tests(int timeout, int concurrency)
 
 	int		activesockets = 0; /* Number of allocated sockets */
 	int		pending = 0;	   /* Total number of tests */
-	test_t		*nextinqueue;      /* Points to the next item to start testing */
-	test_t		*firstactive;      /* Points to the first item currently being tested */
+	tcptest_t	*nextinqueue;      /* Points to the next item to start testing */
+	tcptest_t	*firstactive;      /* Points to the first item currently being tested */
 					   /* Thus, active connections are between firstactive..nextinqueue */
-	test_t		*item;
+	tcptest_t	*item;
 	int		sockok;
 	int		maxfd;
 	int		res;
@@ -1251,7 +1251,7 @@ void do_tcp_tests(int timeout, int concurrency)
 
 void show_tcp_test_results(void)
 {
-	test_t *item;
+	tcptest_t *item;
 
 	for (item = thead; (item); item = item->next) {
 		printf("Address=%s:%d, open=%d, res=%d, err=%d, connecttime=%ld.%06ld, totaltime=%ld.%06ld, ",
@@ -1294,7 +1294,7 @@ void show_tcp_test_results(void)
 	}
 }
 
-int tcp_got_expected(test_t *test)
+int tcp_got_expected(tcptest_t *test)
 {
 	if (test == NULL) return 1;
 

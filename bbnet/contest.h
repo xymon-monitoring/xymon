@@ -84,7 +84,7 @@ typedef void (*f_callback_final)(void *privdata);
 #define CONTEST_EIO        4
 #define CONTEST_ESSL       5
 
-typedef struct test_t {
+typedef struct tcptest_t {
 	struct sockaddr_in addr;        /* Address (IP+port) to test */
 	struct svcinfo_t *svcinfo;      /* svcinfo_t for service */
 	int  fd;                        /* Socket filedescriptor */
@@ -126,8 +126,8 @@ typedef struct test_t {
 	f_callback_data datacallback;
 	f_callback_final finalcallback;
 
-	struct test_t *next;
-} test_t;
+	struct tcptest_t *next;
+} tcptest_t;
 
 #define CONTENTCHECK_NONE   0
 #define CONTENTCHECK_REGEX  1
@@ -149,7 +149,7 @@ typedef struct test_t {
 #define CHUNK_NOMORE     7
 
 typedef struct {
-	test_t		*tcptest;
+	tcptest_t	*tcptest;
 
 	char		*url;			/* URL to request, stripped of BB'isms */
 	int		parsestatus;
@@ -189,12 +189,12 @@ extern unsigned int tcp_stats_connects;
 extern char *init_tcp_services(void);
 extern int default_tcp_port(char *svcname);
 extern void dump_tcp_services(void);
-extern test_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
+extern tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 			    int silent, unsigned char *reqmsg, 
 			    void *priv, f_callback_data datacallback, f_callback_final finalcallback);
 extern void do_tcp_tests(int timeout, int concurrency);
 extern void show_tcp_test_results(void);
-extern int tcp_got_expected(test_t *test);
+extern int tcp_got_expected(tcptest_t *test);
 
 #endif
 
