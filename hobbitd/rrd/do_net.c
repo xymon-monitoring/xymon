@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbnet_rcsid[] = "$Id: do_net.c,v 1.8 2005-02-06 08:49:02 henrik Exp $";
+static char bbnet_rcsid[] = "$Id: do_net.c,v 1.9 2005-02-21 15:27:22 henrik Exp $";
 
 static char *bbnet_params[]       = { "rrdcreate", rrdfn, "DS:sec:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
@@ -51,7 +51,7 @@ int do_net_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 		if (url) xfree(url);
 	}
-	else if ((strcmp(testname, "conn") == 0) || (strcmp(testname, "ping") == 0) || (strcmp(testname, "fping") == 0)) {
+	else if (strcmp(testname, xgetenv("PINGCOLUMN")) == 0) {
 		/*
 		 * Ping-tests, possibly using fping.
 		 */
