@@ -28,13 +28,16 @@ bbgend_history: $(HISTORYOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(HISTORYOBJS) $(LIBOBJS)
 
 bbgend_alert: $(ALERTOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(ALERTOBJS) $(LIBOBJS) -lpcre
+	$(CC) $(CFLAGS) -o $@ $(ALERTOBJS) $(LIBOBJS) $(PCRELIBS)
 
 bbgend_larrd: $(LARRDOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(LARRDOBJS) $(LIBOBJS) -lrrd
+	$(CC) $(CFLAGS) -o $@ $(LARRDOBJS) $(LIBOBJS) $(RRDLIBS)
+
+do_alert.o: do_alert.c
+	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ do_alert.c
 
 do_larrd.o: do_larrd.c do_larrd.h larrd/*.c
-	$(CC) $(CFLAGS) -c -o $@ do_larrd.c
+	$(CC) $(CFLAGS) $(RRDINCDIR) -c -o $@ do_larrd.c
 
 bbgend_sample: $(SAMPLEOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(SAMPLEOBJS) $(LIBOBJS)
