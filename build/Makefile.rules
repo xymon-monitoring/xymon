@@ -4,6 +4,7 @@
 
 CFLAGS += -DMAXMSG=$(MAXMSG)
 
+
 PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bbdigest bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi
 CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh
 EXTENSIONS = bbcombotest bbretest-net.sh
@@ -33,6 +34,7 @@ COMBOTESTOBJS = bbcombotest.o util.o debug.o calc.o sendmsg.o
 SNAPOBJS = bb-snapshot.o debug.o util.o
 EVENTLOGOBJS = bb-eventlog.o debug.o util.o
 
+
 bbgen: $(GENOBJS)
 	$(CC) $(CFLAGS) -o $@ $(GENOBJS) $(NETLIBS)
 
@@ -46,16 +48,10 @@ bbhostshow: $(HOSTSHOWOBJS)
 	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS)
 
 bbdigest: $(DIGESTOBJS)
-	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) -lcrypto
-
-bbdigest.o: digest.c digest.h
-	$(CC) $(CFLAGS) -c -o $@ -DSTANDALONE digest.c
+	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) $(SSLLIBDIR) -lcrypto
 
 bb-rep.cgi: $(REPOBJS)
 	$(CC) $(CFLAGS) -o $@ $(REPOBJS)
-
-bb-replog-cgi.o: bb-replog.c
-	$(CC) $(CFLAGS) -DCGI -c -o $@ bb-replog.c
 
 bb-replog.cgi: $(REPLOGOBJS)
 	$(CC) $(CFLAGS) -o $@ $(REPLOGOBJS)
@@ -66,23 +62,25 @@ bb-hist.cgi: $(HISTOBJS)
 bb-snapshot.cgi: $(SNAPOBJS)
 	$(CC) $(CFLAGS) -o $@ $(SNAPOBJS)
 
-bb-eventlog.o: eventlog.o
-	$(CC) $(CFLAGS) -DCGI -c -o $@ eventlog.c
-
 bb-eventlog.cgi: $(EVENTLOGOBJS)
 	$(CC) $(CFLAGS) -o $@ $(EVENTLOGOBJS)
 
 bbcombotest: $(COMBOTESTOBJS)
 	$(CC) $(CFLAGS) -o $@ $(COMBOTESTOBJS) $(NETLIBS)
 
+
+
+################################################
+# TEST programs
+################################################
 alert: alert.c debug.c util.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ alert.c debug.c util.c
 
 contest: contest.c debug.c util.c
-	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCLUDE) -g -DSTANDALONE -DDEBUG -Wall -o $@ contest.c debug.c util.c $(CURLLIB) $(NETLIBS)
+	$(CC) -g -DSTANDALONE -DDEBUG -Wall $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -o $@ contest.c debug.c util.c $(CURLLIB) $(SSLLIBS) $(NETLIBS)
 
 ldaptest: ldaptest.c debug.o util.o sendmsg.o
-	$(CC) $(CFLAGS) $(LDAPFLAGS) $(LDAPINCLUDE) -g -DSTANDALONE -DDEBUG -Wall -o $@ ldaptest.c debug.o util.o sendmsg.o $(LDAPLIBS) $(NETLIBS)
+	$(CC) -g -DSTANDALONE -DDEBUG -Wall $(CFLAGS) $(LDAPFLAGS) $(LDAPINCDIR) -o $@ ldaptest.c debug.o util.o sendmsg.o $(LDAPLIBS) $(NETLIBS)
 
 calc: calc.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ calc.c
@@ -93,21 +91,46 @@ reptest: reportdata.c debug.c util.c
 sendmsg: sendmsg.c debug.c util.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ sendmsg.c debug.c util.c $(NETLIBS)
 
+
+################################################
+# Objects requiring special compile flags 
+################################################
 bbtest-net.o: bbtest-net.c bbtest-net.h
-	$(CC) $(CFLAGS) $(LDAPFLAGS) -c -o $@ bbtest-net.c
+	$(CC) $(CFLAGS) $(SSLFLAGS) $(LDAPFLAGS) $(SSLINCDIR) $(LDAPINCDIR) -c -o $@ bbtest-net.c
 
 httptest.o: httptest.c httptest.h
-	$(CC) $(CFLAGS) $(CURLINCLUDE) $(USEMULTI) -c -o $@ httptest.c
+	$(CC) $(CFLAGS) $(CURLINCLUDE) -c -o $@ httptest.c
 
 ldaptest.o: ldaptest.c ldaptest.h
-	$(CC) $(CFLAGS) $(LDAPFLAGS) $(LDAPINCLUDE) -c -o $@ ldaptest.c
+	$(CC) $(CFLAGS) $(LDAPFLAGS) $(LDAPINCDIR) -c -o $@ ldaptest.c
 
 contest.o: contest.c contest.h
-	$(CC) $(CFLAGS) $(CURLINCLUDE) $(SSLFLAGS) $(SSLINCLUDE) -c -o $@ contest.c
+	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ contest.c
+
+digest.o: digest.c digest.h
+	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ digest.c
 
 bb-hist.o: bb-hist.c
 	$(CC) $(CFLAGS) $(HISTGRAPHDEF) -c -o $@ bb-hist.c
 
+
+################################################
+# Objects compiled differently for use in 
+# bbgen/bbtest-net, and in standalone programs
+################################################
+bb-eventlog.o: eventlog.o
+	$(CC) $(CFLAGS) -DCGI -c -o $@ eventlog.c
+
+bb-replog-cgi.o: bb-replog.c
+	$(CC) $(CFLAGS) -DCGI -c -o $@ bb-replog.c
+
+bbdigest.o: digest.c digest.h
+	$(CC) $(CFLAGS) $(SSLINCDIR) -c -o $@ -DSTANDALONE digest.c
+
+
+################################################
+# Default compilation rules
+################################################
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
@@ -115,6 +138,10 @@ bb-hist.o: bb-hist.c
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' >$@
 	chmod 755 $@
 
+
+################################################
+# Installation and maintenance targets
+################################################
 distclean: clean
 	rm -f Makefile
 

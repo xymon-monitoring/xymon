@@ -181,6 +181,34 @@ else
 	fi
 	echo ""
 
+	OSSLINC=""
+	OSSLLIB=""
+	for DIR in /usr/local/ssl /usr/local /usr
+	do
+		if test -d $DIR/include/openssl
+		then
+			OSSLINC=$DIR/include
+		fi
+
+		if test -f $DIR/lib/libcrypto.so
+		then
+			OSSLLIB=$DIR/lib
+		fi
+		if test -f $DIR/lib/libcrypto.a
+		then
+			OSSLLIB=$DIR/lib
+		fi
+	done
+
+	if test "$OSSLINC" != "" -a "$OSSLLIB" != ""
+	then
+		echo "Found OpenSSL include files in $OSSLINC"
+		echo "Found OpenSSL libraries in $OSSLLIB"
+	else
+		echo "*************************"
+		echo "*** OpenSSL not found ***"
+		echo "*************************"
+	fi
 	echo "bbgen can use the OpenSSL library to test SSL-enabled services"
 	echo "like POP3S, IMAPS, NNTPS and TELNETS. If you have the OpenSSL"
 	echo "library installed, I recommend that you enable this."
@@ -196,8 +224,34 @@ else
 	fi
 	echo ""
 
-	echo "bbgen can use the OpenLDAP library to test LDAP servers."
-	echo "If you have the OpenLDAP libraries on your system (it is"
+	for DIR in /usr/local /usr
+	do
+		if test -f $DIR/include/ldap.h
+		then
+			LDAPINC=$DIR/include
+		fi
+
+		if test -f $DIR/lib/libldap.so
+		then
+			LDAPLIB=$DIR/lib
+		fi
+		if test -f $DIR/lib/libldap.a
+		then
+			LDAPLIB=$DIR/lib
+		fi
+	done
+
+	if test "$LDAPINC" != "" -a "$LDAPLIB" != ""
+	then
+		echo "Found LDAP include files in $LDAPINC"
+		echo "Found LDAP libraries in $LDAPLIB"
+	else
+		echo "******************************"
+		echo "*** LDAP library not found ***"
+		echo "******************************"
+	fi
+	echo "bbgen can use a LDAP client library to test LDAP servers."
+	echo "If you have e.g. the OpenLDAP libraries on your system (it is"
 	echo "standard e.g. on Solaris 8), it is recommended that you"
 	echo "enable this."
 	echo ""
@@ -213,11 +267,8 @@ else
 		else
 			LDAPDEF="-DBBGEN_LDAP"
 		fi
-
-		LDAPLIBS="-lldap"
 	else
 		LDAPDEF=""
-		LDAPLIBS=""
 	fi
 	echo ""
 
@@ -244,11 +295,21 @@ else
 	echo "# OpenSSL settings"             >>Makefile
 	echo "SSLFLAGS = $SSLDEF"             >>Makefile
 	echo "# Change the following line if compiler complains about a missing ssl.h" >>Makefile
-	echo "SSLINCLUDE = "                  >>Makefile
+	echo "SSLINCDIR = -I$OSSLINC"         >>Makefile
+	echo "SSLLIBDIR = -L$OSSLLIB"         >>Makefile
 	echo "#"                              >>Makefile
 	echo "# OpenLDAP settings"            >>Makefile
 	echo "LDAPFLAGS = $LDAPDEF"           >>Makefile
-	echo "LDAPLIBS = $LDAPLIBS"           >>Makefile
+	if test "$LDAPINC" != ""
+	then
+		echo "LDAPINCDIR = -I$LDAPINC"      >>Makefile
+	fi
+	if test "$LDAPLIB" != ""
+	then
+		echo "LDAPLIBS = -L$LDAPLIB -lldap" >>Makefile
+	else
+		echo "LDAPLIBS = -lldap"            >>Makefile
+	fi
 
 	if test -r Makefile.`uname -s`
 	then
