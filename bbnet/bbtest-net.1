@@ -286,6 +286,24 @@ use for the system-name in Big Brother.
 
 This works for web-sites that use the "Basic" authentication
 scheme in HTTP.
+.sp
+.IP $BBTMP/*.status - test status summary
+Each time bbtest-net runs, if any tests fail (i.e. they result
+in a red status) then they will be listed in a file name
+TESTNAME.[LOCATION].status. The LOCATION part may be null. This
+file is used to determine how long the failure has lasted, which
+in turn decides if this test should be included in the tests done by
+.I bbretest-net.sh(1)
+.br
+It is also used internally by bbtest-net when determining the
+color for tests that use the "badconn" or "badTESTNAME" tags.
+.sp
+.IP $BBTMP/frequenttests.[LOCATION]
+This file contains the hostnames of those hosts that should be
+retested by the
+.I bbretest-net.sh(1)
+test tool. It is updated only by bbtest-net during the normal
+runs, and read by bbretest-net.sh.
 
 .SH "SEE ALSO"
 bb-hosts(5), bb-environ(5), curl(1), fping(1), nslookup(1), dig(1),
