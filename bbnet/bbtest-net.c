@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.116 2003-09-10 14:29:12 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.117 2003-09-11 11:54:53 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1343,7 +1343,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 		if ((color == COL_RED) && test->host->deprouterdown) { 
 			char *routertext;
 
-			routertext = test->host->hosttype;
+			routertext = test->host->deprouterdown->hosttype;
 			if (routertext == NULL) routertext = getenv("BBROUTERTEXT");
 			if (routertext == NULL) routertext = "router";
 
