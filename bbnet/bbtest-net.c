@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.4 2003-04-13 15:28:35 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.5 2003-04-13 15:33:48 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -306,6 +306,8 @@ void run_nmap_service(service_t *service)
 		}
 	}
 	fclose(logfile);
+
+	if (!debug) unlink(logfn);
 }
 
 void send_results(service_t *service)
@@ -329,8 +331,9 @@ void send_results(service_t *service)
 		if ((color != COL_GREEN) && (t->host->dialup || t->dialup)) color = COL_CLEAR;
 
 		init_status(color);
-		sprintf(msgline, "status %s.%s %s %s\n", 
-			commafy(t->host->hostname), t->service->testname, colorname(color), timestamp);
+		sprintf(msgline, "status %s.%s %s %s %s %s\n", 
+			commafy(t->host->hostname), t->service->testname, colorname(color), timestamp,
+			t->service->testname, ((color == COL_RED) ? "NOT ok" : "ok"));
 		addtostatus(msgline);
 
 		if (t->host->dnserror) {
