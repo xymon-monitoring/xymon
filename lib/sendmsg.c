@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.39 2004-11-01 16:05:06 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.40 2004-11-17 16:03:00 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -684,6 +684,10 @@ int main(int argc, char *argv[])
 
 			timeout = atoi(p+1);
 		}
+		else if (argnmatch(argv[argi], "--env=")) {
+			char *p = strchr(argv[argi], '=');
+			loadenv(p+1);
+		}
 		else if (strcmp(argv[argi], "-?") == 0) {
 			showhelp = 1;
 		}
@@ -747,7 +751,10 @@ int main(int argc, char *argv[])
 		else if (strncmp(msg, "bbgendlog ", 10) == 0) {
 			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 		}
-		else if (strncmp(msg, "bbgendboard", 9) == 0) {
+		else if (strncmp(msg, "bbgendboard", 11) == 0) {
+			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
+		}
+		else if (strncmp(msg, "bbgendlist", 10) == 0) {
 			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 		}
 		else {
