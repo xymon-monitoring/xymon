@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.100 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.101 2005-01-19 11:59:01 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -982,7 +982,6 @@ void handle_enadis(int enabled, char *msg, char *sender)
 		while (*dismsg && isspace((int)*dismsg)) dismsg++;        /* and the space ... */
 		while (*dismsg && !isspace((int)*dismsg)) dismsg++;       /* and the host.test ... */
 		while (*dismsg && isspace((int)*dismsg)) dismsg++;        /* and the space ... */
-		while (*dismsg && !isspace((int)*dismsg)) dismsg++;       /* and the duration ... */
 
 		if (alltests) {
 			for (log = hwalk->logs; (log); log = log->next) {
