@@ -95,7 +95,7 @@ bbtest-local: bbtest-local.c bbtest-local-linux.c bbtest-local-sunos.c bbtest-lo
 	$(CC) $(CFLAGS) $(OSDEF) -g -DDEBUG -Wall -o $@ bbtest-local.c debug.c util.c sendmsg.c
 
 libcheck: bbtest-net
-	@sh -c './bbtest-net --version >/dev/null || echo "bbtest-net compiled, but will not run. You probably need to set LD_LIBRARY_PATH in bb-network.sh"'
+	@./bbtest-net --version >/dev/null || echo "bbtest-net compiled, but will not run. You probably need to set LD_LIBRARY_PATH in bb-network.sh"
 
 ################################################
 # Objects requiring special compile flags 
