@@ -22,7 +22,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.8 2004-10-30 15:54:17 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.9 2004-11-13 08:18:47 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -37,8 +37,7 @@ static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.8 2004-10-30 15:54:17 henrik Exp $
 
 #include "libbbgen.h"
 
-#include "bbgend.h"
-#include "bbdutil.h"
+#include "bbgend_ipc.h"
 
 char *channelnames[] = {
 	"status", 

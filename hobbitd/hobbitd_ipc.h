@@ -8,8 +8,8 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __BBDUTIL_H__
-#define __BBDUTIL_H__
+#ifndef __BBGEND_IPC_H__
+#define __BBGEND_IPC_H__
 
 #define SHAREDBUFSZ (3*MAXMSG+4096)
 
@@ -20,6 +20,17 @@
 
 #define CHAN_MASTER 0
 #define CHAN_CLIENT 1
+
+enum msgchannels_t { C_STATUS, C_STACHG, C_PAGE, C_DATA, C_NOTES, C_ENADIS };
+
+typedef struct bbd_channel_t {
+	enum msgchannels_t channelid;
+	int shmid;
+	int semid;
+	char *channelbuf;
+	unsigned int seq;
+	struct bbd_channel_t *next;
+} bbd_channel_t;
 
 extern char *channelnames[];
 
