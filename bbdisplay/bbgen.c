@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.151 2003-09-09 09:56:45 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.152 2003-09-10 17:58:18 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -415,6 +415,7 @@ int main(int argc, char *argv[])
 			printf("    --pages-last                : Put page- and subpage-links after hosts (as BB does)\n");
 			printf("    --pages-first               : Put page- and subpage-links before hosts (default)\n");
 			printf("    --subpagecolumns=N          : Number of columns for links to pages and subpages\n");
+			printf("    --maxrows=N                 : Repeat column headings for every N hosts shown\n");
 			printf("    --recentgifs                : Use xxx-recent.gif icons for newly changed tests\n");
 			printf("    --sort-group-only-items     : Display group-only items in alphabetical order\n");
 			printf("    --page-title=TITLE          : Set a default page title for all pages\n");
