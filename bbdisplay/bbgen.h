@@ -36,8 +36,7 @@
      subpages                              +-----------+               |
      groups -------> group_t               |                   +-------+
      hosts ---+         title              V                   |
-     next     |         color                                  |
-              |         hosts ---------> host_t                |
+     next     |         hosts ---------> host_t                |
               |         next   +------->   hostname            |
               |                |           ip                  |
               +----------------+           dialup              |
@@ -69,8 +68,7 @@
   link from a page.
 
   group_t structure holds the data from a "group" directive. groups belong to
-  pages or subpages. A group has an associated color, calculated as the
-  most critical color of the hosts within the group.
+  pages or subpages. 
   Currently, all groups act as "group-compress" directive.
 
   host_t structure holds all data about a given host. "color" is calculated as
