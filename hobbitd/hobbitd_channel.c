@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.13 2004-10-30 22:19:39 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.14 2004-10-31 11:44:41 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -80,6 +80,9 @@ int main(int argc, char *argv[])
 	char *childcmd = "";
 	char **childargs = NULL;
 	struct timespec tmo;
+
+	/* Dont save the error buffer */
+	save_errbuf = 0;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--debug")) {

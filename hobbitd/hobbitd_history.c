@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.16 2004-10-31 08:16:09 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.17 2004-10-31 11:44:41 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -91,6 +91,9 @@ int main(int argc, char *argv[])
 	int save_histlogs = 1;
 	FILE *alleventsfd = NULL;
 	int running = 1;
+
+	/* Dont save the error buffer */
+	save_errbuf = 0;
 
 	if (getenv("BBALLHISTLOG")) save_allevents = (strcmp(getenv("BBALLHISTLOG"), "TRUE") == 0);
 	if (getenv("BBHOSTHISTLOG")) save_hostevents = (strcmp(getenv("BBHOSTHISTLOG"), "TRUE") == 0);

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_sample.c,v 1.8 2004-10-30 15:54:05 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_sample.c,v 1.9 2004-10-31 11:44:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -59,6 +59,13 @@ int main(int argc, char *argv[])
 			timeout->tv_usec = 0;
 		}
 	}
+
+	/*
+	 * An "errprintf" routine prints an error message to stderr, including a timestamp.
+	 * The error-messages are saved in a string variable, unless you disable that. You
+	 * should do so for long-lived processes.
+	 */
+	save_errbuf = 0;
 
 	/*
 	 * If your worker application fork()'s child processes, then

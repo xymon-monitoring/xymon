@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.16 2004-10-31 07:24:07 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.17 2004-10-31 11:44:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -149,6 +149,9 @@ int main(int argc, char *argv[])
 	int argi;
 	int seq;
 	int running = 1;
+
+	/* Dont save the error buffer */
+	save_errbuf = 0;
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--status") == 0) {
