@@ -1,13 +1,13 @@
-.TH BBD_ALERT 8 "Version 3.4: 21 nov 2004" "bbgen toolkit"
+.TH BBGEND_ALERT 8 "Version 3.4: 21 nov 2004" "bbgen toolkit"
 .SH NAME
-bbd_alert \- bbgend worker module for sending out alerts
+bbgend_alert \- bbgend worker module for sending out alerts
 .SH SYNOPSIS
-.B "bbd_channel --channel=page bbd_alert [options]"
+.B "bbgend_channel --channel=page bbgend_alert [options]"
 
 .SH DESCRIPTION
-bbd_alert is a worker module for bbgend, and as such it is normally
+bbgend_alert is a worker module for bbgend, and as such it is normally
 run via the
-.I bbd_channel(8)
+.I bbgend_channel(8)
 program. It receives bbgend page- and ack-messages from the "page" 
 channel via stdin, and uses these to send out alerts about failed 
 and recovered hosts and services.
@@ -20,19 +20,50 @@ file.
 
 
 .SH OPTIONS
+.IP "--alertcolors=color1[,color2]"
+Define the colors that may generate alerts. A status with one of
+these colors may trigger an alert message, if it matches one
+or more rules in the bb-alerts.cfg file. A switch from an alert-
+color to a non-alert color may trigger a "recovered" message.
+
+The default is "--alertcolors=red,yellow,purple".
+
+.IP "--config=FILENAME"
+Sets the filename for the 
+.I bb-alerts.cfg"
+file. This option is required.
+
+.IP "--dump-config"
+Dumps the configuration after parsing it. May be useful to track
+down problems with configuration file errors.
+
+.IP "--checkpoint-file=FILENAME"
+File where the current state of the bbgend_alert module is saved. 
+When starting up, bbgend_alert will also read this file to restore
+the previous state.
+
+.IP "--checkpoint-interval=N"
+Defines how often (in seconds) the checkpoint-file is saved.
+
+.IP "--cfid"
+If this option is present, alert messages will include a line with
+"cfid:N" where N is the linenumber in the bb-alerts.cfg file that
+caused this message to be sent. This can be useful to track down
+problems with duplicate alerts.
+
 .IP "--debug"
 Enable debugging output.
 
 .SH ENVIRONMENT
 .IP MAIL
 The first part of a command line used to send out an e-mail with a 
-subject, typically set to "/usr/bin/mail -s" . bbd_alert will add
+subject, typically set to "/usr/bin/mail -s" . bbgend_alert will add
 the subject and the mail recipients to form the command line used
 for sending out email alerts.
 
 .IP MAILC
 The first part of a command line used to send out an e-mail without
-a subject. Typically this will be "/usr/bin/mail". bbd_alert will
+a subject. Typically this will be "/usr/bin/mail". bbgend_alert will
 add the mail recipients to form the command line used for sending
 out email alerts.
 
@@ -40,5 +71,5 @@ out email alerts.
 .IP "$BBHOME/etc/bb-alerts.cfg"
 
 .SH "SEE ALSO"
-bbd_channel(8), bbgen-intro(7), bbgend(8)
+bbgend_channel(8), bbgen-intro(7), bbgend(8)
 

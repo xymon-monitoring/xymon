@@ -1,15 +1,15 @@
-.TH BBD_LARRD 8 "Version 3.4: 21 nov 2004" "bbgen toolkit"
+.TH BBGEND_LARRD 8 "Version 3.4: 21 nov 2004" "bbgen toolkit"
 .SH NAME
-bbd_larrd \- bbgend worker module for updating LARRD graphs
+bbgend_larrd \- bbgend worker module for updating LARRD graphs
 .SH SYNOPSIS
-.B "bbd_channel --channel=status bbd_larrd [options]"
+.B "bbgend_channel --channel=status bbgend_larrd [options]"
 .br
-.B "bbd_channel --channel=data bbd_larrd [options]"
+.B "bbgend_channel --channel=data bbgend_larrd [options]"
 
 .SH DESCRIPTION
-bbd_larrd is a worker module for bbgend, and as such it is normally
+bbgend_larrd is a worker module for bbgend, and as such it is normally
 run via the
-.I bbd_channel(8)
+.I bbgend_channel(8)
 program. It receives "status" and "data" messages from bbgend via
 stdin, and updates the LARRD graphs so you no longer need to bother
 with installing LARRD on your BBDISPLAY server. It also eliminates
@@ -25,7 +25,7 @@ for the "status" channel and once for the "data" channel.
 Enable debugging output.
 
 .IP "--rrddir=DIRECTORY"
-Defines the directory where the LARRD RRD-files are stored. bbd_larrd
+Defines the directory where the LARRD RRD-files are stored. bbgend_larrd
 will use the location pointed to by the BBRRDS environment is this
 option is not present.
 
@@ -34,5 +34,5 @@ option is not present.
 Default directory where LARRD RRD files are stored.
 
 .SH "SEE ALSO"
-bbd_channel(8), bbgen-intro(7), bbgend(8)
+bbgend_channel(8), bbgen-intro(7), bbgend(8)
 

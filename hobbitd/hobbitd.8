@@ -19,6 +19,11 @@ with the standard Big Brother daemon. However, even with these
 plugins enabled, bbgend still performs much faster than the
 standard bbd daemon.
 
+bbgend is normally started and controlled by the
+.I bblaunch(8)
+tool, and the command used to invoke bbgend should therefore be
+in the bbtasks.cfg file.
+
 .SH OPTIONS
 .IP "--bbhosts=FILENAME"
 Specifies the path to the Big Brother bb-hosts file. This is used
@@ -46,7 +51,7 @@ from the information in this file. You can use the same filename for
 Specifies which colors should trigger an alert. Alerts are triggered
 when a status changes from a non-alert color to an alert-color, or
 vice verse. The 
-.I bbd_alert(8)
+.I bbgend_alert(8)
 module can then further filter alert events based on a separate alert
 configuration, but you should still list the possible alert colors here.
 The default setting is "--alertcolors=red,yellow,purple".
@@ -76,13 +81,25 @@ Specifies the IP-address and port where bbgend will listen for incoming
 connections. By default, bbgend listens on IP 0.0.0.0 (i.e. all IP-
 adresses available on the host) and port 1984.
 
-.IP "--no-daemon"
-bbgend normally detaches from the terminal and runs as a background
-proces. This option keeps it running as a foreground proces.
+.IP "--daemon"
+bbgend is normally started by 
+.I bblaunch(8).
+If you do not want to use bblaunch, you can start bbgend with this option;
+it will then detach from the terminal and continue running as a background
+task.
 
-.IP "--pid-file=FILENAME"
-If bbgend runs as a background process, the proces-ID of bbgend will
+.IP "--env=FILENAME"
+Loads the content of FILENAME as environment settings before starting
+bbgend. This is mostly used when running as a stand-alone daemon; if
+bbgend is started by bblaunch, the environment settings are controlled
+by the bblaunch bbtasks.cfg file.
+
+.IP "--pidfile=FILENAME"
+If bbgend runs as a daemon process, the proces-ID of bbgend will
 be written to this file. This is for use in automated startup scripts.
+
+.IP "--log=FILENAME"
+Redirect all output from bbgend to FILENAME.
 
 .IP "--status-senders=IP[/MASK][,IP/MASK]"
 Controls which hosts may send "status", "combo", "config" and "query"
@@ -130,6 +147,14 @@ commands are the "bbgenddrop" and "bbgendrename" commands. Access to these
 should be restricted, since they provide an un-authenticated means of completely
 disabling monitoring of a host, and can be used to remove all traces of e.g.
 a system compromise from the Big Brother monitor.
+
+.IP "--debug"
+Enable debugging output.
+
+.IP "--dbghost=HOSTNAME"
+For troubleshooting problems with a specific host, it may be useful to track
+the exact communications from a single host. This option causes bbgend to
+dump all traffic from a single host to the file "/tmp/bbgend.dbg".
 
 .SH SIGNALS
 .IP SIGHUP

@@ -1,19 +1,19 @@
-.TH BBD_FILESTORE 8 "Version 3.4: 21 nov 2004" "bbgen toolkit"
+.TH BBGEND_FILESTORE 8 "Version 3.4: 21 nov 2004" "bbgen toolkit"
 .SH NAME
-bbd_filestore \- bbgend worker module for storing Big Brother files
+bbgend_filestore \- bbgend worker module for storing Big Brother files
 .SH SYNOPSIS
-.B "bbd_channel --channel=status bbd_filestore --status [options]"
+.B "bbgend_channel --channel=status bbgend_filestore --status [options]"
 .br
-.B "bbd_channel --channel=data   bbd_filestore --data [options]"
+.B "bbgend_channel --channel=data   bbgend_filestore --data [options]"
 .br
-.B "bbd_channel --channel=notes  bbd_filestore --notes [options]"
+.B "bbgend_channel --channel=notes  bbgend_filestore --notes [options]"
 .br
-.B "bbd_channel --channel=enadis bbd_filestore --enadis [options]"
+.B "bbgend_channel --channel=enadis bbgend_filestore --enadis [options]"
 
 .SH DESCRIPTION
-bbd_filestore is a worker module for bbgend, and as such it is normally
+bbgend_filestore is a worker module for bbgend, and as such it is normally
 run via the
-.I bbd_channel(8)
+.I bbgend_channel(8)
 program. It receives bbgend messages from a bbgend channel via stdin, and 
 stores these in the filesystem in a manner that is compatible with the 
 standard Big Brother daemon, bbd.
@@ -30,7 +30,7 @@ throughout your Big Brother server, you will not need to run this
 module to save status messages, unless you have a third-party 
 Big Brother add-on that reads the status-logs directly.
 This module is NOT needed for LARRD, you should run the 
-.I bbd_larrd(8)
+.I bbgend_larrd(8)
 module instead.
 
 .IP "--data"
@@ -38,7 +38,7 @@ Incoming messages are "data" messages, they will be stored in the
 $BBDATA directory. This module is not needed, unless you have a
 third-party module that processes the data-files. This module is
 NOT needed for LARRD, you should run the 
-.I bbd_larrd(8)
+.I bbgend_larrd(8)
 module instead.
 
 .IP "--notes"
@@ -77,5 +77,5 @@ Enable debugging output.
 This module does not rely on any configuration files.
 
 .SH "SEE ALSO"
-bbd_channel(8), bbd_larrd(8), bbgen-intro(7), bbgend(8)
+bbgend_channel(8), bbgend_larrd(8), bbgen-intro(7), bbgend(8)
 

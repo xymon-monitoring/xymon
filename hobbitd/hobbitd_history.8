@@ -1,13 +1,13 @@
-.TH BBD_HISTORY 8 "Version 3.4: 21 nov 2004" "bbgen toolkit"
+.TH BBGEND_HISTORY 8 "Version 3.4: 21 nov 2004" "bbgen toolkit"
 .SH NAME
-bbd_history \- bbgend worker module for storing Big Brother history
+bbgend_history \- bbgend worker module for storing Big Brother history
 .SH SYNOPSIS
-.B "bbd_channel --channel=stachg bbd_history [options]"
+.B "bbgend_channel --channel=stachg bbgend_history [options]"
 
 .SH DESCRIPTION
-bbd_history is a worker module for bbgend, and as such it is normally
+bbgend_history is a worker module for bbgend, and as such it is normally
 run via the
-.I bbd_channel(8)
+.I bbgend_channel(8)
 program. It receives bbgend status-change messages from the "stachg" 
 channel via stdin, and uses these to update the standard Big Brother
 history files in a manner that is compatible with the standard Big Brother 
@@ -50,5 +50,5 @@ do not want to save these, you can disable it by setting SAVESTATUSLOG=FALSE.
 This module does not rely on any configuration files.
 
 .SH "SEE ALSO"
-bbd_channel(8), bbgen-intro(7), bbgend(8)
+bbgend_channel(8), bbgen-intro(7), bbgend(8)
 
