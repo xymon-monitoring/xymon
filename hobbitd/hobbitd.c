@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.8 2004-10-06 14:06:29 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.9 2004-10-06 15:09:55 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -843,7 +843,7 @@ void do_message(conn_t *msg)
 			msg->buflen = strlen(msg->buf);
 		}
 	}
-	else if (strcmp(msg->buf, "bbgendbrd") == 0) {
+	else if (strcmp(msg->buf, "bbgendboard") == 0) {
 		/* Request for a summmary of all known status logs */
 		bbd_hostlist_t *hwalk;
 		bbd_log_t *lwalk;
