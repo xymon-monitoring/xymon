@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: netservices.c,v 1.4 2005-02-24 18:51:11 henrik Exp $";
+static char rcsid[] = "$Id: netservices.c,v 1.5 2005-03-01 14:22:33 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -79,6 +79,8 @@ static char *binview(unsigned char *buf, int buflen)
 	unsigned char *inp, *outp;
 	int i;
 
+	MEMDEFINE(result);
+
 	if (buf && (buflen == 0)) buflen = strlen(buf);
 	for (inp=buf, i=0, outp=result; (i<buflen); i++,inp++) {
 		if (isprint(*inp)) {
@@ -106,6 +108,8 @@ static char *binview(unsigned char *buf, int buflen)
 	}
 	*outp = '\0';
 
+	MEMUNDEFINE(result);
+
 	return result;
 }
 
@@ -123,6 +127,9 @@ char *init_tcp_services(void)
 	int svcnamebytes = 0;
 	int svccount = 0;
 	int i;
+
+	MEMDEFINE(filename);
+	MEMDEFINE(buf);
 
 	filename[0] = '\0';
 	if (xgetenv("BBHOME")) {
@@ -156,6 +163,9 @@ char *init_tcp_services(void)
 	if (fd == NULL) {
 		errprintf("Cannot open TCP service-definitions file %s - using defaults\n", filename);
 		bbnetsvcs = strdup(xgetenv("BBNETSVCS"));
+
+		MEMUNDEFINE(filename);
+		MEMUNDEFINE(buf);
 		return bbnetsvcs;
 	}
 
@@ -303,6 +313,8 @@ char *init_tcp_services(void)
 		printf("BBNETSVCS set to : %s\n", bbnetsvcs);
 	}
 
+	MEMUNDEFINE(filename);
+	MEMUNDEFINE(buf);
 	return bbnetsvcs;
 }
 
