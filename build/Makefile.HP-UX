@@ -6,7 +6,7 @@ OSDEF = -DHPUX
 NETLIBS =
 
 # Compile flags for normal build
-CFLAGS = -O -D_REENTRANT -DHPUX
+CFLAGS = -g -O -D_REENTRANT -DHPUX
 
 # Compile flags for debugging
 # CFLAGS = -g -DDEBUG -D_REENTRANT -DHPUX

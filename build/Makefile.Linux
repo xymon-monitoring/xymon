@@ -6,7 +6,7 @@ OSDEF = -DLINUX
 NETLIBS =
 
 # Compile flags for normal build
-CFLAGS = -O2 -Wall -Wno-unused -D_REENTRANT 
+CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT 
 
 # Red Hat in their wisdom ships an openssl the depends on Kerberos,
 # and then puts the Kerberos includes where they are not found automatically.
