@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.59 2003-06-21 07:33:54 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.60 2003-06-23 13:06:37 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -705,6 +705,32 @@ char *cgidoclink(const char *doccgi, const char *hostname)
 	}
 
 	return linkurl;
+}
+
+
+char *cleanurl(char *url)
+{
+	static char cleaned[MAX_PATH];
+	char *pin, *pout;
+	int  lastwasslash = 0;
+
+	for (pin=url, pout=cleaned, lastwasslash=0; (*pin); pin++) {
+		if (*pin == '/') {
+			if (!lastwasslash) { 
+				*pout = *pin; 
+				pout++; 
+			}
+			lastwasslash = 1;
+		}
+		else {
+			*pout = *pin; 
+			pout++;
+			lastwasslash = 0;
+		}
+	}
+	*pout = '\0';
+
+	return cleaned;
 }
 
 
