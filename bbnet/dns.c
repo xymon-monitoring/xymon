@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.3 2004-08-20 20:52:32 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.4 2004-08-24 09:58:33 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -17,6 +17,7 @@ static char rcsid[] = "$Id: dns.c,v 1.3 2004-08-20 20:52:32 henrik Exp $";
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <arpa/nameser.h>
 #include <netdb.h>
 
 #include "bbgen.h"
@@ -24,6 +25,7 @@ static char rcsid[] = "$Id: dns.c,v 1.3 2004-08-20 20:52:32 henrik Exp $";
 #include "debug.h"
 #include "bbtest-net.h"
 #include "dns.h"
+#include "dns2.h"
 
 #include <ares.h>
 static ares_channel stdchannel;
@@ -229,45 +231,41 @@ int dns_test_server(char *serverip, char *hostname, char **banner, int *bannerby
 	struct ares_options options;
 	struct in_addr serveraddr;
 	int status;
-	dnsitem_t dnsc;
+	struct timeval starttime, endtime;
 	struct timezone tz;
+	char msg[100];
 
 	if (inet_aton(serverip, &serveraddr) == 0) {
 		errprintf("dns_test_server: serverip '%s' not a valid IP\n", serverip);
 		return 1;
 	}
 
-	options.flags = ARES_OPT_SERVERS;
+	options.flags = ARES_FLAG_NOCHECKRESP;
 	options.servers = &serveraddr;
 	options.nservers = 1;
 
-	status = ares_init_options(&channel, &options, ARES_OPT_SERVERS);
+	status = ares_init_options(&channel, &options, (ARES_OPT_FLAGS | ARES_OPT_SERVERS));
 	if (status != ARES_SUCCESS) {
 		errprintf("Could not initialize ares channel %d\n", status);
 		return 1;
 	}
 
-	dnsc.name = hostname;
-	dnsc.failed = 0;
-	dnsc.next = NULL;
-	gettimeofday(&dnsc.resolvetime, &tz);
-	ares_gethostbyname(channel, hostname, AF_INET, dns_callback, &dnsc);
+	gettimeofday(&starttime, &tz);
+	ares_query(channel, hostname, C_IN, T_A, dns_detail_callback, NULL);
 	dns_queue_run(channel);
-
-	*banner = NULL;
-	*bannerbytes = 0;
-	if (!dnsc.failed) {
-		char msg[1024];
-
-		sprintf(msg, "Server %s responds\nHost %s has address %s\n",
-			serverip, hostname, inet_ntoa(dnsc.addr));
-		addtobuffer(banner, bannerbytes, msg);
-		sprintf(msg, "\nSeconds: %d.%03d\n",
-			dnsc.resolvetime.tv_sec, dnsc.resolvetime.tv_usec / 1000);
-		addtobuffer(banner, bannerbytes, msg);
+	gettimeofday(&endtime, &tz);
+	if (endtime.tv_usec < starttime.tv_usec) {
+		endtime.tv_sec--;
+		endtime.tv_usec += 1000000;
 	}
-	else addtobuffer(banner, bannerbytes, "No response from DNS server\n");
 
-	return (dnsc.failed);
+	*banner = dns_detail_response(&status);
+	*bannerbytes = strlen(*banner);
+	sprintf(msg, "\nSeconds: %d.%03d\n",
+		(endtime.tv_sec - starttime.tv_sec),
+		(endtime.tv_usec - starttime.tv_usec) / 1000);
+	addtobuffer(banner, bannerbytes, msg);
+
+	return (status != ARES_SUCCESS);
 }
 
