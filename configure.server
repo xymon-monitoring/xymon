@@ -405,9 +405,12 @@ else
 	echo "#"                                 >>Makefile
 	echo "# OpenSSL settings"                >>Makefile
 	echo "SSLFLAGS = $SSLDEF"                >>Makefile
-	echo "# Change the following line if compiler complains about a missing ssl.h" >>Makefile
-	echo "SSLINCDIR = -I$OSSLINC"            >>Makefile
-	echo "SSLLIBS = -L$OSSLLIB -lcrypto -lssl" >>Makefile
+	if test "$SSLDEF" != ""
+	then
+		echo "# Change the following line if compiler complains about a missing ssl.h" >>Makefile
+		echo "SSLINCDIR = -I$OSSLINC"            >>Makefile
+		echo "SSLLIBS = -L$OSSLLIB -lcrypto -lssl" >>Makefile
+	fi
 	echo "#"                                 >>Makefile
 	echo "# OpenLDAP settings"               >>Makefile
 	echo "LDAPFLAGS = $LDAPDEF"              >>Makefile
