@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.10 2003-09-10 18:24:47 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.11 2003-09-15 21:01:26 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -18,6 +18,8 @@ static char rcsid[] = "$Id: ldaptest.c,v 1.10 2003-09-10 18:24:47 henrik Exp $";
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
+#include <unistd.h>
+#include <signal.h>
 
 #include "bbgen.h"
 #include "util.h"
@@ -34,6 +36,8 @@ static char rcsid[] = "$Id: ldaptest.c,v 1.10 2003-09-10 18:24:47 henrik Exp $";
 #define BBGEN_LDAP_SEARCHFAILED	40
 
 char *ldap_library_version = NULL;
+
+static volatile int bind_timeout = 0;
 
 int init_ldap_library(void)
 {
@@ -96,6 +100,12 @@ int add_ldap_test(testitem_t *t)
 	return 0;
 }
 
+
+static void ldap_alarmhandler(int signum)
+{
+	signal(signum, SIG_DFL);
+	bind_timeout = 1;
+}
 
 void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 {
@@ -165,9 +175,25 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 		}
 #endif
 
-		/* Bind to the server - we do an anonymous bind, asynchronous */
+		/* Bind to the server - we do an anonymous bind, asynchronous.
+		 *
+		 * Even though the ldap_simple_bind() man page claims that this
+		 * is "asynchronous", it will block on a connect(). If the host
+		 * does not respond it can take several minutes to timeout.
+		 * To avoid this, use an alarm to interrupt the connection
+		 * establishment, and abort if it triggers.
+		 */
+		bind_timeout = 0;
+		signal(SIGALRM, ldap_alarmhandler);
+		alarm(t->host->conntimeout ? t->host->conntimeout : DEF_CONNECT_TIMEOUT);
 		msgID = ldap_simple_bind(ld, (t->host->ldapuser ? t->host->ldapuser : ""), 
 					 (t->host->ldappasswd ? t->host->ldappasswd : ""));
+		signal(SIGALRM, SIG_DFL);
+		if (bind_timeout || (msgID == -1)) {
+			req->ldapstatus = BBGEN_LDAP_BINDFAIL;
+			req->output = "Cannot connect to server";
+			continue;
+		}
 
 		/* Wait for bind to complete */
 		rc = 0; finished = 0; 
