@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.130 2004-10-08 13:10:41 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.131 2004-10-13 12:19:38 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -39,6 +39,8 @@ static char rcsid[] = "$Id: util.c,v 1.130 2004-10-08 13:10:41 henrik Exp $";
 #include "bbgen.h"
 #include "util.h"
 #include "debug.h"
+
+char *htmlextension = ".html"; /* Filename extension for generated HTML files */
 
 int	use_recentgifs = 0;
 int	unpatched_bbd = 0;
@@ -482,7 +484,7 @@ char *hostpage_link(host_t *host)
 	bbgen_page_t *pgwalk;
 
 	if (host->parent && (strlen(((bbgen_page_t *)host->parent)->name) > 0)) {
-		sprintf(pagelink, "%s.html", ((bbgen_page_t *)host->parent)->name);
+		sprintf(pagelink, "%s%s", ((bbgen_page_t *)host->parent)->name, htmlextension);
 		for (pgwalk = host->parent; (pgwalk); pgwalk = pgwalk->parent) {
 			if (strlen(pgwalk->name)) {
 				sprintf(tmppath, "%s/%s", pgwalk->name, pagelink);
@@ -491,7 +493,7 @@ char *hostpage_link(host_t *host)
 		}
 	}
 	else {
-		sprintf(pagelink, "bb.html");
+		sprintf(pagelink, "bb%s", htmlextension);
 	}
 
 	return pagelink;
@@ -843,7 +845,7 @@ char *hostlink(link_t *link)
 		sprintf(linkurl, "%s/%s", link->urlprefix, link->filename);
 	}
 	else {
-		sprintf(linkurl, "%s/bb.html", getenv("BBWEB"));
+		sprintf(linkurl, "%s/bb%s", getenv("BBWEB"), htmlextension);
 	}
 
 	return linkurl;
