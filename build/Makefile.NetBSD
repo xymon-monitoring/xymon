@@ -1,0 +1,18 @@
+# bbgen compile-time settings for NetBSD systems
+# From Emmanuel Dreyfus.
+#
+OSDEF = -DBSD
+#
+# NETLIBS: None needed
+NETLIBS =
+#
+# Compile flags for normal build
+CC = gcc
+CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT -I/usr/local/include \
+          -I/usr/pkg/include -L/usr/local/lib -L/usr/pkg/lib
+#
+# Compile flags for debugging
+# CFLAGS = -g -DDEBUG -Wall -D_REENTRANT -I/usr/local/include -L/usr/local/lib
+
+RUNTIMEDEFS="LD_LIBRARY_PATH=\"/usr/pkg/lib\""
+
