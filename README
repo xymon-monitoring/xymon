@@ -1,64 +1,46 @@
-README file for bbgen toolkit
-=============================
+README file for Hobbit (previous known as the "bbgen toolkit")
+==============================================================
 
 What is it ?
 ------------
-The bbgen toolkit provides drop-in replacements for key components
-of the Big Brother monitoring package:
-
-- bbgen is a replacement for the mkbb.sh and other web page 
-  shellscripts;
-- bbtest-net is a replacement for the bb-network.sh network
-  test script;
-- other tools replace other less frequently used scripts from
-  the Big Brother package.
-
-The bbgen replacement tools are much faster than the scripts
-they replace, resulting in better performance and less load
-on the Big Brother BBDISPLAY and BBNET servers.
-
-Besides being simple replacements, these tools also implement
-a large number of features not present in the standard Big 
-Brother package. These features are aimed at providing the
-features needed to use Big Brother and bbgen for monitoring
-of a large number of systems on a 24x7 basis, with reporting
-facilities for Service Level Agreements etc.
-
-The bbgen toolkit is fully compatible with Big Brother
-version 1.9c and the commonly used add-on package LARRD
-version 0.42 and 0.43.
-
-A more detailed description of the bbgen features can be
-found in the bbgen-intro.html file, which is a HTML version
-of the bbgen-intro(7) man page.
+Hobbit is a system for monitoring your network servers and 
+applications. It is heavily inspired by the Big Brother
+tool, but is a complete re-implementation with a lot of added
+functionality and performance improvements. A slightly more
+detailed rationale for Hobbit is in the docs/about.html file.
 
 
 How to install
 --------------
-Detailed installation instructions are in the INSTALL file.
-If you are upgrading from a previous release of bbgen, refer
-to the UPGRADE file for changes you should be aware of.
+Detailed installation instructions are in the 
+docs/install.html file. Essentially, it boils down
+to running
+	./configure
+	make
+	make setup   (or "make install")
+but do have a look at the install.html file for more
+detailed instructions.
 
 
 Documentation
 -------------
-As of version 2.6, all documentation for the bbgen tools
-are in the form of Unix man-pages included with the bbgen
-package. These man-pages are installed automatically when
-installing bbgen, and should be available on-line. The
-bbgen-intro(7) man page provides an introduction to the
-toolkit and has pointers to the other man-pages of the
+The docs/ directory holds information about the basic
+installation and configuration of Hobbit. All of the
+tools and configuration files in Hobbit have man-pages
+that are installed automatically when installing Hobbit.
+The hobbit(7) man page provides an introduction to 
+Hobbit and has pointers to the other man-pages of the
 package.
 
 
 License
 -------
-The bbgen toolkit is Open Source software, made available 
-under the GNU General Public License (GPL) version 2,
-with the explicit exemption that linking with the OpenSSL
-libraries is permitted. See the file COPYING for details.
+Hobbit is Open Source software, made available under the 
+GNU General Public License (GPL) version 2, with the explicit 
+exemption that linking with the OpenSSL libraries is permitted. 
+See the file COPYING for details.
 
-bbgen released under the GPL, and therefore available
+Hobbit is released under the GPL, and therefore available
 free of charge. However, if you find it useful and want
 to encourage further development, I do have an Amazon
 wishlist at http://www.amazon.co.uk/ - just search for
@@ -69,10 +51,10 @@ form of a book, CD or DVD is appreciated.
 Updates
 -------
 If you want to be notified of future updates, please subscribe
-to the bbgen-announce mailing list. Send an email to
+to the hobbit-announce mailing list. Send an email to
 
-   bbgen-announce-subscribe@hswn.dk
+   hobbit-announce-subscribe@hswn.dk
 
 to be added to the mailing list. This is a moderated list, used
-only for announcing new bbgen releases.
+only for announcing new Hobbit releases.
 
