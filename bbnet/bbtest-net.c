@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.185 2004-12-11 14:15:13 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.186 2004-12-16 17:01:57 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -384,18 +384,20 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *testspec
 }
 
 
-int wanted_host(char *l, char *netstring, char *hostname)
+int wanted_host(namelist_t *host, char *netstring)
 {
+	char *netlocation = bbh_item(host, BBH_NET);
+
 	if (selectedcount == 0)
-		return ((netstring == NULL) || 				/* No BBLOCATION = do all */
-			(strstr(l, netstring) != NULL) ||		/* BBLOCATION && matching NET: tag */
-			(testuntagged && (strstr(l, "NET:") == NULL))); /* No NET: tag for this host */
+		return ((strlen(netstring) == 0) || 				/* No BBLOCATION = do all */
+			(strcmp(netlocation, netstring) == 0) ||		/* BBLOCATION && matching NET: tag */
+			(testuntagged && (netlocation == NULL)));		/* No NET: tag for this host */
 	else {
 		/* User provided an explicit list of hosts to test */
 		int i;
 
 		for (i=0; (i < selectedcount); i++) {
-			if (strcmp(selectedhosts[i], hostname) == 0) return 1;
+			if (strcmp(selectedhosts[i], host->bbhostname) == 0) return 1;
 		}
 	}
 
@@ -405,557 +407,397 @@ int wanted_host(char *l, char *netstring, char *hostname)
 
 void load_tests(void)
 {
-	FILE 	*bbhosts;
-	char 	l[MAX_LINE_LEN];	/* With multiple http tests, we may have long lines */
-	char	hostname[MAX_LINE_LEN];
-	int	ip1, ip2, ip3, ip4, banksize;
-	char	*netstring, *routestring;
-	char 	*p;
+	char *p, *routestring = NULL;
+	namelist_t *hosts, *hwalk;
+	testedhost_t *h;
 
-	bbhosts = stackfopen(getenv("BBHOSTS"), "r");
-	if (bbhosts == NULL) {
-		errprintf("No bb-hosts file found");
+	hosts = load_hostnames(getenv("BBHOSTS"), get_fqdn(), NULL);
+	if (hosts == NULL) {
+		errprintf("Cannot load bb-hosts\n");
 		return;
 	}
 
 	/* Each network test tagged with NET:locationname */
-	p = getenv("BBLOCATION");
-	if (p && (strlen(p) > 0)) {
-		netstring = (char *) malloc(strlen(p)+strlen("NET:")+1);
-		sprintf(netstring, "NET:%s", p);
-		routestring = (char *) malloc(strlen(p)+strlen("route_:")+1);
-		sprintf(routestring, "route_%s:", p);
-	}
-	else {
-		netstring = NULL;
-		routestring = NULL;
+	if (strlen(location) > 0) {
+		routestring = (char *) malloc(strlen(location)+strlen("route_:")+1);
+		sprintf(routestring, "route_%s:", location);
 	}
 
-	while (stackfgets(l, sizeof(l), "include", "netinclude")) {
-		p = strchr(l, '\n'); if (p) { *p = '\0'; };
-		for (p=l; (*p && isspace((int) *p)); p++) ;
+	for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
+		int anytests = 0, okexpected = 1;
+		int ping_dialuptest = 0, ping_reversetest = 0;
+		char *testspec;
 
-		if ((*p == '#') || (*p == '\0')) {
-			/* Do nothing - it's a comment or empty line */
-		}
-		else if (sscanf(l, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
+		if (!wanted_host(hwalk, location)) continue;
 
-			if (!fqdn) {
-				/* FQDN=OFF means strip the domain part of the hostname */
-				char *p = strchr(hostname, '.');
-
-				if (p) {
-					*p = '\0';
-				}
-			}
-
-			if (wanted_host(l, netstring, hostname)) {
-
-				char *testspec;
-				char *badsaves;
-				testedhost_t *h;
-				testitem_t *newtest;
-				int anytests = 0;
-				int ping_dialuptest = 0;
-				int ping_reversetest = 0;
-				int sendasdata = 0;
-
-				p = strchr(l, '#'); 
-				if (p) {
-					p++;
-					while (isspace((unsigned int) *p)) p++;
-				}
-				else {
-					/* There is just an IP and a hostname - handle as if no tests */
-					p = "";
-				}
-
-				h = init_testedhost(hostname, 
-						    (strstr(p, "SLA=") ? within_sla(p, "SLA", 1) : !within_sla(p, "DOWNTIME", 0)) );
-				anytests = 0;
-				badsaves = (char *) malloc(strlen(p)+1); *badsaves = '\0';
-
-				testspec = strtok(p, "\t ");
-				while (testspec) {
-
-					service_t *s = NULL;
-					int dialuptest = 0;
-					int reversetest = 0;
-					int alwaystruetest = 0;
-					int silenttest = 0;
-					int specialtag = 0;
-					char *savedspec = NULL;
-
-					if (argnmatch(testspec, "badconn") && periodcoversnow(testspec+strlen("badconn"))) {
-						char *p =strchr(testspec, ':');
-
-						specialtag = 1;
-						if (p) sscanf(p, ":%d:%d:%d", &h->badconn[0], &h->badconn[1], &h->badconn[2]);
-					}
-					else if (argnmatch(testspec, "bad")) {
-						if (strlen(badsaves)) strcat(badsaves, " ");
-						strcat(badsaves, testspec);
-						specialtag = 1;
-					}
-					else if (argnmatch(testspec, "route:")) {
-						specialtag = 1;
-						h->routerdeps = strdup(testspec+6);
-					}
-					else if (routestring && (strncasecmp(testspec, routestring, strlen(routestring)) == 0)) {
-						specialtag = 1;
-						h->routerdeps = strdup(testspec+strlen(routestring));
-						dprintf("host %s has routerdeps %s\n", h->hostname, h->routerdeps);
-					}
-					else if (argnmatch(testspec, "TIMEOUT:")) {
-						int dummy, newtimeout;
-
-						specialtag = 1;
-						if (sscanf(testspec, "TIMEOUT:%d:%d", &dummy, &newtimeout) == 2) {
-							/*
-							 * For compatibility, pick up the timeout
-							 * setting if specified for a host, but use it
-							 * to adjust the global timeout setting for
-							 * all TCP tests.
-							 */
-							if (newtimeout > timeout) timeout = newtimeout;
-						}
-					}
-					else if (strcmp(testspec, "noconn") == 0)  { specialtag = 1; h->noconn = 1; }
-					else if (strcmp(testspec, "noping") == 0)  { specialtag = 1; h->noping = 1; }
-					else if (strcmp(testspec, "trace") == 0)   { specialtag = 1; h->dotrace = 1; }
-					else if (strcmp(testspec, "notrace") == 0) { specialtag = 1; h->dotrace = 0; }
-					else if (strcmp(testspec, "testip") == 0)  { specialtag = 1; h->testip = 1; }
-					else if (strcmp(testspec, "dialup") == 0)  { specialtag = 1; h->dialup = 1; }
-					else if (strcmp(testspec, "ldapyellowfail") == 0) { specialtag = 1; h->ldapsearchfailyellow = 1; }
-					else if (strcmp(testspec, "nosslcert") == 0) { specialtag = 1; h->nosslcert = 1; }
-					else if (argnmatch(testspec, "ssldays=")) {
-						int warndays, alarmdays;
-
-						if (sscanf(testspec, "ssldays=%d:%d", &warndays, &alarmdays) == 2) {
-							h->sslwarndays = warndays;
-							h->sslalarmdays = alarmdays;
-						}
-					}
-					else if (argnmatch(testspec, "depends=")) {
-						specialtag = 1;
-						h->deptests = strdup(testspec+8);
-					}
-					else if (argnmatch(testspec, "ldaplogin=")) {
-						char *username, *password;
-						
-						username = password = NULL;
-						username = (strchr(testspec, '='));
-						if (username) {
-							username++;
-							password = (strchr(username, ':'));
-							if (password) {
-								*password = '\0';
-								password++;
-							}
-						}
-
-						specialtag = 1;
-						if (username) h->ldapuser = strdup(username);
-						if (password) h->ldappasswd = strdup(password);
-					}
-					else if (argnmatch(testspec, "NAME:")) {
-						char *name, *p;
-
-						specialtag = 1;
-						p = testspec+strlen("NAME:");
-						name = (char *) malloc(MAX_LINE_LEN);
-						if (*p == '\"') {
-							p++;
-							strcpy(name, p);
-							p = strchr(name, '\"');
-							if (p) *p = '\0'; 
-							else {
-								/* Scan forward to next " in input stream */
-								testspec = strtok(NULL, "\"\r\n");
-								if (testspec) {
-									strcat(name, " ");
-									strcat(name, testspec);
-								}
-							}
-						}
-						else {
-							strcpy(name, p);
-						}
-
-						free(name);
-					}
-					else if (argnmatch(testspec, "COMMENT:")) {
-						char *comment, *p;
-
-						specialtag = 1;
-						p = testspec+strlen("COMMENT:");
-						comment = (char *) malloc(MAX_LINE_LEN);
-						if (*p == '\"') {
-							p++;
-							strcpy(comment, p);
-							p = strchr(comment, '\"');
-							if (p) *p = '\0'; 
-							else {
-								/* Scan forward to next " in input stream */
-								testspec = strtok(NULL, "\"\r\n");
-								if (testspec) {
-									strcat(comment, " ");
-									strcat(comment, testspec);
-								}
-							}
-						}
-						else {
-							strcpy(comment, p);
-						}
-
-						free(comment);
-					}
-					else if (argnmatch(testspec, "DESCR:")) {
-						char *description, *p;
-
-						specialtag = 1;
-						p = testspec+strlen("DESCR:");
-						description = (char *) malloc(MAX_LINE_LEN);
-						if (*p == '\"') {
-							p++;
-							strcpy(description, p);
-							p = strchr(description, '\"');
-							if (p) *p = '\0'; 
-							else {
-								/* Scan forward to next " in input stream */
-								testspec = strtok(NULL, "\"\r\n");
-								if (testspec) {
-									strcat(description, " ");
-									strcat(description, testspec);
-								}
-							}
-						}
-						else {
-							strcpy(description, p);
-						}
-
-						p = strchr(description, ':');
-						if (p) *p = '\0';
-						h->hosttype = strdup(description);
-						if (p) *p = ':';
-
-						free(description);
-					}
-
-					if (!specialtag) {
-						/* Test prefixes:
-						 * - '?' denotes dialup test, i.e. report failures as clear.
-						 * - '|' denotes reverse test, i.e. service should be DOWN.
-						 * - '~' denotes test that ignores ping result (normally,
-						 *       TCP tests are reported CLEAR if ping check fails;
-						 *       with this flag report their true status)
-						 */
-						dialuptest = reversetest = alwaystruetest = 0;
-						if (*testspec == '?') { dialuptest=1;     testspec++; }
-						if (*testspec == '!') { reversetest=1;    testspec++; }
-						if (*testspec == '~') { alwaystruetest=1; testspec++; }
-					}
-
-					if (specialtag) {
-						s = NULL;
-					}
-					else if (pingtest && argnmatch(testspec, pingtest->testname)) {
-						char *p;
-
-						/*
-						 * Ping/conn test. Save any modifier flags for later use.
-						 */
-						ping_dialuptest = dialuptest;
-						ping_reversetest = reversetest;
-						p = strchr(testspec, '=');
-						if (p) {
-							char *ips;
-
-							/* Extra ping tests - save them for later */
-							h->extrapings = (extraping_t *)malloc(sizeof(extraping_t));
-							h->extrapings->iplist = NULL;
-							if (argnmatch(p, "=worst,")) {
-								h->extrapings->matchtype = MULTIPING_WORST;
-								ips = strdup(p+7);
-							}
-							else if (argnmatch(p, "=best,")) {
-								h->extrapings->matchtype = MULTIPING_BEST;
-								ips = strdup(p+6);
-							}
-							else {
-								h->extrapings->matchtype = MULTIPING_BEST;
-								ips = strdup(p+1);
-							}
-
-							do {
-								ipping_t *newping = (ipping_t *)malloc(sizeof(ipping_t));
-
-								newping->ip = ips;
-								newping->open = 0;
-								newping->banner = NULL;
-								newping->bannerbytes = 0;
-								newping->next = h->extrapings->iplist;
-								h->extrapings->iplist = newping;
-								ips = strchr(ips, ',');
-								if (ips) { *ips = '\0'; ips++; }
-							} while (ips && (*ips));
-						}
-						s = NULL; /* Dont add the test now - ping is special (enabled by default) */
-					}
-					else if ((argnmatch(testspec, "ldap://")) ||
-						 (argnmatch(testspec, "ldaps://"))) {
-						/*
-						 * LDAP test. This uses ':' a lot, so save it here.
-						 */
-#ifdef BBGEN_LDAP
-						s = ldaptest;
-						savedspec = strdup(testspec);
-						add_url_to_dns_queue(testspec);
-#else
-						errprintf("ldap test requested, but bbgen was built with no ldap support\n");
-#endif
-					}
-					else if ( argnmatch(testspec, "http")         ||
-						  argnmatch(testspec, "content=http") ||
-						  argnmatch(testspec, "cont;http")    ||
-						  argnmatch(testspec, "cont=")        ||
-						  argnmatch(testspec, "nocont;http")  ||
-						  argnmatch(testspec, "nocont=")      ||
-						  argnmatch(testspec, "post;http")    ||
-						  argnmatch(testspec, "post=")        ||
-						  argnmatch(testspec, "nopost;http")  ||
-						  argnmatch(testspec, "nopost=")      ||
-						  argnmatch(testspec, "type;http")    ||
-						  argnmatch(testspec, "type=")        )      {
-						/*
-						 * HTTP test. This uses ':' a lot, so save it here.
-						 */
-						s = httptest;
-						savedspec = strdup(testspec);
-						add_url_to_dns_queue(testspec);
-					}
-					else if (argnmatch(testspec, "apache")) {
-						char statusurl[50];
-
-						s = httptest;
-						sprintf(statusurl, "cont=apache;http://%d.%d.%d.%d/server-status?auto;.",
-							ip1, ip2, ip3, ip4);
-						savedspec = strdup(statusurl);
-						add_url_to_dns_queue(savedspec);
-						sendasdata = 1;
-					}
-					else if (argnmatch(testspec, "rpc")) {
-						/*
-						 * rpc check via rpcinfo
-						 */
-						s = rpctest;
-						savedspec = strdup(testspec);
-					}
-					else if (argnmatch(testspec, "dns=")) {
-						s = dnstest;
-						savedspec = strdup(testspec);
-					}
-					else if (argnmatch(testspec, "dig=")) {
-						s = digtest;
-						savedspec = strdup(testspec);
-					}
-					else {
-						/* 
-						 * Simple TCP connect test. 
-						 */
-						char *option;
-
-						/* Remove any trailing ":s", ":q", ":Q", ":portnumber" */
-						option = strchr(testspec, ':'); 
-						if (option) { 
-							*option = '\0'; 
-							option++; 
-						}
-	
-						/* Find the service */
-						for (s=svchead; (s && (strcmp(s->testname, testspec) != 0)); s = s->next) ;
-
-						if (option && s) {
-							/*
-							 * Check if it is a service with an explicit portnumber.
-							 * If it is, then create a new service record named
-							 * "SERVICE_PORT" so we can merge tests for this service+port
-							 * combination for multiple hosts.
-							 *
-							 * According to BB docs, this type of services must be in
-							 * BBNETSVCS - so it is known already.
-							 */
-							int specialport = 0;
-							char *specialname;
-							char *opt2 = strrchr(option, ':');
-
-							if (opt2) {
-								if (strcmp(opt2, ":s") == 0) {
-									/* option = "portnumber:s" */
-									silenttest = 1;
-									*opt2 = '\0';
-									specialport = atoi(option);
-									*opt2 = ':';
-								}
-							}
-							else if (strcmp(option, "s") == 0) {
-								/* option = "s" */
-								silenttest = 1;
-								specialport = 0;
-							}
-							else {
-								/* option = "portnumber" */
-								specialport = atoi(option);
-							}
-
-							if (specialport) {
-								specialname = (char *) malloc(strlen(s->testname)+10);
-								sprintf(specialname, "%s_%d", s->testname, specialport);
-								s = add_service(specialname, specialport, strlen(s->testname), TOOL_CONTEST);
-								free(specialname);
-							}
-						}
-
-						if (s) h->dodns = 1;
-						if (option) *(option-1) = ':';
-					}
-
-					if (s) {
-						anytests = 1;
-						newtest = init_testitem(h, s, savedspec, dialuptest, reversetest, alwaystruetest, silenttest, sendasdata);
-						newtest->next = s->items;
-						s->items = newtest;
-
-						if (s == httptest) h->firsthttp = newtest;
-						else if (s == ldaptest) h->firstldap = newtest;
-					}
-
-					if (testspec) testspec = strtok(NULL, "\t ");
-				}
-
-				if (pingtest && !h->noconn) {
-					/* Add the ping check */
-					anytests = 1;
-					newtest = init_testitem(h, pingtest, NULL, ping_dialuptest, ping_reversetest, 1, 0, 0);
-					newtest->next = pingtest->items;
-					pingtest->items = newtest;
-					h->dodns = 1;
-				}
-
-				/* 
-				 * Setup badXXX values.
-				 *
-				 * We need to do this last, because the testitem_t records do
-				 * not exist until the test has been created.
-				 *
-				 * So after parsing the badFOO tag, we must find the testitem_t
-				 * record created earlier for this test (it may not exist).
-				 */
-				testspec = strtok(badsaves, " ");
-				while (testspec) {
-					char *testname, *timespec, *badcounts;
-					int badclear, badyellow, badred;
-					int inscope;
-					testitem_t *twalk;
-					service_t *swalk;
-
-					badclear = badyellow = badred = 0;
-					inscope = 1;
-
-					testname = testspec+strlen("bad");
-					badcounts = strchr(testspec, ':');
-					if (badcounts) {
-						*badcounts = '\0';
-						badcounts++;
-						if (sscanf(badcounts, "%d:%d:%d", &badclear, &badyellow, &badred) != 3) {
-							errprintf("Incorrect 'bad' counts: '%s'\n", badcounts);
-							badcounts = NULL;
-						}
-					}
-					timespec = strchr(testspec, '-');
-					if (timespec) inscope = periodcoversnow(timespec);
-
-					if (strlen(testname) && badcounts && inscope) {
-						twalk = NULL;
-
-						for (swalk=svchead; (swalk && (strcmp(swalk->testname, testname) != 0)); swalk = swalk->next) ;
-						if (swalk) {
-							if (swalk == httptest) twalk = h->firsthttp;
-							else if (swalk == ldaptest) twalk = h->firstldap;
-							else {
-								for (twalk = swalk->items; (twalk && (twalk->host != h)); twalk = twalk->next) ;
-							}
-						}
-
-						if (twalk) {
-							twalk->badtest[0] = badclear;
-							twalk->badtest[1] = badyellow;
-							twalk->badtest[2] = badred;
-						}
-						else {
-							dprintf("No test for badtest spec host=%s, test=%s\n",
-								h->hostname, testname);
-						}
-					}
-
-					testspec = strtok(NULL, " ");
-				}
-				free(badsaves);
-
-				if (anytests) {
-					testedhost_t *walk;
-
-					/* Check for a duplicate host def. Causes all sorts of funny problems.
-					 * However, dont drop the second definition - to do this, we will have
-					 * to clean up the testitem lists as well, or we get crashes when 
-					 * tests belong to a non-existing host.
-					 */
-					for (walk=testhosthead; (walk && (strcmp(hostname, walk->hostname) != 0)); walk = walk->next);
-					if (walk) {
-						errprintf("Host %s appears twice in bb-hosts! This probably causes strange results.\n", hostname);
-					}
-
-					sprintf(h->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
-					if (!h->testip) add_host_to_dns_queue(hostname);
-					h->next = testhosthead;
-					testhosthead = h;
-				}
-				else {
-					/* No network tests for this host, so ignore it */
-					dprintf("Did not find any network tests for host %s\n", h->hostname);
-					free(h);
-					notesthostcount++;
-				}
-			}
-		}
-		else if ((sscanf(l, "dialup %s %3d.%3d.%3d.%3d %d", hostname, &ip1, &ip2, &ip3, &ip4, &banksize) == 6) && (banksize > 0)) {
+		if (argnmatch(hwalk->bbhostname, "@dialup.")) {
 			/* Modembank entry: "dialup displayname startIP count" */
 
-			if (wanted_host (l, netstring, hostname)) {
-				testitem_t *newtest;
-				modembank_t *newentry;
-				int i;
+			char *realname;
+			testitem_t *newtest;
+			modembank_t *newentry;
+			int i, ip1, ip2, ip3, ip4, banksize;
 
-				newtest = init_testitem(NULL, modembanktest, NULL, 0, 0, 0, 0, 0);
-				newtest->next = modembanktest->items;
-				modembanktest->items = newtest;
+			realname = hwalk->bbhostname + strlen("@dialup.");
+			banksize = atoi(bbh_item(hwalk, BBH_BANKSIZE));
+			sscanf(bbh_item(hwalk, BBH_IP), "%d.%d.%d.%d", &ip1, &ip2, &ip3, &ip4);
 
-				newtest->privdata = (void *)malloc(sizeof(modembank_t));
-				newentry = (modembank_t *)newtest->privdata;
+			newtest = init_testitem(NULL, modembanktest, NULL, 0, 0, 0, 0, 0);
+			newtest->next = modembanktest->items;
+			modembanktest->items = newtest;
 
-				newentry->hostname = strdup(hostname);
-				newentry->startip = IPtou32(ip1, ip2, ip3, ip4);
-				newentry->banksize = banksize;
-				newentry->responses = (int *) malloc(banksize * sizeof(int));
-				for (i=0; i<banksize; i++) newentry->responses[i] = 0;
+			newtest->privdata = (void *)malloc(sizeof(modembank_t));
+			newentry = (modembank_t *)newtest->privdata;
+			newentry->hostname = realname;
+			newentry->startip = IPtou32(ip1, ip2, ip3, ip4);
+			newentry->banksize = banksize;
+			newentry->responses = (int *) malloc(banksize * sizeof(int));
+			for (i=0; i<banksize; i++) newentry->responses[i] = 0;
+
+			/* No more to do for modembanks */
+			continue;
+		}
+
+
+		p = bbh_item(hwalk, BBH_DOWNTIME);
+		if (p) okexpected = (!within_sla(p, "", 0));
+		h = init_testedhost(hwalk->bbhostname, okexpected);
+
+		p = bbh_custom_item(hwalk, "badconn:");
+		if (p) sscanf(p, "%d:%d:%d", &h->badconn[0], &h->badconn[1], &h->badconn[2]);
+
+		p = bbh_custom_item(hwalk, "route:");
+		if (p) h->routerdeps = p;
+		if (routestring) {
+			p = bbh_custom_item(hwalk, routestring);
+			if (p) h->routerdeps = p;
+		}
+
+		if (bbh_item(hwalk, BBH_FLAG_NOCONN)) h->noconn = 1;
+		if (bbh_item(hwalk, BBH_FLAG_NOPING)) h->noping = 1;
+		if (bbh_item(hwalk, BBH_FLAG_TRACE)) h->dotrace = 1;
+		if (bbh_item(hwalk, BBH_FLAG_NOTRACE)) h->dotrace = 0;
+		if (bbh_item(hwalk, BBH_FLAG_TESTIP)) h->testip = 1;
+		if (bbh_item(hwalk, BBH_FLAG_DIALUP)) h->dialup = 1;
+		if (bbh_item(hwalk, BBH_FLAG_NOSSLCERT)) h->nosslcert = 1;
+		if (bbh_item(hwalk, BBH_FLAG_LDAPFAILYELLOW)) h->ldapsearchfailyellow = 1;
+
+		p = bbh_item(hwalk, BBH_SSLDAYS);
+		if (p) sscanf(p, "%d:%d", &h->sslwarndays, &h->sslalarmdays);
+
+		p = bbh_item(hwalk, BBH_DEPENDS);
+		if (p) h->deptests = p;
+
+		p = bbh_item(hwalk, BBH_LDAPLOGIN);
+		if (p) {
+			h->ldapuser = strdup(p);
+			h->ldappasswd = (strchr(h->ldapuser, ':'));
+			if (h->ldappasswd) {
+				*h->ldappasswd = '\0';
+				h->ldappasswd++;
 			}
 		}
+
+		p = bbh_item(hwalk, BBH_DESCRIPTION);
+		if (p) {
+			h->hosttype = strdup(p);
+			p = strchr(h->hosttype, ':');
+			if (p) *p = '\0';
+		}
+
+		testspec = bbh_item_walk(hwalk);
+		while (testspec) {
+			service_t *s = NULL;
+			int dialuptest = 0, reversetest = 0, alwaystruetest = 0, silenttest = 0, sendasdata = 0;
+
+			if (bbh_item_idx(testspec) == -1) {
+
+				/* Test prefixes:
+				 * - '?' denotes dialup test, i.e. report failures as clear.
+				 * - '|' denotes reverse test, i.e. service should be DOWN.
+				 * - '~' denotes test that ignores ping result (normally,
+				 *       TCP tests are reported CLEAR if ping check fails;
+				 *       with this flag report their true status)
+				 */
+				if (*testspec == '?') { dialuptest=1;     testspec++; }
+				if (*testspec == '!') { reversetest=1;    testspec++; }
+				if (*testspec == '~') { alwaystruetest=1; testspec++; }
+
+				if (pingtest && argnmatch(testspec, pingtest->testname)) {
+					char *p;
+
+					/*
+					 * Ping/conn test. Save any modifier flags for later use.
+					 */
+					ping_dialuptest = dialuptest;
+					ping_reversetest = reversetest;
+					p = strchr(testspec, '=');
+					if (p) {
+						char *ips;
+
+						/* Extra ping tests - save them for later */
+						h->extrapings = (extraping_t *)malloc(sizeof(extraping_t));
+						h->extrapings->iplist = NULL;
+						if (argnmatch(p, "=worst,")) {
+							h->extrapings->matchtype = MULTIPING_WORST;
+							ips = strdup(p+7);
+						}
+						else if (argnmatch(p, "=best,")) {
+							h->extrapings->matchtype = MULTIPING_BEST;
+							ips = strdup(p+6);
+						}
+						else {
+							h->extrapings->matchtype = MULTIPING_BEST;
+							ips = strdup(p+1);
+						}
+
+						do {
+							ipping_t *newping = (ipping_t *)malloc(sizeof(ipping_t));
+
+							newping->ip = ips;
+							newping->open = 0;
+							newping->banner = NULL;
+							newping->bannerbytes = 0;
+							newping->next = h->extrapings->iplist;
+							h->extrapings->iplist = newping;
+							ips = strchr(ips, ',');
+							if (ips) { *ips = '\0'; ips++; }
+						} while (ips && (*ips));
+					}
+					s = NULL; /* Dont add the test now - ping is special (enabled by default) */
+				}
+				else if ((argnmatch(testspec, "ldap://")) || (argnmatch(testspec, "ldaps://"))) {
+					/*
+					 * LDAP test. This uses ':' a lot, so save it here.
+					 */
+#ifdef BBGEN_LDAP
+					s = ldaptest;
+					add_url_to_dns_queue(testspec);
+#else
+					errprintf("ldap test requested, but bbgen was built with no ldap support\n");
+#endif
+				}
+				else if ( argnmatch(testspec, "http")         ||
+					  argnmatch(testspec, "content=http") ||
+					  argnmatch(testspec, "cont;http")    ||
+					  argnmatch(testspec, "cont=")        ||
+					  argnmatch(testspec, "nocont;http")  ||
+					  argnmatch(testspec, "nocont=")      ||
+					  argnmatch(testspec, "post;http")    ||
+					  argnmatch(testspec, "post=")        ||
+					  argnmatch(testspec, "nopost;http")  ||
+					  argnmatch(testspec, "nopost=")      ||
+					  argnmatch(testspec, "type;http")    ||
+					  argnmatch(testspec, "type=")        )      {
+					/*
+					 * HTTP test. This uses ':' a lot, so save it here.
+					 */
+					s = httptest;
+					add_url_to_dns_queue(testspec);
+				}
+				else if (argnmatch(testspec, "apache")) {
+					static char statusurl[50];
+
+					s = httptest;
+					sprintf(statusurl, "cont=apache;http://%s/server-status?auto;.",
+						bbh_item(hwalk, BBH_IP));
+					testspec = statusurl;
+					add_url_to_dns_queue(testspec);
+					sendasdata = 1;
+				}
+				else if (argnmatch(testspec, "rpc")) {
+					/*
+					 * rpc check via rpcinfo
+					 */
+					s = rpctest;
+				}
+				else if (argnmatch(testspec, "dns=")) {
+					s = dnstest;
+				}
+				else if (argnmatch(testspec, "dig=")) {
+					s = digtest;
+				}
+				else {
+					/* 
+					 * Simple TCP connect test. 
+					 */
+					char *option;
+
+					/* Remove any trailing ":s", ":q", ":Q", ":portnumber" */
+					option = strchr(testspec, ':'); 
+					if (option) { 
+						*option = '\0'; 
+						option++; 
+					}
+	
+					/* Find the service */
+					for (s=svchead; (s && (strcmp(s->testname, testspec) != 0)); s = s->next) ;
+
+					if (option && s) {
+						/*
+						 * Check if it is a service with an explicit portnumber.
+						 * If it is, then create a new service record named
+						 * "SERVICE_PORT" so we can merge tests for this service+port
+						 * combination for multiple hosts.
+						 *
+						 * According to BB docs, this type of services must be in
+						 * BBNETSVCS - so it is known already.
+						 */
+						int specialport = 0;
+						char *specialname;
+						char *opt2 = strrchr(option, ':');
+
+						if (opt2) {
+							if (strcmp(opt2, ":s") == 0) {
+								/* option = "portnumber:s" */
+								silenttest = 1;
+								*opt2 = '\0';
+								specialport = atoi(option);
+								*opt2 = ':';
+							}
+						}
+						else if (strcmp(option, "s") == 0) {
+							/* option = "s" */
+							silenttest = 1;
+							specialport = 0;
+						}
+						else {
+							/* option = "portnumber" */
+							specialport = atoi(option);
+						}
+
+						if (specialport) {
+							specialname = (char *) malloc(strlen(s->testname)+10);
+							sprintf(specialname, "%s_%d", s->testname, specialport);
+							s = add_service(specialname, specialport, strlen(s->testname), TOOL_CONTEST);
+							free(specialname);
+						}
+					}
+
+					if (s) h->dodns = 1;
+					if (option) *(option-1) = ':';
+				}
+
+				if (s) {
+					testitem_t *newtest;
+
+					anytests = 1;
+					newtest = init_testitem(h, s, testspec, dialuptest, reversetest, alwaystruetest, silenttest, sendasdata);
+					newtest->next = s->items;
+					s->items = newtest;
+
+					if (s == httptest) h->firsthttp = newtest;
+					else if (s == ldaptest) h->firstldap = newtest;
+				}
+			}
+
+			testspec = bbh_item_walk(NULL);
+		}
+
+		if (pingtest && !h->noconn) {
+			/* Add the ping check */
+			testitem_t *newtest;
+
+			anytests = 1;
+			newtest = init_testitem(h, pingtest, NULL, ping_dialuptest, ping_reversetest, 1, 0, 0);
+			newtest->next = pingtest->items;
+			pingtest->items = newtest;
+			h->dodns = 1;
+		}
+
+
+		/* 
+		 * Setup badXXX values.
+		 *
+		 * We need to do this last, because the testitem_t records do
+		 * not exist until the test has been created.
+		 *
+		 * So after parsing the badFOO tag, we must find the testitem_t
+		 * record created earlier for this test (it may not exist).
+		 */
+		testspec = bbh_item_walk(hwalk);
+		while (testspec) {
+			char *testname, *timespec, *badcounts;
+			int badclear, badyellow, badred;
+			int inscope;
+			testitem_t *twalk;
+			service_t *swalk;
+
+			if (strncmp(testspec, "bad", 3) != 0) {
+				/* Not a bad* tag - skip it */
+				testspec = bbh_item_walk(NULL);
+				continue;
+			}
+
+
+			badclear = badyellow = badred = 0;
+			inscope = 1;
+
+			testname = testspec+strlen("bad");
+			badcounts = strchr(testspec, ':');
+			if (badcounts) {
+				if (sscanf(badcounts, ":%d:%d:%d", &badclear, &badyellow, &badred) != 3) {
+					errprintf("Incorrect 'bad' counts: '%s'\n", badcounts);
+					badcounts = NULL;
+				}
+			}
+			timespec = strchr(testspec, '-');
+			if (timespec) inscope = periodcoversnow(timespec);
+
+			if (strlen(testname) && badcounts && inscope) {
+				twalk = NULL;
+
+				for (swalk=svchead; (swalk && strcmp(swalk->testname, testname)); swalk = swalk->next) ;
+				if (swalk) {
+					if (swalk == httptest) twalk = h->firsthttp;
+					else if (swalk == ldaptest) twalk = h->firstldap;
+					else for (twalk = swalk->items; (twalk && (twalk->host != h)); twalk = twalk->next) ;
+				}
+
+				if (twalk) {
+					twalk->badtest[0] = badclear;
+					twalk->badtest[1] = badyellow;
+					twalk->badtest[2] = badred;
+				}
+				else {
+					dprintf("No test for badtest spec host=%s, test=%s\n",
+						h->hostname, testname);
+				}
+			}
+
+			testspec = bbh_item_walk(NULL);
+		}
+
+
+		if (anytests) {
+			testedhost_t *walk;
+
+			/* 
+			 * Check for a duplicate host def. Causes all sorts of funny problems.
+			 * However, dont drop the second definition - to do this, we will have
+			 * to clean up the testitem lists as well, or we get crashes when 
+			 * tests belong to a non-existing host.
+			 */
+
+			for (walk=testhosthead; (walk && (strcmp(h->hostname, walk->hostname) != 0)); walk = walk->next);
+			if (walk) {
+				errprintf("Host %s appears twice in bb-hosts! This may cause strange results\n", h->hostname);
+			}
+	
+			strcpy(h->ip, bbh_item(hwalk, BBH_IP));
+			if (!h->testip) add_host_to_dns_queue(h->hostname);
+			h->next = testhosthead;
+			testhosthead = h;
+		}
 		else {
-			/* Other bb-hosts line - ignored */
-		};
+			/* No network tests for this host, so ignore it */
+			dprintf("Did not find any network tests for host %s\n", h->hostname);
+			free(h);
+			notesthostcount++;
+		}
+
 	}
 
-	stackfclose(bbhosts);
 	return;
 }
 
@@ -1875,7 +1717,7 @@ void send_modembank_results(service_t *service)
 
 		init_status(COL_GREEN);		/* Modembanks are always green */
 		sprintf(msgline, "status dialup.%s %s %s FROM %s TO %s DATA ", 
-			commafy(req->hostname), colorname(COL_GREEN), timestamp, startip, endip);
+			req->hostname, colorname(COL_GREEN), timestamp, startip, endip);
 		addtostatus(msgline);
 		for (i=0; i<req->banksize; i++) {
 			if (req->responses[i]) {
