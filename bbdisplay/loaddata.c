@@ -9,14 +9,14 @@
 /* generate the webpages. This is a problem, when the pages are used for      */
 /* 24x7 monitoring of the system status.                                      */
 /*                                                                            */
-/* Copyright (C) 2002 Henrik Storner <henrik@storner.dk>                      */
+/* Copyright (C) 2002-2004 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.125 2004-09-10 06:08:30 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.126 2004-10-24 22:07:25 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -54,8 +54,26 @@ int		purplecount = 0;
 char		*purplelogfn = NULL;
 static FILE	*purplelog = NULL;
 
+int		usebbgend = 0;
+
 static time_t oldestentry;
 
+
+typedef struct logdata_t {
+	/* hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|1st line of message */
+	char *hostname;
+	char *testname;
+	int  color;
+	char *testflags;
+	time_t lastchange;
+	time_t logtime;
+	time_t validtime;
+	time_t acktime;
+	time_t disabletime;
+	char *sender;
+	int cookie;
+	char *msg;
+} logdata_t;
 
 char *parse_testflags(char *l)
 {
@@ -87,7 +105,7 @@ int testflag_set(entry_t *e, char flag)
 }
 
 
-state_t *init_state(const char *filename, int dopurple, int *is_purple)
+state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_purple)
 {
 	FILE 		*fd;
 	char		*p;
@@ -100,6 +118,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	struct stat 	log_st;
 	time_t		now = time(NULL);
 	time_t		histentry_start;
+	int		logexpired = 0;
 
 	statuscount++;
 	dprintf("init_state(%s, %d, ...)\n", textornull(filename), dopurple);
@@ -130,42 +149,50 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		}
 	}
 
-	sprintf(fullfn, "%s/%s", getenv(((reportstart || snapshot) ? "BBHIST" : "BBLOGS")), filename);
-
-	/* Check that we can access this file */
-	if ( (stat(fullfn, &log_st) == -1)       || 
-	     (!S_ISREG(log_st.st_mode))            ||
-	     ((fd = fopen(fullfn, "r")) == NULL)   ) {
-		errprintf("Weird file '%s' skipped\n", fullfn);
-		return NULL;
-	}
-
-	/* Pick out host- and test-name */
-	hostname = malcop(filename);
-	p = strrchr(hostname, '.');
-
-	/* Skip files that have no '.' in filename */
-	if (p) {
-		/* Pick out the testname ... */
-		*p = '\0'; p++;
-		testname = malcop(p);
-
-		/* ... and change hostname back into normal form */
-		for (p=hostname; (*p); p++) {
-			if (*p == ',') *p='.';
-		}
+	if (usebbgend) {
+		hostname = strdup(log->hostname);
+		testname = strdup(log->testname);
+		logexpired = (log->validtime < now);
 	}
 	else {
-		free(hostname);
-		fclose(fd);
-		return NULL;
+		sprintf(fullfn, "%s/%s", getenv(((reportstart || snapshot) ? "BBHIST" : "BBLOGS")), filename);
+
+		/* Check that we can access this file */
+		if ( (stat(fullfn, &log_st) == -1)       || 
+		     (!S_ISREG(log_st.st_mode))            ||
+		     ((fd = fopen(fullfn, "r")) == NULL)   ) {
+			errprintf("Weird file '%s' skipped\n", fullfn);
+			return NULL;
+		}
+
+		/* Pick out host- and test-name */
+		logexpired = (log_st.st_mtime < now);
+		hostname = malcop(filename);
+		p = strrchr(hostname, '.');
+
+		/* Skip files that have no '.' in filename */
+		if (p) {
+			/* Pick out the testname ... */
+			*p = '\0'; p++;
+			testname = malcop(p);
+	
+			/* ... and change hostname back into normal form */
+			for (p=hostname; (*p); p++) {
+				if (*p == ',') *p='.';
+			}
+		}
+		else {
+			free(hostname);
+			fclose(fd);
+			return NULL;
+		}
 	}
 
 	sprintf(l, ",%s,", testname);
 	if (ignorecolumns && strstr(ignorecolumns, l)) {
 		free(hostname);
 		free(testname);
-		fclose(fd);
+		if (!usebbgend) fclose(fd);
 		return NULL;	/* Ignore this type of test */
 	}
 
@@ -220,9 +247,16 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	else if (snapshot) {
 		newstate->entry->color = history_color(fd, snapshot, &histentry_start, &newstate->entry->histlogname);
 	}
+	else if (usebbgend) {
+		newstate->entry->color = log->color;
+		newstate->entry->testflags = strdup(log->testflags);
+		if (testflag_set(newstate->entry, 'D')) newstate->entry->skin = dialupskin;
+		if (testflag_set(newstate->entry, 'R')) newstate->entry->skin = reverseskin;
+		newstate->entry->shorttext = malcop(log->msg);
+	}
 	else if (fgets(l, sizeof(l), fd)) {
 		newstate->entry->color = parse_color(l);
-		newstate->entry->testflags = parse_testflags(l);
+		newstate->entry->testflags = malcop(parse_testflags(l));
 		if (testflag_set(newstate->entry, 'D')) newstate->entry->skin = dialupskin;
 		if (testflag_set(newstate->entry, 'R')) newstate->entry->skin = reverseskin;
 		newstate->entry->shorttext = malcop(l);
@@ -242,7 +276,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		newstate->entry->color = COL_CLEAR;
 	}
 
-	if ( !reportstart && !snapshot && (log_st.st_mtime <= now) && (strcmp(testname, larrdcol) != 0) && (strcmp(testname, infocol) != 0) ) {
+	if ( !reportstart && !snapshot && logexpired && (strcmp(testname, larrdcol) != 0) && (strcmp(testname, infocol) != 0) ) {
 		/* Log file too old = go purple */
 
 		if (host && host->dialup) {
@@ -260,19 +294,24 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	}
 
 	/* Acked column ? */
-	if (!reportstart && !snapshot && host && (newstate->entry->color != COL_GREEN)) {
-		struct stat ack_st;
-		char ackfilename[MAX_PATH];
-
-		/*
-		 * ACK's are named by the client alias, if that exists.
-		 */
-		sprintf(ackfilename, "%s/ack.%s.%s", getenv("BBACKS"), 
-			(host->clientalias ? host->clientalias : host->hostname), testname);
-		newstate->entry->acked = (stat(ackfilename, &ack_st) == 0);
+	if (usebbgend) {
+		newstate->entry->acked = (log->acktime > now);
 	}
 	else {
-		newstate->entry->acked = 0;
+		if (!reportstart && !snapshot && host && (newstate->entry->color != COL_GREEN)) {
+			struct stat ack_st;
+			char ackfilename[MAX_PATH];
+
+			/*
+			 * ACK's are named by the client alias, if that exists.
+			 */
+			sprintf(ackfilename, "%s/ack.%s.%s", getenv("BBACKS"), 
+				(host->clientalias ? host->clientalias : host->hostname), testname);
+			newstate->entry->acked = (stat(ackfilename, &ack_st) == 0);
+		}
+		else {
+			newstate->entry->acked = 0;
+		}
 	}
 
 	newstate->entry->propagate = checkpropagation(host, testname, newstate->entry->color, newstate->entry->acked);
@@ -282,6 +321,17 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	}
 	else if (snapshot) {
 		time_t fileage = snapshot - histentry_start;
+
+		newstate->entry->oldage = (fileage >= 86400);
+		if (fileage >= 86400)
+			sprintf(newstate->entry->age, "%.2f days", (fileage / 86400.0));
+		else if (fileage > 3600)
+			sprintf(newstate->entry->age, "%.2f hours", (fileage / 3600.0));
+		else
+			sprintf(newstate->entry->age, "%.2f minutes", (fileage / 60.0));
+	}
+	else if (usebbgend) {
+		time_t fileage = (now - log->lastchange);
 
 		newstate->entry->oldage = (fileage >= 86400);
 		if (fileage >= 86400)
@@ -417,125 +467,136 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 
 	free(hostname);
 	free(testname);
-	fclose(fd);
+	if (!usebbgend) fclose(fd);
 
 	return newstate;
 }
 
-dispsummary_t *init_displaysummary(char *fn)
+dispsummary_t *init_displaysummary(char *fn, logdata_t *log)
 {
-	FILE *fd;
-	char sumfn[MAX_PATH];
-	struct stat st;
 	char l[MAX_LINE_LEN];
 	dispsummary_t *newsum = NULL;
+	time_t now = time(NULL);
 
 	dprintf("init_displaysummary(%s)\n", textornull(fn));
 
-	sprintf(sumfn, "%s/%s", getenv("BBLOGS"), fn);
+	if (usebbgend) {
+		if (log->validtime < now) return NULL;
+		strcpy(l, log->msg);
+	}
+	else {
+		char sumfn[MAX_PATH];
+		FILE *fd;
+		struct stat st;
 
-	/* Check that we can access this file */
-	if ( (stat(sumfn, &st) == -1)          || 
-	     (!S_ISREG(st.st_mode))            ||     /* Not a regular file */
-	     ((fd = fopen(sumfn, "r")) == NULL)   ) {
-		errprintf("Weird summary file BBLOGS/%s skipped\n", fn);
-		return NULL;
+		sprintf(sumfn, "%s/%s", getenv("BBLOGS"), fn);
+
+		/* Check that we can access this file */
+		if ( (stat(sumfn, &st) == -1)          || 
+		     (!S_ISREG(st.st_mode))            ||     /* Not a regular file */
+		     ((fd = fopen(sumfn, "r")) == NULL)   ) {
+			errprintf("Weird summary file BBLOGS/%s skipped\n", fn);
+			return NULL;
+		}
+
+		if (st.st_mtime < now) {
+			/* Stale summary file - ignore and delete */
+			errprintf("Stale summary file BBLOGS/%s - deleted\n", fn);
+			unlink(sumfn);
+			return NULL;
+		}
+
+		if (fgets(l, sizeof(l), fd) == NULL) {
+			errprintf("Read error reading from file %s\n", sumfn);
+			return NULL;
+		}
+
+		fclose(fd);
 	}
 
-	if (st.st_mtime < time(NULL)) {
-		/* Stale summary file - ignore and delete */
-		errprintf("Stale summary file BBLOGS/%s - deleted\n", fn);
-		unlink(sumfn);
-		return NULL;
-	}
-
-	if (fgets(l, sizeof(l), fd)) {
+	if (strlen(l)) {
 		char *p, *rowcol;
 		char *color = (char *) malloc(strlen(l));
 
 		newsum = (dispsummary_t *) malloc(sizeof(dispsummary_t));
 		newsum->url = (char *) malloc(strlen(l));
 
-		sscanf(l, "%s %s", color, newsum->url);
+		if (sscanf(l, "%s %s", color, newsum->url) == 2) {
+			newsum->color = parse_color(color);
 
-		if (strncmp(color, "green", 5) == 0) {
-			newsum->color = COL_GREEN;
-		}
-		else if (strncmp(color, "yellow", 6) == 0) {
-			newsum->color = COL_YELLOW;
-		}
-		else if (strncmp(color, "red", 3) == 0) {
-			newsum->color = COL_RED;
-		}
-		else if (strncmp(color, "blue", 4) == 0) {
-			newsum->color = COL_BLUE;
-		}
-		else if (strncmp(color, "clear", 5) == 0) {
-			newsum->color = COL_CLEAR;
-		}
-		else if (strncmp(color, "purple", 6) == 0) {
-			newsum->color = COL_PURPLE;
-		}
+			rowcol = (char *) malloc(strlen(fn) + 1);
+			strcpy(rowcol, fn+8);
+			p = strrchr(rowcol, '.');
+			if (p) *p = ' ';
 
-		rowcol = (char *) malloc(strlen(fn) + 1);
-		strcpy(rowcol, fn+8);
-		p = strrchr(rowcol, '.');
-		if (p) *p = ' ';
-
-		newsum->column = (char *) malloc(strlen(rowcol)+1);
-		newsum->row = (char *) malloc(strlen(rowcol)+1);
-		sscanf(rowcol, "%s %s", newsum->row, newsum->column);
-		newsum->next = NULL;
+			newsum->column = (char *) malloc(strlen(rowcol)+1);
+			newsum->row = (char *) malloc(strlen(rowcol)+1);
+			sscanf(rowcol, "%s %s", newsum->row, newsum->column);
+			newsum->next = NULL;
+		}
+		else {
+			free(newsum->url);
+			free(newsum);
+			newsum = NULL;
+		}
 
 		free(color);
 		free(rowcol);
 	}
-	else {
-		errprintf("Read error reading from file %s\n", sumfn);
-		newsum = NULL;
-	}
 
-
-	fclose(fd);
 	return newsum;
 }
 
-void init_modembank_status(char *fn)
+void init_modembank_status(char *fn, logdata_t *log)
 {
 	FILE *fd;
 	char statusfn[MAX_PATH];
 	struct stat st;
 	char l[MAXMSG];
 	host_t *targethost;
+	time_t now = time(NULL);
 
 	dprintf("init_modembank_status(%s)\n", textornull(fn));
 
-	sprintf(statusfn, "%s/%s", getenv("BBLOGS"), fn);
-
-	/* Check that we can access this file */
-	if ( (stat(statusfn, &st) == -1)          || 
-	     (!S_ISREG(st.st_mode))            ||     /* Not a regular file */
-	     ((fd = fopen(statusfn, "r")) == NULL)   ) {
-		errprintf("Weird modembank/dialup logfile BBLOGS/%s skipped\n", fn);
-		return;
+	if (usebbgend) {
+		if (log->validtime < now) return;
+		strcpy(l, log->msg);
 	}
+	else {
+		sprintf(statusfn, "%s/%s", getenv("BBLOGS"), fn);
 
-	if (st.st_mtime < time(NULL)) {
-		/* Stale summary file - ignore and delete */
-		errprintf("Stale modembank summary file BBLOGS/%s - deleted\n", fn);
+		/* Check that we can access this file */
+		if ( (stat(statusfn, &st) == -1)          || 
+		     (!S_ISREG(st.st_mode))            ||     /* Not a regular file */
+		     ((fd = fopen(statusfn, "r")) == NULL)   ) {
+			errprintf("Weird modembank/dialup logfile BBLOGS/%s skipped\n", fn);
+			return;
+		}
+
+		if (st.st_mtime < now) {
+			/* Stale summary file - ignore and delete */
+			errprintf("Stale modembank summary file BBLOGS/%s - deleted\n", fn);
+			fclose(fd);
+			unlink(statusfn);
+			return;
+		}
+
+		if (fgets(l, sizeof(l), fd) == NULL) {
+			errprintf("Cannot read modembank logfile %s\n", fn);
+			fclose(fd);
+			return;
+		}
+
 		fclose(fd);
-		unlink(statusfn);
-		return;
 	}
 
 	targethost = find_host(fn+strlen("dialup."));
 	if (targethost == NULL) {
 		dprintf("Modembank status from unknown host %s - ignored\n", fn+strlen("dialup."));
-		fclose(fd);
 		return;
 	}
 
-	if (fgets(l, sizeof(l), fd)) {
+	if (strlen(l)) {
 		char *startip, *endip, *tag;
 		int idx = -1;
 
@@ -579,8 +640,6 @@ void init_modembank_status(char *fn)
 				  fn, (idx-1), targethost->banksize);
 		}
 	}
-
-	fclose(fd);
 }
 
 
@@ -595,12 +654,30 @@ state_t *load_state(dispsummary_t **sumhead)
 	struct stat	st;
 	int		purplecount = 0;
 	int		is_purple;
+	char 		*board = NULL;
+	char		*nextline;
+	int		done;
+	logdata_t	log;
 
 	dprintf("load_state()\n");
+	if (usebbgend) {
+		int bbgendresult = sendmessage("bbgendboard", NULL, NULL, &board, 1);
+		if ((bbgendresult != BB_OK) || (board == NULL) || (*board == '\0')) {
+			errprintf("bbgend status-board not available\n");
+			return NULL;
+		}
+	}
+	else {
+		if (chdir(getenv("BBLOGS")) != 0) {
+			errprintf("Cannot access the BBLOGS directory %s\n", getenv("BBLOGS"));
+			return NULL;
+		}
 
-	if (chdir(getenv("BBLOGS")) != 0) {
-		errprintf("Cannot access the BBLOGS directory %s\n", getenv("BBLOGS"));
-		return NULL;
+		bblogs = opendir(getenv("BBLOGS"));
+		if (!bblogs) {
+			errprintf("No logs! Cannot read the BBLOGS directory %s\n", getenv("BBLOGS"));
+			return NULL;
+		}
 	}
 
 	if (reportstart || snapshot) {
@@ -609,7 +686,8 @@ state_t *load_state(dispsummary_t **sumhead)
 		oldestentry = time(NULL);
 	}
 	else {
-		if (stat(".bbstartup", &st) == -1) {
+		sprintf(fn, "%s/.bbstartup", getenv("BBLOGS"));
+		if (stat(fn, &st) == -1) {
 			/* Do purple if no ".bbstartup" file */
 			dopurple = enable_purpleupd;
 		}
@@ -622,7 +700,7 @@ state_t *load_state(dispsummary_t **sumhead)
 			/* Check if enough time has passed to remove the startup file */
 			time(&now);
 			if ((now - st.st_mtime) > 300) {
-				remove(".bbstartup");
+				remove(fn);
 			}
 		}
 
@@ -637,18 +715,59 @@ state_t *load_state(dispsummary_t **sumhead)
 	topstate = NULL;
 	topsum = NULL;
 
-	bblogs = opendir(getenv("BBLOGS"));
-	if (!bblogs) {
-		errprintf("No logs! Cannot read the BBLOGS directory %s\n", getenv("BBLOGS"));
-		return NULL;
-	}
+	done = 0; nextline = board;
+	while (!done) {
+		if (usebbgend) {
+			char *bol = nextline;
+			char onelog[MAXMSG];
+			char *p;
+			int i;
 
-	while ((d = readdir(bblogs))) {
-		strcpy(fn, d->d_name);
+			nextline = strchr(nextline, '\n');
+			if (nextline) { *nextline = '\0'; nextline++; }
+
+			if (strlen(bol) == 0) {
+				done = 1;
+				continue;
+			}
+
+			strcpy(onelog, bol);;
+			p = gettok(onelog, "|"); i = 0;
+			while (p) {
+				switch (i) {
+				  /* hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|1st line of message */
+				  case  0: log.hostname = p; break;
+				  case  1: log.testname = p; break;
+				  case  2: log.color = parse_color(p); break;
+				  case  3: log.testflags = p; break;
+				  case  4: log.lastchange = atoi(p); break;
+				  case  5: log.logtime = atoi(p); break;
+				  case  6: log.validtime = atoi(p); break;
+				  case  7: log.acktime = atoi(p); break;
+				  case  8: log.disabletime = atoi(p); break;
+				  case  9: log.sender = p; break;
+				  case 10: log.cookie = atoi(p); break;
+				  case 11: log.msg = p; break;
+				}
+
+				p = gettok(NULL, "|");
+				i++;
+			}
+			sprintf(fn, "%s.%s", commafy(log.hostname), log.testname);
+		}
+		else {
+			d = readdir(bblogs);
+			if (d == NULL) {
+				done = 1;
+				continue;
+			}
+
+			strcpy(fn, d->d_name);
+		}
 
 		if (strncmp(fn, "summary.", 8) == 0) {
 			if (!reportstart && !snapshot) {
-				newsum = init_displaysummary(fn);
+				newsum = init_displaysummary(fn, &log);
 				if (newsum) {
 					newsum->next = topsum;
 					topsum = newsum;
@@ -656,12 +775,12 @@ state_t *load_state(dispsummary_t **sumhead)
 			}
 		}
 		else if (strncmp(fn, "dialup.", 7) == 0) {
-			init_modembank_status(fn);
+			init_modembank_status(fn, &log);
 		}
 		else {
 			is_purple = 0;
 
-			newstate = init_state(fn, dopurple, &is_purple);
+			newstate = init_state(fn, &log, dopurple, &is_purple);
 			if (newstate) {
 				newstate->next = topstate;
 				topstate = newstate;
@@ -681,7 +800,55 @@ state_t *load_state(dispsummary_t **sumhead)
 		}
 	}
 
-	closedir(bblogs);
+	if (0 && usebbgend) {
+		hostlist_t *hwalk;
+		logdata_t log;
+
+		if (board) free(board);
+
+		/*
+		 * Generate the pseudo files for info- and larrd-columnes.
+		 * These dont go via the network daemon, so we need to fake them.
+		 */
+
+		log.color = COL_GREEN;
+		log.testflags = "";
+		log.lastchange = 0;
+		log.logtime = time(NULL);
+		log.validtime = log.logtime+1800;
+		log.acktime = 0;
+		log.disabletime = 0;
+		log.sender = "";
+		log.cookie = -1;
+		log.msg = "";
+
+		for (hwalk=hosthead; (hwalk); hwalk = hwalk->next) {
+			log.hostname = hwalk->hostentry->hostname;
+
+			if (enable_infogen) {
+				log.testname = infocol;
+				sprintf(fn, "%s.%s", commafy(log.hostname), log.testname);
+				newstate = init_state(fn, &log, dopurple, &is_purple);
+				if (newstate) {
+					newstate->next = topstate;
+					topstate = newstate;
+				}
+			}
+
+			if (enable_larrdgen) {
+				log.testname = larrdcol;
+				sprintf(fn, "%s.%s", commafy(log.hostname), log.testname);
+				newstate = init_state(fn, &log, dopurple, &is_purple);
+				if (newstate) {
+					newstate->next = topstate;
+					topstate = newstate;
+				}
+			}
+		}
+	}
+	else {
+		closedir(bblogs);
+	}
 
 	if (reportstart) sethostenv_report(oldestentry, reportend, reportwarnlevel, reportgreenlevel);
 	if (dopurple) combo_end();
