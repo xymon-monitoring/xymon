@@ -1,15 +1,14 @@
 <CENTER>
 <FORM METHOD="GET" ACTION="&CGIBINURL/bb-eventlog.sh">
-   <FONT FACE="Arial, Helvetica" COLOR="silver">
    <TABLE BORDER=0 SUMMARY="Eventlog criteria">
      <TR>
-       <TD><B>How long to go back in time:</B></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>How long to go back in time:</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
-       <TD><INPUT TYPE=TEXT NAME="MAXTIME" SIZE=10 VALUE="1440">&nbsp; minutes</B></TD>
+       <TD><INPUT TYPE=TEXT NAME="MAXTIME" SIZE=10 VALUE="1440"><FONT FACE="Arial, Helvetica" COLOR="silver"><B>&nbsp; minutes</B></FONT></TD>
      </TR>
 
      <TR>
-       <TD><B>Max. number of events</B></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Max. number of events</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
        <TD><INPUT TYPE=TEXT NAME="MAXCOUNT" SIZE=10></TD>
      </TR>
@@ -21,6 +20,5 @@
         </TD>
      </TR>
    </TABLE>
-   </FONT>
 </FORM>
 </CENTER>
