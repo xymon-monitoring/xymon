@@ -17,6 +17,7 @@ raised with Hobbit.</p>
 	<li><a href="#drophost">How do I delete a host ?</a></li>
 	<li><a href="#renamehost">How do I rename a host ?</a></li>
 	<li><a href="#apachetest">I cannot get the Apache graphs to work</a></li>
+	<li><a href="#mrtg">How can I add MRTG graphs to the Hobbit webpages?</a></li>
 	<li><a href="#updatefreq">Updating more frequently</a></li>
 	<li><a href="#fahrenheit">I want my temperature graphs to show Fahrenheit</a></li>
 	<li><a href="#nohtmllink">How do I remove the HTML links from the alert messages?</a></li>
@@ -160,6 +161,11 @@ data.  Heres what I have in mine:
  -Charles
 </tt></pre>
 
+
+<hr>
+<h3><a name="mrtg">How can I add MRTG graphs to the Hobbit webpages?</a></h3>
+<p>There is <a href="hobbit-mrtg.html">a special document</a> for this, describing how you can configure
+MRTG to save data in a format that Hobbit can handle natively.</p>
 
 <hr>
 <h3><a name="updatefreq">I need the web-pages to update more frequently</a></h3>
