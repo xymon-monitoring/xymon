@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.14 2003-02-02 21:58:31 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.15 2003-02-07 14:09:32 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -36,6 +36,8 @@ static char rcsid[] = "$Id: pagegen.c,v 1.14 2003-02-02 21:58:31 henrik Exp $";
 #include "infogen.h"
 
 char *bb_headfoot = "bb";
+int  subpagecolumns=1;
+
 
 int interesting_column(int pagetype, int color, int alert, char *columnname, char *onlycols)
 {
@@ -361,6 +363,7 @@ void do_bb_page(page_t *page, dispsummary_t *sums, char *filename)
 	FILE	*output;
 	page_t	*p;
 	link_t  *link;
+	int	currentcolumn;
 
 	output = fopen(filename, "w");
 	if (output == NULL) {
@@ -376,22 +379,27 @@ void do_bb_page(page_t *page, dispsummary_t *sums, char *filename)
 		fprintf(output, "<A NAME=\"pages-blk\">\n");
 		fprintf(output, "<TABLE SUMMARY=\"Page Block\" BORDER=0>\n");
 
-		fprintf(output, "<TR><TD COLSPAN=2><CENTER> \n<FONT %s>\n", getenv("MKBBTITLE"));
+		fprintf(output, "<TR><TD COLSPAN=%d><CENTER> \n<FONT %s>\n", 
+				(2*subpagecolumns + (subpagecolumns - 1)), getenv("MKBBTITLE"));
 		fprintf(output, "   %s\n", getenv("MKBBLOCAL"));
 		fprintf(output, "</FONT></CENTER></TD></TR>\n");
-		fprintf(output, "<TR><TD COLSPAN=2><HR WIDTH=100%%></TD></TR>\n");
+		fprintf(output, "<TR><TD COLSPAN=%d><HR WIDTH=100%%></TD></TR>\n", 
+				(2*subpagecolumns + (subpagecolumns - 1)));
 
+		currentcolumn = 0;
 		for (p = page->next; (p); p = p->next) {
+
+			if (currentcolumn == 0) fprintf(output, "<TR>");
 
 			link = find_link(p->name);
 			if (link != &null_link) {
-				fprintf(output, "<TR><TD><FONT %s><A HREF=\"%s/%s\">%s</A></FONT></TD>\n", 
+				fprintf(output, "<TD><FONT %s><A HREF=\"%s/%s\">%s</A></FONT></TD>\n", 
 					getenv("MKBBROWFONT"),
 					getenv("BBWEB"), hostlink(link), 
 					p->title);
 			}
 			else {
-				fprintf(output, "<TR><TD><FONT %s>%s</FONT></TD>\n", getenv("MKBBROWFONT"), p->title);
+				fprintf(output, "<TD><FONT %s>%s</FONT></TD>\n", getenv("MKBBROWFONT"), p->title);
 			}
 
 			fprintf(output, "<TD><CENTER><A HREF=\"%s/%s/%s.html\">\n", getenv("BBWEB"), p->name, p->name);
@@ -399,7 +407,17 @@ void do_bb_page(page_t *page, dispsummary_t *sums, char *filename)
 				getenv("BBSKIN"), colorname(p->color), 
 				getenv("DOTWIDTH"), getenv("DOTHEIGHT"),
 				colorname(p->color));
-			fprintf(output, "</CENTER></TD></TR>\n");
+			fprintf(output, "</CENTER></TD>\n");
+
+			if (currentcolumn == (subpagecolumns-1)) {
+				fprintf(output, "</TR>\n");
+				currentcolumn = 0;
+			}
+			else {
+				/* Need to have a little space between columns */
+				fprintf(output, "<TD WIDTH=%s>&nbsp;</TD>", getenv("DOTWIDTH"));
+				currentcolumn++;
+			}
 		}
 
 		fprintf(output, "</TABLE><BR><BR>\n");
@@ -424,6 +442,7 @@ void do_page(page_t *page, char *filename, char *upperpagename)
 	FILE	*output;
 	page_t	*p;
 	link_t  *link;
+	int	currentcolumn;
 
 	output = fopen(filename, "w");
 	if (output == NULL) {
@@ -439,22 +458,27 @@ void do_page(page_t *page, char *filename, char *upperpagename)
 		fprintf(output, "<A NAME=\"pages-blk\">\n");
 		fprintf(output, "<TABLE SUMMARY=\"Page Block\" BORDER=0>\n");
 
-		fprintf(output, "<TR><TD COLSPAN=2><CENTER> \n<FONT %s>\n", getenv("MKBBTITLE"));
+		fprintf(output, "<TR><TD COLSPAN=%d><CENTER> \n<FONT %s>\n", 
+				(2*subpagecolumns + (subpagecolumns - 1)), getenv("MKBBTITLE"));
 		fprintf(output, "   %s\n", getenv("MKBBSUBLOCAL"));
 		fprintf(output, "</FONT></CENTER></TD></TR>\n");
-		fprintf(output, "<TR><TD COLSPAN=2><HR WIDTH=100%%></TD></TR>");
+		fprintf(output, "<TR><TD COLSPAN=%d><HR WIDTH=100%%></TD></TR>", 
+				(2*subpagecolumns + (subpagecolumns - 1)));
 
+		currentcolumn = 0;
 		for (p = page->subpages; (p); p = p->next) {
+
+			if (currentcolumn == 0) fprintf(output, "<TR>");
 
 			link = find_link(p->name);
 			if (link != &null_link) {
-				fprintf(output, "<TR><TD><FONT %s><A HREF=\"%s/%s\">%s</A></FONT></TD>\n", 
+				fprintf(output, "<TD><FONT %s><A HREF=\"%s/%s\">%s</A></FONT></TD>\n", 
 					getenv("MKBBROWFONT"),
 					getenv("BBWEB"), hostlink(link), 
 					p->title);
 			}
 			else {
-				fprintf(output, "<TR><TD><FONT %s>%s</FONT></TD>\n", getenv("MKBBROWFONT"), p->title);
+				fprintf(output, "<TD><FONT %s>%s</FONT></TD>\n", getenv("MKBBROWFONT"), p->title);
 			}
 
 			fprintf(output, "<TD><CENTER><A HREF=\"%s/%s/%s/%s.html\">\n", getenv("BBWEB"), upperpagename, p->name, p->name);
@@ -462,8 +486,18 @@ void do_page(page_t *page, char *filename, char *upperpagename)
 				getenv("BBSKIN"), colorname(p->color), 
 				getenv("DOTWIDTH"), getenv("DOTHEIGHT"),
 				colorname(p->color));
-			fprintf(output, "</CENTER></TD></TR>\n");
+			fprintf(output, "</CENTER></TD>\n");
+
+			if (currentcolumn == (subpagecolumns-1)) {
+				fprintf(output, "</TR>\n");
+				currentcolumn = 0;
+			}
+			else {
+				fprintf(output, "<TD WIDTH=%s>&nbsp;</TD>", getenv("DOTWIDTH"));
+				currentcolumn++;
+			}
 		}
+		if (currentcolumn != 0) fprintf(output, "</TR>\n");
 
 		fprintf(output, "</TABLE><BR><BR>\n");
 		fprintf(output, "</CENTER>\n");
