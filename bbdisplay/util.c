@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.73 2003-07-17 08:36:41 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.74 2003-07-18 14:14:15 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -783,7 +783,7 @@ char *histlogurl(char *hostname, char *service, time_t histtime)
 	if (d2[0] == '0') strcpy(d2, d2+1);
         strftime(d3, sizeof(d3), "_%H:%M:%S_%Y", localtime(&histtime));
 
-	sprintf(url, "%s/bb-histlog.sh?HOST=%s&SERVICE=%s&TIMEBUF=%s%s%s", 
+	sprintf(url, "%s/bb-histlog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s%s%s", 
 		getenv("CGIBINURL"), hostname, service, d1,d2,d3);
 
 	return url;

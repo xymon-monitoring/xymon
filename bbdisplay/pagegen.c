@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.81 2003-07-17 21:06:16 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.82 2003-07-18 14:14:15 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -398,7 +398,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 				}
 				else if (e->histlogname) {
 					/* Snapshot points to historical logfile */
-					fprintf(output, "<A HREF=\"%s/bb-histlog.sh?HOST=%s&SERVICE=%s&TIMEBUF=%s\">", 
+					fprintf(output, "<A HREF=\"%s/bb-histlog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s\">", 
 						getenv("CGIBINURL"), h->hostname, e->column->name, e->histlogname);
 
 					fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
@@ -437,31 +437,31 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 				else {
 					/* Report format output */
 					if ((e->color == COL_GREEN) || (e->color == COL_CLEAR)) {
-						fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
+						fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0>",
 							bbskin, dotgiffilename(e->color, e->acked, e->oldage),
 							colorname(e->color),
 							getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
 					}
 					else {
 						if (dynamicreport) {
-							fprintf(output, "<A HREF=\"%s/bb-replog.sh?HOSTSVC=%s.%s&IP=%s",
+							fprintf(output, "<A HREF=\"%s/bb-replog.sh?HOSTSVC=%s.%s&amp;IP=%s",
 								getenv("CGIBINURL"), commafy(h->hostname), e->column->name, h->ip);
-							fprintf(output, "&COLOR=%s&PCT=%.2f&ST=%lu&END=%lu",
+							fprintf(output, "&amp;COLOR=%s&amp;PCT=%.2f&amp;ST=%lu&amp;END=%lu",
 								colorname(e->color), e->repinfo->fullavailability, 
 								e->repinfo->reportstart, reportend);
-							fprintf(output, "&RED=%.2f&YEL=%.2f&GRE=%.2f&PUR=%.2f&CLE=%.2f&BLU=%.2f",
+							fprintf(output, "&amp;RED=%.2f&amp;YEL=%.2f&amp;GRE=%.2f&amp;PUR=%.2f&amp;CLE=%.2f&amp;BLU=%.2f",
 								e->repinfo->fullpct[COL_RED], e->repinfo->fullpct[COL_YELLOW], 
 								e->repinfo->fullpct[COL_GREEN], e->repinfo->fullpct[COL_PURPLE], 
 								e->repinfo->fullpct[COL_CLEAR], e->repinfo->fullpct[COL_BLUE]);
-							fprintf(output, "&STYLE=%s&FSTATE=%s",
+							fprintf(output, "&amp;STYLE=%s&amp;FSTATE=%s",
 								stylenames[reportstyle], e->repinfo->fstate);
-							fprintf(output, "&REDCNT=%d&YELCNT=%d&GRECNT=%d&PURCNT=%d&CLECNT=%d&BLUCNT=%d",
+							fprintf(output, "&amp;REDCNT=%d&amp;YELCNT=%d&amp;GRECNT=%d&amp;PURCNT=%d&amp;CLECNT=%d&amp;BLUCNT=%d",
 								e->repinfo->count[COL_RED], e->repinfo->count[COL_YELLOW], 
 								e->repinfo->count[COL_GREEN], e->repinfo->count[COL_PURPLE], 
 								e->repinfo->count[COL_CLEAR], e->repinfo->count[COL_BLUE]);
-							if (h->reporttime) fprintf(output, "&REPORTTIME=%s", h->reporttime);
-							fprintf(output, "&WARNPCT=%.2f", h->reportwarnlevel);
-							fprintf(output, "&RECENTGIFS=%d", use_recentgifs);
+							if (h->reporttime) fprintf(output, "&amp;REPORTTIME=%s", h->reporttime);
+							fprintf(output, "&amp;WARNPCT=%.2f", h->reportwarnlevel);
+							fprintf(output, "&amp;RECENTGIFS=%d", use_recentgifs);
 							fprintf(output, "\">\n");
 						}
 						else {
