@@ -27,10 +27,11 @@
 
 
 typedef struct {
-	char   *url;
+	char   *url;                    /* URL to request, stripped of BB'isms */
+	char   *proxy;                  /* Proxy host CURLOPT_PROXY */
+	char   *postdata;               /* Form POST data CURLOPT_POSTFIELDS */
 	int    sslversion;		/* SSL version CURLOPT_SSLVERSION */
 	char   *ciphers; 	   	/* SSL ciphers CURLOPT_SSL_CIPHER_LIST */
-	char   *proxy;                  /* Proxy host CURLOPT_PROXY */
 	CURL   *curl;			/* Handle for libcurl */
 	char   errorbuffer[CURL_ERROR_SIZE];	/* Error buffer for libcurl */
 	long   httpstatus;		/* HTTP status from server */
@@ -54,13 +55,19 @@ void add_http_test(testitem_t *t)
 	char *proxy = NULL;
 	int status;
 
+	/* 
+	 * t->testspec containts the full testspec
+	 * It can be either "URL", "content=URL", 
+	 * "cont;URL;expected_data", "post;URL;postdata;expected_data"
+	 */
+
 	/* Allocate the private data and initialize it */
 	t->private = req = malloc(sizeof(http_data_t));
 	req->url = malcop(realurl(t->testspec, &proxy));
 	if (proxy) req->proxy = malcop(proxy); else req->proxy = NULL;
+	req->postdata = NULL;
 	req->sslversion = 0;
 	req->ciphers = NULL;
-	req->proxy = NULL;
 	req->curl = NULL;
 	req->errorbuffer[0] = '\0';
 	req->httpstatus = 0;
@@ -70,11 +77,6 @@ void add_http_test(testitem_t *t)
 	req->totaltime = 0.0;
 	req->expoutput = NULL;
 	req->exp = NULL;
-
-	/* 
-	 * t->testspec containts the full testspec
-	 * It can be either a URL, a "content=URL", or "cont;URL;expected_data"
-	 */
 
 	/* Determine the content data to look for (if any) */
 	if (strncmp(t->testspec, "content=", 8) == 0) {
@@ -118,6 +120,33 @@ void add_http_test(testitem_t *t)
 			}
 		}
 		else req->contstatus = STATUS_CONTENTMATCH_NOFILE;
+		proto = t->testspec+5;
+	}
+	else if (strncmp(t->testspec, "post;", 5) == 0) {
+		/* POST request - whee! */
+
+		/* First grab data we expect back, like with "cont;" */
+		char *p = strrchr(t->testspec, ';');
+		char *q;
+
+		if (p) {
+			req->expoutput = malcop(p+1);
+			req->exp = malloc(sizeof(regex_t));
+			status = regcomp(req->exp, p+1, REG_EXTENDED|REG_NOSUB);
+			if (status) {
+				printf("Failed to compile regexp '%s' for URL %s\n", p+1, req->url);
+				req->contstatus = STATUS_CONTENTMATCH_BADREGEX;
+			}
+		}
+		else req->contstatus = STATUS_CONTENTMATCH_NOFILE;
+
+		if (p) {
+			*p = '\0';  /* Cut off expected data */
+			q = strrchr(t->testspec, ';');
+			if (q) req->postdata = malcop(q+1);
+			*p = ';';  /* Restore testspec */
+		}
+
 		proto = t->testspec+5;
 	}
 	else {
@@ -235,7 +264,7 @@ static size_t data_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 }
 
 
-void run_http_tests(service_t *httptest)
+void run_http_tests(service_t *httptest, long followlocations)
 {
 	http_data_t *req;
 	testitem_t *t;
@@ -268,6 +297,15 @@ void run_http_tests(service_t *httptest)
 
 		/* If needed, get username/password from $HOME/.netrc */
 		curl_easy_setopt(req->curl, CURLOPT_NETRC, CURL_NETRC_OPTIONAL);
+
+		/* Follow Location: headers for redirects? */
+		if (followlocations) {
+			curl_easy_setopt(req->curl, CURLOPT_FOLLOWLOCATION, 1);
+			curl_easy_setopt(req->curl, CURLOPT_MAXREDIRS, followlocations);
+		}
+
+		/* Any post data ? */
+		if (req->postdata) curl_easy_setopt(req->curl, CURLOPT_POSTFIELDS, req->postdata);
 
 		/* Select SSL version, if requested */
 		if (req->sslversion > 0) curl_easy_setopt(req->curl, CURLOPT_SSLVERSION, req->sslversion);

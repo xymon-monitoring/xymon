@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.31 2003-04-27 09:21:43 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.32 2003-04-27 12:45:17 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -53,6 +53,7 @@ testitem_t	*testhead = NULL;		/* Head of all tests */
 char		*nonetpage = NULL;		/* The "NONETPAGE" env. variable */
 int		dnsmethod = DNS_THEN_IP;	/* How to do DNS lookups */
 int 		timeout=0;
+long		followlocations = 0;		/* Follow Location: redirects in HTTP? */
 char		*contenttestname = "content";   /* Name of the content checks column */
 
 service_t *add_service(char *name, int port, int namelen, int toolid)
@@ -250,6 +251,13 @@ void load_tests(void)
 					else if (strncmp(testspec, "cont;", 5) == 0) {
 						/*
 						 * Content check, "cont.sh" style. Like http above.
+						 */
+						s = httptest;
+						savedspec = malcop(testspec);
+					}
+					else if (strncmp(testspec, "post;", 5) == 0) {
+						/*
+						 * POST with content check, "cont.sh" style. Like http above.
 						 */
 						s = httptest;
 						savedspec = malcop(testspec);
@@ -744,6 +752,9 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--noping") == 0) {
 			pingcolumn = NULL;
 		}
+		else if (strcmp(argv[argi], "--follow") == 0) {
+			followlocations = 3;
+		}
 	}
 
 	init_timestamp();
@@ -813,7 +824,7 @@ int main(int argc, char *argv[])
 
 	/* Run the http tests */
 	for (t = httptest->items; (t); t = t->next) add_http_test(t);
-	run_http_tests(httptest);
+	run_http_tests(httptest, followlocations);
 	if (debug) show_http_test_results(httptest);
 	for (h=testhosthead; (h); h = h->next) send_http_results(httptest, h, nonetpage, contenttestname);
 
