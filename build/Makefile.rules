@@ -7,6 +7,9 @@ CFLAGS += -DMAXMSG=$(MAXMSG)
 PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi
 CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh
 EXTENSIONS = bbcombotest bbretest-net.sh
+MAN1PAGES = bbgen.1 bbtest-net.1 bbhostgrep.1 bbhostshow.1 bb-rep.cgi.1 bb-replog.cgi.1 bb-hist.cgi.1 bb-snapshot.cgi.1 bbcombotest.1 bbretest-net.sh.1
+MAN5PAGES = bbcombotest.cfg.5 bb-hosts.5 bb-environ.5
+MAN7PAGES = bbgen-intro.7
 
 all: $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS)
 	@echo ""
@@ -101,5 +104,19 @@ install-cgi: $(CGISCRIPTS)
 install-exts: $(EXTENSIONS)
 	cp -p $(EXTENSIONS) $(BBHOME)/ext/
 
-install: install-bin install-cgi install-exts
+install-man: install-man1 install-man5 install-man7
+
+install-man1:
+	mkdir -p /usr/local/man/man1 || /bin/true
+	cp -p $(MAN1PAGES) /usr/local/man/man1/
+
+install-man5:
+	mkdir -p /usr/local/man/man5 || /bin/true
+	cp -p $(MAN5PAGES) /usr/local/man/man5/
+
+install-man7:
+	mkdir -p /usr/local/man/man7 || /bin/true
+	cp -p $(MAN7PAGES) /usr/local/man/man7/
+
+install: install-bin install-cgi install-exts install-man
 
