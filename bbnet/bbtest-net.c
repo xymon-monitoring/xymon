@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.96 2003-08-28 09:54:45 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.97 2003-08-28 10:06:19 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -295,7 +295,7 @@ void load_tests(void)
 	char 	l[MAX_LINE_LEN];	/* With multiple http tests, we may have long lines */
 	char	hostname[MAX_LINE_LEN];
 	int	ip1, ip2, ip3, ip4, banksize;
-	char	*netstring;
+	char	*netstring, *routestring;
 	char 	*p;
 
 	bbhosts = stackfopen(getenv("BBHOSTS"), "r");
@@ -307,11 +307,14 @@ void load_tests(void)
 	/* Each network test tagged with NET:locationname */
 	p = getenv("BBLOCATION");
 	if (p) {
-		netstring = (char *) malloc(strlen(p)+5);
+		netstring = (char *) malloc(strlen(p)+strlen("NET:")+1);
 		sprintf(netstring, "NET:%s", p);
+		routestring = (char *) malloc(strlen(p)+strlen("route_:")+1);
+		sprintf(netstring, "route_%s:", p);
 	}
 	else {
 		netstring = NULL;
+		routestring = NULL;
 	}
 
 	while (stackfgets(l, sizeof(l), "include")) {
@@ -382,6 +385,10 @@ void load_tests(void)
 					else if (strncmp(testspec, "route:", 6) == 0) {
 						specialtag = 1;
 						h->routerdeps = malcop(testspec+6);
+					}
+					else if (routestring && (strncmp(testspec, routestring, strlen(routestring)) == 0)) {
+						specialtag = 1;
+						h->routerdeps = malcop(testspec+strlen(routestring));
 					}
 					else if (strncmp(testspec, "TIMEOUT:", 8) == 0) {
 						specialtag = 1;
