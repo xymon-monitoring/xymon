@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.9 2003-09-10 11:55:15 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.10 2003-09-10 18:24:47 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -43,8 +43,9 @@ int init_ldap_library(void)
 	/* Doesnt really do anything except define the version-number string */
 	sprintf(versionstring, "%s %d", LDAP_VENDOR_NAME, LDAP_VENDOR_VERSION);
 	ldap_library_version = malcop(versionstring);
-	return 0;
 #endif
+
+	return 0;
 }
 
 void shutdown_ldap_library(void)
