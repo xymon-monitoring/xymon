@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.4 2003-06-19 20:21:49 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.5 2003-06-20 12:31:30 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -28,6 +28,31 @@ static char rcsid[] = "$Id: availability.c,v 1.4 2003-06-19 20:21:49 henrik Exp 
 #include "debug.h"
 #include "util.h"
 #include "reportdata.h"
+
+replog_t *reploghead = NULL;
+
+char *parse_histlogfile(char *hostname, char *servicename, char *timespec)
+{
+	char fn[MAX_PATH];
+	char *p;
+	FILE *fd;
+	char l[MAX_LINE_LEN];
+
+	sprintf(fn, "%s/%s", getenv("BBHISTLOGS"), commafy(hostname));
+	for (p = strrchr(fn, '/'); (*p); p++) if (*p == ',') *p = '_';
+	sprintf(p, "/%s/%s", servicename, timespec);
+
+	dprintf("Looking at history logfile %s\n", fn);
+	fd = fopen(fn, "r");
+	if (fgets(l, sizeof(l), fd)) {
+		p = strchr(l, '\n'); if (p) *p ='\0';
+		fclose(fd);
+		return malcop(l);
+	}
+
+	fclose(fd);
+	return NULL;
+}
 
 int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 		char *buf, size_t bufsize, 
@@ -115,17 +140,16 @@ int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 	return err;
 }
 
-int parse_historyfile(FILE *fd, reportinfo_t *repinfo)
+int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *servicename, time_t fromtime, time_t totime)
 {
 	char l[MAX_LINE_LEN];
 	time_t starttime, duration;
 	char colstr[MAX_LINE_LEN];
-	unsigned long totduration[COL_COUNT];
 	int color, done, i, scanres;
 	int fileerrors;
 
 	for (i=0; (i<COL_COUNT); i++) {
-		totduration[i] = 0;
+		repinfo->totduration[i] = 0;
 		repinfo->count[i] = 0;
 		repinfo->pct[i] = 0.0;
 	}
@@ -133,36 +157,64 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo)
 	repinfo->fstate = "OK";
 	repinfo->reportstart = time(NULL);
 
-	fileerrors = scan_historyfile(fd, reportstart, reportend, 
+	fileerrors = scan_historyfile(fd, fromtime, totime, 
 				      l, sizeof(l), &starttime, &duration, colstr);
 
-	if (starttime > reportend) {
+	if (starttime > totime) {
 		repinfo->availability = 100.0;
 		repinfo->pct[COL_CLEAR] = 100.0;
 		repinfo->count[COL_CLEAR] = 1;
 		return COL_CLEAR;
 	}
 
-	/* If event starts before our reportstart, adjust starttime and duration */
-	if (starttime < reportstart) {
-		duration -= (reportstart - starttime);
-		starttime = reportstart;
+	/* If event starts before our fromtime, adjust starttime and duration */
+	if (starttime < fromtime) {
+		duration -= (fromtime - starttime);
+		starttime = fromtime;
 	}
 	repinfo->reportstart = starttime;
 
 	done = 0;
 	do {
 		/* If event ends after our reportend, adjust duration */
-		if ((starttime + duration) > reportend) duration = (reportend - starttime);
+		if ((starttime + duration) > totime) duration = (totime - starttime);
 		strcat(colstr, " "); color = parse_color(colstr);
 
 		if (color != -1) {
 			dprintf("In-range entry starting %lu lasting %lu color %d: %s", starttime, duration, color, l);
 			repinfo->count[color]++;
-			totduration[color] += duration;
+			repinfo->totduration[color] += duration;
+
+			if ((hostname != NULL) && (servicename != NULL)) {
+				replog_t *newentry;
+				char timecopy[26], timespec[26];
+				char *token;
+
+				/* Compute the timespec string used as the name of the historical logfile */
+				strncpy(timecopy, l, 25);
+				timecopy[25] = '\0';
+
+				token = strtok(timecopy, " ");
+				strcpy(timespec, token);
+
+				for (i=1; i<5; i++) {
+					strcat(timespec, "_");
+					token = strtok(NULL, " ");
+					strcat(timespec, token);
+				}
+
+				newentry = malloc(sizeof(replog_t));
+				newentry->starttime = starttime;
+				newentry->duration = duration;
+				newentry->color = color;
+				newentry->cause = parse_histlogfile(hostname, servicename, timespec);
+				newentry->timespec = malcop(timespec);
+				newentry->next = reploghead;
+				reploghead = newentry;
+			}
 		}
 
-		if ((starttime + duration) < reportend) {
+		if ((starttime + duration) < totime) {
 			fgets(l, sizeof(l), fd);
 			scanres = sscanf(l+25, "%s %lu %lu", colstr, &starttime, &duration);
 			if (scanres == 2) duration = time(NULL) - starttime;
@@ -171,8 +223,8 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo)
 	} while (!done);
 
 	for (i=0; (i<COL_COUNT); i++) {
-		dprintf("Duration for color %d: %lu\n", i, totduration[i]);
-		repinfo->pct[i] = (100.0*totduration[i] / (reportend - repinfo->reportstart));
+		dprintf("Duration for color %d: %lu\n", i, repinfo->totduration[i]);
+		repinfo->pct[i] = (100.0*repinfo->totduration[i] / (totime - repinfo->reportstart));
 	}
 	repinfo->availability = 100.0 - repinfo->pct[COL_RED];
 
@@ -201,6 +253,8 @@ int main(int argc, char *argv[])
 	FILE *fd;
 	reportinfo_t repinfo;
 	int i, color;
+	char *p, *hostsvc, *host, *svc;
+	replog_t *rwalk;
 
 	debug=1;
 
@@ -210,7 +264,13 @@ int main(int argc, char *argv[])
 	reportstart = atol(argv[2]);
 	reportend = atol(argv[3]);
 
-	color = parse_historyfile(fd, &repinfo);
+	hostsvc = malcop(argv[1]);
+	p = strrchr(hostsvc, '.');
+	*p = '\0'; svc = p+1;
+	p = strrchr(hostsvc, '/'); host = p+1;
+	while ((p = strchr(host, ','))) *p = '.';
+
+	color = parse_historyfile(fd, &repinfo, host, svc, reportstart, reportend);
 
 	for (i=0; (i<COL_COUNT); i++) {
 		dprintf("Color %d: Count=%d, pct=%.2f\n", i, repinfo.count[i], repinfo.pct[i]);
@@ -219,6 +279,31 @@ int main(int argc, char *argv[])
 	dprintf("History file status: %s\n", repinfo.fstate);
 
 	fclose(fd);
+
+	for (rwalk = reploghead; (rwalk); rwalk = rwalk->next) {
+		char start[30];
+		char end[30];
+		char dur[30], dhelp[30];
+		time_t endtime;
+		time_t duration;
+
+		strftime(start, sizeof(start), "%a %b %d %H:%M:%S %Y", localtime(&rwalk->starttime));
+		endtime = rwalk->starttime + rwalk->duration;
+		strftime(end, sizeof(end), "%a %b %d %H:%M:%S %Y", localtime(&endtime));
+
+		duration = rwalk->duration;
+		dur[0] = '\0';
+		if (duration > 86400) {
+			sprintf(dhelp, "%lu days ", (duration / 86400));
+			duration %= 86400;
+			strcpy(dur, dhelp);
+		}
+		sprintf(dhelp, "%lu:%02lu:%02lu", duration / 3600, ((duration % 3600) / 60), (duration % 60));
+		strcat(dur, dhelp);
+
+		dprintf("Start: %s, End: %s, Color: %s, Duration: %s, Cause: %s\n",
+			start, end, colorname(rwalk->color), dur, rwalk->cause);
+	}
 
 	return 0;
 }
