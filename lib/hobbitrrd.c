@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.7 2004-12-19 22:37:23 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.8 2004-12-26 23:29:06 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -184,7 +184,8 @@ larrdgraph_t *find_larrd_graph(char *rrdname)
 
 
 static char *larrd_graph_text(char *hostname, char *dispname, char *service, 
-			      larrdgraph_t *graphdef, int itemcount, int larrd043, const char *fmt)
+			      larrdgraph_t *graphdef, int itemcount, int larrd043, int bbgend,
+			      const char *fmt)
 {
 	static char *rrdurl = NULL;
 	static int rrdurlsize = 0;
@@ -222,7 +223,35 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 	}
 	*rrdurl = '\0';
 
-	if (larrd043 && graphdef->larrdpartname) {
+	if (bbgend) {
+		char *rrdparturl;
+		int first = 1;
+		int gcount, step;
+
+		gcount = (itemcount / 5); if ((gcount*5) != itemcount) gcount++;
+		step = (itemcount / gcount);
+
+		rrdparturl = (char *) malloc(rrdparturlsize);
+		do {
+			sprintf(svcurl, "%s/larrd-grapher.cgi?host=%s&service=%s&first=%d&count=%d", 
+				getenv("CGIBINURL"), hostname, rrdservicename, first, step);
+
+			if (dispname) {
+				strcat(svcurl, "&disp=");
+				strcat(svcurl, urlencode(dispname));
+			}
+
+			sprintf(rrdparturl, fmt, svcurl, svcurl, rrdservicename);
+			if ((strlen(rrdparturl) + strlen(rrdurl) + 1) >= rrdurlsize) {
+				rrdurlsize += (4096 + (itemcount - (first+step-1))*rrdparturlsize);
+				rrdurl = (char *) realloc(rrdurl, rrdurlsize);
+			}
+			strcat(rrdurl, rrdparturl);
+			first += step;
+		} while (first <= itemcount);
+		free(rrdparturl);
+	}
+	else if (larrd043 && graphdef->larrdpartname) {
 		char *rrdparturl;
 		int first = 0;
 
@@ -267,11 +296,12 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 
 
 char *larrd_graph_data(char *hostname, char *dispname, char *service, 
-		      larrdgraph_t *graphdef, int itemcount, int larrd043, int wantmeta)
+		      larrdgraph_t *graphdef, int itemcount, int larrd043, int bbgend,
+		      int wantmeta)
 {
 	if (wantmeta)
-		return larrd_graph_text(hostname, dispname, service, graphdef, itemcount, 1, metafmt);
+		return larrd_graph_text(hostname, dispname, service, graphdef, itemcount, 1, 0, metafmt);
 	else
-		return larrd_graph_text(hostname, dispname, service, graphdef, itemcount, larrd043, linkfmt);
+		return larrd_graph_text(hostname, dispname, service, graphdef, itemcount, larrd043, bbgend, linkfmt);
 }
 
