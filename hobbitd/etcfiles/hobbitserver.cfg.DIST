@@ -124,7 +124,7 @@ BBREL="Hobbit"					# Used by the standard BB web headers, not by Hobbit
 BBRELDATE=""					# Used by the standard BB web headers, not by Hobbit
 DOTHEIGHT="16"					# Height (in pixels) of the color GIF's
 DOTWIDTH="16"					# Width (in pixels) of the color GIF's
-COLUMNDOCURL="$CGIBINURL/hobbitdoc.sh?column=%s"  # URL formatting string for column-links
+COLUMNDOCURL="$CGIBINURL/hobbitcolumn.sh?%s"	# URL formatting string for column-links
 
 # Fonts and texts
 MKBBLOCAL="<B><I>Pages Hosted Locally</I></B>"
