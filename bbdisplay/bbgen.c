@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.137 2003-07-06 14:53:46 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.138 2003-07-12 06:10:22 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -461,13 +461,15 @@ int main(int argc, char *argv[])
 	}
 	bb_color = pagehead->color;
 
-	/*
-	 * Displayed summaries affect the BB page only, 
-	 * but should not go into the color we report to
-	 * others.
-	 */
-	for (s=dispsums; (s); s = s->next) {
-		if (s->color > pagehead->color) pagehead->color = s->color;
+	if (getenv("SUMMARY_SET_BKG") && (strcmp(getenv("SUMMARY_SET_BKG"), "TRUE") == 0)) {
+		/*
+		 * Displayed summaries affect the BB page only, 
+		 * but should not go into the color we report to
+		 * others.
+		 */
+		for (s=dispsums; (s); s = s->next) {
+			if (s->color > pagehead->color) pagehead->color = s->color;
+		}
 	}
 	add_timestamp("Color calculation done");
 
