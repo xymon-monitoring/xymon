@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.41 2004-08-05 09:09:14 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.42 2004-08-05 22:15:54 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -28,6 +28,7 @@ static char rcsid[] = "$Id: contest.c,v 1.41 2004-08-05 09:09:14 henrik Exp $";
 #include <string.h>
 #include <stdio.h>
 #include <netdb.h>
+#include <ctype.h>
 
 #include "bbtest-net.h"
 #include "contest.h"
@@ -838,14 +839,28 @@ void show_tcp_test_results(void)
 	test_t *item;
 
 	for (item = thead; (item); item = item->next) {
-		printf("Address=%s:%d, open=%d, res=%d, time=%ld.%06ld, banner='%s'",
+		printf("Address=%s:%d, open=%d, res=%d, time=%ld.%06ld, ",
 				inet_ntoa(item->addr.sin_addr), 
 				ntohs(item->addr.sin_port),
 				item->open, item->connres, 
-				item->duration.tv_sec, item->duration.tv_usec, 
-				textornull(item->banner));
+				item->duration.tv_sec, item->duration.tv_usec);
+
+		if (item->banner && (item->bannerbytes == strlen(item->banner))) {
+			printf("banner='%s' (%d bytes)",
+				textornull(item->banner),
+				item->bannerbytes);
+		}
+		else {
+			int i;
+			unsigned char *p;
+
+			for (i=0, p=item->banner; i < item->bannerbytes; i++, p++) {
+				printf("%c", (isprint(*p) ? *p : '.'));
+			}
+		}
+
 		if (item->certinfo) {
-			printf("certinfo='%s' (%u %s)", 
+			printf(", certinfo='%s' (%u %s)", 
 				item->certinfo, (unsigned int)item->certexpires,
 				((item->certexpires > time(NULL)) ? "valid" : "expired"));
 		}
