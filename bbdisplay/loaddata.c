@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.122 2004-08-05 12:05:43 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.123 2004-08-09 11:11:56 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -191,6 +191,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	newstate->entry->repinfo = NULL;
 	newstate->entry->causes = NULL;
 	newstate->entry->histlogname = NULL;
+	newstate->entry->shorttext = NULL;
 
 	if (host) {
 		newstate->entry->alert = checkalert(host->alerts, testname);
@@ -224,6 +225,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		newstate->entry->testflags = parse_testflags(l);
 		if (testflag_set(newstate->entry, 'D')) newstate->entry->skin = dialupskin;
 		if (testflag_set(newstate->entry, 'R')) newstate->entry->skin = reverseskin;
+		newstate->entry->shorttext = malcop(l);
 	}
 	else if (!enable_larrdgen && ((strcmp(testname, "larrd") == 0) || (strcmp(testname, "trends") == 0))) {
 		/* 
