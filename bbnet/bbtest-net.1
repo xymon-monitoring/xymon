@@ -29,6 +29,13 @@ all of the services listed as BBNETSVCS in bbdef.sh. For
 these tests, a completely new and very speedy service-
 checker has been implemented.
 
+bbtest-net has built-in support for testing SSL-enabled
+protocols, e.g. imaps, pop3s, nntps, telnets, if SSL-support
+was enabled when configuring bbgen. To fully enable these,
+you must make sure that these protocols are defined in
+your /etc/services file, and they must be added to the
+BBNETSVCS setting in $BBHOME/etc/bbdef.sh.
+
 In addition, it implements the "dns" and "dig" tests for
 testing DNS servers. This is done in the same way as 
 bb-network.sh does it. 
