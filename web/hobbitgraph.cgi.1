@@ -42,16 +42,29 @@ Set the lower limit of the graph. See
 .I rrdgraph(1)
 for a description of the "-l" option.
 .sp
-.BR rigid
-Make the upper- and lower-limits rigid, i.e. force the graph to use the specified
-values as the upper- and lower-limit. See
-.I rrdgraph(1)
-for a description of the "--rigid" option.
+.BR graph_start
+Set the starttime of the graph. This is used in zoom-mode.
 .sp
-.BR logarithmic
-Make the graph use a logarithmic Y-axis instead of a linear axis. See
-.I rrdgraph(1)
-for a description of the "--logarithmic" option.
+.BR graph_end
+Set the end-time of the graph. This is used in zoom-mode.
+.sp
+.BR action=menu
+Generate an HTML page with links to 4 graphs, representing the
+hourly, weekly, monthly and yearly graphs. Doesn't actually generate
+any graphs, only the HTML that links to the graphs.
+.sp
+.BR action=selzoom
+Generate an HTML page with link to single graph, and with JavaScript code 
+that lets the user select part of the graph for a zoom-operation. The 
+JavaScript invokes hobbitgraph.cgi with "action=showzoom" to generate the
+zoomed graph webpage.
+.sp
+.BR action=showzoom
+Generate HTML with a link to the zoomed graph image. This link goes to
+an "action=view" invocation of hobbitgraph.cgi.
+.sp
+.BR action=view
+Generate a single graph image.
 
 .SH OPTIONS
 .IP "--config=FILENAME"
