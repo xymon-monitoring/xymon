@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.17 2003-07-07 14:54:02 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.18 2003-07-07 20:00:15 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -83,6 +83,10 @@ void build_reportspecs(char *reporttime)
 			dow = -1;
 			sscanf(spec, "*:%d:%d", &start, &end);
 		}
+		else if ((*spec == 'W') || (*spec == 'w')) {
+			dow = -2;
+			sscanf(spec, "*:%d:%d", &start, &end);
+		}
 		else {
 			sscanf(spec, "%d:%d:%d", &dow, &start, &end);
 		}
@@ -103,7 +107,7 @@ unsigned long reportduration_oneday(int eventdow, time_t eventstart, time_t even
 	unsigned long result = 0;
 
 	for (i=0; (i<reptimecnt); i++) {
-		if ((reptimes[i].dow == eventdow) || (reptimes[i].dow == -1)) {
+		if ((reptimes[i].dow == eventdow) || (reptimes[i].dow == -1) || ((reptimes[i].dow == -2) && (eventdow >= 1) && (eventdow <= 5)) ) {
 			if ((reptimes[i].start > eventend) || (reptimes[i].end < eventstart)) {
 				/* Outside our window */
 			}
