@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char external_rcsid[] = "$Id: do_external.c,v 1.4 2005-03-01 14:37:16 henrik Exp $";
+static char external_rcsid[] = "$Id: do_external.c,v 1.5 2005-03-08 21:06:45 henrik Exp $";
 
 
 int do_external_larrd(char *hostname, char *testname, char *msg, time_t tstamp) 
@@ -50,7 +50,7 @@ int do_external_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		if (extfd) {
 			pstate = R_DEFS;
 
-			while (fgets(l, sizeof(l), extfd)) {
+			while (fgets(l, sizeof(l)-1, extfd)) {
 				p = strchr(l, '\n'); if (p) *p = '\0';
 				if (strlen(l) == 0) continue;
 
@@ -60,8 +60,9 @@ int do_external_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 						/* New DS definitions, scratch the old ones */
 						pstate = R_DEFS;
 
-						for (paridx=2; (params[paridx] != NULL); paridx++) {
-							if (strncasecmp(params[paridx], "DS:", 3) == 0) xfree(params[paridx]);
+						if (params) {
+							for (paridx=2; (params[paridx] != NULL); paridx++) 
+								xfree(params[paridx]);
 						}
 						xfree(params);
 						params = NULL;
@@ -73,7 +74,7 @@ int do_external_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				switch (pstate) {
 				  case R_DEFS:
 					if (params == NULL) {
-						params = (char **)malloc(8 * sizeof(char *));
+						params = (char **)calloc(8, sizeof(char *));
 						params[0] = "rrdcreate";
 						params[1] = rrdfn;
 						paridx = 1;
@@ -84,14 +85,15 @@ int do_external_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 						paridx++;
 						params = (char **)realloc(params, (7 + paridx)*sizeof(char *));
 						params[paridx] = strdup(l);
+						params[paridx+1] = NULL;
 						break;
 					}
 					else {
 						/* No more DS defs - put in the RRA's last. */
-						params[++paridx] = rra1;
-						params[++paridx] = rra2;
-						params[++paridx] = rra3;
-						params[++paridx] = rra4;
+						params[++paridx] = strdup(rra1);
+						params[++paridx] = strdup(rra2);
+						params[++paridx] = strdup(rra3);
+						params[++paridx] = strdup(rra4);
 						params[++paridx] = NULL;
 						pstate = R_FN;
 					}
@@ -119,9 +121,7 @@ int do_external_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		}
 
 		if (params) {
-			for (paridx=2; (params[paridx] != NULL); paridx++) {
-				if (strncasecmp(params[paridx], "DS:", 3) == 0) xfree(params[paridx]);
-			}
+			for (paridx=2; (params[paridx] != NULL); paridx++) xfree(params[paridx]);
 			xfree(params);
 		}
 
