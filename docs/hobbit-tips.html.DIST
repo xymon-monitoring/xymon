@@ -19,12 +19,12 @@ raised with Hobbit.<br>
 <h3>What do the little red/yellow/green icons mean ?</h3>
 <table align="center" border=1>
 	<tr><th align=left valign=top>Color</th><td>Recently changed</td><td>Last change &gt; 24 hours</td></tr>
-	<tr><th align=left valign=top>Green: Status is OK</th><td align=center><img src="green-recent.gif"></td><td align=center><img src="green.gif"></td></tr>
-	<tr><th align=left valign=top>Yellow: Warning</th><td align=center><img src="yellow-recent.gif"></td><td align=center><img src="yellow.gif"></td></tr>
-	<tr><th align=left valign=top>Red: Critical</th><td align=center><img src="red-recent.gif"></td><td align=center><img src="red.gif"></td></tr>
-	<tr><th align=left valign=top>Clear: No data</th><td align=center><img src="clear-recent.gif"></td><td align=center><img src="clear.gif"></td></tr>
-	<tr><th align=left valign=top>Purple: No report</th><td align=center><img src="purple-recent.gif"></td><td align=center><img src="purple.gif"></td></tr>
-	<tr><th align=left valign=top>Blue: Disabled</th><td align=center><img src="blue-recent.gif"></td><td align=center><img src="blue.gif"></td></tr>
+	<tr><th align=left valign=top>Green: Status is OK</th><td align=center><img src="@BBHOSTURL@/gifs/green-recent.gif"></td><td align=center><img src="@BBHOSTURL@/gifs/green.gif"></td></tr>
+	<tr><th align=left valign=top>Yellow: Warning</th><td align=center><img src="@BBHOSTURL@/gifs/yellow-recent.gif"></td><td align=center><img src="@BBHOSTURL@/gifs/yellow.gif"></td></tr>
+	<tr><th align=left valign=top>Red: Critical</th><td align=center><img src="@BBHOSTURL@/gifs/red-recent.gif"></td><td align=center><img src="@BBHOSTURL@/gifs/red.gif"></td></tr>
+	<tr><th align=left valign=top>Clear: No data</th><td align=center><img src="@BBHOSTURL@/gifs/clear-recent.gif"></td><td align=center><img src="@BBHOSTURL@/gifs/clear.gif"></td></tr>
+	<tr><th align=left valign=top>Purple: No report</th><td align=center><img src="@BBHOSTURL@/gifs/purple-recent.gif"></td><td align=center><img src="@BBHOSTURL@/gifs/purple.gif"></td></tr>
+	<tr><th align=left valign=top>Blue: Disabled</th><td align=center><img src="@BBHOSTURL@/gifs/blue-recent.gif"></td><td align=center><img src="@BBHOSTURL@/gifs/blue.gif"></td></tr>
 </table>
 
 <a name="noclient">

@@ -1,8 +1,8 @@
 all:
-	@echo ""
+	cat hobbit-tips.html.DIST | sed -e 's!@BBHOSTURL@!$(BBHOSTURL)!g' >hobbit-tips.html
 
 clean:
-	rm -f *~
+	rm -f hobbit-tips.html *~
 
 install:
 	mkdir -p $(BBHOME)/www/help/manpages
