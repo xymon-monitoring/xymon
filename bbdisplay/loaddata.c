@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.85 2003-06-20 13:05:49 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.86 2003-06-21 07:34:52 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1410,7 +1410,7 @@ state_t *load_state(dispsummary_t **sumhead)
 
 	closedir(bblogs);
 
-	if (reportstart) sethostenv_report(oldestentry, reportend, reportwarnlevel, reportpaniclevel);
+	if (reportstart) sethostenv_report(oldestentry, reportend, reportwarnlevel, reportgreenlevel);
 	if (dopurple) combo_end();
 	if (purplelog) fclose(purplelog);
 

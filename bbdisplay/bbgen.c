@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.130 2003-06-19 12:08:53 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.131 2003-06-21 07:34:52 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -49,7 +49,7 @@ int		bb_color, bb2_color, bbnk_color;	/* Top-level page colors */
 time_t		reportstart = 0;
 time_t		reportend = 0;
 double		reportwarnlevel = 97.0;
-double		reportpaniclevel = 99.995;
+double		reportgreenlevel = 99.995;
 char		*reportstyle = "crit";
 
 char *reqenv[] = {
@@ -156,13 +156,13 @@ int main(int argc, char *argv[])
 			if (count == 3) reportstyle = malcop(style);
 
 			if (getenv("BBREPWARN")) reportwarnlevel = atof(getenv("BBREPWARN"));
-			if (getenv("BBREPPANIC")) reportpaniclevel = atof(getenv("BBREPPANIC"));
+			if (getenv("BBREPGREEN")) reportgreenlevel = atof(getenv("BBREPGREEN"));
 
 			if ((reportwarnlevel < 0.0) || (reportwarnlevel > 100.0)) reportwarnlevel = 97.0;
-			if ((reportpaniclevel < 0.0) || (reportpaniclevel > 100.0)) reportpaniclevel = 99.995;
+			if ((reportgreenlevel < 0.0) || (reportgreenlevel > 100.0)) reportgreenlevel = 99.995;
 
 			select_headers_and_footers("bbrep");
-			sethostenv_report(reportstart, reportend, reportwarnlevel, reportpaniclevel);
+			sethostenv_report(reportstart, reportend, reportwarnlevel, reportgreenlevel);
 		}
 
 		else if (strcmp(argv[i], "--pages-first") == 0) {

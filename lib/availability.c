@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.7 2003-06-20 22:56:17 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.8 2003-06-21 07:34:52 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -252,7 +252,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 	}
 	repinfo->availability = 100.0 - repinfo->pct[COL_RED];
 
-	if (repinfo->availability > reportpaniclevel) color = COL_GREEN;
+	if (repinfo->availability > reportgreenlevel) color = COL_GREEN;
 	else if (repinfo->availability >= reportwarnlevel) color = COL_YELLOW;
 	else color = COL_RED;
 
@@ -264,7 +264,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 #ifdef STANDALONE
 
 time_t reportstart, reportend;
-double reportpaniclevel = 99.995;
+double reportgreenlevel = 99.995;
 double reportwarnlevel = 98.0;
 
 /* These are dummy vars needed by stuff in util.c */
