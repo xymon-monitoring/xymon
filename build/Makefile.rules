@@ -21,7 +21,7 @@ CFLAGS=-O2 -Wall -Wno-unused -D_REENTRANT
 GENOBJS = bbgen.o debug.o loaddata.o larrdgen.o pagegen.o process.o util.o infogen.o alert.o wmlgen.o
 NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o
 
-LIBRESOLV := $(shell if [ `uname -s` = "SunOS" ]; then echo "-lresolv"; fi)
+NETLIBS := $(shell if [ `uname -s` = "SunOS" ]; then echo "-lresolv -lsocket -lnsl"; fi)
 
 bbgen: $(GENOBJS)
 	$(CC) $(CFLAGS) -o bbgen $(GENOBJS)
@@ -33,7 +33,7 @@ alert: alert.c debug.c util.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o alert alert.c debug.c util.c
 
 contest: contest.c debug.c util.c
-	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o contest contest.c debug.c util.c $(LIBRESOLV)
+	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o contest contest.c debug.c util.c $(NETLIBS)
 
 httptest.o: httptest.c httptest.h
 	$(CC) $(CFLAGS) $(CURLINCLUDE) -c -o $@ $<
