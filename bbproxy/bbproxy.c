@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.11 2004-09-19 15:33:16 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.12 2004-09-19 20:04:37 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -146,14 +146,29 @@ int main(int argc, char *argv[])
 	int timeout = 10;
 	int listenq = 512;
 	char *pidfile = "/var/run/bbproxy.pid";
+	char *proxyname = NULL;
 
 	int sockcount = 0;
 	int lsocket;
 	struct sockaddr_in laddr;
 	struct sockaddr_in saddr;
 	int opt;
-
 	conn_t *chead = NULL;
+
+	/* Statistics info */
+	time_t laststatus = 0;
+	time_t startuptime = time(NULL);
+	unsigned long msgs_total = 0;
+	unsigned long msgs_total_last = 0;
+	unsigned long msgs_status = 0;
+	unsigned long msgs_page = 0;
+	unsigned long msgs_combo = 0;
+	unsigned long msgs_delivered = 0;
+	unsigned long msgs_lost = 0;
+	unsigned long msgs_timeout = 0;
+	unsigned long msgs_timeout_from[P_CLEANUP+1] = { 0, };
+
+	/* Dont save the output from errprintf() */
 	save_errbuf = 0;
 
 	for (opt=1; (opt < argc); opt++) {
@@ -192,6 +207,10 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[opt], "--pidfile=")) {
 			char *p = strchr(argv[opt], '=');
 			pidfile = strdup(p+1);
+		}
+		else if (argnmatch(argv[opt], "--proxyname=")) {
+			char *p = strchr(argv[opt], '=');
+			proxyname = strdup(p+1);
 		}
 		else if (strcmp(argv[opt], "--debug") == 0) {
 			debug = 1;
@@ -290,6 +309,56 @@ int main(int argc, char *argv[])
 		int n, idx;
 		conn_t *cwalk;
 		time_t ctime;
+		time_t now;
+
+		/* See if it is time for a status report */
+		if (proxyname && ((now = time(NULL)) >= (laststatus+300))) {
+			conn_t *stentry = NULL;
+			int ccount = 0;
+			unsigned long bufspace = 0;
+			char runtime_s[30];
+			unsigned long runt = (unsigned long) (now-startuptime);
+			char *p;
+
+			sprintf(runtime_s, "%lu days, %02lu:%02lu:%02lu",
+				(runt/86400), ((runt % 86400) / 3600),
+				((runt % 3600) / 60), (runt % 60));
+			init_timestamp();
+			for (cwalk = chead; (cwalk); cwalk = cwalk->next) {
+				ccount++;
+				bufspace += cwalk->bufsize;
+				if (cwalk->state == P_IDLE) stentry = cwalk;
+			}
+
+			if (stentry) {
+				sprintf(stentry->buf, "status %s green %s Proxy up %s\n\nProxy statistics\n\nMessages total           : %10lu (%lu msgs/second)\nMessages delivered       : %10lu\nMessages lost (server)   : %10lu\nMessages lost (timeout)  : %10lu\nCombo messages           : %10lu\nStatus messages          : %10lu\nPage messages            : %10lu\n\nConnection table size    : %10d\nBuffer space             : %10lu kByte\n",
+					proxyname,
+					timestamp,
+					runtime_s,
+					msgs_total, 
+					(msgs_total - msgs_total_last) / (now - laststatus),
+					msgs_delivered,
+					msgs_lost,
+					msgs_timeout,
+					msgs_combo,
+					msgs_status,
+					msgs_page,
+					ccount,
+					bufspace / 1024);
+				p = stentry->buf + strlen(stentry->buf);
+				p += sprintf(p, "\nTimeout details:\n");
+				for (idx = P_IDLE+1; (idx < P_CLEANUP); idx++) {
+					p += sprintf(p, "%-24s : %10lu\n", statename[idx], msgs_timeout_from[idx]);
+				}
+				laststatus = now;
+				msgs_total_last = msgs_total;
+				stentry->buflen = strlen(stentry->buf);
+				stentry->bufp = stentry->buf;
+				stentry->state = P_REQ_CONNECTING;
+				stentry->conntries = CONNECT_TRIES;
+				stentry->conntime = 0;
+			}
+		}
 
 		FD_ZERO(&fdread);
 		FD_ZERO(&fdwrite);
@@ -306,6 +375,11 @@ int main(int argc, char *argv[])
 
 			  case P_REQ_READY:
 				shutdown(cwalk->csocket, SHUT_RD);
+
+				if (strncmp(cwalk->buf, "status", 5) == 0) msgs_status++;
+				else if (strncmp(cwalk->buf, "combo", 5) == 0) msgs_combo++;
+				else if (strncmp(cwalk->buf, "page", 4) == 0) msgs_page++;
+
 				cwalk->bufp = cwalk->buf;
 				cwalk->state = P_REQ_CONNECTING;
 				cwalk->conntries = CONNECT_TRIES;
@@ -323,6 +397,7 @@ int main(int argc, char *argv[])
 				if (cwalk->conntries < 0) {
 					errprintf("Server not responding, message lost\n");
 					cwalk->state = P_CLEANUP;
+					msgs_lost++;
 					break;
 				}
 
@@ -359,6 +434,7 @@ int main(int argc, char *argv[])
 				cwalk->bufp = cwalk->buf; cwalk->buflen = 0;
 				memset(cwalk->buf, 0, cwalk->bufsize);
 				cwalk->state = P_RESP_READING;
+				msgs_delivered++;
 				/* Fallthrough */
 
 			  case P_RESP_READING:
@@ -375,7 +451,7 @@ int main(int argc, char *argv[])
 				/* Fall through */
 
 			  case P_RESP_SENDING:
-				if (cwalk->buflen) {
+				if (cwalk->buflen && (cwalk->csocket >= 0)) {
 					FD_SET(cwalk->csocket, &fdwrite);
 					if (cwalk->csocket > maxfd) maxfd = cwalk->csocket;
 					break;
@@ -386,8 +462,10 @@ int main(int argc, char *argv[])
 				/* Fall through */
 
 			  case P_RESP_DONE:
-				shutdown(cwalk->csocket, SHUT_WR);
-				close(cwalk->csocket); sockcount--;
+				if (cwalk->csocket >= 0) {
+					shutdown(cwalk->csocket, SHUT_WR);
+					close(cwalk->csocket); sockcount--;
+				}
 				cwalk->csocket = -1;
 				cwalk->state = P_CLEANUP;
 				/* Fall through */
@@ -423,7 +501,6 @@ int main(int argc, char *argv[])
 		}
 		else {
 			static time_t lastlog = 0;
-			time_t now;
 			if ((now = time(NULL)) < (lastlog+30)) {
 				lastlog = now;
 				errprintf("Squelching incoming connections, sockcount=%d\n", sockcount);
@@ -437,9 +514,12 @@ int main(int argc, char *argv[])
 			for (cwalk = chead; (cwalk); cwalk = cwalk->next) {
 				switch (cwalk->state) {
 				  case P_IDLE:
+				  case P_CLEANUP:
 					break;
 
 				  default: 
+					msgs_timeout++;
+					msgs_timeout_from[cwalk->state]++;
 					cwalk->state = P_CLEANUP;
 					break;
 				}
@@ -526,6 +606,7 @@ int main(int argc, char *argv[])
 					newconn->state = P_IDLE;
 				}
 				else {
+					msgs_total++;
 					strcpy(newconn->clientip, inet_ntoa(newconn->caddr.sin_addr));
 					sockcount++;
 					fcntl(newconn->csocket, F_SETFL, O_NONBLOCK);
