@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.5 2005-01-01 19:48:19 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.6 2005-01-04 09:39:04 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -159,7 +159,15 @@ int within_sla(char *l, char *tag, int defresult)
 				starttime = minutes(slaspec+2);
 				endtime = minutes(slaspec+7);
 				curtime = now->tm_hour*60+now->tm_min;
-				found = ((curtime >= starttime) && (curtime <= endtime));
+				if (endtime > starttime) {
+					/* *:0200:0400 */
+					found = ((curtime >= starttime) && (curtime <= endtime));
+				}
+				else {
+					/* The period crosses over midnight: *:2330:0400 */
+					found = ((curtime >= starttime) || (curtime <= endtime));
+				}
+
 				dprintf("\tstart,end,current time = %d, %d, %d - found=%d\n", 
 					starttime,endtime,curtime,found);
 			}
@@ -175,7 +183,7 @@ int within_sla(char *l, char *tag, int defresult)
 		result = found;
 	}
 	else {
-		/* No SLA -> default to always included */
+		/* No SLA -> use the default */
 		result = defresult;
 	}
 	free(tagspec);
