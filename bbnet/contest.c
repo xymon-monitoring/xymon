@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.18 2003-06-25 20:36:41 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.19 2003-07-15 18:34:43 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -45,25 +45,25 @@ static test_t *thead = NULL;
  * banner or not.
  */
 static svcinfo_t svcinfo[] = {
-	{ "ftp",     "quit\r\n",          1 },
-	{ "ssh",     NULL,                1 },
-	{ "ssh1",    NULL,                1 },
-	{ "ssh2",    NULL,                1 },
-	{ "telnet",  NULL,                0 },
-	{ "smtp",    "quit\r\n",          1 },
-	{ "pop",     "quit\r\n",          1 },
-	{ "pop2",    "quit\r\n",          1 },
-	{ "pop-2",   "quit\r\n",          1 },
-	{ "pop3",    "quit\r\n",          1 },
-	{ "pop-3",   "quit\r\n",          1 },
-	{ "imap",    "ABC123 LOGOUT\r\n", 1 },
-	{ "imap2",   "ABC123 LOGOUT\r\n", 1 },
-	{ "imap3",   "ABC123 LOGOUT\r\n", 1 },
-	{ "imap4",   "ABC123 LOGOUT\r\n", 1 },
-	{ "nntp",    "quit\r\n",          1 },
-	{ "rsync",   NULL,                1 },
-	{ "bbd",     "dummy",             0 },
-	{ NULL,      NULL,                0 }	/* Default behaviour: Dont send anything, dont grab banner */
+	{ "ftp",     "quit\r\n",          "220",	1 },
+	{ "ssh",     NULL,                "SSH",	1 },
+	{ "ssh1",    NULL,                "SSH",	1 },
+	{ "ssh2",    NULL,                "SSH",	1 },
+	{ "telnet",  NULL,                NULL,		0 },
+	{ "smtp",    "quit\r\n",          "220",	1 },
+	{ "pop",     "quit\r\n",          "+OK",	1 },
+	{ "pop2",    "quit\r\n",          "+OK",	1 },
+	{ "pop-2",   "quit\r\n",          "+OK",	1 },
+	{ "pop3",    "quit\r\n",          "+OK",	1 },
+	{ "pop-3",   "quit\r\n",          "+OK",	1 },
+	{ "imap",    "ABC123 LOGOUT\r\n", "* OK",	1 },
+	{ "imap2",   "ABC123 LOGOUT\r\n", "* OK",	1 },
+	{ "imap3",   "ABC123 LOGOUT\r\n", "* OK",	1 },
+	{ "imap4",   "ABC123 LOGOUT\r\n", "* OK",	1 },
+	{ "nntp",    "quit\r\n",          "200",	1 },
+	{ "rsync",   NULL,                "@RSYNCD",	1 },
+	{ "bbd",     "dummy",             NULL,		0 },
+	{ NULL,      NULL,                NULL,		0 }	/* Default behaviour: Dont send anything, dont grab banner */
 };
 
 
@@ -387,6 +387,16 @@ void show_tcp_test_results(void)
 				item->open, item->connres, 
 				item->duration.tv_sec, item->duration.tv_usec, textornull(item->banner));
 	}
+}
+
+int tcp_got_expected(test_t *test)
+{
+	if (test == NULL) return 1;
+
+	if (test->banner && test->svcinfo->exptext) 
+		return (strncmp(test->svcinfo->exptext, test->banner, strlen(test->svcinfo->exptext)) == 0);
+	else
+		return 1;
 }
 
 #ifdef STANDALONE

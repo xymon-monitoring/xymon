@@ -16,6 +16,7 @@
 extern test_t *add_tcp_test(char *ip, int portnum, char *service, int silent);
 extern void do_tcp_tests(int timeout, int concurrency);
 extern void show_tcp_test_results(void);
+extern int tcp_got_expected(test_t *test);
 
 #endif
 
