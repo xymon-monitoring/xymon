@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.107 2004-01-27 11:36:27 hstoerne Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.108 2004-03-18 10:04:00 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -61,6 +61,7 @@ int  bb2acklog = 1;
 int  bb2eventlogmaxcount = 100;
 int  bb2eventlogmaxtime = 240;
 char *lognkstatus = NULL;
+int  nkonlyreds = 0;
 
 /* Format strings for htaccess files */
 char *htaccess = NULL;
@@ -134,6 +135,7 @@ int interesting_column(int pagetype, int color, int alert, bbgen_col_t *column, 
 		   */
 		if (alert) {
 			if (color == COL_RED)  return 1;
+			if (nkonlyreds) return 0;
 			if ( (color == COL_YELLOW) || (color == COL_CLEAR) ) {
 				if (strcmp(column->name, "conn") == 0) return 0;
 				if (lognkstatus && (strcmp(column->name, lognkstatus) == 0)) return 0;
@@ -674,7 +676,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 
 		if (newhost == NULL) {
 			/* New summary "host" */
-			newhost = init_host(s->row, NULL, NULL, NULL, 0,0,0,0, 0, 0, 0.0, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, 0);
+			newhost = init_host(s->row, NULL, NULL, NULL, NULL, 0,0,0,0, 0, 0, 0.0, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, 0);
 
 			/*
 			 * Cannot have the pseudo host in the official hostlist,
@@ -1046,7 +1048,16 @@ int do_bb2_page(char *filename, int summarytype)
 		  case PAGE_NK:
 			/* The NK page */
 			for (useit=0, e=h->hostentry->entries; (e && !useit); e=e->next) {
-				useit = (e->alert && (!e->acked) && ((e->color == COL_RED) || ((e->color == COL_YELLOW) && (strcmp(e->column->name, "conn") != 0))));
+				if (e->alert && !e->acked) {
+					if (e->color == COL_RED) {
+						useit = 1;
+					}
+					else {
+						if (!nkonlyreds) {
+							useit = ((e->color == COL_YELLOW) && (strcmp(e->column->name, "conn") != 0));
+						}
+					}
+				}
 			}
 			break;
 		}
