@@ -37,10 +37,15 @@ case "$1" in
 	echo "Reloading $DESC configuration files."
 	su -c "$DAEMON reload" - hobbit
 	echo "$NAME."
-  ;;
+	  ;;
   restart)
 	echo -n "Restarting $DESC: "
 	su -c "$DAEMON restart" - hobbit
+	echo "$NAME."
+	;;
+  rotate)
+	echo -n "Rotating logs for $DESC: "
+	su -c "$DAEMON rotate" - hobbit
 	echo "$NAME."
 	;;
   *)
