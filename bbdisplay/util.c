@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.129 2004-10-08 12:23:46 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.130 2004-10-08 13:10:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -2097,5 +2097,45 @@ void getenv_default(char *envname, char *envdefault, char **buf)
 	}
 
 	if (buf) *buf = val;
+}
+
+char *gettok(char *s, char *delims)
+{
+	/*
+	 * This works like strtok(), but can handle empty fields.
+	 */
+
+	static char *source = NULL;
+	static char *whereat = NULL;
+	int n;
+	char *result;
+
+	if ((delims == NULL) || (*delims == '\0')) return NULL;	/* Sanity check */
+	if ((source == NULL) && (s == NULL)) return NULL;	/* Programmer goofed and called us first time with NULL */
+
+	if (source == NULL) source = whereat = s;		/* First call */
+
+	if (*whereat == '\0') {
+		/* End of string ... clear local state and return NULL */
+		source = whereat = NULL;
+		return NULL;
+	}
+
+	n = strcspn(whereat, delims);
+	if (n == 0) {
+		/* An empty token */
+		whereat++;
+		result = "";
+	}
+	else {
+		/* Null-teminate the token */
+		*(whereat + n) = '\0';
+		result = whereat;
+
+		/* Move past this token and the delimiter */
+		whereat += (n+1);
+	}
+
+	return result;
 }
 
