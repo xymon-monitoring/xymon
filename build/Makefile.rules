@@ -77,7 +77,7 @@ sendmsg: sendmsg.c debug.c util.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ sendmsg.c debug.c util.c $(NETLIBS)
 
 httptest.o: httptest.c httptest.h
-	$(CC) $(CFLAGS) $(CURLINCLUDE) -c -o $@ httptest.c
+	$(CC) $(CFLAGS) $(CURLINCLUDE) $(USEMULTI) -c -o $@ httptest.c
 
 bb-hist.o: bb-hist.c
 	$(CC) $(CFLAGS) $(HISTGRAPHDEF) -c -o $@ bb-hist.c

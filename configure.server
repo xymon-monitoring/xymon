@@ -199,6 +199,7 @@ else
 	echo "CC = $CURLCC"                   >>Makefile
 	echo "CURLINCLUDE = $CURLINCLUDE"     >>Makefile
 	echo "CURLLIB = $CURLLIBS"            >>Makefile
+	echo "USEMULTI ="                     >>Makefile
 
 	if test -r Makefile.`uname -s`
 	then
