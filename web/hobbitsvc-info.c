@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.48 2004-08-24 21:06:04 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.49 2004-08-27 10:40:36 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -447,7 +447,7 @@ int generate_info(char *infocolumn)
 		while (p) {
 			if ((strncmp(p, "NAME:", 5) == 0) || 
 			    (strncmp(p, "COMMENT:", 8) == 0) ||
-			    (strncmp(p, "DESCR:", 8) == 0)) {
+			    (strncmp(p, "DESCR:", 6) == 0)) {
 				char *p2 = strchr(p, ':');
 
 				p2++;
