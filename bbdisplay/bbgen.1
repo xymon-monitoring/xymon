@@ -386,12 +386,17 @@ The minimum color to include in the Netscape Sidebar - default is "red",
 meaning only critical alerts are included. If you want to include
 warnings also, use "--nslimit=yellow".
 
-.IP "--rss=FILENAME"
+.IP "--rss[=FILENAME]
 Generate an RSS/RDF content delivery stream of your critical Big Brother 
 alerts. This output format can be dynamically embedded in other web
-pages, much like the live newsfeeds often seen on web sites. If FILENAME 
-does not begin with a slash, the output file is in the $BBHOME/www/
-directory.  For more information about RSS/RDF content feeds, please see 
+pages, much like the live newsfeeds often seen on web sites. Two RSS files
+will be generated, one reflects the BB2 page, the other reflects the BBNK
+page. They will be in the "bb2.rss" and "bbnk.rss" files, respectively.
+.br
+The FILENAME parameter is now obsolete; if specificed, it will be used instead
+of the bb2.rss filename.
+.br
+For more information about RSS/RDF content feeds, please see 
 http://www.syndic8.com/.
 .sp
 .IP "--rssversion={0.91|0.92|1.0|2.0}"
