@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.30 2003-08-16 20:53:29 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.31 2003-08-18 06:21:41 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -292,19 +292,20 @@ static void generate_colorbar(
 	fprintf(htmlrep, "</TD>\n");
 
 	fprintf(htmlrep, "<TD ALIGN=CENTER>\n");
+	fprintf(htmlrep, "  <TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0>\n");
 	if (usepct) {
-		fprintf(htmlrep, "&nbsp;");
+		fprintf(htmlrep, "  <TR><TD ALIGN=CENTER><A HREF=\"%s&amp&amp;PIXELS=%d\">Time reset</A></TD></TR>\n", 
+			selfurl, (usepct ? 0 : pixels));
 	}
 	else {
-		fprintf(htmlrep, "  <TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0>\n");
 		fprintf(htmlrep, "  <TR><TD ALIGN=CENTER><A HREF=\"%s&amp;ENDTIME=%u&amp;PIXELS=%d\">Zoom +</A></TD></TR>\n", 
 			selfurl, (unsigned int)endtime, pixels+200);
 		if (pixels > 200) {
 			fprintf(htmlrep, "  <TR><TD ALIGN=CENTER><A HREF=\"%s&amp;ENDTIME=%u&amp;PIXELS=%d\">Zoom -</A></TD></TR>\n", 
 				selfurl, (unsigned int)endtime, pixels-200);
 		}
-		fprintf(htmlrep, "  </TABLE>\n");
 	}
+	fprintf(htmlrep, "  </TABLE>\n");
 	fprintf(htmlrep, "</TD>\n");
 	fprintf(htmlrep, "<TD ALIGN=CENTER>\n");
 	generate_pct_summary(htmlrep, hostname, service, caption, repinfo, secsperpixel);
