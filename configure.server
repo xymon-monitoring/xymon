@@ -214,17 +214,23 @@ else
 		then
 			BBUSER="hobbit"
 		fi
-		USERDATA=`getent passwd $BBUSER 2>/dev/null || grep "^${BBUSER}:" /etc/passwd`
-		if test $? -eq 0
-		then
-			echo "Found passwd entry for user $USERDATA"
-		else
-			echo "FAILURE: The user $BBUSER does not exist. Create user and try again."
-			exit 1
-		fi
-		echo ""; echo ""
 
-		HOMEDIR="`echo $USERDATA|cut -d: -f6`"
+		if test -z "$BBTOPDIR"
+		then
+			USERDATA=`getent passwd $BBUSER 2>/dev/null || grep "^${BBUSER}:" /etc/passwd`
+			if test $? -eq 0
+			then
+				echo "Found passwd entry for user $USERDATA"
+			else
+				echo "FAILURE: The user $BBUSER does not exist. Create user and try again."
+				exit 1
+			fi
+			echo ""; echo ""
+			HOMEDIR="`echo $USERDATA|cut -d: -f6`"
+		else
+			HOMEDIR="$BBTOPDIR"
+		fi
+
 		echo "Where do you want the Hobbit installation [${HOMEDIR}] ?"
 		if test -z "$BBTOPDIR"
 		then
