@@ -23,11 +23,11 @@ application and does not launch new processes to handle
 each incoming message.
 .br
 
-Second it acts as a buffer, smoothing out peak loads if
+Second, it acts as a buffer, smoothing out peak loads if
 many clients try to send status messages simultaneously.
 bbproxy can absorb messages very quickly, but will queue
 them up internally and forward them to the BBDISPLAY server
-at a reasonable pace. This helps smooth out the load on 
+at a reasonable pace. This helps even out the load on 
 your BBDISPLAY server.
 .br
 
@@ -46,7 +46,6 @@ Specifies the IP-address and optional portnumber where incoming
 messages are forwarded to. The default portnumber is 1984, the
 standard Big Brother port number. If you have setup the normal
 Big Brother environment, you can use "--bbdisplay=$BBDISP".
-.br
 This option is required.
 
 .IP "--bbpager=SERVERIP[:PORT]"
@@ -54,7 +53,6 @@ Specifies the IP-address and optional portnumber where incoming
 "page" messages are forwarded to. The default portnumber is 1984, 
 the standard Big Brother port number. If you have setup the normal
 Big Brother environment, you can use "--bbpager=$BBPAGE".
-.br
 If this option is omitted, "page" messages are sent to the
 server listed in --bbdisplay.
 
@@ -105,7 +103,7 @@ If enabled via the "--report" option, bbproxy will send a
 status message about itself to the BBDISPLAY server once
 every 5 minutes, or when it gets a SIGUSR1 signal.
 
-The status message include the following information:
+The status message includes the following information:
 
 .IP "Incoming messages"
 The total number of connections accepted from clients
@@ -146,15 +144,15 @@ peak number of clients that the proxy has handled simultaneously.
 This is the number of KB memory allocated for network buffers.
 
 .IP "Timeout details - reading from client"
-The number of messages aborting because reading the message
+The number of messages dropped because reading the message
 from the client timed out.
 
 .IP "Timeout details - connecting to server"
-The number of messages aborted, because a connection to the
+The number of messages dropped, because a connection to the
 BBDISPLAY or BBPAGER server could not be established.
 
 .IP "Timeout details - sending to server"
-The number of messages aborted because the communication
+The number of messages dropped because the communication
 to the BBDISPLAY/BBPAGER server timed out after a connection
 was established.
 
@@ -178,7 +176,7 @@ to send them to the client. Note that this applies to the
 types do not get any response from the servers.
 
 .SH ""
-If you think the number do not add up, here is how they relate.
+If you think the numbers do not add up, here is how they relate.
 
 The "Incoming messages" should be equal to the sum of the 
 "Incoming - Combo/Status/Page/Other messages", or slightly
