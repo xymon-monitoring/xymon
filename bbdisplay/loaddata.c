@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.18 2002-12-31 10:53:35 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.19 2003-01-01 21:31:24 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -313,14 +313,19 @@ state_t *init_state(const char *filename, int dopurple)
 		free(purplemsg);
 	}
 	else {
-		while (fgets(l, sizeof(l), fd) && (strncmp(l, "Status unchanged in ", 20) != 0)) ;
+		if (strcmp(testname, larrdcol) != 0) {
+			while (fgets(l, sizeof(l), fd) && (strncmp(l, "Status unchanged in ", 20) != 0)) ;
 
-		if (strncmp(l, "Status unchanged in ", 20) == 0) {
-			char *p;
+			if (strncmp(l, "Status unchanged in ", 20) == 0) {
+				char *p;
 
-			p = strchr(l, '\n'); if (p) *p = '\0';
-			strcpy(newstate->entry->age, l+20);
-			newstate->entry->oldage = (strstr(l+20, "days") != NULL);
+				p = strchr(l, '\n'); if (p) *p = '\0';
+				strcpy(newstate->entry->age, l+20);
+				newstate->entry->oldage = (strstr(l+20, "days") != NULL);
+			}
+		}
+		else {
+			newstate->entry->oldage = 1;
 		}
 
 		fclose(fd);
