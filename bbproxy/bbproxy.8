@@ -158,6 +158,13 @@ The number of messages aborted because the communication
 to the BBDISPLAY/BBPAGER server timed out after a connection
 was established.
 
+.IP "Timeout details - recovered"
+When a timeout happens while sending the status message to 
+the server, bbproxy will attempt to recover the message and
+retry sending it to the server after waiting a few seconds.
+This number is the number of messages that were recovered,
+and so were not lost.
+
 .IP "Timeout details - reading from server"
 The number of response messages that timed out while attempting
 to read them from the server. Note that this applies to the
