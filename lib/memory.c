@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: memory.c,v 1.4 2005-01-23 14:41:13 henrik Exp $";
+static char rcsid[] = "$Id: memory.c,v 1.5 2005-01-27 22:30:02 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -25,6 +25,7 @@ static char rcsid[] = "$Id: memory.c,v 1.4 2005-01-23 14:41:13 henrik Exp $";
 
 static xmemory_t *mhead = NULL;
 
+#ifdef MEMORY_DEBUG
 void add_to_memlist(void *ptr, size_t memsize)
 {
 	xmemory_t *newitem;
@@ -87,7 +88,7 @@ void remove_from_memlist(void *ptr)
 		free(mitem);
 	}
 }
-
+#endif
 
 const char *xfreenullstr = "xfree: Trying to free a NULL pointer";
 
@@ -101,7 +102,9 @@ void *xcalloc(size_t nmemb, size_t size)
 		abort();
 	}
 
+#ifdef MEMORY_DEBUG
 	add_to_memlist(result, nmemb*size);
+#endif
 	return result;
 }
 
@@ -116,7 +119,9 @@ void *xmalloc(size_t size)
 		abort();
 	}
 
+#ifdef MEMORY_DEBUG
 	add_to_memlist(result, size);
+#endif
 	return result;
 }
 
@@ -131,11 +136,13 @@ void *xrealloc(void *ptr, size_t size)
 		abort();
 	}
 
+#ifdef MEMORY_DEBUG
 	mitem = find_in_memlist(ptr);
 	if (mitem == NULL) {
 		errprintf("xrealloc: Called with bogus pointer\n");
 		abort();
 	}
+#endif
 
 	result = realloc(ptr, size);
 	if (result == NULL) {
@@ -143,8 +150,11 @@ void *xrealloc(void *ptr, size_t size)
 		abort();
 	}
 
+#ifdef MEMORY_DEBUG
 	mitem->sdata = result;
 	mitem->ssize = size;
+#endif
+
 	return result;
 }
 
@@ -163,7 +173,10 @@ char *xstrdup(const char *s)
 		abort();
 	}
 
+#ifdef MEMORY_DEBUG
 	add_to_memlist(result, strlen(result)+1);
+#endif
+
 	return result;
 }
 
@@ -181,6 +194,8 @@ char *xstrcat(char *dest, const char *src)
 		errprintf("xstrcat: NULL destination\n");
 		abort();
 	}
+
+#ifdef MEMORY_DEBUG
 	dmem = find_in_memlist(dest);
 	if (dmem == NULL) {
 		errprintf("xstrcat: Bogus destination\n");
@@ -193,6 +208,7 @@ char *xstrcat(char *dest, const char *src)
 		errprintf("xstrcat: Overwrite of %d bytes\n", (copyend - allocend));
 		abort();
 	}
+#endif
 
 	strcat(dest, src);
 	return dest;
@@ -212,6 +228,8 @@ char *xstrncat(char *dest, const char *src, size_t maxlen)
 		errprintf("xstrcat: NULL destination\n");
 		abort();
 	}
+
+#ifdef MEMORY_DEBUG
 	dmem = find_in_memlist(dest);
 	if (dmem == NULL) {
 		errprintf("xstrcat: Bogus destination\n");
@@ -228,6 +246,7 @@ char *xstrncat(char *dest, const char *src, size_t maxlen)
 	if (strlen(dest) + strlen(src) >= maxlen) {
 		errprintf("xstrncat: destination is not NULL terminated - dst '%s', src '%s', max %d\n", dest, src, maxlen);
 	}
+#endif
 
 	strncat(dest, src, maxlen);
 	return dest;
@@ -239,17 +258,19 @@ char *xstrcpy(char *dest, const char *src)
 	void *allocend, *copyend;
 
 	if (src == NULL) {
-		errprintf("xstrcat: NULL destination\n");
+		errprintf("xstrcpy: NULL destination\n");
 		abort();
 	}
 
 	if (dest == NULL) {
-		errprintf("xstrcat: NULL destination\n");
+		errprintf("xstrcpy: NULL destination\n");
 		abort();
 	}
+
+#ifdef MEMORY_DEBUG
 	dmem = find_in_memlist(dest);
 	if (dmem == NULL) {
-		errprintf("xstrcat: Bogus destination\n");
+		errprintf("xstrcpy: Bogus destination\n");
 		abort();
 	}
 
@@ -259,6 +280,7 @@ char *xstrcpy(char *dest, const char *src)
 		errprintf("xstrcpy: Overwrite of %d bytes\n", (copyend - allocend));
 		abort();
 	}
+#endif
 
 	strcpy(dest, src);
 	return dest;
@@ -270,17 +292,19 @@ char *xstrncpy(char *dest, const char *src, size_t maxlen)
 	void *allocend, *copyend;
 
 	if (src == NULL) {
-		errprintf("xstrcat: NULL destination\n");
+		errprintf("xstrncpy: NULL destination\n");
 		abort();
 	}
 
 	if (dest == NULL) {
-		errprintf("xstrcat: NULL destination\n");
+		errprintf("xstrncpy: NULL destination\n");
 		abort();
 	}
+
+#ifdef MEMORY_DEBUG
 	dmem = find_in_memlist(dest);
 	if (dmem == NULL) {
-		errprintf("xstrcat: Bogus destination\n");
+		errprintf("xstrncpy: Bogus destination\n");
 		abort();
 	}
 
@@ -294,6 +318,7 @@ char *xstrncpy(char *dest, const char *src, size_t maxlen)
 	if (strlen(src) >= maxlen) {
 		errprintf("xstrncpy: destination is not NULL terminated - dst '%s', src '%s', max %d\n", dest, src, maxlen);
 	}
+#endif
 
 	strncpy(dest, src, maxlen);
 	return dest;
@@ -309,6 +334,8 @@ int xsprintf(char *dest, const char *fmt, ...)
 		errprintf("xsprintf: NULL destination\n");
 		abort();
 	}
+
+#ifdef MEMORY_DEBUG
 	dmem = find_in_memlist(dest);
 	if (dmem == NULL) {
 		errprintf("xsprintf: Bogus destination\n");
@@ -324,6 +351,11 @@ int xsprintf(char *dest, const char *fmt, ...)
 		errprintf("xsprintf: Output was truncated\n");
 		abort();
 	}
+#else
+	va_start(args, fmt);
+	printedbytes = vsprintf(dest, fmt, args);
+	va_end(args);
+#endif
 
 	return printedbytes;
 }
