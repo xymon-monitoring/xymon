@@ -18,6 +18,6 @@
 
 #ifndef __REPORTDATA_H__
 #define __REPORTDATA_H__
-extern int parse_historyfile(FILE *fd, reportinfo_t *repinfo);
+extern int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *servicename);
 #endif
 

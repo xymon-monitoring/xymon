@@ -178,6 +178,7 @@ typedef struct {
 	time_t reportstart;
 	double pct[COL_COUNT];
 	int count[COL_COUNT];
+	unsigned long totduration[COL_COUNT];
 	char *fstate;
 } reportinfo_t;
 
