@@ -23,6 +23,7 @@ extern void generate_html_log(char *hostname, char *displayname, char *service, 
 		       char *firstline, char *restofmsg, char *ackmsg, 
 		       time_t disabletime, char *dismsg,
 		       int is_history, int wantserviceid, int htmlfmt, int hobbitd,
+		       char *multigraphs,
 		       FILE *output);
 
 #endif

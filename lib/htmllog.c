@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.19 2005-02-20 12:25:05 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.20 2005-02-24 20:39:02 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -87,24 +87,27 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		       char *firstline, char *restofmsg, char *ackmsg, 
 		       time_t disabletime, char *dismsg,
 		       int is_history, int wantserviceid, int htmlfmt, int hobbitd,
+		       char *multigraphs,
 		       FILE *output)
 {
 	int linecount = 0;
-	char *p;
+	char *p, *multikey;
 	larrdrrd_t *larrd = NULL;
 	larrdgraph_t *graph = NULL;
 
 	hostsvc_setup();
+	if (multigraphs == NULL) multigraphs = ",disk,";
 
 	/* 
-	 * "disk" reports use the number of lines as a rough measure for how many disk
-	 * graphs to build. We dont do it for other types of reports because it is too
-	 * unreliable.
+	 * Some reports (disk) use the number of lines as a rough measure for how many
+	 * graphs to build.
 	 * What we *really* should do was to scan the RRD directory and count how many
 	 * RRD database files are present matching this service - but that is way too
 	 * much overhead for something that might be called on every status logged.
 	 */
-	if (strcmp(service, "disk") == 0) {
+	multikey = (char *)malloc(strlen(service) + 3);
+	sprintf(multikey, ",%s,", service);
+	if (strstr(multigraphs, multikey)) {
 		/* Count how many lines are in the status message. This is needed by LARRD later */
 		linecount = 0; p = restofmsg;
 		do {
@@ -118,6 +121,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			}
 		} while (p && (*p));
 	}
+	xfree(multikey);
 
 	sethostenv(displayname, ip, service, colorname(color));
 	if (logtime) sethostenv_snapshot(logtime);
