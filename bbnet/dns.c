@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.5 2004-08-27 10:29:23 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.6 2004-08-27 15:53:20 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -35,6 +35,7 @@ int dns_stats_total   = 0;
 int dns_stats_success = 0;
 int dns_stats_failed  = 0;
 int dns_stats_lookups = 0;
+int dnstimeout        = 30;
 
 typedef struct dnsitem_t {
 	char *name;
@@ -190,6 +191,11 @@ static void dns_queue_run(ares_channel channel)
 	struct timeval *tvp, tv;
 	int progress;
 	int loops = 0;
+	struct timeval cutoff, now;
+	struct timezone tz;
+
+	gettimeofday(&cutoff, &tz);
+	cutoff.tv_sec += dnstimeout + 1;
 
 	do {
 		loops++;
@@ -218,7 +224,8 @@ static void dns_queue_run(ares_channel channel)
 				errprintf("dns_queue_run deadlock - loops=%d\n", loops);
 			}
 		}
-	} while (progress);
+		gettimeofday(&now, &tz);
+	} while (progress && (now.tv_sec < cutoff.tv_sec));
 
 	ares_destroy(channel);
 }

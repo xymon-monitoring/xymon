@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.163 2004-08-27 15:32:46 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.164 2004-08-27 15:53:20 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -2003,6 +2003,10 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			p++; frequenttestlimit = atoi(p);
 		}
+		else if (argnmatch(argv[argi], "--dns-max-all=") || argnmatch(argv[argi], "--dns-timeout=")) {
+			char *p = strchr(argv[argi], '=');
+			p++; dnstimeout = atoi(p);
+		}
 
 		/* Options for TCP tests */
 		else if (argnmatch(argv[argi], "--concurrency=")) {
@@ -2081,6 +2085,7 @@ int main(int argc, char *argv[])
 			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbtest-net\n");
 			printf("    --frequenttestlimit=N       : Seconds after detecting failures in which we poll frequently\n");
 			printf("    --timelimit=N               : Warns if the complete test run takes longer than N seconds [BBSLEEP]\n");
+			printf("    --dns-timeout=N             : DNS lookups timeout and fail after N seconds [30]\n");
 			printf("    --no-flags                  : Dont send extra bbgen test flags\n");
 			printf("\nOptions for services in BBNETSVCS (tcp tests):\n");
 			printf("    --concurrency=N             : Number of tests run in parallel\n");

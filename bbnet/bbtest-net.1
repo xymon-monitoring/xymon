@@ -84,6 +84,16 @@ lookup for the hostname given in the URL; see the
 "bbtest-net tags for HTTP tests" section in
 .I bb-hosts(5)
 
+.IP "--dns-timeout=N (default: 30 seconds)"
+bbtest-net will timeout all DNS lookups after N seconds.
+Any pending DNS lookups are regarded as failed, i.e. the
+network tests that depend on this DNS lookup will report
+an error.
+
+.IP --dns-max-all=N
+Same as "--dns-timeout=N". The "--dns-max-all" option is 
+deprecated and should not be used.
+
 .IP --test-untagged
 When using the BBLOCATION environment variable to test
 only hosts on a particular network segment, bbtest-net

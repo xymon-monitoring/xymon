@@ -20,6 +20,7 @@ extern int dns_stats_total;
 extern int dns_stats_success;
 extern int dns_stats_failed;
 extern int dns_stats_lookups;
+extern int dnstimeout;
 
 extern void add_host_to_dns_queue(char *hostname);
 extern void add_url_to_dns_queue(char *hostname);
