@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.7 2003-04-13 20:04:04 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.8 2003-04-13 21:11:12 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -30,6 +30,7 @@ link_t  null_link = { "", "", "", NULL };
 
 typedef struct {
 	char *testname;
+	int namelen;
 	int portnum;
 	void *next;
 	void *items;
@@ -57,7 +58,7 @@ service_t	*svchead = NULL;
 testedhost_t	*testhosthead = NULL;
 testitem_t	*testhead = NULL;
 
-service_t *add_service(char *name, int port)
+service_t *add_service(char *name, int port, int namelen)
 {
 	service_t *svc;
 
@@ -65,6 +66,7 @@ service_t *add_service(char *name, int port)
 	svc->portnum = port;
 	svc->testname = malloc(strlen(name)+1);
 	strcpy(svc->testname, name);
+	svc->namelen = namelen;
 	svc->items = NULL;
 	svc->next = svchead;
 	svchead = svc;
@@ -84,7 +86,7 @@ void load_services(void)
 	p = strtok(netsvcs, " ");
 	while (p) {
 		svcinfo = getservbyname(p, NULL);
-		add_service(p, (svcinfo ? ntohs(svcinfo->s_port) : 0));
+		add_service(p, (svcinfo ? ntohs(svcinfo->s_port) : 0), 0);
 		p = strtok(NULL, " ");
 	}
 	free(netsvcs);
@@ -180,7 +182,7 @@ void load_tests(void)
 						if ((s->portnum == 0) && (specialport > 0)) {
 							specialname = malloc(strlen(s->testname)+10);
 							sprintf(specialname, "%s_%d", s->testname, specialport);
-							s = add_service(specialname, specialport);
+							s = add_service(specialname, specialport, strlen(s->testname));
 							free(specialname);
 						}
 					}
@@ -329,6 +331,11 @@ void send_results(service_t *service)
 	testitem_t	*t;
 	int		color;
 	char		msgline[MAXMSG];
+	char		*svcname;
+
+	svcname = malloc(strlen(service->testname)+1);
+	strcpy(svcname, service->testname);
+	if (service->namelen) svcname[service->namelen] = '\0';
 
 	for (t=service->items; (t); t = t->next) {
 		color = COL_GREEN;
@@ -346,8 +353,8 @@ void send_results(service_t *service)
 
 		init_status(color);
 		sprintf(msgline, "status %s.%s %s %s %s %s\n", 
-			commafy(t->host->hostname), t->service->testname, colorname(color), timestamp,
-			t->service->testname, ((color == COL_RED) ? "NOT ok" : "ok"));
+			commafy(t->host->hostname), svcname, colorname(color), timestamp,
+			svcname, ((color == COL_RED) ? "NOT ok" : "ok"));
 		addtostatus(msgline);
 
 		if (t->host->dnserror) {
@@ -355,8 +362,7 @@ void send_results(service_t *service)
 		}
 		else {
 			sprintf(msgline, "\n&%s Service %s on %s is %s\n",
-				colorname(color),
-				t->service->testname, t->host->hostname,
+				colorname(color), svcname, t->host->hostname,
 				(t->open ? "UP" : "DOWN"));
 		}
 		addtostatus(msgline);
