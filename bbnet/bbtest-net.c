@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.35 2003-04-27 20:50:54 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.36 2003-04-27 21:02:26 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -582,8 +582,6 @@ void send_results(service_t *service)
 	char		*nopagename;
 	int		nopage = 0;
 
-	combo_start();
-
 	svcname = malloc(strlen(service->testname)+1);
 	strcpy(svcname, service->testname);
 	if (service->namelen) svcname[service->namelen] = '\0';
@@ -701,8 +699,6 @@ void send_results(service_t *service)
 		addtostatus("\n\n");
 		finish_status();
 	}
-
-	combo_end();
 }
 
 int main(int argc, char *argv[])
@@ -801,6 +797,7 @@ int main(int argc, char *argv[])
 	}
 	do_tcp_tests(timeout, concurrency);
 	if (debug) show_tcp_test_results();
+	combo_start();
 	for (s = svchead; (s); s = s->next) {
 		if ((s->items) && (s->toolid == TOOL_CONTEST)) {
 			for (t = s->items; (t); t = t->next) { 
@@ -819,7 +816,7 @@ int main(int argc, char *argv[])
 			send_results(s);
 		}
 	}
-
+	combo_end();
 
 	/* Run the http tests */
 	for (t = httptest->items; (t); t = t->next) add_http_test(t);
@@ -837,16 +834,22 @@ int main(int argc, char *argv[])
 		if (s->items) {
 			switch(s->toolid) {
 				case TOOL_NSLOOKUP:
-					run_nslookup_service(s); send_results(s);
+					run_nslookup_service(s); 
+					combo_start();
+					send_results(s);
+					combo_end();
 					break;
 				case TOOL_DIG:
-					run_dig_service(s); send_results(s);
+					run_dig_service(s); 
+					combo_start();
+					send_results(s);
+					combo_end();
 					break;
 				case TOOL_NTP:
-					run_ntp_service(s); send_results(s);
-					break;
-				case TOOL_FPING:
-					/* Already done */
+					run_ntp_service(s); 
+					combo_start();
+					send_results(s);
+					combo_end();
 					break;
 			}
 		}
