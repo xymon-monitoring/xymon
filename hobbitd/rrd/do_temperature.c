@@ -8,13 +8,13 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char temperature_rcsid[] = "$Id: do_temperature.c,v 1.2 2005-02-06 08:49:02 henrik Exp $";
+static char temperature_rcsid[] = "$Id: do_temperature.c,v 1.3 2005-02-08 07:57:22 henrik Exp $";
 
 static char *temperature_params[] = { "rrdcreate", rrdfn, 
 				      "DS:temperature:GAUGE:600:1:U",
 				      rra1, rra2, rra3, rra4, NULL };
 
-#if 0
+/* Sample input report:
 Device             Temp(C)  Temp(F)
 -----------------------------------
 &green Motherboard#0      31       87
@@ -40,7 +40,7 @@ Device             Temp(C)  Temp(F)
 &green CPU 1 Ambient      26       78
 -----------------------------------
 Status green: All devices look okay
-#endif
+*/
 
 int do_temperature_larrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
