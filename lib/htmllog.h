@@ -22,6 +22,6 @@ extern void generate_html_log(char *hostname, char *displayname, char *service, 
 		       int color, char *sender, char *flags, 
 		       time_t logtime, char *timesincechange, 
 		       char *firstline, char *restofmsg, char *ackmsg, 
-		       int is_history, FILE *output);
+		       int is_history, int wantserviceid, int htmlfmt, FILE *output);
 
 #endif

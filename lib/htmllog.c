@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.3 2004-11-06 10:02:20 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.4 2004-11-18 23:19:01 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -83,7 +83,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		       int color, char *sender, char *flags, 
 		       time_t logtime, char *timesincechange, 
 		       char *firstline, char *restofmsg, char *ackmsg, 
-		       int is_history, FILE *output)
+		       int is_history, int wantserviceid, int htmlfmt, FILE *output)
 {
 	int linecount;
 	char *p;
@@ -114,9 +114,9 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	if (!is_history && (histlocation == HIST_TOP)) historybutton(cgibinurl, hostname, service, ip, output);
 
 	fprintf(output, "<CENTER><TABLE ALIGN=CENTER BORDER=0>\n");
-	fprintf(output, "<TR><TH><FONT %s>%s - %s</FONT><BR><HR WIDTH=\"60%%\"></TH></TR>\n", rowfont, displayname, service);
+	if (wantserviceid) fprintf(output, "<TR><TH><FONT %s>%s - %s</FONT><BR><HR WIDTH=\"60%%\"></TH></TR>\n", rowfont, displayname, service);
 	fprintf(output, "<TR><TD><H3>%s</H3>\n", skipword(firstline));	/* Drop the color */
-	fprintf(output, "<PRE>\n");
+	if (!htmlfmt) fprintf(output, "<PRE>\n");
 
 	do {
 		int color;
@@ -146,7 +146,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		}
 	} while (restofmsg);
 
-	fprintf(output, "\n</PRE>\n");
+	if (!htmlfmt) fprintf(output, "\n</PRE>\n");
 	fprintf(output, "</TD></TR></TABLE>\n");
 
 	fprintf(output, "<br><br>\n");
