@@ -16,9 +16,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.84 2003-03-04 11:24:20 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.85 2003-03-04 17:11:06 henrik Exp $";
 
-#define VERSION "1.8-pre2003.03.02.18.40"
+#define VERSION "1.8"
 
 #include <stdio.h>
 #include <unistd.h>
