@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.23 2003-02-14 22:35:00 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.24 2003-02-14 22:42:32 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -35,9 +35,10 @@ static char rcsid[] = "$Id: pagegen.c,v 1.23 2003-02-14 22:35:00 henrik Exp $";
 #include "infogen.h"
 
 char *bb_headfoot = "bb";
-int  subpagecolumns=1;
+int  subpagecolumns = 1;
 int  hostsbeforepages = 0;
 char *includecolumns = NULL;
+int  sort_grouponly_items = 0; /* Standard BB behaviour: Dont sort group-only items */
 
 
 int interesting_column(int pagetype, int color, int alert, char *columnname, char *onlycols)
@@ -121,7 +122,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 	head->column = &null_column;
 	head->next = NULL;
 
-	if (onlycols != NULL) {
+	if (sort_grouponly_items && (onlycols != NULL)) {
 		/* For group-only, hand back columns in order given by user */
 		char *p1 = onlycols;
 		char *p2;

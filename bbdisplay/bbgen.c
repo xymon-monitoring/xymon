@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.73 2003-02-14 12:24:03 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.74 2003-02-14 22:42:32 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -98,6 +98,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[i], "--pages-last") == 0) {
 			hostsbeforepages = 1;
+		}
+		else if (strcmp(argv[i], "--sort-group-only-items") == 0) {
+			sort_grouponly_items = 1;
 		}
 		else if (strncmp(argv[i], "--purplelifetime=", 17) == 0) {
 			char *lp = strchr(argv[i], '=');
@@ -196,6 +199,7 @@ int main(int argc, char *argv[])
 			printf("    --pages-first               : Put page- and subpage-links before hosts (default)\n");
 			printf("    --subpagecolumns=N          : Number of columns for links to pages and subpages\n");
 			printf("    --recentgifs                : Use xxx-recent.gif icons for newly changed tests\n");
+			printf("    --sort-group-only-items     : Display group-only items in alphabetical order\n");
 			printf("\nStatus propagation control options:\n");
 			printf("    --noprop=test[,test]        : Disable upwards status propagation when YELLOW\n");
 			printf("    --nopropred=test[,test]     : Disable upwards status propagation when RED or YELLOW\n");
