@@ -1,0 +1,22 @@
+.TH BB-EVENTLOG.CGI 1 "Version 2.9: 31 Aug 2003" "bbgen toolkit"
+.SH NAME
+bb-eventlog.cgi \- CGI program to report the Big Brother eventlog
+.SH SYNOPSIS
+.B "bb-eventlog.cgi"
+
+.SH DESCRIPTION
+.I bb-eventlog.cgi
+is invoked as a CGI script via the bb-eventlog.sh CGI wrapper.
+Based on the parameters it receives, it generates the
+Big Brother event log for a period. This log shows all status
+changes that have occurred for all hosts and services.
+
+bb-eventlog.cgi is passed a QUERY_STRING environment variable 
+with the following parameters:
+
+   MAXTIME (maximum days to go back in the log, in minutes)
+   MAXCOUNT (maximum number of events to report)
+
+.SH "SEE ALSO"
+bb-hosts(5), bb-environ(5)
+
