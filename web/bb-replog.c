@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.1 2003-06-20 12:30:41 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.2 2003-06-20 13:07:15 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -333,8 +333,24 @@ int main(int argc, char *argv[])
 
 
 			/* And the text-report */
-			fprintf(textrep, "%s	%s	%s	%s		%lu		%s\n",
-				start, end, colorname(walk->color), durationstr(walk->duration), walk->duration, walk->cause );
+			fprintf(textrep, "%s	%s	%s	%s		%lu		",
+				start, end, colorname(walk->color), durationstr(walk->duration), walk->duration);
+			if (walk->cause) {
+				char *p;
+
+                        	for (p=walk->cause; (p && *p); ) {
+					if (*p == '<') {
+						p = strchr(p, '>');
+						if (p) p++;
+					}
+					else if (*p != '\n') {
+						fprintf(textrep, "%c", *p);
+						p++;
+					}
+					else p++;
+				}
+				fprintf(textrep, "\n");
+			}
 		}
 	}
 
