@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.23 2004-10-11 19:52:35 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.24 2004-10-12 10:24:00 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -112,6 +112,7 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 	struct timeval tstamp;
 	struct timezone tz;
 	union semun su;
+	int semerr;
 
 	/* First see how many users are on this channel */
 	clients = semctl(channel->semid, CLIENTCOUNT, GETVAL);
@@ -120,9 +121,24 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 		return;
 	}
 
-	/* Wait for BOARDBUSY to go low */
-	s.sem_num = BOARDBUSY; s.sem_op = 0; s.sem_flg = 0;
-	n = semop(channel->semid, &s, 1);
+	/* 
+	 * Wait for BOARDBUSY to go low.
+	 * We need a loop here, because if we catch a signal
+	 * while waiting on the semaphore, then we need to
+	 * re-start the semaphore wait. Otherwise we may
+	 * end up with semaphores that are out of sync
+	 * (GOCLIENT goes up while a worker waits for it 
+	 *  to go to 0).
+	 */
+	do {
+		s.sem_num = BOARDBUSY; s.sem_op = 0; s.sem_flg = 0;
+		n = semop(channel->semid, &s, 1);
+		if (n == -1) {
+			semerr = errno;
+			errprintf("semop failed, %s\n", strerror(errno));
+		}
+	} while ((n == -1) && (semerr == EINTR) && running);
+	if (!running) return;
 
 	/* All clear, post the message */
 	if (channel->seq == 999999) channel->seq = 0;
