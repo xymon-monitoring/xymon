@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.96 2003-09-08 21:41:50 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.97 2003-09-16 13:59:46 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -53,6 +53,8 @@ int  pagetitlelinks = 0;
 int  maxrowsbeforeheading = 0;
 int  bb2eventlog = 1;
 int  bb2acklog = 1;
+int  bb2eventlogmaxcount = 100;
+int  bb2eventlogmaxtime = 240;
 
 /* Format strings for htaccess files */
 char *htaccess = NULL;
@@ -960,7 +962,7 @@ static void do_bb2ext(FILE *output, char *extenv, char *family)
 	while (p) {
 		/* Dont redo the eventlog or acklog things */
 		if (strcmp(p, "eventlog.sh") == 0) {
-			if (bb2eventlog && !havedoneeventlog) do_eventlog(output, 0, 240, 0);
+			if (bb2eventlog && !havedoneeventlog) do_eventlog(output, bb2eventlogmaxcount, bb2eventlogmaxtime, 0);
 		}
 		else if (strcmp(p, "acklog.sh") == 0) {
 			if (bb2acklog && !havedoneacklog) do_acklog(output, 25, 240);

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.153 2003-09-12 11:39:25 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.154 2003-09-16 13:59:46 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -275,6 +275,16 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[i], "--no-eventlog") == 0) {
 			bb2eventlog = 0;
 		}
+		else if (argnmatch(argv[i], "--max-eventcount=")) {
+			char *lp = strchr(argv[i], '=');
+
+			bb2eventlogmaxcount = atoi(lp+1);
+		}
+		else if (argnmatch(argv[i], "--max-eventtime=")) {
+			char *lp = strchr(argv[i], '=');
+
+			bb2eventlogmaxtime = atoi(lp+1);
+		}
 		else if (strcmp(argv[i], "--no-acklog") == 0) {
 			bb2acklog = 0;
 		}
@@ -402,6 +412,8 @@ int main(int argc, char *argv[])
 			printf("    --purplelifetime=N          : Purple messages have a lifetime of N minutes\n");
 			printf("    --ignorecolumns=test[,test] : Completely ignore these columns\n");
 			printf("    --includecolumns=test[,test]: Always include these columns on bb2 page\n");
+		        printf("    --max-eventcount=N          : Max number of events to include in eventlog\n");
+		        printf("    --max-eventtime=N           : Show events that occurred within the last N minutes\n");
 			printf("    --eventignore=test[,test]   : Columns to ignore in bb2 event-log display\n");
 			printf("    --no-eventlog               : Do not generate the bb2 eventlog display\n");
 			printf("    --no-acklog                 : Do not generate the bb2 ack-log display\n");
