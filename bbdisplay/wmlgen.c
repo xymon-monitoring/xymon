@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: wmlgen.c,v 1.9 2003-05-22 22:34:22 henrik Exp $";
+static char rcsid[] = "$Id: wmlgen.c,v 1.10 2003-05-22 22:38:22 henrik Exp $";
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -52,7 +52,7 @@ static void delete_old_cards(char *dirname)
 	while ((d = readdir(bbcards))) {
 		strcpy(fn, d->d_name);
 		stat(fn, &st);
-		if (S_ISREG(st.st_mode) && (st.st_mtime < (now-3600))) {
+		if ((fn[0] != '.') && S_ISREG(st.st_mode) && (st.st_mtime < (now-3600))) {
 			unlink(fn);
 		}
 	}
