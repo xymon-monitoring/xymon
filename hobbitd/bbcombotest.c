@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.29 2004-10-31 07:58:10 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.30 2004-12-03 12:05:50 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -228,7 +228,6 @@ static long getvalue(char *hostname, char *testname, int *color, char **errbuf)
 	testspec_t *walk;
 	char errtext[1024];
 	char *errptr;
-	int result;
 
 	*color = -1;
 	errptr = errtext; 
