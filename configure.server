@@ -245,9 +245,16 @@ else
 		then
 			read BBHOSTURL
 		fi
+
 		if test -z "$BBHOSTURL"
 		then
 			BBHOSTURL="/hobbit"
+		elif test "$BBHOSTURL" = "/"
+		then
+			# For Hobbit as the root URL, we must clear this setting.
+			# Otherwise, gifs, menus etc stop working because we generate
+			# URL's begining with "//"
+			BBHOSTURL=""
 		fi
 		echo ""; echo ""
 
