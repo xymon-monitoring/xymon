@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.122 2004-08-31 20:42:35 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.123 2004-09-01 11:35:19 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1857,6 +1857,25 @@ void parse_url(char *inputurl, urlelem_t *url)
 }
 
 
+static char *gethttpcolumn(char *inp, char **name)
+{
+	char *nstart, *nend;
+
+	nstart = inp;
+	nend = strchr(nstart, ';');
+	if (nend == NULL) {
+		*name = NULL;
+		return inp;
+	}
+
+	*nend = '\0';
+	*name = malcop(nstart);
+	*nend = ';';
+
+	return nend+1;
+}
+
+
 char *decode_url(char *testspec, bburl_t *bburl)
 {
 	static bburl_t bburlbuf;
@@ -1896,18 +1915,33 @@ char *decode_url(char *testspec, bburl_t *bburl)
 	} else if (strncmp(inp, "cont;", 5) == 0) {
 		bburl->testtype = BBTEST_CONT;
 		urlstart = inp+5;
+	} else if (strncmp(inp, "cont=", 5) == 0) {
+		bburl->testtype = BBTEST_CONT;
+		urlstart = gethttpcolumn(inp+5, &bburl->columnname);
 	} else if (strncmp(inp, "nocont;", 7) == 0) {
 		bburl->testtype = BBTEST_NOCONT;
 		urlstart = inp+7;
+	} else if (strncmp(inp, "nocont=", 7) == 0) {
+		bburl->testtype = BBTEST_NOCONT;
+		urlstart = gethttpcolumn(inp+7, &bburl->columnname);
 	} else if (strncmp(inp, "post;", 5) == 0) {
 		bburl->testtype = BBTEST_POST;
 		urlstart = inp+5;
+	} else if (strncmp(inp, "post=", 5) == 0) {
+		bburl->testtype = BBTEST_POST;
+		urlstart = gethttpcolumn(inp+5, &bburl->columnname);
 	} else if (strncmp(inp, "nopost;", 7) == 0) {
 		bburl->testtype = BBTEST_NOPOST;
 		urlstart = inp+7;
+	} else if (strncmp(inp, "nopost=", 7) == 0) {
+		bburl->testtype = BBTEST_NOPOST;
+		urlstart = gethttpcolumn(inp+7, &bburl->columnname);
 	} else if (strncmp(inp, "type;", 5) == 0) {
 		bburl->testtype = BBTEST_TYPE;
 		urlstart = inp+5;
+	} else if (strncmp(inp, "type=", 5) == 0) {
+		bburl->testtype = BBTEST_TYPE;
+		urlstart = gethttpcolumn(inp+5, &bburl->columnname);
 	}
 	else {
 		/* Plain URL test */
