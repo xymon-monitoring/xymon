@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbconvert.c,v 1.1 2004-10-26 21:59:35 henrik Exp $";
+static char rcsid[] = "$Id: bbconvert.c,v 1.2 2004-10-28 09:57:23 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -98,7 +98,7 @@ void dump_bbgendchk(void)
 			char *unchstr = NULL;
 			char *p;
 			time_t validtime;
-			int oldcol;
+			int oldcol = -1;
 			time_t lastchange = 0;
 			time_t enabletime = 0;
 			time_t acktime = 0;
@@ -146,10 +146,10 @@ void dump_bbgendchk(void)
 			logfd = fopen(logfn, "r");
 			if (logfd) {
 				char l[100], colstr[20];
-				int curcol, n;
+				int curcol = COL_GREEN, n;
 				if (st.st_size > 130) fseek(logfd, -130, SEEK_END);
 				while (fgets(l, sizeof(l), logfd)) {
-					n = sscanf(l+25, "%s %d", colstr, (int *)&lastchange);
+					n = sscanf(l+25, "%s %d", colstr, &lastchange);
 					if (n == 2) {
 						oldcol = curcol;
 						curcol = parse_color(colstr);
