@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: rssgen.c,v 1.4 2004-07-27 20:37:22 henrik Exp $";
+static char rcsid[] = "$Id: rssgen.c,v 1.5 2004-08-09 09:50:14 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -21,28 +21,29 @@ static char rcsid[] = "$Id: rssgen.c,v 1.4 2004-07-27 20:37:22 henrik Exp $";
 #include "util.h"
 #include "rssgen.h"
 
-char *rssfilename = NULL;
 char *rssversion = "0.91";
-char *nssidebarfilename = NULL;
 int  rsscolorlimit = COL_RED;
 int  nssidebarcolorlimit = COL_RED;
+char *rsstitle = "Big Brother Critical Alerts";
 
 #define RSS091 0
 #define RSS092 1
 #define RSS10  2
 #define RSS20  3
 
-void do_rss_feed(void)
+void do_rss_feed(char *rssfilename, host_t *hosts)
 {
 	FILE *fd;
 	char tmpfn[MAX_PATH];
 	char destfn[MAX_PATH];
 	int rssver = 0;
 	int ttlvalue;
-	hostlist_t *h;
+	host_t *h;
 	int anyshown;
 
 	if (rssfilename == NULL) return;
+
+	if (getenv("BBRSSTITLE")) rsstitle = malcop(getenv("BBRSSTITLE"));
 
 	if      (strcmp(rssversion, "0.91") == 0) rssver = RSS091;
 	else if (strcmp(rssversion, "0.92") == 0) rssver = RSS092;
@@ -77,7 +78,7 @@ void do_rss_feed(void)
 		fprintf(fd, "<?xml version=\"1.0\"?>\n");
 		fprintf(fd, "<rss version=\"0.91\">\n");
 		fprintf(fd, "<channel>\n");
-		fprintf(fd, "  <title>Big Brother Critical Alerts</title>\n");
+		fprintf(fd, "  <title>%s</title>\n", rsstitle);
 		fprintf(fd, "  <link>%s</link>\n", getenv("BBWEBHOSTURL"));
 		fprintf(fd, "  <description>Last updated on %s</description>\n", timestamp);
 		break;
@@ -85,7 +86,7 @@ void do_rss_feed(void)
 		fprintf(fd, "<?xml version=\"1.0\"?>\n");
 		fprintf(fd, "<rss version=\"0.92\">\n");
 		fprintf(fd, "<channel>\n");
-		fprintf(fd, "  <title>Big Brother Critical Alerts</title>\n");
+		fprintf(fd, "  <title>%s</title>\n", rsstitle);
 		fprintf(fd, "  <link>%s</link>\n", getenv("BBWEBHOSTURL"));
 		fprintf(fd, "  <description>Last updated on %s</description>\n", timestamp);
 		fprintf(fd, "  <image>\n");
@@ -98,7 +99,7 @@ void do_rss_feed(void)
 		fprintf(fd, "<?xml version=\"1.0\"?>\n");
 		fprintf(fd, "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns=\"http://purl.org/rss/1.0/\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\">\n");
 		fprintf(fd, "  <channel rdf:about=\"%s\">\n", getenv("BBWEBHOSTURL"));
-		fprintf(fd, "    <title>Big Brother Critical Alerts</title>\n");
+		fprintf(fd, "    <title>%s</title>\n", rsstitle);
 		fprintf(fd, "    <link>%s</link>\n", getenv("BBWEBHOSTURL"));
 		fprintf(fd, "    <description>Last updated on %s</description>\n", timestamp);
 		fprintf(fd, "  </channel>\n");
@@ -107,18 +108,18 @@ void do_rss_feed(void)
 		fprintf(fd, "<?xml version=\"1.0\"?>\n");
 		fprintf(fd, "<rss version=\"2.0\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\">\n");
 		fprintf(fd, "  <channel>\n");
-		fprintf(fd, "    <title>Big Brother Critical Alerts</title>\n");
+		fprintf(fd, "    <title>%s</title>\n", rsstitle);
 		fprintf(fd, "    <link>%s</link>\n", getenv("BBWEBHOSTURL"));
 		fprintf(fd, "    <description>Last updated on %s</description>\n", timestamp);
 		fprintf(fd, "    <ttl>%d</ttl>\n", ttlvalue);
 		break;
 	}
 
-	for (h=hosthead, anyshown=0; (h); h=h->next) {
+	for (h=hosts, anyshown=0; (h); h=h->next) {
 		entry_t *e;
 
-		if (h->hostentry->color >= rsscolorlimit) {
-			for (e=h->hostentry->entries; (e); e=e->next) {
+		if (h->color >= rsscolorlimit) {
+			for (e=h->entries; (e); e=e->next) {
 				if (e->color >= rsscolorlimit) {
 					anyshown = 1;
 
@@ -136,20 +137,20 @@ void do_rss_feed(void)
 					}
 
 					fprintf(fd, "    <title>%s (%s)</title>\n",
-						h->hostentry->hostname, e->column->name);
+						h->hostname, e->column->name);
 
 					fprintf(fd, "    <link>");
 					if (generate_static()) {
 						fprintf(fd, "%s/html/%s.%s.html",
 							getenv("BBWEBHOSTURL"), 
-							h->hostentry->hostname, 
+							h->hostname, 
 							e->column->name);
 					}
 					else {
 						fprintf(fd, "%s%s/bb-hostsvc.sh?HOSTSVC=%s.%s",
 							getenv("BBWEBHOST"),
 							getenv("CGIBINURL"),
-							commafy(h->hostentry->hostname), 
+							commafy(h->hostname), 
 							e->column->name);
 					}
 					fprintf(fd, "</link>\n");
@@ -187,16 +188,18 @@ void do_rss_feed(void)
 	return;
 }
 
-void do_netscape_sidebar(void)
+void do_netscape_sidebar(char *nssidebarfilename, host_t *hosts)
 {
 	FILE *fd;
 	char tmpfn[MAX_PATH];
 	char destfn[MAX_PATH];
 	int ttlvalue;
-	hostlist_t *h;
+	host_t *h;
 	int anyshown;
 
 	if (nssidebarfilename == NULL) return;
+
+	if (getenv("BBRSSTITLE")) rsstitle = malcop(getenv("BBRSSTITLE"));
 
 	ttlvalue = (getenv("BBSLEEP") ? atoi(getenv("BBSLEEP")) : 300);
 
@@ -217,7 +220,7 @@ void do_netscape_sidebar(void)
 	fprintf(fd, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n");
 	fprintf(fd, "<HTML>\n");
 	fprintf(fd, "  <HEAD>\n");
-	fprintf(fd, "    <TITLE>Big Brother Critical Alerts</TITLE>\n");
+	fprintf(fd, "    <TITLE>%s</TITLE>\n", rsstitle);
 	fprintf(fd, "    <META NAME=\"Generator\" CONTENT=\"bbgen - generator for Big Brother\">\n");
 	fprintf(fd, "    <META HTTP-EQUIV=\"Refresh\" CONTENT=\"%d; URL=%s/%s\">\n",
 		ttlvalue, getenv("BBWEBHOSTURL"), nssidebarfilename);
@@ -226,11 +229,11 @@ void do_netscape_sidebar(void)
 	fprintf(fd, "    <FONT SIZE=\"-2\">Last updated:<BR>%s<BR></FONT>\n", timestamp);
 	fprintf(fd, "    <UL>\n");
 
-	for (h=hosthead, anyshown=0; (h); h=h->next) {
+	for (h=hosts, anyshown=0; (h); h=h->next) {
 		entry_t *e;
 
-		if (h->hostentry->color >= nssidebarcolorlimit) {
-			for (e=h->hostentry->entries; (e); e=e->next) {
+		if (h->color >= nssidebarcolorlimit) {
+			for (e=h->entries; (e); e=e->next) {
 				if (e->color >= nssidebarcolorlimit) {
 					anyshown = 1;
 
@@ -238,18 +241,18 @@ void do_netscape_sidebar(void)
 					if (generate_static()) {
 						fprintf(fd, "\t<A TARGET=\"_content\" HREF=\"%s/html/%s.%s.html\">",
 							getenv("BBWEBHOSTURL"), 
-							h->hostentry->hostname, 
+							h->hostname, 
 							e->column->name);
 					}
 					else {
 						fprintf(fd, "\t<A TARGET=\"_content\" HREF=\"%s%s/bb-hostsvc.sh?HOSTSVC=%s.%s\">",
 							getenv("BBWEBHOST"),
 							getenv("CGIBINURL"),
-							commafy(h->hostentry->hostname), 
+							commafy(h->hostname), 
 							e->column->name);
 					}
 					fprintf(fd, "%s (%s)</A>\n",
-						h->hostentry->hostname, e->column->name);
+						h->hostname, e->column->name);
 					fprintf(fd, "      </LI>\n");
 				}
 			}
