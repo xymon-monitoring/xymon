@@ -35,9 +35,14 @@ int main(int argc, char *argv[])
 	char *netstring = NULL;
 	char *p;
 
-	if (argc <= 1) {
+	if ((argc <= 1) || (strcmp(argv[1], "--help") == 0)) {
 		printf("Usage:\n%s test1 [test1] [test2] ... \n", argv[0]);
-		exit (1);
+		exit(1);
+	}
+
+	if ((strcmp(argv[1], "--version") == 0)) {
+		printf("bbhostgrep version %s\n", VERSION);
+		exit(0);
 	}
 
 	if (getenv("BBHOSTS") == NULL) {
