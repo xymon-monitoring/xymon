@@ -41,6 +41,11 @@ bbd_channel_t *channel = NULL;
 void sig_handler(int signum)
 {
 	switch (signum) {
+	  case SIGPIPE:
+		/* We lost the pipe to the worker child. Shutdown. */
+		running = 0;
+		break;
+
 	  case SIGCHLD:
 		/* Our worker child died. Follow it to the grave */
 		wait(&childexit);
