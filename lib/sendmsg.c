@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.18 2004-07-26 22:26:53 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.19 2004-07-27 09:19:42 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -122,6 +122,7 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, int fullrespo
 	int connretries = BBSENDRETRIES;
 	char *httpmessage = NULL;
 	char response[MAXMSG];
+	int haveseenhttphdrs = 1;
 
 	if (dontsendmessages) {
 		printf("%s\n", message);
@@ -207,6 +208,7 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, int fullrespo
 
 		if (posturl) free(posturl);
 		if (posthost) free(posthost);
+		haveseenhttphdrs = 0;
 	}
 
 	if (inet_aton(rcptip, &addr) == 0) {
@@ -289,11 +291,37 @@ retry_connect:
 			}
 
 			if (!rdone && FD_ISSET(sockfd, &readfds)) {
-				int n = recv(sockfd, response, MAXMSG-1, 0);
+				char *outp;
+				int n;
+
+				n = recv(sockfd, response, MAXMSG-1, 0);
 				if (n > 0) {
 					response[n] = '\0';
-					fwrite(response, n, 1, respfd);
-					if (!fullresponse) rdone = (strchr(response, '\n') == NULL);
+
+					/*
+					 * When running over a HTTP transport, we must strip
+					 * off the HTTP headers we get back, so the response
+					 * is consistent with what we get from the normal bbd
+					 * transport.
+					 * (Non-http transport sets "haveseenhttphdrs" to 1)
+					 */
+					if (!haveseenhttphdrs) {
+						outp = strstr(response, "\r\n\r\n");
+						if (outp) {
+							outp += 4;
+							n -= (outp - response);
+							haveseenhttphdrs = 1;
+						}
+						else n = 0;
+					}
+					else outp = response;
+
+					if (n > 0) {
+						fwrite(outp, n, 1, respfd);
+						if (!fullresponse) {
+							rdone = (strchr(outp, '\n') == NULL);
+						}
+					}
 				}
 				else rdone = 1;
 			}
@@ -532,7 +560,7 @@ void finish_status(void)
 			break;
 	}
 }
-#ifdef STANDALONE
+#if defined(STANDALONE) || defined(CGI)
 
 /* These are dummy vars needed by stuff in util.c */
 hostlist_t      *hosthead = NULL;
@@ -542,7 +570,13 @@ link_t  null_link = { "", "", "", NULL };
 int main(int argc, char *argv[])
 {
 	int result = 1;
+	int cgimode;
+	char *recipient;
 
+#ifdef CGI
+	cgimode = 1;
+	recipient = "127.0.0.1";
+#else
 	if (argc < 3) {
 		fprintf(stderr, "Invalid call\n\n");
 		fprintf(stderr, "Usage: %s RECIPIENT DATA\n", argv[0]);
@@ -551,22 +585,44 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	if (strcmp(argv[2], "-") == 0) {
+	cgimode = 0;
+	recipient = argv[1];
+#endif
+
+	if (cgimode || (strcmp(argv[2], "@") == 0)) {
+		char msg[MAXMSG];
+		char *bufp = msg;
+		int spaceleft = sizeof(msg)-1;
+
+		do {
+			if (fgets(bufp, spaceleft, stdin)) {
+				spaceleft -= strlen(bufp);
+				bufp += strlen(bufp);
+			}
+			else {
+				spaceleft = 0;
+			}
+		} while (spaceleft > 0);
+
+		if (cgimode) printf("Content-Type: application/octet-stream\n\n");
+		result = sendmessage(msg, recipient, stdout, 1);
+	}
+	else if (strcmp(argv[2], "-") == 0) {
 		char msg[MAXMSG];
 
 		while (fgets(msg, sizeof(msg), stdin)) {
-			result = sendmessage(msg, argv[1], NULL, 0);
+			result = sendmessage(msg, recipient, NULL, 0);
 		}
 	}
 	else {
 		if (strncmp(argv[2], "query ", 6) == 0) {
-			result = sendmessage(argv[2], argv[1], stdout, 0);
+			result = sendmessage(argv[2], recipient, stdout, 0);
 		}
 		else if (strncmp(argv[2], "config ", 7) == 0) {
-			result = sendmessage(argv[2], argv[1], stdout, 1);
+			result = sendmessage(argv[2], recipient, stdout, 1);
 		}
 		else {
-			result = sendmessage(argv[2], argv[1], NULL, 0);
+			result = sendmessage(argv[2], recipient, NULL, 0);
 		}
 	}
 
