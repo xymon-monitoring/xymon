@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.65 2003-06-21 18:34:23 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.66 2003-06-23 13:07:06 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -558,6 +558,7 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *pagepath)
 	bbgen_page_t	*p;
 	link_t  *link;
 	int	currentcolumn;
+	char	pagelink[MAX_PATH];
 
 	if (subs) {
 		fprintf(output, "<A NAME=\"pages-blk\">\n");
@@ -597,8 +598,8 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *pagepath)
 				fprintf(output, "<TD><FONT %s>%s</FONT></TD>\n", getenv("MKBBROWFONT"), p->title);
 			}
 
-			fprintf(output, "<TD><CENTER><A HREF=\"%s/%s/%s/%s%s\">\n", 
-					getenv("BBWEB"), pagepath, p->name, p->name, htmlextension);
+			sprintf(pagelink, "%s/%s/%s/%s%s", getenv("BBWEB"), pagepath, p->name, p->name, htmlextension);
+			fprintf(output, "<TD><CENTER><A HREF=\"%s\">\n", cleanurl(pagelink));
 
 			fprintf(output, "<IMG SRC=\"%s/%s\" WIDTH=\"%s\" HEIGHT=\"%s\" BORDER=0 ALT=\"%s\"></A>\n", 
 				getenv("BBSKIN"), dotgiffilename(p->color, 0, p->oldage), 
