@@ -337,7 +337,10 @@ List of "COLUMNNAME[=LARRDSERVICE]" settings, that define which
 status- and data-messages have a corresponding RRD graph. You will 
 normally not need to modify this, unless you have added a
 custom TCP-based test to the bb-services file, and want to collect data about
-the response-time. All TCP tests should have LARRDSERVICE set to "tcp".
+the response-time, OR if you are using the
+.I hobbitd_larrd(8)
+external script mechanism to collect data from custom tests. 
+Note: All TCP tests should have LARRDSERVICE set to "tcp".
 
 This is also used by the 
 .I bb-hostsvc.cgi(1) 
@@ -345,7 +348,7 @@ script to determine if the detailed status view of a test should
 include a graph.
 
 .IP GRAPHS
-List of the LARRD databases, that should be shown as a graph on
+List of the RRD databases, that should be shown as a graph on
 the "trends" column. This is used by the
 .I bb-larrdcolumn(1)
 tool that generates the "trends" column data.
