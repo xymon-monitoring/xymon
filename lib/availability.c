@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.9 2003-06-21 18:34:50 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.10 2003-06-22 20:44:49 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -183,6 +183,9 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 	repinfo->fstate = "OK";
 	repinfo->reportstart = time(NULL);
 
+	/* Sanity check */
+	if (totime > time(NULL)) totime = time(NULL);
+
 	fileerrors = scan_historyfile(fd, fromtime, totime, 
 				      l, sizeof(l), &starttime, &duration, colstr);
 
@@ -241,9 +244,11 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 		}
 
 		if ((starttime + duration) < totime) {
-			fgets(l, sizeof(l), fd);
-			scanres = sscanf(l+25, "%s %lu %lu", colstr, &starttime, &duration);
-			if (scanres == 2) duration = time(NULL) - starttime;
+			if (fgets(l, sizeof(l), fd)) {
+				scanres = sscanf(l+25, "%s %lu %lu", colstr, &starttime, &duration);
+				if (scanres == 2) duration = time(NULL) - starttime;
+			}
+			else done = 1;
 		}
 		else done = 1;
 	} while (!done);
