@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.15 2003-03-01 22:29:36 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.16 2003-03-03 22:44:17 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -76,7 +76,7 @@ int generate_info(char *infocolumn)
 	for (hostwalk=hosthead; (hostwalk); hostwalk = hostwalk->next) {
 		char logfn[MAX_PATH], htmlfn[MAX_PATH];
 		FILE *fd;
-		char *p, *hostname, *alertspec, *url, *slaspec, *noprop;
+		char *p, *hostname, *alertspec, *url, *slaspec, *noprop, *rawcopy;
 
 		sprintf(logfn, "%s/%s.%s", getenv("BBLOGS"), 
 			commafy(hostwalk->hostentry->hostname), infocolumn);
@@ -231,7 +231,9 @@ int generate_info(char *infocolumn)
 		strcat(infobuf, "<br>\n");
 
 		strcat(infobuf, "<b>Other tags</b> : ");
-		p = strtok(hostwalk->hostentry->rawentry, " \t");
+		rawcopy = malloc(strlen(hostwalk->hostentry->rawentry)+1);
+		strcpy(rawcopy, hostwalk->hostentry->rawentry);
+		p = strtok(rawcopy, " \t");
 		while (p) {
 			if (
 					(strncmp(p, "#", 1) != 0)
@@ -254,6 +256,7 @@ int generate_info(char *infocolumn)
 
 			p = strtok(NULL, " \t");
 		}
+		free(rawcopy);
 
 		fd = fopen(logfn, "w");
 		if (!fd) {
