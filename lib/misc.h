@@ -36,6 +36,7 @@ extern int get_fqdn(void);
 extern int generate_static(void);
 extern int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int showcmd);
 extern void do_bbext(FILE *output, char *extenv, char *family);
+extern char **setup_commandargs(char *cmdline, char **cmd);
 
 #endif
 

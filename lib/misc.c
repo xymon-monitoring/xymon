@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.15 2004-11-28 09:13:28 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.16 2004-12-03 11:35:58 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -359,12 +359,12 @@ void grok_input(char *l)
 	 * removing comments and un-escaping \-escapes and quotes.
 	 */
 	char *p, *outp;
-	int inquote;
+	int inquote, inhyphen;
 
 	p = strchr(l, '\n'); if (p) *p = '\0';
 
 	/* Remove quotes, comments and leading whitespace */
-	p = l + strspn(l, " \t"); outp = l; inquote = 0;
+	p = l + strspn(l, " \t"); outp = l; inquote = inhyphen = 0;
 	while (*p) {
 		if (*p == '\\') {
 			*outp = *(p+1);
@@ -374,7 +374,11 @@ void grok_input(char *l)
 			inquote = (1 - inquote);
 			p++;
 		}
-		else if ((*p == '#') && !inquote) {
+		else if (*p == '\'') {
+			inhyphen = (1 - inhyphen);
+			p++;
+		}
+		else if ((*p == '#') && !inquote && !inhyphen) {
 			*p = '\0';
 		}
 		else {
@@ -549,5 +553,67 @@ void do_bbext(FILE *output, char *extenv, char *family)
 	}
 
 	free(bbexts);
+}
+
+char **setup_commandargs(char *cmdline, char **cmd)
+{
+	/*
+	 * Good grief - argument parsing is complex!
+	 *
+	 * This routine takes a command-line, picks out any environment settings
+	 * that are in the commandline, and splits up the remainder into the
+	 * actual command to run, and the arguments.
+	 *
+	 * It handles quotes, hyphens and escapes.
+	 */
+
+	char **cmdargs;
+	char *cmdcp, *barg, *earg, *eqchar, *envsetting;
+	int argi, argsz;
+	int argdone, inquote, inhyphen;
+	char savech;
+
+	argsz = 1; cmdargs = (char **) malloc((1+argsz)*sizeof(char *)); argi = 0;
+	cmdcp = strdup(expand_env(cmdline));
+
+	barg = cmdcp;
+	do {
+		earg = barg; argdone = 0; inquote = inhyphen = 0;
+		while (*earg && !argdone) {
+			if (!inquote && !inhyphen) {
+				argdone = isspace((int)*earg);
+			}
+
+			if ((*earg == '"') && !inhyphen) inquote = (1 - inquote);
+			if ((*earg == '\'') && !inquote) inhyphen = (1 - inhyphen);
+			if (!argdone) earg++;
+		}
+		savech = *earg;
+		*earg = '\0';
+
+		grok_input(barg);
+		eqchar = strchr(barg, '=');
+		if (eqchar && (eqchar == (barg + strspn(barg, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")))) {
+			/* It's an environment definition */
+			dprintf("Setting environment: %s\n", barg);
+			envsetting = strdup(barg);
+			putenv(envsetting);
+		}
+		else {
+			if (argi == argsz) {
+				argsz++; cmdargs = (char **) realloc(cmdargs, (1+argsz)*sizeof(char *));
+			}
+			cmdargs[argi++] = strdup(barg);
+		}
+
+		*earg = savech;
+		barg = earg + strspn(earg, " \t\n");
+	} while (*barg);
+	cmdargs[argi] = NULL;
+
+	free(cmdcp);
+
+	*cmd = cmdargs[0];
+	return cmdargs;
 }
 
