@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.100 2003-05-17 21:32:24 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.101 2003-05-18 07:27:33 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -152,7 +152,13 @@ int main(int argc, char *argv[])
 			defaultpagetitle = malcop(lp+1);
 		}
 
-		else if ((strncmp(argv[i], "--noprop=", 9) == 0) || (strncmp(argv[i], "--nopropyellow=", 15) == 0)) {
+		else if (strncmp(argv[i], "--noprop=", 9) == 0) {
+			char *lp = strchr(argv[i], '=');
+			nopropyellowdefault = malloc(strlen(lp)+2);
+			sprintf(nopropyellowdefault, ",%s,", (lp+1));
+			printf("--noprop is deprecated - use --nopropyellow instead\n");
+		}
+		else if (strncmp(argv[i], "--nopropyellow=", 15) == 0) {
 			char *lp = strchr(argv[i], '=');
 			nopropyellowdefault = malloc(strlen(lp)+2);
 			sprintf(nopropyellowdefault, ",%s,", (lp+1));

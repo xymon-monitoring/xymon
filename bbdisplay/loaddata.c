@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.60 2003-05-10 07:40:58 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.61 2003-05-18 07:27:33 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -973,6 +973,10 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			}
 
 			if (startoftags && (nopropyellowlist = strstr(startoftags, "NOPROP:"))) {
+				nopropyellowlist += 7;
+			}
+
+			if (startoftags && (nopropyellowlist = strstr(startoftags, "NOPROPYELLOW:"))) {
 				nopropyellowlist += 7;
 			}
 
