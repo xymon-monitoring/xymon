@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.189 2004-11-30 22:40:35 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.190 2004-11-30 22:59:24 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -138,6 +138,7 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[i], "--bbgenddump")) {
 			bbgenddump = 1;
 			usebbgend = 0;
+			enable_purpleupd = 0;
 		}
 		else if (strcmp(argv[i], "--nopurple") == 0) {
 			enable_purpleupd = 0;
