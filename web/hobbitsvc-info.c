@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.65 2004-12-15 21:57:01 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.66 2004-12-15 22:44:16 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -76,8 +76,10 @@ static void timespec_text(char *spec, char **infobuf, int *infobuflen)
 
 int generate_info(char *infocolumn, char *documentationurl, int bbgend, int sendmetainfo)
 {
-	int infobuflen = 0;
 	char *infobuf = NULL;
+	int infobuflen = 0;
+	char *metabuf = NULL;
+	int metabuflen = 0;
 	char l[MAX_LINE_LEN];
 	namelist_t *hostwalk;
 	char *val;
@@ -86,7 +88,10 @@ int generate_info(char *infocolumn, char *documentationurl, int bbgend, int send
 	int ping, first;
 
 	/* Send the info columns as combo messages */
-	if (bbgend) combo_start();
+	if (bbgend) {
+		combo_start();
+		if (sendmetainfo) meta_start();
+	}
 
 	/* Load the alert setup */
 	if (!bbgend) bbload_alerts();
@@ -95,8 +100,13 @@ int generate_info(char *infocolumn, char *documentationurl, int bbgend, int send
 	while (hostwalk) {
 		addtobuffer(&infobuf, &infobuflen, "<table width=\"100%\">\n");
 
+		sprintf(l, "<Hostname>%s</Hostname>\n", hostwalk->bbhostname);
+		addtobuffer(&metabuf, &metabuflen, l);
+
 		val = bbh_item(hostwalk, BBH_DISPLAYNAME);
 		if (val && (strcmp(val, hostwalk->bbhostname) != 0)) {
+			sprintf(l, "<Displayname>%s</Displayname>\n", val);
+			addtobuffer(&metabuf, &metabuflen, l);
 			sprintf(l, "<tr><th align=left>Hostname:</th><td align=left>%s (%s)</td></tr>\n", 
 				val, hostwalk->bbhostname);
 		}
@@ -107,35 +117,45 @@ int generate_info(char *infocolumn, char *documentationurl, int bbgend, int send
 
 		val = bbh_item(hostwalk, BBH_CLIENTALIAS);
 		if (val && (strcmp(val, hostwalk->bbhostname) != 0)) {
+			sprintf(l, "<Clientname>%s</Clientname>\n", val);
+			addtobuffer(&metabuf, &metabuflen, l);
 			sprintf(l, "<tr><th align=left>Client alias:</th><td align=left>%s</td></tr>\n", val);
 			addtobuffer(&infobuf, &infobuflen, l);
 		}
 
 		val = bbh_item(hostwalk, BBH_IP);
+		sprintf(l, "<IP>%s</IP>\n", val);
+		addtobuffer(&metabuf, &metabuflen, l);
 		sprintf(l, "<tr><th align=left>IP:</th><td align=left>%s</td></tr>\n", val);
 		addtobuffer(&infobuf, &infobuflen, l);
 
 		val = bbh_item(hostwalk, BBH_DOCURL);
 		if (val) {
+			sprintf(l, "<HostDocumentationURL>%s</HostDocumentationURL>\n", val);
+			addtobuffer(&metabuf, &metabuflen, l);
 			sprintf(l, "<tr><th align=left>Documentation:</th><td align=left><a href=\"%s\">%s</a>\n", val, val);
 			addtobuffer(&infobuf, &infobuflen, l);
 		}
 
 		val = hostlink(hostwalk->bbhostname);
 		if (val) {
+			sprintf(l, "<HostNotesURL>%s</HostNotesURL>\n", val);
+			addtobuffer(&metabuf, &metabuflen, l);
 			sprintf(l, "<tr><th align=left>Notes:</th><td align=left><a href=\"%s\">%s%s</a>\n", 
 				val, getenv("BBWEBHOST"), val);
 			addtobuffer(&infobuf, &infobuflen, l);
 		}
 
+		val = bbh_item(hostwalk, BBH_PAGEPATH);
 		sprintf(l, "<tr><th align=left>Page/subpage:</th><td align=left><a href=\"%s/%s\">%s</a>\n", 
-			getenv("BBWEB"), bbh_item(hostwalk, BBH_PAGEPATH), bbh_item(hostwalk, BBH_PAGEPATHTITLE));
+			getenv("BBWEB"), val, bbh_item(hostwalk, BBH_PAGEPATHTITLE));
 		addtobuffer(&infobuf, &infobuflen, l);
 
 		clonewalk = hostwalk->next;
 		while (clonewalk && (strcmp(hostwalk->bbhostname, clonewalk->bbhostname) == 0)) {
+			val = bbh_item(clonewalk, BBH_PAGEPATH);
 			sprintf(l, "<br><a href=\"%s/%s/\">%s</a>\n", 
-				getenv("BBWEB"), bbh_item(clonewalk, BBH_PAGEPATH), bbh_item(clonewalk, BBH_PAGEPATHTITLE));
+				getenv("BBWEB"), val, bbh_item(clonewalk, BBH_PAGEPATHTITLE));
 			addtobuffer(&infobuf, &infobuflen, l);
 			clonewalk = clonewalk->next;
 		}
@@ -144,9 +164,12 @@ int generate_info(char *infocolumn, char *documentationurl, int bbgend, int send
 
 		val = bbh_item(hostwalk, BBH_DESCRIPTION);
 		if (val) {
-			char *delim = strchr(val, ':');
+			char *delim;
 
-			if (delim) *delim = '\0';
+			sprintf(l, "<Description>%s</Description>\n", val);
+			addtobuffer(&metabuf, &metabuflen, l);
+
+			delim = strchr(val, ':'); if (delim) *delim = '\0';
 			sprintf(l, "<tr><th align=left>Host type:</th><td align=left>%s</td></tr>\n", val);
 			addtobuffer(&infobuf, &infobuflen, l);
 			if (delim) { 
@@ -160,6 +183,9 @@ int generate_info(char *infocolumn, char *documentationurl, int bbgend, int send
 
 		val = bbh_item(hostwalk, BBH_NK);
 		if (val) {
+			sprintf(l, "<NKAlerts>%s</NKAlerts>\n", val);
+			addtobuffer(&metabuf, &metabuflen, l);
+
 			sprintf(l, "<tr><th align=left>NK Alerts:</th><td align=left>%s", val); 
 			addtobuffer(&infobuf, &infobuflen, l);
 
@@ -173,11 +199,16 @@ int generate_info(char *infocolumn, char *documentationurl, int bbgend, int send
 			addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
 		}
 		else {
+			sprintf(l, "<NKAlerts>N/A</NKAlerts>\n");
+			addtobuffer(&metabuf, &metabuflen, l);
 			addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>NK alerts:</th><td align=left>None</td></tr>\n");
 		}
 
 		val = bbh_item(hostwalk, BBH_NKTIME);
 		if (val) {
+			sprintf(l, "<NKAlertTimes>%s</NKAlertTimes>\n", val);
+			addtobuffer(&metabuf, &metabuflen, l);
+
 			addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>NK alerts shown:</th><td align=left>");
 			timespec_text(val, &infobuf, &infobuflen);
 			addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
@@ -185,6 +216,9 @@ int generate_info(char *infocolumn, char *documentationurl, int bbgend, int send
 
 		val = bbh_item(hostwalk, BBH_DOWNTIME);
 		if (val) {
+			sprintf(l, "<DownTimes>%s</DownTimes>\n", val);
+			addtobuffer(&metabuf, &metabuflen, l);
+
 			addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>Planned downtime:</th><td align=left>");
 			timespec_text(val, &infobuf, &infobuflen);
 			addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
@@ -192,6 +226,9 @@ int generate_info(char *infocolumn, char *documentationurl, int bbgend, int send
 
 		val = bbh_item(hostwalk, BBH_REPORTTIME);
 		if (val) {
+			sprintf(l, "<ReportTimes>%s</ReportTimes>\n", val);
+			addtobuffer(&metabuf, &metabuflen, l);
+
 			addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>SLA report period:</th><td align=left>");
 			timespec_text(val, &infobuf, &infobuflen);
 			addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
@@ -199,30 +236,46 @@ int generate_info(char *infocolumn, char *documentationurl, int bbgend, int send
 			val = bbh_item(hostwalk, BBH_WARNPCT);
 			if (val == NULL) val = getenv("BBREPWARN");
 			if (val == NULL) val = "(not set)";
+
+			sprintf(l, "<MinimumAvailabilityPCT>%s</MinimumAvailabilityPCT>\n", val);
+			addtobuffer(&metabuf, &metabuflen, l);
+
 			sprintf(l, "<tr><th align=left>SLA Availability:</th><td align=left>%s</td></tr>\n", val); 
 			addtobuffer(&infobuf, &infobuflen, l);
 		}
 
 		val = bbh_item(hostwalk, BBH_NOPROPYELLOW);
 		if (val) {
+			sprintf(l, "<SuppressedYellow>%s</SuppressedYellow>\n", val);
+			addtobuffer(&metabuf, &metabuflen, l);
+
 			sprintf(l, "<tr><th align=left>Suppressed warnings (yellow):</th><td align=left>%s</td></tr>\n", val);
 			addtobuffer(&infobuf, &infobuflen, l);
 		}
 
 		val = bbh_item(hostwalk, BBH_NOPROPRED);
 		if (val) {
+			sprintf(l, "<SuppressedRed>%s</SuppressedRed>\n", val);
+			addtobuffer(&metabuf, &metabuflen, l);
+
 			sprintf(l, "<tr><th align=left>Suppressed alarms (red):</th><td align=left>%s</td></tr>\n", val);
 			addtobuffer(&infobuf, &infobuflen, l);
 		}
 
 		val = bbh_item(hostwalk, BBH_NOPROPPURPLE);
 		if (val) {
+			sprintf(l, "<SuppressedPurple>%s</SuppressedPurple>\n", val);
+			addtobuffer(&metabuf, &metabuflen, l);
+
 			sprintf(l, "<tr><th align=left>Suppressed alarms (purple):</th><td align=left>%s</td></tr>\n", val);
 			addtobuffer(&infobuf, &infobuflen, l);
 		}
 
 		val = bbh_item(hostwalk, BBH_NOPROPACK);
 		if (val) {
+			sprintf(l, "<SuppressedAcked>%s</SuppressedAcked>\n", val);
+			addtobuffer(&metabuf, &metabuflen, l);
+
 			sprintf(l, "<tr><th align=left>Suppressed alarms (acked):</th><td align=left>%s</td></tr>\n", val);
 			addtobuffer(&infobuf, &infobuflen, l);
 		}
@@ -230,6 +283,9 @@ int generate_info(char *infocolumn, char *documentationurl, int bbgend, int send
 
 		val = bbh_item(hostwalk, BBH_NET);
 		if (val) {
+			sprintf(l, "<NetLocation>%s</NetLocation>\n", val);
+			addtobuffer(&metabuf, &metabuflen, l);
+
 			sprintf(l, "<tr><th align=left>Tested from network:</th><td align=left>%s</td></tr>\n", val);
 			addtobuffer(&infobuf, &infobuflen, l);
 		}
@@ -258,6 +314,9 @@ int generate_info(char *infocolumn, char *documentationurl, int bbgend, int send
 
 			if (strncmp(val, "http", 4) == 0) {
 				char *urlstring = decode_url(val, NULL);
+
+				sprintf(l, "<HttpTest><![CDATA[%s]]></HttpTest>\n", val);
+				addtobuffer(&metabuf, &metabuflen, l);
 
 				if (first) {
 					addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>URL checks:</th><td align=left>\n");
@@ -289,6 +348,9 @@ int generate_info(char *infocolumn, char *documentationurl, int bbgend, int send
 
 				bburl_t bburl;
 				char *urlstring = decode_url(val, &bburl);
+
+				sprintf(l, "<HttpTest><![CDATA[%s]]></HttpTest>\n", val);
+				addtobuffer(&metabuf, &metabuflen, l);
 
 				if (first) {
 					addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>Content checks:</th><td align=left>\n");
@@ -393,6 +455,9 @@ int generate_info(char *infocolumn, char *documentationurl, int bbgend, int send
 			     (strncmp(val, "post=", 5)   != 0)  &&
 			     (strncmp(val, "nopost=", 7) != 0)  &&
 			     (strncmp(val, "nopost;", 7) != 0) ) {
+				sprintf(l, "<OtherTest><![CDATA[%s]]></OtherTest>\n", val);
+				addtobuffer(&metabuf, &metabuflen, l);
+
 				sprintf(l, "%s ", val);
 				addtobuffer(&infobuf, &infobuflen, l);
 			}
@@ -402,7 +467,9 @@ int generate_info(char *infocolumn, char *documentationurl, int bbgend, int send
 		addtobuffer(&infobuf, &infobuflen, "</td></tr>\n</table>\n");
 
 		do_savelog(hostwalk->bbhostname, hostwalk->ip, infocolumn, infobuf, bbgend);
+		if (sendmetainfo) do_savemeta(hostwalk->bbhostname, infocolumn, "Info", metabuf);
 		*infobuf = '\0';
+		*metabuf = '\0';
 
 		clonewalk = hostwalk;
 		do {
@@ -410,8 +477,14 @@ int generate_info(char *infocolumn, char *documentationurl, int bbgend, int send
 		} while (hostwalk && (strcmp(hostwalk->bbhostname, clonewalk->bbhostname) == 0));
 
 	}
-	if (bbgend) combo_end();
+
+	if (bbgend) {
+		combo_end();
+		if (sendmetainfo) meta_end();
+	}
+
 	if (infobuf) free(infobuf);
+	if (metabuf) free(metabuf);
 
 	return 0;
 }
