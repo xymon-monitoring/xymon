@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.30 2003-02-02 22:24:42 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.31 2003-02-02 22:30:27 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -186,7 +186,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	char	testname[20];
 	char	ackfilename[256];
 	state_t *newstate;
-	char	l[512];
+	char	l[MAXMSG];
 	host_t	*host;
 	struct stat st;
 	time_t	now = time(NULL);
