@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: url.c,v 1.9 2005-01-20 22:02:23 henrik Exp $";
+static char rcsid[] = "$Id: url.c,v 1.10 2005-01-28 19:30:31 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -353,7 +353,7 @@ void parse_url(char *inputurl, urlelem_t *url)
 	p = strchr(netloc, '@');
 	if (p) {
 		*p = '\0';
-		url->auth = strdup(netloc);
+		url->auth = strdup(urlunescape(netloc));
 		netloc = (p+1);
 	}
 	p = strchr(netloc, '=');
