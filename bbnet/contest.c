@@ -20,6 +20,12 @@
 #define MAX_OPENS  (FD_SETSIZE / 2)	/* Max number of simultaneous open connections */
 
 typedef struct {
+	char *svcname;
+	char *sendtxt;
+	int  grabbanner;
+} svcinfo_t;
+
+typedef struct {
 	char textaddr[25];
 	struct sockaddr_in addr;
 	int  tested;
@@ -28,15 +34,42 @@ typedef struct {
 	int  readpending;
 	int  connres;
 	struct timeval timestart, duration;
+	svcinfo_t *svcinfo;
 	char *banner;
 	void *next;
 } test_t;
 
 static test_t *thead = NULL;
 
-void add_test(char *ip, int port)
+static svcinfo_t svcinfo[] = {
+	{ "ftp", "quit\n", 1 },
+	{ "ssh", NULL, 1 },
+	{ "ssh1", NULL, 1 },
+	{ "ssh2", NULL, 1 },
+	{ "telnet", "quit\n", 0 },
+	{ "smtp", "quit\n", 1 },
+	{ "pop", "quit\n", 1 },
+	{ "pop2", "quit\n", 1 },
+	{ "pop-2", "quit\n", 1 },
+	{ "pop3", "quit\n", 1 },
+	{ "pop-3", "quit\n", 1 },
+	{ "imap", "ABC123 LOGOUT\n", 1 },
+	{ "imap2", "ABC123 LOGOUT\n", 1 },
+	{ "imap3", "ABC123 LOGOUT\n", 1 },
+	{ "imap4", "ABC123 LOGOUT\n", 1 },
+	{ "nntp", "quit\n", 1 },
+	{ "rsync", NULL, 1 },
+	{ NULL, NULL, 0 }	/* Default behaviour: Dont send anything, dont grab banner */
+};
+
+
+
+void add_test(char *ip, int port, char *service)
 {
 	test_t *newtest;
+	int i;
+
+	for (i=0; (svcinfo[i].svcname && (strcmp(service, svcinfo[i].svcname) != 0)); i++) ;
 
 	newtest = (test_t *) malloc(sizeof(test_t));
 	sprintf(newtest->textaddr, "%s:%d", ip, port);
@@ -52,6 +85,7 @@ void add_test(char *ip, int port)
 	newtest->readpending = 0;
 	newtest->connres = -1;
 	newtest->duration.tv_sec = newtest->duration.tv_usec = 0;
+	newtest->svcinfo = &svcinfo[i];
 	newtest->banner = NULL;
 	newtest->next = thead;
 	thead = newtest;
@@ -187,10 +221,16 @@ void do_conn(int conntimeout)
 								item->duration.tv_sec--;
 								item->duration.tv_usec += 1000000;
 							}
-							item->readpending = 1;
+							if (item->svcinfo->sendtxt) {
+								res = write(item->fd, item->svcinfo->sendtxt,
+									strlen(item->svcinfo->sendtxt));
+							}
+							item->readpending = item->svcinfo->grabbanner;
 						}
-						else {
-							item->readpending = 0;
+
+						/* If closed and/or no bannergrabbing, shut down socket */
+						if (!item->open || !item->readpending) {
+							if (item->open) shutdown(item->fd, SHUT_RDWR);
 							close(item->fd);
 							item->fd = -1;
 							activesockets--;
@@ -241,16 +281,16 @@ void show_conn_res(void)
 int main(int argc, char *argv[])
 {
 
-	add_test("172.16.10.254", 628);
-	add_test("172.16.10.254", 23);
-	add_test("130.228.2.150", 139);
-	add_test("172.16.10.254", 22);
-	add_test("172.16.10.2", 22);
-	add_test("172.16.10.1", 22);
-	add_test("172.16.10.1", 25);
-	add_test("130.228.2.150", 23);
-	add_test("130.228.2.150", 21);
-	add_test("172.16.10.101", 22);
+	add_test("172.16.10.254", 628, "qmtp");
+	add_test("172.16.10.254", 23, "telnet");
+	add_test("130.228.2.150", 139, "smb");
+	add_test("172.16.10.254", 22, "ssh");
+	add_test("172.16.10.2", 22, "ssh");
+	add_test("172.16.10.1", 22, "ssh");
+	add_test("172.16.10.1", 25, "smtp");
+	add_test("130.228.2.150", 23, "telnet");
+	add_test("130.228.2.150", 21, "ftp");
+	add_test("172.16.10.101", 22, "ssh");
 
 	do_conn(0);
 	show_conn_res();
