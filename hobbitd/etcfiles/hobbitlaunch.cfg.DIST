@@ -7,7 +7,7 @@
 # This is the main bbgend daemon. You cannot live without this one.
 [bbgend]
 	ENVFILE $BBSERVERROOT/bb/etc/bbserver.env
-	CMD bbgend --restart=$BBTMP/bbgend.chk --checkpoint-file=$BBTMP/bbgend.chk --checkpoint-interval=600 --purple-conn=conn --log=$BBSERVERLOGS/bbgend.log
+	CMD bbgend --restart=$BBTMP/bbgend.chk --checkpoint-file=$BBTMP/bbgend.chk --checkpoint-interval=600 --purple-conn=conn --log=$BBSERVERLOGS/bbgend.log --admin-senders=127.0.0.1,$BBSERVERIP
 
 
 # "bbstatus" saves status-logs in text- and html-format, like the old Big Brother 
