@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.125 2003-06-10 20:22:26 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.126 2003-06-11 06:34:03 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -296,6 +296,7 @@ int main(int argc, char *argv[])
 			printf("    --includecolumns=test[,test]: Always include these columns on bb2 page\n");
 			printf("    --doccgi=cgibinURL          : Hostnames link to a general CGI script for docs\n");
 			printf("    --htmlextension=.EXT        : Sets filename extension for generated file (default: .html\n");
+			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbgen\n");
 			printf("    --wml[=test1,test2,...]     : Generate a small (bb2-style) WML page\n");
 			printf("\nPage layout options:\n");
 			printf("    --pages-last                : Put page- and subpage-links after hosts (as BB does)\n");
@@ -327,7 +328,6 @@ int main(int argc, char *argv[])
 			printf("    --debug                     : Debugging information\n");
 #endif
 			printf("    --version                   : Show version information\n");
-			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbgen\n");
 			printf("    --purplelog=FILENAME        : Create a log of purple hosts and tests\n");
 			exit(0);
 		}

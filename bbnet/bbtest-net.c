@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.67 2003-06-08 20:09:46 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.68 2003-06-11 06:34:42 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1091,6 +1091,7 @@ int main(int argc, char *argv[])
 			printf("Options:\n");
 			printf("    --timeout=N                 : Timeout (in seconds) for service tests\n");
 			printf("    --dns=[only|ip|standard]    : How IP's are decided\n");
+			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbtest-net\n");
 			printf("\nOptions for services in BBNETSVCS (tcp tests):\n");
 			printf("    --concurrency=N             : Number of tests run in parallel\n");
 			printf("\nOptions for PING (connectivity) tests:\n");
@@ -1108,7 +1109,6 @@ int main(int argc, char *argv[])
 			printf("    --debug                     : Output debugging information\n");
 			printf("    --log=FILENAME              : Output trace of HTTP tests to a file.\n");
 			printf("    --timing                    : Trace the amount of time spent on each series of tests\n");
-			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbtest-net\n");
 
 			return 0;
 		}
