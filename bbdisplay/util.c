@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.142 2004-12-12 21:57:08 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.143 2004-12-15 21:21:25 henrik Exp $";
 
 #include <limits.h>
 #include <sys/types.h>
@@ -31,8 +31,6 @@ static char rcsid[] = "$Id: util.c,v 1.142 2004-12-12 21:57:08 henrik Exp $";
 
 char *htmlextension = ".html"; /* Filename extension for generated HTML files */
 hostlist_t      *hosthead = NULL;
-link_t          *linkhead = NULL;
-link_t  null_link = { "", "", "", NULL };
 
 
 char *alttag(entry_t *e)
@@ -165,49 +163,6 @@ int checkpropagation(host_t *host, char *test, int color, int acked)
 }
 
 
-link_t *find_link(const char *name)
-{
-	/* We cache the last link searched for */
-	static link_t *lastlink = NULL;
-	link_t *l;
-
-	if (lastlink && (strcmp(lastlink->name, name) == 0))
-		return lastlink;
-
-	for (l=linkhead; (l && (strcmp(l->name, name) != 0)); l = l->next);
-	lastlink = l;
-
-	return (l ? l : &null_link);
-}
-
-char *columnlink(link_t *link, char *colname)
-{
-	static char linkurl[PATH_MAX];
-
-	if (link != &null_link) {
-		sprintf(linkurl, "%s/%s", link->urlprefix, link->filename);
-	}
-	else {
-		sprintf(linkurl, "%s/help/bb-help.html#%s", getenv("BBWEB"), colname);
-	}
-	
-	return linkurl;
-}
-
-char *hostlink(link_t *link)
-{
-	static char linkurl[PATH_MAX];
-
-	if (link != &null_link) {
-		sprintf(linkurl, "%s/%s", link->urlprefix, link->filename);
-	}
-	else {
-		sprintf(linkurl, "%s/bb%s", getenv("BBWEB"), htmlextension);
-	}
-
-	return linkurl;
-}
-
 
 char *urldoclink(const char *docurl, const char *hostname)
 {
@@ -265,7 +220,6 @@ bbgen_col_t *find_or_create_column(const char *testname, int create)
 		newcol = (bbgen_col_t *) malloc(sizeof(bbgen_col_t));
 		newcol->name = strdup(testname);
 		newcol->listname = (char *)malloc(strlen(testname)+1+2); sprintf(newcol->listname, ",%s,", testname);
-		newcol->link = find_link(testname);
 
 		/* No need to maintain this list in order */
 		if (colhead == NULL) {
@@ -293,54 +247,3 @@ char *histlogurl(char *hostname, char *service, time_t histtime)
 
 	return url;
 }
-
-
-
-int run_columngen(char *column, int update_interval, int enabled)
-{
-	/* If updating is enabled, check timestamp of $BBTMP/.COLUMN-gen */
-	/* If older than update_interval, do the update. */
-
-	char	stampfn[PATH_MAX];
-	struct stat st;
-	FILE    *fd;
-	time_t  now;
-	struct utimbuf filetime;
-
-	if (!enabled)
-		return 0;
-
-	sprintf(stampfn, "%s/.%s-gen", getenv("BBTMP"), column);
-
-	if (stat(stampfn, &st) == -1) {
-		/* No such file - create it, and do the update */
-		fd = fopen(stampfn, "w");
-		fclose(fd);
-		return 1;
-	}
-	else {
-		/* Check timestamp, and update it if too old */
-		time(&now);
-		if ((now - st.st_ctime) > update_interval) {
-			filetime.actime = filetime.modtime = now;
-			utime(stampfn, &filetime);
-			return 1;
-		}
-	}
-
-	return 0;
-}
-
-
-void drop_genstatfiles(void)
-{
-	char fn[PATH_MAX];
-	struct stat st, stampst;
-
-	sprintf(fn, "%s/.bbstartup", getenv("BBLOGS"));
-	if (stat(fn, &st) == 0) {
-		sprintf(fn, "%s/.info-gen", getenv("BBTMP"));
-		if ( (stat(fn, &stampst) == 0) && (stampst.st_ctime < st.st_ctime) ) unlink(fn);
-	}
-}
-

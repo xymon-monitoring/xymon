@@ -20,19 +20,13 @@
 #define __UTIL_H_
 
 extern char *htmlextension;
-
 extern hostlist_t *hosthead;
-extern link_t *linkhead;
-extern link_t null_link;
 
 extern char *alttag(entry_t *e);
 extern char *hostpage_link(host_t *host);
 extern char *hostpage_name(host_t *host);
 extern int checkalert(char *alertlist, char *test);
 extern int checkpropagation(host_t *host, char *test, int color, int acked);
-extern link_t *find_link(const char *name);
-extern char *columnlink(link_t *link, char *colname);
-extern char *hostlink(link_t *link);
 extern char *urldoclink(const char *docurl, const char *hostname);
 extern host_t *find_host(const char *hostname);
 extern bbgen_col_t *find_or_create_column(const char *testname, int create);
