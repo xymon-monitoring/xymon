@@ -30,7 +30,7 @@ extern host_t *init_host(const char *hostname, const char *displayname, const ch
 			 const int ip1, const int ip2, const int ip3, const int ip4,
 			 const int dialup,
 			 const double warnpct, const char *reporttime,
-			 char *alerts, int nktime, char *waps, char *tags, 
+			 char *alerts, int nktime, char *waps,
 			 char *nopropyellowtests, char *nopropredtests, char *noproppurpletests, char *nopropacktests,
 			 int modembanksize);
 

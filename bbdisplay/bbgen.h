@@ -191,7 +191,6 @@ typedef struct host_t {
 	char    *nopropredtests;
 	char    *noproppurpletests;
 	char    *nopropacktests;
-	char    *rawentry;
 	char	*pretitle;
 	struct bbgen_page_t *parent;
 	double  reportwarnlevel;
