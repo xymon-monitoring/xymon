@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.12 2003-10-01 07:24:24 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.13 2003-10-14 21:15:17 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -91,11 +91,9 @@ static int sendtobbd(char *recipient, char *message)
 
 		hent = gethostbyname(recipient);
 		if (hent) {
-			sprintf(hostip, "%d.%d.%d.%d",
-				(unsigned char) hent->h_addr_list[0][0],
-				(unsigned char) hent->h_addr_list[0][1],
-				(unsigned char) hent->h_addr_list[0][2],
-				(unsigned char) hent->h_addr_list[0][3]);
+			memcpy(&addr, *(hent->h_addr_list), sizeof(struct in_addr));
+			strcpy(hostip, inet_ntoa(addr));
+
 			if (inet_aton(hostip, &addr) == 0) return BB_EBADIP;
 		}
 		else {
