@@ -31,21 +31,17 @@ case "$1" in
 	cd /var/lib/hobbit; chown hobbit:hobbit . acks data disabled hist histlogs logs rrd tmp www
 	cd /var/lib/hobbit/www; chown hobbit:hobbit . html notes wml rep snap; chgrp www-data rep snap; chmod g+w rep snap
 
-	#cd /usr/lib/cgi-bin; chown hobbit:hobbit . *
-	#cd /usr/lib/cgi-secure; chown hobbit:hobbit . *
-	#cd /usr/lib/hobbit/server; chown hobbit:hobbit . *
-	#cd /usr/lib/hobbit/server/bin; chown hobbit:hobbit . *
-	#cd /usr/lib/hobbit/server/etc; chown hobbit:hobbit . *
-	#cd /usr/lib/hobbit/server/ext; chown hobbit:hobbit . *
-	#cd /usr/lib/hobbit/server/web; chown hobbit:hobbit . *
-
 	# Do the debconf stuff
 	db_get hobbit/BBHOSTNAME
 	BBHOSTNAME="$RET"
-	db_get hobbit/BBWWWHOSTNAME
-	BBWWWHOSTNAME="$RET"
 	db_get hobbit/BBHOSTIP
 	BBHOSTIP="$RET"
+	db_get hobbit/BBSERVERWWWHOSTNAME
+	BBSERVERWWWHOSTNAME="$RET"
+	db_get hobbit/BBSERVERURL
+	BBSERVERURL="$RET"
+	db_get hobbit/BBLOCATION
+	BBLOCATION="$RET"
 
 	# Update configuration file
 	cp -a -f $CONFIGFILE $CONFIGFILE.tmp
@@ -54,6 +50,20 @@ case "$1" in
 	    -e s/^BBSERVERIP=.*/BBSERVERIP=${BBHOSTIP}/                  \
 	    < $CONFIGFILE > $CONFIGFILE.tmp
 	mv -f $CONFIGFILE.tmp $CONFIGFILE
+
+	# Check if the password-file exists
+	if [ ! -e /etc/hobbit/hobbitpasswd ]; then
+		db_get hobbit/ADMUSER
+		ADMUSER="$RET"
+		db_get hobbit/ADMPWD
+		ADMPWD="$RET"
+
+		htpasswd -b -c /etc/hobbit/hobbitpasswd $ADMUSER $ADMPWD
+
+		# Clear the password data
+		db_set hobbit/ADMUSER ""
+		db_set hobbit/ADMPWD ""
+	fi
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
