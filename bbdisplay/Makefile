@@ -152,10 +152,10 @@ install-nocgi: install-bin install-exts install-man install-html install-gif ins
 endif
 
 install-bin: $(PROGRAMS)
-	cp -fp $(PROGRAMS) $(BBHOME)/bin/
+	cp -fp $(PROGRAMS) $(INSTALLROOT)$(BBHOME)/bin/
 
 install-exts: $(EXTENSIONS)
-	cp -fp $(EXTENSIONS) $(BBHOME)/ext/
+	cp -fp $(EXTENSIONS) $(INSTALLROOT)$(BBHOME)/ext/
 
 install-cgi: $(CGISCRIPTS)
 ifndef HOBBITD
@@ -165,20 +165,20 @@ ifndef HOBBITD
 	@echo ""
 	@sleep 5
 endif
-	mkdir -p $(CGIDIR)
-	cp -fp $(CGISCRIPTS) $(CGIDIR)/
+	mkdir -p $(INSTALLROOT)$(CGIDIR)
+	cp -fp $(CGISCRIPTS) $(INSTALLROOT)$(CGIDIR)/
 
 install-html: $(HTMLPAGES)
-	cp -fp $(HTMLPAGES) $(BBHOME)/www/help/
+	cp -fp $(HTMLPAGES) $(INSTALLROOT)$(BBHOME)/www/help/
 
 install-gif: $(GIFFILES)
-	BBHOME=$(BBHOME) ../build/install-nooverwrite.sh www/gifs $(GIFFILES)
+	BBHOME=$(BBHOME) ../build/install-nooverwrite.sh $(INSTALLROOT)www/gifs $(GIFFILES)
 
 install-templates: $(TEMPLATES)
-	BBHOME=$(BBHOME) ../build/install-nooverwrite.sh web $(TEMPLATES)
+	BBHOME=$(BBHOME) ../build/install-nooverwrite.sh $(INSTALLROOT)web $(TEMPLATES)
 
 install-man:
-	mkdir -p $(MANROOT)/man1 $(MANROOT)/man5
-	cp -fp *.1 $(MANROOT)/man1/
-	cp -fp *.5 $(MANROOT)/man5/
+	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5
+	cp -fp *.1 $(INSTALLROOT)$(MANROOT)/man1/
+	cp -fp *.5 $(INSTALLROOT)$(MANROOT)/man5/
 

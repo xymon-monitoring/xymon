@@ -108,43 +108,43 @@ install-nocgi: $(INSTALLNOCGITARGETS)
 
 install-dirs:
 ifdef HOBBITD
-	mkdir -p $(BBHOME) $(BBVAR)
-	cd $(BBHOME); mkdir -p $(BBHOMEDIRS); chown $(BBUSER) $(BBHOMEDIRS); chgrp `$(IDTOOL) -g $(BBUSER)` $(BBHOMEDIRS)
-	cd $(BBVAR); mkdir -p $(BBVARDIRS); chown $(BBUSER) $(BBVARDIRS); chgrp `$(IDTOOL) -g $(BBUSER)` $(BBVARDIRS)
+	mkdir -p $(INSTALLROOT)$(BBHOME) $(INSTALLROOT)$(BBVAR)
+	cd $(INSTALLROOT)$(BBHOME); mkdir -p $(BBHOMEDIRS); chown $(BBUSER) $(BBHOMEDIRS); chgrp `$(IDTOOL) -g $(BBUSER)` $(BBHOMEDIRS)
+	cd $(INSTALLROOT)$(BBVAR); mkdir -p $(BBVARDIRS); chown $(BBUSER) $(BBVARDIRS); chgrp `$(IDTOOL) -g $(BBUSER)` $(BBVARDIRS)
 ifdef HTTPDGID
-	chgrp $(HTTPDGID) $(BBHOME)/www/rep $(BBHOME)/www/snap
+	chgrp $(HTTPDGID) $(INSTALLROOT)$(BBHOME)/www/rep $(INSTALLROOT)$(BBHOME)/www/snap
 endif
-	chmod g+w $(BBHOME)/www/rep $(BBHOME)/www/snap
+	chmod g+w $(INSTALLROOT)$(BBHOME)/www/rep $(INSTALLROOT)$(BBHOME)/www/snap
 endif
 
 install-common: install-dirs
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C common install
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" INSTALLROOT="$(INSTALLROOT)" $(MAKE) -C common install
 
 install-bbdisplay: install-common
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" HOBBITD="$(HOBBITD)" $(MAKE) -C bbdisplay install
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" HOBBITD="$(HOBBITD)" INSTALLROOT="$(INSTALLROOT)" $(MAKE) -C bbdisplay install
 
 install-bbdisplay-nocgi: install-common
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" $(MAKE) -C bbdisplay install-nocgi
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" INSTALLROOT="$(INSTALLROOT)" $(MAKE) -C bbdisplay install-nocgi
 
 install-bbnet: install-common
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" ARESVER="$(ARESVER)" $(MAKE) -C bbnet install
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" ARESVER="$(ARESVER)" INSTALLROOT="$(INSTALLROOT)" $(MAKE) -C bbnet install
 
 install-bbproxy: install-common
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbproxy install
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" INSTALLROOT="$(INSTALLROOT)" $(MAKE) -C bbproxy install
 
 install-hobbitd: install-common
-	MANROOT="$(MANROOT)" BBTOPDIR="$(BBTOPDIR)" BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" BBLOGDIR="$(BBLOGDIR)" BBUSER="$(BBUSER)" $(MAKE) -C hobbitd install
+	MANROOT="$(MANROOT)" BBTOPDIR="$(BBTOPDIR)" BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" BBLOGDIR="$(BBLOGDIR)" BBUSER="$(BBUSER)" INSTALLROOT="$(INSTALLROOT)" $(MAKE) -C hobbitd install
 
 
 # NOTE: This one is normally not used - man-page install is done by the sub-Makefiles during "make install"
 install-man:
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C common install-man
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" $(MAKE) -C bbdisplay install-man
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbnet install-man
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbproxy install-man
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C hobbitd install-man
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" INSTALLROOT="$(INSTALLROOT)" $(MAKE) -C common install-man
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" INSTALLROOT="$(INSTALLROOT)" $(MAKE) -C bbdisplay install-man
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" INSTALLROOT="$(INSTALLROOT)" $(MAKE) -C bbnet install-man
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" INSTALLROOT="$(INSTALLROOT)" $(MAKE) -C bbproxy install-man
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" INSTALLROOT="$(INSTALLROOT)" $(MAKE) -C hobbitd install-man
 
 install-docs:
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C docs install
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" INSTALLROOT="$(INSTALLROOT)" $(MAKE) -C docs install
 
 
