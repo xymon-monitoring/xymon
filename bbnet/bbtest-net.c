@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.42 2003-05-05 21:47:36 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.43 2003-05-07 09:42:17 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -697,6 +697,7 @@ void send_results(service_t *service)
 		/* If host ping fails, report failed TCP tests as clear unless "alwaystrue" flag set */
 		if ( ((color == COL_RED) || (color == COL_YELLOW)) && /* Test failed */
 		     (service != pingtest)                         && /* It's not a ping test */
+		     (!t->host->noping && !t->host->noconn)        && /* We are doing a ping test */
 		     (t->host->downcount > 0)                      && /* The ping check did fail */
 		     (!t->alwaystrue)                              )  /* No "~testname" flag */ {
 			color = COL_CLEAR;
