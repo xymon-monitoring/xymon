@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.146 2003-08-12 21:16:05 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.147 2003-08-25 16:20:14 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -24,6 +24,7 @@ static char rcsid[] = "$Id: bbgen.c,v 1.146 2003-08-12 21:16:05 henrik Exp $";
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <signal.h>
 
 #include "bbgen.h"
 #include "util.h"
@@ -460,7 +461,15 @@ int main(int argc, char *argv[])
 	 * generate wrong links for info pages etc.
 	 */
 	if (pageset || embedded || snapshot) enable_purpleupd = enable_larrdgen = enable_infogen = enable_wmlgen = 0;
-	if (embedded) egocolumn = htaccess = NULL;
+	if (embedded) {
+		egocolumn = htaccess = NULL;
+
+		/*
+		 * Need to have default SIGPIPE handling when doing embedded stuff.
+		 * We are probably run from a CGI script or something similar.
+		 */
+		signal(SIGPIPE, SIG_DFL);
+	}
 
 	/* Load all data from the various files */
 	linkhead = load_all_links();
