@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.39 2004-02-23 15:00:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.40 2004-03-02 10:00:50 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -42,6 +42,47 @@ static char *service_text(char *svc)
 	if (strlen(svc) == 0) return "&nbsp;";
 
 	if (strcmp(svc, "*") == 0) return "All"; else return svc;
+}
+
+static void timespec_text(char *spec, char **infobuf, int *infobuflen)
+{
+	char l[MAX_LINE_LEN];
+	char *sCopy;
+	char *sItem;
+
+	sCopy = malcop(spec);
+	sItem = strtok(sCopy, " \t\r\n,");
+	while (sItem) {
+		l[0] = '\0';
+
+		switch (*sItem) {
+			case '*': sprintf(l, "All days%s", (sItem+1));
+				  break;
+			case 'W': sprintf(l, "Weekdays%s", (sItem+1));
+				  break;
+			case '0': sprintf(l, "Sunday%s", (sItem+1));
+				  break;
+			case '1': sprintf(l, "Monday%s", (sItem+1));
+				  break;
+			case '2': sprintf(l, "Tuesday%s", (sItem+1));
+				  break;
+			case '3': sprintf(l, "Wednesday%s", (sItem+1));
+				  break;
+			case '4': sprintf(l, "Thursday%s", (sItem+1));
+				  break;
+			case '5': sprintf(l, "Friday%s", (sItem+1));
+				  break;
+			case '6': sprintf(l, "Saturday%s", (sItem+1));
+				  break;
+			default:
+				  break;
+		}
+
+		sItem = strtok(NULL, " \t\r\n,");
+		if (sItem) strcat(l, ", ");
+		addtobuffer(infobuf, infobuflen, l);
+	}
+	free(sCopy);
 }
 
 int generate_info(char *infocolumn)
@@ -165,38 +206,35 @@ int generate_info(char *infocolumn)
 		slaspec = strstr(hostwalk->hostentry->rawentry, "NKTIME=");
 		if (slaspec) {
 			slaspec +=7;
-			p = strchr(slaspec, ' ');
-			if (p) *p = '\0';
-			sprintf(l, "<tr><th align=left>NK alerts shown:</th><td align=left>%s</td></tr>\n", slaspec);
-			addtobuffer(&infobuf, &infobuflen, l);
-			if (p) *p = ' ';
+
+			addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>NK alerts shown:</th><td align=left>");
+			timespec_text(slaspec, &infobuf, &infobuflen);
+			addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
 		}
 		slaspec = strstr(hostwalk->hostentry->rawentry, "SLA=");
 		if (slaspec) {
 			slaspec +=4;
-			p = strchr(slaspec, ' ');
-			if (p) *p = '\0';
-			sprintf(l, "<tr><th align=left>Alert times:</th><td align=left>%s</td></tr>\n", slaspec);
-			addtobuffer(&infobuf, &infobuflen, l);
-			if (p) *p = ' ';
+
+			addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>Alert times:</th><td align=left>");
+			timespec_text(slaspec, &infobuf, &infobuflen);
+			addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
 		}
 		slaspec = strstr(hostwalk->hostentry->rawentry, "DOWNTIME=");
 		if (slaspec) {
 			slaspec +=9;
-			p = strchr(slaspec, ' ');
-			if (p) *p = '\0';
-			sprintf(l, "<tr><th align=left>Planned downtime:</th><td align=left>%s</td></tr>\n", slaspec);
-			addtobuffer(&infobuf, &infobuflen, l);
-			if (p) *p = ' ';
+
+			addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>Planned downtime:</th><td align=left>");
+			timespec_text(slaspec, &infobuf, &infobuflen);
+			addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
 		}
 		slaspec = strstr(hostwalk->hostentry->rawentry, "REPORTTIME=");
 		if (slaspec) {
 			slaspec +=11;
-			p = strchr(slaspec, ' ');
-			if (p) *p = '\0';
-			sprintf(l, "<tr><th align=left>SLA Report period:</th><td align=left>%s</td></tr>\n", slaspec);
-			addtobuffer(&infobuf, &infobuflen, l);
-			if (p) *p = ' ';
+
+			addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>SLA report period:</th><td align=left>");
+			timespec_text(slaspec, &infobuf, &infobuflen);
+			addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
+
 			sprintf(l, "<tr><th align=left>SLA Availability:</th><td align=left>%.2f</td></tr>\n", hostwalk->hostentry->reportwarnlevel); 
 			addtobuffer(&infobuf, &infobuflen, l);
 		}
@@ -255,6 +293,21 @@ int generate_info(char *infocolumn)
 		if (strstr(hostwalk->hostentry->rawentry, "noconn")) ping = 0;
 		sprintf(l, "<tr><th align=left>Checked with ping:</th><td align=left>%s</td></tr>\n", (ping ? "Yes" : "No"));
 		addtobuffer(&infobuf, &infobuflen, l);
+
+		p = strstr(hostwalk->hostentry->rawentry, "TIMEOUT:");
+		if (p) {
+			char *tspec = malcop(p);
+			int t1, t2;
+
+			if (sscanf(tspec, "TIMEOUT:%d:%d", &t1, &t2) == 2) {
+				sprintf(l, "<tr><th align=left>Network timeout:</th><<td align=left>%d seconds (connect), %d seconds (full request)</td></tr>\n",
+					t1, t2);
+				addtobuffer(&infobuf, &infobuflen, l);
+			}
+			free(tspec);
+		}
+
+		/* Space */
 		addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
 		rawcopy = malcop(hostwalk->hostentry->rawentry);
@@ -282,8 +335,9 @@ int generate_info(char *infocolumn)
 		while (p) {
 			if ( (strncmp(p, "content=", 8) == 0) ||
 			     (strncmp(p, "cont;", 5) == 0)    ||
-			     (strncmp(p, "nocont;", 7) == 0)    ||
-			     (strncmp(p, "post;", 5) == 0)       ) {
+			     (strncmp(p, "nocont;", 7) == 0)  ||
+			     (strncmp(p, "post;", 5) == 0)    ||
+			     (strncmp(p, "nopost;", 7) == 0) ) {
 
 				if (firstcontent) {
 					addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>Content checks:</th><td align=left>\n");
@@ -294,13 +348,14 @@ int generate_info(char *infocolumn)
 					realurl(p, NULL, NULL, NULL, NULL), 
 					realurl(p, NULL, NULL, NULL, NULL)); 
 				addtobuffer(&infobuf, &infobuflen, l);
-				if ((strncmp(p, "cont;", 5) == 0) || (strncmp(p, "nocont;", 7) == 0) || (strncmp(p, "post;", 5) == 0)) {
+				if ((strncmp(p, "cont;", 5) == 0) || (strncmp(p, "nocont;", 7) == 0) || 
+				    (strncmp(p, "post;", 5) == 0) || (strncmp(p, "nopost;", 7) == 0)) {
 					char *wanted = strrchr(p, ';');
 
 					if (wanted) {
 						wanted++;
 						sprintf(l, "&nbsp; %s return '%s'", 
-							((strncmp(p, "nocont;", 7) == 0) ? "cannot" : "must"), wanted);
+							((strncmp(p, "no", 2) == 0) ? "cannot" : "must"), wanted);
 						addtobuffer(&infobuf, &infobuflen, l);
 					}
 				}
@@ -388,9 +443,13 @@ int generate_info(char *infocolumn)
 				&&	(strncmp(p, "DOWNTIME=", 9) != 0)
 				&&	(strncmp(p, "REPORTTIME=", 11) != 0)
 				&&	(strncmp(p, "WARNPCT:", 8) != 0)
+				&&	(strncmp(p, "TIMEOUT:", 8) != 0)
 				&&	(strncmp(p, "http", 4) != 0)
 				&&	(strncmp(p, "content=", 8) != 0)
 				&&	(strncmp(p, "cont;", 5)  != 0)
+				&&	(strncmp(p, "nocont;", 7)  != 0)
+				&&	(strncmp(p, "post;", 5)  != 0)
+				&&	(strncmp(p, "nopost;", 7)  != 0)
 				&&	(strncmp(p, "testip", 6) != 0)
 				&&	(strncmp(p, "dialup", 6) != 0)
 				&&	(strncmp(p, "noconn", 6) != 0)
