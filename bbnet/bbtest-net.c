@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.59 2003-05-31 19:23:45 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.60 2003-06-02 05:51:59 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -776,6 +776,19 @@ void send_results(service_t *service)
 	free(nopagename);
 
 	for (t=service->items; (t); t = t->next) {
+		char flags[10];
+		int i;
+
+		i = 0;
+		flags[i++] = (t->open ? 'O' : 'o');
+		flags[i++] = (t->reverse ? 'R' : 'r');
+		flags[i++] = ((t->dialup || t->host->dialup) ? 'D' : 'd');
+		flags[i++] = (t->alwaystrue ? 'A' : 'a');
+		flags[i++] = (t->silenttest ? 'S' : 's');
+		flags[i++] = (t->host->testip ? 'T' : 't');
+		flags[i++] = (t->host->in_sla ? 'I' : 'i');
+		flags[i++] = '\0';
+
 		if ((service == pingtest) && t->host->noping) {
 			color = COL_CLEAR;
 		}
@@ -820,7 +833,7 @@ void send_results(service_t *service)
 			}
 
 			/* Dialup hosts and dialup tests report red as clear */
-			if ( ((color == COL_GREEN) || (color == COL_YELLOW)) && (t->host->dialup || t->dialup) ) color = COL_CLEAR;
+			if ( ((color == COL_RED) || (color == COL_YELLOW)) && (t->host->dialup || t->dialup) ) color = COL_CLEAR;
 
 			/* If not inside SLA and non-green, report as BLUE */
 			if (!t->host->in_sla && (color != COL_GREEN)) color = COL_BLUE;
@@ -859,8 +872,9 @@ void send_results(service_t *service)
 		if (nopage && (color == COL_RED)) color = COL_YELLOW;
 
 		init_status(color);
-		sprintf(msgline, "status %s.%s %s %s %s %s\n", 
-			commafy(t->host->hostname), svcname, colorname(color), timestamp,
+		sprintf(msgline, "status %s.%s %s [flags:%s] %s %s %s\n", 
+			commafy(t->host->hostname), svcname, colorname(color), 
+			flags, timestamp,
 			svcname, ( ((color == COL_RED) || (color == COL_YELLOW)) ? "NOT ok" : "ok"));
 		addtostatus(msgline);
 
