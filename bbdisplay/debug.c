@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.20 2003-05-23 11:53:55 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.21 2003-05-27 16:28:43 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -134,6 +134,15 @@ void show_timestamps(char **buffer)
 		free(outbuf);
 	}
 	else *buffer = outbuf;
+}
+
+
+long total_runtime(void)
+{
+	if (timing)
+		return (stamptail->eventtime.tv_sec - stamphead->eventtime.tv_sec);
+	else
+		return 0;
 }
 
 
