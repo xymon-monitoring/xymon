@@ -73,7 +73,7 @@ extern void envcheck(char *envvars[]);
 extern int run_columngen(char *column, int update_interval, int enabled);
 extern void drop_genstatfiles(void);
 char *urlip(const char *url, char *hostip, char *hostname);
-extern char *realurl(char *url, char **proxy, char **proxyuserpwd, char **ip, char **hosthdr, int *isftp);
+extern char *realurl(char *url, char **proxy, char **proxyuserpwd, char **ip, char **hosthdr);
 
 extern int generate_static(void);
 extern int stdout_on_file(char *filename);

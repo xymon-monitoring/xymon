@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.92 2003-09-11 14:19:02 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.93 2003-09-12 09:41:27 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1085,7 +1085,7 @@ char *urlip(const char *url, char *hostip, char *hostname)
 }
 
 
-char *realurl(char *url, char **proxy, char **proxyuserpwd, char **ip, char **hosthdr, int *isftp)
+char *realurl(char *url, char **proxy, char **proxyuserpwd, char **ip, char **hosthdr)
 {
 	static char result[MAX_LINE_LEN];
 	static char proxyresult[MAX_LINE_LEN];
@@ -1097,19 +1097,11 @@ char *realurl(char *url, char **proxy, char **proxyuserpwd, char **ip, char **ho
 	char *restorechar = NULL;
 
 	result[0] = proxyresult[0] = proxyuserpwdresult[0] = ipresult[0] = hosthdrresult[0] = '\0';
-	if (isftp) *isftp = 0;
 	if (proxy) *proxy = NULL;
 	if (proxyuserpwd) *proxyuserpwd = NULL;
 	if (ip) *ip = NULL;
 	if (hosthdr) *hosthdr = NULL;
 	p = url;
-
-	/* ftp URL's are unchanged */
-	if (strncmp(p, "ftp", 3) == 0) {
-		if (isftp) *isftp = 1;
-		strcpy(result, p);
-		return result;
-	}
 
 	/* First handle any leading "cont;" "post;" and "content=" */
 	if (strncmp(p, "content=", 8) == 0) {
@@ -1186,6 +1178,8 @@ char *realurl(char *url, char **proxy, char **proxyuserpwd, char **ip, char **ho
 		urlstart += 6;
 		sprintf(result, "https:%s", urlstart);
 	} else if (strncmp(urlstart, "http:", 5)   == 0) {
+		strcpy(result, urlstart);
+	} else if (strncmp(urlstart, "ftp:", 4)    == 0) {
 		strcpy(result, urlstart);
 	}
 
