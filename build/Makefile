@@ -9,7 +9,7 @@ merge-sects: merge-sects.c
 	$(CC) -o $@ $(CFLAGS) $<
 
 setup-newfiles: setup-newfiles.c
-	$(CC) -o $@ $(CFLAGS) $< ../lib/libbbgen.a $(SSLLIBS) $(NETLIBS)
+	$(CC) -o $@ $(CFLAGS) $(RPATHOPT) $< ../lib/libbbgen.a $(SSLLIBS) $(NETLIBS)
 
 clean:
 	rm -f $(TOOLS) *.o *~

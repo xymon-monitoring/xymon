@@ -80,7 +80,7 @@ bb-larrdcolumn: $(LARRDCOLUMNOBJS) ../lib/libbbgen.a
 
 bb-infocolumn: $(INFOCOLUMNOBJS) ../lib/libbbgen.a
 ifdef HOBBITD
-	$(CC) $(CFLAGS) -o $@ $(INFOCOLUMNOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(INFOCOLUMNOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 else
 	$(CC) $(CFLAGS) -o $@ $(INFOCOLUMNOBJS) ../lib/libbbgen.a $(NETLIBS)
 endif

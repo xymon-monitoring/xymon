@@ -24,25 +24,25 @@ all: $(PROGRAMS) $(CGISCRIPTS) $(SECCGISCRIPTS) cfgfiles moverrd.sh
 # Need NETLIBS on Solaris for getservbyname(), called by parse_url()
 
 hobbitd: $(HOBBITDOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(HOBBITDOBJS) $(LIBOBJS) $(NETLIBS)
+	$(CC) -o $@ $(RPATHOPT) $(HOBBITDOBJS) $(LIBOBJS) $(NETLIBS)
 
 hobbitd_channel: $(CHANNELOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(CHANNELOBJS) $(LIBOBJS)
+	$(CC) -o $@ $(RPATHOPT) $(CHANNELOBJS) $(LIBOBJS)
 
 hobbitd_filestore: $(FILESTOREOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(FILESTOREOBJS) $(LIBOBJS) $(NETLIBS)
+	$(CC) -o $@ $(RPATHOPT) $(FILESTOREOBJS) $(LIBOBJS) $(NETLIBS)
 
 hobbitd_history: $(HISTORYOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(HISTORYOBJS) $(LIBOBJS)
+	$(CC) -o $@ $(RPATHOPT) $(HISTORYOBJS) $(LIBOBJS)
 
 hobbitd_alert: $(ALERTOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(ALERTOBJS) $(LIBOBJS) $(PCRELIBS)
+	$(CC) -o $@ $(RPATHOPT) $(ALERTOBJS) $(LIBOBJS) $(PCRELIBS)
 
 hobbitd_larrd: $(LARRDOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(LARRDOBJS) $(LIBOBJS) $(RRDLIBS) $(NETLIBS)
+	$(CC) -o $@ $(RPATHOPT) $(LARRDOBJS) $(LIBOBJS) $(RRDLIBS) $(NETLIBS)
 
 hobbitd_filter: $(FILTEROBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(FILTEROBJS) $(LIBOBJS)
+	$(CC) -o $@ $(RPATHOPT) $(FILTEROBJS) $(LIBOBJS)
 
 do_alert.o: do_alert.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ do_alert.c
@@ -51,13 +51,13 @@ do_larrd.o: do_larrd.c do_larrd.h larrd/*.c
 	$(CC) $(CFLAGS) $(RRDINCDIR) -c -o $@ do_larrd.c
 
 hobbitd_sample: $(SAMPLEOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(SAMPLEOBJS) $(LIBOBJS)
+	$(CC) -o $@ $(RPATHOPT) $(SAMPLEOBJS) $(LIBOBJS)
 
 hobbitgraph.o: hobbitgraph.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) $(RRDINCDIR) -c -o $@ hobbitgraph.c
 
 hobbitgraph.cgi: $(HOBBITGRAPHOBJS)
-	$(CC) $(CFLAGS) -o $@ $(HOBBITGRAPHOBJS) $(LIBOBJS) $(PCRELIBS) $(RRDLIBS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(HOBBITGRAPHOBJS) $(LIBOBJS) $(PCRELIBS) $(RRDLIBS) $(NETLIBS)
 
 starthobbit.sh: starthobbit.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g' | sed -e 's!@BBUSER@!$(BBUSER)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@

@@ -20,7 +20,7 @@ bbhostshow: $(HOSTSHOWOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/libbbgen.a
 
 bbdigest: $(DIGESTOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/libbbgen.a $(SSLLIBS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(DIGESTOBJS) ../lib/libbbgen.a $(SSLLIBS) $(NETLIBS)
 
 bb: $(MSGOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(MSGOBJS) ../lib/libbbgen.a $(NETLIBS)

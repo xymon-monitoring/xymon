@@ -11,6 +11,7 @@ CC= gcc
 PKGDIR?=/usr/pkg
 CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT  \
        -I${PKGDIR}/include -L${PKGDIR}/lib, -Wl,--rpath=${PKGDIR}/lib
+RPATH = "-Wl,--rpath="
 #
 # Compile flags for debugging
 # CFLAGS = -g -DDEBUG -Wall -D_REENTRANT \

@@ -527,10 +527,12 @@ else
 		echo "# RRDtool settings"        >>Makefile
 		echo "RRDINCDIR = -I$RRDINC"     >>Makefile
 		echo "RRDLIBS = -L$RRDLIB -lrrd $PNGLIB" >>Makefile
+		echo "RPATHVAL += ${RRDLIB}"     >>Makefile
 		echo "#"                         >>Makefile
 		echo "# PCRE settings"           >>Makefile
 		echo "PCREINCDIR = -I$PCREINC"   >>Makefile
 		echo "PCRELIBS = -L$PCRELIB -lpcre" >>Makefile
+		echo "RPATHVAL += ${PCRELIB}"    >>Makefile
 	fi
 	echo "#"                                 >>Makefile
 	echo "# OpenSSL settings"                >>Makefile
@@ -538,8 +540,9 @@ else
 	if test "$SSLDEF" != ""
 	then
 		echo "# Change the following line if compiler complains about a missing ssl.h" >>Makefile
-		echo "SSLINCDIR = -I$OSSLINC"            >>Makefile
+		echo "SSLINCDIR = -I$OSSLINC"    >>Makefile
 		echo "SSLLIBS = -L$OSSLLIB -lcrypto -lssl" >>Makefile
+		echo "RPATHVAL += ${OSSLLIB}"    >>Makefile
 	fi
 	echo "#"                                 >>Makefile
 	echo "# OpenLDAP settings"               >>Makefile
@@ -553,6 +556,7 @@ else
 		if test "$LDAPLIB" != ""
 		then
 			echo "LDAPLIBS = -L$LDAPLIB -lldap $LDAPLBER" >>Makefile
+			echo "RPATHVAL += ${LDAPLIB}"                 >>Makefile
 		else
 			echo "LDAPLIBS = -lldap $LDAPLBER"            >>Makefile
 		fi
