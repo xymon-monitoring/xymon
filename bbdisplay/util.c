@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.42 2003-04-28 11:28:40 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.43 2003-04-30 19:42:20 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -659,6 +659,86 @@ int within_sla(char *l)
 		result = 1;
 	}
 
+	return result;
+}
+
+
+int periodcoversnow(char *tag)
+{
+	/*
+	 * Tag format: "-DAY-HHMM-HHMM:"
+	 * DAY = 0-6 (Sun .. Mon), or W (1..5)
+	 */
+
+	time_t tnow;
+	struct tm *now;
+
+        int result = 1;
+        char *dayspec, *starttime, *endtime;
+	unsigned int istart, iend, inow;
+	char *p;
+
+        if ((tag == NULL) || (*tag != '-')) return 1;
+
+	dayspec = (char *) malloc(strlen(tag)+1+12); /* Leave room for expanding 'W' and '*' */
+	starttime = (char *) malloc(strlen(tag)+1); 
+	endtime = (char *) malloc(strlen(tag)+1); 
+
+	strcpy(dayspec, (tag+1));
+	for (p=dayspec; ((*p == 'W') || (*p == '*') || ((*p >= '0') && (*p <= '6'))); p++) ;
+	if (*p != '-') {
+		free(endtime); free(starttime); free(dayspec); return 1;
+	}
+	*p = '\0';
+
+	p++;
+	strcpy(starttime, p); p = starttime;
+	if ( (strlen(starttime) < 4) || 
+	     !isdigit(*p)            || 
+	     !isdigit(*(p+1))        ||
+	     !isdigit(*(p+2))        ||
+	     !isdigit(*(p+3))        ||
+	     !(*(p+4) == '-') )          goto out;
+	else *(starttime+4) = '\0';
+
+	p+=5;
+	strcpy(endtime, p); p = endtime;
+	if ( (strlen(endtime) < 4) || 
+	     !isdigit(*p)          || 
+	     !isdigit(*(p+1))      ||
+	     !isdigit(*(p+2))      ||
+	     !isdigit(*(p+3))      ||
+	     !(*(p+4) == ':') )          goto out;
+	else *(endtime+4) = '\0';
+
+	tnow = time(NULL);
+	now = localtime(&tnow);
+
+
+	/* We have a timespec. So default to "not included" */
+	result = 0;
+
+	/* Check day-spec */
+	if (strchr(dayspec, 'W')) strcat(dayspec, "12345");
+	if (strchr(dayspec, '*')) strcat(dayspec, "0123456");
+	if (strchr(dayspec, ('0' + now->tm_wday)) == NULL) goto out;
+
+	/* Calculate minutes since midnight for start, end and now */
+	istart = (600 * (starttime[0]-'0'))   +
+		 (60  * (starttime[1]-'0'))   +
+		 (10  * (starttime[2]-'0'))   +
+		 (1   * (starttime[3]-'0'));
+	iend   = (600 * (endtime[0]-'0'))     +
+		 (60  * (endtime[1]-'0'))     +
+		 (10  * (endtime[2]-'0'))     +
+		 (1   * (endtime[3]-'0'));
+	inow   = 60*now->tm_hour + now->tm_min;
+
+	if ((inow < istart) || (inow > iend)) goto out;
+
+	result = 1;
+out:
+	free(endtime); free(starttime); free(dayspec); 
 	return result;
 }
 

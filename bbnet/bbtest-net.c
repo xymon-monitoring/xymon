@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.38 2003-04-28 08:17:17 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.39 2003-04-30 19:42:20 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -201,8 +201,10 @@ void load_tests(void)
 					char *option;
 					char *savedspec = NULL;
 
-					if (strncmp(testspec, "badconn:", 8) == 0) {
-						sscanf(testspec, "badconn:%d:%d:%d", &h->badconn[0], &h->badconn[1], &h->badconn[2]);
+					if ((strncmp(testspec, "badconn", 7) == 0) && periodcoversnow(testspec+7)) {
+						char *p =strchr(testspec, ':');
+
+						if (p) sscanf(p, ":%d:%d:%d", &h->badconn[0], &h->badconn[1], &h->badconn[2]);
 					}
 					else if (strncmp(testspec, "TIMEOUT:", 8) == 0) {
 						if (sscanf(testspec, "TIMEOUT:%d:%d", &h->conntimeout, &h->timeout) != 2) {
