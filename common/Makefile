@@ -13,22 +13,22 @@ CMDOBJS = bbcmd.o
 all: $(PROGRAMS)
 
 
-bbhostgrep: $(HOSTGREPOBJS)
+bbhostgrep: $(HOSTGREPOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/libbbgen.a
 
-bbhostshow: $(HOSTSHOWOBJS)
+bbhostshow: $(HOSTSHOWOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/libbbgen.a
 
-bbdigest: $(DIGESTOBJS)
+bbdigest: $(DIGESTOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/libbbgen.a $(SSLLIBS) $(NETLIBS)
 
-bb: $(MSGOBJS)
+bb: $(MSGOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(MSGOBJS) ../lib/libbbgen.a $(NETLIBS)
 
-hobbitlaunch: $(LAUNCHOBJS)
+hobbitlaunch: $(LAUNCHOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/libbbgen.a
 
-bbcmd: $(CMDOBJS)
+bbcmd: $(CMDOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/libbbgen.a
 
 sendmsg-std.o: ../lib/sendmsg.c
