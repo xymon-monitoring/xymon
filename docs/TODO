@@ -1,11 +1,6 @@
-Stuff that standard BB does which bbgen/bbtest-net does not
------------------------------------------------------------
-* Handle the missing fping.sh extensions (IP ranges).
-* Handle modem banks
-* Handle "group" as mkbb.sh does
-
 Suggestions from users
 ----------------------
+* Handle the missing fping.sh extensions ("range" and "list" tags).
 * When a host exists on multiple pages, provide links to
   the other pages showing this host. Maybe from the "info"
   column view ?
@@ -13,14 +8,14 @@ Suggestions from users
 Ideas of my own
 ---------------
 * Check of RPC services using getrpcent and rpcinfo
-* Implement the "local" tests (cpu, disk, memory,
-  process, services - NOT logs) as network tests
-  using SNMP
 * libcurl can support LDAP queries. So implement support
   for running ldap checks, if the runtime library does.
   Hmm ... apparently it does not work :-( and the curl
   guys dont want to support it anymore :-((
   Cf. curl bug item #735752
+
+If I have too much time someday
+-------------------------------
 * Use Autoconf. Need to learn how to use it first, though.
 * Communication between BBDISPLAY and BBNET servers.
   Build a new daemon to run on the BBNET servers. It
@@ -36,9 +31,6 @@ Ideas of my own
   Would allow for "Test Now" functionality, and might
   also be used for pushing config updates to BBNET 
   servers without having to open up more ports.
-
-If I have too much time someday
--------------------------------
 * Re-implement bbd using ucspi-tcp "tcpserver" to
   catch incoming messages and store them to a file.
   Maybe restrict incoming messages to status/page only ?
