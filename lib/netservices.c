@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: netservices.c,v 1.2 2005-02-21 16:36:59 henrik Exp $";
+static char rcsid[] = "$Id: netservices.c,v 1.3 2005-02-22 13:59:58 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -19,6 +19,8 @@ static char rcsid[] = "$Id: netservices.c,v 1.2 2005-02-21 16:36:59 henrik Exp $
 #include <unistd.h>
 #include <stdio.h>
 #include <limits.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "libbbgen.h"
 
@@ -64,6 +66,11 @@ static svcinfo_t default_svcinfo[] = {
 
 static svcinfo_t *svcinfo = default_svcinfo;
 
+typedef struct svclist_t {
+	struct svcinfo_t *rec;
+	struct svclist_t *next;
+} svclist_t;
+
 
 static char *binview(unsigned char *buf, int buflen)
 {
@@ -105,24 +112,17 @@ static char *binview(unsigned char *buf, int buflen)
 char *init_tcp_services(void)
 {
 	static char *bbnetsvcs = NULL;
+	static time_t lastupdate = 0;
 
 	char filename[PATH_MAX];
+	struct stat st;
 	FILE *fd = NULL;
 	char buf[MAX_LINE_LEN];
-	svclist_t *head = NULL;
-	svclist_t *item = NULL;
-	svclist_t *first = NULL;
-	svclist_t *walk;
+	svclist_t *head, *tail, *first, *walk;
 	char *searchstring;
 	int svcnamebytes = 0;
 	int svccount = 1;
 	int i;
-
-	if (bbnetsvcs) return bbnetsvcs;	/* Has already run, so just pickup the result */
-
-	if (xgetenv("BBNETSVCS") == NULL) {
-		putenv("BBNETSVCS=smtp telnet ftp pop pop3 pop-3 ssh imap ssh1 ssh2 imap2 imap3 imap4 pop2 pop-2 nntp");
-	}
 
 	filename[0] = '\0';
 	if (xgetenv("BBHOME")) {
@@ -130,15 +130,37 @@ char *init_tcp_services(void)
 	}
 	strcat(filename, "bb-services");
 
+	if ((stat(filename, &st) == 0) && bbnetsvcs) {
+		/* See if we have already run and the file is unchanged - if so just pickup the result */
+		if (st.st_mtime == lastupdate) return bbnetsvcs;
+
+		/* File has changed - reload configuration. But clean up first so we dont leak memory. */
+		if (svcinfo != default_svcinfo) {
+			for (i=0; (svcinfo[i].svcname); i++) {
+				if (svcinfo[i].svcname) xfree(svcinfo[i].svcname);
+				if (svcinfo[i].sendtxt) xfree(svcinfo[i].sendtxt);
+				if (svcinfo[i].exptext) xfree(svcinfo[i].exptext);
+			}
+			xfree(svcinfo);
+			svcinfo = default_svcinfo;
+		}
+
+		xfree(bbnetsvcs); bbnetsvcs = NULL;
+	}
+
+	if (xgetenv("BBNETSVCS") == NULL) {
+		putenv("BBNETSVCS=smtp telnet ftp pop pop3 pop-3 ssh imap ssh1 ssh2 imap2 imap3 imap4 pop2 pop-2 nntp");
+	}
+
 	fd = fopen(filename, "r");
 	if (fd == NULL) {
 		errprintf("Cannot open TCP service-definitions file %s - using defaults\n", filename);
-		return strdup(xgetenv("BBNETSVCS"));
+		bbnetsvcs = strdup(xgetenv("BBNETSVCS"));
+		return bbnetsvcs;
 	}
 
-	head = (svclist_t *)malloc(sizeof(svclist_t));
-	head->rec = (svcinfo_t *)calloc(1, sizeof(svcinfo_t));
-	head->next = NULL;
+	lastupdate = st.st_mtime;
+	head = tail = first = NULL;
 
 	while (fd && fgets(buf, sizeof(buf), fd)) {
 		char *l, *eol;
@@ -151,64 +173,76 @@ char *init_tcp_services(void)
 
 			eol = strchr(l, ']'); if (eol) *eol = '\0';
 			l = skipwhitespace(l+1);
-			svcname = strtok(l, "|");
-			first = NULL;
+
+			svcname = strtok(l, "|"); first = NULL;
 			while (svcname) {
-				item = (svclist_t *) malloc(sizeof(svclist_t));
-				item->rec = (svcinfo_t *)calloc(1, sizeof(svcinfo_t));
-				item->rec->svcname = strdup(svcname);
-				svcnamebytes += (strlen(svcname) + 1);
-				item->next = head;
-				head = item;
-				svcname = strtok(NULL, "|");
-				if (first == NULL) first = item;
+				svclist_t *newitem;
+
 				svccount++;
+				svcnamebytes += (strlen(svcname) + 1);
+
+				newitem = (svclist_t *) malloc(sizeof(svclist_t));
+				newitem->rec = (svcinfo_t *)calloc(1, sizeof(svcinfo_t));
+				newitem->rec->svcname = strdup(svcname);
+				newitem->next = NULL;
+
+				if (first == NULL) first = newitem;
+
+				if (head == NULL) {
+					head = tail = newitem;
+				}
+				else {
+					tail->next = newitem;
+					tail = newitem;
+				}
+
+				svcname = strtok(NULL, "|");
 			}
 		}
 		else if (strncmp(l, "send ", 5) == 0) {
-			if (item) {
-				getescapestring(skipwhitespace(l+4), &item->rec->sendtxt, &item->rec->sendlen);
-				for (walk = item; (walk != first); walk = walk->next) {
-					walk->next->rec->sendtxt = item->rec->sendtxt;
-					walk->next->rec->sendlen = item->rec->sendlen;
+			if (first) {
+				getescapestring(skipwhitespace(l+4), &first->rec->sendtxt, &first->rec->sendlen);
+				for (walk = first->next; (walk); walk = walk->next) {
+					walk->rec->sendtxt = strdup(first->rec->sendtxt);
+					walk->rec->sendlen = first->rec->sendlen;
 				}
 			}
 		}
 		else if (strncmp(l, "expect ", 7) == 0) {
-			if (item) {
-				getescapestring(skipwhitespace(l+7), &item->rec->exptext, &item->rec->explen);
-				for (walk = item; (walk != first); walk = walk->next) {
-					walk->next->rec->exptext = item->rec->exptext;
-					walk->next->rec->explen = item->rec->explen;
-					walk->next->rec->expofs = 0; /* HACK - not used right now */
+			if (first) {
+				getescapestring(skipwhitespace(l+6), &first->rec->exptext, &first->rec->explen);
+				for (walk = first->next; (walk); walk = walk->next) {
+					walk->rec->exptext = strdup(first->rec->exptext);
+					walk->rec->explen = first->rec->explen;
+					walk->rec->expofs = 0; /* HACK - not used right now */
 				}
 			}
 		}
 		else if (strncmp(l, "options ", 8) == 0) {
-			if (item) {
+			if (first) {
 				char *opt;
 
-				item->rec->flags = 0;
+				first->rec->flags = 0;
 				l = skipwhitespace(l+7);
 				opt = strtok(l, ",");
 				while (opt) {
-					if      (strcmp(opt, "ssl") == 0)    item->rec->flags += TCP_SSL;
-					else if (strcmp(opt, "banner") == 0) item->rec->flags += TCP_GET_BANNER;
-					else if (strcmp(opt, "telnet") == 0) item->rec->flags += TCP_TELNET;
+					if      (strcmp(opt, "ssl") == 0)    first->rec->flags |= TCP_SSL;
+					else if (strcmp(opt, "banner") == 0) first->rec->flags |= TCP_GET_BANNER;
+					else if (strcmp(opt, "telnet") == 0) first->rec->flags |= TCP_TELNET;
 					else errprintf("Unknown option: %s\n", opt);
 
 					opt = strtok(NULL, ",");
 				}
-				for (walk = item; (walk != first); walk = walk->next) {
-					walk->next->rec->flags = item->rec->flags;
+				for (walk = first->next; (walk); walk = walk->next) {
+					walk->rec->flags = first->rec->flags;
 				}
 			}
 		}
 		else if (strncmp(l, "port ", 5) == 0) {
-			if (item) {
-				item->rec->port = atoi(skipwhitespace(l+4));
-				for (walk = item; (walk != first); walk = walk->next) {
-					walk->next->rec->port = item->rec->port;
+			if (first) {
+				first->rec->port = atoi(skipwhitespace(l+4));
+				for (walk = first->next; (walk); walk = walk->next) {
+					walk->rec->port = first->rec->port;
 				}
 			}
 		}
@@ -216,6 +250,7 @@ char *init_tcp_services(void)
 
 	if (fd) fclose(fd);
 
+	/* Copy from the svclist to svcinfo table */
 	svcinfo = (svcinfo_t *) malloc(svccount * sizeof(svcinfo_t));
 	for (walk=head, i=0; (walk); walk = walk->next, i++) {
 		svcinfo[i].svcname = walk->rec->svcname;
@@ -226,6 +261,17 @@ char *init_tcp_services(void)
 		svcinfo[i].expofs  = walk->rec->expofs;
 		svcinfo[i].flags   = walk->rec->flags;
 		svcinfo[i].port    = walk->rec->port;
+	}
+
+	/* Free the temp. svclist list */
+	while (head) {
+		/*
+		 * Note: Dont free the strings inside the records, 
+		 * as they are now owned by the svcinfo records.
+		 */
+		walk = head;
+		head = head->next;
+		xfree(walk);
 	}
 
 	searchstring = strdup(xgetenv("BBNETSVCS"));
