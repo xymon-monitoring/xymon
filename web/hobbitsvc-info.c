@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.50 2004-08-31 20:39:12 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.51 2004-09-02 14:05:05 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -341,9 +341,14 @@ int generate_info(char *infocolumn)
 
 			if ( (strncmp(p, "content=", 8) == 0) ||
 			     (strncmp(p, "cont;", 5) == 0)    ||
+			     (strncmp(p, "cont=", 5) == 0)    ||
 			     (strncmp(p, "nocont;", 7) == 0)  ||
+			     (strncmp(p, "nocont=", 7) == 0)  ||
 			     (strncmp(p, "type;", 5) == 0)    ||
+			     (strncmp(p, "type=", 5) == 0)    ||
 			     (strncmp(p, "post;", 5) == 0)    ||
+			     (strncmp(p, "post=", 5) == 0)    ||
+			     (strncmp(p, "nopost=", 7) == 0)  ||
 			     (strncmp(p, "nopost;", 7) == 0) ) {
 
 				bburl_t bburl;
@@ -358,9 +363,16 @@ int generate_info(char *infocolumn)
 				addtobuffer(&infobuf, &infobuflen, l);
 
 				/* FIXME - this is SOOOO ugly! */
-				if ((strncmp(p, "cont;", 5) == 0) || (strncmp(p, "nocont;", 7) == 0) || 
-				    (strncmp(p, "type;", 5) == 0) ||
-				    (strncmp(p, "post;", 5) == 0) || (strncmp(p, "nopost;", 7) == 0)) {
+				if ((strncmp(p, "cont;", 5) == 0)   || 
+				    (strncmp(p, "cont=", 5) == 0)   || 
+				    (strncmp(p, "nocont;", 7) == 0) || 
+				    (strncmp(p, "nocont=", 7) == 0) || 
+				    (strncmp(p, "type;", 5) == 0)   ||
+				    (strncmp(p, "type=", 5) == 0)   ||
+				    (strncmp(p, "post;", 5) == 0)   || 
+				    (strncmp(p, "post=", 5) == 0)   || 
+				    (strncmp(p, "nopost;", 7) == 0) ||
+				    (strncmp(p, "nopost=", 7) == 0) ) {
 					char *wanted = strrchr(p, ';');
 
 					if (wanted) {
