@@ -33,49 +33,49 @@ GIFFILES = bbfindhost1.gif bbfindhost2.gif
 all: $(PROGRAMS) $(EXTENSIONS) $(CGISCRIPTS)
 
 
-bbgen: $(GENOBJS)
+bbgen: $(GENOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(GENOBJS) ../lib/libbbgen.a $(NETLIBS)
 
-bbcombotest: $(COMBOTESTOBJS)
+bbcombotest: $(COMBOTESTOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(COMBOTESTOBJS) ../lib/libbbgen.a $(NETLIBS)
 
-bb-rep.cgi: $(REPOBJS)
+bb-rep.cgi: $(REPOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(REPOBJS) ../lib/libbbgen.a $(NETLIBS)
 
-bb-replog.cgi: $(REPLOGOBJS)
+bb-replog.cgi: $(REPLOGOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(REPLOGOBJS) ../lib/libbbgen.a $(NETLIBS)
 
-bb-hist.cgi: $(HISTOBJS)
+bb-hist.cgi: $(HISTOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(HISTOBJS) ../lib/libbbgen.a $(NETLIBS)
 
-bb-snapshot.cgi: $(SNAPOBJS)
+bb-snapshot.cgi: $(SNAPOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(SNAPOBJS) ../lib/libbbgen.a $(NETLIBS)
 
-bb-eventlog.cgi: $(EVENTLOGOBJS)
+bb-eventlog.cgi: $(EVENTLOGOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(EVENTLOGOBJS) ../lib/libbbgen.a $(NETLIBS)
 
-bb-findhost.cgi: $(FINDHOSTOBJS)
+bb-findhost.cgi: $(FINDHOSTOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(FINDHOSTOBJS) ../lib/libbbgen.a $(NETLIBS)
 
-bb-csvinfo.cgi: $(CSVINFOOBJS)
+bb-csvinfo.cgi: $(CSVINFOOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(CSVINFOOBJS) ../lib/libbbgen.a $(NETLIBS)
 
-bbmessage.cgi: $(MESSAGECGIOBJS)
+bbmessage.cgi: $(MESSAGECGIOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(MESSAGECGIOBJS) ../lib/libbbgen.a $(NETLIBS)
 
-bb-hostsvc.cgi: $(HOSTSVCCGIOBJS)
+bb-hostsvc.cgi: $(HOSTSVCCGIOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(HOSTSVCCGIOBJS) ../lib/libbbgen.a $(NETLIBS)
 
-bb-ack.cgi: $(ACKCGIOBJS)
+bb-ack.cgi: $(ACKCGIOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(ACKCGIOBJS) ../lib/libbbgen.a $(NETLIBS)
 
-bb-webpage: $(WEBPAGEOBJS)
+bb-webpage: $(WEBPAGEOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(WEBPAGEOBJS) ../lib/libbbgen.a
 
-bb-larrdcolumn: $(LARRDCOLUMNOBJS)
+bb-larrdcolumn: $(LARRDCOLUMNOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(LARRDCOLUMNOBJS) ../lib/libbbgen.a $(NETLIBS)
 
-bb-infocolumn: $(INFOCOLUMNOBJS)
+bb-infocolumn: $(INFOCOLUMNOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(INFOCOLUMNOBJS) ../lib/libbbgen.a $(NETLIBS)
 
 
