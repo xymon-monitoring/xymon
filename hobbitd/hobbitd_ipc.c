@@ -29,6 +29,7 @@ bbd_channel_t *setup_channel(enum msgchannels_t chnid, int flags)
 	key_t key = ftok("bbd_net", chnid);
 	bbd_channel_t *newch = (bbd_channel_t *)malloc(sizeof(bbd_channel_t));
 
+	newch->seq = 0;
 	newch->channelid = chnid;
 	newch->shmid = shmget(key, SHAREDBUFSZ, flags);
 	if (newch->shmid == -1) {
