@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.52 2003-09-28 06:38:19 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.53 2003-09-29 07:38:27 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -407,7 +407,6 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 	http_data_t *req;
 	testitem_t *t;
 	char useragent[100];
-	int maxtimeout = DEF_TIMEOUT;
 
 	if (logfile) {
 		logfd = fopen(logfile, "a");
@@ -448,7 +447,6 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 
 		curl_easy_setopt(req->curl, CURLOPT_TIMEOUT, (t->host->timeout ? t->host->timeout : DEF_TIMEOUT));
 		curl_easy_setopt(req->curl, CURLOPT_CONNECTTIMEOUT, (t->host->conntimeout ? t->host->conntimeout : DEF_CONNECT_TIMEOUT));
-		if (t->host->timeout > maxtimeout) maxtimeout = t->host->timeout;
 
 		/* Activate our callbacks */
 		curl_easy_setopt(req->curl, CURLOPT_WRITEHEADER, req);
