@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.63 2003-07-04 09:37:03 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.64 2003-07-06 15:53:35 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -781,7 +781,7 @@ static int minutes(char *p)
 	return (10*(*(p+0)-'0')+(*(p+1)-'0'))*60 + (10*(*(p+2)-'0')+(*(p+3)-'0'));
 }
 
-int within_sla(char *l)
+int within_sla(char *l, char *tag)
 {
 	/*
 	 * Usage: slatime hostline
@@ -791,6 +791,7 @@ int within_sla(char *l)
 
 	char *p;
 	char *slaspec = NULL;
+	char *tagspec;
 
 	time_t tnow;
 	struct tm *now;
@@ -799,14 +800,13 @@ int within_sla(char *l)
 	int found = 0;
 	int starttime,endtime,curtime;
 
-	p = strstr(l, "SLA=");
+	tagspec = malloc(strlen(tag)+2);
+	sprintf(tagspec, "%s=", tag);
+	p = strstr(l, tagspec);
 	if (p) {
-		slaspec = p + 4;
+		slaspec = p + strlen(tagspec);
 		tnow = time(NULL);
 		now = localtime(&tnow);
-
-		// printf("SLA er %s\n", slaspec);
-		// printf("Now is weekday %d, time is %d:%d\n", now->tm_wday, now->tm_hour, now->tm_min);
 
 		/*
 		 * Now find the appropriate SLA definition.
@@ -837,6 +837,7 @@ int within_sla(char *l)
 		/* No SLA -> default to always included */
 		result = 1;
 	}
+	free(tagspec);
 
 	return result;
 }
