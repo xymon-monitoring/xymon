@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.115 2005-02-27 10:52:56 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.116 2005-02-27 11:50:11 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -773,7 +773,22 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	}
 
 	log->logtime = now;
-	if (log->enabletime == 0) log->validtime = now + validity*60; /* Dont change validtime if disabled */
+
+	/*
+	 * Decide how long this status is valid.
+	 *
+	 * If the status is not disabled, then just set the valid time according 
+	 * to the validity of the status report (the normal case).
+	 *
+	 * If the status is disabled, dont change the valid timestamp.
+	 *
+	 * If the status is acknowledged, make it valid for the longest period
+	 * of the acknowledgment and the normal validity (so an acknowledged status
+	 * does not go purple because it is not being updated due to the host being down).
+	 */
+	if (log->enabletime == 0) log->validtime = now + validity*60;
+	if (log->acktime && (log->acktime > log->validtime)) log->validtime = log->acktime;
+
 	strncpy(log->sender, sender, sizeof(log->sender)-1);
 	*(log->sender + sizeof(log->sender) - 1) = '\0';
 	log->oldcolor = log->color;
@@ -781,7 +796,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	oldalertstatus = decide_alertstate(log->oldcolor);
 	newalertstatus = decide_alertstate(newcolor);
 
-	if (msg != log->message) {	/* They can be the same when called from handle_enadis() or check_purple_upd() */
+	if (msg != log->message) { 	/* They can be the same when called from handle_enadis() or check_purple_upd() */
 		char *p;
 
 		/*
@@ -1101,6 +1116,8 @@ void handle_ack(char *msg, char *sender, hobbitd_log_t *log, int duration)
 	char *p;
 
 	log->acktime = time(NULL)+duration*60;
+	if (log->validtime < log->acktime) log->validtime = log->acktime;
+
 	p = msg;
 	p += strspn(p, " \t");			/* Skip the space ... */
 	p += strspn(p, "-0123456789");		/* and the cookie ... */
