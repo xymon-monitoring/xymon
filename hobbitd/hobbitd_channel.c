@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.37 2005-03-06 10:40:26 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.38 2005-03-20 20:59:55 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -366,7 +366,8 @@ int main(int argc, char *argv[])
 				hobbit_msg_t *tmp;
 
 				/* Write failed */
-				errprintf("Our child has failed and will not talk to us\n");
+				errprintf("Our child has failed and will not talk to us: Channel %s, PID %d\n",
+					  channelnames[cnid], getpid(), strerror(errno));
 				tmp = head;
 				head = head->next;
 				xfree(tmp->buf);
