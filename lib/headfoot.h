@@ -18,6 +18,7 @@ extern void sethostenv_report(time_t reportstart, time_t reportend, double repwa
 extern void sethostenv_snapshot(time_t snapshot);
 extern void sethostenv_histlog(char *histtime);
 extern void sethostenv_template(char *dir);
+extern void sethostenv_refresh(int n);
 extern void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype);
 extern void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, int bgcolor);
 

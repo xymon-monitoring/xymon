@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.23 2004-12-26 23:44:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.24 2004-12-27 22:47:58 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -287,6 +287,18 @@ int main(int argc, char *argv[])
 	}
 
 	fprintf(stdout, "Content-type: text/html\n\n");
+
+	/* No need to refresh every minute for "trends" or "info" columns */
+	if ((strcmp(service, "trends") == 0) ||
+	    (strcmp(service, "graphs") == 0) ||
+	    (strcmp(service, "larrd") == 0)  ||
+	    (strcmp(service, "info") == 0)) {
+		sethostenv_refresh(600);
+	}
+	else {
+		/* Refresh once a minute to pick up changes quickly. */
+		sethostenv_refresh(60);
+	}
 
 	generate_html_log(hostname, displayname, service, ip, 
 		          color, sender, flags, 

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.3 2004-12-11 08:21:38 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.4 2004-12-27 22:47:58 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -42,6 +42,7 @@ static char hostenv_reppanic[20];
 static time_t hostenv_snapshot = 0;
 static char *hostenv_logtime = NULL;
 static char *hostenv_templatedir = NULL;
+static int hostenv_refresh = 60;
 
 void sethostenv(char *host, char *ip, char *svc, char *color)
 {
@@ -75,6 +76,11 @@ void sethostenv_template(char *dir)
 {
 	if (hostenv_templatedir) free(hostenv_templatedir);
 	hostenv_templatedir = strdup(dir);
+}
+
+void sethostenv_refresh(int n)
+{
+	hostenv_refresh = n;
 }
 
 void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype)
@@ -150,6 +156,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 		else if (strcmp(t_start, "BBREPWARN") == 0)     fprintf(output, "%s", hostenv_repwarn);
 		else if (strcmp(t_start, "BBREPPANIC") == 0)    fprintf(output, "%s", hostenv_reppanic);
 		else if (strcmp(t_start, "LOGTIME") == 0) 	fprintf(output, "%s", (hostenv_logtime ? hostenv_logtime : ""));
+		else if (strcmp(t_start, "BBREFRESH") == 0)     fprintf(output, "%d", hostenv_refresh);
 
 		else if (strcmp(t_start, "REPMONLIST") == 0) {
 			int i;
