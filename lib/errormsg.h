@@ -19,5 +19,9 @@ extern void errprintf(const char *fmt, ...);
 extern void dprintf(const char *fmt, ...);
 extern void flush_errbuf(void);
 
+extern void starttrace(const char *fn);
+extern void stoptrace(void);
+extern void traceprintf(const char *fmt, ...);
+
 #endif
 

@@ -11,13 +11,15 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: errormsg.c,v 1.5 2005-01-20 22:02:23 henrik Exp $";
+static char rcsid[] = "$Id: errormsg.c,v 1.6 2005-02-22 21:47:22 henrik Exp $";
 
+#include <sys/types.h>
 #include <string.h>
 #include <time.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "libbbgen.h"
 
@@ -26,7 +28,7 @@ int save_errbuf = 1;
 static unsigned int errbufsize = 0;
 
 int debug = 0;
-
+static FILE *tracefd = NULL;
 
 void errprintf(const char *fmt, ...)
 {
@@ -99,5 +101,44 @@ void flush_errbuf(void)
 {
 	if (errbuf) xfree(errbuf);
 	errbuf = NULL;
+}
+
+
+void starttrace(const char *fn)
+{
+	if (tracefd) fclose(tracefd);
+	if (fn) {
+		tracefd = fopen(fn, "a"); 
+		if (tracefd == NULL) errprintf("Cannot open tracefile %s\n", fn);
+	}
+	else tracefd = stdout;
+}
+
+void stoptrace(void)
+{
+	if (tracefd) fclose(tracefd);
+	tracefd = NULL;
+}
+
+void traceprintf(const char *fmt, ...)
+{
+	va_list args;
+
+	if (tracefd) {
+		char timestr[40];
+		time_t now = time(NULL);
+
+		MEMDEFINE(timestr);
+
+		strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S", localtime(&now));
+		fprintf(tracefd, "%08u %s ", (unsigned int)getpid(), timestr);
+
+		va_start(args, fmt);
+		vfprintf(tracefd, fmt, args);
+		va_end(args);
+		fflush(tracefd);
+
+		MEMUNDEFINE(timestr);
+	}
 }
 
