@@ -131,19 +131,6 @@ option has no effect, i.e. it will not terminate bbtest-net
 prematurely. So to eliminate any such warnings, use this
 option with a very high value of N.
 
-.IP --dns-max-one=N (default: 5 seconds)
-Causes bbtest-net to issue a warning when a single DNS
-lookup takes more than N seconds to complete. The warning
-includes the offending hostname. If a single hostname is
-always slow to resolve, you might consider adding a "testip"
-tag to disable the DNS lookup for this host.
-
-.IP --dns-max-all=N (default: BBSLEEP/2 seconds)
-Causes bbtest-net to issue a warning if all DNS lookups
-in total takes more than N seconds. This will also cause 
-bbtest-net to disable further DNS lookups, and run as if
-all hosts had the "testip" tag.
-
 .IP --no-flags
 By default, bbtest-net sends some extra information in the
 status messages, called "flags". These are used by bbgen
