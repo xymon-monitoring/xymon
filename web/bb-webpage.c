@@ -1,17 +1,18 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother webpage generator tool.                                        */
+/* Hobbit webpage generator tool.                                             */
 /*                                                                            */
 /* This is a generic webpage generator, that allows scripts to output a       */
-/* standard BB-like webpage without having to deal with headers and footers.  */
+/* standard Hobbit-like webpage without having to deal with headers and       */
+/* footers.                                                                   */
 /*                                                                            */
-/* Copyright (C) 2004 Henrik Storner <henrik@storner.dk>                      */
+/* Copyright (C) 2004-2005 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-webpage.c,v 1.3 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: bb-webpage.c,v 1.4 2005-03-22 09:03:37 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>

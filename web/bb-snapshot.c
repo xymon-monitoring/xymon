@@ -1,14 +1,18 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother webpage generator tool.                                        */
+/* Hobbit "snapshot" CGI front-end.                                           */
 /*                                                                            */
-/* Copyright (C) 2003 Henrik Storner <henrik@storner.dk>                      */
+/* This is a CGI front-end that lets the user pick which snapshot view is     */
+/* generated. A snapshot is a view of the Hobbit webpages from any time in    */
+/* the past, generated from the history logs.                                 */
+/*                                                                            */
+/* Copyright (C) 2003-2005 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-snapshot.c,v 1.10 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: bb-snapshot.c,v 1.11 2005-03-22 09:03:37 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

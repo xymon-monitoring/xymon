@@ -1,16 +1,18 @@
 /*----------------------------------------------------------------------------*/
-/* bbgen toolkit                                                              */
+/* Hobbit "info" column generator.                                            */
 /*                                                                            */
 /* This is a standalone tool for generating data for the "info" column data.  */
+/* This extracts all of the static configuration info about a host contained  */
+/* in Hobbit, and displays it on one webpage.                                 */
 /*                                                                            */
-/* Copyright (C) 2002-2004 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2005 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.83 2005-03-21 14:52:28 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.84 2005-03-22 09:03:37 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

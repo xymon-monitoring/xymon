@@ -1,19 +1,16 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother webpage generator tool.                                        */
+/* Hobbit history viewer.                                                     */
 /*                                                                            */
-/* This is a replacement for the "bb-hist.sh" script                          */
-/* It includes additional features like summary graphs and statistics for     */
-/* the past week, month and year; in addition to being loads faster than      */
-/* the original script.                                                       */
+/* This is a CGI tool used to view the history of a status log.               */
 /*                                                                            */
-/* Copyright (C) 2003 Henrik Storner <henrik@storner.dk>                      */
+/* Copyright (C) 2003-2005 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.43 2005-02-28 22:36:32 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.44 2005-03-22 09:03:37 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

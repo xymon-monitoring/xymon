@@ -1,14 +1,14 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother combination test tool.                                         */
+/* Hobbit combination test tool.                                              */
 /*                                                                            */
-/* Copyright (C) 2003 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2003-2005 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.37 2005-03-21 15:48:50 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.38 2005-03-22 09:03:37 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

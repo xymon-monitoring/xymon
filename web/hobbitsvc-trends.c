@@ -1,16 +1,20 @@
 /*----------------------------------------------------------------------------*/
-/* bbgen toolkit                                                              */
+/* Hobbit RRD graph overview generator.                                       */
 /*                                                                            */
-/* This is a standalone tool for generating data for the LARRD overview page. */
+/* This is a standalone tool for generating data for the trends column.       */
+/* All of the data stored in RRD files for a host end up as graphs. Some of   */
+/* these are displayed together with the corresponding status display, but    */
+/* others (e.g. from "data" messages) are not. This generates a "trends"      */
+/* column that contains all of the graphs for a host.                         */
 /*                                                                            */
-/* Copyright (C) 2002-2004 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2005 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.61 2005-03-21 14:52:28 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.62 2005-03-22 09:03:37 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

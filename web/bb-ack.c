@@ -1,16 +1,19 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother webpage generator tool.                                        */
+/* Hobbit alert acknowledgment CGI tool.                                      */
 /*                                                                            */
-/* This is a replacement for the "bb-ack.sh" script                           */
+/* This is a CGI script for handling acknowledgments of alerts.               */
+/* If called with no CGI query, it will present the acknowledgment form;      */
+/* if called with a proper CGI query string it will send an ack-message to    */
+/* the Hobbit daemon.                                                         */
 /*                                                                            */
-/* Copyright (C) 2004 Henrik Storner <henrik@storner.dk>                      */
+/* Copyright (C) 2004-2005 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.12 2005-03-06 16:18:48 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.13 2005-03-22 09:03:37 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

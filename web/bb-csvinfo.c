@@ -1,17 +1,19 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother webpage generator tool.                                        */
+/* Hobbit general CSV info viewer.                                            */
 /*                                                                            */
 /* This is a CGI script for a generic presentation of information stored in   */
 /* a comma-separated file (CSV), e.g. via an export from a spreadsheet or DB. */
+/* It is also used for the Hobbit column-name links, to provide information   */
+/* about what each column header means and what kind of test is run.          */
 /*                                                                            */
-/* Copyright (C) 2003 Henrik Storner <henrik@storner.dk>                      */
+/* Copyright (C) 2003-2005 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-csvinfo.c,v 1.11 2005-02-03 13:56:58 henrik Exp $";
+static char rcsid[] = "$Id: bb-csvinfo.c,v 1.12 2005-03-22 09:03:37 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

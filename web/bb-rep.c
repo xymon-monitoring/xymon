@@ -1,21 +1,18 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother webpage generator tool.                                        */
+/* Hobbit report generation front-end.                                        */
 /*                                                                            */
-/* This is a replacement for the "bb-rep.sh" script                           */
+/* This is a front-end CGI that lets the user select reporting parameters,    */
+/* and then invokes bbgen to generate the report. When the report is ready,   */
+/* the user's browser is sent off to view the report.                         */
 /*                                                                            */
-/* Primary reason for doing this: Shell scripts perform badly, and with a     */
-/* medium-sized installation (~150 hosts) it takes several minutes to         */
-/* generate the webpages. This is a problem, when the pages are used for      */
-/* 24x7 monitoring of the system status.                                      */
-/*                                                                            */
-/* Copyright (C) 2003 Henrik Storner <henrik@storner.dk>                      */
+/* Copyright (C) 2003-2005 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.26 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.27 2005-03-22 09:03:37 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

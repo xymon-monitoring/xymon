@@ -1,16 +1,16 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother webpage generator tool.                                        */
+/* Hobbit status-log viewer CGI.                                              */
 /*                                                                            */
-/* This is a replacement for the "bb-hostsvc.sh" script                       */
+/* This CGI tool shows an HTML version of a status log.                       */
 /*                                                                            */
-/* Copyright (C) 2004 Henrik Storner <henrik@storner.dk>                      */
+/* Copyright (C) 2004-2005 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.32 2005-02-27 11:36:36 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.33 2005-03-22 09:03:37 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

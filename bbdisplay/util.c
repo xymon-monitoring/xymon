@@ -1,22 +1,17 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother webpage generator tool.                                        */
+/* Hobbit overview webpage generator tool.                                    */
 /*                                                                            */
-/* This is a replacement for the "mkbb.sh" and "mkbb2.sh" scripts from the    */
-/* "Big Brother" monitoring tool from BB4 Technologies.                       */
+/* Various utility functions specific to bbgen. Generally useful code is      */
+/* in the library.                                                            */
 /*                                                                            */
-/* Primary reason for doing this: Shell scripts perform badly, and with a     */
-/* medium-sized installation (~150 hosts) it takes several minutes to         */
-/* generate the webpages. This is a problem, when the pages are used for      */
-/* 24x7 monitoring of the system status.                                      */
-/*                                                                            */
-/* Copyright (C) 2002 Henrik Storner <henrik@storner.dk>                      */
+/* Copyright (C) 2002-2005 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.146 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.147 2005-03-22 09:03:37 henrik Exp $";
 
 #include <limits.h>
 #include <sys/types.h>
