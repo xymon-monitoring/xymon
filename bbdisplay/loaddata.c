@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.41 2003-02-25 09:33:59 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.42 2003-02-28 07:37:20 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -211,7 +211,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	state_t *newstate;
 	char	l[MAXMSG];
 	host_t	*host;
-	struct stat st;
+	struct stat log_st;
 	time_t	now = time(NULL);
 
 	char	bbcmd[250];
@@ -254,6 +254,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	if (ignorecolumns && strstr(ignorecolumns, l))
 		return NULL;	/* Ignore this type of test */
 
+	stat(filename, &log_st);
 	newstate = malloc(sizeof(state_t));
 	newstate->entry = malloc(sizeof(entry_t));
 	newstate->next = NULL;
@@ -264,15 +265,10 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	newstate->entry->oldage = 0;
 	newstate->entry->propagate = 1;
 
-	/* Acked column ? */
-	sprintf(ackfilename, "%s/ack.%s.%s", getenv("BBACKS"), hostname, testname);
-	newstate->entry->acked = (stat(ackfilename, &st) == 0);
-
 	host = find_host(hostname);
 	newstate->entry->alert = checkalert(host, testname);
 	newstate->entry->sumurl = NULL;
 
-	stat(filename, &st);
 	fd = fopen(filename, "r");
 
 	if (fd && fgets(l, sizeof(l), fd)) {
@@ -296,15 +292,8 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		}
 	}
 
-	newstate->entry->propagate = checkpropagation(host, testname, newstate->entry->color);
-
-	if (dopurple && (st.st_mtime <= now) && 
-			(strcmp(testname, larrdcol) != 0) &&
-			(strcmp(testname, infocol) != 0) ) {
-		/* PURPLE test! */
-
-		char *p;
-		char *purplemsg = malloc(MAXMSG+1024);
+	if ( (log_st.st_mtime <= now) && (strcmp(testname, larrdcol) != 0) && (strcmp(testname, infocol) != 0) ) {
+		/* Log file too old = go purple */
 
 		*is_purple = 1;
 
@@ -316,6 +305,27 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 			/* Not in bb-hosts, or logfile too old */
 			newstate->entry->color = COL_PURPLE;
 		}
+	}
+
+	/* Acked column ? */
+	if (newstate->entry->color != COL_GREEN) {
+		struct stat ack_st;
+
+		sprintf(ackfilename, "%s/ack.%s.%s", getenv("BBACKS"), hostname, testname);
+		newstate->entry->acked = (stat(ackfilename, &ack_st) == 0);
+	}
+	else {
+		newstate->entry->acked = 0;
+	}
+
+	newstate->entry->propagate = checkpropagation(host, testname, newstate->entry->color);
+
+	if (dopurple && *is_purple) {
+		/* Send a message to update status to purple */
+
+		char *p;
+		char *purplemsg = malloc(MAXMSG+1024);
+
 		init_status(newstate->entry->color);
 
 		for (p = strchr(l, ' '); (p && (*p == ' ')); p++); /* Skip old color */
@@ -368,19 +378,38 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		finish_status();
 	}
 	else {
-		if ((strcmp(testname, larrdcol) != 0) && (strcmp(testname, infocol) != 0)) {
-			while (fgets(l, sizeof(l), fd) && (strncmp(l, "Status unchanged in ", 20) != 0)) ;
+		if (*is_purple) {
+			/* 
+			 * dopurple is false, so we are not updating purple messages.
+			 * That means we can use the age of the log file as an indicator
+			 * for how old this status message really is.
+			 */
 
-			if (strncmp(l, "Status unchanged in ", 20) == 0) {
-				char *p;
+			time_t fileage = (now - log_st.st_mtime);
 
-				p = strchr(l, '\n'); if (p) *p = '\0';
-				strcpy(newstate->entry->age, l+20);
-				newstate->entry->oldage = (strstr(l+20, "days") != NULL);
-			}
+			newstate->entry->oldage = (fileage >= 86400);
+			if (fileage >= 86400)
+				sprintf(newstate->entry->age, "%.2f days", (fileage / 86400.0));
+			else if (fileage > 3600)
+				sprintf(newstate->entry->age, "%.2f hours", (fileage / 3600.0));
+			else
+				sprintf(newstate->entry->age, "%.2f minutes", (fileage / 60.0));
 		}
 		else {
-			newstate->entry->oldage = 1;
+			if ((strcmp(testname, larrdcol) != 0) && (strcmp(testname, infocol) != 0)) {
+				while (fgets(l, sizeof(l), fd) && (strncmp(l, "Status unchanged in ", 20) != 0)) ;
+
+				if (strncmp(l, "Status unchanged in ", 20) == 0) {
+					char *p;
+
+					p = strchr(l, '\n'); if (p) *p = '\0';
+					strcpy(newstate->entry->age, l+20);
+					newstate->entry->oldage = (strstr(l+20, "days") != NULL);
+				}
+			}
+			else {
+				newstate->entry->oldage = 1;
+			}
 		}
 
 		fclose(fd);
