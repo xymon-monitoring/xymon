@@ -182,6 +182,16 @@ int main(int argc, char *argv[])
 					free(tmp);
 				}
 			}
+			else if (errno == EAGAIN) {
+				usleep(5000);
+			}
+			else {
+				/* Write failed */
+				msg_t *tmp = head;
+				free(head->buf);
+				head = head->next;
+				free(tmp);
+			}
 		}
 
 	} while (running);
