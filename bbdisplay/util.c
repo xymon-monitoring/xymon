@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.6 2003-01-02 16:06:51 hstoerne Exp $";
+static char rcsid[] = "$Id: util.c,v 1.7 2003-01-04 08:55:33 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -241,13 +241,18 @@ host_t *find_host(const char *hostname)
 char *histlogurl(char *hostname, char *service, time_t histtime)
 {
 	static char url[512];
-	char timestr[40];
+	char d1[40],d2[3],d3[40];
 
-	/* cgi-bin/bb-histlog.sh?HOST=SLS-P-CE1.slsdomain.sls.dk&SERVICE=msgs&TIMEBUF=Fri_Nov_22_16:01:08_2002 */
+	/* cgi-bin/bb-histlog.sh?HOST=SLS-P-CE1.slsdomain.sls.dk&SERVICE=msgs&TIMEBUF=Fri_Nov_7_16:01:08_2002 */
 	
-	strftime(timestr, sizeof(timestr), "%a_%b_%d_%H:%M:%S_%Y", localtime(&histtime));
-	sprintf(url, "%s/bb-histlog.sh?HOST=%s&SERVICE=%s&TIMEBUF=%s", 
-		getenv("CGIBINURL"), hostname, service, timestr);
+	/* Hmm - apparently no way to generate a day-of-month with no leading 0. */
+        strftime(d1, sizeof(d1), "%a_%b_", localtime(&histtime));
+        strftime(d2, sizeof(d2), "%d", localtime(&histtime));
+	if (d2[0] == '0') strcpy(d2, d2+1);
+        strftime(d3, sizeof(d3), "_%H:%M:%S_%Y", localtime(&histtime));
+
+	sprintf(url, "%s/bb-histlog.sh?HOST=%s&SERVICE=%s&TIMEBUF=%s%s%s", 
+		getenv("CGIBINURL"), hostname, service, d1,d2,d3);
 
 	return url;
 }
