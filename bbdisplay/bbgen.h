@@ -51,6 +51,12 @@ typedef struct {
 	void	*next;
 } host_t;
 
+/* Aux. list definition for quick access to host records */
+typedef struct {
+	host_t	*hostentry;
+	void	*next;
+} hostlist_t;
+
 typedef struct {
 	char	title[200];
 	host_t	*hosts;

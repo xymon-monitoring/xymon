@@ -8,11 +8,15 @@
 
 #include "bbgen.h"
 
-page_t	*pagehead = NULL;
-link_t  *linkhead = NULL;
-link_t	null_link = { "", "", NULL };
-state_t	*statehead = NULL;
-col_t   *colhead = NULL;
+page_t		*pagehead = NULL;
+
+link_t  	*linkhead = NULL;
+link_t		null_link = { "", "", NULL };
+
+hostlist_t	*hosthead = NULL;
+state_t		*statehead = NULL;
+col_t   	*colhead = NULL;
+
 
 link_t *find_link(const char *name)
 {
@@ -49,15 +53,31 @@ group_t *init_group(const char *title)
 
 host_t *init_host(const char *hostname, const int ip1, const int ip2, const int ip3, const int ip4)
 {
-	host_t *newhost = malloc(sizeof(host_t));
+	host_t 		*newhost = malloc(sizeof(host_t));
+	hostlist_t	*newlist = malloc(sizeof(hostlist_t));
 
 	strcpy(newhost->hostname, hostname);
 	sprintf(newhost->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 	newhost->link = find_link(hostname);
 	newhost->entries = NULL;
 	newhost->next = NULL;
+
+	newlist->hostentry = newhost;
+	newlist->next = hosthead;
+	hosthead = newlist;
+
 	return newhost;
 }
+
+host_t *find_host(const char *hostname)
+{
+	hostlist_t	*l;
+
+	for (l=hosthead; (l && (strcmp(l->hostentry->hostname, hostname) != 0)); l = l->next) ;
+
+	return (l ? l->hostentry : NULL);
+}
+
 
 link_t *init_link(const char *filename)
 {
@@ -114,6 +134,7 @@ state_t *init_state(const char *filename)
 	char	testname[20];
 	state_t *newstate;
 	char	l[200];
+	host_t	*host;
 
 	strcpy(hostname, filename);
 	p = strrchr(hostname, '.');
@@ -164,7 +185,15 @@ state_t *init_state(const char *filename)
 
 	fclose(fd);
 
-	newstate->entry->next = NULL;
+
+	host = find_host(hostname);
+	if (host) {
+		newstate->entry->next = host->entries;
+		host->entries = newstate->entry;
+	}
+	else {
+		newstate->entry->next = NULL;
+	}
 
 	return newstate;
 }
@@ -374,6 +403,16 @@ void dumpgroups(group_t *head, char *format, char *hostformat)
 	}
 }
 
+void dumphostlist(hostlist_t *head)
+{
+	hostlist_t *h;
+
+	for (h=head; (h); h=h->next) {
+		printf("Hostlist entry: Hostname %s\n", h->hostentry->hostname);
+	}
+}
+
+
 void dumpstate(state_t *head)
 {
 	state_t *s;
@@ -397,6 +436,8 @@ int main(int argc, char *argv[])
 	}
 
 	pagehead = load_bbhosts();
+	dumphostlist(hosthead);
+
 	for (p=pagehead; p; p = p->next) {
 		printf("Page: %s, title=%s\n", p->name, p->title);
 		for (q = p->subpages; (q); q = q->next) {
