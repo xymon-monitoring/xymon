@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.48 2005-03-01 14:39:38 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.49 2005-03-06 07:25:07 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -571,6 +571,14 @@ int main(int argc, char *argv[])
 		}
 		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			running = 0;
+			continue;
+		}
+		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
+			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
+			if (fn && strlen(fn)) {
+				freopen(fn, "a", stdout);
+				freopen(fn, "a", stderr);
+			}
 			continue;
 		}
 		else if (strncmp(metadata[0], "@@idle", 6) == 0) {

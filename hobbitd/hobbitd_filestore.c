@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.37 2005-03-01 14:40:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.38 2005-03-06 07:25:07 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -420,6 +420,14 @@ int main(int argc, char *argv[])
 		}
 		else if (strncmp(items[0], "@@shutdown", 10) == 0) {
 			running = 0;
+		}
+		else if (strncmp(items[0], "@@logrotate", 11) == 0) {
+			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
+			if (fn && strlen(fn)) {
+				freopen(fn, "a", stdout);
+				freopen(fn, "a", stderr);
+			}
+			continue;
 		}
 		else {
 			errprintf("Dropping message type %s, metacount=%d\n", items[0], metacount);

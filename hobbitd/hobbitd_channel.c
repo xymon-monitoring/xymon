@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.35 2005-03-01 14:40:02 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.36 2005-03-06 07:25:07 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -48,7 +48,6 @@ hobbit_msg_t *tail = NULL;
 
 static volatile int running = 1;
 static volatile int gotalarm = 0;
-static volatile int dologswitch = 0;
 static int childexit = -1;
 hobbitd_channel_t *channel = NULL;
 
@@ -70,10 +69,6 @@ void sig_handler(int signum)
 
 	  case SIGALRM:
 		gotalarm = 1;
-		break;
-
-	  case SIGHUP:
-		dologswitch = 1;
 		break;
 	}
 }
@@ -180,7 +175,6 @@ int main(int argc, char *argv[])
 	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGCHLD, &sa, NULL);
-	sigaction(SIGHUP, &sa, NULL);
 
 	/* Switch stdout/stderr to the logfile, if one was specified */
 	freopen("/dev/null", "r", stdin);	/* hobbitd_channel's stdin is not used */
@@ -202,6 +196,11 @@ int main(int argc, char *argv[])
 	}
 	else if (childpid == 0) {
 		/* The channel handler child */
+		char *logfnenv = (char *)malloc(strlen(logfn) + 30);
+
+		sprintf(logfnenv, "HOBBITCHANNEL_LOGFILENAME=%s", logfn);
+		putenv(logfnenv);
+
 		n = dup2(pfd[0], STDIN_FILENO);
 		close(pfd[0]); close(pfd[1]);
 		n = execvp(childcmd, childargs);
@@ -220,13 +219,6 @@ int main(int argc, char *argv[])
 	}
 
 	while (running) {
-
-		if (dologswitch) {
-			freopen(logfn, "a", stdout);
-			freopen(logfn, "a", stderr);
-			dologswitch = 0;
-		}
-
 		/* 
 		 * Wait for GOCLIENT to go up.
 		 *
@@ -307,6 +299,15 @@ int main(int argc, char *argv[])
 			else {
 				tail->next = newmsg;
 				tail = newmsg;
+			}
+
+			/*
+			 * See if they want us to rotate logs. We pass this on to
+			 * the worker module as well, but must handle our own logfile.
+			 */
+			if (strncmp(buf, "@@logrotate", 11) == 0) {
+				freopen(logfn, "a", stdout);
+				freopen(logfn, "a", stderr);
 			}
 		}
 		else {

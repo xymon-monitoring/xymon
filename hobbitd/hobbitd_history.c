@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.31 2005-03-01 14:44:28 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.32 2005-03-06 07:25:07 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -585,6 +585,14 @@ int main(int argc, char *argv[])
 		}
 		else if (strncmp(items[0], "@@shutdown", 10) == 0) {
 			running = 0;
+		}
+		else if (strncmp(items[0], "@@logrotate", 11) == 0) {
+			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
+			if (fn && strlen(fn)) {
+				freopen(fn, "a", stdout);
+				freopen(fn, "a", stderr);
+			}
+			continue;
 		}
 
 		/* Pickup any finished child processes to avoid zombies */

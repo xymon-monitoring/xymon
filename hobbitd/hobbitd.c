@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.124 2005-03-04 08:33:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.125 2005-03-06 07:25:07 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -2554,6 +2554,12 @@ int main(int argc, char *argv[])
 			freopen(logfn, "a", stdout);
 			freopen(logfn, "a", stderr);
 			dologswitch = 0;
+			posttochannel(statuschn, "logrotate", NULL, "hobbitd", NULL, NULL, "");
+			posttochannel(stachgchn, "logrotate", NULL, "hobbitd", NULL, NULL, "");
+			posttochannel(pagechn, "logrotate", NULL, "hobbitd", NULL, NULL, "");
+			posttochannel(datachn, "logrotate", NULL, "hobbitd", NULL, NULL, "");
+			posttochannel(noteschn, "logrotate", NULL, "hobbitd", NULL, NULL, "");
+			posttochannel(enadischn, "logrotate", NULL, "hobbitd", NULL, NULL, "");
 		}
 
 		if (reloadconfig && bbhostsfn) {

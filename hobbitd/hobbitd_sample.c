@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_sample.c,v 1.14 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_sample.c,v 1.15 2005-03-06 07:25:07 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -153,6 +153,21 @@ int main(int argc, char *argv[])
 		if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			printf("Shutting down\n");
 			running = 0;
+			continue;
+		}
+
+		/*
+		 * A "logrotate" message is sent when the Hobbit logs are
+		 * rotated. The child workers must re-open their logfiles,
+		 * typically stdin and stderr - the filename is always
+		 * provided in the HOBBITCHANNEL_LOGFILENAME environment.
+		 */
+		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
+			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
+			if (fn && strlen(fn)) {
+				freopen(fn, "a", stdout);
+				freopen(fn, "a", stderr);
+			}
 			continue;
 		}
 
