@@ -51,34 +51,34 @@ bbtest-net: $(NETTESTOBJS)
 	$(CC) $(CFLAGS) -o $@ $(NETTESTOBJS) $(LDAPLIBS) $(SSLLIBS) $(NETLIBS)
 
 bbhostgrep: $(HOSTGREPOBJS)
-	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS)
+	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) $(NETLIBS)
 
 bbhostshow: $(HOSTSHOWOBJS)
-	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS)
+	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) $(NETLIBS)
 
 bbdigest: $(DIGESTOBJS)
 	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) $(SSLLIBS) $(NETLIBS)
 
 bb-rep.cgi: $(REPOBJS)
-	$(CC) $(CFLAGS) -o $@ $(REPOBJS)
+	$(CC) $(CFLAGS) -o $@ $(REPOBJS) $(NETLIBS)
 
 bb-replog.cgi: $(REPLOGOBJS)
-	$(CC) $(CFLAGS) -o $@ $(REPLOGOBJS)
+	$(CC) $(CFLAGS) -o $@ $(REPLOGOBJS) $(NETLIBS)
 
 bb-hist.cgi: $(HISTOBJS)
-	$(CC) $(CFLAGS) -o $@ $(HISTOBJS)
+	$(CC) $(CFLAGS) -o $@ $(HISTOBJS) $(NETLIBS)
 
 bb-snapshot.cgi: $(SNAPOBJS)
-	$(CC) $(CFLAGS) -o $@ $(SNAPOBJS)
+	$(CC) $(CFLAGS) -o $@ $(SNAPOBJS) $(NETLIBS)
 
 bb-eventlog.cgi: $(EVENTLOGOBJS)
-	$(CC) $(CFLAGS) -o $@ $(EVENTLOGOBJS)
+	$(CC) $(CFLAGS) -o $@ $(EVENTLOGOBJS) $(NETLIBS)
 
 bb-findhost.cgi: $(FINDHOSTOBJS)
-	$(CC) $(CFLAGS) -o $@ $(FINDHOSTOBJS)
+	$(CC) $(CFLAGS) -o $@ $(FINDHOSTOBJS) $(NETLIBS)
 
 bb-csvinfo.cgi: $(CSVINFOOBJS)
-	$(CC) $(CFLAGS) -o $@ $(CSVINFOOBJS)
+	$(CC) $(CFLAGS) -o $@ $(CSVINFOOBJS) $(NETLIBS)
 
 bbcombotest: $(COMBOTESTOBJS)
 	$(CC) $(CFLAGS) -o $@ $(COMBOTESTOBJS) $(NETLIBS)
