@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.61 2003-05-18 07:27:33 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.62 2003-05-18 07:38:27 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -90,7 +90,7 @@ char *build_noprop(const char *defset, const char *specset)
 	/* It's guaranteed that specset is non-NULL. defset may be NULL */
 	if ((*specset != '+') && (*specset != '-')) {
 		/* Old-style - specset is the full set of tests */
-		strcpy(result, specset);
+		sprintf(result, ",%s,", specset);
 		return result;
 	}
 
