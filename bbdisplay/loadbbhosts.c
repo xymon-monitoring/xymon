@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.9 2004-12-15 21:25:52 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.10 2004-12-17 21:48:53 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -463,7 +463,7 @@ summary_t *init_summary(char *name, char *receiver, char *url)
 bbgen_page_t *load_bbhosts(char *pgset)
 {
 	FILE 	*bbhosts;
-	char 	l[MAX_LINE_LEN], lcop[MAX_LINE_LEN];
+	char 	l[MAX_LINE_LEN];
 	char	pagetag[100], subpagetag[100], subparenttag[100], 
 		grouptag[100], summarytag[100], titletag[100], hosttag[100];
 	char 	*name, *link, *onlycols;
@@ -475,9 +475,16 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	int	ip1, ip2, ip3, ip4;
 	int	modembanksize;
 	char	*p;
+	namelist_t *allhosts;
+
+	allhosts = load_hostnames(getenv("BBHOSTS"), get_fqdn(), NULL);
 
 	dprintf("load_bbhosts(pgset=%s)\n", textornull(pgset));
 
+	/*
+	 * load_hostnames() picks up the hostname definitions, but not the page
+	 * layout. So we will scan the file again, this time doing the layout.
+	 */
 	bbhosts = stackfopen(getenv("BBHOSTS"), "r");
 	if (bbhosts == NULL) {
 		errprintf("Cannot open the BBHOSTS file '%s'\n", getenv("BBHOSTS"));
@@ -509,7 +516,6 @@ bbgen_page_t *load_bbhosts(char *pgset)
 		}
 		else {
 			errprintf("Warning: Lines in bb-hosts too long or has no newline: '%s'\n", l);
-			fflush(stdout);
 		}
 
 		dprintf("load_bbhosts: -- got line '%s'\n", l);
@@ -618,146 +624,88 @@ bbgen_page_t *load_bbhosts(char *pgset)
 		}
 		else if ( (sscanf(l, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) ||
 		          (!reportstart && !snapshot && (sscanf(l, "dialup %s %d.%d.%d.%d %d", hostname, &ip1, &ip2, &ip3, &ip4, &modembanksize) == 6) && (modembanksize > 0)) ) {
-			int dialup = 0;
-			int prefer = 0;
-			int nodisp = 0;
-			int nobb2 = 0;
-			int nktime = 1;
+
+			namelist_t *bbhost = NULL;
+			int dialup, nobb2, nktime = 1;
 			double warnpct = reportwarnlevel;
-			char *alertlist, *onwaplist, *nopropyellowlist, *nopropredlist, *noproppurplelist, *nopropacklist;
-			char *reporttime;
 			char *displayname, *clientalias, *comment, *description;
+			char *alertlist, *onwaplist, *reporttime;
+			char *nopropyellowlist, *nopropredlist, *noproppurplelist, *nopropacklist;
+			int nodisp = 0, prefer = 0;
 			char *targetpagelist[MAX_TARGETPAGES_PER_HOST];
 			int targetpagecount;
-			char *tag;
-			char *startoftags = strchr(l, '#');
+			char *bbval, *startoftags, *tag;
 
-			displayname = clientalias = NULL;
-
-			/* If FQDN is not set, strip any domain off the hostname */
-			if (!fqdn) {
-				char *p = strchr(hostname, '.');
-				if (p) {
-					/* Save full name as "displayname", and modify hostname to be with no domain */
-					displayname = strdup(hostname);
-					*p = '\0';
-				}
+			if (strncmp(l, "dialup", 6) != 0) {
+				/* Ordinary host - get the info */
+				bbhost = hostinfo(hostname);
+				strcpy(hostname, bbh_item(bbhost, BBH_HOSTNAME)); /* For fqdn mods. */
 			}
 
-			if (startoftags) {
-				strcpy(lcop, startoftags+1);
-				tag = strtok(lcop, " \t\r\n");
-			}
-			else tag = NULL;
-
-			alertlist = onwaplist = nopropyellowlist = nopropredlist = noproppurplelist = nopropacklist = reporttime = NULL;
-			comment = description = NULL;
 			for (targetpagecount=0; (targetpagecount < MAX_TARGETPAGES_PER_HOST); targetpagecount++) 
 				targetpagelist[targetpagecount] = NULL;
 			targetpagecount = 0;
 
-			while (tag) {
-				if (strcmp(tag, "dialup") == 0) 
-					dialup = 1;
-				else if (strcmp(tag, "prefer") == 0) 
-					prefer = 1;
-				else if ((strcmp(tag, "nodisp") == 0) || (strcmp(tag, "NODISP") == 0)) {
-					if (strlen(pgset) == 0) nodisp = 1;
+			dialup = (bbh_item(bbhost, BBH_FLAG_DIALUP) != NULL);
+			nobb2 = (bbh_item(bbhost, BBH_FLAG_NOBB2) != NULL);
+			alertlist = bbh_item(bbhost, BBH_NK);
+			bbval = bbh_item(bbhost, BBH_NKTIME); if (bbval) nktime = within_sla(bbval, "", 0);
+			onwaplist = bbh_item(bbhost, BBH_WML);
+			nopropyellowlist = bbh_item(bbhost, BBH_NOPROPYELLOW);
+			nopropredlist = bbh_item(bbhost, BBH_NOPROPRED);
+			noproppurplelist = bbh_item(bbhost, BBH_NOPROPPURPLE);
+			nopropacklist = bbh_item(bbhost, BBH_NOPROPACK);
+			displayname = bbh_item(bbhost, BBH_DISPLAYNAME);
+			comment = bbh_item(bbhost, BBH_COMMENT);
+			description = bbh_item(bbhost, BBH_DESCRIPTION);
+			bbval = bbh_item(bbhost, BBH_WARNPCT); if (bbval) warnpct = atof(bbval);
+			reporttime = bbh_item(bbhost, BBH_REPORTTIME);
+
+			clientalias = bbh_item(bbhost, BBH_CLIENTALIAS);
+			if (bbhost && (strcmp(bbh_item(bbhost, BBH_HOSTNAME), clientalias) == 0)) clientalias = NULL;
+
+			/* We need to re-scan the input line to look for "prefer" and target-page tags */
+			startoftags = strchr(l, '#');
+			if (startoftags == NULL) startoftags = ""; else startoftags++;
+			startoftags += strspn(startoftags, " \t\r\n");
+
+			tag = startoftags;
+			while (tag && *tag) {
+				char *item = tag;
+				char *delim;
+
+				/* Skip until we hit a whitespace or a quote */
+				tag += strcspn(tag, " \t\r\n\"");
+				if (*tag == '"') {
+					delim = tag;
+
+					/* Hit a quote - skip until the next matching quote */
+					tag = strchr(tag+1, '"');
+					if (tag != NULL) { 
+						/* Found end-quote, NULL the item here and move on */
+						*tag = '\0'; tag++; 
+					}
+
+					/* Now move quoted data one byte down (including the NUL) to kill quotechar */
+					memmove(delim, delim+1, strlen(delim));
 				}
-				else if ((strcmp(tag, "nobb2") == 0) || (strcmp(tag, "NOBB2") == 0))
-					nobb2 = 1;
-				else if (argnmatch(tag, "NK:")) 
-					alertlist = strdup(tag+strlen("NK:"));
-				else if (argnmatch(tag, "NKTIME=")) 
-					nktime = within_sla(tag, "NKTIME", 1);
-				else if (argnmatch(tag, "WML:")) 
-					onwaplist = strdup(tag+strlen("WML:"));
-				else if (argnmatch(tag, "NOPROP:")) 
-					nopropyellowlist = strdup(tag+strlen("NOPROP:"));
-				else if (argnmatch(tag, "NOPROPYELLOW:")) 
-					nopropyellowlist = strdup(tag+strlen("NOPROPYELLOW:"));
-				else if (argnmatch(tag, "NOPROPRED:")) 
-					nopropredlist = strdup(tag+strlen("NOPROPRED:"));
-				else if (argnmatch(tag, "NOPROPPURPLE:")) 
-					noproppurplelist = strdup(tag+strlen("NOPROPPURPLE:"));
-				else if (argnmatch(tag, "NOPROPACK:")) 
-					nopropacklist = strdup(tag+strlen("NOPROPACK:"));
-				else if (argnmatch(tag, "NAME:")) {
-					p = tag+strlen("NAME:");
-					displayname = (char *) malloc(strlen(l));
-					if (*p == '\"') {
-						p++;
-						strcpy(displayname, p);
-						p = strchr(displayname, '\"');
-						if (p) *p = '\0'; 
-						else {
-							/* Scan forward to next " in input stream */
-							tag = strtok(NULL, "\"\r\n");
-							if (tag) {
-								strcat(displayname, " ");
-								strcat(displayname, tag);
-							}
-						}
-					}
-					else {
-						strcpy(displayname, p);
-					}
+				else if (*tag) {
+					/* Normal end of item, NULL it and move on */
+					*tag = '\0'; tag++;
 				}
-				else if (argnmatch(tag, "CLIENT:")) {
-					p = tag+strlen("CLIENT:");
-					clientalias = strdup(p);
-				}
-				else if (argnmatch(tag, "COMMENT:")) {
-					p = tag+strlen("COMMENT:");
-					comment = (char *) malloc(strlen(l));
-					if (*p == '\"') {
-						p++;
-						strcpy(comment, p);
-						p = strchr(comment, '\"');
-						if (p) *p = '\0'; 
-						else {
-							/* Scan forward to next " in input stream */
-							tag = strtok(NULL, "\"\r\n");
-							if (tag) {
-								strcat(comment, " ");
-								strcat(comment, tag);
-							}
-						}
-					}
-					else {
-						strcpy(comment, p);
-					}
-				}
-				else if (argnmatch(tag, "DESCR:")) {
-					p = tag+strlen("DESCR:");
-					description = (char *) malloc(strlen(l));
-					if (*p == '\"') {
-						p++;
-						strcpy(description, p);
-						p = strchr(description, '\"');
-						if (p) *p = '\0'; 
-						else {
-							/* Scan forward to next " in input stream */
-							tag = strtok(NULL, "\"\r\n");
-							if (tag) {
-								strcat(description, " ");
-								strcat(description, tag);
-							}
-						}
-					}
-					else {
-						strcpy(description, p);
-					}
-				}
-				else if (argnmatch(tag, "WARNPCT:")) 
-					warnpct = atof(tag+8);
-				else if (argnmatch(tag, "REPORTTIME=")) 
-					reporttime = strdup(tag);
-				else if (argnmatch(tag, hosttag)) {
-					targetpagelist[targetpagecount++] = strdup(tag+strlen(hosttag));
+				else {
+					/* End of line - no more to do. */
+					tag = NULL;
 				}
 
-				if (tag) tag = strtok(NULL, " \t\r\n");
+				/* Look for the stuff we want */
+				if (strcmp(item, "prefer") == 0) 
+					prefer = 1;
+				else if (argnmatch(item, hosttag)) {
+					targetpagelist[targetpagecount++] = strdup(item+strlen(hosttag));
+				}
+
+				if (tag) tag += strspn(tag, " \t\r\n");
 			}
 
 			if (nodisp) {
@@ -893,19 +841,6 @@ bbgen_page_t *load_bbhosts(char *pgset)
 					curtitle = NULL;
 				}
 			}
-
-			if (displayname) free(displayname);
-			if (description) free(description);
-			if (comment) free(comment);
-			if (alertlist) free(alertlist);
-			if (onwaplist) free(onwaplist);
-			if (nopropyellowlist) free(nopropyellowlist);
-			if (nopropredlist) free(nopropredlist);
-			if (noproppurplelist) free(noproppurplelist);
-			if (nopropacklist) free(nopropacklist);
-			if (reporttime) free(reporttime);
-			for (targetpagecount=0; (targetpagecount < MAX_TARGETPAGES_PER_HOST); targetpagecount++) 
-				if (targetpagelist[targetpagecount]) free(targetpagelist[targetpagecount]);
 		}
 		else if (strncmp(l, summarytag, strlen(summarytag)) == 0) {
 			/* summary row.column      IP-ADDRESS-OF-PARENT    http://bb4.com/ */
