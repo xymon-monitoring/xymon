@@ -1,6 +1,6 @@
 # bb-service
 #
-# $Id: bb-services,v 1.7 2005-03-08 11:32:53 henrik Exp $
+# $Id: bb-services,v 1.8 2005-03-08 21:24:22 henrik Exp $
 #
 # This file defines the way TCP services are tested by bbtest-net
 # (part of the bbgen toolkit).
@@ -144,13 +144,13 @@
 
 # The AV scanning daemon from the ClamAV antivirus package
 [clamd]
-   send "PING\r\n"
+   send "PING\n"
    expect "PONG"
    port 3310
 
 # SpamAssassin spamd
 [spamd]
-   send "PING SPAMC/Hobbit"
+   send "PING SPAMC/Hobbit\n"
    export "PONG"
    port 783
 
