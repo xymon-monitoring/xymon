@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.10 2005-01-18 22:37:17 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.11 2005-01-19 21:47:28 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -214,7 +214,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			}
 		}
 
-		else if (xgetenv(t_start)) {
+		else if (strlen(t_start) && xgetenv(t_start)) {
 			fprintf(output, "%s", xgetenv(t_start));
 		}
 
