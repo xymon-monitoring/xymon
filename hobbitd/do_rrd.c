@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.13 2005-02-04 14:33:56 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.14 2005-02-06 07:21:46 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -27,6 +27,8 @@ static char rcsid[] = "$Id: do_rrd.c,v 1.13 2005-02-04 14:33:56 henrik Exp $";
 #include "do_larrd.h"
 
 char *rrddir = NULL;
+static char *exthandler = NULL;
+static char **extids = NULL;
 
 static char rrdfn[PATH_MAX];
 static char rrdvalues[MAX_LINE_LEN];
@@ -35,6 +37,23 @@ static char rra2[] = "RRA:AVERAGE:0.5:6:576";
 static char rra3[] = "RRA:AVERAGE:0.5:24:576";
 static char rra4[] = "RRA:AVERAGE:0.5:288:576";
 static char *update_params[]      = { "rrdupdate", rrdfn, rrdvalues, NULL };
+
+void setup_exthandler(char *handlerpath, char *ids)
+{
+	char *p;
+	int idcount = 0;
+
+	exthandler = strdup(handlerpath);
+	idcount=1; p = ids; while ((p = strchr(p, ',')) != NULL) { p++; idcount++; }
+	extids = (char **)malloc((idcount+1)*(sizeof(char *)));
+	idcount = 0;
+	p = strtok(ids, ",");
+	while (p) {
+		extids[idcount++] = strdup(p);
+		p = strtok(NULL, ",");
+	}
+	extids[idcount] = NULL;
+}
 
 static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], char *updparams[])
 {
@@ -106,6 +125,8 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 
 #include "larrd/do_net.c"
 
+#include "larrd/do_external.c"
+
 
 void update_larrd(char *hostname, char *testname, char *msg, time_t tstamp, larrdrrd_t *ldef)
 {
@@ -137,5 +158,13 @@ void update_larrd(char *hostname, char *testname, char *msg, time_t tstamp, larr
 	else if (strcmp(id, "temperature") == 0) res = do_temperature_larrd(hostname, testname, msg, tstamp);
 
 	else if (strcmp(id, "tcp") == 0)         res = do_net_larrd(hostname, testname, msg, tstamp);
+
+	else if (extids && exthandler) {
+		int i;
+
+		for (i=0; (extids[i] && strcmp(extids[i], id)); i++) ;
+
+		if (extids[i]) res = do_external_larrd(hostname, testname, msg, tstamp);
+	}
 }
 
