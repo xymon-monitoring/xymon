@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.14 2003-09-30 16:20:32 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.15 2003-10-28 06:33:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
 	sprintf(htmldelim, "bbrep-%u-%u", (int)getpid(), (unsigned int)time(NULL));
 	printf("Content-type: multipart/mixed;boundary=%s\n", htmldelim);
 	printf("\n");
-	printf("%s\n", htmldelim);
+	printf("--%s\n", htmldelim);
 	printf("Content-type: text/html\n\n");
 
 	/* It's ok with these hardcoded values, as they are not used for this page */
@@ -265,28 +265,28 @@ int main(int argc, char *argv[])
 		signal(SIGHUP, SIG_IGN);
 
 		if (WIFEXITED(childstat) && (WEXITSTATUS(childstat) != 0) ) {
-			printf("%s\n\n", htmldelim);
+			printf("--%s\n\n", htmldelim);
 			printf("Content-Type: text/html\n\n");
 			errormsg("Could not generate report");
 		}
 		else {
 			/* Send the browser off to the report */
-			printf("Done...<P></BODY></HTML>\n");
+			printf("Done...Report is <A HREF=\"%s/%s/%s\">here</a>.</P></BODY></HTML>\n", getenv("BBREPURL"), dirid, suburl);
 			fflush(stdout);
-			printf("%s\n\n", htmldelim);
+			printf("--%s\n\n", htmldelim);
 			printf("Content-Type: text/html\n\n");
 			printf("<HTML><HEAD>\n");
 			printf("<META HTTP-EQUIV=\"REFRESH\" CONTENT=\"0; URL=%s/%s/%s\"\n", 
 					getenv("BBREPURL"), dirid, suburl);
 			printf("</HEAD><BODY BGCOLOR=\"000000\"></BODY></HTML>\n");
-			printf("\n%s\n", htmldelim);
+			printf("\n--%s\n", htmldelim);
 			fflush(stdout);
 		}
 
 		cleandir(getenv("BBREP"));
 	}
 	else {
-		printf("%s\n\n", htmldelim);
+		printf("--%s\n\n", htmldelim);
 		printf("Content-Type: text/html\n\n");
 		errormsg("Fork failed");
 	}
