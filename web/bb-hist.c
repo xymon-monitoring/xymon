@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.24 2003-08-15 11:06:02 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.25 2003-08-15 11:20:41 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -124,7 +124,7 @@ static void generate_pct_summary(
 
 }
 
-static unsigned int calc_endtime(time_t endtime, int change, int alignment, int endofperiod)
+static unsigned int calc_time(time_t endtime, int change, int alignment, int endofperiod)
 {
 	int daysinmonth[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 	struct tm *tmbuf;
@@ -176,7 +176,6 @@ static unsigned int calc_endtime(time_t endtime, int change, int alignment, int 
 			}
 			break;
 	}
-	tmbuf->tm_isdst = -1;
 	result = mktime(tmbuf);
 
 	/* Dont try to foresee the future */
@@ -273,7 +272,7 @@ static void generate_colorbar(
 	fprintf(htmlrep, "<TD ALIGN=LEFT VALIGN=BOTTOM>\n");
 	if (colorlog && colorlog->starttime <= begintime) {
 		fprintf(htmlrep, "<A HREF=\"%s&amp;ENDTIME=%u&amp;PIXELS=%d\">", 
-			selfurl, calc_endtime(endtime, -changeval, changealign, END_UNCHANGED), (usepct ? 0 : pixels));
+			selfurl, calc_time(endtime, -changeval, changealign, END_UNCHANGED), (usepct ? 0 : pixels));
 	}
 	fprintf(htmlrep, "<B>%s</B>", ctime(&begintime));
 	if (colorlog && colorlog->starttime <= begintime) fprintf(htmlrep, "</A>\n");
@@ -311,7 +310,7 @@ static void generate_colorbar(
 
 	fprintf(htmlrep, "<TD ALIGN=RIGHT VALIGN=BOTTOM>\n");
 	fprintf(htmlrep, "<A HREF=\"%s&amp;ENDTIME=%d&amp;PIXELS=%d\">", selfurl, 
-		calc_endtime(endtime, +changeval, changealign, END_UNCHANGED), (usepct ? 0 : pixels));
+		calc_time(endtime, +changeval, changealign, END_UNCHANGED), (usepct ? 0 : pixels));
 	fprintf(htmlrep, "<B>%s</B>\n", ctime(&endtime));
 	fprintf(htmlrep, "</A>\n");
 	fprintf(htmlrep, "</TD>\n");
@@ -336,7 +335,7 @@ static void generate_colorbar(
 		struct tm *tmbuf;
 
 		do {
-			endofinterval = calc_endtime(begininterval, 0, alignment, END_END);
+			endofinterval = calc_time(begininterval, 0, alignment, END_END);
 
 			tmbuf = localtime(&begininterval);
 			switch (bartype) {
@@ -696,10 +695,10 @@ int main(int argc, char *argv[])
 	 * Calculate the beginning time of each colorbar. We go back the specified length
 	 * of time, except 1 second - so days are from midnight -> 23:59:59 etc.
 	 */
-	start1d = calc_endtime(req_endtime, -len1d, ALIGN_HOUR,  END_UNCHANGED) + 1;
-	start1w = calc_endtime(req_endtime, -len1w, ALIGN_DAY,   END_UNCHANGED) + 1;
-	start4w = calc_endtime(req_endtime, -len4w, ALIGN_DAY,   END_UNCHANGED) + 1;
-	start1y = calc_endtime(req_endtime, -len1y, ALIGN_MONTH, END_UNCHANGED) + 1;
+	start1d = calc_time(req_endtime, -len1d, ALIGN_HOUR,  END_UNCHANGED) + 1;
+	start1w = calc_time(req_endtime, -len1w, ALIGN_DAY,   END_UNCHANGED) + 1;
+	start4w = calc_time(req_endtime, -len4w, ALIGN_DAY,   END_UNCHANGED) + 1;
+	start1y = calc_time(req_endtime, -len1y, ALIGN_MONTH, END_UNCHANGED) + 1;
 
 	/*
 	 * Collect data for the color-bars and summaries. Multiple scans over the history file,
