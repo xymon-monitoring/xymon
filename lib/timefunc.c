@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.1 2004-10-30 15:32:09 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.2 2004-10-31 07:57:11 henrik Exp $";
 
 #include <time.h>
 #include <string.h>
@@ -259,6 +259,27 @@ int periodcoversnow(char *tag)
 	result = 1;
 out:
 	free(endtime); free(starttime); free(dayspec); 
+	return result;
+}
+
+char *histlogtime(time_t histtime)
+{
+	static char result[30];
+	char d1[40],d2[3],d3[40];
+
+	/*
+	 * Historical logs use a filename like "Fri_Nov_7_16:01:08_2002 
+	 * But apparently there is no simple way to generate a day-of-month 
+	 * with no leading 0.
+	 */
+
+        strftime(d1, sizeof(d1), "%a_%b_", localtime(&histtime));
+        strftime(d2, sizeof(d2), "%d", localtime(&histtime));
+	if (d2[0] == '0') memmove(d2, d2+1, strlen(d2+1));
+        strftime(d3, sizeof(d3), "_%H:%M:%S_%Y", localtime(&histtime));
+
+	snprintf(result, sizeof(result)-1, "%s%s%s", d1, d2, d3);
+
 	return result;
 }
 
