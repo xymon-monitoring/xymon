@@ -183,6 +183,12 @@ bbtest-net omit these flags from the status messages.
 
 
 .SH OPTIONS FOR THE PING TEST
+Note: bbtest-net uses the program defined by the FPING
+environment to execute ping-tests. See
+.I bb-environ(5)
+for a description of how to customize this, e.g. if you
+need to run it with "sudo" or a similar tool.
+
 .IP --ping[=conn-column-name]
 Enables bbtest-net's ping test, and optionally specifies
 the column name used to report the results of the ping test.
@@ -475,7 +481,10 @@ setting this to "1000000" (one million).
 .IP FPING
 Location of the 
 .I fping(8) 
-utility. Used by bbtest-net for connectivity (ping) testing.
+utility. Used by bbtest-net for connectivity (ping) testing.  See 
+.I bb-environ(5)
+for more information about how to customize the program that is
+executed to do ping tests.
 
 .IP TRACEROUTE
 Location of the 

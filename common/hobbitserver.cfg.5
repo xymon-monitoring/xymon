@@ -195,11 +195,23 @@ description of these for more information. These must be enabled
 on the BBDISPLAY server for these commands to work.
 
 .IP FPING
-Defines the location of the
+Defines the command used to perform ping-tests with the
 .I fping(1)
-program. 
+tool. You can add fping options here if you like, as long
+as you do not change the output format - i.e. do not use
+the "-A" option. 
+
+If you need to use "su", "sudo" or some similar tool to avoid making 
+fping suid-root, you must create a wrapper shellscript to do that,
+e.g. a file /usr/local/bin/runfping.sh
+
+   #!/bin/sh
 .br
-Default: None (uses PATH setting to find program).
+   sudo /usr/local/sbin/fping $*
+
+and then set FPING="/usr/local/bin/runfping.sh"
+
+Default: "fping" (uses PATH setting to find program).
 
 .IP NSLOOKUP
 Defines the location of the
