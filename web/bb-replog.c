@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.3 2003-06-20 14:18:34 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.4 2003-06-20 14:51:42 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -218,12 +218,18 @@ int main(int argc, char *argv[])
 	printf("<TD COLSPAN=6><CENTER><B>Overall Availability: %.2f%%</A></CENTER></TD></TR>\n", repinfo.availability);
 	printf("<TR BGCOLOR=\"#000033\">\n");
 	printf("<TR BGCOLOR=\"#000000\">\n");
-	printf("<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"green\" HEIGHT=16 WIDTH=16 BORDER=0></TD>\n", getenv("BBSKIN"), dotgiffilename(COL_GREEN, 0, 1));
-	printf("<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"yellow\" HEIGHT=16 WIDTH=16 BORDER=0></TD>\n", getenv("BBSKIN"), dotgiffilename(COL_YELLOW, 0, 1));
-	printf("<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"red\" HEIGHT=16 WIDTH=16 BORDER=0></TD>\n",  getenv("BBSKIN"), dotgiffilename(COL_RED, 0, 1));
-	printf("<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"purple\" HEIGHT=16 WIDTH=16 BORDER=0></TD>\n", getenv("BBSKIN"), dotgiffilename(COL_PURPLE, 0, 1));
-	printf("<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"clear\" HEIGHT=16 WIDTH=16 BORDER=0></TD>\n", getenv("BBSKIN"), dotgiffilename(COL_CLEAR, 0, 1));
-	printf("<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"blue\" HEIGHT=16 WIDTH=16 BORDER=0></TD>\n", getenv("BBSKIN"), dotgiffilename(COL_BLUE, 0, 1));
+	printf("<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
+		getenv("BBSKIN"), dotgiffilename(COL_GREEN, 0, 1), colorname(COL_GREEN), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+	printf("<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
+		getenv("BBSKIN"), dotgiffilename(COL_YELLOW, 0, 1), colorname(COL_YELLOW), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+	printf("<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
+		getenv("BBSKIN"), dotgiffilename(COL_RED, 0, 1), colorname(COL_RED), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+	printf("<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
+		getenv("BBSKIN"), dotgiffilename(COL_PURPLE, 0, 1), colorname(COL_PURPLE), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+	printf("<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
+		getenv("BBSKIN"), dotgiffilename(COL_CLEAR, 0, 1), colorname(COL_CLEAR), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+	printf("<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
+		getenv("BBSKIN"), dotgiffilename(COL_BLUE, 0, 1), colorname(COL_BLUE), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
 	printf("</TR>\n");
 	printf("<TR BGCOLOR=\"#000033\">\n");
 	printf("<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo.pct[COL_GREEN]);
