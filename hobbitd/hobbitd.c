@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.117 2005-02-27 12:00:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.118 2005-03-01 10:26:18 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -433,10 +433,11 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 	channel->msgcount++;
 	gettimeofday(&tstamp, &tz);
 	if (readymsg) {
-		n = sprintf(channel->channelbuf, 
+		n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
 			    "@@%s#%u|%d.%06d|%s|%s\n@@\n", 
 			    channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender,
 			    readymsg);
+		*(channel->channelbuf + n) = '\0';
 	}
 	else {
 		switch(channel->channelid) {
@@ -2075,6 +2076,10 @@ void load_checkpoint(char *fn)
 			ltail->next = (hobbitd_log_t *)malloc(sizeof(hobbitd_log_t));
 			ltail = ltail->next;
 		}
+
+		/* Fixup validtime in case of ack'ed or disabled tests */
+		if (validtime < acktime) validtime = acktime;
+		if (validtime < enabletime) validtime = enabletime;
 
 		ltail->test = t;
 		ltail->host = htail;
