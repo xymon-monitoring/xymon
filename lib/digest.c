@@ -10,73 +10,84 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: digest.c,v 1.1 2003-09-13 16:03:16 henrik Exp $";
+static char rcsid[] = "$Id: digest.c,v 1.2 2004-07-19 15:41:14 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
-#include <openssl/evp.h>
-
 #include "digest.h"
 
-static char digestname[30];
-static EVP_MD_CTX mdctx;
-static int dgst_ready = 0;
-
-int digest_init(char *digest)
+digestctx_t *digest_init(char *digest)
 {
 	static int dgst_init_done = 0;
 	const EVP_MD *md;
+	struct digestctx_t *ctx;
 
 	if (!dgst_init_done) {
 		OpenSSL_add_all_digests();
 		dgst_init_done = 1;
 	}
 
-	strncpy(digestname, digest, sizeof(digestname)-1);
-	digestname[sizeof(digestname)-1] = '\0';
-	md = EVP_get_digestbyname(digestname);
+	ctx = (digestctx_t *) malloc(sizeof(digestctx_t));
+	ctx->digestname = (char *)malloc(strlen(digest)+1);
+	strcpy(ctx->digestname, digest);
+	md = EVP_get_digestbyname(ctx->digestname);
 
 	if (!md) {
-		return 1;
+		free(ctx);
+		return NULL;
         }
 
-	EVP_DigestInit(&mdctx, md);
+#if OPENSSL_VERSION_NUMBER >= 0x00907000L
+	EVP_MD_CTX_init(&ctx->mdctx);
+	EVP_DigestInit_ex(&ctx->mdctx, md, NULL);
+#else
+	EVP_DigestInit(&ctx->mdctx, md);
+#endif
 
-	dgst_ready = 1;
+	return ctx;
+}
 
+int digest_data(digestctx_t *ctx, char *buf, int buflen)
+{
+	EVP_DigestUpdate(&ctx->mdctx, buf, buflen);
 	return 0;
 }
 
-int digest_data(char *buf, int buflen)
+char *digest_done(digestctx_t *ctx)
 {
-	if (!dgst_ready) return 1;
-
-	EVP_DigestUpdate(&mdctx, buf, buflen);
-	return 0;
-}
-
-char *digest_done(void)
-{
-	static char md_string[2*EVP_MAX_MD_SIZE+128];
+	char md_string[2*EVP_MAX_MD_SIZE+128];
 	unsigned char md_value[EVP_MAX_MD_SIZE];
 	int md_len, i;
 	char *p;
+	char *result;
 
-	if (!dgst_ready) return NULL;
+#if OPENSSL_VERSION_NUMBER >= 0x00907000L
+	EVP_DigestFinal_ex(&ctx->mdctx, md_value, &md_len);
+#else
+	EVP_DigestFinal(&ctx->mdctx, md_value, &md_len);
+#endif
 
-	EVP_DigestFinal(&mdctx, md_value, &md_len);
-
-	sprintf(md_string, "%s:", digestname);
+	sprintf(md_string, "%s:", ctx->digestname);
 	for(i = 0, p = md_string + strlen(md_string); (i < md_len); i++) {
 		p += sprintf(p, "%02x", md_value[i]);
 		*p = '\0';
 	}
 
-	dgst_ready = 0;
-	return md_string;
+#if OPENSSL_VERSION_NUMBER >= 0x00907000L
+	EVP_MD_CTX_cleanup(&ctx->mdctx);
+#else
+	EVP_cleanup();
+#endif
+
+	free(ctx);
+
+	result = (char *) malloc(strlen(md_string)+1);
+	strcpy(result, md_string);
+
+	return result;
 }
 
 #ifdef STANDALONE
@@ -85,6 +96,7 @@ int main(int argc, char *argv[])
 	FILE *fd;
 	char buf[8192];
 	int buflen;
+	digestctx_t *ctx;
 
 	if (argc < 2) {
 		printf("Usage: %s digestmethod [filename]\n", argv[0]);
@@ -93,7 +105,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	if (digest_init(argv[1]) != 0) {
+	if ((ctx = digest_init(argv[1])) == NULL) {
 		printf("Unknown message digest method %s\n", argv[1]);
 		return 1;
 	}
@@ -106,12 +118,11 @@ int main(int argc, char *argv[])
 	}
 
 	while ((buflen = fread(buf, 1, sizeof(buf), fd)) > 0) {
-		digest_data(buf, buflen);
+		digest_data(ctx, buf, buflen);
 	}
 
-	printf("%s\n", digest_done());
+	printf("%s\n", digest_done(ctx));
 
-	EVP_cleanup();
 	return 0;
 }
 #endif
