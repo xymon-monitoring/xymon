@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother webpage generator tool.                                        */
+/* Hobbit RRD graph generator.                                                */
 /*                                                                            */
 /* This is a CGI script for generating graphs from the data stored in the     */
 /* RRD databases.                                                             */
@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.9 2004-12-28 21:24:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.10 2004-12-30 22:25:34 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -412,7 +412,7 @@ int main(int argc, char *argv[])
 	/* Find the config-file and load it */
 	if (gdeffn == NULL) {
 		char fnam[PATH_MAX];
-		sprintf(fnam, "%s/etc/bb-larrdgraph.cfg", getenv("BBHOME"));
+		sprintf(fnam, "%s/etc/hobbitgraph.cfg", getenv("BBHOME"));
 		gdeffn = strdup(fnam);
 	}
 	load_gdefs(gdeffn);

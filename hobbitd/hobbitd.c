@@ -1,21 +1,21 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother message daemon.                                                */
+/* Hobbit message daemon.                                                     */
 /*                                                                            */
-/* This is the master daemon, bbgend.                                         */
+/* This is the master daemon, hobbitd.                                        */
 /*                                                                            */
 /* This is a daemon that implements the Big Brother network protocol, with    */
-/* additional protocol items implemented for bbgen.                           */
+/* additional protocol items implemented for Hobbit.                          */
 /*                                                                            */
-/* This daemon maintains the full state of the BB system in memory, elimi-    */
-/* nating the need for file-based storage of e.g. status logs. The web        */
+/* This daemon maintains the full state of the Hobbit system in memory,       */
+/* eliminating the need for file-based storage of e.g. status logs. The web   */
 /* frontend programs (bbgen, bbcombotest, bb-hostsvc.cgi etc) can retrieve    */
 /* current statuslogs from this daemon to build the BB webpages. However,     */
 /* a "plugin" mechanism is also implemented to allow "worker modules" to      */
-/* pickup various types of events that occur in the BB system. This allows    */
+/* pickup various types of events that occur in the system. This allows       */
 /* such modules to e.g. maintain the standard BB file-based storage, or       */
 /* implement history logging or RRD database updates. This plugin mechanism   */
 /* uses System V IPC mechanisms for a high-performance/low-latency communi-   */
-/* cation between bbgend and the worker modules - under no circumstances      */
+/* cation between hobbitd and the worker modules - under no circumstances     */
 /* should the daemon be tasked with storing data to a low-bandwidth channel.  */
 /*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.87 2004-12-29 08:47:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.88 2004-12-30 22:25:34 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -56,25 +56,25 @@ static char rcsid[] = "$Id: hobbitd.c,v 1.87 2004-12-29 08:47:47 henrik Exp $";
 
 #include "libbbgen.h"
 
-#include "bbgend_ipc.h"
+#include "hobbitd_ipc.h"
 
 /* This holds the names of the tests we have seen reports for */
-typedef struct bbgend_testlist_t {
+typedef struct hobbitd_testlist_t {
 	char *testname;
-	struct bbgend_testlist_t *next;
-} bbgend_testlist_t;
+	struct hobbitd_testlist_t *next;
+} hobbitd_testlist_t;
 
 htnames_t *metanames = NULL;
-typedef struct bbgend_meta_t {
+typedef struct hobbitd_meta_t {
 	htnames_t *metaname;
 	char *value;
-	struct bbgend_meta_t *next;
-} bbgend_meta_t;
+	struct hobbitd_meta_t *next;
+} hobbitd_meta_t;
 
 /* This holds all information about a single status */
-typedef struct bbgend_log_t {
-	struct bbgend_hostlist_t *host;
-	struct bbgend_testlist_t *test;
+typedef struct hobbitd_log_t {
+	struct hobbitd_hostlist_t *host;
+	struct hobbitd_testlist_t *test;
 	struct htnames_t *origin;
 	int color, oldcolor;
 	char *testflags;
@@ -89,20 +89,20 @@ typedef struct bbgend_log_t {
 	unsigned char *dismsg, *ackmsg;
 	int cookie;
 	time_t cookieexpires;
-	struct bbgend_meta_t *metas;
-	struct bbgend_log_t *next;
-} bbgend_log_t;
+	struct hobbitd_meta_t *metas;
+	struct hobbitd_log_t *next;
+} hobbitd_log_t;
 
 /* This is a list of the hosts we have seen reports for, and links to their status logs */
-typedef struct bbgend_hostlist_t {
+typedef struct hobbitd_hostlist_t {
 	char *hostname;
 	char ip[16];
-	bbgend_log_t *logs;
-	struct bbgend_hostlist_t *next;
-} bbgend_hostlist_t;
+	hobbitd_log_t *logs;
+	struct hobbitd_hostlist_t *next;
+} hobbitd_hostlist_t;
 
-bbgend_hostlist_t *hosts = NULL;		/* The hosts we have reports from */
-bbgend_testlist_t *tests = NULL;		/* The tests we have seen */
+hobbitd_hostlist_t *hosts = NULL;		/* The hosts we have reports from */
+hobbitd_testlist_t *tests = NULL;		/* The tests we have seen */
 htnames_t *origins = NULL;
 
 typedef struct sender_t {
@@ -137,12 +137,12 @@ static volatile time_t nextcheckpoint = 0;
 static volatile int dologswitch = 0;
 
 /* Our channels to worker modules */
-bbgend_channel_t *statuschn = NULL;	/* Receives full "status" messages */
-bbgend_channel_t *stachgchn = NULL;	/* Receives brief message about a status change */
-bbgend_channel_t *pagechn   = NULL;	/* Receives alert messages (triggered from status changes) */
-bbgend_channel_t *datachn   = NULL;	/* Receives raw "data" messages */
-bbgend_channel_t *noteschn  = NULL;	/* Receives raw "notes" messages */
-bbgend_channel_t *enadischn = NULL;	/* Receives "enable" and "disable" messages */
+hobbitd_channel_t *statuschn = NULL;	/* Receives full "status" messages */
+hobbitd_channel_t *stachgchn = NULL;	/* Receives brief message about a status change */
+hobbitd_channel_t *pagechn   = NULL;	/* Receives alert messages (triggered from status changes) */
+hobbitd_channel_t *datachn   = NULL;	/* Receives raw "data" messages */
+hobbitd_channel_t *noteschn  = NULL;	/* Receives raw "notes" messages */
+hobbitd_channel_t *enadischn = NULL;	/* Receives "enable" and "disable" messages */
 
 #define NO_COLOR (COL_COUNT)
 static char *colnames[COL_COUNT+1];
@@ -163,12 +163,12 @@ FILE *dbgfd = NULL;
 char *dbghost = NULL;
 time_t boottime;
 
-typedef struct bbgend_statistics_t {
+typedef struct hobbitd_statistics_t {
 	char *cmd;
 	unsigned long count;
-} bbgend_statistics_t;
+} hobbitd_statistics_t;
 
-bbgend_statistics_t bbgend_stats[] = {
+hobbitd_statistics_t hobbitd_stats[] = {
 	{ "status", 0 },
 	{ "combo", 0 },
 	{ "page", 0 },
@@ -180,11 +180,11 @@ bbgend_statistics_t bbgend_stats[] = {
 	{ "ack", 0 },
 	{ "config", 0 },
 	{ "query", 0 },
-	{ "bbgendboard", 0 },
-	{ "bbgendlist", 0 },
-	{ "bbgendlog", 0 },
-	{ "bbgenddrop", 0 },
-	{ "bbgendrename", 0 },
+	{ "hobbitdboard", 0 },
+	{ "hobbitdlist", 0 },
+	{ "hobbitdlog", 0 },
+	{ "hobbitddrop", 0 },
+	{ "hobbitdrename", 0 },
 	{ NULL, 0 }
 };
 
@@ -199,8 +199,8 @@ void update_statistics(char *cmd)
 	msgs_total++;
 
 	i = 0;
-	while (bbgend_stats[i].cmd && strncmp(bbgend_stats[i].cmd, cmd, strlen(bbgend_stats[i].cmd))) { i++; }
-	bbgend_stats[i].count++;
+	while (hobbitd_stats[i].cmd && strncmp(hobbitd_stats[i].cmd, cmd, strlen(hobbitd_stats[i].cmd))) { i++; }
+	hobbitd_stats[i].count++;
 }
 
 char *generate_stats(void)
@@ -224,12 +224,12 @@ char *generate_stats(void)
 	sprintf(uptimetxt, "%d days, %02d:%02d:%02d", 
 		(int)(uptime / 86400), (int)(uptime % 86400)/3600, (int)(uptime % 3600)/60, (int)(uptime % 60));
 
-	bufp += sprintf(bufp, "status %s.bbgend %s\nStatistics for bbgend daemon\nUp since %s (%s)\n\n",
+	bufp += sprintf(bufp, "status %s.hobbitd %s\nStatistics for Hobbit daemon\nUp since %s (%s)\n\n",
 			getenv("MACHINE"), colorname(errbuf ? COL_YELLOW : COL_GREEN), bootuptxt, uptimetxt);
 	bufp += sprintf(bufp, "Incoming messages      : %10ld\n", msgs_total);
 	i = 0;
-	while (bbgend_stats[i].cmd) {
-		bufp += sprintf(bufp, "- %-20s : %10ld\n", bbgend_stats[i].cmd, bbgend_stats[i].count);
+	while (hobbitd_stats[i].cmd) {
+		bufp += sprintf(bufp, "- %-20s : %10ld\n", hobbitd_stats[i].cmd, hobbitd_stats[i].count);
 		i++;
 	}
 	if ((now > last_stats_time) && (last_stats_time > 0)) {
@@ -345,8 +345,8 @@ int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgb
 }
 
 
-void posttochannel(bbgend_channel_t *channel, char *channelmarker, 
-		   char *msg, char *sender, char *hostname, bbgend_log_t *log, char *readymsg)
+void posttochannel(hobbitd_channel_t *channel, char *channelmarker, 
+		   char *msg, char *sender, char *hostname, hobbitd_log_t *log, char *readymsg)
 {
 	struct sembuf s;
 	struct shmid_ds chninfo;
@@ -551,7 +551,7 @@ void log_ghost(char *hostname, char *sender, char *msg)
 }
 
 void get_hts(char *msg, char *sender, char *origin,
-	     bbgend_hostlist_t **host, bbgend_testlist_t **test, bbgend_log_t **log, 
+	     hobbitd_hostlist_t **host, hobbitd_testlist_t **test, hobbitd_log_t **log, 
 	     int *color, int createhost, int createlog)
 {
 	/*
@@ -564,10 +564,10 @@ void get_hts(char *msg, char *sender, char *origin,
 	char *firstline, *p;
 	char *hosttest, *hostname, *testname, *colstr;
 	char hostip[20];
-	bbgend_hostlist_t *hwalk = NULL;
-	bbgend_testlist_t *twalk = NULL;
+	hobbitd_hostlist_t *hwalk = NULL;
+	hobbitd_testlist_t *twalk = NULL;
 	htnames_t *owalk = NULL;
-	bbgend_log_t *lwalk = NULL;
+	hobbitd_log_t *lwalk = NULL;
 	int maybedown = 0;
 
 	*host = NULL;
@@ -615,7 +615,7 @@ void get_hts(char *msg, char *sender, char *origin,
 
 	for (hwalk = hosts; (hwalk && strcasecmp(hostname, hwalk->hostname)); hwalk = hwalk->next) ;
 	if (createhost && (hwalk == NULL)) {
-		hwalk = (bbgend_hostlist_t *)malloc(sizeof(bbgend_hostlist_t));
+		hwalk = (hobbitd_hostlist_t *)malloc(sizeof(hobbitd_hostlist_t));
 		hwalk->hostname = strdup(hostname);
 		strcpy(hwalk->ip, hostip);
 		hwalk->logs = NULL;
@@ -624,7 +624,7 @@ void get_hts(char *msg, char *sender, char *origin,
 	}
 	for (twalk = tests; (twalk && strcasecmp(testname, twalk->testname)); twalk = twalk->next);
 	if (createlog && (twalk == NULL)) {
-		twalk = (bbgend_testlist_t *)malloc(sizeof(bbgend_testlist_t));
+		twalk = (hobbitd_testlist_t *)malloc(sizeof(hobbitd_testlist_t));
 		twalk->testname = strdup(testname);
 		twalk->next = tests;
 		tests = twalk;
@@ -638,7 +638,7 @@ void get_hts(char *msg, char *sender, char *origin,
 	if (hwalk && twalk && owalk) {
 		for (lwalk = hwalk->logs; (lwalk && ((lwalk->test != twalk) || (lwalk->origin != owalk))); lwalk = lwalk->next);
 		if (createlog && (lwalk == NULL)) {
-			lwalk = (bbgend_log_t *)malloc(sizeof(bbgend_log_t));
+			lwalk = (hobbitd_log_t *)malloc(sizeof(hobbitd_log_t));
 			lwalk->color = lwalk->oldcolor = NO_COLOR;
 			lwalk->testflags = NULL;
 			lwalk->sender[0] = '\0';
@@ -671,14 +671,14 @@ done:
 }
 
 
-bbgend_log_t *find_cookie(int cookie)
+hobbitd_log_t *find_cookie(int cookie)
 {
 	/*
 	 * Find a cookie we have issued.
 	 */
-	bbgend_log_t *result = NULL;
-	bbgend_hostlist_t *hwalk = NULL;
-	bbgend_log_t *lwalk = NULL;
+	hobbitd_log_t *result = NULL;
+	hobbitd_hostlist_t *hwalk = NULL;
+	hobbitd_log_t *lwalk = NULL;
 	int found = 0;
 
 	for (hwalk = hosts; (hwalk && !found); hwalk = hwalk->next) {
@@ -694,7 +694,7 @@ bbgend_log_t *find_cookie(int cookie)
 }
 
 
-void handle_status(unsigned char *msg, char *sender, char *hostname, char *testname, bbgend_log_t *log, int newcolor)
+void handle_status(unsigned char *msg, char *sender, char *hostname, char *testname, hobbitd_log_t *log, int newcolor)
 {
 	int validity = 30;	/* validity is counted in minutes */
 	time_t now = time(NULL);
@@ -849,14 +849,14 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	return;
 }
 
-void handle_meta(char *msg, bbgend_log_t *log)
+void handle_meta(char *msg, hobbitd_log_t *log)
 {
 	/*
 	 * msg has the format "meta HOST.TEST metaname\nmeta-value\n"
 	 */
 	char *metaname, *eoln;
 	htnames_t *nwalk;
-	bbgend_meta_t *mwalk;
+	hobbitd_meta_t *mwalk;
 
 	eoln = strchr(msg, '\n'); if (eoln) *eoln = '\0';
 	metaname = skipword(msg);
@@ -874,7 +874,7 @@ void handle_meta(char *msg, bbgend_log_t *log)
 
 	for (mwalk = log->metas; (mwalk && (mwalk->metaname != nwalk)); mwalk = mwalk->next);
 	if (mwalk == NULL) {
-		mwalk = (bbgend_meta_t *)malloc(sizeof(bbgend_meta_t));
+		mwalk = (hobbitd_meta_t *)malloc(sizeof(hobbitd_meta_t));
 		mwalk->metaname = nwalk;
 		mwalk->value = strdup(eoln+1);
 		mwalk->next = log->metas;
@@ -912,9 +912,9 @@ void handle_enadis(int enabled, char *msg, char *sender)
 	int duration = 0;
 	int assignments;
 	int alltests = 0;
-	bbgend_hostlist_t *hwalk = NULL;
-	bbgend_testlist_t *twalk = NULL;
-	bbgend_log_t *log;
+	hobbitd_hostlist_t *hwalk = NULL;
+	hobbitd_testlist_t *twalk = NULL;
+	hobbitd_log_t *log;
 	char *p;
 	int maybedown;
 
@@ -1037,7 +1037,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 }
 
 
-void handle_ack(char *msg, char *sender, bbgend_log_t *log, int duration)
+void handle_ack(char *msg, char *sender, hobbitd_log_t *log, int duration)
 {
 	char *p;
 
@@ -1056,9 +1056,9 @@ void handle_ack(char *msg, char *sender, bbgend_log_t *log, int duration)
 }
 
 
-void free_log_t(bbgend_log_t *zombie)
+void free_log_t(hobbitd_log_t *zombie)
 {
-	bbgend_meta_t *mwalk, *mtmp;
+	hobbitd_meta_t *mwalk, *mtmp;
 
 	mwalk = zombie->metas;
 	while (mwalk) {
@@ -1079,9 +1079,9 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 {
 	int maybedown;
 	char hostip[20];
-	bbgend_hostlist_t *hwalk;
-	bbgend_testlist_t *twalk, *newt;
-	bbgend_log_t *lwalk;
+	hobbitd_hostlist_t *hwalk;
+	hobbitd_testlist_t *twalk, *newt;
+	hobbitd_log_t *lwalk;
 	char msgbuf[MAXMSG];
 	char *marker = NULL;
 
@@ -1143,7 +1143,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			hwalk->logs = hwalk->logs->next;
 		}
 		else {
-			bbgend_log_t *plog;
+			hobbitd_log_t *plog;
 			for (plog = hwalk->logs; (plog->next != lwalk); plog = plog->next) ;
 			plog->next = lwalk->next;
 		}
@@ -1156,7 +1156,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			hosts = hosts->next;
 		}
 		else {
-			bbgend_hostlist_t *phost;
+			hobbitd_hostlist_t *phost;
 
 			for (phost = hosts; (phost->next != hwalk); phost = phost->next) ;
 			phost->next = hwalk->next;
@@ -1165,7 +1165,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		/* Loop through the host logs and free them */
 		lwalk = hwalk->logs;
 		while (lwalk) {
-			bbgend_log_t *tmp = lwalk;
+			hobbitd_log_t *tmp = lwalk;
 			lwalk = lwalk->next;
 
 			free_log_t(tmp);
@@ -1192,7 +1192,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		if (lwalk == NULL) return;
 		for (newt = tests; (newt && strcasecmp(n2, newt->testname)); newt = newt->next) ;
 		if (newt == NULL) {
-			newt = (bbgend_testlist_t *) malloc(sizeof(bbgend_testlist_t));
+			newt = (hobbitd_testlist_t *) malloc(sizeof(hobbitd_testlist_t));
 			newt->testname = strdup(n2);
 			newt->next = tests;
 			tests = newt;
@@ -1247,9 +1247,9 @@ char *timestr(time_t tstamp)
 
 void do_message(conn_t *msg, char *origin)
 {
-	bbgend_hostlist_t *h;
-	bbgend_testlist_t *t;
-	bbgend_log_t *log;
+	hobbitd_hostlist_t *h;
+	hobbitd_testlist_t *t;
+	hobbitd_log_t *log;
 	int color;
 	char sender[20];
 	time_t now;
@@ -1422,10 +1422,10 @@ void do_message(conn_t *msg, char *origin)
 			}
 		}
 	}
-	else if (strncmp(msg->buf, "bbgendlog ", 10) == 0) {
+	else if (strncmp(msg->buf, "hobbitdlog ", 10) == 0) {
 		/* 
 		 * Request for a single status log
-		 * bbgendlog HOST.TEST
+		 * hobbitdlog HOST.TEST
 		 *
 		 * hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|ackmsg|dismsg
 		 */
@@ -1471,10 +1471,10 @@ void do_message(conn_t *msg, char *origin)
 			msg->buflen = (bufp - buf);
 		}
 	}
-	else if (strncmp(msg->buf, "bbgendxlog ", 11) == 0) {
+	else if (strncmp(msg->buf, "hobbitdxlog ", 11) == 0) {
 		/* 
 		 * Request for a single status log in XML format
-		 * bbgendxlog HOST.TEST
+		 * hobbitdxlog HOST.TEST
 		 *
 		 */
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
@@ -1483,7 +1483,7 @@ void do_message(conn_t *msg, char *origin)
 		if (log) {
 			char *buf, *bufp;
 			int bufsz, buflen;
-			bbgend_meta_t *mwalk;
+			hobbitd_meta_t *mwalk;
 
 			if (log->message == NULL) {
 				errprintf("%s.%s has a NULL message\n", log->host->hostname, log->test->testname);
@@ -1538,14 +1538,14 @@ void do_message(conn_t *msg, char *origin)
 			msg->buflen = (bufp - buf);
 		}
 	}
-	else if (strncmp(msg->buf, "bbgendboard", 11) == 0) {
+	else if (strncmp(msg->buf, "hobbitdboard", 11) == 0) {
 		/* 
 		 * Request for a summmary of all known status logs
 		 *
 		 * hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|1st line of message
 		 */
-		bbgend_hostlist_t *hwalk;
-		bbgend_log_t *lwalk;
+		hobbitd_hostlist_t *hwalk;
+		hobbitd_log_t *lwalk;
 		char *buf, *bufp;
 		int bufsz, buflen;
 		int n;
@@ -1591,13 +1591,13 @@ void do_message(conn_t *msg, char *origin)
 		msg->bufp = msg->buf = buf;
 		msg->buflen = buflen;
 	}
-	else if (strncmp(msg->buf, "bbgendxboard", 12) == 0) {
+	else if (strncmp(msg->buf, "hobbitdxboard", 12) == 0) {
 		/* 
 		 * Request for a summmary of all known status logs in XML format
 		 *
 		 */
-		bbgend_hostlist_t *hwalk;
-		bbgend_log_t *lwalk;
+		hobbitd_hostlist_t *hwalk;
+		hobbitd_log_t *lwalk;
 		char *buf, *bufp;
 		int bufsz;
 
@@ -1656,14 +1656,14 @@ void do_message(conn_t *msg, char *origin)
 		msg->bufp = msg->buf = buf;
 		msg->buflen = (bufp - buf);
 	}
-	else if (strncmp(msg->buf, "bbgendlist", 10) == 0) {
+	else if (strncmp(msg->buf, "hobbitdlist", 10) == 0) {
 		/* 
 		 * Request for a list of all known status logs.
 		 *
 		 * hostname|testname
 		 */
-		bbgend_hostlist_t *hwalk;
-		bbgend_log_t *lwalk;
+		hobbitd_hostlist_t *hwalk;
+		hobbitd_log_t *lwalk;
 		char *buf, *bufp;
 		int bufsz, buflen;
 		int n;
@@ -1693,12 +1693,12 @@ void do_message(conn_t *msg, char *origin)
 		msg->bufp = msg->buf = buf;
 		msg->buflen = buflen;
 	}
-	else if ((strncmp(msg->buf, "bbgendack", 9) == 0) || (strncmp(msg->buf, "ack ack_event", 13) == 0)) {
-		/* bbgendack COOKIE DURATION TEXT */
+	else if ((strncmp(msg->buf, "hobbitdack", 9) == 0) || (strncmp(msg->buf, "ack ack_event", 13) == 0)) {
+		/* hobbitdack COOKIE DURATION TEXT */
 		char *p;
 		int cookie, duration;
 		char durstr[100];
-		bbgend_log_t *lwalk;
+		hobbitd_log_t *lwalk;
 
 		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
@@ -1707,7 +1707,7 @@ void do_message(conn_t *msg, char *origin)
 		 * we will accept an "ack ack_event" message. This allows us
 		 * to work with existing acknowledgement scripts.
 		 */
-		if (strncmp(msg->buf, "bbgendack", 9) == 0) p = msg->buf + 9;
+		if (strncmp(msg->buf, "hobbitdack", 9) == 0) p = msg->buf + 9;
 		else if (strncmp(msg->buf, "ack ack_event", 13) == 0) p = msg->buf + 13;
 		else p = msg->buf;
 
@@ -1730,14 +1730,14 @@ void do_message(conn_t *msg, char *origin)
 			}
 		}
 	}
-	else if (strncmp(msg->buf, "bbgenddrop ", 11) == 0) {
+	else if (strncmp(msg->buf, "hobbitddrop ", 11) == 0) {
 		char hostname[200];
 		char testname[200];
 		int n;
 
 		if (!oksender(adminsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
-		n = sscanf(msg->buf, "bbgenddrop %199s %199s", hostname, testname);
+		n = sscanf(msg->buf, "hobbitddrop %199s %199s", hostname, testname);
 		if (n == 1) {
 			handle_dropnrename(CMD_DROPHOST, sender, hostname, NULL, NULL);
 		}
@@ -1745,14 +1745,14 @@ void do_message(conn_t *msg, char *origin)
 			handle_dropnrename(CMD_DROPTEST, sender, hostname, testname, NULL);
 		}
 	}
-	else if (strncmp(msg->buf, "bbgendrename ", 13) == 0) {
+	else if (strncmp(msg->buf, "hobbitdrename ", 13) == 0) {
 		char hostname[200];
 		char n1[200], n2[200];
 		int n;
 
 		if (!oksender(adminsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
-		n = sscanf(msg->buf, "bbgendrename %199s %199s %199s", hostname, n1, n2);
+		n = sscanf(msg->buf, "hobbitdrename %199s %199s %199s", hostname, n1, n2);
 		if (n == 2) {
 			/* Host rename */
 			handle_dropnrename(CMD_RENAMEHOST, sender, hostname, n1, NULL);
@@ -1782,8 +1782,8 @@ void save_checkpoint(void)
 {
 	char *tempfn;
 	FILE *fd;
-	bbgend_hostlist_t *hwalk;
-	bbgend_log_t *lwalk;
+	hobbitd_hostlist_t *hwalk;
+	hobbitd_log_t *lwalk;
 	time_t now = time(NULL);
 
 	if (checkpointfn == NULL) return;
@@ -1809,7 +1809,7 @@ void save_checkpoint(void)
 				lwalk->ackmsg = NULL;
 				lwalk->acktime = 0;
 			}
-			fprintf(fd, "@@BBGENDCHK-V1|%s|%s|%s|%s|%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%s", 
+			fprintf(fd, "@@HOBBITDCHK-V1|%s|%s|%s|%s|%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%s", 
 				lwalk->origin->name, hwalk->hostname, lwalk->test->testname, lwalk->sender,
 				colnames[lwalk->color], 
 				(lwalk->testflags ? lwalk->testflags : ""),
@@ -1837,9 +1837,9 @@ void load_checkpoint(char *fn)
 	char *item;
 	int i, err, maybedown;
 	char hostip[20];
-	bbgend_hostlist_t *htail = NULL;
-	bbgend_testlist_t *t = NULL;
-	bbgend_log_t *ltail = NULL;
+	hobbitd_hostlist_t *htail = NULL;
+	hobbitd_testlist_t *t = NULL;
+	hobbitd_log_t *ltail = NULL;
 	htnames_t *origin = NULL;
 	char *originname = NULL, *hostname = NULL, *testname = NULL, *sender = NULL, *testflags = NULL; 
 	char *statusmsg = NULL, *disablemsg = NULL, *ackmsg = NULL;
@@ -1860,7 +1860,7 @@ void load_checkpoint(char *fn)
 		item = gettok(l, "|\n"); i = 0;
 		while (item && !err) {
 			switch (i) {
-			  case 0: err = (strcmp(item, "@@BBGENDCHK-V1") != 0); break;
+			  case 0: err = ((strcmp(item, "@@HOBBITDCHK-V1") != 0) && (strcmp(item, "@@BBGENDCHK-V1") != 0)); break;
 			  case 1: originname = item; break;
 			  case 2: if (strlen(item)) hostname = item; else err=1; break;
 			  case 3: if (strlen(item)) testname = item; else err=1; break;
@@ -1898,10 +1898,10 @@ void load_checkpoint(char *fn)
 		if ((hosts == NULL) || (strcmp(hostname, htail->hostname) != 0)) {
 			/* New host */
 			if (hosts == NULL) {
-				htail = hosts = (bbgend_hostlist_t *) malloc(sizeof(bbgend_hostlist_t));
+				htail = hosts = (hobbitd_hostlist_t *) malloc(sizeof(hobbitd_hostlist_t));
 			}
 			else {
-				htail->next = (bbgend_hostlist_t *) malloc(sizeof(bbgend_hostlist_t));
+				htail->next = (hobbitd_hostlist_t *) malloc(sizeof(hobbitd_hostlist_t));
 				htail = htail->next;
 			}
 			htail->hostname = strdup(hostname);
@@ -1912,7 +1912,7 @@ void load_checkpoint(char *fn)
 
 		for (t=tests; (t && (strcmp(t->testname, testname) != 0)); t = t->next) ;
 		if (t == NULL) {
-			t = (bbgend_testlist_t *) malloc(sizeof(bbgend_testlist_t));
+			t = (hobbitd_testlist_t *) malloc(sizeof(hobbitd_testlist_t));
 			t->testname = strdup(testname);
 			t->next = tests;
 			tests = t;
@@ -1927,10 +1927,10 @@ void load_checkpoint(char *fn)
 		}
 
 		if (htail->logs == NULL) {
-			ltail = htail->logs = (bbgend_log_t *) malloc(sizeof(bbgend_log_t));
+			ltail = htail->logs = (hobbitd_log_t *) malloc(sizeof(hobbitd_log_t));
 		}
 		else {
-			ltail->next = (bbgend_log_t *)malloc(sizeof(bbgend_log_t));
+			ltail->next = (hobbitd_log_t *)malloc(sizeof(hobbitd_log_t));
 			ltail = ltail->next;
 		}
 
@@ -1972,8 +1972,8 @@ void load_checkpoint(char *fn)
 
 void check_purple_status(void)
 {
-	bbgend_hostlist_t *hwalk;
-	bbgend_log_t *lwalk;
+	hobbitd_hostlist_t *hwalk;
+	hobbitd_log_t *lwalk;
 	time_t now = time(NULL);
 
 	for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
@@ -1984,7 +1984,7 @@ void check_purple_status(void)
 					/*
 					 * A summary has gone stale. Drop it.
 					 */
-					bbgend_log_t *tmp;
+					hobbitd_log_t *tmp;
 
 					if (lwalk == hwalk->logs) {
 						tmp = hwalk->logs;
@@ -2000,7 +2000,7 @@ void check_purple_status(void)
 					free_log_t(tmp);
 				}
 				else {
-					bbgend_log_t *tmp;
+					hobbitd_log_t *tmp;
 					int newcolor = COL_PURPLE;
 
 					if (purpleclientconn) {
@@ -2011,7 +2011,7 @@ void check_purple_status(void)
 						if (tmp && (tmp->color == COL_RED)) newcolor = COL_CLEAR;
 					}
 
-					handle_status(lwalk->message, "bbgend", 
+					handle_status(lwalk->message, "hobbitd", 
 						hwalk->hostname, lwalk->test->testname, lwalk, newcolor);
 					lwalk = lwalk->next;
 				}
@@ -2166,12 +2166,12 @@ int main(int argc, char *argv[])
 			statussenders = getsenderlist(p+1);
 		}
 		else if (argnmatch(argv[argi], "--admin-senders=")) {
-			/* Who is allowed to send us "bbgenddrop", "bbgendrename", "config", "query" messages */
+			/* Who is allowed to send us "hobbitddrop", "hobbitdrename", "config", "query" messages */
 			char *p = strchr(argv[argi], '=');
 			adminsenders = getsenderlist(p+1);
 		}
 		else if (argnmatch(argv[argi], "--www-senders=")) {
-			/* Who is allowed to send us "bbgendboard", "bbgendlog", "bbgendlist" messages */
+			/* Who is allowed to send us "hobbitdboard", "hobbitdlog", "hobbitdlist" messages */
 			char *p = strchr(argv[argi], '=');
 			wwwsenders = getsenderlist(p+1);
 		}
@@ -2272,7 +2272,7 @@ int main(int argc, char *argv[])
 		setsid();
 	}
 
-	setup_signalhandler("bbgend");
+	setup_signalhandler("hobbitd");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGINT, &sa, NULL);
@@ -2301,7 +2301,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (dbghost) {
-		dbgfd = fopen("/tmp/bbgend.dbg", "a");
+		dbgfd = fopen("/tmp/hobbitd.dbg", "a");
 		if (dbgfd == NULL) errprintf("Cannot open debug file: %s\n", strerror(errno));
 	}
 
@@ -2345,14 +2345,14 @@ int main(int argc, char *argv[])
 
 		if ((last_stats_time + 300) <= now) {
 			char *buf;
-			bbgend_hostlist_t *h;
-			bbgend_testlist_t *t;
-			bbgend_log_t *log;
+			hobbitd_hostlist_t *h;
+			hobbitd_testlist_t *t;
+			hobbitd_log_t *log;
 			int color;
 
 			buf = generate_stats();
-			get_hts(buf, "bbgend", "", &h, &t, &log, &color, 1, 1);
-			handle_status(buf, "bbgend", h->hostname, t->testname, log, color);
+			get_hts(buf, "hobbitd", "", &h, &t, &log, &color, 1, 1);
+			handle_status(buf, "hobbitd", h->hostname, t->testname, log, color);
 			last_stats_time = now;
 			flush_errbuf();
 		}
@@ -2510,12 +2510,12 @@ int main(int argc, char *argv[])
 
 	/* Tell the workers we to shutdown also */
 	running = 1;   /* Kludge, but it's the only way to get posttochannel to do something. */
-	posttochannel(statuschn, "shutdown", NULL, "bbgend", NULL, NULL, "");
-	posttochannel(stachgchn, "shutdown", NULL, "bbgend", NULL, NULL, "");
-	posttochannel(pagechn, "shutdown", NULL, "bbgend", NULL, NULL, "");
-	posttochannel(datachn, "shutdown", NULL, "bbgend", NULL, NULL, "");
-	posttochannel(noteschn, "shutdown", NULL, "bbgend", NULL, NULL, "");
-	posttochannel(enadischn, "shutdown", NULL, "bbgend", NULL, NULL, "");
+	posttochannel(statuschn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
+	posttochannel(stachgchn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
+	posttochannel(pagechn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
+	posttochannel(datachn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
+	posttochannel(noteschn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
+	posttochannel(enadischn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
 	running = 0;
 
 	/* Close the channels */

@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother message daemon.                                                */
+/* Hobbit message daemon.                                                     */
 /*                                                                            */
-/* This is part of the bbgend_alert worker module.                            */
-/* This module implements the standard bbgend alerting function. It loads the */
-/* alert configuration from bb-alerts.cfg, and incoming alerts are then sent  */
-/* according to the rules defined.                                            */
+/* This is part of the hobbitd_alert worker module.                           */
+/* This module implements the standard hobbitd alerting function. It loads    */
+/* the alert configuration from hobbit-alerts.cfg, and incoming alerts are    */
+/* then sent according to the rules defined.                                  */
 /*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
 /*                                                                            */
@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.20 2004-12-05 16:23:41 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.21 2004-12-30 22:25:34 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -42,8 +42,8 @@ static char rcsid[] = "$Id: do_alert.c,v 1.20 2004-12-05 16:23:41 henrik Exp $";
  *   Called after all calls to send_alert()
  *
  * load_alertconfig() and next_alert() are called in the context
- * of the main bbgend_alert worker.
- * send_alert() runs in a sub-proces forked from bbgend_alert.
+ * of the main hobbitd_alert worker.
+ * send_alert() runs in a sub-proces forked from hobbitd_alert.
  *
  */
 
@@ -63,7 +63,7 @@ static char rcsid[] = "$Id: do_alert.c,v 1.20 2004-12-05 16:23:41 henrik Exp $";
 
 #include "libbbgen.h"
 
-#include "bbgend_alert.h"
+#include "hobbitd_alert.h"
 
 /* Should we run in BB compatibility mode ? i.e. read bbwarn{setup,rules}.cfg */
 int bbcompat_mode = 0;
@@ -270,7 +270,7 @@ void load_alertconfig(char *configfn, int defcolors)
 		return;
 	}
 
-	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/bb-alerts.cfg", getenv("BBHOME"));
+	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/hobbit-alerts.cfg", getenv("BBHOME"));
 	if (stat(fn, &st) == -1) return;
 	if (st.st_mtime == lastload) return;
 

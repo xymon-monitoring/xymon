@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother message daemon.                                                */
+/* Hobbit monitor.                                                            */
 /*                                                                            */
-/* This is a library module for bbgend, responsible for loading the host-,    */
+/* This is a library module for Hobbit, responsible for loading the host-,    */
 /* page-, and column-links defined in the BB directory structure.             */
 /*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: links.c,v 1.1 2004-12-15 21:19:57 henrik Exp $";
+static char rcsid[] = "$Id: links.c,v 1.2 2004-12-30 22:25:34 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>

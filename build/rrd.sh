@@ -30,7 +30,7 @@
 	done
 
 	if test -z "$RRDINC" -o -z "$RRDLIB"; then
-		echo "RRDtool include- or library-files not found. These are REQUIRED for bbgend"
+		echo "RRDtool include- or library-files not found. These are REQUIRED for hobbitd"
 		echo "RRDtool can be found at http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/"
 		exit 1
 	else

@@ -2,7 +2,7 @@
 /* Big Brother application launcher.                                          */
 /*                                                                            */
 /* This is used to launch a single BB application, with the environment that  */
-/* would normally be established by bblaunch.                                 */
+/* would normally be established by hobbitlaunch.                             */
 /*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
 /*                                                                            */
@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcmd.c,v 1.2 2004-11-21 10:48:49 henrik Exp $";
+static char rcsid[] = "$Id: bbcmd.c,v 1.3 2004-12-30 22:25:34 henrik Exp $";
 
 #include <sys/types.h>
 #include <string.h>

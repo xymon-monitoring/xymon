@@ -20,7 +20,7 @@
 	done
 
 	if test -z "$PCREINC" -o -z "$PCRELIB"; then
-		echo "PCRE include- or library-files not found. These are REQUIRED for bbgend"
+		echo "PCRE include- or library-files not found. These are REQUIRED for hobbitd"
 		echo "PCRE can be found at http://www.pcre.org/"
 		exit 1
 	else

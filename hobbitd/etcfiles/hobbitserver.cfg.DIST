@@ -1,41 +1,41 @@
 # NB : Even though it might look like a shell-script, it is NOT.
 #
-BBSERVERROOT="@BBTOPDIR@"		# Where BB is installed - top level directory holds the bb and bbvar sub-dirs.
-BBSERVERLOGS="@BBLOGDIR@"		# Directory for server logs. The bb user must have write-access here.
+BBSERVERROOT="@BBTOPDIR@"		# Where Hobbit is installed - holds the server and bbvar sub-dirs.
+BBSERVERLOGS="@BBLOGDIR@"		# Directory for server logs. The hobbit user must have write-access here.
 
 BBSERVERHOSTNAME="@BBHOSTNAME@"		# The hostname of your server
 BBSERVERIP="@BBHOSTIP@"			# The IP-address of your server. Use the real one, not 127.0.0.1 .
 BBSERVEROS="@BBHOSTOS@"			# The operating system of your server. linux,freebsd,solaris,hpux,aix,osf
 
 BBSERVERWWWNAME="@BBHOSTNAME@"		# The name used for this hosts' webserver
-BBSERVERWWWURL="@BBHOSTURL@"		# The top URL for the BB webpages
-BBSERVERCGIURL="@BBCGIURL@"		# The URL for the BB CGI scripts.
+BBSERVERWWWURL="@BBHOSTURL@"		# The top URL for the Hobbit webpages
+BBSERVERCGIURL="@BBCGIURL@"		# The URL for the Hobbit CGI scripts.
 
 # BBLOCATION="foo"			# The network location, makes bbtest-net test only hosts with NET:foo
 					# You only need to set this if you have multiple network test servers with
 					# a shared bb-hosts file.
 
 # Make sure the path includes the directories where you have fping, mail and (optionally) ntpdate installed,
-# as well as the BBHOME/bin directory where all of the bbgend tools reside.
-PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:$BBSERVERROOT/bb/bin"
+# as well as the BBHOME/bin directory where all of the Hobbit programs reside.
+PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:@BBHOME@/bin"
 
 
 ##### Normally you do not need to modify anything below this point #####
 
 # General settings
-BBPORT="1984"			# Portnumber where bbgend/bbd listens
-BBDISP="$BBSERVERIP"		# IP of a single bbgend/bbd server
-BBDISPLAYS=""			# IP of multiple bbgend/bbd servers. If used, BBDISP must be 0.0.0.0
-BBPAGE="$BBSERVERIP"		# IP of a single bbd BBPAGE server. Not used by bbgend.
+BBPORT="1984"			# Portnumber where hobbitd/bbd listens
+BBDISP="$BBSERVERIP"		# IP of a single hobbit/bbd server
+BBDISPLAYS=""			# IP of multiple hobbit/bbd servers. If used, BBDISP must be 0.0.0.0
+BBPAGE="$BBSERVERIP"		# IP of a single bbd BBPAGE server. Not used by Hobbit.
 BBPAGERS=""			# IP of multiple bbd BBPAGE servers. If used, BBPAGE must be 0.0.0.0
 FQDN="TRUE"			# Use fully-qualified hostnames internally. Keep it TRUE unless you know better.
-USEBBGEND="TRUE"		# Set this TRUE if you are using a bbgend server, FALSE if standard bbd.
+USEHOBBITD="TRUE"		# Set this TRUE if you are using a Hobbit server, FALSE if standard bbd.
 DOCOMBO="TRUE"			# Ignored by everyone except maint.pl...
-PAGELEVELS="red yellow purple"	# Status colors that trigger an alert. Used by 'bb' talking to bbd, not bbgend
-PURPLEDELAY="30"		# Lifetime of info- and larrd-pages. Used only when generating for bbd, not bbgend
+PAGELEVELS="red yellow purple"	# Status colors that trigger an alert. Used by 'bb' talking to bbd, not Hobbit.
+PURPLEDELAY="30"		# Lifetime of info- and larrd-pages. Used only when generating for bbd, not Hobbit.
 
 BBLOGSTATUS="DYNAMIC"		# Are HTML status logs statically or dynamically generated?
-				# Use DYNAMIC with bbgend, unless you run bbgend_filestore --status --html
+				# Use DYNAMIC with Hobbit, unless you run hobbitd_filestore --status --html
 
 # Specific to this host
 BBOSTYPE="$BBSERVEROS"		# Hosttype (operating system). Not used by server-side, but clients use this.
@@ -44,44 +44,44 @@ MACHINEADDR="$BBSERVERIP"	# This systems IP-address
 
 # URL's generated/used by bbgen
 BBWEBHOST="http://$BBSERVERWWWNAME"		# Just the host part of the URL - http://www.foo.com
-BBWEBHOSTURL="$BBWEBHOST$BBSERVERWWWURL"	# Prefix for all static BB pages - http://www.foo.com/bb
-BBWEBHTMLLOGS="$BBWEBHOSTURL/html"		# Prefix for the BB HTML logs (only if BBLOGSTATUS=STATIC)
-BBWEB="$BBSERVERWWWURL"				# BB URL prefix without the host part
-BBSKIN="$BBSERVERWWWURL/gifs"			# BB URL prefix for the GIF files
-BBREPURL="$BBSERVERWWWURL/rep"			# BB URL prefix for the BB availability reports
-BBWAP="$BBSERVERWWWURL/wml"			# BB URL prefix for the WAP/WML files.
-CGIBINURL="$BBSERVERCGIURL"			# URL prefix for the BB CGI-scripts - /cgi-bin
+BBWEBHOSTURL="$BBWEBHOST$BBSERVERWWWURL"	# Prefix for all static Hobbit pages - http://www.foo.com/bb
+BBWEBHTMLLOGS="$BBWEBHOSTURL/html"		# Prefix for the Hobbit HTML logs (only if BBLOGSTATUS=STATIC)
+BBWEB="$BBSERVERWWWURL"				# Hobbit URL prefix without the host part
+BBSKIN="$BBSERVERWWWURL/gifs"			# Hobbit URL prefix for the GIF files
+BBREPURL="$BBSERVERWWWURL/rep"			# Hobbit URL prefix for the Hobbit availability reports
+BBWAP="$BBSERVERWWWURL/wml"			# Hobbit URL prefix for the WAP/WML files.
+CGIBINURL="$BBSERVERCGIURL"			# URL prefix for the Hobbit CGI-scripts - /cgi-bin
 
 # Locations of system-wide files and directories
-BBHOME="$BBSERVERROOT/bb"			# The BB home directory. 
+BBHOME="@BBHOME@"				# The Hobbit server directory, where programs and configurations go. 
 BBTMP="$BBHOME/tmp"				# Directory used for temporary files.
 BB="$BBHOME/bin/bb"				# The 'bb' client program
 BBHOSTS="$BBHOME/etc/bb-hosts"			# The bb-hosts file
 
 # Server specific directories
-BBVAR="$BBSERVERROOT/bbvar"			# The bbvar directory holds all monitoring data
-BBACKS="$BBVAR/acks"				# Acknowledge event info stored here (bbgend_alert)
-BBDATA="$BBVAR/data"				# Data files go here (bbgend_filestore --data)
-BBDISABLED="$BBVAR/disabled"			# Enabled/disabled flags are stored here (bbgend_filestore --enadis)
-BBHIST="$BBVAR/hist"				# History logs are stored here (bbgend_history)
-BBHISTLOGS="$BBVAR/histlogs"			# Historical detail status-loge are stored here (bbgend_history)
-BBLOGS="$BBVAR/logs"				# Status logs go here (bbgend_filestore --status). Not needed by bbgend
-BBWWW="$BBHOME/www"				# The directory for BB www files.
-BBHTML="$BBWWW/html"				# HTML status logs go here (bbgend_filestore --status --html)
-BBNOTES="$BBWWW/notes"				# For notes-files (bbgend_filestore --notes)
-BBREP="$BBWWW/rep"				# Top-level directory for BB reports.
+BBVAR="@BBVAR@"					# The bbvar directory holds all monitoring data
+BBACKS="$BBVAR/acks"				# Acknowledge event info stored here (hobbitd_alert)
+BBDATA="$BBVAR/data"				# Data files go here (hobbitd_filestore --data)
+BBDISABLED="$BBVAR/disabled"			# Enabled/disabled flags are stored here (hobbitd_filestore --enadis)
+BBHIST="$BBVAR/hist"				# History logs are stored here (hobbitd_history)
+BBHISTLOGS="$BBVAR/histlogs"			# Historical detail status-loge are stored here (hobbitd_history)
+BBLOGS="$BBVAR/logs"				# Status logs go here (hobbitd_filestore --status). Not needed by Hobbit.
+BBWWW="$BBHOME/www"				# The directory for Hobbit webpage files.
+BBHTML="$BBWWW/html"				# HTML status logs go here (hobbitd_filestore --status --html)
+BBNOTES="$BBWWW/notes"				# For notes-files (hobbitd_filestore --notes)
+BBREP="$BBWWW/rep"				# Top-level directory for Hobbit reports.
 
 
-# For bbgend
+# For hobbitd
 RECVFROMMSG="Status message received from"	# The text showing where a status log came from
 STATUNCHMSG="Status unchanged in"		# The text showing how long a status has been unchanged
 
-# For the bbgend_history module
+# For the hobbitd_history module
 BBALLHISTLOG="TRUE"				# Save a common log of all events (used for the bb2 webpage)
 BBHOSTHISTLOG="TRUE"				# Save a log of all events for a host (not used by any tool currently)
 SAVESTATUSLOG="TRUE"				# Save the detailed status log each time the status changes.
 
-# For the bbgend_alert module
+# For the hobbitd_alert module
 MAILC="mail"					# Command used to send an e-mail with no subject
 MAIL="$MAILC -s"				# Command used to send an e-mail with a subject
 SVCCODES="disk:100,cpu:200,procs:300,svcs:350,msgs:400,conn:500,http:600,dns:800,smtp:725,telnet:723,ftp:721,pop:810,pop3:810,pop-3:810,ssh:722,imap:843,ssh1:722,ssh2:722,imap2:843,imap3:843,imap4:843,pop2:809,pop-2:809,nntp:819,test:901"
@@ -108,11 +108,11 @@ BBRRDS="$BBVAR/rrd"
 #
 # This is also used by the bb-hostsvc.cgi script to determine if the detailed
 # status view of a test should include a graph.
-LARRDS="cpu=la,disk,memory,conn=tcp,fping=tcp,ftp=tcp,ftps=tcp,ssh=tcp,ssh1=tcp,ssh2=tcp,telnet=tcp,telnets=tcp,smtp=tcp,smtps=tcp,pop-2=tcp,pop2=tcp,pop-3=tcp,pop3=tcp,pop=tcp,pop3s=tcp,imap=tcp,imap2=tcp,imap3=tcp,imap4=tcp,imaps=tcp,nntp=tcp,nntps=tcp,ldap=tcp,ldaps=tcp,rsync=tcp,bbd=tcp,clamd=tcp,oratns=tcp,qmtp=tcp,qmqp=tcp,http=tcp,dns=tcp,dig=tcp,time=ntpstat,vmstat,iostat,netstat,temperature,apache,bind,sendmail,nmailq,socks,bea,citrix,bbgen,bbtest,bbproxy,bbgend"
+LARRDS="cpu=la,disk,memory,conn=tcp,fping=tcp,ftp=tcp,ftps=tcp,ssh=tcp,ssh1=tcp,ssh2=tcp,telnet=tcp,telnets=tcp,smtp=tcp,smtps=tcp,pop-2=tcp,pop2=tcp,pop-3=tcp,pop3=tcp,pop=tcp,pop3s=tcp,imap=tcp,imap2=tcp,imap3=tcp,imap4=tcp,imaps=tcp,nntp=tcp,nntps=tcp,ldap=tcp,ldaps=tcp,rsync=tcp,bbd=tcp,clamd=tcp,oratns=tcp,qmtp=tcp,qmqp=tcp,http=tcp,dns=tcp,dig=tcp,time=ntpstat,vmstat,iostat,netstat,temperature,apache,bind,sendmail,nmailq,socks,bea,citrix,bbgen,bbtest,bbproxy,hobbitd"
 
 # This defines which LARRD RRD files to include on the "trends" column webpage,
 # and the order in which they appear.
-GRAPHS="la,disk:disk_part:5,memory,users,vmstat,iostat,tcp.http,tcp,netstat,temperature,ntpstat,apache,bind,sendmail,nmailq,socks,bea,citrix,bbgen,bbtest,bbproxy,bbgend"
+GRAPHS="la,disk:disk_part:5,memory,users,vmstat,iostat,tcp.http,tcp,netstat,temperature,ntpstat,apache,bind,sendmail,nmailq,socks,bea,citrix,bbgen,bbtest,bbproxy,hobbitd"
 
 
 ############################################################
@@ -120,8 +120,8 @@ GRAPHS="la,disk:disk_part:5,memory,users,vmstat,iostat,tcp.http,tcp,netstat,temp
 ############################################################
 SUMMARY_SET_BKG="FALSE"				# Do summaries affect the background color of the BB webpage ?
 BBMKBB2EXT="eventlog.sh acklog.sh"		# What extensions to have on the BB2 page.
-BBREL="bbgend"					# Used by the standard BB web headers, not by bbgend
-BBRELDATE=""					# Used by the standard BB web headers, not by bbgend
+BBREL="Hobbit"					# Used by the standard BB web headers, not by Hobbit
+BBRELDATE=""					# Used by the standard BB web headers, not by Hobbit
 DOTHEIGHT="16"					# Height (in pixels) of the color GIF's
 DOTWIDTH="16"					# Width (in pixels) of the color GIF's
 

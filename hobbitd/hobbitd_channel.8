@@ -1,31 +1,31 @@
-.TH BBGEND_CHANNEL 8 "Version 3.4: 21 nov 2004" "bbgen toolkit"
+.TH HOBBITD_CHANNEL 8 "Version 3.4: 21 nov 2004" "bbgen toolkit"
 .SH NAME
-bbgend_channel \- Feed a bbgend channel to a worker module
+hobbitd_channel \- Feed a hobbitd channel to a worker module
 .SH SYNOPSIS
-.B "bbgend_channel --channel=CHANNEL [options] workerprogram [worker-options]"
+.B "hobbitd_channel --channel=CHANNEL [options] workerprogram [worker-options]"
 
 .SH DESCRIPTION
-bbgend_channel hooks into one of the 
-.I bbgend(8)
-channels that provide information about events occurring in the BB system.
-It retrieves messages from the bbgend daemon, and passes them on to the
+hobbitd_channel hooks into one of the 
+.I hobbitd(8)
+channels that provide information about events occurring in the Hobbit system.
+It retrieves messages from the hobbitd daemon, and passes them on to the
 .I workerprogram
 on the STDIN of the worker program. Worker programs can then handle
 messages as they like.
 
-A number of worker programs are shipped with bbgend, e.g.
-.I bbgend_filestore(8),
-.I bbgend_htmllog(8),
-.I bbgend_history(8),
-.I bbgend_alert(8),
-.I bbgend_larrd(8)
+A number of worker programs are shipped with hobbitd, e.g.
+.I hobbitd_filestore(8),
+.I hobbitd_htmllog(8),
+.I hobbitd_history(8),
+.I hobbitd_alert(8),
+.I hobbitd_larrd(8)
 
 If you want to write your own worker module, a sample worker module
-is provided as part of the bbgend distribution in the bbgend_sample.c
+is provided as part of the hobbitd distribution in the hobbitd_sample.c
 file. This illustrates how to easily fetch and parse messages.
 
 .SH OPTIONS
-bbgend_channel accepts a few options.
+hobbitd_channel accepts a few options.
 
 .IP "--channel=CHANNELNAME"
 Specifies the channel to receive messages from, only one channel can be used.
@@ -44,24 +44,24 @@ This option is required. The following channels are available:
 "enadis" receives information about hosts being disabled or enabled.
 
 .IP "--daemon"
-bbgend_channel is normally started by 
-.I bblaunch(8)
+hobbitd_channel is normally started by 
+.I hobbitlaunch(8)
 as a task defined in the
-.I bbtasks.cfg(5)
-file. If you are not using bblaunch, then starting bbgend_channel with this
+.I hobbittasks.cfg(5)
+file. If you are not using hobbitlaunch, then starting hobbitd_channel with this
 option causes it to run as a stand-alone background task.
 
 .IP "--pidfile=FILENAME"
-If running as a stand-alone daemon, bbgend_channel will save the proces-ID 
+If running as a stand-alone daemon, hobbitd_channel will save the proces-ID 
 of the daemon in FILENAME. This is useful for automated startup- and shutdown-
 scripts.
 
 .IP "--env=FILENAME"
-Loads the environment variables defined in FILENAME before starting bbgend_channel.
-This is normally used only when running as a stand-alone daemon; if bbgend_channel
-is started by bblaunch, then the environment is controlled by the task definition 
+Loads the environment variables defined in FILENAME before starting hobbitd_channel.
+This is normally used only when running as a stand-alone daemon; if hobbitd_channel
+is started by hobbitlaunch, then the environment is controlled by the task definition 
 in the
-.I bbtasks.cfg(5)
+.I hobbittasks.cfg(5)
 file.
 
 .IP "--debug"
@@ -71,5 +71,5 @@ Enable debugging output.
 This program does not use any configuration files.
 
 .SH "SEE ALSO"
-bbgen-intro(7), bbgend(8)
+bbgen-intro(7), hobbitd(8)
 

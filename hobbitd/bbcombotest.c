@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.30 2004-12-03 12:05:50 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.31 2004-12-30 22:25:34 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -44,7 +44,7 @@ typedef struct testspec_t {
 static testspec_t *testhead = NULL;
 static int testcount = 0;
 static int cleanexpr = 0;
-static int usebbgend = 0;
+static int usehobbitd = 0;
 
 static char *gethname(char *spec)
 {
@@ -177,18 +177,18 @@ static int getfilevalue(char *hostname, char *testname, char **errptr)
 	return result;
 }
 
-static int getbbgendvalue(char *hostname, char *testname, char **errptr)
+static int gethobbitdvalue(char *hostname, char *testname, char **errptr)
 {
 	static char *board = NULL;
-	int bbgendresult;
+	int hobbitdresult;
 	int result = COL_CLEAR;
 	char *pattern, *found, *colstr, *p;
 
 	if (board == NULL) {
-		bbgendresult = sendmessage("bbgendboard", NULL, NULL, &board, 1, 30);
-		if (bbgendresult != BB_OK) {
+		hobbitdresult = sendmessage("hobbitdboard", NULL, NULL, &board, 1, 30);
+		if (hobbitdresult != BB_OK) {
 			board = "";
-			*errptr += sprintf(*errptr, "Could not access bbgend board, error %d\n", bbgendresult);
+			*errptr += sprintf(*errptr, "Could not access hobbitd board, error %d\n", hobbitdresult);
 			return COL_CLEAR;
 		}
 	}
@@ -240,7 +240,7 @@ static long getvalue(char *hostname, char *testname, int *color, char **errbuf)
 		return walk->result;
 	}
 
-	*color = (usebbgend ? getbbgendvalue(hostname, testname, &errptr) : getfilevalue(hostname, testname, &errptr));
+	*color = (usehobbitd ? gethobbitdvalue(hostname, testname, &errptr) : getfilevalue(hostname, testname, &errptr));
 
 	/* Save error messages */
 	if (strlen(errtext) > 0) {
@@ -395,8 +395,8 @@ int main(int argc, char *argv[])
 
 	setup_signalhandler("bbcombotest");
 
-	getenv_default("USEBBGEND", "FALSE", NULL);
-	usebbgend = (strcmp(getenv("USEBBGEND"), "TRUE") == 0);
+	getenv_default("USEHOBBITD", "FALSE", NULL);
+	usehobbitd = (strcmp(getenv("USEHOBBITD"), "TRUE") == 0);
 
 	for (argi = 1; (argi < argc); argi++) {
 		if ((strcmp(argv[argi], "--help") == 0)) {
@@ -420,8 +420,8 @@ int main(int argc, char *argv[])
 		else if ((strcmp(argv[argi], "--clean") == 0)) {
 			cleanexpr = 1;
 		}
-		else if ((strcmp(argv[argi], "--bbgend") == 0)) {
-			usebbgend = 1;
+		else if ((strcmp(argv[argi], "--hobbitd") == 0)) {
+			usehobbitd = 1;
 		}
 	}
 

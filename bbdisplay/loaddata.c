@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.135 2004-12-13 16:35:07 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.136 2004-12-30 22:25:34 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -151,7 +151,7 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 		if (find_host(filename)) return NULL;
 	}
 
-	if (usebbgend && !(reportstart || snapshot)) {
+	if (usehobbitd && !(reportstart || snapshot)) {
 		hostname = strdup(log->hostname);
 		testname = strdup(log->testname);
 		logexpired = (log->validtime < now);
@@ -249,7 +249,7 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 	else if (snapshot) {
 		newstate->entry->color = history_color(fd, snapshot, &histentry_start, &newstate->entry->histlogname);
 	}
-	else if (usebbgend) {
+	else if (usehobbitd) {
 		newstate->entry->color = log->color;
 		newstate->entry->testflags = strdup(log->testflags);
 		if (testflag_set(newstate->entry, 'D')) newstate->entry->skin = dialupskin;
@@ -299,7 +299,7 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 	}
 
 	/* Acked column ? */
-	if (usebbgend && !reportstart && !snapshot) {
+	if (usehobbitd && !reportstart && !snapshot) {
 		newstate->entry->acked = (log->acktime > now);
 	}
 	else {
@@ -335,7 +335,7 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 		else
 			sprintf(newstate->entry->age, "%.2f minutes", (fileage / 60.0));
 	}
-	else if (usebbgend) {
+	else if (usehobbitd) {
 		time_t fileage = (now - log->lastchange);
 
 		newstate->entry->oldage = (fileage >= 86400);
@@ -485,7 +485,7 @@ dispsummary_t *init_displaysummary(char *fn, logdata_t *log)
 
 	dprintf("init_displaysummary(%s)\n", textornull(fn));
 
-	if (usebbgend) {
+	if (usehobbitd) {
 		if (log->validtime < now) return NULL;
 		strcpy(l, log->msg);
 	}
@@ -565,7 +565,7 @@ void init_modembank_status(char *fn, logdata_t *log)
 
 	dprintf("init_modembank_status(%s)\n", textornull(fn));
 
-	if (usebbgend) {
+	if (usehobbitd) {
 		if (log->validtime < now) return;
 		strcpy(l, log->msg);
 	}
@@ -670,17 +670,17 @@ state_t *load_state(dispsummary_t **sumhead)
 	logdir = getenv("BBLOGS");
 
 	dprintf("load_state()\n");
-	if (usebbgend) {
-		int bbgendresult;
+	if (usehobbitd) {
+		int hobbitdresult;
 
 		if (!reportstart && !snapshot) {
-			bbgendresult = sendmessage("bbgendboard", NULL, NULL, &board, 1, 30);
+			hobbitdresult = sendmessage("hobbitdboard", NULL, NULL, &board, 1, 30);
 		}
 		else {
-			bbgendresult = sendmessage("bbgendlist", NULL, NULL, &board, 1, 30);
+			hobbitdresult = sendmessage("hobbitdlist", NULL, NULL, &board, 1, 30);
 		}
-		if ((bbgendresult != BB_OK) || (board == NULL) || (*board == '\0')) {
-			errprintf("bbgend status-board not available\n");
+		if ((hobbitdresult != BB_OK) || (board == NULL) || (*board == '\0')) {
+			errprintf("hobbitd status-board not available\n");
 			return NULL;
 		}
 	}
@@ -734,7 +734,7 @@ state_t *load_state(dispsummary_t **sumhead)
 
 	done = 0; nextline = board;
 	while (!done) {
-		if (usebbgend) {
+		if (usehobbitd) {
 			char *bol = nextline;
 			char onelog[MAXMSG];
 			char *p;

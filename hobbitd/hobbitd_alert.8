@@ -1,19 +1,19 @@
-.TH BBGEND_ALERT 8 "Version 3.4: 21 nov 2004" "bbgen toolkit"
+.TH HOBBITD_ALERT 8 "Version 3.4: 21 nov 2004" "bbgen toolkit"
 .SH NAME
-bbgend_alert \- bbgend worker module for sending out alerts
+hobbitd_alert \- hobbitd worker module for sending out alerts
 .SH SYNOPSIS
-.B "bbgend_channel --channel=page bbgend_alert [options]"
+.B "hobbitd_channel --channel=page hobbitd_alert [options]"
 
 .SH DESCRIPTION
-bbgend_alert is a worker module for bbgend, and as such it is normally
+hobbitd_alert is a worker module for hobbitd, and as such it is normally
 run via the
-.I bbgend_channel(8)
-program. It receives bbgend page- and ack-messages from the "page" 
+.I hobbitd_channel(8)
+program. It receives hobbitd page- and ack-messages from the "page" 
 channel via stdin, and uses these to send out alerts about failed 
 and recovered hosts and services.
 
 The operation of this module is controlled by the
-.I bb-alerts.cfg(5)
+.I hobbit-alerts.cfg(5)
 file, except when running in "legacy" mode via the "--legacy" option;
 in that mode, it uses the old bbwarnrules.cfg and bbwarnsetup.cfg files
 to determine who should receive alerts.
@@ -23,23 +23,23 @@ to determine who should receive alerts.
 .IP "--alertcolors=color1[,color2]"
 Define the colors that may generate alerts. A status with one of
 these colors may trigger an alert message, if it matches one
-or more rules in the bb-alerts.cfg file. A switch from an alert-
+or more rules in the hobbit-alerts.cfg file. A switch from an alert-
 color to a non-alert color may trigger a "recovered" message.
 
 The default is "--alertcolors=red,yellow,purple".
 
 .IP "--config=FILENAME"
 Sets the filename for the 
-.I bb-alerts.cfg"
-file. The default value is "$BBHOME/etc/bb-alerts.cfg".
+.I hobbit-alerts.cfg"
+file. The default value is "$BBHOME/etc/hobbit-alerts.cfg".
 
 .IP "--dump-config"
 Dumps the configuration after parsing it. May be useful to track
 down problems with configuration file errors.
 
 .IP "--checkpoint-file=FILENAME"
-File where the current state of the bbgend_alert module is saved. 
-When starting up, bbgend_alert will also read this file to restore
+File where the current state of the hobbitd_alert module is saved. 
+When starting up, hobbitd_alert will also read this file to restore
 the previous state.
 
 .IP "--checkpoint-interval=N"
@@ -47,7 +47,7 @@ Defines how often (in seconds) the checkpoint-file is saved.
 
 .IP "--cfid"
 If this option is present, alert messages will include a line with
-"cfid:N" where N is the linenumber in the bb-alerts.cfg file that
+"cfid:N" where N is the linenumber in the hobbit-alerts.cfg file that
 caused this message to be sent. This can be useful to track down
 problems with duplicate alerts.
 
@@ -58,7 +58,7 @@ Enable the Big Brother compatible legacy mode.
 Enable debugging output.
 
 .SH "LEGACY MODE"
-When running in legacy mode, bbgend_alert reads the alert rules defined by 
+When running in legacy mode, hobbitd_alert reads the alert rules defined by 
 the bbwarnsetup.cfg and bbwarnrules.cfg files, as used by the old Big Brother
 bbd daemon.
 
@@ -69,7 +69,7 @@ host-, service- and time-definitions.
 The use of an escalation delay is not supported in legacy mode. 
 
 If a recipient name contains an "@"-sign, the recipient is believed to
-be an e-mail address, and the alert is sent out using as e-mail by bbgend_alert.
+be an e-mail address, and the alert is sent out using as e-mail by hobbitd_alert.
 All other recipients cause the script "$BBHOME/ext/bbcompatalert.sh" to
 be invoked, with the environment definitions setup as for normal external
 paging scripts.
@@ -77,19 +77,19 @@ paging scripts.
 .SH ENVIRONMENT
 .IP MAIL
 The first part of a command line used to send out an e-mail with a 
-subject, typically set to "/usr/bin/mail -s" . bbgend_alert will add
+subject, typically set to "/usr/bin/mail -s" . hobbitd_alert will add
 the subject and the mail recipients to form the command line used
 for sending out email alerts.
 
 .IP MAILC
 The first part of a command line used to send out an e-mail without
-a subject. Typically this will be "/usr/bin/mail". bbgend_alert will
+a subject. Typically this will be "/usr/bin/mail". hobbitd_alert will
 add the mail recipients to form the command line used for sending
 out email alerts.
 
 .SH FILES
-.IP "$BBHOME/etc/bb-alerts.cfg"
+.IP "$BBHOME/etc/hobbit-alerts.cfg"
 
 .SH "SEE ALSO"
-bbgend_channel(8), bbgen-intro(7), bbgend(8)
+hobbitd_channel(8), bbgen-intro(7), hobbitd(8)
 

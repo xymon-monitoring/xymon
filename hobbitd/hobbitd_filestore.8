@@ -1,22 +1,22 @@
-.TH BBGEND_FILESTORE 8 "Version 3.4: 21 nov 2004" "bbgen toolkit"
+.TH HOBBITD_FILESTORE 8 "Version 3.4: 21 nov 2004" "bbgen toolkit"
 .SH NAME
-bbgend_filestore \- bbgend worker module for storing Big Brother files
+hobbitd_filestore \- hobbitd worker module for storing Big Brother files
 .SH SYNOPSIS
-.B "bbgend_channel --channel=status bbgend_filestore --status [options]"
+.B "hobbitd_channel --channel=status hobbitd_filestore --status [options]"
 .br
-.B "bbgend_channel --channel=data   bbgend_filestore --data [options]"
+.B "hobbitd_channel --channel=data   hobbitd_filestore --data [options]"
 .br
-.B "bbgend_channel --channel=notes  bbgend_filestore --notes [options]"
+.B "hobbitd_channel --channel=notes  hobbitd_filestore --notes [options]"
 .br
-.B "bbgend_channel --channel=enadis bbgend_filestore --enadis [options]"
+.B "hobbitd_channel --channel=enadis hobbitd_filestore --enadis [options]"
 
 .SH DESCRIPTION
-bbgend_filestore is a worker module for bbgend, and as such it is normally
+hobbitd_filestore is a worker module for hobbitd, and as such it is normally
 run via the
-.I bbgend_channel(8)
-program. It receives bbgend messages from a bbgend channel via stdin, and 
+.I hobbitd_channel(8)
+program. It receives hobbitd messages from a hobbitd channel via stdin, and 
 stores these in the filesystem in a manner that is compatible with the 
-standard Big Brother daemon, bbd.
+Big Brother daemon, bbd.
 
 This program can be started multiple times, if you want to store
 messages for more than one channel.
@@ -30,7 +30,7 @@ throughout your Big Brother server, you will not need to run this
 module to save status messages, unless you have a third-party 
 Big Brother add-on that reads the status-logs directly.
 This module is NOT needed for LARRD, you should run the 
-.I bbgend_larrd(8)
+.I hobbitd_larrd(8)
 module instead.
 
 .IP "--data"
@@ -38,7 +38,7 @@ Incoming messages are "data" messages, they will be stored in the
 $BBDATA directory. This module is not needed, unless you have a
 third-party module that processes the data-files. This module is
 NOT needed for LARRD, you should run the 
-.I bbgend_larrd(8)
+.I hobbitd_larrd(8)
 module instead.
 
 .IP "--notes"
@@ -77,5 +77,5 @@ Enable debugging output.
 This module does not rely on any configuration files.
 
 .SH "SEE ALSO"
-bbgend_channel(8), bbgend_larrd(8), bbgen-intro(7), bbgend(8)
+hobbitd_channel(8), hobbitd_larrd(8), bbgen-intro(7), hobbitd(8)
 

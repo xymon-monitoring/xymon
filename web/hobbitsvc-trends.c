@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.53 2004-12-26 23:28:16 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.54 2004-12-30 22:25:34 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -111,7 +111,7 @@ static char *larrd_readdir(void)
 }
 
 
-static char *rrdlink_text(namelist_t *host, graph_t *rrd, int larrd043, int bbgend, int wantmeta)
+static char *rrdlink_text(namelist_t *host, graph_t *rrd, int larrd043, int hobbitd, int wantmeta)
 {
 	static char *rrdlink = NULL;
 	static int rrdlinksize = 0;
@@ -127,7 +127,7 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, int larrd043, int bbge
 	/* If no larrdgraphs definition, include all with default links */
 	if (hostlarrdgraphs == NULL) {
 		dprintf("rrdlink_text: Standard URL (no larrdgraphs)\n");
-		return larrd_graph_data(host->bbhostname, hostdisplayname, NULL, rrd->gdef, rrd->count, larrd043, bbgend, wantmeta);
+		return larrd_graph_data(host->bbhostname, hostdisplayname, NULL, rrd->gdef, rrd->count, larrd043, hobbitd, wantmeta);
 	}
 
 	/* Find this rrd definition in the larrdgraphs */
@@ -142,7 +142,7 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, int larrd043, int bbge
 			dprintf("rrdlink_text: Default URL included\n");
 
 			/* Yes, return default link for this RRD */
-			return larrd_graph_data(host->bbhostname, hostdisplayname, NULL, rrd->gdef, rrd->count, larrd043, bbgend, wantmeta);
+			return larrd_graph_data(host->bbhostname, hostdisplayname, NULL, rrd->gdef, rrd->count, larrd043, hobbitd, wantmeta);
 		}
 		else {
 			dprintf("rrdlink_text: Default URL NOT included\n");
@@ -193,7 +193,7 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, int larrd043, int bbge
 			myrrd->gdef->maxgraphs = 999;
 			myrrd->count = 1;
 			myrrd->next = NULL;
-			partlink = larrd_graph_data(host->bbhostname, hostdisplayname, NULL, myrrd->gdef, myrrd->count, larrd043, bbgend, wantmeta);
+			partlink = larrd_graph_data(host->bbhostname, hostdisplayname, NULL, myrrd->gdef, myrrd->count, larrd043, hobbitd, wantmeta);
 			if ((strlen(rrdlink) + strlen(partlink) + 1) >= rrdlinksize) {
 				rrdlinksize += strlen(partlink) + 4096;
 				rrdlink = (char *)realloc(rrdlink, rrdlinksize);
@@ -214,14 +214,14 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, int larrd043, int bbge
 	}
 	else {
 		/* It is included with the default graph */
-		return larrd_graph_data(host->bbhostname, hostdisplayname, NULL, rrd->gdef, rrd->count, larrd043, bbgend, wantmeta);
+		return larrd_graph_data(host->bbhostname, hostdisplayname, NULL, rrd->gdef, rrd->count, larrd043, hobbitd, wantmeta);
 	}
 
 	return "";
 }
 
 
-int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend)
+int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int hobbitd)
 {
 	char *fn;
 	namelist_t *hostwalk;
@@ -319,7 +319,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 
 	chdir(getenv("BBLOGS"));
 
-	if (bbgend) {
+	if (hobbitd) {
 		combo_start();
 		if (sendmetainfo) meta_start();
 	}
@@ -340,7 +340,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 				int buflen;
 
 				buflen = (allrrdlinksend - allrrdlinks);
-				rrdlink = rrdlink_text(hostwalk, rwalk, larrd043, bbgend, 0);
+				rrdlink = rrdlink_text(hostwalk, rwalk, larrd043, hobbitd, 0);
 				if ((buflen + strlen(rrdlink)) >= allrrdlinksize) {
 					allrrdlinksize += (strlen(rrdlink) + 4096);
 					allrrdlinks = (char *) realloc(allrrdlinks, allrrdlinksize);
@@ -348,9 +348,9 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 				}
 				allrrdlinksend += sprintf(allrrdlinksend, "%s", rrdlink);
 
-				if (bbgend && sendmetainfo) {
+				if (hobbitd && sendmetainfo) {
 					buflen = (allrrdlinksend - allrrdlinks);
-					rrdlink = rrdlink_text(hostwalk, rwalk, larrd043, bbgend, 1);
+					rrdlink = rrdlink_text(hostwalk, rwalk, larrd043, hobbitd, 1);
 					if ((buflen + strlen(rrdlink)) >= allmetasize) {
 						allmetasize += (strlen(rrdlink) + 4096);
 						allmeta = (char *) realloc(allmeta, allmetasize);
@@ -365,7 +365,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 
 		if (strlen(allrrdlinks) > 0) {
 			do_savelog(hostwalk->bbhostname, hostwalk->ip, 
-				larrdcolumn, allrrdlinks, bbgend);
+				larrdcolumn, allrrdlinks, hobbitd);
 		}
 
 		if (sendmetainfo && (strlen(allmeta) > 0)) {
@@ -373,7 +373,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 		}
 	}
 
-	if (bbgend) {
+	if (hobbitd) {
 		combo_end();
 		if (sendmetainfo) meta_end();
 	}
@@ -391,10 +391,10 @@ int main(int argc, char *argv[])
 	char *bbhostsfn = NULL;
 	char *rrddir = NULL;
 	char *larrdcol = NULL;
-	int usebbgend = 0;
+	int usehobbitd = 0;
 
-	getenv_default("USEBBGEND", "FALSE", NULL);
-	usebbgend = (strcmp(getenv("USEBBGEND"), "TRUE") == 0);
+	getenv_default("USEHOBBITD", "FALSE", NULL);
+	usehobbitd = (strcmp(getenv("USEHOBBITD"), "TRUE") == 0);
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
@@ -416,8 +416,8 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			larrdcol = strdup(p+1);
 		}
-		else if (strcmp(argv[argi], "--bbgend") == 0) {
-			usebbgend = 1;
+		else if (strcmp(argv[argi], "--hobbitd") == 0) {
+			usehobbitd = 1;
 		}
 		else if (strcmp(argv[argi], "--meta") == 0) {
 			sendmetainfo = 1;
@@ -439,13 +439,13 @@ int main(int argc, char *argv[])
 	hosthead = load_hostnames(bbhostsfn, NULL, get_fqdn(), NULL);
 
 	/* First, generate the "trends" column for all hosts */
-	generate_larrd(rrddir, larrdcol, 1, usebbgend);
+	generate_larrd(rrddir, larrdcol, 1, usehobbitd);
 
 	/* Next, generate the per-host-per-status meta-info about graphs */
-	if (usebbgend && sendmetainfo) {
+	if (usehobbitd && sendmetainfo) {
 		char *statuslist = NULL;
 
-		if (sendmessage("bbgendlist", NULL, NULL, &statuslist, 1, BBTALK_TIMEOUT) == BB_OK) {
+		if (sendmessage("hobbitdlist", NULL, NULL, &statuslist, 1, BBTALK_TIMEOUT) == BB_OK) {
 			char *curr, *next;
 			char *host, *test, *graphlinks;
 			larrdrrd_t *larrd = NULL;

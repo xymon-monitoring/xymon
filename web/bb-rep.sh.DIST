@@ -2,7 +2,7 @@
 
 # This is the bbgen drop-in replacement for the Big Brother reporting
 # script, bb-rep.sh
-# It is the bbgend version
+# It is the Hobbit version
 
-exec @BBHOME@/bin/bb-rep.cgi --env=@BBHOME@/etc/bbserver.env
+exec @BBHOME@/bin/bb-rep.cgi --env=@BBHOME@/etc/hobbitserver.env
 

@@ -14,7 +14,6 @@
 #include <stdio.h>
 
 enum histbutton_t { HIST_TOP, HIST_BOTTOM, HIST_NONE };
-enum source_t { SRC_BBLOGS, SRC_BBGEND, SRC_HISTLOGS, SRC_MEM };
 
 extern enum histbutton_t histlocation;
 
@@ -22,7 +21,7 @@ extern void generate_html_log(char *hostname, char *displayname, char *service, 
 		       int color, char *sender, char *flags, 
 		       time_t logtime, char *timesincechange, 
 		       char *firstline, char *restofmsg, char *ackmsg, 
-		       int is_history, int wantserviceid, int htmlfmt, int bbgend,
+		       int is_history, int wantserviceid, int htmlfmt, int hobbitd,
 		       FILE *output);
 
 #endif

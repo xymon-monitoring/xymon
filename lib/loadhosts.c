@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother message daemon.                                                */
+/* Hobbit monitor.                                                            */
 /*                                                                            */
-/* This is a library module for bbgend, responsible for loading the bb-hosts  */
+/* This is a library module for Hobbit, responsible for loading the bb-hosts  */
 /* file and keeping track of what hosts are known, their aliases and planned  */
 /* downtime settings etc.                                                     */
 /*                                                                            */
@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.18 2004-12-27 16:14:12 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.19 2004-12-30 22:25:34 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>

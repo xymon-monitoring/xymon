@@ -19,7 +19,7 @@
 #ifndef __BBCONVERT_H__
 #define __BBCONVERT_H__
 
-extern void dump_bbgendchk(void);
+extern void dump_hobbitdchk(void);
 
 #endif
 

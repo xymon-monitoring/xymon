@@ -1,9 +1,8 @@
 #!/bin/sh
 
-# This is the bbgen CGI script interface to bb-larrdgraph.cgi
-# It is the bbgend version.
+# This is the Hobbit CGI script interface to hobbitgraph.cgi
 #
 # Install this script in your webservers' cgi-bin directory
 
-exec @BBHOME@/bin/bb-larrdgraph.cgi --env=@BBHOME@/etc/bbserver.env
+exec @BBHOME@/bin/hobbitgraph.cgi --env=@BBHOME@/etc/hobbitserver.env
 

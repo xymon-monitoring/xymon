@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.12 2004-12-28 22:34:01 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.13 2004-12-30 22:25:34 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -50,7 +50,7 @@ static char *default_rrds =
 	"vmstat,iostat,netstat,"				/* LARRD standard bottom-feeders data */
 	"temperature,bind,sendmail,nmailq,socks,"		/* LARRD non-standard bottom-feeders data */
 	"bea,citrix,"						/* bbgen extra bottom-feeders data */
-	"bbgen,bbtest,bbproxy,bbgend"				/* bbgen report status */
+	"bbgen,bbtest,bbproxy,hobbitd"				/* bbgen report status */
 	;
 
 /* This is the information needed to generate links to larrd-grapher.cgi */
@@ -61,7 +61,7 @@ static char *default_graphs =
 	"temperature,ntpstat,"
 	"apache,bind,sendmail,nmailq,socks,"
 	"bea,citrix,"
-	"bbgen,bbtest,bbproxy,bbgend,"
+	"bbgen,bbtest,bbproxy,hobbitd,"
 	;
 
 static const char *linkfmt = "<br><A HREF=\"%s\"><IMG BORDER=0 SRC=\"%s&amp;graph=hourly\" ALT=\"larrd is accumulating %s\"></A>\n";
@@ -184,7 +184,7 @@ larrdgraph_t *find_larrd_graph(char *rrdname)
 
 
 static char *larrd_graph_text(char *hostname, char *dispname, char *service, 
-			      larrdgraph_t *graphdef, int itemcount, int larrd043, int bbgend,
+			      larrdgraph_t *graphdef, int itemcount, int larrd043, int hobbitd,
 			      const char *fmt)
 {
 	static char *rrdurl = NULL;
@@ -223,7 +223,7 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 	}
 	*rrdurl = '\0';
 
-	if (bbgend) {
+	if (hobbitd) {
 		char *rrdparturl;
 		int first = 1;
 		int step = 5;
@@ -236,11 +236,11 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 		rrdparturl = (char *) malloc(rrdparturlsize);
 		do {
 			if (itemcount > 0) {
-				sprintf(svcurl, "%s/bb-larrdgraph.sh?host=%s&amp;service=%s&amp;first=%d&amp;count=%d", 
+				sprintf(svcurl, "%s/hobbitgraph.sh?host=%s&amp;service=%s&amp;first=%d&amp;count=%d", 
 					getenv("CGIBINURL"), hostname, rrdservicename, first, step);
 			}
 			else {
-				sprintf(svcurl, "%s/bb-larrdgraph.sh?host=%s&amp;service=%s", 
+				sprintf(svcurl, "%s/hobbitgraph.sh?host=%s&amp;service=%s", 
 					getenv("CGIBINURL"), hostname, rrdservicename);
 			}
 
@@ -304,12 +304,12 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 
 
 char *larrd_graph_data(char *hostname, char *dispname, char *service, 
-		      larrdgraph_t *graphdef, int itemcount, int larrd043, int bbgend,
+		      larrdgraph_t *graphdef, int itemcount, int larrd043, int hobbitd,
 		      int wantmeta)
 {
 	if (wantmeta)
 		return larrd_graph_text(hostname, dispname, service, graphdef, itemcount, 1, 0, metafmt);
 	else
-		return larrd_graph_text(hostname, dispname, service, graphdef, itemcount, larrd043, bbgend, linkfmt);
+		return larrd_graph_text(hostname, dispname, service, graphdef, itemcount, larrd043, hobbitd, linkfmt);
 }
 

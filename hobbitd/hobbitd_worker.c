@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother message daemon.                                                */
+/* Hobbit message daemon.                                                     */
 /*                                                                            */
-/* This is a small library for bbgend worker modules, to read a new message   */
-/* from the bbgend_channel process, and also do the decoding of messages that */
-/* are passed on the "meta-data" first line of such a message.                */
+/* This is a small library for hobbitd worker modules, to read a new message  */
+/* from the hobbitd_channel process, and also do the decoding of messages     */
+/* that are passed on the "meta-data" first line of such a message.           */
 /*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
 /*                                                                            */
@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_worker.c,v 1.14 2004-12-29 10:44:10 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_worker.c,v 1.15 2004-12-30 22:25:34 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -27,8 +27,8 @@ static char rcsid[] = "$Id: hobbitd_worker.c,v 1.14 2004-12-29 10:44:10 henrik E
 
 #include "libbbgen.h"
 
-#include "bbgend_ipc.h"
-#include "bbgend_worker.h"
+#include "hobbitd_ipc.h"
+#include "hobbitd_worker.h"
 
 static int didtimeout = 0;
 static int ioerror = 0;
@@ -132,7 +132,7 @@ static char *readlntimed(char *buffer, size_t bufsize, struct timeval *timeout)
 }
 
 
-unsigned char *get_bbgend_message(char *id, int *seq, struct timeval *timeout)
+unsigned char *get_hobbitd_message(char *id, int *seq, struct timeval *timeout)
 {
 	static unsigned int seqnum = 0;
 	static unsigned char buf[SHAREDBUFSZ];

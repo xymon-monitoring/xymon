@@ -1,21 +1,20 @@
-.TH BBGEND_HISTORY 8 "Version 3.4: 21 nov 2004" "bbgen toolkit"
+.TH HOBBITD_HISTORY 8 "Version 3.4: 21 nov 2004" "bbgen toolkit"
 .SH NAME
-bbgend_history \- bbgend worker module for storing Big Brother history
+hobbitd_history \- hobbitd worker module for storing historical logs
 .SH SYNOPSIS
-.B "bbgend_channel --channel=stachg bbgend_history [options]"
+.B "hobbitd_channel --channel=stachg hobbitd_history [options]"
 
 .SH DESCRIPTION
-bbgend_history is a worker module for bbgend, and as such it is normally
+hobbitd_history is a worker module for hobbitd, and as such it is normally
 run via the
-.I bbgend_channel(8)
-program. It receives bbgend status-change messages from the "stachg" 
-channel via stdin, and uses these to update the standard Big Brother
-history files in a manner that is compatible with the standard Big Brother 
-daemon, bbd.
+.I hobbitd_channel(8)
+program. It receives hobbitd status-change messages from the "stachg" 
+channel via stdin, and uses these to update the history logfiles in a manner 
+that is compatible with the standard Big Brother daemon, bbd.
 
 .SH OPTIONS
 .IP "--histdir=DIRECTORY"
-The directory for the Big Brother history files. If not specified, the
+The directory for the history files. If not specified, the
 directory given by the BBHIST environment is used.
 
 .IP "--histlogdir=DIRECTORY"
@@ -50,5 +49,5 @@ do not want to save these, you can disable it by setting SAVESTATUSLOG=FALSE.
 This module does not rely on any configuration files.
 
 .SH "SEE ALSO"
-bbgend_channel(8), bbgen-intro(7), bbgend(8)
+hobbitd_channel(8), bbgen-intro(7), hobbitd(8)
 

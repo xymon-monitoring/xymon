@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother message daemon.                                                */
+/* Hobbit message daemon.    .                                                */
 /*                                                                            */
-/* This is a bbgend worker module for the "stachg" channel.                   */
+/* This is a hobbitd worker module for the "stachg" channel.                  */
 /* This module implements the Big Brother file-based history logging, and     */
 /* keeps the historical logfiles in bbvar/hist/ and bbvar/histlogs/ updated   */
 /* to keep track of the status changes.                                       */
@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.25 2004-12-29 08:47:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.26 2004-12-30 22:25:34 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -30,7 +30,7 @@ static char rcsid[] = "$Id: hobbitd_history.c,v 1.25 2004-12-29 08:47:47 henrik 
 
 #include "libbbgen.h"
 
-#include "bbgend_worker.h"
+#include "hobbitd_worker.h"
 
 void sig_handler(int signum)
 {
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* For picking up lost children */
-	setup_signalhandler("bbgend_history");
+	setup_signalhandler("hobbitd_history");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGCHLD, &sa, NULL);
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
 		int trend;
 		int childstat;
 
-		msg = get_bbgend_message("bbgend_history", &seq, NULL);
+		msg = get_hobbitd_message("hobbitd_history", &seq, NULL);
 		if (msg == NULL) {
 			running = 0;
 			continue;
@@ -193,12 +193,12 @@ int main(int argc, char *argv[])
 
 				if (logexists) {
 					/*
-					 * There is a fair chance bbgend has not been
+					 * There is a fair chance hobbitd has not been
 					 * running all the time while this system was monitored.
 					 * So get the time of the latest status change from the file,
 					 * instead of relying on the "lastchange" value we get
-					 * from bbgend. This is also needed when migrating from 
-					 * standard bbd to bbgend.
+					 * from hobbitd. This is also needed when migrating from 
+					 * standard bbd to hobbitd.
 					 */
 					long pos = -1;
 					char l[1024];

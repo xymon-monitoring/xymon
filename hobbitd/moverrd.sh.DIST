@@ -2,10 +2,10 @@
 
 # This script moves or copies rrd files from the flat "all files
 # in a single directory" structure used by the traditional LARRD
-# tool, to the "one directory per host" structure used by bbgend.
+# tool, to the "one directory per host" structure used by Hobbit
 
 # You need to run this tool once, to migrate your RRD files and
-# historical data to bbgend.
+# historical data to Hobbit.
 #
 # Set these variables to match your local setup
 BBHOME=/usr/local/bb/bb

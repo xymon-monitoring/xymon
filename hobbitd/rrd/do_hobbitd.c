@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother message daemon.                                                */
+/* Hobbit message daemon.                                                     */
 /*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
 /*                                                                            */
@@ -8,9 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbgend_rcsid[] = "$Id: do_hobbitd.c,v 1.1 2004-12-19 22:37:41 henrik Exp $";
+static char hobbitd_rcsid[] = "$Id: do_hobbitd.c,v 1.2 2004-12-30 22:25:34 henrik Exp $";
 
-static char *bbgend_params[] = { "rrdcreate", rrdfn, 
+static char *hobbitd_params[] = { "rrdcreate", rrdfn, 
 				 "DS:inmessages:DERIVE:600:0:U", 
 				 "DS:statusmessages:DERIVE:600:0:U", 
 				 "DS:combomessages:DERIVE:600:0:U", 
@@ -36,12 +36,12 @@ static char *bbgend_params[] = { "rrdcreate", rrdfn,
 				 "DS:enadischmsgs:DERIVE:600:0:U", 
 				 rra1, rra2, rra3, rra4, NULL };
 
-int do_bbgend_larrd(char *hostname, char *testname, char *msg, time_t tstamp) 
+int do_hobbitd_larrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
 	struct {
 		char *marker;
 		unsigned long val;
-	} bbgend_data[] = {
+	} hobbitd_data[] = {
 		{ "\nIncoming messages", 0 },
 		{ "\n- status", 0 },
 		{ "\n- combo", 0 },
@@ -54,11 +54,11 @@ int do_bbgend_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		{ "\n- ack", 0 },
 		{ "\n- config", 0 },
 		{ "\n- query", 0 },
-		{ "\n- bbgendboard", 0 },
-		{ "\n- bbgendlist", 0 },
-		{ "\n- bbgendlog", 0 },
-		{ "\n- bbgenddrop", 0 },
-		{ "\n- bbgendrename", 0 },
+		{ "\n- hobbitdboard", 0 },
+		{ "\n- hobbitdlist", 0 },
+		{ "\n- hobbitdlog", 0 },
+		{ "\n- hobbitddrop", 0 },
+		{ "\n- hobbitdrename", 0 },
 		{ "\nstatus channel messages", 0 },
 		{ "\nstachg channel messages", 0 },
 		{ "\npage   channel messages", 0 },
@@ -74,15 +74,15 @@ int do_bbgend_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 	sprintf(rrdvalues, "%d", (int)tstamp);
 	i = 0;
-	while (bbgend_data[i].marker) {
-		p = strstr(msg, bbgend_data[i].marker);
+	while (hobbitd_data[i].marker) {
+		p = strstr(msg, hobbitd_data[i].marker);
 		if (p) {
 			if (*p == '\n') p++;
 			p += strcspn(p, ":\r\n");
 			if (*p == ':') {
-				bbgend_data[i].val = atol(p+1);
+				hobbitd_data[i].val = atol(p+1);
 				gotany++;
-				sprintf(valstr, ":%lu", bbgend_data[i].val);
+				sprintf(valstr, ":%lu", hobbitd_data[i].val);
 				strcat(rrdvalues, valstr);
 			}
 			else strcat(rrdvalues, ":U");
@@ -93,14 +93,14 @@ int do_bbgend_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	}
 
 	if (gotany) {
-		if (strcmp("bbgend", testname) != 0) {
-			sprintf(rrdfn, "bbgend.%s.rrd", testname);
+		if (strcmp("hobbitd", testname) != 0) {
+			sprintf(rrdfn, "hobbitd.%s.rrd", testname);
 		}
 		else {
-			strcpy(rrdfn, "bbgend.rrd");
+			strcpy(rrdfn, "hobbitd.rrd");
 		}
 
-		return create_and_update_rrd(hostname, rrdfn, bbgend_params, update_params);
+		return create_and_update_rrd(hostname, rrdfn, hobbitd_params, update_params);
 	}
 
 	return 0;

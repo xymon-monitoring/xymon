@@ -1,11 +1,11 @@
 #!/bin/sh
 
 # This is the bbgen CGI wrapper for the bb-csvinfo.cgi program.
-# It is the bbgend version.
+# It is the Hobbit version.
 #
 # Install this script in your webservers' cgi-bin directory, where you
 # already have a bb-rep.sh script.
 
 
-exec @BBHOME@/bin/bb-csvinfo.cgi --env=@BBHOME@/etc/bbserver.env
+exec @BBHOME@/bin/bb-csvinfo.cgi --env=@BBHOME@/etc/hobbitserver.env
 

@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother message daemon.                                                */
+/* Hobbit message daemon.                                                     */
 /*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
 /*                                                                            */
@@ -8,8 +8,8 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __BBGEND_ALERT_H__
-#define __BBGEND_ALERT_H__
+#ifndef __HOBBITD_ALERT_H__
+#define __HOBBITD_ALERT_H__
 
 #include <time.h>
 #include <stdio.h>

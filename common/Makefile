@@ -1,13 +1,13 @@
 # bbgen - common tools
 #
 
-PROGRAMS = bbhostgrep bbhostshow bbdigest bb bblaunch bbcmd
+PROGRAMS = bbhostgrep bbhostshow bbdigest bb hobbitlaunch bbcmd
 
 HOSTGREPOBJS = bbhostgrep.o
 HOSTSHOWOBJS = bbhostshow.o
 DIGESTOBJS = bbdigest.o
 MSGOBJS = sendmsg-std.o
-LAUNCHOBJS = bblaunch.o
+LAUNCHOBJS = hobbitlaunch.o
 CMDOBJS = bbcmd.o
 
 all: $(PROGRAMS)
@@ -25,7 +25,7 @@ bbdigest: $(DIGESTOBJS)
 bb: $(MSGOBJS)
 	$(CC) $(CFLAGS) -o $@ $(MSGOBJS) ../lib/libbbgen.a $(NETLIBS)
 
-bblaunch: $(LAUNCHOBJS)
+hobbitlaunch: $(LAUNCHOBJS)
 	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/libbbgen.a
 
 bbcmd: $(CMDOBJS)

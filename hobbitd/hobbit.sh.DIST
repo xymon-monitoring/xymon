@@ -1,40 +1,40 @@
 #!/bin/sh
 
-# Startup script for the bbgend Big Brother monitor
+# Startup script for the Hobbit monitor
 #
-# This starts the "bblaunch" tool, which in turn starts
-# all of the other BB server programs.
+# This starts the "hobbitlaunch" tool, which in turn starts
+# all of the other Hobbit server programs.
 
 case "$1" in
    "start")
 	if test `id -un` != @BBUSER@
 	then
-		echo "BB must be started as the @BBUSER@ user"
+		echo "Hobbit must be started as the @BBUSER@ user"
 		exit 1
 	else
-		@BBHOME@/bin/bblaunch --config=@BBHOME@/etc/bbtasks.cfg --env=@BBHOME@/etc/bbserver.env --log=@BBLOGDIR@/bblaunch.log --pidfile=@BBLOGDIR@/bblaunch.pid
-		echo "BB started"
+		@BBHOME@/bin/hobbitlaunch --config=@BBHOME@/etc/hobbittasks.cfg --env=@BBHOME@/etc/hobbitserver.env --log=@BBLOGDIR@/hobbitlaunch.log --pidfile=@BBLOGDIR@/hobbitlaunch.pid
+		echo "Hobbit started"
 	fi
 	;;
 
    "stop")
-	if test -s @BBLOGDIR@/bblaunch.pid
+	if test -s @BBLOGDIR@/hobbitlaunch.pid
 	then
-		kill -TERM `cat @BBLOGDIR@/bblaunch.pid`
+		kill -TERM `cat @BBLOGDIR@/hobbitlaunch.pid`
 	fi
 	;;
 
    "status")
-	if test -s @BBLOGDIR@/bblaunch.pid
+	if test -s @BBLOGDIR@/hobbitlaunch.pid
 	then
-		echo "bblaunch running with PID `cat @BBLOGDIR@/bblaunch.pid`"
+		echo "hobbitlaunch running with PID `cat @BBLOGDIR@/hobbitlaunch.pid`"
 	else
-		echo "bblaunch does not appear to be running"
+		echo "hobbitlaunch does not appear to be running"
 	fi
 	;;
 
    "restart")
-	if test -s @BBLOGDIR@/bblaunch.pid
+	if test -s @BBLOGDIR@/hobbitlaunch.pid
 	then
 		$0 stop
 		sleep 10

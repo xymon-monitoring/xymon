@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.67 2004-12-18 10:24:17 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.68 2004-12-30 22:25:34 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -74,7 +74,7 @@ static void timespec_text(char *spec, char **infobuf, int *infobuflen)
 	free(sCopy);
 }
 
-int generate_info(char *infocolumn, char *documentationurl, int bbgend, int sendmetainfo)
+int generate_info(char *infocolumn, char *documentationurl, int hobbitd, int sendmetainfo)
 {
 	char *infobuf = NULL;
 	int infobuflen = 0;
@@ -88,13 +88,13 @@ int generate_info(char *infocolumn, char *documentationurl, int bbgend, int send
 	int ping, first;
 
 	/* Send the info columns as combo messages */
-	if (bbgend) {
+	if (hobbitd) {
 		combo_start();
 		if (sendmetainfo) meta_start();
 	}
 
 	/* Load the alert setup */
-	if (!bbgend) bbload_alerts();
+	if (!hobbitd) bbload_alerts();
 
 	hostwalk = hosthead;
 	while (hostwalk) {
@@ -373,7 +373,7 @@ int generate_info(char *infocolumn, char *documentationurl, int bbgend, int send
 		if (!first) addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
 		addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
-		alerts = (bbgend ? NULL : bbfind_alert(hostwalk->bbhostname, 0, 0));
+		alerts = (hobbitd ? NULL : bbfind_alert(hostwalk->bbhostname, 0, 0));
 		if (!bbh_item(hostwalk, BBH_FLAG_DIALUP)) {
 			if (alerts) {
 				int wantedstate = 0;  /* Start with the normal rules */
@@ -466,7 +466,7 @@ int generate_info(char *infocolumn, char *documentationurl, int bbgend, int send
 		}
 		addtobuffer(&infobuf, &infobuflen, "</td></tr>\n</table>\n");
 
-		do_savelog(hostwalk->bbhostname, hostwalk->ip, infocolumn, infobuf, bbgend);
+		do_savelog(hostwalk->bbhostname, hostwalk->ip, infocolumn, infobuf, hobbitd);
 		if (sendmetainfo) do_savemeta(hostwalk->bbhostname, infocolumn, "Info", metabuf);
 		*infobuf = '\0';
 		*metabuf = '\0';
@@ -478,7 +478,7 @@ int generate_info(char *infocolumn, char *documentationurl, int bbgend, int send
 
 	}
 
-	if (bbgend) {
+	if (hobbitd) {
 		combo_end();
 		if (sendmetainfo) meta_end();
 	}
@@ -495,11 +495,11 @@ int main(int argc, char *argv[])
 	char *bbhostsfn = NULL;
 	char *infocol = "info";
 	char *docurl = NULL;
-	int usebbgend = 0;
+	int usehobbitd = 0;
 	int sendmeta = 0;
 
-	getenv_default("USEBBGEND", "FALSE", NULL);
-	usebbgend = (strcmp(getenv("USEBBGEND"), "TRUE") == 0);
+	getenv_default("USEHOBBITD", "FALSE", NULL);
+	usehobbitd = (strcmp(getenv("USEHOBBITD"), "TRUE") == 0);
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
@@ -517,8 +517,8 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			docurl = strdup(p+1);
 		}
-		else if (strcmp(argv[argi], "--bbgend") == 0) {
-			usebbgend = 1;
+		else if (strcmp(argv[argi], "--hobbitd") == 0) {
+			usehobbitd = 1;
 		}
 		else if (strcmp(argv[argi], "--meta") == 0) {
 			sendmeta = 1;
@@ -533,7 +533,7 @@ int main(int argc, char *argv[])
 	hosthead = load_hostnames(bbhostsfn, NULL, get_fqdn(), docurl);
 	load_all_links();
 
-	generate_info(infocol, docurl, usebbgend, sendmeta);
+	generate_info(infocol, docurl, usehobbitd, sendmeta);
 
 	return 0;
 }

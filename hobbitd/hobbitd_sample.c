@@ -1,12 +1,12 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother message daemon.                                                */
+/* Hobbit message daemon.                                                     */
 /*                                                                            */
-/* Sample bbgend worker module. This module shows how to get messages from    */
-/* one of the bbgend channels. Worker modules subscribe to a channel and can  */
+/* Sample hobbitd worker module. This module shows how to get messages from   */
+/* one of the hobbitd channels. Worker modules subscribe to a channel and can */
 /* use the channel data to implement various types of storage (files, DB) of  */
-/* the Big Brother data, or they can implement actions such as alerting via   */
+/* the Hobbit data, or they can implement actions such as alerting via        */
 /* pager, e-mail, SNMP trap or .... In fact, a worker module can do anything  */
-/* without the master bbgend daemon having to care about what goes on in the  */
+/* without the master hobbit daemon having to care about what goes on in the  */
 /* workers.                                                                   */
 /*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_sample.c,v 1.11 2004-11-13 09:07:16 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_sample.c,v 1.12 2004-12-30 22:25:34 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -26,7 +26,7 @@ static char rcsid[] = "$Id: hobbitd_sample.c,v 1.11 2004-11-13 09:07:16 henrik E
 #include <signal.h>
 
 #include "libbbgen.h"
-#include "bbgend_worker.h"
+#include "hobbitd_worker.h"
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 
@@ -82,8 +82,8 @@ int main(int argc, char *argv[])
 		int metacount;
 
 		/*
-		 * get_bbgend_message() gets the next message from the queue.
-		 * The message buffer is allocated and managed by the get_bbgend_message()
+		 * get_hobbitd_message() gets the next message from the queue.
+		 * The message buffer is allocated and managed by the get_hobbitd_message()
 		 * routine, so you should NOT try to free or allocate it yourself.
 		 *
 		 * All messages have a sequence number ranging from 1-999999.
@@ -96,19 +96,19 @@ int main(int argc, char *argv[])
 		 * sequence number of the message returned.
 		 *
 		 * The third parameter is optional; you can pass a filled-in (struct
-		 * timeval) here, which then defines the maximum time get_bbgend_message()
-		 * will wait for a new message. get_bbgend_message() does not modify
+		 * timeval) here, which then defines the maximum time get_hobbitd_message()
+		 * will wait for a new message. get_hobbitd_message() does not modify
 		 * the content of the timeout parameter.
 		 * 
 		 *
-		 * get_bbgend_message() does not return until a message is ready,
+		 * get_hobbitd_message() does not return until a message is ready,
 		 * or the timeout setting expires, or the channel is closed.
 		 */
 
-		msg = get_bbgend_message(argv[0], &seq, timeout);
+		msg = get_hobbitd_message(argv[0], &seq, timeout);
 		if (msg == NULL) {
 			/*
-			 * get_bbgend_message will return NULL if bbgend_channel closes
+			 * get_hobbitd_message will return NULL if hobbitd_channel closes
 			 * the input pipe. We should shutdown when that happens.
 			 */
 			running = 0;
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
 		}
 
 		/*
-		 * An "idle" message appears when get_bbgend_message() 
+		 * An "idle" message appears when get_hobbitd_message() 
 		 * exceeds the timeout setting (ie. you passed a timeout
 		 * value). This allows your worker module to perform
 		 * some internal processing even though no messages arrive.

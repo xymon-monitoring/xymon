@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother application launcher.                                          */
+/* Hobbit application launcher.                                               */
 /*                                                                            */
-/* This is used to launch various parts of the BB system. Some programs start */
-/* up once and keep running, other must run at various intervals.             */
+/* This is used to launch various parts of the Hobbit system. Some programs   */
+/* start up once and keep running, other must run at various intervals.       */
 /*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
 /*                                                                            */
@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.15 2004-12-29 08:47:24 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.16 2004-12-30 22:25:34 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -32,9 +32,9 @@ static char rcsid[] = "$Id: hobbitlaunch.c,v 1.15 2004-12-29 08:47:24 henrik Exp
 /*
  * config file format:
  *
- * [bbgend]
- * 	CMD bbgend --no-daemon
- * 	LOGFILE /var/log/bbgend.log
+ * [hobbitd]
+ * 	CMD hobbitd --no-daemon
+ * 	LOGFILE /var/log/hobbitd.log
  *
  * [bbdisplay]
  * 	CMD bb-display.sh
@@ -352,7 +352,7 @@ int main(int argc, char *argv[])
 	grouplist_t *gwalk;
 	int argi;
 	int daemonize = 1;
-	char *config = "/etc/bbtasks.cfg";
+	char *config = "/etc/hobbittasks.cfg";
 	char *logfn = NULL;
 	char *pidfn = NULL;
 	pid_t cpid;
@@ -441,14 +441,14 @@ int main(int argc, char *argv[])
 	}
 
 	save_errbuf = 0;
-	setup_signalhandler("bblaunch");
+	setup_signalhandler("hobbitlaunch");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGCHLD, &sa, NULL);
 
-	errprintf("bblaunch starting\n");
+	errprintf("hobbitlaunch starting\n");
 	while (running) {
 		time_t now = time(NULL);
 

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: acklog.c,v 1.7 2004-12-06 12:40:20 henrik Exp $";
+static char rcsid[] = "$Id: acklog.c,v 1.8 2004-12-30 22:25:34 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -146,7 +146,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 					acks[num].ackedby = strdup(ackerp);
 				}
 				else {
-					/* bbgend's alert module does not (cannot) log this. */
+					/* hobbitd's alert module does not (cannot) log this. */
 					acks[num].ackedby = "";
 				}
 

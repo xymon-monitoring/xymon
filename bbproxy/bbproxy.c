@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.39 2004-12-03 12:04:24 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.40 2004-12-30 22:25:34 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
 	int bbdispcount = 0;
 	struct sockaddr_in bbpageraddr[MAX_SERVERS];
 	int bbpagercount = 0;
-	int usebbgend = 0;
+	int usehobbitd = 0;
 	int opt;
 	conn_t *chead = NULL;
 	struct sigaction sa;
@@ -321,8 +321,8 @@ int main(int argc, char *argv[])
 			}
 			free(ips);
 		}
-		else if (strcmp(argv[opt], "--bbgend") == 0) {
-			usebbgend = 1;
+		else if (strcmp(argv[opt], "--hobbitd") == 0) {
+			usehobbitd = 1;
 		}
 		else if (argnmatch(argv[opt], "--timeout=")) {
 			char *p = strchr(argv[opt], '=');
@@ -382,7 +382,7 @@ int main(int argc, char *argv[])
 			printf("\t--listen=IP[:port]          : Listen address and portnumber\n");
 			printf("\t--bbdisplay=IP[:port]       : BBDISPLAY server address and portnumber\n");
 			printf("\t--bbpager=IP[:port]         : BBPAGER server address and portnumber\n");
-			printf("\t--bbgend                    : Modify behaviour to use bbgend features\n");
+			printf("\t--hobbitd                   : Modify behaviour to use hobbitd features\n");
 			printf("\t--report=[HOST.]SERVICE     : Sends a BB status message about proxy activity\n");
 			printf("\t--timeout=N                 : Communications timeout (seconds)\n");
 			printf("\t--lqueue=N                  : Listen-queue size\n");
@@ -636,7 +636,7 @@ int main(int argc, char *argv[])
 						cwalk->buflen = strlen(cwalk->buf);
 						cwalk->bufp = cwalk->buf + cwalk->buflen;
 
-						if (usebbgend && ((cwalk->buflen + 50 ) < cwalk->bufsize)) {
+						if (usehobbitd && ((cwalk->buflen + 50 ) < cwalk->bufsize)) {
 							int n = sprintf(cwalk->bufp, 
 									"\nStatus message received from %s\n", 
 									inet_ntoa(*cwalk->clientip));
@@ -676,7 +676,7 @@ int main(int argc, char *argv[])
 							memcpy(ctmp, cwalk, sizeof(conn_t));
 							ctmp->bufsize = BUFSZ_INC*(((6 + strlen(currmsg) + 50) / BUFSZ_INC) + 1);
 							ctmp->buf = (char *)malloc(ctmp->bufsize);
-							if (usebbgend) {
+							if (usehobbitd) {
 								ctmp->buflen = sprintf(ctmp->buf, 
 									"combo\n%s\nStatus message received from %s\n", 
 									currmsg, inet_ntoa(*cwalk->clientip));
@@ -697,8 +697,8 @@ int main(int argc, char *argv[])
 						break;
 					}
 					else if (strncmp(cwalk->buf+6, "page", 4) == 0) {
-						if (usebbgend) {
-							/* bbgend has no use for page requests */
+						if (usehobbitd) {
+							/* hobbitd has no use for page requests */
 							cwalk->state = P_CLEANUP;
 							break;
 						}

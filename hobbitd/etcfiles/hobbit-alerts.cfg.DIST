@@ -1,5 +1,5 @@
 #
-# The bb-alerts.cfg file controls who receives alerts
+# The hobbit-alerts.cfg file controls who receives alerts
 # when a status in the BB system goes into a critical
 # state (usually: red, yellow or purple).
 #

@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother message daemon.                                                */
+/* Hobbit message daemon.                                                     */
 /*                                                                            */
-/* This module receives messages from one channel of the bbgend master daemon.*/
+/* This module receives messages from one channel of the Hobbit master daemon.*/
 /* These messages are then forwarded to the actual worker process via stdin;  */
 /* the worker process can process the messages without having to care about   */
-/* the tricky details in the bbgend/bbgend_channel communications.            */
+/* the tricky details in the hobbitd/hobbitd_channel communications.          */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.25 2004-11-25 22:08:04 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.26 2004-12-30 22:25:34 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -30,10 +30,10 @@ static char rcsid[] = "$Id: hobbitd_channel.c,v 1.25 2004-11-25 22:08:04 henrik 
 
 #include "libbbgen.h"
 
-#include "bbgend_ipc.h"
+#include "hobbitd_ipc.h"
 
 
-/* For our in-memory queue of messages received from bbgend via IPC */
+/* For our in-memory queue of messages received from hobbitd via IPC */
 typedef struct msg_t {
 	char *buf;
 	char *bufp;
@@ -48,7 +48,7 @@ static volatile int running = 1;
 static volatile int gotalarm = 0;
 static volatile int dologswitch = 0;
 static int childexit = -1;
-bbgend_channel_t *channel = NULL;
+hobbitd_channel_t *channel = NULL;
 
 void sig_handler(int signum)
 {
@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Catch signals */
-	setup_signalhandler("bbgend_channel");
+	setup_signalhandler("hobbitd_channel");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGPIPE, &sa, NULL);
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
 	sigaction(SIGHUP, &sa, NULL);
 
 	/* Switch stdout/stderr to the logfile, if one was specified */
-	freopen("/dev/null", "r", stdin);	/* bbgend_channel's stdin is not used */
+	freopen("/dev/null", "r", stdin);	/* hobbitd_channel's stdin is not used */
 	if (logfn) {
 		freopen(logfn, "a", stdout);
 		freopen(logfn, "a", stderr);

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.4 2004-12-27 22:47:58 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.5 2004-12-30 22:25:34 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -101,7 +101,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 
 		if (strcmp(t_start, "BBREL") == 0)     		fprintf(output, "%s", getenv("BBREL"));
 		else if (strcmp(t_start, "BBRELDATE") == 0) 	fprintf(output, "%s", getenv("BBRELDATE"));
-		else if (strcmp(t_start, "BBGENDREL") == 0) 	fprintf(output, "%s", getenv("BBGENDREL"));
+		else if (strcmp(t_start, "HOBBITDREL") == 0) 	fprintf(output, "%s", getenv("HOBBITDREL"));
 		else if (strcmp(t_start, "BBSKIN") == 0)    	fprintf(output, "%s", getenv("BBSKIN"));
 		else if (strcmp(t_start, "BBWEB") == 0)     	fprintf(output, "%s", getenv("BBWEB"));
 		else if (strcmp(t_start, "CGIBINURL") == 0) 	fprintf(output, "%s", getenv("CGIBINURL"));
@@ -212,10 +212,10 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 	char	*templatedata;
 	char	*hfpath;
 
-	if (getenv("BBGENDREL") == NULL) {
-		char *bbgendrel = (char *)malloc(11+strlen(VERSION));
-		sprintf(bbgendrel, "BBGENDREL=%s", VERSION);
-		putenv(bbgendrel);
+	if (getenv("HOBBITDREL") == NULL) {
+		char *hobbitdrel = (char *)malloc(12+strlen(VERSION));
+		sprintf(hobbitdrel, "HOBBITDREL=%s", VERSION);
+		putenv(hobbitdrel);
 	}
 
 	/*

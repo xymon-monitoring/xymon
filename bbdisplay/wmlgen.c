@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: wmlgen.c,v 1.16 2004-10-31 12:54:10 henrik Exp $";
+static char rcsid[] = "$Id: wmlgen.c,v 1.17 2004-12-30 22:25:34 henrik Exp $";
 
 #include <limits.h>
 #include <stdlib.h>
@@ -94,7 +94,7 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 	char l[MAX_LINE_LEN], lineout[MAX_LINE_LEN];
 	char *p, *outp, *nextline;
 
-	if (!usebbgend) {
+	if (!usehobbitd) {
 		char logfn[PATH_MAX];
 		FILE *logfd = NULL;
 		struct stat st;
@@ -123,12 +123,12 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 		fclose(logfd);
 	}
 	else {
-		char bbgendreq[1024];
-		int bbgendresult;
+		char hobbitdreq[1024];
+		int hobbitdresult;
 
-		sprintf(bbgendreq, "bbgendlog %s.%s", host->hostname, entry->column->name);
-		bbgendresult = sendmessage(bbgendreq, NULL, NULL, &logbuf, 1, 30);
-		if ((bbgendresult != BB_OK) || (logbuf == NULL) || (strlen(logbuf) == 0)) {
+		sprintf(hobbitdreq, "hobbitdlog %s.%s", host->hostname, entry->column->name);
+		hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &logbuf, 1, 30);
+		if ((hobbitdresult != BB_OK) || (logbuf == NULL) || (strlen(logbuf) == 0)) {
 			errprintf("WML: Status not available\n");
 			return;
 		}

@@ -1,39 +1,39 @@
-PROGRAMS = bbgend bbgend_channel bbgend_filestore bbgend_history bbgend_alert bbgend_larrd bbgend_sample startbb.sh bb-larrdgraph.cgi
-CGISCRIPTS = bb-ack.sh bb-larrdgraph.sh maint.pl
+PROGRAMS = hobbitd hobbitd_channel hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_larrd hobbitd_sample starthobbit.sh hobbitgraph.cgi
+CGISCRIPTS = bb-ack.sh hobbitgraph.sh maint.pl
 
 LIBOBJS = ../lib/libbbgen.a
 
-BBGENDOBJS = bbgend.o bbgend_ipc.o
-CHANNELOBJS = bbgend_channel.o bbgend_ipc.o
+HOBBITDOBJS = hobbitd.o hobbitd_ipc.o
+CHANNELOBJS = hobbitd_channel.o hobbitd_ipc.o
 
-SAMPLEOBJS    = bbgend_sample.o    bbgend_worker.o
-FILESTOREOBJS = bbgend_filestore.o bbgend_worker.o
-HISTORYOBJS   = bbgend_history.o   bbgend_worker.o
-ALERTOBJS     = bbgend_alert.o     bbgend_worker.o do_alert.o
-LARRDOBJS     = bbgend_larrd.o     bbgend_worker.o do_larrd.o
-SAMPLEOBJS    = bbgend_sample.o    bbgend_worker.o
-LARRDGRAPHOBJS= bb-larrdgraph.o
+SAMPLEOBJS    = hobbitd_sample.o    hobbitd_worker.o
+FILESTOREOBJS = hobbitd_filestore.o hobbitd_worker.o
+HISTORYOBJS   = hobbitd_history.o   hobbitd_worker.o
+ALERTOBJS     = hobbitd_alert.o     hobbitd_worker.o do_alert.o
+LARRDOBJS     = hobbitd_larrd.o     hobbitd_worker.o do_larrd.o
+SAMPLEOBJS    = hobbitd_sample.o    hobbitd_worker.o
+HOBBITGRAPHOBJS= hobbitgraph.o
 
 all: $(PROGRAMS) $(CGISCRIPTS) cfgfiles
 
 # Need NETLIBS on Solaris for getservbyname(), called by parse_url()
 
-bbgend: $(BBGENDOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(BBGENDOBJS) $(LIBOBJS) $(NETLIBS)
+hobbitd: $(HOBBITDOBJS) $(LIBOBJS)
+	$(CC) -o $@ $(HOBBITDOBJS) $(LIBOBJS) $(NETLIBS)
 
-bbgend_channel: $(CHANNELOBJS) $(LIBOBJS)
+hobbitd_channel: $(CHANNELOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(CHANNELOBJS) $(LIBOBJS)
 
-bbgend_filestore: $(FILESTOREOBJS) $(LIBOBJS)
+hobbitd_filestore: $(FILESTOREOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(FILESTOREOBJS) $(LIBOBJS) $(NETLIBS)
 
-bbgend_history: $(HISTORYOBJS) $(LIBOBJS)
+hobbitd_history: $(HISTORYOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(HISTORYOBJS) $(LIBOBJS)
 
-bbgend_alert: $(ALERTOBJS) $(LIBOBJS)
+hobbitd_alert: $(ALERTOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(ALERTOBJS) $(LIBOBJS) $(PCRELIBS)
 
-bbgend_larrd: $(LARRDOBJS) $(LIBOBJS)
+hobbitd_larrd: $(LARRDOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(LARRDOBJS) $(LIBOBJS) $(RRDLIBS) $(NETLIBS)
 
 do_alert.o: do_alert.c
@@ -42,24 +42,24 @@ do_alert.o: do_alert.c
 do_larrd.o: do_larrd.c do_larrd.h larrd/*.c
 	$(CC) $(CFLAGS) $(RRDINCDIR) -c -o $@ do_larrd.c
 
-bbgend_sample: $(SAMPLEOBJS) $(LIBOBJS)
+hobbitd_sample: $(SAMPLEOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(SAMPLEOBJS) $(LIBOBJS)
 
-bb-larrdgraph.o: bb-larrdgraph.c
-	$(CC) $(CFLAGS) $(PCREINCDIR) $(RRDINCDIR) -c -o $@ bb-larrdgraph.c
+hobbitgraph.o: hobbitgraph.c
+	$(CC) $(CFLAGS) $(PCREINCDIR) $(RRDINCDIR) -c -o $@ hobbitgraph.c
 
-bb-larrdgraph.cgi: $(LARRDGRAPHOBJS)
-	$(CC) $(CFLAGS) -o $@ $(LARRDGRAPHOBJS) $(LIBOBJS) $(PCRELIBS) $(RRDLIBS) $(NETLIBS)
+hobbitgraph.cgi: $(HOBBITGRAPHOBJS)
+	$(CC) $(CFLAGS) -o $@ $(HOBBITGRAPHOBJS) $(LIBOBJS) $(PCRELIBS) $(RRDLIBS) $(NETLIBS)
 
-startbb.sh: startbb.sh.DIST
+starthobbit.sh: starthobbit.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g' | sed -e 's!@BBUSER@!$(BBUSER)!g' >$@
 	chmod 755 $@
 
-bb-ack.sh: bb-ack.sh-bbgend.DIST
+bb-ack.sh: bb-ack.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' >$@
 	chmod 755 $@
 
-bb-larrdgraph.sh: bb-larrdgraph.sh-bbgend.DIST
+hobbitgraph.sh: hobbitgraph.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' >$@
 	chmod 755 $@
 
@@ -68,11 +68,11 @@ maint.pl: maint.pl.DIST
 	chmod 755 $@
 
 cfgfiles:
-	cat etcfiles/bb-apache.conf.DIST | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@CGIDIR@!$(CGIDIR)!g' | sed -e 's!@BBHOSTURL@!$(BBHOSTURL)!g' | sed -e 's!@BBCGIURL@!$(BBCGIURL)!g' >etcfiles/bb-apache.conf
-	cat etcfiles/bbserver.env.DIST | sed -e 's!@BBTOPDIR@!$(BBTOPDIR)!g'| sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g'| sed -e 's!@BBHOSTNAME@!$(BBHOSTNAME)!g'| sed -e 's!@BBHOSTIP@!$(BBHOSTIP)!g'| sed -e 's!@BBHOSTOS@!$(BBHOSTOS)!g' | sed -e 's!@BBHOSTURL@!$(BBHOSTURL)!g' | sed -e 's!@BBCGIURL@!$(BBCGIURL)!g' >etcfiles/bbserver.env
+	cat etcfiles/hobbit-apache.conf.DIST | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@CGIDIR@!$(CGIDIR)!g' | sed -e 's!@BBHOSTURL@!$(BBHOSTURL)!g' | sed -e 's!@BBCGIURL@!$(BBCGIURL)!g' >etcfiles/hobbit-apache.conf
+	cat etcfiles/hobbitserver.env.DIST | sed -e 's!@BBTOPDIR@!$(BBTOPDIR)!g'| sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g'| sed -e 's!@BBHOSTNAME@!$(BBHOSTNAME)!g'| sed -e 's!@BBHOSTIP@!$(BBHOSTIP)!g'| sed -e 's!@BBHOSTOS@!$(BBHOSTOS)!g' | sed -e 's!@BBHOSTURL@!$(BBHOSTURL)!g' | sed -e 's!@BBCGIURL@!$(BBCGIURL)!g' | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBVAR@!$(BBVAR)!g' >etcfiles/hobbitserver.env
 	cat etcfiles/bb-hosts.DIST | sed -e 's!@BBHOSTNAME@!$(BBHOSTNAME)!g'| sed -e 's!@BBHOSTIP@!$(BBHOSTIP)!g' >etcfiles/bb-hosts
-	cat etcfiles/bb-alerts.cfg.DIST >etcfiles/bb-alerts.cfg
-	cat etcfiles/bbtasks.cfg.DIST >etcfiles/bbtasks.cfg
+	cat etcfiles/hobbit-alerts.cfg.DIST >etcfiles/hobbit-alerts.cfg
+	cat etcfiles/hobbittasks.cfg.DIST | sed -e 's!@BBHOME@!$(BBHOME)!g' >etcfiles/hobbittasks.cfg
 	cat wwwfiles/menu/menu_items.js.DIST | sed -e 's!@BBHOSTURL@!$(BBHOSTURL)!g' | sed -e 's!@BBCGIURL@!$(BBCGIURL)!g' >wwwfiles/menu/menu_items.js
 
 %.o: %.c
@@ -80,7 +80,7 @@ cfgfiles:
 
 clean:
 	rm -f $(PROGRAMS) $(CGISCRIPTS) *.o *~ larrd/*~ 
-	rm -f etcfiles/bb-apache.conf etcfiles/bbserver.env etcfiles/bb-hosts etcfiles/bb-alerts.cfg etcfiles/bbtasks.cfg
+	rm -f etcfiles/hobbit-apache.conf etcfiles/hobbitserver.env etcfiles/bb-hosts etcfiles/hobbit-alerts.cfg etcfiles/hobbittasks.cfg
 	rm -f wwwfiles/menu/menu_items.js
 	(find etcfiles/ -name "*~"; find wwwfiles/ -name "*~"; find webfiles/ -name "*~") | xargs rm -f
 
@@ -92,7 +92,7 @@ install-bin:
 install-cgi:
 	mkdir -p $(CGIDIR)
 	cp -fp $(CGISCRIPTS) $(CGIDIR)/
-	cd etcfiles; ../../build/install-nooverwrite.sh etc/ bb-larrdgraph.cfg
+	cd etcfiles; ../../build/install-nooverwrite.sh etc/ hobbitgraph.cfg
 
 install-man:
 	mkdir -p $(MANROOT)/man8
@@ -100,14 +100,14 @@ install-man:
 
 setup:
 	@echo "*** WARNING ***"
-	@echo "This installs a new bbgend server. Any modifications you"
+	@echo "This installs a new Hobbit server. Any modifications you"
 	@echo "have done to existing files in ${BBHOME} may be lost."
 	@echo "If you dont want this to happen, hit CTRL-C now!"
 	@sleep 8
-	@echo "OK, continuing installation..."
+	@echo "Continuing installation..."
 	cd wwwfiles; tar cf - . | (cd $(BBHOME)/www/; tar xf -)
 	cd webfiles; tar cf - . | (cd $(BBHOME)/web/; tar xf -)
-	cd etcfiles; ../../build/install-nooverwrite.sh etc/ bb-apache.conf bbserver.env bb-hosts bb-alerts.cfg bbtasks.cfg bb-larrdgraph.cfg
+	cd etcfiles; ../../build/install-nooverwrite.sh etc/ hobbit-apache.conf hobbitserver.env bb-hosts hobbit-alerts.cfg hobbittasks.cfg hobbitgraph.cfg
 	mkdir -p $(BBLOGDIR)
 	chown $(BBUSER)         $(BBLOGDIR) $(BBHOME) $(BBHOME)/* $(BBHOME)/bin/* $(BBHOME)/etc/* $(BBHOME)/ext/* $(BBHOME)/web/* $(BBHOME)/www/gifs $(BBHOME)/www/gifs/* $(BBHOME)/www/menu $(BBHOME)/www/menu/* $(BBHOME)/www/help $(BBHOME)/www/help/* $(BBHOME)/www/notes $(BBHOME)/www/html $(BBHOME)/www/wml $(BBVAR) $(BBVAR)/* $(CGIDIR) $(CGIDIR)/*
 	chgrp `id -g $(BBUSER)` $(BBLOGDIR) $(BBHOME) $(BBHOME)/* $(BBHOME)/bin/* $(BBHOME)/etc/* $(BBHOME)/ext/* $(BBHOME)/web/* $(BBHOME)/www/gifs $(BBHOME)/www/gifs/* $(BBHOME)/www/menu $(BBHOME)/www/menu/* $(BBHOME)/www/help $(BBHOME)/www/help/* $(BBHOME)/www/notes $(BBHOME)/www/html $(BBHOME)/www/wml $(BBVAR) $(BBVAR)/* $(CGIDIR) $(CGIDIR)/*

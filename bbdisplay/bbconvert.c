@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbconvert.c,v 1.5 2004-11-30 22:40:58 henrik Exp $";
+static char rcsid[] = "$Id: bbconvert.c,v 1.6 2004-12-30 22:25:34 henrik Exp $";
 
 #include <limits.h>
 #include <sys/types.h>
@@ -29,7 +29,7 @@ static char rcsid[] = "$Id: bbconvert.c,v 1.5 2004-11-30 22:40:58 henrik Exp $";
 #include "bbgen.h"
 #include "bbconvert.h"
 
-void dump_bbgendchk(void)
+void dump_hobbitdchk(void)
 {
 	hostlist_t *hwalk;
 	entry_t *e;
@@ -111,7 +111,7 @@ void dump_bbgendchk(void)
 			sprintf(logfn, "%s/%s.%s", getenv("BBDISABLED"), commafy(h->hostname), e->column->name);
 			if (stat(logfn, &st) == 0) enabletime = st.st_mtime;
 
-			printf("@@BBGENDCHK-V1|%s|%s|%s|%s|%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%s",
+			printf("@@HOBBITDCHK-V1|%s|%s|%s|%s|%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%s",
 				"", h->hostname, e->column->name, sender,
 				colorname(e->color),
 				(flags ? flags : ""),

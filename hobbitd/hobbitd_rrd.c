@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother message daemon.                                                */
+/* Hobbit message daemon.                                                     */
 /*                                                                            */
-/* This is a bbgend worker module for the "status" and "data" channels.       */
-/* This module maintains the LARRD database-files, updating them as new       */
+/* This is a hobbitd worker module for the "status" and "data" channels.      */
+/* This module maintains the RRD database-files, updating them as new         */
 /* data arrives.                                                              */
 /*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.9 2004-12-29 08:47:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.10 2004-12-30 22:25:34 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -24,7 +24,7 @@ static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.9 2004-12-29 08:47:47 henrik Exp $
 #include <sys/wait.h>
 
 #include "libbbgen.h"
-#include "bbgend_worker.h"
+#include "hobbitd_worker.h"
 
 #include "do_larrd.h"
 
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 	}
 
 	save_errbuf = 0;
-	setup_signalhandler("bbgend_larrd");
+	setup_signalhandler("hobbitd_larrd");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGCHLD, &sa, NULL);
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 		int childstat;
 
 		/* Get next message */
-		msg = get_bbgend_message(argv[0], &seq, NULL);
+		msg = get_hobbitd_message(argv[0], &seq, NULL);
 		if (msg == NULL) {
 			running = 0;
 			continue;

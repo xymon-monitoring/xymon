@@ -284,7 +284,7 @@ extern double           reportwarnlevel, reportgreenlevel;
 extern int		reportstyle;
 extern int		dynamicreport;
 extern int              fqdn;
-extern int		usebbgend;
+extern int		usehobbitd;
 extern char		*larrdcol;
 extern char		*infocol;
 

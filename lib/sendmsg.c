@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.47 2004-12-21 17:03:18 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.48 2004-12-30 22:25:34 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -444,8 +444,8 @@ static int sendstatus(char *bbdisp, char *msg, int timeout)
 	/* If no BBPAGE defined, drop paging */
 	if (getenv("BBPAGE") == NULL) return statusresult;
 
-	/* If we're using bbgend, drop the page message */
-	if (strcmp(getenv_default("USEBBGEND", "FALSE", NULL), "TRUE") == 0) return statusresult;
+	/* If we're using hobbitd, drop the page message */
+	if (strcmp(getenv_default("USEHOBBITD", "FALSE", NULL), "TRUE") == 0) return statusresult;
 
 	/* Check if we should send a "page" message also */
 	pagelevels = strdup(getenv("PAGELEVELS") ? getenv("PAGELEVELS") : PAGELEVELSDEFAULT);
@@ -675,7 +675,7 @@ void addtometa(char *p)
 
 void finish_status(void)
 {
-	int usebbgend = (strcmp(getenv_default("USEBBGEND", "FALSE", NULL), "TRUE") == 0);
+	int usehobbitd = (strcmp(getenv_default("USEHOBBITD", "FALSE", NULL), "TRUE") == 0);
 
 	if (debug) {
 		char *p = strchr(msgbuf, '\n');
@@ -692,8 +692,8 @@ void finish_status(void)
 			combo_add(msgbuf);
 			break;
 		default:
-			if (usebbgend) {
-				/* bbgend takes anything in combos */
+			if (usehobbitd) {
+				/* hobbitd takes anything in combos */
 				combo_add(msgbuf);
 			}
 			else {
@@ -818,19 +818,19 @@ int main(int argc, char *argv[])
 		else if (strncmp(msg, "config ", 7) == 0) {
 			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 		}
-		else if (strncmp(msg, "bbgendlog ", 10) == 0) {
+		else if (strncmp(msg, "hobbitdlog ", 10) == 0) {
 			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 		}
-		else if (strncmp(msg, "bbgendxlog ", 11) == 0) {
+		else if (strncmp(msg, "hobbitdxlog ", 11) == 0) {
 			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 		}
-		else if (strncmp(msg, "bbgendboard", 11) == 0) {
+		else if (strncmp(msg, "hobbitdboard", 11) == 0) {
 			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 		}
-		else if (strncmp(msg, "bbgendxboard", 12) == 0) {
+		else if (strncmp(msg, "hobbitdxboard", 12) == 0) {
 			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 		}
-		else if (strncmp(msg, "bbgendlist", 10) == 0) {
+		else if (strncmp(msg, "hobbitdlist", 10) == 0) {
 			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 		}
 		else {

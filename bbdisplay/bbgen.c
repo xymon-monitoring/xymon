@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.197 2004-12-17 16:51:51 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.198 2004-12-30 22:25:34 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -47,7 +47,7 @@ summary_t	*sumhead = NULL;			/* Summaries we send out */
 dispsummary_t	*dispsums = NULL;			/* Summaries we received and display */
 int		bb_color, bb2_color, bbnk_color;	/* Top-level page colors */
 int		fqdn = 1;				/* BB FQDN setting */
-int		usebbgend = 0;
+int		usehobbitd = 0;
 char		*larrdcol = "trends";
 char		*infocol = "info";
 
@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 	char		*nssidebarfilename = NULL;
 	char		*egocolumn = NULL;
 	int		embedded = 0;
-	int		bbgenddump = 0;
+	int		hobbitddump = 0;
 
 	/* Setup standard header+footer (might be modified by option pageset) */
 	select_headers_and_footers("bb");
@@ -121,20 +121,20 @@ int main(int argc, char *argv[])
 		if (i > 0) maxrowsbeforeheading = i;
 	}
 
-	getenv_default("USEBBGEND", "FALSE", NULL);
-	usebbgend = (strcmp(getenv("USEBBGEND"), "TRUE") == 0);
+	getenv_default("USEHOBBITD", "FALSE", NULL);
+	usehobbitd = (strcmp(getenv("USEHOBBITD"), "TRUE") == 0);
 
 	for (i = 1; (i < argc); i++) {
-		if (strcmp(argv[i], "--bbgend") == 0) {
-			usebbgend = 1;
+		if (strcmp(argv[i], "--hobbitd") == 0) {
+			usehobbitd = 1;
 		}
 		else if (argnmatch(argv[i], "--env=")) {
 			char *lp = strchr(argv[i], '=');
 			loadenv(lp+1);
 		}
-		else if (argnmatch(argv[i], "--bbgenddump")) {
-			bbgenddump = 1;
-			usebbgend = 0;
+		else if (argnmatch(argv[i], "--hobbitddump")) {
+			hobbitddump = 1;
+			usehobbitd = 0;
 			enable_purpleupd = 0;
 		}
 		else if (strcmp(argv[i], "--nopurple") == 0) {
@@ -441,7 +441,7 @@ int main(int argc, char *argv[])
 
 		else if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-?") == 0)) {
 			printf("bbgen version %s\n\n", VERSION);
-			if (usebbgend) printf("Using bbgend interface\n");
+			if (usehobbitd) printf("Using hobbitd interface\n");
 			printf("Usage: %s [options] [WebpageDirectory]\n", argv[0]);
 			printf("Options:\n");
 			printf("    --nopurple                  : Disable purple status-updates\n");
@@ -581,8 +581,8 @@ int main(int argc, char *argv[])
 	if (embedded || snapshot) dispsums = NULL;
 	add_timestamp("Load STATE done");
 
-	if (bbgenddump) {
-		dump_bbgendchk();
+	if (hobbitddump) {
+		dump_hobbitdchk();
 		return 0;
 	}
 
@@ -678,7 +678,7 @@ int main(int argc, char *argv[])
 		sprintf(msgline, "status %s.%s %s %s\n\n", getenv("MACHINE"), egocolumn, colorname(color), timestamp);
 		addtostatus(msgline);
 
-		sprintf(msgline, "bbgen version %s %s\n", VERSION, (usebbgend ? "with bbgend" : ""));
+		sprintf(msgline, "bbgen version %s %s\n", VERSION, (usehobbitd ? "with hobbitd" : ""));
 		addtostatus(msgline);
 
 		sprintf(msgline, "\nStatistics:\n Hosts               : %5d\n Status messages     : %5d\n Purple messages     : %5d\n Pages               : %5d\n", 

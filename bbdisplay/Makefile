@@ -111,8 +111,8 @@ bb-hostsvc.o: bb-hostsvc.c
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-ifdef BBGEND
-%.sh: %.sh-bbgend.DIST
+ifdef HOBBITD
+%.sh: %.sh-hobbitd.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' >$@
 	chmod 755 $@
 else
@@ -135,7 +135,7 @@ install-exts: $(EXTENSIONS)
 	cp -fp $(EXTENSIONS) $(BBHOME)/ext/
 
 install-cgi: $(CGISCRIPTS)
-ifndef BBGEND
+ifndef HOBBITD
 	@echo ""
 	@echo "  WARNING : About to overwrite any existing Big Brother CGI scripts"
 	@echo "            Hit ctrl-C NOW if you want to save them first!"

@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother message daemon.                                                */
+/* Hobbit message daemon.                                                     */
 /*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
 /*                                                                            */
@@ -8,8 +8,8 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __BBGEND_IPC_H__
-#define __BBGEND_IPC_H__
+#ifndef __HOBBITD_IPC_H__
+#define __HOBBITD_IPC_H__
 
 #define SHAREDBUFSZ (3*MAXMSG+4096)
 
@@ -23,19 +23,19 @@
 
 enum msgchannels_t { C_STATUS, C_STACHG, C_PAGE, C_DATA, C_NOTES, C_ENADIS };
 
-typedef struct bbgend_channel_t {
+typedef struct hobbitd_channel_t {
 	enum msgchannels_t channelid;
 	int shmid;
 	int semid;
 	char *channelbuf;
 	unsigned int seq;
 	unsigned long msgcount;
-	struct bbgend_channel_t *next;
-} bbgend_channel_t;
+	struct hobbitd_channel_t *next;
+} hobbitd_channel_t;
 
 extern char *channelnames[];
 
-extern bbgend_channel_t *setup_channel(enum msgchannels_t chnname, int role);
-extern void close_channel(bbgend_channel_t *chn, int role);
+extern hobbitd_channel_t *setup_channel(enum msgchannels_t chnname, int role);
+extern void close_channel(hobbitd_channel_t *chn, int role);
 #endif
 

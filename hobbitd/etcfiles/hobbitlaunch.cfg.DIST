@@ -1,55 +1,55 @@
 #
-# The bbtasks.cfg file is loaded by "bblaunch".
-# It controls which of the bbgen modules to run, how often, and
+# The hobbittasks.cfg file is loaded by "hobbitlaunch".
+# It controls which of the Hobbit modules to run, how often, and
 # with which parameters, options and environment variables.
 #
 
-# This is the main bbgend daemon. You cannot live without this one.
-[bbgend]
-	ENVFILE $BBSERVERROOT/bb/etc/bbserver.env
-	CMD bbgend --restart=$BBTMP/bbgend.chk --checkpoint-file=$BBTMP/bbgend.chk --checkpoint-interval=600 --purple-conn=conn --log=$BBSERVERLOGS/bbgend.log --admin-senders=127.0.0.1,$BBSERVERIP
+# This is the main Hobbit daemon. You cannot live without this one.
+[hobbitd]
+	ENVFILE @BBHOME@/etc/hobbitserver.env
+	CMD hobbitd --restart=$BBTMP/hobbitd.chk --checkpoint-file=$BBTMP/hobbitd.chk --checkpoint-interval=600 --purple-conn=conn --log=$BBSERVERLOGS/hobbitd.log --admin-senders=127.0.0.1,$BBSERVERIP
 
 
 # "bbstatus" saves status-logs in text- and html-format, like the old Big Brother 
 # daemon does. Unless you are using add-ons that directly access the log-files, you 
 # will not need to run this module, and it is recommended that you keep it disabled
-# since storing the raw logs on disk can cause a significant load on your BB server.
+# since storing the raw logs on disk can cause a significant load on your server.
 
 #[bbstatus]
-#	ENVFILE $BBSERVERROOT/bb/etc/bbserver.env
-#	NEEDS bbgend
-#	CMD bbgend_channel --channel=status --log=$BBSERVERLOGS/status.log bbgend_filestore --status --html
+#	ENVFILE @BBHOME@/etc/hobbitserver.env
+#	NEEDS hobbitd
+#	CMD hobbitd_channel --channel=status --log=$BBSERVERLOGS/status.log hobbitd_filestore --status --html
 
 
 # "bbhistory" keeps track of the status changes that happen, in a manner that is
 # compatible with the Big Brother history logs. You probably do want to run this.
 
 [bbhistory]
-	ENVFILE $BBSERVERROOT/bb/etc/bbserver.env
-	NEEDS bbgend
-	CMD bbgend_channel --channel=stachg --log=$BBSERVERLOGS/history.log bbgend_history
+	ENVFILE @BBHOME@/etc/hobbitserver.env
+	NEEDS hobbitd
+	CMD hobbitd_channel --channel=stachg --log=$BBSERVERLOGS/history.log hobbitd_history
 
 
 # "bbdata" saves information sent using the BB "data" protocol, like the old Big Brother 
 # daemon does. Unless you are using add-ons that directly access the data-files, you 
 # will not need to run this module, and it is recommended that you keep it disabled
 # since storing the raw data on disk can cause a significant load on your BB server.
-# LARRD uses data-files, but since LARRD is handled by the bbgend_larrd module, you do
+# LARRD uses data-files, but since LARRD is handled by the hobbitd_larrd module, you do
 # not need to run the "bbdata" module to get LARRD graphs.
 
 #[bbdata]
-#	ENVFILE $BBSERVERROOT/bb/etc/bbserver.env
-#	NEEDS bbgend
-#	CMD bbgend_channel --channel=data   --log=$BBSERVERLOGS/data.log bbgend_filestore --data
+#	ENVFILE @BBHOME@/etc/hobbitserver.env
+#	NEEDS hobbitd
+#	CMD hobbitd_channel --channel=data   --log=$BBSERVERLOGS/data.log hobbitd_filestore --data
 
 
 # "bbnotes" saves web note-files, that are sent using the BB "notes" protocol. This is
 # disabled by default; if you use the BB "notes" protocol, then you should enable this.
 
 #[bbnotes]
-#	ENVFILE $BBSERVERROOT/bb/etc/bbserver.env
-#	NEEDS bbgend
-#	CMD bbgend_channel --channel=notes  --log=$BBSERVERLOGS/notes.log bbgend_filestore --notes
+#	ENVFILE @BBHOME@/etc/hobbitserver.env
+#	NEEDS hobbitd
+#	CMD hobbitd_channel --channel=notes  --log=$BBSERVERLOGS/notes.log hobbitd_filestore --notes
 
 
 # "bbenadis" updates the files used to indicate that a host or test has been enabled or disabled.
@@ -57,9 +57,9 @@
 # and disabled, so you probably want to run this module.
 
 [bbenadis]
-	ENVFILE $BBSERVERROOT/bb/etc/bbserver.env
-	NEEDS bbgend
-	CMD bbgend_channel --channel=enadis --log=$BBSERVERLOGS/enadis.log bbgend_filestore --enadis
+	ENVFILE @BBHOME@/etc/hobbitserver.env
+	NEEDS hobbitd
+	CMD hobbitd_channel --channel=enadis --log=$BBSERVERLOGS/enadis.log hobbitd_filestore --enadis
 
 
 # "bbpage" sends out alerts. Note that this module is NOT compatible with the old Big Brother
@@ -67,36 +67,38 @@
 # alerts to go out via pager, e-mail or some other means, then you must run this module.
 
 [bbpage]
-	ENVFILE $BBSERVERROOT/bb/etc/bbserver.env
-	NEEDS bbgend
-	CMD bbgend_channel --channel=page   --log=$BBSERVERLOGS/page.log bbgend_alert
+	ENVFILE @BBHOME@/etc/hobbitserver.env
+	NEEDS hobbitd
+	CMD hobbitd_channel --channel=page   --log=$BBSERVERLOGS/page.log hobbitd_alert
 
 
-# "larrdstatus" updates LARRD files with information that arrives as "status" messages.
-# If you want LARRD graphs of your BB data, then you want to run this.
+# "larrdstatus" updates RRD files with information that arrives as "status" messages.
+# If you want RRD graphs of your monitoring data, then you want to run this.
 
 [larrdstatus]
-	ENVFILE $BBSERVERROOT/bb/etc/bbserver.env
-	NEEDS bbgend
-	CMD bbgend_channel --channel=status --log=$BBSERVERLOGS/larrd-status.log bbgend_larrd --rrddir=$BBVAR/rrd
+	ENVFILE @BBHOME@/etc/hobbitserver.env
+	NEEDS hobbitd
+	CMD hobbitd_channel --channel=status --log=$BBSERVERLOGS/larrd-status.log hobbitd_larrd --rrddir=$BBVAR/rrd
 
-# "larrddata" updates LARRD files with information that arrives as "data" messages.
-# If you want LARRD graphs of your BB data, then you want to run this.
+# "larrddata" updates RRD files with information that arrives as "data" messages.
+# If you want RRD graphs of your monitoring BB data, then you want to run this.
 
 [larrddata]
-	ENVFILE $BBSERVERROOT/bb/etc/bbserver.env
-	NEEDS bbgend
-	CMD bbgend_channel --channel=data   --log=$BBSERVERLOGS/larrd-data.log bbgend_larrd --rrddir=$BBVAR/rrd
+	ENVFILE @BBHOME@/etc/hobbitserver.env
+	NEEDS hobbitd
+	CMD hobbitd_channel --channel=data   --log=$BBSERVERLOGS/larrd-data.log hobbitd_larrd --rrddir=$BBVAR/rrd
 
 
-# "bbdisplay" runs the bbgen tool to generate the Big Brother webpages from the status information that
-# has been received. We run this once every 5 minutes, but you may run it more often if you dont have too
-# many hosts defined, or if you have a speedy server.
+# "bbdisplay" runs the bbgen tool to generate the Hobbit webpages from the status information that
+# has been received. Big Brother updated the webpages once every 5 minutes. The default here is to
+# run it every minute for faster updates, but you can change it if you have a highly loaded server
+# and dont need updates that often.
+
 [bbdisplay]
-	ENVFILE $BBSERVERROOT/bb/etc/bbserver.env
-	NEEDS bbgend
+	ENVFILE @BBHOME@/etc/hobbitserver.env
+	NEEDS hobbitd
 	GROUP generators
-	CMD bbgen --bbgend --recentgifs --subpagecolumns=2 --larrd043 --report
+	CMD bbgen --hobbitd --recentgifs --subpagecolumns=2 --larrd043 --report
 	LOGFILE $BBSERVERLOGS/bb-display.log
 	INTERVAL 1m
 
@@ -105,10 +107,10 @@
 # less frequently than the normal webpage updates. We also make sure (with the "GROUP" setting)
 # that they don't run simultaneously with the infocolumnn and bbdisplay tasks.
 [larrdcolumn]
-	ENVFILE $BBSERVERROOT/bb/etc/bbserver.env
-	NEEDS bbgend
+	ENVFILE @BBHOME@/etc/hobbitserver.env
+	NEEDS hobbitd
 	GROUP generators
-	CMD bb-larrdcolumn --bbgend --rrddir=$BBVAR/rrd --column=trends
+	CMD bb-larrdcolumn --hobbitd --rrddir=$BBVAR/rrd --column=trends
 	LOGFILE $BBSERVERLOGS/bb-display.log
 	INTERVAL 15m
 
@@ -118,10 +120,10 @@
 # We also make sure (with the "GROUP" setting) that they don't run simultaneously with 
 # the larrdcolumnn and bbdisplay tasks.
 [infocolumn]
-	ENVFILE $BBSERVERROOT/bb/etc/bbserver.env
-	NEEDS bbgend
+	ENVFILE @BBHOME@/etc/hobbitserver.env
+	NEEDS hobbitd
 	GROUP generators
-	CMD bb-infocolumn --bbgend --column=info
+	CMD bb-infocolumn --hobbitd --column=info
 	LOGFILE $BBSERVERLOGS/bb-display.log
 	INTERVAL 15m
 
@@ -130,8 +132,8 @@
 # all of the various network protocols we need to test.
 
 [bbnet]
-	ENVFILE $BBSERVERROOT/bb/etc/bbserver.env
-	NEEDS bbgend
+	ENVFILE @BBHOME@/etc/hobbitserver.env
+	NEEDS hobbitd
 	CMD bbtest-net --report --ping --checkresponse
 	LOGFILE $BBSERVERLOGS/bb-network.log
 	INTERVAL 5m
@@ -144,8 +146,8 @@
 # reports look much better.
 
 [bbretest]
-	ENVFILE $BBSERVERROOT/bb/etc/bbserver.env
-	NEEDS bbgend
+	ENVFILE @BBHOME@/etc/hobbitserver.env
+	NEEDS hobbitd
 	CMD $BBHOME/ext/bbretest-net.sh
 	LOGFILE $BBSERVERLOGS/bb-retest.log
 	INTERVAL 1m

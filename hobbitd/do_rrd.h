@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* bbgen toolkit                                                              */
+/* Hobbit message daemon.                                                     */
 /*                                                                            */
 /* Copyright (C) 2002-2004 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.24 2004-12-27 22:47:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.25 2004-12-30 22:25:34 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -25,7 +25,8 @@ static char rcsid[] = "$Id: hobbitsvc.c,v 1.24 2004-12-27 22:47:58 henrik Exp $"
 #include "libbbgen.h"
 #include "version.h"
 
-#ifdef CGI
+enum source_t { SRC_BBLOGS, SRC_HOBBITD, SRC_HISTLOGS, SRC_MEM };
+
 /*
  * This program is invoked via CGI with QUERY_STRING containing:
  *
@@ -104,9 +105,9 @@ static void parse_query(void)
 
 int main(int argc, char *argv[])
 {
-	char bbgendreq[200];
+	char hobbitdreq[200];
 	char *log = NULL;
-	int bbgendresult;
+	int hobbitdresult;
 	char *msg;
 	char *sumline, *firstline, *restofmsg, *p;
 	char *items[20];
@@ -120,15 +121,15 @@ int main(int argc, char *argv[])
 	enum source_t source = SRC_BBLOGS;
 	int wantserviceid = 1;
 
-	getenv_default("USEBBGEND", "FALSE", NULL);
-	if (strcmp(getenv("USEBBGEND"), "TRUE") == 0) source = SRC_BBGEND;
+	getenv_default("USEHOBBITD", "FALSE", NULL);
+	if (strcmp(getenv("USEHOBBITD"), "TRUE") == 0) source = SRC_HOBBITD;
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--historical") == 0) {
 			source = SRC_HISTLOGS;
 		}
-		else if (strcmp(argv[argi], "--bbgend") == 0) {
-			source = SRC_BBGEND;
+		else if (strcmp(argv[argi], "--hobbitd") == 0) {
+			source = SRC_HOBBITD;
 		}
 		else if (strncmp(argv[argi], "--history=", 10) == 0) {
 			char *val = strchr(argv[argi], '=')+1;
@@ -156,12 +157,12 @@ int main(int argc, char *argv[])
 	envcheck(reqenv);
 	parse_query();
 
-	if (source == SRC_BBGEND) {
+	if (source == SRC_HOBBITD) {
 		time_t logage;
 
-		sprintf(bbgendreq, "bbgendlog %s.%s", hostname, service);
-		bbgendresult = sendmessage(bbgendreq, NULL, NULL, &log, 1, 30);
-		if ((bbgendresult != BB_OK) || (log == NULL) || (strlen(log) == 0)) {
+		sprintf(hobbitdreq, "hobbitdlog %s.%s", hostname, service);
+		hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &log, 1, 30);
+		if ((hobbitdresult != BB_OK) || (log == NULL) || (strlen(log) == 0)) {
 			errormsg("Status not available\n");
 			return 1;
 		}
@@ -307,8 +308,7 @@ int main(int argc, char *argv[])
 		          (source == SRC_HISTLOGS), 
 			  wantserviceid, 
 			  (strcmp(service, "info") == 0),
-			  (source == SRC_BBGEND),
+			  (source == SRC_HOBBITD),
 			  stdout);
 	return 0;
 }
-#endif

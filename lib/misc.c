@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.16 2004-12-03 11:35:58 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.17 2004-12-30 22:25:34 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -128,9 +128,9 @@ void loadenv(char *envfile)
 		}
 		stackfclose(fd);
 
-		/* Always provide the BBGENDREL variable */
-		if (getenv("BBGENDREL") == NULL) {
-			sprintf(l, "BBGENDREL=%s", VERSION);
+		/* Always provide the HOBBITDREL variable */
+		if (getenv("HOBBITDREL") == NULL) {
+			sprintf(l, "HOBBITDREL=%s", VERSION);
 			oneenv = strdup(l);
 			putenv(oneenv);
 		}
