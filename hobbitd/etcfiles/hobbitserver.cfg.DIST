@@ -8,8 +8,8 @@ BBSERVERIP="@BBHOSTIP@"			# The IP-address of your server. Use the real one, not
 BBSERVEROS="@BBHOSTOS@"			# The operating system of your server. linux,freebsd,solaris,hpux,aix,osf
 
 BBSERVERWWWNAME="@BBHOSTNAME@"		# The name used for this hosts' webserver
-BBSERVERWWWURL="/bb"			# The top URL for the BB webpages
-BBSERVERCGIURL="/bb-cgi"		# The URL for the BB CGI scripts.
+BBSERVERWWWURL="@BBHOSTURL@"		# The top URL for the BB webpages
+BBSERVERCGIURL="@BBCGIURL@"		# The URL for the BB CGI scripts.
 
 # BBLOCATION="foo"			# The network location, makes bbtest-net test only hosts with NET:foo
 					# You only need to set this if you have multiple network test servers with

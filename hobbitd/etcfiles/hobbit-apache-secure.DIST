@@ -4,14 +4,14 @@
 # the BB webpages and cgi-scripts available in the
 # "/bb/" URL.
 
-Alias /bb/  "@BBHOME@/www/"
+Alias @BBHOSTURL@/  "@BBHOME@/www/"
 <Directory "@BBHOME@/www/">
     Options Indexes FollowSymLinks Includes MultiViews
     Order allow,deny
     Allow from all
 </Directory>
 
-ScriptAlias /bb-cgi/ "@CGIDIR@/"
+ScriptAlias @BBCGIURL@/ "@CGIDIR@/"
 <Directory "@CGIDIR@">
     AllowOverride None
     Options ExecCGI Includes
