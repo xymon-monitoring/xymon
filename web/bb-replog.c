@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.5 2003-06-21 07:35:49 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.6 2003-06-21 15:09:53 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,6 +27,8 @@ static char rcsid[] = "$Id: bb-replog.c,v 1.5 2003-06-21 07:35:49 henrik Exp $";
 #include "reportdata.h"
 #include "debug.h"
 #include "bb-replog.h"
+
+char *stylenames[3] = { "crit", "nongr", "all" };
 
 static char *durationstr(time_t duration)
 {

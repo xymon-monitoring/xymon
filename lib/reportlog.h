@@ -15,6 +15,8 @@
 #define STYLE_NONGR 1
 #define STYLE_OTHER 2
 
+extern char *stylenames[];
+
 extern void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 		     char *hostname, char *ip, char *service, int color, int style,
 		     time_t st, time_t end, double reportwarnlevel, double reportgreenlevel, 
