@@ -1,0 +1,820 @@
+Changes from RC-6
+-------------------------
+Bugfixes:
+* DOWNTIME handling was broken in some cases. While fixing this,
+  it was also enhanced to allow multiple day-specifications in 
+  a single time-specification, e.g. "60:2200:2330" is now valid
+  way of defining downtime between 10 PM and 11:30 PM on Saturday
+  and Sunday.
+* If bbtest-net was run with "--dns=ip" option to disable DNS
+  lookups, a DHCP host could not be tested. Changed so that hosts
+  with a "0.0.0.0" IP-address always do a DNS lookup to determine
+  the IP-address for network tests.
+* Links in the RSS file were missing a trailing slash.
+* Disk- and CPU-reports from AS/400 based systems were not handled
+  properly by the RRD parser. Note that this change means the PCRE
+  library is now needed for the hobbitd_larrd module.
+* The default hobbitlaunch.cfg had the environment path for the
+  bbcombotest task hard-coded, instead of picking up the configuration
+  value.
+* Back out the cookie-based filtering of hosts in the Enable/Disable
+  (maint.pl) script - it breaks in too many places. Need further
+  investigation.
+* Alert rules with the STOP and UNMATCHED keywords now flag this on
+  the info-page alert table.
+* If a host was removed from the bb-hosts file, and hobbitd reloaded
+  the file before a "drop" command was sent, then it was impossible to
+  get rid of the internal state stored for the host without restarting
+  Hobbit.
+* Disabled status-logs could go purple while still being disabled,
+  this would show up as the status alternating between blue and purple.
+
+Improvements:
+* If invoking fping failed, the error message was lost and only
+  a "failed with exit code 99" error was reported. Changed so that
+  the real cause of the error is reported in the bbtest-net log.
+* An "mrtg" definition was added to hobbitgraph.cfg, to handle
+  MRTG generated RRD files. If MRTG is configured to save RRD files
+  directly to the Hobbit rrd-directory, these graphs can be handled
+  as if they were native Hobbit graphs. Wrote up hobbit-mrtg.html to
+  describe this setup.
+* When hosts are removed from the bb-hosts file, all in-memory data
+  stored about the host is dropped automatically, so e.g. alerts will
+  no longer be sent out. Data stored on disk is unaffected; this only
+  gets removed when a "drop" command is issued.
+* Time-specifications now accept multiple week-days, e.g. you can 
+  define a host that is down Sunday and Monday 20:00->23:00 with
+  "DOWNTIME=01:2000:2300". This applies globally, so also applies to
+  alert-specifications and other time-related settings using the NKTIME
+  syntax. It will also complain rather loudly in the logfile is an
+  invalid time-specification is found in one of the configuration files.
+* hobbit-mailack added to the HTML man-page index and to the overview
+  description in hobbit(7).
+* A new "trimhistory" tool was added, allowing you to trim the size of
+  history logs and historical status-log collections.
+
+
+Changes from RC-5 -> RC-6
+-------------------------
+Bugfixes:
+* Recovery messages were sent to all recipients, regardless
+  of any color-restrictions on the alerts they received. Changed
+  this so that recipients only get recovery messages for the
+  alerts they received.
+
+* The "NOALERT" option was not applied when multiple recipients
+  were listed in one rule.
+
+* bbtest-net now performs a syntax check on all URL's before
+  adding them to the test queue. This should stop it from 
+  crashing in case you happen to enter a syntactically invalid
+  URL in your bb-hosts file.
+
+* The acknowledgment log on the BB2 page could mix up data from
+  different entries in the log.
+
+* The default mail-utility used to send out e-mail alerts is
+  now defined per OS. Solaris and HP-UX use "mailx", others
+  use "mail".
+
+* Client tests no longer go purple when a host has been 
+  disabled.
+
+* bb-larrdcolumn no longer dumps core if there are no RRD files.
+
+* With the right input, bb-larrdcolumn could use massive amounts of
+  memory and eventually terminate with an out-of-memory error.
+
+* A memory leak in hobbitd_larrd handling of "disk" reports was fixed.
+
+* bb-infocolumn now accepts a "--repeat=N" setting to inform it of
+  the default alert-repeat interval. If you use --repeat with 
+  hobbitd_alert, you should copy that option to bb-infocolumn to 
+  make it generate correct info-column pages.
+
+* If bbgen cannot create output files or directories, the underlying
+  error is now reported in the error message.
+
+* The "merge-lines" and "merge-sects" tools used during installation
+  could crash due to a missing initialization of a pointer.
+
+
+Improvements:
+* It is now possible to make Hobbit re-open all logfiles,
+  e.g. after a log rotate. Use "server/hobbit.sh rotate".
+
+* The hobbit-mailack tool now recognizes the BB format of 
+  alert message responses, i.e. putting "delay" and "msg"
+  in the subject line will work.
+
+* bbcmd defaults to running /bin/sh if no command is given
+
+* hobbitd_larrd now logs the sender IP of a message that
+  results in an error.
+
+* A network test definition for SpamAssassin's spamd daemon
+  was added.
+
+* The default web/*header files now refer to a HOBBITLOGO setting
+  for the HTML used in the upper-left corner of all pages. The 
+  default is just the text "Hobbit", but you can easily replace
+  this with e.g. a company logo by changing this setting in
+  hobbitserver.cfg.
+
+* The Hobbit daemon's "hobbitdboard", "hobbitdxboard" and 
+  "hobbitdlist" commands now support a set of primitive filtering
+  techniques to limit the number of hosts returned.
+
+* maint.pl uses the new Hobbit daemon filtering and a cookie defined
+  by the header in webpages to show only the hosts found on the
+  page where it was called from, or just a single host.
+
+* Hobbit should now compile on Mac OS X (Darwin).
+
+* The info- and graph-column names are now defined globally as
+  environment variables "INFOCOLUMN" and "LARRDCOLUMN", respectively.
+  This eliminates the need to have them listed as options for multiple
+  commands. Consequently, the --larrd and --info options have been 
+  dropped.
+
+* Systems with the necessary libraries (RRDtool, PCRE, OpenSSL etc) in
+  unusual locations can now specify the location of these as parameters
+  to the configure script, overriding the auto-detect routine. See
+  "./configure --help" for details.
+
+* A definition for the "disk1" graph in LARRD was added, this shows the
+  actual use of filesystems instead of the normal percentage.
+
+
+
+Changes from RC-4 -> RC-5
+-------------------------
+Bugfixes:
+* Very large status- or data-messages could overflow the shared
+  memory segment used for communication between hobbitd and the
+  worker modules. This would cause hobbitd to crash. Such messages
+  are now truncated before being passed off to worker modules.
+
+* hobbitd_alert no longer crashes when trying to send a message.
+
+* Recovery messages were sent, even when no alert message had
+  been sent. This caused unexpected "green" messages. 
+
+* The router dependency "route" tag handling was broken.
+
+
+Improvements:
+* The "starthobbit.sh" script now refuses to start Hobbit if it
+  is already running.
+
+* The "starthobbit.sh" script was renamed to just "hobbit.sh".
+  It now also supports a "reload" command that causes hobbitd
+  to reload the bb-hosts file.
+
+* The bb-hist CGI now supports the NAME tag for naming hosts.
+
+* The history CGI's showed the Host- and service-names twice 
+  when in Hobbit mode. Once is enough.
+
+* A "NOALERT" setting in hobbit-alerts.cfg was implemented, so
+  it is easier to define recipients who only get notice-messages
+  and not alerts.
+
+* The input parameter check for CGI scripts was relaxed, so that
+  special characters are permitted - e.g. when passing a custom
+  hostname to a CGI. Since we do not use any shell scripts in 
+  CGI handling, this should not cause any security problem.
+
+
+Building Hobbit:
+* The /opt/sfw directory is now searched for libraries (Solaris).
+
+* The order of libssl and libcrypto has been swapped, to avoid
+  linker problems on some platforms.
+
+
+
+Changes from RC-3 -> RC-4
+-------------------------
+
+Bugfixes:
+* Loading the bb-services file no longer causes bbtest-net,
+  hobbitd_larrd et al to crash.
+* The alert configuration loader was fixed, so that
+  recipient criteria are applied correctly.
+* hobbitd_alert handling of "recovered" status messages was
+  slightly broken. This was probably the cause of the
+  unexpected "green" alerts that some have reported.
+* SCRIPT recipients can now have a "@" in their names without
+  being silently treated as MAIL recipients.
+* An acknowledge message is now cleared when the status changes
+  to an OK color (defined by the --okcolors option). Previously
+  it would have to go "green" before the ack was cleared.
+* Acked and disabled statuses can not go purple while the
+  acknowledge or disable is valid. This was causing brief flickers
+  of purple for tests that were disabled for more than 30 minutes.
+* maint.pl "combo" message support was dropped. This was causing
+  runtime warnings, and it has never been possible to send enable
+  or disable messages inside combo's (neither with Hobbit nor BB).
+
+
+Building Hobbit:
+* bb-infocolumn should build without problems again.
+
+* The "configure" script now also looks in /opt/csw for
+  tools and libraries (for Solaris/x86)
+
+* An OpenBSD Makefile was contributed.
+
+* The gcc option "-Wl,--rpath" is now used when linking
+  the tools on Linux and *BSD. This should resolve a lot of
+  the issues with runtime libraries that cannot be found.
+
+* "configure" now looks for your perl utility, and adjusts
+  the maint.pl script accordingly.
+
+* HP-UX does not have an atoll() routine. So a simple 
+  implementation of this routine was added.
+
+
+Configuration file changes:
+* hobbitlaunch.cfg now supports a DISABLED keyword to shut
+  off unwanted tasks. This permits upgrading without having
+  to re-disable stuff.
+* All commands in hobbitserver.cfg are now quoted, so it
+  can be sourced by the CGI scripts without causing errors.
+  Note that this is NOT automatically changed in an existing
+  configuration file.
+
+
+Improvements:
+* The detailed status display now lets you define what graphs
+  should be split onto multiple graph images (the "--multigraphs"
+  option for bb-hostsvc.cgi and hobbitd_filestore). Currently
+  the "disk", "inode" and "qtree" graphs are handled this way.
+* The detailed status display now includes a line showing how
+  long an acknowledgment is valid. This is configurable via the
+  ACKUNTILMSG setting in hobbitserver.cfg.
+* A new "notify" message is supported as part of the Hobbit 
+  protocol. This takes a normal hostname+testname paramater,
+  plus a text message; this is sent out as an informational
+  message using the hobbit-alerts.cfg rules to determine recipients.
+  This replaces the BB "notify-admin" recipient with a more
+  fine-grained and configurable system. Currently used by
+  maint.pl when enabling and disabling tests.
+* Alert scripts now receive a CFID environment variable with the
+  linenumber of the hobbit-alerts.cfg file that caused this
+  alert to go out.
+* A new tool - hobbit-mailack - was added. If setup to run from
+  e.g. the Hobbit users' .procmailrc file, you can acknowledge
+  alerts by responding to an alert email.
+* Temperature reports now accept additional text in parenthesis
+  without being confused.
+
+
+
+Changes from RC-2 -> RC-3
+-------------------------
+
+Configuration file changes:
+* The bb-services file format was changed slightly.
+  Instead of "service foo" to define a service, it is
+  now "[foo]". Existing files will be converted 
+  automatically by "make install".
+  
+* The name of the "conn" column (for ping-tests) is used
+  throughout Hobbit, and had to be set in multiple locations.
+  Changed all of them to use the setting from the PINGCOLUMN
+  environment variable, and added this to hobbitserver.cfg.
+
+* The --purple-conn option was dropped from hobbitd.
+  It should be removed from hobbitlaunch.cfg.
+
+* The --ping=COLUMNNAME option for bbtest-net should not
+  be used any more. "--ping" enables the ping tests, the
+  name of the column is taken from the PINGCOLUMN variable.
+
+* The GRAPHS setting in hobbitserver.cfg no longer needs to
+  have the simple TCP tests defined. These are automatically
+  picked up from the bb-services file.
+
+Bugfixes:
+* hobbitd no longer crashes, if the MACHINE name from 
+  hobbitserver.cfg is not listed in bb-hosts. Thanks to
+  Stephen Beaudry for helping me track down this bug.
+
+* If hobbitd crashed, then hobbitlaunch would attempt
+  to restart it immediately. Added a 5 second delay,
+  so that there's time for the OS to clean up any open
+  sockets, files etc that might prevent a restart from
+  working.
+
+* The "disk" RRD handler could be confused by reports 
+  from a Unix server, and mistake it for a report from a
+  Windows server. This caused the report to try and store
+  data in an RRD file with an invalid filename, so no
+  graph-data was being stored.
+
+* The "cpu" and "disk" RRD handlers were enhanced to support 
+  reports from the "filerstats2bb" script for monitoring NetApp
+  systems. The disk-handler also supports the "inode" and "qtree"
+  reports from the same script.
+
+* bb-services was overwritten by a "make install". This
+  wiped out custom network test definitions.
+
+* bbnet would crash if you happened to define a "http"
+  or "https" test instead of using a full URL.
+
+* bbnet was mis-calculating the size of the URL used for th
+  apache-test. This could cause it to overflow a buffer and
+  crash.
+
+* hobbitd would ignore the BBPORT setting and always default
+  to using port 1984.
+
+* Portability problems on HP-UX 11 should be resolved. From
+  reports it appears that building RRDtool on HP-UX 11 is 
+  somewhat of a challenge; however, the core library is
+  all that Hobbit needs, so build-problems with the Perl
+  modules can be ignored as far as Hobbit is concerned.
+
+* hobbitd_alert could not handle multiple recipients for scripts,
+  and mistakenly assumed all recipients with a "@" were for
+  e-mail recipients.
+
+* Alert messages no longer include the "<!-- flags:... ->"
+  summary; this is for Hobbit internal use only.
+
+* "suse" and "mandrake" are recognized as aliases for "linux"
+  in the RRD handler.
+
+
+Improvements:
+* The info-pages now list the Hobbit alert configuration.
+
+* hobbitd_alert now has a "--trace=FILENAME" option. This 
+  causes it to log a complete trace of all messages received
+  from hobbitd, and how they are handled and what alerts get
+  sent out as a result. This should help in tracking down
+  alert problems.
+
+* New FORMAT=PLAIN setting for alert recipients. This is the
+  same as FORMAT=TEXT, except that the URL link to the status-
+  page is left out of the message.
+
+* The "setup" target for make has been removed. "make install"
+  will now do all of the work, and will also merge in any
+  added settings to the hobbitserver.cfg, hobbitgraph.cfg,
+  hobbitlaunch.cfg, columndoc.csv and bb-services files.
+  The standard files in ~/server/web/ and ~/server/www/ are
+  also updated, if a previous version of the standard file
+  is found.
+
+* The graph included on a status view page can now be 
+  zoomed directly, without having to go over the "view all
+  period graphs" page.
+
+* Color-names in hobbit-alerts.cfg are now case-insensitive.
+
+* If the "acknowledge alert" webpage is password-protected,
+  the login-username is now included in the acknowledge 
+  message. This will also appear in the BB2 acknowledgement
+  log display, and on the status page.
+
+* More tips added to the "Tips & Tricks" document: How to get
+  temperature graphs with Fahrenheit, how to configure Apache
+  to allow viewing of the CGI man-pages.
+
+* A native MD5 message-digest routine was added, so content-
+  checks using digests will work even when Hobbit is built
+  without OpenSSL support. The routine was taken from
+  http://sourceforge.net/projects/libmd5-rfc/
+
+* bb-findhost CGI will let you search for IP-adresses.
+
+* The "--recentgifs" option to bbgen now has a parameter,
+  so you can specify what the threshold is for a status to have
+  changed "recently". The default is 24 hours.
+
+
+Changes from RC-1 -> RC-2
+-------------------------
+
+Bugfixes:
+* The alert module now gets color changes that move a status from
+  critical (alert) state into a not-yet-recovered state. So if you 
+  only want pages on red, you should no longer see pages when it
+  goes from red to yellow.
+
+* Alert rules with a color specification followed by some other
+  criteria would ignore the color spec.
+
+* Alerts would only get repeated when a new message arrived, not
+  necessarily with the interval set by the REPEAT configuration.
+
+* The alert configuration file was reloaded every time. It should
+  now only reload when it has been changed. This caused a noticable
+  change in hobbitd_alert's CPU usage.
+
+* A MAIL recipient can now have multiple recipients.
+
+* The "iishealth" RRD handler was broken.
+
+* DHCP hosts (those that have an IP of 0.0.0.0) are allowed to report
+  their status from any IP.
+
+* The bb-eventlog CGI was cleaned up (now it actually works!) and
+  a proper submission form and menu item were added.
+
+* bbtest-net would crash when multiple "apache" tests were defined.
+
+* The bb-ack.sh CGI - when located in the secure CGI area - was posting
+  to bb-ack.sh in the unsecure CGI directory. Changed so it always posts
+  to the same location it was originally called from.
+
+
+Improvements:
+* Lots of small tweaks to the HTML templates and some code, to ensure
+  that all HTML generated is HTML 4.0 compliant. Thanks to Firefox
+  and the HTML Validator plugin!
+
+* hobbitgraph.cgi enhanced with a "zoom-in" function taken from the
+  Cacti project. This allows zooming in on a period of time. Zoom
+  on both axis (time and value) will be implemented in the next version
+  of Hobbit, since it requires a modification to the RRDtool library;
+  this is too large a change to add currently.
+
+* A handler for the "temperature" reports was added to hobbitd_larrd.
+
+* An external handler mechanism was implemented for hobbitd_larrd, so 
+  users can add their own graphs without having to do C coding.
+
+* The "bbcmd" utility now loads the standard hobbitserver.cfg environment
+  if no "--env" setting is used on the command line.
+
+* The default for the "find host" form was changed to do a case-insensitive
+  match (since hostnames do not normally care about upper- or lower-case).
+
+
+
+Changes from beta-6 -> RC-1
+---------------------------
+
+* NOTE: The netstat RRD file layout has changed.  You must delete all 
+  "netstat.rrd" files, or your data collection will fail. Sorry, but the old 
+  LARRD format cannot cope with reality, where some systems report packet 
+  counts, some report byte counts, and some have both.
+
+* NOTE: The vmstat RRD file layout has changed, for data collected
+  from Linux-based systems. You must delete all such "vmstat.rrd"
+  files, or the data collection will fail. There were several 
+  incompatible formats of linux vmstat RRD files - now they all
+  use the same format.
+
+* Hobbit should now work on AIX, and possibly other platforms
+  that enforce strict X/Open XPG4 semantics for the ftok() 
+  routine. If you were seeing messages like "Could not generate 
+  shmem key..." or "Cannot setup status channel", then these
+  should now be fixed. Thanks to Chris Morris for being patient 
+  with me while I struggled with the finer details of SVR4 IPC.
+
+* A new "--test" option was implemented for hobbitd_alert. Running
+  "hobbitd_alert --test HOSTNAME SERVICENAME" will print out the
+  rules that match the HOSTNAME/SERVICENAME combination, so you 
+  can see what alerts are triggered. (Note: man-page is not updated
+  with this info yet).
+
+* Macros in hobbit-alerts.cfg were broken. Completely.
+
+* Specifying time-values in hobbit-alerts.cfg as "10m" was 
+  interpreted as "10 months" instead of "10 minutes". Since
+  minutes is much more likely to be useful, the support for
+  "months" and "years" was dropped, and "10m" now means minutes.
+
+* Specifying any kind of duration meant that the alert would not
+  happen until 24 hours had passed (and the alert still was active).
+ 
+* Two new keywords in the hobbit-alerts.cfg file: 
+  STOP on a recipient means that Hobbit stops looking for more 
+  recipients after the current one has matched. 
+  UNMATCHED on a recipient means that this recipient only 
+  gets an alert if no other recipients got an alert (for
+  setting up a default catch-all rule).
+
+* A simple syntax for "all hosts" is now "HOST=*" in hobbit-alerts.cfg
+
+* Configuring the Hobbit URL's as a root URL - "http://host/" -
+  now works, and yields correct links to the menu, the GIF-
+  files, and the documentation.
+
+* The Enable/Disable script (maint.pl) now picks up the menu
+  correctly.
+
+* The "configure" script now allows you to select a second
+  CGI directory for administration scripts (the ack-script
+  and enable/disable script). This second directory is 
+  access-controlled; the default Apache configuration was
+  updated to show how.
+
+* The ~/server/starthobbit.sh symbolic link was not being
+  re-generated if the file already existed (on some platforms).
+
+* The hobbit-tips.html file is now generated during installation,
+  so it has correct links to the icons. Previously it assumed 
+  that the icon-files had been copied to the www/help/ directory.
+
+* vmstat data for the "I/O wait cpu time" on Linux is now being
+  collected. Linux RRD data-formats made identical across the
+  various formats that are in use; this means any existing vmstat.rrd
+  files from Linux systems must be deleted.
+
+* Support for NetBSD 2.0 in vmstat and netstat RRD handler.
+
+* HTTP authentication strings are now URL un-escaped, so you can
+  use any byte-value in the username and/or password.
+
+* The info-column now includes the current address assigned to 
+  a DHCP host.
+
+* A new "noinfo" tag can be used to suppress the "info" column on
+  selected hosts.
+
+* bbhostgrep no longer segfault's if you do not use the BBLOCATION
+  environment setting. This kept some extension scripts from working.
+
+* If every single network test failed, bbtest-net could loop 
+  indefinitely. Seen on NetBSD.
+
+* If the number of available file-descriptors (ulimit -n) was
+  exceeded, bbtest-net would loop forever. Seen on NetBSD.
+
+* When running http-tests via a proxy that requires authentication,
+  the authentication info could not contain a ":" or a "@". The
+  authentication info is now un-escaped using the normal URL
+  decoding routine, so these characters can be entered as %XX 
+  escaped data (e.g. to put a "@" in the password, use "%40").
+
+* LDAP tests now try to select LDAPv3 first, and fallback to
+  LDAPv2 if this is not possible. Some newer LDAP servers 
+  refuse to talk v2 protocol.
+
+* Memory debugging was accidentally enabled in beta6 - it is now
+  disabled.
+
+
+
+Changes from beta-5 -> beta-6 (released Jan 23 2005)
+----------------------------------------------------
+
+General:
+* All environment variables now have default values if
+  they haven't been defined in hobbitserver.cfg.
+
+
+Building:
+* Hobbit now builds and appears to work on NetBSD.
+
+* The problems with the "id" command on Solaris should be
+  fixed (for real, this time).
+
+* The "configure" script checks for GNU Make, and sets up
+  the MAKE variable to run it.
+
+* For automated package builders, the "configure" script will
+  use pre-defined settings and not ask questions requiring user
+  input.
+
+
+hobbitlaunch:
+* A new HEARTBEAT option was added to hobbitlaunch.cfg. One task
+  (hobbitd) can provide a heart-beat by sending hobbitlaunch a
+  USR2 signal; if this signal is lost, hobbitlaunch will bounce
+  the task.
+
+* When killing tasks, hobbitlaunch will now first try SIGTERM. If
+  the task does not terminate, hobbitlaunch will send SIGKILL.
+
+* If some tasks depend on a task that is being killed by hobbitlaunch,
+  then the dependant tasks will also be killed.
+
+
+hobbitd:
+* A timeout has been implemented in hobbitd, when it waits for the
+  hobbitd workers to pick up the latest message sent to them. If the
+  semaphore does not clear in 5 seconds, hobbitd will complain but
+  proceed to post the message to the channel. The root cause for this
+  happening is not yet fully determined, although two potential causes
+  have been identified and corrected. The effect of this happening used
+  to be that hobbit would lock up, and all hosts would disappear from
+  the display.
+  If you see an error-message "BOARDBUSY locked..." I would like to hear
+  about it!
+
+* The post-beta5-lockup patch is included. This fixes a bug that could
+  cause hobbitd to lockup when being started.
+
+* Error handling in the initial setting up of the hobbitd shared-memory
+  and semaphores has been improved and made more verbose.
+
+* A bug in the hobbitd_channel handling of timeouts meant that the
+  timeouts were only reported as "Duplicate message". 
+
+* Alerts are now passed to the hobbitd_alert module each time a status
+  with an "alert-color" is received. The rules for sending off alerts
+  to hobbitd_alert have thus been much simplified and should give a
+  more robust behaviour.
+
+* SCRIPT based alert are now also logged.
+
+
+Status display:
+* Disabled tests now have the information from the "disable" 
+  message shown on the status page.
+
+
+RRD graphs:
+* The BEA graph definitions have been improved to handle multiple
+  instances running on the same node, and to pick up thread information.
+
+
+Network tests:
+* VNC network test definition added.
+
+* The "apache" performance data collector should no longer
+  cause the network tests to crash.
+
+* The "apache" configuration now lets you specify the URL
+  used to fetch the data, if you e.g. need to provide a
+  login/password to get it, or you are using a different
+  URL than the default one.
+
+
+
+Changes from beta-4 -> beta-5 (released Jan 16 2005)
+----------------------------------------------------
+
+hobbitd:
+* Dead connections would cause hobbitd to busy-loop
+  using CPU time. It will now timeout connections after
+  10 seconds (configurable).
+
+* CLIENT tag is now handled regardless of whether "ghost"
+  handling is enabled in hobbitd or not.
+
+
+RRD graphs:
+* The "apache" keyword for picking up Apache performance data is
+  now documented. This is a bottom feeder for the Apache RRD
+  graph data.
+
+* A handler to generate graphs from the "iishealth" extension 
+  data was added.
+
+* "netstat" data from Win32 systems running bb_memory were not
+  handled properly, so no graph data was being stored.
+
+
+Alerting:
+* The default repeat-interval for alerts can be set as a 
+  commandline option.
+
+* A new option to hobbitd, --okcolors=COLOR, allows you
+  to specify what color(s) will trigger a "recovered"
+  message.
+
+
+General:
+* Memory management is now wrapped in routines that check
+  for common errors. This may cause more crashes, but will
+  hopefully also make it easier to track down the bugs.
+
+
+Building:
+* The configure script should be able to pick up the PCRE
+  include files on Red Hat & Fedora.
+
+* RRDtool installations that require linking with libz
+  should now work.
+
+* Compile problems on AIX (conflicting msg_t defintions)
+  have been fixed by renaming the hobbit structure.
+
+* Some scripts used "id -g", this caused problems on
+  Solaris. Changed to use the XPG4 version of "id" on
+  Solaris.
+
+
+Documentation:
+* man-pages for bb-infocolumn, bb-larrdcolumn, bb-webpage 
+  hobbit-alerts.cfg added.
+  The hobbitserver.cfg man-page was heavily updated.
+
+* Misc. documentation updates and improvements
+
+
+Network tests:
+* C-ARES library updated from version 1.2.0 -> 1.2.1.
+
+
+Reporting:
+* Availability reports would show odd data for hosts that had
+  the REPORTTIME option enabled.
+
+* Setting report-generation options in BBGENREPOPTS now works.
+
+* The bb-snapshot.cgi reporting tool is now installed in the 
+  menu, and functional out of the box. This tool allows you to
+  view a snapshot of the Hobbit webpages at a given point in
+  time.
+
+* The report header- and footer-files changed so the menu also
+  works in reports.
+
+
+Changes from beta3 -> beta4 (released Jan 05 2005)
+--------------------------------------------------
+
+General changes
+---------------
+* Bugfixes from bbgen 3.5 included.
+
+* Internally, the code that handles loading of the bb-hosts file in
+  the various tools has been consolidated into a single library
+  routine. Previously there was 3 or 4 different routines who handled
+  loading the bb-hosts file - one for bbgen, another for bbtest-net, a
+  third for bbgend/hobbitd etc. Such a change can cause problems,
+  since so much functionality depends on getting the right information
+  out of the bb-hosts file. So if you stumble across anything that
+  might be related to a tool not getting the expected information from
+  bb-hosts, do let me know. It's been fairly well tested, but one
+  never knows.
+
+* The documentation has been brought up-to-date, and I've added some
+  HTML-formatted documentation that is available either in the docs/
+  directory of the tar-file, or on-line after you install Hobbit. The
+  "install.html" describes how to install Hobbit, if you would like
+  some guidance along the way. The column heading links that pointed
+  into the bb-help.html file from Big Brother are also gone, since
+  this file cannot be redistributed.
+  One man-page is currently missing: The hobbit-alerts.cfg(5) man-
+  page isn't done yet, but there is an HTML document that describes
+  how to setup alerts.
+
+
+
+bbgen changes
+-------------
+* HTML 4.0 compliance was checked for the overview- and status-log
+  webpages. Multiple changes in the "web/" templates and hobbitserver.env
+  as a result.
+
+* bbgen no longer updates the "info" and "trends" columns.  Instead, two 
+  stand-alone utilities handle this. The "--info" and "--larrd" options 
+  are no longer used by bbgen. So if upgrading from beta3, you must 
+  copy the new [larrdcolumn] and [infocolumn] sections from the default
+  hobbitlaunch.cfg file.
+
+
+hobbitd changes
+---------------
+* hobbitd can now save "meta" information about each status; this
+  is expected to be XML-formatted data. Currently, the "info" and
+  "trends" data is stored in this way, if the tools generating it
+  are run with the "--meta" option.
+
+* Two new network commands in hobbitd: "hobbitdxlog" returns a status
+  log in XML format; "hobbitdxboard" returns the full Hobbit status board
+  in XML format.
+
+* hobbitd now handles SIGHUP correctly.
+
+
+RRD / graphing changes
+----------------------
+* A replacement for the Perl-based larrd-grapher CGI was implemented.
+  This has much lower overhead as a CGI script than the old script,
+  so graphs appear a lot quicker and with less load on your server.
+  Also, this graph CGI has some improvements, e.g. if multiple 
+  graphs are combined (e.g. the tcp graph), the view is split up 
+  into multiple graphs. And http response-times are shown on a 
+  separate graph, since they are usually much larger than the 
+  response-times for normal tcp tests.
+
+* Improved the way RRD graphs are defined. The LARRDS environment
+  setting defines what types of status-messages are passed to the
+  LARRD backend and how they should be interpreted. The GRAPHS
+  environment variable defines what graphs appear on the "trends"
+  page.
+
+* The "memory" RRD backend now tracks the "actual" value (for Linux)
+  and "Virtual" value (Win32).
+
+* A new RRD graph for bbgend tracks the number of incoming messages.
+
+* The "apache" RRD backend was implemented. Instead of a standalone
+  bottom-feeder, data is fed by bbtest-net. So you can enable apache
+  reporting simply by putting "apache" as a test in bb-hosts.
+
+* The "sendmail" RRD backend was implemented.
+
