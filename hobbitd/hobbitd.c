@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.129 2005-03-16 21:30:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.130 2005-03-18 12:51:17 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -1373,7 +1373,7 @@ void setup_filter(char *buf, char **spage, char **shost, char **stest, int *scol
 
 	tok = strtok(buf, " \t\r\n");
 	if (tok) tok = strtok(NULL, " \t\r\n");
-	if (tok) {
+	while (tok) {
 		/* Get filter */
 		if (strncmp(tok, "page=", 5) == 0) {
 			*spage = tok+5;
@@ -1382,6 +1382,8 @@ void setup_filter(char *buf, char **spage, char **shost, char **stest, int *scol
 		else if (strncmp(tok, "host=", 5) == 0) *shost = tok+5;
 		else if (strncmp(tok, "test=", 5) == 0) *stest = tok+5;
 		else if (strncmp(tok, "color=", 6) == 0) *scolor = parse_color(tok+6);
+
+		tok = strtok(NULL, " \t\r\n");
 	}
 }
 
