@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.2 2003-04-13 12:39:21 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.3 2003-04-13 13:37:22 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -19,17 +19,14 @@ static char rcsid[] = "$Id: bbtest-net.c,v 1.2 2003-04-13 12:39:21 henrik Exp $"
 #include <ctype.h>
 #include <netdb.h>
 
-#define MAX_LINE_LEN 4096
+#include "bbgen.h"
+#include "util.h"
+#include "debug.h"
 
-/* Max length of a filename */
-#ifndef MAX_PATH
-#ifndef MAXPATHLEN
-#define MAX_PATH 4096
-#else
-#define MAX_PATH MAXPATHLEN
-#endif
-#endif
-
+/* These are dummy vars needed by stuff in util.c */
+hostlist_t      *hosthead = NULL;
+link_t          *linkhead = NULL;
+link_t  null_link = { "", "", "", NULL };
 
 typedef struct {
 	char *testname;
@@ -52,11 +49,12 @@ typedef struct {
 	service_t	*service;
 	int		reverse;
 	int		dialup;
+	int		open;
 	void		*next;
 } testitem_t;
 
 service_t	*svchead = NULL;
-testedhost_t	*hosthead = NULL;
+testedhost_t	*testhosthead = NULL;
 testitem_t	*testhead = NULL;
 
 service_t *add_service(char *name, int port)
@@ -93,7 +91,7 @@ void load_services(void)
 }
 
 
-void load_tests(int pinginfo)
+void load_tests(void)
 {
 	FILE 	*bbhosts;
 	char 	l[MAX_LINE_LEN];	/* With multiple http tests, we may have long lines */
@@ -194,6 +192,7 @@ void load_tests(int pinginfo)
 						newtest->service = s;
 						newtest->dialup = dialuptest;
 						newtest->reverse = reversetest;
+						newtest->open = 0;
 						newtest->next = s->items;
 						s->items = newtest;
 					}
@@ -227,8 +226,8 @@ void load_tests(int pinginfo)
 						}
 					}
 
-					h->next = hosthead;
-					hosthead = h;
+					h->next = testhosthead;
+					testhosthead = h;
 				}
 				else {
 					/* No network tests for this host, so drop it */
@@ -250,8 +249,14 @@ void load_tests(int pinginfo)
 void run_nmap_service(service_t *service)
 {
 	FILE		*nmapin;
+	char		logfn[MAX_PATH];
 	char		nmapcmd[MAX_PATH+1024];
 	testitem_t	*t;
+	FILE		*logfile;
+	char		l[MAX_LINE_LEN];
+	char 		wantedstatus[80];
+
+	sprintf(logfn, "%s/nmap_%s_%d.out", getenv("BBTMP"), service->testname, service->portnum);
 
 	/*
 	 * nmap options:
@@ -262,15 +267,85 @@ void run_nmap_service(service_t *service)
 	 * -oG  : grep'able output format
 	 * -p   : portnumber to test
 	 */
-	sprintf(nmapcmd, "nmap -sT -P0 -n -iL - -oG %s/nmap_%s_%d.out -p %d >/dev/null", 
-		getenv("BBTMP"), service->testname, service->portnum, service->portnum);
+	sprintf(nmapcmd, "nmap -sT -P0 -n -iL - -oG %s -p %d 2>&1 1>/dev/null", 
+		logfn, service->portnum);
 	nmapin = popen(nmapcmd, "w");
+	if (nmapin == NULL) { perror("Cannot run nmap"); exit(1); }
 
 	for (t=service->items; (t); t = t->next) {
 		if (!t->host->dnserror) fprintf(nmapin, "%s\n", t->host->ip);
 	}
 
-	pclose(nmapin);
+	if (pclose(nmapin) != 0) {
+		printf("bbtest-net: failed to execute nmap\n");
+		exit(1);
+	}
+
+	logfile = fopen(logfn, "r");
+	if (logfile == NULL) {
+		printf("Cannot open logfile %s\n", logfn);
+		exit(1);
+	}
+
+	sprintf(wantedstatus, "%d/open/tcp/", service->portnum);
+	while (fgets(l, sizeof(l), logfile)) {
+		int ip1, ip2, ip3, ip4;
+		char status[MAX_LINE_LEN];
+		char logip[16];
+
+		if ((strncmp(l, "Host:", 5) == 0) && 
+		    (sscanf(l, "Host: %3d.%3d.%3d.%3d () Ports: %s Ignored state:", &ip1, &ip2, &ip3, &ip4, status) == 5)) {
+			sprintf(logip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+			for (t=service->items; (t && (strcmp(t->host->ip, logip) != 0)); t = t->next) ;
+			if (t) {
+				t->open = (strncmp(wantedstatus, status, strlen(wantedstatus)) == 0);
+			}
+			else {
+				printf("Weird - tested an IP I didnt know: %s\n", logip);
+			}
+		}
+	}
+	fclose(logfile);
+}
+
+void send_results(service_t *service)
+{
+	testitem_t	*t;
+	int		color;
+	char		msgline[MAXMSG];
+
+	for (t=service->items; (t); t = t->next) {
+		color = COL_GREEN;
+
+		/*
+		 * If DNS error, it is red.
+		 * If not, then either (open=0,reverse=0) or (open=1,reverse=1) is wrong.
+		 */
+		if ((t->host->dnserror) || ((t->open + t->reverse) != 1)) {
+			color = COL_RED;
+		}
+
+		/* Dialup hosts and dialup tests report red as clear */
+		if ((color != COL_GREEN) && (t->host->dialup || t->dialup)) color = COL_CLEAR;
+
+		init_status(color);
+		sprintf(msgline, "status %s.%s %s %s\n", 
+			commafy(t->host->hostname), t->service->testname, colorname(color), timestamp);
+		addtostatus(msgline);
+
+		if (t->host->dnserror) {
+			sprintf(msgline, "\nUnable to resolve hostname %s\n", t->host->hostname);
+		}
+		else {
+			sprintf(msgline, "\nService %s on %s is %s\n",
+				t->service->testname, t->host->hostname,
+				(t->open ? "UP" : "DOWN"));
+		}
+		addtostatus(msgline);
+		addtostatus("\n\n");
+		finish_status();
+	}
+
 }
 
 int main(int argc, char *argv[])
@@ -279,28 +354,32 @@ int main(int argc, char *argv[])
 	testedhost_t *h;
 	testitem_t *t;
 
+	init_timestamp();
 	load_services();
 	for (s = svchead; (s); s = s->next) {
-		printf("Service %s port %d\n", s->testname, s->portnum);
+		dprintf("Service %s port %d\n", s->testname, s->portnum);
 	}
 
-	load_tests(0);
-	for (h = hosthead; (h); h = h->next) {
-		printf("Host %s, dnserror=%d, ip %s, dialup=%d testip=%d\n", 
+	load_tests();
+	for (h = testhosthead; (h); h = h->next) {
+		dprintf("Host %s, dnserror=%d, ip %s, dialup=%d testip=%d\n", 
 			h->hostname, h->dnserror, h->ip, h->dialup, h->testip);
 	}
 
-	printf("\nTest services\n");
+	combo_start();
+	dprintf("\nTest services\n");
 	for (s = svchead; (s); s = s->next) {
 		if (s->items) {
-			printf("Service %s port %d\n", s->testname, s->portnum);
-			for (t = s->items; (t); t = t->next) {
-				printf("\tHost:%s, ip:%s, reverse:%d, dialup:%d\n",
-					t->host->hostname, t->host->ip, t->reverse, t->dialup);
-			}
 			run_nmap_service(s);
+			dprintf("Service %s port %d\n", s->testname, s->portnum);
+			for (t = s->items; (t); t = t->next) {
+				dprintf("\tHost:%s, ip:%s, open:%d, reverse:%d, dialup:%d\n",
+					t->host->hostname, t->host->ip, t->open, t->reverse, t->dialup);
+			}
+			send_results(s);
 		}
 	}
+	combo_end();
 
 	return 0;
 }
