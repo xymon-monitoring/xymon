@@ -61,23 +61,24 @@ int main(int argc, char *argv[])
 
 	int cnid;
 	int pfd[2];
+	pid_t childpid = 0;
 	char *childcmd;
 	char **childargs;
 	struct timespec tmo;
 
 	for (argi=1; (argi < argc); argi++) {
-		if (strcmp(argv[argi], "--debug") == 0) {
+		if (argnmatch(argv[argi], "--debug")) {
 			debug = 1;
 		}
-		else if (strncmp(argv[argi], "--channel=", 10) == 0) {
+		else if (argnmatch(argv[argi], "--channel=")) {
 			char *cn = strchr(argv[argi], '=') + 1;
 
 			for (cnid = 0; (channelnames[cnid] && strcmp(channelnames[cnid], cn)); cnid++) ;
 		}
-		else if (strcmp(argv[argi], "--daemon") == 0) {
+		else if (argnmatch(argv[argi], "--daemon")) {
 			daemonize = 1;
 		}
-		else if (strcmp(argv[argi], "--no-daemon") == 0) {
+		else if (argnmatch(argv[argi], "--no-daemon")) {
 			daemonize = 0;
 		}
 		else {
@@ -90,7 +91,6 @@ int main(int argc, char *argv[])
 
 	/* Go daemon */
 	if (daemonize) {
-		pid_t childpid;
 
 		/* We wont close stdin/stdout/stderr here, since the worker process might need them. */
 
@@ -115,12 +115,12 @@ int main(int argc, char *argv[])
 		errprintf("Could not get a pipe: %s\n", strerror(errno));
 		return 1;
 	}
-	n = fork();
-	if (n == -1) {
+	childpid = fork();
+	if (childpid == -1) {
 		errprintf("Could not fork channel handler: %s\n", strerror(errno));
 		return 1;
 	}
-	else if (n == 0) {
+	else if (childpid == 0) {
 		/* The channel handler child */
 		n = dup2(pfd[0], STDIN_FILENO);
 		close(pfd[0]); close(pfd[1]);
@@ -128,6 +128,7 @@ int main(int argc, char *argv[])
 	}
 	/* Parent process continues */
 	close(pfd[0]);
+	fclose(stdin);	/* bbd_channel's stdin is not used */
 
 	/* We dont want to block when writing to the worker */
 	fcntl(pfd[1], F_SETFL, O_NONBLOCK);
@@ -259,6 +260,9 @@ int main(int argc, char *argv[])
 
 	if (childexit != -1) {
 		errprintf("Worker process died with exit code %d, terminating\n", childexit);
+	}
+	else {
+		if (childpid > 0) kill(childpid, SIGTERM);
 	}
 
 	/* Detach from channels */
