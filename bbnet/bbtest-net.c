@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.150 2004-08-18 06:14:32 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.151 2004-08-18 06:22:02 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -2047,6 +2047,13 @@ int main(int argc, char *argv[])
 		}
 
 		/* Options for HTTP tests */
+		else if (argnmatch(argv[argi], "--conntimeout=")) {
+			int newtimeout;
+			char *p = strchr(argv[argi], '=');
+			p++; newtimeout = atoi(p);
+			if (newtimeout > timeout) timeout = newtimeout;
+			errprintf("Deprecated option '--conntimeout' should not be used\n");
+		}
 		else if (argnmatch(argv[argi], "--content=")) {
 			char *p = strchr(argv[argi], '=');
 			contenttestname = malcop(p+1);
