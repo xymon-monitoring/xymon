@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.44 2004-08-07 11:17:26 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.45 2004-08-07 11:45:25 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -195,7 +195,8 @@ char *init_tcp_services(void)
 	char buf[MAX_LINE_LEN];
 	svclist_t *head = NULL;
 	svclist_t *item = NULL;
-	svclist_t *first, *walk;
+	svclist_t *first = NULL;
+	svclist_t *walk;
 	char *bbnetsvcs = NULL;
 	char *searchstring;
 	int svcnamebytes = 0;
