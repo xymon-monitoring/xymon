@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.24 2004-08-28 07:50:32 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.25 2004-08-29 13:25:42 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -402,7 +402,7 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg)
 	return result;
 }
 
-int sendstatus(char *bbdisp, char *msg)
+static int sendstatus(char *bbdisp, char *msg)
 {
 	int statusresult, pageresult;
 	char statuscolor[256];
@@ -508,7 +508,7 @@ void combo_start(void)
 		sleepbetweenmsgs = atoi(getenv("BBSLEEPBETWEENMSGS"));
 }
 
-void combo_flush(void)
+static void combo_flush(void)
 {
 
 	if (!bbmsgqueued) {
@@ -539,7 +539,7 @@ void combo_flush(void)
 	combo_start();	/* Get ready for the next */
 }
 
-void combo_add(char *buf)
+static void combo_add(char *buf)
 {
 	/* Check if there is room for the message + 2 newlines */
 	if ( ((strlen(bbmsg) + strlen(buf) + 200) >= MAXMSG) || 
