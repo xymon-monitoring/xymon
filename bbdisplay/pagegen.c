@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.134 2005-02-03 13:57:19 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.135 2005-02-21 15:28:07 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -138,7 +138,7 @@ int interesting_column(int pagetype, int color, int alert, bbgen_col_t *column, 
 			if (color == COL_RED)  return 1;
 			if (nkonlyreds) return 0;
 			if ( (color == COL_YELLOW) || (color == COL_CLEAR) ) {
-				if (strcmp(column->name, "conn") == 0) return 0;
+				if (strcmp(column->name, xgetenv("PINGCOLUMN")) == 0) return 0;
 				if (lognkstatus && (strcmp(column->name, lognkstatus) == 0)) return 0;
 				return 1;
 			}
@@ -1092,7 +1092,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 					}
 					else {
 						if (!nkonlyreds) {
-							useit = ((e->color == COL_YELLOW) && (strcmp(e->column->name, "conn") != 0));
+							useit = ((e->color == COL_YELLOW) && (strcmp(e->column->name, xgetenv("PINGCOLUMN")) != 0));
 						}
 					}
 				}
