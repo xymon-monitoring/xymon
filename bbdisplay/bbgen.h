@@ -312,7 +312,8 @@ extern dispsummary_t	*dispsums;
 extern int		bb_color, bb2_color, bbnk_color;
 extern time_t		reportstart, reportend;
 extern double           reportwarnlevel, reportgreenlevel;
-extern char		*reportstyle;
+extern int		reportstyle;
+extern int		dynamicreport;
 
 #endif
 

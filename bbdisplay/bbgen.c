@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.131 2003-06-21 07:34:52 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.132 2003-06-21 15:10:20 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -35,6 +35,7 @@ static char rcsid[] = "$Id: bbgen.c,v 1.131 2003-06-21 07:34:52 henrik Exp $";
 #include "alert.h"
 #include "debug.h"
 #include "wmlgen.h"
+#include "bb-replog.h"
 
 /* Global vars */
 bbgen_page_t	*pagehead = NULL;			/* Head of page list */
@@ -50,7 +51,8 @@ time_t		reportstart = 0;
 time_t		reportend = 0;
 double		reportwarnlevel = 97.0;
 double		reportgreenlevel = 99.995;
-char		*reportstyle = "crit";
+int		reportstyle = STYLE_CRIT;
+int		dynamicreport = 1;
 
 char *reqenv[] = {
 "BB",
@@ -65,6 +67,8 @@ char *reqenv[] = {
 "BBNOTES",
 "BBREL",
 "BBRELDATE",
+"BBREP",
+"BBREPURL",
 "BBSKIN",
 "BBTMP",
 "BBVAR",
@@ -146,14 +150,19 @@ int main(int argc, char *argv[])
 			}
 			enable_wmlgen = 1;
 		}
-		else if (argnmatch(argv[i], "--reporttime=")) {
+		else if (argnmatch(argv[i], "--reportopts=")) {
 			char style[MAX_LINE_LEN];
 
-			int count = sscanf(argv[i], "--reporttime=%lu:%lu:%s", &reportstart, &reportend, style);
+			int count = sscanf(argv[i], "--reportopts=%lu:%lu:%d:%s", &reportstart, &reportend, &dynamicreport, style);
 
 			if (count < 1) reportstart = 788918400;	/* 01-Jan-1995 00:00 GMT */
 			if (count < 2) reportend = time(NULL);
-			if (count == 3) reportstyle = malcop(style);
+			if (count < 3) dynamicreport = 1;
+			if (count == 4) {
+				if (strcmp(style, stylenames[STYLE_CRIT]) == 0) reportstyle = STYLE_CRIT;
+				else if (strcmp(style, stylenames[STYLE_NONGR]) == 0) reportstyle = STYLE_NONGR;
+				else reportstyle = STYLE_OTHER;
+			}
 
 			if (getenv("BBREPWARN")) reportwarnlevel = atof(getenv("BBREPWARN"));
 			if (getenv("BBREPGREEN")) reportgreenlevel = atof(getenv("BBREPGREEN"));
@@ -326,7 +335,7 @@ int main(int argc, char *argv[])
 			printf("    --htmlextension=.EXT        : Sets filename extension for generated file (default: .html\n");
 			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbgen\n");
 			printf("    --wml[=test1,test2,...]     : Generate a small (bb2-style) WML page\n");
-			printf("    --reporttime=START:END      : Run in BB Reporting mode\n");
+			printf("    --reportopts=ST:END:DYN:STL : Run in BB Reporting mode\n");
 			printf("\nPage layout options:\n");
 			printf("    --pages-last                : Put page- and subpage-links after hosts (as BB does)\n");
 			printf("    --pages-first               : Put page- and subpage-links before hosts (default)\n");
