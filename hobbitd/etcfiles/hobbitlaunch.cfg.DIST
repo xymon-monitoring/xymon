@@ -95,9 +95,35 @@
 [bbdisplay]
 	ENVFILE $BBSERVERROOT/bb/etc/bbserver.env
 	NEEDS bbgend
-	CMD bbgen --bbgend --recentgifs --info --subpagecolumns=2 --larrd043 --report
+	GROUP generators
+	CMD bbgen --bbgend --recentgifs --subpagecolumns=2 --larrd043 --report
 	LOGFILE $BBSERVERLOGS/bb-display.log
 	INTERVAL 1m
+
+# "larrdcolumn" is responsible for updating the contents of the LARRD overview page, found on the
+# "trends" column for each host. Since the set of graphs does not change very often, we run this
+# less frequently than the normal webpage updates. We also make sure (with the "GROUP" setting)
+# that they don't run simultaneously with the infocolumnn and bbdisplay tasks.
+[larrdcolumn]
+	ENVFILE $BBSERVERROOT/bb/etc/bbserver.env
+	NEEDS bbgend
+	GROUP generators
+	CMD bb-larrdcolumn --bbgend --rrddir=$BBVAR/rrd --column=trends
+	LOGFILE $BBSERVERLOGS/bb-display.log
+	INTERVAL 15m
+
+# "infocolumn" is responsible for updating the contents of the INFO pages, found on the
+# "info" column for each host. Since the content does not change unless there is a 
+# configuration change, we update these less frequently than the normal webpage updates.
+# We also make sure (with the "GROUP" setting) that they don't run simultaneously with 
+# the larrdcolumnn and bbdisplay tasks.
+[infocolumn]
+	ENVFILE $BBSERVERROOT/bb/etc/bbserver.env
+	NEEDS bbgend
+	GROUP generators
+	CMD bb-infocolumn --bbgend --column=info
+	LOGFILE $BBSERVERLOGS/bb-display.log
+	INTERVAL 15m
 
 
 # "bbnet" runs the bbtest-net tool to perform the network based tests - i.e. http, smtp, ssh, dns and
