@@ -170,9 +170,9 @@ else
 	echo "NB: The ares library has not been thoroughly tested."
 	echo "    Use with caution!"
 	echo ""
-	echo "Do you want to use the ares DNS library ?"
+	echo "Do you want to use the ares DNS library (n) ?"
 	read ENABLEARES
-	if test "$ENABLEARES" = "" -o "$ENABLEARES" = "y"
+	if test "$ENABLEARES" = "y"
 	then
 		ARESDEF="-DUSE_ARES -I./ares-1.1.1/"
 		ARESLIB="libares.a"
