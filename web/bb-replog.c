@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.14 2003-07-07 19:59:56 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.15 2003-07-08 09:10:21 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -196,6 +196,7 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 			char start[30];
 			char end[30];
 			time_t endtime;
+			int angrygif = (repinfo->withreport && walk->affectssla);
 
 			strftime(start, sizeof(start), "%a %b %d %H:%M:%S %Y", localtime(&walk->starttime));
 			endtime = walk->starttime + walk->duration;
@@ -208,7 +209,7 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 			fprintf(htmlrep, "<A HREF=\"%s/bb-histlog.sh?HOST=%s&SERVICE=%s&TIMEBUF=%s\">", 
 				getenv("CGIBINURL"), hostname, service, walk->timespec);
 			fprintf(htmlrep, "<IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0>", 
-				getenv("BBSKIN"), dotgiffilename(walk->color, 0, 1), colorname(walk->color),
+				getenv("BBSKIN"), dotgiffilename(walk->color, 0, !angrygif), colorname(walk->color),
 				getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
 			fprintf(htmlrep, "</TD>\n");
 
@@ -395,6 +396,11 @@ static void parse_query(void)
 	}
 	else query = urldecode("QUERY_STRING");
 
+	if (!urlvalidate(query, NULL)) {
+		errormsg("Invalid request");
+		return;
+	}
+
 	token = strtok(query, "&");
 	while (token) {
 		char *val;
@@ -435,6 +441,9 @@ static void parse_query(void)
 			sprintf(colstr, "%s ", val);
 			color = parse_color(colstr);
 			free(colstr);
+		}
+		else if (argnmatch(token, "RECENTGIFS")) {
+			use_recentgifs = atoi(val);
 		}
 
 		token = strtok(NULL, "&");
