@@ -372,10 +372,14 @@ else
 
 		# Hobbit defaults to standard port and 32KB message max.
 		BBHOSTOS=`uname -s | tr [A-Z] [a-z]`
-		BBHOME=$BBTOPDIR/server
-		BBVAR=$BBTOPDIR/data
 		BBPORT=1984
 		MAXMSG=32768
+		if test "$BBHOME" = ""; then
+			BBHOME=$BBTOPDIR/server
+		fi
+		if test "$BBVAR" = ""; then
+			BBVAR=$BBTOPDIR/data
+		fi
 	fi
 
 	echo "Where should I install the Hobbit man-pages (/usr/local/man) ?"
@@ -585,6 +589,25 @@ else
 		echo "I would appreciate it if you send the changes to"
 		echo "hobbit-owner@hswn.dk so I can include it in the next version."
 		echo ""
+	fi
+	echo "" >>Makefile
+	if test "$INSTALLBINDIR" != ""; then
+		echo "INSTALLBINDIR = $INSTALLBINDIR"   >>Makefile
+	fi
+	if test "$INSTALLETCDIR" != ""; then
+		echo "INSTALLETCDIR = $INSTALLETCDIR"   >>Makefile
+	fi
+	if test "$INSTALLEXTDIR" != ""; then
+		echo "INSTALLEXTDIR = $INSTALLEXTDIR"   >>Makefile
+	fi
+	if test "$INSTALLTMPDIR" != ""; then
+		echo "INSTALLTMPDIR = $INSTALLTMPDIR"   >>Makefile
+	fi
+	if test "$INSTALLWEBDIR" != ""; then
+		echo "INSTALLWEBDIR = $INSTALLWEBDIR"   >>Makefile
+	fi
+	if test "$INSTALLWWWDIR" != ""; then
+		echo "INSTALLWWWDIR = $INSTALLWWWDIR"   >>Makefile
 	fi
 	echo "" >>Makefile
 	echo "# Add local CFLAGS etc. settings here" >>Makefile
