@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.58 2003-05-29 19:22:40 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.59 2003-05-31 19:23:45 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -783,13 +783,44 @@ void send_results(service_t *service)
 			color = COL_GREEN;
 
 			/*
-			 * If DNS error, it is red.
-			 * If not, then either (open=0,reverse=0) or (open=1,reverse=1) is wrong.
+			 * DNS error: Red
+			 * Ping test:
+			 *    !open -> red unless t->reverse
+			 * Non-ping test:
+			 *    Open: Red if t->reverse, green if !t->reverse
+			 *    !open && (pingOK or alwaystruetest): 
+			 *        Green if t->reverse
+			 *        Red if !t->reverse
+			 *    !open && !pingOK
+			 *        Clear
 			 */
-			if ((t->host->dnserror) || ((t->open + t->reverse) != 1)) color = COL_RED;
+			if (t->host->dnserror) color = COL_RED;
+			if (service == pingtest) {
+				/* Red if (open=0, reverse=0) or (open=1, reverse=1) */
+				if ((t->open + t->reverse) != 1) color = COL_RED;
+			} 
+			else {
+				if (t->open) {
+					color = (t->reverse ? COL_RED : COL_GREEN);
+				}
+				else {	
+					/* Not open */
+					if (t->alwaystrue) {
+						color = (t->reverse ? COL_GREEN : COL_RED);
+					}
+					else {
+						if (t->host->downcount == 0) {
+							color = (t->reverse ? COL_GREEN : COL_RED);
+						}
+						else {
+							color = COL_CLEAR;
+						}
+					}
+				}
+			}
 
 			/* Dialup hosts and dialup tests report red as clear */
-			if ((color != COL_GREEN) && (t->host->dialup || t->dialup)) color = COL_CLEAR;
+			if ( ((color == COL_GREEN) || (color == COL_YELLOW)) && (t->host->dialup || t->dialup) ) color = COL_CLEAR;
 
 			/* If not inside SLA and non-green, report as BLUE */
 			if (!t->host->in_sla && (color != COL_GREEN)) color = COL_BLUE;
