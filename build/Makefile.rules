@@ -217,15 +217,15 @@ install-gif: $(GIFFILES)
 install-man: install-man1 install-man5 install-man7
 
 install-man1:
-	mkdir -p /usr/local/man/man1 || /bin/true
+	mkdir -p $(MANROOT)/man1 || /bin/true
 	cp -p $(MAN1PAGES) $(MANROOT)/man1/
 
 install-man5:
-	mkdir -p /usr/local/man/man5 || /bin/true
+	mkdir -p $(MANROOT)/man5 || /bin/true
 	cp -p $(MAN5PAGES) $(MANROOT)/man5/
 
 install-man7:
-	mkdir -p /usr/local/man/man7 || /bin/true
+	mkdir -p $(MANROOT)/man7 || /bin/true
 	cp -p $(MAN7PAGES) $(MANROOT)/man7/
 
 install-nocgi: install-bin install-exts install-man install-html install-conf install-gif
