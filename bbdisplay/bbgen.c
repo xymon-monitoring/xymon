@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.92 2003-04-23 10:57:44 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.93 2003-04-23 20:32:39 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -118,8 +118,7 @@ int main(int argc, char *argv[])
 		}
 		else if (strncmp(argv[i], "--doccgi=", 9) == 0) {
 			char *lp = strchr(argv[i], '=');
-			documentationcgi = malloc(strlen(lp));
-			strcpy(documentationcgi, (lp+1));
+			documentationcgi = malcop(lp+1);
 		}
 
 		else if (strcmp(argv[i], "--pages-first") == 0) {
@@ -139,6 +138,11 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[i], "--sort-group-only-items") == 0) {
 			sort_grouponly_items = 1;
+		}
+		else if (strncmp(argv[i], "--page-title=", 13) == 0) {
+			char *lp = strchr(argv[i], '=');
+
+			defaultpagetitle = malcop(lp+1);
 		}
 
 		else if ((strncmp(argv[i], "--noprop=", 9) == 0) || (strncmp(argv[i], "--nopropyellow=", 15) == 0)) {
@@ -165,10 +169,7 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 
 			enable_infogen=1;
-			if (lp) {
-				infocol = malloc(strlen(lp));
-				strcpy(infocol, (lp+1));
-			}
+			if (lp) infocol = malcop(lp+1);
 		}
 
 		else if (strncmp(argv[i], "--larrdupdate=", 14) == 0) {
@@ -182,10 +183,7 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 
 			enable_larrdgen=1;
-			if (lp) {
-				larrdgraphs_default = malloc(strlen(lp));
-				strcpy(larrdgraphs_default, (lp+1));
-			}
+			if (lp) larrdgraphs_default = malcop(lp+1);
 		}
 		else if (strncmp(argv[i], "--larrd", 7) == 0) {
 			/* "--larrd" just enable larrd page generation */
@@ -193,15 +191,11 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 
 			enable_larrdgen=1;
-			if (lp) {
-				larrdcol = malloc(strlen(lp));
-				strcpy(larrdcol, (lp+1));
-			}
+			if (lp) larrdcol = malcop(lp+1);
 		}
 		else if (strncmp(argv[i], "--rrddir=", 9) == 0) {
 			char *lp = strchr(argv[i], '=');
-			rrddir = malloc(strlen(lp));
-			strcpy(rrddir, (lp+1));
+			rrddir = malcop(lp+1);
 		}
 		else if (strncmp(argv[i], "--log-nohost-rrds", 17) == 0) {
 			log_nohost_rrds=1;
@@ -242,6 +236,7 @@ int main(int argc, char *argv[])
 			printf("    --subpagecolumns=N          : Number of columns for links to pages and subpages\n");
 			printf("    --recentgifs                : Use xxx-recent.gif icons for newly changed tests\n");
 			printf("    --sort-group-only-items     : Display group-only items in alphabetical order\n");
+			printf("    --page-title=TITLE          : Set a default page title for all pages\n");
 			printf("\nStatus propagation control options:\n");
 			printf("    --noprop=test[,test]        : Disable upwards status propagation when YELLOW\n");
 			printf("    --nopropred=test[,test]     : Disable upwards status propagation when RED or YELLOW\n");
