@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.88 2003-08-27 20:30:08 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.89 2003-08-28 06:05:23 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -314,6 +314,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 	int	columncount;
 	char	*bbskin;
 	int	maxbanksize = 0;
+	int	anyplainhosts = 0;
 
 	if (head == NULL)
 		return;
@@ -327,6 +328,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 
 	for (h = head; (h); h = h->next) {
 		if (h->banksize > maxbanksize) maxbanksize = h->banksize;
+		if (h->banksize == 0) anyplainhosts = 1;
 	}
 
 	if (maxbanksize == 0) {
@@ -335,6 +337,10 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 		for (columncount=0, gc=groupcols; (gc); gc = gc->next, columncount++) ;
 	}
 	else {
+		/* There are modembanks here! */
+		if (anyplainhosts) {
+			errprintf("WARNING: Modembank displays should be in their own group or page.\nMixing normal hosts with modembanks yield strange output.\n");
+		}
 		groupcols = NULL;
 		columncount = maxbanksize;
 	}
@@ -358,7 +364,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 				/* output group title and column headings */
 				fprintf(output, "<TR><TD VALIGN=MIDDLE ROWSPAN=2><CENTER><FONT %s>%s</FONT></CENTER></TD>\n", 
 					getenv("MKBBTITLE"), grouptitle);
-				if (maxbanksize) {
+				if ((groupcols == NULL) && (maxbanksize > 0)) {
 					int i;
 
 					for (i=0; (i < maxbanksize); i++) {
