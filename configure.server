@@ -305,7 +305,7 @@ else
 	echo "BUILDTOPDIR=\`pwd\`" >>Makefile
 	echo "" >> Makefile
 
-	if test -r Makefile.`uname -s`
+	if test -r build/Makefile.`uname -s`
 	then
 		echo "include build/Makefile.`uname -s`" >>Makefile
 		echo ""
