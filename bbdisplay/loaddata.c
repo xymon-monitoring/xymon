@@ -296,17 +296,12 @@ state_t *init_state(const char *filename, int dopurple)
 
 
 	if (host) {
-		newstate->hostname = host->hostname;
 		newstate->entry->next = host->entries;
 		host->entries = newstate->entry;
 	}
 	else {
 		/* No host for this test - must be missing from bb-hosts */
 		newstate->entry->next = NULL;
-
-		/* Need to malloc() room for the hostname */
-		newstate->hostname = malloc(strlen(hostname)+1);
-		strcpy(newstate->hostname, hostname);
 	}
 
 	return newstate;

@@ -30,9 +30,9 @@
 
 
    page_t                                hostlist_t          state_t
-     name                                  hostentry --+       hostname
-     title                                 next        |       entry --+
-     color                                             |       next    |
+     name                                  hostentry --+       entry --+
+     title                                 next        |       next    |
+     color                                             |               |
      subpages                              +-----------+               |
      groups -------> group_t               |                   +-------+
      hosts ---+         title              V                   |
@@ -141,9 +141,8 @@ typedef struct {
 	void	*next;
 } entry_t;
 
-/* Aux. list definition for loading state of all hosts into one list */
+/* Aux. list definition for loading state of all tests into one list */
 typedef struct {
-	char	*hostname;
 	entry_t	*entry;
 	void	*next;
 } state_t;
