@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.9 2003-06-24 20:53:30 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.10 2003-06-28 06:44:11 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -89,6 +89,15 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 	fprintf(htmlrep, "<BR>\n");
 
 	/* Create the color-bar */
+
+	/* Need to re-sort the 24-hour log to chronological order */
+	colorlog = NULL; pctsum = 0;
+	for (walk = log24hours; (walk); walk = tmp) {
+		tmp = walk->next;
+		walk->next = colorlog;
+		colorlog = walk;
+		walk = tmp;
+	}
 	fprintf(htmlrep, "<TABLE WIDTH=\"%d%s\" BORDER=0 BGCOLOR=\"#666666\">\n", pixels, pctstr);
 	fprintf(htmlrep, "<TR><TD ALIGN=CENTER>\n");
 
@@ -97,9 +106,9 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 	fprintf(htmlrep, "<TR>\n");
 
 	fprintf(htmlrep, "<TD WIDTH=\"50%%\" ALIGN=LEFT>");
-	fprintf(htmlrep, "<A HREF=\"%s&OFFSET=%d\">", selfurl, startoffset+1);
+	if (colorlog->starttime <= yesterday) fprintf(htmlrep, "<A HREF=\"%s&OFFSET=%d\">", selfurl, startoffset+1);
 	fprintf(htmlrep, "<B>%s</B>", ctime(&yesterday));
-	fprintf(htmlrep, "</A>");
+	if (colorlog->starttime <= yesterday) fprintf(htmlrep, "</A>");
 	fprintf(htmlrep, "</TD>\n");
 
 	fprintf(htmlrep, "<TD WIDTH=\"50%%\" ALIGN=RIGHT>\n");
@@ -130,20 +139,20 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 	fprintf(htmlrep, "<TR>\n");
 	fprintf(htmlrep, "<FONT SIZE=1>\n");
 
-	/* Need to re-sort the 24-hour log to chronological order */
-	colorlog = NULL; pctsum = 0;
-	for (walk = log24hours; (walk); walk = tmp) {
-		tmp = walk->next;
-		walk->next = colorlog;
-		colorlog = walk;
-		walk = tmp;
+	/* First entry may not start at our report-start time */
+	if (colorlog->starttime > yesterday) {
+		int pct = ((colorlog->starttime - yesterday) / factor);
+
+		pctsum += pct;
+		fprintf(htmlrep, "<TD WIDTH=%d%s BGCOLOR=%s NOWRAP>&nbsp</TD>\n", 
+			pct, pctstr, "white");
 	}
 	for (walk = colorlog; (walk); walk = walk->next) {
 		int pct = (walk->duration / factor);
 
 		pctsum += pct;
 		fprintf(htmlrep, "<TD WIDTH=%d%s BGCOLOR=%s NOWRAP>&nbsp</TD>\n", 
-			pct, pctstr, colorname(walk->color));
+			pct, pctstr, ((walk->color == COL_CLEAR) ? "white" : colorname(walk->color)));
 	}
 
 	fprintf(htmlrep, "<!-- pctsum = %d -->\n", pctsum);
