@@ -16,12 +16,14 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.11 2003-03-03 11:16:57 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.12 2003-03-03 11:52:50 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdarg.h>
+#include <stdlib.h>
+#include <sys/time.h>
 
 #include "bbgen.h"
 #include "debug.h"
@@ -30,11 +32,11 @@ int debug = 0;
 int timing = 0;
 
 typedef struct {
-	char	*eventtext;
-	time_t	eventtime;
+	char		*eventtext;
+	struct timeval 	eventtime;
 } timestamp_t;
 
-#define MAX_DBGTIMES 20
+#define MAX_DBGTIMES 50
 static timestamp_t dbgtimes[MAX_DBGTIMES];
 static int         dbgtimecount = 0;
 
@@ -54,8 +56,10 @@ void dprintf(const char *fmt, ...)
 
 void add_timestamp(const char *msg)
 {
+	struct timezone tz;
+
 	if (timing && (dbgtimecount < MAX_DBGTIMES)) {
-		dbgtimes[dbgtimecount].eventtime = time(NULL);
+		gettimeofday(&dbgtimes[dbgtimecount].eventtime, &tz);
 		dbgtimes[dbgtimecount].eventtext = malloc(strlen(msg)+1);
 		strcpy(dbgtimes[dbgtimecount].eventtext,msg);
 		dbgtimecount++;
@@ -65,15 +69,28 @@ void add_timestamp(const char *msg)
 void show_timestamps(void)
 {
 	int i;
+	long difsec, difusec;
 
 	if (!timing) return;
 
 	printf("\n\nTIME SPENT\n");
-	printf("Event                                   Starttime Duration\n");
+	printf("Event                                   ");
+	printf("         Starttime");
+	printf("          Duration\n");
+
 	for (i=0; (i<dbgtimecount); i++) {
-		printf("%40s ", dbgtimes[i].eventtext);
-		printf("%10lu ", dbgtimes[i].eventtime);
-		printf("%10lu ", dbgtimes[i+1].eventtime-dbgtimes[i].eventtime);
+		printf("%-40s ", dbgtimes[i].eventtext);
+		printf("%10lu.%06lu ", dbgtimes[i].eventtime.tv_sec, dbgtimes[i].eventtime.tv_usec);
+		if (i>0) {
+			difsec  = dbgtimes[i].eventtime.tv_sec - dbgtimes[i-1].eventtime.tv_sec;
+			difusec = dbgtimes[i].eventtime.tv_usec - dbgtimes[i-1].eventtime.tv_usec;
+			if (difusec < 0) {
+				difsec -= 1;
+				difusec += 1000000;
+			}
+			printf("%10lu.%06lu ", difsec, difusec);
+		}
+		else printf("                -");
 		printf("\n");
 	}
 }
