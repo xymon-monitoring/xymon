@@ -518,6 +518,12 @@ Define a username and password to use when binding to the LDAP
 server for ldap URI tests. If not specified, bbtest-net will
 attempt an anonymous bind.
 
+.IP ldapyellowfail
+Used with an LDAP URL test. If the LDAP query fails during the 
+search of the directory, the ldap status is normally reported
+as "red" (alarm). This tag reduces a search failure to a 
+"yellow" (warning) status.
+
 .IP rpc[=rpcservice1,rpcservice2,...]
 Check for one or more available RPC services. This check is indirect
 in that it only queries the RPC Portmapper on the host, not the

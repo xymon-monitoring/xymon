@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.120 2003-09-12 10:02:32 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.121 2003-09-18 21:06:27 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -334,6 +334,7 @@ testedhost_t *init_testedhost(char *hostname, int timeout, int conntimeout, int 
 	newhost->firstldap = NULL;
 	newhost->ldapuser = NULL;
 	newhost->ldappasswd = NULL;
+	newhost->ldapsearchfailyellow = 0;
 
 	newhost->sslwarndays = sslwarndays;
 	newhost->sslalarmdays = sslalarmdays;
@@ -506,6 +507,7 @@ void load_tests(void)
 					else if (strcmp(testspec, "noping") == 0) { specialtag = 1; h->noping = 1; }
 					else if (strcmp(testspec, "testip") == 0) { specialtag = 1; h->testip = 1; }
 					else if (strcmp(testspec, "dialup") == 0) { specialtag = 1; h->dialup = 1; }
+					else if (strcmp(testspec, "ldapyellowfail") == 0) { specialtag = 1; h->ldapsearchfailyellow = 1; }
 					else if (strcmp(testspec, "nosslcert") == 0) { specialtag = 1; h->nosslcert = 1; }
 					else if (argnmatch(testspec, "ssldays=")) {
 						int warndays, alarmdays;
@@ -659,7 +661,6 @@ void load_tests(void)
 #endif
 					}
 					else if ( argnmatch(testspec, "ftp://")         ||
-						  argnmatch(testspec, "content=ftp://") ||
 						  argnmatch(testspec, "cont;ftp://") )     {
 						/*
 						 * FTP URL test. This uses ':' a lot, so save it here.

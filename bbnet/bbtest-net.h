@@ -110,6 +110,7 @@ typedef struct testedhost_t {
 	struct testitem_t *firstldap;	/* First LDAP testitem in testitem list */
 	char   *ldapuser;		/* Username */
 	char   *ldappasswd;		/* Password */
+	int    ldapsearchfailyellow;    /* Go red or yellow on failed search */
 
 	/* The following is for the SSL certificate checks */
 	int  sslwarndays;

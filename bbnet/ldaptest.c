@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.12 2003-09-16 08:02:10 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.13 2003-09-18 21:06:27 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -328,7 +328,7 @@ static int statuscolor(testedhost_t *host, int ldapstatus)
 		return COL_RED;
 
 	  case BBGEN_LDAP_SEARCHFAILED:
-		return COL_YELLOW;
+		return (host->ldapsearchfailyellow ? COL_YELLOW : COL_RED);
 	}
 
 	errprintf("Unknown ldapstaus value %d\n", ldapstatus);
