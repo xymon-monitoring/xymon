@@ -1,0 +1,48 @@
+.TH BBDIGEST 1 "Version 2.9: 10 Sep 2003" "bbgen toolkit"
+.SH NAME
+bbdigest \- calculate message digests
+.SH SYNOPSIS
+.B "bbdigest digesttype [filename]"
+
+.SH DESCRIPTION
+.I bbdigest
+is a utility to calculate message digests for a file or
+document. It is used when defining HTTP- or FTP-based
+content checks, where 
+.I bbtest-net(1)
+checks that a URL returns a specific document; instead
+of having to compare the entire document, the comparison
+is done against a pre-computed message digest value 
+using a standard message digest algorithm.
+
+The \fBdigesttype\fR parameter defines which message
+digest algorithm to use; commonly used algorithms are
+\fImd5\fR, \fIsha1\fR and \fIrmd160\fR. The exact set
+of algorithms supported is dependant on the configuration
+of the OpenSSL library which is used by bbdigest.
+
+The optional \fBfilename\fR parameter is the input
+file whose message digest should be calculated; if no
+filename is given, the data is read from standard input.
+
+bbdigest outputs a string containing the digest algorithm
+and the computed message digest. This is in a format
+suitable for use in the
+.I bb-hosts(5)
+definition of a content check.
+
+.SH EXAMPLE
+
+   $ bbdigest md5 index.html
+   md5:88b81b110a85c83db56a939caa2e2cf6
+
+   $ curl http://www.foo.com/ | bbdigest sha1
+   sha1:e5c69784cb971680e2c7380138e04021a20a45a2
+
+.SH NOTES
+bbdigest uses the OpenSSL library implementation of the
+message digest algorithms.
+
+.SH "SEE ALSO"
+bbtest-net(1), bb-hosts(5), openssl(1)
+
