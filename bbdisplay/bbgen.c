@@ -837,6 +837,9 @@ void do_hosts(host_t *head, FILE *output, char *grouptitle)
 	int	genstatic;
 	int	columncount;
 
+	if (head == NULL)
+		return;
+
 	genstatic = ( (strcmp(getenv("BBLOGSTATUS"), "STATIC") == 0) ? 1 : 0);
 
 	fprintf(output, "<A NAME=hosts-blk>&nbsp;</A>\n\n");
@@ -892,6 +895,9 @@ void do_groups(group_t *head, FILE *output)
 {
 	group_t *g;
 
+	if (head == NULL)
+		return;
+
 	fprintf(output, "<CENTER> \n\n<A NAME=begindata>&nbsp;</A>\n");
 
 	for (g = head; (g); g = g->next) {
@@ -913,9 +919,31 @@ void do_bb_page(page_t *page, char *filename)
 
 	headfoot(output, "", "", "header", page->color);
 
+	fprintf(output, "<BR><BR>\n<CENTER>\n");
+
+	fprintf(output, "<A NAME=\"pages-blk\">\n");
+	fprintf(output, "<TABLE SUMMARY=\"Page Block\" BORDER=0>\n");
+
+	fprintf(output, "<TR><TD COLSPAN=2><CENTER> \n<FONT %s>\n", getenv("MKBBTITLE"));
+	fprintf(output, "   %s\n", getenv("MKBBLOCAL"));
+	fprintf(output, "</FONT></CENTER></TD></TR>\n");
+	fprintf(output, "<TR><TD COLSPAN=2><HR WIDTH=100%%></TD></TR>\n");
+
 	for (p = page->next; (p); p = p->next) {
-		fprintf(output, "  page %s - %s\n", p->name, colorname(p->color));
+
+		/* FIXME: Page notes missing */
+		fprintf(output, "<TR><TD><FONT %s>%s</FONT></TD>\n", getenv("MKBBROWFONT"), p->title);
+
+		fprintf(output, "<TD><CENTER><A HREF=\"%s/%s/%s.html\">\n", getenv("BBWEB"), p->name, p->name);
+		fprintf(output, "<IMG SRC=\"%s/%s.gif\" WIDTH=\"%s\" HEIGHT=\"%s\" BORDER=0 ALT=\"%s\"></A>\n", 
+			getenv("BBSKIN"), colorname(p->color), 
+			getenv("DOTWIDTH"), getenv("DOTHEIGHT"),
+			colorname(p->color));
+		fprintf(output, "</CENTER></TD></TR>\n");
 	}
+
+	fprintf(output, "</TABLE><BR><BR>\n");
+	fprintf(output, "</CENTER>\n");
 
 	do_hosts(page->hosts, output, "");
 	do_groups(page->groups, output);
@@ -926,7 +954,7 @@ void do_bb_page(page_t *page, char *filename)
 }
 
 
-void do_page(page_t *page, char *filename)
+void do_page(page_t *page, char *filename, char *upperpagename)
 {
 	FILE	*output;
 	page_t	*p;
@@ -939,10 +967,31 @@ void do_page(page_t *page, char *filename)
 
 	headfoot(output, page->name, "", "header", page->color);
 
+	fprintf(output, "<BR><BR>\n<CENTER>\n");
+
+	fprintf(output, "<A NAME=\"pages-blk\">\n");
+	fprintf(output, "<TABLE SUMMARY=\"Page Block\" BORDER=0>\n");
+
+	fprintf(output, "<TR><TD COLSPAN=2><CENTER> \n<FONT %s>\n", getenv("MKBBTITLE"));
+	fprintf(output, "   %s\n", getenv("MKBBSUBLOCAL"));
+	fprintf(output, "</FONT></CENTER></TD></TR>\n");
+	fprintf(output, "<TR><TD COLSPAN=2><HR WIDTH=100%%></TD></TR>");
+
 	for (p = page->subpages; (p); p = p->next) {
-		fprintf(output, "    subpage %s - %s\n", p->name, colorname(p->color));
+
+		/* FIXME: Page notes missing */
+		fprintf(output, "<TR><TD><FONT %s>%s</FONT></TD>\n", getenv("MKBBROWFONT"), p->title);
+
+		fprintf(output, "<TD><CENTER><A HREF=\"%s/%s/%s/%s.html\">\n", getenv("BBWEB"), upperpagename, p->name, p->name);
+		fprintf(output, "<IMG SRC=\"%s/%s.gif\" WIDTH=\"%s\" HEIGHT=\"%s\" BORDER=0 ALT=\"%s\"></A>\n", 
+			getenv("BBSKIN"), colorname(p->color), 
+			getenv("DOTWIDTH"), getenv("DOTHEIGHT"),
+			colorname(p->color));
+		fprintf(output, "</CENTER></TD></TR>\n");
 	}
-	fprintf(output, "\n");
+
+	fprintf(output, "</TABLE><BR><BR>\n");
+	fprintf(output, "</CENTER>\n");
 
 	do_hosts(page->hosts, output, "");
 	do_groups(page->groups, output);
@@ -1022,7 +1071,7 @@ int main(int argc, char *argv[])
 		sprintf(dirfn, "%s", p->name);
 		mkdir(dirfn, 0755);
 		sprintf(fn, "%s/%s.html", dirfn, p->name);
-		do_page(p, fn);
+		do_page(p, fn, p->name);
 
 		for (q = p->subpages; (q); q = q->next) {
 			sprintf(dirfn, "%s/%s", p->name, q->name);
