@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.13 2004-11-14 16:58:29 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.14 2004-11-18 14:13:42 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -35,7 +35,7 @@ static char rcsid[] = "$Id: do_alert.c,v 1.13 2004-11-14 16:58:29 henrik Exp $";
  * - void start_alerts(void)
  *   Called before the first call to send_alert()
  *
- * - void send_alert(activealerts_t *alert)
+ * - void send_alert(activealerts_t *alert, FILE *logfd)
  *   Called for each alert to send.
  *
  * - void finish_alerts(void)
@@ -587,6 +587,37 @@ void dump_alertconfig(void)
 	}
 }
 
+static int servicecode(char *testname)
+{
+	/*
+	 * The SVCCODES environment is a list of servicecodes:
+	 * SVCCODES="disk:100,cpu:200,procs:300,msgs:400,conn:500,http:600,dns:800,smtp:725,telnet:721"
+	 * This routine returns the number associated with the service.
+	 */
+	static char *svccodes = NULL;
+	char *tname;
+	char *p;
+
+	if (svccodes == NULL) {
+		p = getenv("SVCCODES");
+		if (p == NULL) p = "none";
+		svccodes = (char *)malloc(strlen(p)+2);
+		sprintf(svccodes, ",%s", p);
+	}
+
+	tname = (char *)malloc(strlen(testname)+3);
+	sprintf(tname, ",%s:", testname);
+	p = strstr(svccodes, tname);
+	free(tname);
+
+	if (p) {
+		p = strchr(p, ':');
+		return atoi(p+1);
+	}
+
+	return 0;
+}
+
 void start_alerts(void)
 {
 	/* No special pre-alert setup needed */
@@ -892,7 +923,7 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 	return alert->pagemessage;
 }
 
-void send_alert(activealerts_t *alert)
+void send_alert(activealerts_t *alert, FILE *logfd)
 {
 	recip_t *recip;
 	repeat_t *rpt;
@@ -936,6 +967,20 @@ void send_alert(activealerts_t *alert)
 				if (mailpipe) {
 					fprintf(mailpipe, "%s", message_text(alert, recip));
 					pclose(mailpipe);
+					if (logfd) {
+						init_timestamp();
+						fprintf(logfd, "%s %s.%s (%s) %s %d %d",
+							timestamp, alert->hostname->name, alert->testname->name,
+							alert->ip, recip->recipient, (int)now, 
+							servicecode(alert->testname->name));
+						if (alert->state == A_RECOVERED) {
+							fprintf(logfd, " %d\n", (int)(now - alert->eventstart));
+						}
+						else {
+							fprintf(logfd, "\n");
+						}
+						fflush(logfd);
+					}
 				}
 			}
 			break;
