@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.9 2004-10-17 15:04:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.10 2004-10-17 20:04:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -176,7 +176,7 @@ int main(int argc, char *argv[])
 		if (strncmp(metadata[0], "@@page", 6) == 0) {
 			/* @@page|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime|location */
 
-			int newcolor, newalertstatus;
+			int newcolor, newalertstatus, oldalertstatus;
 
 			dprintf("Got page message from %s:%s\n", hostname, testname);
 			awalk = find_active(hostname, testname);
@@ -228,6 +228,7 @@ int main(int argc, char *argv[])
 			}
 
 			newcolor = parse_color(metadata[6]);
+			oldalertstatus = ((alertcolors & (1 << awalk->color)) != 0);
 			newalertstatus = ((alertcolors & (1 << newcolor)) != 0);
 			awalk->color = newcolor;
 			if (newalertstatus) {
@@ -237,6 +238,11 @@ int main(int argc, char *argv[])
 			else {
 				/* Send one "recovered" message out now, then go to A_DEAD */
 				awalk->state = A_RECOVERED;
+			}
+
+			if (oldalertstatus != newalertstatus) {
+				dprintf("Alert status changed from %d to %d\n", oldalertstatus, newalertstatus);
+				clear_interval(awalk);
 			}
 
 			if (awalk->pagemessage) free(awalk->pagemessage);
@@ -325,7 +331,8 @@ int main(int argc, char *argv[])
 			if ( ((awalk->nextalerttime <= now) && (awalk->state == A_PAGING)) || 
 			     (awalk->state == A_RECOVERED)                                 ||
 			     (awalk->state == A_ACKED)                                        ) {
-				dprintf("Found pending alert: %s.%s\n", awalk->hostname->name, awalk->testname->name);
+				dprintf("Found pending alert: %s.%s (%d)\n", 
+					awalk->hostname->name, awalk->testname->name, (int)awalk->state);
 				anytogo++;
 			}
 		}
@@ -342,8 +349,8 @@ int main(int argc, char *argv[])
 				start_alerts();
 				for (awalk = ahead; (awalk); awalk = awalk->next) {
 					if ( ((awalk->nextalerttime <= now) && (awalk->state == A_PAGING)) ||
-					     (awalk->state == A_RECOVERED)                                 ||
-					     (awalk->state == A_ACKED)                                       ) {
+					     (awalk->state == A_ACKED)                                     ||
+					     (awalk->state == A_RECOVERED)                                    ) {
 						send_alert(awalk);
 					}
 				}
