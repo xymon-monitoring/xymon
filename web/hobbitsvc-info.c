@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.72 2005-01-31 11:40:07 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.73 2005-02-15 11:25:26 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -402,7 +402,10 @@ int generate_info(char *infocolumn, char *documentationurl, int hobbitd, int sen
 
 		alerts = (hobbitd ? NULL : bbfind_alert(hostwalk->bbhostname, 0, 0));
 		if (!bbh_item(hostwalk, BBH_FLAG_DIALUP)) {
-			if (alerts) {
+			if (hobbitd) {
+				addtobuffer(&infobuf, &infobuflen, "<tr><th colspan=2 align=left>Hobbit alert configuration not yet supported</th></tr>\n");
+			}
+			else if (alerts) {
 				int wantedstate = 0;  /* Start with the normal rules */
 				int firstinverse = 1;
 
