@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.63 2004-12-13 23:11:01 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.64 2004-12-15 21:28:17 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -74,7 +74,7 @@ static void timespec_text(char *spec, char **infobuf, int *infobuflen)
 	free(sCopy);
 }
 
-int generate_info(char *infocolumn, int bbgend, int sendmetainfo)
+int generate_info(char *infocolumn, char *documentationurl, int bbgend, int sendmetainfo)
 {
 	int infobuflen = 0;
 	char *infobuf = NULL;
@@ -91,8 +91,9 @@ int generate_info(char *infocolumn, int bbgend, int sendmetainfo)
 	/* Load the alert setup */
 	if (!bbgend) bbload_alerts();
 
-	for (hostwalk=hosthead; (hostwalk); hostwalk = hostwalk->next) {
-		addtobuffer(&infobuf, &infobuflen, "<table width=\"100%%\">\n");
+	hostwalk = hosthead;
+	while (hostwalk) {
+		addtobuffer(&infobuf, &infobuflen, "<table width=\"100%\">\n");
 
 		val = bbh_item(hostwalk, BBH_DISPLAYNAME);
 		if (val && (strcmp(val, hostwalk->bbhostname) != 0)) {
@@ -105,7 +106,7 @@ int generate_info(char *infocolumn, int bbgend, int sendmetainfo)
 		addtobuffer(&infobuf, &infobuflen, l);
 
 		val = bbh_item(hostwalk, BBH_CLIENTALIAS);
-		if (val) {
+		if (val && (strcmp(val, hostwalk->bbhostname) != 0)) {
 			sprintf(l, "<tr><th align=left>Client alias:</th><td align=left>%s</td></tr>\n", val);
 			addtobuffer(&infobuf, &infobuflen, l);
 		}
@@ -114,36 +115,32 @@ int generate_info(char *infocolumn, int bbgend, int sendmetainfo)
 		sprintf(l, "<tr><th align=left>IP:</th><td align=left>%s</td></tr>\n", val);
 		addtobuffer(&infobuf, &infobuflen, l);
 
-#if 0
-		if (documentationurl) {
-			sprintf(l, "<tr><th align=left>Documentation:</th><td align=left><a href=\"%s\">%s</a>\n", 
-				urldoclink(documentationurl, hostwalk->bbhostname),
-				urldoclink(documentationurl, hostwalk->bbhostname));
+		val = bbh_item(hostwalk, BBH_DOCURL);
+		if (val) {
+			sprintf(l, "<tr><th align=left>Documentation:</th><td align=left><a href=\"%s\">%s</a>\n", val, val);
 			addtobuffer(&infobuf, &infobuflen, l);
 		}
 
-		if (hostwalk->link != &null_link) {
+		val = hostlink(hostwalk->bbhostname);
+		if (val) {
 			sprintf(l, "<tr><th align=left>Notes:</th><td align=left><a href=\"%s\">%s%s</a>\n", 
-				hostlink(hostwalk->link),
-				getenv("BBWEBHOST"),
-				hostlink(hostwalk->link));
+				val, getenv("BBWEBHOST"), val);
 			addtobuffer(&infobuf, &infobuflen, l);
 		}
 
 		sprintf(l, "<tr><th align=left>Page/subpage:</th><td align=left><a href=\"%s/%s\">%s</a>\n", 
-			getenv("BBWEB"), hostpage_link(hostwalk), hostpage_name(hostwalk));
+			getenv("BBWEB"), bbh_item(hostwalk, BBH_PAGEPATH), bbh_item(hostwalk, BBH_PAGEPATHTITLE));
 		addtobuffer(&infobuf, &infobuflen, l);
 
 		clonewalk = hostwalk->next;
-		while (strcmp(hostwalk->bbhostname, clonewalk->bbhostname) == 0) {
-			sprintf(l, "<br><a href=\"%s/%s\">%s</a>\n", 
-				getenv("BBWEB"), hostpage_link(clonewalk), hostpage_name(clonewalk));
+		while (clonewalk && (strcmp(hostwalk->bbhostname, clonewalk->bbhostname) == 0)) {
+			sprintf(l, "<br><a href=\"%s/%s/\">%s</a>\n", 
+				getenv("BBWEB"), bbh_item(clonewalk, BBH_PAGEPATH), bbh_item(clonewalk, BBH_PAGEPATHTITLE));
 			addtobuffer(&infobuf, &infobuflen, l);
 			clonewalk = clonewalk->next;
 		}
 		addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
 		addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
-#endif
 
 		val = bbh_item(hostwalk, BBH_DESCRIPTION);
 		if (val) {
@@ -158,8 +155,8 @@ int generate_info(char *infocolumn, int bbgend, int sendmetainfo)
 				sprintf(l, "<tr><th align=left>Description:</th><td align=left>%s</td></tr>\n", delim);
 				addtobuffer(&infobuf, &infobuflen, l);
 			}
+			addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 		}
-		addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
 		val = bbh_item(hostwalk, BBH_NK);
 		if (val) {
@@ -200,6 +197,8 @@ int generate_info(char *infocolumn, int bbgend, int sendmetainfo)
 			addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
 
 			val = bbh_item(hostwalk, BBH_WARNPCT);
+			if (val == NULL) val = getenv("BBREPWARN");
+			if (val == NULL) val = "(not set)";
 			sprintf(l, "<tr><th align=left>SLA Availability:</th><td align=left>%s</td></tr>\n", val); 
 			addtobuffer(&infobuf, &infobuflen, l);
 		}
@@ -404,6 +403,12 @@ int generate_info(char *infocolumn, int bbgend, int sendmetainfo)
 
 		do_savelog(hostwalk->bbhostname, hostwalk->ip, infocolumn, infobuf, bbgend);
 		*infobuf = '\0';
+
+		clonewalk = hostwalk;
+		do {
+			hostwalk = hostwalk->next;
+		} while (hostwalk && (strcmp(hostwalk->bbhostname, clonewalk->bbhostname) == 0));
+
 	}
 	if (bbgend) combo_end();
 	if (infobuf) free(infobuf);
@@ -416,6 +421,7 @@ int main(int argc, char *argv[])
 	int argi;
 	char *bbhostsfn = NULL;
 	char *infocol = "info";
+	char *docurl = NULL;
 	int usebbgend = 0;
 	int sendmeta = 0;
 
@@ -434,6 +440,10 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			infocol = strdup(p+1);
 		}
+		else if (argnmatch(argv[argi], "--docurl=")) {
+			char *p = strchr(argv[argi], '=');
+			docurl = strdup(p+1);
+		}
 		else if (strcmp(argv[argi], "--bbgend") == 0) {
 			usebbgend = 1;
 		}
@@ -447,9 +457,9 @@ int main(int argc, char *argv[])
 
 	if (bbhostsfn == NULL) bbhostsfn = getenv("BBHOSTS");
 
-	hosthead = load_hostnames(bbhostsfn, get_fqdn());
+	hosthead = load_hostnames(bbhostsfn, get_fqdn(), docurl);
 
-	generate_info(infocol, usebbgend, sendmeta);
+	generate_info(infocol, docurl, usebbgend, sendmeta);
 
 	return 0;
 }
