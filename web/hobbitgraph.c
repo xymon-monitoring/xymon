@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.2 2004-12-25 23:57:02 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.3 2004-12-26 14:39:22 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -36,9 +36,9 @@ static char rcsid[] = "$Id: hobbitgraph.c,v 1.2 2004-12-25 23:57:02 henrik Exp $
 char *hostname = NULL;
 char *displayname = NULL;
 char *service = NULL;
-char *period = HOUR_GRAPH;	/* The hourly graph is the default one */
-char *gtype = "hourly";
-char *glegend = "Last 48 Hours";
+char *period = NULL;
+char *gtype = NULL;
+char *glegend = NULL;
 
 int coloridx = 0;
 char *colorlist[] = { 
@@ -56,6 +56,7 @@ char *colorlist[] = {
 typedef struct gdef_t {
 	char *name;
 	char *fnpat;
+	char *exfnpat;
 	char *title;
 	char *yaxis;
 	char **defs;
@@ -144,9 +145,9 @@ void load_gdefs(char *fn)
 	char **alldefs = NULL;
 	int alldefcount = 0, alldefidx = 0;
 
-	fd = fopen(fn, "r");
+	fd = stackfopen(fn, "r");
 	if (fd == NULL) errormsg("Cannot load graph definitions");
-	while (fgets(l, sizeof(l), fd)) {
+	while (stackfgets(l, sizeof(l), "include", NULL)) {
 		p = strchr(l, '\n'); if (p) *p = '\0';
 		p = l; p += strspn(p, " \t");
 		if ((strlen(p) == 0) || (*p == '#')) continue;
@@ -171,6 +172,10 @@ void load_gdefs(char *fn)
 		else if (strncmp(p, "FNPATTERN", 9) == 0) {
 			p += 9; p += strspn(p, " \t");
 			newitem->fnpat = strdup(p);
+		}
+		else if (strncmp(p, "EXFNPATTERN", 11) == 0) {
+			p += 11; p += strspn(p, " \t");
+			newitem->exfnpat = strdup(p);
 		}
 		else if (strncmp(p, "TITLE", 5) == 0) {
 			p += 5; p += strspn(p, " \t");
@@ -199,7 +204,41 @@ void load_gdefs(char *fn)
 		gdefs = newitem;
 	}
 
-	fclose(fd);
+	stackfclose(fd);
+}
+
+char *colon_escape(char *buf)
+{
+	static char *result = NULL;
+	int count;
+	char *p, *inp, *outp;
+
+	p = buf; while ((p = strchr(p, ':')) != NULL) { count++; p++; }
+	if (count == 0) return buf;
+
+	if (result) free(result);
+	result = (char *) malloc(strlen(buf) + count + 1);
+	*result = '\0';
+
+	inp = buf; outp = result;
+	while (*inp) {
+		p = strchr(inp, ':');
+		if (p == NULL) {
+			strcat(outp, inp);
+			inp += strlen(inp);
+			outp += strlen(outp);
+		}
+		else {
+			*p = '\0';
+			strcat(outp, inp); strcat(outp, "\\:");
+			*p = ':';
+			inp = p+1;
+			outp = outp + strlen(outp);
+		}
+	}
+
+	*outp = '\0';
+	return result;
 }
 
 char *expand_tokens(char *tpl)
@@ -228,12 +267,12 @@ char *expand_tokens(char *tpl)
 		*p = '@';
 
 		if (strncmp(inp, "@RRDFN@", 7) == 0) {
-			strcpy(outp, rrdfns[rrdidx]);
+			strcpy(outp, colon_escape(rrdfns[rrdidx]));
 			inp += 7;
 			outp += strlen(outp);
 		}
 		else if ((strncmp(inp, "@RRDPARAM@", 10) == 0) && rrdparams[rrdidx]) {
-			sprintf(outp, "%-*s", paramlen, rrdparams[rrdidx]);
+			sprintf(outp, "%-*s", paramlen, colon_escape(rrdparams[rrdidx]));
 			inp += 10;
 			outp += strlen(outp);
 		}
@@ -275,8 +314,8 @@ int main(int argc, char *argv[])
 	char *graphtitle = NULL;
 	char timestamp[100];
 
-	larrdrrd_t *ldef = NULL;
 	gdef_t *gdef = NULL;
+	int wantsingle = 0;
 
 	DIR *dir;
 
@@ -313,6 +352,34 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	/*
+	 * If no period requested, generate a response that builds a webpage
+	 * with links to all of the period graphs.
+	 */
+	if (period == NULL) {
+		fprintf(stdout, "Content-type: text/html\n\n");
+		sethostenv(displayname, "", service, colorname(COL_GREEN));
+		headfoot(stdout, "graphs", "", "header", COL_GREEN);
+
+		fprintf(stdout, "<table align=\"center\">\n");
+		fprintf(stdout, "<tr><th><br>Hourly</th></tr>\n");
+		fprintf(stdout, "<tr><td><img src=\"%s&graph=hourly\" alt=\"%s Hourly\"></td></tr>\n",
+			getenv("REQUEST_URI"), service);
+		fprintf(stdout, "<tr><th><br>Daily</th></tr>\n");
+		fprintf(stdout, "<tr><td><img src=\"%s&graph=daily\" alt=\"%s Daily\"></td></tr>\n",
+			getenv("REQUEST_URI"), service);
+		fprintf(stdout, "<tr><th><br>Weekly</th></tr>\n");
+		fprintf(stdout, "<tr><td><img src=\"%s&graph=weekly\" alt=\"%s Weekly\"></td></tr>\n",
+			getenv("REQUEST_URI"), service);
+		fprintf(stdout, "<tr><th><br>Monthly</th></tr>\n");
+		fprintf(stdout, "<tr><td><img src=\"%s&graph=monthly\" alt=\"%s Monthly\"></td></tr>\n",
+			getenv("REQUEST_URI"), service);
+		fprintf(stdout, "</table>\n");
+
+		headfoot(stdout, "graphs", "", "footer", COL_GREEN);
+		return 0;
+	}
+
 	/* Find the config-file and load it */
 	if (gdeffn == NULL) {
 		char fnam[PATH_MAX];
@@ -336,20 +403,28 @@ int main(int argc, char *argv[])
 	if (chdir(rrddir)) errormsg("Cannot access RRD directory");
 
 	/* Lookup which RRD file corresponds to the service-name, and how we handle this graph */
-	ldef = find_larrd_rrd(service, NULL);
-	for (gdef = gdefs; (gdef && strcmp(ldef->larrdrrdname, gdef->name)); gdef = gdef->next) ;
-	if ((ldef == NULL) || (gdef == NULL)) errormsg("Unknown LARRD definition");
+	for (gdef = gdefs; (gdef && strcmp(service, gdef->name)); gdef = gdef->next) ;
+	if (gdef == NULL) {
+		larrdrrd_t *ldef = find_larrd_rrd(service, NULL);
+		if (ldef) {
+			for (gdef = gdefs; (gdef && strcmp(ldef->larrdrrdname, gdef->name)); gdef = gdef->next) ;
+			wantsingle = 1;
+		}
+	}
+	if (gdef == NULL) errormsg("Unknown graph requested");
 
 	/* What RRD files do we have matching this request? */
 	if (gdef->fnpat == NULL) {
 		rrdfncount = 1;
 		rrdfns = (char **)malloc((rrdfncount + 1) * sizeof(char *));
+		rrdparams = (char **) malloc((rrdfncount+1) * sizeof(char *));
+
 		rrdfns[0] = (char *)malloc(strlen(gdef->name) + strlen(".rrd") + 1);
 		sprintf(rrdfns[0], "%s.rrd", gdef->name);
 	}
 	else {
 		struct dirent *d;
-		pcre *exp;
+		pcre *pat, *expat = NULL;
 		const char *errmsg;
 		int errofs, result;
 		int ovector[30];
@@ -358,7 +433,8 @@ int main(int argc, char *argv[])
 		dir = opendir("."); if (dir == NULL) errormsg("Unexpected error while accessing RRD directory");
 
 		/* Setup the pattern to match filenames against */
-		exp = pcre_compile(gdef->fnpat, PCRE_CASELESS, &errmsg, &errofs, NULL);
+		pat = pcre_compile(gdef->fnpat, PCRE_CASELESS, &errmsg, &errofs, NULL);
+		if (gdef->exfnpat) expat = pcre_compile(gdef->exfnpat, PCRE_CASELESS, &errmsg, &errofs, NULL);
 
 		/* Allocate an initial filename table */
 		rrdfnsize = 5;
@@ -369,32 +445,47 @@ int main(int argc, char *argv[])
 			char *ext;
 			char param[1024];
 
+			/* Ignore dot-files and files with names shorter than ".rrd" */
 			if (*(d->d_name) == '.') continue;
-
 			ext = d->d_name + strlen(d->d_name) - strlen(".rrd");
 			if ((ext <= d->d_name) || (strcmp(ext, ".rrd") != 0)) continue;
-			result = pcre_exec(exp, NULL, d->d_name, strlen(d->d_name), 0, 0, 
+
+			/* First check the exclude pattern. */
+			if (expat) {
+				result = pcre_exec(expat, NULL, d->d_name, strlen(d->d_name), 0, 0, 
+						   ovector, (sizeof(ovector)/sizeof(int)));
+				if (result >= 0) continue;
+			}
+
+			/* Then see if the include pattern matches. */
+			result = pcre_exec(pat, NULL, d->d_name, strlen(d->d_name), 0, 0, 
 					   ovector, (sizeof(ovector)/sizeof(int)));
+			if (result < 0) continue;
 
-			if (result >= 0) {
-				rrdfns[rrdfncount] = strdup(d->d_name);
-				if (pcre_copy_substring(d->d_name, ovector, result, 1, param, sizeof(param)) > 0) {
-					rrdparams[rrdfncount] = strdup(param);
-					if (strlen(param) > paramlen) paramlen = strlen(param);
-				}
-				else {
-					rrdparams[rrdfncount] = NULL;
-				}
+			if (wantsingle) {
+				/* "Single" graph, i.e. a graph for a service normally included in a bundle (tcp) */
+				if (strstr(d->d_name, service) == NULL) continue;
+			}
 
-				rrdfncount++;
-				if (rrdfncount == rrdfnsize) {
-					rrdfnsize += 5;
-					rrdfns = (char **)realloc(rrdfns, (rrdfnsize+1) * sizeof(char *));
-					rrdparams = (char **)realloc(rrdparams, (rrdfnsize+1) * sizeof(char *));
-				}
+			/* We have a matching file! */
+			rrdfns[rrdfncount] = strdup(d->d_name);
+			if (pcre_copy_substring(d->d_name, ovector, result, 1, param, sizeof(param)) > 0) {
+				rrdparams[rrdfncount] = strdup(param);
+				if (strlen(param) > paramlen) paramlen = strlen(param);
+			}
+			else {
+				rrdparams[rrdfncount] = NULL;
+			}
+
+			rrdfncount++;
+			if (rrdfncount == rrdfnsize) {
+				rrdfnsize += 5;
+				rrdfns = (char **)realloc(rrdfns, (rrdfnsize+1) * sizeof(char *));
+				rrdparams = (char **)realloc(rrdparams, (rrdfnsize+1) * sizeof(char *));
 			}
 		}
-		pcre_free(exp);
+		pcre_free(pat);
+		if (expat) pcre_free(expat);
 		closedir(dir);
 	}
 	rrdfns[rrdfncount] = rrdparams[rrdfncount] = NULL;
