@@ -22,7 +22,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.10 2004-11-13 08:53:03 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.11 2004-11-23 21:46:14 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -67,6 +67,7 @@ bbgend_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 
 	newch->seq = 0;
 	newch->channelid = chnid;
+	newch->msgcount = 0;
 	newch->shmid = shmget(key, SHAREDBUFSZ, flags);
 	if (newch->shmid == -1) {
 		errprintf("Could not get shm %s\n", strerror(errno));

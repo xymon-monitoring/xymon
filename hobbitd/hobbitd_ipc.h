@@ -29,6 +29,7 @@ typedef struct bbgend_channel_t {
 	int semid;
 	char *channelbuf;
 	unsigned int seq;
+	unsigned long msgcount;
 	struct bbgend_channel_t *next;
 } bbgend_channel_t;
 
