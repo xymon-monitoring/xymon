@@ -105,7 +105,6 @@ bb-hostsvc.o: bb-hostsvc.c
 
 ifdef BBGEND
 %.sh: %.sh-bbgend.DIST
-	echo BBGEND is $(BBGEND)
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' >$@
 	chmod 755 $@
 else
