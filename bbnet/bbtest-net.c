@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.121 2003-09-18 21:06:27 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.122 2003-09-21 09:48:39 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1311,6 +1311,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 {
 	int color = COL_GREEN;
 	int countasdown = 0;
+	char *deptest = NULL;
 
 	*cause = '\0';
 	if (service == pingtest) {
@@ -1401,8 +1402,8 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 		}
 
 		/* Handle test dependencies */
-		if ( failgoesclear && (color == COL_RED) && !test->alwaystrue && deptest_failed(test->host, test->service->testname) ) {
-			strcat(cause, "\nProblem appears to be with another service or host");
+		if ( failgoesclear && (color == COL_RED) && !test->alwaystrue && (deptest = deptest_failed(test->host, test->service->testname)) ) {
+			strcpy(cause, deptest);
 			color = COL_CLEAR;
 		}
 
@@ -1422,7 +1423,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 	}
 
 	/* Dialup hosts and dialup tests report red as clear */
-	if ( ((color == COL_RED) || (color == COL_YELLOW)) && (test->host->dialup || test->dialup) ) { 
+	if ( ((color == COL_RED) || (color == COL_YELLOW)) && (test->host->dialup || test->dialup) && !test->reverse) { 
 		strcat(cause, "\nDialup host or service");
 		color = COL_CLEAR; countasdown = 0; 
 	}
@@ -1567,8 +1568,9 @@ void send_results(service_t *service, int failgoesclear)
 				  }
 				  else {
 					  /* Non-ping test clear: Dialup test or failed ping */
-					  strcat(msgline, ": Failure ignored due to failure of another test");
+					  strcat(msgline, ": Ping failed, or dialup host/service");
 					  strcat(msgtext, "Dialup host/service, or test depends on another failed test\n");
+					  strcat(msgtext, causetext);
 				  }
 				  break;
 
