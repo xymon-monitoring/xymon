@@ -36,14 +36,14 @@
 * Der startes et antal hjælpe-processer til at håndtere I/O og
   andre "tunge" tasks:
   - statuslog: Abonnerer på "status". Opdaterer bbvar/logs/ filer.
+  - htmllog  : Abonnerer på "status". Opdaterer bb/www/html/ filer.
   - history  : Abonnerer på "stachg". Opdaterer bbvar/hist/allevents,
                bbvar/hist/{HOST,HOST.TEST}, bbvar/histlogs/HOST/TEST/*
-  - datastore: Abonnerer på "data". Opdaterer bbvar/data/ filer.
-  - infostore: Abonnerer på "notes". Opdaterer bbvar/notes/ filer.
-  - enastore : Abonnerer på "enadis". Opdaterer bbvar/disabled/ filer.
+  - datalog  : Abonnerer på "data". Opdaterer bbvar/data/ filer.
+  - infolog  : Abonnerer på "notes". Opdaterer bbvar/notes/ filer.
+  - enalog   : Abonnerer på "enadis". Opdaterer bbvar/disabled/ filer.
   - alert    : Abonnerer på "page". Udsender alarmer.
   - larrd*2  : Abonnerer på "status" og "data". Opdaterer LARRD RRD's.
-  - htmllog  : Abonnerer på "status". Opdaterer bb/www/html/ filer.
 
 * kanal protokoller
 
@@ -61,7 +61,7 @@
 
   page
   ----
-  @@page|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime
+  @@page|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime|location|cookie
   <message>
   @@
 
@@ -105,6 +105,7 @@
   @@droptest|timestamp|sender|hostname|testname
   @@renamehost|timestamp|sender|hostname|newhostname
   @@renametest|timestamp|sender|hostname|oldtestname|newtestname
+  @@shutdown|timestamp|sender
 
 
 * Simpel "ack" protokol.
