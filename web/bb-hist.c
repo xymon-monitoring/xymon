@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.20 2003-08-05 15:24:28 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.21 2003-08-06 06:20:53 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -79,6 +79,7 @@ static void generate_colorbar(
 	int secsperpixel, periodpixels, pixelsfirst, pixelslast, pixelssum;
 	replog_t *colorlog, *walk, *tmp;
 	char *pctstr = "";
+	int fwdoffset, rewoffset, offsetchange;
 
 	/*
 	 * Pixel-based charts are better, but for backwards
@@ -106,6 +107,11 @@ static void generate_colorbar(
 		walk = tmp;
 	}
 
+	offsetchange = periodlen*periodcount/86400;
+	rewoffset = startoffset + offsetchange;
+	fwdoffset = startoffset - offsetchange;
+	if (fwdoffset < 0) fwdoffset=0;	/* Dont try to go into the future */
+
 	fprintf(htmlrep, "<TABLE WIDTH=\"%d%s\" BORDER=0 BGCOLOR=\"#666666\">\n", pixels, pctstr);
 	fprintf(htmlrep, "<TR><TD ALIGN=CENTER>\n");
 
@@ -115,7 +121,7 @@ static void generate_colorbar(
 
 	fprintf(htmlrep, "<TD WIDTH=\"34%%\" ALIGN=LEFT>\n");
 	if (colorlog && colorlog->starttime <= startofbar) {
-		fprintf(htmlrep, "<A HREF=\"%s&amp;OFFSET=%ld\">", selfurl, startoffset+(periodlen*periodcount/86400));
+		fprintf(htmlrep, "<A HREF=\"%s&amp;OFFSET=%d\">", selfurl, rewoffset);
 	}
 	fprintf(htmlrep, "<B>%s</B>", ctime(&startofbar));
 	if (colorlog && colorlog->starttime <= startofbar) fprintf(htmlrep, "</A>\n");
@@ -125,7 +131,7 @@ static void generate_colorbar(
 
 	fprintf(htmlrep, "<TD WIDTH=\"34%%\" ALIGN=RIGHT>\n");
 	if (startoffset > 0) {
-		fprintf(htmlrep, "<A HREF=\"%s&amp;OFFSET=%ld\">", selfurl, startoffset-(periodlen*periodcount/86400));
+		fprintf(htmlrep, "<A HREF=\"%s&amp;OFFSET=%d\">", selfurl, fwdoffset);
 	}
 	fprintf(htmlrep, "<B>%s</B>\n", ctime(&today));
 	if (startoffset > 0) fprintf(htmlrep, "</A>\n");
