@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.55 2004-08-28 07:11:17 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.56 2004-08-28 11:06:36 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -873,7 +873,7 @@ void do_tcp_tests(int timeout, int concurrency)
 	struct timezone tz;
 
 	/* If timeout or concurrency are 0, set them to reasonable defaults */
-	if (timeout == 0) timeout = 60;	/* seconds */
+	if (timeout == 0) timeout = 10;	/* seconds */
 	if (concurrency == 0) {
 		struct rlimit lim;
 
@@ -1363,7 +1363,8 @@ int main(int argc, char *argv[])
 	int argi;
 	char *argp, *p;
 	testitem_t *thead = NULL;
-	int timeout = 10;
+	int timeout = 0;
+	int concurrency = 0;
 
 	init_tcp_services();
 
@@ -1374,7 +1375,12 @@ int main(int argc, char *argv[])
 		else if (strncmp(argv[argi], "--timeout=", 10) == 0) {
 			p = strchr(argv[argi], '=');
 			timeout = atoi(p+1);
-			if (timeout <= 0) timeout = 10;
+			if (timeout < 0) timeout = 0;
+		}
+		else if (strncmp(argv[argi], "--concurrency=", 14) == 0) {
+			p = strchr(argv[argi], '=');
+			concurrency = atoi(p+1);
+			if (concurrency < 0) concurrency = 0;
 		}
 		else {
 			char *ip;
@@ -1434,7 +1440,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	do_tcp_tests(10, 0);
+	do_tcp_tests(timeout, concurrency);
 	show_tcp_test_results();
 	return 0;
 }
