@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.125 2004-12-27 11:12:23 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.126 2005-01-01 00:45:34 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -603,7 +603,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char 
 								h->hostname, e->column->name, htmlextension);
 						}
 						fprintf(output, "<FONT SIZE=-1 COLOR=%s><B>%.2f</B></FONT></A>\n",
-							colorname(e->color), e->repinfo->fullavailability);
+							colorname(e->color), e->repinfo->reportavailability);
 					}
 				}
 				fprintf(output, "</TD>\n");

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.29 2004-10-30 15:39:28 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.30 2005-01-01 00:45:11 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -456,6 +456,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 		else color = COL_RED;
 	}
 	else {
+		repinfo->reportavailability = repinfo->fullavailability;
 		if (repinfo->fullavailability > greenlevel) color = COL_GREEN;
 		else if (repinfo->fullavailability >= warnlevel) color = COL_YELLOW;
 		else color = COL_RED;
