@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-csvinfo.c,v 1.5 2004-11-17 16:11:31 henrik Exp $";
+static char rcsid[] = "$Id: bb-csvinfo.c,v 1.6 2004-12-28 22:07:11 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -162,10 +162,9 @@ int main(int argc, char *argv[])
 	printf("Content-Type: text/html\n\n");
 
         /* It's ok with these hardcoded values, as they are not used for this page */
-        sethostenv("", "", "", colorname(COL_BLUE));
+        sethostenv(wantedname, "", "", colorname(COL_BLUE));
         headfoot(stdout, "info", "", "header", COL_BLUE);
 
-	printf("<center><h3>Host information for %s</h3></center>\n", wantedname);
 	printf("<table align=center border=1>\n");
 
 	for (i=0; (headers[i]); i++) {
