@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.18 2003-10-02 20:21:20 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.19 2004-04-23 08:53:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -289,6 +289,7 @@ char *reqenv[] = {
 "BBDISP",
 "BBHOME",
 "BBLOGS",
+"BBTMP",
 NULL };
 
 
