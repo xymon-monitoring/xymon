@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.182 2004-10-30 15:41:51 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.183 2004-10-31 07:57:52 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -123,6 +123,9 @@ int main(int argc, char *argv[])
 
 		if (i > 0) maxrowsbeforeheading = i;
 	}
+
+	getenv_default("USEBBGEND", "FALSE", NULL);
+	usebbgend = (strcmp(getenv("USEBBGEND"), "TRUE") == 0);
 
 	for (i = 1; (i < argc); i++) {
 		if (strcmp(argv[i], "--bbgend") == 0) {
