@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.2 2004-08-23 14:29:14 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.3 2004-08-27 16:29:11 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -137,7 +137,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 			  case CONTEST_ETIMEOUT: 
 				  req->errorcause = "Server timeout"; break;
 			  case CONTEST_ENOCONN : 
-				  req->errorcause =  "No connection"; break;
+				  req->errorcause =  malcop(strerror(req->tcptest->connres)); break;
 			  case CONTEST_EDNS    : 
 				  switch (req->parsestatus) {
 					  case 1 : req->errorcause =  "Invalid URL"; break;
