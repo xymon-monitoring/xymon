@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.21 2003-02-14 21:42:38 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.22 2003-03-01 22:29:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -95,7 +95,7 @@ int eventcolor(char *colortext)
 
 char *dotgiffilename(int color, int acked, int oldage)
 {
-	static char filename[20];
+	static char filename[20]; /* yellow-recent.gif */
 
 	strcpy(filename, colorname(color));
 	if (acked) {
@@ -111,7 +111,7 @@ char *dotgiffilename(int color, int acked, int oldage)
 
 char *alttag(entry_t *e)
 {
-	static char tag[50];
+	static char tag[1024];
 
 	sprintf(tag, "%s:%s:", e->column->name, colorname(e->color));
 	if (e->acked) {
@@ -177,7 +177,7 @@ char *hostpage_link(host_t *host)
 {
 
 	/* Provide a link to the page where this host lives */
-	static char pagelink[150];
+	static char pagelink[MAX_PATH];
 
 	if (((bbgen_page_t *)host->parent)->parent) {
 		bbgen_page_t *parentpage, *parentsubpage;
@@ -202,7 +202,7 @@ char *hostpage_link(host_t *host)
 char *hostpage_name(host_t *host)
 {
 	/* Provide a link to the page where this host lives */
-	static char pagename[150];
+	static char pagename[MAX_PATH];
 
 	if (((bbgen_page_t *)host->parent)->parent) {
 		bbgen_page_t *parentpage, *parentsubpage;
@@ -223,7 +223,7 @@ char *hostpage_name(host_t *host)
 
 char *commafy(char *hostname)
 {
-	static char s[256];
+	static char s[MAX_LINE_LEN];
 	char *p;
 
 	strcpy(s, hostname);
@@ -242,7 +242,7 @@ void sethostenv(char *host, char *ip, char *svc, char *color)
 void headfoot(FILE *output, char *pagetype, char *pagename, char *subpagename, char *head_or_foot, int bgcolor)
 {
 	int	fd;
-	char 	filename[256];
+	char 	filename[MAX_PATH];
 	struct stat st;
 	char	*template;
 	char	*t_start, *t_next;
@@ -306,33 +306,40 @@ void headfoot(FILE *output, char *pagetype, char *pagename, char *subpagename, c
 
 int checkalert(host_t *host, char *test)
 {
-	char testname[30];
+	char *testname;
+	int result;
 
 	if ((!host) || (!host->alerts)) return 0;
 
+	testname = malloc(strlen(test)+3);
 	sprintf(testname, ",%s,", test);
-	return (strstr(host->alerts, testname) ? 1 : 0);
+	result = (strstr(host->alerts, testname) ? 1 : 0);
+
+	free(testname);
+	return result;
 }
 
 
 int checkpropagation(host_t *host, char *test, int color)
 {
 	/* NB: Default is to propagate test, i.e. return 1 */
-	char testname[30];
+	char *testname;
+	int result = 1;
 
 	if (!host) return 1;
 
+	testname = malloc(strlen(test)+3);
 	sprintf(testname, ",%s,", test);
 	if (color == COL_RED) {
-		if (host->nopropredtests && strstr(host->nopropredtests, testname)) return 0;
+		if (host->nopropredtests && strstr(host->nopropredtests, testname)) result = 0;
+	}
+	else if (color == COL_YELLOW) {
+		if (host->nopropyellowtests && strstr(host->nopropyellowtests, testname)) result = 0;
+		if (host->nopropredtests && strstr(host->nopropredtests, testname)) result = 0;
 	}
 
-	if (color == COL_YELLOW) {
-		if (host->nopropyellowtests && strstr(host->nopropyellowtests, testname)) return 0;
-		if (host->nopropredtests && strstr(host->nopropredtests, testname)) return 0;
-	}
-
-	return 1;
+	free(testname);
+	return result;
 }
 
 
@@ -347,7 +354,7 @@ link_t *find_link(const char *name)
 
 char *columnlink(link_t *link, char *colname)
 {
-	static char linkurl[60];
+	static char linkurl[MAX_PATH];
 
 	if (link != &null_link) {
 		sprintf(linkurl, "%s/%s", link->urlprefix, link->filename);
@@ -361,7 +368,7 @@ char *columnlink(link_t *link, char *colname)
 
 char *hostlink(link_t *link)
 {
-	static char linkurl[60];
+	static char linkurl[MAX_PATH];
 
 	if (link != &null_link) {
 		sprintf(linkurl, "%s/%s", link->urlprefix, link->filename);
@@ -386,7 +393,7 @@ host_t *find_host(const char *hostname)
 
 char *histlogurl(char *hostname, char *service, time_t histtime)
 {
-	static char url[512];
+	static char url[MAX_PATH];
 	char d1[40],d2[3],d3[40];
 
 	/* cgi-bin/bb-histlog.sh?HOST=SLS-P-CE1.slsdomain.sls.dk&SERVICE=msgs&TIMEBUF=Fri_Nov_7_16:01:08_2002 */
@@ -473,13 +480,19 @@ int within_sla(char *l)
 
 static void sendmessage(char *msg)
 {
-	char 	bbcmd[256];
-	char 	bbdisp[256];
+	static char *bbcmd = NULL;
+	static char *bbdisp = NULL;
 	pid_t	childpid;
 	int	childstat;
 
-	strcpy(bbcmd, getenv("BB"));
-	strcpy(bbdisp, getenv("BBDISP"));
+	if (bbcmd == NULL) {
+		bbcmd = malloc(strlen(getenv("BB"))+1);
+		strcpy(bbcmd, getenv("BB"));
+	}
+	if (bbdisp == NULL) {
+		bbdisp = malloc(strlen(getenv("BBDISP"))+1);
+		strcpy(bbdisp, getenv("BBDISP"));
+	}
 	
 	childpid = fork();
 	if (childpid == -1) {
@@ -624,7 +637,7 @@ int run_columngen(char *column, int update_interval, int enabled)
 	/* If updating is enabled, check timestamp of $BBTMP/.COLUMN-gen */
 	/* If older than update_interval, do the update. */
 
-	char	fn[256];
+	char	fn[MAX_PATH];
 	struct stat st;
 	FILE    *fd;
 	time_t  now;
@@ -656,7 +669,7 @@ int run_columngen(char *column, int update_interval, int enabled)
 
 char *realurl(char *url)
 {
-	static char result[200];
+	static char result[MAX_PATH];
 	char *p;
 	
 	p = url;

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.17 2003-02-22 08:29:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.18 2003-03-01 22:29:36 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -33,7 +33,7 @@ static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.17 2003-02-22 08:29:18 henrik
 #include "loaddata.h"
 #include "larrdgen.h"
 
-char    larrdcol[20] = "larrd";
+char    *larrdcol = "larrd";
 int 	enable_larrdgen = 0;
 int 	larrd_update_interval = 300; /* Update LARRD pages every N seconds */
 int     log_nohost_rrds = 0;
@@ -56,20 +56,20 @@ int generate_larrd(char *rrddirname, char *larrdcolumn)
 {
 	DIR *rrddir;
 	struct dirent *d;
-	char fn[256];
+	char fn[MAX_PATH];
 	hostlist_t *hostwalk;
 	rrd_t *rwalk;
 	int i;
 	char *allrrdlinks;
+	int allrrdlinksize;
 	time_t now;
 	struct utimbuf logfiletime;
 
 	if (!run_columngen("larrd", larrd_update_interval, enable_larrdgen))
 		return 1;
 
-
-	for (i=0; rrdnames[i]; i++) ;
-	allrrdlinks = malloc(256*i);
+	allrrdlinksize = 16384;
+	allrrdlinks = malloc(allrrdlinksize);
 
 	now = time(NULL);
 	i = atoi(getenv("PURPLEDELAY"));
@@ -157,7 +157,8 @@ int generate_larrd(char *rrddirname, char *larrdcolumn)
 	chdir(getenv("BBLOGS"));
 
 	for (hostwalk=hosthead; (hostwalk); hostwalk = hostwalk->next) {
-		char logfn[256], htmlfn[256], rrdlink[512];
+		char logfn[MAX_PATH], htmlfn[MAX_PATH];
+		char rrdlink[4096];	/* FIXME: Should be dynamic ... */
 		FILE *fd;
 		int i;
 
@@ -183,6 +184,10 @@ int generate_larrd(char *rrddirname, char *larrdcolumn)
 					getenv("CGIBINURL"), hostwalk->hostentry->hostname, rwalk->rrdname,
 					rwalk->rrdname);
 
+				if ((strlen(allrrdlinks) + strlen(rrdlink)) >= allrrdlinksize) {
+					allrrdlinksize += 4096;
+					allrrdlinks = realloc(allrrdlinks, allrrdlinksize);
+				}
 				strcat(allrrdlinks, rrdlink);
 			}
 		}

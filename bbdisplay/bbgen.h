@@ -20,6 +20,7 @@
 #define __BBGEN_H_
 
 #include <time.h>
+#include <stddef.h>
 
 /* Structure defs for bbgen */
 
@@ -111,14 +112,32 @@
 #define PAGE_BB2	1
 #define PAGE_NK		2
 
+
+/* Max length of a single line in bb-hosts */
+#define MAX_LINE_LEN 1024
+
+/* Max size of a BB message */
+/* NB: This MUST match your MAXSIZE setting in bb.h */
+#define MAXMSG 8192
+
 /* Max number of purple messages in one run */
 #define MAX_PURPLE_PER_RUN	30
 
+/* Max length of a filename */
+#ifndef MAX_PATH
+#ifndef MAXPATHLEN
+#define MAX_PATH 4096
+#else
+#define MAX_PATH MAXPATHLEN
+#endif
+#endif
+
+
 /* Info-link definitions. */
 typedef struct {
-	char	name[64];
-	char	filename[64];
-	char	urlprefix[20];	/* "/help", "/notes" etc. */
+	char	*name;
+	char	*filename;
+	char	*urlprefix;	/* "/help", "/notes" etc. */
 	void	*next;
 } link_t;
 
@@ -131,7 +150,7 @@ typedef struct {
 /* Basically a list of all possible column */
 /* names with links to their help-texts    */
 typedef struct {
-	char	name[20];
+	char	*name;
 	link_t	*link;
 	void	*next;
 } col_t;
@@ -164,7 +183,7 @@ typedef struct {
 } state_t;
 
 typedef struct {
-	char	hostname[60];
+	char	*hostname;
 	char	ip[16];
 	int	dialup;
 	link_t	*link;
@@ -187,7 +206,7 @@ typedef struct {
 } hostlist_t;
 
 typedef struct {
-	char	title[200];
+	char	*title;
 	char	*onlycols;
 	host_t	*hosts;
 	void	*next;
@@ -195,8 +214,8 @@ typedef struct {
 
 
 typedef struct {
-	char	name[20];
-	char	title[200];
+	char	*name;
+	char	*title;
 	int	color;		/* Calculated */
 	int     oldage;
 	void	*next;
@@ -208,16 +227,16 @@ typedef struct {
 
 
 typedef struct {
-	char	name[40];
-	char	receiver[20];
-	char	url[250];
+	char	*name;
+	char	*receiver;
+	char	*url;
 	void	*next;
 } summary_t;
 
 typedef struct {
-	char	row[40];
-	char	column[40];
-	char	url[250];
+	char	*row;
+	char	*column;
+	char	*url;
 	int	color;
 	void	*next;
 } dispsummary_t;

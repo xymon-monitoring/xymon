@@ -9,7 +9,7 @@
 void do_wml_cards(time_t startofrun)
 {
 	FILE		*fd;
-	char		fn[256];
+	char		fn[MAX_PATH];
 	hostlist_t	*h;
 	int		hostcount = 0;
 	time_t		timeleft;
@@ -35,8 +35,8 @@ void do_wml_cards(time_t startofrun)
 	timeleft = atoi(getenv("BBSLEEP")) - (time(NULL) - startofrun); 
 	if ((timeleft >= 20) && (hostcount <= 10)) {
 		pid_t pid;
-		char mkbbwmlcmd[256];
-		char newbbhosts[256];
+		char mkbbwmlcmd[MAX_PATH];
+		char newbbhosts[MAX_PATH];
 
 		sprintf(mkbbwmlcmd, "%s/web/mkbbwml.sh", getenv("BBHOME"));
 		sprintf(newbbhosts, "BBHOSTS=%s", fn);

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.77 2003-02-26 21:23:09 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.78 2003-03-01 22:29:36 henrik Exp $";
 
 #define VERSION "1.8"
 
@@ -83,16 +83,15 @@ NULL };
 
 int main(int argc, char *argv[])
 {
-	char		pagedir[256];
-	char		rrddir[256];
+	char		*pagedir;
+	char		*rrddir;
 	bbgen_page_t 	*p, *q;
 	dispsummary_t	*s;
 	int		i;
 	int		pagegenstat;
 	int		bbpageONLY = 0;
 
-	sprintf(pagedir, "%s/www", getenv("BBHOME"));
-	sprintf(rrddir, "%s/rrd", getenv("BBVAR"));
+	pagedir = rrddir = NULL;
 	init_timestamp();
 
 	for (i = 1; (i < argc); i++) {
@@ -134,6 +133,7 @@ int main(int argc, char *argv[])
 
 			enable_larrdgen=1;
 			if (lp) {
+				larrdcol = malloc(strlen(lp));
 				strcpy(larrdcol, (lp+1));
 			}
 		}
@@ -154,11 +154,13 @@ int main(int argc, char *argv[])
 
 			enable_infogen=1;
 			if (lp) {
+				infocol = malloc(strlen(lp));
 				strcpy(infocol, (lp+1));
 			}
 		}
 		else if (strncmp(argv[i], "--rrddir=", 9) == 0) {
 			char *lp = strchr(argv[i], '=');
+			rrddir = malloc(strlen(lp));
 			strcpy(rrddir, (lp+1));
 		}
 		else if (strncmp(argv[i], "--ignorecolumns=", 16) == 0) {
@@ -238,12 +240,23 @@ int main(int argc, char *argv[])
 		}
 		else {
 			/* Last argument is pagedir */
+			pagedir = malloc(strlen(argv[i])+1);
 			strcpy(pagedir, argv[i]);
 		}
 	}
 
 	/* Check that all needed environment vars are defined */
 	envcheck(reqenv);
+
+	if (pagedir == NULL) {
+		pagedir = malloc(strlen(getenv("BBHOME"))+5);
+		sprintf(pagedir, "%s/www", getenv("BBHOME"));
+	}
+	if (rrddir == NULL) {
+		rrddir = malloc(strlen(getenv("BBVAR"))+5);
+		sprintf(rrddir, "%s/rrd", getenv("BBVAR"));
+	}
+
 
 	/*
 	 * bbpageONLY means ONLY generate the standard pages.

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.8 2003-02-14 21:44:36 henrik Exp $";
+static char rcsid[] = "$Id: process.c,v 1.9 2003-03-01 22:29:36 henrik Exp $";
 
 #include <string.h>
 #include <sys/types.h>
@@ -33,10 +33,15 @@ static char rcsid[] = "$Id: process.c,v 1.8 2003-02-14 21:44:36 henrik Exp $";
 
 static int wantedcolumn(char *current, char *wanted)
 {
-	char tag[100];
+	char *tag;
+	int result;
 
+	tag = malloc(strlen(current)+3);
 	sprintf(tag, "|%s|", current);
-	return (strstr(wanted, tag) != NULL);
+	result = (strstr(wanted, tag) != NULL);
+
+	free(tag);
+	return result;
 }
 
 
@@ -133,7 +138,7 @@ void delete_old_acks(void)
 	struct dirent   *d;
 	struct stat     st;
 	time_t		now = time(NULL);
-	char		fn[256];
+	char		fn[MAX_PATH];
 
 	bbacks = opendir(getenv("BBACKS"));
 	if (!bbacks) {
@@ -170,7 +175,7 @@ void send_summaries(summary_t *sumhead)
 	for (s = sumhead; (s); s = s->next) {
 		char *suburl;
 		int summarycolor = -1;
-		char summsg[500];
+		char summsg[MAXMSG];
 
 		suburl = strstr(s->url, ".html");
 		if (suburl) {

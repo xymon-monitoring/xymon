@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.26 2003-02-26 21:50:10 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.27 2003-03-01 22:29:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -45,12 +45,17 @@ int  sort_grouponly_items = 0; /* Standard BB behaviour: Dont sort group-only it
 int interesting_column(int pagetype, int color, int alert, char *columnname, char *onlycols)
 {
 	if (onlycols) {
-		char search[200];
+		char *search;
 
 		/* loaddata::init_group guarantees that onlycols start and end with a '|' */
+		search = malloc(strlen(columnname)+3);
 		sprintf(search, "|%s|", columnname);
 		if (strstr(onlycols, search) == NULL) {
+			free(search);
 			return 0;
+		}
+		else {
+			free(search);
 		}
 	}
 
@@ -381,7 +386,7 @@ void do_bbext(FILE *output, char *extenv)
 
 	char *bbexts, *p;
 	FILE *inpipe;
-	char extfn[200];
+	char extfn[MAX_PATH];
 	char buf[4096];
 	
 	p = getenv(extenv);
@@ -487,6 +492,7 @@ void do_bb_page(bbgen_page_t *page, dispsummary_t *sums, char *filename)
 	sprintf(tmpfilename, "%s.tmp", filename);
 	output = fopen(tmpfilename, "w");
 	if (output == NULL) {
+		free(tmpfilename);
 		printf("Cannot open file %s\n", tmpfilename);
 		return;
 	}
@@ -521,6 +527,7 @@ void do_page(bbgen_page_t *page, char *filename, char *upperpagename)
 	sprintf(tmpfilename, "%s.tmp", filename);
 	output = fopen(tmpfilename, "w");
 	if (output == NULL) {
+		free(tmpfilename);
 		printf("Cannot open file %s\n", tmpfilename);
 		return;
 	}
@@ -550,6 +557,7 @@ void do_subpage(bbgen_page_t *page, char *filename, char *upperpagename)
 	sprintf(tmpfilename, "%s.tmp", filename);
 	output = fopen(tmpfilename, "w");
 	if (output == NULL) {
+		free(tmpfilename);
 		printf("Cannot open file %s\n", tmpfilename);
 		return;
 	}
@@ -573,13 +581,13 @@ void do_subpage(bbgen_page_t *page, char *filename, char *upperpagename)
 void do_eventlog(FILE *output, int maxcount, int maxminutes)
 {
 	FILE *eventlog;
-	char eventlogfilename[256];
+	char eventlogfilename[MAX_PATH];
 	char newcol[3], oldcol[3];
 	time_t cutoff;
 	event_t	*events;
 	int num, eventintime_count;
 	struct stat st;
-	char l[200];
+	char l[MAX_LINE_LEN];
 	char title[200];
 
 
@@ -709,8 +717,7 @@ void do_bb2_page(char *filename, int summarytype)
 	char	*tmpfilename = malloc(strlen(filename)+5);
 
 	/* Build a "page" with the hosts that should be included in bb2 page */
-	strcpy(bb2page.name, "");
-	strcpy(bb2page.title, "");
+	bb2page.name = bb2page.title = "";
 	bb2page.color = COL_GREEN;
 	bb2page.subpages = NULL;
 	bb2page.groups = NULL;
@@ -766,6 +773,7 @@ void do_bb2_page(char *filename, int summarytype)
 	sprintf(tmpfilename, "%s.tmp", filename);
 	output = fopen(tmpfilename, "w");
 	if (output == NULL) {
+		free(tmpfilename);
 		perror("Cannot open file");
 		exit(1);
 	}

@@ -19,8 +19,6 @@
 #ifndef __UTIL_H_
 #define __UTIL_H_
 
-#define MAXMSG 8192		/* Max size of a BB message */
-
 extern int use_recentgifs;
 extern char timestamp[];
 

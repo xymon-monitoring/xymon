@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.14 2003-02-18 13:02:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.15 2003-03-01 22:29:36 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -32,7 +32,7 @@ static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.14 2003-02-18 13:02:44 henrik E
 #include "infogen.h"
 #include "alert.h"
 
-char infocol[20] = "info";
+char *infocol = "info";
 int enable_infogen = 0;
 int info_update_interval = 300; /* Update INFO pages every N seconds */
 
@@ -44,7 +44,7 @@ int generate_info(char *infocolumn)
 	char l[512];
 	int ping, testip, dialup;
 	alertrec_t *alerts;
-	char fn[512];
+	char fn[MAX_PATH];
 	struct stat st;
 
 	/* Is it necessary to update this ? */
@@ -74,7 +74,7 @@ int generate_info(char *infocolumn)
 	logfiletime.actime = logfiletime.modtime = (time(NULL) + atoi(getenv("PURPLEDELAY"))*60);
 
 	for (hostwalk=hosthead; (hostwalk); hostwalk = hostwalk->next) {
-		char logfn[256], htmlfn[256];
+		char logfn[MAX_PATH], htmlfn[MAX_PATH];
 		FILE *fd;
 		char *p, *hostname, *alertspec, *url, *slaspec, *noprop;
 

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.8 2003-02-14 21:44:36 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.9 2003-03-01 22:29:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -45,7 +45,7 @@ void dumphosts(host_t *head, char *prefix)
 #ifdef DEBUG
 	host_t *h;
 	entry_t *e;
-	char	format[80];
+	char	format[512];
 
 	strcpy(format, prefix);
 	strcat(format, "Host: %s, ip: %s, color: %d, old: %d, noprop-y: %s, noprop-r: %s, link: %s\n");
@@ -67,7 +67,7 @@ void dumpgroups(group_t *head, char *prefix, char *hostprefix)
 {
 #ifdef DEBUG
 	group_t *g;
-	char    format[80];
+	char    format[512];
 
 	strcpy(format, prefix);
 	strcat(format, "Group: %s\n");
