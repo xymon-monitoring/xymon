@@ -41,6 +41,7 @@ typedef struct {
 	char	age[20];
 	int	oldage;
 	int	acked;
+	int	alert;
 	void	*next;
 } entry_t;
 
@@ -58,6 +59,7 @@ typedef struct {
 	link_t	*link;
 	entry_t	*entries;
 	int	color;		/* Calculated */
+	char	*alerts;
 	void	*next;
 } host_t;
 

@@ -172,14 +172,15 @@ void headfoot(FILE *output, char *pagetype, char *pagename, char *subpagename, c
 			for (t_start = t_next; ((*t_next >= 'A') && (*t_next <= 'Z')); t_next++ ) ;
 			savechar = *t_next; *t_next = '\0';
 
-			if (strcmp(t_start, "BBREL") == 0)     fprintf(output, "%s", getenv("BBREL"));
-			if (strcmp(t_start, "BBRELDATE") == 0) fprintf(output, "%s", getenv("BBRELDATE"));
-			if (strcmp(t_start, "BBSKIN") == 0)    fprintf(output, "%s", getenv("BBSKIN"));
-			if (strcmp(t_start, "BBWEB") == 0)     fprintf(output, "%s", getenv("BBWEB"));
-			if (strcmp(t_start, "CGIBINURL") == 0) fprintf(output, "%s", getenv("CGIBINURL"));
+			if (strcmp(t_start, "BBREL") == 0)     		fprintf(output, "%s", getenv("BBREL"));
+			else if (strcmp(t_start, "BBRELDATE") == 0) 	fprintf(output, "%s", getenv("BBRELDATE"));
+			else if (strcmp(t_start, "BBSKIN") == 0)    	fprintf(output, "%s", getenv("BBSKIN"));
+			else if (strcmp(t_start, "BBWEB") == 0)     	fprintf(output, "%s", getenv("BBWEB"));
+			else if (strcmp(t_start, "CGIBINURL") == 0) 	fprintf(output, "%s", getenv("CGIBINURL"));
 
-			if (strcmp(t_start, "BBDATE") == 0)          fprintf(output, "%s", ctime(&now));
-			if (strcmp(t_start, "BBBACKGROUND") == 0)    fprintf(output, "%s", colorname(bgcolor));
+			else if (strcmp(t_start, "BBDATE") == 0)        fprintf(output, "%s", ctime(&now));
+			else if (strcmp(t_start, "BBBACKGROUND") == 0)  fprintf(output, "%s", colorname(bgcolor));
+			else fprintf(output, "&");			/* No substitution - copy the ampersand */
 			
 			*t_next = savechar; t_start = t_next; t_next = strchr(t_start, '&');
 		}
@@ -192,6 +193,17 @@ void headfoot(FILE *output, char *pagetype, char *pagename, char *subpagename, c
 	else {
 		fprintf(output, "<HTML><BODY> \n <HR size=4> \n <BR>%s is either missing or invalid, please create this file with your custom header<BR> \n<HR size=4>", filename);
 	}
+}
+
+
+int checkalert(host_t *host, char *test)
+{
+	char testname[30];
+
+	if ((!host) || (!host->alerts)) return 0;
+
+	sprintf(testname, ",%s,", test);
+	return (strstr(host->alerts, testname) ? 1 : 0);
 }
 
 
@@ -257,7 +269,8 @@ group_t *init_group(const char *title)
 	return newgroup;
 }
 
-host_t *init_host(const char *hostname, const int ip1, const int ip2, const int ip3, const int ip4, const int dialup)
+host_t *init_host(const char *hostname, const int ip1, const int ip2, const int ip3, const int ip4, 
+		  const int dialup, const char *alerts)
 {
 	host_t 		*newhost = malloc(sizeof(host_t));
 	hostlist_t	*newlist = malloc(sizeof(hostlist_t));
@@ -268,6 +281,13 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	newhost->entries = NULL;
 	newhost->color = -1;
 	newhost->dialup = dialup;
+	if (alerts) {
+		newhost->alerts = malloc(strlen(alerts)+1);
+		strcpy(newhost->alerts, alerts);
+	}
+	else {
+		newhost->alerts = NULL;
+	}
 	newhost->next = NULL;
 
 	newlist->hostentry = newhost;
@@ -387,6 +407,8 @@ state_t *init_state(const char *filename, int dopurple)
 	newstate->entry->acked = (stat(ackfilename, &st) == 0);
 
 	host = find_host(hostname);
+	newstate->entry->alert = checkalert(host, testname);
+
 	stat(filename, &st);
 	fd = fopen(filename, "r");
 
@@ -653,11 +675,24 @@ page_t *load_bbhosts(void)
 		else if (sscanf(l, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
 			int dialup = 0;
 			char *p = strchr(l, '#');
+			char *alertlist;
 
 			if (p && strstr(p, " dialup")) dialup=1;
 
+			if (p && (alertlist = strstr(p, "NK:"))) {
+				alertlist += 2;
+				*alertlist = ',';
+				p = strchr(alertlist, ' ');
+				if (p) {
+					*p = ',';
+				}
+				else {
+					strcat(alertlist, ",");
+				}
+			}
+
 			if (curhost == NULL) {
-				curhost = init_host(hostname, ip1, ip2, ip3, ip4, dialup);
+				curhost = init_host(hostname, ip1, ip2, ip3, ip4, dialup, alertlist);
 				if (curgroup != NULL) {
 					curgroup->hosts = curhost;
 				} else if (cursubpage != NULL) {
@@ -672,7 +707,7 @@ page_t *load_bbhosts(void)
 				}
 			}
 			else {
-				curhost = curhost->next = init_host(hostname, ip1, ip2, ip3, ip4, dialup);
+				curhost = curhost->next = init_host(hostname, ip1, ip2, ip3, ip4, dialup, alertlist);
 			}
 		}
 		else {
@@ -843,8 +878,8 @@ void dumphosts(host_t *head, char *prefix)
 	for (h = head; (h); h = h->next) {
 		printf(format, h->hostname, h->ip, h->color, h->link->filename);
 		for (e = h->entries; (e); e = e->next) {
-			printf("\t\t\t\t\tTest: %s, state %d, age: %s, oldage: %d\n", 
-				e->column->name, e->color, e->age, e->oldage);
+			printf("\t\t\t\t\tTest: %s, alert %d, state %d, age: %s, oldage: %d\n", 
+				e->column->name, e->alert, e->color, e->age, e->oldage);
 		}
 	}
 }
@@ -878,10 +913,11 @@ void dumpstatelist(state_t *head)
 	state_t *s;
 
 	for (s=statehead; (s); s=s->next) {
-		printf("Host: %s, test:%s, state: %d, oldage: %d, age: %s\n",
+		printf("Host: %s, test:%s, state: %d, alert: %d, oldage: %d, age: %s\n",
 			s->hostname,
 			s->entry->column->name,
 			s->entry->color,
+			s->entry->alert,
 			s->entry->oldage,
 			s->entry->age);
 	}
@@ -1266,11 +1302,14 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 	fclose(eventlog);
 }
 
-void do_bb2_page(char *filename)
+void do_bb2_page(char *filename, int summarytype)
 {
 	FILE	*output;
 	page_t	bb2page;
 	hostlist_t *h;
+	entry_t	*e;
+	int	useit;
+	char    *hf_prefix[2] = { "bb2", "bbnk" };
 
 	/* Build a "page" with the hosts that should be included in bb2 page */
 	strcpy(bb2page.name, "");
@@ -1282,7 +1321,22 @@ void do_bb2_page(char *filename)
 	bb2page.next = NULL;
 
 	for (h=hosthead; (h); h=h->next) {
-		if ((h->hostentry->color == COL_RED) || (h->hostentry->color == COL_YELLOW) || (h->hostentry->color == COL_PURPLE)) {
+		switch (summarytype) {
+		  case 0:
+			/* Normal BB2 page */
+			useit = ((h->hostentry->color == COL_RED) || 
+				 (h->hostentry->color == COL_YELLOW) || 
+				 (h->hostentry->color == COL_PURPLE));
+			break;
+
+		  case 1:
+			for (useit=0, e=h->hostentry->entries; (e && !useit); e=e->next) {
+				useit = useit || (e->alert && ((e->color == COL_RED) || ((e->color == COL_YELLOW) && (strcmp(e->column->name, "conn") != 0))));
+			}
+			break;
+			/* NK page */
+		}
+		if (useit) {
 			host_t *newhost, *walk;
 
 			if (h->hostentry->color > bb2page.color) bb2page.color = h->hostentry->color;
@@ -1318,7 +1372,7 @@ void do_bb2_page(char *filename)
 		exit(1);
 	}
 
-	headfoot(output, "bb2", "", "", "header", bb2page.color);
+	headfoot(output, hf_prefix[summarytype], "", "", "header", bb2page.color);
 
 	fprintf(output, "<center>\n");
 	fprintf(output, "\n<A NAME=begindata>&nbsp;</A> \n<A NAME=\"hosts-blk\">&nbsp;</A>\n");
@@ -1331,10 +1385,12 @@ void do_bb2_page(char *filename)
 		fprintf(output, "<FONT SIZE=+2 FACE=\"Arial, Helvetica\"><BR><BR><I>All Monitored Systems OK</I></FONT><BR><BR>");
 	}
 
-	do_eventlog(output, 0, 240);
+	if (summarytype == 0) {
+		do_eventlog(output, 0, 240);
+	}
 
 	fprintf(output, "</center>\n");
-	headfoot(output, "bb2", "", "", "footer", bb2page.color);
+	headfoot(output, hf_prefix[summarytype], "", "", "footer", bb2page.color);
 
 	fclose(output);
 }
@@ -1395,7 +1451,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	do_bb2_page("bb2.html");
+	do_bb2_page("bb2.html", 0);
+	do_bb2_page("bbnk.html", 1);
 
 	return 0;
 }
