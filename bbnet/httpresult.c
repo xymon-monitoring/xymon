@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.3 2004-08-27 16:29:11 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.4 2004-09-01 11:54:17 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -265,7 +265,7 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 	int     nopage = 0;
 	char    *conttest;
 	int 	contentnum = 0;
-	conttest = (char *) malloc(strlen(contenttestname)+5);
+	conttest = (char *) malloc(128);
 
 	if (host->firsthttp == NULL) return;
 
@@ -378,8 +378,15 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 			/* Send the content status message */
 			dprintf("Content check on %s is %s\n", req->url, colorname(color));
 
-			if (contentnum > 0) sprintf(conttest, "%s%d", contenttestname, contentnum);
-			else strcpy(conttest, contenttestname);
+			if (req->bburl.columnname) {
+				strcpy(conttest, req->bburl.columnname);
+			}
+			else {
+				if (contentnum > 0) sprintf(conttest, "%s%d", contenttestname, contentnum);
+				else strcpy(conttest, contenttestname);
+
+				contentnum++;
+			}
 
 			init_status(color);
 			sprintf(msgline, "status %s.%s %s %s: %s\n", 
@@ -432,8 +439,6 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 
 			addtostatus("\n\n");
 			finish_status();
-
-			contentnum++;
 		}
 	}
 
