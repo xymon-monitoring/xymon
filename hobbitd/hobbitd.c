@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.57 2004-11-17 16:10:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.58 2004-11-18 10:03:31 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -476,6 +476,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		/* A disable has expired. Clear the timestamp and the message buffer */
 		log->enabletime = 0;
 		if (log->dismsg) { free(log->dismsg); log->dismsg = NULL; }
+		posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, (void *)log, NULL);
 	}
 
 	if (log->acktime) {
