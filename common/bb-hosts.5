@@ -327,6 +327,13 @@ is set, it will only test the hosts that have a matching
 if you have more than one BBNET system, but you still want
 to keep a consolidated bb-hosts file for all your systems.
 
+.IP nosslcert
+Disables the standard check of any SSL certificates for
+this host. By default, if an SSL-enabled service is tested,
+a second test result is generated with information about 
+the SSL certificate - this tag disables the SSL certificate
+checks for the host.
+
 .IP DOWNTIME=day:starttime:endtime[,day:starttime:endtime]
 This tag can be used to ignore failed checks during
 specific times of the day - e.g. if you run services that
@@ -421,6 +428,21 @@ host. This test uses the "ntpdate" utility to check for a
 NTP server - you should either have ntpdate in your PATH, or
 set the location of the ntpdate program in $BBHOME/etc/bbsys.local
 
+.IP "imaps pop3s nntps telnets ftps smtps"
+These tags are for testing of the SSL-tunneled versions of
+the standard imap, pop3, nntp, telnet, ftp and smtp protocols. 
+If bbgen was configured with support for SSL, you can test these
+services like any other network service - bbtest-net will
+setup an SSL-encrypted session while testing the service.
+The server certificate is validated and information about
+it sent in the "sslcert" column. Note: You must add these
+protocol names to your BBNETSVCS environment variable, and
+also make sure that you have portnumbers defined for the 
+services defined in /etc/services (see www.iana.org).
+Note that smtps does not currently have a standard portnumber
+assignment.
+
+
 .SH BBTEST-NET TAGS FOR CONNECTIVITY TEST
 These tags affect the behaviour of the bbtest-net connectivity
 test.
@@ -464,10 +486,6 @@ tracking down which router is the root cause of the problem.
 Note: Internally, the ping test will still be handled as
 "failed", and therefore any other tests run for this host
 will report a status of "clear".
-
-.IP nosslcert
-Disables the standard check of the SSL certificate for
-this host.
 
 
 .SH BBTEST-NET TAGS FOR HTTP (WEB) TESTS
