@@ -40,5 +40,6 @@ cd rpmbuild
 tar zcf SOURCES/hobbit-$REL.tar.gz hobbit-$REL
 rm -rf hobbit-$REL
 HOME=`pwd` rpmbuild -ba --clean SPECS/hobbit.spec
-rpm --addsign RPMS/i?86/hobbit-$REL-1.i?86.rpm
+rpm --addsign RPMS/i?86/hobbit-$REL-*.i?86.rpm
+mv RPMS/i?86/hobbit-$REL-*.i?86.rpm SRPMS/hobbit-$REL-*.src.rpm ../rpm/pkg/
 
