@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 		}
 
 		if ((role == ROLE_STATUS) && (strcmp(items[0], "@@status") == 0)) {
-			/* @@status|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage */
+			/* @@status|timestamp|sender|hostname|testname|expiretime|color|testflags|prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage */
 			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			testname = items[4];
 			sprintf(logfn, "%s/%s.%s", filedir, hostname, testname);
