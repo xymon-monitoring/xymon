@@ -2,7 +2,7 @@
 
 	RRDINC=""
 	RRDLIB=""
-	for DIR in /usr/local/rrdtool /usr/local /usr
+	for DIR in /opt/rrdtool /usr/local/rrdtool /usr/local /usr
 	do
 		if test -f $DIR/include/rrd.h
 		then

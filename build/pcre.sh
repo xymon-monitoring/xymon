@@ -2,7 +2,7 @@
 
 	PCREINC=""
 	PCRELIB=""
-	for DIR in /usr/local/pcre /usr/local /usr
+	for DIR in /opt/pcre /usr/local/pcre /usr/local /usr
 	do
 		if test -f $DIR/include/pcre.h
 		then
