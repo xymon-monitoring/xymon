@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.54 2003-01-05 08:10:31 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.55 2003-01-05 08:37:09 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -59,6 +59,13 @@ int main(int argc, char *argv[])
 		if (strcmp(argv[i], "--recentgifs") == 0) {
 			use_recentgifs = 1;
 		}
+		else if (strncmp(argv[i], "--larrdupdate=", 14) == 0) {
+			char *lp = strchr(argv[i], '=');
+
+			larrd_update_interval = atoi(lp);
+			if (larrd_update_interval <= 0) enable_larrdgen=0;
+			else enable_larrdgen = 1;
+		}
 		else if (strncmp(argv[i], "--larrd", 7) == 0) {
 			/* "--larrd" just enable larrd page generation */
 			/* "--larrd=xxx" does that, and redefines the larrd column name */
@@ -81,6 +88,7 @@ int main(int argc, char *argv[])
 			printf("Options:\n");
 			printf("    --recentgifs           : Use xxx-recent.gif images\n");
 			printf("    --larrd[=LARRDCOLUMN]  : LARRD data in column LARRDCOLUMN, and handle larrd-html\n");
+			printf("    --larrdupdate=N        : time between updates of LARRD pages in seconds\n");
 			printf("    --rrddir=RRD-directory : Directory for LARRD RRD files\n");
 			printf("    --nopurple             : Disable all purple updates\n");
 			exit(1);

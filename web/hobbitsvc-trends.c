@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.5 2003-01-05 08:11:23 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.6 2003-01-05 08:37:09 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -34,27 +34,40 @@ static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.5 2003-01-05 08:11:23 henrik 
 #include "larrdgen.h"
 
 int enable_larrdgen = 0;
+int larrd_update_interval = 300; /* Update LARRD pages every N seconds */
 
 static int run_larrdgen(void)
 {
-	/* Check if $BBTMP/.larrdgen exists */
+	/* If LARRD updating is enabled, check timestamp of $BBTMP/.larrdgen */
+	/* If older than larrd_update_interval, do the update. */
 
-	FILE	*fd;
 	char	fn[256];
+	struct stat st;
+	FILE    *fd;
+	time_t  now;
+	struct utimbuf filetime;
 
 	if (!enable_larrdgen)
 		return 0;
 
 	sprintf(fn, "%s/.larrdgen", getenv("BBTMP"));
-	fd = fopen(fn, "r");
-	if (fd != NULL) {
+	if (stat(fn, &st) == -1) {
+		/* No such file - create it, and do the update */
+		fd = fopen(fn, "w");
 		fclose(fd);
-		unlink(fn);
 		return 1;
 	}
 	else {
-		return 0;
+		/* Check timestamp, and update it if too old */
+		time(&now);
+		if ((now - st.st_ctime) > larrd_update_interval) {
+			filetime.actime = filetime.modtime = now;
+			utime(fn, &filetime);
+			return 1;
+		}
 	}
+
+	return 0;
 }
 
 void generate_larrd(char *rrddirname, char *larrdcolumn)
