@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.114 2005-02-26 16:29:04 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.115 2005-02-27 10:52:56 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -773,7 +773,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	}
 
 	log->logtime = now;
-	log->validtime = now + validity*60;
+	if (log->enabletime == 0) log->validtime = now + validity*60; /* Dont change validtime if disabled */
 	strncpy(log->sender, sender, sizeof(log->sender)-1);
 	*(log->sender + sizeof(log->sender) - 1) = '\0';
 	log->oldcolor = log->color;
@@ -1059,7 +1059,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 
 		if (alltests) {
 			for (log = hwalk->logs; (log); log = log->next) {
-				log->enabletime = expires;
+				log->enabletime = log->validtime = expires;
 				if (dismsg) {
 					if (log->dismsg) xfree(log->dismsg);
 					log->dismsg = strdup(dismsg);
@@ -1072,7 +1072,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 		else {
 			for (log = hwalk->logs; (log && (log->test != twalk)); log = log->next) ;
 			if (log) {
-				log->enabletime = expires;
+				log->enabletime = log->validtime = expires;
 				if (dismsg) {
 					if (log->dismsg) xfree(log->dismsg);
 					log->dismsg = strdup(dismsg);
