@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.59 2003-05-09 21:14:36 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.60 2003-05-10 07:40:58 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -77,7 +77,60 @@ void addtopagelist(bbgen_page_t *page)
 	newitem->next = pagelisthead;
 	pagelisthead = newitem;
 }
-	
+
+char *build_noprop(const char *defset, const char *specset)
+{
+	static char result[MAX_LINE_LEN];
+	char *set;
+	char *item;
+	char ibuf[MAX_LINE_LEN];
+	char op;
+	char *p;
+
+	/* It's guaranteed that specset is non-NULL. defset may be NULL */
+	if ((*specset != '+') && (*specset != '-')) {
+		/* Old-style - specset is the full set of tests */
+		strcpy(result, specset);
+		return result;
+	}
+
+	set = malcop(specset);
+	strcpy(result, ((defset != NULL) ? defset : ""));
+	item = strtok(set, ",");
+
+	while (item) {
+		if ((*item == '-') || (*item == '+')) {
+			op = *item;
+			sprintf(ibuf, ",%s,", item+1);
+		}
+		else {
+			op = '+';
+			sprintf(ibuf, ",%s,", item);
+		}
+
+		p = strstr(result, ibuf);
+		if (p && (op == '-')) {
+			/* Remove this item */
+			memmove(p, (p+strlen(item)), strlen(p));
+		}
+		else if ((p == NULL) && (op == '+')) {
+			/* Add this item (it's not already included) */
+			if (strlen(result) == 0) {
+				sprintf(result, ",%s,", item+1);
+			}
+			else {
+				strcat(result, item+1);
+				strcat(result, ",");
+			}
+		}
+
+		item = strtok(NULL, ",");
+	}
+
+	free(set);
+	return ((strlen(result) > 0) ? result : NULL);
+}
+
 bbgen_page_t *init_page(const char *name, const char *title)
 {
 	bbgen_page_t *newpage = malloc(sizeof(bbgen_page_t));
@@ -164,8 +217,7 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	if (nopropyellowtests) {
 		char *p;
 		p = skipword(nopropyellowtests); if (*p) *p = '\0'; else p = NULL;
-		newhost->nopropyellowtests = malloc(strlen(nopropyellowtests)+3);
-		sprintf(newhost->nopropyellowtests, ",%s,", nopropyellowtests);
+		newhost->nopropyellowtests = malcop(build_noprop(nopropyellowdefault, nopropyellowtests));
 		if (p) *p = ' ';
 	}
 	else {
@@ -174,8 +226,7 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	if (nopropredtests) {
 		char *p;
 		p = skipword(nopropredtests); if (*p) *p = '\0'; else p = NULL;
-		newhost->nopropredtests = malloc(strlen(nopropredtests)+3);
-		sprintf(newhost->nopropredtests, ",%s,", nopropredtests);
+		newhost->nopropredtests = malcop(build_noprop(nopropreddefault, nopropredtests));
 		if (p) *p = ' ';
 	}
 	else {
