@@ -1206,7 +1206,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 
 		if (eventintime_count <= maxcount) {
 			firstevent = 0;
-			lastevent = eventintime_count;
+			lastevent = eventintime_count-1;
 		}
 		else {
 			firstevent = num;
