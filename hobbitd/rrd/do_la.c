@@ -8,9 +8,11 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char la_rcsid[] = "$Id: do_la.c,v 1.10 2005-02-17 21:53:52 henrik Exp $";
+static char la_rcsid[] = "$Id: do_la.c,v 1.11 2005-03-22 21:20:07 henrik Exp $";
 
 static char *la_params[]          = { "rrdcreate", rrdfn, "DS:la:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
+
+static pcre *as400_exp = NULL;
 
 int do_la_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -63,6 +65,38 @@ int do_la_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			}
 		}
 	}
+	else {
+		/* 
+		 * No "uptime" in message - could be from an AS/400. They look like this:
+		 * green March 21, 2005 12:33:24 PM EST deltacdc 108 users 45525 jobs(126 batch,0 waiting for message), load=26%
+		 */
+		int ovector[30];
+		char w[100];
+		int res;
+
+		if (as400_exp == NULL) {
+			const char *errmsg = NULL;
+			int errofs = 0;
+
+			as400_exp = pcre_compile(".* ([0-9]+) users ([0-9]+) jobs.* load=([0-9]+)\%", 
+						 PCRE_CASELESS, &errmsg, &errofs, NULL);
+		}
+
+		res = pcre_exec(as400_exp, NULL, msg, strlen(msg), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+		if (res >= 0) {
+			/* We have a match - pick up the AS/400 data. */
+			*w = '\0'; if (res > 0) pcre_copy_substring(msg, ovector, res, 1, w, sizeof(w));
+			if (strlen(w)) {
+				users = atoi(w); gotusers = 1;
+			}
+
+			*w = '\0'; if (res > 0) pcre_copy_substring(msg, ovector, res, 3, w, sizeof(w));
+			if (strlen(w)) {
+				load = atoi(w); gotload = 1;
+			}
+		}
+	}
+
 	if (eoln) *eoln = '\n';
 
 	if (!gotload) {
