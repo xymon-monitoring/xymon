@@ -33,6 +33,7 @@ typedef struct activealerts_t {
 	time_t eventstart;
 	time_t nextalerttime;
 	enum astate_t state;
+	int cookie;
 
 	struct activealerts_t *next;
 } activealerts_t;

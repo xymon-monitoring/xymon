@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.15 2004-10-25 12:05:04 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.16 2004-10-30 15:52:23 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -45,6 +45,8 @@ static char rcsid[] = "$Id: hobbitd_alert.c,v 1.15 2004-10-25 12:05:04 henrik Ex
 #include <errno.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <time.h>
+#include "libbbgen.h"
 
 #include "bbdworker.h"
 #include "bbd_alert.h"
@@ -292,8 +294,8 @@ int main(int argc, char *argv[])
 		if (metacount > 4) testname = metadata[4];
 
 
-		if ((metacount > 9) && (strncmp(metadata[0], "@@page", 6) == 0)) {
-			/* @@page|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime|location */
+		if ((metacount > 10) && (strncmp(metadata[0], "@@page", 6) == 0)) {
+			/* @@page|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime|location|cookie */
 
 			int newcolor, newalertstatus, oldalertstatus;
 
@@ -309,6 +311,7 @@ int main(int argc, char *argv[])
 				awalk->testname = twalk;
 				awalk->location = pwalk;
 				awalk->color = 0;
+				awalk->cookie = -1;
 				awalk->pagemessage = NULL;
 				awalk->ackmessage = NULL;
 				awalk->eventstart = time(NULL);
@@ -335,6 +338,8 @@ int main(int argc, char *argv[])
 				dprintf("Alert status changed from %d to %d\n", oldalertstatus, newalertstatus);
 				clear_interval(awalk);
 			}
+
+			awalk->cookie = atoi(metadata[10]);
 
 			if (awalk->pagemessage) free(awalk->pagemessage);
 			awalk->pagemessage = strdup(restofmsg);
