@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.16 2003-02-18 13:02:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.17 2003-02-22 08:29:18 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -34,8 +34,9 @@ static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.16 2003-02-18 13:02:44 henrik
 #include "larrdgen.h"
 
 char    larrdcol[20] = "larrd";
-int enable_larrdgen = 0;
-int larrd_update_interval = 300; /* Update LARRD pages every N seconds */
+int 	enable_larrdgen = 0;
+int 	larrd_update_interval = 300; /* Update LARRD pages every N seconds */
+int     log_nohost_rrds = 0;
 
 char	*rrdnames[] = { 
         "la",
@@ -74,6 +75,14 @@ int generate_larrd(char *rrddirname, char *larrdcolumn)
 	i = atoi(getenv("PURPLEDELAY"));
 	logfiletime.actime = logfiletime.modtime = now + i*60;
 
+	/*
+	 * General idea: Scan the RRD directory for all RRD files, and 
+	 * pick up which RRD's are present for each host.
+	 * Since there are only a limited set of possible RRD links to
+	 * generate, this does not take up a huge hunk of memory.
+	 * Then, loop over the list of hosts, and generate a log
+	 * file and an html file for the larrd column.
+	 */
 
 	chdir(rrddirname);
 	rrddir = opendir(rrddirname);
@@ -88,19 +97,26 @@ int generate_larrd(char *rrddirname, char *larrdcolumn)
 		if ((strlen(fn) > 4) && (strcmp(fn+strlen(fn)-4, ".rrd") == 0)) {
 			char *p, *rrdname;
 			char *r = NULL;
-			int found;
+			int found, hostfound;
 			int i;
 
+			/* Logfiles use ',' instead of '.' in FQDN hostnames */
 			for (p=fn; *p; p++) {
 				if (*p == ',') *p = '.';
 			}
 
-			hostwalk = hosthead; found = 0;
+			/* Is this a known host? */
+			hostwalk = hosthead; found = hostfound = 0;
 			while (hostwalk && (!found)) {
 				if (strncmp(hostwalk->hostentry->hostname, fn, strlen(hostwalk->hostentry->hostname)) == 0) {
+
+					p = fn + strlen(hostwalk->hostentry->hostname);
+					hostfound = ( (*p == '.') || (*p = ',') );
+
 					/* First part of filename matches.
-					   Now check that there is a valid RRD id next -
-					   if not, then we may have hit a partial hostname */
+					 * Now check that there is a valid RRD id next -
+					 * if not, then we may have hit a partial hostname 
+					 */
 
 					rrdname = fn + strlen(hostwalk->hostentry->hostname) + 1;
 					p = strchr(rrdname, '.');
@@ -119,6 +135,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn)
 			}
 
 			if (found) {
+				/* hostwalk now points to the host owning this RRD */
 				for (rwalk = hostwalk->hostentry->rrds; (rwalk && (rwalk->rrdname != r)); rwalk = rwalk->next) ;
 				if (rwalk == NULL) {
 					rrd_t *newrrd = malloc(sizeof(rrd_t));
@@ -128,6 +145,11 @@ int generate_larrd(char *rrddirname, char *larrdcolumn)
 					hostwalk->hostentry->rrds = newrrd;
 				}
 				/* printf("Host\t%-40s\t\trrd %s\n", hostwalk->hostentry->hostname, r); */
+			}
+
+			if (!hostfound && log_nohost_rrds) {
+				/* This rrd file has no matching host. */
+				printf("No host record for rrd %s\n", d->d_name);
 			}
 		}
 	}

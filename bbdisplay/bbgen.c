@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.74 2003-02-14 22:42:32 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.75 2003-02-22 08:29:18 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -130,6 +130,9 @@ int main(int argc, char *argv[])
 			if (lp) {
 				strcpy(larrdcol, (lp+1));
 			}
+		}
+		else if (strncmp(argv[i], "--log-nohost-rrds", 17) == 0) {
+			log_nohost_rrds=1;
 		}
 		else if (strncmp(argv[i], "--infoupdate=", 13) == 0) {
 			char *lp = strchr(argv[i], '=');
