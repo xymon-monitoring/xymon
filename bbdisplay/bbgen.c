@@ -142,13 +142,16 @@ state_t *init_state(const char *filename)
 
 	strcpy(hostname, filename);
 	p = strrchr(hostname, '.');
-	if (p) {
+
+	/* Skip files that have no '.' in filename, or begin with a '.' */
+	if (p && (p > hostname)) {	
+		/* Pick out the testname ... */
 		*p = '\0';
 		strcpy(testname, p+1);
+
+		/* ... and change hostname back into normal form */
 		for (p=hostname; (*p); p++) {
-			if (*p == ',') {
-				*p='.';
-			}
+			if (*p == ',') *p='.';
 		}
 	}
 	else {
@@ -441,6 +444,9 @@ void calc_hostcolors(hostlist_t *head)
 		for (e = h->hostentry->entries; (e); e = e->next) {
 			if (e->color > color) color = e->color;
 		}
+
+		/* Blue and clear is not propageted upwards */
+		if ((color == COL_CLEAR) || (color == COL_BLUE)) color = COL_GREEN;
 
 		h->hostentry->color = color;
 	}
