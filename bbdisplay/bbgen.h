@@ -40,12 +40,11 @@
 |    groups -------> group_t               |                   |
 |    hosts ---+         title              V                   |
 +--- parent   |         hosts ---------> host_t                |
-     oldage   |         onlycols           group               |
-     next     |         next               hostname            |
-      ^       +------------------------>   ip                  |
-      |                                    dialup              |
+     oldage   |         onlycols           hostname            |
+     next     |         next               ip                  |
+      ^       +------------------------>   color               |
+      |                                    oldage              |
       +---------------------------------   parent              |
-                                           color               |
                                            alerts              |
                                            waps                |
 					   anywaps             |
@@ -54,7 +53,7 @@
 					   rawentry            |
                       +------------------  link                V
                       |                    entries ---------> entry_t
-                      |                    oldage               column -------> bbgen_col_t
+                      |                    dialup               column -------> bbgen_col_t
                       |                    larrdgraphs          color             name
                       |                    next                 age            +- link
                       |                                         oldage         |  next
