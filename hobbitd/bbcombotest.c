@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.3 2003-07-01 13:51:44 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.4 2003-07-01 14:17:44 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -33,6 +33,7 @@ typedef struct {
 	char *reshostname;
 	char *restestname;
 	char *expression;
+	char *comment;
 	char *resultexpr;
 	value_t *valuelist;
 	long result;
@@ -79,7 +80,7 @@ static void loadtests(void)
 	if (fd == NULL) return;
 
 	while (fgets(l, sizeof(l), fd)) {
-		char *p;
+		char *p, *comment;
 
 		/* Strip newline */
 		p = strchr(l, '\n'); if (p) *p = '\0';
@@ -92,9 +93,13 @@ static void loadtests(void)
 			p = strchr(l, '=');
 			if (p) {
 				*p = '\0';
+
+				comment = strchr(p+1, '#');
+				if (comment) *comment = '\0';
 				newtest->reshostname = malcop(gethname(l));
 				newtest->restestname = malcop(gettname(l));
 				newtest->expression = malcop(p+1);
+				newtest->comment = (comment ? malcop(comment+1) : NULL);
 				newtest->resultexpr = NULL;
 				newtest->valuelist = NULL;
 				newtest->result = -1;
@@ -279,6 +284,7 @@ int main(int argc, char *argv[])
 		init_status(color);
 		sprintf(msgline, "status %s.%s %s %s\n\n", commafy(t->reshostname), t->restestname, colorname(color), timestamp);
 		addtostatus(msgline);
+		if (t->comment) { addtostatus(t->comment); addtostatus("\n\n"); }
 		sprintf(msgline, "%s = %s = %ld\n", t->expression, t->resultexpr, t->result);
 		addtostatus(msgline);
 		for (vwalk = t->valuelist; (vwalk); vwalk = vwalk->next) {
