@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.3 2004-12-12 14:08:46 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.4 2004-12-12 16:13:43 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -63,6 +63,9 @@ static char *default_graphs =
 	"bea,citrix,"
 	"bbgen,bbtest,bbproxy,"
 	;
+
+static const char *linkfmt = "<br><A HREF=\"%s\"><IMG BORDER=0 SRC=\"%s&amp;graph=hourly\" ALT=\"larrd is accumulating %s\"></A>\n";
+static const char *metafmt = "<GraphLink><![CDATA[%s]]></GraphLink>\n<GraphImage><![CDATA[%s&graph=hourly]]></GraphImage>\n";
 
 /*
  * Define the mapping between BB columns and LARRD graphs.
@@ -179,14 +182,14 @@ larrdgraph_t *find_larrd_graph(char *rrdname)
 	return (found ? grec : NULL);
 }
 
-char *larrd_graph_url(char *hostname, char *dispname, char *service, 
-		      larrdgraph_t *graphdef, int itemcount, int larrd043)
+
+static char *larrd_graph_text(char *hostname, char *dispname, char *service, 
+			      larrdgraph_t *graphdef, int itemcount, int larrd043, const char *fmt)
 {
 	static char *rrdurl = NULL;
 	static int rrdurlsize = 0;
 	char *svcurl;
 	int svcurllen, rrdparturlsize;
-	const char *linkfmt = "<br><A HREF=\"%s\"><IMG BORDER=0 SRC=\"%s&amp;graph=hourly\" ALT=\"larrd is accumulating %s\"></A>\n";
 	char rrdservicename[100];
 
 	dprintf("rrdlink_url: host %s, rrd %s (partname:%s, maxgraphs:%d, count=%d), larrd043=%d\n", 
@@ -209,7 +212,7 @@ char *larrd_graph_url(char *hostname, char *dispname, char *service,
 	svcurl = (char *) malloc(svcurllen);
 
 	rrdparturlsize = 2048 +
-			 strlen(linkfmt)    +
+			 strlen(fmt)        +
 			 2*svcurllen        +
 			 strlen(rrdservicename);
 
@@ -236,7 +239,7 @@ char *larrd_graph_url(char *hostname, char *dispname, char *service,
 				strcat(svcurl, "&amp;disp=");
 				strcat(svcurl, urlencode(dispname));
 			}
-			sprintf(rrdparturl, linkfmt, svcurl, svcurl, rrdservicename);
+			sprintf(rrdparturl, fmt, svcurl, svcurl, rrdservicename);
 			if ((strlen(rrdparturl) + strlen(rrdurl) + 1) >= rrdurlsize) {
 				rrdurlsize += (4096 + (itemcount - last)*rrdparturlsize);
 				rrdurl = (char *) realloc(rrdurl, rrdurlsize);
@@ -253,12 +256,22 @@ char *larrd_graph_url(char *hostname, char *dispname, char *service,
 			strcat(svcurl, "&amp;disp=");
 			strcat(svcurl, urlencode(dispname));
 		}
-		sprintf(rrdurl, linkfmt, svcurl, svcurl, rrdservicename);
+		sprintf(rrdurl, fmt, svcurl, svcurl, rrdservicename);
 	}
 
 	dprintf("URLtext: %s\n", rrdurl);
 
 	free(svcurl);
 	return rrdurl;
+}
+
+
+char *larrd_graph_data(char *hostname, char *dispname, char *service, 
+		      larrdgraph_t *graphdef, int itemcount, int larrd043, int wantmeta)
+{
+	if (wantmeta)
+		return larrd_graph_text(hostname, dispname, service, graphdef, itemcount, 1, metafmt);
+	else
+		return larrd_graph_text(hostname, dispname, service, graphdef, itemcount, larrd043, linkfmt);
 }
 
