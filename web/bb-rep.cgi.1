@@ -52,10 +52,23 @@ Do not clean the BBREP directory of old reports. Makes the
 report-tool go a bit faster - instead, you can clean up the
 BBREP directory e.g. via a cron-job.
 
+.IP "--env=FILENAME"
+Load the environment from FILENAME before executing the CGI.
+
 .IP bbgen-options
 All other options passed to bb-rep.cgi are passed on to the 
 .I bbgen(1)
 program building the report files.
+
+.SH FILES
+.IP $BBHOME/web/report_header
+HTML template header for the report request form
+
+.IP $BBHOME/web/report_footer
+HTML template footer for the report request form
+
+.IP $BBHOME/web/report_form
+HTML template report request form
 
 .SH "ENVIRONMENT VARIABLES"
 .IP BBGENREPOPTS
