@@ -65,7 +65,7 @@ alert: alert.c debug.c util.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ alert.c debug.c util.c
 
 contest: contest.c debug.c util.c
-	$(CC) $(CFLAGS) -g -DSTANDALONE -DDEBUG -Wall -o $@ contest.c debug.c util.c $(CURLLIB) $(NETLIBS)
+	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCLUDE) -g -DSTANDALONE -DDEBUG -Wall -o $@ contest.c debug.c util.c $(CURLLIB) $(NETLIBS)
 
 calc: calc.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ calc.c
@@ -78,6 +78,9 @@ sendmsg: sendmsg.c debug.c util.c
 
 httptest.o: httptest.c httptest.h
 	$(CC) $(CFLAGS) $(CURLINCLUDE) $(USEMULTI) -c -o $@ httptest.c
+
+contest.o: contest.c contest.h
+	$(CC) $(CFLAGS) $(CURLINCLUDE) $(SSLFLAGS) $(SSLINCLUDE) -c -o $@ contest.c
 
 bb-hist.o: bb-hist.c
 	$(CC) $(CFLAGS) $(HISTGRAPHDEF) -c -o $@ bb-hist.c
