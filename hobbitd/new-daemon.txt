@@ -61,11 +61,11 @@
 
   page
   ----
-  @@page|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime|location|cookie
+  @@page|timestamp|sender|hostname|testname|hostip|expiretime|color|prevcolor|changetime|location|cookie
   <message>
   @@
 
-  @@ack|timestamp|sender|hostname|testname|expiretime
+  @@ack|timestamp|sender|hostname|testname|hostip|expiretime
   <ack message>
   @@
 
@@ -194,4 +194,8 @@
   - BBSKIN
   - DOTHEIGHT
   - DOTWIDTH
+
+* bbgend_larrd : Ikke kompatibel for 
+  - vmstat  : 
+  - netstat : Linux, snmpnetstat, Win32
 
