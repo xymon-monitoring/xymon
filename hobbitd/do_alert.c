@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.17 2004-11-28 09:16:22 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.18 2004-11-28 22:00:33 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -64,6 +64,10 @@ static char rcsid[] = "$Id: do_alert.c,v 1.17 2004-11-28 09:16:22 henrik Exp $";
 #include "libbbgen.h"
 
 #include "bbgend_alert.h"
+
+/* Should we run in BB compatibility mode ? i.e. read bbwarn{setup,rules}.cfg */
+int bbcompat_mode = 0;
+static char bbcompatscript[PATH_MAX];
 
 enum method_t { M_MAIL, M_SCRIPT };
 enum msgformat_t { FRM_TEXT, FRM_SMS, FRM_PAGER, FRM_SCRIPT };
@@ -218,7 +222,7 @@ static char *preprocess(char *buf)
 	return result;
 }
 
-pcre *compileregex(char *pattern)
+static pcre *compileregex(char *pattern)
 {
 	pcre *result;
 	const char *errmsg;
@@ -234,7 +238,7 @@ pcre *compileregex(char *pattern)
 	return result;
 }
 
-void flush_rule(rule_t *currule)
+static void flush_rule(rule_t *currule)
 {
 	if (currule == NULL) return;
 
@@ -259,6 +263,12 @@ void load_alertconfig(char *configfn, int defcolors)
 	char *p;
 	rule_t *currule = NULL;
 	recip_t *currcp = NULL, *rcptail = NULL;
+
+	if (bbcompat_mode) {
+		sprintf(bbcompatscript, "%s/ext/bbcompatalert.sh", getenv("BBHOME"));
+		bbload_alerts();
+		return;
+	}
 
 	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/bb-alerts.cfg", getenv("BBHOME"));
 	if (stat(fn, &st) == -1) return;
@@ -603,6 +613,11 @@ void dump_alertconfig(void)
 	rule_t *rulewalk;
 	recip_t *recipwalk;
 
+	if (bbcompat_mode) {
+		printf("Dump not supported in bb-compatible mode\n");
+		return;
+	}
+
 	for (rulewalk = rulehead; (rulewalk); rulewalk = rulewalk->next) {
 		dump_criteria(rulewalk->criteria, 0);
 		printf("\n");
@@ -806,6 +821,93 @@ static recip_t *next_recipient(activealerts_t *alert, int *first)
 {
 	static rule_t *rulewalk = NULL;
 	static recip_t *recipwalk = NULL;
+
+	if (bbcompat_mode) {
+		static recip_t bbresult;
+		char timespec[100];
+		alertrec_t *bbalertdef;
+		int continued;
+		char *p, *q;
+
+		if (*first) continued = 0; else continued = 1;
+		*first = 0;
+bbagain:
+		/* 
+		 * Find the (next) BB alert definition. 
+		 * We only want the default alert recipient the first time - if there are
+		 * recipient defined, we dont want to see the default recipient.
+		 */
+		bbalertdef = bbfind_alert(alert->hostname->name, (continued == 0), continued);
+		if (bbalertdef == NULL) return NULL;
+
+		/* Check bbalertdef against service specs and time limits */
+		if (strstr(bbalertdef->items[3], alert->testname->name)) goto bbagain; /* Excluded service */
+		if ((strlen(bbalertdef->items[2]) > 0) && (strcmp(bbalertdef->items[2], "*") != 0)) {
+			/* See if service is in the explicit service list */
+			if (strstr(bbalertdef->items[2], alert->testname->name) == NULL) goto bbagain;
+		}
+
+		/* Convert the BB timespec into something we can handle */
+		memset(timespec, 0, sizeof(timespec));
+		if (strlen(bbalertdef->items[4]) == 0) bbalertdef->items[4] = "*";
+		for (p = bbalertdef->items[4]; (*p); p++) {
+			timespec[strlen(timespec)] = *p;
+			q = bbalertdef->items[5];
+			if ((strlen(q) == 0) || (*q == '*')) q = "0000-2359";
+			while (q) {
+				char *nextq = strchr(q, ' ');
+
+				if (nextq) *nextq = '\0';
+				strcat(timespec, ":");
+				strcat(timespec, q);
+				if (nextq) { *nextq = ' '; q = nextq + 1; } else q = NULL;
+			}
+		}
+		dprintf("Converted bbtimespec '%s' '%s' to '%s'\n", bbalertdef->items[4], bbalertdef->items[5], timespec);
+		if (!within_sla(timespec, "", 1)) goto bbagain;
+
+		p = strchr(bbalertdef->items[6], ':');
+		if (p) {
+			if (*(p+1) == '~') {
+				/* Initial delay */
+				char initialdelay = 60*atoi(p+1);
+				p++;
+				p += strspn(p, "0123456789");
+
+				if ((time(NULL) - alert->eventstart) < initialdelay) goto bbagain;
+			}
+			else if (*(p+1) == '^') {
+				/* Acknowledge interval. We dont handle that. */
+				p++;
+				p += strspn(p, "0123456789");
+			}
+
+			if (p && ((*p == ':') || (*p == '-'))) {
+				bbresult.interval = 60*atoi(p+1);
+			}
+			else {
+				bbresult.interval = 60*bbpagedelay;
+			}
+		}
+
+		/* Create a recip_t struct from the bbalertdef contents */
+		bbresult.cfid = -1;
+		bbresult.criteria = NULL;
+		if (strchr(bbalertdef->items[6], '@')) {
+			bbresult.method = M_MAIL;
+			bbresult.scriptname = NULL;
+			bbresult.recipient = bbalertdef->items[6];
+			bbresult.format = FRM_TEXT;
+		}
+		else {
+			bbresult.method = M_SCRIPT;
+			bbresult.scriptname = bbcompatscript;
+			bbresult.recipient = bbalertdef->items[6];
+			bbresult.format = FRM_SCRIPT;
+		}
+		bbresult.next = NULL;
+		return &bbresult;
+	}
 
 	do {
 		if (*first) {
