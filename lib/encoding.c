@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: encoding.c,v 1.3 2005-01-15 17:39:50 henrik Exp $";
+static char rcsid[] = "$Id: encoding.c,v 1.4 2005-01-16 11:44:18 henrik Exp $";
 
 #include <stdlib.h>
 #include <ctype.h>
@@ -235,6 +235,7 @@ void nldecode(unsigned char *msg)
 			outp += n;
 		}
 
+		/* *inp is either a backslash or a \0 */
 		if (*inp == '\\') {
 			inp++;
 			switch (*inp) {
@@ -244,10 +245,6 @@ void nldecode(unsigned char *msg)
 			  case 't': *outp = '\t'; outp++; inp++; break;
 			  case '\\': *outp = '\\'; outp++; inp++; break;
 			}
-		}
-		else if (*inp) {
-			*outp = *inp;
-			outp++; inp++;
 		}
 	}
 	*outp = '\0';
