@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.74 2003-07-18 14:14:15 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.75 2003-07-19 16:28:01 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -40,17 +40,6 @@ int	use_recentgifs = 0;
 char	timestamp[30];
 
 extern  int debug;
-
-/* Stuff for combo message handling */
-int		bbmsgcount = 0;		/* Number of messages transmitted */
-int		bbstatuscount = 0;	/* Number of status items reported */
-int		bbnocombocount = 0;	/* Number of status items reported outside combo msgs */
-static int	bbmsgqueued;		/* Anything in the buffer ? */
-static char	bbmsg[MAXMSG];		/* Complete combo message buffer */
-static char	msgbuf[MAXMSG-50];	/* message buffer for one status message */
-static int	msgcolor;		/* color of status message in msgbuf */
-static int      maxmsgspercombo = 0;	/* 0 = no limit */
-static int      sleepbetweenmsgs = 0;
 
 /* Stuff for headfoot - variables we can set dynamically */
 static char hostenv_svc[20];
@@ -937,153 +926,6 @@ out:
 	return result;
 }
 
-
-void sendmessage(char *msg, char *recipient)
-{
-	static char *bbcmd = NULL;
-	static char *bbdisp = NULL;
-	pid_t	childpid;
-	int	childstat;
-
-	if (bbcmd == NULL) {
-		bbcmd = malloc(strlen(getenv("BB"))+1);
-		strcpy(bbcmd, getenv("BB"));
-	}
-	if (bbdisp == NULL) {
-		bbdisp = malloc(strlen(getenv("BBDISP"))+1);
-		strcpy(bbdisp, getenv("BBDISP"));
-	}
-	
-	childpid = fork();
-	if (childpid == -1) {
-		errprintf("%s: Fork error\n", timestamp);
-	}
-	else if (childpid == 0) {
-		execl(bbcmd, "bb", (recipient ? recipient : bbdisp), msg, NULL);
-	}
-	else {
-		wait(&childstat);
-		if (WIFEXITED(childstat) && (WEXITSTATUS(childstat) != 0) ) {
-			errprintf("%s: Whoops ! bb failed to send message - returns status %d\n", 
-				timestamp, WEXITSTATUS(childstat));
-		}
-	}
-
-	/* Give it a break */
-	if (sleepbetweenmsgs) usleep(sleepbetweenmsgs);
-	bbmsgcount++;
-}
-
-
-/* Routines for handling combo message transmission */
-void combo_start(void)
-{
-	strcpy(bbmsg, "combo\n");
-	bbmsgqueued = 0;
-
-	if ((maxmsgspercombo == 0) && getenv("BBMAXMSGSPERCOMBO")) 
-		maxmsgspercombo = atoi(getenv("BBMAXMSGSPERCOMBO"));
-	if ((sleepbetweenmsgs == 0) && getenv("BBSLEEPBETWEENMSGS")) 
-		sleepbetweenmsgs = atoi(getenv("BBSLEEPBETWEENMSGS"));
-}
-
-void combo_flush(void)
-{
-
-	if (!bbmsgqueued) {
-		if (debug) printf("Flush, but bbmsg is empty\n");
-		return;
-	}
-
-	if (debug) {
-		char *p1, *p2;
-
-		printf("Flushing combo message\n");
-		p1 = p2 = bbmsg;
-
-		do {
-			p2++;
-			p1 = strstr(p2, "\nstatus ");
-			if (p1) {
-				p1++; /* Skip the newline */
-				p2 = strchr(p1, '\n');
-				*p2='\0';
-				printf("      %s\n", p1);
-				*p2='\n';
-			}
-		} while (p1);
-	}
-
-	sendmessage(bbmsg, NULL);
-	combo_start();	/* Get ready for the next */
-}
-
-void combo_add(char *buf)
-{
-	/* Check if there is room for the message + 2 newlines */
-	if ( ((strlen(bbmsg) + strlen(buf) + 200) >= MAXMSG) || 
-	     (maxmsgspercombo && (bbmsgqueued >= maxmsgspercombo)) ) {
-		/* Nope ... flush buffer */
-		combo_flush();
-	}
-	else {
-		/* Yep ... add delimiter before new status (but not before the first!) */
-		if (bbmsgqueued) strcat(bbmsg, "\n\n");
-	}
-
-	strcat(bbmsg, buf);
-	bbmsgqueued++;
-}
-
-void combo_end(void)
-{
-	combo_flush();
-	if (debug) {
-		printf("%s: %d status messages merged into %d transmissions\n", 
-			timestamp, bbstatuscount, bbmsgcount);
-	}
-}
-
-
-void init_status(int color)
-{
-	msgbuf[0] = '\0';
-	msgcolor = color;
-	bbstatuscount++;
-}
-
-void addtostatus(char *p)
-{
-	if ((strlen(msgbuf) + strlen(p)) < sizeof(msgbuf))
-		strcat(msgbuf, p);
-	else {
-		strncat(msgbuf, p, sizeof(msgbuf)-strlen(msgbuf)-1);
-	}
-}
-
-void finish_status(void)
-{
-	if (debug) {
-		char *p = strchr(msgbuf, '\n');
-
-		if (p) *p = '\0';
-		printf("Adding to combo msg: %s\n", msgbuf);
-		if (p) *p = '\n';
-	}
-
-	switch (msgcolor) {
-		case COL_GREEN:
-		case COL_BLUE:
-		case COL_CLEAR:
-			combo_add(msgbuf);
-			break;
-		default:
-			/* Red, yellow and purple messages go out NOW. Or we get no alarms ... */
-			bbnocombocount++;
-			sendmessage(msgbuf, NULL);
-			break;
-	}
-}
 
 void envcheck(char *envvars[])
 {

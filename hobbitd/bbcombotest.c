@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.7 2003-07-03 08:44:47 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.8 2003-07-19 16:28:01 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -22,6 +22,7 @@ static char rcsid[] = "$Id: bbcombotest.c,v 1.7 2003-07-03 08:44:47 henrik Exp $
 #include "debug.h"
 #include "util.h"
 #include "calc.h"
+#include "sendmsg.h"
 
 typedef struct {
 	char *symbol;

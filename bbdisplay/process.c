@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.15 2003-07-16 20:41:58 henrik Exp $";
+static char rcsid[] = "$Id: process.c,v 1.16 2003-07-19 16:28:01 henrik Exp $";
 
 #include <string.h>
 #include <sys/types.h>
@@ -31,6 +31,7 @@ static char rcsid[] = "$Id: process.c,v 1.15 2003-07-16 20:41:58 henrik Exp $";
 #include "process.h"
 #include "util.h"
 #include "debug.h"
+#include "sendmsg.h"
 
 static int wantedcolumn(char *current, char *wanted)
 {

@@ -23,9 +23,6 @@
 
 extern int use_recentgifs;
 extern char timestamp[];
-extern int bbmsgcount;
-extern int bbstatuscount;
-extern int bbnocombocount;
 
 extern void errprintf(const char *fmt, ...);
 extern char *errbuf;
@@ -69,14 +66,6 @@ extern char *histlogurl(char *hostname, char *service, time_t histtime);
 
 extern int within_sla(char *hostline, char *tag, int defresult);
 extern int periodcoversnow(char *tag);
-
-extern void sendmessage(char *msg, char *recipient);
-extern void combo_start(void);
-extern void combo_end(void);
-
-extern void init_status(int color);
-extern void addtostatus(char *p);
-extern void finish_status(void);
 
 extern void envcheck(char *envvars[]);
 

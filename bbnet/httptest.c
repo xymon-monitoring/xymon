@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.30 2003-07-12 06:07:37 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.31 2003-07-19 16:28:01 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -27,6 +27,7 @@ static char rcsid[] = "$Id: httptest.c,v 1.30 2003-07-12 06:07:37 henrik Exp $";
 #include "util.h"
 #include "debug.h"
 #include "bbtest-net.h"
+#include "sendmsg.h"
 
 typedef struct {
 	char   *url;                    /* URL to request, stripped of BB'isms */
