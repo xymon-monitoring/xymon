@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.53 2003-01-04 23:00:19 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.54 2003-01-05 08:10:31 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -53,6 +53,7 @@ int main(int argc, char *argv[])
 
 	sprintf(pagedir, "%s/www", getenv("BBHOME"));
 	sprintf(rrddir, "%s/rrd", getenv("BBVAR"));
+	init_timestamp();
 
 	for (i = 1; (i < argc); i++) {
 		if (strcmp(argv[i], "--recentgifs") == 0) {
