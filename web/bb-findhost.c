@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.11 2004-12-12 21:54:28 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.12 2004-12-16 21:25:17 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -53,16 +53,7 @@ static char rcsid[] = "$Id: bb-findhost.c,v 1.11 2004-12-12 21:54:28 henrik Exp 
 
 #include "libbbgen.h"
 
-#include "bbgen.h"
-#include "util.h"
-#include "loadbbhosts.h"
-
 /* Global vars */
-bbgen_page_t    *pagehead = NULL;                       /* Head of page list */
-summary_t       *sumhead = NULL;                        /* Summaries we send out */
-time_t          reportstart = 0;
-double          reportwarnlevel = 97.0;
-int             fqdn = 1;                               /* BB FQDN setting */
 
 /*
  * [wm] To support regex searching
@@ -136,8 +127,7 @@ void parse_query(void)
 
 int main(int argc, char *argv[])
 {
-	char *pageset = NULL;
-	hostlist_t *hostwalk, *clonewalk;
+	namelist_t *hosthead, *hostwalk, *clonewalk;
 	int argi;
 
 	int gotany = 0;
@@ -148,7 +138,6 @@ int main(int argc, char *argv[])
 	regex_t re;
 	char    re_errstr[BUFSIZE];
 	int 	re_status;
-	host_t	*he;					/* HostEntry pointer (dereferencing)... :)	*/
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -196,7 +185,7 @@ int main(int argc, char *argv[])
         sethostenv("", "", "", colorname(COL_BLUE));
         headfoot(stdout, "findhost", "", "header", COL_BLUE);
 
-	pagehead = load_bbhosts(pageset);
+	hosthead = load_hostnames(getenv("BBHOSTS"), get_fqdn(), NULL);
 
 	printf("<br><br><CENTER><TABLE CELLPADDING=5 SUMMARY=\"Hostlist\">\n");
 	printf("<tr><th align=left>Hostname (DisplayName)</th><th align=left>Location (Group Name)</th></tr>\n");
@@ -210,33 +199,39 @@ int main(int argc, char *argv[])
 	} else {
 
 	       	for (hostwalk=hosthead; (hostwalk); hostwalk = hostwalk->next) {
-			he = hostwalk->hostentry; 
-			
 			/* 
 			 * [wm] - Allow the search to be done on the hostname
 			 * 	also on the "displayname" and the host comment
 			 *	Maybe this should be implemented by changing the HTML form, but until than..
-			 * we're supposing that he->hostname will NEVER be null	
+			 * we're supposing that hostname will NEVER be null	
 			 */
-	       		if ( regexec (&re, he->hostname, (size_t)0, NULL, 0) == 0  ||
-	       			(he->displayname && regexec (&re, he->displayname, (size_t)0, NULL, 0) == 0) ||
-				(he->comment     && regexec (&re, he->comment, 	   (size_t)0, NULL, 0) == 0)   ) {
+			char *hostname, *displayname, *comment;
+
+			hostname = bbh_item(hostwalk, BBH_HOSTNAME);
+			displayname = bbh_item(hostwalk, BBH_DISPLAYNAME);
+			comment = bbh_item(hostwalk, BBH_COMMENT);
+
+	       		if ( regexec (&re, hostname, (size_t)0, NULL, 0) == 0  ||
+	       			(displayname && regexec (&re, displayname, (size_t)0, NULL, 0) == 0) ||
+				(comment     && regexec (&re, comment, 	   (size_t)0, NULL, 0) == 0)   ) {
 	
 				/*  match */
 				printf("<tr>\n");
-				printf("<td align=left> %s </td>\n", he->displayname ? he->displayname : he->hostname);
+				printf("<td align=left> %s </td>\n", displayname ? displayname : hostname);
 				printf("<td align=left> <a href=\"%s/%s#%s\">%s</a>\n",
 	                     		getenv("BBWEB"), 
-					hostpage_link(he), 
-					he->hostname,
-					hostpage_name(he));
+					bbh_item(hostwalk, BBH_PAGEPATH),
+					hostname,
+					bbh_item(hostwalk, BBH_PAGEPATHTITLE));
 
-				for (clonewalk = hostwalk->clones; (clonewalk); clonewalk = clonewalk->next) {
+				clonewalk = hostwalk->next;
+				while (clonewalk && (strcmp(hostwalk->bbhostname, clonewalk->bbhostname) == 0)) {
 					printf("<br><a href=\"%s/%s#%s\">%s</a>\n",
 						getenv("BBWEB"), 
-						hostpage_link(clonewalk->hostentry), 
-						clonewalk->hostentry->hostname,
-						hostpage_name(clonewalk->hostentry));
+						bbh_item(clonewalk, BBH_PAGEPATH),
+						clonewalk->bbhostname,
+						bbh_item(clonewalk, BBH_PAGEPATHTITLE));
+					clonewalk = clonewalk->next;
 				}
 
 				printf("</td>\n</tr>\n");
