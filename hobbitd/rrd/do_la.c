@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char la_rcsid[] = "$Id: do_la.c,v 1.7 2005-02-06 08:49:02 henrik Exp $";
+static char la_rcsid[] = "$Id: do_la.c,v 1.8 2005-02-16 22:04:46 henrik Exp $";
 
 static char *la_params[]          = { "rrdcreate", rrdfn, "DS:la:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
@@ -20,6 +20,8 @@ int do_la_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 	eoln = strchr(msg, '\n'); if (eoln) *eoln = '\0';
 	p = strstr(msg, "up: ");
+	if (!p) p = strstr(msg, "Uptime:");	/* Netapp filerstats2bb script */
+	if (!p) p = strstr(msg, "uptime:");
 	if (p) {
 		/* First line of cpu report, contains "up: 159 days, 1 users, 169 procs, load=21" */
 		p = strchr(p, ',');
