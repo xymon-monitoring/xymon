@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.104 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.105 2005-01-20 22:03:53 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -219,6 +219,9 @@ char *generate_stats(void)
 	char uptimetxt[40];
 	time_t uptime = (now - boottime);
 
+	MEMDEFINE(bootuptxt);
+	MEMDEFINE(uptimetxt);
+
 	if (statsbuf == NULL) {
 		statsbuflen = 8192;
 		statsbuf = (char *)malloc(statsbuflen);
@@ -287,6 +290,9 @@ char *generate_stats(void)
 
 		bufp += sprintf(bufp, "\n\nLatest errormessages:\n%s\n", errbuf);
 	}
+
+	MEMUNDEFINE(bootuptxt);
+	MEMUNDEFINE(uptimetxt);
 
 	return statsbuf;
 }
@@ -544,6 +550,8 @@ void get_hts(char *msg, char *sender, char *origin,
 	hobbitd_log_t *lwalk = NULL;
 	int maybedown = 0;
 
+	MEMDEFINE(hostip);
+
 	*host = NULL;
 	*test = NULL;
 	*log = NULL;
@@ -643,6 +651,8 @@ done:
 		}
 	}
 	xfree(firstline);
+
+	MEMUNDEFINE(hostip);
 }
 
 
@@ -900,6 +910,11 @@ void handle_enadis(int enabled, char *msg, char *sender)
 	char *p;
 	int maybedown;
 
+	MEMDEFINE(firstline);
+	MEMDEFINE(hosttest);
+	MEMDEFINE(hostip);
+	MEMDEFINE(durstr);
+
 	p = strchr(msg, '\n'); 
 	if (p == NULL) {
 		strncpy(firstline, msg, sizeof(firstline)-1);
@@ -911,7 +926,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 	}
 	*(firstline + sizeof(firstline) - 1) = '\0';
 	assignments = sscanf(firstline, "%*s %199s %99s", hosttest, durstr);
-	if (assignments < 1) return;
+	if (assignments < 1) goto done;
 	duration = durationvalue(durstr);
 	p = hosttest + strlen(hosttest) - 1;
 	if (*p == '*') {
@@ -924,7 +939,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 	else {
 		/* No wildcard -> get the test name */
 		p = strrchr(hosttest, '.');
-		if (p == NULL) return; /* "enable foo" ... surely you must be joking. */
+		if (p == NULL) goto done; /* "enable foo" ... surely you must be joking. */
 		*p = '\0';
 		tname = (p+1);
 	}
@@ -932,20 +947,20 @@ void handle_enadis(int enabled, char *msg, char *sender)
 
 
 	p = knownhost(hosttest, hostip, ghosthandling, &maybedown);
-	if (p == NULL) return;
+	if (p == NULL) goto done;
 	strcpy(hosttest, p);
 
 	for (hwalk = hosts; (hwalk && strcasecmp(hosttest, hwalk->hostname)); hwalk = hwalk->next) ;
 	if (hwalk == NULL) {
 		/* Unknown host */
-		return;
+		goto done;
 	}
 
 	if (tname) {
 		for (twalk = tests; (twalk && strcasecmp(tname, twalk->testname)); twalk = twalk->next);
 		if (twalk == NULL) {
 			/* Unknown test */
-			return;
+			goto done;
 		}
 	}
 
@@ -1015,6 +1030,12 @@ void handle_enadis(int enabled, char *msg, char *sender)
 
 	}
 
+done:
+	MEMUNDEFINE(firstline);
+	MEMUNDEFINE(hosttest);
+	MEMUNDEFINE(hostip);
+	MEMUNDEFINE(durstr);
+
 	return;
 }
 
@@ -1067,6 +1088,9 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	char msgbuf[MAXMSG];
 	char *marker = NULL;
 
+	MEMDEFINE(hostip);
+	MEMDEFINE(msgbuf);
+
 	/*
 	 * We pass drop- and rename-messages to the workers, whether 
 	 * we know about this host or not. It could be that the drop command
@@ -1109,18 +1133,18 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	 * Now clean up our internal state info, if there is any.
 	 */
 	hostname = knownhost(hostname, hostip, ghosthandling, &maybedown);
-	if (hostname == NULL) return;
+	if (hostname == NULL) goto done;
 
 	for (hwalk = hosts; (hwalk && strcasecmp(hostname, hwalk->hostname)); hwalk = hwalk->next) ;
-	if (hwalk == NULL) return;
+	if (hwalk == NULL) goto done;
 
 	switch (cmd) {
 	  case CMD_DROPTEST:
 		for (twalk = tests; (twalk && strcasecmp(n1, twalk->testname)); twalk = twalk->next) ;
-		if (twalk == NULL) return;
+		if (twalk == NULL) goto done;
 
 		for (lwalk = hwalk->logs; (lwalk && (lwalk->test != twalk)); lwalk = lwalk->next) ;
-		if (lwalk == NULL) return;
+		if (lwalk == NULL) goto done;
 		if (lwalk == hwalk->logs) {
 			hwalk->logs = hwalk->logs->next;
 		}
@@ -1169,9 +1193,9 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 
 	  case CMD_RENAMETEST:
 		for (twalk = tests; (twalk && strcasecmp(n1, twalk->testname)); twalk = twalk->next) ;
-		if (twalk == NULL) return;
+		if (twalk == NULL) goto done;
 		for (lwalk = hwalk->logs; (lwalk && (lwalk->test != twalk)); lwalk = lwalk->next) ;
-		if (lwalk == NULL) return;
+		if (lwalk == NULL) goto done;
 		for (newt = tests; (newt && strcasecmp(n2, newt->testname)); newt = newt->next) ;
 		if (newt == NULL) {
 			newt = (hobbitd_testlist_t *) malloc(sizeof(hobbitd_testlist_t));
@@ -1182,6 +1206,12 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		lwalk->test = newt;
 		break;
 	}
+
+done:
+	MEMUNDEFINE(hostip);
+	MEMUNDEFINE(msgbuf);
+
+	return;
 }
 
 
@@ -1220,10 +1250,17 @@ char *timestr(time_t tstamp)
 	static char result[30];
 	char *p;
 
-	if (tstamp == 0) return "N/A";
+	MEMDEFINE(result);
+
+	if (tstamp == 0) {
+		MEMUNDEFINE(result);
+		return "N/A";
+	}
+
 	strcpy(result, ctime(&tstamp));
 	p = strchr(result, '\n'); if (p) *p = '\0';
 
+	MEMUNDEFINE(result);
 	return result;
 }
 
@@ -1236,6 +1273,8 @@ void do_message(conn_t *msg, char *origin)
 	char sender[20];
 	time_t now;
 	char *msgfrom;
+
+	MEMDEFINE(sender);
 
 	/* Most likely, we will not send a response */
 	msg->doingwhat = NOTALK;
@@ -1320,6 +1359,8 @@ void do_message(conn_t *msg, char *origin)
 		int maybedown;
 		char hostip[20];
 
+		MEMDEFINE(tok); MEMDEFINE(hostip);
+
 		msgfrom = strstr(msg->buf, "\nStatus message received from ");
 		if (msgfrom) {
 			sscanf(msgfrom, "\nStatus message received from %s\n", sender);
@@ -1336,9 +1377,14 @@ void do_message(conn_t *msg, char *origin)
 				if (hostname == NULL) log_ghost(tok, sender, msg->buf);
 			}
 
-			if (!oksender(statussenders, hostip, msg->addr.sin_addr, msg->buf)) goto done;
+			if (!oksender(statussenders, hostip, msg->addr.sin_addr, msg->buf)) {
+				MEMUNDEFINE(tok); MEMUNDEFINE(hostip);
+				goto done;
+			}
 			if (hostname && testname) handle_data(msg->buf, sender, origin, hostname, testname);
 		}
+
+		MEMUNDEFINE(tok); MEMUNDEFINE(hostip);
 	}
 	else if (strncmp(msg->buf, "summary", 7) == 0) {
 		/* Summaries are always allowed. Or should we ? */
@@ -1353,15 +1399,20 @@ void do_message(conn_t *msg, char *origin)
 		int maybedown;
 		char hostip[20];
 
+		MEMDEFINE(tok); MEMDEFINE(hostip);
 		if (sscanf(msg->buf, "notes %s\n", tok) == 1) {
 			char *p;
 
 			p = tok; while ((p = strchr(p, ',')) != NULL) *p = '.';
 			hostname = knownhost(tok, hostip, ghosthandling, &maybedown);
 
-			if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+			if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) {
+				MEMUNDEFINE(tok); MEMUNDEFINE(hostip);
+				goto done;
+			}
 			if (hostname) handle_notes(msg->buf, sender, hostname);
 		}
+		MEMUNDEFINE(tok); MEMUNDEFINE(hostip);
 	}
 	else if (strncmp(msg->buf, "enable", 6) == 0) {
 		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
@@ -1376,11 +1427,15 @@ void do_message(conn_t *msg, char *origin)
 
 		if (!oksender(statussenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
+		MEMDEFINE(conffn);
+
 		if ( (sscanf(msg->buf, "config %1023s", conffn) == 1) &&
 		     (strstr("../", conffn) == NULL) && (get_config(conffn, msg) == 0) ) {
 			msg->doingwhat = RESPONDING;
 			msg->bufp = msg->buf;
 		}
+
+		MEMUNDEFINE(conffn);
 	}
 	else if (strncmp(msg->buf, "query ", 6) == 0) {
 		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, 0, 0);
@@ -1684,6 +1739,8 @@ void do_message(conn_t *msg, char *origin)
 
 		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
+		MEMDEFINE(durstr);
+
 		/*
 		 * For just a bit of compatibility with the old BB system,
 		 * we will accept an "ack ack_event" message. This allows us
@@ -1711,6 +1768,8 @@ void do_message(conn_t *msg, char *origin)
 				}
 			}
 		}
+
+		MEMUNDEFINE(durstr);
 	}
 	else if (strncmp(msg->buf, "drop ", 5) == 0) {
 		char hostname[200];
@@ -1719,6 +1778,8 @@ void do_message(conn_t *msg, char *origin)
 
 		if (!oksender(adminsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
+		MEMDEFINE(hostname); MEMDEFINE(testname);
+
 		n = sscanf(msg->buf, "drop %199s %199s", hostname, testname);
 		if (n == 1) {
 			handle_dropnrename(CMD_DROPHOST, sender, hostname, NULL, NULL);
@@ -1726,6 +1787,8 @@ void do_message(conn_t *msg, char *origin)
 		else if (n == 2) {
 			handle_dropnrename(CMD_DROPTEST, sender, hostname, testname, NULL);
 		}
+
+		MEMUNDEFINE(hostname); MEMUNDEFINE(testname);
 	}
 	else if (strncmp(msg->buf, "rename ", 7) == 0) {
 		char hostname[200];
@@ -1733,6 +1796,8 @@ void do_message(conn_t *msg, char *origin)
 		int n;
 
 		if (!oksender(adminsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+
+		MEMDEFINE(hostname); MEMDEFINE(n1); MEMDEFINE(n2);
 
 		n = sscanf(msg->buf, "rename %199s %199s %199s", hostname, n1, n2);
 		if (n == 2) {
@@ -1743,6 +1808,8 @@ void do_message(conn_t *msg, char *origin)
 			/* Test rename */
 			handle_dropnrename(CMD_RENAMETEST, sender, hostname, n1, n2);
 		}
+
+		MEMUNDEFINE(hostname); MEMUNDEFINE(n1); MEMUNDEFINE(n2);
 	}
 	else if (strncmp(msg->buf, "dummy", 5) == 0) {
 		/* Do nothing */
@@ -1757,6 +1824,8 @@ done:
 		close(msg->sock);
 		msg->sock = -1;
 	}
+
+	MEMUNDEFINE(sender);
 }
 
 
@@ -1835,6 +1904,9 @@ void load_checkpoint(char *fn)
 		errprintf("Cannot access checkpoint file %s for restore\n", fn);
 		return;
 	}
+
+	MEMDEFINE(l);
+	MEMDEFINE(hostip);
 
 	while (fgets(l, sizeof(l)-1, fd)) {
 		hostname = testname = sender = testflags = statusmsg = disablemsg = ackmsg = NULL;
@@ -1952,6 +2024,9 @@ void load_checkpoint(char *fn)
 	}
 
 	fclose(fd);
+
+	MEMUNDEFINE(l);
+	MEMDEFINE(hostip);
 }
 
 
@@ -2056,6 +2131,8 @@ int main(int argc, char *argv[])
 	struct sigaction sa;
 	time_t conn_timeout = 10;
 	time_t nextheartbeat = 0;
+
+	MEMDEFINE(colnames);
 
 	boottime = time(NULL);
 
@@ -2578,6 +2655,8 @@ int main(int argc, char *argv[])
 	unlink(pidfile);
 
 	if (dbgfd) fclose(dbgfd);
+
+	MEMUNDEFINE(colnames);
 
 	return 0;
 }
