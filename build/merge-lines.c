@@ -4,6 +4,8 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+#include <stdlib.h>
 
 typedef struct entry_t {
 	char *name;
@@ -102,5 +104,7 @@ int main(int argc, char *argv[])
 
 	fclose(curfd);
 	fclose(srcfd);
+
+	return 0;
 }
 
