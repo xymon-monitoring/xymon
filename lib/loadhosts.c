@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.13 2004-12-15 21:56:18 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.14 2004-12-16 17:00:51 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -70,9 +70,11 @@ static void bbh_item_list_setup(void)
 	bbh_item_key[BBH_FLAG_BBDISPLAY] = "BBDISPLAY";
 	bbh_item_key[BBH_FLAG_BBNET] = "BBNET";
 	bbh_item_key[BBH_FLAG_BBPAGER] = "BBPAGER";
+	bbh_item_key[BBH_FLAG_LDAPFAILYELLOW] = "ldapyellowfail";
+	bbh_item_key[BBH_LDAPLOGIN] = "ldaplogin=";
 
 	i = 0; while (bbh_item_key[i]) i++;
-	if (i != BBH_RAW) {
+	if (i != BBH_IP) {
 		errprintf("ERROR: Setup failure in bbh_item_key position %d\n", i);
 	}
 }
@@ -122,7 +124,7 @@ static int get_page_name_title(char *buf, char *key, char **name, char **title)
 namelist_t *load_hostnames(char *bbhostsfn, int fqdn, char *docurl)
 {
 	FILE *bbhosts;
-	int ip1, ip2, ip3, ip4;
+	int ip1, ip2, ip3, ip4, banksize;
 	char hostname[4096];
 	char l[4096];
 	pagelist_t *curtoppage, *curpage;
@@ -135,7 +137,6 @@ namelist_t *load_hostnames(char *bbhostsfn, int fqdn, char *docurl)
 		namehead = namehead->next;
 
 		free(walk->bbhostname);
-		free(walk->rawentry);
 		free(walk->allelems);
 		free(walk->elems);
 		free(walk);
@@ -162,7 +163,7 @@ namelist_t *load_hostnames(char *bbhostsfn, int fqdn, char *docurl)
 	bbhosts = stackfopen(bbhostsfn, "r");
 	while (stackfgets(l, sizeof(l), "include", NULL)) {
 		char *eoln;
-		
+
 		eoln = strchr(l, '\n'); if (eoln) *eoln = '\0';
 
 		if (strncmp(l, "page ", 5) == 0) {
@@ -233,7 +234,6 @@ namelist_t *load_hostnames(char *bbhostsfn, int fqdn, char *docurl)
 			newitem->bbhostname = strdup(hostname);
 			if (ip1 || ip2 || ip3 || ip4) newitem->preference = 1; else newitem->preference = 0;
 			newitem->clientname = newitem->bbhostname;
-			newitem->rawentry = NULL;
 			newitem->downtime = NULL;
 			newitem->page = curpage;
 			newitem->data = NULL;
@@ -242,7 +242,6 @@ namelist_t *load_hostnames(char *bbhostsfn, int fqdn, char *docurl)
 			startoftags = strchr(l, '#');
 			if (startoftags == NULL) startoftags = ""; else startoftags++;
 			startoftags += strspn(startoftags, " \t\r\n");
-			newitem->rawentry = strdup(startoftags);
 			newitem->allelems = strdup(startoftags);
 			elemsize = 5;
 			newitem->elems = (char **)malloc((elemsize+1)*sizeof(char *));
@@ -322,6 +321,21 @@ namelist_t *load_hostnames(char *bbhostsfn, int fqdn, char *docurl)
 				}
 			}
 		}
+		else if (sscanf(l, "dialup %s %d.%d.%d.%d %d", hostname, &ip1, &ip2, &ip3, &ip4, &banksize) == 6) {
+			namelist_t *newitem = calloc(1, sizeof(namelist_t));
+
+			sprintf(newitem->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+			newitem->bbhostname = (char *)malloc(strlen("@dialup.") + strlen(hostname) + 1);
+			sprintf(newitem->bbhostname, "@dialup.%s", hostname);
+			newitem->clientname = newitem->bbhostname;
+			newitem->page = curpage;
+			newitem->elems = (char **)malloc(sizeof(char *));
+			newitem->elems[0] = NULL;
+			newitem->banksize = banksize;
+
+			newitem->next = namehead;
+			namehead = newitem;
+		}
 	}
 	stackfclose(bbhosts);
 
@@ -377,6 +391,7 @@ namelist_t *hostinfo(char *hostname)
 char *bbh_item(namelist_t *host, enum bbh_item_t item)
 {
 	static char *result;
+	static char inttxt[10];
 	char *p;
 
 	switch (item) {
@@ -386,11 +401,12 @@ char *bbh_item(namelist_t *host, enum bbh_item_t item)
 	  case BBH_DOWNTIME:
 		  return host->downtime;
 
-	  case BBH_RAW:
-		  return host->rawentry;
-
 	  case BBH_IP:
 		  return host->ip;
+
+	  case BBH_BANKSIZE:
+		  sprintf(inttxt, "%d", host->banksize);
+		  return inttxt;
 
 	  case BBH_HOSTNAME: 
 		  return host->bbhostname;
