@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.37 2003-08-12 21:16:05 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.38 2003-08-14 22:16:05 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -42,6 +42,7 @@ typedef struct {
 	long   httpstatus;		/* HTTP status from server */
 	long   contstatus;		/* Status of content check */
 	char   *headers;                /* HTTP headers from server */
+	char   *contenttype;		/* Content-type: header */
 	char   *output;                 /* Data from server */
 	int    logcert;
 	char   *sslinfo;                /* Data about SSL certificate */
@@ -156,6 +157,7 @@ void add_http_test(testitem_t *t)
 	req->httpstatus = 0;
 	req->contstatus = 0;
 	req->headers = NULL;
+	req->contenttype = NULL;
 	req->output = NULL;
 	req->httpcolor = -1;
 	req->faileddeps = NULL;
@@ -523,12 +525,15 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 		}
 		else {
 			double t1, t2;
+			char *contenttype;
 
 			curl_easy_getinfo(req->curl, CURLINFO_HTTP_CODE, &req->httpstatus);
 			curl_easy_getinfo(req->curl, CURLINFO_CONNECT_TIME, &t1);
 			curl_easy_getinfo(req->curl, CURLINFO_TOTAL_TIME, &t2);
+			curl_easy_getinfo(req->curl, CURLINFO_CONTENT_TYPE, &contenttype);
 			req->totaltime = t1+t2;
 			req->errorbuffer[0] = '\0';
+			req->contenttype = (contenttype ? malcop(contenttype) : "");
 			t->open = 1;
 		}
 
@@ -728,13 +733,39 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 			addtostatus(msgline);
 
 			if (req->output) {
-				addtostatus("<pre>\n");
-				addtostatus(req->output);
-				addtostatus("\n</pre><br>\n");
+				if ( (strcasecmp(req->contenttype, "text/html") == 0) ||
+				     (strncasecmp(req->output, "<html", 5) == 0) ) {
+					char *bodystart = NULL;
+					char *bodyend = NULL;
+
+					bodystart = strstr(req->output, "<body");
+					if (bodystart == NULL) bodystart = strstr(req->output, "<BODY");
+					if (bodystart) {
+						char *p;
+
+						p = strchr(bodystart, '>');
+						if (p) bodystart = (p+1);
+					}
+					else bodystart = req->output;
+
+					bodyend = strstr(bodystart, "</body");
+					if (bodyend == NULL) bodyend = strstr(bodystart, "</BODY");
+					if (bodyend) {
+						*bodyend = '\0';
+					}
+
+					addtostatus("<div>\n");
+					addtostatus(bodystart);
+					addtostatus("\n</div>\n");
+				}
+				else {
+					addtostatus(req->output);
+				}
 			}
 			else {
-				addtostatus("\n<p>No output received from server</p><br>\n");
+				addtostatus("\nNo output received from server\n\n");
 			}
+
 			addtostatus("\n\n");
 			finish_status();
 
