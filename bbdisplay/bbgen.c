@@ -44,9 +44,6 @@ col_list_t *gen_column_list(host_t *hostlist, int crit_only)
 	for (h = hostlist; (h); h = h->next) {
 		for (e = h->entries; (e); e = e->next) {
 			if ((!crit_only) || (e->color == COL_RED) || (e->color == COL_YELLOW) || (e->color == COL_PURPLE)) {
-#ifdef DEBUG
-				printf("Inserting %s\n", e->column->name);
-#endif
 				/* See where e->column should go in list */
 				collist_walk = head; 
 				while ( (collist_walk->next && 
@@ -54,9 +51,6 @@ col_list_t *gen_column_list(host_t *hostlist, int crit_only)
 					collist_walk = collist_walk->next;
 				}
 
-#ifdef DEBUG
-				printf("collist_walk is %s\n", collist_walk->column->name);
-#endif
 				if ((collist_walk->next == NULL) || ((col_list_t *)(collist_walk->next))->column != e->column) {
 					/* collist_walk points to the entry before the new one */
 					newlistitem = malloc(sizeof(col_list_t));
@@ -64,22 +58,9 @@ col_list_t *gen_column_list(host_t *hostlist, int crit_only)
 					newlistitem->next = collist_walk->next;
 					collist_walk->next = newlistitem;
 				}
-#ifdef DEBUG
-				{
-					col_list_t *cl;
-					for (cl = head; (cl); cl = cl->next) {
-						printf("%s ", cl->column->name);
-					}
-					printf("\n");
-				}
-#endif
 			}
 		}
 	}
-
-#ifdef DEBUG
-	printf("\n");
-#endif
 
 	/* Skip the dummy record */
 	collist_walk = head; head = head->next; free(collist_walk);
@@ -101,6 +82,17 @@ char *colorname(int color)
 	}
 
 	return cs;
+}
+
+int eventcolor(char *colortext)
+{
+	if 	(strcmp(colortext, "cl") == 0)	return COL_CLEAR;
+	else if (strcmp(colortext, "bl") == 0)	return COL_BLUE;
+	else if (strcmp(colortext, "pu") == 0)	return COL_PURPLE;
+	else if (strcmp(colortext, "gr") == 0)	return COL_GREEN;
+	else if (strcmp(colortext, "ye") == 0)	return COL_YELLOW;
+	else if (strcmp(colortext, "re") == 0)	return COL_RED;
+	else return -1;
 }
 
 char *dotgiffilename(entry_t *e)
@@ -1139,6 +1131,136 @@ void do_subpage(page_t *page, char *filename, char *upperpagename)
 	fclose(output);
 }
 
+char *histlogurl(char *hostname, char *service, time_t histtime)
+{
+	static char url[512];
+
+	strcpy(url, "");
+
+/* <TD><A HREF=\"$CGIBINURL/bb-histlog.sh?HOST=$HOSTDIR&SERVICE=$SERVICE&TIMEBUF=${1}_${2}_${3}_${4}_${5}\"> */
+
+	return url;
+}
+
+
+void do_eventlog(FILE *output, int maxcount, int maxminutes)
+{
+	FILE *eventlog;
+	char eventlogfilename[256];
+	char newcol[3], oldcol[3];
+	time_t cutoff;
+	event_t	*events;
+	int num, eventintime_count;
+	struct stat st;
+	char l[200];
+	char title[200];
+
+
+	cutoff = ( (maxminutes) ? (time(NULL) - maxminutes*60) : 0);
+	if ((!maxcount) || (maxcount > 100)) maxcount = 100;
+
+	sprintf(eventlogfilename, "%s/allevents", getenv("BBHIST"));
+	eventlog = fopen(eventlogfilename, "r");
+	if (!eventlog) {
+		perror("Cannot open eventlog");
+		return;
+	}
+
+	/* HACK ALERT! */
+	if (stat(eventlogfilename, &st) == 0) {
+		char dummy[80];
+		long curofs;
+
+		/* Assume a log entry is max 80 bytes */
+		fseek(eventlog, -80*maxcount, SEEK_END);
+		curofs = ftell(eventlog);
+		fgets(dummy, sizeof(dummy), eventlog);
+	}
+	
+	events = malloc(maxcount*sizeof(event_t));
+	eventintime_count = num = 0;
+
+	while (fgets(l, sizeof(l), eventlog)) {
+
+		sscanf(l, "%s %s %lu %lu %lu %s %s %d",
+			events[num].hostname, events[num].service,
+			&events[num].eventtime, &events[num].changetime, &events[num].duration, 
+			newcol, oldcol, &events[num].state);
+
+		if (events[num].eventtime > cutoff) {
+			events[num].newcolor = eventcolor(newcol);
+			events[num].oldcolor = eventcolor(oldcol);
+			eventintime_count++;
+
+			num = (num + 1) % maxcount;
+		}
+	}
+
+	if (eventintime_count > 0) {
+		int firstevent, lastevent;
+		char *bgcolors[2] = { "000000", "000033" };
+		int  bgcolor = 0;
+
+		if (eventintime_count <= maxcount) {
+			firstevent = 0;
+			lastevent = eventintime_count;
+		}
+		else {
+			firstevent = num;
+			lastevent = ( (num == 0) ? maxcount : (num-1));
+			eventintime_count = maxcount;
+		}
+
+		sprintf(title, "%d events received in the past %lu minutes",
+			eventintime_count, ((time(NULL)-events[firstevent].eventtime) / 60));
+
+		fprintf(output, "<BR><BR>\n");
+        	fprintf(output, "<TABLE SUMMARY=\"$EVENTSTITLE\" BORDER=0>\n");
+		fprintf(output, "<TR BGCOLOR=\"333333\">\n");
+		fprintf(output, "<TD ALIGN=CENTER COLSPAN=5><FONT SIZE=-1 COLOR=\"teal\">%s</FONT></TD></TR>\n", title);
+
+		for (num = firstevent; (num != lastevent); num = (num + 1) % maxcount) {
+			fprintf(output, "<TR BGCOLOR=%s>\n", bgcolors[bgcolor]);
+			bgcolor = ((bgcolor + 1) % 2);
+
+			fprintf(output, "<TD ALIGN=CENTER>%s</TD>\n", ctime(&events[num].eventtime));
+			fprintf(output, "<TD ALIGN=CENTER BGCOLOR=%s><FONT COLOR=black>%s</FONT></TD>\n",
+				(events[num].newcolor == COL_CLEAR) ? "black" : colorname(events[num].newcolor),
+				events[num].hostname);
+			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", events[num].service);
+			fprintf(output, "<TD><A HREF=\"%s\">\n", 
+				histlogurl(events[num].hostname, events[num].service, events[num].changetime));
+			fprintf(output, "<IMG SRC=\"%s/%s.gif\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=%s></A>\n", 
+				getenv("BBSKIN"), colorname(events[num].oldcolor), 
+				getenv("DOTHEIGHT"), getenv("DOTWIDTH"), 
+				colorname(events[num].oldcolor));
+			fprintf(output, "<TD><A HREF=\"%s\">\n", 
+				histlogurl(events[num].hostname, events[num].service, events[num].eventtime));
+			fprintf(output, "<IMG SRC=\"%s/%s.gif\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=%s></A>\n", 
+				getenv("BBSKIN"), colorname(events[num].newcolor), 
+				getenv("DOTHEIGHT"), getenv("DOTWIDTH"), 
+				colorname(events[num].newcolor));
+		}
+
+		fprintf(output, "</TABLE>\n");
+	}
+	else {
+		/* No events during the past maxminutes */
+		sprintf(title, "No events received in the last %d minutes", maxminutes);
+
+		fprintf(output, "<CENTER><BR>\n");
+		fprintf(output, "<TABLE SUMMARY=\"%s\" BORDER=0>\n", title);
+		fprintf(output, "<TR BGCOLOR=\"333333\">\n");
+		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"teal\">%s</FONT></TD>\n", title);
+		fprintf(output, "</TR>\n");
+		fprintf(output, "</TABLE>\n");
+		fprintf(output, "</CENTER>\n");
+	}
+
+	free(events);
+	fclose(eventlog);
+}
+
 void do_bb2_page(char *filename)
 {
 	FILE	*output;
@@ -1203,6 +1325,8 @@ void do_bb2_page(char *filename)
 		/* "All Monitored Systems OK */
 		fprintf(output, "<FONT SIZE=+2 FACE=\"Arial, Helvetica\"><BR><BR><I>All Monitored Systems OK</I></FONT><BR><BR>");
 	}
+
+	do_eventlog(output, 0, 240);
 
 	fprintf(output, "</center>\n");
 	headfoot(output, "bb2", "", "", "footer", bb2page.color);
