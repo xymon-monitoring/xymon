@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.25 2003-04-21 07:10:12 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.26 2003-04-21 07:36:07 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -360,7 +360,7 @@ void load_fping_status(void)
 	while (fgets(l, sizeof(l), statusfd)) {
 		if (sscanf(l, "%s %d %lu", host, &downcount, &downstart) == 3) {
 			for (h=testhosthead; (h && (strcmp(h->hostname, host) != 0)); h = h->next) ;
-			if (h) {
+			if (h && !h->noping && !h->noconn) {
 				h->downcount = downcount;
 				h->downstart = downstart;
 			}
@@ -483,8 +483,6 @@ int run_fping_service(service_t *service)
 	FILE		*logfd;
 	char		l[MAX_LINE_LEN];
 	int		ip1, ip2, ip3, ip4;
-	int		rtt1, rtt2;
-	char		timespec[20];
 
 	/* Run "fping -Ae 2>/dev/null" and feed it all IP's to test */
 	p = getenv("FPING");
@@ -600,40 +598,47 @@ void send_results(service_t *service)
 		addtostatus(msgline);
 
 		if (t->host->dnserror) {
-			sprintf(msgline, "\n<p>Unable to resolve hostname %s\n</p>\n", t->host->hostname);
+			sprintf(msgline, "\nUnable to resolve hostname %s\n\n", t->host->hostname);
 		}
 		else {
-			sprintf(msgline, "\n<p>Service %s on %s is ", svcname, t->host->hostname);
+			sprintf(msgline, "\nService %s on %s is ", svcname, t->host->hostname);
 			switch (color) {
 			  case COL_GREEN: 
 				  strcat(msgline, "OK ");
 				  strcat(msgline, (t->reverse ? "(down)" : "(up)"));
-				  strcat(msgline, "<br>\n");
+				  strcat(msgline, "\n");
 				  break;
+
 			  case COL_RED:
 			  case COL_YELLOW:
 				  strcat(msgline, "not OK ");
 				  strcat(msgline, (t->reverse ? "(up)" : "(down)"));
-				  strcat(msgline, "<br>\n");
+				  strcat(msgline, "\n");
 				  break;
+
 			  case COL_CLEAR:
-				  strcat(msgline, "OK<br>\n");
+				  strcat(msgline, "OK\n");
 				  if (service == pingtest) {
 					  if (t->host->noping) {
 						  strcat(msgline, "Ping check disabled (noping)\n");
+					  }
+					  if (t->host->dialup) {
+						  strcat(msgline, "Dialup host\n");
 					  }
 					  /* "clear" due to badconn: no extra text */
 				  }
 				  else {
 					  /* Non-ping test clear: Dialup test or failed ping */
-					  strcat(msgline, "Dialup host, or connectivitity check failed\n");
+					  strcat(msgline, "Dialup host/service, or ping check failed\n");
 				  }
+				  break;
+
 			  case COL_BLUE:
-				  strcat(msgline, "OK<br>\n");
+				  strcat(msgline, "OK\n");
 				  strcat(msgline, "Host currently not monitored due to SLA setting.\n");
 				  break;
 			}
-			strcat(msgline, "</p>\n");
+			strcat(msgline, "\n");
 		}
 		addtostatus(msgline);
 
@@ -644,9 +649,7 @@ void send_results(service_t *service)
 		}
 
 		if (t->banner) {
-			if (service != pingtest) addtostatus("\n<pre>");
 			addtostatus("\n"); addtostatus(t->banner); addtostatus("\n");
-			if (service != pingtest) addtostatus("</pre>\n\n");
 		}
 		if (t->testresult) {
 			sprintf(msgline, "\nSeconds: %ld.%03ld\n", 
