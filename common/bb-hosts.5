@@ -1,20 +1,17 @@
 .TH BB-HOSTS 5 "Version 3.4: 21 nov 2004" "bbgen toolkit"
 .SH NAME
-bb-hosts \- Hobbit / Big Brother main configuration file
+bb-hosts \- Main Hobbit configuration file
 
 .SH SYNOPSIS
-.IP "~hobbit/server/etc/bb-hosts (Hobbit)"
-.br
-.IP "$BBHOME/etc/bb-hosts (Big Brother)"
+.IP bb-hosts
 
 .SH DESCRIPTION
 The
 .I bb-hosts(5)
 file is the most important configuration file for all of the
-Big Brother programs, and hence also for the bbgen toolkit.
-This file contains the full list of all the systems monitored
-by Hobbit / Big Brother, including the set of tests and other configuration
-items stored for each host.
+Hobbit programs.  This file contains the full list of 
+all the systems monitored by Hobbit, including the set 
+of tests and other configuration items stored for each host.
 
 .SH FILE FORMAT
 Each line of the file defines a host. Blank lines and lines
@@ -34,10 +31,10 @@ relevant for the host, and also to set e.g. the time-interval used
 for availability reporting by
 .I bbgen(1)
 
-An example of setting up the bb-hosts file is in the Hobbit on-line documentation 
-(from the Help menu, choose "Configuring Monitoring"), or in the Big Brother
-documentation.  The following describes the Hobbit specific tags implemented for 
-hosts in the bb-hosts file.
+An example of setting up the bb-hosts file is in the Hobbit on-line 
+documentation (from the Help menu, choose "Configuring Monitoring").
+The following describes the possible settings in a bb-hosts
+file supported by Hobbit.
 
 
 .SH TAGS RECOGNIZED BY ALL TOOLS
@@ -56,19 +53,6 @@ the main bb-hosts file is located (usually $BBHOME/etc/).
 You can nest include tags, i.e. a file that is included 
 from the main bb-hosts file can itself include other files.
 
-CAVEAT: Many Big Brother extensions parse the bb-hosts file
-by themselves, and it is very likely that they do not know
-about the "include" tag. If you move hosts out of the main
-bb-hosts file and into included files, the extensions will
-therefore not pickup these hosts (since the extension script
-does not look at the included files). I therefore recommend
-that you either use the "include" tag only for setting up 
-secondary pagesets, OR that you use only the bbgen and 
-bbtest-net tools without any extra extensions,
-OR that you change your extension scripts to use the 
-.I bbhostgrep(1)
-utility to pick out the relevant entries from the bb-hosts file.
-
 .IP "dispinclude filename"
 Acts like the "include" tag, but only on the BBDISPLAY server.
 Can be used e.g. to put a group of hosts on multiple subpages,
@@ -81,7 +65,7 @@ Acts like the "include" tag, but only on the BBNET server.
 .SH BBGEN DISPLAY OPTIONS
 These tags are processed by the 
 .I bbgen(1)
-tool when generating the Big Brother webpages or reports.
+tool when generating the Hobbit webpages or reports.
 
 .IP "subparent parentpage newpage [Page-title]"
 This is used to define subpages in whatever levels you may
@@ -137,7 +121,7 @@ show just before the group on the status page.
 
 If a title tag precedes a page/subpage/subparent
 entry, the title text replaces the normal "Pages hosted
-locally" heading used by standard Big Brother. This
+locally" heading normally inserted by Hobbit. This
 appears on the page that links to the subpages,
 not on the subpage itself. To get a custom heading on
 the subpage, you may want to use the "--pagetext-heading"
@@ -157,17 +141,15 @@ e.g. if you use hostnames with domains in your BB configuration,
 but the client is a silly Window box that does not include the
 hostname. Or vice versa. Whatever the reason, this can be used
 to match status reports with the hosts you define in your
-Big Brother setup. It causes incoming status reports with the
+bb-hosts file. It causes incoming status reports with the
 specified hostname to be filed using the hostname defined in
-Big Brother.
+bb-hosts.
 
 If you are running Big Brother instead of Hobbit, note that this tag 
 requires that you install the bbd-features.patch 
 for the Big Brother bbd daemon, as the CLIENT tag is handled entirely 
 by the bbd daemon. You must also enable the hostname rewriting
-code by setting BBGHOSTS to a non-zero value (see
-.I bb-environ(5)
-).
+code by setting BBGHOSTS to a non-zero value in the environment.
 
 
 .IP "COMMENT:Host comment"
@@ -203,18 +185,6 @@ should be used.
 Note: This only applies to hosts that are defined multiple
 times in the bb-hosts file, although it will not hurt to add it
 on other hosts as well.
-
-.IP "dialup hostname startIP count"
-The "dialup" directive is a standard Big Brother directive used to
-monitor ranges of IP-adresses, e.g. modem-banks or VPN concentrators.
-See the Big Brother Configuration Guide for more details.
-
-Unlike the standard Big Brother webpage script, bbgen will place the
-modembank information on the page where it is defined. For this to
-appear correctly, you must make sure that the "dialup" directive is
-not mixed in with normal hosts - the "dialup" directive should appear
-immediately following a "page", "subpage", "subparent" or "group"
-directive.
 
 .IP LARRD:[*,][![larrdgraph,...]]
 Defines the LARRD graphs to include in the LARRD column
@@ -407,8 +377,7 @@ and "green" count as uptime. "purple" time is ignored.
 The availability calculation correctly handles status changes
 that cross into/out of a REPORTTIME interval.
 
-If no REPORTTIME is given, the standard 24x7 calculation is
-used, similar to the standard Big Brother reports.
+If no REPORTTIME is given, the standard 24x7 calculation is used.
 
 .IP WARNPCT:percentage
 BB's reporting facility uses a computed availability threshold
@@ -422,7 +391,7 @@ must be available, e.g. "WARNPCT:98.5" if you want the threshold to
 be at 98.5%
 
 
-.SH BBTEST-NET GENERIC TAGS
+.SH NETWORK TEST SETTINGS
 .IP NET:location
 This tag defines the host as being tested from a specific location.
 If bbtest-net sees that the environment variable BBLOCATION
@@ -543,116 +512,17 @@ successive failures.
 For the other network tests, use "badftp", "badssh" etc.
 
 
-.SH BBTEST-NET TAGS FOR HOBBIT TESTS
-These tags define network tests that are implemented by bbtest-net,
-but not by the standard Big Brother bb-network.sh script.
-
-.IP "dns[=hostname]"
-.IP "dns=TYPE:lookup[,TYPE:lookup...]
-The default DNS tests in Big Brother attempt a DNS lookup
-of the DNS' servers own hostname. You can specify the hostname
-to lookup on a DNS server by listing it on each test.
-
-The second form of the test allows you to perform multiple 
-queries of the DNS server, requesting different types of
-DNS records. The TYPE defines the type of DNS data: A (IP-address),
-MX (Mail eXchanger), PTR (reverse), CNAME (alias), SOA (Start-Of-Authority), 
-NS (Name Server) are among the more common ones used. The
-"lookup" is the query. E.g. to lookup the MX records for the
-"foo.com" domain, you would use "dns=mx:foo.com". Or to lookup
-the nameservers for the "bar.org" domain, "dns=ns:bar.org". 
-You can list multiple lookups, separated by commas. For the
-test to end up with a green status, all lookups must succeed.
-
-.IP dig
-This is an alias for the "dns" test. In bbtest-net, the "dns"
-and "dig" tests are handled identically, so all of the facilities
-for testing described for the "dns" test are also available for
-the "dig" test.
-
-.IP ntp
-Check for a running NTP (Network Time Protocol) server on this
-host. This test uses the "ntpdate" utility to check for a
-NTP server - you should either have ntpdate in your PATH, or
-set the location of the ntpdate program in $BBHOME/etc/bbsys.local
-
-.IP "imaps pop3s nntps telnets ftps smtps"
-These tags are for testing of the SSL-tunneled versions of
-the standard imap, pop3, nntp, telnet, ftp and smtp protocols. 
-If bbgen was configured with support for SSL, you can test these
-services like any other network service - bbtest-net will
-setup an SSL-encrypted session while testing the service.
-The server certificate is validated and information about
-it sent in the "sslcert" column. Note: You must add these
-protocol names to your BBNETSVCS environment variable, and
-also make sure that you have portnumbers defined for the 
-services defined in /etc/services (see www.iana.org).
-Note that smtps does not currently have a standard portnumber
-assignment.
-
-.IP "ldap ldaps"
-Simple check for an LDAP service. This check merely looks for
-any service running on the ldap/ldaps service port, but does
-not perform any actual LDAP transaction. Since this is a normal
-TCP network test, the "ldap" and "ldaps" services must be added
-to the BBNETSVCS environment variable in BBHOME/etc/bbdef.sh.
-
-.IP ldap://hostport/dn[?attrs[?scope[?filter[?exts]]]]
-Check for an LDAP service by performing an LDAP request. This
-tag is in the form of an LDAP URI (cf. RFC 2255). This type of
-LDAP test requires that
-.I bbtest-net(1)
-was built with support for LDAP, e.g. via the OpenLDAP library.
-The components of the LDAP URI are:
-.nf
-  \fIhostport\fP is a host name with an optional ":portnumber"
-  \fIdn\fP is the search base
-  \fIattrs\fP is a comma separated list of attributes to request
-  \fIscope\fP is one of these three strings:
-    base one sub (default=base)
-  \fIfilter\fP is filter
-  \fIexts\fP are recognized set of LDAP and/or API extensions.
-.fi
-
-.IP ldaps://hostport/dn[?attrs[?scope[?filter[?exts]]]]
-LDAP service check using LDAPv3 and STARTTLS for talking to
-an LDAP server that requires TLS encryption. See
-.I bbtest-net(1)
-for a discussion of the different ways of running LDAP servers
-with SSL/TLS, and which of these are supported by bbtest-net.
-
-.IP ldaplogin=username:password
-Define a username and password to use when binding to the LDAP
-server for ldap URI tests. If not specified, bbtest-net will
-attempt an anonymous bind.
-
-.IP ldapyellowfail
-Used with an LDAP URL test. If the LDAP query fails during the 
-search of the directory, the ldap status is normally reported
-as "red" (alarm). This tag reduces a search failure to a 
-"yellow" (warning) status.
-
-.IP rpc[=rpcservice1,rpcservice2,...]
-Check for one or more available RPC services. This check is indirect
-in that it only queries the RPC Portmapper on the host, not the
-actual service. 
-
-If only "rpc" is given, the test only verifies that the portmapper
-is available on the remote host. If you want to check that one or
-more RPC services are registered with the portmapper, list the 
-names of the desired RPC services after the equals-sign. E.g. for
-a working NFS server the "mount", "nlockmgr" and "nfs" services
-must be available; this can be checked with "rpc=mount,nlockmgr,nfs".
-
-This test uses the rpcinfo tool for the actual test; if this tool
-is not available in the PATH of bbtest-net, you must define the
-RPCINFO environment variable to point at this tool. See
-.I bb-environ(5)
-
-
-.SH BBTEST-NET TAGS FOR THE CONNECTIVITY TEST
+.SH CONNECTIVITY (PING) TEST
 These tags affect the behaviour of the bbtest-net connectivity
 test.
+
+.IP noping
+Disables the ping-test, but will keep the "conn" column
+on the web display with a notice that it has been disabled.
+
+.IP noconn
+Disables the ping-test, and does not put a "conn" column
+on the web display.
 
 .IP conn
 The "conn" test (which does a ping of the host) is enabled
@@ -731,8 +601,113 @@ of a traceroute for the host after a failed connectivity
 test. It is only used if running traceroute is made the
 default via the --trace option.
 
+.SH PING TEST OF MODEMBANKS
+.IP "dialup hostname startIP count"
+The "dialup" directive is a tag used to monitor ranges of IP-adresses, 
+e.g. modem-banks or VPN concentrators.  \fBhostname\fR is the label 
+given to the modembank on the Hobbit webpage. \fBstartIP\fR is the 
+lowest IP to test, and \fBcount\fR is the number of IP-adresses 
+including the first one to test.
 
-.SH EXTENDED URL SYNTAX FOR HTTP TESTS
+Unlike the standard Big Brother webpage script, Hobbit will place the
+modembank information on the page where it is defined. For this to
+appear correctly, you must make sure that the "dialup" directive is
+not mixed in with normal hosts - the "dialup" directive should appear
+immediately following a "page", "subpage", "subparent" or "group"
+directive.
+
+
+.SH SIMPLE NETWORK TESTS
+These tests perform a simple network test of a service by connecting
+to the port and possibly checking that a banner is shown by the
+server.
+
+.IP "ssh telnet smtp pop3 imap nntp rsync clamd oratns qmtp qmqp"
+These tags are for testing the Secure Shell (ssh), SMTP, POP3,
+IMAP, NNTP, rsync, CLAM antivirus daemon (clamd), Oracle TNS
+listener (oratns), qmail QMTP and QMQP protocols.
+
+.IP "ftps telnets smtps pop3s imaps nntps"
+These tags are for testing of the SSL-tunneled versions of
+the standard ftp, telnet, smtp, pop3, imap and nntp protocols. 
+If Hobbit was configured with support for SSL, you can test these
+services like any other network service - bbtest-net will
+setup an SSL-encrypted session while testing the service.
+The server certificate is validated and information about
+it sent in the "sslcert" column. Note that smtps does not
+have a standard portnumber assignment, so you will need to enter
+this into the bb-services file or your /etc/services file.
+
+.IP bbd
+Test that a Big Brother compatible daemon is running. This check
+works both for the Hobbit
+.I hobbitd(8)
+daemon, and the original Big Brother bbd daemon.
+
+
+.SH DNS SERVER TESTS
+These tags are used to setup monitoring of DNS servers.
+
+.IP dns
+Simple DNS test. It will attempt to lookup the A record for
+the hostname of the DNS server.
+
+.IP dig
+This is an alias for the "dns" test. In bbtest-net, the "dns"
+and "dig" tests are handled identically, so all of the facilities
+for testing described for the "dns" test are also available for
+the "dig" test.
+
+.IP "dns=hostname"
+.IP "dns=TYPE:lookup[,TYPE:lookup...]
+The default DNS tests will attempt a DNS lookup
+of the DNS' servers own hostname. You can specify the hostname
+to lookup on a DNS server by listing it on each test.
+
+The second form of the test allows you to perform multiple 
+queries of the DNS server, requesting different types of
+DNS records. The TYPE defines the type of DNS data: A (IP-address),
+MX (Mail eXchanger), PTR (reverse), CNAME (alias), SOA (Start-Of-Authority), 
+NS (Name Server) are among the more common ones used. The
+"lookup" is the query. E.g. to lookup the MX records for the
+"foo.com" domain, you would use "dns=mx:foo.com". Or to lookup
+the nameservers for the "bar.org" domain, "dns=ns:bar.org". 
+You can list multiple lookups, separated by commas. For the
+test to end up with a green status, all lookups must succeed.
+
+
+.SH OTHER NETWORK TESTS
+.IP ntp
+Check for a running NTP (Network Time Protocol) server on this
+host. This test uses the "ntpdate" utility to check for a
+NTP server - you should either have ntpdate in your PATH, or
+set the location of the ntpdate program in $BBHOME/etc/bbsys.local
+
+.IP rpc[=rpcservice1,rpcservice2,...]
+Check for one or more available RPC services. This check is indirect
+in that it only queries the RPC Portmapper on the host, not the
+actual service. 
+
+If only "rpc" is given, the test only verifies that the portmapper
+is available on the remote host. If you want to check that one or
+more RPC services are registered with the portmapper, list the 
+names of the desired RPC services after the equals-sign. E.g. for
+a working NFS server the "mount", "nlockmgr" and "nfs" services
+must be available; this can be checked with "rpc=mount,nlockmgr,nfs".
+
+This test uses the rpcinfo tool for the actual test; if this tool
+is not available in the PATH of bbtest-net, you must define the
+RPCINFO environment variable to point at this tool. See
+.I bb-environ(5)
+
+
+.SH HTTP TESTS
+Simple testing of a http URL is done simply by putting the
+URL into the bb-hosts file. Note that this only applies to
+URL's that begin with "http:" or "https:".
+
+The following items describe more advanced forms of http
+URL's.
 
 .IP "Basic Authentication with username/password"
 If the URL requires authentication in the form of a
@@ -784,7 +759,7 @@ same as the certificate, but with extension ".pass". E.g.
 if you have the PEM certificate in $BBHOME/certs/client.pem,
 you must put the pass phrase into the $BBHOME/certs/client.pass
 file. Make sure to protect this file with Unix permissions,
-so that only the user running Big Brother can read it.
+so that only the user running Hobbit can read it.
 
 .IP "Forcing an HTTP or SSL version"
 Some SSL sites will only allow you to connect, if you use
@@ -835,14 +810,14 @@ it should be done as
 	http://www.sample.com:3128=1.2.3.4/index.html
 
 .IP "HTTP Testing via proxy"
-bbtest-net supports the standard Big Brother syntax for
+bbtest-net supports the Big Brother syntax for
 specifying an HTTP proxy to use when performing http 
 tests. This syntax just joins the proxy- and the target-URL
 into one, e.g.
 .br
-    http://webproxy.sample.com:3128/http://bb4.com/
+    http://webproxy.sample.com:3128/http://www.foo.com/
 .br
-would be the syntax for testing the Big Brother website
+would be the syntax for testing the www.foo.com website
 via the proxy running on "webproxy.sample.com" port 3128.
 
 If the proxy portnumber is not specified, the default 
@@ -851,18 +826,16 @@ HTTP portnumber (80) is used.
 If your proxy requires authentication, you can specify the
 username and password inside the proxy-part of the URL, e.g.
 .br
-    http://fred:Wilma1@webproxy.sample.com:3128/http://bb4.com/
+    http://fred:Wilma1@webproxy.sample.com:3128/http://www.foo.com/
 .br
 will authenticate to the proxy using a username of "fred" and
 a password of "Wilma1", before requesting the proxy to fetch
-the Big Brother homepage.
+the www.foo.com homepage.
 
 Note that it is not possible to test https-sites via a proxy,
 nor is it possible to use https for connecting to the proxy 
 itself.
 
-
-.SH BBTEST-NET TAGS FOR CONTENT CHECKS
 .IP cont[=COLUMN];URL;[expected_data_regexp|#digesttype:digest]
 This tag is used to specify a http/https check, where 
 it is also checked that specific content is present in
@@ -999,10 +972,63 @@ the HTTP Content-Type: header. This can used to check if a
 URL returns e.g. a PDF file, regardless of what is inside the
 PDF file.
 
+.SH LDAP (DIRECTORY SERVER) TESTS
+.IP ldap
+.IP ldaps
+Simple check for an LDAP service. This check merely looks for
+any service running on the ldap/ldaps service port, but does
+not perform any actual LDAP transaction.
+
+.IP ldap://hostport/dn[?attrs[?scope[?filter[?exts]]]]
+Check for an LDAP service by performing an LDAP request. This
+tag is in the form of an LDAP URI (cf. RFC 2255). This type of
+LDAP test requires that
+.I bbtest-net(1)
+was built with support for LDAP, e.g. via the OpenLDAP library.
+The components of the LDAP URI are:
+.nf
+  \fIhostport\fP is a host name with an optional ":portnumber"
+  \fIdn\fP is the search base
+  \fIattrs\fP is a comma separated list of attributes to request
+  \fIscope\fP is one of these three strings:
+    base one sub (default=base)
+  \fIfilter\fP is filter
+  \fIexts\fP are recognized set of LDAP and/or API extensions.
+.fi
+
+.IP ldaps://hostport/dn[?attrs[?scope[?filter[?exts]]]]
+LDAP service check using LDAPv3 and STARTTLS for talking to
+an LDAP server that requires TLS encryption. See
+.I bbtest-net(1)
+for a discussion of the different ways of running LDAP servers
+with SSL/TLS, and which of these are supported by bbtest-net.
+
+.IP ldaplogin=username:password
+Define a username and password to use when binding to the LDAP
+server for ldap URI tests. If not specified, bbtest-net will
+attempt an anonymous bind.
+
+.IP ldapyellowfail
+Used with an LDAP URL test. If the LDAP query fails during the 
+search of the directory, the ldap status is normally reported
+as "red" (alarm). This tag reduces a search failure to a 
+"yellow" (warning) status.
+
 .SH FILES
 .BR ~hobbit/server/etc/bb-hosts
 .sp
 .BR $BBHOME/etc/bb-hosts
+
+.SH NOTES
+Many Big Brother extensions parse the bb-hosts file
+by themselves, and it is very likely that they do not know
+about the "include" tag. If you move hosts out of the main
+bb-hosts file and into included files, the extensions will
+therefore not pickup these hosts (since the extension script
+does not look at the included files). In that case, you 
+should modify the script to use the
+.I bbhostgrep(1)
+utility to pick out the relevant entries from the bb-hosts file.
 
 .SH "SEE ALSO"
 bbgen(1), bbtest-net(1), bbdigest(1), hobbit(7)
