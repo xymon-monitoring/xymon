@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.15 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.16 2005-02-03 14:27:10 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -39,6 +39,10 @@ char *service = NULL;
 char *period = NULL;
 char *gtype = NULL;
 char *glegend = NULL;
+int  rrd_rigid = 0;
+int  rrd_logarithmic = 0;
+char *upperlimit = NULL;
+char *lowerlimit = NULL;
 
 int coloridx = 0;
 char *colorlist[] = { 
@@ -76,6 +80,7 @@ int rrddbsize = 0;
 int rrdidx = 0;
 int paramlen = 0;
 int firstidx = -1;
+int idxcount = -1;
 int lastidx = 0;
 
 void errormsg(char *msg)
@@ -103,7 +108,7 @@ void parse_query(void)
 
 	token = strtok(query, "&");
 	while (token) {
-		char *val;
+		char *val = NULL;
 		val = strchr(token, '='); if (val) { *val = '\0'; val++; }
 		if (strcmp(token, "host") == 0) {
 			hostname = strdup(val);
@@ -140,7 +145,28 @@ void parse_query(void)
 			firstidx = atoi(val) - 1;
 		}
 		else if (strcmp(token, "count") == 0) {
-			lastidx = firstidx + atoi(val) - 1;
+			idxcount = atoi(val);
+			lastidx = firstidx + idxcount - 1;
+		}
+		else if (strcmp(token, "upper") == 0) {
+			if (val && strlen(val)) {
+				upperlimit = (char *)malloc(3 + strlen(val) + 1);
+				sprintf(upperlimit, "-u %s", val);
+			}
+		}
+		else if (strcmp(token, "lower") == 0) {
+			if (val && strlen(val)) {
+				lowerlimit = (char *)malloc(3 + strlen(val) + 1);
+				sprintf(lowerlimit, "-l %s", val);
+			}
+		}
+		else if (strcmp(token, "rigid") == 0) {
+			if (val) rrd_rigid = (strcmp(val, "on") == 0);
+			else rrd_rigid = 1;
+		}
+		else if (strcmp(token, "logarithmic") == 0) {
+			if (val) rrd_logarithmic = (strcmp(val, "on") == 0);
+			else rrd_logarithmic = 1;
 		}
 
 		token = strtok(NULL, "&");
@@ -335,6 +361,14 @@ int rrd_name_compare(const void *v1, const void *v2)
 	return strcmp(r1->key, r2->key);
 }
 
+void graph_link(FILE *output, char *grtype, char *grtext, char *uri, char *svc)
+{
+	fprintf(output, "<tr>\n");
+	fprintf(output, "  <td align=\"left\"><img src=\"%s&amp;graph=%s\" alt=\"%s %s\"></td>\n",
+		uri, grtype, service, grtext);
+	fprintf(output, "</tr>\n");
+}
+
 int main(int argc, char *argv[])
 {
 	char *rrddir = NULL;
@@ -384,23 +418,60 @@ int main(int argc, char *argv[])
 	 * with links to all of the period graphs.
 	 */
 	if (period == NULL) {
+		char *requri = xgetenv("REQUEST_URI");
+
+		char okuri[32768];
+		char *inp, *outp, *p;
+
+		*okuri = '\0'; inp=requri; outp=okuri; p = strchr(inp, '&');
+		while (p) {
+			*p = '\0';
+			outp += sprintf(outp, "%s&amp;", inp);
+			inp = (p+1);
+			if (strncasecmp(inp, "amp;", 4) == 0) inp += 4;
+			*p = '&';
+			p = strchr(inp, '&');
+		}
+		if (*inp) strcat(outp, inp);
+
 		fprintf(stdout, "Content-type: text/html\n\n");
 		sethostenv(displayname, "", service, colorname(COL_GREEN));
 		headfoot(stdout, "graphs", "", "header", COL_GREEN);
 
-		fprintf(stdout, "<table align=\"center\">\n");
-		fprintf(stdout, "<tr><th><br>Hourly</th></tr>\n");
-		fprintf(stdout, "<tr><td><img src=\"%s&graph=hourly\" alt=\"%s Hourly\"></td></tr>\n",
-			xgetenv("REQUEST_URI"), service);
-		fprintf(stdout, "<tr><th><br>Daily</th></tr>\n");
-		fprintf(stdout, "<tr><td><img src=\"%s&graph=daily\" alt=\"%s Daily\"></td></tr>\n",
-			xgetenv("REQUEST_URI"), service);
-		fprintf(stdout, "<tr><th><br>Weekly</th></tr>\n");
-		fprintf(stdout, "<tr><td><img src=\"%s&graph=weekly\" alt=\"%s Weekly\"></td></tr>\n",
-			xgetenv("REQUEST_URI"), service);
-		fprintf(stdout, "<tr><th><br>Monthly</th></tr>\n");
-		fprintf(stdout, "<tr><td><img src=\"%s&graph=monthly\" alt=\"%s Monthly\"></td></tr>\n",
-			xgetenv("REQUEST_URI"), service);
+		fprintf(stdout, "<table align=\"center\" summary=\"Graphs\">\n");
+
+		graph_link(stdout, "hourly", "Hourly", okuri, service);
+		graph_link(stdout, "daily", "Daily", okuri, service);
+		graph_link(stdout, "weekly", "Weekly", okuri, service);
+		graph_link(stdout, "monthly", "Monthly", okuri, service);
+
+		fprintf(stdout, "<tr>\n");
+		fprintf(stdout, "  <td align=\"center\"><br>\n");
+		fprintf(stdout, "    <font size=\"+2\"><u>Custom graph</u></font><br><br>\n");
+		fprintf(stdout, "    <form method=\"GET\" action=\"%s\">\n", okuri);
+		fprintf(stdout, "       <font size=\"+1\">Lower limit</font>\n");
+		fprintf(stdout, "       <INPUT TYPE=\"TEXT\" NAME=\"lower\" VALUE=\"\" MAXLENGTH=10>\n");
+		fprintf(stdout, "       <font size=\"+1\">Upper limit</font>\n");
+		fprintf(stdout, "       <INPUT TYPE=\"TEXT\" NAME=\"upper\" VALUE=\"\" MAXLENGTH=10>\n");
+		fprintf(stdout, "       <font size=\"+1\">Rigid</font>\n");
+		fprintf(stdout, "       <INPUT TYPE=\"CHECKBOX\" NAME=\"rigid\" checked>\n");
+		fprintf(stdout, "       <font size=\"+1\">Logarithmic</font>\n");
+		fprintf(stdout, "       <INPUT TYPE=\"CHECKBOX\" NAME=\"logarithmic\">\n");
+		fprintf(stdout, "       <br>\n");
+		fprintf(stdout, "       <INPUT ID=hgraph TYPE=\"RADIO\" NAME=\"graph\" VALUE=\"hourly\"><label for=hgraph>Last 48 hours</label>\n");
+		fprintf(stdout, "       <INPUT ID=dgraph TYPE=\"RADIO\" NAME=\"graph\" VALUE=\"hourly\"><label for=dgraph>Last 12 days</label>\n");
+		fprintf(stdout, "       <INPUT ID=wgraph TYPE=\"RADIO\" NAME=\"graph\" VALUE=\"weekly\"><label for=wgraph>Last 48 days</label>\n");
+		fprintf(stdout, "       <INPUT ID=mgraph TYPE=\"RADIO\" NAME=\"graph\" VALUE=\"monthly\"><label for=mgraph>Last 576 days</label>\n");
+		fprintf(stdout, "       <INPUT TYPE=\"HIDDEN\" NAME=\"host\" VALUE=\"%s\">\n", hostname);
+		fprintf(stdout, "       <INPUT TYPE=\"HIDDEN\" NAME=\"service\" VALUE=\"%s\">\n", service);
+		if (displayname)    fprintf(stdout, "       <INPUT TYPE=\"HIDDEN\" NAME=\"disp\" VALUE=\"%s\">\n", displayname);
+		if (firstidx != -1) fprintf(stdout, "       <INPUT TYPE=\"HIDDEN\" NAME=\"first\" VALUE=\"%d\">\n", firstidx);
+		if (idxcount != -1) fprintf(stdout, "       <INPUT TYPE=\"HIDDEN\" NAME=\"count\" VALUE=\"%d\">\n", idxcount);
+		fprintf(stdout, "       <br><br><INPUT TYPE=\"SUBMIT\" NAME=\"SUB\" VALUE=\"View\" ALT=\"View\">\n");
+		fprintf(stdout, "    </form>\n");
+		fprintf(stdout, "  </td>\n");
+		fprintf(stdout, "</tr>\n");
+
 		fprintf(stdout, "</table>\n");
 
 		headfoot(stdout, "graphs", "", "footer", COL_GREEN);
@@ -582,7 +653,7 @@ int main(int argc, char *argv[])
 	 * there are multiple RRD-files to handle).
 	 */
 	for (pcount = 0; (gdef->defs[pcount]); pcount++) ;
-	argcount = (11 + pcount*rrddbcount + 1); argi = 0;
+	argcount = (15 + pcount*rrddbcount + 1); argi = 0;
 	rrdargs = (char **) calloc(argcount+1, sizeof(char *));
 	rrdargs[argi++]  = "rrdgraph";
 	rrdargs[argi++]  = graphfn;
@@ -603,6 +674,10 @@ int main(int argc, char *argv[])
 	}
 	strftime(timestamp, sizeof(timestamp), "COMMENT:Updated: %d-%b-%Y %H:%M:%S", localtime(&now));
 	rrdargs[argi++] = strdup(timestamp);
+	if (upperlimit) rrdargs[argi++] = strdup(upperlimit);
+	if (lowerlimit) rrdargs[argi++] = strdup(lowerlimit);
+	if (rrd_rigid)  rrdargs[argi++] = "--rigid";
+	if (rrd_logarithmic)  rrdargs[argi++] = "--logarithmic";
 	rrdargcount = argi; rrdargs[argi++] = NULL;
 
 	if (debug) { for (argi=0; (argi < rrdargcount); argi++) dprintf("%s\n", rrdargs[argi]); }
