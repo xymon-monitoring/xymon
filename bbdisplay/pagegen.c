@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.33 2003-03-06 22:17:50 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.34 2003-03-15 16:01:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -353,7 +353,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 
 		if (newhost == NULL) {
 			/* New summary "host" */
-			newhost = init_host(s->row, 0,0,0,0, 0, NULL, NULL, NULL, NULL);
+			newhost = init_host(s->row, 0,0,0,0, 0, NULL, NULL, NULL, NULL, NULL);
 
 			/* Insert into sorted host list */
 			if ((!sumhosts) || (strcmp(newhost->hostname, sumhosts->hostname) < 0)) {

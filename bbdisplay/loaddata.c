@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.49 2003-03-07 09:41:32 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.50 2003-03-15 16:01:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -114,7 +114,8 @@ group_t *init_group(const char *title, const char *onlycols)
 host_t *init_host(const char *hostname, const int ip1, const int ip2, const int ip3, const int ip4, 
 		  const int dialup, const char *alerts, 
 		  char *tags,
-		  const char *nopropyellowtests, const char *nopropredtests)
+		  const char *nopropyellowtests, const char *nopropredtests,
+		  const char *larrdgraphs)
 {
 	host_t 		*newhost = malloc(sizeof(host_t));
 	hostlist_t	*newlist = malloc(sizeof(hostlist_t));
@@ -162,6 +163,14 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	else {
 		newhost->nopropredtests = nopropreddefault;
 	}
+	if (larrdgraphs) {
+		char *p;
+		p = skipword(larrdgraphs); if (*p) *p = '\0'; else p = NULL;
+		newhost->larrdgraphs = malloc(strlen(larrdgraphs)+1);
+		strcpy(newhost->larrdgraphs, larrdgraphs);
+		if (p) *p = ' ';
+	}
+	else newhost->larrdgraphs = NULL;
 	if (tags) {
 		newhost->rawentry = malloc(strlen(tags)+1); strcpy(newhost->rawentry, tags);
 	}
@@ -778,8 +787,9 @@ bbgen_page_t *load_bbhosts(void)
 			int dialup = 0;
 			char *startoftags = strchr(l, '#');
 			char *alertlist, *nopropyellowlist, *nopropredlist;
+			char *larrdgraphs;
 
-			alertlist = nopropyellowlist = nopropredlist = NULL;
+			alertlist = nopropyellowlist = nopropredlist = larrdgraphs = NULL;
 
 			if (startoftags && strstr(startoftags, " dialup")) dialup=1;
 
@@ -794,10 +804,14 @@ bbgen_page_t *load_bbhosts(void)
 			if (startoftags && (nopropredlist = strstr(startoftags, "NOPROPRED:"))) {
 				nopropredlist += 10;
 			}
+			if (startoftags && (larrdgraphs = strstr(startoftags, "LARRD:"))) {
+				larrdgraphs += 6;
+			}
 
 			if (curhost == NULL) {
 				curhost = init_host(hostname, ip1, ip2, ip3, ip4, dialup, alertlist, 
-						    startoftags, nopropyellowlist, nopropredlist);
+						    startoftags, nopropyellowlist, nopropredlist,
+						    larrdgraphs);
 				if (curgroup != NULL) {
 					curgroup->hosts = curhost;
 				} else if (cursubpage != NULL) {
@@ -813,7 +827,8 @@ bbgen_page_t *load_bbhosts(void)
 			}
 			else {
 				curhost = curhost->next = init_host(hostname, ip1, ip2, ip3, ip4, dialup, alertlist, 
-								    startoftags, nopropyellowlist,nopropredlist);
+								    startoftags, nopropyellowlist,nopropredlist,
+								    larrdgraphs);
 			}
 			curhost->parent = (cursubpage ? cursubpage : curpage);
 		}

@@ -50,8 +50,8 @@
                       +------------------  link                V
                       |                    entries ---------> entry_t
                       |                    oldage               column -------> col_t
-                      |                    next                 color             name
-                      |                                         age            +- link
+                      |                    larrdgraphs          color             name
+                      |                    next                 age            +- link
                       |                                         oldage         |  next
                       |                                         acked          |
                       |                                         alert          |
@@ -194,6 +194,7 @@ typedef struct {
 	char    *nopropredtests;
 	char    *rawentry;
 	rrd_t	*rrds;
+	char    *larrdgraphs;
 	int     oldage;
 	void	*parent;
 	void	*next;
