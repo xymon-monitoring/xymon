@@ -2,7 +2,7 @@
 
 	PCREINC=""
 	PCRELIB=""
-	for DIR in /opt/pcre* /usr/local/pcre* /usr/local /usr
+	for DIR in /opt/pcre* /usr/local/pcre* /usr/local /usr /usr/pkg
 	do
 		if test -f $DIR/include/pcre.h
 		then
@@ -29,8 +29,8 @@
 		exit 1
 	else
 		cd build
-		OS=`uname -s` make -f Makefile.test-pcre clean
-		OS=`uname -s` PCREINC="-I$PCREINC" make -f Makefile.test-pcre test-compile
+		OS=`uname -s` $MAKE -f Makefile.test-pcre clean
+		OS=`uname -s` PCREINC="-I$PCREINC" $MAKE -f Makefile.test-pcre test-compile
 		if [ $? -eq 0 ]; then
 			echo "Found PCRE include files in $PCREINC"
 		else
@@ -38,14 +38,14 @@
 			exit 1
 		fi
 
-		OS=`uname -s` PCRELIB="-L$PCRELIB" make -f Makefile.test-pcre test-link
+		OS=`uname -s` PCRELIB="-L$PCRELIB" $MAKE -f Makefile.test-pcre test-link
 		if [ $? -eq 0 ]; then
 			echo "Found PCRE libraries in $PCRELIB"
 		else
 			echo "ERROR: PCRE library files found in $PCRELIB, but link fails."
 			exit 1
 		fi
-		OS=`uname -s` make -f Makefile.test-pcre clean
+		OS=`uname -s` $MAKE -f Makefile.test-pcre clean
 		cd ..
 	fi
 

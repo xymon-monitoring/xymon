@@ -2,7 +2,7 @@
 
 	OSSLINC=""
 	OSSLLIB=""
-	for DIR in /opt/openssl* /opt/ssl* /usr/local/openssl* /usr/local/ssl* /usr/local /usr
+	for DIR in /opt/openssl* /opt/ssl* /usr/local/openssl* /usr/local/ssl* /usr/local /usr /usr/pkg
 	do
 		if test -d $DIR/include/openssl
 		then
@@ -37,21 +37,21 @@
 		fi
 
 		cd build
-		OS=`uname -s` make -f Makefile.test-ssl clean
-		OS=`uname -s` OSSLINC="-I$OSSLINC $OSSLINC2" make -f Makefile.test-ssl test-compile
+		OS=`uname -s` $MAKE -f Makefile.test-ssl clean
+		OS=`uname -s` OSSLINC="-I$OSSLINC $OSSLINC2" $MAKE -f Makefile.test-ssl test-compile
 		if [ $? -eq 0 ]; then
 			echo "Found OpenSSL include files in $OSSLINC"
 		else
 			echo "WARNING: OpenSSL include files found in $OSSLINC, but compile fails."
 		fi
 	
-		OS=`uname -s` OSSLLIB="-L$OSSLLIB" make -f Makefile.test-ssl test-link
+		OS=`uname -s` OSSLLIB="-L$OSSLLIB" $MAKE -f Makefile.test-ssl test-link
 		if [ $? -eq 0 ]; then
 			echo "Found OpenSSL libraries in $OSSLLIB"
 		else
 			echo "WARNING: OpenSSL library files found in $OSSLLIB, but link fails."
 		fi
-		OS=`uname -s` make -f Makefile.test-ssl clean
+		OS=`uname -s` $MAKE -f Makefile.test-ssl clean
 		cd ..
 
 		OSSLINC="$OSSLINC $OSSLINC2"

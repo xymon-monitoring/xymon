@@ -4,7 +4,7 @@
 	RRDLIB=""
 	PNGLIB=""
 	ZLIB=""
-	for DIR in /opt/rrdtool* /usr/local/rrdtool* /usr/local /usr
+	for DIR in /opt/rrdtool* /usr/local/rrdtool* /usr/local /usr /usr/pkg
 	do
 		if test -f $DIR/include/rrd.h
 		then
@@ -45,8 +45,8 @@
 		exit 1
 	else
 		cd build
-		OS=`uname -s` make -f Makefile.test-rrd clean
-		OS=`uname -s` RRDINC="-I$RRDINC" make -f Makefile.test-rrd test-compile
+		OS=`uname -s` $MAKE -f Makefile.test-rrd clean
+		OS=`uname -s` RRDINC="-I$RRDINC" $MAKE -f Makefile.test-rrd test-compile
 		if [ $? -eq 0 ]; then
 			echo "Found RRDtool include files in $RRDINC"
 		else
@@ -54,17 +54,17 @@
 			exit 1
 		fi
 
-		OS=`uname -s` RRDLIB="-L$RRDLIB" PNGLIB="$PNGLIB" make -f Makefile.test-rrd test-link 2>/dev/null
+		OS=`uname -s` RRDLIB="-L$RRDLIB" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link 2>/dev/null
 		if [ $? -ne 0 ]; then
 			# Could be that we need -lz for RRD
 			PNGLIB="$PNGLIB $ZLIB"
 		fi
-		OS=`uname -s` RRDLIB="-L$RRDLIB" PNGLIB="$PNGLIB" make -f Makefile.test-rrd test-link 2>/dev/null
+		OS=`uname -s` RRDLIB="-L$RRDLIB" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link 2>/dev/null
 		if [ $? -ne 0 ]; then
 			# Could be that we need -lm for RRD
 			PNGLIB="$PNGLIB -lm"
 		fi
-		OS=`uname -s` RRDLIB="-L$RRDLIB" PNGLIB="$PNGLIB" make -f Makefile.test-rrd test-link 2>/dev/null
+		OS=`uname -s` RRDLIB="-L$RRDLIB" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link 2>/dev/null
 		if [ $? -eq 0 ]; then
 			echo "Found RRDtool libraries in $RRDLIB"
 			if test "$PNGLIB" != ""; then
@@ -74,7 +74,7 @@
 			echo "ERROR: RRDtool library files found in $RRDLIB, but link fails."
 			exit 1
 		fi
-		OS=`uname -s` make -f Makefile.test-rrd clean
+		OS=`uname -s` $MAKE -f Makefile.test-rrd clean
 		cd ..
 	fi
 

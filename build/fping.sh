@@ -4,7 +4,7 @@
 
 	FPING=""
 
-	for DIR in /bin /usr/bin /sbin /usr/sbin /usr/local/bin /usr/local/sbin /opt/bin
+	for DIR in /bin /usr/bin /sbin /usr/sbin /usr/local/bin /usr/local/sbin /opt/bin /usr/pkg/bin
 	do
 		if test -x $DIR/fping
 		then

@@ -2,7 +2,7 @@
 
 	LDAPINC=""
 	LDAPLIB=""
-	for DIR in /opt/openldap* /opt/ldap* /usr/local/openldap* /usr/local/ldap* /usr/local /usr
+	for DIR in /opt/openldap* /opt/ldap* /usr/local/openldap* /usr/local/ldap* /usr/local /usr /usr/pkg
 	do
 		if test -f $DIR/include/ldap.h
 		then
@@ -39,15 +39,15 @@
 		echo "Continuing with LDAP support disabled."
 	else
 		cd build
-		OS=`uname -s` make -f Makefile.test-ldap clean
-		OS=`uname -s` LDAPINC="-I$LDAPINC" make -f Makefile.test-ldap test-compile
+		OS=`uname -s` $MAKE -f Makefile.test-ldap clean
+		OS=`uname -s` LDAPINC="-I$LDAPINC" $MAKE -f Makefile.test-ldap test-compile
 		if [ $? -eq 0 ]; then
 			echo "Found LDAP include files in $LDAPINC"
 		else
 			echo "WARNING: LDAP include files found in $LDAPINC, but compile fails."
 		fi
 
-		OS=`uname -s` LDAPLIB="-L$LDAPLIB" LDAPLBER="$LDAPLBER" make -f Makefile.test-ldap test-link
+		OS=`uname -s` LDAPLIB="-L$LDAPLIB" LDAPLBER="$LDAPLBER" $MAKE -f Makefile.test-ldap test-link
 		if [ $? -eq 0 ]; then
 			echo "Found LDAP libraries in $LDAPLIB"
 		else
@@ -56,7 +56,7 @@
 
 		LDAPVENDOR=`./test-ldap`
 
-		OS=`uname -s` make -f Makefile.test-ldap clean
+		OS=`uname -s` $MAKE -f Makefile.test-ldap clean
 		cd ..
 	fi
 
