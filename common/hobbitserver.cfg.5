@@ -204,6 +204,26 @@ program.
 .br
 Default: None (uses PATH setting to find program).
 
+.IP TRACEROUTE
+Defines the location of the "traceroute" tool and
+any options needed to run it. traceroute it used by
+the connectivity test when the ping test fails; if
+requested via the "trace" tag, the TRACEROUTE command
+is executed to try to determine the point in the
+network that is causing the problem. By default the
+command executed is "traceroute -n -q 2 -w 2 -m 15"
+(no DNS lookup, max. 2 probes, wait 2 seconds per hop,
+max 15 hops).
+.br
+If you have the
+.I mtr(8)
+tool installed (from http://www.bitwizard.nl/mtr/) I
+strongly recommend using this instead. The recommended
+setting for mtr is "/usr/sbin/mtr -c 2 -n --report" (the
+exact path to the mtr utility may be different on your 
+system).  Note that mtr needs to be installed suid-root 
+on most systems.
+
 .SH FILES
 .I $BBHOME/etc/bbsys.local
 
