@@ -36,16 +36,25 @@ Default: $BBHOME/bin/bbgen
 The bbd-name+larrd patch for the Big Brother daemon bbd introduces 
 a new way of handling status reports from hosts that are not in the
 .I bb-hosts(5)
-file. What happens is controlled by setting BBHOSTS to 0, 1 or 2.
+file. What happens is controlled by setting BBGHOSTS to 0, 1 or 2.
 .br
 By default, these status messages are just stored as if
 the hosts were known to the Big Brother system - this behaviour
 is what you get if BBGHOSTS is undefined, or set to 0.
 .br
-BBHOSTS=1 causes the status report to be silently discarded.
+BBGHOSTS=1 causes the status report to be silently discarded.
 .br
-BBHOSTS=2 also discards the status report, but logs a message
+BBGHOSTS=2 also discards the status report, but logs a message
 to BBOUT with the hostname that was ignored.
+.br
+When BBGHOSTS is set to 1 or 2, the hostnames in incoming 
+status-messages is matched without any case-sensitivity,
+unlike normal Big Brother which is case-sensitive in
+hostnames. So with BBGHOSTS set to 1 or 2, "WWW.FOO.COM"
+and "www.foo.com" are considered to be the same host.
+If necessary, the incoming hostname will be changed
+to match the way it is written in the bb-hosts file,
+changing case as needed.
 
 .IP BBMAXMSGSPERCOMBO
 The maximum number of status messages to combine into one
@@ -71,7 +80,11 @@ With todays network topologies, the router could be a switch or
 another network device; if you define this environment variable
 the word "router" will be replaced with whatever you put into
 the variable. So to inform the users that an intermediate switch
-or router is down, use BBROUTERTEXT="switch or router"
+or router is down, use BBROUTERTEXT="switch or router".
+.br
+This can also be set on a per-host basis using the "DESCR:hosttype:description"
+tag, see
+.I bb-hosts(5)
 
 .IP BBHTACCESS
 Defines the contents of the top-level .htaccess file created by bbgen
