@@ -2,7 +2,7 @@
 .SH NAME
 bb-rep.cgi \- CGI front-end to bbgen reporting
 .SH SYNOPSIS
-.B "bb-rep.cgi [bbgen-options]"
+.B "bb-rep.cgi [--noclean] [bbgen-options]"
 
 .SH DESCRIPTION
 .I bb-rep.cgi
@@ -47,8 +47,13 @@ by invoking
 with the proper "--reportopts" option.
 
 .SH OPTIONS
-bb-rep.cgi does not take any options by itself. Instead, all
-options passed to bb-rep.cgi are passed on to the 
+.IP --noclean
+Do not clean the BBREP directory of old reports. Makes the
+report-tool go a bit faster - instead, you can clean up the
+BBREP directory e.g. via a cron-job.
+
+.IP bbgen-options
+All other options passed to bb-rep.cgi are passed on to the 
 .I bbgen(1)
 program building the report files.
 
