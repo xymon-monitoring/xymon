@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.16 2004-10-30 15:47:55 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.17 2004-12-20 10:28:12 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -25,16 +25,15 @@ static char rcsid[] = "$Id: bbhostgrep.c,v 1.16 2004-10-30 15:47:55 henrik Exp $
 
 int main(int argc, char *argv[])
 { 
-	FILE *bbhosts;
-	char l[MAX_LINE_LEN];
+	namelist_t *hostlist = NULL, *hwalk;
+	char *bbhostsfn = NULL;
 	char *netstring = NULL;
-	char *p;
+	char *include2 = NULL;
 	int extras = 1;
 	int testuntagged = 0;
-	int argi;
-	char *include2 = NULL;
+	char *p;
 	char **lookv;
-	int lookc;
+	int argi, lookc;
 
 	if ((argc <= 1) || (strcmp(argv[1], "--help") == 0)) {
 		printf("Usage:\n%s test1 [test1] [test2] ... \n", argv[0]);
@@ -43,6 +42,8 @@ int main(int argc, char *argv[])
 
 	lookv = (char **)malloc(argc*sizeof(char *));
 	lookc = 0;
+
+	bbhostsfn = getenv("BBHOSTS");
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--noextras") == 0) {
@@ -61,15 +62,25 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--bbdisp") == 0) {
 			include2 = "dispinclude";
 		}
+		else if (argnmatch(argv[argi], "--bbhosts=")) {
+			bbhostsfn = strchr(argv[argi], '=') + 1;
+		}
 		else {
 			lookv[lookc] = strdup(argv[argi]);
 			lookc++;
 		}
 	}
+	lookv[lookc] = NULL;
 
-	if (getenv("BBHOSTS") == NULL) {
+	if (bbhostsfn == NULL) {
 		errprintf("Environment variable BBHOSTS is not set - aborting\n");
 		exit(2);
+	}
+
+	hostlist = load_hostnames(bbhostsfn, include2, get_fqdn(), NULL);
+	if (hostlist == NULL) {
+		errprintf("Cannot load bb-hosts, or file is empty\n");
+		exit(3);
 	}
 
 	/* Each network test tagged with NET:locationname */
@@ -80,89 +91,50 @@ int main(int argc, char *argv[])
 	}
 
 
-	bbhosts = stackfopen(getenv("BBHOSTS"), "r");
-	if (bbhosts == NULL) {
-		errprintf("Cannot open the BBHOSTS file '%s'\n", getenv("BBHOSTS"));
-		exit(1);
-	}
+	for (hwalk = hostlist; (hwalk); hwalk = hwalk->next) {
+		char *curnet = bbh_item(hwalk, BBH_NET);
 
-	while (stackfgets(l, sizeof(l), "include", include2)) {
-		int ip1, ip2, ip3, ip4;
-		char hostname[MAX_LINE_LEN];
-		char wantedtags[MAX_LINE_LEN];
-		int wanted = 0;
-		int sla=-1;
-		char *startoftags = strchr(l, '#');
-
-		p = strchr(l, '\n');
-		if (p) {
-			*p = '\0';
-		}
-		else {
-			errprintf("Warning: Lines in bb-hosts too long or has no newline: '%s'\n", l);
-		}
-
-		/*
-		 * We don't need to care about entries without a "#" mark in them, as
-		 * we are looking for hosts that have at least one tag.
-		 */
-		wantedtags[0] = '\0';
-		if ( startoftags && 
-		     (sscanf(l, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) &&
-		     ( 
-		       (netstring == NULL) || 
-		       (strstr(l, netstring) != NULL) || 
-		       (testuntagged && (strstr(l, "NET:") == NULL)) 
-		     ) 
-		   ) {
+		/* Only look at the hosts whose NET: definition matches the wanted one */
+		if ( (netstring == NULL) || (strcmp(curnet, netstring) == 0) || (testuntagged && (curnet == NULL)) ) {
 			char *item;
-			char *realitem;
+			char wantedtags[MAX_LINE_LEN];
 
-			if (*startoftags == '#') startoftags++;
-			while ((*startoftags != '\0') && isspace((int) *startoftags)) startoftags++;
+			*wantedtags = '\0';
+			for (item = bbh_item_walk(hwalk); (item); item = bbh_item_walk(NULL)) {
+				int i;
+				char *realitem = item + strspn(item, "!~?");
 
-			realitem = item = strtok(startoftags, " \t\r\n");
-			while (item) {
-				if ((*item == '!') || (*item == '~') || (*item == '?')) realitem++;
-
-				if (extras && (strcasecmp(realitem, "dialup") == 0)) strcat(wantedtags, " dialup");
-				else if (extras && (strcasecmp(realitem, "testip") == 0)) strcat(wantedtags, " testip");
-				else if (extras && (strncasecmp(realitem, "SLA=", 4) == 0)) sla = within_sla(l, "SLA", 1);
-				else if (extras && (strncasecmp(realitem, "DOWNTIME=", 9) == 0)) sla = !within_sla(l, "DOWNTIME", 0);
-				else {
-					int i;
-
-					for (i=0; (i<lookc); i++) {
-						if (lookv[i][strlen(lookv[i])-1] == '*') {
-							if (strncasecmp(realitem, lookv[i], strlen(lookv[i])-1) == 0) {
-								strcat(wantedtags, " ");
-								strcat(wantedtags, (extras ? item : realitem));
-								wanted = 1;
-							}
-						}
-						else if (strcasecmp(realitem, lookv[i]) == 0) {
+				for (i=0; lookv[i]; i++) {
+					if (lookv[i][strlen(lookv[i])-1] == '*') {
+						if (strncasecmp(realitem, lookv[i], strlen(lookv[i])-1) == 0) {
 							strcat(wantedtags, " ");
 							strcat(wantedtags, (extras ? item : realitem));
-							wanted = 1;
 						}
 					}
+					else if (strcasecmp(realitem, lookv[i]) == 0) {
+						strcat(wantedtags, " ");
+						strcat(wantedtags, (extras ? item : realitem));
+					}
 				}
-
-				realitem = item = strtok(NULL, " \t\r\n");
 			}
-		}
 
-		if (wanted) {
-			printf("%d.%d.%d.%d %s #%s", ip1, ip2, ip3, ip4, hostname, wantedtags);
-			switch (sla) {
-			  case -1: printf("\n"); break;
-			  case  0: printf(" OUTSIDESLA\n"); break;
-			  case  1: printf(" INSIDESLA\n"); break;
+			if ((*wantedtags != '\0') && extras) {
+				if (bbh_item(hwalk, BBH_FLAG_DIALUP)) strcat(wantedtags, " dialup");
+				if (bbh_item(hwalk, BBH_FLAG_TESTIP)) strcat(wantedtags, " testip");
+				if ((item = bbh_item(hwalk, BBH_DOWNTIME)) != NULL) {
+					if (within_sla(item, "", 0))
+						strcat(wantedtags, " OUTSIDESLA");
+					else
+						strcat(wantedtags, " INSIDESLA");
+				}
+			}
+
+			if (*wantedtags != '\0') {
+				printf("%s %s #%s\n", bbh_item(hwalk, BBH_IP), bbh_item(hwalk, BBH_HOSTNAME), wantedtags);
 			}
 		}
 	}
 
-	stackfclose(bbhosts);
 	return 0;
 }
 
