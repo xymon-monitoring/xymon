@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.1 2004-10-31 07:27:42 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.2 2004-10-31 11:38:09 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -106,8 +106,11 @@ static larrdsvc_t *find_larrd(char *service, char *flags)
 
 static void historybutton(char *cgibinurl, char *hostname, char *service, char *ip, FILE *output) 
 {
-	char *tmp1 = (char *)malloc(strlen(getenv("NONHISTS"))+3);
+	char *tmp1;
 	char *tmp2 = (char *)malloc(strlen(service)+3);
+
+	getenv_default("NONHISTS", "info,larrd,trends", NULL);
+	tmp1 =  (char *)malloc(strlen(getenv("NONHISTS"))+3);
 
 	sprintf(tmp1, ",%s,", getenv("NONHISTS"));
 	sprintf(tmp2, ",%s,", service);
