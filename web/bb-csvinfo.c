@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-csvinfo.c,v 1.6 2004-12-28 22:07:11 henrik Exp $";
+static char rcsid[] = "$Id: bb-csvinfo.c,v 1.7 2005-01-04 16:57:03 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -87,6 +87,8 @@ int main(int argc, char *argv[])
 	FILE *db;
 	char dbfn[PATH_MAX];
 	char buf[MAX_LINE_LEN];
+	char *hffile = "info";
+	int bgcolor = COL_BLUE;
 
 	char *headers[MAXCOLUMNS];
 	char *items[MAXCOLUMNS];
@@ -98,6 +100,17 @@ int main(int argc, char *argv[])
 		if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
 			loadenv(p+1);
+		}
+		else if (strcmp(argv[argi], "--debug") == 0) {
+			debug = 1;
+		}
+		else if (argnmatch(argv[argi], "--hffile=")) {
+			char *p = strchr(argv[argi], '=');
+			hffile = strdup(p+1);
+		}
+		else if (argnmatch(argv[argi], "--color=")) {
+			char *p = strchr(argv[argi], '=');
+			bgcolor = parse_color(p+1);
 		}
 	}
 
@@ -162,19 +175,19 @@ int main(int argc, char *argv[])
 	printf("Content-Type: text/html\n\n");
 
         /* It's ok with these hardcoded values, as they are not used for this page */
-        sethostenv(wantedname, "", "", colorname(COL_BLUE));
-        headfoot(stdout, "info", "", "header", COL_BLUE);
+        sethostenv(wantedname, "", "", colorname(bgcolor));
+        headfoot(stdout, hffile, "", "header", bgcolor);
 
 	printf("<table align=center border=1>\n");
 
 	for (i=0; (headers[i]); i++) {
 		printf("<tr>\n");
-		printf("  <th align=left>%s</th><td align=left>%s</td>\n", headers[i], items[i]);
+		printf("  <th align=left>%s</th><td align=left valign=top>%s</td>\n", headers[i], items[i]);
 		printf("</tr>\n");
 	}
 
 	printf("</table>\n");
-        headfoot(stdout, "info", "", "footer", COL_BLUE);
+        headfoot(stdout, hffile, "", "footer", bgcolor);
 
 	return 0;
 }
