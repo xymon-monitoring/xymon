@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.14 2004-01-25 22:13:02 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.15 2004-07-19 16:06:34 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -30,6 +30,8 @@ static char rcsid[] = "$Id: sendmsg.c,v 1.14 2004-01-25 22:13:02 henrik Exp $";
 #include "util.h"
 #include "debug.h"
 #include "sendmsg.h"
+
+#define BBSENDRETRIES 2
 
 /* Stuff for combo message handling */
 int		bbmsgcount = 0;		/* Number of messages transmitted */
@@ -57,6 +59,7 @@ static int sendtobbd(char *recipient, char *message)
 	char *p;
 	char *rcptip = NULL;
 	int rcptport = 0;
+	int connretries = BBSENDRETRIES;
 
 	if (dontsendmessages) {
 		printf("%s\n", message);
@@ -124,6 +127,7 @@ static int sendtobbd(char *recipient, char *message)
 	res = fcntl(sockfd, F_SETFL, O_NONBLOCK);
 	if (res != 0) return BB_ECANNOTDONONBLOCK;
 
+retry_connect:
 	res = connect(sockfd, (struct sockaddr *)&saddr, sizeof(saddr));
 	if ((res == -1) && (errno != EINPROGRESS)) {
 		close(sockfd);
@@ -143,8 +147,16 @@ static int sendtobbd(char *recipient, char *message)
 		}
 		else if (res == 0) {
 			/* Timeout! */
-			errprintf("Timeout while talking to bbd!\n");
 			close(sockfd);
+
+			if (!isconnected && (connretries > 0)) {
+				connretries--;
+				errprintf("Timeout while talking to bbd - retrying\n");
+				sleep(1);
+				goto retry_connect;	/* Yuck! */
+			}
+
+			errprintf("Timeout while talking to bbd!\n");
 			return BB_ETIMEOUT;
 		}
 		else if (FD_ISSET(sockfd, &writefds)) {
