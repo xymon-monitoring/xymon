@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.109 2003-12-10 20:51:15 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.110 2004-02-03 09:19:44 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -33,6 +33,7 @@ static char rcsid[] = "$Id: util.c,v 1.109 2003-12-10 20:51:15 henrik Exp $";
 #include <stdarg.h>
 #include <signal.h>
 #include <sys/resource.h>
+#include <limits.h>
 
 #include "bbgen.h"
 #include "util.h"
@@ -1547,14 +1548,24 @@ time_t sslcert_expiretime(char *timestr)
 	exptime.tm_year -= 1900; exptime.tm_mon -= 1;
 	result = mktime(&exptime);
 
-	/* 
-	 * Calculate the difference between localtime and GMT 
-	 */
-	t = gmtime(&result); t->tm_isdst = 0; t1 = mktime(t);
-	t = localtime(&result); t->tm_isdst = 0; t2 = mktime(t);
-	gmtofs = (t2-t1);
+	if (result > 0) {
+		/* 
+		 * Calculate the difference between localtime and GMT 
+		 */
+		t = gmtime(&result); t->tm_isdst = 0; t1 = mktime(t);
+		t = localtime(&result); t->tm_isdst = 0; t2 = mktime(t);
+		gmtofs = (t2-t1);
 
-	result += gmtofs;
+		result += gmtofs;
+	}
+	else {
+		/*
+		 * mktime failed - probably it expires after the
+		 * Jan 19,2038 rollover for a 32-bit time_t.
+		 */
+
+		result = INT_MAX;
+	}
 
 	dprintf("Output says it expires: %s", timestr);
 	dprintf("I think it expires at (localtime) %s\n", asctime(localtime(&result)));
