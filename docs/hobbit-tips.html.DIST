@@ -12,6 +12,7 @@ raised with Hobbit.<br>
 	<li><a href="#noclient">Client side tests are missing</a></li>
 	<li><a href="#clientnames">Clients using odd hostnames</a></li>
 	<li><a href="#droprename">Renaming and deleting hosts</a></li>
+	<li><a href="#apachetest">I cannot get the Apache graphs to work</a></li>
 	<li><a href="#updatefreq">Updating more frequently</a></li>
 </ul></p>
 
@@ -91,6 +92,55 @@ Then to move your historical data over to the new name, run
 <pre>
     ~/server/bin/bb 127.0.0.1 "rename OLDHOSTNAME NEWHOSTNAME"
 </pre></p>
+
+
+<a name="apachetest">
+<p>Charles Jones provided this recipe on the Hobbit mailing list:</p>
+<pre><tt>
+From: Charles Jones
+Date: Sun, 06 Feb 2005 21:28:19 -0700
+Subject: Re: [hobbit] Apache tag
+
+Okay, first you must make the indicated addition to your apache
+httpd.conf (or you can make a hobbit.conf in apaches conf.d directory).
+[ed: See the bb-hosts man-page for the "apache" description]
+
+Then, you must restart apache for the change to take effect
+(/etc/init.d/httpd restart).
+
+Then, manually test the server-stats url to make sure it's working, by
+using your browser and going to
+http://your.server.com/server-status?auto  (you can also go to
+http://your.server.com/server-status/ to get some nice extended apache
+performance info).  You should get back something like this:
+
+Total Accesses: 131577
+Total kBytes: 796036
+CPULoad: 1.0401
+Uptime: 21595
+ReqPerSec: 6.09294
+BytesPerSec: 37746.7
+BytesPerReq: 6195.16
+BusyWorkers: 43
+IdleWorkers: 13
+
+Scoreboard: RR__RWR___RR_R_RR_RRRRRRRRR_RRRRRRR__RRR_RRRRCRRRRR_RRRR........................................................................................................................................................................................................
+
+Now, assuming you are getting back the server-status info, time to make
+sure your bb-hosts is correctly configured to collect and graph the
+data.  Heres what I have in mine:
+
+1.2.3.4    my.server.com  # conn ssh http://1.2.3.4 apache=http://1.2.3.4/server-status?auto LARRD:*,apache:apache|apache1|apache2|apache3
+
+ From what you said of your setup, I'm guessing your only problem is
+ using the wrong url for the apache tag (you used
+ "apache=http://192.168.1.25/hobbit/" which just won't work - that's the
+ kind of URL you would use for the http tag).
+
+ Hope this helped.
+
+ -Charles
+</tt></pre>
 
 
 <a name="updatefreq">
