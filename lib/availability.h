@@ -27,6 +27,7 @@ extern int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, ch
 				double warnlevel, double greenlevel, char *reporttime);
 extern replog_t *save_replogs(void);
 extern void restore_replogs(replog_t *head);
+extern int history_color(FILE *fd, time_t snapshot, time_t *starttime, char **histlogname);
 
 #endif
 

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.22 2003-07-11 11:38:45 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.23 2003-07-14 11:11:14 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -287,6 +287,30 @@ int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 }
 
 
+static char *timename(char *timestring)
+{
+	static char timespec[26];
+
+	char timecopy[26];
+	char *token;
+	int i;
+
+	/* Compute the timespec string used as the name of the historical logfile */
+	strncpy(timecopy, timestring, 25);
+	timecopy[25] = '\0';
+
+	token = strtok(timecopy, " ");
+	strcpy(timespec, token);
+
+	for (i=1; i<5; i++) {
+		strcat(timespec, "_");
+		token = strtok(NULL, " ");
+		strcat(timespec, token);
+	}
+
+	return timespec;
+}
+
 
 int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *servicename, 
 			time_t fromtime, time_t totime, int for_history, 
@@ -362,21 +386,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 
 			if (for_history || ((hostname != NULL) && (servicename != NULL))) {
 				replog_t *newentry;
-				char timecopy[26], timespec[26];
-				char *token;
-
-				/* Compute the timespec string used as the name of the historical logfile */
-				strncpy(timecopy, l, 25);
-				timecopy[25] = '\0';
-
-				token = strtok(timecopy, " ");
-				strcpy(timespec, token);
-
-				for (i=1; i<5; i++) {
-					strcat(timespec, "_");
-					token = strtok(NULL, " ");
-					strcat(timespec, token);
-				}
+				char *timespec = timename(l);
 
 				newentry = malloc(sizeof(replog_t));
 				newentry->starttime = starttime;
@@ -450,6 +460,30 @@ void restore_replogs(replog_t *head)
 {
 	reploghead = head;
 }
+
+
+int history_color(FILE *fd, time_t snapshot, time_t *starttime, char **histlogname)
+{
+	int fileerrors;
+	char l[MAX_LINE_LEN];
+	time_t duration;
+	char colstr[MAX_LINE_LEN];
+	int color;
+
+	fileerrors = scan_historyfile(fd, snapshot, snapshot, 
+				      l, sizeof(l), starttime, &duration, colstr);
+	
+	strcat(colstr, " ");
+	color = parse_color(colstr);
+	if ((color == COL_PURPLE) || (color == -1)) {
+		color = -2;
+	}
+
+	*histlogname = malcop(timename(l));
+
+	return color;
+}
+
 
 #ifdef STANDALONE
 
