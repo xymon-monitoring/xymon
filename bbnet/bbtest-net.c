@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.114 2003-09-08 11:49:40 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.115 2003-09-10 11:55:15 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -644,8 +644,8 @@ void load_tests(void)
 						ping_reversetest = reversetest;
 						s = NULL; /* Dont add the test now - ping is special (enabled by default) */
 					}
-					else if ((strncmp(testspec, "ldap:", 5) == 0) ||
-						 (strncmp(testspec, "ldaps:", 6) == 0)) {
+					else if ((argnmatch(testspec, "ldap://")) ||
+						 (argnmatch(testspec, "ldaps://"))) {
 						/*
 						 * LDAP test. This uses ':' a lot, so save it here.
 						 */
@@ -2023,7 +2023,7 @@ int main(int argc, char *argv[])
 	add_service("ntp", getportnumber("ntp"),    0, TOOL_NTP);
 	rpctest  = add_service("rpc", getportnumber("sunrpc"), 0, TOOL_RPCINFO);
 	httptest = add_service("http", getportnumber("http"),  0, TOOL_CURL);
-	ldaptest = add_service("ldap", getportnumber("ldap"),  0, TOOL_LDAP);
+	ldaptest = add_service("ldapurl", getportnumber("ldap"), strlen("ldap"), TOOL_LDAP);
 	if (pingcolumn) pingtest = add_service(pingcolumn, 0, 0, TOOL_FPING);
 	modembanktest = add_service("dialup", 0, 0, TOOL_MODEMBANK);
 	add_timestamp("Service definitions loaded");

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.8 2003-08-31 15:55:21 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.9 2003-09-10 11:55:15 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -296,13 +296,17 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 	int     nopage = 0;
 	testitem_t *ldap1 = host->firstldap;
 	int	anydown = 0;
+	char	*svcname;
 
 	if (ldap1 == NULL) return;
 
+	svcname = malcop(ldaptest->testname);
+	if (ldaptest->namelen) svcname[ldaptest->namelen] = '\0';
+
 	/* Check if this service is a NOPAGENET service. */
-	nopagename = (char *) malloc(strlen(ldaptest->testname)+3);
-	sprintf(nopagename, ",%s,", ldaptest->testname);
-	nopage = (strstr(nonetpage, ldaptest->testname) != NULL);
+	nopagename = (char *) malloc(strlen(svcname)+3);
+	sprintf(nopagename, ",%s,", svcname);
+	nopage = (strstr(nonetpage, svcname) != NULL);
 	free(nopagename);
 
 	dprintf("Calc ldap color host %s : ", host->hostname);
@@ -354,7 +358,7 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 	/* Send off the ldap status report */
 	init_status(color);
 	sprintf(msgline, "status %s.%s %s %s", 
-		commafy(host->hostname), ldaptest->testname, colorname(color), timestamp);
+		commafy(host->hostname), svcname, colorname(color), timestamp);
 	addtostatus(msgline);
 
 	for (t=host->firstldap; (t && (t->host == host)); t = t->next) {
@@ -377,6 +381,7 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 	}
 	addtostatus("\n");
 	finish_status();
+	free(svcname);
 }
 
 
