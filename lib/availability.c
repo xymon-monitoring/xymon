@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.19 2003-07-08 09:05:53 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.20 2003-07-08 12:00:55 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -350,7 +350,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 		strcat(colstr, " "); color = parse_color(colstr);
 
 		if (color != -1) {
-			unsigned long sladuration;
+			unsigned long sladuration = 0;
 
 			dprintf("In-range entry starting %lu lasting %lu color %d: %s", starttime, duration, color, l);
 			repinfo->count[color]++;
