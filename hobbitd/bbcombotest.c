@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.5 2003-07-01 20:52:22 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.6 2003-07-02 10:54:02 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -217,7 +217,7 @@ static long evaluate(char *symbolicexpr, char **resultexpr, value_t **valuelist)
 	error = 0; 
 	result = compute(expr, &error);
 
-	if (error) dprintf("calculate(%s) returned error %d\n", error);
+	if (error) dprintf("calculate(%s) returned error %d\n", expr, error);
 	*valuelist = valhead;
 	return result;
 }
