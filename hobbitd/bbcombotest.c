@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.24 2004-10-24 12:38:18 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.25 2004-10-25 16:14:04 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -141,7 +141,7 @@ static int getfilevalue(char *hostname, char *testname, char **errptr)
 	char l[MAX_LINE_LEN];
 	struct stat st;
 	int statres;
-	int result;
+	int result = COL_CLEAR;
 
 	sprintf(fn, "%s/%s.%s", getenv("BBLOGS"), commafy(hostname), testname);
 	statres = stat(fn, &st);
@@ -150,9 +150,9 @@ static int getfilevalue(char *hostname, char *testname, char **errptr)
 		sprintf(fn, "%s/%s.%s", getenv("BBLOGS"), hostname, testname);
 		statres = stat(fn, &st);
 	}
+
 	if (statres) {
 		*errptr += sprintf(*errptr, "No status file for host=%s, test=%s\n", hostname, testname);
-		result = COL_CLEAR;
 	}
 	else if (st.st_mtime < time(NULL)) {
 		dprintf("Will not use a stale logfile for combo-tests - setting purple\n");
@@ -182,7 +182,7 @@ static int getbbgendvalue(char *hostname, char *testname, char **errptr)
 {
 	static char *board = NULL;
 	int bbgendresult;
-	int result;
+	int result = COL_CLEAR;
 	char *pattern, *found, *colstr, *p;
 
 	if (board == NULL) {
@@ -219,8 +219,6 @@ static int getbbgendvalue(char *hostname, char *testname, char **errptr)
 			found = NULL;
 		}
 	}
-
-	if (!found) result = COL_CLEAR;
 
 	free(pattern);
 	return result;
