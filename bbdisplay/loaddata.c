@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.20 2003-01-04 23:05:34 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.21 2003-01-05 08:19:10 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -258,7 +258,6 @@ state_t *init_state(const char *filename, int dopurple)
 		char *p;
 		char *purplemsg = malloc(st.st_size+1024);
 		char msgline[200];
-		pid_t	childpid;
 
 		if (host && host->dialup) {
 			/* Dialup hosts go clear, not purple */
@@ -301,16 +300,7 @@ state_t *init_state(const char *filename, int dopurple)
 
 		fclose(fd);
 
-		childpid = fork();
-		if (childpid == -1) {
-			printf("Fork error\n");
-		}
-		else if (childpid == 0) {
-			execl(bbcmd, "bb: bbd purple update", bbdispaddr, purplemsg, NULL);
-		}
-		else {
-			wait(NULL);
-		}
+		combo_add(purplemsg);
 		free(purplemsg);
 	}
 	else {
@@ -677,6 +667,8 @@ state_t *load_state(void)
 		remove(".bbstartup");
 	}
 
+	if (dopurple) combo_start();
+
 	topstate = NULL;
 	bblogs = opendir(getenv("BBLOGS"));
 	if (!bblogs) {
@@ -696,6 +688,8 @@ state_t *load_state(void)
 	}
 
 	closedir(bblogs);
+
+	if (dopurple) combo_end();
 
 	return topstate;
 }
