@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.124 2004-08-24 20:46:07 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.125 2004-09-10 06:08:30 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -136,7 +136,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	if ( (stat(fullfn, &log_st) == -1)       || 
 	     (!S_ISREG(log_st.st_mode))            ||
 	     ((fd = fopen(fullfn, "r")) == NULL)   ) {
-		errprintf("Weird file %s/%s skipped\n", fullfn);
+		errprintf("Weird file '%s' skipped\n", fullfn);
 		return NULL;
 	}
 
