@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.5 2004-10-05 22:06:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.6 2004-10-06 11:13:16 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -221,6 +221,46 @@ char *msg_data(char *msg)
 }
 
 
+int durationvalue(char *dur)
+{
+	/* 
+	 * Calculate a duration, taking special modifiers into consideration.
+	 * Return the duration as number of minutes.
+	 */
+
+	int result = 0;
+	char *p;
+	char modifier;
+	struct tm *nowtm;
+	time_t now;
+	
+	now = time(NULL);
+	nowtm = localtime(&now);
+
+	p = dur + strspn(dur, "0123456789");
+	modifier = *p;
+	*p = '\0';
+	result = atoi(dur);
+	*p = modifier;
+
+	switch (modifier) {
+	  case 'h': result *= 60; break;	/* hours */
+	  case 'd': result *= 1440; break;	/* days */
+	  case 'w': result *= 10080; break;	/* weeks */
+	  case 'm': 
+		    nowtm->tm_mon += result;
+		    result = (mktime(nowtm) - now) / 60;
+		    break;
+	  case 'y': 
+		    nowtm->tm_year += result;
+		    result = (mktime(nowtm) - now) / 60;
+		    break;
+	}
+
+	return result;
+}
+
+
 void get_hts(char *msg, char *sender, 
 	     bbd_hostlist_t **host, bbd_testlist_t **test, bbd_log_t **log, 
 	     int *color, int createhost, int createlog)
@@ -313,15 +353,17 @@ void get_hts(char *msg, char *sender,
 void get_cookiedur(char *msg, char *sender, bbd_log_t **log, int *duration)
 {
 	unsigned int cookie;
+	char durstr[100];
 	
 	*log = NULL;
-	if (sscanf(msg, "%*s %u %d", &cookie, duration) == 2) {
+	if (sscanf(msg, "%*s %u %99s", &cookie, durstr) == 2) {
 		cookie_t *cwalk;
 
 		for (cwalk = cookiehead; (cwalk && (cwalk->cookie != cookie)); cwalk = cwalk->next);
 
 		if (cwalk && (cwalk->expires > time(NULL))) {
 			*log = cwalk->log;
+			*duration = durationvalue(durstr);
 			dprintf("Found cookie for status %s\n", (*log)->message);
 		}
 	}
@@ -330,12 +372,12 @@ void get_cookiedur(char *msg, char *sender, bbd_log_t **log, int *duration)
 void handle_status(unsigned char *msg, int msglen, char *sender, char *hostname, char *testname, 
 		   bbd_log_t *log, int newcolor)
 {
-	int validity = 30;
+	int validity = 30;	/* validity is counted in minutes */
 	int oldcolor;
 	time_t now = time(NULL);
 
 	if (strncmp(msg, "status+", 7) == 0) {
-		validity = atoi(msg+7);
+		validity = durationvalue(msg+7);
 	}
 
 	if (log->enabletime > now) {
@@ -422,6 +464,7 @@ void handle_enadis(int enabled, char *msg, int msglen, char *sender)
 	char firstline[200];
 	char hosttest[200];
 	char *tname = NULL;
+	char durstr[100];
 	int duration = 0;
 	int assignments;
 	int alltests = 0;
@@ -440,8 +483,9 @@ void handle_enadis(int enabled, char *msg, int msglen, char *sender)
 		strncpy(firstline, msg, sizeof(firstline)-1);
 		*p = '\n';
 	}
-	assignments = sscanf(firstline, "%*s %199s %d", hosttest, &duration);
+	assignments = sscanf(firstline, "%*s %199s %99s", hosttest, durstr);
 	if (assignments < 1) return;
+	duration = durationvalue(durstr);
 	p = hosttest + strlen(hosttest) - 1;
 	if (*p == '*') {
 		/* It ends with a '*' so assume this is for all tests */
