@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.60 2005-03-13 07:44:37 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.61 2005-03-21 14:52:28 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -449,7 +449,7 @@ int main(int argc, char *argv[])
 	if (usehobbitd && sendmetainfo) {
 		char *statuslist = NULL;
 
-		if ((sendmessage("hobbitdlist", NULL, NULL, &statuslist, 1, BBTALK_TIMEOUT) == BB_OK) &&
+		if ((sendmessage("hobbitdboard fields=hostname,testname", NULL, NULL, &statuslist, 1, BBTALK_TIMEOUT) == BB_OK) &&
 		    (strlen(statuslist) > 0)) {
 			char *curr, *next;
 			char *host, *test, *graphlinks;

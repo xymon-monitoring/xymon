@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.82 2005-03-13 07:44:37 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.83 2005-03-21 14:52:28 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -117,7 +117,7 @@ void generate_hobbit_alertinfo(char *hostname, char **buf, int *buflen, char *co
 		load_alertconfig(configfn, alertcolors, alertinterval);
 		gotconfig = 1;
 
-		if (sendmessage("hobbitdlist", NULL, NULL, &statuslist, 1, 30) != BB_OK) {
+		if (sendmessage("hobbitdboard fields=hostname,testname", NULL, NULL, &statuslist, 1, 30) != BB_OK) {
 			errprintf("Could not get the Hobbit statuslog-list\n");
 			statuslist = NULL;
 			return;
