@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.25 2003-07-05 09:11:41 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.26 2003-07-06 15:55:10 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -285,7 +285,7 @@ int statuscolor(testedhost_t *h, long status)
 	}
 
 	/* Drop failures if not inside SLA window */
-	if ((result >= COL_YELLOW) && (!h->in_sla)) {
+	if ((result >= COL_YELLOW) && (!h->okexpected)) {
 		result = COL_BLUE;
 	}
 
@@ -649,7 +649,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 				}
 
 				/* If not inside SLA and non-green, report as BLUE */
-				if (!t->host->in_sla && (color != COL_GREEN)) color = COL_BLUE;
+				if (!t->host->okexpected && (color != COL_GREEN)) color = COL_BLUE;
 
 				if (nopage && (color == COL_RED)) color = COL_YELLOW;
 			}

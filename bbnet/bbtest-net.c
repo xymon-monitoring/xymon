@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.71 2003-07-03 21:57:25 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.72 2003-07-06 15:55:10 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -205,7 +205,7 @@ void load_services(void)
 }
 
 
-testedhost_t *init_testedhost(char *hostname, int timeout, int conntimeout, int in_sla)
+testedhost_t *init_testedhost(char *hostname, int timeout, int conntimeout, int okexpected)
 {
 	testedhost_t *newhost;
 
@@ -221,7 +221,7 @@ testedhost_t *init_testedhost(char *hostname, int timeout, int conntimeout, int 
 	newhost->nosslcert = 0;
 	newhost->dnserror = 0;
 	newhost->dodns = 0;
-	newhost->in_sla = in_sla;
+	newhost->okexpected = okexpected;
 
 	newhost->noconn = 0;
 	newhost->noping = 0;
@@ -333,7 +333,8 @@ void load_tests(void)
 					p = "";
 				}
 
-				h = init_testedhost(hostname, timeout, conntimeout, within_sla(p));
+				h = init_testedhost(hostname, timeout, conntimeout, 
+						    (strstr(p, "SLA=") ? within_sla(p, "SLA") : !within_sla(p, "DOWNTIME")) );
 				anytests = 0;
 
 				testspec = strtok(p, "\t ");
@@ -811,7 +812,7 @@ void send_results(service_t *service)
 		flags[i++] = (t->alwaystrue ? 'A' : 'a');
 		flags[i++] = (t->silenttest ? 'S' : 's');
 		flags[i++] = (t->host->testip ? 'T' : 't');
-		flags[i++] = (t->host->in_sla ? 'I' : 'i');
+		flags[i++] = (t->host->okexpected ? 'I' : 'i');
 		flags[i++] = (t->host->dodns ? 'L' : 'l');
 		flags[i++] = (t->host->dnserror ? 'E' : 'e');
 		flags[i++] = '\0';
@@ -863,7 +864,7 @@ void send_results(service_t *service)
 			if ( ((color == COL_RED) || (color == COL_YELLOW)) && (t->host->dialup || t->dialup) ) color = COL_CLEAR;
 
 			/* If not inside SLA and non-green, report as BLUE */
-			if (!t->host->in_sla && (color != COL_GREEN)) color = COL_BLUE;
+			if (!t->host->okexpected && (color != COL_GREEN)) color = COL_BLUE;
 		}
 
 		/* Handle the "route" tag dependencies. */

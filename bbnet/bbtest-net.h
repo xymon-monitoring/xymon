@@ -63,7 +63,7 @@ typedef struct {
 	int nosslcert;		/* nosslcert flag */
 	int dodns;              /* set while loading tests if we need to do a DNS lookup */
 	int dnserror;		/* set internally if we cannot find the host's IP */
-	int in_sla;		/* set internally if inside SLA period. If not, failed tests are blue */
+	int okexpected;		/* set internally if outside DOWNTIME period. If not, failed tests are blue */
 
 	/* The following are for the connectivity test */
 	int noconn;		/* noconn flag (dont report "conn" at all */

@@ -99,7 +99,8 @@ int main(int argc, char *argv[])
 
 				if (strcasecmp(realitem, "dialup") == 0) strcat(wantedtags, " dialup");
 				else if (strcasecmp(realitem, "testip") == 0) strcat(wantedtags, " testip");
-				else if (strncasecmp(realitem, "SLA=", 4) == 0) sla = within_sla(l);
+				else if (strncasecmp(realitem, "SLA=", 4) == 0) sla = within_sla(l, "SLA");
+				else if (strncasecmp(realitem, "DOWNTIME=", 9) == 0) sla = !within_sla(l, "DOWNTIME");
 				else {
 					int i;
 
