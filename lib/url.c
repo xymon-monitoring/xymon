@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: url.c,v 1.10 2005-01-28 19:30:31 henrik Exp $";
+static char rcsid[] = "$Id: url.c,v 1.11 2005-02-28 22:14:23 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -130,6 +130,7 @@ char *urlencode(char *s)
  */
 int urlvalidate(char *query, char *validchars)
 {
+#if 0
 	static int valid;
 	char *p;
 
@@ -140,6 +141,9 @@ int urlvalidate(char *query, char *validchars)
 	}
 
 	return valid;
+#else
+	return 1;
+#endif
 }
 
 /*
