@@ -1,8 +1,8 @@
 PROGRAMS = bbgend bbd_channel bbd_filestore bbd_history bbd_alert bbd_larrd
 
 LIBOBJS = ../lib/libbbgen.a
-BBDOBJS = bbgend.o bbdutil.o bbdworker.o loadhosts.o
-CHANNELOBJS = bbd_channel.o bbdutil.o
+BBDOBJS = bbgend.o bbgend_ipc.o bbdworker.o loadhosts.o
+CHANNELOBJS = bbd_channel.o bbgend_ipc.o
 
 SAMPLEOBJS = bbd_sample.o bbdworker.o
 FILESTOREOBJS = bbd_filestore.o bbdworker.o
