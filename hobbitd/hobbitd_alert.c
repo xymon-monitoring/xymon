@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.38 2005-01-28 22:11:28 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.39 2005-02-06 11:57:21 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -322,6 +322,22 @@ int main(int argc, char *argv[])
 		notiflogfd = fopen(notiflogfn, "a");
 	}
 
+	/*
+	 * The general idea here is that this loop handles receiving of alert-
+	 * and ack-messages from the master daemon, and maintains a list of 
+	 * host+test combinations that may have alerts going out.
+	 *
+	 * This module does not deal with any specific alert-configuration, 
+	 * it just picks up the alert messages, maintains the list of 
+	 * known tests that are in some sort of critical condition, and
+	 * periodically pushes alerts to the do_alert.c module for handling.
+	 *
+	 * The only modification of alerts that happen here is the handling
+	 * of when the next alert is due. It calls into the next_alert() 
+	 * routine to learn when an alert should be repeated, and also 
+	 * deals with Acknowledgments that stop alerts from going out for
+	 * a period of time.
+	 */
 	while (running) {
 		char *eoln, *restofmsg;
 		char *metadata[20];
@@ -343,13 +359,15 @@ int main(int argc, char *argv[])
 			if (notiflogfd) notiflogfd = freopen(notiflogfn, "a", notiflogfd);
 		}
 
-		now = time(NULL);
 		timeout.tv_sec = 60; timeout.tv_usec = 0;
 		msg = get_hobbitd_message("hobbitd_alert", &seq, &timeout);
 		if (msg == NULL) {
 			running = 0;
 			continue;
 		}
+
+		/* See what time it is - must happen AFTER the timeout */
+		now = time(NULL);
 
 		/* Split the message in the first line (with meta-data), and the rest */
  		eoln = strchr(msg, '\n');
@@ -377,7 +395,6 @@ int main(int argc, char *argv[])
 
 		if (metacount > 3) hostname = metadata[3];
 		if (metacount > 4) testname = metadata[4];
-
 
 		if ((metacount > 10) && (strncmp(metadata[0], "@@page", 6) == 0)) {
 			/* @@page|timestamp|sender|hostname|testname|hostip|expiretime|color|prevcolor|changetime|location|cookie */
@@ -510,7 +527,7 @@ int main(int argc, char *argv[])
 		/* 
 		 * Loop through the activealerts list and see if anything is pending.
 		 * This is an optimization, we could just as well just fork off the
-		 * notification child and it it handle all of it. But there is no
+		 * notification child and let it handle all of it. But there is no
 		 * reason to fork a child process unless it is going to do something.
 		 */
 		anytogo = 0;
@@ -574,7 +591,7 @@ int main(int argc, char *argv[])
 				exit(0);
 			}
 			else if (childpid > 0) {
-				/* The parent updates the alert timestamps */
+				/* The parent updates the next-alert timestamps */
 				for (awalk = ahead; (awalk); awalk = awalk->next) {
 					switch (awalk->state) {
 					  case A_PAGING:
@@ -617,7 +634,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		/* Two-phase cleanup. All A_DEAD items are deleted. */
+		/* Two-phase cleanup. All A_DEAD items are moved to a kill-list. */
 		khead = NULL; awalk = ahead;
 		while (awalk) {
 			if ((awalk == ahead) && (awalk->state == A_DEAD)) {
