@@ -48,7 +48,7 @@ bbhostshow: $(HOSTSHOWOBJS)
 	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS)
 
 bbdigest: $(DIGESTOBJS)
-	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) $(SSLLIBDIR) -lcrypto
+	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) $(SSLLIBDIR) -lcrypto $(NETLIBS)
 
 bb-rep.cgi: $(REPOBJS)
 	$(CC) $(CFLAGS) -o $@ $(REPOBJS)
