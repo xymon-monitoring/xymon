@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.28 2005-01-19 12:00:55 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.29 2005-01-19 21:58:05 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -257,6 +257,7 @@ int main(int argc, char *argv[])
 			n = strspn(p, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
 			flags = (char *)xmalloc(n+1);
 			strncpy(flags, p, n);
+			*(flags + n) = '\0';
 		}
 		else {
 			flags = "";
