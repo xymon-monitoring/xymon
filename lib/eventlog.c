@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.15 2005-02-03 17:02:20 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.16 2005-02-20 12:29:09 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -158,7 +158,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
 		fprintf(output, "<BR><BR>\n");
         	fprintf(output, "<TABLE SUMMARY=\"$EVENTSTITLE\" BORDER=0>\n");
 		fprintf(output, "<TR BGCOLOR=\"#333333\">\n");
-		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"teal\">%s</FONT></TD></TR>\n", title);
+		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"#33ebf4\">%s</FONT></TD></TR>\n", title);
 
 		for (walk=eventhead; (walk != lasttoshow->next); walk=walk->next) {
 			fprintf(output, "<TR BGCOLOR=%s>\n", bgcolors[bgcolor]);
@@ -210,7 +210,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
 		fprintf(output, "<CENTER><BR>\n");
 		fprintf(output, "<TABLE SUMMARY=\"%s\" BORDER=0>\n", title);
 		fprintf(output, "<TR BGCOLOR=\"#333333\">\n");
-		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"teal\">%s</FONT></TD>\n", title);
+		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"#33ebf4\">%s</FONT></TD>\n", title);
 		fprintf(output, "</TR>\n");
 		fprintf(output, "</TABLE>\n");
 		fprintf(output, "</CENTER>\n");
