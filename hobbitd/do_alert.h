@@ -14,6 +14,7 @@ typedef struct activealerts_t {
 	/* Identification of the alert */
 	htnames_t *hostname;
 	htnames_t *testname;
+	htnames_t *location;
 
 	/* Alert status */
 	int color;

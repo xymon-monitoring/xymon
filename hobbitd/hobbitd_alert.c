@@ -17,7 +17,7 @@
  *
  *   page
  *   ----
- *   @@page|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime
+ *   @@page|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime|location
  *   <message>
  *   @@
  *
@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.7 2004-10-17 10:07:23 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.8 2004-10-17 11:57:50 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -53,6 +53,7 @@ static volatile int running = 1;
 
 htnames_t *hostnames = NULL;
 htnames_t *testnames = NULL;
+htnames_t *locations = NULL;
 activealerts_t *ahead = NULL;
 
 
@@ -175,7 +176,7 @@ int main(int argc, char *argv[])
 		dprintf("Got message from %s:%s\n", hostname, testname);
 
 		if (strncmp(metadata[0], "@@page", 6) == 0) {
-			/* @@page|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime */
+			/* @@page|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime|location */
 
 			int newcolor, newalertstatus;
 
@@ -184,6 +185,7 @@ int main(int argc, char *argv[])
 			if (awalk == NULL) {
 				htnames_t *hwalk;
 				htnames_t *twalk;
+				htnames_t *pwalk;
 
 				dprintf("New alert\n");
 				for (hwalk = hostnames; (hwalk && strcmp(hostname, hwalk->name)); hwalk = hwalk->next) ;
@@ -204,9 +206,19 @@ int main(int argc, char *argv[])
 					dprintf("Created new testname record %s\n", testname);
 				}
 
+				for (pwalk = locations; (pwalk && strcmp(metadata[9], pwalk->name)); pwalk = pwalk->next) ;
+				if (pwalk == NULL) {
+					pwalk = (htnames_t *)malloc(sizeof(htnames_t));
+					pwalk->name = strdup(metadata[9]);
+					pwalk->next = testnames;
+					locations = pwalk;
+					dprintf("Created new location record %s\n", metadata[9]);
+				}
+
 				awalk = (activealerts_t *)malloc(sizeof(activealerts_t));
 				awalk->hostname = hwalk;
 				awalk->testname = twalk;
+				awalk->location = pwalk;
 				awalk->color = 0;
 				awalk->pagemessage = NULL;
 				awalk->ackmessage = NULL;
