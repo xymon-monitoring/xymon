@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.26 2003-08-16 07:10:38 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.27 2003-08-16 07:15:38 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -123,6 +123,8 @@ void do_tcp_tests(int conntimeout, int concurrency)
 	socklen_t	connressize;
 	char		msgbuf[MAX_BANNER];
 
+	struct timezone tz;
+
 	/* If conntimeout or concurrency are 0, set them to reasonable defaults */
 	if (conntimeout == 0) conntimeout = DEF_TIMEOUT;
 	if (concurrency == 0) concurrency = DEF_MAX_OPENS;
@@ -153,7 +155,7 @@ void do_tcp_tests(int conntimeout, int concurrency)
 					/*
 					 * Initiate the connection attempt ... 
 					 */
-					gettimeofday(&nextinqueue->timestart, NULL);
+					gettimeofday(&nextinqueue->timestart, &tz);
 					res = connect(nextinqueue->fd, (struct sockaddr *)&nextinqueue->addr, sizeof(nextinqueue->addr));
 
 					/*
@@ -276,7 +278,7 @@ void do_tcp_tests(int conntimeout, int concurrency)
 		}
 
 		/* Fetch the timestamp so we can tell how long the connect took */
-		gettimeofday(&timestamp, NULL);
+		gettimeofday(&timestamp, &tz);
 
 		/* Now find out which connections had something happen to them */
 		for (item=firstactive; (item != nextinqueue); item=item->next) {
