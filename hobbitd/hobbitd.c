@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.72 2004-12-03 10:31:57 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.73 2004-12-06 21:20:15 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1208,19 +1208,19 @@ void do_message(conn_t *msg, char *origin)
 			}
 
 			get_hts(currmsg, sender, origin, &h, &t, &log, &color, 0, 0);
-			if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, currmsg)) continue;
+			if (oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, currmsg)) {
+				get_hts(currmsg, sender, origin, &h, &t, &log, &color, 1, 1);
+				if (h && dbgfd && dbghost && (strcasecmp(h->hostname, dbghost) == 0)) {
+					fprintf(dbgfd, "\n---- combo message from %s ----\n%s---- end message ----\n", sender, currmsg);
+					fflush(dbgfd);
+				}
 
-			get_hts(currmsg, sender, origin, &h, &t, &log, &color, 1, 1);
-			if (h && dbgfd && dbghost && (strcasecmp(h->hostname, dbghost) == 0)) {
-				fprintf(dbgfd, "\n---- combo message from %s ----\n%s---- end message ----\n", sender, currmsg);
-				fflush(dbgfd);
-			}
+				/* Count individual status-messages also */
+				update_statistics(currmsg);
 
-			/* Count individual status-messages also */
-			update_statistics(currmsg);
-
-			if (log && (color != -1)) {
-				handle_status(currmsg, sender, h->hostname, t->testname, log, color);
+				if (log && (color != -1)) {
+					handle_status(currmsg, sender, h->hostname, t->testname, log, color);
+				}
 			}
 
 			currmsg = nextmsg;
