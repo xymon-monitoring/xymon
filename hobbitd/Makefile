@@ -1,43 +1,44 @@
-PROGRAMS = bbgend bbd_channel bbd_filestore bbd_history bbd_alert bbd_larrd
+PROGRAMS = bbgend bbgend_channel bbgend_filestore bbgend_history bbgend_alert bbgend_larrd bbgend_sample
 
 LIBOBJS = ../lib/libbbgen.a
-BBDOBJS = bbgend.o bbgend_ipc.o bbdworker.o loadhosts.o
-CHANNELOBJS = bbd_channel.o bbgend_ipc.o
 
-SAMPLEOBJS = bbd_sample.o bbdworker.o
-FILESTOREOBJS = bbd_filestore.o bbdworker.o
-HISTORYOBJS = bbd_history.o bbdworker.o
-ALERTOBJS = bbd_alert.o bbdworker.o do_alert.o
-LARRDOBJS = bbd_larrd.o bbdworker.o do_larrd.o
-SAMPLEOBJS = bbd_sample.o bbdworker.o
+BBGENDOBJS = bbgend.o bbgend_ipc.o bbgend_worker.o loadhosts.o
+CHANNELOBJS = bbgend_channel.o bbgend_ipc.o
+
+SAMPLEOBJS    = bbgend_sample.o    bbgend_worker.o
+FILESTOREOBJS = bbgend_filestore.o bbgend_worker.o
+HISTORYOBJS   = bbgend_history.o   bbgend_worker.o
+ALERTOBJS     = bbgend_alert.o     bbgend_worker.o do_alert.o
+LARRDOBJS     = bbgend_larrd.o     bbgend_worker.o do_larrd.o
+SAMPLEOBJS    = bbgend_sample.o    bbgend_worker.o
 
 all: $(PROGRAMS)
 
-bbgend: $(BBDOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(BBDOBJS) $(LIBOBJS)
+bbgend: $(BBGENDOBJS) $(LIBOBJS)
+	$(CC) -o $@ $(BBGENDOBJS) $(LIBOBJS)
 
-bbd_channel: $(CHANNELOBJS) $(LIBOBJS)
+bbgend_channel: $(CHANNELOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(CHANNELOBJS) $(LIBOBJS)
 
-bbd_filestore: $(FILESTOREOBJS) $(LIBOBJS)
+bbgend_filestore: $(FILESTOREOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(FILESTOREOBJS) $(LIBOBJS)
 
-bbd_history: $(HISTORYOBJS) $(LIBOBJS)
+bbgend_history: $(HISTORYOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(HISTORYOBJS) $(LIBOBJS)
 
-bbd_alert: $(ALERTOBJS) $(LIBOBJS)
+bbgend_alert: $(ALERTOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(ALERTOBJS) $(LIBOBJS) -lpcre
 
-bbd_larrd: $(LARRDOBJS) $(LIBOBJS)
+bbgend_larrd: $(LARRDOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(LARRDOBJS) $(LIBOBJS) -lrrd
 
 do_larrd.o: do_larrd.c do_larrd.h larrd/*.c
 	$(CC) $(CFLAGS) -c -o $@ do_larrd.c
 
-bbd_sample: $(SAMPLEOBJS) $(LIBOBJS)
+bbgend_sample: $(SAMPLEOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(SAMPLEOBJS) $(LIBOBJS)
 
-%.o: %.c bbgend.h
+%.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
