@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.119 2003-05-27 16:28:59 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.120 2003-06-02 06:37:33 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -157,6 +157,16 @@ int main(int argc, char *argv[])
 
 			defaultpagetitle = malcop(lp+1);
 		}
+		else if (argnmatch(argv[i], "--dialupskin=")) {
+			char *lp = strchr(argv[i], '=');
+
+			dialupskin = malcop(lp+1);
+		}
+		else if (argnmatch(argv[i], "--reverseskin=")) {
+			char *lp = strchr(argv[i], '=');
+
+			reverseskin = malcop(lp+1);
+		}
 
 		else if (argnmatch(argv[i], "--noprop=")) {
 			char *lp = strchr(argv[i], '=');
@@ -280,6 +290,8 @@ int main(int argc, char *argv[])
 			printf("    --recentgifs                : Use xxx-recent.gif icons for newly changed tests\n");
 			printf("    --sort-group-only-items     : Display group-only items in alphabetical order\n");
 			printf("    --page-title=TITLE          : Set a default page title for all pages\n");
+			printf("    --dialupskin=URL            : Use a different icon skin for dialup tests\n");
+			printf("    --reverseskin=URL           : Use a different icon skin for reverse tests\n");
 			printf("\nStatus propagation control options:\n");
 			printf("    --noprop=test[,test]        : Disable upwards status propagation when YELLOW\n");
 			printf("    --nopropred=test[,test]     : Disable upwards status propagation when RED or YELLOW\n");
