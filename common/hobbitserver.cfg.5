@@ -64,6 +64,15 @@ many milliseconds to wait between the messages.
 .br
 Default: 0 (send messages as quickly as possible).
 
+.IP BBROUTERTEXT
+When using the "router" or "depends" tags for a host, a failure
+status may include text that an "Intermediate router is down".
+With todays network topologies, the router could be a switch or
+another network device; if you define this environment variable
+the word "router" will be replaced with whatever you put into
+the variable. So to inform the users that an intermediate switch
+or router is down, use BBROUTERTEXT="switch or router"
+
 .IP BBHTACCESS
 Defines the contents of the top-level .htaccess file created by bbgen
 when run with the --htaccess option. This .htaccess file is
