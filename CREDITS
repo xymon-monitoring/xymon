@@ -33,7 +33,20 @@ Rob Watson
 It would have been hard to implement bbgen without the
 existing libraries for lots of stuff:
 
-libCURL
+libCURL (although this is no longer used, it was quite
+	 important while it was in use)
 	http://curl.haxx.se/
 	Daniel Steenberg and others
+
+libCARES
+	Based on the ARES library by Greg Hudson of MIT, 
+	C-ARES provides asynchronous parallel DNS lookups.
+	http://daniel.haxx.se/projects/c-ares/
+	Greg Hudson, Daniel Steenberg and others
+
+OpenSSL
+	http://www.openssl.org/
+
+OpenLDAP
+	http://www.openldap.org/
 
