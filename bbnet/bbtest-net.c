@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.22 2003-04-17 21:59:06 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.23 2003-04-20 20:03:47 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -463,7 +463,7 @@ int run_fping_service(service_t *service)
 		}
 	}
 	fclose(logfd);
-	// unlink(logfn);
+	unlink(logfn);
 
 	return 0;
 }
