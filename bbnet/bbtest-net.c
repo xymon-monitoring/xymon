@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.139 2004-03-02 09:48:47 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.140 2004-04-23 08:46:16 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -682,7 +682,8 @@ void load_tests(void)
 						  argnmatch(testspec, "cont;http")    ||
 						  argnmatch(testspec, "nocont;http")  ||
 						  argnmatch(testspec, "post;http")    ||
-						  argnmatch(testspec, "nopost;http") )      {
+						  argnmatch(testspec, "nopost;http")  ||
+						  argnmatch(testspec, "type;http")    )      {
 						/*
 						 * HTTP test. This uses ':' a lot, so save it here.
 						 */
@@ -1687,10 +1688,10 @@ void send_modembank_results(service_t *service)
 	int		i, color, inuse;
 	char		startip[16], endip[16];
 
-	inuse = 0;
 	for (t=service->items; (t); t = t->next) {
 		modembank_t *req = (modembank_t *)t->privdata;
 
+		inuse = 0;
 		strcpy(startip, u32toIP(req->startip));
 		strcpy(endip, u32toIP(req->startip + req->banksize - 1));
 
@@ -2136,6 +2137,7 @@ int main(int argc, char *argv[])
 		send_results(pingtest, failgoesclear);
 		if (selectedhosts == 0) save_fping_status();
 		combo_end();
+		add_timestamp("PING test results sent");
 	}
 
 
