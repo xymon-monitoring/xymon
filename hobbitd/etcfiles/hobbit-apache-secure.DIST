@@ -34,10 +34,10 @@ ScriptAlias @SECUREBBCGIURL@/ "@SECURECGIDIR@/"
     Allow from all
 
     # Password file where users with access to these scripts are kept.
-    # Create it with "htpasswd -c @BBHOME@/etc/hobbitpasswd USERNAME"
-    # Add more users / change passwords with "htpasswd @BBHOME@/etc/hobbitpasswd USERNAME"
+    # Create it with "htpasswd -c @INSTALLETCDIR@/hobbitpasswd USERNAME"
+    # Add more users / change passwords with "htpasswd @INSTALLETCDIR@/hobbitpasswd USERNAME"
 
-    AuthUserFile @BBHOME@/etc/hobbitpasswd
+    AuthUserFile @INSTALLETCDIR@/hobbitpasswd
     AuthType Basic
     AuthName "Hobbit Administration"
     Require valid-user
