@@ -117,10 +117,10 @@ install: install-nocgi install-cgi
 install-nocgi: install-bin install-exts install-html install-gif install-templates install-man
 
 install-bin: $(PROGRAMS)
-	cp -p $(PROGRAMS) $(BBHOME)/bin/
+	cp -fp $(PROGRAMS) $(BBHOME)/bin/
 
 install-exts: $(EXTENSIONS)
-	cp -p $(EXTENSIONS) $(BBHOME)/ext/
+	cp -fp $(EXTENSIONS) $(BBHOME)/ext/
 
 install-cgi: $(CGISCRIPTS)
 	@echo ""
@@ -128,10 +128,10 @@ install-cgi: $(CGISCRIPTS)
 	@echo "            Hit ctrl-C NOW if you want to save them first!"
 	@echo ""
 	@sleep 5
-	cp -p $(CGISCRIPTS) $(CGIDIR)/
+	cp -fp $(CGISCRIPTS) $(CGIDIR)/
 
 install-html: $(HTMLPAGES)
-	cp -p $(HTMLPAGES) $(BBHOME)/www/help/
+	cp -fp $(HTMLPAGES) $(BBHOME)/www/help/
 
 install-gif: $(GIFFILES)
 	BBHOME=$(BBHOME) ../build/install-nooverwrite.sh www/gifs $(GIFFILES)
@@ -141,6 +141,6 @@ install-templates: $(TEMPLATES)
 
 install-man:
 	mkdir -p $(MANROOT)/man{1,5}
-	cp -p *.1 $(MANROOT)/man1/
-	cp -p *.5 $(MANROOT)/man5/
+	cp -fp *.1 $(MANROOT)/man1/
+	cp -fp *.5 $(MANROOT)/man5/
 

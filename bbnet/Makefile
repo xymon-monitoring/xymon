@@ -62,16 +62,16 @@ clean:
 install: install-bin install-ext install-config install-man
 
 install-bin: $(PROGRAMS)
-	cp -p $(PROGRAMS) $(BBHOME)/bin/
+	cp -fp $(PROGRAMS) $(BBHOME)/bin/
 
 install-ext: $(EXTENSIONS)
-	cp -p $(EXTENSIONS) $(BBHOME)/ext/
+	cp -fp $(EXTENSIONS) $(BBHOME)/ext/
 
 install-config:
-	cp -p $(CONFIGFILES) $(BBHOME)/etc/
+	cp -fp $(CONFIGFILES) $(BBHOME)/etc/
 
 install-man:
 	mkdir -p $(MANROOT)/man{1,5}
-	cp -p *.1 $(MANROOT)/man1/
-	cp -p *.5 $(MANROOT)/man5/
+	cp -fp *.1 $(MANROOT)/man1/
+	cp -fp *.5 $(MANROOT)/man5/
 
