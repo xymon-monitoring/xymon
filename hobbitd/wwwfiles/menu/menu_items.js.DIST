@@ -6,6 +6,7 @@ var MENU_ITEMS = [
 	],
 	['Reports', null, null,
 		['Availability Report', '@BBCGIURL@/bb-rep.sh'],
+		['Snapshot Report', '@BBCGIURL@/bb-snapshot.sh'],
 	],
 	['Administration', null, null,
 		['Find host', '@BBCGIURL@/bb-findhost.sh'],
@@ -19,6 +20,7 @@ var MENU_ITEMS = [
 		['Configuring Hobbit Alerts', '@BBHOSTURL@/help/hobbit-alerts.html'],
 		['Known problems', '@BBHOSTURL@/help/known-issues.html'],
 		['Tips and Tricks', '@BBHOSTURL@/help/hobbit-tips.html'],
+		['Hobbit man-pages', '@BBHOSTURL@/help/manpages/'],
         ],
 ];
 
