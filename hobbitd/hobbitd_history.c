@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.20 2004-11-18 13:23:01 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.21 2004-11-18 14:13:00 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -55,6 +55,7 @@ int main(int argc, char *argv[])
 	int save_histlogs = 1;
 	FILE *alleventsfd = NULL;
 	int running = 1;
+	struct sigaction sa;
 
 	/* Dont save the error buffer */
 	save_errbuf = 0;
@@ -103,8 +104,10 @@ int main(int argc, char *argv[])
 
 	/* For picking up lost children */
 	setup_signalhandler("bbgend_history");
-	signal(SIGCHLD, sig_handler);
 	signal(SIGPIPE, SIG_DFL);
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = sig_handler;
+	sigaction(SIGCHLD, &sa, NULL);
 
 	while (running) {
 		char *items[20] = { NULL, };
