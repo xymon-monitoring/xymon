@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.154 2003-09-16 13:59:46 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.155 2003-09-27 06:15:54 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -107,9 +107,6 @@ int main(int argc, char *argv[])
 	int             larrd043 = 0;				/* Set to use LARRD 0.43 disk displays */
 	char		*egocolumn = NULL;
 	int		embedded = 0;
-
-	/* Catch a SEGV fault */
-	setup_signalhandler("bbgen");
 
 	/* Setup standard header+footer (might be modified by option pageset) */
 	select_headers_and_footers("bb");
@@ -487,6 +484,9 @@ int main(int argc, char *argv[])
 
 	/* Check that all needed environment vars are defined */
 	envcheck(reqenv);
+
+	/* Catch a SEGV fault */
+	setup_signalhandler("bbgen");
 
 	if (pagedir == NULL) {
 		pagedir = (char *) malloc(strlen(getenv("BBHOME"))+5);
