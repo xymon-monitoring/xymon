@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.7 2003-08-31 11:44:01 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.8 2003-08-31 15:55:21 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -118,6 +118,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 		int		finished;
 		char		response[MAXMSG];
 		char		buf[MAX_LINE_LEN];
+		char 		*dn;
 
 		req = (ldap_data_t *) t->privdata;
 		ludp = (LDAPURLDesc *) req->ldapdesc;
@@ -226,7 +227,9 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 		sprintf(response, "Searching LDAP for %s yields %d results:\n\n", 
 			t->testspec, ldap_count_entries(ld, result));
 		for(e = ldap_first_entry(ld, result); (e != NULL); e = ldap_next_entry(ld, e) ) {
-			sprintf(buf, "DN: %s\n", ldap_get_dn(ld, e)); strcat(response, buf);
+			dn = ldap_get_dn(ld, e);
+			sprintf(buf, "DN: %s\n", dn); 
+			strcat(response, buf);
 
 			/* Addtributes and values */
 			for (attribute = ldap_first_attribute(ld, e, &ber); (attribute != NULL); attribute = ldap_next_attribute(ld, e, ber) ) {
@@ -242,8 +245,9 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 
 			/* Free memory used to store attribute */
 			ldap_memfree(attribute);
-
+			ldap_memfree(dn);
 			if (ber != NULL) ber_free(ber, 0);
+
 			strcat(response, "\n");
 		}
 		req->ldapstatus = BBGEN_LDAP_OK;
