@@ -1,5 +1,5 @@
-PROGRAMS = bbgend bbgend_channel bbgend_filestore bbgend_history bbgend_alert bbgend_larrd bbgend_sample startbb.sh
-CGISCRIPTS = bb-ack.sh larrd-grapher.cgi maint.pl
+PROGRAMS = bbgend bbgend_channel bbgend_filestore bbgend_history bbgend_alert bbgend_larrd bbgend_sample startbb.sh bb-larrdgraph.cgi
+CGISCRIPTS = bb-ack.sh bb-larrdgraph.sh maint.pl
 
 LIBOBJS = ../lib/libbbgen.a
 
@@ -12,6 +12,7 @@ HISTORYOBJS   = bbgend_history.o   bbgend_worker.o
 ALERTOBJS     = bbgend_alert.o     bbgend_worker.o do_alert.o
 LARRDOBJS     = bbgend_larrd.o     bbgend_worker.o do_larrd.o
 SAMPLEOBJS    = bbgend_sample.o    bbgend_worker.o
+LARRDGRAPHOBJS= bb-larrdgraph.o
 
 all: $(PROGRAMS) $(CGISCRIPTS) cfgfiles
 
@@ -42,6 +43,12 @@ do_larrd.o: do_larrd.c do_larrd.h larrd/*.c
 bbgend_sample: $(SAMPLEOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(SAMPLEOBJS) $(LIBOBJS)
 
+bb-larrdgraph.o: bb-larrdgraph.c
+	$(CC) $(CFLAGS) $(PCREINCDIR) $(RRDINCDIR) -c -o $@ bb-larrdgraph.c
+
+bb-larrdgraph.cgi: $(LARRDGRAPHOBJS)
+	$(CC) $(CFLAGS) -o $@ $(LARRDGRAPHOBJS) $(LIBOBJS) $(PCRELIBS) $(RRDLIBS)
+
 startbb.sh: startbb.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g' | sed -e 's!@BBUSER@!$(BBUSER)!g' >$@
 	chmod 755 $@
@@ -50,8 +57,8 @@ bb-ack.sh: bb-ack.sh-bbgend.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' >$@
 	chmod 755 $@
 
-larrd-grapher.cgi: larrd-grapher.cgi.DIST
-	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBVAR@!$(BBVAR)!g' >$@
+bb-larrdgraph.sh: bb-larrdgraph.sh-bbgend.DIST
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' >$@
 	chmod 755 $@
 
 maint.pl: maint.pl.DIST
