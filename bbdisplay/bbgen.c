@@ -2,10 +2,23 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <sys/types.h>
+#include <dirent.h>
 
 #include "bbgen.h"
 
-page_t	*pagehead;
+page_t	*pagehead = NULL;
+link_t  *linkhead = NULL;
+link_t	null_link = { "", "", NULL };
+
+link_t *find_link(const char *hostname)
+{
+	link_t *l;
+
+	for (l=linkhead; (l && (strcmp(l->name, hostname) != 0)); l = l->next);
+
+	return (l ? l : &null_link);
+}
 
 page_t *init_page(const char *name, const char *title)
 {
@@ -36,10 +49,33 @@ host_t *init_host(const char *hostname)
 	host_t *newhost = malloc(sizeof(host_t));
 
 	strcpy(newhost->hostname, hostname);
-	strcpy(newhost->link, "");
+	newhost->link = find_link(hostname);
 	newhost->entries = NULL;
 	newhost->next = NULL;
 	return newhost;
+}
+
+link_t *init_link(const char *filename)
+{
+	char *p;
+	link_t *newlink = NULL;
+
+	p = strrchr(filename, '.');
+	if (p == NULL) return NULL;	/* Filename with no extension - not linkable */
+
+	if ( (strcmp(p, ".php") == 0)   ||
+	     (strcmp(p, ".html") == 0)  ||
+	     (strcmp(p, ".htm") == 0)) {
+
+		newlink = malloc(sizeof(link_t));
+		strcpy(newlink->filename, filename);
+
+		*p = '\0';
+		strcpy(newlink->name, filename);  /* Without extension, this time */
+		newlink->next = NULL;
+	}
+
+	return newlink;
 }
 
 void getnamelink(char *l, char **name, char **link)
@@ -80,6 +116,35 @@ void getgrouptitle(char *l, char **title)
 
 		*title = p;
 	}
+}
+
+link_t *load_links(void)
+{
+	DIR		*bblinks;
+	struct dirent 	*d;
+	link_t		*curlink, *toplink, *newlink;
+
+	toplink = NULL;
+	bblinks = opendir(getenv("BBNOTES"));
+	if (!bblinks) {
+		perror("No notes");
+		exit(1);
+	}
+
+	while ((d = readdir(bblinks))) {
+		newlink = init_link(d->d_name);
+		if (newlink) {
+			if (toplink == NULL) {
+				toplink = newlink;
+			}
+			else {
+				curlink->next = newlink;
+			}
+			curlink = newlink;
+		}
+	}
+	closedir(bblinks);
+	return toplink;
 }
 
 page_t *load_bbhosts(void)
@@ -172,7 +237,7 @@ void dumphosts(host_t *head, char *format)
 	host_t *h;
 
 	for (h = head; (h); h = h->next) {
-		printf(format, h->hostname);
+		printf(format, h->hostname, h->link->filename);
 	}
 }
 
@@ -189,20 +254,26 @@ void dumpgroups(group_t *head, char *format, char *hostformat)
 int main(int argc, char *argv[])
 {
 	page_t *p, *q;
+	link_t *l;
+
+	linkhead = load_links();
+	for (l = linkhead; l; l = l->next) {
+		printf("Link for host %s, filename %s\n", l->name, l->filename);
+	}
 
 	pagehead = load_bbhosts();
 	for (p=pagehead; p; p = p->next) {
 		printf("Page: %s, title=%s\n", p->name, p->title);
 		for (q = p->subpages; (q); q = q->next) {
 			printf("\tSubpage: %s, title=%s\n", q->name, q->title);
-			dumpgroups(q->groups, "\t\tGroup: %s\n", "\t\t    Host: %s\n");
-			dumphosts(q->hosts, "\t    Host: %s\n");
+			dumpgroups(q->groups, "\t\tGroup: %s\n", "\t\t    Host: %s, link:%s\n");
+			dumphosts(q->hosts, "\t    Host: %s, link: %s\n");
 		}
 
-		dumpgroups(p->groups, "\tGroup: %s\n","\t    Host: %s\n");
-		dumphosts(p->hosts, "    Host: %s\n");
+		dumpgroups(p->groups, "\tGroup: %s\n","\t    Host: %s, link: %s\n");
+		dumphosts(p->hosts, "    Host: %s, link: %s\n");
 	}
-	dumphosts(pagehead->hosts, "Host: %s\n");
+	dumphosts(pagehead->hosts, "Host: %s, link: %s\n");
 	return 0;
 }
 

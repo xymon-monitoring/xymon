@@ -9,12 +9,19 @@
 #define COL_YELLOW	4
 #define COL_RED		5
 
+/* Info-link definitions. */
+typedef struct {
+	char	name[64];
+	char	filename[64];
+	void	*next;
+} link_t;
+
 /* Column definitions.                     */
 /* Basically a list of all possible column */
 /* names with links to their help-texts    */
 typedef struct {
 	char	name[20];
-	char	link[200];
+	link_t	*link;
 	void	*next;
 } col_t;
 
@@ -31,7 +38,7 @@ typedef struct {
 
 typedef struct {
 	char	hostname[60];
-	char	link[200];
+	link_t	*link;
 	entry_t	*entries;
 	void	*next;
 } host_t;
