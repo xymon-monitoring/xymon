@@ -4,7 +4,7 @@ CFLAGS=-g -Wall
 
 GENOBJS = bbgen.o debug.o loaddata.o larrdgen.o pagegen.o process.o util.o infogen.o alert.o
 TESTOBJS = bbtest-web.o util.o debug.o
-NETOBJS = bbnethosts.o util.o debug.o
+NETOBJS = bbnethosts.o
 GMCOBJS = bbgmchosts.o
 
 bbgen: $(GENOBJS)
