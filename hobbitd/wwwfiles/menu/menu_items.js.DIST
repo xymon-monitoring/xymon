@@ -1,16 +1,16 @@
 var MENU_ITEMS = [
 	['Views', null, null,
-		['Main view', '/bb/bb.html'],
-		['All non-green view', '/bb/bb2.html'],
-		['NK view', '/bb/bbnk.html'],
+		['Main view', '@BBHOSTURL@/bb.html'],
+		['All non-green view', '@BBHOSTURL@/bb2.html'],
+		['NK view', '@BBHOSTURL@/bbnk.html'],
 	],
 	['Reports', null, null,
-		['Availability Report', '/bb-cgi/bb-rep.sh'],
+		['Availability Report', '@BBCGIURL@/bb-rep.sh'],
 	],
 	['Administration', null, null,
-		['Find host', '/bb-cgi/bb-findhost.sh'],
-		['Acknowledge alert', '/bb-cgi/bb-ack.sh'],
-		['Enable/disable', '/bb-cgi/maint.pl'],
+		['Find host', '@BBCGIURL@/bb-findhost.sh'],
+		['Acknowledge alert', '@BBCGIURL@/bb-ack.sh'],
+		['Enable/disable', '@BBCGIURL@/maint.pl'],
 	],
 ];
 
