@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.15 2003-09-29 22:18:59 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.16 2003-09-30 07:30:06 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -38,6 +38,7 @@ typedef struct testspec_t {
 	char *resultexpr;
 	value_t *valuelist;
 	long result;
+	char *errbuf;
 	struct testspec_t *next;
 } testspec_t;
 
@@ -86,7 +87,10 @@ static void loadtests(void)
 		sprintf(fn, "%s/etc/bbcombotests.cfg", getenv("BBHOME"));
 		fd = fopen(fn, "r");
 	}
-	if (fd == NULL) return;
+	if (fd == NULL) {
+		errprintf("Cannot open %s/etc/bbcombotest.cfg\n", getenv("BBHOME"));
+		return;
+	}
 
 	while (fgets(l, sizeof(l), fd)) {
 		char *p, *comment;
@@ -104,34 +108,30 @@ static void loadtests(void)
 		*outp = '\0';
 		if (strlen(inp)) memmove(outp, inp, strlen(inp)+1);
 
-		if (strlen(l)) {
+		if (strlen(l) && (l[0] != '#') && (p = strchr(l, '=')) ) {
 			testspec_t *newtest = (testspec_t *) malloc(sizeof(testspec_t));
 
-			p = strchr(l, '=');
-			if (p) {
-				*p = '\0';
-
-				comment = strchr(p+1, '#');
-				if (comment) *comment = '\0';
-				newtest->reshostname = malcop(gethname(l));
-				newtest->restestname = malcop(gettname(l));
-				newtest->expression = malcop(p+1);
-				newtest->comment = (comment ? malcop(comment+1) : NULL);
-				newtest->resultexpr = NULL;
-				newtest->valuelist = NULL;
-				newtest->result = -1;
-				newtest->next = testhead;
-				testhead = newtest;
-				testcount++;
-			}
-
+			*p = '\0';
+			comment = strchr(p+1, '#');
+			if (comment) *comment = '\0';
+			newtest->reshostname = malcop(gethname(l));
+			newtest->restestname = malcop(gettname(l));
+			newtest->expression = malcop(p+1);
+			newtest->comment = (comment ? malcop(comment+1) : NULL);
+			newtest->resultexpr = NULL;
+			newtest->valuelist = NULL;
+			newtest->result = -1;
+			newtest->errbuf = NULL;
+			newtest->next = testhead;
+			testhead = newtest;
+			testcount++;
 		}
 	}
 
 	fclose(fd);
 }
 
-static long getvalue(char *hostname, char *testname, int *color)
+static long getvalue(char *hostname, char *testname, int *color, char **errbuf)
 {
 	char fn[MAX_PATH];
 	FILE *fd;
@@ -139,8 +139,13 @@ static long getvalue(char *hostname, char *testname, int *color)
 	struct stat st;
 	testspec_t *walk;
 	int statres;
+	char errtext[1024];
+	char *errptr;
+	int result;
 
 	*color = -1;
+	errptr = errtext; 
+	*errptr = '\0';
 
 	/* First check if it is one of our own tests */
 	for (walk = testhead; (walk && ( (strcmp(walk->reshostname, hostname) != 0) || (strcmp(walk->restestname, testname) != 0) ) ); walk = walk->next);
@@ -157,7 +162,7 @@ static long getvalue(char *hostname, char *testname, int *color)
 		statres = stat(fn, &st);
 	}
 	if (statres) {
-		dprintf("No status file for host=%s, test=%s\n", hostname, testname);
+		errptr += sprintf(errptr, "No status file for host=%s, test=%s\n", hostname, testname);
 	}
 	else if (st.st_mtime < time(NULL)) {
 		dprintf("Will not use a stale logfile for combo-tests - setting purple\n");
@@ -166,18 +171,28 @@ static long getvalue(char *hostname, char *testname, int *color)
 	else {
 		fd = fopen(fn, "r");
 		if (fd == NULL) {
-			dprintf("Cannot open file %s\n", fn);
-			return -1;
-		}
-
-		if (fgets(l, sizeof(l), fd)) {
-			*color = parse_color(l);
+			errptr += sprintf("Cannot open file %s\n", fn);
 		}
 		else {
-			dprintf("Cannot read status file %s\n", fn);
+			if (fgets(l, sizeof(l), fd)) {
+				*color = parse_color(l);
+			}
+			else {
+				errptr += sprintf("Cannot read status file %s\n", fn);
+			}
+	
+			fclose(fd);
 		}
+	}
 
-		fclose(fd);
+	/* Save error messages */
+	if (strlen(errtext) > 0) {
+		if (*errbuf == NULL)
+			*errbuf = malcop(errtext);
+		else {
+			*errbuf = (char *)realloc(*errbuf, strlen(*errbuf)+strlen(errtext)+1);
+			strcat(*errbuf, errtext);
+		}
 	}
 
 	if (*color == -1) return -1;
@@ -185,7 +200,7 @@ static long getvalue(char *hostname, char *testname, int *color)
 }
 
 
-static long evaluate(char *symbolicexpr, char **resultexpr, value_t **valuelist)
+static long evaluate(char *symbolicexpr, char **resultexpr, value_t **valuelist, char **errbuf)
 {
 	char expr[MAX_LINE_LEN];
 	char *inp, *outp, *symp;
@@ -197,6 +212,7 @@ static long evaluate(char *symbolicexpr, char **resultexpr, value_t **valuelist)
 	int onecolor;
 	value_t *valhead = NULL, *valtail = NULL;
 	value_t *newval;
+	char errtext[1024];
 
 	done = 0; inp=symbolicexpr; outp=expr; symp = NULL; 
 	while (!done) {
@@ -212,7 +228,7 @@ static long evaluate(char *symbolicexpr, char **resultexpr, value_t **valuelist)
 				/* Symbol finished - evaluate the symbol */
 				*symp = '\0';
 				insymbol = 0;
-				oneval = getvalue(gethname(symbol), gettname(symbol), &onecolor);
+				oneval = getvalue(gethname(symbol), gettname(symbol), &onecolor, errbuf);
 				sprintf(outp, "%ld", oneval);
 				outp += strlen(outp);
 
@@ -243,7 +259,17 @@ static long evaluate(char *symbolicexpr, char **resultexpr, value_t **valuelist)
 	error = 0; 
 	result = compute(expr, &error);
 
-	if (error) dprintf("calculate(%s) returned error %d\n", expr, error);
+	if (error) {
+		sprintf(errtext, "compute(%s) returned error %d\n", expr, error);
+		if (*errbuf == NULL) {
+			*errbuf = malcop(errtext);
+		}
+		else {
+			*errbuf = (char *)realloc(*errbuf, strlen(*errbuf)+strlen(errtext)+1);
+			strcat(*errbuf, errtext);
+		}
+	}
+
 	*valuelist = valhead;
 	return result;
 }
@@ -302,7 +328,7 @@ int main(int argc, char *argv[])
 		pending = testcount;
 		for (t=testhead; (t); t = t->next) {
 			if (t->result == -1) {
-				t->result = evaluate(t->expression, &t->resultexpr, &t->valuelist);
+				t->result = evaluate(t->expression, &t->resultexpr, &t->valuelist, &t->errbuf);
 				if (t->result != -1) testcount--;
 			}
 		}
@@ -327,6 +353,11 @@ int main(int argc, char *argv[])
 			for (vwalk = t->valuelist; (vwalk); vwalk = vwalk->next) {
 				sprintf(msgline, "&%s %s\n", colorname(vwalk->color), vwalk->symbol);
 				addtostatus(msgline);
+			}
+
+			if (t->errbuf) {
+				addtostatus("\nErrors occurred during evaluation:\n");
+				addtostatus(t->errbuf);
 			}
 		}
 		finish_status();
