@@ -20,6 +20,7 @@
 #define __LOADDATA_H_
 
 extern int statuscount;
+extern int usebbgend;
 
 extern char     *ignorecolumns;
 extern char	*dialupskin;
