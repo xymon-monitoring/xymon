@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.61 2003-06-23 20:54:23 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.62 2003-06-24 12:40:11 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -84,7 +84,11 @@ void errprintf(const char *fmt, ...)
 	va_list args;
 
 	va_start(args, fmt);
+#ifdef NO_VSNPRINTF
 	vsprintf(msg, fmt, args);
+#else
+	vsnprintf(msg, sizeof(msg), fmt, args);
+#endif
 	va_end(args);
 
 	fprintf(stderr, "%s", msg);
