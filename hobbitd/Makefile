@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -g -I.. -DMAXMSG=8192 -Wall
 
 LIBOBJS = ../debug.o ../util.o
-BBDOBJS = bbd_net.o bbdutil.o loadhosts.o
+BBDOBJS = bbd_net.o bbdutil.o bbdworker.o loadhosts.o
 CHANNELOBJS = bbd_channel.o bbdutil.o
 
 FILESTOREOBJS = bbd_filestore.o bbdworker.o
@@ -10,7 +10,7 @@ HISTORYOBJS = bbd_history.o bbdworker.o
 
 all: bbd_net bbd_channel bbd_filestore bbd_history
 
-bbd_net: $(BBDOBJS)
+bbd_net: $(BBDOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(BBDOBJS) $(LIBOBJS)
 
 bbd_channel: $(CHANNELOBJS) $(LIBOBJS)
