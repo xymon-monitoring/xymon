@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.136 2003-07-02 11:04:59 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.137 2003-07-06 14:53:46 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -132,6 +132,11 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 			includecolumns = malloc(strlen(lp)+2);
 			sprintf(includecolumns, ",%s,", (lp+1));
+		}
+		else if (argnmatch(argv[i], "--eventignore=")) {
+			char *lp = strchr(argv[i], '=');
+			eventignorecolumns = malloc(strlen(lp)+2);
+			sprintf(eventignorecolumns, ",%s,", (lp+1));
 		}
 		else if (argnmatch(argv[i], "--doccgi=")) {
 			char *lp = strchr(argv[i], '=');
@@ -339,6 +344,7 @@ int main(int argc, char *argv[])
 			printf("    --purplelifetime=N          : Purple messages have a lifetime of N minutes\n");
 			printf("    --ignorecolumns=test[,test] : Completely ignore these columns\n");
 			printf("    --includecolumns=test[,test]: Always include these columns on bb2 page\n");
+			printf("    --eventignore=test[,test]   : Columns to ignore in bb2 event-log display\n");
 			printf("    --doccgi=cgibinURL          : Hostnames link to a general CGI script for docs\n");
 			printf("    --htmlextension=.EXT        : Sets filename extension for generated file (default: .html\n");
 			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbgen\n");

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.71 2003-07-04 09:37:03 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.72 2003-07-06 14:53:46 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -46,6 +46,8 @@ int  sort_grouponly_items = 0; /* Standard BB behaviour: Dont sort group-only it
 char *documentationcgi = NULL;
 char *htmlextension = ".html"; /* Filename extension for generated files */
 char *defaultpagetitle = NULL;
+
+char *eventignorecolumns = NULL;
 
 /* Format strings for htaccess files */
 char *htaccess = NULL;
@@ -810,6 +812,19 @@ void do_page_with_subs(bbgen_page_t *curpage, dispsummary_t *sums)
 	}
 }
 
+int wanted_eventcolumn(char *service)
+{
+	char svc[100];
+	int result;
+
+	if (!eventignorecolumns || (strlen(service) > (sizeof(svc)-3))) return 1;
+
+	sprintf(svc, ",%s,", service);
+	result = (strstr(eventignorecolumns, svc) == NULL);
+
+	return result;
+}
+
 void do_eventlog(FILE *output, int maxcount, int maxminutes)
 {
 	FILE *eventlog;
@@ -833,17 +848,26 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 		return;
 	}
 
-	/* HACK ALERT! */
 	if (stat(eventlogfilename, &st) == 0) {
-		char dummy[80];
+		time_t curtime;
+		int done = 0;
 
-		/* Assume a log entry is max 80 bytes */
-		if (80*maxcount < st.st_size)
-			fseek(eventlog, -80*maxcount, SEEK_END);
-		else
-			rewind(eventlog);
-
-		fgets(dummy, sizeof(dummy), eventlog);
+		/* Find a spot in the eventlog file close to where the cutoff time is */
+		fseek(eventlog, 0, SEEK_END);
+		do {
+			/* Go back maxcount*80 bytes - one entry is ~80 bytes */
+			if (ftell(eventlog) > maxcount*80) {
+				fseek(eventlog, -maxcount*80, SEEK_CUR); 
+				fgets(l, sizeof(l), eventlog); /* Skip to start of line */
+				fgets(l, sizeof(l), eventlog);
+				sscanf(l, "%*s %*s %lu %*u %*u %*s %*s %*d", &curtime);
+				done = (curtime < cutoff);
+			}
+			else {
+				rewind(eventlog);
+				done = 1;
+			}
+		} while (!done);
 	}
 	
 	events = malloc(maxcount*sizeof(event_t));
@@ -856,7 +880,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 			&events[num].eventtime, &events[num].changetime, &events[num].duration, 
 			newcol, oldcol, &events[num].state);
 
-		if ((events[num].eventtime > cutoff) && find_host(events[num].hostname)) {
+		if ((events[num].eventtime > cutoff) && find_host(events[num].hostname) && wanted_eventcolumn(events[num].service)) {
 			events[num].newcolor = eventcolor(newcol);
 			events[num].oldcolor = eventcolor(oldcol);
 			eventintime_count++;

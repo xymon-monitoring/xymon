@@ -26,6 +26,7 @@ extern int sort_grouponly_items;
 extern char *documentationcgi;
 extern char *htmlextension;
 extern char *defaultpagetitle;
+extern char *eventignorecolumns;
 extern char *htaccess;
 extern char *bbhtaccess;
 extern char *bbpagehtaccess;
