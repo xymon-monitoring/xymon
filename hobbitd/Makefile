@@ -14,6 +14,9 @@ LARRDOBJS     = hobbitd_larrd.o     hobbitd_worker.o do_larrd.o
 SAMPLEOBJS    = hobbitd_sample.o    hobbitd_worker.o
 HOBBITGRAPHOBJS= hobbitgraph.o
 
+IDTOOL := $(shell if test `uname -s` = "SunOS"; then echo /usr/xpg4/bin/id; else echo id; fi)
+
+
 all: $(PROGRAMS) $(CGISCRIPTS) cfgfiles moverrd.sh
 
 # Need NETLIBS on Solaris for getservbyname(), called by parse_url()
@@ -116,6 +119,6 @@ setup:
 	cd etcfiles; ../../build/install-nooverwrite.sh etc/ hobbit-apache.conf hobbitserver.cfg bb-hosts hobbit-alerts.cfg hobbitlaunch.cfg hobbitgraph.cfg
 	mkdir -p $(BBLOGDIR)
 	chown $(BBUSER)         $(BBLOGDIR) $(BBHOME) $(BBHOME)/* $(BBHOME)/bin/* $(BBHOME)/etc/* $(BBHOME)/ext/* $(BBHOME)/web/* $(BBHOME)/www/gifs $(BBHOME)/www/gifs/* $(BBHOME)/www/menu $(BBHOME)/www/menu/* $(BBHOME)/www/help $(BBHOME)/www/help/* $(BBHOME)/www/notes $(BBHOME)/www/html $(BBHOME)/www/wml $(BBVAR) $(BBVAR)/* $(CGIDIR) $(CGIDIR)/*
-	chgrp `id -g $(BBUSER)` $(BBLOGDIR) $(BBHOME) $(BBHOME)/* $(BBHOME)/bin/* $(BBHOME)/etc/* $(BBHOME)/ext/* $(BBHOME)/web/* $(BBHOME)/www/gifs $(BBHOME)/www/gifs/* $(BBHOME)/www/menu $(BBHOME)/www/menu/* $(BBHOME)/www/help $(BBHOME)/www/help/* $(BBHOME)/www/notes $(BBHOME)/www/html $(BBHOME)/www/wml $(BBVAR) $(BBVAR)/* $(CGIDIR) $(CGIDIR)/*
+	chgrp `$(IDTOOL) -g $(BBUSER)` $(BBLOGDIR) $(BBHOME) $(BBHOME)/* $(BBHOME)/bin/* $(BBHOME)/etc/* $(BBHOME)/ext/* $(BBHOME)/web/* $(BBHOME)/www/gifs $(BBHOME)/www/gifs/* $(BBHOME)/www/menu $(BBHOME)/www/menu/* $(BBHOME)/www/help $(BBHOME)/www/help/* $(BBHOME)/www/notes $(BBHOME)/www/html $(BBHOME)/www/wml $(BBVAR) $(BBVAR)/* $(CGIDIR) $(CGIDIR)/*
 	cd $(BBHOME); ln -sf bin/starthobbit.sh .
 

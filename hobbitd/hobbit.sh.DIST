@@ -5,9 +5,18 @@
 # This starts the "hobbitlaunch" tool, which in turn starts
 # all of the other Hobbit server programs.
 
+case "`uname -s`" in
+   "SunOS")
+   	ID=/usr/xpg4/bin/id
+	;;
+   *)
+   	ID=id
+	;;
+esac
+
 case "$1" in
    "start")
-	if test `id -un` != @BBUSER@
+	if test `$ID -un` != @BBUSER@
 	then
 		echo "Hobbit must be started as the @BBUSER@ user"
 		exit 1
