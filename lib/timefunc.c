@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.10 2005-01-23 12:00:41 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.11 2005-02-02 21:12:11 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -323,21 +323,10 @@ int durationvalue(char *dur)
 	*p = modifier;
 
 	switch (modifier) {
+	  case 'm': break;			/* minutes */
 	  case 'h': result *= 60; break;	/* hours */
 	  case 'd': result *= 1440; break;	/* days */
 	  case 'w': result *= 10080; break;	/* weeks */
-	  case 'm': 
-		    now = time(NULL);
-		    nowtm = localtime(&now);
-		    nowtm->tm_mon += result;
-		    result = (mktime(nowtm) - now) / 60;
-		    break;
-	  case 'y': 
-		    now = time(NULL);
-		    nowtm = localtime(&now);
-		    nowtm->tm_year += result;
-		    result = (mktime(nowtm) - now) / 60;
-		    break;
 	}
 
 	return result;
