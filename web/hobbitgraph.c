@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.7 2004-12-26 22:43:49 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.8 2004-12-26 23:27:18 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -75,6 +75,8 @@ int rrddbcount = 0;
 int rrddbsize = 0;
 int rrdidx = 0;
 int paramlen = 0;
+int firstidx = -1;
+int lastidx = 0;
 
 void errormsg(char *msg)
 {
@@ -112,25 +114,33 @@ void parse_query(void)
 		else if (strcmp(token, "disp") == 0) {
 			displayname = strdup(val);
 		}
-		else if (strcmp(val, "hourly") == 0) {
-			period = HOUR_GRAPH;
-			gtype = strdup(val);
-			glegend = "Last 48 Hours";
+		else if (strcmp(token, "graph") == 0) {
+			if (strcmp(val, "hourly") == 0) {
+				period = HOUR_GRAPH;
+				gtype = strdup(val);
+				glegend = "Last 48 Hours";
+			}
+			else if (strcmp(val, "daily") == 0) {
+				period = DAY_GRAPH;
+				gtype = strdup(val);
+				glegend = "Last 12 Days";
+			}
+			else if (strcmp(val, "weekly") == 0) {
+				period = WEEK_GRAPH;
+				gtype = strdup(val);
+				glegend = "Last 48 Days";
+			}
+			else if (strcmp(val, "monthly") == 0) {
+				period = MONTH_GRAPH;
+				gtype = strdup(val);
+				glegend = "Last 576 Days";
+			}
 		}
-		else if (strcmp(val, "daily") == 0) {
-			period = DAY_GRAPH;
-			gtype = strdup(val);
-			glegend = "Last 12 Days";
+		else if (strcmp(token, "first") == 0) {
+			firstidx = atoi(val) - 1;
 		}
-		else if (strcmp(val, "weekly") == 0) {
-			period = WEEK_GRAPH;
-			gtype = strdup(val);
-			glegend = "Last 48 Days";
-		}
-		else if (strcmp(val, "monthly") == 0) {
-			period = MONTH_GRAPH;
-			gtype = strdup(val);
-			glegend = "Last 576 Days";
+		else if (strcmp(token, "count") == 0) {
+			lastidx = firstidx + atoi(val) - 1;
 		}
 
 		token = strtok(NULL, "&");
@@ -337,7 +347,7 @@ int main(int argc, char *argv[])
 
 	DIR *dir;
 	char **calcpr  = NULL;
-	int argi, pcount, argcount, xsize, ysize, result;
+	int argi, pcount, argcount, rrdargcount, xsize, ysize, result;
 	time_t now;
 	char timestamp[100];
 	char graphtitle[1024];
@@ -588,14 +598,16 @@ int main(int argc, char *argv[])
 	rrdargs[argi++]  = "-a";
 	rrdargs[argi++] = "PNG";
 	for (rrdidx=0; (rrdidx < rrddbcount); rrdidx++) {
-		int i;
-		for (i=0; (gdef->defs[i]); i++) rrdargs[argi++] = strdup(expand_tokens(gdef->defs[i]));
+		if ((firstidx == -1) || ((rrdidx >= firstidx) && (rrdidx <= lastidx))) {
+			int i;
+			for (i=0; (gdef->defs[i]); i++) rrdargs[argi++] = strdup(expand_tokens(gdef->defs[i]));
+		}
 	}
 	strftime(timestamp, sizeof(timestamp), "COMMENT:Updated: %d-%b-%Y %H:%M:%S", localtime(&now));
 	rrdargs[argi++] = strdup(timestamp);
-	rrdargs[argi++] = NULL;
+	rrdargcount = argi; rrdargs[argi++] = NULL;
 
-	if (debug) { for (argi=0; (argi < argcount); argi++) dprintf("%s\n", rrdargs[argi]); }
+	if (debug) { for (argi=0; (argi < rrdargcount); argi++) dprintf("%s\n", rrdargs[argi]); }
 
 	/* If sending to stdout, print the HTTP header first. */
 	if (strcmp(graphfn, "-") == 0) {
@@ -610,7 +622,7 @@ int main(int argc, char *argv[])
 
 	/* All set - generate the graph */
 	rrd_clear_error();
-	result = rrd_graph(argcount, rrdargs, &calcpr, &xsize, &ysize);
+	result = rrd_graph(rrdargcount, rrdargs, &calcpr, &xsize, &ysize);
 
 	/* Was it OK ? */
 	if (rrd_test_error() || (result != 0)) {
@@ -639,14 +651,15 @@ int main(int argc, char *argv[])
 
 	gdef = gdefuser = NULL;
 	wantsingle = 0;
+
 #if 0
 	/* Why does this cause the program to crash ? */
 	for (argi=11; (argi < argcount); argi++) {
 		if (rrdargs[argi]) free(rrdargs[argi]);
 	}
 	free(rrdargs);
-#endif
 	rrdargs = NULL;
+#endif
 
 	return 0;
 }
