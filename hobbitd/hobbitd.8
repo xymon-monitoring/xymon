@@ -169,15 +169,7 @@ the exact communications from a single host. This option causes hobbitd to
 dump all traffic from a single host to the file "/tmp/hobbitd.dbg".
 
 .SH HOW ALERTS TRIGGER
-When a new status message arrives, hobbitd first sees if the color has
-changed since the previous status message. If there is no change in color, 
-then hobbitd will not trigger the 
-.I hobbitd_alert(8)
-module. (However, hobbitd_alert has its own set of rules for repeating
-active alerts that may trigger an alert message regardless of what hobbitd
-does).
-
-When the color changes, hobbitd matches the old and new color against
+When a status arrives, hobbitd matches the old and new color against
 the "alert" colors (from the --alertcolors" option) and the "OK" colors 
 (from the "--okcolors" option). The old and new color falls into one of three
 categories:
@@ -191,22 +183,21 @@ The color is one of the "alert" colors (e.g. "red").
 .BR UNDECIDED:
 The color is neither an "alert" color nor an "OK" color (e.g. "yellow").
 
-If the status goes from OK to ALERT, an alert is triggered
+If the new status shows an ALERT state, then a message to the
+.I hobbitd_alert(8) 
+module is triggered. This may be a repeat of a previous alert, but 
+.I hobbitd_alert(8)
+will handle that internally, and only send alert messages with the
+interval configured in 
+.I hobbit-alerts.cfg(5).
 
-If the status goes from ALERT to OK, a recovery message is triggered.
+If the status goes from a not-OK state (ALERT or UNDECIDED) to OK, 
+and there is a record of having been in a ALERT state previously, 
+then a recovery message is triggered.
 
-If the status goes from UNDECIDED to ALERT, an alert is triggered
-only if there is no alert active already. So a status may flip-flop 
-between e.g. "red" and "yellow" without triggering an alert, but
-if the status goes from "green" via "yellow" to "red", then an
-alert is triggered.
-
-If the status goes from UNDECIDED to OK, a recovery messages is 
-triggered only if there is an alert active. Again, a status can
-flip-flop between e.g. "yellow" and "green" without triggering
-a recovery message, but if it goes from "red" to "yellow" to "green"
-then a recovery message is generated.
-
+The use of the OK, ALERT and UNDECIDED states make it possible to
+avoid being flooded with alerts when a status flip-flops between
+e.g yellow and red, or green and yellow.
 
 .SH CHANNELS
 A lot of functionality in the Hobbit server is delegated to "worker modules"

@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.98 2005-01-15 17:38:28 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.99 2005-01-18 21:52:33 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -802,28 +802,26 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 			log->oldcolor, oldalertstatus, newcolor, newalertstatus);
 
 		/*
-		 * We pass the message to the page channel, IF
-		 * - alertstate goes from A_OK -> A_ALERT (direct alert)
-		 * - alertstate goes from A_ALERT -> A_OK (direct recovery)
-		 * - alertstate goes from A_UNDECIDED -> A_ALERT, and we have no active alert (gradually critical)
-		 * - alertstate goes from A_UNDECIDED -> A_OK, and we have an active alert (gradual recovery)
-		 */
-		if ( ((oldalertstatus == A_OK) && (newalertstatus == A_ALERT)) ||
-		     ((oldalertstatus == A_ALERT) && (newalertstatus == A_OK)) ||
-		     ((oldalertstatus == A_UNDECIDED) && (newalertstatus == A_ALERT) && !log->activealert) ||
-		     ((oldalertstatus == A_UNDECIDED) && (newalertstatus == A_OK) && log->activealert) ) {
-
-			log->activealert = (newalertstatus == A_ALERT);
-			dprintf("posting to page channel\n");
-			posttochannel(pagechn, channelnames[C_PAGE], msg, sender, hostname, log, NULL);
-		}
-
-		/*
 		 * Change of color always goes to the status-change channel.
 		 */
 		dprintf("posting to stachg channel\n");
 		posttochannel(stachgchn, channelnames[C_STACHG], msg, sender, hostname, log, NULL);
 		log->lastchange = time(NULL);
+	}
+
+	if (newalertstatus == A_ALERT) {
+		/* Status is critical, send alerts */
+		dprintf("posting to page channel\n");
+
+		log->activealert = 1;
+		posttochannel(pagechn, channelnames[C_PAGE], msg, sender, hostname, log, NULL);
+	}
+	else if (log->activealert && (oldalertstatus != A_OK) && (newalertstatus == A_OK)) {
+		/* Status has recovered, send recovery notice */
+		dprintf("posting to page channel\n");
+
+		log->activealert = 0;
+		posttochannel(pagechn, channelnames[C_PAGE], msg, sender, hostname, log, NULL);
 	}
 
 	dprintf("posting to status channel\n");
@@ -1923,7 +1921,7 @@ void load_checkpoint(char *fn)
 		ltail->origin = origin;
 		ltail->color = color;
 		ltail->oldcolor = oldcolor;
-		ltail->activealert = 0;
+		ltail->activealert = (decide_alertstate(color) == A_ALERT);
 		ltail->testflags = ( (testflags && strlen(testflags)) ? xstrdup(testflags) : NULL);
 		strcpy(ltail->sender, sender);
 		ltail->logtime = logtime;
