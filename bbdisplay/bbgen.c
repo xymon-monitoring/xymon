@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.61 2003-01-30 17:23:18 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.62 2003-01-31 08:37:33 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -82,6 +82,7 @@ int main(int argc, char *argv[])
 	page_t 		*p, *q;
 	dispsummary_t	*s;
 	int		i;
+	int		pagegenstat;
 
 	sprintf(pagedir, "%s/www", getenv("BBHOME"));
 	sprintf(rrddir, "%s/rrd", getenv("BBVAR"));
@@ -180,8 +181,10 @@ int main(int argc, char *argv[])
 	load_alerts();
 
 	/* Generate the LARRD pages before loading state */
-	generate_larrd(rrddir, larrdcol);
-	generate_info(infocol);
+	pagegenstat = generate_larrd(rrddir, larrdcol);
+
+	/* Dont generate both LARRD and info in one run */
+	if (pagegenstat) pagegenstat = generate_info(infocol);
 
 	statehead = load_state();
 

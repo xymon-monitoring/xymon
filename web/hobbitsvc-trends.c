@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.10 2003-01-30 13:43:08 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.11 2003-01-31 08:37:33 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -51,7 +51,7 @@ char	*rrdnames[] = {
         NULL
 };
 
-void generate_larrd(char *rrddirname, char *larrdcolumn)
+int generate_larrd(char *rrddirname, char *larrdcolumn)
 {
 	DIR *rrddir;
 	struct dirent *d;
@@ -64,7 +64,7 @@ void generate_larrd(char *rrddirname, char *larrdcolumn)
 	struct utimbuf logfiletime;
 
 	if (!run_columngen("larrd", larrd_update_interval, enable_larrdgen))
-		return;
+		return 1;
 
 
 	for (i=0; rrdnames[i]; i++) ;
@@ -78,8 +78,8 @@ void generate_larrd(char *rrddirname, char *larrdcolumn)
 	chdir(rrddirname);
 	rrddir = opendir(rrddirname);
 	if (!rrddir) {
-		perror("Cannot access RRD directory");
-		exit(1);
+		printf("Cannot access RRD directory\n");
+		return 1;
 	}
 
 	while ((d = readdir(rrddir))) {
@@ -214,5 +214,6 @@ void generate_larrd(char *rrddirname, char *larrdcolumn)
 
 	closedir(rrddir);
 	free(allrrdlinks);
+	return 0;
 }
 

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.7 2003-01-31 08:28:31 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.8 2003-01-31 08:37:33 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -36,7 +36,7 @@ char infocol[20] = "info";
 int enable_infogen = 0;
 int info_update_interval = 300; /* Update INFO pages every N seconds */
 
-void generate_info(char *infocolumn)
+int generate_info(char *infocolumn)
 {
 	hostlist_t *hostwalk;
 	struct utimbuf logfiletime;
@@ -46,7 +46,7 @@ void generate_info(char *infocolumn)
 	alertrec_t *alerts;
 
 	if (!run_columngen("info", info_update_interval, enable_infogen))
-		return;
+		return 1;
 
 	logfiletime.actime = logfiletime.modtime = (time(NULL) + atoi(getenv("PURPLEDELAY"))*60);
 
@@ -269,5 +269,7 @@ void generate_info(char *infocolumn)
 		headfoot(fd, "hostsvc", "", "", "footer", COL_GREEN);
 		fclose(fd);
 	}
+
+	return 0;
 }
 
