@@ -2,7 +2,7 @@ all:
 	@/bin/true
 
 clean:
-	rm -f *~ manpages/* manpages/man1/* manpages/man5/* manpages/man7/* manpages/man8/*
+	rm -f *~ manpages/index.html* manpages/man1/* manpages/man5/* manpages/man7/* manpages/man8/*
 
 install:
 	mkdir -p $(BBHOME)/www/help/manpages
