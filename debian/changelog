@@ -1,3 +1,9 @@
+hobbit (4.0-3) unstable; urgency=low
+
+  * Fix preinst script failure when adding group- and user-id.
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Sat, 12 Mar 2005 08:13:52 +0100
+
 hobbit (4.0-2) unstable; urgency=low
 
   * Changes to Debian pre/post install scripts to support querying of
