@@ -395,9 +395,12 @@ else
 		echo "BBHOSTURL = $BBHOSTURL"    >>Makefile
 		echo "# URL for BB CGIs"         >>Makefile
 		echo "BBCGIURL = $BBCGIURL"      >>Makefile
+
+		echo ""                          >>Makefile
 		echo "# RRDtool settings"        >>Makefile
 		echo "RRDINCDIR = -I$RRDINC"     >>Makefile
-		echo "RRDLIBS = -L$RRDLIB -lrrd" >>Makefile
+		echo "RRDLIBS = -L$RRDLIB -lrrd $PNGLIB" >>Makefile
+		echo "#"                         >>Makefile
 		echo "# PCRE settings"           >>Makefile
 		echo "PCREINCDIR = -I$PCREINC"   >>Makefile
 		echo "PCRELIBS = -L$PCRELIB -lpcre" >>Makefile
