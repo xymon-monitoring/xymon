@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.106 2003-12-10 20:56:58 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.107 2004-01-27 11:36:27 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1054,7 +1054,14 @@ int do_bb2_page(char *filename, int summarytype)
 		if (useit) {
 			host_t *newhost, *walk;
 
-			if (h->hostentry->color > bb2page.color) bb2page.color = h->hostentry->color;
+			switch (summarytype) {
+			  case PAGE_BB2:
+				if (h->hostentry->bb2color > bb2page.color) bb2page.color = h->hostentry->bb2color;
+				break;
+			  case PAGE_NK:
+				if (h->hostentry->bbnkcolor > bb2page.color) bb2page.color = h->hostentry->bbnkcolor;
+				break;
+			}
 
 			/* We need to create a copy of the original record, */
 			/* as we will diddle with the pointers */
@@ -1166,10 +1173,12 @@ int do_bb2_page(char *filename, int summarytype)
 			svcspace = '(';
 
 			for (ewalk = hwalk->entries; (ewalk); ewalk = ewalk->next) {
-				if ((ewalk->color == COL_RED) || (ewalk->color == COL_YELLOW)) {
-					msgptr += sprintf(msgptr, "%s", ewalk->column->name);
-					if (nklog) fprintf(nklog, "%c%s:%s", svcspace, ewalk->column->name, colorname(ewalk->color));
-					svcspace = ' ';
+				if ((summarytype == PAGE_BB2) || (ewalk->alert)) {
+					if ((ewalk->color == COL_RED) || (ewalk->color == COL_YELLOW)) {
+						msgptr += sprintf(msgptr, "%s", ewalk->column->name);
+						if (nklog) fprintf(nklog, "%c%s:%s", svcspace, ewalk->column->name, colorname(ewalk->color));
+						svcspace = ' ';
+					}
 				}
 			}
 			strcpy(msgptr, "\n");

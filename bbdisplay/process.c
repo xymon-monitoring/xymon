@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.18 2003-12-10 20:54:03 henrik Exp $";
+static char rcsid[] = "$Id: process.c,v 1.19 2004-01-27 11:36:27 hstoerne Exp $";
 
 #include <string.h>
 #include <sys/types.h>
@@ -49,12 +49,12 @@ static int wantedcolumn(char *current, char *wanted)
 
 void calc_hostcolors(hostlist_t *head, char *bb2ignores)
 {
-	int		color, bb2color, oldage;
+	int		color, bb2color, bbnkcolor, oldage;
 	hostlist_t 	*h, *cwalk;
 	entry_t		*e;
 
 	for (h = head; (h); h = h->next) {
-		color = bb2color = 0; oldage = 1;
+		color = bb2color = bbnkcolor = 0; oldage = 1;
 
 		for (e = h->hostentry->entries; (e); e = e->next) {
 			if (e->propagate && (e->color > color)) color = e->color;
@@ -63,6 +63,10 @@ void calc_hostcolors(hostlist_t *head, char *bb2ignores)
 			if (e->propagate && (e->color > bb2color) && (strstr(bb2ignores, e->column->listname) == NULL)) {
 				bb2color = e->color;
 			}
+
+			if (e->propagate && e->alert && (e->color > bbnkcolor)) {
+				bbnkcolor = e->color;
+			}
 		}
 
 		/* Blue and clear is not propagated upwards */
@@ -70,12 +74,14 @@ void calc_hostcolors(hostlist_t *head, char *bb2ignores)
 
 		h->hostentry->color = color;
 		h->hostentry->bb2color = bb2color;
+		h->hostentry->bbnkcolor = bbnkcolor;
 		h->hostentry->oldage = oldage;
 
 		/* Need to update the clones also */
 		for (cwalk = h->clones; (cwalk); cwalk = cwalk->next) {
 			cwalk->hostentry->color = color;
 			cwalk->hostentry->bb2color = bb2color;
+			cwalk->hostentry->bbnkcolor = bbnkcolor;
 			cwalk->hostentry->oldage = oldage;
 		}
 	}
