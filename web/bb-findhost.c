@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.3 2004-09-26 14:39:18 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.4 2004-09-26 14:42:48 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -92,21 +92,6 @@ void parse_query(void)
 		return;
 	}
 	else query = urldecode("QUERY_STRING");
-
-	/* 
-	 * [wm]
-	 * So that it is posible to put regexp chars in the search string
-	 * It was necessary to comment this urlvalidate out.
-	 * ATTENTION : Verify the security impact of this removal
-	 *
-	if (!urlvalidate(query, NULL)) {
-		errormsg("Invalid request: QUERY_STRING is invalid(undecodable)");
-		return;
-	}
-
-	 *
-	 *[wm] end
-	 */
 
 	token = strtok(query, "&");
 	while (token) {
