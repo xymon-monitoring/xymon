@@ -1,6 +1,6 @@
 # bb-service
 #
-# $Id: bb-services,v 1.3 2004-08-11 15:00:09 henrik Exp $
+# $Id: bb-services,v 1.4 2004-08-28 20:09:56 henrik Exp $
 #
 # This file defines the way TCP services are tested by bbtest-net
 # (part of the bbgen toolkit).
@@ -78,7 +78,7 @@ service smtps
    options ssl,banner
 #  No default port-number assignment for smtps - nonstandard according to IANA
 
-service pop|pop3|pop-3
+service pop2|pop-2
    send "quit\r\n"
    expect "+OK"
    options banner
@@ -142,6 +142,7 @@ service bbd
    send "dummy"
    port 1984
 
+# The AV scanning daemon from the ClamAV antivirus package
 service clamd
    send "PING\r\n"
    expect "PONG"
