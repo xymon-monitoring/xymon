@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.52 2003-05-23 11:22:58 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.53 2003-05-23 11:26:11 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1036,6 +1036,7 @@ int main(int argc, char *argv[])
 			printf("    --debug                     : Output debugging information\n");
 			printf("    --log=FILENAME              : Output trace of HTTP tests to a file.\n");
 			printf("    --timing                    : Trace the amount of time spent on each series of tests\n");
+			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbtest-net\n");
 
 			return 0;
 		}

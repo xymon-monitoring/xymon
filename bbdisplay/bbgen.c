@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.115 2003-05-23 11:20:13 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.116 2003-05-23 11:26:11 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -301,6 +301,7 @@ int main(int argc, char *argv[])
 			printf("    --debug                     : Debugging information\n");
 #endif
 			printf("    --version                   : Show version information\n");
+			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbgen\n");
 			exit(0);
 		}
 		else if (strncmp(argv[i], "-", 1) == 0) {
