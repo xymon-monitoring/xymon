@@ -6,6 +6,7 @@ Bugfixes
 
 Improvements
 ------------
+* Allow for enable/disable of TCP response check per host/service.
 * https proxying (proxy CONNECT protocol)
 * Improve the history colorbars in cases where there are many
   shortlived statuses. They should not automatically be given 1
