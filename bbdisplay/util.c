@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.12 2003-01-27 23:21:17 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.13 2003-01-28 06:44:45 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -540,5 +540,33 @@ int run_columngen(char *column, int update_interval, int enabled)
 	}
 
 	return 0;
+}
+
+
+char *realurl(char *url)
+{
+	static char result[200];
+	char *p;
+	
+	p = url;
+
+	if (strncmp(p, "content=", 8) == 0) {
+		p += 8;
+	}
+
+	if (strncmp(p, "https2:", 7) == 0) {
+		p += 7;
+		sprintf(result, "https:%s", p);
+	} else if (strncmp(p, "httpsm:", 7) == 0) {
+		p += 7;
+		sprintf(result, "https:%s", p);
+	} else if (strncmp(p, "https:", 6) == 0) {
+		p += 6;
+		sprintf(result, "https:%s", p);
+	} else if (strncmp(p, "http:", 5) == 0) {
+		strcpy(result, p);
+	}
+
+	return result;
 }
 
