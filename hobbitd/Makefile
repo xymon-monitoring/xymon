@@ -1,8 +1,8 @@
 CC = gcc
-CFLAGS = -g -I.. -DMAXMSG=8192
+CFLAGS = -g -I.. -DMAXMSG=8192 -Wall
 
 LIBOBJS = ../debug.o ../util.o
-BBDOBJS = bbd_net.o bbdutil.o
+BBDOBJS = bbd_net.o bbdutil.o loadhosts.o
 CHANNELOBJS = bbd_channel.o bbdutil.o
 
 all: bbd_net bbd_channel
