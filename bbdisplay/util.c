@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.76 2003-07-22 06:58:22 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.77 2003-07-24 14:19:05 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -35,6 +35,7 @@ static char rcsid[] = "$Id: util.c,v 1.76 2003-07-22 06:58:22 henrik Exp $";
 
 #include "bbgen.h"
 #include "util.h"
+#include "debug.h"
 
 int	use_recentgifs = 0;
 char	timestamp[30];
@@ -480,8 +481,7 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 	char	*t_start, *t_next;
 	char	savechar;
 	time_t	now = time(NULL);
-	char	hfpath[MAX_PATH];
-	char	*hfdelim;
+	char	*hfpath;
 
 	/*
 	 * "pagepath" is the relative path for this page, e.g. 
@@ -494,31 +494,46 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 	 * most detailed one, and working up towards the standard "web/bb_TYPE" file.
 	 */
 
-	strcpy(hfpath, pagepath); hfdelim = strrchr(hfpath, '/'); fd = -1;
-	while ((fd == -1) && hfdelim) {
-		char *p;
+	hfpath = malcop(pagepath); 
+	/* Trim off excess trailing slashes */
+	while (*(hfpath + strlen(hfpath) - 1) == '/') {
+		*(hfpath + strlen(hfpath) - 1) = '\0';
+	}
+	fd = -1;
 
-		*hfdelim = '\0';
-		for (p = strchr(hfpath, '/'); (p); p = strchr(hfpath, '/')) *p = '_';
-		sprintf(filename, "%s/web/%s_%s", getenv("BBHOME"), hfpath, head_or_foot);
+	while ((fd == -1) && strlen(hfpath)) {
+		char *p;
+		char *elemstart;
+
+		sprintf(filename, "%s/web/", getenv("BBHOME"));
+		p = strchr(hfpath, '/'); elemstart = hfpath;
+		while (p) {
+			*p = '\0';
+			strcat(filename, elemstart);
+			strcat(filename, "_");
+			*p = '/';
+			p++;
+			elemstart = p; p = strchr(elemstart, '/');
+		}
+		strcat(filename, elemstart);
+		strcat(filename, "_");
+		strcat(filename, head_or_foot);
+
+		dprintf("Trying header/footer file '%s'\n", filename);
 		fd = open(filename, O_RDONLY);
 
 		if (fd == -1) {
-			/*
-			 * HACK: Restore original hfpath (with slashes),
-			 * but immediately cut off the parts we have used
-			 * already.
-			 *
-			 * Then find the next hfdelim value for another round.
-			 */
-			strcpy(hfpath, pagepath); *hfdelim = '\0';
-			hfdelim = strrchr((hfdelim - 1), '/');
+			p = strrchr(hfpath, '/');
+			if (p == NULL) p = hfpath;
+			*p = '\0';
 		}
 	}
+	free(hfpath);
 
 	if (fd == -1) {
 		/* Fall back to default head/foot file. */
 		sprintf(filename, "%s/web/%s_%s", getenv("BBHOME"), pagetype, head_or_foot);
+		dprintf("Trying header/footer file '%s'\n", filename);
 		fd = open(filename, O_RDONLY);
 	}
 
