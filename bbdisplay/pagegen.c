@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.48 2003-05-23 11:15:11 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.49 2003-06-01 21:40:46 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -492,8 +492,9 @@ void do_bbext(FILE *output, char *extenv)
 	p = strtok(bbexts, "\t ");
 
 	while (p) {
-		/* Dont redo the eventlog thing */
-		if (strcmp(p, "eventlog.sh") != 0) {
+		/* Dont redo the eventlog or acklog things */
+		if ((strcmp(p, "eventlog.sh") != 0) &&
+		    (strcmp(p, "acklog.sh") != 0)) {
 			sprintf(extfn, "%s/ext/mkbb/%s", getenv("BBHOME"), p);
 			inpipe = popen(extfn, "r");
 			if (inpipe) {
@@ -723,11 +724,13 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 	/* HACK ALERT! */
 	if (stat(eventlogfilename, &st) == 0) {
 		char dummy[80];
-		long curofs;
 
 		/* Assume a log entry is max 80 bytes */
-		fseek(eventlog, -80*maxcount, SEEK_END);
-		curofs = ftell(eventlog);
+		if (80*maxcount < st.st_size)
+			fseek(eventlog, -80*maxcount, SEEK_END);
+		else
+			rewind(eventlog);
+
 		fgets(dummy, sizeof(dummy), eventlog);
 	}
 	
@@ -824,6 +827,174 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 	free(events);
 	fclose(eventlog);
 }
+
+
+void do_acklog(FILE *output, int maxcount, int maxminutes)
+{
+	FILE *acklog;
+	char acklogfilename[MAX_PATH];
+	time_t cutoff;
+	struct stat st;
+	char l[MAX_LINE_LEN];
+	char title[200];
+	ack_t *acks;
+	int num, ackintime_count;
+
+
+	cutoff = ( (maxminutes) ? (time(NULL) - maxminutes*60) : 0);
+	if ((!maxcount) || (maxcount > 100)) maxcount = 100;
+
+	sprintf(acklogfilename, "%s/acklog", getenv("BBACKS"));
+	acklog = fopen(acklogfilename, "r");
+	if (!acklog) {
+		errprintf("Cannot open acklog");
+		return;
+	}
+
+	/* HACK ALERT! */
+	if (stat(acklogfilename, &st) == 0) {
+		char dummy[80];
+
+		/* Assume a log entry is max 150 bytes */
+		if (150*maxcount < st.st_size)
+			fseek(acklog, -150*maxcount, SEEK_END);
+		fgets(dummy, sizeof(dummy), acklog);
+	}
+
+	acks = malloc(maxcount*sizeof(ack_t));
+	ackintime_count = num = 0;
+
+	while (fgets(l, sizeof(l), acklog)) {
+		char ackedby[MAX_LINE_LEN], hosttest[MAX_LINE_LEN], color[10], ackmsg[MAX_LINE_LEN];
+		char ackfn[MAX_PATH];
+		char *testname;
+		int ok;
+
+		if (atol(l) >= cutoff) {
+			int c_used;
+			char *p, *p1;
+
+			sscanf(l, "%lu\t%d\t%d\t%d\t%s\t%s\t%s\t%n",
+				&acks[num].acktime, &acks[num].acknum,
+				&acks[num].duration, &acks[num].acknum2,
+				ackedby, hosttest, color, &c_used);
+
+			p1 = ackmsg;
+			for (p=l+c_used, p1=ackmsg; (*p); ) {
+				if ((*p == '%') && (strlen(p) >= 3) && isxdigit(*(p+1)) && isxdigit(*(p+2))) {
+					char hexnum[3];
+
+					hexnum[0] = *(p+1);
+					hexnum[1] = *(p+2);
+					hexnum[2] = '\0';
+					*p1 = (char) strtol(hexnum, NULL, 16);
+					p1++;
+					p += 3;
+				}
+				else {
+					*p1 = *p;
+					p1++;
+					p++;
+				}
+			}
+			sprintf(ackfn, "%s/ack.%s", getenv("BBACKS"), hosttest);
+
+			testname = strrchr(hosttest, '.');
+			if (testname) {
+				*testname = '\0'; testname++; 
+			}
+			else testname = "unknown";
+
+			ok = 1;
+
+			/* Ack occurred within wanted timerange ? */
+			if (ok && (acks[num].acktime < cutoff)) ok = 0;
+
+			/* Unknown host ? */
+			if (ok && (find_host(hosttest) == NULL)) ok = 0;
+
+			if (ok) {
+				char *ackerp;
+
+				/* If ack has expired or tag file is gone, the ack is no longer valid */
+				acks[num].ackvalid = 1;
+				if ((acks[num].acktime + 60*acks[num].duration) < time(NULL)) acks[num].ackvalid = 0;
+				if (acks[num].ackvalid && (stat(ackfn, &st) != 0)) acks[num].ackvalid = 0;
+
+				ackerp = ackedby;
+				if (strncmp(ackerp, "np_", 3) == 0) ackerp += 3;
+				p = strrchr(ackerp, '_');
+				if (p > ackerp) *p = '\0';
+				acks[num].ackedby = malcop(ackerp);
+
+				acks[num].hostname = malcop(hosttest);
+				acks[num].testname = malcop(testname);
+				strcat(color, " "); acks[num].color = parse_color(color);
+				acks[num].ackmsg = malcop(ackmsg);
+				ackintime_count++;
+
+				num = (num + 1) % maxcount;
+			}
+		}
+	}
+
+	if (ackintime_count > 0) {
+		int firstack, lastack;
+		int period = maxminutes;
+
+		if (ackintime_count <= maxcount) {
+			firstack = 0;
+			lastack = ackintime_count-1;
+			period = maxminutes;
+		}
+		else {
+			firstack = num;
+			lastack = ( (num == 0) ? maxcount : (num-1));
+			ackintime_count = maxcount;
+			period = ((time(NULL)-acks[firstack].acktime) / 60);
+		}
+
+		sprintf(title, "%d events acknowledged in the past %u minutes", ackintime_count, period);
+
+		fprintf(output, "<BR><BR>\n");
+		fprintf(output, "<TABLE SUMMARY=\"%s\" BORDER=0>\n", title);
+		fprintf(output, "<TR BGCOLOR=\"333333\">\n");
+		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"teal\">%s</FONT></TD></TR>\n", title);
+
+		for (num = lastack; (ackintime_count); ackintime_count--, num = ((num == 0) ? (maxcount-1) : (num - 1)) ) {
+			fprintf(output, "<TR BGCOLOR=#000000>\n");
+
+			fprintf(output, "<TD ALIGN=CENTER><FONT COLOR=white>%s</FONT></TD>\n", ctime(&acks[num].acktime));
+			fprintf(output, "<TD ALIGN=CENTER BGCOLOR=%s><FONT COLOR=black>%s</FONT></TD>\n", colorname(acks[num].color), acks[num].hostname);
+			fprintf(output, "<TD ALIGN=CENTER><FONT COLOR=white>%s</FONT></TD>\n", acks[num].testname);
+
+			if (acks[num].color != -1) {
+   				fprintf(output, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\"></TD>\n", 
+					getenv("BBSKIN"), 
+					dotgiffilename(acks[num].color, acks[num].ackvalid, 1));
+			}
+			else
+   				fprintf(output, "<TD ALIGN=CENTER><FONT COLOR=white>&nbsp;</FONT></TD>\n");
+
+			fprintf(output, "<TD ALIGN=LEFT BGCOLOR=#000033>%s</TD>\n", acks[num].ackedby);
+			fprintf(output, "<TD ALIGN=LEFT>%s</TD></TR>\n", acks[num].ackmsg);
+		}
+
+	}
+	else {
+		sprintf(title, "No events acknowledged in the last %u minutes", maxminutes);
+
+		fprintf(output, "<BR><BR>\n");
+		fprintf(output, "<TABLE SUMMARY=\"%s\" BORDER=0>\n", title);
+		fprintf(output, "<TR BGCOLOR=\"333333\">\n");
+		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"teal\">%s</FONT></TD></TR>\n", title);
+	}
+
+	fprintf(output, "</TABLE>\n");
+
+	fclose(acklog);
+}
+
 
 int do_bb2_page(char *filename, int summarytype)
 {
@@ -939,6 +1110,7 @@ int do_bb2_page(char *filename, int summarytype)
 
 	if (summarytype == PAGE_BB2) {
 		do_eventlog(output, 0, 240);
+		do_acklog(output, 25, 240);
 		do_bbext(output, "BBMKBB2EXT");
 	}
 

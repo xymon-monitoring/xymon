@@ -273,6 +273,20 @@ typedef struct {
 	int	state;		/* 2=escalated, 1=recovered, 0=no change */
 } event_t;
 
+/* Format of records in $BBACKS/acklog file (TAB separated) */
+typedef struct {
+	time_t	acktime;
+	int	acknum;
+	int	duration;	/* Minutes */
+	int	acknum2;
+	char	*ackedby;
+	char	*hostname;
+	char	*testname;
+	int	color;
+	char	*ackmsg;
+	int	ackvalid;
+} ack_t;
+
 extern bbgen_page_t	*pagehead;
 extern link_t 		*linkhead, null_link;
 extern hostlist_t	*hosthead;
