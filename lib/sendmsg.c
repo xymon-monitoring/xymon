@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.44 2004-12-12 16:12:57 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.45 2004-12-12 16:17:30 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -665,10 +665,6 @@ void meta_start(void)
 void meta_end(void)
 {
 	/* Send the message */
-	FILE *fd = fopen("/tmp/meta.txt", "w");
-	fprintf(fd, "%s", metamsg);
-	fclose(fd);
-
 	sendmessage(metamsg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
 
 	free(metamsg);
