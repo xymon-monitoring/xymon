@@ -95,8 +95,8 @@ bb: $(MSGOBJS)
 alert: alert.c debug.c util.c
 	$(CC) $(CFLAGS) -g -DSTANDALONE -DDEBUG -Wall -o $@ alert.c debug.c util.c
 
-contest: contest.c debug.o util.o digest.o httptest.c dns.o
-	$(CC) -g -DSTANDALONE -DDEBUG -Wall $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -o $@ contest.c httptest.c dns.o digest.o debug.o util.o $(SSLLIBS) $(NETLIBS) ./c-ares-1.2.0/libcares.a
+contest: contest.c debug.o util.o digest.o httptest.c dns.o dns2.o
+	$(CC) -g -DSTANDALONE -DDEBUG -Wall $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -o $@ contest.c httptest.c dns.o dns2.o digest.o debug.o util.o $(SSLLIBS) $(NETLIBS) ./c-ares-1.2.0/libcares.a
 
 ldaptest: ldaptest.c debug.o util.o sendmsg.o
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall $(CFLAGS) $(LDAPFLAGS) $(LDAPINCDIR) -o $@ ldaptest.c debug.o util.o sendmsg.o $(LDAPLIBS) $(NETLIBS)
