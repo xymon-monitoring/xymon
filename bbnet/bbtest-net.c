@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.102 2003-08-30 20:44:34 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.103 2003-08-31 07:28:10 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -247,7 +247,10 @@ testedhost_t *init_testedhost(char *hostname, int timeout, int conntimeout, int 
 	newhost->deprouterdown = NULL;
 
 	newhost->firsthttp = NULL;
+
 	newhost->firstldap = NULL;
+	newhost->ldapuser = NULL;
+	newhost->ldappasswd = NULL;
 
 	newhost->deptests = NULL;
 
@@ -417,6 +420,24 @@ void load_tests(void)
 					else if (strncmp(testspec, "depends=", 8) == 0) {
 						specialtag = 1;
 						h->deptests = malcop(testspec+8);
+					}
+					else if (strncmp(testspec, "ldaplogin=", 10) == 0) {
+						char *username, *password;
+						
+						username = password = NULL;
+						username = (strchr(testspec, '='));
+						if (username) {
+							username++;
+							password = (strchr(username, ':'));
+							if (password) {
+								*password = '\0';
+								password++;
+							}
+						}
+
+						specialtag = 1;
+						if (username) h->ldapuser = malcop(username);
+						if (password) h->ldappasswd = malcop(password);
 					}
 
 					if (!specialtag) {

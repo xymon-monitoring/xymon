@@ -74,6 +74,8 @@ typedef struct testedhost_t {
 
 	/* The following is for the LDAP tests */
 	struct testitem_t *firstldap;	/* First LDAP testitem in testitem list */
+	char   *ldapuser;		/* Username */
+	char   *ldappasswd;		/* Password */
 
 	/* For storing the test dependency tag. */
 	char *deptests;

@@ -485,6 +485,11 @@ an LDAP server that requires TLS encryption. See
 for a discussion of the different ways of running LDAP servers
 with SSL/TLS, and which of these are supported by bbtest-net.
 
+.IP ldaplogin=username:password
+Define a username and password to use when binding to the LDAP
+server for ldap URI tests. If not specified, bbtest-net will
+attempt an anonymous bind.
+
 .IP rpc[=rpcservice1,rpcservice2,...]
 Check for one or more available RPC services. This check is indirect
 in that it only queries the RPC Portmapper on the host, not the

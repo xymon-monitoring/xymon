@@ -221,9 +221,12 @@ Example:
   ldap://ldap.example.net/dc=example,dc=net?cn,sn?sub?(cn=*)
 .fi
 .sp
-All "bind" operations to LDAP servers use simple anonymous 
-authentication. It supports only normal username/password
-authentication - SASL, CRAM/MD5 etc have not been tested.
+All "bind" operations to LDAP servers use simple authentication.
+Kerberos and SASL are not supported. If your LDAP server requires 
+a username/password, use the "ldaplogin" tag to specify this, cf. 
+.I bb-hosts(5) 
+If no username/password information is provided, an anonymous
+bind will be attempted. 
 
 SSL support requires both a client library and an LDAP server that support LDAPv3; 
 it uses the LDAP "STARTTLS" protocol request after establishing a connection to 

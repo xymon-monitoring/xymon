@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.5 2003-08-30 23:04:56 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.6 2003-08-31 07:28:10 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -163,7 +163,8 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 #endif
 
 		/* Bind to the server - we do an anonymous bind, asynchronous */
-		msgID = ldap_simple_bind(ld, "", "");
+		msgID = ldap_simple_bind(ld, (t->host->ldapuser ? t->host->ldapuser : ""), 
+					 (t->host->ldappasswd ? t->host->ldappasswd : ""));
 
 		/* Wait for bind to complete */
 		rc = 0; finished = 0; 
@@ -443,6 +444,8 @@ int main(int argc, char *argv[])
 	host.conntimeout = 5;
 	host.timeout = 10;
 	host.hostname = "ldaptest.bbgen";
+	host.ldapuser = NULL;
+	host.ldappasswd = NULL;
 
 	init_ldap_library();
 
