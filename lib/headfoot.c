@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.1 2004-10-30 15:28:24 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.2 2004-11-20 22:29:27 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -26,6 +26,7 @@ static char rcsid[] = "$Id: headfoot.c,v 1.1 2004-10-30 15:28:24 henrik Exp $";
 #include "color.h"
 #include "errormsg.h"
 #include "headfoot.h"
+#include "version.h"
 
 int	unpatched_bbd = 0;
 
@@ -69,16 +70,139 @@ void sethostenv_histlog(char *histtime)
 	hostenv_logtime = strdup(histtime);
 }
 
+void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype)
+{
+	char	*t_start, *t_next;
+	char	savechar;
+	time_t	now = time(NULL);
+	time_t  yesterday = time(NULL) - 86400;
+
+	for (t_start = templatedata, t_next = strchr(t_start, '&'); (t_next); ) {
+		/* Copy from t_start to t_next unchanged */
+		*t_next = '\0'; t_next++;
+		fprintf(output, "%s", t_start);
+
+		/* Find token */
+		for (t_start = t_next; ((*t_next >= 'A') && (*t_next <= 'Z')); t_next++ ) ;
+		savechar = *t_next; *t_next = '\0';
+
+		if (strcmp(t_start, "BBREL") == 0)     		fprintf(output, "%s", getenv("BBREL"));
+		else if (strcmp(t_start, "BBRELDATE") == 0) 	fprintf(output, "%s", getenv("BBRELDATE"));
+		else if (strcmp(t_start, "BBGENDREL") == 0) 	fprintf(output, "%s", getenv("BBGENDREL"));
+		else if (strcmp(t_start, "BBSKIN") == 0)    	fprintf(output, "%s", getenv("BBSKIN"));
+		else if (strcmp(t_start, "BBWEB") == 0)     	fprintf(output, "%s", getenv("BBWEB"));
+		else if (strcmp(t_start, "CGIBINURL") == 0) 	fprintf(output, "%s", getenv("CGIBINURL"));
+
+		else if (strcmp(t_start, "BBDATE") == 0) {
+			char *bbdatefmt = getenv("BBDATEFORMAT");
+			char datestr[100];
+
+			/*
+			 * If no BBDATEFORMAT setting, use a format string that
+			 * produces output similar to that from ctime()
+			 */
+			if (bbdatefmt == NULL) bbdatefmt = "%a %b %d %H:%M:%S %Y\n";
+
+			if (hostenv_reportstart != 0) {
+				char starttime[20], endtime[20];
+
+				strftime(starttime, sizeof(starttime), "%b %d %Y", localtime(&hostenv_reportstart));
+				strftime(endtime, sizeof(endtime), "%b %d %Y", localtime(&hostenv_reportend));
+				if (strcmp(starttime, endtime) == 0)
+					fprintf(output, "%s", starttime);
+				else
+					fprintf(output, "%s - %s", starttime, endtime);
+			}
+			else if (hostenv_snapshot != 0) {
+				strftime(datestr, sizeof(datestr), bbdatefmt, localtime(&hostenv_snapshot));
+				fprintf(output, "%s", datestr);
+			}
+			else {
+				strftime(datestr, sizeof(datestr), bbdatefmt, localtime(&now));
+				fprintf(output, "%s", datestr);
+			}
+		}
+
+		else if (strcmp(t_start, "BBBACKGROUND") == 0)  {
+			if (unpatched_bbd && (strcmp(pagetype, "hostsvc") == 0)) {
+				fprintf(output, "%s/bkg-%s.gif", 
+					getenv("BBSKIN"), colorname(bgcolor));
+			}
+			else {
+				fprintf(output, "%s", colorname(bgcolor));
+			}
+		}
+		else if (strcmp(t_start, "BBCOLOR") == 0)       fprintf(output, "%s", hostenv_color);
+		else if (strcmp(t_start, "BBSVC") == 0)         fprintf(output, "%s", hostenv_svc);
+		else if (strcmp(t_start, "BBHOST") == 0)        fprintf(output, "%s", hostenv_host);
+		else if (strcmp(t_start, "BBIP") == 0)          fprintf(output, "%s", hostenv_ip);
+		else if (strcmp(t_start, "BBIPNAME") == 0) {
+			if (strcmp(hostenv_ip, "0.0.0.0") == 0) fprintf(output, "%s", hostenv_host);
+			else fprintf(output, "%s", hostenv_ip);
+		}
+		else if (strcmp(t_start, "BBREPWARN") == 0)     fprintf(output, "%s", hostenv_repwarn);
+		else if (strcmp(t_start, "BBREPPANIC") == 0)    fprintf(output, "%s", hostenv_reppanic);
+		else if (strcmp(t_start, "LOGTIME") == 0) 	fprintf(output, "%s", (hostenv_logtime ? hostenv_logtime : ""));
+
+		else if (strcmp(t_start, "REPMONLIST") == 0) {
+			int i;
+			struct tm *nowtm = localtime(&yesterday);
+			struct tm monthtm;
+			char mname[20];
+			char *selstr;
+
+			for (i=1; (i <= 12); i++) {
+				if (i == (nowtm->tm_mon + 1)) selstr = "SELECTED"; else selstr = "";
+				monthtm.tm_mon = (i-1); monthtm.tm_mday = 1; monthtm.tm_year = nowtm->tm_year;
+				monthtm.tm_hour = monthtm.tm_min = monthtm.tm_sec = monthtm.tm_isdst = 0;
+				strftime(mname, sizeof(mname)-1, "%B", &monthtm);
+				fprintf(output, "<OPTION VALUE=\"%d\" %s>%s\n", i, selstr, mname);
+			}
+		}
+		else if (strcmp(t_start, "REPDAYLIST") == 0) {
+			int i;
+			struct tm *nowtm = localtime(&yesterday);
+			char *selstr;
+
+			for (i=1; (i <= 31); i++) {
+				if (i == nowtm->tm_mday) selstr = "SELECTED"; else selstr = "";
+				fprintf(output, "<OPTION VALUE=\"%d\" %s>%d\n", i, selstr, i);
+			}
+		}
+		else if (strcmp(t_start, "REPYEARLIST") == 0) {
+			int i;
+			struct tm *nowtm = localtime(&yesterday);
+			char *selstr;
+
+			for (i=1999; (i <= 2009); i++) {
+				if (i == (nowtm->tm_year + 1900)) selstr = "SELECTED"; else selstr = "";
+				fprintf(output, "<OPTION VALUE=\"%d\" %s>%d\n", i, selstr, i);
+			}
+		}
+
+		else fprintf(output, "&");			/* No substitution - copy the ampersand */
+			
+		*t_next = savechar; t_start = t_next; t_next = strchr(t_start, '&');
+	}
+
+	/* Remainder of file */
+	fprintf(output, "%s", t_start);
+}
+
+
 void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, int bgcolor)
 {
 	int	fd;
 	char 	filename[PATH_MAX];
 	struct stat st;
 	char	*templatedata;
-	char	*t_start, *t_next;
-	char	savechar;
-	time_t	now = time(NULL);
 	char	*hfpath;
+
+	if (getenv("BBGENDREL") == NULL) {
+		char *bbgendrel = (char *)malloc(11+strlen(VERSION));
+		sprintf(bbgendrel, "BBGENDREL=%s", VERSION);
+		putenv(bbgendrel);
+	}
 
 	/*
 	 * "pagepath" is the relative path for this page, e.g. 
@@ -141,78 +265,7 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 		templatedata[st.st_size] = '\0';
 		close(fd);
 
-		for (t_start = templatedata, t_next = strchr(t_start, '&'); (t_next); ) {
-			/* Copy from t_start to t_next unchanged */
-			*t_next = '\0'; t_next++;
-			fprintf(output, "%s", t_start);
-
-			/* Find token */
-			for (t_start = t_next; ((*t_next >= 'A') && (*t_next <= 'Z')); t_next++ ) ;
-			savechar = *t_next; *t_next = '\0';
-
-			if (strcmp(t_start, "BBREL") == 0)     		fprintf(output, "%s", getenv("BBREL"));
-			else if (strcmp(t_start, "BBRELDATE") == 0) 	fprintf(output, "%s", getenv("BBRELDATE"));
-			else if (strcmp(t_start, "BBSKIN") == 0)    	fprintf(output, "%s", getenv("BBSKIN"));
-			else if (strcmp(t_start, "BBWEB") == 0)     	fprintf(output, "%s", getenv("BBWEB"));
-			else if (strcmp(t_start, "CGIBINURL") == 0) 	fprintf(output, "%s", getenv("CGIBINURL"));
-
-			else if (strcmp(t_start, "BBDATE") == 0) {
-				char *bbdatefmt = getenv("BBDATEFORMAT");
-				char datestr[100];
-
-				/*
-				 * If no BBDATEFORMAT setting, use a format string that
-				 * produces output similar to that from ctime()
-				 */
-				if (bbdatefmt == NULL) bbdatefmt = "%a %b %d %H:%M:%S %Y\n";
-
-				if (hostenv_reportstart != 0) {
-					char starttime[20], endtime[20];
-
-					strftime(starttime, sizeof(starttime), "%b %d %Y", localtime(&hostenv_reportstart));
-					strftime(endtime, sizeof(endtime), "%b %d %Y", localtime(&hostenv_reportend));
-					if (strcmp(starttime, endtime) == 0)
-						fprintf(output, "%s", starttime);
-					else
-						fprintf(output, "%s - %s", starttime, endtime);
-				}
-				else if (hostenv_snapshot != 0) {
-					strftime(datestr, sizeof(datestr), bbdatefmt, localtime(&hostenv_snapshot));
-					fprintf(output, "%s", datestr);
-				}
-				else {
-					strftime(datestr, sizeof(datestr), bbdatefmt, localtime(&now));
-					fprintf(output, "%s", datestr);
-				}
-			}
-
-			else if (strcmp(t_start, "BBBACKGROUND") == 0)  {
-				if (unpatched_bbd && (strcmp(pagetype, "hostsvc") == 0)) {
-					fprintf(output, "%s/bkg-%s.gif", 
-						getenv("BBSKIN"), colorname(bgcolor));
-				}
-				else {
-					fprintf(output, "%s", colorname(bgcolor));
-				}
-			}
-			else if (strcmp(t_start, "BBCOLOR") == 0)       fprintf(output, "%s", hostenv_color);
-			else if (strcmp(t_start, "BBSVC") == 0)         fprintf(output, "%s", hostenv_svc);
-			else if (strcmp(t_start, "BBHOST") == 0)        fprintf(output, "%s", hostenv_host);
-			else if (strcmp(t_start, "BBIP") == 0)          fprintf(output, "%s", hostenv_ip);
-			else if (strcmp(t_start, "BBIPNAME") == 0) {
-				if (strcmp(hostenv_ip, "0.0.0.0") == 0) fprintf(output, "%s", hostenv_host);
-				else fprintf(output, "%s", hostenv_ip);
-			}
-			else if (strcmp(t_start, "BBREPWARN") == 0)     fprintf(output, "%s", hostenv_repwarn);
-			else if (strcmp(t_start, "BBREPPANIC") == 0)    fprintf(output, "%s", hostenv_reppanic);
-			else if (strcmp(t_start, "LOGTIME") == 0) 	fprintf(output, "%s", (hostenv_logtime ? hostenv_logtime : ""));
-			else fprintf(output, "&");			/* No substitution - copy the ampersand */
-			
-			*t_next = savechar; t_start = t_next; t_next = strchr(t_start, '&');
-		}
-
-		/* Remainder of file */
-		fprintf(output, "%s", t_start);
+		output_parsed(output, templatedata, bgcolor, pagetype);
 
 		free(templatedata);
 	}
