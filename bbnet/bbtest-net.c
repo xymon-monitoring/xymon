@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.158 2004-08-21 10:48:28 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.159 2004-08-23 14:04:10 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -36,6 +36,10 @@ static char rcsid[] = "$Id: bbtest-net.c,v 1.158 2004-08-21 10:48:28 henrik Exp 
 #include "httptest.h"
 #include "httpresult.h"
 #include "ldaptest.h"
+
+/* See http://www.openssl.org/docs/apps/ciphers.html for cipher strings */
+char *ciphersmedium = "MEDIUM";	/* Must be formatted for openssl library */
+char *ciphershigh = "HIGH";	/* Must be formatted for openssl library */
 
 /* These are dummy vars needed by stuff in util.c */
 hostlist_t      *hosthead = NULL;
@@ -2077,6 +2081,7 @@ int main(int argc, char *argv[])
 		/* Informational options */
 		else if (strcmp(argv[argi], "--version") == 0) {
 			printf("bbtest-net version %s\n", VERSION);
+			if (ssl_library_version) printf("SSL library : %s\n", ssl_library_version);
 			if (ldap_library_version) printf("LDAP library: %s\n", ldap_library_version);
 			printf("Compile settings: MAXMSG=%d, BBDPORTNUMBER=%d", MAXMSG, BBDPORTNUMBER);
 #ifdef DEBUG
@@ -2197,7 +2202,7 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-	for (t = httptest->items; (t); t = t->next) add_http_test(t);
+	for (t = httptest->items; (t); t = t->next) add_http_test(t, NULL);
 	add_timestamp("Test engine setup completed");
 
 	do_tcp_tests(timeout, concurrency);
@@ -2414,6 +2419,10 @@ int main(int argc, char *argv[])
 
 		sprintf(msgline, "bbtest-net version %s\n", VERSION);
 		addtostatus(msgline);
+		if (ssl_library_version) {
+			sprintf(msgline, "SSL library : %s\n", ssl_library_version);
+			addtostatus(msgline);
+		}
 		if (ldap_library_version) {
 			sprintf(msgline, "LDAP library: %s\n", ldap_library_version);
 			addtostatus(msgline);
