@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.1 2003-06-23 15:02:50 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.2 2003-06-23 20:55:47 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,17 +27,88 @@ static char rcsid[] = "$Id: bb-hist.c,v 1.1 2003-06-23 15:02:50 henrik Exp $";
 #include "reportdata.h"
 #include "debug.h"
 
-void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, reportinfo_t *repinfo, int entrycount)
+void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, int entrycount,
+		      reportinfo_t *repinfo, replog_t *log24hours, replog_t *loghead)
 {
-	replog_t *walk;
 	char *bgcols[2] = { "\"#000000\"", "\"#000033\"" };
 	int curbg = 0;
+	time_t yesterday, today;
+	int pctfirst, pctlast;
+	struct tm *tmbuf;
+	time_t secs;
+	int starthour, hour;
+	replog_t *colorlog, *walk, *tmp;
+
+	today = time(NULL); yesterday = today-86400;
+
+	/* Compute the percentage of the first (incomplete) hour */
+	tmbuf = localtime(&yesterday);
+	secs = 3600 - (tmbuf->tm_min*60 + tmbuf->tm_sec);
+	pctfirst = secs / 864;	/* secs * 100 / 86400 */
+	if (pctfirst == 0) pctfirst = 1;
+
+	/* Compute the percentage of the last (incomplete) hour */
+	tmbuf = localtime(&today);
+	starthour = tmbuf->tm_hour;
+	secs = tmbuf->tm_min*60 + tmbuf->tm_sec;
+	pctlast = secs / 864;
+	if (pctlast == 0) pctlast = 1;
 
 	sethostenv(hostname, ip, service, colorname(COL_GREEN));
 
 	headfoot(htmlrep, "hist", "", "header", COL_GREEN);
 
 	fprintf(htmlrep, "\n");
+
+	fprintf(htmlrep, "<CENTER>\n");
+	fprintf(htmlrep, "<BR>\n");
+
+	/* Create the color-bar */
+	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 BGCOLOR=\"#666666\">\n");
+	fprintf(htmlrep, "<TR><TD ALIGN=CENTER>\n");
+
+	/* The date stamps */
+	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=1 BGCOLOR=\"#000033\">\n");
+	fprintf(htmlrep, "<TR>\n");
+	fprintf(htmlrep, "<TD WIDTH=\"50%%\" ALIGN=LEFT><B>%s</B></TD>\n", ctime(&yesterday));
+	fprintf(htmlrep, "<TD WIDTH=\"50%%\" ALIGN=RIGHT><B>%s</B></TD>\n", ctime(&today));
+	fprintf(htmlrep, "</TR>\n");
+	fprintf(htmlrep, "</TABLE>\n");
+
+	/* The hour line */
+	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 BGCOLOR=\"#000033\">\n");
+	fprintf(htmlrep, "<TR>\n");
+	fprintf(htmlrep, "<TD WIDTH=%d%% ALIGN=LEFT><B>&nbsp;</B></TD>\n", pctfirst);
+	for (hour = ((starthour + 1) % 24); (hour != starthour); hour = ((hour + 1) % 24)) {
+		fprintf(htmlrep, "<TD WIDTH=4%% ALIGN=LEFT><B>%d</B></TD>\n", hour);
+	}
+	fprintf(htmlrep, "<TD WIDTH=%d%% ALIGN=LEFT><B>%d</B></TD>\n", pctlast, starthour);
+	fprintf(htmlrep, "</TR>\n");
+	fprintf(htmlrep, "</TABLE>\n");
+
+	/* The actual color bar */
+	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 BGCOLOR=\"#000033\">\n");
+	fprintf(htmlrep, "<TR>\n");
+	fprintf(htmlrep, "<FONT SIZE=1>\n");
+
+	/* Need to re-sort the 24-hour log to chronological order */
+	colorlog = NULL;
+	for (walk = log24hours; (walk); walk = tmp) {
+		tmp = walk->next;
+		walk->next = colorlog;
+		colorlog = walk;
+		walk = tmp;
+	}
+	for (walk = colorlog; (walk); walk = walk->next) {
+		fprintf(htmlrep, "<TD WIDTH=%ld%% BGCOLOR=%s NOWRAP>&nbsp</TD>\n", 
+			(walk->duration / 864), colorname(walk->color));
+	}
+
+	fprintf(htmlrep, "</FONT></TR>\n");
+	fprintf(htmlrep, "</TABLE>\n");
+
+	fprintf(htmlrep, "</TD></TR></TABLE>\n");
+
 
 	fprintf(htmlrep, "<CENTER>\n");
 	fprintf(htmlrep, "<BR><FONT %s><H2>%s - %s</H2></FONT>\n", getenv("MKBBROWFONT"), hostname, service);
@@ -87,7 +158,7 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, re
 			getenv("CGIBINURL"), commafy(hostname), service);
 	}
 	else {
-		fprintf(htmlrep, "<TD COLSPAN=3><B>All log entries</B></TD>\n");
+		fprintf(htmlrep, "<TD COLSPAN=3 ALIGN=CENTER><B>All log entries</B></TD>\n");
 	}
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "<TR BGCOLOR=\"#333333\">\n");
@@ -96,7 +167,7 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, re
 	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Duration</B></TD>\n", getenv("MKBBCOLFONT"));
 	fprintf(htmlrep, "</TR>\n");
 
-	for (walk = reploghead; (walk); walk = walk->next) {
+	for (walk = loghead; (walk); walk = walk->next) {
 		char start[30];
 
 		strftime(start, sizeof(start), "%a %b %d %H:%M:%S %Y", localtime(&walk->starttime));
@@ -180,7 +251,7 @@ static void parse_query(void)
 		errormsg("Invalid request");
 		return;
 	}
-	else query = malcop(getenv("QUERY_STRING"));
+	else query = urldecode("QUERY_STRING");
 
 	token = strtok(query, "&");
 	while (token) {
@@ -217,6 +288,7 @@ int main(int argc, char *argv[])
 	FILE *fd;
 	reportinfo_t repinfo, dummyrep;
 	time_t now;
+	replog_t *log24hours;
 
 	envcheck(reqenv);
 	parse_query();
@@ -228,19 +300,22 @@ int main(int argc, char *argv[])
 	}
 	now = time(NULL);
 
-	parse_historyfile(fd, &repinfo, NULL, NULL, now-86400, now, 0);
+	parse_historyfile(fd, &repinfo, NULL, NULL, now-86400, now, 1);
+	log24hours = save_replogs();
 
 	if (entrycount == 0) {
+		/* All entries - just rewind the history file and do all of them */
 		rewind(fd);
-		parse_historyfile(fd, &dummyrep, hostname, service, 0, now, 1);
+		parse_historyfile(fd, &dummyrep, NULL, NULL, 0, now, 1);
 		fclose(fd);
 	}
 	else {
+		/* Last 50 entries - we cheat and use "tail" in a pipe to pick the entries */
 		fclose(fd);
-		sprintf(tailcmd, "tail -n %d %s", entrycount, histlogfn);
+		sprintf(tailcmd, "tail -%d %s", entrycount, histlogfn);
 		fd = popen(tailcmd, "r");
 		if (fd == NULL) errormsg("Cannot run tail on the histfile");
-		parse_historyfile(fd, &dummyrep, hostname, service, 0, now, 1);
+		parse_historyfile(fd, &dummyrep, NULL, NULL, 0, now, 1);
 		pclose(fd);
 	}
 
@@ -248,7 +323,7 @@ int main(int argc, char *argv[])
 	/* Now generate the webpage */
 	printf("Content-Type: text/html\n\n");
 
-	generate_history(stdout, hostname, service, ip, &repinfo, entrycount);
+	generate_history(stdout, hostname, service, ip, entrycount, &repinfo, log24hours, reploghead);
 
 	return 0;
 }
