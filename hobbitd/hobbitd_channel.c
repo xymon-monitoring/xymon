@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.15 2004-11-04 12:00:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.16 2004-11-06 21:58:40 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -81,6 +81,7 @@ int main(int argc, char *argv[])
 	char *childcmd = "";
 	char **childargs = NULL;
 	struct timespec tmo;
+	int canwrite;
 
 	/* Dont save the error buffer */
 	save_errbuf = 0;
@@ -203,6 +204,7 @@ int main(int argc, char *argv[])
 			 * delivered to the worker child; this is then caught by the 
 			 * sequence numbers.
 			 */
+#if 0
 			s.sem_num = GOCLIENT; s.sem_op = 0; s.sem_flg = 0;
 			tmo.tv_sec = 0; tmo.tv_nsec = 250000000; /* Wait at most 250 ms */
 			n = semtimedop(channel->semid, &s, 1, &tmo);
@@ -210,6 +212,12 @@ int main(int argc, char *argv[])
 				errprintf("Wait for GOCLIENT=0 failed, GOCLIENT is %d\n",
 					  semctl(channel->semid, GOCLIENT, GETVAL));
 			}
+#else
+			do {
+				s.sem_num = GOCLIENT; s.sem_op  = 0; s.sem_flg = 0;
+				n = semop(channel->semid, &s, 1);
+			} while ((n == -1) && (errno == EAGAIN) && running);
+#endif
 
 			/* 
 			 * Let master know we got it by downing BOARDBUSY.
@@ -253,7 +261,8 @@ int main(int argc, char *argv[])
 		 *
 		 * Maybe it could be optimized via SIGIO ... 
 		 */
-		if (head) {
+		canwrite = 1;
+		while (head && canwrite) {
 			n = write(pfd[1], head->bufp, head->buflen);
 			if (n >= 0) {
 				head->bufp += n;
@@ -267,10 +276,9 @@ int main(int argc, char *argv[])
 			}
 			else if (errno == EAGAIN) {
 				/*
-				 * Wait just a little while so we dont spin out of 
-				 * control when worker child is busy.
+				 * Write would block ... stop for now. 
 				 */
-				usleep(5000);
+				canwrite = 0;
 			}
 			else {
 				/* Write failed */
@@ -279,6 +287,7 @@ int main(int argc, char *argv[])
 				free(head->buf);
 				head = head->next;
 				free(tmp);
+				canwrite = 0;
 			}
 		}
 	}
