@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.20 2004-11-16 21:35:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.21 2004-11-17 16:25:44 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -311,9 +311,11 @@ int main(int argc, char *argv[])
 				usleep(2500);
 			}
 			else {
+				msg_t *tmp;
+
 				/* Write failed */
 				errprintf("Our child has failed and will not talk to us\n");
-				msg_t *tmp = head;
+				tmp = head;
 				head = head->next;
 				free(tmp->buf);
 				free(tmp);
