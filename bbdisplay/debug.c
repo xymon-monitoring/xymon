@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.5 2003-01-16 11:37:15 hstoerne Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.6 2003-02-02 18:48:10 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -96,7 +96,7 @@ void dumpstatelist(state_t *head)
 #ifdef DEBUG
 	state_t *s;
 
-	for (s=statehead; (s); s=s->next) {
+	for (s=head; (s); s=s->next) {
 		printf("test:%s, state: %d, alert: %d, propagate: %d, oldage: %d, age: %s\n",
 			s->entry->column->name,
 			s->entry->color,
