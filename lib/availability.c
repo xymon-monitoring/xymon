@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.25 2003-08-16 06:59:26 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.26 2004-03-16 09:36:13 hstoerne Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -161,6 +161,7 @@ char *parse_histlogfile(char *hostname, char *servicename, char *timespec)
 	FILE *fd;
 	char l[MAX_LINE_LEN];
 	char cause[MAX_LINE_LEN];
+	int causefull = 0;
 
 	cause[0] = '\0';
 
@@ -171,13 +172,16 @@ char *parse_histlogfile(char *hostname, char *servicename, char *timespec)
 	dprintf("Looking at history logfile %s\n", fn);
 	fd = fopen(fn, "r");
 	if (fd != NULL) {
-		while (fgets(l, sizeof(l), fd)) {
+		while (!causefull && fgets(l, sizeof(l), fd)) {
 			p = strchr(l, '\n'); if (p) *p = '\0';
 
 			if ((l[0] == '&') && (strncmp(l, "&green", 6) != 0)) {
 				p = skipwhitespace(skipword(l));
-				strcat(cause, p);
-				strcat(cause, "<BR>\n");
+				if ((strlen(cause) + strlen(p) + strlen("<BR>\n") + 1) < sizeof(cause)) {
+					strcat(cause, p);
+					strcat(cause, "<BR>\n");
+				}
+				else causefull = 1;
 			}
 		}
 
@@ -190,6 +194,11 @@ char *parse_histlogfile(char *hostname, char *servicename, char *timespec)
 				strncpy(cause, l+offset, sizeof(cause));
 				cause[sizeof(cause)-1] = '\0';
 			}
+		}
+
+		if (causefull) {
+			cause[sizeof(cause) - strlen(" [Truncated]") - 1] = '\0';
+			strcat(cause, " [Truncated]");
 		}
 
 		fclose(fd);
