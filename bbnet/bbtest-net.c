@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.19 2003-04-16 09:07:58 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.20 2003-04-17 09:01:33 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -35,6 +35,11 @@ link_t  null_link = { "", "", "", NULL };
 #define TOOL_NSLOOKUP	1
 #define TOOL_DIG	2
 #define TOOL_NTP        3
+
+/* dnslookup values */
+#define DNS_THEN_IP     0	/* Try DNS - if it fails, use IP from bb-hosts */
+#define DNS_ONLY        1	/* DNS only - if it fails, report service down */
+#define IP_ONLY         2	/* IP only - dont do DNS lookups */
 
 typedef struct {
 	char *testname;
@@ -70,6 +75,7 @@ service_t	*svchead = NULL;
 testedhost_t	*testhosthead = NULL;
 testitem_t	*testhead = NULL;
 char		*nonetpage = NULL;
+int		dnsmethod = DNS_THEN_IP;
 
 service_t *add_service(char *name, int port, int namelen, int toolid)
 {
@@ -239,7 +245,7 @@ void load_tests(void)
 					 * to avoid multiple DNS lookups for each service 
 					 * we test on a host.
 					 */
-					if (h->testip) {
+					if (h->testip || (dnsmethod == IP_ONLY)) {
 						sprintf(h->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 						if (strcmp(h->ip, "0.0.0.0") == 0) {
 							printf("bbtest-net: %s has IP 0.0.0.0 and testip - dropped\n", hostname);
@@ -250,22 +256,25 @@ void load_tests(void)
 						struct hostent *hent;
 
 						hent = gethostbyname(hostname);
-						if (hent == NULL) {
-							/* Cannot resolve hostname */
-							h->dnserror = 1;
-						}
-						else {
+						if (hent) {
 							sprintf(h->ip, "%d.%d.%d.%d", 
 								(unsigned char) hent->h_addr_list[0][0],
 								(unsigned char) hent->h_addr_list[0][1],
 								(unsigned char) hent->h_addr_list[0][2],
 								(unsigned char) hent->h_addr_list[0][3]);
 						}
-					}
+						else if (dnsmethod == DNS_THEN_IP) {
+							sprintf(h->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+						}
+						else {
+							/* Cannot resolve hostname */
+							h->dnserror = 1;
+						}
 
-					if (strcmp(h->ip, "0.0.0.0") == 0) {
-						printf("bbtest-net: IP resolver error for host %s\n", hostname);
-						h->dnserror = 1;
+						if (strcmp(h->ip, "0.0.0.0") == 0) {
+							printf("bbtest-net: IP resolver error for host %s\n", hostname);
+							h->dnserror = 1;
+						}
 					}
 					h->next = testhosthead;
 					testhosthead = h;
@@ -461,6 +470,13 @@ int main(int argc, char *argv[])
 		else if (strncmp(argv[argi], "--concurrency=", 14) == 0) {
 			char *p = strchr(argv[argi], '=');
 			p++; concurrency = atoi(p);
+		}
+		else if (strncmp(argv[argi], "--dns=", 6) == 0) {
+			char *p = strchr(argv[argi], '=');
+			p++;
+			if (strcmp(p, "only") == 0)      dnsmethod = DNS_ONLY;
+			else if (strcmp(p, "ip") == 0)   dnsmethod = IP_ONLY;
+			else                             dnsmethod = DNS_THEN_IP;
 		}
 	}
 
