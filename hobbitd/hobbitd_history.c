@@ -74,13 +74,13 @@ int main(int argc, char *argv[])
 	if (getenv("SAVESTATUSLOG")) save_histlogs = (strcmp(getenv("SAVESTATUSLOG"), "TRUE") == 0);
 
 	for (argi = 1; (argi < argc); argi++) {
-		if (strncmp(argv[argi], "--histdir=", 10) == 0) {
+		if (argnmatch(argv[argi], "--histdir=")) {
 			histdir = strchr(argv[argi], '=')+1;
 		}
-		else if (strncmp(argv[argi], "--histlogdir=", 10) == 0) {
+		else if (argnmatch(argv[argi], "--histlogdir=")) {
 			histlogdir = strchr(argv[argi], '=')+1;
 		}
-		else if (strcmp(argv[argi], "--debug") == 0) {
+		else if (argnmatch(argv[argi], "--debug")) {
 			debug = 1;
 		}
 	}

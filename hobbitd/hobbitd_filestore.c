@@ -86,26 +86,26 @@ int main(int argc, char *argv[])
 	int seq;
 
 	for (argi = 1; (argi < argc); argi++) {
-		if (strcmp(argv[argi], "--status") == 0) {
+		if (argnmatch(argv[argi], "--status")) {
 			role = ROLE_STATUS;
 			if (!filedir) filedir = getenv("BBLOGS");
 		}
-		else if (strcmp(argv[argi], "--data") == 0) {
+		else if (argnmatch(argv[argi], "--data")) {
 			role = ROLE_DATA;
 			if (!filedir) filedir = getenv("BBDATA");
 		}
-		else if (strcmp(argv[argi], "--notes") == 0) {
+		else if (argnmatch(argv[argi], "--notes")) {
 			role = ROLE_NOTES;
 			if (!filedir) filedir = getenv("BBNOTES");
 		}
-		else if (strcmp(argv[argi], "--enadis") == 0) {
+		else if (argnmatch(argv[argi], "--enadis")) {
 			role = ROLE_ENADIS;
 			if (!filedir) filedir = getenv("BBDISABLED");
 		}
-		else if (strcmp(argv[argi], "--debug") == 0) {
+		else if (argnmatch(argv[argi], "--debug")) {
 			debug = 1;
 		}
-		else if (strncmp(argv[argi], "--dir=", 6) == 0) {
+		else if (argnmatch(argv[argi], "--dir=")) {
 			filedir = strchr(argv[argi], '=')+1;
 		}
 	}
