@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.8 2004-12-11 23:20:27 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.9 2004-12-12 14:44:22 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -130,6 +130,6 @@ void update_larrd(char *hostname, char *testname, char *msg, time_t tstamp, larr
 	else if (strcmp(id, "mailq") == 0)    res = do_mailq_larrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "bea") == 0)      res = do_bea_larrd(hostname, testname, msg, tstamp);
 
-	else if (strncmp(id, "tcp.", 4) == 0) res = do_net_larrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "tcp") == 0)      res = do_net_larrd(hostname, testname, msg, tstamp);
 }
 
