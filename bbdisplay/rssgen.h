@@ -14,13 +14,11 @@
 #ifndef __RSSGEN_H__
 #define __RSSGEN_H__
 
-extern char *rssfilename;
 extern char *rssversion;
 extern int  rsscolorlimit;
-extern char *nssidebarfilename;
 extern int  nssidebarcolorlimit;
 
-extern void do_rss_feed(void);
-extern void do_netscape_sidebar(void);
+extern void do_rss_feed(char *rssfilename, host_t *hosts);
+extern void do_netscape_sidebar(char *rssfilename, host_t *hosts);
 #endif
 

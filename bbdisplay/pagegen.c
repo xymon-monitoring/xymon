@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.110 2004-08-09 09:37:44 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.111 2004-08-09 09:49:23 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1006,7 +1006,7 @@ static void do_bb2ext(FILE *output, char *extenv, char *family)
 	free(bbexts);
 }
 
-int do_bb2_page(char *filename, char *rssfilename, int summarytype)
+int do_bb2_page(char *filename, char *rssfilename, char *nssidebarfilename, int summarytype)
 {
 	bbgen_page_t	bb2page;
 	FILE		*output;
@@ -1155,9 +1155,8 @@ int do_bb2_page(char *filename, char *rssfilename, int summarytype)
 
 	free(tmpfilename);
 
-	if (rssfilename) {
-		do_rss_feed(rssfilename, bb2page.hosts);
-	}
+	if (rssfilename) do_rss_feed(rssfilename, bb2page.hosts);
+	if (nssidebarfilename) do_netscape_sidebar(nssidebarfilename, bb2page.hosts);
 
 	if (lognkstatus && (summarytype == PAGE_NK)) {
 		host_t *hwalk;

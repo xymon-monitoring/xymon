@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.171 2004-08-09 09:37:10 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.172 2004-08-09 09:49:23 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -676,12 +676,12 @@ int main(int argc, char *argv[])
 
 	/* The full summary page - bb2.html */
 	sprintf(bb2filename, "bb2%s", htmlextension);
-	bb2_color = do_bb2_page(bb2filename, bb2rssfilename, PAGE_BB2);
+	bb2_color = do_bb2_page(bb2filename, bb2rssfilename, nssidebarfilename, PAGE_BB2);
 	add_timestamp("BB2 generation done");
 
 	/* Reduced summary (alerts) page - bbnk.html */
 	sprintf(bbnkfilename, "bbnk%s", htmlextension);
-	bbnk_color = do_bb2_page(bbnkfilename, bbnkrssfilename, PAGE_NK);
+	bbnk_color = do_bb2_page(bbnkfilename, bbnkrssfilename, NULL, PAGE_NK);
 	add_timestamp("BBNK generation done");
 
 	if (snapshot) {
@@ -698,12 +698,6 @@ int main(int argc, char *argv[])
 	/* Generate WML cards */
 	do_wml_cards(pagedir);
 	add_timestamp("WML generation done");
-
-	/* Generate Netscape sidebar feed */
-	if (nssidebarfilename) {
-		do_netscape_sidebar(nssidebarfilename, hosthead);
-		add_timestamp("Netscape Sidebar generation done");
-	}
 
 	/* Need to do this before sending in our report */
 	add_timestamp("Run completed");
