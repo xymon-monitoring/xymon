@@ -21,12 +21,13 @@ FINDHOSTOBJS = bb-findhost.o loadhosts.o util.o		# util.o for hostpage_name, hos
 CSVINFOOBJS = bb-csvinfo.o
 MESSAGECGIOBJS = sendmsg-cgi.o
 HOSTSVCCGIOBJS = bb-hostsvc.o
+ACKCGIOBJS = bb-ack.o
 
 HTMLPAGES = bb-findhost.html
 GIFFILES = bbfindhost1.gif bbfindhost2.gif
 
 
-all: $(PROGRAMS) $(EXTENSIONS) $(CGISCRIPTS)
+all: $(PROGRAMS) $(EXTENSIONS) $(CGISCRIPTS) bb-ack.cgi
 
 
 bbgen: $(GENOBJS)
@@ -61,6 +62,9 @@ bbmessage.cgi: $(MESSAGECGIOBJS)
 
 bb-hostsvc.cgi: $(HOSTSVCCGIOBJS)
 	$(CC) $(CFLAGS) -o $@ $(HOSTSVCCGIOBJS) ../lib/libbbgen.a $(NETLIBS)
+
+bb-ack.cgi: $(ACKCGIOBJS)
+	$(CC) $(CFLAGS) -o $@ $(ACKCGIOBJS) ../lib/libbbgen.a $(NETLIBS)
 
 
 ################################################
