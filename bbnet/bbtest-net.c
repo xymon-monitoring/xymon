@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.33 2003-04-27 16:16:42 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.34 2003-04-27 20:15:07 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -416,9 +416,12 @@ void save_fping_status(void)
 	if (statusfd == NULL) return;
 
 	for (t=pingtest->items; (t); t = t->next) {
-		if (t->host->downcount) {
+		if (!t->open) {
+			t->host->downcount++;
+			if (t->host->downcount == 1) t->host->downstart = time(NULL);
 			fprintf(statusfd, "%s %d %lu\n", t->host->hostname, t->host->downcount, t->host->downstart);
 		}
+		else t->host->downcount = 0;
 	}
 
 	fclose(statusfd);
@@ -553,18 +556,9 @@ int run_fping_service(service_t *service)
 			 */
 			for (t=service->items; (t); t = t->next) {
 				if (strcmp(t->host->ip, hostname) == 0) {
-
 					t->open = (strstr(l, "is alive") != NULL);
 					t->banner = malloc(strlen(l)+1);
 					strcpy(t->banner, l);
-
-					if (t->open) {
-						t->host->downcount = 0;
-					}
-					else {
-						t->host->downcount++;
-						if (t->host->downcount == 1) t->host->downstart = time(NULL);
-					}
 				}
 			}
 		}
