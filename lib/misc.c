@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.27 2005-02-16 22:04:19 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.28 2005-02-25 07:17:32 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -439,5 +439,22 @@ char **setup_commandargs(char *cmdline, char **cmd)
 
 	*cmd = cmdargs[0];
 	return cmdargs;
+}
+
+unsigned long long my_atoll(char *s)
+{
+	/*
+	 * Since atoll may not exist, we do our own
+	 */
+	unsigned long long result = 0;
+	char *p;
+
+	p = s + strspn(s, " \t");
+	while (*p && isdigit((int)*p)) {
+		result = (result * 10) + (*p - '0');
+		p++;
+	}
+
+	return result;
 }
 
