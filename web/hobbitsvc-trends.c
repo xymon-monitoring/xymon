@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.54 2004-12-30 22:25:34 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.55 2004-12-30 23:31:17 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -410,7 +410,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--rrddir=")) {
 			char *p = strchr(argv[argi], '=');
-			bbhostsfn = strdup(p+1);
+			rrddir = strdup(p+1);
 		}
 		else if (argnmatch(argv[argi], "--column=")) {
 			char *p = strchr(argv[argi], '=');
