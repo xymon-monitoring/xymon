@@ -52,26 +52,18 @@
                                            nopropredtests      |
                                            noproppurpletests   |
                                            nopropacktests      |
-					   rawentry            |
-                      +------------------  link                V
-                      |                    entries ---------> entry_t
-                      |                    dialup               column -------> bbgen_col_t
-                      |                    larrdgraphs          color             name
-                      |                    reportwarnlevel      age            +- link
-                      |                    comment              oldage         |  next
-                      |                    banks                acked          |
-                      |                    banksize             alert          |
-                      |                    next                 onwap          |
-                      |                                         propagate      |
-                      |                                         reportinfo     |
-                      |                                         next           |
-                      |+-------------------------------------------------------+
-                      ||
-                      VV
-                    link_t
-                      name
-                      filename
-                      urlprefix
+					   rawentry            V
+                                           entries ---------> entry_t
+                                           dialup               column -------> bbgen_col_t
+                                           larrdgraphs          color             name
+                                           reportwarnlevel      age               next
+                                           comment              oldage
+                                           banks                acked
+                                           banksize             alert
+                                           next                 onwap
+                                                                propagate
+                                                                reportinfo
+                                                                next
 
 
   bbgen_page_t structure holds data about one BB page - the first record in this list
@@ -99,13 +91,6 @@
   test belongs on the reduced summary (alerts) page.
 
   state_t is a simple 1-dimensional list of all tests (entry_t records).
-
-  link_t is a simple way of storing all links to /help/ and /notes/ URL's,
-  so they can be pre-loaded to avoid doing a lot of file lookups while
-  generating the webpages.
-  "name" is the text that finds the link (e.g. a pagename, a hostname or
-  a testname); "filename" is the filename for the link, and "urlprefix"
-  contains "help" or "notes" depending on where the file is located.
 */
 
 #define PAGE_BB		0
@@ -116,21 +101,12 @@
 /* Max number of purple messages in one run */
 #define MAX_PURPLE_PER_RUN	30
 
-/* Info-link definitions. */
-typedef struct link_t {
-	char	*name;
-	char	*filename;
-	char	*urlprefix;	/* "/help", "/notes" etc. */
-	struct link_t	*next;
-} link_t;
-
 /* Column definitions.                     */
 /* Basically a list of all possible column */
-/* names with links to their help-texts    */
+/* names                                   */
 typedef struct bbgen_col_t {
 	char	*name;
 	char	*listname;	/* The ",NAME," string used for searches */
-	struct link_t		*link;
 	struct bbgen_col_t	*next;
 } bbgen_col_t;
 
@@ -201,7 +177,6 @@ typedef struct host_t {
 	char    *description;
 	char	ip[16];
 	int	dialup;
-	struct link_t	*link;
 	struct entry_t	*entries;
 	int	color;		/* Calculated */
 	int	bb2color;	/* Calculated */
@@ -300,7 +275,6 @@ typedef struct ack_t {
 } ack_t;
 
 extern bbgen_page_t	*pagehead;
-extern link_t 		*linkhead, null_link;
 extern hostlist_t	*hosthead;
 extern state_t		*statehead;
 extern bbgen_col_t	*colhead, null_column;

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.33 2004-12-12 22:11:24 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.34 2004-12-15 21:24:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -27,16 +27,6 @@ static char rcsid[] = "$Id: debug.c,v 1.33 2004-12-12 22:11:24 henrik Exp $";
 
 #include "bbgen.h"
 
-void dumplinks(link_t *head)
-{
-	link_t *l;
-
-	for (l = head; l; l = l->next) {
-		printf("Link for host %s, URL/filename %s/%s\n", l->name, l->urlprefix, l->filename);
-	}
-}
-
-
 void dumphosts(host_t *head, char *prefix)
 {
 	host_t *h;
@@ -44,7 +34,7 @@ void dumphosts(host_t *head, char *prefix)
 	char	format[512];
 
 	strcpy(format, prefix);
-	strcat(format, "Host: %s, ip: %s, name: %s, color: %d, old: %d, anywaps: %d, wapcolor: %d, pretitle: '%s', noprop-y: %s, noprop-r: %s, noprop-p: %s, noprop-ack: %s, link: %s, waps: %s\n");
+	strcat(format, "Host: %s, ip: %s, name: %s, color: %d, old: %d, anywaps: %d, wapcolor: %d, pretitle: '%s', noprop-y: %s, noprop-r: %s, noprop-p: %s, noprop-ack: %s, waps: %s\n");
 
 	for (h = head; (h); h = h->next) {
 		printf(format, h->hostname, h->ip, textornull(h->displayname), h->color, h->oldage,
@@ -54,7 +44,6 @@ void dumphosts(host_t *head, char *prefix)
 			textornull(h->nopropredtests), 
 			textornull(h->noproppurpletests), 
 			textornull(h->nopropacktests), 
-			h->link->filename,
 			textornull(h->waps));
 		for (e = h->entries; (e); e = e->next) {
 			printf("\t\t\t\t\tTest: %s, alert %d, propagate %d, state %d, age: %s, oldage: %d\n", 
