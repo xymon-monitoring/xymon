@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.128 2003-10-16 21:49:35 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.129 2003-10-19 21:00:10 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1334,7 +1334,7 @@ int run_fping_service(service_t *service)
 		}
 	}
 	fpingstatus = pclose(cmdpipe);
-	switch (fpingstatus) {
+	switch (WEXITSTATUS(fpingstatus)) {
 	  case 0: /* All hosts reachable */
 	  case 1: /* Some hosts unreachable */
 	  case 2: /* Some IP's not found (should not happen) */
