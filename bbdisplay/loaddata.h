@@ -19,6 +19,12 @@
 #ifndef __LOADDATA_H_
 #define __LOADDATA_H_
 
+/* List definition to search for page records */
+typedef struct {
+	bbgen_page_t *pageentry;
+	void *next;
+} pagelist_t;
+
 extern col_t *find_or_create_column(const char *testname);
 extern link_t *load_all_links(void);
 extern bbgen_page_t *load_bbhosts(void);

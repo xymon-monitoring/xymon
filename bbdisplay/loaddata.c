@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.52 2003-04-22 15:55:09 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.53 2003-04-22 20:38:49 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -47,6 +47,9 @@ link_t  null_link = { "", "", "", NULL };	/* Null link for pages/hosts/whatever 
 col_t   null_column = { "", NULL };		/* Null column */
 char	*null_text = "";
 
+static pagelist_t *pagelisthead = NULL;
+
+
 char *skipword(const char *l)
 {
 	char *p;
@@ -65,6 +68,16 @@ char *skipwhitespace(const char *l)
 }
 
 
+void addtopagelist(bbgen_page_t *page)
+{
+	pagelist_t *newitem;
+
+	newitem = malloc(sizeof(pagelist_t));
+	newitem->pageentry = page;
+	newitem->next = pagelisthead;
+	pagelisthead = newitem;
+}
+	
 bbgen_page_t *init_page(const char *name, const char *title)
 {
 	bbgen_page_t *newpage = malloc(sizeof(bbgen_page_t));
@@ -485,7 +498,6 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		for (l=hosthead; (l); l = l->next) {
 			if (strcmp(l->hostentry->hostname, host->hostname) == 0) {
 				l->hostentry->entries = newstate->entry;
-				dprintf("init_state: Duplicate host, cloning state entries\n");
 			}
 		}
 
@@ -621,6 +633,44 @@ void getnamelink(char *l, char **name, char **link)
 }
 
 
+void getparentnamelink(char *l, bbgen_page_t *toppage, bbgen_page_t **parent, char **name, char **link)
+{
+	/* "subparent NAME PARENTNAME title-or-link" splitup */
+	unsigned char *p;
+	char *parentname;
+	pagelist_t *walk;
+
+	dprintf("getnamelink(%s, ...)\n", textornull(l));
+
+	*name = null_text;
+	*link = null_text;
+
+	/* Skip page/subpage keyword, and whitespace after that */
+	parentname = p = skipwhitespace(skipword(l));
+	p = skipword(p);
+	if (*p) {
+		*p = '\0'; /* Null-terminate pagename */
+		p++;
+		*name = p = skipwhitespace(p);
+	 	p = skipword(p);
+		if (*p) {
+			*p = '\0'; /* Null-terminate parentname */
+			p++;
+			*link = skipwhitespace(p);
+		}
+	}
+
+	for (walk = pagelisthead; (walk && (strcmp(walk->pageentry->name, parentname) != 0)); walk = walk->next) ;
+	if (walk) {
+		*parent = walk->pageentry;
+	}
+	else {
+		printf("Cannot find parent page '%s'\n", parentname);
+		*parent = NULL;
+	}
+}
+
+
 void getgrouptitle(char *l, char **title, char **onlycols)
 {
 	*title = null_text;
@@ -712,7 +762,7 @@ bbgen_page_t *load_bbhosts(void)
 	char 	l[MAX_LINE_LEN];
 	char 	*name, *link, *onlycols;
 	char 	hostname[MAX_LINE_LEN];
-	bbgen_page_t 	*toppage, *curpage, *cursubpage;
+	bbgen_page_t 	*toppage, *curpage, *cursubpage, *cursubparent;
 	group_t *curgroup;
 	host_t	*curhost;
 	int	ip1, ip2, ip3, ip4;
@@ -727,10 +777,12 @@ bbgen_page_t *load_bbhosts(void)
 	}
 
 	toppage = init_page("", "");
+	addtopagelist(toppage);
 	curpage = NULL;
 	cursubpage = NULL;
 	curgroup = NULL;
 	curhost = NULL;
+	cursubparent = NULL;
 
 	while (fgets(l, sizeof(l), bbhosts)) {
 		p = strchr(l, '\n'); 
@@ -759,8 +811,10 @@ bbgen_page_t *load_bbhosts(void)
 
 			curpage->parent = toppage;
 			cursubpage = NULL;
+			cursubparent = NULL;
 			curgroup = NULL;
 			curhost = NULL;
+			addtopagelist(curpage);
 		}
 		else if (strncmp(l, "subpage", 7) == 0) {
 			getnamelink(l, &name, &link);
@@ -771,14 +825,36 @@ bbgen_page_t *load_bbhosts(void)
 				cursubpage = cursubpage->next = init_page(name, link);
 			}
 			cursubpage->parent = curpage;
+			cursubparent = NULL;
 			curgroup = NULL;
 			curhost = NULL;
+			addtopagelist(cursubpage);
+		}
+		else if (strncmp(l, "subparent", 9) == 0) {
+			bbgen_page_t *parentpage, *walk;
+
+			getparentnamelink(l, toppage, &parentpage, &name, &link);
+			cursubparent = init_page(name, link);
+			if (parentpage->subpages == NULL) {
+				parentpage->subpages = cursubparent;
+			} 
+			else {
+				for (walk = parentpage->subpages; (walk->next); (walk = walk->next)) ;
+				walk->next = cursubparent;
+			}
+			cursubparent->parent = parentpage;
+			curgroup = NULL;
+			curhost = NULL;
+			addtopagelist(cursubparent);
 		}
 		else if (strncmp(l, "group", 5) == 0) {
 			getgrouptitle(l, &link, &onlycols);
 			if (curgroup == NULL) {
 				curgroup = init_group(link, onlycols);
-				if (cursubpage != NULL) {
+				if (cursubparent != NULL) {
+					cursubparent->groups = curgroup;
+				}
+				else if (cursubpage != NULL) {
 					/* We're in a subpage */
 					cursubpage->groups = curgroup;
 				}
@@ -828,7 +904,11 @@ bbgen_page_t *load_bbhosts(void)
 						    larrdgraphs);
 				if (curgroup != NULL) {
 					curgroup->hosts = curhost;
-				} else if (cursubpage != NULL) {
+				}
+				else if (cursubparent != NULL) {
+					cursubparent->hosts = curhost;
+				}
+				else if (cursubpage != NULL) {
 					cursubpage->hosts = curhost;
 				}
 				else if (curpage != NULL) {
@@ -843,7 +923,7 @@ bbgen_page_t *load_bbhosts(void)
 								    startoftags, nopropyellowlist,nopropredlist,
 								    larrdgraphs);
 			}
-			curhost->parent = (cursubpage ? cursubpage : curpage);
+			curhost->parent = (cursubparent ? cursubparent : (cursubpage ? cursubpage : curpage));
 		}
 		else if (strncmp(l, "summary", 7) == 0) {
 			/* summary row.column      IP-ADDRESS-OF-PARENT    http://bb4.com/ */
