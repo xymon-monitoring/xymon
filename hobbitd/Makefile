@@ -16,6 +16,8 @@ LARRDGRAPHOBJS= bb-larrdgraph.o
 
 all: $(PROGRAMS) $(CGISCRIPTS) cfgfiles
 
+# Need NETLIBS on Solaris for getservbyname(), called by parse_url()
+
 bbgend: $(BBGENDOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(BBGENDOBJS) $(LIBOBJS) $(NETLIBS)
 
@@ -23,7 +25,7 @@ bbgend_channel: $(CHANNELOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(CHANNELOBJS) $(LIBOBJS)
 
 bbgend_filestore: $(FILESTOREOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(FILESTOREOBJS) $(LIBOBJS)
+	$(CC) -o $@ $(FILESTOREOBJS) $(LIBOBJS) $(NETLIBS)
 
 bbgend_history: $(HISTORYOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(HISTORYOBJS) $(LIBOBJS)
@@ -32,7 +34,7 @@ bbgend_alert: $(ALERTOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(ALERTOBJS) $(LIBOBJS) $(PCRELIBS)
 
 bbgend_larrd: $(LARRDOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(LARRDOBJS) $(LIBOBJS) $(RRDLIBS)
+	$(CC) $(CFLAGS) -o $@ $(LARRDOBJS) $(LIBOBJS) $(RRDLIBS) $(NETLIBS)
 
 do_alert.o: do_alert.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ do_alert.c
@@ -47,7 +49,7 @@ bb-larrdgraph.o: bb-larrdgraph.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) $(RRDINCDIR) -c -o $@ bb-larrdgraph.c
 
 bb-larrdgraph.cgi: $(LARRDGRAPHOBJS)
-	$(CC) $(CFLAGS) -o $@ $(LARRDGRAPHOBJS) $(LIBOBJS) $(PCRELIBS) $(RRDLIBS)
+	$(CC) $(CFLAGS) -o $@ $(LARRDGRAPHOBJS) $(LIBOBJS) $(PCRELIBS) $(RRDLIBS) $(NETLIBS)
 
 startbb.sh: startbb.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g' | sed -e 's!@BBUSER@!$(BBUSER)!g' >$@
