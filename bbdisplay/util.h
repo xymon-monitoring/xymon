@@ -55,5 +55,7 @@ extern void init_status(void);
 extern void addtostatus(char *p);
 extern void finish_status(void);
 
+extern void envcheck(char *envvars[]);
+
 #endif
 

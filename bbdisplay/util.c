@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.10 2003-01-16 11:37:15 hstoerne Exp $";
+static char rcsid[] = "$Id: util.c,v 1.11 2003-01-17 10:00:13 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -486,5 +486,23 @@ void finish_status(void)
 		*p = '\n';
 	}
 	combo_add(msgbuf);
+}
+
+void envcheck(char *envvars[])
+{
+	int i;
+	int ok = 1;
+
+	for (i = 0; (envvars[i]); i++) {
+		if (getenv(envvars[i]) == NULL) {
+			fprintf(stderr, "Environment variable %s not defined\n", envvars[i]);
+			ok = 0;
+		}
+	}
+
+	if (!ok) {
+		fprintf(stderr, "Aborting\n");
+		exit (1);
+	}
 }
 
