@@ -12,7 +12,7 @@ case "$1" in
 		echo "Hobbit must be started as the @BBUSER@ user"
 		exit 1
 	else
-		@BBHOME@/bin/hobbitlaunch --config=@BBHOME@/etc/hobbittasks.cfg --env=@BBHOME@/etc/hobbitserver.env --log=@BBLOGDIR@/hobbitlaunch.log --pidfile=@BBLOGDIR@/hobbitlaunch.pid
+		@BBHOME@/bin/hobbitlaunch --config=@BBHOME@/etc/hobbittasks.cfg --env=@BBHOME@/etc/hobbitserver.cfg --log=@BBLOGDIR@/hobbitlaunch.log --pidfile=@BBLOGDIR@/hobbitlaunch.pid
 		echo "Hobbit started"
 	fi
 	;;

@@ -4,5 +4,5 @@
 # script, bb-hist.sh
 # It is the Hobbit version.
 
-exec @BBHOME@/bin/bb-hist.cgi --env=@BBHOME@/etc/hobbitserver.env
+exec @BBHOME@/bin/bb-hist.cgi --env=@BBHOME@/etc/hobbitserver.cfg
 

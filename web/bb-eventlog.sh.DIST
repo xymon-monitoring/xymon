@@ -5,5 +5,5 @@
 #
 # Install this script in your webservers' cgi-bin directory
 
-exec @BBHOME@/bin/bb-eventlog.cgi --env=@BBHOME@/etc/hobbitserver.env
+exec @BBHOME@/bin/bb-eventlog.cgi --env=@BBHOME@/etc/hobbitserver.cfg
 

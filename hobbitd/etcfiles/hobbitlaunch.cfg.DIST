@@ -6,7 +6,7 @@
 
 # This is the main Hobbit daemon. You cannot live without this one.
 [hobbitd]
-	ENVFILE @BBHOME@/etc/hobbitserver.env
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	CMD hobbitd --restart=$BBTMP/hobbitd.chk --checkpoint-file=$BBTMP/hobbitd.chk --checkpoint-interval=600 --purple-conn=conn --log=$BBSERVERLOGS/hobbitd.log --admin-senders=127.0.0.1,$BBSERVERIP
 
 
@@ -16,7 +16,7 @@
 # since storing the raw logs on disk can cause a significant load on your server.
 
 #[bbstatus]
-#	ENVFILE @BBHOME@/etc/hobbitserver.env
+#	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 #	NEEDS hobbitd
 #	CMD hobbitd_channel --channel=status --log=$BBSERVERLOGS/status.log hobbitd_filestore --status --html
 
@@ -25,7 +25,7 @@
 # compatible with the Big Brother history logs. You probably do want to run this.
 
 [bbhistory]
-	ENVFILE @BBHOME@/etc/hobbitserver.env
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	NEEDS hobbitd
 	CMD hobbitd_channel --channel=stachg --log=$BBSERVERLOGS/history.log hobbitd_history
 
@@ -38,7 +38,7 @@
 # not need to run the "bbdata" module to get LARRD graphs.
 
 #[bbdata]
-#	ENVFILE @BBHOME@/etc/hobbitserver.env
+#	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 #	NEEDS hobbitd
 #	CMD hobbitd_channel --channel=data   --log=$BBSERVERLOGS/data.log hobbitd_filestore --data
 
@@ -47,7 +47,7 @@
 # disabled by default; if you use the BB "notes" protocol, then you should enable this.
 
 #[bbnotes]
-#	ENVFILE @BBHOME@/etc/hobbitserver.env
+#	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 #	NEEDS hobbitd
 #	CMD hobbitd_channel --channel=notes  --log=$BBSERVERLOGS/notes.log hobbitd_filestore --notes
 
@@ -57,7 +57,7 @@
 # and disabled, so you probably want to run this module.
 
 [bbenadis]
-	ENVFILE @BBHOME@/etc/hobbitserver.env
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	NEEDS hobbitd
 	CMD hobbitd_channel --channel=enadis --log=$BBSERVERLOGS/enadis.log hobbitd_filestore --enadis
 
@@ -67,7 +67,7 @@
 # alerts to go out via pager, e-mail or some other means, then you must run this module.
 
 [bbpage]
-	ENVFILE @BBHOME@/etc/hobbitserver.env
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	NEEDS hobbitd
 	CMD hobbitd_channel --channel=page   --log=$BBSERVERLOGS/page.log hobbitd_alert
 
@@ -76,7 +76,7 @@
 # If you want RRD graphs of your monitoring data, then you want to run this.
 
 [larrdstatus]
-	ENVFILE @BBHOME@/etc/hobbitserver.env
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	NEEDS hobbitd
 	CMD hobbitd_channel --channel=status --log=$BBSERVERLOGS/larrd-status.log hobbitd_larrd --rrddir=$BBVAR/rrd
 
@@ -84,7 +84,7 @@
 # If you want RRD graphs of your monitoring BB data, then you want to run this.
 
 [larrddata]
-	ENVFILE @BBHOME@/etc/hobbitserver.env
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	NEEDS hobbitd
 	CMD hobbitd_channel --channel=data   --log=$BBSERVERLOGS/larrd-data.log hobbitd_larrd --rrddir=$BBVAR/rrd
 
@@ -95,7 +95,7 @@
 # and dont need updates that often.
 
 [bbdisplay]
-	ENVFILE @BBHOME@/etc/hobbitserver.env
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	NEEDS hobbitd
 	GROUP generators
 	CMD bbgen --hobbitd --recentgifs --subpagecolumns=2 --larrd043 --report
@@ -107,7 +107,7 @@
 # less frequently than the normal webpage updates. We also make sure (with the "GROUP" setting)
 # that they don't run simultaneously with the infocolumnn and bbdisplay tasks.
 [larrdcolumn]
-	ENVFILE @BBHOME@/etc/hobbitserver.env
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	NEEDS hobbitd
 	GROUP generators
 	CMD bb-larrdcolumn --hobbitd --rrddir=$BBVAR/rrd --column=trends
@@ -120,7 +120,7 @@
 # We also make sure (with the "GROUP" setting) that they don't run simultaneously with 
 # the larrdcolumnn and bbdisplay tasks.
 [infocolumn]
-	ENVFILE @BBHOME@/etc/hobbitserver.env
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	NEEDS hobbitd
 	GROUP generators
 	CMD bb-infocolumn --hobbitd --column=info
@@ -132,7 +132,7 @@
 # all of the various network protocols we need to test.
 
 [bbnet]
-	ENVFILE @BBHOME@/etc/hobbitserver.env
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	NEEDS hobbitd
 	CMD bbtest-net --report --ping --checkresponse
 	LOGFILE $BBSERVERLOGS/bb-network.log
@@ -146,7 +146,7 @@
 # reports look much better.
 
 [bbretest]
-	ENVFILE @BBHOME@/etc/hobbitserver.env
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	NEEDS hobbitd
 	CMD $BBHOME/ext/bbretest-net.sh
 	LOGFILE $BBSERVERLOGS/bb-retest.log
