@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.16 2003-04-16 07:03:12 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.17 2003-04-16 09:01:48 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -297,9 +297,12 @@ int run_command(char *cmd, char *errortext, char **banner)
 	result = 0;
 	if (banner) *banner = NULL;
 	cmdpipe = popen(cmd, "r");
-	if (cmdpipe == NULL) return -1;
+	if (cmdpipe == NULL) {
+		if (banner) sprintf(*banner, "popen() failed to run command '%s'\n", cmd);
+		return -1;
+	}
 
-	if (banner) { *banner = malloc(1024); **banner = '\0'; }
+	if (banner) { *banner = malloc(1024); sprintf(*banner, "Command: %s\n\n", cmd); }
 	while (fgets(l, sizeof(l), cmdpipe)) {
 		if (strstr(l, errortext) != NULL) result = 1;
 		if (banner && ((strlen(l) + strlen(*banner)) < 1024)) strcat(*banner, l);
@@ -326,8 +329,7 @@ void run_nslookup_service(service_t *service)
 		if (!t->host->dnserror) {
 			sprintf(cmd, "%s %s %s 2>&1", 
 				cmdpath, t->host->hostname, t->host->ip);
-			t->open = (run_command(cmd, "can't find", NULL) == 0);
-			t->banner = NULL;
+			t->open = (run_command(cmd, "can't find", &t->banner) == 0);
 		}
 	}
 }
@@ -345,8 +347,7 @@ void run_dig_service(service_t *service)
 		if (!t->host->dnserror) {
 			sprintf(cmd, "%s @%s %s 2>&1", 
 				cmdpath, t->host->ip, t->host->hostname);
-			t->open = (run_command(cmd, "Bad server", NULL) == 0);
-			t->banner = NULL;
+			t->open = (run_command(cmd, "Bad server", &t->banner) == 0);
 		}
 	}
 }
@@ -491,6 +492,9 @@ int main(int argc, char *argv[])
 				if (!t->host->dnserror) {
 					t->testresult = add_test(t->host->ip, s->portnum, s->testname, t->silenttest);
 				}
+				else {
+					t->testresult = NULL;
+				}
 			}
 		}
 	}
@@ -499,8 +503,17 @@ int main(int argc, char *argv[])
 	for (s = svchead; (s); s = s->next) {
 		if ((s->items) && (s->toolid == TOOL_CONTEST)) {
 			for (t = s->items; (t); t = t->next) { 
-				t->open = t->testresult->open;
-				t->banner = t->testresult->banner;
+				/*
+				 * If the test fails due to DNS error, t->testresult is NULL
+				 */
+				if (t->testresult) {
+					t->open = t->testresult->open;
+					t->banner = t->testresult->banner;
+				}
+				else {
+					t->open = 0;
+					t->banner = NULL;
+				}
 			}
 			send_results(s);
 		}
