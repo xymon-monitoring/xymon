@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.60 2004-07-11 06:35:48 hstoerne Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.61 2004-07-19 16:01:13 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -26,6 +26,8 @@ static char rcsid[] = "$Id: httptest.c,v 1.60 2004-07-11 06:35:48 hstoerne Exp $
 #include "bbtest-net.h"
 #include "httptest.h"
 #include "digest.h"
+
+#define MAXPARALLELS 40
 
 char *http_library_version = NULL;
 
@@ -142,6 +144,7 @@ void add_http_test(testitem_t *t)
 	req->contenttype = NULL;
 	req->output = NULL;
 	req->digest = NULL;
+	req->digestctx = NULL;
 	req->httpcolor = -1;
 	req->faileddeps = NULL;
 	req->logcert = 0;
@@ -420,7 +423,7 @@ static size_t data_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 		break;
 
 	  case CONTENTCHECK_DIGEST:
-		if (digest_data(ptr, count) != 0) {
+		if (digest_data(req->digestctx, ptr, count) != 0) {
 			errprintf("Failed to hash data for digest\n");
 		}
 		break;
@@ -469,6 +472,13 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 	char useragent[100];
 	struct timeval tm1, tm2, tmdif;
 	struct timezone tz;
+
+#ifdef MULTICURL
+	testitem_t *firstitem = NULL;
+	CURLM *multihandle;
+	int multiactive;
+	int testcount = 0;
+#endif
 
 	if (logfile) {
 		logfd = fopen(logfile, "a");
@@ -567,15 +577,6 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 				curl_easy_setopt(req->curl, CURLOPT_PROXYUSERPWD, req->proxyuserpwd);
 			}
 		}
-	}
-
-	for (t = httptest->items; (t); t = t->next) {
-		/* Let's do it ... */
-		req = (http_data_t *) t->privdata;
-
-		if (logfd) {
-			fprintf(logfd, "\n*** Checking URL: %s ***\n", req->url);
-		}
 
 		if (req->contentcheck == CONTENTCHECK_DIGEST) {
 			char *p;
@@ -583,8 +584,19 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 			/* Setup the digest hash */
 			p = strchr((char *)req->exp, ':');
 			if (p) *p = '\0';
-			digest_init((char *) req->exp);
+			req->digestctx = digest_init((char *) req->exp);
 			if (p) *p = ':';
+		}
+
+	}
+
+#ifndef MULTICURL
+	for (t = httptest->items; (t); t = t->next) {
+		/* Let's do it ... */
+		req = (http_data_t *) t->privdata;
+
+		if (logfd) {
+			fprintf(logfd, "\n*** Checking URL: %s ***\n", req->url);
 		}
 
 		if (logfd) gettimeofday(&tm1, &tz);
@@ -597,11 +609,122 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
  
 			fprintf(logfd, "   Time: %10lu.%06lu\n", tmdif.tv_sec, tmdif.tv_usec);
 		}
-
-		if ((req->res == CURLE_OK) && (req->contentcheck == CONTENTCHECK_DIGEST)) {
-			req->digest = malcop(digest_done());
-		}
 	}
+
+#else
+	multihandle = NULL;
+
+	for (t = httptest->items, testcount=0; (t); t = t->next) {
+		CURLMsg *msg;
+		int msgsleft;
+
+		/* Setup the multi handle with all of the individual http transfers */
+		if (multihandle == NULL) {
+			multihandle = curl_multi_init();
+
+			if (multihandle == NULL) {
+				errprintf("Cannot initiate CURL multi handle - aborting HTTP tests\n");
+				return;
+			}
+		}
+
+		if (firstitem == NULL) firstitem = t;
+
+		req = (http_data_t *) t->privdata;
+		curl_multi_add_handle(multihandle, req->curl);
+		testcount++;
+
+		dprintf("Multi-add %s\n", req->url);
+		if ((testcount < MAXPARALLELS) && (t->next != NULL)) continue;
+
+		dprintf("Starting %d transfers\n", testcount);
+
+		/* Do the transfers */
+		while (curl_multi_perform(multihandle, &multiactive) == CURLM_CALL_MULTI_PERFORM);
+		while (multiactive) {
+			struct timeval tmo;
+			fd_set fdread;
+			fd_set fdwrite;
+			fd_set fdexcep;
+			int maxfd, selres;
+
+			/* Setup the file descriptors */
+			FD_ZERO(&fdread); FD_ZERO(&fdwrite); FD_ZERO(&fdexcep);
+			curl_multi_fdset(multihandle, &fdread, &fdwrite, &fdexcep, &maxfd);
+
+			/* This timeout does not relate to any of the specific timeouts for a URL */
+			tmo.tv_sec = 1;
+			tmo.tv_usec = 0;
+
+			dprintf("curl_multi select with %d handles active\n", multiactive);
+			selres = select(maxfd+1, &fdread, &fdwrite, &fdexcep, &tmo);
+
+			switch (selres) {
+				case -1:
+					errprintf("select() returned an error - aborting http tests\n");
+					multiactive = 0;
+					testcount = 0;
+					break;
+
+				case 0:
+					/*
+					 * Timeout: We must still call curl_multi_perform()
+					 * for the library to fill in information about how the
+					 * timeout occurred (dns tmo, connect tmo, tmo waiting for data ...)
+					 */
+					dprintf("timeout waiting for http requests\n");
+					while (curl_multi_perform(multihandle, &multiactive) == CURLM_CALL_MULTI_PERFORM);
+					break;
+	
+				default:
+					/* Do some data processing */
+					while (curl_multi_perform(multihandle, &multiactive) == CURLM_CALL_MULTI_PERFORM);
+					break;
+			}
+		}
+	
+		/* Pick up the result codes. Odd way of doing it, but so says libcurl */
+		msg = curl_multi_info_read(multihandle, &msgsleft); 
+		dprintf("Got %d+%d messages\n", (msg ? 1 : 0), msgsleft);
+		while (msg) {
+			if (msg == NULL) {
+				dprintf("Oops - got a NULL msg\n");
+			} else if (msg->msg == CURLMSG_DONE) {
+				int found = 0;
+				testitem_t *r;
+
+				for (r = firstitem; (r && !found); r = r->next) {
+					req = (http_data_t *) r->privdata;
+
+					found = (req->curl == msg->easy_handle);
+					if (found) {
+						req->res = msg->data.result;
+						dprintf("Got result for %s\n", req->url);
+						testcount--;
+					}
+					else {
+						dprintf("Cannot find handle for a message\n");
+					}
+				}
+			}
+			else {
+				dprintf("Huh ? Got a msg %d\n", msg->msg);
+			}
+
+		     msg = curl_multi_info_read(multihandle, &msgsleft);
+		}
+
+		/* Debug */
+		if (testcount != 0) {
+			errprintf("Whoa! Ended up with testcount=%d - we failed to pick up status for some tests\n", testcount);
+		}
+	
+		curl_multi_cleanup(multihandle);
+		multihandle = NULL;
+		testcount = 0;
+		firstitem = NULL;
+	}
+#endif
 
 	for (t = httptest->items; (t); t = t->next) {
 		req = (http_data_t *) t->privdata;
@@ -627,6 +750,10 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 			req->errorbuffer[0] = '\0';
 			req->contenttype = (contenttype ? malcop(contenttype) : "");
 			t->open = 1;
+
+			if (req->contentcheck == CONTENTCHECK_DIGEST) {
+				req->digest = digest_done(req->digestctx);
+			}
 		}
 
 
@@ -846,6 +973,7 @@ void send_content_results(service_t *httptest, service_t *ftptest, testedhost_t 
 						break;
 
 					  case CONTENTCHECK_DIGEST:
+						if (req->digest == NULL) req->digest = malcop("");
 						if (strcmp(req->digest, (char *)req->exp) != 0) {
 							status = STATUS_CONTENTMATCH_FAILED;
 						}

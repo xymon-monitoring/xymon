@@ -21,6 +21,8 @@
 #include <time.h>
 #include <regex.h>
 
+#include "digest.h"
+
 #define CONTENTCHECK_NONE   0
 #define CONTENTCHECK_REGEX  1
 #define CONTENTCHECK_DIGEST 2
@@ -52,6 +54,7 @@ typedef struct {
 	char   *contenttype;		/* Content-type: header */
 	char   *output;                 /* Data from server */
 	char   *digest;                 /* Digest of server data */
+	digestctx_t *digestctx;		/* OpenSSL data for digest handling */
 	int    logcert;
 	char   *certinfo;               /* Data about SSL certificate */
 	time_t certexpires;		/* Expiry time for SSL cert */
