@@ -143,7 +143,7 @@ COLUMNDOCURL="$CGIBINURL/hobbitcolumn.sh?%s"	# URL formatting string for column-
 MKBBLOCAL="<B><I>Pages Hosted Locally</I></B>"
 MKBBREMOTE="<B><I>Remote Status Display</I></B>"
 MKBBSUBLOCAL="<B><I>Subpages Hosted Locally</I></B>"
-MKBBACKFONT="COLOR=\"silver\" SIZE=\"-1\""	# Size and color of the 'Current acknowledgement...' text in the html log.
+MKBBACKFONT="COLOR=\"#33ebf4\" SIZE=\"-1\""	# Size and color of the 'Current acknowledgement...' text in the html log.
 MKBBCOLFONT="COLOR=\"#87a9e5\" SIZE=\"-1\""	# Size and color of the column headings text
 MKBBROWFONT="SIZE=\"+1\" COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\""   # Size,color,font of text in each row (hostname)
 MKBBTITLE="COLOR=\"#FFFFF0\" SIZE=\"+1\""	# Size and color of the BB titles (the old "ivory" is invalid HTML)

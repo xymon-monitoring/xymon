@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.8 2005-02-07 09:41:08 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.9 2005-02-20 12:25:05 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -109,10 +109,10 @@ const static struct {
 	{ "MKBBLOCAL", "<B><I>Pages Hosted Locally</I></B>" },
 	{ "MKBBREMOTE", "<B><I>Remote Status Display</I></B>" },
 	{ "MKBBSUBLOCAL", "<B><I>Subpages Hosted Locally</I></B>" },
-	{ "MKBBACKFONT", "COLOR=silver SIZE=\"-1\""	 },
+	{ "MKBBACKFONT", "COLOR=\"#33ebf4\" SIZE=\"-1\"" },
 	{ "MKBBCOLFONT", "COLOR=\"#87a9e5\" SIZE=\"-1\"" },
 	{ "MKBBROWFONT", "SIZE=\"+1\" COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\"" },
-	{ "MKBBTITLE", "COLOR=ivory SIZE=\"+1\"" },
+	{ "MKBBTITLE", "COLOR=\"ivory\" SIZE=\"+1\"" },
 	{ "BBDATEFORMAT", "%a %b %d %H:%M:%S %Y" },
 	{ "BBRSSTITLE", "Hobbit Alerts" },
 	{ "WMLMAXCHARS", "1500"	},

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.18 2005-02-15 12:56:27 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.19 2005-02-20 12:25:05 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -41,8 +41,8 @@ static void hostsvc_setup(void)
 	getenv_default("BBREL", "bbgen", NULL);
 	getenv_default("BBRELDATE", VERSION, NULL);
 	getenv_default("CGIBINURL", "/cgi-bin", &cgibinurl);
-	getenv_default("MKBBCOLFONT", "COLOR=teal SIZE=-1\"", &colfont);
-	getenv_default("MKBBACKFONT", "COLOR=teal SIZE=-1\"", &ackfont);
+	getenv_default("MKBBACKFONT", "COLOR=\"#33ebf4\" SIZE=-1\"", &ackfont);
+	getenv_default("MKBBCOLFONT", "COLOR=\"#87a9e5\" SIZE=-1\"", &colfont);
 	getenv_default("MKBBROWFONT", "SIZE=+1 COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\"", &rowfont);
 	getenv_default("BBWEB", "/bb", NULL);
 	{
