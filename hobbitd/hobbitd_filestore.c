@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.38 2005-03-06 07:25:07 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.39 2005-03-12 08:07:18 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -272,6 +272,7 @@ int main(int argc, char *argv[])
 
 		if ((role == ROLE_STATUS) && (metacount >= 14) && (strncmp(items[0], "@@status", 8) == 0)) {
 			/* @@status|timestamp|sender|origin|hostname|testname|expiretime|color|testflags|prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage */
+			int ltime;
 			time_t logtime = 0, timesincechange = 0, acktime = 0, disabletime = 0;
 
 			hostname = items[4];
@@ -284,7 +285,7 @@ int main(int argc, char *argv[])
 			sprintf(logfn, "%s/%s.%s", filedir, commafy(hostname), testname);
 			expiretime = atoi(items[6]);
 			statusdata = msg_data(statusdata);
-			sscanf(items[1], "%d.%*d", (int *)&logtime);
+			sscanf(items[1], "%d.%*d", &ltime); logtime = ltime;
 			timesincechange = logtime - atoi(items[10]);
 			update_file(logfn, "w", statusdata, expiretime, items[2], timesincechange, seq);
 			if (htmldir) {
