@@ -25,6 +25,7 @@ extern char *colorname(int color);
 extern int parse_color(char *colortext);
 extern int eventcolor(char *colortext);
 extern char *dotgiffilename(int color, int acked, int oldage);
+extern int colorset(char *colspec, int excludeset);
 
 #endif
 

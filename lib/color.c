@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: color.c,v 1.7 2005-03-22 09:16:49 henrik Exp $";
+static char rcsid[] = "$Id: color.c,v 1.8 2005-04-03 11:01:01 henrik Exp $";
 
 #include <string.h>
 
@@ -108,5 +108,23 @@ char *dotgiffilename(int color, int acked, int oldage)
 	strcat(filename, ".gif");
 
 	return filename;
+}
+
+int colorset(char *colspec, int excludeset)
+{
+	int c, ac;
+	char *p;
+
+	p = strtok(colspec, ",");
+	ac = 0;
+	while (p) {
+		c = parse_color(p);
+		if (c != -1) ac = (ac | (1 << c));
+		p = strtok(NULL, ",");
+	}
+
+	/* Some color may be forbidden */
+	ac = (ac & ~excludeset);
+	return ac;
 }
 
