@@ -9,8 +9,6 @@ Suggestions from users
 * When a host exists on multiple pages, provide links to
   the other pages showing this host. Maybe from the "info"
   column view ?
-* Something similar to "badconn" for all tests (Torsten
-  Richter on bb list).
 
 Ideas of my own
 ---------------
@@ -18,30 +16,11 @@ Ideas of my own
 * Implement the "local" tests (cpu, disk, memory,
   process, services - NOT logs) as network tests
   using SNMP
-* Some way of defining acceptable responsetimes for 
-  services, and then go yellow/red if the threshold is 
-  exceeded.
 * libcurl can support LDAP queries. So implement support
   for running ldap checks, if the runtime library does.
   Hmm ... apparently it does not work :-( and the curl
   guys dont want to support it anymore :-((
   Cf. curl bug item #735752
-* Dynamic schedules. When a test fails, we want to test
-  it sooner than normal to quickly pick up when it goes
-  OK again. However, if a test fails and it stays in 
-  the failed mode for some time, we dont want to spend
-  a lot of energy retesting it.
-  Initial guess: When it fails, do the next 5 tests with
-  one minute intervals. Then if the failure persists,
-  back off to 2 minute intervals for 5 tests, then 4
-  minute intervals for 5 tests etc. until we test only
-  once an hour. That means an increased test rate for
-  the first 5*(1+2+4) = 35 minutes and then we go to
-  a slower than normal test frequency.
-  This should be configurable on a per host and/or 
-  per service basis.
-* Fixed schedules. Some hosts may require testing more
-  often than others.
 * Use Autoconf. Need to learn how to use it first, though.
 * Communication between BBDISPLAY and BBNET servers.
   Build a new daemon to run on the BBNET servers. It
