@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.29 2004-09-30 16:33:30 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.30 2004-09-30 20:44:13 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -78,19 +78,20 @@ typedef struct conn_t {
 	int dontcount;
 	int csocket;
 	struct sockaddr_in caddr;
-	char clientip[16];
-	char *serverip;
+	struct in_addr *clientip, *serverip;
+	int snum;
 	int ssocket;
 	int conntries, sendtries;
 	int connectpending;
 	time_t conntime;
 	int madetocombo;
 	struct timeval timelimit, arrival;
-	unsigned char *buf, *bufp;
-	unsigned int bufsize, buflen;
+	unsigned char *buf, *bufp, *bufpsave;
+	unsigned int bufsize, buflen, buflensave;
 	struct conn_t *next;
 } conn_t;
 
+#define MAX_SERVERS 3
 #define CONNECT_TRIES 3		/* How many connect-attempts against the server */
 #define CONNECT_INTERVAL 8	/* Seconds between each connection attempt */
 #define SEND_TRIES 2		/* How many times to try sending a message */
@@ -141,7 +142,7 @@ int overdue(struct timeval *now, struct timeval *limit)
 	else return (now->tv_usec >= limit->tv_usec);
 }
 
-static int do_read(int sockfd, char *addr, conn_t *conn, enum phase_t completedstate)
+static int do_read(int sockfd, struct in_addr *addr, conn_t *conn, enum phase_t completedstate)
 {
 	int n;
 
@@ -154,7 +155,7 @@ static int do_read(int sockfd, char *addr, conn_t *conn, enum phase_t completeds
 	n = read(sockfd, conn->bufp, (conn->bufsize - conn->buflen - 1));
 	if (n == -1) {
 		/* Error - abort */
-		errprintf("READ error from %s: %s\n", addr, strerror(errno));
+		errprintf("READ error from %s: %s\n", inet_ntoa(*addr), strerror(errno));
 		msgs_timeout_from[conn->state]++;
 		conn->state = P_CLEANUP;
 		return -1;
@@ -172,14 +173,14 @@ static int do_read(int sockfd, char *addr, conn_t *conn, enum phase_t completeds
 	return 0;
 }
 
-static int do_write(int sockfd, char *addr, conn_t *conn, enum phase_t completedstate)
+static int do_write(int sockfd, struct in_addr *addr, conn_t *conn, enum phase_t completedstate)
 {
 	int n;
 
 	n = write(sockfd, conn->bufp, conn->buflen);
 	if (n == -1) {
 		/* Error - abort */
-		errprintf("WRITE error to %s: %s\n", addr, strerror(errno));
+		errprintf("WRITE error to %s: %s\n", inet_ntoa(*addr), strerror(errno));
 		msgs_timeout_from[conn->state]++;
 		conn->state = P_CLEANUP;
 		return -1;
@@ -216,12 +217,6 @@ void do_log(conn_t *conn)
 
 int main(int argc, char *argv[])
 {
-	int locport = 1984;
-	char *locaddr = "0.0.0.0";
-	int bbdispport = 1984;
-	char *bbdispip = NULL;
-	int bbpagerport = 1984;
-	char *bbpagerip = NULL;
 	int daemonize = 1;
 	int timeout = 10;
 	int listenq = 512;
@@ -232,8 +227,10 @@ int main(int argc, char *argv[])
 	int sockcount = 0;
 	int lsocket;
 	struct sockaddr_in laddr;
-	struct sockaddr_in bbdispaddr;
-	struct sockaddr_in bbpageraddr;
+	struct sockaddr_in bbdispaddr[MAX_SERVERS];
+	int bbdispcount = 0;
+	struct sockaddr_in bbpageraddr[MAX_SERVERS];
+	int bbpagercount = 0;
 	int opt;
 	conn_t *chead = NULL;
 
@@ -254,33 +251,79 @@ int main(int argc, char *argv[])
 	/* Dont save the output from errprintf() */
 	save_errbuf = 0;
 
+	memset(&laddr, 0, sizeof(laddr));
+	inet_aton("0.0.0.0", (struct in_addr *) &laddr.sin_addr.s_addr);
+	laddr.sin_port = htons(1984);
+	laddr.sin_family = AF_INET;
+
 	for (opt=1; (opt < argc); opt++) {
 		if (argnmatch(argv[opt], "--listen=")) {
-			char *p = strchr(argv[opt], '=');
-			locaddr = strdup(p+1);
+			char *locaddr, *p;
+			int locport;
+
+			locaddr = strchr(argv[opt], '=')+1;
 			p = strchr(locaddr, ':');
-			if (p) {
-				*p = '\0';
-				locport = atoi(p+1);
+			if (p) { locport = atoi(p+1); *p = '\0'; } else locport = 1984;
+
+			memset(&laddr, 0, sizeof(laddr));
+			laddr.sin_port = htons(locport);
+			laddr.sin_family = AF_INET;
+			if (inet_aton(locaddr, (struct in_addr *) &laddr.sin_addr.s_addr) == 0) {
+				errprintf("Invalid listen address %s\n", locaddr);
+				return 1;
 			}
 		}
 		else if (argnmatch(argv[opt], "--bbdisplay=")) {
-			char *p = strchr(argv[opt], '=');
-			bbdispip = strdup(p+1);
-			p = strchr(bbdispip, ':');
-			if (p) {
-				*p = '\0';
-				bbdispport = atoi(p+1);
+			char *ips, *ip1;
+			int port1;
+
+			ips = strdup(strchr(argv[opt], '=')+1);
+
+			ip1 = strtok(ips, ",");
+			while (ip1) {
+				char *p; 
+				p = strchr(ip1, ':');
+				if (p) { port1 = atoi(p+1); *p = '\0'; } else port1 = 1984;
+
+				memset(&bbdispaddr[bbdispcount], 0, sizeof(bbdispaddr[bbdispcount]));
+				bbdispaddr[bbdispcount].sin_port = htons(port1);
+				bbdispaddr[bbdispcount].sin_family = AF_INET;
+				if (inet_aton(ip1, (struct in_addr *) &bbdispaddr[bbdispcount].sin_addr.s_addr) == 0) {
+					errprintf("Invalid remote address %s\n", ip1);
+				}
+				else {
+					bbdispcount++;
+				}
+				if (p) *p = ':';
+				ip1 = strtok(NULL, ",");
 			}
+			free(ips);
 		}
 		else if (argnmatch(argv[opt], "--bbpager=")) {
-			char *p = strchr(argv[opt], '=');
-			bbpagerip = strdup(p+1);
-			p = strchr(bbpagerip, ':');
-			if (p) {
-				*p = '\0';
-				bbpagerport = atoi(p+1);
+			char *ips, *ip1;
+			int port1;
+
+			ips = strdup(strchr(argv[opt], '=')+1);
+
+			ip1 = strtok(ips, ",");
+			while (ip1) {
+				char *p; 
+				p = strchr(ip1, ':');
+				if (p) { port1 = atoi(p+1); *p = '\0'; } else port1 = 1984;
+
+				memset(&bbpageraddr[bbpagercount], 0, sizeof(bbpageraddr[bbpagercount]));
+				bbpageraddr[bbpagercount].sin_port = htons(port1);
+				bbpageraddr[bbpagercount].sin_family = AF_INET;
+				if (inet_aton(ip1, (struct in_addr *) &bbpageraddr[bbpagercount].sin_addr.s_addr) == 0) {
+					errprintf("Invalid remote address %s\n", ip1);
+				}
+				else {
+					bbpagercount++;
+				}
+				if (p) *p = ':';
+				ip1 = strtok(NULL, ",");
 			}
+			free(ips);
 		}
 		else if (argnmatch(argv[opt], "--timeout=")) {
 			char *p = strchr(argv[opt], '=');
@@ -353,30 +396,20 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (bbdispip == NULL) {
+	if (bbdispcount == 0) {
 		errprintf("No BBDISPLAY address given - aborting\n");
 		return 1;
 	}
 
-	if (bbpagerip == NULL) {
-		bbpagerip = bbdispip;
-		bbpagerport = bbdispport;
-	}
+	if (bbpagercount == 0) {
+		int i;
 
-	memset(&bbdispaddr, 0, sizeof(bbdispaddr));
-	bbdispaddr.sin_port = htons(bbdispport);
-	bbdispaddr.sin_family = AF_INET;
-	if (inet_aton(bbdispip, (struct in_addr *) &bbdispaddr.sin_addr.s_addr) == 0) {
-		errprintf("Invalid remote address %s\n", bbdispip);
-		return 1;
-	}
-
-	memset(&bbpageraddr, 0, sizeof(bbpageraddr));
-	bbpageraddr.sin_port = htons(bbpagerport);
-	bbpageraddr.sin_family = AF_INET;
-	if (inet_aton(bbpagerip, (struct in_addr *) &bbpageraddr.sin_addr.s_addr) == 0) {
-		errprintf("Invalid remote address %s\n", bbpagerip);
-		return 1;
+		for (i = 0; (i < bbdispcount); i++) {
+			memcpy(&bbpageraddr[i], &bbdispaddr[i], sizeof(bbpageraddr[i]));
+			bbpageraddr[i].sin_port = bbdispaddr[i].sin_port;
+			bbpageraddr[i].sin_family = bbdispaddr[i].sin_family;
+			bbpagercount++;
+		}
 	}
 
 	/* Set up a socket to listen for new connections */
@@ -388,13 +421,6 @@ int main(int argc, char *argv[])
 	opt = 1;
 	setsockopt(lsocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 	fcntl(lsocket, F_SETFL, O_NONBLOCK);
-	memset(&laddr, 0, sizeof(laddr));
-	laddr.sin_port = htons(locport);
-	laddr.sin_family = AF_INET;
-	if (inet_aton(locaddr, (struct in_addr *) &laddr.sin_addr.s_addr) == 0) {
-		errprintf("Invalid listen address %s\n", locaddr);
-		return 1;
-	}
 	if (bind(lsocket, (struct sockaddr *)&laddr, sizeof(laddr)) == -1) {
 		errprintf("Cannot bind to listen socket (%s)\n", strerror(errno));
 		return 1;
@@ -409,9 +435,22 @@ int main(int argc, char *argv[])
 	sigmisc_handler(SIGHUP);
 
 	errprintf("bbproxy version %s starting\n", VERSION);
-	errprintf("Listening on %s port %d\n", locaddr, locport);
-	errprintf("Sending to BBDISPLAY at %s port %d\n", bbdispip, bbdispport);
-	errprintf("Sending to BBPAGER at %s port %d\n", bbpagerip, bbpagerport);
+	errprintf("Listening on %s:%d\n", inet_ntoa(laddr.sin_addr), ntohs(laddr.sin_port));
+	{
+		int i;
+		char *p;
+		char srvrs[500];
+
+		for (i=0, srvrs[0] = '\0', p=srvrs; (i<bbdispcount); i++) {
+			p += sprintf(p, "%s:%d ", inet_ntoa(bbdispaddr[i].sin_addr), ntohs(bbdispaddr[i].sin_port));
+		}
+		errprintf("Sending to BBDISPLAY(s) %s\n", srvrs);
+
+		for (i=0, srvrs[0] = '\0', p=srvrs; (i<bbpagercount); i++) {
+			p += sprintf(p, "%s:%d ", inet_ntoa(bbpageraddr[i].sin_addr), ntohs(bbpageraddr[i].sin_port));
+		}
+		errprintf("Sending to BBPAGER(s) %s\n", srvrs);
+	}
 
 	if (daemonize) {
 		pid_t childpid;
@@ -553,11 +592,13 @@ int main(int argc, char *argv[])
 				if ((strncmp(cwalk->buf+6, "query", 5) == 0) || (strncmp(cwalk->buf+6, "config", 6) == 0)) {
 					shutdown(cwalk->csocket, SHUT_RD);
 					if (!cwalk->dontcount) msgs_other++;
+					cwalk->snum = 1; /* We only do these once! */
 				}
 				else {
 					shutdown(cwalk->csocket, SHUT_RDWR);
 					close(cwalk->csocket); sockcount--;
 					cwalk->csocket = -1;
+					cwalk->snum = bbdispcount;
 
 					if (strncmp(cwalk->buf+6, "status", 6) == 0) {
 						if (!cwalk->dontcount) msgs_status++;
@@ -574,6 +615,7 @@ int main(int argc, char *argv[])
 						if (!cwalk->dontcount) msgs_combo++;
 					}
 					else if (strncmp(cwalk->buf+6, "page", 4) == 0) {
+						cwalk->snum = bbpagercount;
 						if (!cwalk->dontcount) msgs_page++;
 					}
 					else {
@@ -584,12 +626,18 @@ int main(int argc, char *argv[])
 				 * This wont be made into a combo message, so skip the "combo\n" 
 				 * and go off to send the message to the server.
 				 */
-				cwalk->bufp = cwalk->buf+6;
+				cwalk->bufp = cwalk->buf+6; 
 				cwalk->buflen -= 6;
+				cwalk->bufpsave = cwalk->bufp;
+				cwalk->buflensave = cwalk->buflen;
 				cwalk->state = P_REQ_CONNECTING;
 				/* Fall through for non-status messages */
 
 			  case P_REQ_CONNECTING:
+				/* Need to restore the bufp and buflen, as we may get here many times for one message */
+				cwalk->bufp = cwalk->bufpsave;
+				cwalk->buflen = cwalk->buflensave;
+
 				ctime = time(NULL);
 				if (ctime < (cwalk->conntime + CONNECT_INTERVAL)) {
 					dprintf("Delaying retry of connection\n");
@@ -614,12 +662,16 @@ int main(int argc, char *argv[])
 				fcntl(cwalk->ssocket, F_SETFL, O_NONBLOCK);
 
 				if (strncmp(cwalk->buf, "page", 4) == 0) {
-					n = connect(cwalk->ssocket, (struct sockaddr *)&bbpageraddr, sizeof(bbpageraddr));
-					cwalk->serverip = bbpagerip;
+					int idx = (bbpagercount - cwalk->snum);
+					n = connect(cwalk->ssocket, (struct sockaddr *)&bbpageraddr[idx], sizeof(bbpageraddr[idx]));
+					cwalk->serverip = &bbpageraddr[idx].sin_addr;
+					dprintf("Connecting to BBPAGER at %s\n", inet_ntoa(*cwalk->serverip));
 				}
 				else {
-					n = connect(cwalk->ssocket, (struct sockaddr *)&bbdispaddr, sizeof(bbdispaddr));
-					cwalk->serverip = bbdispip;
+					int idx = (bbdispcount - cwalk->snum);
+					n = connect(cwalk->ssocket, (struct sockaddr *)&bbdispaddr[idx], sizeof(bbdispaddr[idx]));
+					cwalk->serverip = &bbdispaddr[idx].sin_addr;
+					dprintf("Connecting to BBDISPLAY at %s\n", inet_ntoa(*cwalk->serverip));
 				}
 
 				if ((n == 0) || ((n == -1) && (errno == EINPROGRESS))) {
@@ -646,8 +698,22 @@ int main(int argc, char *argv[])
 			  case P_REQ_DONE:
 				/* Request is off to the server */
 				shutdown(cwalk->ssocket, SHUT_WR);
-				cwalk->bufp = cwalk->buf; cwalk->buflen = 0;
-				memset(cwalk->buf, 0, cwalk->bufsize);
+				cwalk->snum--;
+				if (cwalk->snum) {
+					/* More servers to do */
+					close(cwalk->ssocket); cwalk->ssocket = -1; sockcount--;
+					cwalk->conntries = CONNECT_TRIES;
+					cwalk->sendtries = SEND_TRIES;
+					cwalk->conntime = 0;
+					cwalk->state = P_REQ_CONNECTING;
+					break;
+				}
+				else {
+					/* All servers done */
+					cwalk->bufp = cwalk->buf; cwalk->buflen = 0;
+					memset(cwalk->buf, 0, cwalk->bufsize);
+				}
+
 				if (!cwalk->dontcount) {
 					struct timeval departure;
 
@@ -822,6 +888,9 @@ int main(int argc, char *argv[])
 						dprintf("No messages to combine - sending unchanged\n");
 					}
 				}
+
+				cwalk->bufpsave = cwalk->bufp;
+				cwalk->buflensave = cwalk->buflen;
 				break;
 
 			  default:
@@ -953,6 +1022,7 @@ int main(int argc, char *argv[])
 				newconn->connectpending = 0;
 				newconn->madetocombo = 0;
 				newconn->dontcount = 0;
+				newconn->snum = 0;
 				newconn->ssocket = -1;
 				newconn->serverip = NULL;
 				newconn->conntries = 0;
@@ -979,7 +1049,7 @@ int main(int argc, char *argv[])
 				}
 				else {
 					msgs_total++;
-					strcpy(newconn->clientip, inet_ntoa(newconn->caddr.sin_addr));
+					newconn->clientip = &newconn->caddr.sin_addr;
 					sockcount++;
 					fcntl(newconn->csocket, F_SETFL, O_NONBLOCK);
 					newconn->state = P_REQ_READING;

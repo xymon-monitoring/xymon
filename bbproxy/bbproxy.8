@@ -41,20 +41,23 @@ causes "status" messages to be delayed for up to 0.25 seconds
 before being sent off to the BBDISPLAY server.
 
 .SH OPTIONS
-.IP "--bbdisplay=SERVERIP[:PORT]"
+.IP "--bbdisplay=SERVERIP[:PORT][,SERVER2IP[:PORT]]"
 Specifies the IP-address and optional portnumber where incoming
 messages are forwarded to. The default portnumber is 1984, the
 standard Big Brother port number. If you have setup the normal
-Big Brother environment, you can use "--bbdisplay=$BBDISP".
-This option is required.
+Big Brother environment, you can use "--bbdisplay=$BBDISP". Up
+to 3 servers can be specified; incoming messages are sent to
+all of them (except "config" and "query" messages, which go to
+the first server only). This option is required.
 
-.IP "--bbpager=SERVERIP[:PORT]"
+.IP "--bbpager=SERVERIP[:PORT][,SERVER2IP[:PORT]]"
 Specifies the IP-address and optional portnumber where incoming
 "page" messages are forwarded to. The default portnumber is 1984, 
 the standard Big Brother port number. If you have setup the normal
-Big Brother environment, you can use "--bbpager=$BBPAGE".
-If this option is omitted, "page" messages are sent to the
-server listed in --bbdisplay.
+Big Brother environment, you can use "--bbpager=$BBPAGE". Up
+to 3 servers can be specified; incoming messages are sent to
+all of them. If this option is omitted, "page" messages are sent 
+to the servers listed in --bbdisplay.
 
 .IP "--listen=LOCALIP[:PORT]"
 Specifies the IP-adress where bbproxy listens for incoming 
