@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.19 2004-07-27 09:19:42 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.20 2004-08-04 13:03:49 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -48,6 +48,7 @@ static char     *bbdispproxyhost = NULL;
 static int      bbdispproxyport = 0;
 
 int dontsendmessages = 0;
+
 
 static void setup_transport(char *recipient)
 {
@@ -443,7 +444,23 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, int fullresponse)
 	}
 
 	if (res != BB_OK) {
-		errprintf("%s: Whoops ! bb failed to send message - returns status %d\n", timestamp, res);
+		char *statustext = "";
+
+		switch (res) {
+		  case BB_OK            : statustext = "OK"; break;
+		  case BB_EBADIP        : statustext = "Bad IP address"; break;
+		  case BB_EIPUNKNOWN    : statustext = "Cannot resolve hostname"; break;
+		  case BB_ENOSOCKET     : statustext = "Cannot get a socket"; break;
+		  case BB_ECANNOTDONONBLOCK   : statustext = "Non-blocking I/O failed"; break;
+		  case BB_ECONNFAILED   : statustext = "Connection failed"; break;
+		  case BB_ESELFAILED    : statustext = "select(2) failed"; break;
+		  case BB_ETIMEOUT      : statustext = "timeout"; break;
+		  case BB_EWRITEERROR   : statustext = "write error"; break;
+		  case BB_EBADURL       : statustext = "Bad URL"; break;
+		  default:                statustext = "Unknown error"; break;
+		};
+
+		errprintf("%s: Whoops ! bb failed to send message - %s (%d)\n", timestamp, statustext, res);
 	}
 
 	/* Give it a break */
