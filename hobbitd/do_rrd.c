@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.9 2004-12-12 14:44:22 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.10 2004-12-19 22:37:01 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -85,6 +85,7 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 #include "larrd/do_bbgen.c"
 #include "larrd/do_bbtest.c"
 #include "larrd/do_bbproxy.c"
+#include "larrd/do_bbgend.c"
 #include "larrd/do_citrix.c"
 #include "larrd/do_ntpstat.c"
 
@@ -114,6 +115,7 @@ void update_larrd(char *hostname, char *testname, char *msg, time_t tstamp, larr
 	if      (strcmp(id, "bbgen") == 0)    res = do_bbgen_larrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "bbtest") == 0)   res = do_bbtest_larrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "bbproxy") == 0)  res = do_bbproxy_larrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "bbgend") == 0)   res = do_bbgend_larrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "citrix") == 0)   res = do_citrix_larrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "ntpstat") == 0)  res = do_ntpstat_larrd(hostname, testname, msg, tstamp);
 
