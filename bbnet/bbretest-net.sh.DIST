@@ -7,7 +7,7 @@
 REDOFILE=$BBTMP/frequenttests.$BBLOCATION
 if test -r $REDOFILE
 then
-	$BBHOME/bin/bbtest-net `cat $REDOFILE`
+	@RUNTIMEDEFS@ $BBHOME/bin/bbtest-net `cat $REDOFILE`
 fi
 
 exit 0

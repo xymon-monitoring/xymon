@@ -58,7 +58,7 @@ c-ares/configure: c-ares-$(ARESVER).tar.gz
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 %.sh: %.sh.DIST
-	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' >$@
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
 clean:
