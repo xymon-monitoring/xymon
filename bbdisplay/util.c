@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.89 2003-08-31 11:43:32 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.90 2003-09-05 17:22:25 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1411,7 +1411,8 @@ time_t sslcert_expiretime(char *timestr)
 	gmtofs = (t2-t1);
 
 	result += gmtofs;
-	dprintf("Output says it expires: %s", exptime);
+
+	dprintf("Output says it expires: %s", timestr);
 	dprintf("I think it expires at (localtime) %s\n", asctime(localtime(&result)));
 
 	return result;
