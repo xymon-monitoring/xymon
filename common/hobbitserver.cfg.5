@@ -56,6 +56,18 @@ If necessary, the incoming hostname will be changed
 to match the way it is written in the bb-hosts file,
 changing case as needed.
 
+.IP BBPORT
+The BBPORT variable can be used to override the portnumber
+of the bbd daemon that status messages are sent to. bbgen
+determines the portnumber from the first of these three
+possibilities that yield a valid portnumber:
+.br
+    * the BBPORT environment variable;
+.br
+    * the "bbd" entry in /etc/services;
+.br
+    * the default defined when compiling bbgen
+
 .IP BBMAXMSGSPERCOMBO
 The maximum number of status messages to combine into one
 combo message. You may need to lower this number of your
