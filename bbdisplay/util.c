@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.33 2003-04-24 12:09:58 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.34 2003-04-25 11:55:07 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -49,11 +49,115 @@ static int	msgcolor;		/* color of status message in msgbuf */
 static int      maxmsgspercombo = 0;	/* 0 = no limit */
 static int      sleepbetweenmsgs = 0;
 
+/* Stuff for headfoot - variables we can set dynamically */
 static char hostenv_svc[20];
 static char hostenv_host[200];
 static char hostenv_ip[20];
 static char hostenv_color[20];
 
+/* Stuff for reading files that include other files */
+typedef struct {
+	FILE *fd;
+	void *next;
+} stackfd_t;
+static stackfd_t *fdhead = NULL;
+static char stackfd_base[MAX_PATH];
+static char stackfd_mode[10];
+
+FILE *stackfopen(char *filename, char *mode)
+{
+	FILE *newfd;
+	stackfd_t *newitem;
+	char stackfd_filename[MAX_PATH];
+
+	if (fdhead == NULL) {
+		char *p;
+
+		strcpy(stackfd_base, filename);
+		p = strrchr(stackfd_base, '/'); if (p) *(p+1) = '\0';
+
+		strcpy(stackfd_mode, mode);
+
+		strcpy(stackfd_filename, filename);
+	}
+	else {
+		if (*filename == '/')
+			strcpy(stackfd_filename, filename);
+		else
+			sprintf(stackfd_filename, "%s/%s", stackfd_base, filename);
+	}
+
+	newfd = fopen(stackfd_filename, stackfd_mode);
+	if (newfd != NULL) {
+		newitem = malloc(sizeof(stackfd_t));
+		newitem->fd = newfd;
+		newitem->next = fdhead;
+		fdhead = newitem;
+	}
+
+	return newfd;
+}
+
+
+int stackfclose(FILE *fd)
+{
+	int result;
+	stackfd_t *olditem;
+
+	if (fd != NULL) {
+		/* Close all */
+		while (fdhead != NULL) {
+			olditem = fdhead;
+			fdhead = fdhead->next;
+			fclose(olditem->fd);
+			free(olditem);
+		}
+		stackfd_base[0] = '\0';
+		stackfd_mode[0] = '\0';
+		result = 0;
+	}
+	else {
+		olditem = fdhead;
+		fdhead = fdhead->next;
+		result = fclose(olditem->fd);
+		free(olditem);
+	}
+
+	return result;
+}
+
+
+char *stackfgets(char *buffer, unsigned int bufferlen, char *includetag)
+{
+	char *result;
+
+	result = fgets(buffer, bufferlen, fdhead->fd);
+
+	if (result && (strncmp(buffer, includetag, strlen(includetag)) == 0)) {
+		char *newfn = buffer+strlen(includetag);
+		char *eol = strchr(buffer, '\n');
+
+		while (*newfn && isspace(*newfn)) newfn++;
+		if (eol) *eol = '\0';
+		
+		if (stackfopen(newfn, "r") != NULL) 
+			return stackfgets(buffer, bufferlen, includetag);
+		else {
+			if (eol) *eol = '\n';
+			return result;
+		}
+	}
+	else if (result == NULL) {
+		/* end-of-file on read */
+		stackfclose(NULL);
+		if (fdhead != NULL)
+			return stackfgets(buffer, bufferlen, includetag);
+		else
+			return NULL;
+	}
+
+	return result;
+}
 
 char *malcop(const char *s)
 {

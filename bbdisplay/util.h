@@ -22,6 +22,10 @@
 extern int use_recentgifs;
 extern char timestamp[];
 
+extern FILE *stackfopen(char *filename, char *mode);
+extern int stackfclose(FILE *fd);
+extern char *stackfgets(char *buffer, unsigned int bufferlen, char *includetag);
+
 extern char *malcop(const char *s);
 extern void init_timestamp(void);
 
