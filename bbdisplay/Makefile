@@ -79,7 +79,11 @@ bb-larrdcolumn: $(LARRDCOLUMNOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(LARRDCOLUMNOBJS) ../lib/libbbgen.a $(NETLIBS)
 
 bb-infocolumn: $(INFOCOLUMNOBJS) ../lib/libbbgen.a
+ifdef HOBBITD
 	$(CC) $(CFLAGS) -o $@ $(INFOCOLUMNOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
+else
+	$(CC) $(CFLAGS) -o $@ $(INFOCOLUMNOBJS) ../lib/libbbgen.a $(NETLIBS)
+endif
 
 
 ################################################
@@ -107,6 +111,14 @@ sendmsg-cgi.o: ../lib/sendmsg.c
 
 bb-hostsvc.o: bb-hostsvc.c
 	$(CC) $(CFLAGS) -DCGI -c -o $@ bb-hostsvc.c
+
+ifdef HOBBITD
+bb-infocolumn.o: bb-infocolumn.c
+	$(CC) $(CFLAGS) -DHOBBIT -I../hobbitd -c -o $@ bb-infocolumn.c
+else
+bb-infocolumn.o: bb-infocolumn.c
+	$(CC) $(CFLAGS) -c -o $@ bb-infocolumn.c
+endif
 
 hobbit-alertconfig.o: ../hobbitd/do_alert.c
 	$(CC) $(CFLAGS) -DINFOCOL -c -o $@ $(PCREINCDIR) -I../hobbitd ../hobbitd/do_alert.c
