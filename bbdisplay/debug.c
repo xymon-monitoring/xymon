@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.3 2003-01-04 22:44:44 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.4 2003-01-05 08:06:23 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -24,6 +24,9 @@ static char rcsid[] = "$Id: debug.c,v 1.3 2003-01-04 22:44:44 henrik Exp $";
 
 #include "bbgen.h"
 #include "debug.h"
+
+int debug = 0;
+
 
 void dumplinks(link_t *head)
 {

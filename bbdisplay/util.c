@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.7 2003-01-04 08:55:33 hstoerne Exp $";
+static char rcsid[] = "$Id: util.c,v 1.8 2003-01-05 08:06:23 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -28,16 +28,38 @@ static char rcsid[] = "$Id: util.c,v 1.7 2003-01-04 08:55:33 hstoerne Exp $";
 #include <unistd.h>
 #include <fcntl.h>
 #include <time.h>
+#include <sys/wait.h>
 
 #include "bbgen.h"
 #include "util.h"
 
 int	use_recentgifs = 0;
+char	timestamp[30];
+
+extern  int debug;
+
+/* Stuff for combo message handling */
+int		bbmsgcount = 0;		/* Number of messages transmitted */
+int		bbstatuscount = 0;	/* Number of status items reported */
+static int	bbmsginuse;		/* Anything in the buffer ? */
+static char	bbmsg[MAXMSG];		/* Complete combo message buffer */
+static char	msgbuf[MAXMSG-50];	/* message buffer for one status message */
 
 static char hostenv_svc[20];
 static char hostenv_host[200];
 static char hostenv_ip[20];
 static char hostenv_color[20];
+
+
+void init_timestamp(void)
+{
+	time_t	now;
+
+        now = time(NULL);
+        strcpy(timestamp, ctime(&now));
+        timestamp[strlen(timestamp)-1] = '\0';
+
+}
 
 char *colorname(int color)
 {
@@ -245,7 +267,7 @@ char *histlogurl(char *hostname, char *service, time_t histtime)
 
 	/* cgi-bin/bb-histlog.sh?HOST=SLS-P-CE1.slsdomain.sls.dk&SERVICE=msgs&TIMEBUF=Fri_Nov_7_16:01:08_2002 */
 	
-	/* Hmm - apparently no way to generate a day-of-month with no leading 0. */
+	/* Hmm - apparently no format to generate a day-of-month with no leading 0. */
         strftime(d1, sizeof(d1), "%a_%b_", localtime(&histtime));
         strftime(d2, sizeof(d2), "%d", localtime(&histtime));
 	if (d2[0] == '0') strcpy(d2, d2+1);
@@ -322,5 +344,120 @@ int within_sla(char *l)
 	}
 
 	return result;
+}
+
+
+/* Routines for handling combo message transmission */
+void combo_start(void)
+{
+	strcpy(bbmsg, "combo\n");
+	bbmsginuse = 0;
+}
+
+void combo_flush(void)
+{
+	char 	bbcmd[256];
+	char 	bbdisp[256];
+	pid_t	childpid;
+	int	childstat;
+
+	if (!bbmsginuse) {
+		if (debug) printf("Flush, but bbmsg is empty\n");
+		return;
+	}
+
+	if (debug) {
+		char *p1, *p2;
+
+		printf("Flushing combo message\n");
+		p1 = p2 = bbmsg;
+
+		do {
+			p2++;
+			p1 = strstr(p2, "\nstatus ");
+			if (p1) {
+				p1++; /* Skip the newline */
+				p2 = strchr(p1, '\n');
+				*p2='\0';
+				printf("      %s\n", p1);
+				*p2='\n';
+			}
+		} while (p1);
+	}
+
+	strcpy(bbcmd, getenv("BB"));
+	strcpy(bbdisp, getenv("BBDISP"));
+	
+	childpid = fork();
+	if (childpid == -1) {
+		printf("%s: Fork error\n", timestamp);
+	}
+	else if (childpid == 0) {
+		execl(bbcmd, "bb", bbdisp, bbmsg, NULL);
+	}
+	else {
+		wait(&childstat);
+		if (WIFEXITED(childstat) && (WEXITSTATUS(childstat) != 0) ) {
+			printf("%s: Whoops ! bb failed to send message - returns status %d\n", 
+				timestamp, WEXITSTATUS(childstat));
+		}
+	}
+
+	combo_start();	/* Get ready for the next */
+	bbmsgcount++;
+}
+
+void combo_add(char *buf)
+{
+	/* Check if there is room for the message + 2 newlines */
+	if ((strlen(bbmsg) + strlen(buf) + 2) >= MAXMSG) {
+		/* Nope ... flush buffer */
+		combo_flush();
+	}
+	else {
+		/* Yep ... add delimiter before new status (but not before the first!) */
+		if (bbmsginuse) strcat(bbmsg, "\n\n");
+	}
+
+	strcat(bbmsg, buf);
+	bbmsginuse = 1;
+	bbstatuscount++;
+}
+
+void combo_end(void)
+{
+	combo_flush();
+	if (debug) {
+		printf("%s: %d status messages merged into %d transmissions\n", 
+			timestamp, bbstatuscount, bbmsgcount);
+	}
+}
+
+
+void init_status(void)
+{
+	msgbuf[0] = '\0';
+}
+
+void addtostatus(char *p)
+{
+	if ((strlen(msgbuf) + strlen(p)) < sizeof(msgbuf))
+		strcat(msgbuf, p);
+	else {
+		strncat(msgbuf, p, sizeof(msgbuf)-strlen(msgbuf)-1);
+	}
+}
+
+void finish_status(void)
+{
+
+	if (debug) {
+		char *p = strchr(msgbuf, '\n');
+
+		*p = '\0';
+		printf("Adding to combo msg: %s\n", msgbuf);
+		*p = '\n';
+	}
+	combo_add(msgbuf);
 }
 

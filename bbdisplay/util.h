@@ -19,7 +19,12 @@
 #ifndef __UTIL_H_
 #define __UTIL_H_
 
+#define MAXMSG 8192		/* Max size of a BB message */
+
 extern int use_recentgifs;
+extern char timestamp[];
+
+extern void init_timestamp(void);
 
 extern char *colorname(int color);
 extern int eventcolor(char *colortext);
@@ -38,6 +43,16 @@ extern host_t *find_host(const char *hostname);
 extern char *histlogurl(char *hostname, char *service, time_t histtime);
 
 extern int within_sla(char *hostline);
+
+extern void combo_start(void);
+extern void combo_flush(void);
+extern void combo_add(char *buf);
+extern void combo_end(void);
+
+
+extern void init_status(void);
+extern void addtostatus(char *p);
+extern void finish_status(void);
 
 #endif
 

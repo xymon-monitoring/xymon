@@ -19,6 +19,8 @@
 #ifndef __DEBUG_H_
 #define __DEBUG_H_
 
+extern int debug;
+
 extern void dumplinks(link_t *head);
 extern void dumphosts(host_t *head, char *prefix);
 extern void dumpgroups(group_t *head, char *prefix, char *hostprefix);
