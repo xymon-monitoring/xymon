@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.109 2004-08-02 13:22:24 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.110 2004-08-09 09:37:44 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -41,6 +41,7 @@ static char rcsid[] = "$Id: pagegen.c,v 1.109 2004-08-02 13:22:24 henrik Exp $";
 #include "bb-replog.h"
 #include "reportdata.h"
 #include "sendmsg.h"
+#include "rssgen.h"
 
 int  subpagecolumns = 1;
 int  hostsbeforepages = 0;
@@ -1005,7 +1006,7 @@ static void do_bb2ext(FILE *output, char *extenv, char *family)
 	free(bbexts);
 }
 
-int do_bb2_page(char *filename, int summarytype)
+int do_bb2_page(char *filename, char *rssfilename, int summarytype)
 {
 	bbgen_page_t	bb2page;
 	FILE		*output;
@@ -1153,6 +1154,10 @@ int do_bb2_page(char *filename, int summarytype)
 	}
 
 	free(tmpfilename);
+
+	if (rssfilename) {
+		do_rss_feed(rssfilename, bb2page.hosts);
+	}
 
 	if (lognkstatus && (summarytype == PAGE_NK)) {
 		host_t *hwalk;
