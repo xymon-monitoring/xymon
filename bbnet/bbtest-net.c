@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.203 2005-03-05 06:54:29 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.204 2005-03-22 22:05:22 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -837,29 +837,24 @@ void do_dns_lookups(void)
 		 * to avoid multiple DNS lookups for each service 
 		 * we test on a host.
 		 */
-		if (h->testip || (dnsmethod == IP_ONLY)) {
-			if (strcmp(h->ip, "0.0.0.0") == 0) {
-				errprintf("bbtest-net: %s has IP 0.0.0.0 and testip - dropped\n", h->hostname);
-				h->dnserror = 1;
-			}
+		int nullip = (strcmp(h->ip, "0.0.0.0") == 0);
+
+		if (!nullip && (h->testip || (dnsmethod == IP_ONLY))) {
+			/* Already have the IP setup */
 		}
-		else if (h->dodns) {
+		else {
 			dnsresult = dnsresolve(h->hostname);
 
 			if (dnsresult) {
 				strcpy(h->ip, dnsresult);
 			}
-			else if (dnsmethod == DNS_THEN_IP) {
+			else if ((dnsmethod == DNS_THEN_IP) && !nullip) {
 				/* Already have the IP setup */
 			}
 			else {
 				/* Cannot resolve hostname */
 				h->dnserror = 1;
-			}
-
-			if (strcmp(h->ip, "0.0.0.0") == 0) {
-				errprintf("bbtest-net: IP resolver error for host %s\n", h->hostname);
-				h->dnserror = 1;
+				errprintf("bbtest-net: Cannot resolve IP for host %s\n", h->hostname);
 			}
 		}
 	}
