@@ -4,10 +4,10 @@
 
 CFLAGS += -DMAXMSG=$(MAXMSG)
 
-PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi
+PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bbdigest bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi
 CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh
 EXTENSIONS = bbcombotest bbretest-net.sh
-MAN1PAGES = bbgen.1 bbtest-net.1 bbhostgrep.1 bbhostshow.1 bb-rep.cgi.1 bb-replog.cgi.1 bb-hist.cgi.1 bb-snapshot.cgi.1 bb-eventlog.cgi.1 bbcombotest.1 bbretest-net.sh.1
+MAN1PAGES = bbgen.1 bbtest-net.1 bbhostgrep.1 bbhostshow.1 bbdigest.1 bb-rep.cgi.1 bb-replog.cgi.1 bb-hist.cgi.1 bb-snapshot.cgi.1 bb-eventlog.cgi.1 bbcombotest.1 bbretest-net.sh.1
 MAN5PAGES = bbcombotest.cfg.5 bb-hosts.5 bb-environ.5
 MAN7PAGES = bbgen-intro.7
 
@@ -22,9 +22,10 @@ all: $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS)
 	@echo ""
 
 GENOBJS = bbgen.o debug.o loaddata.o reportdata.o larrdgen.o pagegen.o eventlog.o acklog.o process.o util.o infogen.o alert.o wmlgen.o rssgen.o bb-replog.o sendmsg.o
-NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o ldaptest.o sendmsg.o
+NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o ldaptest.o sendmsg.o digest.o
 HOSTGREPOBJS = bbhostgrep.o util.o debug.o
 HOSTSHOWOBJS = bbhostshow.o util.o debug.o
+DIGESTOBJS = bbdigest.o
 REPOBJS = bb-rep.o debug.o util.o
 REPLOGOBJS = bb-replog-cgi.o reportdata.o debug.o util.o
 HISTOBJS = bb-hist.o reportdata.o debug.o util.o
@@ -43,6 +44,12 @@ bbhostgrep: $(HOSTGREPOBJS)
 
 bbhostshow: $(HOSTSHOWOBJS)
 	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS)
+
+bbdigest: $(DIGESTOBJS)
+	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) -lcrypto
+
+bbdigest.o: digest.c digest.h
+	$(CC) $(CFLAGS) -c -o $@ -DSTANDALONE digest.c
 
 bb-rep.cgi: $(REPOBJS)
 	$(CC) $(CFLAGS) -o $@ $(REPOBJS)
