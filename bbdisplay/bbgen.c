@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.150 2003-09-08 20:39:16 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.151 2003-09-09 09:56:45 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -118,6 +118,13 @@ int main(int argc, char *argv[])
 	pagedir = rrddir = NULL;
 	init_timestamp();
 	fqdn = get_fqdn();
+
+	/* Setup values from env. vars that may be overridden via commandline options */
+	if (getenv("MKBB2COLREPEAT")) {
+		int i = atoi(getenv("MKBB2COLREPEAT"));
+
+		if (i > 0) maxrowsbeforeheading = i;
+	}
 
 	for (i = 1; (i < argc); i++) {
 		if (strcmp(argv[i], "--nopurple") == 0) {
