@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.31 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.32 2005-02-23 07:18:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -123,10 +123,14 @@ void update_htmlfile(char *fn, char *msg,
 
 void update_enable(char *fn, time_t expiretime)
 {
+	time_t now = time(NULL);
+
 	dprintf("Enable/disable file %s, time %d\n", fn, (int)expiretime);
 
-	if (expiretime == 0) {
-		unlink(fn);
+	if (expiretime <= now) {
+		if (unlink(fn) != 0) {
+			errprintf("Could not remove disable-file '%s':%s\n", fn, strerror(errno));
+		}
 	}
 	else {
 		FILE *enablefd;
@@ -299,6 +303,7 @@ int main(int argc, char *argv[])
 			update_file(logfn, "w", statusdata, expiretime, NULL, -1, seq);
 		}
 		else if ((role == ROLE_ENADIS) && (metacount > 5) && (strncmp(items[0], "@@enadis", 8) == 0)) {
+			/* @@enadis|timestamp|sender|hostname|testname|expiretime */
 			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			testname = items[4];
 			expiretime = atoi(items[5]);
