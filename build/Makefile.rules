@@ -83,7 +83,7 @@ distclean: clean
 	rm -f Makefile
 
 clean:
-	rm -f *.o *~ $(PROGRAMS) $(CGISCRIPTS) alert contest reptest calc
+	rm -f *.o *~ $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) alert contest reptest calc
 
 install-bin: $(PROGRAMS)
 	cp -p $(PROGRAMS) $(BBHOME)/bin/
