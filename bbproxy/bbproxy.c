@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.30 2004-09-30 20:44:13 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.31 2004-10-01 16:01:23 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -210,7 +210,7 @@ void do_log(conn_t *conn)
 	for (; (*delim && !isspace((unsigned char) *delim)); delim++);
 	savechar = *delim; *delim = '\0';
 
-	errprintf("%s : %s\n", conn->clientip, rq);
+	errprintf("%s : %s\n", inet_ntoa(*conn->clientip), rq);
 	*delim = savechar;
 	if (eol) *eol = '\n';
 }
@@ -567,7 +567,7 @@ int main(int argc, char *argv[])
 			  case P_REQ_READY:
 				if (cwalk->buflen <= 6) {
 					/* Got an empty request - just drop it */
-					dprintf("Dropping empty request from %s\n", cwalk->clientip);
+					dprintf("Dropping empty request from %s\n", inet_ntoa(*cwalk->clientip));
 					cwalk->state = P_CLEANUP;
 					break;
 				}
