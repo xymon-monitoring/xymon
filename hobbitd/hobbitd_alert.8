@@ -12,11 +12,11 @@ program. It receives bbgend page- and ack-messages from the "page"
 channel via stdin, and uses these to send out alerts about failed 
 and recovered hosts and services.
 
-.B This module is not compatible with standard Big Brother
-
 The operation of this module is controlled by the
 .I bb-alerts.cfg(5)
-file.
+file, except when running in "legacy" mode via the "--legacy" option;
+in that mode, it uses the old bbwarnrules.cfg and bbwarnsetup.cfg files
+to determine who should receive alerts.
 
 
 .SH OPTIONS
@@ -31,7 +31,7 @@ The default is "--alertcolors=red,yellow,purple".
 .IP "--config=FILENAME"
 Sets the filename for the 
 .I bb-alerts.cfg"
-file. This option is required.
+file. The default value is "$BBHOME/etc/bb-alerts.cfg".
 
 .IP "--dump-config"
 Dumps the configuration after parsing it. May be useful to track
@@ -51,8 +51,28 @@ If this option is present, alert messages will include a line with
 caused this message to be sent. This can be useful to track down
 problems with duplicate alerts.
 
+.IP "--legacy"
+Enable the Big Brother compatible legacy mode.
+
 .IP "--debug"
 Enable debugging output.
+
+.SH "LEGACY MODE"
+When running in legacy mode, bbgend_alert reads the alert rules defined by 
+the bbwarnsetup.cfg and bbwarnrules.cfg files, as used by the old Big Brother
+bbd daemon.
+
+The legacy mode support the BB host- and page-group definitions; the initial 
+delay and pagedelay settings; the "ignforall" setting, and the rules for 
+host-, service- and time-definitions.
+
+The use of an escalation delay is not supported in legacy mode. 
+
+If a recipient name contains an "@"-sign, the recipient is believed to
+be an e-mail address, and the alert is sent out using as e-mail by bbgend_alert.
+All other recipients cause the script "$BBHOME/ext/bbcompatalert.sh" to
+be invoked, with the environment definitions setup as for normal external
+paging scripts.
 
 .SH ENVIRONMENT
 .IP MAIL
