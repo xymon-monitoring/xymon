@@ -1,7 +1,9 @@
 /*----------------------------------------------------------------------------*/
 /* Big Brother message daemon.                                                */
 /*                                                                            */
-/* Simple "alert" bbd worker module. This handles paging via e-mail only.     */
+/* This is the main alert module for bbd_net. It receives alert messages,     */
+/* keeps track of active alerts, enable/disable, acks etc., and triggers      */
+/* outgoing alerts by calling send_alert().                                   */
 /*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
 /*                                                                            */
@@ -34,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.1 2004-10-12 20:57:12 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.2 2004-10-16 12:37:14 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -45,36 +47,17 @@ static char rcsid[] = "$Id: hobbitd_alert.c,v 1.1 2004-10-12 20:57:12 henrik Exp
 #include <sys/wait.h>
 
 #include "bbdworker.h"
-#include "alert.h"
+#include "bbd_alert.h"
+#include "alert_simple.h"
 
 static volatile int running = 1;
 
-typedef struct htnames_t {
-	char *name;
-	struct htnames_t *next;
-} htnames_t;
 htnames_t *hostnames = NULL;
 htnames_t *testnames = NULL;
-
-enum astate_t { A_PAGING, A_RECOVERED, A_DEAD };
-
-typedef struct activealerts_t {
-	/* Identification of the alert */
-	htnames_t *hostname;
-	htnames_t *testname;
-
-	/* Alert status */
-	int color;
-	char *pagemessage;
-	time_t nextalerttime;
-	enum astate_t state;
-
-	struct activealerts_t *next;
-} activealerts_t;
 activealerts_t *ahead = NULL;
 
 
-activealerts_t *findalert(char *hostname, char *testname)
+activealerts_t *find_active(char *hostname, char *testname)
 {
 	htnames_t *hwalk, *twalk;
 	activealerts_t *awalk;
@@ -110,15 +93,11 @@ int main(int argc, char *argv[])
 	char *msg;
 	int seq;
 	int argi;
-	int do_recovered = 0;
 	int alertcolors = ( (1 << COL_RED) | (1 << COL_YELLOW) | (1 << COL_PURPLE) );
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
-		}
-		else if (strcmp(argv[argi], "--recover") == 0) {
-			do_recovered = 1;
 		}
 		else if (strncmp(argv[argi], "--alertcolors=", 14) == 0) {
 			char *colspec = strchr(argv[argi], '=') + 1;
@@ -137,7 +116,10 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	setup_signalhandler("bbd_alert");
 	signal(SIGCHLD, sig_handler);
+	signal(SIGTERM, sig_handler);
+	signal(SIGINT, sig_handler);
 
 	while (running) {
 		char *eoln, *restofmsg;
@@ -148,11 +130,12 @@ int main(int argc, char *argv[])
 		struct timeval timeout;
 		time_t now;
 		int anytogo;
-		activealerts_t *awalk;
+		activealerts_t *awalk, *khead, *tmp;
 
 		timeout.tv_sec = 60; timeout.tv_usec = 0;
 		msg = get_bbgend_message("bbd_alert", &seq, &timeout);
 		if (msg == NULL) {
+			dprintf("Got NULL message, exiting\n");
 			running = 0;
 			continue;
 		}
@@ -179,13 +162,15 @@ int main(int argc, char *argv[])
 		hostname = metadata[3];
 		testname = metadata[4];
 
+		dprintf("Got message from %s:%s\n", hostname, testname);
+
 		if (strncmp(metadata[0], "@@page", 6) == 0) {
 			/* @@page|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime */
 
-			int newcolor, oldalertstatus, newalertstatus;
+			int newcolor, newalertstatus;
 
 			dprintf("Incoming alert %s\n", msg);
-			awalk = findalert(hostname, testname);
+			awalk = find_active(hostname, testname);
 			if (awalk == NULL) {
 				htnames_t *hwalk;
 				htnames_t *twalk;
@@ -214,6 +199,8 @@ int main(int argc, char *argv[])
 				awalk->testname = twalk;
 				awalk->color = 0;
 				awalk->pagemessage = NULL;
+				awalk->ackmessage = NULL;
+				awalk->eventstart = time(NULL);
 				awalk->nextalerttime = 0;
 				awalk->state = A_DEAD;
 				awalk->next = ahead;
@@ -221,13 +208,16 @@ int main(int argc, char *argv[])
 			}
 
 			newcolor = parse_color(metadata[6]);
-			oldalertstatus = ((alertcolors & (1 << awalk->color)) != 0);
 			newalertstatus = ((alertcolors & (1 << newcolor)) != 0);
 			awalk->color = newcolor;
-			if (newalertstatus)
+			if (newalertstatus) {
+				/* It's in an alert state. */
 				awalk->state = A_PAGING;
-			else
-				awalk->state = (do_recovered ? A_RECOVERED : A_DEAD);
+			}
+			else {
+				/* Send one "recovered" message out now, then go to A_DEAD */
+				awalk->state = A_RECOVERED;
+			}
 
 			if (awalk->pagemessage) free(awalk->pagemessage);
 			awalk->pagemessage = strdup(restofmsg);
@@ -239,66 +229,27 @@ int main(int argc, char *argv[])
 			 * An ack is handled simply by setting the next
 			 * alert-time to when the ack expires.
 			 */
-			awalk = findalert(hostname, testname);
-			if (awalk) {
+			awalk = find_active(hostname, testname);
+			if (awalk && (awalk->state == A_PAGING)) {
+				awalk->state = A_ACKED;
 				awalk->nextalerttime = atoi(metadata[5]);
+				if (awalk->ackmessage) free(awalk->ackmessage);
+				awalk->ackmessage = strdup(restofmsg);
 			}
 		}
 		else if (strncmp(metadata[0], "@@drophost", 10) == 0) {
 			/* @@drophost|timestamp|sender|hostname */
 			htnames_t *hwalk;
-			activealerts_t *khead, *tmp;
 
 			for (hwalk = hostnames; (hwalk && strcmp(hostname, hwalk->name)); hwalk = hwalk->next) ;
-			if (hwalk) {
-				khead = NULL;
-
-				awalk = ahead;
-				do {
-					if ((awalk == ahead) && (awalk->hostname == hwalk)) {
-						/* head of alert chain is going away */
-
-						/* Unlink ahead from the chain ... */
-						tmp = ahead;
-						ahead = ahead->next;
-
-						/* ... and link it into the kill-list */
-						tmp->next = khead;
-						khead = tmp;
-
-						/* We're still at the head of the chain. */
-						awalk = ahead;
-					}
-					else if (awalk->next && (awalk->next->hostname == hwalk)) {
-						/* Unlink awalk->next from the chain ... */
-						tmp = awalk->next;
-						awalk->next = tmp->next;
-
-						/* ... and link it into the kill-list */
-						tmp->next = khead;
-						khead = tmp;
-
-						/* awalk stays unchanged */
-					}
-					else {
-						awalk = awalk->next;
-					}
-				} while (awalk);
-
-
-				while (khead) {
-					tmp = khead;
-					khead = khead->next;
-
-					if (tmp->pagemessage) free(tmp->pagemessage);
-					free(tmp);
-				}
+			for (awalk = ahead; (awalk); awalk = awalk->next) {
+				if (awalk->hostname == hwalk) awalk->state = A_DEAD;
 			}
 		}
 		else if (strncmp(metadata[0], "@@droptest", 10) == 0) {
 			/* @@droptest|timestamp|sender|hostname|testname */
 
-			awalk = findalert(hostname, testname);
+			awalk = find_active(hostname, testname);
 			if (awalk) {
 				if (awalk == ahead) {
 					ahead = ahead->next;
@@ -330,7 +281,7 @@ int main(int argc, char *argv[])
 			htnames_t *newtest;
 			char *newtestname = metadata[5];
 
-			awalk = findalert(hostname, testname);
+			awalk = find_active(hostname, testname);
 			if (awalk) {
 				for (newtest = testnames; (newtest && strcmp(newtestname, newtest->name)); newtest = newtest->next); 
 				if (newtest == NULL) {
@@ -347,12 +298,15 @@ int main(int argc, char *argv[])
 			/* Timeout */
 		}
 
-		/* Loop through the activealerts list and send out pending alerts */
+		/* Loop through the activealerts list and see if anything is pending */
 		now = time(NULL); anytogo = 0;
 		for (awalk = ahead; (awalk); awalk = awalk->next) {
-			if (awalk->nextalerttime > now) continue;
-			dprintf("Found pending alert: %s.%s\n", awalk->hostname->name, awalk->testname->name);
-			anytogo++;
+			if ( ((awalk->nextalerttime <= now) && (awalk->state == A_PAGING)) || 
+			     (awalk->state == A_RECOVERED)                                 ||
+			     (awalk->state == A_ACKED)                                        ) {
+				dprintf("Found pending alert: %s.%s\n", awalk->hostname->name, awalk->testname->name);
+				anytogo++;
+			}
 		}
 		dprintf("%d alerts to go\n", anytogo);
 
@@ -362,24 +316,83 @@ int main(int argc, char *argv[])
 			if (childpid == 0) {
 				/* The child */
 				for (awalk = ahead; (awalk); awalk = awalk->next) {
-					if (awalk->nextalerttime <= now) {
-						printf("Must send alert for host %s, test %s\n%s\n", 
-							awalk->hostname->name, awalk->testname->name, 
-							awalk->pagemessage);
+					if ( ((awalk->nextalerttime <= now) && (awalk->state == A_PAGING)) ||
+					     (awalk->state == A_RECOVERED)                                 ||
+					     (awalk->state == A_ACKED)                                       ) {
+						send_alert(awalk);
 					}
 				}
 				/* Child does not continue */
-				return 0;
+				exit(0);
 			}
 			else if (childpid > 0) {
 				/* The parent updates the alert timestamps */
 				for (awalk = ahead; (awalk); awalk = awalk->next) {
-					if (awalk->nextalerttime <= now) awalk->nextalerttime = (now+1800);
+					if ((awalk->nextalerttime <= now) && (awalk->state == A_PAGING)) {
+						awalk->nextalerttime = next_alert(awalk);
+					}
+					else if (awalk->state == A_ACKED) {
+						/*
+						 * Acked alerts go back to state A_PAGING.
+						 * The nextalerttime ensures they wont send out alerts
+						 * until the ack has expired.
+						 */
+						awalk->state = A_PAGING;
+					}
+					else if (awalk->state == A_RECOVERED) {
+						awalk->state = A_DEAD;
+					}
 				}
 			}
 			else {
 				errprintf("Fork failed, cannot send alerts: %s\n", strerror(errno));
 			}
+		}
+
+		/* 
+		 * Cleanup dead events,
+		 * All A_DEAD and A_RECOVERED items are deleted.
+		 */
+		khead = NULL; awalk = ahead;
+		while (awalk) {
+			if ((awalk == ahead) && (awalk->state != A_PAGING)) {
+				/* head of alert chain is going away */
+
+				/* Unlink ahead from the chain ... */
+				tmp = ahead;
+				ahead = ahead->next;
+
+				/* ... and link it into the kill-list */
+				tmp->next = khead;
+				khead = tmp;
+
+				/* We're still at the head of the chain. */
+				awalk = ahead;
+			}
+			else if (awalk->next && (awalk->next->state != A_PAGING)) {
+				/* Unlink awalk->next from the chain ... */
+				tmp = awalk->next;
+				awalk->next = tmp->next;
+
+				/* ... and link it into the kill-list */
+				tmp->next = khead;
+				khead = tmp;
+
+				/* awalk stays unchanged */
+			}
+			else {
+				awalk = awalk->next;
+			}
+		}
+
+		/* khead now holds a list of dead items */
+		while (khead) {
+			tmp = khead;
+			khead = khead->next;
+
+			if (tmp->pagemessage) free(tmp->pagemessage);
+			if (tmp->ackmessage) free(tmp->ackmessage);
+			free(tmp);
 		}
 	}
 
