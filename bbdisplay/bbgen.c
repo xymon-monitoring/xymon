@@ -4,18 +4,21 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include <unistd.h>
 
 #include "bbgen.h"
 
 page_t	*pagehead = NULL;
 link_t  *linkhead = NULL;
 link_t	null_link = { "", "", NULL };
+state_t	*statehead = NULL;
+col_t   *colhead = NULL;
 
-link_t *find_link(const char *hostname)
+link_t *find_link(const char *name)
 {
 	link_t *l;
 
-	for (l=linkhead; (l && (strcmp(l->name, hostname) != 0)); l = l->next);
+	for (l=linkhead; (l && (strcmp(l->name, name) != 0)); l = l->next);
 
 	return (l ? l : &null_link);
 }
@@ -77,6 +80,93 @@ link_t *init_link(const char *filename)
 	}
 
 	return newlink;
+}
+
+col_t *find_or_create_column(const char *testname)
+{
+	col_t	*newcol;
+
+	for (newcol = colhead; (newcol && (strcmp(testname, newcol->name) != 0)); newcol = newcol->next);
+	if (newcol == NULL) {
+		newcol = malloc(sizeof(col_t));
+		strcpy(newcol->name, testname);
+		newcol->link = find_link(testname);
+
+		/* No need to maintain this list in order */
+		if (colhead == NULL) {
+			colhead = newcol;
+			newcol->next = NULL;
+		}
+		else {
+			newcol->next = colhead;
+			colhead = newcol;
+		}
+	}
+
+	return newcol;
+}
+
+state_t *init_state(const char *filename)
+{
+	FILE *fd;
+	char	*p;
+	char	hostname[60];
+	char	testname[20];
+	state_t *newstate;
+	char	l[200];
+
+	strcpy(hostname, filename);
+	p = strrchr(hostname, '.');
+	if (p) {
+		*p = '\0';
+		strcpy(testname, p+1);
+		for (p=hostname; (*p); p++) {
+			if (*p == ',') {
+				*p='.';
+			}
+		}
+	}
+	else {
+		return NULL;
+	}
+
+	newstate = malloc(sizeof(state_t));
+	strcpy(newstate->hostname, hostname);
+	newstate->entry = malloc(sizeof(entry_t));
+	newstate->next = NULL;
+
+	newstate->entry->column = find_or_create_column(testname);
+	newstate->entry->color = -1;
+
+	fd = fopen(filename, "r");
+	if (fd && fgets(l, sizeof(l), fd)) {
+		if (strncmp(l, "green ", 6) == 0) {
+			newstate->entry->color = COL_GREEN;
+		}
+		else if (strncmp(l, "yellow ", 7) == 0) {
+			newstate->entry->color = COL_YELLOW;
+		}
+		else if (strncmp(l, "red ", 4) == 0) {
+			newstate->entry->color = COL_RED;
+		}
+		else if (strncmp(l, "blue ", 5) == 0) {
+			newstate->entry->color = COL_BLUE;
+		}
+		else if (strncmp(l, "clear ", 6) == 0) {
+			newstate->entry->color = COL_CLEAR;
+		}
+		else {
+			newstate->entry->color = COL_PURPLE;
+		}
+	}
+
+	newstate->entry->age = 0;	/* FIXME */
+
+	fclose(fd);
+
+	newstate->entry->next = NULL;
+
+	return newstate;
 }
 
 void getnamelink(char *l, char **name, char **link)
@@ -233,6 +323,38 @@ page_t *load_bbhosts(void)
 }
 
 
+state_t *load_state(void)
+{
+	DIR		*bblogs;
+	struct dirent 	*d;
+	state_t		*newstate, *topstate;
+
+	chdir(getenv("BBLOGS"));
+
+	topstate = NULL;
+	bblogs = opendir(getenv("BBLOGS"));
+	if (!bblogs) {
+		perror("No logs!");
+		exit(1);
+	}
+
+	while ((d = readdir(bblogs))) {
+		if (d->d_name[0] != '.') {
+			newstate = init_state(d->d_name);
+			if (newstate) {
+				newstate->next = topstate;
+				topstate = newstate;
+			}
+		}
+	}
+
+	closedir(bblogs);
+
+	return topstate;
+}
+
+
+
 void dumphosts(host_t *head, char *format)
 {
 	host_t *h;
@@ -249,6 +371,18 @@ void dumpgroups(group_t *head, char *format, char *hostformat)
 	for (g = head; (g); g = g->next) {
 		printf(format, g->title);
 		dumphosts(g->hosts, hostformat);
+	}
+}
+
+void dumpstate(state_t *head)
+{
+	state_t *s;
+
+	for (s=statehead; (s); s=s->next) {
+		printf("Host: %s, test:%s, state: %d\n",
+			s->hostname,
+			s->entry->column->name,
+			s->entry->color);
 	}
 }
 
@@ -275,6 +409,9 @@ int main(int argc, char *argv[])
 		dumphosts(p->hosts, "    Host: %s, ip: %s, link: %s\n");
 	}
 	dumphosts(pagehead->hosts, "Host: %s, ip: %s, link: %s\n");
+
+	statehead = load_state();
+	dumpstate(statehead);
 	return 0;
 }
 

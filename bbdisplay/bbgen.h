@@ -36,6 +36,13 @@ typedef struct {
 	void	*next;
 } entry_t;
 
+/* Aux. list definition for loading state of all hosts into one list */
+typedef struct {
+	char	hostname[64];
+	entry_t	*entry;
+	void	*next;
+} state_t;
+
 typedef struct {
 	char	hostname[60];
 	char	ip[16];
