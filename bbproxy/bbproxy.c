@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.7 2004-09-19 09:41:43 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.8 2004-09-19 11:03:36 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -43,7 +43,6 @@ static const char *VERSION_STRING = "1.0";
 enum phase_t {
 	P_IDLE, 
 
-	P_REQ_NEW,		/* New incoming connection */
 	P_REQ_READING,		/* Reading request data */
 	P_REQ_READY, 		/* Done reading request from client */
 
@@ -60,7 +59,6 @@ enum phase_t {
 
 char *statename[] = {
 	"idle",
-	"req_new",
 	"req_reading",
 	"req_ready",
 	"req_connecting",
@@ -103,6 +101,7 @@ static void do_read(int sockfd, conn_t *conn, enum phase_t completedstate)
 	n = read(sockfd, conn->bufp, (conn->bufsize - conn->buflen - 1));
 	if (n == -1) {
 		/* Error - abort */
+		errprintf("READ error : %s\n", strerror(errno));
 		conn->state = P_CLEANUP;
 	}
 	else if (n == 0) {
@@ -123,6 +122,7 @@ static void do_write(int sockfd, conn_t *conn, enum phase_t completedstate)
 	n = write(sockfd, conn->bufp, conn->buflen);
 	if (n == -1) {
 		/* Error - abort */
+		errprintf("WRITE error : %s\n", strerror(errno));
 		conn->state = P_CLEANUP;
 	}
 	else if (n > 0) { 
@@ -144,6 +144,7 @@ int main(int argc, char *argv[])
 	int timeout = 10;
 	int listenq = 20;
 
+	int sockcount = 0;
 	int lsocket;
 	struct sockaddr_in laddr;
 	struct sockaddr_in saddr;
@@ -212,22 +213,41 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	/* Set up a socket to listen for new connections */
-	lsocket = socket(AF_INET, SOCK_STREAM, 0);
-	opt = 1;
-	setsockopt(lsocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-	memset(&laddr, 0, sizeof(laddr));
-	laddr.sin_port = htons(locport);
-	laddr.sin_family = AF_INET;
-	inet_aton(locaddr, (struct in_addr *) &laddr.sin_addr.s_addr);
-	bind(lsocket, (struct sockaddr *)&laddr, sizeof(laddr));
-	listen(lsocket, listenq);
-	errprintf("Listening on %s port %d\n", locaddr, locport);
-
 	memset(&saddr, 0, sizeof(saddr));
 	saddr.sin_port = htons(remport);
 	saddr.sin_family = AF_INET;
-	inet_aton(remaddr, (struct in_addr *) &saddr.sin_addr.s_addr);
+	if (inet_aton(remaddr, (struct in_addr *) &saddr.sin_addr.s_addr) == 0) {
+		errprintf("Invalid remote address %s\n", remaddr);
+		return 1;
+	}
+
+	/* Set up a socket to listen for new connections */
+	lsocket = socket(AF_INET, SOCK_STREAM, 0);
+	if (lsocket == -1) {
+		errprintf("Cannot create listen socket (%s)\n", strerror(errno));
+		return 1;
+	}
+	opt = 1;
+	setsockopt(lsocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+	fcntl(lsocket, F_SETFL, O_NONBLOCK);
+	memset(&laddr, 0, sizeof(laddr));
+	laddr.sin_port = htons(locport);
+	laddr.sin_family = AF_INET;
+	if (inet_aton(locaddr, (struct in_addr *) &laddr.sin_addr.s_addr) == 0) {
+		errprintf("Invalid listen address %s\n", locaddr);
+		return 1;
+	}
+	if (bind(lsocket, (struct sockaddr *)&laddr, sizeof(laddr)) == -1) {
+		errprintf("Cannot bind to listen socket (%s)\n", strerror(errno));
+		return 1;
+	}
+
+	if (listen(lsocket, listenq) == -1) {
+		errprintf("Cannot listen (%s)\n", strerror(errno));
+		return 1;
+	}
+
+	errprintf("Listening on %s port %d\n", locaddr, locport);
 	errprintf("Sending to %s port %d\n", remaddr, remport);
 
 	if (daemonize) {
@@ -295,9 +315,10 @@ int main(int argc, char *argv[])
 
 				cwalk->ssocket = socket(AF_INET, SOCK_STREAM, 0);
 				if (cwalk->ssocket == -1) {
-					dprintf("Could not get a socket\n");
+					errprintf("Could not get a socket - will try again\n");
 					break; /* Retry the next time around */
 				}
+				sockcount++;
 				fcntl(cwalk->ssocket, F_SETFL, O_NONBLOCK);
 
 				n = connect(cwalk->ssocket, (struct sockaddr *)&saddr, sizeof(saddr));
@@ -307,7 +328,8 @@ int main(int argc, char *argv[])
 				}
 				else {
 					/* Could not connect! Invoke retries */
-					close(cwalk->ssocket);
+					errprintf("Connect to server failed: %s\n", strerror(errno));
+					close(cwalk->ssocket); sockcount--;
 					cwalk->ssocket = -1;
 					break;
 				}
@@ -333,7 +355,7 @@ int main(int argc, char *argv[])
 
 			  case P_RESP_READY:
 				shutdown(cwalk->ssocket, SHUT_RD);
-				close(cwalk->ssocket);
+				close(cwalk->ssocket); sockcount--;
 				cwalk->ssocket = -1;
 				cwalk->bufp = cwalk->buf;
 				cwalk->state = P_RESP_SENDING;
@@ -352,18 +374,18 @@ int main(int argc, char *argv[])
 
 			  case P_RESP_DONE:
 				shutdown(cwalk->csocket, SHUT_WR);
-				close(cwalk->csocket);
+				close(cwalk->csocket); sockcount--;
 				cwalk->csocket = -1;
 				cwalk->state = P_CLEANUP;
 				/* Fall through */
 
 			  case P_CLEANUP:
 				if (cwalk->csocket >= 0) {
-					close(cwalk->csocket);
+					close(cwalk->csocket); sockcount--;
 					cwalk->csocket = -1;
 				}
 				if (cwalk->ssocket >= 0) {
-					close(cwalk->ssocket);
+					close(cwalk->ssocket); sockcount--;
 					cwalk->ssocket = -1;
 				}
 				cwalk->bufp = cwalk->bufp; 
@@ -415,9 +437,9 @@ int main(int argc, char *argv[])
 							n = getsockopt(cwalk->ssocket, SOL_SOCKET, SO_ERROR, &connres, &connressize);
 							if (connres != 0) {
 								/* Connect failed! Invoke retries. */
-								errprintf("Could not connect to server - retrying %d\n",
-									  cwalk->conntries);
-								close(cwalk->ssocket);
+								errprintf("Connect to server failed: %s - retrying\n", 
+										strerror(errno));
+								close(cwalk->ssocket); sockcount--;
 								cwalk->ssocket = -1;
 								cwalk->state = P_REQ_CONNECTING;
 								break;
@@ -448,7 +470,7 @@ int main(int argc, char *argv[])
 			if (FD_ISSET(lsocket, &fdread)) {
 				/* New incoming connection */
 				conn_t *newconn;
-				int caddrsize = sizeof(newconn->caddr);
+				int caddrsize;
 
 				dprintf("New connection\n");
 				for (cwalk = chead; (cwalk && (cwalk->state != P_IDLE)); cwalk = cwalk->next);
@@ -463,14 +485,24 @@ int main(int argc, char *argv[])
 					newconn->buf = newconn->bufp = malloc(newconn->bufsize);
 				}
 
-				newconn->state = P_REQ_NEW;
-				newconn->csocket = accept(lsocket, (struct sockaddr *)&newconn->caddr, &caddrsize);
-				fcntl(newconn->csocket, F_SETFL, O_NONBLOCK);
 				newconn->ssocket = -1;
 				newconn->conntries = 0;
 				newconn->buflen = 0;
 				*newconn->buf = '\0';
-				newconn->state = P_REQ_READING;
+
+				caddrsize = sizeof(newconn->caddr);
+				newconn->csocket = accept(lsocket, (struct sockaddr *)&newconn->caddr, &caddrsize);
+				if (newconn->csocket == -1) {
+					/* accept() failure. Yes, it does happen! */
+					errprintf("accept failure, ignoring connection (%s), sockcount=%d\n", 
+						strerror(errno), sockcount);
+					newconn->state = P_IDLE;
+				}
+				else {
+					sockcount++;
+					fcntl(newconn->csocket, F_SETFL, O_NONBLOCK);
+					newconn->state = P_REQ_READING;
+				}
 			}
 		}
 	} while (1);
