@@ -77,7 +77,7 @@ install: build
 	dh_installdirs
 
 	# Add here commands to install the package into debian/hobbit.
-	INSTALLROOT=$(CURDIR)/debian/hobbit/ $(MAKE) install
+	PKGBUILD=1 INSTALLROOT=$(CURDIR)/debian/hobbit/ $(MAKE) install
 
 
 # Build architecture-independent files here.
