@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.136 2003-12-02 21:44:37 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.137 2003-12-12 10:12:36 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -906,6 +906,14 @@ void load_tests(void)
 void dns_resolve(void)
 {
 	testedhost_t	*h;
+	int dnstries = 0;
+	int dnsfails = 0;
+	time_t cycletime, starttime, cutofftime;
+
+	/* Dont spend more than half our cycle time on DNS lookups */
+	starttime = time(NULL);
+	cycletime = atoi(getenv("BBSLEEP") ? getenv("BBSLEEP") : "300");
+	cutofftime = starttime + (cycletime / 2);
 
 	for (h=testhosthead; (h); h=h->next) {
 		/* 
@@ -922,7 +930,34 @@ void dns_resolve(void)
 		else if (h->dodns) {
 			struct hostent *hent;
 
-			hent = gethostbyname(h->hostname);
+			dnstries++;
+			dprintf("DNS lookup for %s\n", h->hostname);
+
+			if (time(NULL) > cutofftime) {
+
+				/*
+				 * This is not good ....
+				 * We haven't done any testing yet - only DNS lookups - and
+				 * already more than half of the time has been spent.
+				 * Looks like our DNS lookups are currently broken.
+				 * Bail out with everything else done by IP-address only.
+				 */
+
+				static int warnsent = 0;
+
+				if (!warnsent) {
+					errprintf("Major DNS problem: DNS lookups are failing or are too slow to keep up with bbtest-net - %d of %d lookups failed in %d seconds. Falling back to IP-address based testing.\n",
+						dnsfails, dnstries, time(NULL)-starttime);
+					warnsent = 1;
+				}
+
+				/* Simulate failed lookup */
+				hent = NULL;
+			}
+			else {
+				hent = gethostbyname(h->hostname);
+			}
+
 			if (hent) {
 				struct in_addr addr;
 
@@ -935,6 +970,7 @@ void dns_resolve(void)
 			else {
 				/* Cannot resolve hostname */
 				h->dnserror = 1;
+				dnsfails++;
 			}
 
 			if (strcmp(h->ip, "0.0.0.0") == 0) {
