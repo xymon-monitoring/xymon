@@ -10,8 +10,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.77 2005-02-20 09:11:11 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.78 2005-02-23 07:17:28 henrik Exp $";
 
+#include <limits.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
