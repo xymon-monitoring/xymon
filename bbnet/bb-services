@@ -1,6 +1,6 @@
 # bb-service
 #
-# $Id: bb-services,v 1.2 2004-08-11 13:08:48 henrik Exp $
+# $Id: bb-services,v 1.3 2004-08-11 15:00:09 henrik Exp $
 #
 # This file defines the way TCP services are tested by bbtest-net
 # (part of the bbgen toolkit).
@@ -152,4 +152,12 @@ service oratns
    send "\x00\x57\x00\x00\x01\x00\x00\x00\x01\x36\x01\x2C\x00\x00\x08\x00\x7F\xFF\xA3\x0A\x00\x00\x01\x00\x00\x1D\x00\x3A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x08\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00(CONNECT_DATA=(COMMAND=ping))"
    options banner
    port 1521
+
+# qmail "Quick Mail Transfer Protocol"
+service qmtp
+   port 209
+
+# qmail "Quick Mail Queuing Protocol"
+service qmqp
+   port 628
 
