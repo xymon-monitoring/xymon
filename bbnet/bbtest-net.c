@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.46 2003-05-20 21:14:12 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.47 2003-05-20 21:38:38 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -921,6 +921,9 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
 		}
+		else if (strcmp(argv[argi], "--timing") == 0) {
+			timing = 1;
+		}
 
 		/* Options for TCP tests */
 		else if (strncmp(argv[argi], "--concurrency=", 14) == 0) {
@@ -1004,6 +1007,7 @@ int main(int argc, char *argv[])
 			printf("\nDebugging options:\n");
 			printf("    --debug                     : Output debugging information\n");
 			printf("    --log=FILENAME              : Output trace of HTTP tests to a file.\n");
+			printf("    --timing                    : Trace the amount of time spent on each series of tests\n");
 
 			return 0;
 		}
@@ -1016,12 +1020,15 @@ int main(int argc, char *argv[])
 	envcheck(reqenv);
 	if (getenv("BBLOCATION")) location = malcop(getenv("BBLOCATION"));
 
+	add_timestamp("bbtest-net startup");
+
 	load_services();
 	add_service("dns", getportnumber("domain"), 0, TOOL_NSLOOKUP);
 	add_service("dig", getportnumber("domain"), 0, TOOL_DIG);
 	add_service("ntp", getportnumber("ntp"),    0, TOOL_NTP);
 	httptest = add_service("http", getportnumber("http"),  0, TOOL_CURL);
 	if (pingcolumn) pingtest = add_service(pingcolumn, 0, 0, TOOL_FPING);
+	add_timestamp("Service definitions loaded");
 
 	for (s = svchead; (s); s = s->next) {
 		dprintf("Service %s port %d tool %d\n", s->testname, s->portnum, s->toolid);
@@ -1032,13 +1039,13 @@ int main(int argc, char *argv[])
 		dprintf("Host %s, dnserror=%d, ip %s, dialup=%d testip=%d\n", 
 			h->hostname, h->dnserror, h->ip, h->dialup, h->testip);
 	}
-
-	dprintf("\nTest services\n");
+	add_timestamp("Test definitions loaded");
 
 
 	/* Ping checks first */
 	if (pingtest && pingtest->items) {
 		run_fping_service(pingtest); 
+		add_timestamp("PING test completed");
 	}
 
 
@@ -1055,7 +1062,9 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
+	add_timestamp("TCP test engine setup completed");
 	do_tcp_tests(timeout, concurrency);
+	add_timestamp("TCP tests executed");
 	if (debug) show_tcp_test_results();
 	for (s = svchead; (s); s = s->next) {
 		if ((s->items) && (s->toolid == TOOL_CONTEST)) {
@@ -1074,11 +1083,15 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
+	add_timestamp("TCP tests result collection completed");
 
 	/* Run the http tests */
 	for (t = httptest->items; (t); t = t->next) add_http_test(t);
+	add_timestamp("HTTP test engine setup completed");
 	run_http_tests(httptest, followlocations, logfile, (ssltestname != NULL));
+	add_timestamp("HTTP tests executed");
 	if (debug) show_http_test_results(httptest);
+	add_timestamp("HTTP tests result collection completed");
 
 
 	/* dns, dig, ntp tests */
@@ -1087,12 +1100,15 @@ int main(int argc, char *argv[])
 			switch(s->toolid) {
 				case TOOL_NSLOOKUP:
 					run_nslookup_service(s); 
+					add_timestamp("NSLOOKUP tests executed");
 					break;
 				case TOOL_DIG:
 					run_dig_service(s); 
+					add_timestamp("DIG tests executed");
 					break;
 				case TOOL_NTP:
 					run_ntp_service(s); 
+					add_timestamp("NTP tests executed");
 					break;
 			}
 		}
@@ -1117,8 +1133,12 @@ int main(int argc, char *argv[])
 		send_http_results(httptest, h, nonetpage, contenttestname, ssltestname, sslwarndays, sslalarmdays);
 	}
 	combo_end();
+	add_timestamp("Test results transmitted");
 
 	shutdown_http_library();
+	add_timestamp("bbtest-net completed");
+
+	show_timestamps();
 	return 0;
 }
 
