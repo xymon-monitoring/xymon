@@ -119,6 +119,8 @@ else
 			echo "I recommend that you rebuild libcurl with SSL support"
 			echo "         ********  NB NB NB *********"
 		fi
+		CURLMSG="Determined with curl-config - ought to work"
+		CURLCC="`curl-config --cc`"
 		CURLINCLUDE="`curl-config --cflags`"
 		CURLLIBS="`curl-config --libs`"
 	else
@@ -126,6 +128,8 @@ else
 		echo "Cannot run curl-config - are you sure you have libcurl ?"
 		echo "Assuming you have libcurl in a standard location"
 		echo "         ********  NB NB NB *********"
+		CURLMSG="These settings were GUESSED by configure - they probably need changing"
+		CURLCC="cc"
 		CURLINCLUDE="-I/usr/local/include"
 		CURLLIBS="-L/usr/local/lib -lcurl -lssl -lcrypto -lz"
 	fi
@@ -136,6 +140,9 @@ else
 	echo "CGIDIR = $CGIDIR"               >>Makefile
 	echo "HISTGRAPHDEF = $HISTGRAPHDEF"   >>Makefile
 	echo "MAXMSG = $MAXMSG"               >>Makefile
+	echo "#"                              >>Makefile
+	echo "# $CURLMSG"                     >>Makefile
+	echo "CC = $CURLCC"                   >>Makefile
 	echo "CURLINCLUDE = $CURLINCLUDE"     >>Makefile
 	echo "CURLLIB = $CURLLIBS"            >>Makefile
 
