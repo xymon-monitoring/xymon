@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.112 2004-08-09 11:09:13 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.113 2004-08-11 12:56:35 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -50,7 +50,8 @@ char *bb2ignorecolumns = "";
 int  bb2includepurples = 1;
 int  sort_grouponly_items = 0; /* Standard BB behaviour: Dont sort group-only items */
 char *documentationurl = NULL;
-char *htmlextension = ".html"; /* Filename extension for generated files */
+char *htmlextension = ".html"; /* Filename extension for generated HTML files */
+char *rssextension = ".rss"; /* Filename extension for generated RSS files */
 char *doctargetspec = " TARGET=\"_blank\"";
 char *defaultpagetitle = NULL;
 int  pagetitlelinks = 0;
@@ -64,6 +65,7 @@ int  bb2eventlogmaxtime = 240;
 char *lognkstatus = NULL;
 int  nkonlyreds = 0;
 char *nkackname = "NK";
+int  wantrss = 0;
 
 /* Format strings for htaccess files */
 char *htaccess = NULL;
@@ -318,7 +320,7 @@ static char *nameandcomment(host_t *host)
 	return result;
 }
 
-void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int pagetype, char *pagepath)
+void do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char *grouptitle, int pagetype, char *pagepath)
 {
 	/*
 	 * This routine outputs the host part of a page or a group.
@@ -528,10 +530,12 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 						 */
 						fprintf(output, "<A HREF=\"%s/html/%s.%s.html\">",
 							getenv("BBWEB"), h->hostname, e->column->name);
+						do_rss_item(rssoutput, h, e);
 					}
 					else {
 						fprintf(output, "<A HREF=\"%s/bb-hostsvc.sh?HOSTSVC=%s.%s\">",
 							getenv("CGIBINURL"), commafy(h->hostname), e->column->name);
+						do_rss_item(rssoutput, h, e);
 					}
 
 					fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
@@ -623,7 +627,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 	free(bbskin);
 }
 
-void do_groups(group_t *head, FILE *output, char *pagepath)
+void do_groups(group_t *head, FILE *output, FILE *rssoutput, char *pagepath)
 {
 	/*
 	 * This routine generates all the groups on a given page.
@@ -646,7 +650,7 @@ void do_groups(group_t *head, FILE *output, char *pagepath)
 			fprintf(output, "</TABLE></CENTER>\n");
 		}
 
-		do_hosts(g->hosts, g->onlycols, output, g->title, PAGE_BB, pagepath);
+		do_hosts(g->hosts, g->onlycols, output, rssoutput, g->title, PAGE_BB, pagepath);
 	}
 	fprintf(output, "\n</CENTER>\n");
 }
@@ -736,7 +740,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 	fprintf(output, "<CENTER>\n");
 	fprintf(output, "<TABLE SUMMARY=\"Summary Block\" BORDER=0>\n");
 	fprintf(output, "<TR><TD>\n");
-	do_hosts(sumhosts, NULL, output, getenv("MKBBREMOTE"), 0, NULL);
+	do_hosts(sumhosts, NULL, output, NULL, getenv("MKBBREMOTE"), 0, NULL);
 	fprintf(output, "</TD></TR>\n");
 	fprintf(output, "</TABLE>\n");
 	fprintf(output, "</CENTER>\n");
@@ -830,10 +834,13 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *pagepath)
 
 void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 {
-	FILE	*output;
+	FILE	*output = NULL;
+	FILE	*rssoutput = NULL;
 	char	pagepath[MAX_PATH];
 	char	filename[MAX_PATH];
 	char	tmpfilename[MAX_PATH];
+	char	rssfilename[MAX_PATH];
+	char	tmprssfilename[MAX_PATH];
 	char	*dirdelim;
 	char	*mkbblocal;
 
@@ -849,6 +856,7 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 
 			/* top level page */
 			sprintf(filename, "bb%s", htmlextension);
+			sprintf(rssfilename, "bb%s", rssextension);
 			sprintf(indexfilename, "index%s", htmlextension);
 			symlink(filename, indexfilename);
 			dprintf("Symlinking %s -> %s\n", filename, indexfilename);
@@ -865,8 +873,10 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 			}
 	
 			sprintf(filename, "%s/%s%s", pagepath, page->name, htmlextension);
+			sprintf(rssfilename, "%s/%s%s", pagepath, page->name, rssextension);
 		}
 		sprintf(tmpfilename, "%s.tmp", filename);
+		sprintf(tmprssfilename, "%s.tmp", rssfilename);
 
 
 		/* Try creating the output file. If it fails, we may need to create the directories */
@@ -906,11 +916,20 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 				return;
 			}
 		}
+
+		if (wantrss) {
+			/* Just create the RSS files - all the directory stuff is done */
+			rssoutput = fopen(tmprssfilename, "w");
+			if (rssoutput == NULL) {
+				errprintf("Cannot open RSS file %s\n", tmprssfilename);
+			}
+		}
 	}
 
 	setup_htaccess(pagepath);
 
 	headfoot(output, hf_prefix[PAGE_BB], pagepath, "header", page->color);
+	do_rss_header(rssoutput);
 
 	if (pagetextheadings && page->title && strlen(page->title)) {
 		fprintf(output, "<CENTER><TABLE BORDER=0>\n");
@@ -927,8 +946,8 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 	}
 
 	if (!embedded && !hostsbeforepages && page->subpages) do_page_subpages(output, page->subpages, pagepath);
-	do_hosts(page->hosts, NULL, output, "", PAGE_BB, pagepath);
-	do_groups(page->groups, output, pagepath);
+	do_hosts(page->hosts, NULL, output, rssoutput, "", PAGE_BB, pagepath);
+	do_groups(page->groups, output, rssoutput, pagepath);
 	if (!embedded && hostsbeforepages && page->subpages) do_page_subpages(output, page->subpages, pagepath);
 
 	/* Summaries on main page only */
@@ -940,11 +959,18 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 	do_bbext(output, "BBMKBBEXT", "mkbb");
 
 	headfoot(output, hf_prefix[PAGE_BB], pagepath, "footer", page->color);
+	do_rss_footer(rssoutput);
 
 	if (!embedded) {
 		fclose(output);
 		if (rename(tmpfilename, filename)) {
 			errprintf("Cannot rename %s to %s - error %d\n", tmpfilename, filename, errno);
+		}
+		if (rssoutput) {
+			fclose(rssoutput);
+			if (rename(tmprssfilename, rssfilename)) {
+				errprintf("Cannot rename %s to %s - error %d\n", tmprssfilename, rssfilename, errno);
+			}
 		}
 	}
 
@@ -1007,11 +1033,15 @@ static void do_bb2ext(FILE *output, char *extenv, char *family)
 	free(bbexts);
 }
 
-int do_bb2_page(char *filename, char *rssfilename, char *nssidebarfilename, int summarytype)
+int do_bb2_page(char *nssidebarfilename, int summarytype)
 {
 	bbgen_page_t	bb2page;
-	FILE		*output;
-	char		*tmpfilename = (char *) malloc(strlen(filename)+5);
+	FILE		*output = NULL;
+	FILE		*rssoutput = NULL;
+	char		filename[MAX_PATH];
+	char		tmpfilename[MAX_PATH];
+	char		rssfilename[MAX_PATH];
+	char		tmprssfilename[MAX_PATH];
 	hostlist_t 	*h;
 
 	/* Build a "page" with the hosts that should be included in bb2 page */
@@ -1117,21 +1147,41 @@ int do_bb2_page(char *filename, char *rssfilename, char *nssidebarfilename, int 
 		}
 	}
 
+	switch (summarytype) {
+	  case PAGE_BB2:
+		sprintf(filename, "bb2%s", htmlextension);
+		sprintf(rssfilename, "bb2%s", rssextension);
+		break;
+	  case PAGE_NK:
+		sprintf(filename, "bbnk%s", htmlextension);
+		sprintf(rssfilename, "bbnk%s", rssextension);
+		break;
+	}
+
 	sprintf(tmpfilename, "%s.tmp", filename);
 	output = fopen(tmpfilename, "w");
 	if (output == NULL) {
 		errprintf("Cannot open file %s", tmpfilename);
-		free(tmpfilename);
 		return bb2page.color;
 	}
 
+	if (wantrss) {
+		sprintf(tmprssfilename, "%s.tmp", rssfilename);
+		rssoutput = fopen(tmprssfilename, "w");
+		if (rssoutput == NULL) {
+			errprintf("Cannot open RSS file %s", tmpfilename);
+			return bb2page.color;
+		}
+	}
+
 	headfoot(output, hf_prefix[summarytype], "", "header", bb2page.color);
+	do_rss_header(rssoutput);
 
 	fprintf(output, "<center>\n");
 	fprintf(output, "\n<A NAME=begindata>&nbsp;</A> \n<A NAME=\"hosts-blk\">&nbsp;</A>\n");
 
 	if (bb2page.hosts) {
-		do_hosts(bb2page.hosts, NULL, output, "", summarytype, NULL);
+		do_hosts(bb2page.hosts, NULL, output, rssoutput, "", summarytype, NULL);
 	}
 	else {
 		/* "All Monitored Systems OK */
@@ -1148,15 +1198,20 @@ int do_bb2_page(char *filename, char *rssfilename, char *nssidebarfilename, int 
 
 	fprintf(output, "</center>\n");
 	headfoot(output, hf_prefix[summarytype], "", "footer", bb2page.color);
+	do_rss_footer(rssoutput);
 
 	fclose(output);
 	if (rename(tmpfilename, filename)) {
 		errprintf("Cannot rename %s to %s - error %d\n", tmpfilename, filename, errno);
 	}
 
-	free(tmpfilename);
+	if (rssoutput) {
+		fclose(rssoutput);
+		if (rename(tmprssfilename, rssfilename)) {
+			errprintf("Cannot rename %s to %s - error %d\n", tmprssfilename, rssfilename, errno);
+		}
+	}
 
-	if (rssfilename) do_rss_feed(rssfilename, bb2page.hosts);
 	if (nssidebarfilename) do_netscape_sidebar(nssidebarfilename, bb2page.hosts);
 
 	if (lognkstatus && (summarytype == PAGE_NK)) {
