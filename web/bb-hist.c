@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.29 2003-08-16 10:07:27 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.30 2003-08-16 20:53:29 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -182,8 +182,10 @@ again:
 	}
 	tmbuf->tm_isdst = dstsetting;
 	result = mktime(tmbuf);
-	if ((dstsetting == -1) && (result < endtime)) {
+	if ((dstsetting == -1) && (endofperiod == END_END) && (result < endtime)) {
 		/* DST->normaltime switchover - redo with forced DST setting */
+		dprintf("DST rollover with endtime/change/alignment/endodperiod = %u/%d/%d/%d\n",
+			(unsigned int)endtime, change, alignment, endofperiod);
 		dstsetting = 0;
 		goto again;
 	}
