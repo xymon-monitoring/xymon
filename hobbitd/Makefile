@@ -64,7 +64,7 @@ hobbit-mailack.o: hobbit-mailack.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ hobbit-mailack.c
 
 hobbit-mailack: $(MAILACKOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(MAILACKOBJS) $(LIBOBJS) $(PCRELIBS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(MAILACKOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
 starthobbit.sh: starthobbit.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g' | sed -e 's!@BBUSER@!$(BBUSER)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
