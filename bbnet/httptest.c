@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.63 2004-08-17 20:23:59 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.64 2004-08-18 21:55:59 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -27,6 +27,7 @@ static char rcsid[] = "$Id: httptest.c,v 1.63 2004-08-17 20:23:59 henrik Exp $";
 #include "bbtest-net.h"
 #include "contest.h"
 #include "httptest.h"
+#include "dns.h"
 
 typedef struct cookielist_t {
 	char *host;
@@ -248,23 +249,15 @@ int parse_url(url_t *url, char *inputurl)
 	url->host = malcop(netloc);
 
 	if (strlen(url->host)) {
-		struct in_addr inp;
-		struct hostent *hent;
+		char *dnsip;
 
-		if (inet_aton(url->host, &inp) != 0) {
-			/* It is an IP, so just use that */
-			url->ip = url->host;
+		dnsip = dnsresolve(url->host);
+		if (dnsip) {
+			url->ip = malcop(dnsip);
 		}
 		else {
-			hent = gethostbyname(url->host);
-			if (hent) {
-				memcpy(&inp, *(hent->h_addr_list), sizeof(inp));
-				url->ip = malcop(inet_ntoa(inp));
-			}
-			else {
-				result = 2;
-				dprintf("Could not resolve URL hostname '%s'\n", url->host);
-			}
+			result = 2;
+			dprintf("Could not resolve URL hostname '%s'\n", url->host);
 		}
 	}
 
