@@ -18,6 +18,7 @@ imap4;The <b>imap4</b> column shows the status when trying to communicate with t
 nntp;The <b>nntp</b> column shows the status when trying to communicate with the NNTP News service on the host. NNTP is used to access discussion groups hosted by a central server.;
 rsync;The <b>rsync</b> column shows the status when trying to communicate with the rsync service on the host. rsync is commonly used for automatic file-synchronization between hosts, or for distributing files between hosts.;
 clamd;The <b>clamd</b> column shows the status of the CLAM anti-virus scanning daemon on the host. clamd is commonly used for virus-scanning of files that arrive in e-mail.;
+spamd;The <b>spamd</b> column shows the status of the SpamAssassin spam scanning daemon on the host. spamd is commonly used for spam-scanning of files that arrive in e-mail.;
 oratns;The <b>oratns</b> column shows the status of the Oracle TNS listener service on the host. Although the TNS listener is needed to access the Oracle databases, the fact that the TNS listener service is running is not a guarantee that the database itself is accessible.;
 qmtp;The <b>qmtp</b> column shows the status of the qmail mail-transfer service on the host. qmtp is used to transfer mail between two mailservers running qmail.;
 qmqp;The <b>qmqp</b> column shows the status of the qmail mail-queuing service on the host. qmqp is used when your central mailserver is running qmail, and your mail users need to deliver outgoing mail to the server.;
