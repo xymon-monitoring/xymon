@@ -113,7 +113,6 @@ install-cgi:
 	cp -fp $(CGISCRIPTS) $(CGIDIR)/
 	mkdir -p $(SECURECGIDIR)
 	cp -fp $(SECCGISCRIPTS) $(SECURECGIDIR)/
-	cd etcfiles; ../../build/install-nooverwrite.sh etc/ hobbitgraph.cfg columndoc.csv
 
 install-man:
 	mkdir -p $(MANROOT)/man1 $(MANROOT)/man5 $(MANROOT)/man8
@@ -125,12 +124,13 @@ install-cfg:
 	cd etcfiles; ../../build/merge-lines hobbitserver.cfg $(BBHOME)/etc/hobbitserver.cfg
 	cd etcfiles; ../../build/merge-sects hobbitlaunch.cfg $(BBHOME)/etc/hobbitlaunch.cfg
 	cd etcfiles; ../../build/merge-sects hobbitgraph.cfg $(BBHOME)/etc/hobbitgraph.cfg
+	cd etcfiles; ../../build/merge-lines columndoc.csv $(BBHOME)/etc/columndoc.csv
 	cd etcfiles; (echo "bb-hosts"; echo "hobbit-alerts.cfg") | ../../build/setup-newfiles $(BBHOME)/etc/
 	cd etcfiles; cp -fp hobbit-apache.conf $(BBHOME)/etc/hobbit-apache.conf
 	cd $(BBHOME); rm -f starthobbit.sh; ln -sf bin/starthobbit.sh .
 	cd wwwfiles; find . | grep -v RCS | grep -v DIST | ../../build/setup-newfiles $(BBHOME)/www/
 	cd webfiles; find . | grep -v RCS | grep -v DIST | ../../build/setup-newfiles $(BBHOME)/web/
 	mkdir -p $(BBLOGDIR)
-	chown $(BBUSER)         $(BBLOGDIR) $(BBHOME) $(BBHOME)/* $(BBHOME)/bin/* $(BBHOME)/etc/* $(BBHOME)/ext/* $(BBHOME)/web/* $(BBHOME)/www/gifs $(BBHOME)/www/gifs/* $(BBHOME)/www/menu $(BBHOME)/www/menu/* $(BBHOME)/www/help $(BBHOME)/www/help/* $(BBHOME)/www/notes $(BBHOME)/www/html $(BBHOME)/www/wml $(BBVAR) $(BBVAR)/* $(CGIDIR) $(CGIDIR)/* $(SECURECGIDIR) $(SECURECGIDIR)/*
-	chgrp `$(IDTOOL) -g $(BBUSER)` $(BBLOGDIR) $(BBHOME) $(BBHOME)/* $(BBHOME)/bin/* $(BBHOME)/etc/* $(BBHOME)/ext/* $(BBHOME)/web/* $(BBHOME)/www/gifs $(BBHOME)/www/gifs/* $(BBHOME)/www/menu $(BBHOME)/www/menu/* $(BBHOME)/www/help $(BBHOME)/www/help/* $(BBHOME)/www/notes $(BBHOME)/www/html $(BBHOME)/www/wml $(BBVAR) $(BBVAR)/* $(CGIDIR) $(CGIDIR)/* $(SECURECGIDIR) $(SECURECGIDIR)/*
+	chown $(BBUSER) $(BBLOGDIR) $(BBHOME) $(BBHOME)/* $(BBHOME)/bin/* $(BBHOME)/etc/* $(BBHOME)/ext/* $(BBHOME)/web/* $(BBHOME)/www/gifs $(BBHOME)/www/gifs/* $(BBHOME)/www/menu $(BBHOME)/www/menu/* $(BBHOME)/www/help $(BBHOME)/www/notes $(BBHOME)/www/html $(BBHOME)/www/wml $(BBVAR) $(BBVAR)/* $(CGIDIR) $(CGIDIR)/* $(SECURECGIDIR) $(SECURECGIDIR)/*
+	chgrp `$(IDTOOL) -g $(BBUSER)` $(BBLOGDIR) $(BBHOME) $(BBHOME)/* $(BBHOME)/bin/* $(BBHOME)/etc/* $(BBHOME)/ext/* $(BBHOME)/web/* $(BBHOME)/www/gifs $(BBHOME)/www/gifs/* $(BBHOME)/www/menu $(BBHOME)/www/menu/* $(BBHOME)/www/help $(BBHOME)/www/notes $(BBHOME)/www/html $(BBHOME)/www/wml $(BBVAR) $(BBVAR)/* $(CGIDIR) $(CGIDIR)/* $(SECURECGIDIR) $(SECURECGIDIR)/*
 
