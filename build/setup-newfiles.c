@@ -7,14 +7,42 @@
 #include <stdlib.h>
 #include <limits.h>
 
+#include "libbbgen.h"
+
 int main(int argc, char *argv[])
 {
 	char srcfn[PATH_MAX];
 	char destfn[PATH_MAX];
 	char *p;
 	struct stat st;
+	unsigned char *sumbuf = NULL;
+
+	if (argc > 2) {
+		if (stat(argv[2], &st) == 0) {
+			FILE *sumfd;
+			printf("Loading md5-data ... ");
+			sumfd = fopen(argv[2], "r");
+			sumbuf = (char *)malloc(st.st_size + 1);
+			if (fread(sumbuf, 1, st.st_size, sumfd) == st.st_size) {
+				printf("OK\n");
+				fclose(sumfd);
+			}
+			else {
+				printf("failed\n");
+				free(sumbuf);
+				sumbuf = NULL;
+			}
+		}
+	}
 
 	while (fgets(srcfn, sizeof(srcfn), stdin)) {
+		FILE *fd;
+		char buf[8192];
+		int buflen;
+		digestctx_t *ctx;
+		char srcmd5[40];
+		char *md5sum;
+
 		p = strchr(srcfn, '\n'); if (p) *p = '\0';
 
 		strcpy(destfn, argv[1]);
@@ -23,7 +51,33 @@ int main(int argc, char *argv[])
 		else if (strncmp(p, "./", 2) == 0) p += 2;
 		strcat(destfn, p);
 
-		if (stat(destfn, &st) == 0) continue;  /* Destination file exists, dont do anything */
+		*srcmd5 = '\0';
+		if (((fd = fopen(srcfn, "r")) != NULL) && ((ctx = digest_init("md5")) != NULL)) {
+			while ((buflen = fread(buf, 1, sizeof(buf), fd)) > 0) digest_data(ctx, buf, buflen);
+			strcpy(srcmd5, digest_done(ctx));
+		}
+
+		if (stat(destfn, &st) == 0) {
+			/* Destination file exists, see if it's a previous version */
+
+			if (sumbuf == NULL) continue; /* No md5-data, dont overwrite an existing file */
+			if (!S_ISREG(st.st_mode)) continue;
+
+			fd = fopen(destfn, "r"); if (fd == NULL) continue;
+			if ((ctx = digest_init("md5")) == NULL) continue;
+			while ((buflen = fread(buf, 1, sizeof(buf), fd)) > 0) digest_data(ctx, buf, buflen);
+			md5sum = digest_done(ctx);
+
+			if (strstr(sumbuf, md5sum) == NULL) continue;  /* Not one of our known versions */
+			if (strcmp(srcmd5, md5sum) == 0) continue; /* Already installed */
+
+			/* We now know the destination that exists is just one of our old files */
+			printf("Updating old standard file %s\n", destfn);
+			unlink(destfn);
+		}
+		else {
+			printf("Installing new file %s\n", destfn);
+		}
 
 		if (lstat(srcfn, &st) != 0) {
 			printf("Error - cannot lstat() %s\n", srcfn);
