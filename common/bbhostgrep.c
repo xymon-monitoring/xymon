@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.18 2004-12-20 10:35:42 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.19 2004-12-20 11:22:12 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -90,9 +90,10 @@ int main(int argc, char *argv[])
 		sprintf(netstring, "NET:%s", p);
 	}
 
-
-	for (hwalk = hostlist; (hwalk); hwalk = hwalk->next) {
+	hwalk = hostlist;
+	while (hwalk) {
 		char *curnet = bbh_item(hwalk, BBH_NET);
+		char *curname = bbh_item(hwalk, BBH_HOSTNAME);
 
 		/* Only look at the hosts whose NET: definition matches the wanted one */
 		if ( (netstring == NULL) || (strcmp(curnet, netstring) == 0) || (testuntagged && (curnet == NULL)) ) {
@@ -141,6 +142,8 @@ int main(int argc, char *argv[])
 				printf("%s %s #%s\n", bbh_item(hwalk, BBH_IP), bbh_item(hwalk, BBH_HOSTNAME), wantedtags);
 			}
 		}
+
+		do { hwalk = hwalk->next; } while (hwalk && (strcmp(curname, hwalk->bbhostname) == 0));
 	}
 
 	return 0;
