@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.5 2004-11-04 17:00:09 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.6 2004-11-07 11:09:55 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -21,6 +21,33 @@ static char rcsid[] = "$Id: misc.c,v 1.5 2004-11-04 17:00:09 henrik Exp $";
 #include <limits.h>
 
 #include "errormsg.h"
+#include "misc.h"
+
+enum ostype_t get_ostype(char *osname)
+{
+	char savech;
+	enum ostype_t result = OS_UNKNOWN;
+
+	int n = strspn(osname, "abcdefghijklmnopqrstuvwxyz0123456789");
+	savech = *(osname+n);
+
+	if      (strcmp(osname, "solaris") == 0)     result = OS_SOLARIS;
+	else if (strcmp(osname, "hpux") == 0)        result = OS_HPUX;
+	else if (strcmp(osname, "aix") == 0)         result = OS_AIX;
+	else if (strcmp(osname, "osf") == 0)         result = OS_OSF;
+	else if (strcmp(osname, "sco") == 0)         result = OS_SCO;
+	else if (strcmp(osname, "win32") == 0)       result = OS_WIN32;
+	else if (strcmp(osname, "freebsd") == 0)     result = OS_FREEBSD;
+	else if (strcmp(osname, "redhat") == 0)      result = OS_REDHAT;
+	else if (strcmp(osname, "debian3") == 0)     result = OS_DEBIAN3;
+	else if (strcmp(osname, "debian") == 0)      result = OS_DEBIAN;
+	else if (strcmp(osname, "linux") == 0)       result = OS_LINUX;
+	else if (strcmp(osname, "snmp") == 0)        result = OS_SNMP;
+	else if (strcmp(osname, "snmpnetstat") == 0) result = OS_SNMP;
+
+	*(osname+n) = savech;
+	return result;
+}
 
 int hexvalue(unsigned char c)
 {
