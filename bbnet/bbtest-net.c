@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.132 2003-10-30 13:23:24 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.133 2003-10-30 14:07:06 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1075,14 +1075,21 @@ void run_nslookup_service(service_t *service)
 	testitem_t	*t;
 	char		cmd[1024];
 	char		*p;
+	char		*lookup;
 	char		cmdpath[MAX_PATH];
 
 	p = getenv("NSLOOKUP");
 	strcpy(cmdpath, (p ? p : "nslookup"));
 	for (t=service->items; (t); t = t->next) {
 		if (!t->host->dnserror) {
-			sprintf(cmd, "%s %s %s 2>&1", 
-				cmdpath, t->host->hostname, t->host->ip);
+			if (t->testspec && (lookup = strchr(t->testspec, '='))) {
+				lookup++; 
+			}
+			else {
+				lookup = t->host->hostname;
+			}
+
+			sprintf(cmd, "%s %s %s 2>&1", cmdpath, lookup, t->host->ip);
 			t->open = (run_command(cmd, "can't find", &t->banner, 1) == 0);
 		}
 	}
@@ -1093,14 +1100,21 @@ void run_dig_service(service_t *service)
 	testitem_t	*t;
 	char		cmd[1024];
 	char		*p;
+	char		*lookup;
 	char		cmdpath[MAX_PATH];
 
 	p = getenv("DIG");
 	strcpy(cmdpath, (p ? p : "dig"));
 	for (t=service->items; (t); t = t->next) {
 		if (!t->host->dnserror) {
-			sprintf(cmd, "%s @%s %s 2>&1", 
-				cmdpath, t->host->ip, t->host->hostname);
+			if (t->testspec && (lookup = strchr(t->testspec, '='))) {
+				lookup++; 
+			}
+			else {
+				lookup = t->host->hostname;
+			}
+
+			sprintf(cmd, "%s @%s %s 2>&1", cmdpath, t->host->ip, lookup);
 			t->open = (run_command(cmd, "Bad server", &t->banner, 1) == 0);
 		}
 	}
