@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.2 2004-08-19 10:56:59 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.3 2004-08-20 20:52:32 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -126,9 +126,16 @@ void add_url_to_dns_queue(char *url)
 	char *auth = NULL;
 	char *port = NULL;
 	char *netloc;
+	char *proxy;
 	char *startp, *p;
 
-	tempurl = malcop(realurl(url, NULL, NULL, NULL, NULL));
+	tempurl = malcop(realurl(url, &proxy, NULL, NULL, NULL));
+	if (proxy) {
+		char *extraurl = malcop(proxy);
+		add_url_to_dns_queue(extraurl);
+		free(extraurl);
+	}
+
 	fragment = strchr(tempurl, '#'); if (fragment) *fragment = '\0';
 
 	/* First, skip the "scheme" (protocol) */
