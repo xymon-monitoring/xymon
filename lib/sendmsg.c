@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.11 2003-08-27 20:18:18 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.12 2003-10-01 07:24:24 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -41,6 +41,7 @@ static char	msgbuf[MAXMSG-50];	/* message buffer for one status message */
 static int	msgcolor;		/* color of status message in msgbuf */
 static int      maxmsgspercombo = 0;	/* 0 = no limit */
 static int      sleepbetweenmsgs = 0;
+static int      bbdportnumber = 0;
 
 int dontsendmessages = 0;
 
@@ -57,6 +58,29 @@ static int sendtobbd(char *recipient, char *message)
 	if (dontsendmessages) {
 		printf("%s\n", message);
 		return BB_OK;
+	}
+
+	if (bbdportnumber == 0) {
+		/*
+		 * Need to figure out the port number 
+		 * First see if BBPORT is defined; if not, fall back to default.
+		 */
+
+		/* First check for BBPORT */
+		if (getenv("BBPORT")) bbdportnumber = atoi(getenv("BBPORT"));
+
+		/* Next is /etc/services "bbd" entry */
+		if ((bbdportnumber <= 0) || (bbdportnumber > 65535)) {
+			struct servent *svcinfo;
+
+			svcinfo = getservbyname("bbd", NULL);
+			if (svcinfo) bbdportnumber = ntohs(svcinfo->s_port);
+		}
+
+		/* Last resort: The default value */
+		if ((bbdportnumber <= 0) || (bbdportnumber > 65535)) {
+			bbdportnumber = BBDPORTNUMBER;
+		}
 	}
 
 	if (inet_aton(recipient, &addr) == 0) {
@@ -82,7 +106,7 @@ static int sendtobbd(char *recipient, char *message)
 	memset(&saddr, 0, sizeof(saddr));
 	saddr.sin_family = AF_INET;
 	saddr.sin_addr.s_addr = addr.s_addr;
-	saddr.sin_port = htons(BBDPORTNUMBER);
+	saddr.sin_port = htons(bbdportnumber);
 
 	/* Get a non-blocking socket */
 	sockfd = socket(PF_INET, SOCK_STREAM, 0);

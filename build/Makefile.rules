@@ -2,7 +2,7 @@
 #
 # This file is included from the Makefile created by the "configure" script
 
-CFLAGS += -DMAXMSG=$(MAXMSG)
+CFLAGS += -DMAXMSG=$(MAXMSG) -DBBDPORTNUMBER=$(BBPORT)
 
 
 PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bbdigest bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi

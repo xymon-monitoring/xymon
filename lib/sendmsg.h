@@ -11,7 +11,10 @@
 #ifndef __SENDMSG_H_
 #define __SENDMSG_H_
 
+#ifndef BBDPORTNUMBER
 #define BBDPORTNUMBER 1984
+#endif
+
 #define PAGELEVELSDEFAULT "red purple"
 
 #define BB_OK			0

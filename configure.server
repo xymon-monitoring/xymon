@@ -34,7 +34,7 @@ else
 	fi
 	echo ""
 
-	echo "Trying to determine your BB MAXLINE setting"
+	echo "Trying to determine your BB MAXLINE and PORT settings"
 	if test -r $BBHOME/src/bb.h
 	then
 		MAXLINE=`grep "^#define.*MAXLINE.*[0-9]*" $BBHOME/src/bb.h 2>/dev/null`
@@ -46,9 +46,20 @@ else
 			MAXMSG="8192"
 			echo " *** Could not determine the MAXMSG setting ***"
 		fi
+
+		PORT=`grep "^#define.*PORT.*[0-9]*" $BBHOME/src/bb.h 2>/dev/null`
+		if test "$PORT" != ""
+		then
+			BBPORT=`echo $PORT | awk '{print $3}'`
+			echo "Found your BB PORT to be $BBPORT"
+		else
+			BBPORT="1984"
+			echo " *** Could not determine the PORT setting ***"
+		fi
 	else
 		MAXMSG="8192"
-		echo "*** Could not determine the MAXMSG setting ($BBHOME/src/bb.h not found) ***"
+		BBPORT="1984"
+		echo "*** Could not determine the MAXMSG and PORT settings ($BBHOME/src/bb.h not found) ***"
 	fi
 	echo ""
 
@@ -312,6 +323,7 @@ else
 	echo "CGIDIR = $CGIDIR"               >>Makefile
 	echo "HISTGRAPHDEF = $HISTGRAPHDEF $BARSUMDEF"   >>Makefile
 	echo "MAXMSG = $MAXMSG"               >>Makefile
+	echo "BBPORT = $BBPORT"               >>Makefile
 	echo "MANROOT = $MANROOT"             >>Makefile
 	echo "#"                              >>Makefile
 	echo "# ARES settings"                >>Makefile
