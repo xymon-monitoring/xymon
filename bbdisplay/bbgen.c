@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.68 2003-02-08 23:07:17 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.69 2003-02-09 13:50:05 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -198,7 +198,7 @@ int main(int argc, char *argv[])
 			printf("    --larrd[=LARRDCOLUMN]  : LARRD data in column LARRDCOLUMN, and handle larrd-html\n");
 			printf("    --larrdupdate=N        : time between updates of LARRD pages in seconds\n");
 			printf("    --rrddir=RRD-directory : Directory for LARRD RRD files\n");
-			printf("Alternate pageset generation support:\n");
+			printf("\nAlternate pageset generation support:\n");
 			printf("    --bbpageONLY           : Generate the standard (bb.html) page only\n");
 			printf("    --template=TEMPLATE    : template for header and footer files\n");
 #ifdef DEBUG
