@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.70 2003-05-23 09:59:43 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.71 2003-05-23 10:10:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -226,7 +226,7 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	newhost->wapcolor = -1;
 
 	/* Wap set is :
-	 * - Specific WAP: tag
+	 * - Specific WML: tag
 	 * - NK: tag
 	 * - --wap=COLUMN cmdline option
 	 * - NULL
@@ -1001,7 +1001,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			if (startoftags && (alertlist = strstr(startoftags, "NK:"))) {
 				alertlist += 3;
 			}
-			if (startoftags && (onwaplist = strstr(startoftags, "WAP:"))) {
+			if (startoftags && (onwaplist = strstr(startoftags, "WML:"))) {
 				onwaplist += 3;
 			}
 
