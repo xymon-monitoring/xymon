@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.197 2005-02-17 12:31:36 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.198 2005-02-21 14:32:38 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -599,20 +599,23 @@ void load_tests(void)
 					add_url_to_dns_queue(testspec);
 				}
 				else if (argnmatch(testspec, "apache") || argnmatch(testspec, "apache=")) {
-					static char *statusurl = NULL, *userurl;
+					char *userfmt = "cont=apache;%s;.";
+					char *deffmt = "cont=apache;http://%s/server-status?auto;.";
+					static char *statusurl = NULL;
+					char *userurl;
 
 					if (statusurl != NULL) xfree(statusurl);
 
 					userurl = strchr(testspec, '='); 
 					if (userurl) {
 						userurl++;
-						statusurl = (char *)malloc(strlen(userurl) + 20);
-						sprintf(statusurl, "cont=apache;%s;.", userurl);
+						statusurl = (char *)malloc(strlen(userurl) + strlen(userfmt) + 1);
+						sprintf(statusurl, userfmt, userurl);
 					}
 					else {
-						statusurl = (char *)malloc(50);
-						sprintf(statusurl, "cont=apache;http://%s/server-status?auto;.",
-							bbh_item(hwalk, BBH_IP));
+						char *ip = bbh_item(hwalk, BBH_IP);
+						statusurl = (char *)malloc(strlen(deffmt) + strlen(ip) + 1);
+						sprintf(statusurl, deffmt, ip);
 					}
 
 					testspec = statusurl;
