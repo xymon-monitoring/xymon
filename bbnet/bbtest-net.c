@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.47 2003-05-20 21:38:38 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.48 2003-05-21 20:14:04 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -258,8 +258,8 @@ void load_tests(void)
 {
 	FILE 	*bbhosts;
 	char 	l[MAX_LINE_LEN];	/* With multiple http tests, we may have long lines */
-	int	ip1, ip2, ip3, ip4;
 	char	hostname[MAX_LINE_LEN];
+	int	ip1, ip2, ip3, ip4;
 	char	*netstring;
 	char 	*p;
 
@@ -455,42 +455,7 @@ void load_tests(void)
 				}
 
 				if (anytests) {
-					/* 
-					 * Determine the IP address to test. We do it here,
-					 * to avoid multiple DNS lookups for each service 
-					 * we test on a host.
-					 */
-					if (h->testip || (dnsmethod == IP_ONLY)) {
-						sprintf(h->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
-						if (strcmp(h->ip, "0.0.0.0") == 0) {
-							printf("bbtest-net: %s has IP 0.0.0.0 and testip - dropped\n", hostname);
-							h->dnserror = 1;
-						}
-					}
-					else {
-						struct hostent *hent;
-
-						hent = gethostbyname(hostname);
-						if (hent) {
-							sprintf(h->ip, "%d.%d.%d.%d", 
-								(unsigned char) hent->h_addr_list[0][0],
-								(unsigned char) hent->h_addr_list[0][1],
-								(unsigned char) hent->h_addr_list[0][2],
-								(unsigned char) hent->h_addr_list[0][3]);
-						}
-						else if (dnsmethod == DNS_THEN_IP) {
-							sprintf(h->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
-						}
-						else {
-							/* Cannot resolve hostname */
-							h->dnserror = 1;
-						}
-
-						if (strcmp(h->ip, "0.0.0.0") == 0) {
-							printf("bbtest-net: IP resolver error for host %s\n", hostname);
-							h->dnserror = 1;
-						}
-					}
+					sprintf(h->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 					h->next = testhosthead;
 					testhosthead = h;
 				}
@@ -507,6 +472,50 @@ void load_tests(void)
 
 	stackfclose(bbhosts);
 	return;
+}
+
+
+void dns_resolve(void)
+{
+	testedhost_t	*h;
+
+	for (h=testhosthead; (h); h=h->next) {
+		/* 
+		 * Determine the IP address to test. We do it here,
+		 * to avoid multiple DNS lookups for each service 
+		 * we test on a host.
+		 */
+		if (h->testip || (dnsmethod == IP_ONLY)) {
+			if (strcmp(h->ip, "0.0.0.0") == 0) {
+				printf("bbtest-net: %s has IP 0.0.0.0 and testip - dropped\n", h->hostname);
+				h->dnserror = 1;
+			}
+		}
+		else {
+			struct hostent *hent;
+
+			hent = gethostbyname(h->hostname);
+			if (hent) {
+				sprintf(h->ip, "%d.%d.%d.%d", 
+					(unsigned char) hent->h_addr_list[0][0],
+					(unsigned char) hent->h_addr_list[0][1],
+					(unsigned char) hent->h_addr_list[0][2],
+					(unsigned char) hent->h_addr_list[0][3]);
+			}
+			else if (dnsmethod == DNS_THEN_IP) {
+				/* Already have the IP setup */
+			}
+			else {
+				/* Cannot resolve hostname */
+				h->dnserror = 1;
+			}
+
+			if (strcmp(h->ip, "0.0.0.0") == 0) {
+				printf("bbtest-net: IP resolver error for host %s\n", h->hostname);
+				h->dnserror = 1;
+			}
+		}
+	}
 }
 
 
@@ -1030,17 +1039,11 @@ int main(int argc, char *argv[])
 	if (pingcolumn) pingtest = add_service(pingcolumn, 0, 0, TOOL_FPING);
 	add_timestamp("Service definitions loaded");
 
-	for (s = svchead; (s); s = s->next) {
-		dprintf("Service %s port %d tool %d\n", s->testname, s->portnum, s->toolid);
-	}
-
 	load_tests();
-	for (h = testhosthead; (h); h = h->next) {
-		dprintf("Host %s, dnserror=%d, ip %s, dialup=%d testip=%d\n", 
-			h->hostname, h->dnserror, h->ip, h->dialup, h->testip);
-	}
 	add_timestamp("Test definitions loaded");
 
+	dns_resolve();
+	add_timestamp("DNS lookups completed");
 
 	/* Ping checks first */
 	if (pingtest && pingtest->items) {
@@ -1063,8 +1066,10 @@ int main(int argc, char *argv[])
 		}
 	}
 	add_timestamp("TCP test engine setup completed");
+
 	do_tcp_tests(timeout, concurrency);
 	add_timestamp("TCP tests executed");
+
 	if (debug) show_tcp_test_results();
 	for (s = svchead; (s); s = s->next) {
 		if ((s->items) && (s->toolid == TOOL_CONTEST)) {
