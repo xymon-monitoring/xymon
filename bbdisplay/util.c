@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.54 2003-06-08 20:09:20 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.55 2003-06-12 06:59:14 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -76,23 +76,23 @@ static char signal_msg[1024];
 
 void errprintf(const char *fmt, ...)
 {
-	char msg[1024];
+	char msg[4096];
 	va_list args;
 
 	va_start(args, fmt);
-	vsnprintf(msg, sizeof(msg), fmt, args);
+	vsprintf(msg, fmt, args);
 	va_end(args);
 
 	fprintf(stderr, "%s", msg);
 	fflush(stderr);
 
 	if (errbuf == NULL) {
-		errbufsize = 4096;
+		errbufsize = 8192;
 		errbuf = malloc(errbufsize);
 		*errbuf = '\0';
 	}
 	else if ((strlen(errbuf) + strlen(msg)) > errbufsize) {
-		errbufsize += 4096;
+		errbufsize += 8192;
 		errbuf = realloc(errbuf, errbufsize);
 	}
 
