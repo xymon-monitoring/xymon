@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.26 2003-07-06 15:55:10 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.27 2003-07-09 08:50:04 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -492,9 +492,9 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 		res = curl_easy_perform(req->curl);
 		if (res != 0) {
 			/* Some error occurred */
-			strcat(req->errorbuffer, "\n\n");
-			req->headers = malcop(req->errorbuffer);
-			if (logfd) fprintf(logfd, "Error: %s\n", req->errorbuffer);
+			req->headers = malloc(strlen(req->errorbuffer) + 20);
+			sprintf(req->headers, "Error %3d: %s\n\n", res, req->errorbuffer);
+			if (logfd) fprintf(logfd, "Error %d: %s\n", res, req->errorbuffer);
 			t->open = 0;
 		}
 		else {
