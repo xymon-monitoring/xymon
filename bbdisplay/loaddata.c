@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.15 2002-12-02 22:35:46 hstoerne Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.16 2002-12-19 13:00:22 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -37,6 +37,20 @@ char    larrdcol[20] = "larrd";
 int     enable_purpleupd = 1;
 link_t  null_link = { "", "", "", NULL };	/* Null link for pages/hosts/whatever with no link */
 col_t   null_column = { "", NULL };		/* Null column */
+
+char	*rrdnames[] = { 
+        "la",
+        "disk",
+        "memory",
+        "tcp",
+        "citrix",
+        "users",
+        "procs",
+        "vmstat",
+        "netstat",
+        "iostat",
+        NULL
+};
 
 
 page_t *init_page(const char *name, const char *title)
@@ -89,6 +103,7 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 		newhost->alerts = NULL;
 	}
 	newhost->parent = newhost->next = NULL;
+	newhost->rrds = NULL;
 
 	newlist->hostentry = newhost;
 	newlist->next = hosthead;
