@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.175 2004-08-12 08:50:05 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.176 2004-08-29 15:48:58 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -220,10 +220,11 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[i], "--reportopts=")) {
 			char style[MAX_LINE_LEN];
+			unsigned int rstart, rend;
 
 			int count = sscanf(argv[i], "--reportopts=%u:%u:%d:%s", 
-					   (unsigned int *)&reportstart, (unsigned int *)&reportend, 
-					   &dynamicreport, style);
+					   &rstart, &rend, &dynamicreport, style);
+			reportstart = rstart; reportend = rend;
 
 			if (count < 1) reportstart = 788918400;	/* 01-Jan-1995 00:00 GMT */
 			if (count < 2) reportend = time(NULL);
