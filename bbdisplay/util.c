@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.119 2004-08-24 11:42:40 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.120 2004-08-24 20:04:43 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -631,6 +631,15 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 			else if (strcmp(t_start, "CGIBINURL") == 0) 	fprintf(output, "%s", getenv("CGIBINURL"));
 
 			else if (strcmp(t_start, "BBDATE") == 0) {
+				char *bbdatefmt = getenv("BBDATEFORMAT");
+				char datestr[100];
+
+				/*
+				 * If no BBDATEFORMAT setting, use a format string that
+				 * produces output similar to that from ctime()
+				 */
+				if (bbdatefmt == NULL) bbdatefmt = "%a %b %d %H:%M:%S %Y\n";
+
 				if (hostenv_reportstart != 0) {
 					char starttime[20], endtime[20];
 
@@ -642,10 +651,12 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 						fprintf(output, "%s - %s", starttime, endtime);
 				}
 				else if (hostenv_snapshot != 0) {
-					fprintf(output, "%s", ctime(&hostenv_snapshot));
+					strftime(datestr, sizeof(datestr), bbdatefmt, localtime(&hostenv_snapshot));
+					fprintf(output, "%s", datestr);
 				}
 				else {
-					fprintf(output, "%s", ctime(&now));
+					strftime(datestr, sizeof(datestr), bbdatefmt, localtime(&now));
+					fprintf(output, "%s", datestr);
 				}
 			}
 
