@@ -1,6 +1,8 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <HTML>
 <HEAD>
+<META HTTP-EQUIV="Set-Cookie" CONTENT="pagepath=&BBPAGEPATH; path=/">
+<META HTTP-EQUIV="Set-Cookie" CONTENT="host=; path=/">
 <TITLE>Hobbit Snapshot Report : &BBDATE</TITLE>
 
 <!-- Styles for the menu bar -->
