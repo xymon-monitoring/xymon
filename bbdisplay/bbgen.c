@@ -17,6 +17,76 @@ link_t		null_link = { "", "", "", NULL };
 hostlist_t	*hosthead = NULL;
 state_t		*statehead = NULL;
 col_t   	*colhead = NULL;
+col_t		null_column = { "", NULL };
+
+
+col_list_t *gen_column_list(host_t *hostlist, col_list_t *currentlist)
+{
+#undef DEBUG
+	/*
+	 * Build a list of the columns that are in use by
+	 * hosts in the hostlist passed as parameter.
+	 * The column list must be sorted by column name.
+	 */
+
+	col_list_t	*head;
+	host_t		*h;
+	entry_t		*e;
+	col_list_t	*newlistitem, *collist_walk;
+
+	/* Code de-obfuscation trick: Add a null record as the head item */
+	/* Simplifies handling since head != NULL and we never have to insert at head of list */
+	if (currentlist == NULL) {
+		head = malloc(sizeof(col_list_t));
+		head->column = &null_column;
+		head->next = NULL;
+	}
+	else {
+		head = currentlist;
+	}
+
+	for (h = hostlist; (h); h = h->next) {
+		for (e = h->entries; (e); e = e->next) {
+#ifdef DEBUG
+			printf("Inserting %s\n", e->column->name);
+#endif
+			/* See where e->column should go in list */
+			collist_walk = head; 
+			while ( (collist_walk->next && 
+                               	strcmp(e->column->name, ((col_list_t *)(collist_walk->next))->column->name) > 0) ) {
+				collist_walk = collist_walk->next;
+			}
+
+#ifdef DEBUG
+			printf("collist_walk is %s\n", collist_walk->column->name);
+#endif
+			if ((collist_walk->next == NULL) || ((col_list_t *)(collist_walk->next))->column != e->column) {
+				/* collist_walk points to the entry before the new one */
+				newlistitem = malloc(sizeof(col_list_t));
+				newlistitem->column = e->column;
+				newlistitem->next = collist_walk->next;
+				collist_walk->next = newlistitem;
+			}
+#ifdef DEBUG
+			{
+				col_list_t *cl;
+				for (cl = head; (cl); cl = cl->next) {
+					printf("%s ", cl->column->name);
+				}
+				printf("\n");
+			}
+#endif
+		}
+	}
+
+#ifdef DEBUG
+	printf("\n");
+#endif
+
+	/* Skip the dummy record */
+	collist_walk = head; head = head->next; free(collist_walk);
+	return (head);
+}
 
 
 char *colorname(int color)
@@ -670,9 +740,19 @@ void do_hosts(host_t *head, FILE *output)
 void do_groups(group_t *head, FILE *output)
 {
 	group_t *g;
+	col_list_t *groupcols, *gc;
 
 	for (g = head; (g); g = g->next) {
+		groupcols = gen_column_list(g->hosts, NULL);
+
 		fprintf(output, "    group %s\n", g->title);
+
+		fprintf(output, "    - columns: ");
+		for (gc=groupcols; (gc); gc = gc->next) {
+			fprintf(output, "%s ", gc->column->name);
+		}
+		fprintf(output, "\n");
+
 		do_hosts(g->hosts, output);
 	}
 	fprintf(output, "\n");
@@ -731,8 +811,6 @@ void do_page(page_t *page, char *filename)
 void do_subpage(page_t *page, char *filename)
 {
 	FILE	*output;
-	group_t *g;
-	host_t  *h;
 
 	output = fopen(filename, "w");
 	if (output == NULL) {
@@ -744,15 +822,7 @@ void do_subpage(page_t *page, char *filename)
 	fprintf(output, "Color: %s\n", colorname(page->color));
 
 	do_hosts(page->hosts, output);
-
-	for (g = page->groups; (g); g = g->next) {
-		fprintf(output, "    group %s\n", g->title);
-		for (h = g->hosts; (h); h = h->next) {
-			fprintf(output, "    host %s\n", h->hostname);
-		}
-		fprintf(output, "\n");
-	}
-	fprintf(output, "\n");
+	do_groups(page->groups, output);
 
 	fclose(output);
 }

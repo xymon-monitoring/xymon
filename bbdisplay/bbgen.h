@@ -26,6 +26,11 @@ typedef struct {
 	void	*next;
 } col_t;
 
+typedef struct {
+	col_t	*column;
+	void	*next;
+} col_list_t;
+
 /* Measurement entry definition               */
 /* This points to a column definition, and    */
 /* contains the actual color of a measurement */
