@@ -44,6 +44,7 @@ enum bbtesttype_t {
 
 typedef struct bburl_t {
 	int testtype;
+	char *columnname;
 	struct urlelem_t *desturl;
 	struct urlelem_t *proxyurl;
 	unsigned char *postdata;
