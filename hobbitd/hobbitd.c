@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.16 2004-10-09 20:41:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.17 2004-10-09 21:45:01 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -130,13 +130,15 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 		strcpy(channel->channelbuf, readymsg);
 	}
 	else {
+		channel->seq++;
 		gettimeofday(&tstamp, &tz);
 		switch(channel->channelid) {
 		  case C_STATUS:
 			log = (bbd_log_t *)arg;
 			n = sprintf(channel->channelbuf, 
-				"@@%s|%d.%06d|%s|%s|%s|%d|%s|%s|%s|%d", 
-				channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
+				"@@%s#%u|%d.%06d|%s|%s|%s|%d|%s|%s|%s|%d", 
+				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
+				sender, hostname, 
 				log->test->testname, (int) log->validtime, 
 				colnames[log->color], 
 				(log->testflags ? log->testflags : ""),
@@ -151,8 +153,9 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 		  case C_STACHG:
 			log = (bbd_log_t *)arg;
 			sprintf(channel->channelbuf, 
-				"@@%s|%d.%06d|%s|%s|%s|%d|%s|%s|%d\n%s\n@@\n", 
-				channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
+				"@@%s#%u|%d.%06d|%s|%s|%s|%d|%s|%s|%d\n%s\n@@\n", 
+				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
+				sender, hostname, 
 				log->test->testname, (int) log->validtime, 
 				colnames[log->color], colnames[log->oldcolor], (int) log->lastchange, 
 				msg);
@@ -162,14 +165,16 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 			log = (bbd_log_t *)arg;
 			if (strcmp(channelmarker, "ack") == 0) {
 				sprintf(channel->channelbuf, 
-					"@@%s|%d.%06d|%s|%s|%s|%d\n%s\n@@\n", 
-					channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
+					"@@%s#%u|%d.%06d|%s|%s|%s|%d\n%s\n@@\n", 
+					channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
+					sender, hostname, 
 					log->test->testname, (int) log->acktime, msg);
 			}
 			else {
 				sprintf(channel->channelbuf, 
-					"@@%s|%d.%06d|%s|%s|%s|%d|%s|%s|%d\n%s\n@@\n", 
-					channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
+					"@@%s#%u|%d.%06d|%s|%s|%s|%d|%s|%s|%d\n%s\n@@\n", 
+					channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
+					sender, hostname, 
 					log->test->testname, (int) log->validtime, 
 					colnames[log->color], colnames[log->oldcolor], (int) log->lastchange,
 					msg);
@@ -179,16 +184,16 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 		  case C_DATA:
 			testname = (char *)arg;
 			sprintf(channel->channelbuf, 
-				"@@%s|%d.%06d|%s|%s|%s\n%s\n@@\n", 
-				channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
-				testname, msg);
+				"@@%s#%u|%d.%06d|%s|%s|%s\n%s\n@@\n", 
+				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
+				sender, hostname, testname, msg);
 			break;
 
 		  case C_NOTES:
 			sprintf(channel->channelbuf, 
-				"@@%s|%d.%06d|%s|%s\n%s\n@@\n", 
-				channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
-				msg);
+				"@@%s#%u|%d.%06d|%s|%s\n%s\n@@\n", 
+				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
+				sender, hostname, msg);
 			break;
 		}
 	}
@@ -197,7 +202,7 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 	s.sem_num = 0;
 	s.sem_op = clients;
 	s.sem_flg = 0;
-	dprintf("Posting message to %d readers\n", clients);
+	dprintf("Posting message %u to %d readers\n", channel->seq, clients);
 	n = semop(channel->semid, &s, 1);
 	dprintf("Message posted\n");
 
