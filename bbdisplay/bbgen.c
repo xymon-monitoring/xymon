@@ -51,7 +51,7 @@ group_t *init_group(const char *title)
 	return newgroup;
 }
 
-host_t *init_host(const char *hostname, const int ip1, const int ip2, const int ip3, const int ip4)
+host_t *init_host(const char *hostname, const int ip1, const int ip2, const int ip3, const int ip4, const int dialup)
 {
 	host_t 		*newhost = malloc(sizeof(host_t));
 	hostlist_t	*newlist = malloc(sizeof(hostlist_t));
@@ -61,6 +61,7 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	newhost->link = find_link(hostname);
 	newhost->entries = NULL;
 	newhost->color = -1;
+	newhost->dialup = dialup;
 	newhost->next = NULL;
 
 	newlist->hostentry = newhost;
@@ -155,7 +156,6 @@ state_t *init_state(const char *filename)
 	}
 
 	newstate = malloc(sizeof(state_t));
-	strcpy(newstate->hostname, hostname);
 	newstate->entry = malloc(sizeof(entry_t));
 	newstate->next = NULL;
 
@@ -191,12 +191,19 @@ state_t *init_state(const char *filename)
 
 	host = find_host(hostname);
 	if (host) {
-		/* FIXME: Insert into list sorted by test-name */
+		newstate->hostname = host->hostname;
 		newstate->entry->next = host->entries;
 		host->entries = newstate->entry;
 	}
 	else {
+		/* No host for this test - must be missing from bb-hosts */
+		/* FIXME: send update to purple for this host, with message "no longer listed" */
+		/*        Or maybe just delete the file? */
 		newstate->entry->next = NULL;
+
+		/* Need to malloc() room for the hostname */
+		newstate->hostname = malloc(strlen(hostname)+1);
+		strcpy(newstate->hostname, hostname);
 	}
 
 	return newstate;
@@ -358,8 +365,13 @@ page_t *load_bbhosts(void)
 			curhost = NULL;
 		}
 		else if (sscanf(l, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
+			int dialup = 0;
+			char *p = strchr(l, '#');
+
+			if (p && strstr(p, " dialup")) dialup=1;
+
 			if (curhost == NULL) {
-				curhost = init_host(hostname, ip1, ip2, ip3, ip4);
+				curhost = init_host(hostname, ip1, ip2, ip3, ip4, dialup);
 				if (curgroup != NULL) {
 					curgroup->hosts = curhost;
 				} else if (cursubpage != NULL) {
@@ -374,7 +386,7 @@ page_t *load_bbhosts(void)
 				}
 			}
 			else {
-				curhost = curhost->next = init_host(hostname, ip1, ip2, ip3, ip4);
+				curhost = curhost->next = init_host(hostname, ip1, ip2, ip3, ip4, dialup);
 			}
 		}
 		else {
@@ -553,15 +565,17 @@ int main(int argc, char *argv[])
 	page_t *p, *q;
 
 	linkhead = load_all_links();
+	/* dumplinks(linkhead); */
+
 	pagehead = load_bbhosts();
+	/* dumphostlist(hosthead); */
+
 	statehead = load_state();
+	dumpstatelist(statehead);
 
 	calc_hostcolors(hosthead);
 	calc_pagecolors(pagehead, "");
 
-	/* dumpstatelist(statehead); */
-	/* dumphostlist(hosthead); */
-	dumplinks(linkhead);
 
 	for (p=pagehead; p; p = p->next) {
 		printf("Page: %s, color: %d, title=%s\n", p->name, p->color, p->title);

@@ -39,7 +39,7 @@ typedef struct {
 
 /* Aux. list definition for loading state of all hosts into one list */
 typedef struct {
-	char	hostname[64];
+	char	*hostname;
 	entry_t	*entry;
 	void	*next;
 } state_t;
@@ -47,6 +47,7 @@ typedef struct {
 typedef struct {
 	char	hostname[60];
 	char	ip[16];
+	int	dialup;
 	link_t	*link;
 	entry_t	*entries;
 	int	color;		/* Calculated */
