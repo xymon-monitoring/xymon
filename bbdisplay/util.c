@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.23 2003-03-02 21:19:51 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.24 2003-03-07 09:41:32 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -346,9 +346,15 @@ int checkpropagation(host_t *host, char *test, int color)
 
 link_t *find_link(const char *name)
 {
+	/* We cache the last link searched for */
+	static link_t *lastlink = NULL;
 	link_t *l;
 
+	if (lastlink && (strcmp(lastlink->name, name) == 0))
+		return lastlink;
+
 	for (l=linkhead; (l && (strcmp(l->name, name) != 0)); l = l->next);
+	lastlink = l;
 
 	return (l ? l : &null_link);
 }
@@ -384,9 +390,16 @@ char *hostlink(link_t *link)
 
 host_t *find_host(const char *hostname)
 {
+	static hostlist_t *lastsearch = NULL;
 	hostlist_t	*l;
 
+	/* We cache the last result */
+	if (lastsearch && (strcmp(lastsearch->hostentry->hostname, hostname) == 0)) 
+		return lastsearch->hostentry;
+
+	/* Search for the host */
 	for (l=hosthead; (l && (strcmp(l->hostentry->hostname, hostname) != 0)); l = l->next) ;
+	lastsearch = l;
 
 	return (l ? l->hostentry : NULL);
 }

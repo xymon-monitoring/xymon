@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.48 2003-03-07 09:22:29 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.49 2003-03-07 09:41:32 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -208,9 +208,12 @@ link_t *init_link(char *filename, const char *urlprefix)
 
 col_t *find_or_create_column(const char *testname)
 {
+	static col_t *lastcol = NULL;	/* Cache the last lookup */
 	col_t	*newcol;
 
 	dprintf("find_or_create_column(%s)\n", textornull(testname));
+	if (lastcol && (strcmp(testname, lastcol->name) == 0))
+		return lastcol;
 
 	for (newcol = colhead; (newcol && (strcmp(testname, newcol->name) != 0)); newcol = newcol->next);
 	if (newcol == NULL) {
@@ -228,6 +231,7 @@ col_t *find_or_create_column(const char *testname)
 			colhead = newcol;
 		}
 	}
+	lastcol = newcol;
 
 	return newcol;
 }
