@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.76 2003-07-11 08:14:47 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.77 2003-07-12 06:07:37 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -78,7 +78,7 @@ int		notesthostcount = 0;
 char		**selectedhosts;
 int		selectedcount = 0;
 time_t		frequenttesttime = 1800;	/* Interval (seconds) when failing hosts are retried frequently */
-
+int		failgoesclear = 0;		/* IPTEST_2_CLEAR_ON_FAILED_CONN */
 
 testitem_t *find_test(char *hostname, char *testname)
 {
@@ -981,7 +981,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test)
 			}
 			else {
 				if (!test->open) {
-					if ((test->host->downcount != 0) && !test->alwaystrue) {
+					if (failgoesclear && (test->host->downcount != 0) && !test->alwaystrue) {
 						color = COL_CLEAR; countasdown = 0;
 					}
 					else {
@@ -992,7 +992,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test)
 		}
 
 		/* Handle test dependencies */
-		if ( (color == COL_RED) && !test->alwaystrue && deptest_failed(test->host, test->service->testname) ) {
+		if ( failgoesclear && (color == COL_RED) && !test->alwaystrue && deptest_failed(test->host, test->service->testname) ) {
 			color = COL_CLEAR;
 		}
 
@@ -1321,6 +1321,9 @@ int main(int argc, char *argv[])
 	init_timestamp();
 	envcheck(reqenv);
 	if (getenv("BBLOCATION")) location = malcop(getenv("BBLOCATION"));
+	if (getenv("IPTEST_2_CLEAR_ON_FAILED_CONN")) {
+		failgoesclear = (strcmp(getenv("IPTEST_2_CLEAR_ON_FAILED_CONN"), "TRUE") == 0);
+	}
 
 	add_timestamp("bbtest-net startup");
 
@@ -1435,7 +1438,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	for (h=testhosthead; (h); h = h->next) {
-		send_http_results(httptest, h, nonetpage, contenttestname, ssltestname, sslwarndays, sslalarmdays);
+		send_http_results(httptest, h, nonetpage, contenttestname, ssltestname, sslwarndays, sslalarmdays, failgoesclear);
 	}
 
 	combo_end();

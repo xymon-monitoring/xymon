@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.29 2003-07-10 09:10:50 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.30 2003-07-12 06:07:37 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -517,7 +517,7 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 
 void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage, 
 		       char *contenttestname, char *ssltestname,
-		       int sslwarndays, int sslalarmdays)
+		       int sslwarndays, int sslalarmdays, int failgoesclear)
 {
 	testitem_t *t;
 	int	color = -1;
@@ -554,13 +554,14 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 		if ( ((req->httpcolor == COL_RED) || (req->httpcolor == COL_YELLOW)) && /* Test failed */
 		     (host->downcount > 0)                   && /* The ping check did fail */
 		     (!host->noping && !host->noconn)        && /* We are doing a ping test */
+		     (failgoesclear)                         &&
 		     (!t->alwaystrue)                           )  /* No "~testname" flag */ {
 			req->httpcolor = COL_CLEAR;
 		}
 
 		/* If test we depend on has failed, report CLEAR unless alwaystrue */
 		if ( ((req->httpcolor == COL_RED) || (req->httpcolor == COL_YELLOW)) && /* Test failed */
-		     (!t->alwaystrue)                              )  /* No "~testname" flag */ {
+		      failgoesclear && !t->alwaystrue )  /* No "~testname" flag */ {
 			char *faileddeps = deptest_failed(host, t->service->testname);
 
 			if (faileddeps) {
@@ -627,6 +628,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 	for (t=host->firsthttp; (t && (t->host == host)); t = t->next) {
 		http_data_t *req = t->private;
 		char cause[100];
+		int got_data = 1;
 
 		strcpy(cause, "Content OK");
 		if (req->exp) {
@@ -656,7 +658,8 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 					 * Failed to retrieve the webpage.
 					 * Report CLEAR, unless "alwaystrue" is set.
 					 */
-					if (!t->alwaystrue) color = COL_CLEAR;
+					if (failgoesclear && !t->alwaystrue) color = COL_CLEAR;
+					got_data = 0;
 					strcpy(cause, "Failed to get webpage");
 				}
 
@@ -682,7 +685,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 				commafy(host->hostname), conttest, colorname(color), timestamp, cause);
 			addtostatus(msgline);
 
-			if (color == COL_CLEAR) {
+			if (!got_data) {
 				sprintf(msgline, "\nAn HTTP error occurred while testing <a href=\"%s\">URL %s</a>\n", 
 					realurl(req->url, NULL), realurl(req->url, NULL));
 			}
