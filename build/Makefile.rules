@@ -10,7 +10,7 @@
 
 CFLAGS += -DMAXMSG=$(MAXMSG) -DBBDPORTNUMBER=$(BBPORT) -I. -I$(BUILDTOPDIR)/include
 
-all: lib-build common-build bbdisplay-build bbnet-build bbproxy-build bbgend-build
+all: lib-build common-build bbdisplay-build bbnet-build bbproxy-build
 	@echo ""
 	@echo "Build complete"
 	@echo ""
@@ -30,9 +30,6 @@ bbnet-build: lib-build common-build
 bbproxy-build: lib-build common-build
 	CC="$(CC)" CFLAGS="$(CFLAGS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" $(MAKE) -C bbproxy all
 
-bbgend-build: lib-build common-build
-	CC="$(CC)" CFLAGS="$(CFLAGS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" $(MAKE) -C bbgend  all
-
 
 #####################
 # Cleanup targets
@@ -50,7 +47,6 @@ clean:
 	$(MAKE) -C bbdisplay clean
 	$(MAKE) -C bbnet clean
 	$(MAKE) -C bbproxy clean
-	$(MAKE) -C bbgend clean
 	rm -f {.,build,include}/*~
 
 
@@ -58,8 +54,8 @@ clean:
 # Install targets
 ####################
 
-install: install-bbdisplay install-bbnet install-bbproxy install-bbgend
-install-nocgi: install-bbdisplay-nocgi install-bbnet install-bbproxy install-bbgend
+install: install-bbdisplay install-bbnet install-bbproxy
+install-nocgi: install-bbdisplay-nocgi install-bbnet install-bbproxy
 
 install-common:
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C common install
@@ -76,13 +72,9 @@ install-bbnet: install-common
 install-bbproxy: install-common
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbproxy install
 
-install-bbgend: install-common
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbgend install
-
 install-man:
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C common install-man
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" $(MAKE) -C bbdisplay install-man
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbnet install-man
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbproxy install-man
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbgend install-man
 
