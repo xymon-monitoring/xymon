@@ -30,6 +30,7 @@ typedef struct activealerts_t {
 extern void load_alertconfig(char *configfn, int alertcolors);
 extern void dump_alertconfig(void);
 extern time_t next_alert(activealerts_t *alert);
+extern void clear_interval(activealerts_t *alert);
 
 extern void start_alerts(void);
 extern void send_alert(activealerts_t *alert);
