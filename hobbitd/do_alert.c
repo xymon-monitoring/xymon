@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.28 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.29 2005-01-28 22:13:23 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -65,10 +65,6 @@ static char rcsid[] = "$Id: do_alert.c,v 1.28 2005-01-20 10:45:44 henrik Exp $";
 
 #include "hobbitd_alert.h"
 
-/* Should we run in BB compatibility mode ? i.e. read bbwarn{setup,rules}.cfg */
-int bbcompat_mode = 0;
-static char bbcompatscript[PATH_MAX];
-
 enum method_t { M_MAIL, M_SCRIPT };
 enum msgformat_t { FRM_TEXT, FRM_SMS, FRM_PAGER, FRM_SCRIPT };
 enum recovermsg_t { SR_UNKNOWN, SR_NOTWANTED, SR_WANTED };
@@ -84,6 +80,7 @@ static token_t *tokhead = NULL;
 /* These are the criteria we use when matching an alert. Used both generally for a rule, and for recipients */
 typedef struct criteria_t {
 	int cfid;
+	char *cfline;
 	char *pagespec;		/* Pages to include */
 	pcre *pagespecre;
 	char *expagespec;	/* Pages to exclude */
@@ -111,6 +108,7 @@ typedef struct recip_t {
 	char *scriptname;
 	enum msgformat_t format;
 	time_t interval;		/* In seconds */
+	int stoprule, unmatchedonly;
 	struct recip_t *next;
 } recip_t;
 
@@ -124,6 +122,8 @@ typedef struct rule_t {
 static rule_t *rulehead = NULL;
 static rule_t *ruletail = NULL;
 static int cfid = 0;
+static char cfline[80];
+static int stoprulefound = 0;
 
 /*
  * This is the dynamic info stored to keep track of active alerts. We
@@ -157,6 +157,7 @@ static criteria_t *setup_criteria(rule_t **currule, recip_t **currcp)
 			(*currule)->criteria = (criteria_t *)calloc(1, sizeof(criteria_t));
 		crit = (*currule)->criteria;
 		crit->cfid = cfid;
+		crit->cfline = strdup(cfline);
 		*currcp = NULL;
 		break;
 
@@ -165,6 +166,7 @@ static criteria_t *setup_criteria(rule_t **currule, recip_t **currcp)
 			(*currcp)->criteria = (criteria_t *)calloc(1, sizeof(criteria_t));
 		crit = (*currcp)->criteria;
 		crit->cfid = cfid;
+		crit->cfline = strdup(cfline);
 		crit->colors = (*currule)->criteria->colors;
 		break;
 	}
@@ -264,12 +266,6 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 	rule_t *currule = NULL;
 	recip_t *currcp = NULL, *rcptail = NULL;
 
-	if (bbcompat_mode) {
-		sprintf(bbcompatscript, "%s/ext/bbcompatalert.sh", xgetenv("BBHOME"));
-		bbload_alerts();
-		return;
-	}
-
 	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/hobbit-alerts.cfg", xgetenv("BBHOME"));
 	if (stat(fn, &st) == -1) return;
 	if (st.st_mtime == lastload) return;
@@ -282,6 +278,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 		rule_t *trule;
 
 		if (rulehead->criteria) {
+			if (rulehead->criteria->cfline)       xfree(rulehead->criteria->cfline);
 			if (rulehead->criteria->pagespec)     xfree(rulehead->criteria->pagespec);
 			if (rulehead->criteria->pagespecre)   pcre_free(rulehead->criteria->pagespecre);
 			if (rulehead->criteria->expagespec)   xfree(rulehead->criteria->expagespec);
@@ -302,6 +299,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 			recip_t *trecip = rulehead->recipients;
 
 			if (trecip->criteria) {
+				if (trecip->criteria->cfline)       xfree(trecip->criteria->cfline);
 				if (trecip->criteria->pagespec)     xfree(trecip->criteria->pagespec);
 				if (trecip->criteria->pagespecre)   pcre_free(trecip->criteria->pagespecre);
 				if (trecip->criteria->expagespec)   xfree(trecip->criteria->expagespec);
@@ -355,11 +353,16 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 
 			delim = strchr(l, '=');
 			*delim = '\0';
-			newtok->name = strdup(l);
+			newtok->name = strdup(l+1);	/* Skip the '$' */
 			newtok->value = strdup(delim+1);
 			newtok->next = tokhead;
 			tokhead = newtok;
 			continue;
+		}
+
+		if (tracefd) {
+			strncpy(cfline, l, (sizeof(cfline)-1));
+			cfline[sizeof(cfline)-1] = '\0';
 		}
 
 		/* Expand macros inside the line before parsing */
@@ -502,6 +505,8 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				if (p) {
 					newrcp->recipient = strdup(p);
 					newrcp->interval = defaultinterval;
+					newrcp->stoprule = 0;
+					newrcp->unmatchedonly = 0;
 					newrcp->next = NULL;
 					currcp = newrcp;
 					pstate = P_RECIP;
@@ -540,6 +545,8 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				if (p) {
 					newrcp->recipient = strdup(p);
 					newrcp->interval = defaultinterval;
+					newrcp->stoprule = 0;
+					newrcp->unmatchedonly = 0;
 					newrcp->next = NULL;
 					currcp = newrcp;
 					pstate = P_RECIP;
@@ -564,6 +571,12 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 			}
 			else if ((pstate == P_RECIP) && (strncasecmp(p, "REPEAT=", 7) == 0)) {
 				currcp->interval = 60*durationvalue(p+7);
+			}
+			else if ((pstate == P_RECIP) && (strcasecmp(p, "STOP") == 0)) {
+				currcp->stoprule = 1;
+			}
+			else if ((pstate == P_RECIP) && (strcasecmp(p, "UNMATCHED") == 0)) {
+				currcp->unmatchedonly = 1;
 			}
 
 			if (p) p = strtok(NULL, " ");
@@ -612,11 +625,6 @@ void dump_alertconfig(void)
 {
 	rule_t *rulewalk;
 	recip_t *recipwalk;
-
-	if (bbcompat_mode) {
-		printf("Dump not supported in bb-compatible mode\n");
-		return;
-	}
 
 	for (rulewalk = rulehead; (rulewalk); rulewalk = rulewalk->next) {
 		dump_criteria(rulewalk->criteria, 0);
@@ -694,6 +702,11 @@ static int namematch(char *needle, char *haystack, pcre *pcrecode)
 		return (result >= 0);
 	}
 
+	if (strcmp(haystack, "*") == 0) {
+		/* Match anything */
+		return 1;
+	}
+
 	/* Implement a simple, no-wildcard match */
 	xhay = malloc(strlen(haystack) + 3);
 	sprintf(xhay, ",%s,", haystack);
@@ -732,12 +745,17 @@ static int namematch(char *needle, char *haystack, pcre *pcrecode)
 
 	xfree(xhay);
 	xfree(xneedle);
+
 	return result;
 }
 
 static int timematch(char *tspec)
 {
-	return within_sla(tspec, "", 0);
+	int result;
+
+	result = within_sla(tspec, "", 0);
+
+	return result;
 }
 
 static int criteriamatch(activealerts_t *alert, criteria_t *crit)
@@ -748,52 +766,67 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit)
 	 */
 
 	time_t duration;
-	
+	int result;
+
 	if (crit == NULL) return 1;	/* Only happens for recipient-list criteria */
 
 	dprintf("criteriamatch %s:%s %s:%s:%s\n", alert->hostname->name, alert->testname->name, 
 		textornull(crit->hostspec), textornull(crit->pagespec), textornull(crit->svcspec));
+	if (tracefd) {
+		fprintf(tracefd, "Matching host:service:page '%s:%s:%s' against rule line %d:",
+			alert->hostname->name, alert->testname->name, 
+			alert->location->name, crit->cfid);
+	}
 
 	duration = (time(NULL) - alert->eventstart);
 	if (crit->minduration && (duration < crit->minduration)) { 
 		dprintf("failed minduration %d<%d\n", duration, crit->minduration); 
+		if (tracefd) fprintf(tracefd, "Failed (min. duration)\n");
 		return 0; 
 	}
 
 	if (crit->maxduration && (duration > crit->maxduration)) { 
 		dprintf("failed maxduration\n"); 
+		if (tracefd) fprintf(tracefd, "Failed (max. duration)\n");
 		return 0; 
 	}
 
 	if (crit->pagespec && !namematch(alert->location->name, crit->pagespec, crit->pagespecre)) { 
 		dprintf("failed pagespec\n"); 
+		if (tracefd) fprintf(tracefd, "Failed (pagename not in include list)\n");
 		return 0; 
 	}
 	if (crit->expagespec && namematch(alert->location->name, crit->expagespec, crit->expagespecre)) { 
 		dprintf("matched expagespec, so drop it\n"); 
+		if (tracefd) fprintf(tracefd, "Failed (pagename excluded)\n");
 		return 0; 
 	}
 
 	if (crit->hostspec && !namematch(alert->hostname->name, crit->hostspec, crit->hostspecre)) { 
 		dprintf("failed hostspec\n"); 
+		if (tracefd) fprintf(tracefd, "Failed (hostname not in include list)\n");
 		return 0; 
 	}
 	if (crit->exhostspec && namematch(alert->hostname->name, crit->exhostspec, crit->exhostspecre)) { 
 		dprintf("matched exhostspec, so drop it\n"); 
+		if (tracefd) fprintf(tracefd, "Failed (hostname excluded)\n");
 		return 0; 
 	}
 
 	if (crit->svcspec && !namematch(alert->testname->name, crit->svcspec, crit->svcspecre))  { 
 		dprintf("failed svcspec\n"); 
+		if (tracefd) fprintf(tracefd, "Failed (service not in include list)\n");
 		return 0; 
 	}
 	if (crit->exsvcspec && namematch(alert->testname->name, crit->exsvcspec, crit->exsvcspecre))  { 
 		dprintf("matched exsvcspec, so drop it\n"); 
+		if (tracefd) fprintf(tracefd, "Failed (service excluded)\n");
 		return 0; 
 	}
 
 	if (crit->timespec && !timematch(crit->timespec)) { 
 		dprintf("failed timespec\n"); 
+		if (tracefd) fprintf(tracefd, "Failed (time criteria)\n");
 		return 0; 
 	}
 
@@ -806,115 +839,28 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit)
 
 	/* We now know that the state is not A_RECOVERED, so final check is to match against the colors. */
 	if (crit->colors) {
-		int result = (((1 << alert->color) & crit->colors) != 0);
+		result = (((1 << alert->color) & crit->colors) != 0);
 		dprintf("Checking explicit color setting %o against %o gives %d\n", crit->colors, alert->color, result);
-		return result;
 	}
 	else {
-		int result = (((1 << alert->color) & defaultcolors) != 0);
+		result = (((1 << alert->color) & defaultcolors) != 0);
 		dprintf("Checking default color setting %o against %o gives %d\n", defaultcolors, alert->color, result);
-		return result;
 	}
+
+	if (tracefd) {
+		if (result)
+			fprintf(tracefd, "Matched\n    *** Match with '%s' ***\n", crit->cfline);
+		else
+			fprintf(tracefd, "%s\n", "Failed (color)");
+	}
+
+	return result;
 }
 
 static recip_t *next_recipient(activealerts_t *alert, int *first)
 {
 	static rule_t *rulewalk = NULL;
 	static recip_t *recipwalk = NULL;
-
-	if (bbcompat_mode) {
-		static recip_t bbresult;
-		char timespec[100];
-		alertrec_t *bbalertdef;
-		int continued, wantdefault;
-		char *p, *q;
-
-		if (*first) {
-			continued = 0; 
-			wantdefault = 1;
-		}
-		else {
-			/*
-			 * We only want the default alert recipient the first time - if there are
-			 * recipient defined, we dont want to see the default recipient.
-			 */
-			continued = 1;
-			wantdefault = 0;
-		}
-
-		*first = 0;
-
-bbagain:
-		/* 
-		 * Find the (next) BB alert definition. 
-		 */
-		bbalertdef = bbfind_alert(alert->hostname->name, wantdefault, continued);
-		wantdefault = 0;
-		if (bbalertdef == NULL) return NULL;
-
-		/* Check bbalertdef against service specs and time limits */
-		if (strstr(bbalertdef->items[3], alert->testname->name)) goto bbagain; /* Excluded service */
-		if ((strlen(bbalertdef->items[2]) > 0) && (strcmp(bbalertdef->items[2], "*") != 0)) {
-			/* See if service is in the explicit service list */
-			if (strstr(bbalertdef->items[2], alert->testname->name) == NULL) goto bbagain;
-		}
-
-		/* Convert the BB timespec into something we can handle */
-		memset(timespec, 0, sizeof(timespec));
-		if (strlen(bbalertdef->items[4]) == 0) bbalertdef->items[4] = "*";
-		for (p = bbalertdef->items[4]; (*p); p++) {
-			timespec[strlen(timespec)] = *p;
-			q = bbalertdef->items[5];
-			if ((strlen(q) == 0) || (*q == '*')) q = "0000-2359";
-			while (q) {
-				char *nextq = strchr(q, ' ');
-
-				if (nextq) *nextq = '\0';
-				strcat(timespec, ":");
-				strcat(timespec, q);
-				if (nextq) { *nextq = ' '; q = nextq + 1; } else q = NULL;
-			}
-		}
-		dprintf("Converted bbtimespec '%s' '%s' to '%s'\n", bbalertdef->items[4], bbalertdef->items[5], timespec);
-		if (!within_sla(timespec, "", 1)) goto bbagain;
-
-		p = strchr(bbalertdef->items[6], ':');
-		if (p) {
-			if ((*(p+1) == '~') || (*(p+1) == '^')) {
-				/* Initial or acknowledgement delay */
-				char initialdelay = 60*atoi(p+1);
-				p++;
-				p += strspn(p, "0123456789");
-
-				if ((time(NULL) - alert->eventstart) < initialdelay) goto bbagain;
-			}
-		}
-		/* Set the repeat interval */
-		if (p && ((*p == ':') || (*p == '-'))) {
-			bbresult.interval = 60*atoi(p+1);
-		}
-		else {
-			bbresult.interval = 60*bbpagedelay;
-		}
-
-		/* Create a recip_t struct from the bbalertdef contents */
-		bbresult.cfid = -1;
-		bbresult.criteria = NULL;
-		if (strchr(bbalertdef->items[6], '@')) {
-			bbresult.method = M_MAIL;
-			bbresult.scriptname = NULL;
-			bbresult.recipient = bbalertdef->items[6];
-			bbresult.format = FRM_TEXT;
-		}
-		else {
-			bbresult.method = M_SCRIPT;
-			bbresult.scriptname = bbcompatscript;
-			bbresult.recipient = bbalertdef->items[6];
-			bbresult.format = FRM_SCRIPT;
-		}
-		bbresult.next = NULL;
-		return &bbresult;
-	}
 
 	do {
 		if (*first) {
@@ -958,6 +904,7 @@ bbagain:
 		}
 	} while (rulewalk && recipwalk && !criteriamatch(alert, recipwalk->criteria));
 
+	stoprulefound = (recipwalk && recipwalk->stoprule);
 	return recipwalk;
 }
 
@@ -1101,14 +1048,22 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 	recip_t *recip;
 	repeat_t *rpt;
 	int first = 1;
+	int alertcount = 0;
 	time_t now = time(NULL);
 
 	dprintf("send_alert %s:%s state %d\n", alert->hostname->name, alert->testname->name, (int)alert->state);
 
-	while ((recip = next_recipient(alert, &first)) != NULL) {
+	stoprulefound = 0;
+
+	while (!stoprulefound && ((recip = next_recipient(alert, &first)) != NULL)) {
+		alertcount++;
+
 		rpt = find_repeatinfo(alert, recip, 1);
 		dprintf("  repeat %s at %d\n", rpt->recipid, rpt->nextalert);
 		if (rpt->nextalert > now) continue;
+
+		/* If this is an "UNMATCHED" rule, ignore it if we have already sent out some alert */
+		if (recip->unmatchedonly && (alertcount != 1)) continue;
 
 		dprintf("  Alert for %s:%s to %s\n", alert->hostname->name, alert->testname->name, recip->recipient);
 		switch (recip->method) {
@@ -1135,6 +1090,11 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 						sprintf(cmd, "mail ");
 				}
 				strcat(cmd, recip->recipient);
+
+				if (tracefd) {
+					fprintf(tracefd, "Mail alert with command '%s'\n", cmd);
+					break;
+				}
 
 				mailpipe = popen(cmd, "w");
 				if (mailpipe) {
@@ -1233,6 +1193,12 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 				}
 				putenv(downsecsmsg);
 
+				if (tracefd) {
+					fprintf(tracefd, "Script alert with command '%s' and recipient %s\n", 
+						recip->scriptname, recip->recipient);
+					break;
+				}
+
 				scriptpid = fork();
 				if (scriptpid == 0) {
 					/* The child starts the script */
@@ -1309,10 +1275,13 @@ time_t next_alert(activealerts_t *alert)
 	recip_t *recip;
 	repeat_t *rpt;
 
-	while ((recip = next_recipient(alert, &first)) != NULL) {
+	stoprulefound = 0;
+	while (!stoprulefound && ((recip = next_recipient(alert, &first)) != NULL)) {
 		rpt = find_repeatinfo(alert, recip, 1);
-		if (rpt->nextalert <= now) rpt->nextalert = (now + recip->interval);
-		if (rpt->nextalert < nexttime) nexttime = rpt->nextalert;
+		if (rpt) {
+			if (rpt->nextalert <= now) rpt->nextalert = (now + recip->interval);
+			if (rpt->nextalert < nexttime) nexttime = rpt->nextalert;
+		}
 	}
 
 	return nexttime;
@@ -1363,7 +1332,8 @@ void clear_interval(activealerts_t *alert)
 	repeat_t *rpt;
 
 	alert->nextalerttime = 0;
-	while ((recip = next_recipient(alert, &first)) != NULL) {
+	stoprulefound = 0;
+	while (!stoprulefound && ((recip = next_recipient(alert, &first)) != NULL)) {
 		rpt = find_repeatinfo(alert, recip, 0);
 		if (rpt) {
 			dprintf("Cleared repeat interval for %s\n", rpt->recipid);
