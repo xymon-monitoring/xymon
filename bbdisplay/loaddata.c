@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.77 2003-06-07 06:53:13 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.78 2003-06-09 21:06:32 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1076,6 +1076,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 		else if (sscanf(l, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
 			int dialup = 0;
 			int prefer = 0;
+			int nodisp = 0;
 			char *alertlist, *onwaplist, *nopropyellowlist, *nopropredlist, *larrdgraphs;
 			char *displayname, *targetpagename;
 			char *tag;
@@ -1095,6 +1096,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 					dialup = 1;
 				else if (strcmp(tag, "prefer") == 0) 
 					prefer = 1;
+				else if ((strcmp(tag, "nodisp") == 0) || (strcmp(tag, "NODISP") == 0))
+					nodisp = 1;
 				else if (argnmatch(tag, "NK:")) 
 					alertlist = malcop(tag+strlen("NK:"));
 				else if (argnmatch(tag, "WML:")) 
@@ -1135,7 +1138,12 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				if (tag) tag = strtok(NULL, " \t\r\n");
 			}
 
-			if (strlen(pgset) == 0) {
+			if (nodisp) {
+				/*
+				 * Ignore this host.
+				 */
+			}
+			else if (strlen(pgset) == 0) {
 				/*
 				 * Default pageset generated. Put the host into
 				 * whatever group or page is current.
