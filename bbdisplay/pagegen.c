@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.99 2003-09-27 06:48:47 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.100 2003-09-27 09:50:55 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -50,6 +50,8 @@ char *htmlextension = ".html"; /* Filename extension for generated files */
 char *doctargetspec = " TARGET=\"_blank\"";
 char *defaultpagetitle = NULL;
 int  pagetitlelinks = 0;
+int  pagetextheadings = 0;
+int  underlineheadings = 1;
 int  maxrowsbeforeheading = 0;
 int  bb2eventlog = 1;
 int  bb2acklog = 1;
@@ -368,12 +370,13 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 			/* If there is a host pretitle, show it. */
 			dprintf("Host:%s, pretitle:%s\n", h->hostname, textornull(h->pretitle));
 
-			if (h->pretitle && (rowcount == 0)) {
+			if (h->pretitle) {
 				fprintf(output, "<tr><td colspan=%d align=center valign=middle><br><font %s>%s</font></td></tr>\n", 
 						columncount+1, getenv("MKBBTITLE"), h->pretitle);
+				rowcount = 0;
 			}
 
-			if (h->pretitle || (rowcount == 0)) {
+			if (rowcount == 0) {
 				/* output group title and column headings */
 				fprintf(output, "<TR><TD VALIGN=MIDDLE ROWSPAN=2><CENTER><FONT %s>%s</FONT></CENTER></TD>\n", 
 					getenv("MKBBTITLE"), grouptitle);
@@ -628,7 +631,7 @@ void do_groups(group_t *head, FILE *output, char *pagepath)
 		if (g->hosts && g->pretitle) {
 			fprintf(output, "<CENTER><TABLE BORDER=0>\n");
 			fprintf(output, "  <TR><TD><CENTER><FONT %s>%s</FONT></CENTER></TD></TR>\n", getenv("MKBBTITLE"), g->pretitle);
-			fprintf(output, "  <TR><TD><HR WIDTH=\"100%%\"></TD></TR>\n");
+			if (underlineheadings) fprintf(output, "  <TR><TD><HR WIDTH=\"100%%\"></TD></TR>\n");
 			fprintf(output, "</TABLE></CENTER>\n");
 		}
 
@@ -719,16 +722,11 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 
 	fprintf(output, "<A NAME=\"summaries-blk\">&nbsp;</A>\n");
 	fprintf(output, "<CENTER>\n");
-	fprintf(output, "<TABLE SUMMARY=\"Summary Block\" BORDER=0><TR><TD>\n");
-	fprintf(output, "<CENTER><FONT %s>\n", getenv("MKBBTITLE"));
-	fprintf(output, "%s\n", getenv("MKBBREMOTE"));
-	fprintf(output, "</FONT></CENTER></TD></TR><TR><TD>\n");
-	fprintf(output, "<HR WIDTH=\"100%%\"></TD></TR>\n");
+	fprintf(output, "<TABLE SUMMARY=\"Summary Block\" BORDER=0>\n");
 	fprintf(output, "<TR><TD>\n");
-
-	do_hosts(sumhosts, NULL, output, "", 0, NULL);
-
-	fprintf(output, "</TD></TR></TABLE>\n");
+	do_hosts(sumhosts, NULL, output, getenv("MKBBREMOTE"), 0, NULL);
+	fprintf(output, "</TD></TR>\n");
+	fprintf(output, "</TABLE>\n");
 	fprintf(output, "</CENTER>\n");
 }
 
@@ -746,7 +744,6 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *pagepath)
 
 	if (subs) {
 		fprintf(output, "<A NAME=\"pages-blk\">&nbsp;</A>\n");
-
 		fprintf(output, "<BR>\n<CENTER>\n");
 		fprintf(output, "<TABLE SUMMARY=\"Page Block\" BORDER=0>\n");
 
@@ -765,8 +762,15 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *pagepath)
 						(2*subpagecolumns + (subpagecolumns - 1)), getenv("MKBBTITLE"));
 				fprintf(output, "   <br>%s\n", p->pretitle);
 				fprintf(output, "</FONT></CENTER></TD></TR>\n");
-				fprintf(output, "<TR><TD COLSPAN=%d><HR WIDTH=\"100%%\"></TD></TR>\n", 
-						(2*subpagecolumns + (subpagecolumns - 1)));
+
+				fprintf(output, "<TR><TD COLSPAN=%d>", (2*subpagecolumns + (subpagecolumns - 1)));
+				if (underlineheadings) {
+					fprintf(output, "<HR WIDTH=\"100%%\">");
+				}
+				else {
+					fprintf(output, "&nbsp;");
+				}
+				fprintf(output, "</TD></TR>\n");
 			}
 
 			if (currentcolumn == 0) fprintf(output, "<TR>\n");
@@ -819,6 +823,9 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 	char	filename[MAX_PATH];
 	char	tmpfilename[MAX_PATH];
 	char	*dirdelim;
+	char	*mkbblocal;
+
+	mkbblocal = malcop(getenv((page->parent ? "MKBBSUBLOCAL" : "MKBBLOCAL")));
 
 	pagepath[0] = '\0';
 	if (embedded) {
@@ -893,14 +900,18 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 
 	headfoot(output, hf_prefix[PAGE_BB], pagepath, "header", page->color);
 
-	if (page->subpages || page->pretitle || defaultpagetitle) {
-		/* Print the "Pages hosted locally" header - either the defined pretitle, or the default */
+	if (pagetextheadings && page->title && strlen(page->title)) {
 		fprintf(output, "<CENTER><TABLE BORDER=0>\n");
-		fprintf(output, "  <TR><TD><br><CENTER><FONT %s>%s</FONT></CENTER></TD></TR>\n", 
-			getenv("MKBBTITLE"), 
-			(page->pretitle ? page->pretitle : (defaultpagetitle ? defaultpagetitle : getenv("MKBBLOCAL"))));
-		fprintf(output, "  <TR><TD><HR WIDTH=\"100%%\"></TD></TR>\n");
+		fprintf(output, "  <TR><TD><CENTER><FONT %s>%s</FONT></CENTER></TD></TR>\n", 
+			getenv("MKBBTITLE"), page->title);
+		if (underlineheadings) fprintf(output, "  <TR><TD><HR WIDTH=\"100%%\"></TD></TR>\n");
 		fprintf(output, "</TABLE></CENTER>\n");
+	}
+	else if (page->subpages) {
+		/* If first page does not have a pretitle, use the default ones */
+		if (page->subpages->pretitle == NULL) {
+			page->subpages->pretitle = (defaultpagetitle ? defaultpagetitle : mkbblocal);
+		}
 	}
 
 	if (!embedded && !hostsbeforepages && page->subpages) do_page_subpages(output, page->subpages, pagepath);
@@ -924,6 +935,8 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 			errprintf("Cannot rename %s to %s - error %d\n", tmpfilename, filename, errno);
 		}
 	}
+
+	free(mkbblocal);
 }
 
 
