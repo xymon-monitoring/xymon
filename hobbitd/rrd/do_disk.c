@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.18 2005-03-28 09:05:19 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.19 2005-03-28 12:04:00 henrik Exp $";
 
 static char *disk_params[] = { "rrdcreate", rrdfn, "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", 
 				rra1, rra2, rra3, rra4, NULL };
@@ -17,11 +17,12 @@ static char *disk_params[] = { "rrdcreate", rrdfn, "DS:pct:GAUGE:600:0:100", "DS
 
 int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
-	enum { DT_IRIX, DT_AS400, DT_NT, DT_UNIX, DT_NETAPP } dsystype;
+	enum { DT_IRIX, DT_AS400, DT_NT, DT_UNIX, DT_NETAPP, DT_NETWARE } dsystype;
 	char *eoln, *curline;
 
 	if (strstr(msg, " xfs ") || strstr(msg, " efs ") || strstr(msg, " cxfs ")) dsystype = DT_IRIX;
 	else if (strstr(msg, "DASD")) dsystype = DT_AS400;
+	else if (strstr(msg, "NetWare Volumes")) dsystype = DT_NETWARE;
 	else if (strstr(msg, "NetAPP")) dsystype = DT_NETAPP;
 	else if (strstr(msg, "Filesystem")) dsystype = DT_NT;
 	else dsystype = DT_UNIX;
@@ -43,8 +44,11 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		/* All clients except AS/400 report the mount-point with slashes - ALSO Win32 clients. */
 		if ((dsystype != DT_AS400) && (strchr(curline, '/') == NULL)) goto nextline;
 
-		if ((dsystype != DT_NETAPP) && (*curline == '&')) goto nextline; /* red/yellow filesystems show up twice */
-		if ((dsystype != DT_NETAPP) && (strstr(curline, " red ") || strstr(curline, " yellow "))) goto nextline;
+		/* red/yellow filesystems show up twice */
+		if ((dsystype != DT_NETAPP) && (dsystype != DT_NETWARE)) {
+			if (*curline == '&') goto nextline; 
+			if ((strstr(curline, " red ") || strstr(curline, " yellow "))) goto nextline;
+		}
 
 		for (i=0; (i<20); i++) columns[i] = "";
 		fsline = xstrdup(curline); i = 0; p = strtok(fsline, " ");
@@ -96,6 +100,11 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			else if (*p == 'G') aused *= (1024*1024);
 			else if (*p == 'T') aused *= (1024*1024*1024);
 			break;
+		  case DT_NETWARE:
+			diskname = xstrdup(columns[1]);
+			p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
+			aused = atoll(columns[3]);
+			pused = atoi(columns[7]);	/* Value without purging purgeable data. */
 		}
 
 		if (diskname && (pused != -1)) {
