@@ -10,7 +10,7 @@
 <BODY BGCOLOR="&BBBACKGROUND" BACKGROUND="&BBSKIN/bkg-&BBBACKGROUND.gif" TEXT="#D8D8BF" LINK="#00FFAA" VLINK="#FFFF44">
 
 <TABLE SUMMARY="Topline" WIDTH="100%">
-<TR><TD HEIGHT=16>&nbsp</TD></TR>  <!-- For the menu bar -->
+<TR><TD HEIGHT=16>&nbsp;</TD></TR>  <!-- For the menu bar -->
 <TR>
   <TD VALIGN=CENTER ALIGN=LEFT WIDTH="30%">
     <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>Hobbit</B></FONT>
