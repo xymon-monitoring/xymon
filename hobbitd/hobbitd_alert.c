@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.39 2005-02-06 11:57:21 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.40 2005-02-06 17:37:21 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -259,16 +259,19 @@ int main(int argc, char *argv[])
 			include_configid = 1;
 		}
 		else if (argnmatch(argv[argi], "--test")) {
-			char *testhost = NULL, *testservice = NULL, *testpage = NULL;
+			char *testhost = NULL, *testservice = NULL, *testpage = NULL, *testcolor = "red";
+			int testdur = 0;
 			FILE *logfd = NULL;
 			activealerts_t *awalk = NULL;;
 
 			argi++; if (argi < argc) testhost = argv[argi];
 			argi++; if (argi < argc) testservice = argv[argi];
 			argi++; if (argi < argc) testpage = argv[argi];
+			argi++; if (argi < argc) testdur = atoi(argv[argi]);
+			argi++; if (argi < argc) testcolor = argv[argi];
 
 			if ((testhost == NULL) || (testservice == NULL)) {
-				printf("Usage: hobbitd_alert --test HOST SERVICE [PAGE]\n");
+				printf("Usage: hobbitd_alert --test HOST SERVICE [PAGE [duration [color]]]\n");
 				return 1;
 			}
 
@@ -279,10 +282,10 @@ int main(int argc, char *argv[])
 			awalk->testname = find_name(&testnames, testservice);
 			awalk->location = find_name(&locations, testpage);
 			strcpy(awalk->ip, "127.0.0.1");
-			awalk->color = COL_RED;
+			awalk->color = parse_color(testcolor);
 			awalk->pagemessage = "Test of the alert configuration";
 			awalk->ackmessage = NULL;
-			awalk->eventstart = time(NULL);
+			awalk->eventstart = time(NULL) - testdur*60;
 			awalk->nextalerttime = 0;
 			awalk->state = A_PAGING;
 			awalk->cookie = 12345;
@@ -530,11 +533,12 @@ int main(int argc, char *argv[])
 		 * notification child and let it handle all of it. But there is no
 		 * reason to fork a child process unless it is going to do something.
 		 */
+		load_alertconfig(configfn, alertcolors, alertinterval);
 		anytogo = 0;
 		for (awalk = ahead; (awalk); awalk = awalk->next) {
 			switch (awalk->state) {
 			  case A_PAGING:
-				if (awalk->nextalerttime <= now) anytogo++;
+				if ((awalk->nextalerttime <= now) && have_recipient(awalk)) anytogo++;
 				break;
 
 			  case A_ACKED:
@@ -559,9 +563,7 @@ int main(int argc, char *argv[])
 		if (anytogo) {
 			pid_t childpid;
 
-			load_alertconfig(configfn, alertcolors, alertinterval);
 			childpid = fork();
-
 			if (childpid == 0) {
 				/* The child */
 				start_alerts();
