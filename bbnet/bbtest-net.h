@@ -30,6 +30,7 @@ typedef struct svcinfo_t {
 	char *sendtxt;
 	char *exptext;
 	int  grabbanner;
+	int  istelnet;
 } svcinfo_t;
 
 typedef struct test_t {
@@ -40,6 +41,9 @@ typedef struct test_t {
 	struct timeval timestart, duration;
 	struct svcinfo_t *svcinfo;      /* Points to svcinfo_t for service */
 	int  silenttest;
+	unsigned char *telnetbuf;
+	int telnetbuflen;
+	int telnetnegotiate;
 	int  readpending;               /* Temp status while reading banner */
 	char *banner;                   /* Banner text from service */
 	struct test_t *next;
