@@ -84,6 +84,7 @@ int main(int argc, char *argv[])
 	enum role_t role = ROLE_STATUS;
 	int argi;
 	int seq;
+	int running = 1;
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--status")) {
@@ -115,7 +116,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	while ((msg = get_bbgend_message("filestore", &seq, NULL)) != NULL) {
+	while (running) {
 		char *items[20] = { NULL, };
 		char *statusdata = "";
 		char *p;
@@ -123,6 +124,12 @@ int main(int argc, char *argv[])
 		char *hostname, *testname;
 		time_t expiretime = 0;
 		char logfn[MAX_PATH];
+
+		msg = get_bbgend_message("filestore", &seq, NULL);
+		if (msg == NULL) {
+			running = 0;
+			continue;
+		}
 
 		p = strchr(msg, '\n'); 
 		if (p) {
@@ -241,6 +248,9 @@ int main(int argc, char *argv[])
 			sprintf(logfn, "%s/%s.%s", filedir, hostname, testname);
 			sprintf(newfn, "%s/%s.%s", filedir, hostname, newtestname);
 			rename(logfn, newfn);
+		}
+		else if (strncmp(items[0], "@@shutdown", 10) == 0) {
+			running = 0;
 		}
 		else {
 			errprintf("Dropping message type %s, metacount=%d\n", items[0], metacount);
