@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.107 2003-08-31 21:19:21 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.108 2003-09-01 20:45:41 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -324,11 +324,11 @@ void load_tests(void)
 
 	/* Each network test tagged with NET:locationname */
 	p = getenv("BBLOCATION");
-	if (p) {
+	if (p && (strlen(p) > 0)) {
 		netstring = (char *) malloc(strlen(p)+strlen("NET:")+1);
 		sprintf(netstring, "NET:%s", p);
 		routestring = (char *) malloc(strlen(p)+strlen("route_:")+1);
-		sprintf(netstring, "route_%s:", p);
+		sprintf(routestring, "route_%s:", p);
 	}
 	else {
 		netstring = NULL;
