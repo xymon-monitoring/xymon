@@ -22,6 +22,8 @@
 #include <time.h>
 #include <stddef.h>
 
+#define VERSION "1.10pre"
+
 /* Structure defs for bbgen */
 
 /*
@@ -114,7 +116,7 @@
 
 
 /* Max length of a single line in bb-hosts */
-#define MAX_LINE_LEN 1024
+#define MAX_LINE_LEN 4096
 
 /* Max size of a BB message */
 /* NB: This MUST match your MAXSIZE setting in bb.h */
