@@ -318,6 +318,11 @@ application.
 is a proxy-server that forwards Big Brother messages between
 clients and the BBDISPLAY server.
 
+.I trimhistory(8)
+is a tool to trim the Hobbit history logs. It will remove all
+log entries and optionally also the individual status-logs for
+events that happened before a given time.
+
 .SH REQUIREMENTS
 Hobbit runs on Unix-like systems - e.g. Linux, OpenBSD or Solaris.
 It relies on a number of Open-Source libraries and tools:
@@ -430,6 +435,6 @@ bb-larrdcolumn(1), bb-infocolumn(1), bb-findhost.cgi(1), bb-csvinfo.cgi(1), bb-r
 bb-replog.cgi(1), bb-snapshot.cgi(1), bb-eventlog.cgi(1),
 bbtest-net(1), bbretest-net.sh(1), bb-services(5),
 bb(1), bbmessage.cgi(1), bbhostgrep(1), bbhostshow(1), bbdigest(1), bbcombotest(1), bbcombotest.cfg(5),
-bbproxy(8),
+bbproxy(8), trimhistory(8),
 bb-hosts(5), hobbitserver.cfg(5)
 
