@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.14 2004-11-18 14:13:42 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.15 2004-11-25 21:37:00 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -1019,36 +1019,34 @@ time_t next_alert(activealerts_t *alert)
 
 void cleanup_alert(activealerts_t *alert)
 {
-	if (alert->state == A_RECOVERED) {
-		/*
-		 * A status has recovered and gone green. So we clear out all info
-		 * we have about this alert and it's recipients.
-		 */
-		char *id;
-		repeat_t *rptwalk, *rptprev;
+	/*
+	 * A status has recovered and gone green, or it has been deleted. 
+	 * So we clear out all info we have about this alert and it's recipients.
+	 */
+	char *id;
+	repeat_t *rptwalk, *rptprev;
 
-		id = (char *)malloc(strlen(alert->hostname->name)+strlen(alert->testname->name)+3);
-		sprintf(id, "%s|%s|", alert->hostname->name, alert->testname->name);
-		rptwalk = rpthead; rptprev = NULL;
-		while (rptwalk) {
-			if (strncmp(rptwalk->recipid, id, strlen(id)) == 0) {
-				repeat_t *tmp = rptwalk;
+	id = (char *)malloc(strlen(alert->hostname->name)+strlen(alert->testname->name)+3);
+	sprintf(id, "%s|%s|", alert->hostname->name, alert->testname->name);
+	rptwalk = rpthead; rptprev = NULL;
+	while (rptwalk) {
+		if (strncmp(rptwalk->recipid, id, strlen(id)) == 0) {
+			repeat_t *tmp = rptwalk;
 
-				if (rptwalk == rpthead) {
-					rptwalk = rpthead = rpthead->next;
-				}
-				else {
-					rptprev->next = rptwalk->next;
-					rptwalk = rptwalk->next;
-				}
-
-				free(tmp->recipid);
-				free(tmp);
+			if (rptwalk == rpthead) {
+				rptwalk = rpthead = rpthead->next;
 			}
 			else {
-				rptprev = rptwalk;
+				rptprev->next = rptwalk->next;
 				rptwalk = rptwalk->next;
 			}
+
+			free(tmp->recipid);
+			free(tmp);
+		}
+		else {
+			rptprev = rptwalk;
+			rptwalk = rptwalk->next;
 		}
 	}
 }
