@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.18 2004-11-04 16:59:23 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.19 2004-11-05 07:54:18 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -244,7 +244,7 @@ int main(int argc, char *argv[])
 						     items[2], items[7], logtime, timesincechange, ackmsg);
 			}
 		}
-		else if ((role == ROLE_DATA) && (metacount > 4) && (strncmp(items[0], "@@data", 6)) == 0) {
+		else if ((role == ROLE_DATA) && (metacount > 4) && (strncmp(items[0], "@@data", 6) == 0)) {
 			/* @@data|timestamp|sender|hostname|testname */
 			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			testname = items[4];
