@@ -19,41 +19,15 @@
 #ifndef __LOADDATA_H_
 #define __LOADDATA_H_
 
-/* List definition to search for page records */
-typedef struct pagelist_t {
-	struct bbgen_page_t *pageentry;
-	struct pagelist_t *next;
-} pagelist_t;
-
-extern int hostcount;
 extern int statuscount;
-extern int pagecount;
-extern int purplecount;
-extern char *purplelogfn;
 
-extern link_t *load_all_links(void);
-extern bbgen_page_t *load_bbhosts(char *pgset);
-extern state_t *load_state(dispsummary_t **sumhead);
-
-/* Needed by the summary handling */
-extern host_t *init_host(const char *hostname, const char *displayname, const char *comment, const char *description,
-			 const int ip1, const int ip2, const int ip3, const int ip4,
-			 const int dialup, const int prefer, 
-			 const double warnpct, const char *reporttime,
-			 char *alerts, int nktime, char *waps, char *tags, 
-			 char *nopropyellowtests, char *nopropredtests, char *noproppurpletests,
-			 char *larrdgraphs, int modembanksize);
-
-extern char	*nopropyellowdefault;
-extern char	*nopropreddefault;
-extern char	*noproppurpledefault;
-extern char	*larrdgraphs_default;
-extern int	enable_purpleupd;
-extern int	purpledelay;
 extern char     *ignorecolumns;
-extern char     *wapcolumns;
 extern char	*dialupskin;
 extern char	*reverseskin;
-extern time_t   snapshot;
+
+extern int	enable_purpleupd;
+extern int	purpledelay;
+extern int 	purplecount;
+extern char 	*purplelogfn;
 
 #endif
