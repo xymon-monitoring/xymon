@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.63 2003-06-21 07:33:54 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.64 2003-06-21 15:11:19 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -35,6 +35,7 @@ static char rcsid[] = "$Id: pagegen.c,v 1.63 2003-06-21 07:33:54 henrik Exp $";
 #include "pagegen.h"
 #include "larrdgen.h"
 #include "infogen.h"
+#include "bb-replog.h"
 #include "debug.h"
 
 int  subpagecolumns = 1;
@@ -217,7 +218,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 	return (head);
 }
 
-void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int pagetype)
+void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int pagetype, char *pagepath)
 {
 	/*
 	 * This routine outputs the host part of a page or a group.
@@ -354,22 +355,54 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 							getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
 					}
 					else {
-						fprintf(output, "<A HREF=\"%s/bb-replog.sh?HOSTSVC=%s.%s&IP=%s",
-							getenv("CGIBINURL"), commafy(h->hostname), e->column->name, h->ip);
-						fprintf(output, "&COLOR=%s&PCT=%.2f&ST=%lu&END=%lu",
-							colorname(e->color), e->repinfo->availability, 
-							e->repinfo->reportstart, reportend);
-						fprintf(output, "&RED=%.2f&YEL=%.2f&GRE=%.2f&PUR=%.2f&CLE=%.2f&BLU=%.2f",
-							e->repinfo->pct[COL_RED], e->repinfo->pct[COL_YELLOW], 
-							e->repinfo->pct[COL_GREEN], e->repinfo->pct[COL_PURPLE], 
-							e->repinfo->pct[COL_CLEAR], e->repinfo->pct[COL_BLUE]);
-						fprintf(output, "&STYLE=%s&FSTATE=%s",
-							reportstyle, e->repinfo->fstate);
-						fprintf(output, "&REDCNT=%d&YELCNT=%d&GRECNT=%d&PURCNT=%d&CLECNT=%d&BLUCNT=%d",
-							e->repinfo->count[COL_RED], e->repinfo->count[COL_YELLOW], 
-							e->repinfo->count[COL_GREEN], e->repinfo->count[COL_PURPLE], 
-							e->repinfo->count[COL_CLEAR], e->repinfo->count[COL_BLUE]);
-						fprintf(output, "\">\n");
+						if (dynamicreport) {
+							fprintf(output, "<A HREF=\"%s/bb-replog.sh?HOSTSVC=%s.%s&IP=%s",
+								getenv("CGIBINURL"), commafy(h->hostname), e->column->name, h->ip);
+							fprintf(output, "&COLOR=%s&PCT=%.2f&ST=%lu&END=%lu",
+								colorname(e->color), e->repinfo->availability, 
+								e->repinfo->reportstart, reportend);
+							fprintf(output, "&RED=%.2f&YEL=%.2f&GRE=%.2f&PUR=%.2f&CLE=%.2f&BLU=%.2f",
+								e->repinfo->pct[COL_RED], e->repinfo->pct[COL_YELLOW], 
+								e->repinfo->pct[COL_GREEN], e->repinfo->pct[COL_PURPLE], 
+								e->repinfo->pct[COL_CLEAR], e->repinfo->pct[COL_BLUE]);
+							fprintf(output, "&STYLE=%s&FSTATE=%s",
+								stylenames[reportstyle], e->repinfo->fstate);
+							fprintf(output, "&REDCNT=%d&YELCNT=%d&GRECNT=%d&PURCNT=%d&CLECNT=%d&BLUCNT=%d",
+								e->repinfo->count[COL_RED], e->repinfo->count[COL_YELLOW], 
+								e->repinfo->count[COL_GREEN], e->repinfo->count[COL_PURPLE], 
+								e->repinfo->count[COL_CLEAR], e->repinfo->count[COL_BLUE]);
+							fprintf(output, "\">\n");
+						}
+						else {
+							FILE *htmlrep, *textrep;
+							char htmlrepfn[MAX_PATH];
+							char textrepfn[MAX_PATH];
+							char textrepurl[MAX_PATH];
+
+							/* File names are relative - current directory is the output dir */
+							/* pagepath is either empty, or it ends with a '/' */
+							sprintf(htmlrepfn, "%s%s-%s%s", 
+								pagepath, h->hostname, e->column->name, htmlextension);
+							sprintf(textrepfn, "%savail-%s-%s.txt",
+								pagepath, h->hostname, e->column->name);
+							sprintf(textrepurl, "%s/%s", 
+								getenv("BBWEB"), textrepfn);
+
+							htmlrep = fopen(htmlrepfn, "w");
+							textrep = fopen(textrepfn, "w");
+
+							/* Pre-build the test-specific report */
+							generate_replog(htmlrep, textrep, textrepurl,
+									h->hostname, h->ip, e->column->name, e->color, 
+									reportstyle, reportstart, reportend,
+									reportwarnlevel, reportgreenlevel, e->repinfo);
+
+							if (textrep) fclose(textrep);
+							if (htmlrep) fclose(htmlrep);
+
+							fprintf(output, "<A HREF=\"%s-%s%s\">\n", 
+								h->hostname, e->column->name, htmlextension);
+						}
 						fprintf(output, "<FONT SIZE=-1 COLOR=%s><B>%.2f</B></FONT></A>\n",
 							colorname(e->color), e->repinfo->availability);
 					}
@@ -393,7 +426,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 	free(bbskin);
 }
 
-void do_groups(group_t *head, FILE *output)
+void do_groups(group_t *head, FILE *output, char *pagepath)
 {
 	/*
 	 * This routine generates all the groups on a given page.
@@ -416,7 +449,7 @@ void do_groups(group_t *head, FILE *output)
 			fprintf(output, "</TABLE></CENTER>\n");
 		}
 
-		do_hosts(g->hosts, g->onlycols, output, g->title, PAGE_BB);
+		do_hosts(g->hosts, g->onlycols, output, g->title, PAGE_BB, pagepath);
 	}
 	fprintf(output, "\n</CENTER>\n");
 }
@@ -507,7 +540,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 	fprintf(output, "<HR WIDTH=100%%></TD></TR>\n");
 	fprintf(output, "<TR><TD>\n");
 
-	do_hosts(sumhosts, NULL, output, "", 0);
+	do_hosts(sumhosts, NULL, output, "", 0, NULL);
 
 	fprintf(output, "</TD></TR></TABLE>\n");
 	fprintf(output, "</CENTER>\n");
@@ -562,7 +595,7 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *pagepath)
 				fprintf(output, "<TD><FONT %s>%s</FONT></TD>\n", getenv("MKBBROWFONT"), p->title);
 			}
 
-			fprintf(output, "<TD><CENTER><A HREF=\"%s/%s%s/%s%s\">\n", 
+			fprintf(output, "<TD><CENTER><A HREF=\"%s/%s/%s/%s%s\">\n", 
 					getenv("BBWEB"), pagepath, p->name, p->name, htmlextension);
 
 			fprintf(output, "<IMG SRC=\"%s/%s\" WIDTH=\"%s\" HEIGHT=\"%s\" BORDER=0 ALT=\"%s\"></A>\n", 
@@ -617,7 +650,7 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 	
 			for (pgwalk = page; (pgwalk); pgwalk = pgwalk->parent) {
 				if (strlen(pgwalk->name)) {
-					sprintf(tmppath, "%s/%s", pgwalk->name, pagepath);
+					sprintf(tmppath, "%s/%s/", pgwalk->name, pagepath);
 					strcpy(pagepath, tmppath);
 				}
 			}
@@ -677,8 +710,8 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 	}
 
 	if (!embedded && !hostsbeforepages && page->subpages) do_page_subpages(output, page->subpages, pagepath);
-	do_hosts(page->hosts, NULL, output, "", PAGE_BB);
-	do_groups(page->groups, output);
+	do_hosts(page->hosts, NULL, output, "", PAGE_BB, pagepath);
+	do_groups(page->groups, output, pagepath);
 	if (!embedded && hostsbeforepages && page->subpages) do_page_subpages(output, page->subpages, pagepath);
 
 	/* Summaries and extensions on main page only */
@@ -1119,7 +1152,7 @@ int do_bb2_page(char *filename, int summarytype)
 	fprintf(output, "\n<A NAME=begindata>&nbsp;</A> \n<A NAME=\"hosts-blk\">&nbsp;</A>\n");
 
 	if (bb2page.hosts) {
-		do_hosts(bb2page.hosts, NULL, output, "", summarytype);
+		do_hosts(bb2page.hosts, NULL, output, "", summarytype, NULL);
 	}
 	else {
 		/* "All Monitored Systems OK */
