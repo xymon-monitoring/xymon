@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.3 2004-11-16 21:07:31 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.4 2004-11-16 21:36:20 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -397,6 +397,7 @@ int main(int argc, char *argv[])
 		if (logfn && dologswitch) {
 			freopen(logfn, "a", stdout);
 			freopen(logfn, "a", stderr);
+			dologswitch = 0;
 		}
 
 		/* Pick up children that have terminated */
