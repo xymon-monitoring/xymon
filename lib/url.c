@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: url.c,v 1.1 2004-10-30 15:33:16 henrik Exp $";
+static char rcsid[] = "$Id: url.c,v 1.2 2004-10-31 11:39:22 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -36,9 +36,11 @@ static loginlist_t *loginhead = NULL;
 
 char *urlunescape(char *url)
 {
-	char *pin, *pout, *result;
+	static char *result = NULL;
+	char *pin, *pout;
 
 	pin = url;
+	if (result) free(result);
 	pout = result = (char *) malloc(strlen(pin) + 1);
 	while (*pin) {
 		if (*pin == '+') {
@@ -78,10 +80,12 @@ char *urldecode(char *envvar)
 
 char *urlencode(char *s)
 {
-	static char result[1024];
+	static char *result = NULL;
 	char *inp, *outp;
 
-	outp = result;
+	if (result) free(result);
+	outp = result = (char *)malloc(strlen(s)+1);
+
 	for (inp = s; (inp && *inp && (outp-result < sizeof(result)) ); inp++) {
 		if ( ( (*inp >= 'a') && (*inp <= 'z') ) ||
 		     ( (*inp >= 'A') && (*inp <= 'Z') ) ||
@@ -101,8 +105,8 @@ char *urlencode(char *s)
 
 int urlvalidate(char *query, char *validchars)
 {
+	static int valid;
 	char *p;
-	int valid;
 
 	if (validchars == NULL) validchars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ,.-:&_%=*+/ ";
 
