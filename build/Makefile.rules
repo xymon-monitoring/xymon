@@ -134,6 +134,9 @@ ldaptest.o: ldaptest.c ldaptest.h
 httptest.o: httptest.c httptest.h
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ httptest.c
 
+httpresult.o: httpresult.c httpresult.h
+	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ httpresult.c
+
 contest.o: contest.c contest.h
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ contest.c
 
