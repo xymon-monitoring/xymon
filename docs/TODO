@@ -5,15 +5,6 @@ Suggestions from users
   the other pages showing this host. Maybe from the "info"
   column view ?
 
-Ideas of my own
----------------
-* Check of RPC services using getrpcent and rpcinfo
-* libcurl can support LDAP queries. So implement support
-  for running ldap checks, if the runtime library does.
-  Hmm ... apparently it does not work :-( and the curl
-  guys dont want to support it anymore :-((
-  Cf. curl bug item #735752
-
 If I have too much time someday
 -------------------------------
 * Use Autoconf. Need to learn how to use it first, though.
