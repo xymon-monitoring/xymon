@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.69 2003-07-02 09:29:49 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.70 2003-07-02 09:41:01 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -48,6 +48,7 @@ char *htmlextension = ".html"; /* Filename extension for generated files */
 char *defaultpagetitle = NULL;
 
 /* Format strings for htaccess files */
+char *htaccess = NULL;
 char *bbhtaccess = NULL;
 char *bbpagehtaccess = NULL;
 char *bbsubpagehtaccess = NULL;
@@ -230,10 +231,12 @@ void setup_htaccess(const char *pagepath)
 	char htaccessfn[MAX_PATH];
 	char htaccesscontent[1024];
 
+	if (htaccess == NULL) return;
+
 	htaccesscontent[0] = '\0';
 
 	if (strlen(pagepath) == 0) {
-		sprintf(htaccessfn, ".htaccess");
+		sprintf(htaccessfn, "%s", htaccess);
 		if (bbhtaccess) strcpy(htaccesscontent, bbhtaccess);
 	}
 	else {
@@ -242,7 +245,7 @@ void setup_htaccess(const char *pagepath)
 
 		for (p = path + strlen(path) - 1; ((p > path) && (*p == '/')); p--) *p = '\0';
 
-		sprintf(htaccessfn, "%s/.htaccess", path);
+		sprintf(htaccessfn, "%s/%s", path, htaccess);
 
 		pagename = path; if (*pagename == '/') pagename++;
 		p = strchr(pagename, '/'); 

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.134 2003-07-02 09:29:49 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.135 2003-07-02 09:41:01 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -140,6 +140,11 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[i], "--htmlextension=")) {
 			char *lp = strchr(argv[i], '=');
 			htmlextension = malcop(lp+1);
+		}
+		else if (argnmatch(argv[i], "--htaccess")) {
+			char *lp = strchr(argv[i], '=');
+			if (lp) htaccess = malcop(lp+1);
+			else htaccess = ".htaccess";
 		}
 		else if ((strcmp(argv[i], "--wml") == 0) || argnmatch(argv[i], "--wml=")) {
 			char *lp = strchr(argv[i], '=');
