@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.10 2003-08-16 07:12:50 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.11 2003-09-04 21:05:56 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -76,8 +76,16 @@ static void loadtests(void)
 	char fn[MAX_PATH];
 	char l[MAX_LINE_LEN];
 
-	sprintf(fn, "%s/etc/bbcombotests.cfg", getenv("BBHOME"));
+	sprintf(fn, "%s/etc/bbcombotest.cfg", getenv("BBHOME"));
 	fd = fopen(fn, "r");
+	if (fd == NULL) {
+		/* 
+		 * Why this ? Because I goofed and released a version using bbcombotests.cfg,
+		 * and you shouldn't break peoples' setups when fixing silly bugs.
+		 */
+		sprintf(fn, "%s/etc/bbcombotests.cfg", getenv("BBHOME"));
+		fd = fopen(fn, "r");
+	}
 	if (fd == NULL) return;
 
 	while (fgets(l, sizeof(l), fd)) {
