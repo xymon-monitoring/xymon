@@ -74,15 +74,10 @@ case "$1" in
 	;;
 
    "rotate")
-	if test -s @BBLOGDIR@/hobbitlaunch.pid
-	then
-		kill -HUP `cat @BBLOGDIR@/hobbitlaunch.pid`
-	fi
-
-	if test -s @BBLOGDIR@/hobbitd.pid
-	then
-		kill -HUP `cat @BBLOGDIR@/hobbitd.pid`
-	fi
+   	for PIDFILE in @BBLOGDIR@/*.pid
+	do
+		kill -HUP `cat $PIDFILE`
+	done
 	;;
 
    *)
