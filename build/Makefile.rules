@@ -4,7 +4,7 @@
 
 CFLAGS += -DMAXMSG=$(MAXMSG)
 
-PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi
+PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi
 CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh
 EXTENSIONS = bbcombotest bbretest-net.sh
 MAN1PAGES = bbgen.1 bbtest-net.1 bbhostgrep.1 bbhostshow.1 bb-rep.cgi.1 bb-replog.cgi.1 bb-hist.cgi.1 bb-snapshot.cgi.1 bbcombotest.1 bbretest-net.sh.1
@@ -21,7 +21,7 @@ all: $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS)
 	@echo "and then you can later run 'make install-cgi' to install cgi scripts"
 	@echo ""
 
-GENOBJS = bbgen.o debug.o loaddata.o reportdata.o larrdgen.o pagegen.o process.o util.o infogen.o alert.o wmlgen.o rssgen.o bb-replog.o sendmsg.o
+GENOBJS = bbgen.o debug.o loaddata.o reportdata.o larrdgen.o pagegen.o eventlog.o acklog.o process.o util.o infogen.o alert.o wmlgen.o rssgen.o bb-replog.o sendmsg.o
 NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o ldaptest.o sendmsg.o
 HOSTGREPOBJS = bbhostgrep.o util.o debug.o
 HOSTSHOWOBJS = bbhostshow.o util.o debug.o
@@ -30,6 +30,7 @@ REPLOGOBJS = bb-replog-cgi.o reportdata.o debug.o util.o
 HISTOBJS = bb-hist.o reportdata.o debug.o util.o
 COMBOTESTOBJS = bbcombotest.o util.o debug.o calc.o sendmsg.o
 SNAPOBJS = bb-snapshot.o debug.o util.o
+EVENTLOGOBJS = bb-eventlog.o debug.o util.o
 
 bbgen: $(GENOBJS)
 	$(CC) $(CFLAGS) -o $@ $(GENOBJS) $(NETLIBS)
@@ -57,6 +58,12 @@ bb-hist.cgi: $(HISTOBJS)
 
 bb-snapshot.cgi: $(SNAPOBJS)
 	$(CC) $(CFLAGS) -o $@ $(SNAPOBJS)
+
+bb-eventlog.o: eventlog.o
+	$(CC) $(CFLAGS) -DCGI -c -o $@ eventlog.c
+
+bb-eventlog.cgi: $(EVENTLOGOBJS)
+	$(CC) $(CFLAGS) -o $@ $(EVENTLOGOBJS)
 
 bbcombotest: $(COMBOTESTOBJS)
 	$(CC) $(CFLAGS) -o $@ $(COMBOTESTOBJS) $(NETLIBS)
