@@ -1,0 +1,44 @@
+.TH BBD_ALERT 8 "Version 3.2:  4 okt 2004" "bbgen toolkit"
+.SH NAME
+bbd_alert \- bbgend worker module for sending out alerts
+.SH SYNOPSIS
+.B "bbd_channel --channel=page bbd_alert [options]"
+
+.SH DESCRIPTION
+bbd_alert is a worker module for bbgend, and as such it is normally
+run via the
+.I bbd_channel(8)
+program. It receives bbgend page- and ack-messages from the "page" 
+channel via stdin, and uses these to send out alerts about failed 
+and recovered hosts and services.
+
+.B This module is not compatible with standard Big Brother
+
+The operation of this module is controlled by the
+.I bb-alerts.cfg(5)
+file.
+
+
+.SH OPTIONS
+.IP "--debug"
+Enable debugging output.
+
+.SH ENVIRONMENT
+.IP MAIL
+The first part of a command line used to send out an e-mail with a 
+subject, typically set to "/usr/bin/mail -s" . bbd_alert will add
+the subject and the mail recipients to form the command line used
+for sending out email alerts.
+
+.IP MAILC
+The first part of a command line used to send out an e-mail without
+a subject. Typically this will be "/usr/bin/mail". bbd_alert will
+add the mail recipients to form the command line used for sending
+out email alerts.
+
+.SH FILES
+.IP "$BBHOME/etc/bb-alerts.cfg"
+
+.SH "SEE ALSO"
+bbd_channel(8), bbgen-intro(7), bbgend(8)
+

@@ -1,0 +1,58 @@
+.TH BBD_CHANNEL 8 "Version 3.2:  4 okt 2004" "bbgen toolkit"
+.SH NAME
+bbd_channel \- Feed a bbgend channel to a worker module
+.SH SYNOPSIS
+.B "bbd_channel --channel=CHANNEL [options] workerprogram [worker-options]"
+
+.SH DESCRIPTION
+bbd_channel hooks into one of the 
+.I bbgend(8)
+channels that provide information about events occurring in the BB system.
+It retrieves messages from the bbgend daemon, and passes them on to the
+.I workerprogram
+on the STDIN of the worker program. Worker programs can then handle
+messages as they like.
+
+A number of worker programs are shipped with bbgend, e.g.
+.I bbd_filestore(8),
+.I bbd_htmllog(8),
+.I bbd_history(8),
+.I bbd_alert(8),
+.I bbd_larrd(8)
+
+If you want to write your own worker module, a sample worker module
+is provided as part of the bbgend distribution in the bbd_sample.c
+file. This illustrates how to easily fetch and parse messages.
+
+.SH OPTIONS
+bbd_channel accepts a few options.
+
+.IP "--channel=CHANNELNAME"
+Specifies the channel to receive messages from, only one channel can be used.
+This option is required. The following channels are available:
+.br
+"status" receives all Big Brother status- and summary-messages
+.br
+"stachg" receives information about status changes
+.br
+"page" receives information about statuses triggering alerts
+.br
+"data" receives all Big Brother "data" messages
+.br
+"notes" receives all Big Brother "notes" messages
+.br
+"enadis" receives information about hosts being disabled or enabled.
+
+.IP "--no-daemon"
+bbd_channel normally detaches from the terminal and runs as a background
+proces. This option keeps it running as a foreground proces.
+
+.IP "--debug"
+Enable debugging output.
+
+.SH FILES
+This program does not use any configuration files.
+
+.SH "SEE ALSO"
+bbgen-intro(7), bbgend(8)
+

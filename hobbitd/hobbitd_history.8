@@ -1,0 +1,54 @@
+.TH BBD_HISTORY 8 "Version 3.2:  4 okt 2004" "bbgen toolkit"
+.SH NAME
+bbd_history \- bbgend worker module for storing Big Brother history
+.SH SYNOPSIS
+.B "bbd_channel --channel=stachg bbd_history [options]"
+
+.SH DESCRIPTION
+bbd_history is a worker module for bbgend, and as such it is normally
+run via the
+.I bbd_channel(8)
+program. It receives bbgend status-change messages from the "stachg" 
+channel via stdin, and uses these to update the standard Big Brother
+history files in a manner that is compatible with the standard Big Brother 
+daemon, bbd.
+
+.SH OPTIONS
+.IP "--histdir=DIRECTORY"
+The directory for the Big Brother history files. If not specified, the
+directory given by the BBHIST environment is used.
+
+.IP "--histlogdir=DIRECTORY"
+The directory for the historical status-logs. If not specified, the
+directory given by the BBHISTLOGS environment is used.
+
+.IP "--debug"
+Enable debugging output.
+
+.SH ENVIRONMENT
+.IP BBALLHISTLOG
+This standard BB environment variable controls if the $BBHIST/allevents
+logfile is updated. This file is used by the event-log display on the
+BB2 html page. If you do not use this, you can disable it by setting
+BBALLHISTLOGS=FALSE.
+
+.IP BBHOSTHISTLOG
+This standard BB environment variable controls if the $BBHIST/HOSTNAME
+logfile is updated. This file holds a list of all status changes seen
+for a single host, but is not used by any of the standard Big Brother
+tools. If you do not want to save this, you can disable it by setting
+BBHOSTHISTLOG=FALSE.
+
+.IP SAVESTATUSLOG
+This standard BB environment variable controls if the historical
+status-logs are saved whenever a status change occurs. These logfiles
+are stored in the $BBHISTLOGS directory, and are used for the detailed
+log-display of a status from the Big Brother "History" page. If you
+do not want to save these, you can disable it by setting SAVESTATUSLOG=FALSE.
+
+.SH FILES
+This module does not rely on any configuration files.
+
+.SH "SEE ALSO"
+bbd_channel(8), bbgen-intro(7), bbgend(8)
+
