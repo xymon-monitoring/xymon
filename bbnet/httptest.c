@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.69 2004-08-28 07:23:41 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.70 2004-08-30 12:03:36 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -487,6 +487,7 @@ int tcp_http_data_callback(unsigned char *buf, unsigned int len, void *priv)
 		item->hdrlen += len;
 		*(item->headers + item->hdrlen) = '\0';
 
+check_for_endofheaders:
 		/* 
 		 * Now see if we have the end-of-headers delimiter.
 		 * This SHOULD be <cr><lf><cr><lf>, but RFC 2616 says
@@ -504,18 +505,39 @@ int tcp_http_data_callback(unsigned char *buf, unsigned int len, void *priv)
 				if (*p == '\r') p++;
 			}
 		} while (p && (*p != '\n'));
+		if (p) p++; /* Skip the last \n */
 
 		if (p) {
-			unsigned int bytesinheaders, bytesindata;
-			unsigned int delimchars = 1;
+			/* We have an end-of-header delimiter, but it could be just a "100 Continue" response */
+			int http1subver, httpstatus;
+			sscanf(item->headers, "HTTP/1.%d %d", &http1subver, &httpstatus);
+			if (httpstatus == 100) {
+				/* 
+				 * It's a "100"  continue-status.
+				 * Just drop this set of headers, and move on.
+				 */
+				item->hdrlen -= (p - item->headers);
+				if (item->hdrlen) {
+					memmove(item->headers, p, item->hdrlen);
+					*(item->headers + item->hdrlen) = '\0';
+				}
+				else {
+					free(item->headers);
+					item->headers = NULL;
+				}
+				goto check_for_endofheaders;
+			}
+		}
+
+		if (p) {
+			unsigned int bytesindata;
 			char *p1, *xferencoding;
 			int contlen;
 
 			/* We did find the end-of-header delim. */
 			item->gotheaders = 1;
-			if (*(p-1) == '\r') { *(p-1) = '\0'; delimchars++; } /* NULL-terminate the headers. */
-			*p = '\0';
-			p++;
+			*(p-1) = '\0';
+			if (*(p-2) == '\r') { *(p-2) = '\0'; } /* NULL-terminate the headers. */
 
 			/* See if the transfer uses chunks */
 			p1 = item->headers; xferencoding = NULL; contlen = 0;
@@ -538,9 +560,8 @@ int tcp_http_data_callback(unsigned char *buf, unsigned int len, void *priv)
 			}
 			item->contlen = (contlen ? contlen : -1);
 
-			bytesinheaders = ((p - item->headers) - delimchars);
-			bytesindata = item->hdrlen - bytesinheaders - delimchars;
-			item->hdrlen = bytesinheaders;
+			bytesindata = item->hdrlen - (p - item->headers);
+			item->hdrlen = strlen(item->headers);
 			if (*p) {
 				/* 
 				 * We received some content data together with the
