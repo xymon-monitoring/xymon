@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.18 2004-10-10 09:30:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.19 2004-10-10 17:40:51 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -118,6 +118,7 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 		strcpy(channel->channelbuf, readymsg);
 	}
 	else {
+		if (channel->seq == 999999) channel->seq = 0;
 		channel->seq++;
 		gettimeofday(&tstamp, &tz);
 		switch(channel->channelid) {
@@ -275,16 +276,24 @@ void get_hts(char *msg, char *sender,
 	}
 	if (hosttest) colstr = strtok(NULL, " \n\t");
 
-	if (hosttest) {
-		hostname = hosttest;
-		testname = strrchr(hosttest, '.');
+	if (strncmp(msg, "summary", 7) == 0) {
+		/* Summary messages are handled specially */
+		hostname = hosttest;	/* This will always be "summary" */
+		testname = strchr(hosttest, '.');
 		if (testname) { *testname = '\0'; testname++; }
-		p = hostname;
-		while ((p = strchr(p, ',')) != NULL) *p = '.';
 	}
+	else {
+		if (hosttest) {
+			hostname = hosttest;
+			testname = strrchr(hosttest, '.');
+			if (testname) { *testname = '\0'; testname++; }
+			p = hostname;
+			while ((p = strchr(p, ',')) != NULL) *p = '.';
+		}
 
-	hostname = knownhost(hostname, sender, ghosthandling, &maybedown);
-	if (hostname == NULL) return;
+		hostname = knownhost(hostname, sender, ghosthandling, &maybedown);
+		if (hostname == NULL) return;
+	}
 
 	for (hwalk = hosts; (hwalk && strcasecmp(hostname, hwalk->hostname)); hwalk = hwalk->next) ;
 	if (createhost && (hwalk == NULL)) {
@@ -357,6 +366,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	time_t now = time(NULL);
 	char *p;
 	int msglen = strlen(msg);
+	int issummary = (strncmp(msg, "summary", 7) == 0);
 
 	if (strncmp(msg, "status+", 7) == 0) {
 		validity = durationvalue(msg+7);
@@ -437,7 +447,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		}
 	}
 
-	if (oldcolor != newcolor) {
+	if ((oldcolor != newcolor) && !issummary) {
 		int oldalertstatus = ((alertcolors & (1 << oldcolor)) != 0);
 		int newalertstatus = ((alertcolors & (1 << newcolor)) != 0);
 
@@ -800,7 +810,6 @@ void do_message(conn_t *msg)
 	}
 	else if (strncmp(msg->buf, "summary", 7) == 0) {
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 1, 1);
-		/* FIXME - get_hts fails to pick up the right host/test name */
 		if (log && (color != -1)) {
 			handle_status(msg->buf, sender, h->hostname, t->testname, log, color);
 		}
@@ -1163,7 +1172,7 @@ int main(int argc, char *argv[])
 	int argi;
 	struct timeval tv;
 	struct timezone tz;
-	int daemonize = 0;
+	int daemonize = 1;
 	char *pidfile = "/var/run/bbd_net.pid";
 
 	colnames[COL_GREEN] = "green";
