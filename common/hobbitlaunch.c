@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.2 2004-11-16 16:45:07 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.3 2004-11-16 21:07:31 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -187,8 +187,15 @@ void load_config(char *conffn)
 			curtask->cmd = strdup(p);
 		}
 		else if (curtask && (strncasecmp(p, "INTERVAL ", 9) == 0)) {
+			char *tspec;
 			p += 9;
 			curtask->interval = atoi(p);
+			tspec = p + strspn(p, "0123456789");
+			switch (*tspec) {
+			  case 'm': curtask->interval *= 60; break;	/* Minutes */
+			  case 'h': curtask->interval *= 3600; break;	/* Hours */
+			  case 'd': curtask->interval *= 86400; break;	/* Days */
+			}
 		}
 		else if (curtask && (strncasecmp(p, "LOGFILE ", 8) == 0)) {
 			p += 7;
@@ -277,7 +284,7 @@ void load_config(char *conffn)
 	/* Dump configuration */
 	for (twalk = taskhead; (twalk); twalk = twalk->next) {
 		dprintf("[%s]\n", twalk->key);
-		dprintf("\t%s\n", twalk->cmd);
+		dprintf("\tCMD %s\n", twalk->cmd);
 		if (twalk->depends) dprintf("\tNEEDS %s\n", twalk->depends->key);
 		if (twalk->interval) dprintf("\tINTERVAL %d\n", twalk->interval);
 		if (twalk->logfile) dprintf("\tLOGFILE %s\n", twalk->logfile);
@@ -327,6 +334,21 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--log=")) {
 			char *p = strchr(argv[argi], '=');
 			logfn = strdup(p+1);
+		}
+		else if (strcmp(argv[argi], "--dump") == 0) {
+			/* Dump configuration */
+
+			load_config(config);
+			for (twalk = taskhead; (twalk); twalk = twalk->next) {
+				printf("[%s]\n", twalk->key);
+				printf("\tCMD %s\n", twalk->cmd);
+				if (twalk->depends)  printf("\tNEEDS %s\n", twalk->depends->key);
+				if (twalk->interval) printf("\tINTERVAL %d\n", twalk->interval);
+				if (twalk->logfile)  printf("\tLOGFILE %s\n", twalk->logfile);
+				if (twalk->envfile)  printf("\tENVFILE %s\n", twalk->envfile);
+				printf("\n");
+			}
+			return 0;
 		}
 	}
 
