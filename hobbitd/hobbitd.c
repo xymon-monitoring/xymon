@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.93 2005-01-11 23:25:51 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.94 2005-01-14 09:51:20 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1765,6 +1765,7 @@ void save_checkpoint(void)
 
 	if (checkpointfn == NULL) return;
 
+	dprintf("Start save_checkpoint\n");
 	tempfn = malloc(strlen(checkpointfn) + 20);
 	sprintf(tempfn, "%s.%d", checkpointfn, (int)now);
 	fd = fopen(tempfn, "w");
@@ -1804,6 +1805,7 @@ void save_checkpoint(void)
 	fclose(fd);
 	rename(tempfn, checkpointfn);
 	free(tempfn);
+	dprintf("End save_checkpoint\n");
 }
 
 
@@ -1954,10 +1956,12 @@ void check_purple_status(void)
 	hobbitd_log_t *lwalk;
 	time_t now = time(NULL);
 
+	dprintf("Start check for purple logs\n");
 	for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
 		lwalk = hwalk->logs;
 		while (lwalk) {
 			if (lwalk->validtime < now) {
+				dprintf("Purple log from %s %s\n", hwalk->hostname, lwalk->test->testname);
 				if (strcmp(hwalk->hostname, "summary") == 0) {
 					/*
 					 * A summary has gone stale. Drop it.
@@ -1999,6 +2003,7 @@ void check_purple_status(void)
 			}
 		}
 	}
+	dprintf("End check for purple logs\n");
 }
 
 void sig_handler(int signum)
@@ -2386,10 +2391,10 @@ int main(int argc, char *argv[])
 				if (FD_ISSET(cwalk->sock, &fdread)) {
 					n = read(cwalk->sock, cwalk->bufp, (cwalk->bufsz - cwalk->buflen - 1));
 					if (n <= 0) {
-						if (cwalk->buflen) {
-							/* FIXME - need to set origin here */
-							do_message(cwalk, "");
-						}
+						*(cwalk->bufp) = '\0';
+
+						/* FIXME - need to set origin here */
+						do_message(cwalk, "");
 					}
 					else {
 						cwalk->bufp += n;
