@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.28 2003-07-09 14:51:14 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.29 2003-07-10 09:10:50 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -588,7 +588,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 		}
 	}
 
-	if (anydown) http1->downcount++;
+	if (anydown) http1->downcount++; else http1->downcount = 0;
 
 	/* Handle the "badtest" stuff for http tests */
 	if ((color == COL_RED) && (http1->downcount < http1->badtest[2])) {
