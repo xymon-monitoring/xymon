@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.19 2005-02-13 17:48:46 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.20 2005-03-18 12:00:50 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -654,7 +654,8 @@ int main(int argc, char *argv[])
 				 * This is ugly, but I cannot find a pretty way of un-mangling
 				 * the disk- and http-data that has been molested by the back-end.
 				 */
-				if ((strcmp(gdef->name, "disk") == 0) && (strcmp(param, ",root") == 0)) {
+				if ((strcmp(param, ",root") == 0) &&
+				    ((strncmp(gdef->name, "disk", 4) == 0) || (strncmp(gdef->name, "inode", 5) == 0)) ) {
 					rrddbs[rrddbcount].rrdparam = strdup(",");
 				}
 				else if ((strcmp(gdef->name, "http") == 0) && (strncmp(param, "http", 4) != 0)) {
