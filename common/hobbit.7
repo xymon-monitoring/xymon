@@ -217,14 +217,14 @@ that receives messages sent via HTTP is also included.
 .I bbretest-net.sh(1)
 is a Big Brother extension script for re-doing failed
 network tests with a higher frequency than the normal
-network tests. This allows Big Brother to pick up a
+network tests. This allows Big Brother to pick up
 the recovery of a network service as soon as it happens,
 resulting in less downtime being recorded.
 
 .I bbhostgrep(1)
 is a utility for use by BB extension scripts. It
 allows an extension script to easily pick out the hosts that
-are relevant to the script, so it need not parse a huge
+are relevant to a script, so it need not parse a huge
 bb-hosts file with lots of unwanted test-specifications.
 
 .I bbhostshow(1)
@@ -236,7 +236,7 @@ file following any "include" statements.
 is a Big Brother extension script for the BBDISPLAY server,
 allowing you to build complicated tests from simpler
 BB test results. E.g. you can define a test that uses the results
-from testing your webserver, DB server and router to have a 
+from testing your webserver, database server and router to have a 
 single test showing the availability of your enterprise web
 application.
 
@@ -314,7 +314,7 @@ as well as for the message digest calculations for content checks.
 If your system does not already have openssl installed, you can pick it
 up from http://www.openssl.org/
 
-.IP OpenLDAP
+.IP "OpenLDAP (optional)"
 If you want to test LDAP servers, it is recommended that you
 install an LDAP client library such as OpenLDAP. It is available
 from http://www.openldap.org/
@@ -375,7 +375,7 @@ A site running this software can be seen at http://www.hswn.dk/bb/
 .SH COPYRIGHT
 All tools are 
 .br
-  Copyright (C) 2002-2003, Henrik Storner <henrik@storner.dk> 
+  Copyright (C) 2002-2004, Henrik Storner <henrik@storner.dk> 
 .br
 All files are released under the GNU General Public License version 2, 
 with the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -395,7 +395,7 @@ an e-mail to
     bbgen-announce-subscribe@hswn.dk
 
 .SH "SEE ALSO"
-bbgen(1), bbtest-net(1), bbretest-net.sh(1), bbcombotest(1)
+bbgen(1), bbtest-net(1), bb(1), bbretest-net.sh(1), bbcombotest(1)
 bbhostgrep(1), bbhostshow(1), bbdigest(1),
 bb-rep.cgi(1), bb-replog.cgi(1), bb-hist.cgi(1), bb-snapshot.cgi(1),
 bb-eventlog.cgi(1), bb-findhost.cgi(1), bb-csvinfo.cgi(1)
