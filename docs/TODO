@@ -9,9 +9,14 @@ Suggestions from users
 * When a host exists on multiple pages, provide links to
   the other pages showing this host. Maybe from the "info"
   column view ?
+* Support for testing standard TCP services that are
+  tunnelled through TLS. pop3s, imaps, nntps, smtps. 
+  Need to talk to the openssl library for that.
 
 Ideas of my own
 ---------------
+* Switch httptest to use the libcurl "multi" interface
+  for multiple concurrent web checks.
 * Check of RPC services using getrpcent and rpcinfo
 * Implement the "local" tests (cpu, disk, memory,
   process, services - NOT logs) as network tests
