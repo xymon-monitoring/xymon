@@ -530,6 +530,29 @@ it should be done as
 
 	http://www.sample.com:3128=1.2.3.4/index.html
 
+.IP "Extended URL syntax for testing via proxy"
+bbtest-net supports the standard Big Brother syntax for
+specifying an HTTP proxy to use when performing http 
+tests. This syntax just joins the proxy- and the target-URL
+into one, e.g.
+.br
+    http://webproxy.sample.com:3128/http://bb4.com/
+.br
+would be the syntax for testing the Big Brother website
+via the proxy running on "webproxy.sample.com" port 3128.
+
+If the proxy portnumber is not specified, the default 
+portnumber (80) is used.
+
+If your proxy requires authentication, you can specify the
+username and password inside the proxy-part of the URL, e.g.
+.br
+    http://fred:Wilma1@webproxy.sample.com:3128/http://bb4.com/
+.br
+will authenticate to the proxy using a username of "fred" and
+a password of "Wilma1", before requesting the proxy to fetch
+the Big Brother homepage.
+
 
 .SH BBTEST-NET TAGS FOR WEB CONTENT CHECKS
 .IP cont;URL;expected_data_regexp
