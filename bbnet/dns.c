@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.4 2004-08-24 09:58:33 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.5 2004-08-27 10:29:23 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -185,22 +185,40 @@ void add_url_to_dns_queue(char *url)
 
 static void dns_queue_run(ares_channel channel)
 {
-	int status, nfds;
+	int status, nfds, selres;
 	fd_set read_fds, write_fds;
 	struct timeval *tvp, tv;
+	int progress;
+	int loops = 0;
 
-	while (1) {
+	do {
+		loops++;
 		FD_ZERO(&read_fds);
 		FD_ZERO(&write_fds);
 		nfds = ares_fds(channel, &read_fds, &write_fds);
-		if (nfds == 0)
-			break;
+		if (nfds == 0) break;
 
-		tv.tv_sec = 30; tv.tv_usec = 0;
+		tv.tv_sec = 10; tv.tv_usec = 0;
 		tvp = ares_timeout(channel, &tv, &tv);
-		select(nfds, &read_fds, &write_fds, NULL, tvp);
+		selres = select(nfds, &read_fds, &write_fds, NULL, tvp);
 		ares_process(channel, &read_fds, &write_fds);
-	}
+
+		/* 
+		 * This is a guesstimate way of preventing this from being an
+		 * infinite loop. select must return with some sort of data; 
+		 * if it does not, then a timeout happened and we'll tolerate
+		 * those only for a limited number of times.
+		 */
+		if (selres > 0) { 
+			progress = 10; 
+		}
+		else {
+			progress--;
+			if (!progress) {
+				errprintf("dns_queue_run deadlock - loops=%d\n", loops);
+			}
+		}
+	} while (progress);
 
 	ares_destroy(channel);
 }
