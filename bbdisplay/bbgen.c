@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.102 2003-05-19 15:26:27 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.103 2003-05-20 13:02:44 hstoerne Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -73,9 +73,6 @@ char *reqenv[] = {
 "MKBBROWFONT",
 "MKBBTITLE",
 "PURPLEDELAY",
-#ifdef WMLSUPPORT
-"WML_OUTPUT",
-#endif
 NULL };
 
 
@@ -91,7 +88,6 @@ int main(int argc, char *argv[])
 	char 		bb2filename[MAX_PATH];
 	char 		bbnkfilename[MAX_PATH];
 	int             larrd043 = 0;				/* Set to use LARRD 0.43 disk displays */
-
 
 	bb_color = bb2_color = bbnk_color = -1;
 	pagedir = rrddir = NULL;
@@ -393,13 +389,16 @@ int main(int argc, char *argv[])
 		add_timestamp("Summary transmission done");
 	}
 
-#ifdef WMLSUPPORT
 	/* Generate a hosts file for the WML generator */
-	if ((pagesets == NULL) && (strcmp(getenv("WML_OUTPUT"), "TRUE") == 0)) {
-		do_wml_cards(0);
-		add_timestamp("WML generation done");
+	if (getenv("WML_OUTPUT")) {
+		int wml_update_interval = 300;
+		int enable_wmlgen = (strcmp(getenv("WML_OUTPUT"), "TRUE") == 0);
+
+		if ((pageset == NULL) && run_columngen("wml", wml_update_interval, enable_wmlgen)) {
+			do_wml_cards();
+			add_timestamp("WML generation done");
+		}
 	}
-#endif
 
 	add_timestamp("Run completed");
 	show_timestamps();

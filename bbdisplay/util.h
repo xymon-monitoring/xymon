@@ -40,7 +40,7 @@ extern char *hostpage_name(host_t *host);
 extern char *commafy(char *hostname);
 extern void sethostenv(char *host, char *ip, char *svc, char *color);
 extern void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, int bgcolor);
-extern int checkalert(host_t *host, char *test);
+extern int checkalert(char *alertlist, char *test);
 extern int checkpropagation(host_t *host, char *test, int color);
 
 extern link_t *find_link(const char *name);

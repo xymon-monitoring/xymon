@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.64 2003-05-20 10:09:42 hstoerne Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.65 2003-05-20 13:02:44 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -182,7 +182,7 @@ group_t *init_group(const char *title, const char *onlycols)
 }
 
 host_t *init_host(const char *hostname, const int ip1, const int ip2, const int ip3, const int ip4, 
-		  const int dialup, const char *alerts, 
+		  const int dialup, const char *alerts, const char *waps,
 		  char *tags,
 		  const char *nopropyellowtests, const char *nopropredtests,
 		  const char *larrdgraphs)
@@ -213,6 +213,17 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	}
 	else {
 		newhost->alerts = NULL;
+	}
+	if (waps) {
+		char *p;
+		p = skipword(waps); if (*p) *p = '\0'; else p = NULL;
+
+		newhost->waps = malloc(strlen(waps)+3);
+		sprintf(newhost->waps, ",%s,", waps);
+		if (p) *p = ' ';
+	}
+	else {
+		newhost->waps = NULL;
 	}
 	if (nopropyellowtests) {
 		char *p;
@@ -385,8 +396,15 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	newstate->entry->propagate = 1;
 
 	host = find_host(hostname);
-	if (host == NULL) dprintf("   hostname %s not found\n", hostname);
-	newstate->entry->alert = checkalert(host, testname);
+	if (host) {
+		newstate->entry->alert = checkalert(host->alerts, testname);
+		newstate->entry->onwap = checkalert(host->waps, testname);
+	}
+	else {
+		dprintf("   hostname %s not found\n", hostname);
+		newstate->entry->alert = newstate->entry->onwap = 0;
+	}
+
 	newstate->entry->sumurl = NULL;
 
 	if (fgets(l, sizeof(l), fd)) {
@@ -961,17 +979,21 @@ bbgen_page_t *load_bbhosts(char *pgset)
 		else if (sscanf(l, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
 			int dialup = 0;
 			char *startoftags = strchr(l, '#');
-			char *alertlist, *nopropyellowlist, *nopropredlist;
+			char *alertlist, *onwaplist, *nopropyellowlist, *nopropredlist;
 			char *larrdgraphs;
 			char *targetpagename;
 
-			alertlist = nopropyellowlist = nopropredlist = larrdgraphs = NULL;
+			alertlist = onwaplist = nopropyellowlist = nopropredlist = larrdgraphs = NULL;
 
 			if (startoftags && strstr(startoftags, " dialup")) dialup=1;
 
 			if (startoftags && (alertlist = strstr(startoftags, "NK:"))) {
 				alertlist += 3;
 			}
+			if (startoftags && (onwaplist = strstr(startoftags, "WAP:"))) {
+				onwaplist += 3;
+			}
+			else onwaplist = alertlist;
 
 			if (startoftags && (nopropyellowlist = strstr(startoftags, "NOPROP:"))) {
 				nopropyellowlist += 7;
@@ -994,7 +1016,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				 * whatever group or page is current.
 				 */
 				if (curhost == NULL) {
-					curhost = init_host(hostname, ip1, ip2, ip3, ip4, dialup, alertlist, 
+					curhost = init_host(hostname, ip1, ip2, ip3, ip4, dialup, alertlist, onwaplist,
 							    startoftags, nopropyellowlist, nopropredlist,
 							    larrdgraphs);
 					if (curgroup != NULL) {
@@ -1014,7 +1036,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 					}
 				}
 				else {
-					curhost = curhost->next = init_host(hostname, ip1, ip2, ip3, ip4, dialup, alertlist, 
+					curhost = curhost->next = init_host(hostname, ip1, ip2, ip3, ip4, dialup, 
+									    alertlist, onwaplist,
 									    startoftags, nopropyellowlist,nopropredlist,
 									    larrdgraphs);
 				}
@@ -1045,7 +1068,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 						targetpagename, hostname);
 				}
 				else {
-					host_t *newhost = init_host(hostname, ip1, ip2, ip3, ip4, dialup, alertlist, 
+					host_t *newhost = init_host(hostname, ip1, ip2, ip3, ip4, dialup, 
+								    alertlist, onwaplist,
 								    startoftags, nopropyellowlist,nopropredlist,
 								    larrdgraphs);
 

@@ -46,6 +46,8 @@
       |                                    dialup              |
       +---------------------------------   parent              |
                                            color               |
+                                           alerts              |
+                                           waps                |
                                            nopropyellowtests   |
                                            nopropredtests      |
 					   rawentry            |
@@ -57,6 +59,7 @@
                       |                                         oldage         |  next
                       |                                         acked          |
                       |                                         alert          |
+                      |                                         onwap          |
                       |                                         propagate      |
                       |                                         next           |
                       |                                                        |
@@ -180,6 +183,7 @@ typedef struct {
 	int	oldage;
 	int	acked;
 	int	alert;
+	int	onwap;
 	int	propagate;
 	char 	*sumurl;
 	void	*next;
@@ -199,6 +203,7 @@ typedef struct {
 	entry_t	*entries;
 	int	color;		/* Calculated */
 	char	*alerts;
+	char	*waps;
 	char    *nopropyellowtests;
 	char    *nopropredtests;
 	char    *rawentry;

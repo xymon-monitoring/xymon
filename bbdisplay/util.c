@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.44 2003-05-03 06:54:59 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.45 2003-05-20 13:02:44 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -455,16 +455,16 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 }
 
 
-int checkalert(host_t *host, char *test)
+int checkalert(char *alertlist, char *test)
 {
 	char *testname;
 	int result;
 
-	if ((!host) || (!host->alerts)) return 0;
+	if (!alertlist) return 0;
 
 	testname = malloc(strlen(test)+3);
 	sprintf(testname, ",%s,", test);
-	result = (strstr(host->alerts, testname) ? 1 : 0);
+	result = (strstr(alertlist, testname) ? 1 : 0);
 
 	free(testname);
 	return result;
