@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.160 2004-08-23 14:21:41 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.161 2004-08-23 14:29:14 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -75,7 +75,6 @@ int		pingcount = 0;
 service_t	*dnstest = NULL;		/* Identifies the dnstest within svchead list */
 service_t	*digtest = NULL;		/* Identifies the digtest within svchead list */
 service_t	*httptest = NULL;		/* Identifies the httptest within svchead list */
-service_t	*ftptest = NULL;		/* Identifies the ftptest within svchead list */
 service_t	*ldaptest = NULL;		/* Identifies the ldaptest within svchead list */
 service_t	*rpctest = NULL;		/* Identifies the rpctest within svchead list */
 service_t	*modembanktest = NULL;		/* Identifies the modembank test within svchead list */
@@ -345,7 +344,6 @@ testedhost_t *init_testedhost(char *hostname, int okexpected)
 	newhost->traceroute = NULL;
 
 	newhost->firsthttp = NULL;
-	newhost->firstftp = NULL;
 
 	newhost->firstldap = NULL;
 	newhost->ldapuser = NULL;
@@ -686,15 +684,6 @@ void load_tests(void)
 						errprintf("ldap test requested, but bbgen was built with no ldap support\n");
 #endif
 					}
-					else if ( argnmatch(testspec, "ftp://")         ||
-						  argnmatch(testspec, "cont;ftp://") )     {
-						/*
-						 * FTP URL test. This uses ':' a lot, so save it here.
-						 */
-						s = ftptest;
-						savedspec = malcop(testspec);
-						add_url_to_dns_queue(testspec);
-					}
 					else if ( argnmatch(testspec, "http")         ||
 						  argnmatch(testspec, "content=http") ||
 						  argnmatch(testspec, "cont;http")    ||
@@ -792,7 +781,6 @@ void load_tests(void)
 						s->items = newtest;
 
 						if (s == httptest) h->firsthttp = newtest;
-						else if (s == ftptest) h->firstftp = newtest;
 						else if (s == ldaptest) h->firstldap = newtest;
 					}
 
@@ -847,7 +835,6 @@ void load_tests(void)
 						for (swalk=svchead; (swalk && (strcmp(swalk->testname, testname) != 0)); swalk = swalk->next) ;
 						if (swalk) {
 							if (swalk == httptest) twalk = h->firsthttp;
-							else if (swalk == ftptest) twalk = h->firstftp;
 							else if (swalk == ldaptest) twalk = h->firstldap;
 							else {
 								for (twalk = swalk->items; (twalk && (twalk->host != h)); twalk = twalk->next) ;
@@ -1036,7 +1023,6 @@ void load_test_status(service_t *test)
 			for (h=testhosthead; (h && (strcmp(h->hostname, host) != 0)); h = h->next) ;
 			if (h) {
 				if (test == httptest) walk = h->firsthttp;
-				else if (test == ftptest) walk = h->firstftp;
 				else if (test == ldaptest) walk = h->firstldap;
 				else for (walk = test->items; (walk && (walk->host != h)); walk = walk->next) ;
 
@@ -2155,7 +2141,6 @@ int main(int argc, char *argv[])
 	add_service("ntp", getportnumber("ntp"),    0, TOOL_NTP);
 	rpctest  = add_service("rpc", getportnumber("sunrpc"), 0, TOOL_RPCINFO);
 	httptest = add_service("http", getportnumber("http"),  0, TOOL_HTTP);
-	ftptest = add_service("ftpurl", getportnumber("ftp"),  strlen("ftp"), TOOL_HTTP);
 	ldaptest = add_service("ldapurl", getportnumber("ldap"), strlen("ldap"), TOOL_LDAP);
 	if (pingcolumn) pingtest = add_service(pingcolumn, 0, 0, TOOL_FPING);
 	modembanktest = add_service("dialup", 0, 0, TOOL_MODEMBANK);
@@ -2251,29 +2236,6 @@ int main(int argc, char *argv[])
 
 	add_timestamp("Test result collection completed");
 
-#if 0
-	/* Run the ftpurl tests */
-	for (t = ftptest->items; (t); t = t->next) add_http_test(t);
-	add_timestamp("FTPURL test engine setup completed");
-
-	run_http_tests(ftptest, 0, logfile, 0);
-	add_timestamp("FTPURL tests executed");
-
-	if (debug) show_http_test_results(ftptest);
-	for (t = ftptest->items; (t); t = t->next) {
-		if (t->privdata) {
-			http_data_t *testresult = (http_data_t *)t->privdata;
-
-			t->certinfo = testresult->certinfo;
-			t->certexpires = testresult->certexpires;
-		}
-	}
-	add_timestamp("FTPURL tests result collection completed");
-#else
-	if (ftptest->items) {
-		errprintf("Testing of FTP URL's is not implemented for bbtest-net 3.x\n");
-	}
-#endif
 
 	/* Run the ldap tests */
 	for (t = ldaptest->items; (t); t = t->next) add_ldap_test(t);
@@ -2349,8 +2311,7 @@ int main(int argc, char *argv[])
 	}
 	for (h=testhosthead; (h); h = h->next) {
 		send_http_results(httptest, h, h->firsthttp, nonetpage, failgoesclear);
-		send_http_results(ftptest, h, h->firstftp, nonetpage, failgoesclear);
-		send_content_results(httptest, ftptest, h, nonetpage, contenttestname, failgoesclear);
+		send_content_results(httptest, h, nonetpage, contenttestname, failgoesclear);
 		send_ldap_results(ldaptest, h, nonetpage, failgoesclear);
 		if (ssltestname && !h->nosslcert) send_sslcert_status(h);
 	}

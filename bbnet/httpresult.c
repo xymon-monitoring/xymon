@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.1 2004-08-17 20:37:41 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.2 2004-08-23 14:29:14 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -241,21 +241,20 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 }
 
 
-static testitem_t *nextcontenttest(service_t *httptest, service_t *ftptest, testedhost_t *host, testitem_t *current)
+static testitem_t *nextcontenttest(service_t *httptest, testedhost_t *host, testitem_t *current)
 {
 	testitem_t *result;
 
 	result = current->next;
 
 	if ((result == NULL) || (result->host != host)) {
-		if (current->service == httptest) result = host->firstftp;
-		if (current->service == ftptest)  result = NULL;
+		result = NULL;
 	}
 
 	return result;
 }
 
-void send_content_results(service_t *httptest, service_t *ftptest, testedhost_t *host,
+void send_content_results(service_t *httptest, testedhost_t *host,
 			  char *nonetpage, char *contenttestname, int failgoesclear)
 {
 	testitem_t *t, *firsttest;
@@ -268,7 +267,7 @@ void send_content_results(service_t *httptest, service_t *ftptest, testedhost_t 
 	int 	contentnum = 0;
 	conttest = (char *) malloc(strlen(contenttestname)+5);
 
-	if ((host->firsthttp == NULL) && (host->firstftp == NULL)) return;
+	if (host->firsthttp == NULL) return;
 
 	/* Check if this service is a NOPAGENET service. */
 	nopagename = (char *) malloc(strlen(contenttestname)+3);
@@ -280,9 +279,8 @@ void send_content_results(service_t *httptest, service_t *ftptest, testedhost_t 
 	msgtext[0] = '\0';
 
 	firsttest = host->firsthttp;
-	if (firsttest == NULL) firsttest = host->firstftp;
 
-	for (t=firsttest; (t && (t->host == host)); t = nextcontenttest(httptest, ftptest, host, t)) {
+	for (t=firsttest; (t && (t->host == host)); t = nextcontenttest(httptest, host, t)) {
 		http_data_t *req = (http_data_t *) t->privdata;
 		char cause[100];
 		int got_data = 1;

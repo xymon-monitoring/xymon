@@ -93,7 +93,6 @@ typedef struct testedhost_t {
 
 	/* The following is for the HTTP/FTP URL tests */
 	struct testitem_t *firsthttp;	/* First HTTP testitem in testitem list */
-	struct testitem_t *firstftp;	/* First FTP testitem in testitem list */
 
 	/* The following is for the LDAP tests */
 	struct testitem_t *firstldap;	/* First LDAP testitem in testitem list */
