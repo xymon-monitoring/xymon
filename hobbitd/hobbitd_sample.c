@@ -16,13 +16,14 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_sample.c,v 1.5 2004-10-22 15:15:32 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_sample.c,v 1.6 2004-10-25 11:56:47 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <signal.h>
 
 #include "bbdworker.h"
 
@@ -32,6 +33,7 @@ static char rcsid[] = "$Id: hobbitd_sample.c,v 1.5 2004-10-22 15:15:32 henrik Ex
 int main(int argc, char *argv[])
 {
 	char *msg;
+	int running;
 	int argi, seq;
 	struct timeval *timeout = NULL;
 
@@ -58,29 +60,48 @@ int main(int argc, char *argv[])
 	}
 
 	/*
-	 * get_bbgend_message() gets the next message from the queue.
-	 * The message buffer is allocated and managed by the get_bbgend_message()
-	 * routine, so you should NOT try to free or allocate it yourself.
-	 *
-	 * All messages have a sequence number ranging from 1-999999.
-	 *
-	 *
-	 * The first parameter is the name of the calling module; this is
-	 * only used for debugging output.
-	 *
-	 * The second parameter must be an (int *), which then receives the
-	 * sequence number of the message returned.
-	 *
-	 * The third parameter is optional; you can pass a filled-in (struct
-	 * timeval) here, which then defines the maximum time get_bbgend_message()
-	 * will wait for a new message. get_bbgend_message() does not modify
-	 * the content of the timeout parameter.
-	 * 
-	 *
-	 * get_bbgend_message() does not return until a message is ready,
-	 * or the timeout setting expires, or the channel is closed.
+	 * If your worker application fork()'s child processes, then
+	 * you should ignore or handle SIGCHLD properly, both to avoid
+	 * zombie's, and to prevent the SIGCHLD signal from interfering
+	 * with the reading of messages from the input pipe.
 	 */
-	while ((msg = get_bbgend_message(argv[0], &seq, timeout)) != NULL) {
+	signal(SIGCHLD, SIG_IGN);
+
+	running = 1;
+	while (running) {
+		/*
+		 * get_bbgend_message() gets the next message from the queue.
+		 * The message buffer is allocated and managed by the get_bbgend_message()
+		 * routine, so you should NOT try to free or allocate it yourself.
+		 *
+		 * All messages have a sequence number ranging from 1-999999.
+		 *
+		 *
+		 * The first parameter is the name of the calling module; this is
+		 * only used for debugging output.
+		 *
+		 * The second parameter must be an (int *), which then receives the
+		 * sequence number of the message returned.
+		 *
+		 * The third parameter is optional; you can pass a filled-in (struct
+		 * timeval) here, which then defines the maximum time get_bbgend_message()
+		 * will wait for a new message. get_bbgend_message() does not modify
+		 * the content of the timeout parameter.
+		 * 
+		 *
+		 * get_bbgend_message() does not return until a message is ready,
+		 * or the timeout setting expires, or the channel is closed.
+		 */
+
+		msg = get_bbgend_message(argv[0], &seq, timeout);
+		if (msg == NULL) {
+			/*
+			 * get_bbgend_message will return NULL if bbd_channel closes
+			 * the input pipe. We should shutdown when that happens.
+			 */
+			running = 0;
+			continue;
+		}
 
 		/*
 		 * Now we have a message. So do something with it.
@@ -92,8 +113,8 @@ int main(int argc, char *argv[])
 
 		char *eoln, *restofmsg;
 		char *metadata[MAX_META+1];
+		int metacount;
 		char *p;
-		int i;
 
 		/* Split the message in the first line (with meta-data), and the rest */
  		eoln = strchr(msg, '\n');
@@ -110,35 +131,80 @@ int main(int argc, char *argv[])
 		 * We use our own "gettok()" routine which works
 		 * like strtok(), but can handle empty elements.
 		 */
-		i = 0; 
+		metacount = 0; 
 		p = gettok(msg, "|");
-		while (p && (i < MAX_META)) {
-			metadata[i++] = p;
+		while (p && (metacount < MAX_META)) {
+			metadata[metacount++] = p;
 			p = gettok(NULL, "|");
 		}
-		metadata[i] = NULL;
+		metadata[metacount] = NULL;
+
+		/*
+		 * A "shutdown" message is sent when the master daemon
+		 * terminates. The child workers should shutdown also.
+		 */
+		if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
+			printf("Shutting down\n");
+			running = 0;
+			continue;
+		}
+
+		/*
+		 * An "idle" message appears when get_bbgend_message() 
+		 * exceeds the timeout setting (ie. you passed a timeout
+		 * value). This allows your worker module to perform
+		 * some internal processing even though no messages arrive.
+		 */
+		else if (strncmp(metadata[0], "@@idle", 6) == 0) {
+			printf("Got an 'idle' message\n");
+		}
+
+		/*
+		 * The "drophost", "droptest", "renamehost" and "renametst"
+		 * indicates that a host/test was deleted or renamed. If the
+		 * worker module maintains some internal storage (in memory
+		 * or persistent file-storage), it should act on these
+		 * messages to maintain data consistency.
+		 */
+		else if ((metacount > 3) && (strncmp(metadata[0], "@@drophost", 10) == 0)) {
+			printf("Got a 'drophost' message for host '%s'\n", metadata[3]);
+		}
+		else if ((metacount > 4) && (strncmp(metadata[0], "@@droptest", 10) == 0)) {
+			printf("Got a 'droptest' message for host '%s' test '%s'\n", metadata[3], metadata[4]);
+		}
+		else if ((metacount > 4) && (strncmp(metadata[0], "@@renamehost", 12) == 0)) {
+			printf("Got a 'renamehost' message for host '%s' -> '%s'\n", metadata[3], metadata[4]);
+		}
+		else if ((metacount > 5) && (strncmp(metadata[0], "@@renametest", 12) == 0)) {
+			printf("Got a 'renameetst' message for host '%s' test '%s' -> '%s'\n", 
+				metadata[3], metadata[4], metadata[5]);
+		}
 
 		/*
 		 * What happens next is up to the worker module.
 		 *
 		 * For this sample module, we'll just print out the data we got.
 		 */
-		printf("Message # %d received at %d\n", seq, (int)time(NULL));
-		for (i=0; (metadata[i]); i++) {
-			printf("   Meta #%2d: %s\n", i, metadata[i]);
-		}
-		printf("\n");
+		else {
+			int i;
 
-		printf("   Rest of message\n");
-		p = restofmsg;
-		while (p) {
-			eoln = strchr(p, '\n');
-			if (eoln) *eoln = '\0';
+			printf("Message # %d received at %d\n", seq, (int)time(NULL));
+			for (i=0; (metadata[i]); i++) {
+				printf("   Meta #%2d: %s\n", i, metadata[i]);
+			}
+			printf("\n");
 
-			printf("\t'%s'\n", p);
-			if (eoln) p = eoln+1; else p = NULL;
+			printf("   Rest of message\n");
+			p = restofmsg;
+			while (p) {
+				eoln = strchr(p, '\n');
+				if (eoln) *eoln = '\0';
+	
+				printf("\t'%s'\n", p);
+				if (eoln) p = eoln+1; else p = NULL;
+			}
+			printf("   >>> End of message <<<\n");
 		}
-		printf("   >>> End of message <<<\n");
 	}
 
 	return 0;
