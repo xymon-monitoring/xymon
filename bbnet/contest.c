@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.52 2004-08-24 11:33:11 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.53 2004-08-27 10:37:17 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -999,7 +999,7 @@ void do_tcp_tests(int timeout, int concurrency)
 		/*
 		 * Setup the FDSET's
 		 */
-		FD_ZERO(&readfds); FD_ZERO(&writefds); maxfd = 0;
+		FD_ZERO(&readfds); FD_ZERO(&writefds); maxfd = -1;
 		for (item=firstactive; (item != nextinqueue); item=item->next) {
 			if (item->fd > -1) {
 				/*
@@ -1024,11 +1024,24 @@ void do_tcp_tests(int timeout, int concurrency)
 		/*
 		 * Wait for something to happen: connect, timeout, banner arrives ...
 		 */
-		dprintf("Doing select\n");
 		gettimeofday(&timestamp, &tz);
 		tmo.tv_sec = (1 + cutoff.tv_sec - timestamp.tv_sec); tmo.tv_usec = 0;
-		selres = select((maxfd+1), &readfds, &writefds, NULL, &tmo);
-		dprintf("select returned %d\n", selres);
+		if (tmo.tv_sec <= 0) {
+			errprintf("select timeout is <= 0: %d.%06d (cutoff=%d.%06d, timestamp=%d.%06d)\n", 
+					tmo.tv_sec, tmo.tv_usec,
+					cutoff.tv_sec, cutoff.tv_usec,
+					timestamp.tv_sec, timestamp.tv_usec);
+			selres = 0;
+		}
+		else if (maxfd < 0) {
+			errprintf("select - no active fd's found, but pending is %d\n", pending);
+			selres = 0;
+		}
+		else {
+			dprintf("Doing select\n");
+			selres = select((maxfd+1), &readfds, &writefds, NULL, &tmo);
+			dprintf("select returned %d\n", selres);
+		}
 		if (selres == -1) {
 			int selerr = errno;
 
@@ -1036,9 +1049,9 @@ void do_tcp_tests(int timeout, int concurrency)
 			 * select() failed - this is BAD!
 			 */
 			switch (selerr) {
-			   case EBADF : errprintf("select failed - EBADF\n"); break;
 			   case EINTR : errprintf("select failed - EINTR\n"); break;
-			   case EINVAL: errprintf("select failed - EINVAL\n"); break;
+			   case EBADF : errprintf("select failed - EBADF\n"); break;
+			   case EINVAL: errprintf("select failed - EINVAL, maxfd=%d, tmo=%d.%06d\n", maxfd, tmo.tv_sec, tmo.tv_usec); break;
 			   case ENOMEM: errprintf("select failed - ENOMEM\n"); break;
 			   default    : errprintf("Unknown select() error %d\n", selerr); break;
 			}
