@@ -24,7 +24,7 @@ buildarchtranslate: i586: i386
 buildarchtranslate: i686: i386
 EOF2
 
-cp rpm/hobbit.spec rpmbuild/SPECS/
+cat rpm/hobbit.spec | sed -e "s/@VER@/$REL/g" >rpmbuild/SPECS/hobbit.spec
 cp rpm/hobbit-init.d rpmbuild/SOURCES/
 cp rpm/hobbit.logrotate rpmbuild/SOURCES/
 

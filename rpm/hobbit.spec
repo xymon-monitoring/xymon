@@ -1,10 +1,10 @@
 Name: hobbit
-Version: 4.0
+Version: @VER@
 Release: 1
 Group: Networking/Daemons
 URL: http://hobbitmon.sourceforge.net/
 Copyright: Henrik Stoerner <henrik@hswn.dk>
-Source: hobbit-4.0.tar.gz
+Source: hobbit-@VER@.tar.gz
 Source1: hobbit-init.d
 Source2: hobbit.logrotate
 Summary: Hobbit network monitor
