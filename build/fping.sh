@@ -28,6 +28,11 @@
 		RC=$?
 		if test $RC -eq 0; then
 			echo "OK, will use '$FPING' for ping tests"
+			echo "NOTE: If you are using an suid-root wrapper, make sure the 'hobbit'"
+			echo "      user is also allowed to run fping without having to enter passwords."
+			echo "      For 'sudo', add something like this to your 'sudoers' file:"
+			echo "      hobbit: ALL=(ALL) NOPASSWD: /usr/local/sbin/fping"
+			echo ""
 			NOTOK=0
 		else
 			echo ""
