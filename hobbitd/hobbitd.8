@@ -94,6 +94,12 @@ hobbitd is normally started by
 it will then detach from the terminal and continue running as a background
 task.
 
+.IP "--timeout=N"
+Set the timeout used for incoming connections. If a status has not been
+received more than N seconds after the connection was accepted, then
+the connection is dropped and any status message is discarded.
+Default: 10 seconds.
+
 .IP "--env=FILENAME"
 Loads the content of FILENAME as environment settings before starting
 hobbitd. This is mostly used when running as a stand-alone daemon; if
@@ -250,6 +256,12 @@ Re-read the bb-hosts configuration file.
 
 .IP SIGUSR1
 Force an immediate dump of the checkpoint file.
+
+.SH BUGS
+Timeout of incoming connections are not strictly enforced. The check
+for a timeout only triggers during the normal network handling loop,
+so a connection that should timeout after N seconds may persist until
+some activity happens on another (unrelated) connection.
 
 .SH FILES
 If ghost-handling is enabled via the "--ghosts" option, the bb-hosts

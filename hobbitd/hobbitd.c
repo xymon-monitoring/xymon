@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.96 2005-01-15 08:34:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.97 2005-01-15 15:17:26 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -126,6 +126,7 @@ typedef struct conn_t {
 	unsigned char *buf, *bufp;	/* Message buffer and pointer */
 	int buflen, bufsz;		/* Active and maximum length of buffer */
 	int doingwhat;			/* Communications state (NOTALK, READING, RESPONDING) */
+	time_t timeout;			/* When the timeout for this connection happens */
 	struct conn_t *next;
 } conn_t;
 
@@ -235,7 +236,7 @@ char *generate_stats(void)
 		bufp += sprintf(bufp, "- %-20s : %10ld\n", hobbitd_stats[i].cmd, hobbitd_stats[i].count);
 		i++;
 	}
-	bufp += sprintf(bufp, "- %-20s : %10ld\n", "Bogus messages", hobbitd_stats[i].count);
+	bufp += sprintf(bufp, "- %-20s : %10ld\n", "Bogus/Timeouts ", hobbitd_stats[i].count);
 
 	if ((now > last_stats_time) && (last_stats_time > 0)) {
 		bufp += sprintf(bufp, "Incoming messages/sec  : %10ld (average last %d seconds)\n", 
@@ -2053,6 +2054,7 @@ int main(int argc, char *argv[])
 	int daemonize = 0;
 	char *pidfile = NULL;
 	struct sigaction sa;
+	time_t conn_timeout = 10;
 
 	boottime = time(NULL);
 
@@ -2079,6 +2081,14 @@ int main(int argc, char *argv[])
 				*p = '\0';
 				listenport = atoi(p+1);
 			}
+		}
+		else if (argnmatch(argv[argi], "--timeout=")) {
+			char *p = strchr(argv[argi], '=') + 1;
+			int newconn_timeout = atoi(p);
+			if ((newconn_timeout < 5) || (newconn_timeout > 60)) 
+				errprintf("--timeout must be between 5 and 60\n");
+			else
+				conn_timeout = newconn_timeout;
 		}
 		else if (argnmatch(argv[argi], "--bbhosts=")) {
 			char *p = strchr(argv[argi], '=') + 1;
@@ -2440,8 +2450,21 @@ int main(int argc, char *argv[])
 		{
 			conn_t *tmp, *khead;
 
+			now = time(NULL);
 			khead = NULL; cwalk = connhead;
 			while (cwalk) {
+				/* Check for connections that timeout */
+				if (now > cwalk->timeout) {
+					update_statistics("");
+					cwalk->doingwhat = NOTALK;
+					if (cwalk->sock >= 0) {
+						shutdown(cwalk->sock, SHUT_RDWR);
+						close(cwalk->sock);
+						cwalk->sock = -1;
+					}
+				}
+
+				/* Move dead connections to a purge-list */
 				if ((cwalk == connhead) && (cwalk->doingwhat == NOTALK)) {
 					/* head of chain is dead */
 					tmp = connhead;
@@ -2475,6 +2498,7 @@ int main(int argc, char *argv[])
 				}
 			}
 
+			/* Purge the dead connections */
 			while (khead) {
 				tmp = khead;
 				khead = khead->next;
@@ -2506,6 +2530,7 @@ int main(int argc, char *argv[])
 				conntail->buf = (unsigned char *)malloc(conntail->bufsz);
 				conntail->bufp = conntail->buf;
 				conntail->buflen = 0;
+				conntail->timeout = now + conn_timeout;
 				conntail->next = NULL;
 			}
 		}
