@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.17 2004-12-20 10:28:12 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.18 2004-12-20 10:35:42 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -105,15 +105,23 @@ int main(int argc, char *argv[])
 				char *realitem = item + strspn(item, "!~?");
 
 				for (i=0; lookv[i]; i++) {
+					char *outitem = NULL;
+
 					if (lookv[i][strlen(lookv[i])-1] == '*') {
 						if (strncasecmp(realitem, lookv[i], strlen(lookv[i])-1) == 0) {
-							strcat(wantedtags, " ");
-							strcat(wantedtags, (extras ? item : realitem));
+							outitem = (extras ? item : realitem);
 						}
 					}
 					else if (strcasecmp(realitem, lookv[i]) == 0) {
+						outitem = (extras ? item : realitem);
+					}
+
+					if (outitem) {
+						int needquotes = ((strchr(outitem, ' ') != NULL) || (strchr(outitem, '\t') != NULL));
 						strcat(wantedtags, " ");
-						strcat(wantedtags, (extras ? item : realitem));
+						if (needquotes) strcat(wantedtags, "\"");
+						strcat(wantedtags, outitem);
+						if (needquotes) strcat(wantedtags, "\"");
 					}
 				}
 			}
