@@ -46,11 +46,14 @@ will be used.
 Specifies the number of seconds after which a connection is
 aborted due to a timeout. Default: 10 seconds.
 
-.IP "--proxyname=BBHOSTNAME.BBSERVICE"
+.IP "--report=[PROXYHOSTNAME.]BBSERVICE"
 If given, this option causes bbproxy to send a status report
 every 5 minutes to the BBDISPLAY server about itself. If you
 have set the standard Big Brother environment, you can use
-"--proxyname=$MACHINE.bbproxy".
+"--report=bbproxy" to have bbproxy report its status to a
+"bbproxy" column in Big Brother. The default for PROXYHOSTNAME
+is the $MACHINE environment variable, i.e. the hostname of the
+server running bbproxy.
 
 .IP "--lqueue=N"
 Size of the listen-queue where incoming connections can
@@ -68,8 +71,18 @@ Runs bbproxy as a foreground proces.
 Specifies the location of a file containing the proces-ID 
 of the bbproxy daemon proces. Default: /var/run/bbproxy.pid.
 
+.IP "--logfile=FILENAME"
+Sends all logging output to the specified file instead of stderr.
+
 .IP "--debug"
 Enable debugging output.
+
+.SH SIGNALS
+.IP SIGHUP
+Re-opens the logfile, e.g. after it has been rotated.
+
+.IP SIGTERM
+Shut down the proxy.
 
 .SH "SEE ALSO"
 bb(1), bbd(1), bbgen-intro(7)
