@@ -10,7 +10,7 @@
 
 CFLAGS += -DMAXMSG=$(MAXMSG) -DBBDPORTNUMBER=$(BBPORT) -I. -I$(BUILDTOPDIR)/include
 
-BUILDTARGETS = lib-build common-build bbdisplay-build bbnet-build bbproxy-build docs-build
+BUILDTARGETS = lib-build common-build bbdisplay-build bbnet-build bbproxy-build docs-build build-build
 INSTALLTARGETS = install-bbdisplay install-bbnet install-bbproxy install-man
 INSTALLNOCGITARGETS = install-bbdisplay-nocgi install-bbnet install-bbproxy
 ifdef HOBBITD
@@ -32,6 +32,9 @@ all: $(BUILDTARGETS)
 	@echo "To upgrade an existing Hobbit/BB server, now run 'make install' as root"
 	@echo ""
 
+build-build:
+	CC="$(CC)" CFLAGS="$(CFLAGS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" $(MAKE) -C build all
+
 lib-build:
 	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBTOPDIR="$(BBTOPDIR)" BBLOGDIR="$(BBLOGDIR)" BBHOSTNAME="$(BBHOSTNAME)" BBHOSTIP="$(BBHOSTIP)" BBHOSTOS="$(BBHOSTOS)" $(MAKE) -C lib all
 
@@ -52,12 +55,12 @@ bbnet-build: lib-build common-build
 bbproxy-build: lib-build common-build
 	CC="$(CC)" CFLAGS="$(CFLAGS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" $(MAKE) -C bbproxy all
 
-hobbitd-build: lib-build common-build
+hobbitd-build: build-build lib-build common-build 
 	CC="$(CC)" CFLAGS="$(CFLAGS)" RRDINCDIR="$(RRDINCDIR)" PCREINCDIR="$(PCREINCDIR)" NETLIBS="$(NETLIBS)" RRDLIBS="$(RRDLIBS)" PCRELIBS="$(PCRELIBS)" BBTOPDIR="$(BBTOPDIR)" BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" BBLOGDIR="$(BBLOGDIR)" BBHOSTNAME="$(BBHOSTNAME)" BBHOSTIP="$(BBHOSTIP)" BBHOSTOS="$(BBHOSTOS)" BBUSER="$(BBUSER)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" BBHOSTURL="$(BBHOSTURL)" BBCGIURL="$(BBCGIURL)" SECUREBBCGIURL="$(SECUREBBCGIURL)" FPING="$(FPING)" RUNTIMEDEFS="$(RUNTIMEDEFS)" $(MAKE) -C hobbitd  all
 
 docs-build:
 	BBHOSTURL="$(BBHOSTURL)" $(MAKE) -C docs all
-
+	
 
 #####################
 # Cleanup targets
@@ -70,6 +73,7 @@ allclean: clean
 	(cd bbnet/c-ares && $(MAKE) clean) || true
 
 clean:
+	$(MAKE) -C build clean
 	$(MAKE) -C lib clean
 	$(MAKE) -C common clean
 	$(MAKE) -C bbdisplay clean
@@ -77,7 +81,7 @@ clean:
 	$(MAKE) -C bbproxy clean
 	$(MAKE) -C hobbitd clean
 	$(MAKE) -C docs clean
-	rm -f ./*~ build/*~ include/*~
+	rm -f ./*~ include/*~
 
 
 ####################
