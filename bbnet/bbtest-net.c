@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.21 2003-04-17 15:42:44 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.22 2003-04-17 21:59:06 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -35,6 +35,7 @@ link_t  null_link = { "", "", "", NULL };
 #define TOOL_NSLOOKUP	1
 #define TOOL_DIG	2
 #define TOOL_NTP        3
+#define TOOL_FPING      4
 
 /* dnslookup values */
 #define DNS_THEN_IP     0	/* Try DNS - if it fails, use IP from bb-hosts */
@@ -57,6 +58,8 @@ typedef struct {
 	int testip;
 	int dnserror;
 	int in_sla;
+	int noconn;
+	int noping;
 	void *next;
 } testedhost_t;
 
@@ -73,6 +76,7 @@ typedef struct {
 } testitem_t;
 
 service_t	*svchead = NULL;
+service_t	*pingtest = NULL;
 testedhost_t	*testhosthead = NULL;
 testitem_t	*testhead = NULL;
 char		*nonetpage = NULL;
@@ -167,17 +171,34 @@ void load_tests(void)
 				h = malloc(sizeof(testedhost_t));
 				h->hostname = malloc(strlen(hostname)+1);
 				strcpy(h->hostname, hostname);
-				h->dialup = (strstr(l, "dialup") != NULL);
-				h->testip = (strstr(l, "testip") != NULL);
-				h->in_sla = within_sla(l);
-				h->ip[0] = '\0';
-				h->dnserror = 0;
 
 				p = strchr(l, '#'); p++;
 				while (isspace((unsigned int) *p)) p++;
-				testspec = strtok(p, "\t ");
 
+				h->dialup = (strstr(p, "dialup") != NULL);
+				h->testip = (strstr(p, "testip") != NULL);
+				h->noconn = (strstr(p, "noconn") != NULL);
+				h->noping = (strstr(p, "noping") != NULL);
+				h->in_sla = within_sla(p);
+				h->ip[0] = '\0';
+				h->dnserror = 0;
 				anytests = 0;
+
+				if (pingtest && !h->noconn) {
+					/* Add the ping check */
+					anytests = 1;
+					newtest = malloc(sizeof(testitem_t));
+					newtest->host = h;
+					newtest->dialup = 0;
+					newtest->reverse = 0;
+					newtest->open = 0;
+					newtest->testresult = NULL;
+					newtest->service = pingtest;
+					newtest->next = pingtest->items;
+					pingtest->items = newtest;
+				}
+
+				testspec = strtok(p, "\t ");
 				while (testspec) {
 
 					service_t *s;
@@ -380,6 +401,74 @@ void run_ntp_service(service_t *service)
 }
 
 
+int run_fping_service(service_t *service)
+{
+	testitem_t	*t;
+	char		cmd[1024];
+	char		*p;
+	char		cmdpath[MAX_PATH];
+	char		logfn[MAX_PATH];
+	FILE		*cmdpipe;
+	FILE		*logfd;
+	char		l[MAX_LINE_LEN];
+	int		ip1, ip2, ip3, ip4;
+	int		rtt1, rtt2;
+	char		timespec[20];
+
+	p = getenv("FPING");
+	strcpy(cmdpath, (p ? p : "fping"));
+	sprintf(logfn, "%s/fping.%u", getenv("BBTMP"), getpid());
+	sprintf(cmd, "%s -Ae 2>/dev/null 1>%s", cmdpath, logfn);
+
+	cmdpipe = popen(cmd, "w");
+	if (cmdpipe == NULL) return -1;
+	for (t=service->items; (t); t = t->next) {
+		if (!t->host->dnserror && !t->host->noping) {
+			fprintf(cmdpipe, "%s\n", t->host->ip);
+		}
+	}
+	pclose(cmdpipe);
+
+	logfd = fopen(logfn, "r");
+	if (logfd == NULL) { printf("Cannot open fping output file!\n"); return -1; }
+	while (fgets(l, sizeof(l), logfd)) {
+		if (sscanf(l, "%d.%d.%d.%d ", &ip1, &ip2, &ip3, &ip4) == 4) {
+			p = strchr(l, ' ');
+			if (p) *p = '\0';
+			for (t=service->items; (t && (strcmp(t->host->ip, l) != 0)); t = t->next) ;
+			if (p) *p = ' ';
+
+			t->open = (strstr(l, "is alive") != NULL);
+			t->banner = malloc(strlen(l)+1);
+			strcpy(t->banner, l);
+
+			if (t->open) {
+				p = strchr(l, '(');
+				t->testresult = malloc(sizeof(test_t));
+				t->testresult->banner = t->banner;
+				if (sscanf(p, "(%d.%d %s)", &rtt1, &rtt2, timespec) == 3) {
+					if (strncmp(timespec, "ms", 2) == 0) {
+						/* Milliseconds */
+						t->testresult->duration.tv_sec = 0;
+						t->testresult->duration.tv_usec = 1000*rtt1;
+					}
+					else {
+						/* Seconds */
+						t->testresult->duration.tv_sec = rtt1;
+						t->testresult->duration.tv_usec = 0;
+					}
+				}
+			}
+
+		}
+	}
+	fclose(logfd);
+	// unlink(logfn);
+
+	return 0;
+}
+
+
 void send_results(service_t *service)
 {
 	testitem_t	*t;
@@ -400,29 +489,35 @@ void send_results(service_t *service)
 	free(nopagename);
 
 	for (t=service->items; (t); t = t->next) {
-		color = COL_GREEN;
-
-		/*
-		 * If DNS error, it is red.
-		 * If not, then either (open=0,reverse=0) or (open=1,reverse=1) is wrong.
-		 */
-		if ((t->host->dnserror) || ((t->open + t->reverse) != 1)) {
-			color = COL_RED;
+		if ((service == pingtest) && (t->host->noping)) {
+			color = COL_CLEAR;
+			t->banner = "Ping test disabled";
 		}
+		else {
+			color = COL_GREEN;
 
-		/* Dialup hosts and dialup tests report red as clear */
-		if ((color != COL_GREEN) && (t->host->dialup || t->dialup)) color = COL_CLEAR;
+			/*
+			 * If DNS error, it is red.
+			 * If not, then either (open=0,reverse=0) or (open=1,reverse=1) is wrong.
+			 */
+			if ((t->host->dnserror) || ((t->open + t->reverse) != 1)) {
+				color = COL_RED;
+			}
 
-		/* NOPAGENET services that are down are reported as yellow */
-		if (nopage && (color == COL_RED)) color = COL_YELLOW;
+			/* Dialup hosts and dialup tests report red as clear */
+			if ((color != COL_GREEN) && (t->host->dialup || t->dialup)) color = COL_CLEAR;
 
-		/* If not inside SLA and non-green, report as BLUE */
-		if (!t->host->in_sla && (color != COL_GREEN)) color = COL_BLUE;
+			/* NOPAGENET services that are down are reported as yellow */
+			if (nopage && (color == COL_RED)) color = COL_YELLOW;
+
+			/* If not inside SLA and non-green, report as BLUE */
+			if (!t->host->in_sla && (color != COL_GREEN)) color = COL_BLUE;
+		}
 
 		init_status(color);
 		sprintf(msgline, "status %s.%s %s %s %s %s\n", 
 			commafy(t->host->hostname), svcname, colorname(color), timestamp,
-			svcname, ((color == COL_RED) ? "NOT ok" : "ok"));
+			svcname, ( ((color == COL_RED) || (color == COL_YELLOW)) ? "NOT ok" : "ok"));
 		addtostatus(msgline);
 
 		if (t->host->dnserror) {
@@ -431,7 +526,7 @@ void send_results(service_t *service)
 		else {
 			sprintf(msgline, "\n&%s Service %s on %s is %s\n",
 				colorname(color), svcname, t->host->hostname,
-				(t->open ? "UP" : "DOWN"));
+				((color == COL_CLEAR) ? "disabled" : (t->open ? "UP" : "DOWN")));
 
 		}
 		addtostatus(msgline);
@@ -442,8 +537,8 @@ void send_results(service_t *service)
 			addtostatus("\n</pre>\n\n");
 		}
 		if (t->testresult) {
-			sprintf(msgline, "Seconds: %ld.%02ld\n", 
-				t->testresult->duration.tv_sec, t->testresult->duration.tv_usec / 10000);
+			sprintf(msgline, "Seconds: %ld.%03ld\n", 
+				t->testresult->duration.tv_sec, t->testresult->duration.tv_usec / 1000);
 			addtostatus(msgline);
 		}
 		addtostatus("\n\n");
@@ -459,6 +554,7 @@ int main(int argc, char *argv[])
 	int argi;
 	int timeout=0;
 	int concurrency=0;
+	char *pingcolumn = NULL;
 
 	for (argi=1; (argi < argc); argi++) {
 		if      (strcmp(argv[argi], "--debug") == 0) {
@@ -483,6 +579,16 @@ int main(int argc, char *argv[])
 			else if (strcmp(p, "ip") == 0)   dnsmethod = IP_ONLY;
 			else                             dnsmethod = DNS_THEN_IP;
 		}
+		else if (strncmp(argv[argi], "--ping", 6) == 0) {
+			char *p = strchr(argv[argi], '=');
+			if (p) {
+				p++; pingcolumn = p;
+			}
+			else pingcolumn = "conn";
+		}
+		else if (strcmp(argv[argi], "--noping") == 0) {
+			pingcolumn = NULL;
+		}
 	}
 
 	init_timestamp();
@@ -491,6 +597,7 @@ int main(int argc, char *argv[])
 	add_service("dns", getportnumber("domain"), 0, TOOL_NSLOOKUP);
 	add_service("dig", getportnumber("domain"), 0, TOOL_DIG);
 	add_service("ntp", getportnumber("ntp"), 0, TOOL_NTP);
+	if (pingcolumn) pingtest = add_service(pingcolumn, 0, 0, TOOL_FPING);
 
 	for (s = svchead; (s); s = s->next) {
 		dprintf("Service %s port %d\n", s->testname, s->portnum);
@@ -551,6 +658,9 @@ int main(int argc, char *argv[])
 					break;
 				case TOOL_NTP:
 					run_ntp_service(s); send_results(s);
+					break;
+				case TOOL_FPING:
+					run_fping_service(s); send_results(s);
 					break;
 			}
 		}
