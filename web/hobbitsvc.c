@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.11 2004-10-24 12:52:36 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.12 2004-10-24 22:05:24 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -429,7 +429,7 @@ int main(int argc, char *argv[])
 
 	fprintf(stdout, "<CENTER><TABLE ALIGN=CENTER BORDER=0>\n");
 	fprintf(stdout, "<TR><TH><FONT %s>%s - %s</FONT><BR><HR WIDTH=\"60%%\"></TH></TR>\n", rowfont, displayname, service);
-	fprintf(stdout, "<TR><TD><H3>%s</H3>\n", firstline);
+	fprintf(stdout, "<TR><TD><H3>%s</H3>\n", skipword(firstline));	/* Drop the color */
 	fprintf(stdout, "<PRE>\n");
 
 	do {
