@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.18 2005-02-13 13:17:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.19 2005-02-15 12:52:46 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -65,7 +65,9 @@ static char *default_graphs =
 	;
 
 static const char *bblinkfmt = "<br><A HREF=\"%s\"><IMG BORDER=0 SRC=\"%s&amp;graph=hourly\" ALT=\"larrd is accumulating %s\"></A>\n";
-static const char *hobbitlinkfmt = "<br><A HREF=\"%s&amp;action=menu\"><IMG BORDER=0 SRC=\"%s&amp;graph=hourly&amp;action=view\" ALT=\"hobbit graph %s\"></A>\n";
+
+static const char *hobbitlinkfmt = "<table summary=\"Graph\"><tr><td><A HREF=\"%s&amp;action=menu\"><IMG BORDER=0 SRC=\"%s&amp;graph=hourly&amp;action=view\" ALT=\"hobbit graph %s\"></A></td><td> <td align=\"left\" valign=\"top\"> <a href=\"%s&amp;graph=hourly&amp;action=selzoom\"> <img src=\"%s/zoom.gif\" border=0 alt=\"Zoom graph\" style='padding: 3px'> </a> </td></tr></table>\n";
+
 static const char *metafmt = "<RRDGraph>\n  <GraphLink><![CDATA[%s]]></GraphLink>\n  <GraphImage><![CDATA[%s&graph=hourly]]></GraphImage>\n</RRDGraph>\n";
 
 /*
@@ -217,8 +219,9 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 
 	rrdparturlsize = 2048 +
 			 strlen(fmt)        +
-			 2*svcurllen        +
-			 strlen(rrdservicename);
+			 3*svcurllen        +
+			 strlen(rrdservicename) +
+			 strlen(xgetenv("BBSKIN"));
 
 	if (rrdurl == NULL) {
 		rrdurlsize = rrdparturlsize;
@@ -252,7 +255,7 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 				strcat(svcurl, urlencode(dispname));
 			}
 
-			sprintf(rrdparturl, fmt, svcurl, svcurl, rrdservicename);
+			sprintf(rrdparturl, fmt, svcurl, svcurl, rrdservicename, svcurl, xgetenv("BBSKIN"));
 			if ((strlen(rrdparturl) + strlen(rrdurl) + 1) >= rrdurlsize) {
 				rrdurlsize += (4096 + (itemcount - (first+step-1))*rrdparturlsize);
 				rrdurl = (char *) realloc(rrdurl, rrdurlsize);
@@ -279,7 +282,7 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 				strcat(svcurl, "&amp;disp=");
 				strcat(svcurl, urlencode(dispname));
 			}
-			sprintf(rrdparturl, fmt, svcurl, svcurl, rrdservicename);
+			sprintf(rrdparturl, fmt, svcurl, svcurl, rrdservicename, svcurl, xgetenv("BBSKIN"));
 			if ((strlen(rrdparturl) + strlen(rrdurl) + 1) >= rrdurlsize) {
 				rrdurlsize += (4096 + (itemcount - last)*rrdparturlsize);
 				rrdurl = (char *) realloc(rrdurl, rrdurlsize);
@@ -296,7 +299,7 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 			strcat(svcurl, "&amp;disp=");
 			strcat(svcurl, urlencode(dispname));
 		}
-		sprintf(rrdurl, fmt, svcurl, svcurl, rrdservicename);
+		sprintf(rrdurl, fmt, svcurl, svcurl, rrdservicename, svcurl, xgetenv("BBSKIN"));
 	}
 
 	dprintf("URLtext: %s\n", rrdurl);
