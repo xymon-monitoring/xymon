@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.90 2003-09-05 17:22:25 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.91 2003-09-10 13:37:43 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1310,15 +1310,11 @@ char *urlunescape(char *url)
 	pin = url;
 	pout = result = (char *) malloc(strlen(pin) + 1);
 	while (*pin) {
-		if (*pin != '%') {
-			*pout = *pin;
-			pin++;
-		}
-		else if (*pin == '+') {
+		if (*pin == '+') {
 			*pout = ' ';
 			pin++;
 		}
-		else {
+		else if (*pin == '%') {
 			pin++;
 			if ((strlen(pin) >= 2) && isxdigit((int)*pin) && isxdigit((int)*(pin+1))) {
 				*pout = 16*hexvalue(*pin) + hexvalue(*(pin+1));
@@ -1328,6 +1324,10 @@ char *urlunescape(char *url)
 				*pout = '%';
 				pin++;
 			}
+		}
+		else {
+			*pout = *pin;
+			pin++;
 		}
 
 		pout++;
