@@ -28,3 +28,6 @@ do
 	done
 done
 
+# Sourceforge update
+cd ~/hobbit/docs && rsync -av --rsh=ssh --exclude=RCS ./ storner@shell.sourceforge.net:/home/groups/h/ho/hobbitmon/htdocs/docs/
+
