@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.8 2003-04-13 21:11:12 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.9 2003-04-14 07:45:30 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -377,8 +377,15 @@ int main(int argc, char *argv[])
 	service_t *s;
 	testedhost_t *h;
 	testitem_t *t;
+	int argi;
 
-	if ((argc > 1) && (strcmp(argv[1], "--debug") == 0)) debug = 1;
+	for (argi=1; (argi < argc); argi++) {
+		if      (strcmp(argv[argi], "--debug") == 0)       debug = 1;
+		else if (strcmp(argv[argi], "--version") == 0)     {
+			printf("bbtest-net version %s\n", VERSION);
+			return 0;
+		}
+	}
 
 	init_timestamp();
 	load_services();
