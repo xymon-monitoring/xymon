@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.31 2003-02-02 22:30:27 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.32 2003-02-02 22:38:03 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -278,7 +278,6 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 
 		char *p;
 		char *purplemsg = malloc(st.st_size+1024);
-		char msgline[512];
 
 		*is_purple = 1;
 
@@ -307,19 +306,19 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		}
 		else {
 			/* No longer in bb-hosts */
-			sprintf(msgline, "%s\n\n", hostname);
-			strcat(purplemsg, msgline);
+			sprintf(l, "%s\n\n", hostname);
+			strcat(purplemsg, l);
 
-			sprintf(msgline, "This entry is no longer listed in %s/etc/bb-hosts.  To remove this\n",
+			sprintf(l, "This entry is no longer listed in %s/etc/bb-hosts.  To remove this\n",
 				getenv("BBHOME"));
-			strcat(purplemsg, msgline);
+			strcat(purplemsg, l);
 
-			sprintf(msgline, "purple message, please delete the log files for this host located in\n");
-			strcat(purplemsg, msgline);
+			sprintf(l, "purple message, please delete the log files for this host located in\n");
+			strcat(purplemsg, l);
 
-			sprintf(msgline, "%s, %s and %s if this host is no longer monitored.\n",
+			sprintf(l, "%s, %s and %s if this host is no longer monitored.\n",
 				getenv("BBLOGS"), getenv("BBHIST"), getenv("BBHISTLOGS"));
-			strcat(purplemsg, msgline);
+			strcat(purplemsg, l);
 		}
 
 		fclose(fd);
