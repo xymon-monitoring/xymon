@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.124 2004-12-18 11:05:49 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.125 2004-12-27 11:12:23 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -530,7 +530,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char 
 						do_rss_item(rssoutput, h, e);
 					}
 					else {
-						fprintf(output, "<A HREF=\"%s/bb-hostsvc.sh?HOSTSVC=%s.%s&IP=%s&DISPLAYNAME=%s\">",
+						fprintf(output, "<A HREF=\"%s/bb-hostsvc.sh?HOSTSVC=%s.%s&amp;IP=%s&amp;DISPLAYNAME=%s\">",
 							getenv("CGIBINURL"), commafy(h->hostname), e->column->name,
 							h->ip, (h->displayname ? h->displayname : h->hostname));
 						do_rss_item(rssoutput, h, e);
