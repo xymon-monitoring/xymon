@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: color.c,v 1.5 2005-01-20 22:02:23 henrik Exp $";
+static char rcsid[] = "$Id: color.c,v 1.6 2005-02-14 07:02:11 henrik Exp $";
 
 #include <string.h>
 
@@ -47,31 +47,31 @@ int parse_color(char *colortext)
 
 	strncpy(inpcolor, colortext, 7);
 	inpcolor[7] = '\0';
-	n = strspn(inpcolor, "abcdefghijklmnopqrstuvwxyz");
+	n = strspn(inpcolor, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	inpcolor[n] = '\0';
 	strcat(inpcolor, " ");
 
-	if (strncmp(inpcolor, "green ", 6) == 0) {
+	if (strncasecmp(inpcolor, "green ", 6) == 0) {
 		MEMUNDEFINE(inpcolor);
 		return COL_GREEN;
 	}
-	else if (strncmp(inpcolor, "yellow ", 7) == 0) {
+	else if (strncasecmp(inpcolor, "yellow ", 7) == 0) {
 		MEMUNDEFINE(inpcolor);
 		return COL_YELLOW;
 	}
-	else if (strncmp(inpcolor, "red ", 4) == 0) {
+	else if (strncasecmp(inpcolor, "red ", 4) == 0) {
 		MEMUNDEFINE(inpcolor);
 		return COL_RED;
 	}
-	else if (strncmp(inpcolor, "blue ", 5) == 0) {
+	else if (strncasecmp(inpcolor, "blue ", 5) == 0) {
 		MEMUNDEFINE(inpcolor);
 		return COL_BLUE;
 	}
-	else if (strncmp(inpcolor, "clear ", 6) == 0) {
+	else if (strncasecmp(inpcolor, "clear ", 6) == 0) {
 		MEMUNDEFINE(inpcolor);
 		return COL_CLEAR;
 	}
-	else if (strncmp(inpcolor, "purple ", 7) == 0) {
+	else if (strncasecmp(inpcolor, "purple ", 7) == 0) {
 		MEMUNDEFINE(inpcolor);
 		return COL_PURPLE;
 	}
