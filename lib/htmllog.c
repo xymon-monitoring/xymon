@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.9 2004-12-26 23:45:56 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.10 2004-12-27 11:11:46 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -88,25 +88,35 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		       int is_history, int wantserviceid, int htmlfmt, int bbgend,
 		       FILE *output)
 {
-	int linecount;
+	int linecount = 0;
 	char *p;
 	larrdrrd_t *larrd = NULL;
 	larrdgraph_t *graph = NULL;
 
 	hostsvc_setup();
 
-	/* Count how many lines are in the status message. This is needed by LARRD later */
-	linecount = 0; p = restofmsg;
-	do {
-		/* First skip all whitespace and blank lines */
-		while ((*p) && (isspace((int)*p) || iscntrl((int)*p))) p++;
-		if (*p) {
-			/* We found something that is not blank, so one more line */
-			linecount++;
-			/* Then skip forward to the EOLN */
-			p = strchr(p, '\n');
-		}
-	} while (p && (*p));
+	/* 
+	 * "disk" reports use the number of lines as a rough measure for how many disk
+	 * graphs to build. We dont do it for other types of reports because it is too
+	 * unreliable.
+	 * What we *really* should do was to scan the RRD directory and count how many
+	 * RRD database files are present matching this service - but that is way too
+	 * much overhead for something that might be called on every status logged.
+	 */
+	if (strcmp(service, "disk") == 0) {
+		/* Count how many lines are in the status message. This is needed by LARRD later */
+		linecount = 0; p = restofmsg;
+		do {
+			/* First skip all whitespace and blank lines */
+			while ((*p) && (isspace((int)*p) || iscntrl((int)*p))) p++;
+			if (*p) {
+				/* We found something that is not blank, so one more line */
+				linecount++;
+				/* Then skip forward to the EOLN */
+				p = strchr(p, '\n');
+			}
+		} while (p && (*p));
+	}
 
 	sethostenv(displayname, ip, service, colorname(color));
 	if (logtime) sethostenv_snapshot(logtime);
@@ -179,7 +189,8 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	}
 
 	if (!is_history && (histlocation == HIST_BOTTOM)) historybutton(cgibinurl, hostname, service, ip, output);
-	
+
+	fprintf(output,"</CENTER>\n");
 	headfoot(output, (is_history ? "histlog" : "hostsvc"), "", "footer", color);
 }
 
