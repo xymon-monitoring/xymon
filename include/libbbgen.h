@@ -14,6 +14,12 @@
 #include <stdio.h>
 #include <time.h>
 
+typedef struct htnames_t {
+	char *name;
+	struct htnames_t *next;
+} htnames_t;
+
+#include "../lib/bblarrd.h"
 #include "../lib/calc.h"
 #include "../lib/color.h"
 #include "../lib/encoding.h"

@@ -13,11 +13,6 @@
 
 #include <time.h>
 
-typedef struct htnames_t {
-	char *name;
-	struct htnames_t *next;
-} htnames_t;
-
 enum astate_t { A_PAGING, A_ACKED, A_RECOVERED, A_DEAD };
 
 typedef struct activealerts_t {
