@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.10 2003-01-06 22:02:52 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.11 2003-01-28 21:39:53 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -33,6 +33,7 @@ static char rcsid[] = "$Id: pagegen.c,v 1.10 2003-01-06 22:02:52 henrik Exp $";
 #include "util.h"
 #include "loaddata.h"
 #include "pagegen.h"
+#include "infogen.h"
 
 int interesting_column(int pagetype, int color, int alert, char *columnname, char *onlycols)
 {
@@ -54,7 +55,8 @@ int interesting_column(int pagetype, int color, int alert, char *columnname, cha
 	  case PAGE_BB2:
 		return ((color == COL_RED) || 
 			(color == COL_YELLOW) ||
-			(color == COL_PURPLE));
+			(color == COL_PURPLE) ||
+			(enable_infogen && (strcmp(columnname, infocol) == 0)));
 
 	  case PAGE_NK:
 		if (alert) {
@@ -65,6 +67,9 @@ int interesting_column(int pagetype, int color, int alert, char *columnname, cha
 			    (strcmp(columnname, "conn") != 0)) {
 				return 1;
 			}
+		}
+		else if (enable_infogen && (strcmp(columnname, infocol) == 0)) {
+			return 1;
 		}
 		break;
 	}
