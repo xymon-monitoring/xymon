@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.12 2004-10-24 22:05:24 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.13 2004-10-26 15:35:25 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -281,7 +281,7 @@ int main(int argc, char *argv[])
 		time_t logage;
 
 		sprintf(bbgendreq, "bbgendlog %s.%s", hostname, service);
-		bbgendresult = sendmessage(bbgendreq, NULL, NULL, &log, 1);
+		bbgendresult = sendmessage(bbgendreq, NULL, NULL, &log, 1, 30);
 		if ((bbgendresult != BB_OK) || (log == NULL) || (strlen(log) == 0)) {
 			errormsg("Status not available\n");
 			return 1;

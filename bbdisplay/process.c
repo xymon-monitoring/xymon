@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.21 2004-10-07 15:48:51 henrik Exp $";
+static char rcsid[] = "$Id: process.c,v 1.22 2004-10-26 15:35:25 henrik Exp $";
 
 #include <string.h>
 #include <sys/types.h>
@@ -261,7 +261,7 @@ void send_summaries(summary_t *sumhead)
 		/* Send the summary message */
 		sprintf(summsg, "summary summary.%s %s %s %s",
 			s->name, colorname(summarycolor), s->url, timestamp);
-		sendmessage(summsg, s->receiver, NULL, NULL, 0);
+		sendmessage(summsg, s->receiver, NULL, NULL, 0, BBTALK_TIMEOUT);
 	}
 }
 

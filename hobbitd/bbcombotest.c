@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.25 2004-10-25 16:14:04 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.26 2004-10-26 15:35:25 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -186,7 +186,7 @@ static int getbbgendvalue(char *hostname, char *testname, char **errptr)
 	char *pattern, *found, *colstr, *p;
 
 	if (board == NULL) {
-		bbgendresult = sendmessage("bbgendboard", NULL, NULL, &board, 1);
+		bbgendresult = sendmessage("bbgendboard", NULL, NULL, &board, 1, 30);
 		if (bbgendresult != BB_OK) {
 			board = "";
 			*errptr += sprintf(*errptr, "Could not access bbgend board, error %d\n", bbgendresult);

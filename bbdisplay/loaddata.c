@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.127 2004-10-25 16:13:18 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.128 2004-10-26 15:35:25 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -663,7 +663,7 @@ state_t *load_state(dispsummary_t **sumhead)
 
 	dprintf("load_state()\n");
 	if (usebbgend) {
-		int bbgendresult = sendmessage("bbgendboard", NULL, NULL, &board, 1);
+		int bbgendresult = sendmessage("bbgendboard", NULL, NULL, &board, 1, 30);
 		if ((bbgendresult != BB_OK) || (board == NULL) || (*board == '\0')) {
 			errprintf("bbgend status-board not available\n");
 			return NULL;
