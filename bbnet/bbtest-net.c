@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.50 2003-05-22 05:56:18 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.51 2003-05-22 06:49:45 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1166,10 +1166,11 @@ int main(int argc, char *argv[])
 	/* Tell about us */
 	if (egocolumn) {
 		char msgline[MAXMSG];
+		int color = (errbuf ? COL_YELLOW : COL_GREEN);
 
 		combo_start();
-		init_status(errbuf ? COL_YELLOW : COL_GREEN);
-		sprintf(msgline, "status %s.%s green %s\n\n", getenv("MACHINE"), egocolumn, timestamp);
+		init_status(color);
+		sprintf(msgline, "status %s.%s %s %s\n\n", getenv("MACHINE"), egocolumn, colorname(color), timestamp);
 		addtostatus(msgline);
 
 		sprintf(msgline, "bbtest-net version %s\n", VERSION);
