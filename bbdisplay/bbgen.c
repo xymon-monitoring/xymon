@@ -229,7 +229,7 @@ char *columnlink(link_t *link, char *colname)
 	return linkurl;
 }
 
-char *hostlink(link_t *link, char *hostname)
+char *hostlink(link_t *link)
 {
 	static char linkurl[60];
 
@@ -932,7 +932,7 @@ void do_hosts(host_t *head, FILE *output, char *grouptitle)
 
 			if (h->link != &null_link) {
 				fprintf(output, "<A HREF=\"%s/%s\" TARGET=\"_blank\"><FONT %s>%s</FONT></A>\n </TD>",
-					getenv("BBWEB"), hostlink(h->link, h->hostname), 
+					getenv("BBWEB"), hostlink(h->link), 
 					getenv("MKBBROWFONT"), h->hostname);
 			}
 			else {
@@ -990,6 +990,7 @@ void do_bb_page(page_t *page, char *filename)
 {
 	FILE	*output;
 	page_t	*p;
+	link_t  *link;
 
 	output = fopen(filename, "w");
 	if (output == NULL) {
@@ -1012,8 +1013,15 @@ void do_bb_page(page_t *page, char *filename)
 
 		for (p = page->next; (p); p = p->next) {
 
-			/* FIXME: Page notes missing */
-			fprintf(output, "<TR><TD><FONT %s>%s</FONT></TD>\n", getenv("MKBBROWFONT"), p->title);
+			link = find_link(p->name);
+			if (link != &null_link) {
+				fprintf(output, "<TR><TD><FONT %s><A HREF=\"%s/%s\">%s</A></FONT></TD>\n", 
+					getenv("BBWEB"), hostlink(link), 
+					getenv("MKBBROWFONT"), p->title);
+			}
+			else {
+				fprintf(output, "<TR><TD><FONT %s>%s</FONT></TD>\n", getenv("MKBBROWFONT"), p->title);
+			}
 
 			fprintf(output, "<TD><CENTER><A HREF=\"%s/%s/%s.html\">\n", getenv("BBWEB"), p->name, p->name);
 			fprintf(output, "<IMG SRC=\"%s/%s.gif\" WIDTH=\"%s\" HEIGHT=\"%s\" BORDER=0 ALT=\"%s\"></A>\n", 
@@ -1040,6 +1048,7 @@ void do_page(page_t *page, char *filename, char *upperpagename)
 {
 	FILE	*output;
 	page_t	*p;
+	link_t  *link;
 
 	output = fopen(filename, "w");
 	if (output == NULL) {
@@ -1062,8 +1071,15 @@ void do_page(page_t *page, char *filename, char *upperpagename)
 
 		for (p = page->subpages; (p); p = p->next) {
 
-			/* FIXME: Page notes missing */
-			fprintf(output, "<TR><TD><FONT %s>%s</FONT></TD>\n", getenv("MKBBROWFONT"), p->title);
+			link = find_link(p->name);
+			if (link != &null_link) {
+				fprintf(output, "<TR><TD><FONT %s><A HREF=\"%s/%s\">%s</A></FONT></TD>\n", 
+					getenv("BBWEB"), hostlink(link), 
+					getenv("MKBBROWFONT"), p->title);
+			}
+			else {
+				fprintf(output, "<TR><TD><FONT %s>%s</FONT></TD>\n", getenv("MKBBROWFONT"), p->title);
+			}
 
 			fprintf(output, "<TD><CENTER><A HREF=\"%s/%s/%s/%s.html\">\n", getenv("BBWEB"), upperpagename, p->name, p->name);
 			fprintf(output, "<IMG SRC=\"%s/%s.gif\" WIDTH=\"%s\" HEIGHT=\"%s\" BORDER=0 ALT=\"%s\"></A>\n", 
