@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.34 2005-02-24 20:39:39 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.35 2005-02-27 11:36:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -78,7 +78,7 @@ void update_htmlfile(char *fn, char *msg,
 		     char *hostname, char *service, int color,
 		     char *sender, char *flags,
 		     time_t logtime, time_t timesincechange,
-		     char *ackmsg,
+		     time_t acktime, char *ackmsg,
                      time_t disabletime, char *dismsg)
 {
 	FILE *output;
@@ -113,7 +113,8 @@ void update_htmlfile(char *fn, char *msg,
 		generate_html_log(hostname, displayname, service, ip,
 			color, sender, flags,
 			logtime, timestr,
-			firstline, restofmsg, ackmsg,
+			firstline, restofmsg, 
+			acktime, ackmsg,
 			disabletime, dismsg,
 			0, 1, 0, 1, multigraphs, output);
 
@@ -261,7 +262,7 @@ int main(int argc, char *argv[])
 
 		if ((role == ROLE_STATUS) && (metacount >= 14) && (strncmp(items[0], "@@status", 8) == 0)) {
 			/* @@status|timestamp|sender|origin|hostname|testname|expiretime|color|testflags|prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage */
-			int logtime, timesincechange, disabletime;
+			time_t logtime = 0, timesincechange = 0, acktime = 0, disabletime = 0;
 
 			hostname = items[4];
 			testname = items[5];
@@ -278,16 +279,18 @@ int main(int argc, char *argv[])
 				char *dismsg = NULL;
 				char htmllogfn[PATH_MAX];
 
+				if (items[11]) acktime = atoi(items[11]);
 				if (items[12] && strlen(items[12])) ackmsg = items[12];
 				if (ackmsg) nldecode(ackmsg);
 
-				disabletime = atoi(items[13]);
+				if (items[13]) disabletime = atoi(items[13]);
 				if (items[14] && strlen(items[14]) && (disabletime > 0)) dismsg = items[14];
 				if (dismsg) nldecode(dismsg);
 
 				sprintf(htmllogfn, "%s/%s.%s.%s", htmldir, hostname, testname, htmlextension);
 				update_htmlfile(htmllogfn, statusdata, hostname, testname, parse_color(items[7]),
-						     items[2], items[8], logtime, timesincechange, ackmsg,
+						     items[2], items[8], logtime, timesincechange, 
+						     acktime, ackmsg,
 						     disabletime, dismsg);
 			}
 		}

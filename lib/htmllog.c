@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.20 2005-02-24 20:39:02 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.21 2005-02-27 11:36:36 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -84,7 +84,8 @@ static void historybutton(char *cgibinurl, char *hostname, char *service, char *
 void generate_html_log(char *hostname, char *displayname, char *service, char *ip, 
 		       int color, char *sender, char *flags, 
 		       time_t logtime, char *timesincechange, 
-		       char *firstline, char *restofmsg, char *ackmsg, 
+		       char *firstline, char *restofmsg, 
+		       time_t acktime, char *ackmsg, 
 		       time_t disabletime, char *dismsg,
 		       int is_history, int wantserviceid, int htmlfmt, int hobbitd,
 		       char *multigraphs,
@@ -193,17 +194,26 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	if (sender) fprintf(output, "Status message received from %s<br>\n", sender);
 	if (ackmsg) {
 		char *ackedby;
-		
+		char ackuntil[200];
+
+		MEMDEFINE(ackuntil);
+
+		strftime(ackuntil, sizeof(ackuntil)-1, xgetenv("ACKUNTILMSG"), localtime(&acktime));
+		ackuntil[sizeof(ackuntil)-1] = '\0';
+
 		ackedby = strstr(ackmsg, "\nAcked by:");
 		if (ackedby) {
 			*ackedby = '\0';
-			fprintf(output, "<font %s>Current acknowledgment: %s<br>%s</font><br>\n", 
-				ackfont, ackmsg, (ackedby+1));
+			fprintf(output, "<font %s>Current acknowledgment: %s<br>%s<br>%s</font><br>\n", 
+				ackfont, ackmsg, (ackedby+1), ackuntil);
 			*ackedby = '\n';
 		}
 		else {
-			fprintf(output, "<font %s>Current acknowledgment: %s</font><br>\n", ackfont, ackmsg);
+			fprintf(output, "<font %s>Current acknowledgment: %s<br>%s</font><br>\n", 
+				ackfont, ackmsg, ackuntil);
 		}
+
+		MEMUNDEFINE(ackuntil);
 	}
 		
 	fprintf(output, "</font></td></tr>\n");
