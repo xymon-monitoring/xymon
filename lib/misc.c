@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.9 2004-11-17 16:23:52 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.10 2004-11-18 10:05:01 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -23,6 +23,7 @@ static char rcsid[] = "$Id: misc.c,v 1.9 2004-11-17 16:23:52 henrik Exp $";
 
 #include "errormsg.h"
 #include "misc.h"
+#include "stackio.h"
 
 enum ostype_t get_ostype(char *osname)
 {
@@ -107,9 +108,9 @@ void loadenv(char *envfile)
 	char *p, *oneenv;
 	int n;
 
-	fd = fopen(envfile, "r");
+	fd = stackfopen(envfile, "r");
 	if (fd) {
-		while (fgets(l, sizeof(l), fd)) {
+		while (stackfgets(l, sizeof(l), "include", NULL)) {
 			p = strchr(l, '\n'); if (p) *p = '\0';
 			p = l + strspn(l, " \t");
 			if (strlen(p) && (*p != '#') && strchr(p, '=')) {
@@ -124,7 +125,7 @@ void loadenv(char *envfile)
 				n = putenv(oneenv);
 			}
 		}
-		fclose(fd);
+		stackfclose(fd);
 	}
 	else {
 		errprintf("Cannot open env file %s - %s\n", envfile, strerror(errno));
