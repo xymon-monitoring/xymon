@@ -21,6 +21,13 @@
 
 #include <stdio.h>
 
+typedef struct linebuf_t {
+	char *buf;
+	int buflen;
+} linebuf_t;
+
+extern char *read_line(struct linebuf_t *buffer, FILE *stream);
+
 extern int use_recentgifs;
 extern char timestamp[];
 

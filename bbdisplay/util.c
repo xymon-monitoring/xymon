@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.100 2003-10-16 21:49:35 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.101 2003-10-21 08:35:39 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -164,6 +164,52 @@ int stackfclose(FILE *fd)
 	return result;
 }
 
+static char *read_line_1(struct linebuf_t *buffer, FILE *stream, int *docontinue)
+{
+	char l[MAX_LINE_LEN];
+	char *p, *start;
+
+	*docontinue = 0;
+	if (fgets(l, sizeof(l), stream) == NULL) return NULL;
+
+	p = strchr(l, '\n'); if (p) *p = '\0';
+
+	/* Strip leading spaces */
+	for (start=l; (*start && isspace((int) *start)); start++) ;
+
+	/* Strip trailing spaces while looking for continuation character */
+	for (p = start + strlen(start) - 1; ((p > start) && (isspace((int) *p) || (*p == '\\')) ); p--) {
+		if (*p == '\\') *docontinue = 1;
+	}
+	*(p+1) = '\0';
+
+	if ((strlen(start) + strlen(buffer->buf) + 1) > buffer->buflen) {
+		buffer->buflen += MAX_LINE_LEN;
+		buffer->buf = (char *)realloc(buffer->buf, buffer->buflen);
+	}
+
+	strcat(buffer->buf, start);
+	return buffer->buf;
+}
+
+char *read_line(struct linebuf_t *buffer, FILE *stream)
+{
+	char *result = NULL;
+	int docontinue = 0;
+
+	if (buffer->buf == NULL) {
+		buffer->buflen = MAX_LINE_LEN;
+		buffer->buf = (char *)malloc(buffer->buflen);
+	}
+	*(buffer->buf) = '\0';
+
+	do {
+		result = read_line_1(buffer, stream, &docontinue);
+	} while (result && docontinue);
+
+	return result;
+}
+
 
 char *stackfgets(char *buffer, unsigned int bufferlen, char *includetag)
 {
@@ -197,6 +243,7 @@ char *stackfgets(char *buffer, unsigned int bufferlen, char *includetag)
 
 	return result;
 }
+
 
 char *malcop(const char *s)
 {
