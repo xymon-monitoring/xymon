@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.5 2004-12-26 17:14:48 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.6 2004-12-26 17:54:16 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -330,21 +330,21 @@ int main(int argc, char *argv[])
 	char *rrddir = NULL;
 	char *gdeffn = NULL;
 	char *graphfn = "-";
-	char *graphtitle = NULL;
-	char timestamp[100];
 
 	gdef_t *gdef = NULL, *gdefuser = NULL;
 	int wantsingle = 0;
+	char **rrdargs = NULL;
 
 	DIR *dir;
-
-	char **rrdargs = NULL;
 	char **calcpr  = NULL;
 	int argi, pcount, argcount, xsize, ysize, result;
-	time_t now = time(NULL);
+	time_t now;
+	char timestamp[100];
+	char graphtitle[1024];
 
 	/* See what we want to do - i.e. get hostname, service and graph-type */
 	parse_query();
+	now = time(NULL);
 
 	/* Handle any commandline args */
 	for (argi=1; (argi < argc); argi++) {
@@ -463,8 +463,13 @@ int main(int argc, char *argv[])
 
 	/* What RRD files do we have matching this request? */
 	if (gdef->fnpat == NULL) {
-		rrddbcount = 1;
-		rrddbs = (rrddb_t *)malloc((rrddbcount + 1) * sizeof(rrddb_t));
+		/*
+		 * No pattern, just a single file. It doesnt matter if it exists, because
+		 * these types of graphs usually have a hard-coded value for the RRD filename
+		 * in the graph definition.
+		 */
+		rrddbcount = rrddbsize = 1;
+		rrddbs = (rrddb_t *)malloc((rrddbsize + 1) * sizeof(rrddb_t));
 
 		rrddbs[0].key = strdup(service);
 		rrddbs[0].rrdfn = (char *)malloc(strlen(gdef->name) + strlen(".rrd") + 1);
@@ -518,11 +523,15 @@ int main(int argc, char *argv[])
 			/* We have a matching file! */
 			rrddbs[rrddbcount].rrdfn = strdup(d->d_name);
 			if (pcre_copy_substring(d->d_name, ovector, result, 1, param, sizeof(param)) > 0) {
+				/*
+				 * This is ugly, but I cannot find a pretty way of un-mangling
+				 * the disk- and http-data that has been molested by the back-end.
+				 */
 				if ((strcmp(gdef->name, "disk") == 0) && (strcmp(param, ",root") == 0)) {
 					rrddbs[rrddbcount].rrdparam = strdup(",");
 				}
 				else if ((strcmp(gdef->name, "http") == 0) && (strncmp(param, "http", 4) != 0)) {
-					rrddbs[rrddbcount].rrdparam = (char *)malloc(strlen(param) + strlen("http://") + 1);
+					rrddbs[rrddbcount].rrdparam = (char *)malloc(strlen("http://")+strlen(param)+1);
 					sprintf(rrddbs[rrddbcount].rrdparam, "http://%s", param);
 				}
 				else {
@@ -551,15 +560,12 @@ int main(int argc, char *argv[])
 		closedir(dir);
 	}
 	rrddbs[rrddbcount].key = rrddbs[rrddbcount].rrdfn = rrddbs[rrddbcount].rrdparam = NULL;
+
+	/* Sort them so the display looks prettier */
 	qsort(&rrddbs[0], rrddbcount, sizeof(rrddb_t), rrd_name_compare);
 
 	/* Setup the title */
-	if (graphtitle == NULL) {
-		char title[1024];
-
-		sprintf(title, "%s %s %s", displayname, gdef->title, glegend);
-		graphtitle = strdup(title);
-	}
+	sprintf(graphtitle, "%s %s %s", displayname, gdef->title, glegend);
 
 	/*
 	 * Setup the arguments for calling rrd_graph. 
@@ -569,7 +575,7 @@ int main(int argc, char *argv[])
 	 */
 	for (pcount = 0; (gdef->defs[pcount]); pcount++) ;
 	argcount = (11 + pcount*rrddbcount + 1); argi = 0;
-	rrdargs = (char **) calloc(argcount, sizeof(char *));
+	rrdargs = (char **) calloc(argcount+1, sizeof(char *));
 	rrdargs[argi++]  = "rrdgraph";
 	rrdargs[argi++]  = graphfn;
 	rrdargs[argi++]  = "-s";
@@ -583,11 +589,12 @@ int main(int argc, char *argv[])
 	rrdargs[argi++] = "PNG";
 	for (rrdidx=0; (rrdidx < rrddbcount); rrdidx++) {
 		int i;
-
 		for (i=0; (gdef->defs[i]); i++) rrdargs[argi++] = strdup(expand_tokens(gdef->defs[i]));
 	}
 	strftime(timestamp, sizeof(timestamp), "COMMENT:Updated: %d-%b-%Y %H:%M:%S", localtime(&now));
 	rrdargs[argi++] = strdup(timestamp);
+	rrdargs[argi++] = NULL;
+
 	if (debug) { for (argi=0; (argi < argcount); argi++) dprintf("%s\n", rrdargs[argi]); }
 
 	/* If sending to stdout, print the HTTP header first. */
@@ -610,11 +617,36 @@ int main(int argc, char *argv[])
 		if (calcpr) { 
 			int i;
 			for (i=0; (calcpr[i]); i++) free(calcpr[i]);
+			calcpr = NULL;
 		}
 
 		errormsg(rrd_get_error());
-		return 1;
 	}
+
+	if (displayname != hostname) { free(displayname); displayname = NULL; }
+	if (hostname) { free(hostname); hostname = NULL; }
+	if (service) { free(service); service = NULL; }
+	if (gtype) { free(gtype); gtype = NULL; }
+	glegend = period = NULL; /* Dont free these - they are static strings in the program. */
+	for (argi=0; (argi < rrddbcount); argi++) {
+		if (rrddbs[argi].key) free(rrddbs[argi].key);
+		if (rrddbs[argi].rrdfn) free(rrddbs[argi].rrdfn);
+		if (rrddbs[argi].rrdparam) free(rrddbs[argi].rrdparam);
+	}
+	free(rrddbs);
+	rrddbs = NULL;
+	coloridx = rrddbcount = rrddbsize = rrdidx = paramlen = 0;
+
+	gdef = gdefuser = NULL;
+	wantsingle = 0;
+#if 0
+	/* Why does this cause the program to crash ? */
+	for (argi=11; (argi < argcount); argi++) {
+		if (rrdargs[argi]) free(rrdargs[argi]);
+	}
+	free(rrdargs);
+#endif
+	rrdargs = NULL;
 
 	return 0;
 }
