@@ -62,6 +62,7 @@ int main(int argc, char *argv[])
 			*p = ']';
 			newent->val = strdup(l);
 			newent->copied = 0;
+			newent->next = NULL;
 
 			if (tail == NULL) {
 				tail = head = newent;
