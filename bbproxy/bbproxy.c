@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.27 2004-09-25 16:18:24 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.28 2004-09-27 20:57:52 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -204,9 +204,9 @@ void do_log(conn_t *conn)
 	if (strncmp(rq, "combo\n", 6) == 0) rq += 6;
 
 	eol = strchr(rq, '\n'); if (eol) *eol = '\0';
-	for (delim = rq; (*delim && isalpha(*delim)); delim++);
-	for (; (*delim && isspace(*delim)); delim++);
-	for (; (*delim && !isspace(*delim)); delim++);
+	for (delim = rq; (*delim && isalpha((unsigned char) *delim)); delim++);
+	for (; (*delim && isspace((unsigned char) *delim)); delim++);
+	for (; (*delim && !isspace((unsigned char) *delim)); delim++);
 	savechar = *delim; *delim = '\0';
 
 	errprintf("%s : %s\n", conn->clientip, rq);
@@ -430,7 +430,7 @@ int main(int argc, char *argv[])
 			/* Parent - save PID and exit */
 			FILE *fd = fopen(pidfile, "w");
 			if (fd) {
-				fprintf(fd, "%d\n", childpid);
+				fprintf(fd, "%d\n", (int)childpid);
 				fclose(fd);
 			}
 			exit(0);
