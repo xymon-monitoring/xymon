@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.22 2004-10-11 14:45:51 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.23 2004-10-11 19:52:35 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -386,7 +386,6 @@ void get_cookiedur(char *msg, char *sender, bbd_log_t **log, int *duration)
 void handle_status(unsigned char *msg, char *sender, char *hostname, char *testname, bbd_log_t *log, int newcolor)
 {
 	int validity = 30;	/* validity is counted in minutes */
-	int oldcolor;
 	time_t now = time(NULL);
 	char *p;
 	int msglen = strlen(msg);
@@ -425,7 +424,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	}
 
 	log->validtime = now + validity*60;
-	oldcolor = log->color;
+	log->oldcolor = log->color;
 	log->color = newcolor;
 	strncpy(log->sender, sender, sizeof(log->sender)-1);
 
@@ -480,13 +479,12 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		}
 	}
 
-	if ((oldcolor != newcolor) && !issummary) {
-		int oldalertstatus = ((alertcolors & (1 << oldcolor)) != 0);
+	if ((log->oldcolor != newcolor) && !issummary) {
+		int oldalertstatus = ((alertcolors & (1 << log->oldcolor)) != 0);
 		int newalertstatus = ((alertcolors & (1 << newcolor)) != 0);
 
-		log->oldcolor = oldcolor;
 		dprintf("oldcolor=%d, oldas=%d, newcolor=%d, newas=%d\n", 
-			oldcolor, oldalertstatus, newcolor, newalertstatus);
+			log->oldcolor, oldalertstatus, newcolor, newalertstatus);
 
 		if (oldalertstatus != newalertstatus) {
 			/* alert status changed. Tell the pagers */
