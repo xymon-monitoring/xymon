@@ -1,4 +1,4 @@
-README file for bbgen version 1.1
+README file for bbgen version 1.2
 =================================
 
 bbgen is a drop-in replacement for the bb-display.sh script that 
@@ -7,7 +7,7 @@ ships with the Big Brother monitoring tool.
 It can also replace part of the LARRD tool that is often used
 with Big Brother.
 
-bbgen is Copyright (C) 2002, Henrik Storner <henrik@storner.dk>
+bbgen is Copyright (C) 2002-2003, Henrik Storner <henrik@storner.dk>
 It is released under the GNU General Public License, version 2.
 
 
@@ -135,9 +135,6 @@ in bbgen:
 * Modem banks are not handled at all by bbgen. This directive
   is simply ignored.
 
-* The bb2.html page does not currently include the acknowledgement
-  log.
-
 
 Bugs
 ----
@@ -174,5 +171,5 @@ See the "TODO" file.
 
 
 Henrik Storner <henrik@storner.dk>
-Dec 31, 2002
+Jan 1, 2003
 
