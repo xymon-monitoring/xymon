@@ -11,9 +11,10 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.3 2004-11-03 22:52:46 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.4 2004-11-17 16:23:52 henrik Exp $";
 
 #include <time.h>
+#include <sys/time.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: files.c,v 1.1 2004-11-13 22:34:04 henrik Exp $";
+static char rcsid[] = "$Id: files.c,v 1.2 2004-11-17 16:23:52 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -19,6 +19,7 @@ static char rcsid[] = "$Id: files.c,v 1.1 2004-11-13 22:34:04 henrik Exp $";
 #include <dirent.h>
 #include <string.h>
 #include <stdio.h>
+#include <limits.h>
 
 #include "errormsg.h"
 #include "files.h"
