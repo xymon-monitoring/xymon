@@ -252,8 +252,9 @@ as some features needed by bbtest-net are not available in earlier
 versions.
 
 .IP openssl
-The OpenSSL library is used by libcurl for checking https websites,
-and should be installed before you install libcurl. If your
+The OpenSSL library is used for checking https websites and
+other SSL-enabled protocols (imaps, pop3s, nntps, smtps).
+It should be installed before you install libcurl. If your
 system does not already have openssl installed, you can pick it
 up from http://www.openssl.org/
 
@@ -268,17 +269,13 @@ A "group" directive in the
 .I bb-hosts(5)
 file is treated as a "group-compress".
 
-.IP "dialup directive"
-The "dialup" directive in standard Big Brother allows
-you to test a modem-bank by pinging a range of IP-adresses.
-This feature is not implemented in the bbgen toolkit.
-.br
-Note: This only applies to the entries in bb-hosts that
-*begin* with the "dialup" keyword, and is used to test
-a range of IP-adresses. The "dialup" flag on a host is
-implemented, as is the "?" modifier on a network test that 
-flags it as a "dialup" service, i.e. a service that may
-be down without generating an alert.
+.IP Connectivity tests use the hostname
+Standard BB always uses the IP-address listed in the bb-hosts
+file for the connectivity (ping) test. bbtest-net will attempt
+a DNS lookup of the hostname to determine the IP-address,
+but fallback to using the IP-address if the DNS lookup fails.
+This behaviour can be changed with the "testip" tag (on a per-host
+basis), or via the "--dns" tag (globally).
 
 .IP ":q and :Q modifiers"
 The ":q" and ":Q" modifiers on individual tests are ignored.
@@ -286,7 +283,7 @@ These modifiers are only relevant for the standard Big
 Brother network test tool bbnet, which is not used when
 you install the bbgen network test tools.
 
-.IP "Hosts not in bb-hosts are ignored"
+.IP "Status messages from hosts not in bb-hosts are ignored"
 Standard Big Brother will process status-logs from unknown
 hosts, and these can cause the web pages to have a purple
 background color. The bbgen toolkit ignores logs from hosts
