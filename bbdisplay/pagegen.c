@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.121 2004-12-13 16:35:07 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.122 2004-12-15 21:26:33 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -333,6 +333,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char 
 	int	maxbanksize = 0;
 	int	anyplainhosts = 0;
 	int	rowcount = 0;
+	char	*hostlinkurl;
 
 	if (head == NULL)
 		return;
@@ -409,7 +410,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char 
 					for (gc=groupcols; (gc); gc = gc->next) {
 						fprintf(output, " <TD ALIGN=CENTER VALIGN=BOTTOM WIDTH=45>\n");
 						fprintf(output, " <A HREF=\"%s\"><FONT %s><B>%s</B></FONT></A> </TD>\n", 
-							columnlink(gc->column->link, gc->column->name), 
+							columnlink(gc->column->name), 
 							getenv("MKBBCOLFONT"), gc->column->name);
 					}
 				}
@@ -437,9 +438,9 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char 
 					urldoclink(documentationurl, h->hostname),
 					doctargetspec, getenv("MKBBROWFONT"), nameandcomment(h));
 			}
-			else if (h->link != &null_link) {
+			else if ((hostlinkurl = hostlink(h->hostname)) != NULL) {
 				fprintf(output, "<A HREF=\"%s\" %s><FONT %s>%s</FONT></A>\n </TD>",
-					hostlink(h->link), doctargetspec, getenv("MKBBROWFONT"), nameandcomment(h));
+					hostlinkurl, doctargetspec, getenv("MKBBROWFONT"), nameandcomment(h));
 			}
 			else if (pagetype != PAGE_BB) {
 				/* Provide a link to the page where this host lives */
@@ -751,9 +752,9 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *pagepath)
 	 */
 
 	bbgen_page_t	*p;
-	link_t  *link;
 	int	currentcolumn;
 	char	pagelink[PATH_MAX];
+	char    *linkurl;
 
 	if (subs) {
 		fprintf(output, "<A NAME=\"pages-blk\">&nbsp;</A>\n");
@@ -788,12 +789,12 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *pagepath)
 
 			if (currentcolumn == 0) fprintf(output, "<TR>\n");
 
-			link = find_link(p->name);
 			sprintf(pagelink, "%s/%s/%s/%s%s", getenv("BBWEB"), pagepath, p->name, p->name, htmlextension);
 
+			linkurl = hostlink(p->name);
 			fprintf(output, "<TD><FONT %s>", getenv("MKBBROWFONT"));
-			if (link != &null_link) {
-				fprintf(output, "<A HREF=\"%s\">%s</A>", hostlink(link), p->title);
+			if (linkurl) {
+				fprintf(output, "<A HREF=\"%s\">%s</A>", linkurl, p->title);
 			}
 			else if (pagetitlelinks) {
 				fprintf(output, "<A HREF=\"%s\">%s</A>", cleanurl(pagelink), p->title);
