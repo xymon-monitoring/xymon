@@ -1,3 +1,11 @@
+hobbit (4.0-2) unstable; urgency=low
+
+  * Changes to Debian pre/post install scripts to support querying of
+    the user via debconf for essential local configuration (hostname,
+    webserver hostname, local IP).
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Wed,  9 Mar 2005 10:04:41 +0100
+
 hobbit (4.0-1) unstable; urgency=low
 
   * Initial Release.
