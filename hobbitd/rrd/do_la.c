@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char la_rcsid[] = "$Id: do_la.c,v 1.8 2005-02-16 22:04:46 henrik Exp $";
+static char la_rcsid[] = "$Id: do_la.c,v 1.9 2005-02-17 12:32:18 henrik Exp $";
 
 static char *la_params[]          = { "rrdcreate", rrdfn, "DS:la:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
@@ -58,6 +58,17 @@ int do_la_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 	}
 	if (eoln) *eoln = '\n';
+
+	if (!gotload) {
+		/* See if it's a report from the ciscocpu.pl script. */
+		p = strstr(msg, "<br>CPU 5 min average:");
+		if (p) {
+			/* It reports in % cpu utilization */
+			p = strchr(p, ':');
+			load = atoi(p+1);
+			gotload = 1;
+		}
+	}
 
 	if (gotload) {
 		sprintf(rrdfn, "la.rrd");
