@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.25 2004-09-24 07:23:19 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.26 2004-09-24 16:10:42 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -497,7 +497,7 @@ int main(int argc, char *argv[])
 						(avgtime / 1000), (avgtime % 1000));
 				laststatus = now;
 				msgs_total_last = msgs_total;
-				timeinqueue.tv_sec = timeinqueue.tv_sec = 0;
+				timeinqueue.tv_sec = timeinqueue.tv_usec = 0;
 				stentry->dontcount = 1;
 				stentry->buflen = strlen(stentry->buf);
 				stentry->bufp = stentry->buf;
@@ -652,7 +652,14 @@ int main(int argc, char *argv[])
 					if (cwalk->arrival.tv_sec > 0) {
 						gettimeofday(&departure, &tz);
 						timeinqueue.tv_sec += (departure.tv_sec - cwalk->arrival.tv_sec);
-						timeinqueue.tv_usec += (departure.tv_usec - cwalk->arrival.tv_usec);
+						if (departure.tv_usec >= cwalk->arrival.tv_usec) {
+							timeinqueue.tv_usec += (departure.tv_usec - cwalk->arrival.tv_usec);
+						}
+						else {
+							timeinqueue.tv_sec--;
+							timeinqueue.tv_usec += (1000000 + departure.tv_usec - cwalk->arrival.tv_usec);
+						}
+
 						if (timeinqueue.tv_usec > 1000000) {
 							timeinqueue.tv_sec++;
 							timeinqueue.tv_usec -= 1000000;
