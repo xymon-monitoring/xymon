@@ -99,6 +99,11 @@ install-bin: $(PROGRAMS)
 	cp -p $(PROGRAMS) $(BBHOME)/bin/
 
 install-cgi: $(CGISCRIPTS)
+	@echo ""
+	@echo "  WARNING : About to overwrite any existing Big Brother CGI scripts"
+	@echo "            Hit ctrl-C NOW if you want to save them first!"
+	@echo ""
+	@sleep 5
 	cp -p $(CGISCRIPTS) $(CGIDIR)/
 
 install-exts: $(EXTENSIONS)
