@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.34 2003-04-25 11:55:07 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.35 2003-04-25 12:09:10 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -143,6 +143,7 @@ char *stackfgets(char *buffer, unsigned int bufferlen, char *includetag)
 		if (stackfopen(newfn, "r") != NULL) 
 			return stackfgets(buffer, bufferlen, includetag);
 		else {
+			printf("WARNING: Cannot open include file '%s', line was:%s\n", newfn, buffer);
 			if (eol) *eol = '\n';
 			return result;
 		}
