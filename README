@@ -7,8 +7,14 @@ ships with the Big Brother monitoring tool.
 It can also replace part of the LARRD tool that is often used
 with Big Brother.
 
-bbgen is Copyright (C) 2002-2003, Henrik Storner <henrik@storner.dk>
-It is released under the GNU General Public License, version 2.
+bbtest-web, bbnethosts and bbgmchosts are utilities that can
+replace part of the bb-network.sh network test utility in
+Big Brother. See README.bb-network for details.
+
+bbgen, bbtest-web, bbnethosts and bbgmchosts and sources are 
+Copyright (C) 2002-2003, Henrik Storner <henrik@storner.dk> 
+All files are released under the GNU General Public License, 
+version 2. See the file COPYING for details.
 
 
 Features
@@ -32,8 +38,8 @@ for your trend graphs, instead of wasting it with generation
 of the web pages. See the "LARRD support" section below.
 
 There are a couple of non-standard tags in bb-hosts that bbgen
-will recognize. See the "bbhost-extensions.txt" file for a 
-detailed description of these.
+will recognize. See the "README.bbhosts" file for a detailed 
+description of these.
 
 
 Requirements
@@ -43,15 +49,46 @@ A working Big Brother installation. Get BB up and running first,
 then you can drop in bbgen to speed up things.
 
 
+Compatibility
+-------------
+
+bbgen is intended to be a drop-in replacement for the bb-display.sh
+script in Big Brother version 1.9c. 
+
+If you enable bbgen's LARRD support, you will need to change a few
+of the Big Brother files - see "LARRD support" below.
+
+The only known difference is that pages with both hosts and subpages
+have the hosts first in standard Big Brother; bbgen places the
+hosts last (after the subpages).
+
+The following features in bb-display.sh are not currently implemented
+in bbgen:
+
+* "group" directives in bb-hosts are handled as "group-compress".
+  I currently have no plans to support the simple "group"
+  directive.
+
+* Modem banks are not handled at all by bbgen. This directive
+  is simply ignored - if you have a pressing need for bbgen
+  to support it, let me know.
+
+
 Installation
 ------------
+
+Check out the value used for MAXLINE in $BBHOME/src/bb.h. This 
+value MUST be the same as MAXMSG in bbgen's util.h - if not, then 
+change util.h to match your bb.h definition (or vice versa).
+Point is: They should match.
 
 Compile bbgen. It has been compiled with gcc 2.95.3 on both
 Solaris (2.8) and Linux (Red Hat 7.3, Mandrake 9). Other 
 compilers may require some tweaking - I don't know. Normally, 
 it should be as simple as running "make".
 
-Put the bbgen executable in $BBHOME/bin/
+Put the executables (bbgen, bbtest-web, bbnethosts, bbgmchosts)
+in $BBHOME/bin/
 
 To test bbgen, su to the account that you run bb as on your
 BB display server. Make sure to setup ALL of the environment
@@ -95,7 +132,8 @@ hours.
 
 To enable this, put the extra set of icons into the $BBHOME/www/gifs/
 directory as "red-recent.gif", "green-recent.gif" etc, and run
-bbgen with the "--recentgifs" option.
+bbgen with the "--recentgifs" option. Several icon sets are
+available from www.deadcat.net.au.
 
 I find it quite handy to see what systems have had any problems
 recently.
@@ -127,7 +165,7 @@ generation, by commenting out this line in larrd.pl:
 
 
 While implementing this, I found out that there is some
-confusion in the standard BB handling about the use of skins,
+confusion in the standard Big Brother about the use of skins,
 and handling of the BBBACKGROUND tag in the BB header files.
 In some cases, BBBACKGROUND is expanded only to the background
 color name - "green", "red" - where in others it is expanded 
@@ -179,36 +217,20 @@ whether network tests use the hostname or IP-adress, if the host
 is a dialup host, if it is checked with ping, the web URL's
 checked for this host (if any), and all of the other configuration
 information used by Big Brother. If you use any of my non-standard
-bb-hosts extensions (see the bbhost-extenstions.txt file), these
-will also show up here.
+bb-hosts extensions (see the README.bbhosts file), these will also 
+show up here.
 
 The "info" column is always included in the bb2.html and in the
 non-standard bbnk.html page, so the information is available to
 the people troubleshooting a problem with a service or host.
 
 As with the LARRD option, generating the info-column pages do add
-to the time it takes to run bbgen. By default, the info column pages
-are only updated every 5 minutes, which should not be a problem unless
-you have a very large number of hosts.
+to the time it takes to run bbgen. The info column pages are only 
+updated when the bb-hosts, bbwarnsetup.cfg or bbwarnrules.cfg
+files change - and at most once every 5 minutes.
 
 As with the LARRD column, the "info" column name can be specified in
-the "--info=COLUMNNAME" option, and the interval between updates of
-the info column pages can be set with the "--infoupdate" option.
-
-
-Limitations
------------
-
-The following features in bb-display.sh are not currently implemented
-in bbgen:
-
-* "group" directives in bb-hosts are handled as "group-compress".
-  I currently have no plans to support the simple "group"
-  directive.
-
-* Modem banks are not handled at all by bbgen. This directive
-  is simply ignored - if you have a pressing need for bbgen
-  to support it, let me know.
+the "--info=COLUMNNAME" option.
 
 
 Bugs
@@ -249,5 +271,5 @@ See the "TODO" file.
 
 
 Henrik Storner <henrik@storner.dk>
-Jan 1, 2003
+Feb 4, 2003
 
