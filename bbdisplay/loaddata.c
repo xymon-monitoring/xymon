@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.22 2003-01-10 08:41:02 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.23 2003-01-16 11:37:15 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -35,6 +35,8 @@ static char rcsid[] = "$Id: loaddata.c,v 1.22 2003-01-10 08:41:02 henrik Exp $";
 #include "debug.h"
 
 char    larrdcol[20] = "larrd";
+char    *nopropyellowdefault = NULL;
+char    *nopropreddefault = NULL;
 int     enable_purpleupd = 1;
 link_t  null_link = { "", "", "", NULL };	/* Null link for pages/hosts/whatever with no link */
 col_t   null_column = { "", NULL };		/* Null column */
@@ -85,7 +87,8 @@ group_t *init_group(const char *title, const char *onlycols)
 }
 
 host_t *init_host(const char *hostname, const int ip1, const int ip2, const int ip3, const int ip4, 
-		  const int dialup, const char *alerts)
+		  const int dialup, const char *alerts, 
+		  const char *nopropyellowtests, const char *nopropredtests)
 {
 	host_t 		*newhost = malloc(sizeof(host_t));
 	hostlist_t	*newlist = malloc(sizeof(hostlist_t));
@@ -102,6 +105,20 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	}
 	else {
 		newhost->alerts = NULL;
+	}
+	if (nopropyellowtests) {
+		newhost->nopropyellowtests = malloc(strlen(nopropyellowtests)+1);
+		strcpy(newhost->nopropyellowtests, nopropyellowtests);
+	}
+	else {
+		newhost->nopropyellowtests = nopropyellowdefault;
+	}
+	if (nopropredtests) {
+		newhost->nopropredtests = malloc(strlen(nopropredtests)+1);
+		strcpy(newhost->nopropredtests, nopropredtests);
+	}
+	else {
+		newhost->nopropredtests = nopropreddefault;
 	}
 	newhost->parent = newhost->next = NULL;
 	newhost->rrds = NULL;
@@ -219,6 +236,7 @@ state_t *init_state(const char *filename, int dopurple)
 	newstate->entry->color = -1;
 	strcpy(newstate->entry->age, "");
 	newstate->entry->oldage = 0;
+	newstate->entry->propagate = 1;
 
 	/* Acked column ? */
 	sprintf(ackfilename, "%s/ack.%s.%s", getenv("BBACKS"), hostname, testname);
@@ -251,6 +269,8 @@ state_t *init_state(const char *filename, int dopurple)
 			newstate->entry->color = COL_PURPLE;
 		}
 	}
+
+	newstate->entry->propagate = checkpropagation(host, testname, newstate->entry->color);
 
 	if (dopurple && (st.st_mtime <= now) && (strcmp(testname, larrdcol) != 0)) {
 		/* PURPLE test! */
@@ -589,7 +609,7 @@ page_t *load_bbhosts(void)
 		else if (sscanf(l, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
 			int dialup = 0;
 			char *p = strchr(l, '#');
-			char *alertlist;
+			char *alertlist, *nopropyellowlist, *nopropredlist;
 
 			if (p && strstr(p, " dialup")) dialup=1;
 
@@ -605,8 +625,33 @@ page_t *load_bbhosts(void)
 				}
 			}
 
+			if (p && (nopropyellowlist = strstr(p, "NOPROP:"))) {
+				nopropyellowlist += 6;
+				*nopropyellowlist = ',';
+				p = strchr(nopropyellowlist, ' ');
+				if (p) {
+					*p = ',';
+				}
+				else {
+					strcat(nopropyellowlist, ",");
+				}
+			}
+
+			if (p && (nopropredlist = strstr(p, "NOPROPRED:"))) {
+				nopropredlist += 6;
+				*nopropredlist = ',';
+				p = strchr(nopropredlist, ' ');
+				if (p) {
+					*p = ',';
+				}
+				else {
+					strcat(nopropredlist, ",");
+				}
+			}
+
 			if (curhost == NULL) {
-				curhost = init_host(hostname, ip1, ip2, ip3, ip4, dialup, alertlist);
+				curhost = init_host(hostname, ip1, ip2, ip3, ip4, dialup, alertlist, 
+						    nopropyellowlist, nopropredlist);
 				if (curgroup != NULL) {
 					curgroup->hosts = curhost;
 				} else if (cursubpage != NULL) {
@@ -621,7 +666,8 @@ page_t *load_bbhosts(void)
 				}
 			}
 			else {
-				curhost = curhost->next = init_host(hostname, ip1, ip2, ip3, ip4, dialup, alertlist);
+				curhost = curhost->next = init_host(hostname, ip1, ip2, ip3, ip4, dialup, alertlist, 
+								    nopropyellowlist,nopropredlist);
 			}
 			curhost->parent = (cursubpage ? cursubpage : curpage);
 		}

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.4 2003-01-05 08:06:23 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.5 2003-01-16 11:37:15 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -48,13 +48,16 @@ void dumphosts(host_t *head, char *prefix)
 	char	format[80];
 
 	strcpy(format, prefix);
-	strcat(format, "Host: %s, ip: %s, color: %d, link: %s\n");
+	strcat(format, "Host: %s, ip: %s, color: %d, noprop-y: %s, noprop-r: %s, link: %s\n");
 
 	for (h = head; (h); h = h->next) {
-		printf(format, h->hostname, h->ip, h->color, h->link->filename);
+		printf(format, h->hostname, h->ip, h->color, 
+			(h->nopropyellowtests ? h->nopropyellowtests : ""), 
+			(h->nopropredtests ? h->nopropredtests : ""), 
+			h->link->filename);
 		for (e = h->entries; (e); e = e->next) {
-			printf("\t\t\t\t\tTest: %s, alert %d, state %d, age: %s, oldage: %d\n", 
-				e->column->name, e->alert, e->color, e->age, e->oldage);
+			printf("\t\t\t\t\tTest: %s, alert %d, propagate %d, state %d, age: %s, oldage: %d\n", 
+				e->column->name, e->alert, e->propagate, e->color, e->age, e->oldage);
 		}
 	}
 #endif
@@ -94,10 +97,11 @@ void dumpstatelist(state_t *head)
 	state_t *s;
 
 	for (s=statehead; (s); s=s->next) {
-		printf("test:%s, state: %d, alert: %d, oldage: %d, age: %s\n",
+		printf("test:%s, state: %d, alert: %d, propagate: %d, oldage: %d, age: %s\n",
 			s->entry->column->name,
 			s->entry->color,
 			s->entry->alert,
+			s->entry->propagate,
 			s->entry->oldage,
 			s->entry->age);
 	}

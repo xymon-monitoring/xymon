@@ -26,6 +26,8 @@ extern state_t *load_state(void);
 extern dispsummary_t *load_summaries(void);
 
 extern char	*rrdnames[];
+extern char	*nopropyellowdefault;
+extern char	*nopropreddefault;
 extern char	larrdcol[];
 extern int	enable_purpleupd;
 

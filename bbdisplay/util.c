@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.9 2003-01-10 08:42:02 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.10 2003-01-16 11:37:15 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -109,11 +109,14 @@ char *dotgiffilename(entry_t *e)
 
 char *alttag(entry_t *e)
 {
-	static char tag[40];
+	static char tag[50];
 
 	sprintf(tag, "%s:%s:", e->column->name, colorname(e->color));
 	if (e->acked) {
 		strcat(tag, "acked:");
+	}
+	if (!e->propagate) {
+		strcat(tag, "nopropagate:");
 	}
 	strcat(tag, e->age);
 
@@ -212,6 +215,27 @@ int checkalert(host_t *host, char *test)
 
 	sprintf(testname, ",%s,", test);
 	return (strstr(host->alerts, testname) ? 1 : 0);
+}
+
+
+int checkpropagation(host_t *host, char *test, int color)
+{
+	/* NB: Default is to propagate test, i.e. return 1 */
+	char testname[30];
+
+	if (!host) return 1;
+
+	sprintf(testname, ",%s,", test);
+	if (color == COL_RED) {
+		if (host->nopropredtests && strstr(host->nopropredtests, testname)) return 0;
+	}
+
+	if (color == COL_YELLOW) {
+		if (host->nopropyellowtests && strstr(host->nopropyellowtests, testname)) return 0;
+		if (host->nopropredtests && strstr(host->nopropredtests, testname)) return 0;
+	}
+
+	return 1;
 }
 
 

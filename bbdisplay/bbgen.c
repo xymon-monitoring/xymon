@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.55 2003-01-05 08:37:09 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.56 2003-01-16 11:37:15 hstoerne Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -76,12 +76,25 @@ int main(int argc, char *argv[])
 				strcpy(larrdcol, (lp+1));
 			}
 		}
-		else if (strncmp(argv[i], "--rrddir=", 8) == 0) {
+		else if (strncmp(argv[i], "--rrddir=", 9) == 0) {
 			char *lp = strchr(argv[i], '=');
 			strcpy(rrddir, (lp+1));
 		}
+		else if ((strncmp(argv[i], "--noprop=", 9) == 0) || (strncmp(argv[i], "--nopropyellow=", 15) == 0)) {
+			char *lp = strchr(argv[i], '=');
+			nopropyellowdefault = malloc(strlen(lp)+2);
+			sprintf(nopropyellowdefault, ",%s,", (lp+1));
+		}
+		else if (strncmp(argv[i], "--nopropred=", 12) == 0) {
+			char *lp = strchr(argv[i], '=');
+			nopropreddefault = malloc(strlen(lp)+2);
+			sprintf(nopropreddefault, ",%s,", (lp+1));
+		}
 		else if (strcmp(argv[i], "--nopurple") == 0) {
 			enable_purpleupd = 0;
+		}
+		else if (strcmp(argv[i], "--debug") == 0) {
+			debug = 1;
 		}
 		else if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-?") == 0)) {
 			printf("Usage: %s [--options] [WebpageDirectory]\n", argv[0]);
@@ -95,7 +108,7 @@ int main(int argc, char *argv[])
 		}
 		else {
 			/* Last argument is pagedir */
-			strcpy(pagedir, argv[1]);
+			strcpy(pagedir, argv[i]);
 		}
 	}
 
@@ -130,6 +143,8 @@ int main(int argc, char *argv[])
 	for (s=dispsums; (s); s = s->next) {
 		if (s->color > pagehead->color) pagehead->color = s->color;
 	}
+
+	if (debug) dumpall(pagehead);
 
 	/* Generate pages */
 	if (chdir(pagedir) != 0) {

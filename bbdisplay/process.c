@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.3 2002-11-26 12:03:04 hstoerne Exp $";
+static char rcsid[] = "$Id: process.c,v 1.4 2003-01-16 11:37:15 hstoerne Exp $";
 
 #include <string.h>
 #include <sys/types.h>
@@ -41,7 +41,7 @@ void calc_hostcolors(hostlist_t *head)
 		color = 0;
 
 		for (e = h->hostentry->entries; (e); e = e->next) {
-			if (e->color > color) color = e->color;
+			if (e->propagate && (e->color > color)) color = e->color;
 		}
 
 		/* Blue and clear is not propageted upwards */

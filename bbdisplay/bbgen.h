@@ -43,6 +43,8 @@
       |                                    dialup              |
       +---------------------------------   parent              |
                                            color               |
+                                           nopropyellowtests   |
+                                           nopropredtests      |
                       +------------------  link                V
                       |                    entries ---------> entry_t
                       |                    next                 column -------> col_t
@@ -51,6 +53,7 @@
                       |                                         oldage         |  next
                       |                                         acked          |
                       |                                         alert          |
+                      |                                         propagate      |
                       |                                         next           |
                       |                                                        |
                       |+-------------------------------------------------------+
@@ -145,6 +148,7 @@ typedef struct {
 	int	oldage;
 	int	acked;
 	int	alert;
+	int	propagate;
 	char 	*sumurl;
 	void	*next;
 } entry_t;
@@ -163,6 +167,8 @@ typedef struct {
 	entry_t	*entries;
 	int	color;		/* Calculated */
 	char	*alerts;
+	char    *nopropyellowtests;
+	char    *nopropredtests;
 	rrd_t	*rrds;
 	void	*parent;
 	void	*next;
