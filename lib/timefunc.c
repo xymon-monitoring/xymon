@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.17 2005-03-25 08:33:05 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.18 2005-03-27 06:56:44 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -140,24 +140,38 @@ int within_sla(char *timespec, int defresult)
 	onesla = timespec;
 	while (!found && onesla) {
 
-		int wdaymatch = 0;
+		char *wday;
+		int validday, wdaymatch = 0;
 		char *endsla, *starttimep, *endtimep;
 		int starttime, endtime;
 
 		endsla = strchr(onesla, ','); if (endsla) *endsla = '\0';
 
-		if (*onesla == '*') {
-			wdaymatch = 1;
-		}
-		else if ((toupper((int)*onesla) == 'W') && (now->tm_wday >= 1) && (now->tm_wday <=5)) {
-			wdaymatch = 1;
-		}
-		else {
-			char *wday;
-			for (wday = onesla; ((*wday >= '0') && (*wday <= '6')); wday++) {
+		for (wday = onesla, validday=1; (validday && !wdaymatch); wday++) {
+			switch (*wday) {
+			  case '*':
+				wdaymatch = 1;
+				break;
+
+			  case 'W':
+			  case 'w':
+				if ((now->tm_wday >= 1) && (now->tm_wday <=5)) wdaymatch = 1;
+				break;
+
+			  case '0': case '1': case '2': case '3': case '4': case '5': case '6':
 				if (*wday == (now->tm_wday+'0')) wdaymatch = 1;
+				break;
+
+			  case ':':
+				/* End of weekday spec. is OK */
+				validday = 0;
+				break;
+
+			  default:
+				errprintf("Bad timespec (missing colon or wrong weekdays): %s\n", onesla);
+				validday = 0;
+				break;
 			}
-			if (*wday != ':') errprintf("Bad timespec (missing colon or wrong weekdays): %s\n", onesla);
 		}
 
 		if (wdaymatch) {
