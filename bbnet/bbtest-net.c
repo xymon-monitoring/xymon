@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.118 2003-09-11 14:19:02 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.119 2003-09-11 20:48:28 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1520,18 +1520,22 @@ void send_results(service_t *service, int failgoesclear)
 			  case COL_RED:
 			  case COL_YELLOW:
 				  if ((service == pingtest) && t->host->deprouterdown) {
+					char *routertext;
+
+					routertext = t->host->deprouterdown->hosttype;
+					if (routertext == NULL) routertext = getenv("BBROUTERTEXT");
+					if (routertext == NULL) routertext = "router";
+
 					strcat(msgline, ": Intermediate ");
-					strcat(msgline, (getenv("BBROUTERTEXT") ? getenv("BBROUTERTEXT") : "router"));
+					strcat(msgline, routertext);
 					strcat(msgline, " down");
 
-					strcat(msgtext, "not OK.\n");
-					strcat(msgtext, "The device ");
+					strcat(msgtext, "not OK.\nThe ");
+					strcat(msgtext, routertext); strcat(msgtext, " ");
 					strcat(msgtext, ((testedhost_t *)t->host->deprouterdown)->hostname);
 					strcat(msgtext, " (IP:");
 					strcat(msgtext, ((testedhost_t *)t->host->deprouterdown)->ip);
-					strcat(msgtext, ") ");
-					strcat(msgtext, "is not reachable, causing this host to be unreachable.");
-					strcat(msgtext, "\n");
+					strcat(msgtext, ") is not reachable, causing this host to be unreachable.\n");
 				  }
 				  else {
 				  	strcat(msgtext, "not OK : ");
@@ -1544,17 +1548,22 @@ void send_results(service_t *service, int failgoesclear)
 				  strcat(msgtext, "OK\n");
 				  if (service == pingtest) {
 					  if (t->host->deprouterdown) {
+						char *routertext;
+
+						routertext = t->host->deprouterdown->hosttype;
+						if (routertext == NULL) routertext = getenv("BBROUTERTEXT");
+						if (routertext == NULL) routertext = "router";
+
 						strcat(msgline, ": Intermediate ");
-						strcat(msgline, (getenv("BBROUTERTEXT") ? getenv("BBROUTERTEXT") : "router"));
+						strcat(msgline, routertext);
 						strcat(msgline, " down");
 
-						strcat(msgtext, "The device ");
+						strcat(msgtext, "\nThe ");
+						strcat(msgtext, routertext); strcat(msgtext, " ");
 						strcat(msgtext, ((testedhost_t *)t->host->deprouterdown)->hostname);
 						strcat(msgtext, " (IP:");
 						strcat(msgtext, ((testedhost_t *)t->host->deprouterdown)->ip);
-						strcat(msgtext, ") ");
-						strcat(msgtext, "is not reachable, causing this host to be unreachable.");
-						strcat(msgtext, "\n");
+						strcat(msgtext, ") is not reachable, causing this host to be unreachable.\n");
 					  }
 					  else if (t->host->noping) {
 						  strcat(msgline, ": Disabled");
