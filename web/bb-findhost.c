@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.4 2004-09-26 14:42:48 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.5 2004-10-14 06:07:31 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -139,7 +139,7 @@ void parse_query(void)
 int main(int argc, char *argv[])
 {
 	char *pageset = NULL;
-	hostlist_t *hostwalk;
+	hostlist_t *hostwalk, *clonewalk;
 	int i;
 
 	int gotany = 0;
@@ -191,12 +191,21 @@ int main(int argc, char *argv[])
 				/*  match */
 				printf("<tr>\n");
 				printf("<td align=left> %s </td>\n", he->displayname ? he->displayname : he->hostname);
-				printf("<td align=left> <a href=\"%s/%s#%s\">%s</a> </td>\n",
+				printf("<td align=left> <a href=\"%s/%s#%s\">%s</a>\n",
 	                     		getenv("BBWEB"), 
 					hostpage_link(he), 
 					he->hostname,
 					hostpage_name(he));
-				printf("</tr>\n");
+
+				for (clonewalk = hostwalk->clones; (clonewalk); clonewalk = clonewalk->next) {
+					printf("<br><a href=\"%s/%s#%s\">%s</a>\n",
+						getenv("BBWEB"), 
+						hostpage_link(clonewalk->hostentry), 
+						clonewalk->hostentry->hostname,
+						hostpage_name(clonewalk->hostentry));
+				}
+
+				printf("</td>\n</tr>\n");
 	
 				gotany++;
 			}
