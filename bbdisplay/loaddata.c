@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.131 2004-10-31 12:53:15 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.132 2004-11-01 16:02:14 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -252,10 +252,14 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 		newstate->entry->shorttext = strdup(log->msg);
 	}
 	else if (fgets(l, sizeof(l), fd)) {
+		char *flags = parse_testflags(l);
+
 		newstate->entry->color = parse_color(l);
-		newstate->entry->testflags = strdup(parse_testflags(l));
-		if (testflag_set(newstate->entry, 'D')) newstate->entry->skin = dialupskin;
-		if (testflag_set(newstate->entry, 'R')) newstate->entry->skin = reverseskin;
+		if (flags) {
+			newstate->entry->testflags = strdup(flags);
+			if (testflag_set(newstate->entry, 'D')) newstate->entry->skin = dialupskin;
+			if (testflag_set(newstate->entry, 'R')) newstate->entry->skin = reverseskin;
+		}
 		newstate->entry->shorttext = strdup(l);
 	}
 	else if (!enable_larrdgen && ((strcmp(testname, "larrd") == 0) || (strcmp(testname, "trends") == 0))) {
