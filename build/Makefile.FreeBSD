@@ -6,6 +6,7 @@ OSDEF = -DBSD
 NETLIBS =
 
 # Compile flags for normal build
+CC = gcc
 CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT -I/usr/local/include -L/usr/local/lib
 
 # Compile flags for debugging

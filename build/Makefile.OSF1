@@ -5,6 +5,7 @@
 NETLIBS =
 
 # Compile flags for normal build
+CC = cc
 CFLAGS = -g -O -D_REENTRANT -DNO_VSNPRINTF
 
 # Compile flags for debugging

@@ -6,6 +6,7 @@ OSDEF = -DLINUX
 NETLIBS =
 
 # Compile flags for normal build
+CC = gcc
 CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT 
 
 # Red Hat in their wisdom ships an openssl the depends on Kerberos,

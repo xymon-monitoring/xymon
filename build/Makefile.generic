@@ -5,6 +5,7 @@
 NETLIBS =
 
 # Compile flags for normal build
+CC = cc
 CFLAGS = -g -O -D_REENTRANT
 
 # Compile flags for debugging

@@ -5,6 +5,7 @@
 NETLIBS =
 
 # Compile flags for normal build
+CC = cc
 CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT -D_BSD_SOCKLEN_T_=int
 
 # Compile flags for debugging
