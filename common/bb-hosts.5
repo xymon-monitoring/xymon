@@ -236,11 +236,11 @@ include start out as being empty (no graphs).
 * To include all default graphs, use an asterisk.  E.g. "LARRD:*"
 .br
 * To exclude a certain graph, speficy it prefixed with '!'. E.g. 
-to see all graphs except users: "LARRD=*,!users"
+to see all graphs except users: "LARRD:*,!users"
 .br
 * The netstat, vmstat and tcp graphs have many "subgraphs".
 Which of these are shown can be speficied like this:
-"LARRD=*,netstat:netstat2|netstat3,tcp:http|smtp|conn"
+"LARRD:*,netstat:netstat2|netstat3,tcp:http|smtp|conn"
 This will show all graphs, but instead of the normal 
 netstat graph, there will be two: The netstat2 and
 netstat3 graphs. Instead of the combined tcp graphs showing
