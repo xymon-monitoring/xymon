@@ -104,7 +104,8 @@ clean:
 	rm -f *.o *.a *~ $(PROGRAMS) $(EXTENSIONS) $(CGISCRIPTS)
 
 
-install: install-bin install-exts install-cgi install-html install-gif install-man
+install: install-nocgi install-cgi
+install-nocgi: install-bin install-exts install-html install-gif install-man
 
 install-bin: $(PROGRAMS)
 	cp -p $(PROGRAMS) $(BBHOME)/bin/
