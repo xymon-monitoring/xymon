@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.2 2004-10-04 19:56:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.3 2004-10-04 21:30:44 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -51,6 +51,7 @@ union semun {
 #include "debug.h"
 #include "bbd_net.h"
 #include "bbdutil.h"
+#include "loadhosts.h"
 
 /* These are dummy vars needed by stuff in util.c */
 hostlist_t      *hosthead = NULL;
@@ -76,6 +77,7 @@ typedef struct conn_t {
 } conn_t;
 
 static volatile int running = 1;
+static volatile int reloadconfig = 1;
 bbd_channel_t *statuschn = NULL;
 bbd_channel_t *stachgchn = NULL;
 bbd_channel_t *pagechn   = NULL;
@@ -85,7 +87,7 @@ bbd_channel_t *noteschn  = NULL;
 #define NO_COLOR (COL_COUNT)
 static char *colnames[COL_COUNT+1];
 int alertcolors = ( (1 << COL_RED) | (1 << COL_YELLOW) | (1 << COL_PURPLE) );
-
+int ghosthandling = -1;
 
 void posttochannel(bbd_channel_t *channel, char *msg, int msglen, 
 		   char *sender, char *hostname, char *testname, time_t validity, 
@@ -95,7 +97,6 @@ void posttochannel(bbd_channel_t *channel, char *msg, int msglen,
 	struct shmid_ds chninfo;
 	int clients;
 	int n;
-	struct timespec tmo;
 	struct timeval tstamp;
 	struct timezone tz;
 
@@ -119,21 +120,14 @@ void posttochannel(bbd_channel_t *channel, char *msg, int msglen,
 	s.sem_op = -clients;
 	s.sem_flg = 0;
 	dprintf("Waiting for %d readers to finish with message\n", clients);
-	tmo.tv_sec = 1; tmo.tv_nsec = 0;
-	n = semtimedop(channel->semid, &s, 1, &tmo);
-	if ((n == -1) && (errno == EAGAIN)) {
-		union semun su;
-		dprintf("Hung reader, ignoring it\n");
-		su.val = 0;
-		semctl(channel->semid, 1, SETVAL, &su);
-	}
+	n = semop(channel->semid, &s, 1);
 	dprintf("Readers are done with last message\n");
 
 	/* All clear, post the message */
 	gettimeofday(&tstamp, &tz);
 	n = sprintf(channel->channelbuf, "@@%s|%d.%06d|%s|%s|%s|%d|%s|%s|%d\n", 
-		    channelnames[channel->channelid], tstamp.tv_sec, tstamp.tv_usec, 
-		    sender, hostname, testname, validity, colnames[newcolor], colnames[oldcolor], lastchange);
+		    channelnames[channel->channelid], (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
+		    sender, hostname, testname, (int) validity, colnames[newcolor], colnames[oldcolor], (int) lastchange);
 	memcpy(channel->channelbuf+n, msg, msglen);
 	*(channel->channelbuf + msglen + n) = '\0';
 
@@ -166,15 +160,17 @@ char *msg_data(char *msg)
 }
 
 
-void get_hts(char *msg, bbd_hostlist_t **host, bbd_testlist_t **test, bbd_log_t **log, 
+void get_hts(char *msg, char *sender, 
+	     bbd_hostlist_t **host, bbd_testlist_t **test, bbd_log_t **log, 
 	     int *color, int createhost, int createlog)
 {
 	/* "msg" contains an incoming message. First list is of the form "KEYWORD host,domain.test COLOR" */
 	char *l, *p;
 	char *hosttest, *hostname, *testname, *colstr;
-	bbd_hostlist_t *hwalk;
-	bbd_testlist_t *twalk;
-	bbd_log_t *lwalk;
+	bbd_hostlist_t *hwalk = NULL;
+	bbd_testlist_t *twalk = NULL;
+	bbd_log_t *lwalk = NULL;
+	int maybedown = 0;
 
 	*host = NULL;
 	*test = NULL;
@@ -204,8 +200,11 @@ void get_hts(char *msg, bbd_hostlist_t **host, bbd_testlist_t **test, bbd_log_t 
 		testname = strrchr(hosttest, '.');
 		if (testname) { *testname = '\0'; testname++; }
 		p = hostname;
-		while (p = strchr(p, ',')) *p = '.';
+		while ((p = strchr(p, ',')) != NULL) *p = '.';
 	}
+
+	hostname = knownhost(hostname, sender, ghosthandling, &maybedown);
+	if (hostname == NULL) return;
 
 	for (hwalk = hosts; (hwalk && strcasecmp(hostname, hwalk->hostname) && strcasecmp(hostname, hwalk->alias)); hwalk = hwalk->next) ;
 	if (createhost && (hwalk == NULL)) {
@@ -241,7 +240,12 @@ void get_hts(char *msg, bbd_hostlist_t **host, bbd_testlist_t **test, bbd_log_t 
 	*host = hwalk;
 	*test = twalk;
 	*log = lwalk;
-	if (colstr) *color = parse_color(colstr);
+	if (colstr) {
+		*color = parse_color(colstr);
+		if ( maybedown && ((*color == COL_RED) || (*color == COL_YELLOW)) ) {
+			*color = COL_BLUE;
+		}
+	}
 	free(l);
 }
 
@@ -267,7 +271,7 @@ void handle_status(char *msg, int msglen, char *sender, char *hostname, char *te
 		umsglen = msglen + strlen(log->dismsg) + 512;
 		umsg = (unsigned char *)malloc(umsglen);
 
-		p = chostname; while (p = strchr(p, '.')) *p = ',';
+		p = chostname; while ((p = strchr(p, '.')) != NULL) *p = ',';
 		sprintf(umsg, "status %s.%s+%d blue disabled until %s\n", 
 			chostname, testname, validity, ctime(&log->enabletime));
 		strcat(umsg, log->dismsg);
@@ -369,7 +373,7 @@ void handle_enadis(int enabled, char *msg, int msglen, char *sender)
 		*p = '\0';
 		tname = (p+1);
 	}
-	p = hosttest; while (p = strchr(p, ',')) *p = '.';
+	p = hosttest; while ((p = strchr(p, ',')) != NULL) *p = '.';
 
 	for (hwalk = hosts; (hwalk && strcasecmp(hosttest, hwalk->hostname) && strcasecmp(hosttest, hwalk->alias)); hwalk = hwalk->next) ;
 	if (hwalk == NULL) {
@@ -412,7 +416,7 @@ void handle_enadis(int enabled, char *msg, int msglen, char *sender)
 		time_t expires = time(NULL) + duration*60;
 		char *dismsg;
 
-		p = hosttest; while (p = strchr(p, '.')) *p = ',';
+		p = hosttest; while ((p = strchr(p, '.')) != NULL) *p = ',';
 
 		dismsg = msg;
 		while (*dismsg && !isspace(*dismsg)) dismsg++;       /* Skip "disable".... */
@@ -445,15 +449,47 @@ void handle_enadis(int enabled, char *msg, int msglen, char *sender)
 	return;
 }
 
+int get_config(char *fn, conn_t *msg)
+{
+	FILE *fd = NULL;
+	int done = 0;
+	int n;
+
+	fd = stackfopen(fn, "r");
+	if (fd == NULL) return -1;
+
+	*msg->buf = '\0';
+	msg->bufp = msg->buf;
+	msg->buflen = 0;
+	do {
+		if ((msg->bufsz - msg->buflen) < 1024) {
+			msg->bufsz += 4096;
+			msg->buf = realloc(msg->buf, msg->bufsz);
+			msg->bufp = msg->buf + msg->buflen;
+		}
+		done = (stackfgets(msg->bufp, (msg->bufsz - msg->buflen), "include", NULL) == NULL);
+		if (!done) {
+			n = strlen(msg->bufp);
+			msg->buflen += n;
+			msg->bufp += n;
+		}
+	} while (!done);
+
+	stackfclose(fd);
+	return 0;
+}
+
 void do_message(conn_t *msg)
 {
 	bbd_hostlist_t *h;
 	bbd_testlist_t *t;
 	bbd_log_t *log;
 	int color;
+	char sender[20];
 
 	/* Most likely, we will not send a response */
 	msg->doingwhat = NOTALK;
+	strcpy(sender, inet_ntoa(msg->addr.sin_addr));
 
 	if (strncmp(msg->buf, "combo\n", 6) == 0) {
 		char *currmsg, *nextmsg;
@@ -463,49 +499,45 @@ void do_message(conn_t *msg)
 			nextmsg = strstr(currmsg, "\n\nstatus");
 			if (nextmsg) { *(nextmsg+1) = '\0'; nextmsg += 2; }
 
-			get_hts(currmsg, &h, &t, &log, &color, 1, 1);
-			handle_status(currmsg, strlen(currmsg), inet_ntoa(msg->addr.sin_addr), 
-					h->hostname, t->testname, log, color);
+			get_hts(currmsg, sender, &h, &t, &log, &color, 1, 1);
+			if (log) handle_status(currmsg, strlen(currmsg), sender, h->hostname, t->testname, log, color);
 
 			currmsg = nextmsg;
 		} while (currmsg);
 	}
 	else if (strncmp(msg->buf, "status", 6) == 0) {
-		get_hts(msg->buf, &h, &t, &log, &color, 1, 1);
-		handle_status(msg->buf, msg->buflen, inet_ntoa(msg->addr.sin_addr), 
-				h->hostname, t->testname, log, color);
+		get_hts(msg->buf, sender, &h, &t, &log, &color, 1, 1);
+		if (log) handle_status(msg->buf, msg->buflen, sender, h->hostname, t->testname, log, color);
 	}
 	else if (strncmp(msg->buf, "data", 4) == 0) {
-		get_hts(msg->buf, &h, &t, &log, &color, 1, 1);
-		if (h && t) handle_data(msg->buf, msg->buflen, inet_ntoa(msg->addr.sin_addr), h->hostname, t->testname);
+		get_hts(msg->buf, sender, &h, &t, &log, &color, 1, 1);
+		if (h && t) handle_data(msg->buf, msg->buflen, sender, h->hostname, t->testname);
 	}
 	else if (strncmp(msg->buf, "summary", 7) == 0) {
-		get_hts(msg->buf, &h, &t, &log, &color, 1, 1);
-		handle_status(msg->buf, msg->buflen, inet_ntoa(msg->addr.sin_addr), 
-				h->hostname, t->testname, log, color);
+		get_hts(msg->buf, sender, &h, &t, &log, &color, 1, 1);
+		handle_status(msg->buf, msg->buflen, sender, h->hostname, t->testname, log, color);
 	}
 	else if (strncmp(msg->buf, "notes", 5) == 0) {
-		get_hts(msg->buf, &h, &t, &log, &color, 1, 0);
-		if (h) handle_notes(msg->buf, msg->buflen, inet_ntoa(msg->addr.sin_addr), h->hostname);
+		get_hts(msg->buf, sender, &h, &t, &log, &color, 1, 0);
+		if (h) handle_notes(msg->buf, msg->buflen, sender, h->hostname);
 	}
 	else if (strncmp(msg->buf, "enable", 6) == 0) {
-		handle_enadis(1, msg->buf, msg->buflen, inet_ntoa(msg->addr.sin_addr));
+		handle_enadis(1, msg->buf, msg->buflen, sender);
 	}
 	else if (strncmp(msg->buf, "disable", 7) == 0) {
-		handle_enadis(0, msg->buf, msg->buflen, inet_ntoa(msg->addr.sin_addr));
+		handle_enadis(0, msg->buf, msg->buflen, sender);
 	}
 	else if (strncmp(msg->buf, "config", 6) == 0) {
 		char conffn[1024];
-		FILE *conffd = NULL;
 
 		if ( (sscanf(msg->buf, "config %1023s", conffn) == 1) &&
-		     (strstr("../", conffn) == NULL) && get_config(conffn, msg) ) {
+		     (strstr("../", conffn) == NULL) && (get_config(conffn, msg) == 0) ) {
 			msg->doingwhat = RESPONDING;
 			msg->bufp = msg->buf;
 		}
 	}
 	else if (strncmp(msg->buf, "query", 5) == 0) {
-		get_hts(msg->buf, &h, &t, &log, &color, 0, 0);
+		get_hts(msg->buf, sender, &h, &t, &log, &color, 0, 0);
 		if (log) {
 			unsigned char *eoln = strchr(log->message, '\n');
 
@@ -518,7 +550,7 @@ void do_message(conn_t *msg)
 	}
 	else if (strncmp(msg->buf, "bbgendlog ", 10) == 0) {
 		/* Request for a single status log */
-		get_hts(msg->buf, &h, &t, &log, &color, 0, 0);
+		get_hts(msg->buf, sender, &h, &t, &log, &color, 0, 0);
 		if (log) {
 			msg->doingwhat = RESPONDING;
 			msg->bufp = msg->buf = strdup(log->message);
@@ -550,7 +582,7 @@ void do_message(conn_t *msg)
 				n = sprintf(bufp, "%s|%s|%s|%d|%d|%s\n", 
 					hwalk->hostname, lwalk->test->testname, 
 					colnames[lwalk->color],
-					lwalk->lastchange, lwalk->validtime,
+					(int) lwalk->lastchange, (int) lwalk->validtime,
 					msg_data(lwalk->message));
 				bufp += n;
 				buflen += n;
@@ -574,20 +606,27 @@ void do_message(conn_t *msg)
 }
 
 
-int get_config(char *fn, conn_t *msg)
-{
-}
-
 void sig_handler(int signum)
 {
-	running = 0;
+	switch (signum) {
+	  case SIGTERM:
+	  case SIGINT:
+		running = 0;
+		break;
+
+	  case SIGHUP:
+		reloadconfig = 1;
+		break;
+	}
 }
+
 
 int main(int argc, char *argv[])
 {
 	conn_t *chead = NULL;
 	char *listenip = "0.0.0.0";
 	int listenport = 1984;
+	char *bbhostsfn = NULL;
 	struct sockaddr_in laddr;
 	int lsocket, opt;
 	int listenq = 512;
@@ -615,8 +654,41 @@ int main(int argc, char *argv[])
 				listenport = atoi(p+1);
 			}
 		}
-		else if (strncmp(argv[argi], "--alertcolors=", 14) == 0) {
+		else if (strncmp(argv[argi], "--bbhosts=", 9) == 0) {
+			char *p = strchr(argv[argi], '=') + 1;
+			bbhostsfn = strdup(p);
 		}
+		else if (strncmp(argv[argi], "--alertcolors=", 14) == 0) {
+			char *colspec = strchr(argv[argi], '=') + 1;
+			int c, ac;
+			char *p;
+
+			p = strtok(colspec, ",");
+			ac = 0;
+			while (p) {
+				c = parse_color(p);
+				if (c != -1) ac = (ac | (1 << c));
+				p = strtok(NULL, ",");
+			}
+
+			alertcolors = ac;
+		}
+		else if (strncmp(argv[argi], "--ghosts=", 9) == 0) {
+			char *p = strchr(argv[argi], '=') + 1;
+
+			if (strcmp(p, "allow") == 0) ghosthandling = 0;
+			else if (strcmp(p, "drop") == 0) ghosthandling = 1;
+			else if (strcmp(p, "log") == 0) ghosthandling = 2;
+		}
+	}
+
+	if (getenv("BBHOSTS") && (bbhostsfn == NULL)) {
+		bbhostsfn = strdup(getenv("BBHOSTS"));
+	}
+
+	if (ghosthandling == -1) {
+		if (getenv("BBGHOSTS")) ghosthandling = atoi(getenv("BBGHOSTS"));
+		else ghosthandling = 0;
 	}
 
 	/* Set up a socket to listen for new connections */
@@ -655,6 +727,11 @@ int main(int argc, char *argv[])
 		fd_set fdread, fdwrite;
 		int maxfd, n;
 		conn_t *cwalk;
+
+		if (reloadconfig) {
+			reloadconfig = 0;
+			load_hostnames(bbhostsfn, 1);
+		}
 
 		FD_ZERO(&fdread); FD_ZERO(&fdwrite);
 		FD_SET(lsocket, &fdread); maxfd = lsocket;
