@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.90 2003-07-04 09:37:03 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.91 2003-07-06 16:20:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -186,8 +186,8 @@ group_t *init_group(const char *title, const char *onlycols)
 
 host_t *init_host(const char *hostname, const char *displayname,
 		  const int ip1, const int ip2, const int ip3, const int ip4, 
-		  const int dialup, const int prefer, const double warnpct,
-		  const char *alerts, const char *waps, char *tags,
+		  const int dialup, const int prefer, const double warnpct, const char *reporttime,
+		  const char *alerts, int nktime, const char *waps, char *tags,
 		  const char *nopropyellowtests, const char *nopropredtests,
 		  const char *larrdgraphs)
 {
@@ -211,7 +211,8 @@ host_t *init_host(const char *hostname, const char *displayname,
 	newhost->prefer = prefer;
 	newhost->dialup = dialup;
 	newhost->reportwarnlevel = warnpct;
-	if (alerts) {
+	newhost->reporttime = (reporttime ? reporttime : NULL);	/* malloc()'ed by load_hosts() */
+	if (alerts && nktime) {
 		char *p;
 		p = skipword(alerts); if (*p) *p = '\0'; else p = NULL;
 
@@ -1118,8 +1119,9 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			int dialup = 0;
 			int prefer = 0;
 			int nodisp = 0;
+			int nktime = 1;
 			double warnpct = reportwarnlevel;
-			char *alertlist, *onwaplist, *nopropyellowlist, *nopropredlist, *larrdgraphs;
+			char *alertlist, *onwaplist, *nopropyellowlist, *nopropredlist, *larrdgraphs, *reporttime;
 			char *displayname;
 			char *targetpagelist[MAX_TARGETPAGES_PER_HOST];
 			int targetpagecount;
@@ -1132,7 +1134,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			}
 			else tag = NULL;
 
-			alertlist = onwaplist = nopropyellowlist = nopropredlist = larrdgraphs = NULL;
+			alertlist = onwaplist = nopropyellowlist = nopropredlist = larrdgraphs = reporttime = NULL;
 			displayname = NULL;
 			for (targetpagecount=0; (targetpagecount < MAX_TARGETPAGES_PER_HOST); targetpagecount++) 
 				targetpagelist[targetpagecount] = NULL;
@@ -1147,6 +1149,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 					nodisp = 1;
 				else if (argnmatch(tag, "NK:")) 
 					alertlist = malcop(tag+strlen("NK:"));
+				else if (argnmatch(tag, "NKTIME=")) 
+					nktime = within_sla(tag, "NKTIME");
 				else if (argnmatch(tag, "WML:")) 
 					onwaplist = malcop(tag+strlen("WML:"));
 				else if (argnmatch(tag, "NOPROP:")) 
@@ -1180,6 +1184,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				}
 				else if (argnmatch(tag, "WARNPCT:")) 
 					warnpct = atof(tag+8);
+				else if (argnmatch(tag, "REPTIME=")) 
+					reporttime = malcop(tag);
 				else if (argnmatch(tag, hosttag)) {
 					targetpagelist[targetpagecount++] = malcop(tag+strlen(hosttag));
 				}
@@ -1199,8 +1205,9 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				 */
 				if (curhost == NULL) {
 					curhost = init_host(hostname, displayname,
-							    ip1, ip2, ip3, ip4, dialup, prefer, warnpct,
-							    alertlist, onwaplist,
+							    ip1, ip2, ip3, ip4, dialup, prefer, 
+							    warnpct, reporttime,
+							    alertlist, nktime, onwaplist,
 							    startoftags, nopropyellowlist, nopropredlist,
 							    larrdgraphs);
 					if (curgroup != NULL) {
@@ -1221,8 +1228,9 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				}
 				else {
 					curhost = curhost->next = init_host(hostname, displayname,
-									    ip1, ip2, ip3, ip4, dialup, prefer, warnpct,
-									    alertlist, onwaplist,
+									    ip1, ip2, ip3, ip4, dialup, prefer, 
+									    warnpct, reporttime,
+									    alertlist, nktime, onwaplist,
 									    startoftags, nopropyellowlist,nopropredlist,
 									    larrdgraphs);
 				}
@@ -1262,8 +1270,9 @@ bbgen_page_t *load_bbhosts(char *pgset)
 					}
 					else {
 						host_t *newhost = init_host(hostname, displayname,
-									    ip1, ip2, ip3, ip4, dialup, prefer, warnpct,
-									    alertlist, onwaplist,
+									    ip1, ip2, ip3, ip4, dialup, prefer, 
+									    warnpct, reporttime,
+									    alertlist, nktime, onwaplist,
 									    startoftags, nopropyellowlist,nopropredlist,
 									    larrdgraphs);
 

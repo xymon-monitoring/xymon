@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.72 2003-07-06 14:53:46 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.73 2003-07-06 16:20:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -549,7 +549,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 
 		if (newhost == NULL) {
 			/* New summary "host" */
-			newhost = init_host(s->row, NULL, 0,0,0,0, 0, 0, 0.0, NULL, NULL, NULL, NULL, NULL, NULL);
+			newhost = init_host(s->row, NULL, 0,0,0,0, 0, 0, 0.0, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL);
 
 			/*
 			 * Cannot have the pseudo host in the official hostlist,
@@ -1180,7 +1180,7 @@ int do_bb2_page(char *filename, int summarytype)
 
 		  case PAGE_NK:
 			/* The NK page */
-			for (useit=0, e=h->hostentry->entries; (e && !useit); e=e->next) {
+			for (useit=0, e=h->hostentry->entries; (h->hostentry->nktime && e && !useit); e=e->next) {
 				useit = (e->alert && (!e->acked) && ((e->color == COL_RED) || ((e->color == COL_YELLOW) && (strcmp(e->column->name, "conn") != 0))));
 			}
 			break;
