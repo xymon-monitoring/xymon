@@ -30,4 +30,6 @@ extern int	purpledelay;
 extern int 	purplecount;
 extern char 	*purplelogfn;
 
+extern state_t *load_state(dispsummary_t **sumhead);
+
 #endif

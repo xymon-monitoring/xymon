@@ -30,7 +30,6 @@ extern int pagecount;
 
 extern link_t *load_all_links(void);
 extern bbgen_page_t *load_bbhosts(char *pgset);
-extern state_t *load_state(dispsummary_t **sumhead);
 
 /* Needed by the summary handling */
 extern host_t *init_host(const char *hostname, const char *displayname, const char *clientalias,
