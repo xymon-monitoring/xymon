@@ -11,9 +11,9 @@ link_t  null_link = { "", "", "", NULL };
 
 unsigned char *get_bbgend_message(void)
 {
-	static unsigned char buf[4*MAXMSG];
+	static unsigned char buf[SHAREDBUFSZ];
 	unsigned char *bufp = buf;
-	int bufsz = 4*MAXMSG;
+	int bufsz = SHAREDBUFSZ;
 	int buflen = 0;
 	int complete = 0;
 
@@ -37,5 +37,86 @@ unsigned char *get_bbgend_message(void)
 
 	*bufp = '\0';
 	return ((!complete || (buflen == 0)) ? NULL : buf);
+}
+
+unsigned char *nlencode(unsigned char *msg)
+{
+	static unsigned char *buf = NULL;
+	static int bufsz = 0;
+	int maxneeded;
+	unsigned char *inp, *outp;
+	int n;
+
+	if (msg == NULL) msg = "";
+
+	maxneeded = 2*strlen(msg)+1;
+
+	if (buf == NULL) {
+		bufsz = maxneeded;
+		buf = (char *)malloc(bufsz);
+	}
+	else if (bufsz < maxneeded) {
+		bufsz = maxneeded;
+		buf = (char *)realloc(buf, bufsz);
+	}
+
+	inp = msg;
+	outp = buf;
+
+	while (*inp) {
+		n = strcspn(inp, "|\n\r\t\\");
+		if (n > 0) {
+			memcpy(outp, inp, n);
+			outp += n;
+			inp += n;
+		}
+
+		if (*inp) {
+			*outp = '\\'; outp++;
+			switch (*inp) {
+			  case '|' : *outp = 'p'; outp++; break;
+			  case '\n': *outp = 'n'; outp++; break;
+			  case '\r': *outp = 'r'; outp++; break;
+			  case '\t': *outp = 't'; outp++; break;
+			  case '\\': *outp = '\\'; outp++; break;
+			}
+			inp++;
+		}
+	}
+	*outp = '\0';
+
+	return buf;
+}
+
+void nldecode(unsigned char *msg)
+{
+	unsigned char *inp = msg;
+	unsigned char *outp = msg;
+	int n;
+
+	while (*inp) {
+		n = strcspn(inp, "\\");
+		if ((n > 0) && (inp != outp)) {
+			memmove(outp, inp, n);
+			inp += n;
+			outp += n;
+		}
+
+		if (*inp == '\\') {
+			inp++;
+			switch (*inp) {
+			  case 'p': *outp = '|';  outp++; inp++; break;
+			  case 'r': *outp = '\r'; outp++; inp++; break;
+			  case 'n': *outp = '\n'; outp++; inp++; break;
+			  case 't': *outp = '\t'; outp++; inp++; break;
+			  case '\\': *outp = '\\'; outp++; inp++; break;
+			}
+		}
+		else if (*inp) {
+			*outp = *inp;
+			outp++; inp++;
+		}
+	}
+	*outp = '\0';
 }
 
