@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.33 2003-08-26 15:33:43 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.34 2003-08-26 21:08:19 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -204,12 +204,12 @@ static void setup_ssl(test_t *item)
 	item->sslrunning = 0;
 }
 
-int socket_write(test_t *item, char *outbuf, int outlen)
+int socket_write(test_t *item, unsigned char *outbuf, int outlen)
 {
 	return write(item->fd, outbuf, outlen);
 }
 
-int socket_read(test_t *item, char *inbuf, int inbufsize)
+int socket_read(test_t *item, unsigned char *inbuf, int inbufsize)
 {
 	return read(item->fd, inbuf, inbufsize);
 }
@@ -730,11 +730,11 @@ void do_tcp_tests(int conntimeout, int concurrency)
 						if (res) {
 							msgbuf[res] = '\0';
 							if (item->banner == NULL) {
-								item->banner = (char *)malloc(res+1);
+								item->banner = (unsigned char *)malloc(res+1);
 								memcpy(item->banner, msgbuf, res+1);
 							}
 							else {
-								item->banner = (char *)realloc(item->banner, strlen(item->banner)+strlen(msgbuf)+1);
+								item->banner = (unsigned char *)realloc(item->banner, strlen(item->banner)+strlen(msgbuf)+1);
 								strcat(item->banner, msgbuf);
 							}
 						}
