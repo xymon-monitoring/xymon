@@ -304,12 +304,12 @@ else
 
 	if test -r Makefile.`uname -s`
 	then
-		echo "include Makefile.`uname -s`" >>Makefile
+		echo "include build/Makefile.`uname -s`" >>Makefile
 		echo ""
 		echo "Using `uname -s` Makefile settings"
 		echo ""
 	else
-		echo "include Makefile.generic" >>Makefile
+		echo "include build/Makefile.generic" >>Makefile
 		echo ""
 		echo "Using GENERIC Makefile settings"
 		echo ""
@@ -319,7 +319,7 @@ else
 		echo "bbgen@storner.dk so I can include it in the next version."
 		echo ""
 	fi
-	echo "include Makefile.rules" >> Makefile
+	echo "include build/Makefile.rules" >> Makefile
 	echo "" >> Makefile
 	echo "# Add local CFLAGS etc. settings below here" >>Makefile
 
