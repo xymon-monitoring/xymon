@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.8 2003-06-21 07:34:52 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.9 2003-06-21 18:34:50 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -164,6 +164,8 @@ int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 	return err;
 }
 
+
+
 int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *servicename, time_t fromtime, time_t totime)
 {
 	char l[MAX_LINE_LEN];
@@ -260,6 +262,19 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 	return color;
 }
 
+
+replog_t *save_replogs(void)
+{
+	replog_t *tmp = reploghead;
+
+	reploghead = NULL;
+	return tmp;
+}
+
+void restore_replogs(replog_t *head)
+{
+	reploghead = head;
+}
 
 #ifdef STANDALONE
 
