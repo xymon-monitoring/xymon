@@ -441,6 +441,10 @@ page_t *load_bbhosts(void)
 		exit(1);
 
 	curpage = toppage = init_page("", "");
+	cursubpage = NULL;
+	curgroup = NULL;
+	curhost = NULL;
+
 	while (fgets(l, sizeof(l), bbhosts)) {
 		p = strchr(l, '\n'); if (p) { *p = '\0'; };
 
