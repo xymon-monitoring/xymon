@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.20 2003-06-02 16:07:01 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.21 2003-06-09 14:41:57 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -44,26 +44,6 @@ int generate_info(char *infocolumn)
 	char l[512];
 	int ping, testip, dialup;
 	alertrec_t *alerts;
-	char fn[MAX_PATH];
-	struct stat st;
-
-	/* Is it necessary to update this ? */
-	sprintf(fn, "%s/.info-gen", getenv("BBTMP"));
-	if (stat(fn, &st) == 0) {
-		time_t lastupd, currupd;
-
-		currupd = st.st_mtime;
-
-		stat(getenv("BBHOSTS"), &st); lastupd = st.st_mtime;
-
-		sprintf(fn, "%s/etc/bbwarnsetup.cfg", getenv("BBHOME")); 
-		if ((stat(fn, &st) == 0) && (st.st_mtime > lastupd)) lastupd = st.st_mtime;
-		sprintf(fn, "%s/etc/bbwarnrules.cfg", getenv("BBHOME")); 
-		if ((stat(fn, &st) == 0) && (st.st_mtime > lastupd)) lastupd = st.st_mtime;
-
-		/* None of the source files modified since last update - drop it */
-		if (lastupd < currupd) return 1;
-	}
 
 	if (!run_columngen("info", info_update_interval, enable_infogen))
 		return 1;
