@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.108 2003-09-08 12:40:48 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.109 2003-09-18 20:45:01 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -291,6 +291,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *com
 			newhost->comment = newhost->ip;
 		}
 	}
+	newhost->nobb2 = 0;
 	newhost->next = NULL;
 
 	/*
@@ -1248,6 +1249,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			int dialup = 0;
 			int prefer = 0;
 			int nodisp = 0;
+			int nobb2 = 0;
 			int nktime = 1;
 			double warnpct = reportwarnlevel;
 			char *alertlist, *onwaplist, *nopropyellowlist, *nopropredlist, *larrdgraphs, *reporttime;
@@ -1288,6 +1290,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 					prefer = 1;
 				else if ((strcmp(tag, "nodisp") == 0) || (strcmp(tag, "NODISP") == 0))
 					nodisp = 1;
+				else if ((strcmp(tag, "nobb2") == 0) || (strcmp(tag, "NOBB2") == 0))
+					nobb2 = 1;
 				else if (argnmatch(tag, "NK:")) 
 					alertlist = malcop(tag+strlen("NK:"));
 				else if (argnmatch(tag, "NKTIME=")) 
@@ -1419,6 +1423,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				}
 				curhost->parent = (cursubparent ? cursubparent : (cursubpage ? cursubpage : curpage));
 				if (curtitle) { curhost->pretitle = curtitle; curtitle = NULL; }
+				curhost->nobb2 = nobb2;
 			}
 			else if (targetpagecount) {
 

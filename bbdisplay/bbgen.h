@@ -257,6 +257,7 @@ typedef struct host_t {
 	char	*reporttime;
 	int     *banks;
 	int     banksize;
+	int     nobb2;
 	struct host_t	*next;
 } host_t;
 

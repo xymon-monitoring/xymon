@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.97 2003-09-16 13:59:46 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.98 2003-09-18 20:45:01 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1015,9 +1015,12 @@ int do_bb2_page(char *filename, int summarytype)
 		switch (summarytype) {
 		  case PAGE_BB2:
 			/* Normal BB2 page */
-			useit = ((h->hostentry->color == COL_RED) || 
-				 (h->hostentry->color == COL_YELLOW) || 
-				 (h->hostentry->color == COL_PURPLE));
+			if (h->hostentry->nobb2) 
+				useit = 0;
+			else
+				useit = ((h->hostentry->color == COL_RED) || 
+					 (h->hostentry->color == COL_YELLOW) || 
+					 (h->hostentry->color == COL_PURPLE));
 			break;
 
 		  case PAGE_NK:
