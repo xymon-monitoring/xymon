@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.11 2004-09-10 21:35:41 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.12 2004-09-11 07:14:43 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -30,6 +30,7 @@ static char rcsid[] = "$Id: dns.c,v 1.11 2004-09-10 21:35:41 henrik Exp $";
 #include <ares.h>
 static ares_channel stdchannel;
 static int stdchannelactive = 0;
+int use_ares_lookup = 1;
 
 int dns_stats_total   = 0;
 int dns_stats_success = 0;
@@ -99,7 +100,7 @@ void add_host_to_dns_queue(char *hostname)
 
 		dprintf("Adding hostname '%s' to resolver queue\n", hostname);
 
-		if (!stdchannelactive) {
+		if (use_ares_lookup && !stdchannelactive) {
 			int status;
 			status = ares_init(&stdchannel);
 			stdchannelactive = 1;
@@ -111,7 +112,26 @@ void add_host_to_dns_queue(char *hostname)
 		gettimeofday(&dnsc->resolvetime, &tz);
 		dnscache = dnsc;
 
-		ares_gethostbyname(stdchannel, hostname, AF_INET, dns_callback, dnsc);
+		if (use_ares_lookup) {
+			ares_gethostbyname(stdchannel, hostname, AF_INET, dns_callback, dnsc);
+		}
+		else {
+			struct hostent *hent;
+			int status;
+
+			hent = gethostbyname(hostname);
+			if (hent) {
+				status = ARES_SUCCESS;
+				dns_stats_success++;
+			}
+			else {
+				status = ARES_ENOTFOUND;
+				dns_stats_failed++;
+				dprintf("gethostbyname() failed with err %d: %s\n", h_errno, hstrerror(h_errno));
+			}
+			dns_callback(dnsc, status, hent);
+		}
+
 		dns_stats_total++;
 	}
 }

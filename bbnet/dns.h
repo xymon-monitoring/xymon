@@ -16,6 +16,8 @@
 #define DNS_ONLY        1	/* DNS only - if it fails, report service down */
 #define IP_ONLY         2	/* IP only - dont do DNS lookups */
 
+extern int use_ares_lookup;
+
 extern int dns_stats_total;
 extern int dns_stats_success;
 extern int dns_stats_failed;

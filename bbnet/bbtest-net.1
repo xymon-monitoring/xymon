@@ -85,6 +85,9 @@ bbtest-net will timeout all DNS lookups after N seconds.
 Any pending DNS lookups are regarded as failed, i.e. the
 network tests that depend on this DNS lookup will report
 an error.
+.br
+Note: If you use the --no-ares option, timeout of DNS
+lookups cannot be controlled by bbtest-net.
 
 .IP --dns-max-all=N
 Same as "--dns-timeout=N". The "--dns-max-all" option is 
@@ -108,6 +111,20 @@ will ignore this setting and still perform a DNS
 lookup for the hostname given in the URL; see the
 "bbtest-net tags for HTTP tests" section in
 .I bb-hosts(5)
+
+.IP --no-ares
+Disable the ARES resolver built into bbtest-net. This makes
+bbtest-net resolve hostnames using your system resolver
+function. You should only use this as a last resort if bbtest-net
+cannot resolve the hostnames you use in the normal way (via DNS
+or /etc/hosts). One reason for using this would be if you need to 
+resolve hostnames via NIS/NIS+ (a.k.a. Yellow Pages).
+.br
+The system resolver function does not provide a mechanism for
+controlling timeouts of the hostname lookups, so if your
+DNS or NIS server is down, bbtest-net can take a very long time
+to run. The --dns-timeout option is effectively disabled when
+using this option.
 
 .IP --report[=COLUMNNAME]
 With this option, bbtest-net will send a status message with details 

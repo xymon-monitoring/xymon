@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.174 2004-09-10 20:39:18 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.175 2004-09-11 07:14:43 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -2096,6 +2096,9 @@ int main(int argc, char *argv[])
 			else if (strcmp(p, "ip") == 0)   dnsmethod = IP_ONLY;
 			else                             dnsmethod = DNS_THEN_IP;
 		}
+		else if (strcmp(argv[argi], "--no-ares") == 0) {
+			use_ares_lookup = 0;
+		}
 		else if (argnmatch(argv[argi], "--report=") || (strcmp(argv[argi], "--report") == 0)) {
 			char *p = strchr(argv[argi], '=');
 			if (p) {
@@ -2211,6 +2214,7 @@ int main(int argc, char *argv[])
 			printf("    --concurrency=N             : Number of tests run in parallel\n");
 			printf("    --dns-timeout=N             : DNS lookups timeout and fail after N seconds [30]\n");
 			printf("    --dns=[only|ip|standard]    : How IP's are decided\n");
+			printf("    --no-ares                   : Use the system resolver library for hostname lookups\n");
 			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbtest-net\n");
 			printf("    --test-untagged             : Include hosts without a NET: tag in the test\n");
 			printf("    --frequenttestlimit=N       : Seconds after detecting failures in which we poll frequently\n");
@@ -2294,10 +2298,10 @@ int main(int argc, char *argv[])
 	add_timestamp("Service definitions loaded");
 
 	load_tests();
-	add_timestamp("Test definitions loaded");
+	add_timestamp(use_ares_lookup ? "Tests loaded" : "Tests loaded, hostname lookups done");
 
 	do_dns_lookups();
-	add_timestamp("DNS lookups completed");
+	if (use_ares_lookup) add_timestamp("DNS lookups completed");
 
 	if (dumpdata & 1) { dump_hostlist(); dump_testitems(); }
 
