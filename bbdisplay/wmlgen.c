@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: wmlgen.c,v 1.8 2003-05-22 22:20:44 henrik Exp $";
+static char rcsid[] = "$Id: wmlgen.c,v 1.9 2003-05-22 22:34:22 henrik Exp $";
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -24,12 +24,40 @@ static char rcsid[] = "$Id: wmlgen.c,v 1.8 2003-05-22 22:20:44 henrik Exp $";
 #include <sys/wait.h>
 #include <string.h>
 #include <ctype.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 #include "bbgen.h"
 #include "util.h"
 #include "wmlgen.h"
 
 static char wmldir[MAX_PATH];
+
+static void delete_old_cards(char *dirname)
+{
+	DIR             *bbcards;
+	struct dirent   *d;
+	struct stat     st;
+	time_t		now = time(NULL);
+	char		fn[MAX_PATH];
+
+	bbcards = opendir(dirname);
+	if (!bbcards) {
+		errprintf("Cannot read directory %s\n", dirname);
+		return;
+        }
+
+	chdir(dirname);
+	while ((d = readdir(bbcards))) {
+		strcpy(fn, d->d_name);
+		stat(fn, &st);
+		if (S_ISREG(st.st_mode) && (st.st_mtime < (now-3600))) {
+			unlink(fn);
+		}
+	}
+	closedir(bbcards);
+}
 
 static char *wml_colorname(int color)
 {
@@ -169,7 +197,7 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 int do_wml_cards(char *webdir)
 {
 	FILE		*bb2fd, *hostfd;
-	char		bb2fn[MAX_PATH], hostfn[MAX_PATH];
+	char		bb2fn[MAX_PATH], indexfn[MAX_PATH], hostfn[MAX_PATH];
 	hostlist_t	*h;
 	entry_t		*t;
 	int		wapcolor, hostcolor;
@@ -177,6 +205,8 @@ int do_wml_cards(char *webdir)
 	int bb2part = 1;
 
 	sprintf(wmldir, "%s/wml", webdir);
+	delete_old_cards(wmldir);
+
 	wapcolor = COL_GREEN;
 	for (h = hosthead; (h); h = h->next) {
 		hostcolor = COL_GREEN;
@@ -203,6 +233,10 @@ int do_wml_cards(char *webdir)
 		errprintf("Cannot open BB2 WML file %s\n", bb2fn);
 		return 0;
 	}
+
+	sprintf(indexfn, "%s/index.wml", wmldir);
+	symlink(bb2fn, indexfn);
+
 	fprintf(bb2fd, "<?xml version=\"1.0\"?>\n");
 	fprintf(bb2fd, "<!DOCTYPE wml PUBLIC \"-//WAPFORUM//DTD WML 1.1//EN\" \"http://www.wapforum.org/DTD/wml_1.1.xml\">\n");
 	fprintf(bb2fd, "<wml>\n");
@@ -243,7 +277,7 @@ int do_wml_cards(char *webdir)
 				if (t->onwap && (t->color > hostcolor)) hostcolor = t->color;
 
 				if (t->onwap && ((t->color == COL_RED) || (t->color == COL_YELLOW))) {
-					fprintf(hostfd, "<b><anchor title=\"%s\">%s%s<go href=\"%s.%s.wml\"/></anchor></b> %s<br/>", 
+					fprintf(hostfd, "<b><anchor title=\"%s\">%s%s<go href=\"%s.%s.wml\"/></anchor></b> %s<br/>\n", 
 						t->column->name, 
 						wml_colorname(t->color),
 						(t->acked ? "x" : ""),
@@ -254,7 +288,7 @@ int do_wml_cards(char *webdir)
 			fprintf(hostfd, "\n</p> </card> </wml>\n");
 			fclose(hostfd);
 
-			fprintf(bb2fd, "<b><anchor title=\"%s\">%s<go href=\"%s.wml\"/></anchor></b> %s<br/>", 
+			fprintf(bb2fd, "<b><anchor title=\"%s\">%s<go href=\"%s.wml\"/></anchor></b> %s<br/>\n", 
 				h->hostentry->hostname, wml_colorname(hostcolor), h->hostentry->hostname, h->hostentry->hostname);
 
 			if (ftell(bb2fd) >= wmlmaxchars) {
