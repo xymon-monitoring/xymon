@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.13 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.14 2005-02-06 07:22:22 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -45,6 +45,8 @@ int main(int argc, char *argv[])
 	int running;
 	int argi, seq;
 	struct sigaction sa;
+	char *exthandler = NULL;
+	char *extids = NULL;
 
 	/* Handle program options. */
 	for (argi = 1; (argi < argc); argi++) {
@@ -54,6 +56,14 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--rrddir=")) {
 			char *p = strchr(argv[argi], '=');
 			rrddir = strdup(p+1);
+		}
+		else if (argnmatch(argv[argi], "--extra-script=")) {
+			char *p = strchr(argv[argi], '=');
+			exthandler = strdup(p+1);
+		}
+		else if (argnmatch(argv[argi], "--extra-tests=")) {
+			char *p = strchr(argv[argi], '=');
+			extids = strdup(p+1);
 		}
 	}
 
@@ -67,6 +77,8 @@ int main(int argc, char *argv[])
 	sa.sa_handler = sig_handler;
 	sigaction(SIGCHLD, &sa, NULL);
 	signal(SIGPIPE, SIG_DFL);
+
+	if (exthandler && extids) setup_exthandler(exthandler, extids);
 
 	running = 1;
 	while (running) {
