@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.29 2003-03-02 06:59:39 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.30 2003-03-02 17:39:08 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -33,68 +33,78 @@ static char rcsid[] = "$Id: pagegen.c,v 1.29 2003-03-02 06:59:39 henrik Exp $";
 #include "util.h"
 #include "loaddata.h"
 #include "pagegen.h"
+#include "larrdgen.h"
 #include "infogen.h"
 
-char *bb_headfoot = "bb";
 int  subpagecolumns = 1;
 int  hostsbeforepages = 0;
 char *includecolumns = NULL;
 int  sort_grouponly_items = 0; /* Standard BB behaviour: Dont sort group-only items */
 
+char *hf_prefix[3];            /* header/footer prefixes for BB, BB2, BBNK pages*/
+
+
+void select_headers_and_footers(char *prefix)
+{
+	hf_prefix[PAGE_BB]  = malloc(strlen(prefix)+1); sprintf(hf_prefix[PAGE_BB],  "%s",   prefix);
+	hf_prefix[PAGE_BB2] = malloc(strlen(prefix)+2); sprintf(hf_prefix[PAGE_BB2], "%s2",  prefix);
+	hf_prefix[PAGE_NK]  = malloc(strlen(prefix)+3); sprintf(hf_prefix[PAGE_NK],  "%snk", prefix);
+}
+
 
 int interesting_column(int pagetype, int color, int alert, char *columnname, char *onlycols)
 {
-	if (onlycols) {
-		char *search;
+	if (pagetype == PAGE_BB) {
+		/* Fast-path the BB page. */
 
-		/* loaddata::init_group guarantees that onlycols start and end with a '|' */
-		search = malloc(strlen(columnname)+3);
-		sprintf(search, "|%s|", columnname);
-		if (strstr(onlycols, search) == NULL) {
+		int result = 1;
+
+		if (onlycols) {
+			/* onlycols explicitly list the columns to include (for bb page only) */
+			char *search;
+
+			/* loaddata::init_group guarantees that onlycols start and end with a '|' */
+			search = malloc(strlen(columnname)+3);
+			sprintf(search, "|%s|", columnname);
+			result = (strstr(onlycols, search) != NULL);
 			free(search);
-			return 0;
 		}
-		else {
-			free(search);
-		}
+
+		/* This is final. */
+		return result;
 	}
 
+
+	/* LARRD and INFO columns are always included on non-BB pages */
+	if (larrdcol && (strcmp(columnname, larrdcol) == 0)) return 1;
+	if (infocol && (strcmp(columnname, infocol) == 0)) return 1;
+
 	if (includecolumns) {
+		/* includecolumns are other columns to include always on non-BB pages (bb2, bbnk) */
 		char *col1 = malloc(strlen(columnname)+3); /* 3 = 2 commas and a NULL */
+		int result;
 
 		sprintf(col1, ",%s,", columnname);
-		if (strstr(includecolumns, col1)) {
-			free(col1);
-			return 1;
-		}
-		else {
-			free(col1);
-		}
+		result = (strstr(includecolumns, col1) != NULL);
+		free(col1);
+
+		/* If included, done here. Otherwise may be included further down. */
+		if (result) return result;
 	}
 
 	switch (pagetype) {
-	  case PAGE_BB:
-		return 1;
-		break;
-
 	  case PAGE_BB2:
-		return ((color == COL_RED) || 
-			(color == COL_YELLOW) ||
-			(color == COL_PURPLE) ||
-			(enable_infogen && (strcmp(columnname, infocol) == 0)));
+		  /* Include all non-green tests */
+		  return ((color == COL_RED) || (color == COL_YELLOW) || (color == COL_PURPLE));
 
 	  case PAGE_NK:
+		  /* Include only RED or YELLOW tests with "alert" property set. 
+		   * Even then, the "conn" test is included only when RED.
+		   */
 		if (alert) {
-			if (color == COL_RED) {
+			if ( (color == COL_RED) || ((color == COL_YELLOW) && (strcmp(columnname, "conn") != 0)) ) {
 				return 1;
 			}
-			else if ((color == COL_YELLOW) &&
-			    (strcmp(columnname, "conn") != 0)) {
-				return 1;
-			}
-		}
-		else if (enable_infogen && (strcmp(columnname, infocol) == 0)) {
-			return 1;
 		}
 		break;
 	}
@@ -105,16 +115,10 @@ int interesting_column(int pagetype, int color, int alert, char *columnname, cha
 col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 {
 	/*
-	 * Build a list of the columns that are in use by
-	 * hosts in the hostlist passed as parameter.
+	 * Build a list of all the columns that are in use by
+	 * any host in the hostlist passed as parameter.
 	 * The column list will be sorted by column name, except 
-	 * if onlycols used (group-only directive).
-	 */
-
-	/* Meaning of pagetype:
-	     0: Normal pages, include all
-	     1: bb2.html, all non-green
-	     2: bbnk.html, only alert columns
+	 * when doing a "group-only" and the standard BB behaviour.
 	 */
 
 	col_list_t	*head;
@@ -129,7 +133,16 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 	head->next = NULL;
 
 	if (!sort_grouponly_items && (onlycols != NULL)) {
-		/* For group-only, hand back columns in order given by user */
+
+		/* 
+		 * This is the original BB handling of "group-only". 
+		 * All items are included, whether there are any test data
+		 * for a column or not. The order given in the group-only
+		 * directive is maintained.
+		 * We simple convert the group-only directive to a
+		 * col_list_t linked list.
+		 */
+
 		char *p1 = onlycols;
 		char *p2;
 		col_t *col;
@@ -158,10 +171,18 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 
 		/* Skip the dummy record */
 		collist_walk = head; head = head->next; free(collist_walk);
+
+		/* We're done - dont even look at the actual test data. */
 		return (head);
 	}
 
 	for (h = hostlist; (h); h = h->next) {
+		/*
+		 * This is for everything except "standard group-only" handled above.
+		 * So also for group-only with --sort-group-only-items.
+		 * Note that in a group-only here, items may be left out if there
+		 * are no test data for a column at all.
+		 */
 		for (e = h->entries; (e); e = e->next) {
 			if (interesting_column(pagetype, e->color, e->alert, e->column->name, onlycols)) {
 				/* See where e->column should go in list */
@@ -205,8 +226,10 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 
 	groupcols = gen_column_list(head, pagetype, onlycols);
 	if (groupcols) {
-		fprintf(output, "<CENTER><TABLE SUMMARY=\"Group Block\" BORDER=0> \n <TR><TD VALIGN=MIDDLE ROWSPAN=2 CELLPADDING=2><CENTER><FONT %s>%s</FONT></CENTER></TD>\n", getenv("MKBBTITLE"), grouptitle);
+		fprintf(output, "<CENTER><TABLE SUMMARY=\"Group Block\" BORDER=0>\n");
+		fprintf(output, "<TR><TD VALIGN=MIDDLE ROWSPAN=2 CELLPADDING=2><CENTER><FONT %s>%s</FONT></CENTER></TD>\n", getenv("MKBBTITLE"), grouptitle);
 
+		/* Generate the column headings */
 		columncount = 1; /* Count the title also */
 		for (gc=groupcols; (gc); gc = gc->next, columncount++) {
 			fprintf(output, " <TD ALIGN=CENTER VALIGN=BOTTOM WIDTH=45>\n");
@@ -216,9 +239,21 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 		}
 		fprintf(output, "</TR> \n<TR><TD COLSPAN=%d><HR WIDTH=100%%></TD></TR>\n\n", columncount);
 
+		/* Generate the host rows */
 		for (h = head; (h); h = h->next) {
 			fprintf(output, "<TR>\n <TD NOWRAP><A NAME=\"%s\">\n", h->hostname);
 
+			/* First the hostname and a notes-link.
+			 *
+			 * If a host has a direct notes-link, use that.
+			 *
+			 * If no direct link and we are doing a BB2/BBNK page, 
+			 * provide a link to the main page with this host (there
+			 * may be links to documentation in some page-title).
+			 *
+			 * If no direct link and on a BB page, just put the
+			 * hostname there.
+			 */
 			if (h->link != &null_link) {
 				fprintf(output, "<A HREF=\"%s/%s\" TARGET=\"_blank\"><FONT %s>%s</FONT></A>\n </TD>",
 					getenv("BBWEB"), hostlink(h->link), 
@@ -235,15 +270,18 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 					getenv("MKBBROWFONT"), h->hostname);
 			}
 
+			/* Then the columns. */
 			for (gc = groupcols; (gc); gc = gc->next) {
 				fprintf(output, "<TD ALIGN=CENTER>");
 
+				/* Any column entry for this host ? */
 				for (e = h->entries; (e && (e->column != gc->column)); e = e->next) ;
 				if (e == NULL) {
 					fprintf(output, "-");
 				}
 				else {
 					if (e->sumurl) {
+						/* A summary host. */
 						fprintf(output, "<A HREF=\"%s\">", e->sumurl);
 					}
 					else if (genstatic) {
@@ -497,7 +535,7 @@ void do_bb_page(bbgen_page_t *page, dispsummary_t *sums, char *filename)
 		return;
 	}
 
-	headfoot(output, bb_headfoot, "", "", "header", page->color);
+	headfoot(output, hf_prefix[PAGE_BB], "", "", "header", page->color);
 
 	if (!hostsbeforepages) do_page_subpages(output, page->next, "MKBBLOCAL", NULL);
 	do_hosts(page->hosts, NULL, output, "", PAGE_BB);
@@ -508,7 +546,7 @@ void do_bb_page(bbgen_page_t *page, dispsummary_t *sums, char *filename)
 	/* Support for extension scripts */
 	do_bbext(output, "BBMKBBEXT");
 
-	headfoot(output, bb_headfoot, "", "", "footer", page->color);
+	headfoot(output, hf_prefix[PAGE_BB], "", "", "footer", page->color);
 
 	fclose(output);
 	if (rename(tmpfilename, filename)) {
@@ -532,14 +570,14 @@ void do_page(bbgen_page_t *page, char *filename, char *upperpagename)
 		return;
 	}
 
-	headfoot(output, bb_headfoot, page->name, "", "header", page->color);
+	headfoot(output, hf_prefix[PAGE_BB], page->name, "", "header", page->color);
 
 	if (!hostsbeforepages) do_page_subpages(output, page->subpages, "MKBBSUBLOCAL", upperpagename);
 	do_hosts(page->hosts, NULL, output, "", PAGE_BB);
 	do_groups(page->groups, output);
 	if (hostsbeforepages) do_page_subpages(output, page->subpages, "MKBBSUBLOCAL", upperpagename);
 
-	headfoot(output, bb_headfoot, page->name, "", "footer", page->color);
+	headfoot(output, hf_prefix[PAGE_BB], page->name, "", "footer", page->color);
 
 	fclose(output);
 	if (rename(tmpfilename, filename)) {
@@ -562,12 +600,12 @@ void do_subpage(bbgen_page_t *page, char *filename, char *upperpagename)
 		return;
 	}
 
-	headfoot(output, bb_headfoot, upperpagename, page->name, "header", page->color);
+	headfoot(output, hf_prefix[PAGE_BB], upperpagename, page->name, "header", page->color);
 
 	do_hosts(page->hosts, NULL, output, "", PAGE_BB);
 	do_groups(page->groups, output);
 
-	headfoot(output, bb_headfoot, upperpagename, page->name, "footer", page->color);
+	headfoot(output, hf_prefix[PAGE_BB], upperpagename, page->name, "footer", page->color);
 
 	fclose(output);
 	if (rename(tmpfilename, filename)) {
@@ -708,13 +746,10 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 
 void do_bb2_page(char *filename, int summarytype)
 {
-	FILE	*output;
 	bbgen_page_t	bb2page;
-	hostlist_t *h;
-	entry_t	*e;
-	int	useit = 0;
-	char    *hf_prefix[2] = { "bb2", "bbnk" };
-	char	*tmpfilename = malloc(strlen(filename)+5);
+	FILE		*output;
+	char		*tmpfilename = malloc(strlen(filename)+5);
+	hostlist_t 	*h;
 
 	/* Build a "page" with the hosts that should be included in bb2 page */
 	bb2page.name = bb2page.title = "";
@@ -725,18 +760,32 @@ void do_bb2_page(char *filename, int summarytype)
 	bb2page.next = NULL;
 
 	for (h=hosthead; (h); h=h->next) {
+		entry_t	*e;
+		int	useit = 0;
+
+		/*
+		 * Why dont we use the interesting_column() * routine here ? 
+		 *
+		 * Well, because what we are interested in for now is
+		 * to determine if this HOST should be included on the page.
+		 *
+		 * We dont care if individual COLUMNS are included if the 
+		 * host shows up - some columns are always included, e.g.
+		 * the info- and larrd-columns, but we dont want that to
+		 * trigger a host being on the bb2 page!
+		 */
 		switch (summarytype) {
-		  case 0:
+		  case PAGE_BB2:
 			/* Normal BB2 page */
 			useit = ((h->hostentry->color == COL_RED) || 
 				 (h->hostentry->color == COL_YELLOW) || 
 				 (h->hostentry->color == COL_PURPLE));
 			break;
 
-		  case 1:
+		  case PAGE_NK:
 			/* The NK page */
 			for (useit=0, e=h->hostentry->entries; (e && !useit); e=e->next) {
-				useit = useit || (e->alert && ((e->color == COL_RED) || ((e->color == COL_YELLOW) && (strcmp(e->column->name, "conn") != 0))));
+				useit = (e->alert && ((e->color == COL_RED) || ((e->color == COL_YELLOW) && (strcmp(e->column->name, "conn") != 0))));
 			}
 			break;
 		}
@@ -795,14 +844,14 @@ void do_bb2_page(char *filename, int summarytype)
 	fprintf(output, "\n<A NAME=begindata>&nbsp;</A> \n<A NAME=\"hosts-blk\">&nbsp;</A>\n");
 
 	if (bb2page.hosts) {
-		do_hosts(bb2page.hosts, NULL, output, "", (1+summarytype));
+		do_hosts(bb2page.hosts, NULL, output, "", summarytype);
 	}
 	else {
 		/* "All Monitored Systems OK */
 		fprintf(output, "<FONT SIZE=+2 FACE=\"Arial, Helvetica\"><BR><BR><I>All Monitored Systems OK</I></FONT><BR><BR>");
 	}
 
-	if (summarytype == 0) {
+	if (summarytype == PAGE_BB2) {
 		do_eventlog(output, 0, 240);
 		do_bbext(output, "BBMKBB2EXT");
 	}

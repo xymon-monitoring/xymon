@@ -16,9 +16,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.79 2003-03-02 12:38:47 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.80 2003-03-02 17:39:08 henrik Exp $";
 
-#define VERSION "1.8"
+#define VERSION "1.8-pre2003.03.02.18.40"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -93,6 +93,7 @@ int main(int argc, char *argv[])
 
 	pagedir = rrddir = NULL;
 	init_timestamp();
+	select_headers_and_footers("bb");
 
 	for (i = 1; (i < argc); i++) {
 		if (strcmp(argv[i], "--recentgifs") == 0) {
@@ -195,8 +196,7 @@ int main(int argc, char *argv[])
 		else if (strncmp(argv[i], "--template=", 11) == 0) {
 			char *lp = strchr(argv[i], '=');
 			lp++;
-			bb_headfoot = malloc(strlen(lp+1));
-			strcpy(bb_headfoot, lp);
+			select_headers_and_footers(lp);
 		}
 		else if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-?") == 0)) {
 			printf("bbgen version %s\n\n", VERSION);
@@ -328,10 +328,10 @@ int main(int argc, char *argv[])
 	}
 
 	/* The full summary page - bb2.html */
-	if (!bbpageONLY) do_bb2_page("bb2.html", 0);
+	if (!bbpageONLY) do_bb2_page("bb2.html", PAGE_BB2);
 
 	/* Reduced summary (alerts) page - bbnk.html */
-	if (!bbpageONLY) do_bb2_page("bbnk.html", 1);
+	if (!bbpageONLY) do_bb2_page("bbnk.html", PAGE_NK);
 
 #ifdef WMLSUPPORT
 	/* Generate a hosts file for the WML generator */

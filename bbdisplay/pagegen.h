@@ -19,12 +19,12 @@
 #ifndef __PAGEGEN_H_
 #define __PAGEGEN_H_
 
-extern char *bb_headfoot;
 extern int subpagecolumns;
 extern int hostsbeforepages;
 extern char *includecolumns;
 extern int sort_grouponly_items;
 
+extern void select_headers_and_footers(char *prefix);
 extern void do_bb_page(bbgen_page_t *page, dispsummary_t *sums, char *filename);
 extern void do_page(bbgen_page_t *page, char *filename, char *upperpagename);
 extern void do_subpage(bbgen_page_t *page, char *filename, char *upperpagename);
