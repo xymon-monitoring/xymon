@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.29 2003-04-25 11:59:45 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.30 2003-04-25 16:49:09 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -198,6 +198,8 @@ void load_tests(void)
 				testedhost_t *h;
 				testitem_t *newtest;
 				int anytests;
+				int ping_dialuptest = 0;
+				int ping_reversetest = 0;
 
 				h = malloc(sizeof(testedhost_t));
 				h->hostname = malloc(strlen(hostname)+1);
@@ -216,14 +218,6 @@ void load_tests(void)
 				h->ip[0] = '\0';
 				h->dnserror = 0;
 				anytests = 0;
-
-				if (pingtest && !h->noconn) {
-					/* Add the ping check */
-					anytests = 1;
-					newtest = init_testitem(h, pingtest, 0, 0, 1, 0);
-					newtest->next = pingtest->items;
-					pingtest->items = newtest;
-				}
 
 				testspec = strtok(p, "\t ");
 				while (testspec) {
@@ -256,6 +250,11 @@ void load_tests(void)
 					if (*testspec == '?') { dialuptest=1;     testspec++; }
 					if (*testspec == '!') { reversetest=1;    testspec++; }
 					if (*testspec == '~') { alwaystruetest=1; testspec++; }
+
+					if (pingtest && (strcmp(testspec, pingtest->testname) == 0)) {
+						ping_dialuptest = dialuptest;
+						ping_reversetest = reversetest;
+					}
 
 					/* Find the service */
 					for (s=svchead; (s && (strcmp(s->testname, testspec) != 0)); s = s->next) ;
@@ -290,6 +289,14 @@ void load_tests(void)
 					}
 
 					testspec = strtok(NULL, "\t ");
+				}
+
+				if (pingtest && !h->noconn) {
+					/* Add the ping check */
+					anytests = 1;
+					newtest = init_testitem(h, pingtest, ping_dialuptest, ping_reversetest, 1, 0);
+					newtest->next = pingtest->items;
+					pingtest->items = newtest;
 				}
 
 				if (anytests) {
