@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.57 2003-05-27 16:28:59 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.58 2003-05-29 19:22:40 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -295,7 +295,7 @@ void load_tests(void)
 		else if (sscanf(l, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
 			char *testspec;
 
-			if (((netstring == NULL) || (strstr(l, netstring) != NULL)) && strchr(l, '#')) {
+			if ((netstring == NULL) || (strstr(l, netstring) != NULL)) {
 
 				testedhost_t *h;
 				testitem_t *newtest;
@@ -303,8 +303,15 @@ void load_tests(void)
 				int ping_dialuptest = 0;
 				int ping_reversetest = 0;
 
-				p = strchr(l, '#'); p++;
-				while (isspace((unsigned int) *p)) p++;
+				p = strchr(l, '#'); 
+				if (p) {
+					p++;
+					while (isspace((unsigned int) *p)) p++;
+				}
+				else {
+					/* There is just an IP and a hostname - handle as if no tests */
+					p = "";
+				}
 
 				h = init_testedhost(hostname, timeout, conntimeout, within_sla(p));
 				anytests = 0;
