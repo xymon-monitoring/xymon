@@ -11,13 +11,14 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.1 2004-10-30 15:29:37 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.2 2004-10-31 07:56:48 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/wait.h>
+#include <limits.h>
 
 #include "errormsg.h"
 
@@ -231,19 +232,15 @@ const char *textornull(const char *text)
 
 int get_fqdn(void)
 {
-	int result = 1;
-
 	/* Get FQDN setting */
-	if (getenv("FQDN")) {
-		if (strcmp(getenv("FQDN"), "TRUE") == 0) {
-			result = 1;
-		}
-		else {
-			result = 0;
-		}
-	}
+	getenv_default("FQDN", "TRUE", NULL);
+	return (strcmp(getenv("FQDN"), "TRUE") == 0);
+}
 
-	return result;
+int generate_static(void)
+{
+	getenv_default("BBLOGSTATUS", "STATIC", NULL);
+	return (strcmp(getenv("BBLOGSTATUS"), "STATIC") == 0);
 }
 
 
@@ -288,3 +285,44 @@ int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int
 	if (bannerbytes) *bannerbytes = strlen(*banner);
 	return result;
 }
+
+
+void do_bbext(FILE *output, char *extenv, char *family)
+{
+	/*
+	 * Extension scripts. These are ad-hoc, and implemented as a
+	 * simple pipe. So we do a fork here ...
+	 */
+
+	char *bbexts, *p;
+	FILE *inpipe;
+	char extfn[PATH_MAX];
+	char buf[4096];
+
+	p = getenv(extenv);
+	if (p == NULL) {
+		/* No extension */
+		return;
+	}
+
+	bbexts = strdup(p);
+	p = strtok(bbexts, "\t ");
+
+	while (p) {
+		/* Dont redo the eventlog or acklog things */
+		if ((strcmp(p, "eventlog.sh") != 0) &&
+		    (strcmp(p, "acklog.sh") != 0)) {
+			sprintf(extfn, "%s/ext/%s/%s", getenv("BBHOME"), family, p);
+			inpipe = popen(extfn, "r");
+			if (inpipe) {
+				while (fgets(buf, sizeof(buf), inpipe)) 
+					fputs(buf, output);
+				pclose(inpipe);
+			}
+		}
+		p = strtok(NULL, "\t ");
+	}
+
+	free(bbexts);
+}
+

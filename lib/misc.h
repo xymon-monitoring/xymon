@@ -11,6 +11,8 @@
 #ifndef __MISC_H__
 #define __MISC_H__
 
+#include <stdio.h>
+
 extern int hexvalue(unsigned char c);
 extern void envcheck(char *envvars[]);
 extern void getenv_default(char *envname, char *envdefault, char **buf);
@@ -25,7 +27,9 @@ extern unsigned int IPtou32(int ip1, int ip2, int ip3, int ip4);
 extern char *u32toIP(unsigned int ip32);
 extern const char *textornull(const char *text);
 extern int get_fqdn(void);
+extern int generate_static(void);
 extern int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int showcmd);
+extern void do_bbext(FILE *output, char *extenv, char *family);
 
 #endif
 
