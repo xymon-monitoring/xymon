@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.63 2003-05-18 14:49:15 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.64 2003-05-20 10:09:42 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -271,6 +271,7 @@ link_t *init_link(char *filename, const char *urlprefix)
 	if ( (strcmp(p, ".php") == 0)    ||
              (strcmp(p, ".php3") == 0)   ||
              (strcmp(p, ".asp") == 0)    ||
+             (strcmp(p, ".doc") == 0)    ||
 	     (strcmp(p, ".shtml") == 0)  ||
 	     (strcmp(p, ".phtml") == 0)  ||
 	     (strcmp(p, ".html") == 0)   ||
