@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.63 2003-02-02 14:15:15 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.64 2003-02-02 21:58:31 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -150,6 +150,12 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[i], "--bbpageONLY") == 0) {
 			bbpageONLY = 1;
 		}
+		else if (strncmp(argv[i], "--template=", 11) == 0) {
+			char *lp = strchr(argv[i], '=');
+			lp++;
+			bb_headfoot = malloc(strlen(lp+1));
+			strcpy(bb_headfoot, lp);
+		}
 		else if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-?") == 0)) {
 			printf("Usage: %s [options] [WebpageDirectory]\n", argv[0]);
 			printf("Options:\n");
@@ -165,6 +171,7 @@ int main(int argc, char *argv[])
 			printf("    --noprop=test[,test]   : Disable upwards status propagation when YELLOW\n");
 			printf("    --nopropred=test[,test]: Disable upwards status propagation when RED or YELLOW\n");
 			printf("\n");
+			printf("    --template=TEMPLATE    : template for header and footer files\n");
 			printf("    --bbpageONLY           : Standard page generation only\n");
 #ifdef DEBUG
 			printf("\n");

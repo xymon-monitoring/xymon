@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.13 2003-02-02 18:43:57 hstoerne Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.14 2003-02-02 21:58:31 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -34,6 +34,8 @@ static char rcsid[] = "$Id: pagegen.c,v 1.13 2003-02-02 18:43:57 hstoerne Exp $"
 #include "loaddata.h"
 #include "pagegen.h"
 #include "infogen.h"
+
+char *bb_headfoot = "bb";
 
 int interesting_column(int pagetype, int color, int alert, char *columnname, char *onlycols)
 {
@@ -366,7 +368,7 @@ void do_bb_page(page_t *page, dispsummary_t *sums, char *filename)
 		return;
 	}
 
-	headfoot(output, "bb", "", "", "header", page->color);
+	headfoot(output, bb_headfoot, "", "", "header", page->color);
 
 	fprintf(output, "<BR>\n<CENTER>\n");
 
@@ -411,7 +413,7 @@ void do_bb_page(page_t *page, dispsummary_t *sums, char *filename)
 	/* Support for extension scripts */
 	do_bbext(output, "BBMKBBEXT");
 
-	headfoot(output, "bb", "", "", "footer", page->color);
+	headfoot(output, bb_headfoot, "", "", "footer", page->color);
 
 	fclose(output);
 }
@@ -429,7 +431,7 @@ void do_page(page_t *page, char *filename, char *upperpagename)
 		return;
 	}
 
-	headfoot(output, "bb", page->name, "", "header", page->color);
+	headfoot(output, bb_headfoot, page->name, "", "header", page->color);
 
 	fprintf(output, "<BR>\n<CENTER>\n");
 
@@ -470,7 +472,7 @@ void do_page(page_t *page, char *filename, char *upperpagename)
 	do_hosts(page->hosts, NULL, output, "", PAGE_BB);
 	do_groups(page->groups, output);
 
-	headfoot(output, "bb", page->name, "", "footer", page->color);
+	headfoot(output, bb_headfoot, page->name, "", "footer", page->color);
 
 	fclose(output);
 }
@@ -485,12 +487,12 @@ void do_subpage(page_t *page, char *filename, char *upperpagename)
 		return;
 	}
 
-	headfoot(output, "bb", upperpagename, page->name, "header", page->color);
+	headfoot(output, bb_headfoot, upperpagename, page->name, "header", page->color);
 
 	do_hosts(page->hosts, NULL, output, "", PAGE_BB);
 	do_groups(page->groups, output);
 
-	headfoot(output, "bb", upperpagename, page->name, "footer", page->color);
+	headfoot(output, bb_headfoot, upperpagename, page->name, "footer", page->color);
 
 	fclose(output);
 }
