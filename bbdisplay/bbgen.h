@@ -177,12 +177,18 @@ typedef struct {
 } col_list_t;
 
 typedef struct {
-	double availability;
-	time_t reportstart;
-	double pct[COL_COUNT];
-	int count[COL_COUNT];
-	unsigned long totduration[COL_COUNT];
 	char *fstate;
+	time_t reportstart;
+	int count[COL_COUNT];
+
+	double fullavailability;
+	double fullpct[COL_COUNT];
+	unsigned long fullduration[COL_COUNT];
+
+	int withreport;
+	double reportavailability;
+	double reportpct[COL_COUNT];
+	unsigned long reportduration[COL_COUNT];
 } reportinfo_t;
 
 typedef struct {
@@ -232,6 +238,7 @@ typedef struct {
 	int     oldage;
 	int	prefer;
 	char	*alerts;
+	int	nktime;
 	int	anywaps;
 	int	wapcolor;
 	char	*waps;
@@ -243,6 +250,7 @@ typedef struct {
 	char	*pretitle;
 	void	*parent;
 	double  reportwarnlevel;
+	char	*reporttime;
 	void	*next;
 } host_t;
 
