@@ -1,4 +1,4 @@
-.TH TRIMHISTORY 1 "Version 4.0-RC6: 21 mar 2005" "Hobbit Monitor"
+.TH TRIMHISTORY 8 "Version 4.0-RC6: 21 mar 2005" "Hobbit Monitor"
 .SH NAME
 trimhistory \- Remove old Hobbit history-log entries
 .SH SYNOPSIS
@@ -52,6 +52,16 @@ Causes trimhistory to delete files from services that are not currently
 tracked by Hobbit. Normally these files would be left untouched if only
 the host exists.
 
+.IP --droplogs
+Process the BBHISTLOGS directory also, and delete status-logs from events
+prior to the cut-off time. Note that this can dramatically increase the
+processing time, since there are often lots and lots of files to process.
+
+.IP "--progress[=N]"
+This will cause trimhistory to output a status line for every N history
+logs or status-log collections it processes, to indicate how far it has
+progressed. The default setting for N is 100.
+
 .IP "--env=FILENAME"
 Loads the environment from FILENAME before executing trimhistory.
 
@@ -69,9 +79,15 @@ The per-host eventlogs.
 .IP "$BBHIST/HOSTNAME.SERVICE"
 The per-service eventlogs.
 
+.IP "$BBHISTLOGS/*/*"
+The historical status-logs.
+
 .SH "ENVIRONMENT VARIABLES"
 .IP BBHIST
 The directory holding all history logs.
+
+.IP BBHISTLOGS
+The top-level directory for the historical status-log collections.
 
 .IP BBHOSTS
 The location of the bb-hosts file, holding the list of currently 

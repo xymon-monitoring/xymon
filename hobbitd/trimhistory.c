@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: trimhistory.c,v 1.3 2005-03-30 09:12:19 henrik Exp $";
+static char rcsid[] = "$Id: trimhistory.c,v 1.4 2005-03-30 15:55:45 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -24,7 +24,7 @@ static char rcsid[] = "$Id: trimhistory.c,v 1.3 2005-03-30 09:12:19 henrik Exp $
 
 #include "libbbgen.h"
 
-enum ftype_t { F_HOSTHISTORY, F_SERVICEHISTORY, F_ALLEVENTS, F_DROPIT };
+enum ftype_t { F_HOSTHISTORY, F_SERVICEHISTORY, F_ALLEVENTS, F_DROPIT, F_PURGELOGS };
 typedef struct filelist_t {
 	char *fname;
 	enum ftype_t ftype;
@@ -33,6 +33,13 @@ typedef struct filelist_t {
 filelist_t *flhead = NULL;
 
 char *outdir = NULL;
+int progressinfo = 0;
+int totalitems = 0;
+
+void showprogress(int itemno)
+{
+	errprintf("Processing item %d/%d ... \n", itemno, totalitems);
+}
 
 int validstatus(char *hname, char *tname)
 {
@@ -74,6 +81,8 @@ void add_to_filelist(char *fn, enum ftype_t ftype)
 	newitem->ftype = ftype;
 	newitem->next = flhead;
 	flhead = newitem;
+
+	totalitems++;
 }
 
 
@@ -111,8 +120,9 @@ void trim_history(FILE *infd, FILE *outfd, enum ftype_t ftype, time_t cutoff)
 				break;
 
 			  case F_DROPIT:
+			  case F_PURGELOGS:
 				/* Cannot happen */
-				errprintf("Impossible - F_DROPIT in trim_history\n");
+				errprintf("Impossible - F_DROPIT/F_PURGELOGS in trim_history\n");
 				return;
 			}
 
@@ -140,10 +150,12 @@ void trim_files(time_t cutoff)
 	char outfn[PATH_MAX];
 	struct stat st;
 	struct utimbuf tstamp;
+	int itemno = 0;
 
 	/* We have a list of files to trim, so process them */
 	for (fwalk = flhead; (fwalk); fwalk = fwalk->next) {
 		dprintf("Processing %s\n", fwalk->fname);
+		itemno++; if (progressinfo && ((itemno % progressinfo) == 0)) showprogress(itemno); 
 
 		if (fwalk->ftype == F_DROPIT) {
 			/* It's an orphan, and we want to delete it */
@@ -194,6 +206,126 @@ void trim_files(time_t cutoff)
 	}
 }
 
+time_t logtime(char *fn)
+{
+	static char *mnames[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", NULL };
+	char tstamp[25];
+	struct tm tmstamp;
+	time_t result;
+	int flen;
+
+	flen = strlen(fn);
+	strcpy(tstamp, fn);
+	memset(&tmstamp, 0, sizeof(tmstamp));
+	tmstamp.tm_isdst = -1;
+
+	if (flen == 24) {
+		/* fn is of the form: WWW_MMM_DD_hh:mm:ss_YYYY */
+		if (*(tstamp+3) == '_')  *(tstamp+3) = ' '; else return -1;
+		if (*(tstamp+7) == '_')  *(tstamp+7) = ' '; else return -1;
+		if (*(tstamp+10) == '_') *(tstamp+10) = ' '; else return -1;
+		if (*(tstamp+13) == ':') *(tstamp+13) = ' '; else return -1;
+		if (*(tstamp+16) == ':') *(tstamp+16) = ' '; else return -1;
+		if (*(tstamp+19) == '_') *(tstamp+19) = ' '; else return -1;
+
+		while (mnames[tmstamp.tm_mon] && strncmp(tstamp+4, mnames[tmstamp.tm_mon], 3)) tmstamp.tm_mon++;
+		tmstamp.tm_mday  = atoi(tstamp+8);
+		tmstamp.tm_year  = atoi(tstamp+20)-1900;
+		tmstamp.tm_hour  = atoi(tstamp+11);
+		tmstamp.tm_min   = atoi(tstamp+14);
+		tmstamp.tm_sec   = atoi(tstamp+17);
+	}
+	else if (flen == 23) {
+		/* fn is of the form: WWW_MMM_D_hh:mm:ss_YYYY */
+		if (*(tstamp+3) == '_')  *(tstamp+3) = ' '; else return -1;
+		if (*(tstamp+7) == '_')  *(tstamp+7) = ' '; else return -1;
+		if (*(tstamp+9) == '_')  *(tstamp+9) = ' '; else return -1;
+		if (*(tstamp+12) == ':') *(tstamp+12) = ' '; else return -1;
+		if (*(tstamp+15) == ':') *(tstamp+15) = ' '; else return -1;
+		if (*(tstamp+18) == '_') *(tstamp+18) = ' '; else return -1;
+
+		while (mnames[tmstamp.tm_mon] && strncmp(tstamp+4, mnames[tmstamp.tm_mon], 3)) tmstamp.tm_mon++;
+		tmstamp.tm_mday  = atoi(tstamp+8);
+		tmstamp.tm_year  = atoi(tstamp+19)-1900;
+		tmstamp.tm_hour  = atoi(tstamp+10);
+		tmstamp.tm_min   = atoi(tstamp+13);
+		tmstamp.tm_sec   = atoi(tstamp+16);
+	}
+	else {
+		return -1;
+	}
+
+	result = mktime(&tmstamp);
+
+	return result;
+}
+
+void trim_logs(time_t cutoff)
+{
+	filelist_t *fwalk;
+	DIR *ldir = NULL, *sdir = NULL;
+	struct dirent *sent, *lent;
+	time_t ltime;
+	char fn1[PATH_MAX], fn2[PATH_MAX];
+	int itemno = 0;
+
+	/* We have a list of directories to trim, so process them */
+	for (fwalk = flhead; (fwalk); fwalk = fwalk->next) {
+		dprintf("Processing %s\n", fwalk->fname);
+		itemno++; if (progressinfo && ((itemno % progressinfo) == 0)) showprogress(itemno); 
+
+		switch (fwalk->ftype) {
+		  case F_DROPIT:
+			/* It's an orphan, and we want to delete it */
+			dropdirectory(fwalk->fname, 0);
+			break;
+
+		  case F_PURGELOGS:
+			sdir = opendir(fwalk->fname);
+			if (sdir == NULL) {
+				errprintf("Cannot process directory %s: %s\n", fwalk->fname, strerror(errno));
+				break;
+			}
+
+			while ((sent = readdir(sdir)) != NULL) {
+				int allgone = 1;
+				if (*(sent->d_name) == '.') continue;
+
+				sprintf(fn1, "%s/%s", fwalk->fname, sent->d_name);
+				ldir = opendir(fn1);
+				if (ldir == NULL) {
+					errprintf("Cannot process directory %s: %s\n", fn1, strerror(errno));
+					continue;
+				}
+
+				while ((lent = readdir(ldir)) != NULL) {
+					if (*(lent->d_name) == '.') continue;
+
+					ltime = logtime(lent->d_name);
+					if ((ltime > 0) && (ltime < cutoff)) {
+						sprintf(fn2, "%s/%s", fn1, lent->d_name);
+						if (unlink(fn2) == -1) {
+							errprintf("Failed to unlink %s: %s\n", fn2, strerror(errno));
+						}
+					}
+					else allgone = 0;
+				}
+
+				closedir(ldir);
+
+				/* Is it empty ? Then remove it */
+				if (allgone) rmdir(fn1);
+			}
+
+			closedir(sdir);
+			break;
+
+		  default:
+			break;
+		}
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	int argi;
@@ -203,6 +335,7 @@ int main(int argc, char *argv[])
 	time_t cutoff = 0;
 	int dropsvcs = 0;
 	int dropfiles = 0;
+	int droplogs = 0;
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--cutoff=")) {
@@ -218,6 +351,16 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--dropsvcs") == 0) {
 			dropsvcs = 1;
+		}
+		else if (strcmp(argv[argi], "--droplogs") == 0) {
+			droplogs = 1;
+		}
+		else if (strcmp(argv[argi], "--progress") == 0) {
+			progressinfo = 100;
+		}
+		else if (argnmatch(argv[argi], "--progress=")) {
+			char *p = strchr(argv[argi], '=');
+			progressinfo = atoi(p+1);
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
@@ -307,7 +450,46 @@ int main(int argc, char *argv[])
 	closedir(histdir);
 
 	/* Then process the files */
+	if (progressinfo) errprintf("Starting trim of %d history-logs\n", totalitems);
 	trim_files(cutoff);
+
+
+	/* Process statuslogs also ? */
+	if (!droplogs) return 0;
+
+	flhead = NULL;  /* Dirty - we should clean it up properly - but I dont care */
+	totalitems = 0;
+	if (chdir(xgetenv("BBHISTLOGS")) == -1) {
+		errprintf("Cannot cd to historical statuslogs directory: %s\n", strerror(errno));
+		return 1;
+	}
+
+	histdir = opendir(".");
+	if (!histdir) {
+		errprintf("Cannot read historical statuslogs directory: %s\n", strerror(errno));
+		return 1;
+	}
+
+	while ((hent = readdir(histdir)) != NULL) {
+		if (stat(hent->d_name, &st) == -1) {
+			errprintf("Odd entry %s - cannot stat: %s\n", hent->d_name, strerror(errno));
+			continue;
+		}
+
+		if ((*(hent->d_name) == '.') || !S_ISDIR(st.st_mode)) continue;
+
+		if (knownloghost(hent->d_name)) {
+			add_to_filelist(hent->d_name, F_PURGELOGS);
+		}
+		else {
+			add_to_filelist(hent->d_name, F_DROPIT);
+		}
+	}
+
+	closedir(histdir);
+
+	if (progressinfo) errprintf("Starting trim of %d status-log collections\n", totalitems);
+	trim_logs(cutoff);
 
 	return 0;
 }
