@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.98 2003-09-28 10:29:57 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.99 2003-10-01 09:42:05 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -64,7 +64,7 @@ static char stackfd_base[MAX_PATH];
 static char stackfd_mode[10];
 
 char *errbuf = NULL;
-static int errbufsize = 0;
+static unsigned int errbufsize = 0;
 
 /* Data used while crashing - cannot depend on the stack being usable */
 static char signal_bbcmd[MAX_PATH];
