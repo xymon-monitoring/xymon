@@ -11,12 +11,14 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sig.c,v 1.1 2004-10-30 15:30:56 henrik Exp $";
+static char rcsid[] = "$Id: sig.c,v 1.2 2004-11-04 09:25:00 henrik Exp $";
 
 #include <limits.h>
 #include <signal.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -57,6 +59,8 @@ static void sigsegv_handler(int signum)
 
 void setup_signalhandler(char *programname)
 {
+	struct rlimit lim;
+
 	/*
 	 * After lengthy debugging and perusing of mail archives:
 	 * Need to ignore SIGPIPE since FreeBSD (and others?) can throw this
@@ -65,18 +69,13 @@ void setup_signalhandler(char *programname)
 	 */
 	signal(SIGPIPE, SIG_IGN);
 
-#ifdef RLIMIT_CORE
 	/*
 	 * Try to allow ourselves to generate core files
 	 */
-	{
-		struct rlimit lim;
+	getrlimit(RLIMIT_CORE, &lim);
+	lim.rlim_cur = RLIM_INFINITY;
+	setrlimit(RLIMIT_CORE, &lim);
 
-		getrlimit(RLIMIT_CORE, &lim);
-		lim.rlim_cur = RLIM_INFINITY;
-		setrlimit(RLIMIT_CORE, &lim);
-	}
-#endif
 	if (getenv("BB") == NULL) return;
 	if (getenv("BBDISP") == NULL) return;
 
