@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.152 2004-08-18 06:35:11 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.153 2004-08-18 21:55:24 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -30,6 +30,7 @@ static char rcsid[] = "$Id: bbtest-net.c,v 1.152 2004-08-18 06:35:11 henrik Exp 
 #include "sendmsg.h"
 #include "debug.h"
 #include "bbtest-net.h"
+#include "dns.h"
 #include "contest.h"
 #include "httptest.h"
 #include "httpresult.h"
@@ -63,11 +64,6 @@ char *reqenv[] = {
 #define TOOL_LDAP	7
 #define TOOL_RPCINFO	8
 
-/* dnslookup values */
-#define DNS_THEN_IP     0	/* Try DNS - if it fails, use IP from bb-hosts */
-#define DNS_ONLY        1	/* DNS only - if it fails, report service down */
-#define IP_ONLY         2	/* IP only - dont do DNS lookups */
-
 service_t	*svchead = NULL;		/* Head of all known services */
 service_t	*pingtest = NULL;		/* Identifies the pingtest within svchead list */
 int		pingcount = 0;
@@ -99,8 +95,6 @@ time_t		frequenttestlimit = 1800;	/* Interval (seconds) when failing hosts are r
 int		checktcpresponse = 0;
 int		dotraceroute = 0;
 int		fqdn = 1;
-int		dnsmaxperlookup = 5;		/* Max seconds for one DNS lookup */
-int		dnsmaxalllookups = 0;		/* Max seconds for all DNS lookup */
 int		dosendflags = 1;
 
 void dump_hostlist(void)
@@ -682,6 +676,7 @@ void load_tests(void)
 #ifdef BBGEN_LDAP
 						s = ldaptest;
 						savedspec = malcop(testspec);
+						add_url_to_dns_queue(testspec);
 #else
 						errprintf("ldap test requested, but bbgen was built with no ldap support\n");
 #endif
@@ -693,6 +688,7 @@ void load_tests(void)
 						 */
 						s = ftptest;
 						savedspec = malcop(testspec);
+						add_url_to_dns_queue(testspec);
 					}
 					else if ( argnmatch(testspec, "http")         ||
 						  argnmatch(testspec, "content=http") ||
@@ -706,6 +702,7 @@ void load_tests(void)
 						 */
 						s = httptest;
 						savedspec = malcop(testspec);
+						add_url_to_dns_queue(testspec);
 					}
 					else if (argnmatch(testspec, "rpc")) {
 						/*
@@ -881,6 +878,7 @@ void load_tests(void)
 					}
 
 					sprintf(h->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+					if (!h->testip) add_host_to_dns_queue(hostname);
 					h->next = testhosthead;
 					testhosthead = h;
 				}
@@ -923,22 +921,10 @@ void load_tests(void)
 	return;
 }
 
-void dns_resolve(void)
+void do_dns_lookups(void)
 {
 	testedhost_t	*h;
-	int dnstries = 0;
-	int dnsfails = 0;
-	time_t starttime, cutofftime;
-
-	/* Dont spend more than half our cycle time on DNS lookups */
-	starttime = time(NULL);
-	if (dnsmaxalllookups > 0) {
-		cutofftime = starttime + dnsmaxalllookups;
-	}
-	else {
-		time_t cycletime = atoi(getenv("BBSLEEP") ? getenv("BBSLEEP") : "300");
-		cutofftime = starttime + (cycletime / 2);
-	}
+	char *dnsresult;
 
 	for (h=testhosthead; (h); h=h->next) {
 		/* 
@@ -953,50 +939,10 @@ void dns_resolve(void)
 			}
 		}
 		else if (h->dodns) {
-			struct hostent *hent;
+			dnsresult = dnsresolve(h->hostname);
 
-			dnstries++;
-			dprintf("DNS lookup for %s\n", h->hostname);
-
-			if (time(NULL) > cutofftime) {
-
-				/*
-				 * This is not good ....
-				 * We haven't done any testing yet - only DNS lookups - and
-				 * already more than half of the time has been spent.
-				 * Looks like our DNS lookups are currently broken.
-				 * Bail out with everything else done by IP-address only.
-				 */
-
-				static int warnsent = 0;
-
-				if (!warnsent) {
-					errprintf("Major DNS problem: DNS lookups are failing or are too slow to keep up with bbtest-net - %d of %d lookups failed in %d seconds. Falling back to IP-address based testing.\n",
-						dnsfails, dnstries, time(NULL)-starttime);
-					warnsent = 1;
-				}
-
-				/* Simulate failed lookup */
-				hent = NULL;
-			}
-			else {
-				time_t dnsstart, dnsend;
-
-				dnsstart = time(NULL);
-				hent = gethostbyname(h->hostname);
-				dnsend = time(NULL);
-
-				if ((dnsend - dnsstart) > dnsmaxperlookup) {
-					errprintf("Slow DNS response %d seconds for %s\n", (dnsend - dnsstart), h->hostname);
-				}
-
-			}
-
-			if (hent) {
-				struct in_addr addr;
-
-				memcpy(&addr, *(hent->h_addr_list), sizeof(struct in_addr));
-				strcpy(h->ip, inet_ntoa(addr));
+			if (dnsresult) {
+				strcpy(h->ip, dnsresult);
 			}
 			else if (dnsmethod == DNS_THEN_IP) {
 				/* Already have the IP setup */
@@ -1004,7 +950,6 @@ void dns_resolve(void)
 			else {
 				/* Cannot resolve hostname */
 				h->dnserror = 1;
-				dnsfails++;
 			}
 
 			if (strcmp(h->ip, "0.0.0.0") == 0) {
@@ -2010,14 +1955,6 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			p++; frequenttestlimit = atoi(p);
 		}
-		else if (argnmatch(argv[argi], "--dns-max-one=")) {
-			char *p = strchr(argv[argi], '=');
-			p++; dnsmaxperlookup = atoi(p);
-		}
-		else if (argnmatch(argv[argi], "--dns-max-all=")) {
-			char *p = strchr(argv[argi], '=');
-			p++; dnsmaxalllookups = atoi(p);
-		}
 
 		/* Options for TCP tests */
 		else if (argnmatch(argv[argi], "--concurrency=")) {
@@ -2105,8 +2042,6 @@ int main(int argc, char *argv[])
 			printf("    --test-untagged             : Include hosts without a NET: tag in the test\n");
 			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbtest-net\n");
 			printf("    --frequenttestlimit=N       : Seconds after detecting failures in which we poll frequently\n");
-			printf("    --dns-max-one=N             : Warns if a single DNS lookup takes more than N seconds [5]\n");
-			printf("    --dns-max-all=N             : Warns if all DNS lookups combined takes more than N seconds [BBSLEP/2]\n");
 			printf("    --timelimit=N               : Warns if the complete test run takes longer than N seconds [BBSLEEP]\n");
 			printf("    --no-flags                  : Dont send extra bbgen test flags\n");
 			printf("\nOptions for services in BBNETSVCS (tcp tests):\n");
@@ -2187,7 +2122,7 @@ int main(int argc, char *argv[])
 	load_tests();
 	add_timestamp("Test definitions loaded");
 
-	dns_resolve();
+	do_dns_lookups();
 	add_timestamp("DNS lookups completed");
 
 	if (dumpdata & 1) { dump_hostlist(); dump_testitems(); }
@@ -2205,7 +2140,6 @@ int main(int argc, char *argv[])
 		combo_end();
 		add_timestamp("PING test results sent");
 	}
-
 
 	/* Load current status files */
 	for (s = svchead; (s); s = s->next) { if (s != pingtest) load_test_status(s); }
@@ -2427,8 +2361,15 @@ int main(int argc, char *argv[])
 			addtostatus(msgline);
 		}
 
-		sprintf(msgline, "\nStatistics:\n Hosts total         : %5d\n Hosts with no tests : %5d\n Total test count    : %5d\n Status messages     : %5d\n Alert status msgs   : %5d\n Transmissions       : %5d\n", 
+		sprintf(msgline, "\nStatistics:\n Hosts total           : %5d\n Hosts with no tests   : %5d\n Total test count      : %5d\n Status messages       : %5d\n Alert status msgs     : %5d\n Transmissions         : %5d\n", 
 			hostcount, notesthostcount, testcount, bbstatuscount, bbnocombocount, bbmsgcount);
+		addtostatus(msgline);
+		sprintf(msgline, "\nDNS statistics:\n # hostnames resolved  : %5d\n # succesful           : %5d\n # failed              : %5d\n # calls to dnsresolve : %5d\n",
+			dns_stats_total, dns_stats_success, dns_stats_failed, dns_stats_lookups);
+		addtostatus(msgline);
+		sprintf(msgline, "\nTCP test statistics:\n # TCP tests total     : %5d\n # HTTP tests          : %5d\n # Simple TCP tests    : %5d\n # Connection attempts : %5d\n # bytes written       : %8ld\n # bytes read          : %8ld\n",
+			tcp_stats_total, tcp_stats_http, tcp_stats_plain, tcp_stats_connects, 
+			tcp_stats_written, tcp_stats_read);
 		addtostatus(msgline);
 
 		if (errbuf) {
