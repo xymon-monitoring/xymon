@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timing.c,v 1.3 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: timing.c,v 1.4 2005-01-20 22:02:23 henrik Exp $";
 
 #include <stdlib.h>
 #include <string.h>
@@ -66,6 +66,8 @@ void show_timestamps(char **buffer)
 
 	if (!timing || (stamphead == NULL)) return;
 
+	MEMDEFINE(buf1);
+
 	strcpy(outbuf, "\n\nTIME SPENT\n");
 	strcat(outbuf, "Event                                   ");
 	strcat(outbuf, "         Starttime");
@@ -101,6 +103,8 @@ void show_timestamps(char **buffer)
 		xfree(outbuf);
 	}
 	else *buffer = outbuf;
+
+	MEMUNDEFINE(buf1);
 }
 
 

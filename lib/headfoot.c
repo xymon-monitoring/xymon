@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.13 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.14 2005-01-20 22:02:23 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -29,14 +29,17 @@ static char rcsid[] = "$Id: headfoot.c,v 1.13 2005-01-20 10:45:44 henrik Exp $";
 int	unpatched_bbd = 0;
 
 /* Stuff for headfoot - variables we can set dynamically */
-static char hostenv_svc[20];
-static char hostenv_host[200];
-static char hostenv_ip[20];
-static char hostenv_color[20];
+static char *hostenv_host = NULL;
+static char *hostenv_ip = NULL;
+static char *hostenv_svc = NULL;
+static char *hostenv_color = NULL;
+
 static time_t hostenv_reportstart = 0;
 static time_t hostenv_reportend = 0;
-static char hostenv_repwarn[20];
-static char hostenv_reppanic[20];
+
+static char *hostenv_repwarn = NULL;
+static char *hostenv_reppanic = NULL;
+
 static time_t hostenv_snapshot = 0;
 static char *hostenv_logtime = NULL;
 static char *hostenv_templatedir = NULL;
@@ -44,21 +47,25 @@ static int hostenv_refresh = 60;
 
 void sethostenv(char *host, char *ip, char *svc, char *color)
 {
-	hostenv_host[0] = hostenv_ip[0] = hostenv_svc[0] = hostenv_color[0] = '\0';
-	strncat(hostenv_host,  host,  sizeof(hostenv_host)-1);
-	*(hostenv_host + sizeof(hostenv_host) -1) = '\0';
-	strncat(hostenv_ip,    ip,    sizeof(hostenv_ip)-1);
-	*(hostenv_ip + sizeof(hostenv_ip) -1) = '\0';
-	strncat(hostenv_svc,   svc,   sizeof(hostenv_svc)-1);
-	*(hostenv_svc + sizeof(hostenv_svc) -1) = '\0';
-	strncat(hostenv_color, color, sizeof(hostenv_color)-1);
-	*(hostenv_color + sizeof(hostenv_color) -1) = '\0';
+	if (hostenv_host)  xfree(hostenv_host);
+	if (hostenv_ip)    xfree(hostenv_ip);
+	if (hostenv_svc)   xfree(hostenv_svc);
+	if (hostenv_color) xfree(hostenv_color);
+
+	hostenv_host = strdup(host);
+	hostenv_ip = strdup(ip);
+	hostenv_svc = strdup(svc);
+	hostenv_color = strdup(color);
 }
 
 void sethostenv_report(time_t reportstart, time_t reportend, double repwarn, double reppanic)
 {
+	if (hostenv_repwarn == NULL) hostenv_repwarn = malloc(10);
+	if (hostenv_reppanic == NULL) hostenv_reppanic = malloc(10);
+
 	hostenv_reportstart = reportstart;
 	hostenv_reportend = reportend;
+
 	sprintf(hostenv_repwarn, "%.2f", repwarn);
 	sprintf(hostenv_reppanic, "%.2f", reppanic);
 }
@@ -105,6 +112,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			char *bbdatefmt = xgetenv("BBDATEFORMAT");
 			char datestr[100];
 
+			MEMDEFINE(datestr);
+
 			/*
 			 * If no BBDATEFORMAT setting, use a format string that
 			 * produces output similar to that from ctime()
@@ -114,12 +123,16 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			if (hostenv_reportstart != 0) {
 				char starttime[20], endtime[20];
 
+				MEMDEFINE(starttime); MEMDEFINE(endtime);
+
 				strftime(starttime, sizeof(starttime), "%b %d %Y", localtime(&hostenv_reportstart));
 				strftime(endtime, sizeof(endtime), "%b %d %Y", localtime(&hostenv_reportend));
 				if (strcmp(starttime, endtime) == 0)
 					fprintf(output, "%s", starttime);
 				else
 					fprintf(output, "%s - %s", starttime, endtime);
+
+				MEMUNDEFINE(starttime); MEMUNDEFINE(endtime);
 			}
 			else if (hostenv_snapshot != 0) {
 				strftime(datestr, sizeof(datestr), bbdatefmt, localtime(&hostenv_snapshot));
@@ -129,6 +142,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 				strftime(datestr, sizeof(datestr), bbdatefmt, localtime(&now));
 				fprintf(output, "%s", datestr);
 			}
+
+			MEMUNDEFINE(datestr);
 		}
 
 		else if (strcmp(t_start, "BBBACKGROUND") == 0)  {
@@ -160,6 +175,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			char mname[20];
 			char *selstr;
 
+			MEMDEFINE(mname);
+
 			for (i=1; (i <= 12); i++) {
 				if (i == (nowtm->tm_mon + 1)) selstr = "SELECTED"; else selstr = "";
 				monthtm.tm_mon = (i-1); monthtm.tm_mday = 1; monthtm.tm_year = nowtm->tm_year;
@@ -167,6 +184,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 				strftime(mname, sizeof(mname)-1, "%B", &monthtm);
 				fprintf(output, "<OPTION VALUE=\"%d\" %s>%s\n", i, selstr, mname);
 			}
+
+			MEMUNDEFINE(mname);
 		}
 		else if (strcmp(t_start, "REPDAYLIST") == 0) {
 			int i;
@@ -239,6 +258,8 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 	struct stat st;
 	char	*templatedata;
 	char	*hfpath;
+
+	MEMDEFINE(filename);
 
 	if (xgetenv("HOBBITDREL") == NULL) {
 		char *hobbitdrel = (char *)malloc(12+strlen(VERSION));
@@ -326,5 +347,7 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 	else {
 		fprintf(output, "<HTML><BODY> \n <HR size=4> \n <BR>%s is either missing or invalid, please create this file with your custom header<BR> \n<HR size=4>", filename);
 	}
+
+	MEMUNDEFINE(filename);
 }
 

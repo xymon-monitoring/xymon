@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: files.c,v 1.5 2005-01-18 22:36:41 henrik Exp $";
+static char rcsid[] = "$Id: files.c,v 1.6 2005-01-20 22:02:23 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -36,6 +36,8 @@ void dropdirectory(char *dirfn, int background)
 		/* Caller wants us to run as a background task. */
 		childpid = fork();
 	}
+
+	MEMDEFINE(fn);
 
 	if (childpid == 0) {
 		dprintf("Starting to remove directory %s\n", dirfn);
@@ -66,5 +68,7 @@ void dropdirectory(char *dirfn, int background)
 	else if (childpid < 0) {
 		errprintf("Could not fork child to remove directory %s\n", dirfn);
 	}
+
+	MEMUNDEFINE(fn);
 }
 

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: color.c,v 1.4 2005-01-19 21:58:05 henrik Exp $";
+static char rcsid[] = "$Id: color.c,v 1.5 2005-01-20 22:02:23 henrik Exp $";
 
 #include <string.h>
 
@@ -43,6 +43,8 @@ int parse_color(char *colortext)
 	char inpcolor[10];
 	int n;
 
+	MEMDEFINE(inpcolor);
+
 	strncpy(inpcolor, colortext, 7);
 	inpcolor[7] = '\0';
 	n = strspn(inpcolor, "abcdefghijklmnopqrstuvwxyz");
@@ -50,24 +52,31 @@ int parse_color(char *colortext)
 	strcat(inpcolor, " ");
 
 	if (strncmp(inpcolor, "green ", 6) == 0) {
+		MEMUNDEFINE(inpcolor);
 		return COL_GREEN;
 	}
 	else if (strncmp(inpcolor, "yellow ", 7) == 0) {
+		MEMUNDEFINE(inpcolor);
 		return COL_YELLOW;
 	}
 	else if (strncmp(inpcolor, "red ", 4) == 0) {
+		MEMUNDEFINE(inpcolor);
 		return COL_RED;
 	}
 	else if (strncmp(inpcolor, "blue ", 5) == 0) {
+		MEMUNDEFINE(inpcolor);
 		return COL_BLUE;
 	}
 	else if (strncmp(inpcolor, "clear ", 6) == 0) {
+		MEMUNDEFINE(inpcolor);
 		return COL_CLEAR;
 	}
 	else if (strncmp(inpcolor, "purple ", 7) == 0) {
+		MEMUNDEFINE(inpcolor);
 		return COL_PURPLE;
 	}
 
+	MEMUNDEFINE(inpcolor);
 	return -1;
 }
 
@@ -84,7 +93,10 @@ int eventcolor(char *colortext)
 
 char *dotgiffilename(int color, int acked, int oldage)
 {
-	static char filename[20]; /* yellow-recent.gif */
+	static char *filename = NULL; /* yellow-recent.gif */
+
+	/* Allocate the first time, never free */
+	if (filename == NULL) filename = (char *)malloc(20);
 
 	strcpy(filename, colorname(color));
 	if (acked) {

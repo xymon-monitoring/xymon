@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.16 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.17 2005-01-20 22:02:23 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -193,6 +193,8 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 	int svcurllen, rrdparturlsize;
 	char rrdservicename[100];
 
+	MEMDEFINE(rrdservicename);
+
 	dprintf("rrdlink_url: host %s, rrd %s (partname:%s, maxgraphs:%d, count=%d), larrd043=%d\n", 
 		hostname, 
 		graphdef->larrdrrdname, textornull(graphdef->larrdpartname), graphdef->maxgraphs, itemcount, 
@@ -299,6 +301,9 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 	dprintf("URLtext: %s\n", rrdurl);
 
 	xfree(svcurl);
+
+	MEMUNDEFINE(rrdservicename);
+
 	return rrdurl;
 }
 

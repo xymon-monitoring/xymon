@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.8 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.9 2005-01-20 22:02:23 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -22,10 +22,12 @@ static char rcsid[] = "$Id: timefunc.c,v 1.8 2005-01-20 10:45:44 henrik Exp $";
 
 #include "libbbgen.h"
 
-char timestamp[30];
+char *timestamp = NULL;
 void init_timestamp(void)
 {
 	time_t	now;
+
+	if (timestamp == NULL) timestamp = (char *)malloc(30);
 
         now = time(NULL);
         strcpy(timestamp, ctime(&now));
@@ -36,9 +38,11 @@ void init_timestamp(void)
 
 char *weekday_text(char *dayspec)
 {
-	static char result[80];
+	static char *result = NULL;
 	static char *dayname[7] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 	char *p;
+
+	if (result == NULL) result = (char *)malloc(80);
 
 	if (strcmp(dayspec, "*") == 0) {
 		strcpy(result, "All days");
@@ -68,7 +72,9 @@ char *weekday_text(char *dayspec)
 
 char *time_text(char *timespec)
 {
-	static char result[80];
+	static char *result = NULL;
+
+	if (result == NULL) result = (char *)malloc(80);
 
 	if (strcmp(timespec, "*") == 0) {
 		strcpy(result, "0000-2359");
@@ -272,8 +278,11 @@ out:
 
 char *histlogtime(time_t histtime)
 {
-	static char result[30];
+	static char *result = NULL;
 	char d1[40],d2[3],d3[40];
+
+	if (result == NULL) result = (char *)malloc(30);
+	MEMDEFINE(d1); MEMDEFINE(d2); MEMDEFINE(d3);
 
 	/*
 	 * Historical logs use a filename like "Fri_Nov_7_16:01:08_2002 
@@ -287,6 +296,8 @@ char *histlogtime(time_t histtime)
         strftime(d3, sizeof(d3), "_%H:%M:%S_%Y", localtime(&histtime));
 
 	snprintf(result, sizeof(result)-1, "%s%s%s", d1, d2, d3);
+
+	MEMUNDEFINE(d1); MEMUNDEFINE(d2); MEMUNDEFINE(d3);
 
 	return result;
 }

@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.4 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.5 2005-01-20 22:02:23 henrik Exp $";
 
 
 static int get_page_name_title(char *buf, char *key, char **name, char **title)
@@ -54,6 +54,9 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 	char l[4096];
 	pagelist_t *curtoppage, *curpage, *pgtail;
 	namelist_t *nametail = NULL;
+
+	MEMDEFINE(hostname);
+	MEMDEFINE(l);
 
 	initialize_hostlist(docurl);
 	curpage = curtoppage = pgtail = pghead;
@@ -129,6 +132,9 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 
 			namelist_t *newitem = malloc(sizeof(namelist_t));
 			namelist_t *iwalk, *iprev;
+
+			MEMDEFINE(clientname);
+			MEMDEFINE(downtime);
 
 			/* Hostname beginning with '@' are "no-display" hosts. But we still want them. */
 			if (*hostname == '@') memmove(hostname, hostname+1, strlen(hostname));
@@ -235,6 +241,9 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 					iprev->next = newitem;
 				}
 			}
+
+			MEMUNDEFINE(clientname);
+			MEMUNDEFINE(downtime);
 		}
 		else if (sscanf(l, "dialup %s %d.%d.%d.%d %d", hostname, &ip1, &ip2, &ip3, &ip4, &banksize) == 6) {
 			namelist_t *newitem = calloc(1, sizeof(namelist_t));
@@ -258,6 +267,9 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 		}
 	}
 	stackfclose(bbhosts);
+
+	MEMUNDEFINE(hostname);
+	MEMUNDEFINE(l);
 
 	return namehead;
 }

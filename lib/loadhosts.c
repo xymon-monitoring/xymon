@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.22 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.23 2005-01-20 22:02:23 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -138,7 +138,9 @@ char *knownhost(char *hostname, char *hostip, int ghosthandling, int *maybedown)
 	 * ghosthandling = 2 : Case-insensitive, log ghosts, drop ghosts
 	 */
 	namelist_t *walk = NULL;
-	static char result[MAXMSG];
+	static char *result = NULL;
+
+	if (result == NULL) result = (char *)malloc(MAXMSG);
 
 	/* Find the host */
 	for (walk = namehead; (walk && (strcasecmp(walk->bbhostname, hostname) != 0) && (strcasecmp(walk->clientname, hostname) != 0)); walk = walk->next);
@@ -177,8 +179,10 @@ namelist_t *hostinfo(char *hostname)
 char *bbh_item(namelist_t *host, enum bbh_item_t item)
 {
 	static char *result;
-	static char inttxt[10];
+	static char *inttxt = NULL;
 	char *p;
+
+	if (inttxt == NULL) inttxt = (char *)malloc(10);
 
 	if (host == NULL) return NULL;
 

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: digest.c,v 1.6 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: digest.c,v 1.7 2005-01-20 22:02:23 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -81,6 +81,8 @@ char *digest_done(digestctx_t *ctx)
 	int md_len, i;
 	char *p;
 
+	MEMDEFINE(md_string); MEMDEFINE(md_value);
+
 #if OPENSSL_VERSION_NUMBER >= 0x00907000L
 	EVP_DigestFinal_ex(ctx->mdctx, md_value, &md_len);
 #else
@@ -104,6 +106,8 @@ char *digest_done(digestctx_t *ctx)
 
 	result = (char *) malloc(strlen(md_string)+1);
 	strcpy(result, md_string);
+
+	MEMUNDEFINE(md_string); MEMUNDEFINE(md_value);
 #endif
 
 	return result;

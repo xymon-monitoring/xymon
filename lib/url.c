@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: url.c,v 1.8 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: url.c,v 1.9 2005-01-20 22:02:23 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -165,9 +165,17 @@ static void load_netrc(void)
 	if (loaded) return;
 	loaded = 1;
 
+	MEMDEFINE(netrcfn);
+	MEMDEFINE(l);
+
 	sprintf(netrcfn, "%s/.netrc", xgetenv("HOME"));
 	fd = fopen(netrcfn, "r");
-	if (fd == NULL) return;
+	if (fd == NULL) {
+		MEMUNDEFINE(netrcfn);
+		MEMUNDEFINE(l);
+
+		return;
+	}
 
 	host = login = password = NULL;
 	while (fgets(l, sizeof(l), fd)) {
@@ -222,6 +230,9 @@ static void load_netrc(void)
 	}
 
 	fclose(fd);
+
+	MEMUNDEFINE(netrcfn);
+	MEMUNDEFINE(l);
 }
 
 /*

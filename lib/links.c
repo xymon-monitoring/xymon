@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: links.c,v 1.6 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: links.c,v 1.7 2005-01-20 22:02:23 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -85,6 +85,8 @@ static link_t *load_links(const char *directory, char *urlprefix)
 		return NULL;
 	}
 
+	MEMDEFINE(fn);
+
 	while ((d = readdir(bblinks))) {
 		strcpy(fn, d->d_name);
 		newlink = init_link(fn, urlprefix);
@@ -99,6 +101,9 @@ static link_t *load_links(const char *directory, char *urlprefix)
 		}
 	}
 	closedir(bblinks);
+
+	MEMUNDEFINE(fn);
+
 	return toplink;
 }
 
@@ -107,6 +112,8 @@ void load_all_links(void)
 	link_t *l, *head1, *head2;
 	char dirname[PATH_MAX];
 	char *p;
+
+	MEMDEFINE(dirname);
 
 	dprintf("load_all_links()\n");
 
@@ -146,6 +153,8 @@ void load_all_links(void)
 	}
 
 	linkhead = head1;
+
+	MEMUNDEFINE(dirname);
 }
 
 
@@ -167,8 +176,10 @@ static link_t *find_link(const char *name)
 
 char *columnlink(char *colname)
 {
-	static char linkurl[PATH_MAX];
+	static char *linkurl = NULL;
 	link_t *link = find_link(colname);
+
+	if (linkurl == NULL) linkurl = (char *)malloc(PATH_MAX);
 
 	if (columndocurl) {
 		sprintf(linkurl, columndocurl, colname);
@@ -186,8 +197,10 @@ char *columnlink(char *colname)
 
 char *hostlink(char *hostname)
 {
-	static char linkurl[PATH_MAX];
+	static char *linkurl = NULL;
 	link_t *link = find_link(hostname);
+
+	if (linkurl == NULL) linkurl = (char *)malloc(PATH_MAX);
 
 	if (link) {
 		sprintf(linkurl, "%s/%s", link->urlprefix, link->filename);

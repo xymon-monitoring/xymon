@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: errormsg.c,v 1.4 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: errormsg.c,v 1.5 2005-01-20 22:02:23 henrik Exp $";
 
 #include <string.h>
 #include <time.h>
@@ -35,6 +35,9 @@ void errprintf(const char *fmt, ...)
 	va_list args;
 
 	time_t now = time(NULL);
+
+	MEMDEFINE(timestr);
+	MEMDEFINE(msg);
 
 	strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S", localtime(&now));
 	fprintf(stderr, "%s ", timestr);
@@ -63,6 +66,9 @@ void errprintf(const char *fmt, ...)
 
 		strcat(errbuf, msg);
 	}
+
+	MEMUNDEFINE(timestr);
+	MEMUNDEFINE(msg);
 }
 
 
@@ -74,6 +80,8 @@ void dprintf(const char *fmt, ...)
 		char timestr[30];
 		time_t now = time(NULL);
 
+		MEMDEFINE(timestr);
+
 		strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S",
 			 localtime(&now));
 		printf("%s ", timestr);
@@ -82,6 +90,8 @@ void dprintf(const char *fmt, ...)
 		vprintf(fmt, args);
 		va_end(args);
 		fflush(stdout);
+
+		MEMUNDEFINE(timestr);
 	}
 }
 

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.6 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.7 2005-01-20 22:02:23 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -33,6 +33,7 @@ const static struct {
 	{ "BBSERVERWWWNAME", "localhost" },
 	{ "BBSERVERWWWURL", "/hobbit" },
 	{ "BBSERVERCGIURL", "/hobbit-cgi" },
+	{ "BBLOCATION", "" },
 	{ "PATH", "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:$BBSERVERROOT/server/bin" },
 	{ "BBPORT", "1984" },
 	{ "BBDISP", "$BBSERVERIP" },
@@ -184,6 +185,8 @@ void loadenv(char *envfile)
 	char *p, *oneenv;
 	int n;
 
+	MEMDEFINE(l);
+
 	fd = stackfopen(envfile, "r");
 	if (fd) {
 		while (stackfgets(l, sizeof(l), "include", NULL)) {
@@ -214,6 +217,8 @@ void loadenv(char *envfile)
 	else {
 		errprintf("Cannot open env file %s - %s\n", envfile, strerror(errno));
 	}
+
+	MEMUNDEFINE(l);
 }
 
 char *getenv_default(char *envname, char *envdefault, char **buf)

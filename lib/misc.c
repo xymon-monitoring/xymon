@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.22 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.23 2005-01-20 22:02:23 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -248,7 +248,9 @@ unsigned int IPtou32(int ip1, int ip2, int ip3, int ip4)
 char *u32toIP(unsigned int ip32)
 {
 	int ip1, ip2, ip3, ip4;
-	static char result[16];
+	static char *result = NULL;
+
+	if (result == NULL) result = (char *)malloc(16);
 
 	ip1 = ((ip32 >> 24) & 0xFF);
 	ip2 = ((ip32 >> 16) & 0xFF);
@@ -287,6 +289,8 @@ int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int
 	int	piperes;
 	int	bannersize = 0;
 
+	MEMDEFINE(l);
+
 	result = 0;
 	if (banner) { 
 		bannersize = 4096;
@@ -298,6 +302,7 @@ int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int
 	if (cmdpipe == NULL) {
 		errprintf("Could not open pipe for command %s\n", cmd);
 		if (banner) strcat(*banner, "popen() failed to run command\n");
+		MEMUNDEFINE(l);
 		return -1;
 	}
 
@@ -318,6 +323,8 @@ int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int
 	}
 
 	if (bannerbytes) *bannerbytes = strlen(*banner);
+
+	MEMUNDEFINE(l);
 	return result;
 }
 
@@ -340,6 +347,9 @@ void do_bbext(FILE *output, char *extenv, char *family)
 		return;
 	}
 
+	MEMDEFINE(extfn);
+	MEMDEFINE(buf);
+
 	bbexts = strdup(p);
 	p = strtok(bbexts, "\t ");
 
@@ -359,6 +369,9 @@ void do_bbext(FILE *output, char *extenv, char *family)
 	}
 
 	xfree(bbexts);
+
+	MEMUNDEFINE(extfn);
+	MEMUNDEFINE(buf);
 }
 
 char **setup_commandargs(char *cmdline, char **cmd)

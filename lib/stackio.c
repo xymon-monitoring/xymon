@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: stackio.c,v 1.3 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: stackio.c,v 1.4 2005-01-20 22:02:23 henrik Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -26,8 +26,8 @@ typedef struct stackfd_t {
 	struct stackfd_t *next;
 } stackfd_t;
 static stackfd_t *fdhead = NULL;
-static char stackfd_base[PATH_MAX];
-static char stackfd_mode[10];
+static char *stackfd_base = NULL;
+static char *stackfd_mode = NULL;
 
 
 FILE *stackfopen(char *filename, char *mode)
@@ -36,13 +36,15 @@ FILE *stackfopen(char *filename, char *mode)
 	stackfd_t *newitem;
 	char stackfd_filename[PATH_MAX];
 
+	MEMDEFINE(stackfd_filename);
+
 	if (fdhead == NULL) {
 		char *p;
 
-		strcpy(stackfd_base, filename);
+		stackfd_base = strdup(filename);
 		p = strrchr(stackfd_base, '/'); if (p) *(p+1) = '\0';
 
-		strcpy(stackfd_mode, mode);
+		stackfd_mode = strdup(mode);
 
 		strcpy(stackfd_filename, filename);
 	}
@@ -61,6 +63,8 @@ FILE *stackfopen(char *filename, char *mode)
 		fdhead = newitem;
 	}
 
+	MEMUNDEFINE(stackfd_filename);
+
 	return newfd;
 }
 
@@ -78,8 +82,8 @@ int stackfclose(FILE *fd)
 			fclose(olditem->fd);
 			xfree(olditem);
 		}
-		stackfd_base[0] = '\0';
-		stackfd_mode[0] = '\0';
+		xfree(stackfd_base);
+		xfree(stackfd_mode);
 		result = 0;
 	}
 	else {
@@ -97,8 +101,13 @@ static char *read_line_1(struct linebuf_t *buffer, FILE *stream, int *docontinue
 	char l[PATH_MAX];
 	char *p, *start;
 
+	MEMDEFINE(l);
+
 	*docontinue = 0;
-	if (fgets(l, sizeof(l), stream) == NULL) return NULL;
+	if (fgets(l, sizeof(l), stream) == NULL) {
+		MEMUNDEFINE(l);
+		return NULL;
+	}
 
 	p = strchr(l, '\n'); if (p) *p = '\0';
 
@@ -118,6 +127,9 @@ static char *read_line_1(struct linebuf_t *buffer, FILE *stream, int *docontinue
 
 	strcat(buffer->buf, start);
 	if (*docontinue) strcat(buffer->buf, " ");
+
+	MEMUNDEFINE(l);
+
 	return buffer->buf;
 }
 

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sig.c,v 1.5 2005-01-18 22:37:29 henrik Exp $";
+static char rcsid[] = "$Id: sig.c,v 1.6 2005-01-20 22:02:23 henrik Exp $";
 
 #include <limits.h>
 #include <signal.h>
@@ -61,6 +61,11 @@ void setup_signalhandler(char *programname)
 {
 	struct rlimit lim;
 	struct sigaction sa;
+
+	MEMDEFINE(signal_bbcmd);
+	MEMDEFINE(signal_bbdisp);
+	MEMDEFINE(signal_bbtmp);
+	MEMDEFINE(signal_msg);
 
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sigsegv_handler;
