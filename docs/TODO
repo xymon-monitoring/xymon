@@ -30,5 +30,5 @@ If I have too much time someday
   Another cool feature would be to sign messages with
   a key installed on the sender system. Perhaps for
   "dangerous" messages only - disable/enable, notes,
-* Perhaps switch to using a DB for storing messages.
+* Switch to using a DB for storing messages.
 
