@@ -404,8 +404,14 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 					regmatch_t foo[1];
 					int status;
 
-					status = regexec(req->exp, req->output, 0, foo, 0);
-					regfree(req->exp);
+					if (req->output) {
+						status = regexec(req->exp, req->output, 0, foo, 0);
+						regfree(req->exp);
+					}
+					else {
+						/* output may be null if we only got a redirect */
+						status = STATUS_CONTENTMATCH_FAILED;
+					}
 					req->contstatus = ((status == 0)  ? 200 : STATUS_CONTENTMATCH_FAILED);
 					color = statuscolor(t->host, req->contstatus);
 				}
