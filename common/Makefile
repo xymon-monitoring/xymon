@@ -1,13 +1,14 @@
 # bbgen - common tools
 #
 
-PROGRAMS = bbhostgrep bbhostshow bbdigest bb bblaunch
+PROGRAMS = bbhostgrep bbhostshow bbdigest bb bblaunch bbcmd
 
 HOSTGREPOBJS = bbhostgrep.o
 HOSTSHOWOBJS = bbhostshow.o
 DIGESTOBJS = bbdigest.o
 MSGOBJS = sendmsg-std.o
 LAUNCHOBJS = bblaunch.o
+CMDOBJS = bbcmd.o
 
 all: $(PROGRAMS)
 
@@ -26,6 +27,9 @@ bb: $(MSGOBJS)
 
 bblaunch: $(LAUNCHOBJS)
 	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/libbbgen.a
+
+bbcmd: $(CMDOBJS)
+	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/libbbgen.a
 
 sendmsg-std.o: ../lib/sendmsg.c
 	$(CC) $(CFLAGS) -DSTANDALONE -c -o $@ ../lib/sendmsg.c
@@ -46,8 +50,9 @@ install-bin: $(PROGRAMS)
 	cp -p $(PROGRAMS) $(BBHOME)/bin/
 
 install-man:
-	mkdir -p $(MANROOT)/man{1,5,7}
+	mkdir -p $(MANROOT)/man{1,5,7,8}
 	cp -p *.1 $(MANROOT)/man1/
 	cp -p *.5 $(MANROOT)/man5/
 	cp -p *.7 $(MANROOT)/man7/
+	cp -p *.8 $(MANROOT)/man8/
 
