@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 /* These are dummy vars needed by stuff in util.c */
 hostlist_t      *hosthead = NULL;
@@ -11,11 +12,13 @@ link_t  null_link = { "", "", "", NULL };
 
 unsigned char *get_bbgend_message(void)
 {
+	static unsigned int seqnum = 0;
 	static unsigned char buf[SHAREDBUFSZ];
 	unsigned char *bufp = buf;
 	int bufsz = SHAREDBUFSZ;
 	int buflen = 0;
 	int complete = 0;
+	char *p;
 
 	while (!complete && fgets(bufp, (bufsz - buflen), stdin)) {
 		if (strcmp(bufp, "@@\n") == 0) {
@@ -25,7 +28,7 @@ unsigned char *get_bbgend_message(void)
 		}
 		else if ((bufp == buf) && (strncmp(bufp, "@@", 2) != 0)) {
 			/* A new message must begin with "@@" - if not, just drop those lines. */
-			dprintf("Out-of-sync data in channel: %s\n", bufp);
+			errprintf("Out-of-sync data in channel: %s\n", bufp);
 		}
 		else {
 			/* Add data to buffer */
@@ -36,6 +39,21 @@ unsigned char *get_bbgend_message(void)
 	}
 
 	*bufp = '\0';
+
+	dprintf("Got message\n");
+	p = buf + strcspn(buf, "0123456789|");
+	if (isdigit(*p)) {
+		unsigned int seq = atoi(p);
+
+		dprintf("Got message %u\n", seq);
+
+		if ((seqnum == 0) || (seq == (seqnum + 1))) seqnum = seq;
+		else {
+			errprintf("Got message %u, expected %u\n", seq, seqnum+1);
+			seqnum = seq;
+		}
+	}
+
 	return ((!complete || (buflen == 0)) ? NULL : buf);
 }
 
