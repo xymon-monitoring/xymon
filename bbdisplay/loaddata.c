@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.92 2003-07-06 19:29:47 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.93 2003-07-07 19:59:56 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1186,7 +1186,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				}
 				else if (argnmatch(tag, "WARNPCT:")) 
 					warnpct = atof(tag+8);
-				else if (argnmatch(tag, "REPTIME=")) 
+				else if (argnmatch(tag, "REPORTTIME=")) 
 					reporttime = malcop(tag);
 				else if (argnmatch(tag, hosttag)) {
 					targetpagelist[targetpagecount++] = malcop(tag+strlen(hosttag));

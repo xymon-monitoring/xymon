@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.13 2003-07-07 16:55:48 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.14 2003-07-07 19:59:56 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -324,7 +324,7 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
  *
  *	HOSTSVC=www,sample,com.conn
  *	IP=12.34.56.78
- *	REPTIME=*:HHHH:MMMM
+ *	REPORTTIME=*:HHHH:MMMM
  *	COLOR=yellow
  *	WARNPCT=98.5
  *	PCT=98.92
@@ -411,9 +411,9 @@ static void parse_query(void)
 		else if (argnmatch(token, "IP")) {
 			ip = malcop(val);
 		}
-		else if (argnmatch(token, "REPTIME")) {
-			reporttime = malloc(strlen(val)+strlen("REPTIME=")+1);
-			sprintf(reporttime, "REPTIME=%s", val);
+		else if (argnmatch(token, "REPORTTIME")) {
+			reporttime = malloc(strlen(val)+strlen("REPORTTIME=")+1);
+			sprintf(reporttime, "REPORTTIME=%s", val);
 		}
 		else if (argnmatch(token, "WARNPCT")) {
 			reportwarnlevel = atof(val);

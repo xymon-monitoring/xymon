@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.74 2003-07-07 14:53:23 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.75 2003-07-07 19:59:56 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -438,7 +438,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 								e->repinfo->count[COL_RED], e->repinfo->count[COL_YELLOW], 
 								e->repinfo->count[COL_GREEN], e->repinfo->count[COL_PURPLE], 
 								e->repinfo->count[COL_CLEAR], e->repinfo->count[COL_BLUE]);
-							if (h->reporttime) fprintf(output, "&REPTIME=%s", h->reporttime);
+							if (h->reporttime) fprintf(output, "&REPORTTIME=%s", h->reporttime);
 							fprintf(output, "&WARNPCT=%.2f", h->reportwarnlevel);
 							fprintf(output, "\">\n");
 						}
