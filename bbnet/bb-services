@@ -1,0 +1,151 @@
+# This file defines the way TCP services are tested by bbtest-net
+# (part of the bbgen toolkit).
+#
+# A service definition looks like this:
+#     service NAME
+#        send "HELLO"
+#        expect "OK"
+#        options banner,ssl,telnet
+#        port PORTNUMBER
+#
+# The NAME is the name of the test, and of the TCP service. If
+# multiple tests share a common definition (e.g. ssh, ssh1, ssh2)
+# then these may be given as "NAME1|NAME2|NAME3"
+#
+# If the send-string is defined, this data is sent to the service
+# immediately after a connect.
+#
+# If the expect-string is defined, any data returned by the service is 
+# matched against this. If it matches, the status will be green; if it
+# does not match, the status will turn yellow. Only if the service does
+# not respond at all will the status go red. If a expect-string is not 
+# defined, the status will always be green if it is possible to connect 
+# to the service.
+#
+# The options can include "banner" (to grab the banner from the 
+# service), "telnet" (telnet options are to be negotiated), and
+# "ssl" (perform an SSL/TLS handshake and pick up the SSL certificate).
+#
+# The "port" is the TCP port used for this service. This OVERRIDES
+# any port number listed in /etc/services - but this also means that
+# you need not define "unusual" port-numbers in /etc/services. 
+# Of course, you can always define your test in bb-hosts to use a 
+# specific portnumber.
+#
+# The send/expect string definitions must be in double quotes.
+# The sequences "\r", "\n", "\t" and "\xNN" are recognized and
+# converted into a carriage-return (ASCII 13), line-feed (ASCII 10),
+# TAB (ASCII 8), and any byte respectively (NN=hex value).
+
+service ftp
+   send "quit\r\n"
+   expect "220"
+   options banner
+   port 21
+
+service ftps
+   send "quit\r\n"
+   expect "220"
+   options ssl,banner
+   port 990
+
+service ssh|ssh1|ssh2
+   expect "SSH"
+   options banner
+   port 22
+
+service telnet
+   options banner,telnet
+   port 23
+
+service telnets
+   options ssl,banner,telnet
+   port 992
+
+service smtp
+   send "mail\r\nquit\r\n"
+   expect "220"
+   options banner
+   port 25
+
+service smtps
+   send "mail\r\nquit\r\n"
+   expect "220"
+   options ssl,banner
+#  No default port-number assignment for smtps - nonstandard according to IANA
+
+service pop|pop3|pop-3
+   send "quit\r\n"
+   expect "+OK"
+   options banner
+   port 109
+
+service pop|pop3|pop-3
+   send "quit\r\n"
+   expect "+OK"
+   options banner
+   port 110
+
+service pop3s
+   send "quit\r\n"
+   expect "+OK"
+   options ssl,banner
+   port 995
+
+service imap|imap2|imap4
+   send "ABC123 LOGOUT\r\n"
+   expect "* OK"
+   options banner
+   port 143
+
+service imap3
+   send "ABC123 LOGOUT\r\n"
+   expect "* OK"
+   options banner
+   port 220
+
+service imaps
+   send "ABC123 LOGOUT\r\n"
+   expect "* OK"
+   options ssl,banner
+   port 993
+
+service nntp
+   send "quit\r\n"
+   expect "200"
+   options banner
+   port 119
+
+service nntps
+   send "quit\r\n"
+   expect "200"
+   options ssl,banner
+   port 563
+
+service ldap
+   port 389
+
+service ldaps
+   options ssl
+   port 636
+
+service rsync
+   expect "@RSYNCD"
+   options banner
+   port 873
+
+service bbd
+   send "dummy"
+   port 1984
+
+service clamd
+   send "PING\r\n"
+   expect "PONG"
+   port 3310
+
+# From http://www.mail-archive.com/whatsup_forum@list.ipswitch.com/msg06678.html
+service oratns
+   send "\x00\x57\x00\x00\x01\x00\x00\x00\x01\x36\x01\x2C\x00\x00\x08\x00\x7F\xFF\xA3\x0A\x00\x00\x01\x00\x00\x1D\x00\x3A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x08\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00(CONNECT_DATA=(COMMAND=ping))"
+   options banner
+   port 1521
+
