@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.58 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.59 2005-03-12 08:30:37 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -230,6 +230,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int hobbit
 	unsigned int allrrdlinksize;
 	char *allmeta, *allmetaend;
 	unsigned int allmetasize;
+	int anyrrds = 0;
 
 	dprintf("generate_larrd(rrddirname=%s, larrcolumn=%s, larrd043=%d\n",
 		 rrddirname, larrdcolumn, larrd043);
@@ -260,6 +261,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int hobbit
 			int found, hostfound;
 
 			dprintf("Got RRD %s\n", fn);
+			anyrrds++;
 
 			/* Some logfiles use ',' instead of '.' in FQDN hostnames */
 			p = fn; while ( (p = strchr(p, ',')) != NULL) *p = '.';
@@ -316,6 +318,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int hobbit
 			}
 		}
 	}
+	if (!anyrrds) goto done;
 
 	chdir(xgetenv("BBLOGS"));
 
@@ -378,6 +381,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int hobbit
 		if (sendmetainfo) meta_end();
 	}
 
+done:
 	larrd_closedir();
 	xfree(allrrdlinks);
 	xfree(allmeta);
@@ -445,7 +449,8 @@ int main(int argc, char *argv[])
 	if (usehobbitd && sendmetainfo) {
 		char *statuslist = NULL;
 
-		if (sendmessage("hobbitdlist", NULL, NULL, &statuslist, 1, BBTALK_TIMEOUT) == BB_OK) {
+		if ((sendmessage("hobbitdlist", NULL, NULL, &statuslist, 1, BBTALK_TIMEOUT) == BB_OK) &&
+		    (strlen(statuslist) > 0)) {
 			char *curr, *next;
 			char *host, *test, *graphlinks;
 			larrdrrd_t *larrd = NULL;
