@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.87 2003-08-30 10:14:04 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.88 2003-08-30 23:05:31 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1426,5 +1426,20 @@ char *u32toIP(unsigned int ip32)
 
 	sprintf(result, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 	return result;
+}
+
+void addtobuffer(char **buf, int *buflen, char *newtext)
+{
+	if (*buf == NULL) {
+		*buflen = 4096;
+		*buf = (char *) malloc(*buflen);
+		**buf = '\0';
+	}
+	else if ((strlen(*buf) + strlen(newtext)) > *buflen) {
+		*buflen += strlen(newtext) + 4096;
+		*buf = (char *) realloc(*buf, *buflen);
+	}
+
+	strcat(*buf, newtext);
 }
 

@@ -87,5 +87,6 @@ extern time_t sslcert_expiretime(char *timestr);
 extern unsigned int IPtou32(int ip1, int ip2, int ip3, int ip4);
 extern char *u32toIP(unsigned int ip32);
 
+extern void addtobuffer(char **buf, int *buflen, char *newtext);
 #endif
 
