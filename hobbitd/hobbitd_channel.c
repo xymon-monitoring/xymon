@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.17 2004-11-06 22:05:05 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.18 2004-11-07 07:47:20 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -45,12 +45,15 @@ msg_t *head = NULL;
 msg_t *tail = NULL;
 
 static volatile int running = 1;
+static volatile int gotalarm = 0;
 static int childexit = -1;
 bbd_channel_t *channel = NULL;
 
 void sig_handler(int signum)
 {
 	switch (signum) {
+	  case SIGTERM:
+	  case SIGINT:
 	  case SIGPIPE:
 		/* We lost the pipe to the worker child. Shutdown. */
 		running = 0;
@@ -61,9 +64,11 @@ void sig_handler(int signum)
 		wait(&childexit);
 		running = 0;
 		break;
-	}
 
-	running = 0;
+	  case SIGALRM:
+		gotalarm = 0;
+		break;
+	}
 }
 
 int main(int argc, char *argv[])
@@ -80,7 +85,6 @@ int main(int argc, char *argv[])
 	pid_t childpid = 0;
 	char *childcmd = "";
 	char **childargs = NULL;
-	struct timespec tmo;
 	int canwrite;
 
 	/* Dont save the error buffer */
@@ -195,11 +199,20 @@ int main(int argc, char *argv[])
 			 * Now we have safely stored the new message in our buffer.
 			 * Wait until any other clients on the same channel have picked up 
 			 * this message (GOCLIENT reaches 0).
+			 *
+			 * We wrap this into an alarm handler, because it can occasionally
+			 * fail, causing the whole system to lock up. We dont want that....
 			 */
+			gotalarm = 0; signal(SIGALRM, sig_handler); alarm(2);
 			do {
 				s.sem_num = GOCLIENT; s.sem_op  = 0; s.sem_flg = 0;
 				n = semop(channel->semid, &s, 1);
-			} while ((n == -1) && (errno == EAGAIN) && running);
+			} while ((n == -1) && (errno == EAGAIN) && running && (!gotalarm));
+			signal(SIGALRM, SIG_IGN);
+
+			if (gotalarm) {
+				errprintf("Broke deadlock waiting for GOCLIENT to go low.\n");
+			}
 
 			/* 
 			 * Let master know we got it by downing BOARDBUSY.
