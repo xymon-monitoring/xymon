@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.20 2003-04-17 09:01:33 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.21 2003-04-17 15:42:44 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -56,6 +56,7 @@ typedef struct {
 	int dialup;
 	int testip;
 	int dnserror;
+	int in_sla;
 	void *next;
 } testedhost_t;
 
@@ -168,6 +169,7 @@ void load_tests(void)
 				strcpy(h->hostname, hostname);
 				h->dialup = (strstr(l, "dialup") != NULL);
 				h->testip = (strstr(l, "testip") != NULL);
+				h->in_sla = within_sla(l);
 				h->ip[0] = '\0';
 				h->dnserror = 0;
 
@@ -413,6 +415,9 @@ void send_results(service_t *service)
 
 		/* NOPAGENET services that are down are reported as yellow */
 		if (nopage && (color == COL_RED)) color = COL_YELLOW;
+
+		/* If not inside SLA and non-green, report as BLUE */
+		if (!t->host->in_sla && (color != COL_GREEN)) color = COL_BLUE;
 
 		init_status(color);
 		sprintf(msgline, "status %s.%s %s %s %s %s\n", 
