@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.51 2002-12-19 14:13:23 hstoerne Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.52 2002-12-20 08:48:08 hstoerne Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -57,9 +57,15 @@ int main(int argc, char *argv[])
 		if (strcmp(argv[i], "--recentgifs") == 0) {
 			use_recentgifs = 1;
 		}
-		else if (strncmp(argv[i], "--larrd=", 8) == 0) {
+		else if (strncmp(argv[i], "--larrd", 7) == 0) {
+			/* "--larrd" just enable larrd page generation */
+			/* "--larrd=xxx" does that, and redefines the larrd column name */
 			char *lp = strchr(argv[i], '=');
-			strcpy(larrdcol, (lp+1));
+
+			enable_larrdgen=1;
+			if (lp) {
+				strcpy(larrdcol, (lp+1));
+			}
 		}
 		else if (strncmp(argv[i], "--rrddir=", 8) == 0) {
 			char *lp = strchr(argv[i], '=');
@@ -72,7 +78,7 @@ int main(int argc, char *argv[])
 			printf("Usage: %s [--options] [WebpageDirectory]\n", argv[0]);
 			printf("Options:\n");
 			printf("    --recentgifs           : Use xxx-recent.gif images\n");
-			printf("    --larrd=LARRDCOLUMN    : LARRD data in column LARRDCOLUMN never goes purple\n");
+			printf("    --larrd[=LARRDCOLUMN]  : LARRD data in column LARRDCOLUMN, and handle larrd-html\n");
 			printf("    --rrddir=RRD-directory : Directory for LARRD RRD files\n");
 			printf("    --nopurple             : Disable all purple updates\n");
 			exit(1);

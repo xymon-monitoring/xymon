@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.2 2002-12-19 14:13:23 hstoerne Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.3 2002-12-20 08:48:08 hstoerne Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -31,6 +31,31 @@ static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.2 2002-12-19 14:13:23 hstoern
 #include "bbgen.h"
 #include "util.h"
 #include "loaddata.h"
+#include "larrdgen.h"
+
+int enable_larrdgen = 0;
+
+static int run_larrdgen(void)
+{
+	/* Check if $BBTMP/.larrdgen exists */
+
+	FILE	*fd;
+	char	fn[256];
+
+	if (!enable_larrdgen)
+		return 0;
+
+	sprintf(fn, "%s/.larrdgen", getenv("BBTMP"));
+	fd = fopen(fn, "r");
+	if (fd != NULL) {
+		fclose(fd);
+		unlink(fn);
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
 
 void generate_larrd(char *rrddirname, char *larrdcolumn)
 {
@@ -44,6 +69,10 @@ void generate_larrd(char *rrddirname, char *larrdcolumn)
 	char timestamp[100];
 	time_t now;
 	struct utimbuf logfiletime;
+
+	if (!run_larrdgen())
+		return;
+
 
 	for (i=0; rrdnames[i]; i++) ;
 	allrrdlinks = malloc(256*i);
