@@ -1,14 +1,17 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother "bbgen" toolkit - routines to send messages to bbd             */
+/* bbgen toolkit                                                              */
 /*                                                                            */
-/* Copyright (C) 2003 Henrik Storner <henrik@storner.dk>                      */
+/* This is a library module, part of libbbgen.                                */
+/* It contains routines for sending and receiving data to/from the BB daemon  */
+/*                                                                            */
+/* Copyright (C) 2002-2004 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.35 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.36 2004-10-30 15:30:21 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -25,10 +28,11 @@ static char rcsid[] = "$Id: sendmsg.c,v 1.35 2004-10-29 10:21:57 henrik Exp $";
 #include <errno.h>
 #include <netdb.h>
 #include <fcntl.h>
+#include <stdio.h>
 
-#include "bbgen.h"
-#include "util.h"
-#include "debug.h"
+#include "color.h"
+#include "errormsg.h"
+#include "misc.h"
 #include "sendmsg.h"
 
 #define BBSENDRETRIES 2
@@ -582,8 +586,7 @@ static void combo_add(char *buf)
 void combo_end(void)
 {
 	combo_flush();
-	dprintf("%s: %d status messages merged into %d transmissions\n", 
-		timestamp, bbstatuscount, bbmsgcount);
+	dprintf("%d status messages merged into %d transmissions\n", bbstatuscount, bbmsgcount);
 }
 
 
@@ -627,11 +630,6 @@ void finish_status(void)
 	}
 }
 #if defined(STANDALONE) || defined(CGI)
-
-/* These are dummy vars needed by stuff in util.c */
-hostlist_t      *hosthead = NULL;
-link_t          *linkhead = NULL;
-link_t  null_link = { "", "", "", NULL };
 
 int main(int argc, char *argv[])
 {
