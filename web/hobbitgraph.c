@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.12 2005-01-15 17:38:28 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.13 2005-01-18 12:47:13 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -504,7 +504,7 @@ int main(int argc, char *argv[])
 
 		while ((d = readdir(dir)) != NULL) {
 			char *ext;
-			char param[1024];
+			char param[PATH_MAX];
 
 			/* Ignore dot-files and files with names shorter than ".rrd" */
 			if (*(d->d_name) == '.') continue;
