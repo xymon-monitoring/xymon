@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.86 2003-08-27 20:19:00 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.87 2003-08-30 10:14:04 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -197,7 +197,11 @@ char *stackfgets(char *buffer, unsigned int bufferlen, char *includetag)
 
 char *malcop(const char *s)
 {
-	char *buf = (char *) malloc(strlen(s)+1);
+	char *buf;
+
+	if (s == NULL) return NULL;
+
+	buf = (char *) malloc(strlen(s)+1);
 	strcpy(buf, s);
 	return buf;
 }
