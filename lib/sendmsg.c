@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.8 2003-07-27 10:51:06 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.9 2003-08-01 10:53:42 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -117,7 +117,7 @@ static int sendtobbd(char *recipient, char *message)
 			if (!isconnected) {
 				/* Havent seen our connect() status yet - must be now */
 				int connres;
-				int connressize = sizeof(connres);
+				socklen_t connressize = sizeof(connres);
 
 				res = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &connres, &connressize);
 				isconnected = (connres == 0);

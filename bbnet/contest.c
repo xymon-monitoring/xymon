@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.19 2003-07-15 18:34:43 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.20 2003-08-01 10:53:42 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -118,7 +118,8 @@ void do_tcp_tests(int conntimeout, int concurrency)
 	test_t		*item;
 	int		sockok;
 	int		maxfd;
-	int		res, connressize;
+	int		res;
+	socklen_t	connressize;
 	char		msgbuf[MAX_BANNER];
 
 
