@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-mailack.c,v 1.2 2005-02-23 16:41:29 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-mailack.c,v 1.3 2005-03-06 10:42:16 henrik Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -73,12 +73,11 @@ int main(int argc, char *argv[])
 	}
 
 	/* Get the alert cookie */
-	subjexp = pcre_compile(".*BB \\[([0-9]+)\\] .+:.+", PCRE_CASELESS, &errmsg, &errofs, NULL);
+	subjexp = pcre_compile(".*BB[ -]+\\[*([0-9]+)[\\]!]*", PCRE_CASELESS, &errmsg, &errofs, NULL);
 	if (subjexp == NULL) {
-		dprintf("PCRE failed to compile subject pattern\n");
+		dprintf("pcre compile failed - 1\n");
 		return 2;
 	}
-
 	result = pcre_exec(subjexp, NULL, subjectline, strlen(subjectline), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
 	if (result < 0) {
 		dprintf("Subject line did not match pattern\n");
@@ -88,9 +87,38 @@ int main(int argc, char *argv[])
 		dprintf("Could not find cookie value\n");
 		return 4; /* No cookie */
 	}
+	pcre_free(subjexp);
 
-	/* See if there's a delay-value also */
-	p = strstr(subjectline, "DELAY="); duration = (p ? atoi(p+6) : 30);
+	/* See if there's a "DELAY=" delay-value also */
+	duration = 30;
+	subjexp = pcre_compile(".*DELAY[= ]*([0-9]+)", PCRE_CASELESS, &errmsg, &errofs, NULL);
+	if (subjexp == NULL) {
+		dprintf("pcre compile failed - 2\n");
+		return 2;
+	}
+	result = pcre_exec(subjexp, NULL, subjectline, strlen(subjectline), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+	if (result >= 0) {
+		char delaytxt[4096];
+		if (pcre_copy_substring(subjectline, ovector, result, 1, delaytxt, sizeof(delaytxt)) > 0) {
+			duration = atoi(delaytxt);
+		}
+	}
+	pcre_free(subjexp);
+
+	/* See if there's a "msg" text also */
+	subjexp = pcre_compile(".*MSG[ =]+(.*)", PCRE_CASELESS, &errmsg, &errofs, NULL);
+	if (subjexp == NULL) {
+		dprintf("pcre compile failed - 3\n");
+		return 2;
+	}
+	result = pcre_exec(subjexp, NULL, subjectline, strlen(subjectline), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+	if (result >= 0) {
+		char msgtxt[4096];
+		if (pcre_copy_substring(subjectline, ovector, result, 1, msgtxt, sizeof(msgtxt)) > 0) {
+			firsttxtline = strdup(msgtxt);
+		}
+	}
+	pcre_free(subjexp);
 
 	/* Use the "return-path:" header if we didn't see a From: line */
 	if ((fromline == NULL) && returnpathline) fromline = returnpathline;
