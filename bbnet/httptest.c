@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.47 2003-09-11 14:19:02 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.48 2003-09-12 08:32:52 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -29,7 +29,6 @@ static char rcsid[] = "$Id: httptest.c,v 1.47 2003-09-11 14:19:02 henrik Exp $";
 char *http_library_version = NULL;
 
 static int can_ssl = 1;
-static int can_ldap = 0;
 static FILE *logfd = NULL;
 
 int init_http_library(void)
@@ -65,7 +64,6 @@ int init_http_library(void)
 
 		for (i=0; (curlver->protocols[i]); i++) {
 			dprintf("Curl supports %s\n", curlver->protocols[i]);
-			if (strcmp(curlver->protocols[i], "ldap") == 0) can_ldap = 1;
 		}
 	}
 #else
