@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.59 2004-09-01 11:33:15 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.60 2004-09-01 11:57:39 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1041,7 +1041,13 @@ void do_tcp_tests(int timeout, int concurrency)
 		gettimeofday(&timestamp, &tz);
 		tvdiff(&timestamp, &cutoff, &tmo);
 		if ((tmo.tv_sec < 0) || (tmo.tv_usec < 0)) {
-			errprintf("select timeout is < 0: %d.%06d (cutoff=%d.%06d, timestamp=%d.%06d)\n", 
+			/*
+			 * This is actually OK, and it does happen occasionally.
+			 * It just means that we passed the cutoff-threshold.
+			 * So set selres=0 (timeout) without doing the select,
+			 * and we will act as correctly.
+			 */
+			dprintf("select timeout is < 0: %d.%06d (cutoff=%d.%06d, timestamp=%d.%06d)\n", 
 					tmo.tv_sec, tmo.tv_usec,
 					cutoff.tv_sec, cutoff.tv_usec,
 					timestamp.tv_sec, timestamp.tv_usec);
