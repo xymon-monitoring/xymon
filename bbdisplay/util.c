@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.60 2003-06-23 13:06:37 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.61 2003-06-23 20:54:23 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1251,5 +1251,70 @@ void setup_signalhandler(char *programname)
 #ifdef SIGBUS
 	signal(SIGBUS, sigsegv_handler);
 #endif
+}
+
+
+int hexvalue(unsigned char c)
+{
+	switch (c) {
+	  case '0': return 0;
+	  case '1': return 1;
+	  case '2': return 2;
+	  case '3': return 3;
+	  case '4': return 4;
+	  case '5': return 5;
+	  case '6': return 6;
+	  case '7': return 7;
+	  case '8': return 8;
+	  case '9': return 9;
+	  case 'a': return 10;
+	  case 'A': return 10;
+	  case 'b': return 11;
+	  case 'B': return 11;
+	  case 'c': return 12;
+	  case 'C': return 12;
+	  case 'd': return 13;
+	  case 'D': return 13;
+	  case 'e': return 14;
+	  case 'E': return 14;
+	  case 'f': return 15;
+	  case 'F': return 15;
+	}
+
+	return -1;
+}
+
+char *urldecode(char *envvar)
+{
+	char *result;
+	char *pin, *pout;
+
+	if (getenv(envvar) == NULL) return NULL;
+
+	pin = getenv(envvar);
+	pout = result = malloc(strlen(pin) + 1);
+	while (*pin) {
+		if (*pin != '%') {
+			*pout = *pin;
+			pin++;
+		}
+		else {
+			pin++;
+			if ((strlen(pin) >= 2) && isxdigit((int)*pin) && isxdigit((int)*(pin+1))) {
+				*pout = 16*hexvalue(*pin) + hexvalue(*(pin+1));
+				pin += 2;
+			}
+			else {
+				*pout = '%';
+				pin++;
+			}
+		}
+
+		pout++;
+	}
+
+	*pout = '\0';
+
+	return result;
 }
 
