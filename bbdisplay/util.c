@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.3 2002-11-26 12:20:26 hstoerne Exp $";
+static char rcsid[] = "$Id: util.c,v 1.4 2002-12-19 13:01:20 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -32,6 +32,12 @@ static char rcsid[] = "$Id: util.c,v 1.3 2002-11-26 12:20:26 hstoerne Exp $";
 #include "util.h"
 
 int	use_recentgifs = 0;
+
+static char *emptyenv = "";
+static char hostenv_svc[20];
+static char hostenv_host[200];
+static char hostenv_ip[20];
+static char hostenv_color[20];
 
 char *colorname(int color)
 {
@@ -100,6 +106,14 @@ char *commafy(char *hostname)
 	return s;
 }
 
+void sethostenv(char *host, char *ip, char *svc, char *color)
+{
+	strcpy(hostenv_host,  host);
+	strcpy(hostenv_ip,    ip);
+	strcpy(hostenv_svc,   svc);
+	strcpy(hostenv_color, color);
+}
+
 void headfoot(FILE *output, char *pagetype, char *pagename, char *subpagename, char *head_or_foot, int bgcolor)
 {
 	int	fd;
@@ -145,6 +159,10 @@ void headfoot(FILE *output, char *pagetype, char *pagename, char *subpagename, c
 
 			else if (strcmp(t_start, "BBDATE") == 0)        fprintf(output, "%s", ctime(&now));
 			else if (strcmp(t_start, "BBBACKGROUND") == 0)  fprintf(output, "%s", colorname(bgcolor));
+			else if (strcmp(t_start, "BBCOLOR") == 0)       fprintf(output, "%s", hostenv_color);
+			else if (strcmp(t_start, "BBSVC") == 0)         fprintf(output, "%s", hostenv_svc);
+			else if (strcmp(t_start, "BBHOST") == 0)        fprintf(output, "%s", hostenv_host);
+			else if (strcmp(t_start, "BBIP") == 0)          fprintf(output, "%s", hostenv_ip);
 			else fprintf(output, "&");			/* No substitution - copy the ampersand */
 			
 			*t_next = savechar; t_start = t_next; t_next = strchr(t_start, '&');
