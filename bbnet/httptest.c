@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.64 2004-08-18 21:55:59 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.65 2004-08-19 11:47:24 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -913,6 +913,10 @@ void add_http_test(testitem_t *t)
 			addtobuffer(&httprequest, &httprequestlen, "\r\n");
 		}
 	}
+
+	/* Some standard stuff */
+	addtobuffer(&httprequest, &httprequestlen, "Accept: */*\r\n");
+	addtobuffer(&httprequest, &httprequestlen, "Pragma: no-cache\r\n");
 
 	/* The final blank line terminates the headers */
 	addtobuffer(&httprequest, &httprequestlen, "\r\n");
