@@ -66,6 +66,17 @@ Format of the text message with the alert. Default is "TEXT" (suitable for e-mai
 .BR "REPEAT=time"
 How often an alert gets repeated. As with DURATION, time is a number optionally followed by 'm', 'h' or 'd'.
 
+.SH MACROS
+It is possible to use \fBmacros\fR in the configuration file. To define a macro:
+.sp
+	$MYMACRO=text extending to end of line
+.sp
+After the definition of a macro, it can be used throughout the file. Wherever the
+text $MYMACRO appears, it will be substituted with the text of the macro before
+any processing of rules and recipients.
+
+It is possible to nest macros, as long as the macro is defined before it is used.
+
 .SH "ALERT SCRIPTS"
 Alerts can go out via custom scripts, by using the SCRIPT keyword for a recipient.
 Such scritps have access to the following environment variables:
