@@ -13,7 +13,7 @@
 
 #define TIMEOUT 10	/* seconds */
 #define MAX_BANNER 1024
-#define MAX_OPENS  3	/* Max number of simultaneous open connections */
+#define MAX_OPENS  (FD_SETSIZE / 2)	/* Max number of simultaneous open connections */
 
 typedef struct {
 	char textaddr[25];
@@ -57,25 +57,28 @@ void do_conn(void)
 {
 	int		selres;
 	fd_set		readfds, writefds;
-	struct timeval	tmo, timeend;
+	struct timeval	tmo, timestamp;
 	struct timezone tz;
 
 	int		activesockets = 0; /* Number of allocated sockets */
 	int		pending = 0;	   /* Total number of tests */
-	test_t		*item, *nextinqueue;
+	test_t		*nextinqueue;      /* Points to the next item to start testing */
+	test_t		*firstactive;      /* Points to the first item currently being tested */
+					   /* Thus, active connections are between firstactive..nextinqueue */
+	test_t		*item;
 	int		sockok;
 	int		maxfd;
-	int		res, connres, connressize;
-	char		msgbuf[1024];
+	int		res, connressize;
+	char		msgbuf[MAX_BANNER];
 
 
 	/* How many tests to do ? */
 	for (item = thead; (item); item = item->next) pending++; 
-	nextinqueue = thead;
+	firstactive = nextinqueue = thead;
 
 	while (pending > 0) {
 		/*
-		 * First, see if we need to allocate new sockets.
+		 * First, see if we need to allocate new sockets and initiate connections.
 		 */
 		for (sockok=1; (sockok && nextinqueue && (activesockets < MAX_OPENS)); 
 			nextinqueue=nextinqueue->next, activesockets++) {
@@ -109,8 +112,18 @@ void do_conn(void)
 		 * Setup the FDSET's
 		 */
 		FD_ZERO(&readfds); FD_ZERO(&writefds); maxfd = 0;
-		for (item=thead; (item != nextinqueue); item=item->next) {
+		for (item=firstactive; (item != nextinqueue); item=item->next) {
 			if (item->fd > -1) {
+				/*
+				 * WRITE events are used to signal that a
+				 * connection is ready, or it has been refused.
+				 * READ events are only interesting for sockets
+				 * that have already been found to be open, and
+				 * thus have the "readpending" flag set.
+				 *
+				 * So: On any given socket, we want either a 
+				 * write-event or a read-event - never both.
+				 */
 				if (item->readpending)
 					FD_SET(item->fd, &readfds);
 				else 
@@ -121,13 +134,13 @@ void do_conn(void)
 		}
 
 		/*
-		 * Wait for something to happen
+		 * Wait for something to happen: connect, timeout, banner arrives ...
 		 */
 		tmo.tv_sec = TIMEOUT; tmo.tv_usec = 0;
 		selres = select((maxfd+1), &readfds, &writefds, NULL, &tmo);
-		gettimeofday(&timeend, &tz);
+		gettimeofday(&timestamp, &tz);
 
-		for (item=thead; (item != nextinqueue); item=item->next) {
+		for (item=firstactive; (item != nextinqueue); item=item->next) {
 			if (item->fd > -1) {
 				if (selres == 0) {
 					/* 
@@ -140,6 +153,7 @@ void do_conn(void)
 					item->fd = -1;
 					activesockets--;
 					pending--;
+					if (item == firstactive) firstactive = item->next;
 				}
 				else {
 					if (FD_ISSET(item->fd, &writefds)) {
@@ -147,27 +161,34 @@ void do_conn(void)
 						 * Active response on this socket - either OK, or 
 						 * connection refused.
 						 */
-						connressize = sizeof(connres);
-						res = getsockopt(item->fd, SOL_SOCKET, SO_ERROR, &connres, &connressize);
-						item->open = (connres == 0);
-						item->connres = connres;
+						connressize = sizeof(item->connres);
+						res = getsockopt(item->fd, SOL_SOCKET, SO_ERROR, &item->connres, &connressize);
+						item->open = (item->connres == 0);
 						if (item->open) {
-							item->duration.tv_sec = timeend.tv_sec - item->timestart.tv_sec;
-							item->duration.tv_usec = timeend.tv_usec - item->timestart.tv_usec;
+							item->duration.tv_sec = timestamp.tv_sec - item->timestart.tv_sec;
+							item->duration.tv_usec = timestamp.tv_usec - item->timestart.tv_usec;
 							if (item->duration.tv_usec < 0) {
 								item->duration.tv_sec--;
 								item->duration.tv_usec += 1000000;
 							}
-							// shutdown(item->fd, SHUT_RDWR);
 							item->readpending = 1;
 						}
-						// close(item->fd);
-						// item->fd = -1;
-						// activesockets--;
-						// pending--;
+						else {
+							item->readpending = 0;
+							close(item->fd);
+							item->fd = -1;
+							activesockets--;
+							pending--;
+							if (item == firstactive) firstactive = item->next;
+						}
 					}
-
-					if (FD_ISSET(item->fd, &readfds)) {
+					else if (FD_ISSET(item->fd, &readfds)) {
+						/*
+						 * Data read to read on this socket. Grab the
+						 * banner - we only do one read (need the socket
+						 * for other tests), so if the banner takes more
+						 * than one cycle to arrive, too bad!
+						 */
 						res = read(item->fd, msgbuf, sizeof(msgbuf)-1);
 						if (res > 0) {
 							msgbuf[res] = '\0';
@@ -180,11 +201,12 @@ void do_conn(void)
 						item->fd = -1;
 						activesockets--;
 						pending--;
+						if (item == firstactive) firstactive = item->next;
 					}
 				}
 			}
-		}
-	}
+		}  /* end for loop */
+	} /* end while (pending) */
 }
 
 int main(int argc, char *argv[])
@@ -200,6 +222,7 @@ int main(int argc, char *argv[])
 	add_test("172.16.10.1", 25);
 	add_test("130.228.2.150", 23);
 	add_test("130.228.2.150", 21);
+	add_test("172.16.10.101", 22);
 	do_conn();
 
 	for (item = thead; (item); item = item->next) {
