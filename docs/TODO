@@ -60,8 +60,6 @@ Ideas of my own
 
 If I have too much time someday
 -------------------------------
-* BB reporting sucks. But how should a good report
-  feature be ?
 * Re-implement bbd using ucspi-tcp "tcpserver" to
   catch incoming messages and store them to a file.
   Maybe restrict incoming messages to status/page only ?
