@@ -3,7 +3,7 @@ Version: @VER@
 Release: 1
 Group: Networking/Daemons
 URL: http://hobbitmon.sourceforge.net/
-Copyright: Henrik Stoerner <henrik@hswn.dk>
+License: GPL
 Source: hobbit-@VER@.tar.gz
 Source1: hobbit-init.d
 Source2: hobbit.logrotate
