@@ -9,23 +9,6 @@ hostlist_t      *hosthead = NULL;
 link_t          *linkhead = NULL;
 link_t  null_link = { "", "", "", NULL };
 
-char *msg_data(char *msg)
-{
-	/* Find the start position of the data following the "status host.test " message */
-	char *result;
-	
-	result = strchr(msg, '.');		/* Hits the '.' in "host.test" */
-	if (!result) {
-		dprintf("Msg was not what I expected: '%s'\n", msg);
-		return msg;
-	}
-
-	result += strcspn(result, " \t\n");	/* Skip anything until we see a space, TAB or NL */
-	result += strspn(result, " \t");	/* Skip all whitespace */
-
-	return result;
-}
-
 unsigned char *get_bbgend_message(void)
 {
 	static unsigned char buf[4*MAXMSG];

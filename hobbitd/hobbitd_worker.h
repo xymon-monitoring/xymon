@@ -6,7 +6,6 @@
 #include "debug.h"
 
 extern unsigned char *get_bbgend_message(void);
-extern char *msg_data(char *msg);
 
 
 #endif
