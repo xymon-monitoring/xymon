@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.1 2003-06-19 11:57:28 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.2 2003-06-19 13:28:48 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -46,6 +46,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo)
 	}
 	repinfo->availability = 0.0;
 	repinfo->fstate = "OK";
+	repinfo->reportstart = time(NULL);
 
 	/*
 	 * Format of history entries:
