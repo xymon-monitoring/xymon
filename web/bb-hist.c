@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.4 2003-06-23 22:18:35 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.5 2003-06-24 05:30:10 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,8 +27,8 @@ static char rcsid[] = "$Id: bb-hist.c,v 1.4 2003-06-23 22:18:35 henrik Exp $";
 #include "reportdata.h"
 #include "debug.h"
 
-#define PIXELS 960
-#define FACTOR 90	/* 86400 / 960 */
+#define PIXELS 960	/* 864 ? */
+#define FACTOR 90	/* 86400 / PIXELS */
 
 void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, int entrycount,
 		      reportinfo_t *repinfo, replog_t *log24hours, replog_t *loghead)
