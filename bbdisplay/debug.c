@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.12 2003-03-03 11:52:50 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.13 2003-03-03 12:41:08 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -36,7 +36,7 @@ typedef struct {
 	struct timeval 	eventtime;
 } timestamp_t;
 
-#define MAX_DBGTIMES 50
+#define MAX_DBGTIMES 100
 static timestamp_t dbgtimes[MAX_DBGTIMES];
 static int         dbgtimecount = 0;
 
