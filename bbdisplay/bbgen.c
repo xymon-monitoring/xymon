@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.96 2003-05-09 21:14:36 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.97 2003-05-09 21:42:25 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -88,8 +88,10 @@ int main(int argc, char *argv[])
 	dispsummary_t	*s;
 	int		i;
 	int		pagegenstat;
-	int		bbpageONLY = 0;
 	char		*pageset = "";
+	char 		bb2filename[MAX_PATH];
+	char 		bbnkfilename[MAX_PATH];
+
 
 	bb_color = bb2_color = bbnk_color = -1;
 	pagedir = rrddir = NULL;
@@ -207,7 +209,8 @@ int main(int argc, char *argv[])
 		}
 
 		else if (strcmp(argv[i], "--bbpageONLY") == 0) {
-			bbpageONLY = 1;
+			/* Deprecated */
+			printf("--bbpageONLY is deprecated - use --pageset=NAME to generate pagesets\n");
 		}
 		else if (strncmp(argv[i], "--pageset=", 10) == 0) {
 			char *lp = strchr(argv[i], '=');
@@ -259,7 +262,6 @@ int main(int argc, char *argv[])
 			printf("    --larrdupdate=N             : time between updates of LARRD pages in seconds\n");
 			printf("    --rrddir=RRD-directory      : Directory for LARRD RRD files\n");
 			printf("\nAlternate pageset generation support:\n");
-			printf("    --bbpageONLY                : Generate the standard (bb.html) page only\n");
 			printf("    --pageset=SETNAME           : Generate non-standard pageset with tag SETNAME\n");
 			printf("    --template=TEMPLATE         : template for header and footer files\n");
 			printf("\nDebugging options:\n");
@@ -297,10 +299,12 @@ int main(int argc, char *argv[])
 
 
 	/*
-	 * bbpageONLY means ONLY generate the standard pages.
-	 * No NK page, no BB2 page, no LARRD, no INFO, no purple updates 
+	 * When doing alternate pagesets, disable some stuff:
+	 * No LARRD, no INFO, no purple updates 
+	 * If we did those, we would send double purple updates, 
+	 * generate wrong links for info pages etc.
 	 */
-	if (bbpageONLY) enable_purpleupd = enable_larrdgen = enable_infogen = 0;
+	if (pageset) enable_purpleupd = enable_larrdgen = enable_infogen = 0;
 
 	/* Load all data from the various files */
 	linkhead = load_all_links();
@@ -308,18 +312,16 @@ int main(int argc, char *argv[])
 	pagehead = load_bbhosts(pageset);
 	add_timestamp("Load bbhosts done");
 
-	if (!bbpageONLY) {
-		/* Generate the LARRD pages before loading state */
-		pagegenstat = generate_larrd(rrddir, larrdcol);
-		add_timestamp("LARRD generate done");
+	/* Generate the LARRD pages before loading state */
+	pagegenstat = generate_larrd(rrddir, larrdcol);
+	add_timestamp("LARRD generate done");
 
-		/* Dont generate both LARRD and info in one run */
-		if (pagegenstat) pagegenstat = generate_info(infocol);
-		add_timestamp("INFO generate done");
-	}
+	/* Dont generate both LARRD and info in one run */
+	if (pagegenstat) pagegenstat = generate_info(infocol);
+	add_timestamp("INFO generate done");
 
 	/* Remove old acknowledgements */
-	if (!bbpageONLY) delete_old_acks();
+	delete_old_acks();
 	add_timestamp("ACK removal done");
 
 	statehead = load_state(&dispsums);
@@ -360,32 +362,22 @@ int main(int argc, char *argv[])
 	add_timestamp("BB pagegen done");
 
 	/* The full summary page - bb2.html */
-	if (!bbpageONLY) {
-		char bb2filename[MAX_PATH];
-
-		sprintf(bb2filename, "bb2%s", htmlextension);
-		bb2_color = do_bb2_page(bb2filename, PAGE_BB2);
-		add_timestamp("BB2 generation done");
-	}
+	sprintf(bb2filename, "bb2%s", htmlextension);
+	bb2_color = do_bb2_page(bb2filename, PAGE_BB2);
+	add_timestamp("BB2 generation done");
 
 	/* Reduced summary (alerts) page - bbnk.html */
-	if (!bbpageONLY) {
-		char bbnkfilename[MAX_PATH];
-
-		sprintf(bbnkfilename, "bbnk%s", htmlextension);
-		bbnk_color = do_bb2_page(bbnkfilename, PAGE_NK);
-		add_timestamp("BBNK generation done");
-	}
+	sprintf(bbnkfilename, "bbnk%s", htmlextension);
+	bbnk_color = do_bb2_page(bbnkfilename, PAGE_NK);
+	add_timestamp("BBNK generation done");
 
 	/* Send summary notices */
-	if (!bbpageONLY) {
-		send_summaries(sumhead);
-		add_timestamp("Summary transmission done");
-	}
+	send_summaries(sumhead);
+	add_timestamp("Summary transmission done");
 
 #ifdef WMLSUPPORT
 	/* Generate a hosts file for the WML generator */
-	if (!bbpageONLY && (strcmp(getenv("WML_OUTPUT"), "TRUE") == 0)) {
+	if ((pagesets == NULL) && (strcmp(getenv("WML_OUTPUT"), "TRUE") == 0)) {
 		do_wml_cards(0);
 		add_timestamp("WML generation done");
 	}
