@@ -283,13 +283,16 @@ include it in the $BBHOME/web/bb_header file):
 .br
 function addNetscapePanel() {
 .br
-   if ((typeof window.sidebar == "object") && (typeof window.sidebar.addPanel == "function"))
+   if ((typeof window.sidebar == "object") && 
+       (typeof window.sidebar.addPanel == "function"))
 .br
-      window.sidebar.addPanel ("Big Brother", "http://your.server.com/nstab.html","");
+      window.sidebar.addPanel ("Big Brother", 
+.br
+            "http://your.server.com/nstab.html","");
 .br
    else
 .br
-      alert("Only for Mozilla or Netscape 6+");
+      alert("Sidebar only for Mozilla or Netscape 6+");
 .br
 }
 .br
@@ -299,9 +302,22 @@ function addNetscapePanel() {
 .sp
 and then you can include a "Add this to sidebar" link using this as a template:
 .sp
-<A HREF="javascript:addNetscapePanel();">Add to Sidebar</A>
-.br
+   <A HREF="javascript:addNetscapePanel();">Add to Sidebar</A>
 .sp
+or if you prefer to have the standard Netscape "Add tab" button, you 
+would do it with
+.sp
+   <A HREF="javascript:addNetscapePanel();">
+.br
+      <IMG SRC="/gifs/add-button.gif" HEIGHT=45 WIDTH=100
+.br
+           ALT="[Add Sidebar]" STYLE="border:0">
+.br
+   </A>
+.sp
+The "add-button.gif" is available from Netscape at
+http://developer.netscape.com/docs/manuals/browser/sidebar/add-button.gif
+
 .IP "--rss=FILENAME"
 Generate an RSS/RDF content delivery stream of your critical Big Brother 
 alerts. This output format can be dynamically embedded in other web
