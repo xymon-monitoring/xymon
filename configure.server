@@ -8,12 +8,14 @@
 echo ""
 echo "Configuration script for bbgen"
 echo ""
-echo "This script asks a few questions and builds a Makefile to compile bbgen"
-echo ""
+
 if test -r Makefile
 then
 	echo "Already configured - remove Makefile to re-configure"
+	exit 1
 else
+	echo "This script asks a few questions and builds a Makefile to compile bbgen"
+	echo ""
 	echo "Where is your Big Brother BBHOME directory [/usr/local/bb] ? "
 	read BBHOME
 	if test -z "$BBHOME"
@@ -127,8 +129,9 @@ else
 	echo "Created Makefile with the necessary information to build bbgen."
 	echo "If you need to change settings, you should change the Makefile"
 	echo ""
+
+	echo "Configuration complete - now run 'make' to build the tools"
 fi
 
-echo "Configuration complete - now run 'make' to build the tools"
 exit 0
 
