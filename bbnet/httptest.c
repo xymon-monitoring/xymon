@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.19 2003-05-23 12:09:59 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.20 2003-06-12 20:29:48 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -80,7 +80,6 @@ int init_http_library(void)
 		if (curlver->ssl_version_num == 0) {
 			errprintf("WARNING: No SSL support in libcurl - https tests disabled\n");
 			can_ssl = 0;
-			return 1;
 		}
 
 		if (curlver->version_num < LIBCURL_VERSION_NUM) {
