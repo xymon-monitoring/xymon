@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_worker.c,v 1.13 2004-11-13 08:50:52 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_worker.c,v 1.14 2004-12-29 10:44:10 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -185,7 +185,7 @@ startagain:
 	*bufp = '\0';
 
 	p = buf + strcspn(buf, "0123456789|");
-	if (isdigit(*p)) {
+	if (isdigit((int)*p)) {
 		*seq = atoi(p);
 
 		if (debug) {
