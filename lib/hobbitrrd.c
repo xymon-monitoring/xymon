@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.28 2005-03-25 07:42:19 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.29 2005-03-31 13:48:43 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -250,10 +250,8 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 					xgetenv("CGIBINURL"), hostname, rrdservicename);
 			}
 
-			if (dispname) {
-				strcat(svcurl, "&amp;disp=");
-				strcat(svcurl, urlencode(dispname));
-			}
+			strcat(svcurl, "&amp;disp=");
+			strcat(svcurl, urlencode(dispname ? dispname : hostname));
 
 			sprintf(rrdparturl, fmt, rrdservicename, svcurl, svcurl, rrdservicename, svcurl, xgetenv("BBSKIN"));
 			if ((strlen(rrdparturl) + strlen(rrdurl) + 1) >= rrdurlsize) {
@@ -278,10 +276,8 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 			sprintf(svcurl, "%s/larrd-grapher.cgi?host=%s&amp;service=%s&amp;%s=%d..%d", 
 				xgetenv("CGIBINURL"), hostname, rrdservicename,
 				graphdef->larrdpartname, first, last);
-			if (dispname) {
-				strcat(svcurl, "&amp;disp=");
-				strcat(svcurl, urlencode(dispname));
-			}
+			strcat(svcurl, "&amp;disp=");
+			strcat(svcurl, urlencode(dispname ? dispname : hostname));
 			sprintf(rrdparturl, fmt, svcurl, svcurl, rrdservicename, svcurl, xgetenv("BBSKIN"));
 			if ((strlen(rrdparturl) + strlen(rrdurl) + 1) >= rrdurlsize) {
 				rrdurlsize += (4096 + rrdparturlsize);
@@ -295,10 +291,8 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 	else {
 		sprintf(svcurl, "%s/larrd-grapher.cgi?host=%s&amp;service=%s", 
 			xgetenv("CGIBINURL"), hostname, rrdservicename);
-		if (dispname) {
-			strcat(svcurl, "&amp;disp=");
-			strcat(svcurl, urlencode(dispname));
-		}
+		strcat(svcurl, "&amp;disp=");
+		strcat(svcurl, urlencode(dispname ? dispname : hostname));
 		sprintf(rrdurl, fmt, svcurl, svcurl, rrdservicename, svcurl, xgetenv("BBSKIN"));
 	}
 
