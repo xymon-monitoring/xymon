@@ -22,7 +22,7 @@ standard bbd daemon.
 hobbitd is normally started and controlled by the
 .I hobbitlaunch(8)
 tool, and the command used to invoke hobbitd should therefore be
-in the hobbittasks.cfg file.
+in the hobbitlaunch.cfg file.
 
 .SH OPTIONS
 .IP "--bbhosts=FILENAME"
@@ -92,7 +92,7 @@ task.
 Loads the content of FILENAME as environment settings before starting
 hobbitd. This is mostly used when running as a stand-alone daemon; if
 hobbitd is started by hobbitlaunch, the environment settings are controlled
-by the hobbitlaunch hobbittasks.cfg file.
+by the hobbitlaunch hobbitlaunch.cfg file.
 
 .IP "--pidfile=FILENAME"
 If hobbitd runs as a daemon process, the proces-ID of hobbitd will

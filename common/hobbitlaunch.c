@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.16 2004-12-30 22:25:34 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.17 2005-01-01 09:22:18 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -352,7 +352,7 @@ int main(int argc, char *argv[])
 	grouplist_t *gwalk;
 	int argi;
 	int daemonize = 1;
-	char *config = "/etc/hobbittasks.cfg";
+	char *config = "/etc/hobbitlaunch.cfg";
 	char *logfn = NULL;
 	char *pidfn = NULL;
 	pid_t cpid;

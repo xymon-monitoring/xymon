@@ -72,7 +72,7 @@ cfgfiles:
 	cat etcfiles/hobbitserver.env.DIST | sed -e 's!@BBTOPDIR@!$(BBTOPDIR)!g'| sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g'| sed -e 's!@BBHOSTNAME@!$(BBHOSTNAME)!g'| sed -e 's!@BBHOSTIP@!$(BBHOSTIP)!g'| sed -e 's!@BBHOSTOS@!$(BBHOSTOS)!g' | sed -e 's!@BBHOSTURL@!$(BBHOSTURL)!g' | sed -e 's!@BBCGIURL@!$(BBCGIURL)!g' | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBVAR@!$(BBVAR)!g' >etcfiles/hobbitserver.env
 	cat etcfiles/bb-hosts.DIST | sed -e 's!@BBHOSTNAME@!$(BBHOSTNAME)!g'| sed -e 's!@BBHOSTIP@!$(BBHOSTIP)!g' >etcfiles/bb-hosts
 	cat etcfiles/hobbit-alerts.cfg.DIST >etcfiles/hobbit-alerts.cfg
-	cat etcfiles/hobbittasks.cfg.DIST | sed -e 's!@BBHOME@!$(BBHOME)!g' >etcfiles/hobbittasks.cfg
+	cat etcfiles/hobbitlaunch.cfg.DIST | sed -e 's!@BBHOME@!$(BBHOME)!g' >etcfiles/hobbitlaunch.cfg
 	cat wwwfiles/menu/menu_items.js.DIST | sed -e 's!@BBHOSTURL@!$(BBHOSTURL)!g' | sed -e 's!@BBCGIURL@!$(BBCGIURL)!g' >wwwfiles/menu/menu_items.js
 
 %.o: %.c
@@ -80,7 +80,7 @@ cfgfiles:
 
 clean:
 	rm -f $(PROGRAMS) $(CGISCRIPTS) *.o *~ larrd/*~ 
-	rm -f etcfiles/hobbit-apache.conf etcfiles/hobbitserver.env etcfiles/bb-hosts etcfiles/hobbit-alerts.cfg etcfiles/hobbittasks.cfg
+	rm -f etcfiles/hobbit-apache.conf etcfiles/hobbitserver.env etcfiles/bb-hosts etcfiles/hobbit-alerts.cfg etcfiles/hobbitlaunch.cfg
 	rm -f wwwfiles/menu/menu_items.js
 	(find etcfiles/ -name "*~"; find wwwfiles/ -name "*~"; find webfiles/ -name "*~") | xargs rm -f
 
@@ -107,7 +107,7 @@ setup:
 	@echo "Continuing installation..."
 	cd wwwfiles; tar cf - . | (cd $(BBHOME)/www/; tar xf -)
 	cd webfiles; tar cf - . | (cd $(BBHOME)/web/; tar xf -)
-	cd etcfiles; ../../build/install-nooverwrite.sh etc/ hobbit-apache.conf hobbitserver.env bb-hosts hobbit-alerts.cfg hobbittasks.cfg hobbitgraph.cfg
+	cd etcfiles; ../../build/install-nooverwrite.sh etc/ hobbit-apache.conf hobbitserver.env bb-hosts hobbit-alerts.cfg hobbitlaunch.cfg hobbitgraph.cfg
 	mkdir -p $(BBLOGDIR)
 	chown $(BBUSER)         $(BBLOGDIR) $(BBHOME) $(BBHOME)/* $(BBHOME)/bin/* $(BBHOME)/etc/* $(BBHOME)/ext/* $(BBHOME)/web/* $(BBHOME)/www/gifs $(BBHOME)/www/gifs/* $(BBHOME)/www/menu $(BBHOME)/www/menu/* $(BBHOME)/www/help $(BBHOME)/www/help/* $(BBHOME)/www/notes $(BBHOME)/www/html $(BBHOME)/www/wml $(BBVAR) $(BBVAR)/* $(CGIDIR) $(CGIDIR)/*
 	chgrp `id -g $(BBUSER)` $(BBLOGDIR) $(BBHOME) $(BBHOME)/* $(BBHOME)/bin/* $(BBHOME)/etc/* $(BBHOME)/ext/* $(BBHOME)/web/* $(BBHOME)/www/gifs $(BBHOME)/www/gifs/* $(BBHOME)/www/menu $(BBHOME)/www/menu/* $(BBHOME)/www/help $(BBHOME)/www/help/* $(BBHOME)/www/notes $(BBHOME)/www/html $(BBHOME)/www/wml $(BBVAR) $(BBVAR)/* $(CGIDIR) $(CGIDIR)/*
