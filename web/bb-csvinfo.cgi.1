@@ -26,6 +26,21 @@ for CSV files is the semi-colon - if you need a different delimiter,
 invoke bb-csvinfo.cgi with the "delimiter=<character>" in the query
 string.
 
+.SH Example usage
+This example shows how you can use the bb-csvinfo CGI. It assumes
+you have a CSV-formatted file with information about the hosts stored
+as $BBHOME/etc/hostinfo.csv, and the hostname is in the first column
+of the file.
+
+.IP "Use with the bbgen --docurl"
+The --docurl option to
+.I bbgen(1)
+sets up all of the hostnames on your BB webpages to act as links to
+a CGI script. To invoke the bb-csvinfo CGI script, run bbgen with the
+option
+.sp
+   --docurl=/cgi-bin/bb-csvinfo.sh?db=hostinfo.csv&key=%s
+
 .SH "SEE ALSO"
-bb-hosts(5), bb-environ(5)
+bb-hosts(5), bb-environ(5), bbgen(1)
 
