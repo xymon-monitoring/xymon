@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.9 2004-11-17 16:13:53 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.10 2004-12-06 12:40:20 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -69,7 +69,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
 	sprintf(eventlogfilename, "%s/allevents", getenv("BBHIST"));
 	eventlog = fopen(eventlogfilename, "r");
 	if (!eventlog) {
-		errprintf("Cannot open eventlog");
+		errprintf("Cannot open eventlog\n");
 		return;
 	}
 

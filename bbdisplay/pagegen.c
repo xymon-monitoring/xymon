@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.117 2004-10-30 15:40:33 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.118 2004-12-06 12:40:20 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -1160,7 +1160,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 	sprintf(tmpfilename, "%s.tmp", filename);
 	output = fopen(tmpfilename, "w");
 	if (output == NULL) {
-		errprintf("Cannot open file %s", tmpfilename);
+		errprintf("Cannot open file %s\n", tmpfilename);
 		return bb2page.color;
 	}
 
@@ -1168,7 +1168,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 		sprintf(tmprssfilename, "%s.tmp", rssfilename);
 		rssoutput = fopen(tmprssfilename, "w");
 		if (rssoutput == NULL) {
-			errprintf("Cannot open RSS file %s", tmpfilename);
+			errprintf("Cannot open RSS file %s\n", tmpfilename);
 			return bb2page.color;
 		}
 	}
