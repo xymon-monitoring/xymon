@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.184 2004-12-03 12:04:24 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.185 2004-12-11 14:15:13 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -354,7 +354,8 @@ testedhost_t *init_testedhost(char *hostname, int okexpected)
 }
 
 testitem_t *init_testitem(testedhost_t *host, service_t *service, char *testspec, 
-                          int dialuptest, int reversetest, int alwaystruetest, int silenttest)
+                          int dialuptest, int reversetest, int alwaystruetest, int silenttest,
+			  int sendasdata)
 {
 	testitem_t *newtest;
 
@@ -366,6 +367,7 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *testspec
 	newtest->reverse = reversetest;
 	newtest->alwaystrue = alwaystruetest;
 	newtest->silenttest = silenttest;
+	newtest->senddata = sendasdata;
 	newtest->testspec = testspec;
 	newtest->privdata = NULL;
 	newtest->open = 0;
@@ -456,6 +458,7 @@ void load_tests(void)
 				int anytests = 0;
 				int ping_dialuptest = 0;
 				int ping_reversetest = 0;
+				int sendasdata = 0;
 
 				p = strchr(l, '#'); 
 				if (p) {
@@ -731,6 +734,16 @@ void load_tests(void)
 						savedspec = strdup(testspec);
 						add_url_to_dns_queue(testspec);
 					}
+					else if (argnmatch(testspec, "apache")) {
+						char statusurl[50];
+
+						s = httptest;
+						sprintf(statusurl, "cont=apache;http://%d.%d.%d.%d/server-status?auto;.",
+							ip1, ip2, ip3, ip4);
+						savedspec = strdup(statusurl);
+						add_url_to_dns_queue(savedspec);
+						sendasdata = 1;
+					}
 					else if (argnmatch(testspec, "rpc")) {
 						/*
 						 * rpc check via rpcinfo
@@ -809,7 +822,7 @@ void load_tests(void)
 
 					if (s) {
 						anytests = 1;
-						newtest = init_testitem(h, s, savedspec, dialuptest, reversetest, alwaystruetest, silenttest);
+						newtest = init_testitem(h, s, savedspec, dialuptest, reversetest, alwaystruetest, silenttest, sendasdata);
 						newtest->next = s->items;
 						s->items = newtest;
 
@@ -823,7 +836,7 @@ void load_tests(void)
 				if (pingtest && !h->noconn) {
 					/* Add the ping check */
 					anytests = 1;
-					newtest = init_testitem(h, pingtest, NULL, ping_dialuptest, ping_reversetest, 1, 0);
+					newtest = init_testitem(h, pingtest, NULL, ping_dialuptest, ping_reversetest, 1, 0, 0);
 					newtest->next = pingtest->items;
 					pingtest->items = newtest;
 					h->dodns = 1;
@@ -923,7 +936,7 @@ void load_tests(void)
 				modembank_t *newentry;
 				int i;
 
-				newtest = init_testitem(NULL, modembanktest, NULL, 0, 0, 0, 0);
+				newtest = init_testitem(NULL, modembanktest, NULL, 0, 0, 0, 0, 0);
 				newtest->next = modembanktest->items;
 				modembanktest->items = newtest;
 

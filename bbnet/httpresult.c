@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.6 2004-10-30 15:45:07 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.7 2004-12-11 14:15:13 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -98,6 +98,9 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 	msgtext[0] = '\0';
 	for (t=firsttest; (t && (t->host == host)); t = t->next) {
 		http_data_t *req = (http_data_t *) t->privdata;
+
+		/* Skip the data-reports for now */
+		if (t->senddata) continue;
 
 		req->httpcolor = statuscolor(host, req->httpstatus);
 		if (req->httpcolor == COL_RED) anydown++;
@@ -212,6 +215,9 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 	for (t=firsttest; (t && (t->host == host)); t = t->next) {
 		http_data_t *req = (http_data_t *) t->privdata;
 
+		/* Skip the "data" reports */
+		if (t->senddata) continue;
+
 		sprintf(msgline, "\n&%s %s - ", colorname(req->httpcolor), req->url);
 		if (req->httpcolor == COL_GREEN) strcat(msgline, "OK");
 		else {
@@ -235,6 +241,19 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 	addtostatus("\n\n");
 	finish_status();
 
+	for (t=firsttest; (t && (t->host == host)); t = t->next) {
+		http_data_t *req;
+		char *data = "";
+
+		if (!t->senddata) continue;
+
+		req = (http_data_t *) t->privdata;
+		if (req->output) data = req->output;
+
+		sprintf(msgline, "data %s.%s\n%s", commafy(host->hostname), req->bburl.columnname, data);
+		sendmessage(msgline, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+	}
+
 	free(svcname);
 }
 
@@ -243,11 +262,13 @@ static testitem_t *nextcontenttest(service_t *httptest, testedhost_t *host, test
 {
 	testitem_t *result;
 
-	result = current->next;
+	do {
+		result = current->next;
 
-	if ((result == NULL) || (result->host != host)) {
-		result = NULL;
-	}
+		if ((result == NULL) || (result->host != host)) {
+			result = NULL;
+		}
+	} while (result && result->senddata);
 
 	return result;
 }
