@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.25 2004-08-29 13:25:42 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.26 2004-09-01 11:58:34 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -289,8 +289,8 @@ retry_connect:
 			close(sockfd);
 
 			if (!isconnected && (connretries > 0)) {
+				dprintf("Timeout while talking to bbd - retrying\n");
 				connretries--;
-				errprintf("Timeout while talking to bbd - retrying\n");
 				sleep(1);
 				goto retry_connect;	/* Yuck! */
 			}
