@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.13 2002-11-27 13:13:41 hstoerne Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.14 2002-11-27 13:19:30 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -519,7 +519,10 @@ page_t *load_bbhosts(void)
 	while (fgets(l, sizeof(l), bbhosts)) {
 		p = strchr(l, '\n'); if (p) { *p = '\0'; };
 
-		if (strncmp(l, "page", 4) == 0) {
+		if ((l[0] == '#') || (strlen(l) == 0)) {
+			/* Do nothing - it's a comment */
+		}
+		else if (strncmp(l, "page", 4) == 0) {
 			getnamelink(l, &name, &link);
 			curpage->next = init_page(name, link);
 			curpage = curpage->next;
