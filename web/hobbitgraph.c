@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.3 2004-12-26 14:39:22 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.4 2004-12-26 16:23:29 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -272,7 +272,13 @@ char *expand_tokens(char *tpl)
 			outp += strlen(outp);
 		}
 		else if ((strncmp(inp, "@RRDPARAM@", 10) == 0) && rrdparams[rrdidx]) {
+			/* 
+			 * We do a colon-escape first, then change all commas to slashes as
+			 * this is a common mangling used by multiple backends (disk, http, iostat...)
+			 */
+			char *p;
 			sprintf(outp, "%-*s", paramlen, colon_escape(rrdparams[rrdidx]));
+			p = outp; while ((p = strchr(p, ',')) != NULL) *p = '/';
 			inp += 10;
 			outp += strlen(outp);
 		}
@@ -314,7 +320,7 @@ int main(int argc, char *argv[])
 	char *graphtitle = NULL;
 	char timestamp[100];
 
-	gdef_t *gdef = NULL;
+	gdef_t *gdef = NULL, *gdefuser = NULL;
 	int wantsingle = 0;
 
 	DIR *dir;
@@ -402,13 +408,42 @@ int main(int argc, char *argv[])
 	}
 	if (chdir(rrddir)) errormsg("Cannot access RRD directory");
 
-	/* Lookup which RRD file corresponds to the service-name, and how we handle this graph */
+
+	if (strchr(service, ':')) {
+		/*
+		 * service is "tcp:foo" - so use the "tcp" graph definition, but for a
+		 * single service (as if service was set to just "foo").
+		 */
+		char *delim = strchr(service, ':');
+		char *realservice;
+
+		*delim = '\0';
+		realservice = strdup(delim+1);
+
+		/* The requested gdef only acts as a fall-back solution so dont set gdef here. */
+		for (gdefuser = gdefs; (gdefuser && strcmp(service, gdefuser->name)); gdefuser = gdefuser->next) ;
+		strcpy(service, realservice);
+		wantsingle = 1;
+
+		free(realservice);
+	}
+
+	/*
+	 * Lookup which RRD file corresponds to the service-name, and how we handle this graph.
+	 * We first lookup the service name in the graph definition list.
+	 * If that fails, then we try mapping it via the BB service -> LARRD map.
+	 */
 	for (gdef = gdefs; (gdef && strcmp(service, gdef->name)); gdef = gdef->next) ;
 	if (gdef == NULL) {
-		larrdrrd_t *ldef = find_larrd_rrd(service, NULL);
-		if (ldef) {
-			for (gdef = gdefs; (gdef && strcmp(ldef->larrdrrdname, gdef->name)); gdef = gdef->next) ;
-			wantsingle = 1;
+		if (gdefuser) {
+			gdef = gdefuser;
+		}
+		else {
+			larrdrrd_t *ldef = find_larrd_rrd(service, NULL);
+			if (ldef) {
+				for (gdef = gdefs; (gdef && strcmp(ldef->larrdrrdname, gdef->name)); gdef = gdef->next) ;
+				wantsingle = 1;
+			}
 		}
 	}
 	if (gdef == NULL) errormsg("Unknown graph requested");
