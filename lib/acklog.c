@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: acklog.c,v 1.5 2004-10-30 15:34:57 henrik Exp $";
+static char rcsid[] = "$Id: acklog.c,v 1.6 2004-11-18 11:48:15 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -138,11 +138,17 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 				if ((acks[num].acktime + 60*acks[num].duration) < time(NULL)) acks[num].ackvalid = 0;
 				if (acks[num].ackvalid && (stat(ackfn, &st) != 0)) acks[num].ackvalid = 0;
 
-				ackerp = ackedby;
-				if (strncmp(ackerp, "np_", 3) == 0) ackerp += 3;
-				p = strrchr(ackerp, '_');
-				if (p > ackerp) *p = '\0';
-				acks[num].ackedby = strdup(ackerp);
+				if (strcmp(ackedby, "np_filename_not_used") != 0) {
+					ackerp = ackedby;
+					if (strncmp(ackerp, "np_", 3) == 0) ackerp += 3;
+					p = strrchr(ackerp, '_');
+					if (p > ackerp) *p = '\0';
+					acks[num].ackedby = strdup(ackerp);
+				}
+				else {
+					/* bbgend's alert module does not (cannot) log this. */
+					acks[num].ackedby = "";
+				}
 
 				acks[num].hostname = strdup(hosttest);
 				acks[num].testname = strdup(testname);
