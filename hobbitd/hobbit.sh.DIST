@@ -1,0 +1,40 @@
+#!/bin/sh
+
+# Startup script for the bbgend Big Brother monitor
+#
+# This starts the "bblaunch" tool, which in turn starts
+# all of the other BB server programs.
+
+case "$1" in
+   "start")
+	@BBHOME@/bin/bblaunch --config=@BBHOME@/etc/bbtasks.cfg --env=@BBHOME@/etc/bbserver.env --log=@BBLOGDIR@/bblaunch.log --pidfile=@BBLOGDIR@/bblaunch.pid
+	;;
+
+   "stop")
+	if test -s @BBLOGDIR@/bblaunch.pid
+	then
+		kill -TERM `cat @BBLOGDIR@/bblaunch.pid`
+	fi
+	;;
+
+   "status")
+	if test -s @BBLOGDIR@/bblaunch.pid
+	then
+		echo "bblaunch running with PID `cat @BBLOGDIR@/bblaunch.pid`"
+	else
+		echo "bblaunch does not appear to be running"
+	fi
+	;;
+
+   "restart")
+	if test -s @BBLOGDIR@/bblaunch.pid
+	then
+		$0 stop
+		sleep 10
+		$0 start
+	fi
+	;;
+esac
+
+exit 0
+
