@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.119 2003-12-02 22:45:25 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.120 2004-08-02 12:15:09 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -262,7 +262,11 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		struct stat ack_st;
 		char ackfilename[MAX_PATH];
 
-		sprintf(ackfilename, "%s/ack.%s.%s", getenv("BBACKS"), hostname, testname);
+		/*
+		 * ACK's are named by the client alias, if that exists.
+		 */
+		sprintf(ackfilename, "%s/ack.%s.%s", getenv("BBACKS"), 
+			(host->clientalias ? host->clientalias : host->hostname), testname);
 		newstate->entry->acked = (stat(ackfilename, &ack_st) == 0);
 	}
 	else {
