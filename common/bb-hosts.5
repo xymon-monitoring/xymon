@@ -67,6 +67,8 @@ utility to pick out the relevant entries from the bb-hosts file.
 
 .IP "dispinclude filename"
 Acts like the "include" tag, but only on the BBDISPLAY server.
+Can be used e.g. to put a group of hosts on multiple subpages,
+without having to repeat the host definitions.
 
 .IP "netinclude filename"
 Acts like the "include" tag, but only on the BBNET server.
@@ -138,10 +140,25 @@ when running
 .I bbgen(1)
 
 .IP NAME:hostname
-Overrides the default hostname used on the overview web pages
-(the detailed status page still shows the normal hostname).
+Overrides the default hostname used on the overview web pages.
 If "hostname" contains spaces, it must be enclosed in double
 quotes, e.g. NAME:"R&D Oracle Server"
+
+.IP CLIENT:hostname
+Defines an alias for a host, which will be used when identifying
+status messages. This is typically used to accomodate a local
+client that sends in status reports with a different hostname,
+e.g. if you use hostnames with domains in your BB configuration,
+but the client is a silly Window box that does not include the
+hostname. Or vice versa. Whatever the reason, this can be used
+to match status reports with the hosts you define in your
+Big Brother setup. It causes incoming status reports with the
+specified hostname to be filed using the hostname defined in
+Big Brother.
+
+Note that this tag requires that you install the bbd-features.patch 
+for the Big Brother bbd daemon, as the CLIENT tag is handled entirely 
+by the bbd daemon.
 
 .IP "COMMENT:Host comment"
 Adds a small text after the hostname on the webpage. This can
@@ -171,7 +188,8 @@ of the BB servers.
 
 .IP nobb2
 Ignore this host on the BB2 page. Even if it has an active alert,
-it will not be included in the BB2 page.
+it will not be included in the BB2 page. This also removes the
+host from the event-log display.
 
 .IP prefer
 When a single host is defined multiple time in the bb-hosts file,
@@ -384,12 +402,16 @@ be at 98.5%
 
 .SH BBTEST-NET GENERIC TAGS
 .IP NET:location
-This tag defines the host as being on a specific network.
+This tag defines the host as being tested from a specific location.
 If bbtest-net sees that the environment variable BBLOCATION
 is set, it will only test the hosts that have a matching
 "NET:location" tag in the bb-hosts file. So this tag is useful
 if you have more than one BBNET system, but you still want
 to keep a consolidated bb-hosts file for all your systems.
+
+Note: The "--test-untagged" option modifies this behaviour,
+see
+.I bbtest-net(1)
 
 .IP nosslcert
 Disables the standard check of any SSL certificates for
