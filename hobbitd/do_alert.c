@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.34 2005-02-06 23:03:20 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.35 2005-02-13 11:46:14 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -161,8 +161,16 @@ static criteria_t *setup_criteria(rule_t **currule, recip_t **currcp)
 		break;
 
 	  case P_RECIP:
-		if (!(*currcp)->criteria)
+		if (!(*currcp)->criteria) {
+			recip_t *rwalk;
+
 			(*currcp)->criteria = (criteria_t *)calloc(1, sizeof(criteria_t));
+
+			/* Make sure other recipients on the same rule also get these criteria */
+			for (rwalk = (*currule)->recipients; (rwalk); rwalk = rwalk->next) {
+				if (rwalk->cfid == cfid) rwalk->criteria = (*currcp)->criteria;
+			}
+		}
 		crit = (*currcp)->criteria;
 		crit->cfid = cfid;
 		if (crit->cfline == NULL) crit->cfline = strdup(cfline);
@@ -255,6 +263,24 @@ static void flush_rule(rule_t *currule)
 	}
 }
 
+static void free_criteria(criteria_t *crit)
+{
+	if (crit->cfline)       xfree(crit->cfline);
+	if (crit->pagespec)     xfree(crit->pagespec);
+	if (crit->pagespecre)   pcre_free(crit->pagespecre);
+	if (crit->expagespec)   xfree(crit->expagespec);
+	if (crit->expagespecre) pcre_free(crit->expagespecre);
+	if (crit->hostspec)     xfree(crit->hostspec);
+	if (crit->hostspecre)   pcre_free(crit->hostspecre);
+	if (crit->exhostspec)   xfree(crit->exhostspec);
+	if (crit->exhostspecre) pcre_free(crit->exhostspecre);
+	if (crit->svcspec)      xfree(crit->svcspec);
+	if (crit->svcspecre)    pcre_free(crit->svcspecre);
+	if (crit->exsvcspec)    xfree(crit->exsvcspec);
+	if (crit->exsvcspecre)  pcre_free(crit->exsvcspecre);
+	if (crit->timespec)     xfree(crit->timespec);
+}
+
 void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 {
 	/* (Re)load the configuration file without leaking memory */
@@ -280,20 +306,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 		rule_t *trule;
 
 		if (rulehead->criteria) {
-			if (rulehead->criteria->cfline)       xfree(rulehead->criteria->cfline);
-			if (rulehead->criteria->pagespec)     xfree(rulehead->criteria->pagespec);
-			if (rulehead->criteria->pagespecre)   pcre_free(rulehead->criteria->pagespecre);
-			if (rulehead->criteria->expagespec)   xfree(rulehead->criteria->expagespec);
-			if (rulehead->criteria->expagespecre) pcre_free(rulehead->criteria->expagespecre);
-			if (rulehead->criteria->hostspec)     xfree(rulehead->criteria->hostspec);
-			if (rulehead->criteria->hostspecre)   pcre_free(rulehead->criteria->hostspecre);
-			if (rulehead->criteria->exhostspec)   xfree(rulehead->criteria->exhostspec);
-			if (rulehead->criteria->exhostspecre) pcre_free(rulehead->criteria->exhostspecre);
-			if (rulehead->criteria->svcspec)      xfree(rulehead->criteria->svcspec);
-			if (rulehead->criteria->svcspecre)    pcre_free(rulehead->criteria->svcspecre);
-			if (rulehead->criteria->exsvcspec)    xfree(rulehead->criteria->exsvcspec);
-			if (rulehead->criteria->exsvcspecre)  pcre_free(rulehead->criteria->exsvcspecre);
-			if (rulehead->criteria->timespec)     xfree(rulehead->criteria->timespec);
+			free_criteria(rulehead->criteria);
 			xfree(rulehead->criteria);
 		}
 
@@ -301,22 +314,17 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 			recip_t *trecip = rulehead->recipients;
 
 			if (trecip->criteria) {
-				if (trecip->criteria->cfline)       xfree(trecip->criteria->cfline);
-				if (trecip->criteria->pagespec)     xfree(trecip->criteria->pagespec);
-				if (trecip->criteria->pagespecre)   pcre_free(trecip->criteria->pagespecre);
-				if (trecip->criteria->expagespec)   xfree(trecip->criteria->expagespec);
-				if (trecip->criteria->expagespecre) pcre_free(trecip->criteria->expagespecre);
-				if (trecip->criteria->hostspec)     xfree(trecip->criteria->hostspec);
-				if (trecip->criteria->hostspecre)   pcre_free(trecip->criteria->hostspecre);
-				if (trecip->criteria->exhostspec)   xfree(trecip->criteria->exhostspec);
-				if (trecip->criteria->exhostspecre) pcre_free(trecip->criteria->exhostspecre);
-				if (trecip->criteria->svcspec)      xfree(trecip->criteria->svcspec);
-				if (trecip->criteria->svcspecre)    pcre_free(trecip->criteria->svcspecre);
-				if (trecip->criteria->exsvcspec)    xfree(trecip->criteria->exsvcspec);
-				if (trecip->criteria->exsvcspecre)  pcre_free(trecip->criteria->exsvcspecre);
-				if (trecip->criteria->timespec)     xfree(trecip->criteria->timespec);
+				recip_t *rwalk;
+
+				/* Clear out the duplicate criteria that may exist, to avoid double-free'ing them */
+				for (rwalk = trecip->next; (rwalk); rwalk = rwalk->next) {
+					if (rwalk->criteria == trecip->criteria) rwalk->criteria = NULL;
+				}
+
+				free_criteria(trecip->criteria);
 				xfree(trecip->criteria);
 			}
+
 			if (trecip->recipient)  xfree(trecip->recipient);
 			if (trecip->scriptname) xfree(trecip->scriptname);
 			rulehead->recipients = rulehead->recipients->next;
@@ -326,6 +334,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 		rulehead = rulehead->next;
 		xfree(trule);
 	}
+
 	while (tokhead) {
 		token_t *ttok;
 
