@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.30 2005-02-01 21:06:30 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.31 2005-02-02 22:07:39 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -200,6 +200,7 @@ static char *preprocess(char *buf)
 		}
 		else {
 			token_t *twalk;
+			char savech;
 
 			*p = '\0';
 			n = strlen(inp);
@@ -208,9 +209,10 @@ static char *preprocess(char *buf)
 			p = (p+1);
 
 			n = strcspn(p, "\t $.,|%!()[]{}+?/&@:;*");
+			savech = *(p+n);
 			*(p+n) = '\0';
 			for (twalk = tokhead; (twalk && strcmp(p, twalk->name)); twalk = twalk->next) ;
-			*(p+n) = ' ';
+			*(p+n) = savech;
 
 			if (twalk) {
 				strcat(outp, twalk->value);
@@ -366,7 +368,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 		}
 
 		/* Expand macros inside the line before parsing */
-		p = strtok(preprocess(l), " ");
+		p = strtok(preprocess(l), " \t");
 		while (p) {
 			if ((strncasecmp(p, "PAGE=", 5) == 0) || (strncasecmp(p, "PAGES=", 6) == 0)) {
 				char *val;
@@ -477,6 +479,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				crit = setup_criteria(&currule, &currcp);
 				if (*(p+8) == '>') crit->minduration = 60*durationvalue(p+9);
 				else if (*(p+8) == '<') crit->maxduration = 60*durationvalue(p+9);
+				else errprintf("Ignoring invalid DURATION at line %d: %s\n",cfid, p);
 			}
 			else if (strncasecmp(p, "RECOVERED", 9) == 0) {
 				criteria_t *crit;
@@ -486,7 +489,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				currule->criteria->sendrecovered = SR_WANTED;
 				crit->sendrecovered = SR_WANTED;
 			}
-			else if (currule && ((strcasecmp(p, "MAIL") == 0) || strchr(p, '@')) ) {
+			else if (currule && ((strncasecmp(p, "MAIL", 4) == 0) || strchr(p, '@')) ) {
 				recip_t *newrcp;
 
 				if (currule == NULL) {
@@ -501,7 +504,11 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				newrcp->criteria = NULL;
 				newrcp->recipient = NULL;
 				newrcp->scriptname = NULL;
-				if (strchr(p, '@') == NULL) p = strtok(NULL, " ");
+				if (strncasecmp(p, "MAIL=", 5) == 0) {
+					p += 5;
+				}
+				else if (strchr(p, '@') == NULL) p = strtok(NULL, " \t");
+
 				if (p) {
 					newrcp->recipient = strdup(p);
 					newrcp->interval = defaultinterval;
@@ -519,10 +526,11 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 					}
 				}
 				else {
+					errprintf("Ignoring MAIL with no recipient at line %d\n", cfid);
 					xfree(newrcp);
 				}
 			}
-			else if (currule && (strcasecmp(p, "SCRIPT") == 0)) {
+			else if (currule && (strncasecmp(p, "SCRIPT", 6) == 0)) {
 				recip_t *newrcp;
 
 				if (currule == NULL) {
@@ -536,7 +544,12 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				newrcp->format = FRM_SCRIPT;
 				newrcp->criteria = NULL;
 				newrcp->scriptname = NULL;
-				p = strtok(NULL, " ");
+
+				if (strncasecmp(p, "SCRIPT=", 7) == 0) {
+					p += 7;
+				}
+				else p = strtok(NULL, " \t");
+
 				if (p) {
 					newrcp->scriptname = strdup(p);
 					p = strtok(NULL, " ");
@@ -559,6 +572,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 					}
 				}
 				else {
+					errprintf("Ignoring SCRIPT with no recipient at line %d\n", cfid);
 					if (newrcp->scriptname) xfree(newrcp->scriptname);
 					xfree(newrcp);
 				}
@@ -1271,18 +1285,36 @@ time_t next_alert(activealerts_t *alert)
 {
 	time_t now = time(NULL);
 	int first = 1;
-	time_t nexttime = now+86400;
+	int found = 0;
+	time_t nexttime = now+(30*86400);	/* 30 days from now */
 	recip_t *recip;
 	repeat_t *rpt;
 
 	stoprulefound = 0;
 	while (!stoprulefound && ((recip = next_recipient(alert, &first)) != NULL)) {
+		found = 1;
 		rpt = find_repeatinfo(alert, recip, 1);
 		if (rpt) {
 			if (rpt->nextalert <= now) rpt->nextalert = (now + recip->interval);
 			if (rpt->nextalert < nexttime) nexttime = rpt->nextalert;
 		}
+		else {
+			/* 
+			 * This can happen, e.g.  if we get an alert, but the minimum 
+			 * DURATION has not been met.
+			 * This simply means we dropped the alert -for now - for some 
+			 * reason, so it should be retried again right away. Put in a
+			 * 1 minute delay to prevent run-away alerts from flooding us.
+			 */
+			if ((now + 60) < nexttime) nexttime = now + 60;
+		}
 	}
+
+	/*
+	 * If no current recipients, then try again real soon - we're probably
+	 * just waiting for a minimum duration to trigger.
+	 */
+	if (!found) nexttime = now + 60;
 
 	return nexttime;
 }
