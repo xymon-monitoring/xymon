@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.99 2003-05-17 09:25:42 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.100 2003-05-17 21:32:24 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -198,7 +198,7 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 
 			enable_larrdgen=1;
-			if (lp) larrdcol = malcop(lp+1);
+			if (lp) larrdcol = malcop(lp+1); else larrdcol = "trends";
 			larrd043 = 1;
 		}
 		else if (strncmp(argv[i], "--larrd", 7) == 0) {
@@ -207,7 +207,7 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 
 			enable_larrdgen=1;
-			if (lp) larrdcol = malcop(lp+1);
+			if (lp) larrdcol = malcop(lp+1); else larrdcol = "larrd";
 		}
 		else if (strncmp(argv[i], "--rrddir=", 9) == 0) {
 			char *lp = strchr(argv[i], '=');
