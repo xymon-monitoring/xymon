@@ -131,7 +131,7 @@ LARRDS="cpu=la,disk,inode,qtree,memory,$PINGCOLUMN=tcp,http=tcp,dns=tcp,dig=tcp,
 
 # This defines which LARRD RRD files to include on the "trends" column webpage,
 # and the order in which they appear.
-GRAPHS="la,disk,inode,qtree,memory,users,vmstat,iostat,tcp.http,tcp,netstat,temperature,ntpstat,apache,bind,sendmail,nmailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd"
+GRAPHS="la,disk,inode,qtree,memory,users,vmstat,iostat,tcp.http,tcp,netstat,mrtg::1,temperature,ntpstat,apache,bind,sendmail,nmailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd"
 
 
 ############################################################
