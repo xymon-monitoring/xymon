@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.22 2004-11-15 22:05:57 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.23 2004-11-19 22:12:29 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -110,7 +110,7 @@ void update_htmlfile(char *fn, char *msg,
 			color, sender, flags,
 			logtime, timestr,
 			firstline, restofmsg, ackmsg,
-			0, output);
+			0, 1, 0, output);
 
 		fclose(output);
 		rename(tmpfn, fn);
