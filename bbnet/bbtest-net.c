@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.77 2003-07-12 06:07:37 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.78 2003-07-12 06:15:58 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -78,7 +78,6 @@ int		notesthostcount = 0;
 char		**selectedhosts;
 int		selectedcount = 0;
 time_t		frequenttesttime = 1800;	/* Interval (seconds) when failing hosts are retried frequently */
-int		failgoesclear = 0;		/* IPTEST_2_CLEAR_ON_FAILED_CONN */
 
 testitem_t *find_test(char *hostname, char *testname)
 {
@@ -937,7 +936,7 @@ int run_fping_service(service_t *service, int updatestatus)
 }
 
 
-int decide_color(service_t *service, char *svcname, testitem_t *test)
+int decide_color(service_t *service, char *svcname, testitem_t *test, int failgoesclear)
 {
 	int color = COL_GREEN;
 	int countasdown = 0;
@@ -1034,7 +1033,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test)
 }
 
 
-void send_results(service_t *service)
+void send_results(service_t *service, int failgoesclear)
 {
 	testitem_t	*t;
 	int		color;
@@ -1064,7 +1063,7 @@ void send_results(service_t *service)
 		flags[i++] = (t->host->dnserror ? 'E' : 'e');
 		flags[i++] = '\0';
 
-		color = decide_color(service, svcname, t);
+		color = decide_color(service, svcname, t, failgoesclear);
 
 		init_status(color);
 		sprintf(msgline, "status %s.%s %s <!-- [flags:%s] --> %s %s %s ", 
@@ -1175,6 +1174,7 @@ int main(int argc, char *argv[])
 	int concurrency = 0;
 	char *pingcolumn = NULL;
 	char *egocolumn = NULL;
+	int failgoesclear = 0;		/* IPTEST_2_CLEAR_ON_FAILED_CONN */
 
 	/* Setup SEGV handler */
 	setup_signalhandler("bbtest");
@@ -1321,7 +1321,7 @@ int main(int argc, char *argv[])
 	init_timestamp();
 	envcheck(reqenv);
 	if (getenv("BBLOCATION")) location = malcop(getenv("BBLOCATION"));
-	if (getenv("IPTEST_2_CLEAR_ON_FAILED_CONN")) {
+	if (pingtest && getenv("IPTEST_2_CLEAR_ON_FAILED_CONN")) {
 		failgoesclear = (strcmp(getenv("IPTEST_2_CLEAR_ON_FAILED_CONN"), "TRUE") == 0);
 	}
 
@@ -1430,7 +1430,7 @@ int main(int argc, char *argv[])
 			case TOOL_NSLOOKUP:
 			case TOOL_DIG:
 			case TOOL_NTP:
-				send_results(s);
+				send_results(s, failgoesclear);
 				break;
 
 			case TOOL_CURL:
