@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.69 2003-06-18 20:19:50 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.70 2003-06-25 20:36:41 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1134,6 +1134,10 @@ int main(int argc, char *argv[])
 	add_timestamp("bbtest-net startup");
 
 	load_services();
+
+	/* bbd uses 1984 - may not be in /etc/services */
+	add_service("bbd", (getportnumber("bbd") ? getportnumber("bbd") : 1984), 0, TOOL_CONTEST);
+
 	add_service("dns", getportnumber("domain"), 0, TOOL_NSLOOKUP);
 	add_service("dig", getportnumber("domain"), 0, TOOL_DIG);
 	add_service("ntp", getportnumber("ntp"),    0, TOOL_NTP);

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.17 2003-06-23 15:40:14 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.18 2003-06-25 20:36:41 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -62,6 +62,7 @@ static svcinfo_t svcinfo[] = {
 	{ "imap4",   "ABC123 LOGOUT\r\n", 1 },
 	{ "nntp",    "quit\r\n",          1 },
 	{ "rsync",   NULL,                1 },
+	{ "bbd",     "dummy",             0 },
 	{ NULL,      NULL,                0 }	/* Default behaviour: Dont send anything, dont grab banner */
 };
 
