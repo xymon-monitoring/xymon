@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.6 2004-10-21 15:03:25 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.7 2004-10-22 15:15:12 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -891,7 +891,7 @@ void cleanup_alert(activealerts_t *alert)
 		id = (char *)malloc(strlen(alert->hostname->name)+strlen(alert->testname->name)+3);
 		sprintf(id, "%s|%s|", alert->hostname->name, alert->testname->name);
 		rptwalk = rpthead; rptprev = NULL;
-		do {
+		while (rptwalk) {
 			if (strncmp(rptwalk->recipid, id, strlen(id)) == 0) {
 				repeat_t *tmp = rptwalk;
 
@@ -910,7 +910,7 @@ void cleanup_alert(activealerts_t *alert)
 				rptprev = rptwalk;
 				rptwalk = rptwalk->next;
 			}
-		} while (rptwalk);
+		}
 	}
 }
 
