@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
 		char *items[20] = { NULL, };
 		char *statusdata = "";
 		char *p;
-		int icount;
+		int metacount;
 		char *hostname, *testname;
 		time_t expiretime = 0;
 		char logfn[MAX_PATH];
@@ -130,13 +130,13 @@ int main(int argc, char *argv[])
 			statusdata = p+1;
 		}
 
-		p = gettok(msg, "|"); icount = 0;
-		while (p && (icount < 20)) {
-			items[icount++] = p;
+		p = gettok(msg, "|"); metacount = 0;
+		while (p && (metacount < 20)) {
+			items[metacount++] = p;
 			p = gettok(NULL, "|");
 		}
 
-		if ((role == ROLE_STATUS) && (strncmp(items[0], "@@status", 8) == 0)) {
+		if ((role == ROLE_STATUS) && (metacount > 13) && (strncmp(items[0], "@@status", 8) == 0)) {
 			/* @@status|timestamp|sender|hostname|testname|expiretime|color|testflags|prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage */
 			time_t timesincechange;
 
@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 			timesincechange -= atoi(items[9]);
 			update_file(logfn, "w", statusdata, expiretime, items[2], timesincechange, seq);
 		}
-		else if ((role == ROLE_DATA) && (strncmp(items[0], "@@data", 6)) == 0) {
+		else if ((role == ROLE_DATA) && (metacount > 4) && (strncmp(items[0], "@@data", 6)) == 0) {
 			/* @@data|timestamp|sender|hostname|testname */
 			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			testname = items[4];
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
 			expiretime = 0;
 			update_file(logfn, "a", statusdata, expiretime, NULL, -1, seq);
 		}
-		else if ((role == ROLE_NOTES) && (strncmp(items[0], "@@notes", 7) == 0)) {
+		else if ((role == ROLE_NOTES) && (metacount > 3) && (strncmp(items[0], "@@notes", 7) == 0)) {
 			/* @@notes|timestamp|sender|hostname */
 			hostname = items[3];
 			statusdata = msg_data(statusdata); if (*statusdata == '\n') statusdata++;
@@ -166,14 +166,14 @@ int main(int argc, char *argv[])
 			expiretime = 0;
 			update_file(logfn, "w", statusdata, expiretime, NULL, -1, seq);
 		}
-		else if ((role == ROLE_ENADIS) && (strncmp(items[0], "@@enadis", 8) == 0)) {
+		else if ((role == ROLE_ENADIS) && (metacount > 5) && (strncmp(items[0], "@@enadis", 8) == 0)) {
 			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			testname = items[4];
 			expiretime = atoi(items[5]);
 			sprintf(logfn, "%s/%s.%s", filedir, hostname, testname);
 			update_enable(logfn, expiretime);
 		}
-		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (strncmp(items[0], "@@drophost", 10) == 0)) {
+		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (metacount > 3) && (strncmp(items[0], "@@drophost", 10) == 0)) {
 			/* @@drophost|timestamp|sender|hostname */
 			DIR *dirfd;
 			struct dirent *de;
@@ -196,14 +196,14 @@ int main(int argc, char *argv[])
 
 			free(hostlead);
 		}
-		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (strncmp(items[0], "@@droptest", 10) == 0)) {
+		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (metacount > 4) && (strncmp(items[0], "@@droptest", 10) == 0)) {
 			/* @@droptest|timestamp|sender|hostname|testname */
 			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			testname = items[4];
 			sprintf(logfn, "%s/%s.%s", filedir, hostname, testname);
 			unlink(logfn);
 		}
-		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (strncmp(items[0], "@@renamehost", 12) == 0)) {
+		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (metacount > 4) && (strncmp(items[0], "@@renamehost", 12) == 0)) {
 			/* @@renamehost|timestamp|sender|hostname|newhostname */
 			DIR *dirfd;
 			struct dirent *de;
@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
 			}
 			free(hostlead);
 		}
-		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (strncmp(items[0], "@@renametest", 12) == 0)) {
+		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (metacount > 5) && (strncmp(items[0], "@@renametest", 12) == 0)) {
 			/* @@renametest|timestamp|sender|hostname|oldtestname|newtestname */
 			char *newtestname;
 			char newfn[MAX_PATH];
