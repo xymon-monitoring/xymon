@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.29 2004-10-07 15:16:26 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.30 2004-10-07 15:48:32 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -114,7 +114,7 @@ static void setup_transport(char *recipient)
 	dprintf("bbdispproxyport = %d\n", bbdispproxyport);
 }
 
-static int sendtobbd(char *recipient, char *message, FILE *respfd, int fullresponse)
+static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respstr, int fullresponse)
 {
 	struct in_addr addr;
 	struct sockaddr_in saddr;
@@ -131,6 +131,8 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, int fullrespo
 	char *httpmessage = NULL;
 	char response[MAXMSG];
 	int haveseenhttphdrs = 1;
+	int respstrsz = 0;
+	int respstrlen = 0;
 
 	if (dontsendmessages) {
 		printf("%s\n", message);
@@ -268,7 +270,7 @@ retry_connect:
 		return BB_ECONNFAILED;
 	}
 
-	rdone = (respfd == NULL);
+	rdone = ((respfd == NULL) && (respstr == NULL));
 	isconnected = wdone = 0;
 	while (!wdone || !rdone) {
 		FD_ZERO(&writefds);
@@ -342,7 +344,23 @@ retry_connect:
 					else outp = response;
 
 					if (n > 0) {
-						fwrite(outp, n, 1, respfd);
+						if (respfd) {
+							fwrite(outp, n, 1, respfd);
+						}
+						else if (respstr) {
+							char *respend;
+							if (n > respstrsz) {
+								respstrsz += 4096;
+								if (respstrsz == 4096)
+									*respstr = (char *)malloc(respstrsz);
+								else
+									*respstr = (char *)realloc(*respstr, respstrsz);
+							}
+							respend = (*respstr) + respstrlen;
+							memcpy(respend, outp, n);
+							*(respend + n) = '\0';
+							respstrlen += n;
+						}
 						if (!fullresponse) {
 							rdone = (strchr(outp, '\n') == NULL);
 						}
@@ -383,14 +401,14 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg)
 	int result = 0;
 
 	if (strcmp(onercpt, "0.0.0.0") != 0)
-		result = sendtobbd(onercpt, msg, NULL, 0);
+		result = sendtobbd(onercpt, msg, NULL, NULL, 0);
 	else if (morercpts) {
 		char *bbdlist, *rcpt;
 
 		bbdlist = malcop(morercpts);
 		rcpt = strtok(bbdlist, " \t");
 		while (rcpt) {
-			result += sendtobbd(rcpt, msg, NULL, 0);
+			result += sendtobbd(rcpt, msg, NULL, NULL, 0);
 			rcpt = strtok(NULL, " \t");
 		}
 
@@ -457,7 +475,7 @@ static int sendstatus(char *bbdisp, char *msg)
 }
 
 
-int sendmessage(char *msg, char *recipient, FILE *respfd, int fullresponse)
+int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fullresponse)
 {
 	static char *bbdisp = NULL;
 	int res = 0;
@@ -468,7 +486,7 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, int fullresponse)
 		res = sendstatus((recipient ? recipient : bbdisp), msg);
 	}
 	else {
-		res = sendtobbd(recipient, msg, respfd, fullresponse);
+		res = sendtobbd(recipient, msg, respfd, respstr, fullresponse);
 	}
 
 	if (res != BB_OK) {
@@ -537,7 +555,7 @@ static void combo_flush(void)
 		} while (p1 && p2);
 	}
 
-	sendmessage(bbmsg, NULL, NULL, 0);
+	sendmessage(bbmsg, NULL, NULL, NULL, 0);
 	combo_start();	/* Get ready for the next */
 }
 
@@ -601,7 +619,7 @@ void finish_status(void)
 		default:
 			/* Red, yellow and purple messages go out NOW. Or we get no alarms ... */
 			bbnocombocount++;
-			sendmessage(msgbuf, NULL, NULL, 0);
+			sendmessage(msgbuf, NULL, NULL, NULL, 0);
 			break;
 	}
 }
@@ -620,6 +638,8 @@ int main(int argc, char *argv[])
 	int cgimode = 0;
 	char *recipient = NULL;
 	char *msg = NULL;
+	FILE *respfd = stdout;
+	char *response = NULL;
 
 #ifdef CGI
 	cgimode = 1;
@@ -641,6 +661,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--help") == 0) {
 			showhelp = 1;
+		}
+		else if (strcmp(argv[argi], "--str") == 0) {
+			respfd = NULL;
 		}
 		else if (strcmp(argv[argi], "-?") == 0) {
 			showhelp = 1;
@@ -686,33 +709,37 @@ int main(int argc, char *argv[])
 		} while (spaceleft > 0);
 
 		if (cgimode) printf("Content-Type: application/octet-stream\n\n");
-		result = sendmessage(msg, recipient, stdout, 1);
+		result = sendmessage(msg, recipient, stdout, NULL, 1);
 	}
 	else if (strcmp(msg, "-") == 0) {
 		char msg[MAXMSG];
 
 		while (fgets(msg, sizeof(msg), stdin)) {
-			result = sendmessage(msg, recipient, NULL, 0);
+			result = sendmessage(msg, recipient, NULL, NULL, 0);
 		}
 	}
 	else {
 		if (strncmp(msg, "query ", 6) == 0) {
-			result = sendmessage(msg, recipient, stdout, 0);
+			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 0);
 		}
 		else if (strncmp(msg, "config ", 7) == 0) {
-			result = sendmessage(msg, recipient, stdout, 1);
+			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1);
 		}
 		else if (strncmp(msg, "bbgendlog ", 10) == 0) {
-			result = sendmessage(msg, recipient, stdout, 1);
+			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1);
 		}
 		else if (strncmp(msg, "bbgendboard", 9) == 0) {
-			result = sendmessage(msg, recipient, stdout, 1);
+			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1);
 		}
 		else if (strncmp(msg, "bbgendcookie ", 13) == 0) {
-			result = sendmessage(msg, recipient, stdout, 1);
+			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1);
 		}
 		else {
-			result = sendmessage(msg, recipient, NULL, 0);
+			result = sendmessage(msg, recipient, NULL, NULL, 0);
+		}
+
+		if (response) {
+			printf("Buffered response is '%s'\n", response);
 		}
 	}
 
