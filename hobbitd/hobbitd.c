@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.60 2004-11-18 14:11:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.61 2004-11-19 22:13:27 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -96,6 +96,16 @@ typedef struct bbgend_hostlist_t {
 bbgend_hostlist_t *hosts = NULL;		/* The hosts we have reports from */
 bbgend_testlist_t *tests = NULL;		/* The tests we have seen */
 
+typedef struct sender_t {
+	unsigned long int ipval;
+	int ipmask;
+} sender_t;
+
+sender_t *maintsenders = NULL;
+sender_t *statussenders = NULL;
+sender_t *adminsenders = NULL;
+sender_t *wwwsenders = NULL;
+
 #define NOTALK 0
 #define RECEIVING 1
 #define RESPONDING 2
@@ -131,6 +141,53 @@ int alertcolors = ( (1 << COL_RED) | (1 << COL_YELLOW) | (1 << COL_PURPLE) );
 int ghosthandling = -1;
 char *checkpointfn = NULL;
 char *purpleclientconn = NULL;
+
+FILE *dbgfd = NULL;
+char *dbghost = NULL;
+
+sender_t *getsenderlist(char *iplist)
+{
+	char *p, *tok;
+	sender_t *result;
+	int count;
+
+	count = 0; p = iplist; do { count++; p = strchr(p, ','); if (p) p++; } while (p);
+	result = (sender_t *) calloc(1, sizeof(sender_t) * (count+1));
+
+	tok = strtok(iplist, ","); count = 0;
+	while (tok) {
+		int bits = 32;
+
+		p = strchr(tok, '/');
+		if (p) *p = '\0';
+		result[count].ipval = ntohl(inet_addr(tok));
+		if (p) { *p = '/'; p++; bits = atoi(p); }
+		if (bits < 32) 
+			result[count].ipmask = (0xFFFFFFFF << (32 - atoi(p)));
+		else
+			result[count].ipmask = 0xFFFFFFFF;
+
+		tok = strtok(NULL, ",");
+		count++;
+	}
+
+	return result;
+}
+
+int oksender(sender_t *oklist, uint32_t sender)
+{
+	int i;
+
+	if (oklist == NULL) return 1;
+	i = 0;
+	do {
+		if ((oklist[i].ipval & oklist[i].ipmask) == (ntohl(sender) & oklist[i].ipmask)) return 1;
+		i++;
+	} while (oklist[i].ipval != 0);
+
+	return 0;
+}
+
 
 void posttochannel(bbgend_channel_t *channel, char *channelmarker, 
 		   char *msg, char *sender, char *hostname, void *arg, char *readymsg)
@@ -957,12 +1014,18 @@ void do_message(conn_t *msg)
 	if (strncmp(msg->buf, "combo\n", 6) == 0) {
 		char *currmsg, *nextmsg;
 
+		if (!oksender(statussenders, msg->addr.sin_addr.s_addr)) goto done;
+
 		currmsg = msg->buf+6;
 		do {
 			nextmsg = strstr(currmsg, "\n\nstatus");
 			if (nextmsg) { *(nextmsg+1) = '\0'; nextmsg += 2; }
 
 			get_hts(currmsg, sender, &h, &t, &log, &color, 1, 1);
+			if (h && dbgfd && dbghost && (strcasecmp(h->hostname, dbghost) == 0)) {
+				fprintf(dbgfd, "\n---- combo message from %s ----\n%s---- end message ----\n", sender, currmsg);
+				fflush(dbgfd);
+			}
 			if (log && (color != -1)) {
 				msgfrom = strstr(currmsg, "\nStatus message received from ");
 				if (msgfrom) {
@@ -977,7 +1040,13 @@ void do_message(conn_t *msg)
 		} while (currmsg);
 	}
 	else if (strncmp(msg->buf, "status", 6) == 0) {
+		if (!oksender(statussenders, msg->addr.sin_addr.s_addr)) goto done;
+
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 1, 1);
+		if (h && dbgfd && dbghost && (strcasecmp(h->hostname, dbghost) == 0)) {
+			fprintf(dbgfd, "\n---- status message from %s ----\n%s---- end message ----\n", sender, msg->buf);
+			fflush(dbgfd);
+		}
 		if (log && (color != -1)) {
 			msgfrom = strstr(msg->buf, "\nStatus message received from ");
 			if (msgfrom) {
@@ -993,6 +1062,9 @@ void do_message(conn_t *msg)
 		char *hostname = NULL, *testname = NULL;
 		int maybedown;
 		char hostip[20];
+
+		if (!oksender(statussenders, msg->addr.sin_addr.s_addr)) goto done;
+
 		if (sscanf(msg->buf, "data %s\n", tok) == 1) {
 			if ((testname = strrchr(tok, '.')) != NULL) {
 				char *p;
@@ -1005,6 +1077,8 @@ void do_message(conn_t *msg)
 		}
 	}
 	else if (strncmp(msg->buf, "summary", 7) == 0) {
+		if (!oksender(statussenders, msg->addr.sin_addr.s_addr)) goto done;
+
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 1, 1);
 		if (log && (color != -1)) {
 			handle_status(msg->buf, sender, h->hostname, t->testname, log, color);
@@ -1015,6 +1089,9 @@ void do_message(conn_t *msg)
 		char *hostname;
 		int maybedown;
 		char hostip[20];
+
+		if (!oksender(maintsenders, msg->addr.sin_addr.s_addr)) goto done;
+
 		if (sscanf(msg->buf, "notes %s\n", tok) == 1) {
 			char *p;
 
@@ -1024,13 +1101,17 @@ void do_message(conn_t *msg)
 		}
 	}
 	else if (strncmp(msg->buf, "enable", 6) == 0) {
+		if (!oksender(maintsenders, msg->addr.sin_addr.s_addr)) goto done;
 		handle_enadis(1, msg->buf, sender);
 	}
 	else if (strncmp(msg->buf, "disable", 7) == 0) {
+		if (!oksender(maintsenders, msg->addr.sin_addr.s_addr)) goto done;
 		handle_enadis(0, msg->buf, sender);
 	}
 	else if (strncmp(msg->buf, "config", 6) == 0) {
 		char conffn[1024];
+
+		if (!oksender(adminsenders, msg->addr.sin_addr.s_addr)) goto done;
 
 		if ( (sscanf(msg->buf, "config %1023s", conffn) == 1) &&
 		     (strstr("../", conffn) == NULL) && (get_config(conffn, msg) == 0) ) {
@@ -1039,6 +1120,8 @@ void do_message(conn_t *msg)
 		}
 	}
 	else if (strncmp(msg->buf, "query ", 6) == 0) {
+		if (!oksender(adminsenders, msg->addr.sin_addr.s_addr)) goto done;
+
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 0, 0);
 		if (log) {
 			msg->doingwhat = RESPONDING;
@@ -1065,6 +1148,8 @@ void do_message(conn_t *msg)
 		 *
 		 * hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|ackmsg|dismsg
 		 */
+		if (!oksender(wwwsenders, msg->addr.sin_addr.s_addr)) goto done;
+
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 0, 0);
 		if (log) {
 			char *buf, *bufp;
@@ -1117,6 +1202,8 @@ void do_message(conn_t *msg)
 		int bufsz, buflen;
 		int n;
 
+		if (!oksender(wwwsenders, msg->addr.sin_addr.s_addr)) goto done;
+
 		bufsz = 16384;
 		bufp = buf = (char *)malloc(bufsz);
 		buflen = 0;
@@ -1168,6 +1255,8 @@ void do_message(conn_t *msg)
 		int bufsz, buflen;
 		int n;
 
+		if (!oksender(wwwsenders, msg->addr.sin_addr.s_addr)) goto done;
+
 		bufsz = 16384;
 		bufp = buf = (char *)malloc(bufsz);
 		buflen = 0;
@@ -1197,6 +1286,8 @@ void do_message(conn_t *msg)
 		int cookie, duration;
 		char durstr[100];
 		bbgend_log_t *lwalk;
+
+		if (!oksender(maintsenders, msg->addr.sin_addr.s_addr)) goto done;
 
 		/*
 		 * For just a bit of compatibility with the old BB system,
@@ -1229,8 +1320,11 @@ void do_message(conn_t *msg)
 	else if (strncmp(msg->buf, "bbgenddrop ", 11) == 0) {
 		char hostname[200];
 		char testname[200];
-		int n = sscanf(msg->buf, "bbgenddrop %199s %199s", hostname, testname);
+		int n;
 
+		if (!oksender(adminsenders, msg->addr.sin_addr.s_addr)) goto done;
+
+		n = sscanf(msg->buf, "bbgenddrop %199s %199s", hostname, testname);
 		if (n == 1) {
 			handle_dropnrename(CMD_DROPHOST, sender, hostname, NULL, NULL);
 		}
@@ -1241,8 +1335,11 @@ void do_message(conn_t *msg)
 	else if (strncmp(msg->buf, "bbgendrename ", 13) == 0) {
 		char hostname[200];
 		char n1[200], n2[200];
-		int n = sscanf(msg->buf, "bbgendrename %199s %199s %199s", hostname, n1, n2);
+		int n;
 
+		if (!oksender(adminsenders, msg->addr.sin_addr.s_addr)) goto done;
+
+		n = sscanf(msg->buf, "bbgendrename %199s %199s %199s", hostname, n1, n2);
 		if (n == 2) {
 			/* Host rename */
 			handle_dropnrename(CMD_RENAMEHOST, sender, hostname, n1, NULL);
@@ -1253,6 +1350,7 @@ void do_message(conn_t *msg)
 		}
 	}
 
+done:
 	if (msg->doingwhat == RESPONDING) {
 		shutdown(msg->sock, SHUT_RD);
 	}
@@ -1635,6 +1733,32 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			logfn = strdup(p+1);
 		}
+		else if (argnmatch(argv[argi], "--maint-senders=")) {
+			/* Who is allowed to send us "enable", "disable", "ack", "notes" messages */
+			char *p = strchr(argv[argi], '=');
+			maintsenders = getsenderlist(p+1);
+		}
+		else if (argnmatch(argv[argi], "--status-senders=")) {
+			/* Who is allowed to send us "status", "combo", "summary", "data" messages */
+			char *p = strchr(argv[argi], '=');
+			statussenders = getsenderlist(p+1);
+		}
+		else if (argnmatch(argv[argi], "--admin-senders=")) {
+			/* Who is allowed to send us "bbgenddrop", "bbgendrename", "config", "query" messages */
+			char *p = strchr(argv[argi], '=');
+			adminsenders = getsenderlist(p+1);
+		}
+		else if (argnmatch(argv[argi], "--www-senders=")) {
+			/* Who is allowed to send us "bbgendboard", "bbgendlog", "bbgendlist" messages */
+			char *p = strchr(argv[argi], '=');
+			wwwsenders = getsenderlist(p+1);
+		}
+		else if (argnmatch(argv[argi], "--dbghost=")) {
+			char *p = strchr(argv[argi], '=');
+
+			dbghost = strdup(p+1);
+			dbgfd = fopen("/tmp/bbgend.dbg", "a");
+		}
 		else if (argnmatch(argv[argi], "--help")) {
 			printf("Options:\n");
 			printf("\t--listen=IP:PORT              : The address the daemon listens on\n");
@@ -1944,6 +2068,8 @@ int main(int argc, char *argv[])
 
 	save_checkpoint();
 	unlink(pidfile);
+
+	if (dbgfd) fclose(dbgfd);
 
 	return 0;
 }
