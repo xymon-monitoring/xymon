@@ -14,7 +14,7 @@
 #include <time.h>
 #include <stdio.h>
 
-enum astate_t { A_PAGING, A_ACKED, A_RECOVERED, A_DEAD };
+enum astate_t { A_PAGING, A_ACKED, A_RECOVERED, A_NOTIFY, A_DEAD };
 
 typedef struct activealerts_t {
 	/* Identification of the alert */

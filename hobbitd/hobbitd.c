@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.113 2005-02-21 15:31:49 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.114 2005-02-26 16:29:04 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -190,6 +190,7 @@ hobbitd_statistics_t hobbitd_stats[] = {
 	{ "drop", 0 },
 	{ "rename", 0 },
 	{ "dummy", 0 },
+	{ "notify", 0 },
 	{ NULL, 0 }
 };
 
@@ -473,6 +474,17 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 					sender, hostname, 
 					log->test->testname, log->host->ip,
 					(int) log->acktime, msg);
+			}
+			else if (strcmp(channelmarker, "notify") == 0) {
+				namelist_t *hi = hostinfo(hostname);
+
+				n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
+					"@@%s#%u|%d.%06d|%s|%s|%s|%s\n%s\n@@\n", 
+					channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
+					sender, hostname, 
+					(log->test ? log->test->testname : ""), 
+					(hi ? hi->page->pagepath : ""), 
+					msg);
 			}
 			else {
 				namelist_t *hi = hostinfo(hostname);
@@ -1102,6 +1114,14 @@ void handle_ack(char *msg, char *sender, hobbitd_log_t *log, int duration)
 	return;
 }
 
+void handle_notify(char *msg, char *sender, hobbitd_log_t *log)
+{
+	char *msgtext = msg_data(msg);
+
+	/* Tell the pagers */
+	posttochannel(pagechn, "notify", msgtext, sender, log->host->hostname, log, NULL);
+	return;
+}
 
 void free_log_t(hobbitd_log_t *zombie)
 {
@@ -1857,6 +1877,11 @@ void do_message(conn_t *msg, char *origin)
 	}
 	else if (strncmp(msg->buf, "dummy", 5) == 0) {
 		/* Do nothing */
+	}
+	else if (strncmp(msg->buf, "notify", 6) == 0) {
+		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, 0, 0);
+		if (log) handle_notify(msg->buf, sender, log);
 	}
 
 done:

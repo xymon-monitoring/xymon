@@ -25,6 +25,10 @@
  *   <ack message>
  *   @@
  *
+ *   @@notify|timestamp|sender|hostname|testname|pagepath
+ *   <notify message>
+ *   @@
+ *
  *   Note that "page" modules get messages whenever the alert-state of a test
  *   changes. I.e. a message is generated whenever a test goes from a color
  *   that is non-alerting to a color that is alerting, or vice versa.
@@ -36,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.45 2005-02-22 21:48:35 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.46 2005-02-26 16:29:04 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -495,6 +499,28 @@ int main(int argc, char *argv[])
 				traceprintf("No record\n");
 			}
 		}
+		else if ((metacount > 4) && (strncmp(metadata[0], "@@notify", 5) == 0)) {
+			/* @@notify|timestamp|sender|hostname|testname|pagepath */
+
+			htnames_t *hwalk = find_name(&hostnames, hostname);
+			htnames_t *twalk = find_name(&testnames, testname);
+			htnames_t *pwalk = find_name(&locations, metadata[4]);
+
+			awalk = (activealerts_t *)malloc(sizeof(activealerts_t));
+			awalk->hostname = hwalk;
+			awalk->testname = twalk;
+			awalk->ip[0] = '\0';
+			awalk->location = pwalk;
+			awalk->color = 0;
+			awalk->cookie = -1;
+			awalk->pagemessage = strdup(restofmsg);
+			awalk->ackmessage = NULL;
+			awalk->eventstart = time(NULL);
+			awalk->nextalerttime = 0;
+			awalk->state = A_NOTIFY;
+			awalk->next = ahead;
+			ahead = awalk;
+		}
 		else if ((metacount > 3) && (strncmp(metadata[0], "@@drophost", 10) == 0)) {
 			/* @@drophost|timestamp|sender|hostname */
 			htnames_t *hwalk;
@@ -567,6 +593,7 @@ int main(int argc, char *argv[])
 				break;
 
 			  case A_RECOVERED:
+			  case A_NOTIFY:
 				anytogo++;
 				break;
 
@@ -596,6 +623,7 @@ int main(int argc, char *argv[])
 						break;
 
 					  case A_RECOVERED:
+					  case A_NOTIFY:
 						send_alert(awalk, notiflogfd);
 						break;
 
@@ -623,6 +651,7 @@ int main(int argc, char *argv[])
 						break;
 
 					  case A_RECOVERED:
+					  case A_NOTIFY:
 						awalk->state = A_DEAD;
 						break;
 
@@ -645,6 +674,7 @@ int main(int argc, char *argv[])
 				  break;
 
 			  case A_RECOVERED: 
+			  case A_NOTIFY: 
 			  case A_DEAD: 
 				  cleanup_alert(awalk); 
 				  awalk->state = A_DEAD; 
