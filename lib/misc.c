@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.12 2004-11-20 12:48:48 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.13 2004-11-20 22:28:27 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -24,6 +24,7 @@ static char rcsid[] = "$Id: misc.c,v 1.12 2004-11-20 12:48:48 henrik Exp $";
 #include "errormsg.h"
 #include "misc.h"
 #include "stackio.h"
+#include "version.h"
 
 enum ostype_t get_ostype(char *osname)
 {
@@ -115,7 +116,9 @@ void loadenv(char *envfile)
 			p = strchr(l, '\n'); if (p) *p = '\0';
 
 			/* ... and any comments ... */
-			p = strchr(l, '#'); if (p) *p = '\0'; /* Kill all comments */
+			p = l + strlen(l) - 1;
+			while ((p > l) && (*p != '"') && (*p != '#')) p--;
+			if (*p == '#') *p = '\0'; /* Kill all comments */
 
 			/* ... and trailing whitespace */
 			p = l + strlen(l) -1; while (isspace((int)*p) && (p >= l)) p--;
@@ -135,6 +138,13 @@ void loadenv(char *envfile)
 			}
 		}
 		stackfclose(fd);
+
+		/* Always provide the BBGENDREL variable */
+		if (getenv("BBGENDREL") == NULL) {
+			sprintf(l, "BBGENDREL=%s", VERSION);
+			oneenv = strdup(l);
+			putenv(oneenv);
+		}
 	}
 	else {
 		errprintf("Cannot open env file %s - %s\n", envfile, strerror(errno));
