@@ -105,7 +105,7 @@ else
 	echo ""
 
 	echo "bbgen uses the CURL library for http and https tests."
-	echo "Trying to find your curl library and headers with curl-config"
+	echo "I will try to find your curl library and headers with curl-config"
 	CURLVER=`curl-config --version`
 	if test $? -eq 0
 	then
@@ -126,7 +126,7 @@ else
 	else
 		echo "         ********  NB NB NB *********"
 		echo "Cannot run curl-config - are you sure you have libcurl ?"
-		echo "Assuming you have libcurl in a standard location"
+		echo "Assuming you have libcurl in /usr/local/lib and /usr/local/include"
 		echo "         ********  NB NB NB *********"
 		CURLMSG="These settings were GUESSED by configure - they probably need changing"
 		CURLCC="cc"
@@ -135,11 +135,19 @@ else
 	fi
 	echo ""
 
+	echo "Where should I install the bbgen man-pages (/usr/local/man) ?"
+	read MANROOT
+	if test -z "$MANROOT"
+	then
+		MANROOT=/usr/local/man
+	fi
+
 	echo "# configure settings for bbgen" > Makefile
 	echo "BBHOME = $BBHOME"               >>Makefile
 	echo "CGIDIR = $CGIDIR"               >>Makefile
 	echo "HISTGRAPHDEF = $HISTGRAPHDEF"   >>Makefile
 	echo "MAXMSG = $MAXMSG"               >>Makefile
+	echo "MANROOT = $MANROOT"             >>Makefile
 	echo "#"                              >>Makefile
 	echo "# $CURLMSG"                     >>Makefile
 	echo "CC = $CURLCC"                   >>Makefile
