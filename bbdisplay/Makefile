@@ -2,11 +2,11 @@
 #
 
 
-PROGRAMS = bbgen bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi bb-findhost.cgi bb-csvinfo.cgi bb-ack.cgi bb-webpage
+PROGRAMS = bbgen bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi bb-findhost.cgi bb-csvinfo.cgi bb-ack.cgi bb-webpage bb-datepage.cgi
 
 EXTENSIONS = bbcombotest
 
-CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh bb-findhost.sh bb-csvinfo.sh bbmessage.cgi hobbitcolumn.sh
+CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh bb-findhost.sh bb-csvinfo.sh bbmessage.cgi hobbitcolumn.sh bb-datepage.sh
 
 TEMPLATES = acknowledge_header acknowledge_footer acknowledge_form findhost_header findhost_footer findhost_form report_header report_footer report_form snapshot_header snapshot_footer snapshot_form event_header event_footer event_form
 
@@ -22,6 +22,7 @@ CSVINFOOBJS = bb-csvinfo.o
 MESSAGECGIOBJS = sendmsg-cgi.o
 ACKCGIOBJS = bb-ack.o
 WEBPAGEOBJS = bb-webpage.o
+DATEPAGEOBJS = bb-datepage.o
 
 HTMLPAGES = bb-findhost.html
 GIFFILES = bbfindhost1.gif bbfindhost2.gif
@@ -65,6 +66,9 @@ bb-ack.cgi: $(ACKCGIOBJS) ../lib/libbbgen.a
 
 bb-webpage: $(WEBPAGEOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(WEBPAGEOBJS) ../lib/libbbgen.a
+
+bb-datepage.cgi: $(DATEPAGEOBJS) ../lib/libbbgen.a
+	$(CC) $(CFLAGS) -o $@ $(DATEPAGEOBJS) ../lib/libbbgen.a
 
 
 ################################################
