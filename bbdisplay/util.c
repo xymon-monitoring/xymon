@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.131 2004-10-13 12:19:38 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.132 2004-10-14 11:01:05 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -2115,7 +2115,7 @@ char *gettok(char *s, char *delims)
 	if ((delims == NULL) || (*delims == '\0')) return NULL;	/* Sanity check */
 	if ((source == NULL) && (s == NULL)) return NULL;	/* Programmer goofed and called us first time with NULL */
 
-	if (source == NULL) source = whereat = s;		/* First call */
+	if (s) source = whereat = s;				/* First call */
 
 	if (*whereat == '\0') {
 		/* End of string ... clear local state and return NULL */
