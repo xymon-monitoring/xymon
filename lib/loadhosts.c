@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.4 2004-10-30 15:55:20 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.5 2004-11-18 11:51:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -208,7 +208,7 @@ void load_hostnames(char *bbhostsfn, int fqdn)
 }
 
 
-char *knownhost(char *hostname, char *srcip, int ghosthandling, int *maybedown)
+char *knownhost(char *hostname, char *hostip, char *srcip, int ghosthandling, int *maybedown)
 {
 	/*
 	 * ghosthandling = 0 : Default BB method (case-sensitive, no logging, keep ghosts)
@@ -220,6 +220,11 @@ char *knownhost(char *hostname, char *srcip, int ghosthandling, int *maybedown)
 
 	strcpy(result, hostname);
 	*maybedown = 0;
+	*hostip = '\0';
+
+	/* Find the host */
+	for (walk = namehead; (walk && (strcasecmp(walk->bbhostname, hostname) != 0) && (strcasecmp(walk->clientname, hostname) != 0)); walk = walk->next);
+	if (walk) strcpy(hostip, walk->ip);
 
 	/* If default method, just say yes */
 	if (ghosthandling == 0) return result;
@@ -229,7 +234,6 @@ char *knownhost(char *hostname, char *srcip, int ghosthandling, int *maybedown)
 	if (strcmp(hostname, "dialup") == 0) return result;
 
 	/* See if we know this hostname */
-	for (walk = namehead; (walk && (strcasecmp(walk->bbhostname, hostname) != 0) && (strcasecmp(walk->clientname, hostname) != 0)); walk = walk->next);
 	if (walk) {
 		/*
 		 * Force our version of the hostname

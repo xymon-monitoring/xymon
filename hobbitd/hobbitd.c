@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.58 2004-11-18 10:03:31 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.59 2004-11-18 11:51:57 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -88,6 +88,7 @@ typedef struct bbgend_log_t {
 /* This is a list of the hosts we have seen reports for, and links to their status logs */
 typedef struct bbgend_hostlist_t {
 	char *hostname;
+	char ip[16];
 	bbgend_log_t *logs;
 	struct bbgend_hostlist_t *next;
 } bbgend_hostlist_t;
@@ -216,17 +217,18 @@ void posttochannel(bbgend_channel_t *channel, char *channelmarker,
 			log = (bbgend_log_t *)arg;
 			if (strcmp(channelmarker, "ack") == 0) {
 				n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
-					"@@%s#%u|%d.%06d|%s|%s|%s|%d\n%s\n@@\n", 
+					"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d\n%s\n@@\n", 
 					channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 					sender, hostname, 
-					log->test->testname, (int) log->acktime, msg);
+					log->test->testname, log->host->ip,
+					(int) log->acktime, msg);
 			}
 			else {
 				n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
-					"@@%s#%u|%d.%06d|%s|%s|%s|%d|%s|%s|%d|%s|%d\n%s\n@@\n", 
+					"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d\n%s\n@@\n", 
 					channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 					sender, hostname, 
-					log->test->testname, (int) log->validtime, 
+					log->test->testname, log->host->ip, (int) log->validtime, 
 					colnames[log->color], colnames[log->oldcolor], (int) log->lastchange,
 					hostpagename(hostname), log->cookie, msg);
 			}
@@ -336,6 +338,7 @@ void get_hts(char *msg, char *sender,
 
 	char *firstline, *p;
 	char *hosttest, *hostname, *testname, *colstr;
+	char hostip[20];
 	bbgend_hostlist_t *hwalk = NULL;
 	bbgend_testlist_t *twalk = NULL;
 	bbgend_log_t *lwalk = NULL;
@@ -374,7 +377,7 @@ void get_hts(char *msg, char *sender,
 		if (testname) { *testname = '\0'; testname++; }
 		p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
 
-		hostname = knownhost(hostname, sender, ghosthandling, &maybedown);
+		hostname = knownhost(hostname, hostip, sender, ghosthandling, &maybedown);
 		if (hostname == NULL) goto done;
 	}
 
@@ -382,6 +385,7 @@ void get_hts(char *msg, char *sender,
 	if (createhost && (hwalk == NULL)) {
 		hwalk = (bbgend_hostlist_t *)malloc(sizeof(bbgend_hostlist_t));
 		hwalk->hostname = strdup(hostname);
+		strcpy(hwalk->ip, hostip);
 		hwalk->logs = NULL;
 		hwalk->next = hosts;
 		hosts = hwalk;
@@ -619,6 +623,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 {
 	char firstline[MAXMSG];
 	char hosttest[200];
+	char hostip[20];
 	char *tname = NULL;
 	char durstr[100];
 	int duration = 0;
@@ -660,7 +665,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 	p = hosttest; while ((p = strchr(p, ',')) != NULL) *p = '.';
 
 
-	p = knownhost(hosttest, sender, ghosthandling, &maybedown);
+	p = knownhost(hosttest, hostip, sender, ghosthandling, &maybedown);
 	if (p == NULL) return;
 	strcpy(hosttest, p);
 
@@ -779,6 +784,7 @@ void free_log_t(bbgend_log_t *zombie)
 void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, char *n1, char *n2)
 {
 	int maybedown;
+	char hostip[20];
 	bbgend_hostlist_t *hwalk;
 	bbgend_testlist_t *twalk, *newt;
 	bbgend_log_t *lwalk;
@@ -826,7 +832,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	/*
 	 * Now clean up our internal state info, if there is any.
 	 */
-	hostname = knownhost(hostname, sender, ghosthandling, &maybedown);
+	hostname = knownhost(hostname, hostip, sender, ghosthandling, &maybedown);
 	if (hostname == NULL) return;
 
 	for (hwalk = hosts; (hwalk && strcasecmp(hostname, hwalk->hostname)); hwalk = hwalk->next) ;
@@ -986,13 +992,14 @@ void do_message(conn_t *msg)
 		char tok[MAXMSG];
 		char *hostname = NULL, *testname = NULL;
 		int maybedown;
+		char hostip[20];
 		if (sscanf(msg->buf, "data %s\n", tok) == 1) {
 			if ((testname = strrchr(tok, '.')) != NULL) {
 				char *p;
 				*testname = '\0'; 
 				testname++; 
 				p = tok; while ((p = strchr(p, ',')) != NULL) *p = '.';
-				hostname = knownhost(tok, sender, ghosthandling, &maybedown);
+				hostname = knownhost(tok, hostip, sender, ghosthandling, &maybedown);
 			}
 			if (hostname && testname) handle_data(msg->buf, sender, hostname, testname);
 		}
@@ -1007,11 +1014,12 @@ void do_message(conn_t *msg)
 		char tok[MAXMSG];
 		char *hostname;
 		int maybedown;
+		char hostip[20];
 		if (sscanf(msg->buf, "notes %s\n", tok) == 1) {
 			char *p;
 
 			p = tok; while ((p = strchr(p, ',')) != NULL) *p = '.';
-			hostname = knownhost(tok, sender, ghosthandling, &maybedown);
+			hostname = knownhost(tok, hostip, sender, ghosthandling, &maybedown);
 			if (hostname) handle_notes(msg->buf, sender, hostname);
 		}
 	}
@@ -1314,6 +1322,7 @@ void load_checkpoint(char *fn)
 	char l[4*MAXMSG];
 	char *item;
 	int i, err, maybedown;
+	char hostip[20];
 	bbgend_hostlist_t *htail = NULL;
 	bbgend_testlist_t *t = NULL;
 	bbgend_log_t *ltail = NULL;
@@ -1367,7 +1376,7 @@ void load_checkpoint(char *fn)
 		if (err) continue;
 
 		/* Only load hosts we know; they may have been dropped while we were offline */
-		hostname = knownhost(hostname, "bbgendchk", ghosthandling, &maybedown);
+		hostname = knownhost(hostname, hostip, "bbgendchk", ghosthandling, &maybedown);
 		if (hostname == NULL) continue;
 
 		if ((hosts == NULL) || (strcmp(hostname, htail->hostname) != 0)) {
@@ -1380,6 +1389,7 @@ void load_checkpoint(char *fn)
 				htail = htail->next;
 			}
 			htail->hostname = strdup(hostname);
+			strcpy(htail->ip, hostip);
 			htail->logs = NULL;
 			htail->next = NULL;
 		}
