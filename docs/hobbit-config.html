@@ -1,0 +1,99 @@
+<html>
+
+<head>
+	<title>Configuring Hobbit Monitoring</title>
+</head>
+
+<body>
+
+<h1>Configuring Hobbit Monitoring</h1>
+<p>The Hobbit configuration is kept in the files in the <tt>~/server/etc/</tt> 
+directory. If you look at this directory, you will see these files:
+<ul>
+	<li><em>bb-hosts</em> is the one you will change the most. This file contains
+	a list of all the hosts you are monitoring, including information such as their
+	IP-address, what network services you are monitoring on the host, what URL's
+	you are checking, what subpage in the Hobbit web-pages this host is shown on etc.
+	The name of the file - "bb-hosts" - was chosen so it is compatible with the
+	Big Brother system which uses the same filename and file format.</li>
+	<li><em>hobbit-alerts.cfg</em> holds the alerting configuration. In this file,
+	you setup the rules for sending out alerts about services going down: Who gets
+	the alert, how is it sent, how often, whether to send alerts 24x7 or only between
+	10 AM and 4 PM on weekdays etc.</li>
+	<li><em>hobbitserver.cfg</em> is the configuration file for the Hobbit server.
+	This file defines a lot of environment variables that are made available to
+	all of the Hobbit programs when they run. Some environment variables that are defined
+	in the Big Brother system are also setup by Hobbit, so that Big Brother extension
+	scripts will work.<br>The initial configuration of hobbitserver.cfg is setup by the 
+	<tt>configure</tt> script when you install Hobbit, and in most cases you will 
+	not need to change it.</li>
+	<li><em>hobbitlaunch.cfg</em> is the configuration file for the <tt>hobbitlaunch</tt>
+	tool. hobbitlaunch is the master program in Hobbit, it is the only program you start
+	to run the Hobbit server. hobbitlaunch reads the hobbitlaunch.cfg file, and starts
+	the programs listed here to run the server. Some of the programs may run as daemons,
+	some of the programs may run at regular intervals. If you want to use some of the
+	advanced options for the <tt>bbgen</tt> or <tt>bbtest-net</tt> programs, you change
+	the hobbitlaunch.cfg file to add these options to the commandline.</li>
+	<li><em>hobbitgraph.cfg</em> is a configuration file for the <tt>hobbitgraph CGI</tt>.
+	It defines how the graphs are generated from the data in the RRD files.</li>
+	<li><em>bb-services</em> is a configuration file for the <tt>bbtest-net</tt> program.
+	It defines how network services are checked.</li>
+</ul>
+
+<h1>Setting up monitoring of hosts</h1>
+<p>The <em>bb-hosts</em> file defines which hosts Hobbit monitors. When you install Hobbit,
+a simple configuration is setup that just lists the Hobbit server:<br>
+<img src="hobbit-bbhosts.png"></p>
+
+<p>There are a few things to notice here:
+<ul>
+	<li>Lines that begin with a <em>&#35;</em> are comments.</li>
+	<li>Each host you monitor is on a line by itself, with the IP-address
+	and the hostname of the host.</li>
+	<li>You can add extra tags to each host definition, by putting in a
+	&#35;-mark and then some keywords. These keywords define how Hobbit
+	handles the host.</li>
+</ul></p>
+<p>The bb-hosts file shown in the example has only one host defined: 
+<em>www.hswn.dk</em> which is the server running Hobbit. There are a few
+extra keywords thrown in:
+<ul>
+	<li><em>BBDISPLAY, BBPAGER, BBNET</em> are compatibility settings 
+	for extensions written for Big Brother. Hobbit doesn't use these,
+	but puts them in the bb-hosts file to avoid problems if you mix 
+	Hobbit and Big Brother modules.</li>
+	<li><em>bbd</em> is the name of a <i>network test</i>. This keyword
+	causes the Hobbit network-tester <tt>bbtest-net</tt> to check if 
+	the bbd network service is running on this host, and send a status
+	report to the Hobbit server with the information about this service.
+	So you'll get a (hopefully!) green icon on the Hobbit webpage for
+	this host, showing the status of the bbd network service.<br>
+	Network services are defined in the <em>bb-services</em> file, so
+	this file must have an entry for <tt>bbd</tt> defining what TCP
+	port to check, and possibly also what data to send to the service and
+	what to expect as a response.</li>
+	<li><em>http://www.hswn.dk/</em> is a URL, obviously. This also
+	triggers a network test, the Hobbit network tester will try to request
+	this URL, and send in a status report showing if the URL was accessible
+	or not.</li>
+</ul>
+By default, Hobbit will always check if the host is up and running by trying to
+&quot;ping&quot; it. This results in a <em>conn</em> column on the Hobbit webpage
+for this host, showing if the ping-test succeeded. If you have a host that does
+not respond to ping - e.g. because there is a firewall that filters out such
+requests - then you can disable the ping-test by putting a "noconn" keyword on 
+the line in bb-hosts.</p>
+
+<p>As you can see, the syntax is pretty straight-forward. Need to monitor an extra 
+URL for this server ? Just add the URL to the line. Need to check if ssh (Secure Shell)
+is running ? Just add <em>ssh</em> to the line. The full set of keywords you can
+use is described in the <b>bb-hosts man-page</b> (run '<tt>man bb-hosts</tt>' from a 
+command-line prompt to see it). Many of the keywords relate to the
+way Hobbit displays the information about the host on the web-pages, other keywords
+deal with how the uptime percentage is calculated for availability reports, and
+some keywords - like the <em>bbd</em> and <em>http://...</em> mentioned above -
+describe the network services that are tested for this host.</p>
+
+</body>
+</html>
+

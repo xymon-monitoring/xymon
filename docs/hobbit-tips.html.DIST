@@ -1,0 +1,58 @@
+<html>
+<head>
+	<title>Using Hobbit</title>
+</head>
+<body>
+<h1>Using Hobbit</h1>
+
+<p>Here you will find out how to do some of the more common things
+with Hobbit.</p>
+
+<h3>Renaming and deleting rows (hosts) and columns (tests)</h3>
+
+<h4>Where are the bbrm and bbmv commands from Big Brother ?</h4>
+<p>They have been integrated into the Hobbit network daemon. See
+the next two questions.</p>
+
+
+<h4>I accidentally added an 'ftp' check. Now I cannot get it off the webpage!</h4>
+<p>Use the command
+<pre>
+    ~/server/bin/bb 127.0.0.1 "drop HOSTNAME ftp"
+</pre>
+to permanenly remove all traces of a test. Note that you need the quotes
+around the &quot;hobbitddrop HOSTNAME ftp&quot;.</p>
+
+
+<h4>So how do I get rid of an entire host in Hobbit?</h4>
+<p>First, remove the host from the ~/server/etc/bb-hosts file. Then use the command
+<pre>
+    ~/server/bin/bb 127.0.0.1 "drop HOSTNAME"
+</pre>
+to permanenly remove all traces of a host. Note that you need the quotes
+around the &quot;hobbitddrop HOSTNAME&quot;.</p>
+
+
+<h4>How do I rename a host in the Hobbit display?</h4>
+<p>First, change the ~/server/etc/bb-hosts file so it has the new name.
+Then to move your historical data over to the new name, run
+<pre>
+    ~/server/bin/bb 127.0.0.1 "rename OLDHOSTNAME NEWHOSTNAME"
+</pre></p>
+
+
+<h3>Tweaking the configuration</h3>
+<h4>I need the web-pages to update more frequently</h4>
+<p>The ~/server/etc/hobbitlaunch.cfg defines the update
+interval for all of the Hobbit programs. The default is for
+network tests to run every 5 minutes, and webpage updates to
+happen once a minute.</p>
+<p>Note that if you run the <em>bbretest-net.sh</em> tool
+on your network test server (this is the default for a new
+Hobbit server), then network tests that fail 
+will run every minute for up to 30 minutes after the initial
+failure, so usually there is little need to change the update
+interval for your network tests.</p>
+
+</body>
+</html>

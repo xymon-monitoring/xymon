@@ -1,0 +1,185 @@
+<html>
+<head>
+	<title>Installing Hobbit</title>
+</head>
+
+<body>
+<h1>Installing Hobbit</h1>
+
+<p>This describes how to setup a Hobbit server for monitoring your systems.</p>
+
+<h2>Prerequisites - before you install Hobbit</h2>
+<p>There are a few things you should check before you begin to install Hobbit.
+Dont be scared of the number of items here - it is likely that you already have
+most or all of it in place.</p>
+
+<h4>A Unix-like operating system</h4>
+<p>Hobbit is written for Unix-based systems, e.g. Linux, FreeBSD, or Solaris.
+It will probably work on any Unix-like system that supports the Unix System V
+IPC mechanisms (shared memory, semaphores) - that should be just about anything
+Unix-like you are likely to have.</p>
+
+<h4>A webserver</h4>
+<p>Hobbit is designed with a web-based front-end. So you should have a webserver
+such as <a href="http://httpd.apache.org/">Apache</a> running on the server where
+you install Hobbit.</p>
+
+<h4>A working C compiler, GNU make.</h4>
+<p>Hobbit is written in C, so you need a working C compiler, e.g. <a href="http://gcc.gnu.org/">gcc</a>. 
+You will also need a "make" utility - many systems have one by default, but I strongly recommend
+that you use the <a href="http://directory.fsf.org/make.html">GNU make</a> utility. On some systems,
+this is pre-installed as "gmake" or "gnumake".</p>
+
+<h4>PCRE, RRDtool, libpng, OpenSSL, OpenLDAP libraries.</h4>
+<p>Hobbit relies on a number of Open-Source libraries - these must be installed
+before you start building Hobbit. On many systems you already have these 
+pre-installed - they are commonly installed by default on Linux systems, and
+FreeBSD has all of them in the "ports" collection.</p>
+
+<p>Note: Although many systems have these libraries pre-installed, they often
+include only the run-time libraries and not the files that are needed to compile
+and build programs such as Hobbit. So if you think you have all of these libraries
+installed but Hobbit will not build, do check that you have the development
+files installed as well. Often these are in packages called "something<em>-dev</em>".</p>
+
+<ul>
+	<li>PCRE - Perl Compatible Regular Expression library - is a library 
+	for matching text-strings. It is available from
+	<a href="http://www.pcre.org/">http://www.pcre.org/</a></li>
+
+	<li>RRDtool is a library for handling the Round-Robin Databases used
+	to hold the historical data Hobbit gathers. It is available from 
+	<a href="http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/">http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/</a></li>
+
+	<li>libpng is a library for generating images in the PNG format. It
+	is used by RRDtool (and hence Hobbit). You can find it at
+	<a href="http://www.libpng.org/pub/png/libpng.html">http://www.libpng.org/pub/png/libpng.html</a></li>
+
+	<li>OpenSSL is a library for communicating with network services, that
+	use SSL encryption - e.g. secure websites. Although this library is
+	not absolutely required for Hobbit, I strongly recommend that you install
+	it because sooner or later you will probably need it anyway. It is 
+	available from <a href="http://www.openssl.org/">http://www.openssl.org/</a></li>
+
+	<li>OpenLDAP is used to query LDAP directory servers. If you would like
+	to test that your directory server is up and running, you will need this
+	library. It is available from <a href="http://www.openldap.org/">http://www.openldap.org/</a></li>
+</ul>
+
+<h4>The "fping" utility</h4>
+<p>Hobbit uses fping when checking if systems are alive, so you need to
+install it before running Hobbit. fping is available from
+<a href="http://www.fping.com/">http://www.fping.com/</a>.</p>
+
+<h4>A "hobbit" userid on your system</h4>
+<p>A core element of Hobbit is a network daemon. To keep your system secure and
+limit the amount of damage that can be done if someone finds a security problem
+in Hobbit, I strongly recommend that you create a dedicated userid for the Hobbit
+programs. This user should <em>not</em> be a member of any other groups on your
+system.</p>
+
+
+<h2>Building Hobbit</h2>
+<p>After unpacking Hobbit from the tar-file, run the <tt>configure</tt> script.
+This script asks a series of questions, but all of the questions have a reasonable
+default response. So if you are in doubt about what to answer, use the default 
+setting. You can <a href="configure.txt">see what it looks like</a>.</p>
+
+<p>When the configure script finishes, it tells you to run <tt>make</tt> to 
+build the Hobbit programs. If your default "make" tool is not GNU make, you 
+should use the command for running GNU make instead, e.g. <tt>gmake</tt>.
+You will now see a lot of commands being run to build the programs, it usually
+takes a minute or two.</p>
+<p>When it is finished, you can either finish the installation by running 
+<tt>make setup</tt> or <tt>make install</tt>.
+<ul>
+	<li><tt>make setup</tt> is used the first time you setup a Hobbit
+	server. Besides installing the Hobbit programs, it also creates
+	the default directory structure used by Hobbit, and installs an
+	initial set of configuration files that you can use as the basis
+	for setting up monitoring of your entire network. So when you are
+	installing a new Hobbit server, running <tt>make setup</tt> is the
+	way to go.</li>
+
+	<li><tt>make install</tt> is used when upgrading a Hobbit server,
+	or if you want to use some of the Hobbit programs together with
+	an existing Big Brother server. It installs the programs, but does
+	not change any configuration files or create directories.</li>
+</ul>
+</p>
+<p>Using Hobbit programs together with an existing Big Brother server is
+described in the <a href="hobbit-bigbrother.html">Using Hobbit with Big Brother</a>
+document. Please refer to that document if you want to use Hobbit as an add-on
+to Big Brother.</p>
+
+<h2>Configuring your webserver</h2>
+<p>Hobbit uses a web-based front-end. So you need to configure your webserver so
+that it knows where the Hobbit webpages can be found, and what CGI scripts can
+run as part of Hobbit. This usually means adding a few lines to your webserver
+configuration that sets up a URL which points at the <em>~/server/www/</em> directory,
+and which tells your webserver that the <em>~/cgi-bin/</em> directory holds CGI
+scripts that the webserver should run when they are requested.</p>
+<p>If you are using the Apache webserver, you will find the necessary additions
+to the Apache configuration in <em>~/server/etc/hobbit-apache.conf</em> - 
+it looks like <a href="hobbit-apacheconf.txt">this</a>.</p>
+<p>After changing the webserver configuration, you probably need to restart the
+webserver.</p>
+
+<h2>Starting Hobbit</h2>
+<p>You can now login as the "hobbit" user, and run the command <tt>./server/starthobbit.sh start</tt>
+to start Hobbit. After a few seconds, it should have started and you now have the following
+processes running: <br><img src="hobbitprocs.png"></p>
+<p>Quite a few, but all of them controlled by the master <tt>hobbitlaunch</tt> process.
+A quick run-down of what each of them does:
+<ul>
+	<li><tt>hobbitd</tt> is the network daemon that receives status updates from
+	the clients and the network test tool. It also provides the current status of
+	all your systems to the tool that generates the webpages.</li>
+	<li><tt>hobbitd_channel</tt> provides the communication between hobbitd and 
+	all of the helper modules that implement other server-based functions.</li>
+	<li><tt>hobbitd_history</tt> takes care of recording the history of status
+	changes for each item you monitor. This is used to track what has happened
+	with a single status over time - when it was red, when it was green, what the
+	error reported at 2:51 AM last Friday looked like. The history file format is
+	compatible with the format used by the Big Brother package.</li>
+	<li><tt>hobbitd_filestore</tt> stores files with information about the current
+	status of the systems monitored by Hobbit. There may be several of these
+	running, but normally you will only need the one that stores information about
+	hosts that have been disabled, which is the one you see here.</li>
+	<li><tt>hobbitd_alert</tt> takes care of sending out alerts when your servers
+	begin to report a critical status.</li>
+	<li><tt>hobbitd_larrd</tt> updates the RRD database files with the numeric data
+	collected from the status reports, to track e.g. how the disk utilization of
+	a server changes over time. There are two of these processes, because the
+	data can arrive in two different ways.</li>
+</ul></p>
+<p>After a couple of minutes, you should have data available for the Hobbit server itself.
+If you open a webbrowser with the Hobbit URL - usually http://your.server/hobbit/ - you
+should see something like this:<br><img src="hobbitmain.png"></p>
+<p>Each of the little faces indicate an item that is being monitored for this host. Here
+you see the default set of items that the Hobbit installation sets up for a Hobbit server:
+<ul>
+	<li><em>bbd</em> is the availability of the Hobbit network daemon.</li>
+	<li><em>bbgen</em> is the status of the bbgen tool, which updates the webpages.</li>
+	<li><em>bbtest</em> is the status of the bbtest-net network tester that performs
+	all of the network tests you configure in Hobbit.</li>
+	<li><em>conn</em> is a simple &quot;ping&quot; test of the host.</li>
+	<li><em>hobbitd</em> is the status of the Hobbit daemon, with statistics about
+	how many monitored items are being tracked.</li>
+	<li><em>http</em> is the status of the HTTP-server running on the Hobbit server.</li>
+	<li><em>info</em> contains information about how the host is configured in Hobbit,
+	such as what IP-address it has, what network tests are being run against this
+	host etc.</li>
+	<li><em>trends</em> is a collection of the various RRD graphs available for this host.</li>
+</ul>
+You can click on each of the green icons to see a more detailed status.</p>
+
+<h2>Next steps</h2>
+<p>Congratulations, you now have a running Hobbit server!</p>
+<p>The next step is to configure it to monitor your servers and applications, and to set up
+the alerts to send you e-mail, call a pager, or send an SMS in case of trouble. For that, see
+the <a href="hobbit-config.html">Hobbit configuration guide</a>.</p>
+
+</body>
+</html>
+
