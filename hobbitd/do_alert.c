@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.50 2005-02-27 22:16:22 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.51 2005-03-01 14:46:58 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -111,7 +111,7 @@ typedef struct recip_t {
 	char *scriptname;
 	enum msgformat_t format;
 	time_t interval;		/* In seconds */
-	int stoprule, unmatchedonly;
+	int stoprule, unmatchedonly, noalerts;
 	struct recip_t *next;
 } recip_t;
 
@@ -149,6 +149,8 @@ static criteria_t *setup_criteria(rule_t **currule, recip_t **currcp)
 {
 	criteria_t *crit = NULL;
 
+	MEMDEFINE(cfline);
+
 	switch (pstate) {
 	  case P_NONE:
 		*currule = (rule_t *)calloc(1, sizeof(rule_t));
@@ -182,6 +184,7 @@ static criteria_t *setup_criteria(rule_t **currule, recip_t **currcp)
 		break;
 	}
 
+	MEMUNDEFINE(cfline);
 	return crit;
 }
 
@@ -298,13 +301,15 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 	rule_t *currule = NULL;
 	recip_t *currcp = NULL, *rcptail = NULL;
 
+	MEMDEFINE(fn);
+
 	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/hobbit-alerts.cfg", xgetenv("BBHOME"));
-	if (stat(fn, &st) == -1) return;
-	if (st.st_mtime == lastload) return;
+	if (stat(fn, &st) == -1) { MEMUNDEFINE(fn); return; }
+	if (st.st_mtime == lastload) { MEMUNDEFINE(fn); return; }
 	lastload = st.st_mtime;
 
 	fd = fopen(fn, "r");
-	if (!fd) return;
+	if (!fd) { MEMUNDEFINE(fn); return; }
 
 	/* First, clean out the old rule set */
 	while (rulehead) {
@@ -351,6 +356,8 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 	}
 
 	defaultcolors = defcolors;
+
+	MEMDEFINE(cfline);
 
 	cfid = 0;
 	while (fgets(l, sizeof(l), fd)) {
@@ -539,6 +546,9 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 			else if ((pstate == P_RECIP) && (strcasecmp(p, "UNMATCHED") == 0)) {
 				currcp->unmatchedonly = 1;
 			}
+			else if ((pstate == P_RECIP) && (strncasecmp(p, "NOALERT", 7) == 0)) {
+				currcp->noalerts = 1;
+			}
 			else if (currule && ((strncasecmp(p, "MAIL", 4) == 0) || mailcmdactive) ) {
 				recip_t *newrcp;
 
@@ -667,6 +677,9 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 
 	flush_rule(currule);
 	fclose(fd);
+
+	MEMUNDEFINE(cfline);
+	MEMUNDEFINE(fn);
 }
 
 static void dump_criteria(criteria_t *crit, int isrecip)
@@ -734,6 +747,7 @@ void dump_alertconfig(void)
 			if (recipwalk->criteria) dump_criteria(recipwalk->criteria, 1);
 			if (recipwalk->unmatchedonly) printf("UNMATCHED ");
 			if (recipwalk->stoprule) printf("STOP ");
+			if (recipwalk->noalerts) printf("NOALERT ");
 			printf("\n");
 		}
 		printf("\n");
@@ -1045,6 +1059,8 @@ static char *message_subject(activealerts_t *alert, recip_t *recip)
 	static char subj[150];
 	char *sev = "";
 
+	MEMDEFINE(subj);
+
 	switch (alert->color) {
 	  case COL_RED:
 		  sev = "is RED";
@@ -1079,18 +1095,23 @@ static char *message_subject(activealerts_t *alert, recip_t *recip)
 			snprintf(subj, sizeof(subj)-1, "BB [%d] %s:%s %s",
 				 alert->cookie, alert->hostname->name, alert->testname->name, sev);
 		}
+		MEMUNDEFINE(subj);
 		return subj;
 
 	 case FRM_SMS:
+		MEMUNDEFINE(subj);
 		return NULL;
 
 	 case FRM_PAGER:
+		MEMUNDEFINE(subj);
 		return NULL;
 
 	 case FRM_SCRIPT:
+		MEMUNDEFINE(subj);
 		return NULL;
 	}
 
+	MEMUNDEFINE(subj);
 	return NULL;
 }
 
@@ -1101,12 +1122,15 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 	char *eoln, *bom, *p;
 	char info[4096];
 
+	MEMDEFINE(info);
+
 	if (buf) *buf = '\0';
 
 	if (alert->state == A_NOTIFY) {
 		sprintf(info, "%s:%s INFO\n", alert->hostname->name, alert->testname->name);
 		addtobuffer(&buf, &buflen, info);
 		addtobuffer(&buf, &buflen, alert->pagemessage);
+		MEMUNDEFINE(info);
 		return buf;
 	}
 
@@ -1143,6 +1167,8 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 				commafy(alert->hostname->name), alert->testname->name);
 			addtobuffer(&buf, &buflen, info);
 		}
+
+		MEMUNDEFINE(info);
 		return buf;
 
 	  case FRM_SMS:
@@ -1166,6 +1192,7 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 				bom = (eoln ? eoln+1 : "");
 			}
 		}
+		MEMUNDEFINE(info);
 		return buf;
 
 	  case FRM_SCRIPT:
@@ -1174,19 +1201,21 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 		addtobuffer(&buf, &buflen, info);
 		addtobuffer(&buf, &buflen, msg_data(alert->pagemessage));
 		addtobuffer(&buf, &buflen, "\n");
+		MEMUNDEFINE(info);
 		return buf;
 
 	  case FRM_PAGER:
+		MEMUNDEFINE(info);
 		return "";
 	}
 
+	MEMUNDEFINE(info);
 	return alert->pagemessage;
 }
 
 void send_alert(activealerts_t *alert, FILE *logfd)
 {
 	recip_t *recip;
-	repeat_t *rpt;
 	int first = 1;
 	int alertcount = 0;
 	time_t now = time(NULL);
@@ -1199,20 +1228,36 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 	stoprulefound = 0;
 
 	while (!stoprulefound && ((recip = next_recipient(alert, &first)) != NULL)) {
-		alertcount++;
-
-		rpt = find_repeatinfo(alert, recip, 1);
-		dprintf("  repeat %s at %d\n", rpt->recipid, rpt->nextalert);
-		if (rpt->nextalert > now) {
-			traceprintf("Recipient '%s' dropped, next alert due at %d > %d\n",
-					rpt->recipid, (int)rpt->nextalert, (int)now);
+		/* If this is an "UNMATCHED" rule, ignore it if we have already sent out some alert */
+		if (recip->unmatchedonly && (alertcount != 0)) {
+			traceprintf("Recipient '%s' dropped, not unmatched (count=%d)\n", recip->recipient, alertcount);
 			continue;
 		}
 
-		/* If this is an "UNMATCHED" rule, ignore it if we have already sent out some alert */
-		if (recip->unmatchedonly && (alertcount != 1)) {
-			traceprintf("Recipient '%s' dropped, not unmatched (count=%d)\n", rpt->recipid, alertcount);
+		if (recip->noalerts && ((alert->state == A_PAGING) || (alert->state == A_RECOVERED))) {
+			traceprintf("Recipient '%s' dropped (NOALERT)\n", recip->recipient);
 			continue;
+		}
+
+		if (alert->state == A_PAGING) {
+			repeat_t *rpt = NULL;
+
+			rpt = find_repeatinfo(alert, recip, 1);
+			dprintf("  repeat %s at %d\n", rpt->recipid, rpt->nextalert);
+			if (rpt->nextalert > now) {
+				traceprintf("Recipient '%s' dropped, next alert due at %d > %d\n",
+						rpt->recipid, (int)rpt->nextalert, (int)now);
+				continue;
+			}
+			alertcount++;
+		}
+		else if (alert->state == A_RECOVERED) {
+			/* RECOVERED messages require that we've sent out an alert before */
+			repeat_t *rpt = NULL;
+
+			rpt = find_repeatinfo(alert, recip, 0);
+			if (!rpt) continue;
+			alertcount++;
 		}
 
 		dprintf("  Alert for %s:%s to %s\n", alert->hostname->name, alert->testname->name, recip->recipient);
@@ -1222,6 +1267,8 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 				char cmd[32768];
 				char *mailsubj;
 				FILE *mailpipe;
+
+				MEMDEFINE(cmd);
 
 				mailsubj = message_subject(alert, recip);
 
@@ -1242,7 +1289,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 				strcat(cmd, recip->recipient);
 
 				traceprintf("Mail alert with command '%s'\n", cmd);
-				if (testonly) break;
+				if (testonly) { MEMUNDEFINE(cmd); break; }
 
 				mailpipe = popen(cmd, "w");
 				if (mailpipe) {
@@ -1267,6 +1314,8 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					errprintf("ERROR: Cannot open command pipe for '%s' - alert lost!\n", cmd);
 					traceprintf("Mail pipe failed - alert lost\n");
 				}
+
+				MEMUNDEFINE(cmd);
 			}
 			break;
 
@@ -1434,7 +1483,7 @@ time_t next_alert(activealerts_t *alert)
 	stoprulefound = 0;
 	while (!stoprulefound && ((recip = next_recipient(alert, &first)) != NULL)) {
 		found = 1;
-		rpt = find_repeatinfo(alert, recip, 1);
+		rpt = find_repeatinfo(alert, recip, 0);
 		if (rpt) {
 			if (rpt->nextalert <= now) rpt->nextalert = (now + recip->interval);
 			if (rpt->nextalert < nexttime) nexttime = rpt->nextalert;
@@ -1541,6 +1590,9 @@ void load_state(char *filename)
 	char *p;
 
 	if (fd == NULL) return;
+
+	MEMDEFINE(l);
+
 	while (fgets(l, sizeof(l), fd)) {
 		p = strchr(l, '\n'); if (p) *p = '\0';
 
@@ -1560,6 +1612,8 @@ void load_state(char *filename)
 	}
 
 	fclose(fd);
+
+	MEMUNDEFINE(l);
 }
 
 void alert_printmode(int on)
@@ -1578,6 +1632,9 @@ void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
 	int count = 0;
 	char *p, *fontspec;
 	char codes[10];
+
+	MEMDEFINE(l);
+	MEMDEFINE(codes);
 
 	fontspec = normalfont;
 	stoprulefound = 0;
@@ -1624,7 +1681,8 @@ void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
 		     (recip->criteria && (recip->criteria->sendnotice == SR_WANTED)) ) notice = 1;
 
 		*codes = '\0';
-		if (recovered) strcat(codes, "R");
+		if (recip->noalerts) strcat(codes, "-A");
+		if (recovered && !recip->noalerts) { if (strlen(codes)) strcat(codes, ",R"); else strcat(codes, "R"); }
 		if (notice) { if (strlen(codes)) strcat(codes, ",N"); else strcat(codes, "N"); }
 		if (recip->stoprule) { if (strlen(codes)) strcat(codes, ",S"); else strcat(codes, "S"); }
 
@@ -1665,5 +1723,8 @@ void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
 	sprintf(l, "%d   ", count);
 	p = strstr(*buf, "rowspan=###");
 	if (p) { p += strlen("rowspan="); memcpy(p, l, 3); }
+
+	MEMUNDEFINE(l);
+	MEMUNDEFINE(codes);
 }
 
