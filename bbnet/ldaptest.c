@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.6 2003-08-31 07:28:10 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.7 2003-08-31 11:44:01 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -59,14 +59,15 @@ int add_ldap_test(testitem_t *t)
 #ifdef BBGEN_LDAP
 	ldap_data_t *req;
 	LDAPURLDesc *ludp;
-	char *p;
+	char *urltotest;
 
 	/* 
 	 * t->testspec containts the full testspec
 	 * We need to remove any URL-encoding.
 	 */
-	for (p=t->testspec; (*p); p++) if (*p == '+') *p = ' ';
-	if (ldap_url_parse(t->testspec, &ludp) != 0) {
+	urltotest = urlunescape(t->testspec);
+
+	if (ldap_url_parse(urltotest, &ludp) != 0) {
 		errprintf("Invalid LDAP URL %s\n", t->testspec);
 		return 1;
 	}
@@ -75,7 +76,7 @@ int add_ldap_test(testitem_t *t)
 	t->privdata = (void *) malloc(sizeof(ldap_data_t)); 
 	req = (ldap_data_t *) t->privdata;
 	req->ldapdesc = (void *) ludp;
-	req->usetls = (strncmp(t->testspec, "ldaps:", 6) == 0);
+	req->usetls = (strncmp(urltotest, "ldaps:", 6) == 0);
 #ifdef BBGEN_LDAP_USESTARTTLS
 	if (req->usetls && (ludp->lud_port == LDAPS_PORT)) {
 		dprintf("Forcing port %d for ldaps with STARTTLS\n", LDAP_PORT );
@@ -438,7 +439,7 @@ int main(int argc, char *argv[])
 	item.host = &host;
 	item.service = &ldapservice;
 	item.dialup = item.reverse = item.silenttest = item.alwaystrue = 0;
-	item.testspec = argv[argi];
+	item.testspec = urlunescape(argv[argi]);
 
 	host.firstldap = &item;
 	host.conntimeout = 5;
