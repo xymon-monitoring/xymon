@@ -181,6 +181,19 @@ else
 	fi
 	echo ""
 
+	echo "bbgen can use the OpenSSL library to test SSL-enabled services"
+	echo "like POP3S, IMAPS, NNTPS and SMTPS. If you have the OpenSSL"
+	echo "library installed, I recommend that you enable this."
+	echo ""
+	echo "Do you want to be able to test SSL-enabled services (y) ?"
+	read ENABLESSL
+	if test "$ENABLESSL" = "" -o "$ENABLESSL" = "y"
+	then
+		SSLDEF="-DBBGEN_SSL"
+	else
+		SSLDEF=""
+	fi
+
 	echo "Where should I install the bbgen man-pages (/usr/local/man) ?"
 	read MANROOT
 	if test -z "$MANROOT"
@@ -200,6 +213,11 @@ else
 	echo "CURLINCLUDE = $CURLINCLUDE"     >>Makefile
 	echo "CURLLIB = $CURLLIBS"            >>Makefile
 	echo "USEMULTI ="                     >>Makefile
+	echo "#"                              >>Makefile
+	echo "# OpenSSL settings"             >>Makefile
+	echo "SSLFLAGS = $SSLDEF"             >>Makefile
+	echo "# Change the following line if compiler complains about a missing ssl.h" >>Makefile
+	echo "SSLINCLUDE = "                  >>Makefile
 
 	if test -r Makefile.`uname -s`
 	then
