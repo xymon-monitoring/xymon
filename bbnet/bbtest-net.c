@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.104 2003-08-31 08:09:57 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.105 2003-08-31 08:21:14 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -2016,9 +2016,14 @@ int main(int argc, char *argv[])
 
 		sprintf(msgline, "bbtest-net version %s\n", VERSION);
 		addtostatus(msgline);
-		if (http_library_version) sprintf(msgline, "HTTP library: %s\n", http_library_version);
-		if (ldap_library_version) sprintf(msgline, "LDAP library: %s\n", ldap_library_version);
-		addtostatus(msgline);
+		if (http_library_version) {
+			sprintf(msgline, "HTTP library: %s\n", http_library_version);
+			addtostatus(msgline);
+		}
+		if (ldap_library_version) {
+			sprintf(msgline, "LDAP library: %s\n", ldap_library_version);
+			addtostatus(msgline);
+		}
 
 		sprintf(msgline, "\nStatistics:\n Hosts total         : %5d\n Hosts with no tests : %5d\n Total test count    : %5d\n Status messages     : %5d\n Alert status msgs   : %5d\n Transmissions       : %5d\n", 
 			hostcount, notesthostcount, testcount, bbstatuscount, bbnocombocount, bbmsgcount);
