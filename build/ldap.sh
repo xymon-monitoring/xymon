@@ -1,0 +1,52 @@
+	echo "Checking for LDAP ..."
+
+	LDAPINC=""
+	LDAPLIB=""
+	for DIR in /usr/local/openldap /usr/local /usr
+	do
+		if test -f $DIR/include/ldap.h
+		then
+			LDAPINC=$DIR/include
+		fi
+
+		if test -f $DIR/lib/libldap.so
+		then
+			LDAPLIB=$DIR/lib
+		fi
+		if test -f $DIR/lib/libldap.a
+		then
+			LDAPLIB=$DIR/lib
+		fi
+	done
+
+	#
+	# Some systems require liblber also
+	#
+	if test -f $LDAPLIB/liblber.a
+	then
+		LDAPLBER=-llber
+	fi
+	if test -f $LDAPLIB/liblber.so
+	then
+		LDAPLBER=-llber
+	fi
+
+	cd build
+	OS=`uname -s` make -f Makefile.test-ldap clean
+	OS=`uname -s` LDAPINC="-I$LDAPINC" make -f Makefile.test-ldap test-compile
+	if [ $? -eq 0 ]; then
+		echo "Found LDAP include files in $LDAPINC"
+	else
+		echo "WARNING: LDAP include files found in $LDAPINC, but compile fails."
+	fi
+
+	OS=`uname -s` LDAPLIB="-L$LDAPLIB" LDAPLBER="$LDAPLBER" make -f Makefile.test-ldap test-link
+	if [ $? -eq 0 ]; then
+		echo "Found LDAP libraries in $LDAPLIB"
+	else
+		echo "WARNING: LDAP library files found in $LDAPLIB, but link fails."
+	fi
+	OS=`uname -s` make -f Makefile.test-ldap clean
+	cd ..
+
+
