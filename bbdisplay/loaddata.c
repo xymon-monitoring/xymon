@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.66 2003-05-22 05:56:18 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.67 2003-05-22 13:51:22 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -416,24 +416,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	newstate->entry->sumurl = NULL;
 
 	if (fgets(l, sizeof(l), fd)) {
-		if (strncmp(l, "green ", 6) == 0) {
-			newstate->entry->color = COL_GREEN;
-		}
-		else if (strncmp(l, "yellow ", 7) == 0) {
-			newstate->entry->color = COL_YELLOW;
-		}
-		else if (strncmp(l, "red ", 4) == 0) {
-			newstate->entry->color = COL_RED;
-		}
-		else if (strncmp(l, "blue ", 5) == 0) {
-			newstate->entry->color = COL_BLUE;
-		}
-		else if (strncmp(l, "clear ", 6) == 0) {
-			newstate->entry->color = COL_CLEAR;
-		}
-		else if (strncmp(l, "purple ", 7) == 0) {
-			newstate->entry->color = COL_PURPLE;
-		}
+		newstate->entry->color = parse_color(l);
 	}
 
 	if ( (log_st.st_mtime <= now) && (strcmp(testname, larrdcol) != 0) && (strcmp(testname, infocol) != 0) ) {

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.47 2003-05-22 05:56:18 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.48 2003-05-22 13:51:22 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -226,6 +226,30 @@ char *colorname(int color)
 	}
 
 	return cs;
+}
+
+int parse_color(char *colortext)
+{
+	if (strncmp(colortext, "green ", 6) == 0) {
+		return COL_GREEN;
+	}
+	else if (strncmp(colortext, "yellow ", 7) == 0) {
+		return COL_YELLOW;
+	}
+	else if (strncmp(colortext, "red ", 4) == 0) {
+		return COL_RED;
+	}
+	else if (strncmp(colortext, "blue ", 5) == 0) {
+		return COL_BLUE;
+	}
+	else if (strncmp(colortext, "clear ", 6) == 0) {
+		return COL_CLEAR;
+	}
+	else if (strncmp(colortext, "purple ", 7) == 0) {
+		return COL_PURPLE;
+	}
+
+	return -1;
 }
 
 int eventcolor(char *colortext)

@@ -36,6 +36,7 @@ extern char *malcop(const char *s);
 extern void init_timestamp(void);
 
 extern char *colorname(int color);
+extern int parse_color(char *colortext);
 extern int eventcolor(char *colortext);
 extern char *dotgiffilename(int color, int acked, int oldage);
 extern char *weekday_text(char *dayspec);
