@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.38 2005-02-19 22:56:41 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.39 2005-02-20 08:19:54 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -1465,6 +1465,11 @@ void load_state(char *filename)
 	fclose(fd);
 }
 
+void alert_printmode(int on)
+{
+	printmode = on;
+}
+
 void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
 {
 	int first = 1;
@@ -1472,8 +1477,6 @@ void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
 	char l[4096];
 	int count = 0;
 	char *p;
-
-	printmode = 1;
 
 	stoprulefound = 0;
 	while ((recip = next_recipient(alert, &first)) != NULL) {
@@ -1507,13 +1510,13 @@ void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
 		sprintf(l, "<td>%s</td>", recip->recipient);
 		addtobuffer(buf, buflen, l);
 
-		if (mindur) sprintf(l, "<td align=center>%d</td>", mindur/60); else strcpy(l, "<td align=center>-</td>");
+		sprintf(l, "<td align=center>%s</td>", durationstring(mindur));
 		addtobuffer(buf, buflen, l);
 
-		if (maxdur) sprintf(l, "<td align=center>%d</td>", maxdur/60); else strcpy(l, "<td align=center>-</td>");
+		sprintf(l, "<td align=center>%s</td>", durationstring(maxdur));
 		addtobuffer(buf, buflen, l);
 
-		sprintf(l, "<td align=center>%d</td>", (int)(recip->interval/60)); 
+		sprintf(l, "<td align=center>%s</td>", durationstring(recip->interval)); 
 		addtobuffer(buf, buflen, l);
 
 		if (timespec) sprintf(l, "<td align=center>%s</td>", timespec); else strcpy(l, "<td align=center>-</td>");
@@ -1544,7 +1547,5 @@ void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
 	sprintf(l, "%d   ", count);
 	p = strstr(*buf, "rowspan=###");
 	if (p) { p += strlen("rowspan="); memcpy(p, l, 3); }
-
-	printmode = 0;
 }
 
