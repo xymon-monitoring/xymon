@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.53 2003-06-07 15:52:33 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.54 2003-06-08 20:09:20 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1129,6 +1129,9 @@ void sigsegv_handler(int signum)
 
 void setup_signalhandler(char *programname)
 {
+	if (getenv("BB") == NULL) return;
+	if (getenv("BBDISP") == NULL) return;
+
 	strcpy(signal_bbcmd, getenv("BB"));
 	strcpy(signal_bbdisp, getenv("BBDISP"));
 	sprintf(signal_msg, "status %s.%s red - Program crashed\n\nFatal signal caught!\n", 
