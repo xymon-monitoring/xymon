@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.7 2003-06-23 15:00:18 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.8 2003-06-23 20:54:59 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -329,7 +329,7 @@ static void parse_query(void)
 		errormsg("Invalid request");
 		return;
 	}
-	else query = malcop(getenv("QUERY_STRING"));
+	else query = urldecode("QUERY_STRING");
 
 	token = strtok(query, "&");
 	while (token) {
