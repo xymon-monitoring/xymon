@@ -20,7 +20,7 @@ EVENTLOGOBJS = bb-eventlog.o util.o
 FINDHOSTOBJS = bb-findhost.o loadhosts.o util.o
 CSVINFOOBJS = bb-csvinfo.o
 MESSAGECGIOBJS = sendmsg-cgi.o
-HOSTSVCCGIOBJS = bb-hostsvc.o util.o
+HOSTSVCCGIOBJS = bb-hostsvc.o
 
 HTMLPAGES = bb-findhost.html
 GIFFILES = bbfindhost1.gif bbfindhost2.gif
