@@ -167,6 +167,9 @@ else
 	echo "different than the normal nslookup/dig output."
 	echo "Also, ares does not support name lookups via NIS/NIS+ (YP)."
 	echo ""
+	echo "NB: The ares library has not been thoroughly tested."
+	echo "    Use with caution!"
+	echo ""
 	echo "Do you want to use the ares DNS library ?"
 	read ENABLEARES
 	if test "$ENABLEARES" = "" -o "$ENABLEARES" = "y"
