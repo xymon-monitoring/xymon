@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.3 2003-11-16 08:01:50 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.4 2003-11-16 08:51:58 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -55,10 +55,8 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
 {
 	FILE *eventlog;
 	char eventlogfilename[MAX_PATH];
-	char hostname[MAX_LINE_LEN], svcname[MAX_LINE_LEN], newcol[MAX_LINE_LEN], oldcol[MAX_LINE_LEN];
 	time_t cutoff;
-	event_t	*events;
-	int num, eventintime_count, itemsfound;
+	event_t	*eventhead, *walk;
 	struct stat st;
 	char l[MAX_LINE_LEN];
 	char title[200];
@@ -97,92 +95,105 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
 		} while (!done);
 	}
 	
-	events = (event_t *) malloc(maxcount*sizeof(event_t));
-	for (num=0; (num < maxcount); num++) events[num].hostname = events[num].service = NULL;
-	eventintime_count = num = 0;
+	eventhead = NULL;
 
 	while (fgets(l, sizeof(l), eventlog)) {
 
+		time_t eventtime, changetime, duration;
+		char hostname[MAX_LINE_LEN], svcname[MAX_LINE_LEN], newcol[MAX_LINE_LEN], oldcol[MAX_LINE_LEN];
+		int state, itemsfound;
+		event_t *newevent;
+
 		itemsfound = sscanf(l, "%s %s %u %u %u %s %s %d",
 			hostname, svcname,
-			(unsigned int *)&events[num].eventtime, 
-			(unsigned int *)&events[num].changetime, 
-			(unsigned int *)&events[num].duration, 
-			newcol, oldcol, &events[num].state);
+			(unsigned int *)&eventtime, 
+			(unsigned int *)&changetime, 
+			(unsigned int *)&duration, 
+			newcol, oldcol, &state);
 
 		if ( (itemsfound == 8) && 
-		     (events[num].eventtime > cutoff) && 
+		     (eventtime > cutoff) && 
 		     (allowallhosts || find_host(hostname)) && 
 		     (wanted_eventcolumn(svcname)) ) {
-			if (events[num].hostname != NULL) free(events[num].hostname);
-			if (events[num].service != NULL) free(events[num].service);
-			events[num].hostname = malcop(hostname);
-			events[num].service = malcop(svcname);
-			events[num].newcolor = eventcolor(newcol);
-			events[num].oldcolor = eventcolor(oldcol);
-			eventintime_count++;
 
-			num = (num + 1) % maxcount;
+			newevent = (event_t *) malloc(sizeof(event_t));
+			newevent->hostname   = malcop(hostname);
+			newevent->service    = malcop(svcname);
+			newevent->eventtime  = eventtime;
+			newevent->changetime = changetime;
+			newevent->duration   = duration;
+			newevent->newcolor   = eventcolor(newcol);
+			newevent->oldcolor   = eventcolor(oldcol);
+
+			newevent->next = eventhead;
+			eventhead = newevent;
 		}
 	}
 
-	if (eventintime_count > 0) {
-		int firstevent, lastevent;
+	if (eventhead) {
 		char *bgcolors[2] = { "000000", "000033" };
 		int  bgcolor = 0;
+		int  count;
+		struct event_t *lasttoshow = eventhead;
 
-		if (eventintime_count <= maxcount) {
-			firstevent = 0;
-			lastevent = eventintime_count-1;
-		}
-		else {
-			firstevent = num;
-			lastevent = ( (num == 0) ? (maxcount-1) : (num-1));
-			eventintime_count = maxcount;
-		}
+		count=0;
+		walk=eventhead; 
+		do {
+			count++;
+			lasttoshow = walk;
+			walk = walk->next;
+		} while (walk && (count<maxcount));
 
 		sprintf(title, "%d events received in the past %u minutes",
-			eventintime_count, (unsigned int)((time(NULL)-events[firstevent].eventtime) / 60));
+			count, (unsigned int)((time(NULL) - lasttoshow->eventtime) / 60));
 
 		fprintf(output, "<BR><BR>\n");
         	fprintf(output, "<TABLE SUMMARY=\"$EVENTSTITLE\" BORDER=0>\n");
 		fprintf(output, "<TR BGCOLOR=\"333333\">\n");
 		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"teal\">%s</FONT></TD></TR>\n", title);
 
-		for (num = lastevent; (eventintime_count); eventintime_count--, num = ((num == 0) ? (maxcount-1) : (num-1)) ) {
+		for (walk=eventhead; (walk != lasttoshow->next); walk=walk->next) {
 			fprintf(output, "<TR BGCOLOR=%s>\n", bgcolors[bgcolor]);
 			bgcolor = ((bgcolor + 1) % 2);
 
-			fprintf(output, "<TD ALIGN=CENTER>%s</TD>\n", ctime(&events[num].eventtime));
+			fprintf(output, "<TD ALIGN=CENTER>%s</TD>\n", ctime(&walk->eventtime));
 
-			if (events[num].newcolor == COL_CLEAR) {
+			if (walk->newcolor == COL_CLEAR) {
 				fprintf(output, "<TD ALIGN=CENTER BGCOLOR=black><FONT COLOR=white>%s</FONT></TD>\n",
-					events[num].hostname);
+					walk->hostname);
 			}
 			else {
 				fprintf(output, "<TD ALIGN=CENTER BGCOLOR=%s><FONT COLOR=black>%s</FONT></TD>\n",
-					colorname(events[num].newcolor),
-					events[num].hostname);
+					colorname(walk->newcolor), walk->hostname);
 			}
 
-			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", events[num].service);
+			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", walk->service);
 			fprintf(output, "<TD><A HREF=\"%s\">\n", 
-				histlogurl(events[num].hostname, events[num].service, events[num].changetime));
+				histlogurl(walk->hostname, walk->service, walk->changetime));
 			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=%s></A>\n", 
-				getenv("BBSKIN"), dotgiffilename(events[num].oldcolor, 0, 0), 
+				getenv("BBSKIN"), dotgiffilename(walk->oldcolor, 0, 0), 
 				getenv("DOTHEIGHT"), getenv("DOTWIDTH"), 
-				colorname(events[num].oldcolor));
+				colorname(walk->oldcolor));
 			fprintf(output, "<IMG SRC=\"%s/arrow.gif\" BORDER=0 ALT=\"From -&gt; To\">\n", 
 				getenv("BBSKIN"));
 			fprintf(output, "<TD><A HREF=\"%s\">\n", 
-				histlogurl(events[num].hostname, events[num].service, events[num].eventtime));
+				histlogurl(walk->hostname, walk->service, walk->eventtime));
 			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=%s></A>\n", 
-				getenv("BBSKIN"), dotgiffilename(events[num].newcolor, 0, 0), 
+				getenv("BBSKIN"), dotgiffilename(walk->newcolor, 0, 0), 
 				getenv("DOTHEIGHT"), getenv("DOTWIDTH"), 
-				colorname(events[num].newcolor));
+				colorname(walk->newcolor));
 		}
 
 		fprintf(output, "</TABLE>\n");
+
+		/* Clean up */
+		walk = eventhead;
+		do {
+			struct event_t *tmp = walk;
+
+			walk = walk->next;
+			free(tmp->hostname); free(tmp->service); free(tmp);
+		} while (walk);
 	}
 	else {
 		/* No events during the past maxminutes */
@@ -197,12 +208,6 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
 		fprintf(output, "</CENTER>\n");
 	}
 
-	for (num=0; (num < maxcount); num++) {
-		if (events[num].hostname != NULL) free(events[num].hostname);
-		if (events[num].service != NULL) free(events[num].service);
-	}
-
-	free(events);
 	fclose(eventlog);
 }
 
