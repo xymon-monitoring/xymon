@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.6 2003-06-24 09:24:33 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.7 2003-06-24 09:31:47 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -156,7 +156,8 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 	fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "<TR></TR>\n");
-	fprintf(htmlrep, "<TR><TD COLSPAN=6 ALIGN=CENTER><B>Last 24 hours</B></TD></TR>\n");
+	fprintf(htmlrep, "<TR><TD COLSPAN=6 ALIGN=CENTER><B>%s</B></TD></TR>\n",
+		(startoffset ? "24 hour statistics" : "Last 24 hours"));
 	fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
 	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
 		getenv("BBSKIN"), dotgiffilename(COL_GREEN, 0, 1), colorname(COL_GREEN), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
