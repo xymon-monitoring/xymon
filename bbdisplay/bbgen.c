@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.179 2004-10-26 17:23:36 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.180 2004-10-26 21:58:55 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -40,6 +40,7 @@ static char rcsid[] = "$Id: bbgen.c,v 1.179 2004-10-26 17:23:36 henrik Exp $";
 #include "bb-replog.h"
 #include "sendmsg.h"
 #include "rssgen.h"
+#include "bbconvert.h"
 
 /* Global vars */
 bbgen_page_t	*pagehead = NULL;			/* Head of page list */
@@ -107,6 +108,7 @@ int main(int argc, char *argv[])
 	int             larrd043 = 0;				/* Set to use LARRD 0.43 disk displays */
 	char		*egocolumn = NULL;
 	int		embedded = 0;
+	int		bbgenddump = 0;
 
 	/* Setup standard header+footer (might be modified by option pageset) */
 	select_headers_and_footers("bb");
@@ -126,6 +128,9 @@ int main(int argc, char *argv[])
 	for (i = 1; (i < argc); i++) {
 		if (strcmp(argv[i], "--bbgend") == 0) {
 			usebbgend = 1;
+		}
+		else if (argnmatch(argv[i], "--bbgenddump")) {
+			bbgenddump = 1;
 		}
 		else if (strcmp(argv[i], "--nopurple") == 0) {
 			enable_purpleupd = 0;
@@ -625,6 +630,11 @@ int main(int argc, char *argv[])
 	statehead = load_state(&dispsums);
 	if (embedded || snapshot) dispsums = NULL;
 	add_timestamp("Load STATE done");
+
+	if (bbgenddump) {
+		dump_bbgendchk();
+		return 0;
+	}
 
 	/* Calculate colors of hosts and pages */
 	calc_hostcolors(hosthead, bb2ignorecolumns);
