@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.40 2003-08-21 20:35:50 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.41 2003-08-22 15:03:15 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -435,8 +435,7 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 
 #ifdef MULTICURL
 	CURLM *multihandle;
-	CURLMsg *msg;
-	int multiactive, msgsleft;
+	int multiactive;
 #endif
 
 	if (logfile) {
@@ -552,7 +551,8 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 		fd_set fdread;
 		fd_set fdwrite;
 		fd_set fdexcep;
-		int maxfd, selres;
+		int maxfd, selres, msgsleft;
+		CURLMsg *msg;
 
 		/* Setup the file descriptors */
 		FD_ZERO(&fdread); FD_ZERO(&fdwrite); FD_ZERO(&fdexcep);
@@ -589,18 +589,18 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 				while (curl_multi_perform(multihandle, &multiactive) == CURLM_CALL_MULTI_PERFORM);
 				break;
 		}
-	}
 
-	/* Pick up the result codes. Odd way of doing it, but so says libcurl */
-	while ((msg = curl_multi_info_read(multihandle, &msgsleft))) {
-		if (msg->msg == CURLMSG_DONE) {
-			int found = 0;
+		/* Pick up the result codes. Odd way of doing it, but so says libcurl */
+		while ((msg = curl_multi_info_read(multihandle, &msgsleft))) {
+			if (msg->msg == CURLMSG_DONE) {
+				int found = 0;
 
-			for (t = httptest->items; (t && !found); t = t->next) {
-				req = (http_data_t *) t->privdata;
+				for (t = httptest->items; (t && !found); t = t->next) {
+					req = (http_data_t *) t->privdata;
 
-				found = (req->curl == msg->easy_handle);
-				if (found) req->res = msg->data.result;
+					found = (req->curl == msg->easy_handle);
+					if (found) req->res = msg->data.result;
+				}
 			}
 		}
 	}
