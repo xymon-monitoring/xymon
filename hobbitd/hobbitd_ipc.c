@@ -22,7 +22,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.15 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.16 2005-01-21 23:15:38 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -56,15 +56,20 @@ hobbitd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	struct sembuf s;
 	hobbitd_channel_t *newch;
 	int flags = ((role == CHAN_MASTER) ? (IPC_CREAT | 0600) : 0);
+	char *bbh = xgetenv("BBHOME");
 
-	if ( (xgetenv("BBHOME") == NULL) || (stat(xgetenv("BBHOME"), &st) == -1) ) {
+	if ( (bbh == NULL) || (stat(bbh, &st) == -1) ) {
 		errprintf("BBHOME not defined, or points to invalid directory - cannot continue.\n");
 		return NULL;
 	}
 
-	key = ftok(xgetenv("BBHOME"), chnid);
-	newch = (hobbitd_channel_t *)malloc(sizeof(hobbitd_channel_t));
+	key = ftok(bbh, chnid);
+	if (key == -1) {
+		errprintf("Could not generate shmem key based on %s: %s\n", bbh, strerror(errno));
+		return NULL;
+	}
 
+	newch = (hobbitd_channel_t *)malloc(sizeof(hobbitd_channel_t));
 	newch->seq = 0;
 	newch->channelid = chnid;
 	newch->msgcount = 0;
