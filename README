@@ -1,4 +1,4 @@
-README file for bbgen version 1.4
+README file for bbgen version 1.5
 =================================
 
 bbgen is a drop-in replacement for the bb-display.sh script that 
@@ -271,5 +271,5 @@ See the "TODO" file.
 
 
 Henrik Storner <henrik@storner.dk>
-Feb 4, 2003
+Feb 5, 2003
 
