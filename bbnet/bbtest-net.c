@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.164 2004-08-27 15:53:20 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.165 2004-08-28 06:39:44 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1703,8 +1703,8 @@ void send_results(service_t *service, int failgoesclear)
 		}
 
 		if (t->duration.tv_sec != -1) {
-			sprintf(msgtext, "\nSeconds: %ld.%03ld\n", 
-				t->duration.tv_sec, t->duration.tv_usec / 1000);
+			sprintf(msgtext, "\nSeconds: %ld.%02ld\n", 
+				t->duration.tv_sec, t->duration.tv_usec / 10000);
 			addtostatus(msgtext);
 		}
 		addtostatus("\n\n");
