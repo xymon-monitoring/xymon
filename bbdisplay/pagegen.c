@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.86 2003-08-16 06:59:26 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.87 2003-08-26 09:23:34 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -814,11 +814,13 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 	do_groups(page->groups, output, pagepath);
 	if (!embedded && hostsbeforepages && page->subpages) do_page_subpages(output, page->subpages, pagepath);
 
-	/* Summaries and extensions on main page only */
+	/* Summaries on main page only */
 	if (!embedded && (page->parent == NULL)) {
 		do_summaries(dispsums, output);
-		do_bbext(output, "BBMKBBEXT", "mkbb");
 	}
+
+	/* Extension scripts */
+	do_bbext(output, "BBMKBBEXT", "mkbb");
 
 	headfoot(output, hf_prefix[PAGE_BB], pagepath, "footer", page->color);
 
