@@ -273,7 +273,34 @@ file. If no tests are specified, all tests will be included.
 .sp
 .IP "--nsbar=FILENAME"
 Generate an HTML file suitable for a Netscape 6/Mozilla sidebar
-entry.
+entry. To actually enable your users to obtain such a sidebar
+entry, you need this Javascript code in a webpage (e.g. you can
+include it in the $BBHOME/web/bb_header file):
+.sp
+<SCRIPT TYPE="text/javascript">
+.br
+<!--
+.br
+function addNetscapePanel() {
+.br
+   if ((typeof window.sidebar == "object") && (typeof window.sidebar.addPanel == "function"))
+.br
+      window.sidebar.addPanel ("Big Brother", "http://your.server.com/nstab.html","");
+.br
+   else
+.br
+      alert("Only for Mozilla or Netscape 6+");
+.br
+}
+.br
+//-->
+.br
+</SCRIPT>
+.sp
+and then you can include a "Add this to sidebar" link using this as a template:
+.sp
+<A HREF="javascript:addNetscapePanel();">Add to Sidebar</A>
+.br
 .sp
 .IP "--rss=FILENAME"
 Generate an RSS/RDF content delivery stream of your critical Big Brother 
