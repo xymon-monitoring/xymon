@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.81 2004-12-12 21:52:21 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.82 2004-12-13 06:53:39 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1061,13 +1061,13 @@ void free_log_t(bbgend_log_t *zombie)
 	bbgend_meta_t *mwalk, *mtmp;
 
 	mwalk = zombie->metas;
-	do {
+	while (mwalk) {
 		mtmp = mwalk;
 		mwalk = mwalk->next;
 
 		if (mtmp->value) free(mtmp->value);
 		free(mtmp);
-	} while (mwalk);
+	}
 
 	if (zombie->message) free(zombie->message);
 	if (zombie->dismsg) free(zombie->dismsg);
