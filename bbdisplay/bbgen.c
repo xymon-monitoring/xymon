@@ -215,6 +215,35 @@ link_t *find_link(const char *name)
 	return (l ? l : &null_link);
 }
 
+char *columnlink(link_t *link, char *colname)
+{
+	static char linkurl[60];
+
+	if (link != &null_link) {
+		sprintf(linkurl, "%s/%s", link->urlprefix, link->filename);
+	}
+	else {
+		sprintf(linkurl, "help/bb-help.html#%s", colname);
+	}
+	
+	return linkurl;
+}
+
+char *hostlink(link_t *link, char *hostname)
+{
+	static char linkurl[60];
+
+	if (link != &null_link) {
+		sprintf(linkurl, "%s/%s", link->urlprefix, link->filename);
+	}
+	else {
+		sprintf(linkurl, "bb.html");
+	}
+
+	return linkurl;
+}
+
+
 page_t *init_page(const char *name, const char *title)
 {
 	page_t *newpage = malloc(sizeof(page_t));
@@ -850,15 +879,18 @@ void do_hosts(host_t *head, FILE *output, char *grouptitle)
 
 		columncount = 1; /* Count the title also */
 		for (gc=groupcols; (gc); gc = gc->next, columncount++) {
-			fprintf(output, 
-			    " <TD ALIGN=CENTER VALIGN=BOTTOM WIDTH=45> <A HREF=\"/bb/%s/%s\"><FONT %s><B>%s</B></FONT></A> </TD>\n", 
-			    gc->column->link->urlprefix, gc->column->link->filename, getenv("MKBBCOLFONT"), gc->column->name);
+			fprintf(output, " <TD ALIGN=CENTER VALIGN=BOTTOM WIDTH=45>\n");
+			fprintf(output, " <A HREF=\"%s/%s\"><FONT %s><B>%s</B></FONT></A> </TD>\n", 
+				getenv("BBWEB"), columnlink(gc->column->link, gc->column->name), 
+				getenv("MKBBCOLFONT"), gc->column->name);
 		}
 		fprintf(output, "</TR> \n<TR><TD COLSPAN=%d><HR WIDTH=100%%></TD></TR>\n\n", columncount);
 
 		for (h = head; (h); h = h->next) {
-			fprintf(output, "<TR>\n <TD NOWRAP><A NAME=\"%s\">\n <A HREF=\"/bb/%s/%s\" TARGET=\"_blank\"><FONT %s>%s</FONT></A>\n </TD>",
-				h->hostname, h->link->urlprefix, h->link->filename, getenv("MKBBROWFONT"), h->hostname);
+			fprintf(output, "<TR>\n <TD NOWRAP><A NAME=\"%s\">\n", h->hostname);
+			fprintf(output, "<A HREF=\"%s/%s\" TARGET=\"_blank\"><FONT %s>%s</FONT></A>\n </TD>",
+				getenv("BBWEB"), hostlink(h->link, h->hostname), 
+				getenv("MKBBROWFONT"), h->hostname);
 
 			for (gc = groupcols; (gc); gc = gc->next) {
 				fprintf(output, "<TD ALIGN=CENTER>");
@@ -1027,7 +1059,15 @@ void do_subpage(page_t *page, char *filename, char *upperpagename)
 
 int main(int argc, char *argv[])
 {
+	char	pagedir[256];
 	page_t *p, *q;
+
+	if (argc > 1) {
+		strcpy(pagedir, argv[1]);
+	}
+	else {
+		sprintf(pagedir, "%s/www", getenv("$BBHOME"));
+	}
 
 	linkhead = load_all_links();
 	/* dumplinks(linkhead); */
@@ -1065,7 +1105,10 @@ int main(int argc, char *argv[])
 #endif
 
 	/* Generate pages */
-	chdir("/var/apache/htdocs/bb2");	/* FIXME: Production should be chdir(getenv("$BBHOME")/www); */
+	if (chdir(pagedir) != 0) {
+		printf("Cannot change to webpage directory %s\n", pagedir);
+		exit(1);
+	}
 
 	do_bb_page(pagehead, "bb.html");
 	for (p=pagehead->next; (p); p = p->next) {
