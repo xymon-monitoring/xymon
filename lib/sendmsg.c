@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.27 2004-09-25 15:14:49 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.28 2004-10-04 12:44:03 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -370,7 +370,7 @@ retry_connect:
 		}
 	}
 
-	dprintf("Closing connection");
+	dprintf("Closing connection\n");
 	shutdown(sockfd, SHUT_RDWR);
 	close(sockfd);
 	free(rcptip);
@@ -700,6 +700,12 @@ int main(int argc, char *argv[])
 			result = sendmessage(msg, recipient, stdout, 0);
 		}
 		else if (strncmp(msg, "config ", 7) == 0) {
+			result = sendmessage(msg, recipient, stdout, 1);
+		}
+		else if (strncmp(msg, "bbgendlog ", 10) == 0) {
+			result = sendmessage(msg, recipient, stdout, 1);
+		}
+		else if (strncmp(msg, "bbgendbrd", 9) == 0) {
 			result = sendmessage(msg, recipient, stdout, 1);
 		}
 		else {
