@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.14 2004-11-21 10:47:46 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.15 2004-11-28 09:13:28 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -112,21 +112,10 @@ void loadenv(char *envfile)
 	fd = stackfopen(envfile, "r");
 	if (fd) {
 		while (stackfgets(l, sizeof(l), "include", NULL)) {
-			/* Kill the newline ... */
-			p = strchr(l, '\n'); if (p) *p = '\0';
+			grok_input(l);
 
-			/* ... and any comments ... */
-			p = l + strlen(l) - 1;
-			while ((p > l) && (*p != '"') && (*p != '#')) p--;
-			if (*p == '#') *p = '\0'; /* Kill all comments */
-
-			/* ... and trailing whitespace */
-			p = l + strlen(l) -1; while (isspace((int)*p) && (p >= l)) p--;
-			*(p+1) = '\0';
-
-			p = l + strspn(l, " \t");
-			if ((*p) && (*p != '#') && strchr(p, '=')) {
-				oneenv = strdup(expand_env(p));
+			if (strlen(l) && strchr(l, '=')) {
+				oneenv = strdup(expand_env(l));
 				p = strchr(oneenv, '=');
 				if (*(p+1) == '"') {
 					/* Move string over the first '"' */
@@ -361,6 +350,42 @@ char *gettok(char *s, char *delims)
 	}
 
 	return result;
+}
+
+void grok_input(char *l)
+{
+	/*
+	 * This routine sanitizes an input line, stripping off whitespace,
+	 * removing comments and un-escaping \-escapes and quotes.
+	 */
+	char *p, *outp;
+	int inquote;
+
+	p = strchr(l, '\n'); if (p) *p = '\0';
+
+	/* Remove quotes, comments and leading whitespace */
+	p = l + strspn(l, " \t"); outp = l; inquote = 0;
+	while (*p) {
+		if (*p == '\\') {
+			*outp = *(p+1);
+			outp++; p += 2;
+		}
+		else if (*p == '"') {
+			inquote = (1 - inquote);
+			p++;
+		}
+		else if ((*p == '#') && !inquote) {
+			*p = '\0';
+		}
+		else {
+			if (outp != p) *outp = *p;
+			outp++; p++;
+		}
+	}
+
+	/* Remove trailing whitespace */
+	while ((outp > l) && (isspace((int) *(outp-1)))) outp--;
+	*outp = '\0';
 }
 
 char *getword(char *buf)

@@ -28,6 +28,7 @@ extern int argnmatch(char *arg, char *match);
 extern void addtobuffer(char **buf, int *bufsz, char *newtext);
 extern char *msg_data(char *msg);
 extern char *gettok(char *s, char *delims);
+extern void grok_input(char *s);
 extern unsigned int IPtou32(int ip1, int ip2, int ip3, int ip4);
 extern char *u32toIP(unsigned int ip32);
 extern const char *textornull(const char *text);
