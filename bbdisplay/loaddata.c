@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.79 2003-06-10 20:22:26 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.80 2003-06-18 08:53:04 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -34,6 +34,8 @@ static char rcsid[] = "$Id: loaddata.c,v 1.79 2003-06-10 20:22:26 henrik Exp $";
 #include "larrdgen.h"
 #include "infogen.h"
 #include "debug.h"
+
+#define MAX_TARGETPAGES_PER_HOST 10
 
 char    *nopropyellowdefault = NULL;
 char    *nopropreddefault = NULL;
@@ -1081,7 +1083,9 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			int prefer = 0;
 			int nodisp = 0;
 			char *alertlist, *onwaplist, *nopropyellowlist, *nopropredlist, *larrdgraphs;
-			char *displayname, *targetpagename;
+			char *displayname;
+			char *targetpagelist[MAX_TARGETPAGES_PER_HOST];
+			int targetpagecount;
 			char *tag;
 			char *startoftags = strchr(l, '#');
 
@@ -1092,7 +1096,10 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			else tag = NULL;
 
 			alertlist = onwaplist = nopropyellowlist = nopropredlist = larrdgraphs = NULL;
-			targetpagename = displayname = NULL;
+			displayname = NULL;
+			for (targetpagecount=0; (targetpagecount < MAX_TARGETPAGES_PER_HOST); targetpagecount++) 
+				targetpagelist[targetpagecount] = NULL;
+			targetpagecount = 0;
 
 			while (tag) {
 				if (strcmp(tag, "dialup") == 0) 
@@ -1135,7 +1142,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 					}
 				}
 				else if (argnmatch(tag, hosttag)) {
-					targetpagename = malcop(tag+strlen(hosttag));
+					targetpagelist[targetpagecount++] = malcop(tag+strlen(hosttag));
 				}
 
 				if (tag) tag = strtok(NULL, " \t\r\n");
@@ -1183,72 +1190,80 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				curhost->parent = (cursubparent ? cursubparent : (cursubpage ? cursubpage : curpage));
 				if (curtitle) { curhost->pretitle = curtitle; curtitle = NULL; }
 			}
-			else if (targetpagename) {
+			else if (targetpagecount) {
 
-				char savechar;
-				int wantedgroup = 0;
-				pagelist_t *targetpage = NULL;
+				int pgnum;
 
-				/* Put the host into the page specified by the PGSET: tag */
-				p = strchr(targetpagename, ',');
-				if (p) {
-					savechar = *p;
-					*p = '\0';
-					wantedgroup = atoi(p+1);
-				}
-				else {
-					savechar = '\0';
-					p = targetpagename + strlen(targetpagename);
-				}
+				for (pgnum=0; (pgnum < targetpagecount); pgnum++) {
+					char *targetpagename = targetpagelist[pgnum];
 
-				/* Find the page */
-				for (targetpage = pagelisthead; (targetpage && (strcmp(targetpagename, targetpage->pageentry->name) != 0)); targetpage = targetpage->next) ;
+					char savechar;
+					int wantedgroup = 0;
+					pagelist_t *targetpage = NULL;
 
-				*p = savechar;
-				if (targetpage == NULL) {
-					errprintf("Warning: Cannot find any target page named %s - dropping host %s'\n", 
-						targetpagename, hostname);
-				}
-				else {
-					host_t *newhost = init_host(hostname, displayname,
-								    ip1, ip2, ip3, ip4, dialup, prefer,
-								    alertlist, onwaplist,
-								    startoftags, nopropyellowlist,nopropredlist,
-								    larrdgraphs);
+					/* Put the host into the page specified by the PGSET: tag */
+					p = strchr(targetpagename, ',');
+					if (p) {
+						savechar = *p;
+						*p = '\0';
+						wantedgroup = atoi(p+1);
+					}
+					else {
+						savechar = '\0';
+						p = targetpagename + strlen(targetpagename);
+					}
 
-					if (wantedgroup > 0) {
-						group_t *gwalk;
-						host_t  *hwalk;
-						int i;
+					/* Find the page */
+					for (targetpage = pagelisthead; (targetpage && (strcmp(targetpagename, targetpage->pageentry->name) != 0)); targetpage = targetpage->next) ;
 
-						for (gwalk = targetpage->pageentry->groups, i=1; (gwalk && (i < wantedgroup)); i++,gwalk=gwalk->next) ;
-						if (gwalk) {
-							if (gwalk->hosts == NULL)
-								gwalk->hosts = newhost;
+					*p = savechar;
+					if (targetpage == NULL) {
+						errprintf("Warning: Cannot find any target page named %s - dropping host %s'\n", 
+							targetpagename, hostname);
+					}
+					else {
+						host_t *newhost = init_host(hostname, displayname,
+									    ip1, ip2, ip3, ip4, dialup, prefer,
+									    alertlist, onwaplist,
+									    startoftags, nopropyellowlist,nopropredlist,
+									    larrdgraphs);
+
+						if (wantedgroup > 0) {
+							group_t *gwalk;
+							host_t  *hwalk;
+							int i;
+
+							for (gwalk = targetpage->pageentry->groups, i=1; (gwalk && (i < wantedgroup)); i++,gwalk=gwalk->next) ;
+							if (gwalk) {
+								if (gwalk->hosts == NULL)
+									gwalk->hosts = newhost;
+								else {
+									for (hwalk = gwalk->hosts; (hwalk->next); hwalk = hwalk->next) ;
+									hwalk->next = newhost;
+								}
+							}
 							else {
-								for (hwalk = gwalk->hosts; (hwalk->next); hwalk = hwalk->next) ;
-								hwalk->next = newhost;
+								errprintf("Warning: Cannot find group %d for host %s - dropping host\n",
+									wantedgroup, hostname);
 							}
 						}
 						else {
-							errprintf("Warning: Cannot find group %d for host %s - dropping host\n",
-								wantedgroup, hostname);
+							/* Just put in on the page's hostlist */
+							host_t *walk;
+	
+							if (targetpage->pageentry->hosts == NULL)
+								targetpage->pageentry->hosts = newhost;
+							else {
+								for (walk = targetpage->pageentry->hosts; (walk->next); walk = walk->next) ;
+								walk->next = newhost;
+							}
 						}
-					}
-					else {
-						/* Just put in on the page's hostlist */
-						host_t *walk;
 
-						if (targetpage->pageentry->hosts == NULL)
-							targetpage->pageentry->hosts = newhost;
-						else {
-							for (walk = targetpage->pageentry->hosts; (walk->next); walk = walk->next) ;
-							walk->next = newhost;
-						}
+						newhost->parent = targetpage->pageentry;
+						if (curtitle) newhost->pretitle = curtitle;
 					}
 
-					newhost->parent = targetpage->pageentry;
-					if (curtitle) { newhost->pretitle = curtitle; curtitle = NULL; }
+					curtitle = NULL;
 				}
 			}
 
@@ -1257,7 +1272,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			if (nopropyellowlist) free(nopropyellowlist);
 			if (nopropredlist) free(nopropredlist);
 			if (larrdgraphs) free(larrdgraphs);
-			if (targetpagename) free(targetpagename);
+			for (targetpagecount=0; (targetpagecount < MAX_TARGETPAGES_PER_HOST); targetpagecount++) 
+				if (targetpagelist[targetpagecount]) free(targetpagelist[targetpagecount]);
 		}
 		else if (strncmp(l, summarytag, strlen(summarytag)) == 0) {
 			/* summary row.column      IP-ADDRESS-OF-PARENT    http://bb4.com/ */
