@@ -1,0 +1,204 @@
+/*----------------------------------------------------------------------------*/
+/* Big Brother webpage generator tool.                                        */
+/*                                                                            */
+/* This is a replacement for the "bb-rep.sh" script                           */
+/*                                                                            */
+/* Primary reason for doing this: Shell scripts perform badly, and with a     */
+/* medium-sized installation (~150 hosts) it takes several minutes to         */
+/* generate the webpages. This is a problem, when the pages are used for      */
+/* 24x7 monitoring of the system status.                                      */
+/*                                                                            */
+/* Copyright (C) 2003 Henrik Storner <henrik@storner.dk>                      */
+/*                                                                            */
+/* This program is released under the GNU General Public License (GPL),       */
+/* version 2. See the file "COPYING" for details.                             */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+static char rcsid[] = "$Id: bb-rep.c,v 1.1 2003-06-20 22:56:58 henrik Exp $";
+
+#include <stdio.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+#include "bbgen.h"
+#include "util.h"
+#include "debug.h"
+
+/*
+ * This program is invoked via CGI with QUERY_STRING containing:
+ *
+ *	start-mon=Jun&
+ *	start-day=19&
+ *	start-yr=2003&
+ *	end-mon=Jun&
+ *	end-day=19&
+ *	end-yr=2003&
+ *	style=crit&
+ *	SUB=Generate+Report
+ *
+ */
+
+char *reqenv[] = {
+"BBHOME",
+"BBREP",
+"BBREPURL",
+NULL };
+
+char *style = "";
+time_t starttime = 0;
+time_t endtime = 0;
+
+char *monthnames[13] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", NULL };
+
+void errmsg(char *msg)
+{
+	printf("Content-type: text/html\n\n");
+	printf("<html><head><title>Invalid request</title></head>\n");
+	printf("<body>%s</body></html>\n", msg);
+	exit(1);
+}
+
+void parse_query(void)
+{
+	char *query, *token;
+	int startday, startmon, startyear;
+	int endday, endmon, endyear;
+	struct tm tmbuf;
+
+	if (getenv("QUERY_STRING") == NULL) {
+		errmsg("Invalid request");
+		return;
+	}
+	else query = malcop(getenv("QUERY_STRING"));
+
+	token = strtok(query, "&");
+	while (token) {
+		char *val;
+		
+		val = strchr(token, '='); if (val) { *val = '\0'; val++; }
+
+		if (argnmatch(token, "start-day")) {
+			startday = atoi(val);
+		}
+		else if (argnmatch(token, "start-mon")) {
+			for (startmon=0; (monthnames[startmon] && strcmp(val, monthnames[startmon])); startmon++) ;
+			if (startmon >= 12) startmon = -1;
+		}
+		else if (argnmatch(token, "start-yr")) {
+			startyear = atoi(val);
+		}
+		else if (argnmatch(token, "end-day")) {
+			endday = atoi(val);
+		}
+		else if (argnmatch(token, "end-mon")) {
+			for (endmon=0; (monthnames[endmon] && strcmp(val, monthnames[endmon])); endmon++) ;
+			if (endmon > 12) endmon = -1;
+		}
+		else if (argnmatch(token, "end-yr")) {
+			endyear = atoi(val);
+		}
+		else if (argnmatch(token, "style")) {
+			style = malcop(val);
+		}
+
+		token = strtok(NULL, "&");
+	}
+
+	memset(&tmbuf, 0, sizeof(tmbuf));
+	tmbuf.tm_mday = startday;
+	tmbuf.tm_mon = startmon;
+	tmbuf.tm_year = startyear - 1900;
+	starttime = mktime(&tmbuf);
+
+	memset(&tmbuf, 0, sizeof(tmbuf));
+	tmbuf.tm_mday = endday;
+	tmbuf.tm_mon = endmon;
+	tmbuf.tm_year = endyear - 1900;
+	endtime = mktime(&tmbuf);
+
+	if ((starttime == -1) || (endtime == -1) || (starttime > time(NULL))) errmsg("Invalid parameters");
+
+	if (starttime == endtime) {
+		/* Set end at 23:59:59 same day */
+		endtime += 86399;
+	}
+
+	if (endtime > time(NULL)) endtime = time(NULL);
+
+	if (starttime > endtime) {
+		/* Swap start and end times */
+		time_t tmp;
+
+		tmp = endtime;
+		endtime = starttime;
+		starttime = tmp;
+	}
+
+	free(query);
+}
+
+
+/* These are dummy vars needed by stuff in util.c */
+hostlist_t      *hosthead = NULL;
+link_t          *linkhead = NULL;
+link_t  null_link = { "", "", "", NULL };
+
+int main(int argc, char *argv[])
+{
+	char dirid[MAX_PATH];
+	char outdir[MAX_PATH];
+	char bbwebenv[MAX_PATH];
+	char bbgencmd[MAX_PATH];
+	char bbgentimeopt[100];
+	char *bbgen_argv[20];
+	int i;
+	pid_t childpid;
+	int childstat;
+
+	envcheck(reqenv);
+	parse_query();
+
+	sprintf(dirid, "%u-%lu", (unsigned int)getpid(), time(NULL));
+	sprintf(outdir, "%s/%s", getenv("BBREP"), dirid);
+	mkdir(outdir, 0755);
+
+	sprintf(bbwebenv, "BBWEB=%s/%s", getenv("BBREPURL"), dirid);
+	putenv(bbwebenv);
+
+	sprintf(bbgencmd, "%s/bin/bbgen", getenv("BBHOME"));
+	bbgen_argv[0] = bbgencmd;
+	sprintf(bbgentimeopt, "--reporttime=%lu:%lu:%s", starttime, endtime, style);
+	bbgen_argv[1] = bbgentimeopt;
+	for (i=1; (i<argc); i++) bbgen_argv[i+1] = argv[i];
+	bbgen_argv[1+argc] = outdir;
+	bbgen_argv[2+argc] = NULL;
+
+	childpid = fork();	
+	if (childpid == 0) {
+		execv(bbgencmd, bbgen_argv);
+	}
+	else if (childpid > 0) {
+		wait(&childstat);
+		if (WIFEXITED(childstat) && (WEXITSTATUS(childstat) != 0) ) {
+			errmsg("Could not generate report");
+		}
+		else {
+			printf("Content-Type: text/html\n\n");
+			printf("<HTML><HEAD>\n");
+			printf("<META HTTP-EQUIV=\"REFRESH\" CONTENT=\"0; URL=%s/%s/\"\n", getenv("BBREPURL"), dirid);
+			printf("</HEAD><BODY BGCOLOR=\"000000\"></BODY></HTML>\n");
+		}
+	}
+	else {
+		errmsg("Fork failed");
+	}
+
+	return 0;
+}
+
