@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.30 2003-10-01 09:38:25 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.31 2003-10-13 16:54:26 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -56,8 +56,10 @@ rrdlayout_t rrdnames[] = {
 
 static char *rrdlink_url(char *hostname, char *dispname, rrd_t *rrd, int larrd043)
 {
-	static char rrdurl[4096];
-	char svcurl[4096];
+	static char *rrdurl = NULL;
+	static int rrdurlsize = 0;
+	char *svcurl;
+	int svcurllen, rrdparturlsize;
 	const char *linkfmt = "<br><A HREF=\"%s\"><IMG BORDER=0 SRC=\"%s&amp;graph=hourly\" ALT=\"larrd is accumulating %s\"></A>\n";
 
 	dprintf("rrdlink_url: host %s, rrd %s (partname:%s, maxgraphs:%d, count=%d), larrd043=%d\n", 
@@ -65,12 +67,29 @@ static char *rrdlink_url(char *hostname, char *dispname, rrd_t *rrd, int larrd04
 		rrd->rrdname->name, textornull(rrd->rrdname->partname), rrd->rrdname->maxgraphs, rrd->count, 
 		larrd043);
 
+	svcurllen = 2048                        + 
+		    strlen(getenv("CGIBINURL")) + 
+		    strlen(hostname)            + 
+		    strlen(rrd->rrdname->name)  + 
+		    (dispname ? strlen(urlencode(dispname)) : 0);
+	svcurl = (char *) malloc(svcurllen);
+
+	rrdparturlsize = 2048 +
+			 strlen(linkfmt)    +
+			 2*svcurllen        +
+			 strlen(rrd->rrdname->name);
+
+	if (rrdurl == NULL) {
+		rrdurlsize = rrdparturlsize;
+		rrdurl = (char *) malloc(rrdurlsize);
+	}
+	*rrdurl = '\0';
+
 	if (larrd043 && rrd->rrdname->partname) {
-		char rrdparturl[4096];
+		char *rrdparturl;
 		int first = 0;
 
-		rrdurl[0] = '\0';
-
+		rrdparturl = (char *) malloc(rrdparturlsize);
 		do {
 			int last = (first-1)+rrd->rrdname->maxgraphs;
 
@@ -83,9 +102,14 @@ static char *rrdlink_url(char *hostname, char *dispname, rrd_t *rrd, int larrd04
 				strcat(svcurl, urlencode(dispname));
 			}
 			sprintf(rrdparturl, linkfmt, svcurl, svcurl, rrd->rrdname->name);
+			if ((strlen(rrdparturl) + strlen(rrdurl) + 1) >= rrdurlsize) {
+				rrdurlsize += (4096 + (rrd->count - last)*rrdparturlsize);
+				rrdurl = (char *) realloc(rrdurl, rrdurlsize);
+			}
 			strcat(rrdurl, rrdparturl);
 			first = last+1;
 		} while (first < rrd->count);
+		free(rrdparturl);
 	}
 	else {
 		sprintf(svcurl, "%s/larrd-grapher.cgi?host=%s&amp;service=%s", 
@@ -99,12 +123,14 @@ static char *rrdlink_url(char *hostname, char *dispname, rrd_t *rrd, int larrd04
 
 	dprintf("URLtext: %s\n", rrdurl);
 
+	free(svcurl);
 	return rrdurl;
 }
 
 static char *rrdlink_text(host_t *host, rrd_t *rrd, int larrd043)
 {
-	static char rrdlink[4096];
+	static char *rrdlink = NULL;
+	static int rrdlinksize = 0;
 	char *graphdef, *p;
 
 	dprintf("rrdlink_text: host %s, rrd %s, larrd043=%d\n", host->hostname, rrd->rrdname->name, larrd043);
@@ -145,7 +171,11 @@ static char *rrdlink_text(host_t *host, rrd_t *rrd, int larrd043)
 	}
 
 	/* It must be included. */
-	rrdlink[0] = '\0';
+	if (rrdlink == NULL) {
+		rrdlinksize = 4096;
+		rrdlink = (char *)malloc(rrdlinksize);
+	}
+	*rrdlink = '\0';
 
 	p = graphdef + strlen(rrd->rrdname->name);
 	if (*p == ':') {
@@ -153,6 +183,7 @@ static char *rrdlink_text(host_t *host, rrd_t *rrd, int larrd043)
 		char savechar;
 		char *enddef;
 		rrd_t *myrrd;
+		char *partlink;
 
 		myrrd = (rrd_t *) malloc(sizeof(rrd_t));
 		myrrd->rrdname = (rrdlayout_t *) malloc(sizeof(rrdlayout_t));
@@ -163,7 +194,6 @@ static char *rrdlink_text(host_t *host, rrd_t *rrd, int larrd043)
 
 		graphdef = (p+1);
 		do {
-
 			p = strchr(graphdef, '|');			/* Ends at '|' ? */
 			if (p == NULL) p = graphdef + strlen(graphdef);	/* Ends at end of string */
 			savechar = *p; *p = '\0'; 
@@ -173,7 +203,12 @@ static char *rrdlink_text(host_t *host, rrd_t *rrd, int larrd043)
 			myrrd->rrdname->maxgraphs = 999;
 			myrrd->count = 1;
 			myrrd->next = NULL;
-			strcat(rrdlink, rrdlink_url(host->hostname, host->displayname, myrrd, larrd043));
+			partlink = rrdlink_url(host->hostname, host->displayname, myrrd, larrd043);
+			if ((strlen(rrdlink) + strlen(partlink) + 1) >= rrdlinksize) {
+				rrdlinksize += strlen(partlink) + 4096;
+				rrdlink = (char *)realloc(rrdlink, rrdlinksize);
+			}
+			strcat(rrdlink, partlink);
 			*p = savechar;
 
 			graphdef = p;
