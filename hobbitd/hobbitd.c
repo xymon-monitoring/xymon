@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.73 2004-12-06 21:20:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.74 2004-12-07 22:50:23 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -949,11 +949,11 @@ void handle_enadis(int enabled, char *msg, char *sender)
 		p = hosttest; while ((p = strchr(p, '.')) != NULL) *p = ',';
 
 		dismsg = msg;
-		while (*dismsg && !isspace(*dismsg)) dismsg++;       /* Skip "disable".... */
-		while (*dismsg && isspace(*dismsg)) dismsg++;        /* and the space ... */
-		while (*dismsg && !isspace(*dismsg)) dismsg++;       /* and the host.test ... */
-		while (*dismsg && isspace(*dismsg)) dismsg++;        /* and the space ... */
-		while (*dismsg && !isspace(*dismsg)) dismsg++;       /* and the duration ... */
+		while (*dismsg && !isspace((int)*dismsg)) dismsg++;       /* Skip "disable".... */
+		while (*dismsg && isspace((int)*dismsg)) dismsg++;        /* and the space ... */
+		while (*dismsg && !isspace((int)*dismsg)) dismsg++;       /* and the host.test ... */
+		while (*dismsg && isspace((int)*dismsg)) dismsg++;        /* and the space ... */
+		while (*dismsg && !isspace((int)*dismsg)) dismsg++;       /* and the duration ... */
 
 		if (alltests) {
 			for (log = hwalk->logs; (log); log = log->next) {
