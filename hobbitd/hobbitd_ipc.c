@@ -22,7 +22,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.21 2005-03-01 14:41:16 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.22 2005-03-02 14:53:55 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -130,7 +130,9 @@ hobbitd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 		}
 	}
 
+#ifdef MEMORY_DEBUG
 	add_to_memlist(newch->channelbuf, SHAREDBUFSZ);
+#endif
 	return newch;
 }
 
