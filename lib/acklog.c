@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: acklog.c,v 1.1 2003-09-03 20:23:37 henrik Exp $";
+static char rcsid[] = "$Id: acklog.c,v 1.2 2003-09-08 21:40:09 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -34,6 +34,8 @@ static char rcsid[] = "$Id: acklog.c,v 1.1 2003-09-03 20:23:37 henrik Exp $";
 #include "debug.h"
 #include "acklog.h"
 
+int havedoneacklog = 0;
+
 void do_acklog(FILE *output, int maxcount, int maxminutes)
 {
 	FILE *acklog;
@@ -45,6 +47,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 	ack_t *acks;
 	int num, ackintime_count;
 
+	havedoneacklog = 1;
 
 	cutoff = ( (maxminutes) ? (time(NULL) - maxminutes*60) : 0);
 	if ((!maxcount) || (maxcount > 100)) maxcount = 100;

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.1 2003-09-03 20:23:37 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.2 2003-09-08 21:40:09 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -36,6 +36,7 @@ static char rcsid[] = "$Id: eventlog.c,v 1.1 2003-09-03 20:23:37 henrik Exp $";
 
 
 char *eventignorecolumns = NULL;
+int havedoneeventlog = 0;
 
 static int wanted_eventcolumn(char *service)
 {
@@ -62,6 +63,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
 	char l[MAX_LINE_LEN];
 	char title[200];
 
+	havedoneeventlog = 1;
 
 	cutoff = ( (maxminutes) ? (time(NULL) - maxminutes*60) : 0);
 	if (!maxcount) maxcount = 100;

@@ -20,6 +20,7 @@
 #define __EVENTLOG_H_
 
 extern char *eventignorecolumns;
+extern int havedoneeventlog;
 
 extern void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts);
 

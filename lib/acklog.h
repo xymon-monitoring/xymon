@@ -19,6 +19,7 @@
 #ifndef __ACKLOG_H_
 #define __ACKLOG_H_
 
+extern int havedoneacklog;
 extern void do_acklog(FILE *output, int maxcount, int maxminutes);
 
 #endif
