@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.59 2004-11-17 16:14:14 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.60 2004-11-28 21:58:43 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -31,7 +31,6 @@ static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.59 2004-11-17 16:14:14 henrik E
 #include "util.h"
 #include "pagegen.h"		/* for documentationurl variable */
 #include "infogen.h"
-#include "alert.h"
 #include "savelog.h"
 
 char *infocol = "info";
@@ -103,7 +102,7 @@ int generate_info(char *infocolumn, int bbgend)
 	if (bbgend) combo_start();
 
 	/* Load the alert setup */
-	if (!usebbgend) load_alerts();
+	if (!usebbgend) bbload_alerts();
 
 	for (hostwalk=hosthead; (hostwalk); hostwalk = hostwalk->next) {
 		char *p, *alertspec, *slaspec, *noprop, *rawcopy;
@@ -380,7 +379,7 @@ int generate_info(char *infocolumn, int bbgend)
 		if (!firstcontent) addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
 		addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
-		alerts = (usebbgend ? NULL : find_alert(hostwalk->hostentry->hostname, 0, 0));
+		alerts = (usebbgend ? NULL : bbfind_alert(hostwalk->hostentry->hostname, 0, 0));
 		if (!dialup) {
 			if (alerts) {
 				int wantedstate = 0;  /* Start with the normal rules */
@@ -424,11 +423,11 @@ int generate_info(char *infocolumn, int bbgend)
 						addtobuffer(&infobuf, &infobuflen, "</tr>\n");
 					}
 
-					alerts = find_alert(hostwalk->hostentry->hostname, 0, 1);
+					alerts = bbfind_alert(hostwalk->hostentry->hostname, 0, 1);
 					if ((wantedstate == 0) && (alerts == NULL)) {
 						/* No more normal rules - see if any inverted rules */
 						wantedstate = 1;
-						alerts = find_alert(hostwalk->hostentry->hostname, 0, 0);
+						alerts = bbfind_alert(hostwalk->hostentry->hostname, 0, 0);
 					}
 				}
 				addtobuffer(&infobuf, &infobuflen, "</table>\n");
@@ -436,7 +435,7 @@ int generate_info(char *infocolumn, int bbgend)
 				addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
 
 				sprintf(l, "<tr><th align=left>Default time between each alert:</th><td align=left>%d minutes</td></tr>\n", 
-					pagedelay);
+					bbpagedelay);
 				addtobuffer(&infobuf, &infobuflen, l);
 			}
 			else {

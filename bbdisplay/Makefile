@@ -11,7 +11,7 @@ CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh bb-
 
 TEMPLATES = acknowledge_header acknowledge_footer acknowledge_form findhost_header findhost_footer findhost_form report_header report_footer report_form
 
-GENOBJS = bbgen.o loadhosts.o loaddata.o reportdata.o bbconvert.o larrdgen.o pagegen.o eventlog.o acklog.o process.o infogen.o savelog.o alert.o wmlgen.o rssgen.o bb-replog.o util.o debug.o
+GENOBJS = bbgen.o loadhosts.o loaddata.o reportdata.o bbconvert.o larrdgen.o pagegen.o eventlog.o acklog.o process.o infogen.o savelog.o wmlgen.o rssgen.o bb-replog.o util.o debug.o
 COMBOTESTOBJS = bbcombotest.o
 REPOBJS = bb-rep.o
 REPLOGOBJS = bb-replog-cgi.o reportdata.o
