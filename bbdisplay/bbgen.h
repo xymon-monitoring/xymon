@@ -228,7 +228,6 @@ typedef struct {
 	host_t	*hosts;
 } bbgen_page_t;
 
-
 typedef struct {
 	char	*name;
 	char	*receiver;
@@ -256,7 +255,7 @@ typedef struct {
 	int	state;		/* 2=escalated, 1=recovered, 0=no change */
 } event_t;
 
-extern bbgen_page_t		*pagehead;
+extern bbgen_page_t	*pagehead;
 extern link_t 		*linkhead, null_link;
 extern hostlist_t	*hosthead;
 extern state_t		*statehead;
