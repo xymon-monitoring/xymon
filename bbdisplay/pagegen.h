@@ -33,6 +33,8 @@ extern char *bbhtaccess;
 extern char *bbpagehtaccess;
 extern char *bbsubpagehtaccess;
 extern int  pagetitlelinks;
+extern int  pagetextheadings;
+extern int  underlineheadings;
 extern int  maxrowsbeforeheading;
 extern int  bb2eventlog;
 extern int  bb2acklog;

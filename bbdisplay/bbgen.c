@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.157 2003-09-27 06:52:47 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.158 2003-09-27 09:49:34 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -274,6 +274,15 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[i], "--pagetitle-links") == 0) {
 			pagetitlelinks = 1;
 		}
+		else if (strcmp(argv[i], "--pagetext-headings") == 0) {
+			pagetextheadings = 1;
+		}
+		else if (strcmp(argv[i], "--underline-headings") == 0) {
+			underlineheadings = 1;
+		}
+		else if (strcmp(argv[i], "--no-underline-headings") == 0) {
+			underlineheadings = 0;
+		}
 		else if (strcmp(argv[i], "--no-eventlog") == 0) {
 			bb2eventlog = 0;
 		}
@@ -436,6 +445,8 @@ int main(int argc, char *argv[])
 			printf("    --dialupskin=URL            : Use a different icon skin for dialup tests\n");
 			printf("    --reverseskin=URL           : Use a different icon skin for reverse tests\n");
 			printf("    --pagetitle-links           : Make page- and subpage-titles act as links\n");
+			printf("    --pagetext-headings         : Use page texts as headings\n");
+			printf("    --no-underline-headings     : Do not underline the page headings\n");
 			printf("\nStatus propagation control options:\n");
 			printf("    --noprop=test[,test]        : Disable upwards status propagation when YELLOW\n");
 			printf("    --nopropred=test[,test]     : Disable upwards status propagation when RED or YELLOW\n");
