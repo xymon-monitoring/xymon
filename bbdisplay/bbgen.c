@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.101 2003-05-18 07:27:33 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.102 2003-05-19 15:26:27 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -387,9 +387,11 @@ int main(int argc, char *argv[])
 	bbnk_color = do_bb2_page(bbnkfilename, PAGE_NK);
 	add_timestamp("BBNK generation done");
 
-	/* Send summary notices */
-	send_summaries(sumhead);
-	add_timestamp("Summary transmission done");
+	/* Send summary notices - only once, so not on pagesets */
+	if (pageset == NULL) {
+		send_summaries(sumhead);
+		add_timestamp("Summary transmission done");
+	}
 
 #ifdef WMLSUPPORT
 	/* Generate a hosts file for the WML generator */
