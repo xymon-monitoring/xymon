@@ -101,6 +101,8 @@ typedef struct testedhost_t {
 	time_t downstart;	/* time() of first conn failure */
 	char *routerdeps;       /* Hosts from the "router:" tag */
 	struct testedhost_t *deprouterdown;    /* Set if dependant router is down */
+	int dotrace;		/* Run traceroute for this host */
+	char *traceroute;	/* traceroute results */
 
 	/* The following is for the HTTP/FTP URL tests */
 	struct testitem_t *firsthttp;	/* First HTTP testitem in testitem list */
