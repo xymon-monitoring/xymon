@@ -343,15 +343,18 @@ else
 	echo "#"                              >>Makefile
 	echo "# OpenLDAP settings"            >>Makefile
 	echo "LDAPFLAGS = $LDAPDEF"           >>Makefile
-	if test "$LDAPINC" != ""
+	if test "$LDAPDEF" != ""
 	then
-		echo "LDAPINCDIR = -I$LDAPINC"      >>Makefile
-	fi
-	if test "$LDAPLIB" != ""
-	then
-		echo "LDAPLIBS = -L$LDAPLIB -lldap $LDAPLBER" >>Makefile
-	else
-		echo "LDAPLIBS = -lldap $LDAPLBER"            >>Makefile
+		if test "$LDAPINC" != ""
+		then
+			echo "LDAPINCDIR = -I$LDAPINC"      >>Makefile
+		fi
+		if test "$LDAPLIB" != ""
+		then
+			echo "LDAPLIBS = -L$LDAPLIB -lldap $LDAPLBER" >>Makefile
+		else
+			echo "LDAPLIBS = -lldap $LDAPLBER"            >>Makefile
+		fi
 	fi
 
 	if test -r Makefile.`uname -s`
