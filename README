@@ -6,12 +6,10 @@ ships with the Big Brother monitoring tool.  It can also replace
 part of the LARRD tool that is often used with Big Brother. See
 the INSTALL.bbgen for details
 
-bbtest-web and bbtest-net are utilities that can replace the 
-bb-network.sh network test utility in Big Brother. See 
-INSTALL.bbtest for details.
+bbtest-net is a utility that can replace the bb-network.sh network 
+test utility in Big Brother. See INSTALL.bbtest for details.
 
-bbgen, bbtest-web and bbtest-net are 
-Copyright (C) 2002-2003, Henrik Storner <henrik@storner.dk> 
+bbgen and bbtest-net are Copyright (C) 2002-2003, Henrik Storner <henrik@storner.dk> 
 All files are released under the GNU General Public License, 
 version 2. See the file COPYING for details.
 
@@ -26,10 +24,9 @@ has about 350 hosts, spread over 50 pages and subpages. The time
 to generate the pages with bb-display.sh was about 12 minutes;
 bbgen does it in less than 5 seconds.
 
-The network test tools (bbtest-net, bbtest-web) also give 
-significant speed improvements for large sites. One site 
-reported that the runtime for their network tests dropped
-from 1000 seconds to about 30.
+The network test tool bbtest-net also gives significant speed improvements 
+for large sites. One site reported that the runtime for their network tests 
+dropped from 1000 seconds to about 30.
 
 bbgen also supports the generation of files for the LARRD
 graphics plugin for Big Brother (http://www.packetpushers.com/larrd).
@@ -49,11 +46,13 @@ Requirements
 ------------
 
 A working Big Brother installation. Get BB up and running first,
-then you can drop in bbgen and bbtest-web/bbtest-net to speed
-things up.
+then you can drop in bbgen and bbtest-net to speed things up.
 
-For testing websites, the "curl" utility must be installed. 
-This tool is available from http://curl.haxx.se/.
+Building the bbtest-net tool requires that the "curl" library
+is available. This library is available from http://curl.haxx.se/
+Many Linux distributions include curl as part of the standard
+software - make sure you have the development files installed
+as well.
 
 For network connectivity tests, the fping utility must be 
 installed. This is available from www.fping.org.
@@ -89,17 +88,14 @@ in bbgen:
   to support it, let me know.
 
 
-bbtest-net and bbtest-web are drop-in replacements for the
-standard bb-network.sh script, with the following exceptions:
+bbtest-net is a drop-in replacements for the standard bb-network.sh 
+script, with the following exceptions:
 
 * By default bbtest-net does not perform ping checks (the 
   "conn" column). If you want to do connectivity testing,
   run bbtest-net with the "--ping" option. Otherwise, use
   the fping.sh script from www.deadcat.net to take care of 
   the connectivity tests.
-
-* The proxy-syntax for testing http URL's that standard
-  Big Brother (bbnet) uses is not supported by bbtest-web.
 
 * The ":q" and ":Q" options on individual tests are ignored.
 
@@ -116,8 +112,7 @@ Installation
 
 See the INSTALL.bbgen file for information on how to install bbgen.
 
-See the INSTALL.bbtest file for information on how to use
-bbtest-web and bbtest-net.
+See the INSTALL.bbtest file for information on how to use bbtest-net.
 
 
 Planned improvements
@@ -129,5 +124,5 @@ have a feature you would like to see added.
 
 
 Henrik Storner <henrik@storner.dk>
-April 25, 2003
+April 27, 2003
 
