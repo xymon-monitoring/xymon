@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.28 2004-09-27 20:57:52 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.29 2004-09-30 16:33:30 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -184,7 +184,7 @@ static int do_write(int sockfd, char *addr, conn_t *conn, enum phase_t completed
 		conn->state = P_CLEANUP;
 		return -1;
 	}
-	else if (n > 0) { 
+	else if (n >= 0) { 
 		conn->buflen -= n; 
 		conn->bufp += n; 
 		if (conn->buflen == 0) {
@@ -526,6 +526,13 @@ int main(int argc, char *argv[])
 				break;
 
 			  case P_REQ_READY:
+				if (cwalk->buflen <= 6) {
+					/* Got an empty request - just drop it */
+					dprintf("Dropping empty request from %s\n", cwalk->clientip);
+					cwalk->state = P_CLEANUP;
+					break;
+				}
+
 				if (logdetails) do_log(cwalk);
 				cwalk->conntries = CONNECT_TRIES;
 				cwalk->sendtries = SEND_TRIES;
