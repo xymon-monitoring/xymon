@@ -44,7 +44,12 @@
 			exit 1
 		fi
 
-		OS=`uname -s` RRDLIB="-L$RRDLIB" PNGLIB="$PNGLIB" make -f Makefile.test-rrd test-link
+		OS=`uname -s` RRDLIB="-L$RRDLIB" PNGLIB="$PNGLIB" make -f Makefile.test-rrd test-link 2>/dev/null
+		if [ $? -ne 0 ]; then
+			# Could be that we need -lm for RRD
+			PNGLIB="$PNGLIB -lm"
+		fi
+		OS=`uname -s` RRDLIB="-L$RRDLIB" PNGLIB="$PNGLIB" make -f Makefile.test-rrd test-link 2>/dev/null
 		if [ $? -eq 0 ]; then
 			echo "Found RRDtool libraries in $RRDLIB"
 			if test "$PNGLIB" != ""; then
