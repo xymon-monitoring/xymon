@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.6 2004-08-27 15:53:20 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.7 2004-08-28 06:43:54 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -74,12 +74,7 @@ static void dns_callback(void *arg, int status, struct hostent *hent)
 	struct timezone tz;
 
 	gettimeofday(&etime, &tz);
-	if (etime.tv_usec < dnsc->resolvetime.tv_usec) {
-		etime.tv_sec--;
-		etime.tv_usec += 1000000;
-	}
-	dnsc->resolvetime.tv_sec  = (etime.tv_sec - dnsc->resolvetime.tv_sec);
-	dnsc->resolvetime.tv_usec = (etime.tv_usec - dnsc->resolvetime.tv_usec);
+	tvdiff(&dnsc->resolvetime, &etime, &dnsc->resolvetime);
 
 	if (status == ARES_SUCCESS) {
 		memcpy(&dnsc->addr, *(hent->h_addr_list), sizeof(dnsc->addr));
@@ -257,6 +252,7 @@ int dns_test_server(char *serverip, char *hostname, char **banner, int *bannerby
 	struct in_addr serveraddr;
 	int status;
 	struct timeval starttime, endtime;
+	struct timeval *tspent;
 	struct timezone tz;
 	char msg[100];
 
@@ -279,16 +275,10 @@ int dns_test_server(char *serverip, char *hostname, char **banner, int *bannerby
 	ares_query(channel, hostname, C_IN, T_A, dns_detail_callback, NULL);
 	dns_queue_run(channel);
 	gettimeofday(&endtime, &tz);
-	if (endtime.tv_usec < starttime.tv_usec) {
-		endtime.tv_sec--;
-		endtime.tv_usec += 1000000;
-	}
-
+	tspent = tvdiff(&starttime, &endtime, NULL);
 	*banner = dns_detail_response(&status);
 	*bannerbytes = strlen(*banner);
-	sprintf(msg, "\nSeconds: %d.%03d\n",
-		(endtime.tv_sec - starttime.tv_sec),
-		(endtime.tv_usec - starttime.tv_usec) / 1000);
+	sprintf(msg, "\nSeconds: %u.%03u\n", (unsigned int)tspent->tv_sec, (unsigned int)tspent->tv_usec/1000);
 	addtobuffer(banner, bannerbytes, msg);
 
 	return (status != ARES_SUCCESS);
