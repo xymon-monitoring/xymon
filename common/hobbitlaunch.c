@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.22 2005-02-18 09:50:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.23 2005-02-25 10:22:52 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -53,6 +53,7 @@ typedef struct grouplist_t {
 
 typedef struct tasklist_t {
 	char *key;
+	int disabled;
 	grouplist_t *group;
 	char *cmd;
 	int interval;
@@ -137,6 +138,10 @@ void update_task(tasklist_t *newtask)
 	else if (twalk->interval != newtask->interval) {
 		twalk->interval = newtask->interval;
 		twalk->cfload = 0;
+	}
+	else if (twalk->disabled != newtask->disabled) {
+		twalk->disabled = newtask->disabled;
+		twalk->cfload = 1;
 	}
 	else {
 		/* Task was unchanged */
@@ -263,8 +268,11 @@ void load_config(char *conffn)
 			p += strspn(p, " \t");
 			curtask->envfile = strdup(p);
 		}
-		else if (curtask && (strncasecmp(p, "HEARTBEAT", 9) == 0)) {
+		else if (curtask && (strcasecmp(p, "HEARTBEAT") == 0)) {
 			curtask->heartbeat = &heartbeat;
+		}
+		else if (curtask && (strcasecmp(p, "DISABLED") == 0)) {
+			curtask->disabled = 1;
 		}
 	}
 	if (curtask) update_task(curtask);
@@ -529,7 +537,7 @@ int main(int argc, char *argv[])
 		dprintf("\n");
 		dprintf("Starting tasklist scan\n");
 		for (twalk = taskhead; (twalk); twalk = twalk->next) {
-			if ((twalk->pid == 0) && (now >= (twalk->laststart + twalk->interval))) {
+			if ((twalk->pid == 0) && !twalk->disabled && (now >= (twalk->laststart + twalk->interval))) {
 
 				if (twalk->depends && ((twalk->depends->pid == 0) || (twalk->depends->laststart > (now - 5)))) {
 					dprintf("Postponing start of %s due to %s not yet running\n",
