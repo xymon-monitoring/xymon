@@ -43,7 +43,8 @@ enum bbh_item_t {
 	BBH_FLAG_BBDISPLAY,
 	BBH_FLAG_BBNET,
 	BBH_FLAG_BBPAGER,
-	BBH_RAW,
+	BBH_FLAG_LDAPFAILYELLOW,
+	BBH_LDAPLOGIN,
 	BBH_IP,
 	BBH_HOSTNAME,
 	BBH_PAGENAME,
@@ -51,6 +52,7 @@ enum bbh_item_t {
 	BBH_PAGETITLE,
 	BBH_PAGEPATHTITLE,
 	BBH_DOCURL,
+	BBH_BANKSIZE,
 	BBH_LAST
 };
 
@@ -64,6 +66,7 @@ typedef struct namelist_t {
 	char ip[16];
 	char *bbhostname;	/* Name for item 2 of bb-hosts */
 	int preference;		/* For host with multiple entries, mark if we have the preferred one */
+	int banksize;		/* For modem-bank entries only */
 	pagelist_t *page;	/* Host location in the page/subpage/subparent tree */
 	void *data;		/* Misc. data supplied by the user of this library function */
 	struct namelist_t *next;
@@ -87,6 +90,7 @@ extern namelist_t *load_hostnames(char *bbhostsfn, int fqdn, char *docurl);
 extern char *knownhost(char *filename, char *hostip, int ghosthandling, int *maybedown);
 extern namelist_t *hostinfo(char *hostname);
 extern char *bbh_item(namelist_t *host, enum bbh_item_t item);
+extern char *bbh_custom_item(namelist_t *host, char *key);
 extern char *bbh_item_walk(namelist_t *host);
 extern int bbh_item_idx(char *value);
 
