@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.11 2005-02-20 12:28:41 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.12 2005-03-06 16:18:48 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 {
 	int argi, bbresult;
 	char bbmsg[MAXMSG];
-	char *respmsg = "";
+	char *respmsgfmt = "";
 	int hobbitd = 0;
 
 	for (argi = 1; (argi < argc); argi++) {
@@ -152,25 +152,25 @@ int main(int argc, char *argv[])
 			acknum, validity, ackmsg, acking_user);
 		bbresult = sendmessage(bbmsg, NULL, NULL, NULL, 0, 30);
 		if (bbresult != BB_OK) {
-			respmsg = "<center><h4>Could not contact BB servers</h4></center>\n";
+			respmsgfmt = "<center><h4>Could not contact %s servers</h4></center>\n";
 		}
 		else {
-			respmsg = "<center><h4>Acknowledgment sent to BB servers</h4></center>\n";
+			respmsgfmt = "<center><h4>Acknowledgment sent to %s servers</h4></center>\n";
 		}
 
 		if (strlen(acking_user)) xfree(acking_user);
 	}
 	else if (strcasecmp(action, "page") == 0) {
-		respmsg = "<center><h4>This system does not support paging the operator</h4></center>\n";
+		respmsgfmt = "<center><h4>This system does not support paging the operator</h4></center>\n";
 	}
 	else {
-		respmsg = "<center><h4>Unknown action ignored</h4></center>\n";
+		respmsgfmt = "<center><h4>Unknown action ignored</h4></center>\n";
 	}
 
 	fprintf(stdout, "Content-type: text/html\n\n");
 	
 	headfoot(stdout, "acknowledge", "", "header", COL_RED);
-	fprintf(stdout, "%s", respmsg);
+	fprintf(stdout, respmsgfmt, (hobbitd ? "Hobbit" : "BB"));
 	headfoot(stdout, "acknowledge", "", "footer", COL_RED);
 
 	return 0;
