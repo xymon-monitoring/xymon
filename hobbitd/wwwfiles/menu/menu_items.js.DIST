@@ -13,7 +13,12 @@ var MENU_ITEMS = [
 		['Enable/disable', '@BBCGIURL@/maint.pl'],
 	],
         ['Help', null, null,
-                ['Hobbit Manual', '@BBHOSTURL@/help/hobbit.html'],
+		['About Hobbit', '@BBHOSTURL@/help/about.html'],
+		['Installing Hobbit', '@BBHOSTURL@/help/install.html'],
+		['Configuring Hobbit Monitoring', '@BBHOSTURL@/help/hobbit-config.html'],
+		['Configuring Hobbit Alerts', '@BBHOSTURL@/help/hobbit-alerts.html'],
+		['Known problems', '@BBHOSTURL@/help/known-issues.html'],
+		['Tips and Tricks', '@BBHOSTURL@/help/hobbit-tips.html'],
         ],
 ];
 
