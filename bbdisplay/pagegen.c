@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.102 2003-10-02 20:55:23 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.103 2003-11-18 21:58:35 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -188,7 +188,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 			if (p2) {
 				*p2 = '\0';
 
-				for (col = colhead; (col && (strcmp(p1, col->name) != 0)); col = col->next);
+				col = find_or_create_column(p1, 0);
 				if (col) {
 					newlistitem = (col_list_t *) malloc(sizeof(col_list_t));
 					newlistitem->column = col;
@@ -705,7 +705,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 				if (strcmp(s2->row, s->row) == 0) {
 					newentry = (entry_t *) malloc(sizeof(entry_t));
 
-					newentry->column = find_or_create_column(s2->column);
+					newentry->column = find_or_create_column(s2->column, 1);
 					newentry->color = s2->color;
 					strcpy(newentry->age, "");
 					newentry->oldage = 1; /* Use standard gifs */
