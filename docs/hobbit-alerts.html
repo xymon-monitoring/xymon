@@ -5,14 +5,21 @@
 </head>
 
 <body>
-
 <h1>Configuring Hobbit Alerts</h1>
 <p>When something breaks, you want to know about it. Since you probably 
 dont have the Hobbit webpages in view all of the time, Hobbit can 
 generate alerts to draw your attention to problems. Alerts can go out
 as e-mail, or Hobbit can run a script that takes care of activating
-a pager, sending an SMS, or however you prefer to get alerted.</p>
+a pager, sending an SMS, or however you prefer to get alerted.<br>
+<ul>
+	<li><a href="#simple">A simple alert configuration</a></li>
+	<li><a href="#keywords">Configuration file keywords</a></li>
+	<li><a href="#wildcards">Using regular expressions for names</a></li>
+	<li><a href="#scripts">Alering via a script</a></li>
+	<li><a href="#macros">Using macros</a></li>
+</ul>
 
+<A NAME="simple">
 <h3>A simple alert configuration</h3>
 <p>The configuration file for the Hobbit alert module is <em>~/server/etc/hobbit-alerts.cfg</em>.
 This file consists of a number of <em>rules</em> that are matched against
@@ -61,6 +68,8 @@ also apply to the alerts that go out when there is a problem with the "cpu", "di
 services. So there would not be any mails going to <tt>unixsupport@foo.com</tt> when a disk
 fills up during the night.</p>
 
+<a name="keywords">
+<h3>Keywords in rules and recipients</h3>
 <p>The full set of keywords and their meaning is as follows:<br>
 <table width="80%" align="center">
 	<tr><th align="left" valign="top">PAGE</th><td>rule matching an alert by the name of the page the host is displayed on. This is the name following the "page", "subpage" or "subparent" keyword in the bb-hosts file.</td></tr>
@@ -71,15 +80,16 @@ fills up during the night.</p>
 	<tr><th align="left" valign="top">EXSERVICE</th><td>rule excluding an alert by matching the hostname.</td></tr>
 	<tr><th align="left" valign="top">COLOR</th><td>rule matching an alert by color. Can be "red", "yellow", or "purple".</td></tr>
 	<tr><th align="left" valign="top">TIME</th><td>rule matching an alert by the time-of-day. This is specified as the DOWNTIME timespecification in the bb-hosts file (see bb-hosts(5)).</td></tr>
-	<tr><th align="left" valign="top">DURATION</th><td>Rule matching an alert if the event has lasted longer/shorter than the given duration. E.g. <em>DURATION&gt;10</em> (lasted longer than 10 minutes) or <em>DURATION&lt;30</em> (only sends alerts the first 30 minutes).</td></tr>
+	<tr><th align="left" valign="top">DURATION</th><td>Rule matching an alert if the event has lasted longer/shorter than the given duration. E.g. <em>DURATION&gt;10m</em> (lasted longer than 10 minutes) or <em>DURATION&lt;2h</em> (only sends alerts the first 2 hours). Unless explicitly stated, this is in minutes - you can use 'm', 'h', 'd' for 'minutes', 'hours' and 'days' respectively.</td></tr>
 	<tr><th align="left" valign="top">RECOVERED</th><td>Rule matches if the alert has recovered from an alert state.</td></tr>
 	<tr><th align="left" valign="top">MAIL</th><td>Recipient who receives an e-mail alert. This takes one parameter, the e-mail address.</td></tr>
 	<tr><th align="left" valign="top">SCRIPT</th><td>Recipient that invokes a script. This takes two parameters: The script filename, and the recipient that gets passed to the script.</td></tr>
 	<tr><th align="left" valign="top">FORMAT</th><td>format of the text message with the alert. Default is "TEXT" (suitable for e-mail alerts). "SMS" is a short message with no subject for SMS alerts. "SCRIPT" is a brief message template for scripts.</td></tr>
-	<tr><th align="left" valign="top">REPEAT</th><td>How often an alert gets repeated, in minutes.</td></tr>
+	<tr><th align="left" valign="top">REPEAT</th><td>How often an alert gets repeated. As with the DURATION setting, this is in minutes unless explicitly modified with 'm', 'h', 'd'.</td></tr>
 </table>
 </p>
 
+<a name="wildcards">
 <h3>Wildcards - regular expressions</h3>
 <p>So now we can setup an alert. But using explicit hostnames is bothersome, if you have many
 hosts. There is a smarter way:
@@ -93,6 +103,7 @@ The percent-sign indicates that the hostname should not be taken literally - ins
 This particular expression matches "www.foo.com", "intranet.foo.com", "support.foo.com" and
 "mail.foo.com". You can use regular expressions to match hostnames, service-names and page-names.</p>
 
+<a name="scripts">
 <h3>If e-mail is not enough</h3>
 <p>The <em>MAIL</em> keyword means that the alert is sent in an e-mail. Sometimes this ends
 up being an SMS to your cell-phone - there are several "e-mail to SMS" gateways that perform
@@ -144,6 +155,7 @@ BBALPHSMSG variable for the script.</p>
 paging scripts, so you should be able to re-use any paging scripts written for Big Brother
 with Hobbit.</p>
 
+<a name="macros">
 <h3>Save on the typing - use macros</h3>
 <p>Say you have a long list of hosts or e-mail adresses that you want to use several times throughout the
 hobbit-alerts.cfg file. Do you have to write the full list every time ? No:<br>
