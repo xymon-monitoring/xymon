@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.28 2003-08-16 06:59:26 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.29 2003-08-16 10:07:27 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -129,10 +129,10 @@ static unsigned int calc_time(time_t endtime, int change, int alignment, int end
 	int daysinmonth[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 	struct tm *tmbuf;
 	time_t result, now;
-	int startdst;
+	int dstsetting = -1;
 
+again:
 	tmbuf = localtime(&endtime);
-	startdst = tmbuf->tm_isdst;
 	switch (alignment) {
 		case ALIGN_HOUR: 
 			tmbuf->tm_hour += change;
@@ -180,12 +180,12 @@ static unsigned int calc_time(time_t endtime, int change, int alignment, int end
 			}
 			break;
 	}
+	tmbuf->tm_isdst = dstsetting;
 	result = mktime(tmbuf);
-
-	if ((startdst == 1) && (tmbuf->tm_isdst == 0)) {
-		/* Switched from DST to standard time, so must add one hour */
-		/* Hackish - assumes difference between DST and standard time is 3600 seconds */
-		result += 3600;
+	if ((dstsetting == -1) && (result < endtime)) {
+		/* DST->normaltime switchover - redo with forced DST setting */
+		dstsetting = 0;
+		goto again;
 	}
 
 	/* Dont try to foresee the future */
