@@ -137,8 +137,11 @@ dns.o: libcares.a dns.c dns.h
 libcares.a: c-ares-1.2.0/libcares.a
 	cp c-ares-1.2.0/libcares.a .
 
-c-ares-1.2.0/libcares.a:
-	(cd c-ares-1.2.0 && ./configure && make libcares.a)
+c-ares-1.2.0/libcares.a: c-ares-1.2.0/Makefile
+	(cd c-ares-1.2.0 && make libcares.a)
+
+c-ares-1.2.0/Makefile:
+	(cd c-ares-1.2.0 && ./configure)
 
 ################################################
 # Objects compiled differently for use in 
@@ -174,12 +177,14 @@ sendmsg-cgi.o: sendmsg.c sendmsg.h
 ################################################
 # Installation and maintenance targets
 ################################################
-distclean: clean
+distclean: allclean
 	rm -f Makefile
 	cd c-ares-1.2.0 && (make distclean || /bin/true)
 
-clean:
+allclean: clean
 	cd c-ares-1.2.0 && (make clean || /bin/true)
+
+clean:
 	rm -f *.o *.a *~ $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) alert contest reptest calc ldaptest bbtest-local
 
 install-bin: $(PROGRAMS)
