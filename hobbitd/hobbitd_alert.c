@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.13 2004-10-22 15:15:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.14 2004-10-23 21:04:33 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -190,13 +190,14 @@ int main(int argc, char *argv[])
 	int alertcolors = ( (1 << COL_RED) | (1 << COL_YELLOW) | (1 << COL_PURPLE) );
 	char *configfn = NULL;
 	char *checkfn = NULL;
-	time_t nextcheckpoint = time(NULL) + 300;
+	int checkpointinterval = 900;
+	time_t nextcheckpoint;
 
 	for (argi=1; (argi < argc); argi++) {
-		if (strcmp(argv[argi], "--debug") == 0) {
+		if (argnmatch(argv[argi], "--debug")) {
 			debug = 1;
 		}
-		else if (strncmp(argv[argi], "--alertcolors=", 14) == 0) {
+		else if (argnmatch(argv[argi], "--alertcolors=")) {
 			char *colspec = strchr(argv[argi], '=') + 1;
 			int c, ac;
 			char *p;
@@ -211,20 +212,28 @@ int main(int argc, char *argv[])
 
 			alertcolors = ac;
 		}
-		else if (strncmp(argv[argi], "--config=", 9) == 0) {
+		else if (argnmatch(argv[argi], "--config=")) {
 			configfn = strdup(strchr(argv[argi], '=')+1);
 		}
-		else if (strncmp(argv[argi], "--checkpoint-file=", 13) == 0) {
+		else if (argnmatch(argv[argi], "--checkpoint-file=")) {
 			checkfn = strdup(strchr(argv[argi], '=')+1);
 		}
-		else if (strcmp(argv[argi], "--dump-config") == 0) {
+		else if (argnmatch(argv[argi], "--checkpoint-interval=")) {
+			char *p = strchr(argv[argi], '=') + 1;
+			checkpointinterval = atoi(p);
+		}
+		else if (argnmatch(argv[argi], "--dump-config")) {
 			load_alertconfig(configfn, alertcolors);
 			dump_alertconfig();
 			return 0;
 		}
 	}
 
-	if (checkfn) load_checkpoint(checkfn);
+	if (checkfn) {
+		load_checkpoint(checkfn);
+		nextcheckpoint = time(NULL) + checkpointinterval;
+		dprintf("Next checkpoint at %d, interval %d\n", (int) nextcheckpoint, checkpointinterval);
+	}
 
 	setup_signalhandler("bbd_alert");
 	signal(SIGCHLD, sig_handler);
@@ -243,7 +252,8 @@ int main(int argc, char *argv[])
 		activealerts_t *awalk, *khead, *tmp;
 
 		if (checkfn && (time(NULL) > nextcheckpoint)) {
-			nextcheckpoint = time(NULL)+300;
+			dprintf("Saving checkpoint\n");
+			nextcheckpoint = time(NULL)+checkpointinterval;
 			save_checkpoint(checkfn);
 		}
 
@@ -411,11 +421,15 @@ int main(int argc, char *argv[])
 		/* Loop through the activealerts list and see if anything is pending */
 		now = time(NULL); anytogo = 0;
 		for (awalk = ahead; (awalk); awalk = awalk->next) {
-			if ( ((awalk->nextalerttime <= now) && (awalk->state == A_PAGING)) || 
-			     (awalk->state == A_RECOVERED)                                 ||
-			     (awalk->state == A_ACKED)                                        ) {
-				dprintf("Found pending alert: %s.%s (%d)\n", 
-					awalk->hostname->name, awalk->testname->name, (int)awalk->state);
+			if ((awalk->nextalerttime <= now) && (awalk->state == A_PAGING)) {
+				if (awalk->ackmessage) {
+					/* An ack has expired, so drop the ack message */
+					free(awalk->ackmessage);
+					awalk->ackmessage = NULL;
+				}
+				anytogo++;
+			}
+			else if ((awalk->state == A_RECOVERED) || (awalk->state == A_ACKED)) { 
 				anytogo++;
 			}
 		}
