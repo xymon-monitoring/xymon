@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.9 2003-07-01 20:51:46 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.10 2003-07-08 09:04:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -60,7 +60,7 @@ char *suburl = "";
 
 char *monthnames[13] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", NULL };
 
-void errmsg(char *msg)
+void errormsg(char *msg)
 {
 	printf("Content-type: text/html\n\n");
 	printf("<html><head><title>Invalid request</title></head>\n");
@@ -78,10 +78,15 @@ void parse_query(void)
 	startday = startmon = startyear = endday = endmon = endyear = -1;
 
 	if (getenv("QUERY_STRING") == NULL) {
-		errmsg("Invalid request");
+		errormsg("Invalid request");
 		return;
 	}
 	else query = urldecode("QUERY_STRING");
+
+	if (!urlvalidate(query, NULL)) {
+		errormsg("Invalid request");
+		return;
+	}
 
 	token = strtok(query, "&");
 	while (token) {
@@ -133,7 +138,7 @@ void parse_query(void)
 	tmbuf.tm_isdst = -1;		/* Important! Or we mishandle DST periods */
 	endtime = mktime(&tmbuf);
 
-	if ((starttime == -1) || (endtime == -1) || (starttime > time(NULL))) errmsg("Invalid parameters");
+	if ((starttime == -1) || (endtime == -1) || (starttime > time(NULL))) errormsg("Invalid parameters");
 
 	if (starttime == endtime) {
 		/* Set end at 23:59:59 same day */
@@ -260,7 +265,7 @@ int main(int argc, char *argv[])
 		if (WIFEXITED(childstat) && (WEXITSTATUS(childstat) != 0) ) {
 			printf("%s\n\n", htmldelim);
 			printf("Content-Type: text/html\n\n");
-			errmsg("Could not generate report");
+			errormsg("Could not generate report");
 		}
 		else {
 			/* Send the browser off to the report */
@@ -281,7 +286,7 @@ int main(int argc, char *argv[])
 	else {
 		printf("%s\n\n", htmldelim);
 		printf("Content-Type: text/html\n\n");
-		errmsg("Fork failed");
+		errormsg("Fork failed");
 	}
 
 	return 0;
