@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.28 2003-04-21 16:13:33 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.29 2003-04-25 11:59:45 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -168,7 +168,7 @@ void load_tests(void)
 	char	*netstring;
 	char 	*p;
 
-	bbhosts = fopen(getenv("BBHOSTS"), "r");
+	bbhosts = stackfopen(getenv("BBHOSTS"), "r");
 	if (bbhosts == NULL) {
 		perror("No bb-hosts file found");
 		return;
@@ -184,7 +184,7 @@ void load_tests(void)
 		netstring = NULL;
 	}
 
-	while (fgets(l, sizeof(l), bbhosts)) {
+	while (stackfgets(l, sizeof(l), "include")) {
 		p = strchr(l, '\n'); if (p) { *p = '\0'; };
 
 		if ((l[0] == '#') || (strlen(l) == 0)) {
@@ -344,7 +344,7 @@ void load_tests(void)
 		};
 	}
 
-	fclose(bbhosts);
+	stackfclose(bbhosts);
 	return;
 }
 

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.57 2003-04-24 21:52:01 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.58 2003-04-25 11:59:45 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -780,7 +780,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 
 	dprintf("load_bbhosts(pgset=%s)\n", textornull(pgset));
 
-	bbhosts = fopen(getenv("BBHOSTS"), "r");
+	bbhosts = stackfopen(getenv("BBHOSTS"), "r");
 	if (bbhosts == NULL) {
 		printf("Cannot open the BBHOSTS file '%s'\n", getenv("BBHOSTS"));
 		exit(1);
@@ -804,7 +804,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	cursubparent = NULL;
 	curtitle = NULL;
 
-	while (fgets(l, sizeof(l), bbhosts)) {
+	while (stackfgets(l, sizeof(l), "include")) {
 		p = strchr(l, '\n'); 
 		if (p) {
 			*p = '\0'; 
@@ -1050,7 +1050,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 		};
 	}
 
-	fclose(bbhosts);
+	stackfclose(bbhosts);
 	return toppage;
 }
 
