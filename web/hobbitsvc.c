@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.7 2004-10-21 21:31:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.8 2004-10-22 20:29:18 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
 			p = gettok(NULL, "|");
 		}
 
-		/* hostname|testname|color|testflags|logtime|lastchange|expires|sender */
+		/* hostname|testname|color|testflags|logtime|lastchange|expires|sender|cookie */
 		color = parse_color(items[2]);
 		flags = items[3];
 		logtime = atoi(items[4]);
