@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.121 2004-08-02 13:21:27 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.122 2004-08-05 12:05:43 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -258,7 +258,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	}
 
 	/* Acked column ? */
-	if (!reportstart && !snapshot && (newstate->entry->color != COL_GREEN)) {
+	if (!reportstart && !snapshot && host && (newstate->entry->color != COL_GREEN)) {
 		struct stat ack_st;
 		char ackfilename[MAX_PATH];
 
