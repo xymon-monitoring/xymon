@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.12 2004-09-19 20:04:37 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.13 2004-09-19 20:30:13 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -76,6 +76,7 @@ typedef struct conn_t {
 	int csocket;
 	struct sockaddr_in caddr;
 	char clientip[16];
+	char *serverip;
 	int ssocket;
 	int conntries;
 	time_t conntime;
@@ -140,8 +141,10 @@ int main(int argc, char *argv[])
 {
 	int locport = 1984;
 	char *locaddr = "0.0.0.0";
-	int remport = 1984;
-	char *remaddr = NULL;
+	int bbdispport = 1984;
+	char *bbdispip = NULL;
+	int bbpagerport = 1984;
+	char *bbpagerip = NULL;
 	int daemonize = 1;
 	int timeout = 10;
 	int listenq = 512;
@@ -151,7 +154,8 @@ int main(int argc, char *argv[])
 	int sockcount = 0;
 	int lsocket;
 	struct sockaddr_in laddr;
-	struct sockaddr_in saddr;
+	struct sockaddr_in bbdispaddr;
+	struct sockaddr_in bbpageraddr;
 	int opt;
 	conn_t *chead = NULL;
 
@@ -181,13 +185,22 @@ int main(int argc, char *argv[])
 				locport = atoi(p+1);
 			}
 		}
-		else if (argnmatch(argv[opt], "--remote=")) {
+		else if (argnmatch(argv[opt], "--bbdisplay=")) {
 			char *p = strchr(argv[opt], '=');
-			remaddr = strdup(p+1);
-			p = strchr(remaddr, ':');
+			bbdispip = strdup(p+1);
+			p = strchr(bbdispip, ':');
 			if (p) {
 				*p = '\0';
-				remport = atoi(p+1);
+				bbdispport = atoi(p+1);
+			}
+		}
+		else if (argnmatch(argv[opt], "--bbpager=")) {
+			char *p = strchr(argv[opt], '=');
+			bbpagerip = strdup(p+1);
+			p = strchr(bbpagerip, ':');
+			if (p) {
+				*p = '\0';
+				bbpagerport = atoi(p+1);
 			}
 		}
 		else if (argnmatch(argv[opt], "--timeout=")) {
@@ -223,28 +236,43 @@ int main(int argc, char *argv[])
 			printf("bbproxy version %s\n", VERSION_STRING);
 			printf("\nOptions:\n");
 			printf("\t--local=IP[:port]           : Listen address and portnumber\n");
-			printf("\t--remote=IP[:port]          : Server address and portnumber\n");
+			printf("\t--bbdisplay=IP[:port]       : BBDISPLAY server address and portnumber\n");
+			printf("\t--bbpager=IP[:port]         : BBPAGER server address and portnumber\n");
 			printf("\t--timeout=N                 : Communications timeout (seconds)\n");
 			printf("\t--lqueue=N                  : Listen-queue size\n");
 			printf("\t--daemon                    : Run as a daemon\n");
 			printf("\t--no-daemon                 : Do not run as a daemon\n");
 			printf("\t--pidfile=FILENAME          : Save proces-ID of daemon to FILENAME\n");
+			printf("\t--proxyname=PROXY.SERVICE   : Sends a status message about proxy activity\n");
 			printf("\t--debug                     : Enable debugging output\n");
 			printf("\n");
 			return 0;
 		}
 	}
 
-	if (remaddr == NULL) {
-		errprintf("No remote address given - aborting\n");
+	if (bbdispip == NULL) {
+		errprintf("No BBDISPLAY address given - aborting\n");
 		return 1;
 	}
 
-	memset(&saddr, 0, sizeof(saddr));
-	saddr.sin_port = htons(remport);
-	saddr.sin_family = AF_INET;
-	if (inet_aton(remaddr, (struct in_addr *) &saddr.sin_addr.s_addr) == 0) {
-		errprintf("Invalid remote address %s\n", remaddr);
+	if (bbpagerip == NULL) {
+		bbpagerip = bbdispip;
+		bbpagerport = bbdispport;
+	}
+
+	memset(&bbdispaddr, 0, sizeof(bbdispaddr));
+	bbdispaddr.sin_port = htons(bbdispport);
+	bbdispaddr.sin_family = AF_INET;
+	if (inet_aton(bbdispip, (struct in_addr *) &bbdispaddr.sin_addr.s_addr) == 0) {
+		errprintf("Invalid remote address %s\n", bbdispip);
+		return 1;
+	}
+
+	memset(&bbpageraddr, 0, sizeof(bbpageraddr));
+	bbpageraddr.sin_port = htons(bbpagerport);
+	bbpageraddr.sin_family = AF_INET;
+	if (inet_aton(bbpagerip, (struct in_addr *) &bbpageraddr.sin_addr.s_addr) == 0) {
+		errprintf("Invalid remote address %s\n", bbpagerip);
 		return 1;
 	}
 
@@ -275,7 +303,8 @@ int main(int argc, char *argv[])
 	}
 
 	errprintf("Listening on %s port %d\n", locaddr, locport);
-	errprintf("Sending to %s port %d\n", remaddr, remport);
+	errprintf("Sending to BBDISPLAY at %s port %d\n", bbdispip, bbdispport);
+	errprintf("Sending to BBPAGER at %s port %d\n", bbpagerip, bbpagerport);
 
 	if (daemonize) {
 		pid_t childpid;
@@ -409,7 +438,15 @@ int main(int argc, char *argv[])
 				sockcount++;
 				fcntl(cwalk->ssocket, F_SETFL, O_NONBLOCK);
 
-				n = connect(cwalk->ssocket, (struct sockaddr *)&saddr, sizeof(saddr));
+				if (strncmp(cwalk->buf, "page", 4) != 0) {
+					n = connect(cwalk->ssocket, (struct sockaddr *)&bbdispaddr, sizeof(bbdispaddr));
+					cwalk->serverip = bbdispip;
+				}
+				else {
+					n = connect(cwalk->ssocket, (struct sockaddr *)&bbpageraddr, sizeof(bbpageraddr));
+					cwalk->serverip = bbpagerip;
+				}
+
 				if ((n == 0) || ((n == -1) && (errno == EINPROGRESS))) {
 					cwalk->state = P_REQ_SENDING;
 					/* Fallthrough */
@@ -553,13 +590,13 @@ int main(int argc, char *argv[])
 							}
 						}
 
-						do_write(cwalk->ssocket, remaddr, cwalk, P_REQ_DONE);
+						do_write(cwalk->ssocket, cwalk->serverip, cwalk, P_REQ_DONE);
 					}
 					break;
 
 				  case P_RESP_READING:
 					if (FD_ISSET(cwalk->ssocket, &fdread)) {
-						do_read(cwalk->ssocket, remaddr, cwalk, P_RESP_READY);
+						do_read(cwalk->ssocket, cwalk->serverip, cwalk, P_RESP_READY);
 					}
 					break;
 
@@ -593,6 +630,7 @@ int main(int argc, char *argv[])
 				}
 
 				newconn->ssocket = -1;
+				newconn->serverip = NULL;
 				newconn->conntries = 0;
 				newconn->buflen = 0;
 				*newconn->buf = '\0';
