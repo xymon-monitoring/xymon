@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.45 2004-10-30 22:20:20 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.46 2004-10-31 11:47:25 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1410,6 +1410,9 @@ int main(int argc, char *argv[])
 	colnames[NO_COLOR] = "none";
 	gettimeofday(&tv, &tz);
 	srandom(tv.tv_usec);
+
+	/* Dont save the error buffer */
+	save_errbuf = 0;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--debug")) {
