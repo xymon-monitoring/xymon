@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.124 2004-09-19 07:52:46 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.125 2004-10-03 06:38:58 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -335,7 +335,7 @@ int argnmatch(char *arg, char *match)
 
 char *colorname(int color)
 {
-	char *cs = "";
+	static char *cs = "";
 
 	switch (color) {
 	  case COL_CLEAR:  cs = "clear"; break;
