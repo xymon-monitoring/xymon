@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.51 2003-05-22 06:49:45 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.52 2003-05-23 11:22:58 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -947,7 +947,7 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--report") == 0) {
 			char *p = strchr(argv[argi], '=');
 			if (p) {
-				p++; egocolumn = p;
+				egocolumn = malcop(p+1);
 			}
 			else egocolumn = "bbtest";
 			timing = 1;
