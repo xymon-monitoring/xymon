@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.47 2004-08-05 12:05:23 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.48 2004-08-24 21:06:04 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -308,19 +308,6 @@ int generate_info(char *infocolumn)
 		if (strstr(hostwalk->hostentry->rawentry, "noconn")) ping = 0;
 		sprintf(l, "<tr><th align=left>Checked with ping:</th><td align=left>%s</td></tr>\n", (ping ? "Yes" : "No"));
 		addtobuffer(&infobuf, &infobuflen, l);
-
-		p = strstr(hostwalk->hostentry->rawentry, "TIMEOUT:");
-		if (p) {
-			char *tspec = malcop(p);
-			int t1, t2;
-
-			if (sscanf(tspec, "TIMEOUT:%d:%d", &t1, &t2) == 2) {
-				sprintf(l, "<tr><th align=left>Network timeout:</th><<td align=left>%d seconds (connect), %d seconds (full request)</td></tr>\n",
-					t1, t2);
-				addtobuffer(&infobuf, &infobuflen, l);
-			}
-			free(tspec);
-		}
 
 		/* Space */
 		addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
