@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.53 2004-08-27 10:37:17 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.54 2004-08-27 15:32:04 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1080,8 +1080,7 @@ void do_tcp_tests(int timeout, int concurrency)
 					else {
 						/* Connection timeout */
 						item->open = 0;
-						item->connres = ETIMEDOUT;
-						item->errcode = CONTEST_ENOCONN;
+						item->errcode = CONTEST_ETIMEOUT;
 					}
 					get_totaltime(item, &timestamp);
 					close(item->fd);
@@ -1108,6 +1107,7 @@ void do_tcp_tests(int timeout, int concurrency)
 							connressize = sizeof(item->connres);
 							res = getsockopt(item->fd, SOL_SOCKET, SO_ERROR, &item->connres, &connressize);
 							item->open = (item->connres == 0);
+							if (!item->open) item->errcode = CONTEST_ENOCONN;
 							do_talk = item->open;
 							get_connectiontime(item, &timestamp);
 						}
