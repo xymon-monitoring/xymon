@@ -103,7 +103,7 @@ clean:
 	rm -f wwwfiles/menu/menu_items.js
 	(find etcfiles/ -name "*~"; find wwwfiles/ -name "*~"; find webfiles/ -name "*~") | xargs rm -f
 
-install: install-bin install-cgi install-man
+install: install-bin install-cgi install-man install-cfg
 
 install-bin:
 	cp -fp $(PROGRAMS) $(BBHOME)/bin/
@@ -121,18 +121,16 @@ install-man:
 	cp -fp *.5 $(MANROOT)/man5/
 	cp -fp *.8 $(MANROOT)/man8/
 
-setup:
-	@echo "*** WARNING ***"
-	@echo "This installs a new Hobbit server. Any modifications you"
-	@echo "have done to existing files in ${BBHOME} may be lost."
-	@echo "If you dont want this to happen, hit CTRL-C now!"
-	@sleep 8
-	@echo "Continuing installation..."
-	cd wwwfiles; tar cf - . | (cd $(BBHOME)/www/; tar xf -)
-	cd webfiles; tar cf - . | (cd $(BBHOME)/web/; tar xf -)
-	cd etcfiles; ../../build/install-nooverwrite.sh etc/ hobbit-apache.conf hobbitserver.cfg bb-hosts hobbit-alerts.cfg hobbitlaunch.cfg hobbitgraph.cfg
+install-cfg:
+	cd etcfiles; ../../build/merge-lines hobbitserver.cfg $(BBHOME)/etc/hobbitserver.cfg
+	cd etcfiles; ../../build/merge-sects hobbitlaunch.cfg $(BBHOME)/etc/hobbitlaunch.cfg
+	cd etcfiles; ../../build/merge-sects hobbitgraph.cfg $(BBHOME)/etc/hobbitgraph.cfg
+	cd etcfiles; (echo "bb-hosts"; echo "hobbit-alerts.cfg") | ../../build/setup-newfiles $(BBHOME)/etc/
+	cd etcfiles; cp -fp hobbit-apache.conf $(BBHOME)/etc/hobbit-apache.conf
+	cd $(BBHOME); rm -f starthobbit.sh; ln -sf bin/starthobbit.sh .
+	cd wwwfiles; find . | grep -v RCS | grep -v DIST | ../../build/setup-newfiles $(BBHOME)/www/
+	cd webfiles; find . | grep -v RCS | grep -v DIST | ../../build/setup-newfiles $(BBHOME)/web/
 	mkdir -p $(BBLOGDIR)
 	chown $(BBUSER)         $(BBLOGDIR) $(BBHOME) $(BBHOME)/* $(BBHOME)/bin/* $(BBHOME)/etc/* $(BBHOME)/ext/* $(BBHOME)/web/* $(BBHOME)/www/gifs $(BBHOME)/www/gifs/* $(BBHOME)/www/menu $(BBHOME)/www/menu/* $(BBHOME)/www/help $(BBHOME)/www/help/* $(BBHOME)/www/notes $(BBHOME)/www/html $(BBHOME)/www/wml $(BBVAR) $(BBVAR)/* $(CGIDIR) $(CGIDIR)/* $(SECURECGIDIR) $(SECURECGIDIR)/*
 	chgrp `$(IDTOOL) -g $(BBUSER)` $(BBLOGDIR) $(BBHOME) $(BBHOME)/* $(BBHOME)/bin/* $(BBHOME)/etc/* $(BBHOME)/ext/* $(BBHOME)/web/* $(BBHOME)/www/gifs $(BBHOME)/www/gifs/* $(BBHOME)/www/menu $(BBHOME)/www/menu/* $(BBHOME)/www/help $(BBHOME)/www/help/* $(BBHOME)/www/notes $(BBHOME)/www/html $(BBHOME)/www/wml $(BBVAR) $(BBVAR)/* $(CGIDIR) $(CGIDIR)/* $(SECURECGIDIR) $(SECURECGIDIR)/*
-	cd $(BBHOME); rm -f starthobbit.sh; ln -sf bin/starthobbit.sh .
 
