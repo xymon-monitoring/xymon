@@ -11,10 +11,12 @@
 /*                                                                            */
 /* Copyright (C) 2002 Henrik Storner <henrik@storner.dk>                      */
 /*                                                                            */
-/* This program is released under the GNU Public License (GPL), version 2.    */
-/* See the file "COPYING" for details.                                        */
+/* This program is released under the GNU General Public License (GPL),       */
+/* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
+
+static char rcsid[] = "$Id: bbgen.c,v 1.47 2002-11-26 11:59:34 hstoerne Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
