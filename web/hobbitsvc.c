@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.10 2004-10-23 07:35:19 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.11 2004-10-24 12:52:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -307,20 +307,20 @@ int main(int argc, char *argv[])
 			p = gettok(NULL, "|");
 		}
 
-		/* hostname|testname|color|testflags|logtime|lastchange|expires|sender|cookie|ackmsg|dismsg */
+		/* hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|ackmsg|dismsg */
 		color = parse_color(items[2]);
 		flags = items[3];
-		logtime = atoi(items[4]);
-		logage = time(NULL) - atoi(items[5]);
+		logage = time(NULL) - atoi(items[4]);
 		timesincechange[0] = '\0'; p = timesincechange;
 		if (logage > 86400) p += sprintf(p, "%d days,", (int) (logage / 86400));
 		p += sprintf(p, "%d hours, %d minutes", (int) ((logage % 86400) / 3600), (int) ((logage % 3600) / 60));
-		sender = items[7];
+		logtime = atoi(items[5]);
+		sender = items[9];
 
-		if (items[9] && strlen(items[9])) ackmsg = items[9];
+		if (items[11] && strlen(items[11])) ackmsg = items[11];
 		if (ackmsg) nldecode(ackmsg);
 
-		if (items[10] && strlen(items[10])) dismsg = items[10];
+		if (items[12] && strlen(items[12])) dismsg = items[12];
 		if (dismsg) nldecode(dismsg);
 	}
 	else {
