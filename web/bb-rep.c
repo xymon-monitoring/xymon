@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.4 2003-06-22 07:30:00 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.5 2003-06-22 09:06:23 henrik Exp $";
 
 #include <stdio.h>
 #include <stdio.h>
@@ -218,10 +218,8 @@ int main(int argc, char *argv[])
 			errmsg("Could not generate report");
 		}
 		else {
-			sleep(5);
 			printf("Done...<P></BODY></HTML>\n");
 			fflush(stdout);
-			sleep(5);
 			printf("%s\n\n", htmldelim);
 			printf("Content-Type: text/html\n\n");
 			printf("<HTML><HEAD>\n");
