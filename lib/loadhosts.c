@@ -8,16 +8,34 @@
 #include "util.h"
 #include "loadhosts.h"
 
+typedef struct pagelist_t {
+	char *pagename;
+	struct pagelist_t *next;
+} pagelist_t;
+
 typedef struct namelist_t {
 	char ip[16];
 	char *bbhostname;	/* Name for item 2 of bb-hosts */
 	char *clientname;	/* CLIENT: tag - host alias */
 	char *displayname;	/* NAME: tag - display purpose only */
 	char *downtime;
+	struct pagelist_t *page;
 	struct namelist_t *next;
 } namelist_t;
+static pagelist_t *pghead = NULL;
 static namelist_t *namehead = NULL;
 
+static int pagematch(pagelist_t *pg, char *name)
+{
+	char *p = strrchr(pg->pagename, '/');
+
+	if (p) {
+		return (strcmp(p+1, name) == 0);
+	}
+	else {
+		return (strcmp(pg->pagename, name) == 0);
+	}
+}
 
 void load_hostnames(char *bbhostsfn, int fqdn)
 {
@@ -25,6 +43,7 @@ void load_hostnames(char *bbhostsfn, int fqdn)
 	int ip1, ip2, ip3, ip4;
 	char hostname[MAXMSG];
 	char l[MAXMSG];
+	pagelist_t *curtoppage, *curpage;
 
 	while (namehead) {
 		namelist_t *walk = namehead;
@@ -41,9 +60,70 @@ void load_hostnames(char *bbhostsfn, int fqdn)
 		free(walk);
 	}
 
+	while (pghead) {
+		pagelist_t *walk = pghead;
+
+		pghead = pghead->next;
+		if (walk->pagename) free(walk->pagename);
+		free(walk);
+	}
+
+	/* Setup the top-level page */
+	pghead = (pagelist_t *) malloc(sizeof(pagelist_t));
+	pghead->pagename = strdup("");
+	pghead->next = NULL;
+	curpage = curtoppage = pghead;
+
 	bbhosts = stackfopen(bbhostsfn, "r");
 	while (stackfgets(l, sizeof(l), "include", NULL)) {
-		if (sscanf(l, "%d.%d.%d.%d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
+		if (strncmp(l, "page ", 5) == 0) {
+			pagelist_t *newp;
+			char *tok;
+
+			tok = strtok(l+5, " \n\t\r");
+			if (tok) {
+				newp = (pagelist_t *)malloc(sizeof(pagelist_t));
+				newp->pagename = strdup(tok);
+				newp->next = pghead;
+				curtoppage = pghead = newp;
+				curpage = newp;
+			}
+		}
+		else if (strncmp(l, "subpage ", 8) == 0) {
+			pagelist_t *newp;
+			char *tok;
+
+			tok = strtok(l+8, " \n\t\r");
+			if (tok) {
+				newp = (pagelist_t *)malloc(sizeof(pagelist_t));
+				newp->pagename = malloc(strlen(curtoppage->pagename) + strlen(tok) + 2);
+				sprintf(newp->pagename, "%s/%s", curtoppage->pagename, tok);
+				newp->next = pghead;
+				pghead = newp;
+				curpage = newp;
+			}
+		}
+		else if (strncmp(l, "subparent ", 10) == 0) {
+			pagelist_t *newp, *parent;
+			char *partok, *tok;
+
+			parent = NULL; tok = NULL;
+
+			partok = strtok(l+10, " \n\t\r");
+			if (partok) {
+				tok = strtok(NULL, " \n\t\r");
+				for (parent = pghead; (parent && !pagematch(parent, partok)); parent = parent->next);
+			}
+			if (parent) {
+				newp = (pagelist_t *)malloc(sizeof(pagelist_t));
+				newp->pagename = malloc(strlen(parent->pagename) + strlen(tok) + 2);
+				sprintf(newp->pagename, "%s/%s", parent->pagename, tok);
+				newp->next = pghead;
+				pghead = newp;
+				curpage = newp;
+			}
+		}
+		else if (sscanf(l, "%d.%d.%d.%d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
 			char *startoftags, *tag, *p;
 			char displayname[MAXMSG];
 			char clientname[MAXMSG];
@@ -63,6 +143,7 @@ void load_hostnames(char *bbhostsfn, int fqdn)
 			newitem->clientname = newitem->bbhostname;
 			newitem->downtime = NULL;
 			newitem->displayname = NULL;
+			newitem->page = curpage;
 			newitem->next = namehead;
 			namehead = newitem;
 
@@ -156,5 +237,13 @@ char *hostdispname(char *hostname)
 
 	for (walk = namehead; (walk && (strcmp(walk->bbhostname, hostname) != 0)); walk = walk->next);
 	return ((walk && walk->displayname) ? walk->displayname : hostname);
+}
+
+char *hostpagename(char *hostname)
+{
+	namelist_t *walk;
+
+	for (walk = namehead; (walk && (strcmp(walk->bbhostname, hostname) != 0)); walk = walk->next);
+	return (walk ? walk->page->pagename : "");
 }
 
