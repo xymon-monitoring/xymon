@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.5 2003-06-20 12:31:30 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.6 2003-06-20 13:06:16 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -37,6 +37,9 @@ char *parse_histlogfile(char *hostname, char *servicename, char *timespec)
 	char *p;
 	FILE *fd;
 	char l[MAX_LINE_LEN];
+	char cause[MAX_LINE_LEN];
+
+	cause[0] = '\0';
 
 	sprintf(fn, "%s/%s", getenv("BBHISTLOGS"), commafy(hostname));
 	for (p = strrchr(fn, '/'); (*p); p++) if (*p == ',') *p = '_';
@@ -44,14 +47,29 @@ char *parse_histlogfile(char *hostname, char *servicename, char *timespec)
 
 	dprintf("Looking at history logfile %s\n", fn);
 	fd = fopen(fn, "r");
-	if (fgets(l, sizeof(l), fd)) {
-		p = strchr(l, '\n'); if (p) *p ='\0';
-		fclose(fd);
-		return malcop(l);
+	while (fgets(l, sizeof(l), fd)) {
+		p = strchr(l, '\n'); if (p) *p = '\0';
+
+		if ((l[0] == '&') && (strncmp(l, "&green", 6) != 0)) {
+			p = skipwhitespace(skipword(l));
+			strcat(cause, p);
+			strcat(cause, "<BR>\n");
+		}
+	}
+
+	if (strlen(cause) == 0) {
+		int offset;
+		rewind(fd);
+		if (fgets(l, sizeof(l), fd)) {
+			p = strchr(l, '\n'); if (p) *p = '\0';
+			sscanf(l, "%*s %*s %*s %*s %*s %*s %*s %n", &offset);
+			strncpy(cause, l+offset, sizeof(cause));
+			cause[sizeof(cause)-1] = '\0';
+		}
 	}
 
 	fclose(fd);
-	return NULL;
+	return malcop(cause);
 }
 
 int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
