@@ -5,18 +5,18 @@
 # This is a quick hack to make things work on the systems I use
 # personally, without having to do the full GNU Autoconf thing.
 
-if test -e Makefile.local
+if test -r Makefile.local
 then
 	echo "Already configured - remove Makefile.local to re-configure"
 else
-	echo -n "Where is your Big Brother BBHOME directory [/usr/local/bb] ? "
+	echo "Where is your Big Brother BBHOME directory [/usr/local/bb] ? "
 	read BBHOME
 	if test -z "$BBHOME"
 	then
 		BBHOME=/usr/local/bb
 	fi
 
-	if test -f $BBHOME/etc/bbdef.sh
+	if test -r $BBHOME/etc/bbdef.sh
 	then
 		echo "OK, your BBHOME looks good"
 	else
@@ -25,14 +25,14 @@ else
 	fi
 	echo ""
 
-	echo -n "Where is your Webserver CGI-BIN directory [/var/apache/cgi-bin] ? "
+	echo "Where is your Webserver CGI-BIN directory [/var/apache/cgi-bin] ? "
 	read CGIDIR
 	if test -z "$CGIDIR"
 	then
 		CGIDIR=/var/apache/cgi-bin
 	fi
 
-	if test -f $CGIDIR/bb-hist.sh
+	if test -r $CGIDIR/bb-hist.sh
 	then
 		echo "OK, your CGIDIR looks good"
 	else
@@ -47,11 +47,17 @@ else
 	echo "graph instead of the standard Big Brother graph that automatically"
 	echo "resizes to your browser window."
 	echo ""
-	echo -n "Use the standard Big Brother history graph (y/n) [y] ? "
+	echo "Use the standard Big Brother history graph (y/n) [y] ? "
 	read USEPCTHIST
 	if test "$USEPCTHIST" = "n"
 	then
-		echo -n "   What width should I use for the graph [960] ? "
+		echo "   Tell me the display width (in pixels) to use for"
+		echo "   the history graph. This could be anything, but to"
+		echo "   eliminate as many rounding errors as possible, it"
+		echo "   is best to use a multiple of 24."
+		echo "   The default value (960) is good on 1024x768 displays"
+		echo ""
+		echo "   What width should I use for the graph [960] ? "
 		read PIXELCOUNT
 		if test "$PIXELCOUNT" = ""
 		then
@@ -70,7 +76,7 @@ else
 	echo "CGIDIR = $CGIDIR"             >>Makefile.local
 	echo "HISTGRAPHDEF = $HISTGRAPHDEF" >> Makefile.local
 
-	if test -f Makefile.`uname -s`
+	if test -r Makefile.`uname -s`
 	then
 		cat Makefile.`uname -s` >>Makefile.local
 		echo ""
