@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.133 2003-06-21 18:33:10 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.134 2003-07-02 09:29:49 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -400,6 +400,9 @@ int main(int argc, char *argv[])
 		sprintf(rrddir, "%s/rrd", getenv("BBVAR"));
 	}
 
+	if (getenv("BBHTACCESS")) bbhtaccess = malcop(getenv("BBHTACCESS"));
+	if (getenv("BBPAGEHTACCESS")) bbpagehtaccess = malcop(getenv("BBPAGEHTACCESS"));
+	if (getenv("BBSUBPAGEHTACCESS")) bbsubpagehtaccess = malcop(getenv("BBSUBPAGEHTACCESS"));
 
 	/*
 	 * When doing alternate pagesets, disable some stuff:

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.68 2003-06-24 20:53:30 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.69 2003-07-02 09:29:49 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -46,6 +46,11 @@ int  sort_grouponly_items = 0; /* Standard BB behaviour: Dont sort group-only it
 char *documentationcgi = NULL;
 char *htmlextension = ".html"; /* Filename extension for generated files */
 char *defaultpagetitle = NULL;
+
+/* Format strings for htaccess files */
+char *bbhtaccess = NULL;
+char *bbpagehtaccess = NULL;
+char *bbsubpagehtaccess = NULL;
 
 char *hf_prefix[3];            /* header/footer prefixes for BB, BB2, BBNK pages*/
 
@@ -218,6 +223,63 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 	collist_walk = head; head = head->next; free(collist_walk);
 	return (head);
 }
+
+
+void setup_htaccess(const char *pagepath)
+{
+	char htaccessfn[MAX_PATH];
+	char htaccesscontent[1024];
+
+	htaccesscontent[0] = '\0';
+
+	if (strlen(pagepath) == 0) {
+		sprintf(htaccessfn, ".htaccess");
+		if (bbhtaccess) strcpy(htaccesscontent, bbhtaccess);
+	}
+	else {
+		char *pagename, *subpagename, *p;
+		char *path = malcop(pagepath);
+
+		for (p = path + strlen(path) - 1; ((p > path) && (*p == '/')); p--) *p = '\0';
+
+		sprintf(htaccessfn, "%s/.htaccess", path);
+
+		pagename = path; if (*pagename == '/') pagename++;
+		p = strchr(pagename, '/'); 
+		if (p) { 
+			*p = '\0'; 
+			subpagename = p+1;
+			p = strchr(subpagename, '/');
+			if (p) *p = '\0';
+			if (bbsubpagehtaccess) sprintf(htaccesscontent, bbsubpagehtaccess, pagename, subpagename);
+		}
+		else {
+			if (bbpagehtaccess) sprintf(htaccesscontent, bbpagehtaccess, pagename);
+		}
+
+		free(path);
+	}
+
+	if (strlen(htaccesscontent)) {
+		FILE *fd;
+		struct stat st;
+
+		if (stat(htaccessfn, &st) == 0) {
+			dprintf("htaccess file %s exists, not overwritten\n", htaccessfn);
+			return;
+		}
+
+		fd = fopen(htaccessfn, "w");
+		if (fd) {
+			fprintf(fd, "%s\n", htaccesscontent);
+			fclose(fd);
+		}
+		else {
+			errprintf("Cannot create %s\n", htaccessfn);
+		}
+	}
+}
+
 
 void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int pagetype, char *pagepath)
 {
@@ -701,6 +763,8 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 			}
 		}
 	}
+
+	setup_htaccess(pagepath);
 
 	headfoot(output, hf_prefix[PAGE_BB], pagepath, "header", page->color);
 
