@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-csvinfo.c,v 1.4 2004-10-30 15:35:44 henrik Exp $";
+static char rcsid[] = "$Id: bb-csvinfo.c,v 1.5 2004-11-17 16:11:31 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -92,6 +92,14 @@ int main(int argc, char *argv[])
 	char *items[MAXCOLUMNS];
 
 	int i, found;
+	int argi;
+
+	for (argi=1; (argi < argc); argi++) {
+		if (argnmatch(argv[argi], "--env=")) {
+			char *p = strchr(argv[argi], '=');
+			loadenv(p+1);
+		}
+	}
 
 	parse_query();
 	if (strlen(wantedname) == 0) {
