@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.11 2005-02-02 21:12:11 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.12 2005-02-08 09:26:12 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -313,9 +313,7 @@ int durationvalue(char *dur)
 	int result = 0;
 	char *p;
 	char modifier;
-	struct tm *nowtm;
-	time_t now;
-	
+
 	p = dur + strspn(dur, "0123456789");
 	modifier = *p;
 	*p = '\0';
