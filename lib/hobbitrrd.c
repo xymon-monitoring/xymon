@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.21 2005-02-22 14:14:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.22 2005-02-23 17:03:06 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -57,7 +57,7 @@ static void larrd_setup(void)
 	lrec = larrdrrds;
 	while (lrec) {
 		if (lrec->larrdrrdname != lrec->bbsvcname) xfree(lrec->larrdrrdname);
-		xfree(lrec->bbsvcname);
+		if (lrec->bbsvcname) xfree(lrec->bbsvcname);
 		lrec++;
 	}
 	if (larrdrrds) xfree(larrdrrds);
@@ -65,7 +65,7 @@ static void larrd_setup(void)
 	grec = larrdgraphs;
 	while (grec) {
 		if (grec->larrdpartname) xfree(grec->larrdpartname);
-		xfree(grec->larrdrrdname);
+		if (grec->larrdrrdname) xfree(grec->larrdrrdname);
 		grec++;
 	}
 	if (larrdgraphs) xfree(larrdgraphs);
