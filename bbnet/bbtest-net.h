@@ -91,6 +91,7 @@ typedef struct testedhost_t {
 	int dnserror;		/* set internally if we cannot find the host's IP */
 	int okexpected;		/* set internally if outside DOWNTIME period. If not, failed tests are blue */
 	int repeattest;         /* Set if this host goes on the quick poll list */
+	char *hosttype;         /* For the "Intermediate HOSTTYPE is down" message */
 
 	/* The following are for the connectivity test */
 	int noconn;		/* noconn flag (dont report "conn" at all */

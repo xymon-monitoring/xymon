@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.106 2003-08-31 08:07:51 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.107 2003-09-08 11:49:40 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -186,7 +186,7 @@ group_t *init_group(const char *title, const char *onlycols)
 	return newgroup;
 }
 
-host_t *init_host(const char *hostname, const char *displayname, const char *comment,
+host_t *init_host(const char *hostname, const char *displayname, const char *comment, const char *description,
 		  const int ip1, const int ip2, const int ip3, const int ip4, 
 		  const int dialup, const int prefer, const double warnpct, const char *reporttime,
 		  char *alerts, int nktime, char *waps, char *tags,
@@ -204,6 +204,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *com
 	newhost->hostname = newhost->displayname = malcop(hostname);
 	if (displayname) newhost->displayname = malcop(displayname);
 	newhost->comment = (comment ? malcop(comment) : NULL);
+	newhost->description = (description ? malcop(description) : NULL);
 	sprintf(newhost->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 	newhost->link = find_link(hostname);
 	newhost->pretitle = NULL;
@@ -1250,7 +1251,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			int nktime = 1;
 			double warnpct = reportwarnlevel;
 			char *alertlist, *onwaplist, *nopropyellowlist, *nopropredlist, *larrdgraphs, *reporttime;
-			char *displayname, *comment;
+			char *displayname, *comment, *description;
 			char *targetpagelist[MAX_TARGETPAGES_PER_HOST];
 			int targetpagecount;
 			char *tag;
@@ -1275,7 +1276,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			else tag = NULL;
 
 			alertlist = onwaplist = nopropyellowlist = nopropredlist = larrdgraphs = reporttime = NULL;
-			comment = NULL;
+			comment = description = NULL;
 			for (targetpagecount=0; (targetpagecount < MAX_TARGETPAGES_PER_HOST); targetpagecount++) 
 				targetpagelist[targetpagecount] = NULL;
 			targetpagecount = 0;
@@ -1343,6 +1344,27 @@ bbgen_page_t *load_bbhosts(char *pgset)
 						strcpy(comment, p);
 					}
 				}
+				else if (argnmatch(tag, "DESCR:")) {
+					p = tag+strlen("DESCRCOMMENT:");
+					description = (char *) malloc(strlen(l));
+					if (*p == '\"') {
+						p++;
+						strcpy(description, p);
+						p = strchr(description, '\"');
+						if (p) *p = '\0'; 
+						else {
+							/* Scan forward to next " in input stream */
+							tag = strtok(NULL, "\"\r\n");
+							if (tag) {
+								strcat(description, " ");
+								strcat(description, tag);
+							}
+						}
+					}
+					else {
+						strcpy(description, p);
+					}
+				}
 				else if (argnmatch(tag, "WARNPCT:")) 
 					warnpct = atof(tag+8);
 				else if (argnmatch(tag, "REPORTTIME=")) 
@@ -1365,7 +1387,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				 * whatever group or page is current.
 				 */
 				if (curhost == NULL) {
-					curhost = init_host(hostname, displayname, comment,
+					curhost = init_host(hostname, displayname, comment, description,
 							    ip1, ip2, ip3, ip4, dialup, prefer, 
 							    warnpct, reporttime,
 							    alertlist, nktime, onwaplist,
@@ -1388,7 +1410,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 					}
 				}
 				else {
-					curhost = curhost->next = init_host(hostname, displayname, comment,
+					curhost = curhost->next = init_host(hostname, displayname, comment, description,
 									    ip1, ip2, ip3, ip4, dialup, prefer, 
 									    warnpct, reporttime,
 									    alertlist, nktime, onwaplist,
@@ -1430,7 +1452,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 							targetpagename, hostname);
 					}
 					else {
-						host_t *newhost = init_host(hostname, displayname, comment,
+						host_t *newhost = init_host(hostname, displayname, comment, description,
 									    ip1, ip2, ip3, ip4, dialup, prefer, 
 									    warnpct, reporttime,
 									    alertlist, nktime, onwaplist,
@@ -1477,6 +1499,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			}
 
 			if (displayname) free(displayname);
+			if (description) free(description);
 			if (comment) free(comment);
 			if (alertlist) free(alertlist);
 			if (onwaplist) free(onwaplist);

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.93 2003-09-07 21:33:25 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.94 2003-09-08 11:49:40 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -658,7 +658,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 
 		if (newhost == NULL) {
 			/* New summary "host" */
-			newhost = init_host(s->row, NULL, NULL, 0,0,0,0, 0, 0, 0.0, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0);
+			newhost = init_host(s->row, NULL, NULL, NULL, 0,0,0,0, 0, 0, 0.0, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0);
 
 			/*
 			 * Cannot have the pseudo host in the official hostlist,

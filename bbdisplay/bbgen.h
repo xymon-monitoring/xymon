@@ -233,6 +233,7 @@ typedef struct host_t {
 	char	*hostname;
 	char	*displayname;
 	char	*comment;
+	char    *description;
 	char	ip[16];
 	int	dialup;
 	struct link_t	*link;

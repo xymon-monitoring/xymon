@@ -37,7 +37,7 @@ extern bbgen_page_t *load_bbhosts(char *pgset);
 extern state_t *load_state(dispsummary_t **sumhead);
 
 /* Needed by the summary handling */
-extern host_t *init_host(const char *hostname, const char *displayname, const char *comment,
+extern host_t *init_host(const char *hostname, const char *displayname, const char *comment, const char *description,
 			 const int ip1, const int ip2, const int ip3, const int ip4,
 			 const int dialup, const int prefer, 
 			 const double warnpct, const char *reporttime,

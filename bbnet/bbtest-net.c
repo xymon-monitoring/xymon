@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.113 2003-09-07 07:40:55 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.114 2003-09-08 11:49:40 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -103,8 +103,8 @@ void dump_hostlist(void)
 	for (walk = testhosthead; (walk); walk = walk->next) {
 		printf("Hostname: %s\n", textornull(walk->hostname));
 		printf("\tIP           : %s\n", textornull(walk->ip));
-		printf("\tconntimeout  : %d\n", walk->conntimeout);
-		printf("\ttimeout      : %d\n", walk->timeout);
+		printf("\tHosttype     : %s\n", textornull(walk->hosttype));
+		printf("\tTimeouts     : %d:%d\n", walk->conntimeout, walk->timeout);
 
 		printf("\tFlags        :");
 		if (walk->testip) printf(" testip");
@@ -307,6 +307,7 @@ testedhost_t *init_testedhost(char *hostname, int timeout, int conntimeout, int 
 	newhost = (testedhost_t *) malloc(sizeof(testedhost_t));
 	newhost->hostname = malcop(hostname);
 	newhost->ip[0] = '\0';
+	newhost->hosttype = NULL;
 	newhost->conntimeout = conntimeout;
 	newhost->timeout = timeout;
 
@@ -471,18 +472,18 @@ void load_tests(void)
 					int specialtag = 0;
 					char *savedspec = NULL;
 
-					if ((strncmp(testspec, "badconn", 7) == 0) && periodcoversnow(testspec+7)) {
+					if (argnmatch(testspec, "badconn") && periodcoversnow(testspec+strlen("badconn"))) {
 						char *p =strchr(testspec, ':');
 
 						specialtag = 1;
 						if (p) sscanf(p, ":%d:%d:%d", &h->badconn[0], &h->badconn[1], &h->badconn[2]);
 					}
-					else if (strncmp(testspec, "bad", 3) == 0) {
+					else if (argnmatch(testspec, "bad")) {
 						if (strlen(badsaves)) strcat(badsaves, " ");
 						strcat(badsaves, testspec);
 						specialtag = 1;
 					}
-					else if (strncmp(testspec, "route:", 6) == 0) {
+					else if (argnmatch(testspec, "route:")) {
 						specialtag = 1;
 						h->routerdeps = malcop(testspec+6);
 					}
@@ -491,7 +492,7 @@ void load_tests(void)
 						h->routerdeps = malcop(testspec+strlen(routestring));
 						dprintf("host %s has routerdeps %s\n", h->hostname, h->routerdeps);
 					}
-					else if (strncmp(testspec, "TIMEOUT:", 8) == 0) {
+					else if (argnmatch(testspec, "TIMEOUT:")) {
 						specialtag = 1;
 
 						if (sscanf(testspec, "TIMEOUT:%d:%d", &h->conntimeout, &h->timeout) != 2) {
@@ -504,7 +505,7 @@ void load_tests(void)
 					else if (strcmp(testspec, "testip") == 0) { specialtag = 1; h->testip = 1; }
 					else if (strcmp(testspec, "dialup") == 0) { specialtag = 1; h->dialup = 1; }
 					else if (strcmp(testspec, "nosslcert") == 0) { specialtag = 1; h->nosslcert = 1; }
-					else if (strncmp(testspec, "ssldays=", 8) == 0) {
+					else if (argnmatch(testspec, "ssldays=")) {
 						int warndays, alarmdays;
 
 						if (sscanf(testspec, "ssldays=%d:%d", &warndays, &alarmdays) == 2) {
@@ -512,11 +513,11 @@ void load_tests(void)
 							h->sslalarmdays = alarmdays;
 						}
 					}
-					else if (strncmp(testspec, "depends=", 8) == 0) {
+					else if (argnmatch(testspec, "depends=")) {
 						specialtag = 1;
 						h->deptests = malcop(testspec+8);
 					}
-					else if (strncmp(testspec, "ldaplogin=", 10) == 0) {
+					else if (argnmatch(testspec, "ldaplogin=")) {
 						char *username, *password;
 						
 						username = password = NULL;
@@ -533,6 +534,89 @@ void load_tests(void)
 						specialtag = 1;
 						if (username) h->ldapuser = malcop(username);
 						if (password) h->ldappasswd = malcop(password);
+					}
+					else if (argnmatch(testspec, "NAME:")) {
+						char *name, *p;
+
+						specialtag = 1;
+						p = testspec+strlen("NAME:");
+						name = (char *) malloc(MAX_LINE_LEN);
+						if (*p == '\"') {
+							p++;
+							strcpy(name, p);
+							p = strchr(name, '\"');
+							if (p) *p = '\0'; 
+							else {
+								/* Scan forward to next " in input stream */
+								testspec = strtok(NULL, "\"\r\n");
+								if (testspec) {
+									strcat(name, " ");
+									strcat(name, testspec);
+								}
+							}
+						}
+						else {
+							strcpy(name, p);
+						}
+
+						free(name);
+					}
+					else if (argnmatch(testspec, "COMMENT:")) {
+						char *comment, *p;
+
+						specialtag = 1;
+						p = testspec+strlen("COMMENT:");
+						comment = (char *) malloc(MAX_LINE_LEN);
+						if (*p == '\"') {
+							p++;
+							strcpy(comment, p);
+							p = strchr(comment, '\"');
+							if (p) *p = '\0'; 
+							else {
+								/* Scan forward to next " in input stream */
+								testspec = strtok(NULL, "\"\r\n");
+								if (testspec) {
+									strcat(comment, " ");
+									strcat(comment, testspec);
+								}
+							}
+						}
+						else {
+							strcpy(comment, p);
+						}
+
+						free(comment);
+					}
+					else if (argnmatch(testspec, "DESCR:")) {
+						char *description, *p;
+
+						specialtag = 1;
+						p = testspec+strlen("DESCR:");
+						description = (char *) malloc(MAX_LINE_LEN);
+						if (*p == '\"') {
+							p++;
+							strcpy(description, p);
+							p = strchr(description, '\"');
+							if (p) *p = '\0'; 
+							else {
+								/* Scan forward to next " in input stream */
+								testspec = strtok(NULL, "\"\r\n");
+								if (testspec) {
+									strcat(description, " ");
+									strcat(description, testspec);
+								}
+							}
+						}
+						else {
+							strcpy(description, p);
+						}
+
+						p = strchr(description, ':');
+						if (p) *p = '\0';
+						h->hosttype = malcop(description);
+						if (p) *p = ':';
+
+						free(description);
 					}
 
 					if (!specialtag) {
@@ -678,7 +762,7 @@ void load_tests(void)
 						else if (s == ldaptest) h->firstldap = newtest;
 					}
 
-					testspec = strtok(NULL, "\t ");
+					if (testspec) testspec = strtok(NULL, "\t ");
 				}
 
 				if (pingtest && !h->noconn) {
@@ -1257,8 +1341,14 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 
 		/* Handle the "route" tag dependencies. */
 		if ((color == COL_RED) && test->host->deprouterdown) { 
+			char *routertext;
+
+			routertext = test->host->hosttype;
+			if (routertext == NULL) routertext = getenv("BBROUTERTEXT");
+			if (routertext == NULL) routertext = "router";
+
 			strcat(cause, "\nIntermediate ");
-			strcat(cause, (getenv("BBROUTERTEXT") ? getenv("BBROUTERTEXT") : "router"));
+			strcat(cause, routertext);
 			strcat(cause, " down ");
 			color = COL_YELLOW; 
 		}

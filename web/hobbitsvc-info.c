@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.31 2003-08-30 23:06:17 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.32 2003-09-08 11:49:40 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -104,6 +104,22 @@ int generate_info(char *infocolumn)
 			addtobuffer(&infobuf, &infobuflen, l);
 		}
 		addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
+		addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
+
+		if (hostwalk->hostentry->description) {
+			char *delim = strchr(hostwalk->hostentry->description, ':');
+
+			if (delim) *delim = '\0';
+			sprintf(l, "<tr><th align=left>Host type:</th><td align=left>%s</td></tr>\n",
+				hostwalk->hostentry->description);
+			addtobuffer(&infobuf, &infobuflen, l);
+			if (delim) { 
+				*delim = ':'; 
+				delim++;
+				sprintf(l, "<tr><th align=left>Description:</th><td align=left>%s</td></tr>\n", delim);
+				addtobuffer(&infobuf, &infobuflen, l);
+			}
+		}
 		addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
 		p = hostwalk->hostentry->alerts;
