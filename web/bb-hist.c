@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.12 2003-07-06 19:29:47 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.13 2003-07-07 14:50:01 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -189,12 +189,12 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 		getenv("BBSKIN"), dotgiffilename(COL_BLUE, 0, 1), colorname(COL_BLUE), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "<TR BGCOLOR=\"#000033\">\n");
-	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->pct[COL_GREEN]);
-	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->pct[COL_YELLOW]);
-	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->pct[COL_RED]);
-	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->pct[COL_PURPLE]);
-	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->pct[COL_CLEAR]);
-	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->pct[COL_BLUE]);
+	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_GREEN]);
+	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_YELLOW]);
+	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_RED]);
+	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_PURPLE]);
+	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_CLEAR]);
+	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_BLUE]);
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
 	fprintf(htmlrep, "<TD COLSPAN=6 ALIGN=CENTER>\n");
