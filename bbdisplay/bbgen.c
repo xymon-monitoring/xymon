@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.178 2004-10-26 15:50:21 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.179 2004-10-26 17:23:36 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -610,11 +610,11 @@ int main(int argc, char *argv[])
 		drop_genstatfiles();
 
 		/* Generate the LARRD pages before loading state */
-		pagegenstat = generate_larrd(rrddir, larrdcol, larrd043);
+		pagegenstat = generate_larrd(rrddir, larrdcol, larrd043, usebbgend);
 		add_timestamp("LARRD generate done");
 
 		/* Dont generate both LARRD and info in one run */
-		if (pagegenstat) pagegenstat = generate_info(infocol);
+		if (pagegenstat) pagegenstat = generate_info(infocol, usebbgend);
 		add_timestamp("INFO generate done");
 
 		/* Remove old acknowledgements */
