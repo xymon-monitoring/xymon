@@ -29,7 +29,7 @@
 
 
 
-   page_t                                hostlist_t          state_t
+   bbgen_page_t                          hostlist_t          state_t
 +->  name                                  hostentry --+       entry --+
 |    title                                 next        |       next    |
 |    color                                             |               |
@@ -66,11 +66,11 @@
                       urlprefix
 
 
-  page_t structure holds data about one BB page - the first record in this list
+  bbgen_page_t structure holds data about one BB page - the first record in this list
   represents the top-level bb.html page. Other pages in the list are defined
   using the bb-hosts "page" directive and access via the page->next link.
 
-  subpages are stored in page_t structures also. Accessible via the "subpages"
+  subpages are stored in bbgen_page_t structures also. Accessible via the "subpages"
   link from a page.
 
   group_t structure holds the data from a "group" directive. groups belong to
@@ -202,7 +202,7 @@ typedef struct {
 	void	*parent;
 	group_t	*groups;
 	host_t	*hosts;
-} page_t;
+} bbgen_page_t;
 
 
 typedef struct {
@@ -232,7 +232,7 @@ typedef struct {
 	int	state;		/* 2=escalated, 1=recovered, 0=no change */
 } event_t;
 
-extern page_t		*pagehead;
+extern bbgen_page_t		*pagehead;
 extern link_t 		*linkhead, null_link;
 extern hostlist_t	*hosthead;
 extern state_t		*statehead;

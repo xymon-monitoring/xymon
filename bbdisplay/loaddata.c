@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.36 2003-02-08 23:07:17 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.37 2003-02-11 16:29:52 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -27,7 +27,6 @@ static char rcsid[] = "$Id: loaddata.c,v 1.36 2003-02-08 23:07:17 henrik Exp $";
 #include <dirent.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <wait.h>
 
 #include "bbgen.h"
 #include "util.h"
@@ -47,9 +46,9 @@ link_t  null_link = { "", "", "", NULL };	/* Null link for pages/hosts/whatever 
 col_t   null_column = { "", NULL };		/* Null column */
 
 
-page_t *init_page(const char *name, const char *title)
+bbgen_page_t *init_page(const char *name, const char *title)
 {
-	page_t *newpage = malloc(sizeof(page_t));
+	bbgen_page_t *newpage = malloc(sizeof(bbgen_page_t));
 
 	strcpy(newpage->name, name);
 	strcpy(newpage->title, title);
@@ -563,13 +562,13 @@ link_t *load_all_links(void)
 }
 
 
-page_t *load_bbhosts(void)
+bbgen_page_t *load_bbhosts(void)
 {
 	FILE 	*bbhosts;
 	char 	l[512];
 	char 	*name, *link, *onlycols;
 	char 	hostname[65];
-	page_t 	*toppage, *curpage, *cursubpage;
+	bbgen_page_t 	*toppage, *curpage, *cursubpage;
 	group_t *curgroup;
 	host_t	*curhost;
 	int	ip1, ip2, ip3, ip4;

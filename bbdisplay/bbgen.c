@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.70 2003-02-10 09:12:47 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.71 2003-02-11 16:29:52 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -36,7 +36,7 @@ static char rcsid[] = "$Id: bbgen.c,v 1.70 2003-02-10 09:12:47 henrik Exp $";
 #include "debug.h"
 
 /* Global vars */
-page_t		*pagehead = NULL;			/* Head of page list */
+bbgen_page_t	*pagehead = NULL;			/* Head of page list */
 link_t  	*linkhead = NULL;			/* Head of links list */
 hostlist_t	*hosthead = NULL;			/* Head of hosts list */
 state_t		*statehead = NULL;			/* Head of list of all state entries */
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 {
 	char		pagedir[256];
 	char		rrddir[256];
-	page_t 		*p, *q;
+	bbgen_page_t 	*p, *q;
 	dispsummary_t	*s;
 	int		i;
 	int		pagegenstat;

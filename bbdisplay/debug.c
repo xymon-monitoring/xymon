@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.6 2003-02-02 18:48:10 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.7 2003-02-11 16:29:52 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -108,10 +108,10 @@ void dumpstatelist(state_t *head)
 #endif
 }
 
-void dumpall(page_t *head)
+void dumpall(bbgen_page_t *head)
 {
 #ifdef DEBUG
-	page_t *p, *q;
+	bbgen_page_t *p, *q;
 
 	for (p=head; p; p = p->next) {
 		printf("%sPage: %s, color: %d, title=%s\n", 

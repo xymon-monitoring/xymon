@@ -24,9 +24,9 @@ extern int subpagecolumns;
 extern int hostsbeforepages;
 extern char *includecolumns;
 
-extern void do_bb_page(page_t *page, dispsummary_t *sums, char *filename);
-extern void do_page(page_t *page, char *filename, char *upperpagename);
-extern void do_subpage(page_t *page, char *filename, char *upperpagename);
+extern void do_bb_page(bbgen_page_t *page, dispsummary_t *sums, char *filename);
+extern void do_page(bbgen_page_t *page, char *filename, char *upperpagename);
+extern void do_subpage(bbgen_page_t *page, char *filename, char *upperpagename);
 extern void do_bb2_page(char *filename, int summarytype);
 
 #endif

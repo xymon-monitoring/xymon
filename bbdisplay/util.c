@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.17 2003-02-10 22:17:52 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.18 2003-02-11 16:29:52 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -179,8 +179,8 @@ char *hostpage_link(host_t *host)
 	/* Provide a link to the page where this host lives */
 	static char pagelink[150];
 
-	if (((page_t *)host->parent)->parent) {
-		page_t *parentpage, *parentsubpage;
+	if (((bbgen_page_t *)host->parent)->parent) {
+		bbgen_page_t *parentpage, *parentsubpage;
 
 		parentsubpage = host->parent;
 		parentpage = parentsubpage->parent;
@@ -192,7 +192,7 @@ char *hostpage_link(host_t *host)
 	else {
 		/* "/bb/sdm/sdm.html" */
 		sprintf(pagelink, "%s/%s.html",
-			((page_t *)host->parent)->name, ((page_t *)host->parent)->name);
+			((bbgen_page_t *)host->parent)->name, ((bbgen_page_t *)host->parent)->name);
 	}
 
 	return pagelink;
@@ -204,8 +204,8 @@ char *hostpage_name(host_t *host)
 	/* Provide a link to the page where this host lives */
 	static char pagename[150];
 
-	if (((page_t *)host->parent)->parent) {
-		page_t *parentpage, *parentsubpage;
+	if (((bbgen_page_t *)host->parent)->parent) {
+		bbgen_page_t *parentpage, *parentsubpage;
 
 		parentsubpage = host->parent;
 		parentpage = parentsubpage->parent;
@@ -215,7 +215,7 @@ char *hostpage_name(host_t *host)
 	}
 	else {
 		/* "sdm" */
-		sprintf(pagename, "%s", ((page_t *)host->parent)->title);
+		sprintf(pagename, "%s", ((bbgen_page_t *)host->parent)->title);
 	}
 
 	return pagename;

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.5 2003-02-02 19:09:26 hstoerne Exp $";
+static char rcsid[] = "$Id: process.c,v 1.6 2003-02-11 16:29:52 henrik Exp $";
 
 #include <string.h>
 #include <sys/types.h>
@@ -25,7 +25,7 @@ static char rcsid[] = "$Id: process.c,v 1.5 2003-02-02 19:09:26 hstoerne Exp $";
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <wait.h>
+#include <sys/wait.h>
 
 #include "bbgen.h"
 #include "process.h"
@@ -51,9 +51,9 @@ void calc_hostcolors(hostlist_t *head)
 	}
 }
 
-void calc_pagecolors(page_t *phead)
+void calc_pagecolors(bbgen_page_t *phead)
 {
-	page_t 	*p, *toppage;
+	bbgen_page_t 	*p, *toppage;
 	group_t *g;
 	host_t  *h;
 	int	color;
@@ -147,7 +147,7 @@ void send_summaries(summary_t *sumhead)
 				/* Specific page  - "suburl" is now either */
 				/* "pagename.html" or "pagename/subpage.html" */
 				char *p, *pg, *subpg;
-				page_t *pg1, *pg2;
+				bbgen_page_t *pg1, *pg2;
 
 				pg = subpg = NULL;
 				pg1 = pg2 = NULL;

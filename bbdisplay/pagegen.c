@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.18 2003-02-10 09:12:47 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.19 2003-02-11 16:29:52 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -27,7 +27,6 @@ static char rcsid[] = "$Id: pagegen.c,v 1.18 2003-02-10 09:12:47 henrik Exp $";
 #include <dirent.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <wait.h>
 
 #include "bbgen.h"
 #include "util.h"
@@ -374,9 +373,9 @@ void do_bbext(FILE *output, char *extenv)
 }
 
 
-void do_page_subpages(FILE *output, page_t *subs, char *mklocaltitle, char *upperpagename)
+void do_page_subpages(FILE *output, bbgen_page_t *subs, char *mklocaltitle, char *upperpagename)
 {
-	page_t	*p;
+	bbgen_page_t	*p;
 	link_t  *link;
 	int	currentcolumn;
 
@@ -442,7 +441,7 @@ void do_page_subpages(FILE *output, page_t *subs, char *mklocaltitle, char *uppe
 
 }
 
-void do_bb_page(page_t *page, dispsummary_t *sums, char *filename)
+void do_bb_page(bbgen_page_t *page, dispsummary_t *sums, char *filename)
 {
 	FILE	*output;
 
@@ -469,7 +468,7 @@ void do_bb_page(page_t *page, dispsummary_t *sums, char *filename)
 }
 
 
-void do_page(page_t *page, char *filename, char *upperpagename)
+void do_page(bbgen_page_t *page, char *filename, char *upperpagename)
 {
 	FILE	*output;
 
@@ -491,7 +490,7 @@ void do_page(page_t *page, char *filename, char *upperpagename)
 	fclose(output);
 }
 
-void do_subpage(page_t *page, char *filename, char *upperpagename)
+void do_subpage(bbgen_page_t *page, char *filename, char *upperpagename)
 {
 	FILE	*output;
 
@@ -643,7 +642,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 void do_bb2_page(char *filename, int summarytype)
 {
 	FILE	*output;
-	page_t	bb2page;
+	bbgen_page_t	bb2page;
 	hostlist_t *h;
 	entry_t	*e;
 	int	useit;
