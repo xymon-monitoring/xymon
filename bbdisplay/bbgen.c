@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.152 2003-09-10 17:58:18 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.153 2003-09-12 11:39:25 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -461,6 +461,15 @@ int main(int argc, char *argv[])
 
 	/* In case they changed the name of our column ... */
 	if (egocolumn) setup_signalhandler(egocolumn);
+
+	if (debug) {
+		int i;
+		printf("Command: bbgen");
+		for (i=1; (i<argc); i++) printf(" '%s'", argv[i]);
+		printf("\n");
+		printf("Environment BBHOSTS='%s'\n", textornull(getenv("BBHOSTS")));
+		printf("\n");
+	}
 
 	add_timestamp("Startup");
 
