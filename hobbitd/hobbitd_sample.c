@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_sample.c,v 1.1 2004-10-11 12:34:54 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_sample.c,v 1.2 2004-10-12 10:20:13 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -68,13 +68,17 @@ int main(int argc, char *argv[])
 		*eoln = '\0';
 		restofmsg = eoln+1;
 
-		/* Now parse the meta-data into elements */
+		/* 
+		 * Now parse the meta-data into elements.
+		 * We use our own "gettok()" routine which works
+		 * like strtok(), but can handle empty elements.
+		 */
 		i = 0; 
-		p = strtok(msg, "|");
+		p = gettok(msg, "|");
 		while (p) {
 			metadata[i] = p;
 			i++;
-			p = strtok(NULL, "|");
+			p = gettok(NULL, "|");
 		}
 		metadata[i] = NULL;
 
