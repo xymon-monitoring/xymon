@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.4 2004-12-12 16:13:43 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.5 2004-12-13 13:01:42 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -150,7 +150,7 @@ larrdrrd_t *find_larrd_rrd(char *service, char *flags)
 
 	larrd_setup();
 
-	if (strchr(flags, 'R')) {
+	if (flags && (strchr(flags, 'R') != NULL)) {
 		/* Dont do LARRD for reverse tests, since they have no data */
 		return NULL;
 	}
