@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.22 2004-11-18 14:12:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.23 2004-11-22 14:57:26 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -167,6 +167,13 @@ int main(int argc, char *argv[])
 	sigaction(SIGCHLD, &sa, NULL);
 	sigaction(SIGHUP, &sa, NULL);
 
+	/* Switch stdout/stderr to the logfile, if one was specified */
+	freopen("/dev/null", "r", stdin);	/* bbgend_channel's stdin is not used */
+	if (logfn) {
+		freopen(logfn, "a", stdout);
+		freopen(logfn, "a", stderr);
+	}
+
 	/* Start the channel handler */
 	n = pipe(pfd);
 	if (n == -1) {
@@ -195,12 +202,6 @@ int main(int argc, char *argv[])
 	if (channel == NULL) {
 		errprintf("Channel not available\n");
 		return 1;
-	}
-
-	freopen("/dev/null", "r", stdin);	/* bbgend_channel's stdin is not used */
-	if (logfn) {
-		freopen(logfn, "a", stdout);
-		freopen(logfn, "a", stderr);
 	}
 
 	while (running) {
