@@ -1,28 +1,35 @@
 Stuff that standard BB does which bbgen/bbtest-net does not
 -----------------------------------------------------------
-* Handle the missing fping.sh extensions (ranges).
+* Handle the missing fping.sh extensions (IP ranges).
 * Handle modem banks
 * Handle "group" as mkbb.sh does
 * Convert the mkbwml.sh script to generate WAP pages.
-  Does anyone use WAP phones these days ?
+  Does anyone use WAP phones anymore ?
 * Convert the acklog.sh extension for bb2.html. This does
   not load the system a great deal (at least for me), so
   doing it via the existing script as an extension is OK.
+  Ought to be converted, especially for use with alternate
+  pagesets (currently, all ack-logs go onto the bb2 page,
+  even for hosts that are not included in the current pageset).
 
 Suggestions from users
 ----------------------
-* Allow generation of the bb2.html / bbnk.html for 
-  alternate pagesets, and have the eventlog&acklog show only
-  events for the hosts that are part of this pageset.
-  NB: This would require re-doing the acklog as part of
-  bbgen, instead of via the current standard BB extension
-  script.
 * When a host exists on multiple pages, provide links to
   the other pages showing this host. Maybe from the "info"
   column view ?
+* Something similar to "badconn" for all tests (Torsten
+  Richter on bb list).
 
 Ideas of my own
 ---------------
+* Some way of defining acceptable responsetimes for 
+  services, and then go yellow/red if the threshold is 
+  exceeded.
+* libcurl can support LDAP queries. So implement support
+  for running ldap checks, if the runtime library does.
+  Hmm ... apparently it does not work :-( and the curl
+  guys dont want to support it anymore :-((
+  Cf. curl bug item #735752
 * Dynamic schedules. When a test fails, we want to test
   it sooner than normal to quickly pick up when it goes
   OK again. However, if a test fails and it stays in 
@@ -39,6 +46,7 @@ Ideas of my own
   per service basis.
 * Fixed schedules. Some hosts may require testing more
   often than others.
+* Use Autoconf. Need to learn how to use it first, though.
 
 If I have too much time someday
 -------------------------------
@@ -52,5 +60,8 @@ If I have too much time someday
   Then run a processing task to move messages off
   to the logs/ directory, generate web pages,
   initiate paging etc.
+  Another cool feature would be to sign messages with
+  a key installed on the sender system. Perhaps for
+  "dangerous" messages only - disable/enable, notes,
 * Perhaps switch to using a DB for storing messages.
 
