@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.9 2004-10-23 07:18:36 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.10 2004-10-23 07:35:19 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -191,8 +191,30 @@ static void parse_query(void)
 	if (strcmp(displayname, "") == 0) displayname = hostname;
 }
 
+void historybutton(char *cgibinurl, char *hostname, char *service, char *ip) 
+{
+	char *tmp1 = (char *)malloc(strlen(getenv("NONHISTS"))+3);
+	char *tmp2 = (char *)malloc(strlen(service)+3);
+
+	sprintf(tmp1, ",%s,", getenv("NONHISTS"));
+	sprintf(tmp2, ",%s,", service);
+	if (strstr(tmp1, tmp2) == NULL) {
+		fprintf(stdout,"<BR><BR><CENTER><FORM ACTION=\"%s/bb-hist.sh\"> \
+			<INPUT TYPE=SUBMIT VALUE=\"HISTORY\"> \
+			<INPUT TYPE=HIDDEN NAME=\"HISTFILE\" VALUE=\"%s.%s\"> \
+			<INPUT TYPE=HIDDEN NAME=\"ENTRIES\" VALUE=\"50\"> \
+			<INPUT TYPE=HIDDEN NAME=\"IP\" VALUE=\"%s\"> \
+			</FORM></CENTER>\n",
+			cgibinurl, hostname, service, ip);
+	}
+
+	free(tmp2);
+	free(tmp1);
+}
+
 
 enum source_t { SRC_BBLOGS, SRC_BBGEND, SRC_HISTLOGS };
+enum histbutton_t { HIST_TOP, HIST_BOTTOM, HIST_NONE };
 
 int main(int argc, char *argv[])
 {
@@ -212,6 +234,7 @@ int main(int argc, char *argv[])
 	larrdsvc_t *larrd = NULL;
 	char *cgibinurl, *colfont, *rowfont;
 	enum source_t source = SRC_BBLOGS;
+	enum histbutton_t histlocation = HIST_BOTTOM;
 
 	getenv_default("LARRDS", "cpu=la,content=http,http,conn,fping=conn,ftp,ssh,telnet,nntp,pop,pop-2,pop-3,pop2,pop3,smtp,imap,disk,vmstat,memory,iostat,netstat,citrix,bbgen,bbtest,bbproxy,time=ntpstat,vmio,temperature", NULL);
 	getenv_default("NONHISTS", "info,larrd,trends,graphs", NULL);
@@ -238,6 +261,16 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--bbgend") == 0) {
 			source = SRC_BBGEND;
+		}
+		else if (strncmp(argv[argi], "--history=", 10) == 0) {
+			char *val = strchr(argv[argi], '=')+1;
+
+			if (strcmp(val, "none") == 0)
+				histlocation = HIST_NONE;
+			else if (strcmp(val, "top") == 0)
+				histlocation = HIST_TOP;
+			else if (strcmp(val, "bottom") == 0)
+				histlocation = HIST_BOTTOM;
 		}
 	}
 
@@ -392,6 +425,8 @@ int main(int argc, char *argv[])
 
 	fprintf(stdout, "<br><br><a name=\"begindata\">&nbsp;</a>\n");
 
+	if ((source != SRC_HISTLOGS) && (histlocation == HIST_TOP)) historybutton(cgibinurl, hostname, service, ip);
+
 	fprintf(stdout, "<CENTER><TABLE ALIGN=CENTER BORDER=0>\n");
 	fprintf(stdout, "<TR><TH><FONT %s>%s - %s</FONT><BR><HR WIDTH=\"60%%\"></TH></TR>\n", rowfont, displayname, service);
 	fprintf(stdout, "<TR><TD><H3>%s</H3>\n", firstline);
@@ -438,7 +473,7 @@ int main(int argc, char *argv[])
 	fprintf(stdout, "</table>\n");
 
 	/* larrd stuff here */
-	larrd = find_larrd(service, flags);
+	if (source != SRC_HISTLOGS) larrd = find_larrd(service, flags);
 	if (larrd) {
 		/* 
 		 * If this service uses part-names (currently, only disk does),
@@ -463,26 +498,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	{
-		char *tmp1 = (char *)malloc(strlen(getenv("NONHISTS"))+3);
-		char *tmp2 = (char *)malloc(strlen(service)+3);
-
-		sprintf(tmp1, ",%s,", getenv("NONHISTS"));
-		sprintf(tmp2, ",%s,", service);
-		if (strstr(tmp1, tmp2) == NULL) {
-			fprintf(stdout,"<BR><BR><CENTER><FORM ACTION=\"%s/bb-hist.sh\"> \
-				<INPUT TYPE=SUBMIT VALUE=\"HISTORY\"> \
-				<INPUT TYPE=HIDDEN NAME=\"HISTFILE\" VALUE=\"%s.%s\"> \
-				<INPUT TYPE=HIDDEN NAME=\"ENTRIES\" VALUE=\"50\"> \
-				<INPUT TYPE=HIDDEN NAME=\"IP\" VALUE=\"%s\"> \
-				</FORM></CENTER>\n",
-				cgibinurl, hostname, service, ip);
-		}
-
-		free(tmp2);
-		free(tmp1);
-	}
-
+	if ((source != SRC_HISTLOGS) && (histlocation == HIST_BOTTOM)) historybutton(cgibinurl, hostname, service, ip);
+	
 	headfoot(stdout, ((source == SRC_HISTLOGS) ? "histlog" : "hostsvc"), "", "footer", color);
 	return 0;
 }
