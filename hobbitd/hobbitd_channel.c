@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.16 2004-11-06 21:58:40 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.17 2004-11-06 22:05:05 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -195,29 +195,11 @@ int main(int argc, char *argv[])
 			 * Now we have safely stored the new message in our buffer.
 			 * Wait until any other clients on the same channel have picked up 
 			 * this message (GOCLIENT reaches 0).
-			 *
-			 * Tests show that this will occasionally fail - why I do not know.
-			 * but it appears to be related to an interaction between signals
-			 * and semaphores.
-			 *
-			 * If it fails, then it will cause a duplicate of a message to be 
-			 * delivered to the worker child; this is then caught by the 
-			 * sequence numbers.
 			 */
-#if 0
-			s.sem_num = GOCLIENT; s.sem_op = 0; s.sem_flg = 0;
-			tmo.tv_sec = 0; tmo.tv_nsec = 250000000; /* Wait at most 250 ms */
-			n = semtimedop(channel->semid, &s, 1, &tmo);
-			if ((n == -1) && (errno == EAGAIN)) {
-				errprintf("Wait for GOCLIENT=0 failed, GOCLIENT is %d\n",
-					  semctl(channel->semid, GOCLIENT, GETVAL));
-			}
-#else
 			do {
 				s.sem_num = GOCLIENT; s.sem_op  = 0; s.sem_flg = 0;
 				n = semop(channel->semid, &s, 1);
 			} while ((n == -1) && (errno == EAGAIN) && running);
-#endif
 
 			/* 
 			 * Let master know we got it by downing BOARDBUSY.
@@ -277,8 +259,12 @@ int main(int argc, char *argv[])
 			else if (errno == EAGAIN) {
 				/*
 				 * Write would block ... stop for now. 
+				 * Wait just a little while before continuing, so we
+				 * dont do busy-waiting when the worker child is not
+				 * accepting more data.
 				 */
 				canwrite = 0;
+				usleep(2500);
 			}
 			else {
 				/* Write failed */
