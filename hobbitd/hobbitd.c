@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.39 2004-10-25 21:52:49 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.40 2004-10-26 05:52:29 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -401,15 +401,15 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 {
 	int validity = 30;	/* validity is counted in minutes */
 	time_t now = time(NULL);
-	char *p;
-	int msglen = strlen(msg);
-	int issummary = (strncmp(msg, "summary", 7) == 0);
-	int oldalertstatus, newalertstatus;
+	int msglen, issummary, oldalertstatus, newalertstatus;
 
 	if (msg == NULL) {
 		errprintf("handle_status got a NULL message for %s.%s, sender %s\n", hostname, testname, sender);
 		return;
 	}
+
+	msglen = strlen(msg);
+	issummary = (strncmp(msg, "summary", 7) == 0);
 
 	if (strncmp(msg, "status+", 7) == 0) {
 		validity = durationvalue(msg+7);
@@ -452,6 +452,8 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	newalertstatus = ((alertcolors & (1 << newcolor)) != 0);
 
 	if (msg != log->message) {	/* They can be the same when called from handle_enadis() or check_purple_upd() */
+		char *p;
+
 		/*
 		 * Note here:
 		 * - log->msgsz is the buffer size INCLUDING the final \0.
