@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.23 2005-02-23 20:43:57 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.24 2005-03-13 17:25:12 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -256,7 +256,7 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 
 			sprintf(rrdparturl, fmt, svcurl, svcurl, rrdservicename, svcurl, xgetenv("BBSKIN"));
 			if ((strlen(rrdparturl) + strlen(rrdurl) + 1) >= rrdurlsize) {
-				rrdurlsize += (4096 + (itemcount - (first+step-1))*rrdparturlsize);
+				rrdurlsize += (4096 + rrdparturlsize);
 				rrdurl = (char *) realloc(rrdurl, rrdurlsize);
 			}
 			strcat(rrdurl, rrdparturl);
@@ -283,7 +283,7 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 			}
 			sprintf(rrdparturl, fmt, svcurl, svcurl, rrdservicename, svcurl, xgetenv("BBSKIN"));
 			if ((strlen(rrdparturl) + strlen(rrdurl) + 1) >= rrdurlsize) {
-				rrdurlsize += (4096 + (itemcount - last)*rrdparturlsize);
+				rrdurlsize += (4096 + rrdparturlsize);
 				rrdurl = (char *) realloc(rrdurl, rrdurlsize);
 			}
 			strcat(rrdurl, rrdparturl);
