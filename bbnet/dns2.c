@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns2.c,v 1.1 2004-08-24 09:57:55 henrik Exp $";
+static char rcsid[] = "$Id: dns2.c,v 1.2 2004-08-28 07:12:30 henrik Exp $";
 
 /*
  * All of the code for parsing DNS responses and formatting these into
@@ -339,12 +339,12 @@ static const unsigned char *display_rr(const unsigned char *aptr,
 		p = aptr;
 		len = *p;
 		if (p + len + 1 > aptr + dlen) return NULL;
-		sprintf(msg, "\t%.*s", len, p + 1);
+		sprintf(msg, "\t%.*s", (int) len, p + 1);
 		addtobuffer(&msgbuf, &msglen, msg);
 		p += len + 1;
 		len = *p;
 		if (p + len + 1 > aptr + dlen) return NULL;
-		sprintf(msg, "\t%.*s", len, p + 1);
+		sprintf(msg, "\t%.*s", (int) len, p + 1);
 		addtobuffer(&msgbuf, &msglen, msg);
 		break;
 
@@ -410,7 +410,7 @@ static const unsigned char *display_rr(const unsigned char *aptr,
 		while (p < aptr + dlen) {
 			len = *p;
 			if (p + len + 1 > aptr + dlen) return NULL;
-			sprintf(msg, "\t%.*s", len, p + 1);
+			sprintf(msg, "\t%.*s", (int)len, p + 1);
 			addtobuffer(&msgbuf, &msglen, msg);
 			p += len + 1;
 		}
