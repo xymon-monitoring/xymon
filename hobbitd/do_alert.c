@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.41 2005-02-21 21:02:02 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.42 2005-02-22 16:54:06 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -67,6 +67,7 @@ static char rcsid[] = "$Id: do_alert.c,v 1.41 2005-02-21 21:02:02 henrik Exp $";
 
 FILE *tracefd = NULL;	   /* Logfile for tracing. If not NULL, output trace info to troubleshoot alert rules */
 int include_configid = 0;  /* Whether to include the configuration file linenumber in alerts */
+int testonly = 0;	   /* Test mode, dont actually send out alerts */
 
 enum method_t { M_MAIL, M_SCRIPT };
 enum msgformat_t { FRM_TEXT, FRM_PLAIN, FRM_SMS, FRM_PAGER, FRM_SCRIPT };
@@ -1113,6 +1114,11 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 	time_t now = time(NULL);
 
 	dprintf("send_alert %s:%s state %d\n", alert->hostname->name, alert->testname->name, (int)alert->state);
+	if (tracefd) {
+		char *alerttxt[A_DEAD+1] = { "Paging", "Acked", "Recovered", "Dead" };
+		fprintf(tracefd, "send_alert %s:%s state %s\n", 
+			alert->hostname->name, alert->testname->name, alerttxt[alert->state]);
+	}
 
 	stoprulefound = 0;
 
@@ -1121,10 +1127,18 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 
 		rpt = find_repeatinfo(alert, recip, 1);
 		dprintf("  repeat %s at %d\n", rpt->recipid, rpt->nextalert);
-		if (rpt->nextalert > now) continue;
+		if (rpt->nextalert > now) {
+			if (tracefd) fprintf(tracefd, "Recipient '%s' dropped, next alert due at %d > %d\n",
+						rpt->recipid, (int)rpt->nextalert, (int)now);
+			continue;
+		}
 
 		/* If this is an "UNMATCHED" rule, ignore it if we have already sent out some alert */
-		if (recip->unmatchedonly && (alertcount != 1)) continue;
+		if (recip->unmatchedonly && (alertcount != 1)) {
+			if (tracefd) fprintf(tracefd, "Recipient '%s' dropped, not unmatched (count=%d)\n", 
+					     rpt->recipid, alertcount);
+			continue;
+		}
 
 		dprintf("  Alert for %s:%s to %s\n", alert->hostname->name, alert->testname->name, recip->recipient);
 		switch (recip->method) {
@@ -1152,10 +1166,8 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 				}
 				strcat(cmd, recip->recipient);
 
-				if (tracefd) {
-					fprintf(tracefd, "Mail alert with command '%s'\n", cmd);
-					break;
-				}
+				if (tracefd) fprintf(tracefd, "Mail alert with command '%s'\n", cmd);
+				if (testonly) break;
 
 				mailpipe = popen(cmd, "w");
 				if (mailpipe) {
@@ -1175,6 +1187,10 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 						}
 						fflush(logfd);
 					}
+				}
+				else {
+					errprintf("ERROR: Cannot open command pipe for '%s' - alert lost!\n", cmd);
+					if (tracefd) fprintf(tracefd, "Mail pipe failed - alert lost\n");
 				}
 			}
 			break;
@@ -1254,11 +1270,9 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 				}
 				putenv(downsecsmsg);
 
-				if (tracefd) {
-					fprintf(tracefd, "Script alert with command '%s' and recipient %s\n", 
-						recip->scriptname, recip->recipient);
-					break;
-				}
+				if (tracefd) fprintf(tracefd, "Script alert with command '%s' and recipient %s\n", 
+						     recip->scriptname, recip->recipient);
+				if (testonly) break;
 
 				scriptpid = fork();
 				if (scriptpid == 0) {
@@ -1298,7 +1312,8 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					}
 				}
 				else {
-					errprintf("Fork failed to launch script %s\n", recip->scriptname);
+					errprintf("ERROR: Fork failed to launch script '%s' - alert lost\n", recip->scriptname);
+					if (tracefd) fprintf(tracefd, "Script fork failed - alert lost\n");
 				}
 
 				/* Clean out the environment settings */
