@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.8 2004-12-26 23:27:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.9 2004-12-28 21:24:15 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -225,7 +225,7 @@ void load_gdefs(char *fn)
 char *colon_escape(char *buf)
 {
 	static char *result = NULL;
-	int count;
+	int count = 0;
 	char *p, *inp, *outp;
 
 	p = buf; while ((p = strchr(p, ':')) != NULL) { count++; p++; }
