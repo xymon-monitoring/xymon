@@ -16,6 +16,7 @@ MAN1PAGES = bbgen.1 bbtest-net.1 bbhostgrep.1 bbhostshow.1 bbdigest.1 bb-rep.cgi
 MAN5PAGES = bbcombotest.cfg.5 bb-hosts.5 bb-environ.5 bb-services.5
 MAN7PAGES = bbgen-intro.7
 CONFFILES = bb-services
+GIFFILES  = bbfindhost.gif
 
 all: $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) libcheck
 	@echo ""
@@ -208,7 +209,10 @@ install-html: $(HTMLPAGES)
 	cp -p $(HTMLPAGES) $(BBHOME)/www/help/
 
 install-conf: $(CONFFILES)
-	BBHOME=$(BBHOME) ./install-nooverwrite.sh $(CONFFILES)
+	BBHOME=$(BBHOME) ./install-nooverwrite.sh etc $(CONFFILES)
+
+install-gif: $(GIFFILES)
+	BBHOME=$(BBHOME) ./install-nooverwrite.sh www/gifs $(GIFFILES)
 
 install-man: install-man1 install-man5 install-man7
 
@@ -224,6 +228,6 @@ install-man7:
 	mkdir -p /usr/local/man/man7 || /bin/true
 	cp -p $(MAN7PAGES) $(MANROOT)/man7/
 
-install-nocgi: install-bin install-exts install-man install-html install-conf
+install-nocgi: install-bin install-exts install-man install-html install-conf install-gif
 install: install-nocgi install-cgi
 
