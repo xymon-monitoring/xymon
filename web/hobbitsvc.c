@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "bbgen.h"
 #include "debug.h"
@@ -133,6 +136,7 @@ static void parse_query(void)
 
 int main(int argc, char *argv[])
 {
+	int use_bbgend = 0;
 	char bbgendreq[200];
 	char *log = NULL;
 	int bbgendresult;
@@ -163,43 +167,121 @@ int main(int argc, char *argv[])
 		getenv_default("BBSKIN", dbuf, NULL);
 		free(dbuf);
 	}
+	{
+		getenv_default("USEBBGEND", "FALSE", NULL);
+		if (strcmp(getenv("USEBBGEND"), "TRUE") == 0) use_bbgend = 1;
+	}
 
 	envcheck(reqenv);
 	parse_query();
 
-	sprintf(bbgendreq, "bbgendlog %s.%s", hostname, service);
-	bbgendresult = sendmessage(bbgendreq, NULL, NULL, &log, 1);
-	if ((bbgendresult != BB_OK) || (log == NULL) || (strlen(log) == 0)) {
-		errormsg("Status not available\n");
-		return 1;
+	if (use_bbgend) {
+		sprintf(bbgendreq, "bbgendlog %s.%s", hostname, service);
+		bbgendresult = sendmessage(bbgendreq, NULL, NULL, &log, 1);
+		if ((bbgendresult != BB_OK) || (log == NULL) || (strlen(log) == 0)) {
+			errormsg("Status not available\n");
+			return 1;
+		}
+
+		sumline = log; p = strchr(log, '\n'); *p = '\0';
+		msg = (p+1); p = strchr(msg, '\n');
+		if (!p) {
+			firstline = msg;
+			restofmsg = "";
+		}
+		else { 
+			*p = '\0'; 
+			firstline = strdup(msg); 
+			restofmsg = (p+1);
+			*p = '\n'; 
+		}
+
+		p = gettok(sumline, "|"); icount = 0;
+		while (p && (icount < 20)) {
+			items[icount++] = p;
+			p = gettok(NULL, "|");
+		}
+
+		color = parse_color(items[2]);
+		flags = items[3];
+		logage = time(NULL) - atoi(items[4]);
+		sender = items[6];
+	}
+	else {
+		char logfn[MAX_PATH];
+		struct stat st;
+		int fd;
+		char *receivedfromtext = "\nMessage received from ";
+		char *statusunchangedtext = "\nStatus unchanged in ";
+		char *p, *unchangedstr, *receivedfromstr;
+		int n;
+
+		sprintf(logfn, "%s/%s.%s", getenv("BBLOGS"), commafy(hostname), service);
+		if (stat(logfn, &st) == -1) {
+			errormsg("No such host/service\n");
+			return 1;
+		}
+
+		fd = open(logfn, O_RDONLY);
+		if (fd < 0) {
+			errormsg("Unable to access logfile\n");
+			return 1;
+		}
+		log = (char *)malloc(st.st_size+1);
+		read(fd, log, st.st_size);
+		close(fd);
+		firstline = log;
+		restofmsg = strchr(log, '\n'); 
+		if (restofmsg) {
+			*restofmsg = '\0';
+			restofmsg++;
+		}
+
+		color = parse_color(log);
+
+		p = strstr(log, "<!-- [flags:"); 
+		if (p) {
+			p += strlen("<!-- [flags:");
+			n = strspn(p, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+			flags = (char *)malloc(n+1);
+			strncpy(flags, p, n);
+		}
+		else {
+			flags = "";
+		}
+
+		sprintf(logfn, "%s/%s.%s", getenv("BBHIST"), commafy(hostname), service);
+		if (stat(logfn, &st) == 0) {
+			logage = time(NULL) - st.st_mtime;
+		}
+		else {
+			logage = 0;
+		}
+
+		unchangedstr = strstr(restofmsg, statusunchangedtext);
+
+		p = receivedfromstr = strstr(restofmsg, receivedfromtext); 
+		if (p) {
+			p += strlen(receivedfromtext);
+			n = strspn(p, "0123456789.");
+			sender = (char *)malloc(n);
+			strncpy(sender, p, n);
+			*(sender+n) = '\0';
+		}
+		else {
+			sender = NULL;
+		}
+
+		/* Kill the "Status unchanged ..." and "Message received ..." lines */
+		if (unchangedstr) *unchangedstr = '\0';
+		if (receivedfromstr) *receivedfromstr = '\0';
 	}
 
-	sumline = log; p = strchr(log, '\n'); *p = '\0';
-	msg = (p+1); p = strchr(msg, '\n');
-	if (!p) {
-		firstline = msg;
-		restofmsg = "";
+	if (logage) {
+		timesincechange[0] = '\0'; p = timesincechange;
+		if (logage > 86400) p += sprintf(p, "%d days,", (int) (logage / 86400));
+		p += sprintf(p, "%d hours, %d minutes", (int) ((logage % 86400) / 3600), (int) ((logage % 3600) / 60));
 	}
-	else { 
-		*p = '\0'; 
-		firstline = strdup(msg); 
-		restofmsg = (p+1);
-		*p = '\n'; 
-	}
-
-	p = gettok(sumline, "|"); icount = 0;
-	while (p && (icount < 20)) {
-		items[icount++] = p;
-		p = gettok(NULL, "|");
-	}
-
-	color = parse_color(items[2]);
-	flags = items[3];
-	logage = time(NULL) - atoi(items[4]);
-	timesincechange[0] = '\0'; p = timesincechange;
-	if (logage > 86400) p += sprintf(p, "%d days,", (int) (logage / 86400));
-	p += sprintf(p, "%d hours, %d minutes", (int) ((logage % 86400) / 3600), (int) ((logage % 3600) / 60));
-	sender = items[6];
 
 	/* Count how many lines are in the status message. This is needed by LARRD later */
 	linecount = 0; p = restofmsg;
@@ -224,14 +306,44 @@ int main(int argc, char *argv[])
 	fprintf(stdout, "<CENTER><TABLE ALIGN=CENTER BORDER=0>\n");
 	fprintf(stdout, "<TR><TH><FONT %s>%s - %s</FONT><BR><HR WIDTH=\"60%%\"></TH></TR>\n", rowfont, displayname, service);
 	fprintf(stdout, "<TR><TD><H3>%s</H3>\n", firstline);
-	fprintf(stdout, "<PRE>\n%s\n</PRE>\n", restofmsg);
+	fprintf(stdout, "<PRE>\n");
+
+	do {
+		int color;
+
+		p = strchr(restofmsg, '&');
+		if (p) {
+			*p = '\0';
+			fprintf(stdout, "%s", restofmsg);
+
+			color = parse_color(p+1);
+			if (color == -1) {
+				fprintf(stdout, "&");
+				restofmsg = p+1;
+			}
+			else {
+				fprintf(stdout, "<IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0>",
+                                                        getenv("BBSKIN"), dotgiffilename(color, 0, 0),
+							colorname(color),
+                                                        getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+
+				restofmsg = p+1+strlen(colorname(color));
+			}
+		}
+		else {
+			fprintf(stdout, "%s", restofmsg);
+			restofmsg = NULL;
+		}
+	} while (restofmsg);
+
+	fprintf(stdout, "\n</PRE>\n");
 	fprintf(stdout, "</TD></TR></TABLE>\n");
 
 	fprintf(stdout, "<br><br>\n");
 	fprintf(stdout, "<table align=\"center\" border=0>\n");
 	fprintf(stdout, "<tr><td align=\"center\"><font %s>", colfont);
-	fprintf(stdout, "Status unchanged in %s<br>\n", timesincechange);
-	fprintf(stdout, "Status message received from %s\n", sender);
+	if (timesincechange) fprintf(stdout, "Status unchanged in %s<br>\n", timesincechange);
+	if (sender) fprintf(stdout, "Status message received from %s\n", sender);
 	fprintf(stdout, "</font></td></tr>\n");
 	fprintf(stdout, "</table>\n");
 
