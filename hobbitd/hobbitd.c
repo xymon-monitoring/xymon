@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.36 2004-10-25 12:47:19 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.37 2004-10-25 13:11:27 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -697,8 +697,7 @@ void handle_ack(char *msg, char *sender, bbd_log_t *log, int duration)
 
 	log->acktime = time(NULL)+duration*60;
 	p = msg;
-	p += strcspn(p, " \t");			/* Skip the keyword ... */
-	p += strspn(p, " \t");			/* and the space ... */
+	p += strspn(p, " \t");			/* Skip the space ... */
 	p += strspn(p, "-0123456789");		/* and the cookie ... */
 	p += strspn(p, " \t");			/* and the space ... */
 	p += strspn(p, "0123456789hdwmy");	/* and the duration ... */
@@ -1022,18 +1021,28 @@ void do_message(conn_t *msg)
 		msg->bufp = msg->buf = buf;
 		msg->buflen = buflen;
 	}
-	else if (strncmp(msg->buf, "bbgendack", 9) == 0) {
+	else if ((strncmp(msg->buf, "bbgendack", 9) == 0) || (strncmp(msg->buf, "ack ack_event", 13) == 0)) {
 		/* bbgendack COOKIE DURATION TEXT */
+		char *p;
 		int cookie, duration;
 		char durstr[100];
 		bbd_log_t *lwalk;
 
-		if (sscanf(msg->buf, "%*s %d %99s", &cookie, durstr) == 2) {
+		/*
+		 * For just a bit of compatibility with the old BB system,
+		 * we will accept an "ack ack_event" message. This allows us
+		 * to work with existing acknowledgement scripts.
+		 */
+		if (strncmp(msg->buf, "bbgendack", 9) == 0) p = msg->buf + 9;
+		else if (strncmp(msg->buf, "ack ack_event", 13) == 0) p = msg->buf + 13;
+		else p = msg->buf;
+
+		if (sscanf(p, "%d %99s", &cookie, durstr) == 2) {
 			log = find_cookie(abs(cookie));
 			if (log) {
 				duration = durationvalue(durstr);
 				if (cookie > 0)
-					handle_ack(msg->buf, sender, log, duration);
+					handle_ack(p, sender, log, duration);
 				else {
 					/*
 					 * Negative cookies mean to ack all pending alerts for
@@ -1041,7 +1050,7 @@ void do_message(conn_t *msg)
 					 * have a valid cookie (i.e. not -1)
 					 */
 					for (lwalk = log->host->logs; (lwalk); lwalk = lwalk->next) {
-						if (lwalk->cookie != -1) handle_ack(msg->buf, sender, lwalk, duration);
+						if (lwalk->cookie != -1) handle_ack(p, sender, lwalk, duration);
 					}
 				}
 			}
