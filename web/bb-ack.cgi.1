@@ -1,0 +1,56 @@
+.TH BB-ACK.CGI 1 "Version 3.4: 21 nov 2004" "bbgen toolkit"
+.SH NAME
+bb-ack.cgi \- Big Brother CGI script to acknowledge alerts
+.SH SYNOPSIS
+.B "bb-ack.cgi?ACTION=action&NUMBER=acknum&DELAY=validity&MESSAGE=text"
+
+.SH DESCRIPTION
+.I bb-ack.cgi
+is invoked as a CGI script via the bb-ack.sh CGI wrapper.
+
+bb-ack.cgi is passed a QUERY_STRING environment variable with the
+ACTION, NUMBER, DELAY and MESSAGE parameters. 
+
+The only supported action is "Ack" to acknowledge an alert. The
+original Big Brother script also allowed "WapAck" to acknowledge
+an alert via a WAP/WML interface, and a "PageAdmin" action to
+request the administrator to contact you - these two actions are
+not supported by bb-ack.cgi.
+
+NUMBER is the number identifying the host/service to be acknowledged.
+It is included in all alert-messages sent out by Big Brother.
+
+DELAY is the time (in minutes) that the acknowledge is valid.
+
+MESSAGE is an optional text which will be shown on the status page
+while the acknowledgment is active. You can use it to e.g. tell users
+not to contact you about the problem, or inform them when the problem
+is expected to be resolved.
+
+.SH OPTIONS
+.IP "--env=FILENAME"
+Loads the environment defined in FILENAME before executing the CGI script.
+
+.IP "--debug"
+Enables debugging output.
+
+.SH FILES
+.IP "$BBHOME/web/acknowledge_header"
+HTML header file for the generated web page
+
+.IP "$BBHOME/web/acknowledge_footer"
+HTML footer file for the generated web page
+
+.IP "$BBHOME/web/acknowledge_form"
+Query form displayed when bb-ack.cgi is called with no parameters.
+
+.SH "ENVIRONMENT VARIABLES"
+.IP BBHOME
+Used to locate the template files for the generated web pages.
+
+.IP QUERY_STRING
+Contains the parameters for the CGI script.
+
+.SH "SEE ALSO"
+bbgen(1), bb-hosts(5), bb-environ(5)
+
