@@ -1,16 +1,16 @@
-all: bbgen 
+all: bbgen bbtest-web
 
 GENOBJS = bbgen.o debug.o loaddata.o larrdgen.o pagegen.o process.o util.o 
-TESTOBJS = bbtest.o debug.o loaddata.o util.o
+TESTOBJS = bbtest-web.o util.o
 
 bbgen: $(GENOBJS)
 	gcc -g -o bbgen $(GENOBJS)
 
-bbtest: $(TESTOBJS)
-	gcc -g -o bbtest $(TESTOBJS)
+bbtest-web: $(TESTOBJS)
+	gcc -g -o bbtest-web $(TESTOBJS)
 
 %.o: %.c
 	gcc -Wall -c -g -o $@ $<
 
 clean:
-	rm -f *.o *~ bbgen bbtest
+	rm -f *.o *~ bbgen bbtest-web
