@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.35 2003-09-12 09:41:27 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.36 2003-10-03 13:01:11 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -49,7 +49,7 @@ int generate_info(char *infocolumn)
 	struct utimbuf logfiletime;
 	int infobuflen = 0;
 	char *infobuf = NULL;
-	char l[512];
+	char l[MAX_LINE_LEN];
 	int ping, testip, dialup;
 	alertrec_t *alerts;
 
