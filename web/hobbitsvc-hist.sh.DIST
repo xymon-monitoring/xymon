@@ -1,8 +1,7 @@
 #!/bin/sh
 
-# This is the bbgen drop-in replacement for the Big Brother histlog
-# script, bb-histlog.sh
-# It is the Hobbit version.
+# This is the wrapper for hobbitsvc.cgi when viewing a 
+# a historical logfile.
 
-@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-hostsvc.cgi --env=@BBHOME@/etc/hobbitserver.cfg --historical --no-svcid
+@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbitsvc.cgi --env=@BBHOME@/etc/hobbitserver.cfg --historical --no-svcid
 
