@@ -91,7 +91,7 @@ void add_http_test(testitem_t *t)
 			if (fgets(l, sizeof(l), contentfd)) {
 				p = strchr(l, '\n'); if (p) { *p = '\0'; };
 				req->exp = malloc(sizeof(regex_t));
-				status = regcomp(req->exp, p, REG_EXTENDED|REG_NOSUB);
+				status = regcomp(req->exp, l, REG_EXTENDED|REG_NOSUB);
 				if (status) {
 					printf("Failed to compile regexp '%s' for URL %s\n", p, req->url);
 					req->contstatus = STATUS_CONTENTMATCH_BADREGEX;
