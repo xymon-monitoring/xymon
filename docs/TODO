@@ -1,10 +1,14 @@
 Bugfixes
 --------
 * Handle FPING being set to e.g. "sudo fping -r2"
+* It's been reported that bbtest-net crashes when trying
+  to do http tests via an MS ISA Proxy server that requires
+  authentication. This is still being investigated.
 
 Improvements
 ------------
 * Implement "--follow" in the new HTTP tester.
+* Allow for some tags (e.g. badconn) to be set for all hosts.
 * https proxying (proxy CONNECT protocol)
 * Optionally hide the URL and content output from HTTP/content
   checks for "security reasons". Marco Avvisano, 20-sep-2004.
