@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.169 2004-07-27 20:37:22 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.170 2004-08-02 13:20:05 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -343,6 +343,11 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 			noproppurpledefault = (char *) malloc(strlen(lp)+2);
 			sprintf(noproppurpledefault, ",%s,", (lp+1));
+		}
+		else if (argnmatch(argv[i], "--nopropack=")) {
+			char *lp = strchr(argv[i], '=');
+			nopropackdefault = (char *) malloc(strlen(lp)+2);
+			sprintf(nopropackdefault, ",%s,", (lp+1));
 		}
 
 		else if (argnmatch(argv[i], "--infoupdate=")) {
