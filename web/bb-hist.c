@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.26 2003-08-15 21:05:15 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.27 2003-08-15 21:13:13 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -372,11 +372,14 @@ static void generate_colorbar(
 
 			fprintf(htmlrep, "<TD WIDTH=\"%d%s\" ALIGN=CENTER BGCOLOR=%s>", intervalpixels, pctstr, bgcols[curbg]);
 			if ((endofinterval - begininterval) > minduration) {
-				fprintf(htmlrep, "<A HREF=\"%s&amp;ENDTIME=%u&amp;PIXELS=%d\">",
-					selfurl, (unsigned int)endofinterval, (usepct ? 0 : pixels));
+				int dolink = (colorlog && endofinterval >= colorlog->starttime);
+
+				if (dolink) fprintf(htmlrep, "<A HREF=\"%s&amp;ENDTIME=%u&amp;PIXELS=%d\">",
+						    selfurl, (unsigned int)endofinterval, 
+						    (usepct ? 0 : pixels));
 				fprintf(htmlrep, "<FONT COLOR=\"%s\"><B>%s</B></FONT>", 
 					tagcolors[tagcolor], tag);
-				fprintf(htmlrep, "</A>");
+				if (dolink) fprintf(htmlrep, "</A>");
 			}
 			fprintf(htmlrep, "</TD>\n");
 
