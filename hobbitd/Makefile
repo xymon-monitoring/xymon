@@ -1,10 +1,11 @@
-PROGRAMS = hobbitd hobbitd_channel hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_larrd hobbitd_sample starthobbit.sh hobbitgraph.cgi
+PROGRAMS = hobbitd hobbitd_channel hobbitd_filter hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_larrd hobbitd_sample starthobbit.sh hobbitgraph.cgi
 CGISCRIPTS = bb-ack.sh hobbitgraph.sh maint.pl
 
 LIBOBJS = ../lib/libbbgen.a
 
 HOBBITDOBJS = hobbitd.o hobbitd_ipc.o
 CHANNELOBJS = hobbitd_channel.o hobbitd_ipc.o
+FILTEROBJS  = hobbitd_filter.o hobbitd_ipc.o
 
 SAMPLEOBJS    = hobbitd_sample.o    hobbitd_worker.o
 FILESTOREOBJS = hobbitd_filestore.o hobbitd_worker.o
@@ -38,6 +39,9 @@ hobbitd_alert: $(ALERTOBJS) $(LIBOBJS)
 
 hobbitd_larrd: $(LARRDOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(LARRDOBJS) $(LIBOBJS) $(RRDLIBS) $(NETLIBS)
+
+hobbitd_filter: $(FILTEROBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(FILTEROBJS) $(LIBOBJS)
 
 do_alert.o: do_alert.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ do_alert.c
