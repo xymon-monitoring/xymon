@@ -193,6 +193,24 @@ else
 	else
 		SSLDEF=""
 	fi
+	echo ""
+
+	echo "bbgen can use the OpenLDAP library to test LDAP servers."
+	echo "If you have the OpenLDAP libraries on your system (it is"
+	echo "standard e.g. on Solaris 8), it is recommended that you"
+	echo "enable this."
+	echo ""
+	echo "Do you want to be able to test LDAP servers (y) ?"
+	read ENABLELDAP
+	if test "$ENABLELDAP" = "" -o "$ENABLELDAP" = "y"
+	then
+		LDAPDEF="-DBBGEN_LDAP"
+		LDAPLIBS="-lldap"
+	else
+		LDAPDEF=""
+		LDAPLIBS=""
+	fi
+	echo ""
 
 	echo "Where should I install the bbgen man-pages (/usr/local/man) ?"
 	read MANROOT
@@ -218,6 +236,10 @@ else
 	echo "SSLFLAGS = $SSLDEF"             >>Makefile
 	echo "# Change the following line if compiler complains about a missing ssl.h" >>Makefile
 	echo "SSLINCLUDE = "                  >>Makefile
+	echo "#"                              >>Makefile
+	echo "# OpenLDAP settings"            >>Makefile
+	echo "LDAPFLAGS = $LDAPDEF"           >>Makefile
+	echo "LDAPLIBS = $LDAPLIBS"           >>Makefile
 
 	if test -r Makefile.`uname -s`
 	then
