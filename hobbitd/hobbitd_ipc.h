@@ -3,6 +3,10 @@
 
 #define SHAREDBUFSZ (3*MAXMSG+4096)
 
+/* Semaphore numbers */
+#define BOARDBUSY 0
+#define GOCLIENT 1
+
 extern char *channelnames[];
 
 extern bbd_channel_t *setup_channel(enum msgchannels_t chnname, int flags);
