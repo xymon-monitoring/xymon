@@ -26,10 +26,27 @@ file.
 A sample web page implementing the search facility is included
 with bbgen, you access it via the URL /bb/help/bb-findhost.html.
 
+.SH OPTIONS
+.IP "--env=FILENAME
+Loads the environment from FILENAME before executing the CGI.
+
+.SH FILES
+.IP "$BBHOME/web/findhost_header"
+HTML header file for the generated web page
+
+.IP "$BBHOME/web/findhost_footer"
+HTML footer file for the generated web page
+
+.IP "$BBHOME/web/findhost_form"
+Query form displayed when bb-findhost.cgi is called with no parameters.
+
 .SH "ENVIRONMENT VARIABLES"
 .IP BBHOSTS
 bb-findhost.cgi uses the BBHOSTS environment variable to find the
 bb-hosts file listing all known hosts and their page locations.
+
+.IP BBHOME
+Used to locate the template files for the generated web pages.
 
 .SH "SEE ALSO"
 bbgen(1), bb-hosts(5), bb-environ(5)
