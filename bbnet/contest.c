@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.29 2003-08-18 09:27:49 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.30 2003-08-20 15:57:20 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -35,6 +35,7 @@ static char rcsid[] = "$Id: contest.c,v 1.29 2003-08-18 09:27:49 henrik Exp $";
 
 #define DEF_MAX_OPENS  (FD_SETSIZE / 4)	/* Max number of simultaneous open connections */
 #define MAX_BANNER 1024
+#define MAX_TELNET_CYCLES 5		/* Max loops with telnet options before aborting banner */
 
 static test_t *thead = NULL;
 
@@ -97,7 +98,7 @@ test_t *add_tcp_test(char *ip, int port, char *service, int silent)
 
 	newtest->silenttest = silent;
 	newtest->readpending = 0;
-	newtest->telnetnegotiate = (svcinfo[i].istelnet && !silent);
+	newtest->telnetnegotiate = ((svcinfo[i].istelnet && !silent) ? MAX_TELNET_CYCLES : 0);
 	newtest->telnetbuf = NULL;
 	newtest->telnetbuflen = 0;
 	newtest->banner = NULL;
@@ -160,6 +161,7 @@ notiac:
 
 	item->telnetbuflen = (outp-obuf);
 	memcpy(item->telnetbuf, obuf, item->telnetbuflen);
+	item->telnetbuf[item->telnetbuflen] = '\0';
 	free(obuf);
 	return result;
 }
@@ -441,7 +443,12 @@ void do_tcp_tests(int conntimeout, int concurrency)
 						res = read(item->fd, msgbuf, sizeof(msgbuf)-1);
 						if (res > 0) {
 							msgbuf[res] = '\0';
-							item->banner = malcop(msgbuf);
+							if (item->banner == NULL) 
+								item->banner = malcop(msgbuf);
+							else {
+								item->banner = (char *)realloc(item->banner, strlen(item->banner)+strlen(msgbuf)+1);
+								strcat(item->banner, msgbuf);
+							}
 						}
 
 						if (item->telnetnegotiate) {
@@ -452,6 +459,19 @@ void do_tcp_tests(int conntimeout, int concurrency)
 							 */
 							item->telnetbuf = item->banner;
 							item->telnetbuflen = res;
+
+							/*
+							 * Safety measure: Dont loop forever doing
+							 * telnet options.
+							 * This puts a maximum on how many times
+							 * we go here.
+							 */
+							item->telnetnegotiate--;
+							if (!item->telnetnegotiate) {
+								dprintf("Max. telnet negotiation (%d) reached for host %s\n", 
+									MAX_TELNET_CYCLES,
+									inet_ntoa(item->addr.sin_addr));
+							}
 
 							if (do_telnet_options(item)) {
 								/* Still havent seen the session banner */
@@ -517,8 +537,11 @@ link_t  null_link = { "", "", "", NULL };
 int main(int argc, char *argv[])
 {
 	add_tcp_test("172.16.10.100", 23, "telnet", 0);
-	add_tcp_test("172.16.10.100", 22, "ssh", 0);
-	add_tcp_test("172.16.10.100", 21, "ftp", 0);
+	add_tcp_test("213.237.10.86", 23, "telnet", 0);
+	add_tcp_test("62.79.41.122", 23, "telnet", 0);
+	add_tcp_test("147.29.31.155", 23, "telnet", 0);
+	// add_tcp_test("172.16.10.100", 22, "ssh", 0);
+	// add_tcp_test("172.16.10.100", 21, "ftp", 0);
 
 	do_tcp_tests(0, 0);
 	show_tcp_test_results();
