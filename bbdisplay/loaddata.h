@@ -41,9 +41,8 @@ extern host_t *init_host(const char *hostname, const char *displayname, const ch
 			 const int ip1, const int ip2, const int ip3, const int ip4,
 			 const int dialup, const int prefer, 
 			 const double warnpct, const char *reporttime,
-			 const char *alerts, int nktime, const char *waps,
-			 char *tags, const char *nopropyellowtests, const char *nopropredtests,
-			 const char *larrdgraphs);
+			 char *alerts, int nktime, char *waps, char *tags, 
+			 char *nopropyellowtests, char *nopropredtests, char *larrdgraphs);
 
 extern char	*nopropyellowdefault;
 extern char	*nopropreddefault;

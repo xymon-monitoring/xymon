@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.103 2003-08-12 21:16:05 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.104 2003-08-14 21:51:40 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -189,9 +189,8 @@ group_t *init_group(const char *title, const char *onlycols)
 host_t *init_host(const char *hostname, const char *displayname, const char *comment,
 		  const int ip1, const int ip2, const int ip3, const int ip4, 
 		  const int dialup, const int prefer, const double warnpct, const char *reporttime,
-		  const char *alerts, int nktime, const char *waps, char *tags,
-		  const char *nopropyellowtests, const char *nopropredtests,
-		  const char *larrdgraphs)
+		  char *alerts, int nktime, char *waps, char *tags,
+		  char *nopropyellowtests, char *nopropredtests, char *larrdgraphs)
 {
 	host_t 		*newhost = (host_t *) malloc(sizeof(host_t));
 	hostlist_t	*oldlist;
