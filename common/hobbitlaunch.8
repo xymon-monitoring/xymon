@@ -21,6 +21,12 @@ each component of the Big Brother system, instead of getting output
 from all components logged to a single file.
 
 .SH OPTIONS
+.IP "--env=FILENAME"
+Loads the environment from FILENAME before starting other tools.
+The environment defined by FILENAME is the default, it can be
+overridden by the ENVFILE option in 
+.I bbtasks.cfg(5)
+
 .IP "--config=FILENAME"
 This option defines the file that bblaunch scans for tasks it
 must launch. A description of this file is in 
