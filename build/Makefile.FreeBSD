@@ -1,11 +1,5 @@
 # bbgen compile-time settings for FreeBSD systems
 
-# Set these to the location of your libcurl include-files and library.
-# Note: If your curl version supports SSL (HTTPS sites), you need the OpenSSL
-# libraries as well.
-CURLINCLUDE = -I/usr/local/include
-CURLLIB = -L/usr/local/lib -lcurl -lssl -lcrypto
-
 # NETLIBS: None needed
 NETLIBS =
 

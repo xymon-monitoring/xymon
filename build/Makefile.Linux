@@ -1,11 +1,5 @@
 # bbgen compile-time settings for LINUX systems
 
-# Set these to the location of your libcurl include-files and library.
-# Note: If your curl version supports SSL (HTTPS sites), you need the OpenSSL
-# libraries as well.
-CURLINCLUDE =
-CURLLIB = -lcurl -lssl -lcrypto
-
 # NETLIBS: None needed on Linux
 NETLIBS =
 
