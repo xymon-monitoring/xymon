@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.59 2004-04-23 08:47:03 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.60 2004-07-11 06:35:48 hstoerne Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -31,6 +31,7 @@ char *http_library_version = NULL;
 
 static int can_ssl = 1;
 static FILE *logfd = NULL;
+static int logverbose = 0;
 
 int init_http_library(void)
 {
@@ -367,7 +368,7 @@ static size_t hdr_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 	http_data_t *req = stream;
 	size_t count = size*nmemb;
 
-	if (logfd) fprintf(logfd, "%s", (char *)ptr);
+	if (logverbose && logfd) fprintf(logfd, "%s", (char *)ptr);
 
 	if (req->headers == NULL) {
 		req->headers = (char *) malloc(count+1);
@@ -395,7 +396,7 @@ static size_t data_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 	http_data_t *req = stream;
 	size_t count = size*nmemb;
 
-	if (logfd) fprintf(logfd, "%s", (char *)ptr);
+	if (logverbose && logfd) fprintf(logfd, "%s", (char *)ptr);
 
 	switch (req->contentcheck) {
 	  case CONTENTCHECK_NONE:
@@ -466,6 +467,8 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 	http_data_t *req;
 	testitem_t *t;
 	char useragent[100];
+	struct timeval tm1, tm2, tmdif;
+	struct timezone tz;
 
 	if (logfile) {
 		logfd = fopen(logfile, "a");
@@ -570,7 +573,9 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 		/* Let's do it ... */
 		req = (http_data_t *) t->privdata;
 
-		if (logfd) fprintf(logfd, "\n*** Checking URL: %s ***\n", req->url);
+		if (logfd) {
+			fprintf(logfd, "\n*** Checking URL: %s ***\n", req->url);
+		}
 
 		if (req->contentcheck == CONTENTCHECK_DIGEST) {
 			char *p;
@@ -582,7 +587,16 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 			if (p) *p = ':';
 		}
 
+		if (logfd) gettimeofday(&tm1, &tz);
 		req->res = curl_easy_perform(req->curl);
+		if (logfd) {
+			gettimeofday(&tm2, &tz);
+			tmdif.tv_sec = tm2.tv_sec - tm1.tv_sec;
+			tmdif.tv_usec = tm2.tv_usec - tm1.tv_usec;
+			if (tm2.tv_usec < tm1.tv_usec) { tmdif.tv_sec--; tmdif.tv_usec += 1000000; }
+ 
+			fprintf(logfd, "   Time: %10lu.%06lu\n", tmdif.tv_sec, tmdif.tv_usec);
+		}
 
 		if ((req->res == CURLE_OK) && (req->contentcheck == CONTENTCHECK_DIGEST)) {
 			req->digest = malcop(digest_done());
