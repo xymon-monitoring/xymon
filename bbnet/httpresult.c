@@ -1,16 +1,16 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother network test tool.                                             */
+/* Hobbit monitor network test tool.                                          */
 /*                                                                            */
 /* This is used to implement the testing of HTTP service.                     */
 /*                                                                            */
-/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2004-2005 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.10 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.11 2005-03-25 21:06:57 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
