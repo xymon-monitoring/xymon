@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.29 2005-04-03 12:28:53 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.30 2005-04-03 15:34:51 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -25,9 +25,8 @@ static char rcsid[] = "$Id: loadhosts.c,v 1.29 2005-04-03 12:28:53 henrik Exp $"
 
 static pagelist_t *pghead = NULL;
 static namelist_t *namehead = NULL;
-static const char *bbh_item_key[BBH_LAST];
-static char *documentation_url = NULL;
 static namelist_t *defaulthost = NULL;
+static const char *bbh_item_key[BBH_LAST];
 
 static void bbh_item_list_setup(void)
 {
@@ -44,6 +43,7 @@ static void bbh_item_list_setup(void)
 	bbh_item_key[BBH_CLIENTALIAS] = "CLIENT:";
 	bbh_item_key[BBH_COMMENT] = "COMMENT:";
 	bbh_item_key[BBH_DESCRIPTION] = "DESCR:";
+	bbh_item_key[BBH_DOCURL] = "DOC:";
 	bbh_item_key[BBH_NK] = "NK:";
 	bbh_item_key[BBH_NKTIME] = "NKTIME=";
 	bbh_item_key[BBH_LARRD] = "LARRD:";
@@ -99,10 +99,8 @@ static char *bbh_find_item(namelist_t *host, enum bbh_item_t item)
 		return bbh_find_item(host->defaulthost, item);
 }
 
-static void initialize_hostlist(char *docurl)
+static void initialize_hostlist(void)
 {
-	if (documentation_url) xfree(documentation_url); documentation_url = NULL;
-
 	while (defaulthost) {
 		namelist_t *walk = defaulthost;
 		defaulthost = defaulthost->defaulthost;
@@ -133,8 +131,6 @@ static void initialize_hostlist(char *docurl)
 		xfree(walk);
 	}
 
-	if (docurl) documentation_url = strdup(docurl);
-
 	/* Setup the top-level page */
 	pghead = (pagelist_t *) malloc(sizeof(pagelist_t));
 	pghead->pagepath = strdup("");
@@ -142,12 +138,7 @@ static void initialize_hostlist(char *docurl)
 	pghead->next = NULL;
 }
 
-#ifdef MYSQL
-#include "loadhosts_mysql.c"
-#else
 #include "loadhosts_file.c"
-#endif
-
 
 char *knownhost(char *hostname, char *hostip, int ghosthandling, int *maybedown)
 {
@@ -246,10 +237,11 @@ char *bbh_item(namelist_t *host, enum bbh_item_t item)
 		  return "Top Page";
 
 	  case BBH_DOCURL:
-		  if (documentation_url) {
+		  p = bbh_find_item(host, item);
+		  if (p) {
 			if (result) xfree(result);
-			result = (char *)malloc(strlen(documentation_url) + strlen(host->bbhostname) + 1);
-			sprintf(result, documentation_url, host->bbhostname);
+			result = (char *)malloc(strlen(p) + strlen(host->bbhostname) + 1);
+			sprintf(result, p, host->bbhostname);
 		  	return result;
 		  }
 		  else
@@ -314,7 +306,7 @@ int main(int argc, char *argv[])
 	namelist_t *hosts, *h;
 	char *val;
 
-	hosts = load_hostnames(argv[1], NULL, 1, NULL);
+	hosts = load_hostnames(argv[1], NULL, 1);
 
 	for (argi = 2; (argi < argc); argi++) {
 		h = hostinfo(argv[argi]);
