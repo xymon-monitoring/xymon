@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.185 2004-11-04 11:42:36 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.186 2004-11-13 12:57:13 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -257,6 +257,7 @@ int main(int argc, char *argv[])
 
 			select_headers_and_footers("bbrep");
 			sethostenv_report(reportstart, reportend, reportwarnlevel, reportgreenlevel);
+			usebbgend = 0;
 		}
 		else if (argnmatch(argv[i], "--snapshot=")) {
 			char *lp = strchr(argv[i], '=');
@@ -264,6 +265,7 @@ int main(int argc, char *argv[])
 			snapshot = atol(lp+1);
 			select_headers_and_footers("bbsnap");
 			sethostenv_snapshot(snapshot);
+			usebbgend = 0;
 		}
 
 		else if (strcmp(argv[i], "--pages-first") == 0) {
