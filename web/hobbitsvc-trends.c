@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.22 2003-05-22 05:56:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.23 2003-05-27 20:34:22 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -32,6 +32,7 @@ static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.22 2003-05-22 05:56:18 henrik
 #include "util.h"
 #include "loaddata.h"
 #include "larrdgen.h"
+#include "debug.h"
 
 char    *larrdcol = "larrd";
 int 	enable_larrdgen = 0;
@@ -59,6 +60,11 @@ static char *rrdlink_url(char *hostname, rrd_t *rrd, int larrd043)
 	char svcurl[4096];
 	const char *linkfmt = "<p><A HREF=\"%s\"><IMG SRC=\"%s&graph=hourly\" ALT=\"larrd is accumulating %s\" BORDER=0></A></p>\n";
 
+	dprintf("rrdlink_url: host %s, rrd %s (partname:%s, maxgraphs:%d, count=%d), larrd043=%d\n", 
+		hostname, 
+		rrd->rrdname->name, textornull(rrd->rrdname->partname), rrd->rrdname->maxgraphs, rrd->count, 
+		larrd043);
+
 	if (larrd043 && rrd->rrdname->partname) {
 		char rrdparturl[4096];
 		int first = 0;
@@ -84,6 +90,7 @@ static char *rrdlink_url(char *hostname, rrd_t *rrd, int larrd043)
 		sprintf(rrdurl, linkfmt, svcurl, svcurl, rrd->rrdname->name);
 	}
 
+	dprintf("URLtext: %s\n", rrdurl);
 
 	return rrdurl;
 }
@@ -93,8 +100,11 @@ static char *rrdlink_text(host_t *host, rrd_t *rrd, int larrd043)
 	static char rrdlink[4096];
 	char *graphdef, *p;
 
+	dprintf("rrdlink_text: host %s, rrd %s, larrd043=%d\n", host->hostname, rrd->rrdname->name, larrd043);
+
 	/* If no larrdgraphs definition, include all with default links */
 	if (host->larrdgraphs == NULL) {
+		dprintf("rrdlink_text: Standard URL (no larrdgraphs)\n");
 		return rrdlink_url(host->hostname, rrd, larrd043);
 	}
 
@@ -103,20 +113,29 @@ static char *rrdlink_text(host_t *host, rrd_t *rrd, int larrd043)
 
 	/* If not found ... */
 	if (graphdef == NULL) {
+		dprintf("rrdlink_text: NULL graphdef\n");
+
 		/* Do we include all by default ? */
-		if (*(host->larrdgraphs) == '*') 
+		if (*(host->larrdgraphs) == '*') {
+			dprintf("rrdlink_text: Default URL included\n");
+
 			/* Yes, return default link for this RRD */
 			return rrdlink_url(host->hostname, rrd, larrd043);
-		else
+		}
+		else {
+			dprintf("rrdlink_text: Default URL NOT included\n");
 			/* No, return empty string */
 			return "";
+		}
 	}
 
 	/* We now know that larrdgraphs explicitly define what to do with this RRD */
 
 	/* Does he want to explicitly exclude this RRD ? */
-	if ((graphdef > host->larrdgraphs) && (*(graphdef-1) == '!')) return "";
-
+	if ((graphdef > host->larrdgraphs) && (*(graphdef-1) == '!')) {
+		dprintf("rrdlink_text: This graph is explicitly excluded\n");
+		return "";
+	}
 
 	/* It must be included. */
 	rrdlink[0] = '\0';
@@ -183,8 +202,14 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043)
 	time_t now;
 	struct utimbuf logfiletime;
 
-	if (!run_columngen("larrd", larrd_update_interval, enable_larrdgen))
+	dprintf("generate_larrd(rrddirname=%s, larrcolumn=%s, larrd043=%d\n",
+		 rrddirname, larrdcolumn, larrd043);
+
+	if (!run_columngen("larrd", larrd_update_interval, enable_larrdgen)) {
+		dprintf("Dropping larrd updates, larrd_update_interval=%d, enable_larrdgen=%d\n",
+			larrd_update_interval, enable_larrdgen);
 		return 1;
+	}
 
 	allrrdlinksize = 16384;
 	allrrdlinks = malloc(allrrdlinksize);
@@ -217,6 +242,8 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043)
 			rrdlayout_t *r = NULL;
 			int found, hostfound;
 			int i;
+
+			dprintf("Got RRD %s\n", fn);
 
 			/* Logfiles use ',' instead of '.' in FQDN hostnames */
 			for (p=fn; *p; p++) {
@@ -261,11 +288,17 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043)
 					newrrd->rrdname = r;
 					newrrd->count = 1;
 					newrrd->next = hostwalk->hostentry->rrds;
-					hostwalk->hostentry->rrds = newrrd;
+					hostwalk->hostentry->rrds = rwalk = newrrd;
+					dprintf("larrd: New rrd for host:%s, rrd:%s\n",
+						hostwalk->hostentry->hostname, r->name);
 				}
-				else rwalk->count++;
+				else {
+					rwalk->count++;
 
-				/* printf("Host\t%-40s\t\trrd %s\n", hostwalk->hostentry->hostname, r); */
+					dprintf("larrd: Extra RRD for host %s, rrd %s   count:%d\n", 
+						hostwalk->hostentry->hostname, 
+						rwalk->rrdname->name, rwalk->count);
+				}
 			}
 
 			if (!hostfound && log_nohost_rrds) {
