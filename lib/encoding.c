@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: encoding.c,v 1.4 2005-01-16 11:44:18 henrik Exp $";
+static char rcsid[] = "$Id: encoding.c,v 1.5 2005-01-17 21:51:02 henrik Exp $";
 
 #include <stdlib.h>
 #include <ctype.h>
@@ -229,8 +229,8 @@ void nldecode(unsigned char *msg)
 
 	while (*inp) {
 		n = strcspn(inp, "\\");
-		if ((n > 0) && (inp != outp)) {
-			memmove(outp, inp, n);
+		if (n > 0) {
+			if (inp != outp) memmove(outp, inp, n);
 			inp += n;
 			outp += n;
 		}
