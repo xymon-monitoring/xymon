@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.54 2004-08-27 15:32:04 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.55 2004-08-28 07:11:17 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -487,22 +487,12 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 
 static void get_connectiontime(tcptest_t *item, struct timeval *timestamp)
 {
-	item->duration.tv_sec = timestamp->tv_sec - item->timestart.tv_sec;
-	item->duration.tv_usec = timestamp->tv_usec - item->timestart.tv_usec;
-	if (item->duration.tv_usec < 0) {
-		item->duration.tv_sec--;
-		item->duration.tv_usec += 1000000;
-	}
+	tvdiff(&item->timestart, timestamp, &item->duration);
 }
 
 static void get_totaltime(tcptest_t *item, struct timeval *timestamp)
 {
-	item->totaltime.tv_sec = timestamp->tv_sec - item->timestart.tv_sec;
-	item->totaltime.tv_usec = timestamp->tv_usec - item->timestart.tv_usec;
-	if (item->totaltime.tv_usec < 0) {
-		item->totaltime.tv_sec--;
-		item->totaltime.tv_usec += 1000000;
-	}
+	tvdiff(&item->timestart, timestamp, &item->totaltime);
 }
 
 static int do_telnet_options(tcptest_t *item)
@@ -1025,9 +1015,9 @@ void do_tcp_tests(int timeout, int concurrency)
 		 * Wait for something to happen: connect, timeout, banner arrives ...
 		 */
 		gettimeofday(&timestamp, &tz);
-		tmo.tv_sec = (1 + cutoff.tv_sec - timestamp.tv_sec); tmo.tv_usec = 0;
-		if (tmo.tv_sec <= 0) {
-			errprintf("select timeout is <= 0: %d.%06d (cutoff=%d.%06d, timestamp=%d.%06d)\n", 
+		tvdiff(&timestamp, &cutoff, &tmo);
+		if ((tmo.tv_sec < 0) || (tmo.tv_usec < 0)) {
+			errprintf("select timeout is < 0: %d.%06d (cutoff=%d.%06d, timestamp=%d.%06d)\n", 
 					tmo.tv_sec, tmo.tv_usec,
 					cutoff.tv_sec, cutoff.tv_usec,
 					timestamp.tv_sec, timestamp.tv_usec);
@@ -1042,6 +1032,7 @@ void do_tcp_tests(int timeout, int concurrency)
 			selres = select((maxfd+1), &readfds, &writefds, NULL, &tmo);
 			dprintf("select returned %d\n", selres);
 		}
+
 		if (selres == -1) {
 			int selerr = errno;
 
@@ -1051,7 +1042,9 @@ void do_tcp_tests(int timeout, int concurrency)
 			switch (selerr) {
 			   case EINTR : errprintf("select failed - EINTR\n"); break;
 			   case EBADF : errprintf("select failed - EBADF\n"); break;
-			   case EINVAL: errprintf("select failed - EINVAL, maxfd=%d, tmo=%d.%06d\n", maxfd, tmo.tv_sec, tmo.tv_usec); break;
+			   case EINVAL: errprintf("select failed - EINVAL, maxfd=%d, tmo=%u.%06u\n", maxfd, 
+						(unsigned int)tmo.tv_sec, (unsigned int)tmo.tv_usec); 
+					break;
 			   case ENOMEM: errprintf("select failed - ENOMEM\n"); break;
 			   default    : errprintf("Unknown select() error %d\n", selerr); break;
 			}
@@ -1297,12 +1290,12 @@ void show_tcp_test_results(void)
 	tcptest_t *item;
 
 	for (item = thead; (item); item = item->next) {
-		printf("Address=%s:%d, open=%d, res=%d, err=%d, connecttime=%ld.%06ld, totaltime=%ld.%06ld, ",
+		printf("Address=%s:%d, open=%d, res=%d, err=%d, connecttime=%u.%06u, totaltime=%u.%06u, ",
 				inet_ntoa(item->addr.sin_addr), 
 				ntohs(item->addr.sin_port),
 				item->open, item->connres, item->errcode,
-				item->duration.tv_sec, item->duration.tv_usec,
-				item->totaltime.tv_sec, item->totaltime.tv_usec);
+				(unsigned int)item->duration.tv_sec, (unsigned int)item->duration.tv_usec,
+				(unsigned int)item->totaltime.tv_sec, (unsigned int)item->totaltime.tv_usec);
 
 		if (item->banner && (item->bannerbytes == strlen(item->banner))) {
 			printf("banner='%s' (%d bytes)",
