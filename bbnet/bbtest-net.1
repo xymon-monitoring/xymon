@@ -95,6 +95,10 @@ With this option, hosts with no NET: tag are included
 in the test, so that all hosts that either have a
 matching NET: tag, or no NET: tag at all are tested.
 
+.IP --services
+Dump the list of defined TCP services bbtest-net knows
+how to test. Do not run any tests.
+
 .IP --debug
 Dumps a bunch of status about the tests as they
 progress to stdout.
@@ -453,6 +457,14 @@ Optionally used when a connectivity test fails to pinpoint the
 network location that is causing the failure.
 
 .SH FILES
+,IP "$BBHOME/etc/bb-services"
+This file contains definitions of TCP services that bbtest-net
+can test. Definitions for a default set of common services is built
+into bbtest-net, but these can be overridden or supplemented by
+defining services in the bb-services file. See 
+.I bb-services(5)
+for details on this file.
+
 .IP "~/.netrc - authentication data for password-protected webs"
 bbtest-net uses the CURL library, which supports the use of a
 $HOME/.netrc file. If you have password-protected sites, you can put 
@@ -498,6 +510,6 @@ test tool. It is updated only by bbtest-net during the normal
 runs, and read by bbretest-net.sh.
 
 .SH "SEE ALSO"
-bb-hosts(5), bb-environ(5), curl(1), fping(1), nslookup(1), dig(1),
-ntpdate(1)
+bb-hosts(5), bb-services(5), bb-environ(5), curl(1), fping(1), 
+nslookup(1), dig(1), ntpdate(1)
 
