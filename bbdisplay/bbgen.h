@@ -122,9 +122,12 @@
 /* Max length of a single line in bb-hosts */
 #define MAX_LINE_LEN 4096
 
-/* Max size of a BB message */
-/* NB: This MUST match your MAXSIZE setting in bb.h */
+/* Max size of a BB message - this MUST match your MAXSIZE setting in bb.h */
+/* Normally this is picked up from the configure script. */
+#ifndef MAXMSG
+#warning Using MAXMSG 8192 - check that this matches MAXLINE in your BBHOME/src/bb.h
 #define MAXMSG 8192
+#endif
 
 /* Max number of purple messages in one run */
 #define MAX_PURPLE_PER_RUN	30
