@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.89 2003-08-12 21:16:05 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.90 2003-08-14 22:16:31 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1216,7 +1216,7 @@ void send_results(service_t *service, int failgoesclear)
 		addtostatus(msgtext);
 
 		if ((service == pingtest) && t->host->downcount) {
-			sprintf(msgtext, "\n<p>System unreachable for %d poll periods (%lu seconds)\n</p>",
+			sprintf(msgtext, "\nSystem unreachable for %d poll periods (%lu seconds)\n",
 				t->host->downcount, (time(NULL) - t->host->downstart));
 			addtostatus(msgtext);
 		}
