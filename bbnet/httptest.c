@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.24 2003-07-04 11:13:02 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.25 2003-07-05 09:11:41 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -614,7 +614,9 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 	
 	for (t=host->firsthttp; (t && (t->host == host)); t = t->next) {
 		http_data_t *req = t->private;
+		char cause[100];
 
+		strcpy(cause, "Content OK");
 		if (req->exp) {
 			/* We have a content check */
 			if (req->contstatus == 0) {
@@ -635,6 +637,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 					}
 					req->contstatus = ((status == 0)  ? 200 : STATUS_CONTENTMATCH_FAILED);
 					color = statuscolor(t->host, req->contstatus);
+					if (color != COL_GREEN) strcpy(cause, "Content match failed");
 				}
 				else {
 					/*
@@ -642,6 +645,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 					 * Report CLEAR, unless "alwaystrue" is set.
 					 */
 					if (!t->alwaystrue) color = COL_CLEAR;
+					strcpy(cause, "Failed to get webpage");
 				}
 
 				/* If not inside SLA and non-green, report as BLUE */
@@ -652,6 +656,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 			else {
 				/* This only happens upon internal errors in BB test system */
 				color = statuscolor(t->host, req->contstatus);
+				strcpy(cause, "Internal BB error");
 			}
 
 			/* Send of the status */
@@ -661,8 +666,8 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 			else strcpy(conttest, contenttestname);
 
 			init_status(color);
-			sprintf(msgline, "status %s.%s %s %s\n", 
-				commafy(host->hostname), conttest, colorname(color), timestamp);
+			sprintf(msgline, "status %s.%s %s %s: %s\n", 
+				commafy(host->hostname), conttest, colorname(color), timestamp, cause);
 			addtostatus(msgline);
 
 			if (color == COL_CLEAR) {
