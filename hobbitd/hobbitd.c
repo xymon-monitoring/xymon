@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.66 2004-11-25 15:06:25 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.67 2004-11-25 15:10:49 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -212,7 +212,7 @@ char *generate_stats(void)
 	bufp = statsbuf;
 
 	strftime(bootuptxt, sizeof(bootuptxt), "%d-%b-%Y %T", localtime(&boottime));
-	sprintf(uptimetxt, "%d days, %2d:%2d:%2d", 
+	sprintf(uptimetxt, "%d days, %02d:%02d:%02d", 
 		(int)(uptime / 86400), (int)(uptime % 86400)/3600, (int)(uptime % 3600)/60, (int)(uptime % 60));
 
 	bufp += sprintf(bufp, "status %s.bbgend %s\nStatistics for bbgend daemon\nUp since %s (%s)\n\n",
