@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.6 2005-03-22 09:16:49 henrik Exp $";
+static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.7 2005-03-30 15:41:20 henrik Exp $";
 
 
 static int get_page_name_title(char *buf, char *key, char **name, char **title)
@@ -150,6 +150,8 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 			newitem->bbhostname = strdup(hostname);
 			if (ip1 || ip2 || ip3 || ip4) newitem->preference = 1; else newitem->preference = 0;
 			newitem->clientname = newitem->bbhostname;
+			newitem->logname = strdup(newitem->bbhostname);
+			{ char *p = newitem->logname; while ((p = strchr(p, '.')) != NULL) { *p = '_'; } }
 			newitem->downtime = NULL;
 			newitem->page = curpage;
 			newitem->data = NULL;

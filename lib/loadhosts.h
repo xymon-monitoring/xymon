@@ -67,6 +67,7 @@ typedef struct pagelist_t {
 typedef struct namelist_t {
 	char ip[16];
 	char *bbhostname;	/* Name for item 2 of bb-hosts */
+	char *logname;		/* Name of the host directory in BBHISTLOGS (underscores replaces dots). */
 	int preference;		/* For host with multiple entries, mark if we have the preferred one */
 	int banksize;		/* For modem-bank entries only */
 	pagelist_t *page;	/* Host location in the page/subpage/subparent tree */
@@ -79,7 +80,7 @@ typedef struct namelist_t {
 
 	/* 
 	 * The following are pre-parsed elements from the "rawentry".
-	 * These are pre-parsed because they are used by the bbgen daemon, so
+	 * These are pre-parsed because they are used by the hobbit daemon, so
 	 * fast access to them is an optimization.
 	 */
 	char *clientname;	/* CLIENT: tag - host alias */
@@ -90,6 +91,7 @@ extern char *larrdgraphs_default;
 
 extern namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *docurl);
 extern char *knownhost(char *filename, char *hostip, int ghosthandling, int *maybedown);
+extern int knownloghost(char *logdir);
 extern namelist_t *hostinfo(char *hostname);
 extern char *bbh_item(namelist_t *host, enum bbh_item_t item);
 extern char *bbh_custom_item(namelist_t *host, char *key);

@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.26 2005-03-25 07:40:15 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.27 2005-03-30 15:41:20 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -167,6 +167,16 @@ char *knownhost(char *hostname, char *hostip, int ghosthandling, int *maybedown)
 	if (strcmp(hostname, "dialup") == 0) return result;
 
 	return (walk ? result : NULL);
+}
+
+int knownloghost(char *logdir)
+{
+	namelist_t *walk = NULL;
+
+	/* Find the host */
+	for (walk = namehead; (walk && (strcasecmp(walk->logname, logdir) != 0)); walk = walk->next);
+
+	return (walk != NULL);
 }
 
 namelist_t *hostinfo(char *hostname)
