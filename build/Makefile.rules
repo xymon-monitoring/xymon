@@ -2,249 +2,75 @@
 #
 # This file is included from the Makefile created by the "configure" script
 
-# ARES settings. c-ares 1.2.0 included with bbgen
-DNSFLAGS = -I./c-ares-1.2.0
-DNSLIB = -L./c-ares-1.2.0 -lcares
 
-CFLAGS += -DMAXMSG=$(MAXMSG) -DBBDPORTNUMBER=$(BBPORT)
 
-PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bbdigest bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi bb-findhost.cgi bb-csvinfo.cgi bb-hostsvc.cgi bb bbproxy
-CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh bb-findhost.sh bb-csvinfo.sh bbmessage.cgi bb-hostsvc.sh bb-histlog.sh
-EXTENSIONS = bbcombotest bbretest-net.sh
-HTMLPAGES = bb-findhost.html
-MAN1PAGES = bbgen.1 bbtest-net.1 bbhostgrep.1 bbhostshow.1 bbdigest.1 bb-rep.cgi.1 bb-replog.cgi.1 bb-hist.cgi.1 bb-snapshot.cgi.1 bb-eventlog.cgi.1 bbcombotest.1 bbretest-net.sh.1 bb-findhost.cgi.1 bb-csvinfo.cgi.1 bb.1 bbmessage.cgi.1 bbproxy.1 bb-hostsvc.cgi.1
-MAN5PAGES = bbcombotest.cfg.5 bb-hosts.5 bb-environ.5 bb-services.5
-MAN7PAGES = bbgen-intro.7
-CONFFILES = bb-services
-GIFFILES  = bbfindhost1.gif bbfindhost2.gif
+#####################
+# Build targets
+#####################
 
-all: $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) libcheck
+CFLAGS += -DMAXMSG=$(MAXMSG) -DBBDPORTNUMBER=$(BBPORT) -I. -I$(BUILDTOPDIR)/include
+
+all: lib-build common-build bbdisplay-build bbnet-build bbproxy-build bbgend-build
 	@echo ""
 	@echo "Build complete"
 	@echo ""
-	@echo "Run 'make install' to install programs AND cgi scripts"
-	@echo "    **** This will overwrite your existing cgi scripts ****"
-	@echo "If you dont want to do that, run 'make install-nocgi' to install programs"
-	@echo "and then you can later run 'make install-cgi' to install cgi scripts"
-	@echo ""
 
-GENOBJS = bbgen.o debug.o loadhosts.o loaddata.o reportdata.o bbconvert.o larrdgen.o pagegen.o eventlog.o acklog.o process.o util.o infogen.o savelog.o alert.o wmlgen.o rssgen.o bb-replog.o sendmsg.o
-NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o httpresult.o ldaptest.o sendmsg.o digest.o dns.o dns2.o libcares.a
-HOSTGREPOBJS = bbhostgrep.o util.o debug.o
-HOSTSHOWOBJS = bbhostshow.o util.o debug.o
-DIGESTOBJS = bbdigest.o
-REPOBJS = bb-rep.o debug.o util.o
-REPLOGOBJS = bb-replog-cgi.o reportdata.o debug.o util.o
-HISTOBJS = bb-hist.o reportdata.o debug.o util.o
-COMBOTESTOBJS = bbcombotest.o util.o debug.o calc.o sendmsg.o
-SNAPOBJS = bb-snapshot.o debug.o util.o
-EVENTLOGOBJS = bb-eventlog.o debug.o util.o
-FINDHOSTOBJS = bb-findhost.o loadhosts.o debug.o util.o
-CSVINFOOBJS = bb-csvinfo.o debug.o util.o
-MSGOBJS = sendmsg-std.o debug.o util.o
-MESSAGECGIOBJS = sendmsg-cgi.o debug.o util.o
-HOSTSVCCGIOBJS = bb-hostsvc.o debug.o util.o sendmsg.o
-PROXYOBJS = bbproxy.o debug.o util.o
+lib-build:
+	CC="$(CC)" CFLAGS="$(CFLAGS)" make -C lib all
 
-bbgen: $(GENOBJS)
-	$(CC) $(CFLAGS) -o $@ $(GENOBJS) $(NETLIBS)
+common-build: lib-build
+	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" make -C common all
 
-bbtest-net: $(NETTESTOBJS)
-	$(CC) $(CFLAGS) -o $@ $(NETTESTOBJS) $(LDAPLIBS) $(SSLLIBS) $(NETLIBS)
+bbdisplay-build: lib-build
+	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" HISTGRAPHDEF="$(HISTGRAPHDEF)" make -C bbdisplay all
 
-bbhostgrep: $(HOSTGREPOBJS)
-	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) $(NETLIBS)
+bbnet-build: lib-build
+	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" LDAPFLAGS="$(LDAPFLAGS)" LDAPINCDIR="$(LDAPINCDIR)" LDAPLIBS="$(LDAPLIBS)" NETLIBS="$(NETLIBS)" make -C bbnet all
 
-bbhostshow: $(HOSTSHOWOBJS)
-	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) $(NETLIBS)
+bbproxy-build: lib-build
+	CC="$(CC)" CFLAGS="$(CFLAGS)" NETLIBS="$(NETLIBS)" make -C bbproxy all
 
-bbdigest: $(DIGESTOBJS)
-	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) $(SSLLIBS) $(NETLIBS)
-
-bb-rep.cgi: $(REPOBJS)
-	$(CC) $(CFLAGS) -o $@ $(REPOBJS) $(NETLIBS)
-
-bb-replog.cgi: $(REPLOGOBJS)
-	$(CC) $(CFLAGS) -o $@ $(REPLOGOBJS) $(NETLIBS)
-
-bb-hist.cgi: $(HISTOBJS)
-	$(CC) $(CFLAGS) -o $@ $(HISTOBJS) $(NETLIBS)
-
-bb-snapshot.cgi: $(SNAPOBJS)
-	$(CC) $(CFLAGS) -o $@ $(SNAPOBJS) $(NETLIBS)
-
-bb-eventlog.cgi: $(EVENTLOGOBJS)
-	$(CC) $(CFLAGS) -o $@ $(EVENTLOGOBJS) $(NETLIBS)
-
-bb-findhost.cgi: $(FINDHOSTOBJS)
-	$(CC) $(CFLAGS) -o $@ $(FINDHOSTOBJS) $(NETLIBS)
-
-bb-csvinfo.cgi: $(CSVINFOOBJS)
-	$(CC) $(CFLAGS) -o $@ $(CSVINFOOBJS) $(NETLIBS)
-
-bbcombotest: $(COMBOTESTOBJS)
-	$(CC) $(CFLAGS) -o $@ $(COMBOTESTOBJS) $(NETLIBS)
-
-bbmessage.cgi: $(MESSAGECGIOBJS)
-	$(CC) $(CFLAGS) -o $@ $(MESSAGECGIOBJS) $(NETLIBS)
-
-bb-hostsvc.cgi: $(HOSTSVCCGIOBJS)
-	$(CC) $(CFLAGS) -o $@ $(HOSTSVCCGIOBJS) $(NETLIBS)
-
-bb: $(MSGOBJS)
-	$(CC) $(CFLAGS) -o $@ $(MSGOBJS) $(NETLIBS)
-
-bbproxy: $(PROXYOBJS)
-	$(CC) $(CFLAGS) -o $@ $(PROXYOBJS) $(NETLIBS)
+bbgend-build: lib-build
+	CC="$(CC)" CFLAGS="$(CFLAGS)" NETLIBS="$(NETLIBS)" make -C bbgend  all
 
 
-################################################
-# TEST programs
-################################################
-alert: alert.c debug.c util.c
-	$(CC) $(CFLAGS) -g -DSTANDALONE -DDEBUG -Wall -o $@ alert.c debug.c util.c
-
-contest: contest.c debug.o util.o digest.o httptest.c dns.o dns2.o
-	$(CC) -g -DSTANDALONE -DDEBUG -Wall $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -o $@ contest.c httptest.c dns.o dns2.o digest.o debug.o util.o $(SSLLIBS) $(NETLIBS) ./c-ares-1.2.0/libcares.a
-
-ldaptest: ldaptest.c debug.o util.o sendmsg.o
-	$(CC) -g -DSTANDALONE -DDEBUG -Wall $(CFLAGS) $(LDAPFLAGS) $(LDAPINCDIR) -o $@ ldaptest.c debug.o util.o sendmsg.o $(LDAPLIBS) $(NETLIBS)
-
-calc: calc.c
-	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ calc.c
-
-reptest: reportdata.c debug.c util.c
-	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ reportdata.c debug.c util.c
-
-bbtest-local: bbtest-local.c bbtest-local-linux.c bbtest-local-sunos.c bbtest-local-hpux.c bbtest-local-bsd.c debug.c util.c sendmsg.c
-	$(CC) $(CFLAGS) $(OSDEF) -g -DDEBUG -Wall -o $@ bbtest-local.c debug.c util.c sendmsg.c
-
-libcheck: bbtest-net
-	@./bbtest-net --version >/dev/null || echo "bbtest-net compiled, but will not run. You probably need to set LD_LIBRARY_PATH in bb-network.sh"
-
-################################################
-# Objects requiring special compile flags 
-################################################
-bbtest-net.o: bbtest-net.c bbtest-net.h
-	$(CC) $(CFLAGS) $(SSLFLAGS) $(LDAPFLAGS) $(SSLINCDIR) $(LDAPINCDIR) -c -o $@ bbtest-net.c
-
-ldaptest.o: ldaptest.c ldaptest.h
-	$(CC) $(CFLAGS) $(LDAPFLAGS) $(LDAPINCDIR) -c -o $@ ldaptest.c
-
-httptest.o: httptest.c httptest.h
-	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ httptest.c
-
-httpresult.o: httpresult.c httpresult.h
-	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ httpresult.c
-
-contest.o: contest.c contest.h
-	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ contest.c
-
-digest.o: digest.c digest.h
-	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ digest.c
-
-bb-hist.o: bb-hist.c
-	$(CC) $(CFLAGS) $(HISTGRAPHDEF) -c -o $@ bb-hist.c
-
-dns.o: libcares.a dns.c dns.h
-	$(CC) $(CFLAGS) $(DNSFLAGS) -c -o $@ dns.c
-
-dns2.o: dns2.c dns2.h
-	$(CC) $(CFLAGS) $(DNSFLAGS) -c -o $@ dns2.c
-
-libcares.a: c-ares-1.2.0/libcares.a
-	cp c-ares-1.2.0/libcares.a .
-
-c-ares-1.2.0/libcares.a: c-ares-1.2.0/Makefile
-	(cd c-ares-1.2.0 && make libcares.a)
-
-c-ares-1.2.0/Makefile:
-	(cd c-ares-1.2.0 && ./configure)
-
-################################################
-# Objects compiled differently for use in 
-# bbgen/bbtest-net, and in standalone programs
-################################################
-bb-eventlog.o: eventlog.o
-	$(CC) $(CFLAGS) -DCGI -c -o $@ eventlog.c
-
-bb-replog-cgi.o: bb-replog.c
-	$(CC) $(CFLAGS) -DCGI -c -o $@ bb-replog.c
-
-bbdigest.o: digest.c digest.h
-	$(CC) $(CFLAGS) $(SSLINCDIR) -c -o $@ -DSTANDALONE digest.c
-
-sendmsg-std.o: sendmsg.c sendmsg.h
-	$(CC) $(CFLAGS) -DSTANDALONE -c -o $@ sendmsg.c
-
-sendmsg-cgi.o: sendmsg.c sendmsg.h
-	$(CC) $(CFLAGS) -DCGI -c -o $@ sendmsg.c
-
-bb-hostsvc.o: bb-hostsvc.c
-	$(CC) $(CFLAGS) -DCGI -c -o $@ bb-hostsvc.c
-
-################################################
-# Default compilation rules
-################################################
-%.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-%.sh: %.sh.DIST
-	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' >$@
-	chmod 755 $@
-
-
-################################################
-# Installation and maintenance targets
-################################################
+#####################
+# Cleanup targets
+#####################
 distclean: allclean
 	rm -f Makefile
-	cd c-ares-1.2.0 && (make distclean || /bin/true)
+	cd bbnet/c-ares-1.2.0 && (make distclean || /bin/true)
 
 allclean: clean
-	cd c-ares-1.2.0 && (make clean || /bin/true)
+	cd bbnet/c-ares-1.2.0 && (make clean || /bin/true)
 
 clean:
-	rm -f *.o *.a *~ $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) alert contest reptest calc ldaptest bbtest-local bbproxy
+	make -C lib clean
+	make -C common clean
+	make -C bbdisplay clean
+	make -C bbnet clean
+	make -C bbproxy clean
+	make -C bbgend clean
 
-install-bin: $(PROGRAMS)
-	cp -p $(PROGRAMS) $(BBHOME)/bin/
 
-install-cgi: $(CGISCRIPTS)
-	@echo ""
-	@echo "  WARNING : About to overwrite any existing Big Brother CGI scripts"
-	@echo "            Hit ctrl-C NOW if you want to save them first!"
-	@echo ""
-	@sleep 5
-	cp -p $(CGISCRIPTS) $(CGIDIR)/
+####################
+# Install targets
+####################
 
-install-exts: $(EXTENSIONS)
-	cp -p $(EXTENSIONS) $(BBHOME)/ext/
+install: install-bbdisplay install-bbnet install-bbproxy install-bbgend
 
-install-html: $(HTMLPAGES)
-	cp -p $(HTMLPAGES) $(BBHOME)/www/help/
+install-common:
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" make -C common install
 
-install-conf: $(CONFFILES)
-	BBHOME=$(BBHOME) ./install-nooverwrite.sh etc $(CONFFILES)
+install-bbdisplay: install-common
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" make -C bbdisplay install
 
-install-gif: $(GIFFILES)
-	BBHOME=$(BBHOME) ./install-nooverwrite.sh www/gifs $(GIFFILES)
+install-bbnet: install-common
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" make -C bbnet install
 
-install-man: install-man1 install-man5 install-man7
+install-bbproxy: install-common
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" make -C bbproxy install
 
-install-man1:
-	mkdir -p $(MANROOT)/man1 || /bin/true
-	cp -p $(MAN1PAGES) $(MANROOT)/man1/
-
-install-man5:
-	mkdir -p $(MANROOT)/man5 || /bin/true
-	cp -p $(MAN5PAGES) $(MANROOT)/man5/
-
-install-man7:
-	mkdir -p $(MANROOT)/man7 || /bin/true
-	cp -p $(MAN7PAGES) $(MANROOT)/man7/
-
-install-net: install-bin install-exts install-man install-conf
-install-nocgi: install-net install-html install-gif
-install: install-nocgi install-cgi
+install-bbgend: install-common
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" make -C bbgend install
 
