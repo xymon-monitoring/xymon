@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.10 2003-06-28 06:44:11 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.11 2003-06-30 09:37:52 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -106,9 +106,9 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 	fprintf(htmlrep, "<TR>\n");
 
 	fprintf(htmlrep, "<TD WIDTH=\"50%%\" ALIGN=LEFT>");
-	if (colorlog->starttime <= yesterday) fprintf(htmlrep, "<A HREF=\"%s&OFFSET=%d\">", selfurl, startoffset+1);
+	if (colorlog && colorlog->starttime <= yesterday) fprintf(htmlrep, "<A HREF=\"%s&OFFSET=%d\">", selfurl, startoffset+1);
 	fprintf(htmlrep, "<B>%s</B>", ctime(&yesterday));
-	if (colorlog->starttime <= yesterday) fprintf(htmlrep, "</A>");
+	if (colorlog && colorlog->starttime <= yesterday) fprintf(htmlrep, "</A>");
 	fprintf(htmlrep, "</TD>\n");
 
 	fprintf(htmlrep, "<TD WIDTH=\"50%%\" ALIGN=RIGHT>\n");
@@ -140,7 +140,11 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 	fprintf(htmlrep, "<FONT SIZE=1>\n");
 
 	/* First entry may not start at our report-start time */
-	if (colorlog->starttime > yesterday) {
+	if (colorlog == NULL) {
+		pctsum += factor;
+		fprintf(htmlrep, "<TD WIDTH=100%% BGCOLOR=white NOWRAP>&nbsp</TD>\n");
+	}
+	else if (colorlog->starttime > yesterday) {
 		int pct = ((colorlog->starttime - yesterday) / factor);
 
 		pctsum += pct;
