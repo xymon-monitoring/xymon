@@ -285,7 +285,7 @@ where the alert will show up on the NK page.
 
 The timespecification consists of
 .br
-* day-of-week: 'W' means Mon-Fri ("weekdays"), '*' means all days, '0' .. '6' = Sunday .. Monday
+* day-of-week: 'W' means Mon-Fri ("weekdays"), '*' means all days, '0' .. '6' = Sunday .. Saturday
 .br
 * starttime: Time to start showing errors, HHMM hours/minutes. E.g. "8 am" is "0800", "9.30 pm" is "2130"
 .br
@@ -874,6 +874,13 @@ end is required.
 
 .IP nocont;URL;forbidden_data_regexp
 This tag works just like "cont" tag, but reverses the test. 
+It is green when the "forbidden_data_regexp" is NOT found in
+the response, and red when it IS found. So it can be used to 
+watch for data that should NOT be present in the response,
+e.g. a server error message.
+
+.IP nopost;URL;form-data;expected_data_regexp
+This tag works just like "post" tag, but reverses the test. 
 It is green when the "forbidden_data_regexp" is NOT found in
 the response, and red when it IS found. So it can be used to 
 watch for data that should NOT be present in the response,
