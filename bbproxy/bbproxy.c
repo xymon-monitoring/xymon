@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.20 2004-09-21 13:33:27 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.21 2004-09-21 20:04:40 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -83,7 +83,7 @@ typedef struct conn_t {
 	char clientip[16];
 	char *serverip;
 	int ssocket;
-	int conntries;
+	int conntries, sendtries;
 	int connectpending;
 	time_t conntime;
 	int madetocombo;
@@ -95,6 +95,7 @@ typedef struct conn_t {
 
 #define CONNECT_TRIES 3		/* How many connect-attempts against the server */
 #define CONNECT_INTERVAL 8	/* Seconds between each connection attempt */
+#define SEND_TRIES 2		/* How many times to try sending a message */
 #define BUFSZ_READ 2048		/* Minimum #bytes that must be free when read'ing into a buffer */
 #define BUFSZ_INC  8192		/* How much to grow the buffer when it is too small */
 #define MAX_OPEN_SOCKS 256
@@ -135,7 +136,7 @@ int overdue(struct timeval *now, struct timeval *limit)
 	else return (now->tv_usec >= limit->tv_usec);
 }
 
-static void do_read(int sockfd, char *addr, conn_t *conn, enum phase_t completedstate)
+static int do_read(int sockfd, char *addr, conn_t *conn, enum phase_t completedstate)
 {
 	int n;
 
@@ -151,6 +152,7 @@ static void do_read(int sockfd, char *addr, conn_t *conn, enum phase_t completed
 		errprintf("READ error from %s: %s\n", addr, strerror(errno));
 		msgs_timeout_from[conn->state]++;
 		conn->state = P_CLEANUP;
+		return -1;
 	}
 	else if (n == 0) {
 		/* EOF - request is complete */
@@ -161,9 +163,11 @@ static void do_read(int sockfd, char *addr, conn_t *conn, enum phase_t completed
 		conn->bufp += n;
 		*conn->bufp = '\0';
 	}
+
+	return 0;
 }
 
-static void do_write(int sockfd, char *addr, conn_t *conn, enum phase_t completedstate)
+static int do_write(int sockfd, char *addr, conn_t *conn, enum phase_t completedstate)
 {
 	int n;
 
@@ -173,6 +177,7 @@ static void do_write(int sockfd, char *addr, conn_t *conn, enum phase_t complete
 		errprintf("WRITE error to %s: %s\n", addr, strerror(errno));
 		msgs_timeout_from[conn->state]++;
 		conn->state = P_CLEANUP;
+		return -1;
 	}
 	else if (n > 0) { 
 		conn->buflen -= n; 
@@ -181,6 +186,8 @@ static void do_write(int sockfd, char *addr, conn_t *conn, enum phase_t complete
 			conn->state = completedstate;
 		}
 	}
+
+	return 0;
 }
 
 int main(int argc, char *argv[])
@@ -217,6 +224,7 @@ int main(int argc, char *argv[])
 	unsigned long msgs_page = 0;
 	unsigned long msgs_combo = 0;
 	unsigned long msgs_other = 0;
+	unsigned long msgs_recovered = 0;
 
 	/* Dont save the output from errprintf() */
 	save_errbuf = 0;
@@ -449,6 +457,7 @@ int main(int argc, char *argv[])
 				p += sprintf(p, "- %-22s : %10lu\n", statename[P_REQ_READING], msgs_timeout_from[P_REQ_READING]);
 				p += sprintf(p, "- %-22s : %10lu\n", statename[P_REQ_CONNECTING], msgs_timeout_from[P_REQ_CONNECTING]);
 				p += sprintf(p, "- %-22s : %10lu\n", statename[P_REQ_SENDING], msgs_timeout_from[P_REQ_SENDING]);
+				p += sprintf(p, "- %-22s : %10lu\n", "recovered", msgs_recovered);
 				p += sprintf(p, "- %-22s : %10lu\n", statename[P_RESP_READING], msgs_timeout_from[P_RESP_READING]);
 				p += sprintf(p, "- %-22s : %10lu\n", statename[P_RESP_SENDING], msgs_timeout_from[P_RESP_SENDING]);
 				laststatus = now;
@@ -458,6 +467,7 @@ int main(int argc, char *argv[])
 				stentry->bufp = stentry->buf;
 				stentry->state = P_REQ_CONNECTING;
 				stentry->conntries = CONNECT_TRIES;
+				stentry->sendtries = SEND_TRIES;
 				stentry->conntime = 0;
 			}
 		}
@@ -478,6 +488,7 @@ int main(int argc, char *argv[])
 
 			  case P_REQ_READY:
 				cwalk->conntries = CONNECT_TRIES;
+				cwalk->sendtries = SEND_TRIES;
 				cwalk->conntime = 0;
 
 				/*
@@ -539,6 +550,7 @@ int main(int argc, char *argv[])
 				}
 
 				cwalk->conntries--;
+				cwalk->conntime = ctime;
 				if (cwalk->conntries < 0) {
 					errprintf("Server not responding, message lost\n");
 					cwalk->state = P_CLEANUP;
@@ -589,7 +601,14 @@ int main(int argc, char *argv[])
 				shutdown(cwalk->ssocket, SHUT_WR);
 				cwalk->bufp = cwalk->buf; cwalk->buflen = 0;
 				memset(cwalk->buf, 0, cwalk->bufsize);
-				if (!cwalk->dontcount) msgs_delivered++;
+				if (!cwalk->dontcount) {
+					if (cwalk->sendtries < SEND_TRIES) {
+						errprintf("Recovered from write error after %d retries\n", 
+								(SEND_TRIES - cwalk->sendtries));
+						msgs_recovered++;
+					}
+					msgs_delivered++;
+				}
 				if (cwalk->csocket < 0) {
 					cwalk->state = P_CLEANUP;
 					break;
@@ -809,7 +828,22 @@ int main(int argc, char *argv[])
 							}
 						}
 
-						do_write(cwalk->ssocket, cwalk->serverip, cwalk, P_REQ_DONE);
+						if ( (do_write(cwalk->ssocket, cwalk->serverip, cwalk, P_REQ_DONE) == -1) && 
+						     (cwalk->sendtries > 0) ) {
+							/*
+							 * Got a "write" error after connecting.
+							 * Try saving the situation by retrying the send later.
+							 */
+							dprintf("Attempting recovery from write error\n");
+							close(cwalk->ssocket); sockcount--; cwalk->ssocket = -1;
+							cwalk->sendtries--;
+							cwalk->state = P_REQ_CONNECTING;
+							cwalk->conntries = CONNECT_TRIES;
+							cwalk->conntime = time(NULL);
+						}
+						else {
+							errprintf("Message lost during delivery to server\n");
+						}
 					}
 					break;
 
@@ -854,6 +888,7 @@ int main(int argc, char *argv[])
 				newconn->ssocket = -1;
 				newconn->serverip = NULL;
 				newconn->conntries = 0;
+				newconn->sendtries = 0;
 
 				/*
 				 * Why this ? Because we like to merge small status messages
