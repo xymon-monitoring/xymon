@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.10 2005-02-06 08:49:02 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.11 2005-03-22 17:07:30 henrik Exp $";
 
 static char *netstat_params[] = { "rrdcreate", rrdfn, 
 	                          "DS:udpInDatagrams:DERIVE:600:0:U", 
@@ -263,10 +263,16 @@ int do_netstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		if (!havedata) havedata = do_valbeforemarker(netstat_hpux_markers, datapart, outp);
 		break;
 
+	  case OS_WIN32:
+		havedata = do_valaftermarkerequal(netstat_win32_markers, datapart, outp);
+		break;
+
+	  case OS_OSF:
+		errprintf("Cannot grok osf netstat from host '%s' \n", hostname);
+		return -1;
+
+	  case OS_LINUX22:
 	  case OS_LINUX:
-	  case OS_REDHAT:
-	  case OS_DEBIAN:
-	  case OS_DEBIAN3:
 	  case OS_RHEL3:
 		/* These are of the form "<value> <marker" */
 		datapart = strstr(datapart, "\nTcp:");	/* Skip to the start of "Tcp" (udp comes after) */
@@ -275,24 +281,13 @@ int do_netstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 	  case OS_FREEBSD:
 	  case OS_NETBSD:
+	  case OS_OPENBSD:
 		havedata = do_valbeforemarker(netstat_freebsd_markers, datapart, outp);
 		break;
 
 	  case OS_SNMP:
 		havedata = do_valbeforemarker(netstat_snmp_markers, datapart, outp);
 		break;
-
-	  case OS_WIN32:
-		havedata = do_valaftermarkerequal(netstat_win32_markers, datapart, outp);
-		break;
-
-	  case OS_SCO:
-		errprintf("Cannot grok sco netstat from host '%s' \n", hostname);
-		return -1;
-
-	  case OS_OSF:
-		errprintf("Cannot grok osf netstat from host '%s' \n", hostname);
-		return -1;
 
 	  case OS_UNKNOWN:
 		errprintf("Host '%s' reports netstat for an unknown OS\n", hostname);

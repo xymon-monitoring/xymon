@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.29 2005-03-22 09:16:49 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.30 2005-03-22 17:07:30 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -37,14 +37,15 @@ enum ostype_t get_ostype(char *osname)
 	else if (strcasecmp(osname, "hpux") == 0)        result = OS_HPUX;
 	else if (strcasecmp(osname, "aix") == 0)         result = OS_AIX;
 	else if (strcasecmp(osname, "osf") == 0)         result = OS_OSF;
-	else if (strcasecmp(osname, "sco") == 0)         result = OS_SCO;
 	else if (strcasecmp(osname, "win32") == 0)       result = OS_WIN32;
 	else if (strcasecmp(osname, "freebsd") == 0)     result = OS_FREEBSD;
 	else if (strcasecmp(osname, "netbsd") == 0)      result = OS_NETBSD;
-	else if (strcasecmp(osname, "redhat") == 0)      result = OS_REDHAT;
-	else if (strcasecmp(osname, "debian3") == 0)     result = OS_DEBIAN3;
-	else if (strcasecmp(osname, "debian") == 0)      result = OS_DEBIAN;
+	else if (strcasecmp(osname, "openbsd") == 0)     result = OS_OPENBSD;
+	else if (strcasecmp(osname, "debian3") == 0)     result = OS_LINUX22;
+	else if (strcasecmp(osname, "linux22") == 0)     result = OS_LINUX22;
 	else if (strcasecmp(osname, "linux") == 0)       result = OS_LINUX;
+	else if (strcasecmp(osname, "redhat") == 0)      result = OS_LINUX;
+	else if (strcasecmp(osname, "debian") == 0)      result = OS_LINUX;
 	else if (strcasecmp(osname, "suse") == 0)        result = OS_LINUX;
 	else if (strcasecmp(osname, "mandrake") == 0)    result = OS_LINUX;
 	else if (strcasecmp(osname, "rhel3") == 0)       result = OS_RHEL3;

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.12 2005-02-06 08:49:02 henrik Exp $";
+static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.13 2005-03-22 17:07:30 henrik Exp $";
 
 typedef struct vmstat_layout_t {
 	int index;
@@ -202,7 +202,7 @@ static vmstat_layout_t vmstat_rhel3_layout[] = {
 
 /* This one is for Debian 3.0 (Woody), and possibly others with a Linux 2.2 kernel */
 /* NOT compatible with LARRD 0.43c */
-static vmstat_layout_t vmstat_debian3_layout[] = {
+static vmstat_layout_t vmstat_linux22_layout[] = {
 	{ 0, "cpu_r" },
 	{ 1, "cpu_b" },
 	{ 2, "cpu_w" },
@@ -272,28 +272,26 @@ int do_vmstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		layout = vmstat_osf_layout; break;
 	  case OS_AIX: 
 		layout = vmstat_aix_layout; break;
+	  case OS_HPUX: 
+		layout = vmstat_hpux_layout; break;
+	  case OS_WIN32:
+		errprintf("Cannot handle Win32 vmstat from host '%s' \n", hostname);
+		return -1;
 	  case OS_FREEBSD:
 		layout = vmstat_freebsd_layout; break;
 	  case OS_NETBSD:
 		layout = vmstat_netbsd_layout; break;
-	  case OS_HPUX: 
-		layout = vmstat_hpux_layout; break;
+	  case OS_OPENBSD:
+		errprintf("Cannot handle OpenBSD vmstat from host '%s' \n", hostname);
+		return -1;
+	  case OS_LINUX22:
+		layout = vmstat_linux22_layout; break;
 	  case OS_LINUX:
-	  case OS_REDHAT:
-	  case OS_DEBIAN:
 		layout = vmstat_linux_layout; break;
 	  case OS_RHEL3:
 		layout = vmstat_rhel3_layout; break;
-	  case OS_DEBIAN3:
-		layout = vmstat_debian3_layout; break;
-	  case OS_SCO:
-		errprintf("Cannot handle sco vmstat from host '%s' \n", hostname);
-		return -1;
 	  case OS_SNMP:
 		errprintf("Cannot handle SNMP vmstat from host '%s' \n", hostname);
-		return -1;
-	  case OS_WIN32:
-		errprintf("Cannot handle Win32 vmstat from host '%s' \n", hostname);
 		return -1;
 	  case OS_UNKNOWN:
 		errprintf("Host '%s' reports vmstat for an unknown OS\n", hostname);
