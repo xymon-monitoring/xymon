@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.15 2005-03-01 14:38:55 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.16 2005-03-06 07:21:24 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 		char *metadata[MAX_META+1];
 		int metacount;
 		char *p;
-		char *hostname = NULL, *testname = NULL;
+		char *hostname = NULL, *testname = NULL, *sender = NULL;
 		larrdrrd_t *ldef = NULL;
 		time_t tstamp;
 		int childstat;
@@ -116,6 +116,14 @@ int main(int argc, char *argv[])
 
 		if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			running = 0;
+			continue;
+		}
+		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
+			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
+			if (fn && strlen(fn)) {
+				freopen(fn, "a", stdout);
+				freopen(fn, "a", stderr);
+			}
 			continue;
 		}
 		else if ((metacount > 3) && (strncmp(metadata[0], "@@drophost", 10) == 0)) {
@@ -168,10 +176,11 @@ int main(int argc, char *argv[])
 			  case COL_YELLOW:
 			  case COL_RED:
 				tstamp = atoi(metadata[1]);
+				sender = metadata[2];
 				hostname = metadata[4]; 
 				testname = metadata[5];
 				ldef = find_larrd_rrd(testname, metadata[8]);
-				update_larrd(hostname, testname, restofmsg, tstamp, ldef);
+				update_larrd(hostname, testname, restofmsg, tstamp, sender, ldef);
 				break;
 
 			  default:
@@ -182,10 +191,11 @@ int main(int argc, char *argv[])
 		else if ((metacount > 5) && (strncmp(metadata[0], "@@data", 6) == 0)) {
 			/* @@data|timestamp|sender|origin|hostname|testname */
 			tstamp = atoi(metadata[1]);
+			sender = metadata[2];
 			hostname = metadata[4]; 
 			testname = metadata[5];
 			ldef = find_larrd_rrd(testname, "");
-			update_larrd(hostname, testname, restofmsg, tstamp, ldef);
+			update_larrd(hostname, testname, restofmsg, tstamp, sender, ldef);
 		}
 
 		/* 
