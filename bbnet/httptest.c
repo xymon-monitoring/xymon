@@ -54,37 +54,57 @@ static int can_ldap = 0;
 
 int init_http_library(void)
 {
-	curl_version_info_data *curlver;
-	int i;
-
 	if (curl_global_init(CURL_GLOBAL_DEFAULT)) {
 		printf("FATAL: Cannot initialize libcurl!\n");
 		return 1;
 	}
 
-	/* Check libcurl version */
 	http_library_version = malcop(curl_version());
-	curlver = curl_version_info(CURLVERSION_NOW);
-	if (curlver->age != CURLVERSION_NOW) {
-		printf("Unknown libcurl version - please recompile bbtest-net\n");
-		return 1;
-	}
 
-	if (curlver->ssl_version_num == 0) {
-		printf("WARNING: No SSL support in libcurl - https tests disabled\n");
-		can_ssl = 0;
-		return 1;
-	}
+#if (LIBCURL_VERSION_NUM >= 0x070a00)
+	{
+		curl_version_info_data *curlver;
+		int i;
 
-	if (curlver->version_num < LIBCURL_VERSION_NUM) {
-		printf("WARNING: Compiled against libcurl %s, but running on version %s\n",
-			LIBCURL_VERSION, curlver->version);
-	}
+		/* Check libcurl version */
+		curlver = curl_version_info(CURLVERSION_NOW);
+		if (curlver->age != CURLVERSION_NOW) {
+			printf("Unknown libcurl version - please recompile bbtest-net\n");
+			return 1;
+		}
 
-	for (i=0; (curlver->protocols[i]); i++) {
-		dprintf("Curl supports %s\n", curlver->protocols[i]);
-		if (strcmp(curlver->protocols[i], "ldap") == 0) can_ldap = 1;
+		if (curlver->ssl_version_num == 0) {
+			printf("WARNING: No SSL support in libcurl - https tests disabled\n");
+			can_ssl = 0;
+			return 1;
+		}
+
+		if (curlver->version_num < LIBCURL_VERSION_NUM) {
+			printf("WARNING: Compiled against libcurl %s, but running on version %s\n",
+				LIBCURL_VERSION, curlver->version);
+		}
+
+		for (i=0; (curlver->protocols[i]); i++) {
+			dprintf("Curl supports %s\n", curlver->protocols[i]);
+			if (strcmp(curlver->protocols[i], "ldap") == 0) can_ldap = 1;
+		}
 	}
+#else
+
+/*
+ * Many systems (e.g. Debian) have version 7.9.5, so try to work
+ * with what we have but give a warning about some features not
+ * being supported.
+ */
+#warning libcurl older than 7.10.x is not supported - trying to build anyway
+#warning SSL certificate checks will NOT work.
+#warning Use of the ~/.netrc for usernames and passwords will NOT work.
+
+#if (LIBCURL_VERSION_NUM < 0x070907)
+#define CURLOPT_WRITEDATA CURLOPT_FILE
+#endif
+
+#endif
 
 	return 0;
 }
@@ -327,6 +347,7 @@ static size_t data_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 }
 
 
+#if (LIBCURL_VERSION_NUM >= 0x070a00)
 static int debug_callback(CURL *handle, curl_infotype type, char *data, size_t size, void *userp)
 {
 	http_data_t *req = userp;
@@ -382,7 +403,7 @@ static int debug_callback(CURL *handle, curl_infotype type, char *data, size_t s
 
 	return 0;
 }
-
+#endif
 
 void run_http_tests(service_t *httptest, long followlocations, char *logfile, int sslcertcheck)
 {
@@ -406,15 +427,22 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 
 		curl_easy_setopt(req->curl, CURLOPT_URL, req->url);
 		curl_easy_setopt(req->curl, CURLOPT_NOPROGRESS, 1);
-		curl_easy_setopt(req->curl, CURLOPT_WRITEHEADER, req);
-		curl_easy_setopt(req->curl, CURLOPT_HEADERFUNCTION, hdr_callback);
+
+		/* Dont check if peer name in certificate is OK */
     		curl_easy_setopt(req->curl, CURLOPT_SSL_VERIFYPEER, 0);
+    		curl_easy_setopt(req->curl, CURLOPT_SSL_VERIFYHOST, 0);
+
 		curl_easy_setopt(req->curl, CURLOPT_TIMEOUT, (t->host->timeout ? t->host->timeout : DEF_TIMEOUT));
 		curl_easy_setopt(req->curl, CURLOPT_CONNECTTIMEOUT, (t->host->conntimeout ? t->host->conntimeout : DEF_CONNECT_TIMEOUT));
+
+		/* Activate our callbacks */
+		curl_easy_setopt(req->curl, CURLOPT_WRITEHEADER, req);
+		curl_easy_setopt(req->curl, CURLOPT_HEADERFUNCTION, hdr_callback);
 		curl_easy_setopt(req->curl, CURLOPT_WRITEDATA, req);
 		curl_easy_setopt(req->curl, CURLOPT_WRITEFUNCTION, data_callback);
 		curl_easy_setopt(req->curl, CURLOPT_ERRORBUFFER, &req->errorbuffer);
 
+#if (LIBCURL_VERSION_NUM >= 0x070a00)
 		if (sslcertcheck && (strncmp(req->url, "https:", 6) == 0)) {
 			curl_easy_setopt(req->curl, CURLOPT_VERBOSE, 1);
 			curl_easy_setopt(req->curl, CURLOPT_DEBUGDATA, req);
@@ -423,6 +451,7 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 
 		/* If needed, get username/password from $HOME/.netrc */
 		curl_easy_setopt(req->curl, CURLOPT_NETRC, CURL_NETRC_OPTIONAL);
+#endif
 
 		/* Follow Location: headers for redirects? */
 		if (followlocations) {
