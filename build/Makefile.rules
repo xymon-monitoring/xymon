@@ -1,4 +1,4 @@
-all: bbgen bbtest-web bbnethosts
+all: bbgen
 
 GENOBJS = bbgen.o debug.o loaddata.o larrdgen.o pagegen.o process.o util.o 
 TESTOBJS = bbtest-web.o util.o debug.o
