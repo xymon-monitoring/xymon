@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.28 2003-01-30 13:43:08 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.29 2003-02-02 19:36:43 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -271,7 +271,9 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 
 	newstate->entry->propagate = checkpropagation(host, testname, newstate->entry->color);
 
-	if (dopurple && (st.st_mtime <= now) && (strcmp(testname, larrdcol) != 0)) {
+	if (dopurple && (st.st_mtime <= now) && 
+			(strcmp(testname, larrdcol) != 0) &&
+			(strcmp(testname, infocol) != 0) ) {
 		/* PURPLE test! */
 
 		char *p;
