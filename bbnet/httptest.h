@@ -25,12 +25,17 @@
 #define CONTENTCHECK_REGEX  1
 #define CONTENTCHECK_DIGEST 2
 
+#define HTTPVER_ANY 0
+#define HTTPVER_10  1
+#define HTTPVER_11  2
+
 typedef struct {
 	char   *url;                    /* URL to request, stripped of BB'isms */
 	char   *proxy;                  /* Proxy host CURLOPT_PROXY */
 	char   *proxyuserpwd;           /* Proxy username/passwd CURLOPT_PROXYUSERPWD */
 	char   *ip;                     /* IP to test against */
 	int    is_ftp;                  /* Set if URL is an FTP request */
+	int    httpver;                 /* If we must do only HTTP 1.0 */
 	char   *hosthdr;                /* Host: header for ip-based test */
 	char   *postdata;               /* Form POST data CURLOPT_POSTFIELDS */
 	int    sslversion;		/* SSL version CURLOPT_SSLVERSION */

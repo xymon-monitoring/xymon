@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.55 2003-12-12 06:53:23 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.56 2004-01-26 15:01:48 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -127,6 +127,7 @@ void add_http_test(testitem_t *t)
 	if (ip) req->ip = malcop(ip); else req->ip = NULL;
 	if (hosthdr) req->hosthdr = malcop(hosthdr); else req->hosthdr = NULL;
 	req->is_ftp = (strncmp(req->url, "ftp:", 4) == 0);
+	req->httpver = HTTPVER_ANY;
 	req->postdata = NULL;
 	req->sslversion = 0;
 	req->ciphers = NULL;
@@ -250,6 +251,8 @@ void add_http_test(testitem_t *t)
 	else if (strncmp(proto, "https2:", 7) == 0)      req->sslversion = 2;
 	else if (strncmp(proto, "httpsh:", 7) == 0)      req->ciphers = ciphershigh;
 	else if (strncmp(proto, "httpsm:", 7) == 0)      req->ciphers = ciphersmedium;
+	else if (strncmp(proto, "http10:", 7) == 0)      req->httpver = HTTPVER_10;
+	else if (strncmp(proto, "http11:", 7) == 0)      req->httpver = HTTPVER_11;
 }
 
 
@@ -474,6 +477,18 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 
 		/* Any post data ? */
 		if (req->postdata) curl_easy_setopt(req->curl, CURLOPT_POSTFIELDS, req->postdata);
+
+		/* Select HTTP version, if requested */
+		switch (req->httpver) {
+			case HTTPVER_ANY:
+				break;
+			case HTTPVER_10:
+				curl_easy_setopt(req->curl,CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+				break;
+			case HTTPVER_11:
+				curl_easy_setopt(req->curl,CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+				break;
+		}
 
 		/* Select SSL version, if requested */
 		if (req->sslversion > 0) curl_easy_setopt(req->curl, CURLOPT_SSLVERSION, req->sslversion);
