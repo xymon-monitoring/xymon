@@ -33,7 +33,7 @@ page_t *init_page(const char *name, const char *title)
 
 	strcpy(newpage->name, name);
 	strcpy(newpage->title, title);
-	newpage->color = COL_GREEN;
+	newpage->color = -1;
 	newpage->next = NULL;
 	newpage->subpages = NULL;
 	newpage->groups = NULL;
@@ -60,6 +60,7 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	sprintf(newhost->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 	newhost->link = find_link(hostname);
 	newhost->entries = NULL;
+	newhost->color = -1;
 	newhost->next = NULL;
 
 	newlist->hostentry = newhost;
@@ -176,7 +177,7 @@ state_t *init_state(const char *filename)
 		else if (strncmp(l, "clear ", 6) == 0) {
 			newstate->entry->color = COL_CLEAR;
 		}
-		else {
+		else if (strncmp(l, "purple ", 7) == 0) {
 			newstate->entry->color = COL_PURPLE;
 		}
 	}
@@ -188,8 +189,7 @@ state_t *init_state(const char *filename)
 
 	host = find_host(hostname);
 	if (host) {
-		/* Insert into list sorted by test-name */
-
+		/* FIXME: Insert into list sorted by test-name */
 		newstate->entry->next = host->entries;
 		host->entries = newstate->entry;
 	}
@@ -279,6 +279,7 @@ page_t *load_bbhosts(void)
 	group_t *curgroup;
 	host_t	*curhost;
 	int	ip1, ip2, ip3, ip4;
+	char	*p;
 
 
 	bbhosts = fopen(getenv("BBHOSTS"), "r");
@@ -287,6 +288,8 @@ page_t *load_bbhosts(void)
 
 	curpage = toppage = init_page("*TOP*", "");
 	while (fgets(l, sizeof(l), bbhosts)) {
+		p = strchr(l, '\n'); if (p) { *p = '\0'; };
+
 		if (strncmp(l, "page", 4) == 0) {
 			getnamelink(l, &name, &link);
 			curpage->next = init_page(name, link);
@@ -385,6 +388,73 @@ state_t *load_state(void)
 }
 
 
+void calc_hostcolors(hostlist_t *head)
+{
+	int		color;
+	hostlist_t 	*h;
+	entry_t		*e;
+
+	for (h = head; (h); h = h->next) {
+		color = 0;
+
+		for (e = h->hostentry->entries; (e); e = e->next) {
+			if (e->color > color) color = e->color;
+		}
+
+		h->hostentry->color = color;
+	}
+}
+
+void calc_pagecolors(page_t *phead, char *indent1)
+{
+	page_t 	*p, *toppage;
+	group_t *g;
+	host_t  *h;
+	int	color;
+	char 	indent2[80];
+
+	strcpy(indent2, indent1);
+	strcat(indent2, "  >");
+
+	for (toppage=phead; (toppage); toppage = toppage->next) {
+		/* printf("%s Color: page=%s\n", indent1, toppage->name); */
+
+		/* Start with the color of immediate hosts */
+		color = (toppage->hosts ? toppage->hosts->color : -1);
+		/* printf("%s Hostcolor %d\n",indent1 , color); */
+
+		/* Then adjust with the color of hosts in immediate groups */
+		for (g = toppage->groups; (g); g = g->next) {
+			for (h = g->hosts; (h); h = h->next) {
+				if (h->color > color) color = h->color;
+			}
+		}
+		/* printf("%s Host+group color: %d\n", indent1, color); */
+
+		/* Then adjust with the color of subpages, if any.  */
+		/* These must be calculated first!                  */
+		if (toppage->subpages) {
+			/* printf("%s Calling calc of subpages\n", indent1); */
+			calc_pagecolors(toppage->subpages, indent2);
+		}
+
+		/* printf("%s Subpages checked: ", indent1); */
+		for (p = toppage->subpages; (p); p = p->next) {
+			/* printf("%s ", p->name); */
+			if (p->color > color) color = p->color;
+		}
+		/* printf("\n"); */
+
+		toppage->color = color;
+		/* printf("%s pagecolor: %d\n", indent1, color); */
+	}
+
+	/* For the ultimate top-page */
+	for (toppage=phead; (toppage); toppage = toppage->next) {
+		if (toppage->color > phead->color) phead->color = toppage->color;
+	}
+}
+
 
 void dumplinks(link_t *head)
 {
@@ -396,26 +466,34 @@ void dumplinks(link_t *head)
 }
 
 
-void dumphosts(host_t *head, char *format)
+void dumphosts(host_t *head, char *prefix)
 {
 	host_t *h;
 	entry_t *e;
+	char	format[80];
+
+	strcpy(format, prefix);
+	strcat(format, "Host: %s, ip: %s, color: %d, link: %s\n");
 
 	for (h = head; (h); h = h->next) {
-		printf(format, h->hostname, h->ip, h->link->filename);
+		printf(format, h->hostname, h->ip, h->color, h->link->filename);
 		for (e = h->entries; (e); e = e->next) {
 			printf("\t\t\t\t\tTest: %s, state %d\n", e->column->name, e->color);
 		}
 	}
 }
 
-void dumpgroups(group_t *head, char *format, char *hostformat)
+void dumpgroups(group_t *head, char *prefix, char *hostprefix)
 {
 	group_t *g;
+	char    format[80];
+
+	strcpy(format, prefix);
+	strcat(format, "Group: %s\n");
 
 	for (g = head; (g); g = g->next) {
 		printf(format, g->title);
-		dumphosts(g->hosts, hostformat);
+		dumphosts(g->hosts, hostprefix);
 	}
 }
 
@@ -449,22 +527,26 @@ int main(int argc, char *argv[])
 	pagehead = load_bbhosts();
 	statehead = load_state();
 
+	calc_hostcolors(hosthead);
+	calc_pagecolors(pagehead, "");
+
+	/* dumpstatelist(statehead); */
+	/* dumphostlist(hosthead); */
+
 	for (p=pagehead; p; p = p->next) {
-		printf("Page: %s, title=%s\n", p->name, p->title);
+		printf("Page: %s, color: %d, title=%s\n", p->name, p->color, p->title);
 		for (q = p->subpages; (q); q = q->next) {
-			printf("\tSubpage: %s, title=%s\n", q->name, q->title);
-			dumpgroups(q->groups, "\t\tGroup: %s\n", "\t\t    Host: %s, ip: %s, link:%s\n");
-			dumphosts(q->hosts, "\t    Host: %s, ip: %s, link: %s\n");
+			printf("\tSubpage: %s, color=%d, title=%s\n", q->name, q->color, q->title);
+			dumpgroups(q->groups, "\t\t", "\t\t    ");
+			dumphosts(q->hosts, "\t    ");
 		}
 
-		dumpgroups(p->groups, "\tGroup: %s\n","\t    Host: %s, ip: %s, link: %s\n");
-		dumphosts(p->hosts, "    Host: %s, ip: %s, link: %s\n");
+		dumpgroups(p->groups, "\t","\t    ");
+		dumphosts(p->hosts, "    ");
 	}
-	dumphosts(pagehead->hosts, "Host: %s, ip: %s, link: %s\n");
+	dumphosts(pagehead->hosts, "");
 
 	/* dumplinks(linkhead); */
-	/* dumphostlist(hosthead); */
-	dumpstatelist(statehead);
 	return 0;
 }
 
