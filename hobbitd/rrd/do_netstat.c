@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.5 2004-11-13 13:23:47 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.6 2004-11-25 11:46:31 henrik Exp $";
 
 static char *netstat_params[] = { "rrdcreate", rrdfn, 
 	                          "DS:udpInDatagrams:DERIVE:600:0:U", 
@@ -182,7 +182,7 @@ int do_netstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	enum ostype_t ostype;
 	char *datapart = msg;
 	char *outp;
-	int havedata;
+	int havedata = 0;
 
 	if ((strncmp(msg, "status", 6) == 0) || (strncmp(msg, "data", 4) == 0)) {
 		/* Skip the first line of full status- and data-messages. */
