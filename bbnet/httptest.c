@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.57 2004-02-23 15:01:33 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.58 2004-03-02 09:49:09 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -257,6 +257,36 @@ void add_http_test(testitem_t *t)
 		}
 
 		proto = t->testspec+5;
+	}
+	else if (strncmp(t->testspec, "nopost;", 7) == 0) {
+		/* POST request - whee! */
+
+		/* First grab data we expect back, like with "cont;" */
+		char *p = strrchr(t->testspec, ';');
+		char *q;
+
+		if (p) {
+			/* It is legal not to specify anything for the expected output from a POST */
+			if (strlen(p+1) > 0) {
+				req->contentcheck = CONTENTCHECK_NOREGEX;
+				req->exp = (void *) malloc(sizeof(regex_t));
+				status = regcomp((regex_t *)req->exp, p+1, REG_EXTENDED|REG_NOSUB);
+				if (status) {
+					errprintf("Failed to compile regexp '%s' for URL %s\n", p+1, req->url);
+					req->contstatus = STATUS_CONTENTMATCH_BADREGEX;
+				}
+			}
+		}
+		else req->contstatus = STATUS_CONTENTMATCH_NOFILE;
+
+		if (p) {
+			*p = '\0';  /* Cut off expected data */
+			q = strrchr(t->testspec, ';');
+			if (q) req->postdata = malcop(q+1);
+			*p = ';';  /* Restore testspec */
+		}
+
+		proto = t->testspec+7;
 	}
 	else {
 		proto = t->testspec;
