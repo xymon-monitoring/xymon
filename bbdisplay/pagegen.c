@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.56 2003-06-07 06:53:13 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.57 2003-06-12 21:10:27 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -599,7 +599,7 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *pagepath)
 }
 
 
-void do_one_page(bbgen_page_t *page, dispsummary_t *sums)
+void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 {
 	FILE	*output;
 	char	pagepath[MAX_PATH];
@@ -608,63 +608,68 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums)
 	char	*dirdelim;
 
 	pagepath[0] = '\0';
-	if (page->parent == NULL) {
-		char	indexfilename[MAX_PATH];
-
-		/* top level page */
-		sprintf(filename, "bb%s", htmlextension);
-		sprintf(indexfilename, "index%s", htmlextension);
-		symlink(filename, indexfilename);
+	if (embedded) {
+		output = stdout;
 	}
 	else {
-		char tmppath[MAX_PATH];
-		bbgen_page_t *pgwalk;
+		if (page->parent == NULL) {
+			char	indexfilename[MAX_PATH];
 
-		for (pgwalk = page; (pgwalk); pgwalk = pgwalk->parent) {
-			if (strlen(pgwalk->name)) {
-				sprintf(tmppath, "%s/%s", pgwalk->name, pagepath);
-				strcpy(pagepath, tmppath);
+			/* top level page */
+			sprintf(filename, "bb%s", htmlextension);
+			sprintf(indexfilename, "index%s", htmlextension);
+			symlink(filename, indexfilename);
+		}
+		else {
+			char tmppath[MAX_PATH];
+			bbgen_page_t *pgwalk;
+	
+			for (pgwalk = page; (pgwalk); pgwalk = pgwalk->parent) {
+				if (strlen(pgwalk->name)) {
+					sprintf(tmppath, "%s/%s", pgwalk->name, pagepath);
+					strcpy(pagepath, tmppath);
+				}
 			}
+	
+			sprintf(filename, "%s/%s%s", pagepath, page->name, htmlextension);
 		}
-
-		sprintf(filename, "%s/%s%s", pagepath, page->name, htmlextension);
-	}
-	sprintf(tmpfilename, "%s.tmp", filename);
+		sprintf(tmpfilename, "%s.tmp", filename);
 
 
-	/* Try creating the output file. If it fails, we may need to create the directories */
-	output = fopen(tmpfilename, "w");
-	if (output == NULL) {
-		char indexfilename[MAX_PATH];
-		char pagebasename[MAX_PATH];
-		char *p;
-
-		/* Make sure the directories exist. */
-		dirdelim = tmpfilename;
-		while ((dirdelim = strchr(dirdelim, '/')) != NULL) {
-			*dirdelim = '\0';
-			mkdir(tmpfilename, 0755);
-			*dirdelim = '/';
-			dirdelim++;
-		}
-
-		/* We've created the directories. Now retry creating the file. */
+		/* Try creating the output file. If it fails, we may need to create the directories */
 		output = fopen(tmpfilename, "w");
-
-		/* 
-		 * We had to create the directory. Set up an index.html file for 
-		 * the directory where we created our new file.
-		 */
-		strcpy(indexfilename, filename);
-		p = strrchr(indexfilename, '/'); 
-		*p = '\0'; 
-		sprintf(indexfilename, "/index%s", htmlextension);
-		sprintf(pagebasename, "%s%s", page->name, htmlextension);
-		symlink(pagebasename, indexfilename);
-
 		if (output == NULL) {
-			errprintf("Cannot open file %s\n", tmpfilename);
-			return;
+			char indexfilename[MAX_PATH];
+			char pagebasename[MAX_PATH];
+			char *p;
+	
+			/* Make sure the directories exist. */
+			dirdelim = tmpfilename;
+			while ((dirdelim = strchr(dirdelim, '/')) != NULL) {
+				*dirdelim = '\0';
+				mkdir(tmpfilename, 0755);
+				*dirdelim = '/';
+				dirdelim++;
+			}
+
+			/* We've created the directories. Now retry creating the file. */
+			output = fopen(tmpfilename, "w");
+
+			/* 
+			 * We had to create the directory. Set up an index.html file for 
+			 * the directory where we created our new file.
+			 */
+			strcpy(indexfilename, filename);
+			p = strrchr(indexfilename, '/'); 
+			*p = '\0'; 
+			sprintf(indexfilename, "/index%s", htmlextension);
+			sprintf(pagebasename, "%s%s", page->name, htmlextension);
+			symlink(pagebasename, indexfilename);
+
+			if (output == NULL) {
+				errprintf("Cannot open file %s\n", tmpfilename);
+				return;
+			}
 		}
 	}
 
@@ -680,22 +685,24 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums)
 		fprintf(output, "</TABLE></CENTER>\n");
 	}
 
-	if (!hostsbeforepages && page->subpages) do_page_subpages(output, page->subpages, pagepath);
+	if (!embedded && !hostsbeforepages && page->subpages) do_page_subpages(output, page->subpages, pagepath);
 	do_hosts(page->hosts, NULL, output, "", PAGE_BB);
 	do_groups(page->groups, output);
-	if (hostsbeforepages && page->subpages) do_page_subpages(output, page->subpages, pagepath);
+	if (!embedded && hostsbeforepages && page->subpages) do_page_subpages(output, page->subpages, pagepath);
 
 	/* Summaries and extensions on main page only */
-	if (page->parent == NULL) {
+	if (!embedded && (page->parent == NULL)) {
 		do_summaries(dispsums, output);
 		do_bbext(output, "BBMKBBEXT");
 	}
 
 	headfoot(output, hf_prefix[PAGE_BB], pagepath, "footer", page->color);
 
-	fclose(output);
-	if (rename(tmpfilename, filename)) {
-		errprintf("Cannot rename %s to %s - error %d\n", tmpfilename, filename, errno);
+	if (!embedded) {
+		fclose(output);
+		if (rename(tmpfilename, filename)) {
+			errprintf("Cannot rename %s to %s - error %d\n", tmpfilename, filename, errno);
+		}
 	}
 }
 
@@ -705,7 +712,7 @@ void do_page_with_subs(bbgen_page_t *curpage, dispsummary_t *sums)
 	bbgen_page_t *levelpage;
 
 	for (levelpage = curpage; (levelpage); levelpage = levelpage->next) {
-		do_one_page(levelpage, sums);
+		do_one_page(levelpage, sums, 0);
 		do_page_with_subs(levelpage->subpages, NULL);
 	}
 }

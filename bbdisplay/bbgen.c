@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.126 2003-06-11 06:34:03 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.127 2003-06-12 21:10:27 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -90,6 +90,7 @@ int main(int argc, char *argv[])
 	char 		bbnkfilename[MAX_PATH];
 	int             larrd043 = 0;				/* Set to use LARRD 0.43 disk displays */
 	char		*egocolumn = NULL;
+	int		embedded = 0;
 
 	/* Catch a SEGV fault */
 	setup_signalhandler("bbgen");
@@ -249,6 +250,9 @@ int main(int argc, char *argv[])
 			/* Deprecated */
 			errprintf("--bbpageONLY is deprecated - use --pageset=NAME to generate pagesets\n");
 		}
+		else if (strcmp(argv[i], "--embedded") == 0) {
+			embedded = 1;
+		}
 		else if (argnmatch(argv[i], "--pageset=")) {
 			char *lp = strchr(argv[i], '=');
 			pageset = malcop(lp+1);
@@ -366,7 +370,8 @@ int main(int argc, char *argv[])
 	 * If we did those, we would send double purple updates, 
 	 * generate wrong links for info pages etc.
 	 */
-	if (pageset) enable_purpleupd = enable_larrdgen = enable_infogen = enable_wmlgen = 0;
+	if (pageset || embedded) enable_purpleupd = enable_larrdgen = enable_infogen = enable_wmlgen = 0;
+	if (embedded) egocolumn = NULL;
 
 	/* Load all data from the various files */
 	linkhead = load_all_links();
@@ -374,22 +379,25 @@ int main(int argc, char *argv[])
 	pagehead = load_bbhosts(pageset);
 	add_timestamp("Load bbhosts done");
 
-	/* Delete old info- and larrd-timestamp files if we have restarted */
-	drop_genstatfiles();
+	if (!embedded) {
+		/* Delete old info- and larrd-timestamp files if we have restarted */
+		drop_genstatfiles();
 
-	/* Generate the LARRD pages before loading state */
-	pagegenstat = generate_larrd(rrddir, larrdcol, larrd043);
-	add_timestamp("LARRD generate done");
+		/* Generate the LARRD pages before loading state */
+		pagegenstat = generate_larrd(rrddir, larrdcol, larrd043);
+		add_timestamp("LARRD generate done");
 
-	/* Dont generate both LARRD and info in one run */
-	if (pagegenstat) pagegenstat = generate_info(infocol);
-	add_timestamp("INFO generate done");
+		/* Dont generate both LARRD and info in one run */
+		if (pagegenstat) pagegenstat = generate_info(infocol);
+		add_timestamp("INFO generate done");
 
-	/* Remove old acknowledgements */
-	delete_old_acks();
-	add_timestamp("ACK removal done");
+		/* Remove old acknowledgements */
+		delete_old_acks();
+		add_timestamp("ACK removal done");
+	}
 
 	statehead = load_state(&dispsums);
+	if (embedded) dispsums = NULL;
 	add_timestamp("Load STATE done");
 
 	/* Calculate colors of hosts and pages */
@@ -418,6 +426,12 @@ int main(int argc, char *argv[])
 	if (chdir(pagedir) != 0) {
 		errprintf("Cannot change to webpage directory %s\n", pagedir);
 		exit(1);
+	}
+
+	if (embedded) {
+		/* Just generate that one page */
+		do_one_page(pagehead, NULL, 1);
+		return 0;
 	}
 
 	/* The main page - bb.html and pages/subpages thereunder */
