@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.200 2005-02-21 16:03:30 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.201 2005-02-22 13:59:20 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -290,7 +290,7 @@ void load_services(void)
 	char *netsvcs;
 	char *p;
 
-	netsvcs = init_tcp_services();
+	netsvcs = strdup(init_tcp_services());
 
 	p = strtok(netsvcs, " ");
 	while (p) {
