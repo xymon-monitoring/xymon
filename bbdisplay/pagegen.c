@@ -29,6 +29,7 @@
 
 #include "bbgen.h"
 #include "util.h"
+#include "loaddata.h"
 #include "pagegen.h"
 
 int interesting_column(int pagetype, int color, int alert, char *columnname)
@@ -59,7 +60,7 @@ int interesting_column(int pagetype, int color, int alert, char *columnname)
 	return 0;
 }
 
-col_list_t *gen_column_list(host_t *hostlist, int crit_only)
+col_list_t *gen_column_list(host_t *hostlist, int pagetype)
 {
 	/*
 	 * Build a list of the columns that are in use by
@@ -67,7 +68,7 @@ col_list_t *gen_column_list(host_t *hostlist, int crit_only)
 	 * The column list must be sorted by column name.
 	 */
 
-	/* Meaning of crit_only:
+	/* Meaning of pagetype:
 	     0: Normal pages, include all
 	     1: bb2.html, all non-green
 	     2: bbnk.html, only alert columns
@@ -86,7 +87,7 @@ col_list_t *gen_column_list(host_t *hostlist, int crit_only)
 
 	for (h = hostlist; (h); h = h->next) {
 		for (e = h->entries; (e); e = e->next) {
-			if (interesting_column(crit_only, e->color, e->alert, e->column->name)) {
+			if (interesting_column(pagetype, e->color, e->alert, e->column->name)) {
 				/* See where e->column should go in list */
 				collist_walk = head; 
 				while ( (collist_walk->next && 
@@ -110,7 +111,7 @@ col_list_t *gen_column_list(host_t *hostlist, int crit_only)
 	return (head);
 }
 
-void do_hosts(host_t *head, FILE *output, char *grouptitle, int summarypage)
+void do_hosts(host_t *head, FILE *output, char *grouptitle, int pagetype)
 {
 	host_t	*h;
 	entry_t	*e;
@@ -125,7 +126,7 @@ void do_hosts(host_t *head, FILE *output, char *grouptitle, int summarypage)
 
 	fprintf(output, "<A NAME=hosts-blk>&nbsp;</A>\n\n");
 
-	groupcols = gen_column_list(head, summarypage);
+	groupcols = gen_column_list(head, pagetype);
 	if (groupcols) {
 		fprintf(output, "<TABLE SUMMARY=\"Group Block\" BORDER=0> \n <TR><TD VALIGN=MIDDLE ROWSPAN=2 CELLPADDING=2><CENTER><FONT %s>%s</FONT></CENTER></TD>\n", getenv("MKBBTITLE"), grouptitle);
 
@@ -159,7 +160,10 @@ void do_hosts(host_t *head, FILE *output, char *grouptitle, int summarypage)
 					fprintf(output, "-");
 				}
 				else {
-					if (genstatic) {
+					if (e->sumurl) {
+						fprintf(output, "<A HREF=\"%s\">", e->sumurl);
+					}
+					else if (genstatic) {
 						fprintf(output, "<A HREF=\"%s/html/%s.%s.html\">",
 							getenv("BBWEB"), h->hostname, e->column->name);
 					}
@@ -167,6 +171,7 @@ void do_hosts(host_t *head, FILE *output, char *grouptitle, int summarypage)
 						fprintf(output, "<A HREF=\"%s/bb-hostsvc.sh?HOSTSVC=%s.%s\">",
 							getenv("CGIBINURL"), commafy(h->hostname), e->column->name);
 					}
+
 					fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
 						getenv("BBSKIN"), dotgiffilename(e),
 						alttag(e),
@@ -179,6 +184,12 @@ void do_hosts(host_t *head, FILE *output, char *grouptitle, int summarypage)
 		}
 
 		fprintf(output, "</TABLE><BR><BR>\n");
+	}
+
+	while (groupcols) {
+		gc = groupcols;
+		groupcols = groupcols->next;
+		free(gc);
 	}
 }
 
@@ -195,6 +206,87 @@ void do_groups(group_t *head, FILE *output)
 		do_hosts(g->hosts, output, g->title, PAGE_BB);
 	}
 	fprintf(output, "\n</CENTER>\n");
+}
+
+void do_summaries(dispsummary_t *sums, FILE *output)
+{
+	dispsummary_t *s;
+	host_t *sumhosts = NULL;
+	host_t *walk;
+
+	for (s=sums; (s); s = s->next) {
+		/* Generate host records out of all unique s->row values */
+
+		host_t *newhost;
+		entry_t *newentry;
+		dispsummary_t *s2;
+
+		/* Do we already have it ? */
+		for (newhost = sumhosts; (newhost && (strcmp(s->row, newhost->hostname) != 0) ); newhost = newhost->next);
+
+		if (newhost == NULL) {
+			/* New summary "host" */
+
+			newhost = malloc(sizeof(host_t));
+			strcpy(newhost->hostname, s->row);
+			strcpy(newhost->ip, "");
+			newhost->dialup = 0;
+			newhost->color = -1;
+			newhost->link = &null_link;
+			newhost->entries = NULL;
+			newhost->next = NULL;
+
+			/* Insert into sorted host list */
+			if ((!sumhosts) || (strcmp(newhost->hostname, sumhosts->hostname) < 0)) {
+				/* Empty list, or new entry goes before list head item */
+				newhost->next = sumhosts;
+				sumhosts = newhost;
+			}
+			else {
+				/* Walk list until we find element that goes after new item */
+				for (walk = sumhosts; 
+			      	(walk->next && (strcmp(newhost->hostname, ((host_t *)walk->next)->hostname) > 0)); 
+			      	walk = walk->next) ;
+
+				/* "walk" points to element before the new item */
+				newhost->next = walk->next;
+				walk->next = newhost;
+			}
+
+
+			/* Setup the "event" records from the column records */
+			for (s2 = sums; (s2); s2 = s2->next) {
+				
+				if (strcmp(s2->row, s->row) == 0) {
+					newentry = malloc(sizeof(entry_t));
+
+					newentry->column = find_or_create_column(s2->column);
+					newentry->color = s2->color;
+					strcpy(newentry->age, "");
+					newentry->oldage = 1; /* Use standard gifs */
+					newentry->acked = 0;
+					newentry->alert = 0;
+					newentry->sumurl = s2->url;
+					newentry->next = newhost->entries;
+					newhost->entries = newentry;
+				}
+			}
+		}
+	}
+
+	fprintf(output, "<A NAME=\"summaries-blk\">\n");
+	fprintf(output, "<CENTER>\n");
+	fprintf(output, "<TABLE SUMMARY=\"Summary Block\" BORDER=0><TR><TD>\n");
+	fprintf(output, "<CENTER><FONT %s>\n", getenv("MKBBTITLE"));
+	fprintf(output, "%s\n", getenv("MKBBREMOTE"));
+	fprintf(output, "</FONT></CENTER></TD></TR><TR><TD>\n");
+	fprintf(output, "<HR WIDTH=100%%></TD></TR>\n");
+	fprintf(output, "<TR><TD>\n");
+
+	do_hosts(sumhosts, output, "", 0);
+
+	fprintf(output, "</TD></TR></TABLE>\n");
+	fprintf(output, "</CENTER>\n");
 }
 
 void do_bb_page(page_t *page, dispsummary_t *sums, char *filename)
@@ -249,6 +341,7 @@ void do_bb_page(page_t *page, dispsummary_t *sums, char *filename)
 
 	do_hosts(page->hosts, output, "", PAGE_BB);
 	do_groups(page->groups, output);
+	do_summaries(dispsums, output);
 
 	headfoot(output, "bb", "", "", "footer", page->color);
 
@@ -554,4 +647,16 @@ void do_bb2_page(char *filename, int summarytype)
 	headfoot(output, hf_prefix[summarytype], "", "", "footer", bb2page.color);
 
 	fclose(output);
+
+	{
+		/* Free temporary hostlist */
+		host_t *h1, *h2;
+
+		h1 = bb2page.hosts;
+		while (h1) {
+			h2 = h1;
+			h1 = h1->next;
+			free(h2);
+		}
+	}
 }
