@@ -1,9 +1,19 @@
-OS := $(shell uname -s)
+# bbgen main Makefile
+#
+# This Makefile picks up system-specific settings from Makefile.local
+# This file is defined by the configure script
+#
+include Makefile.local
 
-include Makefile.$(OS)
 
+PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bb-rep.cgi bb-replog.cgi bb-hist.cgi
+CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh
 
-all: bbgen bbtest-net bbhostgrep bbhostshow bb-rep.cgi bb-replog.cgi bb-hist.cgi
+all: Makefile.local $(PROGRAMS) $(CGISCRIPTS)
+	@echo "Run 'make install' to install programs AND cgi scripts"
+	@echo "    **** This will overwrite your existing cgi scripts ****"
+	@echo "If you dont want to do that, run 'make install-bin' to install programs"
+	@echo "and then you can later run 'make install-cgi' to install cgi scripts"
 
 GENOBJS = bbgen.o debug.o loaddata.o reportdata.o larrdgen.o pagegen.o process.o util.o infogen.o alert.o wmlgen.o bb-replog.o
 NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o
@@ -12,6 +22,10 @@ HOSTSHOWOBJS = bbhostshow.o util.o debug.o
 REPOBJS = bb-rep.o debug.o util.o
 REPLOGOBJS = bb-replog-cgi.o reportdata.o debug.o util.o
 HISTOBJS = bb-hist.o reportdata.o debug.o util.o
+
+Makefile.local:
+	@echo "Please run configure first"
+	@exit 1
 
 bbgen: $(GENOBJS)
 	$(CC) $(CFLAGS) -o $@ $(GENOBJS)
@@ -55,5 +69,21 @@ bb-hist.o: bb-hist.c
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+%.sh: %.sh.DIST
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' >$@
+	chmod 755 $@
+
+distclean: clean
+	rm -f Makefile.local
+
 clean:
-	rm -f *.o *~ bbgen bbtest-net bbhostgrep bbhostshow bb-rep.cgi bb-replog.cgi bb-hist.cgi alert contest reptest
+	rm -f *.o *~ $(PROGRAMS) $(CGISCRIPTS) alert contest reptest
+
+install-bin: $(PROGRAMS)
+	cp -p $(PROGRAMS) $(BBHOME)/bin/
+
+install-cgi: $(CGISCRIPTS)
+	cp -p $(CGISCRIPTS) $(CGIDIR)/
+
+install: install-bin install-cgi
+
