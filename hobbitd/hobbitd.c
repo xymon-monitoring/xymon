@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.69 2004-11-25 22:07:43 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.70 2004-11-26 23:06:22 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -530,9 +530,15 @@ int durationvalue(char *dur)
 }
 
 
-void log_ghost(char *hostname, char *sender)
+void log_ghost(char *hostname, char *sender, char *msg)
 {
 	ghostlist_t *gwalk;
+
+	/* If debugging, log the full request */
+	if (dbgfd) {
+		fprintf(dbgfd, "\n---- combo message from %s ----\n%s---- end message ----\n", sender, msg);
+		fflush(dbgfd);
+	}
 
 	if ((ghosthandling < 2) || (hostname == NULL) || (sender == NULL)) return;
 
@@ -602,7 +608,7 @@ void get_hts(char *msg, char *sender,
 
 		knownname = knownhost(hostname, hostip, ghosthandling, &maybedown);
 		if (knownname == NULL) {
-			log_ghost(hostname, sender);
+			log_ghost(hostname, sender, msg);
 			goto done;
 		}
 		hostname = knownname;
@@ -1193,6 +1199,13 @@ void do_message(conn_t *msg)
 			nextmsg = strstr(currmsg, "\n\nstatus");
 			if (nextmsg) { *(nextmsg+1) = '\0'; nextmsg += 2; }
 
+			/* Pick out the real sender of this message */
+			msgfrom = strstr(currmsg, "\nStatus message received from ");
+			if (msgfrom) {
+				sscanf(msgfrom, "\nStatus message received from %s\n", sender);
+				*msgfrom = '\0';
+			}
+
 			get_hts(currmsg, sender, &h, &t, &log, &color, 0, 0);
 			if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, currmsg)) continue;
 
@@ -1206,12 +1219,6 @@ void do_message(conn_t *msg)
 			update_statistics(currmsg);
 
 			if (log && (color != -1)) {
-				msgfrom = strstr(currmsg, "\nStatus message received from ");
-				if (msgfrom) {
-					sscanf(msgfrom, "\nStatus message received from %s\n", sender);
-					*msgfrom = '\0';
-				}
-
 				handle_status(currmsg, sender, h->hostname, t->testname, log, color);
 			}
 
@@ -1219,6 +1226,12 @@ void do_message(conn_t *msg)
 		} while (currmsg);
 	}
 	else if (strncmp(msg->buf, "status", 6) == 0) {
+		msgfrom = strstr(msg->buf, "\nStatus message received from ");
+		if (msgfrom) {
+			sscanf(msgfrom, "\nStatus message received from %s\n", sender);
+			*msgfrom = '\0';
+		}
+
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 0, 0);
 		if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, msg->buf)) goto done;
 
@@ -1228,12 +1241,6 @@ void do_message(conn_t *msg)
 			fflush(dbgfd);
 		}
 		if (log && (color != -1)) {
-			msgfrom = strstr(msg->buf, "\nStatus message received from ");
-			if (msgfrom) {
-				sscanf(msgfrom, "\nStatus message received from %s\n", sender);
-				*msgfrom = '\0';
-			}
-
 			handle_status(msg->buf, sender, h->hostname, t->testname, log, color);
 		}
 	}
@@ -1243,6 +1250,12 @@ void do_message(conn_t *msg)
 		int maybedown;
 		char hostip[20];
 
+		msgfrom = strstr(msg->buf, "\nStatus message received from ");
+		if (msgfrom) {
+			sscanf(msgfrom, "\nStatus message received from %s\n", sender);
+			*msgfrom = '\0';
+		}
+
 		if (sscanf(msg->buf, "data %s\n", tok) == 1) {
 			if ((testname = strrchr(tok, '.')) != NULL) {
 				char *p;
@@ -1250,7 +1263,7 @@ void do_message(conn_t *msg)
 				testname++; 
 				p = tok; while ((p = strchr(p, ',')) != NULL) *p = '.';
 				hostname = knownhost(tok, hostip, ghosthandling, &maybedown);
-				if (hostname == NULL) log_ghost(tok, sender);
+				if (hostname == NULL) log_ghost(tok, sender, msg->buf);
 			}
 
 			if (!oksender(statussenders, hostip, msg->addr.sin_addr, msg->buf)) goto done;
@@ -1939,7 +1952,6 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 
 			dbghost = strdup(p+1);
-			dbgfd = fopen("/tmp/bbgend.dbg", "a");
 		}
 		else if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
@@ -2058,6 +2070,11 @@ int main(int argc, char *argv[])
 	if (logfn) {
 		freopen(logfn, "a", stdout);
 		freopen(logfn, "a", stderr);
+	}
+
+	if (dbghost) {
+		dbgfd = fopen("/tmp/bbgend.dbg", "a");
+		if (dbgfd == NULL) errprintf("Cannot open debug file: %s\n", strerror(errno));
 	}
 
 	do {
