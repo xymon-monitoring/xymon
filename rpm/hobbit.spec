@@ -1,6 +1,6 @@
 Name: hobbit
 Version: @VER@
-Release: 1
+Release: 1.2
 Group: Networking/Daemons
 URL: http://hobbitmon.sourceforge.net/
 License: GPL
