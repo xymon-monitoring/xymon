@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.10 2004-12-30 22:25:34 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.11 2005-01-04 11:39:14 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -373,11 +373,9 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			gdeffn = strdup(p+1);
 		}
-		else if (strcmp(argv[argi], "--save") == 0) {
-			char fnam[PATH_MAX];
-
-			sprintf(fnam, "%s_%s_%s.png", hostname, service, gtype);
-			graphfn = strdup(fnam);
+		else if (strcmp(argv[argi], "--save=") == 0) {
+			char *p = strchr(argv[argi], '=');
+			graphfn = strdup(p+1);
 		}
 	}
 
