@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.48 2004-11-04 12:20:56 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.49 2004-11-04 22:53:06 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -97,6 +97,7 @@ static char *colnames[COL_COUNT+1];
 int alertcolors = ( (1 << COL_RED) | (1 << COL_YELLOW) | (1 << COL_PURPLE) );
 int ghosthandling = -1;
 char *checkpointfn = NULL;
+char *purpleclientconn = NULL;
 
 #if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
 /* union semun is defined by including <sys/sem.h> */
@@ -749,6 +750,14 @@ void handle_ack(char *msg, char *sender, bbd_log_t *log, int duration)
 }
 
 
+void free_log_t(bbd_log_t *zombie)
+{
+	if (zombie->message) free(zombie->message);
+	if (zombie->dismsg) free(zombie->dismsg);
+	if (zombie->ackmsg) free(zombie->ackmsg);
+	free(zombie);
+}
+
 void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, char *n1, char *n2)
 {
 	int maybedown;
@@ -820,10 +829,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			for (plog = hwalk->logs; (plog->next != lwalk); plog = plog->next) ;
 			plog->next = lwalk->next;
 		}
-		if (lwalk->message) free(lwalk->message);
-		if (lwalk->dismsg) free(lwalk->dismsg);
-		if (lwalk->ackmsg) free(lwalk->ackmsg);
-		free(lwalk);
+		free_log_t(lwalk);
 		break;
 
 	  case CMD_DROPHOST:
@@ -844,10 +850,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			bbd_log_t *tmp = lwalk;
 			lwalk = lwalk->next;
 
-			if (tmp->message) free(tmp->message);
-			if (tmp->dismsg) free(tmp->dismsg);
-			if (tmp->ackmsg) free(tmp->ackmsg);
-			free(tmp);
+			free_log_t(tmp);
 		}
 
 		/* Free the hostlist entry */
@@ -1373,11 +1376,47 @@ void check_purple_status(void)
 	time_t now = time(NULL);
 
 	for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
-		for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
+		lwalk = hwalk->logs;
+		while (lwalk) {
 			if (lwalk->validtime < now) {
-				handle_status(lwalk->message, "bbgend", 
-						lwalk->host->hostname, lwalk->test->testname, lwalk, 
-						COL_PURPLE);
+				if (strcmp(hwalk->hostname, "summary") == 0) {
+					/*
+					 * A summary has gone stale. Drop it.
+					 */
+					bbd_log_t *tmp;
+
+					if (lwalk == hwalk->logs) {
+						tmp = hwalk->logs;
+						hwalk->logs = lwalk->next;
+						lwalk = lwalk->next;
+					}
+					else {
+						for (tmp = hwalk->logs; (tmp->next != lwalk); tmp = tmp->next);
+						tmp->next = lwalk->next;
+						tmp = lwalk;
+						lwalk = lwalk->next;
+					}
+					free_log_t(tmp);
+				}
+				else {
+					bbd_log_t *tmp;
+					int newcolor = COL_PURPLE;
+
+					if (purpleclientconn) {
+						/*
+						 * See if this is a (client) test where we have a red "conn" test.
+						 */
+						for (tmp = hwalk->logs; (tmp && strcmp(tmp->test->testname, purpleclientconn)); tmp = tmp->next) ;
+						if (tmp->color == COL_RED) newcolor = COL_CLEAR;
+					}
+
+					handle_status(lwalk->message, "bbgend", 
+						hwalk->hostname, lwalk->test->testname, lwalk, newcolor);
+					lwalk = lwalk->next;
+				}
+			}
+			else {
+				lwalk = lwalk->next;
 			}
 		}
 	}
@@ -1499,6 +1538,10 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--no-purple")) {
 			do_purples = 0;
 		}
+		else if (argnmatch(argv[argi], "--purple-conn=")) {
+			char *p = strchr(argv[argi], '=');
+			purpleclientconn = strdup(p+1);
+		}
 		else if (argnmatch(argv[argi], "--daemon")) {
 			daemonize = 1;
 		}
@@ -1506,7 +1549,7 @@ int main(int argc, char *argv[])
 			daemonize = 0;
 		}
 		else if (argnmatch(argv[argi], "--pidfile=")) {
-			char *p = strchr(argv[opt], '=');
+			char *p = strchr(argv[argi], '=');
 			pidfile = strdup(p+1);
 		}
 		else if (argnmatch(argv[argi], "--help")) {
