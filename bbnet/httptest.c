@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.49 2003-09-12 10:02:32 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.50 2003-09-12 11:23:34 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -607,6 +607,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 {
 	testitem_t *t;
 	int	color = -1;
+	char    *svcname;
 	char	msgline[MAXMSG];
 	char	msgtext[MAXMSG];
 	char    *nopagename;
@@ -615,10 +616,13 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 	if (firsttest == NULL) return;
 
+	svcname = malcop(httptest->testname);
+	if (httptest->namelen) svcname[httptest->namelen] = '\0';
+
 	/* Check if this service is a NOPAGENET service. */
-	nopagename = (char *) malloc(strlen(httptest->testname)+3);
-	sprintf(nopagename, ",%s,", httptest->testname);
-	nopage = (strstr(nonetpage, httptest->testname) != NULL);
+	nopagename = (char *) malloc(strlen(svcname)+3);
+	sprintf(nopagename, ",%s,", svcname);
+	nopage = (strstr(nonetpage, svcname) != NULL);
 	free(nopagename);
 
 	dprintf("Calc http color host %s : ", host->hostname);
@@ -686,7 +690,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 	/* Send off the http status report */
 	init_status(color);
 	sprintf(msgline, "status %s.%s %s %s", 
-		commafy(host->hostname), httptest->testname, colorname(color), timestamp);
+		commafy(host->hostname), svcname, colorname(color), timestamp);
 	addtostatus(msgline);
 	addtostatus(msgtext);
 	addtostatus("\n");
@@ -713,6 +717,8 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 	}
 	addtostatus("\n\n");
 	finish_status();
+
+	free(svcname);
 }
 
 
@@ -828,7 +834,7 @@ void send_content_results(service_t *httptest, service_t *ftptest, testedhost_t 
 			addtostatus(msgline);
 
 			if (req->output) {
-				if ( (strcasecmp(req->contenttype, "text/html") == 0) ||
+				if ( (strncasecmp(req->contenttype, "text/html", 9) == 0) ||
 				     (strncasecmp(req->output, "<html", 5) == 0) ) {
 					char *bodystart = NULL;
 					char *bodyend = NULL;
