@@ -1,6 +1,59 @@
+/*----------------------------------------------------------------------------*/
+/* Big Brother webpage generator tool.                                        */
+/*                                                                            */
+/* This is a replacement for the "mkbb.sh" and "mkbb2.sh" scripts from the    */
+/* "Big Brother" monitoring tool from BB4 Technologies.                       */
+/*                                                                            */
+/* Primary reason for doing this: Shell scripts perform badly, and with a     */
+/* medium-sized installation (~150 hosts) it takes several minutes to         */
+/* generate the webpages. This is a problem, when the pages are used for      */
+/* 24x7 monitoring of the system status.                                      */
+/*                                                                            */
+/* Copyright (C) 2002 Henrik Storner <henrik@storner.dk>                      */
+/*                                                                            */
+/* This program is released under the GNU Public License (GPL), version 2.    */
+/* See the file "COPYING" for details.                                        */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+#ifndef __BBGEN_H_
+#define __BBGEN_H_
+
 #include <time.h>
 
 /* Structure defs for bbgen */
+
+/*
+   page_t                                hostlist_t          state_t
+     name                                  hostentry --+       hostname
+     title                                 next        |       entry --+
+     color                                             |       next    |
+     subpages                              +-----------+               |
+     groups -------> group_t               |                   +-------+
+     hosts              title              V                   |
+     next               color                                  |
+                        hosts ---------> host_t                |
+                        next               hostname            |
+                                           ip                  |
+                                           dialup              |
+                      +------------------- link                V
+                      |                    color
+                      |                    entries ---------> entry_t
+                      |                    next                 column -------> col_t
+                      |                                         color             name
+                      |                                         age            +- link
+                      |                                         oldage         |  next
+                      |                                         acked          |
+                      |                                         next           |
+                      |                                                        |
+                      |+-------------------------------------------------------+
+                      ||
+                      VV
+                    link_t
+                      name
+                      filename
+                      urlprefix
+*/
 
 #define COL_GREEN	0
 #define COL_CLEAR 	1
@@ -8,6 +61,10 @@
 #define COL_PURPLE 	3
 #define COL_YELLOW	4
 #define COL_RED		5
+
+#define PAGE_BB		0
+#define PAGE_BB2	1
+#define PAGE_NK		2
 
 /* Info-link definitions. */
 typedef struct {
@@ -86,6 +143,7 @@ typedef struct {
 	host_t	*hosts;
 } page_t;
 
+
 /* Format of records in the $BBHIST/allevents file */
 typedef struct {
 	char	hostname[60];
@@ -97,4 +155,12 @@ typedef struct {
 	int	oldcolor;
 	int	state;		/* 2=escalated, 1=recovered, 0=no change */
 } event_t;
+
+extern page_t		*pagehead;
+extern link_t 		*linkhead, null_link;
+extern hostlist_t	*hosthead;
+extern state_t		*statehead;
+extern col_t		*colhead, null_column;
+
+#endif
 
