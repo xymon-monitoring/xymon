@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.120 2005-03-01 12:55:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.121 2005-03-03 12:01:19 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -2467,24 +2467,26 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 		else if (childpid > 0) {
-			if (pidfile) {
-				/* Parent - save PID and exit */
-				FILE *fd = fopen(pidfile, "w");
-				if (fd) {
-					if (fprintf(fd, "%d\n", (int)childpid) <= 0) {
-						errprintf("Error writing PID file %s: %s\n", pidfile, strerror(errno));
-					}
-					fclose(fd);
-				}
-				else {
-					errprintf("Cannot open PID file %s: %s\n", pidfile, strerror(errno));
-				}
-			}
-
+			/* Parent just exits */
 			exit(0);
 		}
+
 		/* Child (daemon) continues here */
 		setsid();
+	}
+
+	if (pidfile) {
+		/* Save PID */
+		FILE *fd = fopen(pidfile, "w");
+		if (fd) {
+			if (fprintf(fd, "%d\n", (int)getpid()) <= 0) {
+				errprintf("Error writing PID file %s: %s\n", pidfile, strerror(errno));
+			}
+			fclose(fd);
+		}
+		else {
+			errprintf("Cannot open PID file %s: %s\n", pidfile, strerror(errno));
+		}
 	}
 
 	errprintf("Setting up signal handlers\n");
