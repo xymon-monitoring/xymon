@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.38 2004-10-31 11:51:21 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.39 2004-11-01 16:05:06 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -489,8 +489,12 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 	static char *bbdisp = NULL;
 	int res = 0;
 
- 	if (bbdisp == NULL) bbdisp = strdup(getenv("BBDISP"));
+ 	if ((bbdisp == NULL) && getenv("BBDISP")) bbdisp = strdup(getenv("BBDISP"));
 	if (recipient == NULL) recipient = bbdisp;
+	if (recipient == NULL) {
+		errprintf("No recipient for message\n");
+		return BB_EBADIP;
+	}
 
 	if ((strncmp(msg, "status", 6) == 0) || (strncmp(msg, "combo", 5) == 0)) {
 		res = sendstatus((recipient ? recipient : bbdisp), msg, timeout);
