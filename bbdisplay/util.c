@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.84 2003-08-25 16:21:16 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.85 2003-08-26 20:45:31 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1075,18 +1075,20 @@ char *urlip(const char *url, char *hostip, char *hostname)
 }
 
 
-char *realurl(char *url, char **proxy, char **ip, char **hosthdr)
+char *realurl(char *url, char **proxy, char **proxyuserpwd, char **ip, char **hosthdr)
 {
 	static char result[MAX_LINE_LEN];
 	static char proxyresult[MAX_LINE_LEN];
+	static char proxyuserpwdresult[MAX_LINE_LEN];
 	static char ipresult[MAX_LINE_LEN];
 	static char hosthdrresult[MAX_LINE_LEN];
 	char *p;
 	char *urlstart;
 	char *restorechar = NULL;
 
-	result[0] = proxyresult[0] = ipresult[0] = hosthdrresult[0] = '\0';
+	result[0] = proxyresult[0] = proxyuserpwdresult[0] = ipresult[0] = hosthdrresult[0] = '\0';
 	if (proxy) *proxy = NULL;
+	if (proxyuserpwd) *proxyuserpwd = NULL;
 	if (ip) *ip = NULL;
 	if (hosthdr) *hosthdr = NULL;
 	p = url;
@@ -1123,8 +1125,26 @@ char *realurl(char *url, char **proxy, char **ip, char **hosthdr)
 
 		p++; /* Move p to "http" */
 		if (proxy) {
+			char *userpwd;
+			char *p1;
+
 			*(p-1) = '\0'; /* Proxy setting stops before "/http" */
-			strcpy(proxyresult, urlstart);
+
+			/* See if there is username:password in the proxy spec */
+			userpwd = urlstart + strlen("http://");
+			p1 = strchr(userpwd, '@');
+			if (p1) {
+				/* We do have a username:password */
+				*p1 = '\0';
+				strcpy(proxyuserpwdresult, userpwd);
+				if (proxyuserpwd) *proxyuserpwd = proxyuserpwdresult;
+
+				sprintf(proxyresult, "http://%s", (p1+1));
+				*p1 = '@';
+			}
+			else {
+				strcpy(proxyresult, urlstart);
+			}
 			*proxy = proxyresult;
 			*(p-1) = '/';
 		}

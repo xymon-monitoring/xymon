@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.43 2003-08-26 15:33:43 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.44 2003-08-26 20:45:31 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -28,10 +28,11 @@ static char rcsid[] = "$Id: httptest.c,v 1.43 2003-08-26 15:33:43 henrik Exp $";
 
 static FILE *logfd = NULL;
 
-
 char *http_library_version = NULL;
 static int can_ssl = 1;
 static int can_ldap = 0;
+
+char *proxy_userpwd = NULL;
 
 int init_http_library(void)
 {
@@ -104,6 +105,7 @@ void add_http_test(testitem_t *t)
 	http_data_t *req;
 	char *proto = NULL;
 	char *proxy = NULL;
+	char *proxyuserpwd = NULL;
 	char *ip = NULL;
 	char *hosthdr = NULL;
 	int status;
@@ -117,8 +119,14 @@ void add_http_test(testitem_t *t)
 	/* Allocate the private data and initialize it */
 	req = (http_data_t *) malloc(sizeof(http_data_t));
 	t->privdata = (void *) req;
-	req->url = malcop(realurl(t->testspec, &proxy, &ip, &hosthdr));
-	if (proxy) req->proxy = malcop(proxy); else req->proxy = NULL;
+	req->url = malcop(realurl(t->testspec, &proxy, &proxyuserpwd, &ip, &hosthdr));
+
+	if (proxy) {
+		req->proxy = malcop(proxy); 
+		req->proxyuserpwd = malcop(proxyuserpwd);
+	}
+	else req->proxy = req->proxyuserpwd = NULL;
+
 	if (ip) req->ip = malcop(ip); else req->ip = NULL;
 	if (hosthdr) req->hosthdr = malcop(hosthdr); else req->hosthdr = NULL;
 	req->postdata = NULL;
@@ -462,6 +470,11 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 
 			/* Default only - may be overridden by specifying ":portnumber" in the proxy string. */
 			curl_easy_setopt(req->curl, CURLOPT_PROXYPORT, 80);
+
+			/* For proxies requiring authentication... */
+			if (req->proxyuserpwd) {
+				curl_easy_setopt(req->curl, CURLOPT_PROXYUSERPWD, req->proxyuserpwd);
+			}
 		}
 	}
 
