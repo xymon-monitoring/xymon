@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.196 2004-12-15 21:27:18 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.197 2004-12-17 16:51:51 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -652,8 +652,10 @@ int main(int argc, char *argv[])
 	}
 
 	/* Generate WML cards */
-	do_wml_cards(pagedir);
-	add_timestamp("WML generation done");
+	if (enable_wmlgen) {
+		do_wml_cards(pagedir);
+		add_timestamp("WML generation done");
+	}
 
 	/* Need to do this before sending in our report */
 	add_timestamp("Run completed");
