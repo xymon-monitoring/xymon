@@ -67,6 +67,15 @@ These tags are processed by the
 .I bbgen(1)
 tool when generating the Hobbit webpages or reports.
 
+.IP "page NAME [Page-title]"
+This defines a page at the level below the entry page. All
+hosts following the "page" directive appear on this page, until 
+a new "page", "subpage" or "subparent" line is found.
+
+.IP "subpage NAME [Page-title]"
+This defines a subpage in the second level below the entry page.
+You must have a previous "page" line to hook this subpage to.
+
 .IP "subparent parentpage newpage [Page-title]"
 This is used to define subpages in whatever levels you may
 wish. Just like the standard "subpage" tag, "subparent" defines a
@@ -102,6 +111,20 @@ script, and I am grateful to Craig for suggesting that
 I implement it in bbgen. The idea to explicitly list
 the parent page in the "subparent" tag was what made
 it easy to implement.
+
+.IP "group [group-title]"
+.IP "group-compress [group-title]"
+Defines a group of hosts, that appear together on the webpage,
+with a single header-line listing all of the columns. Hosts
+following the "group" line appear inside the group, until a
+new "group" or page-line is found. The two group-directives
+are handled identically by Hobbit and bbgen, but both forms
+are allowed for compatibility with Big Brother.
+
+.IP "group-only COLUMN1|COLUMN2|COLUMN3 [group-title]"
+Same as the "group" and "group-compress" lines, but includes
+only the columns explicitly listed in the group. Any columns
+not listed will be ignored for these hosts.
 
 .IP "title Page, group or host title text"
 The "title" tag is used to put custom headings into the
@@ -621,6 +644,36 @@ directive.
 These tests perform a simple network test of a service by connecting
 to the port and possibly checking that a banner is shown by the
 server.
+
+How these tests operate are configured in the
+.I bb-services(5)
+configuration file, which controls which port to use for the service,
+whether to send any data to the service, whether to check for
+a response from the service etc.
+
+You can modify the behaviour of these tests on a per-test basis by
+adding one or more modifiers to the test: \fB:NUMBER\fR changes the
+port number from the default to the one you specify for this test.
+E.g. to test ssh running on port 8022, specify the test as \fBssh:8022\fR.
+
+\fB:s\fR makes the test silent, i.e. it does not send any data to
+the service. E.g. to do a silent test of an smtp server, enter
+\fBsmtp:s\fR.
+
+You can combine these two: \fBftp:8021:s\fR is valid.
+
+The name of the test also determines the columnname that the test 
+result will appear with in the Hobbit webpages.
+
+By prefixing a test with "!" it becomes a reverse test: Hobbit will 
+expect the service NOT to be available, and send a green status if
+it does NOT respond. If a connection to the service succeeds, the
+status will go red.
+
+By prefixing a test with "?" errors will be reported with a "clear"
+status instead of red. This is known as a test for a "dialup" service,
+and allows you to run tests of hosts that are not always online, 
+without getting alarms while they are off-line.
 
 .IP "ftp ssh telnet smtp pop3 imap nntp rsync clamd oratns qmtp qmqp"
 These tags are for testing services offering the FTP, Secure Shell (ssh), 
