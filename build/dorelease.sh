@@ -51,7 +51,7 @@ for f in bbdisplay bbnet bbpatches bbproxy build common docs hobbitd include lib
 do
 	find $f/ | grep -v RCS | cpio -pdvmu ~/hobbit/release/hobbit-$REL/
 done
-cp -p Changes configure COPYING CREDITS README ~/hobbit/release/hobbit-$REL/
+cp -p Changes.bbgen Changes configure COPYING CREDITS README ~/hobbit/release/hobbit-$REL/
 find ~/hobbit/release/hobbit-$REL -type d|xargs chmod 755
 
 exit 0
