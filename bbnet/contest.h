@@ -78,6 +78,7 @@ typedef struct svcinfo_t {
 typedef struct {
 	char *cipherlist;
 	int  sslversion;
+	char *clientcert;
 } ssloptions_t;
 
 typedef int (*f_callback_data)(unsigned char *buffer, unsigned int size, void *privdata);

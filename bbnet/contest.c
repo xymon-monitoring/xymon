@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.57 2004-08-30 15:46:28 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.58 2004-08-31 20:37:27 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -147,62 +147,6 @@ static char *binview(unsigned char *buf, int buflen)
 	return result;
 }
 
-static void getescapestring(char *msg, unsigned char **buf, int *buflen, int *offset)
-{
-	char *inp, *outp;
-	int outlen = 0;
-
-	inp = msg;
-	if (*inp != '\"') {
-		errprintf("bb-services error - strings must be in quotes\n");
-		return;
-	}
-	inp++; /* Skip the quote */
-
-	outp = *buf = malloc(strlen(msg)+1);
-	while (*inp && (*inp != '\"')) {
-		if (*inp == '\\') {
-			inp++;
-			if (*inp == 'r') {
-				*outp = '\r'; outlen++; inp++; outp++;
-			}
-			else if (*inp == 'n') {
-				*outp = '\n'; outlen++; inp++; outp++;
-			}
-			else if (*inp == 't') {
-				*outp = '\t'; outlen++; inp++; outp++;
-			}
-			else if (*inp == 'x') {
-				inp++;
-				if (isxdigit((int) *inp)) {
-					*outp = hexvalue(*inp);
-					inp++;
-
-					if (isxdigit((int) *inp)) {
-						*outp *= 16;
-						*outp += hexvalue(*inp);
-						inp++;
-					}
-				}
-				else {
-					errprintf("Invalid hex escape in service.txt\n");
-				}
-				outlen++; outp++;
-			}
-			else {
-				errprintf("Unknown escape sequence in service.txt at: %s\n", inp);
-			}
-		}
-		else {
-			*outp = *inp;
-			outlen++;
-			inp++; outp++;
-		}
-	}
-	*outp = '\0';
-	*buflen = outlen;
-}
-
 char *init_tcp_services(void)
 {
 	char filename[MAX_PATH];
@@ -255,7 +199,7 @@ char *init_tcp_services(void)
 		}
 		else if (strncmp(l, "send ", 5) == 0) {
 			if (item) {
-				getescapestring(skipwhitespace(l+4), &item->rec->sendtxt, &item->rec->sendlen, NULL);
+				getescapestring(skipwhitespace(l+4), &item->rec->sendtxt, &item->rec->sendlen);
 				for (walk = item; (walk != first); walk = walk->next) {
 					walk->next->rec->sendtxt = item->rec->sendtxt;
 					walk->next->rec->sendlen = item->rec->sendlen;
@@ -264,11 +208,11 @@ char *init_tcp_services(void)
 		}
 		else if (strncmp(l, "expect ", 7) == 0) {
 			if (item) {
-				getescapestring(skipwhitespace(l+7), &item->rec->exptext, &item->rec->explen, &item->rec->expofs);
+				getescapestring(skipwhitespace(l+7), &item->rec->exptext, &item->rec->explen);
 				for (walk = item; (walk != first); walk = walk->next) {
 					walk->next->rec->exptext = item->rec->exptext;
 					walk->next->rec->explen = item->rec->explen;
-					walk->next->rec->expofs = item->rec->expofs;
+					walk->next->rec->expofs = 0; /* HACK - not used right now */
 				}
 			}
 		}
@@ -590,6 +534,40 @@ static void socket_shutdown(tcptest_t *item)
 
 char *ssl_library_version = OPENSSL_VERSION_TEXT;
 
+static int cert_password_cb(char *buf, int size, int rwflag, void *userdata)
+{
+	FILE *passfd;
+	char *p;
+	char passfn[MAX_PATH];
+	char passphrase[1024];
+	tcptest_t *item = (tcptest_t *)userdata;
+
+	memset(passphrase, 0, sizeof(passphrase));
+
+	/*
+	 * Private key passphrases are stored in the file named same as the
+	 * certificate itself, but with extension ".pass"
+	 */
+	sprintf(passfn, "%s/certs/%s", getenv("BBHOME"), item->ssloptions->clientcert);
+	p = strrchr(passfn, '.'); if (p == NULL) p = passfn+strlen(passfn);
+	strcpy(p, ".pass");
+
+	passfd = fopen(passfn, "r");
+	if (passfd) {
+		fgets(passphrase, sizeof(passphrase)-1, passfd);
+		p = strchr(passphrase, '\n'); if (p) *p = '\0';
+		fclose(passfd);
+	}
+
+	strncpy(buf, passphrase, size);
+	buf[size - 1] = '\0';
+
+	/* Clear this buffer for security! Dont want passphrases in core dumps... */
+	memset(passphrase, 0, sizeof(passphrase));
+
+	return strlen(buf);
+}
+
 static char *bbgen_ASN1_UTCTIME(ASN1_UTCTIME *tm)
 {
 	static char result[256];
@@ -697,6 +675,31 @@ static void setup_ssl(tcptest_t *item)
 		/* Limit set of ciphers, if user wants to */
 		if (item->ssloptions->cipherlist) 
 			SSL_CTX_set_cipher_list(item->sslctx, item->ssloptions->cipherlist);
+
+		if (item->ssloptions->clientcert) {
+			int status;
+			char certfn[MAX_PATH];
+
+			SSL_CTX_set_default_passwd_cb(item->sslctx, cert_password_cb);
+			SSL_CTX_set_default_passwd_cb_userdata(item->sslctx, item);
+
+			sprintf(certfn, "%s/certs/%s", getenv("BBHOME"), item->ssloptions->clientcert);
+			status = SSL_CTX_use_certificate_chain_file(item->sslctx, certfn);
+			if (status == 1) {
+				status = SSL_CTX_use_PrivateKey_file(item->sslctx, certfn, SSL_FILETYPE_PEM);
+			}
+
+			if (status != 1) {
+				char sslerrmsg[256];
+
+				ERR_error_string(ERR_get_error(), sslerrmsg);
+				errprintf("Cannot load SSL client certificate/key %s: %s\n", 
+					  item->ssloptions->clientcert, sslerrmsg);
+				item->sslrunning = 0;
+				item->errcode = CONTEST_ESSL;
+				return;
+			}
+		}
 	}
 
 	if (item->ssldata == NULL) {
@@ -713,6 +716,26 @@ static void setup_ssl(tcptest_t *item)
 			return;
 		}
 
+		/* Verify that the client certificate is working */
+		if (item->ssloptions->clientcert) {
+			X509 *x509;
+
+			x509 = SSL_get_certificate(item->ssldata);
+			if(x509 != NULL) {
+				EVP_PKEY *pktmp = X509_get_pubkey(x509);
+				EVP_PKEY_copy_parameters(pktmp,SSL_get_privatekey(item->ssldata));
+				EVP_PKEY_free(pktmp);
+			}
+
+			if (!SSL_CTX_check_private_key(item->sslctx)) {
+				errprintf("Private/public key mismatch for certificate %s\n", item->ssloptions->clientcert);
+				item->sslrunning = 0;
+				item->errcode = CONTEST_ESSL;
+				return;
+			}
+		}
+
+		/* SSL setup is done. Now attach the socket FD to the SSL protocol handler */
 		if (SSL_set_fd(item->ssldata, item->fd) != 1) {
 			char sslerrmsg[256];
 
@@ -720,7 +743,8 @@ static void setup_ssl(tcptest_t *item)
 			errprintf("Could not initiate SSL on connection - IP %s, service %s: %s\n", 
 				   inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname, sslerrmsg);
 			item->sslrunning = 0;
-			SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
+			SSL_free(item->ssldata); 
+			SSL_CTX_free(item->sslctx);
 			item->errcode = CONTEST_ESSL;
 			return;
 		}
@@ -1420,16 +1444,18 @@ int main(int argc, char *argv[])
 					testitem->testspec = testspec;
 					strcpy(hostitem->ip, ip);
 					add_url_to_dns_queue(testspec);
-					add_http_test(testitem, NULL);
+					add_http_test(testitem);
 
 					testitem->next = NULL;
 					thead = testitem;
 
 					httptest = (http_data_t *)testitem->privdata;
-					printf("TCP connection goes to %s:%d\n",
-						inet_ntoa(httptest->tcptest->addr.sin_addr),
-						ntohs(httptest->tcptest->addr.sin_port));
-					printf("Request:\n%s\n", httptest->tcptest->sendtxt);
+					if (httptest && httptest->tcptest) {
+						printf("TCP connection goes to %s:%d\n",
+							inet_ntoa(httptest->tcptest->addr.sin_addr),
+							ntohs(httptest->tcptest->addr.sin_port));
+						printf("Request:\n%s\n", httptest->tcptest->sendtxt);
+					}
 				}
 				else {
 					add_tcp_test(ip, atoi(port), testspec, NULL, 0, NULL, NULL, NULL, NULL);
