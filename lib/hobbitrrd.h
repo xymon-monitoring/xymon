@@ -29,7 +29,7 @@ extern larrdgraph_t *larrdgraphs;
 
 extern larrdrrd_t *find_larrd_rrd(char *service, char *flags);
 extern larrdgraph_t *find_larrd_graph(char *rrdname);
-extern char *larrd_graph_data(char *hostname, char *dispname, char *service, larrdgraph_t *graphdef, int itemcount, int larrd043, int wantmeta);
+extern char *larrd_graph_data(char *hostname, char *dispname, char *service, larrdgraph_t *graphdef, int itemcount, int larrd043, int bbgend, int wantmeta);
 
 #endif
 
