@@ -68,7 +68,11 @@ files installed as well. Often these are in packages called "something<em>-dev</
 	use SSL encryption - e.g. secure websites. Although this library is
 	not absolutely required for Hobbit, I strongly recommend that you install
 	it because sooner or later you will probably need it anyway. It is 
-	available from <a href="http://www.openssl.org/">http://www.openssl.org/</a></li>
+	available from <a href="http://www.openssl.org/">http://www.openssl.org/</a>.
+	Note: If you are building on Solaris, you should check that you have a
+	random-data generator, either the prngd daemon (available on 
+	<a href="http://www.sunfreeware.com/">Sun Freeware</a>) or the Solaris 
+	/dev/random driver from Solaris patch 112438.</li>
 
 	<li>OpenLDAP is used to query LDAP directory servers. If you would like
 	to test that your directory server is up and running, you will need this
