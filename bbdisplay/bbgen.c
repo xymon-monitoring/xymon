@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.48 2002-11-26 12:20:26 hstoerne Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.49 2002-11-27 10:03:07 hstoerne Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -45,6 +45,10 @@ col_t		null_column = { "", NULL };		/* Null column */
 summary_t	*sumhead = NULL;			/* Summaries we send out */
 dispsummary_t	*dispsums = NULL;			/* Summaries we received and display */
 
+char		larrdcol[20];
+int		enable_purpleupd = 1;
+
+
 int main(int argc, char *argv[])
 {
 	char		pagedir[256];
@@ -53,10 +57,26 @@ int main(int argc, char *argv[])
 	int		i;
 
 	sprintf(pagedir, "%s/www", getenv("BBHOME"));
+	strcpy(larrdcol, "larrd");
 
 	for (i = 1; (i < argc); i++) {
 		if (strcmp(argv[i], "--recentgifs") == 0) {
 			use_recentgifs = 1;
+		}
+		else if (strncmp(argv[i], "--larrd=", 8) == 0) {
+			char *lp = strchr(argv[i], '=');
+			strcpy(larrdcol, (lp+1));
+		}
+		else if (strcmp(argv[i], "--nopurple") == 0) {
+			enable_purpleupd = 0;
+		}
+		else if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-?") == 0)) {
+			printf("Usage: %s [--options] [WebpageDirectory]\n", argv[0]);
+			printf("Options:\n");
+			printf("    --recentgifs        : Use xxx-recent.gif images\n");
+			printf("    --larrd=LARRDCOLUMN]: LARRD data in column LARRDCOLUMN never goes purple\n");
+			printf("    --nopurple          : Disable all purple updates\n");
+			exit(1);
 		}
 		else {
 			/* Last argument is pagedir */

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.11 2002-11-26 14:51:44 hstoerne Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.12 2002-11-27 10:03:07 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -229,7 +229,7 @@ state_t *init_state(const char *filename, int dopurple)
 		}
 	}
 
-	if (dopurple && (st.st_mtime <= now)) {
+	if (dopurple && (st.st_mtime <= now) && (strcmp(testname, larrdcol) != 0)) {
 		/* PURPLE test! */
 
 		char *p;
@@ -624,7 +624,7 @@ state_t *load_state(void)
 	chdir(getenv("BBLOGS"));
 	if (stat(".bbstartup", &st) == -1) {
 		/* Do purple if no ".bbstartup" file */
-		dopurple = 1;
+		dopurple = enable_purpleupd;
 	}
 	else {
 		/* Don't do purple hosts ("avoid purple explosion on startup") */
