@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.40 2003-02-25 08:31:53 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.41 2003-02-25 09:33:59 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -44,6 +44,24 @@ char	*ignorecolumns = NULL;			/* Columns that will be ignored totally */
 
 link_t  null_link = { "", "", "", NULL };	/* Null link for pages/hosts/whatever with no link */
 col_t   null_column = { "", NULL };		/* Null column */
+
+
+char *skipword(const char *l)
+{
+	char *p;
+
+	for (p=l; (*p && (!isspace((int)*p))); p++) ;
+	return p;
+}
+
+
+char *skipwhitespace(const char *l)
+{
+	char *p;
+
+	for (p=l; (*p && (isspace((int)*p))); p++) ;
+	return p;
+}
 
 
 bbgen_page_t *init_page(const char *name, const char *title)
@@ -94,7 +112,7 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	newhost->oldage = 1;
 	newhost->dialup = dialup;
 	if (alerts) {
-		p = strchr(alerts, ' '); if (p) { *p = '\0'; }
+		p = skipword(alerts); if (*p) *p = '\0'; else p = NULL;
 
 		newhost->alerts = malloc(strlen(alerts)+3);
 		sprintf(newhost->alerts, ",%s,", alerts);
@@ -104,7 +122,7 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 		newhost->alerts = NULL;
 	}
 	if (nopropyellowtests) {
-		p = strchr(nopropyellowtests, ' '); if (p) { *p = '\0'; }
+		p = skipword(nopropyellowtests); if (*p) *p = '\0'; else p = NULL;
 		newhost->nopropyellowtests = malloc(strlen(nopropyellowtests)+3);
 		sprintf(newhost->nopropyellowtests, ",%s,", nopropyellowtests);
 		if (p) *p = ' ';
@@ -113,7 +131,7 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 		newhost->nopropyellowtests = nopropyellowdefault;
 	}
 	if (nopropredtests) {
-		p = strchr(nopropredtests, ' '); if (p) { *p = '\0'; }
+		p = skipword(nopropredtests); if (*p) *p = '\0'; else p = NULL;
 		newhost->nopropredtests = malloc(strlen(nopropredtests)+3);
 		sprintf(newhost->nopropredtests, ",%s,", nopropredtests);
 		if (p) *p = ' ';
@@ -458,24 +476,6 @@ dispsummary_t *init_displaysummary(char *fn)
 
 	return newsum;
 }
-
-char *skipword(char *l)
-{
-	char *p;
-
-	for (p=l; (*p && (!isspace(*p))); p++) ;
-	return p;
-}
-
-
-char *skipwhitespace(char *l)
-{
-	char *p;
-
-	for (p=l; (*p && (isspace(*p))); p++) ;
-	return p;
-}
-
 
 void getnamelink(char *l, char **name, char **link)
 {
