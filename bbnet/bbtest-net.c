@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.130 2003-10-21 21:09:42 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.131 2003-10-21 21:38:25 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -936,7 +936,13 @@ void dns_resolve(void)
 		 * we test on a host.
 		 */
 
-		if (!h->testip && (h->dodns || (strcmp(h->ip, "0.0.0.0") == 0))) {
+		if (h->testip || (dnsmethod == IP_ONLY)) {
+			if (strcmp(h->ip, "0.0.0.0") == 0) {
+				errprintf("bbtest-net: %s has IP 0.0.0.0 and testip - dropped\n", h->hostname);
+				h->dnserror = 1;
+			}
+		}
+		else if (h->dodns) {
 			ares_gethostbyname(myares_channel, h->hostname, AF_INET, dns_callback, h);
 		}
 	}
