@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.25 2003-03-15 16:00:54 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.26 2003-04-17 09:00:47 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -42,10 +42,12 @@ extern  int debug;
 /* Stuff for combo message handling */
 int		bbmsgcount = 0;		/* Number of messages transmitted */
 int		bbstatuscount = 0;	/* Number of status items reported */
-static int	bbmsginuse;		/* Anything in the buffer ? */
+static int	bbmsgqueued;		/* Anything in the buffer ? */
 static char	bbmsg[MAXMSG];		/* Complete combo message buffer */
 static char	msgbuf[MAXMSG-50];	/* message buffer for one status message */
 static int	msgcolor;		/* color of status message in msgbuf */
+static int      maxmsgspercombo = 0;	/* 0 = no limit */
+static int      sleepbetweenmsgs = 0;
 
 static char hostenv_svc[20];
 static char hostenv_host[200];
@@ -523,6 +525,8 @@ static void sendmessage(char *msg)
 		}
 	}
 
+	/* Give it a break */
+	if (sleepbetweenmsgs) usleep(sleepbetweenmsgs);
 	bbmsgcount++;
 }
 
@@ -531,13 +535,18 @@ static void sendmessage(char *msg)
 void combo_start(void)
 {
 	strcpy(bbmsg, "combo\n");
-	bbmsginuse = 0;
+	bbmsgqueued = 0;
+
+	if ((maxmsgspercombo == 0) && getenv("BBMAXMSGSPERCOMBO")) 
+		maxmsgspercombo = atoi(getenv("BBMAXMSGSPERCOMBO"));
+	if ((sleepbetweenmsgs == 0) && getenv("BBSLEEPBETWEENMSGS")) 
+		sleepbetweenmsgs = atoi(getenv("BBSLEEPBETWEENMSGS"));
 }
 
 void combo_flush(void)
 {
 
-	if (!bbmsginuse) {
+	if (!bbmsgqueued) {
 		if (debug) printf("Flush, but bbmsg is empty\n");
 		return;
 	}
@@ -568,17 +577,18 @@ void combo_flush(void)
 void combo_add(char *buf)
 {
 	/* Check if there is room for the message + 2 newlines */
-	if ((strlen(bbmsg) + strlen(buf) + 200) >= MAXMSG) {
+	if ( ((strlen(bbmsg) + strlen(buf) + 200) >= MAXMSG) || 
+	     (maxmsgspercombo && (bbmsgqueued >= maxmsgspercombo)) ) {
 		/* Nope ... flush buffer */
 		combo_flush();
 	}
 	else {
 		/* Yep ... add delimiter before new status (but not before the first!) */
-		if (bbmsginuse) strcat(bbmsg, "\n\n");
+		if (bbmsgqueued) strcat(bbmsg, "\n\n");
 	}
 
 	strcat(bbmsg, buf);
-	bbmsginuse = 1;
+	bbmsgqueued++;
 }
 
 void combo_end(void)
