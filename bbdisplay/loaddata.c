@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.97 2003-07-11 11:38:45 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.98 2003-07-14 11:10:47 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -59,6 +59,7 @@ int	pagecount = 0;
 int	purplecount = 0;
 char	*purplelogfn = NULL;
 static FILE *purplelog = NULL;
+time_t	snapshot = 0;
 
 static pagelist_t *pagelisthead = NULL;
 
@@ -440,6 +441,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	host_t		*host;
 	struct stat 	log_st;
 	time_t		now = time(NULL);
+	time_t		histentry_start;
 
 	statuscount++;
 	dprintf("init_state(%s, %d, ...)\n", textornull(filename), dopurple);
@@ -451,7 +453,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		return NULL;
 	}
 
-	if (reportstart) {
+	if (reportstart || snapshot) {
 		/* Dont do reports for info- and larrd-columns */
 		p = strrchr(filename, '.');
 		if (p == NULL) return NULL;
@@ -460,7 +462,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		if (strcmp(p, larrdcol) == 0) return NULL;
 	}
 
-	sprintf(fullfn, "%s/%s", getenv((reportstart ? "BBHIST" : "BBLOGS")), filename);
+	sprintf(fullfn, "%s/%s", getenv(((reportstart || snapshot) ? "BBHIST" : "BBLOGS")), filename);
 
 	/* Check that we can access this file */
 	if ( (stat(fullfn, &log_st) == -1)       || 
@@ -508,10 +510,12 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	strcpy(newstate->entry->age, "");
 	newstate->entry->oldage = 0;
 	newstate->entry->propagate = 1;
+	newstate->entry->testflags = NULL;
 	newstate->entry->skin = NULL;
 	newstate->entry->testflags = NULL;
 	newstate->entry->repinfo = NULL;
 	newstate->entry->causes = NULL;
+	newstate->entry->histlogname = NULL;
 
 	host = find_host(hostname);
 	if (host) {
@@ -537,7 +541,9 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 				reportgreenlevel,
 				(host ? host->reporttime : NULL));
 		newstate->entry->causes = (dynamicreport ? NULL : save_replogs());
-		newstate->entry->testflags = NULL;
+	}
+	else if (snapshot) {
+		newstate->entry->color = history_color(fd, snapshot, &histentry_start, &newstate->entry->histlogname);
 	}
 	else if (fgets(l, sizeof(l), fd)) {
 		newstate->entry->color = parse_color(l);
@@ -546,12 +552,11 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		if (testflag_set(newstate->entry, 'R')) newstate->entry->skin = reverseskin;
 	}
 	else {
-		errprintf("Empty or unreadable status file %s/%s\n", (reportstart ? "BBHIST" : "BBLOGS"), filename);
+		errprintf("Empty or unreadable status file %s/%s\n", ((reportstart || snapshot) ? "BBHIST" : "BBLOGS"), filename);
 		newstate->entry->color = COL_CLEAR;
-		newstate->entry->testflags = NULL;
 	}
 
-	if ( (!reportstart) && (log_st.st_mtime <= now) && (strcmp(testname, larrdcol) != 0) && (strcmp(testname, infocol) != 0) ) {
+	if ( !reportstart && !snapshot && (log_st.st_mtime <= now) && (strcmp(testname, larrdcol) != 0) && (strcmp(testname, infocol) != 0) ) {
 		/* Log file too old = go purple */
 
 		if (host && host->dialup) {
@@ -569,7 +574,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	}
 
 	/* Acked column ? */
-	if (!reportstart && (newstate->entry->color != COL_GREEN)) {
+	if (!reportstart && !snapshot && (newstate->entry->color != COL_GREEN)) {
 		struct stat ack_st;
 		char ackfilename[MAX_PATH];
 
@@ -584,6 +589,17 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 
 	if (reportstart) {
 		/* Reports have no purple handling */
+	}
+	else if (snapshot) {
+		time_t fileage = snapshot - histentry_start;
+
+		newstate->entry->oldage = (fileage >= 86400);
+		if (fileage >= 86400)
+			sprintf(newstate->entry->age, "%.2f days", (fileage / 86400.0));
+		else if (fileage > 3600)
+			sprintf(newstate->entry->age, "%.2f hours", (fileage / 3600.0));
+		else
+			sprintf(newstate->entry->age, "%.2f minutes", (fileage / 60.0));
 	}
 	else if (dopurple && *is_purple) {
 		/* Send a message to update status to purple */
@@ -1394,7 +1410,7 @@ state_t *load_state(dispsummary_t **sumhead)
 		return NULL;
 	}
 
-	if (reportstart) {
+	if (reportstart || snapshot) {
 		dopurple = 0;
 		purplelog = NULL;
 		oldestentry = time(NULL);
@@ -1438,7 +1454,7 @@ state_t *load_state(dispsummary_t **sumhead)
 		strcpy(fn, d->d_name);
 
 		if (strncmp(fn, "summary.", 8) == 0) {
-			if (!reportstart) {
+			if (!reportstart && !snapshot) {
 				newsum = init_displaysummary(fn);
 				if (newsum) {
 					newsum->next = topsum;

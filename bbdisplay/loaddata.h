@@ -54,5 +54,6 @@ extern char     *ignorecolumns;
 extern char     *wapcolumns;
 extern char	*dialupskin;
 extern char	*reverseskin;
+extern time_t   snapshot;
 
 #endif
