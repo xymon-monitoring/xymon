@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.18 2004-10-30 15:37:02 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.19 2004-11-17 16:12:43 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -200,38 +200,52 @@ int main(int argc, char *argv[])
 	char bbgencmd[PATH_MAX];
 	char bbgentimeopt[100];
 	char *bbgen_argv[20];
-	int i, newargc;
 	pid_t childpid;
 	int childstat;
 	char htmldelim[20];
 	char startstr[20], endstr[20];
 	int cleanupoldreps = 1;
+	int argi, newargi;
+
+	newargi = 0;
+	bbgen_argv[newargi++] = bbgencmd;
+	bbgen_argv[newargi++] = bbgentimeopt;
+
+	for (argi=1; (argi < argc); argi++) {
+		if (argnmatch(argv[argi], "--env=")) {
+			char *p = strchr(argv[argi], '=');
+			loadenv(p+1);
+		}
+		else if (strcmp(argv[1], "--noclean") == 0) {
+			cleanupoldreps = 0;
+		}
+		else {
+			bbgen_argv[newargi++] = argv[argi];
+		}
+	}
+	bbgen_argv[newargi++] = outdir;
+	bbgen_argv[newargi++] = NULL;
 
 	envcheck(reqenv);
-	if (argc > 1) {
-		if (strcmp(argv[1], "--noclean") == 0) cleanupoldreps = 0;
-	}
 	parse_query();
+
+	/*
+	 * We need to set these variables up AFTER we have put them into the bbgen_argv[] array.
+	 * We cannot do it before, because we need the environment that the the commandline options 
+	 * might provide.
+	 */
+	if (getenv("BBGEN")) sprintf(bbgencmd, "%s", getenv("BBGEN"));
+	else sprintf(bbgencmd, "%s/bin/bbgen", getenv("BBHOME"));
+
+	sprintf(bbgentimeopt, "--reportopts=%u:%u:1:%s", (unsigned int)starttime, (unsigned int)endtime, style);
 
 	sprintf(dirid, "%u-%u", (unsigned int)getpid(), (unsigned int)time(NULL));
 	sprintf(outdir, "%s/%s", getenv("BBREP"), dirid);
 	mkdir(outdir, 0755);
 
+
 	sprintf(bbwebenv, "BBWEB=%s/%s", getenv("BBREPURL"), dirid);
 	putenv(bbwebenv);
-
-	if (getenv("BBGEN")) sprintf(bbgencmd, "%s", getenv("BBGEN"));
-	else sprintf(bbgencmd, "%s/bin/bbgen", getenv("BBHOME"));
-	newargc = 0;
-	bbgen_argv[newargc++] = bbgencmd;
-	sprintf(bbgentimeopt, "--reportopts=%u:%u:1:%s", (unsigned int)starttime, (unsigned int)endtime, style);
-	bbgen_argv[newargc++] = bbgentimeopt;
-	for (i=1; (i<argc); i++) {
-		if (strcmp(argv[i], "--noclean") != 0) bbgen_argv[newargc++] = argv[i];
-	}
-	bbgen_argv[newargc++] = outdir;
-	bbgen_argv[newargc++] = NULL;
-
 
 	/* Output the "please wait for report ... " thing */
 	sprintf(htmldelim, "bbrep-%u-%u", (int)getpid(), (unsigned int)time(NULL));
@@ -252,7 +266,6 @@ int main(int argc, char *argv[])
 	printf("<H3>Generating report for the period: %s - %s (%s)<BR>\n", startstr, endstr, style);
 	printf("<P><P>\n");
 	fflush(stdout);
-
 
 	/* Go do the report */
 	childpid = fork();
