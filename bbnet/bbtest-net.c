@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.75 2003-07-10 10:41:04 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.76 2003-07-11 08:14:47 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -948,8 +948,13 @@ int decide_color(service_t *service, char *svcname, testitem_t *test)
 		 * "noping" always sends back a status "clear".
 		 * If DNS error, return red and count as down.
 		 */
-		if (test->host->noping) { color = COL_CLEAR; }
-		else if (test->host->dnserror) { color = COL_RED; countasdown = 1; }
+		if (test->host->noping) { 
+			/* Ping test disabled - go "clear". End of story. */
+			return COL_CLEAR; 
+		}
+		else if (test->host->dnserror) { 
+			color = COL_RED; countasdown = 1; 
+		}
 		else {
 			/* Red if (open=0, reverse=0) or (open=1, reverse=1) */
 			if ((test->open + test->reverse) != 1) { color = COL_RED; countasdown = 1; }
@@ -967,7 +972,9 @@ int decide_color(service_t *service, char *svcname, testitem_t *test)
 	}
 	else {
 		/* TCP test */
-		if (test->host->dnserror) { color = COL_RED; countasdown = 1; }
+		if (test->host->dnserror) { 
+			color = COL_RED; countasdown = 1; 
+		}
 		else {
 			if (test->reverse) {
 				if (test->open) { color = COL_RED; countasdown = 1; }
