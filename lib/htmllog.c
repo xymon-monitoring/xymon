@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.6 2004-12-11 23:20:27 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.7 2004-12-12 14:07:02 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -90,6 +90,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	int linecount;
 	char *p;
 	larrdrrd_t *larrd = NULL;
+	larrdgraph_t *graph = NULL;
 
 	hostsvc_setup();
 
@@ -161,29 +162,19 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	fprintf(output, "</table>\n");
 
 	/* larrd stuff here */
-	if (!is_history) larrd = find_larrd_rrd(service, flags);
-	if (larrd) {
-		/* 
-		 * If this service uses part-names (currently, only disk does),
-		 * then setup a link for each of the part graphs.
-		 */
-		if (larrd->larrdpartname) {
-			int start;
-
-			fprintf(output, "<!-- linecount=%d -->\n", linecount);
-			for (start=0; (start < linecount); start += 6) {
-				fprintf(output,"<BR><BR><CENTER><A HREF=\"%s/larrd-grapher.cgi?host=%s&amp;service=%s&%s=%d..%d&amp;disp=%s\"><IMG SRC=\"%s/larrd-grapher.cgi?host=%s&amp;service=%s&amp;%s=%d..%d&amp;graph=hourly&ampdisp=%s\" ALT=\"&nbsp;\" BORDER=0></A><BR></CENTER>\n",
-					cgibinurl, hostname, larrd->larrdrrdname, larrd->larrdpartname,
-					start, (((start+5) < linecount) ? start+5 : linecount-1), displayname,
-					cgibinurl, hostname, larrd->larrdrrdname, larrd->larrdpartname,
-					start, (((start+5) < linecount) ? start+5 : linecount-1), displayname);
+	if (!is_history) {
+		larrd = find_larrd_rrd(service, flags);
+		if (larrd) {
+			graph = find_larrd_graph(larrd->larrdrrdname);
+			if (graph == NULL) {
+				errprintf("Setup error: Service %s has a graph %s, but no graph-definition\n",
+					  service, larrd->larrdrrdname);
 			}
 		}
-		else {
-				fprintf(output,"<BR><BR><CENTER><A HREF=\"%s/larrd-grapher.cgi?host=%s&amp;service=%s&amp;disp=%s\"><IMG SRC=\"%s/larrd-grapher.cgi?host=%s&amp;service=%s&amp;disp=%s&amp;graph=hourly\"ALT=\"&nbsp;\" BORDER=0></A><BR></CENTER>\n",
-					cgibinurl, hostname, larrd->larrdrrdname, displayname,
-					cgibinurl, hostname, larrd->larrdrrdname, displayname);
-		}
+	}
+	if (larrd && graph) {
+		fprintf(output, "<!-- linecount=%d -->\n", linecount);
+		fprintf(output, "%s\n", larrd_graph_url(hostname, displayname, service, graph, linecount, 1));
 	}
 
 	if (!is_history && (histlocation == HIST_BOTTOM)) historybutton(cgibinurl, hostname, service, ip, output);
