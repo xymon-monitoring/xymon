@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.26 2004-10-16 11:58:46 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.27 2004-10-16 16:06:31 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -192,12 +192,12 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 			}
 			else {
 				sprintf(channel->channelbuf, 
-					"@@%s#%u|%d.%06d|%s|%s|%s|%d|%s|%s|%d\n%s\n@@\n", 
+					"@@%s#%u|%d.%06d|%s|%s|%s|%d|%s|%s|%d|%s\n%s\n@@\n", 
 					channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 					sender, hostname, 
 					log->test->testname, (int) log->validtime, 
 					colnames[log->color], colnames[log->oldcolor], (int) log->lastchange,
-					msg);
+					hostpagename(hostname), msg);
 			}
 			break;
 
