@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_worker.c,v 1.15 2004-12-30 22:25:34 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_worker.c,v 1.16 2005-02-15 09:23:18 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -20,7 +20,11 @@ static char rcsid[] = "$Id: hobbitd_worker.c,v 1.15 2004-12-30 22:25:34 henrik E
 #include <ctype.h>
 
 #include <unistd.h>
-#include <sys/select.h>
+
+#if !defined(HPUX)              /* HP-UX has select() and friends in sys/types.h */
+#include <sys/select.h>         /* Someday I'll move to GNU Autoconf for this ..  . */
+#endif
+
 #include <sys/time.h>
 #include <time.h>
 #include <errno.h>
