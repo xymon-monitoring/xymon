@@ -158,7 +158,11 @@ Big Brother.
 
 Note that this tag requires that you install the bbd-features.patch 
 for the Big Brother bbd daemon, as the CLIENT tag is handled entirely 
-by the bbd daemon.
+by the bbd daemon. You must also enable the hostname rewriting
+code by setting BBGHOSTS to a non-zero value (see
+.I bb-environ(5)
+).
+
 
 .IP "COMMENT:Host comment"
 Adds a small text after the hostname on the webpage. This can
