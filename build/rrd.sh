@@ -2,6 +2,7 @@
 
 	RRDINC=""
 	RRDLIB=""
+	PNGLIB=""
 	for DIR in /opt/rrdtool* /usr/local/rrdtool* /usr/local /usr
 	do
 		if test -f $DIR/include/rrd.h
@@ -16,6 +17,15 @@
 		if test -f $DIR/lib/librrd.a
 		then
 			RRDLIB=$DIR/lib
+		fi
+
+		if test -f $DIR/lib/libpng.so
+		then
+			PNGLIB="-L$DIR/lib -lpng"
+		fi
+		if test -f $DIR/lib/libpng.a
+		then
+			PNGLIB="-L$DIR/lib -lpng"
 		fi
 	done
 
@@ -34,9 +44,12 @@
 			exit 1
 		fi
 
-		OS=`uname -s` RRDLIB="-L$RRDLIB" make -f Makefile.test-rrd test-link
+		OS=`uname -s` RRDLIB="-L$RRDLIB" PNGLIB="$PNGLIB" make -f Makefile.test-rrd test-link
 		if [ $? -eq 0 ]; then
 			echo "Found RRDtool libraries in $RRDLIB"
+			if test "$PNGLIB" != ""; then
+				echo "Linking RRD with PNG library: $PNGLIB"
+			fi
 		else
 			echo "ERROR: RRDtool library files found in $RRDLIB, but link fails."
 			exit 1
