@@ -143,10 +143,13 @@ heading.
 Normally, page headings are underlined using an HTML "horizontal ruler"
 tag. This option disables the underlining of headings.
 .sp
-.IP "--recentgifs"
+.IP "--recentgifs[=MINUTES]"
 Use images named COLOR-recent.gif for tests, where the test status
 has changed within the past 24 hours. These GIF files need to be installed
-in the $BBHOME/www/gifs/ directory.
+in the $BBHOME/www/gifs/ directory. By default, the threshold is set to 24
+hours - if you want it differently, you can specify the time limit also.
+E.g. "--recentgifs=3h" will show the recent GIFs for only 3 hours after
+a status change.
 .sp
 .IP "--sort-group-only-items"
 In a normal "group-only" directive, you can specify the order in which the

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.142 2005-01-25 21:51:52 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.143 2005-02-18 17:04:36 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -40,6 +40,7 @@ int		statuscount = 0;
 char		*ignorecolumns = NULL;			/* Columns that will be ignored totally */
 char		*dialupskin = NULL;			/* BBSKIN used for dialup tests */
 char		*reverseskin = NULL;			/* BBSKIN used for reverse tests */
+time_t		recentgif_limit = 86400;		/* Limit for recent-gifs display, in seconds */
 
 bbgen_col_t   	null_column = { "", NULL };		/* Null column */
 
@@ -327,7 +328,7 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 	else if (snapshot) {
 		time_t fileage = snapshot - histentry_start;
 
-		newstate->entry->oldage = (fileage >= 86400);
+		newstate->entry->oldage = (fileage >= recentgif_limit);
 		if (fileage >= 86400)
 			sprintf(newstate->entry->age, "%.2f days", (fileage / 86400.0));
 		else if (fileage > 3600)
@@ -338,7 +339,7 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 	else if (usehobbitd) {
 		time_t fileage = (now - log->lastchange);
 
-		newstate->entry->oldage = (fileage >= 86400);
+		newstate->entry->oldage = (fileage >= recentgif_limit);
 		if (fileage >= 86400)
 			sprintf(newstate->entry->age, "%.2f days", (fileage / 86400.0));
 		else if (fileage > 3600)

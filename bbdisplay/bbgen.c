@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.201 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.202 2005-02-18 17:04:36 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -288,6 +288,12 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[i], "--recentgifs") == 0) {
 			use_recentgifs = 1;
+		}
+		else if (argnmatch(argv[i], "--recentgifs=")) {
+			char *lp = strchr(argv[i], '=');
+
+			use_recentgifs = 1;
+			recentgif_limit = 60*durationvalue(lp+1);
 		}
 		else if (strcmp(argv[i], "--sort-group-only-items") == 0) {
 			sort_grouponly_items = 1;

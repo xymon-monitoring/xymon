@@ -24,6 +24,7 @@ extern int statuscount;
 extern char     *ignorecolumns;
 extern char	*dialupskin;
 extern char	*reverseskin;
+extern time_t   recentgif_limit;
 
 extern int	enable_purpleupd;
 extern int	purpledelay;
