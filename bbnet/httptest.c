@@ -282,6 +282,7 @@ void run_http_tests(service_t *httptest)
 		res = curl_easy_perform(req->curl);
 		if (res != 0) {
 			/* Some error occurred */
+			strcat(req->errorbuffer, "\n\n");
 			req->headers = malcop(req->errorbuffer);
 		}
 		else {
@@ -344,7 +345,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 		sprintf(msgline, "\n&%s %s - %s\n", colorname(httpcolor), req->url,
 			((httpcolor != COL_GREEN) ? "failed" : "OK"));
 		addtostatus(msgline);
-		sprintf(msgline, "%s\n", req->headers);
+		sprintf(msgline, "\n%s", req->headers);
 		addtostatus(msgline);
 
 		sprintf(msgline, "Seconds: %5.2f\n", req->totaltime);
@@ -389,7 +390,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 			addtostatus(msgline);
 
 			if (color == COL_CLEAR) {
-				sprintf(msgline, "An HTTP error occurred while testing <a href=\"%s\">URL %s</a>\n", 
+				sprintf(msgline, "\nAn HTTP error occurred while testing <a href=\"%s\">URL %s</a>\n", 
 					realurl(req->url, NULL), realurl(req->url, NULL));
 			}
 			else {
@@ -398,9 +399,14 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 			}
 			addtostatus(msgline);
 
-			addtostatus("<pre>\n");
-			addtostatus(req->output);
-			addtostatus("\n</pre><br>\n");
+			if (req->output) {
+				addtostatus("<pre>\n");
+				addtostatus(req->output);
+				addtostatus("\n</pre><br>\n");
+			}
+			else {
+				addtostatus("\n<p>No output received from server</p><br>\n");
+			}
 			addtostatus("\n\n");
 			finish_status();
 
