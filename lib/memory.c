@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: memory.c,v 1.7 2005-03-01 14:35:52 henrik Exp $";
+static char rcsid[] = "$Id: memory.c,v 1.8 2005-03-02 15:16:37 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -313,7 +313,7 @@ char *xstrncpy(char *dest, const char *src, size_t maxlen)
 	}
 
 	if (strlen(src) >= maxlen) {
-		errprintf("xstrncpy: destination is not NULL terminated - dst '%s', src '%s', max %d\n", dest, src, maxlen);
+		errprintf("xstrncpy: destination is not NULL terminated - src '%s', max %d\n", dest, src, maxlen);
 	}
 #endif
 
