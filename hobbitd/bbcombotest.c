@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.19 2004-04-23 08:53:41 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.20 2004-10-07 16:30:21 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -45,6 +45,7 @@ typedef struct testspec_t {
 static testspec_t *testhead = NULL;
 static int testcount = 0;
 static int cleanexpr = 0;
+static int usebbgend = 0;
 
 static char *gethname(char *spec)
 {
@@ -133,14 +134,101 @@ static void loadtests(void)
 	fclose(fd);
 }
 
-static long getvalue(char *hostname, char *testname, int *color, char **errbuf)
+static int getfilevalue(char *hostname, char *testname, char **errptr)
 {
 	char fn[MAX_PATH];
 	FILE *fd;
 	char l[MAX_LINE_LEN];
 	struct stat st;
-	testspec_t *walk;
 	int statres;
+	int result;
+
+	sprintf(fn, "%s/%s.%s", getenv("BBLOGS"), commafy(hostname), testname);
+	statres = stat(fn, &st);
+	if (statres) {
+		/* No file ? Maybe it is using the wrong (non-commafied) hostname */
+		sprintf(fn, "%s/%s.%s", getenv("BBLOGS"), hostname, testname);
+		statres = stat(fn, &st);
+	}
+	if (statres) {
+		*errptr += sprintf(*errptr, "No status file for host=%s, test=%s\n", hostname, testname);
+		result = COL_CLEAR;
+	}
+	else if (st.st_mtime < time(NULL)) {
+		dprintf("Will not use a stale logfile for combo-tests - setting purple\n");
+		result = COL_PURPLE;
+	}
+	else {
+		fd = fopen(fn, "r");
+		if (fd == NULL) {
+			*errptr += sprintf(*errptr, "Cannot open file %s\n", fn);
+		}
+		else {
+			if (fgets(l, sizeof(l), fd)) {
+				result = parse_color(l);
+			}
+			else {
+				*errptr += sprintf(*errptr, "Cannot read status file %s\n", fn);
+			}
+	
+			fclose(fd);
+		}
+	}
+
+	return result;
+}
+
+static int getbbgendvalue(char *hostname, char *testname, char **errptr)
+{
+	static char *board = NULL;
+	int bbgendresult;
+	int result;
+	char *pattern, *found, *colstr, *p;
+
+	if (board == NULL) {
+		bbgendresult = sendmessage("bbgendboard", NULL, NULL, &board, 1);
+		if (bbgendresult != BB_OK) {
+			board = "";
+			*errptr += sprintf(*errptr, "Could not access bbgend board, error %d\n", bbgendresult);
+			return COL_CLEAR;
+		}
+	}
+
+	pattern = (char *)malloc(1 + strlen(hostname) + 1 + strlen(testname) + 1 + 1);
+	sprintf(pattern, "\n%s|%s|", hostname, testname);
+
+	if (strncmp(board, pattern+1, strlen(pattern+1)) == 0) {
+		/* The first entry in the board doesn't have the "\n" */
+		found = board;
+	}
+	else {
+		found = strstr(board, pattern);
+	}
+
+	if (found) {
+		/* hostname|testname|color|testflags|lastchange|expires|1st line of message */
+		colstr = found + strlen(pattern);
+		p = strchr(colstr, '|');
+		if (p) {
+			*p = '\0';
+			result = parse_color(colstr);
+			*p = '|';
+		}
+		else {
+			*errptr += sprintf(*errptr, "Malformed board\n");
+			found = NULL;
+		}
+	}
+
+	if (!found) result = COL_CLEAR;
+
+	free(pattern);
+	return result;
+}
+
+static long getvalue(char *hostname, char *testname, int *color, char **errbuf)
+{
+	testspec_t *walk;
 	char errtext[1024];
 	char *errptr;
 	int result;
@@ -156,36 +244,7 @@ static long getvalue(char *hostname, char *testname, int *color, char **errbuf)
 		return walk->result;
 	}
 
-	sprintf(fn, "%s/%s.%s", getenv("BBLOGS"), commafy(hostname), testname);
-	statres = stat(fn, &st);
-	if (statres) {
-		/* No file ? Maybe it is using the wrong (non-commafied) hostname */
-		sprintf(fn, "%s/%s.%s", getenv("BBLOGS"), hostname, testname);
-		statres = stat(fn, &st);
-	}
-	if (statres) {
-		errptr += sprintf(errptr, "No status file for host=%s, test=%s\n", hostname, testname);
-	}
-	else if (st.st_mtime < time(NULL)) {
-		dprintf("Will not use a stale logfile for combo-tests - setting purple\n");
-		*color = COL_PURPLE;
-	}
-	else {
-		fd = fopen(fn, "r");
-		if (fd == NULL) {
-			errptr += sprintf("Cannot open file %s\n", fn);
-		}
-		else {
-			if (fgets(l, sizeof(l), fd)) {
-				*color = parse_color(l);
-			}
-			else {
-				errptr += sprintf("Cannot read status file %s\n", fn);
-			}
-	
-			fclose(fd);
-		}
-	}
+	*color = (usebbgend ? getbbgendvalue(hostname, testname, &errptr) : getfilevalue(hostname, testname, &errptr));
 
 	/* Save error messages */
 	if (strlen(errtext) > 0) {
@@ -366,6 +425,9 @@ int main(int argc, char *argv[])
 		}
 		else if ((strcmp(argv[argi], "--clean") == 0)) {
 			cleanexpr = 1;
+		}
+		else if ((strcmp(argv[argi], "--bbgend") == 0)) {
+			usebbgend = 1;
 		}
 	}
 
