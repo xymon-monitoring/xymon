@@ -1,0 +1,20 @@
+# bbgen compile-time settings for a HP-UX system
+#
+# Set these to the location of your libcurl include-files and library.
+# Note: If your curl version supports SSL (HTTPS sites), you need the OpenSSL
+# libraries as well.
+CURLINCLUDE = -I/usr/local/include
+CURLLIB = -L/usr/local/lib -lcurl -L/usr/local/ssl/lib -lssl -lcrypto
+
+# NETLIBS: You may need to add -lresolv or similar to pick up network libraries
+NETLIBS =
+
+# Pick your compiler here
+CC=cc
+
+# Compile flags for normal build
+CFLAGS = -O -D_REENTRANT -DHPUX
+
+# Compile flags for debugging
+# CFLAGS = -g -DDEBUG -D_REENTRANT -DHPUX
+
