@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.29 2003-08-12 21:16:05 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.30 2003-10-01 09:38:25 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -205,7 +205,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043)
 	rrd_t *rwalk;
 	int i;
 	char *allrrdlinks;
-	int allrrdlinksize;
+	unsigned int allrrdlinksize;
 	time_t now;
 	struct utimbuf logfiletime;
 

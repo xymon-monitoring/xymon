@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.53 2003-09-29 07:38:27 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.54 2003-10-01 09:42:18 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -611,9 +611,9 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		if (req->httpcolor > color) color = req->httpcolor;
 
 		if (req->headers) {
-			char    *firstline;
-			int	len;
-			char	savechar;
+			char    	*firstline;
+			unsigned int	len;
+			char		savechar;
 
 			strcat(msgtext, (strlen(msgtext) ? " ; " : ": ") );
 			for (firstline = req->headers; (*firstline && isspace((int) *firstline)); firstline++);
