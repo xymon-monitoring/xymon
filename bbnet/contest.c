@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.67 2004-10-30 15:46:20 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.68 2004-10-31 08:00:09 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -316,6 +316,53 @@ void dump_tcp_services(void)
 		printf("   Port    : %d\n", svcinfo[i].port);
 	}
 	printf("\n");
+}
+
+
+static time_t sslcert_expiretime(char *timestr)
+{
+	int res;
+	time_t t1, t2;
+	struct tm *t;
+	struct tm exptime;
+	time_t gmtofs, result;
+
+	/* expire date: 2004-01-02 08:04:15 GMT */
+	res = sscanf(timestr, "%4d-%2d-%2d %2d:%2d:%2d", 
+		     &exptime.tm_year, &exptime.tm_mon, &exptime.tm_mday,
+		     &exptime.tm_hour, &exptime.tm_min, &exptime.tm_sec);
+	if (res != 6) {
+		errprintf("Cannot interpret certificate time %s\n", timestr);
+		return 0;
+	}
+
+	/* tm_year is 1900 based; tm_mon is 0 based */
+	exptime.tm_year -= 1900; exptime.tm_mon -= 1;
+	result = mktime(&exptime);
+
+	if (result > 0) {
+		/* 
+		 * Calculate the difference between localtime and GMT 
+		 */
+		t = gmtime(&result); t->tm_isdst = 0; t1 = mktime(t);
+		t = localtime(&result); t->tm_isdst = 0; t2 = mktime(t);
+		gmtofs = (t2-t1);
+
+		result += gmtofs;
+	}
+	else {
+		/*
+		 * mktime failed - probably it expires after the
+		 * Jan 19,2038 rollover for a 32-bit time_t.
+		 */
+
+		result = INT_MAX;
+	}
+
+	dprintf("Output says it expires: %s", timestr);
+	dprintf("I think it expires at (localtime) %s\n", asctime(localtime(&result)));
+
+	return result;
 }
 
 
