@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.90 2003-08-28 09:36:22 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.91 2003-09-03 20:23:18 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -31,13 +31,15 @@ static char rcsid[] = "$Id: pagegen.c,v 1.90 2003-08-28 09:36:22 henrik Exp $";
 
 #include "bbgen.h"
 #include "util.h"
+#include "debug.h"
 #include "loaddata.h"
 #include "pagegen.h"
 #include "larrdgen.h"
 #include "infogen.h"
+#include "eventlog.h"
+#include "acklog.h"
 #include "bb-replog.h"
 #include "reportdata.h"
-#include "debug.h"
 
 int  subpagecolumns = 1;
 int  hostsbeforepages = 0;
@@ -48,8 +50,6 @@ char *htmlextension = ".html"; /* Filename extension for generated files */
 char *doctargetspec = " TARGET=\"_blank\"";
 char *defaultpagetitle = NULL;
 int  pagetitlelinks = 0;
-
-char *eventignorecolumns = NULL;
 
 /* Format strings for htaccess files */
 char *htaccess = NULL;
@@ -908,335 +908,6 @@ void do_page_with_subs(bbgen_page_t *curpage, dispsummary_t *sums)
 	}
 }
 
-int wanted_eventcolumn(char *service)
-{
-	char svc[100];
-	int result;
-
-	if (!eventignorecolumns || (strlen(service) > (sizeof(svc)-3))) return 1;
-
-	sprintf(svc, ",%s,", service);
-	result = (strstr(eventignorecolumns, svc) == NULL);
-
-	return result;
-}
-
-void do_eventlog(FILE *output, int maxcount, int maxminutes)
-{
-	FILE *eventlog;
-	char eventlogfilename[MAX_PATH];
-	char newcol[3], oldcol[3];
-	time_t cutoff;
-	event_t	*events;
-	int num, eventintime_count;
-	struct stat st;
-	char l[MAX_LINE_LEN];
-	char title[200];
-
-
-	cutoff = ( (maxminutes) ? (time(NULL) - maxminutes*60) : 0);
-	if ((!maxcount) || (maxcount > 100)) maxcount = 100;
-
-	sprintf(eventlogfilename, "%s/allevents", getenv("BBHIST"));
-	eventlog = fopen(eventlogfilename, "r");
-	if (!eventlog) {
-		errprintf("Cannot open eventlog");
-		return;
-	}
-
-	if (stat(eventlogfilename, &st) == 0) {
-		time_t curtime;
-		int done = 0;
-
-		/* Find a spot in the eventlog file close to where the cutoff time is */
-		fseek(eventlog, 0, SEEK_END);
-		do {
-			/* Go back maxcount*80 bytes - one entry is ~80 bytes */
-			if (ftell(eventlog) > maxcount*80) {
-				fseek(eventlog, -maxcount*80, SEEK_CUR); 
-				fgets(l, sizeof(l), eventlog); /* Skip to start of line */
-				fgets(l, sizeof(l), eventlog);
-				sscanf(l, "%*s %*s %u %*u %*u %*s %*s %*d", (unsigned int *)&curtime);
-				done = (curtime < cutoff);
-			}
-			else {
-				rewind(eventlog);
-				done = 1;
-			}
-		} while (!done);
-	}
-	
-	events = (event_t *) malloc(maxcount*sizeof(event_t));
-	eventintime_count = num = 0;
-
-	while (fgets(l, sizeof(l), eventlog)) {
-
-		sscanf(l, "%s %s %u %u %u %s %s %d",
-			events[num].hostname, events[num].service,
-			(unsigned int *)&events[num].eventtime, 
-			(unsigned int *)&events[num].changetime, 
-			(unsigned int *)&events[num].duration, 
-			newcol, oldcol, &events[num].state);
-
-		if ((events[num].eventtime > cutoff) && find_host(events[num].hostname) && wanted_eventcolumn(events[num].service)) {
-			events[num].newcolor = eventcolor(newcol);
-			events[num].oldcolor = eventcolor(oldcol);
-			eventintime_count++;
-
-			num = (num + 1) % maxcount;
-		}
-	}
-
-	if (eventintime_count > 0) {
-		int firstevent, lastevent;
-		char *bgcolors[2] = { "000000", "000033" };
-		int  bgcolor = 0;
-
-		if (eventintime_count <= maxcount) {
-			firstevent = 0;
-			lastevent = eventintime_count-1;
-		}
-		else {
-			firstevent = num;
-			lastevent = ( (num == 0) ? maxcount : (num-1));
-			eventintime_count = maxcount;
-		}
-
-		sprintf(title, "%d events received in the past %u minutes",
-			eventintime_count, (unsigned int)((time(NULL)-events[firstevent].eventtime) / 60));
-
-		fprintf(output, "<BR><BR>\n");
-        	fprintf(output, "<TABLE SUMMARY=\"$EVENTSTITLE\" BORDER=0>\n");
-		fprintf(output, "<TR BGCOLOR=\"333333\">\n");
-		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"teal\">%s</FONT></TD></TR>\n", title);
-
-		for (num = lastevent; (eventintime_count); eventintime_count--, num = ((num == 0) ? (maxcount-1) : (num - 1)) ) {
-			fprintf(output, "<TR BGCOLOR=%s>\n", bgcolors[bgcolor]);
-			bgcolor = ((bgcolor + 1) % 2);
-
-			fprintf(output, "<TD ALIGN=CENTER>%s</TD>\n", ctime(&events[num].eventtime));
-
-			if (events[num].newcolor == COL_CLEAR) {
-				fprintf(output, "<TD ALIGN=CENTER BGCOLOR=black><FONT COLOR=white>%s</FONT></TD>\n",
-					events[num].hostname);
-			}
-			else {
-				fprintf(output, "<TD ALIGN=CENTER BGCOLOR=%s><FONT COLOR=black>%s</FONT></TD>\n",
-					colorname(events[num].newcolor),
-					events[num].hostname);
-			}
-
-			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", events[num].service);
-			fprintf(output, "<TD><A HREF=\"%s\">\n", 
-				histlogurl(events[num].hostname, events[num].service, events[num].changetime));
-			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=%s></A>\n", 
-				getenv("BBSKIN"), dotgiffilename(events[num].oldcolor, 0, 0), 
-				getenv("DOTHEIGHT"), getenv("DOTWIDTH"), 
-				colorname(events[num].oldcolor));
-			fprintf(output, "<IMG SRC=\"%s/arrow.gif\" BORDER=0 ALT=\"From -&gt; To\">\n", 
-				getenv("BBSKIN"));
-			fprintf(output, "<TD><A HREF=\"%s\">\n", 
-				histlogurl(events[num].hostname, events[num].service, events[num].eventtime));
-			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=%s></A>\n", 
-				getenv("BBSKIN"), dotgiffilename(events[num].newcolor, 0, 0), 
-				getenv("DOTHEIGHT"), getenv("DOTWIDTH"), 
-				colorname(events[num].newcolor));
-		}
-
-		fprintf(output, "</TABLE>\n");
-	}
-	else {
-		/* No events during the past maxminutes */
-		sprintf(title, "No events received in the last %d minutes", maxminutes);
-
-		fprintf(output, "<CENTER><BR>\n");
-		fprintf(output, "<TABLE SUMMARY=\"%s\" BORDER=0>\n", title);
-		fprintf(output, "<TR BGCOLOR=\"333333\">\n");
-		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"teal\">%s</FONT></TD>\n", title);
-		fprintf(output, "</TR>\n");
-		fprintf(output, "</TABLE>\n");
-		fprintf(output, "</CENTER>\n");
-	}
-
-	free(events);
-	fclose(eventlog);
-}
-
-
-void do_acklog(FILE *output, int maxcount, int maxminutes)
-{
-	FILE *acklog;
-	char acklogfilename[MAX_PATH];
-	time_t cutoff;
-	struct stat st;
-	char l[MAX_LINE_LEN];
-	char title[200];
-	ack_t *acks;
-	int num, ackintime_count;
-
-
-	cutoff = ( (maxminutes) ? (time(NULL) - maxminutes*60) : 0);
-	if ((!maxcount) || (maxcount > 100)) maxcount = 100;
-
-	sprintf(acklogfilename, "%s/acklog", getenv("BBACKS"));
-	acklog = fopen(acklogfilename, "r");
-	if (!acklog) {
-		/* If no acklog, that is OK - some people dont use acks */
-		dprintf("Cannot open acklog");
-		return;
-	}
-
-	/* HACK ALERT! */
-	if (stat(acklogfilename, &st) == 0) {
-		char dummy[80];
-
-		/* Assume a log entry is max 150 bytes */
-		if (150*maxcount < st.st_size)
-			fseek(acklog, -150*maxcount, SEEK_END);
-		fgets(dummy, sizeof(dummy), acklog);
-	}
-
-	acks = (ack_t *) malloc(maxcount*sizeof(ack_t));
-	ackintime_count = num = 0;
-
-	while (fgets(l, sizeof(l), acklog)) {
-		char ackedby[MAX_LINE_LEN], hosttest[MAX_LINE_LEN], color[10], ackmsg[MAX_LINE_LEN];
-		char ackfn[MAX_PATH];
-		char *testname;
-		int ok;
-
-		if (atol(l) >= cutoff) {
-			int c_used;
-			char *p, *p1;
-
-			sscanf(l, "%u\t%d\t%d\t%d\t%s\t%s\t%s\t%n",
-				(unsigned int *)&acks[num].acktime, &acks[num].acknum,
-				&acks[num].duration, &acks[num].acknum2,
-				ackedby, hosttest, color, &c_used);
-
-			p1 = ackmsg;
-			for (p=l+c_used, p1=ackmsg; (*p); ) {
-				/*
-				 * Need to de-code the ackmsg - it may have been entered
-				 * via a web page that did "%asciival" encoding.
-				 */
-				if ((*p == '%') && (strlen(p) >= 3) && isxdigit((int)*(p+1)) && isxdigit((int)*(p+2))) {
-					char hexnum[3];
-
-					hexnum[0] = *(p+1);
-					hexnum[1] = *(p+2);
-					hexnum[2] = '\0';
-					*p1 = (char) strtol(hexnum, NULL, 16);
-					p1++;
-					p += 3;
-				}
-				else {
-					*p1 = *p;
-					p1++;
-					p++;
-				}
-			}
-			/* Show only the first 30 characters in message */
-			ackmsg[30] = '\0';
-
-			sprintf(ackfn, "%s/ack.%s", getenv("BBACKS"), hosttest);
-
-			testname = strrchr(hosttest, '.');
-			if (testname) {
-				*testname = '\0'; testname++; 
-			}
-			else testname = "unknown";
-
-			ok = 1;
-
-			/* Ack occurred within wanted timerange ? */
-			if (ok && (acks[num].acktime < cutoff)) ok = 0;
-
-			/* Unknown host ? */
-			if (ok && (find_host(hosttest) == NULL)) ok = 0;
-
-			if (ok) {
-				char *ackerp;
-
-				/* If ack has expired or tag file is gone, the ack is no longer valid */
-				acks[num].ackvalid = 1;
-				if ((acks[num].acktime + 60*acks[num].duration) < time(NULL)) acks[num].ackvalid = 0;
-				if (acks[num].ackvalid && (stat(ackfn, &st) != 0)) acks[num].ackvalid = 0;
-
-				ackerp = ackedby;
-				if (strncmp(ackerp, "np_", 3) == 0) ackerp += 3;
-				p = strrchr(ackerp, '_');
-				if (p > ackerp) *p = '\0';
-				acks[num].ackedby = malcop(ackerp);
-
-				acks[num].hostname = malcop(hosttest);
-				acks[num].testname = malcop(testname);
-				strcat(color, " "); acks[num].color = parse_color(color);
-				acks[num].ackmsg = malcop(ackmsg);
-				ackintime_count++;
-
-				num = (num + 1) % maxcount;
-			}
-		}
-	}
-
-	if (ackintime_count > 0) {
-		int firstack, lastack;
-		int period = maxminutes;
-
-		if (ackintime_count <= maxcount) {
-			firstack = 0;
-			lastack = ackintime_count-1;
-			period = maxminutes;
-		}
-		else {
-			firstack = num;
-			lastack = ( (num == 0) ? maxcount : (num-1));
-			ackintime_count = maxcount;
-			period = ((time(NULL)-acks[firstack].acktime) / 60);
-		}
-
-		sprintf(title, "%d events acknowledged in the past %u minutes", ackintime_count, period);
-
-		fprintf(output, "<BR><BR>\n");
-		fprintf(output, "<TABLE SUMMARY=\"%s\" BORDER=0>\n", title);
-		fprintf(output, "<TR BGCOLOR=\"333333\">\n");
-		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"teal\">%s</FONT></TD></TR>\n", title);
-
-		for (num = lastack; (ackintime_count); ackintime_count--, num = ((num == 0) ? (maxcount-1) : (num - 1)) ) {
-			fprintf(output, "<TR BGCOLOR=#000000>\n");
-
-			fprintf(output, "<TD ALIGN=CENTER><FONT COLOR=white>%s</FONT></TD>\n", ctime(&acks[num].acktime));
-			fprintf(output, "<TD ALIGN=CENTER BGCOLOR=%s><FONT COLOR=black>%s</FONT></TD>\n", colorname(acks[num].color), acks[num].hostname);
-			fprintf(output, "<TD ALIGN=CENTER><FONT COLOR=white>%s</FONT></TD>\n", acks[num].testname);
-
-			if (acks[num].color != -1) {
-   				fprintf(output, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\"></TD>\n", 
-					getenv("BBSKIN"), 
-					dotgiffilename(acks[num].color, acks[num].ackvalid, 1));
-			}
-			else
-   				fprintf(output, "<TD ALIGN=CENTER><FONT COLOR=white>&nbsp;</FONT></TD>\n");
-
-			fprintf(output, "<TD ALIGN=LEFT BGCOLOR=#000033>%s</TD>\n", acks[num].ackedby);
-			fprintf(output, "<TD ALIGN=LEFT>%s</TD></TR>\n", acks[num].ackmsg);
-		}
-
-	}
-	else {
-		sprintf(title, "No events acknowledged in the last %u minutes", maxminutes);
-
-		fprintf(output, "<BR><BR>\n");
-		fprintf(output, "<TABLE SUMMARY=\"%s\" BORDER=0>\n", title);
-		fprintf(output, "<TR BGCOLOR=\"333333\">\n");
-		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"teal\">%s</FONT></TD></TR>\n", title);
-	}
-
-	fprintf(output, "</TABLE>\n");
-
-	fclose(acklog);
-}
-
 
 int do_bb2_page(char *filename, int summarytype)
 {
@@ -1351,7 +1022,7 @@ int do_bb2_page(char *filename, int summarytype)
 	}
 
 	if ((snapshot == 0) && (summarytype == PAGE_BB2)) {
-		do_eventlog(output, 0, 240);
+		do_eventlog(output, 0, 240, 0);
 		do_acklog(output, 25, 240);
 		do_bbext(output, "BBMKBB2EXT", "mkbb");
 	}
