@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.126 2004-10-24 22:07:25 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.127 2004-10-25 16:13:18 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -107,7 +107,7 @@ int testflag_set(entry_t *e, char flag)
 
 state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_purple)
 {
-	FILE 		*fd;
+	FILE 		*fd = NULL;
 	char		*p;
 	char		*hostname;
 	char		*testname;
@@ -192,7 +192,7 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 	if (ignorecolumns && strstr(ignorecolumns, l)) {
 		free(hostname);
 		free(testname);
-		if (!usebbgend) fclose(fd);
+		if (fd) fclose(fd);
 		return NULL;	/* Ignore this type of test */
 	}
 
@@ -467,7 +467,7 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 
 	free(hostname);
 	free(testname);
-	if (!usebbgend) fclose(fd);
+	if (fd) fclose(fd);
 
 	return newstate;
 }
@@ -515,13 +515,14 @@ dispsummary_t *init_displaysummary(char *fn, logdata_t *log)
 	}
 
 	if (strlen(l)) {
-		char *p, *rowcol;
+		char *p;
 		char *color = (char *) malloc(strlen(l));
 
 		newsum = (dispsummary_t *) malloc(sizeof(dispsummary_t));
 		newsum->url = (char *) malloc(strlen(l));
 
 		if (sscanf(l, "%s %s", color, newsum->url) == 2) {
+			char *rowcol;
 			newsum->color = parse_color(color);
 
 			rowcol = (char *) malloc(strlen(fn) + 1);
@@ -533,6 +534,8 @@ dispsummary_t *init_displaysummary(char *fn, logdata_t *log)
 			newsum->row = (char *) malloc(strlen(rowcol)+1);
 			sscanf(rowcol, "%s %s", newsum->row, newsum->column);
 			newsum->next = NULL;
+
+			free(rowcol);
 		}
 		else {
 			free(newsum->url);
@@ -541,7 +544,6 @@ dispsummary_t *init_displaysummary(char *fn, logdata_t *log)
 		}
 
 		free(color);
-		free(rowcol);
 	}
 
 	return newsum;
@@ -645,7 +647,7 @@ void init_modembank_status(char *fn, logdata_t *log)
 
 state_t *load_state(dispsummary_t **sumhead)
 {
-	DIR		*bblogs;
+	DIR		*bblogs = NULL;
 	struct dirent 	*d;
 	char		fn[MAX_PATH];
 	state_t		*newstate, *topstate;
@@ -800,55 +802,7 @@ state_t *load_state(dispsummary_t **sumhead)
 		}
 	}
 
-	if (0 && usebbgend) {
-		hostlist_t *hwalk;
-		logdata_t log;
-
-		if (board) free(board);
-
-		/*
-		 * Generate the pseudo files for info- and larrd-columnes.
-		 * These dont go via the network daemon, so we need to fake them.
-		 */
-
-		log.color = COL_GREEN;
-		log.testflags = "";
-		log.lastchange = 0;
-		log.logtime = time(NULL);
-		log.validtime = log.logtime+1800;
-		log.acktime = 0;
-		log.disabletime = 0;
-		log.sender = "";
-		log.cookie = -1;
-		log.msg = "";
-
-		for (hwalk=hosthead; (hwalk); hwalk = hwalk->next) {
-			log.hostname = hwalk->hostentry->hostname;
-
-			if (enable_infogen) {
-				log.testname = infocol;
-				sprintf(fn, "%s.%s", commafy(log.hostname), log.testname);
-				newstate = init_state(fn, &log, dopurple, &is_purple);
-				if (newstate) {
-					newstate->next = topstate;
-					topstate = newstate;
-				}
-			}
-
-			if (enable_larrdgen) {
-				log.testname = larrdcol;
-				sprintf(fn, "%s.%s", commafy(log.hostname), log.testname);
-				newstate = init_state(fn, &log, dopurple, &is_purple);
-				if (newstate) {
-					newstate->next = topstate;
-					topstate = newstate;
-				}
-			}
-		}
-	}
-	else {
-		closedir(bblogs);
-	}
+	if (bblogs) closedir(bblogs);
 
 	if (reportstart) sethostenv_report(oldestentry, reportend, reportwarnlevel, reportgreenlevel);
 	if (dopurple) combo_end();
