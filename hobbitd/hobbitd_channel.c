@@ -5,12 +5,14 @@
 #include <signal.h>
 #include <fcntl.h>
 
+#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
 
 #include "bbgen.h"
 #include "debug.h"
+#include "util.h"
 #include "bbd_net.h"
 #include "bbdutil.h"
 
@@ -47,7 +49,6 @@ int main(int argc, char *argv[])
 
 	int cnid;
 	int pfd[2];
-	pid_t handlerpid = 0;
 	char *childcmd;
 	char **childargs;
 

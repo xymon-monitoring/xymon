@@ -3,10 +3,14 @@
 #include <sys/shm.h>
 #include <sys/sem.h>
 
+#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
 
+#include "bbgen.h"
+#include "debug.h"
+#include "util.h"
 #include "bbd_net.h"
 
 char *channelnames[] = {
