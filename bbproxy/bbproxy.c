@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.18 2004-09-21 11:21:57 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.19 2004-09-21 12:43:07 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -98,8 +98,8 @@ typedef struct conn_t {
 #define BUFSZ_READ 2048		/* Minimum #bytes that must be free when read'ing into a buffer */
 #define BUFSZ_INC  8192		/* How much to grow the buffer when it is too small */
 #define MAX_OPEN_SOCKS 256
-#define MINIMUM_FOR_COMBO 4096	/* To start merging messages, at least have 4 KB free */
-#define COMBO_DELAY 500000	/* Delay before sending a combo message (in microseconds) */
+#define MINIMUM_FOR_COMBO 2048	/* To start merging messages, at least have 2 KB free */
+#define COMBO_DELAY 250000	/* Delay before sending a combo message (in microseconds) */
 
 int keeprunning = 1;
 time_t laststatus = 0;
