@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.20 2003-06-12 20:29:48 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.21 2003-06-23 08:54:30 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -416,11 +416,13 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 	http_data_t *req;
 	testitem_t *t;
 	CURLcode res;
+	char useragent[100];
 
 	if (logfile) {
 		logfd = fopen(logfile, "a");
 		if (logfd) fprintf(logfd, "*** Starting web checks at %s ***\n", timestamp);
 	}
+	sprintf(useragent, "BigBrother bbtest-net/%s curl/%s", VERSION, LIBCURL_VERSION);
 
 	for (t = httptest->items; (t); t = t->next) {
 		req = t->private;
@@ -433,6 +435,7 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 
 		curl_easy_setopt(req->curl, CURLOPT_URL, req->url);
 		curl_easy_setopt(req->curl, CURLOPT_NOPROGRESS, 1);
+		curl_easy_setopt(req->curl, CURLOPT_USERAGENT, useragent);
 
 		/* Dont check if peer name in certificate is OK */
     		curl_easy_setopt(req->curl, CURLOPT_SSL_VERIFYPEER, 0);
