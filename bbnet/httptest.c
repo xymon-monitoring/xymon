@@ -10,6 +10,8 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
+static char rcsid[] = "$Id: httptest.c,v 1.17 2003-05-11 07:00:46 henrik Exp $";
+
 #include <curl/curl.h>
 #include <curl/types.h>
 #include <curl/easy.h>
