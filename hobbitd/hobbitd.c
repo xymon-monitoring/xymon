@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.30 2004-10-23 06:37:31 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.31 2004-10-24 07:01:52 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -939,11 +939,19 @@ void do_message(conn_t *msg)
 		 */
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 0, 0);
 		if (log) {
-			char *bp, *ackmsg = "", *dismsg = "";
+			char *buf, *bufp;
+			int bufsz, buflen;
+			char *ackmsg = "", *dismsg = "";
 
-			msg->doingwhat = RESPONDING;
-			bp = msg->buf;
-			bp += sprintf(bp, "%s|%s|%s|%s|%d|%d|%d|%s|%d", 
+			free(msg->buf);
+			bufsz = 1024 + strlen(log->message);
+			if (log->ackmsg) bufsz += 2*strlen(log->ackmsg);
+			if (log->dismsg) bufsz += 2*strlen(log->dismsg);
+
+			bufp = buf = (char *)malloc(bufsz);
+			buflen = 0;
+
+			bufp += sprintf(bufp, "%s|%s|%s|%s|%d|%d|%d|%s|%d", 
 					h->hostname, log->test->testname, 
 					colnames[log->color], 
 					(log->testflags ? log->testflags : ""),
@@ -951,12 +959,16 @@ void do_message(conn_t *msg)
 					log->sender, log->cookie);
 
 			if (log->ackmsg && (log->acktime > now)) ackmsg = nlencode(log->ackmsg);
-			bp += sprintf(bp, "|%s", ackmsg);
+			bufp += sprintf(bufp, "|%s", ackmsg);
+
 			if (log->dismsg && (log->enabletime > now)) dismsg = nlencode(log->dismsg);
-			bp += sprintf(bp, "|%s", dismsg);
-			bp += sprintf(bp, "\n%s", msg_data(log->message));
-			msg->bufp = msg->buf;
-			msg->buflen = strlen(msg->buf);
+			bufp += sprintf(bufp, "|%s", dismsg);
+
+			bufp += sprintf(bufp, "\n%s", msg_data(log->message));
+
+			msg->doingwhat = RESPONDING;
+			msg->bufp = msg->buf = buf;
+			msg->buflen = (bufp - buf);
 		}
 	}
 	else if (strncmp(msg->buf, "bbgendboard", 11) == 0) {
@@ -967,7 +979,7 @@ void do_message(conn_t *msg)
 		int bufsz, buflen;
 		int n;
 
-		bufsz = 102400;
+		bufsz = 16384;
 		bufp = buf = (char *)malloc(bufsz);
 		buflen = 0;
 
@@ -976,7 +988,7 @@ void do_message(conn_t *msg)
 				char *eoln = strchr(lwalk->message, '\n');
 
 				if (eoln) *eoln = '\0';
-				if ((bufsz - buflen) < 1024) {
+				if ((bufsz - buflen - strlen(lwalk->message)) < 1024) {
 					bufsz += 16384;
 					buf = (char *)realloc(buf, bufsz);
 					bufp = buf + buflen;
@@ -1070,6 +1082,16 @@ void save_checkpoint(void)
 
 	for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
 		for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
+			if (lwalk->dismsg && (lwalk->enabletime < now)) {
+				free(lwalk->dismsg);
+				lwalk->dismsg = NULL;
+				lwalk->enabletime = 0;
+			}
+			if (lwalk->ackmsg && (lwalk->acktime < now)) {
+				free(lwalk->ackmsg);
+				lwalk->ackmsg = NULL;
+				lwalk->acktime = 0;
+			}
 			fprintf(fd, "@@BBGENDCHK-V1|%s|%s|%s|%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%s", 
 				hwalk->hostname, lwalk->test->testname, lwalk->sender,
 				colnames[lwalk->color], 
@@ -1245,7 +1267,7 @@ int main(int argc, char *argv[])
 	char *listenip = "0.0.0.0";
 	int listenport = 1984;
 	char *bbhostsfn = NULL;
-	int checkpointinterval = 300;
+	int checkpointinterval = 900;
 	struct sockaddr_in laddr;
 	int lsocket, opt;
 	int listenq = 512;
@@ -1266,10 +1288,10 @@ int main(int argc, char *argv[])
 	srandom(tv.tv_usec);
 
 	for (argi=1; (argi < argc); argi++) {
-		if (strcmp(argv[argi], "--debug") == 0) {
+		if (argnmatch(argv[argi], "--debug")) {
 			debug = 1;
 		}
-		else if (strncmp(argv[argi], "--listen=", 9) == 0) {
+		else if (argnmatch(argv[argi], "--listen=")) {
 			char *p = strchr(argv[argi], '=') + 1;
 
 			listenip = strdup(p);
@@ -1279,23 +1301,23 @@ int main(int argc, char *argv[])
 				listenport = atoi(p+1);
 			}
 		}
-		else if (strncmp(argv[argi], "--bbhosts=", 10) == 0) {
+		else if (argnmatch(argv[argi], "--bbhosts=")) {
 			char *p = strchr(argv[argi], '=') + 1;
 			bbhostsfn = strdup(p);
 		}
-		else if (strncmp(argv[argi], "--checkpoint-file=", 18) == 0) {
+		else if (argnmatch(argv[argi], "--checkpoint-file=")) {
 			char *p = strchr(argv[argi], '=') + 1;
 			checkpointfn = strdup(p);
 		}
-		else if (strncmp(argv[argi], "--checkpoint-interval=", 22) == 0) {
+		else if (argnmatch(argv[argi], "--checkpoint-interval=")) {
 			char *p = strchr(argv[argi], '=') + 1;
 			checkpointinterval = atoi(p);
 		}
-		else if (strncmp(argv[argi], "--restart=", 10) == 0) {
+		else if (argnmatch(argv[argi], "--restart=")) {
 			char *p = strchr(argv[argi], '=') + 1;
 			load_checkpoint(p);
 		}
-		else if (strncmp(argv[argi], "--alertcolors=", 14) == 0) {
+		else if (argnmatch(argv[argi], "--alertcolors=")) {
 			char *colspec = strchr(argv[argi], '=') + 1;
 			int c, ac;
 			char *p;
@@ -1310,24 +1332,24 @@ int main(int argc, char *argv[])
 
 			alertcolors = ac;
 		}
-		else if (strncmp(argv[argi], "--ghosts=", 9) == 0) {
+		else if (argnmatch(argv[argi], "--ghosts=")) {
 			char *p = strchr(argv[argi], '=') + 1;
 
 			if (strcmp(p, "allow") == 0) ghosthandling = 0;
 			else if (strcmp(p, "drop") == 0) ghosthandling = 1;
 			else if (strcmp(p, "log") == 0) ghosthandling = 2;
 		}
-		else if (strcmp(argv[argi], "--daemon") == 0) {
+		else if (argnmatch(argv[argi], "--daemon")) {
 			daemonize = 1;
 		}
-		else if (strcmp(argv[argi], "--no-daemon") == 0) {
+		else if (argnmatch(argv[argi], "--no-daemon")) {
 			daemonize = 0;
 		}
 		else if (argnmatch(argv[argi], "--pidfile=")) {
 			char *p = strchr(argv[opt], '=');
 			pidfile = strdup(p+1);
 		}
-		else if (strcmp(argv[argi], "--help") == 0) {
+		else if (argnmatch(argv[argi], "--help")) {
 			printf("Options:\n");
 			printf("\t--listen=IP:PORT              : The address the daemon listens on\n");
 			printf("\t--bbhosts=FILENAME            : The bb-hosts file\n");
@@ -1433,10 +1455,11 @@ int main(int argc, char *argv[])
 		if (now > nextcheckpoint) {
 			pid_t childpid;
 
+			reloadconfig = 1;
 			nextcheckpoint = now + checkpointinterval;
 			childpid = fork();
 			if (childpid == -1) {
-				errprintf("Could not fork checkpoing child:%s\n", strerror(errno));
+				errprintf("Could not fork checkpoint child:%s\n", strerror(errno));
 			}
 			else if (childpid == 0) {
 				save_checkpoint();
@@ -1559,6 +1582,7 @@ int main(int argc, char *argv[])
 	close_channel(noteschn, CHAN_MASTER);
 	close_channel(enadischn, CHAN_MASTER);
 	save_checkpoint();
+	unlink(pidfile);
 
 	return 0;
 }
