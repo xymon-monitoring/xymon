@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.26 2003-11-21 13:22:13 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.27 2003-12-03 14:56:08 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -44,7 +44,6 @@ static timestamp_t *stamptail = NULL;
 
 void dprintf(const char *fmt, ...)
 {
-#ifdef DEBUG
 	va_list args;
 
 	if (debug) {
@@ -53,7 +52,6 @@ void dprintf(const char *fmt, ...)
 		va_end(args);
 		fflush(stdout);
 	}
-#endif
 }
 
 void add_timestamp(const char *msg)
@@ -150,6 +148,7 @@ const char *textornull(const char *text)
 {
 	return (text ? text : "(NULL)");
 }
+
 
 void dumplinks(link_t *head)
 {
