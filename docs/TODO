@@ -25,9 +25,23 @@ Bugfixes
 
 Improvements
 ------------
+* Configuration of which graph(s) to show by default, including 
+  limiting it to e.g. one of the 7 disk graphs. Ref. mail from
+  Charles Jones 15-feb-2005.
+* Something similar to larrd-graphs.cgi for picking out a bunch
+  of graphs to show on one page.
+* More reports: Check out bb-reports on deadcat
 * Macros in the bb-hosts file, to avoid repeating common setups.
 * Multi-line macros in hobbit-alerts.cfg
 * Allow for regex's in the TCP response match code.
+* Merging of alerts based on some criteria, e.g. merge all
+  purple alerts for a host into one message.
+* Filtering via RRD parser of incoming messages, allowing them
+  to modify the message. E.g. change color based on the disk-
+  space reports. Can be used to move client-side configuration into 
+  the server. Also to fire off alerts to different people from the
+  same status report (if process "httpd" is down, call the webpeople,
+  if process "orad" is down, call the DBA guys).
 * Implement "--follow" in the new HTTP tester.
 * Allow for some tags (e.g. badconn) to be set for all hosts.
 * https proxying (proxy CONNECT protocol)
@@ -50,12 +64,6 @@ Improvements
   shortlived statuses. They should not automatically be given 1
   pixel each, as that will cause the history graph to be *very*
   wide.
-* Build an extension script for BBNET servers to frequently pull
-  a "hot-list" of tests to run from the BBDISPLAY server. This
-  could be implemented as a new BB config file that would be 
-  dynamically updated by a CGI-script, then pulled across to the
-  BBNET server, and fed to bbtest-net. This would enable something
-  like the "Test now" function in Unicenter.
 
 Various ideas that have appeared on the BB mailing list
 -------------------------------------------------------
