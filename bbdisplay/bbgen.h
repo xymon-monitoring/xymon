@@ -196,7 +196,6 @@ typedef struct {
         time_t duration;
         int color;
 	int affectssla;
-	char *service;
         char *cause;
 	char *timespec;
         void *next;

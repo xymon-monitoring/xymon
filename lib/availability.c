@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.21 2003-07-11 10:59:54 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.22 2003-07-11 11:38:45 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -200,39 +200,9 @@ char *parse_histlogfile(char *hostname, char *servicename, char *timespec)
 	return malcop(cause);
 }
 
-
-int gethistline(char *buf, int bufsize, FILE *fd, char *colstr, time_t *start, time_t *dur, char *service)
-{
-	int scanres;
-
-	if (fgets(buf, bufsize, fd)) {
-		if (service == NULL) {
-			/* File format is "25-byte-timestamp color starttime_t durationtime_t" */
-			scanres = sscanf(buf+25, "%s %lu %lu", colstr, start, dur);
-			if (scanres == 2) *dur = time(NULL)-(*start);
-		}
-		else {
-			int color;
-
-			/* File format is "service end(time_t) start(time_t) duration(time_t) fromstat(2c) tostat(2c) severity */
-			scanres = sscanf(buf, "%s %*u %lu %lu %s", service, start, dur, colstr);
-			if (scanres == 2) *dur = time(NULL)-(*start);
-
-			color = eventcolor(colstr);
-			if (color == -1) color = COL_CLEAR;
-			strcpy(colstr, colorname(color));
-		}
-
-		return scanres;
-	}
-	else {
-		return 0;
-	}
-}
-
 int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 		char *buf, size_t bufsize, 
-		time_t *starttime, time_t *duration, char *colstr, char *servicename)
+		time_t *starttime, time_t *duration, char *colstr)
 {
 	time_t start, dur;
 	int scanres;
@@ -245,7 +215,8 @@ int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 
 	/* Is start of history after our report-end time ? */
 	rewind(fd);
-	gethistline(buf, bufsize, fd, colstr, &start, &dur, NULL);
+	fgets(buf, bufsize, fd);
+	if (sscanf(buf+25, "%s %lu %lu", colstr, &start, &dur) == 2) dur = time(NULL)-start;
 	if (start > totime) {
 		*starttime = start;
 		*duration = dur;
@@ -255,7 +226,10 @@ int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 
 	/* First, do a quick scan through the file to find the approximate position where we should start */
 	while ((start+dur) < fromtime) {
-		if ((scanres = gethistline(buf, bufsize, fd, colstr, &start, &dur, servicename))) {
+		if (fgets(buf, bufsize, fd)) {
+			scanres = sscanf(buf+25, "%s %lu %lu", colstr, &start, &dur);
+			if (scanres == 2) dur = time(NULL) - start;
+
 			if (scanres >= 2) {
 				dprintf("Skipped to entry starting %lu\n", start);
 
@@ -286,7 +260,10 @@ int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 
 	/* Read one line at a time until we hit start of our report period */
 	do {
-		if ((scanres = gethistline(buf, bufsize, fd, colstr, &start, &dur, servicename))) {
+		if (fgets(buf, bufsize, fd)) {
+			scanres = sscanf(buf+25, "%s %lu %lu", colstr, &start, &dur);
+			if (scanres == 2) dur = time(NULL) - start;
+
 			if (scanres < 2) {
 				err++;
 				dprintf("Bad line in history file '%s'\n", buf);
@@ -313,16 +290,13 @@ int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 
 int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *servicename, 
 			time_t fromtime, time_t totime, int for_history, 
-			double warnlevel, double greenlevel, char *reporttime, int servicehistory)
+			double warnlevel, double greenlevel, char *reporttime)
 {
 	char l[MAX_LINE_LEN];
 	time_t starttime, duration;
 	char colstr[MAX_LINE_LEN];
-	char *servicename = NULL;
 	int color, done, i, scanres;
 	int fileerrors;
-
-	if (!servicehistory) servicename = malloc(MAX_LINE_LEN+1);
 
 	repinfo->fstate = "OK";
 	repinfo->withreport = 0;
@@ -345,11 +319,13 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 	/* If for_history and fromtime is 0, dont do any seeking */
 	if (!for_history || (fromtime > 0)) {
 		fileerrors = scan_historyfile(fd, fromtime, totime, 
-				      l, sizeof(l), &starttime, &duration, colstr, servicename);
+				      l, sizeof(l), &starttime, &duration, colstr);
 	}
 	else {
 		/* Already positioned (probably in a pipe) */
-		gethistline(l, sizeof(l), fd, colstr, &starttime, &duration, servicename);
+		fgets(l, sizeof(l), fd);
+		scanres = sscanf(l+25, "%s %lu %lu", colstr, &starttime, &duration);
+		if (scanres == 2) duration = time(NULL) - starttime;
 		fileerrors = 0;
 	}
 
@@ -407,7 +383,6 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 				newentry->duration = duration;
 				newentry->color = color;
 				newentry->affectssla = (reporttime && (sladuration > 0));
-				newentry->service = (servicename ? malcop(servicename) : NULL);
 
 				if (!for_history && (color != COL_GREEN)) {
 					newentry->cause = parse_histlogfile(hostname, servicename, timespec);
@@ -421,9 +396,11 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 		}
 
 		if ((starttime + duration) < totime) {
-			if (!gethistline(l, sizeof(l), fd, colstr, &starttime, &duration, servicename)) {
-				done = 1;
+			if (fgets(l, sizeof(l), fd)) {
+				scanres = sscanf(l+25, "%s %lu %lu", colstr, &starttime, &duration);
+				if (scanres == 2) duration = time(NULL) - starttime;
 			}
+			else done = 1;
 		}
 		else done = 1;
 	} while (!done);
@@ -457,7 +434,6 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 	}
 
 	if (fileerrors) repinfo->fstate = "NOTOK";
-	if (servicename) free(servicename);
 	return color;
 }
 
@@ -480,7 +456,6 @@ void restore_replogs(replog_t *head)
 time_t reportstart, reportend;
 double reportgreenlevel = 99.995;
 double reportwarnlevel = 98.0;
-int servicehistory = 1;
 
 /* These are dummy vars needed by stuff in util.c */
 hostlist_t      *hosthead = NULL;
@@ -509,7 +484,7 @@ int main(int argc, char *argv[])
 	p = strrchr(hostsvc, '/'); host = p+1;
 	while ((p = strchr(host, ','))) *p = '.';
 
-	color = parse_historyfile(fd, &repinfo, host, svc, reportstart, reportend, reportwarnlevel, reportgreenlevel, NULL, servicehistory);
+	color = parse_historyfile(fd, &repinfo, host, svc, reportstart, reportend, reportwarnlevel, reportgreenlevel, NULL);
 
 	for (i=0; (i<COL_COUNT); i++) {
 		dprintf("Color %d: Count=%d, pct=%.2f\n", i, repinfo.count[i], repinfo.pct[i]);
