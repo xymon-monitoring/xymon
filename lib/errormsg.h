@@ -17,6 +17,7 @@ extern int debug;
 
 extern void errprintf(const char *fmt, ...);
 extern void dprintf(const char *fmt, ...);
+extern void flush_errbuf(void);
 
 #endif
 

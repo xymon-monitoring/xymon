@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: errormsg.c,v 1.1 2004-10-30 15:27:35 henrik Exp $";
+static char rcsid[] = "$Id: errormsg.c,v 1.2 2004-11-23 21:45:47 henrik Exp $";
 
 #include <string.h>
 #include <time.h>
@@ -83,5 +83,11 @@ void dprintf(const char *fmt, ...)
 		va_end(args);
 		fflush(stdout);
 	}
+}
+
+void flush_errbuf(void)
+{
+	if (errbuf) free(errbuf);
+	errbuf = NULL;
 }
 
