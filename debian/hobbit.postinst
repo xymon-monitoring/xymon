@@ -32,38 +32,21 @@ case "$1" in
 	cd /var/lib/hobbit/www; chown hobbit:hobbit . html notes wml rep snap; chgrp www-data rep snap; chmod g+w rep snap
 
 	# Do the debconf stuff
-	db_get hobbit/BBHOSTNAME
-	BBHOSTNAME="$RET"
-	db_get hobbit/BBHOSTIP
-	BBHOSTIP="$RET"
-	db_get hobbit/BBSERVERWWWHOSTNAME
-	BBSERVERWWWHOSTNAME="$RET"
-	db_get hobbit/BBSERVERURL
-	BBSERVERURL="$RET"
-	db_get hobbit/BBLOCATION
-	BBLOCATION="$RET"
+	db_get hobbit/BBSERVERHOSTNAME
+	BBSERVERHOSTNAME="$RET"
+	db_get hobbit/BBSERVERIP
+	BBSERVERIP="$RET"
+	db_get hobbit/BBSERVERWWWNAME
+	BBSERVERWWWNAME="$RET"
+	db_stop
 
 	# Update configuration file
 	cp -a -f $CONFIGFILE $CONFIGFILE.tmp
-	sed -e s/^BBSERVERHOSTNAME=.*/BBSERVERHOSTNAME=${BBHOSTNAME}/    \
-	    -e s/^BBSERVERWWWNAME=.*/BBSERVERWWWNAME=${BBWWWHOSTNAME}/   \
-	    -e s/^BBSERVERIP=.*/BBSERVERIP=${BBHOSTIP}/                  \
+	sed -e s/^BBSERVERHOSTNAME=.*/BBSERVERHOSTNAME=${BBSERVERHOSTNAME}/ \
+	    -e s/^BBSERVERIP=.*/BBSERVERIP=${BBSERVERIP}/                   \
+	    -e s/^BBSERVERWWWNAME=.*/BBSERVERWWWNAME=${BBSERVERWWWNAME}/    \
 	    < $CONFIGFILE > $CONFIGFILE.tmp
 	mv -f $CONFIGFILE.tmp $CONFIGFILE
-
-	# Check if the password-file exists
-	if [ ! -e /etc/hobbit/hobbitpasswd ]; then
-		db_get hobbit/ADMUSER
-		ADMUSER="$RET"
-		db_get hobbit/ADMPWD
-		ADMPWD="$RET"
-
-		htpasswd -b -c /etc/hobbit/hobbitpasswd $ADMUSER $ADMPWD
-
-		# Clear the password data
-		db_set hobbit/ADMUSER ""
-		db_set hobbit/ADMPWD ""
-	fi
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
