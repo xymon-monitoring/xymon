@@ -4,6 +4,7 @@
 #include <sys/wait.h>
 
 #include "bbgen.h"
+#include "util.h"
 #include "wmlgen.h"
 
 void do_wml_cards(void)
@@ -12,25 +13,32 @@ void do_wml_cards(void)
 	char		fn[MAX_PATH];
 	hostlist_t	*h;
 	entry_t		*t;
-	int		wapred;
+	int		wapcolor, hostcolor;
 	pid_t pid;
 	char mkbbwmlcmd[MAX_PATH];
 	char newbbhosts[MAX_PATH];
 
 	sprintf(fn, "%s/bb-hosts-wml.tmp", getenv("BBTMP"));
+	sprintf(newbbhosts, "BBHOSTS=%s", fn);
 	fd = fopen(fn, "w");
 	if (fd == NULL) {
 		printf("Cannot open %s\n", fn);
 		return;
 	}
 
+	wapcolor = COL_GREEN;
 	for (h = hosthead; (h); h = h->next) {
-		/* See if there are any WAP enabled tests that are RED */
-		for (t = h->hostentry->entries, wapred=0; (t && (wapred == 0)); t = t->next) {
-			wapred = (t->onwap && (t->color == COL_RED));
+		hostcolor = COL_GREEN;
+		for (t = h->hostentry->entries; (t); t = t->next) {
+			if (t->onwap && (t->color > hostcolor)) hostcolor = t->color;
 		}
 
-		if (wapred) {
+		/* We only care about RED or YELLOW */
+		switch (hostcolor) {
+		 case COL_RED:
+		 case COL_YELLOW:
+			if (hostcolor > wapcolor) wapcolor = hostcolor;
+
 			/* Include this host in the hosts to generate WML pages for. */
 			fprintf(fd, "%s %s %s\n", 
 				h->hostentry->ip, h->hostentry->hostname,
@@ -40,8 +48,17 @@ void do_wml_cards(void)
 
 	fclose(fd);
 
+	/* Create the file used to determine background color in mkbbwml.sh */
+	sprintf(fn, "%s/.bkg", getenv("BBLOGS"));
+	fd = fopen(fn, "w");
+	if (fd == NULL) {
+		printf("Cannot open %s\n", fn);
+		return;
+	}
+	fprintf(fd, "%s\n", colorname(wapcolor));
+	fclose(fd);
+
 	/* Fork off the WML generator */
-	sprintf(newbbhosts, "BBHOSTS=%s", fn);
 	sprintf(mkbbwmlcmd, "%s/web/mkbbwml.sh", getenv("BBHOME"));
 	pid = fork();
 	if (pid == -1) {
