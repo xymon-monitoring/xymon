@@ -929,9 +929,16 @@ void do_hosts(host_t *head, FILE *output, char *grouptitle)
 
 		for (h = head; (h); h = h->next) {
 			fprintf(output, "<TR>\n <TD NOWRAP><A NAME=\"%s\">\n", h->hostname);
-			fprintf(output, "<A HREF=\"%s/%s\" TARGET=\"_blank\"><FONT %s>%s</FONT></A>\n </TD>",
-				getenv("BBWEB"), hostlink(h->link, h->hostname), 
-				getenv("MKBBROWFONT"), h->hostname);
+
+			if (h->link != &null_link) {
+				fprintf(output, "<A HREF=\"%s/%s\" TARGET=\"_blank\"><FONT %s>%s</FONT></A>\n </TD>",
+					getenv("BBWEB"), hostlink(h->link, h->hostname), 
+					getenv("MKBBROWFONT"), h->hostname);
+			}
+			else {
+				fprintf(output, "<FONT %s>%s</FONT>\n </TD>",
+					getenv("MKBBROWFONT"), h->hostname);
+			}
 
 			for (gc = groupcols; (gc); gc = gc->next) {
 				fprintf(output, "<TD ALIGN=CENTER>");
