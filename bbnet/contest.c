@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.68 2004-10-31 08:00:09 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.69 2004-11-17 08:49:58 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -160,6 +160,10 @@ char *init_tcp_services(void)
 	int svcnamebytes = 0;
 	int svccount = 1;
 	int i;
+
+	if (getenv("BBNETSVCS") == NULL) {
+		putenv("BBNETSVCS=smtp telnet ftp pop pop3 pop-3 ssh imap ssh1 ssh2 imap2 imap3 imap4 pop2 pop-2 nntp");
+	}
 
 	filename[0] = '\0';
 	if (getenv("BBHOME")) {
