@@ -16,7 +16,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.75 2003-02-22 08:29:18 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.76 2003-02-25 09:48:24 henrik Exp $";
+
+#define VERSION "1.8"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -74,6 +76,7 @@ char *reqenv[] = {
 "MKBBTITLE",
 "PURPLEDELAY",
 NULL };
+
 
 int main(int argc, char *argv[])
 {
@@ -191,6 +194,7 @@ int main(int argc, char *argv[])
 			strcpy(bb_headfoot, lp);
 		}
 		else if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-?") == 0)) {
+			printf("bbgen version %s\n\n", VERSION);
 			printf("Usage: %s [options] [WebpageDirectory]\n", argv[0]);
 			printf("Options:\n");
 			printf("    --nopurple                  : Disable purple status-updates\n");
@@ -220,7 +224,11 @@ int main(int argc, char *argv[])
 			printf("\n");
 			printf("    --debug                     : Dumps internal state-table\n");
 #endif
-			exit(1);
+			exit(0);
+		}
+		else if (strncmp(argv[i], "--version", 9) == 0) {
+			printf("bbgen version %s\n", VERSION);
+			exit(0);
 		}
 		else if (strncmp(argv[i], "-", 1) == 0) {
 			printf("Unknown option : %s\n", argv[i]);
@@ -318,4 +326,3 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
-
