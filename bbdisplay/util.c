@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.69 2003-07-09 14:15:11 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.70 2003-07-12 06:41:28 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -551,6 +551,10 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 			else if (strcmp(t_start, "BBSVC") == 0)         fprintf(output, "%s", hostenv_svc);
 			else if (strcmp(t_start, "BBHOST") == 0)        fprintf(output, "%s", hostenv_host);
 			else if (strcmp(t_start, "BBIP") == 0)          fprintf(output, "%s", hostenv_ip);
+			else if (strcmp(t_start, "BBIPNAME") == 0) {
+				if (strcmp(hostenv_ip, "0.0.0.0") == 0) fprintf(output, "%s", hostenv_host);
+				else fprintf(output, "%s", hostenv_ip);
+			}
 			else if (strcmp(t_start, "BBREPWARN") == 0)     fprintf(output, "%s", hostenv_repwarn);
 			else if (strcmp(t_start, "BBREPPANIC") == 0)    fprintf(output, "%s", hostenv_reppanic);
 			else fprintf(output, "&");			/* No substitution - copy the ampersand */
