@@ -4,18 +4,42 @@
 # the Hobbit webpages and cgi-scripts available in the
 # "/hobbit" and "/hobbit-cgi" URLs.
 
-Alias /hobbit/  "/usr/local/hobbit/server/www/"
-<Directory "/usr/local/hobbit/server/www/">
+
+# NB: The "Alias" line below must NOT be used if you have
+#     the Hobbit webfiles as the root URL. In that case,
+#     you should instead set this:
+#
+#          DocumentRoot /usr/local/bb/server/www/
+
+Alias /hobbit/  "/usr/local/bb/server/www/"
+<Directory "/usr/local/bb/server/www/">
     Options Indexes FollowSymLinks Includes MultiViews
     Order allow,deny
     Allow from all
 </Directory>
 
-ScriptAlias /hobbit-cgi/ "/usr/local/hobbit/cgi-bin/"
-<Directory "/usr/local/hobbit/cgi-bin">
+ScriptAlias /hobbit-cgi/ "/usr/local/bb/cgi-bin/"
+<Directory "/usr/local/bb/cgi-bin">
     AllowOverride None
     Options ExecCGI Includes
     Order allow,deny
     Allow from all
+</Directory>
+
+ScriptAlias /hobbit-seccgi/ "/usr/local/bb/cgi-secure/"
+<Directory "/usr/local/bb/cgi-secure">
+    AllowOverride None
+    Options ExecCGI Includes
+    Order allow,deny
+    Allow from all
+
+    # Password file where users with access to these scripts are kept.
+    # Create it with "htpasswd -c /usr/local/bb/server/etc/hobbitpasswd USERNAME"
+    # Add more users / change passwords with "htpasswd /usr/local/bb/server/etc/hobbitpasswd USERNAME"
+
+    AuthUserFile /usr/local/bb/server/etc/hobbitpasswd
+    AuthType Basic
+    AuthName "Hobbit Administration"
+    Require valid-user
 </Directory>
 
