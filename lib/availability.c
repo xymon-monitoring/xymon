@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.3 2003-06-19 19:56:00 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.4 2003-06-19 20:21:49 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -29,15 +29,100 @@ static char rcsid[] = "$Id: availability.c,v 1.3 2003-06-19 19:56:00 henrik Exp 
 #include "util.h"
 #include "reportdata.h"
 
+int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
+		char *buf, size_t bufsize, 
+		time_t *starttime, time_t *duration, char *colstr)
+{
+	time_t start, dur;
+	int scanres;
+	int err = 0;
+
+	/*
+	 * Format of history entries:
+	 *    asctime-stamp newcolor starttime [duration]
+	 */
+
+	/* Is start of history after our report-end time ? */
+	rewind(fd);
+	fgets(buf, bufsize, fd);
+	if (sscanf(buf+25, "%s %lu %lu", colstr, &start, &dur) == 2) dur = time(NULL)-start;
+	if (start > totime) {
+		*starttime = start;
+		*duration = dur;
+		strcpy(colstr, "clear");
+		return 0;
+	}
+
+	/* First, do a quick scan through the file to find the approximate position where we should start */
+	while ((start+dur) < fromtime) {
+		if (fgets(buf, bufsize, fd)) {
+			scanres = sscanf(buf+25, "%s %lu %lu", colstr, &start, &dur);
+			if (scanres == 2) dur = time(NULL) - start;
+
+			if (scanres >= 2) {
+				dprintf("Skipped to entry starting %lu\n", start);
+
+				if ((start + dur) < fromtime) {
+					fseek(fd, 2048, SEEK_CUR);
+					fgets(buf, bufsize, fd); /* Skip partial line */
+				}
+			}
+			else {
+				err++;
+				dprintf("Bad line in history file '%s'\n", buf);
+				start = dur = 0; /* Try next line */
+			}
+		}
+		else {
+			start = time(NULL);
+			dur = 0;
+		}
+	};
+
+	/* We know the start position of the logfile is between current pos and (current-~2048 bytes) */
+	if (ftell(fd) < 2300)
+		rewind(fd);
+	else {
+		fseek(fd, -2300, SEEK_CUR); 
+		fgets(buf, bufsize, fd); /* Skip partial line */
+	}
+
+	/* Read one line at a time until we hit start of our report period */
+	do {
+		if (fgets(buf, bufsize, fd)) {
+			scanres = sscanf(buf+25, "%s %lu %lu", colstr, &start, &dur);
+			if (scanres == 2) dur = time(NULL) - start;
+
+			if (scanres < 2) {
+				err++;
+				dprintf("Bad line in history file '%s'\n", buf);
+				start = dur = 0; /* Try next line */
+			}
+			else {
+				dprintf("Got entry starting %lu lasting %lu\n", start, dur);
+			}
+		}
+		else {
+			start = time(NULL);
+			dur = 0;
+		}
+	} while ((start+dur) < fromtime);
+
+	dprintf("Reporting starts with this entry: %s\n\n", buf);
+
+	*starttime = start;
+	*duration = dur;
+	return err;
+}
+
 int parse_historyfile(FILE *fd, reportinfo_t *repinfo)
 {
 	char l[MAX_LINE_LEN];
-	char colstr[MAX_LINE_LEN];
 	time_t starttime, duration;
-	int color;
-	int scanres, done, i;
-	int fileerrors = 0;
+	char colstr[MAX_LINE_LEN];
 	unsigned long totduration[COL_COUNT];
+	int color, done, i, scanres;
+	int fileerrors;
 
 	for (i=0; (i<COL_COUNT); i++) {
 		totduration[i] = 0;
@@ -48,79 +133,15 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo)
 	repinfo->fstate = "OK";
 	repinfo->reportstart = time(NULL);
 
-	/*
-	 * Format of history entries:
-	 *    asctime-stamp newcolor starttime [duration]
-	 */
+	fileerrors = scan_historyfile(fd, reportstart, reportend, 
+				      l, sizeof(l), &starttime, &duration, colstr);
 
-	/* Is start of history after our report-end time ? */
-	rewind(fd);
-	fgets(l, sizeof(l), fd);
-	if (sscanf(l+25, "%s %lu %lu", colstr, &starttime, &duration) == 2) duration = time(NULL)-starttime;
 	if (starttime > reportend) {
 		repinfo->availability = 100.0;
 		repinfo->pct[COL_CLEAR] = 100.0;
 		repinfo->count[COL_CLEAR] = 1;
 		return COL_CLEAR;
 	}
-
-
-	/* First, do a quick scan through the file to find the approximate position where we should start */
-	while ((starttime+duration) < reportstart) {
-		if (fgets(l, sizeof(l), fd)) {
-			scanres = sscanf(l+25, "%s %lu %lu", colstr, &starttime, &duration);
-			if (scanres == 2) duration = time(NULL) - starttime;
-
-			if (scanres >= 2) {
-				dprintf("Skipped to entry starting %lu\n", starttime);
-
-				if ((starttime + duration) < reportstart) {
-					fseek(fd, 2048, SEEK_CUR);
-					fgets(l, sizeof(l), fd); /* Skip partial line */
-				}
-			}
-			else {
-				fileerrors++;
-				dprintf("Bad line in history file '%s'\n", l);
-				starttime = duration = 0; /* Try next line */
-			}
-		}
-		else {
-			starttime = time(NULL);
-			duration = 0;
-		}
-	};
-
-	/* We know the start position of the logfile is between current pos and (current-~2048 bytes) */
-	if (ftell(fd) < 2300)
-		rewind(fd);
-	else {
-		fseek(fd, -2300, SEEK_CUR); 
-		fgets(l, sizeof(l), fd); /* Skip partial line */
-	}
-
-	/* Read one line at a time until we hit start of our report period */
-	do {
-		if (fgets(l, sizeof(l), fd)) {
-			scanres = sscanf(l+25, "%s %lu %lu", colstr, &starttime, &duration);
-			if (scanres == 2) duration = time(NULL) - starttime;
-
-			if (scanres < 2) {
-				fileerrors++;
-				dprintf("Bad line in history file '%s'\n", l);
-				starttime = duration = 0; /* Try next line */
-			}
-			else {
-				dprintf("Got entry starting %lu lasting %lu\n", starttime, duration);
-			}
-		}
-		else {
-			starttime = time(NULL);
-			duration = 0;
-		}
-	} while ((starttime+duration) < reportstart);
-
-	dprintf("Reporting starts with this entry: %s\n\n", l);
 
 	/* If event starts before our reportstart, adjust starttime and duration */
 	if (starttime < reportstart) {
