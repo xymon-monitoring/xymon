@@ -47,4 +47,3 @@ extern void load_state(char *filename);
 extern void save_state(char *filename);
 
 #endif
-
