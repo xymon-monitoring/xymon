@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.27 2003-08-16 07:15:38 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.28 2003-08-18 06:53:52 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -50,7 +50,7 @@ static svcinfo_t svcinfo[] = {
 	{ "ssh1",    NULL,                "SSH",	1 },
 	{ "ssh2",    NULL,                "SSH",	1 },
 	{ "telnet",  NULL,                NULL,		0 },
-	{ "smtp",    "quit\r\n",          "220",	1 },
+	{ "smtp",    "mail\r\nquit\r\n",  "220",	1 }, /* Send "MAIL" to avoid sendmail NOQUEUE logs */
 	{ "pop",     "quit\r\n",          "+OK",	1 },
 	{ "pop2",    "quit\r\n",          "+OK",	1 },
 	{ "pop-2",   "quit\r\n",          "+OK",	1 },
@@ -63,7 +63,7 @@ static svcinfo_t svcinfo[] = {
 	{ "nntp",    "quit\r\n",          "200",	1 },
 	{ "rsync",   NULL,                "@RSYNCD",	1 },
 	{ "bbd",     "dummy",             NULL,		0 },
-	{ NULL,      NULL,                NULL,		0 }	/* Default behaviour: Dont send anything, dont grab banner */
+	{ NULL,      NULL,                NULL,		0 }	/* Default behaviour: Dont send anything, dont expect anything, dont grab banner */
 };
 
 
