@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.25 2003-08-15 11:20:41 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.26 2003-08-15 21:05:15 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -129,8 +129,10 @@ static unsigned int calc_time(time_t endtime, int change, int alignment, int end
 	int daysinmonth[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 	struct tm *tmbuf;
 	time_t result, now;
+	int startdst;
 
 	tmbuf = localtime(&endtime);
+	startdst = tmbuf->tm_isdst;
 	switch (alignment) {
 		case ALIGN_HOUR: 
 			tmbuf->tm_hour += change;
@@ -141,6 +143,7 @@ static unsigned int calc_time(time_t endtime, int change, int alignment, int end
 				tmbuf->tm_min = tmbuf->tm_sec = 0;
 			}
 			break;
+
 		case ALIGN_DAY:
 			tmbuf->tm_mday += change;
 			if (endofperiod == END_END) {
@@ -152,6 +155,7 @@ static unsigned int calc_time(time_t endtime, int change, int alignment, int end
 				tmbuf->tm_hour = tmbuf->tm_min = tmbuf->tm_sec = 0;
 			}
 			break;
+
 		case ALIGN_MONTH:
 			tmbuf->tm_mon += change;
 
@@ -177,6 +181,12 @@ static unsigned int calc_time(time_t endtime, int change, int alignment, int end
 			break;
 	}
 	result = mktime(tmbuf);
+
+	if ((startdst == 1) && (tmbuf->tm_isdst == 0)) {
+		/* Switched from DST to standard time, so must add one hour */
+		/* Hackish - assumes difference between DST and standard time is 3600 seconds */
+		result += 3600;
+	}
 
 	/* Dont try to foresee the future */
 	now = time(NULL);
