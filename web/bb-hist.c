@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.17 2003-07-18 15:10:20 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.18 2003-08-04 22:21:56 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,90 +29,84 @@ static char rcsid[] = "$Id: bb-hist.c,v 1.17 2003-07-18 15:10:20 henrik Exp $";
 
 static char selfurl[MAX_PATH];
 static int startoffset = 0;
+static int len1d = 24;
+static char *bartitle1d = "1 day";
+static char *summarytitle1d = "1 day summary";
+static int len1w = 7;
+static char *bartitle1w = "1 week";
+static char *summarytitle1w = "1 week summary";
+static int len4w = 28;
+static char *bartitle4w = "4 weeks";
+static char *summarytitle4w = "4 week summary";
+static int len1y = 12;
+static char *bartitle1y = "1 year";
+static char *summarytitle1y = "1 year summary";
 
 #ifndef DEFPIXELS
 static int usepct = 1;
-static int factor = 864;	/* (100 * x) / 86400 = (x / 864) */
 static int pixels = 100;
 #else
 static int usepct = 0;
-static int factor = (86400 / DEFPIXELS);
 static int pixels = DEFPIXELS;
 #endif
 
-void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, int entrycount, time_t today,
-		      reportinfo_t *repinfo, replog_t *log24hours, replog_t *loghead)
+static void generate_colorbar(
+			FILE *htmlrep,
+			time_t periodlen, int periodcount,
+			time_t startofperiod, time_t startofbar, time_t today,
+			replog_t *periodlog,
+			char *caption,
+			char *tagfmt
+)
 {
-	char *bgcols[2] = { "\"#000000\"", "\"#000033\"" };
-	int curbg = 0;
-	time_t yesterday;
-	int pctfirst, pctlast, pctsum, hourpct;
-	struct tm *tmbuf;
-	time_t secs;
-	int starthour, hour;
+	int secsperpixel, periodpixels, pixelsfirst, pixelslast, pixelssum;
 	replog_t *colorlog, *walk, *tmp;
-	char *pctstr = "";
-
-	yesterday = today-86400;
+	char *pctstr;
 
 	if (usepct) {
 		pixels = 100;
-		pctstr = "%%";
-		hourpct = 4;
+		pctstr = "%";
 	}
 	else {
-		factor = (86400 / pixels);
 		pctstr = "";
-		hourpct = (3600 / factor);
 	}
+	secsperpixel = (periodlen*periodcount / pixels);	/* How many seconds required for 1 pixel */
+	periodpixels = (pixels / periodcount);			/* Same as: periodlen / secsperpixel */
 
-	/* Compute the percentage of the first (incomplete) hour */
-	tmbuf = localtime(&yesterday);
-	secs = 3600 - (tmbuf->tm_min*60 + tmbuf->tm_sec);
-	pctfirst = secs / factor;
-	if (usepct && (pctfirst == 0)) pctfirst = 1;
+	/* Compute the percentage of the first and last (incomplete) periods */
+	pixelslast = (today - startofperiod) / secsperpixel;
+	pixelsfirst = periodpixels - pixelslast;
 
-	/* Compute the percentage of the last (incomplete) hour */
-	tmbuf = localtime(&today);
-	starthour = tmbuf->tm_hour;
-	secs = tmbuf->tm_min*60 + tmbuf->tm_sec;
-	pctlast = secs / factor;
-	if (usepct && (pctlast == 0)) pctlast = 1;
-
-	sethostenv(hostname, ip, service, colorname(COL_GREEN));
-
-	headfoot(htmlrep, "hist", "", "header", COL_GREEN);
-
-	fprintf(htmlrep, "\n");
-
-	fprintf(htmlrep, "<CENTER>\n");
-	fprintf(htmlrep, "<BR>\n");
-
-	/* Create the color-bar */
-
-	/* Need to re-sort the 24-hour log to chronological order */
-	colorlog = NULL; pctsum = 0;
-	for (walk = log24hours; (walk); walk = tmp) {
+	/* Need to re-sort the period-log to chronological order */
+	colorlog = NULL;
+	for (walk = periodlog; (walk); walk = tmp) {
 		tmp = walk->next;
 		walk->next = colorlog;
 		colorlog = walk;
 		walk = tmp;
 	}
+
 	fprintf(htmlrep, "<TABLE WIDTH=\"%d%s\" BORDER=0 BGCOLOR=\"#666666\">\n", pixels, pctstr);
 	fprintf(htmlrep, "<TR><TD ALIGN=CENTER>\n");
 
 	/* The date stamps */
-	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=1 BGCOLOR=\"#000033\">\n");
+	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 FRAME=NONE CELLSPACING=0 CELLPADDING=1 BGCOLOR=\"#000033\">\n");
 	fprintf(htmlrep, "<TR>\n");
 
-	fprintf(htmlrep, "<TD WIDTH=\"50%%\" ALIGN=LEFT>");
-	if (colorlog && colorlog->starttime <= yesterday) fprintf(htmlrep, "<A HREF=\"%s&amp;OFFSET=%d\">", selfurl, startoffset+1);
-	fprintf(htmlrep, "<B>%s</B>", ctime(&yesterday));
-	if (colorlog && colorlog->starttime <= yesterday) fprintf(htmlrep, "</A>");
+	fprintf(htmlrep, "<TD WIDTH=\"34%%\" ALIGN=LEFT>");
+	if (colorlog && colorlog->starttime <= startofbar) {
+		fprintf(htmlrep, "<A HREF=\"%s&amp;OFFSET=%ld\">", selfurl, startoffset+(periodlen*periodcount/86400));
+	}
+	fprintf(htmlrep, "<B>%s</B>", ctime(&startofbar));
+	if (colorlog && colorlog->starttime <= startofbar) fprintf(htmlrep, "</A>");
 	fprintf(htmlrep, "</TD>\n");
 
-	fprintf(htmlrep, "<TD WIDTH=\"50%%\" ALIGN=RIGHT>\n");
-	if (startoffset > 0) fprintf(htmlrep, "<A HREF=\"%s&amp;OFFSET=%d\">", selfurl, startoffset-1);
+	fprintf(htmlrep, "<TH ALIGN=CENTER WIDTH=\"32%%\">%s</TH>\n", caption);
+
+	fprintf(htmlrep, "<TD WIDTH=\"34%%\" ALIGN=RIGHT>\n");
+	if (startoffset > 0) {
+		fprintf(htmlrep, "<A HREF=\"%s&amp;OFFSET=%ld\">", selfurl, startoffset-(periodlen*periodcount/86400));
+	}
 	fprintf(htmlrep, "<B>%s</B>\n", ctime(&today));
 	if (startoffset > 0) fprintf(htmlrep, "</A>");
 	fprintf(htmlrep, "</TD>\n");
@@ -120,56 +114,94 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "</TABLE>\n");
 
-	/* The hour line */
-	pctsum = pctfirst + pctlast;
-	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 BGCOLOR=\"#000033\">\n");
+
+	/* The period marker line */
+	pixelssum = pixelsfirst + pixelslast;
+	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 FRAME=NONE CELLSPACING=0 CELLPADDING=0 BGCOLOR=\"#000033\">\n");
 	fprintf(htmlrep, "<TR>\n");
-	fprintf(htmlrep, "<TD WIDTH=%d%s ALIGN=LEFT><B>&nbsp;</B></TD>\n", pctfirst, pctstr);
-	for (hour = ((starthour + 1) % 24); (hour != starthour); hour = ((hour + 1) % 24)) {
-		fprintf(htmlrep, "<TD WIDTH=%d%s ALIGN=LEFT><B>%d</B></TD>\n", hourpct, pctstr, hour);
-		pctsum += hourpct;
+	fprintf(htmlrep, "<TD WIDTH=\"%d%s\" ALIGN=CENTER BGCOLOR=\"#000000\"><B>&nbsp;</B></TD>\n", pixelsfirst, pctstr);
+	{
+		int i; 
+		time_t markertime;
+		char tag[20];
+		char *bgcols[2] = { "\"#000000\"", "\"#555555\"" };
+		int curbg = 1;
+
+		markertime = startofbar;
+		for (i=1; i<periodcount; i++) {
+			markertime += periodlen;
+			strftime(tag, sizeof(tag), tagfmt, localtime(&markertime));
+			fprintf(htmlrep, "<TD WIDTH=\"%d%s\" ALIGN=CENTER BGCOLOR=%s><B>%s</B></TD>\n", 
+				periodpixels, pctstr, bgcols[curbg], tag);
+			pixelssum += periodpixels;
+			curbg = (1-curbg);
+		}
+
+		markertime += periodlen;
+		strftime(tag, sizeof(tag), tagfmt, localtime(&markertime));
+		fprintf(htmlrep, "<TD WIDTH=\"%d%s\" ALIGN=CENTER BGCOLOR=%s><B>%s</B></TD>\n", 
+			pixelslast, pctstr, bgcols[curbg], tag);
 	}
-	fprintf(htmlrep, "<TD WIDTH=%d%s ALIGN=LEFT><B>%d</B></TD>\n", pctlast, pctstr, starthour);
-	fprintf(htmlrep, "<!-- pctsum = %d -->\n", pctsum);
+	fprintf(htmlrep, "<!-- pixelssum = %d -->\n", pixelssum);
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "</TABLE>\n");
 
+
 	/* The actual color bar */
-	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 BGCOLOR=\"#000033\">\n");
+	fprintf(htmlrep, "<TABLE WIDTH=\"100%%\" BORDER=0 FRAME=NONE CELLSPACING=0 CELLPADDING=0 BGCOLOR=\"#000033\">\n");
 	fprintf(htmlrep, "<TR>\n");
+	pixelssum = 0;
 
 	/* First entry may not start at our report-start time */
 	if (colorlog == NULL) {
-		pctsum += factor;
+		pixelssum += secsperpixel;
 		fprintf(htmlrep, "<TD WIDTH=100%% BGCOLOR=white NOWRAP>&nbsp</TD>\n");
 	}
-	else if (colorlog->starttime > yesterday) {
-		int pct = ((colorlog->starttime - yesterday) / factor);
+	else if (colorlog->starttime > startofbar) {
+		int pixels = ((colorlog->starttime - startofbar) / secsperpixel);
 
-		pctsum += pct;
-		fprintf(htmlrep, "<TD WIDTH=%d%s BGCOLOR=%s NOWRAP>&nbsp</TD>\n", 
-			pct, pctstr, "white");
+		if (((colorlog->starttime - startofbar) >= (secsperpixel/2)) && (pixels == 0)) pixels = 1;
+		if (pixels > 0) {
+			pixelssum += pixels;
+			fprintf(htmlrep, "<TD WIDTH=\"%d%s\" BGCOLOR=%s NOWRAP>&nbsp</TD>\n", pixels, pctstr, "white");
+		}
 	}
+
 	for (walk = colorlog; (walk); walk = walk->next) {
-		int pct = (walk->duration / factor);
+		int pixels = (walk->duration / secsperpixel);
 
-		pctsum += pct;
-		fprintf(htmlrep, "<TD WIDTH=%d%s BGCOLOR=%s NOWRAP>&nbsp</TD>\n", 
-			pct, pctstr, ((walk->color == COL_CLEAR) ? "white" : colorname(walk->color)));
+		if ((walk->duration >= (secsperpixel/2)) && (pixels == 0)) pixels = 1;
+		if (pixels > 0) {
+			pixelssum += pixels;
+			fprintf(htmlrep, "<TD WIDTH=\"%d%s\" BGCOLOR=%s NOWRAP>&nbsp</TD>\n", 
+				pixels, pctstr, ((walk->color == COL_CLEAR) ? "white" : colorname(walk->color)));
+		}
 	}
 
-	fprintf(htmlrep, "<!-- pctsum = %d -->\n", pctsum);
+	fprintf(htmlrep, "<!-- pixelssum = %d -->\n", pixelssum);
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "</TABLE>\n");
 
 	fprintf(htmlrep, "</TD></TR></TABLE>\n");
+	fprintf(htmlrep, "<BR><BR>\n");
 
+}
 
-	fprintf(htmlrep, "<CENTER>\n");
-	fprintf(htmlrep, "<BR><FONT %s><B>%s - %s</B></FONT>\n", getenv("MKBBROWFONT"), hostname, service);
-	fprintf(htmlrep, "<TABLE BORDER=0 BGCOLOR=\"#333333\" CELLPADDING=3>\n");
-	fprintf(htmlrep, "<TR><TD COLSPAN=6 ALIGN=CENTER><BR><B>%s</B></TD></TR>\n",
-		(startoffset ? "24 hour statistics" : "Last 24 hours"));
+static void generate_pct_summary(
+			FILE *htmlrep,			/* output file */
+			char *hostname,
+			char *service,
+			char *caption,
+			reportinfo_t *repinfo, 		/* Percent summaries for period */
+			int first, int last)
+{
+	if (first) {
+		fprintf(htmlrep, "<TABLE BORDER=0 BGCOLOR=\"#000033\" CELLSPACING=5>\n");
+		fprintf(htmlrep, "<TR><TD>\n");
+		fprintf(htmlrep, "<TABLE BORDER=0 BGCOLOR=\"#000000\" CELLPADDING=3>\n");
+	}
+
+	fprintf(htmlrep, "<TR BGCOLOR=\"#333333\"><TD COLSPAN=6 ALIGN=CENTER><B>%s</B></TD></TR>\n", caption);
 	fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
 	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
 		getenv("BBSKIN"), dotgiffilename(COL_GREEN, 0, 1), colorname(COL_GREEN), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
@@ -192,17 +224,29 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_CLEAR]);
 	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_BLUE]);
 	fprintf(htmlrep, "</TR>\n");
-	fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
-	fprintf(htmlrep, "<TD COLSPAN=6 ALIGN=CENTER>\n");
-	fprintf(htmlrep, "<FONT %s><B>[Total may not equal 100%%]</B></FONT></TD> </TR>\n", getenv("MKBBCOLFONT"));
-	fprintf(htmlrep, "</TABLE>\n");
-	fprintf(htmlrep, "</CENTER>\n");
+
+	if (last) {
+		fprintf(htmlrep, "</TD></TR>\n");
+		fprintf(htmlrep, "</TABLE>\n");
+
+		fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
+		fprintf(htmlrep, "<TD ALIGN=CENTER>\n");
+		fprintf(htmlrep, "<FONT %s><B>[Totals may not equal 100%%]</B></FONT></TD> </TR>\n", getenv("MKBBCOLFONT"));
+		fprintf(htmlrep, "</TABLE>\n");
+	}
+	else {
+		fprintf(htmlrep, "<TR BGCOLOR=\"#000000\" BORDER=0><TD COLSPAN=6>&nbsp;</TD></TR>\n");
+	}
+}
 
 
-	fprintf(htmlrep, "<BR><BR>\n");
+static void generate_histlog_table(FILE *htmlrep,
+		char *hostname, char *service, int entrycount, replog_t *loghead)
+{
+	char *bgcols[2] = { "\"#000000\"", "\"#000033\"" };
+	int curbg = 0;
+	replog_t *walk;
 
-
-	fprintf(htmlrep, "<CENTER>\n");
 	fprintf(htmlrep, "<TABLE BORDER=0 BGCOLOR=\"#333333\" CELLSPACING=3>\n");
 	fprintf(htmlrep, "<TR>\n");
 	if (entrycount) {
@@ -241,6 +285,72 @@ void generate_history(FILE *htmlrep, char *hostname, char *service, char *ip, in
 
 
 	fprintf(htmlrep, "</TABLE>\n");
+}
+
+
+void generate_history(FILE *htmlrep, 			/* output file */
+		      char *hostname, char *service, 	/* Host and service we report on */
+		      char *ip, 			/* IP - for the header only */
+		      time_t today,			/* End time of color-bar graphs */
+                      time_t start1d,
+		      reportinfo_t *repinfo1d, 		/* Percent summaries for 1-day period */
+		      replog_t *log1d, 			/* Events during past 1 day */
+                      time_t start1w,
+		      reportinfo_t *repinfo1w, 		/* Percent summaries for 1-week period */
+		      replog_t *log1w, 			/* Events during past 1 week */
+                      time_t start4w,
+		      reportinfo_t *repinfo4w, 		/* Percent summaries for 4-week period */
+		      replog_t *log4w, 			/* Events during past 4 weeks */
+                      time_t start1y,
+		      reportinfo_t *repinfo1y, 		/* Percent summaries for 1-year period */
+		      replog_t *log1y, 			/* Events during past 1 yeary */
+		      int entrycount,			/* Log entry maxcount */
+		      replog_t *loghead)		/* Eventlog for entrycount events back */
+{
+	time_t startofperiod;
+	struct tm *tmbuf;
+
+	sethostenv(hostname, ip, service, colorname(COL_GREEN));
+	headfoot(htmlrep, "hist", "", "header", COL_GREEN);
+
+	fprintf(htmlrep, "\n");
+	fprintf(htmlrep, "<CENTER>\n");
+	fprintf(htmlrep, "<BR><FONT %s><B>%s - %s</B></FONT>\n", getenv("MKBBROWFONT"), hostname, service);
+	fprintf(htmlrep, "<BR><BR>\n");
+
+	/* Create the color-bar */
+	tmbuf = localtime(&today); 
+	tmbuf->tm_min = tmbuf->tm_sec = 0; 
+	startofperiod = mktime(tmbuf);
+	generate_colorbar(htmlrep, 3600, len1d, startofperiod, start1d, today, log1d, bartitle1d, "%H");
+
+	tmbuf = localtime(&today); 
+	tmbuf->tm_hour = tmbuf->tm_min = tmbuf->tm_sec = 0;
+	startofperiod = mktime(tmbuf);
+	generate_colorbar(htmlrep, 86400, len1w, startofperiod, start1w, today, log1w, bartitle1w, "%a");
+	generate_colorbar(htmlrep, 86400, len4w, startofperiod, start4w, today, log4w, bartitle4w, "%d");
+
+	tmbuf = localtime(&today); 
+	tmbuf->tm_hour = tmbuf->tm_min = tmbuf->tm_sec = 0;
+	tmbuf->tm_mday = 1;
+	startofperiod = mktime(tmbuf);
+	generate_colorbar(htmlrep, 30*86400, len1y, startofperiod, start1y, today, log1y, bartitle1y, "%b");
+
+
+	/* Availability percentage summary */
+	fprintf(htmlrep, "<CENTER>\n");
+	generate_pct_summary(htmlrep, hostname, service, summarytitle1d, repinfo1d, 1, 0);
+	generate_pct_summary(htmlrep, hostname, service, summarytitle1w, repinfo1w, 0, 0);
+	generate_pct_summary(htmlrep, hostname, service, summarytitle4w, repinfo4w, 0, 0);
+	generate_pct_summary(htmlrep, hostname, service, summarytitle1y, repinfo1y, 0, 1);
+	fprintf(htmlrep, "</CENTER>\n");
+
+	fprintf(htmlrep, "<BR><BR>\n");
+
+
+	/* Last N histlog entries */
+	fprintf(htmlrep, "<CENTER>\n");
+	generate_histlog_table(htmlrep, hostname, service, entrycount, loghead);
 	fprintf(htmlrep, "</CENTER>\n");
 
 	fprintf(htmlrep, "<BR><BR>\n");
@@ -350,9 +460,12 @@ int main(int argc, char *argv[])
 	char histlogfn[MAX_PATH];
 	char tailcmd[MAX_PATH];
 	FILE *fd;
-	reportinfo_t repinfo, dummyrep;
+	reportinfo_t repinfo1d, repinfo1w, repinfo4w, repinfo1y, dummyrep;
 	time_t now;
-	replog_t *log24hours;
+	time_t start1d, start1w, start4w, start1y;
+	replog_t *log1d, *log1w, *log4w, *log1y;
+	struct tm *starttm;
+	char *p;
 
 	envcheck(reqenv);
 	parse_query();
@@ -367,16 +480,22 @@ int main(int argc, char *argv[])
 	}
 
 	if (entrycount) {
-		char *p = selfurl + strlen(selfurl);
+		p = selfurl + strlen(selfurl);
 		sprintf(p, "&amp;ENTRIES=%d", entrycount);
 	}
 	else strcat(selfurl, "&amp;ENTRIES=ALL");
 
-	if (!usepct) {
-		char *p = selfurl + strlen(selfurl);
+	if (usepct) {
+		/* Must modify 4-week charts to be 5-weeks, or the last day is 19% of the bar */
+		len1d = 25; bartitle1d = "25 hours"; summarytitle1d = "25 hour summary";
+		len1w = 10; bartitle1w = "10 days"; summarytitle1w = "10 day summary";
+		len4w = 33; bartitle4w = "33 days"; summarytitle4w = "33 day summary";
+		len1y = 10; bartitle1y = "10 months"; summarytitle1y = "10 month summary";
+	}
+	else {
+		p = selfurl + strlen(selfurl);
 		sprintf(p, "&amp;PIXELS=%d", pixels);
 	}
-
 
 	sprintf(histlogfn, "%s/%s.%s", getenv("BBHIST"), commafy(hostname), service);
 	fd = fopen(histlogfn, "r");
@@ -385,8 +504,21 @@ int main(int argc, char *argv[])
 	}
 	now = time(NULL) - startoffset*86400;
 
-	parse_historyfile(fd, &repinfo, NULL, NULL, now-86400, now, 1, reportwarnlevel, reportgreenlevel, NULL);
-	log24hours = save_replogs();
+	starttm = localtime(&now); starttm->tm_hour -= len1d; start1d = mktime(starttm);
+	parse_historyfile(fd, &repinfo1d, NULL, NULL, start1d, now, 1, reportwarnlevel, reportgreenlevel, NULL);
+	log1d = save_replogs();
+
+	starttm = localtime(&now); starttm->tm_mday -= len1w; start1w = mktime(starttm);
+	parse_historyfile(fd, &repinfo1w, NULL, NULL, start1w, now, 1, reportwarnlevel, reportgreenlevel, NULL);
+	log1w = save_replogs();
+
+	starttm = localtime(&now); starttm->tm_mday -= len4w; start4w = mktime(starttm);
+	parse_historyfile(fd, &repinfo4w, NULL, NULL, start4w, now, 1, reportwarnlevel, reportgreenlevel, NULL);
+	log4w = save_replogs();
+
+	starttm = localtime(&now); starttm->tm_mday -= 30*len1y; start1y = mktime(starttm);
+	parse_historyfile(fd, &repinfo1y, NULL, NULL, start1y, now, 1, reportwarnlevel, reportgreenlevel, NULL);
+	log1y = save_replogs();
 
 	if (entrycount == 0) {
 		/* All entries - just rewind the history file and do all of them */
@@ -408,7 +540,13 @@ int main(int argc, char *argv[])
 	/* Now generate the webpage */
 	printf("Content-Type: text/html\n\n");
 
-	generate_history(stdout, hostname, service, ip, entrycount, now, &repinfo, log24hours, reploghead);
+	generate_history(stdout, 
+			 hostname, service, ip, now, 
+			 start1d, &repinfo1d, log1d, 
+			 start1w, &repinfo1w, log1w, 
+			 start4w, &repinfo4w, log4w, 
+			 start1y, &repinfo1y, log1y, 
+			 entrycount, reploghead);
 
 	return 0;
 }
