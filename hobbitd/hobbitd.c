@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.130 2005-03-18 12:51:17 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.131 2005-03-21 15:06:24 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -185,7 +185,6 @@ hobbitd_statistics_t hobbitd_stats[] = {
 	{ "config", 0 },
 	{ "query", 0 },
 	{ "hobbitdboard", 0 },
-	{ "hobbitdlist", 0 },
 	{ "hobbitdlog", 0 },
 	{ "drop", 0 },
 	{ "rename", 0 },
@@ -193,6 +192,36 @@ hobbitd_statistics_t hobbitd_stats[] = {
 	{ "notify", 0 },
 	{ NULL, 0 }
 };
+
+enum boardfield_t { F_NONE, F_HOSTNAME, F_TESTNAME, F_COLOR, F_FLAGS, 
+		    F_LASTCHANGE, F_LOGTIME, F_VALIDTIME, F_ACKTIME, F_DISABLETIME,
+		    F_SENDER, F_COOKIE, F_LINE1,
+		    F_ACKMSG, F_DISMSG, F_MSG, 
+		    F_LAST };
+
+typedef struct boardfieldnames_t {
+	char *name;
+	enum boardfield_t id;
+} boardfieldnames_t;
+boardfieldnames_t boardfieldnames[] = {
+	{ "hostname", F_HOSTNAME },
+	{ "testname", F_TESTNAME },
+	{ "color", F_COLOR },
+	{ "flags", F_FLAGS },
+	{ "lastchange", F_LASTCHANGE },
+	{ "logtime", F_LOGTIME },
+	{ "validtime", F_VALIDTIME },
+	{ "acktime", F_ACKTIME },
+	{ "disabletime", F_DISABLETIME },
+	{ "sender", F_SENDER },
+	{ "cookie", F_COOKIE },
+	{ "line1", F_LINE1 },
+	{ "ackmsg", F_ACKMSG },
+	{ "dismsg", F_DISMSG },
+	{ "msg", F_MSG },
+	{ NULL, F_LAST },
+};
+enum boardfield_t boardfields[F_LAST];
 
 unsigned long msgs_total = 0;
 unsigned long msgs_total_last = 0;
@@ -1364,11 +1393,12 @@ char *timestr(time_t tstamp)
 	return result;
 }
 
-void setup_filter(char *buf, char **spage, char **shost, char **stest, int *scolor)
+void setup_filter(char *buf, char **spage, char **shost, char **stest, int *scolor, char **fields)
 {
-	char *tok;
+	char *tok, *s;
+	int idx = 0;
 
-	*spage = *shost = *stest = NULL;
+	*spage = *shost = *stest = *fields = NULL;
 	*scolor = -1;
 
 	tok = strtok(buf, " \t\r\n");
@@ -1381,10 +1411,26 @@ void setup_filter(char *buf, char **spage, char **shost, char **stest, int *scol
 		}
 		else if (strncmp(tok, "host=", 5) == 0) *shost = tok+5;
 		else if (strncmp(tok, "test=", 5) == 0) *stest = tok+5;
+		else if (strncmp(tok, "fields=", 7) == 0) *fields = tok+7;
 		else if (strncmp(tok, "color=", 6) == 0) *scolor = parse_color(tok+6);
 
 		tok = strtok(NULL, " \t\r\n");
 	}
+
+	/* If no fields given, provide the default set. */
+	if (*fields == NULL) *fields = "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1";
+
+	s = strdup(*fields);
+	tok = strtok(s, ",");
+	while (tok) {
+		enum boardfield_t i;
+		for (i=0; (boardfieldnames[i].name && strcmp(tok, boardfieldnames[i].name)); i++) ;
+		if (i < F_LAST) boardfields[idx++] = boardfieldnames[i].id;
+		tok = strtok(NULL, ",");
+	}
+	boardfields[idx++] = F_NONE;
+
+	xfree(s);
 }
 
 void do_message(conn_t *msg, char *origin)
@@ -1582,7 +1628,7 @@ void do_message(conn_t *msg, char *origin)
 			}
 		}
 	}
-	else if ((strncmp(msg->buf, "hobbitdlog ", 11) == 0) || (strncmp(msg->buf, "bbgendlog ", 10) == 0)) {
+	else if (strncmp(msg->buf, "hobbitdlog ", 11) == 0) {
 		/* 
 		 * Request for a single status log
 		 * hobbitdlog HOST.TEST
@@ -1631,7 +1677,7 @@ void do_message(conn_t *msg, char *origin)
 			msg->buflen = (bufp - buf);
 		}
 	}
-	else if ((strncmp(msg->buf, "hobbitdxlog ", 12) == 0) || (strncmp(msg->buf, "bbgendxlog ", 11) == 0)) {
+	else if (strncmp(msg->buf, "hobbitdxlog ", 12) == 0) {
 		/* 
 		 * Request for a single status log in XML format
 		 * hobbitdxlog HOST.TEST
@@ -1698,7 +1744,7 @@ void do_message(conn_t *msg, char *origin)
 			msg->buflen = (bufp - buf);
 		}
 	}
-	else if ((strncmp(msg->buf, "hobbitdboard", 12) == 0) || (strncmp(msg->buf, "bbgendboard", 11) == 0)) {
+	else if (strncmp(msg->buf, "hobbitdboard", 12) == 0) {
 		/* 
 		 * Request for a summmary of all known status logs
 		 *
@@ -1707,18 +1753,16 @@ void do_message(conn_t *msg, char *origin)
 		hobbitd_hostlist_t *hwalk;
 		hobbitd_log_t *lwalk;
 		char *buf, *bufp;
-		int bufsz, buflen;
-		int n;
-		char *spage = NULL, *shost = NULL, *stest = NULL;
+		int bufsz;
+		char *spage = NULL, *shost = NULL, *stest = NULL, *fields = NULL;
 		int scolor = -1;
 		namelist_t *hi = NULL;
 
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
-		setup_filter(msg->buf, &spage, &shost, &stest, &scolor);
+		setup_filter(msg->buf, &spage, &shost, &stest, &scolor, &fields);
 		bufsz = 16384;
 		bufp = buf = (char *)malloc(bufsz);
-		buflen = 0;
 
 		for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
 
@@ -1733,6 +1777,7 @@ void do_message(conn_t *msg, char *origin)
 
 			for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
 				char *eoln;
+				int f_idx;
 
 				/* Testname filter */
 				if (stest && (strcmp(lwalk->test->testname, stest) != 0)) continue;
@@ -1745,33 +1790,62 @@ void do_message(conn_t *msg, char *origin)
 					lwalk->message = strdup("");
 				}
 
-				eoln = strchr(lwalk->message, '\n');
-				if (eoln) *eoln = '\0';
-				if ((bufsz - buflen - strlen(lwalk->message)) < 1024) {
-					bufsz += (16384 + strlen(lwalk->message));
-					buf = (char *)realloc(buf, bufsz);
-					bufp = buf + buflen;
+				for (f_idx = 0; (boardfields[f_idx] != F_NONE); f_idx++) {
+					int needed = 1024;
+
+					switch (boardfields[f_idx]) {
+					  case F_ACKMSG: if (lwalk->ackmsg) needed = 2*strlen(lwalk->ackmsg); break;
+					  case F_DISMSG: if (lwalk->dismsg) needed = 2*strlen(lwalk->dismsg); break;
+					  case F_MSG: needed = 2*strlen(lwalk->message); break;
+					  default: break;
+					}
+
+					if ((bufsz - (bufp - buf)) < needed) {
+						int buflen = (bufp - buf);
+						bufsz += 4096 + needed;
+						buf = (char *)realloc(buf, bufsz);
+						bufp = buf + buflen;
+					}
+
+					if (f_idx > 0) bufp += sprintf(bufp, "|");
+
+					switch (boardfields[f_idx]) {
+					  case F_NONE: break;
+					  case F_HOSTNAME: bufp += sprintf(bufp, "%s", hwalk->hostname); break;
+					  case F_TESTNAME: bufp += sprintf(bufp, "%s", lwalk->test->testname); break;
+					  case F_COLOR: bufp += sprintf(bufp, "%s", colnames[lwalk->color]); break;
+					  case F_FLAGS: bufp += sprintf(bufp, "%s", (lwalk->testflags ? lwalk->testflags : "")); break;
+					  case F_LASTCHANGE: bufp += sprintf(bufp, "%d", (int)lwalk->lastchange); break;
+					  case F_LOGTIME: bufp += sprintf(bufp, "%d", (int)lwalk->logtime); break;
+					  case F_VALIDTIME: bufp += sprintf(bufp, "%d", (int)lwalk->validtime); break;
+					  case F_ACKTIME: bufp += sprintf(bufp, "%d", (int)lwalk->acktime); break;
+					  case F_DISABLETIME: bufp += sprintf(bufp, "%d", (int)lwalk->enabletime); break;
+					  case F_SENDER: bufp += sprintf(bufp, "%s", lwalk->sender); break;
+					  case F_COOKIE: bufp += sprintf(bufp, "%d", lwalk->cookie); break;
+
+					  case F_LINE1:
+						eoln = strchr(lwalk->message, '\n'); if (eoln) *eoln = '\0';
+						bufp += sprintf(bufp, "%s", msg_data(lwalk->message));
+						if (eoln) *eoln = '\n';
+						break;
+
+					  case F_ACKMSG: if (lwalk->ackmsg) bufp += sprintf(bufp, "%s", nlencode(lwalk->ackmsg)); break;
+					  case F_DISMSG: if (lwalk->dismsg) bufp += sprintf(bufp, "%s", nlencode(lwalk->dismsg)); break;
+					  case F_MSG: bufp += sprintf(bufp, "%s", nlencode(lwalk->message)); break;
+					  case F_LAST: break;
+					}
 				}
-				n = sprintf(bufp, "%s|%s|%s|%s|%d|%d|%d|%d|%d|%s|%d|%s\n", 
-					hwalk->hostname, lwalk->test->testname, 
-					colnames[lwalk->color], 
-					(lwalk->testflags ? lwalk->testflags : ""),
-					(int) lwalk->lastchange, 
-					(int) lwalk->logtime, (int) lwalk->validtime,
-					(int) lwalk->acktime, (int) lwalk->enabletime,
-					lwalk->sender, lwalk->cookie, msg_data(lwalk->message));
-				bufp += n;
-				buflen += n;
-				if (eoln) *eoln = '\n';
+				bufp += sprintf(bufp, "\n");
 			}
 		}
+		*bufp = '\0';
 
 		xfree(msg->buf);
 		msg->doingwhat = RESPONDING;
 		msg->bufp = msg->buf = buf;
-		msg->buflen = buflen;
+		msg->buflen = (bufp - buf);
 	}
-	else if ((strncmp(msg->buf, "hobbitdxboard", 13) == 0) || (strncmp(msg->buf, "bbgendxboard", 12) == 0)) {
+	else if (strncmp(msg->buf, "hobbitdxboard", 13) == 0) {
 		/* 
 		 * Request for a summmary of all known status logs in XML format
 		 *
@@ -1780,13 +1854,13 @@ void do_message(conn_t *msg, char *origin)
 		hobbitd_log_t *lwalk;
 		char *buf, *bufp;
 		int bufsz;
-		char *spage = NULL, *shost = NULL, *stest = NULL;
+		char *spage = NULL, *shost = NULL, *stest = NULL, *fields = NULL;
 		int scolor = -1;
 		namelist_t *hi = NULL;
 
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
-		setup_filter(msg->buf, &spage, &shost, &stest, &scolor);
+		setup_filter(msg->buf, &spage, &shost, &stest, &scolor, &fields);
 		bufsz = 16384;
 		bufp = buf = (char *)malloc(bufsz);
 
@@ -1855,63 +1929,6 @@ void do_message(conn_t *msg, char *origin)
 		msg->doingwhat = RESPONDING;
 		msg->bufp = msg->buf = buf;
 		msg->buflen = (bufp - buf);
-	}
-	else if (strncmp(msg->buf, "hobbitdlist", 11) == 0) {
-		/* 
-		 * Request for a list of all known status logs.
-		 *
-		 * hostname|testname
-		 */
-		hobbitd_hostlist_t *hwalk;
-		hobbitd_log_t *lwalk;
-		char *buf, *bufp;
-		int bufsz, buflen;
-		int n;
-		char *spage = NULL, *shost = NULL, *stest = NULL;
-		int scolor = -1;
-		namelist_t *hi = NULL;
-
-		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
-
-		setup_filter(msg->buf, &spage, &shost, &stest, &scolor);
-		bufsz = 16384;
-		bufp = buf = (char *)malloc(bufsz);
-		buflen = 0;
-
-		for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
-
-			/* Host pagename filter */
-			if (spage) {
-				hi = hostinfo(hwalk->hostname);
-				if (hi && (strncmp(hi->page->pagepath, spage, strlen(spage)) != 0)) continue;
-			}
-
-			/* Hostname filter */
-			if (shost && (strcmp(hwalk->hostname, shost) != 0)) continue;
-
-			for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
-				/* Testname filter */
-				if (stest && (strcmp(lwalk->test->testname, stest) != 0)) continue;
-
-				/* Color filter */
-				if ((scolor != -1) && (lwalk->color != scolor)) continue;
-
-				if ((bufsz - buflen - strlen(lwalk->message)) < 1024) {
-					bufsz += 16384;
-					buf = (char *)realloc(buf, bufsz);
-					bufp = buf + buflen;
-				}
-
-				n = sprintf(bufp, "%s|%s\n", hwalk->hostname, lwalk->test->testname);
-				bufp += n;
-				buflen += n;
-			}
-		}
-
-		xfree(msg->buf);
-		msg->doingwhat = RESPONDING;
-		msg->bufp = msg->buf = buf;
-		msg->buflen = buflen;
 	}
 	else if ((strncmp(msg->buf, "hobbitdack", 10) == 0) || (strncmp(msg->buf, "ack ack_event", 13) == 0)) {
 		/* hobbitdack COOKIE DURATION TEXT */
@@ -2467,7 +2484,7 @@ int main(int argc, char *argv[])
 			adminsenders = getsenderlist(p+1);
 		}
 		else if (argnmatch(argv[argi], "--www-senders=")) {
-			/* Who is allowed to send us "hobbitdboard", "hobbitdlog", "hobbitdlist" messages */
+			/* Who is allowed to send us "hobbitdboard", "hobbitdlog"  messages */
 			char *p = strchr(argv[argi], '=');
 			wwwsenders = getsenderlist(p+1);
 		}
