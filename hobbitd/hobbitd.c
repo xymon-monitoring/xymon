@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.84 2004-12-18 10:24:17 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.85 2004-12-19 20:22:23 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -2283,6 +2283,7 @@ int main(int argc, char *argv[])
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGUSR1, &sa, NULL);
 	sigaction(SIGCHLD, &sa, NULL);
+	sigaction(SIGHUP, &sa, NULL);
 
 	statuschn = setup_channel(C_STATUS, CHAN_MASTER);
 	if (statuschn == NULL) { errprintf("Cannot setup status channel\n"); return 1; }
