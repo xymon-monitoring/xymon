@@ -96,6 +96,7 @@ typedef struct test_t {
 
 extern char *init_tcp_services(void);
 extern int default_tcp_port(char *svcname);
+extern void dump_tcp_services(void);
 extern test_t *add_tcp_test(char *ip, int portnum, char *service, int silent);
 extern void do_tcp_tests(int timeout, int concurrency);
 extern void show_tcp_test_results(void);
