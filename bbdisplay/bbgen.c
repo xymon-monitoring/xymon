@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.82 2003-03-03 11:52:19 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.83 2003-03-03 16:01:01 henrik Exp $";
 
 #define VERSION "1.8-pre2003.03.02.18.40"
 
@@ -96,17 +96,8 @@ int main(int argc, char *argv[])
 	select_headers_and_footers("bb");
 
 	for (i = 1; (i < argc); i++) {
-		if (strcmp(argv[i], "--recentgifs") == 0) {
-			use_recentgifs = 1;
-		}
-		else if (strcmp(argv[i], "--pages-first") == 0) {
-			hostsbeforepages = 0;
-		}
-		else if (strcmp(argv[i], "--pages-last") == 0) {
-			hostsbeforepages = 1;
-		}
-		else if (strcmp(argv[i], "--sort-group-only-items") == 0) {
-			sort_grouponly_items = 1;
+		if (strcmp(argv[i], "--nopurple") == 0) {
+			enable_purpleupd = 0;
 		}
 		else if (strncmp(argv[i], "--purplelifetime=", 17) == 0) {
 			char *lp = strchr(argv[i], '=');
@@ -114,33 +105,48 @@ int main(int argc, char *argv[])
 			purpledelay = atoi(lp+1);
 			if (purpledelay < 0) purpledelay=0;
 		}
+
+		else if (strncmp(argv[i], "--ignorecolumns=", 16) == 0) {
+			char *lp = strchr(argv[i], '=');
+			ignorecolumns = malloc(strlen(lp)+2);
+			sprintf(ignorecolumns, ",%s,", (lp+1));
+		}
+		else if (strncmp(argv[i], "--includecolumns=", 17) == 0) {
+			char *lp = strchr(argv[i], '=');
+			includecolumns = malloc(strlen(lp)+2);
+			sprintf(includecolumns, ",%s,", (lp+1));
+		}
+
+		else if (strcmp(argv[i], "--pages-first") == 0) {
+			hostsbeforepages = 0;
+		}
+		else if (strcmp(argv[i], "--pages-last") == 0) {
+			hostsbeforepages = 1;
+		}
 		else if (strncmp(argv[i], "--subpagecolumns=", 17) == 0) {
 			char *lp = strchr(argv[i], '=');
 
 			subpagecolumns = atoi(lp+1);
 			if (subpagecolumns < 1) subpagecolumns=1;
 		}
-		else if (strncmp(argv[i], "--larrdupdate=", 14) == 0) {
-			char *lp = strchr(argv[i], '=');
+		else if (strcmp(argv[i], "--recentgifs") == 0) {
+			use_recentgifs = 1;
+		}
+		else if (strcmp(argv[i], "--sort-group-only-items") == 0) {
+			sort_grouponly_items = 1;
+		}
 
-			larrd_update_interval = atoi(lp+1);
-			if (larrd_update_interval <= 0) enable_larrdgen=0;
-			else enable_larrdgen = 1;
-		}
-		else if (strncmp(argv[i], "--larrd", 7) == 0) {
-			/* "--larrd" just enable larrd page generation */
-			/* "--larrd=xxx" does that, and redefines the larrd column name */
+		else if ((strncmp(argv[i], "--noprop=", 9) == 0) || (strncmp(argv[i], "--nopropyellow=", 15) == 0)) {
 			char *lp = strchr(argv[i], '=');
+			nopropyellowdefault = malloc(strlen(lp)+2);
+			sprintf(nopropyellowdefault, ",%s,", (lp+1));
+		}
+		else if (strncmp(argv[i], "--nopropred=", 12) == 0) {
+			char *lp = strchr(argv[i], '=');
+			nopropreddefault = malloc(strlen(lp)+2);
+			sprintf(nopropreddefault, ",%s,", (lp+1));
+		}
 
-			enable_larrdgen=1;
-			if (lp) {
-				larrdcol = malloc(strlen(lp));
-				strcpy(larrdcol, (lp+1));
-			}
-		}
-		else if (strncmp(argv[i], "--log-nohost-rrds", 17) == 0) {
-			log_nohost_rrds=1;
-		}
 		else if (strncmp(argv[i], "--infoupdate=", 13) == 0) {
 			char *lp = strchr(argv[i], '=');
 
@@ -159,40 +165,34 @@ int main(int argc, char *argv[])
 				strcpy(infocol, (lp+1));
 			}
 		}
+
+		else if (strncmp(argv[i], "--larrdupdate=", 14) == 0) {
+			char *lp = strchr(argv[i], '=');
+
+			larrd_update_interval = atoi(lp+1);
+			if (larrd_update_interval <= 0) enable_larrdgen=0;
+			else enable_larrdgen = 1;
+		}
+		else if (strncmp(argv[i], "--larrd", 7) == 0) {
+			/* "--larrd" just enable larrd page generation */
+			/* "--larrd=xxx" does that, and redefines the larrd column name */
+			char *lp = strchr(argv[i], '=');
+
+			enable_larrdgen=1;
+			if (lp) {
+				larrdcol = malloc(strlen(lp));
+				strcpy(larrdcol, (lp+1));
+			}
+		}
 		else if (strncmp(argv[i], "--rrddir=", 9) == 0) {
 			char *lp = strchr(argv[i], '=');
 			rrddir = malloc(strlen(lp));
 			strcpy(rrddir, (lp+1));
 		}
-		else if (strncmp(argv[i], "--ignorecolumns=", 16) == 0) {
-			char *lp = strchr(argv[i], '=');
-			ignorecolumns = malloc(strlen(lp)+2);
-			sprintf(ignorecolumns, ",%s,", (lp+1));
+		else if (strncmp(argv[i], "--log-nohost-rrds", 17) == 0) {
+			log_nohost_rrds=1;
 		}
-		else if (strncmp(argv[i], "--includecolumns=", 17) == 0) {
-			char *lp = strchr(argv[i], '=');
-			includecolumns = malloc(strlen(lp)+2);
-			sprintf(includecolumns, ",%s,", (lp+1));
-		}
-		else if ((strncmp(argv[i], "--noprop=", 9) == 0) || (strncmp(argv[i], "--nopropyellow=", 15) == 0)) {
-			char *lp = strchr(argv[i], '=');
-			nopropyellowdefault = malloc(strlen(lp)+2);
-			sprintf(nopropyellowdefault, ",%s,", (lp+1));
-		}
-		else if (strncmp(argv[i], "--nopropred=", 12) == 0) {
-			char *lp = strchr(argv[i], '=');
-			nopropreddefault = malloc(strlen(lp)+2);
-			sprintf(nopropreddefault, ",%s,", (lp+1));
-		}
-		else if (strcmp(argv[i], "--nopurple") == 0) {
-			enable_purpleupd = 0;
-		}
-		else if (strcmp(argv[i], "--timing") == 0) {
-			timing = 1;
-		}
-		else if (strcmp(argv[i], "--debug") == 0) {
-			debug = 1;
-		}
+
 		else if (strcmp(argv[i], "--bbpageONLY") == 0) {
 			bbpageONLY = 1;
 		}
@@ -201,6 +201,18 @@ int main(int argc, char *argv[])
 			lp++;
 			select_headers_and_footers(lp);
 		}
+
+		else if (strcmp(argv[i], "--timing") == 0) {
+			timing = 1;
+		}
+		else if (strcmp(argv[i], "--debug") == 0) {
+			debug = 1;
+		}
+		else if (strncmp(argv[i], "--version", 9) == 0) {
+			printf("bbgen version %s\n", VERSION);
+			exit(0);
+		}
+
 		else if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-?") == 0)) {
 			printf("bbgen version %s\n\n", VERSION);
 			printf("Usage: %s [options] [WebpageDirectory]\n", argv[0]);
@@ -228,18 +240,18 @@ int main(int argc, char *argv[])
 			printf("\nAlternate pageset generation support:\n");
 			printf("    --bbpageONLY                : Generate the standard (bb.html) page only\n");
 			printf("    --template=TEMPLATE         : template for header and footer files\n");
-			printf("\n");
+			printf("\nDebugging options:\n");
 			printf("    --timing                    : Collect timing information\n");
+#ifdef DEBUG
 			printf("    --debug                     : Debugging information\n");
-			exit(0);
-		}
-		else if (strncmp(argv[i], "--version", 9) == 0) {
-			printf("bbgen version %s\n", VERSION);
+#endif
+			printf("    --version                   : Show version information\n");
 			exit(0);
 		}
 		else if (strncmp(argv[i], "-", 1) == 0) {
 			printf("Unknown option : %s\n", argv[i]);
 		}
+
 		else {
 			/* Last argument is pagedir */
 			pagedir = malloc(strlen(argv[i])+1);
@@ -326,13 +338,17 @@ int main(int argc, char *argv[])
 	add_timestamp("BB mainpage done");
 
 	/* Do pages - contains links to subpages, groups, hosts */
+	add_timestamp("BB subpages start");
 	for (p=pagehead->next; (p); p = p->next) {
-		char dirfn[256], fn[256];
+		char dirfn[MAX_PATH], fn[MAX_PATH];
+
+		add_timestamp(p->name);
 
 		sprintf(dirfn, "%s", p->name);
 		mkdir(dirfn, 0755);
 		sprintf(fn, "%s/%s.html", dirfn, p->name);
 		do_page(p, fn, p->name);
+		add_timestamp("  - page");
 
 		/* Do subpages */
 		for (q = p->subpages; (q); q = q->next) {
@@ -340,7 +356,9 @@ int main(int argc, char *argv[])
 			mkdir(dirfn, 0755);
 			sprintf(fn, "%s/%s.html", dirfn, q->name);
 			do_subpage(q, fn, p->name);
+			add_timestamp("  - subpage");
 		}
+		add_timestamp("  - done");
 	}
 	add_timestamp("BB subpages done");
 
