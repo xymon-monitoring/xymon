@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.64 2003-06-21 15:11:19 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.65 2003-06-21 18:34:23 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -36,6 +36,7 @@ static char rcsid[] = "$Id: pagegen.c,v 1.64 2003-06-21 15:11:19 henrik Exp $";
 #include "larrdgen.h"
 #include "infogen.h"
 #include "bb-replog.h"
+#include "reportdata.h"
 #include "debug.h"
 
 int  subpagecolumns = 1;
@@ -392,6 +393,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 							textrep = fopen(textrepfn, "w");
 
 							/* Pre-build the test-specific report */
+							restore_replogs(e->causes);
 							generate_replog(htmlrep, textrep, textrepurl,
 									h->hostname, h->ip, e->column->name, e->color, 
 									reportstyle, reportstart, reportend,
