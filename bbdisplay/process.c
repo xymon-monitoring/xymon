@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.4 2003-01-16 11:37:15 hstoerne Exp $";
+static char rcsid[] = "$Id: process.c,v 1.5 2003-02-02 19:09:26 hstoerne Exp $";
 
 #include <string.h>
 #include <sys/types.h>
@@ -61,7 +61,10 @@ void calc_pagecolors(page_t *phead)
 	for (toppage=phead; (toppage); toppage = toppage->next) {
 
 		/* Start with the color of immediate hosts */
-		color = (toppage->hosts ? toppage->hosts->color : -1);
+		color = -1;
+		for (h = toppage->hosts; (h); h = h->next) {
+			if (h->color > color) color = h->color;
+		}
 
 		/* Then adjust with the color of hosts in immediate groups */
 		for (g = toppage->groups; (g); g = g->next) {
