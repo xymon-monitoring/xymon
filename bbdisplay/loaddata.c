@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.51 2003-03-18 14:26:53 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.52 2003-04-22 15:55:09 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -83,11 +83,12 @@ bbgen_page_t *init_page(const char *name, const char *title)
 
 	newpage->color = -1;
 	newpage->oldage = 1;
-	newpage->next = NULL;
-	newpage->subpages = NULL;
 	newpage->groups = NULL;
 	newpage->hosts = NULL;
 	newpage->parent = NULL;
+	newpage->subpages = NULL;
+	newpage->next = NULL;
+
 	return newpage;
 }
 
@@ -725,7 +726,8 @@ bbgen_page_t *load_bbhosts(void)
 		exit(1);
 	}
 
-	curpage = toppage = init_page("", "");
+	toppage = init_page("", "");
+	curpage = NULL;
 	cursubpage = NULL;
 	curgroup = NULL;
 	curhost = NULL;
@@ -747,8 +749,15 @@ bbgen_page_t *load_bbhosts(void)
 		}
 		else if (strncmp(l, "page", 4) == 0) {
 			getnamelink(l, &name, &link);
-			curpage->next = init_page(name, link);
-			curpage = curpage->next;
+			if (curpage == NULL) {
+				/* First page - hook it on toppage as a subpage from there */
+				curpage = toppage->subpages = init_page(name, link);
+			}
+			else {
+				curpage = curpage->next = init_page(name, link);
+			}
+
+			curpage->parent = toppage;
 			cursubpage = NULL;
 			curgroup = NULL;
 			curhost = NULL;
@@ -769,13 +778,17 @@ bbgen_page_t *load_bbhosts(void)
 			getgrouptitle(l, &link, &onlycols);
 			if (curgroup == NULL) {
 				curgroup = init_group(link, onlycols);
-				if (cursubpage == NULL) {
+				if (cursubpage != NULL) {
+					/* We're in a subpage */
+					cursubpage->groups = curgroup;
+				}
+				else if (curpage != NULL) {
 					/* We're on a main page */
 					curpage->groups = curgroup;
 				}
 				else {
-					/* We're in a subpage */
-					cursubpage->groups = curgroup;
+					/* We're on the top page */
+					toppage->groups = curgroup;
 				}
 			}
 			else {
@@ -822,8 +835,7 @@ bbgen_page_t *load_bbhosts(void)
 					curpage->hosts = curhost;
 				}
 				else {
-					/* Should not happen! */
-					printf("Nowhere to put the host %s\n", hostname);
+					toppage->hosts = curhost;
 				}
 			}
 			else {

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.35 2003-04-22 09:18:02 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.36 2003-04-22 15:53:45 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -36,29 +36,6 @@ static char rcsid[] = "$Id: pagegen.c,v 1.35 2003-04-22 09:18:02 henrik Exp $";
 #include "larrdgen.h"
 #include "infogen.h"
 
-/*
- * Some explanation is needed for my own sake on what happens here:
- *
- * bbgen::main() calls:
- * - do_bb_page() to generate bb.html
- *   - do_hosts() to show all hosts on the page that do not belong to a group
- *   - do_groups() to show all groups on the page
- *     - do_hosts() to show hosts in the group
- *   - do_page_subpages() to link to all pages below the page
- *   - do_bb_ext() for extension scripts
- *   - do_summaries to show summary statuses
- *
- * - do_page() to generate all pages linked from bb.html
- *   - do_hosts() to show all hosts on the page that do not belong to a group
- *   - do_groups() to show all groups on the page
- *     - do_hosts() to show hosts in the group
- *   - do_page_subpages() to link to all pages below the page
- *
- * - do_subpage() to generate all subpages linked from pages linked from bb.html
- *   - do_hosts() to show all hosts on the page that do not belong to a group
- *   - do_groups() to show all groups on the page
- *     - do_hosts() to show hosts in the group
- */
 
 int  subpagecolumns = 1;
 int  hostsbeforepages = 0;
@@ -492,12 +469,11 @@ void do_bbext(FILE *output, char *extenv)
 }
 
 
-void do_page_subpages(FILE *output, bbgen_page_t *subs, char *mklocaltitle, char *upperpagename)
+void do_page_subpages(FILE *output, bbgen_page_t *subs, char *mklocaltitle, char *pagepath)
 {
 	/*
 	 * This routine does NOT generate subpages!
-	 * Instead, it generates the LINKS to the subpages below
-	 * any given page.
+	 * Instead, it generates the LINKS to the subpages below any given page.
 	 */
 
 	bbgen_page_t	*p;
@@ -533,12 +509,8 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *mklocaltitle, char
 				fprintf(output, "<TD><FONT %s>%s</FONT></TD>\n", getenv("MKBBROWFONT"), p->title);
 			}
 
-			if (upperpagename)
-				fprintf(output, "<TD><CENTER><A HREF=\"%s/%s/%s/%s.html\">\n", 
-						getenv("BBWEB"), upperpagename, p->name, p->name);
-			else
-				fprintf(output, "<TD><CENTER><A HREF=\"%s/%s/%s.html\">\n", 
-						getenv("BBWEB"), p->name, p->name);
+			fprintf(output, "<TD><CENTER><A HREF=\"%s/%s%s/%s.html\">\n", 
+					getenv("BBWEB"), pagepath, p->name, p->name);
 
 			fprintf(output, "<IMG SRC=\"%s/%s\" WIDTH=\"%s\" HEIGHT=\"%s\" BORDER=0 ALT=\"%s\"></A>\n", 
 				getenv("BBSKIN"), dotgiffilename(p->color, 0, p->oldage), 
@@ -562,115 +534,112 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *mklocaltitle, char
 		fprintf(output, "</TABLE><BR><BR>\n");
 		fprintf(output, "</CENTER>\n");
 	}
-
-
 }
 
-void do_bb_page(bbgen_page_t *page, dispsummary_t *sums, char *filename)
+
+void do_one_page(bbgen_page_t *page, dispsummary_t *sums)
 {
-	/*
-	 * This generates the top-level BB page bb.html
-	 */
-
 	FILE	*output;
-	char	*tmpfilename = malloc(strlen(filename)+5);
+	char	pagepath[MAX_PATH];
+	char	filename[MAX_PATH];
+	char	tmpfilename[MAX_PATH];
+	char	*dirdelim;
 
+	pagepath[0] = '\0';
+	if (page->parent == NULL) {
+		/* top level page */
+		strcpy(filename, "bb.html");
+		symlink("bb.html", "index.html");
+	}
+	else {
+		char tmppath[MAX_PATH];
+		bbgen_page_t *pgwalk;
+
+		for (pgwalk = page; (pgwalk); pgwalk = pgwalk->parent) {
+			if (strlen(pgwalk->name)) {
+				sprintf(tmppath, "%s/%s", pgwalk->name, pagepath);
+				strcpy(pagepath, tmppath);
+			}
+		}
+
+		sprintf(filename, "%s/%s.html", pagepath, page->name);
+	}
 	sprintf(tmpfilename, "%s.tmp", filename);
+
+
+	/* Try creating the output file. If it fails, we may need to create the directories */
 	output = fopen(tmpfilename, "w");
 	if (output == NULL) {
-		free(tmpfilename);
-		printf("Cannot open file %s\n", tmpfilename);
-		return;
+		char indexfilename[MAX_PATH];
+		char pagebasename[MAX_PATH];
+		char *p;
+
+		/* Make sure the directories exist. */
+		dirdelim = tmpfilename;
+		while ((dirdelim = strchr(dirdelim, '/')) != NULL) {
+			*dirdelim = '\0';
+			mkdir(tmpfilename, 0755);
+			*dirdelim = '/';
+			dirdelim++;
+		}
+
+		/* We've created the directories. Now retry creating the file. */
+		output = fopen(tmpfilename, "w");
+
+		/* 
+		 * We had to create the directory. Set up an index.html file for 
+		 * the directory where we created our new file.
+		 */
+		strcpy(indexfilename, filename);
+		p = strrchr(indexfilename, '/'); 
+		*p = '\0'; 
+		strcat(indexfilename, "/index.html");
+		sprintf(pagebasename, "%s.html", page->name);
+		symlink(pagebasename, indexfilename);
+
+		if (output == NULL) {
+			printf("Cannot open file %s\n", tmpfilename);
+			return;
+		}
 	}
 
-	headfoot(output, hf_prefix[PAGE_BB], "", "", "header", page->color);
+	headfoot(output, hf_prefix[PAGE_BB], pagepath, "header", page->color);
 
-	if (!hostsbeforepages) do_page_subpages(output, page->next, "MKBBLOCAL", NULL);
+	if (!hostsbeforepages && page->subpages) {
+		do_page_subpages(output, page->subpages, "MKBBLOCAL", pagepath);
+	}
+
 	do_hosts(page->hosts, NULL, output, "", PAGE_BB);
 	do_groups(page->groups, output);
-	if (hostsbeforepages) do_page_subpages(output, page->next, "MKBBLOCAL", NULL);
-	do_summaries(dispsums, output);
 
-	/* Support for extension scripts */
-	do_bbext(output, "BBMKBBEXT");
+	if (hostsbeforepages && page->subpages) {
+		do_page_subpages(output, page->subpages, "MKBBLOCAL", pagepath);
+	}
 
-	headfoot(output, hf_prefix[PAGE_BB], "", "", "footer", page->color);
+	/* Summaries and extensions on main page only */
+	if (page->parent != NULL) {
+		do_summaries(dispsums, output);
+		do_bbext(output, "BBMKBBEXT");
+	}
+
+	headfoot(output, hf_prefix[PAGE_BB], pagepath, "footer", page->color);
 
 	fclose(output);
 	if (rename(tmpfilename, filename)) {
 		printf("Cannot rename %s to %s - error %d\n", tmpfilename, filename, errno);
 	}
-
-	free(tmpfilename);
 }
 
 
-void do_page(bbgen_page_t *page, char *filename, char *upperpagename, int level)
+void do_page_with_subs(bbgen_page_t *curpage, dispsummary_t *sums)
 {
-	/*
-	 * This generates pages that live directly beneath bb.html
-	 */
+	bbgen_page_t *levelpage;
 
-	FILE	*output;
-	char	*tmpfilename = malloc(strlen(filename)+5);	/* 5 = ".tmp" and a NULL */
-
-	sprintf(tmpfilename, "%s.tmp", filename);
-	output = fopen(tmpfilename, "w");
-	if (output == NULL) {
-		free(tmpfilename);
-		printf("Cannot open file %s\n", tmpfilename);
-		return;
+	for (levelpage = curpage; (levelpage); levelpage = levelpage->next) {
+		do_one_page(levelpage, sums);
+		do_page_with_subs(levelpage->subpages, NULL);
 	}
-
-	headfoot(output, hf_prefix[PAGE_BB], page->name, "", "header", page->color); /* for pages */
-
-	if (!hostsbeforepages) do_page_subpages(output, page->subpages, "MKBBSUBLOCAL", upperpagename);
-	do_hosts(page->hosts, NULL, output, "", PAGE_BB);
-	do_groups(page->groups, output);
-	if (hostsbeforepages) do_page_subpages(output, page->subpages, "MKBBSUBLOCAL", upperpagename);
-
-	headfoot(output, hf_prefix[PAGE_BB], page->name, "", "footer", page->color);
-
-	fclose(output);
-	if (rename(tmpfilename, filename)) {
-		printf("Cannot rename %s to %s - error %d\n", tmpfilename, filename, errno);
-	}
-
-	free(tmpfilename);
 }
-
-void do_subpage(bbgen_page_t *page, char *filename, char *upperpagename)
-{
-	/*
-	 * This generates subpages that are on level 2 beneath bb.html
-	 */
-
-	FILE	*output;
-	char	*tmpfilename = malloc(strlen(filename)+5);
-
-	sprintf(tmpfilename, "%s.tmp", filename);
-	output = fopen(tmpfilename, "w");
-	if (output == NULL) {
-		free(tmpfilename);
-		printf("Cannot open file %s\n", tmpfilename);
-		return;
-	}
-
-	headfoot(output, hf_prefix[PAGE_BB], upperpagename, page->name, "header", page->color);
-
-	do_hosts(page->hosts, NULL, output, "", PAGE_BB);
-	do_groups(page->groups, output);
-
-	headfoot(output, hf_prefix[PAGE_BB], upperpagename, page->name, "footer", page->color);
-
-	fclose(output);
-	if (rename(tmpfilename, filename)) {
-		printf("Cannot rename %s to %s - error %d\n", tmpfilename, filename, errno);
-	}
-
-	free(tmpfilename);
-}
-
 
 void do_eventlog(FILE *output, int maxcount, int maxminutes)
 {
@@ -899,7 +868,7 @@ int do_bb2_page(char *filename, int summarytype)
 		exit(1);
 	}
 
-	headfoot(output, hf_prefix[summarytype], "", "", "header", bb2page.color);
+	headfoot(output, hf_prefix[summarytype], "", "header", bb2page.color);
 
 	fprintf(output, "<center>\n");
 	fprintf(output, "\n<A NAME=begindata>&nbsp;</A> \n<A NAME=\"hosts-blk\">&nbsp;</A>\n");
@@ -918,7 +887,7 @@ int do_bb2_page(char *filename, int summarytype)
 	}
 
 	fprintf(output, "</center>\n");
-	headfoot(output, hf_prefix[summarytype], "", "", "footer", bb2page.color);
+	headfoot(output, hf_prefix[summarytype], "", "footer", bb2page.color);
 
 	fclose(output);
 	if (rename(tmpfilename, filename)) {

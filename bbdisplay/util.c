@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.27 2003-04-21 07:07:36 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.28 2003-04-22 15:53:45 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -242,7 +242,7 @@ void sethostenv(char *host, char *ip, char *svc, char *color)
 	strncat(hostenv_color, color, sizeof(hostenv_color)-1);
 }
 
-void headfoot(FILE *output, char *pagetype, char *pagename, char *subpagename, char *head_or_foot, int bgcolor)
+void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, int bgcolor)
 {
 	int	fd;
 	char 	filename[MAX_PATH];
@@ -251,14 +251,44 @@ void headfoot(FILE *output, char *pagetype, char *pagename, char *subpagename, c
 	char	*t_start, *t_next;
 	char	savechar;
 	time_t	now = time(NULL);
+	char	hfpath[MAX_PATH];
+	char	*hfdelim;
 
-	sprintf(filename, "%s/web/%s_%s_%s", getenv("BBHOME"), pagename, subpagename, head_or_foot);
-	fd = open(filename, O_RDONLY);
-	if (fd == -1) {
-		sprintf(filename, "%s/web/%s_%s", getenv("BBHOME"), pagename, head_or_foot);
+	/*
+	 * "pagepath" is the relative path for this page, e.g. 
+	 * - for "bb.html" it is ""
+	 * - for a page, it is "pagename/"
+	 * - for a subpage, it is "pagename/subpagename/"
+	 *
+	 * BB allows header/footer files named bb_PAGE_header or bb_PAGE_SUBPAGE_header
+	 * so we need to scan for an existing file - starting with the
+	 * most detailed one, and working up towards the standard "web/bb_TYPE" file.
+	 */
+
+	strcpy(hfpath, pagepath); hfdelim = strrchr(hfpath, '/'); fd = -1;
+	while ((fd == -1) && hfdelim) {
+		char *p;
+
+		*hfdelim = '\0';
+		for (p = strchr(hfpath, '/'); (p); p = strchr(hfpath, '/')) *p = '_';
+		sprintf(filename, "%s/web/%s_%s", getenv("BBHOME"), hfpath, head_or_foot);
 		fd = open(filename, O_RDONLY);
+
+		if (fd == -1) {
+			/*
+			 * HACK: Restore original hfpath (with slashes),
+			 * but immediately cut off the parts we have used
+			 * already.
+			 *
+			 * Then find the next hfdelim value for another round.
+			 */
+			strcpy(hfpath, pagepath); *hfdelim = '\0';
+			hfdelim = strrchr((hfdelim - 1), '/');
+		}
 	}
+
 	if (fd == -1) {
+		/* Fall back to default head/foot file. */
 		sprintf(filename, "%s/web/%s_%s", getenv("BBHOME"), pagetype, head_or_foot);
 		fd = open(filename, O_RDONLY);
 	}

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.14 2003-03-15 17:16:04 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.15 2003-04-22 15:53:45 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -182,25 +182,34 @@ void dumpstatelist(state_t *head)
 #endif
 }
 
+void dumponepagewithsubs(bbgen_page_t *curpage, char *indent)
+{
+#ifdef DEBUG
+	bbgen_page_t *levelpage;
+
+	char newindent[100];
+	char newindentextra[105];
+
+	strcpy(newindent, indent);
+	strcat(newindent, "\t");
+	strcpy(newindentextra, newindent);
+	strcat(newindentextra, "    ");
+
+	for (levelpage = curpage; (levelpage); levelpage = levelpage->next) {
+		printf("%sPage: %s, color=%d, oldage=%d, title=%s\n", 
+			indent, levelpage->name, levelpage->color, levelpage->oldage, levelpage->title);
+
+		dumpgroups(levelpage->groups, newindent, newindentextra);
+		dumphosts(levelpage->hosts, newindentextra);
+		dumponepagewithsubs(levelpage->subpages, newindent);
+	}
+#endif
+}
+
 void dumpall(bbgen_page_t *head)
 {
 #ifdef DEBUG
-	bbgen_page_t *p, *q;
-
-	for (p=head; p; p = p->next) {
-		printf("%sPage: %s, color: %d, oldage: %d, title=%s\n", 
-                       (strlen(p->name) == 0) ? "" : "    ", p->name, p->color, p->oldage, p->title);
-		for (q = p->subpages; (q); q = q->next) {
-			printf("\tSubpage: %s, color=%d, oldage=%d, title=%s\n", 
-				q->name, q->color, q->oldage, q->title);
-			dumpgroups(q->groups, "\t\t", "\t\t    ");
-			dumphosts(q->hosts, "\t    ");
-		}
-
-		dumpgroups(p->groups, "\t","\t    ");
-		dumphosts(p->hosts, "    ");
-	}
-	dumphosts(head->hosts, "");
+	dumponepagewithsubs(head, "");
 #endif
 }
 

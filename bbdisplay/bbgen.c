@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.90 2003-04-14 07:44:18 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.91 2003-04-22 15:53:45 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
 {
 	char		*pagedir;
 	char		*rrddir;
-	bbgen_page_t 	*p, *q;
+	bbgen_page_t 	*p;
 	dispsummary_t	*s;
 	int		i;
 	int		pagegenstat;
@@ -343,34 +343,9 @@ int main(int argc, char *argv[])
 	}
 
 	/* The main page - bb.html and pages/subpages thereunder */
-	add_timestamp("BB mainpage start");
-	do_bb_page(pagehead, dispsums, "bb.html");
-	add_timestamp("BB mainpage done");
-
-	/* Do pages - contains links to subpages, groups, hosts */
-	add_timestamp("BB subpages start");
-	for (p=pagehead->next; (p); p = p->next) {
-		char dirfn[MAX_PATH], fn[MAX_PATH];
-
-		add_timestamp(p->name);
-
-		sprintf(dirfn, "%s", p->name);
-		mkdir(dirfn, 0755);
-		sprintf(fn, "%s/%s.html", dirfn, p->name);
-		do_page(p, fn, p->name);
-		add_timestamp("  - page");
-
-		/* Do subpages */
-		for (q = p->subpages; (q); q = q->next) {
-			sprintf(dirfn, "%s/%s", p->name, q->name);
-			mkdir(dirfn, 0755);
-			sprintf(fn, "%s/%s.html", dirfn, q->name);
-			do_subpage(q, fn, p->name);
-			add_timestamp("  - subpage");
-		}
-		add_timestamp("  - done");
-	}
-	add_timestamp("BB subpages done");
+	add_timestamp("BB pagegen start");
+	do_page_with_subs(pagehead, dispsums);
+	add_timestamp("BB pagegen done");
 
 	/* The full summary page - bb2.html */
 	if (!bbpageONLY) {
