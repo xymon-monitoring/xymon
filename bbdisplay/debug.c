@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.31 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.32 2004-10-30 15:43:04 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -26,142 +26,19 @@ static char rcsid[] = "$Id: debug.c,v 1.31 2004-10-29 10:21:57 henrik Exp $";
 #include <sys/time.h>
 
 #include "bbgen.h"
-#include "debug.h"
-#include "util.h"
-
-int debug = 0;
-int timing = 0;
-
-typedef struct timestamp_t {
-	char		*eventtext;
-	struct timeval 	eventtime;
-	struct timestamp_t *prev;
-	struct timestamp_t *next;
-} timestamp_t;
-
-static timestamp_t *stamphead = NULL;
-static timestamp_t *stamptail = NULL;
-
-void dprintf(const char *fmt, ...)
-{
-	va_list args;
-
-	if (debug) {
-		char timestr[30];
-		time_t now = time(NULL);
-
-		strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S",
-			 localtime(&now));
-		printf("%s ", timestr);
-
-		va_start(args, fmt);
-		vprintf(fmt, args);
-		va_end(args);
-		fflush(stdout);
-	}
-}
-
-void add_timestamp(const char *msg)
-{
-	struct timezone tz;
-
-	if (timing) {
-		timestamp_t *newstamp = (timestamp_t *) malloc(sizeof(timestamp_t));
-
-		gettimeofday(&newstamp->eventtime, &tz);
-		newstamp->eventtext = strdup(msg);
-
-		if (stamphead == NULL) {
-			newstamp->next = newstamp->prev = NULL;
-			stamphead = newstamp;
-		}
-		else {
-			newstamp->prev = stamptail;
-			newstamp->next = NULL;
-			stamptail->next = newstamp;
-		}
-		stamptail = newstamp;
-	}
-}
-
-void show_timestamps(char **buffer)
-{
-	timestamp_t *s;
-	struct timeval dif;
-	char *outbuf = (char *) malloc(4096);
-	int outbuflen = 4096;
-	char buf1[80];
-
-	if (!timing || (stamphead == NULL)) return;
-
-	strcpy(outbuf, "\n\nTIME SPENT\n");
-	strcat(outbuf, "Event                                   ");
-	strcat(outbuf, "         Starttime");
-	strcat(outbuf, "          Duration\n");
-
-	for (s=stamphead; (s); s=s->next) {
-		sprintf(buf1, "%-40s ", s->eventtext);
-		strcat(outbuf, buf1);
-		sprintf(buf1, "%10u.%06u ", (unsigned int)s->eventtime.tv_sec, (unsigned int)s->eventtime.tv_usec);
-		strcat(outbuf, buf1);
-		if (s->prev) {
-			tvdiff(&((timestamp_t *)s->prev)->eventtime, &s->eventtime, &dif);
-			sprintf(buf1, "%10u.%06u ", (unsigned int)dif.tv_sec, (unsigned int)dif.tv_usec);
-			strcat(outbuf, buf1);
-		}
-		else strcat(outbuf, "                -");
-		strcat(outbuf, "\n");
-
-		if ((outbuflen - strlen(outbuf)) < 200) {
-			outbuflen += 4096;
-			outbuf = (char *) realloc(outbuf, outbuflen);
-		}
-	}
-
-	tvdiff(&stamphead->eventtime, &stamptail->eventtime, &dif);
-	sprintf(buf1, "%-40s ", "TIME TOTAL"); strcat(outbuf, buf1);
-	sprintf(buf1, "%-18s", ""); strcat(outbuf, buf1);
-	sprintf(buf1, "%10u.%06u ", (unsigned int)dif.tv_sec, (unsigned int)dif.tv_usec); strcat(outbuf, buf1);
-	strcat(outbuf, "\n");
-
-	if (buffer == NULL) {
-		printf("%s", outbuf);
-		free(outbuf);
-	}
-	else *buffer = outbuf;
-}
-
-
-long total_runtime(void)
-{
-	if (timing)
-		return (stamptail->eventtime.tv_sec - stamphead->eventtime.tv_sec);
-	else
-		return 0;
-}
-
-
-const char *textornull(const char *text)
-{
-	return (text ? text : "(NULL)");
-}
-
 
 void dumplinks(link_t *head)
 {
-#ifdef DEBUG
 	link_t *l;
 
 	for (l = head; l; l = l->next) {
 		printf("Link for host %s, URL/filename %s/%s\n", l->name, l->urlprefix, l->filename);
 	}
-#endif
 }
 
 
 void dumphosts(host_t *head, char *prefix)
 {
-#ifdef DEBUG
 	host_t *h;
 	entry_t *e;
 	char	format[512];
@@ -184,12 +61,10 @@ void dumphosts(host_t *head, char *prefix)
 				e->column->name, e->alert, e->propagate, e->color, e->age, e->oldage);
 		}
 	}
-#endif
 }
 
 void dumpgroups(group_t *head, char *prefix, char *hostprefix)
 {
-#ifdef DEBUG
 	group_t *g;
 	char    format[512];
 
@@ -200,24 +75,20 @@ void dumpgroups(group_t *head, char *prefix, char *hostprefix)
 		printf(format, textornull(g->title), textornull(g->pretitle));
 		dumphosts(g->hosts, hostprefix);
 	}
-#endif
 }
 
 void dumphostlist(hostlist_t *head)
 {
-#ifdef DEBUG
 	hostlist_t *h;
 
 	for (h=head; (h); h=h->next) {
 		printf("Hostlist entry: Hostname %s\n", h->hostentry->hostname);
 	}
-#endif
 }
 
 
 void dumpstatelist(state_t *head)
 {
-#ifdef DEBUG
 	state_t *s;
 
 	for (s=head; (s); s=s->next) {
@@ -229,12 +100,10 @@ void dumpstatelist(state_t *head)
 			s->entry->oldage,
 			s->entry->age);
 	}
-#endif
 }
 
 void dumponepagewithsubs(bbgen_page_t *curpage, char *indent)
 {
-#ifdef DEBUG
 	bbgen_page_t *levelpage;
 
 	char newindent[100];
@@ -253,14 +122,11 @@ void dumponepagewithsubs(bbgen_page_t *curpage, char *indent)
 		dumphosts(levelpage->hosts, newindentextra);
 		dumponepagewithsubs(levelpage->subpages, newindent);
 	}
-#endif
 }
 
 void dumpall(bbgen_page_t *head)
 {
-#ifdef DEBUG
 	dumponepagewithsubs(head, "");
-#endif
 }
 
 
