@@ -147,7 +147,6 @@ BBRELDATE=""					# Used by the standard BB web headers, not by Hobbit
 DOTHEIGHT="16"					# Height (in pixels) of the color GIF's
 DOTWIDTH="16"					# Width (in pixels) of the color GIF's
 COLUMNDOCURL="$CGIBINURL/hobbitcolumn.sh?%s"	# URL formatting string for column-links
-HOSTDOCURL=""					# URL formatting string for host documentation links
 
 # Fonts and texts
 HOBBITLOGO="Hobbit"                             # HTML inserted on all header pages at top-left corner.
