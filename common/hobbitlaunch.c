@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.10 2004-11-22 14:55:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.11 2004-11-25 15:05:02 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -319,6 +319,7 @@ int main(int argc, char *argv[])
 	int daemonize = 1;
 	char *config = "/etc/bbtasks.cfg";
 	char *logfn = NULL;
+	char *pidfn = NULL;
 	pid_t cpid;
 	int status;
 	struct sigaction sa;
@@ -341,6 +342,10 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
 			loadenv(p+1);
+		}
+		else if (argnmatch(argv[argi], "--pidfile=")) {
+			char *p = strchr(argv[argi], '=');
+			pidfn = strdup(expand_env(p+1));
 		}
 		else if (strcmp(argv[argi], "--dump") == 0) {
 			/* Dump configuration */
@@ -372,6 +377,15 @@ int main(int argc, char *argv[])
 		}
 		else if (childpid > 0) {
 			/* Parent exits */
+			if (pidfn) {
+				FILE *pidfd = fopen(pidfn, "w");
+
+				if (pidfd) {
+					fprintf(pidfd, "%d\n", (int)childpid);
+					fclose(pidfd);
+				}
+			}
+
 			exit(0);
 		}
 		/* Child (daemon) continues here */
