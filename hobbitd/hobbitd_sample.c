@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_sample.c,v 1.4 2004-10-14 09:02:46 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_sample.c,v 1.5 2004-10-22 15:15:32 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -97,8 +97,13 @@ int main(int argc, char *argv[])
 
 		/* Split the message in the first line (with meta-data), and the rest */
  		eoln = strchr(msg, '\n');
-		*eoln = '\0';
-		restofmsg = eoln+1;
+		if (eoln) {
+			*eoln = '\0';
+			restofmsg = eoln+1;
+		}
+		else {
+			restofmsg = "";
+		}
 
 		/* 
 		 * Now parse the meta-data into elements.
