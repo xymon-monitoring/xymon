@@ -13,7 +13,15 @@ variables, please see the Big Brother documentation.
 You will normally need to define the bbgen environment variables in
 your $BBHOME/etc/bbsys.local file, so that they are available
 to the bbgen toolkit programs when they execute as part of
-the Big Brother programs.
+the Big Brother programs. Note that after defining the variable
+you should do an "export" on it to make it available to the
+other Big Brother programs. Like this:
+
+.br
+	NTPDATE=/usr/sbin/ntpdate
+.br
+	export NTPDATE
+
 
 .SH ENVIRONMENT VARIABLES
 
@@ -25,8 +33,8 @@ program.
 Default: $BBHOME/bin/bbgen
 
 .IP BBGHOSTS
-The bbgen patch for the Big Brother daemon bbd introduces a new
-way of handling status reports from hosts that are not in the
+The bbd-name+larrd patch for the Big Brother daemon bbd introduces 
+a new way of handling status reports from hosts that are not in the
 .I bb-hosts(5)
 file. What happens is controlled by setting BBHOSTS to 0, 1 or 2.
 .br
