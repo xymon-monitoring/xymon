@@ -146,7 +146,7 @@ MKBBSUBLOCAL="<B><I>Subpages Hosted Locally</I></B>"
 MKBBACKFONT="COLOR=\"silver\" SIZE=\"-1\""	# Size and color of the 'Current acknowledgement...' text in the html log.
 MKBBCOLFONT="COLOR=\"#87a9e5\" SIZE=\"-1\""	# Size and color of the column headings text
 MKBBROWFONT="SIZE=\"+1\" COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\""   # Size,color,font of text in each row (hostname)
-MKBBTITLE="COLOR=\"ivory\" SIZE=\"+1\""		# Size and color of the BB titles
+MKBBTITLE="COLOR=\"#FFFFF0\" SIZE=\"+1\""	# Size and color of the BB titles (the old "ivory" is invalid HTML)
 BBDATEFORMAT="%a %b %d %H:%M:%S %Y"		# Date format
 BBRSSTITLE="Hobbit Alerts"			# Title for the RSS and WML outputs.
 
