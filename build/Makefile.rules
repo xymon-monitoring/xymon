@@ -1,6 +1,6 @@
 all: bbgen
 
-OBJS = bbgen.o debug.o loaddata.o pagegen.o process.o util.o
+OBJS = bbgen.o debug.o loaddata.o pagegen.o process.o util.o wapgen.o
 
 bbgen: $(OBJS)
 	gcc -o bbgen $(OBJS)
