@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.89 2003-08-28 06:05:23 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.90 2003-08-28 09:36:22 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -47,6 +47,7 @@ char *documentationcgi = NULL;
 char *htmlextension = ".html"; /* Filename extension for generated files */
 char *doctargetspec = " TARGET=\"_blank\"";
 char *defaultpagetitle = NULL;
+int  pagetitlelinks = 0;
 
 char *eventignorecolumns = NULL;
 
@@ -739,21 +740,25 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *pagepath)
 						(2*subpagecolumns + (subpagecolumns - 1)));
 			}
 
-			if (currentcolumn == 0) fprintf(output, "<TR>");
+			if (currentcolumn == 0) fprintf(output, "<TR>\n");
 
 			link = find_link(p->name);
+			sprintf(pagelink, "%s/%s/%s/%s%s", getenv("BBWEB"), pagepath, p->name, p->name, htmlextension);
+
+			fprintf(output, "<TD><FONT %s>", getenv("MKBBROWFONT"));
 			if (link != &null_link) {
-				fprintf(output, "<TD><FONT %s><A HREF=\"%s\">%s</A></FONT></TD>\n", 
-					getenv("MKBBROWFONT"), hostlink(link), p->title);
+				fprintf(output, "<A HREF=\"%s\">%s</A>", hostlink(link), p->title);
+			}
+			else if (pagetitlelinks) {
+				fprintf(output, "<A HREF=\"%s\">%s</A>", cleanurl(pagelink), p->title);
 			}
 			else {
-				fprintf(output, "<TD><FONT %s>%s</FONT></TD>\n", getenv("MKBBROWFONT"), p->title);
+				fprintf(output, "%s", p->title);
 			}
+			fprintf(output, "</FONT></TD>\n");
 
-			sprintf(pagelink, "%s/%s/%s/%s%s", getenv("BBWEB"), pagepath, p->name, p->name, htmlextension);
-			fprintf(output, "<TD><CENTER><A HREF=\"%s\">\n", cleanurl(pagelink));
-
-			fprintf(output, "<IMG SRC=\"%s/%s\" WIDTH=\"%s\" HEIGHT=\"%s\" BORDER=0 ALT=\"%s\"></A>\n", 
+			fprintf(output, "<TD><CENTER><A HREF=\"%s\">", cleanurl(pagelink));
+			fprintf(output, "<IMG SRC=\"%s/%s\" WIDTH=\"%s\" HEIGHT=\"%s\" BORDER=0 ALT=\"%s\"></A>", 
 				getenv("BBSKIN"), dotgiffilename(p->color, 0, p->oldage), 
 				getenv("DOTWIDTH"), getenv("DOTHEIGHT"),
 				colorname(p->color));

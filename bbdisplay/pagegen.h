@@ -32,6 +32,7 @@ extern char *htaccess;
 extern char *bbhtaccess;
 extern char *bbpagehtaccess;
 extern char *bbsubpagehtaccess;
+extern int  pagetitlelinks;
 
 extern void select_headers_and_footers(char *prefix);
 extern void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded);
