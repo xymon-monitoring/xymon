@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.13 2005-02-20 08:19:11 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.14 2005-02-20 09:03:48 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -341,27 +341,27 @@ char *durationstring(time_t secs)
 	*result = '\0';
 
 	if (v >= 7*24*60*60) {
-		p += sprintf(p, "%dw ", (v / (7*24*60*60)));
+		p += sprintf(p, "%dw ", (int)(v / (7*24*60*60)));
 		v = (v % 7*24*60*60);
 	}
 
 	if (v >= 24*60*60) {
-		p += sprintf(p, "%dd ", (v / (24*60*60)));
+		p += sprintf(p, "%dd ", (int)(v / (24*60*60)));
 		v = (v % 24*60*60);
 	}
 
 	if (v >= 60*60) {
-		p += sprintf(p, "%dh ", (v / (60*60)));
+		p += sprintf(p, "%dh ", (int)(v / (60*60)));
 		v = (v % 60*60);
 	}
 
 	if (v >= 60) {
-		p += sprintf(p, "%dm ", (v / 60));
+		p += sprintf(p, "%dm ", (int)(v / 60));
 		v = (v % 60);
 	}
 
 	if (v > 0) {
-		p += sprintf(p, "%ds ", v);
+		p += sprintf(p, "%ds ", (int)v);
 	}
 
 	return result;
