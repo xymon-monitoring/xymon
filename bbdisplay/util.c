@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.39 2003-04-27 09:59:52 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.40 2003-04-27 10:02:42 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -873,6 +873,7 @@ char *realurl(char *url, char **proxy)
 
 	result[0] = '\0';
 	proxyresult[0] = '\0';
+	if (proxy) *proxy = NULL;
 	p = url;
 
 	if (strncmp(p, "content=", 8) == 0) {
@@ -892,7 +893,7 @@ char *realurl(char *url, char **proxy)
 		/* There IS a proxy spec first. */
 
 		p++; /* Move p to "http" */
-		if (proxy != NULL) {
+		if (proxy) {
 			*p = '\0';
 			strcpy(proxyresult, urlstart);
 			*proxy = proxyresult;
