@@ -344,11 +344,17 @@ test different sets of hosts by different BBNET systems.
 
 
 .SH BBTEST-NET INTERNALS
-bbtest-net first scans the bb-hosts file, and collects information
+bbtest-net first reads the bb-services file to see which network tests
+are defined. It then scans the bb-hosts file, and collects information
 about the TCP service tests that need to be tested. It picks out only
-the tests that are listed in the BBNETSVCS setting, plus the "dns",
+the tests that were listed in the bb-services file, plus the "dns",
 "dig" and "ntp" tests - those tests that bb-network.sh would normally 
 use the "bbnet" tool to test.
+
+It then runs two tasks in parallel: First, a separate process is
+started to run the "fping" tool for the connectivity tests. While 
+fping is busy doing the "ping" checks, bbtest-net runs all of the
+TCP-based network tests.
 
 All of the TCP-based service checks are then handled by a connection
 tester written specifically for this purpose. It uses only standard
@@ -374,10 +380,7 @@ every test to require a timeout. Since the most normal use of BB
 is to check for services that are active, you should have a lot
 less timeouts.
 
-The "http" and "content" checks use the CURL library to perform
-all checks.
-
-The "dns", "dig" and "ntp" checks rely on external programs to 
+The "ntp" and "rpcinfo" checks rely on external programs to 
 do each test. Thus, they perform only marginally better than the
 standard bb-network.sh script. 
 
@@ -433,26 +436,27 @@ the value "500000"; a delay of 1 second is achieved by
 setting this to "1000000" (one million).
 
 .IP FPING
-Location of the fping(8) utility. Used by bbtest-net for connectivity
-(ping) testing.
-
-.IP NTPDATE
-Location of the ntpdate(1) utility. Used by bbtest-net when checking 
-the "ntp" service.
-
-.IP NSLOOKUP
-Location of the nslookup(1) utility. Used by bbtest-net when checking 
-the "dns" service.
-
-.IP DIG
-Location of the dig(1) utility. Used by bbtest-net when checking 
-the "dig" service.
+Location of the 
+.I fping(8) 
+utility. Used by bbtest-net for connectivity (ping) testing.
 
 .IP TRACEROUTE
-Location of the traceroute(8) utility, or an equivalent tool e.g.
+Location of the 
+.I traceroute(8
+) utility, or an equivalent tool e.g.
 .I mtr(8).
 Optionally used when a connectivity test fails to pinpoint the
 network location that is causing the failure.
+
+.IP NTPDATE
+Location of the 
+.I ntpdate(1) 
+utility. Used by bbtest-net when checking the "ntp" service.
+
+.IP RPCINFO
+Location of the 
+.I rpcinfo(8) 
+utility. Used by bbtest-net for the "rpc" service checks.
 
 .SH FILES
 ,IP "$BBHOME/etc/bb-services"
@@ -464,10 +468,10 @@ defining services in the bb-services file. See
 for details on this file.
 
 .IP "~/.netrc - authentication data for password-protected webs"
-bbtest-net uses the CURL library, which supports the use of a
-$HOME/.netrc file. If you have password-protected sites, you can put 
-the username and password into the ".netrc" file in the bb users' 
-home-directory. See 
+If you have password-protected sites, you can put the username and 
+password into the ".netrc" file in the home-directory of the user
+running your BB network tests.
+See 
 .I ftp(1)
 for details - a sample entry would look like this
 .br
@@ -509,5 +513,5 @@ runs, and read by bbretest-net.sh.
 
 .SH "SEE ALSO"
 bb-hosts(5), bb-services(5), bb-environ(5), curl(1), ftp(1), 
-fping(1), nslookup(1), dig(1), ntpdate(1)
+fping(1), ntpdate(1), rpcinfo(8)
 
