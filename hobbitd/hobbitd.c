@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.134 2005-03-28 06:27:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.135 2005-03-30 15:05:48 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -831,9 +831,12 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	 * If the status is acknowledged, make it valid for the longest period
 	 * of the acknowledgment and the normal validity (so an acknowledged status
 	 * does not go purple because it is not being updated due to the host being down).
+	 *
+	 * Same tweak must be done for disabled tests.
 	 */
 	log->validtime = now + validity*60;
-	if (log->acktime && (log->acktime > log->validtime)) log->validtime = log->acktime;
+	if (log->acktime    && (log->acktime > log->validtime))    log->validtime = log->acktime;
+	if (log->enabletime && (log->enabletime > log->validtime)) log->validtime = log->enabletime;
 
 	strncpy(log->sender, sender, sizeof(log->sender)-1);
 	*(log->sender + sizeof(log->sender) - 1) = '\0';
@@ -842,7 +845,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	oldalertstatus = decide_alertstate(log->oldcolor);
 	newalertstatus = decide_alertstate(newcolor);
 
-	if (msg != log->message) { 	/* They can be the same when called from handle_enadis() or check_purple_upd() */
+	if (msg != log->message) { /* They can be the same when called from handle_enadis() or check_purple_status() */
 		char *p;
 
 		/*
