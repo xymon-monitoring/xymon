@@ -62,7 +62,7 @@ extern void sethostenv_snapshot(time_t snapshot);
 extern void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, int bgcolor);
 extern void do_bbext(FILE *output, char *extenv, char *family);
 extern int checkalert(char *alertlist, char *test);
-extern int checkpropagation(host_t *host, char *test, int color);
+extern int checkpropagation(host_t *host, char *test, int color, int acked);
 
 extern link_t *find_link(const char *name);
 extern char *columnlink(link_t *link, char *colname);

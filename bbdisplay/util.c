@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.113 2004-04-23 08:53:24 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.114 2004-08-02 13:21:27 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -732,7 +732,7 @@ int checkalert(char *alertlist, char *test)
 }
 
 
-int checkpropagation(host_t *host, char *test, int color)
+int checkpropagation(host_t *host, char *test, int color, int acked)
 {
 	/* NB: Default is to propagate test, i.e. return 1 */
 	char *testname;
@@ -742,15 +742,21 @@ int checkpropagation(host_t *host, char *test, int color)
 
 	testname = (char *) malloc(strlen(test)+3);
 	sprintf(testname, ",%s,", test);
-	if (color == COL_RED) {
-		if (host->nopropredtests && strstr(host->nopropredtests, testname)) result = 0;
+	if (acked) {
+		if (host->nopropacktests && strstr(host->nopropacktests, testname)) result = 0;
 	}
-	else if (color == COL_YELLOW) {
-		if (host->nopropyellowtests && strstr(host->nopropyellowtests, testname)) result = 0;
-		if (host->nopropredtests && strstr(host->nopropredtests, testname)) result = 0;
-	}
-	else if (color == COL_PURPLE) {
-		if (host->noproppurpletests && strstr(host->noproppurpletests, testname)) result = 0;
+
+	if (result) {
+		if (color == COL_RED) {
+			if (host->nopropredtests && strstr(host->nopropredtests, testname)) result = 0;
+		}
+		else if (color == COL_YELLOW) {
+			if (host->nopropyellowtests && strstr(host->nopropyellowtests, testname)) result = 0;
+			if (host->nopropredtests && strstr(host->nopropredtests, testname)) result = 0;
+		}
+		else if (color == COL_PURPLE) {
+			if (host->noproppurpletests && strstr(host->noproppurpletests, testname)) result = 0;
+		}
 	}
 
 	free(testname);

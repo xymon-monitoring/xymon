@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.120 2004-08-02 12:15:09 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.121 2004-08-02 13:21:27 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -273,7 +273,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		newstate->entry->acked = 0;
 	}
 
-	newstate->entry->propagate = checkpropagation(host, testname, newstate->entry->color);
+	newstate->entry->propagate = checkpropagation(host, testname, newstate->entry->color, newstate->entry->acked);
 
 	if (reportstart) {
 		/* Reports have no purple handling */
