@@ -22,7 +22,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.18 2005-01-24 16:40:01 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.19 2005-01-24 17:28:28 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -39,7 +39,8 @@ static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.18 2005-01-24 16:40:01 henrik Exp 
 
 #include "hobbitd_ipc.h"
 
-char *channelnames[] = {
+char *channelnames[C_LAST+1] = {
+	"",		/* First one is index 0 - not used */
 	"status", 
 	"stachg",
 	"page",
@@ -63,11 +64,15 @@ hobbitd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 		return NULL;
 	}
 
+	errprintf("Setting up %s channel (id=%d)\n", channelnames[chnid], chnid);
+
+	errprintf("calling ftok('%s',%d)\n", bbh, chnid);
 	key = ftok(bbh, chnid);
 	if (key == -1) {
 		errprintf("Could not generate shmem key based on %s: %s\n", bbh, strerror(errno));
 		return NULL;
 	}
+	errprintf("ftok() returns: 0x%X\n", key);
 
 	newch = (hobbitd_channel_t *)malloc(sizeof(hobbitd_channel_t));
 	newch->seq = 0;
@@ -79,6 +84,7 @@ hobbitd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 		xfree(newch);
 		return NULL;
 	}
+	errprintf("shmget() returns: 0x%X\n", newch->shmid);
 
 	newch->channelbuf = (char *) shmat(newch->shmid, NULL, 0);
 	if (newch->channelbuf == (char *)-1) {
