@@ -333,6 +333,13 @@ E.g.: bbgen runs with "--nopropred=ftp,smtp".
 "NOPROPRED:dns" gives a setting of "dns" only (the default
 is ignored).
 
+Note: If you set use the "--nopropred=*" commandline
+option to disable propagation of all alerts, you cannot use
+the "+" and "-" methods to add or remove from the wildcard
+setting. In that case, do not use the "+" or "-" setting,
+but simply list the required tests that you want to keep
+from propagating.
+
 .IP NOPROPYELLOW:[+|-]testname[,[+|-]testname]
 Similar to NOPROPRED: tag, but applies to propagating a yellow
 status upwards.
