@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.56 2004-10-30 15:41:14 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.57 2004-11-01 16:02:38 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -105,15 +105,11 @@ int generate_info(char *infocolumn, int bbgend)
 	/* Load the alert setup */
 	load_alerts();
 
-	infobuflen = 4096; infobuf = (char *)malloc(infobuflen); *infobuf = '\0';
-
 	for (hostwalk=hosthead; (hostwalk); hostwalk = hostwalk->next) {
 		char *p, *alertspec, *slaspec, *noprop, *rawcopy;
 		int firstcontent;
 
 		if (hostwalk->hostentry->banksize > 0) continue; /* No info for modem-banks */
-
-		*infobuf = '\0';
 
 		sprintf(l, "status %s.%s green\n\n", commafy(hostwalk->hostentry->hostname), infocol);
 		addtobuffer(&infobuf, &infobuflen, l);
