@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.14 2003-04-15 16:43:19 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.15 2003-04-15 20:41:30 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -34,6 +34,7 @@ link_t  null_link = { "", "", "", NULL };
 #define TOOL_CONTEST	0
 #define TOOL_NSLOOKUP	1
 #define TOOL_DIG	2
+#define TOOL_NTP        3
 
 typedef struct {
 	char *testname;
@@ -61,6 +62,7 @@ typedef struct {
 	int		silenttest;
 	int		open;
 	test_t		*testresult;
+	char		*banner;
 	void		*next;
 } testitem_t;
 
@@ -86,19 +88,25 @@ service_t *add_service(char *name, int port, int namelen, int toolid)
 	return svc;
 }
 
+int getportnumber(char *svcname)
+{
+	struct servent *svcinfo;
+
+	svcinfo = getservbyname(svcname, NULL);
+	return (svcinfo ? ntohs(svcinfo->s_port) : 0);
+}
+
 void load_services(void)
 {
 	char *netsvcs;
 	char *p;
-	struct servent *svcinfo;
 
 	netsvcs = malloc(strlen(getenv("BBNETSVCS"))+1);
 	strcpy(netsvcs, getenv("BBNETSVCS"));
 
 	p = strtok(netsvcs, " ");
 	while (p) {
-		svcinfo = getservbyname(p, NULL);
-		add_service(p, (svcinfo ? ntohs(svcinfo->s_port) : 0), 0, TOOL_CONTEST);
+		add_service(p, getportnumber(p), 0, TOOL_CONTEST);
 		p = strtok(NULL, " ");
 	}
 	free(netsvcs);
@@ -217,6 +225,7 @@ void load_tests(void)
 						newtest->dialup = dialuptest;
 						newtest->reverse = reversetest;
 						newtest->open = 0;
+						newtest->testresult = NULL;
 						newtest->next = s->items;
 						s->items = newtest;
 					}
@@ -278,7 +287,7 @@ void load_tests(void)
 }
 
 
-int run_command(char *cmd, char *errortext)
+int run_command(char *cmd, char *errortext, char **banner)
 {
 	FILE	*cmdpipe;
 	char	l[1024];
@@ -286,14 +295,20 @@ int run_command(char *cmd, char *errortext)
 	int	piperes;
 
 	result = 0;
+	if (banner) *banner = NULL;
 	cmdpipe = popen(cmd, "r");
 	if (cmdpipe == NULL) return -1;
 
+	if (banner) { *banner = malloc(1024); **banner = '\0'; }
 	while (fgets(l, sizeof(l), cmdpipe)) {
 		if (strstr(l, errortext) != NULL) result = 1;
+		if (banner && ((strlen(l) + strlen(*banner)) < 1024)) strcat(*banner, l);
 	}
 	piperes = pclose(cmdpipe);
-	/* Call WIFEXITED(piperes) / WIFEXITSTATUS(piperes) */
+	if (!WIFEXITED(piperes) || (WEXITSTATUS(piperes) != 0)) {
+		/* Something failed */
+		result = 1;
+	}
 
 	return result;
 }
@@ -302,16 +317,53 @@ void run_nslookup_service(service_t *service)
 {
 	testitem_t	*t;
 	char		cmd[1024];
+	char		*p;
+	char		cmdpath[MAX_PATH];
 
+	p = getenv("NSLOOKUP");
+	strcpy(cmdpath, (p ? p : "nslookup"));
 	for (t=service->items; (t); t = t->next) {
 		if (!t->host->dnserror) {
-			sprintf(cmd, "nslookup %s %s 2>&1", t->host->hostname, t->host->ip);
+			sprintf(cmd, "%s %s %s 2>&1", 
+				cmdpath, t->host->hostname, t->host->ip);
+			t->open = (run_command(cmd, "can't find", NULL) == 0);
 		}
 	}
 }
 
 void run_dig_service(service_t *service)
 {
+	testitem_t	*t;
+	char		cmd[1024];
+	char		*p;
+	char		cmdpath[MAX_PATH];
+
+	p = getenv("DIG");
+	strcpy(cmdpath, (p ? p : "dig"));
+	for (t=service->items; (t); t = t->next) {
+		if (!t->host->dnserror) {
+			sprintf(cmd, "%s @%s %s 2>&1", 
+				cmdpath, t->host->ip, t->host->hostname);
+			t->open = (run_command(cmd, "Bad server", NULL) == 0);
+		}
+	}
+}
+
+void run_ntp_service(service_t *service)
+{
+	testitem_t	*t;
+	char		cmd[1024];
+	char		*p;
+	char		cmdpath[MAX_PATH];
+
+	p = getenv("NTPDATE");
+	strcpy(cmdpath, (p ? p : "ntpdate"));
+	for (t=service->items; (t); t = t->next) {
+		if (!t->host->dnserror) {
+			sprintf(cmd, "%s -u -q -p 2 %s 2>&1", cmdpath, t->host->ip);
+			t->open = (run_command(cmd, "no server suitable for synchronization", &t->banner) == 0);
+		}
+	}
 }
 
 
@@ -368,13 +420,12 @@ void send_results(service_t *service)
 		}
 		addtostatus(msgline);
 
+		if (t->banner) {
+			addtostatus("\n<pre>\n");
+			addtostatus(t->banner);
+			addtostatus("\n</pre>\n\n");
+		}
 		if (t->testresult) {
-			if (t->testresult->banner) {
-				addtostatus("\n<pre>\n");
-				addtostatus(t->testresult->banner);
-				addtostatus("\n</pre>\n");
-			}
-			addtostatus("\n\n");
 			sprintf(msgline, "Seconds: %ld.%02ld\n", 
 				t->testresult->duration.tv_sec, t->testresult->duration.tv_usec / 10000);
 			addtostatus(msgline);
@@ -382,7 +433,6 @@ void send_results(service_t *service)
 		addtostatus("\n\n");
 		finish_status();
 	}
-
 }
 
 int main(int argc, char *argv[])
@@ -413,9 +463,11 @@ int main(int argc, char *argv[])
 	}
 
 	init_timestamp();
+
 	load_services();
-	// add_service("dns", 53, 3, TOOL_NSLOOKUP);
-	// add_service("dig", 53, 3, TOOL_DIG);
+	add_service("dns", getportnumber("domain"), 0, TOOL_NSLOOKUP);
+	add_service("dig", getportnumber("domain"), 0, TOOL_DIG);
+	add_service("ntp", getportnumber("ntp"), 0, TOOL_NTP);
 
 	for (s = svchead; (s); s = s->next) {
 		dprintf("Service %s port %d\n", s->testname, s->portnum);
@@ -427,47 +479,48 @@ int main(int argc, char *argv[])
 			h->hostname, h->dnserror, h->ip, h->dialup, h->testip);
 	}
 
+	combo_start();
+	dprintf("\nTest services\n");
+
 	/* First run the standard TCP/IP tests */
 	for (s = svchead; (s); s = s->next) {
 		if ((s->items) && (s->toolid == TOOL_CONTEST)) {
 			for (t = s->items; (t); t = t->next) {
-				t->testresult = add_test(t->host->ip, s->portnum, s->testname, t->silenttest);
+				if (!t->host->dnserror) {
+					t->testresult = add_test(t->host->ip, s->portnum, s->testname, t->silenttest);
+				}
 			}
 		}
 	}
-
 	do_conn(timeout, concurrency);
 	if (debug) show_conn_res();
-
 	for (s = svchead; (s); s = s->next) {
 		if ((s->items) && (s->toolid == TOOL_CONTEST)) {
-			for (t = s->items; (t); t = t->next) {
+			for (t = s->items; (t); t = t->next) { 
 				t->open = t->testresult->open;
+				t->banner = t->testresult->banner;
 			}
 			send_results(s);
 		}
 	}
 
-	combo_start();
-	dprintf("\nTest services\n");
+	/* dns, dig, ntp tests */
 	for (s = svchead; (s); s = s->next) {
 		if (s->items) {
 			switch(s->toolid) {
 				case TOOL_NSLOOKUP:
-					run_nslookup_service(s);
+					run_nslookup_service(s); send_results(s);
 					break;
 				case TOOL_DIG:
-					run_dig_service(s);
+					run_dig_service(s); send_results(s);
+					break;
+				case TOOL_NTP:
+					run_ntp_service(s); send_results(s);
 					break;
 			}
-			dprintf("Service %s port %d\n", s->testname, s->portnum);
-			for (t = s->items; (t); t = t->next) {
-				dprintf("\tHost:%s, ip:%s, open:%d, reverse:%d, dialup:%d\n",
-					t->host->hostname, t->host->ip, t->open, t->reverse, t->dialup);
-			}
-			send_results(s);
 		}
 	}
+
 	combo_end();
 
 	return 0;
