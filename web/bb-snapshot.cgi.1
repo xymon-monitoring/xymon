@@ -34,8 +34,11 @@ by invoking
 with the proper "--snapshot" option.
 
 .SH OPTIONS
-bb-snapshot.cgi does not take any options by itself. Instead, all
-options passed to bb-snapshot.cgi are passed on to the 
+.IP "--env=FILENAME"
+Load environment from FILENAME before executing the CGI.
+
+.IP "bbgen-options"
+All options except "--env" are passed on to the 
 .I bbgen(1)
 program building the snapshot files.
 
