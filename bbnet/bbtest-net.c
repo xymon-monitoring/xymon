@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.65 2003-06-07 15:49:46 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.66 2003-06-08 19:22:00 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1100,7 +1100,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* In case they changed the name of our column ... */
-	setup_signalhandler(egocolumn);
+	if (egocolumn) setup_signalhandler(egocolumn);
 
 	init_timestamp();
 	envcheck(reqenv);

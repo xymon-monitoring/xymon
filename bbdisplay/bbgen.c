@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.123 2003-06-07 15:49:46 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.124 2003-06-08 19:22:00 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -93,6 +93,9 @@ int main(int argc, char *argv[])
 
 	/* Catch a SEGV fault */
 	setup_signalhandler("bbgen");
+
+	/* Setup standard header+footer (might be modified by option pageset) */
+	select_headers_and_footers("bb");
 
 	bb_color = bb2_color = bbnk_color = -1;
 	pagedir = rrddir = NULL;
@@ -331,15 +334,12 @@ int main(int argc, char *argv[])
 	}
 
 	/* In case they changed the name of our column ... */
-	setup_signalhandler(egocolumn);
+	if (egocolumn) setup_signalhandler(egocolumn);
 
 	add_timestamp("Startup");
 
 	/* Check that all needed environment vars are defined */
 	envcheck(reqenv);
-
-	/* Setup standard header+footer */
-	select_headers_and_footers("bb");
 
 	if (pagedir == NULL) {
 		pagedir = malloc(strlen(getenv("BBHOME"))+5);
