@@ -37,14 +37,18 @@ Provide a summary of available commandline options.
 .IP "--version"
 Prints the version number of bbgen
 .sp
-.IP "--doccgi=URL"
+.IP "--docurl=URL"
 Make hostnames be hyperlinks to documentation, accessed via a common
-CGI script interface. The URL parameter is a formatting string with the
-name of the CGI script - you can put a "%s" in it which will be replaced
-by the hostname being accessed. E.g. "--doccgi=bbdocs.cgi?hostname=%s"
-for the host www.storner.dk will result in a link to 
-"/cgi-bin/bbdocs.cgi?hostname=www.storner.dk". The link is automatically
-prefixed with the CGIBINURL environment variable, usually /cgi-bin/
+web page (typically a CGI script or a PHP-driven dynamic page). The URL 
+parameter is a formatting string with the name of the web page - you can 
+put a "%s" in it which will be replaced by the hostname being accessed. 
+E.g. if you use the bb-notes extension from www.deadcat.net, you would
+enable this with "--docurl=/bb/admin/notes.php?host=%s". For the host 
+www.storner.dk this will result in a link to 
+"/bb/admin/notes.php?host=www.storner.dk". 
+.sp
+.IP "--doccgi=URL"
+This option is deprecated; please use --docurl instead.
 .sp
 .IP "--no-doc-window"
 By default, links to documentation for hosts and services cause a new

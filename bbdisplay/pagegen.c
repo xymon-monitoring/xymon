@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.98 2003-09-18 20:45:01 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.99 2003-09-27 06:48:47 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -45,7 +45,7 @@ int  subpagecolumns = 1;
 int  hostsbeforepages = 0;
 char *includecolumns = NULL;
 int  sort_grouponly_items = 0; /* Standard BB behaviour: Dont sort group-only items */
-char *documentationcgi = NULL;
+char *documentationurl = NULL;
 char *htmlextension = ".html"; /* Filename extension for generated files */
 char *doctargetspec = " TARGET=\"_blank\"";
 char *defaultpagetitle = NULL;
@@ -420,9 +420,9 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 			 *
 			 * else just put the hostname there.
 			 */
-			if (documentationcgi) {
-				fprintf(output, "<A HREF=\"%s/%s\" %s><FONT %s>%s</FONT></A>\n </TD>",
-					getenv("CGIBINURL"), cgidoclink(documentationcgi, h->hostname),
+			if (documentationurl) {
+				fprintf(output, "<A HREF=\"%s\" %s><FONT %s>%s</FONT></A>\n </TD>",
+					urldoclink(documentationurl, h->hostname),
 					doctargetspec, getenv("MKBBROWFONT"), nameandcomment(h));
 			}
 			else if (h->link != &null_link) {

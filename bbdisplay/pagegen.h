@@ -23,7 +23,7 @@ extern int subpagecolumns;
 extern int hostsbeforepages;
 extern char *includecolumns;
 extern int sort_grouponly_items;
-extern char *documentationcgi;
+extern char *documentationurl;
 extern char *doctargetspec;
 extern char *htmlextension;
 extern char *defaultpagetitle;

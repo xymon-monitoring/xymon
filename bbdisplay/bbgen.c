@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.155 2003-09-27 06:15:54 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.156 2003-09-27 06:48:47 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -151,7 +151,12 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[i], "--doccgi=")) {
 			char *lp = strchr(argv[i], '=');
-			documentationcgi = malcop(lp+1);
+			documentationurl = (char *)malloc(strlen(getenv("CGIBINURL"))+strlen(lp+1)+2);
+			sprintf(documentationurl, "%s/%s", getenv("CGIBINURL"), lp+1);
+		}
+		else if (argnmatch(argv[i], "--docurl=")) {
+			char *lp = strchr(argv[i], '=');
+			documentationurl = malcop(lp+1);
 		}
 		else if (argnmatch(argv[i], "--no-doc-window")) {
 			doctargetspec = "";

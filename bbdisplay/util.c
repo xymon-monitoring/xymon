@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.96 2003-09-27 06:16:22 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.97 2003-09-27 06:48:47 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -738,18 +738,18 @@ char *hostlink(link_t *link)
 }
 
 
-char *cgidoclink(const char *doccgi, const char *hostname)
+char *urldoclink(const char *docurl, const char *hostname)
 {
 	/*
-	 * doccgi is a user defined text string to build
-	 * a documentation cgi. It is expanded with the
+	 * docurl is a user defined text string to build
+	 * a documentation url. It is expanded with the
 	 * hostname.
 	 */
 
 	static char linkurl[MAX_PATH];
 
-	if (doccgi) {
-		sprintf(linkurl, doccgi, hostname);
+	if (docurl) {
+		sprintf(linkurl, docurl, hostname);
 	}
 	else {
 		linkurl[0] = '\0';
