@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.3 2004-11-07 07:44:35 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.4 2004-11-07 11:08:32 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -119,10 +119,6 @@ void update_larrd(char *hostname, char *testname, char *msg, time_t tstamp, larr
 	else if (ldef) {
 		/* Assume anything else with a known LARRD definition is a network test */
 		res = do_net_larrd(hostname, id, msg, tstamp);
-	}
-
-	if (res != 0) {
-		errprintf("update_larrd failed for %s:%s, code %d\n", hostname, testname, res);
 	}
 }
 
