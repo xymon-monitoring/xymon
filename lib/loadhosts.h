@@ -91,7 +91,7 @@ typedef struct namelist_t {
 
 extern char *larrdgraphs_default;
 
-extern namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *docurl);
+extern namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn);
 extern char *knownhost(char *filename, char *hostip, int ghosthandling, int *maybedown);
 extern int knownloghost(char *logdir);
 extern namelist_t *hostinfo(char *hostname);
