@@ -19,19 +19,19 @@ lib-build:
 	CC="$(CC)" CFLAGS="$(CFLAGS)" make -C lib all
 
 common-build: lib-build
-	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" make -C common all
+	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" make -C common all
 
 bbdisplay-build: lib-build
-	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" HISTGRAPHDEF="$(HISTGRAPHDEF)" make -C bbdisplay all
+	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" HISTGRAPHDEF="$(HISTGRAPHDEF)" make -C bbdisplay all
 
 bbnet-build: lib-build
-	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" LDAPFLAGS="$(LDAPFLAGS)" LDAPINCDIR="$(LDAPINCDIR)" LDAPLIBS="$(LDAPLIBS)" NETLIBS="$(NETLIBS)" make -C bbnet all
+	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" LDAPFLAGS="$(LDAPFLAGS)" LDAPINCDIR="$(LDAPINCDIR)" LDAPLIBS="$(LDAPLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" make -C bbnet all
 
 bbproxy-build: lib-build
-	CC="$(CC)" CFLAGS="$(CFLAGS)" NETLIBS="$(NETLIBS)" make -C bbproxy all
+	CC="$(CC)" CFLAGS="$(CFLAGS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" make -C bbproxy all
 
 bbgend-build: lib-build
-	CC="$(CC)" CFLAGS="$(CFLAGS)" NETLIBS="$(NETLIBS)" make -C bbgend  all
+	CC="$(CC)" CFLAGS="$(CFLAGS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" make -C bbgend  all
 
 
 #####################
