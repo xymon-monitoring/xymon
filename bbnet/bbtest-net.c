@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.70 2003-06-25 20:36:41 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.71 2003-07-03 21:57:25 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -783,6 +783,7 @@ void send_results(service_t *service)
 	testitem_t	*t;
 	int		color;
 	char		msgline[MAXMSG];
+	char		msgtext[MAXMSG];
 	char		*svcname;
 	char		*nopagename;
 	int		nopage = 0;
@@ -889,91 +890,99 @@ void send_results(service_t *service)
 		if (nopage && (color == COL_RED)) color = COL_YELLOW;
 
 		init_status(color);
-		sprintf(msgline, "status %s.%s %s <!-- [flags:%s] --> %s %s %s\n", 
+		sprintf(msgline, "status %s.%s %s <!-- [flags:%s] --> %s %s %s ", 
 			commafy(t->host->hostname), svcname, colorname(color), 
-			flags, timestamp,
+			flags, timestamp, 
 			svcname, ( ((color == COL_RED) || (color == COL_YELLOW)) ? "NOT ok" : "ok"));
-		addtostatus(msgline);
 
 		if (t->host->dnserror) {
-			sprintf(msgline, "\nUnable to resolve hostname %s\n\n", t->host->hostname);
+			strcat(msgline, ": DNS lookup failed");
+			sprintf(msgtext, "\nUnable to resolve hostname %s\n\n", t->host->hostname);
 		}
 		else {
-			sprintf(msgline, "\nService %s on %s is ", svcname, t->host->hostname);
+			sprintf(msgtext, "\nService %s on %s is ", svcname, t->host->hostname);
 			switch (color) {
 			  case COL_GREEN: 
-				  strcat(msgline, "OK ");
-				  strcat(msgline, (t->reverse ? "(down)" : "(up)"));
-				  strcat(msgline, "\n");
+				  strcat(msgtext, "OK ");
+				  strcat(msgtext, (t->reverse ? "(down)" : "(up)"));
+				  strcat(msgtext, "\n");
 				  break;
 
 			  case COL_RED:
 			  case COL_YELLOW:
 				  if ((service == pingtest) && t->host->deprouterdown) {
-					strcat(msgline, "not OK.\n");
-					strcat(msgline, "The gateway ");
-					strcat(msgline, ((testedhost_t *)t->host->deprouterdown)->hostname);
-					strcat(msgline, " (IP:");
-					strcat(msgline, ((testedhost_t *)t->host->deprouterdown)->ip);
-					strcat(msgline, ") ");
-					strcat(msgline, "is not reachable, causing this host to be unreachable.");
-					strcat(msgline, "\n");
+					strcat(msgline, ": Intermediate router down");
+					strcat(msgtext, "not OK.\n");
+					strcat(msgtext, "The gateway ");
+					strcat(msgtext, ((testedhost_t *)t->host->deprouterdown)->hostname);
+					strcat(msgtext, " (IP:");
+					strcat(msgtext, ((testedhost_t *)t->host->deprouterdown)->ip);
+					strcat(msgtext, ") ");
+					strcat(msgtext, "is not reachable, causing this host to be unreachable.");
+					strcat(msgtext, "\n");
 				  }
 				  else {
-				  	strcat(msgline, "not OK ");
-				  	strcat(msgline, (t->reverse ? "(up)" : "(down)"));
-				  	strcat(msgline, "\n");
+				  	strcat(msgtext, "not OK ");
+				  	strcat(msgtext, (t->reverse ? "(up)" : "(down)"));
+				  	strcat(msgtext, "\n");
 				  }
 				  break;
 
 			  case COL_CLEAR:
-				  strcat(msgline, "OK\n");
+				  strcat(msgtext, "OK\n");
 				  if (service == pingtest) {
 					  if (t->host->deprouterdown) {
-						  strcat(msgline, "The gateway ");
-						  strcat(msgline, ((testedhost_t *)t->host->deprouterdown)->hostname);
-						  strcat(msgline, " (IP:");
-						  strcat(msgline, ((testedhost_t *)t->host->deprouterdown)->ip);
-						  strcat(msgline, ") ");
-						  strcat(msgline, "is not reachable, causing this host to be unreachable.");
-						  strcat(msgline, "\n");
+						  strcat(msgline, ": Intermediate router down");
+						  strcat(msgtext, "The gateway ");
+						  strcat(msgtext, ((testedhost_t *)t->host->deprouterdown)->hostname);
+						  strcat(msgtext, " (IP:");
+						  strcat(msgtext, ((testedhost_t *)t->host->deprouterdown)->ip);
+						  strcat(msgtext, ") ");
+						  strcat(msgtext, "is not reachable, causing this host to be unreachable.");
+						  strcat(msgtext, "\n");
 					  }
 					  else if (t->host->noping) {
-						  strcat(msgline, "Ping check disabled (noping)\n");
+						  strcat(msgline, ": Disabled");
+						  strcat(msgtext, "Ping check disabled (noping)\n");
 					  }
 					  else if (t->host->dialup) {
-						  strcat(msgline, "Dialup host\n");
+						  strcat(msgline, ": Disabled (dialup host)");
+						  strcat(msgtext, "Dialup host\n");
 					  }
 					  /* "clear" due to badconn: no extra text */
 				  }
 				  else {
 					  /* Non-ping test clear: Dialup test or failed ping */
-					  strcat(msgline, "Dialup host/service, or test depends on another failed test\n");
+					  strcat(msgline, ": Failure ignored due to failure of another test");
+					  strcat(msgtext, "Dialup host/service, or test depends on another failed test\n");
 				  }
 				  break;
 
 			  case COL_BLUE:
-				  strcat(msgline, "OK\n");
-				  strcat(msgline, "Host currently not monitored due to SLA setting.\n");
+				  strcat(msgline, ": Temporarily disabled");
+				  strcat(msgtext, "OK\n");
+				  strcat(msgtext, "Host currently not monitored due to SLA setting.\n");
 				  break;
 			}
-			strcat(msgline, "\n");
+			strcat(msgtext, "\n");
 		}
+		strcat(msgline, "\n");
 		addtostatus(msgline);
+		addtostatus(msgtext);
 
 		if ((service == pingtest) && t->host->downcount) {
-			sprintf(msgline, "\n<p>System unreachable for %d poll periods (%lu seconds)\n</p>",
+			sprintf(msgtext, "\n<p>System unreachable for %d poll periods (%lu seconds)\n</p>",
 				t->host->downcount, (time(NULL) - t->host->downstart));
-			addtostatus(msgline);
+			addtostatus(msgtext);
 		}
 
 		if (t->banner) {
 			addtostatus("\n"); addtostatus(t->banner); addtostatus("\n");
 		}
 		if (t->testresult) {
-			sprintf(msgline, "\nSeconds: %ld.%03ld\n", 
+			sprintf(msgtext, "\nSeconds: %ld.%03ld\n", 
 				t->testresult->duration.tv_sec, t->testresult->duration.tv_usec / 1000);
-			addtostatus(msgline);
+			addtostatus(msgtext);
 		}
 		addtostatus("\n\n");
 		finish_status();

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.22 2003-06-23 09:02:36 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.23 2003-07-03 21:57:25 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -21,6 +21,7 @@ static char rcsid[] = "$Id: httptest.c,v 1.22 2003-06-23 09:02:36 henrik Exp $";
 #include <stdio.h>
 #include <string.h>
 #include <regex.h>
+#include <ctype.h>
 
 #include "bbgen.h"
 #include "util.h"
@@ -521,6 +522,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 	testitem_t *t;
 	int	color = -1;
 	char	msgline[MAXMSG];
+	char	msgtext[MAXMSG];
 	char    *nopagename;
 	int     nopage = 0;
 	int 	contentnum = 0;
@@ -536,6 +538,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 	free(nopagename);
 
 	dprintf("Calc http color host %s : ", host->hostname);
+	msgtext[0] = '\0';
 	for (t=host->firsthttp; (t && (t->host == host)); t = t->next) {
 		http_data_t *req = t->private;
 
@@ -565,6 +568,21 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 
 		dprintf("%s(%s) ", t->testspec, colorname(req->httpcolor));
 		if (req->httpcolor > color) color = req->httpcolor;
+
+		if (req->headers) {
+			char    *firstline;
+			int	len;
+			char	savechar;
+
+			strcat(msgtext, (strlen(msgtext) ? " ; " : ": ") );
+			for (firstline = req->headers; (*firstline && isspace((int) *firstline)); firstline++);
+			len = strcspn(firstline, "\r\n");
+			if (len  > (sizeof(msgtext)-strlen(msgtext)-2)) len = sizeof(msgtext) - strlen(msgtext) - 2;
+			savechar = *(firstline+len);
+			*(firstline+len) = '\0';
+			strcat(msgtext, firstline);
+			*(firstline+len) = savechar;
+		}
 	}
 
 	if (nopage && (color == COL_RED)) color = COL_YELLOW;
@@ -572,9 +590,11 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 
 	/* Send off the http status report */
 	init_status(color);
-	sprintf(msgline, "status %s.%s %s %s\n", 
+	sprintf(msgline, "status %s.%s %s %s", 
 		commafy(host->hostname), httptest->testname, colorname(color), timestamp);
 	addtostatus(msgline);
+	addtostatus(msgtext);
+	addtostatus("\n");
 
 	for (t=host->firsthttp; (t && (t->host == host)); t = t->next) {
 		http_data_t *req = t->private;
