@@ -312,7 +312,12 @@ void run_http_tests(service_t *httptest, long followlocations)
 		if (req->ciphers) curl_easy_setopt(req->curl, CURLOPT_SSL_CIPHER_LIST, req->ciphers);
 
 		/* Select proxy, if requested */
-		if (req->proxy) curl_easy_setopt(req->curl, CURLOPT_PROXY, req->proxy);
+		if (req->proxy) {
+			curl_easy_setopt(req->curl, CURLOPT_PROXY, req->proxy);
+
+			/* Default only - may be overridden by specifying ":portnumber" in the proxy string. */
+			curl_easy_setopt(req->curl, CURLOPT_PROXYPORT, 80);
+		}
 
 		/* Let's do it ... */
 		res = curl_easy_perform(req->curl);
