@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.29 2004-08-04 11:31:38 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.30 2004-08-28 07:11:47 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -87,7 +87,7 @@ void add_timestamp(const char *msg)
 void show_timestamps(char **buffer)
 {
 	timestamp_t *s;
-	long difsec, difusec;
+	struct timeval dif;
 	char *outbuf = (char *) malloc(4096);
 	int outbuflen = 4096;
 	char buf1[80];
@@ -102,16 +102,11 @@ void show_timestamps(char **buffer)
 	for (s=stamphead; (s); s=s->next) {
 		sprintf(buf1, "%-40s ", s->eventtext);
 		strcat(outbuf, buf1);
-		sprintf(buf1, "%10lu.%06lu ", s->eventtime.tv_sec, s->eventtime.tv_usec);
+		sprintf(buf1, "%10u.%06u ", (unsigned int)s->eventtime.tv_sec, (unsigned int)s->eventtime.tv_usec);
 		strcat(outbuf, buf1);
 		if (s->prev) {
-			difsec  = s->eventtime.tv_sec - ((timestamp_t *)s->prev)->eventtime.tv_sec;
-			difusec = s->eventtime.tv_usec - ((timestamp_t *)s->prev)->eventtime.tv_usec;
-			if (difusec < 0) {
-				difsec -= 1;
-				difusec += 1000000;
-			}
-			sprintf(buf1, "%10lu.%06lu ", difsec, difusec);
+			tvdiff(&((timestamp_t *)s->prev)->eventtime, &s->eventtime, &dif);
+			sprintf(buf1, "%10u.%06u ", (unsigned int)dif.tv_sec, (unsigned int)dif.tv_usec);
 			strcat(outbuf, buf1);
 		}
 		else strcat(outbuf, "                -");
@@ -123,15 +118,10 @@ void show_timestamps(char **buffer)
 		}
 	}
 
-	difsec  = stamptail->eventtime.tv_sec - stamphead->eventtime.tv_sec;
-	difusec = stamptail->eventtime.tv_usec - stamphead->eventtime.tv_usec;
-	if (difusec < 0) {
-		difsec -= 1;
-		difusec += 1000000;
-	}
+	tvdiff(&stamphead->eventtime, &stamptail->eventtime, &dif);
 	sprintf(buf1, "%-40s ", "TIME TOTAL"); strcat(outbuf, buf1);
 	sprintf(buf1, "%-18s", ""); strcat(outbuf, buf1);
-	sprintf(buf1, "%10lu.%06lu ", difsec, difusec); strcat(outbuf, buf1);
+	sprintf(buf1, "%10u.%06u ", (unsigned int)dif.tv_sec, (unsigned int)dif.tv_usec); strcat(outbuf, buf1);
 	strcat(outbuf, "\n");
 
 	if (buffer == NULL) {
