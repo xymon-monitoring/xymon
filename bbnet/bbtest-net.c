@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.56 2003-05-23 15:32:54 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.57 2003-05-27 16:28:59 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1170,7 +1170,14 @@ int main(int argc, char *argv[])
 	if (egocolumn) {
 		char msgline[MAXMSG];
 		char *timestamps;
-		int color = (errbuf ? COL_YELLOW : COL_GREEN);
+		long bbsleep = (getenv("BBSLEEP") ? atol(getenv("BBSLEEP")) : 300);
+		int color;
+
+		/* Go yellow if it runs for too long */
+		if (total_runtime() > bbsleep) {
+			errprintf("WARNING: Runtime %ld longer than BBSLEEP (%ld)\n", total_runtime(), bbsleep);
+		}
+		color = (errbuf ? COL_YELLOW : COL_GREEN);
 
 		combo_start();
 		init_status(color);
