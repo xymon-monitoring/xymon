@@ -33,7 +33,7 @@ extern host_t *init_host(const char *hostname, const char *displayname, const ch
 			 const double warnpct, const char *reporttime,
 			 char *alerts, int nktime, char *waps, char *tags, 
 			 char *nopropyellowtests, char *nopropredtests, char *noproppurpletests, char *nopropacktests,
-			 char *larrdgraphs, int modembanksize);
+			 int modembanksize);
 
 extern char	*nopropyellowdefault;
 extern char	*nopropreddefault;

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.191 2004-12-12 21:57:08 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.192 2004-12-12 22:11:24 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -383,10 +383,6 @@ int main(int argc, char *argv[])
 			if (lp) infocol = strdup(lp+1);
 		}
 
-		else if (argnmatch(argv[i], "--larrdgraphs=")) {
-			char *lp = strchr(argv[i], '=');
-			if (lp) larrdgraphs_default = strdup(lp+1);
-		}
 		else if (argnmatch(argv[i], "--larrd043=") || (strcmp(argv[i], "--larrd043") == 0)) {
 			char *lp = strchr(argv[i], '=');
 			if (lp) larrdcol = strdup(lp+1); else larrdcol = "trends";
@@ -501,7 +497,6 @@ int main(int argc, char *argv[])
 			printf("\nLARRD support options:\n");
 			printf("    --larrd[=LARRDCOLUMN]       : LARRD data in column LARRDCOLUMN (default:larrd)\n");
 			printf("    --larrd043[=LARRDCOLUMN]    : LARRD data in column LARRDCOLUMN (default:trends)\n");
-			printf("    --larrdgraphs=GRAPHSPEC     : Set a default value for the LARRD: bb-hosts tag\n");
 			printf("\nAlternate pageset generation support:\n");
 			printf("    --pageset=SETNAME           : Generate non-standard pageset with tag SETNAME\n");
 			printf("    --template=TEMPLATE         : template for header and footer files\n");

@@ -218,8 +218,6 @@ typedef struct host_t {
 	char    *noproppurpletests;
 	char    *nopropacktests;
 	char    *rawentry;
-	void	*rrdlist;	/* Used while generating the larrd overview page */
-	char    *larrdgraphs;	/* The LARRD entry from bb-hosts */
 	char	*pretitle;
 	struct bbgen_page_t *parent;
 	double  reportwarnlevel;

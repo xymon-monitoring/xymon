@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.32 2004-10-30 15:43:04 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.33 2004-12-12 22:11:24 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -44,7 +44,7 @@ void dumphosts(host_t *head, char *prefix)
 	char	format[512];
 
 	strcpy(format, prefix);
-	strcat(format, "Host: %s, ip: %s, name: %s, color: %d, old: %d, anywaps: %d, wapcolor: %d, pretitle: '%s', noprop-y: %s, noprop-r: %s, noprop-p: %s, noprop-ack: %s, link: %s, graphs: %s, waps: %s\n");
+	strcat(format, "Host: %s, ip: %s, name: %s, color: %d, old: %d, anywaps: %d, wapcolor: %d, pretitle: '%s', noprop-y: %s, noprop-r: %s, noprop-p: %s, noprop-ack: %s, link: %s, waps: %s\n");
 
 	for (h = head; (h); h = h->next) {
 		printf(format, h->hostname, h->ip, textornull(h->displayname), h->color, h->oldage,
@@ -55,7 +55,7 @@ void dumphosts(host_t *head, char *prefix)
 			textornull(h->noproppurpletests), 
 			textornull(h->nopropacktests), 
 			h->link->filename,
-			textornull(h->larrdgraphs), textornull(h->waps));
+			textornull(h->waps));
 		for (e = h->entries; (e); e = e->next) {
 			printf("\t\t\t\t\tTest: %s, alert %d, propagate %d, state %d, age: %s, oldage: %d\n", 
 				e->column->name, e->alert, e->propagate, e->color, e->age, e->oldage);
