@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.22 2005-02-23 17:03:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.23 2005-02-23 20:43:57 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -44,7 +44,7 @@ static const char *metafmt = "<RRDGraph>\n  <GraphLink><![CDATA[%s]]></GraphLink
 static void larrd_setup(void)
 {
 	static int setup_done = 0;
-	char *lenv, *ldef, *p, *tcptests;
+	char *lenv, *ldef, *p, *tcptests, *services;
 	int count;
 	larrdrrd_t *lrec;
 	larrdgraph_t *grec;
@@ -53,28 +53,33 @@ static void larrd_setup(void)
 	if ((setup_done + 300) >= time(NULL)) return;
 
 
-	/* Must free any old data first */
+	/* 
+	 * Must free any old data first.
+	 * NB: These lists are NOT null-terminated ! 
+	 *     Stop when bbsvcname becomes a NULL.
+	 */
 	lrec = larrdrrds;
-	while (lrec) {
+	while (lrec && lrec->bbsvcname) {
 		if (lrec->larrdrrdname != lrec->bbsvcname) xfree(lrec->larrdrrdname);
-		if (lrec->bbsvcname) xfree(lrec->bbsvcname);
+		xfree(lrec->bbsvcname);
 		lrec++;
 	}
 	if (larrdrrds) xfree(larrdrrds);
 
 	grec = larrdgraphs;
-	while (grec) {
+	while (grec && grec->larrdrrdname) {
 		if (grec->larrdpartname) xfree(grec->larrdpartname);
-		if (grec->larrdrrdname) xfree(grec->larrdrrdname);
+		xfree(grec->larrdrrdname);
 		grec++;
 	}
 	if (larrdgraphs) xfree(larrdgraphs);
 
 
 	/* Get the tcp services, and count how many there are */
-	tcptests = strdup(init_tcp_services());
+	services = strdup(init_tcp_services());
+	tcptests = strdup(services);
 	count = 0; p = strtok(tcptests, " "); while (p) { count++; p = strtok(NULL, " "); }
-	strcpy(tcptests, init_tcp_services());
+	strcpy(tcptests, services);
 
 	/* Setup the larrdrrds table, mapping test-names to RRD files */
 	lenv = (char *)malloc(strlen(xgetenv("LARRDS")) + strlen(tcptests) + count*strlen(",=tcp") + 1);
@@ -82,6 +87,7 @@ static void larrd_setup(void)
 	p = lenv+strlen(lenv)-1; if (*p == ',') *p = '\0';	/* Drop a trailing comma */
 	p = strtok(tcptests, " "); while (p) { sprintf(lenv+strlen(lenv), ",%s=tcp", p); p = strtok(NULL, " "); }
 	xfree(tcptests);
+	xfree(services);
 
 	count = 0; p = lenv; do { count++; p = strchr(p+1, ','); } while (p);
 	larrdrrds = (larrdrrd_t *)calloc(sizeof(larrdrrd_t), (count+1));
