@@ -35,8 +35,8 @@ extern char *malcop(const char *s);
 extern int get_fqdn(void);
 extern void init_timestamp(void);
 extern int argnmatch(char *arg, char *match);
-extern char *skipword(const char *l);
-extern char *skipwhitespace(const char *l);
+extern char *skipword(char *l);
+extern char *skipwhitespace(char *l);
 
 extern char *colorname(int color);
 extern int parse_color(char *colortext);

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.80 2003-08-12 21:16:05 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.81 2003-08-14 21:50:58 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -230,7 +230,7 @@ int get_fqdn(void)
 	return result;
 }
 
-char *skipword(const char *l)
+char *skipword(char *l)
 {
 	char *p;
 
@@ -239,7 +239,7 @@ char *skipword(const char *l)
 }
 
 
-char *skipwhitespace(const char *l)
+char *skipwhitespace(char *l)
 {
 	char *p;
 
