@@ -5,7 +5,7 @@
 CFLAGS += -DMAXMSG=$(MAXMSG) -DBBDPORTNUMBER=$(BBPORT)
 
 
-PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bbdigest bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi bb-findhost.cgi bb-csvinfo.cgi
+PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bbdigest bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi bb-findhost.cgi bb-csvinfo.cgi bbmsg bbmessage.cgi
 CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh bb-findhost.sh bb-csvinfo.sh
 EXTENSIONS = bbcombotest bbretest-net.sh
 HTMLPAGES = bb-findhost.html
@@ -36,6 +36,8 @@ SNAPOBJS = bb-snapshot.o debug.o util.o
 EVENTLOGOBJS = bb-eventlog.o debug.o util.o
 FINDHOSTOBJS = bb-findhost.o loadhosts.o debug.o util.o
 CSVINFOOBJS = bb-csvinfo.o debug.o util.o
+MSGOBJS = sendmsg-std.o debug.o util.o
+MESSAGECGIOBJS = sendmsg-cgi.o debug.o util.o
 
 bbgen: $(GENOBJS)
 	$(CC) $(CFLAGS) -o $@ $(GENOBJS) $(NETLIBS)
@@ -76,6 +78,11 @@ bb-csvinfo.cgi: $(CSVINFOOBJS)
 bbcombotest: $(COMBOTESTOBJS)
 	$(CC) $(CFLAGS) -o $@ $(COMBOTESTOBJS) $(NETLIBS)
 
+bbmessage.cgi: $(MESSAGECGIOBJS)
+	$(CC) $(CFLAGS) -o $@ $(MESSAGECGIOBJS) $(NETLIBS)
+
+bbmsg: $(MSGOBJS)
+	$(CC) $(CFLAGS) -o $@ $(MSGOBJS) $(NETLIBS)
 
 
 ################################################
@@ -95,9 +102,6 @@ calc: calc.c
 
 reptest: reportdata.c debug.c util.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ reportdata.c debug.c util.c
-
-sendmsg: sendmsg.c debug.c util.c
-	$(CC) -g -DSTANDALONE -DDEBUG -Wall $(CFLAGS) -o $@ sendmsg.c debug.c util.c $(NETLIBS)
 
 bbtest-local: bbtest-local.c bbtest-local-linux.c bbtest-local-sunos.c bbtest-local-hpux.c bbtest-local-bsd.c debug.c util.c sendmsg.c
 	$(CC) $(CFLAGS) $(OSDEF) -g -DDEBUG -Wall -o $@ bbtest-local.c debug.c util.c sendmsg.c
@@ -140,6 +144,12 @@ bb-replog-cgi.o: bb-replog.c
 bbdigest.o: digest.c digest.h
 	$(CC) $(CFLAGS) $(SSLINCDIR) -c -o $@ -DSTANDALONE digest.c
 
+sendmsg-std.o: sendmsg.c sendmsg.h
+	$(CC) $(CFLAGS) -DSTANDALONE -c -o $@ sendmsg.c
+
+sendmsg-cgi.o: sendmsg.c sendmsg.h
+	$(CC) $(CFLAGS) -DCGI -c -o $@ sendmsg.c
+
 
 ################################################
 # Default compilation rules
@@ -159,7 +169,7 @@ distclean: clean
 	rm -f Makefile
 
 clean:
-	rm -f *.o *~ $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) alert contest reptest calc sendmsg ldaptest bbtest-local
+	rm -f *.o *~ $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) alert contest reptest calc ldaptest bbtest-local
 
 install-bin: $(PROGRAMS)
 	cp -p $(PROGRAMS) $(BBHOME)/bin/
