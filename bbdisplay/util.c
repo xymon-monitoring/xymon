@@ -16,12 +16,11 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.140 2004-10-30 22:26:01 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.141 2004-10-31 07:58:46 henrik Exp $";
 
 #include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/wait.h>
 #include <string.h>
 #include <stdlib.h>
 #include <utime.h>
@@ -287,18 +286,10 @@ bbgen_col_t *find_or_create_column(const char *testname, int create)
 char *histlogurl(char *hostname, char *service, time_t histtime)
 {
 	static char url[PATH_MAX];
-	char d1[40],d2[3],d3[40];
 
 	/* cgi-bin/bb-histlog.sh?HOST=SLS-P-CE1.slsdomain.sls.dk&SERVICE=msgs&TIMEBUF=Fri_Nov_7_16:01:08_2002 */
-	
-	/* Hmm - apparently no format to generate a day-of-month with no leading 0. */
-        strftime(d1, sizeof(d1), "%a_%b_", localtime(&histtime));
-        strftime(d2, sizeof(d2), "%d", localtime(&histtime));
-	if (d2[0] == '0') strcpy(d2, d2+1);
-        strftime(d3, sizeof(d3), "_%H:%M:%S_%Y", localtime(&histtime));
-
-	sprintf(url, "%s/bb-histlog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s%s%s", 
-		getenv("CGIBINURL"), hostname, service, d1,d2,d3);
+	sprintf(url, "%s/bb-histlog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s", 
+		getenv("CGIBINURL"), hostname, service, histlogtime(histtime));
 
 	return url;
 }
@@ -355,92 +346,3 @@ void drop_genstatfiles(void)
 	}
 }
 
-
-int generate_static(void)
-{
-	return ( (strcmp(getenv("BBLOGSTATUS"), "STATIC") == 0) ? 1 : 0);
-}
-
-
-time_t sslcert_expiretime(char *timestr)
-{
-	int res;
-	time_t t1, t2;
-	struct tm *t;
-	struct tm exptime;
-	time_t gmtofs, result;
-
-	/* expire date: 2004-01-02 08:04:15 GMT */
-	res = sscanf(timestr, "%4d-%2d-%2d %2d:%2d:%2d", 
-		     &exptime.tm_year, &exptime.tm_mon, &exptime.tm_mday,
-		     &exptime.tm_hour, &exptime.tm_min, &exptime.tm_sec);
-	if (res != 6) {
-		errprintf("Cannot interpret certificate time %s\n", timestr);
-		return 0;
-	}
-
-	/* tm_year is 1900 based; tm_mon is 0 based */
-	exptime.tm_year -= 1900; exptime.tm_mon -= 1;
-	result = mktime(&exptime);
-
-	if (result > 0) {
-		/* 
-		 * Calculate the difference between localtime and GMT 
-		 */
-		t = gmtime(&result); t->tm_isdst = 0; t1 = mktime(t);
-		t = localtime(&result); t->tm_isdst = 0; t2 = mktime(t);
-		gmtofs = (t2-t1);
-
-		result += gmtofs;
-	}
-	else {
-		/*
-		 * mktime failed - probably it expires after the
-		 * Jan 19,2038 rollover for a 32-bit time_t.
-		 */
-
-		result = INT_MAX;
-	}
-
-	dprintf("Output says it expires: %s", timestr);
-	dprintf("I think it expires at (localtime) %s\n", asctime(localtime(&result)));
-
-	return result;
-}
-
-void do_bbext(FILE *output, char *extenv, char *family)
-{
-	/* Extension scripts. These are ad-hoc, and implemented as a
-	 * simple pipe. So we do a fork here ...
-	 */
-
-	char *bbexts, *p;
-	FILE *inpipe;
-	char extfn[PATH_MAX];
-	char buf[4096];
-	
-	p = getenv(extenv);
-	if (p == NULL)
-		/* No extension */
-		return;
-
-	bbexts = strdup(p);
-	p = strtok(bbexts, "\t ");
-
-	while (p) {
-		/* Dont redo the eventlog or acklog things */
-		if ((strcmp(p, "eventlog.sh") != 0) &&
-		    (strcmp(p, "acklog.sh") != 0)) {
-			sprintf(extfn, "%s/ext/%s/%s", getenv("BBHOME"), family, p);
-			inpipe = popen(extfn, "r");
-			if (inpipe) {
-				while (fgets(buf, sizeof(buf), inpipe)) 
-					fputs(buf, output);
-				pclose(inpipe);
-			}
-		}
-		p = strtok(NULL, "\t ");
-	}
-
-	free(bbexts);
-}
