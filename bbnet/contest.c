@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.64 2004-09-11 07:13:37 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.65 2004-09-11 15:52:50 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1481,6 +1481,14 @@ int main(int argc, char *argv[])
 							ntohs(httptest->tcptest->addr.sin_port));
 						printf("Request:\n%s\n", httptest->tcptest->sendtxt);
 					}
+				}
+				else if (strncmp(argp, "dns=", 4) == 0) {
+					char *banner = NULL;
+					int bannerlen = 0;
+					int result;
+
+					result = dns_test_server(ip, argp+4, &banner, &bannerlen);
+					printf("DNS test result=%d\nBanner:%s\n", result, textornull(banner));
 				}
 				else {
 					add_tcp_test(ip, atoi(port), testspec, NULL, 0, NULL, NULL, NULL, NULL);
