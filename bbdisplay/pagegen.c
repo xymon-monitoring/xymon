@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.49 2003-06-01 21:40:46 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.50 2003-06-01 21:44:55 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -881,6 +881,10 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 
 			p1 = ackmsg;
 			for (p=l+c_used, p1=ackmsg; (*p); ) {
+				/*
+				 * Need to de-code the ackmsg - it may have been entered
+				 * via a web page that did "%asciival" encoding.
+				 */
 				if ((*p == '%') && (strlen(p) >= 3) && isxdigit(*(p+1)) && isxdigit(*(p+2))) {
 					char hexnum[3];
 
@@ -897,6 +901,9 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 					p++;
 				}
 			}
+			/* Show only the first 30 characters in message */
+			ackmsg[30] = '\0';
+
 			sprintf(ackfn, "%s/ack.%s", getenv("BBACKS"), hosttest);
 
 			testname = strrchr(hosttest, '.');
