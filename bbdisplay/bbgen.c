@@ -146,18 +146,15 @@ char *commafy(char *hostname)
 	return s;
 }
 
-char *headfoot(char *pagename, char *subpagename, char *head_or_foot, int bgcolor)
+void headfoot(FILE *output, char *pagename, char *subpagename, char *head_or_foot, int bgcolor)
 {
 	int	fd;
 	char 	filename[256];
-	static 	char text[8192];
 	struct stat st;
 	char	*template;
 	char	*t_start, *t_next;
 	char	savechar;
 	time_t	now = time(NULL);
-
-	text[0] = '\0';
 
 	sprintf(filename, "%s/web/%s_%s_%s", getenv("BBHOME"), pagename, subpagename, head_or_foot);
 	fd = open(filename, O_RDONLY);
@@ -172,41 +169,40 @@ char *headfoot(char *pagename, char *subpagename, char *head_or_foot, int bgcolo
 
 	if (fd != -1) {
 		fstat(fd, &st);
-		template = malloc(st.st_size);
+		template = malloc(st.st_size + 1);
 		read(fd, template, st.st_size);
+		template[st.st_size] = '\0';
 		close(fd);
 
 		for (t_start = template, t_next = strchr(t_start, '&'); (t_next); ) {
 			/* Copy from t_start to t_next unchanged */
 			*t_next = '\0'; t_next++;
-			strcat(text, t_start);
+			fprintf(output, "%s", t_start);
 
 			/* Find token */
 			for (t_start = t_next; ((*t_next >= 'A') && (*t_next <= 'Z')); t_next++ ) ;
 			savechar = *t_next; *t_next = '\0';
 
-			if (strcmp(t_start, "BBREL") == 0)     strcat(text, getenv("BBREL"));
-			if (strcmp(t_start, "BBRELDATE") == 0) strcat(text, getenv("BBRELDATE"));
-			if (strcmp(t_start, "BBSKIN") == 0)    strcat(text, getenv("BBSKIN"));
-			if (strcmp(t_start, "BBWEB") == 0)     strcat(text, getenv("BBWEB"));
-			if (strcmp(t_start, "CGIBINURL") == 0) strcat(text, getenv("CGIBINURL"));
+			if (strcmp(t_start, "BBREL") == 0)     fprintf(output, "%s", getenv("BBREL"));
+			if (strcmp(t_start, "BBRELDATE") == 0) fprintf(output, "%s", getenv("BBRELDATE"));
+			if (strcmp(t_start, "BBSKIN") == 0)    fprintf(output, "%s", getenv("BBSKIN"));
+			if (strcmp(t_start, "BBWEB") == 0)     fprintf(output, "%s", getenv("BBWEB"));
+			if (strcmp(t_start, "CGIBINURL") == 0) fprintf(output, "%s", getenv("CGIBINURL"));
 
-			if (strcmp(t_start, "BBDATE") == 0)          strcat(text, ctime(&now));
-			if (strcmp(t_start, "BBBACKGROUND") == 0)    strcat(text, colorname(bgcolor));
+			if (strcmp(t_start, "BBDATE") == 0)          fprintf(output, "%s", ctime(&now));
+			if (strcmp(t_start, "BBBACKGROUND") == 0)    fprintf(output, "%s", colorname(bgcolor));
 			
 			*t_next = savechar; t_start = t_next; t_next = strchr(t_start, '&');
 		}
 
 		/* Remainder of file */
-		strcat(text, t_start);
+		fprintf(output, "%s", t_start);
 
 		free(template);
 	}
 	else {
-		sprintf(text, "<HTML><BODY> \n <HR size=4> \n <BR>%s is either missing or invalid, please create this file with your custom header<BR> \n<HR size=4>", filename);
+		fprintf(output, "<HTML><BODY> \n <HR size=4> \n <BR>%s is either missing or invalid, please create this file with your custom header<BR> \n<HR size=4>", filename);
 	}
-
-	return text;
 }
 
 
@@ -915,7 +911,7 @@ void do_bb_page(page_t *page, char *filename)
 		return;
 	}
 
-	fprintf(output, "%s", headfoot("", "", "header", page->color));
+	headfoot(output, "", "", "header", page->color);
 
 	for (p = page->next; (p); p = p->next) {
 		fprintf(output, "  page %s - %s\n", p->name, colorname(p->color));
@@ -924,7 +920,7 @@ void do_bb_page(page_t *page, char *filename)
 	do_hosts(page->hosts, output, "");
 	do_groups(page->groups, output);
 
-	fprintf(output, "%s", headfoot("", "", "footer", page->color));
+	headfoot(output, "", "", "footer", page->color);
 
 	fclose(output);
 }
@@ -941,7 +937,7 @@ void do_page(page_t *page, char *filename)
 		return;
 	}
 
-	fprintf(output, "%s", headfoot(page->name, "", "header", page->color));
+	headfoot(output, page->name, "", "header", page->color);
 
 	for (p = page->subpages; (p); p = p->next) {
 		fprintf(output, "    subpage %s - %s\n", p->name, colorname(p->color));
@@ -951,7 +947,7 @@ void do_page(page_t *page, char *filename)
 	do_hosts(page->hosts, output, "");
 	do_groups(page->groups, output);
 
-	fprintf(output, "%s", headfoot(page->name, "", "footer", page->color));
+	headfoot(output, page->name, "", "footer", page->color);
 
 	fclose(output);
 }
@@ -966,12 +962,12 @@ void do_subpage(page_t *page, char *filename, char *upperpagename)
 		return;
 	}
 
-	fprintf(output, "%s", headfoot(upperpagename, page->name, "header", page->color));
+	headfoot(output, upperpagename, page->name, "header", page->color);
 
 	do_hosts(page->hosts, output, "");
 	do_groups(page->groups, output);
 
-	fprintf(output, "%s", headfoot(upperpagename, page->name, "footer", page->color));
+	headfoot(output, upperpagename, page->name, "footer", page->color);
 
 	fclose(output);
 }
