@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.8 2005-01-15 17:38:33 henrik Exp $";
+static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.9 2005-01-25 17:53:45 henrik Exp $";
 
 typedef struct vmstat_layout_t {
 	int index;
@@ -97,10 +97,11 @@ static vmstat_layout_t vmstat_hpux_layout[] = {
 	{ -1, NULL }
 };
 
-/* This one matches Debian 3.1 (Sarge), Red Hat 9, Fedora - generally, all newer Linux versions with a 2.4 kernel */
+/* This one is all newer Linux procps versions, with kernel 2.4+ */
 static vmstat_layout_t vmstat_linux_layout[] = {
 	{ 0, "cpu_r" },
 	{ 1, "cpu_b" },
+	{ -1, "cpu_w" },	/* Not present for 2.4+ kernels, so log as "Undefined" */
 	{ 2, "mem_swpd" },
 	{ 3, "mem_free" },
 	{ 4, "mem_buff" },
@@ -114,6 +115,7 @@ static vmstat_layout_t vmstat_linux_layout[] = {
 	{ 12, "cpu_usr" },
 	{ 13, "cpu_sys" },
 	{ 14, "cpu_idl" },
+	{ 15, "cpu_wait"  },	/* Requires kernel 2.6, but may not be present */
 	{ -1, NULL }
 };
 
@@ -135,6 +137,7 @@ static vmstat_layout_t vmstat_debian3_layout[] = {
 	{ 13, "cpu_usr" },
 	{ 14, "cpu_sys" },
 	{ 15, "cpu_idl" },
+	{ -1, "cpu_wait" },
 	{ -1, NULL }
 };
 
@@ -169,7 +172,7 @@ int do_vmstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	vmstat_layout_t *layout = NULL;
 	char *datapart = msg;
 	int values[MAX_VMSTAT_VALUES];
-	int i, vcount, result;
+	int defcount, defidx, datacount, result;
 	char *p;
 	char **creparams;
 
@@ -195,6 +198,14 @@ int do_vmstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		return -1;
 	}
 
+	/* Pick up the values in the datapart line. Stop at newline. */
+	p = strchr(datapart, '\n'); if (p) *p = '\0';
+	p = strtok(datapart, " "); datacount = 0;
+	while (p && (datacount < MAX_VMSTAT_VALUES)) {
+		values[datacount++] = atoi(p);
+		p = strtok(NULL, " ");
+	}
+
 	switch (ostype) {
 	  case OS_SOLARIS: 
 		layout = vmstat_solaris_layout; break;
@@ -207,7 +218,8 @@ int do_vmstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	  case OS_LINUX:
 	  case OS_REDHAT:
 	  case OS_DEBIAN:
-		layout = vmstat_linux_layout; break;
+		layout = vmstat_linux_layout;
+		break;
 	  case OS_DEBIAN3:
 		layout = vmstat_debian3_layout; break;
 	  case OS_FREEBSD:
@@ -230,45 +242,40 @@ int do_vmstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		return -1;
 	}
 
-	/* How many values are in the dataset ? */
-	for (vcount = 0; (layout[vcount].name); vcount++) ;
-
-	/* Pick up the values in the datapart line. Stop at newline. */
-	p = strchr(datapart, '\n'); if (p) *p = '\0';
-	p = strtok(datapart, " "); i = 0;
-	while (p && (i < MAX_VMSTAT_VALUES)) {
-		values[i++] = atoi(p);
-		p = strtok(NULL, " ");
-	}
-	if (i < vcount) {
-		errprintf("Expected %d values for this OS, but only got %d\n", vcount, i);
-		return -1;
-	}
+	/* How many values are defined in the dataset ? */
+	for (defcount = 0; (layout[defcount].name); defcount++) ;
 
 	/* Setup the create-parameters */
-	creparams = (char **)xmalloc((vcount+7)*sizeof(char *));
+	creparams = (char **)xmalloc((defcount+7)*sizeof(char *));
 	creparams[0] = "rrdcreate";
 	creparams[1] = rrdfn;
-	for (i=0; (i < vcount); i++) {
-		creparams[2+i] = (char *)xmalloc(strlen(layout[i].name) + strlen("DS::GAUGE:600:0:U") + 1);
-		sprintf(creparams[2+i], "DS:%s:GAUGE:600:0:U", layout[i].name);
+	for (defidx=0; (defidx < defcount); defidx++) {
+		creparams[2+defidx] = (char *)xmalloc(strlen(layout[defidx].name) + strlen("DS::GAUGE:600:0:U") + 1);
+		sprintf(creparams[2+defidx], "DS:%s:GAUGE:600:0:U", layout[defidx].name);
 	}
-	creparams[2+vcount+0] = rra1;
-	creparams[2+vcount+1] = rra2;
-	creparams[2+vcount+2] = rra3;
-	creparams[2+vcount+3] = rra4;
-	creparams[2+vcount+4] = NULL;
+	creparams[2+defcount+0] = rra1;
+	creparams[2+defcount+1] = rra2;
+	creparams[2+defcount+2] = rra3;
+	creparams[2+defcount+3] = rra4;
+	creparams[2+defcount+4] = NULL;
 
 	/* Setup the update string, picking out values according to the layout */
 	p = rrdvalues + sprintf(rrdvalues, "%d", (int)tstamp);
-	for (i=0; (i< vcount); i++) {
-		p += sprintf(p, ":%d", values[layout[i].index]);
+	for (defidx=0; (defidx < defcount); defidx++) {
+		int dataidx = layout[defidx].index;
+
+		if ((dataidx > datacount) || (dataidx == -1)) {
+			p += sprintf(p, ":U");
+		}
+		else {
+			p += sprintf(p, ":%d", values[layout[defidx].index]);
+		}
 	}
 
 	sprintf(rrdfn, "vmstat.rrd");
 	result = create_and_update_rrd(hostname, rrdfn, creparams, update_params);
 
-	for (i=0; (i < vcount); i++) xfree(creparams[2+i]);
+	for (defidx=0; (defidx < defcount); defidx++) xfree(creparams[2+defidx]);
 	xfree(creparams);
 
 	return result;
