@@ -1,0 +1,68 @@
+#!/bin/sh
+
+# Configure script for bbgen.
+#
+# This is a quick hack to make things work on the systems I use
+# personally, without having to do the full GNU Autoconf thing.
+
+if test -e Makefile.local
+then
+	echo "Already configured - remove Makefile.local to re-configure"
+else
+	echo -n "Where is your Big Brother BBHOME directory [/usr/local/bb] ? "
+	read BBHOME
+	if test -z "$BBHOME"
+	then
+		BBHOME=/usr/local/bb
+	fi
+
+	if test -f $BBHOME/etc/bbdef.sh
+	then
+		echo "OK, your BBHOME looks good"
+	else
+		echo "Ooops ... cannot find the Big Brother configuration in $BBHOME"
+		echo "I trust you know better, so I will use that setting anyway."
+	fi
+
+	echo -n "Where is your Webserver CGI-BIN directory [/var/apache/cgi-bin] ? "
+	read CGIDIR
+	if test -z "$CGIDIR"
+	then
+		CGIDIR=/var/apache/cgi-bin
+	fi
+
+	if test -f $CGIDIR/bb-hist.sh
+	then
+		echo "OK, your CGIDIR looks good"
+	else
+		echo "Ooops ... cannot find the Big Brother CGI scripts in $CGIDIR"
+		echo "I trust you know better, so I will use that setting anyway."
+	fi
+
+	echo "# configure settings" >Makefile.local
+	echo "BBHOME = $BBHOME" >>Makefile.local
+	echo "CGIDIR = $CGIDIR" >>Makefile.local
+
+	if test -f Makefile.`uname -s`
+	then
+		cat Makefile.`uname -s` >>Makefile.local
+		echo ""
+		echo "Using `uname -s` Makefile settings"
+		echo ""
+	else
+		cat Makefile.generic >>Makefile.local
+		echo ""
+		echo "Using GENERIC Makefile settings"
+		echo ""
+		echo "If this fails, change the compile settings in Makefile.local"
+		echo ""
+		echo "When it works, copy Makefile.local to Makefile.`uname -s`"
+		echo "I would appreciate it if you send the result to"
+		echo "bbgen@storner.dk so I can include it in the next version."
+		echo ""
+	fi
+fi
+
+echo "Configuration complete - now run 'make' to build the tools"
+exit 0
+
