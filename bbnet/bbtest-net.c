@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.60 2003-06-02 05:51:59 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.61 2003-06-02 06:38:22 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -818,7 +818,7 @@ void send_results(service_t *service)
 				}
 				else {	
 					/* Not open */
-					if (t->alwaystrue) {
+					if (t->alwaystrue || t->host->noconn || t->host->noping) {
 						color = (t->reverse ? COL_GREEN : COL_RED);
 					}
 					else {
@@ -850,15 +850,6 @@ void send_results(service_t *service)
 			else if (t->host->downcount >= t->host->badconn[0]) color = COL_CLEAR;
 			else                                                color = COL_GREEN;
 
-		}
-
-		/* If host ping fails, report failed TCP tests as clear unless "alwaystrue" flag set */
-		if ( ((color == COL_RED) || (color == COL_YELLOW)) && /* Test failed */
-		     (service != pingtest)                         && /* It's not a ping test */
-		     (!t->host->noping && !t->host->noconn)        && /* We are doing a ping test */
-		     (t->host->downcount > 0)                      && /* The ping check did fail */
-		     (!t->alwaystrue)                              )  /* No "~testname" flag */ {
-			color = COL_CLEAR;
 		}
 
 		/* Handle test dependencies */
