@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.3 2004-10-17 21:12:27 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.4 2004-10-18 20:43:06 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -55,6 +55,8 @@ static char rcsid[] = "$Id: do_alert.c,v 1.3 2004-10-17 21:12:27 henrik Exp $";
 #include <stdlib.h>
 #include <time.h>
 
+#include <pcre.h>
+
 #include "bbd_alert.h"
 #include "bbgen.h"
 #include "util.h"
@@ -73,8 +75,11 @@ static token_t *tokhead = NULL;
 
 typedef struct criteria_t {
 	char *pagespec;
+	pcre *pagespecre;
 	char *hostspec;
+	pcre *hostspecre;
 	char *svcspec;
+	pcre *svcspecre;
 	int colors;
 	char *timespec;
 	int minduration, maxduration;
@@ -185,6 +190,22 @@ static char *preprocess(char *buf)
 	return result;
 }
 
+pcre *compileregex(char *pattern)
+{
+	pcre *result;
+	const char *errmsg;
+	int errofs;
+
+	dprintf("Compiling regex %s\n", pattern);
+	result = pcre_compile(pattern, PCRE_CASELESS, &errmsg, &errofs, NULL);
+	if (result == NULL) {
+		errprintf("pcre compile '%s' failed (offset %d): %s\n", pattern, errofs, errmsg);
+		return NULL;
+	}
+
+	return result;
+}
+
 void load_alertconfig(char *configfn, int defcolors)
 {
 
@@ -209,8 +230,11 @@ void load_alertconfig(char *configfn, int defcolors)
 
 		if (rulehead->criteria) {
 			if (rulehead->criteria->pagespec) free(rulehead->criteria->pagespec);
+			if (rulehead->criteria->pagespecre) pcre_free(rulehead->criteria->pagespecre);
 			if (rulehead->criteria->hostspec) free(rulehead->criteria->hostspec);
+			if (rulehead->criteria->hostspecre) pcre_free(rulehead->criteria->hostspecre);
 			if (rulehead->criteria->svcspec)  free(rulehead->criteria->svcspec);
+			if (rulehead->criteria->svcspecre) pcre_free(rulehead->criteria->svcspecre);
 			if (rulehead->criteria->timespec) free(rulehead->criteria->timespec);
 			free(rulehead->criteria);
 		}
@@ -220,8 +244,11 @@ void load_alertconfig(char *configfn, int defcolors)
 
 			if (trecip->criteria) {
 				if (trecip->criteria->pagespec) free(trecip->criteria->pagespec);
+				if (trecip->criteria->pagespecre) pcre_free(trecip->criteria->pagespecre);
 				if (trecip->criteria->hostspec) free(trecip->criteria->hostspec);
+				if (trecip->criteria->hostspecre) pcre_free(trecip->criteria->hostspecre);
 				if (trecip->criteria->svcspec)  free(trecip->criteria->svcspec);
+				if (trecip->criteria->svcspecre) pcre_free(trecip->criteria->svcspecre);
 				if (trecip->criteria->timespec) free(trecip->criteria->timespec);
 				free(trecip->criteria);
 			}
@@ -284,23 +311,29 @@ void load_alertconfig(char *configfn, int defcolors)
 		/* Expand shortnames inside the line before parsing */
 		p = strtok(preprocess(l), " ");
 		while (p) {
-			if (strncmp(p, "PAGE=", 5) == 0) {
+			if ((strncmp(p, "PAGE=", 5) == 0) || (strncmp(p, "PAGES=", 6) == 0)) {
+				char *val = strchr(p, '=')+1;
 				criteria_t *crit = setup_criteria(&currule, &currcp);
-				crit->pagespec = strdup(p+5);
+				crit->pagespec = strdup(val);
+				if (*(crit->pagespec) == '%') crit->pagespecre = compileregex(crit->pagespec+1);
 			}
-			else if (strncmp(p, "HOST=", 5) == 0) {
+			else if ((strncmp(p, "HOST=", 5) == 0) || (strncmp(p, "HOSTS=", 6) == 0)) {
+				char *val = strchr(p, '=')+1;
 				criteria_t *crit = setup_criteria(&currule, &currcp);
-				crit->hostspec = strdup(p+5);
+				crit->hostspec = strdup(val);
+				if (*(crit->hostspec) == '%') crit->hostspecre = compileregex(crit->hostspec+1);
 			}
-			else if (strncmp(p, "SERVICE=", 8) == 0) {
+			else if ((strncmp(p, "SERVICE=", 8) == 0) || (strncmp(p, "SERVICES=", 9) == 0)) {
+				char *val = strchr(p, '=')+1;
 				criteria_t *crit = setup_criteria(&currule, &currcp);
-				crit->svcspec = strdup(p+8);
+				crit->svcspec = strdup(val);
+				if (*(crit->svcspec) == '%') crit->svcspecre = compileregex(crit->svcspec+1);
 			}
-			else if (strncmp(p, "COLOR=", 6) == 0) {
+			else if ((strncmp(p, "COLOR=", 6) == 0) || (strncmp(p, "COLORS=", 7) == 0)) {
 				criteria_t *crit = setup_criteria(&currule, &currcp);
 				char *c1, *c2;
 				
-				c1 = p+6;
+				c1 = strchr(p, '=')+1;
 				do {
 					c2 = strchr(c1, ',');
 					if (c2) *c2 = '\0';
@@ -308,9 +341,10 @@ void load_alertconfig(char *configfn, int defcolors)
 					if (c2) c1 = (c2+1); else c1 = NULL;
 				} while (c1);
 			}
-			else if (strncmp(p, "TIME=", 5) == 0) {
+			else if ((strncmp(p, "TIME=", 5) == 0) || (strncmp(p, "TIMES=", 6) == 0)) {
+				char *val = strchr(p, '=')+1;
 				criteria_t *crit = setup_criteria(&currule, &currcp);
-				crit->timespec = strdup(p+5);
+				crit->timespec = strdup(val);
 			}
 			else if (strncmp(p, "DURATION", 8) == 0) {
 				criteria_t *crit = setup_criteria(&currule, &currcp);
@@ -476,13 +510,25 @@ void start_alerts(void)
 	return;
 }
 
-static int namematch(char *needle, char *haystack)
+static int namematch(char *needle, char *haystack, pcre *pcrecode)
 {
 	char *xhay;
 	char *xneedle;
 	char *match;
 	int result = 0;
 
+	if (*haystack == '%') {
+		dprintf("Regex matching, pcrecode is %s\n", (pcrecode ? "ok" : "NULL"));
+	}
+
+	if (pcrecode && (*haystack == '%')) {
+		int ovector[30];
+		result = pcre_exec(pcrecode, NULL, needle, strlen(needle), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+		dprintf("pcre_exec returned %d\n", result);
+		return (result >= 0);
+	}
+
+	/* Implement a simple, no-wildcard match */
 	xhay = malloc(strlen(haystack) + 3);
 	sprintf(xhay, ",%s,", haystack);
 	xneedle = malloc(strlen(needle)+2);
@@ -539,19 +585,45 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit)
 	
 	if (crit == NULL) return 1;	/* Only happens for recipient-list criteria */
 
-	duration = (time(NULL) - alert->eventstart);
 	dprintf("criteriamatch %s:%s %s:%s:%s\n", alert->hostname->name, alert->testname->name, 
 		textornull(crit->hostspec), textornull(crit->pagespec), textornull(crit->svcspec));
-	if (crit->minduration && (duration < crit->minduration)) { dprintf("failed minduration %d<%d\n", duration, crit->minduration); return 0; }
-	if (crit->maxduration && (duration > crit->maxduration)) { dprintf("failed maxduration\n"); return 0; }
-	if (crit->pagespec    && !namematch(alert->location->name, crit->pagespec)) { dprintf("failed pagespec\n"); return 0; }
-	if (crit->hostspec    && !namematch(alert->hostname->name, crit->hostspec)) { dprintf("failed hostspec\n"); return 0; }
-	if (crit->svcspec     && !namematch(alert->testname->name, crit->svcspec))  { dprintf("failed svcspec\n"); return 0; }
-	if (crit->timespec    && !timematch(crit->timespec)) { dprintf("failed timespec\n"); return 0; }
+
+	duration = (time(NULL) - alert->eventstart);
+	if (crit->minduration && (duration < crit->minduration)) { 
+		dprintf("failed minduration %d<%d\n", duration, crit->minduration); 
+		return 0; 
+	}
+
+	if (crit->maxduration && (duration > crit->maxduration)) { 
+		dprintf("failed maxduration\n"); 
+		return 0; 
+	}
+
+	if (crit->pagespec && !namematch(alert->location->name, crit->pagespec, crit->pagespecre)) { 
+		dprintf("failed pagespec\n"); 
+		return 0; 
+	}
+
+	if (crit->hostspec && !namematch(alert->hostname->name, crit->hostspec, crit->hostspecre)) { 
+		dprintf("failed hostspec\n"); 
+		return 0; 
+	}
+
+	if (crit->svcspec && !namematch(alert->testname->name, crit->svcspec, crit->svcspecre))  { 
+		dprintf("failed svcspec\n"); 
+		return 0; 
+	}
+
+	if (crit->timespec && !timematch(crit->timespec)) { 
+		dprintf("failed timespec\n"); 
+		return 0; 
+	}
 
 	if (alert->state == A_RECOVERED) {
 		dprintf("Checking for recovered setting %d\n", crit->sendrecovered);
-		if (crit->sendrecovered) return (crit->sendrecovered == SR_WANTED);
+		if (crit->sendrecovered) {
+			return (crit->sendrecovered == SR_WANTED);
+		}
 	}
 
 	/* We now know that the state is not A_RECOVERED, so final check is to match against the colors. */
