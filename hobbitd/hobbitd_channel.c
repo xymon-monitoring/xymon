@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.30 2005-01-18 21:36:51 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.31 2005-01-18 21:41:57 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -250,8 +250,11 @@ int main(int argc, char *argv[])
 			 *
 			 * We wrap this into an alarm handler, because it can occasionally
 			 * fail, causing the whole system to lock up. We dont want that....
+			 * We'll set the alarm to trigger after 1 second. Experience shows
+			 * that we'll either succeed in a few milliseconds, or fail completely
+			 * and wait the full alarm-timer duration.
 			 */
-			gotalarm = 0; signal(SIGALRM, sig_handler); alarm(5); 
+			gotalarm = 0; signal(SIGALRM, sig_handler); alarm(1); 
 #ifdef WATCHLATENCY
 			gettimeofday(&starttv, &tz);
 #endif
