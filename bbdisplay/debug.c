@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.7 2003-02-11 16:29:52 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.8 2003-02-14 21:44:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -48,10 +48,10 @@ void dumphosts(host_t *head, char *prefix)
 	char	format[80];
 
 	strcpy(format, prefix);
-	strcat(format, "Host: %s, ip: %s, color: %d, noprop-y: %s, noprop-r: %s, link: %s\n");
+	strcat(format, "Host: %s, ip: %s, color: %d, old: %d, noprop-y: %s, noprop-r: %s, link: %s\n");
 
 	for (h = head; (h); h = h->next) {
-		printf(format, h->hostname, h->ip, h->color, 
+		printf(format, h->hostname, h->ip, h->color, h->oldage,
 			(h->nopropyellowtests ? h->nopropyellowtests : ""), 
 			(h->nopropredtests ? h->nopropredtests : ""), 
 			h->link->filename);
@@ -114,10 +114,11 @@ void dumpall(bbgen_page_t *head)
 	bbgen_page_t *p, *q;
 
 	for (p=head; p; p = p->next) {
-		printf("%sPage: %s, color: %d, title=%s\n", 
-                       (strlen(p->name) == 0) ? "" : "    ", p->name, p->color, p->title);
+		printf("%sPage: %s, color: %d, oldage: %d, title=%s\n", 
+                       (strlen(p->name) == 0) ? "" : "    ", p->name, p->color, p->oldage, p->title);
 		for (q = p->subpages; (q); q = q->next) {
-			printf("\tSubpage: %s, color=%d, title=%s\n", q->name, q->color, q->title);
+			printf("\tSubpage: %s, color=%d, oldage=%d, title=%s\n", 
+				q->name, q->color, q->oldage, q->title);
 			dumpgroups(q->groups, "\t\t", "\t\t    ");
 			dumphosts(q->hosts, "\t    ");
 		}

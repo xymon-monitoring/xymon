@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.21 2003-02-14 12:06:18 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.22 2003-02-14 21:44:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -215,7 +215,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 					}
 
 					fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
-						getenv("BBSKIN"), dotgiffilename(e),
+						getenv("BBSKIN"), dotgiffilename(e->color, e->acked, e->oldage),
 						alttag(e),
 						getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
 				}
@@ -416,8 +416,8 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *mklocaltitle, char
 				fprintf(output, "<TD><CENTER><A HREF=\"%s/%s/%s.html\">\n", 
 						getenv("BBWEB"), p->name, p->name);
 
-			fprintf(output, "<IMG SRC=\"%s/%s.gif\" WIDTH=\"%s\" HEIGHT=\"%s\" BORDER=0 ALT=\"%s\"></A>\n", 
-				getenv("BBSKIN"), colorname(p->color), 
+			fprintf(output, "<IMG SRC=\"%s/%s\" WIDTH=\"%s\" HEIGHT=\"%s\" BORDER=0 ALT=\"%s\"></A>\n", 
+				getenv("BBSKIN"), dotgiffilename(p->color, 0, p->oldage), 
 				getenv("DOTWIDTH"), getenv("DOTHEIGHT"),
 				colorname(p->color));
 			fprintf(output, "</CENTER></TD>\n");
@@ -607,16 +607,16 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", events[num].service);
 			fprintf(output, "<TD><A HREF=\"%s\">\n", 
 				histlogurl(events[num].hostname, events[num].service, events[num].changetime));
-			fprintf(output, "<IMG SRC=\"%s/%s.gif\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=%s></A>\n", 
-				getenv("BBSKIN"), colorname(events[num].oldcolor), 
+			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=%s></A>\n", 
+				getenv("BBSKIN"), dotgiffilename(events[num].oldcolor, 0, 0), 
 				getenv("DOTHEIGHT"), getenv("DOTWIDTH"), 
 				colorname(events[num].oldcolor));
 			fprintf(output, "<IMG SRC=\"%s/arrow.gif\" BORDER=0 ALT=\"From -&gt; To\">\n", 
 				getenv("BBSKIN"));
 			fprintf(output, "<TD><A HREF=\"%s\">\n", 
 				histlogurl(events[num].hostname, events[num].service, events[num].eventtime));
-			fprintf(output, "<IMG SRC=\"%s/%s.gif\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=%s></A>\n", 
-				getenv("BBSKIN"), colorname(events[num].newcolor), 
+			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=%s></A>\n", 
+				getenv("BBSKIN"), dotgiffilename(events[num].newcolor, 0, 0), 
 				getenv("DOTHEIGHT"), getenv("DOTWIDTH"), 
 				colorname(events[num].newcolor));
 		}

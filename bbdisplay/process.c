@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.7 2003-02-14 13:07:36 henrik Exp $";
+static char rcsid[] = "$Id: process.c,v 1.8 2003-02-14 21:44:36 henrik Exp $";
 
 #include <string.h>
 #include <sys/types.h>
@@ -42,21 +42,23 @@ static int wantedcolumn(char *current, char *wanted)
 
 void calc_hostcolors(hostlist_t *head)
 {
-	int		color;
+	int		color, oldage;
 	hostlist_t 	*h;
 	entry_t		*e;
 
 	for (h = head; (h); h = h->next) {
-		color = 0;
+		color = 0; oldage = 1;
 
 		for (e = h->hostentry->entries; (e); e = e->next) {
 			if (e->propagate && (e->color > color)) color = e->color;
+			oldage &= e->oldage;
 		}
 
 		/* Blue and clear is not propagated upwards */
 		if ((color == COL_CLEAR) || (color == COL_BLUE)) color = COL_GREEN;
 
 		h->hostentry->color = color;
+		h->hostentry->oldage = oldage;
 	}
 }
 
@@ -66,14 +68,15 @@ void calc_pagecolors(bbgen_page_t *phead)
 	bbgen_page_t 	*p, *toppage;
 	group_t *g;
 	host_t  *h;
-	int	color;
+	int	color, oldage;
 
 	for (toppage=phead; (toppage); toppage = toppage->next) {
 
 		/* Start with the color of immediate hosts */
-		color = -1;
+		color = -1; oldage = 1;
 		for (h = toppage->hosts; (h); h = h->next) {
 			if (h->color > color) color = h->color;
+			oldage &= h->oldage;
 		}
 
 		/* Then adjust with the color of hosts in immediate groups */
@@ -82,6 +85,7 @@ void calc_pagecolors(bbgen_page_t *phead)
 				if (g->onlycols == NULL) {
 					/* No group-only directive - use host color */
 					if (h->color > color) color = h->color;
+					oldage &= h->oldage;
 				}
 				else {
 					/* This is a group-only directive. Color must be
@@ -97,6 +101,7 @@ void calc_pagecolors(bbgen_page_t *phead)
 						     (e->color > color) &&
 						     wantedcolumn(e->column->name, g->onlycols) )
 							color = e->color;
+							oldage &= e->oldage;
 					}
 
 					/* Blue and clear is not propagated upwards */
@@ -113,9 +118,11 @@ void calc_pagecolors(bbgen_page_t *phead)
 
 		for (p = toppage->subpages; (p); p = p->next) {
 			if (p->color > color) color = p->color;
+			oldage &= p->oldage;
 		}
 
 		toppage->color = color;
+		toppage->oldage = oldage;
 	}
 }
 

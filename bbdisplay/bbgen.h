@@ -37,9 +37,9 @@
 |    groups -------> group_t               |                   |
 |    hosts ---+         title              V                   |
 +--- parent   |         hosts ---------> host_t                |
-     next     |         onlycols           group               |
-      ^       |         next               hostname            |
-      |       +------------------------>   ip                  |
+     oldage   |         onlycols           group               |
+     next     |         next               hostname            |
+      ^       +------------------------>   ip                  |
       |                                    dialup              |
       +---------------------------------   parent              |
                                            color               |
@@ -48,8 +48,8 @@
 					   rawentry            |
                       +------------------  link                V
                       |                    entries ---------> entry_t
-                      |                    next                 column -------> col_t
-                      |                                         color             name
+                      |                    oldage               column -------> col_t
+                      |                    next                 color             name
                       |                                         age            +- link
                       |                                         oldage         |  next
                       |                                         acked          |
@@ -175,6 +175,7 @@ typedef struct {
 	char    *nopropredtests;
 	char    *rawentry;
 	rrd_t	*rrds;
+	int     oldage;
 	void	*parent;
 	void	*next;
 } host_t;
@@ -197,6 +198,7 @@ typedef struct {
 	char	name[20];
 	char	title[200];
 	int	color;		/* Calculated */
+	int     oldage;
 	void	*next;
 	void	*subpages;
 	void	*parent;

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.38 2003-02-11 16:59:47 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.39 2003-02-14 21:44:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -53,6 +53,7 @@ bbgen_page_t *init_page(const char *name, const char *title)
 	strcpy(newpage->name, name);
 	strcpy(newpage->title, title);
 	newpage->color = -1;
+	newpage->oldage = 1;
 	newpage->next = NULL;
 	newpage->subpages = NULL;
 	newpage->groups = NULL;
@@ -90,6 +91,7 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	newhost->link = find_link(hostname);
 	newhost->entries = NULL;
 	newhost->color = -1;
+	newhost->oldage = 1;
 	newhost->dialup = dialup;
 	if (alerts) {
 		p = strchr(alerts, ' '); if (p) { *p = '\0'; }
