@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.8 2004-10-30 15:41:27 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.9 2004-11-17 16:13:53 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -284,6 +284,15 @@ static void parse_query(void)
 
 int main(int argc, char *argv[])
 {
+	int argi;
+
+	for (argi=1; (argi < argc); argi++) {
+		if (argnmatch(argv[argi], "--env=")) {
+			char *p = strchr(argv[argi], '=');
+			loadenv(p+1);
+		}
+	}
+
 	envcheck(reqenv);
 	parse_query();
 

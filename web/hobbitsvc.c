@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.18 2004-10-31 07:28:46 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.19 2004-11-17 16:12:22 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -138,6 +138,10 @@ int main(int argc, char *argv[])
 				histlocation = HIST_TOP;
 			else if (strcmp(val, "bottom") == 0)
 				histlocation = HIST_BOTTOM;
+		}
+		else if (argnmatch(argv[argi], "--env=")) {
+			char *p = strchr(argv[argi], '=');
+			loadenv(p+1);
 		}
 	}
 

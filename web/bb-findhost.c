@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.6 2004-10-30 15:36:08 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.7 2004-11-17 16:11:50 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -136,6 +136,7 @@ int main(int argc, char *argv[])
 	char *pageset = NULL;
 	hostlist_t *hostwalk, *clonewalk;
 	int i;
+	int argi;
 
 	int gotany = 0;
 
@@ -147,6 +148,12 @@ int main(int argc, char *argv[])
 	int 	re_status;
 	host_t	*he;					/* HostEntry pointer (dereferencing)... :)	*/
 
+	for (argi=1; (argi < argc); argi++) {
+		if (argnmatch(argv[argi], "--env=")) {
+			char *p = strchr(argv[argi], '=');
+			loadenv(p+1);
+		}
+	}
 
 	parse_query();
 

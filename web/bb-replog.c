@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.23 2004-10-30 15:37:20 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.24 2004-11-17 16:13:08 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -453,6 +453,14 @@ int main(int argc, char *argv[])
 	char textrepfullfn[PATH_MAX], textrepfn[1024], textrepurl[PATH_MAX];
 	FILE *textrep;
 	reportinfo_t repinfo;
+	int argi;
+
+	for (argi=1; (argi < argc); argi++) {
+		if (argnmatch(argv[argi], "--env=")) {
+			char *p = strchr(argv[argi], '=');
+			loadenv(p+1);
+		}
+	}
 
 	envcheck(reqenv);
 	parse_query();

@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.37 2004-10-30 15:36:26 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.38 2004-11-17 16:12:05 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -672,10 +672,17 @@ int main(int argc, char *argv[])
 	reportinfo_t repinfo1d, repinfo1w, repinfo4w, repinfo1y, dummyrep;
 	replog_t *log1d, *log1w, *log4w, *log1y;
 	char *p;
+	int argi;
+
+	for (argi=1; (argi < argc); argi++) {
+		if (argnmatch(argv[argi], "--env=")) {
+			char *p = strchr(argv[argi], '=');
+			loadenv(p+1);
+		}
+	}
 
 	envcheck(reqenv);
 	parse_query();
-
 
 	/* Build our own URL */
 	sprintf(selfurl, "%s/bb-hist.sh?HISTFILE=%s.%s", getenv("CGIBINURL"), commafy(hostname), service);
