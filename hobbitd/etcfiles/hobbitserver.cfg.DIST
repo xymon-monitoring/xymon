@@ -95,6 +95,23 @@ NTPDATE="ntpdate"				# Path to the 'ntpdate' program
 BBROUTERTEXT="router"				# What to call a failing intermediate network device.
 
 
+# Settings for the LARRD graphs
+
+# This defines the status- and data-messages you want to collect LARRD data
+# about. You will normally not need to modify this, unless you have added a
+# custom TCP-based test to the bb-services file, and want to collect data about 
+# the response-time. The format here is "BBCOLUMN=LARRDSERVICE". All TCP tests
+# should have LARRDSERVICE set to "tcp".
+#
+# This is also used by the bb-hostsvc.cgi script to determine if the detailed
+# status view of a test should include a graph.
+LARRDS="cpu=la,disk,memory,conn=tcp,fping=tcp,ftp=tcp,ftps=tcp,ssh=tcp,ssh1=tcp,ssh2=tcp,telnet=tcp,telnets=tcp,smtp=tcp,smtps=tcp,pop-2=tcp,pop2=tcp,pop-3=tcp,pop3=tcp,pop=tcp,pop3s=tcp,imap=tcp,imap2=tcp,imap3=tcp,imap4=tcp,imaps=tcp,nntp=tcp,nntps=tcp,ldap=tcp,ldaps=tcp,rsync=tcp,bbd=tcp,clamd=tcp,oratns=tcp,qmtp=tcp,qmqp=tcp,http=tcp,dns=tcp,dig=tcp,time=ntpstat,vmstat,iostat,netstat,temperature,apache,bind,sendmail,nmailq,socks,bea,citrix,bbgen,bbtest,bbproxy"
+
+# This defines which LARRD RRD files to include on the "trends" column webpage,
+# and the order in which they appear.
+GRAPHS="la,disk:disk_part:5,memory,users,vmstat,iostat,tcp,netstat,temperature,ntpstat,apache,bind,sendmail,nmailq,socks,bea,citrix,bbgen,bbtest,bbproxy"
+
+
 ############################################################
 # These determine some parts of how bbgen generates webpages
 ############################################################
