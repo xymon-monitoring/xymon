@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.137 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.138 2004-10-29 15:30:25 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -38,15 +38,12 @@ static char rcsid[] = "$Id: util.c,v 1.137 2004-10-29 10:21:57 henrik Exp $";
 
 #include "bbgen.h"
 #include "util.h"
-#include "debug.h"
 
 char *htmlextension = ".html"; /* Filename extension for generated HTML files */
 
 int	use_recentgifs = 0;
 int	unpatched_bbd = 0;
 char	timestamp[30];
-
-extern  int debug;
 
 /* Stuff for headfoot - variables we can set dynamically */
 static char hostenv_svc[20];
@@ -88,6 +85,11 @@ typedef struct loginlist_t {
 } loginlist_t;
 
 static loginlist_t *loginhead = NULL;
+
+
+hostlist_t      *hosthead = NULL;
+link_t          *linkhead = NULL;
+link_t  null_link = { "", "", "", NULL };
 
 
 void errprintf(const char *fmt, ...)
