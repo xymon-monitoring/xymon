@@ -707,6 +707,58 @@ This option is deprecated. Use the
 option "--timeout=N" to set the timeout for TCP- and 
 HTTP-tests.
 
+.IP "Authentication with Basic username/password"
+If the URL requires authentication in the form of a
+username and password, it is most likely using the
+HTTP "Basic" authentication. bbtest-net support this,
+and you can provide the username and password either 
+by embedding them in the URL e.g.
+.br
+    http://USERNAME:PASSWORD@www.sample.com/
+.br
+or by putting the username and password into the ~/.netrc
+file (see
+.I ftp(1)
+for details).
+
+.IP "Authentication with SSL client certificates"
+An SSL client certificate can be used for authentication.
+To use this, the client certificate must be stored in a
+PEM-formatted file together with the client certificate
+key, in the $BBHOME/certs/ directory. The URL is then given as
+.br
+    http://CERT:FILENAME@www.sample.com/
+.br
+The "CERT:" part is literal - i.e. you write C-E-R-T-colon
+and then the filename of the PEM-formatted certificate.
+.br
+A PEM-formatted certificate file can be generated based on
+certificates stored in Microsoft Internet Explorer and
+OpenSSL. Do as follows:
+.br
+From the MSIE Tools-Options menu, pick the Content tab,
+click on Certificates, choose the Personal tab, select the
+certificate and click Export. Make sure you export the
+private key also. In the Export File Format, choose
+PKCS 12 (.PFX), check the "Include all certificates" 
+checkbox and uncheck the "Enable strong protection".
+Provide a temporary password for the exported file,
+and select a filename for the PFX-file.
+.br
+Now run "openssl pkcs12 -in file.pfx -out file.pem". When
+prompted for the "Import Password", provide the temporary
+password you gave when exporting the certificate. Then
+provide a "PEM pass phrase" (twice) when prompted for one.
+.br
+The file.pem file is the one you should use in the FILENAME
+field in the URL - this file must be kept in $BBHOME/certs/.
+The PEM pass phrase must be put into a file named the
+same as the certificate, but with extension ".pass". E.g.
+if you have the PEM certificate in $BBHOME/certs/client.pem,
+you must put the pass phrase into the $BBHOME/certs/client.pass
+file. Make sure to protect this file with Unix permissions,
+so that only the user running Big Brother can read it.
+
 .IP "Extended URL syntax for SSL (https) tests"
 Some SSL sites will only allow you to connect, if you use
 specific "dialects" of SSL. Normally this is auto-negotiated,
@@ -722,8 +774,10 @@ something else instead of "https:" in the URL:
 * httpsm://www.sample.com/ : use only 128-bit ciphers
 .br
 * httpsh://www.sample.com/ : use only >128-bit ciphers
-
-You cannot mix these, e.g. "httpsm2" does not work.
+.br
+* http10://www.sample.com/ : use HTTP 1.0
+.br
+* http11://www.sample.com/ : use HTTP 1.1
 
 .IP "Extended URL syntax for testing sites by IP-address"
 bbtest-net ignores the "testip" tag normally used to force a 
