@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbnet_rcsid[] = "$Id: do_net.c,v 1.9 2005-02-21 15:27:22 henrik Exp $";
+static char bbnet_rcsid[] = "$Id: do_net.c,v 1.10 2005-02-21 16:44:16 henrik Exp $";
 
 static char *bbnet_params[]       = { "rrdcreate", rrdfn, "DS:sec:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
@@ -71,7 +71,7 @@ int do_net_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		if (strncmp(tmod, "ms", 2) == 0) seconds = seconds / 1000.0;
 		else if (strncmp(tmod, "usec", 4) == 0) seconds = seconds / 1000000.0;
 
-		sprintf(rrdfn, "tcp.conn.rrd");
+		sprintf(rrdfn, "tcp.%s.rrd", testname);
 		sprintf(rrdvalues, "%d:%.6f", (int)tstamp, seconds);
 		return create_and_update_rrd(hostname, rrdfn, bbnet_params, update_params);
 	}
