@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.107 2003-11-21 13:22:13 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.108 2003-11-27 09:31:34 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1342,6 +1342,14 @@ int stdout_on_file(char *filename)
 
 void sigsegv_handler(int signum)
 {
+	/*
+	 * This is a signal handler. Only a very limited number of 
+	 * library routines can be safely used here, according to
+	 * Posix: http://www.opengroup.org/onlinepubs/007904975/functions/xsh_chap02_04.html#tag_02_04_03
+	 * Do not use string, stdio etc. - just basic system calls.
+	 * That is why we need to setup all of the strings in advance.
+	 */
+
 	signal(signum, SIG_DFL);
 
 	/* 
@@ -1382,6 +1390,10 @@ void setup_signalhandler(char *programname)
 	if (getenv("BB") == NULL) return;
 	if (getenv("BBDISP") == NULL) return;
 
+	/*
+	 * Used inside signal-handler. Must be setup in
+	 * advance.
+	 */
 	strcpy(signal_bbcmd, getenv("BB"));
 	strcpy(signal_bbdisp, getenv("BBDISP"));
 	strcpy(signal_bbtmp, getenv("BBTMP"));
