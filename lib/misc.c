@@ -1,0 +1,290 @@
+/*----------------------------------------------------------------------------*/
+/* bbgen toolkit                                                              */
+/*                                                                            */
+/* This is a library module, part of libbbgen.                                */
+/* It contains miscellaneous routines.                                        */
+/*                                                                            */
+/* Copyright (C) 2002-2004 Henrik Storner <henrik@storner.dk>                 */
+/*                                                                            */
+/* This program is released under the GNU General Public License (GPL),       */
+/* version 2. See the file "COPYING" for details.                             */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+static char rcsid[] = "$Id: misc.c,v 1.1 2004-10-30 15:29:37 henrik Exp $";
+
+#include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/wait.h>
+
+#include "errormsg.h"
+
+int hexvalue(unsigned char c)
+{
+	switch (c) {
+	  case '0': return 0;
+	  case '1': return 1;
+	  case '2': return 2;
+	  case '3': return 3;
+	  case '4': return 4;
+	  case '5': return 5;
+	  case '6': return 6;
+	  case '7': return 7;
+	  case '8': return 8;
+	  case '9': return 9;
+	  case 'a': return 10;
+	  case 'A': return 10;
+	  case 'b': return 11;
+	  case 'B': return 11;
+	  case 'c': return 12;
+	  case 'C': return 12;
+	  case 'd': return 13;
+	  case 'D': return 13;
+	  case 'e': return 14;
+	  case 'E': return 14;
+	  case 'f': return 15;
+	  case 'F': return 15;
+	}
+
+	return -1;
+}
+
+void envcheck(char *envvars[])
+{
+	int i;
+	int ok = 1;
+
+	for (i = 0; (envvars[i]); i++) {
+		if (getenv(envvars[i]) == NULL) {
+			errprintf("Environment variable %s not defined\n", envvars[i]);
+			ok = 0;
+		}
+	}
+
+	if (!ok) {
+		errprintf("Aborting\n");
+		exit (1);
+	}
+}
+
+void getenv_default(char *envname, char *envdefault, char **buf)
+{
+	char *val;
+
+	val = getenv(envname);
+	if (!val) {
+		val = (char *)malloc(strlen(envname) + strlen(envdefault) + 2);
+		sprintf(val, "%s=%s", envname, envdefault);
+		putenv(val);
+		/* Dont free the string - it must be kept for the environment to work */
+		val = getenv(envname);
+	}
+
+	if (buf) *buf = val;
+}
+
+
+char *commafy(char *hostname)
+{
+	static char *s = NULL;
+	char *p;
+
+	if (s == NULL) {
+		s = strdup(hostname);
+	}
+	else if (strlen(hostname) > strlen(s)) {
+		free(s);
+		s = strdup(hostname);
+	}
+	else {
+		strcpy(s, hostname);
+	}
+
+	for (p = strchr(s, '.'); (p); p = strchr(s, '.')) *p = ',';
+	return s;
+}
+
+
+char *skipword(char *l)
+{
+	char *p;
+
+	for (p=l; (*p && (!isspace((int)*p))); p++) ;
+	return p;
+}
+
+
+char *skipwhitespace(char *l)
+{
+	char *p;
+
+	for (p=l; (*p && (isspace((int)*p))); p++) ;
+	return p;
+}
+
+
+int argnmatch(char *arg, char *match)
+{
+	return (strncmp(arg, match, strlen(match)) == 0);
+}
+
+
+void addtobuffer(char **buf, int *buflen, char *newtext)
+{
+	if (*buf == NULL) {
+		*buflen = 4096;
+		*buf = (char *) malloc(*buflen);
+		**buf = '\0';
+	}
+	else if ((strlen(*buf) + strlen(newtext)) > *buflen) {
+		*buflen += strlen(newtext) + 4096;
+		*buf = (char *) realloc(*buf, *buflen);
+	}
+
+	strcat(*buf, newtext);
+}
+
+
+char *msg_data(char *msg)
+{
+	/* Find the start position of the data following the "status host.test " message */
+	char *result;
+
+	result = strchr(msg, '.');              /* Hits the '.' in "host.test" */
+	if (!result) {
+		dprintf("Msg was not what I expected: '%s'\n", msg);
+		return msg;
+	}
+
+	result += strcspn(result, " \t\n");     /* Skip anything until we see a space, TAB or NL */
+	result += strspn(result, " \t");        /* Skip all whitespace */
+
+	return result;
+}
+
+char *gettok(char *s, char *delims)
+{
+	/*
+	 * This works like strtok(), but can handle empty fields.
+	 */
+
+	static char *source = NULL;
+	static char *whereat = NULL;
+	int n;
+	char *result;
+
+	if ((delims == NULL) || (*delims == '\0')) return NULL;	/* Sanity check */
+	if ((source == NULL) && (s == NULL)) return NULL;	/* Programmer goofed and called us first time with NULL */
+
+	if (s) source = whereat = s;				/* First call */
+
+	if (*whereat == '\0') {
+		/* End of string ... clear local state and return NULL */
+		source = whereat = NULL;
+		return NULL;
+	}
+
+	n = strcspn(whereat, delims);
+	if (n == 0) {
+		/* An empty token */
+		whereat++;
+		result = "";
+	}
+	else {
+		/* Null-teminate the token */
+		*(whereat + n) = '\0';
+		result = whereat;
+
+		/* Move past this token and the delimiter */
+		whereat += (n+1);
+	}
+
+	return result;
+}
+
+unsigned int IPtou32(int ip1, int ip2, int ip3, int ip4)
+{
+	return ((ip1 << 24) | (ip2 << 16) | (ip3 << 8) | (ip4));
+}
+
+char *u32toIP(unsigned int ip32)
+{
+	int ip1, ip2, ip3, ip4;
+	static char result[16];
+
+	ip1 = ((ip32 >> 24) & 0xFF);
+	ip2 = ((ip32 >> 16) & 0xFF);
+	ip3 = ((ip32 >> 8) & 0xFF);
+	ip4 = (ip32 & 0xFF);
+
+	sprintf(result, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+	return result;
+}
+
+const char *textornull(const char *text)
+{
+	return (text ? text : "(NULL)");
+}
+
+
+int get_fqdn(void)
+{
+	int result = 1;
+
+	/* Get FQDN setting */
+	if (getenv("FQDN")) {
+		if (strcmp(getenv("FQDN"), "TRUE") == 0) {
+			result = 1;
+		}
+		else {
+			result = 0;
+		}
+	}
+
+	return result;
+}
+
+
+int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int showcmd)
+{
+	FILE	*cmdpipe;
+	char	l[1024];
+	int	result;
+	int	piperes;
+	int	bannersize = 0;
+
+	result = 0;
+	if (banner) { 
+		bannersize = 4096;
+		*banner = (char *) malloc(bannersize); 
+		**banner = '\0';
+		if (showcmd) sprintf(*banner, "Command: %s\n\n", cmd); 
+	}
+	cmdpipe = popen(cmd, "r");
+	if (cmdpipe == NULL) {
+		errprintf("Could not open pipe for command %s\n", cmd);
+		if (banner) strcat(*banner, "popen() failed to run command\n");
+		return -1;
+	}
+
+	while (fgets(l, sizeof(l), cmdpipe)) {
+		if (banner) {
+			if ((strlen(l) + strlen(*banner)) > bannersize) {
+				bannersize += strlen(l) + 4096;
+				*banner = (char *) realloc(*banner, bannersize);
+			}
+			strcat(*banner, l);
+		}
+		if (errortext && (strstr(l, errortext) != NULL)) result = 1;
+	}
+	piperes = pclose(cmdpipe);
+	if (!WIFEXITED(piperes) || (WEXITSTATUS(piperes) != 0)) {
+		/* Something failed */
+		result = 1;
+	}
+
+	if (bannerbytes) *bannerbytes = strlen(*banner);
+	return result;
+}
