@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.57 2003-06-19 13:28:26 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.58 2003-06-20 13:05:24 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -217,6 +217,24 @@ void init_timestamp(void)
         timestamp[strlen(timestamp)-1] = '\0';
 
 }
+
+char *skipword(const char *l)
+{
+	char *p;
+
+	for (p=l; (*p && (!isspace((int)*p))); p++) ;
+	return p;
+}
+
+
+char *skipwhitespace(const char *l)
+{
+	char *p;
+
+	for (p=l; (*p && (isspace((int)*p))); p++) ;
+	return p;
+}
+
 
 int argnmatch(char *arg, char *match)
 {

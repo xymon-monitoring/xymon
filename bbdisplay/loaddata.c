@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.84 2003-06-20 12:28:50 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.85 2003-06-20 13:05:49 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -63,24 +63,6 @@ static FILE *purplelog = NULL;
 static pagelist_t *pagelisthead = NULL;
 
 static time_t oldestentry;
-
-
-char *skipword(const char *l)
-{
-	char *p;
-
-	for (p=l; (*p && (!isspace((int)*p))); p++) ;
-	return p;
-}
-
-
-char *skipwhitespace(const char *l)
-{
-	char *p;
-
-	for (p=l; (*p && (isspace((int)*p))); p++) ;
-	return p;
-}
 
 
 void addtopagelist(bbgen_page_t *page)
