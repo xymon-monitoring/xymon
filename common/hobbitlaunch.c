@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.9 2004-11-21 11:37:56 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.10 2004-11-22 14:55:47 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -154,6 +154,7 @@ void load_config(char *conffn)
 	}
 	if (st.st_mtime == cfgtstamp) return; /* No change */
 	cfgtstamp = st.st_mtime;
+	errprintf("Loading tasklist configuration from %s\n", conffn);
 
 	/* The cfload flag: -1=delete task, 0=old task unchanged, 1=new/changed task */
 	for (twalk = taskhead; (twalk); twalk = twalk->next) twalk->cfload = -1;
@@ -393,11 +394,11 @@ int main(int argc, char *argv[])
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
 
+	errprintf("bblaunch starting\n");
 	while (running) {
 		time_t now = time(NULL);
 
 		if (now >= nextcfgload) {
-			dprintf("Loading configuration file\n");
 			load_config(config);
 			nextcfgload = (now + 30);
 		}
@@ -439,7 +440,7 @@ int main(int argc, char *argv[])
 		for (twalk = taskhead; (twalk); twalk = twalk->next) {
 			if ((twalk->pid == 0) && (now >= (twalk->laststart + twalk->interval))) {
 
-				if (twalk->depends && (twalk->depends->pid == 0)) {
+				if (twalk->depends && ((twalk->depends->pid == 0) || (twalk->depends->laststart > (now - 5)))) {
 					dprintf("Postponing start of %s due to %s not yet running\n",
 						twalk->key, twalk->depends->key);
 					continue;
@@ -467,7 +468,10 @@ int main(int argc, char *argv[])
 					char *cmdcp, *p;
 
 					/* Setup environment */
-					if (twalk->envfile) loadenv(expand_env(twalk->envfile));
+					if (twalk->envfile) {
+						dprintf("%s -> Loading environment from %s\n", twalk->key, expand_env(twalk->envfile));
+						loadenv(expand_env(twalk->envfile));
+					}
 
 					/* Count # of arguments in command */
 					cmdcp = strdup(expand_env(twalk->cmd));
@@ -484,16 +488,16 @@ int main(int argc, char *argv[])
 					
 					/* Point stdout/stderr to a logfile, if requested */
 					if (twalk->logfile) {
-						int fd = open(expand_env(twalk->logfile), 
-								O_WRONLY|O_CREAT|O_APPEND, S_IRUSR|S_IWUSR|S_IRGRP);
-						if (fd) { 
-							dup2(fd, STDOUT_FILENO); 
-							dup2(fd, STDERR_FILENO); 
-							close(fd);
-						}
+						char *logfn = expand_env(twalk->logfile);
+
+						dprintf("%s -> Assigning stdout/stderr to log '%s'\n", twalk->key, logfn);
+
+						freopen(logfn, "a", stdout);
+						freopen(logfn, "a", stderr);
 					}
 
 					/* Go! */
+					dprintf("%s -> Running '%s', BBHOME=%s\n", twalk->key, cmd, getenv("BBHOME"));
 					execvp(cmd, cmdargs);
 
 					/* Should never go here */
@@ -504,6 +508,9 @@ int main(int argc, char *argv[])
 					/* Fork failed */
 					errprintf("Fork failed!\n");
 					twalk->pid = 0;
+				}
+				else {
+					errprintf("Task %s started with PID %d\n", twalk->key, (int)twalk->pid);
 				}
 			}
 			else if (twalk->pid > 0) {
