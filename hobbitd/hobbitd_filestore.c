@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.29 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.30 2005-01-19 12:00:55 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -75,7 +75,8 @@ void update_htmlfile(char *fn, char *msg,
 		     char *hostname, char *service, int color,
 		     char *sender, char *flags,
 		     time_t logtime, time_t timesincechange,
-		     char *ackmsg)
+		     char *ackmsg,
+                     time_t disabletime, char *dismsg)
 {
 	FILE *output;
 	char *tmpfn;
@@ -110,6 +111,7 @@ void update_htmlfile(char *fn, char *msg,
 			color, sender, flags,
 			logtime, timestr,
 			firstline, restofmsg, ackmsg,
+			disabletime, dismsg,
 			0, 1, 0, 1, output);
 
 		fclose(output);
@@ -247,7 +249,7 @@ int main(int argc, char *argv[])
 
 		if ((role == ROLE_STATUS) && (metacount >= 14) && (strncmp(items[0], "@@status", 8) == 0)) {
 			/* @@status|timestamp|sender|origin|hostname|testname|expiretime|color|testflags|prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage */
-			int logtime, timesincechange;
+			int logtime, timesincechange, disabletime;
 
 			hostname = items[4];
 			testname = items[5];
@@ -261,14 +263,20 @@ int main(int argc, char *argv[])
 			update_file(logfn, "w", statusdata, expiretime, items[2], timesincechange, seq);
 			if (htmldir) {
 				char *ackmsg = NULL;
+				char *dismsg = NULL;
 				char htmllogfn[PATH_MAX];
 
 				if (items[12] && strlen(items[12])) ackmsg = items[12];
 				if (ackmsg) nldecode(ackmsg);
 
+				disabletime = atoi(items[13]);
+				if (items[14] && strlen(items[14]) && (disabletime > 0)) dismsg = items[14];
+				if (dismsg) nldecode(dismsg);
+
 				sprintf(htmllogfn, "%s/%s.%s.%s", htmldir, hostname, testname, htmlextension);
 				update_htmlfile(htmllogfn, statusdata, hostname, testname, parse_color(items[7]),
-						     items[2], items[8], logtime, timesincechange, ackmsg);
+						     items[2], items[8], logtime, timesincechange, ackmsg,
+						     disabletime, dismsg);
 			}
 		}
 		else if ((role == ROLE_DATA) && (metacount > 5) && (strncmp(items[0], "@@data", 6) == 0)) {

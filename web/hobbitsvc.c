@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.27 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.28 2005-01-19 12:00:55 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 	int argi, icount;
 	int color;
 	char timesincechange[100];
-	time_t logtime = 0;
+	time_t logtime = 0, disabletime = 0;
 	char *sender;
 	char *flags;
 	char *ackmsg = NULL, *dismsg = NULL;
@@ -195,6 +195,7 @@ int main(int argc, char *argv[])
 		if (logage > 86400) p += sprintf(p, "%d days,", (int) (logage / 86400));
 		p += sprintf(p, "%d hours, %d minutes", (int) ((logage % 86400) / 3600), (int) ((logage % 3600) / 60));
 		logtime = atoi(items[5]);
+		if (items[8] && strlen(items[8])) disabletime = atoi(items[8]);
 		sender = items[9];
 
 		if (items[11] && strlen(items[11])) ackmsg = items[11];
@@ -305,6 +306,7 @@ int main(int argc, char *argv[])
 		          color, sender, flags, 
 		          logtime, timesincechange, 
 		          firstline, restofmsg, ackmsg, 
+			  disabletime, dismsg,
 		          (source == SRC_HISTLOGS), 
 			  wantserviceid, 
 			  (strcmp(service, "info") == 0),
