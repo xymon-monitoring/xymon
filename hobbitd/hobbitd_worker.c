@@ -10,7 +10,7 @@ hostlist_t      *hosthead = NULL;
 link_t          *linkhead = NULL;
 link_t  null_link = { "", "", "", NULL };
 
-unsigned char *get_bbgend_message(void)
+unsigned char *get_bbgend_message(char *id, int *seq)
 {
 	static unsigned int seqnum = 0;
 	static unsigned char buf[SHAREDBUFSZ];
@@ -28,7 +28,7 @@ unsigned char *get_bbgend_message(void)
 		}
 		else if ((bufp == buf) && (strncmp(bufp, "@@", 2) != 0)) {
 			/* A new message must begin with "@@" - if not, just drop those lines. */
-			errprintf("Out-of-sync data in channel: %s\n", bufp);
+			errprintf("%s: Out-of-sync data in channel: %s\n", id, bufp);
 		}
 		else {
 			/* Add data to buffer */
@@ -40,18 +40,29 @@ unsigned char *get_bbgend_message(void)
 
 	*bufp = '\0';
 
-	dprintf("Got message\n");
 	p = buf + strcspn(buf, "0123456789|");
 	if (isdigit(*p)) {
-		unsigned int seq = atoi(p);
+		*seq = atoi(p);
 
-		dprintf("Got message %u\n", seq);
-
-		if ((seqnum == 0) || (seq == (seqnum + 1))) seqnum = seq;
-		else {
-			errprintf("Got message %u, expected %u\n", seq, seqnum+1);
-			seqnum = seq;
+		if (debug) {
+			p = strchr(buf, '\n'); if (p) *p = '\0';
+			dprintf("%s: Got message %u %s\n", id, *seq, buf);
+			if (p) *p = '\n';
 		}
+
+		if ((seqnum == 0) || (*seq == (seqnum + 1))) {
+			seqnum = *seq;
+			if (seqnum == 99) seqnum = 0;
+		}
+		else {
+			errprintf("%s: Got message %u, expected %u\n", id, *seq, seqnum+1);
+			seqnum = *seq;
+			if (seqnum == 999999) seqnum = 0;
+		}
+	}
+	else {
+		dprintf("%s: Got message with no serial\n", id);
+		*seq = -1;
 	}
 
 	return ((!complete || (buflen == 0)) ? NULL : buf);
