@@ -1,3 +1,7 @@
+# bb-service
+#
+# $Id: bb-services,v 1.2 2004-08-11 13:08:48 henrik Exp $
+#
 # This file defines the way TCP services are tested by bbtest-net
 # (part of the bbgen toolkit).
 #
