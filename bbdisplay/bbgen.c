@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.167 2004-01-25 22:21:12 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.168 2004-03-18 10:03:15 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -139,6 +139,9 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 			ignorecolumns = (char *) malloc(strlen(lp)+2);
 			sprintf(ignorecolumns, ",%s,", (lp+1));
+		}
+		else if (argnmatch(argv[i], "--nk-reds-only")) {
+			nkonlyreds = 1;
 		}
 		else if (argnmatch(argv[i], "--bb2-ignorecolumns=")) {
 			char *lp = strchr(argv[i], '=');
@@ -451,6 +454,7 @@ int main(int argc, char *argv[])
 			printf("    --nopurple                  : Disable purple status-updates\n");
 			printf("    --purplelifetime=N          : Purple messages have a lifetime of N minutes\n");
 			printf("    --ignorecolumns=test[,test] : Completely ignore these columns\n");
+			printf("    --nk-reds-only              : Only show red statuses on the NK page\n");
 			printf("    --bb2-ignorecolumns=test[,test]: Ignore these columns for the BB2 page\n");
 			printf("    --bb2-ignorepurples         : Ignore all-purple hosts on BB2 page\n");
 			printf("    --includecolumns=test[,test]: Always include these columns on BB2 page\n");
