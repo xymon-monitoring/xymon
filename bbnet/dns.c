@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.14 2004-09-12 15:36:07 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.15 2004-09-13 19:53:19 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -103,7 +103,14 @@ void add_host_to_dns_queue(char *hostname)
 		if (use_ares_lookup && !stdchannelactive) {
 			int status;
 			status = ares_init(&stdchannel);
-			stdchannelactive = 1;
+			if (status == ARES_SUCCESS) {
+				stdchannelactive = 1;
+			}
+			else {
+				errprintf("Cannot initialize ARES resolver, using standard\n");
+				errprintf("ARES error was: '%s'\n", ares_strerror(status));
+				use_ares_lookup = 0;
+			}
 		}
 
 		dnsc->name = malcop(hostname);
@@ -247,7 +254,7 @@ int dns_test_server(char *serverip, char *hostname, char **banner, int *bannerby
 
 	status = ares_init_options(&channel, &options, (ARES_OPT_FLAGS | ARES_OPT_SERVERS));
 	if (status != ARES_SUCCESS) {
-		errprintf("Could not initialize ares channel %d\n", status);
+		errprintf("Could not initialize ares channel: %s\n", ares_strerror(status));
 		return 1;
 	}
 
