@@ -40,6 +40,15 @@ GNU General Public License (GPL) version 2, with the explicit
 exemption that linking with the OpenSSL libraries is permitted. 
 See the file COPYING for details.
 
+The lib/md5.c and lib/md5.h files are (C) L. Peter Deutsch,
+available under a BSD-like license from
+http://sourceforge.net/projects/libmd5-rfc/
+
+The lib/rbtr.c and lib/rbtr.h files are by Thomas Nieman,
+who has released them into the public domain.
+http://www.epaperpress.com/sortsearch/rbt.html
+http://www.epaperpress.com/sortsearch/title.html
+
 Hobbit is released under the GPL, and therefore available
 free of charge. However, if you find it useful and want
 to encourage further development, I do have an Amazon
