@@ -5,7 +5,7 @@ BBGENLIBOBJS = bbalert.o bblarrd.o calc.o color.o digest.o encoding.o errormsg.o
 
 CFLAGS += -I. -I../include 
 
-all: libbbgen.a loadhosts
+all: libbbgen.a
 
 libbbgen.a: $(BBGENLIBOBJS)
 	ar cr libbbgen.a $(BBGENLIBOBJS)
@@ -18,5 +18,5 @@ loadhosts: loadhosts.c libbbgen.a
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ loadhosts.c ./libbbgen.a
 
 clean:
-	rm -f *.o *.a *~
+	rm -f *.o *.a *~ loadhosts
 
