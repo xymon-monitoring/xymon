@@ -698,16 +698,9 @@ test. It is only used if running traceroute is made the
 default via the --trace option.
 
 
-.SH BBTEST-NET TAGS FOR HTTP (WEB) TESTS
-These tags affect the way a http check is performed.
+.SH EXTENDED URL SYNTAX FOR HTTP TESTS
 
-.IP "TIMEOUT:N1:N2"
-This option is deprecated. Use the 
-.I bbtest-net(1)
-option "--timeout=N" to set the timeout for TCP- and 
-HTTP-tests.
-
-.IP "Authentication with Basic username/password"
+.IP "Basic Authentication with username/password"
 If the URL requires authentication in the form of a
 username and password, it is most likely using the
 HTTP "Basic" authentication. bbtest-net support this,
@@ -759,27 +752,31 @@ you must put the pass phrase into the $BBHOME/certs/client.pass
 file. Make sure to protect this file with Unix permissions,
 so that only the user running Big Brother can read it.
 
-.IP "Extended URL syntax for SSL (https) tests"
+.IP "Forcing an HTTP or SSL version"
 Some SSL sites will only allow you to connect, if you use
-specific "dialects" of SSL. Normally this is auto-negotiated,
+specific "dialects" of HTTP or SSL. Normally this is auto-negotiated,
 but experience shows that this fails on some systems.
 
-bbtest-net can be told to use specific SSL dialects, by using
-something else instead of "https:" in the URL: 
+bbtest-net can be told to use specific dialects, by adding
+one or more "dialect names" to the URL scheme, i.e. the
+"http" or "https" in the URL:
 
-* https2://www.sample.com/ : use only SSLv2
+* "2",  e.g. https2://www.sample.com/ : use only SSLv2
 .br
-* https3://www.sample.com/ : use only SSLv3
+* "3",  e.g. https3://www.sample.com/ : use only SSLv3
 .br
-* httpsm://www.sample.com/ : use only 128-bit ciphers
+* "m",  e.g. httpsm://www.sample.com/ : use only 128-bit ciphers
 .br
-* httpsh://www.sample.com/ : use only >128-bit ciphers
+* "h",  e.g. httpsh://www.sample.com/ : use only >128-bit ciphers
 .br
-* http10://www.sample.com/ : use HTTP 1.0
+* "10", e.g. http10://www.sample.com/ : use HTTP 1.0
 .br
-* http11://www.sample.com/ : use HTTP 1.1
+* "11", e.g. http11://www.sample.com/ : use HTTP 1.1
 
-.IP "Extended URL syntax for testing sites by IP-address"
+These can be combined where it makes sense, e.g to force
+SSLv2 and HTTP 1.0 you would use "https210".
+
+.IP "Testing sites by IP-address"
 bbtest-net ignores the "testip" tag normally used to force a 
 test to use the IP-address from the bb-hosts file instead of
 the hostname, when it performs http and https tests.
@@ -803,7 +800,7 @@ it should be done as
 
 	http://www.sample.com:3128=1.2.3.4/index.html
 
-.IP "Extended URL syntax for testing via proxy"
+.IP "HTTP Testing via proxy"
 bbtest-net supports the standard Big Brother syntax for
 specifying an HTTP proxy to use when performing http 
 tests. This syntax just joins the proxy- and the target-URL
@@ -815,7 +812,7 @@ would be the syntax for testing the Big Brother website
 via the proxy running on "webproxy.sample.com" port 3128.
 
 If the proxy portnumber is not specified, the default 
-portnumber (80) is used.
+HTTP portnumber (80) is used.
 
 If your proxy requires authentication, you can specify the
 username and password inside the proxy-part of the URL, e.g.
@@ -826,14 +823,9 @@ will authenticate to the proxy using a username of "fred" and
 a password of "Wilma1", before requesting the proxy to fetch
 the Big Brother homepage.
 
-
-.IP "Extended URL syntax for specifying HTTP protocol version"
-If you happen to have a server that requires that you talk 
-HTTP 1.0 to it, then you can specify the URL as
-.br
-    http10://www.sample.com/
-.br
-This cannot be combined with any other modifiers.
+Note that it is not possible to test https-sites via a proxy,
+nor is it possible to use https for connecting to the proxy 
+itself.
 
 
 .SH BBTEST-NET TAGS FOR CONTENT CHECKS
@@ -850,6 +842,21 @@ The data that must be returned can be specified either
 as a regular expression (except that <space> is not allowed)
 or as a message digest (typically using an MD5 sum or 
 SHA-1 hash).
+
+The regex is pre-processed for backslash "\\" escape
+sequences. So you can really put any character in this
+string by escaping it first:
+.br
+   \\n     Newline (LF, ASCII 10 decimal)
+.br
+   \\r     Carriage return (CR, ASCII 13 decimal)
+.br
+   \\t     TAB (ASCII 8 decimal)
+.br
+   \\\\    Backslash (ASCII 92 decimal)
+.br
+   \\XX    The character with ASCII hex-value XX
+.br
 
 If you must have whitespace in the regex, use the
 [[:space:]] syntax, e.g. if you want to test for 
