@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char la_rcsid[] = "$Id: do_la.c,v 1.9 2005-02-17 12:32:18 henrik Exp $";
+static char la_rcsid[] = "$Id: do_la.c,v 1.10 2005-02-17 21:53:52 henrik Exp $";
 
 static char *la_params[]          = { "rrdcreate", rrdfn, "DS:la:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
@@ -37,25 +37,31 @@ int do_la_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 		/*
 		 * Load can be either 
-		 * -  "load=xx.xx" (Unix, DISPREALLOADAVG=TRUE)
 		 * -  "load=xx%"   (Windows)
+		 * -  "load=xx.xx" (Unix, DISPREALLOADAVG=TRUE)
 		 * -  "load=xx"    (Unix, DISPREALLOADAVG=FALSE)
 		 *
 		 * We want the load in percent (Windows), or LA*100 (Unix).
 		 */
-		p = strstr(msg, "load="); if (p) { gotload = 1; p += 5; }
-		if (strchr(p, '.')) {
-			load = 100*atoi(p);
-			p = strchr(p, '.');
-			load += (atoi(p+1) % 100);
+		p = strstr(msg, "load="); 
+		if (p) { 
+			p += 5;
+			if (strchr(p, '%')) {
+				gotload = 1; 
+				load = atoi(p);
+			}
+			else if (strchr(p, '.')) {
+				gotload = 1; 
+				load = 100*atoi(p);
+				/* Find the decimal part, and cut off at 2 decimals */
+				p = strchr(p, '.'); if (strlen(p) > 3) *(p+3) = '\0';
+				load += atoi(p+1);
+			}
+			else {
+				gotload = 1; 
+				load = atoi(p);
+			}
 		}
-		else if (strchr(p, '%')) {
-			load = atoi(p);
-		}
-		else {
-			load = atoi(p);
-		}
-
 	}
 	if (eoln) *eoln = '\n';
 
