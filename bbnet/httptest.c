@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.33 2003-07-25 09:24:09 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.34 2003-07-25 09:49:07 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -413,21 +413,22 @@ static int debug_callback(CURL *handle, curl_infotype type, char *data, size_t s
 }
 #endif
 
-char *urlip(char *url, char *hostip, char *hostname)
+char *urlip(const char *url, char *hostip, char *hostname)
 {
 	/* This routine changes the URL to use an IP-address instead of the hostname */
+	char *urlcopy = malcop(url);
 	static char result[MAX_LINE_LEN];
 	char *p, *hoststart, *restofurl, *portnumber;
 
 	*hostname = '\0';
-	strcpy(result, url);
+	strcpy(result, urlcopy);
 
 	/* First find where the hostname starts */
-	p = strstr(url, "://");
+	p = strstr(urlcopy, "://");
 	if (p == NULL) return result;
 
 	hoststart = p+3;
-	result[hoststart-url] = '\0';
+	result[hoststart-urlcopy] = '\0';
 
 	/* Now cut off the part of the URL that is not the hostname */
 	p = strchr(hoststart, '/');
@@ -455,6 +456,7 @@ char *urlip(char *url, char *hostip, char *hostname)
 	strcat(result, "/");
 	strcat(result, restofurl);
 
+	free(urlcopy);
 	return result;
 }
 
