@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.35 2003-04-25 12:09:10 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.36 2003-04-25 12:12:14 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -137,7 +137,7 @@ char *stackfgets(char *buffer, unsigned int bufferlen, char *includetag)
 		char *newfn = buffer+strlen(includetag);
 		char *eol = strchr(buffer, '\n');
 
-		while (*newfn && isspace(*newfn)) newfn++;
+		while (*newfn && isspace((int)*newfn)) newfn++;
 		if (eol) *eol = '\0';
 		
 		if (stackfopen(newfn, "r") != NULL) 
