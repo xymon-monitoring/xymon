@@ -8,7 +8,6 @@ Stuff that standard BB does which bbgen/bbtest-* does not
   doing it via the existing script as an extension is OK.
 * Handle all fping.sh extensions (IP ranges, conn-failure
   root-cause analysis - i.e. traceroute + router dependency)
-* Handle the bbnet "proxy" syntax: http://proxy/http://www.site.com/
 
 Suggestions from users
 ----------------------
