@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.51 2003-06-01 21:48:12 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.52 2003-06-02 06:39:31 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -230,9 +230,12 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 	col_list_t *groupcols, *gc;
 	int	genstatic;
 	int	columncount;
+	char	*bbskin;
 
 	if (head == NULL)
 		return;
+
+	bbskin = malcop(getenv("BBSKIN"));
 
 	/* Generate static or dynamic links (from BBLOGSTATUS) ? */
 	genstatic = generate_static();
@@ -315,6 +318,10 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 					fprintf(output, "-");
 				}
 				else {
+					char *skin;
+
+					skin = (e->skin ? e->skin : bbskin);
+
 					if (e->sumurl) {
 						/* A summary host. */
 						fprintf(output, "<A HREF=\"%s\">", e->sumurl);
@@ -333,7 +340,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 					}
 
 					fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
-						getenv("BBSKIN"), dotgiffilename(e->color, e->acked, e->oldage),
+						skin, dotgiffilename(e->color, e->acked, e->oldage),
 						alttag(e),
 						getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
 				}
@@ -352,6 +359,8 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 		groupcols = groupcols->next;
 		free(gc);
 	}
+
+	free(bbskin);
 }
 
 void do_groups(group_t *head, FILE *output)
@@ -447,8 +456,11 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 					newentry->oldage = 1; /* Use standard gifs */
 					newentry->acked = 0;
 					newentry->alert = 0;
+					newentry->onwap = 0;
 					newentry->propagate = 1;
 					newentry->sumurl = s2->url;
+					newentry->skin = NULL;
+					newentry->testflags = NULL;
 					newentry->next = newhost->entries;
 					newhost->entries = newentry;
 				}

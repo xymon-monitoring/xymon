@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.72 2003-05-23 10:32:24 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.73 2003-06-02 06:39:31 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -43,6 +43,8 @@ int	purpledelay = 0;			/* Lifetime of purple status-messages. Default 0 for
 						   compatibility with standard bb-display.sh behaviour */
 char	*ignorecolumns = NULL;			/* Columns that will be ignored totally */
 char    *wapcolumns = NULL;                     /* Default columns included in WAP cards */
+char	*dialupskin = NULL;			/* BBSKIN used for dialup tests */
+char	*reverseskin = NULL;			/* BBSKIN used for reverse tests */
 
 link_t  null_link = { "", "", "", NULL };	/* Null link for pages/hosts/whatever with no link */
 bbgen_col_t   null_column = { "", NULL };		/* Null column */
@@ -343,6 +345,35 @@ bbgen_col_t *find_or_create_column(const char *testname)
 	return newcol;
 }
 
+char *parse_testflags(char *l)
+{
+	char *result = NULL;
+	char *flagstart = strstr(l, "[flags:");
+
+	if (flagstart) {
+		char *flagend;
+
+		flagstart += 7;
+		flagend = strchr(flagstart, ']');
+
+		if (flagend) {
+			*flagend = '\0';
+			result = malcop(flagstart);
+			*flagend = ']';
+		}
+	}
+
+	return result;
+}
+
+int testflag_set(entry_t *e, char flag)
+{
+	if (e->testflags) 
+		return (strchr(e->testflags, flag) != NULL);
+	else
+		return 0;
+}
+
 state_t *init_state(const char *filename, int dopurple, int *is_purple)
 {
 	FILE 		*fd;
@@ -411,6 +442,8 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	strcpy(newstate->entry->age, "");
 	newstate->entry->oldage = 0;
 	newstate->entry->propagate = 1;
+	newstate->entry->skin = NULL;
+	newstate->entry->testflags = NULL;
 
 	host = find_host(hostname);
 	if (host) {
@@ -428,6 +461,9 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 
 	if (fgets(l, sizeof(l), fd)) {
 		newstate->entry->color = parse_color(l);
+		newstate->entry->testflags = parse_testflags(l);
+		if (testflag_set(newstate->entry, 'D')) newstate->entry->skin = dialupskin;
+		if (testflag_set(newstate->entry, 'R')) newstate->entry->skin = reverseskin;
 	}
 
 	if ( (log_st.st_mtime <= now) && (strcmp(testname, larrdcol) != 0) && (strcmp(testname, infocol) != 0) ) {

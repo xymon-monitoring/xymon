@@ -48,5 +48,7 @@ extern int	enable_purpleupd;
 extern int	purpledelay;
 extern char     *ignorecolumns;
 extern char     *wapcolumns;
+extern char	*dialupskin;
+extern char	*reverseskin;
 
 #endif
