@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.24 2003-08-14 14:53:35 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.25 2003-08-16 06:59:26 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -111,7 +111,6 @@ void do_tcp_tests(int conntimeout, int concurrency)
 	int		selres;
 	fd_set		readfds, writefds;
 	struct timeval	tmo, timestamp;
-	struct timezone tz;
 
 	int		activesockets = 0; /* Number of allocated sockets */
 	int		pending = 0;	   /* Total number of tests */
@@ -164,7 +163,7 @@ void do_tcp_tests(int conntimeout, int concurrency)
 					/*
 					 * Initiate the connection attempt ... 
 					 */
-					gettimeofday(&nextinqueue->timestart, &tz);
+					gettimeofday(&nextinqueue->timestart, NULL);
 					res = connect(nextinqueue->fd, (struct sockaddr *)&nextinqueue->addr, sizeof(nextinqueue->addr));
 
 					/*
@@ -287,7 +286,7 @@ void do_tcp_tests(int conntimeout, int concurrency)
 		}
 
 		/* Fetch the timestamp so we can tell how long the connect took */
-		gettimeofday(&timestamp, &tz);
+		gettimeofday(&timestamp, NULL);
 
 		/* Now find out which connections had something happen to them */
 		for (item=firstactive; (item != nextinqueue); item=item->next) {

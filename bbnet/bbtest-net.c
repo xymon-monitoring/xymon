@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.90 2003-08-14 22:16:31 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.91 2003-08-16 06:59:26 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -698,7 +698,7 @@ void save_fping_status(void)
 
 	for (t=pingtest->items; (t); t = t->next) {
 		if (t->host->downcount) {
-			fprintf(statusfd, "%s %d %lu\n", t->host->hostname, t->host->downcount, t->host->downstart);
+			fprintf(statusfd, "%s %d %u\n", t->host->hostname, t->host->downcount, (unsigned int)t->host->downstart);
 			didany = 1;
 			t->host->repeattest = ((time(NULL) - t->host->downstart) < frequenttestlimit);
 		}
@@ -754,7 +754,7 @@ void save_test_status(service_t *test)
 
 	for (t=test->items; (t); t = t->next) {
 		if (t->downcount) {
-			fprintf(statusfd, "%s %d %lu\n", t->host->hostname, t->downcount, t->downstart);
+			fprintf(statusfd, "%s %d %u\n", t->host->hostname, t->downcount, (unsigned int)t->downstart);
 			didany = 1;
 			t->host->repeattest = ((time(NULL) - t->downstart) < frequenttestlimit);
 		}
@@ -1216,8 +1216,8 @@ void send_results(service_t *service, int failgoesclear)
 		addtostatus(msgtext);
 
 		if ((service == pingtest) && t->host->downcount) {
-			sprintf(msgtext, "\nSystem unreachable for %d poll periods (%lu seconds)\n",
-				t->host->downcount, (time(NULL) - t->host->downstart));
+			sprintf(msgtext, "\nSystem unreachable for %d poll periods (%u seconds)\n",
+				t->host->downcount, (unsigned int)(time(NULL) - t->host->downstart));
 			addtostatus(msgtext);
 		}
 

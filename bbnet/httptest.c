@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.38 2003-08-14 22:16:05 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.39 2003-08-16 06:59:26 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -800,14 +800,14 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 
 			if (req->sslinfo && (req->sslexpire > 0)) {
 				if (req->sslexpire > now) {
-					sprintf(msgline, "\n&%s SSL certificate for %s expires in %ld days\n\n", 
+					sprintf(msgline, "\n&%s SSL certificate for %s expires in %u days\n\n", 
 						colorname(req->sslcolor), req->url,
-						(req->sslexpire-now) / 86400);
+						(unsigned int)((req->sslexpire-now) / 86400));
 				}
 				else {
-					sprintf(msgline, "\n&%s SSL certificate for %s expired %ld days ago\n\n", 
+					sprintf(msgline, "\n&%s SSL certificate for %s expired %u days ago\n\n", 
 						colorname(req->sslcolor), req->url, 
-						(now-req->sslexpire) / 86400);
+						(unsigned int)((now-req->sslexpire) / 86400));
 				}
 				addtostatus(msgline);
 				addtostatus(req->sslinfo);

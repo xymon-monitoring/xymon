@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-snapshot.c,v 1.2 2003-07-17 21:06:16 henrik Exp $";
+static char rcsid[] = "$Id: bb-snapshot.c,v 1.3 2003-08-16 06:59:26 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
 	envcheck(reqenv);
 	parse_query();
 
-	sprintf(dirid, "%u-%lu", (unsigned int)getpid(), time(NULL));
+	sprintf(dirid, "%u-%u", (unsigned int)getpid(), (unsigned int)time(NULL));
 	sprintf(outdir, "%s/%s", getenv("BBSNAP"), dirid);
 	if (mkdir(outdir, 0755) == -1) errormsg("Cannot create output directory");
 
@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
 	else sprintf(bbgencmd, "%s/bin/bbgen", getenv("BBHOME"));
 
 	bbgen_argv[0] = bbgencmd;
-	sprintf(bbgentimeopt, "--snapshot=%lu", starttime);
+	sprintf(bbgentimeopt, "--snapshot=%u", (unsigned int)starttime);
 	bbgen_argv[1] = bbgentimeopt;
 	for (i=1; (i<argc); i++) bbgen_argv[i+1] = argv[i];
 	bbgen_argv[1+argc] = outdir;
@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
 
 
 	/* Output the "please wait for report ... " thing */
-	sprintf(htmldelim, "bbrep-%u-%lu", (int)getpid(), time(NULL));
+	sprintf(htmldelim, "bbrep-%u-%u", (int)getpid(), (unsigned int)time(NULL));
 	printf("Content-type: multipart/mixed;boundary=%s\n", htmldelim);
 	printf("\n");
 	printf("%s\n", htmldelim);

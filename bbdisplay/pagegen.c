@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.85 2003-08-12 21:16:05 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.86 2003-08-16 06:59:26 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -447,9 +447,9 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 						if (dynamicreport) {
 							fprintf(output, "<A HREF=\"%s/bb-replog.sh?HOSTSVC=%s.%s&amp;IP=%s",
 								getenv("CGIBINURL"), commafy(h->hostname), e->column->name, h->ip);
-							fprintf(output, "&amp;COLOR=%s&amp;PCT=%.2f&amp;ST=%lu&amp;END=%lu",
+							fprintf(output, "&amp;COLOR=%s&amp;PCT=%.2f&amp;ST=%u&amp;END=%u",
 								colorname(e->color), e->repinfo->fullavailability, 
-								e->repinfo->reportstart, reportend);
+								(unsigned int)e->repinfo->reportstart, (unsigned int)reportend);
 							fprintf(output, "&amp;RED=%.2f&amp;YEL=%.2f&amp;GRE=%.2f&amp;PUR=%.2f&amp;CLE=%.2f&amp;BLU=%.2f",
 								e->repinfo->fullpct[COL_RED], e->repinfo->fullpct[COL_YELLOW], 
 								e->repinfo->fullpct[COL_GREEN], e->repinfo->fullpct[COL_PURPLE], 
@@ -935,8 +935,8 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 			eventintime_count = maxcount;
 		}
 
-		sprintf(title, "%d events received in the past %lu minutes",
-			eventintime_count, ((time(NULL)-events[firstevent].eventtime) / 60));
+		sprintf(title, "%d events received in the past %u minutes",
+			eventintime_count, (unsigned int)((time(NULL)-events[firstevent].eventtime) / 60));
 
 		fprintf(output, "<BR><BR>\n");
         	fprintf(output, "<TABLE SUMMARY=\"$EVENTSTITLE\" BORDER=0>\n");

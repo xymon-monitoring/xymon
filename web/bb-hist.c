@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.27 2003-08-15 21:13:13 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.28 2003-08-16 06:59:26 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -235,7 +235,8 @@ static void generate_colorbar(
 	int secsperpixel;
 	char *pctstr = "";
 	replog_t *colorlog, *walk;
-	int changeval, changealign;
+	int changeval = 0;
+	int changealign = 0;
 
 	/*
 	 * Pixel-based charts are better, but for backwards
@@ -341,7 +342,7 @@ static void generate_colorbar(
 		char *bgcols[2] = { "\"#000000\"", "\"#555555\"" };
 		int curbg = 0;
 		int intervalpixels, tagcolor;
-		time_t minduration;
+		time_t minduration = 1800;
 		struct tm *tmbuf;
 
 		do {

@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.19 2003-08-12 21:16:05 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.20 2003-08-16 06:59:26 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -218,8 +218,9 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 
 			/* And the text-report */
 			if (textrep) {
-				fprintf(textrep, "%s	%s	%s	%s		%lu		",
-					start, end, colorname(walk->color), durationstr(walk->duration), walk->duration);
+				fprintf(textrep, "%s	%s	%s	%s		%u		",
+					start, end, colorname(walk->color), 
+					durationstr(walk->duration), (unsigned int)walk->duration);
 				if (walk->cause) {
 					char *p;
 
@@ -470,7 +471,7 @@ int main(int argc, char *argv[])
 	color = parse_historyfile(fd, &repinfo, hostname, service, st, end, 0, reportwarnlevel, reportgreenlevel, reporttime);
 	fclose(fd);
 
-	sprintf(textrepfn, "avail-%s-%s-%lu-%u.txt", hostname, service, time(NULL), (int)getpid());
+	sprintf(textrepfn, "avail-%s-%s-%u-%u.txt", hostname, service, (unsigned int)time(NULL), (int)getpid());
 	sprintf(textrepfullfn, "%s/%s", getenv("BBREP"), textrepfn);
 	sprintf(textrepurl, "%s/%s", getenv("BBREPURL"), textrepfn);
 	textrep = fopen(textrepfullfn, "w");

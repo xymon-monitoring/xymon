@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.12 2003-07-22 21:11:05 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.13 2003-08-16 06:59:26 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -214,7 +214,7 @@ int main(int argc, char *argv[])
 	envcheck(reqenv);
 	parse_query();
 
-	sprintf(dirid, "%u-%lu", (unsigned int)getpid(), time(NULL));
+	sprintf(dirid, "%u-%u", (unsigned int)getpid(), (unsigned int)time(NULL));
 	sprintf(outdir, "%s/%s", getenv("BBREP"), dirid);
 	mkdir(outdir, 0755);
 
@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
 	if (getenv("BBGEN")) sprintf(bbgencmd, "%s", getenv("BBGEN"));
 	else sprintf(bbgencmd, "%s/bin/bbgen", getenv("BBHOME"));
 	bbgen_argv[0] = bbgencmd;
-	sprintf(bbgentimeopt, "--reportopts=%lu:%lu:1:%s", starttime, endtime, style);
+	sprintf(bbgentimeopt, "--reportopts=%u:%u:1:%s", (unsigned int)starttime, (unsigned int)endtime, style);
 	bbgen_argv[1] = bbgentimeopt;
 	for (i=1; (i<argc); i++) bbgen_argv[i+1] = argv[i];
 	bbgen_argv[1+argc] = outdir;
@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
 
 
 	/* Output the "please wait for report ... " thing */
-	sprintf(htmldelim, "bbrep-%u-%lu", (int)getpid(), time(NULL));
+	sprintf(htmldelim, "bbrep-%u-%u", (int)getpid(), (unsigned int)time(NULL));
 	printf("Content-type: multipart/mixed;boundary=%s\n", htmldelim);
 	printf("\n");
 	printf("%s\n", htmldelim);

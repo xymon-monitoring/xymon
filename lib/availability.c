@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.24 2003-08-12 21:16:05 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.25 2003-08-16 06:59:26 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -49,11 +49,12 @@ char *durationstr(time_t duration)
 	else {
 		dur[0] = '\0';
 		if (duration > 86400) {
-			sprintf(dhelp, "%lu days ", (duration / 86400));
+			sprintf(dhelp, "%u days ", (unsigned int)(duration / 86400));
 			duration %= 86400;
 			strcpy(dur, dhelp);
 		}
-		sprintf(dhelp, "%lu:%02lu:%02lu", duration / 3600, ((duration % 3600) / 60), (duration % 60));
+		sprintf(dhelp, "%u:%02u:%02u", (unsigned int)(duration / 3600), 
+			(unsigned int)((duration % 3600) / 60), (unsigned int)(duration % 60));
 		strcat(dur, dhelp);
 	}
 
