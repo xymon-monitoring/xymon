@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.2 2004-10-31 07:56:48 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.3 2004-10-31 11:51:35 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -70,9 +70,9 @@ void envcheck(char *envvars[])
 	}
 }
 
-void getenv_default(char *envname, char *envdefault, char **buf)
+char *getenv_default(char *envname, char *envdefault, char **buf)
 {
-	char *val;
+	static char *val;
 
 	val = getenv(envname);
 	if (!val) {
@@ -84,6 +84,7 @@ void getenv_default(char *envname, char *envdefault, char **buf)
 	}
 
 	if (buf) *buf = val;
+	return val;
 }
 
 
