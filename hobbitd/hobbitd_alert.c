@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.44 2005-02-22 16:53:39 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.45 2005-02-22 21:48:35 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -290,7 +290,7 @@ int main(int argc, char *argv[])
 			awalk->next = NULL;
 
 			logfd = fopen("/dev/null", "w");
-			tracefd = stdout;
+			starttrace(NULL);
 			testonly = 1;
 
 			load_alertconfig(configfn, alertcolors, alertinterval);
@@ -299,7 +299,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--trace=")) {
 			char *tracefn = strchr(argv[argi], '=')+1;
-			tracefd = fopen(tracefn, "a");
+			starttrace(tracefn);
 		}
 		else {
 			errprintf("Unknown option '%s'\n", argv[argi]);
@@ -408,7 +408,7 @@ int main(int argc, char *argv[])
 			int newcolor, newalertstatus, oldalertstatus;
 
 			dprintf("Got page message from %s:%s\n", hostname, testname);
-			if (tracefd) fprintf(tracefd, "@@page %s:%s:%s=%s", hostname, testname, metadata[10], metadata[7]);
+			traceprintf("@@page %s:%s:%s=%s\n", hostname, testname, metadata[10], metadata[7]);
 
 			awalk = find_active(hostname, testname);
 			if (awalk == NULL) {
@@ -430,7 +430,7 @@ int main(int argc, char *argv[])
 				awalk->state = A_DEAD;
 				awalk->next = ahead;
 				ahead = awalk;
-				if (tracefd) fprintf(tracefd, ": New record");
+				traceprintf("New record\n");
 			}
 
 			newcolor = parse_color(metadata[7]);
@@ -438,7 +438,7 @@ int main(int argc, char *argv[])
 			newalertstatus = ((alertcolors & (1 << newcolor)) != 0);
 			awalk->color = newcolor;
 
-			if (tracefd) fprintf(tracefd, ": state %d->%d\n", oldalertstatus, newalertstatus);
+			traceprintf("state %d->%d\n", oldalertstatus, newalertstatus);
 
 			if (newalertstatus) {
 				/* It's in an alert state. */
@@ -470,12 +470,12 @@ int main(int argc, char *argv[])
 			time_t nextalert = atoi(metadata[6]);
 
 			dprintf("Got ack message from %s:%s\n", hostname, testname);
-			if (tracefd) fprintf(tracefd, "@@ack: %s:%s now=%d, ackeduntil %d",
-						hostname, testname, (int)now, (int)nextalert);
+			traceprintf("@@ack: %s:%s now=%d, ackeduntil %d\n",
+				     hostname, testname, (int)now, (int)nextalert);
 
 			awalk = find_active(hostname, testname);
 			if (awalk && (awalk->state == A_PAGING)) {
-				if (tracefd) fprintf(tracefd, ": Record updated\n");
+				traceprintf("Record updated\n");
 				if (acklogfd) {
 					fprintf(acklogfd, "%d\t%d\t%d\t%d\t%s\t%s.%s\t%s\t%s\n",
 						(int)now, awalk->cookie, 
@@ -492,7 +492,7 @@ int main(int argc, char *argv[])
 				awalk->ackmessage = strdup(restofmsg);
 			}
 			else {
-				if (tracefd) fprintf(tracefd, ": No record\n");
+				traceprintf("No record\n");
 			}
 		}
 		else if ((metacount > 3) && (strncmp(metadata[0], "@@drophost", 10) == 0)) {
@@ -702,6 +702,7 @@ int main(int argc, char *argv[])
 	if (checkfn) save_checkpoint(checkfn);
 	if (acklogfd) fclose(acklogfd);
 	if (notiflogfd) fclose(notiflogfd);
+	stoptrace();
 
 	return 0;
 }

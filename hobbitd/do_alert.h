@@ -37,7 +37,6 @@ typedef struct activealerts_t {
 
 extern int include_configid;
 extern int testonly;
-extern FILE *tracefd;
 
 extern void load_alertconfig(char *configfn, int alertcolors, int alertinterval);
 extern void dump_alertconfig(void);

@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.42 2005-02-22 16:54:06 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.43 2005-02-22 21:48:35 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -65,7 +65,6 @@ static char rcsid[] = "$Id: do_alert.c,v 1.42 2005-02-22 16:54:06 henrik Exp $";
 
 #include "hobbitd_alert.h"
 
-FILE *tracefd = NULL;	   /* Logfile for tracing. If not NULL, output trace info to troubleshoot alert rules */
 int include_configid = 0;  /* Whether to include the configuration file linenumber in alerts */
 int testonly = 0;	   /* Test mode, dont actually send out alerts */
 
@@ -804,61 +803,59 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit)
 
 	dprintf("criteriamatch %s:%s %s:%s:%s\n", alert->hostname->name, alert->testname->name, 
 		textornull(crit->hostspec), textornull(crit->pagespec), textornull(crit->svcspec));
-	if (tracefd) {
-		fprintf(tracefd, "Matching host:service:page '%s:%s:%s' against rule line %d:",
+	traceprintf("Matching host:service:page '%s:%s:%s' against rule line %d\n",
 			alert->hostname->name, alert->testname->name, 
 			alert->location->name, crit->cfid);
-	}
 
 	duration = (time(NULL) - alert->eventstart);
 	if (crit->minduration && (duration < crit->minduration)) { 
 		dprintf("failed minduration %d<%d\n", duration, crit->minduration); 
-		if (tracefd) fprintf(tracefd, "Failed (min. duration)\n");
+		traceprintf("Failed (min. duration)\n");
 		if (!printmode) return 0; 
 	}
 
 	if (crit->maxduration && (duration > crit->maxduration)) { 
 		dprintf("failed maxduration\n"); 
-		if (tracefd) fprintf(tracefd, "Failed (max. duration)\n");
+		traceprintf("Failed (max. duration)\n");
 		if (!printmode) return 0; 
 	}
 
 	if (crit->pagespec && !namematch(alert->location->name, crit->pagespec, crit->pagespecre)) { 
 		dprintf("failed pagespec\n"); 
-		if (tracefd) fprintf(tracefd, "Failed (pagename not in include list)\n");
+		traceprintf("Failed (pagename not in include list)\n");
 		return 0; 
 	}
 	if (crit->expagespec && namematch(alert->location->name, crit->expagespec, crit->expagespecre)) { 
 		dprintf("matched expagespec, so drop it\n"); 
-		if (tracefd) fprintf(tracefd, "Failed (pagename excluded)\n");
+		traceprintf("Failed (pagename excluded)\n");
 		return 0; 
 	}
 
 	if (crit->hostspec && !namematch(alert->hostname->name, crit->hostspec, crit->hostspecre)) { 
 		dprintf("failed hostspec\n"); 
-		if (tracefd) fprintf(tracefd, "Failed (hostname not in include list)\n");
+		traceprintf("Failed (hostname not in include list)\n");
 		return 0; 
 	}
 	if (crit->exhostspec && namematch(alert->hostname->name, crit->exhostspec, crit->exhostspecre)) { 
 		dprintf("matched exhostspec, so drop it\n"); 
-		if (tracefd) fprintf(tracefd, "Failed (hostname excluded)\n");
+		traceprintf("Failed (hostname excluded)\n");
 		return 0; 
 	}
 
 	if (crit->svcspec && !namematch(alert->testname->name, crit->svcspec, crit->svcspecre))  { 
 		dprintf("failed svcspec\n"); 
-		if (tracefd) fprintf(tracefd, "Failed (service not in include list)\n");
+		traceprintf("Failed (service not in include list)\n");
 		return 0; 
 	}
 	if (crit->exsvcspec && namematch(alert->testname->name, crit->exsvcspec, crit->exsvcspecre))  { 
 		dprintf("matched exsvcspec, so drop it\n"); 
-		if (tracefd) fprintf(tracefd, "Failed (service excluded)\n");
+		traceprintf("Failed (service excluded)\n");
 		return 0; 
 	}
 
 	if (crit->timespec && !timematch(crit->timespec)) { 
 		dprintf("failed timespec\n"); 
-		if (tracefd) fprintf(tracefd, "Failed (time criteria)\n");
+		traceprintf("Failed (time criteria)\n");
 		if (!printmode) return 0; 
 	}
 
@@ -881,12 +878,10 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit)
 		if (printmode) return 1;
 	}
 
-	if (tracefd) {
-		if (result)
-			fprintf(tracefd, "Matched\n    *** Match with '%s' ***\n", crit->cfline);
-		else
-			fprintf(tracefd, "%s\n", "Failed (color)");
-	}
+	if (result)
+		traceprintf("*** Match with '%s' ***\n", crit->cfline);
+	else
+		traceprintf("%s\n", "Failed (color)");
 
 	return result;
 }
@@ -1112,13 +1107,11 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 	int first = 1;
 	int alertcount = 0;
 	time_t now = time(NULL);
+	char *alerttxt[A_DEAD+1] = { "Paging", "Acked", "Recovered", "Dead" };
 
 	dprintf("send_alert %s:%s state %d\n", alert->hostname->name, alert->testname->name, (int)alert->state);
-	if (tracefd) {
-		char *alerttxt[A_DEAD+1] = { "Paging", "Acked", "Recovered", "Dead" };
-		fprintf(tracefd, "send_alert %s:%s state %s\n", 
-			alert->hostname->name, alert->testname->name, alerttxt[alert->state]);
-	}
+	traceprintf("send_alert %s:%s state %s\n", 
+		    alert->hostname->name, alert->testname->name, alerttxt[alert->state]);
 
 	stoprulefound = 0;
 
@@ -1128,15 +1121,14 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 		rpt = find_repeatinfo(alert, recip, 1);
 		dprintf("  repeat %s at %d\n", rpt->recipid, rpt->nextalert);
 		if (rpt->nextalert > now) {
-			if (tracefd) fprintf(tracefd, "Recipient '%s' dropped, next alert due at %d > %d\n",
-						rpt->recipid, (int)rpt->nextalert, (int)now);
+			traceprintf("Recipient '%s' dropped, next alert due at %d > %d\n",
+					rpt->recipid, (int)rpt->nextalert, (int)now);
 			continue;
 		}
 
 		/* If this is an "UNMATCHED" rule, ignore it if we have already sent out some alert */
 		if (recip->unmatchedonly && (alertcount != 1)) {
-			if (tracefd) fprintf(tracefd, "Recipient '%s' dropped, not unmatched (count=%d)\n", 
-					     rpt->recipid, alertcount);
+			traceprintf("Recipient '%s' dropped, not unmatched (count=%d)\n", rpt->recipid, alertcount);
 			continue;
 		}
 
@@ -1166,7 +1158,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 				}
 				strcat(cmd, recip->recipient);
 
-				if (tracefd) fprintf(tracefd, "Mail alert with command '%s'\n", cmd);
+				traceprintf("Mail alert with command '%s'\n", cmd);
 				if (testonly) break;
 
 				mailpipe = popen(cmd, "w");
@@ -1190,7 +1182,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 				}
 				else {
 					errprintf("ERROR: Cannot open command pipe for '%s' - alert lost!\n", cmd);
-					if (tracefd) fprintf(tracefd, "Mail pipe failed - alert lost\n");
+					traceprintf("Mail pipe failed - alert lost\n");
 				}
 			}
 			break;
@@ -1270,8 +1262,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 				}
 				putenv(downsecsmsg);
 
-				if (tracefd) fprintf(tracefd, "Script alert with command '%s' and recipient %s\n", 
-						     recip->scriptname, recip->recipient);
+				traceprintf("Script alert with command '%s' and recipient %s\n", recip->scriptname, recip->recipient);
 				if (testonly) break;
 
 				scriptpid = fork();
@@ -1313,7 +1304,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 				}
 				else {
 					errprintf("ERROR: Fork failed to launch script '%s' - alert lost\n", recip->scriptname);
-					if (tracefd) fprintf(tracefd, "Script fork failed - alert lost\n");
+					traceprintf("Script fork failed - alert lost\n");
 				}
 
 				/* Clean out the environment settings */
