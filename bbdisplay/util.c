@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.121 2004-08-28 06:40:01 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.122 2004-08-31 20:42:35 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -34,6 +34,7 @@ static char rcsid[] = "$Id: util.c,v 1.121 2004-08-28 06:40:01 henrik Exp $";
 #include <signal.h>
 #include <sys/resource.h>
 #include <limits.h>
+#include <netdb.h>
 
 #include "bbgen.h"
 #include "util.h"
@@ -73,6 +74,17 @@ static char signal_bbcmd[MAX_PATH];
 static char signal_bbdisp[1024];
 static char signal_msg[1024];
 static char signal_bbtmp[MAX_PATH];
+
+
+
+typedef struct loginlist_t {
+	char *host;
+	char *auth;
+	struct loginlist_t *next;
+} loginlist_t;
+
+static loginlist_t *loginhead = NULL;
+
 
 void errprintf(const char *fmt, ...)
 {
@@ -1177,220 +1189,6 @@ void drop_genstatfiles(void)
 	}
 }
 
-char *urlip(const char *url, char *hostip, char *hostname)
-{
-	/* This routine changes the URL to use an IP-address instead of the hostname */
-	char *urlcopy = malcop(url);
-	static char result[MAX_LINE_LEN];
-	char *p, *hoststart, *restofurl, *portnumber;
-
-	if (hostname) *hostname = '\0';
-	strcpy(result, urlcopy);
-
-	/* First find where the hostname starts */
-	p = strstr(urlcopy, "://");
-	if (p == NULL) return result;
-
-	hoststart = p+3;
-	result[hoststart-urlcopy] = '\0';
-
-	/* Now cut off the part of the URL that is not the hostname */
-	p = strchr(hoststart, '/');
-	if (p) { *p = '\0'; restofurl = p+1; } else restofurl = "";
-
-	/* hoststart points to start of hostname, restofurl to the part after the hostname */
-	p = strchr(hoststart, '@');
-	if (p) {
-		/* URL contains "login:password@" sequence */
-		*p = '\0';
-		strcat(result, hoststart); strcat(result, "@");
-		hoststart = p+1;
-	}
-
-	/* Any port number lurking here? */
-	portnumber = strchr(hoststart, ':');
-	if (portnumber) { *portnumber = '\0'; portnumber++; }
-
-	if (hostname) strcpy(hostname, hoststart);
-	strcat(result, hostip);
-	if (portnumber) {
-		strcat(result, ":");
-		strcat(result, portnumber);
-	}
-	strcat(result, "/");
-	strcat(result, restofurl);
-
-	free(urlcopy);
-	return result;
-}
-
-
-char *realurl(char *url, char **proxy, char **proxyuserpwd, char **ip, char **hosthdr)
-{
-	static char result[MAX_LINE_LEN];
-	static char proxyresult[MAX_LINE_LEN];
-	static char proxyuserpwdresult[MAX_LINE_LEN];
-	static char ipresult[MAX_LINE_LEN];
-	static char hosthdrresult[MAX_LINE_LEN];
-	char *p;
-	char *urlstart;
-	char *restorechar = NULL;
-
-	result[0] = proxyresult[0] = proxyuserpwdresult[0] = ipresult[0] = hosthdrresult[0] = '\0';
-	if (proxy) *proxy = NULL;
-	if (proxyuserpwd) *proxyuserpwd = NULL;
-	if (ip) *ip = NULL;
-	if (hosthdr) *hosthdr = NULL;
-	p = url;
-
-	/* First handle any leading "cont;" "post;" and "content=" */
-	if (strncmp(p, "content=", 8) == 0) {
-		p += 8;
-	}
-	else if (strncmp(p, "cont;", 5) == 0) {
-		p += 5;
-		restorechar = strrchr(p, ';');
-		if (restorechar) *restorechar = '\0';
-	}
-	else if (strncmp(p, "nocont;", 7) == 0) {
-		p += 7;
-		restorechar = strrchr(p, ';');
-		if (restorechar) *restorechar = '\0';
-	}
-	else if (strncmp(p, "post;", 5) == 0) {
-		p += 5;
-		restorechar = strrchr(p, ';');
-		if (restorechar) {
-			/* Go back 2 ';' for a post-test */
-			char *rest2char = restorechar;
-
-			*restorechar = '\0'; /* Cut off the expected data */
-			restorechar = strrchr(p, ';');
-			*rest2char = ';';
-			if (restorechar) *restorechar = '\0';
-		}
-	}
-	else if (strncmp(p, "nopost;", 7) == 0) {
-		p += 7;
-		restorechar = strrchr(p, ';');
-		if (restorechar) {
-			/* Go back 2 ';' for a post-test */
-			char *rest2char = restorechar;
-
-			*restorechar = '\0'; /* Cut off the expected data */
-			restorechar = strrchr(p, ';');
-			*rest2char = ';';
-			if (restorechar) *restorechar = '\0';
-		}
-	}
-	else if (strncmp(p, "type;", 5) == 0) {
-		p += 5;
-		restorechar = strrchr(p, ';');
-		if (restorechar) *restorechar = '\0';
-	}
-
-	/* Check if there is a proxy spec in there */
-	urlstart = p;
-	p += 4; /* Skip leading "http" */
-	p = strstr((p+4), "/http");
-	if (p) {
-		/* There IS a proxy spec first. */
-
-		p++; /* Move p to "http" */
-		if (proxy) {
-			char *userpwd;
-			char *p1;
-
-			*(p-1) = '\0'; /* Proxy setting stops before "/http" */
-
-			/* See if there is username:password in the proxy spec */
-			userpwd = urlstart + strlen("http://");
-			p1 = strchr(userpwd, '@');
-			if (p1) {
-				/* We do have a username:password */
-				*p1 = '\0';
-				strcpy(proxyuserpwdresult, userpwd);
-				if (proxyuserpwd) *proxyuserpwd = proxyuserpwdresult;
-
-				sprintf(proxyresult, "http://%s", (p1+1));
-				*p1 = '@';
-			}
-			else {
-				strcpy(proxyresult, urlstart);
-			}
-			*proxy = proxyresult;
-			*(p-1) = '/';
-		}
-		urlstart = p;
-	}
-
-	/* Drop the special httpsX/http1X stuff */
-	if (strncmp(urlstart, "https2:", 7) == 0) {
-		urlstart += 7;
-		sprintf(result, "https:%s", urlstart);
-	} else if (strncmp(urlstart, "https3:", 7) == 0) {
-		urlstart += 7;
-		sprintf(result, "https:%s", urlstart);
-	} else if (strncmp(urlstart, "httpsm:", 7) == 0) {
-		urlstart += 7;
-		sprintf(result, "https:%s", urlstart);
-	} else if (strncmp(urlstart, "httpsh:", 7) == 0) {
-		urlstart += 7;
-		sprintf(result, "https:%s", urlstart);
-	} else if (strncmp(urlstart, "https:", 6)  == 0) {
-		urlstart += 6;
-		sprintf(result, "https:%s", urlstart);
-	} else if (strncmp(urlstart, "http10:", 7)   == 0) {
-		urlstart += 7;
-		sprintf(result, "http:%s", urlstart);
-	} else if (strncmp(urlstart, "http11:", 7)   == 0) {
-		urlstart += 7;
-		sprintf(result, "http:%s", urlstart);
-	} else if (strncmp(urlstart, "http:", 5)   == 0) {
-		strcpy(result, urlstart);
-	} else if (strncmp(urlstart, "ftp:", 4)    == 0) {
-		strcpy(result, urlstart);
-	}
-
-	if (restorechar) *restorechar = ';';
-
-
-	/* 
-	 * Now see if the hostname inside the URL has an IP spec in it
-	 * It could be 
-	 *    http://www.foo.com=12.34.56.78/baz/index.html
-	 *    http://www.foo.com:1234=5.6.7.8/baz/index.html
-	 */
-	urlstart = strstr(result, "://");
-	if (urlstart) {
-		urlstart += 3;
-		p = strchr(urlstart, '/');
-	}
-	if (urlstart && p) {
-		char *ipstart;
-
-		*p = '\0';
-		ipstart = strchr(urlstart, '=');
-		if (ipstart) {
-			strcpy(ipresult, (ipstart+1));
-			*p = '/';
-			memmove(ipstart, p, strlen(p)+1);
-			if (ip) *ip = ipresult;
-
-			if (hosthdr) {
-				strcpy(hosthdrresult, "Host: ");
-				urlip(result, ipresult, hosthdrresult+strlen(hosthdrresult));
-				*hosthdr = hosthdrresult;
-			}
-		}
-		else {
-			*p = '/';
-		}
-	}
-
-	return result;
-}
-
 
 int generate_static(void)
 {
@@ -1730,3 +1528,462 @@ struct timeval *tvdiff(struct timeval *tstart, struct timeval *tend, struct time
 	return result;
 }
 
+
+static void load_netrc(void)
+{
+
+#define WANT_TOKEN   0
+#define MACHINEVAL   1
+#define LOGINVAL     2
+#define PASSVAL      3
+#define OTHERVAL     4
+
+	static int loaded = 0;
+
+	char netrcfn[MAX_PATH];
+	FILE *fd;
+	char l[4096];
+	char *host, *login, *password, *p;
+	int state = WANT_TOKEN;
+
+	if (loaded) return;
+	loaded = 1;
+
+	sprintf(netrcfn, "%s/.netrc", getenv("HOME"));
+	fd = fopen(netrcfn, "r");
+	if (fd == NULL) return;
+
+	host = login = password = NULL;
+	while (fgets(l, sizeof(l), fd)) {
+		p = strchr(l, '\n'); 
+		if (p) {
+			*p = '\0';
+			p--;
+			if ((p > l) && (*p == '\r')) *p = '\0';
+		}
+
+		if ((l[0] != '#') && strlen(l)) {
+			p = strtok(l, " \t");
+			while (p) {
+				switch (state) {
+				  case WANT_TOKEN:
+					if (strcmp(p, "machine") == 0) state = MACHINEVAL;
+					else if (strcmp(p, "login") == 0) state = LOGINVAL;
+					else if (strcmp(p, "password") == 0) state = PASSVAL;
+					else if (strcmp(p, "account") == 0) state = OTHERVAL;
+					else if (strcmp(p, "macdef") == 0) state = OTHERVAL;
+					else if (strcmp(p, "default") == 0) { host = ""; state = WANT_TOKEN; }
+					else state = WANT_TOKEN;
+					break;
+
+				  case MACHINEVAL:
+					host = malcop(p); state = WANT_TOKEN; break;
+
+				  case LOGINVAL:
+					login = malcop(p); state = WANT_TOKEN; break;
+
+				  case PASSVAL:
+					password = malcop(p); state = WANT_TOKEN; break;
+
+				  case OTHERVAL:
+				  	state = WANT_TOKEN; break;
+				}
+
+				if (host && login && password) {
+					loginlist_t *item = (loginlist_t *) malloc(sizeof(loginlist_t));
+
+					item->host = host;
+					item->auth = (char *) malloc(strlen(login) + strlen(password) + 2);
+					sprintf(item->auth, "%s:%s", login, password);
+					item->next = loginhead;
+					loginhead = item;
+					host = login = password = NULL;
+				}
+
+				p = strtok(NULL, " \t");
+			}
+		}
+	}
+
+	fclose(fd);
+}
+
+char *base64encode(unsigned char *buf)
+{
+	static char b64chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	unsigned char c0, c1, c2;
+	unsigned int n0, n1, n2, n3;
+	unsigned char *inp, *outp;
+	unsigned char *result;
+
+	result = malloc(4*(strlen(buf)/3 + 1) + 1);
+	inp = buf; outp=result;
+
+	while (strlen(inp) >= 3) {
+		c0 = *inp; c1 = *(inp+1); c2 = *(inp+2);
+
+		n0 = (c0 >> 2);				/* 6 bits from c0 */
+		n1 = ((c0 & 3) << 4) + (c1 >> 4);	/* 2 bits from c0, 4 bits from c1 */
+		n2 = ((c1 & 15) << 2) + (c2 >> 6);	/* 4 bits from c1, 2 bits from c2 */
+		n3 = (c2 & 63);				/* 6 bits from c2 */
+
+		*outp = b64chars[n0]; outp++;
+		*outp = b64chars[n1]; outp++;
+		*outp = b64chars[n2]; outp++;
+		*outp = b64chars[n3]; outp++;
+
+		inp += 3;
+	}
+
+	if (strlen(inp) == 1) {
+		c0 = *inp; c1 = 0;
+		n0 = (c0 >> 2);				/* 6 bits from c0 */
+		n1 = ((c0 & 3) << 4) + (c1 >> 4);	/* 2 bits from c0, 4 bits from c1 */
+
+		*outp = b64chars[n0]; outp++;
+		*outp = b64chars[n1]; outp++;
+		*outp = '='; outp++;
+		*outp = '='; outp++;
+	}
+	else if (strlen(inp) == 2) {
+		c0 = *inp; c1 = *(inp+1); c2 = 0;
+
+		n0 = (c0 >> 2);				/* 6 bits from c0 */
+		n1 = ((c0 & 3) << 4) + (c1 >> 4);	/* 2 bits from c0, 4 bits from c1 */
+		n2 = ((c1 & 15) << 2) + (c2 >> 6);	/* 4 bits from c1, 2 bits from c2 */
+
+		*outp = b64chars[n0]; outp++;
+		*outp = b64chars[n1]; outp++;
+		*outp = b64chars[n2]; outp++;
+		*outp = '='; outp++;
+	}
+
+	*outp = '\0';
+
+	return result;
+}
+
+void getescapestring(char *msg, unsigned char **buf, int *buflen)
+{
+	char *inp, *outp;
+	int outlen = 0;
+
+	inp = msg;
+	if (*inp == '\"') inp++; /* Skip the quote */
+
+	outp = *buf = malloc(strlen(msg)+1);
+	while (*inp && (*inp != '\"')) {
+		if (*inp == '\\') {
+			inp++;
+			if (*inp == 'r') {
+				*outp = '\r'; outlen++; inp++; outp++;
+			}
+			else if (*inp == 'n') {
+				*outp = '\n'; outlen++; inp++; outp++;
+			}
+			else if (*inp == 't') {
+				*outp = '\t'; outlen++; inp++; outp++;
+			}
+			else if (*inp == '\\') {
+				*outp = '\\'; outlen++; inp++; outp++;
+			}
+			else if (*inp == 'x') {
+				inp++;
+				if (isxdigit((int) *inp)) {
+					*outp = hexvalue(*inp);
+					inp++;
+
+					if (isxdigit((int) *inp)) {
+						*outp *= 16;
+						*outp += hexvalue(*inp);
+						inp++;
+					}
+				}
+				else {
+					errprintf("Invalid hex escape in '%s'\n", msg);
+				}
+				outlen++; outp++;
+			}
+			else {
+				errprintf("Unknown escape sequence \\%c in '%s'\n", *inp, msg);
+			}
+		}
+		else {
+			*outp = *inp;
+			outlen++;
+			inp++; outp++;
+		}
+	}
+	*outp = '\0';
+	if (buflen) *buflen = outlen;
+}
+
+
+void parse_url(char *inputurl, urlelem_t *url)
+{
+	/*
+	 * See RFC1808 for guidelines to parsing a URL
+	 */
+
+	char *tempurl;
+	char *fragment = NULL;
+	char *netloc;
+	char *startp, *p;
+	int haveportspec = 0;
+	char canonurl[MAX_LINE_LEN];
+
+	memset(url, 0, sizeof(urlelem_t));
+	url->scheme = url->host = url->relurl = "";
+
+	/* Get a temp. buffer we can molest */
+	tempurl = malcop(inputurl);
+
+	/* First cut off any fragment specifier */
+	fragment = strchr(tempurl, '#'); if (fragment) *fragment = '\0';
+
+	/* Get the scheme (protocol) */
+	startp = tempurl;
+	p = strchr(startp, ':');
+	if (p) {
+		*p = '\0';
+		if (strncmp(startp, "https", 5) == 0) {
+			url->scheme = "https";
+			url->port = 443;
+			if (strlen(startp) > 5) url->schemeopts = malcop(startp+5);
+		} else if (strncmp(startp, "http", 4) == 0) {
+			url->scheme = "http";
+			url->port = 80;
+			if (strlen(startp) > 4) url->schemeopts = malcop(startp+4);
+		} else if (strcmp(startp, "ftp") == 0) {
+			url->scheme = "ftp";
+			url->port = 21;
+		} else if (strcmp(startp, "ldap") == 0) {
+			url->scheme = "ldap";
+			url->port = 389;
+		} else if (strcmp(startp, "ldaps") == 0) {
+			url->scheme = "ldaps";
+			url->port = 389; /* ldaps:// URL's are non-standard, and must use port 389+STARTTLS */
+		}
+		else {
+			/* Unknown scheme! */
+			errprintf("Unknown URL scheme '%s' in URL '%s'\n", startp, inputurl);
+			url->scheme = malcop(startp);
+			url->port = 0;
+		}
+		startp = (p+1);
+	}
+	else {
+		errprintf("Malformed URL - no 'scheme:' in '%s'\n", inputurl);
+		url->parseerror = 1;
+		return;
+	}
+
+	if (strncmp(startp, "//", 2) == 0) {
+		startp += 2;
+		netloc = startp;
+
+		p = strchr(startp, '/');
+		if (p) {
+			*p = '\0';
+			startp = (p+1);
+		}
+		else startp += strlen(startp);
+	}
+	else {
+		errprintf("Malformed URL missing '//' in '%s'\n", inputurl);
+		url->parseerror = 2;
+		return;
+	}
+
+	/* netloc is [username:password@]hostname[:port][=forcedIP] */
+	p = strchr(netloc, '@');
+	if (p) {
+		*p = '\0';
+		url->auth = malcop(netloc);
+		netloc = (p+1);
+	}
+	p = strchr(netloc, '=');
+	if (p) {
+		url->ip = malcop(p+1);
+		*p = '\0';
+	}
+	p = strchr(netloc, ':');
+	if (p) {
+		haveportspec = 1;
+		*p = '\0';
+		url->port = atoi(p+1);
+	}
+
+	url->host = malcop(netloc);
+	if (url->port == 0) {
+		struct servent *svc = getservbyname(url->scheme, NULL);
+		if (svc) url->port = ntohs(svc->s_port);
+		else {
+			errprintf("Unknown scheme (no port) '%s'\n", url->scheme);
+			url->parseerror = 3;
+			return;
+		}
+	}
+
+	if (fragment) *fragment = '#';
+	url->relurl = malloc(strlen(startp) + 2);
+	sprintf(url->relurl, "/%s", startp);
+
+	if (url->auth == NULL) {
+		/* See if we have it in the .netrc list */
+		loginlist_t *walk;
+
+		load_netrc();
+		for (walk = loginhead; (walk && (strcmp(walk->host, url->host) != 0)); walk = walk->next) ;
+		if (walk) url->auth = walk->auth;
+	}
+
+	/* Build the canonical form of this URL, free from all BB'isms */
+	p = canonurl;
+	p += sprintf(p, "%s://", url->scheme);
+	/*
+	 * Dont include authentication here, since it 
+	 * may show up in clear text on the info page.
+	 * And it is not used in URLs to access the site.
+	 * if (url->auth) p += sprintf(p, "%s@", url->auth);
+	 */
+	p += sprintf(p, "%s", url->host);
+	if (haveportspec) p += sprintf(p, ":%d", url->port);
+	p += sprintf(p, "%s", url->relurl);
+	url->origform = malcop(canonurl);
+
+	free(tempurl);
+	return;
+}
+
+
+char *decode_url(char *testspec, bburl_t *bburl)
+{
+	static bburl_t bburlbuf;
+	static urlelem_t desturlbuf, proxyurlbuf;
+
+	/* 
+	 * Split a BB test-specification with a URL and optional post-data/expect-data/expect-type data
+	 * into the URL itself and the other elements.
+	 * Un-escape data in the post- and expect-data.
+	 * Parse the URL.
+	 */
+	char *inp, *p;
+	char *urlstart, *poststart, *expstart, *proxystart;
+	urlstart = poststart = expstart = proxystart = NULL;
+
+	/* If called with no buffer, use our own static one */
+	if (bburl == NULL) {
+		memset(&bburlbuf, 0, sizeof(bburl_t));
+		memset(&desturlbuf, 0, sizeof(urlelem_t));
+		memset(&proxyurlbuf, 0, sizeof(urlelem_t));
+
+		bburl = &bburlbuf;
+		bburl->desturl = &desturlbuf;
+		bburl->proxyurl = NULL;
+	}
+	else {
+		memset(bburl, 0, sizeof(bburl_t));
+		bburl->desturl = (urlelem_t*) calloc(1, sizeof(urlelem_t));
+		bburl->proxyurl = NULL;
+	}
+
+	inp = malcop(testspec);
+
+	if (strncmp(inp, "content=", 8) == 0) {
+		bburl->testtype = BBTEST_CONTENT;
+		urlstart = inp+8;
+	} else if (strncmp(inp, "cont;", 5) == 0) {
+		bburl->testtype = BBTEST_CONT;
+		urlstart = inp+5;
+	} else if (strncmp(inp, "nocont;", 7) == 0) {
+		bburl->testtype = BBTEST_NOCONT;
+		urlstart = inp+7;
+	} else if (strncmp(inp, "post;", 5) == 0) {
+		bburl->testtype = BBTEST_POST;
+		urlstart = inp+5;
+	} else if (strncmp(inp, "nopost;", 7) == 0) {
+		bburl->testtype = BBTEST_NOPOST;
+		urlstart = inp+7;
+	} else if (strncmp(inp, "type;", 5) == 0) {
+		bburl->testtype = BBTEST_TYPE;
+		urlstart = inp+5;
+	}
+	else {
+		/* Plain URL test */
+		bburl->testtype = BBTEST_PLAIN;
+		urlstart = inp;
+	}
+
+	switch (bburl->testtype) {
+	  case BBTEST_PLAIN:
+		  break;
+
+	  case BBTEST_CONT:
+	  case BBTEST_NOCONT:
+	  case BBTEST_TYPE:
+		  expstart = strchr(urlstart, ';');
+		  if (expstart) {
+			  *expstart = '\0';
+			  expstart++;
+		  }
+		  else {
+			  errprintf("content-check, but no content-data in '%s'\n", testspec);
+			  bburl->testtype = BBTEST_PLAIN;
+		  }
+		  break;
+
+	  case BBTEST_POST:
+	  case BBTEST_NOPOST:
+		  poststart = strchr(urlstart, ';');
+		  if (poststart) {
+			  *poststart = '\0';
+			  poststart++;
+			  expstart = strchr(poststart, ';');
+			  if (expstart) {
+				  *expstart = '\0';
+				  expstart++;
+			  }
+			  else {
+				  if (bburl->testtype == BBTEST_NOPOST) {
+			  		errprintf("content-check, but no content-data in '%s'\n", testspec);
+			  		bburl->testtype = BBTEST_PLAIN;
+				  }
+			  }
+		  }
+		  else {
+			  errprintf("post-check, but no post-data in '%s'\n", testspec);
+			  bburl->testtype = BBTEST_PLAIN;
+		  }
+		  break;
+	}
+
+	if (poststart) getescapestring(poststart, &bburl->postdata, NULL);
+	if (expstart)  getescapestring(expstart, &bburl->expdata, NULL);
+
+	p = strstr(urlstart, "/http");
+	if (p) {
+		proxystart = urlstart;
+		urlstart = (p+1);
+		*p = '\0';
+	}
+
+	parse_url(urlstart, bburl->desturl);
+	if (proxystart) {
+		if (bburl == &bburlbuf) {
+			/* We use our own static buffers */
+			bburl->proxyurl = &proxyurlbuf;
+		}
+		else {
+			/* User allocated buffers */
+			bburl->proxyurl = (urlelem_t *)malloc(sizeof(urlelem_t));
+		}
+
+		parse_url(proxystart, bburl->proxyurl);
+	}
+
+	free(inp);
+
+	return bburl->desturl->origform;
+}
+ 

@@ -26,6 +26,30 @@ typedef struct linebuf_t {
 	int buflen;
 } linebuf_t;
 
+typedef struct urlelem_t {
+	char *origform;
+	char *scheme;
+	char *schemeopts;
+	char *host;
+	char *ip;
+	int  port;
+	char *auth;
+	char *relurl;
+	int parseerror;
+} urlelem_t;
+
+enum bbtesttype_t { 
+	BBTEST_PLAIN, BBTEST_CONTENT, BBTEST_CONT, BBTEST_NOCONT, BBTEST_POST, BBTEST_NOPOST, BBTEST_TYPE 
+};
+
+typedef struct bburl_t {
+	int testtype;
+	struct urlelem_t *desturl;
+	struct urlelem_t *proxyurl;
+	unsigned char *postdata;
+	unsigned char *expdata;
+} bburl_t;
+
 extern char *read_line(struct linebuf_t *buffer, FILE *stream);
 
 extern int use_recentgifs;
@@ -81,8 +105,6 @@ extern void envcheck(char *envvars[]);
 
 extern int run_columngen(char *column, int update_interval, int enabled);
 extern void drop_genstatfiles(void);
-char *urlip(const char *url, char *hostip, char *hostname);
-extern char *realurl(char *url, char **proxy, char **proxyuserpwd, char **ip, char **hosthdr);
 
 extern int generate_static(void);
 extern int stdout_on_file(char *filename);
@@ -102,5 +124,10 @@ extern void addtobuffer(char **buf, int *buflen, char *newtext);
 extern int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int showcmd);
 
 extern struct timeval *tvdiff(struct timeval *tstart, struct timeval *tend, struct timeval *result);
+
+extern char *base64encode(unsigned char *buf);
+extern void getescapestring(char *msg, unsigned char **buf, int *buflen);
+extern char *decode_url(char *inputurl, bburl_t *bburl);
+
 #endif
 
