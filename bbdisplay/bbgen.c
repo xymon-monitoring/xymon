@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.86 2003-03-07 09:43:20 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.87 2003-03-18 14:26:53 henrik Exp $";
 
 #define VERSION "1.9-pre"
 
@@ -175,6 +175,15 @@ int main(int argc, char *argv[])
 			if (larrd_update_interval <= 0) enable_larrdgen=0;
 			else enable_larrdgen = 1;
 		}
+		else if (strncmp(argv[i], "--larrdgraphs=", 14) == 0) {
+			char *lp = strchr(argv[i], '=');
+
+			enable_larrdgen=1;
+			if (lp) {
+				larrdcol = malloc(strlen(lp));
+				strcpy(larrdgraphs_default, (lp+1));
+			}
+		}
 		else if (strncmp(argv[i], "--larrd", 7) == 0) {
 			/* "--larrd" just enable larrd page generation */
 			/* "--larrd=xxx" does that, and redefines the larrd column name */
@@ -237,6 +246,7 @@ int main(int argc, char *argv[])
 			printf("    --infoupdate=N              : time between updates of INFO column pages in seconds\n");
 			printf("\nLARRD support options:\n");
 			printf("    --larrd[=LARRDCOLUMN]       : LARRD data in column LARRDCOLUMN, and handle larrd-html\n");
+			printf("    --larrdgraphs=GRAPHSPEC     : Set a default value for the LARRD: bb-hosts tag\n");
 			printf("    --larrdupdate=N             : time between updates of LARRD pages in seconds\n");
 			printf("    --rrddir=RRD-directory      : Directory for LARRD RRD files\n");
 			printf("\nAlternate pageset generation support:\n");

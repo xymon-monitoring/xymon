@@ -32,6 +32,7 @@ extern host_t *init_host(const char *hostname, const int ip1, const int ip2, con
 
 extern char	*nopropyellowdefault;
 extern char	*nopropreddefault;
+extern char	*larrdgraphs_default;
 extern int	enable_purpleupd;
 extern int	purpledelay;
 extern char     *ignorecolumns;

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.50 2003-03-15 16:01:36 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.51 2003-03-18 14:26:53 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -37,6 +37,7 @@ static char rcsid[] = "$Id: loaddata.c,v 1.50 2003-03-15 16:01:36 henrik Exp $";
 
 char    *nopropyellowdefault = NULL;
 char    *nopropreddefault = NULL;
+char	*larrdgraphs_default = NULL;
 int     enable_purpleupd = 1;
 int	purpledelay = 0;			/* Lifetime of purple status-messages. Default 0 for
 						   compatibility with standard bb-display.sh behaviour */
@@ -170,7 +171,7 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 		strcpy(newhost->larrdgraphs, larrdgraphs);
 		if (p) *p = ' ';
 	}
-	else newhost->larrdgraphs = NULL;
+	else newhost->larrdgraphs = larrdgraphs_default;
 	if (tags) {
 		newhost->rawentry = malloc(strlen(tags)+1); strcpy(newhost->rawentry, tags);
 	}
