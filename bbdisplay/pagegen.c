@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.47 2003-05-22 05:56:18 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.48 2003-05-23 11:15:11 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -410,6 +410,12 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 		if (newhost == NULL) {
 			/* New summary "host" */
 			newhost = init_host(s->row, 0,0,0,0, 0, NULL, NULL, NULL, NULL, NULL, NULL);
+
+			/*
+			 * Cannot have the pseudo host in the official hostlist,
+			 * it messes up the WML generator later.
+			 */
+			if (hosthead->hostentry == newhost) hosthead = hosthead->next;
 
 			/* Insert into sorted host list */
 			if ((!sumhosts) || (strcmp(newhost->hostname, sumhosts->hostname) < 0)) {
