@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.14 2005-02-25 07:17:56 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.15 2005-03-17 21:08:15 henrik Exp $";
 
 static char *disk_params[] = { "rrdcreate", rrdfn, "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", 
 				rra1, rra2, rra3, rra4, NULL };
@@ -117,6 +117,7 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		if (diskname) { xfree(diskname); diskname = NULL; }
 
 		if (eoln) *eoln = '\n';
+		xfree(fsline);
 	}
 
 	return 0;
