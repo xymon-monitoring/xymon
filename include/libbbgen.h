@@ -35,6 +35,7 @@ typedef struct htnames_t {
 #include "../lib/md5.h"
 #include "../lib/memory.h"
 #include "../lib/misc.h"
+#include "../lib/netservices.h"
 #include "../lib/rbtr.h"
 #include "../lib/savelog.h"
 #include "../lib/sendmsg.h"
