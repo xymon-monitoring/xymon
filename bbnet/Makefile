@@ -9,7 +9,7 @@ CONFIGFILES = bb-services
 
 all: $(PROGRAMS) $(EXTENSIONS)
 
-NETTESTOBJS = bbtest-net.o contest.o httptest.o httpresult.o ldaptest.o digest.o dns.o dns2.o
+NETTESTOBJS = bbtest-net.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o
 
 bbtest-net: $(NETTESTOBJS) 
 	$(CC) $(CFLAGS) -o $@ $(NETTESTOBJS) $(LDAPLIBS) $(SSLLIBS) ../lib/libbbgen.a libcares.a $(NETLIBS)
@@ -29,9 +29,6 @@ httpresult.o: httpresult.c
 
 contest.o: contest.c
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ contest.c
-
-digest.o: digest.c
-	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ digest.c
 
 dns.o: libcares.a dns.c
 	$(CC) $(CFLAGS) $(DNSFLAGS) -c -o $@ dns.c

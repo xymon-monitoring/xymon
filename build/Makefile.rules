@@ -16,7 +16,7 @@ all: lib-build common-build bbdisplay-build bbnet-build bbproxy-build bbgend-bui
 	@echo ""
 
 lib-build:
-	CC="$(CC)" CFLAGS="$(CFLAGS)" make -C lib all
+	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" make -C lib all
 
 common-build: lib-build
 	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" make -C common all
@@ -51,6 +51,7 @@ clean:
 	make -C bbnet clean
 	make -C bbproxy clean
 	make -C bbgend clean
+	rm -f {.,build,include}/*~
 
 
 ####################

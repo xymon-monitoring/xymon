@@ -54,7 +54,7 @@
 #define SSL void
 #endif
 
-#include "digest.h"
+#include "libbbgen.h"
 
 extern char *ssl_library_version;
 extern char *ciphershigh;

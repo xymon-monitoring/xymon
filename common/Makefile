@@ -23,10 +23,6 @@ bbdigest: $(DIGESTOBJS)
 bb: $(MSGOBJS)
 	$(CC) $(CFLAGS) -o $@ $(MSGOBJS) ../lib/libbbgen.a $(NETLIBS)
 
-
-bbdigest.o: ../bbnet/digest.c
-	$(CC) $(CFLAGS) $(SSLINCDIR) -c -o $@ -DSTANDALONE ../bbnet/digest.c
-
 sendmsg-std.o: ../lib/sendmsg.c
 	$(CC) $(CFLAGS) -DSTANDALONE -c -o $@ ../lib/sendmsg.c
 
