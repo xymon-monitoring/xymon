@@ -39,6 +39,13 @@ NTPDATE environment variable to point at the location of your
 .I ntpdate(1)
 program.
 
+Note: Unlike the standard Big Brother network test tool,
+bbtest-net performs the connectivity test (ping) based on the
+hostname, unless the host is tagged with "testip" or the 
+"--dns=ip" option is used. So the target of the connectivity
+test can be determined by your /etc/hosts file or DNS.
+
+
 .SH GENERAL OPTIONS
 
 .IP "--help or -?"
