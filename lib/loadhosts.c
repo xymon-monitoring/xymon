@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.7 2004-12-10 12:53:36 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.8 2004-12-10 12:56:40 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -39,7 +39,7 @@ static int pagematch(pagelist_t *pg, char *name)
 	}
 }
 
-void load_hostnames(char *bbhostsfn, int fqdn)
+namelist_t *load_hostnames(char *bbhostsfn, int fqdn)
 {
 	FILE *bbhosts;
 	int ip1, ip2, ip3, ip4;
@@ -193,6 +193,8 @@ void load_hostnames(char *bbhostsfn, int fqdn)
 		}
 	}
 	stackfclose(bbhosts);
+
+	return namehead;
 }
 
 

@@ -27,7 +27,7 @@ typedef struct namelist_t {
 	struct namelist_t *next;
 } namelist_t;
 
-extern void load_hostnames(char *bbhostsfn, int fqdn);
+extern namelist_t *load_hostnames(char *bbhostsfn, int fqdn);
 extern char *knownhost(char *filename, char *hostip, int ghosthandling, int *maybedown);
 extern namelist_t *hostinfo(char *hostname);
 
