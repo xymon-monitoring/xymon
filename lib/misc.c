@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.4 2004-11-01 16:04:26 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.5 2004-11-04 17:00:09 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -133,16 +133,16 @@ int argnmatch(char *arg, char *match)
 }
 
 
-void addtobuffer(char **buf, int *buflen, char *newtext)
+void addtobuffer(char **buf, int *bufsz, char *newtext)
 {
 	if (*buf == NULL) {
-		*buflen = strlen(newtext) + 4096;
-		*buf = (char *) malloc(*buflen);
+		*bufsz = strlen(newtext) + 4096;
+		*buf = (char *) malloc(*bufsz);
 		**buf = '\0';
 	}
-	else if ((strlen(*buf) + strlen(newtext) + 1) > *buflen) {
-		*buflen += strlen(newtext) + 4096;
-		*buf = (char *) realloc(*buf, *buflen);
+	else if ((strlen(*buf) + strlen(newtext) + 1) > *bufsz) {
+		*bufsz += strlen(newtext) + 4096;
+		*buf = (char *) realloc(*buf, *bufsz);
 	}
 
 	strcat(*buf, newtext);
@@ -202,6 +202,48 @@ char *gettok(char *s, char *delims)
 		/* Move past this token and the delimiter */
 		whereat += (n+1);
 	}
+
+	return result;
+}
+
+char *getword(char *buf)
+{
+	static char *startpos = NULL;
+	int n, insideword;
+	char savech;
+	char *beginquote = NULL, *endquote = NULL;
+	char *endpos, *result;
+
+	if (startpos == NULL) {
+		if (buf == NULL) return NULL;
+		startpos = buf;
+	}
+
+	/* Skip leading whitespace */
+	n = strspn(startpos, " \t\r\n");
+	startpos += n;
+	if (*startpos == '\0') return NULL;
+	result = startpos;
+
+	/* How long is the next word ? */
+	insideword = 1;
+	while (insideword) {
+		n = strcspn(startpos, " \t\r\n");
+		endpos = startpos + n;
+		savech = *endpos;
+		*endpos = '\0';
+		beginquote = strchr(startpos, '"');
+		*endpos = savech;
+		if (beginquote) {
+			memmove(beginquote, beginquote+1, strlen(beginquote));
+			endquote = strchr(beginquote, '"');
+			if (endquote) memmove(endquote, endquote+1, strlen(endquote));
+			endpos = endquote;
+			startpos = endquote+1;
+			insideword = (strcspn(startpos, " \t\r\n") > 0);
+		}
+	}
+	*endpos = '\0';
 
 	return result;
 }

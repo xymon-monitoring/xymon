@@ -20,7 +20,7 @@ extern char *commafy(char *hostname);
 extern char *skipword(char *l);
 extern char *skipwhitespace(char *l);
 extern int argnmatch(char *arg, char *match);
-extern void addtobuffer(char **buf, int *buflen, char *newtext);
+extern void addtobuffer(char **buf, int *bufsz, char *newtext);
 extern char *msg_data(char *msg);
 extern char *gettok(char *s, char *delims);
 extern unsigned int IPtou32(int ip1, int ip2, int ip3, int ip4);
