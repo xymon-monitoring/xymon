@@ -11,7 +11,11 @@
 #include <stdio.h>
 #include <errno.h>
 
-#define TIMEOUT 10	/* seconds */
+#include "contest.h"
+#include "bbgen.h"
+#include "debug.h"
+
+#define DEFTIMEOUT 10	/* seconds */
 #define MAX_BANNER 1024
 #define MAX_OPENS  (FD_SETSIZE / 2)	/* Max number of simultaneous open connections */
 
@@ -28,7 +32,7 @@ typedef struct {
 	void *next;
 } test_t;
 
-test_t *thead = NULL;
+static test_t *thead = NULL;
 
 void add_test(char *ip, int port)
 {
@@ -53,7 +57,7 @@ void add_test(char *ip, int port)
 	thead = newtest;
 }
 
-void do_conn(void)
+void do_conn(int conntimeout)
 {
 	int		selres;
 	fd_set		readfds, writefds;
@@ -76,6 +80,9 @@ void do_conn(void)
 	for (item = thead; (item); item = item->next) pending++; 
 	firstactive = nextinqueue = thead;
 
+	if (conntimeout == 0) conntimeout = DEFTIMEOUT;
+
+
 	while (pending > 0) {
 		/*
 		 * First, see if we need to allocate new sockets and initiate connections.
@@ -90,7 +97,7 @@ void do_conn(void)
 				if (res == 0) {
 					gettimeofday(&nextinqueue->timestart, &tz);
 					res = connect(nextinqueue->fd, (struct sockaddr *)&nextinqueue->addr, sizeof(nextinqueue->addr));
-					if ((res == -1) && (errno == EINPROGRESS)) {
+					if ((res == 0) || ((res == -1) && (errno == EINPROGRESS))) {
 						/* This is OK */
 					}
 					else {
@@ -107,6 +114,8 @@ void do_conn(void)
 				printf("Cannot get socket\n");
 			}
 		}
+
+		dprintf("%d tests pending - %d active tests\n", pending, activesockets);
 
 		/*
 		 * Setup the FDSET's
@@ -136,7 +145,7 @@ void do_conn(void)
 		/*
 		 * Wait for something to happen: connect, timeout, banner arrives ...
 		 */
-		tmo.tv_sec = TIMEOUT; tmo.tv_usec = 0;
+		tmo.tv_sec = conntimeout; tmo.tv_usec = 0;
 		selres = select((maxfd+1), &readfds, &writefds, NULL, &tmo);
 		gettimeofday(&timestamp, &tz);
 
@@ -145,10 +154,17 @@ void do_conn(void)
 				if (selres == 0) {
 					/* 
 					 * Timeout on all active connection attempts.
-					 * Close all sockets, and flag them as down.
+					 * Close all sockets.
 					 */
-					item->open = 0;
-					item->connres = ETIMEDOUT;
+					if (item->readpending) {
+						/* Final read timeout - just shut this socket */
+						shutdown(item->fd, SHUT_RDWR);
+					}
+					else {
+						/* Connection timeout */
+						item->open = 0;
+						item->connres = ETIMEDOUT;
+					}
 					close(item->fd);
 					item->fd = -1;
 					activesockets--;
@@ -184,7 +200,7 @@ void do_conn(void)
 					}
 					else if (FD_ISSET(item->fd, &readfds)) {
 						/*
-						 * Data read to read on this socket. Grab the
+						 * Data ready to read on this socket. Grab the
 						 * banner - we only do one read (need the socket
 						 * for other tests), so if the banner takes more
 						 * than one cycle to arrive, too bad!
@@ -209,11 +225,23 @@ void do_conn(void)
 	} /* end while (pending) */
 }
 
-int main(int argc, char *argv[])
+void show_conn_res(void)
 {
 	test_t *item;
 
-	add_test("172.16.10.254", 25);
+	for (item = thead; (item); item = item->next) {
+		printf("Address=%s, tested=%d, open=%d, res=%d, time=%ld.%ld, banner='%s'\n", 
+				item->textaddr, 
+				item->tested, item->open, item->connres, 
+				item->duration.tv_sec, item->duration.tv_usec, textornull(item->banner));
+	}
+}
+
+#ifdef STANDALONE
+int main(int argc, char *argv[])
+{
+
+	add_test("172.16.10.254", 628);
 	add_test("172.16.10.254", 23);
 	add_test("130.228.2.150", 139);
 	add_test("172.16.10.254", 22);
@@ -223,15 +251,11 @@ int main(int argc, char *argv[])
 	add_test("130.228.2.150", 23);
 	add_test("130.228.2.150", 21);
 	add_test("172.16.10.101", 22);
-	do_conn();
 
-	for (item = thead; (item); item = item->next) {
-		printf("Address=%s, tested=%d, open=%d, res=%d, time=%ld.%ld, banner='%s'\n", 
-				item->textaddr, 
-				item->tested, item->open, item->connres, 
-				item->duration.tv_sec, item->duration.tv_usec, item->banner);
-	}
+	do_conn(0);
+	show_conn_res();
 
 	return 0;
 }
+#endif
 
