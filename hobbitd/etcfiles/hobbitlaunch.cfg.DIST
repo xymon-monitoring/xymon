@@ -148,7 +148,7 @@
 # status messages that are combined from the status of one or more normal statuses.
 # It is controlled via the bbcombotest.cfg file.
 [bbcombotest]
-	ENVFILE /usr/local/hobbit/server/etc/hobbitserver.cfg
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	NEEDS hobbitd
 	CMD $BBHOME/ext/bbcombotest --hobbitd
 	LOGFILE $BBSERVERLOGS/bbcombotest.log
