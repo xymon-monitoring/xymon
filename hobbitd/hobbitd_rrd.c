@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.3 2004-11-13 21:58:51 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.4 2004-11-18 13:22:30 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -54,6 +54,7 @@ int main(int argc, char *argv[])
 	save_errbuf = 0;
 	setup_signalhandler("bbgend_larrd");
 	signal(SIGPIPE, SIG_DFL);
+	signal(SIGCHLD, SIG_IGN);
 
 	running = 1;
 	while (running) {
@@ -98,7 +99,7 @@ int main(int argc, char *argv[])
 			hostname = metadata[3];
 
 			sprintf(hostdir, "%s/%s", rrddir, hostname);
-			dropdirectory(hostdir);
+			dropdirectory(hostdir, 1);
 		}
 		else if ((metacount > 4) && (strncmp(metadata[0], "@@droptest", 10) == 0)) {
 			/*
