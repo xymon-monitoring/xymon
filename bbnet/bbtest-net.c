@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.103 2003-08-31 07:28:10 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.104 2003-08-31 08:09:57 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -668,7 +668,7 @@ void load_tests(void)
 				}
 			}
 		}
-		else if (sscanf(l, "dialup %s %3d.%3d.%3d.%3d %d", hostname, &ip1, &ip2, &ip3, &ip4, &banksize) == 6) {
+		else if ((sscanf(l, "dialup %s %3d.%3d.%3d.%3d %d", hostname, &ip1, &ip2, &ip3, &ip4, &banksize) == 6) && (banksize > 0)) {
 			/* Modembank entry: "dialup displayname startIP count" */
 
 			if (wanted_host (l, netstring, hostname)) {
