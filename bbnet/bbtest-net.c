@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.143 2004-08-04 13:37:22 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.144 2004-08-04 15:21:59 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -102,6 +102,7 @@ int		dotraceroute = 0;
 int		fqdn = 1;
 int		dnsmaxperlookup = 5;		/* Max seconds for one DNS lookup */
 int		dnsmaxalllookups = 0;		/* Max seconds for all DNS lookup */
+int		dosendflags = 1;
 
 void dump_hostlist(void)
 {
@@ -1577,10 +1578,16 @@ void send_results(service_t *service, int failgoesclear)
 		color = decide_color(service, svcname, t, failgoesclear, causetext);
 
 		init_status(color);
-		sprintf(msgline, "status %s.%s %s <!-- [flags:%s] --> %s %s %s ", 
-			commafy(t->host->hostname), svcname, colorname(color), 
-			flags, timestamp, 
-			svcname, ( ((color == COL_RED) || (color == COL_YELLOW)) ? "NOT ok" : "ok"));
+		if (dosendflags) 
+			sprintf(msgline, "status %s.%s %s <!-- [flags:%s] --> %s %s %s ", 
+				commafy(t->host->hostname), svcname, colorname(color), 
+				flags, timestamp, 
+				svcname, ( ((color == COL_RED) || (color == COL_YELLOW)) ? "NOT ok" : "ok"));
+		else
+			sprintf(msgline, "status %s.%s %s %s %s %s ", 
+				commafy(t->host->hostname), svcname, colorname(color), 
+				timestamp, 
+				svcname, ( ((color == COL_RED) || (color == COL_YELLOW)) ? "NOT ok" : "ok"));
 
 		if (t->host->dnserror) {
 			strcat(msgline, ": DNS lookup failed");
@@ -1952,6 +1959,9 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			p++; runtimewarn = atol(p);
 		}
+		else if (strcmp(argv[argi], "--no-flags") == 0) {
+			dosendflags = 0;
+		}
 
 		/* Debugging options */
 		else if (strcmp(argv[argi], "--debug") == 0) {
@@ -2082,6 +2092,8 @@ int main(int argc, char *argv[])
 			printf("    --frequenttestlimit=N       : Seconds after detecting failures in which we poll frequently\n");
 			printf("    --dns-max-one=N             : Warns if a single DNS lookup takes more than N seconds [5]\n");
 			printf("    --dns-max-all=N             : Warns if all DNS lookups combined takes more than N seconds [BBSLEP/2]\n");
+			printf("    --timelimit=N               : Warns if the complete test run takes longer than N seconds [BBSLEEP]\n");
+			printf("    --no-flags                  : Dont send extra bbgen test flags\n");
 			printf("\nOptions for services in BBNETSVCS (tcp tests):\n");
 			printf("    --concurrency=N             : Number of tests run in parallel\n");
 			printf("    --checkresponse             : Check response from known services\n");
