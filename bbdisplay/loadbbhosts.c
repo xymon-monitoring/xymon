@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.22 2005-04-03 15:39:02 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.23 2005-04-04 15:31:12 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -435,8 +435,9 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	int	modembanksize;
 	char	*p;
 	namelist_t *allhosts;
+	int	fqdn = get_fqdn();
 
-	allhosts = load_hostnames(xgetenv("BBHOSTS"), "dispinclude", get_fqdn());
+	allhosts = load_hostnames(xgetenv("BBHOSTS"), "dispinclude", fqdn);
 
 	dprintf("load_bbhosts(pgset=%s)\n", textornull(pgset));
 
@@ -597,11 +598,17 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			/* Check for no-display hosts - they are ignored. */
 			if (*hostname == '@') continue;
 
-			if (strncmp(l, "dialup", 6) != 0) {
-				/* Ordinary host - get the info */
-				bbhost = hostinfo(hostname);
-				if (bbhost == NULL) continue;
-				strcpy(hostname, bbh_item(bbhost, BBH_HOSTNAME)); /* For fqdn mods. */
+			if (!fqdn) {
+				/* Strip any domain from the hostname */
+				char *p = strchr(hostname, '.');
+				if (p) *p = '\0';
+			}
+
+			/* Get the info */
+			bbhost = hostinfo(hostname);
+			if (bbhost == NULL) {
+				errprintf("Confused - hostname '%s' cannot be found. Ignored\n", hostname);
+				continue;
 			}
 
 			for (targetpagecount=0; (targetpagecount < MAX_TARGETPAGES_PER_HOST); targetpagecount++) 
