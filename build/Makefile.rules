@@ -8,7 +8,7 @@ CFLAGS=-O2 -Wall -Wno-unused
 # Compile flags for debugging
 # CFLAGS=-g -DDEBUG -Wall
 
-GENOBJS = bbgen.o debug.o loaddata.o larrdgen.o pagegen.o process.o util.o infogen.o alert.o
+GENOBJS = bbgen.o debug.o loaddata.o larrdgen.o pagegen.o process.o util.o infogen.o alert.o wmlgen.o
 TESTOBJS = bbtest-web.o util.o debug.o
 NETOBJS = bbnethosts.o
 GMCOBJS = bbgmchosts.o
