@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.202 2005-03-02 21:08:28 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.203 2005-03-05 06:54:29 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -591,11 +591,19 @@ void load_tests(void)
 					  argnmatch(testspec, "nopost=")      ||
 					  argnmatch(testspec, "type;http")    ||
 					  argnmatch(testspec, "type=")        )      {
-					/*
-					 * HTTP test. This uses ':' a lot, so save it here.
-					 */
-					s = httptest;
-					add_url_to_dns_queue(testspec);
+
+					/* HTTP test. */
+					bburl_t url;
+
+					decode_url(testspec, &url);
+					if (url.desturl->parseerror || (url.proxyurl && url.proxyurl->parseerror)) {
+						s = NULL;
+						errprintf("Invalid URL for http test - ignored: %s\n", testspec);
+					}
+					else {
+						s = httptest;
+						add_url_to_dns_queue(testspec);
+					}
 				}
 				else if (argnmatch(testspec, "apache") || argnmatch(testspec, "apache=")) {
 					char *userfmt = "cont=apache;%s;.";
