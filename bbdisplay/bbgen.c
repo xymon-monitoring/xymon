@@ -390,6 +390,8 @@ state_t *init_state(const char *filename, int dopurple)
 
 	newstate->entry->column = find_or_create_column(testname);
 	newstate->entry->color = -1;
+	strcpy(newstate->entry->age, "");
+	newstate->entry->oldage = 0;
 
 	/* Acked column ? */
 	sprintf(ackfilename, "%s/ack.%s.%s", getenv("BBACKS"), hostname, testname);
@@ -420,8 +422,14 @@ state_t *init_state(const char *filename, int dopurple)
 		}
 	}
 
-	if (st.st_mtime <= now) {
+	if (dopurple && (st.st_mtime <= now)) {
 		/* PURPLE test! */
+
+		FILE *purplefile;
+		char purplefilename[256];
+		char fulllogfilename[256];
+		char *p;
+
 		if (host && host->dialup) {
 			/* Dialup hosts go clear, not purple */
 			newstate->entry->color = COL_CLEAR;
@@ -431,23 +439,52 @@ state_t *init_state(const char *filename, int dopurple)
 			newstate->entry->color = COL_PURPLE;
 		}
 
-		/* FIXME : Need to send a bbd update of status to purple */
-	}
+		sprintf(fulllogfilename, "%s/%s", getenv("BBLOGS"), filename);
+		sprintf(purplefilename, "%s/NEW.purple", getenv("BBTMP"));
+		purplefile = fopen(purplefilename, "w");
+		if (purplefile == NULL) {
+			perror("Cannot open purplefile");
+			exit(1);
+		}
+		p = strchr(l, ' '); /* Skip old color */
+		fprintf(purplefile, "%s %s", colorname(newstate->entry->color), p);
 
-	while (fgets(l, sizeof(l), fd) && (strncmp(l, "Status unchanged in ", 20) != 0)) ;
-	if (strncmp(l, "Status unchanged in ", 20) == 0) {
-		char *p = strchr(l, '\n');
-		*p = '\0';
+		if (host) {
+			while (fgets(l, sizeof(l), fd)) {
+				if ( (strncmp(l, "Status unchanged", 16) != 0) &&
+				     (strncmp(l, "Encrypted status message", 24) != 0)  &&
+				     (strncmp(l, "Status message received from", 28) != 0) ) {
+					fprintf(purplefile, "%s", l);
+				}
+			}
+		}
+		else {
+			/* No longer in bb-hosts */
+			fprintf(purplefile, "%s\n\n", hostname);
+			fprintf(purplefile, "This entry is no longer listed in %s/etc/bb-hosts.  To remove this\n",
+				getenv("BBHOME"));
+			fprintf(purplefile, "purple message, please delete the log files for this host located in\n");
+			fprintf(purplefile, "%s, %s and %s if this host is no longer monitored.\n",
+				getenv("BBLOGS"), getenv("BBHIST"), getenv("BBHISTLOGS"));
+		}
 
-		strcpy(newstate->entry->age, l+20);
-		newstate->entry->oldage = (strstr(l+20, "days") != NULL);
+		fclose(fd);
+		fclose(purplefile);
+		rename(purplefilename, fulllogfilename);
 	}
 	else {
-		strcpy(newstate->entry->age, "");
-		newstate->entry->oldage = 0;
-	}
+		while (fgets(l, sizeof(l), fd) && (strncmp(l, "Status unchanged in ", 20) != 0)) ;
 
-	fclose(fd);
+		if (strncmp(l, "Status unchanged in ", 20) == 0) {
+			char *p = strchr(l, '\n');
+			*p = '\0';
+
+			strcpy(newstate->entry->age, l+20);
+			newstate->entry->oldage = (strstr(l+20, "days") != NULL);
+		}
+
+		fclose(fd);
+	}
 
 
 	if (host) {
@@ -1070,7 +1107,7 @@ int main(int argc, char *argv[])
 		strcpy(pagedir, argv[1]);
 	}
 	else {
-		sprintf(pagedir, "%s/www", getenv("$BBHOME"));
+		sprintf(pagedir, "%s/www", getenv("BBHOME"));
 	}
 
 	linkhead = load_all_links();
