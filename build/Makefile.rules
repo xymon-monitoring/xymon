@@ -8,26 +8,30 @@ all: bbgen bbtest-net
 CC=gcc
 
 # Set these to the location of your libcurl include-files and library.
-# CURLINCLUDE=-I/usr/local/include
-# CURLLIB=-L/usr/local/lib
+# Note: If your curl version supports SSL (HTTPS sites), you need the OpenSSL
+# libraries as well.
+CURLINCLUDE = -I/usr/local/include
+CURLLIB = -L/usr/local/lib -lcurl -lssl -lcrypto
+
+# Solaris (maybe others) need this enabled
+# NETLIBS = -lresolv -lsocket -lnsl
 
 # Compile flags for normal build
-CFLAGS=-O2 -Wall -Wno-unused -D_REENTRANT
+CFLAGS = -O2 -Wall -Wno-unused -D_REENTRANT
 
 # Compile flags for debugging
-# CFLAGS=-g -DDEBUG -Wall -D_REENTRANT
+# CFLAGS = -g -DDEBUG -Wall -D_REENTRANT
 
 
 GENOBJS = bbgen.o debug.o loaddata.o larrdgen.o pagegen.o process.o util.o infogen.o alert.o wmlgen.o
 NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o
 
-NETLIBS := $(shell if [ `uname -s` = "SunOS" ]; then echo "-lresolv -lsocket -lnsl"; fi)
 
 bbgen: $(GENOBJS)
 	$(CC) $(CFLAGS) -o bbgen $(GENOBJS)
 
 bbtest-net: $(NETTESTOBJS)
-	$(CC) $(CFLAGS) -o bbtest-net $(NETTESTOBJS) $(CURLLIB) -lcurl $(LIBRESOLV)
+	$(CC) $(CFLAGS) -o bbtest-net $(NETTESTOBJS) $(CURLLIB) $(NETLIBS)
 
 alert: alert.c debug.c util.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o alert alert.c debug.c util.c
