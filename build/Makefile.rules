@@ -10,7 +10,16 @@
 
 CFLAGS += -DMAXMSG=$(MAXMSG) -DBBDPORTNUMBER=$(BBPORT) -I. -I$(BUILDTOPDIR)/include
 
-all: lib-build common-build bbdisplay-build bbnet-build bbproxy-build bbgend-build
+BUILDTARGETS = lib-build common-build bbdisplay-build bbnet-build bbproxy-build
+INSTALLTARGETS = install-bbdisplay install-bbnet install-bbproxy
+INSTALLNOCGITARGETS = install-nocgi: install-bbdisplay-nocgi install-bbnet install-bbproxy
+ifdef BBGEND
+	BUILDTARGETS += bbgend-build
+	INSTALLTARGETS += install-bbgend
+	INSTALLNOCGITARGETS += install-bbgend
+endif
+
+all: $(BUILDTARGETS)
 	@echo ""
 	@echo "Build complete"
 	@echo ""
@@ -22,7 +31,12 @@ common-build: lib-build
 	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" $(MAKE) -C common all
 
 bbdisplay-build: lib-build common-build
+ifdef BBGEND
+	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" HISTGRAPHDEF="$(HISTGRAPHDEF)" BBGEND="$(BBGEND)" $(MAKE) -C bbdisplay all
+else
 	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" HISTGRAPHDEF="$(HISTGRAPHDEF)" $(MAKE) -C bbdisplay all
+endif
+
 
 bbnet-build: lib-build common-build
 	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" LDAPFLAGS="$(LDAPFLAGS)" LDAPINCDIR="$(LDAPINCDIR)" LDAPLIBS="$(LDAPLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" $(MAKE) -C bbnet all
@@ -58,8 +72,8 @@ clean:
 # Install targets
 ####################
 
-install: install-bbdisplay install-bbnet install-bbproxy install-bbgend
-install-nocgi: install-bbdisplay-nocgi install-bbnet install-bbproxy install-bbgend
+install: $(INSTALLTARGETS)
+install-nocgi: $(INSTALLNOCGTARGETS)
 
 install-common:
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C common install
