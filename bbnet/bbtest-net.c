@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.159 2004-08-23 14:04:10 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.160 2004-08-23 14:21:41 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -83,13 +83,11 @@ testedhost_t	*testhosthead = NULL;		/* Head of all hosts */
 char		*nonetpage = NULL;		/* The "NONETPAGE" env. variable */
 int		dnsmethod = DNS_THEN_IP;	/* How to do DNS lookups */
 int 		timeout=10;			/* The timeout (seconds) for all TCP-tests */
-long		followlocations = 0;		/* Follow Location: redirects in HTTP? */
 char		*contenttestname = "content";   /* Name of the content checks column */
 char		*ssltestname = "sslcert";       /* Name of the SSL certificate checks column */
 int             sslwarndays = 30;		/* If cert expires in fewer days, SSL cert column = yellow */
 int             sslalarmdays = 10;		/* If cert expires in fewer days, SSL cert column = red */
 char		*location = "";			/* BBLOCATION value */
-char		*logfile = NULL;
 int		hostcount = 0;
 int		testcount = 0;
 int		notesthostcount = 0;
@@ -2066,17 +2064,6 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			p++; sslalarmdays = atoi(p);
 		}
-		else if (argnmatch(argv[argi], "--follow=") || (strcmp(argv[argi], "--follow") == 0)) {
-			char *p = strchr(argv[argi], '=');
-
-			if (p) followlocations = atoi(p+1);
-			else followlocations = 3;
-		}
-		else if (argnmatch(argv[argi], "--log=")) {
-			char *p = strchr(argv[argi], '=');
-
-			logfile = malcop(p+1);
-		}
 
 		/* Informational options */
 		else if (strcmp(argv[argi], "--version") == 0) {
@@ -2113,12 +2100,10 @@ int main(int argc, char *argv[])
 			printf("    --sslwarn=N                 : Go yellow if certificate expires in less than N days (default:30)\n");
 			printf("    --sslalarm=N                : Go red if certificate expires in less than N days (default:10)\n");
 			printf("    --no-ssl                    : Disable SSL certificate check\n");
-			printf("    --follow[=N]                : Follow redirects for N levels (default: N=3).\n");
 			printf("\nDebugging options:\n");
 			printf("    --debug                     : Output debugging information\n");
 			printf("    --dump[=before|=after|=all] : Dump internal memory structures before/after tests run\n");
 			printf("    --no-update                 : Send status messages to stdout instead of to bbd\n");
-			printf("    --log=FILENAME              : Output trace of HTTP tests to a file.\n");
 			printf("    --timing                    : Trace the amount of time spent on each series of tests\n");
 			printf("    --services                  : Dump list of known services and exit\n");
 
