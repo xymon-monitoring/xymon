@@ -31,6 +31,7 @@ typedef struct htnames_t {
 #include "../lib/htmllog.h"
 #include "../lib/links.h"
 #include "../lib/loadhosts.h"
+#include "../lib/memory.h"
 #include "../lib/misc.h"
 #include "../lib/rbtr.h"
 #include "../lib/savelog.h"
