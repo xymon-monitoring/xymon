@@ -538,20 +538,20 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 		req->httpcolor = statuscolor(host, req->httpstatus);
 
 		/* Dialup hosts and dialup tests report red as clear */
-		if ((req->httpcolor != COL_GREEN) && (t->host->dialup || t->dialup)) req->httpcolor = COL_CLEAR;
+		if ((req->httpcolor != COL_GREEN) && (host->dialup || t->dialup)) req->httpcolor = COL_CLEAR;
 
 		/* If ping failed, report CLEAR unless alwaystrue */
 		if ( ((req->httpcolor == COL_RED) || (req->httpcolor == COL_YELLOW)) && /* Test failed */
-		     (t->host->downcount > 0)                      && /* The ping check did fail */
-		     (!t->host->noping && !t->host->noconn)        && /* We are doing a ping test */
-		     (!t->alwaystrue)                              )  /* No "~testname" flag */ {
+		     (host->downcount > 0)                   && /* The ping check did fail */
+		     (!host->noping && !host->noconn)        && /* We are doing a ping test */
+		     (!t->alwaystrue)                           )  /* No "~testname" flag */ {
 			req->httpcolor = COL_CLEAR;
 		}
 
-		/* If ping failed, report CLEAR unless alwaystrue */
+		/* If test we depend on has failed, report CLEAR unless alwaystrue */
 		if ( ((req->httpcolor == COL_RED) || (req->httpcolor == COL_YELLOW)) && /* Test failed */
 		     (!t->alwaystrue)                              )  /* No "~testname" flag */ {
-			char *faileddeps = deptest_failed(t->host, t->service->testname);
+			char *faileddeps = deptest_failed(host, t->service->testname);
 
 			if (faileddeps) {
 				req->httpcolor = COL_CLEAR;
@@ -562,9 +562,6 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 		dprintf("%s(%s) ", t->testspec, colorname(req->httpcolor));
 		if (req->httpcolor > color) color = req->httpcolor;
 	}
-
-	/* If not inside SLA and non-green, report failures as BLUE */
-	if (!host->in_sla && ((color == COL_RED) || (color == COL_YELLOW))) color = COL_BLUE;
 
 	if (nopage && (color == COL_RED)) color = COL_YELLOW;
 	dprintf(" --> %s\n", colorname(color));
