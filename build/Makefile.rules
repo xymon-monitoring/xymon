@@ -11,8 +11,6 @@ MAN1PAGES = bbgen.1 bbtest-net.1 bbhostgrep.1 bbhostshow.1 bb-rep.cgi.1 bb-replo
 MAN5PAGES = bbcombotest.cfg.5 bb-hosts.5 bb-environ.5
 MAN7PAGES = bbgen-intro.7
 
-LDAPLIBS = -lldap
-
 all: $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS)
 	@echo ""
 	@echo "Build complete"
