@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.1 2004-11-06 10:03:16 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.2 2004-11-13 22:33:46 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -39,7 +39,7 @@ static void larrd_setup(void)
 
 	if (setup_done) return;
 
-	getenv_default("LARRDS", "cpu=la,content=http,http,conn,fping=conn,ftp,ssh,telnet,nntp,pop,pop-2,pop-3,pop2,pop3,smtp,imap,disk,vmstat,memory,iostat,netstat,citrix,bbgen,bbtest,bbproxy,time=ntpstat,vmio,temperature", NULL);
+	getenv_default("LARRDS", "cpu=la,http,conn,fping=conn,ftp,ssh,telnet,nntp,pop,pop-2,pop-3,pop2,pop3,smtp,imap,disk,vmstat,memory,iostat,netstat,citrix,bbgen,bbtest,bbproxy,time=ntpstat", NULL);
 
 	lenv = strdup(getenv("LARRDS")); lcount = 0;
 	p = lenv; do { lcount++; p = strchr(p+1, ','); } while (p);
