@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.17 2003-04-16 09:01:48 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.18 2003-04-16 09:06:40 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -295,14 +295,13 @@ int run_command(char *cmd, char *errortext, char **banner)
 	int	piperes;
 
 	result = 0;
-	if (banner) *banner = NULL;
+	if (banner) { *banner = malloc(1024); sprintf(*banner, "Command: %s\n\n", cmd); }
 	cmdpipe = popen(cmd, "r");
 	if (cmdpipe == NULL) {
-		if (banner) sprintf(*banner, "popen() failed to run command '%s'\n", cmd);
+		if (banner) strcat(*banner, "popen() failed to run command\n");
 		return -1;
 	}
 
-	if (banner) { *banner = malloc(1024); sprintf(*banner, "Command: %s\n\n", cmd); }
 	while (fgets(l, sizeof(l), cmdpipe)) {
 		if (strstr(l, errortext) != NULL) result = 1;
 		if (banner && ((strlen(l) + strlen(*banner)) < 1024)) strcat(*banner, l);
