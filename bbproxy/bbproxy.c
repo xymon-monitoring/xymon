@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.23 2004-09-21 20:59:19 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.24 2004-09-23 08:43:02 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -85,7 +85,7 @@ typedef struct conn_t {
 	int connectpending;
 	time_t conntime;
 	int madetocombo;
-	struct timeval timelimit;
+	struct timeval timelimit, arrival;
 	unsigned char *buf, *bufp;
 	unsigned int bufsize, buflen;
 	struct conn_t *next;
@@ -249,6 +249,7 @@ int main(int argc, char *argv[])
 	unsigned long msgs_combo = 0;
 	unsigned long msgs_other = 0;
 	unsigned long msgs_recovered = 0;
+	struct timeval timeinqueue = { 0, 0 };
 
 	/* Dont save the output from errprintf() */
 	save_errbuf = 0;
@@ -472,6 +473,10 @@ int main(int argc, char *argv[])
 			}
 
 			if (stentry) {
+				unsigned long avgtime;	/* In millisecs */
+				
+				avgtime = (timeinqueue.tv_sec*1000 + timeinqueue.tv_usec/1000) / (msgs_total - msgs_total_last);
+
 				sprintf(stentry->buf, "status %s green %s Proxy up %s\n\nProxy statistics\n\nIncoming messages        : %10lu (%lu msgs/second)\nOutbound messages        : %10lu\n\nIncoming message distribution\n- Combo messages         : %10lu\n- Status messages        : %10lu\n  Messages merged        : %10lu\n  Resulting combos       : %10lu\n- Page messages          : %10lu\n- Other messages         : %10lu\n\nProxy ressources\n- Connection table size  : %10d\n- Buffer space           : %10lu kByte\n",
 					proxyname, timestamp, runtime_s,
 					msgs_total, (msgs_total - msgs_total_last) / (now - laststatus),
@@ -488,8 +493,11 @@ int main(int argc, char *argv[])
 				p += sprintf(p, "- %-22s : %10lu\n", "recovered", msgs_recovered);
 				p += sprintf(p, "- %-22s : %10lu\n", statename[P_RESP_READING], msgs_timeout_from[P_RESP_READING]);
 				p += sprintf(p, "- %-22s : %10lu\n", statename[P_RESP_SENDING], msgs_timeout_from[P_RESP_SENDING]);
+				p += sprintf(p, "\n%-24s : %10lu.%03lu\n", "Average queue time", 
+						(avgtime / 1000), (avgtime % 1000));
 				laststatus = now;
 				msgs_total_last = msgs_total;
+				timeinqueue.tv_sec = timeinqueue.tv_sec = 0;
 				stentry->dontcount = 1;
 				stentry->buflen = strlen(stentry->buf);
 				stentry->bufp = stentry->buf;
@@ -631,12 +639,20 @@ int main(int argc, char *argv[])
 				cwalk->bufp = cwalk->buf; cwalk->buflen = 0;
 				memset(cwalk->buf, 0, cwalk->bufsize);
 				if (!cwalk->dontcount) {
+					struct timeval departure;
+					gettimeofday(&departure, &tz);
 					if (cwalk->sendtries < SEND_TRIES) {
 						errprintf("Recovered from write error after %d retries\n", 
 								(SEND_TRIES - cwalk->sendtries));
 						msgs_recovered++;
 					}
 					msgs_delivered++;
+					timeinqueue.tv_sec += (departure.tv_sec - cwalk->arrival.tv_sec);
+					timeinqueue.tv_usec += (departure.tv_usec - cwalk->arrival.tv_usec);
+					if (timeinqueue.tv_usec > 1000000) {
+						timeinqueue.tv_sec++;
+						timeinqueue.tv_usec -= 1000000;
+					}
 				}
 				if (cwalk->csocket < 0) {
 					cwalk->state = P_CLEANUP;
@@ -940,8 +956,9 @@ int main(int argc, char *argv[])
 					sockcount++;
 					fcntl(newconn->csocket, F_SETFL, O_NONBLOCK);
 					newconn->state = P_REQ_READING;
-					gettimeofday(&newconn->timelimit, &tz);
-					newconn->timelimit.tv_sec += timeout;
+					gettimeofday(&newconn->arrival, &tz);
+					newconn->timelimit.tv_sec = newconn->arrival.tv_sec + timeout;
+					newconn->timelimit.tv_usec = newconn->arrival.tv_usec;
 				}
 			}
 		}
