@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.21 2004-10-11 11:39:07 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.22 2004-10-11 14:45:51 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -430,16 +430,25 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	strncpy(log->sender, sender, sizeof(log->sender)-1);
 
 	if (msg != log->message) {	/* They can be the same when called from handle_enadis() */
+		/*
+		 * Note here:
+		 * - log->msgsz is the buffer size INCLUDING the final \0.
+		 * - msglen is the message length WITHOUT the final \0.
+		 */
 		if ((log->message == NULL) || (log->msgsz == 0)) {
-			log->message = strdup(msg);
+			/* No buffer - get one */
+			log->message = (unsigned char *)malloc(msglen+1);
+			memcpy(log->message, msg, msglen+1);
 			log->msgsz = msglen+1;
 		}
 		else if (log->msgsz > msglen) {
-			strncpy(log->message, msg, msglen);
+			/* Message - including \0 - fits into the existing buffer. */
+			memcpy(log->message, msg, msglen+1);
 		}
 		else {
-			log->message = realloc(log->message, msglen+1);
-			strncpy(log->message, msg, msglen);
+			/* Message does not fit into existing buffer. Grow it. */
+			log->message = (unsigned char *)realloc(log->message, msglen+1);
+			memcpy(log->message, msg, msglen+1);
 			log->msgsz = msglen+1;
 		}
 
