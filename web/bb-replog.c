@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.6 2003-06-21 15:09:53 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.7 2003-06-23 15:00:18 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,27 +30,6 @@ static char rcsid[] = "$Id: bb-replog.c,v 1.6 2003-06-21 15:09:53 henrik Exp $";
 
 char *stylenames[3] = { "crit", "nongr", "all" };
 
-static char *durationstr(time_t duration)
-{
-	static char dur[100];
-	char dhelp[100];
-
-	if (duration <= 0) {
-		strcpy(dur, "none");
-	}
-	else {
-		dur[0] = '\0';
-		if (duration > 86400) {
-			sprintf(dhelp, "%lu days ", (duration / 86400));
-			duration %= 86400;
-			strcpy(dur, dhelp);
-		}
-		sprintf(dhelp, "%lu:%02lu:%02lu", duration / 3600, ((duration % 3600) / 60), (duration % 60));
-		strcat(dur, dhelp);
-	}
-
-	return dur;
-}
 
 void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 		     char *hostname, char *ip, char *service, int color, int style,
@@ -75,9 +54,8 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "<TR></TR>\n");
 	fprintf(htmlrep, "<TR>\n");
-	fprintf(htmlrep, "<TD COLSPAN=6><CENTER><B>Overall Availability: %.2f%%</A></CENTER></TD></TR>\n", repinfo->availability);
+	fprintf(htmlrep, "<TD COLSPAN=6><CENTER><B>Overall Availability: %.2f%%</CENTER></TD></TR>\n", repinfo->availability);
 	fprintf(htmlrep, "<TR BGCOLOR=\"#000033\">\n");
-	fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
 	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
 		getenv("BBSKIN"), dotgiffilename(COL_GREEN, 0, 1), colorname(COL_GREEN), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
 	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
@@ -99,6 +77,7 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->pct[COL_CLEAR]);
 	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->pct[COL_BLUE]);
 	fprintf(htmlrep, "</TR>\n");
+	fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
 	fprintf(htmlrep, "<TD ALIGN=CENTER><B>Event count</B></TD>\n");
 	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%d</B></TD>\n", repinfo->count[COL_YELLOW]);
 	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%d</B></TD>\n", repinfo->count[COL_RED]);
@@ -410,7 +389,7 @@ int main(int argc, char *argv[])
 		errormsg("Cannot open history file");
 	}
 
-	parse_historyfile(fd, &repinfo, hostname, service, st, end);
+	parse_historyfile(fd, &repinfo, hostname, service, st, end, 0);
 	fclose(fd);
 
 	sprintf(textrepfn, "avail-%s-%s-%lu-%u.txt", hostname, service, time(NULL), (int)getpid());
