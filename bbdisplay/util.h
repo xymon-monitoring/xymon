@@ -67,7 +67,6 @@ extern FILE *stackfopen(char *filename, char *mode);
 extern int stackfclose(FILE *fd);
 extern char *stackfgets(char *buffer, unsigned int bufferlen, char *includetag1, char *includetag2);
 
-extern char *malcop(const char *s);
 extern int get_fqdn(void);
 extern void init_timestamp(void);
 extern int argnmatch(char *arg, char *match);
