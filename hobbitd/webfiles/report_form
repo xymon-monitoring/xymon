@@ -1,19 +1,18 @@
 <BR>
 
 <CENTER>
-  <FONT COLOR="#FF0000" FACE="Arial, Helvetica">
-  <TABLE WIDTH=80% BORDER=0 CELLSPACING=5>
+  <TABLE WIDTH=80% BORDER=0 CELLSPACING=5 SUMMARY="Report date specification">
     <TR BGCOLOR="#000033">
-       <TD COLSPAN=2><FONT FACE="Arial, Helvetica"  SIZE="+1">
-           <CENTER><B>Hobbit Monitor Availability Report</B></CENTER>
+       <TD COLSPAN=2>
+           <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1"><B>Hobbit Monitor Availability Report</B></FONT></CENTER>
        </TD>
     </TR>
     <TR>
-       <TD BGCOLOR="#333333"><FONT FACE="Arial, Helvetica">
+       <TD BGCOLOR="#333333">
        <BR>
-       <H6><CENTER>
+       <CENTER>
 
-       <FORM ACTION="&CGIBINURL/bb-rep.sh">
+       <FORM METHOD="GET" ACTION="&CGIBINURL/bb-rep.sh">
           <SELECT NAME="start-mon">
           &REPMONLIST
           </SELECT>
@@ -26,7 +25,7 @@
           &REPYEARLIST
           </SELECT>
 
-          <FONT SIZE="+1">- to -</FONT SIZE="-1">
+          <FONT SIZE="+1" FACE="Arial, Helvetica">- to -</FONT>
 
           <SELECT NAME="end-mon">
           &REPMONLIST
@@ -47,9 +46,10 @@
           </SELECT>
 
           <BR><BR>
-          <INPUT TYPE="SUBMIT" NAME="SUB" VALUE="Generate Report" ALT="Generate Report" BORDER=0 METHOD="GET">
+          <INPUT TYPE="SUBMIT" NAME="SUB" VALUE="Generate Report" ALT="Generate Report">
        </FORM>
-       </CENTER></H6>
+
+       </CENTER>
        </TD>
       </TR>
    </TABLE>
