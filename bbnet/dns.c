@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.17 2004-09-13 20:46:40 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.18 2004-10-29 10:21:57 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -124,7 +124,7 @@ void add_host_to_dns_queue(char *hostname)
 			}
 		}
 
-		dnsc->name = malcop(hostname);
+		dnsc->name = strdup(hostname);
 		dnsc->failed = 0;
 		dnsc->next = dnscache;
 		gettimeofday(&dnsc->resolvetime, &tz);
@@ -273,7 +273,7 @@ int dns_test_server(char *serverip, char *hostname, char **banner, int *bannerby
 		return 1;
 	}
 
-	tspec = malcop(hostname);
+	tspec = strdup(hostname);
 	gettimeofday(&starttime, &tz);
 	tst = strtok(tspec, ",");
 	do {

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.16 2004-08-28 07:12:09 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.17 2004-10-29 10:21:57 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -46,7 +46,7 @@ int init_ldap_library(void)
 
 	/* Doesnt really do anything except define the version-number string */
 	sprintf(versionstring, "%s %d", LDAP_VENDOR_NAME, LDAP_VENDOR_VERSION);
-	ldap_library_version = malcop(versionstring);
+	ldap_library_version = strdup(versionstring);
 #endif
 
 	return 0;
@@ -177,7 +177,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 			dprintf("Attempting to select LDAPv3 for TLS\n");
 			if ((rc = ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &protocol)) != LDAP_OPT_SUCCESS) {
 				dprintf("Failed to force protocol 3\n");
-				req->output = malcop(ldap_err2string(rc));
+				req->output = strdup(ldap_err2string(rc));
 				req->ldapstatus = BBGEN_LDAP_TLSFAIL;
 				continue;
 			}
@@ -185,7 +185,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 			dprintf("Trying to enable TLS for session\n");
 			if ((rc = ldap_start_tls_s(ld, NULL, NULL)) != LDAP_SUCCESS) {
 				dprintf("ldap_start_tls failed\n");
-				req->output = malcop(ldap_err2string(rc));
+				req->output = strdup(ldap_err2string(rc));
 				req->ldapstatus = BBGEN_LDAP_TLSFAIL;
 				continue;
 			}
@@ -221,7 +221,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 				finished = 1;
 				rc2 = ldap_result2error(ld, result, 1);
 				req->ldapstatus = BBGEN_LDAP_BINDFAIL;
-				req->output = malcop(ldap_err2string(rc2));
+				req->output = strdup(ldap_err2string(rc2));
 				ldap_unbind(ld);
 			}
 			if (rc == 0) {
@@ -242,7 +242,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 					rc2 = ldap_result2error(ld, result, 1);
 					if(rc2 != LDAP_SUCCESS) {
 						req->ldapstatus = BBGEN_LDAP_BINDFAIL;
-						req->output = malcop(ldap_err2string(rc));
+						req->output = strdup(ldap_err2string(rc));
 						ldap_unbind(ld);
 					}
 				}
@@ -259,13 +259,13 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 
 		if(rc == LDAP_TIMEOUT) {
 			req->ldapstatus = BBGEN_LDAP_TIMEOUT;
-			req->output = malcop(ldap_err2string(rc));
+			req->output = strdup(ldap_err2string(rc));
 	  		ldap_unbind(ld);
 			continue;
 		}
 		if( rc != LDAP_SUCCESS ) {
 			req->ldapstatus = BBGEN_LDAP_SEARCHFAILED;
-			req->output = malcop(ldap_err2string(rc));
+			req->output = strdup(ldap_err2string(rc));
 	  		ldap_unbind(ld);
 			continue;
 		}
@@ -308,7 +308,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 			strcat(response, "\n");
 		}
 		req->ldapstatus = BBGEN_LDAP_OK;
-		req->output = malcop(response);
+		req->output = strdup(response);
 		tvdiff(&starttime, &endtime, &req->duration);
 
 		ldap_msgfree(result);
@@ -352,7 +352,7 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 
 	if (ldap1 == NULL) return;
 
-	svcname = malcop(ldaptest->testname);
+	svcname = strdup(ldaptest->testname);
 	if (ldaptest->namelen) svcname[ldaptest->namelen] = '\0';
 
 	/* Check if this service is a NOPAGENET service. */
@@ -387,7 +387,7 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 
 			if (faileddeps) {
 				req->ldapcolor = COL_CLEAR;
-				req->faileddeps = malcop(faileddeps);
+				req->faileddeps = strdup(faileddeps);
 			}
 		}
 

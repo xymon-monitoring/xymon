@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.30 2004-08-28 07:11:47 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.31 2004-10-29 10:21:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -69,7 +69,7 @@ void add_timestamp(const char *msg)
 		timestamp_t *newstamp = (timestamp_t *) malloc(sizeof(timestamp_t));
 
 		gettimeofday(&newstamp->eventtime, &tz);
-		newstamp->eventtext = malcop(msg);
+		newstamp->eventtext = strdup(msg);
 
 		if (stamphead == NULL) {
 			newstamp->next = newstamp->prev = NULL;

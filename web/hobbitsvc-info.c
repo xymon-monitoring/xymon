@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.54 2004-10-26 17:23:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.55 2004-10-29 10:21:57 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -52,7 +52,7 @@ static void timespec_text(char *spec, char **infobuf, int *infobuflen)
 	char *sCopy;
 	char *sItem;
 
-	sCopy = malcop(spec);
+	sCopy = strdup(spec);
 	sCopy[strcspn(sCopy, " \t\r\n")] = '\0';
 	sItem = strtok(sCopy, ",");
 	while (sItem) {
@@ -306,7 +306,7 @@ int generate_info(char *infocolumn, int bbgend)
 		/* Space */
 		addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
-		rawcopy = malcop(hostwalk->hostentry->rawentry);
+		rawcopy = strdup(hostwalk->hostentry->rawentry);
 		firstcontent = 1;
 		p = strtok(rawcopy, " \t");
 		while (p) {
@@ -405,7 +405,7 @@ int generate_info(char *infocolumn, int bbgend)
 							addtobuffer(&infobuf, &infobuflen, "<tr><th colspan=5 align=center><i>Exceptions</i></th></tr>\n");
 						}
 
-						recips = malcop(alerts->items[6]);
+						recips = strdup(alerts->items[6]);
 						addtobuffer(&infobuf, &infobuflen, "<tr>\n");
 
 						sprintf(l, "<td align=left>%s</td>\n", service_text(alerts->items[2]));

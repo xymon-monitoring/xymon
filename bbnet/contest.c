@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.65 2004-09-11 15:52:50 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.66 2004-10-29 10:21:57 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -171,7 +171,7 @@ char *init_tcp_services(void)
 	fd = fopen(filename, "r");
 	if (fd == NULL) {
 		errprintf("Cannot open TCP service-definitions file %s - using defaults\n", filename);
-		return malcop(getenv("BBNETSVCS"));
+		return strdup(getenv("BBNETSVCS"));
 	}
 
 	head = (svclist_t *)malloc(sizeof(svclist_t));
@@ -193,7 +193,7 @@ char *init_tcp_services(void)
 			while (svcname) {
 				item = (svclist_t *) malloc(sizeof(svclist_t));
 				item->rec = (svcinfo_t *)calloc(1, sizeof(svcinfo_t));
-				item->rec->svcname = malcop(svcname);
+				item->rec->svcname = strdup(svcname);
 				svcnamebytes += (strlen(svcname) + 1);
 				item->next = head;
 				head = item;
@@ -265,7 +265,7 @@ char *init_tcp_services(void)
 		svcinfo[i].port    = walk->rec->port;
 	}
 
-	searchstring = malcop(getenv("BBNETSVCS"));
+	searchstring = strdup(getenv("BBNETSVCS"));
 	bbnetsvcs = (char *) malloc(strlen(getenv("BBNETSVCS")) + svcnamebytes + 1);
 	strcpy(bbnetsvcs, getenv("BBNETSVCS"));
 	for (i=0; (svcinfo[i].svcname); i++) {
@@ -481,7 +481,7 @@ static int do_telnet_options(tcptest_t *item)
 			 * We probably have the banner in the remainder of the
 			 * buffer, so copy it over, and return it.
 			 */
-			item->banner = malcop(inp);
+			item->banner = strdup(inp);
 			item->bannerbytes = strlen(inp);
 			item->telnetbuflen = 0;
 			free(obuf);
@@ -810,8 +810,8 @@ static void setup_ssl(tcptest_t *item)
 	}
 
 	certcn = X509_NAME_oneline(X509_get_subject_name(peercert), NULL, 0);
-	certstart = malcop(bbgen_ASN1_UTCTIME(X509_get_notBefore(peercert)));
-	certend = malcop(bbgen_ASN1_UTCTIME(X509_get_notAfter(peercert)));
+	certstart = strdup(bbgen_ASN1_UTCTIME(X509_get_notBefore(peercert)));
+	certend = strdup(bbgen_ASN1_UTCTIME(X509_get_notAfter(peercert)));
 
 	item->certinfo = (char *) malloc(strlen(certcn)+strlen(certstart)+strlen(certend)+100);
 	sprintf(item->certinfo, 

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.180 2004-10-26 21:58:55 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.181 2004-10-29 10:21:57 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -175,18 +175,18 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[i], "--docurl=")) {
 			char *lp = strchr(argv[i], '=');
-			documentationurl = malcop(lp+1);
+			documentationurl = strdup(lp+1);
 		}
 		else if (argnmatch(argv[i], "--no-doc-window")) {
 			doctargetspec = "";
 		}
 		else if (argnmatch(argv[i], "--htmlextension=")) {
 			char *lp = strchr(argv[i], '=');
-			htmlextension = malcop(lp+1);
+			htmlextension = strdup(lp+1);
 		}
 		else if (argnmatch(argv[i], "--htaccess")) {
 			char *lp = strchr(argv[i], '=');
-			if (lp) htaccess = malcop(lp+1);
+			if (lp) htaccess = strdup(lp+1);
 			else htaccess = ".htaccess";
 		}
 		else if ((strcmp(argv[i], "--wml") == 0) || argnmatch(argv[i], "--wml=")) {
@@ -202,7 +202,7 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 
 			if (strlen(lp+1) > 0) {
-				nssidebarfilename = malcop(lp+1);
+				nssidebarfilename = strdup(lp+1);
 			}
 			else errprintf("--nstab requires a filename\n");
 		}
@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[i], "--rssversion=")) {
 			char *lp = strchr(argv[i], '=');
 
-			rssversion = malcop(lp+1);
+			rssversion = strdup(lp+1);
 		}
 		else if (argnmatch(argv[i], "--rsslimit=")) {
 			char *lp = strchr(argv[i], '=');
@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[i], "--rssextension=")) {
 			char *lp = strchr(argv[i], '=');
-			rssextension = malcop(lp+1);
+			rssextension = strdup(lp+1);
 		}
 		else if (argnmatch(argv[i], "--reportopts=")) {
 			char style[MAX_LINE_LEN];
@@ -290,17 +290,17 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[i], "--page-title=")) {
 			char *lp = strchr(argv[i], '=');
 
-			defaultpagetitle = malcop(lp+1);
+			defaultpagetitle = strdup(lp+1);
 		}
 		else if (argnmatch(argv[i], "--dialupskin=")) {
 			char *lp = strchr(argv[i], '=');
 
-			dialupskin = malcop(lp+1);
+			dialupskin = strdup(lp+1);
 		}
 		else if (argnmatch(argv[i], "--reverseskin=")) {
 			char *lp = strchr(argv[i], '=');
 
-			reverseskin = malcop(lp+1);
+			reverseskin = strdup(lp+1);
 		}
 		else if (strcmp(argv[i], "--pagetitle-links") == 0) {
 			pagetitlelinks = 1;
@@ -374,7 +374,7 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 
 			enable_infogen=1;
-			if (lp) infocol = malcop(lp+1);
+			if (lp) infocol = strdup(lp+1);
 		}
 
 		else if (argnmatch(argv[i], "--larrdupdate=")) {
@@ -388,7 +388,7 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 
 			enable_larrdgen=1;
-			if (lp) larrdgraphs_default = malcop(lp+1);
+			if (lp) larrdgraphs_default = strdup(lp+1);
 		}
 		else if (argnmatch(argv[i], "--larrd043=") || (strcmp(argv[i], "--larrd043") == 0)) {
 			/* "--larrd" just enable larrd page generation */
@@ -396,7 +396,7 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 
 			enable_larrdgen=1;
-			if (lp) larrdcol = malcop(lp+1); else larrdcol = "trends";
+			if (lp) larrdcol = strdup(lp+1); else larrdcol = "trends";
 			larrd043 = 1;
 		}
 		else if (argnmatch(argv[i], "--larrd=") || (strcmp(argv[i], "--larrd") == 0)) {
@@ -405,11 +405,11 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 
 			enable_larrdgen=1;
-			if (lp) larrdcol = malcop(lp+1); else larrdcol = "larrd";
+			if (lp) larrdcol = strdup(lp+1); else larrdcol = "larrd";
 		}
 		else if (argnmatch(argv[i], "--rrddir=")) {
 			char *lp = strchr(argv[i], '=');
-			rrddir = malcop(lp+1);
+			rrddir = strdup(lp+1);
 		}
 		else if (strcmp(argv[i], "--log-nohost-rrds") == 0) {
 			log_nohost_rrds=1;
@@ -424,7 +424,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[i], "--pageset=")) {
 			char *lp = strchr(argv[i], '=');
-			pageset = malcop(lp+1);
+			pageset = strdup(lp+1);
 		}
 		else if (argnmatch(argv[i], "--template=")) {
 			char *lp = strchr(argv[i], '=');
@@ -434,7 +434,7 @@ int main(int argc, char *argv[])
 
 		else if (argnmatch(argv[i], "--purplelog=")) {
 			char *lp = strchr(argv[i], '=');
-			if (*(lp+1) == '/') purplelogfn = malcop(lp+1);
+			if (*(lp+1) == '/') purplelogfn = strdup(lp+1);
 			else {
 				purplelogfn = (char *) malloc(strlen(getenv("BBHOME"))+1+strlen(lp+1)+1);
 				sprintf(purplelogfn, "%s/%s", getenv("BBHOME"), (lp+1));
@@ -443,7 +443,7 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[i], "--report=") || (strcmp(argv[i], "--report") == 0)) {
 			char *lp = strchr(argv[i], '=');
 			if (lp) {
-				egocolumn = malcop(lp+1);
+				egocolumn = strdup(lp+1);
 			}
 			else egocolumn = "bbgen";
 			timing = 1;
@@ -451,7 +451,7 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[i], "--nklog=") || (strcmp(argv[i], "--nklog") == 0)) {
 			char *lp = strchr(argv[i], '=');
 			if (lp) {
-				lognkstatus = malcop(lp+1);
+				lognkstatus = strdup(lp+1);
 			}
 			else lognkstatus = "nk";
 		}
@@ -545,7 +545,7 @@ int main(int argc, char *argv[])
 
 		else {
 			/* Last argument is pagedir */
-			pagedir = malcop(argv[i]);
+			pagedir = strdup(argv[i]);
 		}
 	}
 
@@ -571,7 +571,7 @@ int main(int argc, char *argv[])
 
 	if (pagedir == NULL) {
 		if (getenv("BBWWW")) {
-			pagedir = malcop(getenv("BBWWW"));
+			pagedir = strdup(getenv("BBWWW"));
 		}
 		else {
 			pagedir = (char *) malloc(strlen(getenv("BBHOME"))+5);
@@ -583,9 +583,9 @@ int main(int argc, char *argv[])
 		sprintf(rrddir, "%s/rrd", getenv("BBVAR"));
 	}
 
-	if (getenv("BBHTACCESS")) bbhtaccess = malcop(getenv("BBHTACCESS"));
-	if (getenv("BBPAGEHTACCESS")) bbpagehtaccess = malcop(getenv("BBPAGEHTACCESS"));
-	if (getenv("BBSUBPAGEHTACCESS")) bbsubpagehtaccess = malcop(getenv("BBSUBPAGEHTACCESS"));
+	if (getenv("BBHTACCESS")) bbhtaccess = strdup(getenv("BBHTACCESS"));
+	if (getenv("BBPAGEHTACCESS")) bbpagehtaccess = strdup(getenv("BBPAGEHTACCESS"));
+	if (getenv("BBSUBPAGEHTACCESS")) bbsubpagehtaccess = strdup(getenv("BBSUBPAGEHTACCESS"));
 
 	/*
 	 * When doing alternate pagesets, disable some stuff:

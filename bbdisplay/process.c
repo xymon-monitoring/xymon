@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.22 2004-10-26 15:35:25 henrik Exp $";
+static char rcsid[] = "$Id: process.c,v 1.23 2004-10-29 10:21:57 henrik Exp $";
 
 #include <string.h>
 #include <sys/types.h>
@@ -224,7 +224,7 @@ void send_summaries(summary_t *sumhead)
 			char *p, *pg;
 			bbgen_page_t *pgwalk;
 			bbgen_page_t *sourcepg = NULL;
-			char *urlcopy = malcop(suburl);
+			char *urlcopy = strdup(suburl);
 
 			/*
 			 * Walk the page tree

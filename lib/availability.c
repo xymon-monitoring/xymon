@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.27 2004-08-29 15:59:19 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.28 2004-10-29 10:21:57 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -77,7 +77,7 @@ void build_reportspecs(char *reporttime)
 	spec = strchr(reporttime, '=');
 	if (spec == NULL) return; 
 	
-	timespec = malcop(spec+1);
+	timespec = strdup(spec+1);
 	spec = strtok(timespec, ",");
 	while (spec) {
 		if (*spec == '*') {
@@ -207,7 +207,7 @@ char *parse_histlogfile(char *hostname, char *servicename, char *timespec)
 		strcpy(cause, "No historical status available");
 	}
 
-	return malcop(cause);
+	return strdup(cause);
 }
 
 int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
@@ -417,7 +417,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 				}
 				else newentry->cause = "";
 
-				newentry->timespec = malcop(timespec);
+				newentry->timespec = strdup(timespec);
 				newentry->next = reploghead;
 				reploghead = newentry;
 			}
@@ -498,7 +498,7 @@ int history_color(FILE *fd, time_t snapshot, time_t *starttime, char **histlogna
 		color = -2;
 	}
 
-	*histlogname = malcop(timename(l));
+	*histlogname = strdup(timename(l));
 
 	return color;
 }
@@ -531,7 +531,7 @@ int main(int argc, char *argv[])
 	reportstart = atol(argv[2]);
 	reportend = atol(argv[3]);
 
-	hostsvc = malcop(argv[1]);
+	hostsvc = strdup(argv[1]);
 	p = strrchr(hostsvc, '.');
 	*p = '\0'; svc = p+1;
 	p = strrchr(hostsvc, '/'); host = p+1;

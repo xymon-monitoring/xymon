@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.21 2003-11-21 10:42:26 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.22 2004-10-29 10:21:57 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -409,12 +409,12 @@ static void parse_query(void)
 		if (argnmatch(token, "HOSTSVC")) {
 			char *p = strrchr(val, '.');
 
-			if (p) { *p = '\0'; service = malcop(p+1); }
-			hostname = malcop(val);
+			if (p) { *p = '\0'; service = strdup(p+1); }
+			hostname = strdup(val);
 			while ((p = strchr(hostname, ','))) *p = '.';
 		}
 		else if (argnmatch(token, "IP")) {
-			ip = malcop(val);
+			ip = strdup(val);
 		}
 		else if (argnmatch(token, "REPORTTIME")) {
 			reporttime = (char *) malloc(strlen(val)+strlen("REPORTTIME=")+1);

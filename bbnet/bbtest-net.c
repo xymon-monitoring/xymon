@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.179 2004-10-01 16:02:12 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.180 2004-10-29 10:21:57 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -208,7 +208,7 @@ char *deptest_failed(testedhost_t *host, char *testname)
 
 	if (host->deptests == NULL) return NULL;
 
-	depcopy = malcop(host->deptests);
+	depcopy = strdup(host->deptests);
 	sprintf(depitem, "(%s:", testname);
 	p = strstr(depcopy, depitem);
 	if (p == NULL) { free(depcopy); return NULL; }
@@ -268,7 +268,7 @@ service_t *add_service(char *name, int port, int namelen, int toolid)
 
 	svc = (service_t *) malloc(sizeof(service_t));
 	svc->portnum = port;
-	svc->testname = malcop(name); 
+	svc->testname = strdup(name); 
 	svc->toolid = toolid;
 	svc->namelen = namelen;
 	svc->items = NULL;
@@ -319,7 +319,7 @@ testedhost_t *init_testedhost(char *hostname, int okexpected)
 
 	hostcount++;
 	newhost = (testedhost_t *) calloc(1, sizeof(testedhost_t));
-	newhost->hostname = malcop(hostname);
+	newhost->hostname = strdup(hostname);
 	newhost->ip[0] = '\0';
 	newhost->hosttype = NULL;
 
@@ -503,11 +503,11 @@ void load_tests(void)
 					}
 					else if (argnmatch(testspec, "route:")) {
 						specialtag = 1;
-						h->routerdeps = malcop(testspec+6);
+						h->routerdeps = strdup(testspec+6);
 					}
 					else if (routestring && (strncasecmp(testspec, routestring, strlen(routestring)) == 0)) {
 						specialtag = 1;
-						h->routerdeps = malcop(testspec+strlen(routestring));
+						h->routerdeps = strdup(testspec+strlen(routestring));
 						dprintf("host %s has routerdeps %s\n", h->hostname, h->routerdeps);
 					}
 					else if (argnmatch(testspec, "TIMEOUT:")) {
@@ -542,7 +542,7 @@ void load_tests(void)
 					}
 					else if (argnmatch(testspec, "depends=")) {
 						specialtag = 1;
-						h->deptests = malcop(testspec+8);
+						h->deptests = strdup(testspec+8);
 					}
 					else if (argnmatch(testspec, "ldaplogin=")) {
 						char *username, *password;
@@ -559,8 +559,8 @@ void load_tests(void)
 						}
 
 						specialtag = 1;
-						if (username) h->ldapuser = malcop(username);
-						if (password) h->ldappasswd = malcop(password);
+						if (username) h->ldapuser = strdup(username);
+						if (password) h->ldappasswd = strdup(password);
 					}
 					else if (argnmatch(testspec, "NAME:")) {
 						char *name, *p;
@@ -640,7 +640,7 @@ void load_tests(void)
 
 						p = strchr(description, ':');
 						if (p) *p = '\0';
-						h->hosttype = malcop(description);
+						h->hosttype = strdup(description);
 						if (p) *p = ':';
 
 						free(description);
@@ -680,15 +680,15 @@ void load_tests(void)
 							h->extrapings->iplist = NULL;
 							if (argnmatch(p, "=worst,")) {
 								h->extrapings->matchtype = MULTIPING_WORST;
-								ips = malcop(p+7);
+								ips = strdup(p+7);
 							}
 							else if (argnmatch(p, "=best,")) {
 								h->extrapings->matchtype = MULTIPING_BEST;
-								ips = malcop(p+6);
+								ips = strdup(p+6);
 							}
 							else {
 								h->extrapings->matchtype = MULTIPING_BEST;
-								ips = malcop(p+1);
+								ips = strdup(p+1);
 							}
 
 							do {
@@ -713,7 +713,7 @@ void load_tests(void)
 						 */
 #ifdef BBGEN_LDAP
 						s = ldaptest;
-						savedspec = malcop(testspec);
+						savedspec = strdup(testspec);
 						add_url_to_dns_queue(testspec);
 #else
 						errprintf("ldap test requested, but bbgen was built with no ldap support\n");
@@ -735,7 +735,7 @@ void load_tests(void)
 						 * HTTP test. This uses ':' a lot, so save it here.
 						 */
 						s = httptest;
-						savedspec = malcop(testspec);
+						savedspec = strdup(testspec);
 						add_url_to_dns_queue(testspec);
 					}
 					else if (argnmatch(testspec, "rpc")) {
@@ -743,15 +743,15 @@ void load_tests(void)
 						 * rpc check via rpcinfo
 						 */
 						s = rpctest;
-						savedspec = malcop(testspec);
+						savedspec = strdup(testspec);
 					}
 					else if (argnmatch(testspec, "dns=")) {
 						s = dnstest;
-						savedspec = malcop(testspec);
+						savedspec = strdup(testspec);
 					}
 					else if (argnmatch(testspec, "dig=")) {
 						s = digtest;
-						savedspec = malcop(testspec);
+						savedspec = strdup(testspec);
 					}
 					else {
 						/* 
@@ -937,7 +937,7 @@ void load_tests(void)
 				newtest->privdata = (void *)malloc(sizeof(modembank_t));
 				newentry = (modembank_t *)newtest->privdata;
 
-				newentry->hostname = malcop(hostname);
+				newentry->hostname = strdup(hostname);
 				newentry->startip = IPtou32(ip1, ip2, ip3, ip4);
 				newentry->banksize = banksize;
 				newentry->responses = (int *) malloc(banksize * sizeof(int));
@@ -1352,7 +1352,7 @@ int finish_fping_service(service_t *service)
 				if (strcmp(t->host->ip, pingip) == 0) {
 					if (t->open) dprintf("More than one ping result for %s\n", pingip);
 					t->open = (strstr(l, "is alive") != NULL);
-					t->banner = malcop(l);
+					t->banner = strdup(l);
 					t->bannerbytes = strlen(l);
 				}
 
@@ -1362,7 +1362,7 @@ int finish_fping_service(service_t *service)
 						if (strcmp(walk->ip, pingip) == 0) {
 							if (t->open) dprintf("More than one ping result for %s\n", pingip);
 							walk->open = (strstr(l, "is alive") != NULL);
-							walk->banner = malcop(l);
+							walk->banner = strdup(l);
 							walk->bannerbytes = strlen(l);
 						}
 					}
@@ -1685,7 +1685,7 @@ void send_results(service_t *service, int failgoesclear)
 	char		causetext[1024];
 	char		*svcname;
 
-	svcname = malcop(service->testname);
+	svcname = strdup(service->testname);
 	if (service->namelen) svcname[service->namelen] = '\0';
 
 	dprintf("Sending results for service %s\n", svcname);
@@ -1911,7 +1911,7 @@ void send_rpcinfo_results(service_t *service, int failgoesclear)
 
 		color = decide_color(service, service->testname, t, failgoesclear, causetext);
 		p = strchr(t->testspec, '=');
-		if (p) wantedrpcsvcs = malcop(p+1);
+		if (p) wantedrpcsvcs = strdup(p+1);
 
 		if ((color == COL_GREEN) && t->banner && wantedrpcsvcs) {
 			char *rpcsvc, *aline;
@@ -2121,7 +2121,7 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--report=") || (strcmp(argv[argi], "--report") == 0)) {
 			char *p = strchr(argv[argi], '=');
 			if (p) {
-				egocolumn = malcop(p+1);
+				egocolumn = strdup(p+1);
 			}
 			else egocolumn = "bbtest";
 			timing = 1;
@@ -2176,13 +2176,13 @@ int main(int argc, char *argv[])
 		/* Options for HTTP tests */
 		else if (argnmatch(argv[argi], "--content=")) {
 			char *p = strchr(argv[argi], '=');
-			contenttestname = malcop(p+1);
+			contenttestname = strdup(p+1);
 		}
 
 		/* Options for SSL certificates */
 		else if (argnmatch(argv[argi], "--ssl=")) {
 			char *p = strchr(argv[argi], '=');
-			ssltestname = malcop(p+1);
+			ssltestname = strdup(p+1);
 		}
 		else if (strcmp(argv[argi], "--no-ssl") == 0) {
 			ssltestname = NULL;
@@ -2281,7 +2281,7 @@ int main(int argc, char *argv[])
 		else {
 			/* Must be a hostname */
 			if (selectedcount == 0) selectedhosts = (char **) malloc(argc*sizeof(char *));
-			selectedhosts[selectedcount++] = malcop(argv[argi]);
+			selectedhosts[selectedcount++] = strdup(argv[argi]);
 		}
 	}
 
@@ -2292,7 +2292,7 @@ int main(int argc, char *argv[])
 	/* Setup SEGV handler */
 	setup_signalhandler(egocolumn ? egocolumn : "bbtest");
 
-	if (getenv("BBLOCATION")) location = malcop(getenv("BBLOCATION"));
+	if (getenv("BBLOCATION")) location = strdup(getenv("BBLOCATION"));
 	if (pingcolumn && getenv("IPTEST_2_CLEAR_ON_FAILED_CONN")) {
 		failgoesclear = (strcmp(getenv("IPTEST_2_CLEAR_ON_FAILED_CONN"), "TRUE") == 0);
 	}

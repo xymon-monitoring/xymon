@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: acklog.c,v 1.3 2004-06-24 08:17:16 henrik Exp $";
+static char rcsid[] = "$Id: acklog.c,v 1.4 2004-10-29 10:21:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -142,12 +142,12 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 				if (strncmp(ackerp, "np_", 3) == 0) ackerp += 3;
 				p = strrchr(ackerp, '_');
 				if (p > ackerp) *p = '\0';
-				acks[num].ackedby = malcop(ackerp);
+				acks[num].ackedby = strdup(ackerp);
 
-				acks[num].hostname = malcop(hosttest);
-				acks[num].testname = malcop(testname);
+				acks[num].hostname = strdup(hosttest);
+				acks[num].testname = strdup(testname);
 				strcat(color, " "); acks[num].color = parse_color(color);
-				acks[num].ackmsg = malcop(ackmsg);
+				acks[num].ackmsg = strdup(ackmsg);
 				ackintime_count++;
 
 				num = (num + 1) % maxcount;

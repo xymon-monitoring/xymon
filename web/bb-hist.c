@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.35 2004-03-29 11:42:42 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.36 2004-10-29 10:21:57 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -637,12 +637,12 @@ static void parse_query(void)
 		if (argnmatch(token, "HISTFILE")) {
 			char *p = strrchr(val, '.');
 
-			if (p) { *p = '\0'; service = malcop(p+1); }
-			hostname = malcop(val);
+			if (p) { *p = '\0'; service = strdup(p+1); }
+			hostname = strdup(val);
 			while ((p = strchr(hostname, ','))) *p = '.';
 		}
 		else if (argnmatch(token, "IP")) {
-			ip = malcop(val);
+			ip = strdup(val);
 		}
 		else if (argnmatch(token, "ENTRIES")) {
 			if (strcmp(val, "all") == 0) entrycount = 0;

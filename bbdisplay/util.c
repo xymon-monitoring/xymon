@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.136 2004-10-26 21:48:42 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.137 2004-10-29 10:21:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -271,18 +271,6 @@ char *stackfgets(char *buffer, unsigned int bufferlen, char *includetag1, char *
 	}
 
 	return result;
-}
-
-
-char *malcop(const char *s)
-{
-	char *buf;
-
-	if (s == NULL) return NULL;
-
-	buf = (char *) malloc(strlen(s)+1);
-	strcpy(buf, s);
-	return buf;
 }
 
 
@@ -566,7 +554,7 @@ void sethostenv_snapshot(time_t snapshot)
 void sethostenv_histlog(char *histtime)
 {
 	if (hostenv_logtime) free(hostenv_logtime);
-	hostenv_logtime = malcop(histtime);
+	hostenv_logtime = strdup(histtime);
 }
 
 void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, int bgcolor)
@@ -591,7 +579,7 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 	 * most detailed one, and working up towards the standard "web/bb_TYPE" file.
 	 */
 
-	hfpath = malcop(pagepath); 
+	hfpath = strdup(pagepath); 
 	/* Trim off excess trailing slashes */
 	while (*(hfpath + strlen(hfpath) - 1) == '/') {
 		*(hfpath + strlen(hfpath) - 1) = '\0';
@@ -738,7 +726,7 @@ void do_bbext(FILE *output, char *extenv, char *family)
 		/* No extension */
 		return;
 
-	bbexts = malcop(p);
+	bbexts = strdup(p);
 	p = strtok(bbexts, "\t ");
 
 	while (p) {
@@ -941,7 +929,7 @@ bbgen_col_t *find_or_create_column(const char *testname, int create)
 		if (!create) return NULL;
 
 		newcol = (bbgen_col_t *) malloc(sizeof(bbgen_col_t));
-		newcol->name = malcop(testname);
+		newcol->name = strdup(testname);
 		newcol->listname = (char *)malloc(strlen(testname)+1+2); sprintf(newcol->listname, ",%s,", testname);
 		newcol->link = find_link(testname);
 
@@ -1601,13 +1589,13 @@ static void load_netrc(void)
 					break;
 
 				  case MACHINEVAL:
-					host = malcop(p); state = WANT_TOKEN; break;
+					host = strdup(p); state = WANT_TOKEN; break;
 
 				  case LOGINVAL:
-					login = malcop(p); state = WANT_TOKEN; break;
+					login = strdup(p); state = WANT_TOKEN; break;
 
 				  case PASSVAL:
-					password = malcop(p); state = WANT_TOKEN; break;
+					password = strdup(p); state = WANT_TOKEN; break;
 
 				  case OTHERVAL:
 				  	state = WANT_TOKEN; break;
@@ -1801,7 +1789,7 @@ void parse_url(char *inputurl, urlelem_t *url)
 	url->scheme = url->host = url->relurl = "";
 
 	/* Get a temp. buffer we can molest */
-	tempurl = malcop(inputurl);
+	tempurl = strdup(inputurl);
 
 	/* First cut off any fragment specifier */
 	fragment = strchr(tempurl, '#'); if (fragment) *fragment = '\0';
@@ -1814,11 +1802,11 @@ void parse_url(char *inputurl, urlelem_t *url)
 		if (strncmp(startp, "https", 5) == 0) {
 			url->scheme = "https";
 			url->port = 443;
-			if (strlen(startp) > 5) url->schemeopts = malcop(startp+5);
+			if (strlen(startp) > 5) url->schemeopts = strdup(startp+5);
 		} else if (strncmp(startp, "http", 4) == 0) {
 			url->scheme = "http";
 			url->port = 80;
-			if (strlen(startp) > 4) url->schemeopts = malcop(startp+4);
+			if (strlen(startp) > 4) url->schemeopts = strdup(startp+4);
 		} else if (strcmp(startp, "ftp") == 0) {
 			url->scheme = "ftp";
 			url->port = 21;
@@ -1832,7 +1820,7 @@ void parse_url(char *inputurl, urlelem_t *url)
 		else {
 			/* Unknown scheme! */
 			errprintf("Unknown URL scheme '%s' in URL '%s'\n", startp, inputurl);
-			url->scheme = malcop(startp);
+			url->scheme = strdup(startp);
 			url->port = 0;
 		}
 		startp = (p+1);
@@ -1864,12 +1852,12 @@ void parse_url(char *inputurl, urlelem_t *url)
 	p = strchr(netloc, '@');
 	if (p) {
 		*p = '\0';
-		url->auth = malcop(netloc);
+		url->auth = strdup(netloc);
 		netloc = (p+1);
 	}
 	p = strchr(netloc, '=');
 	if (p) {
-		url->ip = malcop(p+1);
+		url->ip = strdup(p+1);
 		*p = '\0';
 	}
 	p = strchr(netloc, ':');
@@ -1879,7 +1867,7 @@ void parse_url(char *inputurl, urlelem_t *url)
 		url->port = atoi(p+1);
 	}
 
-	url->host = malcop(netloc);
+	url->host = strdup(netloc);
 	if (url->port == 0) {
 		struct servent *svc = getservbyname(url->scheme, NULL);
 		if (svc) url->port = ntohs(svc->s_port);
@@ -1915,7 +1903,7 @@ void parse_url(char *inputurl, urlelem_t *url)
 	p += sprintf(p, "%s", url->host);
 	if (haveportspec) p += sprintf(p, ":%d", url->port);
 	p += sprintf(p, "%s", url->relurl);
-	url->origform = malcop(canonurl);
+	url->origform = strdup(canonurl);
 
 	free(tempurl);
 	return;
@@ -1934,7 +1922,7 @@ static char *gethttpcolumn(char *inp, char **name)
 	}
 
 	*nend = '\0';
-	*name = malcop(nstart);
+	*name = strdup(nstart);
 	*nend = ';';
 
 	return nend+1;
@@ -1972,7 +1960,7 @@ char *decode_url(char *testspec, bburl_t *bburl)
 		bburl->proxyurl = NULL;
 	}
 
-	inp = malcop(testspec);
+	inp = strdup(testspec);
 
 	if (strncmp(inp, "content=", 8) == 0) {
 		bburl->testtype = BBTEST_CONTENT;

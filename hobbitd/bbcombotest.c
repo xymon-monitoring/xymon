@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.26 2004-10-26 15:35:25 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.27 2004-10-29 10:21:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -117,10 +117,10 @@ static void loadtests(void)
 			*p = '\0';
 			comment = strchr(p+1, '#');
 			if (comment) *comment = '\0';
-			newtest->reshostname = malcop(gethname(l));
-			newtest->restestname = malcop(gettname(l));
-			newtest->expression = malcop(p+1);
-			newtest->comment = (comment ? malcop(comment+1) : NULL);
+			newtest->reshostname = strdup(gethname(l));
+			newtest->restestname = strdup(gettname(l));
+			newtest->expression = strdup(p+1);
+			newtest->comment = (comment ? strdup(comment+1) : NULL);
 			newtest->resultexpr = NULL;
 			newtest->valuelist = NULL;
 			newtest->result = -1;
@@ -247,7 +247,7 @@ static long getvalue(char *hostname, char *testname, int *color, char **errbuf)
 	/* Save error messages */
 	if (strlen(errtext) > 0) {
 		if (*errbuf == NULL)
-			*errbuf = malcop(errtext);
+			*errbuf = strdup(errtext);
 		else {
 			*errbuf = (char *)realloc(*errbuf, strlen(*errbuf)+strlen(errtext)+1);
 			strcat(*errbuf, errtext);
@@ -295,7 +295,7 @@ static long evaluate(char *symbolicexpr, char **resultexpr, value_t **valuelist,
 				outp += strlen(outp);
 
 				newval = (value_t *) malloc(sizeof(value_t));
-				newval->symbol = malcop(symbol);
+				newval->symbol = strdup(symbol);
 				newval->color = onecolor;
 				newval->next = NULL;
 				if (valhead == NULL) {
@@ -315,7 +315,7 @@ static long evaluate(char *symbolicexpr, char **resultexpr, value_t **valuelist,
 
 	*outp = '\0';
 
-	if (resultexpr) *resultexpr = malcop(expr);
+	if (resultexpr) *resultexpr = strdup(expr);
 	dprintf("Symbolic '%s' converted to '%s'\n", symbolicexpr, expr);
 
 	error = 0; 
@@ -324,7 +324,7 @@ static long evaluate(char *symbolicexpr, char **resultexpr, value_t **valuelist,
 	if (error) {
 		sprintf(errtext, "compute(%s) returned error %d\n", expr, error);
 		if (*errbuf == NULL) {
-			*errbuf = malcop(errtext);
+			*errbuf = strdup(errtext);
 		}
 		else {
 			*errbuf = (char *)realloc(*errbuf, strlen(*errbuf)+strlen(errtext)+1);

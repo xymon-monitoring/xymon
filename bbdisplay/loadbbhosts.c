@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.3 2004-08-02 13:21:55 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.4 2004-10-29 10:21:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -81,7 +81,7 @@ char *build_noprop(const char *defset, const char *specset)
 		return result;
 	}
 
-	set = malcop(specset);
+	set = strdup(specset);
 	strcpy(result, ((defset != NULL) ? defset : ""));
 	item = strtok(set, ",");
 
@@ -126,12 +126,12 @@ bbgen_page_t *init_page(const char *name, const char *title)
 	dprintf("init_page(%s, %s)\n", textornull(name), textornull(title));
 
 	if (name) {
-		newpage->name = malcop(name);
+		newpage->name = strdup(name);
 	}
 	else name = null_text;
 
 	if (title) {
-		newpage->title = malcop(title);
+		newpage->title = strdup(title);
 	}else
 		title = null_text;
 
@@ -154,7 +154,7 @@ group_t *init_group(const char *title, const char *onlycols)
 	dprintf("init_group(%s, %s)\n", textornull(title), textornull(onlycols));
 
 	if (title) {
-		newgroup->title = malcop(title);
+		newgroup->title = strdup(title);
 	}
 	else title = null_text;
 
@@ -187,11 +187,11 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 		textornull(nopropyellowtests), textornull(nopropredtests), 
 		textornull(noproppurpletests), textornull(nopropacktests));
 
-	newhost->hostname = newhost->displayname = malcop(hostname);
-	if (displayname) newhost->displayname = malcop(displayname);
-	newhost->clientalias = (clientalias ? malcop(clientalias) : NULL);
-	newhost->comment = (comment ? malcop(comment) : NULL);
-	newhost->description = (description ? malcop(description) : NULL);
+	newhost->hostname = newhost->displayname = strdup(hostname);
+	if (displayname) newhost->displayname = strdup(displayname);
+	newhost->clientalias = (clientalias ? strdup(clientalias) : NULL);
+	newhost->comment = (comment ? strdup(comment) : NULL);
+	newhost->description = (description ? strdup(description) : NULL);
 	sprintf(newhost->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 	newhost->link = find_link(hostname);
 	newhost->pretitle = NULL;
@@ -201,7 +201,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	newhost->prefer = prefer;
 	newhost->dialup = dialup;
 	newhost->reportwarnlevel = warnpct;
-	newhost->reporttime = (reporttime ? malcop(reporttime) : NULL);
+	newhost->reporttime = (reporttime ? strdup(reporttime) : NULL);
 	if (alerts && nktime) {
 		char *p;
 		p = skipword(alerts); if (*p) *p = '\0'; else p = NULL;
@@ -225,7 +225,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	if (waps || alerts) {
 		char *p;
 		p = skipword((waps ? waps : alerts)); if (*p) *p = '\0'; else p = NULL;
-		newhost->waps = malcop(build_noprop(wapcolumns, (waps ? waps : alerts)));
+		newhost->waps = strdup(build_noprop(wapcolumns, (waps ? waps : alerts)));
 		if (p) *p = ' ';
 	}
 	else {
@@ -235,7 +235,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	if (nopropyellowtests) {
 		char *p;
 		p = skipword(nopropyellowtests); if (*p) *p = '\0'; else p = NULL;
-		newhost->nopropyellowtests = malcop(build_noprop(nopropyellowdefault, nopropyellowtests));
+		newhost->nopropyellowtests = strdup(build_noprop(nopropyellowdefault, nopropyellowtests));
 		if (p) *p = ' ';
 	}
 	else {
@@ -244,7 +244,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	if (nopropredtests) {
 		char *p;
 		p = skipword(nopropredtests); if (*p) *p = '\0'; else p = NULL;
-		newhost->nopropredtests = malcop(build_noprop(nopropreddefault, nopropredtests));
+		newhost->nopropredtests = strdup(build_noprop(nopropreddefault, nopropredtests));
 		if (p) *p = ' ';
 	}
 	else {
@@ -253,7 +253,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	if (noproppurpletests) {
 		char *p;
 		p = skipword(noproppurpletests); if (*p) *p = '\0'; else p = NULL;
-		newhost->noproppurpletests = malcop(build_noprop(noproppurpledefault, noproppurpletests));
+		newhost->noproppurpletests = strdup(build_noprop(noproppurpledefault, noproppurpletests));
 		if (p) *p = ' ';
 	}
 	else {
@@ -262,7 +262,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	if (nopropacktests) {
 		char *p;
 		p = skipword(nopropacktests); if (*p) *p = '\0'; else p = NULL;
-		newhost->nopropacktests = malcop(build_noprop(nopropackdefault, nopropacktests));
+		newhost->nopropacktests = strdup(build_noprop(nopropackdefault, nopropacktests));
 		if (p) *p = ' ';
 	}
 	else {
@@ -271,12 +271,12 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	if (larrdgraphs) {
 		char *p;
 		p = skipword(larrdgraphs); if (*p) *p = '\0'; else p = NULL;
-		newhost->larrdgraphs = malcop(larrdgraphs);
+		newhost->larrdgraphs = strdup(larrdgraphs);
 		if (p) *p = ' ';
 	}
 	else newhost->larrdgraphs = larrdgraphs_default;
 	if (tags) {
-		newhost->rawentry = malcop(tags);
+		newhost->rawentry = strdup(tags);
 	}
 	else newhost->rawentry = null_text;
 	newhost->parent = NULL;
@@ -367,8 +367,8 @@ link_t *init_link(char *filename, const char *urlprefix)
 	dprintf("init_link(%s, %s)\n", textornull(filename), textornull(urlprefix));
 
 	newlink = (link_t *) malloc(sizeof(link_t));
-	newlink->filename = malcop(filename);
-	newlink->urlprefix = malcop(urlprefix);
+	newlink->filename = strdup(filename);
+	newlink->urlprefix = strdup(urlprefix);
 	newlink->next = NULL;
 
 	p = strrchr(filename, '.');
@@ -387,7 +387,7 @@ link_t *init_link(char *filename, const char *urlprefix)
 	}
 
 	/* Without extension, this time */
-	newlink->name = malcop(filename);
+	newlink->name = strdup(filename);
 
 	return newlink;
 }
@@ -522,13 +522,13 @@ link_t *load_all_links(void)
 
 	dprintf("load_all_links()\n");
 
-	if (getenv("BBNOTESSKIN")) notesskin = malcop(getenv("BBNOTESSKIN"));
+	if (getenv("BBNOTESSKIN")) notesskin = strdup(getenv("BBNOTESSKIN"));
 	else { 
 		notesskin = (char *) malloc(strlen(getenv("BBWEB")) + strlen("/notes") + 1);
 		sprintf(notesskin, "%s/notes", getenv("BBWEB"));
 	}
 
-	if (getenv("BBHELPSKIN")) helpskin = malcop(getenv("BBHELPSKIN"));
+	if (getenv("BBHELPSKIN")) helpskin = strdup(getenv("BBHELPSKIN"));
 	else { 
 		helpskin = (char *) malloc(strlen(getenv("BBWEB")) + strlen("/help") + 1);
 		sprintf(helpskin, "%s/help", getenv("BBWEB"));
@@ -565,9 +565,9 @@ summary_t *init_summary(char *name, char *receiver, char *url)
 		return NULL;
 
 	newsum = (summary_t *) malloc(sizeof(summary_t));
-	newsum->name = malcop(name);
-	newsum->receiver = malcop(receiver);
-	newsum->url = malcop(url);
+	newsum->name = strdup(name);
+	newsum->receiver = strdup(receiver);
+	newsum->url = strdup(url);
 	newsum->next = NULL;
 
 	return newsum;
@@ -753,7 +753,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				char *p = strchr(hostname, '.');
 				if (p) {
 					/* Save full name as "displayname", and modify hostname to be with no domain */
-					displayname = malcop(hostname);
+					displayname = strdup(hostname);
 					*p = '\0';
 				}
 			}
@@ -781,23 +781,23 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				else if ((strcmp(tag, "nobb2") == 0) || (strcmp(tag, "NOBB2") == 0))
 					nobb2 = 1;
 				else if (argnmatch(tag, "NK:")) 
-					alertlist = malcop(tag+strlen("NK:"));
+					alertlist = strdup(tag+strlen("NK:"));
 				else if (argnmatch(tag, "NKTIME=")) 
 					nktime = within_sla(tag, "NKTIME", 1);
 				else if (argnmatch(tag, "WML:")) 
-					onwaplist = malcop(tag+strlen("WML:"));
+					onwaplist = strdup(tag+strlen("WML:"));
 				else if (argnmatch(tag, "NOPROP:")) 
-					nopropyellowlist = malcop(tag+strlen("NOPROP:"));
+					nopropyellowlist = strdup(tag+strlen("NOPROP:"));
 				else if (argnmatch(tag, "NOPROPYELLOW:")) 
-					nopropyellowlist = malcop(tag+strlen("NOPROPYELLOW:"));
+					nopropyellowlist = strdup(tag+strlen("NOPROPYELLOW:"));
 				else if (argnmatch(tag, "NOPROPRED:")) 
-					nopropredlist = malcop(tag+strlen("NOPROPRED:"));
+					nopropredlist = strdup(tag+strlen("NOPROPRED:"));
 				else if (argnmatch(tag, "NOPROPPURPLE:")) 
-					noproppurplelist = malcop(tag+strlen("NOPROPPURPLE:"));
+					noproppurplelist = strdup(tag+strlen("NOPROPPURPLE:"));
 				else if (argnmatch(tag, "NOPROPACK:")) 
-					nopropacklist = malcop(tag+strlen("NOPROPACK:"));
+					nopropacklist = strdup(tag+strlen("NOPROPACK:"));
 				else if (argnmatch(tag, "LARRD:")) 
-					larrdgraphs = malcop(tag+strlen("LARRD:"));
+					larrdgraphs = strdup(tag+strlen("LARRD:"));
 				else if (argnmatch(tag, "NAME:")) {
 					p = tag+strlen("NAME:");
 					displayname = (char *) malloc(strlen(l));
@@ -821,7 +821,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				}
 				else if (argnmatch(tag, "CLIENT:")) {
 					p = tag+strlen("CLIENT:");
-					clientalias = malcop(p);
+					clientalias = strdup(p);
 				}
 				else if (argnmatch(tag, "COMMENT:")) {
 					p = tag+strlen("COMMENT:");
@@ -868,9 +868,9 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				else if (argnmatch(tag, "WARNPCT:")) 
 					warnpct = atof(tag+8);
 				else if (argnmatch(tag, "REPORTTIME=")) 
-					reporttime = malcop(tag);
+					reporttime = strdup(tag);
 				else if (argnmatch(tag, hosttag)) {
-					targetpagelist[targetpagecount++] = malcop(tag+strlen(hosttag));
+					targetpagelist[targetpagecount++] = strdup(tag+strlen(hosttag));
 				}
 
 				if (tag) tag = strtok(NULL, " \t\r\n");
@@ -1039,7 +1039,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 		}
 		else if (strncmp(l, titletag, strlen(titletag)) == 0) {
 			/* Save the title for the next entry */
-			curtitle = malcop(skipwhitespace(skipword(l)));
+			curtitle = strdup(skipwhitespace(skipword(l)));
 		}
 		else {
 		};

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.34 2004-10-26 15:34:05 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.35 2004-10-29 10:21:57 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -70,7 +70,7 @@ static void setup_transport(char *recipient)
 		if (proxysetting) {
 			char *p;
 
-			bbdispproxyhost = malcop(proxysetting);
+			bbdispproxyhost = strdup(proxysetting);
 			if (strncmp(bbdispproxyhost, "http://", 7) == 0) bbdispproxyhost += strlen("http://");
  
 			p = strchr(bbdispproxyhost, ':');
@@ -145,7 +145,7 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 
 	if (strncmp(recipient, "http://", strlen("http://")) != 0) {
 		/* Standard BB communications, directly to bbd */
-		rcptip = malcop(recipient);
+		rcptip = strdup(recipient);
 		rcptport = bbdportnumber;
 		p = strchr(rcptip, ':');
 		if (p) {
@@ -166,12 +166,12 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 			 * Strip off "http://", and point "posturl" to the part after the hostname.
 			 * If a portnumber is present, strip it off and update rcptport.
 			 */
-			rcptip = malcop(recipient+strlen("http://"));
+			rcptip = strdup(recipient+strlen("http://"));
 			rcptport = bbdportnumber;
 
 			p = strchr(rcptip, '/');
 			if (p) {
-				posturl = malcop(p);
+				posturl = strdup(p);
 				*p = '\0';
 			}
 
@@ -182,7 +182,7 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 				rcptport = atoi(p);
 			}
 
-			posthost = malcop(rcptip);
+			posthost = strdup(rcptip);
 
 			dprintf("BB-HTTP protocol directly to host %s\n", posthost);
 		}
@@ -192,15 +192,15 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 			/*
 			 * With proxy. The full "recipient" must be in the POST request.
 			 */
-			rcptip = malcop(bbdispproxyhost);
+			rcptip = strdup(bbdispproxyhost);
 			rcptport = bbdispproxyport;
 
-			posturl = malcop(recipient);
+			posturl = strdup(recipient);
 
 			p = strchr(recipient + strlen("http://"), '/');
 			if (p) {
 				*p = '\0';
-				posthost = malcop(recipient + strlen("http://"));
+				posthost = strdup(recipient + strlen("http://"));
 				*p = '/';
 
 				p = strchr(posthost, ':');
@@ -407,7 +407,7 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg, int timeout)
 	else if (morercpts) {
 		char *bbdlist, *rcpt;
 
-		bbdlist = malcop(morercpts);
+		bbdlist = strdup(morercpts);
 		rcpt = strtok(bbdlist, " \t");
 		while (rcpt) {
 			result += sendtobbd(rcpt, msg, NULL, NULL, 0, timeout);
@@ -436,7 +436,7 @@ static int sendstatus(char *bbdisp, char *msg, int timeout)
 	if (getenv("BBPAGE") == NULL) return statusresult;
 
 	/* Check if we should send a "page" message also */
-	pagelevels = malcop(getenv("PAGELEVELS") ? getenv("PAGELEVELS") : PAGELEVELSDEFAULT);
+	pagelevels = strdup(getenv("PAGELEVELS") ? getenv("PAGELEVELS") : PAGELEVELSDEFAULT);
 	sscanf(msg, "%*s %*s %255s", statuscolor);
 	if (strstr(pagelevels, statuscolor)) {
 		/* Reformat the message into a "page" message */
@@ -482,7 +482,7 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 	static char *bbdisp = NULL;
 	int res = 0;
 
- 	if (bbdisp == NULL) bbdisp = malcop(getenv("BBDISP"));
+ 	if (bbdisp == NULL) bbdisp = strdup(getenv("BBDISP"));
 	if (recipient == NULL) recipient = bbdisp;
 
 	if ((strncmp(msg, "status", 6) == 0) || (strncmp(msg, "combo", 5) == 0)) {

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.115 2004-10-13 12:19:38 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.116 2004-10-29 10:21:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -264,7 +264,7 @@ void setup_htaccess(const char *pagepath)
 	}
 	else {
 		char *pagename, *subpagename, *p;
-		char *path = malcop(pagepath);
+		char *path = strdup(pagepath);
 
 		for (p = path + strlen(path) - 1; ((p > path) && (*p == '/')); p--) *p = '\0';
 
@@ -340,7 +340,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char 
 	if (head == NULL)
 		return;
 
-	bbskin = malcop(getenv("BBSKIN"));
+	bbskin = strdup(getenv("BBSKIN"));
 
 	/* Generate static or dynamic links (from BBLOGSTATUS) ? */
 	genstatic = generate_static();
@@ -844,7 +844,7 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 	char	*dirdelim;
 	char	*mkbblocal;
 
-	mkbblocal = malcop(getenv((page->parent ? "MKBBSUBLOCAL" : "MKBBLOCAL")));
+	mkbblocal = strdup(getenv((page->parent ? "MKBBSUBLOCAL" : "MKBBLOCAL")));
 
 	pagepath[0] = '\0';
 	if (embedded) {
@@ -1007,7 +1007,7 @@ static void do_bb2ext(FILE *output, char *extenv, char *family)
 		return;
 	}
 
-	bbexts = malcop(p);
+	bbexts = strdup(p);
 	p = strtok(bbexts, "\t ");
 
 	while (p) {

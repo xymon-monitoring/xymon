@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.73 2004-09-01 11:36:34 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.74 2004-10-29 10:21:57 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -85,12 +85,12 @@ static void load_cookies(void)
 			if ((fieldcount == 7) && (c_expire > time(NULL))) {
 				/* We have a valid cookie */
 				cookielist_t *ck = (cookielist_t *)malloc(sizeof(cookielist_t));
-				ck->host = malcop(c_host);
+				ck->host = strdup(c_host);
 				ck->tailmatch = c_tailmatch;
-				ck->path = malcop(c_path);
+				ck->path = strdup(c_path);
 				ck->secure = c_secure;
-				ck->name = malcop(c_name);
-				ck->value = malcop(c_value);
+				ck->name = strdup(c_name);
+				ck->value = strdup(c_value);
 				ck->next = cookiehead;
 				cookiehead = ck;
 			}
@@ -379,7 +379,7 @@ void tcp_http_final_callback(void *priv)
 				p += 13; while (isspace((int)*p)) p++;
 				p2 = (p + strcspn(p, "\r\n ;"));
 				savechar = *p2; *p2 = '\0';
-				item->contenttype = malcop(p);
+				item->contenttype = strdup(p);
 				*p2 = savechar;
 			}
 			else {
@@ -414,7 +414,7 @@ void add_http_test(testitem_t *t)
 	httptest = (http_data_t *) calloc(1, sizeof(http_data_t));
 	t->privdata = (void *) httptest;
 
-	httptest->url = malcop(decode_url(t->testspec, &httptest->bburl));
+	httptest->url = strdup(decode_url(t->testspec, &httptest->bburl));
 	httptest->contlen = -1;
 	httptest->parsestatus = (httptest->bburl.proxyurl ? httptest->bburl.proxyurl->parseerror : httptest->bburl.desturl->parseerror);
 
@@ -425,7 +425,7 @@ void add_http_test(testitem_t *t)
 	if (httptest->bburl.proxyurl && (httptest->bburl.proxyurl->ip == NULL)) {
 		dnsip = dnsresolve(httptest->bburl.proxyurl->host);
 		if (dnsip) {
-			httptest->bburl.proxyurl->ip = malcop(dnsip);
+			httptest->bburl.proxyurl->ip = strdup(dnsip);
 		}
 		else {
 			dprintf("Could not resolve URL hostname '%s'\n", httptest->bburl.proxyurl->host);
@@ -434,7 +434,7 @@ void add_http_test(testitem_t *t)
 	else if (httptest->bburl.desturl->ip == NULL) {
 		dnsip = dnsresolve(httptest->bburl.desturl->host);
 		if (dnsip) {
-			httptest->bburl.desturl->ip = malcop(dnsip);
+			httptest->bburl.desturl->ip = strdup(dnsip);
 		}
 		else {
 			dprintf("Could not resolve URL hostname '%s'\n", httptest->bburl.desturl->host);
@@ -458,7 +458,7 @@ void add_http_test(testitem_t *t)
 
 				if (fgets(l, sizeof(l), contentfd)) {
 					p = strchr(l, '\n'); if (p) { *p = '\0'; };
-					httptest->bburl.expdata = malcop(l);
+					httptest->bburl.expdata = strdup(l);
 				}
 				else {
 					httptest->contstatus = STATUS_CONTENTMATCH_NOFILE;
@@ -509,7 +509,7 @@ void add_http_test(testitem_t *t)
 		{
 			char *hashfunc;
 
-			httptest->exp = (void *) malcop(httptest->bburl.expdata+1);
+			httptest->exp = (void *) strdup(httptest->bburl.expdata+1);
 			hashfunc = strchr(httptest->exp, ':');
 			if (hashfunc) {
 				*hashfunc = '\0';

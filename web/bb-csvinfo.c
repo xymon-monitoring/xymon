@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-csvinfo.c,v 1.2 2003-12-12 10:12:09 henrik Exp $";
+static char rcsid[] = "$Id: bb-csvinfo.c,v 1.3 2004-10-29 10:21:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -67,7 +67,7 @@ void parse_query(void)
                 val = strchr(token, '='); if (val) { *val = '\0'; val++; }
 
 		if (argnmatch(token, "key")) {
-			wantedname = malcop(val);
+			wantedname = strdup(val);
 		}
 		else if (argnmatch(token, "db")) {
 			char *p;
@@ -76,7 +76,7 @@ void parse_query(void)
 			p = strrchr(val, '/');
 			if (p) val = (p+1);
 
-			srcdb = malcop(val);
+			srcdb = strdup(val);
 		}
 		else if (argnmatch(token, "column")) {
 			keycolumn = atoi(val);
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 
 		for (i=0, p1=buf, p2=strchr(buf, delimiter); (p1 && p2 && strlen(p1)); i++,p1=p2+1,p2=strchr(p1, delimiter)) {
 			*p2 = '\0';
-			headers[i] = malcop(p1);
+			headers[i] = strdup(p1);
 		}
 	}
 

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.4 2004-09-01 11:54:17 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.5 2004-10-29 10:21:57 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -87,7 +87,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 	if (firsttest == NULL) return;
 
-	svcname = malcop(httptest->testname);
+	svcname = strdup(httptest->testname);
 	if (httptest->namelen) svcname[httptest->namelen] = '\0';
 
 	/* Check if this service is a NOPAGENET service. */
@@ -123,7 +123,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 			if (faileddeps) {
 				req->httpcolor = COL_CLEAR;
-				req->faileddeps = malcop(faileddeps);
+				req->faileddeps = strdup(faileddeps);
 			}
 		}
 
@@ -137,7 +137,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 			  case CONTEST_ETIMEOUT: 
 				  req->errorcause = "Server timeout"; break;
 			  case CONTEST_ENOCONN : 
-				  req->errorcause =  malcop(strerror(req->tcptest->connres)); break;
+				  req->errorcause =  strdup(strerror(req->tcptest->connres)); break;
 			  case CONTEST_EDNS    : 
 				  switch (req->parsestatus) {
 					  case 1 : req->errorcause =  "Invalid URL"; break;
@@ -180,7 +180,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 				sprintf(m1, "HTTP error %ld", req->httpstatus);
 			}
 			strcat(msgtext, m1);
-			req->errorcause = malcop(m1);
+			req->errorcause = strdup(m1);
 		}
 		else {
 			strcat(msgtext, "OK");
@@ -323,7 +323,7 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 						break;
 
 					  case CONTENTCHECK_DIGEST:
-						if (req->digest == NULL) req->digest = malcop("");
+						if (req->digest == NULL) req->digest = strdup("");
 						if (strcmp(req->digest, (char *)req->exp) != 0) {
 							status = STATUS_CONTENTMATCH_FAILED;
 						}
@@ -342,7 +342,7 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 							status = STATUS_CONTENTMATCH_FAILED;
 						}
 
-						if (req->contenttype == NULL) req->contenttype = malcop("No content-type provdied");
+						if (req->contenttype == NULL) req->contenttype = strdup("No content-type provdied");
 
 						req->output = (char *) malloc(strlen(req->contenttype)+strlen((char *)req->exp)+strlen("Expected content-type: %s\nGot content-type     : %s\n")+1);
 						sprintf(req->output, "Expected content-type: %s\nGot content-type     : %s\n",

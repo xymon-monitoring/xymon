@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.16 2004-08-04 13:57:26 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.17 2004-10-29 10:21:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -115,10 +115,10 @@ void parse_query(void)
 			endyear = atoi(val);
 		}
 		else if (argnmatch(token, "style")) {
-			style = malcop(val);
+			style = strdup(val);
 		}
 		else if (argnmatch(token, "suburl")) {
-			suburl = malcop(val);
+			suburl = strdup(val);
 		}
 
 		token = strtok(NULL, "&");

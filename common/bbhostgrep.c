@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.14 2003-11-04 11:44:44 hstoerne Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.15 2004-10-29 10:21:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 			include2 = "dispinclude";
 		}
 		else {
-			lookv[lookc] = malcop(argv[argi]);
+			lookv[lookc] = strdup(argv[argi]);
 			lookc++;
 		}
 	}

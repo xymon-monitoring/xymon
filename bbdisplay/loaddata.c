@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.128 2004-10-26 15:35:25 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.129 2004-10-29 10:21:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -88,7 +88,7 @@ char *parse_testflags(char *l)
 
 		if (flagend) {
 			*flagend = '\0';
-			result = malcop(flagstart);
+			result = strdup(flagstart);
 			*flagend = ']';
 		}
 	}
@@ -167,14 +167,14 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 
 		/* Pick out host- and test-name */
 		logexpired = (log_st.st_mtime < now);
-		hostname = malcop(filename);
+		hostname = strdup(filename);
 		p = strrchr(hostname, '.');
 
 		/* Skip files that have no '.' in filename */
 		if (p) {
 			/* Pick out the testname ... */
 			*p = '\0'; p++;
-			testname = malcop(p);
+			testname = strdup(p);
 	
 			/* ... and change hostname back into normal form */
 			for (p=hostname; (*p); p++) {
@@ -252,14 +252,14 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 		newstate->entry->testflags = strdup(log->testflags);
 		if (testflag_set(newstate->entry, 'D')) newstate->entry->skin = dialupskin;
 		if (testflag_set(newstate->entry, 'R')) newstate->entry->skin = reverseskin;
-		newstate->entry->shorttext = malcop(log->msg);
+		newstate->entry->shorttext = strdup(log->msg);
 	}
 	else if (fgets(l, sizeof(l), fd)) {
 		newstate->entry->color = parse_color(l);
-		newstate->entry->testflags = malcop(parse_testflags(l));
+		newstate->entry->testflags = strdup(parse_testflags(l));
 		if (testflag_set(newstate->entry, 'D')) newstate->entry->skin = dialupskin;
 		if (testflag_set(newstate->entry, 'R')) newstate->entry->skin = reverseskin;
-		newstate->entry->shorttext = malcop(l);
+		newstate->entry->shorttext = strdup(l);
 	}
 	else if (!enable_larrdgen && ((strcmp(testname, "larrd") == 0) || (strcmp(testname, "trends") == 0))) {
 		/* 
