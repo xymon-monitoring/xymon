@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.82 2004-12-13 06:53:39 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.83 2004-12-14 22:25:14 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -439,7 +439,7 @@ void posttochannel(bbgend_channel_t *channel, char *channelmarker,
 					sender, hostname, 
 					log->test->testname, log->host->ip, (int) log->validtime, 
 					colnames[log->color], colnames[log->oldcolor], (int) log->lastchange,
-					(hi ? hi->page->pagename : ""), 
+					(hi ? hi->page->pagepath : ""), 
 					log->cookie, msg);
 			}
 			*(channel->channelbuf + n) = '\0';
@@ -2213,7 +2213,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (restartfn) {
-		load_hostnames(bbhostsfn, get_fqdn());
+		load_hostnames(bbhostsfn, get_fqdn(), NULL);
 		load_checkpoint(restartfn);
 	}
 
@@ -2322,7 +2322,7 @@ int main(int argc, char *argv[])
 
 		if (reloadconfig && bbhostsfn) {
 			reloadconfig = 0;
-			load_hostnames(bbhostsfn, get_fqdn());
+			load_hostnames(bbhostsfn, get_fqdn(), NULL);
 		}
 
 		if (now > nextcheckpoint) {
