@@ -29,7 +29,7 @@ COMBOTESTOBJS = bbcombotest.o util.o debug.o calc.o sendmsg.o
 SNAPOBJS = bb-snapshot.o debug.o util.o
 
 bbgen: $(GENOBJS)
-	$(CC) $(CFLAGS) -o $@ $(GENOBJS)
+	$(CC) $(CFLAGS) -o $@ $(GENOBJS) $(NETLIBS)
 
 bbtest-net: $(NETTESTOBJS)
 	$(CC) $(CFLAGS) -o $@ $(NETTESTOBJS) $(CURLLIB) $(NETLIBS)
@@ -56,7 +56,7 @@ bb-snapshot.cgi: $(SNAPOBJS)
 	$(CC) $(CFLAGS) -o $@ $(SNAPOBJS)
 
 bbcombotest: $(COMBOTESTOBJS)
-	$(CC) $(CFLAGS) -o $@ $(COMBOTESTOBJS)
+	$(CC) $(CFLAGS) -o $@ $(COMBOTESTOBJS) $(NETLIBS)
 
 alert: alert.c debug.c util.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ $alert.c debug.c util.c
@@ -71,7 +71,7 @@ reptest: reportdata.c debug.c util.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ reportdata.c debug.c util.c
 
 sendmsg: sendmsg.c debug.c util.c
-	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ sendmsg.c debug.c util.c
+	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ sendmsg.c debug.c util.c $(NETLIBS)
 
 httptest.o: httptest.c httptest.h
 	$(CC) $(CFLAGS) $(CURLINCLUDE) -c -o $@ httptest.c
