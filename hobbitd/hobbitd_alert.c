@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.41 2005-02-19 07:41:45 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.42 2005-02-20 12:25:50 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -468,7 +468,7 @@ int main(int argc, char *argv[])
 						"np_filename_not_used", 
 						hostname, testname, 
 						colorname(awalk->color),
-						restofmsg);
+						nlencode(restofmsg));
 					fflush(acklogfd);
 				}
 				awalk->state = A_ACKED;
