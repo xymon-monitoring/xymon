@@ -126,6 +126,7 @@ typedef struct testitem_t {
 	/* These data may be filled in from the test engine private data */
 	int		open;		/* Is the service open ? NB: Shows true state of service, ignores flags */
 	char		*banner;
+	int		bannerbytes;
 	char		*certinfo;
 	time_t		certexpires;
 	struct timeval	duration;

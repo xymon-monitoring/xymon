@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.144 2004-08-04 15:21:59 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.145 2004-08-05 22:17:12 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -374,6 +374,7 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *testspec
 	newtest->privdata = NULL;
 	newtest->open = 0;
 	newtest->banner = NULL;
+	newtest->bannerbytes = 0;
 	newtest->certinfo = NULL;
 	newtest->certexpires = 0;
 	newtest->duration.tv_sec = newtest->duration.tv_usec = -1;
@@ -1159,7 +1160,7 @@ void run_nslookup_service(service_t *service)
 			}
 
 			sprintf(cmd, "%s %s %s 2>&1", cmdpath, lookup, t->host->ip);
-			t->open = (run_command(cmd, "can't find", &t->banner, 1) == 0);
+			t->open = (run_command(cmd, "can't find", &t->banner, &t->bannerbytes, 1) == 0);
 		}
 	}
 }
@@ -1184,7 +1185,7 @@ void run_dig_service(service_t *service)
 			}
 
 			sprintf(cmd, "%s @%s %s 2>&1", cmdpath, t->host->ip, lookup);
-			t->open = (run_command(cmd, "Bad server", &t->banner, 1) == 0);
+			t->open = (run_command(cmd, "Bad server", &t->banner, &t->bannerbytes, 1) == 0);
 		}
 	}
 }
@@ -1201,7 +1202,7 @@ void run_ntp_service(service_t *service)
 	for (t=service->items; (t); t = t->next) {
 		if (!t->host->dnserror) {
 			sprintf(cmd, "%s -u -q -p 2 %s 2>&1", cmdpath, t->host->ip);
-			t->open = (run_command(cmd, "no server suitable for synchronization", &t->banner, 1) == 0);
+			t->open = (run_command(cmd, "no server suitable for synchronization", &t->banner, &t->bannerbytes, 1) == 0);
 		}
 	}
 }
@@ -1219,7 +1220,7 @@ void run_rpcinfo_service(service_t *service)
 	for (t=service->items; (t); t = t->next) {
 		if (!t->host->dnserror) {
 			sprintf(cmd, "%s -p %s 2>&1", cmdpath, t->host->ip);
-			t->open = (run_command(cmd, NULL, &t->banner, 1) == 0);
+			t->open = (run_command(cmd, NULL, &t->banner, &t->bannerbytes, 1) == 0);
 		}
 	}
 }
@@ -1293,6 +1294,7 @@ int run_fping_service(service_t *service)
 				if (strcmp(t->host->ip, hostname) == 0) {
 					t->open = (strstr(l, "is alive") != NULL);
 					t->banner = malcop(l);
+					t->bannerbytes = strlen(l);
 				}
 			}
 		}
@@ -1443,7 +1445,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 			else {
 				sprintf(cmd, "traceroute -n -q 2 -w 2 -m 15 %s 2>&1", test->host->hostname);
 			}
-			run_command(cmd, NULL, &test->host->traceroute, 0);
+			run_command(cmd, NULL, &test->host->traceroute, NULL, 0);
 		}
 	}
 	else {
@@ -2221,10 +2223,20 @@ int main(int argc, char *argv[])
 
 					t->open = testresult->open;
 					t->banner = testresult->banner;
+					t->bannerbytes = testresult->bannerbytes;
 					t->certinfo = testresult->certinfo;
 					t->certexpires = testresult->certexpires;
 					t->duration.tv_sec = testresult->duration.tv_sec;
 					t->duration.tv_usec = testresult->duration.tv_usec;
+
+					if (t->banner && (t->bannerbytes > 0) && (strlen(t->banner) != t->bannerbytes)) {
+						/* Binary data in banner ... */
+						char *p;
+						int i;
+						for (i=0, p=t->banner; (i < t->bannerbytes); i++, p++) {
+							if (!isprint(*p)) *p = '.';
+						}
+					}
 				}
 			}
 		}
