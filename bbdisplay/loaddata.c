@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.139 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.140 2005-01-19 21:54:15 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -370,11 +370,13 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 
 					p = strchr(l, '\n'); if (p) *p = '\0';
 					strncat(newstate->entry->age, l+20, sizeof(newstate->entry->age)-1);
+					*(newstate->entry->age + sizeof(newstate->entry->age) -1) = '\0';
 					newstate->entry->oldage = (strstr(l+20, "days") != NULL);
 				}
 				else if ( (strncmp(l, "Encrypted status message", 24) != 0)  &&
 				          (strncmp(l, "Status message received from", 28) != 0) ) {
-					strncat(purplemsg, l, bufleft);
+					strncat(purplemsg, l, bufleft - 1);
+					*(purplemsg + bufleft - 1) = '\0';
 				}
 			}
 			/* Avoid newlines piling up at end of logfile */
@@ -431,6 +433,7 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 
 					p = strchr(l, '\n'); if (p) *p = '\0';
 					strncat(newstate->entry->age, l+20, sizeof(newstate->entry->age)-1);
+					*(newstate->entry->age + sizeof(newstate->entry->age) - 1) = '\0';
 					newstate->entry->oldage = (strstr(l+20, "days") != NULL);
 				}
 			}

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.50 2005-01-18 22:25:59 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.51 2005-01-19 21:54:15 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -658,6 +658,7 @@ void addtostatus(char *p)
 		strcat(msgbuf, p);
 	else {
 		strncat(msgbuf, p, sizeof(msgbuf)-strlen(msgbuf)-1);
+		*(msgbuf + sizeof(msgbuf) - 1) = '\0';
 	}
 }
 
@@ -667,6 +668,7 @@ void addtometa(char *p)
 		strcat(metabuf, p);
 	else {
 		strncat(metabuf, p, sizeof(metabuf)-strlen(metabuf)-1);
+		*(metabuf + sizeof(metabuf) - 1) = '\0';
 	}
 }
 

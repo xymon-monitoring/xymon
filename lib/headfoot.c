@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.11 2005-01-19 21:47:28 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.12 2005-01-19 21:54:15 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -46,9 +46,13 @@ void sethostenv(char *host, char *ip, char *svc, char *color)
 {
 	hostenv_host[0] = hostenv_ip[0] = hostenv_svc[0] = hostenv_color[0] = '\0';
 	strncat(hostenv_host,  host,  sizeof(hostenv_host)-1);
+	*(hostenv_host + sizeof(hostenv_host) -1) = '\0';
 	strncat(hostenv_ip,    ip,    sizeof(hostenv_ip)-1);
+	*(hostenv_ip + sizeof(hostenv_ip) -1) = '\0';
 	strncat(hostenv_svc,   svc,   sizeof(hostenv_svc)-1);
+	*(hostenv_svc + sizeof(hostenv_svc) -1) = '\0';
 	strncat(hostenv_color, color, sizeof(hostenv_color)-1);
+	*(hostenv_color + sizeof(hostenv_color) -1) = '\0';
 }
 
 void sethostenv_report(time_t reportstart, time_t reportend, double repwarn, double reppanic)
