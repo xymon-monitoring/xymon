@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.19 2004-11-17 16:12:22 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.20 2004-11-17 22:13:18 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -234,6 +234,9 @@ int main(int argc, char *argv[])
 		if (restofmsg) {
 			*restofmsg = '\0';
 			restofmsg++;
+		}
+		else {
+			restofmsg = "";
 		}
 
 		color = parse_color(log);
