@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.132 2004-11-01 16:02:14 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.133 2004-11-17 16:15:40 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -144,9 +144,16 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 		if (!enable_larrdgen && ((strcmp(p, "larrd") == 0) || (strcmp(p, "trends") == 0))) {
 			return NULL;
 		}
+
+		/*
+		 * When doing reports, we are scanning the BBHIST directory. It may
+		 * contain files that are named as a host only (no test-name).
+		 * Skip those.
+		 */
+		if (find_host(filename)) return NULL;
 	}
 
-	if (usebbgend) {
+	if (usebbgend && !(reportstart || snapshot)) {
 		hostname = strdup(log->hostname);
 		testname = strdup(log->testname);
 		logexpired = (log->validtime < now);
@@ -295,7 +302,7 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 	}
 
 	/* Acked column ? */
-	if (usebbgend) {
+	if (usebbgend && !reportstart && !snapshot) {
 		newstate->entry->acked = (log->acktime > now);
 	}
 	else {
@@ -661,24 +668,34 @@ state_t *load_state(dispsummary_t **sumhead)
 	char		*nextline;
 	int		done;
 	logdata_t	log;
+	char		*logdir;
+
+	logdir = getenv("BBLOGS");
 
 	dprintf("load_state()\n");
 	if (usebbgend) {
-		int bbgendresult = sendmessage("bbgendboard", NULL, NULL, &board, 1, 30);
+		int bbgendresult;
+
+		if (!reportstart && !snapshot) {
+			bbgendresult = sendmessage("bbgendboard", NULL, NULL, &board, 1, 30);
+		}
+		else {
+			bbgendresult = sendmessage("bbgendlist", NULL, NULL, &board, 1, 30);
+		}
 		if ((bbgendresult != BB_OK) || (board == NULL) || (*board == '\0')) {
 			errprintf("bbgend status-board not available\n");
 			return NULL;
 		}
 	}
 	else {
-		if (chdir(getenv("BBLOGS")) != 0) {
-			errprintf("Cannot access the BBLOGS directory %s\n", getenv("BBLOGS"));
+		if (chdir(logdir) != 0) {
+			errprintf("Cannot access the logfile directory %s\n", logdir);
 			return NULL;
 		}
 
-		bblogs = opendir(getenv("BBLOGS"));
+		bblogs = opendir(logdir);
 		if (!bblogs) {
-			errprintf("No logs! Cannot read the BBLOGS directory %s\n", getenv("BBLOGS"));
+			errprintf("No logs! Cannot read the logfile directory %s\n", logdir);
 			return NULL;
 		}
 	}
@@ -689,7 +706,7 @@ state_t *load_state(dispsummary_t **sumhead)
 		oldestentry = time(NULL);
 	}
 	else {
-		sprintf(fn, "%s/.bbstartup", getenv("BBLOGS"));
+		sprintf(fn, "%s/.bbstartup", logdir);
 		if (stat(fn, &st) == -1) {
 			/* Do purple if no ".bbstartup" file */
 			dopurple = enable_purpleupd;
