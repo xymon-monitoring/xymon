@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.12 2003-02-11 16:59:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.13 2003-02-12 11:26:41 hstoerne Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -104,7 +104,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn)
 
 					rrdname = fn + strlen(hostwalk->hostentry->hostname) + 1;
 					p = strchr(rrdname, '.');
-					*p = '\0';
+					if (p) *p = '\0';
 
 					for (i=0; (rrdnames[i] && (strcmp(rrdnames[i], rrdname) != 0)); i++) ;
 					if (rrdnames[i]) {
