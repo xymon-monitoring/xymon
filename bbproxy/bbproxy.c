@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.4 2004-09-19 07:32:15 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.5 2004-09-19 08:04:21 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -150,6 +150,7 @@ int main(int argc, char *argv[])
 	int opt;
 
 	conn_t *chead = NULL;
+	save_errbuf = 0;
 
 	for (opt=1; (opt < argc); opt++) {
 		if (argnmatch(argv[opt], "--local=")) {
@@ -221,13 +222,13 @@ int main(int argc, char *argv[])
 	inet_aton(locaddr, (struct in_addr *) &laddr.sin_addr.s_addr);
 	bind(lsocket, (struct sockaddr *)&laddr, sizeof(laddr));
 	listen(lsocket, listenq);
-	dprintf("Listening on %s port %d\n", locaddr, locport);
+	errprintf("Listening on %s port %d\n", locaddr, locport);
 
 	memset(&saddr, 0, sizeof(saddr));
 	saddr.sin_port = htons(remport);
 	saddr.sin_family = AF_INET;
 	inet_aton(remaddr, (struct in_addr *) &saddr.sin_addr.s_addr);
-	dprintf("Sending to %s port %d\n", remaddr, remport);
+	errprintf("Sending to %s port %d\n", remaddr, remport);
 
 	if (daemonize) {
 		pid_t childpid;
