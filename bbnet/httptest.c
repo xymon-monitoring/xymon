@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.44 2003-08-26 20:45:31 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.45 2003-08-26 21:07:28 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -31,8 +31,6 @@ static FILE *logfd = NULL;
 char *http_library_version = NULL;
 static int can_ssl = 1;
 static int can_ldap = 0;
-
-char *proxy_userpwd = NULL;
 
 int init_http_library(void)
 {
@@ -614,7 +612,6 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 	int     nopage = 0;
 	int 	contentnum = 0;
 	char 	*conttest = (char *) malloc(strlen(contenttestname)+5);
-	time_t  now = time(NULL);
 	testitem_t *http1 = host->firsthttp;
 	int	anydown = 0;
 
