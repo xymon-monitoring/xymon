@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.22 2003-07-06 16:31:49 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.23 2003-07-06 19:28:51 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -103,7 +103,7 @@ int generate_info(char *infocolumn)
 				sprintf(l, " (%s)", slaspec); strcat(infobuf, l);
 				if (p) *p = ' ';
 			}
-			else strcat(infobuf, " (24x7)";
+			else strcat(infobuf, " (24x7)");
 
 			strcat(infobuf, "<br>\n");
 		}
