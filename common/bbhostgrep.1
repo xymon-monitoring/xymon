@@ -35,6 +35,17 @@ time is inside or outside the expected uptime window.
 Remove the "testip", "dialup", "INSIDESLA" and "OUTSIDESLA" tags 
 from the output.
 
+.IP "--test-untagged"
+When using the BBLOCATION environment variable to test
+only hosts on a particular network segment, bbtest-net
+will ignore hosts that do not have any "NET:x" tag.
+So only hosts that have a NET:$BBLOCATION tag will be
+tested.
+.br
+With this option, hosts with no NET: tag are included
+in the test, so that all hosts that either have a
+matching NET: tag, or no NET: tag at all are tested.
+
 .SH EXAMPLE
 If your bb-hosts file looks like this
 

@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.10 2003-08-12 21:16:05 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.11 2003-09-07 21:41:24 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -36,6 +36,7 @@ int main(int argc, char *argv[])
 	char *netstring = NULL;
 	char *p;
 	int extras = 1;
+	int testuntagged = 0;
 	int argi;
 
 	if ((argc <= 1) || (strcmp(argv[1], "--help") == 0)) {
@@ -46,6 +47,9 @@ int main(int argc, char *argv[])
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--noextras") == 0) {
 			extras = 0;
+		}
+		else if (strcmp(argv[argi], "--test-untagged") == 0) {
+			testuntagged = 1;
 		}
 		else if (strcmp(argv[argi], "--version") == 0) {
 			printf("bbhostgrep version %s\n", VERSION);
@@ -95,7 +99,12 @@ int main(int argc, char *argv[])
 		wantedtags[0] = '\0';
 		if ( startoftags && 
 		     (sscanf(l, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) &&
-		     ((netstring == NULL) || (strstr(l, netstring) != NULL)) ) {
+		     ( 
+		       (netstring == NULL) || 
+		       (strstr(l, netstring) != NULL) || 
+		       (testuntagged && (strstr(l, "NET:") == NULL)) 
+		     ) 
+		   ) {
 			char *item;
 			char *realitem;
 
