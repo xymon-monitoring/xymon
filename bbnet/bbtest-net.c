@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.27 2003-04-21 07:38:28 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.28 2003-04-21 16:13:33 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -139,6 +139,26 @@ void load_services(void)
 }
 
 
+testitem_t *init_testitem(testedhost_t *host, service_t *service, int dialuptest, int reversetest, int alwaystruetest, int silenttest)
+{
+	testitem_t *newtest;
+
+	newtest = malloc(sizeof(testitem_t));
+	newtest->host = host;
+	newtest->service = service;
+	newtest->dialup = dialuptest;
+	newtest->reverse = reversetest;
+	newtest->alwaystrue = alwaystruetest;
+	newtest->silenttest = silenttest;
+	newtest->open = 0;
+	newtest->testresult = NULL;
+	newtest->banner = NULL;
+	newtest->next = NULL;
+
+	return newtest;
+}
+
+
 void load_tests(void)
 {
 	FILE 	*bbhosts;
@@ -200,14 +220,7 @@ void load_tests(void)
 				if (pingtest && !h->noconn) {
 					/* Add the ping check */
 					anytests = 1;
-					newtest = malloc(sizeof(testitem_t));
-					newtest->host = h;
-					newtest->dialup = 0;
-					newtest->reverse = 0;
-					newtest->alwaystrue = 1;
-					newtest->open = 0;
-					newtest->testresult = NULL;
-					newtest->service = pingtest;
+					newtest = init_testitem(h, pingtest, 0, 0, 1, 0);
 					newtest->next = pingtest->items;
 					pingtest->items = newtest;
 				}
@@ -271,14 +284,7 @@ void load_tests(void)
 
 					if (s) {
 						anytests = 1;
-						newtest = malloc(sizeof(testitem_t));
-						newtest->host = h;
-						newtest->service = s;
-						newtest->dialup = dialuptest;
-						newtest->reverse = reversetest;
-						newtest->alwaystrue = alwaystruetest;
-						newtest->open = 0;
-						newtest->testresult = NULL;
+						newtest = init_testitem(h, s, dialuptest, reversetest, alwaystruetest, 0);
 						newtest->next = s->items;
 						s->items = newtest;
 					}
@@ -482,12 +488,13 @@ int run_fping_service(service_t *service)
 	FILE		*cmdpipe;
 	FILE		*logfd;
 	char		l[MAX_LINE_LEN];
+	char		hostname[MAX_LINE_LEN];
 	int		ip1, ip2, ip3, ip4;
 
 	/* Run "fping -Ae 2>/dev/null" and feed it all IP's to test */
 	p = getenv("FPING");
 	strcpy(cmdpath, (p ? p : "fping"));
-	sprintf(logfn, "%s/fping.%lu", getenv("BBTMP"), getpid());
+	sprintf(logfn, "%s/fping.%lu", getenv("BBTMP"), (unsigned long)getpid());
 	sprintf(cmd, "%s -Ae 2>/dev/null 1>%s", cmdpath, logfn);
 
 	cmdpipe = popen(cmd, "w");
@@ -508,24 +515,33 @@ int run_fping_service(service_t *service)
 		if (sscanf(l, "%d.%d.%d.%d ", &ip1, &ip2, &ip3, &ip4) == 4) {
 			p = strchr(l, ' ');
 			if (p) *p = '\0';
-			for (t=service->items; (t && (strcmp(t->host->ip, l) != 0)); t = t->next) ;
+			strcpy(hostname, l);
 			if (p) *p = ' ';
 
-			t->open = (strstr(l, "is alive") != NULL);
-			t->banner = malloc(strlen(l)+1);
-			strcpy(t->banner, l);
+			/*
+			 * Need to loop through all testitems - there may be multiple entries for
+			 * the same IP-address.
+			 */
+			for (t=service->items; (t); t = t->next) {
+				if (strcmp(t->host->ip, hostname) == 0) {
 
-			if (t->open) {
-				t->host->downcount = 0;
-			}
-			else {
-				t->host->downcount++;
-				if (t->host->downcount == 1) t->host->downstart = time(NULL);
+					t->open = (strstr(l, "is alive") != NULL);
+					t->banner = malloc(strlen(l)+1);
+					strcpy(t->banner, l);
+
+					if (t->open) {
+						t->host->downcount = 0;
+					}
+					else {
+						t->host->downcount++;
+						if (t->host->downcount == 1) t->host->downstart = time(NULL);
+					}
+				}
 			}
 		}
 	}
 	fclose(logfd);
-	unlink(logfn);
+	if (!debug) unlink(logfn);
 
 	save_fping_status();
 
