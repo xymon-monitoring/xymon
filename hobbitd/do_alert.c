@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.57 2005-03-20 13:52:05 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.58 2005-03-25 07:40:15 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -860,7 +860,7 @@ static int timematch(char *tspec)
 {
 	int result;
 
-	result = within_sla(tspec, "", 0);
+	result = within_sla(tspec, 0);
 
 	return result;
 }

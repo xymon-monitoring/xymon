@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.25 2005-03-22 09:16:49 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.26 2005-03-25 07:40:15 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -151,7 +151,7 @@ char *knownhost(char *hostname, char *hostip, int ghosthandling, int *maybedown)
 		 */
 		strcpy(hostip, walk->ip);
 		strcpy(result, walk->bbhostname);
-		if (walk->downtime) *maybedown = within_sla(walk->downtime, "DOWNTIME", 0);
+		if (walk->downtime) *maybedown = within_sla(walk->downtime, 0);
 	}
 	else {
 		strcpy(result, hostname);

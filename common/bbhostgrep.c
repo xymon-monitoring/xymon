@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.24 2005-01-31 22:30:23 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.25 2005-03-25 07:40:15 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 				if (bbh_item(hwalk, BBH_FLAG_DIALUP)) strcat(wantedtags, " dialup");
 				if (bbh_item(hwalk, BBH_FLAG_TESTIP)) strcat(wantedtags, " testip");
 				if ((item = bbh_item(hwalk, BBH_DOWNTIME)) != NULL) {
-					if (within_sla(item, "", 0))
+					if (within_sla(item, 0))
 						strcat(wantedtags, " OUTSIDESLA");
 					else
 						strcat(wantedtags, " INSIDESLA");
