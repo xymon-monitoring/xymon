@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.21 2003-06-23 08:54:30 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.22 2003-06-23 09:02:36 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -422,7 +422,7 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 		logfd = fopen(logfile, "a");
 		if (logfd) fprintf(logfd, "*** Starting web checks at %s ***\n", timestamp);
 	}
-	sprintf(useragent, "BigBrother bbtest-net/%s curl/%s", VERSION, LIBCURL_VERSION);
+	sprintf(useragent, "BigBrother bbtest-net/%s curl/%s-%s", VERSION, LIBCURL_VERSION, curl_version());
 
 	for (t = httptest->items; (t); t = t->next) {
 		req = t->private;
