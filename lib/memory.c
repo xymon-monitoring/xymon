@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: memory.c,v 1.5 2005-01-27 22:30:02 henrik Exp $";
+static char rcsid[] = "$Id: memory.c,v 1.6 2005-02-08 09:32:19 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -22,8 +22,11 @@ static char rcsid[] = "$Id: memory.c,v 1.5 2005-01-27 22:30:02 henrik Exp $";
 
 #include "libbbgen.h"
 
-
+#ifdef MEMORY_DEBUG
 static xmemory_t *mhead = NULL;
+static xmemory_t *dmem;
+static void *allocend, *copyend;
+#endif
 
 #ifdef MEMORY_DEBUG
 void add_to_memlist(void *ptr, size_t memsize)
@@ -129,7 +132,6 @@ void *xmalloc(size_t size)
 void *xrealloc(void *ptr, size_t size)
 {
 	void *result;
-	xmemory_t *mitem;
 
 	if (ptr == NULL) {
 		errprintf("xrealloc: Cannot realloc NULL pointer\n");
@@ -137,8 +139,8 @@ void *xrealloc(void *ptr, size_t size)
 	}
 
 #ifdef MEMORY_DEBUG
-	mitem = find_in_memlist(ptr);
-	if (mitem == NULL) {
+	dmem = find_in_memlist(ptr);
+	if (dmem == NULL) {
 		errprintf("xrealloc: Called with bogus pointer\n");
 		abort();
 	}
@@ -151,8 +153,8 @@ void *xrealloc(void *ptr, size_t size)
 	}
 
 #ifdef MEMORY_DEBUG
-	mitem->sdata = result;
-	mitem->ssize = size;
+	dmem->sdata = result;
+	dmem->ssize = size;
 #endif
 
 	return result;
@@ -182,9 +184,6 @@ char *xstrdup(const char *s)
 
 char *xstrcat(char *dest, const char *src)
 {
-	xmemory_t *dmem;
-	void *allocend, *copyend;
-
 	if (src == NULL) {
 		errprintf("xstrcat: NULL destination\n");
 		abort();
@@ -216,9 +215,6 @@ char *xstrcat(char *dest, const char *src)
 
 char *xstrncat(char *dest, const char *src, size_t maxlen)
 {
-	xmemory_t *dmem;
-	void *allocend, *copyend;
-
 	if (src == NULL) {
 		errprintf("xstrcat: NULL destination\n");
 		abort();
@@ -254,9 +250,6 @@ char *xstrncat(char *dest, const char *src, size_t maxlen)
 
 char *xstrcpy(char *dest, const char *src)
 {
-	xmemory_t *dmem;
-	void *allocend, *copyend;
-
 	if (src == NULL) {
 		errprintf("xstrcpy: NULL destination\n");
 		abort();
@@ -288,9 +281,6 @@ char *xstrcpy(char *dest, const char *src)
 
 char *xstrncpy(char *dest, const char *src, size_t maxlen)
 {
-	xmemory_t *dmem;
-	void *allocend, *copyend;
-
 	if (src == NULL) {
 		errprintf("xstrncpy: NULL destination\n");
 		abort();
@@ -327,8 +317,10 @@ char *xstrncpy(char *dest, const char *src, size_t maxlen)
 int xsprintf(char *dest, const char *fmt, ...)
 {
 	va_list args;
-	size_t availablebytes, printedbytes;
-	xmemory_t *dmem;
+	size_t printedbytes;
+#ifdef MEMORY_DEBUG
+	size_t availablebytes;
+#endif
 
 	if (dest == NULL) {
 		errprintf("xsprintf: NULL destination\n");
