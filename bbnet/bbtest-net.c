@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.149 2004-08-17 20:23:59 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.150 2004-08-18 06:14:32 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -81,7 +81,7 @@ service_t	*modembanktest = NULL;		/* Identifies the modembank test within svchea
 testedhost_t	*testhosthead = NULL;		/* Head of all hosts */
 char		*nonetpage = NULL;		/* The "NONETPAGE" env. variable */
 int		dnsmethod = DNS_THEN_IP;	/* How to do DNS lookups */
-int 		timeout=0;
+int 		timeout=10;			/* The timeout (seconds) for all TCP-tests */
 long		followlocations = 0;		/* Follow Location: redirects in HTTP? */
 char		*contenttestname = "content";   /* Name of the content checks column */
 char		*ssltestname = "sslcert";       /* Name of the SSL certificate checks column */
@@ -512,6 +512,20 @@ void load_tests(void)
 						specialtag = 1;
 						h->routerdeps = malcop(testspec+strlen(routestring));
 						dprintf("host %s has routerdeps %s\n", h->hostname, h->routerdeps);
+					}
+					else if (argnmatch(testspec, "TIMEOUT:")) {
+						int dummy, newtimeout;
+
+						specialtag = 1;
+						if (sscanf(testspec, "TIMEOUT:%d:%d", dummy, nettimeout) == 2) {
+							/*
+							 * For compatibility, pick up the timeout
+							 * setting if specified for a host, but use it
+							 * to adjust the global timeout setting for
+							 * all TCP tests.
+							 */
+							if (newtimeout > timeout) timeout = newtimeout;
+						}
 					}
 					else if (strcmp(testspec, "noconn") == 0)  { specialtag = 1; h->noconn = 1; }
 					else if (strcmp(testspec, "noping") == 0)  { specialtag = 1; h->noping = 1; }
