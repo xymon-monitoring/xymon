@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.35 2004-10-25 12:02:53 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.36 2004-10-25 12:47:19 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -697,12 +697,12 @@ void handle_ack(char *msg, char *sender, bbd_log_t *log, int duration)
 
 	log->acktime = time(NULL)+duration*60;
 	p = msg;
-	p += strcspn(p, " \t");		/* Skip the keyword ... */
-	p += strspn(p, " \t");		/* and the space ... */
-	p += strspn(p, "0123456789");	/* and the cookie ... */
-	p += strspn(p, " \t");		/* and the space ... */
-	p += strspn(p, "0123456789");	/* and the duration ... */
-	p += strspn(p, " \t");		/* and the space ... */
+	p += strcspn(p, " \t");			/* Skip the keyword ... */
+	p += strspn(p, " \t");			/* and the space ... */
+	p += strspn(p, "-0123456789");		/* and the cookie ... */
+	p += strspn(p, " \t");			/* and the space ... */
+	p += strspn(p, "0123456789hdwmy");	/* and the duration ... */
+	p += strspn(p, " \t");			/* and the space ... */
 	log->ackmsg = strdup(p);
 
 	/* Tell the pagers */
@@ -1026,12 +1026,24 @@ void do_message(conn_t *msg)
 		/* bbgendack COOKIE DURATION TEXT */
 		int cookie, duration;
 		char durstr[100];
+		bbd_log_t *lwalk;
 
 		if (sscanf(msg->buf, "%*s %d %99s", &cookie, durstr) == 2) {
-			log = find_cookie(cookie);
+			log = find_cookie(abs(cookie));
 			if (log) {
 				duration = durationvalue(durstr);
-				handle_ack(msg->buf, sender, log, duration);
+				if (cookie > 0)
+					handle_ack(msg->buf, sender, log, duration);
+				else {
+					/*
+					 * Negative cookies mean to ack all pending alerts for
+					 * the host. So loop over the host logs and ack all that
+					 * have a valid cookie (i.e. not -1)
+					 */
+					for (lwalk = log->host->logs; (lwalk); lwalk = lwalk->next) {
+						if (lwalk->cookie != -1) handle_ack(msg->buf, sender, lwalk, duration);
+					}
+				}
 			}
 		}
 	}
