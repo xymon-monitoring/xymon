@@ -15,13 +15,13 @@
 <TR HEIGHT=16><TD>&nbsp</TD></TR>  <!-- For the menu bar -->
 <TR>
   <TD VALIGN=TOP ALIGN=LEFT WIDTH="30%">
-    <FONT FACE="Arial, Helvetica" SIZE=+1 COLOR="silver"><B>Big Brother</B></FONT>
+    <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>Big Brother</B></FONT>
   </TD>
   <TD VALIGN=TOP ALIGN=CENTER WIDTH="40%">
-    <CENTER><FONT FACE="Arial, Helvetica" SIZE=+1 COLOR="silver"><B>&BBHOST - &BBSVC</B></FONT></CENTER>
+    <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&BBHOST - &BBSVC</B></FONT></CENTER>
   </TD>
   <TD VALIGN=TOP ALIGN=RIGHT WIDTH="30%">
-   <FONT FACE="Arial, Helvetica" SIZE=+1 COLOR="silver"><B>&BBDATE</B></FONT>
+   <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&BBDATE</B></FONT>
   </TD>
 </TR>
 <TR>
