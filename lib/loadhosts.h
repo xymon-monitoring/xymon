@@ -47,11 +47,16 @@ enum bbh_item_t {
 	BBH_IP,
 	BBH_HOSTNAME,
 	BBH_PAGENAME,
+	BBH_PAGEPATH,
+	BBH_PAGETITLE,
+	BBH_PAGEPATHTITLE,
+	BBH_DOCURL,
 	BBH_LAST
 };
 
 typedef struct pagelist_t {
-	char *pagename;
+	char *pagepath;
+	char *pagetitle;
 	struct pagelist_t *next;
 } pagelist_t;
 
@@ -78,7 +83,7 @@ typedef struct namelist_t {
 
 extern char *larrdgraphs_default;
 
-extern namelist_t *load_hostnames(char *bbhostsfn, int fqdn);
+extern namelist_t *load_hostnames(char *bbhostsfn, int fqdn, char *docurl);
 extern char *knownhost(char *filename, char *hostip, int ghosthandling, int *maybedown);
 extern namelist_t *hostinfo(char *hostname);
 extern char *bbh_item(namelist_t *host, enum bbh_item_t item);
