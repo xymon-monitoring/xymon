@@ -1,20 +1,22 @@
 all: bbgen
 
+CFLAGS=-g -Wall
+
 GENOBJS = bbgen.o debug.o loaddata.o larrdgen.o pagegen.o process.o util.o 
 TESTOBJS = bbtest-web.o util.o debug.o
 NETOBJS = bbnethosts.o util.o debug.o
 
 bbgen: $(GENOBJS)
-	gcc -g -o bbgen $(GENOBJS)
+	gcc $(CFLAGS) -o bbgen $(GENOBJS)
 
 bbtest-web: $(TESTOBJS)
-	gcc -g -o bbtest-web $(TESTOBJS)
+	gcc $(CFLAGS) -o bbtest-web $(TESTOBJS)
 
 bbnethosts: $(NETOBJS)
-	gcc -g -o bbnethosts $(NETOBJS)
+	gcc $(CFLAGS) -o bbnethosts $(NETOBJS)
 
 %.o: %.c
-	gcc -Wall -c -g -o $@ $<
+	gcc $(CFLAGS) -c -o $@ $<
 
 clean:
 	rm -f *.o *~ bbgen bbtest-web bbnethosts
