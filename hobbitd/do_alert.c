@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.55 2005-03-09 12:32:46 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.56 2005-03-09 16:54:25 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -1087,6 +1087,7 @@ static char *message_subject(activealerts_t *alert, recip_t *recip)
 
 	switch (alert->state) {
 	  case A_PAGING:
+	  case A_ACKED:
 		subjfmt = (include_configid ? "Hobbit [%d] %s:%s %s [cfid:%d]" :  "Hobbit [%d] %s:%s %s");
 		snprintf(subj, sizeof(subj)-1, subjfmt, 
 			 alert->cookie, alert->hostname->name, alert->testname->name, sev, recip->cfid);
@@ -1102,6 +1103,10 @@ static char *message_subject(activealerts_t *alert, recip_t *recip)
 		subjfmt = (include_configid ? "Hobbit %s:%s recovered [cfid:%d]" :  "Hobbit %s:%s recovered");
 		snprintf(subj, sizeof(subj)-1, subjfmt, 
 			 alert->hostname->name, alert->testname->name, recip->cfid);
+		break;
+
+	  case A_DEAD:
+		/* Cannot happen */
 		break;
 	}
 
