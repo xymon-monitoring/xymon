@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.94 2003-04-23 20:58:25 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.95 2003-04-24 10:55:31 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -89,6 +89,7 @@ int main(int argc, char *argv[])
 	int		i;
 	int		pagegenstat;
 	int		bbpageONLY = 0;
+	char		*pageset = "";
 
 	bb_color = bb2_color = bbnk_color = -1;
 	pagedir = rrddir = NULL;
@@ -208,6 +209,10 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[i], "--bbpageONLY") == 0) {
 			bbpageONLY = 1;
 		}
+		else if (strncmp(argv[i], "--pageset=", 10) == 0) {
+			char *lp = strchr(argv[i], '=');
+			pageset = malcop(lp+1);
+		}
 		else if (strncmp(argv[i], "--template=", 11) == 0) {
 			char *lp = strchr(argv[i], '=');
 			lp++;
@@ -255,6 +260,7 @@ int main(int argc, char *argv[])
 			printf("    --rrddir=RRD-directory      : Directory for LARRD RRD files\n");
 			printf("\nAlternate pageset generation support:\n");
 			printf("    --bbpageONLY                : Generate the standard (bb.html) page only\n");
+			printf("    --pageset=SETNAME           : Generate non-standard pageset with tag SETNAME\n");
 			printf("    --template=TEMPLATE         : template for header and footer files\n");
 			printf("\nDebugging options:\n");
 			printf("    --timing                    : Collect timing information\n");
@@ -299,7 +305,7 @@ int main(int argc, char *argv[])
 	/* Load all data from the various files */
 	linkhead = load_all_links();
 	add_timestamp("Load links done");
-	pagehead = load_bbhosts();
+	pagehead = load_bbhosts(pageset);
 	add_timestamp("Load bbhosts done");
 
 	if (!bbpageONLY) {

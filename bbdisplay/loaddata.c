@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.55 2003-04-23 20:32:59 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.56 2003-04-24 10:55:31 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -674,14 +674,19 @@ void getparentnamelink(char *l, bbgen_page_t *toppage, bbgen_page_t **parent, ch
 }
 
 
-void getgrouptitle(char *l, char **title, char **onlycols)
+void getgrouptitle(char *l, char *pageset, char **title, char **onlycols)
 {
+	char grouponlytag[100], grouptag[100];
+
 	*title = null_text;
 	*onlycols = NULL;
 
+	sprintf(grouponlytag, "%sgroup-only", pageset);
+	sprintf(grouptag, "%sgroup", pageset);
+
 	dprintf("getgrouptitle(%s, ...)\n", textornull(l));
 
-	if (strncmp(l, "group-only", 10) == 0) {
+	if (strncmp(l, grouponlytag, strlen(grouponlytag)) == 0) {
 		unsigned char *p;
 
 		*onlycols = skipwhitespace(skipword(l));
@@ -692,7 +697,7 @@ void getgrouptitle(char *l, char **title, char **onlycols)
 			*title = skipwhitespace(p);
 		}
 	}
-	else if (strncmp(l, "group", 5) == 0) {
+	else if (strncmp(l, grouptag, strlen(grouptag)) == 0) {
 		*title = skipwhitespace(skipword(l));
 	}
 }
@@ -759,10 +764,12 @@ link_t *load_all_links(void)
 }
 
 
-bbgen_page_t *load_bbhosts(void)
+bbgen_page_t *load_bbhosts(char *pgset)
 {
 	FILE 	*bbhosts;
 	char 	l[MAX_LINE_LEN];
+	char	pagetag[100], subpagetag[100], subparenttag[100], 
+		grouptag[100], summarytag[100], titletag[100], hosttag[100];
 	char 	*name, *link, *onlycols;
 	char 	hostname[MAX_LINE_LEN];
 	bbgen_page_t 	*toppage, *curpage, *cursubpage, *cursubparent;
@@ -772,13 +779,22 @@ bbgen_page_t *load_bbhosts(void)
 	int	ip1, ip2, ip3, ip4;
 	char	*p;
 
-	dprintf("load_bbhosts()\n");
+	dprintf("load_bbhosts(pgset=%s)\n", textornull(pgset));
 
 	bbhosts = fopen(getenv("BBHOSTS"), "r");
 	if (bbhosts == NULL) {
 		printf("Cannot open the BBHOSTS file '%s'\n", getenv("BBHOSTS"));
 		exit(1);
 	}
+
+	if (pgset == NULL) pgset = "";
+	sprintf(pagetag, "%spage", pgset);
+	sprintf(subpagetag, "%ssubpage", pgset);
+	sprintf(subparenttag, "%ssubparent", pgset);
+	sprintf(grouptag, "%sgroup", pgset);
+	sprintf(summarytag, "%ssummary", pgset);
+	sprintf(titletag, "%stitle", pgset);
+	sprintf(hosttag, "%s:", pgset); for (p=hosttag; (*p); p++) *p = toupper((int)*p);
 
 	toppage = init_page("", "");
 	addtopagelist(toppage);
@@ -804,7 +820,7 @@ bbgen_page_t *load_bbhosts(void)
 		if ((l[0] == '#') || (strlen(l) == 0)) {
 			/* Do nothing - it's a comment */
 		}
-		else if (strncmp(l, "page", 4) == 0) {
+		else if (strncmp(l, pagetag, strlen(pagetag)) == 0) {
 			getnamelink(l, &name, &link);
 			if (curpage == NULL) {
 				/* First page - hook it on toppage as a subpage from there */
@@ -826,7 +842,7 @@ bbgen_page_t *load_bbhosts(void)
 			curhost = NULL;
 			addtopagelist(curpage);
 		}
-		else if (strncmp(l, "subpage", 7) == 0) {
+		else if (strncmp(l, subpagetag, strlen(subpagetag)) == 0) {
 			getnamelink(l, &name, &link);
 			if (cursubpage == NULL) {
 				cursubpage = curpage->subpages = init_page(name, link);
@@ -845,7 +861,7 @@ bbgen_page_t *load_bbhosts(void)
 			curhost = NULL;
 			addtopagelist(cursubpage);
 		}
-		else if (strncmp(l, "subparent", 9) == 0) {
+		else if (strncmp(l, subparenttag, strlen(subparenttag)) == 0) {
 			bbgen_page_t *parentpage, *walk;
 
 			getparentnamelink(l, toppage, &parentpage, &name, &link);
@@ -867,8 +883,8 @@ bbgen_page_t *load_bbhosts(void)
 			curhost = NULL;
 			addtopagelist(cursubparent);
 		}
-		else if (strncmp(l, "group", 5) == 0) {
-			getgrouptitle(l, &link, &onlycols);
+		else if (strncmp(l, grouptag, strlen(grouptag)) == 0) {
+			getgrouptitle(l, pgset, &link, &onlycols);
 			if (curgroup == NULL) {
 				curgroup = init_group(link, onlycols);
 				if (cursubparent != NULL) {
@@ -899,6 +915,7 @@ bbgen_page_t *load_bbhosts(void)
 			char *startoftags = strchr(l, '#');
 			char *alertlist, *nopropyellowlist, *nopropredlist;
 			char *larrdgraphs;
+			char *targetpagename;
 
 			alertlist = nopropyellowlist = nopropredlist = larrdgraphs = NULL;
 
@@ -919,35 +936,104 @@ bbgen_page_t *load_bbhosts(void)
 				larrdgraphs += 6;
 			}
 
-			if (curhost == NULL) {
-				curhost = init_host(hostname, ip1, ip2, ip3, ip4, dialup, alertlist, 
-						    startoftags, nopropyellowlist, nopropredlist,
-						    larrdgraphs);
-				if (curgroup != NULL) {
-					curgroup->hosts = curhost;
-				}
-				else if (cursubparent != NULL) {
-					cursubparent->hosts = curhost;
-				}
-				else if (cursubpage != NULL) {
-					cursubpage->hosts = curhost;
-				}
-				else if (curpage != NULL) {
-					curpage->hosts = curhost;
+			if (strlen(pgset) == 0) {
+				/*
+				 * Default pageset generated. Put the host into
+				 * whatever group or page is current.
+				 */
+				if (curhost == NULL) {
+					curhost = init_host(hostname, ip1, ip2, ip3, ip4, dialup, alertlist, 
+							    startoftags, nopropyellowlist, nopropredlist,
+							    larrdgraphs);
+					if (curgroup != NULL) {
+						curgroup->hosts = curhost;
+					}
+					else if (cursubparent != NULL) {
+						cursubparent->hosts = curhost;
+					}
+					else if (cursubpage != NULL) {
+						cursubpage->hosts = curhost;
+					}
+					else if (curpage != NULL) {
+						curpage->hosts = curhost;
+					}
+					else {
+						toppage->hosts = curhost;
+					}
 				}
 				else {
-					toppage->hosts = curhost;
+					curhost = curhost->next = init_host(hostname, ip1, ip2, ip3, ip4, dialup, alertlist, 
+									    startoftags, nopropyellowlist,nopropredlist,
+									    larrdgraphs);
 				}
+				curhost->parent = (cursubparent ? cursubparent : (cursubpage ? cursubpage : curpage));
+				if (curtitle) { curhost->pretitle = curtitle; curtitle = NULL; }
 			}
-			else {
-				curhost = curhost->next = init_host(hostname, ip1, ip2, ip3, ip4, dialup, alertlist, 
+			else if (startoftags && ((targetpagename = strstr(startoftags, hosttag)) != NULL)) {
+
+				char savechar;
+				pagelist_t *targetpage = NULL;
+				int wantedgroup = 0;
+
+				/* Put the host into the page specified by the PGSET: tag */
+				targetpagename += strlen(hosttag);
+				for (p=targetpagename; (*p && (*p != ' ') && (*p != '\t') && (*p != ',')); p++) ;
+				savechar = *p; *p = '\0';
+
+				if (savechar == ',') {
+					wantedgroup = atoi(p+1);
+				}
+
+				/* Find the page */
+				for (targetpage = pagelisthead; (targetpage && (strcmp(targetpagename, targetpage->pageentry->name) != 0)); targetpage = targetpage->next) ;
+
+				*p = savechar;
+				if (targetpage == NULL) {
+					printf("Warning: Cannot find any target page named %s - dropping host %s'\n", 
+						targetpagename, hostname);
+				}
+				else {
+					host_t *newhost = init_host(hostname, ip1, ip2, ip3, ip4, dialup, alertlist, 
 								    startoftags, nopropyellowlist,nopropredlist,
 								    larrdgraphs);
+
+					if (wantedgroup > 0) {
+						group_t *gwalk;
+						host_t  *hwalk;
+						int i;
+
+						for (gwalk = targetpage->pageentry->groups, i=1; (gwalk && (i < wantedgroup)); i++,gwalk=gwalk->next) ;
+						if (gwalk) {
+							if (gwalk->hosts == NULL)
+								gwalk->hosts = newhost;
+							else {
+								for (hwalk = gwalk->hosts; (hwalk->next); hwalk = hwalk->next) ;
+								hwalk->next = newhost;
+							}
+						}
+						else {
+							printf("Warning: Cannot find group %d for host %s - dropping host\n",
+								wantedgroup, hostname);
+						}
+					}
+					else {
+						/* Just put in on the page's hostlist */
+						host_t *walk;
+
+						if (targetpage->pageentry->hosts == NULL)
+							targetpage->pageentry->hosts = newhost;
+						else {
+							for (walk = targetpage->pageentry->hosts; (walk->next); walk = walk->next) ;
+							walk->next = newhost;
+						}
+					}
+
+					newhost->parent = targetpage->pageentry;
+					if (curtitle) { newhost->pretitle = curtitle; curtitle = NULL; }
+				}
 			}
-			if (curtitle) { curhost->pretitle = curtitle; curtitle = NULL; }
-			curhost->parent = (cursubparent ? cursubparent : (cursubpage ? cursubpage : curpage));
 		}
-		else if (strncmp(l, "summary", 7) == 0) {
+		else if (strncmp(l, summarytag, strlen(summarytag)) == 0) {
 			/* summary row.column      IP-ADDRESS-OF-PARENT    http://bb4.com/ */
 			char sumname[MAX_LINE_LEN];
 			char receiver[MAX_LINE_LEN];
@@ -960,7 +1046,7 @@ bbgen_page_t *load_bbhosts(void)
 				sumhead = newsum;
 			}
 		}
-		else if (strncmp(l, "title", 5) == 0) {
+		else if (strncmp(l, titletag, strlen(titletag)) == 0) {
 			/* Save the title for the next entry */
 			curtitle = malcop(skipwhitespace(skipword(l)));
 		}
