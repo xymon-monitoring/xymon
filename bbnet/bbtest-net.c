@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.39 2003-04-30 19:42:20 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.40 2003-05-01 10:17:37 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -104,6 +104,36 @@ void load_services(void)
 }
 
 
+testedhost_t *init_testedhost(char *hostname, int timeout, int in_sla)
+{
+	testedhost_t *newhost;
+
+	newhost = malloc(sizeof(testedhost_t));
+	newhost->hostname = malcop(hostname);
+	newhost->ip[0] = '\0';
+	newhost->conntimeout = 0;
+	newhost->timeout = timeout;
+
+	newhost->dialup = 0;
+	newhost->testip = 0;
+	newhost->dnserror = 0;
+	newhost->in_sla = in_sla;
+
+	newhost->noconn = 0;
+	newhost->noping = 0;
+	newhost->badconn[0] = newhost->badconn[1] = newhost->badconn[2] = 0;
+	newhost->downcount = 0;
+	newhost->downstart = 0;
+	newhost->routerdeps = NULL;
+	newhost->deprouterdown = NULL;
+
+	newhost->firsthttp = NULL;
+
+	newhost->next = NULL;
+
+	return newhost;
+}
+
 testitem_t *init_testitem(testedhost_t *host, service_t *service, char *testspec, 
                           int dialuptest, int reversetest, int alwaystruetest, int silenttest)
 {
@@ -166,70 +196,67 @@ void load_tests(void)
 
 				testedhost_t *h;
 				testitem_t *newtest;
-				int anytests;
+				int anytests = 0;
 				int ping_dialuptest = 0;
 				int ping_reversetest = 0;
-
-				h = malloc(sizeof(testedhost_t));
-				h->hostname = malloc(strlen(hostname)+1);
-				strcpy(h->hostname, hostname);
 
 				p = strchr(l, '#'); p++;
 				while (isspace((unsigned int) *p)) p++;
 
-				h->dialup = 0;
-				h->testip = 0;
-				h->noconn = 0;
-				h->noping = 0;
-				h->timeout = timeout;
-				h->conntimeout = 0;
-				h->badconn[0] = h->badconn[1] = h->badconn[2] = 0;
-				h->downcount = 0;
-				h->in_sla = within_sla(p);
-				h->ip[0] = '\0';
-				h->dnserror = 0;
-				h->firsthttp = NULL;
+				h = init_testedhost(hostname, timeout, within_sla(p));
 				anytests = 0;
 
 				testspec = strtok(p, "\t ");
 				while (testspec) {
 
-					service_t *s;
-					int dialuptest;
-					int reversetest;
-					int alwaystruetest;
-					char *option;
+					service_t *s = NULL;
+					int dialuptest = 0;
+					int reversetest = 0;
+					int alwaystruetest = 0;
+					int specialtag = 0;
 					char *savedspec = NULL;
 
 					if ((strncmp(testspec, "badconn", 7) == 0) && periodcoversnow(testspec+7)) {
 						char *p =strchr(testspec, ':');
 
+						specialtag = 1;
 						if (p) sscanf(p, ":%d:%d:%d", &h->badconn[0], &h->badconn[1], &h->badconn[2]);
 					}
+					else if (strncmp(testspec, "route:", 6) == 0) {
+						specialtag = 1;
+						h->routerdeps = malcop(testspec+6);
+					}
 					else if (strncmp(testspec, "TIMEOUT:", 8) == 0) {
+						specialtag = 1;
+
 						if (sscanf(testspec, "TIMEOUT:%d:%d", &h->conntimeout, &h->timeout) != 2) {
 							h->timeout = timeout;
 							h->conntimeout = 0;
 						}
 					}
-					else if (strcmp(testspec, "noconn") == 0) h->noconn = 1;
-					else if (strcmp(testspec, "noping") == 0) h->noping = 1;
-					else if (strcmp(testspec, "testip") == 0) h->testip = 1;
-					else if (strcmp(testspec, "dialup") == 0) h->dialup = 1;
+					else if (strcmp(testspec, "noconn") == 0) { specialtag = 1; h->noconn = 1; }
+					else if (strcmp(testspec, "noping") == 0) { specialtag = 1; h->noping = 1; }
+					else if (strcmp(testspec, "testip") == 0) { specialtag = 1; h->testip = 1; }
+					else if (strcmp(testspec, "dialup") == 0) { specialtag = 1; h->dialup = 1; }
 
-					/* Test prefixes:
-					 * - '?' denotes dialup test, i.e. report failures as clear.
-					 * - '|' denotes reverse test, i.e. service should be DOWN.
-					 * - '~' denotes test that ignores ping result (normally,
-					 *       TCP tests are reported CLEAR if ping check fails;
-					 *       with this flag report their true status)
-					 */
-					dialuptest = reversetest = alwaystruetest = 0;
-					if (*testspec == '?') { dialuptest=1;     testspec++; }
-					if (*testspec == '!') { reversetest=1;    testspec++; }
-					if (*testspec == '~') { alwaystruetest=1; testspec++; }
+					if (!specialtag) {
+						/* Test prefixes:
+						 * - '?' denotes dialup test, i.e. report failures as clear.
+						 * - '|' denotes reverse test, i.e. service should be DOWN.
+						 * - '~' denotes test that ignores ping result (normally,
+						 *       TCP tests are reported CLEAR if ping check fails;
+						 *       with this flag report their true status)
+						 */
+						dialuptest = reversetest = alwaystruetest = 0;
+						if (*testspec == '?') { dialuptest=1;     testspec++; }
+						if (*testspec == '!') { reversetest=1;    testspec++; }
+						if (*testspec == '~') { alwaystruetest=1; testspec++; }
+					}
 
-					if (pingtest && (strcmp(testspec, pingtest->testname) == 0)) {
+					if (specialtag) {
+						s = NULL;
+					}
+					else if (pingtest && (strcmp(testspec, pingtest->testname) == 0)) {
 						/*
 						 * Ping/conn test. Save any modifier flags for later use.
 						 */
@@ -269,6 +296,7 @@ void load_tests(void)
 						/* 
 						 * Simple TCP connect test. 
 						 */
+						char *option;
 
 						/* Remove any trailing ":s", ":q", ":Q", ":portnumber" */
 						option = strchr(testspec, ':'); 
@@ -571,6 +599,30 @@ int run_fping_service(service_t *service)
 
 	save_fping_status();
 
+	/* 
+	 * Handle the router dependency stuff. I.e. for all hosts
+	 * where the ping test failed, go through the list of router
+	 * dependencies and if one of the dependent hosts also has 
+	 * a failed ping test, point the dependency there.
+	 */
+	for (t=service->items; (t); t = t->next) {
+		if (!t->open && t->host->routerdeps) {
+			testitem_t *router;
+
+			strcpy(l, t->host->routerdeps);
+			p = strtok(l, ",");
+			while (p && (t->host->deprouterdown == NULL)) {
+				for (router=service->items; 
+					(router && (strcmp(p, router->host->hostname) != 0)); 
+					router = router->next) ;
+
+				if (router && !router->open) t->host->deprouterdown = router->host;
+
+				p = strtok(NULL, ",");
+			}
+		}
+	}
+
 	return 0;
 }
 
@@ -614,6 +666,11 @@ void send_results(service_t *service)
 			if (!t->host->in_sla && (color != COL_GREEN)) color = COL_BLUE;
 		}
 
+		/* Handle the "route" tag dependencies. */
+		if ((service == pingtest) && (color == COL_RED) && t->host->deprouterdown) {
+			color = COL_YELLOW;
+		}
+
 		/* Handle the "badconn" stuff for ping checks */
 		if ((service == pingtest) && (color == COL_RED) && (t->host->downcount < t->host->badconn[2])) {
 			if      (t->host->downcount >= t->host->badconn[1]) color = COL_YELLOW;
@@ -653,18 +710,39 @@ void send_results(service_t *service)
 
 			  case COL_RED:
 			  case COL_YELLOW:
-				  strcat(msgline, "not OK ");
-				  strcat(msgline, (t->reverse ? "(up)" : "(down)"));
-				  strcat(msgline, "\n");
+				  if ((service == pingtest) && t->host->deprouterdown) {
+					strcat(msgline, "not OK.\n");
+					strcat(msgline, "The gateway ");
+					strcat(msgline, ((testedhost_t *)t->host->deprouterdown)->hostname);
+					strcat(msgline, " (IP:");
+					strcat(msgline, ((testedhost_t *)t->host->deprouterdown)->ip);
+					strcat(msgline, ") ");
+					strcat(msgline, "is not reachable, causing this host to be unreachable.");
+					strcat(msgline, "\n");
+				  }
+				  else {
+				  	strcat(msgline, "not OK ");
+				  	strcat(msgline, (t->reverse ? "(up)" : "(down)"));
+				  	strcat(msgline, "\n");
+				  }
 				  break;
 
 			  case COL_CLEAR:
 				  strcat(msgline, "OK\n");
 				  if (service == pingtest) {
-					  if (t->host->noping) {
+					  if (t->host->deprouterdown) {
+						  strcat(msgline, "The gateway ");
+						  strcat(msgline, ((testedhost_t *)t->host->deprouterdown)->hostname);
+						  strcat(msgline, " (IP:");
+						  strcat(msgline, ((testedhost_t *)t->host->deprouterdown)->ip);
+						  strcat(msgline, ") ");
+						  strcat(msgline, "is not reachable, causing this host to be unreachable.");
+						  strcat(msgline, "\n");
+					  }
+					  else if (t->host->noping) {
 						  strcat(msgline, "Ping check disabled (noping)\n");
 					  }
-					  if (t->host->dialup) {
+					  else if (t->host->dialup) {
 						  strcat(msgline, "Dialup host\n");
 					  }
 					  /* "clear" due to badconn: no extra text */

@@ -69,6 +69,8 @@ typedef struct {
 	int badconn[3];		/* badconn:x:y:z flag */
 	int downcount;		/* number of successive failed conn tests */
 	time_t downstart;	/* time() of first conn failure */
+	char *routerdeps;       /* Hosts from the "router:" tag */
+	void *deprouterdown;    /* Set if dependant router is down */
 
 	/* The following is for the HTTP tests */
 	void *firsthttp;	/* First HTTP testitem in testitem list */
