@@ -165,36 +165,6 @@ As with the LARRD column, the "info" column name can be specified in
 the "--info=COLUMNNAME" option.
 
 
-Bugs
-----
-
-bbgen is very new. It is currently in use on two systems I run:
-One very large installation, and one very small installation.
-It works for me, and I think I have taken care of all the 
-little details, but do not be surprised if it crashes when you
-try to run it.
-
-bbgen now (from version 1.4) checks that all needed environment
-variables have been defined, and will complain if any are 
-missing. You must have loaded all of the BB environment:
-
-    BBHOME=/path/to/bb/home
-    export BBHOME
-    . $BBHOME/etc/bbdef.sh
-
-You should also check that you have write access to the 
-BBTMP and BBWEB directories.
-
-If it still fails, feel free to debug the problem and send me
-patches :-) Or if your C coding is a bit rusty, e-mail we and
-I'll see if I can help you track down the problem. I will 
-probably need a copy of the contents of your bb-hosts file,
-and the contents of the bbvar/logs/ directory:
-
-	tar cvf /tmp/bbgendata.tar $BBHOSTS $BBLOGS/
-	gzip /tmp/bbgendata.tar
-
-
 Planned improvements
 --------------------
 
@@ -204,5 +174,5 @@ have a feature you would like to see added to bbgen.
 
 
 Henrik Storner <henrik@storner.dk>
-Feb 17, 2003
+March 2nd, 2003
 
