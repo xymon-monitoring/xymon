@@ -50,10 +50,7 @@ extern char *histlogurl(char *hostname, char *service, time_t histtime);
 extern int within_sla(char *hostline);
 
 extern void combo_start(void);
-extern void combo_flush(void);
-extern void combo_add(char *buf);
 extern void combo_end(void);
-
 
 extern void init_status(int color);
 extern void addtostatus(char *p);
