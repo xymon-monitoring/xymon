@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: acklog.c,v 1.14 2005-02-20 12:29:35 henrik Exp $";
+static char rcsid[] = "$Id: acklog.c,v 1.15 2005-03-06 16:38:58 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -113,6 +113,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 					p++;
 				}
 			}
+			*p1 = '\0';
 
 			/* Hobbit uses \n in the ack message, for the "acked by" data. Cut it off. */
 			nldecode(ackmsg); p = strchr(ackmsg, '\n'); 
