@@ -1,22 +1,16 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother webpage generator tool.                                        */
+/* bbgen toolkit                                                              */
 /*                                                                            */
-/* This is a replacement for the "mkbb.sh" and "mkbb2.sh" scripts from the    */
-/* "Big Brother" monitoring tool from BB4 Technologies.                       */
+/* This is a standalone tool for generating data for the LARRD overview page. */
 /*                                                                            */
-/* Primary reason for doing this: Shell scripts perform badly, and with a     */
-/* medium-sized installation (~150 hosts) it takes several minutes to         */
-/* generate the webpages. This is a problem, when the pages are used for      */
-/* 24x7 monitoring of the system status.                                      */
-/*                                                                            */
-/* Copyright (C) 2002 Henrik Storner <henrik@storner.dk>                      */
+/* Copyright (C) 2002-2004 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.46 2004-12-12 18:06:58 hstoerne Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.47 2004-12-12 22:40:06 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -29,15 +23,10 @@ static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.46 2004-12-12 18:06:58 hstoer
 #include <unistd.h>
 #include <utime.h>
 
-#include "bbgen.h"
-#include "util.h"
-#include "larrdgen.h"
-#include "savelog.h"
+#include "libbbgen.h"
 
-char    *larrdcol = "larrd";
-int 	enable_larrdgen = 0;
-int 	larrd_update_interval = 300; /* Update LARRD pages every N seconds */
 int     log_nohost_rrds = 0;
+namelist_t *hosthead = NULL;
 
 typedef struct graph_t {
 	larrdgraph_t *gdef;
@@ -120,18 +109,19 @@ static char *larrd_readdir(void)
 }
 
 
-static char *rrdlink_text(host_t *host, graph_t *rrd, int larrd043, int wantmeta)
+static char *rrdlink_text(namelist_t *host, graph_t *rrd, int larrd043, int wantmeta)
 {
 	static char *rrdlink = NULL;
 	static int rrdlinksize = 0;
 	char *graphdef, *p;
 
-	dprintf("rrdlink_text: host %s, rrd %s, larrd043=%d\n", host->hostname, rrd->gdef->larrdrrdname, larrd043);
+
+	dprintf("rrdlink_text: host %s, rrd %s, larrd043=%d\n", host->bbhostname, rrd->gdef->larrdrrdname, larrd043);
 
 	/* If no larrdgraphs definition, include all with default links */
 	if (host->larrdgraphs == NULL) {
 		dprintf("rrdlink_text: Standard URL (no larrdgraphs)\n");
-		return larrd_graph_data(host->hostname, host->displayname, NULL, rrd->gdef, rrd->count, larrd043, wantmeta);
+		return larrd_graph_data(host->bbhostname, host->displayname, NULL, rrd->gdef, rrd->count, larrd043, wantmeta);
 	}
 
 	/* Find this rrd definition in the larrdgraphs */
@@ -146,7 +136,7 @@ static char *rrdlink_text(host_t *host, graph_t *rrd, int larrd043, int wantmeta
 			dprintf("rrdlink_text: Default URL included\n");
 
 			/* Yes, return default link for this RRD */
-			return larrd_graph_data(host->hostname, host->displayname, NULL, rrd->gdef, rrd->count, larrd043, wantmeta);
+			return larrd_graph_data(host->bbhostname, host->displayname, NULL, rrd->gdef, rrd->count, larrd043, wantmeta);
 		}
 		else {
 			dprintf("rrdlink_text: Default URL NOT included\n");
@@ -197,7 +187,7 @@ static char *rrdlink_text(host_t *host, graph_t *rrd, int larrd043, int wantmeta
 			myrrd->gdef->maxgraphs = 999;
 			myrrd->count = 1;
 			myrrd->next = NULL;
-			partlink = larrd_graph_data(host->hostname, host->displayname, NULL, myrrd->gdef, myrrd->count, larrd043, wantmeta);
+			partlink = larrd_graph_data(host->bbhostname, host->displayname, NULL, myrrd->gdef, myrrd->count, larrd043, wantmeta);
 			if ((strlen(rrdlink) + strlen(partlink) + 1) >= rrdlinksize) {
 				rrdlinksize += strlen(partlink) + 4096;
 				rrdlink = (char *)realloc(rrdlink, rrdlinksize);
@@ -218,7 +208,7 @@ static char *rrdlink_text(host_t *host, graph_t *rrd, int larrd043, int wantmeta
 	}
 	else {
 		/* It is included with the default graph */
-		return larrd_graph_data(host->hostname, host->displayname, NULL, rrd->gdef, rrd->count, larrd043, wantmeta);
+		return larrd_graph_data(host->bbhostname, host->displayname, NULL, rrd->gdef, rrd->count, larrd043, wantmeta);
 	}
 
 	return "";
@@ -228,7 +218,7 @@ static char *rrdlink_text(host_t *host, graph_t *rrd, int larrd043, int wantmeta
 int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend)
 {
 	char *fn;
-	hostlist_t *hostwalk;
+	namelist_t *hostwalk;
 	graph_t *rwalk;
 	char *allrrdlinks, *allrrdlinksend;
 	unsigned int allrrdlinksize;
@@ -237,12 +227,6 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 
 	dprintf("generate_larrd(rrddirname=%s, larrcolumn=%s, larrd043=%d\n",
 		 rrddirname, larrdcolumn, larrd043);
-
-	if (!run_columngen("larrd", larrd_update_interval, enable_larrdgen)) {
-		dprintf("Dropping larrd updates, larrd_update_interval=%d, enable_larrdgen=%d\n",
-			larrd_update_interval, enable_larrdgen);
-		return 1;
-	}
 
 	allrrdlinksize = 16384;
 	allrrdlinks = (char *) malloc(allrrdlinksize);
@@ -277,9 +261,9 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 			/* Is this a known host? */
 			hostwalk = hosthead; found = hostfound = 0;
 			while (hostwalk && (!found)) {
-				if (strncmp(hostwalk->hostentry->hostname, fn, strlen(hostwalk->hostentry->hostname)) == 0) {
+				if (strncmp(hostwalk->bbhostname, fn, strlen(hostwalk->bbhostname)) == 0) {
 
-					p = fn + strlen(hostwalk->hostentry->hostname);
+					p = fn + strlen(hostwalk->bbhostname);
 					hostfound = ( (*p == '.') || (*p == ',') || (*p == '/') );
 
 					/* First part of filename matches.
@@ -287,7 +271,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 					 * if not, then we may have hit a partial hostname 
 					 */
 
-					rrdname = fn + strlen(hostwalk->hostentry->hostname) + 1;
+					rrdname = fn + strlen(hostwalk->bbhostname) + 1;
 					r = find_larrd_graph(rrdname);
 					found = (r != NULL);
 				}
@@ -299,23 +283,23 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 
 			if (found) {
 				/* hostwalk now points to the host owning this RRD */
-				for (rwalk = (graph_t *)hostwalk->hostentry->rrdlist; (rwalk && (rwalk->gdef != r)); rwalk = rwalk->next) ;
+				for (rwalk = (graph_t *)hostwalk->data; (rwalk && (rwalk->gdef != r)); rwalk = rwalk->next) ;
 				if (rwalk == NULL) {
 					graph_t *newrrd = (graph_t *) malloc(sizeof(graph_t));
 
 					newrrd->gdef = r;
 					newrrd->count = 1;
-					newrrd->next = (graph_t *)hostwalk->hostentry->rrdlist;
-					hostwalk->hostentry->rrdlist = (void *)newrrd;
+					newrrd->next = (graph_t *)hostwalk->data;
+					hostwalk->data = (void *)newrrd;
 					rwalk = newrrd;
 					dprintf("larrd: New rrd for host:%s, rrd:%s\n",
-						hostwalk->hostentry->hostname, r->larrdrrdname);
+						hostwalk->bbhostname, r->larrdrrdname);
 				}
 				else {
 					rwalk->count++;
 
 					dprintf("larrd: Extra RRD for host %s, rrd %s   count:%d\n", 
-						hostwalk->hostentry->hostname, 
+						hostwalk->bbhostname, 
 						rwalk->gdef->larrdrrdname, rwalk->count);
 				}
 			}
@@ -345,12 +329,12 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 
 		graph = larrdgraphs;
 		while (graph->larrdrrdname) {
-			for (rwalk = (graph_t *)hostwalk->hostentry->rrdlist; (rwalk && (rwalk->gdef->larrdrrdname != graph->larrdrrdname)); rwalk = rwalk->next) ;
+			for (rwalk = (graph_t *)hostwalk->data; (rwalk && (rwalk->gdef->larrdrrdname != graph->larrdrrdname)); rwalk = rwalk->next) ;
 			if (rwalk) {
 				int buflen;
 
 				buflen = (allrrdlinksend - allrrdlinks);
-				rrdlink = rrdlink_text(hostwalk->hostentry, rwalk, larrd043, 0);
+				rrdlink = rrdlink_text(hostwalk, rwalk, larrd043, 0);
 				if ((buflen + strlen(rrdlink)) >= allrrdlinksize) {
 					allrrdlinksize += (strlen(rrdlink) + 4096);
 					allrrdlinks = (char *) realloc(allrrdlinks, allrrdlinksize);
@@ -360,7 +344,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 
 				if (bbgend) {
 					buflen = (allrrdlinksend - allrrdlinks);
-					rrdlink = rrdlink_text(hostwalk->hostentry, rwalk, larrd043, 1);
+					rrdlink = rrdlink_text(hostwalk, rwalk, larrd043, 1);
 					if ((buflen + strlen(rrdlink)) >= allmetasize) {
 						allmetasize += (strlen(rrdlink) + 4096);
 						allmeta = (char *) realloc(allmeta, allmetasize);
@@ -373,10 +357,10 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 			graph++;
 		}
 
-		if (strlen(allrrdlinks) > 0) do_savelog(hostwalk->hostentry->hostname, hostwalk->hostentry->ip, 
-							larrdcol, allrrdlinks, bbgend);
+		if (strlen(allrrdlinks) > 0) do_savelog(hostwalk->bbhostname, hostwalk->ip, 
+							larrdcolumn, allrrdlinks, bbgend);
 
-		if (strlen(allmeta) > 0) do_savemeta(hostwalk->hostentry->hostname, larrdcol, "Graphs", allmeta);
+		if (strlen(allmeta) > 0) do_savemeta(hostwalk->bbhostname, larrdcolumn, "Graphs", allmeta);
 	}
 
 	if (bbgend) {
@@ -387,6 +371,60 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 	larrd_closedir();
 	free(allrrdlinks);
 	free(allmeta);
+	return 0;
+}
+
+int main(int argc, char *argv[])
+{
+	int argi;
+	char *bbhostsfn = NULL;
+	char *rrddir = NULL;
+	char *larrdcol = NULL;
+	int usebbgend = 0;
+
+	getenv_default("USEBBGEND", "FALSE", NULL);
+	usebbgend = (strcmp(getenv("USEBBGEND"), "TRUE") == 0);
+
+	for (argi=1; (argi < argc); argi++) {
+		if (strcmp(argv[argi], "--debug") == 0) {
+			debug = dontsendmessages = 1;
+		}
+		else if (argnmatch(argv[argi], "--larrdgraphs=")) {
+			char *p = strchr(argv[argi], '=');
+			larrdgraphs_default = strdup(p+1);
+		}
+		else if (argnmatch(argv[argi], "--bbhosts=")) {
+			char *p = strchr(argv[argi], '=');
+			bbhostsfn = strdup(p+1);
+		}
+		else if (argnmatch(argv[argi], "--rrddir=")) {
+			char *p = strchr(argv[argi], '=');
+			bbhostsfn = strdup(p+1);
+		}
+		else if (argnmatch(argv[argi], "--column=")) {
+			char *p = strchr(argv[argi], '=');
+			larrdcol = strdup(p+1);
+		}
+		else if (strcmp(argv[argi], "--bbgend") == 0) {
+			usebbgend = 1;
+		}
+		else if (strcmp(argv[argi], "--no-update") == 0) {
+			dontsendmessages = 1;
+		}
+	}
+
+	if (bbhostsfn == NULL) bbhostsfn = getenv("BBHOSTS");
+	if (rrddir == NULL) {
+		char dname[PATH_MAX];
+
+		sprintf(dname, "%s/rrd", getenv("BBVAR"));
+		rrddir = strdup(dname);
+	}
+	if (larrdcol == NULL) larrdcol = "trends";
+
+	hosthead = load_hostnames(bbhostsfn, get_fqdn());
+	generate_larrd(rrddir, larrdcol, 1, usebbgend);
+
 	return 0;
 }
 
