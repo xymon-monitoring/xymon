@@ -19,7 +19,7 @@
 #ifndef __PAGEGEN_H_
 #define __PAGEGEN_H_
 
-extern void do_bb_page(page_t *page, char *filename);
+extern void do_bb_page(page_t *page, dispsummary_t *sums, char *filename);
 extern void do_page(page_t *page, char *filename, char *upperpagename);
 extern void do_subpage(page_t *page, char *filename, char *upperpagename);
 extern void do_bb2_page(char *filename, int summarytype);

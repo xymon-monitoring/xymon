@@ -40,13 +40,14 @@ state_t		*statehead = NULL;			/* Head of list of all state entries */
 col_t   	*colhead = NULL;			/* Head of column-name list */
 col_t		null_column = { "", NULL };		/* Null column */
 
-summary_t	*sumhead = NULL;
-
+summary_t	*sumhead = NULL;			/* Summaries we send out */
+dispsummary_t	*dispsums = NULL;			/* Summaries we received and display */
 
 int main(int argc, char *argv[])
 {
-	char	pagedir[256];
-	page_t *p, *q;
+	char		pagedir[256];
+	page_t 		*p, *q;
+	dispsummary_t	*s;
 
 	if (argc > 1) {
 		strcpy(pagedir, argv[1]);
@@ -72,6 +73,17 @@ int main(int argc, char *argv[])
 	/* Remove old acknowledgements */
 	delete_old_acks();
 
+	/* Send summary notices */
+	send_summaries(sumhead);
+
+	/* Load displayed summaries */
+	dispsums = load_summaries();
+
+	/* Recalc topmost page (background color for bb.html) */
+	for (s=dispsums; (s); s = s->next) {
+		if (s->color > pagehead->color) pagehead->color = s->color;
+	}
+
 	/* Generate pages */
 	if (chdir(pagedir) != 0) {
 		printf("Cannot change to webpage directory %s\n", pagedir);
@@ -79,7 +91,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* The main page - bb.html and pages/subpages thereunder */
-	do_bb_page(pagehead, "bb.html");
+	do_bb_page(pagehead, dispsums, "bb.html");
 
 	/* Do pages - contains links to subpages, groups, hosts */
 	for (p=pagehead->next; (p); p = p->next) {

@@ -197,7 +197,7 @@ void do_groups(group_t *head, FILE *output)
 	fprintf(output, "\n</CENTER>\n");
 }
 
-void do_bb_page(page_t *page, char *filename)
+void do_bb_page(page_t *page, dispsummary_t *sums, char *filename)
 {
 	FILE	*output;
 	page_t	*p;

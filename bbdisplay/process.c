@@ -23,9 +23,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <wait.h>
 
 #include "bbgen.h"
 #include "process.h"
+#include "util.h"
 
 void calc_hostcolors(hostlist_t *head)
 {
@@ -106,5 +108,82 @@ void delete_old_acks(void)
 		}
 	}
 	closedir(bbacks);
+}
+
+void send_summaries(summary_t *sumhead)
+{
+	summary_t *s;
+	time_t now = time(NULL);
+	pid_t childpid;
+	char *bbcmd;
+
+	bbcmd = getenv("BB");
+	if (!bbcmd) {
+		printf("BB not defined!");
+		return;
+	}
+
+	for (s = sumhead; (s); s = s->next) {
+		char *suburl;
+		int summarycolor = -1;
+		char summsg[500];
+
+		suburl = strstr(s->url, ".html");
+		if (suburl) {
+			suburl = strstr(s->url, getenv("BBWEB"));
+			if (suburl) suburl += strlen(getenv("BBWEB"));
+			if (suburl && (*suburl == '/')) suburl++;
+
+			if ( suburl && 
+			     (strcmp(suburl, "bb.html") != 0) &&
+			     (strcmp(suburl, "bb2.html") != 0) &&
+			     (strcmp(suburl, "index.html") != 0) ) {
+
+				/* Specific page  - "suburl" is now either */
+				/* "pagename.html" or "pagename/subpage.html" */
+				char *p, *pg, *subpg;
+				page_t *pg1, *pg2;
+
+				pg = subpg = NULL;
+				pg1 = pg2 = NULL;
+
+				pg = suburl; p = strchr(pg, '/');
+				if (p) {
+					*p = '\0';
+					subpg = (p+1);
+				}
+				else
+					subpg = NULL;
+
+				for (pg1 = pagehead; (pg1 && (strcmp(pg1->name, pg) != 0)); pg1 = pg1->next) ;
+				if (pg1 && subpg) {
+					for (pg2 = pg1->subpages; (pg2 && (strcmp(pg2->name, subpg) != 0)); pg2 = pg2->next) ;
+				}
+
+				if (pg2) summarycolor = pg2->color;
+				else if (pg1) summarycolor = pg1->color;
+				else summarycolor = pagehead->color;
+			}
+		}
+
+		if (summarycolor == -1) {
+			summarycolor = pagehead->color;
+		}
+
+		/* Send the summary message */
+		sprintf(summsg, "summary summary.%s %s %s %s",
+			s->name, colorname(summarycolor), s->url, ctime(&now));
+
+		childpid = fork();
+		if (childpid == -1) {
+			printf("Fork error\n");
+		}
+		else if (childpid == 0) {
+			execl(bbcmd, "bb: bbd summary", s->receiver, summsg, NULL);
+		}
+		else {
+			wait(NULL);
+		}
+	}
 }
 

@@ -190,6 +190,14 @@ typedef struct {
 	void	*next;
 } summary_t;
 
+typedef struct {
+	char	row[40];
+	char	column[40];
+	char	url[250];
+	int	color;
+	void	*next;
+} dispsummary_t;
+
 /* Format of records in the $BBHIST/allevents file */
 typedef struct {
 	char	hostname[60];
@@ -208,6 +216,7 @@ extern hostlist_t	*hosthead;
 extern state_t		*statehead;
 extern col_t		*colhead, null_column;
 extern summary_t	*sumhead;
+extern dispsummary_t	*dispsums;
 
 #endif
 

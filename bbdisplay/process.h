@@ -22,6 +22,7 @@
 extern void calc_hostcolors(hostlist_t *head);
 extern void calc_pagecolors(page_t *phead);
 extern void delete_old_acks(void);
+extern void send_summaries(summary_t *sumhead);
 
 #endif
 

@@ -325,6 +325,44 @@ summary_t *init_summary(char *name, char *receiver, char *url)
 	return newsum;
 }
 
+dispsummary_t *init_displaysummary(char *fn)
+{
+	FILE *fd;
+	char color[20];
+	dispsummary_t *newsum = NULL;
+
+	fd = fopen(fn, "r");
+	if (fd) {
+		newsum = malloc(sizeof(dispsummary_t));
+
+		fscanf(fd, "%s %s", color, newsum->url);
+		if (strncmp(color, "green", 5) == 0) {
+			newsum->color = COL_GREEN;
+		}
+		else if (strncmp(color, "yellow", 6) == 0) {
+			newsum->color = COL_YELLOW;
+		}
+		else if (strncmp(color, "red", 3) == 0) {
+			newsum->color = COL_RED;
+		}
+		else if (strncmp(color, "blue", 4) == 0) {
+			newsum->color = COL_BLUE;
+		}
+		else if (strncmp(color, "clear", 5) == 0) {
+			newsum->color = COL_CLEAR;
+		}
+		else if (strncmp(color, "purple", 6) == 0) {
+			newsum->color = COL_PURPLE;
+		}
+
+		sscanf(fn, "summary.%s.%s", newsum->row, newsum->column);
+		newsum->next = NULL;
+		fclose(fd);
+	}
+
+	return newsum;
+}
+
 void getnamelink(char *l, char **name, char **link)
 {
 	unsigned char *p;
@@ -588,3 +626,35 @@ state_t *load_state(void)
 
 	return topstate;
 }
+
+dispsummary_t *load_summaries(void)
+{
+	DIR		*bblogs;
+	struct dirent 	*d;
+	char		fn[256];
+	dispsummary_t	*newsum, *head;
+
+	head = NULL;
+
+	bblogs = opendir(getenv("BBLOGS"));
+	if (!bblogs) {
+		perror("No logs!");
+		exit(1);
+	}
+
+	while ((d = readdir(bblogs))) {
+		strcpy(fn, d->d_name);
+		if (strncmp(fn, "summary.", 8) == 0) {
+			newsum = init_displaysummary(fn);
+			if (newsum) {
+				newsum->next = head;
+				head = newsum;
+			}
+		}
+	}
+
+	closedir(bblogs);
+
+	return head;
+}
+

@@ -22,6 +22,7 @@
 extern link_t *load_all_links(void);
 extern page_t *load_bbhosts(void);
 extern state_t *load_state(void);
+extern dispsummary_t *load_summaries(void);
 
 #endif
 
