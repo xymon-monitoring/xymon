@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.11 2003-09-04 21:05:56 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.12 2003-09-25 20:38:11 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -90,13 +90,21 @@ static void loadtests(void)
 
 	while (fgets(l, sizeof(l), fd)) {
 		char *p, *comment;
+		char *inp, *outp;
 
-		/* Strip newline */
-		p = strchr(l, '\n'); if (p) *p = '\0';
+		/* Strip whitespace */
+		for (inp=outp=l; ((*inp >= ' ') && (*inp != '#')); inp++) {
+			if (isspace((int)*inp)) {
+			}
+			else {
+				*outp = *inp;
+				outp++;
+			}
+		}
+		*outp = '\0';
+		if (strlen(inp)) memmove(outp, inp, strlen(inp)+1);
 
-		/* Ignore empty lines and comment lines */
-		for (p=l; (*p && isspace((int)*p)); p++) ;
-		if (*p && (*p != '#')) {
+		if (strlen(l)) {
 			testspec_t *newtest = (testspec_t *) malloc(sizeof(testspec_t));
 
 			p = strchr(l, '=');
