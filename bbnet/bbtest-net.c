@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.146 2004-08-06 22:11:41 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.147 2004-08-07 10:45:24 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -287,9 +287,15 @@ service_t *add_service(char *name, int port, int namelen, int toolid)
 int getportnumber(char *svcname)
 {
 	struct servent *svcinfo;
+	int result = 0;
 
-	svcinfo = getservbyname(svcname, NULL);
-	return (svcinfo ? ntohs(svcinfo->s_port) : 0);
+	result = default_tcp_port(svcname);
+	if (result == 0) {
+		svcinfo = getservbyname(svcname, NULL);
+		if (svcinfo) result = ntohs(svcinfo->s_port);
+	}
+
+	return result;
 }
 
 void load_services(void)
