@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.11 2004-11-13 08:48:23 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.12 2004-11-14 14:02:29 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -343,70 +343,88 @@ void load_alertconfig(char *configfn, int defcolors)
 		/* Expand macros inside the line before parsing */
 		p = strtok(preprocess(l), " ");
 		while (p) {
-			if ((strncmp(p, "PAGE=", 5) == 0) || (strncmp(p, "PAGES=", 6) == 0)) {
+			if ((strncasecmp(p, "PAGE=", 5) == 0) || (strncasecmp(p, "PAGES=", 6) == 0)) {
 				char *val = strchr(p, '=')+1;
 				criteria_t *crit = setup_criteria(&currule, &currcp);
 				crit->pagespec = strdup(val);
 				if (*(crit->pagespec) == '%') crit->pagespecre = compileregex(crit->pagespec+1);
 			}
-			else if ((strncmp(p, "EXPAGE=", 7) == 0) || (strncmp(p, "EXPAGES=", 8) == 0)) {
+			else if ((strncasecmp(p, "EXPAGE=", 7) == 0) || (strncasecmp(p, "EXPAGES=", 8) == 0)) {
 				char *val = strchr(p, '=')+1;
 				criteria_t *crit = setup_criteria(&currule, &currcp);
 				crit->expagespec = strdup(val);
 				if (*(crit->expagespec) == '%') crit->expagespecre = compileregex(crit->expagespec+1);
 			}
-			else if ((strncmp(p, "HOST=", 5) == 0) || (strncmp(p, "HOSTS=", 6) == 0)) {
+			else if ((strncasecmp(p, "HOST=", 5) == 0) || (strncasecmp(p, "HOSTS=", 6) == 0)) {
 				char *val = strchr(p, '=')+1;
 				criteria_t *crit = setup_criteria(&currule, &currcp);
 				crit->hostspec = strdup(val);
 				if (*(crit->hostspec) == '%') crit->hostspecre = compileregex(crit->hostspec+1);
 			}
-			else if ((strncmp(p, "EXHOST=", 7) == 0) || (strncmp(p, "EXHOSTS=", 8) == 0)) {
+			else if ((strncasecmp(p, "EXHOST=", 7) == 0) || (strncasecmp(p, "EXHOSTS=", 8) == 0)) {
 				char *val = strchr(p, '=')+1;
 				criteria_t *crit = setup_criteria(&currule, &currcp);
 				crit->exhostspec = strdup(val);
 				if (*(crit->exhostspec) == '%') crit->exhostspecre = compileregex(crit->exhostspec+1);
 			}
-			else if ((strncmp(p, "SERVICE=", 8) == 0) || (strncmp(p, "SERVICES=", 9) == 0)) {
+			else if ((strncasecmp(p, "SERVICE=", 8) == 0) || (strncasecmp(p, "SERVICES=", 9) == 0)) {
 				char *val = strchr(p, '=')+1;
 				criteria_t *crit = setup_criteria(&currule, &currcp);
 				crit->svcspec = strdup(val);
 				if (*(crit->svcspec) == '%') crit->svcspecre = compileregex(crit->svcspec+1);
 			}
-			else if ((strncmp(p, "EXSERVICE=", 10) == 0) || (strncmp(p, "EXSERVICES=", 11) == 0)) {
+			else if ((strncasecmp(p, "EXSERVICE=", 10) == 0) || (strncasecmp(p, "EXSERVICES=", 11) == 0)) {
 				char *val = strchr(p, '=')+1;
 				criteria_t *crit = setup_criteria(&currule, &currcp);
 				crit->exsvcspec = strdup(val);
 				if (*(crit->exsvcspec) == '%') crit->exsvcspecre = compileregex(crit->exsvcspec+1);
 			}
-			else if ((strncmp(p, "COLOR=", 6) == 0) || (strncmp(p, "COLORS=", 7) == 0)) {
+			else if ((strncasecmp(p, "COLOR=", 6) == 0) || (strncasecmp(p, "COLORS=", 7) == 0)) {
 				criteria_t *crit = setup_criteria(&currule, &currcp);
 				char *c1, *c2;
-				
+				int cval, reverse = 0;
+
+				/* Put a value in crit->colors so we know there is an explicit color setting */
+				crit->colors = (1 << 30);
 				c1 = strchr(p, '=')+1;
+
+				/*
+				 * If the first colorspec is "!color", then apply the default colors and
+				 * subtract colors from that.
+				 */
+				if (*c1 == '!') crit->colors |= defaultcolors;
+
 				do {
 					c2 = strchr(c1, ',');
 					if (c2) *c2 = '\0';
-					crit->colors = (crit->colors | (1 << parse_color(c1)));
+
+					if (*c1 == '!') { reverse=1; c1++; }
+					cval = (1 << parse_color(c1));
+
+					if (reverse)
+						crit->colors &= (~cval);
+					else 
+						crit->colors |= cval;
+
 					if (c2) c1 = (c2+1); else c1 = NULL;
 				} while (c1);
 			}
-			else if ((strncmp(p, "TIME=", 5) == 0) || (strncmp(p, "TIMES=", 6) == 0)) {
+			else if ((strncasecmp(p, "TIME=", 5) == 0) || (strncasecmp(p, "TIMES=", 6) == 0)) {
 				char *val = strchr(p, '=')+1;
 				criteria_t *crit = setup_criteria(&currule, &currcp);
 				crit->timespec = strdup(val);
 			}
-			else if (strncmp(p, "DURATION", 8) == 0) {
+			else if (strncasecmp(p, "DURATION", 8) == 0) {
 				criteria_t *crit = setup_criteria(&currule, &currcp);
 				if (*(p+8) == '>') crit->minduration = 60*atoi(p+9);
 				else if (*(p+8) == '<') crit->maxduration = 60*atoi(p+9);
 			}
-			else if (strncmp(p, "RECOVERED", 9) == 0) {
+			else if (strncasecmp(p, "RECOVERED", 9) == 0) {
 				criteria_t *crit = setup_criteria(&currule, &currcp);
 				currule->criteria->sendrecovered = SR_WANTED;
 				crit->sendrecovered = SR_WANTED;
 			}
-			else if (currule && ((strncmp(p, "MAIL ", 5) == 0) || strchr(p, '@')) ) {
+			else if (currule && ((strncasecmp(p, "MAIL ", 5) == 0) || strchr(p, '@')) ) {
 				recip_t *newrcp = (recip_t *)malloc(sizeof(recip_t));
 				newrcp->method = M_MAIL;
 				newrcp->format = FRM_TEXT;
@@ -430,7 +448,7 @@ void load_alertconfig(char *configfn, int defcolors)
 					free(newrcp);
 				}
 			}
-			else if (currule && (strncmp(p, "SCRIPT ", 7) == 0)) {
+			else if (currule && (strncasecmp(p, "SCRIPT ", 7) == 0)) {
 				recip_t *newrcp = (recip_t *)malloc(sizeof(recip_t));
 				newrcp->method = M_SCRIPT;
 				newrcp->format = FRM_TEXT;
@@ -454,7 +472,7 @@ void load_alertconfig(char *configfn, int defcolors)
 					free(newrcp);
 				}
 			}
-			else if (currule && (strncmp(p, "BBSCRIPT ", 9) == 0)) {
+			else if (currule && (strncasecmp(p, "BBSCRIPT ", 9) == 0)) {
 				recip_t *newrcp = (recip_t *)malloc(sizeof(recip_t));
 				newrcp->method = M_BBSCRIPT;
 				newrcp->format = FRM_TEXT;
@@ -478,12 +496,12 @@ void load_alertconfig(char *configfn, int defcolors)
 					free(newrcp);
 				}
 			}
-			else if ((pstate == P_RECIP) && (strncmp(p, "FORMAT=", 7) == 0)) {
+			else if ((pstate == P_RECIP) && (strncasecmp(p, "FORMAT=", 7) == 0)) {
 				if      (strcmp(p+7, "TEXT") == 0) currcp->format = FRM_TEXT;
 				else if (strcmp(p+7, "SMS") == 0) currcp->format = FRM_SMS;
 				else if (strcmp(p+7, "PAGER") == 0) currcp->format = FRM_PAGER;
 			}
-			else if ((pstate == P_RECIP) && (strncmp(p, "REPEAT=", 7) == 0)) {
+			else if ((pstate == P_RECIP) && (strncasecmp(p, "REPEAT=", 7) == 0)) {
 				currcp->interval = 60*atoi(p+7);
 			}
 
@@ -689,12 +707,15 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit)
 	}
 
 	/* We now know that the state is not A_RECOVERED, so final check is to match against the colors. */
-	dprintf("Checking color setting\n");
 	if (crit->colors) {
-		return (((1 << alert->color) & crit->colors) != 0);
+		int result = (((1 << alert->color) & crit->colors) != 0);
+		dprintf("Checking explicit color setting %o against %o gives %d\n", crit->colors, alert->color, result);
+		return result;
 	}
 	else {
-		return (((1 << alert->color) & defaultcolors) != 0);
+		int result = (((1 << alert->color) & defaultcolors) != 0);
+		dprintf("Checking default color setting %o against %o gives %d\n", defaultcolors, alert->color, result);
+		return result;
 	}
 }
 
@@ -711,10 +732,12 @@ static recip_t *next_recipient(activealerts_t *alert, int *first)
 			while (rulewalk && !criteriamatch(alert, rulewalk->criteria)) rulewalk = rulewalk->next;
 			if (rulewalk) {
 				/* Point recipwalk at the list of possible candidates */
+				dprintf("Found a first matching rule\n");
 				recipwalk = rulewalk->recipients; 
 			}
 			else {
 				/* No matching rules */
+				dprintf("Found no first matching rule\n");
 				recipwalk = NULL;
 			}
 		}
@@ -731,10 +754,12 @@ static recip_t *next_recipient(activealerts_t *alert, int *first)
 
 				if (rulewalk) {
 					/* Point recipwalk at the list of possible candidates */
+					dprintf("Found a secondary matching rule\n");
 					recipwalk = rulewalk->recipients; 
 				}
 				else {
 					/* No matching rules */
+					dprintf("No more secondary matching rule\n");
 					recipwalk = NULL;
 				}
 			}
