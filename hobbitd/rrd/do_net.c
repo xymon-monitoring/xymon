@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbnet_rcsid[] = "$Id: do_net.c,v 1.5 2004-11-13 13:23:47 henrik Exp $";
+static char bbnet_rcsid[] = "$Id: do_net.c,v 1.6 2004-12-03 10:31:03 henrik Exp $";
 
 static char *bbnet_params[]       = { "rrdcreate", rrdfn, "DS:sec:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
@@ -19,7 +19,6 @@ int do_net_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 	if (strcmp(testname, "http") == 0) {
 		char *line1, *url = NULL, *eoln;
-		int n;
 
 		line1 = msg;
 		while ((line1 = strchr(line1, '\n')) != NULL) {
