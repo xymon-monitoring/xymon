@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.46 2004-08-02 13:20:49 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.47 2004-08-05 12:05:23 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -392,36 +392,53 @@ int generate_info(char *infocolumn)
 		alerts = find_alert(hostwalk->hostentry->hostname, 0, 0);
 		if (!dialup) {
 			if (alerts) {
+				int wantedstate = 0;  /* Start with the normal rules */
+				int firstinverse = 1;
+
 				addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>E-mail/SMS alerting:</th><td align=left>\n");
 				addtobuffer(&infobuf, &infobuflen, "<table width=\"100%%\" border=1>\n");
 				addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>Services</th><th align=left>Ex.Services</th><th align=left>Weekdays</th><th align=left>Time</th><th align=left>Recipients</th></tr>\n");
 				while (alerts) {
-					char *recips = malcop(alerts->items[6]);
+					char *recips;
 					char *onercpt;
 
-					addtobuffer(&infobuf, &infobuflen, "<tr>\n");
+					if (alerts->inverse == wantedstate) {
 
-					sprintf(l, "<td align=left>%s</td>\n", service_text(alerts->items[2]));
-					addtobuffer(&infobuf, &infobuflen, l);
-					sprintf(l, "<td align=left>%s</td>\n", service_text(alerts->items[3]));
-					addtobuffer(&infobuf, &infobuflen, l);
-					sprintf(l, "<td align=left>%s</td>\n", weekday_text(alerts->items[4]));
-					addtobuffer(&infobuf, &infobuflen, l);
-					sprintf(l, "<td align=left>%s</td>\n", time_text(alerts->items[5]));
-					addtobuffer(&infobuf, &infobuflen, l);
+						if ((wantedstate == 1) && firstinverse) {
+							firstinverse = 0;
+							addtobuffer(&infobuf, &infobuflen, "<tr><th colspan=5 align=center><i>Exceptions</i></th></tr>\n");
+						}
 
-					addtobuffer(&infobuf, &infobuflen, "<td align=left>");
-					onercpt = strtok(recips, " \t");
-					while (onercpt) {
-						addtobuffer(&infobuf, &infobuflen, onercpt);
-						onercpt = strtok(NULL, " \t");
-						if (onercpt) addtobuffer(&infobuf, &infobuflen, "<br>");
+						recips = malcop(alerts->items[6]);
+						addtobuffer(&infobuf, &infobuflen, "<tr>\n");
+
+						sprintf(l, "<td align=left>%s</td>\n", service_text(alerts->items[2]));
+						addtobuffer(&infobuf, &infobuflen, l);
+						sprintf(l, "<td align=left>%s</td>\n", service_text(alerts->items[3]));
+						addtobuffer(&infobuf, &infobuflen, l);
+						sprintf(l, "<td align=left>%s</td>\n", weekday_text(alerts->items[4]));
+						addtobuffer(&infobuf, &infobuflen, l);
+						sprintf(l, "<td align=left>%s</td>\n", time_text(alerts->items[5]));
+						addtobuffer(&infobuf, &infobuflen, l);
+
+						addtobuffer(&infobuf, &infobuflen, "<td align=left>");
+						onercpt = strtok(recips, " \t");
+						while (onercpt) {
+							addtobuffer(&infobuf, &infobuflen, onercpt);
+							onercpt = strtok(NULL, " \t");
+							if (onercpt) addtobuffer(&infobuf, &infobuflen, "<br>");
+						}
+						addtobuffer(&infobuf, &infobuflen, "</td>\n");
+
+						addtobuffer(&infobuf, &infobuflen, "</tr>\n");
 					}
-					addtobuffer(&infobuf, &infobuflen, "</td>\n");
-
-					addtobuffer(&infobuf, &infobuflen, "</tr>\n");
 
 					alerts = find_alert(hostwalk->hostentry->hostname, 0, 1);
+					if ((wantedstate == 0) && (alerts == NULL)) {
+						/* No more normal rules - see if any inverted rules */
+						wantedstate = 1;
+						alerts = find_alert(hostwalk->hostentry->hostname, 0, 0);
+					}
 				}
 				addtobuffer(&infobuf, &infobuflen, "</table>\n");
 
