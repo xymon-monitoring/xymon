@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.9 2005-02-15 21:19:13 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.10 2005-02-17 21:54:34 henrik Exp $";
 
 static char *disk_params[] = { "rrdcreate", rrdfn, "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", 
 				rra1, rra2, rra3, rra4, NULL };
@@ -17,11 +17,12 @@ static char *disk_params[] = { "rrdcreate", rrdfn, "DS:pct:GAUGE:600:0:100", "DS
 
 int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
-	enum { DT_IRIX, DT_AS400, DT_NT, DT_UNIX } dsystype;
+	enum { DT_IRIX, DT_AS400, DT_NT, DT_UNIX, DT_NETAPP } dsystype;
 	char *eoln, *curline;
 
 	if (strstr(msg, " xfs ") || strstr(msg, " efs ") || strstr(msg, " cxfs ")) dsystype = DT_IRIX;
 	else if (strstr(msg, "DASD")) dsystype = DT_AS400;
+	else if (strstr(msg, "NetAPP")) dsystype = DT_NETAPP;
 	else if (strstr(msg, "Filesystem")) dsystype = DT_NT;
 	else dsystype = DT_UNIX;
 
@@ -32,15 +33,14 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		int i;
 		char *diskname = NULL;
 		int pused = -1;
-		unsigned long aused = 0;
+		unsigned long long aused = 0;
 
 		curline = eoln+1; eoln = strchr(curline, '\n'); if (eoln) *eoln = '\0';
 
 		if (*curline == '&') continue;	/* red/yellow filesystems show up twice */
 		if ((strchr(curline, '/') == NULL) && (dsystype != DT_AS400)) continue;
 		if ((dsystype == DT_AS400) && (strstr(curline, "DASD") == NULL)) continue;
-		if (strstr(curline, "bloater")) continue;
-		if (strstr(curline, " red ") || strstr(curline, " yellow ")) continue;
+		if ((dsystype != DT_NETAPP) && (strstr(curline, " red ") || strstr(curline, " yellow "))) continue;
 
 		for (i=0; (i<20); i++) columns[i] = "";
 		fsline = xstrdup(curline); i = 0; p = strtok(fsline, " ");
@@ -81,6 +81,17 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			pused = atoi(columns[4]);
 			aused = atoi(columns[2]);
 			break;
+		  case DT_NETAPP:
+			diskname = xstrdup(columns[1]);
+			p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
+			pused = atoi(columns[5]);
+			p = columns[3] + strspn(columns[3], "0123456789");
+			aused = atoll(columns[3]);
+			/* Convert to KB if there's a modifier after the numbers */
+			if (*p == 'M') aused *= 1024;
+			else if (*p == 'G') aused *= (1024*1024);
+			else if (*p == 'T') aused *= (1024*1024*1024);
+			break;
 		}
 
 		if (diskname && (pused != -1)) {
@@ -90,7 +101,7 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			}
 
 			sprintf(rrdfn, "disk%s.rrd", diskname);
-			sprintf(rrdvalues, "%d:%d:%lu", (int)tstamp, pused, aused);
+			sprintf(rrdvalues, "%d:%d:%llu", (int)tstamp, pused, aused);
 			create_and_update_rrd(hostname, rrdfn, disk_params, update_params);
 		}
 		if (diskname) { xfree(diskname); diskname = NULL; }
