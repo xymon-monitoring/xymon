@@ -1,3 +1,9 @@
+hobbit (4.0rc6-5) unstable; urgency=low
+
+  * Build for RC6
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Mon, 21 Mar 2005 17:44:00 +0100
+
 hobbit (4.0-4) unstable; urgency=low
 
   * Changes to default web templates to allow easy customization.
