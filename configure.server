@@ -182,13 +182,14 @@ else
 	echo ""
 
 	echo "bbgen can use the OpenSSL library to test SSL-enabled services"
-	echo "like POP3S, IMAPS, NNTPS and SMTPS. If you have the OpenSSL"
+	echo "like POP3S, IMAPS, NNTPS and TELNETS. If you have the OpenSSL"
 	echo "library installed, I recommend that you enable this."
 	echo ""
 	echo "Do you want to be able to test SSL-enabled services (y) ?"
 	read ENABLESSL
 	if test "$ENABLESSL" = "" -o "$ENABLESSL" = "y"
 	then
+		echo "NB: You must define services in BBNETSVCS (BBHOME/etc/bbdef.sh) also."
 		SSLDEF="-DBBGEN_SSL"
 	else
 		SSLDEF=""
@@ -204,7 +205,15 @@ else
 	read ENABLELDAP
 	if test "$ENABLELDAP" = "" -o "$ENABLELDAP" = "y"
 	then
-		LDAPDEF="-DBBGEN_LDAP"
+		echo "Enable experimental support for LDAP/SSL (LDAPv3 servers only) (y) ?"
+		read ENABLELDAPSSL
+		if test "$ENABLELDAPSSL" = "" -o "$ENABLELDAPSSL" = "y"
+		then
+			LDAPDEF="-DBBGEN_LDAP -DBBGEN_LDAP_USESTARTTLS"
+		else
+			LDAPDEF="-DBBGEN_LDAP"
+		fi
+
 		LDAPLIBS="-lldap"
 	else
 		LDAPDEF=""
