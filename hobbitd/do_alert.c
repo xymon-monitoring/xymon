@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.48 2005-02-26 17:00:56 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.49 2005-02-27 07:53:00 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -99,7 +99,7 @@ typedef struct criteria_t {
 	int colors;
 	char *timespec;
 	int minduration, maxduration;	/* In seconds */
-	int sendrecovered, sendnotice;
+	enum recovermsg_t sendrecovered, sendnotice;
 } criteria_t;
 
 /* This defines a recipient. There may be some criteria, and then how we send alerts to him */
@@ -500,16 +500,28 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 
 				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
 				crit = setup_criteria(&currule, &currcp);
-				currule->criteria->sendrecovered = SR_WANTED;
 				crit->sendrecovered = SR_WANTED;
+			}
+			else if (strncasecmp(p, "NORECOVERED", 11) == 0) {
+				criteria_t *crit;
+
+				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
+				crit = setup_criteria(&currule, &currcp);
+				crit->sendrecovered = SR_NOTWANTED;
 			}
 			else if (strncasecmp(p, "NOTICE", 6) == 0) {
 				criteria_t *crit;
 
 				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
 				crit = setup_criteria(&currule, &currcp);
-				currule->criteria->sendnotice = SR_WANTED;
 				crit->sendnotice = SR_WANTED;
+			}
+			else if (strncasecmp(p, "NONOTICE", 8) == 0) {
+				criteria_t *crit;
+
+				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
+				crit = setup_criteria(&currule, &currcp);
+				crit->sendnotice = SR_NOTWANTED;
 			}
 			else if ((pstate == P_RECIP) && (strncasecmp(p, "FORMAT=", 7) == 0)) {
 				if      (strcasecmp(p+7, "TEXT") == 0) currcp->format = FRM_TEXT;
@@ -684,10 +696,12 @@ static void dump_criteria(criteria_t *crit, int isrecip)
 	if (crit->maxduration) printf("DURATION<%d ", (crit->maxduration / 60));
 	if (isrecip) {
 		switch (crit->sendrecovered) {
+		  case SR_UNKNOWN: break;
 		  case SR_WANTED: printf("RECOVERED "); break;
 		  case SR_NOTWANTED: printf("NORECOVERED "); break;
 		}
 		switch (crit->sendnotice) {
+		  case SR_UNKNOWN: break;
 		  case SR_WANTED: printf("NOTICE "); break;
 		  case SR_NOTWANTED: printf("NONOTICE "); break;
 		}
@@ -834,7 +848,7 @@ static int timematch(char *tspec)
 	return result;
 }
 
-static int criteriamatch(activealerts_t *alert, criteria_t *crit)
+static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *rulecrit)
 {
 	/*
 	 * See if the "crit" matches the "alert".
@@ -844,89 +858,97 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit)
 	time_t duration;
 	int result;
 
-	if (crit == NULL) return 1;	/* Only happens for recipient-list criteria */
-
-	dprintf("criteriamatch %s:%s %s:%s:%s\n", alert->hostname->name, alert->testname->name, 
-		textornull(crit->hostspec), textornull(crit->pagespec), textornull(crit->svcspec));
 	traceprintf("Matching host:service:page '%s:%s:%s' against rule line %d\n",
-			alert->hostname->name, alert->testname->name, 
-			alert->location->name, crit->cfid);
+			alert->hostname->name, alert->testname->name, alert->location->name, (crit ? crit->cfid : -1));
 
-	if (alert->state != A_NOTIFY) {
-		duration = (time(NULL) - alert->eventstart);
-		if (crit->minduration && (duration < crit->minduration)) { 
-			dprintf("failed minduration %d<%d\n", duration, crit->minduration); 
-			traceprintf("Failed (min. duration)\n");
-			if (!printmode) return 0; 
-		}
-
-		if (crit->maxduration && (duration > crit->maxduration)) { 
-			dprintf("failed maxduration\n"); 
-			traceprintf("Failed (max. duration)\n");
-			if (!printmode) return 0; 
-		}
-	}
-
-	if (crit->pagespec && !namematch(alert->location->name, crit->pagespec, crit->pagespecre)) { 
-		dprintf("failed pagespec\n"); 
+	if (crit && crit->pagespec && !namematch(alert->location->name, crit->pagespec, crit->pagespecre)) { 
 		traceprintf("Failed (pagename not in include list)\n");
 		return 0; 
 	}
-	if (crit->expagespec && namematch(alert->location->name, crit->expagespec, crit->expagespecre)) { 
-		dprintf("matched expagespec, so drop it\n"); 
+	if (crit && crit->expagespec && namematch(alert->location->name, crit->expagespec, crit->expagespecre)) { 
 		traceprintf("Failed (pagename excluded)\n");
 		return 0; 
 	}
 
-	if (crit->hostspec && !namematch(alert->hostname->name, crit->hostspec, crit->hostspecre)) { 
-		dprintf("failed hostspec\n"); 
+	if (crit && crit->hostspec && !namematch(alert->hostname->name, crit->hostspec, crit->hostspecre)) { 
 		traceprintf("Failed (hostname not in include list)\n");
 		return 0; 
 	}
-	if (crit->exhostspec && namematch(alert->hostname->name, crit->exhostspec, crit->exhostspecre)) { 
-		dprintf("matched exhostspec, so drop it\n"); 
+	if (crit && crit->exhostspec && namematch(alert->hostname->name, crit->exhostspec, crit->exhostspecre)) { 
 		traceprintf("Failed (hostname excluded)\n");
 		return 0; 
 	}
 
-	if (crit->svcspec && !namematch(alert->testname->name, crit->svcspec, crit->svcspecre))  { 
-		dprintf("failed svcspec\n"); 
+	if (crit && crit->svcspec && !namematch(alert->testname->name, crit->svcspec, crit->svcspecre))  { 
 		traceprintf("Failed (service not in include list)\n");
 		return 0; 
 	}
-	if (crit->exsvcspec && namematch(alert->testname->name, crit->exsvcspec, crit->exsvcspecre))  { 
-		dprintf("matched exsvcspec, so drop it\n"); 
+	if (crit && crit->exsvcspec && namematch(alert->testname->name, crit->exsvcspec, crit->exsvcspecre))  { 
 		traceprintf("Failed (service excluded)\n");
 		return 0; 
 	}
 
 	if (alert->state == A_NOTIFY) {
-		dprintf("Checking for NOTICE setting %d\n", crit->sendnotice);
-		return (crit->sendnotice == SR_WANTED);
+		/*
+		 * Dont do the check until we are checking individual recipients (rulecrit is set).
+		 * You dont need to have NOTICE on the top-level rule, it's enough if a recipient
+		 * has it set. However, we do want to allow there to be a default defined in the
+		 * rule; but it doesn't take effect until we start checking the recipients.
+		 */
+		if (rulecrit) {
+			int n = (crit ? crit->sendnotice : -1);
+			traceprintf("Checking NOTICE setting %d (rule:%d)\n", n, rulecrit->sendnotice);
+			if (crit && (crit->sendnotice == SR_NOTWANTED)) return 0;	/* Explicit NONOTICE */
+			else if (crit && (crit->sendnotice == SR_WANTED)) return 1;	/* Explicit NOTICE */
+			else return (rulecrit->sendnotice == SR_WANTED);		/* Not set, but rule has NOTICE */
+		}
+		else {
+			return 1;
+		}
 	}
 
-	if (crit->timespec && !timematch(crit->timespec)) { 
-		dprintf("failed timespec\n"); 
+	duration = (time(NULL) - alert->eventstart);
+	if (crit && crit->minduration && (duration < crit->minduration)) { 
+		traceprintf("Failed (min. duration %d<%d)\n", duration, crit->minduration);
+		if (!printmode) return 0; 
+	}
+
+	if (crit && crit->maxduration && (duration > crit->maxduration)) { 
+		traceprintf("Failed (max. duration %d>%d)\n", duration, crit->maxduration);
+		if (!printmode) return 0; 
+	}
+
+	if (crit && crit->timespec && !timematch(crit->timespec)) { 
 		traceprintf("Failed (time criteria)\n");
 		if (!printmode) return 0; 
 	}
 
 	if (alert->state == A_RECOVERED) {
-		dprintf("Checking for recovered setting %d\n", crit->sendrecovered);
-		if (crit->sendrecovered) {
-			return (crit->sendrecovered == SR_WANTED);
+		/*
+		 * Dont do the check until we are checking individual recipients (rulecrit is set).
+		 * You dont need to have RECOVERED on the top-level rule, it's enough if a recipient
+		 * has it set. However, we do want to allow there to be a default defined in the
+		 * rule; but it doesn't take effect until we start checking the recipients.
+		 */
+		if (rulecrit) {
+			int n = (crit ? crit->sendrecovered : -1);
+			traceprintf("Checking recovered setting %d (rule:%d)\n", n, rulecrit->sendrecovered);
+			if (crit && (crit->sendrecovered == SR_NOTWANTED)) return 0;	/* Explicit NORECOVERED */
+			else if (crit && (crit->sendrecovered == SR_WANTED)) return 1;	/* Explicit RECOVERED */
+			else return (rulecrit->sendrecovered == SR_WANTED);	/* Not set, but rule has RECOVERED */
+		}
+		else {
+			return 1;
 		}
 	}
 
 	/* We now know that the state is not A_RECOVERED, so final check is to match against the colors. */
-	if (crit->colors) {
+	if (crit && crit->colors) {
 		result = (((1 << alert->color) & crit->colors) != 0);
-		dprintf("Checking explicit color setting %o against %o gives %d\n", crit->colors, alert->color, result);
 		if (printmode) return 1;
 	}
 	else {
 		result = (((1 << alert->color) & defaultcolors) != 0);
-		dprintf("Checking default color setting %o against %o gives %d\n", defaultcolors, alert->color, result);
 		if (printmode) return 1;
 	}
 
@@ -948,7 +970,7 @@ static recip_t *next_recipient(activealerts_t *alert, int *first)
 			/* Start at beginning of rules-list and find the first matching rule. */
 			*first = 0;
 			rulewalk = rulehead;
-			while (rulewalk && !criteriamatch(alert, rulewalk->criteria)) rulewalk = rulewalk->next;
+			while (rulewalk && !criteriamatch(alert, rulewalk->criteria, NULL)) rulewalk = rulewalk->next;
 			if (rulewalk) {
 				/* Point recipwalk at the list of possible candidates */
 				dprintf("Found a first matching rule\n");
@@ -969,7 +991,7 @@ static recip_t *next_recipient(activealerts_t *alert, int *first)
 				/* End of recipients in current rule. Go to the next matching rule */
 				do {
 					rulewalk = rulewalk->next;
-				} while (rulewalk && !criteriamatch(alert, rulewalk->criteria));
+				} while (rulewalk && !criteriamatch(alert, rulewalk->criteria, NULL));
 
 				if (rulewalk) {
 					/* Point recipwalk at the list of possible candidates */
@@ -983,7 +1005,7 @@ static recip_t *next_recipient(activealerts_t *alert, int *first)
 				}
 			}
 		}
-	} while (rulewalk && recipwalk && !criteriamatch(alert, recipwalk->criteria));
+	} while (rulewalk && recipwalk && !criteriamatch(alert, recipwalk->criteria, rulewalk->criteria));
 
 	stoprulefound = (recipwalk && recipwalk->stoprule);
 
@@ -1587,11 +1609,19 @@ void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
 		if (printrule->criteria && printrule->criteria->colors) colors = (colors & printrule->criteria->colors);
 		if (recip->criteria && recip->criteria->colors) colors = (colors & recip->criteria->colors);
 
-		if ( (printrule->criteria && printrule->criteria->sendrecovered) ||
-		     (recip->criteria && recip->criteria->sendrecovered) ) recovered = 1;
+		/*
+		 * Recoveries are sent if
+		 * - there are no recipient criteria, and the rule says yes;
+		 * - the recipient criteria does not have a RECOVERED setting, and the rule says yes;
+		 * - the recipient criteria says yes.
+		 */
+		if ( (!recip->criteria && printrule->criteria && (printrule->criteria->sendrecovered == SR_WANTED)) ||
+		     (recip->criteria && (printrule->criteria->sendrecovered == SR_WANTED) && (recip->criteria->sendrecovered == SR_UNKNOWN)) ||
+		     (recip->criteria && (recip->criteria->sendrecovered == SR_WANTED)) ) recovered = 1;
 
-		if ( (printrule->criteria && printrule->criteria->sendnotice) ||
-		     (recip->criteria && recip->criteria->sendnotice) ) notice = 1;
+		if ( (!recip->criteria && printrule->criteria && (printrule->criteria->sendnotice == SR_WANTED)) ||
+		     (recip->criteria && (printrule->criteria->sendnotice == SR_WANTED) && (recip->criteria->sendnotice == SR_UNKNOWN)) ||
+		     (recip->criteria && (recip->criteria->sendnotice == SR_WANTED)) ) notice = 1;
 
 		*codes = '\0';
 		if (recovered) strcat(codes, "R");
