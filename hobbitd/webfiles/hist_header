@@ -4,7 +4,7 @@
 <TITLE>&BBBACKGROUND : Hobbit - History @ &BBDATE</TITLE>
 
 <!-- Styles for the menu bar -->
-<link rel="stylesheet" href="&BBWEB/menu/menu.css">
+<link rel="stylesheet" href="&BBMENUSKIN/menu.css">
 </HEAD>
 
 <BODY BGCOLOR="&BBBACKGROUND" BACKGROUND="&BBSKIN/bkg-&BBBACKGROUND.gif" TEXT="#D8D8BF" LINK="#00FFAA" VLINK="#FFFF44">
