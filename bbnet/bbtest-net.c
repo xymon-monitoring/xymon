@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.81 2003-07-15 18:40:15 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.82 2003-07-16 11:33:15 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -669,7 +669,6 @@ void save_fping_status(void)
 
 	for (t=pingtest->items; (t); t = t->next) {
 		if (t->host->downcount) {
-			if (t->host->downcount == 1) t->host->downstart = time(NULL);
 			fprintf(statusfd, "%s %d %lu\n", t->host->hostname, t->host->downcount, t->host->downstart);
 			didany = 1;
 			t->host->repeattest = ((time(NULL) - t->host->downstart) < frequenttestlimit);
@@ -726,7 +725,6 @@ void save_test_status(service_t *test)
 
 	for (t=test->items; (t); t = t->next) {
 		if (t->downcount) {
-			if (t->downcount == 1) t->downstart = time(NULL);
 			fprintf(statusfd, "%s %d %lu\n", t->host->hostname, t->downcount, t->downstart);
 			didany = 1;
 			t->host->repeattest = ((time(NULL) - t->downstart) < frequenttestlimit);
@@ -848,7 +846,7 @@ void run_ntp_service(service_t *service)
 }
 
 
-int run_fping_service(service_t *service, int updatestatus)
+int run_fping_service(service_t *service)
 {
 	testitem_t	*t;
 	char		cmd[1024];
@@ -906,8 +904,6 @@ int run_fping_service(service_t *service, int updatestatus)
 	}
 	fclose(logfd);
 	if (!debug) unlink(logfn);
-
-	if (updatestatus) save_fping_status();
 
 	/* 
 	 * Handle the router dependency stuff. I.e. for all hosts
@@ -1052,10 +1048,18 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 	}
 
 	if (service == pingtest) {
-		if (countasdown) test->host->downcount++; else test->host->downcount = 0;
+		if (countasdown) {
+			test->host->downcount++; 
+			if (test->host->downcount == 1) test->host->downstart = time(NULL);
+		}
+		else test->host->downcount = 0;
 	}
 	else {
-		if (countasdown) test->downcount++; else test->downcount = 0;
+		if (countasdown) {
+			test->downcount++; 
+			if (test->downcount == 1) test->downstart = time(NULL);
+		}
+		else test->downcount = 0;
 	}
 	return color;
 }
@@ -1382,8 +1386,12 @@ int main(int argc, char *argv[])
 
 	/* Ping checks first */
 	if (pingtest && pingtest->items) {
-		run_fping_service(pingtest, (selectedcount == 0)); 
+		run_fping_service(pingtest); 
 		add_timestamp("PING test completed");
+		combo_start();
+		send_results(pingtest, failgoesclear);
+		if (selectedhosts == 0) save_fping_status();
+		combo_end();
 	}
 
 
@@ -1460,7 +1468,6 @@ int main(int argc, char *argv[])
 	combo_start();
 	for (s = svchead; (s); s = s->next) {
 		switch (s->toolid) {
-			case TOOL_FPING:
 			case TOOL_CONTEST:
 			case TOOL_NSLOOKUP:
 			case TOOL_DIG:
@@ -1468,6 +1475,7 @@ int main(int argc, char *argv[])
 				send_results(s, failgoesclear);
 				break;
 
+			case TOOL_FPING:
 			case TOOL_CURL:
 				break;
 		}
