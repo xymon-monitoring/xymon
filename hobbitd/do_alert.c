@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.52 2005-03-02 22:37:26 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.53 2005-03-03 21:19:01 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -1244,6 +1244,10 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 		if (alert->state == A_PAGING) {
 			repeat_t *rpt = NULL;
 
+			/*
+			 * This runs in a child-process context, so the record we
+			 * might create here is NOT used later on.
+			 */
 			rpt = find_repeatinfo(alert, recip, 1);
 			dprintf("  repeat %s at %d\n", rpt->recipid, rpt->nextalert);
 			if (rpt->nextalert > now) {
@@ -1485,7 +1489,11 @@ time_t next_alert(activealerts_t *alert)
 	stoprulefound = 0;
 	while (!stoprulefound && ((recip = next_recipient(alert, &first)) != NULL)) {
 		found = 1;
-		rpt = find_repeatinfo(alert, recip, 0);
+		/* 
+		 * This runs in the parent hobbitd_alert proces, so we must create
+		 * a repeat-record here - or all alerts will get repeated every minute.
+		 */
+		rpt = find_repeatinfo(alert, recip, 1);
 		if (rpt) {
 			if (rpt->nextalert <= now) rpt->nextalert = (now + recip->interval);
 			if (rpt->nextalert < nexttime) nexttime = rpt->nextalert;
