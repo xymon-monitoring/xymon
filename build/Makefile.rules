@@ -23,7 +23,7 @@ all: $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS)
 	@echo ""
 
 GENOBJS = bbgen.o debug.o loaddata.o reportdata.o larrdgen.o pagegen.o eventlog.o acklog.o process.o util.o infogen.o alert.o wmlgen.o rssgen.o bb-replog.o sendmsg.o
-NETTESTOBJS = bbtest-net.o util.o debug.o bbares.o contest.o httptest.o ldaptest.o sendmsg.o digest.o
+NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o ldaptest.o sendmsg.o digest.o
 HOSTGREPOBJS = bbhostgrep.o util.o debug.o
 HOSTSHOWOBJS = bbhostshow.o util.o debug.o
 DIGESTOBJS = bbdigest.o
@@ -38,8 +38,8 @@ EVENTLOGOBJS = bb-eventlog.o debug.o util.o
 bbgen: $(GENOBJS)
 	$(CC) $(CFLAGS) -o $@ $(GENOBJS) $(NETLIBS)
 
-bbtest-net: $(ARESLIB) $(NETTESTOBJS)
-	$(CC) $(CFLAGS) -o $@ $(NETTESTOBJS) $(CURLLIB) $(LDAPLIBS) $(NETLIBS) $(ARESLIB)
+bbtest-net: $(NETTESTOBJS)
+	$(CC) $(CFLAGS) -o $@ $(NETTESTOBJS) $(CURLLIB) $(LDAPLIBS) $(NETLIBS)
 
 bbhostgrep: $(HOSTGREPOBJS)
 	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS)
@@ -98,7 +98,7 @@ bbtest-local: bbtest-local.c bbtest-local-linux.c bbtest-local-sunos.c bbtest-lo
 # Objects requiring special compile flags 
 ################################################
 bbtest-net.o: bbtest-net.c bbtest-net.h
-	$(CC) $(CFLAGS) $(ARESFLAGS) $(SSLFLAGS) $(LDAPFLAGS) $(SSLINCDIR) $(LDAPINCDIR) -c -o $@ bbtest-net.c
+	$(CC) $(CFLAGS) $(SSLFLAGS) $(LDAPFLAGS) $(SSLINCDIR) $(LDAPINCDIR) -c -o $@ bbtest-net.c
 
 httptest.o: httptest.c httptest.h
 	$(CC) $(CFLAGS) $(CURLINCLUDE) -c -o $@ httptest.c
@@ -111,9 +111,6 @@ contest.o: contest.c contest.h
 
 digest.o: digest.c digest.h
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ digest.c
-
-bbares.o: bbares.c bbares.h
-	$(CC) $(CFLAGS) $(ARESFLAGS) -c -o $@ bbares.c
 
 bb-hist.o: bb-hist.c
 	$(CC) $(CFLAGS) $(HISTGRAPHDEF) -c -o $@ bb-hist.c
@@ -134,17 +131,6 @@ bbdigest.o: digest.c digest.h
 
 
 ################################################
-# ARES library
-################################################
-libares.a: ares-1.1.1/libares.a
-	cp -p ares-1.1.1/libares.a .
-
-ares-1.1.1/libares.a: ares-1.1.1.tar.gz
-	@echo "Building the ARES resolver library"
-	gzip -dc ares-1.1.1.tar.gz | tar xf -
-	sh -c 'cd ares-1.1.1; ./configure; make libares.a'
-
-################################################
 # Default compilation rules
 ################################################
 %.o: %.c
@@ -162,8 +148,7 @@ distclean: clean
 	rm -f Makefile
 
 clean:
-	rm -f *.o *~ $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) alert contest reptest calc sendmsg ldaptest libares.a bbtest-local
-	rm -rf ares-1.1.1/
+	rm -f *.o *~ $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) alert contest reptest calc sendmsg ldaptest bbtest-local
 
 install-bin: $(PROGRAMS)
 	cp -p $(PROGRAMS) $(BBHOME)/bin/
