@@ -782,6 +782,13 @@ as a regular expression (except that <space> is not allowed)
 or as a message digest (typically using an MD5 sum or 
 SHA-1 hash).
 
+If you must have whitespace in the regex, use the
+[[:space:]] syntax, e.g. if you want to test for 
+the string "All is OK", use "All[[:space:]]is[[:space:]]OK".
+Note that this may depend on your particular implementation 
+of the regex functions found in your C library. Thanks to 
+Charles Goyard for this tip.
+
 Note: If you are migrating from the "cont2.sh" script,
 you must change the '_' used as wildcards by cont2.sh 
 into '.' which is the regular-expression wildcard character.
