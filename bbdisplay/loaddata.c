@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.76 2003-06-06 17:04:36 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.77 2003-06-07 06:53:13 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -192,7 +192,7 @@ group_t *init_group(const char *title, const char *onlycols)
 
 host_t *init_host(const char *hostname, const char *displayname,
 		  const int ip1, const int ip2, const int ip3, const int ip4, 
-		  const int dialup, const char *alerts, const char *waps,
+		  const int dialup, const int prefer, const char *alerts, const char *waps,
 		  char *tags,
 		  const char *nopropyellowtests, const char *nopropredtests,
 		  const char *larrdgraphs)
@@ -201,9 +201,9 @@ host_t *init_host(const char *hostname, const char *displayname,
 	hostlist_t	*oldlist;
 
 	hostcount++;
-	dprintf("init_host(%s, %d,%d,%d.%d, %d, %s, %s, %s, %s)\n", 
+	dprintf("init_host(%s, %d,%d,%d.%d, %d, %d, %s, %s, %s, %s)\n", 
 		textornull(hostname), ip1, ip2, ip3, ip4,
-		dialup, textornull(alerts), textornull(tags),
+		dialup, prefer, textornull(alerts), textornull(tags),
 		textornull(nopropyellowtests), textornull(nopropredtests));
 
 	newhost->hostname = newhost->displayname = malcop(hostname);
@@ -214,6 +214,7 @@ host_t *init_host(const char *hostname, const char *displayname,
 	newhost->entries = NULL;
 	newhost->color = -1;
 	newhost->oldage = 1;
+	newhost->prefer = prefer;
 	newhost->dialup = dialup;
 	if (alerts) {
 		char *p;
@@ -298,14 +299,24 @@ host_t *init_host(const char *hostname, const char *displayname,
 
 		dprintf("Duplicate host definition for host '%s'\n", hostname);
 
-		if ( (strcmp(oldlist->hostentry->ip, "0.0.0.0") == 0) && (strcmp(newhost->ip, "0.0.0.0") != 0) ) {
+		if (newhost->prefer && !oldlist->hostentry->prefer) {
 			usenew = 1;
-			dprintf("Using new entry as old one has IP 0.0.0.0\n");
+			dprintf("Using new entry as it has 'prefer' tag and old entry does not\n");
 		}
+		else if (newhost->prefer && oldlist->hostentry->prefer) {
+			usenew = 0;
+			errprintf("Warning: Multiple prefer entries for host %s - using first one\n", hostname);
+		}
+		else if (!newhost->prefer && !oldlist->hostentry->prefer) {
+			if ( (strcmp(oldlist->hostentry->ip, "0.0.0.0") == 0) && (strcmp(newhost->ip, "0.0.0.0") != 0) ) {
+				usenew = 1;
+				dprintf("Using new entry as old one has IP 0.0.0.0\n");
+			}
 
-		if ( strstr(oldlist->hostentry->rawentry, "noconn") && (strstr(newhost->rawentry, "noconn") == NULL) ) {
-			usenew = 1;
-			dprintf("Using new entry as old one has noconn\n");
+			if ( strstr(oldlist->hostentry->rawentry, "noconn") && (strstr(newhost->rawentry, "noconn") == NULL) ) {
+				usenew = 1;
+				dprintf("Using new entry as old one has noconn\n");
+			}
 		}
 
 		if (usenew) {
@@ -1064,6 +1075,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 		}
 		else if (sscanf(l, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
 			int dialup = 0;
+			int prefer = 0;
 			char *alertlist, *onwaplist, *nopropyellowlist, *nopropredlist, *larrdgraphs;
 			char *displayname, *targetpagename;
 			char *tag;
@@ -1081,6 +1093,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			while (tag) {
 				if (strcmp(tag, "dialup") == 0) 
 					dialup = 1;
+				else if (strcmp(tag, "prefer") == 0) 
+					prefer = 1;
 				else if (argnmatch(tag, "NK:")) 
 					alertlist = malcop(tag+strlen("NK:"));
 				else if (argnmatch(tag, "WML:")) 
@@ -1128,7 +1142,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				 */
 				if (curhost == NULL) {
 					curhost = init_host(hostname, displayname,
-							    ip1, ip2, ip3, ip4, dialup, alertlist, onwaplist,
+							    ip1, ip2, ip3, ip4, dialup, prefer, 
+							    alertlist, onwaplist,
 							    startoftags, nopropyellowlist, nopropredlist,
 							    larrdgraphs);
 					if (curgroup != NULL) {
@@ -1149,7 +1164,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				}
 				else {
 					curhost = curhost->next = init_host(hostname, displayname,
-									    ip1, ip2, ip3, ip4, dialup, 
+									    ip1, ip2, ip3, ip4, dialup, prefer,
 									    alertlist, onwaplist,
 									    startoftags, nopropyellowlist,nopropredlist,
 									    larrdgraphs);
@@ -1185,7 +1200,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				}
 				else {
 					host_t *newhost = init_host(hostname, displayname,
-								    ip1, ip2, ip3, ip4, dialup, 
+								    ip1, ip2, ip3, ip4, dialup, prefer,
 								    alertlist, onwaplist,
 								    startoftags, nopropyellowlist,nopropredlist,
 								    larrdgraphs);
