@@ -4,6 +4,8 @@
 
 	for DIR in / /usr /usr/local /opt /usr/pkg /opt/csw
 	do
+		if test "$DIR" = "/"; then DIR=""; fi
+
 		if test -x $DIR/bin/fping
 		then
 			FPING=$DIR/bin/fping
