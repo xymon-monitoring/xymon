@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.5 2004-12-30 22:25:34 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.6 2005-01-09 21:36:05 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -191,6 +191,36 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			for (i=1999; (i <= 2009); i++) {
 				if (i == (nowtm->tm_year + 1900)) selstr = "SELECTED"; else selstr = "";
 				fprintf(output, "<OPTION VALUE=\"%d\" %s>%d\n", i, selstr, i);
+			}
+		}
+		else if (strcmp(t_start, "REPHOURLIST") == 0) { 
+			int i; 
+			struct tm *nowtm = localtime(&yesterday); 
+			char *selstr;
+
+			for (i=0; (i <= 24); i++) {
+				if (i == nowtm->tm_hour) selstr = "SELECTED"; else selstr = "";
+				fprintf(output, "<OPTION VALUE=\"%d\" %s>%d\n", i, selstr, i);
+			}
+		}
+		else if (strcmp(t_start, "REPMINLIST") == 0) {
+			int i;
+			struct tm *nowtm = localtime(&yesterday);
+			char *selstr;
+
+			for (i=0; (i <= 59); i++) {
+				if (i == nowtm->tm_min) selstr = "SELECTED"; else selstr = "";
+				fprintf(output, "<OPTION VALUE=\"%02d\" %s>%02d\n", i, selstr, i);
+			}
+		}
+		else if (strcmp(t_start, "REPSECLIST") == 0) {
+			int i;
+			struct tm *nowtm = localtime(&yesterday);
+			char *selstr;
+
+			for (i=0; (i <= 59); i++) {
+				if (i == 0) selstr = "SELECTED"; else selstr = "";
+				fprintf(output, "<OPTION VALUE=\"%02d\" %s>%02d\n", i, selstr, i);
 			}
 		}
 
