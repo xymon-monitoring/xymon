@@ -1,5 +1,5 @@
-README file for bbgen version 1.8
-=================================
+README file for bbgen and friends version 1.10
+==============================================
 
 bbgen is a drop-in replacement for the bb-display.sh script that 
 ships with the Big Brother monitoring tool.
@@ -7,11 +7,11 @@ ships with the Big Brother monitoring tool.
 It can also replace part of the LARRD tool that is often used
 with Big Brother.
 
-bbtest-web, bbnethosts and bbgmchosts are utilities that can
-replace part of the bb-network.sh network test utility in
-Big Brother. See README.bb-network for details.
+bbtest-web and bbtest-net are utilities that can replace the 
+bb-network.sh network test utility in Big Brother. See 
+README.nettest for details.
 
-bbgen, bbtest-web, bbnethosts and bbgmchosts and sources are 
+bbgen, bbtest-web, bbtest-net and bbgmchosts and sources are 
 Copyright (C) 2002-2003, Henrik Storner <henrik@storner.dk> 
 All files are released under the GNU General Public License, 
 version 2. See the file COPYING for details.
@@ -58,7 +58,9 @@ bbgen is intended to be a drop-in replacement for the bb-display.sh
 script in Big Brother version 1.9c. 
 
 If you enable bbgen's LARRD support, you will need to change a few
-of the Big Brother files - see "LARRD support" below.
+of the Big Brother files - see "LARRD support" below. The LARRD
+support has been tested with LARRD 0.42; the newer versions that 
+have started appearing now (March-April 2003) have not been tested.
 
 The only known difference is that pages with both hosts and subpages
 have the hosts first in standard Big Brother; bbgen by default places 
@@ -80,7 +82,10 @@ in bbgen:
 Installation
 ------------
 
-See the INSTALL file.
+See the INSTALL file for information on how to install bbgen.
+
+See the README.nettest file for information on how to use
+bbtest-web and bbtest-net.
 
 
 Special display for newly changed items (--recentgifs option)
@@ -174,5 +179,5 @@ have a feature you would like to see added to bbgen.
 
 
 Henrik Storner <henrik@storner.dk>
-March 2nd, 2003
+April 15, 2003
 
