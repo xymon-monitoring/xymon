@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.13 2003-11-03 09:32:53 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.14 2003-11-04 11:44:44 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -39,11 +39,16 @@ int main(int argc, char *argv[])
 	int testuntagged = 0;
 	int argi;
 	char *include2 = NULL;
+	char **lookv;
+	int lookc;
 
 	if ((argc <= 1) || (strcmp(argv[1], "--help") == 0)) {
 		printf("Usage:\n%s test1 [test1] [test2] ... \n", argv[0]);
 		exit(1);
 	}
+
+	lookv = (char **)malloc(argc*sizeof(char *));
+	lookc = 0;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--noextras") == 0) {
@@ -61,6 +66,10 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--bbdisp") == 0) {
 			include2 = "dispinclude";
+		}
+		else {
+			lookv[lookc] = malcop(argv[argi]);
+			lookc++;
 		}
 	}
 
@@ -129,15 +138,15 @@ int main(int argc, char *argv[])
 				else {
 					int i;
 
-					for (i=1; (i<argc); i++) {
-						if (argv[i][strlen(argv[i])-1] == '*') {
-							if (strncasecmp(realitem, argv[i], strlen(argv[i])-1) == 0) {
+					for (i=0; (i<lookc); i++) {
+						if (lookv[i][strlen(lookv[i])-1] == '*') {
+							if (strncasecmp(realitem, lookv[i], strlen(lookv[i])-1) == 0) {
 								strcat(wantedtags, " ");
 								strcat(wantedtags, (extras ? item : realitem));
 								wanted = 1;
 							}
 						}
-						else if (strcasecmp(realitem, argv[i]) == 0) {
+						else if (strcasecmp(realitem, lookv[i]) == 0) {
 							strcat(wantedtags, " ");
 							strcat(wantedtags, (extras ? item : realitem));
 							wanted = 1;
