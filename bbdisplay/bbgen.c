@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.129 2003-06-19 12:01:44 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.130 2003-06-19 12:08:53 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
 			if ((reportpaniclevel < 0.0) || (reportpaniclevel > 100.0)) reportpaniclevel = 99.995;
 
 			select_headers_and_footers("bbrep");
-			sethostenv_report(reportstart, reportend);
+			sethostenv_report(reportstart, reportend, reportwarnlevel, reportpaniclevel);
 		}
 
 		else if (strcmp(argv[i], "--pages-first") == 0) {

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.55 2003-06-12 06:59:14 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.56 2003-06-19 12:08:53 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -57,6 +57,10 @@ static char hostenv_svc[20];
 static char hostenv_host[200];
 static char hostenv_ip[20];
 static char hostenv_color[20];
+static time_t hostenv_reportstart = 0;
+static time_t hostenv_reportend = 0;
+static char hostenv_repwarn[20];
+static char hostenv_reppanic[20];
 
 /* Stuff for reading files that include other files */
 typedef struct {
@@ -425,6 +429,14 @@ void sethostenv(char *host, char *ip, char *svc, char *color)
 	strncat(hostenv_color, color, sizeof(hostenv_color)-1);
 }
 
+void sethostenv_report(time_t reportstart, time_t reportend, double repwarn, double reppanic)
+{
+	hostenv_reportstart = reportstart;
+	hostenv_reportend = reportend;
+	sprintf(hostenv_repwarn, "%.2f", repwarn);
+	sprintf(hostenv_reppanic, "%.2f", reppanic);
+}
+
 void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, int bgcolor)
 {
 	int	fd;
@@ -498,12 +510,24 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 			else if (strcmp(t_start, "BBWEB") == 0)     	fprintf(output, "%s", getenv("BBWEB"));
 			else if (strcmp(t_start, "CGIBINURL") == 0) 	fprintf(output, "%s", getenv("CGIBINURL"));
 
-			else if (strcmp(t_start, "BBDATE") == 0)        fprintf(output, "%s", ctime(&now));
+			else if (strcmp(t_start, "BBDATE") == 0) {
+				if (hostenv_reportstart == 0) fprintf(output, "%s", ctime(&now));
+				else {
+					char starttime[20], endtime[20];
+
+					strftime(starttime, sizeof(starttime), "%b %d %Y", localtime(&hostenv_reportstart));
+					strftime(endtime, sizeof(endtime), "%b %d %Y", localtime(&hostenv_reportend));
+					fprintf(output, "%s - %s", starttime, endtime);
+				}
+			}
+
 			else if (strcmp(t_start, "BBBACKGROUND") == 0)  fprintf(output, "%s", colorname(bgcolor));
 			else if (strcmp(t_start, "BBCOLOR") == 0)       fprintf(output, "%s", hostenv_color);
 			else if (strcmp(t_start, "BBSVC") == 0)         fprintf(output, "%s", hostenv_svc);
 			else if (strcmp(t_start, "BBHOST") == 0)        fprintf(output, "%s", hostenv_host);
 			else if (strcmp(t_start, "BBIP") == 0)          fprintf(output, "%s", hostenv_ip);
+			else if (strcmp(t_start, "BBREPWARN") == 0)     fprintf(output, "%s", hostenv_repwarn);
+			else if (strcmp(t_start, "BBREPPANIC") == 0)    fprintf(output, "%s", hostenv_reppanic);
 			else fprintf(output, "&");			/* No substitution - copy the ampersand */
 			
 			*t_next = savechar; t_start = t_next; t_next = strchr(t_start, '&');
