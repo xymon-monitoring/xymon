@@ -22,7 +22,7 @@
 extern int use_recentgifs;
 extern char timestamp[];
 
-extern char *malcop(char *s);
+extern char *malcop(const char *s);
 extern void init_timestamp(void);
 
 extern char *colorname(int color);

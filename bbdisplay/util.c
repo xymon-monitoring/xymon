@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.31 2003-04-23 15:08:51 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.32 2003-04-23 15:29:25 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -55,7 +55,7 @@ static char hostenv_ip[20];
 static char hostenv_color[20];
 
 
-char *malcop(char *s)
+char *malcop(const char *s)
 {
 	char *buf = malloc(strlen(s)+1);
 	strcpy(buf, s);
