@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.91 2005-01-04 09:38:38 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.92 2005-01-11 22:23:37 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -146,7 +146,9 @@ hobbitd_channel_t *enadischn = NULL;	/* Receives "enable" and "disable" messages
 
 #define NO_COLOR (COL_COUNT)
 static char *colnames[COL_COUNT+1];
-int alertcolors = ( (1 << COL_RED) | (1 << COL_YELLOW) | (1 << COL_PURPLE) );
+int alertcolors = ( (1 << COL_RED)   | (1 << COL_YELLOW) | (1 << COL_PURPLE) );
+int okcolors    = ( (1 << COL_GREEN) | (1 << COL_BLUE)   | (1 << COL_CLEAR)  );
+enum alertstate_t { A_OK, A_ALERT, A_UNDECIDED };
 
 typedef struct ghostlist_t {
 	char *name;
@@ -342,6 +344,13 @@ int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgb
 	if (eoln) *eoln = '\n';
 
 	return 0;
+}
+
+enum alertstate_t decide_alertstate(int color)
+{
+	if ((okcolors & (1 << color)) != 0) return A_OK;
+	else if ((alertcolors & (1 << color)) != 0) return A_ALERT;
+	else return A_UNDECIDED;
 }
 
 
@@ -657,7 +666,8 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 {
 	int validity = 30;	/* validity is counted in minutes */
 	time_t now = time(NULL);
-	int msglen, issummary, oldalertstatus, newalertstatus;
+	int msglen, issummary;
+	enum alertstate_t oldalertstatus, newalertstatus;
 
 	if (msg == NULL) {
 		errprintf("handle_status got a NULL message for %s.%s, sender %s\n", hostname, testname, sender);
@@ -705,8 +715,8 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	strncpy(log->sender, sender, sizeof(log->sender)-1);
 	log->oldcolor = log->color;
 	log->color = newcolor;
-	oldalertstatus = ((alertcolors & (1 << log->oldcolor)) != 0);
-	newalertstatus = ((alertcolors & (1 << newcolor)) != 0);
+	oldalertstatus = decide_alertstate(log->oldcolor);
+	newalertstatus = decide_alertstate(newcolor);
 
 	if (msg != log->message) {	/* They can be the same when called from handle_enadis() or check_purple_upd() */
 		char *p;
@@ -762,7 +772,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	}
 
 	/* If in an alert state, we may need to generate a cookie */
-	if (newalertstatus) {
+	if (newalertstatus == A_ALERT) {
 		if (log->cookieexpires < now) {
 			int newcookie;
 
@@ -787,10 +797,14 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 
 		/*
 		 * We pass the message to the page channel, IF
-		 * - the alert status changes, OR
-		 * - it is in an alert status, and the color changes.
+		 * - alertstate remains in A_ALERT, but the color changes (we already know the color has changed)
+		 * - alertstate goes from A_OK -> A_ALERT (new alert)
+		 * - alertstate goes from !A_OK -> A_OK (recovery)
 		 */
-		if ((oldalertstatus != newalertstatus) || (newalertstatus && (log->oldcolor != newcolor))) {
+		if ( ((oldalertstatus == A_ALERT) && (newalertstatus == A_ALERT)) ||
+		     ((oldalertstatus == A_OK) && (newalertstatus == A_ALERT))    ||
+		     ((oldalertstatus != A_OK) && (newalertstatus == A_OK))         ) {
+
 			dprintf("posting to page channel\n");
 			posttochannel(pagechn, channelnames[C_PAGE], msg, sender, hostname, log, NULL);
 		}
@@ -2086,6 +2100,24 @@ int main(int argc, char *argv[])
 			colormask = ~((1 << COL_GREEN) | (1 << COL_BLUE));
 			alertcolors = (ac & colormask);
 		}
+		else if (argnmatch(argv[argi], "--okcolors=")) {
+			char *colspec = strchr(argv[argi], '=') + 1;
+			int c, oc;
+			char *p;
+			int colormask;
+
+			p = strtok(colspec, ",");
+			oc = 0;
+			while (p) {
+				c = parse_color(p);
+				if (c != -1) oc = (oc | (1 << c));
+				p = strtok(NULL, ",");
+			}
+
+			/* red can NEVER be okcolors */
+			colormask = ~((1 << COL_RED));
+			okcolors = (oc & colormask);
+		}
 		else if (argnmatch(argv[argi], "--ghosts=")) {
 			char *p = strchr(argv[argi], '=') + 1;
 
@@ -2149,6 +2181,7 @@ int main(int argc, char *argv[])
 			printf("\t--bbhosts=FILENAME            : The bb-hosts file\n");
 			printf("\t--ghosts=allow|drop|log       : How to handle unknown hosts\n");
 			printf("\t--alertcolors=COLOR[,COLOR]   : What colors trigger an alert\n");
+			printf("\t--okcolors=COLOR[,COLOR]      : What colors trigger an recovery alert\n");
 			return 1;
 		}
 	}
