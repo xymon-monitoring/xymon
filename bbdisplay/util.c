@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.115 2004-08-05 22:16:19 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.116 2004-08-10 08:18:20 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -743,7 +743,10 @@ int checkpropagation(host_t *host, char *test, int color, int acked)
 	testname = (char *) malloc(strlen(test)+3);
 	sprintf(testname, ",%s,", test);
 	if (acked) {
-		if (host->nopropacktests && strstr(host->nopropacktests, testname)) result = 0;
+		if (host->nopropacktests) {
+			if (strcmp(host->nopropacktests, "*") == 0) return 0;
+			if (strstr(host->nopropacktests, testname)) result = 0;
+		}
 	}
 
 	if (result) {
