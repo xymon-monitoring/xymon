@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.4 2004-11-16 21:36:20 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.5 2004-11-17 16:10:34 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -458,28 +458,8 @@ int main(int argc, char *argv[])
 					int argcount = 0;
 					char *cmdcp, *p;
 
-					if (twalk->envfile) {
-						FILE *fd;
-						char l[32768];
-						char *p, *oneenv;
-						int n;
-
-						fd = fopen(twalk->envfile, "r");
-						if (fd) {
-							while (fgets(l, sizeof(l), fd)) {
-								p = strchr(l, '\n'); if (p) *p = '\0';
-								oneenv = strdup(l);
-								n = putenv(oneenv);
-								if (n) {
-									errprintf("putenv('%s') failed\n", oneenv);
-								}
-							}
-							fclose(fd);
-						}
-						else 
-							errprintf("Cannot open env file %s - %s\n",
-								  twalk->envfile, strerror(errno));
-					}
+					/* Setup environment */
+					if (twalk->envfile) loadenv(twalk->envfile);
 
 					/* Count # of arguments in command */
 					cmdcp = strdup(twalk->cmd);
