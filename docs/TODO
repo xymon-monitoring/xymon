@@ -26,6 +26,9 @@ Improvements
   dynamically updated by a CGI-script, then pulled across to the
   BBNET server, and fed to bbtest-net. This would enable something
   like the "Test now" function in Unicenter.
+* Provide a way of sending http status-messages with individual
+  test (column) names for each URL - apparently, Big Sister does
+  this. Suggested by Darshan Purandare.
 
 If I have too much time someday
 -------------------------------
