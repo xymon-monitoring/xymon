@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.123 2004-09-01 11:35:19 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.124 2004-09-19 07:52:46 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -67,6 +67,7 @@ static char stackfd_base[MAX_PATH];
 static char stackfd_mode[10];
 
 char *errbuf = NULL;
+int save_errbuf = 1;
 static unsigned int errbufsize = 0;
 
 /* Data used while crashing - cannot depend on the stack being usable */
@@ -108,17 +109,19 @@ void errprintf(const char *fmt, ...)
 	fprintf(stderr, "%s", msg);
 	fflush(stderr);
 
-	if (errbuf == NULL) {
-		errbufsize = 8192;
-		errbuf = (char *) malloc(errbufsize);
-		*errbuf = '\0';
-	}
-	else if ((strlen(errbuf) + strlen(msg)) > errbufsize) {
-		errbufsize += 8192;
-		errbuf = (char *) realloc(errbuf, errbufsize);
-	}
+	if (save_errbuf) {
+		if (errbuf == NULL) {
+			errbufsize = 8192;
+			errbuf = (char *) malloc(errbufsize);
+			*errbuf = '\0';
+		}
+		else if ((strlen(errbuf) + strlen(msg)) > errbufsize) {
+			errbufsize += 8192;
+			errbuf = (char *) realloc(errbuf, errbufsize);
+		}
 
-	strcat(errbuf, msg);
+		strcat(errbuf, msg);
+	}
 }
 
 

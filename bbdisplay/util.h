@@ -59,6 +59,7 @@ extern char timestamp[];
 
 extern void errprintf(const char *fmt, ...);
 extern char *errbuf;
+extern int save_errbuf;
 
 extern FILE *stackfopen(char *filename, char *mode);
 extern int stackfclose(FILE *fd);
