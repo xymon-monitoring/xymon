@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.106 2003-08-31 21:16:15 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.107 2003-08-31 21:19:21 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1759,6 +1759,7 @@ int main(int argc, char *argv[])
 			printf("Options:\n");
 			printf("    --timeout=N                 : Timeout (in seconds) for service tests\n");
 			printf("    --dns=[only|ip|standard]    : How IP's are decided\n");
+			printf("    --test-untagged             : Include hosts without a NET: tag in the test\n");
 			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbtest-net\n");
 			printf("    --frequenttestlimit=N       : Seconds after detecting failures in which we poll frequently\n");
 			printf("\nOptions for services in BBNETSVCS (tcp tests):\n");
