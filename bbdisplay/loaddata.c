@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.111 2003-09-20 06:35:18 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.112 2003-10-14 21:07:45 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -478,6 +478,16 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		p++;
 		if (strcmp(p, infocol) == 0) return NULL;
 		if (strcmp(p, larrdcol) == 0) return NULL;
+
+		/* 
+		 * We may not be running with --larrd; in that case
+		 * larrdcol is the default ("larrd") but if we are
+		 * running LARRD 0.43, then it is generating 
+		 * "trends". Avoid stumbling over those.
+		 * From Tom Schmidt.
+		 */
+		if (strcmp(p, "larrd") == 0) return NULL;
+		if (strcmp(p, "trends") == 0) return NULL;
 	}
 
 	sprintf(fullfn, "%s/%s", getenv(((reportstart || snapshot) ? "BBHIST" : "BBLOGS")), filename);
