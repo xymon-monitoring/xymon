@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.26 2004-12-30 22:25:34 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.27 2005-01-14 10:22:11 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -34,15 +34,15 @@ static char rcsid[] = "$Id: hobbitd_channel.c,v 1.26 2004-12-30 22:25:34 henrik 
 
 
 /* For our in-memory queue of messages received from hobbitd via IPC */
-typedef struct msg_t {
+typedef struct hobbit_msg_t {
 	char *buf;
 	char *bufp;
 	int buflen;
-	struct msg_t *next;
-} msg_t;
+	struct hobbit_msg_t *next;
+} hobbit_msg_t;
 
-msg_t *head = NULL;
-msg_t *tail = NULL;
+hobbit_msg_t *head = NULL;
+hobbit_msg_t *tail = NULL;
 
 static volatile int running = 1;
 static volatile int gotalarm = 0;
@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 
 	struct sembuf s;
 	char buf[SHAREDBUFSZ];
-	msg_t *newmsg;
+	hobbit_msg_t *newmsg;
 	int daemonize = 0;
 	char *logfn = NULL;
 	char *pidfile = NULL;
@@ -265,7 +265,7 @@ int main(int argc, char *argv[])
 			/*
 			 * Put the new message on our outbound queue.
 			 */
-			newmsg = (msg_t *) malloc(sizeof(msg_t));
+			newmsg = (hobbit_msg_t *) malloc(sizeof(hobbit_msg_t));
 			newmsg->buf = strdup(buf);
 			newmsg->bufp = newmsg->buf;
 			newmsg->buflen = strlen(buf);
@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
 				head->bufp += n;
 				head->buflen -= n;
 				if (head->buflen == 0) {
-					msg_t *tmp = head;
+					hobbit_msg_t *tmp = head;
 					head = head->next;
 					free(tmp->buf);
 					free(tmp);
@@ -324,7 +324,7 @@ int main(int argc, char *argv[])
 				usleep(2500);
 			}
 			else {
-				msg_t *tmp;
+				hobbit_msg_t *tmp;
 
 				/* Write failed */
 				errprintf("Our child has failed and will not talk to us\n");
