@@ -3,9 +3,6 @@
 # Solaris need this
 NETLIBS = -lresolv -lsocket -lnsl
 
-# Pick your compiler here
-CC=gcc
-
 # Compile flags for normal build
 CFLAGS = -O2 -Wall -Wno-unused -D_REENTRANT
 
