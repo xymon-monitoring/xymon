@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.16 2004-11-25 22:09:15 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.17 2004-11-28 09:16:22 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -49,12 +49,15 @@ static char rcsid[] = "$Id: do_alert.c,v 1.16 2004-11-25 22:09:15 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <time.h>
 #include <limits.h>
+#include <errno.h>
+#include <sys/wait.h>
 
 #include <pcre.h>
 
@@ -62,8 +65,8 @@ static char rcsid[] = "$Id: do_alert.c,v 1.16 2004-11-25 22:09:15 henrik Exp $";
 
 #include "bbgend_alert.h"
 
-enum method_t { M_MAIL, M_SCRIPT, M_BBSCRIPT };
-enum msgformat_t { FRM_TEXT, FRM_SMS, FRM_PAGER };
+enum method_t { M_MAIL, M_SCRIPT };
+enum msgformat_t { FRM_TEXT, FRM_SMS, FRM_PAGER, FRM_SCRIPT };
 enum recovermsg_t { SR_UNKNOWN, SR_NOTWANTED, SR_WANTED };
 
 /* token's are the pre-processor macros we expand while parsing the config file */
@@ -101,6 +104,7 @@ typedef struct recip_t {
 	criteria_t *criteria;
 	enum method_t method;
 	char *recipient;
+	char *scriptname;
 	enum msgformat_t format;
 	time_t interval;
 	struct recip_t *next;
@@ -114,6 +118,7 @@ typedef struct rule_t {
 	struct rule_t *next;
 } rule_t;
 static rule_t *rulehead = NULL;
+static rule_t *ruletail = NULL;
 static int cfid = 0;
 
 /*
@@ -122,7 +127,7 @@ static int cfid = 0;
  * and this goes on a host+test+recipient basis.
  */
 typedef struct repeat_t {
-	char *recipid;	/* Essentially hostname|testname|address */
+	char *recipid;	/* Essentially hostname|testname|method|address */
 	time_t nextalert;
 	struct repeat_t *next;
 } repeat_t;
@@ -229,6 +234,21 @@ pcre *compileregex(char *pattern)
 	return result;
 }
 
+void flush_rule(rule_t *currule)
+{
+	if (currule == NULL) return;
+
+	currule->next = NULL;
+
+	if (rulehead == NULL) {
+		rulehead = ruletail = currule;
+	}
+	else {
+		ruletail->next = currule;
+		ruletail = currule;
+	}
+}
+
 void load_alertconfig(char *configfn, int defcolors)
 {
 	/* (Re)load the configuration file without leaking memory */
@@ -237,7 +257,7 @@ void load_alertconfig(char *configfn, int defcolors)
 	FILE *fd;
 	char l[8192];
 	char *p;
-	rule_t *currule = NULL, *ruletail = NULL;
+	rule_t *currule = NULL;
 	recip_t *currcp = NULL, *rcptail = NULL;
 
 	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/bb-alerts.cfg", getenv("BBHOME"));
@@ -288,6 +308,7 @@ void load_alertconfig(char *configfn, int defcolors)
 				free(trecip->criteria);
 			}
 			if (trecip->recipient) free(trecip->recipient);
+			if (trecip->scriptname) free(trecip->scriptname);
 			rulehead->recipients = rulehead->recipients->next;
 			free(trecip);
 		}
@@ -309,40 +330,22 @@ void load_alertconfig(char *configfn, int defcolors)
 
 	cfid = 0;
 	while (fgets(l, sizeof(l), fd)) {
+		int firsttoken = 1;
+
 		cfid++;
-		p = strchr(l, '\n'); if (p) *p = '\0';
-		p = l + strspn(l, " \t");
-		if (*p == '#') continue;
+		grok_input(l);
 
-		if (strlen(p) == 0) {
-			/*
-			 * Empty line means end of the current rule. So put it into the linked list.
-			 */
-			if (currule) {
-				currule->next = NULL;
+		/* Skip empty lines */
+		if (strlen(l) == 0) continue;
 
-				if (rulehead == NULL) {
-					rulehead = ruletail = currule;
-				}
-				else {
-					ruletail->next = currule;
-					ruletail = currule;
-				}
-
-				currule = NULL;
-				currcp = NULL;
-				pstate = P_NONE;
-			}
-			continue;
-		}
-		else if ((*p == '$') && strchr(l, '=')) {
+		if ((*l == '$') && strchr(l, '=')) {
 			/* Define a macro */
 			token_t *newtok = (token_t *) malloc(sizeof(token_t));
 			char *delim;
 
 			delim = strchr(l, '=');
 			*delim = '\0';
-			newtok->name = strdup(p+1);
+			newtok->name = strdup(l);
 			newtok->value = strdup(delim+1);
 			newtok->next = tokhead;
 			tokhead = newtok;
@@ -353,45 +356,72 @@ void load_alertconfig(char *configfn, int defcolors)
 		p = strtok(preprocess(l), " ");
 		while (p) {
 			if ((strncasecmp(p, "PAGE=", 5) == 0) || (strncasecmp(p, "PAGES=", 6) == 0)) {
-				char *val = strchr(p, '=')+1;
-				criteria_t *crit = setup_criteria(&currule, &currcp);
+				char *val;
+				criteria_t *crit;
+
+				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
+				val = strchr(p, '=')+1;
+				crit = setup_criteria(&currule, &currcp);
 				crit->pagespec = strdup(val);
 				if (*(crit->pagespec) == '%') crit->pagespecre = compileregex(crit->pagespec+1);
 			}
 			else if ((strncasecmp(p, "EXPAGE=", 7) == 0) || (strncasecmp(p, "EXPAGES=", 8) == 0)) {
-				char *val = strchr(p, '=')+1;
-				criteria_t *crit = setup_criteria(&currule, &currcp);
+				char *val;
+				criteria_t *crit;
+
+				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
+				val = strchr(p, '=')+1;
+				crit = setup_criteria(&currule, &currcp);
 				crit->expagespec = strdup(val);
 				if (*(crit->expagespec) == '%') crit->expagespecre = compileregex(crit->expagespec+1);
 			}
 			else if ((strncasecmp(p, "HOST=", 5) == 0) || (strncasecmp(p, "HOSTS=", 6) == 0)) {
-				char *val = strchr(p, '=')+1;
-				criteria_t *crit = setup_criteria(&currule, &currcp);
+				char *val;
+				criteria_t *crit;
+
+				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
+				val = strchr(p, '=')+1;
+				crit = setup_criteria(&currule, &currcp);
 				crit->hostspec = strdup(val);
 				if (*(crit->hostspec) == '%') crit->hostspecre = compileregex(crit->hostspec+1);
 			}
 			else if ((strncasecmp(p, "EXHOST=", 7) == 0) || (strncasecmp(p, "EXHOSTS=", 8) == 0)) {
-				char *val = strchr(p, '=')+1;
-				criteria_t *crit = setup_criteria(&currule, &currcp);
+				char *val;
+				criteria_t *crit;
+
+				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
+				val = strchr(p, '=')+1;
+				crit = setup_criteria(&currule, &currcp);
 				crit->exhostspec = strdup(val);
 				if (*(crit->exhostspec) == '%') crit->exhostspecre = compileregex(crit->exhostspec+1);
 			}
 			else if ((strncasecmp(p, "SERVICE=", 8) == 0) || (strncasecmp(p, "SERVICES=", 9) == 0)) {
-				char *val = strchr(p, '=')+1;
-				criteria_t *crit = setup_criteria(&currule, &currcp);
+				char *val;
+				criteria_t *crit;
+
+				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
+				val = strchr(p, '=')+1;
+				crit = setup_criteria(&currule, &currcp);
 				crit->svcspec = strdup(val);
 				if (*(crit->svcspec) == '%') crit->svcspecre = compileregex(crit->svcspec+1);
 			}
 			else if ((strncasecmp(p, "EXSERVICE=", 10) == 0) || (strncasecmp(p, "EXSERVICES=", 11) == 0)) {
-				char *val = strchr(p, '=')+1;
-				criteria_t *crit = setup_criteria(&currule, &currcp);
+				char *val;
+				criteria_t *crit;
+
+				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
+				val = strchr(p, '=')+1;
+				crit = setup_criteria(&currule, &currcp);
 				crit->exsvcspec = strdup(val);
 				if (*(crit->exsvcspec) == '%') crit->exsvcspecre = compileregex(crit->exsvcspec+1);
 			}
 			else if ((strncasecmp(p, "COLOR=", 6) == 0) || (strncasecmp(p, "COLORS=", 7) == 0)) {
-				criteria_t *crit = setup_criteria(&currule, &currcp);
+				criteria_t *crit;
 				char *c1, *c2;
 				int cval, reverse = 0;
+
+				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
+				crit = setup_criteria(&currule, &currcp);
 
 				/* Put a value in crit->colors so we know there is an explicit color setting */
 				crit->colors = (1 << 30);
@@ -419,26 +449,45 @@ void load_alertconfig(char *configfn, int defcolors)
 				} while (c1);
 			}
 			else if ((strncasecmp(p, "TIME=", 5) == 0) || (strncasecmp(p, "TIMES=", 6) == 0)) {
-				char *val = strchr(p, '=')+1;
-				criteria_t *crit = setup_criteria(&currule, &currcp);
+				char *val;
+				criteria_t *crit;
+
+				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
+				val = strchr(p, '=')+1;
+				crit = setup_criteria(&currule, &currcp);
 				crit->timespec = strdup(val);
 			}
 			else if (strncasecmp(p, "DURATION", 8) == 0) {
-				criteria_t *crit = setup_criteria(&currule, &currcp);
+				criteria_t *crit;
+
+				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
+				crit = setup_criteria(&currule, &currcp);
 				if (*(p+8) == '>') crit->minduration = 60*atoi(p+9);
 				else if (*(p+8) == '<') crit->maxduration = 60*atoi(p+9);
 			}
 			else if (strncasecmp(p, "RECOVERED", 9) == 0) {
-				criteria_t *crit = setup_criteria(&currule, &currcp);
+				criteria_t *crit;
+
+				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
+				crit = setup_criteria(&currule, &currcp);
 				currule->criteria->sendrecovered = SR_WANTED;
 				crit->sendrecovered = SR_WANTED;
 			}
-			else if (currule && ((strncasecmp(p, "MAIL ", 5) == 0) || strchr(p, '@')) ) {
-				recip_t *newrcp = (recip_t *)malloc(sizeof(recip_t));
+			else if (currule && ((strcasecmp(p, "MAIL") == 0) || strchr(p, '@')) ) {
+				recip_t *newrcp;
+
+				if (currule == NULL) {
+					errprintf("Recipient '%s' defined with no preceeding rule\n", p);
+					continue;
+				}
+
+				newrcp = (recip_t *)malloc(sizeof(recip_t));
 				newrcp->cfid = cfid;
 				newrcp->method = M_MAIL;
 				newrcp->format = FRM_TEXT;
 				newrcp->criteria = NULL;
+				newrcp->recipient = NULL;
+				newrcp->scriptname = NULL;
 				if (strchr(p, '@') == NULL) p = strtok(NULL, " ");
 				if (p) {
 					newrcp->recipient = strdup(p);
@@ -458,13 +507,26 @@ void load_alertconfig(char *configfn, int defcolors)
 					free(newrcp);
 				}
 			}
-			else if (currule && (strncasecmp(p, "SCRIPT ", 7) == 0)) {
-				recip_t *newrcp = (recip_t *)malloc(sizeof(recip_t));
+			else if (currule && (strcasecmp(p, "SCRIPT") == 0)) {
+				recip_t *newrcp;
+
+				if (currule == NULL) {
+					errprintf("Recipient '%s' defined with no preceeding rule\n", p);
+					continue;
+				}
+
+				newrcp = (recip_t *)malloc(sizeof(recip_t));
 				newrcp->cfid = cfid;
 				newrcp->method = M_SCRIPT;
-				newrcp->format = FRM_TEXT;
+				newrcp->format = FRM_SCRIPT;
 				newrcp->criteria = NULL;
+				newrcp->scriptname = NULL;
 				p = strtok(NULL, " ");
+				if (p) {
+					newrcp->scriptname = strdup(p);
+					p = strtok(NULL, " ");
+				}
+
 				if (p) {
 					newrcp->recipient = strdup(p);
 					newrcp->interval = 300;
@@ -480,31 +542,7 @@ void load_alertconfig(char *configfn, int defcolors)
 					}
 				}
 				else {
-					free(newrcp);
-				}
-			}
-			else if (currule && (strncasecmp(p, "BBSCRIPT ", 9) == 0)) {
-				recip_t *newrcp = (recip_t *)malloc(sizeof(recip_t));
-				newrcp->cfid = cfid;
-				newrcp->method = M_BBSCRIPT;
-				newrcp->format = FRM_TEXT;
-				newrcp->criteria = NULL;
-				p = strtok(NULL, " ");
-				if (p) {
-					newrcp->recipient = strdup(p);
-					newrcp->interval = 300;
-					newrcp->next = NULL;
-					currcp = newrcp;
-					pstate = P_RECIP;
-
-					if (currule->recipients == NULL)
-						currule->recipients = rcptail = newrcp;
-					else {
-						rcptail->next = newrcp;
-						rcptail = newrcp;
-					}
-				}
-				else {
+					if (newrcp->scriptname) free(newrcp->scriptname);
 					free(newrcp);
 				}
 			}
@@ -512,15 +550,18 @@ void load_alertconfig(char *configfn, int defcolors)
 				if      (strcmp(p+7, "TEXT") == 0) currcp->format = FRM_TEXT;
 				else if (strcmp(p+7, "SMS") == 0) currcp->format = FRM_SMS;
 				else if (strcmp(p+7, "PAGER") == 0) currcp->format = FRM_PAGER;
+				else if (strcmp(p+7, "SCRIPT") == 0) currcp->format = FRM_SCRIPT;
 			}
 			else if ((pstate == P_RECIP) && (strncasecmp(p, "REPEAT=", 7) == 0)) {
 				currcp->interval = 60*atoi(p+7);
 			}
 
 			if (p) p = strtok(NULL, " ");
+			firsttoken = 0;
 		}
 	}
 
+	flush_rule(currule);
 	fclose(fd);
 }
 
@@ -569,15 +610,14 @@ void dump_alertconfig(void)
 		for (recipwalk = rulewalk->recipients; (recipwalk); recipwalk = recipwalk->next) {
 			printf("\t");
 			switch (recipwalk->method) {
-			  case M_MAIL : printf("MAIL "); break;
-			  case M_SCRIPT : printf("SCRIPT "); break;
-			  case M_BBSCRIPT : printf("BBSCRIPT "); break;
+			  case M_MAIL   : printf("MAIL %s ", recipwalk->recipient); break;
+			  case M_SCRIPT : printf("SCRIPT %s %s ", recipwalk->scriptname, recipwalk->recipient); break;
 			}
-			printf("%s ", recipwalk->recipient);
 			switch (recipwalk->format) {
-			  case FRM_TEXT : break;
-			  case FRM_SMS  : printf("FORMAT=SMS "); break;
-			  case FRM_PAGER  : printf("FORMAT=PAGER "); break;
+			  case FRM_TEXT  : break;
+			  case FRM_SMS   : printf("FORMAT=SMS "); break;
+			  case FRM_PAGER : printf("FORMAT=PAGER "); break;
+			  case FRM_SCRIPT: printf("FORMAT=SCRIPT "); break;
 			}
 			printf("REPEAT=%d ", (int)(recipwalk->interval / 60));
 			if (recipwalk->criteria) dump_criteria(recipwalk->criteria, 1);
@@ -814,11 +854,16 @@ static recip_t *next_recipient(activealerts_t *alert, int *first)
 
 static repeat_t *find_repeatinfo(activealerts_t *alert, recip_t *recip, int create)
 {
-	char *id;
+	char *id, *method;
 	repeat_t *walk;
 
-	id = (char *) malloc(strlen(alert->hostname->name) + strlen(alert->testname->name) + strlen(recip->recipient) + 3);
-	sprintf(id, "%s|%s|%s", alert->hostname->name, alert->testname->name, recip->recipient);
+	switch (recip->method) {
+	  case M_MAIL: method = "mail"; break;
+	  case M_SCRIPT: method = "script"; break;
+	}
+
+	id = (char *) malloc(strlen(alert->hostname->name) + strlen(alert->testname->name) + strlen(method) + strlen(recip->recipient) + 4);
+	sprintf(id, "%s|%s|%s|%s", alert->hostname->name, alert->testname->name, method, recip->recipient);
 	for (walk = rpthead; (walk && strcmp(walk->recipid, id)); walk = walk->next);
 
 	if ((walk == NULL) && create) {
@@ -877,6 +922,9 @@ static char *message_subject(activealerts_t *alert, recip_t *recip)
 
 	 case FRM_PAGER:
 		return NULL;
+
+	 case FRM_SCRIPT:
+		return NULL;
 	}
 
 	return NULL;
@@ -887,11 +935,19 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 	static char *buf = NULL;
 	static int buflen = 0;
 	char *eoln, *bom;
-	char info[100];
+	char info[4096];
+
+	if (buf) *buf = '\0';
 
 	switch (recip->format) {
 	  case FRM_TEXT:
-		return msg_data(alert->pagemessage);
+		addtobuffer(&buf, &buflen, msg_data(alert->pagemessage));
+		addtobuffer(&buf, &buflen, "\n");
+		sprintf(info, "See %s%s/bb-hostsvc.sh?HOSTSVC=%s.%s\n", 
+			getenv("BBWEBHOST"), getenv("CGIBINURL"), 
+			commafy(alert->hostname->name), alert->testname->name);
+		addtobuffer(&buf, &buflen, info);
+		return buf;
 
 	  case FRM_SMS:
 		/*
@@ -914,6 +970,14 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 				bom = (eoln ? eoln+1 : "");
 			}
 		}
+		return buf;
+
+	  case FRM_SCRIPT:
+		sprintf(info, "%s:%s %s [%d]\n",
+			alert->hostname->name, alert->testname->name, colorname(alert->color), alert->cookie);
+		addtobuffer(&buf, &buflen, info);
+		addtobuffer(&buf, &buflen, msg_data(alert->pagemessage));
+		addtobuffer(&buf, &buflen, "\n");
 		return buf;
 
 	  case FRM_PAGER:
@@ -986,9 +1050,122 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 			break;
 
 		  case M_SCRIPT:
-			break;
+			{
+				/* Setup all of the environment for a paging script */
+				char *p;
+				int ip1=0, ip2=0, ip3=0, ip4=0;
+				char *bbalphamsg, *ackcode, *rcpt, *bbhostname, *bbhostsvc, *bbhostsvccommas, *bbnumeric, *machip, *bbsvcname, *bbsvcnum, *bbcolorlevel, *recovered, *downsecs, *downsecsmsg;
+				pid_t scriptpid;
 
-		  case M_BBSCRIPT:
+				p = message_text(alert, recip);
+				bbalphamsg = (char *)malloc(strlen("BBALPHAMSG=") + strlen(p) + 1);
+				sprintf(bbalphamsg, "BBALPHAMSG=%s", p);
+				putenv(bbalphamsg);
+
+				ackcode = (char *)malloc(strlen("ACKCODE=") + 10);
+				sprintf(ackcode, "ACKCODE=%d", alert->cookie);
+				putenv(ackcode);
+
+				rcpt = (char *)malloc(strlen("RCPT=") + strlen(recip->recipient) + 1);
+				sprintf(rcpt, "RCPT=%s", recip->recipient);
+				putenv(rcpt);
+
+				bbhostname = (char *)malloc(strlen("BBHOSTNAME=") + strlen(alert->hostname->name) + 1);
+				sprintf(bbhostname, "BBHOSTNAME=%s", alert->hostname->name);
+				putenv(bbhostname);
+
+				bbhostsvc = (char *)malloc(strlen("BBHOSTSVC=") + strlen(alert->hostname->name) + 1 + strlen(alert->testname->name) + 1);
+				sprintf(bbhostsvc, "BBHOSTSVC=%s.%s", alert->hostname->name, alert->testname->name);
+				putenv(bbhostsvc);
+
+				bbhostsvccommas = (char *)malloc(strlen("BBHOSTSVCCOMMAS=") + strlen(alert->hostname->name) + 1 + strlen(alert->testname->name) + 1);
+				sprintf(bbhostsvccommas, "BBHOSTSVCCOMMAS=%s.%s", commafy(alert->hostname->name), alert->testname->name);
+				putenv(bbhostsvccommas);
+
+				bbnumeric = (char *)malloc(strlen("BBNUMERIC=") + 22 + 1);
+				p = bbnumeric;
+				p += sprintf(p, "BBNUMERIC=");
+				p += sprintf(p, "%03d", servicecode(alert->testname->name));
+				sscanf(alert->ip, "%d.%d.%d.%d", &ip1, &ip2, &ip3, &ip4);
+				p += sprintf(p, "%03d%03d%03d%03d", ip1, ip2, ip3, ip4);
+				p += sprintf(p, "%d", alert->cookie);
+				putenv(bbnumeric);
+
+				machip = (char *)malloc(strlen("MACHIP=") + 13);
+				sprintf(machip, "MACHIP=%03d%03d%03d%03d", ip1, ip2, ip3, ip4);
+				putenv(machip);
+
+				bbsvcname = (char *)malloc(strlen("BBSVCNAME=") + strlen(alert->testname->name) + 1);
+				sprintf(bbsvcname, "BBSVCNAME=%s", alert->testname->name);
+				putenv(bbsvcname);
+
+				bbsvcnum = (char *)malloc(strlen("BBSVCNUM=") + 10);
+				sprintf(bbsvcnum, "BBSVCNUM=%d", servicecode(alert->testname->name));
+				putenv(bbsvcnum);
+
+				bbcolorlevel = (char *)malloc(strlen("BBCOLORLEVEL=") + strlen(colorname(alert->color)) + 1);
+				sprintf(bbcolorlevel, "BBCOLORLEVEL=%s", colorname(alert->color));
+				putenv(bbcolorlevel);
+
+				recovered = (char *)malloc(strlen("RECOVERED=") + 2);
+				sprintf(recovered, "RECOVERED=%d", ((alert->state == A_RECOVERED) ? 1 : 0));
+				putenv(recovered);
+
+				downsecs = (char *)malloc(strlen("DOWNSECS=") + 20);
+				sprintf(downsecs, "DOWNSECS=%d", (int)(time(NULL) - alert->eventstart));
+				putenv(downsecs);
+
+				if (alert->state == A_RECOVERED) {
+					downsecsmsg = (char *)malloc(strlen("DOWNSECSMSG=Event duration :") + 20);
+					sprintf(downsecsmsg, "DOWNSECSMSG=Event duration : %d", (int)(time(NULL) - alert->eventstart));
+				}
+				else {
+					downsecsmsg = strdup("DOWNSECSMSG=");
+				}
+				putenv(downsecsmsg);
+
+				scriptpid = fork();
+				if (scriptpid == 0) {
+					/* The child starts the script */
+					execlp(recip->scriptname, recip->scriptname, NULL);
+					errprintf("Could not launch paging script %s: %s\n", 
+						  recip->scriptname, strerror(errno));
+					exit(0);
+				}
+				else if (scriptpid > 0) {
+					/* Parent waits for child to complete */
+					int childstat;
+
+					wait(&childstat);
+					if (WIFEXITED(childstat) && (WEXITSTATUS(childstat) != 0)) {
+						errprintf("Paging script %s terminated with status %d\n",
+							  recip->scriptname, WEXITSTATUS(childstat));
+					}
+					else if (WIFSIGNALED(childstat)) {
+						errprintf("Paging script %s terminated by signal %d\n",
+							  recip->scriptname, WTERMSIG(childstat));
+					}
+				}
+				else {
+					errprintf("Fork failed to launch script %s\n", recip->scriptname);
+				}
+
+				/* Clean out the environment settings */
+				putenv("BBALPHAMSG"); free(bbalphamsg);
+				putenv("ACKCODE"); free(ackcode);
+				putenv("RCPT"); free(rcpt);
+				putenv("BBHOSTNAME"); free(bbhostname);
+				putenv("BBHOSTSVC"); free(bbhostsvc);
+				putenv("BBHOSTSVCCOMMAS"); free(bbhostsvccommas);
+				putenv("BBNUMERIC"); free(bbnumeric);
+				putenv("MACHIP"); free(machip);
+				putenv("BBSVCNAME"); free(bbsvcname);
+				putenv("BBSVCNUM"); free(bbsvcnum);
+				putenv("BBCOLORLEVEL"); free(bbcolorlevel);
+				putenv("RECOVERED"); free(recovered);
+				putenv("DOWNSECS"); free(downsecs);
+				putenv("DOWNSECSMSG"); free(downsecsmsg);
+			}
 			break;
 		}
 	}
