@@ -26,8 +26,11 @@ char *channelnames[] = {
 
 bbd_channel_t *setup_channel(enum msgchannels_t chnid, int flags)
 {
-	key_t key = ftok("bbd_net", chnid);
-	bbd_channel_t *newch = (bbd_channel_t *)malloc(sizeof(bbd_channel_t));
+	key_t key;
+	bbd_channel_t *newch;
+
+	key = ftok(getenv("BBHOME"), chnid);
+	newch = (bbd_channel_t *)malloc(sizeof(bbd_channel_t));
 
 	newch->seq = 0;
 	newch->channelid = chnid;
