@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.75 2004-12-08 17:56:51 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.76 2004-12-09 11:52:43 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1441,16 +1441,16 @@ void do_message(conn_t *msg, char *origin)
 				bufp += sprintf(bufp, "  <Cookie>N/A</Cookie>\n");
 
 			if (log->ackmsg && (log->acktime > now))
-				bufp += sprintf(bufp, "  <AckMsg>%s</AckMsg>\n", log->ackmsg);
+				bufp += sprintf(bufp, "  <AckMsg><![CDATA[%s]]></AckMsg>\n", log->ackmsg);
 			else
 				bufp += sprintf(bufp, "  <AckMsg>N/A</AckMsg>\n");
 
 			if (log->dismsg && (log->enabletime > now))
-				bufp += sprintf(bufp, "  <DisMsg>%s</DisMsg>\n", log->dismsg);
+				bufp += sprintf(bufp, "  <DisMsg><![CDATA[%s]]></DisMsg>\n", log->dismsg);
 			else
 				bufp += sprintf(bufp, "  <DisMsg>N/A</DisMsg>\n");
 
-			bufp += sprintf(bufp, "  <Message>%s</Message>\n", msg_data(log->message));
+			bufp += sprintf(bufp, "  <Message><!CDATA[%s]]></Message>\n", msg_data(log->message));
 			bufp += sprintf(bufp, "</ServerStatus>\n");
 
 			msg->doingwhat = RESPONDING;
@@ -1564,7 +1564,7 @@ void do_message(conn_t *msg, char *origin)
 				else
 					bufp += sprintf(bufp, "    <Cookie>N/A</Cookie>\n");
 
-				bufp += sprintf(bufp, "    <MessageSummary>%s</MessageSummary>\n", lwalk->message);
+				bufp += sprintf(bufp, "    <MessageSummary><![CDATA[%s]]></MessageSummary>\n", lwalk->message);
 				bufp += sprintf(bufp, "  </ServerStatus>\n");
 				if (eoln) *eoln = '\n';
 			}
