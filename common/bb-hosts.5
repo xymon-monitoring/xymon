@@ -487,6 +487,15 @@ Note: Internally, the ping test will still be handled as
 "failed", and therefore any other tests run for this host
 will report a status of "clear".
 
+.IP route_LOCATION:router1,router2,...
+If the BBLOCATION environment variable is defined, a tag
+of "route_BBLOCATION:" is recognized by bbtest-net with 
+the same effect as the normal "route:" tag (see above).
+This allows you to have different route: tags for each
+BBNET server. The actual text for the tag then must
+match the value you have for the BBLOCATION setting.
+E.g. with BBLOCATION=dmz, the tag becomes "route_dmz:"
+
 
 .SH BBTEST-NET TAGS FOR HTTP (WEB) TESTS
 These tags affect the way a http check is performed.
