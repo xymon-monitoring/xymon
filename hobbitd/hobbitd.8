@@ -98,8 +98,9 @@ hobbitd is started by hobbitlaunch, the environment settings are controlled
 by the hobbitlaunch hobbitlaunch.cfg file.
 
 .IP "--pidfile=FILENAME"
-If hobbitd runs as a daemon process, the proces-ID of hobbitd will
-be written to this file. This is for use in automated startup scripts.
+hobbitd writes the process-ID it is running with to this file.
+This is for use in automated startup scripts. The default file is
+$BBSERVERLOGS/hobbitd.pid.
 
 .IP "--log=FILENAME"
 Redirect all output from hobbitd to FILENAME.
