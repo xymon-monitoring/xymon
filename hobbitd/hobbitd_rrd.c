@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.7 2004-12-11 23:20:48 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.8 2004-12-29 08:42:35 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -30,11 +30,20 @@ static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.7 2004-12-11 23:20:48 henrik Exp $
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 
 
+void sig_handler(int signum)
+{
+	switch (signum) {
+	  case SIGCHLD:
+		  break;
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	char *msg;
 	int running;
 	int argi, seq;
+	struct sigaction sa;
 
 	/* Handle program options. */
 	for (argi = 1; (argi < argc); argi++) {
@@ -53,8 +62,10 @@ int main(int argc, char *argv[])
 
 	save_errbuf = 0;
 	setup_signalhandler("bbgend_larrd");
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = sig_handler;
+	sigaction(SIGCHLD, &sa, NULL);
 	signal(SIGPIPE, SIG_DFL);
-	signal(SIGCHLD, SIG_IGN);
 
 	running = 1;
 	while (running) {
@@ -65,6 +76,7 @@ int main(int argc, char *argv[])
 		char *hostname = NULL, *testname = NULL;
 		larrdrrd_t *ldef = NULL;
 		time_t tstamp;
+		int childstat;
 
 		/* Get next message */
 		msg = get_bbgend_message(argv[0], &seq, NULL);
@@ -152,6 +164,12 @@ int main(int argc, char *argv[])
 			ldef = find_larrd_rrd(testname, "");
 			update_larrd(hostname, testname, restofmsg, tstamp, ldef);
 		}
+
+		/* 
+		 * We fork a subprocess when processing drophost requests.
+		 * Pickup any finished child processes to avoid zombies
+		 */
+		while (wait3(&childstat, WNOHANG, NULL) > 0) ;
 	}
 
 	return 0;

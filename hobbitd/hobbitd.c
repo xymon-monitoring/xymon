@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.85 2004-12-19 20:22:23 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.86 2004-12-29 08:42:35 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -2028,6 +2028,9 @@ void sig_handler(int signum)
 	int status;
 
 	switch (signum) {
+	  case SIGCHLD:
+		break;
+
 	  case SIGTERM:
 	  case SIGINT:
 		running = 0;
@@ -2040,11 +2043,6 @@ void sig_handler(int signum)
 
 	  case SIGUSR1:
 		nextcheckpoint = 0;
-		break;
-
-	  case SIGCHLD:
-		/* A child exited. Pick up status so we dont leave zombies around */
-		wait(&status);
 		break;
 	}
 }
@@ -2282,8 +2280,8 @@ int main(int argc, char *argv[])
 	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGUSR1, &sa, NULL);
-	sigaction(SIGCHLD, &sa, NULL);
 	sigaction(SIGHUP, &sa, NULL);
+	sigaction(SIGCHLD, &sa, NULL);
 
 	statuschn = setup_channel(C_STATUS, CHAN_MASTER);
 	if (statuschn == NULL) { errprintf("Cannot setup status channel\n"); return 1; }
@@ -2314,6 +2312,7 @@ int main(int argc, char *argv[])
 		int maxfd, n;
 		conn_t *cwalk;
 		time_t now = time(NULL);
+		int childstat;
 
 		if (logfn && dologswitch) {
 			freopen(logfn, "a", stdout);
@@ -2506,6 +2505,9 @@ int main(int argc, char *argv[])
 				conntail->next = NULL;
 			}
 		}
+
+		/* Pickup any finished child processes to avoid zombies */
+		while (wait3(&childstat, WNOHANG, NULL) > 0) ;
 	} while (running);
 
 	/* Tell the workers we to shutdown also */

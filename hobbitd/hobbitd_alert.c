@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.30 2004-12-03 10:31:25 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.31 2004-12-29 08:42:35 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -99,11 +99,8 @@ activealerts_t *find_active(char *hostname, char *testname)
 
 void sig_handler(int signum)
 {
-	int status;
-
 	switch (signum) {
-	  case SIGCHLD: 
-		  wait(&status);
+	  case SIGCHLD:
 		  break;
 
 	  default:
@@ -273,10 +270,10 @@ int main(int argc, char *argv[])
 	/* Need to handle these ourselves, so we can shutdown and save state-info */
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
-	sigaction(SIGCHLD, &sa, NULL);
 	sigaction(SIGPIPE, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGCHLD, &sa, NULL);
 
 	if (getenv("BBACKS")) {
 		sprintf(acklogfn, "%s/acklog", getenv("BBACKS"));
@@ -295,6 +292,7 @@ int main(int argc, char *argv[])
 		time_t now;
 		int anytogo;
 		activealerts_t *awalk, *khead, *tmp;
+		int childstat;
 
 		if (checkfn && (time(NULL) > nextcheckpoint)) {
 			dprintf("Saving checkpoint\n");
@@ -589,6 +587,9 @@ int main(int argc, char *argv[])
 			if (tmp->ackmessage) free(tmp->ackmessage);
 			free(tmp);
 		}
+
+		/* Pickup any finished child processes to avoid zombies */
+		while (wait3(&childstat, WNOHANG, NULL) > 0) ;
 	}
 
 	if (checkfn) save_checkpoint(checkfn);

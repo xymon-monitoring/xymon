@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.23 2004-11-30 22:38:53 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.24 2004-12-29 08:42:35 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -34,11 +34,11 @@ static char rcsid[] = "$Id: hobbitd_history.c,v 1.23 2004-11-30 22:38:53 henrik 
 
 void sig_handler(int signum)
 {
-	int status;
-
+	/*
+	 * Why this? Because we must have our own signal handler installed to call wait()
+	 */
 	switch (signum) {
 	  case SIGCHLD:
-		  wait(&status);
 		  break;
 	}
 }
@@ -104,10 +104,10 @@ int main(int argc, char *argv[])
 
 	/* For picking up lost children */
 	setup_signalhandler("bbgend_history");
-	signal(SIGPIPE, SIG_DFL);
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
-	sigaction(SIGCHLD, &sa, NULL);
+	sigaction(SIGCHILD, &sa, NULL);
+	signal(SIGPIPE, SIG_DFL);
 
 	while (running) {
 		char *items[20] = { NULL, };
@@ -122,6 +122,7 @@ int main(int argc, char *argv[])
 		char newcol2[3];
 		char oldcol2[3];
 		int trend;
+		int childstat;
 
 		msg = get_bbgend_message("bbgend_history", &seq, NULL);
 		if (msg == NULL) {
@@ -512,6 +513,9 @@ int main(int argc, char *argv[])
 		else if (strncmp(items[0], "@@shutdown", 10) == 0) {
 			running = 0;
 		}
+
+		/* Pickup any finished child processes to avoid zombies */
+		while (wait3(&childstat, WNOHANG, NULL) > 0) ;
 	}
 
 	fclose(alleventsfd);
