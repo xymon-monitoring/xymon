@@ -113,11 +113,11 @@ bb-hostsvc.o: bb-hostsvc.c
 
 ifdef HOBBITD
 %.sh: %.sh-hobbitd.DIST
-	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' >$@
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 else
 %.sh: %.sh-bbd.DIST
-	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' >$@
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 endif
 
