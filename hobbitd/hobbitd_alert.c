@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.4 2004-10-16 13:01:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.5 2004-10-16 16:07:20 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -134,8 +134,10 @@ int main(int argc, char *argv[])
 		timeout.tv_sec = 60; timeout.tv_usec = 0;
 		msg = get_bbgend_message("bbd_alert", &seq, &timeout);
 		if (msg == NULL) {
+			/*
+			 * This will happen when one of our children finishes sending off alarms
+			 */
 			dprintf("Got NULL message, exiting\n");
-			running = 0;
 			continue;
 		}
 
