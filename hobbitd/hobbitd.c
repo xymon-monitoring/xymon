@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.63 2004-11-22 22:09:45 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.64 2004-11-23 21:51:19 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -138,12 +138,137 @@ bbgend_channel_t *enadischn = NULL;	/* Receives "enable" and "disable" messages 
 #define NO_COLOR (COL_COUNT)
 static char *colnames[COL_COUNT+1];
 int alertcolors = ( (1 << COL_RED) | (1 << COL_YELLOW) | (1 << COL_PURPLE) );
+
+typedef struct ghostlist_t {
+	char *name;
+	char *sender;
+	struct ghostlist_t *next;
+} ghostlist_t;
+
 int ghosthandling = -1;
+ghostlist_t *ghostlist = NULL;
+
 char *checkpointfn = NULL;
 char *purpleclientconn = NULL;
-
 FILE *dbgfd = NULL;
 char *dbghost = NULL;
+
+typedef struct bbgend_statistics_t {
+	char *cmd;
+	unsigned long count;
+} bbgend_statistics_t;
+
+bbgend_statistics_t bbgend_stats[] = {
+	{ "status", 0 },
+	{ "combo", 0 },
+	{ "page", 0 },
+	{ "summary", 0 },
+	{ "data", 0 },
+	{ "notes", 0 },
+	{ "enable", 0 },
+	{ "disable", 0 },
+	{ "ack", 0 },
+	{ "config", 0 },
+	{ "query", 0 },
+	{ "bbgendboard", 0 },
+	{ "bbgendlist", 0 },
+	{ "bbgendlog", 0 },
+	{ "bbgenddrop", 0 },
+	{ "bbgendrename", 0 },
+	{ NULL, 0 }
+};
+
+unsigned long msgs_total = 0;
+unsigned long msgs_total_last = 0;
+time_t last_stats_time = 0;
+
+void update_statistics(char *cmd)
+{
+	int i;
+
+	msgs_total++;
+
+	i = 0;
+	while (bbgend_stats[i].cmd && strncmp(bbgend_stats[i].cmd, cmd, strlen(bbgend_stats[i].cmd))) { i++; }
+	bbgend_stats[i].count++;
+}
+
+char *generate_stats(void)
+{
+	static char *statsbuf = NULL;
+	static int statsbuflen = 0;
+	time_t now = time(NULL);
+	char *bufp;
+	int i, clients;
+
+	if (statsbuf == NULL) {
+		statsbuflen = 8192;
+		statsbuf = (char *)malloc(statsbuflen);
+	}
+	init_timestamp();
+
+	bufp = statsbuf;
+
+	bufp += sprintf(bufp, "status %s.bbgend %s %s\nStatistics for bbgend daemon\n\n",
+			getenv("MACHINE"), colorname(errbuf ? COL_YELLOW : COL_GREEN), timestamp);
+	bufp += sprintf(bufp, "Incoming messages      : %10ld\n", msgs_total);
+	i = 0;
+	while (bbgend_stats[i].cmd) {
+		bufp += sprintf(bufp, "- %-20s : %10ld\n", bbgend_stats[i].cmd, bbgend_stats[i].count);
+		i++;
+	}
+	if ((now > last_stats_time) && (last_stats_time > 0)) {
+		bufp += sprintf(bufp, "Incoming messages/sec  : %10ld (average last %d seconds)\n", 
+			((msgs_total - msgs_total_last) / (now - last_stats_time)), 
+			(int)(now - last_stats_time));
+	}
+	msgs_total_last = msgs_total;
+
+	bufp += sprintf(bufp, "\n");
+	clients = semctl(statuschn->semid, CLIENTCOUNT, GETVAL);
+	bufp += sprintf(bufp, "status channel messages: %10ld (%d readers)\n", statuschn->msgcount, clients);
+	clients = semctl(stachgchn->semid, CLIENTCOUNT, GETVAL);
+	bufp += sprintf(bufp, "stachg channel messages: %10ld (%d readers)\n", stachgchn->msgcount, clients);
+	clients = semctl(pagechn->semid, CLIENTCOUNT, GETVAL);
+	bufp += sprintf(bufp, "page   channel messages: %10ld (%d readers)\n", pagechn->msgcount, clients);
+	clients = semctl(datachn->semid, CLIENTCOUNT, GETVAL);
+	bufp += sprintf(bufp, "data   channel messages: %10ld (%d readers)\n", datachn->msgcount, clients);
+	clients = semctl(noteschn->semid, CLIENTCOUNT, GETVAL);
+	bufp += sprintf(bufp, "notes  channel messages: %10ld (%d readers)\n", noteschn->msgcount, clients);
+	clients = semctl(enadischn->semid, CLIENTCOUNT, GETVAL);
+	bufp += sprintf(bufp, "enadis channel messages: %10ld (%d readers)\n", enadischn->msgcount, clients);
+
+	if (ghostlist) {
+		ghostlist_t *tmp;
+
+		bufp += sprintf(bufp, "\n\nGhost reports:\n");
+		while (ghostlist) {
+			if ((statsbuflen - (bufp - statsbuf)) < 512) {
+				/* Less than 512 bytes left in buffer - expand it */
+				statsbuflen += 4096;
+				statsbuf = (char *)realloc(statsbuf, statsbuflen);
+				bufp = statsbuf + strlen(statsbuf);
+			}
+			bufp += sprintf(bufp, "  %-15s reported host %s\n", ghostlist->sender, ghostlist->name);
+			tmp = ghostlist;
+			ghostlist = ghostlist->next;
+			free(tmp->name); free(tmp->sender); free(tmp);
+		}
+	}
+
+	if (errbuf) {
+		if ((strlen(statsbuf) + strlen(errbuf) + 1024) > statsbuflen) {
+			statsbuflen = strlen(statsbuf) + strlen(errbuf) + 1024;
+			statsbuf = (char *)realloc(statsbuf, statsbuflen);
+			bufp = statsbuf + strlen(statsbuf);
+		}
+
+		bufp += sprintf(bufp, "\n\nLatest errormessages:\n%s\n", errbuf);
+	}
+
+	return statsbuf;
+}
+
 
 sender_t *getsenderlist(char *iplist)
 {
@@ -247,6 +372,7 @@ void posttochannel(bbgend_channel_t *channel, char *channelmarker,
 	/* All clear, post the message */
 	if (channel->seq == 999999) channel->seq = 0;
 	channel->seq++;
+	channel->msgcount++;
 	gettimeofday(&tstamp, &tz);
 	if (readymsg) {
 		n = sprintf(channel->channelbuf, 
@@ -398,6 +524,22 @@ int durationvalue(char *dur)
 }
 
 
+void log_ghost(char *hostname, char *sender)
+{
+	ghostlist_t *gwalk;
+
+	if ((ghosthandling < 2) || (hostname == NULL) || (sender == NULL)) return;
+
+	for (gwalk = ghostlist; (gwalk && (strcmp(gwalk->name, hostname) != 0)); gwalk = gwalk->next) ;
+	if (gwalk == NULL) {
+		gwalk = (ghostlist_t *)malloc(sizeof(ghostlist_t));
+		gwalk->name = strdup(hostname);
+		gwalk->sender = strdup(sender);
+		gwalk->next = ghostlist;
+		ghostlist = gwalk;
+	}
+}
+
 void get_hts(char *msg, char *sender, 
 	     bbgend_hostlist_t **host, bbgend_testlist_t **test, bbgend_log_t **log, 
 	     int *color, int createhost, int createlog)
@@ -445,13 +587,19 @@ void get_hts(char *msg, char *sender,
 		if (testname) { *testname = '\0'; testname++; }
 	}
 	else {
+		char *knownname;
+
 		hostname = hosttest;
 		testname = strrchr(hosttest, '.');
 		if (testname) { *testname = '\0'; testname++; }
 		p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
 
-		hostname = knownhost(hostname, hostip, sender, ghosthandling, &maybedown);
-		if (hostname == NULL) goto done;
+		knownname = knownhost(hostname, hostip, ghosthandling, &maybedown);
+		if (knownname == NULL) {
+			log_ghost(hostname, sender);
+			goto done;
+		}
+		hostname = knownname;
 	}
 
 	for (hwalk = hosts; (hwalk && strcasecmp(hostname, hwalk->hostname)); hwalk = hwalk->next) ;
@@ -738,7 +886,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 	p = hosttest; while ((p = strchr(p, ',')) != NULL) *p = '.';
 
 
-	p = knownhost(hosttest, hostip, sender, ghosthandling, &maybedown);
+	p = knownhost(hosttest, hostip, ghosthandling, &maybedown);
 	if (p == NULL) return;
 	strcpy(hosttest, p);
 
@@ -905,7 +1053,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	/*
 	 * Now clean up our internal state info, if there is any.
 	 */
-	hostname = knownhost(hostname, hostip, sender, ghosthandling, &maybedown);
+	hostname = knownhost(hostname, hostip, ghosthandling, &maybedown);
 	if (hostname == NULL) return;
 
 	for (hwalk = hosts; (hwalk && strcasecmp(hostname, hwalk->hostname)); hwalk = hwalk->next) ;
@@ -1027,6 +1175,9 @@ void do_message(conn_t *msg)
 	strcpy(sender, inet_ntoa(msg->addr.sin_addr));
 	now = time(NULL);
 
+	/* Count statistics */
+	update_statistics(msg->buf);
+
 	if (strncmp(msg->buf, "combo\n", 6) == 0) {
 		char *currmsg, *nextmsg;
 
@@ -1044,6 +1195,10 @@ void do_message(conn_t *msg)
 				fprintf(dbgfd, "\n---- combo message from %s ----\n%s---- end message ----\n", sender, currmsg);
 				fflush(dbgfd);
 			}
+
+			/* Count individual status-messages also */
+			update_statistics(currmsg);
+
 			if (log && (color != -1)) {
 				msgfrom = strstr(currmsg, "\nStatus message received from ");
 				if (msgfrom) {
@@ -1088,7 +1243,8 @@ void do_message(conn_t *msg)
 				*testname = '\0'; 
 				testname++; 
 				p = tok; while ((p = strchr(p, ',')) != NULL) *p = '.';
-				hostname = knownhost(tok, hostip, sender, ghosthandling, &maybedown);
+				hostname = knownhost(tok, hostip, ghosthandling, &maybedown);
+				if (hostname == NULL) log_ghost(tok, sender);
 			}
 
 			if (!oksender(statussenders, hostip, msg->addr.sin_addr, msg->buf)) goto done;
@@ -1112,7 +1268,7 @@ void do_message(conn_t *msg)
 			char *p;
 
 			p = tok; while ((p = strchr(p, ',')) != NULL) *p = '.';
-			hostname = knownhost(tok, hostip, sender, ghosthandling, &maybedown);
+			hostname = knownhost(tok, hostip, ghosthandling, &maybedown);
 
 			if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 			if (hostname) handle_notes(msg->buf, sender, hostname);
@@ -1492,7 +1648,7 @@ void load_checkpoint(char *fn)
 		if (err) continue;
 
 		/* Only load hosts we know; they may have been dropped while we were offline */
-		hostname = knownhost(hostname, hostip, "bbgendchk", ghosthandling, &maybedown);
+		hostname = knownhost(hostname, hostip, ghosthandling, &maybedown);
 		if (hostname == NULL) continue;
 
 		if ((hosts == NULL) || (strcmp(hostname, htail->hostname) != 0)) {
@@ -1671,9 +1827,6 @@ int main(int argc, char *argv[])
 	colnames[NO_COLOR] = "none";
 	gettimeofday(&tv, &tz);
 	srandom(tv.tv_usec);
-
-	/* Dont save the error buffer */
-	save_errbuf = 0;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--debug")) {
@@ -1917,6 +2070,20 @@ int main(int argc, char *argv[])
 		if (do_purples && (now > nextpurpleupdate)) {
 			nextpurpleupdate = time(NULL) + 60;
 			check_purple_status();
+		}
+
+		if ((last_stats_time + 300) <= now) {
+			char *buf;
+			bbgend_hostlist_t *h;
+			bbgend_testlist_t *t;
+			bbgend_log_t *log;
+			int color;
+
+			buf = generate_stats();
+			get_hts(buf, "bbgend", &h, &t, &log, &color, 1, 1);
+			handle_status(buf, "bbgend", h->hostname, t->testname, log, color);
+			last_stats_time = now;
+			flush_errbuf();
 		}
 
 		FD_ZERO(&fdread); FD_ZERO(&fdwrite);
