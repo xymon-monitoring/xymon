@@ -56,6 +56,20 @@ for disabling or enabling hosts in Big Brother.
 .IP "--dir=DIRECTORY"
 Overrides the default output directory.
 
+.IP "--htmldir=DIRECTORY"
+When subscribing to the status channel, an HTML version of the logfile
+is saved in this directory. This is for compatibility with the bbd 
+daemon when BBLOGSTATUS is set to "static".
+
+.IP "--htmlext=.EXT"
+Set the filename extension for generated HTML files. By default, HTML
+files are saved with a ".html" extension.
+
+.IP "--only=test[,test,test]"
+Save status messages only for the listed set of tests. This can be useful
+if you have an external script that needs to parse some of the status logs,
+but you do not want to save all status logs.
+
 .IP "--debug"
 Enable debugging output.
 
