@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.14 2005-02-03 13:43:29 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.15 2005-02-03 17:02:20 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -31,6 +31,7 @@ static char rcsid[] = "$Id: eventlog.c,v 1.14 2005-02-03 13:43:29 henrik Exp $";
 #include <errno.h>
 
 #include "bbgen.h"
+#include "loadbbhosts.h"
 #include "util.h"
 #include "eventlog.h"
 
@@ -240,6 +241,11 @@ char *reqenv[] = {
 "DOTHEIGHT",
 NULL };
 
+/* Global vars needed for load_bbhosts() */
+summary_t *sumhead = NULL;
+time_t reportstart = 0;
+double reportwarnlevel = 97.0;
+
 static void errormsg(char *msg)
 {
 	printf("Content-type: text/html\n\n");
@@ -285,6 +291,7 @@ static void parse_query(void)
 int main(int argc, char *argv[])
 {
 	int argi;
+	bbgen_page_t *pagehead = NULL;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -293,17 +300,48 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if ((xgetenv("QUERY_STRING") == NULL) || (strlen(xgetenv("QUERY_STRING")) == 0)) {
+		/* Present the query form */
+		int formfile;
+		char formfn[PATH_MAX];
+
+		sprintf(formfn, "%s/web/event_form", xgetenv("BBHOME"));
+		formfile = open(formfn, O_RDONLY);
+
+		if (formfile >= 0) {
+			char *inbuf;
+			struct stat st;
+
+			fstat(formfile, &st);
+			inbuf = (char *) malloc(st.st_size + 1);
+			read(formfile, inbuf, st.st_size);
+			inbuf[st.st_size] = '\0';
+			close(formfile);
+
+			printf("Content-Type: text/html\n\n");
+			sethostenv("", "", "", colorname(COL_BLUE));
+
+			headfoot(stdout, "event", "", "header", COL_BLUE);
+			output_parsed(stdout, inbuf, COL_BLUE, "report");
+			headfoot(stdout, "event", "", "footer", COL_BLUE);
+
+			xfree(inbuf);
+		}
+		return 0;
+	}
+
 	envcheck(reqenv);
 	parse_query();
+	pagehead = load_bbhosts(NULL);
 
 	/* Now generate the webpage */
 	printf("Content-Type: text/html\n\n");
 
-	headfoot(stdout, "bb2", "", "header", COL_GREEN);
+	headfoot(stdout, "event", "", "header", COL_GREEN);
 	fprintf(stdout, "<center>\n");
 	do_eventlog(stdout, maxcount, maxminutes, 1);
 	fprintf(stdout, "</center>\n");
-	headfoot(stdout, "bb2", "", "footer", COL_GREEN);
+	headfoot(stdout, "event", "", "footer", COL_GREEN);
 
 	return 0;
 }
