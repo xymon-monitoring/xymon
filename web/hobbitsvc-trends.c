@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.62 2005-03-22 09:03:37 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.63 2005-03-24 07:23:05 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -30,9 +30,14 @@ static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.62 2005-03-22 09:03:37 henrik
 #include "libbbgen.h"
 
 int		log_nohost_rrds = 0;
-int		sendmetainfo = 0;
 namelist_t	*hosthead = NULL;
 char		*larrdgraphs_default = NULL;;
+
+#ifdef HOBBITD
+int		sendmetainfo = 1;
+#else
+int		sendmetainfo = 0;
+#endif
 
 typedef struct graph_t {
 	larrdgraph_t *gdef;
@@ -430,6 +435,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--meta") == 0) {
 			sendmetainfo = 1;
+		}
+		else if (strcmp(argv[argi], "--no-meta") == 0) {
+			sendmetainfo = 0;
 		}
 		else if (strcmp(argv[argi], "--no-update") == 0) {
 			dontsendmessages = 1;
