@@ -1,6 +1,6 @@
 Name: hobbit
 Version: @VER@
-Release: 1.2
+Release: 4
 Group: Networking/Daemons
 URL: http://hobbitmon.sourceforge.net/
 License: GPL
@@ -44,6 +44,7 @@ rm -rf $RPM_BUILD_ROOT
         PIXELCOUNT=960 \
         INSTALLBINDIR=/usr/lib/hobbit/server/bin \
         INSTALLETCDIR=/etc/hobbit \
+        INSTALLWEBDIR=/etc/hobbit/web \
         INSTALLEXTDIR=/usr/lib/hobbit/server/ext \
         INSTALLTMPDIR=/var/lib/hobbit/tmp \
         INSTALLWWWDIR=/var/lib/hobbit/www \
@@ -93,8 +94,9 @@ chkconfig --del hobbit
 %files
 %attr(-, root, root) %doc README Changes* COPYING CREDITS
 %attr(644, root, root) %doc /usr/share/man/man*/*
-%attr(755, root, root) %dir /etc/hobbit
 %attr(644, root, root) %config /etc/hobbit/*
+%attr(755, root, root) %dir /etc/hobbit 
+%attr(755, root, root) %dir /etc/hobbit/web
 %attr(755, hobbit, hobbit) %dir /var/log/hobbit
 %attr(755, root, root) /etc/init.d/hobbit
 %attr(644, root, root) /etc/logrotate.d/hobbit
