@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.8 2004-11-20 23:31:42 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.9 2004-11-21 11:37:56 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -331,11 +331,11 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--config=")) {
 			char *p = strchr(argv[argi], '=');
-			config = strdup(p+1);
+			config = strdup(expand_env(p+1));
 		}
 		else if (argnmatch(argv[argi], "--log=")) {
 			char *p = strchr(argv[argi], '=');
-			logfn = strdup(p+1);
+			logfn = strdup(expand_env(p+1));
 		}
 		else if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
