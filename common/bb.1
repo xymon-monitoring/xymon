@@ -1,0 +1,147 @@
+.TH BB 1 "Version 2.14: 25 Dec 2003" "bbgen toolkit"
+.SH NAME
+bb \- bb client communication program
+.SH SYNOPSIS
+.B "bb SERVERIP message"
+
+.SH DESCRIPTION
+.I bb
+is the client program used to communicate with the
+Big Brother server. It is frequently used by Big Brother
+client systems to send in status messages and pager
+alerts on local tests, or by the Big Brother network tester 
+to send in results of the network tests.
+
+Use of the bb client program is documented in the Big
+Brother configuration guide. A brief summary of the
+standard commands is given below. The bbgen toolkit
+- in the "bbd-features.patch" - adds some new commands
+to the bb client program, which are documented here.
+
+.SH PARAMETERS
+The \fBSERVERIP\fR parameter defines which server receives
+the message. If SERVERIP is given as "0.0.0.0", then the
+message is sent to all of the servers listed in the BBDISPLAYS
+or BBPAGERS environment variable (for "status" and "page" messages,
+respectively). 
+
+Usually, a client will use "$BBDISP" for the \fBSERVERIP\fR 
+parameter, as this is defined by the Big Brother client scripts
+to automatically contain the correct value from the
+.I bb-hosts(5)
+file.
+.br
+
+The \fBmessage\fR parameter is the message to be sent across
+to the Big Brother server. Messages must be enclosed in quotes,
+but by doing so they can span multiple lines. The maximum size
+of a message is defined by the MAXLINE compile-time setting
+and defaults to 8 KB.
+
+.SH BB MESSAGE SYNTAX
+
+This section lists the most commonly used messages in the Big Brother
+protocol. For more detailed information, refer to the Big Brother
+Installation and Configuration Guide, section 3.9 Summary of BB Protocol.
+
+Each message must begin with one of the Big Brother commands. Where
+a HOSTNAME is specified, it must have any dots in the hostname changed
+to commas if the Big Brother FQDN setting is enabled (which is the default).
+So e.g. the host "www.foo.com" would report as "www,foo,com".
+
+.IP "status HOSTNAME.TESTNAME COLOR <additional text>"
+This sends in a status message for a single test (column) on a single host.
+TESTNAME is the name of the column where this test will show up; any
+name is valid except that using dots in the testname will not work.
+COLOR must be on of the valid colors: "green", "yellow", "red", "clear".
+"blue" and "purple" - although valid colors - should not be sent in a
+status-message, as these are handled specially by the Big Brother server.
+.br
+The "additional text" normally includes a local timestamp and a summary
+of the test result on the first line. Any lines following the first one
+are free-form, and can include any information that may be useful to
+diagnose the problem being reported.
+
+.IP "page HOSTNAME.TESTNAME COLOR <additional text>"
+This triggers the paging facility, generating a page following the
+rules defined for this particular host/test combination. Clients
+will not normally need to use this command, since a "status" message
+where the color is red, yellow or purple will automatically (in the
+bb program) result in a "page" message being sent as well.
+
+.IP "disable HOSTNAME.TESTNAME DURATION <additional text>"
+Disables a specific test for DURATION minutes. This will cause the
+status of this test to be listed as "blue" on the BBDISPLAY server,
+and no alerts for this host/test will be generated. If DURATION is
+given as a number followed by s/m/h/d, it is interpreted as being
+in seconds/minutes/hours/days respectively.
+
+.IP "enable HOSTNAME.TESTNAME"
+Re-enables a test that had been disabled.
+
+.IP "query HOSTNAME.TESTNAME"
+Query the BBDISPLAY server for the latest status reported for this
+particular test. If the host/test status is known, the response is
+the first line of the status report - the current color will be the
+first word on the line. Additional lines of text that might be 
+present on the status-message cannot be retrieved.
+.br
+This allows any BB client to determine the status of a particular
+test, whether it is one pertaining to the host where the client
+is running, some other host, or perhaps the result of a combined
+test from multiple hosts managed by
+.I bbcombotest(1)
+This will typically be useful to BB client extension scripts, that
+need to determine the status of other hosts e.g. to decide if an
+automatic recovery action should be initiated.
+.br
+Note: This is a bbgen extension, and requires that the Big Brother
+software has been patched with the bbgen bbd-features patch on both
+the server and the client. Also, the QUERYMSG option must be enabled
+on the Big Brother server, typically by adding it to the RUNOPTS
+environment variable.
+
+.IP "config FILENAME"
+Retrieve one of the Big Brother configuration files from the BB
+server. This command allows a client to pull files from the
+$BBHOME/etc/ directory on the server, allowing for semi-automatic
+updates of the client configuration. Since the Big Brother 
+configuration files are designed to have a common file for the
+configuration of all hosts in the BB system - and this is in fact
+the recommended way of configuring your BB clients - this makes
+it easier to keep the configuration files synchronized.
+.br
+Note: This is a bbgen extension, and requires that the Big Brother
+software has been patched with the bbgen bbd-features patch on both
+the server and the client. Also, the CONFIGMSG option must be enabled
+on the Big Brother server, typically by adding it to the RUNOPTS
+environment variable.
+
+
+.SH EXAMPLE
+
+Use "query" message to determine the color of the "www" test, and
+restart Apache if it is red:
+.br
+
+   $ WWW=`$BB $BBDISP "query www,foo,com.www" | awk '{print $1}'`
+   $ if [ "$WWW" = "red" ]; then /etc/init.d/apache restart; fi
+
+Use "config" message to update the local bb-dftab file (but only
+if we get a response):
+.br
+
+   $ $BB $BBDISP "config bb-dftab" >/tmp/bb-dftab.new
+   $ if [ -s /tmp/bb-dftab.new ]; then 
+       mv /tmp/bb-dftab.new $BBHOME/etc/bb-dftab
+     fi
+
+.SH NOTES
+This man-page describes the bb client program as per
+version 1.9e-BTF of the Big Brother package, with the
+extensions provided by the bbgen bbd-features patch.
+
+.SH "SEE ALSO"
+bbcombotest(1), bb-hosts(5), bb-environ(5), 
+the Big Brother Installation and Configuration guide.
+
