@@ -1,0 +1,50 @@
+* Implementer ny "streaming" protokol, som bruger en fast TCP forbin-
+  delse til at modtage beskeder. Besked-formatet beholdes som det er,
+  og der bruges blot en NUL til at adskille beskeder fra hinanden.
+
+* Brug bbproxy til at tage imod beskeder i "legacy" protokol format
+  bbproxy skal så implementere klient-siden af den ny streaming
+  protokol.
+
+* Den ny bbd tager kun mod stream beskeder.
+
+* Ny bbd implementerer en samlet BBDISPLAY+BBPAGER. Separat BBPAGER
+  server understøttes ikke. Der konstrueres en ny forsimplet protokol 
+  "sack" til at registrere acknowledgements.
+  Det betyder at "online", "offline", "page" og "ack" beskeder
+  ignoreres. 
+
+* "disable" beskeder sætter intern status-farve til "blue" og logger
+  beskeden om årsag og varighed. Når der modtages "status" for en
+  disabled test, pre-pendes indholdet af "disable" beskeden til
+  status-beskeden, som så behandles ligesom andre status-beskeder.
+  Den blå status vil også stoppe al alarmering.
+
+* "enable" beskeder clearer blot flag (varighed) for hvor længe
+  en test er disabled. Herefter vil nye status-beskeder automatisk
+  blive håndteret korrekt.
+
+* bbd etablerer et antal kanaler
+  - "status" : Fødes med indholdet af alle "status" og "summary" 
+               beskeder.
+  - "stachg" : Fødes med indholdet af "status" beskeder hvor
+               status-farven skifter.
+  - "page"   : Fødes med indholdet af "status" beskeder hvor
+               status skifter mellem en ikke-alarm farve og en
+	       alarm-farve, samt med "sack" beskeder.
+  - "data"   : Fødes med indholdet af "data" beskeder
+  - "notes"  : Fødes med indholdet af "notes" beskeder
+
+* Der startes et antal hjælpe-processer til at håndtere I/O og
+  andre "tunge" tasks:
+  - statuslog: Abonnerer på "status". Opdaterer bbvar/logs/ filer.
+  - htmllog  : Abonnerer på "status". Opdaterer bb/www/html/ filer.
+  - history  : Abonnerer på "stachg". Opdaterer bbvar/hist/allevents,
+               bbvar/hist/{HOST,HOST.TEST}, bbvar/histlogs/HOST/TEST/*
+  - alert    : Abonnerer på "page". Udsender alarmer via e-mail.
+               Opdaterer bbvar/acks/{notifications,recoveries}.log.
+  - datastore: Abonnerer på "data". Opdaterer bbvar/data/ filer.
+  - infostore: Abonnerer på "notes". Opdaterer bbvar/notes/ filer.
+  - larrd    : Abonnerer på "status" og "data". Opdaterer LARRD
+               datafiler. Prioritet 2.
+
