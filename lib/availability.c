@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.13 2003-06-23 14:35:25 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.14 2003-06-23 14:59:00 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -189,7 +189,8 @@ int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 
 
 
-int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *servicename, time_t fromtime, time_t totime)
+int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *servicename, 
+			time_t fromtime, time_t totime, int for_history)
 {
 	char l[MAX_LINE_LEN];
 	time_t starttime, duration;
@@ -237,7 +238,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 			repinfo->count[color]++;
 			repinfo->totduration[color] += duration;
 
-			if ((hostname != NULL) && (servicename != NULL) && (color != COL_GREEN)) {
+			if (for_history || ((hostname != NULL) && (servicename != NULL))) {
 				replog_t *newentry;
 				char timecopy[26], timespec[26];
 				char *token;
@@ -259,7 +260,12 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 				newentry->starttime = starttime;
 				newentry->duration = duration;
 				newentry->color = color;
-				newentry->cause = parse_histlogfile(hostname, servicename, timespec);
+
+				if (!for_history && (color != COL_GREEN)) {
+					newentry->cause = parse_histlogfile(hostname, servicename, timespec);
+				}
+				else newentry->cause = "";
+
 				newentry->timespec = malcop(timespec);
 				newentry->next = reploghead;
 				reploghead = newentry;
