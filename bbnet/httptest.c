@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.46 2003-08-29 08:26:25 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.47 2003-09-11 14:19:02 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -106,6 +106,7 @@ void add_http_test(testitem_t *t)
 	char *proxyuserpwd = NULL;
 	char *ip = NULL;
 	char *hosthdr = NULL;
+	int  isftp = 0;
 	int status;
 
 	/* 
@@ -117,7 +118,7 @@ void add_http_test(testitem_t *t)
 	/* Allocate the private data and initialize it */
 	req = (http_data_t *) malloc(sizeof(http_data_t));
 	t->privdata = (void *) req;
-	req->url = malcop(realurl(t->testspec, &proxy, &proxyuserpwd, &ip, &hosthdr));
+	req->url = malcop(realurl(t->testspec, &proxy, &proxyuserpwd, &ip, &hosthdr, &isftp));
 
 	if (proxy) {
 		req->proxy = malcop(proxy); 
@@ -127,6 +128,7 @@ void add_http_test(testitem_t *t)
 
 	if (ip) req->ip = malcop(ip); else req->ip = NULL;
 	if (hosthdr) req->hosthdr = malcop(hosthdr); else req->hosthdr = NULL;
+	req->is_ftp = isftp;
 	req->postdata = NULL;
 	req->sslversion = 0;
 	req->ciphers = NULL;
@@ -583,7 +585,9 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 			double t1, t2;
 			char *contenttype;
 
-			curl_easy_getinfo(req->curl, CURLINFO_HTTP_CODE, &req->httpstatus);
+			if (req->is_ftp) req->httpstatus = 200;  /* HACK */
+			else curl_easy_getinfo(req->curl, CURLINFO_HTTP_CODE, &req->httpstatus);
+
 			curl_easy_getinfo(req->curl, CURLINFO_CONNECT_TIME, &t1);
 			curl_easy_getinfo(req->curl, CURLINFO_TOTAL_TIME, &t2);
 			curl_easy_getinfo(req->curl, CURLINFO_CONTENT_TYPE, &contenttype);

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.117 2003-09-11 11:54:53 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.118 2003-09-11 14:19:02 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -655,6 +655,13 @@ void load_tests(void)
 #else
 						errprintf("ldap test requested, but bbgen was built with no ldap support\n");
 #endif
+					}
+					else if (strncmp(testspec, "ftp://", 6) == 0) {
+						/*
+						 * FTP URL test. This uses ':' a lot, so save it here.
+						 */
+						s = httptest;
+						savedspec = malcop(testspec);
 					}
 					else if (strncmp(testspec, "http", 4) == 0) {
 						/*

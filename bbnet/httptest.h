@@ -27,6 +27,7 @@ typedef struct {
 	char   *proxy;                  /* Proxy host CURLOPT_PROXY */
 	char   *proxyuserpwd;           /* Proxy username/passwd CURLOPT_PROXYUSERPWD */
 	char   *ip;                     /* IP to test against */
+	int    is_ftp;                  /* Set if URL is an FTP request */
 	char   *hosthdr;                /* Host: header for ip-based test */
 	char   *postdata;               /* Form POST data CURLOPT_POSTFIELDS */
 	int    sslversion;		/* SSL version CURLOPT_SSLVERSION */
