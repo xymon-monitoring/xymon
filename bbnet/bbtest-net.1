@@ -171,7 +171,8 @@ debugging.
 When bbtest-net tests services that use SSL- or TLS-based protocols,
 it will check that the server certificate has not expired. This check
 happens automatically for https (secure web), pop3s, imaps, nntps
-and all other SSL-enabled services.
+and all other SSL-enabled services (except ldap, see LDAP TESTS 
+below).
 
 All certificates found for a host are reported in one status message.
 
@@ -186,6 +187,65 @@ Disables reporting of the SSL certificate check.
 Determines the number of days before an SSL certificate
 expires, where bbtest-net will generate a warning or
 alarm status for the SSL certificate column.
+
+.SH LDAP TESTS
+ldap testing can be done in two ways. If you just put an "ldap" or
+"ldaps" tag in bb-hosts, a simple test is performed that just verifies
+that it is possible to establish a connection to the port running 
+the ldap service (389 for ldap, 636 for ldaps).
+
+Instead you can put an LDAP URI in bb-hosts. This will cause 
+bbtest-net to initiate a full-blown LDAP session with the server,
+and do an LDAP search for the objects defined by the URI. This
+requires that bbtest-net was built with LDAP support, and relies
+on an existing LDAP library to be installed.  It has been tested 
+with OpenLDAP 2.0.26 (from Red Hat 9) and 2.1.22.  The Solaris 8 
+system ldap library has also been confirmed to work for un-encrypted 
+(plain ldap) access.
+
+The format of LDAP URI's is defined in RFC 2255. LDAP URLs look like this:
+.nf
+
+  \fBldap://\fP\fIhostport\fP\fB/\fP\fIdn\fP[\fB?\fP\fIattrs\fP[\fB?\fP\fIscope\fP[\fB?\fP\fIfilter\fP[\fB?\fP\fIexts\fP]]]]
+
+where:
+  \fIhostport\fP is a host name with an optional ":portnumber"
+  \fIdn\fP is the search base
+  \fIattrs\fP is a comma separated list of attributes to request
+  \fIscope\fP is one of these three strings:
+    base one sub (default=base)
+  \fIfilter\fP is filter
+  \fIexts\fP are recognized set of LDAP and/or API extensions.
+
+Example:
+  ldap://ldap.example.net/dc=example,dc=net?cn,sn?sub?(cn=*)
+.fi
+.sp
+All "bind" operations to LDAP servers use simple anonymous 
+authentication. It supports only normal username/password
+authentication - SASL, CRAM/MD5 etc have not been tested.
+
+SSL support requires both a client library and an LDAP server that support LDAPv3; 
+it uses the LDAP "STARTTLS" protocol request after establishing a connection to 
+the standard (non-encrypted) LDAP port (usually port 389). It has only been
+tested with OpenSSL 2.x, and probably will not work with any other LDAP library.
+
+The older LDAPv2 experimental method of tunnelling normal LDAP traffic through an 
+SSL connection - ldaps, running on port 636 - is not supported, unless someone 
+can explain how to get the OpenLDAP library to support it. This method was never
+formally described in an RFC, and implementations of it are non-standard.
+
+For a discussion of the various ways of running encrypted ldap, see
+http://www.openldap.org/lists/openldap-software/200305/msg00079.html
+http://www.openldap.org/lists/openldap-software/200305/msg00084.html
+http://www.openldap.org/lists/openldap-software/200201/msg00042.html
+http://www.openldap.org/lists/openldap-software/200206/msg00387.html
+
+When testing LDAP URI's, all of the communications are handled 
+by the ldap library. Therefore, it is not possible to obtain the 
+SSL certificate used by the LDAP server, and it will not show up 
+in the "sslcert" column.
+
 
 .SH USING MULTIPLE BBNET SYSTEMS
 If you have more than one BBNET system - e.g. if your network
