@@ -55,7 +55,7 @@ extern void combo_add(char *buf);
 extern void combo_end(void);
 
 
-extern void init_status(void);
+extern void init_status(int color);
 extern void addtostatus(char *p);
 extern void finish_status(void);
 

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.15 2003-02-03 08:49:56 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.16 2003-02-03 12:05:02 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -45,6 +45,7 @@ int		bbstatuscount = 0;	/* Number of status items reported */
 static int	bbmsginuse;		/* Anything in the buffer ? */
 static char	bbmsg[MAXMSG];		/* Complete combo message buffer */
 static char	msgbuf[MAXMSG-50];	/* message buffer for one status message */
+static int	msgcolor;		/* color of status message in msgbuf */
 
 static char hostenv_svc[20];
 static char hostenv_host[200];
@@ -469,6 +470,35 @@ int within_sla(char *l)
 }
 
 
+static void sendmessage(char *msg)
+{
+	char 	bbcmd[256];
+	char 	bbdisp[256];
+	pid_t	childpid;
+	int	childstat;
+
+	strcpy(bbcmd, getenv("BB"));
+	strcpy(bbdisp, getenv("BBDISP"));
+	
+	childpid = fork();
+	if (childpid == -1) {
+		printf("%s: Fork error\n", timestamp);
+	}
+	else if (childpid == 0) {
+		execl(bbcmd, "bb", bbdisp, msg, NULL);
+	}
+	else {
+		wait(&childstat);
+		if (WIFEXITED(childstat) && (WEXITSTATUS(childstat) != 0) ) {
+			printf("%s: Whoops ! bb failed to send message - returns status %d\n", 
+				timestamp, WEXITSTATUS(childstat));
+		}
+	}
+
+	bbmsgcount++;
+}
+
+
 /* Routines for handling combo message transmission */
 void combo_start(void)
 {
@@ -478,10 +508,6 @@ void combo_start(void)
 
 void combo_flush(void)
 {
-	char 	bbcmd[256];
-	char 	bbdisp[256];
-	pid_t	childpid;
-	int	childstat;
 
 	if (!bbmsginuse) {
 		if (debug) printf("Flush, but bbmsg is empty\n");
@@ -507,26 +533,8 @@ void combo_flush(void)
 		} while (p1);
 	}
 
-	strcpy(bbcmd, getenv("BB"));
-	strcpy(bbdisp, getenv("BBDISP"));
-	
-	childpid = fork();
-	if (childpid == -1) {
-		printf("%s: Fork error\n", timestamp);
-	}
-	else if (childpid == 0) {
-		execl(bbcmd, "bb", bbdisp, bbmsg, NULL);
-	}
-	else {
-		wait(&childstat);
-		if (WIFEXITED(childstat) && (WEXITSTATUS(childstat) != 0) ) {
-			printf("%s: Whoops ! bb failed to send message - returns status %d\n", 
-				timestamp, WEXITSTATUS(childstat));
-		}
-	}
-
+	sendmessage(bbmsg);
 	combo_start();	/* Get ready for the next */
-	bbmsgcount++;
 }
 
 void combo_add(char *buf)
@@ -543,7 +551,6 @@ void combo_add(char *buf)
 
 	strcat(bbmsg, buf);
 	bbmsginuse = 1;
-	bbstatuscount++;
 }
 
 void combo_end(void)
@@ -556,9 +563,11 @@ void combo_end(void)
 }
 
 
-void init_status(void)
+void init_status(int color)
 {
 	msgbuf[0] = '\0';
+	msgcolor = color;
+	bbstatuscount++;
 }
 
 void addtostatus(char *p)
@@ -580,7 +589,14 @@ void finish_status(void)
 		printf("Adding to combo msg: %s\n", msgbuf);
 		*p = '\n';
 	}
-	combo_add(msgbuf);
+
+	/* Non-green messages go out NOW. Or we get no alarms ... */
+	if (msgcolor != COL_GREEN) {
+		sendmessage(msgbuf);
+	}
+	else {
+		combo_add(msgbuf);
+	}
 }
 
 void envcheck(char *envvars[])
