@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.33 2005-02-06 17:36:00 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.34 2005-02-06 23:03:20 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -137,7 +137,6 @@ typedef struct repeat_t {
 } repeat_t;
 static repeat_t *rpthead = NULL;
 
-static time_t lastload = 0;	/* Last time the config file was loaded */
 static enum { P_NONE, P_RULE, P_RECIP } pstate = P_NONE;
 static int defaultcolors = 0;
 
@@ -259,6 +258,7 @@ static void flush_rule(rule_t *currule)
 void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 {
 	/* (Re)load the configuration file without leaking memory */
+	static time_t lastload = 0;	/* Last time the config file was loaded */
 	char fn[PATH_MAX];
 	struct stat st;
 	FILE *fd;
@@ -270,6 +270,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/hobbit-alerts.cfg", xgetenv("BBHOME"));
 	if (stat(fn, &st) == -1) return;
 	if (st.st_mtime == lastload) return;
+	lastload = st.st_mtime;
 
 	fd = fopen(fn, "r");
 	if (!fd) return;
