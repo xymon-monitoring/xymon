@@ -52,6 +52,13 @@
 #endif
 
 
+typedef struct svcinfo_t {
+	char *svcname;
+	char *sendtxt;
+	char *exptext;
+	unsigned int flags;
+} svcinfo_t;
+
 typedef struct test_t {
 	struct sockaddr_in addr;        /* Address (IP+port) to test */
 	struct svcinfo_t *svcinfo;      /* svcinfo_t for service */
