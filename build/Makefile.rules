@@ -25,7 +25,7 @@ all: $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) libcheck
 	@echo ""
 
 GENOBJS = bbgen.o debug.o loadhosts.o loaddata.o reportdata.o larrdgen.o pagegen.o eventlog.o acklog.o process.o util.o infogen.o alert.o wmlgen.o rssgen.o bb-replog.o sendmsg.o
-NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o httpresult.o ldaptest.o sendmsg.o digest.o
+NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o httpresult.o ldaptest.o sendmsg.o digest.o dns.o
 HOSTGREPOBJS = bbhostgrep.o util.o debug.o
 HOSTSHOWOBJS = bbhostshow.o util.o debug.o
 DIGESTOBJS = bbdigest.o
@@ -44,7 +44,7 @@ bbgen: $(GENOBJS)
 	$(CC) $(CFLAGS) -o $@ $(GENOBJS) $(NETLIBS)
 
 bbtest-net: $(NETTESTOBJS)
-	$(CC) $(CFLAGS) -o $@ $(NETTESTOBJS) $(LDAPLIBS) $(SSLLIBS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(NETTESTOBJS) $(LDAPLIBS) $(SSLLIBS) $(NETLIBS) $(DNSLIB)
 
 bbhostgrep: $(HOSTGREPOBJS)
 	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS)
