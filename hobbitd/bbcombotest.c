@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.36 2005-03-21 15:04:38 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.37 2005-03-21 15:48:50 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -182,7 +182,7 @@ static int gethobbitdvalue(char *hostname, char *testname, char **errptr)
 	static char *board = NULL;
 	int hobbitdresult;
 	int result = COL_CLEAR;
-	char *pattern, *found, *colstr, *p;
+	char *pattern, *found, *colstr;
 
 	if (board == NULL) {
 		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname,color", NULL, NULL, &board, 1, 30);
