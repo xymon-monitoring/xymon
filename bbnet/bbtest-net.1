@@ -77,7 +77,7 @@ seconds, the service is reported as being down. For HTTP
 tests, this is the absolute limit for the entire request
 to the webserver (the time needed to connect to the server,
 plus the time it takes the server to respond to the request).
-Default: 60 seconds
+Default: 10 seconds
 
 .IP --concurrency=N 
 Determines the number of network tests that
@@ -360,7 +360,7 @@ which amounts to 256 on many Unix systems.
 You can choose the number of concurrent connections with the
 "--concurrency=N" option to bbtest-net.
 
-Connection attempts timeout after 60 seconds - this can be
+Connection attempts timeout after 10 seconds - this can be
 changed with the "--timeout=N" option.
 
 Both of these settings play a part in deciding how long the testing
