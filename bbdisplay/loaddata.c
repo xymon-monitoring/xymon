@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.35 2003-02-07 13:08:10 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.36 2003-02-08 23:07:17 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -41,6 +41,8 @@ char    *nopropreddefault = NULL;
 int     enable_purpleupd = 1;
 int	purpledelay = 0;			/* Lifetime of purple status-messages. Default 0 for
 						   compatibility with standard bb-display.sh behaviour */
+char	*ignorecolumns = NULL;			/* Columns that will be ignored totally */
+
 link_t  null_link = { "", "", "", NULL };	/* Null link for pages/hosts/whatever with no link */
 col_t   null_column = { "", NULL };		/* Null column */
 
@@ -228,6 +230,10 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	else {
 		return NULL;
 	}
+
+	sprintf(l, ",%s,", testname);
+	if (ignorecolumns && strstr(ignorecolumns, l))
+		return NULL;	/* Ignore this type of test */
 
 	newstate = malloc(sizeof(state_t));
 	newstate->entry = malloc(sizeof(entry_t));

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.67 2003-02-08 08:26:24 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.68 2003-02-08 23:07:17 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -147,6 +147,11 @@ int main(int argc, char *argv[])
 		else if (strncmp(argv[i], "--rrddir=", 9) == 0) {
 			char *lp = strchr(argv[i], '=');
 			strcpy(rrddir, (lp+1));
+		}
+		else if (strncmp(argv[i], "--ignorecolumns=", 16) == 0) {
+			char *lp = strchr(argv[i], '=');
+			ignorecolumns = malloc(strlen(lp)+2);
+			sprintf(ignorecolumns, ",%s,", (lp+1));
 		}
 		else if ((strncmp(argv[i], "--noprop=", 9) == 0) || (strncmp(argv[i], "--nopropyellow=", 15) == 0)) {
 			char *lp = strchr(argv[i], '=');

@@ -29,5 +29,6 @@ extern char	*nopropyellowdefault;
 extern char	*nopropreddefault;
 extern int	enable_purpleupd;
 extern int	purpledelay;
+extern char     *ignorecolumns;
 
 #endif
