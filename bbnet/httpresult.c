@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.7 2004-12-11 14:15:13 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.8 2004-12-11 15:29:27 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -262,13 +262,11 @@ static testitem_t *nextcontenttest(service_t *httptest, testedhost_t *host, test
 {
 	testitem_t *result;
 
-	do {
-		result = current->next;
+	result = current->next;
 
-		if ((result == NULL) || (result->host != host)) {
-			result = NULL;
-		}
-	} while (result && result->senddata);
+	if ((result == NULL) || (result->host != host)) {
+		result = NULL;
+	}
 
 	return result;
 }
@@ -303,6 +301,9 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 		http_data_t *req = (http_data_t *) t->privdata;
 		char cause[100];
 		int got_data = 1;
+
+		/* Skip the "data"-only messages */
+		if (t->senddata) continue;
 
 		strcpy(cause, "Content OK");
 		if (req->contentcheck) {
