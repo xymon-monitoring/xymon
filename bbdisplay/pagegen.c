@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.39 2003-04-23 20:58:25 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.40 2003-04-24 12:09:15 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -659,6 +659,13 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums)
 	}
 
 	headfoot(output, hf_prefix[PAGE_BB], pagepath, "header", page->color);
+
+	if (page->pretitle) {
+		fprintf(output, "<CENTER><TABLE BORDER=0>\n");
+		fprintf(output, "  <TR><TD><CENTER><FONT %s>%s</FONT></CENTER></TD></TR>\n", getenv("MKBBTITLE"), page->pretitle);
+		fprintf(output, "  <TR><TD><HR WIDTH=100%%></TD></TR>\n");
+		fprintf(output, "</TABLE></CENTER>\n");
+	}
 
 	if (!hostsbeforepages && page->subpages) {
 		do_page_subpages(output, page->subpages, 
