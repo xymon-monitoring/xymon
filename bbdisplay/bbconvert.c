@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbconvert.c,v 1.3 2004-10-30 15:38:13 henrik Exp $";
+static char rcsid[] = "$Id: bbconvert.c,v 1.4 2004-10-30 22:35:54 henrik Exp $";
 
 #include <limits.h>
 #include <sys/types.h>
@@ -28,55 +28,6 @@ static char rcsid[] = "$Id: bbconvert.c,v 1.3 2004-10-30 15:38:13 henrik Exp $";
 
 #include "bbgen.h"
 #include "bbconvert.h"
-
-static unsigned char *nlencode(unsigned char *msg)
-{
-	static unsigned char *buf = NULL;
-	static int bufsz = 0;
-	int maxneeded;
-	unsigned char *inp, *outp;
-	int n;
-
-	if (msg == NULL) msg = "";
-
-	maxneeded = 2*strlen(msg)+1;
-
-	if (buf == NULL) {
-		bufsz = maxneeded;
-		buf = (char *)malloc(bufsz);
-	}
-	else if (bufsz < maxneeded) {
-		bufsz = maxneeded;
-		buf = (char *)realloc(buf, bufsz);
-	}
-
-	inp = msg;
-	outp = buf;
-
-	while (*inp) {
-		n = strcspn(inp, "|\n\r\t\\");
-		if (n > 0) {
-			memcpy(outp, inp, n);
-			outp += n;
-			inp += n;
-		}
-
-		if (*inp) {
-			*outp = '\\'; outp++;
-			switch (*inp) {
-			  case '|' : *outp = 'p'; outp++; break;
-			  case '\n': *outp = 'n'; outp++; break;
-			  case '\r': *outp = 'r'; outp++; break;
-			  case '\t': *outp = 't'; outp++; break;
-			  case '\\': *outp = '\\'; outp++; break;
-			}
-			inp++;
-		}
-	}
-	*outp = '\0';
-
-	return buf;
-}
 
 void dump_bbgendchk(void)
 {
@@ -98,7 +49,7 @@ void dump_bbgendchk(void)
 			char *p;
 			time_t validtime;
 			int oldcol = -1;
-			time_t lastchange = 0;
+			int lastchange = 0;
 			time_t enabletime = 0;
 			time_t acktime = 0;
 			time_t logtime = 0;
@@ -165,7 +116,7 @@ void dump_bbgendchk(void)
 				colorname(e->color),
 				(flags ? flags : ""),
 				colorname(oldcol),
-				(int) logtime, (int) lastchange, (int) validtime,
+				(int) logtime, lastchange, (int) validtime,
 				(int) enabletime, (int) acktime,
 				cookie, (int) cookieexpires,
 				logenc);
