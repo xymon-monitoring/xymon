@@ -146,7 +146,7 @@ char *commafy(char *hostname)
 	return s;
 }
 
-void headfoot(FILE *output, char *pagename, char *subpagename, char *head_or_foot, int bgcolor)
+void headfoot(FILE *output, char *pagetype, char *pagename, char *subpagename, char *head_or_foot, int bgcolor)
 {
 	int	fd;
 	char 	filename[256];
@@ -163,7 +163,7 @@ void headfoot(FILE *output, char *pagename, char *subpagename, char *head_or_foo
 		fd = open(filename, O_RDONLY);
 	}
 	if (fd == -1) {
-		sprintf(filename, "%s/web/bb_%s", getenv("BBHOME"), head_or_foot);
+		sprintf(filename, "%s/web/%s_%s", getenv("BBHOME"), pagetype, head_or_foot);
 		fd = open(filename, O_RDONLY);
 	}
 
@@ -825,7 +825,6 @@ void delete_old_acks(void)
 		if (strncmp(fn, "ack.", 4) == 0) {
 			stat(fn, &st);
 			if (S_ISREG(st.st_mode) && (st.st_mtime < now)) {
-				printf("Removing old ack-file %s\n",  fn);
 				unlink(fn);
 			}
 		}
@@ -1018,7 +1017,7 @@ void do_bb_page(page_t *page, char *filename)
 		return;
 	}
 
-	headfoot(output, "", "", "header", page->color);
+	headfoot(output, "bb", "", "", "header", page->color);
 
 	fprintf(output, "<BR>\n<CENTER>\n");
 
@@ -1059,7 +1058,7 @@ void do_bb_page(page_t *page, char *filename)
 	do_hosts(page->hosts, output, "");
 	do_groups(page->groups, output);
 
-	headfoot(output, "", "", "footer", page->color);
+	headfoot(output, "bb", "", "", "footer", page->color);
 
 	fclose(output);
 }
@@ -1077,7 +1076,7 @@ void do_page(page_t *page, char *filename, char *upperpagename)
 		return;
 	}
 
-	headfoot(output, page->name, "", "header", page->color);
+	headfoot(output, "bb", page->name, "", "header", page->color);
 
 	fprintf(output, "<BR>\n<CENTER>\n");
 
@@ -1118,7 +1117,7 @@ void do_page(page_t *page, char *filename, char *upperpagename)
 	do_hosts(page->hosts, output, "");
 	do_groups(page->groups, output);
 
-	headfoot(output, page->name, "", "footer", page->color);
+	headfoot(output, "bb", page->name, "", "footer", page->color);
 
 	fclose(output);
 }
@@ -1133,15 +1132,70 @@ void do_subpage(page_t *page, char *filename, char *upperpagename)
 		return;
 	}
 
-	headfoot(output, upperpagename, page->name, "header", page->color);
+	headfoot(output, "bb", upperpagename, page->name, "header", page->color);
 
 	do_hosts(page->hosts, output, "");
 	do_groups(page->groups, output);
 
-	headfoot(output, upperpagename, page->name, "footer", page->color);
+	headfoot(output, "bb", upperpagename, page->name, "footer", page->color);
 
 	fclose(output);
 }
+
+void do_bb2_page(char *filename)
+{
+	FILE	*output;
+	page_t	bb2page;
+	hostlist_t *h;
+
+	/* Build a "page" with the hosts that should be included in bb2 page */
+	strcpy(bb2page.name, "");
+	strcpy(bb2page.title, "");
+	bb2page.color = COL_GREEN;
+	bb2page.subpages = NULL;
+	bb2page.groups = NULL;
+	bb2page.hosts = NULL;
+	bb2page.next = NULL;
+
+	for (h=hosthead; (h); h=h->next) {
+		if ((h->hostentry->color == COL_RED) || (h->hostentry->color == COL_YELLOW) || (h->hostentry->color == COL_PURPLE)) {
+			host_t *newhost;
+
+			if (h->hostentry->color > bb2page.color) bb2page.color = h->hostentry->color;
+
+			/* We need to create a copy of the original record, */
+			/* as we will diddle with the pointers */
+			newhost = malloc(sizeof(host_t));
+			memcpy(newhost, h->hostentry, sizeof(host_t));
+
+			newhost->next = bb2page.hosts;
+			bb2page.hosts = newhost;
+		}
+	}
+
+	output = fopen(filename, "w");
+	if (output == NULL) {
+		perror("Cannot open file");
+		exit(1);
+	}
+
+	headfoot(output, "bb2", "", "", "header", bb2page.color);
+
+	fprintf(output, "\n<A NAME=begindata>&nbsp;</A> \n<A NAME=\"hosts-blk\">&nbsp;</A>\n");
+
+	if (bb2page.hosts) {
+		do_hosts(bb2page.hosts, output, "");
+	}
+	else {
+		/* "All Monitored Systems OK */
+		fprintf(output, "<FONT SIZE=+2 FACE=\"Arial, Helvetica\"><BR><BR><I>All Monitored Systems OK</I></FONT><BR><BR>");
+	}
+
+	headfoot(output, "bb2", "", "", "footer", bb2page.color);
+
+	fclose(output);
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -1197,6 +1251,8 @@ int main(int argc, char *argv[])
 			do_subpage(q, fn, p->name);
 		}
 	}
+
+	do_bb2_page("bb2.html");
 
 	return 0;
 }
