@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.20 2003-08-01 10:53:42 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.21 2003-08-09 09:13:37 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -26,6 +26,7 @@ static char rcsid[] = "$Id: contest.c,v 1.20 2003-08-01 10:53:42 henrik Exp $";
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <signal.h>
 
 #include "bbtest-net.h"
 #include "contest.h"
@@ -121,7 +122,16 @@ void do_tcp_tests(int conntimeout, int concurrency)
 	int		res;
 	socklen_t	connressize;
 	char		msgbuf[MAX_BANNER];
+	void		*oldsigpipe;
 
+	/*
+	 * After lengthy debugging and perusing of mail archives:
+	 * Need to block SIGPIPE since FreeBSD (and others?) can throw this
+	 * on a write() instead of simply returning -EPIPE like any sane
+	 * OS would.
+	 * Sometime they may implement the setsockopt(fd, SO_NOSIGPIPE) from MacOS X ...
+	 */
+	oldsigpipe = signal(SIGPIPE, SIG_IGN);
 
 	/* If conntimeout or concurrency are 0, set them to reasonable defaults */
 	if (conntimeout == 0) conntimeout = DEF_TIMEOUT;
@@ -326,6 +336,8 @@ void do_tcp_tests(int conntimeout, int concurrency)
 								item->duration.tv_sec--;
 								item->duration.tv_usec += 1000000;
 							}
+
+							item->readpending = (!item->silenttest && item->svcinfo->grabbanner);
 							if (item->svcinfo->sendtxt && !item->silenttest) {
 								/*
 								 * It may be that we cannot write all of the
@@ -333,8 +345,12 @@ void do_tcp_tests(int conntimeout, int concurrency)
 								 */
 								res = write(item->fd, item->svcinfo->sendtxt,
 									strlen(item->svcinfo->sendtxt));
+								if (res == -1) {
+									/* Write failed - this socket is done. */
+									dprintf("write failed\n");
+									item->readpending = 0;
+								}
 							}
-							item->readpending = (!item->silenttest && item->svcinfo->grabbanner);
 						}
 
 						/* If closed and/or no bannergrabbing, shut down socket */
@@ -372,6 +388,9 @@ void do_tcp_tests(int conntimeout, int concurrency)
 			}
 		}  /* end for loop */
 	} /* end while (pending) */
+
+	/* Restore SIGPIPE handler */
+	signal(SIGPIPE, oldsigpipe);
 
 	dprintf("TCP tests completed normally\n");
 }
