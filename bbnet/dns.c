@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.8 2004-08-28 07:17:22 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.9 2004-08-31 20:38:21 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -118,64 +118,18 @@ void add_host_to_dns_queue(char *hostname)
 
 void add_url_to_dns_queue(char *url)
 {
-	char *tempurl;
-	char *fragment = NULL;
-	char *scheme = NULL;
-	char *auth = NULL;
-	char *port = NULL;
-	char *netloc;
-	char *proxy;
-	char *startp, *p;
+	bburl_t bburl;
 
-	tempurl = malcop(realurl(url, &proxy, NULL, NULL, NULL));
-	if (proxy) {
-		char *extraurl = malcop(proxy);
-		add_url_to_dns_queue(extraurl);
-		free(extraurl);
-	}
+	decode_url(url, &bburl);
 
-	fragment = strchr(tempurl, '#'); if (fragment) *fragment = '\0';
-
-	/* First, skip the "scheme" (protocol) */
-	startp = tempurl;
-	p = strchr(startp, ':');
-	if (p) {
-		scheme = startp;
-		*p = '\0';
-		startp = (p+1);
-	}
-
-	if (strncmp(startp, "//", 2) == 0) {
-		startp += 2;
-		netloc = startp;
-
-		p = strchr(startp, '/');
-		if (p) {
-			*p = '\0';
-			startp = (p+1);
-		}
-		else startp += strlen(startp);
+	if (bburl.proxyurl) {
+		if (bburl.proxyurl->parseerror) return;
+		add_host_to_dns_queue(bburl.proxyurl->host); 
 	}
 	else {
-		netloc = "";
+		if (bburl.desturl->parseerror) return;
+		add_host_to_dns_queue(bburl.desturl->host); 
 	}
-
-	/* netloc is [username:password@]hostname[:port] */
-	auth = NULL;
-	p = strchr(netloc, '@');
-	if (p) {
-		auth = netloc;
-		*p = '\0';
-		netloc = (p+1);
-	}
-	p = strchr(netloc, ':');
-	if (p) {
-		*p = '\0';
-		port = (p+1);
-	}
-
-	if (strlen(netloc) > 0) add_host_to_dns_queue(netloc); 
-	free(tempurl);
 }
 
 
@@ -228,6 +182,8 @@ static void dns_queue_run(ares_channel channel)
 char *dnsresolve(char *hostname)
 {
 	char *result;
+
+	if (hostname == NULL) return NULL;
 
 	dns_stats_lookups++;
 	if (stdchannelactive) {
