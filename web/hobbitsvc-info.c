@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.23 2003-07-06 19:28:51 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.24 2003-07-08 09:32:47 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -110,6 +110,14 @@ int generate_info(char *infocolumn)
 		else {
 			strcat(infobuf, "<b>NK alerts</b> : None<br>\n");
 		}
+		slaspec = strstr(hostwalk->hostentry->rawentry, "NKTIME=");
+		if (slaspec) {
+			slaspec +=7;
+			p = strchr(slaspec, ' ');
+			if (p) *p = '\0';
+			sprintf(l, "<b>NK alerts shown</b> : %s<br>\n", slaspec); strcat(infobuf, l);
+			if (p) *p = ' ';
+		}
 		slaspec = strstr(hostwalk->hostentry->rawentry, "SLA=");
 		if (slaspec) {
 			slaspec +=4;
@@ -123,8 +131,18 @@ int generate_info(char *infocolumn)
 			slaspec +=9;
 			p = strchr(slaspec, ' ');
 			if (p) *p = '\0';
-			sprintf(l, "<b>Downtimes</b> : %s<br>\n", slaspec); strcat(infobuf, l);
+			sprintf(l, "<b>Planned downtime</b> : %s<br>\n", slaspec); strcat(infobuf, l);
 			if (p) *p = ' ';
+		}
+		slaspec = strstr(hostwalk->hostentry->rawentry, "REPORTTIME=");
+		if (slaspec) {
+			slaspec +=11;
+			p = strchr(slaspec, ' ');
+			if (p) *p = '\0';
+			sprintf(l, "<b>SLA Report period</b> : %s<br>\n", slaspec); strcat(infobuf, l);
+			if (p) *p = ' ';
+			sprintf(l, "<b>SLA Availability</b> : %.2f<br>\n", hostwalk->hostentry->reportwarnlevel); 
+			strcat(infobuf, l);
 		}
 		if (hostwalk->hostentry->nopropyellowtests) {
 			noprop = (hostwalk->hostentry->nopropyellowtests+1);
@@ -235,6 +253,10 @@ int generate_info(char *infocolumn)
 				&&	(strncmp(p, "NOPROPRED:", 10) != 0)
 				&&	(strncmp(p, "NOPROPYELLOW:", 13) != 0)
 				&&	(strncmp(p, "SLA=", 4) != 0)
+				&&	(strncmp(p, "NKTIME=", 7) != 0)
+				&&	(strncmp(p, "DOWNTIME=", 9) != 0)
+				&&	(strncmp(p, "REPORTTIME=", 11) != 0)
+				&&	(strncmp(p, "WARNPCT:", 8) != 0)
 				&&	(strncmp(p, "http", 4) != 0)
 				&&	(strncmp(p, "content=", 8) != 0)
 				&&	(strncmp(p, "cont;", 5)  != 0)
