@@ -95,6 +95,11 @@ of the bbproxy daemon proces. Default: /var/run/bbproxy.pid.
 .IP "--logfile=FILENAME"
 Sends all logging output to the specified file instead of stderr.
 
+.IP "--log-details"
+Log details (IP-address, message type and hostname) to the logfile.
+This can also be enabled and disabled at run-time by sending the
+bbproxy proces a SIGUSR2 signal.
+
 .IP "--debug"
 Enable debugging output.
 
@@ -201,6 +206,9 @@ Shut down the proxy.
 
 .IP SIGUSR1
 Sends a proxy server status message to BBDISPLAY immediately.
+
+.IP SIGUSR2
+Toggles logging of individual messages.
 
 .SH BUGS
 The messages/second counter is always 0 when the proxy
