@@ -25,6 +25,9 @@ ACKCGIOBJS = bb-ack.o
 WEBPAGEOBJS = bb-webpage.o
 LARRDCOLUMNOBJS = bb-larrdcolumn.o
 INFOCOLUMNOBJS = bb-infocolumn.o
+ifdef HOBBITD
+INFOCOLUMNOBJS += hobbit-alertconfig.o
+endif
 
 HTMLPAGES = bb-findhost.html
 GIFFILES = bbfindhost1.gif bbfindhost2.gif
@@ -76,7 +79,7 @@ bb-larrdcolumn: $(LARRDCOLUMNOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(LARRDCOLUMNOBJS) ../lib/libbbgen.a $(NETLIBS)
 
 bb-infocolumn: $(INFOCOLUMNOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(INFOCOLUMNOBJS) ../lib/libbbgen.a $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(INFOCOLUMNOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 
 
 ################################################
@@ -104,6 +107,9 @@ sendmsg-cgi.o: ../lib/sendmsg.c
 
 bb-hostsvc.o: bb-hostsvc.c
 	$(CC) $(CFLAGS) -DCGI -c -o $@ bb-hostsvc.c
+
+hobbit-alertconfig.o: ../hobbitd/do_alert.c
+	$(CC) $(CFLAGS) -DINFOCOL -c -o $@ $(PCREINCDIR) -I../hobbitd ../hobbitd/do_alert.c
 
 ################################################
 # Default compilation rules
