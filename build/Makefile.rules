@@ -23,6 +23,8 @@ BBVARDIRS = acks data disabled hist histlogs logs rrd
 
 ARESVER = 1.2.1
 
+IDTOOL := $(shell if test `uname -s` = "SunOS"; then echo /usr/xpg4/bin/id; else echo id; fi)
+
 all: $(BUILDTARGETS)
 	@echo ""
 	@echo "Build complete."
@@ -88,8 +90,8 @@ install-nocgi: $(INSTALLNOCGITARGETS)
 install-dirs:
 ifdef HOBBITD
 	mkdir -p $(BBHOME) $(BBVAR)
-	cd $(BBHOME); mkdir -p $(BBHOMEDIRS); chown $(BBUSER) $(BBHOMEDIRS); chgrp ` id -g $(BBUSER)` $(BBHOMEDIRS)
-	cd $(BBVAR); mkdir -p $(BBVARDIRS); chown $(BBUSER) $(BBVARDIRS); chgrp ` id -g $(BBUSER)` $(BBVARDIRS)
+	cd $(BBHOME); mkdir -p $(BBHOMEDIRS); chown $(BBUSER) $(BBHOMEDIRS); chgrp `$(IDTOOL) -g $(BBUSER)` $(BBHOMEDIRS)
+	cd $(BBVAR); mkdir -p $(BBVARDIRS); chown $(BBUSER) $(BBVARDIRS); chgrp `$(IDTOOL) -g $(BBUSER)` $(BBVARDIRS)
 ifdef HTTPDGID
 	chgrp $(HTTPDGID) $(BBHOME)/www/rep $(BBHOME)/www/snap
 endif
