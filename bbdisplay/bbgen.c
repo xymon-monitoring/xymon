@@ -657,12 +657,31 @@ void dumpstatelist(state_t *head)
 	}
 }
 
+void do_hosts(host_t *head, FILE *output)
+{
+	host_t	*h;
+
+	for (h = head; (h); h = h->next) {
+		fprintf(output, "    host %s\n", h->hostname);
+	}
+	fprintf(output, "\n");
+}
+
+void do_groups(group_t *head, FILE *output)
+{
+	group_t *g;
+
+	for (g = head; (g); g = g->next) {
+		fprintf(output, "    group %s\n", g->title);
+		do_hosts(g->hosts, output);
+	}
+	fprintf(output, "\n");
+}
+
 void do_page(page_t *page, char *filename)
 {
 	FILE	*output;
 	page_t	*p;
-	group_t *g;
-	host_t  *h;
 
 	output = fopen(filename, "w");
 	if (output == NULL) {
@@ -673,10 +692,13 @@ void do_page(page_t *page, char *filename)
 	fprintf(output, "SDM page %s\n", page->title);
 	fprintf(output, "Color: %s\n", colorname(page->color));
 
-	for (p = page; (p); p = p->next) {
+	for (p = page->subpages; (p); p = p->next) {
 		fprintf(output, "    subpage %s - %s\n", p->name, colorname(p->color));
 	}
 	fprintf(output, "\n");
+
+	do_hosts(page->hosts, output);
+	do_groups(page->groups, output);
 
 	fclose(output);
 }
@@ -684,7 +706,6 @@ void do_page(page_t *page, char *filename)
 void do_subpage(page_t *page, char *filename)
 {
 	FILE	*output;
-	page_t	*p;
 	group_t *g;
 	host_t  *h;
 
@@ -697,10 +718,7 @@ void do_subpage(page_t *page, char *filename)
 	fprintf(output, "SDM subpage %s\n", page->title);
 	fprintf(output, "Color: %s\n", colorname(page->color));
 
-	for (h = page->hosts; (h); h = h->next) {
-		fprintf(output, "    host %s\n", h->hostname);
-	}
-	fprintf(output, "\n");
+	do_hosts(page->hosts, output);
 
 	for (g = page->groups; (g); g = g->next) {
 		fprintf(output, "    group %s\n", g->title);
@@ -762,9 +780,7 @@ int main(int argc, char *argv[])
 		sprintf(dirfn, "/tmp/www/%s", p->name);
 		mkdir(dirfn, 0755);
 		sprintf(fn, "%s/%s.html", dirfn, p->name);
-		if (p->subpages) {
-			do_page(p->subpages, fn);
-		}
+		do_page(p, fn);
 
 		for (q = p->subpages; (q); q = q->next) {
 			sprintf(dirfn, "/tmp/www/%s/%s", p->name, q->name);
@@ -772,9 +788,6 @@ int main(int argc, char *argv[])
 			sprintf(fn, "%s/%s.html", dirfn, q->name);
 			do_subpage(q, fn);
 		}
-
-		/* Do local hosts */
-		/* Do local groups */
 	}
 
 	return 0;
