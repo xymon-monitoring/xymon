@@ -21,7 +21,7 @@ all: $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS)
 	@echo "and then you can later run 'make install-cgi' to install cgi scripts"
 	@echo ""
 
-GENOBJS = bbgen.o debug.o loaddata.o reportdata.o larrdgen.o pagegen.o process.o util.o infogen.o alert.o wmlgen.o bb-replog.o sendmsg.o
+GENOBJS = bbgen.o debug.o loaddata.o reportdata.o larrdgen.o pagegen.o process.o util.o infogen.o alert.o wmlgen.o rssgen.o bb-replog.o sendmsg.o
 NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o sendmsg.o
 HOSTGREPOBJS = bbhostgrep.o util.o debug.o
 HOSTSHOWOBJS = bbhostshow.o util.o debug.o

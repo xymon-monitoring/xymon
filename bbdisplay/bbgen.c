@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.142 2003-08-05 14:39:33 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.143 2003-08-11 15:38:33 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -37,6 +37,7 @@ static char rcsid[] = "$Id: bbgen.c,v 1.142 2003-08-05 14:39:33 henrik Exp $";
 #include "wmlgen.h"
 #include "bb-replog.h"
 #include "sendmsg.h"
+#include "rssgen.h"
 
 /* Global vars */
 bbgen_page_t	*pagehead = NULL;			/* Head of page list */
@@ -75,6 +76,8 @@ char *reqenv[] = {
 "BBTMP",
 "BBVAR",
 "BBWEB",
+"BBWEBHOST",
+"BBWEBHOSTURL",
 "CGIBINURL",
 "DOTHEIGHT",
 "DOTWIDTH",
@@ -165,6 +168,17 @@ int main(int argc, char *argv[])
 				sprintf(wapcolumns, ",%s,", (lp+1));
 			}
 			enable_wmlgen = 1;
+		}
+		else if (argnmatch(argv[i], "--rss=")) {
+			char *lp = strchr(argv[i], '=');
+
+			if (strlen(lp+1) > 0) rssfilename = malcop(lp+1);
+			else errprintf("--rss requires a filename\n");
+		}
+		else if (argnmatch(argv[i], "--rssversion=")) {
+			char *lp = strchr(argv[i], '=');
+
+			rssversion = malcop(lp+1);
 		}
 		else if (argnmatch(argv[i], "--reportopts=")) {
 			char style[MAX_LINE_LEN];
@@ -362,7 +376,6 @@ int main(int argc, char *argv[])
 			printf("    --no-doc-window             : Open doc-links in same window\n");
 			printf("    --htmlextension=.EXT        : Sets filename extension for generated file (default: .html\n");
 			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbgen\n");
-			printf("    --wml[=test1,test2,...]     : Generate a small (bb2-style) WML page\n");
 			printf("    --reportopts=ST:END:DYN:STL : Run in BB Reporting mode\n");
 			printf("    --snapshot=TIME             : Snapshot mode\n");
 			printf("\nPage layout options:\n");
@@ -389,6 +402,10 @@ int main(int argc, char *argv[])
 			printf("\nAlternate pageset generation support:\n");
 			printf("    --pageset=SETNAME           : Generate non-standard pageset with tag SETNAME\n");
 			printf("    --template=TEMPLATE         : template for header and footer files\n");
+			printf("\nAlternate output formats:\n");
+			printf("    --wml[=test1,test2,...]     : Generate a small (bb2-style) WML page\n");
+			printf("    --rss=outputfile            : Generate a RSS/RDF feed of alerts\n");
+			printf("    --rssversion={0.91|0.92|1.0|2.0} : Specify RSS/RDF version (default: 0.91)\n");
 			printf("\nDebugging options:\n");
 			printf("    --timing                    : Collect timing information\n");
 #ifdef DEBUG
@@ -536,6 +553,12 @@ int main(int argc, char *argv[])
 	/* Generate WML cards */
 	do_wml_cards(pagedir);
 	add_timestamp("WML generation done");
+
+	/* Generate RSS/RDF feed */
+	if (rssfilename) {
+		do_rss_feed();
+		add_timestamp("RSS generation done");
+	}
 
 	/* Need to do this before sending in our report */
 	add_timestamp("Run completed");

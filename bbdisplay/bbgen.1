@@ -249,7 +249,17 @@ Generate a logfile of all purple status messages. This log can be
 used to find the hosts that have been removed from the bb-hosts file, 
 but still have log files lying around.
 
-.SH ALTERNATE OUTPUT OPTIONS
+.SH ALTERNATE PAGESET OPTIONS
+.sp
+.IP "--pageset=PAGESETNAME"
+Build webpages for an alternate pageset than the default. See
+the PAGESETS section below.
+.sp
+.IP "--template=TEMPLATE"
+Use an alternate template for header and footer files. Typically used
+together the the "--pageset" option; see the PAGESETS section below.
+
+.SH ALTERNATE OUTPUT FORMATS
 .sp
 .IP "--wml[=test1,test2,...]"
 This option causes bbgen to generate a set of WML "card" files that 
@@ -261,14 +271,18 @@ tags in the
 .I bb-hosts(5)
 file. If no tests are specified, all tests will be included.
 .sp
-.IP "--pageset=PAGESETNAME"
-Build webpages for an alternate pageset than the default. See
-the PAGESETS section below.
+.IP "--rss=FILENAME"
+Generate an RSS/RDF content delivery stream of your critical Big Brother 
+alerts. This output format can be dynamically embedded in other web
+pages, much like the live newsfeeds often seen on web sites. For more
+information about RSS/RDF content feeds, please see http://www.syndic8.com/
 .sp
-.IP "--template=TEMPLATE"
-Use an alternate template for header and footer files. Typically used
-together the the "--pageset" option; see the PAGESETS section below.
-.sp
+.IP "--rssversion={0.91|0.92|1.0|2.0}"
+The desired output format of the RSS/RDF feed. Version 0.91 appears to 
+be the most commonly used format, and is the default if this option is
+omitted.
+
+.SH OPTIONS USED BY CGI FRONT-ENDS
 .IP "--reportopts=START:END:DYNAMIC:STYLE"
 Invoke bbgen in report-generation mode. This is normally used by the
 .I bb-rep.cgi(1)
@@ -286,7 +300,7 @@ TIME. TIME is given as seconds since Jan 1st 1970 00:00 UTC. Normally
 used via the
 .I bb-snapshot.cgi(1)
 CGI script.
-.sp
+
 .SH DEBUGGING OPTIONS
 .sp
 .IP "--debug"
