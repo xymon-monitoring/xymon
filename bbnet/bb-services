@@ -1,6 +1,6 @@
 # bb-service
 #
-# $Id: bb-services,v 1.4 2004-08-28 20:09:56 henrik Exp $
+# $Id: bb-services,v 1.5 2005-01-22 16:15:41 henrik Exp $
 #
 # This file defines the way TCP services are tested by bbtest-net
 # (part of the bbgen toolkit).
@@ -161,4 +161,12 @@ service qmtp
 # qmail "Quick Mail Queuing Protocol"
 service qmqp
    port 628
+
+# vnc "Virtual Network Computing" - method from bb-vnc.tar.gz
+# From Richard Finegold
+service vnc
+   send "RFB 000.000\r\n"
+   expect "RFB "
+   options banner
+   port 5900
 
