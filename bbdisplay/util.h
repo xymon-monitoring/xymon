@@ -29,6 +29,7 @@ typedef struct linebuf_t {
 extern char *read_line(struct linebuf_t *buffer, FILE *stream);
 
 extern int use_recentgifs;
+extern int unpatched_bbd;
 extern char timestamp[];
 
 extern void errprintf(const char *fmt, ...);

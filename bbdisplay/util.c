@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.108 2003-11-27 09:31:34 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.109 2003-12-10 20:51:15 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -39,6 +39,7 @@ static char rcsid[] = "$Id: util.c,v 1.108 2003-11-27 09:31:34 henrik Exp $";
 #include "debug.h"
 
 int	use_recentgifs = 0;
+int	unpatched_bbd = 0;
 char	timestamp[30];
 
 extern  int debug;
@@ -641,7 +642,15 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 				}
 			}
 
-			else if (strcmp(t_start, "BBBACKGROUND") == 0)  fprintf(output, "%s", colorname(bgcolor));
+			else if (strcmp(t_start, "BBBACKGROUND") == 0)  {
+				if (unpatched_bbd && (strcmp(pagetype, "hostsvc") == 0)) {
+					fprintf(output, "%s/bkg-%s.gif", 
+						getenv("BBSKIN"), colorname(bgcolor));
+				}
+				else {
+					fprintf(output, "%s", colorname(bgcolor));
+				}
+			}
 			else if (strcmp(t_start, "BBCOLOR") == 0)       fprintf(output, "%s", hostenv_color);
 			else if (strcmp(t_start, "BBSVC") == 0)         fprintf(output, "%s", hostenv_svc);
 			else if (strcmp(t_start, "BBHOST") == 0)        fprintf(output, "%s", hostenv_host);
@@ -872,6 +881,7 @@ bbgen_col_t *find_or_create_column(const char *testname, int create)
 
 		newcol = (bbgen_col_t *) malloc(sizeof(bbgen_col_t));
 		newcol->name = malcop(testname);
+		newcol->listname = (char *)malloc(strlen(testname)+1+2); sprintf(newcol->listname, ",%s,", testname);
 		newcol->link = find_link(testname);
 
 		/* No need to maintain this list in order */
