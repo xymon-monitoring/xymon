@@ -797,18 +797,20 @@ int main(int argc, char *argv[])
 #endif
 
 	/* Generate pages */
-	do_bb_page(pagehead, "/tmp/www/bb.html");
+	chdir("/tmp/www");	/* FIXME: Production should be chdir(getenv("$BBHOME")/www); */
+
+	do_bb_page(pagehead, "bb.html");
 	for (p=pagehead->next; (p); p = p->next) {
 		char dirfn[256], fn[256];
 
 		/* Do SDM page - contains links to subpages, groups, hosts */
-		sprintf(dirfn, "/tmp/www/%s", p->name);
+		sprintf(dirfn, "%s", p->name);
 		mkdir(dirfn, 0755);
 		sprintf(fn, "%s/%s.html", dirfn, p->name);
 		do_page(p, fn);
 
 		for (q = p->subpages; (q); q = q->next) {
-			sprintf(dirfn, "/tmp/www/%s/%s", p->name, q->name);
+			sprintf(dirfn, "%s/%s", p->name, q->name);
 			mkdir(dirfn, 0755);
 			sprintf(fn, "%s/%s.html", dirfn, q->name);
 			do_subpage(q, fn);
