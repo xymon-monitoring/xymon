@@ -42,6 +42,8 @@ typedef struct {
 	regex_t *exp;			/* regexp data for content match */
 } http_data_t;
 
+static FILE *logfd = NULL;
+
 
 void add_http_test(testitem_t *t)
 {
@@ -215,6 +217,8 @@ static size_t hdr_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 	http_data_t *req = stream;
 	size_t count = size*nmemb;
 
+	if (logfd) fprintf(logfd, "%s", (char *)ptr);
+
 	if (req->headers == NULL) {
 		req->headers = malloc(count+1);
 		memcpy(req->headers, ptr, count);
@@ -241,6 +245,8 @@ static size_t data_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 	http_data_t *req = stream;
 	size_t count = size*nmemb;
 
+	if (logfd) fprintf(logfd, "%s", (char *)ptr);
+
 	if (req->exp == NULL) {
 		/* No need to save output - just drop it */
 		return count;
@@ -262,7 +268,7 @@ static size_t data_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 }
 
 
-void run_http_tests(service_t *httptest, long followlocations)
+void run_http_tests(service_t *httptest, long followlocations, char *logfile)
 {
 	http_data_t *req;
 	testitem_t *t;
@@ -271,6 +277,11 @@ void run_http_tests(service_t *httptest, long followlocations)
 	if (curl_global_init(CURL_GLOBAL_DEFAULT)) {
 		printf("FATAL: Cannot initialize libcurl!\n");
 		return;
+	}
+
+	if (logfile) {
+		logfd = fopen(logfile, "a");
+		if (logfd) fprintf(logfd, "*** Starting web checks at %s ***\n", timestamp);
 	}
 
 	for (t = httptest->items; (t); t = t->next) {
@@ -319,12 +330,15 @@ void run_http_tests(service_t *httptest, long followlocations)
 			curl_easy_setopt(req->curl, CURLOPT_PROXYPORT, 80);
 		}
 
+
 		/* Let's do it ... */
+		if (logfd) fprintf(logfd, "\n*** Checking URL: %s ***\n", req->url);
 		res = curl_easy_perform(req->curl);
 		if (res != 0) {
 			/* Some error occurred */
 			strcat(req->errorbuffer, "\n\n");
 			req->headers = malcop(req->errorbuffer);
+			if (logfd) fprintf(logfd, "Error: %s\n", req->errorbuffer);
 		}
 		else {
 			double t1, t2;
@@ -340,6 +354,7 @@ void run_http_tests(service_t *httptest, long followlocations)
 	}
 
 	curl_global_cleanup();
+	if (logfd) fclose(logfd);
 }
 
 

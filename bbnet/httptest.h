@@ -16,7 +16,7 @@
 #include "bbtest-net.h"
 
 extern void add_http_test(testitem_t *t);
-extern void run_http_tests(service_t *httptest, long followlocations);
+extern void run_http_tests(service_t *httptest, long followlocations, char *logfile);
 extern void show_http_test_results(service_t *httptest);
 extern void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage, char *contenttestname);
 

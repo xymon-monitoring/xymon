@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.40 2003-05-01 10:17:37 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.41 2003-05-04 20:53:55 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -56,6 +56,7 @@ int 		timeout=0;
 long		followlocations = 0;		/* Follow Location: redirects in HTTP? */
 char		*contenttestname = "content";   /* Name of the content checks column */
 char		*location = "";			/* BBLOCATION value */
+char		*logfile = NULL;
 
 service_t *add_service(char *name, int port, int namelen, int toolid)
 {
@@ -820,15 +821,20 @@ int main(int argc, char *argv[])
 			}
 			else pingcolumn = "conn";
 		}
+		else if (strcmp(argv[argi], "--noping") == 0) {
+			pingcolumn = NULL;
+		}
 		else if (strncmp(argv[argi], "--content=", 10) == 0) {
 			char *p = strchr(argv[argi], '=');
 			contenttestname = malcop(p+1);
 		}
-		else if (strcmp(argv[argi], "--noping") == 0) {
-			pingcolumn = NULL;
-		}
 		else if (strcmp(argv[argi], "--follow") == 0) {
 			followlocations = 3;
+		}
+		else if (strncmp(argv[argi], "--log=", 6) == 0) {
+			char *p = strchr(argv[argi], '=');
+
+			logfile = malcop(p+1);
 		}
 	}
 
@@ -902,7 +908,7 @@ int main(int argc, char *argv[])
 
 	/* Run the http tests */
 	for (t = httptest->items; (t); t = t->next) add_http_test(t);
-	run_http_tests(httptest, followlocations);
+	run_http_tests(httptest, followlocations, logfile);
 	if (debug) show_http_test_results(httptest);
 	combo_start();
 	for (h=testhosthead; (h); h = h->next) {
