@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.85 2003-07-27 10:52:06 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.86 2003-07-31 07:05:45 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1376,7 +1376,7 @@ int main(int argc, char *argv[])
 	envcheck(reqenv);
 	fqdn = get_fqdn();
 	if (getenv("BBLOCATION")) location = malcop(getenv("BBLOCATION"));
-	if (pingtest && getenv("IPTEST_2_CLEAR_ON_FAILED_CONN")) {
+	if (pingcolumn && getenv("IPTEST_2_CLEAR_ON_FAILED_CONN")) {
 		failgoesclear = (strcmp(getenv("IPTEST_2_CLEAR_ON_FAILED_CONN"), "TRUE") == 0);
 	}
 
