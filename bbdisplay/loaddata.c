@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.46 2003-03-04 12:23:03 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.47 2003-03-04 16:47:19 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -78,7 +78,7 @@ bbgen_page_t *init_page(const char *name, const char *title)
 	if (title) {
 		newpage->title = malloc(strlen(title)+1); strcpy(newpage->title, title);
 	}else
-		title = "";
+		title = null_text;
 
 	newpage->color = -1;
 	newpage->oldage = 1;
