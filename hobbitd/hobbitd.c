@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.37 2004-10-25 13:11:27 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.38 2004-10-25 20:50:00 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -253,9 +253,6 @@ int durationvalue(char *dur)
 	struct tm *nowtm;
 	time_t now;
 	
-	now = time(NULL);
-	nowtm = localtime(&now);
-
 	p = dur + strspn(dur, "0123456789");
 	modifier = *p;
 	*p = '\0';
@@ -267,10 +264,14 @@ int durationvalue(char *dur)
 	  case 'd': result *= 1440; break;	/* days */
 	  case 'w': result *= 10080; break;	/* weeks */
 	  case 'm': 
+		    now = time(NULL);
+		    nowtm = localtime(&now);
 		    nowtm->tm_mon += result;
 		    result = (mktime(nowtm) - now) / 60;
 		    break;
 	  case 'y': 
+		    now = time(NULL);
+		    nowtm = localtime(&now);
 		    nowtm->tm_year += result;
 		    result = (mktime(nowtm) - now) / 60;
 		    break;
@@ -285,7 +286,7 @@ void get_hts(char *msg, char *sender,
 	     int *color, int createhost, int createlog)
 {
 	/* "msg" contains an incoming message. First list is of the form "KEYWORD host,domain.test COLOR" */
-	char *l, *p;
+	char *firstline, *p;
 	char *hosttest, *hostname, *testname, *colstr;
 	bbd_hostlist_t *hwalk = NULL;
 	bbd_testlist_t *twalk = NULL;
@@ -300,20 +301,18 @@ void get_hts(char *msg, char *sender,
 	hosttest = hostname = testname = colstr = NULL;
 	p = strchr(msg, '\n');
 	if (p == NULL) {
-		l = strdup(msg);
+		firstline = strdup(msg);
 	}
 	else {
 		*p = '\0';
-		l = strdup(msg); 
+		firstline = strdup(msg); 
 		*p = '\n';
 	}
 
-	p = strtok(l, " \t");
-	if (p) {
-
-		hosttest = strtok(NULL, " \t");
-	}
-	if (hosttest) colstr = strtok(NULL, " \n\t");
+	p = strtok(firstline, " \t"); /* Keyword ... */
+	if (p) hosttest = strtok(NULL, " \t"); /* ... HOST.TEST combo ... */
+	if (hosttest) colstr = strtok(NULL, " \t"); /* ... and the color */
+	if ((hosttest == NULL) || (colstr == NULL)) goto done;
 
 	if (strncmp(msg, "summary", 7) == 0) {
 		/* Summary messages are handled specially */
@@ -322,16 +321,13 @@ void get_hts(char *msg, char *sender,
 		if (testname) { *testname = '\0'; testname++; }
 	}
 	else {
-		if (hosttest) {
-			hostname = hosttest;
-			testname = strrchr(hosttest, '.');
-			if (testname) { *testname = '\0'; testname++; }
-			p = hostname;
-			while ((p = strchr(p, ',')) != NULL) *p = '.';
-		}
+		hostname = hosttest;
+		testname = strrchr(hosttest, '.');
+		if (testname) { *testname = '\0'; testname++; }
+		p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
 
 		hostname = knownhost(hostname, sender, ghosthandling, &maybedown);
-		if (hostname == NULL) return;
+		if (hostname == NULL) goto done;
 	}
 
 	for (hwalk = hosts; (hwalk && strcasecmp(hostname, hwalk->hostname)); hwalk = hwalk->next) ;
@@ -369,6 +365,7 @@ void get_hts(char *msg, char *sender,
 		}
 	}
 
+done:
 	*host = hwalk;
 	*test = twalk;
 	*log = lwalk;
@@ -378,7 +375,7 @@ void get_hts(char *msg, char *sender,
 			*color = COL_BLUE;
 		}
 	}
-	free(l);
+	free(firstline);
 }
 
 bbd_log_t * find_cookie(int cookie)
@@ -902,7 +899,7 @@ void do_message(conn_t *msg)
 		char *hostname;
 		int maybedown;
 		if (sscanf(msg->buf, "notes %s\n", tok) == 1) {
-			hostname  = knownhost(tok, sender, ghosthandling, &maybedown);
+			hostname = knownhost(tok, sender, ghosthandling, &maybedown);
 			if (hostname) handle_notes(msg->buf, sender, hostname);
 		}
 	}
