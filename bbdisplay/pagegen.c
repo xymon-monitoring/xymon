@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.105 2003-12-02 22:46:21 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.106 2003-12-10 20:56:58 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -45,6 +45,8 @@ static char rcsid[] = "$Id: pagegen.c,v 1.105 2003-12-02 22:46:21 henrik Exp $";
 int  subpagecolumns = 1;
 int  hostsbeforepages = 0;
 char *includecolumns = NULL;
+char *bb2ignorecolumns = "";
+int  bb2includepurples = 1;
 int  sort_grouponly_items = 0; /* Standard BB behaviour: Dont sort group-only items */
 char *documentationurl = NULL;
 char *htmlextension = ".html"; /* Filename extension for generated files */
@@ -77,7 +79,7 @@ void select_headers_and_footers(char *prefix)
 }
 
 
-int interesting_column(int pagetype, int color, int alert, char *columnname, char *onlycols)
+int interesting_column(int pagetype, int color, int alert, bbgen_col_t *column, char *onlycols)
 {
 	/*
 	 * Decides if a given column is to be included on a page.
@@ -93,8 +95,8 @@ int interesting_column(int pagetype, int color, int alert, char *columnname, cha
 			char *search;
 
 			/* loaddata::init_group guarantees that onlycols start and end with a '|' */
-			search = (char *) malloc(strlen(columnname)+3);
-			sprintf(search, "|%s|", columnname);
+			search = (char *) malloc(strlen(column->name)+3);
+			sprintf(search, "|%s|", column->name);
 			result = (strstr(onlycols, search) != NULL);
 			free(search);
 		}
@@ -106,17 +108,13 @@ int interesting_column(int pagetype, int color, int alert, char *columnname, cha
 	/* pagetype is now known NOT to be PAGE_BB */
 
 	/* LARRD and INFO columns are always included on non-BB pages */
-	if (larrdcol && (strcmp(columnname, larrdcol) == 0)) return 1;
-	if (infocol && (strcmp(columnname, infocol) == 0)) return 1;
+	if (larrdcol && (strcmp(column->name, larrdcol) == 0)) return 1;
+	if (infocol && (strcmp(column->name, infocol) == 0)) return 1;
 
 	if (includecolumns) {
-		/* includecolumns are other columns to include always on non-BB pages (bb2, bbnk) */
-		char *col1 = (char *) malloc(strlen(columnname)+3); /* 3 = 2 commas and a NULL */
 		int result;
 
-		sprintf(col1, ",%s,", columnname);
-		result = (strstr(includecolumns, col1) != NULL);
-		free(col1);
+		result = (strstr(includecolumns, column->listname) != NULL);
 
 		/* If included, done here. Otherwise may be included further down. */
 		if (result) return result;
@@ -125,7 +123,10 @@ int interesting_column(int pagetype, int color, int alert, char *columnname, cha
 	switch (pagetype) {
 	  case PAGE_BB2:
 		  /* Include all non-green tests */
-		  return ((color == COL_RED) || (color == COL_YELLOW) || (color == COL_PURPLE));
+		  if ( (color == COL_RED) || (color == COL_YELLOW) || (bb2includepurples && (color == COL_PURPLE)) ) {
+			return (strstr(bb2ignorecolumns, column->listname) == NULL);
+		  }
+		  else return 0;
 
 	  case PAGE_NK:
 		  /* Include only RED or YELLOW tests with "alert" property set. 
@@ -134,8 +135,8 @@ int interesting_column(int pagetype, int color, int alert, char *columnname, cha
 		if (alert) {
 			if (color == COL_RED)  return 1;
 			if ( (color == COL_YELLOW) || (color == COL_CLEAR) ) {
-				if (strcmp(columnname, "conn") == 0) return 0;
-				if (lognkstatus && (strcmp(columnname, lognkstatus) == 0)) return 0;
+				if (strcmp(column->name, "conn") == 0) return 0;
+				if (lognkstatus && (strcmp(column->name, lognkstatus) == 0)) return 0;
 				return 1;
 			}
 		}
@@ -218,7 +219,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 		 */
 
 		for (e = h->entries; (e); e = e->next) {
-			if (interesting_column(pagetype, e->color, e->alert, e->column->name, onlycols)) {
+			if (interesting_column(pagetype, e->color, e->alert, e->column, onlycols)) {
 				/* See where e->column should go in list */
 				collist_walk = head; 
 				while ( (collist_walk->next && 
@@ -1037,9 +1038,9 @@ int do_bb2_page(char *filename, int summarytype)
 			if (h->hostentry->nobb2) 
 				useit = 0;
 			else
-				useit = ((h->hostentry->color == COL_RED) || 
-					 (h->hostentry->color == COL_YELLOW) || 
-					 (h->hostentry->color == COL_PURPLE));
+				useit = ( (h->hostentry->bb2color == COL_RED) || 
+					  (h->hostentry->bb2color == COL_YELLOW) || 
+					  (bb2includepurples && (h->hostentry->bb2color == COL_PURPLE)) );
 			break;
 
 		  case PAGE_NK:
