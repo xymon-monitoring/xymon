@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.17 2003-04-22 15:53:45 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.18 2003-04-27 11:05:57 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -76,7 +76,8 @@ int generate_info(char *infocolumn)
 	for (hostwalk=hosthead; (hostwalk); hostwalk = hostwalk->next) {
 		char logfn[MAX_PATH], htmlfn[MAX_PATH];
 		FILE *fd;
-		char *p, *hostname, *alertspec, *url, *slaspec, *noprop, *rawcopy;
+		char *p, *hostname, *alertspec, *slaspec, *noprop, *rawcopy;
+		int firstcontent;
 
 		sprintf(logfn, "%s/%s.%s", getenv("BBLOGS"), 
 			commafy(hostwalk->hostentry->hostname), infocolumn);
@@ -173,47 +174,43 @@ int generate_info(char *infocolumn)
 		sprintf(l, "<b>Checked with ping</b> : %s<br>\n", (ping ? "Yes" : "No")); strcat(infobuf, l);
 		strcat(infobuf, "<br>\n");
 
-		url = strstr(hostwalk->hostentry->rawentry, " http");
-		if (url) {
-			strcat(infobuf, "<b>URL checks</b>:<br>\n");
+		rawcopy = malcop(hostwalk->hostentry->rawentry);
+		firstcontent = 1;
+		p = strtok(rawcopy, " \t");
+		while (p) {
+			if (strncmp(p, "http", 4) == 0) {
+				if (firstcontent) {
+					strcat(infobuf, "<b>URL checks</b>:<br>\n");
+					firstcontent = 0;
+				}
 
-			while (url) {
-				url++;  /* Skip space */
-				p = strchr(url, ' ');
-				if (p) *p = '\0';
-				sprintf(l, "&nbsp;&nbsp;<a href=\"%s\">%s</a><br>\n", realurl(url), url); 
+				sprintf(l, "&nbsp;&nbsp;<a href=\"%s\">%s</a><br>\n", 
+					realurl(p, NULL), realurl(p, NULL)); 
 				strcat(infobuf, l);
-				if (p) {
-					*p = ' ';
-					url = strstr(p, " http");
-				}
-				else {
-					url = NULL;
-				}
 			}
-			strcat(infobuf, "<br>\n");
+			p = strtok(NULL, " \t");
 		}
+		if (!firstcontent) strcat(infobuf, "<br>\n");
 
-		url = strstr(hostwalk->hostentry->rawentry, " content=");
-		if (url) {
-			strcat(infobuf, "<b>Content checks</b>:<br>\n");
+		strcpy(rawcopy, hostwalk->hostentry->rawentry);
+		firstcontent = 1;
+		p = strtok(rawcopy, " \t");
+		while (p) {
+			if ( (strncmp(p, "content=", 8) == 0) ||
+			     (strncmp(p, "cont;", 5) == 0)       ) {
 
-			while (url) {
-				url+=9;  /* Skip " content=" */
-				p = strchr(url, ' ');
-				if (p) *p = '\0';
-				sprintf(l, "&nbsp;&nbsp;<a href=\"%s\">%s</a><br>\n", realurl(url), url); 
+				if (firstcontent) {
+					strcat(infobuf, "<b>Content checks</b>:<br>\n");
+					firstcontent = 0;
+				}
+
+				sprintf(l, "&nbsp;&nbsp;<a href=\"%s\">%s</a><br>\n", 
+					realurl(p, NULL), realurl(p, NULL)); 
 				strcat(infobuf, l);
-				if (p) {
-					*p = ' ';
-					url = strstr(p, " content=");
-				}
-				else {
-					url = NULL;
-				}
 			}
-			strcat(infobuf, "<br>\n");
+			p = strtok(NULL, " \t");
 		}
+		if (!firstcontent) strcat(infobuf, "<br>\n");
 
 		alerts = find_alert(hostwalk->hostentry->hostname, 0);
 		if (!dialup) {
@@ -231,8 +228,7 @@ int generate_info(char *infocolumn)
 		strcat(infobuf, "<br>\n");
 
 		strcat(infobuf, "<b>Other tags</b> : ");
-		rawcopy = malloc(strlen(hostwalk->hostentry->rawentry)+1);
-		strcpy(rawcopy, hostwalk->hostentry->rawentry);
+		strcpy(rawcopy, hostwalk->hostentry->rawentry); /* Already allocated */
 		p = strtok(rawcopy, " \t");
 		while (p) {
 			if (
@@ -245,6 +241,7 @@ int generate_info(char *infocolumn)
 				&&	(strncmp(p, "SLA=", 4) != 0)
 				&&	(strncmp(p, "http", 4) != 0)
 				&&	(strncmp(p, "content=", 8) != 0)
+				&&	(strncmp(p, "cont;", 5)  != 0)
 				&&	(strncmp(p, "testip", 6) != 0)
 				&&	(strncmp(p, "dialup", 6) != 0)
 				&&	(strncmp(p, "noconn", 6) != 0)
