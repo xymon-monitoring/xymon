@@ -40,6 +40,7 @@ typedef struct {
 	int	color;
 	char	age[20];
 	int	oldage;
+	int	acked;
 	void	*next;
 } entry_t;
 
