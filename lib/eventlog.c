@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.17 2005-03-22 09:03:37 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.18 2005-04-04 13:30:13 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -48,7 +48,7 @@ static int wanted_eventcolumn(char *service)
 	return result;
 }
 
-void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
+void do_eventlog(FILE *output, int maxcount, int maxminutes)
 {
 	FILE *eventlog;
 	char eventlogfilename[PATH_MAX];
@@ -117,7 +117,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
 
 		if ( (itemsfound == 8) && 
 		     (eventtime > cutoff) && 
-		     (allowallhosts || (eventhost && !eventhost->nobb2)) && 
+		     (eventhost && !eventhost->nobb2) && 
 		     (wanted_eventcolumn(svcname)) ) {
 
 			newevent = (event_t *) malloc(sizeof(event_t));
@@ -335,7 +335,7 @@ int main(int argc, char *argv[])
 
 	headfoot(stdout, "event", "", "header", COL_GREEN);
 	fprintf(stdout, "<center>\n");
-	do_eventlog(stdout, maxcount, maxminutes, 1);
+	do_eventlog(stdout, maxcount, maxminutes);
 	fprintf(stdout, "</center>\n");
 	headfoot(stdout, "event", "", "footer", COL_GREEN);
 
