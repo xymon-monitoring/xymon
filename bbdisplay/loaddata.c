@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.47 2003-03-04 16:47:19 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.48 2003-03-07 09:22:29 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -119,7 +119,10 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	host_t 		*newhost = malloc(sizeof(host_t));
 	hostlist_t	*newlist = malloc(sizeof(hostlist_t));
 
-	dprintf("init_host(%s, ...)\n", textornull(hostname));
+	dprintf("init_host(%s, %d,%d,%d.%d, %d, %s, %s, %s, %s)\n", 
+		textornull(hostname), ip1, ip2, ip3, ip4,
+		dialup, textornull(alerts), textornull(tags),
+		textornull(nopropyellowtests), textornull(nopropredtests));
 
 	newhost->hostname = malloc(strlen(hostname)+1); strcpy(newhost->hostname, hostname);
 	sprintf(newhost->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
@@ -448,6 +451,11 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		}
 	}
 
+	dprintf("init_state: hostname=%s, testname=%s, color=%d, acked=%d, age=%s, oldage=%d, propagate=%d, alert=%d, *is_purple=%d\n",
+		textornull(hostname), textornull(testname), 
+		newstate->entry->color, newstate->entry->acked,
+		textornull(newstate->entry->age), newstate->entry->oldage,
+		newstate->entry->propagate, newstate->entry->alert, *is_purple);
 
 	if (host) {
         	hostlist_t      *l;
@@ -460,8 +468,10 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		 */
 		newstate->entry->next = host->entries;
 		for (l=hosthead; (l); l = l->next) {
-			if (strcmp(l->hostentry->hostname, host->hostname) == 0) 
+			if (strcmp(l->hostentry->hostname, host->hostname) == 0) {
 				l->hostentry->entries = newstate->entry;
+				dprintf("init_state: Duplicate host, cloning state entries\n");
+			}
 		}
 
 	}
