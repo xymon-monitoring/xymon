@@ -1,0 +1,32 @@
+<html>
+<head>
+	<title>Known issues in Hobbit</title>
+</head>
+<body>
+
+<h1>Known issues in Hobbit</h1>
+<p>This describes some known problems you may encounter when
+using Hobbit to monitor servers.</p>
+
+<h3>DNS error reported for network tests</h3>
+<p>The bbtest-net network tester uses the built-in ARES library for
+DNS lookups. There have been reports that this library fails on
+some systems; one confirmed case is on "OSF1 V5.1". So if you 
+suddenly get a lot of failed network tests that report "DNS error",
+try running bbtest-net with the "--no-ares" option to use the
+standard DNS lookups instead.</p>
+
+<h3>Network tests fail sporadically, or report long reponsetimes</h3>
+<p>The bbtest-net network tester runs many tests in parallel; by default
+it will typically run up to 256 tests concurrently. This may be more
+than your network test server or network infrastructure can handle; if
+you see sporadic timeouts of network tests or the graphs show increased
+responsetimes, you can lower the number of concurrent tests by adding
+the "--concurrency=N" option to bbtest-net in the <tt>~/server/etc/hobbittasks.cfg</tt>
+file (for Hobbit), or the <tt>$BBHOME/bin/bb-network.sh</tt> file (Big Brother).
+This has been especially important for sites doing many
+http checks, since these typically have much more traffic going on
+while testing than simple TCP services such as smtp.</p>
+
+</body>
+</html>
