@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.32 2003-07-19 20:45:22 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.33 2003-07-25 09:24:09 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -417,7 +417,7 @@ char *urlip(char *url, char *hostip, char *hostname)
 {
 	/* This routine changes the URL to use an IP-address instead of the hostname */
 	static char result[MAX_LINE_LEN];
-	char *p, *hoststart, *restofurl;
+	char *p, *hoststart, *restofurl, *portnumber;
 
 	*hostname = '\0';
 	strcpy(result, url);
@@ -442,8 +442,16 @@ char *urlip(char *url, char *hostip, char *hostname)
 		hoststart = p+1;
 	}
 
+	/* Any port number lurking here? */
+	portnumber = strchr(hoststart, ':');
+	if (portnumber) { *portnumber = '\0'; portnumber++; }
+
 	strcpy(hostname, hoststart);
 	strcat(result, hostip);
+	if (portnumber) {
+		strcat(result, ":");
+		strcat(result, portnumber);
+	}
 	strcat(result, "/");
 	strcat(result, restofurl);
 
