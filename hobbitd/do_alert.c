@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.47 2005-02-26 16:31:47 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.48 2005-02-26 17:00:56 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -99,7 +99,7 @@ typedef struct criteria_t {
 	int colors;
 	char *timespec;
 	int minduration, maxduration;	/* In seconds */
-	int sendrecovered, nonotify;
+	int sendrecovered, sendnotice;
 } criteria_t;
 
 /* This defines a recipient. There may be some criteria, and then how we send alerts to him */
@@ -503,12 +503,13 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				currule->criteria->sendrecovered = SR_WANTED;
 				crit->sendrecovered = SR_WANTED;
 			}
-			else if (strncasecmp(p, "NONOTIFY", 8) == 0) {
+			else if (strncasecmp(p, "NOTICE", 6) == 0) {
 				criteria_t *crit;
 
 				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
 				crit = setup_criteria(&currule, &currcp);
-				crit->nonotify = 1;
+				currule->criteria->sendnotice = SR_WANTED;
+				crit->sendnotice = SR_WANTED;
 			}
 			else if ((pstate == P_RECIP) && (strncasecmp(p, "FORMAT=", 7) == 0)) {
 				if      (strcasecmp(p+7, "TEXT") == 0) currcp->format = FRM_TEXT;
@@ -686,7 +687,10 @@ static void dump_criteria(criteria_t *crit, int isrecip)
 		  case SR_WANTED: printf("RECOVERED "); break;
 		  case SR_NOTWANTED: printf("NORECOVERED "); break;
 		}
-		if (crit->nonotify) printf("NONOTIFY ");
+		switch (crit->sendnotice) {
+		  case SR_WANTED: printf("NOTICE "); break;
+		  case SR_NOTWANTED: printf("NONOTICE "); break;
+		}
 	}
 }
 
@@ -848,14 +852,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit)
 			alert->hostname->name, alert->testname->name, 
 			alert->location->name, crit->cfid);
 
-	if (alert->state == A_NOTIFY) {
-		if (crit->nonotify) {
-			dprintf("failed nonotify\n"); 
-			traceprintf("Failed no-notify\n");
-			return 0;
-		}
-	}
-	else {
+	if (alert->state != A_NOTIFY) {
 		duration = (time(NULL) - alert->eventstart);
 		if (crit->minduration && (duration < crit->minduration)) { 
 			dprintf("failed minduration %d<%d\n", duration, crit->minduration); 
@@ -903,7 +900,10 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit)
 		return 0; 
 	}
 
-	if (alert->state == A_NOTIFY) return 1;
+	if (alert->state == A_NOTIFY) {
+		dprintf("Checking for NOTICE setting %d\n", crit->sendnotice);
+		return (crit->sendnotice == SR_WANTED);
+	}
 
 	if (crit->timespec && !timematch(crit->timespec)) { 
 		dprintf("failed timespec\n"); 
@@ -1564,7 +1564,7 @@ void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
 		char *timespec = NULL;
 		int colors = defaultcolors;
 		int i, firstcolor = 1;
-		int recovered = 0;
+		int recovered = 0, notice = 0;
 
 		count++;
 
@@ -1590,11 +1590,15 @@ void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
 		if ( (printrule->criteria && printrule->criteria->sendrecovered) ||
 		     (recip->criteria && recip->criteria->sendrecovered) ) recovered = 1;
 
-		if (recovered && recip->stoprule) strcpy(codes, "R,S");
-		else if (recovered) strcpy(codes, "R");
-		else if (recip->stoprule) strcpy(codes, "S");
+		if ( (printrule->criteria && printrule->criteria->sendnotice) ||
+		     (recip->criteria && recip->criteria->sendnotice) ) notice = 1;
 
-		if (!recovered)
+		*codes = '\0';
+		if (recovered) strcat(codes, "R");
+		if (notice) { if (strlen(codes)) strcat(codes, ",N"); else strcat(codes, "N"); }
+		if (recip->stoprule) { if (strlen(codes)) strcat(codes, ",S"); else strcat(codes, "S"); }
+
+		if (strlen(codes) == 0)
 			sprintf(l, "<td><font %s>%s</font></td>", fontspec, recip->recipient);
 		else
 			sprintf(l, "<td><font %s>%s (%s)</font></td>", fontspec, recip->recipient, codes);
