@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.77 2003-07-24 14:19:05 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.78 2003-07-27 11:10:56 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1028,19 +1028,71 @@ void drop_genstatfiles(void)
 	}
 }
 
-char *realurl(char *url, char **proxy)
+char *urlip(const char *url, char *hostip, char *hostname)
+{
+	/* This routine changes the URL to use an IP-address instead of the hostname */
+	char *urlcopy = malcop(url);
+	static char result[MAX_LINE_LEN];
+	char *p, *hoststart, *restofurl, *portnumber;
+
+	if (hostname) *hostname = '\0';
+	strcpy(result, urlcopy);
+
+	/* First find where the hostname starts */
+	p = strstr(urlcopy, "://");
+	if (p == NULL) return result;
+
+	hoststart = p+3;
+	result[hoststart-urlcopy] = '\0';
+
+	/* Now cut off the part of the URL that is not the hostname */
+	p = strchr(hoststart, '/');
+	if (p) { *p = '\0'; restofurl = p+1; } else restofurl = "";
+
+	/* hoststart points to start of hostname, restofurl to the part after the hostname */
+	p = strchr(hoststart, '@');
+	if (p) {
+		/* URL contains "login:password@" sequence */
+		*p = '\0';
+		strcat(result, hoststart); strcat(result, "@");
+		hoststart = p+1;
+	}
+
+	/* Any port number lurking here? */
+	portnumber = strchr(hoststart, ':');
+	if (portnumber) { *portnumber = '\0'; portnumber++; }
+
+	if (hostname) strcpy(hostname, hoststart);
+	strcat(result, hostip);
+	if (portnumber) {
+		strcat(result, ":");
+		strcat(result, portnumber);
+	}
+	strcat(result, "/");
+	strcat(result, restofurl);
+
+	free(urlcopy);
+	return result;
+}
+
+
+char *realurl(char *url, char **proxy, char **ip, char **hosthdr)
 {
 	static char result[MAX_LINE_LEN];
 	static char proxyresult[MAX_LINE_LEN];
+	static char ipresult[MAX_LINE_LEN];
+	static char hosthdrresult[MAX_LINE_LEN];
 	char *p;
 	char *urlstart;
 	char *restorechar = NULL;
 
-	result[0] = '\0';
-	proxyresult[0] = '\0';
+	result[0] = proxyresult[0] = ipresult[0] = hosthdrresult[0] = '\0';
 	if (proxy) *proxy = NULL;
+	if (ip) *ip = NULL;
+	if (hosthdr) *hosthdr = NULL;
 	p = url;
 
+	/* First handle any leading "cont;" "post;" and "content=" */
 	if (strncmp(p, "content=", 8) == 0) {
 		p += 8;
 	}
@@ -1080,6 +1132,7 @@ char *realurl(char *url, char **proxy)
 		urlstart = p;
 	}
 
+	/* Drop the special https* stuff */
 	if (strncmp(urlstart, "https2:", 7) == 0) {
 		urlstart += 7;
 		sprintf(result, "https:%s", urlstart);
@@ -1100,6 +1153,41 @@ char *realurl(char *url, char **proxy)
 	}
 
 	if (restorechar) *restorechar = ';';
+
+
+	/* 
+	 * Now see if the hostname inside the URL has an IP spec in it
+	 * It could be 
+	 *    http://www.foo.com=12.34.56.78/baz/index.html
+	 *    http://www.foo.com:1234=5.6.7.8/baz/index.html
+	 */
+	urlstart = strstr(result, "://");
+	if (urlstart) {
+		urlstart += 3;
+		p = strchr(urlstart, '/');
+	}
+	if (urlstart && p) {
+		char *ipstart;
+
+		*p = '\0';
+		ipstart = strchr(urlstart, '=');
+		if (ipstart) {
+			strcpy(ipresult, (ipstart+1));
+			*p = '/';
+			memmove(ipstart, p, strlen(p)+1);
+			if (ip) *ip = ipresult;
+
+			if (hosthdr) {
+				strcpy(hosthdrresult, "Host: ");
+				urlip(result, ipresult, hosthdrresult+strlen(hosthdrresult));
+				*hosthdr = hosthdrresult;
+			}
+		}
+		else {
+			*p = '/';
+		}
+	}
+
 	return result;
 }
 

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.34 2003-07-25 09:49:07 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.35 2003-07-27 11:10:56 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -32,6 +32,8 @@ static char rcsid[] = "$Id: httptest.c,v 1.34 2003-07-25 09:49:07 henrik Exp $";
 typedef struct {
 	char   *url;                    /* URL to request, stripped of BB'isms */
 	char   *proxy;                  /* Proxy host CURLOPT_PROXY */
+	char   *ip;                     /* IP to test against */
+	char   *hosthdr;                /* Host: header for ip-based test */
 	char   *postdata;               /* Form POST data CURLOPT_POSTFIELDS */
 	int    sslversion;		/* SSL version CURLOPT_SSLVERSION */
 	char   *ciphers; 	   	/* SSL ciphers CURLOPT_SSL_CIPHER_LIST */
@@ -129,6 +131,8 @@ void add_http_test(testitem_t *t)
 	http_data_t *req;
 	char *proto = NULL;
 	char *proxy = NULL;
+	char *ip = NULL;
+	char *hosthdr = NULL;
 	int status;
 
 	/* 
@@ -139,8 +143,10 @@ void add_http_test(testitem_t *t)
 
 	/* Allocate the private data and initialize it */
 	t->private = req = malloc(sizeof(http_data_t));
-	req->url = malcop(realurl(t->testspec, &proxy));
+	req->url = malcop(realurl(t->testspec, &proxy, &ip, &hosthdr));
 	if (proxy) req->proxy = malcop(proxy); else req->proxy = NULL;
+	if (ip) req->ip = malcop(ip); else req->ip = NULL;
+	if (hosthdr) req->hosthdr = malcop(hosthdr); else req->hosthdr = NULL;
 	req->postdata = NULL;
 	req->sslversion = 0;
 	req->ciphers = NULL;
@@ -413,54 +419,6 @@ static int debug_callback(CURL *handle, curl_infotype type, char *data, size_t s
 }
 #endif
 
-char *urlip(const char *url, char *hostip, char *hostname)
-{
-	/* This routine changes the URL to use an IP-address instead of the hostname */
-	char *urlcopy = malcop(url);
-	static char result[MAX_LINE_LEN];
-	char *p, *hoststart, *restofurl, *portnumber;
-
-	*hostname = '\0';
-	strcpy(result, urlcopy);
-
-	/* First find where the hostname starts */
-	p = strstr(urlcopy, "://");
-	if (p == NULL) return result;
-
-	hoststart = p+3;
-	result[hoststart-urlcopy] = '\0';
-
-	/* Now cut off the part of the URL that is not the hostname */
-	p = strchr(hoststart, '/');
-	if (p) { *p = '\0'; restofurl = p+1; } else restofurl = "";
-
-	/* hoststart points to start of hostname, restofurl to the part after the hostname */
-	p = strchr(hoststart, '@');
-	if (p) {
-		/* URL contains "login:password@" sequence */
-		*p = '\0';
-		strcat(result, hoststart); strcat(result, "@");
-		hoststart = p+1;
-	}
-
-	/* Any port number lurking here? */
-	portnumber = strchr(hoststart, ':');
-	if (portnumber) { *portnumber = '\0'; portnumber++; }
-
-	strcpy(hostname, hoststart);
-	strcat(result, hostip);
-	if (portnumber) {
-		strcat(result, ":");
-		strcat(result, portnumber);
-	}
-	strcat(result, "/");
-	strcat(result, restofurl);
-
-	free(urlcopy);
-	return result;
-}
-
-
 void run_http_tests(service_t *httptest, long followlocations, char *logfile, int sslcertcheck)
 {
 	http_data_t *req;
@@ -485,19 +443,15 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 			return;
 		}
 
-		if (t->host->testip) {
+		if (req->ip && req->hosthdr) {
 			/*
 			 * libcurl has no support for testing a specific IP-address.
 			 * So we need to fake that: Substitute the hostname with the
-			 * IP-address we have inside the URL, and set a "Host:" header
+			 * IP-address inside the URL, and set a "Host:" header
 			 * so that virtual webhosts will work.
 			 */
-			char hostnamehdr[MAX_LINE_LEN];
-
-			strcpy(hostnamehdr, "Host: ");
-			curl_easy_setopt(req->curl, CURLOPT_URL, urlip(req->url, t->host->ip, hostnamehdr+strlen(hostnamehdr)));
-			slist = curl_slist_append(slist, hostnamehdr);
-
+			curl_easy_setopt(req->curl, CURLOPT_URL, urlip(req->url, req->ip, NULL));
+			slist = curl_slist_append(slist, req->hosthdr);
 			curl_easy_setopt(req->curl, CURLOPT_HTTPHEADER, slist);
 		}
 		else {
@@ -757,11 +711,11 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 
 			if (!got_data) {
 				sprintf(msgline, "\nAn HTTP error occurred while testing <a href=\"%s\">URL %s</a>\n", 
-					realurl(req->url, NULL), realurl(req->url, NULL));
+					req->url, req->url);
 			}
 			else {
 				sprintf(msgline, "\n&%s %s - Testing <a href=\"%s\">URL</a> yields:\n",
-					colorname(color), realurl(req->url, NULL), realurl(req->url, NULL));
+					colorname(color), req->url, req->url);
 			}
 			addtostatus(msgline);
 
@@ -808,12 +762,12 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 			if (req->sslinfo && (req->sslexpire > 0)) {
 				if (req->sslexpire > now) {
 					sprintf(msgline, "\n&%s SSL certificate for %s expires in %ld days\n\n", 
-						colorname(req->sslcolor), realurl(req->url, NULL), 
+						colorname(req->sslcolor), req->url,
 						(req->sslexpire-now) / 86400);
 				}
 				else {
 					sprintf(msgline, "\n&%s SSL certificate for %s expired %ld days ago\n\n", 
-						colorname(req->sslcolor), realurl(req->url, NULL), 
+						colorname(req->sslcolor), req->url, 
 						(now-req->sslexpire) / 86400);
 				}
 				addtostatus(msgline);

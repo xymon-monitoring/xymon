@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.27 2003-07-18 12:46:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.28 2003-07-27 11:10:56 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -199,7 +199,7 @@ int generate_info(char *infocolumn)
 				}
 
 				sprintf(l, "&nbsp;&nbsp;<a href=\"%s\">%s</a><br>\n", 
-					realurl(p, NULL), realurl(p, NULL)); 
+					realurl(p, NULL, NULL, NULL), realurl(p, NULL, NULL, NULL)); 
 				strcat(infobuf, l);
 			}
 			p = strtok(NULL, " \t");
@@ -219,7 +219,7 @@ int generate_info(char *infocolumn)
 				}
 
 				sprintf(l, "&nbsp;&nbsp;<a href=\"%s\">%s</a><br>\n", 
-					realurl(p, NULL), realurl(p, NULL)); 
+					realurl(p, NULL, NULL, NULL), realurl(p, NULL, NULL, NULL)); 
 				strcat(infobuf, l);
 			}
 			p = strtok(NULL, " \t");
