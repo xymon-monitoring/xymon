@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.36 2003-10-03 13:01:11 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.37 2003-10-14 21:12:37 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -29,6 +29,7 @@ static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.36 2003-10-03 13:01:11 henrik E
 
 #include "bbgen.h"
 #include "util.h"
+#include "pagegen.h"		/* for documentationurl variable */
 #include "infogen.h"
 #include "alert.h"
 
@@ -95,6 +96,19 @@ int generate_info(char *infocolumn)
 
 		sprintf(l, "<tr><th align=left>IP:</th><td align=left>%s</td></tr>\n", hostwalk->hostentry->ip);
 		addtobuffer(&infobuf, &infobuflen, l);
+		if (documentationurl) {
+			sprintf(l, "<tr><th align=left>Documentation:</th><td align=left><a href=\"%s\">%s</a>\n", 
+				urldoclink(documentationurl, hostwalk->hostentry->hostname),
+				urldoclink(documentationurl, hostwalk->hostentry->hostname));
+			addtobuffer(&infobuf, &infobuflen, l);
+		}
+		if (hostwalk->hostentry->link != &null_link) {
+			sprintf(l, "<tr><th align=left>Notes:</th><td align=left><a href=\"%s\">%s%s</a>\n", 
+				hostlink(hostwalk->hostentry->link),
+				getenv("BBWEBHOST"),
+				hostlink(hostwalk->hostentry->link));
+			addtobuffer(&infobuf, &infobuflen, l);
+		}
 		sprintf(l, "<tr><th align=left>Page/subpage:</th><td align=left><a href=\"%s/%s\">%s</a>\n", 
 			getenv("BBWEB"), hostpage_link(hostwalk->hostentry), hostpage_name(hostwalk->hostentry));
 		addtobuffer(&infobuf, &infobuflen, l);
