@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.12 2004-11-25 15:12:16 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.13 2004-12-03 11:36:27 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -478,8 +478,6 @@ int main(int argc, char *argv[])
 					/* Exec the task */
 					char *cmd;
 					char **cmdargs = NULL;
-					int argcount = 0;
-					char *cmdcp, *p;
 
 					/* Setup environment */
 					if (twalk->envfile) {
@@ -487,19 +485,9 @@ int main(int argc, char *argv[])
 						loadenv(expand_env(twalk->envfile));
 					}
 
-					/* Count # of arguments in command */
-					cmdcp = strdup(expand_env(twalk->cmd));
-					dprintf("Task '%s' -> '%s'\n", twalk->key, cmdcp);
-					p = strtok(cmdcp, " ");
-					while (p) { argcount++; p = strtok(NULL, " "); }
-					cmdargs = (char **) calloc(argcount+2, sizeof(char *));
+					/* Setup command line and arguments */
+					cmdargs = setup_commandargs(twalk->cmd, &cmd);
 
-					/* Setup cmd and cmdargs */
-					strcpy(cmdcp, expand_env(twalk->cmd));
-					cmd = strtok(cmdcp, " ");
-					cmdargs[0] = cmd; argcount = 0;
-					while ((p = strtok(NULL, " ")) != NULL) cmdargs[++argcount] = p;
-					
 					/* Point stdout/stderr to a logfile, if requested */
 					if (twalk->logfile) {
 						char *logfn = expand_env(twalk->logfile);
@@ -515,7 +503,8 @@ int main(int argc, char *argv[])
 					execvp(cmd, cmdargs);
 
 					/* Should never go here */
-					errprintf("execvp() failed: %s\n", strerror(errno));
+					errprintf("Could not start task %s using command '%s': %s\n", 
+						   twalk->key, cmd, strerror(errno));
 					exit(0);
 				}
 				else if (twalk->pid == -1) {
