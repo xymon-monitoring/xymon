@@ -582,11 +582,11 @@ link_t *load_all_links(void)
 	char *p;
 
 	strcpy(dirname, getenv("BBNOTES"));
-	head1 = load_links(dirname, "/notes");
+	head1 = load_links(dirname, "notes");
 
 	/* Change xxx/xxx/xxx/notes into xxx/xxx/xxx/help */
 	p = strrchr(dirname, '/'); *p = '\0'; strcat(dirname, "/help");
-	head2 = load_links(dirname, "/help");
+	head2 = load_links(dirname, "help");
 
 	if (head1) {
 		/* Append help-links to list of notes-links */
@@ -1016,8 +1016,9 @@ void do_bb_page(page_t *page, char *filename)
 			link = find_link(p->name);
 			if (link != &null_link) {
 				fprintf(output, "<TR><TD><FONT %s><A HREF=\"%s/%s\">%s</A></FONT></TD>\n", 
+					getenv("MKBBROWFONT"),
 					getenv("BBWEB"), hostlink(link), 
-					getenv("MKBBROWFONT"), p->title);
+					p->title);
 			}
 			else {
 				fprintf(output, "<TR><TD><FONT %s>%s</FONT></TD>\n", getenv("MKBBROWFONT"), p->title);
@@ -1074,8 +1075,9 @@ void do_page(page_t *page, char *filename, char *upperpagename)
 			link = find_link(p->name);
 			if (link != &null_link) {
 				fprintf(output, "<TR><TD><FONT %s><A HREF=\"%s/%s\">%s</A></FONT></TD>\n", 
+					getenv("MKBBROWFONT"),
 					getenv("BBWEB"), hostlink(link), 
-					getenv("MKBBROWFONT"), p->title);
+					p->title);
 			}
 			else {
 				fprintf(output, "<TR><TD><FONT %s>%s</FONT></TD>\n", getenv("MKBBROWFONT"), p->title);
