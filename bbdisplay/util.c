@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.41 2003-04-27 12:44:27 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.42 2003-04-28 11:28:40 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -907,10 +907,10 @@ char *realurl(char *url, char **proxy)
 
 		p++; /* Move p to "http" */
 		if (proxy) {
-			*p = '\0';
+			*(p-1) = '\0'; /* Proxy setting stops before "/http" */
 			strcpy(proxyresult, urlstart);
 			*proxy = proxyresult;
-			*p = 'h';
+			*(p-1) = '/';
 		}
 		urlstart = p;
 	}
