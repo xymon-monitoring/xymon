@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.83 2004-12-14 22:25:14 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.84 2004-12-18 10:24:17 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -2213,7 +2213,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (restartfn) {
-		load_hostnames(bbhostsfn, get_fqdn(), NULL);
+		load_hostnames(bbhostsfn, NULL, get_fqdn(), NULL);
 		load_checkpoint(restartfn);
 	}
 
@@ -2322,7 +2322,7 @@ int main(int argc, char *argv[])
 
 		if (reloadconfig && bbhostsfn) {
 			reloadconfig = 0;
-			load_hostnames(bbhostsfn, get_fqdn(), NULL);
+			load_hostnames(bbhostsfn, NULL, get_fqdn(), NULL);
 		}
 
 		if (now > nextcheckpoint) {

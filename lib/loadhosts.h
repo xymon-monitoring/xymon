@@ -87,7 +87,7 @@ typedef struct namelist_t {
 
 extern char *larrdgraphs_default;
 
-extern namelist_t *load_hostnames(char *bbhostsfn, int fqdn, char *docurl);
+extern namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *docurl);
 extern char *knownhost(char *filename, char *hostip, int ghosthandling, int *maybedown);
 extern namelist_t *hostinfo(char *hostname);
 extern char *bbh_item(namelist_t *host, enum bbh_item_t item);

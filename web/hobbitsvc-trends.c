@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.51 2004-12-14 22:25:34 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.52 2004-12-18 10:24:17 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -436,7 +436,7 @@ int main(int argc, char *argv[])
 	}
 	if (larrdcol == NULL) larrdcol = "trends";
 
-	hosthead = load_hostnames(bbhostsfn, get_fqdn(), NULL);
+	hosthead = load_hostnames(bbhostsfn, NULL, get_fqdn(), NULL);
 
 	/* First, generate the "trends" column for all hosts */
 	generate_larrd(rrddir, larrdcol, 1, usebbgend);
