@@ -16,10 +16,11 @@
 # will not need to run this module, and it is recommended that you keep it disabled
 # since storing the raw logs on disk can cause a significant load on your server.
 
-#[bbstatus]
-#	ENVFILE @BBHOME@/etc/hobbitserver.cfg
-#	NEEDS hobbitd
-#	CMD hobbitd_channel --channel=status --log=$BBSERVERLOGS/status.log hobbitd_filestore --status --html
+[bbstatus]
+	DISABLED
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	NEEDS hobbitd
+	CMD hobbitd_channel --channel=status --log=$BBSERVERLOGS/status.log hobbitd_filestore --status --html
 
 
 # "bbhistory" keeps track of the status changes that happen, in a manner that is
@@ -38,19 +39,21 @@
 # LARRD uses data-files, but since LARRD is handled by the hobbitd_larrd module, you do
 # not need to run the "bbdata" module to get LARRD graphs.
 
-#[bbdata]
-#	ENVFILE @BBHOME@/etc/hobbitserver.cfg
-#	NEEDS hobbitd
-#	CMD hobbitd_channel --channel=data   --log=$BBSERVERLOGS/data.log hobbitd_filestore --data
+[bbdata]
+	DISABLED
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	NEEDS hobbitd
+	CMD hobbitd_channel --channel=data   --log=$BBSERVERLOGS/data.log hobbitd_filestore --data
 
 
 # "bbnotes" saves web note-files, that are sent using the BB "notes" protocol. This is
 # disabled by default; if you use the BB "notes" protocol, then you should enable this.
 
-#[bbnotes]
-#	ENVFILE @BBHOME@/etc/hobbitserver.cfg
-#	NEEDS hobbitd
-#	CMD hobbitd_channel --channel=notes  --log=$BBSERVERLOGS/notes.log hobbitd_filestore --notes
+[bbnotes]
+	DISABLED
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	NEEDS hobbitd
+	CMD hobbitd_channel --channel=notes  --log=$BBSERVERLOGS/notes.log hobbitd_filestore --notes
 
 
 # "bbenadis" updates the files used to indicate that a host or test has been enabled or disabled.
