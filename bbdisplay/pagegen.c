@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.44 2003-05-09 21:14:36 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.45 2003-05-19 15:26:43 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -667,7 +667,7 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums)
 	if (hostsbeforepages && page->subpages) do_page_subpages(output, page->subpages, pagepath);
 
 	/* Summaries and extensions on main page only */
-	if (page->parent != NULL) {
+	if (page->parent == NULL) {
 		do_summaries(dispsums, output);
 		do_bbext(output, "BBMKBBEXT");
 	}
