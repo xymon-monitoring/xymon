@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.1 2004-09-18 22:27:46 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.2 2004-09-19 06:38:59 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -54,12 +54,15 @@ typedef struct conn_t {
 	int ssocket;
 	int conntries;
 	unsigned char *buf, *bufp;
-	unsigned int buflen;
+	unsigned int bufsize, buflen;
 	struct conn_t *next;
 } conn_t;
 
 #define CONNECT_TRIES 5
 conn_t *chead = NULL;
+
+#define BUFSZ_READ 2048
+#define BUFSZ_INC  8192
 
 static char *statename(enum phase_t state)
 {
@@ -79,15 +82,59 @@ static char *statename(enum phase_t state)
 	}
 }
 
+static void do_read(int sockfd, conn_t *conn, enum phase_t completedstate)
+{
+	int n;
+
+	if ((conn->buflen + BUFSZ_READ + 1) > conn->bufsize) {
+		conn->bufsize += BUFSZ_INC;
+		conn->buf = realloc(conn->buf, conn->bufsize);
+		conn->bufp = conn->buf + conn->buflen;
+	}
+
+	n = read(sockfd, conn->bufp, (conn->bufsize - conn->buflen - 1));
+	if (n == -1) {
+		/* Error - abort */
+		conn->state = P_CLEANUP;
+	}
+	else if (n == 0) {
+		/* EOF - request is complete */
+		conn->state = completedstate;
+	}
+	else {
+		conn->buflen += n;
+		conn->bufp += n;
+		*conn->bufp = '\0';
+	}
+}
+
+static void do_write(int sockfd, conn_t *conn, enum phase_t completedstate)
+{
+	int n;
+
+	n = write(sockfd, conn->bufp, conn->buflen);
+	if (n == -1) {
+		/* Error - abort */
+		conn->state = P_CLEANUP;
+	}
+	else if (n > 0) { 
+		conn->buflen -= n; 
+		conn->bufp += n; 
+		if (conn->buflen == 0) {
+			conn->state = completedstate;
+		}
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	int localport = 1984;
 	int remport = 1984;
 	char *remaddr = "172.16.10.2";
+	int daemonize = 0;
 	int timeout = 10;
 	int listenq = 20;
 
-	pid_t childpid;
 	int lsocket;
 	struct sockaddr_in laddr;
 	struct sockaddr_in saddr;
@@ -108,16 +155,22 @@ int main(int argc, char *argv[])
 	saddr.sin_family = AF_INET;
 	inet_aton(remaddr, (struct in_addr *) &saddr.sin_addr.s_addr);
 
-	/* Become a daemon */
-	childpid = fork();
-	if (childpid < 0) {
-		exit(1);
+	if (daemonize) {
+		pid_t childpid;
+
+		/* Become a daemon */
+		childpid = fork();
+		if (childpid < 0) {
+			/* Fork failed */
+			exit(1);
+		}
+		else if (childpid > 0) {
+			/* Parent - just exit */
+			exit(0);
+		}
+		/* Child (daemon) continues here */
+		setsid();
 	}
-	else if (childpid > 0) {
-		exit(0);
-	}
-	/* Child (daemon) continues here */
-	setsid();
 
 	signal(SIGPIPE, SIG_IGN);
 
@@ -127,7 +180,6 @@ int main(int argc, char *argv[])
 		struct timeval tmo;
 		int n, idx;
 		conn_t *cwalk;
-		unsigned char mbuf[32768];
 
 		FD_ZERO(&fdread);
 		FD_ZERO(&fdwrite);
@@ -143,7 +195,6 @@ int main(int argc, char *argv[])
 				break;
 
 			  case P_REQ_READY:
-				/* We have the request, try getting a socket for the server connection */
 				shutdown(cwalk->csocket, SHUT_RD);
 				cwalk->bufp = cwalk->buf;
 				cwalk->state = P_REQ_CONNECTING;
@@ -154,7 +205,6 @@ int main(int argc, char *argv[])
 				cwalk->ssocket = socket(AF_INET, SOCK_STREAM, 0);
 				if (cwalk->ssocket == -1) break; /* Retry the next time around */
 				fcntl(cwalk->ssocket, F_SETFL, O_NONBLOCK);
-
 				cwalk->conntries--;
 				n = connect(cwalk->ssocket, (struct sockaddr *)&saddr, sizeof(saddr));
 				if ((n == 0) || ((n == -1) && (errno == EINPROGRESS))) {
@@ -175,8 +225,8 @@ int main(int argc, char *argv[])
 			  case P_REQ_DONE:
 				/* Request is off to the server */
 				shutdown(cwalk->ssocket, SHUT_WR);
-				if (cwalk->buf) free(cwalk->buf);
-				cwalk->buf = cwalk->bufp = NULL; cwalk->buflen = 0;
+				cwalk->bufp = cwalk->buf; cwalk->buflen = 0;
+				memset(cwalk->buf, 0, cwalk->bufsize);
 				cwalk->state = P_RESP_READING;
 				/* Fallthrough */
 
@@ -206,6 +256,8 @@ int main(int argc, char *argv[])
 
 			  case P_RESP_DONE:
 				shutdown(cwalk->csocket, SHUT_WR);
+				close(cwalk->csocket);
+				cwalk->csocket = -1;
 				cwalk->state = P_CLEANUP;
 				/* Fall through */
 
@@ -218,8 +270,9 @@ int main(int argc, char *argv[])
 					close(cwalk->ssocket);
 					cwalk->ssocket = -1;
 				}
-				if (cwalk->buf) free(cwalk->buf);
-				cwalk->buf = cwalk->bufp = NULL; cwalk->buflen = 0;
+				cwalk->bufp = cwalk->bufp; 
+				cwalk->buflen = 0;
+				memset(cwalk->buf, 0, cwalk->bufsize);
 				memset(&cwalk->caddr, 0, sizeof(cwalk->caddr));
 				cwalk->state = P_IDLE;
 				break;
@@ -246,26 +299,7 @@ int main(int argc, char *argv[])
 				switch (cwalk->state) {
 				  case P_REQ_READING:
 					if (FD_ISSET(cwalk->csocket, &fdread)) {
-						n = read(cwalk->csocket, mbuf, sizeof(mbuf)-1);
-						if (n == -1) {
-							/* Error - abort */
-							cwalk->state = P_CLEANUP;
-						}
-						else if (n == 0) {
-							/* EOF - request is complete */
-							cwalk->state = P_REQ_READY;
-						}
-						else {
-							mbuf[n] = '\0';
-							cwalk->buflen += strlen(mbuf);
-							if (cwalk->buf == NULL) {
-								cwalk->buf = strdup(mbuf);
-							}
-							else {
-								cwalk->buf = realloc(cwalk->buf, cwalk->buflen+1);
-								strcat(cwalk->buf, mbuf);
-							}
-						}
+						do_read(cwalk->csocket, cwalk, P_REQ_READY);
 					}
 					break;
 
@@ -278,65 +312,27 @@ int main(int argc, char *argv[])
 							connressize = sizeof(connres);
 							n = getsockopt(cwalk->ssocket, SOL_SOCKET, SO_ERROR, &connres, &connressize);
 							if (connres != 0) {
-								/* Connect failed! */
-								cwalk->state = P_RESP_DONE;
+								/* Connect failed! Invoke retries. */
+								close(cwalk->ssocket);
+								cwalk->ssocket = -1;
+								cwalk->state = P_REQ_CONNECTING;
 								break;
 							}
 						}
 
-						n = write(cwalk->ssocket, cwalk->bufp, cwalk->buflen);
-						if (n < 0) {
-							cwalk->state = P_CLEANUP;
-						}
-						else if (n > 0) { 
-							cwalk->buflen -= n; 
-							cwalk->bufp += n; 
-							if (cwalk->buflen == 0) {
-								cwalk->state = P_REQ_DONE;
-							}
-						}
+						do_write(cwalk->ssocket, cwalk, P_REQ_DONE);
 					}
 					break;
 
 				  case P_RESP_READING:
 					if (FD_ISSET(cwalk->ssocket, &fdread)) {
-						n = read(cwalk->ssocket, mbuf, sizeof(mbuf)-1);
-						if (n == -1) {
-							/* Error - abort */
-							cwalk->state = P_CLEANUP;
-						}
-						else if (n == 0) {
-							/* EOF - response is complete */
-							cwalk->state = P_RESP_READY;
-						}
-						else {
-							mbuf[n] = '\0';
-							cwalk->buflen += strlen(mbuf);
-							if (cwalk->buf == NULL) {
-								cwalk->buf = strdup(mbuf);
-							}
-							else {
-								cwalk->buf = realloc(cwalk->buf, cwalk->buflen+1);
-								strcat(cwalk->buf, mbuf);
-							}
-						}
+						do_read(cwalk->ssocket, cwalk, P_RESP_READY);
 					}
 					break;
 
 				  case P_RESP_SENDING:
 					if (FD_ISSET(cwalk->csocket, &fdwrite)) {
-						n = write(cwalk->csocket, cwalk->bufp, cwalk->buflen);
-						if (n == -1) {
-							/* Error - abort */
-							cwalk->state = P_CLEANUP;
-						}
-						else if (n > 0) { 
-							cwalk->buflen -= n; 
-							cwalk->bufp += n; 
-							if (cwalk->buflen == 0) {
-								cwalk->state = P_RESP_DONE;
-							}
-						}
+						do_write(cwalk->csocket, cwalk, P_RESP_DONE);
 					}
 					break;
 				}
@@ -350,11 +346,10 @@ int main(int argc, char *argv[])
 				printf("New connection\n");
 				for (cwalk = chead; (cwalk && (cwalk->state != P_IDLE)); cwalk = cwalk->next);
 				if (cwalk) {
-					memset(cwalk, 0, sizeof(conn_t));
 					newconn = cwalk;
 				}
 				else {
-					newconn = calloc(1, sizeof(conn_t));
+					newconn = malloc(sizeof(conn_t));
 					newconn->next = chead;
 					chead = newconn;
 				}
@@ -363,7 +358,9 @@ int main(int argc, char *argv[])
 				newconn->csocket = accept(lsocket, (struct sockaddr *)&newconn->caddr, &caddrsize);
 				fcntl(newconn->csocket, F_SETFL, O_NONBLOCK);
 				newconn->ssocket = -1;
-				newconn->buf = newconn->bufp = NULL;
+				newconn->conntries = 0;
+				newconn->bufsize = BUFSZ_INC;
+				newconn->buf = newconn->bufp = calloc(1, newconn->bufsize);
 				newconn->buflen = 0;
 				newconn->state = P_REQ_READING;
 			}
