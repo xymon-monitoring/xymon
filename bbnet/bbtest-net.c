@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.11 2003-04-14 10:33:56 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.12 2003-04-15 07:35:41 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -18,18 +18,27 @@ static char rcsid[] = "$Id: bbtest-net.c,v 1.11 2003-04-14 10:33:56 henrik Exp $
 #include <sys/stat.h>
 #include <ctype.h>
 #include <netdb.h>
+#include <sys/wait.h>
 
 #include "bbgen.h"
 #include "util.h"
 #include "debug.h"
+#include "contest.h"
 
 /* These are dummy vars needed by stuff in util.c */
 hostlist_t      *hosthead = NULL;
 link_t          *linkhead = NULL;
 link_t  null_link = { "", "", "", NULL };
 
+/* toolid values */
+#define TOOL_NMAP	0
+#define TOOL_NSLOOKUP	1
+#define TOOL_DIG	2
+#define TOOL_CONTEST	3
+
 typedef struct {
 	char *testname;
+	int toolid;
 	int namelen;
 	int portnum;
 	void *next;
@@ -59,7 +68,7 @@ testedhost_t	*testhosthead = NULL;
 testitem_t	*testhead = NULL;
 char		*nonetpage = NULL;
 
-service_t *add_service(char *name, int port, int namelen)
+service_t *add_service(char *name, int port, int namelen, int toolid)
 {
 	service_t *svc;
 
@@ -67,6 +76,7 @@ service_t *add_service(char *name, int port, int namelen)
 	svc->portnum = port;
 	svc->testname = malloc(strlen(name)+1);
 	strcpy(svc->testname, name);
+	svc->toolid = toolid;
 	svc->namelen = namelen;
 	svc->items = NULL;
 	svc->next = svchead;
@@ -87,7 +97,7 @@ void load_services(void)
 	p = strtok(netsvcs, " ");
 	while (p) {
 		svcinfo = getservbyname(p, NULL);
-		add_service(p, (svcinfo ? ntohs(svcinfo->s_port) : 0), 0);
+		add_service(p, (svcinfo ? ntohs(svcinfo->s_port) : 0), 0, TOOL_CONTEST);
 		p = strtok(NULL, " ");
 	}
 	free(netsvcs);
@@ -193,7 +203,7 @@ void load_tests(void)
 						if ((s->portnum == 0) && (specialport > 0)) {
 							specialname = malloc(strlen(s->testname)+10);
 							sprintf(specialname, "%s_%d", s->testname, specialport);
-							s = add_service(specialname, specialport, strlen(s->testname));
+							s = add_service(specialname, specialport, strlen(s->testname), TOOL_CONTEST);
 							free(specialname);
 						}
 					}
@@ -337,6 +347,44 @@ void run_nmap_service(service_t *service)
 	if (!debug) unlink(logfn);
 }
 
+
+int run_command(char *cmd, char *errortext)
+{
+	FILE	*cmdpipe;
+	char	l[1024];
+	int	result;
+	int	piperes;
+
+	result = 0;
+	cmdpipe = popen(cmd, "r");
+	if (cmdpipe == NULL) return -1;
+
+	while (fgets(l, sizeof(l), cmdpipe)) {
+		if (strstr(l, errortext) != NULL) result = 1;
+	}
+	piperes = pclose(cmdpipe);
+	/* Call WIFEXITED(piperes) / WIFEXITSTATUS(piperes) */
+
+	return result;
+}
+
+void run_nslookup_service(service_t *service)
+{
+	testitem_t	*t;
+	char		cmd[1024];
+
+	for (t=service->items; (t); t = t->next) {
+		if (!t->host->dnserror) {
+			sprintf(cmd, "nslookup %s %s 2>&1", t->host->hostname, t->host->ip);
+		}
+	}
+}
+
+void run_dig_service(service_t *service)
+{
+}
+
+
 void send_results(service_t *service)
 {
 	testitem_t	*t;
@@ -411,6 +459,8 @@ int main(int argc, char *argv[])
 
 	init_timestamp();
 	load_services();
+	// add_service("dns", 53, 3, TOOL_NSLOOKUP);
+	// add_service("dig", 53, 3, TOOL_DIG);
 
 	for (s = svchead; (s); s = s->next) {
 		dprintf("Service %s port %d\n", s->testname, s->portnum);
@@ -422,11 +472,22 @@ int main(int argc, char *argv[])
 			h->hostname, h->dnserror, h->ip, h->dialup, h->testip);
 	}
 
+#if 0
 	combo_start();
 	dprintf("\nTest services\n");
 	for (s = svchead; (s); s = s->next) {
 		if (s->items) {
-			run_nmap_service(s);
+			switch(s->toolid) {
+				case TOOL_NMAP: 
+					run_nmap_service(s);
+					break;
+				case TOOL_NSLOOKUP:
+					run_nslookup_service(s);
+					break;
+				case TOOL_DIG:
+					run_dig_service(s);
+					break;
+			}
 			dprintf("Service %s port %d\n", s->testname, s->portnum);
 			for (t = s->items; (t); t = t->next) {
 				dprintf("\tHost:%s, ip:%s, open:%d, reverse:%d, dialup:%d\n",
@@ -436,6 +497,16 @@ int main(int argc, char *argv[])
 		}
 	}
 	combo_end();
+#else
+	for (s = svchead; (s); s = s->next) {
+		for (t = s->items; (t); t = t->next) {
+			add_test(t->host->ip, s->portnum, s->testname);
+		}
+	}
+
+	do_conn(0);
+	show_conn_res();
+#endif
 
 	return 0;
 }
