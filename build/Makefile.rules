@@ -27,9 +27,7 @@ IDTOOL := $(shell if test `uname -s` = "SunOS"; then echo /usr/xpg4/bin/id; else
 
 all: $(BUILDTARGETS)
 	@echo ""
-	@echo "Build complete."
-	@echo "To setup a new Hobbit server from scratch, now run 'make setup' as root"
-	@echo "To upgrade an existing Hobbit/BB server, now run 'make install' as root"
+	@echo "Build complete. Now run '${MAKE} install' as root"
 	@echo ""
 
 build-build:
@@ -89,6 +87,16 @@ clean:
 ####################
 
 install: $(INSTALLTARGETS)
+ifdef HOBBITD
+	@echo "You must configure your webserver for the Hobbit webpages and CGI-scripts."
+	@echo "A sample Apache configuration is in ${BBHOME}/etc/hobbit-apache.conf"
+	@echo "If you have your Administration CGI scripts in a separate directory,"
+	@echo "then you must also setup the password-file with the htpasswd command."
+	@echo ""
+	@echo "To start Hobbit, as the $(BBUSER) user run '${BBHOME}/bin/starthobbit.sh start'"
+	@echo "To view the Hobbit webpages, go to http://${BBHOSTNAME}${BBHOSTURL}"
+endif
+
 install-nocgi: $(INSTALLNOCGITARGETS)
 
 install-dirs:
@@ -132,16 +140,4 @@ install-man:
 install-docs:
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C docs install
 
-setup: install
-	BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" BBLOGDIR="$(BBLOGDIR)" BBUSER="$(BBUSER)" $(MAKE) -C hobbitd  setup
-	@echo ""
-	@echo "Hobbit setup is complete."
-	@echo ""
-	@echo "You must configure your webserver for the Hobbit webpages and CGI-scripts."
-	@echo "A sample Apache configuration is in ${BBHOME}/etc/hobbit-apache.conf"
-	@echo "If you have your Administration CGI scripts in a separate directory,"
-	@echo "then you must also setup the password-file with the htpasswd command."
-	@echo ""
-	@echo "To start Hobbit, as the $(BBUSER) user run '${BBHOME}/bin/starthobbit.sh start'"
-	@echo "To view the Hobbit webpages, go to http://${BBHOSTNAME}${BBHOSTURL}"
 
