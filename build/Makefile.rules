@@ -1,29 +1,11 @@
-# Makefile for bbgen, bbtest-net and misc. other tools
-#
-# Henrik Storner, 27-04-2003
-#
+OS := $(shell uname -s)
+
+include Makefile.$(OS)
+
 
 all: bbgen bbtest-net bbhostgrep bbhostshow
 
-CC=gcc
-
-# Set these to the location of your libcurl include-files and library.
-# Note: If your curl version supports SSL (HTTPS sites), you need the OpenSSL
-# libraries as well.
-CURLINCLUDE = -I/usr/local/include
-CURLLIB = -L/usr/local/lib -lcurl -lssl -lcrypto
-
-# Solaris (maybe others) need this enabled
-# NETLIBS = -lresolv -lsocket -lnsl
-
-# Compile flags for normal build
-CFLAGS = -O2 -Wall -Wno-unused -D_REENTRANT
-
-# Compile flags for debugging
-# CFLAGS = -g -DDEBUG -Wall -D_REENTRANT
-
-
-GENOBJS = bbgen.o debug.o loaddata.o larrdgen.o pagegen.o process.o util.o infogen.o alert.o wmlgen.o
+GENOBJS = bbgen.o debug.o loaddata.o reportdata.o larrdgen.o pagegen.o process.o util.o infogen.o alert.o wmlgen.o
 NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o
 HOSTGREPOBJS = bbhostgrep.o util.o debug.o
 HOSTSHOWOBJS = bbhostshow.o util.o debug.o
@@ -46,6 +28,9 @@ alert: alert.c debug.c util.c
 contest: contest.c debug.c util.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o contest contest.c debug.c util.c $(NETLIBS)
 
+reptest: reportdata.c debug.c util.c
+	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o reptest reportdata.c debug.c util.c
+
 httptest.o: httptest.c httptest.h
 	$(CC) $(CFLAGS) $(CURLINCLUDE) -c -o $@ $<
 
@@ -53,4 +38,4 @@ httptest.o: httptest.c httptest.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f *.o *~ bbgen bbtest-net bbhostgrep bbhostshow alert contest
+	rm -f *.o *~ bbgen bbtest-net bbhostgrep bbhostshow alert contest reptest
