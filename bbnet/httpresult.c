@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.11 2005-03-25 21:06:57 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.12 2005-04-02 12:09:39 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -161,21 +161,19 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 			strcat(msgtext, req->errorcause);
 		}
 		else if ((req->httpcolor == COL_RED) || (req->httpcolor == COL_YELLOW)) {
-			char m1[100];
+			char m1[30];
 
 			if (req->headers) {
-				unsigned char *p1, *p2;
-				unsigned char savechar = '\0';
+				char *p = req->headers;
 
-				p1 = strchr(req->headers, '\n');
-				if (p1 && (*(p1-1) == '\r')) p1--;
-				if (p1) { savechar = *p1; *p1 = '\0'; }
-				p2 = skipword(req->headers);
-				p2 = skipwhitespace(p2);
-				p2 = skipword(p2);
-				p2 = skipwhitespace(p2);
-				strcpy(m1, p2);
-				if (p1) *p1 = savechar;
+				/* Skip past "HTTP/1.x 200 " and pick up the explanatory text, if any */
+				if (strncasecmp(p, "http/", 5) == 0) {
+					p += 5;
+					p += strspn(p, "0123456789. ");
+				}
+
+				strncpy(m1, p, sizeof(m1)-1);
+				m1[sizeof(m1)-1] = '\0';
 			}
 			else {
 				sprintf(m1, "HTTP error %ld", req->httpstatus);
