@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.16 2004-12-18 10:24:47 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.17 2004-12-20 11:34:55 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -128,7 +128,8 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 	int ip1, ip2, ip3, ip4, banksize;
 	char hostname[4096];
 	char l[4096];
-	pagelist_t *curtoppage, *curpage;
+	pagelist_t *curtoppage, *curpage, *pgtail = NULL;
+	namelist_t *nametail = NULL;
 
 	if (documentation_url) free(documentation_url); documentation_url = NULL;
 
@@ -159,7 +160,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 	pghead->pagepath = strdup("");
 	pghead->pagetitle = strdup("");
 	pghead->next = NULL;
-	curpage = curtoppage = pghead;
+	curpage = curtoppage = pgtail = pghead;
 
 	bbhosts = stackfopen(bbhostsfn, "r");
 	while (stackfgets(l, sizeof(l), "include", extrainclude)) {
@@ -175,9 +176,12 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 				newp = (pagelist_t *)malloc(sizeof(pagelist_t));
 				newp->pagepath = strdup(name);
 				newp->pagetitle = (title ? strdup(title) : NULL);
-				newp->next = pghead;
-				curtoppage = pghead = newp;
-				curpage = newp;
+				newp->next = NULL;
+
+				pgtail->next = newp;
+				pgtail = newp;
+
+				curpage = curtoppage = newp;
 			}
 		}
 		else if (strncmp(l, "subpage ", 8) == 0) {
@@ -190,8 +194,11 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 				sprintf(newp->pagepath, "%s/%s", curtoppage->pagepath, name);
 				newp->pagetitle = malloc(strlen(curtoppage->pagetitle) + strlen(title) + 2);
 				sprintf(newp->pagetitle, "%s/%s", curtoppage->pagetitle, title);
-				newp->next = pghead;
-				pghead = newp;
+				newp->next = NULL;
+
+				pgtail->next = newp;
+				pgtail = newp;
+
 				curpage = newp;
 			}
 		}
@@ -210,8 +217,11 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 				sprintf(newp->pagepath, "%s/%s", parent->pagepath, name);
 				newp->pagetitle = malloc(strlen(parent->pagetitle) + strlen(title) + 2);
 				sprintf(newp->pagetitle, "%s/%s", parent->pagetitle, title);
-				newp->next = pghead;
-				pghead = newp;
+				newp->next = NULL;
+
+				pgtail->next = newp;
+				pgtail = newp;
+
 				curpage = newp;
 			}
 		}
@@ -304,9 +314,14 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 			/* See if this host is defined before */
 			for (iwalk = namehead, iprev = NULL; (iwalk && strcmp(iwalk->bbhostname, newitem->bbhostname)); iprev = iwalk, iwalk = iwalk->next) ;
 			if (iwalk == NULL) {
-				/* New item, so add to beginning of list */
-				newitem->next = namehead;
-				namehead = newitem;
+				/* New item, so add to end of list */
+				newitem->next = NULL;
+				if (namehead == NULL) 
+					namehead = nametail = newitem;
+				else {
+					nametail->next = newitem;
+					nametail = newitem;
+				}
 			}
  			else if (newitem->preference <= iwalk->preference) {
 				/* Add after the existing (more preferred) entry */
@@ -336,9 +351,14 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 			newitem->elems = (char **)malloc(sizeof(char *));
 			newitem->elems[0] = NULL;
 			newitem->banksize = banksize;
+			newitem->next = NULL;
 
-			newitem->next = namehead;
-			namehead = newitem;
+			if (namehead == NULL) 
+				namehead = nametail = newitem;
+			else {
+				nametail->next = newitem;
+				nametail = newitem;
+			}
 		}
 	}
 	stackfclose(bbhosts);
@@ -513,6 +533,9 @@ int main(int argc, char *argv[])
 
 		val = bbh_item(h, BBH_NET);
 		if (val) printf("\tBBH_NET is %s\n", val);
+
+		val = bbh_item(h, BBH_PAGEPATH);
+		if (val) printf("\tBBH_PAGEPATH is %s\n", val);
 	}
 
 	return 0;
