@@ -65,6 +65,27 @@ Provide a summary of available commandline options.
 .IP "--version"
 Prints the version number of bbtest-net
 
+.IP --services
+Dump the list of defined TCP services bbtest-net knows
+how to test. Do not run any tests.
+
+.IP --timeout=N
+Determines the timeout (in seconds) for each
+service that is tested. For TCP tests (those from BBNETSVCS),
+if the connection to the service does not succeed within N 
+seconds, the service is reported as being down. For HTTP
+tests, this is the absolute limit for the entire request
+to the webserver (the time needed to connect to the server,
+plus the time it takes the server to respond to the request).
+Default: 60 seconds
+
+.IP --concurrency=N 
+Determines the number of network tests that
+run in parallel. Default is operating system dependent,
+but will usually be 256. If bbtest-net begins to complain 
+about not being able to get a "socket", try running
+bbtest-net with a lower value like 50 or 100.
+
 .IP --dns=[ip|only]
 Determines how bbtest-net finds the IP adresses of the hosts to test. 
 By default, bbtest-net does a DNS lookup of the hostname 
@@ -105,10 +126,6 @@ With this option, hosts with no NET: tag are included
 in the test, so that all hosts that either have a
 matching NET: tag, or no NET: tag at all are tested.
 
-.IP --services
-Dump the list of defined TCP services bbtest-net knows
-how to test. Do not run any tests.
-
 .IP --debug
 Dumps a bunch of status about the tests as they
 progress to stdout.
@@ -140,13 +157,6 @@ cycle of the BB server. Apart from the warning, this
 option has no effect, i.e. it will not terminate bbtest-net
 prematurely. So to eliminate any such warnings, use this
 option with a very high value of N.
-
-.IP --no-flags
-By default, bbtest-net sends some extra information in the
-status messages, called "flags". These are used by bbgen
-e.g. to pick different icons for reversed tests when
-generating the Big Brother webpages. This option makes
-bbtest-net omit these flags from the status messages.
 
 
 .SH OPTIONS FOR THE PING TEST
@@ -190,22 +200,12 @@ services, bbtest-net will look for a valid service-specific
 "OK" response. If another reponse is seen, this will cause
 the test to report a warning (yellow) status.
 
-.IP --concurrency=N 
-Determines the number of network tests that
-run in parallel. Default is operating system dependent,
-but will usually be 256. If bbtest-net begins to complain 
-about not being able to get a "socket", try running
-bbtest-net with a lower value like 50 or 100.
-
-.IP --timeout=N
-Determines the timeout (in seconds) for each
-service that is tested. For TCP tests (those from BBNETSVCS),
-if the connection to the service does not succeed within N 
-seconds, the service is reported as being down. For HTTP
-tests, this is the absolute limit for the entire request
-to the webserver (the time needed to connect to the server,
-plus the time it takes the server to respond to the request).
-Default: 10 seconds
+.IP --no-flags
+By default, bbtest-net sends some extra information in the
+status messages, called "flags". These are used by bbgen
+e.g. to pick different icons for reversed tests when
+generating the Big Brother webpages. This option makes
+bbtest-net omit these flags from the status messages.
 
 
 .SH OPTIONS FOR HTTP (WEB) TESTS
@@ -349,7 +349,7 @@ started to run the "fping" tool for the connectivity tests. While
 fping is busy doing the "ping" checks, bbtest-net runs all of the
 TCP-based network tests.
 
-All of the TCP-based service checks are then handled by a connection
+All of the TCP-based service checks are handled by a connection
 tester written specifically for this purpose. It uses only standard
 Unix-style network programming, but relies on the Unix "select(2)" 
 system-call to handle many simultaneous connections happening in 
@@ -360,8 +360,8 @@ which amounts to 256 on many Unix systems.
 You can choose the number of concurrent connections with the
 "--concurrency=N" option to bbtest-net.
 
-Connection attempts timeout after 10 seconds - this can be
-changed with the "--timeout=N" option. This value is in seconds.
+Connection attempts timeout after 60 seconds - this can be
+changed with the "--timeout=N" option.
 
 Both of these settings play a part in deciding how long the testing
 takes. A conservative estimate for doing N TCP tests is:
@@ -452,7 +452,7 @@ Location of the
 utility. Used by bbtest-net for the "rpc" service checks.
 
 .SH FILES
-,IP "$BBHOME/etc/bb-services"
+.IP "$BBHOME/etc/bb-services"
 This file contains definitions of TCP services that bbtest-net
 can test. Definitions for a default set of common services is built
 into bbtest-net, but these can be overridden or supplemented by
