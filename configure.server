@@ -6,6 +6,59 @@ echo ""
 echo "Configuration script for Hobbit"
 echo ""
 
+while test "$1" != ""
+do
+	OPT="$1"; shift
+
+	case "$OPT" in
+	  "--help")
+	  	cat <<EOF
+  To configure Hobbit, the following options are available:
+     --rrdinclude DIRECTORY   : Specify location of RRDtool include files
+     --rrdlib DIRECTORY       : Specify location of RRDtool libraries
+     --pcreinclude DIRECTORY  : Specify location of PCRE include files
+     --pcrelib DIRECTORY      : Specify location of PCRE libraries
+     --sslinclude DIRECTORY   : Specify location of OpenSSL include files
+     --ssllib DIRECTORY       : Specify location of OpenSSL libraries
+     --ldapinclude DIRECTORY  : Specify location of OpenLDAP include files
+     --ldaplib DIRECTORY      : Specify location of OpenLDAP libraries
+     --fping FILENAME         : Specify location of the Fping program
+
+  The script will search a number of standard directories for
+  all of these files, so you normally do not have to specify any options.
+EOF
+		exit 0
+		;;
+	  "--rrdinclude")
+	  	USERRRDINC="$1"; shift
+		;;
+	  "--rrdlib")
+	  	USERRRDLIB="$1"; shift
+		;;
+	  "--pcreinclude")
+	  	USERPCREINC="$1"; shift
+		;;
+	  "--pcrelib")
+	  	USERPCRELIB="$1"; shift
+		;;
+	  "--sslinc")
+	  	USEROSSLINC="$1"; shift
+		;;
+	  "--ssllib")
+	  	USEROSSLLIB="$1"; shift
+		;;
+	  "--ldapinc")
+	  	USERLDAPINC="$1"; shift
+		;;
+	  "--ldaplib")
+	  	USERLDAPLIB="$1"; shift
+		;;
+	  "--fping")
+	  	USERFPING="$1"; shift
+		;;
+	esac
+done
+
 if test -r Makefile
 then
 	echo "Already configured - remove Makefile to re-configure"
