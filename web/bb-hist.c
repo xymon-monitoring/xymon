@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.42 2005-02-03 13:08:56 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.43 2005-02-28 22:36:32 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -27,6 +27,8 @@ static char rcsid[] = "$Id: bb-hist.c,v 1.42 2005-02-03 13:08:56 henrik Exp $";
 
 static char selfurl[PATH_MAX];
 static time_t req_endtime = 0;
+static char *displayname = NULL;
+static int wantserviceid = 1;
 
 static int len1d = 24;
 static char *bartitle1d = "1 day summary";
@@ -484,8 +486,8 @@ static void generate_histlog_table(FILE *htmlrep,
 		fprintf(htmlrep, "<TR BGCOLOR=%s>\n", bgcols[curbg]); curbg = (1-curbg);
 		fprintf(htmlrep, "<TD ALIGN=LEFT NOWRAP>%s</TD>\n", start);
 		fprintf(htmlrep, "<TD ALIGN=CENTER BGCOLOR=\"#000000\">");
-		fprintf(htmlrep, "<A HREF=\"%s/bb-histlog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s\">", 
-			xgetenv("CGIBINURL"), hostname, service, walk->timespec);
+		fprintf(htmlrep, "<A HREF=\"%s/bb-histlog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s&amp;DISPLAYNAME=%s\">", 
+			xgetenv("CGIBINURL"), hostname, service, walk->timespec, displayname);
 		fprintf(htmlrep, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0>", 
 			xgetenv("BBSKIN"), dotgiffilename(walk->color, 0, 1), colorname(walk->color), colorname(walk->color),
 			xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
@@ -523,13 +525,15 @@ void generate_history(FILE *htmlrep, 			/* output file */
 		      int entrycount,			/* Log entry maxcount */
 		      replog_t *loghead)		/* Eventlog for entrycount events back */
 {
-	sethostenv(hostname, ip, service, colorname(COL_GREEN));
+	sethostenv(displayname, ip, service, colorname(COL_GREEN));
 	headfoot(htmlrep, "hist", "", "header", COL_GREEN);
 
 	fprintf(htmlrep, "\n");
 	fprintf(htmlrep, "<CENTER>\n");
-	fprintf(htmlrep, "<BR><FONT %s><B>%s - %s</B></FONT>\n", xgetenv("MKBBROWFONT"), hostname, service);
-	fprintf(htmlrep, "<BR><BR>\n");
+	if (wantserviceid) {
+		fprintf(htmlrep, "<BR><FONT %s><B>%s - %s</B></FONT><BR>\n", 
+			xgetenv("MKBBROWFONT"), displayname, service);
+	}
 
 	/* Create the color-bars */
 	if (log1d) {
@@ -655,9 +659,14 @@ static void parse_query(void)
 		else if (argnmatch(token, "BARSUMS")) {
 			barsums = atoi(val);
 		}
+		else if (argnmatch(token, "DISPLAYNAME")) {
+			displayname = strdup(val);
+		}
 
 		token = strtok(NULL, "&");
 	}
+
+	if (!displayname) displayname = strdup(hostname);
 
 	free(query);
 }
@@ -678,6 +687,9 @@ int main(int argc, char *argv[])
 		if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
 			loadenv(p+1);
+		}
+		else if (strcmp(argv[argi], "--no-svcid") == 0) {
+			wantserviceid = 0;
 		}
 	}
 
