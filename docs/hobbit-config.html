@@ -129,6 +129,12 @@ configured in Hobbit 4.0 is as follows:<br>
 	<tr><th align="left" valign="top">ldaps</th><td>Secure LDAP (Directory) server test. Enter the full LDAP URI if Hobbit is configured with LDAP support. Note that this is only possible when Hobbit is built with the OpenLDAP v2.x client library, and only for LDAP servers that support LDAP version 3 and the "starttls" command. LDAP server that use the older non-standard method of tunnelling LDAP through SSL on port 636 will not work.</td></tr>
 </table></p>
 
+<p>There are a few network tests that Hobbit can run for you, by using external programs. This is not a very effective way of testing, so it is only done this way for a few very specialised tests:<br>
+<table align="center" width="80%">
+	<tr><th align="left" valign="top">ntp</th><td>NTP (Network Time protocol) server test, using the "ntpdate" command.</td></tr>
+	<tr><th align="left" valign="top">ntp</th><td>RPC service test. This queries the <em>portmapper</em> service on the server, using the "rpcinfo" command. See the <b>bb-hosts(5)</b> man-page for details on how to test for specific RPC services.</td></tr>
+</table></p>
+
 <h3>Monitoring host-specific data with clients</h3>
 <p>You can install an agent on each of the hosts you monitor, to check 
 host-specific data such as CPU utilisation, disk usage, local logfiles, 
