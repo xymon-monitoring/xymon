@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.7 2003-07-19 21:00:59 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.8 2003-07-27 10:51:06 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -42,6 +42,8 @@ static int	msgcolor;		/* color of status message in msgbuf */
 static int      maxmsgspercombo = 0;	/* 0 = no limit */
 static int      sleepbetweenmsgs = 0;
 
+int dontsendmessages = 0;
+
 static int sendtobbd(char *recipient, char *message)
 {
 	struct in_addr addr;
@@ -51,6 +53,11 @@ static int sendtobbd(char *recipient, char *message)
 	int	res, isconnected, done;
 	struct timeval tmo;
 	char *msgptr = message;
+
+	if (dontsendmessages) {
+		printf("%s\n", message);
+		return BB_OK;
+	}
 
 	if (inet_aton(recipient, &addr) == 0) {
 		/* recipient is not an IP - do DNS lookup */

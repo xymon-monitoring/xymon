@@ -27,6 +27,7 @@
 extern int bbmsgcount;
 extern int bbstatuscount;
 extern int bbnocombocount;
+extern int dontsendmessages;
 
 extern int sendstatus(char *bbdisp, char *msg);
 extern int sendmessage(char *msg, char *recipient);
