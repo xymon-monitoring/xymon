@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.147 2004-08-07 10:45:24 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.148 2004-08-07 11:10:41 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1938,6 +1938,7 @@ int main(int argc, char *argv[])
 	int failgoesclear = 0;		/* IPTEST_2_CLEAR_ON_FAILED_CONN */
 	int dumpdata = 0;
 	int runtimewarn;		/* 300 = default BBSLEEP setting */
+	int servicedumponly = 0;
 
 	if (init_http_library() != 0) {
 		errprintf("Failed to initialize http library\n");
@@ -1978,6 +1979,9 @@ int main(int argc, char *argv[])
 		/* Debugging options */
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
+		}
+		else if (strcmp(argv[argi], "--services") == 0) {
+			servicedumponly = 1;
 		}
 		else if (argnmatch(argv[argi], "--dump")) {
 			char *p = strchr(argv[argi], '=');
@@ -2126,6 +2130,7 @@ int main(int argc, char *argv[])
 			printf("    --no-update                 : Send status messages to stdout instead of to bbd\n");
 			printf("    --log=FILENAME              : Output trace of HTTP tests to a file.\n");
 			printf("    --timing                    : Trace the amount of time spent on each series of tests\n");
+			printf("    --services                  : Dump list of known services and exit\n");
 
 			return 0;
 		}
@@ -2165,9 +2170,10 @@ int main(int argc, char *argv[])
 	add_timestamp("bbtest-net startup");
 
 	load_services();
-
-	/* bbd uses 1984 - may not be in /etc/services */
-	add_service("bbd", (getportnumber("bbd") ? getportnumber("bbd") : 1984), 0, TOOL_CONTEST);
+	if (servicedumponly) {
+		dump_tcp_services();
+		return 0;
+	}
 
 	dnstest = add_service("dns", getportnumber("domain"), 0, TOOL_NSLOOKUP);
 	digtest = add_service("dig", getportnumber("domain"), 0, TOOL_DIG);
