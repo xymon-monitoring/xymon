@@ -19,6 +19,8 @@
 #ifndef __UTIL_H_
 #define __UTIL_H_
 
+#include <stdio.h>
+
 extern int use_recentgifs;
 extern char timestamp[];
 extern int bbmsgcount;
