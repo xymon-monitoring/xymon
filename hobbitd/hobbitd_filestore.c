@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.15 2004-10-30 22:25:30 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.16 2004-10-31 07:24:07 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -151,27 +151,27 @@ int main(int argc, char *argv[])
 	int running = 1;
 
 	for (argi = 1; (argi < argc); argi++) {
-		if (argnmatch(argv[argi], "--status")) {
+		if (strcmp(argv[argi], "--status") == 0) {
 			role = ROLE_STATUS;
 			if (!filedir) filedir = getenv("BBLOGS");
 		}
-		else if (argnmatch(argv[argi], "--html")) {
+		else if (strcmp(argv[argi], "--html") == 0) {
 			role = ROLE_STATUS;
-			if (!htmldir) htmldir = getenv("BBWWW");
+			if (!htmldir) htmldir = getenv("BBHTML");
 		}
-		else if (argnmatch(argv[argi], "--data")) {
+		else if (strcmp(argv[argi], "--data") == 0) {
 			role = ROLE_DATA;
 			if (!filedir) filedir = getenv("BBDATA");
 		}
-		else if (argnmatch(argv[argi], "--notes")) {
+		else if (strcmp(argv[argi], "--notes"), 0) {
 			role = ROLE_NOTES;
 			if (!filedir) filedir = getenv("BBNOTES");
 		}
-		else if (argnmatch(argv[argi], "--enadis")) {
+		else if (strcmp(argv[argi], "--enadis") == 0) {
 			role = ROLE_ENADIS;
 			if (!filedir) filedir = getenv("BBDISABLED");
 		}
-		else if (argnmatch(argv[argi], "--debug")) {
+		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
 		}
 		else if (argnmatch(argv[argi], "--dir=")) {
@@ -220,20 +220,22 @@ int main(int argc, char *argv[])
 		if ((role == ROLE_STATUS) && (metacount >= 13) && (strncmp(items[0], "@@status", 8) == 0)) {
 			/* @@status|timestamp|sender|hostname|testname|expiretime|color|testflags|prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage */
 			int logtime, timesincechange;
-			char htmllogfn[PATH_MAX];
 
 			hostname = items[3];
 			testname = items[4];
-			if (htmldir) sprintf(htmllogfn, "%s/%s.%s.%s", htmldir, hostname, testname, htmlextension);
-			p = hostname; while ((p = strchr(p, '.')) != NULL) *p = ',';
-			sprintf(logfn, "%s/%s.%s", filedir, hostname, testname);
+			sprintf(logfn, "%s/%s.%s", filedir, commafy(hostname), testname);
 			expiretime = atoi(items[5]);
 			statusdata = msg_data(statusdata);
 			sscanf(items[1], "%d.%*d", &logtime);
 			timesincechange = logtime - atoi(items[9]);
 			update_file(logfn, "w", statusdata, expiretime, items[2], timesincechange, seq);
-			if (htmldir) update_htmlfile(htmllogfn, statusdata, hostname, testname, parse_color(items[6]),
+			if (htmldir) {
+				char htmllogfn[PATH_MAX];
+
+				sprintf(htmllogfn, "%s/%s.%s.%s", htmldir, hostname, testname, htmlextension);
+				update_htmlfile(htmllogfn, statusdata, hostname, testname, parse_color(items[6]),
 						     items[2], items[7], logtime, timesincechange, items[11]);
+			}
 		}
 		else if ((role == ROLE_DATA) && (metacount > 4) && (strncmp(items[0], "@@data", 6)) == 0) {
 			/* @@data|timestamp|sender|hostname|testname */
