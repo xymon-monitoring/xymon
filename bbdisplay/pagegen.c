@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.82 2003-07-18 14:14:15 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.83 2003-08-05 14:39:33 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -45,6 +45,7 @@ char *includecolumns = NULL;
 int  sort_grouponly_items = 0; /* Standard BB behaviour: Dont sort group-only items */
 char *documentationcgi = NULL;
 char *htmlextension = ".html"; /* Filename extension for generated files */
+char *doctargetspec = " TARGET=\"_blank\"";
 char *defaultpagetitle = NULL;
 
 char *eventignorecolumns = NULL;
@@ -368,18 +369,18 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 			 * else just put the hostname there.
 			 */
 			if (documentationcgi) {
-				fprintf(output, "<A HREF=\"%s/%s\" TARGET=\"_blank\"><FONT %s>%s</FONT></A>\n </TD>",
+				fprintf(output, "<A HREF=\"%s/%s\" %s><FONT %s>%s</FONT></A>\n </TD>",
 					getenv("CGIBINURL"), cgidoclink(documentationcgi, h->hostname),
-					getenv("MKBBROWFONT"), nameandcomment(h));
+					doctargetspec, getenv("MKBBROWFONT"), nameandcomment(h));
 			}
 			else if (h->link != &null_link) {
-				fprintf(output, "<A HREF=\"%s\" TARGET=\"_blank\"><FONT %s>%s</FONT></A>\n </TD>",
-					hostlink(h->link), getenv("MKBBROWFONT"), nameandcomment(h));
+				fprintf(output, "<A HREF=\"%s\" %s><FONT %s>%s</FONT></A>\n </TD>",
+					hostlink(h->link), doctargetspec, getenv("MKBBROWFONT"), nameandcomment(h));
 			}
 			else if (pagetype != PAGE_BB) {
 				/* Provide a link to the page where this host lives */
-				fprintf(output, "<A HREF=\"%s/%s\" TARGET=\"_blank\"><FONT %s>%s</FONT></A>\n </TD>",
-					getenv("BBWEB"), hostpage_link(h),
+				fprintf(output, "<A HREF=\"%s/%s\" %s><FONT %s>%s</FONT></A>\n </TD>",
+					getenv("BBWEB"), hostpage_link(h), doctargetspec,
 					getenv("MKBBROWFONT"), nameandcomment(h));
 			}
 			else {

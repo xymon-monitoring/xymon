@@ -24,6 +24,7 @@ extern int hostsbeforepages;
 extern char *includecolumns;
 extern int sort_grouponly_items;
 extern char *documentationcgi;
+extern char *doctargetspec;
 extern char *htmlextension;
 extern char *defaultpagetitle;
 extern char *eventignorecolumns;

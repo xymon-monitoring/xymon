@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.141 2003-07-22 06:58:22 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.142 2003-08-05 14:39:33 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -144,6 +144,9 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[i], "--doccgi=")) {
 			char *lp = strchr(argv[i], '=');
 			documentationcgi = malcop(lp+1);
+		}
+		else if (argnmatch(argv[i], "--no-doc-window")) {
+			doctargetspec = "";
 		}
 		else if (argnmatch(argv[i], "--htmlextension=")) {
 			char *lp = strchr(argv[i], '=');
@@ -356,6 +359,7 @@ int main(int argc, char *argv[])
 			printf("    --includecolumns=test[,test]: Always include these columns on bb2 page\n");
 			printf("    --eventignore=test[,test]   : Columns to ignore in bb2 event-log display\n");
 			printf("    --doccgi=cgibinURL          : Hostnames link to a general CGI script for docs\n");
+			printf("    --no-doc-window             : Open doc-links in same window\n");
 			printf("    --htmlextension=.EXT        : Sets filename extension for generated file (default: .html\n");
 			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbgen\n");
 			printf("    --wml[=test1,test2,...]     : Generate a small (bb2-style) WML page\n");
