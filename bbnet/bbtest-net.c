@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.23 2003-04-20 20:03:47 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.24 2003-04-20 22:02:44 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -60,6 +60,9 @@ typedef struct {
 	int in_sla;
 	int noconn;
 	int noping;
+	int badconn[3];
+	int downcount;
+	time_t downstart;
 	void *next;
 } testedhost_t;
 
@@ -179,6 +182,7 @@ void load_tests(void)
 				h->testip = (strstr(p, "testip") != NULL);
 				h->noconn = (strstr(p, "noconn") != NULL);
 				h->noping = (strstr(p, "noping") != NULL);
+				h->badconn[0] = h->badconn[1] = h->badconn[2] = h->downcount = 0;
 				h->in_sla = within_sla(p);
 				h->ip[0] = '\0';
 				h->dnserror = 0;
@@ -205,6 +209,10 @@ void load_tests(void)
 					int dialuptest = 0;
 					int reversetest = 0;
 					char *option;
+
+					if (strncmp(testspec, "badconn:", 8) == 0) {
+						sscanf(testspec, "badconn:%d:%d:%d", &h->badconn[0], &h->badconn[1], &h->badconn[2]);
+					}
 
 					/* Remove any trailing ":s", ":q", ":Q", ":portnumber" */
 					option = strchr(testspec, ':'); 
@@ -319,6 +327,53 @@ void load_tests(void)
 }
 
 
+void load_fping_status(void)
+{
+	FILE *statusfd;
+	char statusfn[MAX_PATH];
+	char l[MAX_LINE_LEN];
+	char host[MAX_LINE_LEN];
+	int  downcount;
+	time_t downstart;
+	testedhost_t *h;
+
+	sprintf(statusfn, "%s/fping.status", getenv("BBTMP"));
+	statusfd = fopen(statusfn, "r");
+	if (statusfd == NULL) return;
+
+	while (fgets(l, sizeof(l), statusfd)) {
+		if (sscanf(l, "%s %d %lu", host, &downcount, &downstart) == 3) {
+			for (h=testhosthead; (h && (strcmp(h->hostname, host) != 0)); h = h->next) ;
+			if (h) {
+				h->downcount = downcount;
+				h->downstart = downstart;
+			}
+		}
+	}
+
+	fclose(statusfd);
+}
+
+void save_fping_status(void)
+{
+	FILE *statusfd;
+	char statusfn[MAX_PATH];
+	testitem_t *t;
+
+	sprintf(statusfn, "%s/fping.status", getenv("BBTMP"));
+	statusfd = fopen(statusfn, "w");
+	if (statusfd == NULL) return;
+
+	for (t=pingtest->items; (t); t = t->next) {
+		if (t->host->downcount) {
+			fprintf(statusfd, "%s %d %lu\n", t->host->hostname, t->host->downcount, t->host->downstart);
+		}
+	}
+
+	fclose(statusfd);
+}
+
+
 int run_command(char *cmd, char *errortext, char **banner)
 {
 	FILE	*cmdpipe;
@@ -429,6 +484,8 @@ int run_fping_service(service_t *service)
 	}
 	pclose(cmdpipe);
 
+	load_fping_status();
+
 	logfd = fopen(logfn, "r");
 	if (logfd == NULL) { printf("Cannot open fping output file!\n"); return -1; }
 	while (fgets(l, sizeof(l), logfd)) {
@@ -459,11 +516,16 @@ int run_fping_service(service_t *service)
 					}
 				}
 			}
-
+			else {
+				t->host->downcount++;
+				if (t->host->downcount == 1) t->host->downstart = time(NULL);
+			}
 		}
 	}
 	fclose(logfd);
 	unlink(logfn);
+
+	save_fping_status();
 
 	return 0;
 }
@@ -489,7 +551,7 @@ void send_results(service_t *service)
 	free(nopagename);
 
 	for (t=service->items; (t); t = t->next) {
-		if ((service == pingtest) && (t->host->noping)) {
+		if ((service == pingtest) && t->host->noping) {
 			color = COL_CLEAR;
 			t->banner = "Ping test disabled";
 		}
@@ -500,19 +562,25 @@ void send_results(service_t *service)
 			 * If DNS error, it is red.
 			 * If not, then either (open=0,reverse=0) or (open=1,reverse=1) is wrong.
 			 */
-			if ((t->host->dnserror) || ((t->open + t->reverse) != 1)) {
-				color = COL_RED;
-			}
+			if ((t->host->dnserror) || ((t->open + t->reverse) != 1)) color = COL_RED;
 
 			/* Dialup hosts and dialup tests report red as clear */
 			if ((color != COL_GREEN) && (t->host->dialup || t->dialup)) color = COL_CLEAR;
 
-			/* NOPAGENET services that are down are reported as yellow */
-			if (nopage && (color == COL_RED)) color = COL_YELLOW;
-
 			/* If not inside SLA and non-green, report as BLUE */
 			if (!t->host->in_sla && (color != COL_GREEN)) color = COL_BLUE;
 		}
+
+		/* Handle the "badconn" stuff for ping checks */
+		if ((service == pingtest) && (color == COL_RED) && (t->host->downcount < t->host->badconn[2])) {
+			if      (t->host->downcount >= t->host->badconn[1]) color = COL_YELLOW;
+			else if (t->host->downcount >= t->host->badconn[0]) color = COL_CLEAR;
+			else                                                color = COL_GREEN;
+
+		}
+
+		/* NOPAGENET services that are down are reported as yellow */
+		if (nopage && (color == COL_RED)) color = COL_YELLOW;
 
 		init_status(color);
 		sprintf(msgline, "status %s.%s %s %s %s %s\n", 
@@ -530,6 +598,12 @@ void send_results(service_t *service)
 
 		}
 		addtostatus(msgline);
+
+		if ((service == pingtest) && t->host->downcount) {
+			sprintf(msgline, "\nSystem unreachable for %d poll periods (%lu seconds)\n",
+				t->host->downcount, (time(NULL) - t->host->downstart));
+			addtostatus(msgline);
+		}
 
 		if (t->banner) {
 			addtostatus("\n<pre>\n");
