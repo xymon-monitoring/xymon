@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.61 2003-06-02 06:38:22 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.62 2003-06-02 09:16:14 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -863,7 +863,7 @@ void send_results(service_t *service)
 		if (nopage && (color == COL_RED)) color = COL_YELLOW;
 
 		init_status(color);
-		sprintf(msgline, "status %s.%s %s [flags:%s] %s %s %s\n", 
+		sprintf(msgline, "status %s.%s %s <!-- [flags:%s] --> %s %s %s\n", 
 			commafy(t->host->hostname), svcname, colorname(color), 
 			flags, timestamp,
 			svcname, ( ((color == COL_RED) || (color == COL_YELLOW)) ? "NOT ok" : "ok"));
