@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.5 2004-12-13 13:01:42 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.6 2004-12-14 16:47:54 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -65,7 +65,7 @@ static char *default_graphs =
 	;
 
 static const char *linkfmt = "<br><A HREF=\"%s\"><IMG BORDER=0 SRC=\"%s&amp;graph=hourly\" ALT=\"larrd is accumulating %s\"></A>\n";
-static const char *metafmt = "<GraphLink><![CDATA[%s]]></GraphLink>\n<GraphImage><![CDATA[%s&graph=hourly]]></GraphImage>\n";
+static const char *metafmt = "<RRDGraph>\n  <GraphLink><![CDATA[%s]]></GraphLink>\n  <GraphImage><![CDATA[%s&graph=hourly]]></GraphImage>\n</RRDGraph>\n";
 
 /*
  * Define the mapping between BB columns and LARRD graphs.
