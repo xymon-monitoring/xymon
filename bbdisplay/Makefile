@@ -126,7 +126,12 @@ clean:
 
 
 install: install-nocgi install-cgi
-install-nocgi: install-bin install-exts install-html install-gif install-templates install-man
+
+ifdef HOBBITD
+install-nocgi: install-bin install-exts install-man 
+else
+install-nocgi: install-bin install-exts install-man install-html install-gif install-templates
+endif
 
 install-bin: $(PROGRAMS)
 	cp -fp $(PROGRAMS) $(BBHOME)/bin/
