@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.9 2005-01-25 17:53:45 henrik Exp $";
+static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.10 2005-01-26 21:24:21 henrik Exp $";
 
 typedef struct vmstat_layout_t {
 	int index;
@@ -119,6 +119,31 @@ static vmstat_layout_t vmstat_linux_layout[] = {
 	{ -1, NULL }
 };
 
+/*
+ * This one is for Red Hat Enterprise Linux 3. Identical to the "linux" layout,
+ * except Red Hat for some reason decided to swap the cpu_wait and cpu_idle columns.
+ */
+static vmstat_layout_t vmstat_rhel3_layout[] = {
+	{ 0, "cpu_r" },
+	{ 1, "cpu_b" },
+	{ -1, "cpu_w" },
+	{ 2, "mem_swpd" },
+	{ 3, "mem_free" },
+	{ 4, "mem_buff" },
+	{ 5, "mem_cach" },
+	{ 6, "mem_si" },
+	{ 7, "mem_so" },
+	{ 8, "dsk_bi" },
+	{ 9, "dsk_bo" },
+	{ 10, "cpu_int" },
+	{ 11, "cpu_csw" },
+	{ 12, "cpu_usr" },
+	{ 13, "cpu_sys" },
+	{ 14, "cpu_wait" },
+	{ 15, "cpu_idl"  },
+	{ -1, NULL }
+};
+
 /* This one is for Debian 3.0 (Woody), and possibly others with a Linux 2.2 kernel */
 static vmstat_layout_t vmstat_debian3_layout[] = {
 	{ 0, "cpu_r" },
@@ -218,8 +243,9 @@ int do_vmstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	  case OS_LINUX:
 	  case OS_REDHAT:
 	  case OS_DEBIAN:
-		layout = vmstat_linux_layout;
-		break;
+		layout = vmstat_linux_layout; break;
+	  case OS_RHEL3:
+		layout = vmstat_rhel3_layout; break;
 	  case OS_DEBIAN3:
 		layout = vmstat_debian3_layout; break;
 	  case OS_FREEBSD:

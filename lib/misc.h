@@ -13,7 +13,7 @@
 
 #include <stdio.h>
 
-enum ostype_t { OS_UNKNOWN, OS_SOLARIS, OS_OSF, OS_FREEBSD, OS_LINUX, OS_REDHAT, OS_DEBIAN3, OS_DEBIAN, OS_HPUX, OS_AIX, OS_SCO, OS_SNMP, OS_WIN32 } ;
+enum ostype_t { OS_UNKNOWN, OS_SOLARIS, OS_OSF, OS_FREEBSD, OS_LINUX, OS_REDHAT, OS_DEBIAN3, OS_DEBIAN, OS_HPUX, OS_AIX, OS_SCO, OS_SNMP, OS_WIN32, OS_RHEL3 } ;
 
 extern enum ostype_t get_ostype(char *osname);
 extern int hexvalue(unsigned char c);

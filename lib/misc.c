@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.23 2005-01-20 22:02:23 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.24 2005-01-26 21:24:21 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -43,6 +43,7 @@ enum ostype_t get_ostype(char *osname)
 	else if (strcmp(osname, "debian3") == 0)     result = OS_DEBIAN3;
 	else if (strcmp(osname, "debian") == 0)      result = OS_DEBIAN;
 	else if (strcmp(osname, "linux") == 0)       result = OS_LINUX;
+	else if (strcmp(osname, "rhel3") == 0)       result = OS_RHEL3;
 	else if (strcmp(osname, "snmp") == 0)        result = OS_SNMP;
 	else if (strcmp(osname, "snmpnetstat") == 0) result = OS_SNMP;
 
