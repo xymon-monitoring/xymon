@@ -1,4 +1,4 @@
-PROGRAMS = hobbitd hobbitd_channel hobbitd_filter hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_larrd hobbitd_sample starthobbit.sh hobbitgraph.cgi hobbit-mailack
+PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filter hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_larrd hobbitd_sample hobbitgraph.cgi hobbit-mailack
 CGISCRIPTS = hobbitgraph.sh
 SECCGISCRIPTS = bb-ack.sh maint.pl
 
@@ -66,7 +66,7 @@ hobbit-mailack.o: hobbit-mailack.c
 hobbit-mailack: $(MAILACKOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(MAILACKOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
-starthobbit.sh: starthobbit.sh.DIST
+hobbit.sh: hobbit.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g' | sed -e 's!@BBUSER@!$(BBUSER)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
@@ -134,7 +134,7 @@ install-cfg:
 	cd etcfiles; ../../build/merge-lines columndoc.csv $(BBHOME)/etc/columndoc.csv
 	cd etcfiles; (echo "bb-hosts"; echo "hobbit-alerts.cfg") | ../../build/setup-newfiles $(BBHOME)/etc/
 	cd etcfiles; cp -fp hobbit-apache.conf $(BBHOME)/etc/hobbit-apache.conf
-	cd $(BBHOME); rm -f starthobbit.sh; ln -sf bin/starthobbit.sh .
+	cd $(BBHOME); rm -f hobbit.sh; ln -sf bin/hobbit.sh .
 	cd wwwfiles; find . | grep -v RCS | grep -v DIST | ../../build/setup-newfiles $(BBHOME)/www/ ../../build/md5.dat
 	cd webfiles; find . | grep -v RCS | grep -v DIST | ../../build/setup-newfiles $(BBHOME)/web/ ../../build/md5.dat
 	mkdir -p $(BBLOGDIR)
