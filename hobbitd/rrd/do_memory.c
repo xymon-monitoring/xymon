@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char memory_rcsid[] = "$Id: do_memory.c,v 1.7 2004-12-28 21:13:44 henrik Exp $";
+static char memory_rcsid[] = "$Id: do_memory.c,v 1.8 2004-12-28 21:50:30 henrik Exp $";
 
 static char *memory_params[]      = { "rrdcreate", rrdfn, "DS:realmempct:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
@@ -71,7 +71,7 @@ int do_memory_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 	phys = strstr(msg, "Physical"); if (phys == NULL) phys = strstr(msg, "Real");
 	swap = strstr(msg, "Swap"); if (swap == NULL) swap = strstr(msg, "Page");
-	actual = strstr(msg, "Actual");
+	actual = strstr(msg, "Actual"); if (actual == NULL) actual = strstr(msg, "Virtual");
 
 	if (phys && swap) {
 		char *eoln;
