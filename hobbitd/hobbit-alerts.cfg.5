@@ -61,7 +61,7 @@ Recipient who receives an e-mail alert. This takes one parameter, the e-mail add
 Recipient that invokes a script. This takes two parameters: The script filename, and the recipient that gets passed to the script.
 .sp
 .BR "FORMAT=formatstring"
-Format of the text message with the alert. Default is "TEXT" (suitable for e-mail alerts). "SMS" is a short message with no subject for SMS alerts. "SCRIPT" is a brief message template for scripts.
+Format of the text message with the alert. Default is "TEXT" (suitable for e-mail alerts). "PLAIN" is the same as text, but without the URL link to the status webpage. "SMS" is a short message with no subject for SMS alerts. "SCRIPT" is a brief message template for scripts.
 .sp
 .BR "REPEAT=time"
 How often an alert gets repeated. As with DURATION, time is a number optionally followed by 'm', 'h' or 'd'.
