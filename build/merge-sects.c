@@ -30,6 +30,11 @@ int main(int argc, char *argv[])
 	int adding = 0;
 	int showit = 1;
 
+	if (argc < 3) {
+		printf("Usage: %s DESTINATIONFILE TEMPLATEFILE\n", argv[0]);
+		return 1;
+	}
+
 	srcfn = strdup(argv[1]);
 	curfn = strdup(argv[2]);
 	curbckfn = (char *)malloc(strlen(curfn) + 5);
