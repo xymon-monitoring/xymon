@@ -99,7 +99,9 @@ install-cgi:
 	cd etcfiles; ../../build/install-nooverwrite.sh etc/ hobbitgraph.cfg
 
 install-man:
-	mkdir -p $(MANROOT)/man8
+	mkdir -p $(MANROOT)/man1 $(MANROOT)/man5 $(MANROOT)/man8
+	cp -fp *.1 $(MANROOT)/man1/
+	cp -fp *.5 $(MANROOT)/man5/
 	cp -fp *.8 $(MANROOT)/man8/
 
 setup:
