@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.66 2003-06-23 13:07:06 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.67 2003-06-24 13:59:28 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -646,6 +646,7 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 			sprintf(filename, "bb%s", htmlextension);
 			sprintf(indexfilename, "index%s", htmlextension);
 			symlink(filename, indexfilename);
+			dprintf("Symlinking %s -> %s\n", filename, indexfilename);
 		}
 		else {
 			char tmppath[MAX_PATH];
@@ -669,7 +670,8 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 			char indexfilename[MAX_PATH];
 			char pagebasename[MAX_PATH];
 			char *p;
-	
+			int res;
+
 			/* Make sure the directories exist. */
 			dirdelim = tmpfilename;
 			while ((dirdelim = strchr(dirdelim, '/')) != NULL) {
@@ -688,10 +690,10 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 			 */
 			strcpy(indexfilename, filename);
 			p = strrchr(indexfilename, '/'); 
-			*p = '\0'; 
-			sprintf(indexfilename, "/index%s", htmlextension);
+			sprintf(p, "/index%s", htmlextension);
 			sprintf(pagebasename, "%s%s", page->name, htmlextension);
-			symlink(pagebasename, indexfilename);
+			res = symlink(pagebasename, indexfilename);
+			dprintf("Symlinking %s->%s : %d/%d\n", pagebasename, indexfilename, res, errno);
 
 			if (output == NULL) {
 				errprintf("Cannot open file %s\n", tmpfilename);
