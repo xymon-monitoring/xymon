@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.4 2003-07-19 16:49:32 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.5 2003-07-19 16:52:51 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -175,6 +175,9 @@ int sendstatus(char *bbdisp, char *msg)
 
 	statusresult = sendtomany(bbdisp, getenv("BBDISPLAYS"), msg);
 
+	/* If no BBPAGE defined, drop paging */
+	if (getenv("BBPAGE") == NULL) return staturesult;
+
 	/* Check if we should send a "page" message also */
 	pagelevels = malcop(getenv("PAGELEVELS") ? getenv("PAGELEVELS") : PAGELEVELSDEFAULT);
 	sscanf(msg, "%*s %*s %255s", statuscolor);
@@ -213,7 +216,6 @@ int sendstatus(char *bbdisp, char *msg)
 	}
 
 	free(pagelevels);
-
 	return statusresult;
 }
 
