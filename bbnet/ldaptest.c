@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.11 2003-09-15 21:01:26 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.12 2003-09-16 08:02:10 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -37,7 +37,7 @@ static char rcsid[] = "$Id: ldaptest.c,v 1.11 2003-09-15 21:01:26 henrik Exp $";
 
 char *ldap_library_version = NULL;
 
-static volatile int bind_timeout = 0;
+static volatile int connect_timeout = 0;
 
 int init_ldap_library(void)
 {
@@ -104,7 +104,7 @@ int add_ldap_test(testitem_t *t)
 static void ldap_alarmhandler(int signum)
 {
 	signal(signum, SIG_DFL);
-	bind_timeout = 1;
+	connect_timeout = 1;
 }
 
 void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
@@ -117,19 +117,14 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 	struct timezone tz;
 
 	for (t = ldaptest->items; (t); t = t->next) {
+		LDAPURLDesc	*ludp;
 		LDAP		*ld;
-		int		rc, msgID, i, rc2;
+		int		rc, finished;
+		int		msgID = -1;
+		struct timeval	timeout;
 		LDAPMessage	*result;
 		LDAPMessage	*e;
-		LDAPURLDesc	*ludp;
-		BerElement	*ber;
-		char		*attribute;
-		char		**vals;
-		struct timeval	timeout;
-		int		finished;
 		char		response[MAXMSG];
-		char		buf[MAX_LINE_LEN];
-		char 		*dn;
 
 		req = (ldap_data_t *) t->privdata;
 		ludp = (LDAPURLDesc *) req->ldapdesc;
@@ -146,6 +141,23 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 			continue;
 		}
 
+		/* 
+		 * There is apparently no standard way of defining a network
+		 * timeout for the initial connection setup. OpenLDAP does
+		 * have an undocumented ldap_set_option(ld, LDAP_OPT_NETWORK_TIMEOUT, &tv)
+		 * but this is a) undocumented, and b) non-portable.
+		 * 
+		 * So using an alarm() to interrupt any pending operations
+		 * seems to be the least insane way of doing this.
+		 *
+		 * Note that we must do this right after ldap_init(), as
+		 * any operation on the session handle (ld) may trigger the
+		 * network connection to be established.
+		 */
+		connect_timeout = 0;
+		signal(SIGALRM, ldap_alarmhandler);
+		alarm(t->host->conntimeout ? t->host->conntimeout : DEF_CONNECT_TIMEOUT);
+
 #ifdef BBGEN_LDAP_USESTARTTLS
 		/*
 		 * This is completely undocumented in the OpenLDAP docs.
@@ -160,36 +172,34 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 			int protocol = 3;
 
 			dprintf("Attempting to select LDAPv3 for TLS\n");
-			if(ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &protocol) != LDAP_OPT_SUCCESS) {
+			if ((rc = ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &protocol)) != LDAP_OPT_SUCCESS) {
 				dprintf("Failed to force protocol 3\n");
+				req->output = malcop(ldap_err2string(rc));
 				req->ldapstatus = BBGEN_LDAP_TLSFAIL;
 				continue;
 			}
 
 			dprintf("Trying to enable TLS for session\n");
-			if (ldap_start_tls_s(ld, NULL, NULL) != LDAP_SUCCESS) {
+			if ((rc = ldap_start_tls_s(ld, NULL, NULL)) != LDAP_SUCCESS) {
 				dprintf("ldap_start_tls failed\n");
+				req->output = malcop(ldap_err2string(rc));
 				req->ldapstatus = BBGEN_LDAP_TLSFAIL;
 				continue;
 			}
 		}
 #endif
 
-		/* Bind to the server - we do an anonymous bind, asynchronous.
-		 *
-		 * Even though the ldap_simple_bind() man page claims that this
-		 * is "asynchronous", it will block on a connect(). If the host
-		 * does not respond it can take several minutes to timeout.
-		 * To avoid this, use an alarm to interrupt the connection
-		 * establishment, and abort if it triggers.
-		 */
-		bind_timeout = 0;
-		signal(SIGALRM, ldap_alarmhandler);
-		alarm(t->host->conntimeout ? t->host->conntimeout : DEF_CONNECT_TIMEOUT);
-		msgID = ldap_simple_bind(ld, (t->host->ldapuser ? t->host->ldapuser : ""), 
+		if (!connect_timeout) {
+			msgID = ldap_simple_bind(ld, (t->host->ldapuser ? t->host->ldapuser : ""), 
 					 (t->host->ldappasswd ? t->host->ldappasswd : ""));
+		}
+
+		/* Cancel any pending alarms */
+		alarm(0);
 		signal(SIGALRM, SIG_DFL);
-		if (bind_timeout || (msgID == -1)) {
+
+		/* Did we connect? */
+		if (connect_timeout || (msgID == -1)) {
 			req->ldapstatus = BBGEN_LDAP_BINDFAIL;
 			req->output = "Cannot connect to server";
 			continue;
@@ -200,6 +210,8 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 		timeout.tv_sec = (t->host->conntimeout ? t->host->conntimeout : DEF_CONNECT_TIMEOUT);
 		timeout.tv_usec = 0L;
 		while( ! finished ) {
+			int rc2;
+
 			rc = ldap_result(ld, msgID, LDAP_MSG_ONE, &timeout, &result);
 			dprintf("ldap_result returned %d for ldap_simple_bind()\n", rc);
 			if(rc == -1) {
@@ -231,7 +243,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 			}
 		}
 
-		/* Now do the search. With a timeout again */
+		/* Now do the search. With a timeout */
 		timeout.tv_sec = (t->host->timeout ? t->host->timeout : DEF_TIMEOUT);
 		timeout.tv_usec = 0L;
 		rc = ldap_search_st(ld, ludp->lud_dn, ludp->lud_scope, ludp->lud_filter, ludp->lud_attrs, 0, &timeout, &result);
@@ -253,7 +265,14 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 
 		sprintf(response, "Searching LDAP for %s yields %d results:\n\n", 
 			t->testspec, ldap_count_entries(ld, result));
+
 		for(e = ldap_first_entry(ld, result); (e != NULL); e = ldap_next_entry(ld, e) ) {
+			char 		*dn;
+			BerElement	*ber;
+			char		*attribute;
+			char		**vals;
+			char		buf[MAX_LINE_LEN];
+
 			dn = ldap_get_dn(ld, e);
 			sprintf(buf, "DN: %s\n", dn); 
 			strcat(response, buf);
@@ -261,6 +280,8 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 			/* Addtributes and values */
 			for (attribute = ldap_first_attribute(ld, e, &ber); (attribute != NULL); attribute = ldap_next_attribute(ld, e, ber) ) {
 				if ((vals = ldap_get_values(ld, e, attribute)) != NULL) {
+					int i;
+
 					for(i = 0; (vals[i] != NULL); i++) {
 						sprintf(buf, "\t%s: %s\n", attribute, vals[i]);
 						strcat(response, buf);
