@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.34 2003-11-21 10:39:56 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.35 2004-03-29 11:42:42 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -568,7 +568,7 @@ void generate_history(FILE *htmlrep, 			/* output file */
 
 	fprintf(htmlrep, "</CENTER>\n");
 
-	headfoot(htmlrep, "histlog", "", "footer", COL_GREEN);
+	headfoot(htmlrep, "hist", "", "footer", COL_GREEN);
 }
 
 
