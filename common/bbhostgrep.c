@@ -29,7 +29,6 @@ link_t  null_link = { "", "", "", NULL };
 
 int main(int argc, char *argv[])
 { 
-	char bbhostsfn[MAX_PATH];
 	FILE *bbhosts;
 	char l[MAX_LINE_LEN];
 	char *netstring = NULL;
