@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.76 2004-12-09 11:52:43 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.77 2004-12-09 13:59:28 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1450,7 +1450,7 @@ void do_message(conn_t *msg, char *origin)
 			else
 				bufp += sprintf(bufp, "  <DisMsg>N/A</DisMsg>\n");
 
-			bufp += sprintf(bufp, "  <Message><!CDATA[%s]]></Message>\n", msg_data(log->message));
+			bufp += sprintf(bufp, "  <Message><![CDATA[%s]]></Message>\n", msg_data(log->message));
 			bufp += sprintf(bufp, "</ServerStatus>\n");
 
 			msg->doingwhat = RESPONDING;
