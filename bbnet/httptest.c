@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.72 2004-08-31 20:40:39 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.73 2004-09-01 11:36:34 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -398,15 +398,14 @@ void tcp_http_final_callback(void *priv)
 void add_http_test(testitem_t *t)
 {
 	http_data_t *httptest;
-	bburl_t bburl;
 
-	char *dnsip;
-	ssloptions_t *sslopt;
+	char *dnsip = NULL;
+	ssloptions_t *sslopt = NULL;
 	char *sslopt_ciphers = NULL;
 	int sslopt_version = SSLVERSION_DEFAULT;
 	char *sslopt_clientcert = NULL;
 	int  httpversion = HTTPVER_11;
-	cookielist_t *ck;
+	cookielist_t *ck = NULL;
 	int firstcookie = 1;
 	char *httprequest = NULL;
 	int httprequestlen = 0;
@@ -415,34 +414,34 @@ void add_http_test(testitem_t *t)
 	httptest = (http_data_t *) calloc(1, sizeof(http_data_t));
 	t->privdata = (void *) httptest;
 
-	httptest->url = malcop(decode_url(t->testspec, &bburl));
+	httptest->url = malcop(decode_url(t->testspec, &httptest->bburl));
 	httptest->contlen = -1;
-	httptest->parsestatus = (bburl.proxyurl ? bburl.proxyurl->parseerror : bburl.desturl->parseerror);
+	httptest->parsestatus = (httptest->bburl.proxyurl ? httptest->bburl.proxyurl->parseerror : httptest->bburl.desturl->parseerror);
 
 	/* If there was a parse error in the URL, dont run the test */
 	if (httptest->parsestatus) return;
 
 
-	if (bburl.proxyurl && (bburl.proxyurl->ip == NULL)) {
-		dnsip = dnsresolve(bburl.proxyurl->host);
+	if (httptest->bburl.proxyurl && (httptest->bburl.proxyurl->ip == NULL)) {
+		dnsip = dnsresolve(httptest->bburl.proxyurl->host);
 		if (dnsip) {
-			bburl.proxyurl->ip = malcop(dnsip);
+			httptest->bburl.proxyurl->ip = malcop(dnsip);
 		}
 		else {
-			dprintf("Could not resolve URL hostname '%s'\n", bburl.proxyurl->host);
+			dprintf("Could not resolve URL hostname '%s'\n", httptest->bburl.proxyurl->host);
 		}
 	}
-	else if (bburl.desturl->ip == NULL) {
-		dnsip = dnsresolve(bburl.desturl->host);
+	else if (httptest->bburl.desturl->ip == NULL) {
+		dnsip = dnsresolve(httptest->bburl.desturl->host);
 		if (dnsip) {
-			bburl.desturl->ip = malcop(dnsip);
+			httptest->bburl.desturl->ip = malcop(dnsip);
 		}
 		else {
-			dprintf("Could not resolve URL hostname '%s'\n", bburl.desturl->host);
+			dprintf("Could not resolve URL hostname '%s'\n", httptest->bburl.desturl->host);
 		}
 	}
 
-	switch (bburl.testtype) {
+	switch (httptest->bburl.testtype) {
 	  case BBTEST_PLAIN:
 		httptest->contentcheck = CONTENTCHECK_NONE;
 		break;
@@ -459,7 +458,7 @@ void add_http_test(testitem_t *t)
 
 				if (fgets(l, sizeof(l), contentfd)) {
 					p = strchr(l, '\n'); if (p) { *p = '\0'; };
-					bburl.expdata = malcop(l);
+					httptest->bburl.expdata = malcop(l);
 				}
 				else {
 					httptest->contstatus = STATUS_CONTENTMATCH_NOFILE;
@@ -474,7 +473,7 @@ void add_http_test(testitem_t *t)
 		break;
 
 	  case BBTEST_CONT:
-		httptest->contentcheck = ((*bburl.expdata == '#') ?  CONTENTCHECK_DIGEST : CONTENTCHECK_REGEX);
+		httptest->contentcheck = ((*httptest->bburl.expdata == '#') ?  CONTENTCHECK_DIGEST : CONTENTCHECK_REGEX);
 		break;
 
 	  case BBTEST_NOCONT:
@@ -482,16 +481,16 @@ void add_http_test(testitem_t *t)
 		break;
 
 	  case BBTEST_POST:
-		if (bburl.expdata == NULL) {
+		if (httptest->bburl.expdata == NULL) {
 			httptest->contentcheck = CONTENTCHECK_NONE;
 		}
 		else {
-			httptest->contentcheck = ((*bburl.expdata == '#') ?  CONTENTCHECK_DIGEST : CONTENTCHECK_REGEX);
+			httptest->contentcheck = ((*httptest->bburl.expdata == '#') ?  CONTENTCHECK_DIGEST : CONTENTCHECK_REGEX);
 		}
 		break;
 
 	  case BBTEST_NOPOST:
-		if (bburl.expdata == NULL) {
+		if (httptest->bburl.expdata == NULL) {
 			httptest->contentcheck = CONTENTCHECK_NONE;
 		}
 		else {
@@ -510,7 +509,7 @@ void add_http_test(testitem_t *t)
 		{
 			char *hashfunc;
 
-			httptest->exp = (void *) malcop(bburl.expdata+1);
+			httptest->exp = (void *) malcop(httptest->bburl.expdata+1);
 			hashfunc = strchr(httptest->exp, ':');
 			if (hashfunc) {
 				*hashfunc = '\0';
@@ -526,38 +525,38 @@ void add_http_test(testitem_t *t)
 			int status;
 
 			httptest->exp = (void *) malloc(sizeof(regex_t));
-			status = regcomp((regex_t *)httptest->exp, bburl.expdata, REG_EXTENDED|REG_NOSUB);
+			status = regcomp((regex_t *)httptest->exp, httptest->bburl.expdata, REG_EXTENDED|REG_NOSUB);
 			if (status) {
-				errprintf("Failed to compile regexp '%s' for URL %s\n", bburl.expdata, httptest->url);
+				errprintf("Failed to compile regexp '%s' for URL %s\n", httptest->bburl.expdata, httptest->url);
 				httptest->contstatus = STATUS_CONTENTMATCH_BADREGEX;
 			}
 		}
 		break;
 
 	  case CONTENTCHECK_CONTENTTYPE:
-		httptest->exp = bburl.expdata;
+		httptest->exp = httptest->bburl.expdata;
 		break;
 	}
 
-	if (bburl.desturl->schemeopts) {
-		if      (strstr(bburl.desturl->schemeopts, "3"))      sslopt_version = SSLVERSION_V3;
-		else if (strstr(bburl.desturl->schemeopts, "2"))      sslopt_version = SSLVERSION_V2;
+	if (httptest->bburl.desturl->schemeopts) {
+		if      (strstr(httptest->bburl.desturl->schemeopts, "3"))      sslopt_version = SSLVERSION_V3;
+		else if (strstr(httptest->bburl.desturl->schemeopts, "2"))      sslopt_version = SSLVERSION_V2;
 
-		if      (strstr(bburl.desturl->schemeopts, "h"))      sslopt_ciphers = ciphershigh;
-		else if (strstr(bburl.desturl->schemeopts, "m"))      sslopt_ciphers = ciphersmedium;
+		if      (strstr(httptest->bburl.desturl->schemeopts, "h"))      sslopt_ciphers = ciphershigh;
+		else if (strstr(httptest->bburl.desturl->schemeopts, "m"))      sslopt_ciphers = ciphersmedium;
 
-		if      (strstr(bburl.desturl->schemeopts, "10"))     httpversion    = HTTPVER_10;
-		else if (strstr(bburl.desturl->schemeopts, "11"))     httpversion    = HTTPVER_11;
+		if      (strstr(httptest->bburl.desturl->schemeopts, "10"))     httpversion    = HTTPVER_10;
+		else if (strstr(httptest->bburl.desturl->schemeopts, "11"))     httpversion    = HTTPVER_11;
 	}
 
 	/* Get any cookies */
 	load_cookies();
 
 	/* Generate the request */
-	addtobuffer(&httprequest, &httprequestlen, (bburl.postdata ? "POST " : "GET "));
+	addtobuffer(&httprequest, &httprequestlen, (httptest->bburl.postdata ? "POST " : "GET "));
 	switch (httpversion) {
 		case HTTPVER_10: 
-			addtobuffer(&httprequest, &httprequestlen, (bburl.proxyurl ? httptest->url : bburl.desturl->relurl));
+			addtobuffer(&httprequest, &httprequestlen, (httptest->bburl.proxyurl ? httptest->url : httptest->bburl.desturl->relurl));
 			addtobuffer(&httprequest, &httprequestlen, " HTTP/1.0\r\n"); 
 			break;
 
@@ -567,20 +566,20 @@ void add_http_test(testitem_t *t)
 			 * full URL, some servers (e.g. SunOne App server 7) choke on it.
 			 * So just send the good-old relative URL unless we're proxying.
 			 */
-			addtobuffer(&httprequest, &httprequestlen, (bburl.proxyurl ? httptest->url : bburl.desturl->relurl));
+			addtobuffer(&httprequest, &httprequestlen, (httptest->bburl.proxyurl ? httptest->url : httptest->bburl.desturl->relurl));
 			addtobuffer(&httprequest, &httprequestlen, " HTTP/1.1\r\n"); 
 			addtobuffer(&httprequest, &httprequestlen, "Connection: close\r\n"); 
 			break;
 	}
 
 	addtobuffer(&httprequest, &httprequestlen, "Host: ");
-	addtobuffer(&httprequest, &httprequestlen, bburl.desturl->host);
+	addtobuffer(&httprequest, &httprequestlen, httptest->bburl.desturl->host);
 	addtobuffer(&httprequest, &httprequestlen, "\r\n");
 
-	if (bburl.postdata) {
+	if (httptest->bburl.postdata) {
 		char contlenhdr[100];
 
-		sprintf(contlenhdr, "Content-Length: %d\r\n", strlen(bburl.postdata));
+		sprintf(contlenhdr, "Content-Length: %d\r\n", strlen(httptest->bburl.postdata));
 		addtobuffer(&httprequest, &httprequestlen, contlenhdr);
 		addtobuffer(&httprequest, &httprequestlen, "Content-Type: application/x-www-form-urlencoded\r\n");
 	}
@@ -590,31 +589,31 @@ void add_http_test(testitem_t *t)
 		sprintf(useragent, "User-Agent: BigBrother bbtest-net/%s\r\n", VERSION);
 		addtobuffer(&httprequest, &httprequestlen, useragent);
 	}
-	if (bburl.desturl->auth) {
-		if (strncmp(bburl.desturl->auth, "CERT:", 5) == 0) {
-			sslopt_clientcert = bburl.desturl->auth+5;
+	if (httptest->bburl.desturl->auth) {
+		if (strncmp(httptest->bburl.desturl->auth, "CERT:", 5) == 0) {
+			sslopt_clientcert = httptest->bburl.desturl->auth+5;
 		}
 		else {
 			addtobuffer(&httprequest, &httprequestlen, "Authorization: Basic ");
-			addtobuffer(&httprequest, &httprequestlen, base64encode(bburl.desturl->auth));
+			addtobuffer(&httprequest, &httprequestlen, base64encode(httptest->bburl.desturl->auth));
 			addtobuffer(&httprequest, &httprequestlen, "\r\n");
 		}
 	}
-	if (bburl.proxyurl && bburl.proxyurl->auth) {
+	if (httptest->bburl.proxyurl && httptest->bburl.proxyurl->auth) {
 		addtobuffer(&httprequest, &httprequestlen, "Proxy-Authorization: Basic ");
-		addtobuffer(&httprequest, &httprequestlen, base64encode(bburl.proxyurl->auth));
+		addtobuffer(&httprequest, &httprequestlen, base64encode(httptest->bburl.proxyurl->auth));
 		addtobuffer(&httprequest, &httprequestlen, "\r\n");
 	}
 	for (ck = cookiehead; (ck); ck = ck->next) {
 		int useit = 0;
 
 		if (ck->tailmatch) {
-			int startpos = strlen(bburl.desturl->host) - strlen(ck->host);
+			int startpos = strlen(httptest->bburl.desturl->host) - strlen(ck->host);
 
-			if (startpos > 0) useit = (strcmp(bburl.desturl->host+startpos, ck->host) == 0);
+			if (startpos > 0) useit = (strcmp(httptest->bburl.desturl->host+startpos, ck->host) == 0);
 		}
-		else useit = (strcmp(bburl.desturl->host, ck->host) == 0);
-		if (useit) useit = (strncmp(ck->path, bburl.desturl->relurl, strlen(ck->path)) == 0);
+		else useit = (strcmp(httptest->bburl.desturl->host, ck->host) == 0);
+		if (useit) useit = (strncmp(ck->path, httptest->bburl.desturl->relurl, strlen(ck->path)) == 0);
 
 		if (useit) {
 			if (firstcookie) {
@@ -636,7 +635,7 @@ void add_http_test(testitem_t *t)
 	addtobuffer(&httprequest, &httprequestlen, "\r\n");
 
 	/* Post data goes last */
-	if (bburl.postdata) addtobuffer(&httprequest, &httprequestlen, bburl.postdata);
+	if (httptest->bburl.postdata) addtobuffer(&httprequest, &httprequestlen, httptest->bburl.postdata);
 
 	/* Pickup any SSL options the user wants */
 	if (sslopt_ciphers || (sslopt_version != SSLVERSION_DEFAULT) || sslopt_clientcert){
@@ -647,17 +646,17 @@ void add_http_test(testitem_t *t)
 	}
 
 	/* Add to TCP test queue */
-	if (bburl.proxyurl == NULL) {
-		httptest->tcptest = add_tcp_test(bburl.desturl->ip, 
-						 bburl.desturl->port, 
-						 bburl.desturl->scheme,
+	if (httptest->bburl.proxyurl == NULL) {
+		httptest->tcptest = add_tcp_test(httptest->bburl.desturl->ip, 
+						 httptest->bburl.desturl->port, 
+						 httptest->bburl.desturl->scheme,
 						 sslopt, 0, httprequest, 
 						 httptest, tcp_http_data_callback, tcp_http_final_callback);
 	}
 	else {
-		httptest->tcptest = add_tcp_test(bburl.proxyurl->ip, 
-						 bburl.proxyurl->port, 
-						 bburl.proxyurl->scheme,
+		httptest->tcptest = add_tcp_test(httptest->bburl.proxyurl->ip, 
+						 httptest->bburl.proxyurl->port, 
+						 httptest->bburl.proxyurl->scheme,
 						 sslopt, 0, httprequest, 
 						 httptest, tcp_http_data_callback, tcp_http_final_callback);
 	}
