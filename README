@@ -36,6 +36,8 @@ of the bbgen-intro(7) man page.
 How to install
 --------------
 Detailed installation instructions are in the INSTALL file.
+If you are upgrading from a previous release of bbgen, refer
+to the UPGRADE file for changes you should be aware of.
 
 
 Documentation
