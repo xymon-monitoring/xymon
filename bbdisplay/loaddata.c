@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.134 2004-12-12 21:57:08 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.135 2004-12-13 16:35:07 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -34,7 +34,6 @@ static char rcsid[] = "$Id: loaddata.c,v 1.134 2004-12-12 21:57:08 henrik Exp $"
 #include "loadbbhosts.h"
 #include "loaddata.h"
 #include "reportdata.h"
-#include "infogen.h"
 
 int		statuscount = 0;
 

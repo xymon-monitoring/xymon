@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.194 2004-12-12 23:02:16 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.195 2004-12-13 16:35:07 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -35,7 +35,6 @@ static char rcsid[] = "$Id: bbgen.c,v 1.194 2004-12-12 23:02:16 henrik Exp $";
 #include "loaddata.h"
 #include "process.h"
 #include "pagegen.h"
-#include "infogen.h"
 #include "wmlgen.h"
 #include "bb-replog.h"
 #include "rssgen.h"
@@ -50,6 +49,7 @@ int		bb_color, bb2_color, bbnk_color;	/* Top-level page colors */
 int		fqdn = 1;				/* BB FQDN setting */
 int		usebbgend = 0;
 char		*larrdcol = "trends";
+char		*infocol = "info";
 
 time_t		reportstart = 0;
 time_t		reportend = 0;
@@ -366,19 +366,8 @@ int main(int argc, char *argv[])
 			sprintf(nopropackdefault, ",%s,", (lp+1));
 		}
 
-		else if (argnmatch(argv[i], "--infoupdate=")) {
+		else if (argnmatch(argv[i], "--info=")) {
 			char *lp = strchr(argv[i], '=');
-
-			info_update_interval = atoi(lp+1);
-			if (info_update_interval <= 0) enable_infogen=0;
-			else enable_infogen = 1;
-		}
-		else if ((strcmp(argv[i], "--info") == 0) || argnmatch(argv[i], "--info=")) {
-			/* "--info" just enable info page generation */
-			/* "--info=xxx" does that, and redefines the info column name */
-			char *lp = strchr(argv[i], '=');
-
-			enable_infogen=1;
 			if (lp) infocol = strdup(lp+1);
 		}
 
@@ -565,7 +554,7 @@ int main(int argc, char *argv[])
 	 * If we did those, we would send double purple updates, 
 	 * generate wrong links for info pages etc.
 	 */
-	if (pageset || embedded || snapshot) enable_purpleupd = enable_infogen = enable_wmlgen = wantrss = 0;
+	if (pageset || embedded || snapshot) enable_purpleupd = enable_wmlgen = wantrss = 0;
 	if (embedded) {
 		egocolumn = htaccess = NULL;
 
@@ -583,12 +572,6 @@ int main(int argc, char *argv[])
 	add_timestamp("Load bbhosts done");
 
 	if (!embedded) {
-		/* Delete old info-timestamp file if we have restarted */
-		drop_genstatfiles();
-
-		generate_info(infocol, usebbgend);
-		add_timestamp("INFO generate done");
-
 		/* Remove old acknowledgements */
 		delete_old_acks();
 		add_timestamp("ACK removal done");

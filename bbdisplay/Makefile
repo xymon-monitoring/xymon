@@ -2,7 +2,7 @@
 #
 
 
-PROGRAMS = bbgen bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi bb-findhost.cgi bb-csvinfo.cgi bb-hostsvc.cgi bb-ack.cgi bb-webpage bb-larrdcolumn
+PROGRAMS = bbgen bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi bb-findhost.cgi bb-csvinfo.cgi bb-hostsvc.cgi bb-ack.cgi bb-webpage bb-larrdcolumn bb-infocolumn
 
 EXTENSIONS = bbcombotest
 
@@ -10,7 +10,7 @@ CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh bb-
 
 TEMPLATES = acknowledge_header acknowledge_footer acknowledge_form findhost_header findhost_footer findhost_form report_header report_footer report_form
 
-GENOBJS = bbgen.o loadbbhosts.o loaddata.o reportdata.o bbconvert.o pagegen.o eventlog.o acklog.o process.o infogen.o wmlgen.o rssgen.o bb-replog.o util.o debug.o
+GENOBJS = bbgen.o loadbbhosts.o loaddata.o reportdata.o bbconvert.o pagegen.o eventlog.o acklog.o process.o wmlgen.o rssgen.o bb-replog.o util.o debug.o
 COMBOTESTOBJS = bbcombotest.o
 REPOBJS = bb-rep.o
 REPLOGOBJS = bb-replog-cgi.o reportdata.o
@@ -24,6 +24,7 @@ HOSTSVCCGIOBJS = bb-hostsvc.o
 ACKCGIOBJS = bb-ack.o
 WEBPAGEOBJS = bb-webpage.o
 LARRDCOLUMNOBJS = bb-larrdcolumn.o
+INFOCOLUMNOBJS = bb-infocolumn.o
 
 HTMLPAGES = bb-findhost.html
 GIFFILES = bbfindhost1.gif bbfindhost2.gif
@@ -73,6 +74,9 @@ bb-webpage: $(WEBPAGEOBJS)
 
 bb-larrdcolumn: $(LARRDCOLUMNOBJS)
 	$(CC) $(CFLAGS) -o $@ $(LARRDCOLUMNOBJS) ../lib/libbbgen.a $(NETLIBS)
+
+bb-infocolumn: $(INFOCOLUMNOBJS)
+	$(CC) $(CFLAGS) -o $@ $(INFOCOLUMNOBJS) ../lib/libbbgen.a $(NETLIBS)
 
 
 ################################################

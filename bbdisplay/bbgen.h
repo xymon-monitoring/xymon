@@ -314,6 +314,7 @@ extern int		dynamicreport;
 extern int              fqdn;
 extern int		usebbgend;
 extern char		*larrdcol;
+extern char		*infocol;
 
 #endif
 
