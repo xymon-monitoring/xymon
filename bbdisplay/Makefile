@@ -7,7 +7,9 @@ PROGRAMS = bbgen bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlo
 EXTENSIONS = bbcombotest
 
 CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh bb-findhost.sh bb-csvinfo.sh bbmessage.cgi bb-hostsvc.sh bb-histlog.sh
-# bb-ack.sh
+ifdef BBGEND
+	CGISCRIPTS += bb-ack.sh
+endif
 
 TEMPLATES = acknowledge_header acknowledge_footer acknowledge_form findhost_header findhost_footer findhost_form report_header report_footer report_form
 
@@ -104,10 +106,16 @@ bb-hostsvc.o: bb-hostsvc.c
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-%.sh: %.sh.DIST
+ifdef BBGEND
+%.sh: %.sh-bbgend.DIST
+	echo BBGEND is $(BBGEND)
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' >$@
 	chmod 755 $@
-
+else
+%.sh: %.sh-bbd.DIST
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' >$@
+	chmod 755 $@
+endif
 
 clean:
 	rm -f *.o *.a *~ $(PROGRAMS) $(EXTENSIONS) $(CGISCRIPTS)
