@@ -17,12 +17,12 @@
 #include "bbd_net.h"
 #include "bbdutil.h"
 
-#define SEMDEBUG 1
 
 /* These are dummy vars needed by stuff in util.c */
 hostlist_t      *hosthead = NULL;
 link_t          *linkhead = NULL;
 link_t  null_link = { "", "", "", NULL };
+
 
 typedef struct msg_t {
 	char *buf;
@@ -45,10 +45,6 @@ void sig_handler(int signum)
 		/* Our worker child died. Follow it to the grave */
 		wait(&childexit);
 		break;
-
-	  case SIGPIPE:
-		/* We lost the child */
-		break;
 	}
 
 	running = 0;
@@ -67,7 +63,6 @@ int main(int argc, char *argv[])
 	int pfd[2];
 	char *childcmd;
 	char **childargs;
-
 	struct timespec tmo;
 
 	for (argi=1; (argi < argc); argi++) {
@@ -159,24 +154,48 @@ int main(int argc, char *argv[])
 		 * there is one, and if not we want to continue pushing the
 		 * queued data to the worker.
 		 */
-#ifdef SEMDEBUG
-		dprintf("Waiting for goclient\n");
-#endif
-
 		s.sem_num = GOCLIENT; s.sem_op  = -1; s.sem_flg = (head ? IPC_NOWAIT : 0);
 		n = semop(channel->semid, &s, 1);
 
-#ifdef SEMDEBUG
-		dprintf("goclient is now %d, queue is %s\n", 
-			semctl(channel->semid, GOCLIENT, GETVAL), (head ? "busy" : "idle"));
-#endif
-
 		if (n == 0) {
-			/* Copy the message */
+			/*
+			 * GOCLIENT went high, and so we got alerted about a new
+			 * message arriving. Copy the message to our own buffer queue.
+			 */
 			strcpy(buf, channel->channelbuf);
 
-			dprintf("Got msg\n", buf);
+			/* 
+			 * Now we have safely stored the new message in our buffer.
+			 * Wait until any other clients on the same channel have picked up 
+			 * this message (GOCLIENT reaches 0).
+			 *
+			 * Tests show that this will occasionally fail - why I do not know.
+			 * but it appears to be related to an interaction between signals
+			 * and semaphores.
+			 *
+			 * If it fails, then it will cause a duplicate of a message to be 
+			 * delivered to the worker child; this is then caught by the 
+			 * sequence numbers.
+			 */
+			s.sem_num = GOCLIENT; s.sem_op = 0; s.sem_flg = 0;
+			tmo.tv_sec = 0; tmo.tv_nsec = 250000000; /* Wait at most 250 ms */
+			n = semtimedop(channel->semid, &s, 1, &tmo);
+			if ((n == -1) && (errno == EAGAIN)) {
+				errprintf("Wait for GOCLIENT=0 failed, GOCLIENT is %d\n",
+					  semctl(channel->semid, GOCLIENT, GETVAL));
+			}
 
+			/* 
+			 * Let master know we got it by downing BOARDBUSY.
+			 * This should not block, since BOARDBUSY is upped
+			 * by the master just before he ups GOCLIENT.
+			 */
+			s.sem_num = BOARDBUSY; s.sem_op  = -1; s.sem_flg = 0;
+			n = semop(channel->semid, &s, 1);
+
+			/*
+			 * Put the new message on our outbound queue.
+			 */
 			newmsg = (msg_t *) malloc(sizeof(msg_t));
 			newmsg->buf = strdup(buf);
 			newmsg->bufp = newmsg->buf;
@@ -189,49 +208,11 @@ int main(int argc, char *argv[])
 				tail->next = newmsg;
 				tail = newmsg;
 			}
-
-			/* 
-			 * Wait until other clients on the same channel have picked up 
-			 * this message (GOCLIENT reaches 0).
-			 * This can block, but should not block for very long.
-			 */
-#ifdef SEMDEBUG
-			dprintf("Waiting for goclient to drop (is %d)\n", semctl(channel->semid, GOCLIENT, GETVAL));
-#endif
-
-			s.sem_num = GOCLIENT; s.sem_op = 0; s.sem_flg = 0;
-			tmo.tv_sec = 1; tmo.tv_nsec = 0;
-			n = semtimedop(channel->semid, &s, 1, &tmo);
-			if ((n == -1) && (errno == EAGAIN)) {
-				errprintf("Gave up waiting for GOCLIENT to reach 0 (it is %d)\n",
-					  semctl(channel->semid, GOCLIENT, GETVAL));
-			}
-#ifdef SEMDEBUG
-			dprintf("goclient is 0\n");
-#endif
-
-
-			/* 
-			 * Let master know we got it by downing BOARDBUSY.
-			 * This should not block, since BOARDBUSY is upped
-			 * by the master just before he ups GOCLIENT.
-			 */
-#ifdef SEMDEBUG
-			dprintf("About to down BOARDBUSY\n");
-#endif
-
-			s.sem_num = BOARDBUSY; s.sem_op  = -1; s.sem_flg = 0;
-			n = semop(channel->semid, &s, 1);
-
-#ifdef SEMDEBUG
-			dprintf("BOARDBUSY downed\n");
-#endif
-
 		}
 		else {
 			if (errno != EAGAIN) {
 				dprintf("Semaphore wait aborted: %s\n", strerror(errno));
-				break;
+				continue;
 			}
 		}
 
