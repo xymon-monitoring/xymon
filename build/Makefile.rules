@@ -3,7 +3,7 @@
 # Henrik Storner, 27-04-2003
 #
 
-all: bbgen bbtest-net
+all: bbgen bbtest-net bbhostgrep
 
 CC=gcc
 
@@ -25,13 +25,16 @@ CFLAGS = -O2 -Wall -Wno-unused -D_REENTRANT
 
 GENOBJS = bbgen.o debug.o loaddata.o larrdgen.o pagegen.o process.o util.o infogen.o alert.o wmlgen.o
 NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o
-
+HOSTGREPOBJS = bbhostgrep.o util.o debug.o
 
 bbgen: $(GENOBJS)
 	$(CC) $(CFLAGS) -o bbgen $(GENOBJS)
 
 bbtest-net: $(NETTESTOBJS)
 	$(CC) $(CFLAGS) -o bbtest-net $(NETTESTOBJS) $(CURLLIB) $(NETLIBS)
+
+bbhostgrep: $(HOSTGREPOBJS)
+	$(CC) $(CFLAGS) -o bbhostgrep $(HOSTGREPOBJS)
 
 alert: alert.c debug.c util.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o alert alert.c debug.c util.c
@@ -46,4 +49,4 @@ httptest.o: httptest.c httptest.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f *.o *~ bbgen bbtest-net alert contest
+	rm -f *.o *~ bbgen bbtest-net bbhostgrep alert contest
