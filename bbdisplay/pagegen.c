@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.76 2003-07-08 09:13:05 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.77 2003-07-09 10:44:09 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -286,6 +286,18 @@ void setup_htaccess(const char *pagepath)
 }
 
 
+static char *nameandcomment(host_t *host)
+{
+	static char result[1024];
+
+	if (host->comment) {
+		sprintf(result, "%s (%s)", host->displayname, host->comment);
+	}
+	else strcpy(result, host->displayname);
+
+	return result;
+}
+
 void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int pagetype, char *pagepath)
 {
 	/*
@@ -359,21 +371,21 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 			if (documentationcgi) {
 				fprintf(output, "<A HREF=\"%s/%s\" TARGET=\"_blank\"><FONT %s>%s</FONT></A>\n </TD>",
 					getenv("CGIBINURL"), cgidoclink(documentationcgi, h->hostname),
-					getenv("MKBBROWFONT"), h->displayname);
+					getenv("MKBBROWFONT"), nameandcomment(h));
 			}
 			else if (h->link != &null_link) {
 				fprintf(output, "<A HREF=\"%s\" TARGET=\"_blank\"><FONT %s>%s</FONT></A>\n </TD>",
-					hostlink(h->link), getenv("MKBBROWFONT"), h->displayname);
+					hostlink(h->link), getenv("MKBBROWFONT"), nameandcomment(h));
 			}
 			else if (pagetype != PAGE_BB) {
 				/* Provide a link to the page where this host lives */
 				fprintf(output, "<A HREF=\"%s/%s\" TARGET=\"_blank\"><FONT %s>%s</FONT></A>\n </TD>",
 					getenv("BBWEB"), hostpage_link(h),
-					getenv("MKBBROWFONT"), h->displayname);
+					getenv("MKBBROWFONT"), nameandcomment(h));
 			}
 			else {
 				fprintf(output, "<FONT %s>%s</FONT>\n </TD>",
-					getenv("MKBBROWFONT"), h->displayname);
+					getenv("MKBBROWFONT"), nameandcomment(h));
 			}
 
 			/* Then the columns. */
@@ -552,7 +564,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 
 		if (newhost == NULL) {
 			/* New summary "host" */
-			newhost = init_host(s->row, NULL, 0,0,0,0, 0, 0, 0.0, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL);
+			newhost = init_host(s->row, NULL, NULL, 0,0,0,0, 0, 0, 0.0, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL);
 
 			/*
 			 * Cannot have the pseudo host in the official hostlist,

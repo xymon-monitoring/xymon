@@ -56,8 +56,8 @@
                       |                    dialup               column -------> bbgen_col_t
                       |                    larrdgraphs          color             name
                       |                    reportwarnlevel      age            +- link
-                      |                    next                 oldage         |  next
-                      |                                         acked          |
+                      |                    comment              oldage         |  next
+                      |                    next                 acked          |
                       |                                         alert          |
                       |                                         onwap          |
                       |                                         propagate      |
@@ -231,6 +231,7 @@ typedef struct {
 typedef struct {
 	char	*hostname;
 	char	*displayname;
+	char	*comment;
 	char	ip[16];
 	int	dialup;
 	link_t	*link;
