@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.127 2003-06-12 21:10:27 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.128 2003-06-18 14:07:15 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -45,6 +45,10 @@ bbgen_col_t   	*colhead = NULL;			/* Head of column-name list */
 summary_t	*sumhead = NULL;			/* Summaries we send out */
 dispsummary_t	*dispsums = NULL;			/* Summaries we received and display */
 int		bb_color, bb2_color, bbnk_color;	/* Top-level page colors */
+
+time_t		reportstart = 0;
+time_t		reportend = 0;
+double		reportwarnlevel = 97.0;
 
 char *reqenv[] = {
 "BB",
@@ -139,6 +143,16 @@ int main(int argc, char *argv[])
 				sprintf(wapcolumns, ",%s,", (lp+1));
 			}
 			enable_wmlgen = 1;
+		}
+		else if (argnmatch(argv[i], "--reporttime=")) {
+			int count = sscanf(argv[i], "--reporttime=%lu:%lu", &reportstart, &reportend);
+
+			if (count < 1) reportstart = 788918400;	/* 01-Jan-1995 00:00 GMT */
+			if (count < 2) reportend = time(NULL);
+
+			if (getenv("BBREPWARN")) reportwarnlevel = atoi(getenv("BBREPWARN"));
+
+			if ((reportwarnlevel < 0) || (reportwarnlevel > 100)) reportwarnlevel = 97.0;
 		}
 
 		else if (strcmp(argv[i], "--pages-first") == 0) {
@@ -302,6 +316,7 @@ int main(int argc, char *argv[])
 			printf("    --htmlextension=.EXT        : Sets filename extension for generated file (default: .html\n");
 			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbgen\n");
 			printf("    --wml[=test1,test2,...]     : Generate a small (bb2-style) WML page\n");
+			printf("    --reporttime=START:END      : Run in BB Reporting mode\n");
 			printf("\nPage layout options:\n");
 			printf("    --pages-last                : Put page- and subpage-links after hosts (as BB does)\n");
 			printf("    --pages-first               : Put page- and subpage-links before hosts (default)\n");
@@ -438,6 +453,11 @@ int main(int argc, char *argv[])
 	add_timestamp("BB pagegen start");
 	do_page_with_subs(pagehead, dispsums);
 	add_timestamp("BB pagegen done");
+
+	if (reportstart) {
+		/* Reports end here */
+		return 0;
+	}
 
 	/* The full summary page - bb2.html */
 	sprintf(bb2filename, "bb2%s", htmlextension);

@@ -61,8 +61,8 @@
                       |                                         alert          |
                       |                                         onwap          |
                       |                                         propagate      |
+                      |                                         reportinfo     |
                       |                                         next           |
-                      |                                                        |
                       |+-------------------------------------------------------+
                       ||
                       VV
@@ -172,6 +172,13 @@ typedef struct {
 	void	*next;
 } col_list_t;
 
+typedef struct {
+	double availability;
+	double greenpct, yellowpct, redpct, purplepct, clearpct, bluepct;
+	int greencount, yellowcount, redcount, purplecount, clearcount, bluecount;
+	char *style, *fstate;
+} reportinfo_t;
+
 /* Measurement entry definition               */
 /* This points to a column definition, and    */
 /* contains the actual color of a measurement */
@@ -188,6 +195,7 @@ typedef struct {
 	char 	*sumurl;
 	char	*skin;
 	char	*testflags;
+	reportinfo_t *repinfo;
 	void	*next;
 } entry_t;
 
@@ -299,6 +307,8 @@ extern bbgen_col_t	*colhead, null_column;
 extern summary_t	*sumhead;
 extern dispsummary_t	*dispsums;
 extern int		bb_color, bb2_color, bbnk_color;
+extern time_t		reportstart, reportend;
+extern double           reportwarnlevel;
 
 #endif
 
