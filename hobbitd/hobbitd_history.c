@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.18 2004-11-13 09:07:16 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.19 2004-11-13 16:24:45 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -31,42 +31,6 @@ static char rcsid[] = "$Id: hobbitd_history.c,v 1.18 2004-11-13 09:07:16 henrik 
 #include "libbbgen.h"
 
 #include "bbgend_worker.h"
-
-static void dropdirectory(char *dirfn)
-{
-	DIR *dirfd;
-	struct dirent *de;
-	char fn[PATH_MAX];
-	struct stat st;
-	pid_t childpid;
-
-	childpid = fork();
-	if (childpid == 0) {
-		dprintf("Starting to remove directory %s\n", dirfn);
-		dirfd = opendir(dirfn);
-		if (dirfd) {
-			while ( (de = readdir(dirfd)) != NULL ) {
-				sprintf(fn, "%s/%s", dirfn, de->d_name);
-				if (strcmp(de->d_name, ".") && strcmp(de->d_name, "..") && (stat(fn, &st) == 0)) {
-					if (S_ISREG(st.st_mode)) {
-						dprintf("Removing file %s\n", fn);
-						unlink(fn);
-					}
-					else if (S_ISDIR(st.st_mode)) {
-						dprintf("Recurse into %s\n", fn);
-						dropdirectory(fn);
-					}
-				}
-			}
-			closedir(dirfd);
-		}
-		dprintf("Removing directory %s\n", dirfn);
-		rmdir(dirfn);
-	}
-	else if (childpid < 0) {
-		errprintf("Could not fork child to remove directory %s\n", dirfn);
-	}
-}
 
 void sig_handler(int signum)
 {
