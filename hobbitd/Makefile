@@ -5,6 +5,7 @@ LIBOBJS = ../debug.o ../util.o
 BBDOBJS = bbd_net.o bbdutil.o bbdworker.o loadhosts.o
 CHANNELOBJS = bbd_channel.o bbdutil.o
 
+SAMPLEOBJS = bbd_sample.o bbdworker.o
 FILESTOREOBJS = bbd_filestore.o bbdworker.o
 HISTORYOBJS = bbd_history.o bbdworker.o
 
@@ -16,6 +17,9 @@ bbd_net: $(BBDOBJS) $(LIBOBJS)
 bbd_channel: $(CHANNELOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(CHANNELOBJS) $(LIBOBJS)
 
+bbd_sample: $(SAMPLEOBJS) $(LIBOBJS)
+	$(CC) -o $@ $(SAMPLEOBJS) $(LIBOBJS)
+
 bbd_filestore: $(FILESTOREOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(FILESTOREOBJS) $(LIBOBJS)
 
@@ -26,5 +30,5 @@ bbd_history: $(HISTORYOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f bbd_net bbd_channel bbd_filestore bbd_history *.o *~
+	rm -f bbd_net bbd_channel bbd_sample bbd_filestore bbd_history *.o *~
 
