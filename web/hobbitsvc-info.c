@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.57 2004-11-01 16:02:38 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.58 2004-11-04 11:47:34 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -500,10 +500,11 @@ int generate_info(char *infocolumn, int bbgend)
 		addtobuffer(&infobuf, &infobuflen, "</td></tr>\n</table>\n");
 
 		do_savelog(hostwalk->hostentry->hostname, hostwalk->hostentry->ip, infocol, infobuf, bbgend);
+		*infobuf = '\0';
 	}
 	if (bbgend) combo_end();
+	if (infobuf) free(infobuf);
 
-	free(infobuf);
 	return 0;
 }
 
