@@ -28,5 +28,6 @@ extern dispsummary_t *load_summaries(void);
 extern char	*nopropyellowdefault;
 extern char	*nopropreddefault;
 extern int	enable_purpleupd;
+extern int	purpledelay;
 
 #endif

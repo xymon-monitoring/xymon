@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.34 2003-02-06 22:24:15 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.35 2003-02-07 13:08:10 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -39,6 +39,8 @@ static char rcsid[] = "$Id: loaddata.c,v 1.34 2003-02-06 22:24:15 henrik Exp $";
 char    *nopropyellowdefault = NULL;
 char    *nopropreddefault = NULL;
 int     enable_purpleupd = 1;
+int	purpledelay = 0;			/* Lifetime of purple status-messages. Default 0 for
+						   compatibility with standard bb-display.sh behaviour */
 link_t  null_link = { "", "", "", NULL };	/* Null link for pages/hosts/whatever with no link */
 col_t   null_column = { "", NULL };		/* Null column */
 
@@ -293,14 +295,21 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 
 		for (p = strchr(l, ' '); (p && (*p == ' ')); p++); /* Skip old color */
 
-		sprintf(purplemsg, "status+0 %s.%s %s %s", commafy(hostname), testname,
+		sprintf(purplemsg, "status+%d %s.%s %s %s", purpledelay,
+			commafy(hostname), testname,
                         colorname(newstate->entry->color), (p ? p : ""));
 
 		if (host) {
 			while (fgets(l, sizeof(l), fd)) {
-				if ( (strncmp(l, "Status unchanged", 16) != 0) &&
-				     (strncmp(l, "Encrypted status message", 24) != 0)  &&
-				     (strncmp(l, "Status message received from", 28) != 0) ) {
+				if (strncmp(l, "Status unchanged", 16) == 0) {
+					char *p;
+
+					p = strchr(l, '\n'); if (p) *p = '\0';
+					strcpy(newstate->entry->age, l+20);
+					newstate->entry->oldage = (strstr(l+20, "days") != NULL);
+				}
+				else if ( (strncmp(l, "Encrypted status message", 24) != 0)  &&
+				          (strncmp(l, "Status message received from", 28) != 0) ) {
 					strcat(purplemsg, l);
 				}
 			}
