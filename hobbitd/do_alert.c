@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.46 2005-02-24 10:34:18 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.47 2005-02-26 16:31:47 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -99,7 +99,7 @@ typedef struct criteria_t {
 	int colors;
 	char *timespec;
 	int minduration, maxduration;	/* In seconds */
-	int sendrecovered;
+	int sendrecovered, nonotify;
 } criteria_t;
 
 /* This defines a recipient. There may be some criteria, and then how we send alerts to him */
@@ -503,6 +503,13 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				currule->criteria->sendrecovered = SR_WANTED;
 				crit->sendrecovered = SR_WANTED;
 			}
+			else if (strncasecmp(p, "NONOTIFY", 8) == 0) {
+				criteria_t *crit;
+
+				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
+				crit = setup_criteria(&currule, &currcp);
+				crit->nonotify = 1;
+			}
 			else if ((pstate == P_RECIP) && (strncasecmp(p, "FORMAT=", 7) == 0)) {
 				if      (strcasecmp(p+7, "TEXT") == 0) currcp->format = FRM_TEXT;
 				else if (strcasecmp(p+7, "PLAIN") == 0) currcp->format = FRM_PLAIN;
@@ -679,6 +686,7 @@ static void dump_criteria(criteria_t *crit, int isrecip)
 		  case SR_WANTED: printf("RECOVERED "); break;
 		  case SR_NOTWANTED: printf("NORECOVERED "); break;
 		}
+		if (crit->nonotify) printf("NONOTIFY ");
 	}
 }
 
@@ -706,6 +714,8 @@ void dump_alertconfig(void)
 			}
 			printf("REPEAT=%d ", (int)(recipwalk->interval / 60));
 			if (recipwalk->criteria) dump_criteria(recipwalk->criteria, 1);
+			if (recipwalk->unmatchedonly) printf("UNMATCHED ");
+			if (recipwalk->stoprule) printf("STOP ");
 			printf("\n");
 		}
 		printf("\n");
@@ -838,17 +848,26 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit)
 			alert->hostname->name, alert->testname->name, 
 			alert->location->name, crit->cfid);
 
-	duration = (time(NULL) - alert->eventstart);
-	if (crit->minduration && (duration < crit->minduration)) { 
-		dprintf("failed minduration %d<%d\n", duration, crit->minduration); 
-		traceprintf("Failed (min. duration)\n");
-		if (!printmode) return 0; 
+	if (alert->state == A_NOTIFY) {
+		if (crit->nonotify) {
+			dprintf("failed nonotify\n"); 
+			traceprintf("Failed no-notify\n");
+			return 0;
+		}
 	}
+	else {
+		duration = (time(NULL) - alert->eventstart);
+		if (crit->minduration && (duration < crit->minduration)) { 
+			dprintf("failed minduration %d<%d\n", duration, crit->minduration); 
+			traceprintf("Failed (min. duration)\n");
+			if (!printmode) return 0; 
+		}
 
-	if (crit->maxduration && (duration > crit->maxduration)) { 
-		dprintf("failed maxduration\n"); 
-		traceprintf("Failed (max. duration)\n");
-		if (!printmode) return 0; 
+		if (crit->maxduration && (duration > crit->maxduration)) { 
+			dprintf("failed maxduration\n"); 
+			traceprintf("Failed (max. duration)\n");
+			if (!printmode) return 0; 
+		}
 	}
 
 	if (crit->pagespec && !namematch(alert->location->name, crit->pagespec, crit->pagespecre)) { 
@@ -883,6 +902,8 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit)
 		traceprintf("Failed (service excluded)\n");
 		return 0; 
 	}
+
+	if (alert->state == A_NOTIFY) return 1;
 
 	if (crit->timespec && !timematch(crit->timespec)) { 
 		dprintf("failed timespec\n"); 
@@ -1023,6 +1044,8 @@ static char *message_subject(activealerts_t *alert, recip_t *recip)
 		  break;
 	}
 
+	if (alert->state == A_NOTIFY) sev = "information";
+
 	switch (recip->format) {
 	  case FRM_TEXT:
 	  case FRM_PLAIN:
@@ -1057,6 +1080,13 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 	char info[4096];
 
 	if (buf) *buf = '\0';
+
+	if (alert->state == A_NOTIFY) {
+		sprintf(info, "%s:%s INFO\n", alert->hostname->name, alert->testname->name);
+		addtobuffer(&buf, &buflen, info);
+		addtobuffer(&buf, &buflen, alert->pagemessage);
+		return buf;
+	}
 
 	switch (recip->format) {
 	  case FRM_TEXT:
@@ -1138,7 +1168,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 	int first = 1;
 	int alertcount = 0;
 	time_t now = time(NULL);
-	char *alerttxt[A_DEAD+1] = { "Paging", "Acked", "Recovered", "Dead" };
+	char *alerttxt[A_DEAD+1] = { "Paging", "Acked", "Recovered", "Notify", "Dead" };
 
 	dprintf("send_alert %s:%s state %d\n", alert->hostname->name, alert->testname->name, (int)alert->state);
 	traceprintf("send_alert %s:%s state %s\n", 
@@ -1223,8 +1253,12 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 				/* Setup all of the environment for a paging script */
 				char *p;
 				int ip1=0, ip2=0, ip3=0, ip4=0;
-				char *bbalphamsg, *ackcode, *rcpt, *bbhostname, *bbhostsvc, *bbhostsvccommas, *bbnumeric, *machip, *bbsvcname, *bbsvcnum, *bbcolorlevel, *recovered, *downsecs, *downsecsmsg;
+				char *bbalphamsg, *ackcode, *rcpt, *bbhostname, *bbhostsvc, *bbhostsvccommas, *bbnumeric, *machip, *bbsvcname, *bbsvcnum, *bbcolorlevel, *recovered, *downsecs, *downsecsmsg, *cfidtxt;
 				pid_t scriptpid;
+
+				cfidtxt = (char *)malloc(strlen("CFID=") + 10);
+				sprintf(cfidtxt, "CFID=%d", recip->cfid);
+				putenv(cfidtxt);
 
 				p = message_text(alert, recip);
 				bbalphamsg = (char *)malloc(strlen("BBALPHAMSG=") + strlen(p) + 1);
@@ -1339,6 +1373,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 				}
 
 				/* Clean out the environment settings */
+				putenv("CFID");            xfree(cfidtxt);
 				putenv("BBALPHAMSG");      xfree(bbalphamsg);
 				putenv("ACKCODE");         xfree(ackcode);
 				putenv("RCPT");            xfree(rcpt);
