@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.10 2003-07-06 19:29:47 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.11 2003-07-07 14:54:23 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,8 +54,19 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "<TR></TR>\n");
 	fprintf(htmlrep, "<TR>\n");
-	fprintf(htmlrep, "<TD COLSPAN=6><CENTER><B>Overall Availability: %.2f%%</CENTER></TD></TR>\n", repinfo->availability);
+
+	if (repinfo->withreport) {
+		fprintf(htmlrep, "<TD COLSPAN=3><CENTER><B>Availability (24x7): %.2f%%</CENTER></TD>\n", repinfo->fullavailability);
+		fprintf(htmlrep, "<TD>&nbsp;</TD>\n");
+		fprintf(htmlrep, "<TD COLSPAN=3><CENTER><B>Availability (SLA): %.2f%%</CENTER></TD>\n", repinfo->reportavailability);
+	}
+	else {
+		fprintf(htmlrep, "<TD COLSPAN=7><CENTER><B>Availability: %.2f%%</CENTER></TD>\n", repinfo->fullavailability);
+	}
+	fprintf(htmlrep, "</TR>\n");
+
 	fprintf(htmlrep, "<TR BGCOLOR=\"#000033\">\n");
+	fprintf(htmlrep, "<TD>&nbsp;</TD>\n");
 	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
 		getenv("BBSKIN"), dotgiffilename(COL_GREEN, 0, 1), colorname(COL_GREEN), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
 	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
@@ -70,15 +81,27 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 		getenv("BBSKIN"), dotgiffilename(COL_BLUE, 0, 1), colorname(COL_BLUE), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "<TR BGCOLOR=\"#000033\">\n");
-	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->pct[COL_GREEN]);
-	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->pct[COL_YELLOW]);
-	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->pct[COL_RED]);
-	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->pct[COL_PURPLE]);
-	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->pct[COL_CLEAR]);
-	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->pct[COL_BLUE]);
+	fprintf(htmlrep, "<TD ALIGN=LEFT><B>24x7</B></TD>\n");
+	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_GREEN]);
+	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_YELLOW]);
+	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_RED]);
+	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_PURPLE]);
+	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_CLEAR]);
+	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_BLUE]);
 	fprintf(htmlrep, "</TR>\n");
+	if (repinfo->withreport) {
+		fprintf(htmlrep, "<TR BGCOLOR=\"#000033\">\n");
+		fprintf(htmlrep, "<TD ALIGN=LEFT><B>SLA (%.2f)</B></TD>\n", reportwarnlevel);
+		fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->reportpct[COL_GREEN]);
+		fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->reportpct[COL_YELLOW]);
+		fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->reportpct[COL_RED]);
+		fprintf(htmlrep, "<TD ALIGN=CENTER>-</TD>\n");
+		fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->reportpct[COL_CLEAR]);
+		fprintf(htmlrep, "<TD ALIGN=CENTER>-</TD>\n");
+		fprintf(htmlrep, "</TR>\n");
+	}
 	fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
-	fprintf(htmlrep, "<TD ALIGN=CENTER><B>Event count</B></TD>\n");
+	fprintf(htmlrep, "<TD ALIGN=CENTER COLSPAN=2><B>Event count</B></TD>\n");
 	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%d</B></TD>\n", repinfo->count[COL_YELLOW]);
 	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%d</B></TD>\n", repinfo->count[COL_RED]);
 	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%d</B></TD>\n", repinfo->count[COL_PURPLE]);
@@ -86,12 +109,12 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%d</B></TD>\n", repinfo->count[COL_BLUE]);
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
-	fprintf(htmlrep, "<TD COLSPAN=6 ALIGN=CENTER>\n");
+	fprintf(htmlrep, "<TD COLSPAN=7 ALIGN=CENTER>\n");
 	fprintf(htmlrep, "<FONT %s><B>[Total may not equal 100%%]</B></TD> </TR>\n", getenv("MKBBCOLFONT"));
 
 	if (strcmp(repinfo->fstate, "NOTOK") == 0) {
 		fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
-		fprintf(htmlrep, "<TD COLSPAN=6 ALIGN=CENTER>\n");
+		fprintf(htmlrep, "<TD COLSPAN=7 ALIGN=CENTER>\n");
 		fprintf(htmlrep, "<FONT %s><B>[History file contains invalid entries]</B></TD></TR>\n", getenv("MKBBCOLFONT"));
 	}
 
@@ -115,11 +138,11 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 		fprintf(textrep, "\n");
 		fprintf(textrep, "				%s - %s\n", hostname, service);
 		fprintf(textrep, "\n");
-		fprintf(textrep, "				Availability:	%.2f%%\n", repinfo->availability);
+		fprintf(textrep, "				Availability:	%.2f%%\n", repinfo->fullavailability);
 		fprintf(textrep, "			Red	Yellow	Green	Purple	Clear	Blue\n");
 		fprintf(textrep, "			%.2f%%	%.2f%%	%.2f%%	%.2f%%	%.2f%%	%.2f%%\n",
-			repinfo->pct[COL_RED], repinfo->pct[COL_YELLOW], repinfo->pct[COL_GREEN], 
-			repinfo->pct[COL_PURPLE], repinfo->pct[COL_CLEAR], repinfo->pct[COL_BLUE]);
+			repinfo->fullpct[COL_RED], repinfo->fullpct[COL_YELLOW], repinfo->fullpct[COL_GREEN], 
+			repinfo->fullpct[COL_PURPLE], repinfo->fullpct[COL_CLEAR], repinfo->fullpct[COL_BLUE]);
 		fprintf(textrep, "		Events	%d	%d	%d	%d	%d	%d\n",
 			repinfo->count[COL_RED], repinfo->count[COL_YELLOW], repinfo->count[COL_GREEN], 
 			repinfo->count[COL_PURPLE], repinfo->count[COL_CLEAR], repinfo->count[COL_BLUE]);
@@ -208,34 +231,49 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 	}
 
 	fprintf(htmlrep, "<TR><TD ALIGN=RIGHT BGCOLOR=\"#000033\" COLSPAN=3>\n");
-	fprintf(htmlrep, "<B>Time Critical/Offline:</B></TD>\n");
+	fprintf(htmlrep, "<B>Time Critical/Offline (24x7):</B></TD>\n");
 	fprintf(htmlrep, "<TD ALIGN=LEFT NOWRAP COLSPAN=2>%s</TD></TR>\n", 
-		durationstr(repinfo->totduration[COL_RED]));
+		durationstr(repinfo->fullduration[COL_RED]));
 
 	if (style != STYLE_CRIT) {
 		fprintf(htmlrep, "<TR><TD ALIGN=RIGHT BGCOLOR=\"#000033\" COLSPAN=3>\n");
-		fprintf(htmlrep, "<B>Time Non-Critical:</B></TD>\n");
+		fprintf(htmlrep, "<B>Time Non-Critical (24x7):</B></TD>\n");
 		fprintf(htmlrep, "<TD ALIGN=LEFT NOWRAP COLSPAN=2>%s</TD></TR>\n", 
-			durationstr(repinfo->totduration[COL_YELLOW] + repinfo->totduration[COL_PURPLE] +
-				    repinfo->totduration[COL_CLEAR]  + repinfo->totduration[COL_BLUE]));
+			durationstr(repinfo->fullduration[COL_YELLOW] + repinfo->fullduration[COL_PURPLE] +
+				    repinfo->fullduration[COL_CLEAR]  + repinfo->fullduration[COL_BLUE]));
 	}
+
+	if (repinfo->withreport) {
+		fprintf(htmlrep, "<TR><TD ALIGN=RIGHT BGCOLOR=\"#000033\" COLSPAN=3>\n");
+		fprintf(htmlrep, "<B>Time Critical/Offline (SLA):</B></TD>\n");
+		fprintf(htmlrep, "<TD ALIGN=LEFT NOWRAP COLSPAN=2>%s</TD></TR>\n", 
+			durationstr(repinfo->reportduration[COL_RED]));
+
+		if (style != STYLE_CRIT) {
+			fprintf(htmlrep, "<TR><TD ALIGN=RIGHT BGCOLOR=\"#000033\" COLSPAN=3>\n");
+			fprintf(htmlrep, "<B>Time Non-Critical (SLA):</B></TD>\n");
+			fprintf(htmlrep, "<TD ALIGN=LEFT NOWRAP COLSPAN=2>%s</TD></TR>\n", 
+				durationstr(repinfo->reportduration[COL_YELLOW]));
+		}
+	}
+
 
 	/* And the text report ... */
 	if (textrep) {
 		fprintf(textrep, "\n");
 		fprintf(textrep, "\n");
 		fprintf(textrep, "				%s %s	(%lu secs)\n",
-			"Time Critical/Offline:", durationstr(repinfo->totduration[COL_RED]), repinfo->totduration[COL_RED]);
+			"Time Critical/Offline:", durationstr(repinfo->fullduration[COL_RED]), repinfo->fullduration[COL_RED]);
 
 		if (style != STYLE_CRIT) {
 			fprintf(textrep, "\n");
 			fprintf(textrep, "\n");
 			fprintf(textrep, "				%s %s	(%lu secs)\n",
 				"Time Non-Critical:", 
-				durationstr(repinfo->totduration[COL_YELLOW] + repinfo->totduration[COL_PURPLE] +
-					    repinfo->totduration[COL_CLEAR]  + repinfo->totduration[COL_BLUE]),
-				(repinfo->totduration[COL_YELLOW] + repinfo->totduration[COL_PURPLE] + 
-				 repinfo->totduration[COL_CLEAR] + repinfo->totduration[COL_BLUE]));
+				durationstr(repinfo->fullduration[COL_YELLOW] + repinfo->fullduration[COL_PURPLE] +
+					    repinfo->fullduration[COL_CLEAR]  + repinfo->fullduration[COL_BLUE]),
+				(repinfo->fullduration[COL_YELLOW] + repinfo->fullduration[COL_PURPLE] + 
+				 repinfo->fullduration[COL_CLEAR] + repinfo->fullduration[COL_BLUE]));
 		}
 	}
 
@@ -263,7 +301,9 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
  *
  *	HOSTSVC=www,sample,com.conn
  *	IP=12.34.56.78
+ *	REPTIME=*:HHHH:MMMM
  *	COLOR=yellow
+ *	WARNPCT=98.5
  *	PCT=98.92
  *	ST=1028810893
  *	END=1054418399
@@ -295,6 +335,7 @@ double reportwarnlevel = 98.0;
 
 char *hostname = "";
 char *ip = "";
+char *reporttime = NULL;
 char *service = "";
 time_t st, end;
 int style;
@@ -347,6 +388,13 @@ static void parse_query(void)
 		else if (argnmatch(token, "IP")) {
 			ip = malcop(val);
 		}
+		else if (argnmatch(token, "REPTIME")) {
+			reporttime = malloc(strlen(val)+strlen("REPTIME=")+1);
+			sprintf(reporttime, "REPTIME=%s", val);
+		}
+		else if (argnmatch(token, "WARNPCT")) {
+			reportwarnlevel = atof(val);
+		}
 		else if (argnmatch(token, "STYLE")) {
 			if (strcmp(val, "crit") == 0) style = STYLE_CRIT;
 			else if (strcmp(val, "nongr") == 0) style = STYLE_NONGR;
@@ -389,7 +437,7 @@ int main(int argc, char *argv[])
 		errormsg("Cannot open history file");
 	}
 
-	parse_historyfile(fd, &repinfo, hostname, service, st, end, 0, reportwarnlevel, reportgreenlevel, NULL);
+	parse_historyfile(fd, &repinfo, hostname, service, st, end, 0, reportwarnlevel, reportgreenlevel, reporttime);
 	fclose(fd);
 
 	sprintf(textrepfn, "avail-%s-%s-%lu-%u.txt", hostname, service, time(NULL), (int)getpid());
