@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.32 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.33 2005-01-22 08:49:37 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
 			 * that we'll either succeed in a few milliseconds, or fail completely
 			 * and wait the full alarm-timer duration.
 			 */
-			gotalarm = 0; signal(SIGALRM, sig_handler); alarm(1); 
+			gotalarm = 0; signal(SIGALRM, sig_handler); alarm(2); 
 #ifdef WATCHLATENCY
 			gettimeofday(&starttv, &tz);
 #endif
@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
 #endif
 
 			if (gotalarm) {
-				errprintf("Broke deadlock waiting for GOCLIENT to go low.\n");
+				errprintf("Gave up waiting for GOCLIENT to go low.\n");
 			}
 
 			/* 
@@ -283,8 +283,13 @@ int main(int argc, char *argv[])
 			 * This should not block, since BOARDBUSY is upped
 			 * by the master just before he ups GOCLIENT.
 			 */
-			s.sem_num = BOARDBUSY; s.sem_op  = -1; s.sem_flg = 0;
-			n = semop(channel->semid, &s, 1);
+			do {
+				s.sem_num = BOARDBUSY; s.sem_op  = -1; s.sem_flg = IPC_NOWAIT;
+				n = semop(channel->semid, &s, 1);
+			} while ((n == -1) && (errno == EINTR));
+			if (n == -1) {
+				errprintf("Tried to down BOARDBUSY: %s\n", strerror(errno));
+			}
 
 			/*
 			 * Put the new message on our outbound queue.
