@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.115 2003-09-10 11:55:15 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.116 2003-09-10 14:29:12 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -334,7 +334,7 @@ testedhost_t *init_testedhost(char *hostname, int timeout, int conntimeout, int 
 	newhost->ldappasswd = NULL;
 
 	newhost->sslwarndays = sslwarndays;
-	newhost->sslalarmdays = sslwarndays;
+	newhost->sslalarmdays = sslalarmdays;
 
 	newhost->deptests = NULL;
 
