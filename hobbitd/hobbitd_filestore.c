@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.14 2004-10-30 15:53:21 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.15 2004-10-30 22:25:30 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -70,8 +70,52 @@ void update_file(char *fn, char *mode, char *msg, time_t expire, char *sender, t
 	rename(tmpfn, fn);
 }
 
-void update_htmlfile(char *fn, char *msg, char *sender, time_t timesincechange)
+void update_htmlfile(char *fn, char *msg, 
+		     char *hostname, char *service, int color,
+		     char *sender, char *flags,
+		     time_t logtime, time_t timesincechange,
+		     char *ackmsg)
 {
+	FILE *output;
+	char *tmpfn;
+	char *firstline, *restofmsg;
+	char *displayname = hostname;
+	char *ip = "";
+	char timestr[100];
+
+	tmpfn = (char *) malloc(strlen(fn)+5);
+	sprintf(tmpfn, "%s.tmp", fn);
+	output = fopen(tmpfn, "w");
+
+	if (output) {
+		firstline = msg;
+		restofmsg = strchr(msg, '\n');
+		if (restofmsg) {
+			*restofmsg = '\0';
+			restofmsg++;
+		}
+		else {
+			restofmsg = "";
+		}
+
+		if (timesincechange >= 0) {
+			char *p = timestr;
+			if (timesincechange > 86400) p += sprintf(p, "%ld days, ", (timesincechange / 86400));
+			p += sprintf(p, "%ld hours, %ld minutes", 
+					((timesincechange % 86400) / 3600), ((timesincechange % 3600) / 60));
+		}
+
+		generate_html_log(hostname, displayname, service, ip,
+			color, sender, flags,
+			logtime, timestr,
+			firstline, restofmsg, ackmsg,
+			0, output);
+
+		fclose(output);
+		rename(tmpfn, fn);
+	}
+
+	free(tmpfn);
 }
 
 void update_enable(char *fn, time_t expiretime)
@@ -175,7 +219,7 @@ int main(int argc, char *argv[])
 
 		if ((role == ROLE_STATUS) && (metacount >= 13) && (strncmp(items[0], "@@status", 8) == 0)) {
 			/* @@status|timestamp|sender|hostname|testname|expiretime|color|testflags|prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage */
-			time_t timesincechange;
+			int logtime, timesincechange;
 			char htmllogfn[PATH_MAX];
 
 			hostname = items[3];
@@ -185,10 +229,11 @@ int main(int argc, char *argv[])
 			sprintf(logfn, "%s/%s.%s", filedir, hostname, testname);
 			expiretime = atoi(items[5]);
 			statusdata = msg_data(statusdata);
-			sscanf(items[1], "%d.%*d", (int *) &timesincechange);
-			timesincechange -= atoi(items[9]);
+			sscanf(items[1], "%d.%*d", &logtime);
+			timesincechange = logtime - atoi(items[9]);
 			update_file(logfn, "w", statusdata, expiretime, items[2], timesincechange, seq);
-			if (htmldir) update_htmlfile(htmllogfn, statusdata, items[2], timesincechange);
+			if (htmldir) update_htmlfile(htmllogfn, statusdata, hostname, testname, parse_color(items[6]),
+						     items[2], items[7], logtime, timesincechange, items[11]);
 		}
 		else if ((role == ROLE_DATA) && (metacount > 4) && (strncmp(items[0], "@@data", 6)) == 0) {
 			/* @@data|timestamp|sender|hostname|testname */
