@@ -22,7 +22,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.16 2005-01-21 23:15:38 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.17 2005-01-22 08:52:06 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -56,10 +56,10 @@ hobbitd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	struct sembuf s;
 	hobbitd_channel_t *newch;
 	int flags = ((role == CHAN_MASTER) ? (IPC_CREAT | 0600) : 0);
-	char *bbh = xgetenv("BBHOME");
+	char *bbh = xgetenv("BBHOSTS");
 
 	if ( (bbh == NULL) || (stat(bbh, &st) == -1) ) {
-		errprintf("BBHOME not defined, or points to invalid directory - cannot continue.\n");
+		errprintf("BBHOSTS not defined, or points to invalid directory - cannot continue.\n");
 		return NULL;
 	}
 
@@ -75,7 +75,7 @@ hobbitd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	newch->msgcount = 0;
 	newch->shmid = shmget(key, SHAREDBUFSZ, flags);
 	if (newch->shmid == -1) {
-		errprintf("Could not get shm %s\n", strerror(errno));
+		errprintf("Could not get shm of size %d: %s\n", SHAREDBUFSZ, strerror(errno));
 		xfree(newch);
 		return NULL;
 	}
@@ -83,13 +83,16 @@ hobbitd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	newch->channelbuf = (char *) shmat(newch->shmid, NULL, 0);
 	if (newch->channelbuf == (char *)-1) {
 		errprintf("Could not attach shm %s\n", strerror(errno));
+		if (role == CHAN_MASTER) shmctl(newch->shmid, IPC_RMID, NULL);
 		xfree(newch);
 		return NULL;
 	}
 
 	newch->semid = semget(key, 3, flags);
 	if (newch->semid == -1) {
-		errprintf("Could not get sem %s\n", strerror(errno));
+		errprintf("Could not get sem: %s\n", strerror(errno));
+		shmdt(newch->channelbuf);
+		if (role == CHAN_MASTER) shmctl(newch->shmid, IPC_RMID, NULL);
 		xfree(newch);
 		return NULL;
 	}
@@ -101,7 +104,9 @@ hobbitd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 		 */
 		s.sem_num = CLIENTCOUNT; s.sem_op = +1; s.sem_flg = SEM_UNDO;
 		if (semop(newch->semid, &s, 1) == -1) {
-			errprintf("Could not register presence\n", strerror(errno));
+			errprintf("Could not register presence: %s\n", strerror(errno));
+			shmdt(newch->channelbuf);
+			xfree(newch);
 			return NULL;
 		}
 	}
@@ -111,6 +116,10 @@ hobbitd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 		n = semctl(newch->semid, CLIENTCOUNT, GETVAL);
 		if (n > 0) {
 			errprintf("FATAL: hobbitd sees clientcount %d, should be 0\nCheck for hanging hobbitd_channel processes or stale semaphores\n", n);
+			shmdt(newch->channelbuf);
+			shmctl(newch->shmid, IPC_RMID, NULL);
+			semctl(newch->semid, 0, IPC_RMID);
+			xfree(newch);
 			return NULL;
 		}
 	}
