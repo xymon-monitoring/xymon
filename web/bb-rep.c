@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.8 2003-06-23 20:54:59 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.9 2003-07-01 20:51:46 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -42,6 +42,7 @@ static char rcsid[] = "$Id: bb-rep.c,v 1.8 2003-06-23 20:54:59 henrik Exp $";
  *	end-day=19&
  *	end-yr=2003&
  *	style=crit&
+ *	suburl=path&
  *	SUB=Generate+Report
  *
  */
@@ -55,6 +56,7 @@ NULL };
 char *style = "";
 time_t starttime = 0;
 time_t endtime = 0;
+char *suburl = "";
 
 char *monthnames[13] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", NULL };
 
@@ -109,6 +111,9 @@ void parse_query(void)
 		}
 		else if (argnmatch(token, "style")) {
 			style = malcop(val);
+		}
+		else if (argnmatch(token, "suburl")) {
+			suburl = malcop(val);
 		}
 
 		token = strtok(NULL, "&");
@@ -264,7 +269,8 @@ int main(int argc, char *argv[])
 			printf("%s\n\n", htmldelim);
 			printf("Content-Type: text/html\n\n");
 			printf("<HTML><HEAD>\n");
-			printf("<META HTTP-EQUIV=\"REFRESH\" CONTENT=\"0; URL=%s/%s/\"\n", getenv("BBREPURL"), dirid);
+			printf("<META HTTP-EQUIV=\"REFRESH\" CONTENT=\"0; URL=%s/%s/%s\"\n", 
+					getenv("BBREPURL"), dirid, suburl);
 			printf("</HEAD><BODY BGCOLOR=\"000000\"></BODY></HTML>\n");
 			printf("\n%s\n", htmldelim);
 			fflush(stdout);
