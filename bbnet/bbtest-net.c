@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.133 2003-10-30 14:07:06 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.134 2003-11-03 09:04:31 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -428,7 +428,7 @@ void load_tests(void)
 		routestring = NULL;
 	}
 
-	while (stackfgets(l, sizeof(l), "include")) {
+	while (stackfgets(l, sizeof(l), "include", "netinclude")) {
 		p = strchr(l, '\n'); if (p) { *p = '\0'; };
 		for (p=l; (*p && isspace((int) *p)); p++) ;
 

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.113 2003-10-17 06:21:11 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.114 2003-11-03 09:04:31 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1160,7 +1160,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	cursubparent = NULL;
 	curtitle = NULL;
 
-	while (stackfgets(l, sizeof(l), "include")) {
+	while (stackfgets(l, sizeof(l), "include", "dispinclude")) {
 		p = strchr(l, '\n'); 
 		if (p) {
 			*p = '\0'; 

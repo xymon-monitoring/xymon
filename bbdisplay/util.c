@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.103 2003-10-22 20:24:23 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.104 2003-11-03 09:04:31 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -212,23 +212,25 @@ char *read_line(struct linebuf_t *buffer, FILE *stream)
 }
 
 
-char *stackfgets(char *buffer, unsigned int bufferlen, char *includetag)
+char *stackfgets(char *buffer, unsigned int bufferlen, char *includetag1, char *includetag2)
 {
 	char *result;
 
 	result = fgets(buffer, bufferlen, fdhead->fd);
 
-	if (result && (strncmp(buffer, includetag, strlen(includetag)) == 0)) {
-		char *newfn = buffer+strlen(includetag);
+	if (result && 
+		( (strncmp(buffer, includetag1, strlen(includetag1)) == 0) ||
+		  (includetag2 && (strncmp(buffer, includetag2, strlen(includetag2)) == 0)) )) {
+		char *newfn = strchr(buffer, ' ');
 		char *eol = strchr(buffer, '\n');
 
-		while (*newfn && isspace((int)*newfn)) newfn++;
+		while (newfn && *newfn && isspace((int)*newfn)) newfn++;
 		if (eol) *eol = '\0';
 		
-		if (stackfopen(newfn, "r") != NULL) 
-			return stackfgets(buffer, bufferlen, includetag);
+		if (newfn && (stackfopen(newfn, "r") != NULL))
+			return stackfgets(buffer, bufferlen, includetag1, includetag2);
 		else {
-			errprintf("WARNING: Cannot open include file '%s', line was:%s\n", newfn, buffer);
+			errprintf("WARNING: Cannot open include file '%s', line was:%s\n", textornull(newfn), buffer);
 			if (eol) *eol = '\n';
 			return result;
 		}
@@ -237,7 +239,7 @@ char *stackfgets(char *buffer, unsigned int bufferlen, char *includetag)
 		/* end-of-file on read */
 		stackfclose(NULL);
 		if (fdhead != NULL)
-			return stackfgets(buffer, bufferlen, includetag);
+			return stackfgets(buffer, bufferlen, includetag1, includetag2);
 		else
 			return NULL;
 	}

@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.11 2003-09-07 21:41:24 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.12 2003-11-03 09:04:31 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	while (stackfgets(l, sizeof(l), "include")) {
+	while (stackfgets(l, sizeof(l), "include", "netinclude")) {
 		int ip1, ip2, ip3, ip4;
 		char hostname[MAX_LINE_LEN];
 		char wantedtags[MAX_LINE_LEN];
