@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.118 2005-03-01 10:26:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.119 2005-03-01 11:46:58 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -412,19 +412,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			  semctl(channel->semid, BOARDBUSY, GETNCNT),
 			  semctl(channel->semid, BOARDBUSY, GETPID),
 			  semctl(channel->semid, CLIENTCOUNT, GETVAL));
-
-#if 0
-		/* Forcing it to 0 */
-		errprintf("Forcing BOARDBUSY to 0\n");
-		n = 0;
-		while ((n == 0) && (semctl(channel->semid, BOARDBUSY, GETVAL) > 0)) {
-			s.sem_num = BOARDBUSY; s.sem_op = -1; s.sem_flg = IPC_NOWAIT;
-			n = semop(channel->semid, &s, 1);
-			if (n != 0) {
-				errprintf("Failed to recover BOARDBUSY: %s\n", strerror(errno));
-			}
-		}
-#endif
+		return;
 	}
 
 	/* All clear, post the message */
@@ -433,44 +421,59 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 	channel->msgcount++;
 	gettimeofday(&tstamp, &tz);
 	if (readymsg) {
-		n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
-			    "@@%s#%u|%d.%06d|%s|%s\n@@\n", 
+		n = snprintf(channel->channelbuf, (SHAREDBUFSZ-5),
+			    "@@%s#%u|%d.%06d|%s|%s", 
 			    channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender,
 			    readymsg);
-		*(channel->channelbuf + n) = '\0';
+		if (n > (SHAREDBUFSZ-5)) errprintf("Oversize data msg from %s truncated (n=%d)\n", sender, n);
+		*(channel->channelbuf + SHAREDBUFSZ - 5) = '\0';
 	}
 	else {
 		switch(channel->channelid) {
 		  case C_STATUS:
-			n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
+			n = snprintf(channel->channelbuf, (SHAREDBUFSZ-5),
 				"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%s|%d", 
 				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 				sender, log->origin->name, hostname, log->test->testname, 
 				(int) log->validtime, colnames[log->color], (log->testflags ? log->testflags : ""),
 				colnames[log->oldcolor], (int) log->lastchange); 
-			n += snprintf(channel->channelbuf+n, (SHAREDBUFSZ-n-1), "|%d|%s",
-				(int)log->acktime, nlencode(log->ackmsg));
-			n += snprintf(channel->channelbuf+n, (SHAREDBUFSZ-n-1), "|%d|%s",
-				(int)log->enabletime, nlencode(log->dismsg));
-			n += snprintf(channel->channelbuf+n, (SHAREDBUFSZ-n-1), "\n%s\n@@\n", msg);
-			*(channel->channelbuf + n) = '\0';
+			if (n < (SHAREDBUFSZ-5)) {
+				n += snprintf(channel->channelbuf+n, (SHAREDBUFSZ-n-5), "|%d|%s",
+					(int)log->acktime, nlencode(log->ackmsg));
+			}
+			if (n < (SHAREDBUFSZ-5)) {
+				n += snprintf(channel->channelbuf+n, (SHAREDBUFSZ-n-5), "|%d|%s",
+					(int)log->enabletime, nlencode(log->dismsg));
+			}
+			if (n < (SHAREDBUFSZ-5)) {
+				n += snprintf(channel->channelbuf+n, (SHAREDBUFSZ-n-5), "\n%s", msg);
+			}
+			if (n > (SHAREDBUFSZ-5)) {
+				errprintf("Oversize status msg from %s:%s truncated (n=%d)\n", 
+					hostname, log->test->testname, n);
+			}
+			*(channel->channelbuf + SHAREDBUFSZ - 5) = '\0';
 			break;
 
 		  case C_STACHG:
-			n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
-				"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d\n%s\n@@\n", 
+			n = snprintf(channel->channelbuf, (SHAREDBUFSZ-5),
+				"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d\n%s", 
 				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 				sender, log->origin->name, hostname, log->test->testname, 
 				(int) log->validtime, colnames[log->color], 
 				colnames[log->oldcolor], (int) log->lastchange, 
 				msg);
-			*(channel->channelbuf + n) = '\0';
+			if (n > (SHAREDBUFSZ-5)) {
+				errprintf("Oversize stachg msg from %s:%s truncated (n=%d)\n", 
+					hostname, log->test->testname, n);
+			}
+			*(channel->channelbuf + SHAREDBUFSZ - 5) = '\0';
 			break;
 
 		  case C_PAGE:
 			if (strcmp(channelmarker, "ack") == 0) {
-				n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
-					"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d\n%s\n@@\n", 
+				n = snprintf(channel->channelbuf, (SHAREDBUFSZ-5),
+					"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d\n%s", 
 					channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 					sender, hostname, 
 					log->test->testname, log->host->ip,
@@ -479,8 +482,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			else if (strcmp(channelmarker, "notify") == 0) {
 				namelist_t *hi = hostinfo(hostname);
 
-				n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
-					"@@%s#%u|%d.%06d|%s|%s|%s|%s\n%s\n@@\n", 
+				n = snprintf(channel->channelbuf, (SHAREDBUFSZ-5),
+					"@@%s#%u|%d.%06d|%s|%s|%s|%s\n%s", 
 					channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 					sender, hostname, 
 					(log->test ? log->test->testname : ""), 
@@ -490,8 +493,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			else {
 				namelist_t *hi = hostinfo(hostname);
 
-				n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
-					"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d\n%s\n@@\n", 
+				n = snprintf(channel->channelbuf, (SHAREDBUFSZ-5),
+					"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d\n%s", 
 					channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 					sender, hostname, 
 					log->test->testname, log->host->ip, (int) log->validtime, 
@@ -499,7 +502,11 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 					(hi ? hi->page->pagepath : ""), 
 					log->cookie, msg);
 			}
-			*(channel->channelbuf + n) = '\0';
+			if (n > (SHAREDBUFSZ-5)) {
+				errprintf("Oversize page/ack/notify msg from %s:%s truncated (n=%d)\n", 
+					hostname, (log->test ? log->test->testname : "<none>"), n);
+			}
+			*(channel->channelbuf + SHAREDBUFSZ - 5) = '\0';
 			break;
 
 		  case C_DATA:
@@ -507,25 +514,35 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			break;
 
 		  case C_NOTES:
-			n = snprintf(channel->channelbuf,  (SHAREDBUFSZ-1),
-				"@@%s#%u|%d.%06d|%s|%s\n%s\n@@\n", 
+			n = snprintf(channel->channelbuf,  (SHAREDBUFSZ-5),
+				"@@%s#%u|%d.%06d|%s|%s\n%s", 
 				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 				sender, hostname, msg);
-			*(channel->channelbuf + n) = '\0';
+			if (n > (SHAREDBUFSZ-5)) {
+				errprintf("Oversize notes msg from %s:%s truncated (n=%d)\n", 
+					hostname, log->test->testname, n);
+			}
+			*(channel->channelbuf + SHAREDBUFSZ - 5) = '\0';
 			break;
 
 		  case C_ENADIS:
-			n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
-				"@@%s#%u|%d.%06d|%s|%s|%s|%d\n@@\n",
+			n = snprintf(channel->channelbuf, (SHAREDBUFSZ-5),
+				"@@%s#%u|%d.%06d|%s|%s|%s|%d",
 				channelmarker, channel->seq, (int) tstamp.tv_sec, (int)tstamp.tv_usec,
 				sender, hostname, log->test->testname, (int) log->enabletime);
-			*(channel->channelbuf + n) = '\0';
+			if (n > (SHAREDBUFSZ-5)) {
+				errprintf("Oversize enadis msg from %s:%s truncated (n=%d)\n", 
+					hostname, log->test->testname, n);
+			}
+			*(channel->channelbuf + SHAREDBUFSZ - 5) = '\0';
 			break;
 
 		  case C_LAST:
 			break;
 		}
 	}
+	/* Terminate the message */
+	strncat(channel->channelbuf, "\n@@\n", (SHAREDBUFSZ-1));
 
 	/* Let the readers know it is there.  */
 	clients = semctl(channel->semid, CLIENTCOUNT, GETVAL); /* Get it again, maybe changed since last check */
