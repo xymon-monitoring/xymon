@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.6 2003-06-20 13:06:16 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.7 2003-06-20 22:56:17 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -47,28 +47,34 @@ char *parse_histlogfile(char *hostname, char *servicename, char *timespec)
 
 	dprintf("Looking at history logfile %s\n", fn);
 	fd = fopen(fn, "r");
-	while (fgets(l, sizeof(l), fd)) {
-		p = strchr(l, '\n'); if (p) *p = '\0';
-
-		if ((l[0] == '&') && (strncmp(l, "&green", 6) != 0)) {
-			p = skipwhitespace(skipword(l));
-			strcat(cause, p);
-			strcat(cause, "<BR>\n");
-		}
-	}
-
-	if (strlen(cause) == 0) {
-		int offset;
-		rewind(fd);
-		if (fgets(l, sizeof(l), fd)) {
+	if (fd != NULL) {
+		while (fgets(l, sizeof(l), fd)) {
 			p = strchr(l, '\n'); if (p) *p = '\0';
-			sscanf(l, "%*s %*s %*s %*s %*s %*s %*s %n", &offset);
-			strncpy(cause, l+offset, sizeof(cause));
-			cause[sizeof(cause)-1] = '\0';
+
+			if ((l[0] == '&') && (strncmp(l, "&green", 6) != 0)) {
+				p = skipwhitespace(skipword(l));
+				strcat(cause, p);
+				strcat(cause, "<BR>\n");
+			}
 		}
+
+		if (strlen(cause) == 0) {
+			int offset;
+			rewind(fd);
+			if (fgets(l, sizeof(l), fd)) {
+				p = strchr(l, '\n'); if (p) *p = '\0';
+				sscanf(l, "%*s %*s %*s %*s %*s %*s %*s %n", &offset);
+				strncpy(cause, l+offset, sizeof(cause));
+				cause[sizeof(cause)-1] = '\0';
+			}
+		}
+
+		fclose(fd);
+	}
+	else {
+		strcpy(cause, "No historical status available");
 	}
 
-	fclose(fd);
 	return malcop(cause);
 }
 
