@@ -57,6 +57,8 @@
   stachg
   ------
   @@stachg|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime
+  <new status message>
+  @@
 
   page
   ----
@@ -92,10 +94,10 @@
 
   Alle kanaler
   ------------
-  @@drophost|timestamp|hostname
-  @@droptest|timestamp|hostname|testname
-  @@renamehost|timestamp|oldhostname|newhostname
-  @@renametest|timestamp|oldhostname|oldtestname|newtestname
+  @@drophost|timestamp|sender|hostname
+  @@droptest|timestamp|sender|hostname|testname
+  @@renamehost|timestamp|sender|hostname|newhostname
+  @@renametest|timestamp|sender|hostname|oldtestname|newtestname
 
 
 * Simpel "ack" protokol.
