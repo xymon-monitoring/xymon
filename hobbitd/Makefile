@@ -83,7 +83,7 @@ moverrd.sh: moverrd.sh.DIST
 	chmod 755 $@
 
 maint.pl: maint.pl.DIST
-	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBVAR@!$(BBVAR)!g' >$@
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBVAR@!$(BBVAR)!g' | sed -e 's!@PERLBINARY@!$(PERLBINARY)!g' >$@
 	chmod 755 $@
 
 ifeq ($(BBCGIURL),$(SECUREBBCGIURL))

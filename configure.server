@@ -43,6 +43,8 @@ else
 		echo ""
 		. build/fping.sh
 		echo ""; echo ""
+		. build/perl.sh
+		echo ""; echo ""
 		. build/rrd.sh
 		echo ""; echo ""
 		. build/pcre.sh
@@ -524,11 +526,15 @@ else
 		echo "HTTPDGID=$HTTPDGID"        >>Makefile
 
 		echo ""                          >>Makefile
+		echo "# Your Perl program"       >>Makefile
+		echo "PERLBINARY=$PERLBINARY"    >>Makefile
+
+		echo ""                          >>Makefile
 		echo "# RRDtool settings"        >>Makefile
 		echo "RRDINCDIR = -I$RRDINC"     >>Makefile
 		echo "RRDLIBS = -L$RRDLIB -lrrd $PNGLIB" >>Makefile
 		echo "RPATHVAL += ${RRDLIB}"     >>Makefile
-		echo "#"                         >>Makefile
+		echo ""                          >>Makefile
 		echo "# PCRE settings"           >>Makefile
 		echo "PCREINCDIR = -I$PCREINC"   >>Makefile
 		echo "PCRELIBS = -L$PCRELIB -lpcre" >>Makefile
