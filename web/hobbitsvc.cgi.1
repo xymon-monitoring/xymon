@@ -51,6 +51,15 @@ When showing the current logfile, provide a "HISTORY" button
 at the top or the bottom of the webpage, or not at all. The default 
 is to put the HISTORY button at the bottom of the page.
 
+.SH ENVIRONMENT
+.IP "NONHISTS=info,trends,graphs,larrd"
+A comma-separated list of services that does not have meaningful
+history, e.g. the "info" and "trends" columns. Services listed here
+do not get a "History" button.
+
+.IP "LARRDS=test,test"
+A comma-separated list of the tests that have a LARRD graph.
+
 .SH "SEE ALSO"
 bbgen-intro(7), bbgend(1)
 
