@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.41 2003-05-04 20:53:55 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.42 2003-05-05 21:47:36 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -31,6 +31,17 @@ static char rcsid[] = "$Id: bbtest-net.c,v 1.41 2003-05-04 20:53:55 henrik Exp $
 hostlist_t      *hosthead = NULL;
 link_t          *linkhead = NULL;
 link_t  null_link = { "", "", "", NULL };
+
+char *reqenv[] = {
+	"BBNETSVCS",
+	"NONETPAGE",
+	"BBHOSTS",
+	"BBTMP",
+	"BBHOME",
+	"BB",
+	"BBDISP",
+	NULL
+};
 
 /* toolid values */
 #define TOOL_CONTEST	0
@@ -55,6 +66,9 @@ int		dnsmethod = DNS_THEN_IP;	/* How to do DNS lookups */
 int 		timeout=0;
 long		followlocations = 0;		/* Follow Location: redirects in HTTP? */
 char		*contenttestname = "content";   /* Name of the content checks column */
+char		*ssltestname = "sslcert";       /* Name of the SSL certificate checks column */
+int             sslwarndays = 30;		/* If cert expires in fewer days, SSL cert column = yellow */
+int             sslalarmdays = 10;		/* If cert expires in fewer days, SSL cert column = red */
 char		*location = "";			/* BBLOCATION value */
 char		*logfile = NULL;
 
@@ -828,6 +842,21 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			contenttestname = malcop(p+1);
 		}
+		else if (strncmp(argv[argi], "--ssl=", 6) == 0) {
+			char *p = strchr(argv[argi], '=');
+			ssltestname = malcop(p+1);
+		}
+		else if (strncmp(argv[argi], "--no-ssl", 8) == 0) {
+			ssltestname = NULL;
+		}
+		else if (strncmp(argv[argi], "--sslwarn=", 10) == 0) {
+			char *p = strchr(argv[argi], '=');
+			p++; sslwarndays = atoi(p);
+		}
+		else if (strncmp(argv[argi], "--sslalarm=", 11) == 0) {
+			char *p = strchr(argv[argi], '=');
+			p++; sslalarmdays = atoi(p);
+		}
 		else if (strcmp(argv[argi], "--follow") == 0) {
 			followlocations = 3;
 		}
@@ -839,6 +868,7 @@ int main(int argc, char *argv[])
 	}
 
 	init_timestamp();
+	envcheck(reqenv);
 	if (getenv("BBLOCATION")) location = malcop(getenv("BBLOCATION"));
 
 	load_services();
@@ -908,11 +938,11 @@ int main(int argc, char *argv[])
 
 	/* Run the http tests */
 	for (t = httptest->items; (t); t = t->next) add_http_test(t);
-	run_http_tests(httptest, followlocations, logfile);
+	run_http_tests(httptest, followlocations, logfile, (ssltestname != NULL));
 	if (debug) show_http_test_results(httptest);
 	combo_start();
 	for (h=testhosthead; (h); h = h->next) {
-		send_http_results(httptest, h, nonetpage, contenttestname);
+		send_http_results(httptest, h, nonetpage, contenttestname, ssltestname, sslwarndays, sslalarmdays);
 	}
 	combo_end();
 

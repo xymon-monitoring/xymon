@@ -38,6 +38,10 @@ typedef struct {
 	long   contstatus;		/* Status of content check */
 	char   *headers;                /* HTTP headers from server */
 	char   *output;                 /* Data from server */
+	int    logcert;
+	char   *sslinfo;                /* Data about SSL certificate */
+	time_t sslexpire;               /* Expiry time for SSL cert */
+	int    sslcolor;
 	double totaltime;		/* Time spent doing request */
 	regex_t *exp;			/* regexp data for content match */
 } http_data_t;
@@ -75,6 +79,9 @@ void add_http_test(testitem_t *t)
 	req->contstatus = 0;
 	req->headers = NULL;
 	req->output = NULL;
+	req->logcert = 0;
+	req->sslinfo = NULL;
+	req->sslexpire = 0;
 	req->totaltime = 0.0;
 	req->exp = NULL;
 
@@ -268,7 +275,64 @@ static size_t data_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 }
 
 
-void run_http_tests(service_t *httptest, long followlocations, char *logfile)
+static int debug_callback(CURL *handle, curl_infotype type, char *data, size_t size, void *userp)
+{
+	http_data_t *req = userp;
+	char *p;
+	struct tm exptime;
+
+	if ((req->sslexpire == 0) && (type == CURLINFO_TEXT)) {
+		if (strncmp(data, "Server certificate:", 19) == 0) req->logcert = 1;
+		else if (*data != '\t') req->logcert = 0;
+
+		if (req->logcert) {
+			if (req->sslinfo == NULL) {
+				req->sslinfo = malloc(size+1);
+				memcpy(req->sslinfo, data, size);
+				*(req->sslinfo+size) = '\0';
+			}
+			else {
+				size_t buflen = strlen(req->sslinfo);
+				req->sslinfo = realloc(req->sslinfo, buflen+size+1);
+				memcpy(req->sslinfo+buflen, data, size);
+				*(req->sslinfo+buflen+size) = '\0';
+			}
+		}
+
+		p = strstr(data, "expire date:");
+		if (p) {
+			int res;
+			time_t t1, t2;
+			struct tm *t;
+			time_t gmtofs;
+
+			/* expire date: 2004-01-02 08:04:15 GMT */
+			res = sscanf(p, "expire date: %4d-%2d-%2d %2d:%2d:%2d", 
+				     &exptime.tm_year, &exptime.tm_mon, &exptime.tm_mday,
+				     &exptime.tm_hour, &exptime.tm_min, &exptime.tm_sec);
+			/* tm_year is 1900 based; tm_mon is 0 based */
+			exptime.tm_year -= 1900; exptime.tm_mon -= 1;
+			req->sslexpire = mktime(&exptime);
+
+			/* 
+			 * Calculate the difference between localtime and GMT 
+			 */
+			t = gmtime(&req->sslexpire); t->tm_isdst = 0; t1 = mktime(t);
+			t = localtime(&req->sslexpire); t->tm_isdst = 0; t2 = mktime(t);
+			gmtofs = (t2-t1);
+
+			req->sslexpire += gmtofs;
+			// printf("Output says it expires: %s", p);
+			// printf("I think it expires at (localtime) %s\n", asctime(localtime(&req->sslexpire)));
+		}
+
+	}
+
+	return 0;
+}
+
+
+void run_http_tests(service_t *httptest, long followlocations, char *logfile, int sslcertcheck)
 {
 	http_data_t *req;
 	testitem_t *t;
@@ -303,6 +367,12 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile)
 		curl_easy_setopt(req->curl, CURLOPT_WRITEDATA, req);
 		curl_easy_setopt(req->curl, CURLOPT_WRITEFUNCTION, data_callback);
 		curl_easy_setopt(req->curl, CURLOPT_ERRORBUFFER, &req->errorbuffer);
+
+		if (sslcertcheck && (strncmp(req->url, "https:", 6) == 0)) {
+			curl_easy_setopt(req->curl, CURLOPT_VERBOSE, 1);
+			curl_easy_setopt(req->curl, CURLOPT_DEBUGDATA, req);
+			curl_easy_setopt(req->curl, CURLOPT_DEBUGFUNCTION, debug_callback);
+		}
 
 		/* If needed, get username/password from $HOME/.netrc */
 		curl_easy_setopt(req->curl, CURLOPT_NETRC, CURL_NETRC_OPTIONAL);
@@ -358,7 +428,9 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile)
 }
 
 
-void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage, char *contenttestname)
+void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage, 
+		       char *contenttestname, char *ssltestname,
+		       int sslwarndays, int sslalarmdays)
 {
 	testitem_t *t;
 	int	color = -1;
@@ -367,6 +439,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 	int     nopage = 0;
 	int 	contentnum = 0;
 	char 	*conttest = malloc(strlen(contenttestname)+5);
+	time_t  now = time(NULL);
 
 	if (host->firsthttp == NULL) return;
 
@@ -504,6 +577,40 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 	}
 
 	free(conttest);
+
+	color = -1;
+	for (t=host->firsthttp; (t && (t->host == host)); t = t->next) {
+		http_data_t *req = t->private;
+
+		if (req->sslinfo && (req->sslexpire > 0)) {
+			req->sslcolor = COL_GREEN;
+
+			if (req->sslexpire < (now+sslwarndays*86400)) req->sslcolor = COL_YELLOW;
+			if (req->sslexpire < (now+sslalarmdays*86400)) req->sslcolor = COL_RED;
+			if (req->sslcolor > color) color = req->sslcolor;
+		}
+	}
+
+	if (color != -1) {
+		/* Send off the sslcert status report */
+		init_status(color);
+		sprintf(msgline, "status %s.%s %s %s\n", 
+			commafy(host->hostname), ssltestname, colorname(color), timestamp);
+		addtostatus(msgline);
+
+		for (t=host->firsthttp; (t && (t->host == host)); t = t->next) {
+			http_data_t *req = t->private;
+
+			if (req->sslinfo && (req->sslexpire > 0)) {
+				sprintf(msgline, "\n&%s SSL certificate for %s expires in %ld days\n\n", 
+					colorname(req->sslcolor), realurl(req->url, NULL), (req->sslexpire-now) / 86400);
+				addtostatus(msgline);
+				addtostatus(req->sslinfo);
+			}
+		}
+		addtostatus("\n\n");
+		finish_status();
+	}
 }
 
 
