@@ -6,7 +6,7 @@ bbgen: $(OBJS)
 	gcc -g -o bbgen $(OBJS)
 
 %.o: %.c %.h
-	gcc -Wall -c -o $@ $<
+	gcc -Wall -c -g -o $@ $<
 
 clean:
 	rm -f $(OBJS) bbgen
