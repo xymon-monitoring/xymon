@@ -224,6 +224,15 @@ checks using the same test name as these scripts do.
 Enables logging of all traffic from HTTP/HTTPS servers. Mostly useful for 
 debugging.
 
+.SH USING COOKIES IN WEB TESTS
+If the file $BBHOME/etc/cookies exist, cookies will be read from
+this file and sent along with the HTTP requests when checking
+websites. This file is in the Netscape Cookie format, see
+http://www.netscape.com/newsref/std/cookie_spec.html for details
+on this format. The
+.I curl(1)
+utility can output a file in this format if run with the "--cookie-jar FILENAME"
+option.
 
 .SH SSL CERTIFICATE CHECKS
 When bbtest-net tests services that use SSL- or TLS-based protocols,
@@ -460,6 +469,15 @@ use for the system-name in Big Brother.
 
 This works for web-sites that use the "Basic" authentication
 scheme in HTTP.
+.sp
+.IP "$BBHOME/etc/cookies"
+This file may contain website cookies, in the Netscape HTTP
+Cookie format. If a website requires a static cookie to be 
+present in order for the check to complete, then you can add
+this cookie to this file, and it will be sent along with the 
+HTTP request. To get the cookies into this file, you can use
+the "curl --cookie-jar FILE" to request the URL that sets
+the cookie.
 .sp
 .IP "$BBTMP/*.status - test status summary"
 Each time bbtest-net runs, if any tests fail (i.e. they result
