@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.29 2004-11-28 21:59:12 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.30 2004-12-03 10:31:25 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -439,7 +439,6 @@ int main(int argc, char *argv[])
 		else if ((metacount > 4) && (strncmp(metadata[0], "@@renamehost", 12) == 0)) {
 			/* @@renamehost|timestamp|sender|hostname|newhostname */
 			htnames_t *hwalk;
-			char *newhostname = metadata[4];
 
 			/* 
 			 * We handle rename's simply by dropping the alert. If there is still an
@@ -453,8 +452,6 @@ int main(int argc, char *argv[])
 		}
 		else if ((metacount > 5) && (strncmp(metadata[0], "@@renametest", 12) == 0)) {
 			/* @@renametest|timestamp|sender|hostname|oldtestname|newtestname */
-			htnames_t *newtest;
-			char *newtestname = metadata[5];
 
 			/* 
 			 * We handle rename's simply by dropping the alert. If there is still an
