@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.6 2004-12-26 17:54:16 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.7 2004-12-26 22:43:49 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -422,12 +422,12 @@ int main(int argc, char *argv[])
 	if (chdir(rrddir)) errormsg("Cannot access RRD directory");
 
 
-	if (strchr(service, ':')) {
+	if (strchr(service, ':') || strchr(service, '.')) {
 		/*
 		 * service is "tcp:foo" - so use the "tcp" graph definition, but for a
 		 * single service (as if service was set to just "foo").
 		 */
-		char *delim = strchr(service, ':');
+		char *delim = service + strcspn(service, ":.");
 		char *realservice;
 
 		*delim = '\0';
