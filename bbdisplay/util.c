@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.20 2003-02-14 12:01:08 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.21 2003-02-14 21:42:38 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -93,16 +93,16 @@ int eventcolor(char *colortext)
 	else return -1;
 }
 
-char *dotgiffilename(entry_t *e)
+char *dotgiffilename(int color, int acked, int oldage)
 {
 	static char filename[20];
 
-	strcpy(filename, colorname(e->color));
-	if (e->acked) {
+	strcpy(filename, colorname(color));
+	if (acked) {
 		strcat(filename, "-ack");
 	}
 	else if (use_recentgifs) {
-		strcat(filename, (e->oldage ? "" : "-recent"));
+		strcat(filename, (oldage ? "" : "-recent"));
 	}
 	strcat(filename, ".gif");
 

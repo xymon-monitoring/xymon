@@ -28,7 +28,7 @@ extern void init_timestamp(void);
 
 extern char *colorname(int color);
 extern int eventcolor(char *colortext);
-extern char *dotgiffilename(entry_t *e);
+extern char *dotgiffilename(int color, int acked, int oldage);
 extern char *weekday_text(char *dayspec);
 extern char *time_text(char *timespec);
 extern char *alttag(entry_t *e);
