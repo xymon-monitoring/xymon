@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.8 2005-04-03 12:28:53 henrik Exp $";
+static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.9 2005-04-03 15:35:33 henrik Exp $";
 
 
 static int get_page_name_title(char *buf, char *key, char **name, char **title)
@@ -46,7 +46,7 @@ static int pagematch(pagelist_t *pg, char *name)
 	}
 }
 
-namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *docurl)
+namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 {
 	FILE *bbhosts;
 	int ip1, ip2, ip3, ip4, banksize;
@@ -58,7 +58,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 	MEMDEFINE(hostname);
 	MEMDEFINE(l);
 
-	initialize_hostlist(docurl);
+	initialize_hostlist();
 	curpage = curtoppage = pgtail = pghead;
 
 	bbhosts = stackfopen(bbhostsfn, "r");
@@ -149,12 +149,13 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 
 			newitem->bbhostname = strdup(hostname);
 			if (ip1 || ip2 || ip3 || ip4) newitem->preference = 1; else newitem->preference = 0;
-			newitem->clientname = newitem->bbhostname;
+			newitem->clientname = NULL;
 			newitem->logname = strdup(newitem->bbhostname);
 			{ char *p = newitem->logname; while ((p = strchr(p, '.')) != NULL) { *p = '_'; } }
 			newitem->downtime = NULL;
 			newitem->page = curpage;
 			newitem->data = NULL;
+			newitem->defaulthost = defaulthost;
 
 			clientname[0] = downtime[0] = '\0';
 			startoftags = strchr(l, '#');
@@ -211,10 +212,6 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 			}
 
 			newitem->elems[elemidx] = NULL;
-			newitem->clientname = bbh_find_item(newitem, BBH_CLIENTALIAS);
-			if (newitem->clientname == NULL) newitem->clientname = newitem->bbhostname;
-			newitem->downtime = bbh_find_item(newitem, BBH_DOWNTIME);
-			newitem->defaulthost = defaulthost;
 
 			/* See if this host is defined before */
 			for (iwalk = namehead, iprev = NULL; (iwalk && strcmp(iwalk->bbhostname, newitem->bbhostname)); iprev = iwalk, iwalk = iwalk->next) ;
@@ -249,6 +246,10 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn, char *
 					iprev->next = newitem;
 				}
 			}
+
+			newitem->clientname = bbh_find_item(newitem, BBH_CLIENTALIAS);
+			if (newitem->clientname == NULL) newitem->clientname = newitem->bbhostname;
+			newitem->downtime = bbh_find_item(newitem, BBH_DOWNTIME);
 
 			MEMUNDEFINE(clientname);
 			MEMUNDEFINE(downtime);
