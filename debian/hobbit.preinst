@@ -20,9 +20,8 @@ case "$1" in
         id hobbit 1>/dev/null 2>&1
 	if [ $? -ne 0 ]
 	then
-	    useradd -c "Hobbit user" -d /usr/lib/hobbit hobbit
-	    mkdir -p /usr/lib/hobbit || true
-	    chown hobbit /usr/lib/hobbit
+	    groupadd hobbit
+	    useradd -g hobbit -c "Hobbit user" -d /usr/lib/hobbit hobbit
 	fi
 
         if [ "$1" = "upgrade" ]

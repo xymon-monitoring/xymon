@@ -19,8 +19,20 @@ set -e
 
 case "$1" in
     configure)
-	chgrp www-data /usr/lib/hobbit/server/www/rep /usr/lib/hobbit/server/www/snap
-	chmod g+w /usr/lib/hobbit/server/www/rep /usr/lib/hobbit/server/www/snap
+        # Setup permissions for the newly created "hobbit" user to write
+	# data where he needs to.
+	# And for the Apache-run CGI's to generate reports.
+        cd /var/log/hobbit; chown hobbit:hobbit .
+	cd /var/lib/hobbit; chown hobbit:hobbit . acks data disabled hist histlogs logs rrd tmp www
+	cd /var/lib/hobbit/www; chown hobbit:hobbit . html notes wml rep snap; chgrp www-data rep snap; chmod g+w rep snap
+
+	#cd /usr/lib/cgi-bin; chown hobbit:hobbit . *
+	#cd /usr/lib/cgi-secure; chown hobbit:hobbit . *
+	#cd /usr/lib/hobbit/server; chown hobbit:hobbit . *
+	#cd /usr/lib/hobbit/server/bin; chown hobbit:hobbit . *
+	#cd /usr/lib/hobbit/server/etc; chown hobbit:hobbit . *
+	#cd /usr/lib/hobbit/server/ext; chown hobbit:hobbit . *
+	#cd /usr/lib/hobbit/server/web; chown hobbit:hobbit . *
 	update-rc.d hobbit defaults
     ;;
 
