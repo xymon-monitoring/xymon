@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.54 2003-06-02 16:07:01 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.55 2003-06-02 21:39:34 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1057,7 +1057,7 @@ int do_bb2_page(char *filename, int summarytype)
 		  case PAGE_NK:
 			/* The NK page */
 			for (useit=0, e=h->hostentry->entries; (e && !useit); e=e->next) {
-				useit = (e->alert && ((e->color == COL_RED) || ((e->color == COL_YELLOW) && (strcmp(e->column->name, "conn") != 0))));
+				useit = (e->alert && (!e->acked) && ((e->color == COL_RED) || ((e->color == COL_YELLOW) && (strcmp(e->column->name, "conn") != 0))));
 			}
 			break;
 		}
