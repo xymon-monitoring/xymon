@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.6 2004-10-06 11:13:16 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.7 2004-10-06 13:41:48 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -74,6 +74,9 @@ typedef struct cookie_t {
 	struct cookie_t *next;
 } cookie_t;
 cookie_t *cookiehead = NULL, *cookietail = NULL;
+
+enum droprencmd_t { CMD_DROPHOST, CMD_DROPTEST, CMD_RENAMEHOST, CMD_RENAMETEST };
+static char *droprencommands[] = { "drophost", "droptest", "renamehost", "renametest" };
 
 static volatile int running = 1;
 static volatile int reloadconfig = 1;
@@ -607,6 +610,103 @@ void handle_ack(char *msg, char *sender, bbd_log_t *log, int duration)
 }
 
 
+void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, char *n1, char *n2)
+{
+	int maybedown;
+	bbd_hostlist_t *hwalk;
+	bbd_testlist_t *twalk, *newt;
+	bbd_log_t *lwalk;
+
+	hostname = knownhost(hostname, sender, ghosthandling, &maybedown);
+	if (hostname == NULL) return;
+
+	for (hwalk = hosts; (hwalk && strcasecmp(hostname, hwalk->hostname)); hwalk = hwalk->next) ;
+	if (hwalk == NULL) return;
+
+	switch (cmd) {
+	  case CMD_DROPTEST:
+		for (twalk = tests; (twalk && strcasecmp(n1, twalk->testname)); twalk = twalk->next) ;
+		if (twalk == NULL) return;
+
+		for (lwalk = hwalk->logs; (lwalk && (lwalk->test != twalk)); lwalk = lwalk->next) ;
+		if (lwalk == NULL) return;
+		if (lwalk == hwalk->logs) {
+			hwalk->logs = hwalk->logs->next;
+		}
+		else {
+			bbd_log_t *plog;
+			for (plog = hwalk->logs; (plog->next != lwalk); plog = plog->next) ;
+			plog->next = lwalk->next;
+		}
+		if (lwalk->message) free(lwalk->message);
+		if (lwalk->dismsg) free(lwalk->dismsg);
+		if (lwalk->ackmsg) free(lwalk->ackmsg);
+		free(lwalk);
+		if (hwalk->logs != NULL) {
+			/* FIXME - Tell the worker modules */
+			break;
+		}
+		/* Fallthrough and drop the host when it has no more log entries */
+
+	  case CMD_DROPHOST:
+		/* Unlink the hostlist entry */
+		if (hwalk == hosts) {
+			hosts = hosts->next;
+		}
+		else {
+			bbd_hostlist_t *phost;
+
+			for (phost = hosts; (phost->next != hwalk); phost = phost->next) ;
+			phost->next = hwalk->next;
+		}
+
+		/* Loop through the host logs and free them */
+		lwalk = hwalk->logs;
+		while (lwalk) {
+			bbd_log_t *tmp = lwalk;
+			lwalk = lwalk->next;
+
+			if (tmp->message) free(tmp->message);
+			if (tmp->dismsg) free(tmp->dismsg);
+			if (tmp->ackmsg) free(tmp->ackmsg);
+			free(tmp);
+		}
+
+		/* Free the hostlist entry */
+		free(hwalk);
+		/* FIXME - Tell the worker modules */
+		break;
+
+	  case CMD_RENAMEHOST:
+		if (strlen(hwalk->hostname) <= strlen(n1)) {
+			strcpy(hwalk->hostname, n1);
+		}
+		else {
+			free(hwalk->hostname);
+			hwalk->hostname = strdup(n1);
+		}
+		/* FIXME - Tell the worker modules */
+		break;
+
+	  case CMD_RENAMETEST:
+		for (twalk = tests; (twalk && strcasecmp(n1, twalk->testname)); twalk = twalk->next) ;
+		if (twalk == NULL) return;
+		for (lwalk = hwalk->logs; (lwalk && (lwalk->test != twalk)); lwalk = lwalk->next) ;
+		if (lwalk == NULL) return;
+		for (newt = tests; (newt && strcasecmp(n2, newt->testname)); newt = newt->next) ;
+		if (newt == NULL) {
+			newt = (bbd_testlist_t *) malloc(sizeof(bbd_testlist_t));
+			newt->testname = strdup(n2);
+			newt->next = tests;
+			tests = newt;
+		}
+		lwalk->test = newt;
+		/* FIXME - Tell the worker modules */
+		break;
+	}
+}
+
+
 int get_config(char *fn, conn_t *msg)
 {
 	FILE *fd = NULL;
@@ -789,6 +889,32 @@ void do_message(conn_t *msg)
 		get_cookiedur(msg->buf, sender, &log, &duration);
 		if (log) {
 			handle_ack(msg->buf, sender, log, duration);
+		}
+	}
+	else if (strncmp(msg->buf, "bbgenddrop ", 11) == 0) {
+		char hostname[200];
+		char testname[200];
+		int n = sscanf(msg->buf, "bbgenddrop %s %s", hostname, testname);
+
+		if (n == 1) {
+			handle_dropnrename(CMD_DROPHOST, sender, hostname, NULL, NULL);
+		}
+		else if (n == 2) {
+			handle_dropnrename(CMD_DROPTEST, sender, hostname, testname, NULL);
+		}
+	}
+	else if (strncmp(msg->buf, "bbgendrename ", 13) == 0) {
+		char hostname[200];
+		char n1[200], n2[200];
+		int n = sscanf(msg->buf, "bbgendrename %s %s %s", hostname, n1, n2);
+
+		if (n == 2) {
+			/* Host rename */
+			handle_dropnrename(CMD_RENAMEHOST, sender, hostname, n1, NULL);
+		}
+		else if (n == 3) {
+			/* Test rename */
+			handle_dropnrename(CMD_RENAMETEST, sender, hostname, n1, n2);
 		}
 	}
 
