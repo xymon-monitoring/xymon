@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.102 2005-01-19 21:47:52 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.103 2005-01-20 10:07:38 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -165,6 +165,7 @@ char *purpleclientconn = NULL;
 FILE *dbgfd = NULL;
 char *dbghost = NULL;
 time_t boottime;
+pid_t parentpid = 0;
 
 typedef struct hobbitd_statistics_t {
 	char *cmd;
@@ -2054,6 +2055,7 @@ int main(int argc, char *argv[])
 	char *pidfile = NULL;
 	struct sigaction sa;
 	time_t conn_timeout = 10;
+	time_t nextheartbeat = 0;
 
 	boottime = time(NULL);
 
@@ -2320,7 +2322,14 @@ int main(int argc, char *argv[])
 		if (dbgfd == NULL) errprintf("Cannot open debug file: %s\n", strerror(errno));
 	}
 
+	if (!daemonize) {
+		/* Setup to send the parent proces a heartbeat-signal (SIGUSR2) */
+		nextheartbeat = time(NULL);
+		parentpid = getppid(); if (parentpid <= 1) parentpid = 0;
+	}
+
 	do {
+		struct timeval seltmo;
 		fd_set fdread, fdwrite;
 		int maxfd, n;
 		conn_t *cwalk;
@@ -2388,10 +2397,19 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		n = select(maxfd+1, &fdread, &fdwrite, NULL, NULL);
+		if (parentpid && (nextheartbeat <= now)) {
+			dprintf("Sending heartbeat to pid %d\n", (int) parentpid);
+			nextheartbeat = now + 5;
+			kill(parentpid, SIGUSR2);
+		}
+
+		seltmo.tv_sec = 5; seltmo.tv_usec = 0;
+		n = select(maxfd+1, &fdread, &fdwrite, NULL, &seltmo);
 		if (n <= 0) {
-			if (errno == EINTR) 
+			if ((errno == EINTR) || (n == 0)) {
+				/* Interrupted or a timeout happened */
 				continue;
+			}
 			else {
 				errprintf("Fatal error in select: %s\n", strerror(errno));
 				break;
