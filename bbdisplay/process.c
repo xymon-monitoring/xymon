@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.13 2003-06-06 17:04:36 henrik Exp $";
+static char rcsid[] = "$Id: process.c,v 1.14 2003-06-17 08:25:08 henrik Exp $";
 
 #include <string.h>
 #include <sys/types.h>
@@ -131,6 +131,14 @@ void calc_pagecolors(bbgen_page_t *phead)
 		for (p = toppage->subpages; (p); p = p->next) {
 			if (p->color > color) color = p->color;
 			oldage &= p->oldage;
+		}
+
+		if (color == -1) {
+			/*
+			 * If no hosts or subpages, all goes green.
+			 */
+			color = COL_GREEN;
+			oldage = 1;
 		}
 
 		toppage->color = color;
