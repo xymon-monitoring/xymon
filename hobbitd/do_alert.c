@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.4 2004-10-18 20:43:06 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.5 2004-10-20 20:26:06 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -66,6 +66,7 @@ enum method_t { M_MAIL, M_SCRIPT, M_BBSCRIPT };
 enum msgformat_t { FRM_TEXT, FRM_SMS, FRM_PAGER };
 enum recovermsg_t { SR_UNKNOWN, SR_NOTWANTED, SR_WANTED };
 
+/* token's are the pre-processor macros we expand while parsing the config file */
 typedef struct token_t {
 	char *name;
 	char *value;
@@ -73,6 +74,7 @@ typedef struct token_t {
 } token_t;
 static token_t *tokhead = NULL;
 
+/* These are the criteria we use when matching an alert. Used both generally for a rule, and for recipients */
 typedef struct criteria_t {
 	char *pagespec;
 	pcre *pagespecre;
@@ -86,6 +88,7 @@ typedef struct criteria_t {
 	int sendrecovered;
 } criteria_t;
 
+/* This defines a recipient. There may be some criteria, and then how we send alerts to him */
 typedef struct recip_t {
 	criteria_t *criteria;
 	enum method_t method;
@@ -95,6 +98,7 @@ typedef struct recip_t {
 	struct recip_t *next;
 } recip_t;
 
+/* This defines a rule. Some general criteria, and a list of recipients. */
 typedef struct rule_t {
 	criteria_t *criteria;
 	recip_t *recipients;
@@ -102,14 +106,19 @@ typedef struct rule_t {
 } rule_t;
 static rule_t *rulehead = NULL;
 
+/*
+ * This is the dynamic info stored to keep track of active alerts. We
+ * need to keep track of when the next alert is due for each recipient,
+ * and this goes on a host+test+recipient basis.
+ */
 typedef struct repeat_t {
-	char *recipid;
+	char *recipid;	/* Essentially hostname|testname|address */
 	time_t nextalert;
 	struct repeat_t *next;
 } repeat_t;
 static repeat_t *rpthead = NULL;
 
-static time_t lastload = 0;
+static time_t lastload = 0;	/* Last time the config file was loaded */
 static enum { P_NONE, P_RULE, P_RECIP } pstate = P_NONE;
 static int defaultcolors = 0;
 
@@ -143,6 +152,7 @@ static criteria_t *setup_criteria(rule_t **currule, recip_t **currcp)
 
 static char *preprocess(char *buf)
 {
+	/* Expands config-file macros */
 	static char *result = NULL;
 	static int reslen = 0;
 	int n;
@@ -208,7 +218,7 @@ pcre *compileregex(char *pattern)
 
 void load_alertconfig(char *configfn, int defcolors)
 {
-
+	/* (Re)load the configuration file without leaking memory */
 	char fn[MAX_PATH];
 	struct stat st;
 	FILE *fd;
@@ -224,7 +234,7 @@ void load_alertconfig(char *configfn, int defcolors)
 	fd = fopen(fn, "r");
 	if (!fd) return;
 
-	/* First, cleanout the old rule set */
+	/* First, clean out the old rule set */
 	while (rulehead) {
 		rule_t *trule;
 
@@ -278,6 +288,9 @@ void load_alertconfig(char *configfn, int defcolors)
 		if (*p == '#') continue;
 
 		if (strlen(p) == 0) {
+			/*
+			 * Empty line means end of the current rule. So put it into the linked list.
+			 */
 			if (currule) {
 				currule->next = NULL;
 
@@ -296,6 +309,7 @@ void load_alertconfig(char *configfn, int defcolors)
 			continue;
 		}
 		else if ((*p == '$') && strchr(l, '=')) {
+			/* Define a macro */
 			token_t *newtok = (token_t *) malloc(sizeof(token_t));
 			char *delim;
 
@@ -308,7 +322,7 @@ void load_alertconfig(char *configfn, int defcolors)
 			continue;
 		}
 
-		/* Expand shortnames inside the line before parsing */
+		/* Expand macros inside the line before parsing */
 		p = strtok(preprocess(l), " ");
 		while (p) {
 			if ((strncmp(p, "PAGE=", 5) == 0) || (strncmp(p, "PAGES=", 6) == 0)) {
@@ -748,7 +762,8 @@ static char *message_subject(activealerts_t *alert, recip_t *recip)
 
 static char *message_text(activealerts_t *alert, recip_t *recip)
 {
-	static char buf[4096];
+	static char *buf = NULL;
+	static int buflen = 0;
 	char *eoln, *bom;
 
 	switch (recip->format) {
@@ -763,13 +778,13 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 		bom = msg_data(alert->pagemessage);
 		eoln = strchr(bom, '\n');
 		if (eoln) *eoln = '\0';
-		strcpy(buf, bom);
+		addtobuffer(&buf, &buflen, bom);
 		if (eoln) *eoln = '\n';
 		if (eoln) {
 			bom = eoln;
 			while ((bom = strstr(bom, "\n&")) != NULL) {
 				eoln = strchr(bom+1, '\n'); if (eoln) *eoln = '\0';
-				strcat(buf, bom);
+				addtobuffer(&buf, &buflen, bom);
 				if (eoln) *eoln = '\n';
 				bom = (eoln ? eoln+1 : "");
 			}

@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.10 2004-10-17 20:04:36 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.11 2004-10-20 20:26:06 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
 		char *eoln, *restofmsg;
 		char *metadata[20];
 		char *p;
-		int i;
+		int metacount;
 		char *hostname, *testname;
 		struct timeval timeout;
 		time_t now;
@@ -160,20 +160,20 @@ int main(int argc, char *argv[])
 		 * We use our own "gettok()" routine which works
 		 * like strtok(), but can handle empty elements.
 		 */
-		i = 0; 
+		metacount = 0; 
 		p = gettok(msg, "|");
-		while (p) {
-			metadata[i] = p;
-			i++;
+		while (p && (metacount < 19)) {
+			metadata[metacount] = p;
+			metacount++;
 			p = gettok(NULL, "|");
 		}
-		metadata[i] = NULL;
+		metadata[metacount] = NULL;
 
-		hostname = metadata[3];
-		testname = metadata[4];
+		if (metacount > 3) hostname = metadata[3];
+		if (metacount > 4) testname = metadata[4];
 
 
-		if (strncmp(metadata[0], "@@page", 6) == 0) {
+		if ((metacount > 9) && (strncmp(metadata[0], "@@page", 6) == 0)) {
 			/* @@page|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime|location */
 
 			int newcolor, newalertstatus, oldalertstatus;
@@ -248,7 +248,7 @@ int main(int argc, char *argv[])
 			if (awalk->pagemessage) free(awalk->pagemessage);
 			awalk->pagemessage = strdup(restofmsg);
 		}
-		else if (strncmp(metadata[0], "@@ack", 5) == 0) {
+		else if ((metacount > 5) && (strncmp(metadata[0], "@@ack", 5) == 0)) {
  			/* @@ack|timestamp|sender|hostname|testname|expiretime */
 
 			/*
@@ -264,7 +264,7 @@ int main(int argc, char *argv[])
 				awalk->ackmessage = strdup(restofmsg);
 			}
 		}
-		else if (strncmp(metadata[0], "@@drophost", 10) == 0) {
+		else if ((metacount > 3) && (strncmp(metadata[0], "@@drophost", 10) == 0)) {
 			/* @@drophost|timestamp|sender|hostname */
 			htnames_t *hwalk;
 
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
 				if (awalk->hostname == hwalk) awalk->state = A_DEAD;
 			}
 		}
-		else if (strncmp(metadata[0], "@@droptest", 10) == 0) {
+		else if ((metacount > 4) && (strncmp(metadata[0], "@@droptest", 10) == 0)) {
 			/* @@droptest|timestamp|sender|hostname|testname */
 
 			awalk = find_active(hostname, testname);
@@ -292,7 +292,7 @@ int main(int argc, char *argv[])
 				free(awalk);
 			}
 		}
-		else if (strncmp(metadata[0], "@@renamehost", 12) == 0) {
+		else if ((metacount > 4) && (strncmp(metadata[0], "@@renamehost", 12) == 0)) {
 			/* @@renamehost|timestamp|sender|hostname|newhostname */
 			htnames_t *hwalk;
 			char *newhostname = metadata[4];
@@ -303,7 +303,7 @@ int main(int argc, char *argv[])
 				hwalk->name = strdup(newhostname);
 			}
 		}
-		else if (strncmp(metadata[0], "@@renametest", 12) == 0) {
+		else if ((metacount > 5) && (strncmp(metadata[0], "@@renametest", 12) == 0)) {
 			/* @@renametest|timestamp|sender|hostname|oldtestname|newtestname */
 			htnames_t *newtest;
 			char *newtestname = metadata[5];
