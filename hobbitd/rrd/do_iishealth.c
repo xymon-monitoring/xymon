@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char iishealth_rcsid[] = "$Id: do_iishealth.c,v 1.3 2005-02-06 08:49:02 henrik Exp $";
+static char iishealth_rcsid[] = "$Id: do_iishealth.c,v 1.4 2005-02-09 20:55:28 henrik Exp $";
 
 static char *iishealth_params[] = { "rrdcreate", rrdfn, "DS:realmempct:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
@@ -23,34 +23,32 @@ int do_iishealth_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		*rrdfn = '\0';
 
 		tok = strtok(bol, " \t\r\n");	/* Get color marker */
-		if (tok == NULL) continue;
+		if (tok) tok = strtok(NULL, " \t\r\n");	/* Get keyword */
+		if (tok) {
+			if (strcmp(tok, "Connections:") == 0) {
+				tok = strtok(NULL, " \t\r\n");
+				if (tok == NULL) continue;
 
-		tok = strtok(NULL, " \t\r\n");	/* Get keyword */
-		if (tok == NULL) continue;
+				strcpy(rrdfn, "iishealth.connections.rrd");
+				sprintf(rrdvalues, "%d:%lu", (int)tstamp, atol(tok));
+			}
+			else if (strcmp(tok, "RequestsQueued:") == 0) {
+				tok = strtok(NULL, " \t\r\n");
+				if (tok == NULL) continue;
 
-		if (strcmp(tok, "Connections:") == 0) {
-			tok = strtok(NULL, " \t\r\n");
-			if (tok == NULL) continue;
+				strcpy(rrdfn, "iishealth.requestqueued.rrd");
+				sprintf(rrdvalues, "%d:%lu", (int)tstamp, atol(tok));
+			}
+			else if (strcmp(tok, "Sessions:") == 0) {
+				tok = strtok(NULL, " \t\r\n");
+				if (tok == NULL) continue;
 
-			strcpy(rrdfn, "iishealth.connections.rrd");
-			sprintf(rrdvalues, "%d:%lu", (int)tstamp, atol(tok));
+				strcpy(rrdfn, "iishealth.sessions.rrd");
+				sprintf(rrdvalues, "%d:%lu", (int)tstamp, atol(tok));
+			}
+
+			if (*rrdfn) create_and_update_rrd(hostname, rrdfn, iishealth_params, update_params);
 		}
-		else if (strcmp(tok, "RequestsQueued:") == 0) {
-			tok = strtok(NULL, " \t\r\n");
-			if (tok == NULL) continue;
-
-			strcpy(rrdfn, "iishealth.requestqueued.rrd");
-			sprintf(rrdvalues, "%d:%lu", (int)tstamp, atol(tok));
-		}
-		else if (strcmp(tok, "Sessions:") == 0) {
-			tok = strtok(NULL, " \t\r\n");
-			if (tok == NULL) continue;
-
-			strcpy(rrdfn, "iishealth.sessions.rrd");
-			sprintf(rrdvalues, "%d:%lu", (int)tstamp, atol(tok));
-		}
-
-		if (*rrdfn) create_and_update_rrd(hostname, rrdfn, iishealth_params, update_params);
 
 		bol = (eoln ? eoln+1 : NULL);
 	}
