@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.12 2004-11-14 14:02:29 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.13 2004-11-14 16:58:29 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -76,6 +76,7 @@ static token_t *tokhead = NULL;
 
 /* These are the criteria we use when matching an alert. Used both generally for a rule, and for recipients */
 typedef struct criteria_t {
+	int cfid;
 	char *pagespec;		/* Pages to include */
 	pcre *pagespecre;
 	char *expagespec;	/* Pages to exclude */
@@ -96,6 +97,7 @@ typedef struct criteria_t {
 
 /* This defines a recipient. There may be some criteria, and then how we send alerts to him */
 typedef struct recip_t {
+	int cfid;
 	criteria_t *criteria;
 	enum method_t method;
 	char *recipient;
@@ -106,11 +108,13 @@ typedef struct recip_t {
 
 /* This defines a rule. Some general criteria, and a list of recipients. */
 typedef struct rule_t {
+	int cfid;
 	criteria_t *criteria;
 	recip_t *recipients;
 	struct rule_t *next;
 } rule_t;
 static rule_t *rulehead = NULL;
+static int cfid = 0;
 
 /*
  * This is the dynamic info stored to keep track of active alerts. We
@@ -135,6 +139,7 @@ static criteria_t *setup_criteria(rule_t **currule, recip_t **currcp)
 	switch (pstate) {
 	  case P_NONE:
 		*currule = (rule_t *)calloc(1, sizeof(rule_t));
+		(*currule)->cfid = cfid;
 		pstate = P_RULE;
 		/* Fall through */
 
@@ -142,6 +147,7 @@ static criteria_t *setup_criteria(rule_t **currule, recip_t **currcp)
 		if (!(*currule)->criteria) 
 			(*currule)->criteria = (criteria_t *)calloc(1, sizeof(criteria_t));
 		crit = (*currule)->criteria;
+		crit->cfid = cfid;
 		*currcp = NULL;
 		break;
 
@@ -149,6 +155,7 @@ static criteria_t *setup_criteria(rule_t **currule, recip_t **currcp)
 		if (!(*currcp)->criteria)
 			(*currcp)->criteria = (criteria_t *)calloc(1, sizeof(criteria_t));
 		crit = (*currcp)->criteria;
+		crit->cfid = cfid;
 		crit->colors = (*currule)->criteria->colors;
 		break;
 	}
@@ -300,7 +307,9 @@ void load_alertconfig(char *configfn, int defcolors)
 
 	defaultcolors = defcolors;
 
+	cfid = 0;
 	while (fgets(l, sizeof(l), fd)) {
+		cfid++;
 		p = strchr(l, '\n'); if (p) *p = '\0';
 		p = l + strspn(l, " \t");
 		if (*p == '#') continue;
@@ -426,6 +435,7 @@ void load_alertconfig(char *configfn, int defcolors)
 			}
 			else if (currule && ((strncasecmp(p, "MAIL ", 5) == 0) || strchr(p, '@')) ) {
 				recip_t *newrcp = (recip_t *)malloc(sizeof(recip_t));
+				newrcp->cfid = cfid;
 				newrcp->method = M_MAIL;
 				newrcp->format = FRM_TEXT;
 				newrcp->criteria = NULL;
@@ -450,6 +460,7 @@ void load_alertconfig(char *configfn, int defcolors)
 			}
 			else if (currule && (strncasecmp(p, "SCRIPT ", 7) == 0)) {
 				recip_t *newrcp = (recip_t *)malloc(sizeof(recip_t));
+				newrcp->cfid = cfid;
 				newrcp->method = M_SCRIPT;
 				newrcp->format = FRM_TEXT;
 				newrcp->criteria = NULL;
@@ -474,6 +485,7 @@ void load_alertconfig(char *configfn, int defcolors)
 			}
 			else if (currule && (strncasecmp(p, "BBSCRIPT ", 9) == 0)) {
 				recip_t *newrcp = (recip_t *)malloc(sizeof(recip_t));
+				newrcp->cfid = cfid;
 				newrcp->method = M_BBSCRIPT;
 				newrcp->format = FRM_TEXT;
 				newrcp->criteria = NULL;
@@ -793,7 +805,7 @@ static repeat_t *find_repeatinfo(activealerts_t *alert, recip_t *recip, int crea
 
 static char *message_subject(activealerts_t *alert, recip_t *recip)
 {
-	static char subj[100];
+	static char subj[150];
 	char *sev = "";
 
 	switch (alert->color) {
@@ -819,8 +831,14 @@ static char *message_subject(activealerts_t *alert, recip_t *recip)
 
 	switch (recip->format) {
 	  case FRM_TEXT:
-		snprintf(subj, sizeof(subj)-1, "BB [%d] %s:%s %s",
-			 alert->cookie, alert->hostname->name, alert->testname->name, sev);
+		if (include_configid) {
+			snprintf(subj, sizeof(subj)-1, "BB [%d] %s:%s %s [cfid:%d]",
+				 alert->cookie, alert->hostname->name, alert->testname->name, sev, recip->cfid);
+		}
+		else {
+			snprintf(subj, sizeof(subj)-1, "BB [%d] %s:%s %s",
+				 alert->cookie, alert->hostname->name, alert->testname->name, sev);
+		}
 		return subj;
 
 	 case FRM_SMS:
