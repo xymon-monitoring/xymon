@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.25 2004-10-15 13:50:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.26 2004-10-16 11:58:46 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -510,12 +510,19 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		dprintf("oldcolor=%d, oldas=%d, newcolor=%d, newas=%d\n", 
 			log->oldcolor, oldalertstatus, newcolor, newalertstatus);
 
-		if (oldalertstatus != newalertstatus) {
-			/* alert status changed. Tell the pagers */
+		/*
+		 * We pass the message to the page channel, IF
+		 * - the alert status changes, OR
+		 * - it is in an alert status, and the color changes.
+		 */
+		if ((oldalertstatus != newalertstatus) || (newalertstatus && (log->oldcolor != newcolor))) {
 			dprintf("posting to page channel\n");
 			posttochannel(pagechn, channelnames[C_PAGE], msg, sender, hostname, (void *) log, NULL);
 		}
 
+		/*
+		 * Change of color always goes to the status-change channel.
+		 */
 		dprintf("posting to stachg channel\n");
 		posttochannel(stachgchn, channelnames[C_STACHG], msg, sender, hostname, (void *) log, NULL);
 		log->lastchange = time(NULL);
