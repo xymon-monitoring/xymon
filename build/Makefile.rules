@@ -97,7 +97,7 @@ reptest: reportdata.c debug.c util.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ reportdata.c debug.c util.c
 
 sendmsg: sendmsg.c debug.c util.c
-	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ sendmsg.c debug.c util.c $(NETLIBS)
+	$(CC) -g -DSTANDALONE -DDEBUG -Wall $(CFLAGS) -o $@ sendmsg.c debug.c util.c $(NETLIBS)
 
 bbtest-local: bbtest-local.c bbtest-local-linux.c bbtest-local-sunos.c bbtest-local-hpux.c bbtest-local-bsd.c debug.c util.c sendmsg.c
 	$(CC) $(CFLAGS) $(OSDEF) -g -DDEBUG -Wall -o $@ bbtest-local.c debug.c util.c sendmsg.c
