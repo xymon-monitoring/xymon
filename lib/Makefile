@@ -1,7 +1,7 @@
 # bbgen library Makefile
 #
 
-BBGENLIBOBJS = bblarrd.o calc.o color.o digest.o encoding.o errormsg.o files.o headfoot.o htmllog.o misc.o rbtr.o sendmsg.o sig.o stackio.o timefunc.o timing.o url.o
+BBGENLIBOBJS = bbalert.o bblarrd.o calc.o color.o digest.o encoding.o errormsg.o files.o headfoot.o htmllog.o misc.o rbtr.o sendmsg.o sig.o stackio.o timefunc.o timing.o url.o
 
 CFLAGS += -I. -I../include 
 

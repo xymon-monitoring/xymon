@@ -19,6 +19,7 @@ typedef struct htnames_t {
 	struct htnames_t *next;
 } htnames_t;
 
+#include "../lib/bbalert.h"
 #include "../lib/bblarrd.h"
 #include "../lib/calc.h"
 #include "../lib/color.h"
