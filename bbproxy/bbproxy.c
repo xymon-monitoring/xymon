@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.31 2004-10-01 16:01:23 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.32 2004-10-04 09:18:21 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -75,7 +75,6 @@ char *statename[P_CLEANUP+1] = {
 
 typedef struct conn_t {
 	enum phase_t state;
-	int dontcount;
 	int csocket;
 	struct sockaddr_in caddr;
 	struct in_addr *clientip, *serverip;
@@ -519,7 +518,7 @@ int main(int argc, char *argv[])
 				
 				avgtime = (timeinqueue.tv_sec*1000 + timeinqueue.tv_usec/1000) / (msgs_total - msgs_total_last);
 
-				sprintf(stentry->buf, "status %s green %s Proxy up %s\n\nProxy statistics\n\nIncoming messages        : %10lu (%lu msgs/second)\nOutbound messages        : %10lu\n\nIncoming message distribution\n- Combo messages         : %10lu\n- Status messages        : %10lu\n  Messages merged        : %10lu\n  Resulting combos       : %10lu\n- Page messages          : %10lu\n- Other messages         : %10lu\n\nProxy ressources\n- Connection table size  : %10d\n- Buffer space           : %10lu kByte\n",
+				sprintf(stentry->buf, "combo\nstatus %s green %s Proxy up %s\n\nProxy statistics\n\nIncoming messages        : %10lu (%lu msgs/second)\nOutbound messages        : %10lu\n\nIncoming message distribution\n- Combo messages         : %10lu\n- Status messages        : %10lu\n  Messages merged        : %10lu\n  Resulting combos       : %10lu\n- Page messages          : %10lu\n- Other messages         : %10lu\n\nProxy ressources\n- Connection table size  : %10d\n- Buffer space           : %10lu kByte\n",
 					proxyname, timestamp, runtime_s,
 					msgs_total, (msgs_total - msgs_total_last) / (now - laststatus),
 					msgs_delivered,
@@ -537,16 +536,15 @@ int main(int argc, char *argv[])
 				p += sprintf(p, "- %-22s : %10lu\n", statename[P_RESP_SENDING], msgs_timeout_from[P_RESP_SENDING]);
 				p += sprintf(p, "\n%-24s : %10lu.%03lu\n", "Average queue time", 
 						(avgtime / 1000), (avgtime % 1000));
+
+				/* Clear the summary collection totals */
 				laststatus = now;
 				msgs_total_last = msgs_total;
 				timeinqueue.tv_sec = timeinqueue.tv_usec = 0;
-				stentry->dontcount = 1;
+
 				stentry->buflen = strlen(stentry->buf);
 				stentry->bufp = stentry->buf;
-				stentry->state = P_REQ_CONNECTING;
-				stentry->conntries = CONNECT_TRIES;
-				stentry->sendtries = SEND_TRIES;
-				stentry->conntime = 0;
+				stentry->state = P_REQ_READY;
 			}
 		}
 
@@ -591,17 +589,19 @@ int main(int argc, char *argv[])
 				 */
 				if ((strncmp(cwalk->buf+6, "query", 5) == 0) || (strncmp(cwalk->buf+6, "config", 6) == 0)) {
 					shutdown(cwalk->csocket, SHUT_RD);
-					if (!cwalk->dontcount) msgs_other++;
+					msgs_other++;
 					cwalk->snum = 1; /* We only do these once! */
 				}
 				else {
-					shutdown(cwalk->csocket, SHUT_RDWR);
-					close(cwalk->csocket); sockcount--;
-					cwalk->csocket = -1;
+					if (cwalk->csocket >= 0) {
+						shutdown(cwalk->csocket, SHUT_RDWR);
+						close(cwalk->csocket); sockcount--;
+						cwalk->csocket = -1;
+					}
 					cwalk->snum = bbdispcount;
 
 					if (strncmp(cwalk->buf+6, "status", 6) == 0) {
-						if (!cwalk->dontcount) msgs_status++;
+						msgs_status++;
 						gettimeofday(&cwalk->timelimit, &tz);
 						cwalk->timelimit.tv_usec += COMBO_DELAY;
 						if (cwalk->timelimit.tv_usec >= 1000000) {
@@ -612,14 +612,14 @@ int main(int argc, char *argv[])
 						break;
 					}
 					else if (strncmp(cwalk->buf+6, "combo", 5) == 0) {
-						if (!cwalk->dontcount) msgs_combo++;
+						msgs_combo++;
 					}
 					else if (strncmp(cwalk->buf+6, "page", 4) == 0) {
 						cwalk->snum = bbpagercount;
-						if (!cwalk->dontcount) msgs_page++;
+						msgs_page++;
 					}
 					else {
-						if (!cwalk->dontcount) msgs_other++;
+						msgs_other++;
 					}
 				}
 				/* 
@@ -649,7 +649,7 @@ int main(int argc, char *argv[])
 				if (cwalk->conntries < 0) {
 					errprintf("Server not responding, message lost\n");
 					cwalk->state = P_CLEANUP;
-					if (!cwalk->dontcount) msgs_timeout_from[P_REQ_CONNECTING]++;
+					msgs_timeout_from[P_REQ_CONNECTING]++;
 					break;
 				}
 
@@ -714,37 +714,37 @@ int main(int argc, char *argv[])
 					memset(cwalk->buf, 0, cwalk->bufsize);
 				}
 
-				if (!cwalk->dontcount) {
+
+				msgs_delivered++;
+
+				if (cwalk->sendtries < SEND_TRIES) {
+					errprintf("Recovered from write error after %d retries\n", 
+						  (SEND_TRIES - cwalk->sendtries));
+					msgs_recovered++;
+				}
+
+				if (cwalk->arrival.tv_sec > 0) {
 					struct timeval departure;
 
-					msgs_delivered++;
-
-					if (cwalk->sendtries < SEND_TRIES) {
-						errprintf("Recovered from write error after %d retries\n", 
-								(SEND_TRIES - cwalk->sendtries));
-						msgs_recovered++;
-					}
-
-					if (cwalk->arrival.tv_sec > 0) {
-						gettimeofday(&departure, &tz);
-						timeinqueue.tv_sec += (departure.tv_sec - cwalk->arrival.tv_sec);
-						if (departure.tv_usec >= cwalk->arrival.tv_usec) {
-							timeinqueue.tv_usec += (departure.tv_usec - cwalk->arrival.tv_usec);
-						}
-						else {
-							timeinqueue.tv_sec--;
-							timeinqueue.tv_usec += (1000000 + departure.tv_usec - cwalk->arrival.tv_usec);
-						}
-
-						if (timeinqueue.tv_usec > 1000000) {
-							timeinqueue.tv_sec++;
-							timeinqueue.tv_usec -= 1000000;
-						}
+					gettimeofday(&departure, &tz);
+					timeinqueue.tv_sec += (departure.tv_sec - cwalk->arrival.tv_sec);
+					if (departure.tv_usec >= cwalk->arrival.tv_usec) {
+						timeinqueue.tv_usec += (departure.tv_usec - cwalk->arrival.tv_usec);
 					}
 					else {
-						errprintf("Odd ... this message was not timestamped\n");
+						timeinqueue.tv_sec--;
+						timeinqueue.tv_usec += (1000000 + departure.tv_usec - cwalk->arrival.tv_usec);
+					}
+
+					if (timeinqueue.tv_usec > 1000000) {
+						timeinqueue.tv_sec++;
+						timeinqueue.tv_usec -= 1000000;
 					}
 				}
+				else {
+					errprintf("Odd ... this message was not timestamped\n");
+				}
+
 				if (cwalk->csocket < 0) {
 					cwalk->state = P_CLEANUP;
 					break;
@@ -928,9 +928,7 @@ int main(int argc, char *argv[])
 				  case P_RESP_SENDING:
 					if (overdue(&tmo, &cwalk->timelimit)) {
 						cwalk->state = P_CLEANUP;
-						if (!cwalk->dontcount) {
-							msgs_timeout_from[cwalk->state]++;
-						}
+						msgs_timeout_from[cwalk->state]++;
 					}
 					break;
 
@@ -1021,7 +1019,6 @@ int main(int argc, char *argv[])
 
 				newconn->connectpending = 0;
 				newconn->madetocombo = 0;
-				newconn->dontcount = 0;
 				newconn->snum = 0;
 				newconn->ssocket = -1;
 				newconn->serverip = NULL;
