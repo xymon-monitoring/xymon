@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.21 2004-11-14 14:03:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.22 2004-11-14 16:57:32 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -61,6 +61,8 @@ activealerts_t *ahead = NULL;
 char *statename[] = {
 	"paging", "acked", "recovered", "dead"
 };
+
+int include_configid = 0;
 
 htnames_t *find_name(htnames_t **head, char *name)
 {
@@ -231,6 +233,9 @@ int main(int argc, char *argv[])
 			load_alertconfig(configfn, alertcolors);
 			dump_alertconfig();
 			return 0;
+		}
+		else if (argnmatch(argv[argi], "--cfid")) {
+			include_configid = 1;
 		}
 		else {
 			errprintf("Unknown option '%s'\n", argv[argi]);
