@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.33 2004-10-24 12:55:27 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.34 2004-10-25 10:28:13 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -449,7 +449,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	oldalertstatus = ((alertcolors & (1 << log->oldcolor)) != 0);
 	newalertstatus = ((alertcolors & (1 << newcolor)) != 0);
 
-	if (msg != log->message) {	/* They can be the same when called from handle_enadis() */
+	if (msg != log->message) {	/* They can be the same when called from handle_enadis() or check_purple_upd() */
 		/*
 		 * Note here:
 		 * - log->msgsz is the buffer size INCLUDING the final \0.
@@ -1247,6 +1247,23 @@ void load_checkpoint(char *fn)
 }
 
 
+void check_purple_status(void)
+{
+	bbd_hostlist_t *hwalk;
+	bbd_log_t *lwalk;
+	time_t now = time(NULL);
+
+	for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
+		for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
+			if (lwalk->validtime < now) {
+				handle_status(lwalk->message, "bbgend", 
+						lwalk->host->hostname, lwalk->test->testname, lwalk, 
+						COL_PURPLE);
+			}
+		}
+	}
+}
+
 void sig_handler(int signum)
 {
 	int status;
@@ -1280,6 +1297,8 @@ int main(int argc, char *argv[])
 	int listenport = 1984;
 	char *bbhostsfn = NULL;
 	int checkpointinterval = 900;
+	int do_purples = 1;
+	time_t nextpurpleupdate;
 	struct sockaddr_in laddr;
 	int lsocket, opt;
 	int listenq = 512;
@@ -1351,6 +1370,9 @@ int main(int argc, char *argv[])
 			else if (strcmp(p, "drop") == 0) ghosthandling = 1;
 			else if (strcmp(p, "log") == 0) ghosthandling = 2;
 		}
+		else if (argnmatch(argv[argi], "--no-purple")) {
+			do_purples = 0;
+		}
 		else if (argnmatch(argv[argi], "--daemon")) {
 			daemonize = 1;
 		}
@@ -1385,6 +1407,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 	nextcheckpoint = time(NULL) + checkpointinterval;
+	nextpurpleupdate = time(NULL) + 600;	/* Wait 10 minutes the first time, then do it every 5. */
 
 	/* Set up a socket to listen for new connections */
 	memset(&laddr, 0, sizeof(laddr));
@@ -1477,6 +1500,10 @@ int main(int argc, char *argv[])
 				save_checkpoint();
 				exit(0);
 			}
+		}
+
+		if (do_purples && (now > nextpurpleupdate)) {
+			check_purple_status();
 		}
 
 		FD_ZERO(&fdread); FD_ZERO(&fdwrite);
