@@ -11,10 +11,12 @@
 /*                                                                            */
 /* Copyright (C) 2002 Henrik Storner <henrik@storner.dk>                      */
 /*                                                                            */
-/* This program is released under the GNU Public License (GPL), version 2.    */
-/* See the file "COPYING" for details.                                        */
+/* This program is released under the GNU General Public License (GPL),       */
+/* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
+
+static char rcsid[] = "$Id: pagegen.c,v 1.6 2002-11-26 12:03:04 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -213,6 +215,11 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 	dispsummary_t *s;
 	host_t *sumhosts = NULL;
 	host_t *walk;
+
+	if (sums == NULL) {
+		/* No summary items */
+		return;
+	}
 
 	for (s=sums; (s); s = s->next) {
 		/* Generate host records out of all unique s->row values */
