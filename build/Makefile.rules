@@ -228,6 +228,7 @@ install-man7:
 	mkdir -p $(MANROOT)/man7 || /bin/true
 	cp -p $(MAN7PAGES) $(MANROOT)/man7/
 
-install-nocgi: install-bin install-exts install-man install-html install-conf install-gif
+install-net: install-bin install-exts install-man install-conf
+install-nocgi: install-net install-html install-gif
 install: install-nocgi install-cgi
 
