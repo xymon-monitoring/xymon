@@ -11,6 +11,8 @@ MAN1PAGES = bbgen.1 bbtest-net.1 bbhostgrep.1 bbhostshow.1 bb-rep.cgi.1 bb-replo
 MAN5PAGES = bbcombotest.cfg.5 bb-hosts.5 bb-environ.5
 MAN7PAGES = bbgen-intro.7
 
+LDAPLIBS = -lldap
+
 all: $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS)
 	@echo ""
 	@echo "Build complete"
@@ -22,7 +24,7 @@ all: $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS)
 	@echo ""
 
 GENOBJS = bbgen.o debug.o loaddata.o reportdata.o larrdgen.o pagegen.o process.o util.o infogen.o alert.o wmlgen.o rssgen.o bb-replog.o sendmsg.o
-NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o sendmsg.o
+NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o ldaptest.o sendmsg.o
 HOSTGREPOBJS = bbhostgrep.o util.o debug.o
 HOSTSHOWOBJS = bbhostshow.o util.o debug.o
 REPOBJS = bb-rep.o debug.o util.o
@@ -35,7 +37,7 @@ bbgen: $(GENOBJS)
 	$(CC) $(CFLAGS) -o $@ $(GENOBJS) $(NETLIBS)
 
 bbtest-net: $(NETTESTOBJS)
-	$(CC) $(CFLAGS) -o $@ $(NETTESTOBJS) $(CURLLIB) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(NETTESTOBJS) $(CURLLIB) $(LDAPLIBS) $(NETLIBS)
 
 bbhostgrep: $(HOSTGREPOBJS)
 	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS)
@@ -67,6 +69,9 @@ alert: alert.c debug.c util.c
 contest: contest.c debug.c util.c
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCLUDE) -g -DSTANDALONE -DDEBUG -Wall -o $@ contest.c debug.c util.c $(CURLLIB) $(NETLIBS)
 
+ldaptest: ldaptest.c debug.o util.o sendmsg.o
+	$(CC) $(CFLAGS) $(LDAPINCLUDE) -g -DSTANDALONE -DDEBUG -Wall -o $@ ldaptest.c debug.o util.o sendmsg.o $(LDAPLIBS) $(NETLIBS)
+
 calc: calc.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ calc.c
 
@@ -78,6 +83,9 @@ sendmsg: sendmsg.c debug.c util.c
 
 httptest.o: httptest.c httptest.h
 	$(CC) $(CFLAGS) $(CURLINCLUDE) $(USEMULTI) -c -o $@ httptest.c
+
+ldaptest.o: ldaptest.c ldaptest.h
+	$(CC) $(CFLAGS) $(LDAPINCLUDE) -c -o $@ ldaptest.c
 
 contest.o: contest.c contest.h
 	$(CC) $(CFLAGS) $(CURLINCLUDE) $(SSLFLAGS) $(SSLINCLUDE) -c -o $@ contest.c
@@ -96,7 +104,7 @@ distclean: clean
 	rm -f Makefile
 
 clean:
-	rm -f *.o *~ $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) alert contest reptest calc sendmsg
+	rm -f *.o *~ $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) alert contest reptest calc sendmsg ldaptest
 
 install-bin: $(PROGRAMS)
 	cp -p $(PROGRAMS) $(BBHOME)/bin/

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.97 2003-08-28 10:06:19 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.98 2003-08-29 21:00:52 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -27,6 +27,7 @@ static char rcsid[] = "$Id: bbtest-net.c,v 1.97 2003-08-28 10:06:19 henrik Exp $
 #include "bbtest-net.h"
 #include "contest.h"
 #include "httptest.h"
+#include "ldaptest.h"
 
 /* These are dummy vars needed by stuff in util.c */
 hostlist_t      *hosthead = NULL;
@@ -53,6 +54,7 @@ char *reqenv[] = {
 #define TOOL_FPING      4
 #define TOOL_CURL       5
 #define TOOL_MODEMBANK  6
+#define TOOL_LDAP	7
 
 /* dnslookup values */
 #define DNS_THEN_IP     0	/* Try DNS - if it fails, use IP from bb-hosts */
@@ -62,6 +64,7 @@ char *reqenv[] = {
 service_t	*svchead = NULL;		/* Head of all known services */
 service_t	*pingtest = NULL;		/* Identifies the pingtest within svchead list */
 service_t	*httptest = NULL;		/* Identifies the httptest within svchead list */
+service_t	*ldaptest = NULL;		/* Identifies the ldaptest within svchead list */
 service_t	*modembanktest = NULL;		/* Identifies the modembank test within svchead list */
 testedhost_t	*testhosthead = NULL;		/* Head of all hosts */
 char		*nonetpage = NULL;		/* The "NONETPAGE" env. variable */
@@ -237,6 +240,7 @@ testedhost_t *init_testedhost(char *hostname, int timeout, int conntimeout, int 
 	newhost->deprouterdown = NULL;
 
 	newhost->firsthttp = NULL;
+	newhost->firstldap = NULL;
 
 	newhost->deptests = NULL;
 
@@ -433,6 +437,14 @@ void load_tests(void)
 						ping_reversetest = reversetest;
 						s = NULL; /* Dont add the test now - ping is special (enabled by default) */
 					}
+					else if ((strncmp(testspec, "ldap:", 5) == 0) ||
+						 (strncmp(testspec, "ldaps:", 6) == 0)) {
+						/*
+						 * LDAP test. This uses ':' a lot, so save it here.
+						 */
+						s = ldaptest;
+						savedspec = malcop(testspec);
+					}
 					else if (strncmp(testspec, "http", 4) == 0) {
 						/*
 						 * HTTP test. This uses ':' a lot, so save it here.
@@ -529,6 +541,7 @@ void load_tests(void)
 						s->items = newtest;
 
 						if (s == httptest) h->firsthttp = newtest;
+						else if (s == ldaptest) h->firstldap = newtest;
 					}
 
 					testspec = strtok(NULL, "\t ");
@@ -582,6 +595,7 @@ void load_tests(void)
 						for (swalk=svchead; (swalk && (strcmp(swalk->testname, testname) != 0)); swalk = swalk->next) ;
 						if (swalk) {
 							if (swalk == httptest) twalk = h->firsthttp;
+							else if (swalk == ldaptest) twalk = h->firstldap;
 							else {
 								for (twalk = swalk->items; (twalk && (twalk->host != h)); twalk = twalk->next) ;
 							}
@@ -761,6 +775,7 @@ void load_test_status(service_t *test)
 			for (h=testhosthead; (h && (strcmp(h->hostname, host) != 0)); h = h->next) ;
 			if (h) {
 				if (test == httptest) walk = h->firsthttp;
+				else if (test == ldaptest) walk = h->firstldap;
 				else for (walk = test->items; (walk && (walk->host != h)); walk = walk->next) ;
 
 				if (walk) {
@@ -1390,6 +1405,7 @@ void send_sslcert_status(testedhost_t *host)
 				int sslcolor = COL_GREEN;
 
 				if (s == httptest) certowner = ((http_data_t *)t->privdata)->url;
+				else if (s == ldaptest) certowner = ((ldap_data_t *)t->privdata)->url;
 
 				if (t->certexpires < (now+sslwarndays*86400)) sslcolor = COL_YELLOW;
 				if (t->certexpires < (now+sslalarmdays*86400)) sslcolor = COL_RED;
@@ -1446,6 +1462,11 @@ int main(int argc, char *argv[])
 
 	if (init_http_library() != 0) {
 		errprintf("Failed to initialize http library\n");
+		return 1;
+	}
+
+	if (init_ldap_library() != 0) {
+		errprintf("Failed to initialize ldap library\n");
 		return 1;
 	}
 
@@ -1547,7 +1568,8 @@ int main(int argc, char *argv[])
 		/* Informational options */
 		else if (strcmp(argv[argi], "--version") == 0) {
 			printf("bbtest-net version %s\n", VERSION);
-			printf("HTTP library: %s\n", http_library_version);
+			if (http_library_version) printf("HTTP library: %s\n", http_library_version);
+			if (ldap_library_version) printf("LDAP library: %s\n", ldap_library_version);
 			return 0;
 		}
 		else if ((strcmp(argv[argi], "--help") == 0) || (strcmp(argv[argi], "-?") == 0)) {
@@ -1612,6 +1634,7 @@ int main(int argc, char *argv[])
 	add_service("dig", getportnumber("domain"), 0, TOOL_DIG);
 	add_service("ntp", getportnumber("ntp"),    0, TOOL_NTP);
 	httptest = add_service("http", getportnumber("http"),  0, TOOL_CURL);
+	ldaptest = add_service("ldap", getportnumber("ldap"),  0, TOOL_LDAP);
 	if (pingcolumn) pingtest = add_service(pingcolumn, 0, 0, TOOL_FPING);
 	modembanktest = add_service("dialup", 0, 0, TOOL_MODEMBANK);
 	add_timestamp("Service definitions loaded");
@@ -1691,6 +1714,24 @@ int main(int argc, char *argv[])
 	}
 	add_timestamp("HTTP tests result collection completed");
 
+	/* Run the ldap tests */
+	for (t = ldaptest->items; (t); t = t->next) add_ldap_test(t);
+	add_timestamp("LDAP test engine setup completed");
+
+	run_ldap_tests(ldaptest, (ssltestname != NULL));
+	add_timestamp("LDAP tests executed");
+
+	if (debug) show_ldap_test_results(ldaptest);
+	for (t = ldaptest->items; (t); t = t->next) {
+		if (t->privdata) {
+			ldap_data_t *testresult = (ldap_data_t *)t->privdata;
+
+			t->certinfo = testresult->certinfo;
+			t->certexpires = testresult->certexpires;
+		}
+	}
+	add_timestamp("LDAP tests result collection completed");
+
 
 	/* dns, dig, ntp tests */
 	for (s = svchead; (s); s = s->next) {
@@ -1728,6 +1769,7 @@ int main(int argc, char *argv[])
 
 			case TOOL_FPING:
 			case TOOL_CURL:
+			case TOOL_LDAP:
 				break;
 
 			case TOOL_MODEMBANK:
@@ -1737,6 +1779,7 @@ int main(int argc, char *argv[])
 	}
 	for (h=testhosthead; (h); h = h->next) {
 		send_http_results(httptest, h, nonetpage, contenttestname, failgoesclear);
+		send_ldap_results(ldaptest, h, nonetpage, failgoesclear);
 		if (ssltestname && !h->nosslcert) send_sslcert_status(h);
 	}
 
@@ -1765,6 +1808,7 @@ int main(int argc, char *argv[])
 		save_frequenttestlist(argc, argv);
 	}
 
+	shutdown_ldap_library();
 	shutdown_http_library();
 	add_timestamp("bbtest-net completed");
 
@@ -1788,7 +1832,8 @@ int main(int argc, char *argv[])
 
 		sprintf(msgline, "bbtest-net version %s\n", VERSION);
 		addtostatus(msgline);
-		sprintf(msgline, "HTTP library: %s\n", http_library_version);
+		if (http_library_version) sprintf(msgline, "HTTP library: %s\n", http_library_version);
+		if (ldap_library_version) sprintf(msgline, "LDAP library: %s\n", ldap_library_version);
 		addtostatus(msgline);
 
 		sprintf(msgline, "\nStatistics:\n Hosts total         : %5d\n Hosts with no tests : %5d\n Total test count    : %5d\n Status messages     : %5d\n Alert status msgs   : %5d\n Transmissions       : %5d\n", 
