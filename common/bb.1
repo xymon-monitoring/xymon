@@ -28,6 +28,10 @@ When sending the status messages via HTTP, use this server
 as an HTTP proxy instead of connecting directly to the BBDISPLAY
 server. This is a bbgen extension.
 
+.IP "--timeout=N"
+Specifies the timeout for connecting to the BB server, in
+seconds. The default is 5 seconds.
+
 .IP "RECIPIENT"
 The \fBRECIPIENT\fR parameter defines which server receives
 the message. If RECIPIENT is given as "0.0.0.0", then the
