@@ -1,7 +1,7 @@
 #ifndef __BBD_ALERT_H__
 #define __BBD_ALERT_H__
 
-#include <sys/time.h>
+#include <time.h>
 
 typedef struct htnames_t {
 	char *name;
@@ -27,8 +27,8 @@ typedef struct activealerts_t {
 } activealerts_t;
 
 extern void load_alertconfig(void);
-extern void send_alert(activealerts_t *awalk);
-extern time_t next_alert(activealerts_t *awalk);
+extern void send_alert(activealerts_t *alert);
+extern time_t next_alert(activealerts_t *alert);
 
 #endif
 
