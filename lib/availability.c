@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.11 2003-06-23 10:39:41 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.12 2003-06-23 13:44:43 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -214,7 +214,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 			repinfo->count[color]++;
 			repinfo->totduration[color] += duration;
 
-			if ((hostname != NULL) && (servicename != NULL)) {
+			if ((hostname != NULL) && (servicename != NULL) && (color != COL_GREEN)) {
 				replog_t *newentry;
 				char timecopy[26], timespec[26];
 				char *token;
@@ -236,7 +236,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 				newentry->starttime = starttime;
 				newentry->duration = duration;
 				newentry->color = color;
-				newentry->cause = ((color == COL_GREEN) ? "" : parse_histlogfile(hostname, servicename, timespec));
+				newentry->cause = parse_histlogfile(hostname, servicename, timespec);
 				newentry->timespec = malcop(timespec);
 				newentry->next = reploghead;
 				reploghead = newentry;
