@@ -1,3 +1,4 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 <head>
 	<title>Hobbit Tips and Tricks</title>
@@ -6,7 +7,7 @@
 <h1>Hobbit Tips and Tricks</h1>
 
 <p>Here you will find out how to do some common questions
-raised with Hobbit.<br>
+raised with Hobbit.</p>
 <ul>
 	<li><a href="#icons">What do the different red/yellow/green icons mean ?</a></li>
 	<li><a href="#noclient">Client side tests are missing</a></li>
@@ -14,26 +15,24 @@ raised with Hobbit.<br>
 	<li><a href="#droprename">Renaming and deleting hosts</a></li>
 	<li><a href="#apachetest">I cannot get the Apache graphs to work</a></li>
 	<li><a href="#updatefreq">Updating more frequently</a></li>
-</ul></p>
+</ul>
 
-<a name="icons">
-<h3>What do the little red/yellow/green icons mean ?</h3>
-<table align="center" border=1>
+<h3><a name="icons">What do the little red/yellow/green icons mean ?</a></h3>
+<table align="center" border=1 summary="Hobbit status icons">
 	<tr><th align=left valign=top>Color</th><td>Recently changed</td><td>Last change &gt; 24 hours</td></tr>
-	<tr><th align=left valign=top>Green: Status is OK</th><td align=center><img src="@BBHOSTURL@/gifs/green-recent.gif"></td><td align=center><img src="@BBHOSTURL@/gifs/green.gif"></td></tr>
-	<tr><th align=left valign=top>Yellow: Warning</th><td align=center><img src="@BBHOSTURL@/gifs/yellow-recent.gif"></td><td align=center><img src="@BBHOSTURL@/gifs/yellow.gif"></td></tr>
-	<tr><th align=left valign=top>Red: Critical</th><td align=center><img src="@BBHOSTURL@/gifs/red-recent.gif"></td><td align=center><img src="@BBHOSTURL@/gifs/red.gif"></td></tr>
-	<tr><th align=left valign=top>Clear: No data</th><td align=center><img src="@BBHOSTURL@/gifs/clear-recent.gif"></td><td align=center><img src="@BBHOSTURL@/gifs/clear.gif"></td></tr>
-	<tr><th align=left valign=top>Purple: No report</th><td align=center><img src="@BBHOSTURL@/gifs/purple-recent.gif"></td><td align=center><img src="@BBHOSTURL@/gifs/purple.gif"></td></tr>
-	<tr><th align=left valign=top>Blue: Disabled</th><td align=center><img src="@BBHOSTURL@/gifs/blue-recent.gif"></td><td align=center><img src="@BBHOSTURL@/gifs/blue.gif"></td></tr>
+	<tr><th align=left valign=top>Green: Status is OK</th><td align=center><img src="@BBHOSTURL@/gifs/green-recent.gif" alt="Green - recently changed"></td><td align=center><img src="@BBHOSTURL@/gifs/green.gif" alt="Green"></td></tr>
+	<tr><th align=left valign=top>Yellow: Warning</th><td align=center><img src="@BBHOSTURL@/gifs/yellow-recent.gif" alt="Yellow - recently changed"></td><td align=center><img src="@BBHOSTURL@/gifs/yellow.gif" alt="Yellow"></td></tr>
+	<tr><th align=left valign=top>Red: Critical</th><td align=center><img src="@BBHOSTURL@/gifs/red-recent.gif" alt="Red - recently changed"></td><td align=center><img src="@BBHOSTURL@/gifs/red.gif" alt="Red"></td></tr>
+	<tr><th align=left valign=top>Clear: No data</th><td align=center><img src="@BBHOSTURL@/gifs/clear-recent.gif" alt="Clear - recently changed"></td><td align=center><img src="@BBHOSTURL@/gifs/clear.gif" alt="Clear"></td></tr>
+	<tr><th align=left valign=top>Purple: No report</th><td align=center><img src="@BBHOSTURL@/gifs/purple-recent.gif" alt="Purple - recently changed"></td><td align=center><img src="@BBHOSTURL@/gifs/purple.gif" alt="Purple"></td></tr>
+	<tr><th align=left valign=top>Blue: Disabled</th><td align=center><img src="@BBHOSTURL@/gifs/blue-recent.gif" alt="Blue - recently changed"></td><td align=center><img src="@BBHOSTURL@/gifs/blue.gif" alt="Blue"></td></tr>
 </table>
 
-<a name="noclient">
-<h3>My client-side tests dont show up on the webpages</h3>
+<h3><a name="noclient">My client-side tests dont show up on the webpages</a></h3>
 <p>Did you install a client ? It is not included with Hobbit, so you
 need to install the Big Brother client for client side tests.</p>
 
-<p>If you did, then the two most probable causes for this are:
+<p>If you did, then the two most probable causes for this are:</p>
 <ul>
 	<li>The client is using another hostname than what is in the bb-hosts file.<br>
 	Hobbit only cares about the hosts that are in the bb-hosts file, and
@@ -54,48 +53,45 @@ need to install the Big Brother client for client side tests.</p>
 	server.<br>
 	Other methods are also possible, e.g. <em>bbfetch</em> (available from
 	the <a href="http://www.deadcat.net/">www.deadcat.net</a> archive.
-</ul></p>
+</ul>
 
-<a name="clientnames">
-<h3>My silly clients are using a hostname different from the one in bb-hosts</h3>
+<h3><a name="clientnames">My silly clients are using a hostname different from the one in bb-hosts</a></h3>
 <p>Add a <tt>CLIENT:clienthostname</tt> tag to the host entry in the bb-hosts file,
 or re-configure the client to use the proper hostname.</p>
 
 
-<a name="droprename">
-<h3>Where are the bbrm and bbmv commands from Big Brother ?</h3>
+<h3><a name="droprename">Where are the bbrm and bbmv commands from Big Brother ?</a></h3>
 <p>They have been integrated into the Hobbit network daemon. See
 the next two questions.</p>
 
 
 <h3>I accidentally added an 'ftp' check. Now I cannot get it off the webpage!</h3>
-<p>Use the command
+<p>Use the command</p>
 <pre>
     ~/server/bin/bb 127.0.0.1 "drop HOSTNAME ftp"
 </pre>
-to permanenly remove all traces of a test. Note that you need the quotes
+<p>to permanenly remove all traces of a test. Note that you need the quotes
 around the &quot;drop HOSTNAME ftp&quot;.</p>
 
 
 <h3>So how do I get rid of an entire host in Hobbit?</h3>
-<p>First, remove the host from the ~/server/etc/bb-hosts file. Then use the command
+<p>First, remove the host from the ~/server/etc/bb-hosts file. Then use the command</p>
 <pre>
     ~/server/bin/bb 127.0.0.1 "drop HOSTNAME"
 </pre>
-to permanenly remove all traces of a host. Note that you need the quotes
+<p>to permanenly remove all traces of a host. Note that you need the quotes
 around the &quot;drop HOSTNAME&quot;.</p>
 
 
 <h3>How do I rename a host in the Hobbit display?</h3>
 <p>First, change the ~/server/etc/bb-hosts file so it has the new name.
-Then to move your historical data over to the new name, run
+Then to move your historical data over to the new name, run</p>
 <pre>
     ~/server/bin/bb 127.0.0.1 "rename OLDHOSTNAME NEWHOSTNAME"
-</pre></p>
+</pre>
 
 
-<a name="apachetest">
-<p>Charles Jones provided this recipe on the Hobbit mailing list:</p>
+<p><a name="apachetest">Charles Jones provided this recipe</a> on the Hobbit mailing list:</p>
 <pre><tt>
 From: Charles Jones
 Date: Sun, 06 Feb 2005 21:28:19 -0700
@@ -143,8 +139,7 @@ data.  Heres what I have in mine:
 </tt></pre>
 
 
-<a name="updatefreq">
-<h3>I need the web-pages to update more frequently</h3>
+<h3><a name="updatefreq">I need the web-pages to update more frequently</a></h3>
 <p>The ~/server/etc/hobbitlaunch.cfg defines the update
 interval for all of the Hobbit programs. The default is for
 network tests to run every 5 minutes, and webpage updates to

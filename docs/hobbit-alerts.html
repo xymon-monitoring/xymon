@@ -1,3 +1,4 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 
 <head>
@@ -10,7 +11,7 @@
 dont have the Hobbit webpages in view all of the time, Hobbit can 
 generate alerts to draw your attention to problems. Alerts can go out
 as e-mail, or Hobbit can run a script that takes care of activating
-a pager, sending an SMS, or however you prefer to get alerted.<br>
+a pager, sending an SMS, or however you prefer to get alerted.</p>
 <ul>
 	<li><a href="#simple">A simple alert configuration</a></li>
 	<li><a href="#keywords">Configuration file keywords</a></li>
@@ -19,8 +20,7 @@ a pager, sending an SMS, or however you prefer to get alerted.<br>
 	<li><a href="#macros">Using macros</a></li>
 </ul>
 
-<A NAME="simple">
-<h3>A simple alert configuration</h3>
+<h3><a name="simple">A simple alert configuration</a></h3>
 <p>The configuration file for the Hobbit alert module is <em>~/server/etc/hobbit-alerts.cfg</em>.
 This file consists of a number of <em>rules</em> that are matched against
 the name of the host that has a problem, the name of the service, the
@@ -63,15 +63,14 @@ of on the <i>recipient</i> ? Like this:
 		MAIL webmaster@foo.com SERVICE=http REPEAT=1h
 		MAIL unixsupport@foo.com SERVICE=cpu,disk,memory
 </pre>
-Well, the webmaster would still have his nights to himself - but the TIME setting would then
+<p>Well, the webmaster would still have his nights to himself - but the TIME setting would then
 also apply to the alerts that go out when there is a problem with the "cpu", "disk" or "memory"
 services. So there would not be any mails going to <tt>unixsupport@foo.com</tt> when a disk
 fills up during the night.</p>
 
-<a name="keywords">
-<h3>Keywords in rules and recipients</h3>
-<p>The full set of keywords and their meaning is as follows:<br>
-<table width="80%" align="center">
+<h3><a name="keywords">Keywords in rules and recipients</a></h3>
+<p>The full set of keywords and their meaning is as follows:</p>
+<table width="80%" align="center" summary="hobbit-alerts.cfg keywords">
 	<tr><th align="left" valign="top">PAGE</th><td>rule matching an alert by the name of the page the host is displayed on. This is the name following the "page", "subpage" or "subparent" keyword in the bb-hosts file.</td></tr>
 	<tr><th align="left" valign="top">EXPAGE</th><td>rule excluding an alert if the pagename matches.</td></tr>
 	<tr><th align="left" valign="top">HOST</th><td>rule matching an alert by the hostname.</td></tr>
@@ -89,10 +88,8 @@ fills up during the night.</p>
 	<tr><th align="left" valign="top">STOP</th><td>By default, hobbitd_alert looks at all the possible recipients in the hobbit-alerts.cfg file when handling an alert. If you would like it stop after a specific recipient gets an alert, add the STOP keyword to this recipient. This terminates the search for more recipients.</td></tr>
 	<tr><th align="left" valign="top">UNMATCHED</th><td>This keyword on a recipient means that he will only get an alert, if no other alerts have been sent. So you can use it e.g. when setting up alerts to specific people for some services, then after those you add a recipient with the UNMATCHED keyword who will only get those alerts that were not sent anyone else. You can also use it to setup a "catch-all" alert recipient, use the UNMATHED keyword on a recipient at the end of the hobbit-alerts.cfg file.</td></tr>
 </table>
-</p>
 
-<a name="wildcards">
-<h3>Wildcards - regular expressions</h3>
+<h3><a name="wildcards">Wildcards - regular expressions</a></h3>
 <p>So now we can setup an alert. But using explicit hostnames is bothersome, if you have many
 hosts. There is a smarter way:
 <pre>
@@ -100,12 +97,12 @@ hosts. There is a smarter way:
 		MAIL webmaster@foo.com SERVICE=http REPEAT=1h
 		MAIL unixsupport@foo.com SERVICE=cpu,disk,memory
 </pre>
-The percent-sign indicates that the hostname should not be taken literally - instead,
+<p>The percent-sign indicates that the hostname should not be taken literally - instead,
 <tt>(www|intranet|support|mail).foo.com</tt> is a <i>Perl-compatible regular expression</i>.
 This particular expression matches "www.foo.com", "intranet.foo.com", "support.foo.com" and
 "mail.foo.com". You can use regular expressions to match hostnames, service-names and page-names.</p>
 
-<p>If you want to test how your alert configuration handles a specific host, you can run hobbitd_alert in <b>test</b> mode - you give it a hostname and servicename as input, and it will go through the configuration and tell you which rules match and who gets an alert.<br>
+<p>If you want to test how your alert configuration handles a specific host, you can run hobbitd_alert in <b>test</b> mode - you give it a hostname and servicename as input, and it will go through the configuration and tell you which rules match and who gets an alert.</p>
 <pre><tt>
 	osiris:~ $ cd server/
 	osiris:~/server $ ./bin/bbcmd hobbitd_alert --test osiris.hswn.dk cpu
@@ -115,10 +112,8 @@ This particular expression matches "www.foo.com", "intranet.foo.com", "support.f
 	    *** Match with 'MAIL henrik@sample.com REPEAT=2 RECOVERED COLOR=red' ***
 	Mail alert with command 'mail -s "BB [12345] osiris.hswn.dk:cpu is RED" henrik@sample.com'
 </tt></pre>
-</p>
 
-<a name="scripts">
-<h3>If e-mail is not enough</h3>
+<h3><a name="scripts">If e-mail is not enough</a></h3>
 <p>The <em>MAIL</em> keyword means that the alert is sent in an e-mail. Sometimes this ends
 up being an SMS to your cell-phone - there are several "e-mail to SMS" gateways that perform
 this service - but that may not be what you want to do. And also, for an e-mail to actually
@@ -128,19 +123,19 @@ alerts are handled, you can use the <em>SCRIPT</em> method instead. Here's how:
 	HOST=%(www|intranet|support|mail).foo.com SERVICE=http
 		SCRIPT /usr/local/bin/smsalert 4538761925 FORMAT=sms
 </pre>
-This alert doesn't go out as e-mail. Instead, when an alert needs to be delivered, Hobbit
+<p>This alert doesn't go out as e-mail. Instead, when an alert needs to be delivered, Hobbit
 will run the script <tt>/usr/local/bin/smsalert</tt>. The script can use data from a series of 
 environment variables to build the information it sends in the alert, depending on what the 
 recipient can handle. E.g. for pagers you will typically just send a sequence of numbers - 
 Hobbit provides things like the IP-address of the server that has a problem and a numeric code 
 for the service to the script. So a simple script to send an SMS alert with the "sendsms" 
-tool could look like this:
+tool could look like this:</p>
 <pre>
 	#!/bin/sh
 
 	/usr/local/bin/sendsms $RCPT "$BBALPHAMSG"
 </pre>
-Here you can see the script use two environment variables that Hobbit sets up for the script: The
+<p>Here you can see the script use two environment variables that Hobbit sets up for the script: The
 <em>$RCPT</em> is the recipient, i.e. the phone-number "4538761925" that is in the hobbitalerts.cfg
 file. The <em>$BBALPHAMSG</em> is text of the status that triggers the alert.</p>
 
@@ -149,8 +144,8 @@ be sent in the status message.  The <tt>FORMAT=sms</tt> tells Hobbit to change t
 a form that is suitable for an SMS message - which has a maximum size of 160 bytes. So Hobbit picks
 out the most important bits of the status message, and puts as much of that as possible into the
 BBALPHSMSG variable for the script.</p>
-<p>The full list of environment variables provided to scripts are as follows:<br>
-<table width="80%" align="center">
+<p>The full list of environment variables provided to scripts are as follows:</p>
+<table width="80%" align="center" summary="Paging script environment variables">
 	<tr><th align="left" valign="top">BBALPHAMSG</th><td>The full text of the status log triggering the alert</td></tr>
 	<tr><th align="left" valign="top">ACKCODE</th><td>The "cookie" that can be used to acknowledge the alert</td></tr>
 	<tr><th align="left" valign="top">RCPT</th><td>The recipient, from the SCRIPT entry</td></tr>
@@ -165,12 +160,11 @@ BBALPHSMSG variable for the script.</p>
 	<tr><th align="left" valign="top">SECS</th><td>Number of seconds the service has been down.</td></tr>
 	<tr><th align="left" valign="top">DOWNSECSMSG</th><td>When recovered, holds the text "Event duration : N" where N is the DOWNSECS value.</td></tr>
 </table>
-<br>This set of environment variables are the same as those provided by Big Brother to custom
+<p>This set of environment variables are the same as those provided by Big Brother to custom
 paging scripts, so you should be able to re-use any paging scripts written for Big Brother
 with Hobbit.</p>
 
-<a name="macros">
-<h3>Save on the typing - use macros</h3>
+<h3><a name="macros">Save on the typing - use macros</a></h3>
 <p>Say you have a long list of hosts or e-mail adresses that you want to use several times throughout the
 hobbit-alerts.cfg file. Do you have to write the full list every time ? No:<br>
 <pre>
@@ -195,7 +189,7 @@ In fact, you can put an entire line into a macro:<br>
 	HOST=dns.bar.com
 		$UNIXSUPPORT
 </pre>
-would be a perfectly valid way of specifying that <tt>unixsupport@foo.com</tt> gets 
+<p>would be a perfectly valid way of specifying that <tt>unixsupport@foo.com</tt> gets 
 e-mailed about cpu-, disk- or memory-problems on the foo.com web-servers, and the
 bar.com dns-servers.</p>
 

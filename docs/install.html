@@ -1,3 +1,4 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 <head>
 	<title>Installing Hobbit</title>
@@ -79,7 +80,7 @@ files installed as well. Often these are in packages called "something<em>-dev</
 	library. It is available from <a href="http://www.openldap.org/">http://www.openldap.org/</a></li>
 </ul>
 
-The configure-script will attempt to locate all of these libraries on 
+<p>The configure-script will attempt to locate all of these libraries on 
 your system, and complain if the required ones are missing.</p>
 
 
@@ -109,7 +110,7 @@ should use the command for running GNU make instead, e.g. <tt>gmake</tt>.
 You will now see a lot of commands being run to build the programs, it usually
 takes a minute or two.</p>
 <p>When it is finished, you can either finish the installation by running 
-<tt>make setup</tt> or <tt>make install</tt>.
+<tt>make setup</tt> or <tt>make install</tt>.</p>
 <ul>
 	<li><tt>make setup</tt> is used the first time you setup a Hobbit
 	server. Besides installing the Hobbit programs, it also creates
@@ -124,7 +125,6 @@ takes a minute or two.</p>
 	an existing Big Brother server. It installs the programs, but does
 	not change any configuration files or create directories.</li>
 </ul>
-</p>
 
 <p>If you are setting up Hobbit for use with an existing Big Brother
 installation, please go to the <a href="hobbit-bigbrother.html">Using Hobbit with Big Brother</a>
@@ -154,15 +154,15 @@ command both to create the password file and to add or delete users:<br>
 	Adding password for user admin
 	#
 </tt></pre>
-The <b>-c</b> option should only be used the first time, to create the password
+<p>The <b>-c</b> option should only be used the first time, to create the password
 file. See the Apache documentation for details about how to use htpasswd.</p>
 
 <h2>Starting Hobbit</h2>
 <p>You can now login as the "hobbit" user, and run the command <tt>./server/starthobbit.sh start</tt>
 to start Hobbit. After a few seconds, it should have started and you now have the following
-processes running: <br><img src="hobbitprocs.png"></p>
+processes running: <br><img src="hobbitprocs.png" alt="Hobbit processes"></p>
 <p>Quite a few, but all of them controlled by the master <tt>hobbitlaunch</tt> process.
-A quick run-down of what each of them does:
+A quick run-down of what each of them does:</p>
 <ul>
 	<li><tt>hobbitd</tt> is the network daemon that receives status updates from
 	the clients and the network test tool. It also provides the current status of
@@ -184,12 +184,12 @@ A quick run-down of what each of them does:
 	collected from the status reports, to track e.g. how the disk utilization of
 	a server changes over time. There are two of these processes, because the
 	data can arrive in two different ways.</li>
-</ul></p>
+</ul>
 <p>After a couple of minutes, you should have data available for the Hobbit server itself.
 If you open a webbrowser with the Hobbit URL - usually http://your.server/hobbit/ - you
-should see something like this:<br><img src="hobbitmain.png"></p>
+should see something like this:<br><img src="hobbitmain.png" alt="Hobbit main window"></p>
 <p>Each of the little faces indicate an item that is being monitored for this host. Here
-you see the default set of items that the Hobbit installation sets up for a Hobbit server:
+you see the default set of items that the Hobbit installation sets up for a Hobbit server:</p>
 <ul>
 	<li><em>bbd</em> is the availability of the Hobbit network daemon.</li>
 	<li><em>bbgen</em> is the status of the bbgen tool, which updates the webpages.</li>
@@ -204,7 +204,7 @@ you see the default set of items that the Hobbit installation sets up for a Hobb
 	host etc.</li>
 	<li><em>trends</em> is a collection of the various RRD graphs available for this host.</li>
 </ul>
-You can click on each of the green icons to see a more detailed status.</p>
+<p>You can click on each of the green icons to see a more detailed status.</p>
 
 <h2>Next steps</h2>
 <p>Congratulations, you now have a running Hobbit server!</p>
