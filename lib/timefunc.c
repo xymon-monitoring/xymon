@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.15 2005-03-22 09:16:49 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.16 2005-03-25 07:40:15 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -112,7 +112,7 @@ static int minutes(char *p)
 	return (10*(*(p+0)-'0')+(*(p+1)-'0'))*60 + (10*(*(p+2)-'0')+(*(p+3)-'0'));
 }
 
-int within_sla(char *l, char *tag, int defresult)
+int within_sla(char *timespec, int defresult)
 {
 	/*
 	 * Usage: slatime hostline
@@ -120,10 +120,8 @@ int within_sla(char *l, char *tag, int defresult)
 	 *    "W" = weekday : '*' = all, 'W' = Monday-Friday, '0'..'6' = Sunday ..Saturday
 	 */
 
-	char *p;
 	char *slaspec = NULL;
 	char *endofslaspec = NULL;
-	char *tagspec;
 
 	time_t tnow;
 	struct tm *now;
@@ -132,18 +130,8 @@ int within_sla(char *l, char *tag, int defresult)
 	int found = 0;
 	int starttime,endtime,curtime;
 
-	if (strlen(tag)) {
-		tagspec = (char *) malloc(strlen(tag)+2);
-		sprintf(tagspec, "%s=", tag);
-		p = strstr(l, tagspec);
-	}
-	else {
-		tagspec = strdup("");
-		p = l;
-	}
-
-	if (p) {
-		slaspec = p + strlen(tagspec);
+	if (timespec) {
+		slaspec = timespec;
 		endofslaspec = slaspec + strcspn(slaspec, " \t\r\n");
 		tnow = time(NULL);
 		now = localtime(&tnow);
@@ -154,12 +142,24 @@ int within_sla(char *l, char *tag, int defresult)
 		 */
 		while ( (!found) && slaspec && (slaspec < endofslaspec) )
 		{
+			int wdaymatch = 0;
 			dprintf("Now checking slaspec='%s'\n", slaspec);
 
-			if ( (*slaspec == '*') || 						/* Any day */
-                             (*slaspec == now->tm_wday+'0') ||					/* This day */
-                             ((toupper((int)*slaspec) == 'W') && (now->tm_wday >= 1) && (now->tm_wday <=5)) )	/* Monday thru Friday */
-			{
+			if (*slaspec == '*') {
+				wdaymatch = 1;
+			}
+			else if ((toupper((int)*slaspec) == 'W') && (now->tm_wday >= 1) && (now->tm_wday <=5)) {
+				wdaymatch = 1;
+			}
+			else {
+				char *wday;
+
+				for (wday = slaspec; ((wday < endofslaspec) && (*wday != ':')); wday++) {
+					if (*wday == (now->tm_wday+'0')) wdaymatch = 1;
+				}
+			}
+
+			if (wdaymatch) {
 				/* Weekday matches */
 				starttime = minutes(slaspec+2);
 				endtime = minutes(slaspec+7);
@@ -191,7 +191,6 @@ int within_sla(char *l, char *tag, int defresult)
 		/* No SLA -> use the default */
 		result = defresult;
 	}
-	xfree(tagspec);
 
 	return result;
 }
