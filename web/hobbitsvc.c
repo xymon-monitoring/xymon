@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.17 2004-10-30 22:36:39 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.18 2004-10-31 07:28:46 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -270,6 +270,8 @@ int main(int argc, char *argv[])
 		if (unchangedstr) *unchangedstr = '\0';
 		if (receivedfromstr) *receivedfromstr = '\0';
 	}
+
+	fprintf(stdout, "Content-type: text/html\n\n");
 
 	generate_html_log(hostname, displayname, service, ip, 
 		          color, sender, flags, 
