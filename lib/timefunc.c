@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.2 2004-10-31 07:57:11 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.3 2004-11-03 22:52:46 henrik Exp $";
 
 #include <time.h>
 #include <string.h>
@@ -275,7 +275,7 @@ char *histlogtime(time_t histtime)
 
         strftime(d1, sizeof(d1), "%a_%b_", localtime(&histtime));
         strftime(d2, sizeof(d2), "%d", localtime(&histtime));
-	if (d2[0] == '0') memmove(d2, d2+1, strlen(d2+1));
+	if (d2[0] == '0') { d2[0] = d2[1]; d2[1] = '\0'; }
         strftime(d3, sizeof(d3), "_%H:%M:%S_%Y", localtime(&histtime));
 
 	snprintf(result, sizeof(result)-1, "%s%s%s", d1, d2, d3);
