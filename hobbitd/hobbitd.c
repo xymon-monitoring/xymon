@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.31 2004-10-24 07:01:52 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.32 2004-10-24 07:07:15 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -666,6 +666,8 @@ void handle_enadis(int enabled, char *msg, char *sender)
 					log->dismsg = strdup(dismsg);
 				}
 				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, (void *)log, NULL);
+				/* Trigger an immediate status update */
+				handle_status(log->message, sender, log->host->hostname, log->test->testname, log, COL_BLUE);
 			}
 		}
 		else {
@@ -677,11 +679,12 @@ void handle_enadis(int enabled, char *msg, char *sender)
 					log->dismsg = strdup(dismsg);
 				}
 				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, (void *)log, NULL);
+
+				/* Trigger an immediate status update */
+				handle_status(log->message, sender, log->host->hostname, log->test->testname, log, COL_BLUE);
 			}
 		}
 
-		/* Trigger an immediate status update */
-		handle_status(log->message, sender, log->host->hostname, log->test->testname, log, COL_BLUE);
 	}
 
 	return;
