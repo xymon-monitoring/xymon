@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.105 2005-01-20 22:03:53 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.106 2005-01-22 08:53:21 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -136,6 +136,7 @@ static volatile int running = 1;
 static volatile int reloadconfig = 1;
 static volatile time_t nextcheckpoint = 0;
 static volatile int dologswitch = 0;
+static volatile int gotalarm = 0;
 
 /* Our channels to worker modules */
 hobbitd_channel_t *statuschn = NULL;	/* Receives full "status" messages */
@@ -369,7 +370,6 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 		   char *msg, char *sender, char *hostname, hobbitd_log_t *log, char *readymsg)
 {
 	struct sembuf s;
-	struct shmid_ds chninfo;
 	int clients;
 	int n;
 	struct timeval tstamp;
@@ -392,6 +392,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 	 * (GOCLIENT goes up while a worker waits for it 
 	 *  to go to 0).
 	 */
+	gotalarm = 0; alarm(5);
 	do {
 		s.sem_num = BOARDBUSY; s.sem_op = 0; s.sem_flg = 0;
 		n = semop(channel->semid, &s, 1);
@@ -399,8 +400,31 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			semerr = errno;
 			if (semerr != EINTR) errprintf("semop failed, %s\n", strerror(errno));
 		}
-	} while ((n == -1) && (semerr == EINTR) && running);
+	} while ((n == -1) && (semerr == EINTR) && running && !gotalarm);
+	alarm(0);
 	if (!running) return;
+
+	/* Check if the alarm fired */
+	if (gotalarm) {
+		errprintf("BOARDBUSY locked at %d, GETNCNT is %d, GETPID is %d, %d clients\n",
+			  semctl(channel->semid, BOARDBUSY, GETVAL),
+			  semctl(channel->semid, BOARDBUSY, GETNCNT),
+			  semctl(channel->semid, BOARDBUSY, GETPID),
+			  semctl(channel->semid, CLIENTCOUNT, GETVAL));
+
+#if 0
+		/* Forcing it to 0 */
+		errprintf("Forcing BOARDBUSY to 0\n");
+		n = 0;
+		while ((n == 0) && (semctl(channel->semid, BOARDBUSY, GETVAL) > 0)) {
+			s.sem_num = BOARDBUSY; s.sem_op = -1; s.sem_flg = IPC_NOWAIT;
+			n = semop(channel->semid, &s, 1);
+			if (n != 0) {
+				errprintf("Failed to recover BOARDBUSY: %s\n", strerror(errno));
+			}
+		}
+#endif
+	}
 
 	/* All clear, post the message */
 	if (channel->seq == 999999) channel->seq = 0;
@@ -488,10 +512,16 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 	}
 
 	/* Let the readers know it is there.  */
-	n = shmctl(channel->shmid, IPC_STAT, &chninfo);
-	clients = chninfo.shm_nattch-1;		/* Get it again, in case someone attached since last check */
+	clients = semctl(channel->semid, CLIENTCOUNT, GETVAL); /* Get it again, maybe changed since last check */
 	dprintf("Posting message %u to %d readers\n", channel->seq, clients);
-	s.sem_num = BOARDBUSY; s.sem_op = clients; s.sem_flg = 0;		/* Up BOARDBUSY */
+	/* Up BOARDBUSY */
+	s.sem_num = BOARDBUSY; 
+	s.sem_op = (clients - semctl(channel->semid, BOARDBUSY, GETVAL)); 
+	if (s.sem_op <= 0) {
+		errprintf("How did this happen? clients=%d, s.sem_op=%d\n", clients, s.sem_op);
+		s.sem_op = clients;
+	}
+	s.sem_flg = 0;
 	n = semop(channel->semid, &s, 1);
 
 	/* Make sure GOCLIENT is 0 */
@@ -2092,6 +2122,10 @@ void sig_handler(int signum)
 	  case SIGCHLD:
 		break;
 
+	  case SIGALRM:
+		gotalarm = 1;
+		break;
+
 	  case SIGTERM:
 	  case SIGINT:
 		running = 0;
@@ -2303,7 +2337,9 @@ int main(int argc, char *argv[])
 	}
 
 	if (restartfn) {
+		errprintf("Loading hostnames\n");
 		load_hostnames(bbhostsfn, NULL, get_fqdn(), NULL);
+		errprintf("Loading saved state\n");
 		load_checkpoint(restartfn);
 	}
 
@@ -2313,6 +2349,7 @@ int main(int argc, char *argv[])
 
 
 	/* Set up a socket to listen for new connections */
+	errprintf("Setting up network listener on %s:%d\n", listenip, listenport);
 	memset(&laddr, 0, sizeof(laddr));
 	inet_aton(listenip, (struct in_addr *) &laddr.sin_addr.s_addr);
 	laddr.sin_port = htons(listenport);
@@ -2366,6 +2403,7 @@ int main(int argc, char *argv[])
 		setsid();
 	}
 
+	errprintf("Setting up signal handlers\n");
 	setup_signalhandler("hobbitd");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
@@ -2374,7 +2412,9 @@ int main(int argc, char *argv[])
 	sigaction(SIGUSR1, &sa, NULL);
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGCHLD, &sa, NULL);
+	sigaction(SIGALRM, &sa, NULL);
 
+	errprintf("Setting up hobbitd channels\n");
 	statuschn = setup_channel(C_STATUS, CHAN_MASTER);
 	if (statuschn == NULL) { errprintf("Cannot setup status channel\n"); return 1; }
 	stachgchn = setup_channel(C_STACHG, CHAN_MASTER);
@@ -2388,6 +2428,7 @@ int main(int argc, char *argv[])
 	enadischn  = setup_channel(C_ENADIS, CHAN_MASTER);
 	if (enadischn == NULL) { errprintf("Cannot setup enadis channel\n"); return 1; }
 
+	errprintf("Setting up logfiles\n");
 	freopen("/dev/null", "r", stdin);
 	if (logfn) {
 		freopen(logfn, "a", stdout);
@@ -2405,6 +2446,7 @@ int main(int argc, char *argv[])
 		parentpid = getppid(); if (parentpid <= 1) parentpid = 0;
 	}
 
+	errprintf("Setup complete\n");
 	do {
 		struct timeval seltmo;
 		fd_set fdread, fdwrite;
