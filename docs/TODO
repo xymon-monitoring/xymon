@@ -6,8 +6,7 @@ Stuff that standard BB does which bbgen/bbtest-* does not
 * Convert the acklog.sh extension for bb2.html. This does
   not load the system a great deal (at least for me), so
   doing it via the existing script as an extension is OK.
-* Handle all fping.sh extensions (IP ranges, conn-failure
-  root-cause analysis - i.e. traceroute + router dependency)
+* Handle the missing fping.sh extensions (ranges).
 
 Suggestions from users
 ----------------------
