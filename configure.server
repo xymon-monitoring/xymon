@@ -5,9 +5,14 @@
 # This is a quick hack to make things work on the systems I use
 # personally, without having to do the full GNU Autoconf thing.
 
-if test -r Makefile.settings
+echo ""
+echo "Configuration script for bbgen"
+echo ""
+echo "This script asks a few questions and builds a Makefile to compile bbgen"
+echo ""
+if test -r Makefile
 then
-	echo "Already configured - remove Makefile.settings to re-configure"
+	echo "Already configured - remove Makefile to re-configure"
 else
 	echo "Where is your Big Brother BBHOME directory [/usr/local/bb] ? "
 	read BBHOME
@@ -41,7 +46,11 @@ else
 		MAXMSG="8192"
 		echo "Could not determine the MAXMSG setting ($BBHOME/src/bb.h not found)"
 	fi
+	echo ""
 
+	echo "To install the bbgen CGI scripts for history and reporting, I"
+	echo "need to know where you webserver keeps CGI scripts."
+	echo "This setting is only used by \"make install\""
 	echo "Where is your Webserver CGI-BIN directory [/var/apache/cgi-bin] ? "
 	read CGIDIR
 	if test -z "$CGIDIR"
@@ -87,31 +96,37 @@ else
 	else
 		HISTGRAPHDEF=""
 	fi
+	echo ""
 
-	echo "# configure settings"                        > Makefile.settings
-	echo "BBHOME = $BBHOME"                            >>Makefile.settings
-	echo "CGIDIR = $CGIDIR"                            >>Makefile.settings
-	echo "HISTGRAPHDEF = $HISTGRAPHDEF"                >>Makefile.settings
-	echo "MAXMSG = $MAXMSG"                            >>Makefile.settings
-	echo "# Add local CFLAGS etc. settings below here" >>Makefile.settings
-
+	echo "# configure settings for bbgen" > Makefile
+	echo "BBHOME = $BBHOME"               >>Makefile
+	echo "CGIDIR = $CGIDIR"               >>Makefile
+	echo "HISTGRAPHDEF = $HISTGRAPHDEF"   >>Makefile
+	echo "MAXMSG = $MAXMSG"               >>Makefile
 	if test -r Makefile.`uname -s`
 	then
-		echo "include Makefile.`uname -s`" >>Makefile.settings
+		echo "include Makefile.`uname -s`" >>Makefile
 		echo ""
 		echo "Using `uname -s` Makefile settings"
 		echo ""
 	else
-		echo "include Makefile.generic" >>Makefile.settings
+		echo "include Makefile.generic" >>Makefile
 		echo ""
 		echo "Using GENERIC Makefile settings"
 		echo ""
-		echo "If this fails, change the compile settings in Makefile.settings"
+		echo "If this fails, change the compile settings in Makefile"
 		echo ""
 		echo "I would appreciate it if you send the changes to"
 		echo "bbgen@storner.dk so I can include it in the next version."
 		echo ""
 	fi
+	echo "include Makefile.rules" >> Makefile
+	echo "" >> Makefile
+	echo "# Add local CFLAGS etc. settings below here" >>Makefile
+
+	echo "Created Makefile with the necessary information to build bbgen."
+	echo "If you need to change settings, you should change the Makefile"
+	echo ""
 fi
 
 echo "Configuration complete - now run 'make' to build the tools"
