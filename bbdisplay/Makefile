@@ -9,6 +9,7 @@ EXTENSIONS = bbcombotest
 CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh bb-findhost.sh bb-csvinfo.sh bbmessage.cgi bb-hostsvc.sh bb-histlog.sh
 # bb-ack.sh
 
+TEMPLATES = findhost_header findhost_footer findhost_form
 
 GENOBJS = bbgen.o loadhosts.o loaddata.o reportdata.o bbconvert.o larrdgen.o pagegen.o eventlog.o acklog.o process.o infogen.o savelog.o alert.o wmlgen.o rssgen.o bb-replog.o util.o debug.o
 COMBOTESTOBJS = bbcombotest.o
@@ -134,6 +135,9 @@ install-html: $(HTMLPAGES)
 
 install-gif: $(GIFFILES)
 	BBHOME=$(BBHOME) ../build/install-nooverwrite.sh www/gifs $(GIFFILES)
+
+install-templates: $(TEMPLATES)
+	BBHOME=$(BBHOME) ../build/install-nooverwrite.sh web $(TEMPLATES)
 
 install-man:
 	mkdir -p $(MANROOT)/man{1,5}
