@@ -28,6 +28,7 @@ typedef struct htnames_t {
 #include "../lib/headfoot.h"
 #include "../lib/htmllog.h"
 #include "../lib/misc.h"
+#include "../lib/rbtr.h"
 #include "../lib/sendmsg.h"
 #include "../lib/sig.h"
 #include "../lib/stackio.h"
