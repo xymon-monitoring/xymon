@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: netservices.c,v 1.3 2005-02-22 13:59:58 henrik Exp $";
+static char rcsid[] = "$Id: netservices.c,v 1.4 2005-02-24 18:51:11 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -121,7 +121,7 @@ char *init_tcp_services(void)
 	svclist_t *head, *tail, *first, *walk;
 	char *searchstring;
 	int svcnamebytes = 0;
-	int svccount = 1;
+	int svccount = 0;
 	int i;
 
 	filename[0] = '\0';
@@ -251,8 +251,8 @@ char *init_tcp_services(void)
 	if (fd) fclose(fd);
 
 	/* Copy from the svclist to svcinfo table */
-	svcinfo = (svcinfo_t *) malloc(svccount * sizeof(svcinfo_t));
-	for (walk=head, i=0; (walk); walk = walk->next, i++) {
+	svcinfo = (svcinfo_t *) malloc((svccount+1) * sizeof(svcinfo_t));
+	for (walk=head, i=0; (walk && (i < svccount)); walk = walk->next, i++) {
 		svcinfo[i].svcname = walk->rec->svcname;
 		svcinfo[i].sendtxt = walk->rec->sendtxt;
 		svcinfo[i].sendlen = walk->rec->sendlen;
@@ -261,6 +261,13 @@ char *init_tcp_services(void)
 		svcinfo[i].expofs  = walk->rec->expofs;
 		svcinfo[i].flags   = walk->rec->flags;
 		svcinfo[i].port    = walk->rec->port;
+	}
+	memset(&svcinfo[svccount], 0, sizeof(svcinfo_t));
+
+	/* This should not happen */
+	if (walk) {
+		errprintf("Whoa - didnt copy all services! svccount=%d, next service '%s'\n", 
+			svccount, walk->rec->svcname);
 	}
 
 	/* Free the temp. svclist list */
