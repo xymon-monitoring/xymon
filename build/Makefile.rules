@@ -3,12 +3,13 @@ OS := $(shell uname -s)
 include Makefile.$(OS)
 
 
-all: bbgen bbtest-net bbhostgrep bbhostshow
+all: bbgen bbtest-net bbhostgrep bbhostshow replog
 
 GENOBJS = bbgen.o debug.o loaddata.o reportdata.o larrdgen.o pagegen.o process.o util.o infogen.o alert.o wmlgen.o
 NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o
 HOSTGREPOBJS = bbhostgrep.o util.o debug.o
 HOSTSHOWOBJS = bbhostshow.o util.o debug.o
+REPLOGOBJS = replog.o reportdata.o debug.o util.o
 
 bbgen: $(GENOBJS)
 	$(CC) $(CFLAGS) -o bbgen $(GENOBJS)
@@ -21,6 +22,9 @@ bbhostgrep: $(HOSTGREPOBJS)
 
 bbhostshow: $(HOSTSHOWOBJS)
 	$(CC) $(CFLAGS) -o bbhostshow $(HOSTSHOWOBJS)
+
+replog: $(REPLOGOBJS)
+	$(CC) $(CFLAGS) -o replog $(REPLOGOBJS)
 
 alert: alert.c debug.c util.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o alert alert.c debug.c util.c
@@ -38,4 +42,4 @@ httptest.o: httptest.c httptest.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f *.o *~ bbgen bbtest-net bbhostgrep bbhostshow alert contest reptest
+	rm -f *.o *~ bbgen bbtest-net bbhostgrep bbhostshow replog alert contest reptest
