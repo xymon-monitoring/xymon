@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.14 2003-01-30 22:38:39 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.15 2003-02-03 08:49:56 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -532,7 +532,7 @@ void combo_flush(void)
 void combo_add(char *buf)
 {
 	/* Check if there is room for the message + 2 newlines */
-	if ((strlen(bbmsg) + strlen(buf) + 2) >= MAXMSG) {
+	if ((strlen(bbmsg) + strlen(buf) + 200) >= MAXMSG) {
 		/* Nope ... flush buffer */
 		combo_flush();
 	}
