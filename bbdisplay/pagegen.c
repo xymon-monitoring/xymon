@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.52 2003-06-02 06:39:31 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.53 2003-06-02 13:54:49 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -859,7 +859,8 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 	sprintf(acklogfilename, "%s/acklog", getenv("BBACKS"));
 	acklog = fopen(acklogfilename, "r");
 	if (!acklog) {
-		errprintf("Cannot open acklog");
+		/* If no acklog, that is OK - some people dont use acks */
+		dprintf("Cannot open acklog");
 		return;
 	}
 
