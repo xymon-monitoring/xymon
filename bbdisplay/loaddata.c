@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.26 2003-01-27 23:21:17 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.27 2003-01-28 06:44:12 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -32,6 +32,7 @@ static char rcsid[] = "$Id: loaddata.c,v 1.26 2003-01-27 23:21:17 henrik Exp $";
 #include "bbgen.h"
 #include "util.h"
 #include "loaddata.h"
+#include "infogen.h"
 #include "debug.h"
 
 char    larrdcol[20] = "larrd";
@@ -338,7 +339,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		free(purplemsg);
 	}
 	else {
-		if (strcmp(testname, larrdcol) != 0) {
+		if ((strcmp(testname, larrdcol) != 0) && (strcmp(testname, infocol) != 0)) {
 			while (fgets(l, sizeof(l), fd) && (strncmp(l, "Status unchanged in ", 20) != 0)) ;
 
 			if (strncmp(l, "Status unchanged in ", 20) == 0) {
