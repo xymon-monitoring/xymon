@@ -22,6 +22,7 @@ raised with Hobbit.</p>
 	<li><a href="#nohtmllink">How do I remove the HTML links from the alert messages?</a></li>
 	<li><a href="#mancgi">I cannot see the the man-pages on the web</a></li>
 	<li><a href="#maintpl">Enable / Disable does not work</a></li>
+	<li><a name="#mailnosubj">My alert emails come without a subject</a></li>
 </ul>
 <hr>
 
@@ -207,6 +208,14 @@ setting to CGI scripts. A bit of digging on <a href="http://httpd.apache.org/doc
 that adding</p>
 <code> SetEnv PATH /bin:/usr/bin:/usr/local/bin</code>
 <p>is the way to set environment variables for CGI scripts.</p>
+
+<hr>
+<h3><a name="mailnosubj">My alert emails come without a subject</a></h3>
+<p>Hobbit by default uses the system <b>mail</b> command to send out messages.
+Solaris mail-command does not understand the "-s SUBJECT" syntax that Hobbit uses.
+So you get mails with no subject. The solution is to change the MAIL setting in
+etc/hobbitserver.cfg to use the <b>mailx</b> command instead. Hobbit needs to be
+restarted after this change./p>
 
 <hr>
 
