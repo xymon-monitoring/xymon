@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.79 2003-07-12 06:32:11 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.80 2003-07-13 06:18:10 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -77,7 +77,7 @@ int		testcount = 0;
 int		notesthostcount = 0;
 char		**selectedhosts;
 int		selectedcount = 0;
-time_t		frequenttesttime = 1800;	/* Interval (seconds) when failing hosts are retried frequently */
+time_t		frequenttestlimit = 1800;	/* Interval (seconds) when failing hosts are retried frequently */
 
 testitem_t *find_test(char *hostname, char *testname)
 {
@@ -671,7 +671,7 @@ void save_fping_status(void)
 			if (t->host->downcount == 1) t->host->downstart = time(NULL);
 			fprintf(statusfd, "%s %d %lu\n", t->host->hostname, t->host->downcount, t->host->downstart);
 			didany = 1;
-			t->host->repeattest = ((time(NULL) - t->host->downstart) < frequenttesttime);
+			t->host->repeattest = ((time(NULL) - t->host->downstart) < frequenttestlimit);
 		}
 	}
 
@@ -728,7 +728,7 @@ void save_test_status(service_t *test)
 			if (t->downcount == 1) t->downstart = time(NULL);
 			fprintf(statusfd, "%s %d %lu\n", t->host->hostname, t->downcount, t->downstart);
 			didany = 1;
-			t->host->repeattest = ((time(NULL) - t->downstart) < frequenttesttime);
+			t->host->repeattest = ((time(NULL) - t->downstart) < frequenttestlimit);
 		}
 	}
 
@@ -1214,9 +1214,9 @@ int main(int argc, char *argv[])
 			else egocolumn = "bbtest";
 			timing = 1;
 		}
-		else if (argnmatch(argv[argi], "--frequentpolltime=")) {
+		else if (argnmatch(argv[argi], "--frequenttestlimit=")) {
 			char *p = strchr(argv[argi], '=');
-			p++; frequenttesttime = atoi(p);
+			p++; frequenttestlimit = atoi(p);
 		}
 
 		/* Options for TCP tests */
@@ -1286,7 +1286,7 @@ int main(int argc, char *argv[])
 			printf("    --timeout=N                 : Timeout (in seconds) for service tests\n");
 			printf("    --dns=[only|ip|standard]    : How IP's are decided\n");
 			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbtest-net\n");
-			printf("    --frequentpolltime=N        : Seconds after detecting failures in which we poll frequently\n");
+			printf("    --frequenttestlimit=N       : Seconds after detecting failures in which we poll frequently\n");
 			printf("\nOptions for services in BBNETSVCS (tcp tests):\n");
 			printf("    --concurrency=N             : Number of tests run in parallel\n");
 			printf("\nOptions for PING (connectivity) tests:\n");
