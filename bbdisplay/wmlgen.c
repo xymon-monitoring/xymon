@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: wmlgen.c,v 1.12 2003-05-23 09:59:43 henrik Exp $";
+static char rcsid[] = "$Id: wmlgen.c,v 1.13 2003-05-23 11:03:19 henrik Exp $";
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -96,18 +96,18 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 	char *p, *outp;
 	int linecount;
 
-	sprintf(fn, "%s/%s.%s.wml", wmldir, host->hostname, entry->column->name);
-	fd = fopen(fn, "w");
-	if (fd == NULL) {
-		errprintf("Cannot open file %s\n", fn);
-		return;
-	}
-
 	sprintf(logfn, "%s/%s.%s", getenv("BBLOGS"), commafy(host->hostname), entry->column->name);
 	logfd = fopen(logfn, "r");
 	if (logfd == NULL) {
 		fclose(fd);
 		errprintf("Cannot open file %s\n", logfn);
+		return;
+	}
+
+	sprintf(fn, "%s/%s.%s.wml", wmldir, host->hostname, entry->column->name);
+	fd = fopen(fn, "w");
+	if (fd == NULL) {
+		errprintf("Cannot create file %s\n", fn);
 		return;
 	}
 
