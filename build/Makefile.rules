@@ -65,7 +65,7 @@ alert: alert.c debug.c util.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ alert.c debug.c util.c
 
 contest: contest.c debug.c util.c
-	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ contest.c debug.c util.c $(NETLIBS)
+	$(CC) $(CFLAGS) -g -DSTANDALONE -DDEBUG -Wall -o $@ contest.c debug.c util.c $(CURLLIB) $(NETLIBS)
 
 calc: calc.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ calc.c
