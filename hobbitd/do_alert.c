@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.36 2005-02-15 12:58:06 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.37 2005-02-19 07:41:45 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -64,6 +64,9 @@ static char rcsid[] = "$Id: do_alert.c,v 1.36 2005-02-15 12:58:06 henrik Exp $";
 #include "libbbgen.h"
 
 #include "hobbitd_alert.h"
+
+FILE *tracefd = NULL;	   /* Logfile for tracing. If not NULL, output trace info to troubleshoot alert rules */
+int include_configid = 0;  /* Whether to include the configuration file linenumber in alerts */
 
 enum method_t { M_MAIL, M_SCRIPT };
 enum msgformat_t { FRM_TEXT, FRM_PLAIN, FRM_SMS, FRM_PAGER, FRM_SCRIPT };

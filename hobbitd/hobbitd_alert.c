@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.40 2005-02-06 17:37:21 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.41 2005-02-19 07:41:45 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -64,9 +64,7 @@ char *statename[] = {
 	"paging", "acked", "recovered", "dead"
 };
 
-int include_configid = 0;
 int alertinterval = 30*60; /* By default, repeat an alert every 30 minutes. */
-FILE *tracefd = NULL;	   /* Logfile for tracing. If not NULL, output trace info to troubleshoot alert rules */
 
 htnames_t *find_name(htnames_t **head, char *name)
 {
