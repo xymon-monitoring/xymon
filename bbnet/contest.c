@@ -1,23 +1,37 @@
+/*----------------------------------------------------------------------------*/
+/* Big Brother network test tool.                                             */
+/*                                                                            */
+/* This is used to implement the testing of a TCP service.                    */
+/*                                                                            */
+/* Copyright (C) 2003 Henrik Storner <henrik@hswn.dk>                         */
+/*                                                                            */
+/* This program is released under the GNU General Public License (GPL),       */
+/* version 2. See the file "COPYING" for details.                             */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+static char rcsid = "$Id: contest.c,v 1.6 2003-04-15 15:25:04 henrik Exp $";
+
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <sys/types.h>
 #include <sys/select.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <stdlib.h>
+#include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <errno.h>
 
 #include "contest.h"
 #include "bbgen.h"
 #include "debug.h"
 
-#define DEFTIMEOUT 10	/* seconds */
+#define DEF_TIMEOUT 10			/* seconds */
+#define DEF_MAX_OPENS  (FD_SETSIZE / 4)	/* Max number of simultaneous open connections */
 #define MAX_BANNER 1024
-#define MAX_OPENS  (FD_SETSIZE / 2)	/* Max number of simultaneous open connections */
 
 typedef struct {
 	char *svcname;
@@ -41,27 +55,32 @@ typedef struct {
 
 static test_t *thead = NULL;
 
+/*
+ * Services we know how to handle:
+ * This defines what to send to them to shut down the 
+ * session nicely, and whether we want to grab the
+ * banner or not.
+ */
 static svcinfo_t svcinfo[] = {
-	{ "ftp", "quit\n", 1 },
-	{ "ssh", NULL, 1 },
-	{ "ssh1", NULL, 1 },
-	{ "ssh2", NULL, 1 },
-	{ "telnet", "quit\n", 0 },
-	{ "smtp", "quit\n", 1 },
-	{ "pop", "quit\n", 1 },
-	{ "pop2", "quit\n", 1 },
-	{ "pop-2", "quit\n", 1 },
-	{ "pop3", "quit\n", 1 },
-	{ "pop-3", "quit\n", 1 },
-	{ "imap", "ABC123 LOGOUT\n", 1 },
-	{ "imap2", "ABC123 LOGOUT\n", 1 },
-	{ "imap3", "ABC123 LOGOUT\n", 1 },
-	{ "imap4", "ABC123 LOGOUT\n", 1 },
-	{ "nntp", "quit\n", 1 },
-	{ "rsync", NULL, 1 },
-	{ NULL, NULL, 0 }	/* Default behaviour: Dont send anything, dont grab banner */
+	{ "ftp",     "quit\n",          1 },
+	{ "ssh",     NULL,              1 },
+	{ "ssh1",    NULL,              1 },
+	{ "ssh2",    NULL,              1 },
+	{ "telnet",  "quit\n",          0 },
+	{ "smtp",    "quit\n",          1 },
+	{ "pop",     "quit\n",          1 },
+	{ "pop2",    "quit\n",          1 },
+	{ "pop-2",   "quit\n",          1 },
+	{ "pop3",    "quit\n",          1 },
+	{ "pop-3",   "quit\n",          1 },
+	{ "imap",    "ABC123 LOGOUT\n", 1 },
+	{ "imap2",   "ABC123 LOGOUT\n", 1 },
+	{ "imap3",   "ABC123 LOGOUT\n", 1 },
+	{ "imap4",   "ABC123 LOGOUT\n", 1 },
+	{ "nntp",    "quit\n",          1 },
+	{ "rsync",   NULL,              1 },
+	{ NULL,      NULL,              0 }	/* Default behaviour: Dont send anything, dont grab banner */
 };
-
 
 
 void add_test(char *ip, int port, char *service)
@@ -91,7 +110,8 @@ void add_test(char *ip, int port, char *service)
 	thead = newtest;
 }
 
-void do_conn(int conntimeout)
+
+void do_conn(int conntimeout, int concurrency)
 {
 	int		selres;
 	fd_set		readfds, writefds;
@@ -110,45 +130,99 @@ void do_conn(int conntimeout)
 	char		msgbuf[MAX_BANNER];
 
 
+	/* If conntimeout or concurrency are 0, set them to reasonable defaults */
+	if (conntimeout == 0) conntimeout = DEF_TIMEOUT;
+	if (concurrency == 0) concurrency = DEF_MAX_OPENS;
+
 	/* How many tests to do ? */
 	for (item = thead; (item); item = item->next) pending++; 
 	firstactive = nextinqueue = thead;
-
-	if (conntimeout == 0) conntimeout = DEFTIMEOUT;
-
 
 	while (pending > 0) {
 		/*
 		 * First, see if we need to allocate new sockets and initiate connections.
 		 */
-		for (sockok=1; (sockok && nextinqueue && (activesockets < MAX_OPENS)); 
-			nextinqueue=nextinqueue->next, activesockets++) {
+		for (sockok=1; (sockok && nextinqueue && (activesockets < concurrency)); nextinqueue=nextinqueue->next) {
 
+			/*
+			 * We need to allocate a new socket that has O_NONBLOCK set.
+			 */
 			nextinqueue->fd = socket(PF_INET, SOCK_STREAM, 0);
 			sockok = (nextinqueue->fd != -1);
 			if (sockok) {
 				res = fcntl(nextinqueue->fd, F_SETFL, O_NONBLOCK);
 				if (res == 0) {
+					/*
+					 * Initiate the connection attempt ... 
+					 */
 					gettimeofday(&nextinqueue->timestart, &tz);
+					nextinqueue->tested = 1;
 					res = connect(nextinqueue->fd, (struct sockaddr *)&nextinqueue->addr, sizeof(nextinqueue->addr));
+
+					/*
+					 * Did it work ?
+					 */
 					if ((res == 0) || ((res == -1) && (errno == EINPROGRESS))) {
-						/* This is OK */
+						/* This is OK - EINPROGRES and res=0 pick up status in select() */
+						activesockets++;
+					}
+					else if (res == -1) {
+						/* connect() failed. Flag the item as "not open" */
+						nextinqueue->connres = errno;
+						nextinqueue->open = 0;
+						close(nextinqueue->fd);
+						nextinqueue->fd = -1;
+						pending--;
+
+						switch (nextinqueue->connres) {
+						   /* These may happen if connection is refused immediately */
+						   case ECONNREFUSED : break;
+						   case EHOSTUNREACH : break;
+						   case ENETUNREACH  : break;
+
+						   /* Not likely ... */
+						   case ETIMEDOUT    : break;
+
+						   /* These should not happen. */
+						   case EBADF        : printf("connect returned EBADF!\n"); break;
+						   case ENOTSOCK     : printf("connect returned ENOTSOCK!\n"); break;
+						   case EADDRNOTAVAIL: printf("connect returned EADDRNOTAVAIL!\n"); break;
+						   case EAFNOSUPPORT : printf("connect returned EAFNOSUPPORT!\n"); break;
+						   case EISCONN      : printf("connect returned EISCONN!\n"); break;
+						   case EADDRINUSE   : printf("connect returned EADDRINUSE!\n"); break;
+						   case EFAULT       : printf("connect returned EFAULT!\n"); break;
+						   case EALREADY     : printf("connect returned EALREADY!\n"); break;
+						   default           : printf("connect returned %d, errno=%d\n", res, errno);
+						}
 					}
 					else {
-						printf("connect returned %d, errno=%d\n", res, errno);
+						/* Should NEVER happen. connect returns 0 or -1 */
+						printf("Strange result from connect: %d, errno=%d\n", res, errno);
 					}
-					nextinqueue->tested = 1;
 				}
 				else {
+					/* Could net set to non-blocking mode! Hmmm ... */
 					sockok = 0;
 					printf("Cannot set O_NONBLOCK\n");
 				}
 			}
 			else {
-				printf("Cannot get socket\n");
+				/* Could not get a socket */
+				switch (errno) {
+				   case EPROTONOSUPPORT: printf("Cannot get socket - EPROTONOSUPPORT\n"); break;
+				   case EAFNOSUPPORT   : printf("Cannot get socket - EAFNOSUPPORT\n"); break;
+				   case EMFILE         : printf("Cannot get socket - EMFILE\n"); break;
+				   case ENFILE         : printf("Cannot get socket - ENFILE\n"); break;
+				   case EACCES         : printf("Cannot get socket - EACCESS\n"); break;
+				   case ENOBUFS        : printf("Cannot get socket - ENOBUFS\n"); break;
+				   case ENOMEM         : printf("Cannot get socket - ENOMEM\n"); break;
+				   case EINVAL         : printf("Cannot get socket - EINVAL\n"); break;
+				   default             : printf("Cannot get socket - errno=%d\n", errno); break;
+				}
 			}
 		}
 
+		/* Ready to go - we have a bunch of connections being established */
 		dprintf("%d tests pending - %d active tests\n", pending, activesockets);
 
 		/*
@@ -181,10 +255,22 @@ void do_conn(int conntimeout)
 		 */
 		tmo.tv_sec = conntimeout; tmo.tv_usec = 0;
 		selres = select((maxfd+1), &readfds, &writefds, NULL, &tmo);
+		if (selres == -1) {
+			switch (errno) {
+			   case EBADF : printf("select failed - EBADF\n"); break;
+			   case EINTR : printf("select failed - EINTR\n"); break;
+			   case EINVAL: printf("select failed - EINVAL\n"); break;
+			   case ENOMEM: printf("select failed - ENOMEM\n"); break;
+			}
+			selres = 0;
+		}
+
+		/* Fetch the timestamp so we can tell how long the connect took */
 		gettimeofday(&timestamp, &tz);
 
+		/* Now find out which connections had something happen to them */
 		for (item=firstactive; (item != nextinqueue); item=item->next) {
-			if (item->fd > -1) {
+			if (item->fd > -1) {		/* Only active sockets have this */
 				if (selres == 0) {
 					/* 
 					 * Timeout on all active connection attempts.
@@ -210,11 +296,20 @@ void do_conn(int conntimeout)
 						/*
 						 * Active response on this socket - either OK, or 
 						 * connection refused.
+						 * We determine what happened by getting the SO_ERROR status.
+						 * (cf. select_tut(2) manpage).
 						 */
 						connressize = sizeof(item->connres);
 						res = getsockopt(item->fd, SOL_SOCKET, SO_ERROR, &item->connres, &connressize);
 						item->open = (item->connres == 0);
+
 						if (item->open) {
+							/*
+							 * Connection succeeded - port is open. Determine connection time,
+							 * and if we have anything to send then send it.
+							 * If we want the banner, set the "readpending" flag to initiate
+							 * select() for read()'s.
+							 */
 							item->duration.tv_sec = timestamp.tv_sec - item->timestart.tv_sec;
 							item->duration.tv_usec = timestamp.tv_usec - item->timestart.tv_usec;
 							if (item->duration.tv_usec < 0) {
@@ -222,6 +317,10 @@ void do_conn(int conntimeout)
 								item->duration.tv_usec += 1000000;
 							}
 							if (item->svcinfo->sendtxt) {
+								/*
+								 * It may be that we cannot write all of the
+								 * data we want to. Tough ... 
+								 */
 								res = write(item->fd, item->svcinfo->sendtxt,
 									strlen(item->svcinfo->sendtxt));
 							}
