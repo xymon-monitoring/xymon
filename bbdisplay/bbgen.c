@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.192 2004-12-12 22:11:24 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.193 2004-12-12 22:53:39 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -100,7 +100,6 @@ int main(int argc, char *argv[])
 	bbgen_page_t 	*p;
 	dispsummary_t	*s;
 	int		i;
-	int		pagegenstat;
 	char		*pageset = NULL;
 	char		*nssidebarfilename = NULL;
 	char		*egocolumn = NULL;
@@ -587,8 +586,7 @@ int main(int argc, char *argv[])
 		/* Delete old info-timestamp file if we have restarted */
 		drop_genstatfiles();
 
-		/* Dont generate both LARRD and info in one run */
-		if (pagegenstat) pagegenstat = generate_info(infocol, usebbgend);
+		generate_info(infocol, usebbgend);
 		add_timestamp("INFO generate done");
 
 		/* Remove old acknowledgements */
