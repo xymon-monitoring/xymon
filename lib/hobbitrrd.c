@@ -11,13 +11,14 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.20 2005-02-21 16:45:43 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.21 2005-02-22 14:14:50 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 
 #include "libbbgen.h"
 #include "version.h"
@@ -48,7 +49,27 @@ static void larrd_setup(void)
 	larrdrrd_t *lrec;
 	larrdgraph_t *grec;
 
-	if (setup_done) return;
+	/* Do nothing if we have been called within the past 5 minutes */
+	if ((setup_done + 300) >= time(NULL)) return;
+
+
+	/* Must free any old data first */
+	lrec = larrdrrds;
+	while (lrec) {
+		if (lrec->larrdrrdname != lrec->bbsvcname) xfree(lrec->larrdrrdname);
+		xfree(lrec->bbsvcname);
+		lrec++;
+	}
+	if (larrdrrds) xfree(larrdrrds);
+
+	grec = larrdgraphs;
+	while (grec) {
+		if (grec->larrdpartname) xfree(grec->larrdpartname);
+		xfree(grec->larrdrrdname);
+		grec++;
+	}
+	if (larrdgraphs) xfree(larrdgraphs);
+
 
 	/* Get the tcp services, and count how many there are */
 	tcptests = strdup(init_tcp_services());
@@ -114,7 +135,7 @@ static void larrd_setup(void)
 	}
 	xfree(lenv);
 
-	setup_done = 1;
+	setup_done = time(NULL);
 }
 
 
