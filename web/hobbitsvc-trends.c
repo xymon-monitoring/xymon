@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.42 2004-12-05 21:23:45 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.43 2004-12-06 11:36:20 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -427,8 +427,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 		char *rrdlink;
 		int i;
 
-		sprintf(allrrdlinks, "status %s.%s green %s - larrd is accumulating <center><BR>\n",
-			commafy(hostwalk->hostentry->hostname), larrdcol, timestamp);
+		sprintf(allrrdlinks, "larrd is accumulating <center><BR>\n");
 
 		for (i=0; rrdnames[i].name; i++) {
 			for (rwalk = hostwalk->hostentry->rrds; (rwalk && (rwalk->rrdname->name != rrdnames[i].name)); rwalk = rwalk->next) ;
