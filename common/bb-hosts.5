@@ -279,16 +279,24 @@ You can then use the NKTIME tag to define the time periods
 where the alert will show up on the NK page. 
 
 The timespecification consists of
-.br
-* day-of-week: 'W' means Mon-Fri ("weekdays"), '*' means all days, '0' .. '6' = Sunday .. Saturday
-.br
-* starttime: Time to start showing errors, HHMM hours/minutes. E.g. "8 am" is "0800", "9.30 pm" is "2130"
-.br
-* endtime: Time to stop showing errors.
+.sp
+.BR day-of-week:
+\fBW\fR means Mon-Fri ("weekdays"), \fB*\fR means all days, \fB0\fR .. \fB6\fR = Sunday .. Saturday. 
+One character only.
+.sp
+.BR starttime:
+Time to start showing errors, must be in 24-hour clock format as HHMM hours/minutes. 
+E.g. for 8 am enter "0800", for 9.30 pm enter "2130"
+.sp
+.BR endtime:
+Time to stop showing errors.
 
 If necessary, multiple periods can be specified. E.g. to
 monitor a site 24x7, except between noon and 1 pm, use
 NKTIME=*:0000:1159,*:1300:2359
+
+The interval between starttime and endtime may cross midnight, e.g. \fB*:2330:0200\fR
+would be valid and have the same effect as \fB*:2330:2400,*:0000:0200\fR.
 
 .SH HOBBIT TAGS FOR THE WML (WAP) CARDS
 If bbgen is run with the "--wml" option, it will generate a
