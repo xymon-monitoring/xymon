@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.95 2003-09-08 20:39:16 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.96 2003-09-08 21:41:50 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -936,6 +936,50 @@ void do_page_with_subs(bbgen_page_t *curpage, dispsummary_t *sums)
 }
 
 
+static void do_bb2ext(FILE *output, char *extenv, char *family)
+{
+	/*
+	 * Do the BB2 page extensions. Since we have built-in
+	 * support for eventlog.sh and acklog.sh, we cannot
+	 * use the standard do_bbext() routine.
+	 */
+	char *bbexts, *p;
+	FILE *inpipe;
+	char extfn[MAX_PATH];
+	char buf[4096];
+	
+	p = getenv(extenv);
+	if (p == NULL) {
+		/* No extension */
+		return;
+	}
+
+	bbexts = malcop(p);
+	p = strtok(bbexts, "\t ");
+
+	while (p) {
+		/* Dont redo the eventlog or acklog things */
+		if (strcmp(p, "eventlog.sh") == 0) {
+			if (bb2eventlog && !havedoneeventlog) do_eventlog(output, 0, 240, 0);
+		}
+		else if (strcmp(p, "acklog.sh") == 0) {
+			if (bb2acklog && !havedoneacklog) do_acklog(output, 25, 240);
+		}
+		else {
+			sprintf(extfn, "%s/ext/%s/%s", getenv("BBHOME"), family, p);
+			inpipe = popen(extfn, "r");
+			if (inpipe) {
+				while (fgets(buf, sizeof(buf), inpipe)) 
+					fputs(buf, output);
+				pclose(inpipe);
+			}
+		}
+		p = strtok(NULL, "\t ");
+	}
+
+	free(bbexts);
+}
+
 int do_bb2_page(char *filename, int summarytype)
 {
 	bbgen_page_t	bb2page;
@@ -1049,9 +1093,11 @@ int do_bb2_page(char *filename, int summarytype)
 	}
 
 	if ((snapshot == 0) && (summarytype == PAGE_BB2)) {
-		if (bb2eventlog) do_eventlog(output, 0, 240, 0);
-		if (bb2acklog) do_acklog(output, 25, 240);
-		do_bbext(output, "BBMKBB2EXT", "mkbb");
+		do_bb2ext(output, "BBMKBB2EXT", "mkbb");
+
+		/* Dont redo the eventlog or acklog things */
+		if (bb2eventlog && !havedoneeventlog) do_eventlog(output, 0, 240, 0);
+		if (bb2acklog && !havedoneacklog) do_acklog(output, 25, 240);
 	}
 
 	fprintf(output, "</center>\n");
