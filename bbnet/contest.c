@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.36 2003-08-29 22:08:21 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.37 2003-09-28 10:30:16 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -21,6 +21,7 @@ static char rcsid[] = "$Id: contest.c,v 1.36 2003-08-29 22:08:21 henrik Exp $";
 #include <sys/select.h>		/* Someday I'll move to GNU Autoconf for this ... */
 #endif
 #include <errno.h>
+#include <sys/resource.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -33,7 +34,11 @@ static char rcsid[] = "$Id: contest.c,v 1.36 2003-08-29 22:08:21 henrik Exp $";
 #include "debug.h"
 #include "util.h"
 
-#define DEF_MAX_OPENS  (FD_SETSIZE / 4)	/* Max number of simultaneous open connections */
+/* BSD uses RLIMIT_OFILE */
+#if defined(RLIMIT_OFILE) && !defined(RLIMIT_NOFILE)
+#define RLIMIT_NOFILE RLIMIT_OFILE
+#endif
+
 #define MAX_BANNER 1024
 #define MAX_TELNET_CYCLES 5		/* Max loops with telnet options before aborting banner */
 
@@ -440,7 +445,16 @@ void do_tcp_tests(int conntimeout, int concurrency)
 
 	/* If conntimeout or concurrency are 0, set them to reasonable defaults */
 	if (conntimeout == 0) conntimeout = DEF_TIMEOUT;
-	if (concurrency == 0) concurrency = DEF_MAX_OPENS;
+	if (concurrency == 0) {
+		struct rlimit lim;
+
+		concurrency = (FD_SETSIZE / 4);
+
+		getrlimit(RLIMIT_NOFILE, &lim);
+		if (lim.rlim_cur < concurrency) {
+			concurrency = lim.rlim_cur - 10;
+		}
+	}
 	if (concurrency > (FD_SETSIZE-10)) {
 		concurrency = FD_SETSIZE - 10;	/* Allow a bit for stdin, stdout and such */
 		errprintf("bbtest-net: concurrency reduced to FD_SETSIZE-10 (%d)\n", concurrency);
