@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.126 2005-01-01 00:45:34 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.127 2005-01-09 21:35:07 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -506,7 +506,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char 
 						getenv("CGIBINURL"), h->hostname, e->column->name, e->histlogname);
 
 					fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
-						bbskin, dotgiffilename(e->color, e->acked, e->oldage),
+						bbskin, dotgiffilename(e->color, 0, 1),
 						alttag(e), alttag(e),
 						getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
 				}
@@ -545,7 +545,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char 
 					/* Report format output */
 					if ((e->color == COL_GREEN) || (e->color == COL_CLEAR)) {
 						fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0>",
-							bbskin, dotgiffilename(e->color, e->acked, e->oldage),
+							bbskin, dotgiffilename(e->color, 0, 1),
 							colorname(e->color), colorname(e->color),
 							getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
 					}
@@ -806,7 +806,7 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *pagepath)
 
 			fprintf(output, "<TD><CENTER><A HREF=\"%s\">", cleanurl(pagelink));
 			fprintf(output, "<IMG SRC=\"%s/%s\" WIDTH=\"%s\" HEIGHT=\"%s\" BORDER=0 ALT=\"%s\" TITLE=\"%s\"></A>", 
-				getenv("BBSKIN"), dotgiffilename(p->color, 0, p->oldage), 
+				getenv("BBSKIN"), dotgiffilename(p->color, 0, ((reportstart > 0) ? 1 : p->oldage)), 
 				getenv("DOTWIDTH"), getenv("DOTHEIGHT"),
 				colorname(p->color), colorname(p->color));
 			fprintf(output, "</CENTER></TD>\n");
