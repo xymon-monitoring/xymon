@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.29 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.30 2005-02-15 09:30:19 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -99,7 +99,8 @@ int main(int argc, char *argv[])
 		if (alleventsfd == NULL) {
 			errprintf("Cannot open the all-events file '%s'\n", alleventsfn);
 		}
-		setlinebuf(alleventsfd);
+		/* setlinebuf(alleventsfd); */
+		setvbuf(alleventsfd, (char *)NULL, _IOLBF, 0);
 	}
 
 	/* For picking up lost children */
