@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.121 2005-03-03 12:01:19 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.122 2005-03-03 21:51:33 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -2475,18 +2475,24 @@ int main(int argc, char *argv[])
 		setsid();
 	}
 
-	if (pidfile) {
-		/* Save PID */
-		FILE *fd = fopen(pidfile, "w");
-		if (fd) {
-			if (fprintf(fd, "%d\n", (int)getpid()) <= 0) {
-				errprintf("Error writing PID file %s: %s\n", pidfile, strerror(errno));
-			}
-			fclose(fd);
+	if (pidfile == NULL) {
+		/* Setup a default pid-file */
+		char fn[PATH_MAX];
+
+		sprintf(fn, "%s/hobbitd.pid", xgetenv("BBSERVERLOGS"));
+		pidfile = strdup(fn);
+	}
+
+	/* Save PID */
+	FILE *fd = fopen(pidfile, "w");
+	if (fd) {
+		if (fprintf(fd, "%d\n", (int)getpid()) <= 0) {
+			errprintf("Error writing PID file %s: %s\n", pidfile, strerror(errno));
 		}
-		else {
-			errprintf("Cannot open PID file %s: %s\n", pidfile, strerror(errno));
-		}
+		fclose(fd);
+	}
+	else {
+		errprintf("Cannot open PID file %s: %s\n", pidfile, strerror(errno));
 	}
 
 	errprintf("Setting up signal handlers\n");
