@@ -57,7 +57,7 @@ the next two questions.</p>
     ~/server/bin/bb 127.0.0.1 "drop HOSTNAME ftp"
 </pre>
 to permanenly remove all traces of a test. Note that you need the quotes
-around the &quot;hobbitddrop HOSTNAME ftp&quot;.</p>
+around the &quot;drop HOSTNAME ftp&quot;.</p>
 
 
 <h4>So how do I get rid of an entire host in Hobbit?</h4>
@@ -66,7 +66,7 @@ around the &quot;hobbitddrop HOSTNAME ftp&quot;.</p>
     ~/server/bin/bb 127.0.0.1 "drop HOSTNAME"
 </pre>
 to permanenly remove all traces of a host. Note that you need the quotes
-around the &quot;hobbitddrop HOSTNAME&quot;.</p>
+around the &quot;drop HOSTNAME&quot;.</p>
 
 
 <h4>How do I rename a host in the Hobbit display?</h4>

@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.90 2005-01-01 19:48:56 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.91 2005-01-04 09:38:38 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -2125,7 +2125,7 @@ int main(int argc, char *argv[])
 			statussenders = getsenderlist(p+1);
 		}
 		else if (argnmatch(argv[argi], "--admin-senders=")) {
-			/* Who is allowed to send us "hobbitddrop", "hobbitdrename", "config", "query" messages */
+			/* Who is allowed to send us "drop", "rename", "config", "query" messages */
 			char *p = strchr(argv[argi], '=');
 			adminsenders = getsenderlist(p+1);
 		}

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char hobbitd_rcsid[] = "$Id: do_hobbitd.c,v 1.2 2004-12-30 22:25:34 henrik Exp $";
+static char hobbitd_rcsid[] = "$Id: do_hobbitd.c,v 1.3 2005-01-04 09:38:38 henrik Exp $";
 
 static char *hobbitd_params[] = { "rrdcreate", rrdfn, 
 				 "DS:inmessages:DERIVE:600:0:U", 
@@ -57,8 +57,8 @@ int do_hobbitd_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		{ "\n- hobbitdboard", 0 },
 		{ "\n- hobbitdlist", 0 },
 		{ "\n- hobbitdlog", 0 },
-		{ "\n- hobbitddrop", 0 },
-		{ "\n- hobbitdrename", 0 },
+		{ "\n- drop", 0 },
+		{ "\n- rename", 0 },
 		{ "\nstatus channel messages", 0 },
 		{ "\nstachg channel messages", 0 },
 		{ "\npage   channel messages", 0 },
