@@ -2,7 +2,7 @@
 #
 # Add this to your Apache configuration, it makes
 # the BB webpages and cgi-scripts available in the
-# "/bb/" URL.
+# "@BBHOSTURL@" and "@BBCGIURL@" URLs.
 
 Alias @BBHOSTURL@/  "@BBHOME@/www/"
 <Directory "@BBHOME@/www/">
