@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: memory.c,v 1.1 2005-01-15 17:39:30 henrik Exp $";
+static char rcsid[] = "$Id: memory.c,v 1.2 2005-01-15 22:15:05 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -70,6 +70,11 @@ void *xrealloc(void *ptr, size_t size)
 char *xstrdup(const char *s)
 {
 	char *result;
+
+	if (s == NULL) {
+		errprintf("xstrdup: Cannot dup NULL string\n");
+		abort();
+	}
 
 	result = strdup(s);
 	if (result == NULL) {
