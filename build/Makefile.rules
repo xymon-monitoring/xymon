@@ -68,6 +68,7 @@ docs-build:
 distclean: allclean
 	rm -f Makefile
 	rm -rf bbnet/c-ares
+	rm -rf debbuild rpmbuild
 
 allclean: clean
 	(cd bbnet/c-ares && $(MAKE) clean) || true
