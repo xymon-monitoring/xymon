@@ -8,11 +8,16 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-datepage.c,v 1.1 2005-04-06 20:44:28 henrik Exp $";
+static char rcsid[] = "$Id: bb-datepage.c,v 1.2 2005-04-06 21:40:09 henrik Exp $";
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <fcntl.h>
+#include <limits.h>
 
 #include "libbbgen.h"
 #include "version.h"
@@ -84,7 +89,6 @@ static void get_post_data(void)
 	char l[8192];
 
 	while (fgets(l, sizeof(l), stdin)) {
-		errprintf("Form input: %s\n", l);
 		parse_query(l);
 	}
 }
@@ -96,8 +100,6 @@ int main(int argc, char *argv[])
 	char *hffile = "report";
 	char *urlprefix = "";
 	int bgcolor = COL_BLUE;
-
-	freopen("/tmp/debug.txt", "a", stderr);
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -125,7 +127,6 @@ int main(int argc, char *argv[])
 		char *cookie, *pagepath, *p;
 		char *endurl;
 
-		errprintf("Got a POST\n");
 		get_post_data();
 
 		cookie = getenv("HTTP_COOKIE");
@@ -134,18 +135,17 @@ int main(int argc, char *argv[])
 			return 1;
 		}
 
-		errprintf("Cookie: %s\n", cookie);
-		p = strstr(cookie, "pagepath=");
-		if (p == NULL) {
-			p = strstr(cookie, "host=");
-			if (p == NULL) {
+		p = strstr(cookie, "pagepath="); if (p) p+= strlen("pagepath=");
+		if ((p == NULL) || (strlen(p) == 0)) {
+			p = strstr(cookie, "host="); if (p) p += strlen("host=");
+			if ((p == NULL) || (strlen(p) == 0)) {
 				pagepath = "";
 			}
 			else {
 				char *hname;
 				namelist_t *hinfo;
 
-				hname = strdup(p + strlen("host="));
+				hname = strdup(p);
 				p = strchr(hname, ';'); if (p) *p = '\0';
 
 				load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
@@ -159,11 +159,10 @@ int main(int argc, char *argv[])
 			}
 		}
 		else {
-			pagepath = strdup(p + strlen("pagepath="));
+			pagepath = strdup(p);
 			p = strchr(pagepath, ';'); if (p) *p = '\0';
 		}
 
-		errprintf("pagepath is: %s\n", pagepath);
 		endurl = (char *)malloc(strlen(urlprefix) + strlen(pagepath) + 1024);
 
 		switch (frmtype) {
@@ -188,81 +187,53 @@ int main(int argc, char *argv[])
 
 		if (*pagepath) strcat(endurl, "/");
 
-		errprintf("endurl: %s\n", endurl);
-		fprintf(stdout, "Location: %s\n\n", endurl);
+		fprintf(stdout, "Content-type: text/html\n\n");
+		fprintf(stdout, "<html><head><meta http-equiv=\"refresh\" content=\"0; URL=%s\"></head></html>\n", endurl);
 	}
 	else {
-		char *mnames[] = { "", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
-		int i;
+                int formfile;
+                char formfn[PATH_MAX];
 
 		parse_query(NULL);
 
-		fprintf(stdout, "Content-type: text/html\n\n");
-		headfoot(stdout, hffile, "", "header", bgcolor);
-
-		fprintf(stdout, "<form method=\"post\" action=\"%s\"\n", xgetenv("REQUEST_URI"));
-
+                /* Present the query form */
 		switch (frmtype) {
 		  case FRM_DAY:
-			fprintf(stdout, "<select name=\"month\">\n");
-			for (i=1; (i<=12); i++) {
-				fprintf(stdout, "<option value=\"%02d\">%s\n", i, mnames[i]);
-			}
-			fprintf(stdout, "</select>\n");
-
-			fprintf(stdout, "<select name=\"day\">\n");
-			for (i=1; (i<=31); i++) {
-				fprintf(stdout, "<option value=\"%02d\">%d\n", i, i);
-			}
-			fprintf(stdout, "</select>\n");
-
-			fprintf(stdout, "<select name=\"year\">\n");
-			for (i=1999; (i<=2009); i++) {
-				fprintf(stdout, "<option value=\"%02d\">%d\n", i, i);
-			}
-			fprintf(stdout, "</select>\n");
-			fprintf(stdout, "<input type=\"hidden\" NAME=\"type\" value=\"day\">\n");
+			sprintf(formfn, "%s/web/%s_form_daily", xgetenv("BBHOME"), hffile);
 			break;
 
 		  case FRM_WEEK:
-			fprintf(stdout, "<select name=\"week\">\n");
-			for (i=1; (i<=53); i++) {
-				fprintf(stdout, "<option value=\"%02d\">%d\n", i, i);
-			}
-			fprintf(stdout, "</select>\n");
-
-			fprintf(stdout, "<select name=\"year\">\n");
-			for (i=1999; (i<=2009); i++) {
-				fprintf(stdout, "<option value=\"%02d\">%d\n", i, i);
-			}
-			fprintf(stdout, "</select>\n");
-			fprintf(stdout, "<input type=\"hidden\" NAME=\"type\" value=\"week\">\n");
+			sprintf(formfn, "%s/web/%s_form_weekly", xgetenv("BBHOME"), hffile);
 			break;
 
 		  case FRM_MONTH:
-			fprintf(stdout, "<select name=\"month\">\n");
-			for (i=1; (i<=12); i++) {
-				fprintf(stdout, "<option value=\"%02d\">%s\n", i, mnames[i]);
-			}
-			fprintf(stdout, "</select>\n");
-
-			fprintf(stdout, "<select name=\"year\">\n");
-			for (i=1999; (i<=2009); i++) {
-				fprintf(stdout, "<option value=\"%02d\">%d\n", i, i);
-			}
-			fprintf(stdout, "</select>\n");
-			fprintf(stdout, "<input type=\"hidden\" NAME=\"type\" value=\"month\">\n");
+			sprintf(formfn, "%s/web/%s_form_monthly", xgetenv("BBHOME"), hffile);
 			break;
 
 		  case FRM_NONE:
-			fprintf(stdout, "No type, got QUERY_STRING=%s\n", xgetenv("QUERY_STRING"));
-			break;
+			errormsg("No report type defined");
 		}
 
-		fprintf(stdout, "<INPUT TYPE=\"SUBMIT\" NAME=\"SUBMONTHLY\" VALUE=\"View Report\" ALT=\"View Report\">\n");
-		fprintf(stdout, "</form>\n");
+                formfile = open(formfn, O_RDONLY);
+                if (formfile >= 0) {
+                        char *inbuf;
+                        struct stat st;
 
-		headfoot(stdout, hffile, "", "footer", bgcolor);
+                        fstat(formfile, &st);
+                        inbuf = (char *) malloc(st.st_size + 1);
+                        read(formfile, inbuf, st.st_size);
+                        inbuf[st.st_size] = '\0';
+                        close(formfile);
+
+                        printf("Content-Type: text/html\n\n");
+                        sethostenv("", "", "", colorname(bgcolor));
+
+                        headfoot(stdout, hffile, "", "header", bgcolor);
+                        output_parsed(stdout, inbuf, COL_BLUE, "report");
+                        headfoot(stdout, hffile, "", "footer", bgcolor);
+
+                        xfree(inbuf);
+                }
 	}
 
 	return 0;
