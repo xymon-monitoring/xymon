@@ -50,6 +50,7 @@
 					   anywaps             |
                                            nopropyellowtests   |
                                            nopropredtests      |
+                                           noproppurpletests   |
 					   rawentry            |
                       +------------------  link                V
                       |                    entries ---------> entry_t
@@ -248,6 +249,7 @@ typedef struct host_t {
 	char	*waps;
 	char    *nopropyellowtests;
 	char    *nopropredtests;
+	char    *noproppurpletests;
 	char    *rawentry;
 	struct rrd_t	*rrds;
 	char    *larrdgraphs;

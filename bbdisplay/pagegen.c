@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.103 2003-11-18 21:58:35 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.104 2003-11-21 13:22:13 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -478,9 +478,9 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 						}
 	
 						sprintf(alttag, "%s:%s", u32toIP(baseip+j), colorname(h->banks[j]));
-						fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
+						fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
 							bbskin, dotgiffilename(h->banks[j], 0, 0),
-							alttag, getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+							alttag, alttag, getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
 
 						fprintf(output, "</TD>\n");
 					}
@@ -501,9 +501,9 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 					fprintf(output, "<A HREF=\"%s/bb-histlog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s\">", 
 						getenv("CGIBINURL"), h->hostname, e->column->name, e->histlogname);
 
-					fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
+					fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
 						bbskin, dotgiffilename(e->color, e->acked, e->oldage),
-						alttag(e),
+						alttag(e), alttag(e),
 						getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
 				}
 				else if (reportstart == 0) {
@@ -529,17 +529,17 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 							getenv("CGIBINURL"), commafy(h->hostname), e->column->name);
 					}
 
-					fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
+					fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
 						skin, dotgiffilename(e->color, e->acked, e->oldage),
-						alttag(e),
+						alttag(e), alttag(e),
 						getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
 				}
 				else {
 					/* Report format output */
 					if ((e->color == COL_GREEN) || (e->color == COL_CLEAR)) {
-						fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0>",
+						fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0>",
 							bbskin, dotgiffilename(e->color, e->acked, e->oldage),
-							colorname(e->color),
+							colorname(e->color), colorname(e->color),
 							getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
 					}
 					else {
@@ -673,7 +673,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 
 		if (newhost == NULL) {
 			/* New summary "host" */
-			newhost = init_host(s->row, NULL, NULL, NULL, 0,0,0,0, 0, 0, 0.0, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0);
+			newhost = init_host(s->row, NULL, NULL, NULL, 0,0,0,0, 0, 0, 0.0, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, 0);
 
 			/*
 			 * Cannot have the pseudo host in the official hostlist,
@@ -797,10 +797,10 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *pagepath)
 			fprintf(output, "</FONT></TD>\n");
 
 			fprintf(output, "<TD><CENTER><A HREF=\"%s\">", cleanurl(pagelink));
-			fprintf(output, "<IMG SRC=\"%s/%s\" WIDTH=\"%s\" HEIGHT=\"%s\" BORDER=0 ALT=\"%s\"></A>", 
+			fprintf(output, "<IMG SRC=\"%s/%s\" WIDTH=\"%s\" HEIGHT=\"%s\" BORDER=0 ALT=\"%s\" TITLE=\"%s\"></A>", 
 				getenv("BBSKIN"), dotgiffilename(p->color, 0, p->oldage), 
 				getenv("DOTWIDTH"), getenv("DOTHEIGHT"),
-				colorname(p->color));
+				colorname(p->color), colorname(p->color));
 			fprintf(output, "</CENTER></TD>\n");
 
 			if (currentcolumn == (subpagecolumns-1)) {

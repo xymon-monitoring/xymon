@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.163 2003-11-18 21:56:13 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.164 2003-11-21 13:22:13 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -316,6 +316,11 @@ int main(int argc, char *argv[])
 			nopropreddefault = (char *) malloc(strlen(lp)+2);
 			sprintf(nopropreddefault, ",%s,", (lp+1));
 		}
+		else if (argnmatch(argv[i], "--noproppurple=")) {
+			char *lp = strchr(argv[i], '=');
+			noproppurpledefault = (char *) malloc(strlen(lp)+2);
+			sprintf(noproppurpledefault, ",%s,", (lp+1));
+		}
 
 		else if (argnmatch(argv[i], "--infoupdate=")) {
 			char *lp = strchr(argv[i], '=');
@@ -462,6 +467,7 @@ int main(int argc, char *argv[])
 			printf("\nStatus propagation control options:\n");
 			printf("    --noprop=test[,test]        : Disable upwards status propagation when YELLOW\n");
 			printf("    --nopropred=test[,test]     : Disable upwards status propagation when RED or YELLOW\n");
+			printf("    --noproppurple=test[,test]  : Disable upwards status propagation when PURPLE\n");
 			printf("\nInfo column options:\n");
 			printf("    --info[=INFOCOLUMN]         : Generate INFO data in column INFOCOLUMN\n");
 			printf("    --infoupdate=N              : time between updates of INFO column pages in seconds\n");

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.116 2003-11-18 21:57:55 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.117 2003-11-21 13:22:13 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -41,6 +41,7 @@ static char rcsid[] = "$Id: loaddata.c,v 1.116 2003-11-18 21:57:55 henrik Exp $"
 
 char    *nopropyellowdefault = NULL;
 char    *nopropreddefault = NULL;
+char    *noproppurpledefault = NULL;
 char	*larrdgraphs_default = NULL;
 int     enable_purpleupd = 1;
 int	purpledelay = 0;			/* Lifetime of purple status-messages. Default 0 for
@@ -190,16 +191,17 @@ host_t *init_host(const char *hostname, const char *displayname, const char *com
 		  const int ip1, const int ip2, const int ip3, const int ip4, 
 		  const int dialup, const int prefer, const double warnpct, const char *reporttime,
 		  char *alerts, int nktime, char *waps, char *tags,
-		  char *nopropyellowtests, char *nopropredtests, char *larrdgraphs, int modembanksize)
+		  char *nopropyellowtests, char *nopropredtests, char *noproppurpletests,
+		  char *larrdgraphs, int modembanksize)
 {
 	host_t 		*newhost = (host_t *) malloc(sizeof(host_t));
 	hostlist_t	*oldlist;
 
 	hostcount++;
-	dprintf("init_host(%s, %d,%d,%d.%d, %d, %d, %s, %s, %s, %s)\n", 
+	dprintf("init_host(%s, %d,%d,%d.%d, %d, %d, %s, %s, %s, %s, %s)\n", 
 		textornull(hostname), ip1, ip2, ip3, ip4,
 		dialup, prefer, textornull(alerts), textornull(tags),
-		textornull(nopropyellowtests), textornull(nopropredtests));
+		textornull(nopropyellowtests), textornull(nopropredtests), textornull(noproppurpletests));
 
 	newhost->hostname = newhost->displayname = malcop(hostname);
 	if (displayname) newhost->displayname = malcop(displayname);
@@ -262,6 +264,15 @@ host_t *init_host(const char *hostname, const char *displayname, const char *com
 	}
 	else {
 		newhost->nopropredtests = nopropreddefault;
+	}
+	if (noproppurpletests) {
+		char *p;
+		p = skipword(noproppurpletests); if (*p) *p = '\0'; else p = NULL;
+		newhost->noproppurpletests = malcop(build_noprop(noproppurpledefault, noproppurpletests));
+		if (p) *p = ' ';
+	}
+	else {
+		newhost->noproppurpletests = noproppurpledefault;
 	}
 	if (larrdgraphs) {
 		char *p;
@@ -1242,7 +1253,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			int nobb2 = 0;
 			int nktime = 1;
 			double warnpct = reportwarnlevel;
-			char *alertlist, *onwaplist, *nopropyellowlist, *nopropredlist, *larrdgraphs, *reporttime;
+			char *alertlist, *onwaplist, *nopropyellowlist, *nopropredlist, *noproppurplelist, *larrdgraphs, *reporttime;
 			char *displayname, *comment, *description;
 			char *targetpagelist[MAX_TARGETPAGES_PER_HOST];
 			int targetpagecount;
@@ -1267,7 +1278,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			}
 			else tag = NULL;
 
-			alertlist = onwaplist = nopropyellowlist = nopropredlist = larrdgraphs = reporttime = NULL;
+			alertlist = onwaplist = nopropyellowlist = nopropredlist = noproppurplelist = larrdgraphs = reporttime = NULL;
 			comment = description = NULL;
 			for (targetpagecount=0; (targetpagecount < MAX_TARGETPAGES_PER_HOST); targetpagecount++) 
 				targetpagelist[targetpagecount] = NULL;
@@ -1295,6 +1306,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 					nopropyellowlist = malcop(tag+strlen("NOPROPYELLOW:"));
 				else if (argnmatch(tag, "NOPROPRED:")) 
 					nopropredlist = malcop(tag+strlen("NOPROPRED:"));
+				else if (argnmatch(tag, "NOPROPPURPLE:")) 
+					noproppurplelist = malcop(tag+strlen("NOPROPPURPLE:"));
 				else if (argnmatch(tag, "LARRD:")) 
 					larrdgraphs = malcop(tag+strlen("LARRD:"));
 				else if (argnmatch(tag, "NAME:")) {
@@ -1386,7 +1399,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 							    ip1, ip2, ip3, ip4, dialup, prefer, 
 							    warnpct, reporttime,
 							    alertlist, nktime, onwaplist,
-							    startoftags, nopropyellowlist, nopropredlist,
+							    startoftags, 
+							    nopropyellowlist, nopropredlist, noproppurplelist,
 							    larrdgraphs, modembanksize);
 					if (curgroup != NULL) {
 						curgroup->hosts = curhost;
@@ -1409,7 +1423,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 									    ip1, ip2, ip3, ip4, dialup, prefer, 
 									    warnpct, reporttime,
 									    alertlist, nktime, onwaplist,
-									    startoftags, nopropyellowlist,nopropredlist,
+									    startoftags, 
+									    nopropyellowlist,nopropredlist, noproppurplelist,
 									    larrdgraphs, modembanksize);
 				}
 				curhost->parent = (cursubparent ? cursubparent : (cursubpage ? cursubpage : curpage));
@@ -1455,7 +1470,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 									    ip1, ip2, ip3, ip4, dialup, prefer, 
 									    warnpct, reporttime,
 									    alertlist, nktime, onwaplist,
-									    startoftags, nopropyellowlist,nopropredlist,
+									    startoftags, 
+									    nopropyellowlist,nopropredlist, noproppurplelist,
 									    larrdgraphs, modembanksize);
 
 						if (wantedgroup > 0) {
@@ -1504,6 +1520,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			if (onwaplist) free(onwaplist);
 			if (nopropyellowlist) free(nopropyellowlist);
 			if (nopropredlist) free(nopropredlist);
+			if (noproppurplelist) free(noproppurplelist);
 			if (larrdgraphs) free(larrdgraphs);
 			if (reporttime) free(reporttime);
 			for (targetpagecount=0; (targetpagecount < MAX_TARGETPAGES_PER_HOST); targetpagecount++) 
