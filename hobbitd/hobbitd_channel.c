@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.28 2005-01-15 17:38:28 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.29 2005-01-18 12:47:48 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -67,7 +67,7 @@ void sig_handler(int signum)
 		break;
 
 	  case SIGALRM:
-		gotalarm = 0;
+		gotalarm = 1;
 		break;
 
 	  case SIGHUP:
