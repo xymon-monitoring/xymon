@@ -147,6 +147,12 @@ the normal hobbitd_larrd overhead. So if you have a large number of
 reports for a given test, you should consider implementing it in C
 and including it in the hobbitd_larrd tool.
 
+Apart from writing the script, You must also add a section to
+.I hobbitgraph.cfg(5)
+so that
+.I hobbitgraph.cgi(1)
+knows how to generate the graph from the data stored in the RRD file. 
+
 The script is invoked for each message that arrives, where the test-name
 matches one of the testnames given in the "--extra-tests" option. The
 script receives three commandline parameters:
@@ -159,7 +165,9 @@ The name of the host reporting the data.
 The name of the test being reported.
 .TP
 .BI "Filename"
-File containing the data that was reported.
+File containing the data that was reported. This file is generated for
+you by hobbitd_larrd, and is also deleted automatically after your script
+is finished with it.
 
 .LP
 The script must process the data that is reported, and generate the following
