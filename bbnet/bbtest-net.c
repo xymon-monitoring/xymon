@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.153 2004-08-18 21:55:24 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.154 2004-08-19 11:04:41 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1100,13 +1100,9 @@ void save_frequenttestlist(int argc, char *argv[])
 void run_nslookup_service(service_t *service)
 {
 	testitem_t	*t;
-	char		cmd[1024];
 	char		*p;
 	char		*lookup;
-	char		cmdpath[MAX_PATH];
 
-	p = getenv("NSLOOKUP");
-	strcpy(cmdpath, (p ? p : "nslookup"));
 	for (t=service->items; (t); t = t->next) {
 		if (!t->host->dnserror) {
 			if (t->testspec && (lookup = strchr(t->testspec, '='))) {
@@ -1116,33 +1112,7 @@ void run_nslookup_service(service_t *service)
 				lookup = t->host->hostname;
 			}
 
-			sprintf(cmd, "%s %s %s 2>&1", cmdpath, lookup, t->host->ip);
-			t->open = (run_command(cmd, "can't find", &t->banner, &t->bannerbytes, 1) == 0);
-		}
-	}
-}
-
-void run_dig_service(service_t *service)
-{
-	testitem_t	*t;
-	char		cmd[1024];
-	char		*p;
-	char		*lookup;
-	char		cmdpath[MAX_PATH];
-
-	p = getenv("DIG");
-	strcpy(cmdpath, (p ? p : "dig"));
-	for (t=service->items; (t); t = t->next) {
-		if (!t->host->dnserror) {
-			if (t->testspec && (lookup = strchr(t->testspec, '='))) {
-				lookup++; 
-			}
-			else {
-				lookup = t->host->hostname;
-			}
-
-			sprintf(cmd, "%s @%s %s 2>&1", cmdpath, t->host->ip, lookup);
-			t->open = (run_command(cmd, "Bad server", &t->banner, &t->bannerbytes, 1) == 0);
+			t->open = (dns_test_server(t->host->ip, lookup, &t->banner, &t->bannerbytes) == 0);
 		}
 	}
 }
@@ -2255,7 +2225,7 @@ int main(int argc, char *argv[])
 					add_timestamp("NSLOOKUP tests executed");
 					break;
 				case TOOL_DIG:
-					run_dig_service(s); 
+					run_nslookup_service(s); 
 					add_timestamp("DIG tests executed");
 					break;
 				case TOOL_NTP:
@@ -2361,13 +2331,13 @@ int main(int argc, char *argv[])
 			addtostatus(msgline);
 		}
 
-		sprintf(msgline, "\nStatistics:\n Hosts total           : %5d\n Hosts with no tests   : %5d\n Total test count      : %5d\n Status messages       : %5d\n Alert status msgs     : %5d\n Transmissions         : %5d\n", 
+		sprintf(msgline, "\nStatistics:\n Hosts total           : %8d\n Hosts with no tests   : %8d\n Total test count      : %8d\n Status messages       : %8d\n Alert status msgs     : %8d\n Transmissions         : %8d\n", 
 			hostcount, notesthostcount, testcount, bbstatuscount, bbnocombocount, bbmsgcount);
 		addtostatus(msgline);
-		sprintf(msgline, "\nDNS statistics:\n # hostnames resolved  : %5d\n # succesful           : %5d\n # failed              : %5d\n # calls to dnsresolve : %5d\n",
+		sprintf(msgline, "\nDNS statistics:\n # hostnames resolved  : %8d\n # succesful           : %8d\n # failed              : %8d\n # calls to dnsresolve : %8d\n",
 			dns_stats_total, dns_stats_success, dns_stats_failed, dns_stats_lookups);
 		addtostatus(msgline);
-		sprintf(msgline, "\nTCP test statistics:\n # TCP tests total     : %5d\n # HTTP tests          : %5d\n # Simple TCP tests    : %5d\n # Connection attempts : %5d\n # bytes written       : %8ld\n # bytes read          : %8ld\n",
+		sprintf(msgline, "\nTCP test statistics:\n # TCP tests total     : %8d\n # HTTP tests          : %8d\n # Simple TCP tests    : %8d\n # Connection attempts : %8d\n # bytes written       : %8ld\n # bytes read          : %8ld\n",
 			tcp_stats_total, tcp_stats_http, tcp_stats_plain, tcp_stats_connects, 
 			tcp_stats_written, tcp_stats_read);
 		addtostatus(msgline);
