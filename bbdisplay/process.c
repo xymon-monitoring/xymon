@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.10 2003-03-04 11:24:20 henrik Exp $";
+static char rcsid[] = "$Id: process.c,v 1.11 2003-05-20 21:02:53 henrik Exp $";
 
 #include <string.h>
 #include <sys/types.h>
@@ -196,40 +196,43 @@ void send_summaries(summary_t *sumhead)
 
 		if      (strcmp(suburl, "bb.html") == 0) summarycolor = bb_color;
 		else if (strcmp(suburl, "index.html") == 0) summarycolor = bb_color;
+		else if (strcmp(suburl, "") == 0) summarycolor = bb_color;
 		else if (strcmp(suburl, "bb2.html") == 0) summarycolor = bb2_color;
 		else if (strcmp(suburl, "bbnk.html") == 0) summarycolor = bbnk_color;
 		else {
 			/* 
-			 * Specific page  - "suburl" is now either
-			 * "pagename.html" or "pagename/subpage.html"
+			 * Specific page - find it in the page tree.
 			 */
-			char *p, *pg, *subpg;
-			bbgen_page_t *pg1, *pg2;
+			char *p, *pg;
+			bbgen_page_t *pgwalk;
+			bbgen_page_t *sourcepg = NULL;
+			char *urlcopy = malcop(suburl);
 
-			pg = subpg = NULL;
-			pg1 = pg2 = NULL;
+			/*
+			 * Walk the page tree
+			 */
+			pg = urlcopy; sourcepg = pagehead;
+			do {
+				p = strchr(pg, '/');
+				if (p) *p = '\0';
 
-			pg = suburl; p = strchr(pg, '/');
-			if (p) {
-				*p = '\0';
-				subpg = (p+1);
-			}
-			else
-				subpg = NULL;
+				dprintf("Searching for page %s\n", pg);
+				for (pgwalk = sourcepg->subpages; (pgwalk && (strcmp(pgwalk->name, pg) != 0)); pgwalk = pgwalk->next);
+				if (pgwalk != NULL) {
+					sourcepg = pgwalk;
 
-			if (debug) printf("pg=%s, subpg=%s\n", textornull(pg), textornull(subpg));
+					if (p) { 
+						*p = '/'; pg = p+1; 
+					}
+					else pg = NULL;
+				}
+				else pg = NULL;
+			} while (pg);
 
-			for (pg1 = pagehead; (pg1 && (strcmp(pg1->name, pg) != 0)); pg1 = pg1->next) ;
-			if (pg1 && subpg) {
-				for (pg2 = pg1->subpages; (pg2 && (strcmp(pg2->name, subpg) != 0)); pg2 = pg2->next) ;
-			}
-
-			/* Make sure s->url is put back as it was */
-			if (p) *p = '/';
-
-			if (pg2) summarycolor = pg2->color;
-			else if (pg1) summarycolor = pg1->color;
-			else summarycolor = pagehead->color;
+			dprintf("Summary search for %s found page %s (title:%s), color %d\n",
+				suburl, sourcepg->name, sourcepg->title, sourcepg->color);
+			summarycolor = sourcepg->color;
+			free(urlcopy);
 		}
 
 		if (summarycolor == -1) {
