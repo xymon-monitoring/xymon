@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.8 2003-01-05 08:06:23 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.9 2003-01-10 08:42:02 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -72,6 +72,9 @@ char *colorname(int color)
 	  case COL_GREEN:  cs = "green"; break;
 	  case COL_YELLOW: cs = "yellow"; break;
 	  case COL_RED:    cs = "red"; break;
+	  default:
+			   cs = "unknown";
+			   break;
 	}
 
 	return cs;
