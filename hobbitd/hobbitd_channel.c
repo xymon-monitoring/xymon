@@ -44,8 +44,9 @@ int main(int argc, char *argv[])
 	int argi, n;
 
 	struct sembuf s;
-	char buf[MAXMSG];
+	char buf[SHAREDBUFSZ];
 	msg_t *newmsg;
+	int daemonize = 1;
 
 	int cnid;
 	int pfd[2];
@@ -61,12 +62,39 @@ int main(int argc, char *argv[])
 
 			for (cnid = 0; (channelnames[cnid] && strcmp(channelnames[cnid], cn)); cnid++) ;
 		}
+		else if (strcmp(argv[argi], "--daemon") == 0) {
+			daemonize = 1;
+		}
+		else if (strcmp(argv[argi], "--no-daemon") == 0) {
+			daemonize = 0;
+		}
 		else {
 			int i = 0;
 			childcmd = argv[argi];
 			childargs = (char **) calloc((1 + argc - argi), sizeof(char *));
 			while (argi < argc) { childargs[i++] = argv[argi++]; }
 		}
+	}
+
+	/* Go daemon */
+	if (daemonize) {
+		pid_t childpid;
+
+		/* We wont close stdin/stdout/stderr here, since the worker process might need them. */
+
+		/* Become a daemon */
+		childpid = fork();
+		if (childpid < 0) {
+			/* Fork failed */
+			errprintf("Could not fork\n");
+			exit(1);
+		}
+		else if (childpid > 0) {
+			/* Parent exits */
+			exit(0);
+		}
+		/* Child (daemon) continues here */
+		setsid();
 	}
 
 	/* Start the channel handler */
@@ -90,6 +118,7 @@ int main(int argc, char *argv[])
 	close(pfd[0]);
 	fcntl(pfd[1], F_SETFL, O_NONBLOCK);
 
+	setup_signalhandler("bbd_channel");
 	signal(SIGINT, sig_handler);
 	signal(SIGTERM, sig_handler);
 
