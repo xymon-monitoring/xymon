@@ -17,10 +17,6 @@ enum ostype_t { OS_UNKNOWN, OS_SOLARIS, OS_OSF, OS_FREEBSD, OS_LINUX, OS_REDHAT,
 
 extern enum ostype_t get_ostype(char *osname);
 extern int hexvalue(unsigned char c);
-extern void envcheck(char *envvars[]);
-extern void loadenv(char *envfile);
-extern char *getenv_default(char *envname, char *envdefault, char **buf);
-extern char *expand_env(char *s);
 extern char *commafy(char *hostname);
 extern char *skipword(char *l);
 extern char *skipwhitespace(char *l);
