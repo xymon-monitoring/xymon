@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.65 2004-11-24 11:40:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.66 2004-11-25 15:06:25 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -152,6 +152,7 @@ char *checkpointfn = NULL;
 char *purpleclientconn = NULL;
 FILE *dbgfd = NULL;
 char *dbghost = NULL;
+time_t boottime;
 
 typedef struct bbgend_statistics_t {
 	char *cmd;
@@ -200,17 +201,22 @@ char *generate_stats(void)
 	time_t now = time(NULL);
 	char *bufp;
 	int i, clients;
+	char bootuptxt[40];
+	char uptimetxt[40];
+	time_t uptime = (now - boottime);
 
 	if (statsbuf == NULL) {
 		statsbuflen = 8192;
 		statsbuf = (char *)malloc(statsbuflen);
 	}
-	init_timestamp();
-
 	bufp = statsbuf;
 
-	bufp += sprintf(bufp, "status %s.bbgend %s %s\nStatistics for bbgend daemon\n\n",
-			getenv("MACHINE"), colorname(errbuf ? COL_YELLOW : COL_GREEN), timestamp);
+	strftime(bootuptxt, sizeof(bootuptxt), "%d-%b-%Y %T", localtime(&boottime));
+	sprintf(uptimetxt, "%d days, %2d:%2d:%2d", 
+		(int)(uptime / 86400), (int)(uptime % 86400)/3600, (int)(uptime % 3600)/60, (int)(uptime % 60));
+
+	bufp += sprintf(bufp, "status %s.bbgend %s\nStatistics for bbgend daemon\nUp since %s (%s)\n\n",
+			getenv("MACHINE"), colorname(errbuf ? COL_YELLOW : COL_GREEN), bootuptxt, uptimetxt);
 	bufp += sprintf(bufp, "Incoming messages      : %10ld\n", msgs_total);
 	i = 0;
 	while (bbgend_stats[i].cmd) {
@@ -1818,6 +1824,8 @@ int main(int argc, char *argv[])
 	char *pidfile = NULL;
 	struct sigaction sa;
 
+	boottime = time(NULL);
+
 	colnames[COL_GREEN] = "green";
 	colnames[COL_YELLOW] = "yellow";
 	colnames[COL_RED] = "red";
@@ -1998,12 +2006,20 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 		else if (childpid > 0) {
-			/* Parent - save PID and exit */
-			FILE *fd = fopen(pidfile, "w");
-			if (fd) {
-				fprintf(fd, "%d\n", (int)childpid);
-				fclose(fd);
+			if (pidfile) {
+				/* Parent - save PID and exit */
+				FILE *fd = fopen(pidfile, "w");
+				if (fd) {
+					if (fprintf(fd, "%d\n", (int)childpid) <= 0) {
+						errprintf("Error writing PID file %s: %s\n", pidfile, strerror(errno));
+					}
+					fclose(fd);
+				}
+				else {
+					errprintf("Cannot open PID file %s: %s\n", pidfile, strerror(errno));
+				}
 			}
+
 			exit(0);
 		}
 		/* Child (daemon) continues here */
