@@ -45,7 +45,7 @@ extern int  init_ldap_library(void);
 extern void shutdown_ldap_library(void);
 
 extern int  add_ldap_test(testitem_t *t);
-extern void run_ldap_tests(service_t *ldaptest, int sslcertcheck);
+extern void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int timeout);
 extern void show_ldap_test_results(service_t *ldaptest);
 extern void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage, int failgoesclear);
 
