@@ -35,9 +35,9 @@ you install Hobbit.</p>
 
 <h4>A working C compiler, GNU make.</h4>
 <p>Hobbit is written in C, so you need a working C compiler, e.g. <a href="http://gcc.gnu.org/">gcc</a>. 
-You will also need a "make" utility - many systems have one by default, but I strongly recommend
-that you use the <a href="http://directory.fsf.org/make.html">GNU make</a> utility. On some systems,
-this is pre-installed as "gmake" or "gnumake".</p>
+You will also need a "make" utility - many systems have one by default, but you need to use the
+<a href="http://directory.fsf.org/make.html">GNU make</a> utility. On some systems,
+this is pre-installed as "gmake" or "gnumake". The configure-script checks this for you.</p>
 
 <h4>PCRE, RRDtool, libpng, OpenSSL, OpenLDAP libraries.</h4>
 <p>Hobbit relies on a number of Open-Source libraries - these must be installed
@@ -79,9 +79,14 @@ files installed as well. Often these are in packages called "something<em>-dev</
 	library. It is available from <a href="http://www.openldap.org/">http://www.openldap.org/</a></li>
 </ul>
 
+The configure-script will attempt to locate all of these libraries on 
+your system, and complain if the required ones are missing.</p>
+
+
 <h4>The "fping" utility</h4>
 <p>Hobbit uses fping when checking if systems are alive, so you need to
-install it before running Hobbit. fping is available from
+install it before running Hobbit. The configure-script will also check 
+for this. fping is available from
 <a href="http://www.fping.com/">http://www.fping.com/</a>.</p>
 
 <h4>A "hobbit" userid on your system</h4>
@@ -132,11 +137,25 @@ run as part of Hobbit. This usually means adding a few lines to your webserver
 configuration that sets up a URL which points at the <em>~/server/www/</em> directory,
 and which tells your webserver that the <em>~/cgi-bin/</em> directory holds CGI
 scripts that the webserver should run when they are requested.</p>
+
 <p>If you are using the Apache webserver, you will find the necessary additions
 to the Apache configuration in <em>~/server/etc/hobbit-apache.conf</em> - 
-it looks like <a href="hobbit-apacheconf.txt">this</a>.</p>
-<p>After changing the webserver configuration, you probably need to restart the
-webserver.</p>
+it looks like <a href="hobbit-apacheconf.txt">this</a>. After changing the webserver 
+configuration, you probably need to restart the webserver.</p>
+
+<p>If you configured Hobbit to put the Administration CGI scripts into a separate
+directory (recommended for better security), you will also need to setup the
+password-file that controls access to this directory. Use the <tt>htpasswd</tt>
+command both to create the password file and to add or delete users:<br>
+<pre><tt>
+	# /usr/sbin/htpasswd -c /usr/local/hobbit/server/etc/hobbitpasswd admin
+	New password:
+	Re-type new password:
+	Adding password for user admin
+	#
+</tt></pre>
+The <b>-c</b> option should only be used the first time, to create the password
+file. See the Apache documentation for details about how to use htpasswd.</p>
 
 <h2>Starting Hobbit</h2>
 <p>You can now login as the "hobbit" user, and run the command <tt>./server/starthobbit.sh start</tt>
