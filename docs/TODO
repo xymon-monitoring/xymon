@@ -19,6 +19,10 @@ Bugfixes
   to do http tests via an MS ISA Proxy server that requires
   authentication. This is still being investigated.
 
+* It seems bbtest-net sometimes report an HTTP "500" status as
+  "DNS error".
+
+
 Improvements
 ------------
 * Macros in the bb-hosts file, to avoid repeating common setups.
