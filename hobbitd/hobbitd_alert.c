@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.14 2004-10-23 21:04:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.15 2004-10-25 12:05:04 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -260,9 +260,7 @@ int main(int argc, char *argv[])
 		timeout.tv_sec = 60; timeout.tv_usec = 0;
 		msg = get_bbgend_message("bbd_alert", &seq, &timeout);
 		if (msg == NULL) {
-			/*
-			 * This will happen when one of our children finishes sending off alarms
-			 */
+			running = 0;
 			continue;
 		}
 
@@ -414,7 +412,11 @@ int main(int argc, char *argv[])
 				awalk->testname = newtest;
 			}
 		}
-		else if (strncmp(metadata[0], "@@idle", 12) == 0) {
+		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
+			running = 0;
+			continue;
+		}
+		else if (strncmp(metadata[0], "@@idle", 6) == 0) {
 			/* Timeout */
 		}
 
