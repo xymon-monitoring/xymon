@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.37 2005-02-19 07:41:45 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.38 2005-02-19 22:56:41 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -127,6 +127,8 @@ static rule_t *ruletail = NULL;
 static int cfid = 0;
 static char cfline[256];
 static int stoprulefound = 0;
+static int printmode = 0;
+static rule_t *printrule = NULL;
 
 /*
  * This is the dynamic info stored to keep track of active alerts. We
@@ -808,13 +810,13 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit)
 	if (crit->minduration && (duration < crit->minduration)) { 
 		dprintf("failed minduration %d<%d\n", duration, crit->minduration); 
 		if (tracefd) fprintf(tracefd, "Failed (min. duration)\n");
-		return 0; 
+		if (!printmode) return 0; 
 	}
 
 	if (crit->maxduration && (duration > crit->maxduration)) { 
 		dprintf("failed maxduration\n"); 
 		if (tracefd) fprintf(tracefd, "Failed (max. duration)\n");
-		return 0; 
+		if (!printmode) return 0; 
 	}
 
 	if (crit->pagespec && !namematch(alert->location->name, crit->pagespec, crit->pagespecre)) { 
@@ -853,7 +855,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit)
 	if (crit->timespec && !timematch(crit->timespec)) { 
 		dprintf("failed timespec\n"); 
 		if (tracefd) fprintf(tracefd, "Failed (time criteria)\n");
-		return 0; 
+		if (!printmode) return 0; 
 	}
 
 	if (alert->state == A_RECOVERED) {
@@ -867,10 +869,12 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit)
 	if (crit->colors) {
 		result = (((1 << alert->color) & crit->colors) != 0);
 		dprintf("Checking explicit color setting %o against %o gives %d\n", crit->colors, alert->color, result);
+		if (printmode) return 1;
 	}
 	else {
 		result = (((1 << alert->color) & defaultcolors) != 0);
 		dprintf("Checking default color setting %o against %o gives %d\n", defaultcolors, alert->color, result);
+		if (printmode) return 1;
 	}
 
 	if (tracefd) {
@@ -931,6 +935,8 @@ static recip_t *next_recipient(activealerts_t *alert, int *first)
 	} while (rulewalk && recipwalk && !criteriamatch(alert, recipwalk->criteria));
 
 	stoprulefound = (recipwalk && recipwalk->stoprule);
+
+	printrule = rulewalk;
 	return recipwalk;
 }
 
@@ -1457,5 +1463,88 @@ void load_state(char *filename)
 	}
 
 	fclose(fd);
+}
+
+void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
+{
+	int first = 1;
+	recip_t *recip;
+	char l[4096];
+	int count = 0;
+	char *p;
+
+	printmode = 1;
+
+	stoprulefound = 0;
+	while ((recip = next_recipient(alert, &first)) != NULL) {
+		int mindur = 0, maxdur = 0;
+		char *timespec = NULL;
+		int colors = defaultcolors;
+		int i, firstcolor = 1;
+		int recovered = 0;
+
+		count++;
+
+		addtobuffer(buf, buflen, "<tr>");
+		if (count == 1) {
+			sprintf(l, "<td valign=top rowspan=###>%s</td>", alert->testname->name);
+			addtobuffer(buf, buflen, l);
+		}
+
+		if (printrule->criteria) mindur = printrule->criteria->minduration;
+		if (recip->criteria && recip->criteria->minduration && (recip->criteria->minduration > mindur)) mindur = recip->criteria->minduration;
+		if (printrule->criteria) maxdur = printrule->criteria->maxduration;
+		if (recip->criteria && recip->criteria->maxduration && (recip->criteria->maxduration < maxdur)) maxdur = recip->criteria->maxduration;
+		if (printrule->criteria && printrule->criteria->timespec) timespec = printrule->criteria->timespec;
+		if (recip->criteria && recip->criteria->timespec) {
+			if (timespec == NULL) timespec = recip->criteria->timespec;
+			else errprintf("Cannot handle nested timespecs yet\n");
+		}
+
+		if (printrule->criteria && printrule->criteria->colors) colors = (colors & printrule->criteria->colors);
+		if (recip->criteria && recip->criteria->colors) colors = (colors & recip->criteria->colors);
+
+		sprintf(l, "<td>%s</td>", recip->recipient);
+		addtobuffer(buf, buflen, l);
+
+		if (mindur) sprintf(l, "<td align=center>%d</td>", mindur/60); else strcpy(l, "<td align=center>-</td>");
+		addtobuffer(buf, buflen, l);
+
+		if (maxdur) sprintf(l, "<td align=center>%d</td>", maxdur/60); else strcpy(l, "<td align=center>-</td>");
+		addtobuffer(buf, buflen, l);
+
+		sprintf(l, "<td align=center>%d</td>", (int)(recip->interval/60)); 
+		addtobuffer(buf, buflen, l);
+
+		if (timespec) sprintf(l, "<td align=center>%s</td>", timespec); else strcpy(l, "<td align=center>-</td>");
+		addtobuffer(buf, buflen, l);
+
+		addtobuffer(buf, buflen, "<td>");
+		for (i = 0; (i < COL_COUNT); i++) {
+			if ((1 << i) & colors) {
+				sprintf(l, "%s%s", (firstcolor ? "" : ","), colorname(i));
+				addtobuffer(buf, buflen, l);
+				firstcolor = 0;
+			}
+		}
+		addtobuffer(buf, buflen, "</td>");
+
+		if ( (printrule->criteria && printrule->criteria->sendrecovered) ||
+		     (recip->criteria && recip->criteria->sendrecovered) ) recovered = 1;
+		sprintf(l, "<td>%s</td>", (recovered ? "Yes" : "No"));
+		addtobuffer(buf, buflen, l);
+
+		sprintf(l, "<td>%s</td>", (recip->stoprule ? "Yes" : "No"));
+		addtobuffer(buf, buflen, l);
+
+		addtobuffer(buf, buflen, "</tr>\n");
+	}
+
+	/* This is hackish - patch up the "rowspan" value, so it matches the number of recipient lines */
+	sprintf(l, "%d   ", count);
+	p = strstr(*buf, "rowspan=###");
+	if (p) { p += strlen("rowspan="); memcpy(p, l, 3); }
+
+	printmode = 0;
 }
 
