@@ -13,19 +13,8 @@
 
 #include <sys/time.h>
 
-#ifdef MULTICURL
-/*
- * libcurl multi interface requires longer timeouts.
- * Not quite sure why ... but it is not so important,
- * as many of these run in parallel. So the overall
- * impact on the run-time is limited.
- */
-#define DEF_TIMEOUT         30
-#define DEF_CONNECT_TIMEOUT 15
-#else
 #define DEF_TIMEOUT         10
 #define DEF_CONNECT_TIMEOUT 5
-#endif
 
 #define STATUS_CONTENTMATCH_NOFILE 901
 #define STATUS_CONTENTMATCH_FAILED 902
