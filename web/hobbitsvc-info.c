@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.40 2004-03-02 10:00:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.41 2004-03-09 12:38:35 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -51,7 +51,8 @@ static void timespec_text(char *spec, char **infobuf, int *infobuflen)
 	char *sItem;
 
 	sCopy = malcop(spec);
-	sItem = strtok(sCopy, " \t\r\n,");
+	sCopy[strcspn(sCopy, " \t\r\n")] = '\0';
+	sItem = strtok(sCopy, ",");
 	while (sItem) {
 		l[0] = '\0';
 
@@ -78,7 +79,7 @@ static void timespec_text(char *spec, char **infobuf, int *infobuflen)
 				  break;
 		}
 
-		sItem = strtok(NULL, " \t\r\n,");
+		sItem = strtok(NULL, ",");
 		if (sItem) strcat(l, ", ");
 		addtobuffer(infobuf, infobuflen, l);
 	}
@@ -314,6 +315,8 @@ int generate_info(char *infocolumn)
 		firstcontent = 1;
 		p = strtok(rawcopy, " \t");
 		while (p) {
+			if (*p == '~') p++;
+
 			if (strncmp(p, "http", 4) == 0) {
 				if (firstcontent) {
 					addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>URL checks:</th><td align=left>\n");
@@ -333,6 +336,8 @@ int generate_info(char *infocolumn)
 		firstcontent = 1;
 		p = strtok(rawcopy, " \t");
 		while (p) {
+			if (*p == '~') p++;
+
 			if ( (strncmp(p, "content=", 8) == 0) ||
 			     (strncmp(p, "cont;", 5) == 0)    ||
 			     (strncmp(p, "nocont;", 7) == 0)  ||
