@@ -28,6 +28,7 @@
 typedef struct {
 	char *svcname;
 	char *sendtxt;
+	char *exptext;
 	int  grabbanner;
 } svcinfo_t;
 
