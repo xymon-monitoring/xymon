@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.32 2005-02-05 08:01:04 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.33 2005-02-06 17:36:00 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -1369,6 +1369,13 @@ void clear_interval(activealerts_t *alert)
 			rpt->nextalert = 0;
 		}
 	}
+}
+
+int have_recipient(activealerts_t *alert)
+{
+	int first = 1;
+
+	return (next_recipient(alert, &first) != NULL);
 }
 
 void save_state(char *filename)

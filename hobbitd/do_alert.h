@@ -48,6 +48,8 @@ extern void start_alerts(void);
 extern void send_alert(activealerts_t *alert, FILE *logfd);
 extern void finish_alerts(void);
 
+extern int have_recipient(activealerts_t *alert);
+
 extern void load_state(char *filename);
 extern void save_state(char *filename);
 
