@@ -4,7 +4,11 @@
 NETLIBS =
 
 # Compile flags for normal build
-CFLAGS = -O2 -Wall -Wno-unused -D_REENTRANT -I/usr/kerberos/include
+CFLAGS = -O2 -Wall -Wno-unused -D_REENTRANT 
+
+# Red Hat in their wisdom ships an openssl the depends on Kerberos,
+# and then puts the Kerberos includes where they are not found automatically.
+SSLINCLUDE = -I/usr/kerberos/include
 
 # Compile flags for debugging
 # CFLAGS = -g -DDEBUG -Wall -D_REENTRANT
