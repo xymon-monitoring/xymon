@@ -4,8 +4,8 @@
 
 CFLAGS += -DMAXMSG=$(MAXMSG)
 
-PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bb-rep.cgi bb-replog.cgi bb-hist.cgi
-CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh
+PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi
+CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh
 EXTENSIONS = bbcombotest bbretest-net.sh
 
 all: $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS)
@@ -26,6 +26,7 @@ REPOBJS = bb-rep.o debug.o util.o
 REPLOGOBJS = bb-replog-cgi.o reportdata.o debug.o util.o
 HISTOBJS = bb-hist.o reportdata.o debug.o util.o
 COMBOTESTOBJS = bbcombotest.o util.o debug.o calc.o
+SNAPOBJS = bb-snapshot.o debug.o util.o
 
 bbgen: $(GENOBJS)
 	$(CC) $(CFLAGS) -o $@ $(GENOBJS)
@@ -50,6 +51,9 @@ bb-replog.cgi: $(REPLOGOBJS)
 
 bb-hist.cgi: $(HISTOBJS)
 	$(CC) $(CFLAGS) -o $@ $(HISTOBJS)
+
+bb-snapshot.cgi: $(SNAPOBJS)
+	$(CC) $(CFLAGS) -o $@ $(SNAPOBJS)
 
 bbcombotest: $(COMBOTESTOBJS)
 	$(CC) $(CFLAGS) -o $@ $(COMBOTESTOBJS)
