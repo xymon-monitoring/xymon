@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.20 2003-02-11 16:59:47 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.21 2003-02-14 12:06:18 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -157,7 +157,8 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, char *grouptitle, int 
 	if (head == NULL)
 		return;
 
-	genstatic = ( (strcmp(getenv("BBLOGSTATUS"), "STATIC") == 0) ? 1 : 0);
+	/* Generate static or dynamic links (from BBLOGSTATUS) ? */
+	genstatic = generate_static();
 
 	fprintf(output, "<A NAME=hosts-blk>&nbsp;</A>\n\n");
 
