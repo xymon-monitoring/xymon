@@ -308,13 +308,16 @@ A "group" directive in the
 .I bb-hosts(5)
 file is treated as a "group-compress".
 
-.IP "Modembanks can be placed in subpages"
-Standard BB always displays modem-banks on the front-page
-(bb.html). bbgen treats modembanks like normal hosts, so
-they will appear on a page or subpage according to their
-placement in the bb-hosts file. If you want them on the
-bb.html page, place the "dialup" directive before any
-"page" directives in bb-hosts, but after a "group" directive.
+.IP "Multiple http tests must be separated with spaces"
+Standard Big Brother allows you to define multiple http tests
+in the bb-hosts file separated by a pipe character or space. 
+bbgen requires that you use space.
+
+.IP "Status messages from hosts not in bb-hosts are ignored"
+Standard Big Brother will process status-logs from unknown
+hosts, and these will affect the background color of the 
+bb.html and bb2.html pages.  The bbgen toolkit ignores logs 
+from hosts not listed in the bb-hosts file.
 
 .IP "Connectivity tests use the hostname"
 Standard BB always uses the IP-address listed in the bb-hosts
@@ -324,17 +327,19 @@ but fallback to using the IP-address if the DNS lookup fails.
 This behaviour can be changed with the "testip" tag (on a per-host
 basis), or via the "--dns" tag (globally).
 
+.IP "Modembanks can be placed in subpages"
+Standard BB always displays modem-banks on the front-page
+(bb.html). bbgen treats modembanks like normal hosts, so
+they will appear on a page or subpage according to their
+placement in the bb-hosts file. If you want them on the
+bb.html page, place the "dialup" directive before any
+"page" directives in bb-hosts, but after a "group" directive.
+
 .IP ":q and :Q modifiers are ignored"
 The ":q" and ":Q" modifiers on individual tests are ignored.
 These modifiers are only relevant for the standard Big 
 Brother network test tool bbnet, which is not used when
 you install the bbgen network test tools.
-
-.IP "Status messages from hosts not in bb-hosts are ignored"
-Standard Big Brother will process status-logs from unknown
-hosts, and these will affect the background color of the 
-bb.html and bb2.html pages.  The bbgen toolkit ignores logs 
-from hosts not listed in the bb-hosts file.
 
 .SH DEMONSTRATION SITE
 A site running this software can be seen at http://www.hswn.dk/bb/
