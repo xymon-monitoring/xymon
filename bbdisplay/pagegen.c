@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.130 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.131 2005-01-23 12:59:55 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -612,7 +612,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char 
 			fprintf(output, "</TR>\n\n");
 		}
 
-		fprintf(output, "</TABLE></CENTER><BR><BR>\n");
+		fprintf(output, "</TABLE></CENTER><BR>\n");
 	}
 
 	/* Free the columnlist allocated by gen_column_list() */
@@ -824,7 +824,7 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *pagepath)
 
 		if (currentcolumn != 0) fprintf(output, "</TR>\n");
 
-		fprintf(output, "</TABLE><BR><BR>\n");
+		fprintf(output, "</TABLE><BR>\n");
 		fprintf(output, "</CENTER>\n");
 	}
 }
