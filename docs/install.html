@@ -109,22 +109,17 @@ build the Hobbit programs. If your default "make" tool is not GNU make, you
 should use the command for running GNU make instead, e.g. <tt>gmake</tt>.
 You will now see a lot of commands being run to build the programs, it usually
 takes a minute or two.</p>
-<p>When it is finished, you can either finish the installation by running 
-<tt>make setup</tt> or <tt>make install</tt>.</p>
-<ul>
-	<li><tt>make setup</tt> is used the first time you setup a Hobbit
-	server. Besides installing the Hobbit programs, it also creates
-	the default directory structure used by Hobbit, and installs an
-	initial set of configuration files that you can use as the basis
-	for setting up monitoring of your entire network. So when you are
-	installing a new Hobbit server, running <tt>make setup</tt> is the
-	way to go.</li>
+<p>When it is finished, you finish the installation by running <tt>make install</tt>.</p>
 
-	<li><tt>make install</tt> is used when upgrading a Hobbit server,
-	or if you want to use some of the Hobbit programs together with
-	an existing Big Brother server. It installs the programs, but does
-	not change any configuration files or create directories.</li>
-</ul>
+<p>The first time you run <tt>make install</tt>, besides installing the Hobbit programs 
+it also creates the default directory structure used by Hobbit, and installs an 
+initial set of configuration files that you can use as the basis for setting up 
+monitoring of your entire network.</p>
+
+<p>It is safe to run <tt>make install</tt> when upgrading a Hobbit server. It installs the 
+programs, adds new template-files that were not present in your previous version,
+and updates your configuration files with any new sections that have been added.
+Any changes you have made yourself are preserved.</p>
 
 <p>If you are setting up Hobbit for use with an existing Big Brother
 installation, please go to the <a href="hobbit-bigbrother.html">Using Hobbit with Big Brother</a>

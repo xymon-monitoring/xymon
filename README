@@ -17,7 +17,7 @@ docs/install.html file. Essentially, it boils down
 to running
 	./configure
 	make
-	make setup   (or "make install")
+	make install
 but do have a look at the install.html file for more
 detailed instructions.
 
