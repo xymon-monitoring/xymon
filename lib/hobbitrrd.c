@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.11 2004-12-28 21:17:14 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.12 2004-12-28 22:34:01 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -57,7 +57,7 @@ static char *default_rrds =
 static char *default_graphs =
 	"la,disk:disk_part:5,memory,users,"
 	"vmstat,iostat,"
-	"tcp,netstat,"
+	"tcp.http,tcp,netstat,"
 	"temperature,ntpstat,"
 	"apache,bind,sendmail,nmailq,socks,"
 	"bea,citrix,"
