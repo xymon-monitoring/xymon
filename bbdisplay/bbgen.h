@@ -183,6 +183,13 @@ typedef struct {
 } page_t;
 
 
+typedef struct {
+	char	name[40];
+	char	receiver[20];
+	char	url[250];
+	void	*next;
+} summary_t;
+
 /* Format of records in the $BBHIST/allevents file */
 typedef struct {
 	char	hostname[60];
@@ -200,6 +207,7 @@ extern link_t 		*linkhead, null_link;
 extern hostlist_t	*hosthead;
 extern state_t		*statehead;
 extern col_t		*colhead, null_column;
+extern summary_t	*sumhead;
 
 #endif
 

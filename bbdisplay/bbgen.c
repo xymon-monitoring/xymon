@@ -40,6 +40,8 @@ state_t		*statehead = NULL;			/* Head of list of all state entries */
 col_t   	*colhead = NULL;			/* Head of column-name list */
 col_t		null_column = { "", NULL };		/* Null column */
 
+summary_t	*sumhead;
+
 
 int main(int argc, char *argv[])
 {
