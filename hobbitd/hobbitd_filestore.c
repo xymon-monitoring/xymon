@@ -14,7 +14,7 @@
  * physical storage.
  */
 
-enum role_t { ROLE_STATUS, ROLE_DATA, ROLE_NOTES};
+enum role_t { ROLE_STATUS, ROLE_DATA, ROLE_NOTES, ROLE_ENADIS};
 
 void update_file(char *fn, char *mode, char *msg, time_t expire, char *sender, time_t timesincechange, int seq)
 {
@@ -42,6 +42,27 @@ void update_file(char *fn, char *mode, char *msg, time_t expire, char *sender, t
 	}
 }
 
+void update_enable(char *fn, time_t expiretime)
+{
+	dprintf("Enable/disable file %s, time %d\n", fn, (int)expiretime);
+
+	if (expiretime == 0) {
+		unlink(fn);
+	}
+	else {
+		FILE *enablefd;
+		struct utimbuf logtime;
+
+		enablefd = fopen(fn, "w");
+		if (enablefd) {
+			fclose(enablefd);
+		}
+
+		logtime.actime = logtime.modtime = expiretime;
+		utime(fn, &logtime);
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	char *filedir = NULL;
@@ -62,6 +83,10 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--notes") == 0) {
 			role = ROLE_NOTES;
 			if (!filedir) filedir = getenv("BBNOTES");
+		}
+		else if (strcmp(argv[argi], "--enadis") == 0) {
+			role = ROLE_ENADIS;
+			if (!filedir) filedir = getenv("BBDISABLED");
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
@@ -127,7 +152,14 @@ int main(int argc, char *argv[])
 			expiretime = 0;
 			update_file(logfn, "w", statusdata, expiretime, NULL, -1, seq);
 		}
-		else if (((role == ROLE_STATUS) || (role == ROLE_DATA)) && (strncmp(items[0], "@@drophost", 10) == 0)) {
+		else if ((role == ROLE_ENADIS) && (strncmp(items[0], "@@enadis", 8) == 0)) {
+			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
+			testname = items[4];
+			expiretime = atoi(items[5]);
+			sprintf(logfn, "%s/%s.%s", filedir, hostname, testname);
+			update_enable(logfn, expiretime);
+		}
+		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (strncmp(items[0], "@@drophost", 10) == 0)) {
 			/* @@drophost|timestamp|sender|hostname */
 			DIR *dirfd;
 			struct dirent *de;
@@ -150,14 +182,14 @@ int main(int argc, char *argv[])
 
 			free(hostlead);
 		}
-		else if (((role == ROLE_STATUS) || (role == ROLE_DATA)) && (strncmp(items[0], "@@droptest", 10) == 0)) {
+		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (strncmp(items[0], "@@droptest", 10) == 0)) {
 			/* @@droptest|timestamp|sender|hostname|testname */
 			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			testname = items[4];
 			sprintf(logfn, "%s/%s.%s", filedir, hostname, testname);
 			unlink(logfn);
 		}
-		else if (((role == ROLE_STATUS) || (role == ROLE_DATA)) && (strncmp(items[0], "@@renamehost", 12) == 0)) {
+		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (strncmp(items[0], "@@renamehost", 12) == 0)) {
 			/* @@renamehost|timestamp|sender|hostname|newhostname */
 			DIR *dirfd;
 			struct dirent *de;
@@ -184,7 +216,7 @@ int main(int argc, char *argv[])
 			}
 			free(hostlead);
 		}
-		else if (((role == ROLE_STATUS) || (role == ROLE_DATA)) && (strncmp(items[0], "@@renametest", 12) == 0)) {
+		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (strncmp(items[0], "@@renametest", 12) == 0)) {
 			/* @@renametest|timestamp|sender|hostname|oldtestname|newtestname */
 			char *newtestname;
 			char newfn[MAX_PATH];
