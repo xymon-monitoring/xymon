@@ -13,19 +13,9 @@
 #ifndef __HTTPTESTT_H_
 #define __HTTPTEST_H_
 
-typedef struct url_t {
-	char *protocol;
-	char *host;
-	char *auth;
-	char *relurl;
-
-	char *ip;
-	int  port;
-} url_t;
-
 extern int  tcp_http_data_callback(unsigned char *buf, unsigned int len, void *priv);
 extern void tcp_http_final_callback(void *priv);
-extern void add_http_test(testitem_t *t, ssloptions_t *sslopt);
+extern void add_http_test(testitem_t *t);
 
 #endif
 

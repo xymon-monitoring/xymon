@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.170 2004-08-29 15:59:19 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.171 2004-08-31 10:51:35 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -2208,7 +2208,7 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-	for (t = httptest->items; (t); t = t->next) add_http_test(t, NULL);
+	for (t = httptest->items; (t); t = t->next) add_http_test(t);
 	add_timestamp("Test engine setup completed");
 
 	do_tcp_tests(timeout, concurrency);
