@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.22 2004-12-11 08:21:38 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.23 2004-12-26 23:44:58 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -295,6 +295,7 @@ int main(int argc, char *argv[])
 		          (source == SRC_HISTLOGS), 
 			  wantserviceid, 
 			  (strcmp(service, "info") == 0),
+			  (source == SRC_BBGEND),
 			  stdout);
 	return 0;
 }
