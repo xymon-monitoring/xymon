@@ -3,7 +3,7 @@ CGISCRIPTS = bb-ack.sh larrd-grapher.cgi maint.pl
 
 LIBOBJS = ../lib/libbbgen.a
 
-BBGENDOBJS = bbgend.o bbgend_ipc.o bbgend_worker.o
+BBGENDOBJS = bbgend.o bbgend_ipc.o
 CHANNELOBJS = bbgend_channel.o bbgend_ipc.o
 
 SAMPLEOBJS    = bbgend_sample.o    bbgend_worker.o
