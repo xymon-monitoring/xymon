@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.61 2004-09-02 21:35:28 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.62 2004-09-10 20:11:32 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -150,7 +150,7 @@ static char *binview(unsigned char *buf, int buflen)
 char *init_tcp_services(void)
 {
 	char filename[MAX_PATH];
-	FILE *fd;
+	FILE *fd = NULL;
 	char buf[MAX_LINE_LEN];
 	svclist_t *head = NULL;
 	svclist_t *item = NULL;
@@ -162,7 +162,12 @@ char *init_tcp_services(void)
 	int svccount = 1;
 	int i;
 
-	sprintf(filename, "%s/etc/bb-services", getenv("BBHOME"));
+	filename[0] = '\0';
+	if (getenv("BBHOME")) {
+		sprintf(filename, "%s/etc/", getenv("BBHOME"));
+	}
+	strcat(filename, "bb-services");
+
 	fd = fopen(filename, "r");
 	if (fd == NULL) {
 		errprintf("Cannot open TCP service-definitions file %s - using defaults\n", filename);
@@ -230,6 +235,9 @@ char *init_tcp_services(void)
 					else errprintf("Unknown option: %s\n", opt);
 
 					opt = strtok(NULL, ",");
+				}
+				for (walk = item; (walk != first); walk = walk->next) {
+					walk->next->rec->flags = item->rec->flags;
 				}
 			}
 		}
@@ -1397,6 +1405,8 @@ int main(int argc, char *argv[])
 	int timeout = 0;
 	int concurrency = 0;
 
+	if (getenv("BBNETSVCS") == NULL) putenv("BBNETSVCS=");
+	p = getenv("BBNETSVCS");
 	init_tcp_services();
 
 	for (argi=1; (argi<argc); argi++) {
