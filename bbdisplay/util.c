@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.71 2003-07-14 11:07:59 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.72 2003-07-16 20:41:45 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -938,7 +938,7 @@ out:
 }
 
 
-static void sendmessage(char *msg)
+void sendmessage(char *msg, char *recipient)
 {
 	static char *bbcmd = NULL;
 	static char *bbdisp = NULL;
@@ -959,7 +959,7 @@ static void sendmessage(char *msg)
 		errprintf("%s: Fork error\n", timestamp);
 	}
 	else if (childpid == 0) {
-		execl(bbcmd, "bb", bbdisp, msg, NULL);
+		execl(bbcmd, "bb", (recipient ? recipient : bbdisp), msg, NULL);
 	}
 	else {
 		wait(&childstat);
@@ -1014,7 +1014,7 @@ void combo_flush(void)
 		} while (p1);
 	}
 
-	sendmessage(bbmsg);
+	sendmessage(bbmsg, NULL);
 	combo_start();	/* Get ready for the next */
 }
 
@@ -1080,7 +1080,7 @@ void finish_status(void)
 		default:
 			/* Red, yellow and purple messages go out NOW. Or we get no alarms ... */
 			bbnocombocount++;
-			sendmessage(msgbuf);
+			sendmessage(msgbuf, NULL);
 			break;
 	}
 }

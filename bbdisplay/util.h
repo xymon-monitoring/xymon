@@ -68,6 +68,7 @@ extern char *histlogurl(char *hostname, char *service, time_t histtime);
 extern int within_sla(char *hostline, char *tag, int defresult);
 extern int periodcoversnow(char *tag);
 
+extern void sendmessage(char *msg, char *recipient);
 extern void combo_start(void);
 extern void combo_end(void);
 
