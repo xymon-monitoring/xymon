@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.156 2003-09-27 06:48:47 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.157 2003-09-27 06:52:47 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -419,7 +419,7 @@ int main(int argc, char *argv[])
 			printf("    --eventignore=test[,test]   : Columns to ignore in bb2 event-log display\n");
 			printf("    --no-eventlog               : Do not generate the bb2 eventlog display\n");
 			printf("    --no-acklog                 : Do not generate the bb2 ack-log display\n");
-			printf("    --doccgi=cgibinURL          : Hostnames link to a general CGI script for docs\n");
+			printf("    --docurl=documentation-URL  : Hostnames link to a general (dynamic) web page for docs\n");
 			printf("    --no-doc-window             : Open doc-links in same window\n");
 			printf("    --htmlextension=.EXT        : Sets filename extension for generated file (default: .html\n");
 			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbgen\n");
