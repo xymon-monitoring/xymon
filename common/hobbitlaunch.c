@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.14 2004-12-04 23:09:36 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.15 2004-12-29 08:47:24 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -444,9 +444,9 @@ int main(int argc, char *argv[])
 	setup_signalhandler("bblaunch");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
-	sigaction(SIGCHLD, &sa, NULL);
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGCHLD, &sa, NULL);
 
 	errprintf("bblaunch starting\n");
 	while (running) {
@@ -464,7 +464,7 @@ int main(int argc, char *argv[])
 		}
 
 		/* Pick up children that have terminated */
-		while ((cpid = wait4(0, &status, WNOHANG, NULL)) > 0) {
+		while ((cpid = wait3(&status, WNOHANG, NULL)) > 0) {
 			for (twalk = taskhead; (twalk && (twalk->pid != cpid)); twalk = twalk->next);
 			if (twalk) {
 				twalk->pid = 0;
