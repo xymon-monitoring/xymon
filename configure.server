@@ -66,17 +66,19 @@ else
 		LDAPDEF=""
 	else
 		echo ""
-		echo "bbgen can use a LDAP client library to test LDAP servers."
-		echo "If you have e.g. the OpenLDAP libraries on your system (it is"
-		echo "standard e.g. on Solaris 8), it is recommended that you"
-		echo "enable this."
+		echo "bbgen can use your $LDAPVENDOR LDAP client library to test LDAP servers."
 		echo ""
 		echo "Do you want to be able to test LDAP servers (y) ?"
 		read ENABLELDAP
 		if test "$ENABLELDAP" = "" -o "$ENABLELDAP" = "y"
 		then
-			echo "Enable experimental support for LDAP/SSL (OpenLDAP 2.x only) (y) ?"
-			read ENABLELDAPSSL
+			if test "$LDAPVENDOR" = "OpenLDAP"; then
+				echo "Enable experimental support for LDAP/SSL (OpenLDAP 2.x only) (y) ?"
+				read ENABLELDAPSSL
+			else
+				ENABLELDAPSSL="n"
+			fi
+
 			if test "$ENABLELDAPSSL" = "" -o "$ENABLELDAPSSL" = "y"
 			then
 				LDAPDEF="-DBBGEN_LDAP -DBBGEN_LDAP_USESTARTTLS"
