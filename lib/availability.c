@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.31 2005-01-15 17:38:55 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.32 2005-01-16 11:21:30 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -71,24 +71,28 @@ void build_reportspecs(char *reporttime)
 
 	char *spec, *timespec;
 	int dow, start, end;
+	int found;
 
 	reptimecnt = 0;
 	spec = strchr(reporttime, '=');
-	if (spec == NULL) return; 
+	timespec = xstrdup(spec ? (spec+1) : reporttime); 
 	
-	timespec = xstrdup(spec+1);
 	spec = strtok(timespec, ",");
 	while (spec) {
 		if (*spec == '*') {
 			dow = -1;
-			sscanf(spec, "*:%d:%d", &start, &end);
+			found = sscanf(spec+1, ":%d:%d", &start, &end);
 		}
 		else if ((*spec == 'W') || (*spec == 'w')) {
 			dow = -2;
-			sscanf(spec, "*:%d:%d", &start, &end);
+			found = sscanf(spec+1, ":%d:%d", &start, &end);
 		}
 		else {
-			sscanf(spec, "%d:%d:%d", &dow, &start, &end);
+			found = sscanf(spec, "%d:%d:%d", &dow, &start, &end);
+		}
+
+		if (found < 2) {
+			errprintf("build_reportspecs: Found too few items in %s\n", spec);
 		}
 
 		reptimes[reptimecnt].dow = dow;
@@ -445,15 +449,24 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 			   repinfo->reportduration[COL_YELLOW] + 
 			   repinfo->reportduration[COL_RED] + 
 			   repinfo->reportduration[COL_CLEAR];
-		repinfo->reportpct[COL_GREEN] = (100.0*repinfo->reportduration[COL_GREEN] / duration);
-		repinfo->reportpct[COL_YELLOW] = (100.0*repinfo->reportduration[COL_YELLOW] / duration);
-		repinfo->reportpct[COL_RED] = (100.0*repinfo->reportduration[COL_RED] / duration);
-		repinfo->reportpct[COL_CLEAR] = (100.0*repinfo->reportduration[COL_CLEAR] / duration);
-		repinfo->reportavailability = 100.0 - repinfo->reportpct[COL_RED] - repinfo->reportpct[COL_CLEAR];
 
-		if (repinfo->reportavailability > greenlevel) color = COL_GREEN;
-		else if (repinfo->reportavailability >= warnlevel) color = COL_YELLOW;
-		else color = COL_RED;
+		if (duration > 0) {
+			repinfo->reportpct[COL_GREEN] = (100.0*repinfo->reportduration[COL_GREEN] / duration);
+			repinfo->reportpct[COL_YELLOW] = (100.0*repinfo->reportduration[COL_YELLOW] / duration);
+			repinfo->reportpct[COL_RED] = (100.0*repinfo->reportduration[COL_RED] / duration);
+			repinfo->reportpct[COL_CLEAR] = (100.0*repinfo->reportduration[COL_CLEAR] / duration);
+			repinfo->reportavailability = 100.0 - repinfo->reportpct[COL_RED] - repinfo->reportpct[COL_CLEAR];
+
+			if (repinfo->reportavailability > greenlevel) color = COL_GREEN;
+			else if (repinfo->reportavailability >= warnlevel) color = COL_YELLOW;
+			else color = COL_RED;
+		}
+		else {
+			/* Reporting period has no match with REPORTTIME setting */
+			repinfo->reportpct[COL_CLEAR] = 100.0;
+			repinfo->reportavailability = 100.0;
+			color = COL_GREEN;
+		}
 	}
 	else {
 		repinfo->reportavailability = repinfo->fullavailability;
