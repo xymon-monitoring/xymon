@@ -205,6 +205,8 @@ typedef struct {
 	link_t	*link;
 	entry_t	*entries;
 	int	color;		/* Calculated */
+	int     oldage;
+	int	prefer;
 	char	*alerts;
 	int	anywaps;
 	int	wapcolor;
@@ -214,7 +216,6 @@ typedef struct {
 	char    *rawentry;
 	rrd_t	*rrds;
 	char    *larrdgraphs;
-	int     oldage;
 	char	*pretitle;
 	void	*parent;
 	void	*next;
