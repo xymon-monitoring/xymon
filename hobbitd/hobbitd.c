@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.28 2004-10-21 21:30:17 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.29 2004-10-22 15:16:50 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -731,7 +731,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		if (lwalk->ackmsg) free(lwalk->ackmsg);
 		free(lwalk);
 		marker = "droptest";
-		sprintf(msgbuf, "|%s|%s", hostname, n1);
+		sprintf(msgbuf, "%s|%s", hostname, n1);
 		break;
 
 	  case CMD_DROPHOST:
@@ -761,7 +761,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		/* Free the hostlist entry */
 		free(hwalk);
 		marker = "drophost";
-		sprintf(msgbuf, "|%s", hostname);
+		sprintf(msgbuf, "%s", hostname);
 		break;
 
 	  case CMD_RENAMEHOST:
@@ -773,7 +773,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			hwalk->hostname = strdup(n1);
 		}
 		marker = "renamehost";
-		sprintf(msgbuf, "|%s|%s", hostname, n1);
+		sprintf(msgbuf, "%s|%s", hostname, n1);
 		break;
 
 	  case CMD_RENAMETEST:
@@ -790,7 +790,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		}
 		lwalk->test = newt;
 		marker = "renametest";
-		sprintf(msgbuf, "|%s|%s|%s", hostname, n1, n2);
+		sprintf(msgbuf, "%s|%s|%s", hostname, n1, n2);
 		break;
 	}
 
