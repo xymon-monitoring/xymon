@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.6 2003-07-02 10:54:02 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.7 2003-07-03 08:44:47 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -132,11 +132,17 @@ static long getvalue(char *hostname, char *testname, int *color)
 	}
 
 	sprintf(fn, "%s/%s.%s", getenv("BBLOGS"), commafy(hostname), testname);
-	if ((stat(fn, &st) == 0) && (st.st_mtime > time(NULL))) {
-
+	if (stat(fn, &st)) {
+		dprintf("No status file for host=%s, test=%s\n", hostname, testname);
+	}
+	else if (st.st_mtime < time(NULL)) {
+		dprintf("Will not use a stale logfile for combo-tests - setting purple\n");
+		*color = COL_PURPLE;
+	}
+	else {
 		fd = fopen(fn, "r");
 		if (fd == NULL) {
-			dprintf("No status file for host=%s, test=%s\n", hostname, testname);
+			dprintf("Cannot open file %s\n", fn);
 			return -1;
 		}
 
@@ -148,10 +154,6 @@ static long getvalue(char *hostname, char *testname, int *color)
 		}
 
 		fclose(fd);
-	}
-	else {
-		dprintf("Will not use a stale logfile for combo-tests - setting purple\n");
-		*color = COL_PURPLE;
 	}
 
 	if (*color == -1) return -1;
