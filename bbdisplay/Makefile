@@ -2,7 +2,7 @@
 #
 
 
-PROGRAMS = bbgen bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi bb-findhost.cgi bb-csvinfo.cgi bb-hostsvc.cgi bb-ack.cgi
+PROGRAMS = bbgen bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi bb-findhost.cgi bb-csvinfo.cgi bb-hostsvc.cgi bb-ack.cgi bb-webpage
 
 EXTENSIONS = bbcombotest
 
@@ -22,6 +22,7 @@ CSVINFOOBJS = bb-csvinfo.o
 MESSAGECGIOBJS = sendmsg-cgi.o
 HOSTSVCCGIOBJS = bb-hostsvc.o
 ACKCGIOBJS = bb-ack.o
+WEBPAGEOBJS = bb-webpage.o
 
 HTMLPAGES = bb-findhost.html
 GIFFILES = bbfindhost1.gif bbfindhost2.gif
@@ -65,6 +66,9 @@ bb-hostsvc.cgi: $(HOSTSVCCGIOBJS)
 
 bb-ack.cgi: $(ACKCGIOBJS)
 	$(CC) $(CFLAGS) -o $@ $(ACKCGIOBJS) ../lib/libbbgen.a $(NETLIBS)
+
+bb-webpage: $(WEBPAGEOBJS)
+	$(CC) $(CFLAGS) -o $@ $(WEBPAGEOBJS) ../lib/libbbgen.a
 
 
 ################################################
