@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.5 2004-11-08 17:11:41 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.6 2004-11-13 21:59:46 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -110,27 +110,27 @@ void update_larrd(char *hostname, char *testname, char *msg, time_t tstamp, larr
 
 	if (ldef) id = ldef->larrdsvcname; else id = testname;
 
-	if      (strcmp(id, "bbgen") == 0)    res = do_bbgen_larrd(hostname, id, msg, tstamp);
-	else if (strcmp(id, "bbtest") == 0)   res = do_bbtest_larrd(hostname, id, msg, tstamp);
-	else if (strcmp(id, "bbproxy") == 0)  res = do_bbproxy_larrd(hostname, id, msg, tstamp);
-	else if (strcmp(id, "citrix") == 0)   res = do_citrix_larrd(hostname, id, msg, tstamp);
-	else if (strcmp(id, "ntpstat") == 0)  res = do_ntpstat_larrd(hostname, id, msg, tstamp);
+	if      (strcmp(id, "bbgen") == 0)    res = do_bbgen_larrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "bbtest") == 0)   res = do_bbtest_larrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "bbproxy") == 0)  res = do_bbproxy_larrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "citrix") == 0)   res = do_citrix_larrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "ntpstat") == 0)  res = do_ntpstat_larrd(hostname, testname, msg, tstamp);
 
-	else if (strcmp(id, "la") == 0)       res = do_la_larrd(hostname, id, msg, tstamp);
-	else if (strcmp(id, "disk") == 0)     res = do_disk_larrd(hostname, id, msg, tstamp);
-	else if (strcmp(id, "memory") == 0)   res = do_memory_larrd(hostname, id, msg, tstamp);
-	else if (strcmp(id, "netstat") == 0)  res = do_netstat_larrd(hostname, id, msg, tstamp);
-	else if (strcmp(id, "vmstat") == 0)   res = do_vmstat_larrd(hostname, id, msg, tstamp);
-	else if (strcmp(id, "iostat") == 0)   res = do_iostat_larrd(hostname, id, msg, tstamp);
+	else if (strcmp(id, "la") == 0)       res = do_la_larrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "disk") == 0)     res = do_disk_larrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "memory") == 0)   res = do_memory_larrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "netstat") == 0)  res = do_netstat_larrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "vmstat") == 0)   res = do_vmstat_larrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "iostat") == 0)   res = do_iostat_larrd(hostname, testname, msg, tstamp);
 
-	else if (strcmp(id, "apache") == 0)   res = do_apache_larrd(hostname, id, msg, tstamp);
-	else if (strcmp(id, "bind") == 0)     res = do_bind_larrd(hostname, id, msg, tstamp);
-	else if (strcmp(id, "sendmail") == 0) res = do_sendmail_larrd(hostname, id, msg, tstamp);
-	else if (strcmp(id, "mailq") == 0)    res = do_mailq_larrd(hostname, id, msg, tstamp);
+	else if (strcmp(id, "apache") == 0)   res = do_apache_larrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "bind") == 0)     res = do_bind_larrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "sendmail") == 0) res = do_sendmail_larrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "mailq") == 0)    res = do_mailq_larrd(hostname, testname, msg, tstamp);
 
 	else if (ldef) {
 		/* Assume anything else with a known LARRD definition is a network test */
-		res = do_net_larrd(hostname, id, msg, tstamp);
+		res = do_net_larrd(hostname, testname, msg, tstamp);
 	}
 }
 
