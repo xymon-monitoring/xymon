@@ -96,6 +96,15 @@ this command, since a "status" message where the color is red, yellow
 or purple will automatically (in the bb program) result in a "page" 
 message being sent as well.
 
+.IP "notify HOSTNAME.TESTNAME <message text>"
+Hobbit only, not supported by BB. This triggers an informational 
+message to be sent to those who receive alerts for this HOSTNAME+TESTNAME
+combination, according to the rules defined in
+.I hobbit-alerts.cfg(5)
+This is used by the Hobbit \fBmaint.pl\fR script to notify people
+about hosts being disabled or enabled, but can also serve as a 
+general way of notifying server administrators.
+
 .IP "data HOSTNAME.DATANAME<newline><additional text>"
 The "data" message allows tools to send data about a host, without
 it appearing as a column on the Hobbit / Big Brother webpages. This
