@@ -10,7 +10,7 @@
 		fi
 		if test -f $DIR/include/pcre/pcre.h
 		then
-			PCREINC=$DIR/include
+			PCREINC=$DIR/include/pcre
 		fi
 
 		if test -f $DIR/lib/libpcre.so
