@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.14 2005-03-13 07:44:37 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.15 2005-03-14 11:47:05 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -109,6 +109,7 @@ const static struct {
 	{ "DOTHEIGHT", "16" },
 	{ "DOTWIDTH", "16" },
 	{ "COLUMNDOCURL", "$CGIBINURL/hobbitcolumn.sh?%s" },
+	{ "HOBBITLOGO", "Hobbit" },
 	{ "MKBBLOCAL", "<B><I>Pages Hosted Locally</I></B>" },
 	{ "MKBBREMOTE", "<B><I>Remote Status Display</I></B>" },
 	{ "MKBBSUBLOCAL", "<B><I>Subpages Hosted Locally</I></B>" },
