@@ -9,14 +9,14 @@
 /* generate the webpages. This is a problem, when the pages are used for      */
 /* 24x7 monitoring of the system status.                                      */
 /*                                                                            */
-/* Copyright (C) 2002 Henrik Storner <henrik@storner.dk>                      */
+/* Copyright (C) 2002-2003 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.16 2003-06-24 20:53:30 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.17 2003-07-07 14:54:02 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -28,6 +28,13 @@ static char rcsid[] = "$Id: availability.c,v 1.16 2003-06-24 20:53:30 henrik Exp
 #include "debug.h"
 #include "util.h"
 #include "reportdata.h"
+
+typedef struct {
+	int dow;
+	time_t start, end;
+} reptime_t;
+static reptime_t reptimes[10];
+static int reptimecnt = 0;
 
 replog_t *reploghead = NULL;
 
@@ -51,6 +58,94 @@ char *durationstr(time_t duration)
 	}
 
 	return dur;
+}
+
+time_t secs(int hour, int minute, int sec)
+{
+	return (hour*3600 + minute*60 + sec);
+}
+
+void build_reportspecs(char *reporttime)
+{
+	/* Timespec:  W:HHMM:HHMM */
+
+	char *spec, *timespec;
+	int dow, start, end;
+
+	reptimecnt = 0;
+	spec = strchr(reporttime, '=');
+	if (spec == NULL) return; 
+	
+	timespec = malcop(spec+1);
+	spec = strtok(timespec, ",");
+	while (spec) {
+		if (*spec == '*') {
+			dow = -1;
+			sscanf(spec, "*:%d:%d", &start, &end);
+		}
+		else {
+			sscanf(spec, "%d:%d:%d", &dow, &start, &end);
+		}
+
+		reptimes[reptimecnt].dow = dow;
+		reptimes[reptimecnt].start = secs((start / 100), (start % 100), 0);
+		reptimes[reptimecnt].end = secs((end / 100), (end % 100), 0);
+		reptimecnt++;
+		spec = strtok(NULL, ",");
+	}
+
+	free(timespec);
+}
+
+unsigned long reportduration_oneday(int eventdow, time_t eventstart, time_t eventend)
+{
+	int i;
+	unsigned long result = 0;
+
+	for (i=0; (i<reptimecnt); i++) {
+		if ((reptimes[i].dow == eventdow) || (reptimes[i].dow == -1)) {
+			if ((reptimes[i].start > eventend) || (reptimes[i].end < eventstart)) {
+				/* Outside our window */
+			}
+			else {
+				time_t winstart, winend;
+
+				winstart = ((eventstart < reptimes[i].start) ? reptimes[i].start : eventstart);
+				winend = ((eventend > reptimes[i].end) ? reptimes[i].end : eventend);
+				result += (winend - winstart);
+			}
+		}
+	}
+
+	return result;
+}
+
+unsigned long reportingduration(time_t eventstart, time_t eventduration)
+{
+	struct tm start, end;
+	time_t eventend;
+	unsigned long result;
+
+	memcpy(&start, localtime(&eventstart), sizeof(start));
+	eventend = eventstart + eventduration;
+	memcpy(&end, localtime(&eventend), sizeof(end));
+
+	if ((start.tm_mday == end.tm_mday) && (start.tm_mon == end.tm_mon) && (start.tm_year == end.tm_year))
+		result = reportduration_oneday(start.tm_wday, secs(start.tm_hour, start.tm_min, start.tm_sec), secs(end.tm_hour, end.tm_min, end.tm_sec));
+	else {
+		int fulldays = (eventduration - (86400-secs(start.tm_hour, start.tm_min, start.tm_sec))) / 86400;
+		int curdow = (start.tm_wday  == 6) ? 0 : (start.tm_wday+1);
+
+		result = reportduration_oneday(start.tm_wday, secs(start.tm_hour, start.tm_min, start.tm_sec), 86400);
+		while (fulldays) {
+			result += reportduration_oneday(curdow, 0, 86400);
+			curdow = (curdow  == 6) ? 0 : (curdow+1);
+			fulldays--;
+		}
+		result += reportduration_oneday(curdow, 0, secs(end.tm_hour, end.tm_min, end.tm_sec));
+	}
+
+	return result;
 }
 
 
@@ -191,7 +286,7 @@ int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 
 int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *servicename, 
 			time_t fromtime, time_t totime, int for_history, 
-			double warnlevel, double greenlevel)
+			double warnlevel, double greenlevel, char *reporttime)
 {
 	char l[MAX_LINE_LEN];
 	time_t starttime, duration;
@@ -199,14 +294,20 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 	int color, done, i, scanres;
 	int fileerrors;
 
-	for (i=0; (i<COL_COUNT); i++) {
-		repinfo->totduration[i] = 0;
-		repinfo->count[i] = 0;
-		repinfo->pct[i] = 0.0;
-	}
-	repinfo->availability = 0.0;
 	repinfo->fstate = "OK";
+	repinfo->withreport = 0;
 	repinfo->reportstart = time(NULL);
+	for (i=0; (i<COL_COUNT); i++) {
+		repinfo->count[i] = 0;
+		repinfo->fullduration[i] = 0;
+		repinfo->fullpct[i] = 0.0;
+		repinfo->reportduration[i] = 0;
+		repinfo->reportpct[i] = 0.0;
+	}
+	repinfo->fullavailability = 0.0;
+	repinfo->reportavailability = 0.0;
+
+	if (reporttime) build_reportspecs(reporttime);
 
 	/* Sanity check */
 	if (totime > time(NULL)) totime = time(NULL);
@@ -225,8 +326,8 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 	}
 
 	if (starttime > totime) {
-		repinfo->availability = 100.0;
-		repinfo->pct[COL_CLEAR] = 100.0;
+		repinfo->fullavailability = repinfo->reportavailability = 100.0;
+		repinfo->fullpct[COL_CLEAR] = repinfo->reportpct[COL_CLEAR] = 100.0;
 		repinfo->count[COL_CLEAR] = 1;
 		return COL_CLEAR;
 	}
@@ -247,7 +348,8 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 		if (color != -1) {
 			dprintf("In-range entry starting %lu lasting %lu color %d: %s", starttime, duration, color, l);
 			repinfo->count[color]++;
-			repinfo->totduration[color] += duration;
+			repinfo->fullduration[color] += duration;
+			if (reporttime) repinfo->reportduration[color] += reportingduration(starttime, duration);
 
 			if (for_history || ((hostname != NULL) && (servicename != NULL))) {
 				replog_t *newentry;
@@ -294,14 +396,32 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 	} while (!done);
 
 	for (i=0; (i<COL_COUNT); i++) {
-		dprintf("Duration for color %d: %lu\n", i, repinfo->totduration[i]);
-		repinfo->pct[i] = (100.0*repinfo->totduration[i] / (totime - repinfo->reportstart));
+		dprintf("Duration for color %d: %lu\n", i, repinfo->fullduration[i]);
+		repinfo->fullpct[i] = (100.0*repinfo->fullduration[i] / (totime - repinfo->reportstart));
 	}
-	repinfo->availability = 100.0 - repinfo->pct[COL_RED];
+	repinfo->fullavailability = 100.0 - repinfo->fullpct[COL_RED];
 
-	if (repinfo->availability > greenlevel) color = COL_GREEN;
-	else if (repinfo->availability >= warnlevel) color = COL_YELLOW;
-	else color = COL_RED;
+	if (reporttime) {
+		repinfo->withreport = 1;
+		duration = repinfo->reportduration[COL_GREEN] + 
+			   repinfo->reportduration[COL_YELLOW] + 
+			   repinfo->reportduration[COL_RED] + 
+			   repinfo->reportduration[COL_CLEAR];
+		repinfo->reportpct[COL_GREEN] = (100.0*repinfo->reportduration[COL_GREEN] / duration);
+		repinfo->reportpct[COL_YELLOW] = (100.0*repinfo->reportduration[COL_YELLOW] / duration);
+		repinfo->reportpct[COL_RED] = (100.0*repinfo->reportduration[COL_RED] / duration);
+		repinfo->reportpct[COL_CLEAR] = (100.0*repinfo->reportduration[COL_CLEAR] / duration);
+		repinfo->reportavailability = 100.0 - repinfo->reportpct[COL_RED] - repinfo->reportpct[COL_CLEAR];
+
+		if (repinfo->reportavailability > greenlevel) color = COL_GREEN;
+		else if (repinfo->reportavailability >= warnlevel) color = COL_YELLOW;
+		else color = COL_RED;
+	}
+	else {
+		if (repinfo->fullavailability > greenlevel) color = COL_GREEN;
+		else if (repinfo->fullavailability >= warnlevel) color = COL_YELLOW;
+		else color = COL_RED;
+	}
 
 	if (fileerrors) repinfo->fstate = "NOTOK";
 	return color;
@@ -354,7 +474,7 @@ int main(int argc, char *argv[])
 	p = strrchr(hostsvc, '/'); host = p+1;
 	while ((p = strchr(host, ','))) *p = '.';
 
-	color = parse_historyfile(fd, &repinfo, host, svc, reportstart, reportend, reportwarnlevel, reportgreenlevel);
+	color = parse_historyfile(fd, &repinfo, host, svc, reportstart, reportend, reportwarnlevel, reportgreenlevel, NULL);
 
 	for (i=0; (i<COL_COUNT); i++) {
 		dprintf("Color %d: Count=%d, pct=%.2f\n", i, repinfo.count[i], repinfo.pct[i]);
