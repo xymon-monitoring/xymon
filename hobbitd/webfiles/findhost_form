@@ -1,11 +1,10 @@
-<BR>
 <CENTER>
   <FORM ACTION="&CGIBINURL/bb-findhost.sh" METHOD="GET">
     <TABLE WIDTH="80%" BORDER=0 CELLSPACING=5>
        <TR BGCOLOR="#000033">
            <TD COLSPAN=2 ALIGN="CENTER">
                <FONT FACE="Arial, Helvetica">
-                  <B>Big Brother Host Finder</B>
+                  <B>Hobbit Host Finder</B>
                </FONT>
            </TD>
        </TR>

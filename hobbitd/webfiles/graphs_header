@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <HTML>
 <HEAD>
-<TITLE>&BBBACKGROUND : Big Brother - Graphs @ &BBDATE</TITLE>
+<TITLE>&BBBACKGROUND : Hobbit - Status @ &BBDATE</TITLE>
 
 <!-- Styles for the menu bar -->
 <link rel="stylesheet" href="&BBWEB/menu/menu.css">
@@ -13,7 +13,7 @@
 <TR><TD HEIGHT=16>&nbsp</TD></TR>  <!-- For the menu bar -->
 <TR>
   <TD VALIGN=TOP ALIGN=LEFT WIDTH="30%">
-    <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>Big Brother</B></FONT>
+    <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>Hobbit</B></FONT>
   </TD>
   <TD VALIGN=TOP ALIGN=CENTER WIDTH="40%">
     <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>Graphs</B></FONT></CENTER>

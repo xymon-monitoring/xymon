@@ -3,7 +3,7 @@
 <HEAD>
 <META HTTP-EQUIV="REFRESH" CONTENT="&BBREFRESH">
 <META HTTP-EQUIV="EXPIRES" CONTENT="Sat, 01 Jan 2001 00:00:00 GMT">
-<TITLE>&BBCOLOR : Big Brother - &BBSVC status for &BBHOST (&BBIP) @ &BBDATE</TITLE>
+<TITLE>&BBCOLOR : Hobbit - &BBSVC status for &BBHOST (&BBIP) @ &BBDATE</TITLE>
 
 <!-- Styles for the menu bar -->
 <link rel="stylesheet" href="&BBWEB/menu/menu.css">
@@ -15,7 +15,7 @@
 <TR><TD HEIGHT=16>&nbsp</TD></TR>  <!-- For the menu bar -->
 <TR>
   <TD VALIGN=TOP ALIGN=LEFT WIDTH="30%">
-    <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>Big Brother</B></FONT>
+    <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>Hobbit</B></FONT>
   </TD>
   <TD VALIGN=TOP ALIGN=CENTER WIDTH="40%">
     <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&BBHOST - &BBSVC</B></FONT></CENTER>
