@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.143 2003-08-11 15:38:33 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.144 2003-08-11 20:12:25 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -168,6 +168,12 @@ int main(int argc, char *argv[])
 				sprintf(wapcolumns, ",%s,", (lp+1));
 			}
 			enable_wmlgen = 1;
+		}
+		else if (argnmatch(argv[i], "--nsbar=")) {
+			char *lp = strchr(argv[i], '=');
+
+			if (strlen(lp+1) > 0) nssidebarfilename = malcop(lp+1);
+			else errprintf("--nsbar requires a filename\n");
 		}
 		else if (argnmatch(argv[i], "--rss=")) {
 			char *lp = strchr(argv[i], '=');
@@ -404,7 +410,8 @@ int main(int argc, char *argv[])
 			printf("    --template=TEMPLATE         : template for header and footer files\n");
 			printf("\nAlternate output formats:\n");
 			printf("    --wml[=test1,test2,...]     : Generate a small (bb2-style) WML page\n");
-			printf("    --rss=outputfile            : Generate a RSS/RDF feed of alerts\n");
+			printf("    --nsbar=FILENAME            : Generate a Netscape Sidebar feed\n");
+			printf("    --rss=FILENME               : Generate a RSS/RDF feed of alerts\n");
 			printf("    --rssversion={0.91|0.92|1.0|2.0} : Specify RSS/RDF version (default: 0.91)\n");
 			printf("\nDebugging options:\n");
 			printf("    --timing                    : Collect timing information\n");
@@ -558,6 +565,12 @@ int main(int argc, char *argv[])
 	if (rssfilename) {
 		do_rss_feed();
 		add_timestamp("RSS generation done");
+	}
+
+	/* Generate Netscape sidebar feed */
+	if (nssidebarfilename) {
+		do_netscape_sidebar();
+		add_timestamp("Netscape Sidebar generation done");
 	}
 
 	/* Need to do this before sending in our report */

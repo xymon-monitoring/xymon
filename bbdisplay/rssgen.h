@@ -16,7 +16,9 @@
 
 extern char *rssfilename;
 extern char *rssversion;
+extern char *nssidebarfilename;
 
 extern void do_rss_feed(void);
+extern void do_netscape_sidebar(void);
 #endif
 

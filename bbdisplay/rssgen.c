@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: rssgen.c,v 1.1 2003-08-11 15:38:57 henrik Exp $";
+static char rcsid[] = "$Id: rssgen.c,v 1.2 2003-08-11 20:12:25 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -23,6 +23,7 @@ static char rcsid[] = "$Id: rssgen.c,v 1.1 2003-08-11 15:38:57 henrik Exp $";
 
 char *rssfilename = NULL;
 char *rssversion = "0.91";
+char *nssidebarfilename = NULL;
 
 #define RSS091 0
 #define RSS092 1
@@ -33,6 +34,7 @@ void do_rss_feed(void)
 {
 	FILE *fd;
 	char tmpfn[MAX_PATH];
+	char destfn[MAX_PATH];
 	int rssver = 0;
 	int ttlvalue;
 	hostlist_t *h;
@@ -51,7 +53,8 @@ void do_rss_feed(void)
 
 	ttlvalue = (getenv("BBSLEEP") ? (atoi(getenv("BBSLEEP")) / 60) : 5);
 
-	sprintf(tmpfn, "%s.tmp", rssfilename);
+	sprintf(tmpfn, "%s/www/%s.tmp", getenv("BBHOME"), rssfilename);
+	sprintf(destfn, "%s/www/%s", getenv("BBHOME"), rssfilename);
 	fd = fopen(tmpfn, "w");
 	if (fd == NULL) {
 		errprintf("Cannot create RSS/RDF outputfile %s\n", tmpfn);
@@ -166,8 +169,89 @@ void do_rss_feed(void)
 	}
 
 	fclose(fd);
-	if (rename(tmpfn, rssfilename) != 0) {
-		errprintf("Cannot move file %s to destination %s\n", tmpfn, rssfilename);
+	if (rename(tmpfn, destfn) != 0) {
+		errprintf("Cannot move file %s to destination %s\n", tmpfn, destfn);
+	}
+
+	return;
+}
+
+void do_netscape_sidebar(void)
+{
+	FILE *fd;
+	char tmpfn[MAX_PATH];
+	char destfn[MAX_PATH];
+	int ttlvalue;
+	hostlist_t *h;
+	int anyshown;
+
+	if (nssidebarfilename == NULL) return;
+
+	ttlvalue = (getenv("BBSLEEP") ? atoi(getenv("BBSLEEP")) : 300);
+
+	sprintf(tmpfn, "%s/www/%s.tmp", getenv("BBHOME"), nssidebarfilename);
+	sprintf(destfn, "%s/www/%s", getenv("BBHOME"), nssidebarfilename);
+	fd = fopen(tmpfn, "w");
+	if (fd == NULL) {
+		errprintf("Cannot create RSS/RDF outputfile %s\n", tmpfn);
+		return;
+	}
+
+	fprintf(fd, "<HTML>\n");
+	fprintf(fd, "  <HEAD>\n");
+	fprintf(fd, "    <TITLE>Big Brother Critical Alerts</TITLE>\n");
+	fprintf(fd, "    <META NAME=\"Generator\" CONTENT=\"bbgen - generator for Big Brother\">\n");
+	fprintf(fd, "    <META HTTP-EQUIV=\"Refresh\" CONTENT=\"%d; URL=%s/%s\">\n",
+		ttlvalue, getenv("BBWEBHOSTURL"), nssidebarfilename);
+	fprintf(fd, "  </HEAD>\n");
+	fprintf(fd, "  <BODY>\n");
+	fprintf(fd, "    <FONT SIZE=\"-2\">Last updated:<BR>%s<BR></FONT>\n", timestamp);
+	fprintf(fd, "    <UL>\n");
+
+	for (h=hosthead, anyshown=0; (h); h=h->next) {
+		entry_t *e;
+
+		if (h->hostentry->color == COL_RED) {
+			for (e=h->hostentry->entries; (e); e=e->next) {
+				if (e->color == COL_RED) {
+					anyshown = 1;
+
+					fprintf(fd, "      <LI>\n");
+					if (generate_static()) {
+						fprintf(fd, "\t<A TARGET=\"_content\" HREF=\"%s/html/%s.%s.html\">",
+							getenv("BBWEBHOSTURL"), 
+							h->hostentry->hostname, 
+							e->column->name);
+					}
+					else {
+						fprintf(fd, "\t<A TARGET=\"_content\" HREF=\"%s%s/bb-hostsvc.sh?HOSTSVC=%s.%s\">",
+							getenv("BBWEBHOST"),
+							getenv("CGIBINURL"),
+							commafy(h->hostentry->hostname), 
+							e->column->name);
+					}
+					fprintf(fd, "%s (%s)</A>\n",
+						h->hostentry->hostname, e->column->name);
+					fprintf(fd, "      </LI>\n");
+				}
+			}
+		}
+	}
+
+	if (!anyshown) {
+		fprintf(fd, "      <LI>\n");
+		fprintf(fd, "        <A TARGET=\"_content\" HREF=\"%s\">No Critical Alerts</A>\n",
+			getenv("BBWEBHOSTURL"));
+		fprintf(fd, "      </LI>\n");
+	}
+
+	fprintf(fd, "    </UL>\n");
+	fprintf(fd, "  </BODY>\n"),
+	fprintf(fd, "</HTML>\n");
+
+	fclose(fd);
+	if (rename(tmpfn, destfn) != 0) {
+		errprintf("Cannot move file %s to destination %s\n", tmpfn, destfn);
 	}
 
 	return;
