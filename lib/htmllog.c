@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.16 2005-02-03 12:48:22 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.17 2005-02-03 13:09:12 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -135,10 +135,18 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		fprintf(output, "<TR><TD><H3>Disabled until %s</H3></TD></TR>\n", ctime(&disabletime));
 		fprintf(output, "<TR><TD><PRE>%s</PRE></TD></TR>\n", dismsg);
 		fprintf(output, "<TR><TD><BR><HR>Current status message follows:<HR><BR></TD></TR>\n");
-		fprintf(output, "<TR><TD><H3>%s</H3>\n", firstline);	/* Drop the color */
+
+		fprintf(output, "<TR><TD>");
+		if (strlen(firstline)) fprintf(output, "<H3>%s</H3>", firstline);	/* Drop the color */
+		fprintf(output, "\n");
+			
 	}
 	else {
-		fprintf(output, "<TR><TD><H3>%s</H3>\n", skipword(firstline));	/* Drop the color */
+		char *txt = skipword(firstline);
+
+		fprintf(output, "<TR><TD>");
+		if (strlen(txt)) fprintf(output, "<H3>%s</H3>", txt);	/* Drop the color */
+		fprintf(output, "\n");
 	}
 
 	if (!htmlfmt) fprintf(output, "<PRE>\n");
