@@ -1,0 +1,46 @@
+.TH HOBBIT-MAILACK 8 "Version 4.0-RC3: 22 feb 2005" "Hobbit Monitor"
+.SH NAME
+hobbit-mailack \- permit acknowledging alerts via e-mail
+.SH SYNOPSIS
+.B "hobbit-mailack --env=FILENAME [--debug]"
+
+.SH DESCRIPTION
+hobbit-mailack normally runs as an input mail-filter for the
+hobbit user, e.g. by being called from the hobbit users' 
+.I procmailrc(5)
+file. hobbit-mailack recognizes e-mails that are replies to 
+.I hobbitd_alert(8)
+mail alerts, and converts the reply mail into an acknowledge
+message that is sent to the Hobbit system. This permits an
+administrator to acknowledge an alert via e-mail.
+
+.SH USE WITH PROCMAIL
+To setup hobbit-mailack, create a \fB.procmailrc\fR file in
+the hobbit-users home-directory with the following contents:
+.IP
+.nf
+DEFAULT=$HOME/Mailbox
+LOGFILE=$HOME/procmail.log
+:0
+| $HOME/server/bin/hobbit-mailack --env=$HOME/server/etc/hobbitserver.cfg
+.fi
+
+.SH USE WITH QMAIL
+If you are using Qmail to deliver mail locally, you can run hobbit-mailack
+directly from a \fB.qmail\fR file. Setup the hobbit-users .qmail file like this:
+.IP
+.nf
+| $HOME/server/bin/hobbit-mailack --env=$HOME/server/etc/hobbitserver.cfg
+.fi
+
+.SH OPTIONS
+.IP "--env=FILENAME"
+Load environment from FILENAME, usually hobbitserver.cfg.
+
+.IP "--debug"
+Dont send a message to hobbitd, but dump the message to
+stdout.
+
+.SH "SEE ALSO"
+hobbitd_alert(8), hobbitd(8), hobbit(7)
+
