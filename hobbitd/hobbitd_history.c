@@ -166,6 +166,8 @@ int main(int argc, char *argv[])
 				histlogfd = fopen(fname, "w");
 				if (histlogfd) {
 					fwrite(statusdata, strlen(statusdata), 1, histlogfd);
+					fprintf(histlogfd, "Status unchanged in 0.00 minutes\n");
+					fprintf(histlogfd, "Message received from %s\n", items[2]);
 					fclose(histlogfd);
 				}
 				else {
