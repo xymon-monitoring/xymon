@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.77 2004-12-09 13:59:28 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.78 2004-12-09 22:57:12 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -65,6 +65,13 @@ typedef struct bbgend_testlist_t {
 	struct bbgend_testlist_t *next;
 } bbgend_testlist_t;
 
+htnames_t *metanames = NULL;
+typedef struct bbgend_meta_t {
+	htnames_t *metaname;
+	char *value;
+	struct bbgend_meta_t *next;
+} bbgend_meta_t;
+
 /* This holds all information about a single status */
 typedef struct bbgend_log_t {
 	struct bbgend_hostlist_t *host;
@@ -83,6 +90,7 @@ typedef struct bbgend_log_t {
 	unsigned char *dismsg, *ackmsg;
 	int cookie;
 	time_t cookieexpires;
+	struct bbgend_meta_t *metas;
 	struct bbgend_log_t *next;
 } bbgend_log_t;
 
@@ -641,6 +649,7 @@ void get_hts(char *msg, char *sender, char *origin,
 			lwalk->lastchange = lwalk->validtime = lwalk->enabletime = lwalk->acktime = 0;
 			lwalk->cookie = -1;
 			lwalk->cookieexpires = 0;
+			lwalk->metas = NULL;
 			lwalk->next = hwalk->logs;
 			hwalk->logs = lwalk;
 		}
@@ -836,6 +845,44 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	dprintf("posting to status channel\n");
 	posttochannel(statuschn, channelnames[C_STATUS], msg, sender, hostname, log, NULL);
 	return;
+}
+
+void handle_meta(char *msg, bbgend_log_t *log)
+{
+	/*
+	 * msg has the format "meta HOST.TEST metaname\nmeta-value\n"
+	 */
+	char *metaname, *eoln;
+	htnames_t *nwalk;
+	bbgend_meta_t *mwalk;
+
+	eoln = strchr(msg, '\n'); if (eoln) *eoln = '\0';
+	metaname = skipword(msg);
+	metaname = skipwhitespace(metaname);
+	metaname = skipword(metaname);
+	metaname = skipwhitespace(metaname);
+
+	for (nwalk = metanames; (nwalk && strcmp(nwalk->name, metaname)); nwalk = nwalk->next) ;
+	if (nwalk == NULL) {
+		nwalk = (htnames_t *)malloc(sizeof(htnames_t));
+		nwalk->name = strdup(metaname);
+		nwalk->next = metanames;
+		metanames = nwalk;
+	}
+
+	for (mwalk = log->metas; (mwalk && (mwalk->metaname != nwalk)); mwalk = mwalk->next);
+	if (mwalk == NULL) {
+		mwalk = (bbgend_meta_t *)malloc(sizeof(bbgend_meta_t));
+		mwalk->metaname = nwalk;
+		mwalk->value = strdup(eoln+1);
+		mwalk->next = log->metas;
+		log->metas = mwalk;
+	}
+	else {
+		if (mwalk->value) free(mwalk->value);
+		mwalk->value = strdup(eoln+1);
+	}
+	if (eoln) *eoln = '\n';
 }
 
 void handle_data(char *msg, char *sender, char *origin, char *hostname, char *testname)
@@ -1206,7 +1253,6 @@ void do_message(conn_t *msg, char *origin)
 	if (strncmp(msg->buf, "combo\n", 6) == 0) {
 		char *currmsg, *nextmsg;
 
-
 		currmsg = msg->buf+6;
 		do {
 			nextmsg = strstr(currmsg, "\n\nstatus");
@@ -1233,6 +1279,22 @@ void do_message(conn_t *msg, char *origin)
 				if (log && (color != -1)) {
 					handle_status(currmsg, sender, h->hostname, t->testname, log, color);
 				}
+			}
+
+			currmsg = nextmsg;
+		} while (currmsg);
+	}
+	else if (strncmp(msg->buf, "meta", 4) == 0) {
+		char *currmsg, *nextmsg;
+
+		currmsg = msg->buf;
+		do {
+			nextmsg = strstr(currmsg, "\n\nmeta");
+			if (nextmsg) { *(nextmsg+1) = '\0'; nextmsg += 2; }
+
+			get_hts(currmsg, sender, origin, &h, &t, &log, &color, 0, 0);
+			if (log && oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, currmsg)) {
+				handle_meta(currmsg, log);
 			}
 
 			currmsg = nextmsg;
@@ -1408,6 +1470,7 @@ void do_message(conn_t *msg, char *origin)
 		if (log) {
 			char *buf, *bufp;
 			int bufsz, buflen;
+			bbgend_meta_t *mwalk;
 
 			if (log->message == NULL) {
 				errprintf("%s.%s has a NULL message\n", log->host->hostname, log->test->testname);
@@ -1451,6 +1514,10 @@ void do_message(conn_t *msg, char *origin)
 				bufp += sprintf(bufp, "  <DisMsg>N/A</DisMsg>\n");
 
 			bufp += sprintf(bufp, "  <Message><![CDATA[%s]]></Message>\n", msg_data(log->message));
+			for (mwalk = log->metas; (mwalk); mwalk = mwalk->next) {
+				bufp += sprintf(bufp, "<%s>\n%s</%s>\n", 
+						mwalk->metaname->name, mwalk->value, mwalk->metaname->name);
+			}
 			bufp += sprintf(bufp, "</ServerStatus>\n");
 
 			msg->doingwhat = RESPONDING;
