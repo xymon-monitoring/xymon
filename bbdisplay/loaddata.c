@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.71 2003-05-23 10:10:41 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.72 2003-05-23 10:32:24 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -231,22 +231,14 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	 * - --wap=COLUMN cmdline option
 	 * - NULL
 	 */
-	if (waps) {
+	if (waps || alerts) {
 		char *p;
-
-		p = skipword(waps); if (*p) *p = '\0'; else p = NULL;
-		newhost->waps = malloc(strlen(waps)+3);
-		sprintf(newhost->waps, ",%s,", waps);
+		p = skipword((waps ? waps : alerts)); if (*p) *p = '\0'; else p = NULL;
+		newhost->waps = malcop(build_noprop(wapcolumns, (waps ? waps : alerts)));
 		if (p) *p = ' ';
 	}
-	else if (alerts) {
-		newhost->waps = newhost->alerts;
-	}
-	else if (wapcolumns) {
-		newhost->waps = wapcolumns;
-	}
 	else {
-		newhost->waps = NULL;
+		newhost->waps = wapcolumns;
 	}
 
 	if (nopropyellowtests) {
