@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.9 2003-01-01 11:47:02 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.10 2003-01-06 22:02:52 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -423,7 +423,7 @@ void do_bb_page(page_t *page, dispsummary_t *sums, char *filename)
 	do_summaries(dispsums, output);
 
 	/* Support for extension scripts */
-	do_bbext(output, "MKBBEXT");
+	do_bbext(output, "BBMKBBEXT");
 
 	headfoot(output, "bb", "", "", "footer", page->color);
 
