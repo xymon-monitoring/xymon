@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.37 2004-10-24 22:06:46 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.38 2004-10-26 17:23:18 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -33,6 +33,7 @@ static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.37 2004-10-24 22:06:46 henrik
 #include "larrdgen.h"
 #include "debug.h"
 #include "sendmsg.h"
+#include "savelog.h"
 
 char    *larrdcol = "larrd";
 int 	enable_larrdgen = 0;
@@ -242,7 +243,7 @@ static char *rrdlink_text(host_t *host, rrd_t *rrd, int larrd043)
 }
 
 
-int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043)
+int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend)
 {
 	DIR *rrddir;
 	struct dirent *d;
@@ -357,7 +358,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043)
 
 	chdir(getenv("BBLOGS"));
 
-	combo_start();
+	if (bbgend) combo_start();
 
 	for (hostwalk=hosthead; (hostwalk); hostwalk = hostwalk->next) {
 		char *rrdlink;
@@ -378,14 +379,11 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043)
 			}
 		}
 
-		if (strlen(allrrdlinks) > 0) {
-			init_status(COL_GREEN);
-			addtostatus(allrrdlinks);
-			finish_status();
-		}
+		if (strlen(allrrdlinks) > 0) do_savelog(hostwalk->hostentry->hostname, hostwalk->hostentry->ip, 
+							larrdcol, allrrdlinks, bbgend);
 	}
 
-	combo_end();
+	if (bbgend) combo_end();
 
 	closedir(rrddir);
 	free(allrrdlinks);

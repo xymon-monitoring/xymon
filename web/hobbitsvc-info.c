@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.53 2004-10-24 22:06:46 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.54 2004-10-26 17:23:18 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -33,6 +33,7 @@ static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.53 2004-10-24 22:06:46 henrik E
 #include "infogen.h"
 #include "alert.h"
 #include "sendmsg.h"
+#include "savelog.h"
 
 char *infocol = "info";
 int enable_infogen = 0;
@@ -87,7 +88,7 @@ static void timespec_text(char *spec, char **infobuf, int *infobuflen)
 	free(sCopy);
 }
 
-int generate_info(char *infocolumn)
+int generate_info(char *infocolumn, int bbgend)
 {
 	hostlist_t *hostwalk, *clonewalk;
 	int infobuflen = 0;
@@ -100,7 +101,7 @@ int generate_info(char *infocolumn)
 		return 1;
 
 	/* Send the info columns as combo messages */
-	combo_start();
+	if (bbgend) combo_start();
 
 	/* Load the alert setup */
 	load_alerts();
@@ -503,11 +504,9 @@ int generate_info(char *infocolumn)
 		free(rawcopy);
 		addtobuffer(&infobuf, &infobuflen, "</td></tr>\n</table>\n");
 
-		init_status(COL_GREEN);
-		addtostatus(infobuf);
-		finish_status();
+		do_savelog(hostwalk->hostentry->hostname, hostwalk->hostentry->ip, infocol, infobuf, bbgend);
 	}
-	combo_end();
+	if (bbgend) combo_end();
 
 	free(infobuf);
 	return 0;
