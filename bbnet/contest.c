@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.74 2005-01-22 16:15:41 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.75 2005-01-27 12:08:36 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -953,35 +953,33 @@ void do_tcp_tests(int timeout, int concurrency)
 	socklen_t	connressize;
 	char		msgbuf[4096];
 
+	struct rlimit lim;
 	struct timezone tz;
 
 	/* If timeout or concurrency are 0, set them to reasonable defaults */
 	if (timeout == 0) timeout = 10;	/* seconds */
-	if (concurrency == 0) {
-		struct rlimit lim;
 
-		concurrency = (FD_SETSIZE / 4);
-
-		getrlimit(RLIMIT_NOFILE, &lim);
-		if (lim.rlim_cur < concurrency) {
-			concurrency = lim.rlim_cur - 10;
-		}
-	}
-	if (concurrency > (FD_SETSIZE-10)) {
-		concurrency = FD_SETSIZE - 10;	/* Allow a bit for stdin, stdout and such */
-		errprintf("bbtest-net: concurrency reduced to FD_SETSIZE-10 (%d)\n", concurrency);
-	}
+	/* 
+	 * Decide how many tests to run in parallel.
+	 * If no --concurrency set by user, default to (FD_SETSIZE / 4) - typically 256.
+	 * But never go above the ressource limit that is set, or above FD_SETSIZE.
+	 */
+	if (concurrency == 0) concurrency = (FD_SETSIZE / 4);
+	getrlimit(RLIMIT_NOFILE, &lim); if (lim.rlim_cur < concurrency) concurrency = lim.rlim_cur;
+	if (concurrency > FD_SETSIZE) concurrency = FD_SETSIZE;
+	if (concurrency > 10) concurrency -= 10; /* Save 10 descriptors for stuff like stdin/stdout/stderr and shared libs */
 
 	/* How many tests to do ? */
 	for (item = thead; (item); item = item->next) pending++; 
 	firstactive = nextinqueue = thead;
-	dprintf("About to do %d TCP tests\n", pending);
+	dprintf("About to do %d TCP tests running %d in parallel\n", pending, concurrency);
 
 	while (pending > 0) {
 		/*
 		 * First, see if we need to allocate new sockets and initiate connections.
 		 */
-		for (sockok=1; (sockok && nextinqueue && (activesockets < concurrency)); nextinqueue=nextinqueue->next) {
+		sockok = 1;
+		while (sockok && nextinqueue && (activesockets < concurrency)) {
 
 			/*
 			 * We need to allocate a new socket that has O_NONBLOCK set.
@@ -1048,8 +1046,12 @@ void do_tcp_tests(int timeout, int concurrency)
 					sockok = 0;
 					errprintf("Cannot set O_NONBLOCK\n");
 				}
+
+				nextinqueue=nextinqueue->next;
 			}
 			else {
+				int newconcurrency = ((activesockets > 5) ? (activesockets-1) : 5);
+
 				/* Could not get a socket */
 				switch (errno) {
 				   case EPROTONOSUPPORT: errprintf("Cannot get socket - EPROTONOSUPPORT\n"); break;
@@ -1062,7 +1064,12 @@ void do_tcp_tests(int timeout, int concurrency)
 				   case EINVAL         : errprintf("Cannot get socket - EINVAL\n"); break;
 				   default             : errprintf("Cannot get socket - errno=%d\n", errno); break;
 				}
-				errprintf("Try running with a lower --concurrency setting (currently: %d)\n", concurrency);
+
+				if (newconcurrency != concurrency) {
+					errprintf("Reducing --concurrency setting from %d to %d\n", 
+							concurrency, newconcurrency);
+					concurrency = newconcurrency;
+				}
 			}
 		}
 
@@ -1094,6 +1101,19 @@ void do_tcp_tests(int timeout, int concurrency)
 			}
 		}
 
+		if (maxfd == -1) {
+			/* No active connections */
+			if (activesockets == 0) {
+				/* This can happen, if we get an immediate CONNREFUSED on all connections. */
+				continue;
+			}
+			else {
+				errprintf("contest logic error: No FD's, active=%d, pending=%d\n",
+					  activesockets, pending);
+				continue;
+			}
+		}
+				
 		/*
 		 * Wait for something to happen: connect, timeout, banner arrives ...
 		 */
