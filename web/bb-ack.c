@@ -10,13 +10,16 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.3 2004-11-19 11:18:40 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.4 2004-11-20 22:31:08 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "libbbgen.h"
 #include "version.h"
@@ -97,27 +100,31 @@ int main(int argc, char *argv[])
 
 	if ((getenv("QUERY_STRING") == NULL) || (strlen(getenv("QUERY_STRING")) == 0)) {
 		/* Present the query form */
-		FILE *formfile;
+		int formfile;
 		char formfn[PATH_MAX];
 
 		sprintf(formfn, "%s/web/acknowledge_form", getenv("BBHOME"));
-		formfile = fopen(formfn, "r");
+		formfile = open(formfn, O_RDONLY);
 
-		if (formfile) {
+		if (formfile >= 0) {
 			int n;
-			char inbuf[8192];
+			char *inbuf;
+			struct stat st;
+
+			fstat(formfile, &st);
+			inbuf = (char *) malloc(st.st_size + 1);
+			read(formfile, inbuf, st.st_size);
+			inbuf[st.st_size] = '\0';
+			close(formfile);
 
 			printf("Content-Type: text/html\n\n");
-			sethostenv("", "", "", colorname(COL_BLUE));
+			sethostenv("", "", "", colorname(COL_RED));
 
 			headfoot(stdout, "acknowledge", "", "header", COL_RED);
-			do {
-				n = fread(inbuf, 1, sizeof(inbuf), formfile);
-				if (n > 0) fwrite(inbuf, 1, n, stdout);
-			} while (n == sizeof(inbuf));
+			output_parsed(stdout, inbuf, COL_RED, "acknowledge");
 			headfoot(stdout, "acknowledge", "", "footer", COL_RED);
 
-			fclose(formfile);
+			free(inbuf);
 		}
 		return 0;
 	}

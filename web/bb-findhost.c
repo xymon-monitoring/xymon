@@ -37,19 +37,21 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.8 2004-11-18 23:21:03 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.9 2004-11-20 22:31:08 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <limits.h>
+#include <sys/types.h> 
+#include <sys/stat.h>
+#include <fcntl.h>
 
 /*[wm] For the POSIX regex support*/
-#include <sys/types.h> 
 #include <regex.h> 
 
-
+#include "libbbgen.h"
 
 #include "bbgen.h"
 #include "util.h"
@@ -158,27 +160,31 @@ int main(int argc, char *argv[])
 
 	if ((getenv("QUERY_STRING") == NULL) || (strlen(getenv("QUERY_STRING")) == 0)) {
 		/* Present the query form */
-		FILE *formfile;
+		int formfile;
 		char formfn[PATH_MAX];
 
 		sprintf(formfn, "%s/web/findhost_form", getenv("BBHOME"));
-		formfile = fopen(formfn, "r");
+		formfile = open(formfn, O_RDONLY);
 
-		if (formfile) {
+		if (formfile >= 0) {
 			int n;
-			char inbuf[8192];
+			char *inbuf;
+			struct stat st;
+
+			fstat(formfile, &st);
+			inbuf = (char *) malloc(st.st_size + 1);
+			read(formfile, inbuf, st.st_size);
+			inbuf[st.st_size] = '\0';
+			close(formfile);
 
 			printf("Content-Type: text/html\n\n");
 			sethostenv("", "", "", colorname(COL_BLUE));
 
 			headfoot(stdout, "findhost", "", "header", COL_BLUE);
-			do {
-				n = fread(inbuf, 1, sizeof(inbuf), formfile);
-				if (n > 0) fwrite(inbuf, 1, n, stdout);
-			} while (n == sizeof(inbuf));
+			output_parsed(stdout, inbuf, COL_BLUE, "findhost");
 			headfoot(stdout, "findhost", "", "footer", COL_BLUE);
 
-			fclose(formfile);
+			free(inbuf);
 		}
 		return 0;
 	}
