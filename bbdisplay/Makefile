@@ -122,8 +122,7 @@ install-bin: $(PROGRAMS)
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
 
 install-obsoleted:
-	rm -f $(INSTALLROOT)$(INSTALLBINDIR)/bb-infocolumn || true
-	rm -f $(INSTALLROOT)$(INSTALLBINDIR)/bb-larrdcolumn || true
+	for f in bb-infocolumn bb-larrdcolumn bb-hostsvc.cgi; do if test -f $(INSTALLROOT)$(INSTALLBINDIR)/$f; then rm -f $(INSTALLROOT)$(INSTALLBINDIR)/$f; fi; done
 
 install-exts: $(EXTENSIONS)
 	cp -fp $(EXTENSIONS) $(INSTALLROOT)$(INSTALLEXTDIR)/
