@@ -25,6 +25,8 @@ Bugfixes
 
 Improvements
 ------------
+* hobbitgraph.cgi change to make zoom work in two dimensions. 
+  Requires a custom RRDtool 1.0.x package.
 * Configuration of which graph(s) to show by default, including 
   limiting it to e.g. one of the 7 disk graphs. Ref. mail from
   Charles Jones 15-feb-2005.
