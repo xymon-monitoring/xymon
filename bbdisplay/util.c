@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.117 2004-08-11 11:07:01 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.118 2004-08-14 20:50:38 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1307,7 +1307,7 @@ char *realurl(char *url, char **proxy, char **proxyuserpwd, char **ip, char **ho
 		urlstart = p;
 	}
 
-	/* Drop the special https* stuff */
+	/* Drop the special httpsX/http1X stuff */
 	if (strncmp(urlstart, "https2:", 7) == 0) {
 		urlstart += 7;
 		sprintf(result, "https:%s", urlstart);
@@ -1323,6 +1323,12 @@ char *realurl(char *url, char **proxy, char **proxyuserpwd, char **ip, char **ho
 	} else if (strncmp(urlstart, "https:", 6)  == 0) {
 		urlstart += 6;
 		sprintf(result, "https:%s", urlstart);
+	} else if (strncmp(urlstart, "http10:", 7)   == 0) {
+		urlstart += 7;
+		sprintf(result, "http:%s", urlstart);
+	} else if (strncmp(urlstart, "http11:", 7)   == 0) {
+		urlstart += 7;
+		sprintf(result, "http:%s", urlstart);
 	} else if (strncmp(urlstart, "http:", 5)   == 0) {
 		strcpy(result, urlstart);
 	} else if (strncmp(urlstart, "ftp:", 4)    == 0) {
