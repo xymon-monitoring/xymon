@@ -180,21 +180,32 @@ to send them to the client. Note that this applies to the
 "config" and "query" messages only, since all other message
 types do not get any response from the servers.
 
+.IP "Average queue time"
+The average time it took the proxy to process a message,
+calculated from the messages that have passed through the
+proxy during the past 5 minutes. This number is computed
+from the messages that actually end up establishing a
+connection to the BBDISPLAY or BBPAGER server, i.e. status 
+messages that were combined into combo-messages do not
+go into the calculation - if they did, it would reduce the
+average time, since it is faster to merge messages than
+send them out over the network.
+
 .SH ""
 If you think the numbers do not add up, here is how they relate.
 
 The "Incoming messages" should be equal to the sum of the 
-"Incoming - Combo/Status/Page/Other messages", or slightly
-more because messages that are being received are not included
+"Incoming Combo/Status/Page/Other messages", or slightly
+more because messages in transit are not included
 in the per-type message counts.
 
 The "Outbound messages" should be equal to sum of the
-"Incoming - Combo/Page/Other messages", plus the "Resulting
+"Incoming Combo/Page/Other messages", plus the "Resulting
 combos" count, plus "Incoming Status messages" minus 
 "Messages merged" (this latter number is the number of status
 messages that were NOT merged into combos, but sent directly).
 The "Outbound messages" may be slightly lower than that,
-because messages that are being sent are not included in the
+because messages in transit are not included in the
 "Outbound messages" count until they have been fully sent.
 
 .SH SIGNALS
