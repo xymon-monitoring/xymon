@@ -31,6 +31,27 @@ for "count".
 .sp
 .BR count
 Number of graphs in a multi-graph.
+.sp
+.BR upper
+Set the upper limit of the graph. See
+.I rrdgraph(1)
+for a description of the "-u" option.
+.sp
+.BR lower
+Set the lower limit of the graph. See
+.I rrdgraph(1)
+for a description of the "-l" option.
+.sp
+.BR rigid
+Make the upper- and lower-limits rigid, i.e. force the graph to use the specified
+values as the upper- and lower-limit. See
+.I rrdgraph(1)
+for a description of the "--rigid" option.
+.sp
+.BR logarithmic
+Make the graph use a logarithmic Y-axis instead of a linear axis. See
+.I rrdgraph(1)
+for a description of the "--logarithmic" option.
 
 .SH OPTIONS
 .IP "--config=FILENAME"
