@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.29 2005-03-31 13:48:43 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.30 2005-03-31 21:10:51 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -213,7 +213,7 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 		    strlen(xgetenv("CGIBINURL")) + 
 		    strlen(hostname)            + 
 		    strlen(rrdservicename)  + 
-		    (dispname ? strlen(urlencode(dispname)) : 0);
+		    strlen(urlencode(dispname ? dispname : hostname));
 	svcurl = (char *) malloc(svcurllen);
 
 	rrdparturlsize = 2048 +
