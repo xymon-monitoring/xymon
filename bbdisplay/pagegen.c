@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.28 2003-03-02 06:45:43 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.29 2003-03-02 06:59:39 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -744,6 +744,8 @@ void do_bb2_page(char *filename, int summarytype)
 		if (useit) {
 			host_t *newhost, *walk;
 
+			if (h->hostentry->color > bb2page.color) bb2page.color = h->hostentry->color;
+
 			/* We need to create a copy of the original record, */
 			/* as we will diddle with the pointers */
 			newhost = malloc(sizeof(host_t));
@@ -770,9 +772,6 @@ void do_bb2_page(char *filename, int summarytype)
 				if (strcmp(walk->hostname, newhost->hostname) != 0) {
 					newhost->next = walk->next;
 					walk->next = newhost;
-
-					if (h->hostentry->color > bb2page.color) 
-						bb2page.color = h->hostentry->color;
 				}
 				else {
 					/* Its a duplicate */
