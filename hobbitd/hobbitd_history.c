@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.21 2004-11-18 14:13:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.22 2004-11-24 12:21:55 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -319,6 +319,8 @@ int main(int argc, char *argv[])
 					newcol2, oldcol2, trend);
 				fflush(alleventsfd);
 			}
+
+			free(hostnamecommas);
 		}
 		else if ((metacount > 3) && ((strncmp(items[0], "@@drophost", 10) == 0))) {
 			/* @@drophost|timestamp|sender|hostname */
