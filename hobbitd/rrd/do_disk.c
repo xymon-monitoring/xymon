@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.8 2005-02-06 08:49:02 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.9 2005-02-15 21:19:13 henrik Exp $";
 
 static char *disk_params[] = { "rrdcreate", rrdfn, "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", 
 				rra1, rra2, rra3, rra4, NULL };
@@ -45,6 +45,13 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		for (i=0; (i<20); i++) columns[i] = "";
 		fsline = xstrdup(curline); i = 0; p = strtok(fsline, " ");
 		while (p && (i < 20)) { columns[i++] = p; p = strtok(NULL, " "); }
+
+		/* 
+		 * Some Unix filesystem reports contain the word "Filesystem".
+		 * So check if there's a slash in the NT filesystem letter - if yes,
+		 * then it's really a Unix system after all.
+		 */
+		if ((dsystype == DT_NT) && strchr(columns[0], '/') && strlen(columns[5])) dsystype = DT_UNIX;
 
 		switch (dsystype) {
 		  case DT_IRIX:
