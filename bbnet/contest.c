@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.60 2004-09-01 11:57:39 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.61 2004-09-02 21:35:28 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -341,7 +341,7 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 {
 	tcptest_t *newtest;
 
-	dprintf("Adding tcp test IP=%s, port=%d, service=%s, silent=%d\n", ip, port, service, silent);
+	dprintf("Adding tcp test IP=%s, port=%d, service=%s, silent=%d\n", textornull(ip), port, service, silent);
 
 	if (port == 0) {
 		errprintf("Trying to scan port 0 for service %s\n", service);
@@ -362,7 +362,7 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	memset(&newtest->addr, 0, sizeof(newtest->addr));
 	newtest->addr.sin_family = PF_INET;
 	newtest->addr.sin_port = htons(port);
-	if ((strlen(ip) == 0) || (inet_aton(ip, (struct in_addr *) &newtest->addr.sin_addr.s_addr) == 0)) {
+	if ((ip == NULL) || (strlen(ip) == 0) || (inet_aton(ip, (struct in_addr *) &newtest->addr.sin_addr.s_addr) == 0)) {
 		newtest->errcode = CONTEST_EDNS;
 	}
 
