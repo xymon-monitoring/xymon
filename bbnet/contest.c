@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.8 2003-04-15 16:26:11 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.9 2003-04-22 15:07:01 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -42,24 +42,24 @@ static test_t *thead = NULL;
  * banner or not.
  */
 static svcinfo_t svcinfo[] = {
-	{ "ftp",     "quit\n",          1 },
-	{ "ssh",     NULL,              1 },
-	{ "ssh1",    NULL,              1 },
-	{ "ssh2",    NULL,              1 },
-	{ "telnet",  "quit\n",          0 },
-	{ "smtp",    "quit\n",          1 },
-	{ "pop",     "quit\n",          1 },
-	{ "pop2",    "quit\n",          1 },
-	{ "pop-2",   "quit\n",          1 },
-	{ "pop3",    "quit\n",          1 },
-	{ "pop-3",   "quit\n",          1 },
-	{ "imap",    "ABC123 LOGOUT\n", 1 },
-	{ "imap2",   "ABC123 LOGOUT\n", 1 },
-	{ "imap3",   "ABC123 LOGOUT\n", 1 },
-	{ "imap4",   "ABC123 LOGOUT\n", 1 },
-	{ "nntp",    "quit\n",          1 },
-	{ "rsync",   NULL,              1 },
-	{ NULL,      NULL,              0 }	/* Default behaviour: Dont send anything, dont grab banner */
+	{ "ftp",     "quit\r\n",          1 },
+	{ "ssh",     NULL,                1 },
+	{ "ssh1",    NULL,                1 },
+	{ "ssh2",    NULL,                1 },
+	{ "telnet",  NULL,                0 },
+	{ "smtp",    "quit\r\n",          1 },
+	{ "pop",     "quit\r\n",          1 },
+	{ "pop2",    "quit\r\n",          1 },
+	{ "pop-2",   "quit\r\n",          1 },
+	{ "pop3",    "quit\r\n",          1 },
+	{ "pop-3",   "quit\r\n",          1 },
+	{ "imap",    "ABC123 LOGOUT\r\n", 1 },
+	{ "imap2",   "ABC123 LOGOUT\r\n", 1 },
+	{ "imap3",   "ABC123 LOGOUT\r\n", 1 },
+	{ "imap4",   "ABC123 LOGOUT\r\n", 1 },
+	{ "nntp",    "quit\r\n",          1 },
+	{ "rsync",   NULL,                1 },
+	{ NULL,      NULL,                0 }	/* Default behaviour: Dont send anything, dont grab banner */
 };
 
 
