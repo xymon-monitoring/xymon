@@ -3,10 +3,10 @@ all: bbgen bbgmchosts bbtest-web bbtest-net
 CC=gcc
 
 # Compile flags for normal build
-CFLAGS=-O2 -Wall -Wno-unused
+CFLAGS=-O2 -Wall -Wno-unused -D_REENTRANT
 
 # Compile flags for debugging
-# CFLAGS=-g -DDEBUG -Wall
+# CFLAGS=-g -DDEBUG -Wall -D_REENTRANT
 
 GENOBJS = bbgen.o debug.o loaddata.o larrdgen.o pagegen.o process.o util.o infogen.o alert.o wmlgen.o
 WEBTESTOBJS = bbtest-web.o util.o debug.o
