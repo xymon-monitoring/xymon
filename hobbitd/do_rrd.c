@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.15 2005-02-22 14:15:40 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.16 2005-03-01 14:38:21 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -43,6 +43,8 @@ void setup_exthandler(char *handlerpath, char *ids)
 	char *p;
 	int idcount = 0;
 
+	MEMDEFINE(rrdfn); MEMDEFINE(rrdvalues);
+
 	exthandler = strdup(handlerpath);
 	idcount=1; p = ids; while ((p = strchr(p, ',')) != NULL) { p++; idcount++; }
 	extids = (char **)malloc((idcount+1)*(sizeof(char *)));
@@ -53,6 +55,8 @@ void setup_exthandler(char *handlerpath, char *ids)
 		p = strtok(NULL, ",");
 	}
 	extids[idcount] = NULL;
+
+	MEMUNDEFINE(rrdvalues); MEMUNDEFINE(rrdfn);
 }
 
 static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], char *updparams[])
@@ -66,10 +70,15 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 		return -1;
 	}
 
+	MEMDEFINE(rrdfn); MEMDEFINE(rrdvalues);
+	MEMDEFINE(filedir);
+
 	sprintf(filedir, "%s/%s", rrddir, hostname);
 	if (stat(filedir, &st) == -1) {
 		if (mkdir(filedir, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH) == -1) {
 			errprintf("Cannot create rrd directory %s : %s\n", filedir, strerror(errno));
+			MEMUNDEFINE(filedir);
+			MEMUNDEFINE(rrdvalues); MEMUNDEFINE(rrdfn);
 			return -1;
 		}
 	}
@@ -83,6 +92,8 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 		result = rrd_create(pcount, creparams);
 		if (result != 0) {
 			errprintf("RRD error creating %s: %s\n", filedir, rrd_get_error());
+			MEMUNDEFINE(filedir);
+			MEMUNDEFINE(rrdvalues); MEMUNDEFINE(rrdfn);
 			return 1;
 		}
 	}
@@ -93,8 +104,13 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 	result = rrd_update(pcount, updparams);
 	if (result != 0) {
 		errprintf("RRD error updating %s: %s\n", filedir, rrd_get_error());
+		MEMUNDEFINE(filedir);
+		MEMUNDEFINE(rrdvalues); MEMUNDEFINE(rrdfn);
 		return 2;
 	}
+
+	MEMUNDEFINE(filedir);
+	MEMUNDEFINE(rrdvalues); MEMUNDEFINE(rrdfn);
 
 	return 0;
 }
@@ -133,6 +149,8 @@ void update_larrd(char *hostname, char *testname, char *msg, time_t tstamp, larr
 	int res = 0;
 	char *id;
 
+	MEMDEFINE(rrdvalues); MEMDEFINE(rrdfn);
+
 	if (ldef) id = ldef->larrdrrdname; else id = testname;
 
 	if      (strcmp(id, "bbgen") == 0)       res = do_bbgen_larrd(hostname, testname, msg, tstamp);
@@ -170,5 +188,7 @@ void update_larrd(char *hostname, char *testname, char *msg, time_t tstamp, larr
 
 		if (extids[i]) res = do_external_larrd(hostname, testname, msg, tstamp);
 	}
+
+	MEMUNDEFINE(rrdvalues); MEMUNDEFINE(rrdfn);
 }
 
