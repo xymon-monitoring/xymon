@@ -1,4 +1,4 @@
-all: bbgen bbgmchosts bbnethosts
+all: bbgen bbgmchosts bbnethosts bbtest-web
 
 CFLAGS=-g -Wall
 
