@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
 
 	while ((msg = get_bbgend_message("bbd_history", &seq, NULL)) != NULL) {
 		char *items[20] = { NULL, };
-		int icount;
+		int metacount;
 		char *p;
 		char *statusdata = "";
 		char *hostname, *hostnamecommas, *testname;
@@ -133,13 +133,13 @@ int main(int argc, char *argv[])
 			*p = '\0'; 
 			statusdata = msg_data(p+1);
 		}
-		p = gettok(msg, "|"); icount = 0;
-		while (p && (icount < 20)) {
-			items[icount++] = p;
+		p = gettok(msg, "|"); metacount = 0;
+		while (p && (metacount < 20)) {
+			items[metacount++] = p;
 			p = gettok(NULL, "|");
 		}
 
-		if ((icount > 8) && (strncmp(items[0], "@@stachg", 8) == 0)) {
+		if ((metacount > 8) && (strncmp(items[0], "@@stachg", 8) == 0)) {
 			/* @@stachg#seq|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime */
 			sscanf(items[1], "%d.%*d", (int *)&tstamp);
 			memcpy(&tstamptm, localtime(&tstamp), sizeof(tstamptm));
@@ -316,7 +316,7 @@ int main(int argc, char *argv[])
 				fflush(alleventsfd);
 			}
 		}
-		else if ((icount > 3) && ((strncmp(items[0], "@@drophost", 10) == 0) && (fork() == 0))) {
+		else if ((metacount > 3) && ((strncmp(items[0], "@@drophost", 10) == 0) && (fork() == 0))) {
 			/* @@drophost|timestamp|sender|hostname */
 
 			hostname = items[3];
@@ -373,7 +373,7 @@ int main(int argc, char *argv[])
 
 			exit(0);	/* Child exits */
 		}
-		else if ((icount > 4) && ((strncmp(items[0], "@@droptest", 10) == 0) && (fork() == 0))) {
+		else if ((metacount > 4) && ((strncmp(items[0], "@@droptest", 10) == 0) && (fork() == 0))) {
 			/* @@droptest|timestamp|sender|hostname|testname */
 
 			hostname = items[3];
@@ -402,7 +402,7 @@ int main(int argc, char *argv[])
 
 			exit(0);	/* Child exits */
 		}
-		else if ((icount > 4) && ((strncmp(items[0], "@@renamehost", 12) == 0) && (fork() == 0))) {
+		else if ((metacount > 4) && ((strncmp(items[0], "@@renamehost", 12) == 0) && (fork() == 0))) {
 			/* @@renamehost|timestamp|sender|hostname|newhostname */
 			char *newhostname;
 
@@ -466,7 +466,7 @@ int main(int argc, char *argv[])
 				free(hostnamecommas);
 			}
 		}
-		else if ((icount > 5) && (strncmp(items[0], "@@renametest", 12) == 0)) {
+		else if ((metacount > 5) && (strncmp(items[0], "@@renametest", 12) == 0)) {
 			/* @@renametest|timestamp|sender|hostname|oldtestname|newtestname */
 			char *newtestname;
 
