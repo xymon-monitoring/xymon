@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.76 2003-02-25 09:48:24 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.77 2003-02-26 21:23:09 henrik Exp $";
 
 #define VERSION "1.8"
 
@@ -75,6 +75,9 @@ char *reqenv[] = {
 "MKBBSUBLOCAL",
 "MKBBTITLE",
 "PURPLEDELAY",
+#ifdef WMLSUPPORT
+"WML_OUTPUT",
+#endif
 NULL };
 
 
@@ -320,9 +323,11 @@ int main(int argc, char *argv[])
 	/* Reduced summary (alerts) page - bbnk.html */
 	if (!bbpageONLY) do_bb2_page("bbnk.html", 1);
 
+#ifdef WMLSUPPORT
 	/* Generate a hosts file for the WML generator */
 	if (!bbpageONLY && (strcmp(getenv("WML_OUTPUT"), "TRUE") == 0)) 
 		do_wml_cards(0);
+#endif
 
 	return 0;
 }
