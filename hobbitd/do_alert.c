@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.25 2005-01-15 17:38:28 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.26 2005-01-18 21:52:33 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -1253,6 +1253,21 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					else if (WIFSIGNALED(childstat)) {
 						errprintf("Paging script %s terminated by signal %d\n",
 							  recip->scriptname, WTERMSIG(childstat));
+					}
+
+					if (logfd) {
+						init_timestamp();
+						fprintf(logfd, "%s %s.%s (%s) %s %d %d",
+							timestamp, alert->hostname->name, alert->testname->name,
+							alert->ip, recip->recipient, (int)now, 
+							servicecode(alert->testname->name));
+						if (alert->state == A_RECOVERED) {
+							fprintf(logfd, " %d\n", (int)(now - alert->eventstart));
+						}
+						else {
+							fprintf(logfd, "\n");
+						}
+						fflush(logfd);
 					}
 				}
 				else {
