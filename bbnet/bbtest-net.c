@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.169 2004-08-29 07:04:13 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.170 2004-08-29 15:59:19 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -964,7 +964,9 @@ void load_fping_status(void)
 	if (statusfd == NULL) return;
 
 	while (fgets(l, sizeof(l), statusfd)) {
-		if (sscanf(l, "%s %d %u", host, &downcount, (unsigned int *)&downstart) == 3) {
+		unsigned int uidownstart;
+		if (sscanf(l, "%s %d %u", host, &downcount, &uidownstart) == 3) {
+			downstart = uidownstart;
 			for (h=testhosthead; (h && (strcmp(h->hostname, host) != 0)); h = h->next) ;
 			if (h && !h->noping && !h->noconn) {
 				h->downcount = downcount;
@@ -1015,7 +1017,9 @@ void load_test_status(service_t *test)
 	if (statusfd == NULL) return;
 
 	while (fgets(l, sizeof(l), statusfd)) {
-		if (sscanf(l, "%s %d %u", host, &downcount, (unsigned int *) &downstart) == 3) {
+		unsigned int uidownstart;
+		if (sscanf(l, "%s %d %u", host, &downcount, &uidownstart) == 3) {
+			downstart = uidownstart;
 			for (h=testhosthead; (h && (strcmp(h->hostname, host) != 0)); h = h->next) ;
 			if (h) {
 				if (test == httptest) walk = h->firsthttp;

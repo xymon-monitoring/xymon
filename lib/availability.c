@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.26 2004-03-16 09:36:13 hstoerne Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.27 2004-08-29 15:59:19 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -215,6 +215,7 @@ int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 		time_t *starttime, time_t *duration, char *colstr)
 {
 	time_t start, dur;
+	unsigned int uistart, uidur;
 	int scanres;
 	int err = 0;
 
@@ -226,8 +227,9 @@ int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 	/* Is start of history after our report-end time ? */
 	rewind(fd);
 	fgets(buf, bufsize, fd);
-	if (sscanf(buf+25, "%s %u %u", colstr, (unsigned int *)&start, (unsigned int *)&dur) == 2) 
-		dur = time(NULL)-start;
+	if (sscanf(buf+25, "%s %u %u", colstr, &uistart, &uidur) == 2) 
+		uidur = time(NULL)-uistart;
+	start = uistart; dur = uidur;
 
 	if (start > totime) {
 		*starttime = start;
@@ -239,7 +241,8 @@ int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 	/* First, do a quick scan through the file to find the approximate position where we should start */
 	while ((start+dur) < fromtime) {
 		if (fgets(buf, bufsize, fd)) {
-			scanres = sscanf(buf+25, "%s %u %u", colstr, (unsigned int *)&start, (unsigned int *)&dur);
+			scanres = sscanf(buf+25, "%s %u %u", colstr, &uistart, &uidur);
+			start = uistart; dur = uidur;
 			if (scanres == 2) dur = time(NULL) - start;
 
 			if (scanres >= 2) {
@@ -273,7 +276,8 @@ int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 	/* Read one line at a time until we hit start of our report period */
 	do {
 		if (fgets(buf, bufsize, fd)) {
-			scanres = sscanf(buf+25, "%s %u %u", colstr, (unsigned int *)&start, (unsigned int *)&dur);
+			scanres = sscanf(buf+25, "%s %u %u", colstr, &uistart, &uidur);
+			start = uistart; dur = uidur;
 			if (scanres == 2) dur = time(NULL) - start;
 
 			if (scanres < 2) {
@@ -330,6 +334,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 {
 	char l[MAX_LINE_LEN];
 	time_t starttime, duration;
+	unsigned int uistart, uidur;
 	char colstr[MAX_LINE_LEN];
 	int color, done, i, scanres;
 	int fileerrors;
@@ -360,7 +365,8 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 	else {
 		/* Already positioned (probably in a pipe) */
 		fgets(l, sizeof(l), fd);
-		scanres = sscanf(l+25, "%s %u %u", colstr, (unsigned int *)&starttime, (unsigned int *)&duration);
+		scanres = sscanf(l+25, "%s %u %u", colstr, &uistart, &uidur);
+		starttime = uistart; duration = uidur;
 		if (scanres == 2) duration = time(NULL) - starttime;
 		fileerrors = 0;
 	}
@@ -419,7 +425,8 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 
 		if ((starttime + duration) < totime) {
 			if (fgets(l, sizeof(l), fd)) {
-				scanres = sscanf(l+25, "%s %u %u", colstr, (unsigned int *)&starttime, (unsigned int *)&duration);
+				scanres = sscanf(l+25, "%s %u %u", colstr, &uistart, &uidur);
+				starttime = uistart; duration = uidur;
 				if (scanres == 2) duration = time(NULL) - starttime;
 			}
 			else done = 1;

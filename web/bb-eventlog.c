@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-eventlog.c,v 1.6 2003-11-21 10:44:06 henrik Exp $";
+static char rcsid[] = "$Id: bb-eventlog.c,v 1.7 2004-08-29 15:59:19 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -82,10 +82,12 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
 		do {
 			/* Go back maxcount*80 bytes - one entry is ~80 bytes */
 			if (ftell(eventlog) > maxcount*80) {
+				unsigned int uicurtime;
 				fseek(eventlog, -maxcount*80, SEEK_CUR); 
 				fgets(l, sizeof(l), eventlog); /* Skip to start of line */
 				fgets(l, sizeof(l), eventlog);
-				sscanf(l, "%*s %*s %u %*u %*u %*s %*s %*d", (unsigned int *)&curtime);
+				sscanf(l, "%*s %*s %u %*u %*u %*s %*s %*d", &uicurtime);
+				curtime = uicurtime;
 				done = (curtime < cutoff);
 			}
 			else {
@@ -100,6 +102,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
 	while (fgets(l, sizeof(l), eventlog)) {
 
 		time_t eventtime, changetime, duration;
+		unsigned int uievt, uicht, uidur;
 		char hostname[MAX_LINE_LEN], svcname[MAX_LINE_LEN], newcol[MAX_LINE_LEN], oldcol[MAX_LINE_LEN];
 		int state, itemsfound;
 		event_t *newevent;
@@ -108,10 +111,9 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
 
 		itemsfound = sscanf(l, "%s %s %u %u %u %s %s %d",
 			hostname, svcname,
-			(unsigned int *)&eventtime, 
-			(unsigned int *)&changetime, 
-			(unsigned int *)&duration, 
+			&uievt, &uicht, &uidur, 
 			newcol, oldcol, &state);
+		eventtime = uievt; changetime = uicht; duration = uidur;
 
 		eventhost = find_host(hostname);
 		eventcolumn = find_or_create_column(svcname, 1);
