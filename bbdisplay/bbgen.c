@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.98 2003-05-12 20:44:34 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.99 2003-05-17 09:25:42 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -87,9 +87,10 @@ int main(int argc, char *argv[])
 	dispsummary_t	*s;
 	int		i;
 	int		pagegenstat;
-	char		*pageset = "";
+	char		*pageset = NULL;
 	char 		bb2filename[MAX_PATH];
 	char 		bbnkfilename[MAX_PATH];
+	int             larrd043 = 0;				/* Set to use LARRD 0.43 disk displays */
 
 
 	bb_color = bb2_color = bbnk_color = -1;
@@ -191,6 +192,15 @@ int main(int argc, char *argv[])
 			enable_larrdgen=1;
 			if (lp) larrdgraphs_default = malcop(lp+1);
 		}
+		else if (strcmp(argv[i], "--larrd043") == 0) {
+			/* "--larrd" just enable larrd page generation */
+			/* "--larrd=xxx" does that, and redefines the larrd column name */
+			char *lp = strchr(argv[i], '=');
+
+			enable_larrdgen=1;
+			if (lp) larrdcol = malcop(lp+1);
+			larrd043 = 1;
+		}
 		else if (strncmp(argv[i], "--larrd", 7) == 0) {
 			/* "--larrd" just enable larrd page generation */
 			/* "--larrd=xxx" does that, and redefines the larrd column name */
@@ -256,7 +266,8 @@ int main(int argc, char *argv[])
 			printf("    --info[=INFOCOLUMN]         : Generate INFO data in column INFOCOLUMN\n");
 			printf("    --infoupdate=N              : time between updates of INFO column pages in seconds\n");
 			printf("\nLARRD support options:\n");
-			printf("    --larrd[=LARRDCOLUMN]       : LARRD data in column LARRDCOLUMN, and handle larrd-html\n");
+			printf("    --larrd[=LARRDCOLUMN]       : LARRD data in column LARRDCOLUMN, and handle larrd-html for LARRD 0.42\n");
+			printf("    --larrd043[=LARRDCOLUMN]    : LARRD data in column LARRDCOLUMN, and handle larrd-html for LARRD 0.43\n");
 			printf("    --larrdgraphs=GRAPHSPEC     : Set a default value for the LARRD: bb-hosts tag\n");
 			printf("    --larrdupdate=N             : time between updates of LARRD pages in seconds\n");
 			printf("    --rrddir=RRD-directory      : Directory for LARRD RRD files\n");
@@ -312,7 +323,7 @@ int main(int argc, char *argv[])
 	add_timestamp("Load bbhosts done");
 
 	/* Generate the LARRD pages before loading state */
-	pagegenstat = generate_larrd(rrddir, larrdcol);
+	pagegenstat = generate_larrd(rrddir, larrdcol, larrd043);
 	add_timestamp("LARRD generate done");
 
 	/* Dont generate both LARRD and info in one run */

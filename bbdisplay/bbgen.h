@@ -144,7 +144,14 @@ typedef struct {
 } link_t;
 
 typedef struct {
-	char	*rrdname;
+	char *name;
+	char *partname;
+	int  maxgraphs;
+} rrdlayout_t;
+
+typedef struct {
+	rrdlayout_t *rrdname;
+	int     count;
 	void	*next;
 } rrd_t;
 
