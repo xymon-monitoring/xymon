@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.70 2004-08-30 12:03:36 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.71 2004-08-30 15:54:27 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -341,6 +341,7 @@ int tcp_http_data_callback(unsigned char *buf, unsigned int len, void *priv)
 	 * While doing that, it splits out the data into a
 	 * buffer for the HTTP headers, and a buffer for the
 	 * HTTP content-data.
+	 * Return 1 if data is complete, 0 if more data wanted.
 	 */
 
 	http_data_t *item = (http_data_t *) priv;
@@ -492,24 +493,24 @@ check_for_endofheaders:
 		 * Now see if we have the end-of-headers delimiter.
 		 * This SHOULD be <cr><lf><cr><lf>, but RFC 2616 says
 		 * you SHOULD recognize just plain <lf><lf>.
-		 * So we loop, looking for the next LF in the input,
-		 * if there is one and the next is <cr> then just skip
-		 * the <cr>; repeat until a second <lf> is seen or we
-		 * hit end-of-buffer.
+		 * So try the second form, if the first one is not there.
 		 */
-		p=item->headers;
-		do {
-			p = strchr(p, '\n');
-			if (p) {
-				p++;
-				if (*p == '\r') p++;
-			}
-		} while (p && (*p != '\n'));
-		if (p) p++; /* Skip the last \n */
+		p=strstr(item->headers, "\r\n\r\n");
+		if (p) {
+			p += 4;
+		}
+		else {
+			p = strstr(item->headers, "\n\n");
+			if (p) p += 2;
+		}
 
 		if (p) {
-			/* We have an end-of-header delimiter, but it could be just a "100 Continue" response */
 			int http1subver, httpstatus;
+			unsigned int bytesindata;
+			char *p1, *xferencoding;
+			int contlen;
+
+			/* We have an end-of-header delimiter, but it could be just a "100 Continue" response */
 			sscanf(item->headers, "HTTP/1.%d %d", &http1subver, &httpstatus);
 			if (httpstatus == 100) {
 				/* 
@@ -517,25 +518,26 @@ check_for_endofheaders:
 				 * Just drop this set of headers, and move on.
 				 */
 				item->hdrlen -= (p - item->headers);
-				if (item->hdrlen) {
+				if (item->hdrlen > 0) {
 					memmove(item->headers, p, item->hdrlen);
 					*(item->headers + item->hdrlen) = '\0';
+					goto check_for_endofheaders;
 				}
 				else {
 					free(item->headers);
 					item->headers = NULL;
+					item->hdrlen = 0;
+					return 0;
 				}
-				goto check_for_endofheaders;
+
+				/* Should never go here ... */
 			}
-		}
 
-		if (p) {
-			unsigned int bytesindata;
-			char *p1, *xferencoding;
-			int contlen;
 
-			/* We did find the end-of-header delim. */
+			/* We did find the end-of-header delimiter, and it is not a "100" status. */
 			item->gotheaders = 1;
+
+			/* p points at the first byte of DATA. So the header ends 1 or 2 bytes before. */
 			*(p-1) = '\0';
 			if (*(p-2) == '\r') { *(p-2) = '\0'; } /* NULL-terminate the headers. */
 
@@ -947,3 +949,4 @@ void add_http_test(testitem_t *t, ssloptions_t *sslopt)
 					 sslopt, 0, httprequest, 
 					 httptest, tcp_http_data_callback, tcp_http_final_callback);
 }
+
