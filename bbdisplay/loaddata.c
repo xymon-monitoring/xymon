@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.114 2003-11-03 09:04:31 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.115 2003-11-13 14:03:23 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1470,6 +1470,9 @@ bbgen_page_t *load_bbhosts(char *pgset)
 					}
 
 					/* Find the page */
+					if (strcmp(targetpagename, "*") == 0) {
+						*targetpagename = '\0';
+					}
 					for (targetpage = pagelisthead; (targetpage && (strcmp(targetpagename, targetpage->pageentry->name) != 0)); targetpage = targetpage->next) ;
 
 					*p = savechar;
