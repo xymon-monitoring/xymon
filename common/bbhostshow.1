@@ -2,7 +2,7 @@
 .SH NAME
 bbhostshow \- output the full bb-hosts file
 .SH SYNOPSIS
-.B "bbhostshow [filename]"
+.B "bbhostshow [--bbdisp] [--bbnet] [filename]"
 
 .SH DESCRIPTION
 .I bbhostshow
@@ -16,6 +16,16 @@ utilities.
 
 If no filename is given, bbhostshow displays the file pointed
 to by the BBHOSTS environment variable.
+
+.SH OPTIONS
+.IP "--bbdisp"
+Show the bb-hosts file following include statements as a
+BBDISPLAY server would.
+
+.IP "--bbnet"
+Show the bb-hosts file following include statements as a
+BBNET server would.
+
 
 .SH ENVIRONMENT VARIABLES
 .IP BBHOSTS

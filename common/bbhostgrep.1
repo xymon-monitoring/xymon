@@ -6,7 +6,7 @@ bbhostgrep \- pick out lines in bb-hosts
 .br
 .B "bbhostgrep --version"
 .br
-.B "bbhostgrep [--noextras] [--test-untagged] TAG [TAG...]"
+.B "bbhostgrep [--noextras] [--test-untagged] [--bbdisp] [--bbnet] TAG [TAG...]"
 
 .SH DESCRIPTION
 .I bbhostgrep
@@ -45,6 +45,14 @@ tested.
 With this option, hosts with no NET: tag are included
 in the test, so that all hosts that either have a
 matching NET: tag, or no NET: tag at all are tested.
+
+.IP "--bbdisp"
+Search the bb-hosts file following include statements as a
+BBDISPLAY server would.
+
+.IP "--bbnet"
+Search the bb-hosts file following include statements as a
+BBNET server would.
 
 .SH EXAMPLE
 If your bb-hosts file looks like this

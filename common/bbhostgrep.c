@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.12 2003-11-03 09:04:31 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.13 2003-11-03 09:32:53 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -38,6 +38,7 @@ int main(int argc, char *argv[])
 	int extras = 1;
 	int testuntagged = 0;
 	int argi;
+	char *include2 = NULL;
 
 	if ((argc <= 1) || (strcmp(argv[1], "--help") == 0)) {
 		printf("Usage:\n%s test1 [test1] [test2] ... \n", argv[0]);
@@ -54,6 +55,12 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--version") == 0) {
 			printf("bbhostgrep version %s\n", VERSION);
 			exit(0);
+		}
+		else if (strcmp(argv[argi], "--bbnet") == 0) {
+			include2 = "netinclude";
+		}
+		else if (strcmp(argv[argi], "--bbdisp") == 0) {
+			include2 = "dispinclude";
 		}
 	}
 
@@ -76,7 +83,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	while (stackfgets(l, sizeof(l), "include", "netinclude")) {
+	while (stackfgets(l, sizeof(l), "include", include2)) {
 		int ip1, ip2, ip3, ip4;
 		char hostname[MAX_LINE_LEN];
 		char wantedtags[MAX_LINE_LEN];

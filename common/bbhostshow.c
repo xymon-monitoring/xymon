@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostshow.c,v 1.3 2003-11-03 09:04:31 henrik Exp $";
+static char rcsid[] = "$Id: bbhostshow.c,v 1.4 2003-11-03 09:32:53 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -27,12 +27,40 @@ int main(int argc, char *argv[])
 	FILE *bbhosts;
 	char fn[MAX_PATH];
 	char l[MAX_LINE_LEN];
+	int argi;
+	char *include2 = NULL;
 
-	if ((argc < 2) && getenv("BBHOSTS")) strcpy(fn, getenv("BBHOSTS"));
-	else if (argc == 2) strcpy(fn, argv[1]);
-	else {
-		printf("Usage: bbhostshow [filename]\n");
-		exit(1);
+
+	fn[0] = '\0';
+
+	for (argi=1; (argi < argc); argi++) {
+		if (strcmp(argv[argi], "--version") == 0) {
+			printf("bbhostshow version %s\n", VERSION);
+			exit(0);
+		}
+		else if (strcmp(argv[argi], "--help") == 0) {
+			printf("Usage:\n%s [filename]\n", argv[0]);
+			exit(0);
+		}
+		else if (strcmp(argv[argi], "--bbnet") == 0) {
+			include2 = "netinclude";
+		}
+		else if (strcmp(argv[argi], "--bbdisp") == 0) {
+			include2 = "dispinclude";
+		}
+		else if (*argv[argi] != '-') {
+			strcpy(fn, argv[argi]);
+		}
+	}
+
+	if (strlen(fn) == 0) {
+		if (getenv("BBHOSTS")) {
+			strcpy(fn, getenv("BBHOSTS"));
+		}
+		else {
+			errprintf("Environment variable BBHOSTS is not set - aborting\n");
+			exit(2);
+		}
 	}
 
 	bbhosts = stackfopen(fn, "r");
@@ -41,7 +69,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	while (stackfgets(l, sizeof(l), "include", NULL)) {
+	while (stackfgets(l, sizeof(l), "include", include2)) {
 		printf("%s", l);
 	}
 
