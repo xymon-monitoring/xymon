@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.108 2005-02-03 22:01:36 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.109 2005-02-03 22:33:01 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -339,6 +339,7 @@ int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgb
 
 	/* If we know the target, it would be ok for the host to report on itself. */
 	if (targetip) {
+		if (strcmp(targetip, "0.0.0.0") == 0) return 1; /* DHCP hosts can report from any address */
 		tg_ip = ntohl(inet_addr(targetip));
 		if (ntohl(sender.s_addr) == tg_ip) return 1;
 	}
