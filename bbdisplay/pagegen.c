@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.25 2003-02-25 08:31:12 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.26 2003-02-26 21:50:10 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -27,6 +27,7 @@ static char rcsid[] = "$Id: pagegen.c,v 1.25 2003-02-25 08:31:12 henrik Exp $";
 #include <dirent.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <errno.h>
 
 #include "bbgen.h"
 #include "util.h"
@@ -481,10 +482,12 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *mklocaltitle, char
 void do_bb_page(bbgen_page_t *page, dispsummary_t *sums, char *filename)
 {
 	FILE	*output;
+	char	*tmpfilename = malloc(strlen(filename)+5);
 
-	output = fopen(filename, "w");
+	sprintf(tmpfilename, "%s.tmp", filename);
+	output = fopen(tmpfilename, "w");
 	if (output == NULL) {
-		printf("Cannot open file %s\n", filename);
+		printf("Cannot open file %s\n", tmpfilename);
 		return;
 	}
 
@@ -502,16 +505,23 @@ void do_bb_page(bbgen_page_t *page, dispsummary_t *sums, char *filename)
 	headfoot(output, bb_headfoot, "", "", "footer", page->color);
 
 	fclose(output);
+	if (rename(tmpfilename, filename)) {
+		printf("Cannot rename %s to %s - error %d\n", tmpfilename, filename, errno);
+	}
+
+	free(tmpfilename);
 }
 
 
 void do_page(bbgen_page_t *page, char *filename, char *upperpagename)
 {
 	FILE	*output;
+	char	*tmpfilename = malloc(strlen(filename)+5);
 
-	output = fopen(filename, "w");
+	sprintf(tmpfilename, "%s.tmp", filename);
+	output = fopen(tmpfilename, "w");
 	if (output == NULL) {
-		printf("Cannot open file %s\n", filename);
+		printf("Cannot open file %s\n", tmpfilename);
 		return;
 	}
 
@@ -525,15 +535,22 @@ void do_page(bbgen_page_t *page, char *filename, char *upperpagename)
 	headfoot(output, bb_headfoot, page->name, "", "footer", page->color);
 
 	fclose(output);
+	if (rename(tmpfilename, filename)) {
+		printf("Cannot rename %s to %s - error %d\n", tmpfilename, filename, errno);
+	}
+
+	free(tmpfilename);
 }
 
 void do_subpage(bbgen_page_t *page, char *filename, char *upperpagename)
 {
 	FILE	*output;
+	char	*tmpfilename = malloc(strlen(filename)+5);
 
-	output = fopen(filename, "w");
+	sprintf(tmpfilename, "%s.tmp", filename);
+	output = fopen(tmpfilename, "w");
 	if (output == NULL) {
-		printf("Cannot open file %s\n", filename);
+		printf("Cannot open file %s\n", tmpfilename);
 		return;
 	}
 
@@ -545,6 +562,11 @@ void do_subpage(bbgen_page_t *page, char *filename, char *upperpagename)
 	headfoot(output, bb_headfoot, upperpagename, page->name, "footer", page->color);
 
 	fclose(output);
+	if (rename(tmpfilename, filename)) {
+		printf("Cannot rename %s to %s - error %d\n", tmpfilename, filename, errno);
+	}
+
+	free(tmpfilename);
 }
 
 
@@ -684,6 +706,7 @@ void do_bb2_page(char *filename, int summarytype)
 	entry_t	*e;
 	int	useit = 0;
 	char    *hf_prefix[2] = { "bb2", "bbnk" };
+	char	*tmpfilename = malloc(strlen(filename)+5);
 
 	/* Build a "page" with the hosts that should be included in bb2 page */
 	strcpy(bb2page.name, "");
@@ -740,7 +763,8 @@ void do_bb2_page(char *filename, int summarytype)
 		}
 	}
 
-	output = fopen(filename, "w");
+	sprintf(tmpfilename, "%s.tmp", filename);
+	output = fopen(tmpfilename, "w");
 	if (output == NULL) {
 		perror("Cannot open file");
 		exit(1);
@@ -768,6 +792,11 @@ void do_bb2_page(char *filename, int summarytype)
 	headfoot(output, hf_prefix[summarytype], "", "", "footer", bb2page.color);
 
 	fclose(output);
+	if (rename(tmpfilename, filename)) {
+		printf("Cannot rename %s to %s - error %d\n", tmpfilename, filename, errno);
+	}
+
+	free(tmpfilename);
 
 	{
 		/* Free temporary hostlist */
