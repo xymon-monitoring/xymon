@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.29 2005-01-28 22:13:23 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.30 2005-02-01 21:06:30 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -207,7 +207,7 @@ static char *preprocess(char *buf)
 			outp += n;
 			p = (p+1);
 
-			n = strcspn(p, " \t");
+			n = strcspn(p, "\t $.,|%!()[]{}+?/&@:;*");
 			*(p+n) = '\0';
 			for (twalk = tokhead; (twalk && strcmp(p, twalk->name)); twalk = twalk->next) ;
 			*(p+n) = ' ';
