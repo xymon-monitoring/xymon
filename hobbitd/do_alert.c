@@ -13,12 +13,12 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.23 2005-01-04 06:54:03 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.24 2005-01-12 21:15:06 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
  *
- * - void load_alertconfig(char *filename, int defaultcolors)
+ * - void load_alertconfig(char *filename, int defaultcolors, int defaultinterval)
  *   Called to load the alert configuration. Will be called multiple
  *   times, and must be capable of handling this without leaking
  *   memory.
@@ -253,7 +253,7 @@ static void flush_rule(rule_t *currule)
 	}
 }
 
-void load_alertconfig(char *configfn, int defcolors)
+void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 {
 	/* (Re)load the configuration file without leaking memory */
 	char fn[PATH_MAX];
@@ -501,7 +501,7 @@ void load_alertconfig(char *configfn, int defcolors)
 				if (strchr(p, '@') == NULL) p = strtok(NULL, " ");
 				if (p) {
 					newrcp->recipient = strdup(p);
-					newrcp->interval = 300;
+					newrcp->interval = defaultinterval;
 					newrcp->next = NULL;
 					currcp = newrcp;
 					pstate = P_RECIP;
@@ -539,7 +539,7 @@ void load_alertconfig(char *configfn, int defcolors)
 
 				if (p) {
 					newrcp->recipient = strdup(p);
-					newrcp->interval = 300;
+					newrcp->interval = defaultinterval;
 					newrcp->next = NULL;
 					currcp = newrcp;
 					pstate = P_RECIP;

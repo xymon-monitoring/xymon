@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.32 2004-12-30 22:25:34 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.33 2005-01-12 21:15:06 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -65,6 +65,7 @@ char *statename[] = {
 };
 
 int include_configid = 0;
+int alertinterval = 30*60; /* By default, repeat an alert every 30 minutes. */
 
 htnames_t *find_name(htnames_t **head, char *name)
 {
@@ -234,6 +235,10 @@ int main(int argc, char *argv[])
 
 			alertcolors = ac;
 		}
+		else if (argnmatch(argv[argi], "--repeat=")) {
+			char *p = strchr(argv[argi], '=') + 1;
+			alertinterval = 60*durationvalue(p);
+		}
 		else if (argnmatch(argv[argi], "--config=")) {
 			configfn = strdup(strchr(argv[argi], '=')+1);
 		}
@@ -245,7 +250,7 @@ int main(int argc, char *argv[])
 			checkpointinterval = atoi(p);
 		}
 		else if (argnmatch(argv[argi], "--dump-config")) {
-			load_alertconfig(configfn, alertcolors);
+			load_alertconfig(configfn, alertcolors, alertinterval);
 			dump_alertconfig();
 			return 0;
 		}
@@ -487,7 +492,7 @@ int main(int argc, char *argv[])
 		if (anytogo) {
 			pid_t childpid;
 
-			load_alertconfig(configfn, alertcolors);
+			load_alertconfig(configfn, alertcolors, alertinterval);
 			childpid = fork();
 
 			if (childpid == 0) {

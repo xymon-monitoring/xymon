@@ -26,6 +26,14 @@ color to a non-alert color may trigger a "recovered" message.
 
 The default is "--alertcolors=red,yellow,purple".
 
+.IP "--repeat=N"
+Sets the default REPEAT value for all alerts. By default, an
+alert is repeated every N minutes (unless the critical state
+is cleared, of course). This can be changed by specifying a
+REPEAT setting for each recipient or rule in
+.I hobbit-alerts.cfg(5).
+If not specified, alerts are repeated every 30 minutes.
+
 .IP "--config=FILENAME"
 Sets the filename for the 
 .I hobbit-alerts.cfg
