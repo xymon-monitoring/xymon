@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.38 2003-04-27 09:07:38 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.39 2003-04-27 09:59:52 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -863,13 +863,16 @@ int run_columngen(char *column, int update_interval, int enabled)
 }
 
 
-char *realurl(char *url)
+char *realurl(char *url, char **proxy)
 {
-	static char result[MAX_PATH];
+	static char result[MAX_LINE_LEN];
+	static char proxyresult[MAX_LINE_LEN];
 	char *p;
+	char *urlstart;
 	char *restorechar = NULL;
 
 	result[0] = '\0';
+	proxyresult[0] = '\0';
 	p = url;
 
 	if (strncmp(p, "content=", 8) == 0) {
@@ -881,23 +884,40 @@ char *realurl(char *url)
 		if (restorechar) *restorechar = '\0';
 	}
 
-	if        (strncmp(p, "https2:", 7) == 0) {
-		p += 7;
-		sprintf(result, "https:%s", p);
-	} else if (strncmp(p, "https3:", 7) == 0) {
-		p += 7;
-		sprintf(result, "https:%s", p);
-	} else if (strncmp(p, "httpsm:", 7) == 0) {
-		p += 7;
-		sprintf(result, "https:%s", p);
-	} else if (strncmp(p, "httpsh:", 7) == 0) {
-		p += 7;
-		sprintf(result, "https:%s", p);
-	} else if (strncmp(p, "https:", 6)  == 0) {
-		p += 6;
-		sprintf(result, "https:%s", p);
-	} else if (strncmp(p, "http:", 5)   == 0) {
-		strcpy(result, p);
+	/* Check if there is a proxy spec in there */
+	urlstart = p;
+	p += 4; /* Skip leading "http" */
+	p = strstr((p+4), "/http");
+	if (p) {
+		/* There IS a proxy spec first. */
+
+		p++; /* Move p to "http" */
+		if (proxy != NULL) {
+			*p = '\0';
+			strcpy(proxyresult, urlstart);
+			*proxy = proxyresult;
+			*p = 'h';
+		}
+		urlstart = p;
+	}
+
+	if (strncmp(urlstart, "https2:", 7) == 0) {
+		urlstart += 7;
+		sprintf(result, "https:%s", urlstart);
+	} else if (strncmp(urlstart, "https3:", 7) == 0) {
+		urlstart += 7;
+		sprintf(result, "https:%s", urlstart);
+	} else if (strncmp(urlstart, "httpsm:", 7) == 0) {
+		urlstart += 7;
+		sprintf(result, "https:%s", urlstart);
+	} else if (strncmp(urlstart, "httpsh:", 7) == 0) {
+		urlstart += 7;
+		sprintf(result, "https:%s", urlstart);
+	} else if (strncmp(urlstart, "https:", 6)  == 0) {
+		urlstart += 6;
+		sprintf(result, "https:%s", urlstart);
+	} else if (strncmp(urlstart, "http:", 5)   == 0) {
+		strcpy(result, urlstart);
 	}
 
 	if (restorechar) *restorechar = ';';

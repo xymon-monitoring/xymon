@@ -63,7 +63,7 @@ extern void finish_status(void);
 extern void envcheck(char *envvars[]);
 
 extern int run_columngen(char *column, int update_interval, int enabled);
-extern char *realurl(char *url);
+extern char *realurl(char *url, char **proxy);
 
 extern int generate_static(void);
 extern int stdout_on_file(char *filename);
