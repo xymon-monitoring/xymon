@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.93 2003-04-23 20:32:39 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.94 2003-04-23 20:58:25 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -119,6 +119,10 @@ int main(int argc, char *argv[])
 		else if (strncmp(argv[i], "--doccgi=", 9) == 0) {
 			char *lp = strchr(argv[i], '=');
 			documentationcgi = malcop(lp+1);
+		}
+		else if (strncmp(argv[i], "--htmlextension=", 16) == 0) {
+			char *lp = strchr(argv[i], '=');
+			htmlextension = malcop(lp+1);
 		}
 
 		else if (strcmp(argv[i], "--pages-first") == 0) {
@@ -230,6 +234,7 @@ int main(int argc, char *argv[])
 			printf("    --ignorecolumns=test[,test] : Completely ignore these columns\n");
 			printf("    --includecolumns=test[,test]: Always include these columns on bb2 page\n");
 			printf("    --doccgi=cgibinURL          : Hostnames link to a general CGI script for docs\n");
+			printf("    --htmlextension=.EXT        : Sets filename extension for generated file (default: .html\n");
 			printf("\nPage layout options:\n");
 			printf("    --pages-last                : Put page- and subpage-links after hosts (as BB does)\n");
 			printf("    --pages-first               : Put page- and subpage-links before hosts (default)\n");
@@ -350,13 +355,19 @@ int main(int argc, char *argv[])
 
 	/* The full summary page - bb2.html */
 	if (!bbpageONLY) {
-		bb2_color = do_bb2_page("bb2.html", PAGE_BB2);
+		char bb2filename[MAX_PATH];
+
+		sprintf(bb2filename, "bb2%s", htmlextension);
+		bb2_color = do_bb2_page(bb2filename, PAGE_BB2);
 		add_timestamp("BB2 generation done");
 	}
 
 	/* Reduced summary (alerts) page - bbnk.html */
 	if (!bbpageONLY) {
-		bbnk_color = do_bb2_page("bbnk.html", PAGE_NK);
+		char bbnkfilename[MAX_PATH];
+
+		sprintf(bbnkfilename, "bbnk%s", htmlextension);
+		bbnk_color = do_bb2_page(bbnkfilename, PAGE_NK);
 		add_timestamp("BBNK generation done");
 	}
 
