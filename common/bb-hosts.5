@@ -648,6 +648,20 @@ The actual name of the tag - "conn" by default - depends
 on the "--ping=TESTNAME" option for bbtest-net, as that
 decides the testname for the connectivity test.
 
+.IP "conn={best,|worst,}IP1[,IP2...]"
+This adds additional IP-adresses that are pinged during the
+normal "conn" test. So the normal "conn" test must be enabled
+(the default) before this tag has any effect. The IP-adresses
+listed here are pinged in addition to the main IP-address.
+
+When multiple IP's are pinged, you can choose if ALL IP's
+must respond (the "worst" method), or AT LEAST one IP
+must respond (the "best" setting). All of the IP's are 
+reported in a single "conn" status, whose color is determined
+from the result of pinging the IP's and the best/worst setting.
+The default method is "best" - so it will report green if 
+just one of the IP's respond to ping.
+
 .IP badconn[-weekdays-starttime-endtime]:x:y:z
 This is taken directly from the "fping.sh" connectivity-
 testing script, and is used by bbtest-net when it runs

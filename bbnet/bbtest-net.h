@@ -65,6 +65,21 @@ typedef struct service_t {
 	struct service_t *next;
 } service_t;
 
+#define MULTIPING_BEST 0
+#define MULTIPING_WORST 1
+typedef struct ipping_t {
+	char *ip;
+	int  open;
+	char *banner;
+	int bannerbytes;
+	struct ipping_t *next;
+} ipping_t;
+
+typedef struct extraping_t {
+	int   matchtype;
+	ipping_t *iplist;
+} extraping_t;
+
 typedef struct testedhost_t {
 	char *hostname;
 	char ip[16];
@@ -87,6 +102,7 @@ typedef struct testedhost_t {
 	struct testedhost_t *deprouterdown;    /* Set if dependant router is down */
 	int dotrace;		/* Run traceroute for this host */
 	char *traceroute;	/* traceroute results */
+	struct extraping_t *extrapings;
 
 	/* The following is for the HTTP/FTP URL tests */
 	struct testitem_t *firsthttp;	/* First HTTP testitem in testitem list */

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.172 2004-09-01 11:33:15 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.173 2004-09-02 14:04:25 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -316,7 +316,7 @@ testedhost_t *init_testedhost(char *hostname, int okexpected)
 	testedhost_t *newhost;
 
 	hostcount++;
-	newhost = (testedhost_t *) malloc(sizeof(testedhost_t));
+	newhost = (testedhost_t *) calloc(1, sizeof(testedhost_t));
 	newhost->hostname = malcop(hostname);
 	newhost->ip[0] = '\0';
 	newhost->hosttype = NULL;
@@ -338,6 +338,7 @@ testedhost_t *init_testedhost(char *hostname, int okexpected)
 	newhost->deprouterdown = NULL;
 	newhost->dotrace = dotraceroute;
 	newhost->traceroute = NULL;
+	newhost->extrapings = NULL;
 
 	newhost->firsthttp = NULL;
 
@@ -456,6 +457,7 @@ void load_tests(void)
 				char *badsaves;
 				testedhost_t *h;
 				testitem_t *newtest;
+				extraping_t *extraping = NULL;
 				int anytests = 0;
 				int ping_dialuptest = 0;
 				int ping_reversetest = 0;
@@ -659,12 +661,47 @@ void load_tests(void)
 					if (specialtag) {
 						s = NULL;
 					}
-					else if (pingtest && (strcmp(testspec, pingtest->testname) == 0)) {
+					else if (pingtest && argnmatch(testspec, pingtest->testname)) {
+						char *p;
+
 						/*
 						 * Ping/conn test. Save any modifier flags for later use.
 						 */
 						ping_dialuptest = dialuptest;
 						ping_reversetest = reversetest;
+						p = strchr(testspec, '=');
+						if (p) {
+							char *ips;
+
+							/* Extra ping tests - save them for later */
+							h->extrapings = (extraping_t *)malloc(sizeof(extraping_t));
+							h->extrapings->iplist = NULL;
+							if (argnmatch(p, "=worst,")) {
+								h->extrapings->matchtype = MULTIPING_WORST;
+								ips = malcop(p+7);
+							}
+							else if (argnmatch(p, "=best,")) {
+								h->extrapings->matchtype = MULTIPING_BEST;
+								ips = malcop(p+6);
+							}
+							else {
+								h->extrapings->matchtype = MULTIPING_BEST;
+								ips = malcop(p+1);
+							}
+
+							do {
+								ipping_t *newping = (ipping_t *)malloc(sizeof(ipping_t));
+
+								newping->ip = ips;
+								newping->open = 0;
+								newping->banner = NULL;
+								newping->bannerbytes = 0;
+								newping->next = h->extrapings->iplist;
+								h->extrapings->iplist = newping;
+								ips = strchr(ips, ',');
+								if (ips) { *ips = '\0'; ips++; }
+							} while (ips && (*ips));
+						}
 						s = NULL; /* Dont add the test now - ping is special (enabled by default) */
 					}
 					else if ((argnmatch(testspec, "ldap://")) ||
@@ -1233,6 +1270,15 @@ int start_fping_service(service_t *service)
 				sprintf(ip, "%s\n", t->host->ip);
 				status = write(pfd[1], ip, strlen(ip));
 				pingcount++;
+				if (t->host->extrapings) {
+					ipping_t *walk;
+
+					for (walk = t->host->extrapings->iplist; (walk); walk = walk->next) {
+						sprintf(ip, "%s\n", walk->ip);
+						status = write(pfd[1], ip, strlen(ip));
+						pingcount++;
+					}
+				}
 			}
 		}
 
@@ -1249,7 +1295,7 @@ int finish_fping_service(service_t *service)
 	FILE		*logfd;
 	char 		*p;
 	char		l[MAX_LINE_LEN];
-	char		hostname[MAX_LINE_LEN];
+	char		pingip[MAX_LINE_LEN];
 	int		ip1, ip2, ip3, ip4;
 	int		fpingstatus;
 
@@ -1280,11 +1326,12 @@ int finish_fping_service(service_t *service)
 	logfd = fopen(fpinglog, "r");
 	if (logfd == NULL) { errprintf("Cannot open fping output file %s\n", fpinglog); return -1; }
 	while (fgets(l, sizeof(l), logfd)) {
+		p = strchr(l, '\n'); if (p) *p = '\0';
 		if (sscanf(l, "%d.%d.%d.%d ", &ip1, &ip2, &ip3, &ip4) == 4) {
 
 			p = strchr(l, ' ');
 			if (p) *p = '\0';
-			strcpy(hostname, l);
+			strcpy(pingip, l);
 			if (p) *p = ' ';
 
 			/*
@@ -1292,10 +1339,21 @@ int finish_fping_service(service_t *service)
 			 * the same IP-address.
 			 */
 			for (t=service->items; (t); t = t->next) {
-				if (strcmp(t->host->ip, hostname) == 0) {
+				if (strcmp(t->host->ip, pingip) == 0) {
 					t->open = (strstr(l, "is alive") != NULL);
 					t->banner = malcop(l);
 					t->bannerbytes = strlen(l);
+				}
+
+				if (t->host->extrapings) {
+					ipping_t *walk;
+					for (walk = t->host->extrapings->iplist; (walk); walk = walk->next) {
+						if (strcmp(walk->ip, pingip) == 0) {
+							walk->open = (strstr(l, "is alive") != NULL);
+							walk->banner = malcop(l);
+							walk->bannerbytes = strlen(l);
+						}
+					}
 				}
 			}
 		}
@@ -1408,10 +1466,42 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 			color = COL_RED; countasdown = 1; 
 		}
 		else {
-			/* Red if (open=0, reverse=0) or (open=1, reverse=1) */
-			if ((test->open + test->reverse) != 1) { 
-				sprintf(cause, "Host %s respond to ping", (test->open ? "does" : "does not"));
-				color = COL_RED; countasdown = 1; 
+			if (test->host->extrapings == NULL) {
+				/* Red if (open=0, reverse=0) or (open=1, reverse=1) */
+				if ((test->open + test->reverse) != 1) { 
+					sprintf(cause, "Host %s respond to ping", (test->open ? "does" : "does not"));
+					color = COL_RED; countasdown = 1; 
+				}
+			}
+			else {
+				/* Host with many pings */
+				int totalcount = 1;
+				int okcount = test->open;
+				ipping_t *walk;
+
+				for (walk = test->host->extrapings->iplist; (walk); walk = walk->next) {
+					if (walk->open) okcount++;
+					totalcount++;
+				}
+
+				switch (test->host->extrapings->matchtype) {
+				  case MULTIPING_BEST:
+					  if (okcount == 0) {
+						  color = COL_RED;
+						  countasdown = 1;
+						  sprintf(cause, "Host does not respond to ping on any of %d IP's", 
+							  totalcount);
+					  }
+					  break;
+				  case MULTIPING_WORST:
+					  if (okcount < totalcount) {
+						  color = COL_RED;
+						  countasdown = 0;
+						  sprintf(cause, "Host responds to ping on %d of %d IP's",
+							  okcount, totalcount);
+					  }
+					  break;
+				}
 			}
 		}
 
@@ -1713,7 +1803,23 @@ void send_results(service_t *service, int failgoesclear)
 		}
 
 		if (t->banner) {
-			addtostatus("\n"); addtostatus(t->banner); addtostatus("\n");
+			if (service == pingtest) {
+				sprintf(msgtext, "\n&%s %s\n", colorname(t->open ? COL_GREEN : COL_RED), t->banner);
+				addtostatus(msgtext);
+				if (t->host->extrapings) {
+					ipping_t *walk;
+					for (walk = t->host->extrapings->iplist; (walk); walk = walk->next) {
+						if (walk->banner) {
+							sprintf(msgtext, "&%s %s\n", 
+								colorname(walk->open ? COL_GREEN : COL_RED), walk->banner);
+							addtostatus(msgtext);
+						}
+					}
+				}
+			}
+			else {
+				addtostatus("\n"); addtostatus(t->banner); addtostatus("\n");
+			}
 		}
 
 		if ((service == pingtest) && t->host->traceroute) {
@@ -2118,7 +2224,7 @@ int main(int argc, char *argv[])
 			printf("    --trace                     : Run traceroute on all hosts where ping fails\n");
 			printf("    --notrace                   : Disable traceroute when ping fails (default)\n");
 			printf("\nOptions for HTTP/HTTPS (Web) tests:\n");
-			printf("    --content=COLUMNNAME        : Define columnname for CONTENT checks (content)\n");
+			printf("    --content=COLUMNNAME        : Define default columnname for CONTENT checks (content)\n");
 			printf("\nOptions for SSL certificate tests:\n");
 			printf("    --ssl=COLUMNNAME            : Define columnname for SSL certificate checks (sslcert)\n");
 			printf("    --no-ssl                    : Disable SSL certificate check\n");
