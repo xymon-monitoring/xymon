@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.33 2004-10-30 15:46:58 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.34 2004-11-09 12:27:37 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -603,6 +603,13 @@ int main(int argc, char *argv[])
 							cwalk->timelimit.tv_sec++;
 							cwalk->timelimit.tv_usec -= 1000000;
 						}
+
+						if ((cwalk->buflen + 50 ) < cwalk->bufsize) {
+							cwalk->buflen += sprintf(cwalk->bufp, 
+										 "\nStatus message received from %s\n", 
+										 inet_ntoa(*cwalk->clientip));
+						}
+
 						cwalk->state = P_REQ_COMBINING;
 						break;
 					}
@@ -825,7 +832,7 @@ int main(int argc, char *argv[])
 						while (cextra && (cwalk->buflen < (MAXMSG-20))) {
 							if (strncmp(cextra->buf+6, "status", 6) == 0) {
 								int newsize;
-								
+
 								/*
 								 * Size of the new message - if the cextra one
 								 * is merged - is the cwalk buffer, plus the
