@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.24 2003-03-07 09:41:32 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.25 2003-03-15 16:00:54 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -713,4 +713,19 @@ int generate_static(void)
 {
 	return ( (strcmp(getenv("BBLOGSTATUS"), "STATIC") == 0) ? 1 : 0);
 }
+
+
+int stdout_on_file(char *filename)
+{
+	struct stat st_fd, st_out;
+
+	if (!isatty(1) && (fstat(1, &st_out) == 0) && (stat(filename, &st_fd) != 0)) {
+		if ((st_out.st_ino == st_fd.st_ino) && (st_out.st_dev == st_fd.st_dev)) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 
