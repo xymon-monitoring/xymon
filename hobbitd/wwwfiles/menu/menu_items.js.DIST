@@ -5,6 +5,7 @@ var MENU_ITEMS = [
 		['NK view', '@BBHOSTURL@/bbnk.html'],
 	],
 	['Reports', null, null,
+		['Event log Report', '@BBCGIURL@/bb-eventlog.sh'],
 		['Availability Report', '@BBCGIURL@/bb-rep.sh'],
 		['Snapshot Report', '@BBCGIURL@/bb-snapshot.sh'],
 	],
