@@ -59,12 +59,16 @@ clean:
 ####################
 
 install: install-bbdisplay install-bbnet install-bbproxy install-bbgend
+install-nocgi: install-bbdisplay-nocgi install-bbnet install-bbproxy install-bbgend
 
 install-common:
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C common install
 
 install-bbdisplay: install-common
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" $(MAKE) -C bbdisplay install
+
+install-bbdisplay-nocgi: install-common
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" $(MAKE) -C bbdisplay install-nocgi
 
 install-bbnet: install-common
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbnet install
