@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.21 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.22 2005-02-18 09:50:47 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -511,6 +511,7 @@ int main(int argc, char *argv[])
 					twalk->exitcode = -WTERMSIG(status);
 					twalk->failcount++;
 					errprintf("Task %s terminated by signal %d\n", twalk->key, abs(twalk->exitcode));
+					twalk->failcount++;
 				}
 
 				if (twalk->group) twalk->group->currentuse--;
@@ -549,6 +550,11 @@ int main(int argc, char *argv[])
 
 				if (twalk->failcount > MAX_FAILS) {
 					dprintf("Postponing start of %s due to multiple failures\n", twalk->key);
+					continue;
+				}
+
+				if (twalk->laststart > (now - 5)) {
+					dprintf("Postponing start of %s, will not try more than once in 5 seconds\n", twalk->key);
 					continue;
 				}
 
