@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.35 2005-02-10 14:57:37 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.36 2005-03-21 15:04:38 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -185,7 +185,7 @@ static int gethobbitdvalue(char *hostname, char *testname, char **errptr)
 	char *pattern, *found, *colstr, *p;
 
 	if (board == NULL) {
-		hobbitdresult = sendmessage("hobbitdboard", NULL, NULL, &board, 1, 30);
+		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname,color", NULL, NULL, &board, 1, 30);
 		if ((hobbitdresult != BB_OK) || (board == NULL)) {
 			board = "";
 			*errptr += sprintf(*errptr, "Could not access hobbitd board, error %d\n", hobbitdresult);
@@ -205,18 +205,9 @@ static int gethobbitdvalue(char *hostname, char *testname, char **errptr)
 	}
 
 	if (found) {
-		/* hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|1st line of message */
+		/* hostname|testname|color */
 		colstr = found + strlen(pattern);
-		p = strchr(colstr, '|');
-		if (p) {
-			*p = '\0';
-			result = parse_color(colstr);
-			*p = '|';
-		}
-		else {
-			*errptr += sprintf(*errptr, "Malformed board\n");
-			found = NULL;
-		}
+		result = parse_color(colstr);
 	}
 
 	xfree(pattern);
