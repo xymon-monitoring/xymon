@@ -5,8 +5,8 @@
 CFLAGS += -DMAXMSG=$(MAXMSG) -DBBDPORTNUMBER=$(BBPORT)
 
 
-PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bbdigest bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi bb-findhost.cgi bb-csvinfo.cgi bb bbmessage.cgi
-CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh bb-findhost.sh bb-csvinfo.sh
+PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bbdigest bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi bb-findhost.cgi bb-csvinfo.cgi bb
+CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh bb-findhost.sh bb-csvinfo.sh bbmessage.cgi
 EXTENSIONS = bbcombotest bbretest-net.sh
 HTMLPAGES = bb-findhost.html
 MAN1PAGES = bbgen.1 bbtest-net.1 bbhostgrep.1 bbhostshow.1 bbdigest.1 bb-rep.cgi.1 bb-replog.cgi.1 bb-hist.cgi.1 bb-snapshot.cgi.1 bb-eventlog.cgi.1 bbcombotest.1 bbretest-net.sh.1 bb-findhost.cgi.1 bb-csvinfo.cgi.1 bb.1 bbmessage.cgi.1
