@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.79 2003-08-04 11:49:15 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.80 2003-08-12 21:16:05 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -54,9 +54,9 @@ static char hostenv_reppanic[20];
 static time_t hostenv_snapshot = 0;
 
 /* Stuff for reading files that include other files */
-typedef struct {
+typedef struct stackfd_t {
 	FILE *fd;
-	void *next;
+	struct stackfd_t *next;
 } stackfd_t;
 static stackfd_t *fdhead = NULL;
 static char stackfd_base[MAX_PATH];
@@ -87,12 +87,12 @@ void errprintf(const char *fmt, ...)
 
 	if (errbuf == NULL) {
 		errbufsize = 8192;
-		errbuf = malloc(errbufsize);
+		errbuf = (char *) malloc(errbufsize);
 		*errbuf = '\0';
 	}
 	else if ((strlen(errbuf) + strlen(msg)) > errbufsize) {
 		errbufsize += 8192;
-		errbuf = realloc(errbuf, errbufsize);
+		errbuf = (char *) realloc(errbuf, errbufsize);
 	}
 
 	strcat(errbuf, msg);
@@ -124,7 +124,7 @@ FILE *stackfopen(char *filename, char *mode)
 
 	newfd = fopen(stackfd_filename, stackfd_mode);
 	if (newfd != NULL) {
-		newitem = malloc(sizeof(stackfd_t));
+		newitem = (stackfd_t *) malloc(sizeof(stackfd_t));
 		newitem->fd = newfd;
 		newitem->next = fdhead;
 		fdhead = newitem;
@@ -197,7 +197,7 @@ char *stackfgets(char *buffer, unsigned int bufferlen, char *includetag)
 
 char *malcop(const char *s)
 {
-	char *buf = malloc(strlen(s)+1);
+	char *buf = (char *) malloc(strlen(s)+1);
 	strcpy(buf, s);
 	return buf;
 }
@@ -477,7 +477,7 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 	int	fd;
 	char 	filename[MAX_PATH];
 	struct stat st;
-	char	*template;
+	char	*templatedata;
 	char	*t_start, *t_next;
 	char	savechar;
 	time_t	now = time(NULL);
@@ -539,12 +539,12 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 
 	if (fd != -1) {
 		fstat(fd, &st);
-		template = malloc(st.st_size + 1);
-		read(fd, template, st.st_size);
-		template[st.st_size] = '\0';
+		templatedata = (char *) malloc(st.st_size + 1);
+		read(fd, templatedata, st.st_size);
+		templatedata[st.st_size] = '\0';
 		close(fd);
 
-		for (t_start = template, t_next = strchr(t_start, '&'); (t_next); ) {
+		for (t_start = templatedata, t_next = strchr(t_start, '&'); (t_next); ) {
 			/* Copy from t_start to t_next unchanged */
 			*t_next = '\0'; t_next++;
 			fprintf(output, "%s", t_start);
@@ -597,7 +597,7 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 		/* Remainder of file */
 		fprintf(output, "%s", t_start);
 
-		free(template);
+		free(templatedata);
 	}
 	else {
 		fprintf(output, "<HTML><BODY> \n <HR size=4> \n <BR>%s is either missing or invalid, please create this file with your custom header<BR> \n<HR size=4>", filename);
@@ -621,8 +621,7 @@ void do_bbext(FILE *output, char *extenv, char *family)
 		/* No extension */
 		return;
 
-	bbexts = malloc(strlen(p)+1);
-	strcpy(bbexts, p);
+	bbexts = malcop(p);
 	p = strtok(bbexts, "\t ");
 
 	while (p) {
@@ -651,7 +650,7 @@ int checkalert(char *alertlist, char *test)
 
 	if (!alertlist) return 0;
 
-	testname = malloc(strlen(test)+3);
+	testname = (char *) malloc(strlen(test)+3);
 	sprintf(testname, ",%s,", test);
 	result = (strstr(alertlist, testname) ? 1 : 0);
 
@@ -668,7 +667,7 @@ int checkpropagation(host_t *host, char *test, int color)
 
 	if (!host) return 1;
 
-	testname = malloc(strlen(test)+3);
+	testname = (char *) malloc(strlen(test)+3);
 	sprintf(testname, ",%s,", test);
 	if (color == COL_RED) {
 		if (host->nopropredtests && strstr(host->nopropredtests, testname)) result = 0;
@@ -836,7 +835,7 @@ int within_sla(char *l, char *tag, int defresult)
 	int found = 0;
 	int starttime,endtime,curtime;
 
-	tagspec = malloc(strlen(tag)+2);
+	tagspec = (char *) malloc(strlen(tag)+2);
 	sprintf(tagspec, "%s=", tag);
 	p = strstr(l, tagspec);
 	if (p) {
@@ -855,11 +854,11 @@ int within_sla(char *l, char *tag, int defresult)
                              ((toupper((int)*slaspec) == 'W') && (now->tm_wday >= 1) && (now->tm_wday <=5)) )	/* Monday thru Friday */
 			{
 				/* Weekday matches */
-				// printf("Now checking slaspec=%s\n", slaspec);
+				dprintf("Now checking slaspec=%s\n", slaspec);
 				starttime = minutes(slaspec+2);
 				endtime = minutes(slaspec+7);
 				curtime = now->tm_hour*60+now->tm_min;
-				// printf("start,end,current time = %d, %d, %d\n\n", starttime,endtime,curtime);
+				dprintf("start,end,current time = %d, %d, %d\n\n", starttime,endtime,curtime);
 				found = ((curtime >= starttime) && (curtime <= endtime));
 			};
 
@@ -1274,7 +1273,7 @@ char *urldecode(char *envvar)
 	if (getenv(envvar) == NULL) return NULL;
 
 	pin = getenv(envvar);
-	pout = result = malloc(strlen(pin) + 1);
+	pout = result = (char *) malloc(strlen(pin) + 1);
 	while (*pin) {
 		if (*pin != '%') {
 			*pout = *pin;

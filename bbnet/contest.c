@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.22 2003-08-11 06:55:21 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.23 2003-08-12 21:16:05 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -124,6 +124,7 @@ void do_tcp_tests(int conntimeout, int concurrency)
 	int		res;
 	socklen_t	connressize;
 	char		msgbuf[MAX_BANNER];
+
 	void		*oldsigpipe;
 
 	/*
@@ -375,8 +376,7 @@ void do_tcp_tests(int conntimeout, int concurrency)
 						res = read(item->fd, msgbuf, sizeof(msgbuf)-1);
 						if (res > 0) {
 							msgbuf[res] = '\0';
-							item->banner = malloc(res+1);
-							strcpy(item->banner, msgbuf);
+							item->banner = malcop(msgbuf);
 						}
 						shutdown(item->fd, SHUT_RDWR);
 						item->readpending = 0;

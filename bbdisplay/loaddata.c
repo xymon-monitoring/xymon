@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.102 2003-08-01 12:45:37 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.103 2003-08-12 21:16:05 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -76,7 +76,7 @@ void addtopagelist(bbgen_page_t *page)
 {
 	pagelist_t *newitem;
 
-	newitem = malloc(sizeof(pagelist_t));
+	newitem = (pagelist_t *) malloc(sizeof(pagelist_t));
 	newitem->pageentry = page;
 	newitem->next = pagelisthead;
 	pagelisthead = newitem;
@@ -137,7 +137,7 @@ char *build_noprop(const char *defset, const char *specset)
 
 bbgen_page_t *init_page(const char *name, const char *title)
 {
-	bbgen_page_t *newpage = malloc(sizeof(bbgen_page_t));
+	bbgen_page_t *newpage = (bbgen_page_t *) malloc(sizeof(bbgen_page_t));
 
 	pagecount++;
 	dprintf("init_page(%s, %s)\n", textornull(name), textornull(title));
@@ -166,7 +166,7 @@ bbgen_page_t *init_page(const char *name, const char *title)
 
 group_t *init_group(const char *title, const char *onlycols)
 {
-	group_t *newgroup = malloc(sizeof(group_t));
+	group_t *newgroup = (group_t *) malloc(sizeof(group_t));
 
 	dprintf("init_group(%s, %s)\n", textornull(title), textornull(onlycols));
 
@@ -176,7 +176,7 @@ group_t *init_group(const char *title, const char *onlycols)
 	else title = null_text;
 
 	if (onlycols) {
-		newgroup->onlycols = malloc(strlen(onlycols)+3); /* Add a '|' at start and end */
+		newgroup->onlycols = (char *) malloc(strlen(onlycols)+3); /* Add a '|' at start and end */
 		sprintf(newgroup->onlycols, "|%s|", onlycols);
 	}
 	else newgroup->onlycols = NULL;
@@ -193,7 +193,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *com
 		  const char *nopropyellowtests, const char *nopropredtests,
 		  const char *larrdgraphs)
 {
-	host_t 		*newhost = malloc(sizeof(host_t));
+	host_t 		*newhost = (host_t *) malloc(sizeof(host_t));
 	hostlist_t	*oldlist;
 
 	hostcount++;
@@ -219,7 +219,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *com
 		char *p;
 		p = skipword(alerts); if (*p) *p = '\0'; else p = NULL;
 
-		newhost->alerts = malloc(strlen(alerts)+3);
+		newhost->alerts = (char *) malloc(strlen(alerts)+3);
 		sprintf(newhost->alerts, ",%s,", alerts);
 		if (p) *p = ' ';
 	}
@@ -274,7 +274,8 @@ host_t *init_host(const char *hostname, const char *displayname, const char *com
 		newhost->rawentry = malcop(tags);
 	}
 	else newhost->rawentry = null_text;
-	newhost->parent = newhost->next = NULL;
+	newhost->parent = NULL;
+	newhost->next = NULL;
 	newhost->rrds = NULL;
 
 	/*
@@ -286,7 +287,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *com
 	if (oldlist == NULL) {
 		hostlist_t *newlist;
 
-		newlist = malloc(sizeof(hostlist_t));
+		newlist = (hostlist_t *) malloc(sizeof(hostlist_t));
 		newlist->hostentry = newhost;
 		newlist->clones = NULL;
 		newlist->next = hosthead;
@@ -294,7 +295,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *com
 	}
 	else {
 		int usenew = 0;
-		hostlist_t *clone = malloc(sizeof(hostlist_t));
+		hostlist_t *clone = (hostlist_t *) malloc(sizeof(hostlist_t));
 
 		dprintf("Duplicate host definition for host '%s'\n", hostname);
 
@@ -344,7 +345,7 @@ link_t *init_link(char *filename, const char *urlprefix)
 
 	dprintf("init_link(%s, %s)\n", textornull(filename), textornull(urlprefix));
 
-	newlink = malloc(sizeof(link_t));
+	newlink = (link_t *) malloc(sizeof(link_t));
 	newlink->filename = malcop(filename);
 	newlink->urlprefix = malcop(urlprefix);
 	newlink->next = NULL;
@@ -381,7 +382,7 @@ bbgen_col_t *find_or_create_column(const char *testname)
 
 	for (newcol = colhead; (newcol && (strcmp(testname, newcol->name) != 0)); newcol = newcol->next);
 	if (newcol == NULL) {
-		newcol = malloc(sizeof(bbgen_col_t));
+		newcol = (bbgen_col_t *) malloc(sizeof(bbgen_col_t));
 		newcol->name = malcop(testname);
 		newcol->link = find_link(testname);
 
@@ -502,8 +503,8 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		return NULL;	/* Ignore this type of test */
 	}
 
-	newstate = malloc(sizeof(state_t));
-	newstate->entry = malloc(sizeof(entry_t));
+	newstate = (state_t *) malloc(sizeof(state_t));
+	newstate->entry = (entry_t *) malloc(sizeof(entry_t));
 	newstate->next = NULL;
 
 	newstate->entry->column = find_or_create_column(testname);
@@ -533,7 +534,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 
 	if (reportstart) {
 		/* Determine "color" for this test from the historical data */
-		newstate->entry->repinfo = calloc(1, sizeof(reportinfo_t));
+		newstate->entry->repinfo = (reportinfo_t *) calloc(1, sizeof(reportinfo_t));
 		newstate->entry->color = parse_historyfile(fd, newstate->entry->repinfo, 
 				(dynamicreport ? NULL: hostname), (dynamicreport ? NULL : testname), 
 				reportstart, reportend, 0, 
@@ -612,7 +613,7 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 
 		for (p = strchr(l, ' '); (p && (*p == ' ')); p++); /* Skip old color */
 
-		purplemsg = malloc(bufleft);
+		purplemsg = (char *) malloc(bufleft);
 		sprintf(purplemsg, "status+%d %s.%s %s %s", purpledelay,
 			commafy(hostname), testname,
                         colorname(newstate->entry->color), (p ? p : ""));
@@ -742,7 +743,7 @@ summary_t *init_summary(char *name, char *receiver, char *url)
 	if ((name == NULL) || (receiver == NULL) || (url == NULL)) 
 		return NULL;
 
-	newsum = malloc(sizeof(summary_t));
+	newsum = (summary_t *) malloc(sizeof(summary_t));
 	newsum->name = malcop(name);
 	newsum->receiver = malcop(receiver);
 	newsum->url = malcop(url);
@@ -780,10 +781,10 @@ dispsummary_t *init_displaysummary(char *fn)
 
 	if (fgets(l, sizeof(l), fd)) {
 		char *p, *rowcol;
-		char *color = malloc(strlen(l));
+		char *color = (char *) malloc(strlen(l));
 
-		newsum = malloc(sizeof(dispsummary_t));
-		newsum->url = malloc(strlen(l));
+		newsum = (dispsummary_t *) malloc(sizeof(dispsummary_t));
+		newsum->url = (char *) malloc(strlen(l));
 
 		sscanf(l, "%s %s", color, newsum->url);
 
@@ -806,13 +807,13 @@ dispsummary_t *init_displaysummary(char *fn)
 			newsum->color = COL_PURPLE;
 		}
 
-		rowcol = malloc(strlen(fn) + 1);
+		rowcol = (char *) malloc(strlen(fn) + 1);
 		strcpy(rowcol, fn+8);
 		p = strrchr(rowcol, '.');
 		if (p) *p = ' ';
 
-		newsum->column = malloc(strlen(rowcol)+1);
-		newsum->row = malloc(strlen(rowcol)+1);
+		newsum->column = (char *) malloc(strlen(rowcol)+1);
+		newsum->row = (char *) malloc(strlen(rowcol)+1);
 		sscanf(rowcol, "%s %s", newsum->row, newsum->column);
 		newsum->next = NULL;
 
@@ -832,7 +833,7 @@ dispsummary_t *init_displaysummary(char *fn)
 void getnamelink(char *l, char **name, char **link)
 {
 	/* "page NAME title-or-link" splitup */
-	unsigned char *p;
+	char *p;
 
 	dprintf("getnamelink(%s, ...)\n", textornull(l));
 
@@ -854,7 +855,7 @@ void getnamelink(char *l, char **name, char **link)
 void getparentnamelink(char *l, bbgen_page_t *toppage, bbgen_page_t **parent, char **name, char **link)
 {
 	/* "subparent NAME PARENTNAME title-or-link" splitup */
-	unsigned char *p;
+	char *p;
 	char *parentname;
 	pagelist_t *walk;
 
@@ -902,7 +903,7 @@ void getgrouptitle(char *l, char *pageset, char **title, char **onlycols)
 	dprintf("getgrouptitle(%s, ...)\n", textornull(l));
 
 	if (strncmp(l, grouponlytag, strlen(grouponlytag)) == 0) {
-		unsigned char *p;
+		char *p;
 
 		*onlycols = skipwhitespace(skipword(l));
 
@@ -960,13 +961,13 @@ link_t *load_all_links(void)
 
 	if (getenv("BBNOTESSKIN")) notesskin = malcop(getenv("BBNOTESSKIN"));
 	else { 
-		notesskin = malloc(strlen(getenv("BBWEB")) + strlen("/notes") + 1);
+		notesskin = (char *) malloc(strlen(getenv("BBWEB")) + strlen("/notes") + 1);
 		sprintf(notesskin, "%s/notes", getenv("BBWEB"));
 	}
 
 	if (getenv("BBHELPSKIN")) helpskin = malcop(getenv("BBHELPSKIN"));
 	else { 
-		helpskin = malloc(strlen(getenv("BBWEB")) + strlen("/help") + 1);
+		helpskin = (char *) malloc(strlen(getenv("BBWEB")) + strlen("/help") + 1);
 		sprintf(helpskin, "%s/help", getenv("BBWEB"));
 	}
 
@@ -1194,7 +1195,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 					larrdgraphs = malcop(tag+strlen("LARRD:"));
 				else if (argnmatch(tag, "NAME:")) {
 					p = tag+strlen("NAME:");
-					displayname = malloc(strlen(l));
+					displayname = (char *) malloc(strlen(l));
 					if (*p == '\"') {
 						p++;
 						strcpy(displayname, p);
@@ -1215,7 +1216,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				}
 				else if (argnmatch(tag, "COMMENT:")) {
 					p = tag+strlen("COMMENT:");
-					comment = malloc(strlen(l));
+					comment = (char *) malloc(strlen(l));
 					if (*p == '\"') {
 						p++;
 						strcpy(comment, p);

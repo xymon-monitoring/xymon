@@ -8,6 +8,8 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
+static char rcsid[] = "$Id: bbhostshow.c,v 1.2 2003-08-12 21:16:05 henrik Exp $";
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.84 2003-08-11 06:23:21 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.85 2003-08-12 21:16:05 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -61,9 +61,9 @@ char *hf_prefix[3];            /* header/footer prefixes for BB, BB2, BBNK pages
 
 void select_headers_and_footers(char *prefix)
 {
-	hf_prefix[PAGE_BB]  = malloc(strlen(prefix)+1); sprintf(hf_prefix[PAGE_BB],  "%s",   prefix);
-	hf_prefix[PAGE_BB2] = malloc(strlen(prefix)+2); sprintf(hf_prefix[PAGE_BB2], "%s2",  prefix);
-	hf_prefix[PAGE_NK]  = malloc(strlen(prefix)+3); sprintf(hf_prefix[PAGE_NK],  "%snk", prefix);
+	hf_prefix[PAGE_BB]  = (char *) malloc(strlen(prefix)+1); sprintf(hf_prefix[PAGE_BB],  "%s",   prefix);
+	hf_prefix[PAGE_BB2] = (char *) malloc(strlen(prefix)+2); sprintf(hf_prefix[PAGE_BB2], "%s2",  prefix);
+	hf_prefix[PAGE_NK]  = (char *) malloc(strlen(prefix)+3); sprintf(hf_prefix[PAGE_NK],  "%snk", prefix);
 }
 
 
@@ -83,7 +83,7 @@ int interesting_column(int pagetype, int color, int alert, char *columnname, cha
 			char *search;
 
 			/* loaddata::init_group guarantees that onlycols start and end with a '|' */
-			search = malloc(strlen(columnname)+3);
+			search = (char *) malloc(strlen(columnname)+3);
 			sprintf(search, "|%s|", columnname);
 			result = (strstr(onlycols, search) != NULL);
 			free(search);
@@ -101,7 +101,7 @@ int interesting_column(int pagetype, int color, int alert, char *columnname, cha
 
 	if (includecolumns) {
 		/* includecolumns are other columns to include always on non-BB pages (bb2, bbnk) */
-		char *col1 = malloc(strlen(columnname)+3); /* 3 = 2 commas and a NULL */
+		char *col1 = (char *) malloc(strlen(columnname)+3); /* 3 = 2 commas and a NULL */
 		int result;
 
 		sprintf(col1, ",%s,", columnname);
@@ -147,7 +147,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 
 	/* Code de-obfuscation trick: Add a null record as the head item */
 	/* Simplifies handling since head != NULL and we never have to insert at head of list */
-	head = malloc(sizeof(col_list_t));
+	head = (col_list_t *) malloc(sizeof(col_list_t));
 	head->column = &null_column;
 	head->next = NULL;
 
@@ -176,7 +176,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 
 				for (col = colhead; (col && (strcmp(p1, col->name) != 0)); col = col->next);
 				if (col) {
-					newlistitem = malloc(sizeof(col_list_t));
+					newlistitem = (col_list_t *) malloc(sizeof(col_list_t));
 					newlistitem->column = col;
 					newlistitem->next = NULL;
 					collist_walk->next = newlistitem;
@@ -213,7 +213,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 
 				if ((collist_walk->next == NULL) || ((col_list_t *)(collist_walk->next))->column != e->column) {
 					/* collist_walk points to the entry before the new one */
-					newlistitem = malloc(sizeof(col_list_t));
+					newlistitem = (col_list_t *) malloc(sizeof(col_list_t));
 					newlistitem->column = e->column;
 					newlistitem->next = collist_walk->next;
 					collist_walk->next = newlistitem;
@@ -604,7 +604,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 			for (s2 = sums; (s2); s2 = s2->next) {
 				
 				if (strcmp(s2->row, s->row) == 0) {
-					newentry = malloc(sizeof(entry_t));
+					newentry = (entry_t *) malloc(sizeof(entry_t));
 
 					newentry->column = find_or_create_column(s2->column);
 					newentry->color = s2->color;
@@ -889,7 +889,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 				fseek(eventlog, -maxcount*80, SEEK_CUR); 
 				fgets(l, sizeof(l), eventlog); /* Skip to start of line */
 				fgets(l, sizeof(l), eventlog);
-				sscanf(l, "%*s %*s %lu %*u %*u %*s %*s %*d", &curtime);
+				sscanf(l, "%*s %*s %u %*u %*u %*s %*s %*d", (unsigned int *)&curtime);
 				done = (curtime < cutoff);
 			}
 			else {
@@ -899,14 +899,16 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 		} while (!done);
 	}
 	
-	events = malloc(maxcount*sizeof(event_t));
+	events = (event_t *) malloc(maxcount*sizeof(event_t));
 	eventintime_count = num = 0;
 
 	while (fgets(l, sizeof(l), eventlog)) {
 
-		sscanf(l, "%s %s %lu %lu %lu %s %s %d",
+		sscanf(l, "%s %s %u %u %u %s %s %d",
 			events[num].hostname, events[num].service,
-			&events[num].eventtime, &events[num].changetime, &events[num].duration, 
+			(unsigned int *)&events[num].eventtime, 
+			(unsigned int *)&events[num].changetime, 
+			(unsigned int *)&events[num].duration, 
 			newcol, oldcol, &events[num].state);
 
 		if ((events[num].eventtime > cutoff) && find_host(events[num].hostname) && wanted_eventcolumn(events[num].service)) {
@@ -1027,7 +1029,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 		fgets(dummy, sizeof(dummy), acklog);
 	}
 
-	acks = malloc(maxcount*sizeof(ack_t));
+	acks = (ack_t *) malloc(maxcount*sizeof(ack_t));
 	ackintime_count = num = 0;
 
 	while (fgets(l, sizeof(l), acklog)) {
@@ -1040,8 +1042,8 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 			int c_used;
 			char *p, *p1;
 
-			sscanf(l, "%lu\t%d\t%d\t%d\t%s\t%s\t%s\t%n",
-				&acks[num].acktime, &acks[num].acknum,
+			sscanf(l, "%u\t%d\t%d\t%d\t%s\t%s\t%s\t%n",
+				(unsigned int *)&acks[num].acktime, &acks[num].acknum,
 				&acks[num].duration, &acks[num].acknum2,
 				ackedby, hosttest, color, &c_used);
 
@@ -1173,7 +1175,7 @@ int do_bb2_page(char *filename, int summarytype)
 {
 	bbgen_page_t	bb2page;
 	FILE		*output;
-	char		*tmpfilename = malloc(strlen(filename)+5);
+	char		*tmpfilename = (char *) malloc(strlen(filename)+5);
 	hostlist_t 	*h;
 
 	/* Build a "page" with the hosts that should be included in bb2 page */
@@ -1222,7 +1224,7 @@ int do_bb2_page(char *filename, int summarytype)
 
 			/* We need to create a copy of the original record, */
 			/* as we will diddle with the pointers */
-			newhost = malloc(sizeof(host_t));
+			newhost = (host_t *) malloc(sizeof(host_t));
 			memcpy(newhost, h->hostentry, sizeof(host_t));
 			newhost->next = NULL;
 

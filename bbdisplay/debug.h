@@ -22,14 +22,7 @@
 extern int debug;
 extern int timing;
 
-#ifdef DEBUG
 extern void dprintf(const char *fmt, ...);
-#else
-/* We want dprintf completely optimized away if not -DDEBUG. Thanks, Linus */
-#define dprintf(fmt,arg...) \
-	do { } while (0)
-#endif
-
 extern void add_timestamp(const char *msg);
 extern void show_timestamps(char **buffer);
 extern long total_runtime(void);

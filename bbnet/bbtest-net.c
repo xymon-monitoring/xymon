@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.88 2003-08-11 06:55:53 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.89 2003-08-12 21:16:05 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -166,10 +166,9 @@ service_t *add_service(char *name, int port, int namelen, int toolid)
 {
 	service_t *svc;
 
-	svc = malloc(sizeof(service_t));
+	svc = (service_t *) malloc(sizeof(service_t));
 	svc->portnum = port;
-	svc->testname = malloc(strlen(name)+1);
-	strcpy(svc->testname, name);
+	svc->testname = malcop(name); 
 	svc->toolid = toolid;
 	svc->namelen = namelen;
 	svc->items = NULL;
@@ -192,8 +191,7 @@ void load_services(void)
 	char *netsvcs;
 	char *p;
 
-	netsvcs = malloc(strlen(getenv("BBNETSVCS"))+1);
-	strcpy(netsvcs, getenv("BBNETSVCS"));
+	netsvcs = malcop(getenv("BBNETSVCS"));
 
 	p = strtok(netsvcs, " ");
 	while (p) {
@@ -203,7 +201,7 @@ void load_services(void)
 	free(netsvcs);
 
 	/* Save NONETPAGE env. var in ",test1,test2," format for easy and safe grepping */
-	nonetpage = malloc(strlen(getenv("NONETPAGE"))+3);
+	nonetpage = (char *) malloc(strlen(getenv("NONETPAGE"))+3);
 	sprintf(nonetpage, ",%s,", getenv("NONETPAGE"));
 	for (p=nonetpage; (*p); p++) if (*p == ' ') *p = ',';
 }
@@ -214,7 +212,7 @@ testedhost_t *init_testedhost(char *hostname, int timeout, int conntimeout, int 
 	testedhost_t *newhost;
 
 	hostcount++;
-	newhost = malloc(sizeof(testedhost_t));
+	newhost = (testedhost_t *) malloc(sizeof(testedhost_t));
 	newhost->hostname = malcop(hostname);
 	newhost->ip[0] = '\0';
 	newhost->conntimeout = conntimeout;
@@ -251,7 +249,7 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *testspec
 	testitem_t *newtest;
 
 	testcount++;
-	newtest = malloc(sizeof(testitem_t));
+	newtest = (testitem_t *) malloc(sizeof(testitem_t));
 	newtest->host = host;
 	newtest->service = service;
 	newtest->dialup = dialuptest;
@@ -259,7 +257,7 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *testspec
 	newtest->alwaystrue = alwaystruetest;
 	newtest->silenttest = silenttest;
 	newtest->testspec = testspec;
-	newtest->private = NULL;
+	newtest->privdata = NULL;
 	newtest->open = 0;
 	newtest->testresult = NULL;
 	newtest->banner = NULL;
@@ -305,7 +303,7 @@ void load_tests(void)
 	/* Each network test tagged with NET:locationname */
 	p = getenv("BBLOCATION");
 	if (p) {
-		netstring = malloc(strlen(p)+5);
+		netstring = (char *) malloc(strlen(p)+5);
 		sprintf(netstring, "NET:%s", p);
 	}
 	else {
@@ -353,7 +351,7 @@ void load_tests(void)
 				h = init_testedhost(hostname, timeout, conntimeout, 
 						    (strstr(p, "SLA=") ? within_sla(p, "SLA", 1) : !within_sla(p, "DOWNTIME", 0)) );
 				anytests = 0;
-				badsaves = malloc(strlen(p)+1); *badsaves = '\0';
+				badsaves = (char *) malloc(strlen(p)+1); *badsaves = '\0';
 
 				testspec = strtok(p, "\t ");
 				while (testspec) {
@@ -478,7 +476,7 @@ void load_tests(void)
 							 * According to BB docs, this type of services must be in
 							 * BBNETSVCS - so it is known already.
 							 */
-							int specialport;
+							int specialport = 0;
 							char *specialname;
 							char *opt2 = strrchr(option, ':');
 
@@ -502,7 +500,7 @@ void load_tests(void)
 							}
 
 							if (specialport) {
-								specialname = malloc(strlen(s->testname)+10);
+								specialname = (char *) malloc(strlen(s->testname)+10);
 								sprintf(specialname, "%s_%d", s->testname, specialport);
 								s = add_service(specialname, specialport, strlen(s->testname), TOOL_CONTEST);
 								free(specialname);
@@ -675,7 +673,7 @@ void load_fping_status(void)
 	if (statusfd == NULL) return;
 
 	while (fgets(l, sizeof(l), statusfd)) {
-		if (sscanf(l, "%s %d %lu", host, &downcount, &downstart) == 3) {
+		if (sscanf(l, "%s %d %u", host, &downcount, (unsigned int *)&downstart) == 3) {
 			for (h=testhosthead; (h && (strcmp(h->hostname, host) != 0)); h = h->next) ;
 			if (h && !h->noping && !h->noconn) {
 				h->downcount = downcount;
@@ -726,7 +724,7 @@ void load_test_status(service_t *test)
 	if (statusfd == NULL) return;
 
 	while (fgets(l, sizeof(l), statusfd)) {
-		if (sscanf(l, "%s %d %lu", host, &downcount, &downstart) == 3) {
+		if (sscanf(l, "%s %d %u", host, &downcount, (unsigned int *) &downstart) == 3) {
 			for (h=testhosthead; (h && (strcmp(h->hostname, host) != 0)); h = h->next) ;
 			if (h) {
 				if (test == httptest) walk = h->firsthttp;
@@ -802,7 +800,7 @@ int run_command(char *cmd, char *errortext, char **banner)
 	int	piperes;
 
 	result = 0;
-	if (banner) { *banner = malloc(1024); sprintf(*banner, "Command: %s\n\n", cmd); }
+	if (banner) { *banner = (char *) malloc(1024); sprintf(*banner, "Command: %s\n\n", cmd); }
 	cmdpipe = popen(cmd, "r");
 	if (cmdpipe == NULL) {
 		errprintf("Could not open pipe for command %s\n", cmd);
@@ -927,8 +925,7 @@ int run_fping_service(service_t *service)
 			for (t=service->items; (t); t = t->next) {
 				if (strcmp(t->host->ip, hostname) == 0) {
 					t->open = (strstr(l, "is alive") != NULL);
-					t->banner = malloc(strlen(l)+1);
-					strcpy(t->banner, l);
+					t->banner = malcop(l);
 				}
 			}
 		}
@@ -1081,7 +1078,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 		char *nopagename;
 
 		/* Check if this service is a NOPAGENET service. */
-		nopagename = malloc(strlen(svcname)+3);
+		nopagename = (char *) malloc(strlen(svcname)+3);
 		sprintf(nopagename, ",%s,", svcname);
 		if (strstr(nonetpage, svcname) != NULL) color = COL_YELLOW;
 		free(nopagename);
@@ -1114,8 +1111,7 @@ void send_results(service_t *service, int failgoesclear)
 	char		causetext[1024];
 	char		*svcname;
 
-	svcname = malloc(strlen(service->testname)+1);
-	strcpy(svcname, service->testname);
+	svcname = malcop(service->testname);
 	if (service->namelen) svcname[service->namelen] = '\0';
 
 	dprintf("Sending results for service %s\n", svcname);
@@ -1393,7 +1389,7 @@ int main(int argc, char *argv[])
 		}
 		else {
 			/* Must be a hostname */
-			if (selectedcount == 0) selectedhosts = malloc(argc*sizeof(char *));
+			if (selectedcount == 0) selectedhosts = (char **) malloc(argc*sizeof(char *));
 			selectedhosts[selectedcount++] = malcop(argv[argi]);
 		}
 	}

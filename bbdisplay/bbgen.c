@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.145 2003-08-11 21:11:29 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.146 2003-08-12 21:16:05 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -131,17 +131,17 @@ int main(int argc, char *argv[])
 
 		else if (argnmatch(argv[i], "--ignorecolumns=")) {
 			char *lp = strchr(argv[i], '=');
-			ignorecolumns = malloc(strlen(lp)+2);
+			ignorecolumns = (char *) malloc(strlen(lp)+2);
 			sprintf(ignorecolumns, ",%s,", (lp+1));
 		}
 		else if (argnmatch(argv[i], "--includecolumns=")) {
 			char *lp = strchr(argv[i], '=');
-			includecolumns = malloc(strlen(lp)+2);
+			includecolumns = (char *) malloc(strlen(lp)+2);
 			sprintf(includecolumns, ",%s,", (lp+1));
 		}
 		else if (argnmatch(argv[i], "--eventignore=")) {
 			char *lp = strchr(argv[i], '=');
-			eventignorecolumns = malloc(strlen(lp)+2);
+			eventignorecolumns = (char *) malloc(strlen(lp)+2);
 			sprintf(eventignorecolumns, ",%s,", (lp+1));
 		}
 		else if (argnmatch(argv[i], "--doccgi=")) {
@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 
 			if (lp) {
-				wapcolumns = malloc(strlen(lp)+2);
+				wapcolumns = (char *) malloc(strlen(lp)+2);
 				sprintf(wapcolumns, ",%s,", (lp+1));
 			}
 			enable_wmlgen = 1;
@@ -189,7 +189,9 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[i], "--reportopts=")) {
 			char style[MAX_LINE_LEN];
 
-			int count = sscanf(argv[i], "--reportopts=%lu:%lu:%d:%s", &reportstart, &reportend, &dynamicreport, style);
+			int count = sscanf(argv[i], "--reportopts=%u:%u:%d:%s", 
+					   (unsigned int *)&reportstart, (unsigned int *)&reportend, 
+					   &dynamicreport, style);
 
 			if (count < 1) reportstart = 788918400;	/* 01-Jan-1995 00:00 GMT */
 			if (count < 2) reportend = time(NULL);
@@ -256,18 +258,18 @@ int main(int argc, char *argv[])
 
 		else if (argnmatch(argv[i], "--noprop=")) {
 			char *lp = strchr(argv[i], '=');
-			nopropyellowdefault = malloc(strlen(lp)+2);
+			nopropyellowdefault = (char *) malloc(strlen(lp)+2);
 			sprintf(nopropyellowdefault, ",%s,", (lp+1));
 			errprintf("--noprop is deprecated - use --nopropyellow instead\n");
 		}
 		else if (argnmatch(argv[i], "--nopropyellow=")) {
 			char *lp = strchr(argv[i], '=');
-			nopropyellowdefault = malloc(strlen(lp)+2);
+			nopropyellowdefault = (char *) malloc(strlen(lp)+2);
 			sprintf(nopropyellowdefault, ",%s,", (lp+1));
 		}
 		else if (argnmatch(argv[i], "--nopropred=")) {
 			char *lp = strchr(argv[i], '=');
-			nopropreddefault = malloc(strlen(lp)+2);
+			nopropreddefault = (char *) malloc(strlen(lp)+2);
 			sprintf(nopropreddefault, ",%s,", (lp+1));
 		}
 
@@ -346,7 +348,7 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 			if (*(lp+1) == '/') purplelogfn = malcop(lp+1);
 			else {
-				purplelogfn = malloc(strlen(getenv("BBHOME"))+1+strlen(lp+1)+1);
+				purplelogfn = (char *) malloc(strlen(getenv("BBHOME"))+1+strlen(lp+1)+1);
 				sprintf(purplelogfn, "%s/%s", getenv("BBHOME"), (lp+1));
 			}
 		}
@@ -415,9 +417,7 @@ int main(int argc, char *argv[])
 			printf("    --rssversion={0.91|0.92|1.0|2.0} : Specify RSS/RDF version (default: 0.91)\n");
 			printf("\nDebugging options:\n");
 			printf("    --timing                    : Collect timing information\n");
-#ifdef DEBUG
 			printf("    --debug                     : Debugging information\n");
-#endif
 			printf("    --version                   : Show version information\n");
 			printf("    --purplelog=FILENAME        : Create a log of purple hosts and tests\n");
 			exit(0);
@@ -428,8 +428,7 @@ int main(int argc, char *argv[])
 
 		else {
 			/* Last argument is pagedir */
-			pagedir = malloc(strlen(argv[i])+1);
-			strcpy(pagedir, argv[i]);
+			pagedir = malcop(argv[i]);
 		}
 	}
 
@@ -442,11 +441,11 @@ int main(int argc, char *argv[])
 	envcheck(reqenv);
 
 	if (pagedir == NULL) {
-		pagedir = malloc(strlen(getenv("BBHOME"))+5);
+		pagedir = (char *) malloc(strlen(getenv("BBHOME"))+5);
 		sprintf(pagedir, "%s/www", getenv("BBHOME"));
 	}
 	if (rrddir == NULL) {
-		rrddir = malloc(strlen(getenv("BBVAR"))+5);
+		rrddir = (char *) malloc(strlen(getenv("BBVAR"))+5);
 		sprintf(rrddir, "%s/rrd", getenv("BBVAR"));
 	}
 

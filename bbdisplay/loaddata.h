@@ -20,9 +20,9 @@
 #define __LOADDATA_H_
 
 /* List definition to search for page records */
-typedef struct {
-	bbgen_page_t *pageentry;
-	void *next;
+typedef struct pagelist_t {
+	struct bbgen_page_t *pageentry;
+	struct pagelist_t *next;
 } pagelist_t;
 
 extern int hostcount;

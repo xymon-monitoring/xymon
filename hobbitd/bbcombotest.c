@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.8 2003-07-19 16:28:01 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.9 2003-08-12 21:16:05 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -24,13 +24,13 @@ static char rcsid[] = "$Id: bbcombotest.c,v 1.8 2003-07-19 16:28:01 henrik Exp $
 #include "calc.h"
 #include "sendmsg.h"
 
-typedef struct {
+typedef struct value_t {
 	char *symbol;
 	int color;
-	void *next;
+	struct value_t *next;
 } value_t;
 
-typedef struct {
+typedef struct testspec_t {
 	char *reshostname;
 	char *restestname;
 	char *expression;
@@ -38,7 +38,7 @@ typedef struct {
 	char *resultexpr;
 	value_t *valuelist;
 	long result;
-	void *next;
+	struct testspec_t *next;
 } testspec_t;
 
 static testspec_t *testhead = NULL;
@@ -89,7 +89,7 @@ static void loadtests(void)
 		/* Ignore empty lines and comment lines */
 		for (p=l; (*p && isspace((int)*p)); p++) ;
 		if (*p && (*p != '#')) {
-			testspec_t *newtest = malloc(sizeof(testspec_t));
+			testspec_t *newtest = (testspec_t *) malloc(sizeof(testspec_t));
 
 			p = strchr(l, '=');
 			if (p) {
@@ -193,7 +193,7 @@ static long evaluate(char *symbolicexpr, char **resultexpr, value_t **valuelist)
 				sprintf(outp, "%ld", oneval);
 				outp += strlen(outp);
 
-				newval = malloc(sizeof(value_t));
+				newval = (value_t *) malloc(sizeof(value_t));
 				newval->symbol = malcop(symbol);
 				newval->color = onecolor;
 				newval->next = NULL;

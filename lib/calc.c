@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: calc.c,v 1.4 2003-07-02 10:54:31 henrik Exp $";
+static char rcsid[] = "$Id: calc.c,v 1.5 2003-08-12 21:16:05 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -35,7 +35,7 @@ long compute(char *expression, int *error)
 	if (*error) return -1;
 
 	/* Copy expression except whitespace */
-	exp = malloc(strlen(expression)+1);
+	exp = (char *) malloc(strlen(expression)+1);
 	inp = expression; outp=exp;
 	do {
 		if (!isspace((int) *inp)) { *outp = *inp; outp++; }

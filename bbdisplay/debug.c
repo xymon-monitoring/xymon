@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.22 2003-06-06 08:09:28 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.23 2003-08-12 21:16:05 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -32,19 +32,19 @@ static char rcsid[] = "$Id: debug.c,v 1.22 2003-06-06 08:09:28 henrik Exp $";
 int debug = 0;
 int timing = 0;
 
-typedef struct {
+typedef struct timestamp_t {
 	char		*eventtext;
 	struct timeval 	eventtime;
-	void		*prev;
-	void		*next;
+	struct timestamp_t *prev;
+	struct timestamp_t *next;
 } timestamp_t;
 
 static timestamp_t *stamphead = NULL;
 static timestamp_t *stamptail = NULL;
 
-#ifdef DEBUG
 void dprintf(const char *fmt, ...)
 {
+#ifdef DEBUG
 	va_list args;
 
 	if (debug) {
@@ -53,15 +53,15 @@ void dprintf(const char *fmt, ...)
 		va_end(args);
 		fflush(stdout);
 	}
-}
 #endif
+}
 
 void add_timestamp(const char *msg)
 {
 	struct timezone tz;
 
 	if (timing) {
-		timestamp_t *newstamp = malloc(sizeof(timestamp_t));
+		timestamp_t *newstamp = (timestamp_t *) malloc(sizeof(timestamp_t));
 
 		gettimeofday(&newstamp->eventtime, &tz);
 		newstamp->eventtext = malcop(msg);
@@ -83,7 +83,7 @@ void show_timestamps(char **buffer)
 {
 	timestamp_t *s;
 	long difsec, difusec;
-	char *outbuf = malloc(4096);
+	char *outbuf = (char *) malloc(4096);
 	int outbuflen = 4096;
 	char buf1[80];
 
@@ -114,7 +114,7 @@ void show_timestamps(char **buffer)
 
 		if ((outbuflen - strlen(outbuf)) < 200) {
 			outbuflen += 4096;
-			outbuf = realloc(outbuf, outbuflen);
+			outbuf = (char *) realloc(outbuf, outbuflen);
 		}
 	}
 

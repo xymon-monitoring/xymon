@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.16 2003-07-19 16:28:01 henrik Exp $";
+static char rcsid[] = "$Id: process.c,v 1.17 2003-08-12 21:16:05 henrik Exp $";
 
 #include <string.h>
 #include <sys/types.h>
@@ -38,7 +38,7 @@ static int wantedcolumn(char *current, char *wanted)
 	char *tag;
 	int result;
 
-	tag = malloc(strlen(current)+3);
+	tag = (char *) malloc(strlen(current)+3);
 	sprintf(tag, "|%s|", current);
 	result = (strstr(wanted, tag) != NULL);
 

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.36 2003-07-27 11:38:41 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.37 2003-08-12 21:16:05 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -142,7 +142,8 @@ void add_http_test(testitem_t *t)
 	 */
 
 	/* Allocate the private data and initialize it */
-	t->private = req = malloc(sizeof(http_data_t));
+	req = (http_data_t *) malloc(sizeof(http_data_t));
+	t->privdata = (void *) req;
 	req->url = malcop(realurl(t->testspec, &proxy, &ip, &hosthdr));
 	if (proxy) req->proxy = malcop(proxy); else req->proxy = NULL;
 	if (ip) req->ip = malcop(ip); else req->ip = NULL;
@@ -183,7 +184,7 @@ void add_http_test(testitem_t *t)
 		if (contentfd) {
 			if (fgets(l, sizeof(l), contentfd)) {
 				p = strchr(l, '\n'); if (p) { *p = '\0'; };
-				req->exp = malloc(sizeof(regex_t));
+				req->exp = (regex_t *) malloc(sizeof(regex_t));
 				status = regcomp(req->exp, l, REG_EXTENDED|REG_NOSUB);
 				if (status) {
 					errprintf("Failed to compile regexp '%s' for URL %s\n", p, req->url);
@@ -203,7 +204,7 @@ void add_http_test(testitem_t *t)
 	else if (strncmp(t->testspec, "cont;", 5) == 0) {
 		char *p = strrchr(t->testspec, ';');
 		if (p) {
-			req->exp = malloc(sizeof(regex_t));
+			req->exp = (regex_t *) malloc(sizeof(regex_t));
 			status = regcomp(req->exp, p+1, REG_EXTENDED|REG_NOSUB);
 			if (status) {
 				errprintf("Failed to compile regexp '%s' for URL %s\n", p+1, req->url);
@@ -223,7 +224,7 @@ void add_http_test(testitem_t *t)
 		if (p) {
 			/* It is legal not to specify anything for the expected output from a POST */
 			if (strlen(p+1) > 0) {
-				req->exp = malloc(sizeof(regex_t));
+				req->exp = (regex_t *) malloc(sizeof(regex_t));
 				status = regcomp(req->exp, p+1, REG_EXTENDED|REG_NOSUB);
 				if (status) {
 					errprintf("Failed to compile regexp '%s' for URL %s\n", p+1, req->url);
@@ -313,13 +314,13 @@ static size_t hdr_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 	if (logfd) fprintf(logfd, "%s", (char *)ptr);
 
 	if (req->headers == NULL) {
-		req->headers = malloc(count+1);
+		req->headers = (char *) malloc(count+1);
 		memcpy(req->headers, ptr, count);
 		*(req->headers+count) = '\0';
 	}
 	else {
 		size_t buflen = strlen(req->headers);
-		req->headers = realloc(req->headers, buflen+count+1);
+		req->headers = (char *) realloc(req->headers, buflen+count+1);
 		memcpy(req->headers+buflen, ptr, count);
 		*(req->headers+buflen+count) = '\0';
 	}
@@ -346,13 +347,13 @@ static size_t data_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 	}
 
 	if (req->output == NULL) {
-		req->output = malloc(count+1);
+		req->output = (char *) malloc(count+1);
 		memcpy(req->output, ptr, count);
 		*(req->output+count) = '\0';
 	}
 	else {
 		size_t buflen = strlen(req->output);
-		req->output = realloc(req->output, buflen+count+1);
+		req->output = (char *) realloc(req->output, buflen+count+1);
 		memcpy(req->output+buflen, ptr, count);
 		*(req->output+buflen+count) = '\0';
 	}
@@ -374,13 +375,13 @@ static int debug_callback(CURL *handle, curl_infotype type, char *data, size_t s
 
 		if (req->logcert) {
 			if (req->sslinfo == NULL) {
-				req->sslinfo = malloc(size+1);
+				req->sslinfo = (char *) malloc(size+1);
 				memcpy(req->sslinfo, data, size);
 				*(req->sslinfo+size) = '\0';
 			}
 			else {
 				size_t buflen = strlen(req->sslinfo);
-				req->sslinfo = realloc(req->sslinfo, buflen+size+1);
+				req->sslinfo = (char *) realloc(req->sslinfo, buflen+size+1);
 				memcpy(req->sslinfo+buflen, data, size);
 				*(req->sslinfo+buflen+size) = '\0';
 			}
@@ -409,8 +410,8 @@ static int debug_callback(CURL *handle, curl_infotype type, char *data, size_t s
 			gmtofs = (t2-t1);
 
 			req->sslexpire += gmtofs;
-			// printf("Output says it expires: %s", p);
-			// printf("I think it expires at (localtime) %s\n", asctime(localtime(&req->sslexpire)));
+			dprintf("Output says it expires: %s", p);
+			dprintf("I think it expires at (localtime) %s\n", asctime(localtime(&req->sslexpire)));
 		}
 
 	}
@@ -435,7 +436,7 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 	for (t = httptest->items; (t); t = t->next) {
 		struct curl_slist *slist = NULL;
 
-		req = t->private;
+		req = (http_data_t *) t->privdata;
 		
 		req->curl = curl_easy_init();
 		if (req->curl == NULL) {
@@ -515,7 +516,7 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 		res = curl_easy_perform(req->curl);
 		if (res != 0) {
 			/* Some error occurred */
-			req->headers = malloc(strlen(req->errorbuffer) + 20);
+			req->headers = (char *) malloc(strlen(req->errorbuffer) + 20);
 			sprintf(req->headers, "Error %3d: %s\n\n", res, req->errorbuffer);
 			if (logfd) fprintf(logfd, "Error %d: %s\n", res, req->errorbuffer);
 			t->open = 0;
@@ -550,7 +551,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 	char    *nopagename;
 	int     nopage = 0;
 	int 	contentnum = 0;
-	char 	*conttest = malloc(strlen(contenttestname)+5);
+	char 	*conttest = (char *) malloc(strlen(contenttestname)+5);
 	time_t  now = time(NULL);
 	testitem_t *http1 = host->firsthttp;
 	int	anydown = 0;
@@ -558,7 +559,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 	if (http1 == NULL) return;
 
 	/* Check if this service is a NOPAGENET service. */
-	nopagename = malloc(strlen(httptest->testname)+3);
+	nopagename = (char *) malloc(strlen(httptest->testname)+3);
 	sprintf(nopagename, ",%s,", httptest->testname);
 	nopage = (strstr(nonetpage, httptest->testname) != NULL);
 	free(nopagename);
@@ -566,7 +567,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 	dprintf("Calc http color host %s : ", host->hostname);
 	msgtext[0] = '\0';
 	for (t=host->firsthttp; (t && (t->host == host)); t = t->next) {
-		http_data_t *req = t->private;
+		http_data_t *req = (http_data_t *) t->privdata;
 
 		req->httpcolor = statuscolor(host, req->httpstatus);
 		if (req->httpcolor == COL_RED) anydown++;
@@ -634,7 +635,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 	addtostatus("\n");
 
 	for (t=host->firsthttp; (t && (t->host == host)); t = t->next) {
-		http_data_t *req = t->private;
+		http_data_t *req = (http_data_t *) t->privdata;
 
 		if (req->ip == NULL) {
 			sprintf(msgline, "\n&%s %s - %s\n", colorname(req->httpcolor), req->url,
@@ -657,7 +658,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 	finish_status();
 	
 	for (t=host->firsthttp; (t && (t->host == host)); t = t->next) {
-		http_data_t *req = t->private;
+		http_data_t *req = (http_data_t *) t->privdata;
 		char cause[100];
 		int got_data = 1;
 
@@ -745,7 +746,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 
 	color = -1;
 	for (t=host->firsthttp; (t && (t->host == host)); t = t->next) {
-		http_data_t *req = t->private;
+		http_data_t *req = (http_data_t *) t->privdata;
 
 		if (req->sslinfo && (req->sslexpire > 0)) {
 			req->sslcolor = COL_GREEN;
@@ -764,7 +765,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 		addtostatus(msgline);
 
 		for (t=host->firsthttp; (t && (t->host == host)); t = t->next) {
-			http_data_t *req = t->private;
+			http_data_t *req = (http_data_t *) t->privdata;
 
 			if (req->sslinfo && (req->sslexpire > 0)) {
 				if (req->sslexpire > now) {
@@ -793,7 +794,7 @@ void show_http_test_results(service_t *httptest)
 	testitem_t *t;
 
 	for (t = httptest->items; (t); t = t->next) {
-		req = t->private;
+		req = (http_data_t *) t->privdata;
 
 		printf("URL                      : %s\n", req->url);
 		printf("Req. SSL version/ciphers : %d/%s\n", req->sslversion, req->ciphers);

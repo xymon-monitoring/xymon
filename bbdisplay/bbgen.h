@@ -22,7 +22,7 @@
 #include <time.h>
 #include <stddef.h>
 
-#define VERSION "2.7"
+#define VERSION "2.8pre"
 
 /* Structure defs for bbgen */
 
@@ -143,40 +143,40 @@
 
 
 /* Info-link definitions. */
-typedef struct {
+typedef struct link_t {
 	char	*name;
 	char	*filename;
 	char	*urlprefix;	/* "/help", "/notes" etc. */
-	void	*next;
+	struct link_t	*next;
 } link_t;
 
-typedef struct {
+typedef struct rrdlayout_t {
 	char *name;
 	char *partname;
 	int  maxgraphs;
 } rrdlayout_t;
 
-typedef struct {
-	rrdlayout_t *rrdname;
+typedef struct rrd_t {
+	struct rrdlayout_t *rrdname;
 	int     count;
-	void	*next;
+	struct rrd_t	*next;
 } rrd_t;
 
 /* Column definitions.                     */
 /* Basically a list of all possible column */
 /* names with links to their help-texts    */
-typedef struct {
-	char	*name;
-	link_t	*link;
-	void	*next;
+typedef struct bbgen_col_t {
+	char		*name;
+	struct link_t		*link;
+	struct bbgen_col_t	*next;
 } bbgen_col_t;
 
-typedef struct {
-	bbgen_col_t	*column;
-	void	*next;
+typedef struct col_list_t {
+	struct bbgen_col_t	*column;
+	struct col_list_t	*next;
 } col_list_t;
 
-typedef struct {
+typedef struct reportinfo_t {
 	char *fstate;
 	time_t reportstart;
 	int count[COL_COUNT];
@@ -191,22 +191,22 @@ typedef struct {
 	unsigned long reportduration[COL_COUNT];
 } reportinfo_t;
 
-typedef struct {
+typedef struct replog_t {
         time_t starttime;
         time_t duration;
         int color;
 	int affectssla;
         char *cause;
 	char *timespec;
-        void *next;
+        struct replog_t *next;
 } replog_t;
 
 /* Measurement entry definition               */
 /* This points to a column definition, and    */
 /* contains the actual color of a measurement */
 /* Linked list.                               */
-typedef struct {
-	bbgen_col_t *column;
+typedef struct entry_t {
+	struct bbgen_col_t *column;
 	int	color;
 	char	age[20];
 	int	oldage;
@@ -217,26 +217,26 @@ typedef struct {
 	char 	*sumurl;
 	char	*skin;
 	char	*testflags;
-	reportinfo_t *repinfo;
-	replog_t *causes;
+	struct reportinfo_t *repinfo;
+	struct replog_t *causes;
 	char    *histlogname;
-	void	*next;
+	struct entry_t	*next;
 } entry_t;
 
 /* Aux. list definition for loading state of all tests into one list */
-typedef struct {
-	entry_t	*entry;
-	void	*next;
+typedef struct state_t {
+	struct entry_t	*entry;
+	struct state_t	*next;
 } state_t;
 
-typedef struct {
+typedef struct host_t {
 	char	*hostname;
 	char	*displayname;
 	char	*comment;
 	char	ip[16];
 	int	dialup;
-	link_t	*link;
-	entry_t	*entries;
+	struct link_t	*link;
+	struct entry_t	*entries;
 	int	color;		/* Calculated */
 	int     oldage;
 	int	prefer;
@@ -248,61 +248,61 @@ typedef struct {
 	char    *nopropyellowtests;
 	char    *nopropredtests;
 	char    *rawentry;
-	rrd_t	*rrds;
+	struct rrd_t	*rrds;
 	char    *larrdgraphs;
 	char	*pretitle;
-	void	*parent;
+	struct bbgen_page_t *parent;
 	double  reportwarnlevel;
 	char	*reporttime;
-	void	*next;
+	struct host_t	*next;
 } host_t;
 
 /* Aux. list definition for quick access to host records */
-typedef struct {
-	host_t	*hostentry;
-	void    *clones;
-	void	*next;
+typedef struct hostlist_t {
+	struct host_t		*hostentry;
+	struct hostlist_t    	*clones;
+	struct hostlist_t	*next;
 } hostlist_t;
 
-typedef struct {
+typedef struct group_t {
 	char	*title;
 	char	*onlycols;
-	host_t	*hosts;
+	struct host_t	*hosts;
 	char	*pretitle;
-	void	*next;
+	struct group_t	*next;
 } group_t;
 
 
-typedef struct {
+typedef struct bbgen_page_t {
 	char	*name;
 	char	*title;
 	int	color;		/* Calculated */
 	int     oldage;
 	char	*pretitle;
-	void	*next;
-	void	*subpages;
-	void	*parent;
-	group_t	*groups;
-	host_t	*hosts;
+	struct bbgen_page_t	*next;
+	struct bbgen_page_t	*subpages;
+	struct bbgen_page_t	*parent;
+	struct group_t	*groups;
+	struct host_t	*hosts;
 } bbgen_page_t;
 
-typedef struct {
-	char	*name;
-	char	*receiver;
-	char	*url;
-	void	*next;
+typedef struct summary_t {
+	char		*name;
+	char		*receiver;
+	char		*url;
+	struct summary_t	*next;
 } summary_t;
 
-typedef struct {
-	char	*row;
-	char	*column;
-	char	*url;
-	int	color;
-	void	*next;
+typedef struct dispsummary_t {
+	char		*row;
+	char		*column;
+	char		*url;
+	int		color;
+	struct dispsummary_t	*next;
 } dispsummary_t;
 
 /* Format of records in the $BBHIST/allevents file */
-typedef struct {
+typedef struct event_t {
 	char	hostname[60];
 	char	service[20];
 	time_t	eventtime;
@@ -314,7 +314,7 @@ typedef struct {
 } event_t;
 
 /* Format of records in $BBACKS/acklog file (TAB separated) */
-typedef struct {
+typedef struct ack_t {
 	time_t	acktime;
 	int	acknum;
 	int	duration;	/* Minutes */

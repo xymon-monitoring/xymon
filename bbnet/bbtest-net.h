@@ -25,36 +25,37 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-typedef struct {
+typedef struct svcinfo_t {
 	char *svcname;
 	char *sendtxt;
 	char *exptext;
 	int  grabbanner;
 } svcinfo_t;
 
-typedef struct {
+typedef struct test_t {
 	struct sockaddr_in addr;        /* Address (IP+port) to test */
 	int  fd;                        /* Socket filedescriptor */
 	int  open;                      /* Result - is it open? */
 	int  connres;                   /* connect() status returned */
 	struct timeval timestart, duration;
-	svcinfo_t *svcinfo;             /* Points to svcinfo_t for service */
+	struct svcinfo_t *svcinfo;      /* Points to svcinfo_t for service */
 	int  silenttest;
 	int  readpending;               /* Temp status while reading banner */
 	char *banner;                   /* Banner text from service */
-	void *next;
+	struct test_t *next;
 } test_t;
 
-typedef struct {
+
+typedef struct service_t {
 	char *testname;		/* Name of the test = column name in BB report */
 	int namelen;		/* Length of name - "testname:port" has this as strlen(testname), others 0 */
 	int portnum;		/* Port number this service runs on */
 	int toolid;		/* Which tool to use */
-	void *items;		/* testitem_t linked list of tests for this service */
-	void *next;
+	struct testitem_t *items;		/* testitem_t linked list of tests for this service */
+	struct service_t *next;
 } service_t;
 
-typedef struct {
+typedef struct testedhost_t {
 	char *hostname;
 	char ip[16];
 	int conntimeout;	/* Connection timeout (http test only) */
@@ -74,33 +75,33 @@ typedef struct {
 	int downcount;		/* number of successive failed conn tests */
 	time_t downstart;	/* time() of first conn failure */
 	char *routerdeps;       /* Hosts from the "router:" tag */
-	void *deprouterdown;    /* Set if dependant router is down */
+	struct testedhost_t *deprouterdown;    /* Set if dependant router is down */
 
 	/* The following is for the HTTP tests */
-	void *firsthttp;	/* First HTTP testitem in testitem list */
+	struct testitem_t *firsthttp;	/* First HTTP testitem in testitem list */
 
 	/* For storing the test dependency tag. */
 	char *deptests;
 
-	void *next;
+	struct testedhost_t *next;
 } testedhost_t;
 
-typedef struct {
-	testedhost_t	*host;		/* Pointer to testedhost_t record for this host */
-	service_t	*service;	/* Pointer to service_t record for the service to test */
+typedef struct testitem_t {
+	struct testedhost_t *host;	/* Pointer to testedhost_t record for this host */
+	struct service_t *service;	/* Pointer to service_t record for the service to test */
 	char		*testspec;      /* Pointer to the testspec in bb-hosts (http/content only) */
 	int		reverse;	/* "!testname" flag */
 	int		dialup;		/* "?testname" flag */
 	int		alwaystrue;	/* "~testname" flag */
 	int		silenttest;	/* "testname:s" flag */
-	void		*private;	/* Private data use by test tool */
+	void		*privdata;	/* Private data use by test tool */
 	int		open;		/* Is the service open ? NB: Shows true state of service, ignores flags */
-	test_t		*testresult;	/* Banner and duration of test */
+	struct test_t	*testresult;	/* Banner and duration of test */
 	char		*banner;
 	time_t		downstart;
 	int		downcount;	/* Number of polls when down. */
 	int		badtest[3];
-	void		*next;
+	struct testitem_t *next;
 } testitem_t;
 
 extern char *deptest_failed(testedhost_t *host, char *testname);

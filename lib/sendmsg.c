@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.9 2003-08-01 10:53:42 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.10 2003-08-12 21:16:05 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -194,7 +194,7 @@ int sendstatus(char *bbdisp, char *msg)
 	sscanf(msg, "%*s %*s %255s", statuscolor);
 	if (strstr(pagelevels, statuscolor)) {
 		/* Reformat the message into a "page" message */
-		char *pagemsg = malloc(strlen(msg)+1);
+		char *pagemsg = (char *) malloc(strlen(msg)+1);
 		char *firstnl;
 		char *inp, *outp;
 

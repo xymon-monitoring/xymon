@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.28 2003-08-11 15:36:30 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.29 2003-08-12 21:16:05 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -154,8 +154,8 @@ static char *rrdlink_text(host_t *host, rrd_t *rrd, int larrd043)
 		char *enddef;
 		rrd_t *myrrd;
 
-		myrrd = malloc(sizeof(rrd_t));
-		myrrd->rrdname = malloc(sizeof(rrdlayout_t));
+		myrrd = (rrd_t *) malloc(sizeof(rrd_t));
+		myrrd->rrdname = (rrdlayout_t *) malloc(sizeof(rrdlayout_t));
 
 		/* First, null-terminate this graph definition so we only look at the active RRD */
 		enddef = strchr(graphdef, ',');
@@ -219,7 +219,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043)
 	}
 
 	allrrdlinksize = 16384;
-	allrrdlinks = malloc(allrrdlinksize);
+	allrrdlinks = (char *) malloc(allrrdlinksize);
 
 	now = time(NULL);
 	i = atoi(getenv("PURPLEDELAY"));
@@ -290,7 +290,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043)
 				/* hostwalk now points to the host owning this RRD */
 				for (rwalk = hostwalk->hostentry->rrds; (rwalk && (rwalk->rrdname != r)); rwalk = rwalk->next) ;
 				if (rwalk == NULL) {
-					rrd_t *newrrd = malloc(sizeof(rrd_t));
+					rrd_t *newrrd = (rrd_t *) malloc(sizeof(rrd_t));
 
 					newrrd->rrdname = r;
 					newrrd->count = 1;
@@ -343,7 +343,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043)
 				rrdlink = rrdlink_text(hostwalk->hostentry, rwalk, larrd043);
 				if ((strlen(allrrdlinks) + strlen(rrdlink)) >= allrrdlinksize) {
 					allrrdlinksize += 4096;
-					allrrdlinks = realloc(allrrdlinks, allrrdlinksize);
+					allrrdlinks = (char *) realloc(allrrdlinks, allrrdlinksize);
 				}
 				strcat(allrrdlinks, rrdlink);
 			}
