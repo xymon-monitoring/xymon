@@ -14,8 +14,11 @@
 #define __LDAPTEST_H_
 
 #include <time.h>
+
+#ifdef BBGEN_LDAP
 #include <lber.h>
 #include <ldap.h>
+#endif
 
 typedef struct {
 	char   *url;                    /* URL to request, stripped of BB'isms */

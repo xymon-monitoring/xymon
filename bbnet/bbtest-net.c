@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.98 2003-08-29 21:00:52 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.99 2003-08-29 21:47:37 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -442,8 +442,12 @@ void load_tests(void)
 						/*
 						 * LDAP test. This uses ':' a lot, so save it here.
 						 */
+#ifdef BBGEN_LDAP
 						s = ldaptest;
 						savedspec = malcop(testspec);
+#else
+						errprintf("ldap test requested, but bbgen was built with no ldap support\n");
+#endif
 					}
 					else if (strncmp(testspec, "http", 4) == 0) {
 						/*

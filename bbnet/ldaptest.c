@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.2 2003-08-29 21:26:19 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.3 2003-08-29 21:48:11 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -36,21 +36,26 @@ char *ldap_library_version = NULL;
 
 int init_ldap_library(void)
 {
+#ifdef BBGEN_LDAP
 	char versionstring[100];
 
 	/* Doesnt really do anything except define the version-number string */
 	sprintf(versionstring, "%s %d", LDAP_VENDOR_NAME, LDAP_VENDOR_VERSION);
 	ldap_library_version = malcop(versionstring);
 	return 0;
+#endif
 }
 
 void shutdown_ldap_library(void)
 {
+#ifdef BBGEN_LDAP
 	/* No-op for LDAP */
+#endif
 }
 
 void add_ldap_test(testitem_t *t)
 {
+#ifdef BBGEN_LDAP
 	ldap_data_t *req;
 	LDAPURLDesc *ludp;
 	char *p;
@@ -84,11 +89,13 @@ void add_ldap_test(testitem_t *t)
 	req->duration.tv_sec = req->duration.tv_usec = 0;
 	req->certinfo = NULL;
 	req->certexpires = 0;
+#endif
 }
 
 
 void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 {
+#ifdef BBGEN_LDAP
 	ldap_data_t *req;
 	testitem_t *t;
 	struct timeval starttime;
@@ -207,6 +214,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck)
 		ldap_msgfree(result);
 		ldap_unbind( ld );
 	}
+#endif
 }
 
 
