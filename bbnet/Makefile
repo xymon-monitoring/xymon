@@ -1,7 +1,8 @@
-# bbgen - BBNET Makefile
+# Hobbit - BBNET Makefile
 
-# ARES settings. c-ares 1.2.0 included with bbgen
-DNSFLAGS = -I./c-ares-1.2.0
+# ARES settings. c-ares is included
+ARESTGZ = c-ares-$(ARESVER).tar.gz
+DNSFLAGS = -I./$(ARESDIR)
 
 PROGRAMS = bbtest-net
 EXTENSIONS = bbretest-net.sh
@@ -36,14 +37,17 @@ dns.o: libcares.a dns.c
 dns2.o: dns2.c
 	$(CC) $(CFLAGS) $(DNSFLAGS) -c -o $@ dns2.c
 
-libcares.a: c-ares-1.2.0/libcares.a
-	cp c-ares-1.2.0/libcares.a .
+libcares.a: $(ARESDIR)/.libs/libcares.a
+	cp $(ARESDIR)/.libs/libcares.a .
 
-c-ares-1.2.0/libcares.a: c-ares-1.2.0/Makefile
-	(cd c-ares-1.2.0 && $(MAKE) libcares.a)
+$(ARESDIR)/.libs/libcares.a: $(ARESDIR)/Makefile
+	(cd $(ARESDIR) && $(MAKE))
 
-c-ares-1.2.0/Makefile:
-	(cd c-ares-1.2.0 && ./configure)
+$(ARESDIR)/Makefile: $(ARESDIR)/configure
+	(cd $(ARESDIR) && ./configure --disable-shared)
+
+$(ARESDIR)/configure: $(ARESTGZ)
+	gzip -dc $(ARESTGZ) | tar xf -
 
 ################################################
 # Default compilation rules
