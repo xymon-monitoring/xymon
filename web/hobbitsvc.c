@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.20 2004-11-17 22:13:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.21 2004-11-18 23:19:37 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -118,6 +118,7 @@ int main(int argc, char *argv[])
 	char *flags;
 	char *ackmsg = NULL, *dismsg = NULL;
 	enum source_t source = SRC_BBLOGS;
+	int wantserviceid = 1;
 
 	getenv_default("USEBBGEND", "FALSE", NULL);
 	if (strcmp(getenv("USEBBGEND"), "TRUE") == 0) source = SRC_BBGEND;
@@ -142,6 +143,9 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
 			loadenv(p+1);
+		}
+		else if (strcmp(argv[argi], "--no-svcid") == 0) {
+			wantserviceid = 0;
 		}
 	}
 
@@ -284,7 +288,10 @@ int main(int argc, char *argv[])
 		          color, sender, flags, 
 		          logtime, timesincechange, 
 		          firstline, restofmsg, ackmsg, 
-		          (source == SRC_HISTLOGS), stdout);
+		          (source == SRC_HISTLOGS), 
+			  wantserviceid, 
+			  (strcmp(service, "info") == 0),
+			  stdout);
 	return 0;
 }
 #endif
