@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.35 2003-07-27 11:10:56 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.36 2003-07-27 11:38:41 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -636,8 +636,15 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 	for (t=host->firsthttp; (t && (t->host == host)); t = t->next) {
 		http_data_t *req = t->private;
 
-		sprintf(msgline, "\n&%s %s - %s\n", colorname(req->httpcolor), req->url,
-			((req->httpcolor != COL_GREEN) ? "failed" : "OK"));
+		if (req->ip == NULL) {
+			sprintf(msgline, "\n&%s %s - %s\n", colorname(req->httpcolor), req->url,
+				((req->httpcolor != COL_GREEN) ? "failed" : "OK"));
+		}
+		else {
+			sprintf(msgline, "\n&%s (IP: %s) %s - %s\n", colorname(req->httpcolor), 
+				req->url, req->ip,
+				((req->httpcolor != COL_GREEN) ? "failed" : "OK"));
+		}
 		addtostatus(msgline);
 		sprintf(msgline, "\n%s", req->headers);
 		addtostatus(msgline);
