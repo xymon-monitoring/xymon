@@ -97,9 +97,12 @@ BBROUTERTEXT="router"				# What to call a failing intermediate network device.
 
 # Settings for the LARRD graphs
 
+# Top level directory for the RRD files
+BBRRDS="$BBVAR/rrd"
+
 # This defines the status- and data-messages you want to collect LARRD data
 # about. You will normally not need to modify this, unless you have added a
-# custom TCP-based test to the bb-services file, and want to collect data about 
+# custom TCP-based test to the bb-services file, and want to collect data about
 # the response-time. The format here is "BBCOLUMN=LARRDSERVICE". All TCP tests
 # should have LARRDSERVICE set to "tcp".
 #
@@ -109,7 +112,7 @@ LARRDS="cpu=la,disk,memory,conn=tcp,fping=tcp,ftp=tcp,ftps=tcp,ssh=tcp,ssh1=tcp,
 
 # This defines which LARRD RRD files to include on the "trends" column webpage,
 # and the order in which they appear.
-GRAPHS="la,disk:disk_part:5,memory,users,vmstat,iostat,tcp,netstat,temperature,ntpstat,apache,bind,sendmail,nmailq,socks,bea,citrix,bbgen,bbtest,bbproxy,bbgend"
+GRAPHS="la,disk:disk_part:5,memory,users,vmstat,iostat,tcp.http,tcp,netstat,temperature,ntpstat,apache,bind,sendmail,nmailq,socks,bea,citrix,bbgen,bbtest,bbproxy,bbgend"
 
 
 ############################################################
@@ -126,10 +129,10 @@ DOTWIDTH="16"					# Width (in pixels) of the color GIF's
 MKBBLOCAL="<B><I>Pages Hosted Locally</I></B>"
 MKBBREMOTE="<B><I>Remote Status Display</I></B>"
 MKBBSUBLOCAL="<B><I>Subpages Hosted Locally</I></B>"
-MKBBACKFONT="COLOR=silver SIZE=-1"		# Size and color of the 'Current acknowledgement...' text in the html log.
-MKBBCOLFONT="COLOR=\"#87a9e5\" SIZE=-1"		# Size and color of the column headings text
-MKBBROWFONT="SIZE=+1 COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\""   # Size,color,font of text in each row (hostname)
-MKBBTITLE="COLOR=ivory SIZE=+1"			# Size and color of the BB titles
+MKBBACKFONT="COLOR=silver SIZE=\"-1\""		# Size and color of the 'Current acknowledgement...' text in the html log.
+MKBBCOLFONT="COLOR=\"#87a9e5\" SIZE=\"-1\""	# Size and color of the column headings text
+MKBBROWFONT="SIZE=\"+1\" COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\""   # Size,color,font of text in each row (hostname)
+MKBBTITLE="COLOR=ivory SIZE=\"+1\""		# Size and color of the BB titles
 BBDATEFORMAT="%a %b %d %H:%M:%S %Y"		# Date format
 BBRSSTITLE="Big Brother Alerts"			# Title for the RSS and WML outputs.
 
