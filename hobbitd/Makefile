@@ -8,7 +8,7 @@ CHANNELOBJS = bbd_channel.o bbdutil.o
 SAMPLEOBJS = bbd_sample.o bbdworker.o
 FILESTOREOBJS = bbd_filestore.o bbdworker.o
 HISTORYOBJS = bbd_history.o bbdworker.o
-ALERTOBJS = bbd_alert.o bbdworker.o alert_simple.o
+ALERTOBJS = bbd_alert.o bbdworker.o do_alert.o
 
 all: bbd_net bbd_channel bbd_filestore bbd_history bbd_alert
 
