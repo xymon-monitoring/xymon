@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.43 2003-05-07 09:42:17 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.44 2003-05-10 07:37:19 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -806,21 +806,15 @@ int main(int argc, char *argv[])
 	int concurrency=0;
 	char *pingcolumn = NULL;
 
+	if (init_http_library() != 0) {
+		printf("Failed to initialize http library\n");
+		return 1;
+	}
+
 	for (argi=1; (argi < argc); argi++) {
-		if      (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
-		else if (strcmp(argv[argi], "--version") == 0) {
-			printf("bbtest-net version %s\n", VERSION);
-			return 0;
-		}
-		else if (strncmp(argv[argi], "--timeout=", 10) == 0) {
+		if      (strncmp(argv[argi], "--timeout=", 10) == 0) {
 			char *p = strchr(argv[argi], '=');
 			p++; timeout = atoi(p);
-		}
-		else if (strncmp(argv[argi], "--concurrency=", 14) == 0) {
-			char *p = strchr(argv[argi], '=');
-			p++; concurrency = atoi(p);
 		}
 		else if (strncmp(argv[argi], "--dns=", 6) == 0) {
 			char *p = strchr(argv[argi], '=');
@@ -829,6 +823,19 @@ int main(int argc, char *argv[])
 			else if (strcmp(p, "ip") == 0)   dnsmethod = IP_ONLY;
 			else                             dnsmethod = DNS_THEN_IP;
 		}
+
+		/* Debugging options */
+		else if (strcmp(argv[argi], "--debug") == 0) {
+			debug = 1;
+		}
+
+		/* Options for TCP tests */
+		else if (strncmp(argv[argi], "--concurrency=", 14) == 0) {
+			char *p = strchr(argv[argi], '=');
+			p++; concurrency = atoi(p);
+		}
+
+		/* Options for PING tests */
 		else if (strncmp(argv[argi], "--ping", 6) == 0) {
 			char *p = strchr(argv[argi], '=');
 			if (p) {
@@ -839,6 +846,8 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--noping") == 0) {
 			pingcolumn = NULL;
 		}
+
+		/* Options for HTTP tests */
 		else if (strncmp(argv[argi], "--content=", 10) == 0) {
 			char *p = strchr(argv[argi], '=');
 			contenttestname = malcop(p+1);
@@ -859,12 +868,49 @@ int main(int argc, char *argv[])
 			p++; sslalarmdays = atoi(p);
 		}
 		else if (strcmp(argv[argi], "--follow") == 0) {
-			followlocations = 3;
+			char *p = strchr(argv[argi], '=');
+
+			if (p) followlocations = atoi(p+1);
+			else followlocations = 3;
 		}
 		else if (strncmp(argv[argi], "--log=", 6) == 0) {
 			char *p = strchr(argv[argi], '=');
 
 			logfile = malcop(p+1);
+		}
+
+		/* Informational options */
+		else if (strcmp(argv[argi], "--version") == 0) {
+			printf("bbtest-net version %s\n", VERSION);
+			printf("HTTP library: %s\n", http_library_version);
+			return 0;
+		}
+		else if ((strcmp(argv[argi], "--help") == 0) || (strcmp(argv[argi], "-?") == 0)) {
+			printf("bbtest-net version %s\n\n", VERSION);
+			printf("Usage: %s [options]\n", argv[0]);
+			printf("Options:\n");
+			printf("    --timeout=N                 : Timeout (in seconds) for service tests\n");
+			printf("    --dns=[only|ip|standard]    : How IP's are decided\n");
+			printf("\nOptions for services in BBNETSVCS (tcp tests):\n");
+			printf("    --concurrency=N             : Number of tests run in parallel\n");
+			printf("\nOptions for PING (connectivity) tests:\n");
+			printf("    --ping[=COLUMNNAME]         : Enable ping checking, default columname is \"conn\"\n");
+			printf("    --noping                    : Disable ping checking\n");
+			printf("\nOptions for HTTP/HTTPS (Web) tests:\n");
+			printf("    --content=COLUMNNAME        : Define columnname for CONTENT checks (content)\n");
+			printf("    --ssl=COLUMNNAME            : Define columnname for SSL certificate checks (sslcert)\n");
+			printf("    --sslwarn=N                 : Go yellow if certificate expires in less than N days (default:30\n");
+			printf("    --sslalarm=N                : Go red if certificate expires in less than N days (default:10\n");
+			printf("    --no-ssl                    : Disable SSL certificate check\n");
+			printf("    --follow[=N]                : Follow redirects for N levels (default: N=3).\n");
+			printf("\nDebugging options:\n");
+			printf("    --debug                     : Output debugging information\n");
+			printf("    --log=FILENAME              : Output trace of HTTP tests to a file.\n");
+
+			return 0;
+		}
+		else {
+			printf("Unknown option %s - try --help\n", argv[argi]);
 		}
 	}
 
@@ -974,6 +1020,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	shutdown_http_library();
 	return 0;
 }
 
