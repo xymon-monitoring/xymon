@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.81 2003-03-03 11:16:57 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.82 2003-03-03 11:52:19 henrik Exp $";
 
 #define VERSION "1.8-pre2003.03.02.18.40"
 
@@ -90,8 +90,6 @@ int main(int argc, char *argv[])
 	int		i;
 	int		pagegenstat;
 	int		bbpageONLY = 0;
-
-	add_timestamp("Startup");
 
 	pagedir = rrddir = NULL;
 	init_timestamp();
@@ -248,6 +246,8 @@ int main(int argc, char *argv[])
 			strcpy(pagedir, argv[i]);
 		}
 	}
+
+	add_timestamp("Startup");
 
 	/* Check that all needed environment vars are defined */
 	envcheck(reqenv);
