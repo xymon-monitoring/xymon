@@ -1,5 +1,20 @@
 Bugfixes
 --------
+* From: <Stewart_Larsen@doh.state.fl.us>
+  Date: Mon, 10 Jan 2005 15:06:36 -0500
+  Subject: {bb} Bbgen depends not working for conn tests
+    10.0.0.1     host1.domain.com #   depends=(conn:host2.domain.com/conn)
+    10.0.0.2     host2.domain.com #
+  Both hosts have red connectivity.  My understanding is that since host2
+  can't be pinged, host1's conn test should be clear, not red. Is this
+  right?
+
+  Analysis: "depends" is not evaluated for "conn" tests, 
+  only the "router" setting is. Simple fix would be to
+  change "conn" dependencies into router tags on the fly,
+  or implement "depends" throughout and treat "route"
+  as a special-case of depends.
+
 * It's been reported that bbtest-net crashes when trying
   to do http tests via an MS ISA Proxy server that requires
   authentication. This is still being investigated.
