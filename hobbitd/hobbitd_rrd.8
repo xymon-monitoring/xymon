@@ -152,6 +152,10 @@ Apart from writing the script, You must also add a section to
 so that
 .I hobbitgraph.cgi(1)
 knows how to generate the graph from the data stored in the RRD file. 
+To make the graphs actually show up on the status-page and/or the
+"trends" page, add the name of the new graph to the LARRDS and/or 
+GRAPHS setting in
+.I hobbitserver.cfg(5).
 
 The script is invoked for each message that arrives, where the test-name
 matches one of the testnames given in the "--extra-tests" option. The
