@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.13 2003-10-14 21:15:17 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.14 2004-01-25 22:13:02 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -54,13 +54,23 @@ static int sendtobbd(char *recipient, char *message)
 	int	res, isconnected, done;
 	struct timeval tmo;
 	char *msgptr = message;
+	char *p;
+	char *rcptip = NULL;
+	int rcptport = 0;
 
 	if (dontsendmessages) {
 		printf("%s\n", message);
 		return BB_OK;
 	}
 
-	if (bbdportnumber == 0) {
+	rcptip = malcop(recipient);
+	rcptport = bbdportnumber;
+	p = strchr(rcptip, ':');
+	if (p) {
+		*p = '\0'; p++; rcptport = atoi(p);
+	}
+
+	if (rcptport == 0) {
 		/*
 		 * Need to figure out the port number 
 		 * First see if BBPORT is defined; if not, fall back to default.
@@ -81,15 +91,17 @@ static int sendtobbd(char *recipient, char *message)
 		if ((bbdportnumber <= 0) || (bbdportnumber > 65535)) {
 			bbdportnumber = BBDPORTNUMBER;
 		}
+
+		rcptport = bbdportnumber;
 	}
 
-	if (inet_aton(recipient, &addr) == 0) {
+	if (inet_aton(rcptip, &addr) == 0) {
 		/* recipient is not an IP - do DNS lookup */
 
 		struct hostent *hent;
 		char hostip[16];
 
-		hent = gethostbyname(recipient);
+		hent = gethostbyname(rcptip);
 		if (hent) {
 			memcpy(&addr, *(hent->h_addr_list), sizeof(struct in_addr));
 			strcpy(hostip, inet_ntoa(addr));
@@ -97,14 +109,14 @@ static int sendtobbd(char *recipient, char *message)
 			if (inet_aton(hostip, &addr) == 0) return BB_EBADIP;
 		}
 		else {
-			errprintf("Cannot determine IP address of message recipient %s\n", recipient);
+			errprintf("Cannot determine IP address of message recipient %s\n", rcptip);
 			return BB_EIPUNKNOWN;
 		}
 	}
 	memset(&saddr, 0, sizeof(saddr));
 	saddr.sin_family = AF_INET;
 	saddr.sin_addr.s_addr = addr.s_addr;
-	saddr.sin_port = htons(bbdportnumber);
+	saddr.sin_port = htons(rcptport);
 
 	/* Get a non-blocking socket */
 	sockfd = socket(PF_INET, SOCK_STREAM, 0);
@@ -171,6 +183,7 @@ static int sendtobbd(char *recipient, char *message)
 
 	shutdown(sockfd, SHUT_RDWR);
 	close(sockfd);
+	free(rcptip);
 	return BB_OK;
 }
 
