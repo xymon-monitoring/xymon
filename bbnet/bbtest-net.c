@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.10 2003-04-14 10:23:18 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.11 2003-04-14 10:33:56 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -166,6 +166,12 @@ void load_tests(void)
 					}
 					if (*testspec == '?') { dialuptest=1; testspec++; }
 					if (*testspec == '!') { reversetest=1; testspec++; }
+					/*
+					 * ~TEST is ignored. It is used to have failed test
+					 * display as red, if coupled with the conn test
+					 * (which would normally make the test clear on failure).
+					 */
+					if (*testspec == '~') { testspec++; }
 
 					/* Find the service */
 					for (s=svchead; (s && (strcmp(s->testname, testspec) != 0)); s = s->next) ;
