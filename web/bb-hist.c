@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.31 2003-08-18 06:21:41 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.32 2003-09-10 21:31:48 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -162,7 +162,7 @@ again:
 			if (endofperiod == END_END) {
 				/* Need to find the last day of the month */
 				tmbuf->tm_mday = daysinmonth[tmbuf->tm_mon];
-				if (tmbuf->tm_mon == 2) {
+				if (tmbuf->tm_mon == 1) {
 					if (((tmbuf->tm_year + 1900) % 4) == 0) {
 						tmbuf->tm_mday = 29;
 						if (((tmbuf->tm_year + 1900) % 100) == 0) tmbuf->tm_mday = 28;
@@ -350,6 +350,9 @@ static void generate_colorbar(
 
 		do {
 			endofinterval = calc_time(begininterval, 0, alignment, END_END);
+			dprintf("Period starts %u ends %u - %s", 
+				(unsigned int)begininterval, (unsigned int)endofinterval, 
+				ctime(&endofinterval));
 
 			tmbuf = localtime(&begininterval);
 			switch (bartype) {
