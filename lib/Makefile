@@ -11,6 +11,9 @@ libbbgen.a: $(BBGENLIBOBJS)
 	ar cr libbbgen.a $(BBGENLIBOBJS)
 	ranlib libbbgen.a || echo ""
 
+loadhosts.o: loadhosts.c loadhosts_file.c
+	$(CC) $(CFLAGS) -c -o $@ loadhosts.c
+
 digest.o: digest.c
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ digest.c
 
