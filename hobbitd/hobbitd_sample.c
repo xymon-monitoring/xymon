@@ -9,14 +9,14 @@
 /* without the master hobbit daemon having to care about what goes on in the  */
 /* workers.                                                                   */
 /*                                                                            */
-/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2004-2005 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_sample.c,v 1.15 2005-03-06 07:25:07 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_sample.c,v 1.16 2005-03-25 21:13:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>

@@ -1,14 +1,14 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit message daemon.                                                     */
 /*                                                                            */
-/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2004-2005 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.18 2005-03-22 17:55:30 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.19 2005-03-25 21:13:41 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>

@@ -1,14 +1,14 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit RRD handler module.                                                 */
 /*                                                                            */
-/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2004-2005 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char temperature_rcsid[] = "$Id: do_temperature.c,v 1.4 2005-02-25 07:18:18 henrik Exp $";
+static char temperature_rcsid[] = "$Id: do_temperature.c,v 1.5 2005-03-25 21:15:26 henrik Exp $";
 
 static char *temperature_params[] = { "rrdcreate", rrdfn, 
 				      "DS:temperature:GAUGE:600:1:U",

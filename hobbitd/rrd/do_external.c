@@ -1,14 +1,14 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit RRD handler module.                                                 */
 /*                                                                            */
-/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2004-2005 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char external_rcsid[] = "$Id: do_external.c,v 1.5 2005-03-08 21:06:45 henrik Exp $";
+static char external_rcsid[] = "$Id: do_external.c,v 1.6 2005-03-25 21:15:26 henrik Exp $";
 
 
 int do_external_larrd(char *hostname, char *testname, char *msg, time_t tstamp) 

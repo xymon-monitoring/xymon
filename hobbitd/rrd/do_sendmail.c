@@ -1,14 +1,14 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit RRD handler module.                                                 */
 /*                                                                            */
-/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2004-2005 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char sendmail_rcsid[] = "$Id: do_sendmail.c,v 1.5 2005-03-01 14:37:16 henrik Exp $";
+static char sendmail_rcsid[] = "$Id: do_sendmail.c,v 1.6 2005-03-25 21:15:26 henrik Exp $";
 
 static char *sendmail_params[] = { "rrdcreate", rrdfn, 
 				   "DS:msgsfr:DERIVE:600:0:U",

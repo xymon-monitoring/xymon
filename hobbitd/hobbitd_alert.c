@@ -5,7 +5,7 @@
 /* keeps track of active alerts, enable/disable, acks etc., and triggers      */
 /* outgoing alerts by calling send_alert().                                   */
 /*                                                                            */
-/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2004-2005 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.51 2005-03-09 10:18:02 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.52 2005-03-25 21:13:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>

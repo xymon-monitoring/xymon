@@ -6,14 +6,14 @@
 /* the alert configuration from hobbit-alerts.cfg, and incoming alerts are    */
 /* then sent according to the rules defined.                                  */
 /*                                                                            */
-/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2004-2005 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.58 2005-03-25 07:40:15 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.59 2005-03-25 21:13:41 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:

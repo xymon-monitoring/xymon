@@ -5,14 +5,14 @@
 /* incoming e-mails that are responses to alert mails that Hobbit has sent    */
 /* out. It was inspired by the functionality of the bb-mailack.sh.            */
 /*                                                                            */
-/* Copyright (C) 2005 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2004-2005 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-mailack.c,v 1.4 2005-03-06 16:19:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-mailack.c,v 1.5 2005-03-25 21:13:41 henrik Exp $";
 
 #include <ctype.h>
 #include <stdio.h>

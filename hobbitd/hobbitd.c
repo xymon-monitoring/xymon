@@ -18,14 +18,14 @@
 /* cation between hobbitd and the worker modules - under no circumstances     */
 /* should the daemon be tasked with storing data to a low-bandwidth channel.  */
 /*                                                                            */
-/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2004-2005 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.131 2005-03-21 15:06:24 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.132 2005-03-25 21:13:41 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>

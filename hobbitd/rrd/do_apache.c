@@ -1,14 +1,14 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit RRD handler module.                                                 */
 /*                                                                            */
-/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2004-2005 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char apache_rcsid[] = "$Id: do_apache.c,v 1.4 2005-02-06 08:49:02 henrik Exp $";
+static char apache_rcsid[] = "$Id: do_apache.c,v 1.5 2005-03-25 21:15:26 henrik Exp $";
 
 static char *apache_params[] = { "rrdcreate", rrdfn, 
 				 "DS:TA:DERIVE:600:0:U",
