@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.41 2003-08-22 15:03:15 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.42 2003-08-25 16:21:16 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -373,7 +373,6 @@ static int debug_callback(CURL *handle, curl_infotype type, char *data, size_t s
 {
 	http_data_t *req = userp;
 	char *p;
-	struct tm exptime;
 
 	if ((req->sslexpire == 0) && (type == CURLINFO_TEXT)) {
 		if (strncmp(data, "Server certificate:", 19) == 0) req->logcert = 1;
@@ -394,32 +393,7 @@ static int debug_callback(CURL *handle, curl_infotype type, char *data, size_t s
 		}
 
 		p = strstr(data, "expire date:");
-		if (p) {
-			int res;
-			time_t t1, t2;
-			struct tm *t;
-			time_t gmtofs;
-
-			/* expire date: 2004-01-02 08:04:15 GMT */
-			res = sscanf(p, "expire date: %4d-%2d-%2d %2d:%2d:%2d", 
-				     &exptime.tm_year, &exptime.tm_mon, &exptime.tm_mday,
-				     &exptime.tm_hour, &exptime.tm_min, &exptime.tm_sec);
-			/* tm_year is 1900 based; tm_mon is 0 based */
-			exptime.tm_year -= 1900; exptime.tm_mon -= 1;
-			req->sslexpire = mktime(&exptime);
-
-			/* 
-			 * Calculate the difference between localtime and GMT 
-			 */
-			t = gmtime(&req->sslexpire); t->tm_isdst = 0; t1 = mktime(t);
-			t = localtime(&req->sslexpire); t->tm_isdst = 0; t2 = mktime(t);
-			gmtofs = (t2-t1);
-
-			req->sslexpire += gmtofs;
-			dprintf("Output says it expires: %s", p);
-			dprintf("I think it expires at (localtime) %s\n", asctime(localtime(&req->sslexpire)));
-		}
-
+		if (p) req->sslexpire = sslcert_expiretime(p);
 	}
 
 	return 0;

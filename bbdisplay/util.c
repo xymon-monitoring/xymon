@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.83 2003-08-16 07:12:40 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.84 2003-08-25 16:21:16 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1342,5 +1342,40 @@ int urlvalidate(char *query, char *validchars)
 	}
 
 	return valid;
+}
+
+time_t sslcert_expiretime(char *timestr)
+{
+	int res;
+	time_t t1, t2;
+	struct tm *t;
+	struct tm exptime;
+	time_t gmtofs, result;
+
+	/* expire date: 2004-01-02 08:04:15 GMT */
+	res = sscanf(timestr, "%4d-%2d-%2d %2d:%2d:%2d", 
+		     &exptime.tm_year, &exptime.tm_mon, &exptime.tm_mday,
+		     &exptime.tm_hour, &exptime.tm_min, &exptime.tm_sec);
+	if (res != 6) {
+		errprintf("Cannot interpret certificate time %s\n", timestr);
+		return 0;
+	}
+
+	/* tm_year is 1900 based; tm_mon is 0 based */
+	exptime.tm_year -= 1900; exptime.tm_mon -= 1;
+	result = mktime(&exptime);
+
+	/* 
+	 * Calculate the difference between localtime and GMT 
+	 */
+	t = gmtime(&result); t->tm_isdst = 0; t1 = mktime(t);
+	t = localtime(&result); t->tm_isdst = 0; t2 = mktime(t);
+	gmtofs = (t2-t1);
+
+	result += gmtofs;
+	dprintf("Output says it expires: %s", exptime);
+	dprintf("I think it expires at (localtime) %s\n", asctime(localtime(&result)));
+
+	return result;
 }
 
