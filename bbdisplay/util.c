@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.97 2003-09-27 06:48:47 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.98 2003-09-28 10:29:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -32,6 +32,7 @@ static char rcsid[] = "$Id: util.c,v 1.97 2003-09-27 06:48:47 henrik Exp $";
 #include <utime.h>
 #include <stdarg.h>
 #include <signal.h>
+#include <sys/resource.h>
 
 #include "bbgen.h"
 #include "util.h"
@@ -1273,6 +1274,18 @@ void setup_signalhandler(char *programname)
 	 */
 	signal(SIGPIPE, SIG_IGN);
 
+#ifdef RLIMIT_CORE
+	/*
+	 * Try to allow ourselves to generate core files
+	 */
+	{
+		struct rlimit lim;
+
+		getrlimit(RLIMIT_CORE, &lim);
+		lim.rlim_cur = RLIM_INFINITY;
+		setrlimit(RLIMIT_CORE, &lim);
+	}
+#endif
 	if (getenv("BB") == NULL) return;
 	if (getenv("BBDISP") == NULL) return;
 
