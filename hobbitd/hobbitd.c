@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.56 2004-11-16 21:34:16 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.57 2004-11-17 16:10:50 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1139,6 +1139,41 @@ void do_message(conn_t *msg)
 				bufp += n;
 				buflen += n;
 				if (eoln) *eoln = '\n';
+			}
+		}
+
+		free(msg->buf);
+		msg->doingwhat = RESPONDING;
+		msg->bufp = msg->buf = buf;
+		msg->buflen = buflen;
+	}
+	else if (strncmp(msg->buf, "bbgendlist", 10) == 0) {
+		/* 
+		 * Request for a list of all known status logs.
+		 *
+		 * hostname|testname
+		 */
+		bbgend_hostlist_t *hwalk;
+		bbgend_log_t *lwalk;
+		char *buf, *bufp;
+		int bufsz, buflen;
+		int n;
+
+		bufsz = 16384;
+		bufp = buf = (char *)malloc(bufsz);
+		buflen = 0;
+
+		for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
+			for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
+				if ((bufsz - buflen - strlen(lwalk->message)) < 1024) {
+					bufsz += 16384;
+					buf = (char *)realloc(buf, bufsz);
+					bufp = buf + buflen;
+				}
+
+				n = sprintf(bufp, "%s|%s\n", hwalk->hostname, lwalk->test->testname);
+				bufp += n;
+				buflen += n;
 			}
 		}
 
