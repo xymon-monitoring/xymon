@@ -43,5 +43,12 @@ extern void init_status(int color);
 extern void addtostatus(char *p);
 extern void finish_status(void);
 
+extern void meta_start(void);
+extern void meta_end(void);
+
+extern void init_meta(char *metaname);
+extern void addtometa(char *p);
+extern void finish_meta(void);
+
 #endif
 

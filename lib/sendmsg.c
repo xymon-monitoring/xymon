@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.43 2004-12-11 14:15:47 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.44 2004-12-12 16:12:57 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -51,6 +51,10 @@ static int      bbdportnumber = 0;
 static char     *bbdispproxyhost = NULL;
 static int      bbdispproxyport = 0;
 static char	*proxysetting = NULL;
+static int	bbmetaqueued;		/* Anything in the buffer ? */
+static char	*metamsg = NULL;
+static char     *metaend;
+static int	metamsgsize = 0;
 
 int dontsendmessages = 0;
 
@@ -645,6 +649,61 @@ void finish_status(void)
 			break;
 	}
 }
+
+void meta_start(void)
+{
+	if (metamsg == NULL) {
+		metamsgsize = 32768;
+		metamsg = (char *)malloc(metamsgsize);
+	}
+
+	*metamsg = '\0';
+	metaend = metamsg;
+	bbmetaqueued = 0;
+}
+
+void meta_end(void)
+{
+	/* Send the message */
+	FILE *fd = fopen("/tmp/meta.txt", "w");
+	fprintf(fd, "%s", metamsg);
+	fclose(fd);
+
+	sendmessage(metamsg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+
+	free(metamsg);
+	metamsg = 0;
+	metamsgsize = 0;
+	metaend = NULL;
+	bbmetaqueued = 0;
+}
+
+void init_meta(char *metaname)
+{
+	/* Add delimiter if not the first message */
+	if (bbmetaqueued) strcat(metamsg, "\n\n");
+}
+
+void addtometa(char *buf)
+{
+	int used = (metaend - metamsg);
+	int buflen = strlen(buf);
+
+	if ((used + buflen + 1) >= metamsgsize) {
+		metamsgsize += (32768 + buflen);
+		metamsg = (char *)realloc(metamsg, metamsgsize);
+		metaend = metamsg + used;
+	}
+	strcat(metaend, buf);
+	metaend += buflen;
+}
+
+void finish_meta(void)
+{
+	bbmetaqueued++;
+}
+
+
 #if defined(STANDALONE) || defined(CGI)
 
 int main(int argc, char *argv[])
