@@ -82,7 +82,7 @@ Disable the eventlog normally displayed on the BB2 page
 Disable the acknowledgement log normally displayed on the BB2 page.
 .sp
 .IP "--nklog[=NK log column]"
-This generates a text-based log of how what is shown on the bbnk.html
+This generates a text-based log of what is shown on the bbnk.html
 status page, and sends a status message for the BBDISPLAY server itself
 reflecting the color of the NK status page. This allows you to track
 when problems have appeared on the bbnk status page. The logfile is
@@ -220,42 +220,6 @@ Disable upwards status propagation when RED or YELLOW.
 Disable upwards status propagation when status has been
 acknowledged. If you want to disable all acked tests from
 being propageted, use "--nopropack=*".
-
-.SH LARRD SUPPORT OPTIONS
-bbgen can produce the status logs and HTML pages that link your
-Big Brother webpages with the LARRD graphs. bbgen supports both
-LARRD 0.42 and the newer 0.43 version.
-
-When enabling bbgen's LARRD support, you can safely shut off 
-LARRD's own html-file generation, by commenting out this line 
-in /usr/local/larrd/larrd.pl:
-
-# `$ENV{'LARRDHOME'}/larrd-html.pl >> $ENV{'LARRDLOG'} 2>&1`;
-.br
-# Disabled - bbgen does this.
-
-.IP "--larrd[=LARRDCOLUMN]"
-Put LARRD data in column LARRDCOLUMN, and generate HTML files
-for the LARRD column status pages which include the LARRD 
-graphics files. Use this option if you have LARRD 0.42.
-The default columnname for LARRD 0.42 is "larrd".
-.sp
-.IP "--larrd043[=LARRDCOLUMN]"
-Same as --larrd, but for use with LARRD 0.43. The default columnname
-for LARRD 0.43 is "trends".
-.sp
-.IP "--larrdgraphs=GRAPHSPEC"
-Selects the graphs that are included by default on the LARRD column 
-page. The GRAPHSPEC is a global default for the LARRD: option in 
-.I bb-hosts(5).
-Note that you probably need to enclose this option in double quotes
-to avoid problems with your shell.
-.sp
-.IP "--larrdupdate=N"
-Update the LARRD column pages every N seconds (default: N=300)
-.sp
-.IP "--rrddir=RRD-directory"
-Specifies the directory path for the LARRD RRD files (default is $BBVAR/rrd/).
 
 .SH PURPLE STATUS OPTIONS
 Purple statuses occur when reporting of a test status stops.
@@ -500,15 +464,21 @@ of a subpage, use "OS:*" .
 .sp
 All of this just defines the layout of the new pageset.
 To generate it, you must run bbgen once for each pageset
-you define - i.e. add something like this to your
-bb-display.sh:
-.sp
-  BBWEB="/bb/os" $BBHOME/bin/bbgen \\
-.br
-  --pageset=os --template=os \\
-.br
-  $BBHOME/www/os/
-.sp
+you define - i.e. create an extension script like this:
+.IP
+.nf
+#!/bin/sh
+
+BBWEB="/bb/os" $BBHOME/bin/bbgen \\
+	--pageset=os --template=os \\
+	$BBHOME/www/os/
+.fi
+.LP
+Save this to $BBHOME/ext/os-display.sh, and set this up to run as
+a BB extension: For Big Brother you'll add it to the bb-bbexttab list
+of extensions, for Hobbit you'll add an extra section to hobbitlaunch.cfg
+to run it.
+
 This generates the pages. There are some important options used here:
 .br
 * BBWEB="/bb/os" environment variable, and the 
@@ -702,5 +672,6 @@ Note how the
 utility is used to calculate the start- and end-time parameters.
 
 .SH "SEE ALSO"
-bb-hosts(5), hobbitserver.cfg(5), bb-rep.cgi(1), bb-snapshot.cgi(1), hobbit(7)
+bb-hosts(5), hobbitserver.cfg(5), hobbitlaunch.cfg(5), bb-rep.cgi(1), 
+bb-snapshot.cgi(1), hobbit(7)
 
