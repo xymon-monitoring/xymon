@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.205 2005-03-22 22:09:15 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.206 2005-03-22 22:37:53 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -1126,6 +1126,7 @@ int start_fping_service(service_t *service)
 		execvp(cmd, cmdargs);
 
 		/* Should never go here ... just kill the child */
+		fprintf(stderr, "fping invocation failed: %s\n", strerror(errno));
 		exit(99);
 	}
 	else {
@@ -1168,7 +1169,7 @@ int finish_fping_service(service_t *service)
 	char		l[MAX_LINE_LEN];
 	char		pingip[MAX_LINE_LEN];
 	int		ip1, ip2, ip3, ip4;
-	int		fpingstatus;
+	int		fpingstatus, failed = 0;
 
 	/* 
 	 * Wait for the fping child to finish.
@@ -1187,6 +1188,7 @@ int finish_fping_service(service_t *service)
 		break;
 
 	  default:
+		failed = 1;
 		errprintf("Execution of '%s' failed with error-code %d\n", 
 			fpingcmd, WEXITSTATUS(fpingstatus));
 	}
@@ -1231,6 +1233,16 @@ int finish_fping_service(service_t *service)
 	fclose(logfd);
 	if (!debug) {
 		unlink(fpinglog);
+		if (failed) {
+			FILE *errfd;
+			char buf[1024];
+			
+			errfd = fopen(fpingerrlog, "r");
+			if (errfd && fgets(buf, sizeof(buf), errfd)) {
+				errprintf("%s", buf);
+			}
+			if (errfd) fclose(errfd);
+		}
 		unlink(fpingerrlog);
 	}
 
