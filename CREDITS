@@ -4,23 +4,33 @@ suggesting new features or improvements, pointing out bugs,
 or even coming up with patches. I am very grateful for 
 their help.
 
+Marco Avvisano
+Olivier Beau
 Adamets Bluejay
 Brian Buchanan
 Massimo Carnevali
 Craig Cook
 Douwe Dijkstra
 Francesco Duranti
-Joshua Krause
+Lars Eberling
+Tom Georgoulias
 Laurent Grilli
+Kevin Hanrahan
+Asif Iqbal
+Charles Jones
 Thomas J Jones
 Uwe Kirbach
+Joshua Krause
 Patrick Lin
 Thomas Mattsson
+Daniel J McDonald
 Werner Michels
 Christian Perrier
 Jure Peternel
 William Richardson
 Torsten Richter
+Chris Ricker
+Tim Rotunda
 Thomas Rucker
 Thomas Schäfer
 Tom Schmidt
@@ -28,8 +38,12 @@ Bill Simaz
 Gavin Stone-Tolcher
 Jeff Stoner
 Christian Thibodeau
+Rick Waegner
 Rob Watson
 
+Several others have contributed bug reports and helped with
+testing the beta releases - Hobbit would not be as good as it
+is without their efforts.
 
 It would have been hard to implement Hobbit without the
 existing libraries for lots of stuff:
