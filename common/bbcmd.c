@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcmd.c,v 1.6 2005-02-07 09:41:08 henrik Exp $";
+static char rcsid[] = "$Id: bbcmd.c,v 1.7 2005-03-06 10:40:49 henrik Exp $";
 
 #include <sys/types.h>
 #include <string.h>
@@ -58,6 +58,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Go! */
+	if (cmd == NULL) cmd = cmdargs[0] = "/bin/sh";
 	execvp(cmd, cmdargs);
 
 	/* Should never go here */
