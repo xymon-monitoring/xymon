@@ -4,5 +4,5 @@
 # script, bb-histlog.sh
 # It is the bbgend version.
 
-exec @BBGEND@/bin/bb-hostsvc.cgi --env=@BBGEND@/etc/bbserver.env --historical
+exec @BBHOME@/bin/bb-hostsvc.cgi --env=@BBHOME@/etc/bbserver.env --historical
 
