@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.39 2005-02-20 08:19:54 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.40 2005-02-20 09:08:57 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -1472,12 +1472,17 @@ void alert_printmode(int on)
 
 void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
 {
+	char *normalfont = "COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\"";
+	char *stopfont = "COLOR=\"#33ebf4\" FACE=\"Tahoma, Arial, Helvetica\"";
+
 	int first = 1;
 	recip_t *recip;
 	char l[4096];
 	int count = 0;
-	char *p;
+	char *p, *fontspec;
+	char codes[10];
 
+	fontspec = normalfont;
 	stoprulefound = 0;
 	while ((recip = next_recipient(alert, &first)) != NULL) {
 		int mindur = 0, maxdur = 0;
@@ -1507,7 +1512,17 @@ void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
 		if (printrule->criteria && printrule->criteria->colors) colors = (colors & printrule->criteria->colors);
 		if (recip->criteria && recip->criteria->colors) colors = (colors & recip->criteria->colors);
 
-		sprintf(l, "<td>%s</td>", recip->recipient);
+		if ( (printrule->criteria && printrule->criteria->sendrecovered) ||
+		     (recip->criteria && recip->criteria->sendrecovered) ) recovered = 1;
+
+		if (recovered && recip->stoprule) strcpy(codes, "R,S");
+		else if (recovered) strcpy(codes, "R");
+		else if (recip->stoprule) strcpy(codes, "S");
+
+		if (!recovered)
+			sprintf(l, "<td><font %s>%s</font></td>", fontspec, recip->recipient);
+		else
+			sprintf(l, "<td><font %s>%s (%s)</font></td>", fontspec, recip->recipient, codes);
 		addtobuffer(buf, buflen, l);
 
 		sprintf(l, "<td align=center>%s</td>", durationstring(mindur));
@@ -1532,13 +1547,7 @@ void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
 		}
 		addtobuffer(buf, buflen, "</td>");
 
-		if ( (printrule->criteria && printrule->criteria->sendrecovered) ||
-		     (recip->criteria && recip->criteria->sendrecovered) ) recovered = 1;
-		sprintf(l, "<td>%s</td>", (recovered ? "Yes" : "No"));
-		addtobuffer(buf, buflen, l);
-
-		sprintf(l, "<td>%s</td>", (recip->stoprule ? "Yes" : "No"));
-		addtobuffer(buf, buflen, l);
+		if (stoprulefound) fontspec = stopfont;
 
 		addtobuffer(buf, buflen, "</tr>\n");
 	}
