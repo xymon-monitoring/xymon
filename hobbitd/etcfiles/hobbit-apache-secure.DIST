@@ -9,10 +9,10 @@
 #     the Hobbit webfiles as the root URL. In that case,
 #     you should instead set this:
 #
-#          DocumentRoot @BBHOME@/www/
+#          DocumentRoot @INSTALLWWWDIR@
 
-Alias @BBHOSTURL@/  "@BBHOME@/www/"
-<Directory "@BBHOME@/www/">
+Alias @BBHOSTURL@/  "@INSTALLWWWDIR@"
+<Directory "@INSTALLWWWDIR@">
     Options Indexes FollowSymLinks Includes MultiViews
     Order allow,deny
     Allow from all
