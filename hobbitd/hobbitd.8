@@ -73,15 +73,6 @@ The default is "allow", unless the BBGHOSTS environment variable is set.
 Prevent status messages from going purple when they are no longer valid.
 Unlike the standard bbd daemon, purple-handling is done by hobbitd.
 
-.IP "--purple-conn=CONNTESTCOLUMN"
-When a host goes down that has the BB client installed, you will often
-get alerts both from the network test (ping) and from the client tests
-when they go purple because they are no longer being updated. With this
-option you can tell hobbitd which test is the "ping" test; when this test
-is red and some other test for the same host should go purple, then
-hobbitd will instead make it go "clear". Since a "clear" status does not
-trigger any alarms, you avoid getting many alarms for purple hosts.
-
 .IP "--listen=IP[:PORT]"
 Specifies the IP-address and port where hobbitd will listen for incoming
 connections. By default, hobbitd listens on IP 0.0.0.0 (i.e. all IP-
