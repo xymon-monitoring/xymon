@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.36 2005-03-06 07:25:07 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.37 2005-03-06 10:40:26 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
 	int cnid = -1;
 	int pfd[2];
 	pid_t childpid = 0;
-	char *childcmd = "";
+	char *childcmd = NULL;
 	char **childargs = NULL;
 	int canwrite;
 	struct sigaction sa;
@@ -137,6 +137,11 @@ int main(int argc, char *argv[])
 			childargs = (char **) calloc((1 + argc - argi), sizeof(char *));
 			while (argi < argc) { childargs[i++] = argv[argi++]; }
 		}
+	}
+
+	if (childcmd == NULL) {
+		errprintf("No command to pass data to\n");
+		return 1;
 	}
 
 	if (cnid == -1) {
@@ -196,10 +201,12 @@ int main(int argc, char *argv[])
 	}
 	else if (childpid == 0) {
 		/* The channel handler child */
-		char *logfnenv = (char *)malloc(strlen(logfn) + 30);
 
-		sprintf(logfnenv, "HOBBITCHANNEL_LOGFILENAME=%s", logfn);
-		putenv(logfnenv);
+		if (logfn) {
+			char *logfnenv = (char *)malloc(strlen(logfn) + 30);
+			sprintf(logfnenv, "HOBBITCHANNEL_LOGFILENAME=%s", logfn);
+			putenv(logfnenv);
+		}
 
 		n = dup2(pfd[0], STDIN_FILENO);
 		close(pfd[0]); close(pfd[1]);
