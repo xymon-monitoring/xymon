@@ -47,7 +47,7 @@ fi
 # It's a release - copy the files
 cd ~/hobbit
 mkdir ~/hobbit/release/hobbit-$REL
-for f in bbdisplay bbnet bbpatches bbproxy build common docs hobbitd include lib
+for f in bbdisplay bbnet bbpatches bbproxy build common docs hobbitd include lib scripts
 do
 	find $f/ | grep -v RCS | cpio -pdvmu ~/hobbit/release/hobbit-$REL/
 done
