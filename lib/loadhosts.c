@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.12 2004-12-14 23:08:26 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.13 2004-12-15 21:56:18 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -270,9 +270,13 @@ namelist_t *load_hostnames(char *bbhostsfn, int fqdn, char *docurl)
 					/* Now move quoted data one byte down (including the NUL) to kill quotechar */
 					memmove(delim, delim+1, strlen(delim));
 				}
-				else {
+				else if (*tag) {
 					/* Normal end of item, NULL it and move on */
 					*tag = '\0'; tag++;
+				}
+				else {
+					/* End of line - no more to do. */
+					tag = NULL;
 				}
 
 				/* 
