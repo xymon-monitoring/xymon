@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.6 2003-02-11 16:29:52 henrik Exp $";
+static char rcsid[] = "$Id: process.c,v 1.7 2003-02-14 13:07:36 henrik Exp $";
 
 #include <string.h>
 #include <sys/types.h>
@@ -31,6 +31,15 @@ static char rcsid[] = "$Id: process.c,v 1.6 2003-02-11 16:29:52 henrik Exp $";
 #include "process.h"
 #include "util.h"
 
+static int wantedcolumn(char *current, char *wanted)
+{
+	char tag[100];
+
+	sprintf(tag, "|%s|", current);
+	return (strstr(wanted, tag) != NULL);
+}
+
+
 void calc_hostcolors(hostlist_t *head)
 {
 	int		color;
@@ -44,12 +53,13 @@ void calc_hostcolors(hostlist_t *head)
 			if (e->propagate && (e->color > color)) color = e->color;
 		}
 
-		/* Blue and clear is not propageted upwards */
+		/* Blue and clear is not propagated upwards */
 		if ((color == COL_CLEAR) || (color == COL_BLUE)) color = COL_GREEN;
 
 		h->hostentry->color = color;
 	}
 }
+
 
 void calc_pagecolors(bbgen_page_t *phead)
 {
@@ -69,7 +79,29 @@ void calc_pagecolors(bbgen_page_t *phead)
 		/* Then adjust with the color of hosts in immediate groups */
 		for (g = toppage->groups; (g); g = g->next) {
 			for (h = g->hosts; (h); h = h->next) {
-				if (h->color > color) color = h->color;
+				if (g->onlycols == NULL) {
+					/* No group-only directive - use host color */
+					if (h->color > color) color = h->color;
+				}
+				else {
+					/* This is a group-only directive. Color must be
+					 * based on the tests included in the group-only
+					 * directive, NOT all tests present for the host.
+					 * So we need to re-calculate host color from only
+					 * the selected tests.
+					 */
+					entry_t *e;
+
+					for (e = h->entries; (e); e = e->next) {
+						if ( e->propagate && 
+						     (e->color > color) &&
+						     wantedcolumn(e->column->name, g->onlycols) )
+							color = e->color;
+					}
+
+					/* Blue and clear is not propagated upwards */
+					if ((color == COL_CLEAR) || (color == COL_BLUE)) color = COL_GREEN;
+				}
 			}
 		}
 
