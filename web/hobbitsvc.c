@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.21 2004-11-18 23:19:37 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.22 2004-12-11 08:21:38 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -146,6 +146,10 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--no-svcid") == 0) {
 			wantserviceid = 0;
+		}
+		else if (argnmatch(argv[argi], "--templates=")) {
+			char *p = strchr(argv[argi], '=');
+			sethostenv_template(p+1);
 		}
 	}
 

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.2 2004-11-20 22:29:27 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.3 2004-12-11 08:21:38 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -41,6 +41,7 @@ static char hostenv_repwarn[20];
 static char hostenv_reppanic[20];
 static time_t hostenv_snapshot = 0;
 static char *hostenv_logtime = NULL;
+static char *hostenv_templatedir = NULL;
 
 void sethostenv(char *host, char *ip, char *svc, char *color)
 {
@@ -68,6 +69,12 @@ void sethostenv_histlog(char *histtime)
 {
 	if (hostenv_logtime) free(hostenv_logtime);
 	hostenv_logtime = strdup(histtime);
+}
+
+void sethostenv_template(char *dir)
+{
+	if (hostenv_templatedir) free(hostenv_templatedir);
+	hostenv_templatedir = strdup(dir);
 }
 
 void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype)
@@ -226,7 +233,13 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 		char *p;
 		char *elemstart;
 
-		sprintf(filename, "%s/web/", getenv("BBHOME"));
+		if (hostenv_templatedir) {
+			sprintf(filename, "%s/", hostenv_templatedir);
+		}
+		else {
+			sprintf(filename, "%s/web/", getenv("BBHOME"));
+		}
+
 		p = strchr(hfpath, '/'); elemstart = hfpath;
 		while (p) {
 			*p = '\0';
@@ -253,7 +266,13 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 
 	if (fd == -1) {
 		/* Fall back to default head/foot file. */
-		sprintf(filename, "%s/web/%s_%s", getenv("BBHOME"), pagetype, head_or_foot);
+		if (hostenv_templatedir) {
+			sprintf(filename, "%s/%s_%s", hostenv_templatedir, pagetype, head_or_foot);
+		}
+		else {
+			sprintf(filename, "%s/web/%s_%s", getenv("BBHOME"), pagetype, head_or_foot);
+		}
+
 		dprintf("Trying header/footer file '%s'\n", filename);
 		fd = open(filename, O_RDONLY);
 	}
