@@ -27,8 +27,10 @@ else
 	then
 		echo "OK, your BBHOME looks good"
 	else
+		echo "         ********  NB NB NB *********"
 		echo "Ooops ... cannot find the Big Brother configuration in $BBHOME"
 		echo "I trust you know better, so I will use that setting anyway."
+		echo "         ********  NB NB NB *********"
 	fi
 	echo ""
 
@@ -42,11 +44,11 @@ else
 			echo "Found your BB MAXLINE to be $MAXMSG"
 		else
 			MAXMSG="8192"
-			echo "Could not determine the MAXMSG setting"
+			echo " *** Could not determine the MAXMSG setting ***"
 		fi
 	else
 		MAXMSG="8192"
-		echo "Could not determine the MAXMSG setting ($BBHOME/src/bb.h not found)"
+		echo "*** Could not determine the MAXMSG setting ($BBHOME/src/bb.h not found) ***"
 	fi
 	echo ""
 
@@ -64,8 +66,10 @@ else
 	then
 		echo "OK, your CGIDIR looks good"
 	else
+		echo "         ********  NB NB NB *********"
 		echo "Ooops ... cannot find the Big Brother CGI scripts in $CGIDIR"
 		echo "I trust you know better, so I will use that setting anyway."
+		echo "         ********  NB NB NB *********"
 	fi
 	echo ""
 
@@ -100,11 +104,41 @@ else
 	fi
 	echo ""
 
+	echo "bbgen uses the CURL library for http and https tests."
+	echo "Trying to find your curl library and headers with curl-config"
+	CURLVER=`curl-config --version`
+	if test $? -eq 0
+	then
+		echo "Your curl-config tells me you have curl version `curl-config --version`"
+		if test "`curl-config --feature | grep -c SSL`" = "1"
+		then
+			echo "Your libcurl supports SSL for https transfers - good"
+		else
+			echo "         ********  NB NB NB *********"
+			echo "WARNING: Your libcurl does not support SSL - you cannot test https sites"
+			echo "I recommend that you rebuild libcurl with SSL support"
+			echo "         ********  NB NB NB *********"
+		fi
+		CURLINCLUDE="`curl-config --cflags`"
+		CURLLIBS="`curl-config --libs`"
+	else
+		echo "         ********  NB NB NB *********"
+		echo "Cannot run curl-config - are you sure you have libcurl ?"
+		echo "Assuming you have libcurl in a standard location"
+		echo "         ********  NB NB NB *********"
+		CURLINCLUDE="-I/usr/local/include"
+		CURLLIBS="-L/usr/local/lib -lcurl -lssl -lcrypto -lz"
+	fi
+	echo ""
+
 	echo "# configure settings for bbgen" > Makefile
 	echo "BBHOME = $BBHOME"               >>Makefile
 	echo "CGIDIR = $CGIDIR"               >>Makefile
 	echo "HISTGRAPHDEF = $HISTGRAPHDEF"   >>Makefile
 	echo "MAXMSG = $MAXMSG"               >>Makefile
+	echo "CURLINCLUDE = $CURLINCLUDE"     >>Makefile
+	echo "CURLLIB = $CURLLIBS"            >>Makefile
+
 	if test -r Makefile.`uname -s`
 	then
 		echo "include Makefile.`uname -s`" >>Makefile
