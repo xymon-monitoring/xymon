@@ -17,8 +17,9 @@ See README.bbhostgrep for details.
 
 bbgen, bbtest-net and bbhostgrep are Copyright (C) 2002-2003, 
 Henrik Storner <henrik@storner.dk> All files are released under 
-the GNU General Public License, version 2. See the file COPYING 
-for details.
+the GNU General Public License version 2, with the additional 
+exemption that compiling, linking, and/or using OpenSSL is allowed. 
+See the file COPYING for details.
 
 A site running this software can be seen at http://www.hswn.dk/bb/
 
