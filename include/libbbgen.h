@@ -12,12 +12,14 @@
 #define __LIBBBGEN_H__
 
 #include <stdio.h>
+#include <time.h>
 
 #include "../lib/calc.h"
 #include "../lib/color.h"
 #include "../lib/encoding.h"
 #include "../lib/errormsg.h"
 #include "../lib/headfoot.h"
+#include "../lib/htmllog.h"
 #include "../lib/misc.h"
 #include "../lib/sendmsg.h"
 #include "../lib/sig.h"
