@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.133 2005-03-26 16:53:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.134 2005-03-28 06:27:58 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -130,7 +130,7 @@ typedef struct conn_t {
 	struct conn_t *next;
 } conn_t;
 
-enum droprencmd_t { CMD_DROPHOST, CMD_DROPTEST, CMD_RENAMEHOST, CMD_RENAMETEST };
+enum droprencmd_t { CMD_DROPHOST, CMD_DROPTEST, CMD_RENAMEHOST, CMD_RENAMETEST, CMD_DROPSTATE };
 
 static volatile int running = 1;
 static volatile int reloadconfig = 1;
@@ -1214,6 +1214,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	hobbitd_log_t *lwalk;
 	char msgbuf[MAXMSG];
 	char *marker = NULL;
+	char *canonhostname;
 
 	MEMDEFINE(hostip);
 	MEMDEFINE(msgbuf);
@@ -1243,6 +1244,10 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		marker = "renametest";
 		sprintf(msgbuf, "%s|%s|%s", hostname, n1, n2);
 		break;
+	  case CMD_DROPSTATE:
+		marker = "dropstate";
+		sprintf(msgbuf, "%s", hostname);
+		break;
 	}
 
 	if (strlen(msgbuf)) {
@@ -1258,9 +1263,11 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 
 	/*
 	 * Now clean up our internal state info, if there is any.
+	 * NB: knownhost() may return NULL, if the bb-hosts file was re-loaded before
+	 * we got around to cleaning up a host.
 	 */
-	hostname = knownhost(hostname, hostip, ghosthandling, &maybedown);
-	if (hostname == NULL) goto done;
+	canonhostname = knownhost(hostname, hostip, ghosthandling, &maybedown);
+	if (canonhostname) hostname = canonhostname;
 
 	for (hwalk = hosts; (hwalk && strcasecmp(hostname, hwalk->hostname)); hwalk = hwalk->next) ;
 	if (hwalk == NULL) goto done;
@@ -1284,6 +1291,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		break;
 
 	  case CMD_DROPHOST:
+	  case CMD_DROPSTATE:
 		/* Unlink the hostlist entry */
 		if (hwalk == hosts) {
 			hosts = hosts->next;
@@ -2672,8 +2680,16 @@ int main(int argc, char *argv[])
 		}
 
 		if (reloadconfig && bbhostsfn) {
+			hobbitd_hostlist_t *hwalk, *nexth;
+
 			reloadconfig = 0;
 			load_hostnames(bbhostsfn, NULL, get_fqdn(), NULL);
+			for (hwalk = hosts; (hwalk); hwalk = nexth) {
+				nexth = hwalk->next;  /* hwalk might disappear */
+				if (hostinfo(hwalk->hostname) == NULL) {
+					handle_dropnrename(CMD_DROPSTATE, "hobbitd", hwalk->hostname, NULL, NULL);
+				}
+			}
 		}
 
 		if (now > nextcheckpoint) {
