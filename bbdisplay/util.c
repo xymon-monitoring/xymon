@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.70 2003-07-12 06:41:28 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.71 2003-07-14 11:07:59 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -61,6 +61,7 @@ static time_t hostenv_reportstart = 0;
 static time_t hostenv_reportend = 0;
 static char hostenv_repwarn[20];
 static char hostenv_reppanic[20];
+static time_t hostenv_snapshot = 0;
 
 /* Stuff for reading files that include other files */
 typedef struct {
@@ -459,6 +460,11 @@ void sethostenv_report(time_t reportstart, time_t reportend, double repwarn, dou
 	sprintf(hostenv_reppanic, "%.2f", reppanic);
 }
 
+void sethostenv_snapshot(time_t snapshot)
+{
+	hostenv_snapshot = snapshot;
+}
+
 void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, int bgcolor)
 {
 	int	fd;
@@ -533,8 +539,7 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 			else if (strcmp(t_start, "CGIBINURL") == 0) 	fprintf(output, "%s", getenv("CGIBINURL"));
 
 			else if (strcmp(t_start, "BBDATE") == 0) {
-				if (hostenv_reportstart == 0) fprintf(output, "%s", ctime(&now));
-				else {
+				if (hostenv_reportstart != 0) {
 					char starttime[20], endtime[20];
 
 					strftime(starttime, sizeof(starttime), "%b %d %Y", localtime(&hostenv_reportstart));
@@ -543,6 +548,12 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 						fprintf(output, "%s", starttime);
 					else
 						fprintf(output, "%s - %s", starttime, endtime);
+				}
+				else if (hostenv_snapshot != 0) {
+					fprintf(output, "%s", ctime(&hostenv_snapshot));
+				}
+				else {
+					fprintf(output, "%s", ctime(&now));
 				}
 			}
 
