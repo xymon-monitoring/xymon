@@ -19,10 +19,22 @@ enum role_t { ROLE_STATUS, ROLE_DATA, ROLE_NOTES, ROLE_ENADIS};
 void update_file(char *fn, char *mode, char *msg, time_t expire, char *sender, time_t timesincechange, int seq)
 {
 	FILE *logfd;
+	char tmpfn[MAX_PATH];
+	char *p;
 
 	dprintf("Updating seq %d file %s\n", seq, fn);
 
-	logfd = fopen(fn, mode);
+	p = strrchr(fn, '/');
+	if (p) {
+		*p = '\0';
+		sprintf(tmpfn, "%s/.%s", fn, p+1);
+		*p = '/';
+	}
+	else {
+		sprintf(tmpfn, ".%s", fn);
+	}
+
+	logfd = fopen(tmpfn, mode);
 	fwrite(msg, strlen(msg), 1, logfd);
 	if (sender) fprintf(logfd, "\n\nMessage received from %s\n", sender);
 	if (timesincechange >= 0) {
@@ -38,8 +50,10 @@ void update_file(char *fn, char *mode, char *msg, time_t expire, char *sender, t
 	if (expire) {
 		struct utimbuf logtime;
 		logtime.actime = logtime.modtime = expire;
-		utime(fn, &logtime);
+		utime(tmpfn, &logtime);
 	}
+
+	rename(tmpfn, fn);
 }
 
 void update_enable(char *fn, time_t expiretime)
