@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.17 2002-12-19 14:24:17 hstoerne Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.18 2002-12-31 10:53:35 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -48,6 +48,7 @@ char	*rrdnames[] = {
         "vmstat",
         "netstat",
         "iostat",
+	"ntpstat",
         NULL
 };
 
