@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.18 2005-02-13 17:09:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.19 2005-02-13 17:48:46 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -384,8 +384,8 @@ void graph_link(FILE *output, char *uri, char *grtype, time_t seconds)
 
 	switch (action) {
 	  case ACT_MENU:
-		fprintf(output, "  <td align=\"left\"><img src=\"%s&amp;action=view&amp;graph=%s\"></td>\n",
-			uri, grtype);
+		fprintf(output, "  <td align=\"left\"><img src=\"%s&amp;action=view&amp;graph=%s\" alt=\"%s graph\"></td>\n",
+			uri, grtype, grtype);
 		fprintf(output, "  <td align=\"left\" valign=\"top\"> <a href=\"%s&amp;graph=%s&amp;action=selzoom\"> <img src=\"%s/zoom.gif\" border=0 alt=\"Zoom graph\" style='padding: 3px'> </a> </td>\n",
 			uri, grtype, getenv("BBSKIN"));
 		break;
@@ -484,11 +484,13 @@ int main(int argc, char *argv[])
 		sethostenv(displayname, "", service, colorname(COL_GREEN));
 		headfoot(stdout, "graphs", "", "header", COL_GREEN);
 
-		fprintf(stdout, "<table align=\"center\" summary=\"Graphs\">\n");
 
 		fprintf(stdout, "  <div id='zoomBox' style='position:absolute; overflow:none; left:0px; top:0px; width:0px; height:0px; visibility:visible; background:red; filter:alpha(opacity=50); -moz-opacity:0.5; -khtml-opacity:0.5'></div>\n");
-		fprintf(stdout, "  <div id='zoomSensitiveZone' style='position:absolute; overflow:none; left:0px; top:0px; width:0px; height:0px; visibility:visible; cursor:crosshair; background:blue; filter:alpha(opacity=0); -moz-opacity:0; -khtml-opacity:0' oncontextmenu='return false'></div>\n");
+		fprintf(stdout, "  <div id='zoomSensitiveZone' style='position:absolute; overflow:none; left:0px; top:0px; width:0px; height:0px; visibility:visible; cursor:crosshair; background:blue; filter:alpha(opacity=0); -moz-opacity:0; -khtml-opacity:0'></div>\n");
+
+		fprintf(stdout, "<table align=\"center\" summary=\"Graphs\">\n");
 		graph_link(stdout, okuri, gtype, 0);
+		fprintf(stdout, "</table>\n");
 
 		{
 			char zoomjsfn[PATH_MAX];
@@ -502,7 +504,6 @@ int main(int argc, char *argv[])
 			if (fd) fclose(fd);
 		}
 
-		fprintf(stdout, "</table>\n");
 
 		headfoot(stdout, "graphs", "", "footer", COL_GREEN);
 		return 0;
