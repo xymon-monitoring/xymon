@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.13 2004-12-03 11:36:27 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.14 2004-12-04 23:09:36 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -25,6 +25,7 @@ static char rcsid[] = "$Id: hobbitlaunch.c,v 1.13 2004-12-03 11:36:27 henrik Exp
 #include <time.h>
 #include <unistd.h>
 #include <errno.h>
+#include <ctype.h>
 
 #include "libbbgen.h"
 
@@ -42,8 +43,15 @@ static char rcsid[] = "$Id: hobbitlaunch.c,v 1.13 2004-12-03 11:36:27 henrik Exp
 
 #define MAX_FAILS 5
 
+typedef struct grouplist_t {
+	char *groupname;
+	int currentuse, maxuse;
+	struct grouplist_t *next;
+} grouplist_t;
+
 typedef struct tasklist_t {
 	char *key;
+	grouplist_t *group;
 	char *cmd;
 	int interval;
 	char *logfile;
@@ -58,6 +66,7 @@ typedef struct tasklist_t {
 } tasklist_t;
 tasklist_t *taskhead = NULL;
 tasklist_t *tasktail = NULL;
+grouplist_t *grouphead = NULL;
 
 volatile time_t nextcfgload = 0;
 volatile int running = 1;
@@ -157,7 +166,10 @@ void load_config(char *conffn)
 	errprintf("Loading tasklist configuration from %s\n", conffn);
 
 	/* The cfload flag: -1=delete task, 0=old task unchanged, 1=new/changed task */
-	for (twalk = taskhead; (twalk); twalk = twalk->next) twalk->cfload = -1;
+	for (twalk = taskhead; (twalk); twalk = twalk->next) {
+		twalk->cfload = -1;
+		twalk->group = NULL;
+	}
 
 	fd = fopen(conffn, "r");
 	while (fgets(l, sizeof(l), fd)) {
@@ -187,6 +199,31 @@ void load_config(char *conffn)
 			p += 3;
 			p += strspn(p, " \t");
 			curtask->cmd = strdup(p);
+		}
+		else if (strncasecmp(p, "GROUP ", 6) == 0) {
+			/* Note: GROUP can be used by itself to define a group, or inside a task definition */
+			char *groupname;
+			int maxuse;
+			grouplist_t *gwalk;
+
+			p += 3;
+			p += strspn(p, " \t");
+			groupname = p;
+			p += strcspn(p, " \t");
+			if (isdigit((int) *p)) maxuse = atoi(p); else maxuse = 1;
+
+			/* Find or create the grouplist entry */
+			for (gwalk = grouphead; (gwalk && (strcmp(gwalk->groupname, groupname))); gwalk = gwalk->next);
+			if (gwalk == NULL) {
+				gwalk = (grouplist_t *)malloc(sizeof(grouplist_t));
+				gwalk->groupname = strdup(groupname);
+				gwalk->maxuse = maxuse;
+				gwalk->currentuse = 0;
+				gwalk->next = grouphead;
+				grouphead = gwalk;
+			}
+
+			if (curtask) curtask->group = gwalk;
 		}
 		else if (curtask && (strncasecmp(p, "INTERVAL ", 9) == 0)) {
 			char *tspec;
@@ -283,15 +320,12 @@ void load_config(char *conffn)
 		while (tasktail->next) tasktail = tasktail->next;
 	}
 
-	/* Dump configuration */
+	/* Make sure group usage counts are correct (groups can change) */
 	for (twalk = taskhead; (twalk); twalk = twalk->next) {
-		dprintf("[%s]\n", twalk->key);
-		dprintf("\tCMD %s\n", twalk->cmd);
-		if (twalk->depends) dprintf("\tNEEDS %s\n", twalk->depends->key);
-		if (twalk->interval) dprintf("\tINTERVAL %d\n", twalk->interval);
-		if (twalk->logfile) dprintf("\tLOGFILE %s\n", twalk->logfile);
-		if (twalk->envfile) dprintf("\tENVFILE %s\n", twalk->envfile);
-		dprintf("\n");
+		if (twalk->group) twalk->group->currentuse = 0;
+	}
+	for (twalk = taskhead; (twalk); twalk = twalk->next) {
+		if (twalk->group && twalk->pid) twalk->group->currentuse++;
 	}
 }
 
@@ -315,6 +349,7 @@ void sig_handler(int signum)
 int main(int argc, char *argv[])
 {
 	tasklist_t *twalk;
+	grouplist_t *gwalk;
 	int argi;
 	int daemonize = 1;
 	char *config = "/etc/bbtasks.cfg";
@@ -351,9 +386,14 @@ int main(int argc, char *argv[])
 			/* Dump configuration */
 
 			load_config(config);
+			for (gwalk = grouphead; (gwalk); gwalk = gwalk->next) {
+				if (gwalk->maxuse > 1) printf("GROUP %s %d\n", gwalk->groupname, gwalk->maxuse);
+			}
+			printf("\n");
 			for (twalk = taskhead; (twalk); twalk = twalk->next) {
 				printf("[%s]\n", twalk->key);
 				printf("\tCMD %s\n", twalk->cmd);
+				if (twalk->group)    printf("\tGROUP %s\n", twalk->group->groupname);
 				if (twalk->depends)  printf("\tNEEDS %s\n", twalk->depends->key);
 				if (twalk->interval) printf("\tINTERVAL %d\n", twalk->interval);
 				if (twalk->logfile)  printf("\tLOGFILE %s\n", twalk->logfile);
@@ -444,6 +484,8 @@ int main(int argc, char *argv[])
 					errprintf("Task %s terminated by signal %d\n", twalk->key, abs(twalk->exitcode));
 				}
 
+				if (twalk->group) twalk->group->currentuse--;
+
 				/* Tasks that depend on this task should be killed ... */
 			}
 		}
@@ -457,6 +499,12 @@ int main(int argc, char *argv[])
 				if (twalk->depends && ((twalk->depends->pid == 0) || (twalk->depends->laststart > (now - 5)))) {
 					dprintf("Postponing start of %s due to %s not yet running\n",
 						twalk->key, twalk->depends->key);
+					continue;
+				}
+
+				if (twalk->group && (twalk->group->currentuse >= twalk->group->maxuse)) {
+					dprintf("Postponing start of %s due to group %s being busy\n",
+						twalk->key, twalk->group->groupname);
 					continue;
 				}
 
@@ -513,6 +561,7 @@ int main(int argc, char *argv[])
 					twalk->pid = 0;
 				}
 				else {
+					if (twalk->group) twalk->group->currentuse++;
 					errprintf("Task %s started with PID %d\n", twalk->key, (int)twalk->pid);
 				}
 			}
