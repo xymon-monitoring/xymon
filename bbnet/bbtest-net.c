@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.201 2005-02-22 13:59:20 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.202 2005-03-02 21:08:28 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -466,10 +466,10 @@ void load_tests(void)
 		if (p) sscanf(p, "%d:%d:%d", &h->badconn[0], &h->badconn[1], &h->badconn[2]);
 
 		p = bbh_custom_item(hwalk, "route:");
-		if (p) h->routerdeps = p;
+		if (p) h->routerdeps = p + strlen("route:");
 		if (routestring) {
 			p = bbh_custom_item(hwalk, routestring);
-			if (p) h->routerdeps = p;
+			if (p) h->routerdeps = p + strlen(routestring);
 		}
 
 		if (bbh_item(hwalk, BBH_FLAG_NOCONN)) h->noconn = 1;
