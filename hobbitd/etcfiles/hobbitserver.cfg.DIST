@@ -163,6 +163,7 @@ WMLMAXCHARS="1500"				# Max number of bytes in a WAP message
 
 # For BB reports
 BBREPWARN="97"					# Default availability causing yellow status on availability report.
+BBREPGREEN="99.995"				# Default availability causing green status on availability report.
 BBGENREPOPTS="--recentgifs --subpagecolumns=2"  # bbgen(1) options used when generating availability reports.
 
 # For BB snapshots
