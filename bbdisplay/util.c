@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.56 2003-06-19 12:08:53 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.57 2003-06-19 13:28:26 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -517,7 +517,10 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 
 					strftime(starttime, sizeof(starttime), "%b %d %Y", localtime(&hostenv_reportstart));
 					strftime(endtime, sizeof(endtime), "%b %d %Y", localtime(&hostenv_reportend));
-					fprintf(output, "%s - %s", starttime, endtime);
+					if (strcmp(starttime, endtime) == 0)
+						fprintf(output, "%s", starttime);
+					else
+						fprintf(output, "%s - %s", starttime, endtime);
 				}
 			}
 
