@@ -788,6 +788,10 @@ This tag is used to specify a http/https check, where
 it is also checked that specific content is present in
 the server response.
 
+If the URL itself includes a semi-colon, this must be
+escaped as '%3B' to avoid confusion over which semicolon
+is part of the URL, and which semicolon acts as a delimiter.
+
 The data that must be returned can be specified either
 as a regular expression (except that <space> is not allowed)
 or as a message digest (typically using an MD5 sum or 
@@ -841,7 +845,8 @@ tag instead, see above.
 This tag can be used to test web pages, that use an input
 form. Data can be posted to the form by specifying them 
 in the form-data field, and the result can be checked
-as if it was a normal content check.
+as if it was a normal content check (see above for a description
+of the cont-tag and the restrictions on how the URL must be writen).
 
 The form-data field must be entered in "application/x-www-form-urlencoded"
 format, which is the most commonly used format for web
