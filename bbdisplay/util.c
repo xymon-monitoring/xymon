@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.22 2003-03-01 22:29:36 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.23 2003-03-02 21:19:51 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -233,10 +233,11 @@ char *commafy(char *hostname)
 
 void sethostenv(char *host, char *ip, char *svc, char *color)
 {
-	strcpy(hostenv_host,  host);
-	strcpy(hostenv_ip,    ip);
-	strcpy(hostenv_svc,   svc);
-	strcpy(hostenv_color, color);
+	hostenv_host[0] = hostenv_ip[0] = hostenv_svc[0] = hostenv_color[0] = '\0';
+	strncat(hostenv_host,  host,  sizeof(hostenv_host)-1);
+	strncat(hostenv_ip,    ip,    sizeof(hostenv_ip)-1);
+	strncat(hostenv_svc,   svc,   sizeof(hostenv_svc)-1);
+	strncat(hostenv_color, color, sizeof(hostenv_color)-1);
 }
 
 void headfoot(FILE *output, char *pagetype, char *pagename, char *subpagename, char *head_or_foot, int bgcolor)
@@ -699,3 +700,4 @@ int generate_static(void)
 {
 	return ( (strcmp(getenv("BBLOGSTATUS"), "STATIC") == 0) ? 1 : 0);
 }
+
