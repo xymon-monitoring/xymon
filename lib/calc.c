@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: calc.c,v 1.1 2003-06-30 21:01:26 henrik Exp $";
+static char rcsid[] = "$Id: calc.c,v 1.2 2003-06-30 21:20:03 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -73,8 +73,10 @@ long compute(char *expression, int *error)
 			while (isspace((int) *operator)) operator++;
 			op = *operator;
 			/* For the && and || operators ... */
-			if ((op == '&') && (*(operator+1) == '&')) { op = '@'; operator++; }
-			else if ((op == '|') && (*(operator+1) == '|')) { op = '#'; operator++; }
+			if      ((op == '&') && (*(operator+1) == '&')) { op = 'a'; operator++; }
+			else if ((op == '|') && (*(operator+1) == '|')) { op = 'o'; operator++; }
+			else if ((op == '>') && (*(operator+1) == '=')) { op = 'g'; operator++; }
+			else if ((op == '<') && (*(operator+1) == '=')) { op = 'l'; operator++; }
 
 			/* Since there is an operator, there must be a value after the operator */
 			startp = operator + 1;
@@ -99,15 +101,23 @@ long compute(char *expression, int *error)
 			}
 
 			switch (op) {
-			  case '+': xval = (xval + yval); break;
-			  case '-': xval = (xval - yval); break;
-			  case '*': xval = (xval * yval); break;
-			  case '/': xval = (xval / yval); break;
-			  case '%': xval = (xval % yval); break;
-			  case '|': xval = (xval | yval); break;
-			  case '#': xval = (xval || yval); break;
-			  case '&': xval = (xval & yval); break;
-			  case '@': xval = (xval && yval); break;
+			  case '+': xval = (xval + yval);  break;
+			  case '-': xval = (xval - yval);  break;
+			  case '*': xval = (xval * yval);  break;
+			  case '/': if (yval) xval = (xval / yval); 
+				    else { *error = 10; return -1; }
+				    break;
+			  case '%': if (yval) xval = (xval % yval); 
+				    else { *error = 10; return -1; }
+				    break;
+			  case '&': xval = (xval & yval);  break;
+			  case 'a': xval = (xval && yval); break;
+			  case '|': xval = (xval | yval);  break;
+			  case 'o': xval = (xval || yval); break;
+			  case '>': xval = (xval > yval);  break;
+			  case 'g': xval = (xval >= yval); break;
+			  case '<': xval = (xval < yval);  break;
+			  case 'l': xval = (xval <= yval); break;
 			  default : { *error = 4; return -1; }
 			}
 		}
