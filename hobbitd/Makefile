@@ -28,7 +28,7 @@ bbd_history: $(HISTORYOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(HISTORYOBJS) $(LIBOBJS)
 
 bbd_alert: $(ALERTOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(ALERTOBJS) $(LIBOBJS)
+	$(CC) -o $@ $(ALERTOBJS) $(LIBOBJS) -lpcre
 
 %.o: %.c bbd_net.h
 	$(CC) $(CFLAGS) -c -o $@ $<
