@@ -13,7 +13,7 @@ ALERTOBJS     = bbgend_alert.o     bbgend_worker.o do_alert.o
 LARRDOBJS     = bbgend_larrd.o     bbgend_worker.o do_larrd.o
 SAMPLEOBJS    = bbgend_sample.o    bbgend_worker.o
 
-all: $(PROGRAMS) $(CGISCRIPTS)
+all: $(PROGRAMS) $(CGISCRIPTS) cfgfiles
 
 bbgend: $(BBGENDOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(BBGENDOBJS) $(LIBOBJS) $(NETLIBS)
@@ -55,6 +55,13 @@ maint.pl: maint.pl.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBVAR@!$(BBVAR)!g' >$@
 	chmod 755 $@
 
+cfgfiles:
+	cat etcfiles/bb-apache.conf.DIST | sed -e 's!@BBHOME@!$(BBHOME)!g'| sed -e 's!@CGIDIR@!$(CGIDIR)!g' >etcfiles/bb-apache.conf
+	cat etcfiles/bbserver.env.DIST | sed -e 's!@BBTOPDIR@!$(BBTOPDIR)!g'| sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g'| sed -e 's!@BBHOSTNAME@!$(BBHOSTNAME)!g'| sed -e 's!@BBHOSTIP@!$(BBHOSTIP)!g'| sed -e 's!@BBHOSTOS@!$(BBHOSTOS)!g' >etcfiles/bbserver.env
+	cat etcfiles/bb-hosts.DIST | sed -e 's!@BBTOPDIR@!$(BBTOPDIR)!g'| sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g'| sed -e 's!@BBHOSTNAME@!$(BBHOSTNAME)!g'| sed -e 's!@BBHOSTIP@!$(BBHOSTIP)!g'| sed -e 's!@BBHOSTOS@!$(BBHOSTOS)!g' >etcfiles/bb-hosts
+	cat etcfiles/bb-alerts.cfg.DIST >etcfiles/bb-alerts.cfg
+	cat etcfiles/bbtasks.cfg.DIST >etcfiles/bbtasks.cfg
+
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
@@ -84,11 +91,6 @@ setup:
 	@echo "OK, continuing installation..."
 	cd wwwfiles; tar cf - . | (cd $(BBHOME)/www/; tar xf -)
 	cd webfiles; tar cf - . | (cd $(BBHOME)/web/; tar xf -)
-	cat etcfiles/bb-apache.conf.DIST | sed -e 's!@BBHOME@!$(BBHOME)!g'| sed -e 's!@CGIDIR@!$(CGIDIR)!g' >etcfiles/bb-apache.conf
-	cat etcfiles/bbserver.env.DIST | sed -e 's!@BBTOPDIR@!$(BBTOPDIR)!g'| sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g'| sed -e 's!@BBHOSTNAME@!$(BBHOSTNAME)!g'| sed -e 's!@BBHOSTIP@!$(BBHOSTIP)!g'| sed -e 's!@BBHOSTOS@!$(BBHOSTOS)!g' >etcfiles/bbserver.env
-	cat etcfiles/bb-hosts.DIST | sed -e 's!@BBTOPDIR@!$(BBTOPDIR)!g'| sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g'| sed -e 's!@BBHOSTNAME@!$(BBHOSTNAME)!g'| sed -e 's!@BBHOSTIP@!$(BBHOSTIP)!g'| sed -e 's!@BBHOSTOS@!$(BBHOSTOS)!g' >etcfiles/bb-hosts
-	cp etcfiles/bb-alerts.cfg.DIST etcfiles/bb-alerts.cfg
-	cp etcfiles/bbtasks.cfg.DIST etcfiles/bbtasks.cfg
 	cd etcfiles; ../../build/install-nooverwrite.sh etc/ bb-apache.conf bbserver.env bb-hosts bb-alerts.cfg bbtasks.cfg
 	mkdir -p $(BBLOGDIR)
 	chown $(BBUSER) $(BBLOGDIR)
