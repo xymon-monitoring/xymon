@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.122 2003-06-07 12:07:08 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.123 2003-06-07 15:49:46 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -66,6 +66,7 @@ char *reqenv[] = {
 "CGIBINURL",
 "DOTHEIGHT",
 "DOTWIDTH",
+"MACHINE",
 "MACHINEADDR",
 "MKBBCOLFONT",
 "MKBBLOCAL",
@@ -328,6 +329,9 @@ int main(int argc, char *argv[])
 			strcpy(pagedir, argv[i]);
 		}
 	}
+
+	/* In case they changed the name of our column ... */
+	setup_signalhandler(egocolumn);
 
 	add_timestamp("Startup");
 

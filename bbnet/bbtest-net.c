@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.64 2003-06-07 12:08:46 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.65 2003-06-07 15:49:46 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -40,6 +40,7 @@ char *reqenv[] = {
 	"BBHOME",
 	"BB",
 	"BBDISP",
+	"MACHINE",
 	NULL
 };
 
@@ -1097,6 +1098,9 @@ int main(int argc, char *argv[])
 			errprintf("Unknown option %s - try --help\n", argv[argi]);
 		}
 	}
+
+	/* In case they changed the name of our column ... */
+	setup_signalhandler(egocolumn);
 
 	init_timestamp();
 	envcheck(reqenv);
