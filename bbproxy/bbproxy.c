@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.17 2004-09-21 09:17:51 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.18 2004-09-21 11:21:57 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -220,7 +220,7 @@ int main(int argc, char *argv[])
 	save_errbuf = 0;
 
 	for (opt=1; (opt < argc); opt++) {
-		if (argnmatch(argv[opt], "--local=")) {
+		if (argnmatch(argv[opt], "--listen=")) {
 			char *p = strchr(argv[opt], '=');
 			locaddr = strdup(p+1);
 			p = strchr(locaddr, ':');
@@ -299,15 +299,16 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[opt], "--help") == 0) {
 			printf("bbproxy version %s\n", VERSION_STRING);
 			printf("\nOptions:\n");
-			printf("\t--local=IP[:port]           : Listen address and portnumber\n");
+			printf("\t--listen=IP[:port]          : Listen address and portnumber\n");
 			printf("\t--bbdisplay=IP[:port]       : BBDISPLAY server address and portnumber\n");
 			printf("\t--bbpager=IP[:port]         : BBPAGER server address and portnumber\n");
+			printf("\t--report=[HOST.]SERVICE     : Sends a BB status message about proxy activity\n");
 			printf("\t--timeout=N                 : Communications timeout (seconds)\n");
 			printf("\t--lqueue=N                  : Listen-queue size\n");
 			printf("\t--daemon                    : Run as a daemon\n");
 			printf("\t--no-daemon                 : Do not run as a daemon\n");
 			printf("\t--pidfile=FILENAME          : Save proces-ID of daemon to FILENAME\n");
-			printf("\t--proxyname=[HOST.]SERVICE  : Sends a BB status message about proxy activity\n");
+			printf("\t--logfile=FILENAME          : Log to FILENAME instead of stderr\n");
 			printf("\t--debug                     : Enable debugging output\n");
 			printf("\n");
 			return 0;
@@ -433,11 +434,13 @@ int main(int argc, char *argv[])
 			}
 
 			if (stentry) {
-				sprintf(stentry->buf, "status %s green %s Proxy up %s\n\nProxy statistics\n\nIncoming messages        : %10lu (%lu msgs/second)\nMessages merged to combos: %10lu\nResulting combo messages : %10lu\nOutbound messages        : %10lu\n\nIncoming message distribution\n- Combo messages         : %10lu\n- Status messages        : %10lu\n- Page messages          : %10lu\n- Other messages         : %10lu\n\nProxy ressources\n- Connection table size  : %10d\n- Buffer space           : %10lu kByte\n",
+				sprintf(stentry->buf, "status %s green %s Proxy up %s\n\nProxy statistics\n\nIncoming messages        : %10lu (%lu msgs/second)\nOutbound messages        : %10lu\n\nIncoming message distribution\n- Combo messages         : %10lu\n- Status messages        : %10lu\n  Messages merged        : %10lu\n  Resulting combos       : %10lu\n- Page messages          : %10lu\n- Other messages         : %10lu\n\nProxy ressources\n- Connection table size  : %10d\n- Buffer space           : %10lu kByte\n",
 					proxyname, timestamp, runtime_s,
 					msgs_total, (msgs_total - msgs_total_last) / (now - laststatus),
-					msgs_merged, msgs_combined, msgs_delivered,
-					msgs_combo, msgs_status, msgs_page, msgs_other,
+					msgs_delivered,
+					msgs_combo, 
+					msgs_status, msgs_merged, msgs_combined, 
+					msgs_page, msgs_other,
 					ccount, bufspace / 1024);
 				p = stentry->buf + strlen(stentry->buf);
 				p += sprintf(p, "\nTimeout details:\n");
