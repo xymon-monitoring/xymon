@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.9 2003-01-27 23:21:17 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.10 2003-01-30 13:43:08 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -33,8 +33,23 @@ static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.9 2003-01-27 23:21:17 henrik 
 #include "loaddata.h"
 #include "larrdgen.h"
 
+char    larrdcol[20] = "larrd";
 int enable_larrdgen = 0;
 int larrd_update_interval = 300; /* Update LARRD pages every N seconds */
+
+char	*rrdnames[] = { 
+        "la",
+        "disk",
+        "memory",
+        "tcp",
+        "citrix",
+        "users",
+        "vmstat",
+        "netstat",
+        "iostat",
+	"ntpstat",
+        NULL
+};
 
 void generate_larrd(char *rrddirname, char *larrdcolumn)
 {
