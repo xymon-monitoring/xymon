@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.15 2004-10-30 22:20:07 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.16 2004-10-31 08:16:09 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -172,7 +172,6 @@ int main(int argc, char *argv[])
 		if ((metacount > 8) && (strncmp(items[0], "@@stachg", 8) == 0)) {
 			/* @@stachg#seq|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime */
 			sscanf(items[1], "%d.%*d", &tstamp_i); tstamp = tstamp_i;
-			memcpy(&tstamptm, localtime(&tstamp), sizeof(tstamptm));
 			hostname = items[3];
 			testname = items[4];
 			newcolor = parse_color(items[6]);
@@ -189,10 +188,8 @@ int main(int argc, char *argv[])
 				mkdir(fname, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
 				p = fname + sprintf(fname, "%s/%s/%s", histlogdir, hostdash, testname);
 				mkdir(fname, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
+				p += sprintf(p, "/%s", histlogtime(tstamp));
 
-				p += strftime(p, sizeof(fname)-(p-fname), "/%a_%b_", &tstamptm);
-				p += sprintf(p, "%d", tstamptm.tm_mday);
-				p += strftime(p, sizeof(fname)-(p-fname), "_%H:%M:%S_%Y", &tstamptm);
 				histlogfd = fopen(fname, "w");
 				if (histlogfd) {
 					fwrite(statusdata, strlen(statusdata), 1, histlogfd);
@@ -307,6 +304,7 @@ int main(int argc, char *argv[])
 					}
 
 					/* And the new record. */
+					memcpy(&tstamptm, localtime(&tstamp), sizeof(tstamptm));
 					strftime(timestamp, sizeof(timestamp), "%a %b %e %H:%M:%S %Y", &tstamptm);
 					fprintf(statuslogfd, "%s %s %d", timestamp, colorname(newcolor), (int)tstamp);
 
