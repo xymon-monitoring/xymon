@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.131 2005-01-23 12:59:55 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.132 2005-02-03 13:43:52 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -388,8 +388,13 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char 
 
 			if (rowcount == 0) {
 				/* output group title and column headings */
-				fprintf(output, "<TR><TD VALIGN=MIDDLE ROWSPAN=2><CENTER><FONT %s>%s</FONT></CENTER></TD>\n", 
-					xgetenv("MKBBTITLE"), grouptitle);
+				fprintf(output, "<TR>");
+
+				if (strlen(grouptitle)) {
+					fprintf(output, "<TD VALIGN=MIDDLE ROWSPAN=2><CENTER><FONT %s>%s</FONT></CENTER></TD>\n", 
+						xgetenv("MKBBTITLE"), grouptitle);
+				}
+
 				if ((groupcols == NULL) && (maxbanksize > 0)) {
 					int i,j;
 
