@@ -13,7 +13,7 @@
 #ifndef __CONTEST_H_
 #define __CONTEST_H_
 
-/* All of this just for struct sockaddr_in on FreeBSD */
+#include <time.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>

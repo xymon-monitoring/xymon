@@ -18,6 +18,7 @@
 #include <curl/easy.h>
 
 #include <sys/types.h>
+#include <time.h>
 #include <regex.h>
 
 
