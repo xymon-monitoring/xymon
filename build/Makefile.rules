@@ -1,6 +1,15 @@
-all: bbgen bbtest-web bbtest-net
+# Makefile for bbgen, bbtest-net and misc. other tools
+#
+# Henrik Storner, 27-04-2003
+#
+
+all: bbgen bbtest-net
 
 CC=gcc
+
+# Set these to the location of your libcurl include-files and library.
+# CURLINCLUDE=-I/usr/local/include
+# CURLLIB=-L/usr/local/lib
 
 # Compile flags for normal build
 CFLAGS=-O2 -Wall -Wno-unused -D_REENTRANT
@@ -8,20 +17,17 @@ CFLAGS=-O2 -Wall -Wno-unused -D_REENTRANT
 # Compile flags for debugging
 # CFLAGS=-g -DDEBUG -Wall -D_REENTRANT
 
+
 GENOBJS = bbgen.o debug.o loaddata.o larrdgen.o pagegen.o process.o util.o infogen.o alert.o wmlgen.o
-WEBTESTOBJS = bbtest-web.o util.o debug.o
-NETTESTOBJS = bbtest-net.o util.o debug.o contest.o
+NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o
 
 LIBRESOLV := $(shell if [ `uname -s` = "SunOS" ]; then echo "-lresolv"; fi)
 
 bbgen: $(GENOBJS)
 	$(CC) $(CFLAGS) -o bbgen $(GENOBJS)
 
-bbtest-web: $(WEBTESTOBJS)
-	$(CC) $(CFLAGS) -o bbtest-web $(WEBTESTOBJS)
-
 bbtest-net: $(NETTESTOBJS)
-	$(CC) $(CFLAGS) -o bbtest-net $(NETTESTOBJS) $(LIBRESOLV)
+	$(CC) $(CFLAGS) -o bbtest-net $(NETTESTOBJS) $(CURLLIB) -lcurl $(LIBRESOLV)
 
 alert: alert.c debug.c util.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o alert alert.c debug.c util.c
@@ -29,8 +35,11 @@ alert: alert.c debug.c util.c
 contest: contest.c debug.c util.c
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o contest contest.c debug.c util.c $(LIBRESOLV)
 
+httptest.o: httptest.c httptest.h
+	$(CC) $(CFLAGS) $(CURLINCLUDE) -c -o $@ $<
+
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f *.o *~ bbgen bbtest-web bbtest-net alert contest
+	rm -f *.o *~ bbgen bbtest-net alert contest
