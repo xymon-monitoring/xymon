@@ -54,6 +54,25 @@ Provide a summary of available commandline options.
 .IP "--version"
 Prints the version number of bbtest-net
 
+.IP --dns=[ip|only]
+Determines how bbtest-net finds the IP adresses of the hosts to test. 
+By default, bbtest-net does a DNS lookup of the hostname 
+to determine the IP address, unless the host has the "testip" 
+tag, or the DNS lookup fails.
+.br
+With "--dns=only" bbtest-net will ONLY do the DNS lookup;
+it it fails, then all services on that host will be 
+reported as being down.
+.br
+With "--dns=ip" bbtest-net will never do a DNS lookup;
+it will use the IP adresse specified in bb-hosts for
+the tests. Thus, this setting is equivalent to having
+the "testip" tag on all hosts. Note that http tests
+will ignore this setting and still perform a DNS
+lookup for the hostname given in the URL; see the
+"bbtest-net tags for HTTP tests" section in
+.I bb-hosts(5)
+
 .IP --debug
 Dumps a bunch of status about the tests as they
 progress to stdout.
@@ -113,21 +132,6 @@ but will usually be 256. If bbtest-net begins to complain
 about not being able to get a "socket", try running
 bbtest-net with a lower value like 50 or 100.
 
-.IP --dns=[ip|only]
-Determines how bbtest-net finds the IP adresses of the hosts to test. 
-By default, bbtest-net does a DNS lookup of the hostname 
-to determine the IP address, unless the host has the "testip" 
-tag, or the DNS lookup fails.
-.br
-With "--dns=only" bbtest-net will ONLY do the DNS lookup;
-it it fails, then all services on that host will be 
-reported as being down.
-.br
-With "--dns=ip" bbtest-net will never do a DNS lookup;
-it will use the IP adresse specified in bb-hosts for
-the tests. Thus, this setting is equivalent to having
-the "testip" tag on all hosts.
-
 .IP --timeout=N
 Determines the timeout (in seconds) for each
 service that is tested. For TCP tests (those from BBNETSVCS),
@@ -155,10 +159,18 @@ checks using the same test name as these scripts do.
 Enables logging of all traffic from HTTP/HTTPS servers. Mostly useful for 
 debugging.
 
-.IP --ssl=SSLCERTTESTNAME
-determines the name of the column BB displays for the SSL certificate checks 
-(for https websites only). The default is "sslcert".
 
+.SH SSL CERTIFICATE CHECKS
+When bbtest-net tests services that use SSL- or TLS-based protocols,
+it will check that the server certificate has not expired. This check
+happens automatically for https (secure web), pop3s, imaps, nntps
+and all other SSL-enabled services.
+
+All certificates found for a host are reported in one status message.
+
+.IP --ssl=SSLCERTTESTNAME
+determines the name of the column BB displays for the SSL certificate checks.
+The default is "sslcert".
 .IP --no-ssl
 Disables reporting of the SSL certificate check.
 
@@ -167,7 +179,6 @@ Disables reporting of the SSL certificate check.
 Determines the number of days before an SSL certificate
 expires, where bbtest-net will generate a warning or
 alarm status for the SSL certificate column.
-
 
 .SH USING MULTIPLE BBNET SYSTEMS
 If you have more than one BBNET system - e.g. if your network
