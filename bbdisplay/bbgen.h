@@ -22,7 +22,7 @@
 #include <time.h>
 #include <stddef.h>
 
-#define VERSION "2.12"
+#define VERSION "2.13pre"
 
 /* Structure defs for bbgen */
 
@@ -307,14 +307,15 @@ typedef struct dispsummary_t {
 
 /* Format of records in the $BBHIST/allevents file */
 typedef struct event_t {
-	char	hostname[60];
-	char	service[20];
+	struct host_t *host;
+	struct bbgen_col_t *service;
 	time_t	eventtime;
 	time_t	changetime;
 	time_t	duration;
 	int	newcolor;	/* stored as "re", "ye", "gr" etc. */
 	int	oldcolor;
 	int	state;		/* 2=escalated, 1=recovered, 0=no change */
+	struct event_t *next;
 } event_t;
 
 /* Format of records in $BBACKS/acklog file (TAB separated) */
