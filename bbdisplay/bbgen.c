@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.56 2003-01-16 11:37:15 hstoerne Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.57 2003-01-17 09:59:45 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -42,6 +42,37 @@ col_t   	*colhead = NULL;			/* Head of column-name list */
 summary_t	*sumhead = NULL;			/* Summaries we send out */
 dispsummary_t	*dispsums = NULL;			/* Summaries we received and display */
 
+char *reqenv[] = {
+"BB",
+"BBACKS",
+"BBDISP",
+"BBHIST",
+"BBHISTLOGS",
+"BBHOME",
+"BBHOSTS",
+"BBHTML",
+"BBLOCATION",
+"BBLOGS",
+"BBLOGSTATUS",
+"BBNOTES",
+"BBREL",
+"BBRELDATE",
+"BBSKIN",
+"BBTMP",
+"BBVAR",
+"BBWEB",
+"CGIBINURL",
+"DOTHEIGHT",
+"DOTWIDTH",
+"MACHINEADDR",
+"MKBBCOLFONT",
+"MKBBLOCAL",
+"MKBBREMOTE",
+"MKBBROWFONT",
+"MKBBSUBLOCAL",
+"MKBBTITLE",
+"PURPLEDELAY",
+NULL };
 
 int main(int argc, char *argv[])
 {
@@ -50,6 +81,9 @@ int main(int argc, char *argv[])
 	page_t 		*p, *q;
 	dispsummary_t	*s;
 	int		i;
+
+	/* Check that all needed environment vars are defined */
+	envcheck(reqenv);
 
 	sprintf(pagedir, "%s/www", getenv("BBHOME"));
 	sprintf(rrddir, "%s/rrd", getenv("BBVAR"));
@@ -99,11 +133,18 @@ int main(int argc, char *argv[])
 		else if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-?") == 0)) {
 			printf("Usage: %s [--options] [WebpageDirectory]\n", argv[0]);
 			printf("Options:\n");
-			printf("    --recentgifs           : Use xxx-recent.gif images\n");
+			printf("    --nopurple             : Disable purple status-updates\n");
+			printf("    --recentgifs           : Use xxx-recent.gif icons for newly changed tests\n");
+#ifdef DEBUG
+			printf("    --debug                : Dumps internal state-table\n");
+#endif
+			printf("\nLARRD support options:\n");
 			printf("    --larrd[=LARRDCOLUMN]  : LARRD data in column LARRDCOLUMN, and handle larrd-html\n");
 			printf("    --larrdupdate=N        : time between updates of LARRD pages in seconds\n");
 			printf("    --rrddir=RRD-directory : Directory for LARRD RRD files\n");
-			printf("    --nopurple             : Disable all purple updates\n");
+			printf("\nPropagation control options:\n");
+			printf("    --noprop=test[,test]   : Disable upwards status propagation when YELLOW\n");
+			printf("    --nopropred=test[,test]: Disable upwards status propagation when RED or YELLOW\n");
 			exit(1);
 		}
 		else {
