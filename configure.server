@@ -257,6 +257,17 @@ else
 			LDAPLIB=$DIR/lib
 		fi
 	done
+	#
+	# Some systems require liblber also
+	#
+	if test -f $LDAPLIB/liblber.a
+	then
+		LDAPLBER=-llber
+	fi
+	if test -f $LDAPLIB/liblber.so
+	then
+		LDAPLBER=-llber
+	fi
 
 	if test "$LDAPINC" != "" -a "$LDAPLIB" != ""
 	then
@@ -326,9 +337,9 @@ else
 	fi
 	if test "$LDAPLIB" != ""
 	then
-		echo "LDAPLIBS = -L$LDAPLIB -lldap" >>Makefile
+		echo "LDAPLIBS = -L$LDAPLIB -lldap $LDAPLBER" >>Makefile
 	else
-		echo "LDAPLIBS = -lldap"            >>Makefile
+		echo "LDAPLIBS = -lldap $LDAPLBER"            >>Makefile
 	fi
 
 	if test -r Makefile.`uname -s`
