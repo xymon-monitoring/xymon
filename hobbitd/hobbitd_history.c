@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.14 2004-10-30 15:53:53 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.15 2004-10-30 22:20:07 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -145,6 +145,7 @@ int main(int argc, char *argv[])
 		char *statusdata = "";
 		char *hostname, *hostnamecommas, *testname;
 		time_t tstamp, lastchg;
+		int tstamp_i, lastchg_i;
 		int newcolor, oldcolor;
 		struct tm tstamptm;
 		char newcol2[3];
@@ -170,7 +171,7 @@ int main(int argc, char *argv[])
 
 		if ((metacount > 8) && (strncmp(items[0], "@@stachg", 8) == 0)) {
 			/* @@stachg#seq|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime */
-			sscanf(items[1], "%d.%*d", (int *)&tstamp);
+			sscanf(items[1], "%d.%*d", &tstamp_i); tstamp = tstamp_i;
 			memcpy(&tstamptm, localtime(&tstamp), sizeof(tstamptm));
 			hostname = items[3];
 			testname = items[4];
@@ -249,16 +250,19 @@ int main(int argc, char *argv[])
 					while (!gotit) {
 						long tmppos = ftell(statuslogfd);
 						time_t dur;
+						int dur_i;
 
 						if (fgets(l, sizeof(l)-1, statuslogfd)) {
 							/* Sun Oct 10 06:49:42 2004 red   1097383782 602 */
 
 							if ((strlen(l) > 24) && 
-							    (sscanf(l+24, " %s %d %d", oldcol, (int *)&lastchg, (int *)&dur) == 2)) {
+							    (sscanf(l+24, " %s %d %d", oldcol, &lastchg_i, &dur_i) == 2)) {
 								/* 
 								 * Record the start location of the line
 								 */
 								pos = tmppos;
+								lastchg = lastchg_i;
+								dur = dur_i;
 							}
 						}
 						else {

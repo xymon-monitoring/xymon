@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.16 2004-10-30 15:52:23 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.17 2004-10-30 22:19:24 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
 	char *configfn = NULL;
 	char *checkfn = NULL;
 	int checkpointinterval = 900;
-	time_t nextcheckpoint;
+	time_t nextcheckpoint = 0;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--debug")) {
@@ -247,7 +247,7 @@ int main(int argc, char *argv[])
 		char *metadata[20];
 		char *p;
 		int metacount;
-		char *hostname, *testname;
+		char *hostname = NULL, *testname = NULL;
 		struct timeval timeout;
 		time_t now;
 		int anytogo;

@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.8 2004-10-30 15:55:05 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.9 2004-10-30 22:20:36 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -124,7 +124,7 @@ static int defaultcolors = 0;
 
 static criteria_t *setup_criteria(rule_t **currule, recip_t **currcp)
 {
-	criteria_t *crit;
+	criteria_t *crit = NULL;
 
 	switch (pstate) {
 	  case P_NONE:
@@ -721,7 +721,7 @@ static repeat_t *find_repeatinfo(activealerts_t *alert, recip_t *recip, int crea
 static char *message_subject(activealerts_t *alert, recip_t *recip)
 {
 	static char subj[100];
-	char *sev;
+	char *sev = "";
 
 	switch (alert->color) {
 	  case COL_RED:

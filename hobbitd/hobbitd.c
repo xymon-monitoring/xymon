@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.44 2004-10-30 15:52:01 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.45 2004-10-30 22:20:20 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -121,7 +121,7 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 	struct timeval tstamp;
 	struct timezone tz;
 	union semun su;
-	int semerr;
+	int semerr = 0;
 
 	/* First see how many users are on this channel */
 	clients = semctl(channel->semid, CLIENTCOUNT, GETVAL);
@@ -1226,9 +1226,10 @@ void load_checkpoint(char *fn)
 	bbd_hostlist_t *htail = NULL;
 	bbd_testlist_t *t = NULL;
 	bbd_log_t *ltail = NULL;
-	char *hostname, *testname, *sender, *testflags, *statusmsg, *disablemsg, *ackmsg;
-	time_t logtime, lastchange, validtime, enabletime, acktime, cookieexpires;
-	int color, oldcolor, cookie;
+	char *hostname = NULL, *testname = NULL, *sender = NULL, *testflags = NULL; 
+	char *statusmsg = NULL, *disablemsg = NULL, *ackmsg = NULL;
+	time_t logtime = 0, lastchange = 0, validtime = 0, enabletime = 0, acktime = 0, cookieexpires = 0;
+	int color = COL_GREEN, oldcolor = COL_GREEN, cookie = -1;
 
 	fd = fopen(fn, "r");
 	if (fd == NULL) {
