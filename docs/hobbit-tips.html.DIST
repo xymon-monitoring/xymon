@@ -12,10 +12,17 @@ raised with Hobbit.</p>
 	<li><a href="#icons">What do the different red/yellow/green icons mean ?</a></li>
 	<li><a href="#noclient">Client side tests are missing</a></li>
 	<li><a href="#clientnames">Clients using odd hostnames</a></li>
-	<li><a href="#droprename">Renaming and deleting hosts</a></li>
+	<li><a href="#droprename">Where are the bbmv/bbrm commands?</a></li>
+	<li><a href="#droptest">How do I delete a test status ?</a></li>
+	<li><a href="#drophost">How do I delete a host ?</a></li>
+	<li><a href="#renamehost">How do I rename a host ?</a></li>
 	<li><a href="#apachetest">I cannot get the Apache graphs to work</a></li>
 	<li><a href="#updatefreq">Updating more frequently</a></li>
+	<li><a href="#fahrenheit">I want my temperature graphs to show Fahrenheit</a></li>
+	<li><a href="#nohtmllink">How do I remove the HTML links from the alert messages?</a></li>
+	<li><a href="#mancgi">I cannot see the the man-pages on the web</a></li>
 </ul>
+<hr>
 
 <h3><a name="icons">What do the little red/yellow/green icons mean ?</a></h3>
 <table align="center" border=1 summary="Hobbit status icons">
@@ -27,12 +34,19 @@ raised with Hobbit.</p>
 	<tr><th align=left valign=top>Purple: No report</th><td align=center><img src="@BBHOSTURL@/gifs/purple-recent.gif" alt="Purple - recently changed"></td><td align=center><img src="@BBHOSTURL@/gifs/purple.gif" alt="Purple"></td></tr>
 	<tr><th align=left valign=top>Blue: Disabled</th><td align=center><img src="@BBHOSTURL@/gifs/blue-recent.gif" alt="Blue - recently changed"></td><td align=center><img src="@BBHOSTURL@/gifs/blue.gif" alt="Blue"></td></tr>
 </table>
+<hr>
 
 <h3><a name="noclient">My client-side tests dont show up on the webpages</a></h3>
 <p>Did you install a client ? It is not included with Hobbit, so you
 need to install the Big Brother client for client side tests.</p>
 
-<p>If you did, then the two most probable causes for this are:</p>
+<p>If you prefer an open-source client package, there is a Hobbit
+client available on hobbitmon.sourceforge.net. It is currently only
+for NetBSD systems, but work is underway to port it to other Unix
+systems - including Linux, FreeBSD, and Solaris.</p>
+
+<p>If you did install a client, then the two most probable causes for 
+this are:</p>
 <ul>
 	<li>The client is using another hostname than what is in the bb-hosts file.<br>
 	Hobbit only cares about the hosts that are in the bb-hosts file, and
@@ -55,17 +69,20 @@ need to install the Big Brother client for client side tests.</p>
 	the <a href="http://www.deadcat.net/">www.deadcat.net</a> archive.
 </ul>
 
+<hr>
 <h3><a name="clientnames">My silly clients are using a hostname different from the one in bb-hosts</a></h3>
 <p>Add a <tt>CLIENT:clienthostname</tt> tag to the host entry in the bb-hosts file,
 or re-configure the client to use the proper hostname.</p>
 
 
+<hr>
 <h3><a name="droprename">Where are the bbrm and bbmv commands from Big Brother ?</a></h3>
 <p>They have been integrated into the Hobbit network daemon. See
-the next two questions.</p>
+the next three questions.</p>
 
 
-<h3>I accidentally added an 'ftp' check. Now I cannot get it off the webpage!</h3>
+<hr>
+<h3><a name="droptest">I accidentally added an 'ftp' check. Now I cannot get it off the webpage!</a></h3>
 <p>Use the command</p>
 <pre>
     ~/server/bin/bb 127.0.0.1 "drop HOSTNAME ftp"
@@ -74,7 +91,8 @@ the next two questions.</p>
 around the &quot;drop HOSTNAME ftp&quot;.</p>
 
 
-<h3>So how do I get rid of an entire host in Hobbit?</h3>
+<hr>
+<h3><a name="drophost">So how do I get rid of an entire host in Hobbit?</a></h3>
 <p>First, remove the host from the ~/server/etc/bb-hosts file. Then use the command</p>
 <pre>
     ~/server/bin/bb 127.0.0.1 "drop HOSTNAME"
@@ -82,8 +100,8 @@ around the &quot;drop HOSTNAME ftp&quot;.</p>
 <p>to permanenly remove all traces of a host. Note that you need the quotes
 around the &quot;drop HOSTNAME&quot;.</p>
 
-
-<h3>How do I rename a host in the Hobbit display?</h3>
+<hr>
+<h3><a name="renamehost">How do I rename a host in the Hobbit display?</a></h3>
 <p>First, change the ~/server/etc/bb-hosts file so it has the new name.
 Then to move your historical data over to the new name, run</p>
 <pre>
@@ -91,7 +109,9 @@ Then to move your historical data over to the new name, run</p>
 </pre>
 
 
-<p><a name="apachetest">Charles Jones provided this recipe</a> on the Hobbit mailing list:</p>
+<hr>
+<h3><a name="apachetest">Getting the Apache performance graphs</a></h3>
+<p>Charles Jones provided this recipe on the Hobbit mailing list:</p>
 <pre><tt>
 From: Charles Jones
 Date: Sun, 06 Feb 2005 21:28:19 -0700
@@ -139,6 +159,7 @@ data.  Heres what I have in mine:
 </tt></pre>
 
 
+<hr>
 <h3><a name="updatefreq">I need the web-pages to update more frequently</a></h3>
 <p>The ~/server/etc/hobbitlaunch.cfg defines the update
 interval for all of the Hobbit programs. The default is for
@@ -150,6 +171,31 @@ Hobbit server), then network tests that fail
 will run every minute for up to 30 minutes after the initial
 failure, so usually there is little need to change the update
 interval for your network tests.</p>
+
+<hr>
+<h3><a name="fahrenheit">I want my temperature graphs in Fahrenheit</a></h3>
+<p>Edit the file server/etc/hobbitgraph.cfg, and change the <b>[temperature]</b>
+definition from the default one to the one below that shows Fahrenheit graphs.</p>
+
+<hr>
+<h3><a name="nohtmllink">How do I remove the HTML links from the alert messages?</a></h3>
+<p>Configure your alerts in server/etc/hobbit-alerts.cfg to use <tt>FORMAT=PLAIN</tt>
+instead of TEXT.</p>
+
+<hr>
+<h3><a name="mancgi">I cannot see the the man-pages on the web</a></h3>
+<p>A common Apache configuration mistakenly believes any filename containing
+".cgi" is a CGI-script, so it refuses to present the man-pages for the CGI
+scripts. Stephen Beaudry found the solution:</p>
+<pre>
+   This occurs because by default, apache associates the cgi-script
+   handler with any filename containing ".cgi".  I fixed this on my server
+   by changing the following line in my httpd.conf
+
+   AddHandler cgi-script .cgi     -&gt;to-&gt;    AddHandler cgi-script .cgi$
+</pre>
+
+<hr>
 
 </body>
 </html>
