@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.132 2004-10-14 11:01:05 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.133 2004-10-14 13:59:53 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -58,6 +58,7 @@ static time_t hostenv_reportend = 0;
 static char hostenv_repwarn[20];
 static char hostenv_reppanic[20];
 static time_t hostenv_snapshot = 0;
+static char *hostenv_logtime = NULL;
 
 /* Stuff for reading files that include other files */
 typedef struct stackfd_t {
@@ -560,6 +561,12 @@ void sethostenv_snapshot(time_t snapshot)
 	hostenv_snapshot = snapshot;
 }
 
+void sethostenv_histlog(char *histtime)
+{
+	if (hostenv_logtime) free(hostenv_logtime);
+	hostenv_logtime = malcop(histtime);
+}
+
 void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, int bgcolor)
 {
 	int	fd;
@@ -696,6 +703,7 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 			}
 			else if (strcmp(t_start, "BBREPWARN") == 0)     fprintf(output, "%s", hostenv_repwarn);
 			else if (strcmp(t_start, "BBREPPANIC") == 0)    fprintf(output, "%s", hostenv_reppanic);
+			else if (strcmp(t_start, "LOGTIME") == 0) 	fprintf(output, "%s", (hostenv_logtime ? hostenv_logtime : ""));
 			else fprintf(output, "&");			/* No substitution - copy the ampersand */
 			
 			*t_next = savechar; t_start = t_next; t_next = strchr(t_start, '&');
