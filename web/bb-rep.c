@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.19 2004-11-17 16:12:43 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.20 2004-11-20 22:31:22 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -28,6 +28,7 @@ static char rcsid[] = "$Id: bb-rep.c,v 1.19 2004-11-17 16:12:43 henrik Exp $";
 #include <dirent.h>
 #include <time.h>
 #include <signal.h>
+#include <fcntl.h>
 
 #include "bbgen.h"
 
@@ -97,8 +98,13 @@ void parse_query(void)
 			startday = atoi(val);
 		}
 		else if (argnmatch(token, "start-mon")) {
-			for (startmon=0; (monthnames[startmon] && strcmp(val, monthnames[startmon])); startmon++) ;
-			if (startmon >= 12) startmon = -1;
+			char *errptr;
+
+			startmon = strtol(val, &errptr, 10) - 1;
+			if (errptr == val) {
+				for (startmon=0; (monthnames[startmon] && strcmp(val, monthnames[startmon])); startmon++) ;
+				if (startmon >= 12) startmon = -1;
+			}
 		}
 		else if (argnmatch(token, "start-yr")) {
 			startyear = atoi(val);
@@ -107,8 +113,13 @@ void parse_query(void)
 			endday = atoi(val);
 		}
 		else if (argnmatch(token, "end-mon")) {
-			for (endmon=0; (monthnames[endmon] && strcmp(val, monthnames[endmon])); endmon++) ;
-			if (endmon > 12) endmon = -1;
+			char *errptr;
+
+			endmon = strtol(val, &errptr, 10) - 1;
+			if (errptr == val) {
+				for (endmon=0; (monthnames[endmon] && strcmp(val, monthnames[endmon])); endmon++) ;
+				if (endmon > 12) endmon = -1;
+			}
 		}
 		else if (argnmatch(token, "end-yr")) {
 			endyear = atoi(val);
@@ -225,6 +236,37 @@ int main(int argc, char *argv[])
 	}
 	bbgen_argv[newargi++] = outdir;
 	bbgen_argv[newargi++] = NULL;
+
+	if ((getenv("QUERY_STRING") == NULL) || (strlen(getenv("QUERY_STRING")) == 0)) {
+		/* Present the query form */
+		int formfile;
+		char formfn[PATH_MAX];
+
+		sprintf(formfn, "%s/web/report_form", getenv("BBHOME"));
+		formfile = open(formfn, O_RDONLY);
+
+		if (formfile >= 0) {
+			int n;
+			char *inbuf;
+			struct stat st;
+
+			fstat(formfile, &st);
+			inbuf = (char *) malloc(st.st_size + 1);
+			read(formfile, inbuf, st.st_size);
+			inbuf[st.st_size] = '\0';
+			close(formfile);
+
+			printf("Content-Type: text/html\n\n");
+			sethostenv("", "", "", colorname(COL_BLUE));
+
+			headfoot(stdout, "report", "", "header", COL_BLUE);
+			output_parsed(stdout, inbuf, COL_BLUE, "report");
+			headfoot(stdout, "report", "", "footer", COL_BLUE);
+
+			free(inbuf);
+		}
+		return 0;
+	}
 
 	envcheck(reqenv);
 	parse_query();
