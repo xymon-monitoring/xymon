@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.9 2004-12-26 23:45:29 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.10 2004-12-27 11:10:47 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -228,16 +228,24 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 		int first = 1;
 		int gcount, step;
 
-		gcount = (itemcount / 5); if ((gcount*5) != itemcount) gcount++;
-		step = (itemcount / gcount);
+		if (itemcount > 0) {
+			gcount = (itemcount / 5); if ((gcount*5) != itemcount) gcount++;
+			step = (itemcount / gcount);
+		}
 
 		rrdparturl = (char *) malloc(rrdparturlsize);
 		do {
-			sprintf(svcurl, "%s/bb-larrdgraph.sh?host=%s&service=%s&first=%d&count=%d", 
-				getenv("CGIBINURL"), hostname, rrdservicename, first, step);
+			if (itemcount > 0) {
+				sprintf(svcurl, "%s/bb-larrdgraph.sh?host=%s&amp;service=%s&amp;first=%d&amp;count=%d", 
+					getenv("CGIBINURL"), hostname, rrdservicename, first, step);
+			}
+			else {
+				sprintf(svcurl, "%s/bb-larrdgraph.sh?host=%s&amp;service=%s", 
+					getenv("CGIBINURL"), hostname, rrdservicename);
+			}
 
 			if (dispname) {
-				strcat(svcurl, "&disp=");
+				strcat(svcurl, "&amp;disp=");
 				strcat(svcurl, urlencode(dispname));
 			}
 
@@ -251,7 +259,7 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 		} while (first <= itemcount);
 		free(rrdparturl);
 	}
-	else if (larrd043 && graphdef->larrdpartname) {
+	else if (larrd043 && graphdef->larrdpartname && (itemcount > 0)) {
 		char *rrdparturl;
 		int first = 0;
 
