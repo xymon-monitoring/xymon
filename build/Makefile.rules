@@ -10,13 +10,13 @@
 
 CFLAGS += -DMAXMSG=$(MAXMSG) -DBBDPORTNUMBER=$(BBPORT) -I. -I$(BUILDTOPDIR)/include
 
-BUILDTARGETS = lib-build common-build bbdisplay-build bbnet-build bbproxy-build
-INSTALLTARGETS = install-bbdisplay install-bbnet install-bbproxy
+BUILDTARGETS = lib-build common-build bbdisplay-build bbnet-build bbproxy-build docs-build
+INSTALLTARGETS = install-bbdisplay install-bbnet install-bbproxy install-man
 INSTALLNOCGITARGETS = install-bbdisplay-nocgi install-bbnet install-bbproxy
 ifdef HOBBITD
 	BUILDTARGETS += hobbitd-build
-	INSTALLTARGETS += install-hobbitd
-	INSTALLNOCGITARGETS += install-hobbitd
+	INSTALLTARGETS += install-hobbitd install-docs
+	INSTALLNOCGITARGETS += install-hobbitd install-docs
 endif
 BBHOMEDIRS = bin etc ext tmp web www www/gifs www/help www/html www/menu www/notes www/rep www/wml
 BBVARDIRS = acks data disabled hist histlogs logs rrd
@@ -51,6 +51,9 @@ bbproxy-build: lib-build common-build
 hobbitd-build: lib-build common-build
 	CC="$(CC)" CFLAGS="$(CFLAGS)" RRDINCDIR="$(RRDINCDIR)" PCREINCDIR="$(PCREINCDIR)" NETLIBS="$(NETLIBS)" RRDLIBS="$(RRDLIBS)" PCRELIBS="$(PCRELIBS)" BBTOPDIR="$(BBTOPDIR)" BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" BBLOGDIR="$(BBLOGDIR)" BBHOSTNAME="$(BBHOSTNAME)" BBHOSTIP="$(BBHOSTIP)" BBHOSTOS="$(BBHOSTOS)" BBUSER="$(BBUSER)" CGIDIR="$(CGIDIR)" BBHOSTURL="$(BBHOSTURL)" BBCGIURL="$(BBCGIURL)" FPING="$(FPING)" $(MAKE) -C hobbitd  all
 
+docs-build:
+	$(MAKE) -C docs all
+
 
 #####################
 # Cleanup targets
@@ -69,6 +72,7 @@ clean:
 	$(MAKE) -C bbnet clean
 	$(MAKE) -C bbproxy clean
 	$(MAKE) -C hobbitd clean
+	$(MAKE) -C docs clean
 	rm -f ./*~ build/*~ include/*~
 
 
@@ -108,12 +112,17 @@ install-bbproxy: install-common
 install-hobbitd: install-common
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" BBTOPDIR="$(BBTOPDIR)" BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" CGIDIR="$(CGIDIR)" $(MAKE) -C hobbitd install
 
+
+# NOTE: This one is normally not used - man-page install is done by the sub-Makefiles during "make install"
 install-man:
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C common install-man
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" $(MAKE) -C bbdisplay install-man
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbnet install-man
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbproxy install-man
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C hobbitd install-man
+
+install-docs:
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C docs install
 
 setup: install
 	BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" CGIDIR="$(CGIDIR)" BBLOGDIR="$(BBLOGDIR)" BBUSER="$(BBUSER)" $(MAKE) -C hobbitd  setup
