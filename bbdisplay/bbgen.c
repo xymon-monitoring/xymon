@@ -11,7 +11,7 @@
 page_t		*pagehead = NULL;
 
 link_t  	*linkhead = NULL;
-link_t		null_link = { "", "", NULL };
+link_t		null_link = { "", "", "", NULL };
 
 hostlist_t	*hosthead = NULL;
 state_t		*statehead = NULL;
@@ -80,7 +80,7 @@ host_t *find_host(const char *hostname)
 }
 
 
-link_t *init_link(const char *filename)
+link_t *init_link(const char *filename, const char *urlprefix)
 {
 	char *p;
 	link_t *newlink = NULL;
@@ -97,6 +97,8 @@ link_t *init_link(const char *filename)
 
 		*p = '\0';
 		strcpy(newlink->name, filename);  /* Without extension, this time */
+
+		strcpy(newlink->urlprefix, urlprefix);
 		newlink->next = NULL;
 	}
 
@@ -240,21 +242,21 @@ void getgrouptitle(char *l, char **title)
 	}
 }
 
-link_t *load_links(void)
+link_t *load_links(const char *directory, const char *urlprefix)
 {
 	DIR		*bblinks;
 	struct dirent 	*d;
 	link_t		*curlink, *toplink, *newlink;
 
 	toplink = curlink = NULL;
-	bblinks = opendir(getenv("BBNOTES"));
+	bblinks = opendir(directory);
 	if (!bblinks) {
-		perror("No notes");
+		perror("Cannot read directory");
 		exit(1);
 	}
 
 	while ((d = readdir(bblinks))) {
-		newlink = init_link(d->d_name);
+		newlink = init_link(d->d_name, urlprefix);
 		if (newlink) {
 			if (toplink == NULL) {
 				toplink = newlink;
@@ -268,6 +270,33 @@ link_t *load_links(void)
 	closedir(bblinks);
 	return toplink;
 }
+
+link_t *load_all_links(void)
+{
+	link_t *l, *head1, *head2;
+	char dirname[200];
+	char *p;
+
+	strcpy(dirname, getenv("BBNOTES"));
+	head1 = load_links(dirname, "/notes");
+
+	/* Change xxx/xxx/xxx/notes into xxx/xxx/xxx/help */
+	p = strrchr(dirname, '/'); *p = '\0'; strcat(dirname, "/help");
+	head2 = load_links(dirname, "/help");
+
+	if (head1) {
+		/* Append help-links to list of notes-links */
+		for (l = head1; (l->next); l = l->next) ;
+		l->next = head2;
+	}
+	else {
+		/* /notes was empty, so just return the /help list */
+		head1 = head2;
+	}
+
+	return head1;
+}
+
 
 page_t *load_bbhosts(void)
 {
@@ -461,7 +490,7 @@ void dumplinks(link_t *head)
 	link_t *l;
 
 	for (l = head; l; l = l->next) {
-		printf("Link for host %s, filename %s\n", l->name, l->filename);
+		printf("Link for host %s, URL/filename %s/%s\n", l->name, l->urlprefix, l->filename);
 	}
 }
 
@@ -523,7 +552,7 @@ int main(int argc, char *argv[])
 {
 	page_t *p, *q;
 
-	linkhead = load_links();
+	linkhead = load_all_links();
 	pagehead = load_bbhosts();
 	statehead = load_state();
 
@@ -532,6 +561,7 @@ int main(int argc, char *argv[])
 
 	/* dumpstatelist(statehead); */
 	/* dumphostlist(hosthead); */
+	dumplinks(linkhead);
 
 	for (p=pagehead; p; p = p->next) {
 		printf("Page: %s, color: %d, title=%s\n", p->name, p->color, p->title);
@@ -546,7 +576,6 @@ int main(int argc, char *argv[])
 	}
 	dumphosts(pagehead->hosts, "");
 
-	/* dumplinks(linkhead); */
 	return 0;
 }
 

@@ -13,6 +13,7 @@
 typedef struct {
 	char	name[64];
 	char	filename[64];
+	char	urlprefix[20];	/* "/help", "/notes" etc. */
 	void	*next;
 } link_t;
 
