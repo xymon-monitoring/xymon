@@ -51,6 +51,21 @@ When showing the current logfile, provide a "HISTORY" button
 at the top or the bottom of the webpage, or not at all. The default 
 is to put the HISTORY button at the bottom of the page.
 
+.IP "--env=FILENAME"
+Load the environment from FILENAME before executing the CGI.
+
+.IP "--no-svcid"
+Do not include the HTML tags to identify the hostname/service
+on the generated web page. Useful is this already happens in 
+the hostsvc_header template file, for instance.
+
+.SH FILES
+.IP "$BBHOME/web/hostsvc_header"
+HTML template header
+
+.IP "$BBHOME/web/hostsvc_footer"
+HTML template footer
+
 .SH ENVIRONMENT
 .IP "NONHISTS=info,trends,graphs,larrd"
 A comma-separated list of services that does not have meaningful
