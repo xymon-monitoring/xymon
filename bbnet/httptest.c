@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.39 2003-08-16 06:59:26 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.40 2003-08-21 20:35:50 henrik Exp $";
 
 #include <curl/curl.h>
 #include <curl/types.h>
@@ -38,6 +38,8 @@ typedef struct {
 	int    sslversion;		/* SSL version CURLOPT_SSLVERSION */
 	char   *ciphers; 	   	/* SSL ciphers CURLOPT_SSL_CIPHER_LIST */
 	CURL   *curl;			/* Handle for libcurl */
+	struct curl_slist *slist;	/* libcurl replacement header list */
+	CURLcode res;			/* libcurl result code */
 	char   errorbuffer[CURL_ERROR_SIZE];	/* Error buffer for libcurl */
 	long   httpstatus;		/* HTTP status from server */
 	long   contstatus;		/* Status of content check */
@@ -153,6 +155,8 @@ void add_http_test(testitem_t *t)
 	req->sslversion = 0;
 	req->ciphers = NULL;
 	req->curl = NULL;
+	req->slist = NULL;
+	req->res = CURL_LAST;
 	req->errorbuffer[0] = '\0';
 	req->httpstatus = 0;
 	req->contstatus = 0;
@@ -426,8 +430,14 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 {
 	http_data_t *req;
 	testitem_t *t;
-	CURLcode res;
 	char useragent[100];
+	int maxtimeout = DEF_TIMEOUT;
+
+#ifdef MULTICURL
+	CURLM *multihandle;
+	CURLMsg *msg;
+	int multiactive, msgsleft;
+#endif
 
 	if (logfile) {
 		logfd = fopen(logfile, "a");
@@ -436,8 +446,6 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 	sprintf(useragent, "BigBrother bbtest-net/%s curl/%s-%s", VERSION, LIBCURL_VERSION, curl_version());
 
 	for (t = httptest->items; (t); t = t->next) {
-		struct curl_slist *slist = NULL;
-
 		req = (http_data_t *) t->privdata;
 		
 		req->curl = curl_easy_init();
@@ -454,8 +462,8 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 			 * so that virtual webhosts will work.
 			 */
 			curl_easy_setopt(req->curl, CURLOPT_URL, urlip(req->url, req->ip, NULL));
-			slist = curl_slist_append(slist, req->hosthdr);
-			curl_easy_setopt(req->curl, CURLOPT_HTTPHEADER, slist);
+			req->slist = curl_slist_append(req->slist, req->hosthdr);
+			curl_easy_setopt(req->curl, CURLOPT_HTTPHEADER, req->slist);
 		}
 		else {
 			curl_easy_setopt(req->curl, CURLOPT_URL, req->url);
@@ -470,6 +478,7 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 
 		curl_easy_setopt(req->curl, CURLOPT_TIMEOUT, (t->host->timeout ? t->host->timeout : DEF_TIMEOUT));
 		curl_easy_setopt(req->curl, CURLOPT_CONNECTTIMEOUT, (t->host->conntimeout ? t->host->conntimeout : DEF_CONNECT_TIMEOUT));
+		if (t->host->timeout > maxtimeout) maxtimeout = t->host->timeout;
 
 		/* Activate our callbacks */
 		curl_easy_setopt(req->curl, CURLOPT_WRITEHEADER, req);
@@ -511,16 +520,108 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 			/* Default only - may be overridden by specifying ":portnumber" in the proxy string. */
 			curl_easy_setopt(req->curl, CURLOPT_PROXYPORT, 80);
 		}
+	}
 
+#ifndef MULTICURL
+	for (t = httptest->items; (t); t = t->next) {
 
 		/* Let's do it ... */
+
+		req = (http_data_t *) t->privdata;
+
 		if (logfd) fprintf(logfd, "\n*** Checking URL: %s ***\n", req->url);
-		res = curl_easy_perform(req->curl);
-		if (res != 0) {
+		req->res = curl_easy_perform(req->curl);
+	}
+#else
+	/* Setup the multi handle with all of the individual http transfers */
+	multihandle = curl_multi_init();
+	if (multihandle == NULL) {
+		errprintf("Cannot initiate CURL multi handle - aborting HTTP tests\n");
+		return;
+	}
+	for (t = httptest->items; (t); t = t->next) {
+		req = (http_data_t *) t->privdata;
+
+		curl_multi_add_handle(multihandle, req->curl);
+	}
+
+	/* Do the transfers */
+	while (curl_multi_perform(multihandle, &multiactive) == CURLM_CALL_MULTI_PERFORM);
+	while (multiactive) {
+		struct timeval tmo;
+		fd_set fdread;
+		fd_set fdwrite;
+		fd_set fdexcep;
+		int maxfd, selres;
+
+		/* Setup the file descriptors */
+		FD_ZERO(&fdread); FD_ZERO(&fdwrite); FD_ZERO(&fdexcep);
+		curl_multi_fdset(multihandle, &fdread, &fdwrite, &fdexcep, &maxfd);
+
+		/* 
+		 * Setup the timeout.
+		 * It seems this should be slightly more than the longest timeout
+		 * for any of the individual transfers. A smaller value causes
+		 * us to get "timeout" responses for lots of transfers from libcurl.
+		 */
+		tmo.tv_sec = maxtimeout+5;
+		tmo.tv_usec = 0;
+
+		dprintf("curl_multi select with %d handles active\n", multiactive);
+		selres = select(maxfd+1, &fdread, &fdwrite, &fdexcep, &tmo);
+
+		switch (selres) {
+			case -1:
+				errprintf("select() returned an error - aborting http tests\n");
+				multiactive = 0;
+				break;
+
+			case 0:
+				/*
+				 * Timeout: We must still call curl_multi_perform()
+				 * for the library to fill in information about how the
+				 * timeout occurred (dns tmo, connect tmo, tmo waiting for data ...)
+				 * So fall through to the default handler!
+				 */
+				dprintf("timeout waiting for http requests\n");
+			default:
+				/* Do some data processing */
+				while (curl_multi_perform(multihandle, &multiactive) == CURLM_CALL_MULTI_PERFORM);
+				break;
+		}
+	}
+
+	/* Pick up the result codes. Odd way of doing it, but so says libcurl */
+	while ((msg = curl_multi_info_read(multihandle, &msgsleft))) {
+		if (msg->msg == CURLMSG_DONE) {
+			int found = 0;
+
+			for (t = httptest->items; (t && !found); t = t->next) {
+				req = (http_data_t *) t->privdata;
+
+				found = (req->curl == msg->easy_handle);
+				if (found) req->res = msg->data.result;
+			}
+		}
+	}
+
+	curl_multi_cleanup(multihandle);
+#endif
+
+	for (t = httptest->items; (t); t = t->next) {
+		req = (http_data_t *) t->privdata;
+
+		if (req->res == CURL_LAST) {
+			errprintf("libcurl never provided a result for %s - assuming timeout\n", req->url);
+			req->res = CURLE_OPERATION_TIMEOUTED;
+			strcpy(req->errorbuffer, "libcurl weirdness - assuming timeout");
+		}
+
+		if (req->res != CURLE_OK) {
 			/* Some error occurred */
 			req->headers = (char *) malloc(strlen(req->errorbuffer) + 20);
-			sprintf(req->headers, "Error %3d: %s\n\n", res, req->errorbuffer);
-			if (logfd) fprintf(logfd, "Error %d: %s\n", res, req->errorbuffer);
+			sprintf(req->headers, "Error %3d: %s\n\n", req->res, req->errorbuffer);
+			if (logfd) fprintf(logfd, "Error %d: %s\n", req->res, req->errorbuffer);
 			t->open = 0;
 		}
 		else {
@@ -537,7 +638,7 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 			t->open = 1;
 		}
 
-		if (slist) curl_slist_free_all(slist);
+		if (req->slist) curl_slist_free_all(req->slist);
 		curl_easy_cleanup(req->curl);
 	}
 
@@ -828,10 +929,10 @@ void show_http_test_results(service_t *httptest)
 		req = (http_data_t *) t->privdata;
 
 		printf("URL                      : %s\n", req->url);
-		printf("Req. SSL version/ciphers : %d/%s\n", req->sslversion, req->ciphers);
+		printf("Req. SSL version/ciphers : %d/%s\n", req->sslversion, textornull(req->ciphers));
 		printf("HTTP status              : %lu\n", req->httpstatus);
 		printf("Time spent               : %f\n", req->totaltime);
-		printf("HTTP headers\n%s\n", req->headers);
+		printf("HTTP headers\n%s\n", textornull(req->headers));
 		printf("HTTP output\n%s\n", textornull(req->output));
 		printf("curl error data:\n%s\n", req->errorbuffer);
 		printf("------------------------------------------------------\n");
