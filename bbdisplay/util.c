@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.50 2003-06-07 06:02:31 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.51 2003-06-07 06:37:52 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -974,8 +974,8 @@ int run_columngen(char *column, int update_interval, int enabled)
 	/* If updating is enabled, check timestamp of $BBTMP/.COLUMN-gen */
 	/* If older than update_interval, do the update. */
 
-	char	fn[MAX_PATH];
-	struct stat st, startup_st;
+	char	stampfn[MAX_PATH];
+	struct stat st;
 	FILE    *fd;
 	time_t  now;
 	struct utimbuf filetime;
@@ -983,10 +983,11 @@ int run_columngen(char *column, int update_interval, int enabled)
 	if (!enabled)
 		return 0;
 
-	sprintf(fn, "%s/.%s-gen", getenv("BBTMP"), column);
-	if (stat(fn, &st) == -1) {
+	sprintf(stampfn, "%s/.%s-gen", getenv("BBTMP"), column);
+
+	if (stat(stampfn, &st) == -1) {
 		/* No such file - create it, and do the update */
-		fd = fopen(fn, "w");
+		fd = fopen(stampfn, "w");
 		fclose(fd);
 		return 1;
 	}
@@ -995,22 +996,28 @@ int run_columngen(char *column, int update_interval, int enabled)
 		time(&now);
 		if ((now - st.st_ctime) > update_interval) {
 			filetime.actime = filetime.modtime = now;
-			utime(fn, &filetime);
+			utime(stampfn, &filetime);
 			return 1;
 		}
 	}
 
-	/* 
-	 * Check if logfile is older than $BBLOGS/.bbstartup;
-	 * if it is, then we have restarted BB and should
-	 * run the generator.
-	 */
-	sprintf(fn, "%s/.bbstartup", getenv("BBLOGS"));
-	if ((stat(fn, &startup_st) == 0) && (st.st_ctime < startup_st.st_ctime)) return 1;
-
 	return 0;
 }
 
+
+void drop_genstatfiles(void)
+{
+	char fn[MAX_PATH];
+	struct stat st, stampst;
+
+	sprintf(fn, "%s/.bbstartup", getenv("BBLOGS"));
+	if (stat(fn, &st) == 0) {
+		sprintf(fn, "%s/.larrd-gen", getenv("BBTMP"));
+		if ( (stat(fn, &stampst) == 0) && (stampst.st_ctime < st.st_ctime) ) unlink(fn);
+		sprintf(fn, "%s/.info-gen", getenv("BBTMP"));
+		if ( (stat(fn, &stampst) == 0) && (stampst.st_ctime < st.st_ctime) ) unlink(fn);
+	}
+}
 
 char *realurl(char *url, char **proxy)
 {

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.120 2003-06-02 06:37:33 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.121 2003-06-07 06:37:52 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -355,6 +355,9 @@ int main(int argc, char *argv[])
 	add_timestamp("Load links done");
 	pagehead = load_bbhosts(pageset);
 	add_timestamp("Load bbhosts done");
+
+	/* Delete old info- and larrd-files if we have restarted */
+	drop_genstatfiles();
 
 	/* Generate the LARRD pages before loading state */
 	pagegenstat = generate_larrd(rrddir, larrdcol, larrd043);
