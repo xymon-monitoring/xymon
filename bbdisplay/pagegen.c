@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.27 2003-03-01 22:29:36 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.28 2003-03-02 06:45:43 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -734,16 +734,15 @@ void do_bb2_page(char *filename, int summarytype)
 			break;
 
 		  case 1:
+			/* The NK page */
 			for (useit=0, e=h->hostentry->entries; (e && !useit); e=e->next) {
 				useit = useit || (e->alert && ((e->color == COL_RED) || ((e->color == COL_YELLOW) && (strcmp(e->column->name, "conn") != 0))));
 			}
 			break;
-			/* NK page */
 		}
+
 		if (useit) {
 			host_t *newhost, *walk;
-
-			if (h->hostentry->color > bb2page.color) bb2page.color = h->hostentry->color;
 
 			/* We need to create a copy of the original record, */
 			/* as we will diddle with the pointers */
@@ -763,9 +762,22 @@ void do_bb2_page(char *filename, int summarytype)
 				      (walk->next && (strcmp(newhost->hostname, ((host_t *)walk->next)->hostname) > 0)); 
 				      walk = walk->next) ;
 
-				/* "walk" points to element before the new item */
-				newhost->next = walk->next;
-				walk->next = newhost;
+				/* "walk" points to element before the new item.
+				 *
+		 		 * Check for duplicate hosts. We can have a host on two normal BB
+		 		 * pages, but in the BB2 page we want it only once.
+		 		 */
+				if (strcmp(walk->hostname, newhost->hostname) != 0) {
+					newhost->next = walk->next;
+					walk->next = newhost;
+
+					if (h->hostentry->color > bb2page.color) 
+						bb2page.color = h->hostentry->color;
+				}
+				else {
+					/* Its a duplicate */
+					free(newhost);
+				}
 			}
 		}
 	}
