@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.92 2003-08-16 21:14:46 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.93 2003-08-26 15:33:43 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -259,8 +259,10 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *testspec
 	newtest->testspec = testspec;
 	newtest->privdata = NULL;
 	newtest->open = 0;
-	newtest->testresult = NULL;
 	newtest->banner = NULL;
+	newtest->certinfo = NULL;
+	newtest->certexpires = 0;
+	newtest->duration.tv_sec = newtest->duration.tv_usec = -1;
 	newtest->downcount = 0;
 	newtest->badtest[0] = newtest->badtest[1] = newtest->badtest[2] = 0;
 	newtest->next = NULL;
@@ -1038,7 +1040,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 				}
 				else {
 					/* Check if we got the expected data */
-					if (checktcpresponse && !tcp_got_expected(test->testresult)) {
+					if (checktcpresponse && !tcp_got_expected((test_t *)test->privdata)) {
 						strcpy(cause, "Unexpected service response");
 						color = COL_YELLOW; countasdown = 1;
 					}
@@ -1224,14 +1226,78 @@ void send_results(service_t *service, int failgoesclear)
 		if (t->banner) {
 			addtostatus("\n"); addtostatus(t->banner); addtostatus("\n");
 		}
-		if (t->testresult && !t->reverse) {
+		if (t->duration.tv_sec != -1) {
 			sprintf(msgtext, "\nSeconds: %ld.%03ld\n", 
-				t->testresult->duration.tv_sec, t->testresult->duration.tv_usec / 1000);
+				t->duration.tv_sec, t->duration.tv_usec / 1000);
 			addtostatus(msgtext);
 		}
 		addtostatus("\n\n");
 		finish_status();
 	}
+}
+
+
+void send_sslcert_status(testedhost_t *host)
+{
+	int color = -1;
+	service_t *s;
+	testitem_t *t;
+	char msgline[1024];
+	char *sslmsg;
+	int sslmsgsize;
+	time_t now = time(NULL);
+	char *certowner;
+
+	sslmsgsize = 4096;
+	sslmsg = (char *)malloc(sslmsgsize);
+	*sslmsg = '\0';
+
+	for (s=svchead; (s); s = s->next) {
+		certowner = s->testname;
+
+		for (t=s->items; (t); t=t->next) {
+			if ((t->host == host) && t->certinfo && (t->certexpires > 0)) {
+				int sslcolor = COL_GREEN;
+
+				if (s == httptest) certowner = ((http_data_t *)t->privdata)->url;
+
+				if (t->certexpires < (now+sslwarndays*86400)) sslcolor = COL_YELLOW;
+				if (t->certexpires < (now+sslalarmdays*86400)) sslcolor = COL_RED;
+				if (sslcolor > color) color = sslcolor;
+
+				if (t->certexpires > now) {
+					sprintf(msgline, "\n&%s SSL certificate for %s expires in %u days\n\n", 
+						colorname(sslcolor), certowner,
+						(unsigned int)((t->certexpires - now) / 86400));
+				}
+				else {
+					sprintf(msgline, "\n&%s SSL certificate for %s expired %u days ago\n\n", 
+						colorname(sslcolor), certowner,
+						(unsigned int)((now - t->certexpires) / 86400));
+				}
+
+				if ((strlen(msgline)+strlen(sslmsg) + strlen(t->certinfo)) > sslmsgsize) {
+					sslmsgsize += (4096 + strlen(t->certinfo) + strlen(msgline));
+					sslmsg = (char *)realloc(sslmsg, sslmsgsize);
+				}
+				strcat(sslmsg, msgline);
+				strcat(sslmsg, t->certinfo);
+			}
+		}
+	}
+
+	if (color != -1) {
+		/* Send off the sslcert status report */
+		init_status(color);
+		sprintf(msgline, "status %s.%s %s %s\n", 
+			commafy(host->hostname), ssltestname, colorname(color), timestamp);
+		addtostatus(msgline);
+		addtostatus(sslmsg);
+		addtostatus("\n\n");
+		finish_status();
+	}
+
+	free(sslmsg);
 }
 
 int main(int argc, char *argv[])
@@ -1444,10 +1510,7 @@ int main(int argc, char *argv[])
 		if ((s->items) && (s->toolid == TOOL_CONTEST)) {
 			for (t = s->items; (t); t = t->next) {
 				if (!t->host->dnserror) {
-					t->testresult = add_tcp_test(t->host->ip, s->portnum, s->testname, t->silenttest);
-				}
-				else {
-					t->testresult = NULL;
+					t->privdata = (void *)add_tcp_test(t->host->ip, s->portnum, s->testname, t->silenttest);
 				}
 			}
 		}
@@ -1462,15 +1525,17 @@ int main(int argc, char *argv[])
 		if ((s->items) && (s->toolid == TOOL_CONTEST)) {
 			for (t = s->items; (t); t = t->next) { 
 				/*
-				 * If the test fails due to DNS error, t->testresult is NULL
+				 * If the test fails due to DNS error, t->privdata is NULL
 				 */
-				if (t->testresult) {
-					t->open = t->testresult->open;
-					t->banner = t->testresult->banner;
-				}
-				else {
-					t->open = 0;
-					t->banner = NULL;
+				if (t->privdata) {
+					test_t *testresult = (test_t *)t->privdata;
+
+					t->open = testresult->open;
+					t->banner = testresult->banner;
+					t->certinfo = testresult->certinfo;
+					t->certexpires = testresult->certexpires;
+					t->duration.tv_sec = testresult->duration.tv_sec;
+					t->duration.tv_usec = testresult->duration.tv_usec;
 				}
 			}
 		}
@@ -1480,9 +1545,19 @@ int main(int argc, char *argv[])
 	/* Run the http tests */
 	for (t = httptest->items; (t); t = t->next) add_http_test(t);
 	add_timestamp("HTTP test engine setup completed");
+
 	run_http_tests(httptest, followlocations, logfile, (ssltestname != NULL));
 	add_timestamp("HTTP tests executed");
+
 	if (debug) show_http_test_results(httptest);
+	for (t = httptest->items; (t); t = t->next) {
+		if (t->privdata) {
+			http_data_t *testresult = (http_data_t *)t->privdata;
+
+			t->certinfo = testresult->certinfo;
+			t->certexpires = testresult->certexpires;
+		}
+	}
 	add_timestamp("HTTP tests result collection completed");
 
 
@@ -1522,7 +1597,8 @@ int main(int argc, char *argv[])
 		}
 	}
 	for (h=testhosthead; (h); h = h->next) {
-		send_http_results(httptest, h, nonetpage, contenttestname, ssltestname, sslwarndays, sslalarmdays, failgoesclear);
+		send_http_results(httptest, h, nonetpage, contenttestname, failgoesclear);
+		if (ssltestname && !h->nosslcert) send_sslcert_status(h);
 	}
 
 	combo_end();

@@ -10,11 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.42 2003-08-25 16:21:16 henrik Exp $";
-
-#include <curl/curl.h>
-#include <curl/types.h>
-#include <curl/easy.h>
+static char rcsid[] = "$Id: httptest.c,v 1.43 2003-08-26 15:33:43 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -25,36 +21,10 @@ static char rcsid[] = "$Id: httptest.c,v 1.42 2003-08-25 16:21:16 henrik Exp $";
 
 #include "bbgen.h"
 #include "util.h"
+#include "sendmsg.h"
 #include "debug.h"
 #include "bbtest-net.h"
-#include "sendmsg.h"
-
-typedef struct {
-	char   *url;                    /* URL to request, stripped of BB'isms */
-	char   *proxy;                  /* Proxy host CURLOPT_PROXY */
-	char   *ip;                     /* IP to test against */
-	char   *hosthdr;                /* Host: header for ip-based test */
-	char   *postdata;               /* Form POST data CURLOPT_POSTFIELDS */
-	int    sslversion;		/* SSL version CURLOPT_SSLVERSION */
-	char   *ciphers; 	   	/* SSL ciphers CURLOPT_SSL_CIPHER_LIST */
-	CURL   *curl;			/* Handle for libcurl */
-	struct curl_slist *slist;	/* libcurl replacement header list */
-	CURLcode res;			/* libcurl result code */
-	char   errorbuffer[CURL_ERROR_SIZE];	/* Error buffer for libcurl */
-	long   httpstatus;		/* HTTP status from server */
-	long   contstatus;		/* Status of content check */
-	char   *headers;                /* HTTP headers from server */
-	char   *contenttype;		/* Content-type: header */
-	char   *output;                 /* Data from server */
-	int    logcert;
-	char   *sslinfo;                /* Data about SSL certificate */
-	time_t sslexpire;               /* Expiry time for SSL cert */
-	int    httpcolor;
-	char   *faileddeps;
-	int    sslcolor;
-	double totaltime;		/* Time spent doing request */
-	regex_t *exp;			/* regexp data for content match */
-} http_data_t;
+#include "httptest.h"
 
 static FILE *logfd = NULL;
 
@@ -167,8 +137,8 @@ void add_http_test(testitem_t *t)
 	req->faileddeps = NULL;
 	req->sslcolor = -1;
 	req->logcert = 0;
-	req->sslinfo = NULL;
-	req->sslexpire = 0;
+	req->certinfo = NULL;
+	req->certexpires = 0;
 	req->totaltime = 0.0;
 	req->exp = NULL;
 
@@ -374,26 +344,26 @@ static int debug_callback(CURL *handle, curl_infotype type, char *data, size_t s
 	http_data_t *req = userp;
 	char *p;
 
-	if ((req->sslexpire == 0) && (type == CURLINFO_TEXT)) {
+	if ((req->certexpires == 0) && (type == CURLINFO_TEXT)) {
 		if (strncmp(data, "Server certificate:", 19) == 0) req->logcert = 1;
 		else if (*data != '\t') req->logcert = 0;
 
 		if (req->logcert) {
-			if (req->sslinfo == NULL) {
-				req->sslinfo = (char *) malloc(size+1);
-				memcpy(req->sslinfo, data, size);
-				*(req->sslinfo+size) = '\0';
+			if (req->certinfo == NULL) {
+				req->certinfo = (char *) malloc(size+1);
+				memcpy(req->certinfo, data, size);
+				*(req->certinfo+size) = '\0';
 			}
 			else {
-				size_t buflen = strlen(req->sslinfo);
-				req->sslinfo = (char *) realloc(req->sslinfo, buflen+size+1);
-				memcpy(req->sslinfo+buflen, data, size);
-				*(req->sslinfo+buflen+size) = '\0';
+				size_t buflen = strlen(req->certinfo);
+				req->certinfo = (char *) realloc(req->certinfo, buflen+size+1);
+				memcpy(req->certinfo+buflen, data, size);
+				*(req->certinfo+buflen+size) = '\0';
 			}
 		}
 
 		p = strstr(data, "expire date:");
-		if (p) req->sslexpire = sslcert_expiretime(p);
+		if (p) req->certexpires = sslcert_expiretime(p + strlen("expire date:"));
 	}
 
 	return 0;
@@ -621,8 +591,7 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 
 
 void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage, 
-		       char *contenttestname, char *ssltestname,
-		       int sslwarndays, int sslalarmdays, int failgoesclear)
+		       char *contenttestname, int failgoesclear)
 {
 	testitem_t *t;
 	int	color = -1;
@@ -850,47 +819,6 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 
 	free(conttest);
 
-	color = -1;
-	for (t=host->firsthttp; (t && (t->host == host)); t = t->next) {
-		http_data_t *req = (http_data_t *) t->privdata;
-
-		if (req->sslinfo && (req->sslexpire > 0)) {
-			req->sslcolor = COL_GREEN;
-
-			if (req->sslexpire < (now+sslwarndays*86400)) req->sslcolor = COL_YELLOW;
-			if (req->sslexpire < (now+sslalarmdays*86400)) req->sslcolor = COL_RED;
-			if (req->sslcolor > color) color = req->sslcolor;
-		}
-	}
-
-	if (color != -1) {
-		/* Send off the sslcert status report */
-		init_status(color);
-		sprintf(msgline, "status %s.%s %s %s\n", 
-			commafy(host->hostname), ssltestname, colorname(color), timestamp);
-		addtostatus(msgline);
-
-		for (t=host->firsthttp; (t && (t->host == host)); t = t->next) {
-			http_data_t *req = (http_data_t *) t->privdata;
-
-			if (req->sslinfo && (req->sslexpire > 0)) {
-				if (req->sslexpire > now) {
-					sprintf(msgline, "\n&%s SSL certificate for %s expires in %u days\n\n", 
-						colorname(req->sslcolor), req->url,
-						(unsigned int)((req->sslexpire-now) / 86400));
-				}
-				else {
-					sprintf(msgline, "\n&%s SSL certificate for %s expired %u days ago\n\n", 
-						colorname(req->sslcolor), req->url, 
-						(unsigned int)((now-req->sslexpire) / 86400));
-				}
-				addtostatus(msgline);
-				addtostatus(req->sslinfo);
-			}
-		}
-		addtostatus("\n\n");
-		finish_status();
-	}
 }
 
 

@@ -29,45 +29,19 @@
 #define STATUS_CONTENTMATCH_FAILED 902
 #define STATUS_CONTENTMATCH_BADREGEX 903
 
-
-/* All of this just for struct sockaddr_in on FreeBSD */
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
 typedef struct svcinfo_t {
 	char *svcname;
 	char *sendtxt;
 	char *exptext;
-	int  grabbanner;
-	int  istelnet;
+	unsigned int flags;
 } svcinfo_t;
-
-typedef struct test_t {
-	struct sockaddr_in addr;        /* Address (IP+port) to test */
-	int  fd;                        /* Socket filedescriptor */
-	int  open;                      /* Result - is it open? */
-	int  connres;                   /* connect() status returned */
-	struct timeval timestart, duration;
-	struct svcinfo_t *svcinfo;      /* Points to svcinfo_t for service */
-	int  silenttest;
-	unsigned char *telnetbuf;
-	int telnetbuflen;
-	int telnetnegotiate;
-	int  readpending;               /* Temp status while reading banner */
-	char *banner;                   /* Banner text from service */
-	struct test_t *next;
-} test_t;
-
 
 typedef struct service_t {
 	char *testname;		/* Name of the test = column name in BB report */
 	int namelen;		/* Length of name - "testname:port" has this as strlen(testname), others 0 */
 	int portnum;		/* Port number this service runs on */
 	int toolid;		/* Which tool to use */
-	struct testitem_t *items;		/* testitem_t linked list of tests for this service */
+	struct testitem_t *items; /* testitem_t linked list of tests for this service */
 	struct service_t *next;
 } service_t;
 
@@ -105,18 +79,28 @@ typedef struct testedhost_t {
 typedef struct testitem_t {
 	struct testedhost_t *host;	/* Pointer to testedhost_t record for this host */
 	struct service_t *service;	/* Pointer to service_t record for the service to test */
-	char		*testspec;      /* Pointer to the testspec in bb-hosts (http/content only) */
+
+	char		*testspec;      /* Pointer to the raw testspec in bb-hosts */
 	int		reverse;	/* "!testname" flag */
 	int		dialup;		/* "?testname" flag */
 	int		alwaystrue;	/* "~testname" flag */
 	int		silenttest;	/* "testname:s" flag */
-	void		*privdata;	/* Private data use by test tool */
+
+	/* These data may be filled in from the test engine private data */
 	int		open;		/* Is the service open ? NB: Shows true state of service, ignores flags */
-	struct test_t	*testresult;	/* Banner and duration of test */
 	char		*banner;
+	char		*certinfo;
+	time_t		certexpires;
+	struct timeval	duration;
+
+	/* For badTEST handling: Need to track downtime duration and poll count */
+	int		badtest[3];
 	time_t		downstart;
 	int		downcount;	/* Number of polls when down. */
-	int		badtest[3];
+
+	/* Each test engine has its own data */
+	void		*privdata;	/* Private data use by test tool */
+
 	struct testitem_t *next;
 } testitem_t;
 

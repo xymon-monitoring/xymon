@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.32 2003-08-23 08:31:25 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.33 2003-08-26 15:33:43 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -37,6 +37,8 @@ static char rcsid[] = "$Id: contest.c,v 1.32 2003-08-23 08:31:25 henrik Exp $";
 #define MAX_BANNER 1024
 #define MAX_TELNET_CYCLES 5		/* Max loops with telnet options before aborting banner */
 
+#define SSLSETUP_PENDING -1		/* Magic value for test_t->sslrunning while handshaking */
+
 static test_t *thead = NULL;
 
 /*
@@ -46,25 +48,29 @@ static test_t *thead = NULL;
  * banner or not.
  */
 static svcinfo_t svcinfo[] = {
-	{ "ftp",     "quit\r\n",          "220",	1, 0 },
-	{ "ssh",     NULL,                "SSH",	1, 0 },
-	{ "ssh1",    NULL,                "SSH",	1, 0 },
-	{ "ssh2",    NULL,                "SSH",	1, 0 },
-	{ "telnet",  NULL,                NULL,		1, 1 },
-	{ "smtp",    "mail\r\nquit\r\n",  "220",	1, 0 }, /* Send "MAIL" to avoid sendmail NOQUEUE logs */
-	{ "pop",     "quit\r\n",          "+OK",	1, 0 },
-	{ "pop2",    "quit\r\n",          "+OK",	1, 0 },
-	{ "pop-2",   "quit\r\n",          "+OK",	1, 0 },
-	{ "pop3",    "quit\r\n",          "+OK",	1, 0 },
-	{ "pop-3",   "quit\r\n",          "+OK",	1, 0 },
-	{ "imap",    "ABC123 LOGOUT\r\n", "* OK",	1, 0 },
-	{ "imap2",   "ABC123 LOGOUT\r\n", "* OK",	1, 0 },
-	{ "imap3",   "ABC123 LOGOUT\r\n", "* OK",	1, 0 },
-	{ "imap4",   "ABC123 LOGOUT\r\n", "* OK",	1, 0 },
-	{ "nntp",    "quit\r\n",          "200",	1, 0 },
-	{ "rsync",   NULL,                "@RSYNCD",	1, 0 },
-	{ "bbd",     "dummy",             NULL,		0, 0 },
-	{ NULL,      NULL,                NULL,		0, 0 }	/* Default behaviour: Dont send anything, dont expect anything, dont grab banner */
+	{ "ftp",     "quit\r\n",          "220",	(TCP_GET_BANNER) },
+	{ "ssh",     NULL,                "SSH",	(TCP_GET_BANNER) },
+	{ "ssh1",    NULL,                "SSH",	(TCP_GET_BANNER) },
+	{ "ssh2",    NULL,                "SSH",	(TCP_GET_BANNER) },
+	{ "telnet",  NULL,                NULL,		(TCP_GET_BANNER|TCP_TELNET) },
+	{ "smtp",    "mail\r\nquit\r\n",  "220",	(TCP_GET_BANNER) }, /* Send "MAIL" to avoid sendmail NOQUEUE logs */
+	{ "pop",     "quit\r\n",          "+OK",	(TCP_GET_BANNER) },
+	{ "pop2",    "quit\r\n",          "+OK",	(TCP_GET_BANNER) },
+	{ "pop-2",   "quit\r\n",          "+OK",	(TCP_GET_BANNER) },
+	{ "pop3",    "quit\r\n",          "+OK",	(TCP_GET_BANNER) },
+	{ "pop-3",   "quit\r\n",          "+OK",	(TCP_GET_BANNER) },
+	{ "imap",    "ABC123 LOGOUT\r\n", "* OK",	(TCP_GET_BANNER) },
+	{ "imap2",   "ABC123 LOGOUT\r\n", "* OK",	(TCP_GET_BANNER) },
+	{ "imap3",   "ABC123 LOGOUT\r\n", "* OK",	(TCP_GET_BANNER) },
+	{ "imap4",   "ABC123 LOGOUT\r\n", "* OK",	(TCP_GET_BANNER) },
+	{ "nntp",    "quit\r\n",          "200",	(TCP_GET_BANNER) },
+	{ "rsync",   NULL,                "@RSYNCD",	(TCP_GET_BANNER) },
+	{ "bbd",     "dummy",             NULL,		(0) },
+	{ "smtps",   "mail\r\nquit\r\n",  "220",	(TCP_GET_BANNER|TCP_SSL) },
+	{ "pop3s",   "quit\r\n",          "+OK",	(TCP_GET_BANNER|TCP_SSL) },
+	{ "imaps",   "ABC123 LOGOUT\r\n", "* OK",	(TCP_GET_BANNER|TCP_SSL) },
+	{ "nntps",   "quit\r\n",          "200",	(TCP_GET_BANNER|TCP_SSL) },
+	{ NULL,      NULL,                NULL,		(0) }	/* Default behaviour: Dont send anything, dont expect anything, dont grab banner */
 };
 
 
@@ -98,9 +104,16 @@ test_t *add_tcp_test(char *ip, int port, char *service, int silent)
 
 	newtest->silenttest = silent;
 	newtest->readpending = 0;
-	newtest->telnetnegotiate = ((svcinfo[i].istelnet && !silent) ? MAX_TELNET_CYCLES : 0);
+	newtest->telnetnegotiate = (((svcinfo[i].flags & TCP_TELNET) && !silent) ? MAX_TELNET_CYCLES : 0);
 	newtest->telnetbuf = NULL;
 	newtest->telnetbuflen = 0;
+
+	newtest->sslctx = NULL;
+	newtest->ssldata = NULL;
+	newtest->certinfo = NULL;
+	newtest->certexpires = 0;
+	newtest->sslrunning = ((svcinfo[i].flags & TCP_SSL) ? SSLSETUP_PENDING : 0);
+
 	newtest->banner = NULL;
 	newtest->next = thead;
 
@@ -108,6 +121,16 @@ test_t *add_tcp_test(char *ip, int port, char *service, int silent)
 	return newtest;
 }
 
+
+static void get_connectiontime(test_t *item, struct timeval *timestamp)
+{
+	item->duration.tv_sec = timestamp->tv_sec - item->timestart.tv_sec;
+	item->duration.tv_usec = timestamp->tv_usec - item->timestart.tv_usec;
+	if (item->duration.tv_usec < 0) {
+		item->duration.tv_sec--;
+		item->duration.tv_usec += 1000000;
+	}
+}
 
 static int do_telnet_options(test_t *item)
 {
@@ -161,7 +184,6 @@ static int do_telnet_options(test_t *item)
 			y = 0;
 			result = 1;
 		} /* if y */
-notiac:
 		inp++; remain--;
 	} /* while remain */
 
@@ -171,6 +193,225 @@ notiac:
 	free(obuf);
 	return result;
 }
+
+#if TCP_SSL <= 0
+/*
+ * Define stub routines for plain socket operations without SSL
+ */
+static void setup_ssl(test_t *item)
+{
+	dprintf("SSL service checked as simple TCP test - bbtest-net compiled without SSL\n");
+	item->sslrunning = 0;
+}
+
+int socket_write(test_t *item, char *outbuf, int outlen)
+{
+	return write(item->fd, outbuf, outlen);
+}
+
+int socket_read(test_t *item, char *inbuf, int inbufsize)
+{
+	return read(item->fd, inbuf, inbufsize);
+}
+
+void socket_shutdown(test_t *item)
+{
+	shutdown(item->fd, SHUT_RDWR);
+}
+
+#else
+
+static char *bbgen_ASN1_UTCTIME(ASN1_UTCTIME *tm)
+{
+	static char result[256];
+	char *asn1_string;
+	int gmt=0;
+	int i;
+	int year=0,month=0,day=0,hour=0,minute=0,second=0;
+
+	i=tm->length;
+	asn1_string=(char *)tm->data;
+
+	if (i < 10) return NULL;
+	if (asn1_string[i-1] == 'Z') gmt=1;
+	for (i=0; i<10; i++) {
+		if ((asn1_string[i] > '9') || (asn1_string[i] < '0')) return NULL;
+	}
+
+	year=(asn1_string[0]-'0')*10+(asn1_string[1]-'0');
+	if (year < 50) year+=100;
+
+	month=(asn1_string[2]-'0')*10+(asn1_string[3]-'0');
+	if ((month > 12) || (month < 1)) return NULL;
+
+	day=(asn1_string[4]-'0')*10+(asn1_string[5]-'0');
+	hour=(asn1_string[6]-'0')*10+(asn1_string[7]-'0');
+	minute=(asn1_string[8]-'0')*10+(asn1_string[9]-'0');
+	if ( (asn1_string[10] >= '0') && (asn1_string[10] <= '9') &&
+	     (asn1_string[11] >= '0') && (asn1_string[11] <= '9')) {
+		second= (asn1_string[10]-'0')*10+(asn1_string[11]-'0');
+	}
+
+	sprintf(result, "%04d-%02d-%02d %02d:%02d:%02d %s",
+		year+1900, month, day, hour, minute, second, (gmt?"GMT":""));
+
+	return result;
+}
+
+
+static void setup_ssl(test_t *item)
+{
+	static int ssl_init_complete = 0;
+	X509 *peercert;
+	char *certcn, *certstart, *certend;
+	int err;
+
+	item->sslrunning = 1;
+
+	if (!ssl_init_complete) {
+		/* Setup entropy */
+		if (RAND_status() != 1) {
+			char path[MAX_PATH];	/* Path for the random file */
+
+			/* load entropy from files */
+			RAND_load_file(RAND_file_name(path, sizeof (path)), -1);
+
+			/* load entropy from egd sockets */
+			RAND_egd("/var/run/egd-pool");
+			RAND_egd("/dev/egd-pool");
+			RAND_egd("/etc/egd-pool");
+			RAND_egd("/var/spool/prngd/pool");
+
+			/* shuffle $RANDFILE (or ~/.rnd if unset) */
+			RAND_write_file(RAND_file_name(path, sizeof (path)));
+			if (RAND_status() != 1) {
+				errprintf("Failed to find enough entropy on your system");
+				return;
+			}
+		}
+
+		SSL_load_error_strings();
+		SSL_library_init();
+		ssl_init_complete = 1;
+	}
+
+	if (item->sslctx == NULL) {
+		item->sslctx = SSL_CTX_new(SSLv23_client_method());
+		if (!item->sslctx) {
+			errprintf("Cannot create SSL context\n");
+			item->sslrunning = 0;
+			return;
+		}
+
+		/* Workaround SSL bugs */
+		SSL_CTX_set_options(item->sslctx, SSL_OP_ALL);
+		SSL_CTX_set_quiet_shutdown(item->sslctx, 1);
+	}
+
+	if (item->ssldata == NULL) {
+		item->ssldata = SSL_new(item->sslctx);
+		if (!item->ssldata) {
+			errprintf("SSL_new failed\n");
+			item->sslrunning = 0;
+			SSL_CTX_free(item->sslctx);
+			return;
+		}
+
+		if (SSL_set_fd(item->ssldata, item->fd) != 1) {
+			errprintf("Could not initiate SSL on connection\n");
+			item->sslrunning = 0;
+			SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
+			return;
+		}
+	}
+
+	if ((err = SSL_connect(item->ssldata)) != 1) {
+		switch (SSL_get_error (item->ssldata, err)) {
+		  case SSL_ERROR_WANT_READ:
+		  case SSL_ERROR_WANT_WRITE:
+			item->sslrunning = SSLSETUP_PENDING;
+			break;
+		  case SSL_ERROR_SYSCALL:
+			errprintf("IO error in SSL_connect\n");
+			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
+			break;
+		  case SSL_ERROR_SSL:
+			errprintf("Unspecified SSL error in SSL_connect\n");
+			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
+			break;
+		  default:
+			errprintf("Unknown error %d in SSL_connect\n", err);
+			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
+			break;
+		}
+
+		return;
+	}
+
+	/* If we get this far, the SSL handshake has completed. So grab the certificate */
+	peercert = SSL_get_peer_certificate(item->ssldata);
+	if (!peercert) {
+		errprintf("Cannot get peer certificate\n");
+		item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
+		return;
+	}
+
+	certcn = X509_NAME_oneline(X509_get_subject_name(peercert), NULL, 0);
+	certstart = malcop(bbgen_ASN1_UTCTIME(X509_get_notBefore(peercert)));
+	certend = malcop(bbgen_ASN1_UTCTIME(X509_get_notAfter(peercert)));
+
+	item->certinfo = (char *) malloc(strlen(certcn)+strlen(certstart)+strlen(certend)+100);
+	sprintf(item->certinfo, 
+		"Server certificate:\n\tsubject:%s\n\tstart date: %s\n\texpire date:%s\n", 
+		certcn, certstart, certend);
+	item->certexpires = sslcert_expiretime(certend);
+	free(certcn); free(certstart); free(certend);
+
+	X509_free(peercert);
+}
+
+int socket_write(test_t *item, char *outbuf, int outlen)
+{
+	int res = 0;
+
+	if (item->sslrunning) {
+		res = SSL_write(item->ssldata, outbuf, outlen);
+	}
+	else {
+		res = write(item->fd, outbuf, outlen);
+	}
+
+	return res;
+}
+
+int socket_read(test_t *item, char *inbuf, int inbufsize)
+{
+	int res = 0;
+
+	if (item->svcinfo->flags & TCP_SSL) {
+		if (item->sslrunning) {
+			res = SSL_read(item->ssldata, inbuf, inbufsize);
+		}
+		else {
+			/* SSL setup failed - flag 0 bytes read. */
+			res = 0;
+		}
+	}
+	else res = read(item->fd, inbuf, inbufsize);
+
+	return res;
+}
+
+void socket_shutdown(test_t *item)
+{
+	if (item->sslrunning) {
+		SSL_shutdown(item->ssldata);
+		SSL_free(item->ssldata);
+		SSL_CTX_free(item->sslctx);
+	}
+	shutdown(item->fd, SHUT_RDWR);
+}
+#endif
 
 
 void do_tcp_tests(int conntimeout, int concurrency)
@@ -358,7 +599,7 @@ void do_tcp_tests(int conntimeout, int concurrency)
 					 */
 					if (item->readpending) {
 						/* Final read timeout - just shut this socket */
-						shutdown(item->fd, SHUT_RDWR);
+						socket_shutdown(item);
 					}
 					else {
 						/* Connection timeout */
@@ -373,36 +614,61 @@ void do_tcp_tests(int conntimeout, int concurrency)
 				}
 				else {
 					if (FD_ISSET(item->fd, &writefds)) {
-						/*
-						 * Active response on this socket - either OK, or 
-						 * connection refused.
-						 * We determine what happened by getting the SO_ERROR status.
-						 * (cf. select_tut(2) manpage).
-						 */
-						connressize = sizeof(item->connres);
-						res = getsockopt(item->fd, SOL_SOCKET, SO_ERROR, &item->connres, &connressize);
-						item->open = (item->connres == 0);
+						int do_talk = 1;
+						unsigned char *outbuf = NULL;
+						unsigned int outlen = 0;
 
-						if (item->open) {
-							unsigned char *outbuf = NULL;
-							unsigned int outlen = 0;
-
+						if (!item->open) {
 							/*
-							 * Connection succeeded - port is open. Determine connection time,
-							 * and if we have anything to send then send it.
-							 * If we want the banner, set the "readpending" flag to initiate
-							 * select() for read()'s.
+							 * First time here.
+							 *
+							 * Active response on this socket - either OK, or 
+							 * connection refused.
+							 * We determine what happened by getting the SO_ERROR status.
+							 * (cf. select_tut(2) manpage).
 							 */
-							item->duration.tv_sec = timestamp.tv_sec - item->timestart.tv_sec;
-							item->duration.tv_usec = timestamp.tv_usec - item->timestart.tv_usec;
-							if (item->duration.tv_usec < 0) {
-								item->duration.tv_sec--;
-								item->duration.tv_usec += 1000000;
-							}
+							connressize = sizeof(item->connres);
+							res = getsockopt(item->fd, SOL_SOCKET, SO_ERROR, &item->connres, &connressize);
+							item->open = (item->connres == 0);
+							do_talk = item->open;
+							get_connectiontime(item, &timestamp);
+						}
 
+						if (item->open && (item->svcinfo->flags & TCP_SSL)) {
+							/* 
+							 * Setup the SSL connection, if not done already.
+							 *
+							 * NB: This can be triggered many times, as setup_ssl()
+							 * may need more data from the remote and return with
+							 * item->sslrunning == SSLSETUP_PENDING
+							 */
+							if (item->sslrunning == SSLSETUP_PENDING) {
+								setup_ssl(item);
+								if (item->sslrunning == 1) {
+									/*
+									 * Update connectiontime to include
+									 * time for SSL handshake.
+									 */
+									get_connectiontime(item, &timestamp);
+								}
+							}
+							do_talk = (item->sslrunning == 1);
+						}
+
+						/*
+						 * Connection succeeded - port is open, if SSL then the
+						 * SSL handshake is complete. 
+						 *
+						 * If we have anything to send then send it.
+						 * If we want the banner, set the "readpending" flag to initiate
+						 * select() for read()'s.
+						 */
+
+						item->readpending = (do_talk && !item->silenttest && (item->svcinfo->flags & TCP_GET_BANNER));
+						if (do_talk) {
 							if (item->telnetnegotiate && item->telnetbuflen) {
 								/*
-								 * Return the negotiate data response
+								 * Return the telnet negotiate data response
 								 */
 								outbuf = item->telnetbuf;
 								outlen = item->telnetbuflen;
@@ -412,13 +678,12 @@ void do_tcp_tests(int conntimeout, int concurrency)
 								outlen = strlen(outbuf);
 							}
 
-							item->readpending = (!item->silenttest && item->svcinfo->grabbanner);
 							if (outbuf && outlen) {
 								/*
 								 * It may be that we cannot write all of the
 								 * data we want to. Tough ... 
 								 */
-								res = write(item->fd, outbuf, outlen);
+								res = socket_write(item, outbuf, outlen);
 								if (res == -1) {
 									/* Write failed - this socket is done. */
 									dprintf("write failed\n");
@@ -428,13 +693,17 @@ void do_tcp_tests(int conntimeout, int concurrency)
 						}
 
 						/* If closed and/or no bannergrabbing, shut down socket */
-						if (!item->open || !item->readpending) {
-							if (item->open) shutdown(item->fd, SHUT_RDWR);
-							close(item->fd);
-							item->fd = -1;
-							activesockets--;
-							pending--;
-							if (item == firstactive) firstactive = item->next;
+						if (item->sslrunning != SSLSETUP_PENDING) {
+							if (!item->open || !item->readpending) {
+								if (item->open) {
+									socket_shutdown(item);
+								}
+								close(item->fd);
+								item->fd = -1;
+								activesockets--;
+								pending--;
+								if (item == firstactive) firstactive = item->next;
+							}
 						}
 					}
 					else if (FD_ISSET(item->fd, &readfds)) {
@@ -446,7 +715,16 @@ void do_tcp_tests(int conntimeout, int concurrency)
 						 */
 						int wantmoredata = 0;
 
-						res = read(item->fd, msgbuf, sizeof(msgbuf)-1);
+						/*
+						 * We may be in the process of setting up an SSL connection
+						 */
+						if (item->sslrunning == SSLSETUP_PENDING) setup_ssl(item);
+						if (item->sslrunning == SSLSETUP_PENDING) break;  /* Loop again waiting for more data */
+
+						/*
+						 * Connection is ready - plain or SSL. Read data.
+						 */
+						res = socket_read(item, msgbuf, sizeof(msgbuf)-1);
 						dprintf("read %d bytes from socket\n", res);
 
 						if (res) {
@@ -496,7 +774,9 @@ void do_tcp_tests(int conntimeout, int concurrency)
 						}
 
 						if (!wantmoredata) {
-							shutdown(item->fd, SHUT_RDWR);
+							if (item->open) {
+								socket_shutdown(item);
+							}
 							item->readpending = 0;
 							close(item->fd);
 							item->fd = -1;
@@ -519,11 +799,18 @@ void show_tcp_test_results(void)
 	test_t *item;
 
 	for (item = thead; (item); item = item->next) {
-		printf("Address=%s:%d, open=%d, res=%d, time=%ld.%06ld, banner='%s'\n", 
+		printf("Address=%s:%d, open=%d, res=%d, time=%ld.%06ld, banner='%s'",
 				inet_ntoa(item->addr.sin_addr), 
 				ntohs(item->addr.sin_port),
 				item->open, item->connres, 
-				item->duration.tv_sec, item->duration.tv_usec, textornull(item->banner));
+				item->duration.tv_sec, item->duration.tv_usec, 
+				textornull(item->banner));
+		if (item->certinfo) {
+			printf("certinfo='%s' (%u %s)", 
+				item->certinfo, (unsigned int)item->certexpires,
+				((item->certexpires > time(NULL)) ? "valid" : "expired"));
+		}
+		printf("\n");
 	}
 }
 
@@ -546,12 +833,12 @@ link_t  null_link = { "", "", "", NULL };
 
 int main(int argc, char *argv[])
 {
+	if ((argc > 1) && (strcmp(argv[1], "--debug") == 0)) debug = 1;
+
 	add_tcp_test("172.16.10.100", 23, "telnet", 0);
-	add_tcp_test("213.237.10.86", 23, "telnet", 0);
-	add_tcp_test("62.79.41.122", 23, "telnet", 0);
-	add_tcp_test("147.29.31.155", 23, "telnet", 0);
-	// add_tcp_test("172.16.10.100", 22, "ssh", 0);
-	// add_tcp_test("172.16.10.100", 21, "ftp", 0);
+	add_tcp_test("172.16.10.100", 22, "ssh", 0);
+	add_tcp_test("172.16.10.1", 993, "imaps", 0);
+	add_tcp_test("172.16.10.1", 995, "pop3s", 0);
 
 	do_tcp_tests(0, 0);
 	show_tcp_test_results();
