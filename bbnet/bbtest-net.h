@@ -31,12 +31,44 @@
 #define STATUS_CONTENTMATCH_FAILED 902
 #define STATUS_CONTENTMATCH_BADREGEX 903
 
-typedef struct svcinfo_t {
-	char *svcname;
-	char *sendtxt;
-	char *exptext;
-	unsigned int flags;
-} svcinfo_t;
+/*
+ * Structure of the bbtest-net in-memory records
+ *
+ *  +->service_t
+ *  |      testname
+ *  |      namelen
+ *  |      portnum
+ *  |      toolid
+ *  |      items --------------> testitem_t  <----------------------------------------------+
+ *  |      next             +------- service                                                |
+ *  |                       |        host ------------------>testedhost_t <------------+    |
+ *  +-----------------------+        testspec                    hostname              |    |
+ *                                   dialup                      ip                    |    |
+ *                                   reverse                     conntimeout           |    |
+ *                                   silenttest                  timeout               |    |
+ *                                   alwaystrue                  dialup                |    |
+ *                                   open                        testip                |    |
+ *                                   banner                      nosslcert             |    |
+ *                                   certinfo                    dodns                 |    |
+ *                                   duration                    dnserror              |    |
+ *                                   badtest                     okexpected            |    |
+ *                                   downcount                   repeattest            |    |
+ *                                   downstart                   noconn                |    |
+ *                                   privdata ----+              noping                |    |
+ *                                   next         |              badconn               |    |
+ *                                                |              downcount             |    |
+ *                                                |              downstart             |    |
+ *                                                |              routerdeps            |    |
+ *                                                |              deprouterdown --------+    |
+ *                                                |              firsthttp -----------------+
+ *                                                |              firstldap -----------------+
+ *                                                |              ldapuser
+ *                                                |              ldappasswd
+ *                                                |              sslwarndays
+ *                                                |              sslalarmdays
+ *                                                |
+ *                                                +---------><test private struct>
+ */
 
 typedef struct service_t {
 	char *testname;		/* Name of the test = column name in BB report */
