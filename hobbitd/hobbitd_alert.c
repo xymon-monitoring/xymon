@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.12 2004-10-21 15:02:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.13 2004-10-22 15:15:58 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -258,8 +258,13 @@ int main(int argc, char *argv[])
 
 		/* Split the message in the first line (with meta-data), and the rest */
  		eoln = strchr(msg, '\n');
-		*eoln = '\0';
-		restofmsg = eoln+1;
+		if (eoln) {
+			*eoln = '\0';
+			restofmsg = eoln+1;
+		}
+		else {
+			restofmsg = "";
+		}
 
 		/* 
 		 * Now parse the meta-data into elements.
@@ -450,10 +455,6 @@ int main(int argc, char *argv[])
 						 */
 						awalk->state = A_PAGING;
 					}
-					else if (awalk->state == A_RECOVERED) {
-						cleanup_alert(awalk);
-						awalk->state = A_DEAD;
-					}
 				}
 			}
 			else {
@@ -461,13 +462,30 @@ int main(int argc, char *argv[])
 			}
 		}
 
+		for (awalk = ahead; (awalk); awalk = awalk->next) {
+			switch (awalk->state) {
+			  case A_ACKED: 
+				  /* This really cannot happen */
+				  break;
+
+			  case A_PAGING: 
+				  break;
+
+			  case A_RECOVERED: 
+			  case A_DEAD: 
+				  cleanup_alert(awalk); 
+				  awalk->state = A_DEAD; 
+				  break;
+			}
+		}
+
 		/* 
-		 * Cleanup dead events,
-		 * All A_DEAD and A_RECOVERED items are deleted.
+		 * Cleanup events. Items here are either A_DEAD or A_PAGING.
+		 * All A_DEAD items are deleted.
 		 */
 		khead = NULL; awalk = ahead;
 		while (awalk) {
-			if ((awalk == ahead) && (awalk->state != A_PAGING)) {
+			if ((awalk == ahead) && (awalk->state == A_DEAD)) {
 				/* head of alert chain is going away */
 
 				/* Unlink ahead from the chain ... */
@@ -481,7 +499,7 @@ int main(int argc, char *argv[])
 				/* We're still at the head of the chain. */
 				awalk = ahead;
 			}
-			else if (awalk->next && (awalk->next->state != A_PAGING)) {
+			else if (awalk->next && (awalk->next->state == A_DEAD)) {
 				/* Unlink awalk->next from the chain ... */
 				tmp = awalk->next;
 				awalk->next = tmp->next;
