@@ -2,7 +2,7 @@
 
 	LDAPINC=""
 	LDAPLIB=""
-	for DIR in /opt/openldap* /opt/ldap* /usr/local/openldap* /usr/local/ldap* /usr/local /usr /usr/pkg /opt/csw
+	for DIR in /opt/openldap* /opt/ldap* /usr/local/openldap* /usr/local/ldap* /usr/local /usr /usr/pkg /opt/csw /opt/sfw
 	do
 		if test -f $DIR/include/ldap.h
 		then
