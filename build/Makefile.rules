@@ -12,7 +12,7 @@ CFLAGS += -DMAXMSG=$(MAXMSG) -DBBDPORTNUMBER=$(BBPORT) -I. -I$(BUILDTOPDIR)/incl
 
 BUILDTARGETS = lib-build common-build bbdisplay-build bbnet-build bbproxy-build
 INSTALLTARGETS = install-bbdisplay install-bbnet install-bbproxy
-INSTALLNOCGITARGETS = install-nocgi: install-bbdisplay-nocgi install-bbnet install-bbproxy
+INSTALLNOCGITARGETS = install-bbdisplay-nocgi install-bbnet install-bbproxy
 ifdef BBGEND
 	BUILDTARGETS += bbgend-build
 	INSTALLTARGETS += install-bbgend
@@ -21,7 +21,9 @@ endif
 
 all: $(BUILDTARGETS)
 	@echo ""
-	@echo "Build complete"
+	@echo "Build complete."
+	@echo "To setup a new bbgend server from scratch, now run 'make setup' as root"
+	@echo "To upgrade an existing bbgend/BB server, now run 'make install' as root"
 	@echo ""
 
 lib-build:
@@ -32,7 +34,7 @@ common-build: lib-build
 
 bbdisplay-build: lib-build common-build
 ifdef BBGEND
-	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" HISTGRAPHDEF="$(HISTGRAPHDEF)" BBGEND="$(BBGEND)" $(MAKE) -C bbdisplay all
+	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" HISTGRAPHDEF="$(HISTGRAPHDEF)" BBGEND="$(BBGEND)" $(MAKE) -C bbdisplay all
 else
 	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" HISTGRAPHDEF="$(HISTGRAPHDEF)" $(MAKE) -C bbdisplay all
 endif
@@ -45,7 +47,7 @@ bbproxy-build: lib-build common-build
 	CC="$(CC)" CFLAGS="$(CFLAGS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" $(MAKE) -C bbproxy all
 
 bbgend-build: lib-build common-build
-	CC="$(CC)" CFLAGS="$(CFLAGS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" $(MAKE) -C bbgend  all
+	CC="$(CC)" CFLAGS="$(CFLAGS)" NETLIBS="$(NETLIBS)" BBTOPDIR="$(BBTOPDIR)" BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" BBLOGDIR="$(BBLOGDIR)" BBHOSTNAME="$(BBHOSTNAME)" BBHOSTIP="$(BBHOSTIP)" BBHOSTOS="$(BBHOSTOS)" $(MAKE) -C bbgend  all
 
 
 #####################
@@ -75,11 +77,21 @@ clean:
 install: $(INSTALLTARGETS)
 install-nocgi: $(INSTALLNOCGTARGETS)
 
-install-common:
+install-dirs:
+ifdef BBGEND
+	mkdir -p $(BBHOME)/{bin,etc,ext,tmp,web,www,www/gifs,www/help,www/html,www/menu,www/notes,www/rep,www/wml} $(BBVAR)/{acks,data,disabled,hist,histlogs,logs,rrd}
+	chown $(BBUSER) $(BBHOME)/{bin,etc,ext,tmp,web,www,www/gifs,www/help,www/html,www/menu,www/notes,www/rep,www/wml} $(BBVAR)/{acks,data,disabled,hist,histlogs,logs,rrd}
+	chgrp `id -g $(BBUSER)` $(BBHOME)/{bin,etc,ext,tmp,web,www,www/gifs,www/help,www/html,www/menu,www/notes,www/rep,www/wml} $(BBVAR)/{acks,data,disabled,hist,histlogs,logs,rrd}
+else
+	chmod 775 $(BBHOME)/www/rep
+endif
+	echo ""
+
+install-common: install-dirs
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C common install
 
 install-bbdisplay: install-common
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" $(MAKE) -C bbdisplay install
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" BBGEND="$(BBGEND)" $(MAKE) -C bbdisplay install
 
 install-bbdisplay-nocgi: install-common
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" $(MAKE) -C bbdisplay install-nocgi
@@ -91,7 +103,7 @@ install-bbproxy: install-common
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbproxy install
 
 install-bbgend: install-common
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbgend install
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" BBTOPDIR="$(BBTOPDIR)" BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" CGIDIR="$(CGIDIR)" $(MAKE) -C bbgend install
 
 install-man:
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C common install-man
@@ -99,4 +111,17 @@ install-man:
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbnet install-man
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbproxy install-man
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbgend install-man
+
+setup: install
+	BBTOPDIR="$(BBTOPDIR)" BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" BBLOGDIR="$(BBLOGDIR)" BBHOSTNAME="$(BBHOSTNAME)" BBHOSTIP="$(BBHOSTIP)" BBHOSTOS="$(BBHOSTOS)" BBUSER="$(BBUSER)" CGIDIR="$(CGIDIR)" $(MAKE) -C bbgend  setup
+	@echo ""
+	@echo "Setup complete."
+	@echo ""
+	@echo "You must configure your webserver for the BB webpages and CGI-scripts."
+	@echo "A sample Apache configuration is in ${BBHOME}/etc/bb-apache.conf"
+	@echo ""
+	@echo "For availability reports, change the group-ID of ${BBHOME}/www/rep to your webservers group-ID"
+	@echo ""
+	@echo "To start bbgend, run '${BBHOME}/bb/bin/startbb.sh start'"
+	@echo "To view the BB webpages, go to http://${BBHOSTNAME}/bb/"
 
