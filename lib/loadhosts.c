@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.8 2004-12-10 12:56:40 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.9 2004-12-12 22:38:45 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -26,6 +26,8 @@ static char rcsid[] = "$Id: loadhosts.c,v 1.8 2004-12-10 12:56:40 henrik Exp $";
 
 static pagelist_t *pghead = NULL;
 static namelist_t *namehead = NULL;
+
+char *larrdgraphs_default = NULL;
 
 static int pagematch(pagelist_t *pg, char *name)
 {
@@ -43,8 +45,8 @@ namelist_t *load_hostnames(char *bbhostsfn, int fqdn)
 {
 	FILE *bbhosts;
 	int ip1, ip2, ip3, ip4;
-	char hostname[MAXMSG];
-	char l[MAXMSG];
+	char hostname[4096];
+	char l[4096];
 	pagelist_t *curtoppage, *curpage;
 
 	while (namehead) {
@@ -60,6 +62,7 @@ namelist_t *load_hostnames(char *bbhostsfn, int fqdn)
 		if (walk->displayname) free(walk->displayname);
 		if (walk->downtime) free(walk->downtime);
 		if (walk->data) dprintf("Possible memory leak - data is non-NULL\n");
+		if (walk->larrdgraphs) free(walk->larrdgraphs);
 		free(walk);
 	}
 
@@ -128,9 +131,10 @@ namelist_t *load_hostnames(char *bbhostsfn, int fqdn)
 		}
 		else if (sscanf(l, "%d.%d.%d.%d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
 			char *startoftags, *tag, *p;
-			char displayname[MAXMSG];
-			char clientname[MAXMSG];
-			char downtime[MAXMSG];
+			char displayname[4096];
+			char clientname[4096];
+			char downtime[4096];
+			char larrdgraphs[4096];
 
 			namelist_t *newitem = malloc(sizeof(namelist_t));
 
@@ -147,11 +151,12 @@ namelist_t *load_hostnames(char *bbhostsfn, int fqdn)
 			newitem->downtime = NULL;
 			newitem->displayname = NULL;
 			newitem->page = curpage;
-			newitem->data = NULL;
+			newitem->data = larrdgraphs_default;
+			newitem->larrdgraphs = NULL;
 			newitem->next = namehead;
 			namehead = newitem;
 
-			displayname[0] = clientname[0] = downtime[0] = '\0';
+			displayname[0] = clientname[0] = downtime[0] = larrdgraphs[0] = '\0';
 			startoftags = strchr(l, '#');
 			if (startoftags == NULL) startoftags = ""; else startoftags++;
 
@@ -184,12 +189,17 @@ namelist_t *load_hostnames(char *bbhostsfn, int fqdn)
 				else if (strncmp(tag, "DOWNTIME=", strlen("DOWNTIME=")) == 0) {
                                         strcpy(downtime, tag);
 				}
+				else if (strncmp(tag, "LARRD:", strlen("LARRD:")) == 0) {
+                                        p = tag+strlen("LARRD:");
+                                        strcpy(larrdgraphs, p);
+				}
 				if (tag) tag = strtok(NULL, " \t\r\n");
 			}
 
 			if (strlen(displayname) > 0) newitem->displayname = strdup(displayname);
 			if (strlen(clientname) > 0) newitem->clientname = strdup(clientname);
 			if (strlen(downtime) > 0) newitem->downtime = strdup(downtime);
+			if (strlen(larrdgraphs) > 0) newitem->larrdgraphs = strdup(larrdgraphs);
 		}
 	}
 	stackfclose(bbhosts);

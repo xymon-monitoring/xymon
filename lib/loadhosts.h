@@ -24,8 +24,11 @@ typedef struct namelist_t {
 	char *downtime;
 	struct pagelist_t *page;
 	void *data;		/* Misc. data supplied by the user of this library function */
+	char *larrdgraphs;
 	struct namelist_t *next;
 } namelist_t;
+
+extern char *larrdgraphs_default;
 
 extern namelist_t *load_hostnames(char *bbhostsfn, int fqdn);
 extern char *knownhost(char *filename, char *hostip, int ghosthandling, int *maybedown);
