@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.140 2005-04-04 13:30:13 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.141 2005-04-06 15:21:49 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -893,7 +893,7 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 			dirdelim = tmpfilename;
 			while ((dirdelim = strchr(dirdelim, '/')) != NULL) {
 				*dirdelim = '\0';
-				if (mkdir(tmpfilename, 0755) == -1) {
+				if ((mkdir(tmpfilename, 0755) == -1) && (errno != EEXIST)) {
 					errprintf("Cannot create directory %s (in %s): %s\n", 
 						   tmpfilename, curdir, strerror(errno));
 				}
