@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.23 2004-08-27 20:56:17 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.24 2004-08-28 07:50:32 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -247,6 +247,7 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, int fullrespo
 		}
 	}
 
+retry_connect:
 	dprintf("Will connect to address %s port %d\n", rcptip, rcptport);
 
 	memset(&saddr, 0, sizeof(saddr));
@@ -260,7 +261,6 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, int fullrespo
 	res = fcntl(sockfd, F_SETFL, O_NONBLOCK);
 	if (res != 0) return BB_ECANNOTDONONBLOCK;
 
-retry_connect:
 	res = connect(sockfd, (struct sockaddr *)&saddr, sizeof(saddr));
 	if ((res == -1) && (errno != EINPROGRESS)) {
 		close(sockfd);
@@ -279,11 +279,13 @@ retry_connect:
 		res = select(sockfd+1, &readfds, &writefds, NULL, &tmo);
 		if (res == -1) {
 			errprintf("Select failure while sending to bbd!\n");
-			shutdown(sockfd, SHUT_RDWR); close(sockfd);
+			shutdown(sockfd, SHUT_RDWR);
+			close(sockfd);
 			return BB_ESELFAILED;
 		}
 		else if (res == 0) {
 			/* Timeout! */
+			shutdown(sockfd, SHUT_RDWR);
 			close(sockfd);
 
 			if (!isconnected && (connretries > 0)) {
@@ -305,6 +307,7 @@ retry_connect:
 				dprintf("Connect status is %d\n", connres);
 				isconnected = (connres == 0);
 				if (!isconnected) {
+					shutdown(sockfd, SHUT_RDWR);
 					close(sockfd);
 					errprintf("Could not connect to bbd - %s\n", strerror(connres));
 					return BB_ECONNFAILED;
