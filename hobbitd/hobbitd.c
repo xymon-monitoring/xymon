@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.70 2004-11-26 23:06:22 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.71 2004-11-30 22:37:41 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -69,6 +69,7 @@ typedef struct bbgend_testlist_t {
 typedef struct bbgend_log_t {
 	struct bbgend_hostlist_t *host;
 	struct bbgend_testlist_t *test;
+	struct htnames_t *origin;
 	int color, oldcolor;
 	char *testflags;
 	char sender[16];
@@ -95,6 +96,7 @@ typedef struct bbgend_hostlist_t {
 
 bbgend_hostlist_t *hosts = NULL;		/* The hosts we have reports from */
 bbgend_testlist_t *tests = NULL;		/* The tests we have seen */
+htnames_t *origins = NULL;
 
 typedef struct sender_t {
 	unsigned long int ipval;
@@ -337,9 +339,8 @@ int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgb
 
 
 void posttochannel(bbgend_channel_t *channel, char *channelmarker, 
-		   char *msg, char *sender, char *hostname, void *arg, char *readymsg)
+		   char *msg, char *sender, char *hostname, bbgend_log_t *log, char *readymsg)
 {
-	bbgend_log_t *log;
 	char *testname;
 	struct sembuf s;
 	struct shmid_ds chninfo;
@@ -389,14 +390,11 @@ void posttochannel(bbgend_channel_t *channel, char *channelmarker,
 	else {
 		switch(channel->channelid) {
 		  case C_STATUS:
-			log = (bbgend_log_t *)arg;
 			n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
-				"@@%s#%u|%d.%06d|%s|%s|%s|%d|%s|%s|%s|%d", 
+				"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%s|%d", 
 				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
-				sender, hostname, 
-				log->test->testname, (int) log->validtime, 
-				colnames[log->color], 
-				(log->testflags ? log->testflags : ""),
+				sender, log->origin->name, hostname, log->test->testname, 
+				(int) log->validtime, colnames[log->color], (log->testflags ? log->testflags : ""),
 				colnames[log->oldcolor], (int) log->lastchange); 
 			n += snprintf(channel->channelbuf+n, (SHAREDBUFSZ-n-1), "|%d|%s",
 				(int)log->acktime, nlencode(log->ackmsg));
@@ -407,19 +405,17 @@ void posttochannel(bbgend_channel_t *channel, char *channelmarker,
 			break;
 
 		  case C_STACHG:
-			log = (bbgend_log_t *)arg;
 			n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
-				"@@%s#%u|%d.%06d|%s|%s|%s|%d|%s|%s|%d\n%s\n@@\n", 
+				"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d\n%s\n@@\n", 
 				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
-				sender, hostname, 
-				log->test->testname, (int) log->validtime, 
-				colnames[log->color], colnames[log->oldcolor], (int) log->lastchange, 
+				sender, log->origin->name, hostname, log->test->testname, 
+				(int) log->validtime, colnames[log->color], 
+				colnames[log->oldcolor], (int) log->lastchange, 
 				msg);
 			*(channel->channelbuf + n) = '\0';
 			break;
 
 		  case C_PAGE:
-			log = (bbgend_log_t *)arg;
 			if (strcmp(channelmarker, "ack") == 0) {
 				n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
 					"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d\n%s\n@@\n", 
@@ -441,12 +437,6 @@ void posttochannel(bbgend_channel_t *channel, char *channelmarker,
 			break;
 
 		  case C_DATA:
-			testname = (char *)arg;
-			n = snprintf(channel->channelbuf,  (SHAREDBUFSZ-1),
-				"@@%s#%u|%d.%06d|%s|%s|%s\n%s\n@@\n", 
-				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
-				sender, hostname, testname, msg);
-			*(channel->channelbuf + n) = '\0';
 			break;
 
 		  case C_NOTES:
@@ -458,7 +448,6 @@ void posttochannel(bbgend_channel_t *channel, char *channelmarker,
 			break;
 
 		  case C_ENADIS:
-			log = (bbgend_log_t *)arg;
 			n = snprintf(channel->channelbuf, (SHAREDBUFSZ-1),
 				"@@%s#%u|%d.%06d|%s|%s|%s|%d\n@@\n",
 				channelmarker, channel->seq, (int) tstamp.tv_sec, (int)tstamp.tv_usec,
@@ -552,7 +541,7 @@ void log_ghost(char *hostname, char *sender, char *msg)
 	}
 }
 
-void get_hts(char *msg, char *sender, 
+void get_hts(char *msg, char *sender, char *origin,
 	     bbgend_hostlist_t **host, bbgend_testlist_t **test, bbgend_log_t **log, 
 	     int *color, int createhost, int createlog)
 {
@@ -568,6 +557,7 @@ void get_hts(char *msg, char *sender,
 	char hostip[20];
 	bbgend_hostlist_t *hwalk = NULL;
 	bbgend_testlist_t *twalk = NULL;
+	htnames_t *owalk = NULL;
 	bbgend_log_t *lwalk = NULL;
 	int maybedown = 0;
 
@@ -630,8 +620,14 @@ void get_hts(char *msg, char *sender,
 		twalk->next = tests;
 		tests = twalk;
 	}
-	if (hwalk && twalk) {
-		for (lwalk = hwalk->logs; (lwalk && (lwalk->test != twalk)); lwalk = lwalk->next);
+	for (owalk = origins; (owalk && strcasecmp(origin, owalk->name)); owalk = owalk->next);
+	if (createlog && (owalk == NULL)) {
+		owalk = (htnames_t *)malloc(sizeof(htnames_t));
+		owalk->name = strdup(origin);
+		origins = owalk;
+	}
+	if (hwalk && twalk && owalk) {
+		for (lwalk = hwalk->logs; (lwalk && ((lwalk->test != twalk) || (lwalk->origin != owalk))); lwalk = lwalk->next);
 		if (createlog && (lwalk == NULL)) {
 			lwalk = (bbgend_log_t *)malloc(sizeof(bbgend_log_t));
 			lwalk->color = lwalk->oldcolor = NO_COLOR;
@@ -639,6 +635,7 @@ void get_hts(char *msg, char *sender,
 			lwalk->sender[0] = '\0';
 			lwalk->host = hwalk;
 			lwalk->test = twalk;
+			lwalk->origin = owalk;
 			lwalk->message = NULL;
 			lwalk->msgsz = 0;
 			lwalk->dismsg = lwalk->ackmsg = NULL;
@@ -713,7 +710,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		/* A disable has expired. Clear the timestamp and the message buffer */
 		log->enabletime = 0;
 		if (log->dismsg) { free(log->dismsg); log->dismsg = NULL; }
-		posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, (void *)log, NULL);
+		posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, log, NULL);
 	}
 
 	if (log->acktime) {
@@ -826,25 +823,30 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		 */
 		if ((oldalertstatus != newalertstatus) || (newalertstatus && (log->oldcolor != newcolor))) {
 			dprintf("posting to page channel\n");
-			posttochannel(pagechn, channelnames[C_PAGE], msg, sender, hostname, (void *) log, NULL);
+			posttochannel(pagechn, channelnames[C_PAGE], msg, sender, hostname, log, NULL);
 		}
 
 		/*
 		 * Change of color always goes to the status-change channel.
 		 */
 		dprintf("posting to stachg channel\n");
-		posttochannel(stachgchn, channelnames[C_STACHG], msg, sender, hostname, (void *) log, NULL);
+		posttochannel(stachgchn, channelnames[C_STACHG], msg, sender, hostname, log, NULL);
 		log->lastchange = time(NULL);
 	}
 
 	dprintf("posting to status channel\n");
-	posttochannel(statuschn, channelnames[C_STATUS], msg, sender, hostname, (void *) log, NULL);
+	posttochannel(statuschn, channelnames[C_STATUS], msg, sender, hostname, log, NULL);
 	return;
 }
 
-void handle_data(char *msg, char *sender, char *hostname, char *testname)
+void handle_data(char *msg, char *sender, char *origin, char *hostname, char *testname)
 {
-	posttochannel(datachn, channelnames[C_DATA], msg, sender, hostname, (void *)testname, NULL);
+	char *chnbuf = (char *)malloc(strlen(origin) + strlen(hostname) + strlen(testname) + strlen(msg) + 4);
+
+	sprintf(chnbuf, "%s|%s|%s\n%s",
+		origin, hostname, testname, msg);
+	posttochannel(datachn, channelnames[C_DATA], msg, sender, hostname, NULL, chnbuf);
+	free(chnbuf);
 }
 
 void handle_notes(char *msg, char *sender, char *hostname)
@@ -925,7 +927,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 					free(log->dismsg);
 					log->dismsg = NULL;
 				}
-				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, (void *)log, NULL);
+				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, log, NULL);
 			}
 		}
 		else {
@@ -936,7 +938,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 					free(log->dismsg);
 					log->dismsg = NULL;
 				}
-				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, (void *)log, NULL);
+				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, log, NULL);
 			}
 		}
 	}
@@ -961,7 +963,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 					if (log->dismsg) free(log->dismsg);
 					log->dismsg = strdup(dismsg);
 				}
-				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, (void *)log, NULL);
+				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, log, NULL);
 				/* Trigger an immediate status update */
 				handle_status(log->message, sender, log->host->hostname, log->test->testname, log, COL_BLUE);
 			}
@@ -974,7 +976,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 					if (log->dismsg) free(log->dismsg);
 					log->dismsg = strdup(dismsg);
 				}
-				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, (void *)log, NULL);
+				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, log, NULL);
 
 				/* Trigger an immediate status update */
 				handle_status(log->message, sender, log->host->hostname, log->test->testname, log, COL_BLUE);
@@ -1001,7 +1003,7 @@ void handle_ack(char *msg, char *sender, bbgend_log_t *log, int duration)
 	log->ackmsg = strdup(p);
 
 	/* Tell the pagers */
-	posttochannel(pagechn, "ack", log->ackmsg, sender, log->host->hostname, (void *)log, NULL);
+	posttochannel(pagechn, "ack", log->ackmsg, sender, log->host->hostname, log, NULL);
 	return;
 }
 
@@ -1172,7 +1174,7 @@ int get_config(char *fn, conn_t *msg)
 	return 0;
 }
 
-void do_message(conn_t *msg)
+void do_message(conn_t *msg, char *origin)
 {
 	bbgend_hostlist_t *h;
 	bbgend_testlist_t *t;
@@ -1206,10 +1208,10 @@ void do_message(conn_t *msg)
 				*msgfrom = '\0';
 			}
 
-			get_hts(currmsg, sender, &h, &t, &log, &color, 0, 0);
+			get_hts(currmsg, sender, origin, &h, &t, &log, &color, 0, 0);
 			if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, currmsg)) continue;
 
-			get_hts(currmsg, sender, &h, &t, &log, &color, 1, 1);
+			get_hts(currmsg, sender, origin, &h, &t, &log, &color, 1, 1);
 			if (h && dbgfd && dbghost && (strcasecmp(h->hostname, dbghost) == 0)) {
 				fprintf(dbgfd, "\n---- combo message from %s ----\n%s---- end message ----\n", sender, currmsg);
 				fflush(dbgfd);
@@ -1232,10 +1234,10 @@ void do_message(conn_t *msg)
 			*msgfrom = '\0';
 		}
 
-		get_hts(msg->buf, sender, &h, &t, &log, &color, 0, 0);
+		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, 0, 0);
 		if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, msg->buf)) goto done;
 
-		get_hts(msg->buf, sender, &h, &t, &log, &color, 1, 1);
+		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, 1, 1);
 		if (h && dbgfd && dbghost && (strcasecmp(h->hostname, dbghost) == 0)) {
 			fprintf(dbgfd, "\n---- status message from %s ----\n%s---- end message ----\n", sender, msg->buf);
 			fflush(dbgfd);
@@ -1267,12 +1269,12 @@ void do_message(conn_t *msg)
 			}
 
 			if (!oksender(statussenders, hostip, msg->addr.sin_addr, msg->buf)) goto done;
-			if (hostname && testname) handle_data(msg->buf, sender, hostname, testname);
+			if (hostname && testname) handle_data(msg->buf, sender, origin, hostname, testname);
 		}
 	}
 	else if (strncmp(msg->buf, "summary", 7) == 0) {
 		/* Summaries are always allowed. Or should we ? */
-		get_hts(msg->buf, sender, &h, &t, &log, &color, 1, 1);
+		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, 1, 1);
 		if (log && (color != -1)) {
 			handle_status(msg->buf, sender, h->hostname, t->testname, log, color);
 		}
@@ -1313,7 +1315,7 @@ void do_message(conn_t *msg)
 		}
 	}
 	else if (strncmp(msg->buf, "query ", 6) == 0) {
-		get_hts(msg->buf, sender, &h, &t, &log, &color, 0, 0);
+		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, 0, 0);
 		if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, msg->buf)) goto done;
 
 		if (log) {
@@ -1343,7 +1345,7 @@ void do_message(conn_t *msg)
 		 */
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
-		get_hts(msg->buf, sender, &h, &t, &log, &color, 0, 0);
+		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, 0, 0);
 		if (log) {
 			char *buf, *bufp;
 			int bufsz, buflen;
@@ -1589,8 +1591,8 @@ void save_checkpoint(void)
 				lwalk->ackmsg = NULL;
 				lwalk->acktime = 0;
 			}
-			fprintf(fd, "@@BBGENDCHK-V1|%s|%s|%s|%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%s", 
-				hwalk->hostname, lwalk->test->testname, lwalk->sender,
+			fprintf(fd, "@@BBGENDCHK-V1|%s|%s|%s|%s|%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%s", 
+				lwalk->origin->name, hwalk->hostname, lwalk->test->testname, lwalk->sender,
 				colnames[lwalk->color], 
 				(lwalk->testflags ? lwalk->testflags : ""),
 				colnames[lwalk->oldcolor],
@@ -1620,7 +1622,8 @@ void load_checkpoint(char *fn)
 	bbgend_hostlist_t *htail = NULL;
 	bbgend_testlist_t *t = NULL;
 	bbgend_log_t *ltail = NULL;
-	char *hostname = NULL, *testname = NULL, *sender = NULL, *testflags = NULL; 
+	htnames_t *origin = NULL;
+	char *originname = NULL, *hostname = NULL, *testname = NULL, *sender = NULL, *testflags = NULL; 
 	char *statusmsg = NULL, *disablemsg = NULL, *ackmsg = NULL;
 	time_t logtime = 0, lastchange = 0, validtime = 0, enabletime = 0, acktime = 0, cookieexpires = 0;
 	int color = COL_GREEN, oldcolor = COL_GREEN, cookie = -1;
@@ -1640,30 +1643,31 @@ void load_checkpoint(char *fn)
 		while (item && !err) {
 			switch (i) {
 			  case 0: err = (strcmp(item, "@@BBGENDCHK-V1") != 0); break;
-			  case 1: if (strlen(item)) hostname = item; else err=1; break;
-			  case 2: if (strlen(item)) testname = item; else err=1; break;
-			  case 3: sender = item; break;
-			  case 4: color = parse_color(item); if (color == -1) err = 1; break;
-			  case 5: testflags = item; break;
-			  case 6: oldcolor = parse_color(item); if (oldcolor == -1) oldcolor = NO_COLOR; break;
-			  case 7: logtime = atoi(item); break;
-			  case 8: lastchange = atoi(item); break;
-			  case 9: validtime = atoi(item); break;
-			  case 10: enabletime = atoi(item); break;
-			  case 11: acktime = atoi(item); break;
-			  case 12: cookie = atoi(item); break;
-			  case 13: cookieexpires = atoi(item); break;
-			  case 14: if (strlen(item)) statusmsg = item; else err=1; break;
-			  case 15: disablemsg = item; break;
-			  case 16: ackmsg = item; break;
+			  case 1: if (strlen(item)) originname = item; else err=1; break;
+			  case 2: if (strlen(item)) hostname = item; else err=1; break;
+			  case 3: if (strlen(item)) testname = item; else err=1; break;
+			  case 4: sender = item; break;
+			  case 5: color = parse_color(item); if (color == -1) err = 1; break;
+			  case 6: testflags = item; break;
+			  case 7: oldcolor = parse_color(item); if (oldcolor == -1) oldcolor = NO_COLOR; break;
+			  case 8: logtime = atoi(item); break;
+			  case 9: lastchange = atoi(item); break;
+			  case 10: validtime = atoi(item); break;
+			  case 11: enabletime = atoi(item); break;
+			  case 12: acktime = atoi(item); break;
+			  case 13: cookie = atoi(item); break;
+			  case 14: cookieexpires = atoi(item); break;
+			  case 15: if (strlen(item)) statusmsg = item; else err=1; break;
+			  case 16: disablemsg = item; break;
+			  case 17: ackmsg = item; break;
 			  default: err = 1;
 			}
 
 			item = gettok(NULL, "|\n"); i++;
 		}
 
-		if (i < 16) {
-			errprintf("Too few fields in record - found %d, expected 16\n", i);
+		if (i < 17) {
+			errprintf("Too few fields in record - found %d, expected 17\n", i);
 			err = 1;
 		}
 
@@ -1696,6 +1700,14 @@ void load_checkpoint(char *fn)
 			tests = t;
 		}
 
+		for (origin=origins; (origin && (strcmp(origin->name, originname) != 0)); origin = origin->next) ;
+		if (origin == NULL) {
+			origin = (htnames_t *) malloc(sizeof(htnames_t));
+			origin->name = strdup(originname);
+			origin->next = origins;
+			origins = origin;
+		}
+
 		if (htail->logs == NULL) {
 			ltail = htail->logs = (bbgend_log_t *) malloc(sizeof(bbgend_log_t));
 		}
@@ -1706,6 +1718,7 @@ void load_checkpoint(char *fn)
 
 		ltail->test = t;
 		ltail->host = htail;
+		ltail->origin = origin;
 		ltail->color = color;
 		ltail->oldcolor = oldcolor;
 		ltail->testflags = ( (testflags && strlen(testflags)) ? strdup(testflags) : NULL);
@@ -2122,7 +2135,7 @@ int main(int argc, char *argv[])
 			int color;
 
 			buf = generate_stats();
-			get_hts(buf, "bbgend", &h, &t, &log, &color, 1, 1);
+			get_hts(buf, "bbgend", "", &h, &t, &log, &color, 1, 1);
 			handle_status(buf, "bbgend", h->hostname, t->testname, log, color);
 			last_stats_time = now;
 			flush_errbuf();
@@ -2161,7 +2174,8 @@ int main(int argc, char *argv[])
 					n = read(cwalk->sock, cwalk->bufp, (cwalk->bufsz - cwalk->buflen - 1));
 					if (n <= 0) {
 						if (cwalk->buflen) {
-							do_message(cwalk);
+							/* FIXME - need to set origin here */
+							do_message(cwalk, "");
 						}
 					}
 					else {
