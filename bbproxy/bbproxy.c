@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.10 2004-09-19 12:20:20 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.11 2004-09-19 15:33:16 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -145,6 +145,7 @@ int main(int argc, char *argv[])
 	int daemonize = 1;
 	int timeout = 10;
 	int listenq = 512;
+	char *pidfile = "/var/run/bbproxy.pid";
 
 	int sockcount = 0;
 	int lsocket;
@@ -188,6 +189,10 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[opt], "--no-daemon") == 0) {
 			daemonize = 0;
 		}
+		else if (argnmatch(argv[opt], "--pidfile=")) {
+			char *p = strchr(argv[opt], '=');
+			pidfile = strdup(p+1);
+		}
 		else if (strcmp(argv[opt], "--debug") == 0) {
 			debug = 1;
 		}
@@ -204,6 +209,7 @@ int main(int argc, char *argv[])
 			printf("\t--lqueue=N                  : Listen-queue size\n");
 			printf("\t--daemon                    : Run as a daemon\n");
 			printf("\t--no-daemon                 : Do not run as a daemon\n");
+			printf("\t--pidfile=FILENAME          : Save proces-ID of daemon to FILENAME\n");
 			printf("\t--debug                     : Enable debugging output\n");
 			printf("\n");
 			return 0;
@@ -263,7 +269,12 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 		else if (childpid > 0) {
-			/* Parent - just exit */
+			/* Parent - save PID and exit */
+			FILE *fd = fopen(pidfile, "w");
+			if (fd) {
+				fprintf(fd, "%d\n", childpid);
+				fclose(fd);
+			}
 			exit(0);
 		}
 		/* Child (daemon) continues here */
