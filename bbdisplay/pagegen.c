@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.62 2003-06-20 12:29:49 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.63 2003-06-21 07:33:54 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -513,45 +513,6 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 	fprintf(output, "</CENTER>\n");
 }
 
-void do_bbext(FILE *output, char *extenv)
-{
-	/* Extension scripts. These are ad-hoc, and implemented as a
-	 * simple pipe. So we do a fork here ...
-	 */
-
-	char *bbexts, *p;
-	FILE *inpipe;
-	char extfn[MAX_PATH];
-	char buf[4096];
-	
-	p = getenv(extenv);
-	if (p == NULL)
-		/* No extension */
-		return;
-
-	bbexts = malloc(strlen(p)+1);
-	strcpy(bbexts, p);
-	p = strtok(bbexts, "\t ");
-
-	while (p) {
-		/* Dont redo the eventlog or acklog things */
-		if ((strcmp(p, "eventlog.sh") != 0) &&
-		    (strcmp(p, "acklog.sh") != 0)) {
-			sprintf(extfn, "%s/ext/mkbb/%s", getenv("BBHOME"), p);
-			inpipe = popen(extfn, "r");
-			if (inpipe) {
-				while (fgets(buf, sizeof(buf), inpipe)) 
-					fputs(buf, output);
-				pclose(inpipe);
-			}
-		}
-		p = strtok(NULL, "\t ");
-	}
-
-	free(bbexts);
-}
-
-
 void do_page_subpages(FILE *output, bbgen_page_t *subs, char *pagepath)
 {
 	/*
@@ -723,7 +684,7 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 	/* Summaries and extensions on main page only */
 	if (!embedded && (page->parent == NULL)) {
 		do_summaries(dispsums, output);
-		do_bbext(output, "BBMKBBEXT");
+		do_bbext(output, "BBMKBBEXT", "mkbb");
 	}
 
 	headfoot(output, hf_prefix[PAGE_BB], pagepath, "footer", page->color);
@@ -1168,7 +1129,7 @@ int do_bb2_page(char *filename, int summarytype)
 	if (summarytype == PAGE_BB2) {
 		do_eventlog(output, 0, 240);
 		do_acklog(output, 25, 240);
-		do_bbext(output, "BBMKBB2EXT");
+		do_bbext(output, "BBMKBB2EXT", "mkbb");
 	}
 
 	fprintf(output, "</center>\n");

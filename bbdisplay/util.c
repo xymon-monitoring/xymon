@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.58 2003-06-20 13:05:24 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.59 2003-06-21 07:33:54 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -562,6 +562,45 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 	else {
 		fprintf(output, "<HTML><BODY> \n <HR size=4> \n <BR>%s is either missing or invalid, please create this file with your custom header<BR> \n<HR size=4>", filename);
 	}
+}
+
+
+void do_bbext(FILE *output, char *extenv, char *family)
+{
+	/* Extension scripts. These are ad-hoc, and implemented as a
+	 * simple pipe. So we do a fork here ...
+	 */
+
+	char *bbexts, *p;
+	FILE *inpipe;
+	char extfn[MAX_PATH];
+	char buf[4096];
+	
+	p = getenv(extenv);
+	if (p == NULL)
+		/* No extension */
+		return;
+
+	bbexts = malloc(strlen(p)+1);
+	strcpy(bbexts, p);
+	p = strtok(bbexts, "\t ");
+
+	while (p) {
+		/* Dont redo the eventlog or acklog things */
+		if ((strcmp(p, "eventlog.sh") != 0) &&
+		    (strcmp(p, "acklog.sh") != 0)) {
+			sprintf(extfn, "%s/ext/%s/%s", getenv("BBHOME"), family, p);
+			inpipe = popen(extfn, "r");
+			if (inpipe) {
+				while (fgets(buf, sizeof(buf), inpipe)) 
+					fputs(buf, output);
+				pclose(inpipe);
+			}
+		}
+		p = strtok(NULL, "\t ");
+	}
+
+	free(bbexts);
 }
 
 
