@@ -61,5 +61,7 @@ extern void envcheck(char *envvars[]);
 extern int run_columngen(char *column, int update_interval, int enabled);
 extern char *realurl(char *url);
 
+extern int generate_static(void);
+
 #endif
 

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.19 2003-02-12 11:37:54 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.20 2003-02-14 12:01:08 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -681,3 +681,8 @@ char *realurl(char *url)
 	return result;
 }
 
+
+int generate_static(void)
+{
+	return ( (strcmp(getenv("BBLOGSTATUS"), "STATIC") == 0) ? 1 : 0);
+}
