@@ -39,7 +39,6 @@ typedef struct {
 	char   *headers;                /* HTTP headers from server */
 	char   *output;                 /* Data from server */
 	double totaltime;		/* Time spent doing request */
-	char   *expoutput;              /* Expected output, if content check. */
 	regex_t *exp;			/* regexp data for content match */
 } http_data_t;
 
@@ -75,7 +74,6 @@ void add_http_test(testitem_t *t)
 	req->headers = NULL;
 	req->output = NULL;
 	req->totaltime = 0.0;
-	req->expoutput = NULL;
 	req->exp = NULL;
 
 	/* Determine the content data to look for (if any) */
@@ -90,7 +88,6 @@ void add_http_test(testitem_t *t)
 		if (contentfd) {
 			if (fgets(l, sizeof(l), contentfd)) {
 				p = strchr(l, '\n'); if (p) { *p = '\0'; };
-				req->expoutput = malcop(p);
 				req->exp = malloc(sizeof(regex_t));
 				status = regcomp(req->exp, p, REG_EXTENDED|REG_NOSUB);
 				if (status) {
@@ -111,7 +108,6 @@ void add_http_test(testitem_t *t)
 	else if (strncmp(t->testspec, "cont;", 5) == 0) {
 		char *p = strrchr(t->testspec, ';');
 		if (p) {
-			req->expoutput = malcop(p+1);
 			req->exp = malloc(sizeof(regex_t));
 			status = regcomp(req->exp, p+1, REG_EXTENDED|REG_NOSUB);
 			if (status) {
@@ -130,12 +126,14 @@ void add_http_test(testitem_t *t)
 		char *q;
 
 		if (p) {
-			req->expoutput = malcop(p+1);
-			req->exp = malloc(sizeof(regex_t));
-			status = regcomp(req->exp, p+1, REG_EXTENDED|REG_NOSUB);
-			if (status) {
-				printf("Failed to compile regexp '%s' for URL %s\n", p+1, req->url);
-				req->contstatus = STATUS_CONTENTMATCH_BADREGEX;
+			/* It is legal not to specify anything for the expected output from a POST */
+			if (strlen(p+1) > 0) {
+				req->exp = malloc(sizeof(regex_t));
+				status = regcomp(req->exp, p+1, REG_EXTENDED|REG_NOSUB);
+				if (status) {
+					printf("Failed to compile regexp '%s' for URL %s\n", p+1, req->url);
+					req->contstatus = STATUS_CONTENTMATCH_BADREGEX;
+				}
 			}
 		}
 		else req->contstatus = STATUS_CONTENTMATCH_NOFILE;
@@ -243,7 +241,7 @@ static size_t data_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 	http_data_t *req = stream;
 	size_t count = size*nmemb;
 
-	if (req->expoutput == NULL) {
+	if (req->exp == NULL) {
 		/* No need to save output - just drop it */
 		return count;
 	}
@@ -395,7 +393,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 	for (t=host->firsthttp; (t && (t->host == host)); t = t->next) {
 		http_data_t *req = t->private;
 
-		if (req->expoutput) {
+		if (req->exp) {
 			/* We have a content check */
 			if (req->contstatus == 0) {
 				/* The content check passed initial checks of regexp etc. */
@@ -472,7 +470,6 @@ void show_http_test_results(service_t *httptest)
 
 		printf("URL                      : %s\n", req->url);
 		printf("Req. SSL version/ciphers : %d/%s\n", req->sslversion, req->ciphers);
-		printf("Expected output          : %s\n", textornull(req->expoutput));
 		printf("HTTP status              : %lu\n", req->httpstatus);
 		printf("Time spent               : %f\n", req->totaltime);
 		printf("HTTP headers\n%s\n", req->headers);
