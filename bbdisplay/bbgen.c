@@ -476,9 +476,9 @@ state_t *init_state(const char *filename, int dopurple)
 		while (fgets(l, sizeof(l), fd) && (strncmp(l, "Status unchanged in ", 20) != 0)) ;
 
 		if (strncmp(l, "Status unchanged in ", 20) == 0) {
-			char *p = strchr(l, '\n');
-			*p = '\0';
+			char *p;
 
+			p = strchr(l, '\n'); if (p) *p = '\0';
 			strcpy(newstate->entry->age, l+20);
 			newstate->entry->oldage = (strstr(l+20, "days") != NULL);
 		}
