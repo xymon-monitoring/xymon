@@ -2,11 +2,11 @@
 #
 
 
-PROGRAMS = bbgen bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi bb-findhost.cgi bb-csvinfo.cgi bb-hostsvc.cgi bb-ack.cgi bb-webpage bb-larrdcolumn bb-infocolumn
+PROGRAMS = bbgen bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi bb-findhost.cgi bb-csvinfo.cgi bb-ack.cgi bb-webpage
 
 EXTENSIONS = bbcombotest
 
-CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh bb-findhost.sh bb-csvinfo.sh bbmessage.cgi bb-hostsvc.sh bb-histlog.sh hobbitcolumn.sh
+CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh bb-findhost.sh bb-csvinfo.sh bbmessage.cgi bb-histlog.sh hobbitcolumn.sh
 
 TEMPLATES = acknowledge_header acknowledge_footer acknowledge_form findhost_header findhost_footer findhost_form report_header report_footer report_form snapshot_header snapshot_footer snapshot_form event_header event_footer event_form
 
@@ -20,14 +20,8 @@ EVENTLOGOBJS = bb-eventlog.o util.o loadbbhosts.o		# util.o for histlogurl, find
 FINDHOSTOBJS = bb-findhost.o
 CSVINFOOBJS = bb-csvinfo.o
 MESSAGECGIOBJS = sendmsg-cgi.o
-HOSTSVCCGIOBJS = bb-hostsvc.o
 ACKCGIOBJS = bb-ack.o
 WEBPAGEOBJS = bb-webpage.o
-LARRDCOLUMNOBJS = bb-larrdcolumn.o
-INFOCOLUMNOBJS = bb-infocolumn.o
-ifdef HOBBITD
-INFOCOLUMNOBJS += hobbit-alertconfig.o
-endif
 
 HTMLPAGES = bb-findhost.html
 GIFFILES = bbfindhost1.gif bbfindhost2.gif
@@ -66,24 +60,11 @@ bb-csvinfo.cgi: $(CSVINFOOBJS) ../lib/libbbgen.a
 bbmessage.cgi: $(MESSAGECGIOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(MESSAGECGIOBJS) ../lib/libbbgen.a $(NETLIBS)
 
-bb-hostsvc.cgi: $(HOSTSVCCGIOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(HOSTSVCCGIOBJS) ../lib/libbbgen.a $(NETLIBS)
-
 bb-ack.cgi: $(ACKCGIOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(ACKCGIOBJS) ../lib/libbbgen.a $(NETLIBS)
 
 bb-webpage: $(WEBPAGEOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(WEBPAGEOBJS) ../lib/libbbgen.a
-
-bb-larrdcolumn: $(LARRDCOLUMNOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(LARRDCOLUMNOBJS) ../lib/libbbgen.a $(NETLIBS)
-
-bb-infocolumn: $(INFOCOLUMNOBJS) ../lib/libbbgen.a
-ifdef HOBBITD
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(INFOCOLUMNOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
-else
-	$(CC) $(CFLAGS) -o $@ $(INFOCOLUMNOBJS) ../lib/libbbgen.a $(NETLIBS)
-endif
 
 
 ################################################
@@ -108,20 +89,6 @@ bb-replog-cgi.o: bb-replog.c
 
 sendmsg-cgi.o: ../lib/sendmsg.c
 	$(CC) $(CFLAGS) -DCGI -c -o $@ ../lib/sendmsg.c
-
-bb-hostsvc.o: bb-hostsvc.c
-	$(CC) $(CFLAGS) -DCGI -c -o $@ bb-hostsvc.c
-
-ifdef HOBBITD
-bb-infocolumn.o: bb-infocolumn.c
-	$(CC) $(CFLAGS) -I../hobbitd -c -o $@ bb-infocolumn.c
-else
-bb-infocolumn.o: bb-infocolumn.c
-	$(CC) $(CFLAGS) -c -o $@ bb-infocolumn.c
-endif
-
-hobbit-alertconfig.o: ../hobbitd/do_alert.c
-	$(CC) $(CFLAGS) -DINFOCOL -c -o $@ $(PCREINCDIR) -I../hobbitd ../hobbitd/do_alert.c
 
 ################################################
 # Default compilation rules
