@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.42 2004-10-27 11:21:43 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.43 2004-10-27 13:35:01 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1444,6 +1444,7 @@ int main(int argc, char *argv[])
 			char *colspec = strchr(argv[argi], '=') + 1;
 			int c, ac;
 			char *p;
+			int colormask;
 
 			p = strtok(colspec, ",");
 			ac = 0;
@@ -1453,7 +1454,9 @@ int main(int argc, char *argv[])
 				p = strtok(NULL, ",");
 			}
 
-			alertcolors = ac;
+			/* green and blue can NEVER be alertcolors */
+			colormask = ~((1 << COL_GREEN) | (1 << COL_BLUE));
+			alertcolors = (ac & colormask);
 		}
 		else if (argnmatch(argv[argi], "--ghosts=")) {
 			char *p = strchr(argv[argi], '=') + 1;
