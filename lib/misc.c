@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.7 2004-11-07 14:14:38 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.8 2004-11-17 16:03:41 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -19,6 +19,7 @@ static char rcsid[] = "$Id: misc.c,v 1.7 2004-11-07 14:14:38 henrik Exp $";
 #include <stdio.h>
 #include <sys/wait.h>
 #include <limits.h>
+#include <errno.h>
 
 #include "errormsg.h"
 #include "misc.h"
@@ -96,6 +97,30 @@ void envcheck(char *envvars[])
 	if (!ok) {
 		errprintf("Aborting\n");
 		exit (1);
+	}
+}
+
+void loadenv(char *envfile)
+{
+	FILE *fd;
+	char l[32768];
+	char *p, *oneenv;
+	int n;
+
+	fd = fopen(envfile, "r");
+	if (fd) {
+		while (fgets(l, sizeof(l), fd)) {
+			p = strchr(l, '\n'); if (p) *p = '\0';
+			p = l + strspn(l, " \t");
+			if (strlen(p) && (*p != '#')) {
+				oneenv = strdup(p);
+				n = putenv(oneenv);
+			}
+		}
+		fclose(fd);
+	}
+	else {
+		errprintf("Cannot open env file %s - %s\n", envfile, strerror(errno));
 	}
 }
 
