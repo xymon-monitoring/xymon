@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.91 2003-09-03 20:23:18 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.92 2003-09-03 20:30:03 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -50,6 +50,8 @@ char *htmlextension = ".html"; /* Filename extension for generated files */
 char *doctargetspec = " TARGET=\"_blank\"";
 char *defaultpagetitle = NULL;
 int  pagetitlelinks = 0;
+int  bb2eventlog = 1;
+int  bb2acklog = 1;
 
 /* Format strings for htaccess files */
 char *htaccess = NULL;
@@ -1022,8 +1024,8 @@ int do_bb2_page(char *filename, int summarytype)
 	}
 
 	if ((snapshot == 0) && (summarytype == PAGE_BB2)) {
-		do_eventlog(output, 0, 240, 0);
-		do_acklog(output, 25, 240);
+		if (bb2eventlog) do_eventlog(output, 0, 240, 0);
+		if (bb2acklog) do_acklog(output, 25, 240);
 		do_bbext(output, "BBMKBB2EXT", "mkbb");
 	}
 

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.148 2003-08-28 09:36:22 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.149 2003-09-03 20:30:03 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -259,6 +259,12 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[i], "--pagetitle-links") == 0) {
 			pagetitlelinks = 1;
 		}
+		else if (strcmp(argv[i], "--no-eventlog") == 0) {
+			bb2eventlog = 0;
+		}
+		else if (strcmp(argv[i], "--no-acklog") == 0) {
+			bb2acklog = 0;
+		}
 
 		else if (argnmatch(argv[i], "--noprop=")) {
 			char *lp = strchr(argv[i], '=');
@@ -384,6 +390,8 @@ int main(int argc, char *argv[])
 			printf("    --ignorecolumns=test[,test] : Completely ignore these columns\n");
 			printf("    --includecolumns=test[,test]: Always include these columns on bb2 page\n");
 			printf("    --eventignore=test[,test]   : Columns to ignore in bb2 event-log display\n");
+			printf("    --no-eventlog               : Do not generate the bb2 eventlog display\n");
+			printf("    --no-acklog                 : Do not generate the bb2 ack-log display\n");
 			printf("    --doccgi=cgibinURL          : Hostnames link to a general CGI script for docs\n");
 			printf("    --no-doc-window             : Open doc-links in same window\n");
 			printf("    --htmlextension=.EXT        : Sets filename extension for generated file (default: .html\n");
