@@ -225,6 +225,7 @@ typedef struct entry_t {
 	struct reportinfo_t *repinfo;
 	struct replog_t *causes;
 	char    *histlogname;
+	char    *shorttext;
 	struct entry_t	*next;
 } entry_t;
 
