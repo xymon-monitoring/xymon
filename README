@@ -52,7 +52,9 @@ Building the bbtest-net tool requires that the "curl" library
 is available. This library is available from http://curl.haxx.se/
 Many Linux distributions include curl as part of the standard
 software - make sure you have the development files installed
-as well.
+as well. You should use version 7.9.8 or later of the library,
+as some features needed by bbtest-net are not available in earlier
+versions.
 
 For network connectivity tests, the fping utility must be 
 installed. This is available from www.fping.org.
