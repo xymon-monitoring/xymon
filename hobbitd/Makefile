@@ -40,7 +40,7 @@ bbgend_sample: $(SAMPLEOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(SAMPLEOBJS) $(LIBOBJS)
 
 startbb.sh: startbb.sh.DIST
-	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g' >$@
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g' | sed -e 's!@BBUSER@!$(BBUSER)!g' >$@
 	chmod 755 $@
 
 bb-ack.sh: bb-ack.sh-bbgend.DIST
