@@ -1,0 +1,71 @@
+.TH HOBBITGRAPH.CGI 1 "Version 3.4: 21 nov 2004" "bbgen toolkit"
+.SH NAME
+hobbitgraph.cgi \- CGI to generate Hobbit trend graphs
+.SH SYNOPSIS
+.B "hobbitgraph [options]"
+
+.SH DESCRIPTION
+\fBhobbitgraph.cgi\fR
+is invoked as a CGI script via the hobbitgraph.sh CGI wrapper.
+
+hobbitgraph.cgi is passed a QUERY_STRING environment variable with the
+following parameters:
+.sp
+.BR host
+Name of the host to generate a graph for
+.sp
+.BR service
+Name of the service to generate a graph for
+.sp
+.BR disp
+Display-name of the host, used on the generated graphs instead of hostname.
+.sp
+.BR graph
+Can be "hourly", "daily", "weekly" or "monthly" to select the time period
+that the graph covers.
+.sp
+.BR first
+Used to split multi-graphs into multiple graphs. This causes hobbitgraph.cgi
+to generate only the graphs starting with the "first'th" graph and continuing
+for "count".
+.sp
+.BR count
+Number of graphs in a multi-graph.
+
+.SH OPTIONS
+.IP "--config=FILENAME"
+Loads the graph configuration file from FILENAME. If not specified,
+the file $BBHOME/etc/hobbitgraph.cfg is used. See the
+.I hobbitgraph.cfg(5)
+for details about this file.
+
+.IP "--env=FILENAME"
+Loads the environment settings defined in FILENAME before executing
+the CGI.
+
+.IP "--rrddir=DIRECTORY"
+The top-level directory for the RRD files. If not specified, the
+directory given by the BBRRDS environment is used.
+
+.IP "--save=FILENAME"
+Instead of returning the image via the CGI interface (i.e. on stdout),
+save the generated image to FILENAME.
+
+.IP "--debug"
+Enable debugging output.
+
+.SH ENVIRONMENT
+.sp
+.BR QUERY_STRING
+Provided by the webserver CGI interface, this decides what graph
+to generate.
+
+.SH FILES
+.sp
+.BR hobbitgraph.cfg:
+The configuration file determining how graphs are generated from
+RRD files.
+
+.SH "SEE ALSO"
+hobbitgraph.cfg(5), hobbit(7), rrdtool(1)
+
