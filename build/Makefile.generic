@@ -11,3 +11,8 @@ CFLAGS = -g -O -D_REENTRANT
 # Compile flags for debugging
 # CFLAGS = -g -DDEBUG -D_REENTRANT
 
+# Extra environment settings for runtime stuff.
+# E.g. RUNTIMEDEFS="LD_LIBRARY_PATH=\"/opt/lib\"" to use 
+# runtime libraries located in /opt/lib
+RUNTIMEDEFS = 
+
