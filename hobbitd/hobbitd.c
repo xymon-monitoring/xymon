@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.11 2004-10-06 19:58:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.12 2004-10-07 14:09:08 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -652,12 +652,9 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		if (lwalk->dismsg) free(lwalk->dismsg);
 		if (lwalk->ackmsg) free(lwalk->ackmsg);
 		free(lwalk);
-		if (hwalk->logs != NULL) {
-			sprintf(msgbuf, "@@droptest|%d.%06d|%s|%s\n", 
-				(int)tstamp.tv_sec, (int)tstamp.tv_usec, hostname, n1);
-			break;
-		}
-		/* Fallthrough and drop the host when it has no more log entries */
+		sprintf(msgbuf, "@@droptest|%d.%06d|%s|%s|%s\n@@\n", 
+			(int)tstamp.tv_sec, (int)tstamp.tv_usec, sender, hostname, n1);
+		break;
 
 	  case CMD_DROPHOST:
 		/* Unlink the hostlist entry */
@@ -685,7 +682,8 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 
 		/* Free the hostlist entry */
 		free(hwalk);
-		sprintf(msgbuf, "@@drophost|%d.%06d|%s\n", (int)tstamp.tv_sec, (int)tstamp.tv_usec, hostname);
+		sprintf(msgbuf, "@@drophost|%d.%06d|%s|%s\n@@\n", 
+			(int)tstamp.tv_sec, (int)tstamp.tv_usec, sender, hostname);
 		break;
 
 	  case CMD_RENAMEHOST:
@@ -696,7 +694,8 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			free(hwalk->hostname);
 			hwalk->hostname = strdup(n1);
 		}
-		sprintf(msgbuf, "@@renamehost|%d.%06d|%s|%s\n", (int)tstamp.tv_sec, (int)tstamp.tv_usec, hostname, n1);
+		sprintf(msgbuf, "@@renamehost|%d.%06d|%s|%s|%s\n@@\n", 
+			(int)tstamp.tv_sec, (int)tstamp.tv_usec, sender, hostname, n1);
 		break;
 
 	  case CMD_RENAMETEST:
@@ -712,8 +711,8 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			tests = newt;
 		}
 		lwalk->test = newt;
-		sprintf(msgbuf, "@@renametest|%d.%06d|%s|%s|%s\n", 
-			(int)tstamp.tv_sec, (int)tstamp.tv_usec, hostname, n1, n2);
+		sprintf(msgbuf, "@@renametest|%d.%06d|%s|%s|%s|%s\n@@\n", 
+			(int)tstamp.tv_sec, (int)tstamp.tv_usec, sender, hostname, n1, n2);
 		break;
 	}
 
@@ -1402,6 +1401,7 @@ int main(int argc, char *argv[])
 	close_channel(pagechn, 1);
 	close_channel(datachn, 1);
 	close_channel(noteschn, 1);
+	save_checkpoint();
 
 	return 0;
 }
