@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.8 2004-09-19 11:03:36 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.9 2004-09-19 11:34:42 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -87,6 +87,7 @@ typedef struct conn_t {
 #define CONNECT_INTERVAL 8	/* seconds between each connection attempt */
 #define BUFSZ_READ 2048
 #define BUFSZ_INC  8192
+#define MAX_OPEN_SOCKS 256
 
 static void do_read(int sockfd, conn_t *conn, enum phase_t completedstate)
 {
@@ -142,7 +143,7 @@ int main(int argc, char *argv[])
 	char *remaddr = NULL;
 	int daemonize = 1;
 	int timeout = 10;
-	int listenq = 20;
+	int listenq = 512;
 
 	int sockcount = 0;
 	int lsocket;
@@ -280,8 +281,8 @@ int main(int argc, char *argv[])
 
 		FD_ZERO(&fdread);
 		FD_ZERO(&fdwrite);
+		maxfd = -1;
 
-		FD_SET(lsocket, &fdread); maxfd = lsocket;
 		for (cwalk = chead, idx=0; (cwalk); cwalk = cwalk->next, idx++) {
 			dprintf("state %d: %s\n", idx, statename[cwalk->state]);
 
@@ -400,6 +401,20 @@ int main(int argc, char *argv[])
 
 			  default:
 				break;
+			}
+		}
+
+		/* Add the listen-socket to the select() list, but only if we have room */
+		if (sockcount < MAX_OPEN_SOCKS) {
+			FD_SET(lsocket, &fdread); 
+			if (lsocket > maxfd) maxfd = lsocket;
+		}
+		else {
+			static time_t lastlogging = 0;
+			time_t now;
+			if ((now = time(NULL)) != lastlogging) {
+				lastlogging = now;
+				errprintf("Squelching incoming connections, sockcount=%d\n", sockcount);
 			}
 		}
 
