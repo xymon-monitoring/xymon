@@ -128,8 +128,8 @@ install-cfg:
 	cd etcfiles; (echo "bb-hosts"; echo "hobbit-alerts.cfg") | ../../build/setup-newfiles $(BBHOME)/etc/
 	cd etcfiles; cp -fp hobbit-apache.conf $(BBHOME)/etc/hobbit-apache.conf
 	cd $(BBHOME); rm -f starthobbit.sh; ln -sf bin/starthobbit.sh .
-	cd wwwfiles; find . | grep -v RCS | grep -v DIST | ../../build/setup-newfiles $(BBHOME)/www/
-	cd webfiles; find . | grep -v RCS | grep -v DIST | ../../build/setup-newfiles $(BBHOME)/web/
+	cd wwwfiles; find . | grep -v RCS | grep -v DIST | ../../build/setup-newfiles $(BBHOME)/www/ ../../build/md5.dat
+	cd webfiles; find . | grep -v RCS | grep -v DIST | ../../build/setup-newfiles $(BBHOME)/web/ ../../build/md5.dat
 	mkdir -p $(BBLOGDIR)
 	chown $(BBUSER) $(BBLOGDIR) $(BBHOME) $(BBHOME)/* $(BBHOME)/bin/* $(BBHOME)/etc/* $(BBHOME)/ext/* $(BBHOME)/web/* $(BBHOME)/www/gifs $(BBHOME)/www/gifs/* $(BBHOME)/www/menu $(BBHOME)/www/menu/* $(BBHOME)/www/help $(BBHOME)/www/notes $(BBHOME)/www/html $(BBHOME)/www/wml $(BBVAR) $(BBVAR)/* $(CGIDIR) $(CGIDIR)/* $(SECURECGIDIR) $(SECURECGIDIR)/*
 	chgrp `$(IDTOOL) -g $(BBUSER)` $(BBLOGDIR) $(BBHOME) $(BBHOME)/* $(BBHOME)/bin/* $(BBHOME)/etc/* $(BBHOME)/ext/* $(BBHOME)/web/* $(BBHOME)/www/gifs $(BBHOME)/www/gifs/* $(BBHOME)/www/menu $(BBHOME)/www/menu/* $(BBHOME)/www/help $(BBHOME)/www/notes $(BBHOME)/www/html $(BBHOME)/www/wml $(BBVAR) $(BBVAR)/* $(CGIDIR) $(CGIDIR)/* $(SECURECGIDIR) $(SECURECGIDIR)/*
