@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.20 2003-08-16 06:59:26 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.21 2003-11-21 10:42:26 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -64,18 +64,18 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 
 	fprintf(htmlrep, "<TR BGCOLOR=\"#000033\">\n");
 	fprintf(htmlrep, "<TD>&nbsp;</TD>\n");
-	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		getenv("BBSKIN"), dotgiffilename(COL_GREEN, 0, 1), colorname(COL_GREEN), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
-	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		getenv("BBSKIN"), dotgiffilename(COL_YELLOW, 0, 1), colorname(COL_YELLOW), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
-	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		getenv("BBSKIN"), dotgiffilename(COL_RED, 0, 1), colorname(COL_RED), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
-	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		getenv("BBSKIN"), dotgiffilename(COL_PURPLE, 0, 1), colorname(COL_PURPLE), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
-	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		getenv("BBSKIN"), dotgiffilename(COL_CLEAR, 0, 1), colorname(COL_CLEAR), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
-	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		getenv("BBSKIN"), dotgiffilename(COL_BLUE, 0, 1), colorname(COL_BLUE), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
+		getenv("BBSKIN"), dotgiffilename(COL_GREEN, 0, 1), colorname(COL_GREEN), colorname(COL_GREEN), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
+		getenv("BBSKIN"), dotgiffilename(COL_YELLOW, 0, 1), colorname(COL_YELLOW), colorname(COL_YELLOW), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
+		getenv("BBSKIN"), dotgiffilename(COL_RED, 0, 1), colorname(COL_RED), colorname(COL_RED), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
+		getenv("BBSKIN"), dotgiffilename(COL_PURPLE, 0, 1), colorname(COL_PURPLE), colorname(COL_PURPLE), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
+		getenv("BBSKIN"), dotgiffilename(COL_CLEAR, 0, 1), colorname(COL_CLEAR), colorname(COL_CLEAR), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
+		getenv("BBSKIN"), dotgiffilename(COL_BLUE, 0, 1), colorname(COL_BLUE), colorname(COL_BLUE), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "<TR BGCOLOR=\"#000033\">\n");
 	fprintf(htmlrep, "<TD ALIGN=LEFT><B>24x7</B></TD>\n");
@@ -206,8 +206,8 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 			fprintf(htmlrep, "<TD ALIGN=CENTER BGCOLOR=\"#000000\">");
 			fprintf(htmlrep, "<A HREF=\"%s/bb-histlog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s\">", 
 				getenv("CGIBINURL"), hostname, service, walk->timespec);
-			fprintf(htmlrep, "<IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0>", 
-				getenv("BBSKIN"), dotgiffilename(walk->color, 0, !angrygif), colorname(walk->color),
+			fprintf(htmlrep, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0>", 
+				getenv("BBSKIN"), dotgiffilename(walk->color, 0, !angrygif), colorname(walk->color), colorname(walk->color),
 				getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
 			fprintf(htmlrep, "</A></TD>\n");
 

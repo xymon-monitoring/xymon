@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.5 2003-11-18 21:56:43 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.6 2003-11-21 10:44:06 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -175,18 +175,18 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
 			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", walk->service->name);
 			fprintf(output, "<TD><A HREF=\"%s\">\n", 
 				histlogurl(walk->host->hostname, walk->service->name, walk->changetime));
-			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=%s></A>\n", 
+			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=\"%s\" TITLE=\"%s\"></A>\n", 
 				getenv("BBSKIN"), dotgiffilename(walk->oldcolor, 0, 0), 
 				getenv("DOTHEIGHT"), getenv("DOTWIDTH"), 
-				colorname(walk->oldcolor));
+				colorname(walk->oldcolor), colorname(walk->oldcolor));
 			fprintf(output, "<IMG SRC=\"%s/arrow.gif\" BORDER=0 ALT=\"From -&gt; To\">\n", 
 				getenv("BBSKIN"));
 			fprintf(output, "<TD><A HREF=\"%s\">\n", 
 				histlogurl(walk->host->hostname, walk->service->name, walk->eventtime));
-			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=%s></A>\n", 
+			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=\"%s\" TITLE=\"%s\"></A>\n", 
 				getenv("BBSKIN"), dotgiffilename(walk->newcolor, 0, 0), 
 				getenv("DOTHEIGHT"), getenv("DOTWIDTH"), 
-				colorname(walk->newcolor));
+				colorname(walk->newcolor), colorname(walk->newcolor));
 		}
 
 		fprintf(output, "</TABLE>\n");
