@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.145 2004-08-05 22:17:12 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.146 2004-08-06 22:11:41 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -268,6 +268,10 @@ service_t *add_service(char *name, int port, int namelen, int toolid)
 {
 	service_t *svc;
 
+	/* Avoid duplicates */
+	for (svc=svchead; (svc && (strcmp(svc->testname, name) != 0)); svc = svc->next);
+	if (svc) return svc;
+
 	svc = (service_t *) malloc(sizeof(service_t));
 	svc->portnum = port;
 	svc->testname = malcop(name); 
@@ -293,7 +297,7 @@ void load_services(void)
 	char *netsvcs;
 	char *p;
 
-	netsvcs = malcop(getenv("BBNETSVCS"));
+	netsvcs = init_tcp_services();
 
 	p = strtok(netsvcs, " ");
 	while (p) {
