@@ -56,6 +56,7 @@ BBWEB="$BBSERVERWWWURL"				# Hobbit URL prefix without the host part
 BBSKIN="$BBSERVERWWWURL/gifs"			# Hobbit URL prefix for the GIF files
 BBHELPSKIN="$BBSERVERWWWURL/help"               # Hobbit URL prefix for the online help files.
 BBNOTESSKIN="$BBSERVERWWWURL/notes"             # Hobbit URL prefix for the online notes-files.
+BBMENUSKIN="$BBSERVERWWWURL/menu"               # Hobbit URL prefix for the webpage menu files.
 BBREPURL="$BBSERVERWWWURL/rep"			# Hobbit URL prefix for the Hobbit availability reports
 BBSNAPURL="$BBSERVERWWWURL/snap"		# Hobbit URL prefix for the Hobbit snapshots
 BBWAP="$BBSERVERWWWURL/wml"			# Hobbit URL prefix for the WAP/WML files.
