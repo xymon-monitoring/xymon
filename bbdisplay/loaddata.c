@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.123 2004-08-09 11:11:56 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.124 2004-08-24 20:46:07 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -674,8 +674,8 @@ state_t *load_state(dispsummary_t **sumhead)
 				if (is_purple) purplecount++;
 				if (purplecount > MAX_PURPLE_PER_RUN) {
 					dopurple = 0;
-					errprintf("%s : Too many purple updates (>%d) - disabling updates for purple logs\n", 
-						timestamp, MAX_PURPLE_PER_RUN);
+					errprintf("Too many purple updates (>%d) - disabling updates for purple logs\n", 
+						MAX_PURPLE_PER_RUN);
 				}
 			}
 		}

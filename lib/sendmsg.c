@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.21 2004-08-11 09:17:18 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.22 2004-08-24 20:46:07 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -483,7 +483,7 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, int fullresponse)
 		  default:                statustext = "Unknown error"; break;
 		};
 
-		errprintf("%s: Whoops ! bb failed to send message - %s (%d)\n", timestamp, statustext, res);
+		errprintf("Whoops ! bb failed to send message - %s (%d)\n", statustext, res);
 	}
 
 	/* Give it a break */
