@@ -66,7 +66,7 @@ typedef struct test_t {
 	/* For grabbing banners */
 	int  silenttest;		/* Banner grabbing can be disabled per test */
 	int  readpending;               /* Temp status while reading banner */
-	char *banner;                   /* Banner text from service */
+	unsigned char *banner;          /* Banner text from service */
 
 	/* For testing SSL-wrapped services */
 	SSL_CTX *sslctx;		/* SSL context pointer */
