@@ -16,22 +16,22 @@ all: lib-build common-build bbdisplay-build bbnet-build bbproxy-build bbgend-bui
 	@echo ""
 
 lib-build:
-	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" make -C lib all
+	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" $(MAKE) -C lib all
 
 common-build: lib-build
-	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" make -C common all
+	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" $(MAKE) -C common all
 
 bbdisplay-build: lib-build
-	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" HISTGRAPHDEF="$(HISTGRAPHDEF)" make -C bbdisplay all
+	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" HISTGRAPHDEF="$(HISTGRAPHDEF)" $(MAKE) -C bbdisplay all
 
 bbnet-build: lib-build
-	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" LDAPFLAGS="$(LDAPFLAGS)" LDAPINCDIR="$(LDAPINCDIR)" LDAPLIBS="$(LDAPLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" make -C bbnet all
+	CC="$(CC)" CFLAGS="$(CFLAGS)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" LDAPFLAGS="$(LDAPFLAGS)" LDAPINCDIR="$(LDAPINCDIR)" LDAPLIBS="$(LDAPLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" $(MAKE) -C bbnet all
 
 bbproxy-build: lib-build
-	CC="$(CC)" CFLAGS="$(CFLAGS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" make -C bbproxy all
+	CC="$(CC)" CFLAGS="$(CFLAGS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" $(MAKE) -C bbproxy all
 
 bbgend-build: lib-build
-	CC="$(CC)" CFLAGS="$(CFLAGS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" make -C bbgend  all
+	CC="$(CC)" CFLAGS="$(CFLAGS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" $(MAKE) -C bbgend  all
 
 
 #####################
@@ -39,18 +39,18 @@ bbgend-build: lib-build
 #####################
 distclean: allclean
 	rm -f Makefile
-	cd bbnet/c-ares-1.2.0 && (make distclean || /bin/true)
+	cd bbnet/c-ares-1.2.0 && ($(MAKE) distclean || /bin/true)
 
 allclean: clean
-	cd bbnet/c-ares-1.2.0 && (make clean || /bin/true)
+	cd bbnet/c-ares-1.2.0 && ($(MAKE) clean || /bin/true)
 
 clean:
-	make -C lib clean
-	make -C common clean
-	make -C bbdisplay clean
-	make -C bbnet clean
-	make -C bbproxy clean
-	make -C bbgend clean
+	$(MAKE) -C lib clean
+	$(MAKE) -C common clean
+	$(MAKE) -C bbdisplay clean
+	$(MAKE) -C bbnet clean
+	$(MAKE) -C bbproxy clean
+	$(MAKE) -C bbgend clean
 	rm -f {.,build,include}/*~
 
 
@@ -61,17 +61,17 @@ clean:
 install: install-bbdisplay install-bbnet install-bbproxy install-bbgend
 
 install-common:
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" make -C common install
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C common install
 
 install-bbdisplay: install-common
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" make -C bbdisplay install
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" $(MAKE) -C bbdisplay install
 
 install-bbnet: install-common
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" make -C bbnet install
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbnet install
 
 install-bbproxy: install-common
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" make -C bbproxy install
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbproxy install
 
 install-bbgend: install-common
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" make -C bbgend install
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbgend install
 
