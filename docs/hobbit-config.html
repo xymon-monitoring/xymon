@@ -10,38 +10,38 @@
 <p>The Hobbit configuration is kept in the files in the <tt>~/server/etc/</tt> 
 directory. If you look at this directory, you will see these files:
 <ul>
-	<li><em>bb-hosts</em> is the one you will change the most. This file contains
+	<li><a href="manpages/man5/bb-hosts.5.html">bb-hosts</a> is the one you will change the most. This file contains
 	a list of all the hosts you are monitoring, including information such as their
 	IP-address, what network services you are monitoring on the host, what URL's
 	you are checking, what subpage in the Hobbit web-pages this host is shown on etc.
 	The name of the file - "bb-hosts" - was chosen so it is compatible with the
 	Big Brother system which uses the same filename and file format.</li>
-	<li><em>hobbit-alerts.cfg</em> holds the alerting configuration. In this file,
+	<li><a href="manpages/man5/hobbit-alerts.cfg.5.html">hobbit-alerts.cfg</a> holds the alerting configuration. In this file,
 	you setup the rules for sending out alerts about services going down: Who gets
 	the alert, how is it sent, how often, whether to send alerts 24x7 or only between
 	10 AM and 4 PM on weekdays etc.</li>
-	<li><em>hobbitserver.cfg</em> is the configuration file for the Hobbit server.
+	<li><a href="manpages/man5/hobbitserver.cfg.5.html">hobbitserver.cfg</a> is the configuration file for the Hobbit server.
 	This file defines a lot of environment variables that are made available to
 	all of the Hobbit programs when they run. Some environment variables that are defined
 	in the Big Brother system are also setup by Hobbit, so that Big Brother extension
 	scripts will work.<br>The initial configuration of hobbitserver.cfg is setup by the 
 	<tt>configure</tt> script when you install Hobbit, and in most cases you will 
 	not need to change it.</li>
-	<li><em>hobbitlaunch.cfg</em> is the configuration file for the <tt>hobbitlaunch</tt>
+	<li><a href="manpages/man5/hobbitlaunch.cfg.html">hobbitlaunch.cfg</a> is the configuration file for the <tt>hobbitlaunch</tt>
 	tool. hobbitlaunch is the master program in Hobbit, it is the only program you start
 	to run the Hobbit server. hobbitlaunch reads the hobbitlaunch.cfg file, and starts
 	the programs listed here to run the server. Some of the programs may run as daemons,
 	some of the programs may run at regular intervals. If you want to use some of the
 	advanced options for the <tt>bbgen</tt> or <tt>bbtest-net</tt> programs, you change
 	the hobbitlaunch.cfg file to add these options to the commandline.</li>
-	<li><em>hobbitgraph.cfg</em> is a configuration file for the <tt>hobbitgraph CGI</tt>.
+	<li><a href="manpages/man5/hobbitgraph.cfg.5.html">hobbitgraph.cfg</a> is a configuration file for the <tt>hobbitgraph CGI</tt>.
 	It defines how the graphs are generated from the data in the RRD files.</li>
-	<li><em>bb-services</em> is a configuration file for the <tt>bbtest-net</tt> program.
+	<li><a href="manpages/man5/bb-services.5.html">bb-services</a> is a configuration file for the <tt>bbtest-net</tt> program.
 	It defines how network services are checked.</li>
 </ul>
 
 <h1>Setting up monitoring of hosts</h1>
-<p>The <em>bb-hosts</em> file defines which hosts Hobbit monitors. When you install Hobbit,
+<p>The <a href="manpages/man5/bb-hosts.5.html">bb-hosts</a> file defines which hosts Hobbit monitors. When you install Hobbit,
 a simple configuration is setup that just lists the Hobbit server:<br>
 <img src="hobbit-bbhosts.png"></p>
 
@@ -87,8 +87,8 @@ the line in bb-hosts.</p>
 <p>As you can see, the syntax is pretty straight-forward. Need to monitor an extra 
 URL for this server ? Just add the URL to the line. Need to check if ssh (Secure Shell)
 is running ? Just add <em>ssh</em> to the line. The full set of keywords you can
-use is described in the <b>bb-hosts man-page</b> (run '<tt>man bb-hosts</tt>' from a 
-command-line prompt to see it). Many of the keywords relate to the
+use is described in the <a href="manpages/man5/bb-hosts.5.html">bb-hosts man-page</a>.
+Many of the keywords relate to the
 way Hobbit displays the information about the host on the web-pages, other keywords
 deal with how the uptime percentage is calculated for availability reports, and
 some keywords - like the <em>bbd</em> and <em>http://...</em> mentioned above -
@@ -126,7 +126,7 @@ configured in Hobbit 4.0 is as follows:<br>
 	<tr><th align="left" valign="top">pop3s</th><td>Secure POP-3 server test.</td></tr>
 	<tr><th align="left" valign="top">imaps</th><td>Secure IMAP server test.</td></tr>
 	<tr><th align="left" valign="top">nntps</th><td>Secure NNTP (News) server test.</td></tr>
-	<tr><th align="left" valign="top">ldaps</th><td>Secure LDAP (Directory) server test. Enter the full LDAP URI if Hobbit is configured with LDAP support. Note that this is only possible when Hobbit is built with the OpenLDAP v2.x client library, and only for LDAP servers that support the LDAP version 3 and the "starttls" command. LAP server that use the older non-standard method of tunnelling LDAP through SSL on port 636 will not work.</td></tr>
+	<tr><th align="left" valign="top">ldaps</th><td>Secure LDAP (Directory) server test. Enter the full LDAP URI if Hobbit is configured with LDAP support. Note that this is only possible when Hobbit is built with the OpenLDAP v2.x client library, and only for LDAP servers that support LDAP version 3 and the "starttls" command. LDAP server that use the older non-standard method of tunnelling LDAP through SSL on port 636 will not work.</td></tr>
 </table></p>
 
 <h3>Monitoring host-specific data with clients</h3>
