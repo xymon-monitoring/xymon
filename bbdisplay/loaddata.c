@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.32 2003-02-02 22:38:03 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.33 2003-02-05 08:58:22 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -303,6 +303,11 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 					strcat(purplemsg, l);
 				}
 			}
+			/* Avoid newlines piling up at end of logfile */
+			for (p = purplemsg + strlen(purplemsg) - 1; 
+				((p > purplemsg) && ((*p == '\n') || (*p == '\r')) ); p--) ;
+			if (p>purplemsg) *p = '\0';
+			strcat(purplemsg, "\n\n");
 		}
 		else {
 			/* No longer in bb-hosts */
