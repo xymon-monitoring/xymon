@@ -1,28 +1,17 @@
-Definitely
-----------
-
-Probably
---------
+Stuff that standard BB does which bbgen/bbtest-* does not
+---------------------------------------------------------
 * Convert the mkbwml.sh script to generate WAP pages
-
-Probably not
-------------
 * Handle modem banks
-* Handle "group" properly
+* Handle "group" as mkbb.sh does
 * Convert the acklog.sh extension for bb2.html. This does
   not load the system a great deal (at least for me), so
   doing it via the existing script as an extension is OK.
+* Handle all fping.sh extensions (IP ranges, conn-failure
+  root-cause analysis - i.e. traceroute + router dependency)
+* Handle the bbnet "proxy" syntax: http://proxy/http://www.site.com/
 
 Suggestions from users
 ----------------------
-* Provide a means to add a "text-line" in the middle of a 
-  display group. The text line would look like the group 
-  heading, but allow to have a single display group with
-  common column headings, but still visually split into
-  sets of hosts.
-  This could be implemented by having pseudo "hosts"
-  that would trigger this. Or maybe a new type of group
-  records ?
 * Allow generation of the bb2.html / bbnk.html for 
   alternate pagesets, and have the eventlog&acklog show only
   events for the hosts that are part of this pageset.
@@ -32,4 +21,18 @@ Suggestions from users
 * When a host exists on multiple pages, provide links to
   the other pages showing this host. Maybe from the "info"
   column view ?
+
+If I have too much time someday
+-------------------------------
+* BB reporting sucks. But how should a good report
+  feature be ?
+* Re-implement bbd using ucspi-tcp "tcpserver" to
+  catch incoming messages and store them to a file.
+  Maybe restrict incoming messages to status/page only ?
+  The disable/enable/notes messages could go via a unix 
+  socket, so they could only be local.
+  Then run a processing task to move messages off
+  to the logs/ directory, generate web pages,
+  initiate paging etc.
+* Perhaps switch to using a DB for storing messages.
 
