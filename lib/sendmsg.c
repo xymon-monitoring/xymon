@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.17 2004-07-26 22:22:01 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.18 2004-07-26 22:26:53 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -198,7 +198,7 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, int fullrespo
 		}
 
 		bufp = msgptr = httpmessage = malloc(strlen(message)+1024);
-		bufp += sprintf(httpmessage, "POST %s HTTP/1.1\n", posturl);
+		bufp += sprintf(httpmessage, "POST %s HTTP/1.0\n", posturl);
 		bufp += sprintf(bufp, "MIME-version: 1.0\n");
 		bufp += sprintf(bufp, "Content-Type: application/octet-stream\n");
 		bufp += sprintf(bufp, "Content-Length: %d\n", strlen(message));
