@@ -1,3 +1,15 @@
+/*----------------------------------------------------------------------------*/
+/* Big Brother message daemon.                                                */
+/*                                                                            */
+/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/*                                                                            */
+/* This program is released under the GNU General Public License (GPL),       */
+/* version 2. See the file "COPYING" for details.                             */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.2 2004-11-07 18:24:24 henrik Exp $";
+
 static char *disk_params[] = { "rrdcreate", rrdfn, "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", 
 				rra1, rra2, rra3, rra4, NULL };
 

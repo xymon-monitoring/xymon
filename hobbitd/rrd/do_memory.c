@@ -1,3 +1,15 @@
+/*----------------------------------------------------------------------------*/
+/* Big Brother message daemon.                                                */
+/*                                                                            */
+/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/*                                                                            */
+/* This program is released under the GNU General Public License (GPL),       */
+/* version 2. See the file "COPYING" for details.                             */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+static char memory_rcsid[] = "$Id: do_memory.c,v 1.2 2004-11-07 18:24:24 henrik Exp $";
+
 static char *memory_params[]      = { "rrdcreate", rrdfn, "DS:realmempct:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
 static htnames_t *memhosts = NULL;

@@ -1,3 +1,15 @@
+/*----------------------------------------------------------------------------*/
+/* Big Brother message daemon.                                                */
+/*                                                                            */
+/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/*                                                                            */
+/* This program is released under the GNU General Public License (GPL),       */
+/* version 2. See the file "COPYING" for details.                             */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+static char iostat_rcsid[] = "$Id: do_iostat.c,v 1.2 2004-11-07 18:24:24 henrik Exp $";
+
 /*
  * BEGINKEY
  * d0 /

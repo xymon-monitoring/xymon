@@ -1,3 +1,15 @@
+/*----------------------------------------------------------------------------*/
+/* Big Brother message daemon.                                                */
+/*                                                                            */
+/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/*                                                                            */
+/* This program is released under the GNU General Public License (GPL),       */
+/* version 2. See the file "COPYING" for details.                             */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.4 2004-11-07 18:24:24 henrik Exp $";
+
 typedef struct vmstat_layout_t {
 	int index;
 	char *name;

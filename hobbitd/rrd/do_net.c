@@ -1,3 +1,15 @@
+/*----------------------------------------------------------------------------*/
+/* Big Brother message daemon.                                                */
+/*                                                                            */
+/* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
+/*                                                                            */
+/* This program is released under the GNU General Public License (GPL),       */
+/* version 2. See the file "COPYING" for details.                             */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+static char bbnet_rcsid[] = "$Id: do_net.c,v 1.2 2004-11-07 18:24:24 henrik Exp $";
+
 static char *bbnet_params[]       = { "rrdcreate", rrdfn, "DS:sec:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
 int do_net_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
