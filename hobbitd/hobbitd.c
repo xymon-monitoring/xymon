@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.68 2004-11-25 17:13:07 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.69 2004-11-25 22:07:43 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1940,6 +1940,10 @@ int main(int argc, char *argv[])
 
 			dbghost = strdup(p+1);
 			dbgfd = fopen("/tmp/bbgend.dbg", "a");
+		}
+		else if (argnmatch(argv[argi], "--env=")) {
+			char *p = strchr(argv[argi], '=');
+			loadenv(p+1);
 		}
 		else if (argnmatch(argv[argi], "--help")) {
 			printf("Options:\n");
