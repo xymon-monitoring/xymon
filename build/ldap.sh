@@ -43,6 +43,11 @@
 		echo "If you want to perform detailed LDAP tests (queries), you need to"
 		echo "install LDAP an LDAP client library that bbgen can use."
 		echo "OpenLDAP can be found at http://www.openldap.org/"
+		echo ""
+		echo "If you have OpenLDAP installed, use the \"--ldapinclude DIR\" and \"--ldaplib DIR\""
+		echo "options to configure to specify where they are."
+		echo ""
+		sleep 3
 		echo "Continuing with LDAP support disabled."
 	else
 		cd build

@@ -32,6 +32,11 @@
 		echo "be able to run network tests of SSL-enabled services, e.g. https."
 		echo "So installing OpenSSL is recommended."
 		echo "OpenSSL can be found at http://www.openssl.org/"
+		echo ""
+		echo "If you have OpenSSL installed, use the \"--sslinclude DIR\" and \"--ssllib DIR\""
+		echo "options to configure to specify where they are."
+		echo ""
+		sleep 3
 		echo "Continuing with SSL support disabled."
 	else
 		# Red Hat in their wisdom ships an openssl that depends on Kerberos,
