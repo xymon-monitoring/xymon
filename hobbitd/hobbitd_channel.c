@@ -13,12 +13,13 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.29 2005-01-18 12:47:48 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.30 2005-01-18 21:36:51 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
+#include <sys/time.h>
 #include <signal.h>
 #include <fcntl.h>
 #include <sys/wait.h>
@@ -32,6 +33,7 @@ static char rcsid[] = "$Id: hobbitd_channel.c,v 1.29 2005-01-18 12:47:48 henrik 
 
 #include "hobbitd_ipc.h"
 
+// #define WATCHLATENCY 1
 
 /* For our in-memory queue of messages received from hobbitd via IPC */
 typedef struct hobbit_msg_t {
@@ -94,6 +96,12 @@ int main(int argc, char *argv[])
 	char **childargs = NULL;
 	int canwrite;
 	struct sigaction sa;
+
+#ifdef WATCHLATENCY
+	struct timeval starttv, endtv, *elapsed;
+	struct timezone tz;
+	unsigned long curwait, maxwait = 0;	/* 1 second in microseconds */
+#endif
 
 	/* Dont save the error buffer */
 	save_errbuf = 0;
@@ -243,12 +251,25 @@ int main(int argc, char *argv[])
 			 * We wrap this into an alarm handler, because it can occasionally
 			 * fail, causing the whole system to lock up. We dont want that....
 			 */
-			gotalarm = 0; signal(SIGALRM, sig_handler); alarm(2);
+			gotalarm = 0; signal(SIGALRM, sig_handler); alarm(5); 
+#ifdef WATCHLATENCY
+			gettimeofday(&starttv, &tz);
+#endif
 			do {
 				s.sem_num = GOCLIENT; s.sem_op  = 0; s.sem_flg = 0;
 				n = semop(channel->semid, &s, 1);
 			} while ((n == -1) && (errno == EAGAIN) && running && (!gotalarm));
 			signal(SIGALRM, SIG_IGN);
+
+#ifdef WATCHLATENCY
+			gettimeofday(&endtv, &tz);
+			elapsed = tvdiff(&starttv, &endtv, NULL);
+			curwait = 1000000*elapsed->tv_sec + elapsed->tv_usec;
+			if (curwait > maxwait) {
+				maxwait = curwait;
+				errprintf("GOCLIENT: Delay of %d.%06d secs\n", elapsed->tv_sec, elapsed->tv_usec);
+			}
+#endif
 
 			if (gotalarm) {
 				errprintf("Broke deadlock waiting for GOCLIENT to go low.\n");
