@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.45 2004-12-12 16:16:51 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.46 2004-12-12 18:06:58 hstoerne Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -347,18 +347,24 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 		while (graph->larrdrrdname) {
 			for (rwalk = (graph_t *)hostwalk->hostentry->rrdlist; (rwalk && (rwalk->gdef->larrdrrdname != graph->larrdrrdname)); rwalk = rwalk->next) ;
 			if (rwalk) {
+				int buflen;
+
+				buflen = (allrrdlinksend - allrrdlinks);
 				rrdlink = rrdlink_text(hostwalk->hostentry, rwalk, larrd043, 0);
-				if ((strlen(allrrdlinks) + strlen(rrdlink)) >= allrrdlinksize) {
+				if ((buflen + strlen(rrdlink)) >= allrrdlinksize) {
 					allrrdlinksize += (strlen(rrdlink) + 4096);
 					allrrdlinks = (char *) realloc(allrrdlinks, allrrdlinksize);
+					allrrdlinksend = allrrdlinks + buflen;
 				}
 				allrrdlinksend += sprintf(allrrdlinksend, "%s", rrdlink);
 
 				if (bbgend) {
+					buflen = (allrrdlinksend - allrrdlinks);
 					rrdlink = rrdlink_text(hostwalk->hostentry, rwalk, larrd043, 1);
-					if ((strlen(allmeta) + strlen(rrdlink)) >= allmetasize) {
+					if ((buflen + strlen(rrdlink)) >= allmetasize) {
 						allmetasize += (strlen(rrdlink) + 4096);
 						allmeta = (char *) realloc(allmeta, allmetasize);
+						allmetaend = allmeta + buflen;
 					}
 					allmetaend += sprintf(allmetaend, "<RRDGraph>\n%s</RRDGraph>\n", rrdlink);
 				}
