@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 			if (*startoftags == '#') startoftags++;
 			while ((*startoftags != '\0') && isspace((int) *startoftags)) startoftags++;
 
-			realitem = item = strtok(startoftags, " \t");
+			realitem = item = strtok(startoftags, " \t\r\n");
 			while (item) {
 				if ((*item == '!') || (*item == '~') || (*item == '?')) realitem++;
 
@@ -104,7 +104,14 @@ int main(int argc, char *argv[])
 					int i;
 
 					for (i=1; (i<argc); i++) {
-						if (strcasecmp(realitem, argv[i]) == 0) {
+						if (argv[i][strlen(argv[i])-1] == '*') {
+							if (strncasecmp(realitem, argv[i], strlen(argv[i])-1) == 0) {
+								strcat(wantedtags, " ");
+								strcat(wantedtags, item);
+								wanted = 1;
+							}
+						}
+						else if (strcasecmp(realitem, argv[i]) == 0) {
 							strcat(wantedtags, " ");
 							strcat(wantedtags, item);
 							wanted = 1;
@@ -112,7 +119,7 @@ int main(int argc, char *argv[])
 					}
 				}
 
-				realitem = item = strtok(NULL, " \t");
+				realitem = item = strtok(NULL, " \t\r\n");
 			}
 		}
 
