@@ -25,7 +25,7 @@ all: $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) libcheck
 	@echo ""
 
 GENOBJS = bbgen.o debug.o loadhosts.o loaddata.o reportdata.o larrdgen.o pagegen.o eventlog.o acklog.o process.o util.o infogen.o alert.o wmlgen.o rssgen.o bb-replog.o sendmsg.o
-NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o ldaptest.o sendmsg.o digest.o
+NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o httpresult.o ldaptest.o sendmsg.o digest.o
 HOSTGREPOBJS = bbhostgrep.o util.o debug.o
 HOSTSHOWOBJS = bbhostshow.o util.o debug.o
 DIGESTOBJS = bbdigest.o
@@ -44,7 +44,7 @@ bbgen: $(GENOBJS)
 	$(CC) $(CFLAGS) -o $@ $(GENOBJS) $(NETLIBS)
 
 bbtest-net: $(NETTESTOBJS)
-	$(CC) $(CFLAGS) -o $@ $(NETTESTOBJS) $(CURLLIB) $(LDAPLIBS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(NETTESTOBJS) $(LDAPLIBS) $(SSLLIBS) $(NETLIBS)
 
 bbhostgrep: $(HOSTGREPOBJS)
 	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS)
@@ -53,7 +53,7 @@ bbhostshow: $(HOSTSHOWOBJS)
 	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS)
 
 bbdigest: $(DIGESTOBJS)
-	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) $(SSLLIBDIR) -lcrypto $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) $(SSLLIBS) $(NETLIBS)
 
 bb-rep.cgi: $(REPOBJS)
 	$(CC) $(CFLAGS) -o $@ $(REPOBJS)
@@ -92,8 +92,8 @@ bb: $(MSGOBJS)
 alert: alert.c debug.c util.c
 	$(CC) $(CFLAGS) -g -DSTANDALONE -DDEBUG -Wall -o $@ alert.c debug.c util.c
 
-contest: contest.c debug.c util.c
-	$(CC) -g -DSTANDALONE -DDEBUG -Wall $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -o $@ contest.c debug.c util.c $(CURLLIB) $(SSLLIBS) $(NETLIBS)
+contest: contest.c debug.o util.o digest.o httptest.c
+	$(CC) -g -DSTANDALONE -DDEBUG -Wall $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -o $@ contest.c httptest.c digest.o debug.o util.o $(SSLLIBS) $(NETLIBS)
 
 ldaptest: ldaptest.c debug.o util.o sendmsg.o
 	$(CC) -g -DSTANDALONE -DDEBUG -Wall $(CFLAGS) $(LDAPFLAGS) $(LDAPINCDIR) -o $@ ldaptest.c debug.o util.o sendmsg.o $(LDAPLIBS) $(NETLIBS)
@@ -114,10 +114,7 @@ libcheck: bbtest-net
 # Objects requiring special compile flags 
 ################################################
 bbtest-net.o: bbtest-net.c bbtest-net.h
-	$(CC) $(CFLAGS) $(CURLINCLUDE) $(SSLFLAGS) $(LDAPFLAGS) $(SSLINCDIR) $(LDAPINCDIR) -c -o $@ bbtest-net.c
-
-httptest.o: httptest.c httptest.h
-	$(CC) $(CFLAGS) $(CURLINCLUDE) -c -o $@ httptest.c
+	$(CC) $(CFLAGS) $(SSLFLAGS) $(LDAPFLAGS) $(SSLINCDIR) $(LDAPINCDIR) -c -o $@ bbtest-net.c
 
 ldaptest.o: ldaptest.c ldaptest.h
 	$(CC) $(CFLAGS) $(LDAPFLAGS) $(LDAPINCDIR) -c -o $@ ldaptest.c
