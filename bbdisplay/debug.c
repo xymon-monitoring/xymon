@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.13 2003-03-03 12:41:08 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.14 2003-03-15 17:16:04 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -121,13 +121,14 @@ void dumphosts(host_t *head, char *prefix)
 	char	format[512];
 
 	strcpy(format, prefix);
-	strcat(format, "Host: %s, ip: %s, color: %d, old: %d, noprop-y: %s, noprop-r: %s, link: %s\n");
+	strcat(format, "Host: %s, ip: %s, color: %d, old: %d, noprop-y: %s, noprop-r: %s, link: %s, graphs: %s\n");
 
 	for (h = head; (h); h = h->next) {
 		printf(format, h->hostname, h->ip, h->color, h->oldage,
 			(h->nopropyellowtests ? h->nopropyellowtests : ""), 
 			(h->nopropredtests ? h->nopropredtests : ""), 
-			h->link->filename);
+			h->link->filename,
+			(h->larrdgraphs ? h->larrdgraphs : ""));
 		for (e = h->entries; (e); e = e->next) {
 			printf("\t\t\t\t\tTest: %s, alert %d, propagate %d, state %d, age: %s, oldage: %d\n", 
 				e->column->name, e->alert, e->propagate, e->color, e->age, e->oldage);
