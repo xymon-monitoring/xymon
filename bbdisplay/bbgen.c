@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.47 2002-11-26 11:59:34 hstoerne Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.48 2002-11-26 12:20:26 hstoerne Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -50,12 +50,18 @@ int main(int argc, char *argv[])
 	char		pagedir[256];
 	page_t 		*p, *q;
 	dispsummary_t	*s;
+	int		i;
 
-	if (argc > 1) {
-		strcpy(pagedir, argv[1]);
-	}
-	else {
-		sprintf(pagedir, "%s/www", getenv("BBHOME"));
+	sprintf(pagedir, "%s/www", getenv("BBHOME"));
+
+	for (i = 1; (i < argc); i++) {
+		if (strcmp(argv[i], "--recentgifs") == 0) {
+			use_recentgifs = 1;
+		}
+		else {
+			/* Last argument is pagedir */
+			strcpy(pagedir, argv[1]);
+		}
 	}
 
 	/* Load all data from the various files */

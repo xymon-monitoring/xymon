@@ -19,6 +19,8 @@
 #ifndef __UTIL_H_
 #define __UTIL_H_
 
+extern int use_recentgifs;
+
 extern char *colorname(int color);
 extern int eventcolor(char *colortext);
 extern char *dotgiffilename(entry_t *e);
