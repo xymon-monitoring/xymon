@@ -29,6 +29,7 @@ extern int hostcount;
 extern int statuscount;
 extern int pagecount;
 extern int purplecount;
+extern char *purplelogfn;
 
 extern bbgen_col_t *find_or_create_column(const char *testname);
 extern link_t *load_all_links(void);

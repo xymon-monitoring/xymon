@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.124 2003-06-08 19:22:00 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.125 2003-06-10 20:22:26 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -259,6 +259,14 @@ int main(int argc, char *argv[])
 			select_headers_and_footers(lp);
 		}
 
+		else if (argnmatch(argv[i], "--purplelog=")) {
+			char *lp = strchr(argv[i], '=');
+			if (*(lp+1) == '/') purplelogfn = malcop(lp+1);
+			else {
+				purplelogfn = malloc(strlen(getenv("BBHOME"))+1+strlen(lp+1)+1);
+				sprintf(purplelogfn, "%s/%s", getenv("BBHOME"), (lp+1));
+			}
+		}
 		else if (argnmatch(argv[i], "--report=") || (strcmp(argv[i], "--report") == 0)) {
 			char *lp = strchr(argv[i], '=');
 			if (lp) {
@@ -320,6 +328,7 @@ int main(int argc, char *argv[])
 #endif
 			printf("    --version                   : Show version information\n");
 			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbgen\n");
+			printf("    --purplelog=FILENAME        : Create a log of purple hosts and tests\n");
 			exit(0);
 		}
 		else if (argnmatch(argv[i], "-")) {

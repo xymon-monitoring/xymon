@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.78 2003-06-09 21:06:32 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.79 2003-06-10 20:22:26 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -54,6 +54,8 @@ int	hostcount = 0;
 int	statuscount = 0;
 int	pagecount = 0;
 int	purplecount = 0;
+char	*purplelogfn = NULL;
+static FILE *purplelog = NULL;
 
 static pagelist_t *pagelisthead = NULL;
 
@@ -525,9 +527,6 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	if ( (log_st.st_mtime <= now) && (strcmp(testname, larrdcol) != 0) && (strcmp(testname, infocol) != 0) ) {
 		/* Log file too old = go purple */
 
-		*is_purple = 1;
-		purplecount++;
-
 		if (host && host->dialup) {
 			/* Dialup hosts go clear, not purple */
 			newstate->entry->color = COL_CLEAR;
@@ -535,6 +534,10 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 		else {
 			/* Not in bb-hosts, or logfile too old */
 			newstate->entry->color = COL_PURPLE;
+			*is_purple = 1;
+			purplecount++;
+			if (purplelog) fprintf(purplelog, "%s %s%s\n", 
+					       hostname, testname, (host ? " (expired)" : " (unknown host)"));
 		}
 	}
 
@@ -1314,6 +1317,11 @@ state_t *load_state(dispsummary_t **sumhead)
 		}
 	}
 
+	if (purplelogfn) {
+		purplelog = fopen(purplelogfn, "w");
+		if (purplelog == NULL) errprintf("Cannot open purplelog file %s\n", purplelogfn);
+		else fprintf(purplelog, "Stale (purple) logfiles as of %s\n\n", timestamp);
+	}
 	if (dopurple) combo_start();
 
 	topstate = NULL;
@@ -1358,6 +1366,7 @@ state_t *load_state(dispsummary_t **sumhead)
 	closedir(bblogs);
 
 	if (dopurple) combo_end();
+	if (purplelog) fclose(purplelog);
 
 	*sumhead = topsum;
 	return topstate;
