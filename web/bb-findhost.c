@@ -10,19 +10,52 @@
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
+/* 2004/09/08 - Werner Michels [wm]                                           */
+/*              Added support regular expression on the host search.          */
+/*              Minor changes on errormsg() and error messagess.              */
+/*		The parse_query was rewriten to meet the new needs.           */
+/*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.2 2003-12-10 20:58:11 henrik Exp $";
+/*
+ * [wm] - Functionality change
+ *	Now the search is done using only Extended POSIX pattern match.
+ *	If you don't know how Regex works, look at "man 7 regex".
+ *	If you want search for multiple hosts use "name1|name2|name3" insted
+ *	of separating them by spaces. You can now search for host (displayname)
+ *	with spaces.
+ *	Emtpy search string will list all the hosts.
+ *
+ *
+ *
+ * [wm] - TODO
+ *	- Move the new global vars to local vars and use function parameters
+ *	- Verify the security implication of removing the urlvalidate() call
+ *	- Move to POST instead of GET to receive the FORM data
+ *	- Add the posibility to choose where to search (hostname, description
+ *	  host comment, host displayname, host clientname...)
+ *
+ */
+
+static char rcsid[] = "$Id: bb-findhost.c,v 1.3 2004-09-26 14:39:18 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 
+/*[wm] For the POSIX regex support*/
+#include <sys/types.h> 
+#include <regex.h> 
+
+
+
 #include "bbgen.h"
 #include "loadhosts.h"
 #include "util.h"
 #include "debug.h"
+
+
 
 /* Global vars */
 bbgen_page_t    *pagehead = NULL;                       /* Head of page list */
@@ -33,15 +66,19 @@ int             fqdn = 1;                               /* BB FQDN setting */
 time_t          reportstart = 0;
 double          reportwarnlevel = 97.0;
 
+/*
+ * [wm] To support regex searching
+ */
+char	*pSearchPat = NULL;			/* What're searching for (now its regex, not a hostlist) */
+int 	re_flag     = REG_EXTENDED|REG_NOSUB|REG_ICASE; /* default regcomp flags see man 3 regcomp 	*/
+							/* You must remove REG_ICASE for case sensitive */
 
-/* The list of hosts we get from CGI */
-char **hostlist;
 
 void errormsg(char *msg)
 {
 	printf("Content-type: text/html\n\n");
-	printf("<html><head><title>Invalid request</title></head>\n");
-	printf("<body>%s</body></html>\n", msg);
+	printf("<html><head><title>BigBrother (bbgen) FindHost Error</title></head>\n");
+	printf("<body><BR><BR><BR>%s</body></html>\n", msg);
 	exit(1);
 }
 
@@ -51,41 +88,67 @@ void parse_query(void)
 	char *token;
 
 	if (getenv("QUERY_STRING") == NULL) {
-		errormsg("Invalid request");
+		errormsg("Invalid request: QUERY_STRING is NULL/Empty!");
 		return;
 	}
 	else query = urldecode("QUERY_STRING");
 
+	/* 
+	 * [wm]
+	 * So that it is posible to put regexp chars in the search string
+	 * It was necessary to comment this urlvalidate out.
+	 * ATTENTION : Verify the security impact of this removal
+	 *
 	if (!urlvalidate(query, NULL)) {
-		errormsg("Invalid request");
+		errormsg("Invalid request: QUERY_STRING is invalid(undecodable)");
 		return;
 	}
 
+	 *
+	 *[wm] end
+	 */
+
 	token = strtok(query, "&");
 	while (token) {
-		if (argnmatch(token, "host=")) {
-			int idx = 0;
+		char *pEqual;	/* points to equal sign */
+		char *pVarName; /* Points to the var (var=value) start */
+		char *pValue;	/* Points to the value start */
 
-			/* How many hosts ? Count the number of spaces = (number of hosts - 1) */
-			for (token = strchr(query, ' '), idx=1; (token); token=strchr(token+1, ' '), idx++);
-			/* And remember to add an extra for the final NULL */
-			hostlist = (char **)malloc((idx+1)*sizeof(char *));
+		if ( (pEqual = strchr(token, '=')) != NULL ) {
+			*pEqual++ = '\0';
+			pValue   = pEqual;
+			pVarName = token; 
+			
+			if ( strcmp (pVarName, "host") == 0 ) {
 
-			token = strtok(query+5, " ");
-			idx = 0;
-			while (token) {
-				hostlist[idx] = malcop(token);
-				idx++;
+				/* 
+				 * [wm] maybe we should use strndup
+				 *      or use malloc and strncpy to be safer 
+				 */
+				if (  (pSearchPat = (char *)strdup (pValue)) == NULL ){
+					errormsg("Insufficient memory to allocate search pattern");
+					return; 	/* never comes here than errormsg does exit */
+				}	
 
-				token = strtok(NULL, " ");
+			} else if ( strcmp (pVarName, "case_sensitive") == 0 ) {
+				/* remove the ignore case flag */
+
+				re_flag ^= REG_ICASE;
+
+			} else {
+				if ( 0 )  /* set this to 1 if you want debug info */
+					fprintf (stderr, "bb-findhost.cgi: Ignoring CGI Variable: %s\n", pVarName);
 			}
-			hostlist[idx] = NULL;
+			
 		}
-		else token = strtok(NULL, "&");
+
+		/* get next token */
+		token = strtok(NULL, "&");
 	}
 
 	free(query);
 }
+
 
 
 int main(int argc, char *argv[])
@@ -94,9 +157,21 @@ int main(int argc, char *argv[])
 	hostlist_t *hostwalk;
 	int i;
 
-	printf("Content-Type: text/html\n\n");
+	int gotany = 0;
+
+
+	/*[wm] regex support */
+	#define BUFSIZE		256
+	regex_t re;
+	char    re_errstr[BUFSIZE];
+	int 	re_status;
+	host_t	*he;					/* HostEntry pointer (dereferencing)... :)	*/
+
 
 	parse_query();
+
+	setvbuf(stdout, NULL, _IONBF, 0);   		/* [wm] unbuffer stdout */
+	printf("Content-Type: text/html\n\n");
 
         /* It's ok with these hardcoded values, as they are not used for this page */
         sethostenv("", "", "", colorname(COL_BLUE));
@@ -104,49 +179,57 @@ int main(int argc, char *argv[])
 
 	pagehead = load_bbhosts(pageset);
 
-	printf("<br><br><CENTER><TABLE SUMMARY=\"Hostlist\" WIDTH=60%%>\n");
-	printf("<tr><th align=left width=20%%>Hostname</th><th align=left width=80%%>Location</th></tr>\n");
-
-	for (i=0; (hostlist[i]); i++) {
-		int gotany = 0;
-		int match;
-
-        	for (hostwalk=hosthead; (hostwalk); hostwalk = hostwalk->next) {
-
-        		if (strncasecmp(hostlist[i], hostwalk->hostentry->hostname, strlen(hostlist[i])) == 0) {
-				/*
-				 * We do a case-insensitive compare of only the letters in the given
-				 * searchstring, assuming a trailing wildcard.
-				 *
-				 * This could be improved to do regex matching....
-				 */
-				match = 1;
-			}
-			else {
-				match = 0;
-			}
+	printf("<br><br><CENTER><TABLE CELLPADDING=5 SUMMARY=\"Hostlist\">\n");
+	printf("<tr><th align=left>Hostname (DisplayName)</th><th align=left>Location (Group Name)</th></tr>\n");
 
 
-			if (match) {
+	if ( (re_status = regcomp(&re, pSearchPat, re_flag)) != 0 ) {
+		regerror(re_status, &re, re_errstr, BUFSIZE);
+
+		printf("<tr><td align=left><font color=red>%s</font></td>\n",  pSearchPat);
+		printf("<td align=left><font color=red>%s</font></td></tr>\n", re_errstr);
+	} else {
+
+	       	for (hostwalk=hosthead; (hostwalk); hostwalk = hostwalk->next) {
+			he = hostwalk->hostentry; 
+			
+			/* 
+			 * [wm] - Allow the search to be done on the hostname
+			 * 	also on the "displayname" and the host comment
+			 *	Maybe this should be implemented by changing the HTML form, but until than..
+			 * we're supposing that he->hostname will NEVER be null	
+			 */
+	       		if ( regexec (&re, he->hostname, (size_t)0, NULL, 0) == 0  ||
+	       			(he->displayname && regexec (&re, he->displayname, (size_t)0, NULL, 0) == 0) ||
+				(he->comment     && regexec (&re, he->comment, 	   (size_t)0, NULL, 0) == 0)   ) {
+	
+				/*  match */
 				printf("<tr>\n");
-				printf("<td align=left>%s</td>\n", hostwalk->hostentry->hostname);
-				printf("<td align=left><a href=\"%s/%s#%s\">%s</a></td>\n",
-                       			getenv("BBWEB"), 
-					hostpage_link(hostwalk->hostentry), 
-					hostwalk->hostentry->hostname,
-					hostpage_name(hostwalk->hostentry));
+				printf("<td align=left> %s </td>\n", he->displayname ? he->displayname : he->hostname);
+				printf("<td align=left> <a href=\"%s/%s#%s\">%s</a> </td>\n",
+	                     		getenv("BBWEB"), 
+					hostpage_link(he), 
+					he->hostname,
+					hostpage_name(he));
 				printf("</tr>\n");
-
+	
 				gotany++;
 			}
 		}
 
-		if (!gotany) printf("<tr><td align=left>%s</td><td align=left>Not found</td></tr>\n", hostlist[i]);
+		regfree (&re); 	/*[wm] - free regex compiled patern */
+	
+		if (!gotany) printf("<tr><td align=left>%s</td><td align=left>Not found</td></tr>\n", pSearchPat);
+	} 
 
-	}
+
 	printf("</TABLE></CENTER>\n");
 
         headfoot(stdout, "hostsvc", "", "footer", COL_BLUE);
+
+	/* [wm] - Free the strdup allocated memory */
+	if (pSearchPat) free (pSearchPat);
+
 	return 0;
 }
 
