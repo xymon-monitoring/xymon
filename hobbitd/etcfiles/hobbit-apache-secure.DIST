@@ -26,3 +26,16 @@ ScriptAlias @BBCGIURL@/ "@CGIDIR@/"
     Allow from all
 </Directory>
 
+ScriptAlias @SECUREBBCGIURL@/ "@SECURECGIDIR@/"
+<Directory "@SECURECGIDIR@">
+    AllowOverride None
+    Options ExecCGI Includes
+    Order allow,deny
+    Allow from all
+
+    AuthUserFile @BBHOME@/etc/hobbitpasswd
+    AuthType Basic
+    AuthName "Hobbit Administration"
+    Require valid-user
+</Directory>
+

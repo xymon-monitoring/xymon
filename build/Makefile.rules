@@ -53,7 +53,7 @@ bbproxy-build: lib-build common-build
 	CC="$(CC)" CFLAGS="$(CFLAGS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" $(MAKE) -C bbproxy all
 
 hobbitd-build: lib-build common-build
-	CC="$(CC)" CFLAGS="$(CFLAGS)" RRDINCDIR="$(RRDINCDIR)" PCREINCDIR="$(PCREINCDIR)" NETLIBS="$(NETLIBS)" RRDLIBS="$(RRDLIBS)" PCRELIBS="$(PCRELIBS)" BBTOPDIR="$(BBTOPDIR)" BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" BBLOGDIR="$(BBLOGDIR)" BBHOSTNAME="$(BBHOSTNAME)" BBHOSTIP="$(BBHOSTIP)" BBHOSTOS="$(BBHOSTOS)" BBUSER="$(BBUSER)" CGIDIR="$(CGIDIR)" BBHOSTURL="$(BBHOSTURL)" BBCGIURL="$(BBCGIURL)" FPING="$(FPING)" RUNTIMEDEFS="$(RUNTIMEDEFS)" $(MAKE) -C hobbitd  all
+	CC="$(CC)" CFLAGS="$(CFLAGS)" RRDINCDIR="$(RRDINCDIR)" PCREINCDIR="$(PCREINCDIR)" NETLIBS="$(NETLIBS)" RRDLIBS="$(RRDLIBS)" PCRELIBS="$(PCRELIBS)" BBTOPDIR="$(BBTOPDIR)" BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" BBLOGDIR="$(BBLOGDIR)" BBHOSTNAME="$(BBHOSTNAME)" BBHOSTIP="$(BBHOSTIP)" BBHOSTOS="$(BBHOSTOS)" BBUSER="$(BBUSER)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" BBHOSTURL="$(BBHOSTURL)" BBCGIURL="$(BBCGIURL)" SECUREBBCGIURL="$(SECUREBBCGIURL)" FPING="$(FPING)" RUNTIMEDEFS="$(RUNTIMEDEFS)" $(MAKE) -C hobbitd  all
 
 docs-build:
 	BBHOSTURL="$(BBHOSTURL)" $(MAKE) -C docs all
@@ -102,10 +102,10 @@ install-common: install-dirs
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C common install
 
 install-bbdisplay: install-common
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" HOBBITD="$(HOBBITD)" $(MAKE) -C bbdisplay install
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" HOBBITD="$(HOBBITD)" $(MAKE) -C bbdisplay install
 
 install-bbdisplay-nocgi: install-common
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" $(MAKE) -C bbdisplay install-nocgi
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" $(MAKE) -C bbdisplay install-nocgi
 
 install-bbnet: install-common
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" ARESVER="$(ARESVER)" $(MAKE) -C bbnet install
@@ -114,13 +114,13 @@ install-bbproxy: install-common
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbproxy install
 
 install-hobbitd: install-common
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" BBTOPDIR="$(BBTOPDIR)" BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" CGIDIR="$(CGIDIR)" $(MAKE) -C hobbitd install
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" BBTOPDIR="$(BBTOPDIR)" BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" $(MAKE) -C hobbitd install
 
 
 # NOTE: This one is normally not used - man-page install is done by the sub-Makefiles during "make install"
 install-man:
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C common install-man
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" $(MAKE) -C bbdisplay install-man
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" $(MAKE) -C bbdisplay install-man
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbnet install-man
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbproxy install-man
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C hobbitd install-man
@@ -129,12 +129,14 @@ install-docs:
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C docs install
 
 setup: install
-	BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" CGIDIR="$(CGIDIR)" BBLOGDIR="$(BBLOGDIR)" BBUSER="$(BBUSER)" $(MAKE) -C hobbitd  setup
+	BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" BBLOGDIR="$(BBLOGDIR)" BBUSER="$(BBUSER)" $(MAKE) -C hobbitd  setup
 	@echo ""
 	@echo "Hobbit setup is complete."
 	@echo ""
 	@echo "You must configure your webserver for the Hobbit webpages and CGI-scripts."
 	@echo "A sample Apache configuration is in ${BBHOME}/etc/hobbit-apache.conf"
+	@echo "If you have your Administration CGI scripts in a separate directory,"
+	@echo "then you must also setup the password-file with the htpasswd command."
 	@echo ""
 	@echo "To start Hobbit, as the $(BBUSER) user run '${BBHOME}/bin/starthobbit.sh start'"
 	@echo "To view the Hobbit webpages, go to http://${BBHOSTNAME}${BBHOSTURL}"

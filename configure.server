@@ -280,6 +280,42 @@ else
 		fi
 		echo ""; echo ""
 
+		echo "********************** SECURITY NOTICE ****************************"
+		echo "If your Hobbit server is accessible by outsiders, then you should"
+		echo "restrict access to the CGI scripts that handle enable/disable of"
+		echo "hosts, and acknowledging of alerts. The easiest way to do this is"
+		echo "to put these in a separate CGI directory and require a password to"
+		echo "access them."
+		echo "If your Hobbit server is on a secure network (Intranet) and you trust"
+		echo "your users, then you can keep all the CGI scripts in one directory."
+		echo ""
+		echo "Where to put the Hobbit Administration CGI scripts [$BBTOPDIR/cgi-secure] ? "
+		if test -z "$SECURECGIDIR"
+		then
+			read SECURECGIDIR
+		fi
+		if test -z "$SECURECGIDIR"
+		then
+			SECURECGIDIR=$BBTOPDIR/cgi-secure
+		fi
+		echo ""; echo ""
+
+		if test "$CGIDIR" != "$SECURECGIDIR"
+		then
+			echo "What is the URL for the Hobbit Administration CGI directory [/hobbit-seccgi] ? "
+			if test -z "$SECUREBBCGIURL"
+			then
+				read SECUREBBCGIURL
+			fi
+			if test -z "$SECUREBBCGIURL"
+			then
+				SECUREBBCGIURL="/hobbit-seccgi"
+			fi
+		else
+			SECUREBBCGIURL="$BBCGIURL"
+		fi
+		echo ""; echo ""
+
 		echo "** Note that you may need to modify your webserver configuration."
 		echo "** After installing, see $BBTOPDIR/server/etc/hobbit-apache.conf for an example configuration."
 		echo ""; echo ""
@@ -451,6 +487,7 @@ else
 	echo "BBVAR = $BBVAR"                    >>Makefile
 	echo "# CGI scripts go in CGIDIR"        >>Makefile
 	echo "CGIDIR = $CGIDIR"                  >>Makefile
+	echo "SECURECGIDIR = $SECURECGIDIR"      >>Makefile
 	echo "# Maximum size of a status msg"    >>Makefile
 	echo "MAXMSG = $MAXMSG"                  >>Makefile
 	echo "# Port number for the daemon"      >>Makefile
@@ -480,6 +517,7 @@ else
 		echo "BBHOSTURL = $BBHOSTURL"    >>Makefile
 		echo "# URL for Hobbit CGIs"     >>Makefile
 		echo "BBCGIURL = $BBCGIURL"      >>Makefile
+		echo "SECUREBBCGIURL = $SECUREBBCGIURL" >>Makefile
 
 		echo ""                          >>Makefile
 		echo "# Webserver group-ID"      >>Makefile

@@ -1,5 +1,6 @@
 PROGRAMS = hobbitd hobbitd_channel hobbitd_filter hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_larrd hobbitd_sample starthobbit.sh hobbitgraph.cgi
-CGISCRIPTS = bb-ack.sh hobbitgraph.sh maint.pl
+CGISCRIPTS = hobbitgraph.sh
+SECCGISCRIPTS = bb-ack.sh maint.pl
 
 LIBOBJS = ../lib/libbbgen.a
 
@@ -18,7 +19,7 @@ HOBBITGRAPHOBJS= hobbitgraph.o
 IDTOOL := $(shell if test `uname -s` = "SunOS"; then echo /usr/xpg4/bin/id; else echo id; fi)
 
 
-all: $(PROGRAMS) $(CGISCRIPTS) cfgfiles moverrd.sh
+all: $(PROGRAMS) $(CGISCRIPTS) $(SECCGISCRIPTS) cfgfiles moverrd.sh
 
 # Need NETLIBS on Solaris for getservbyname(), called by parse_url()
 
@@ -79,18 +80,18 @@ maint.pl: maint.pl.DIST
 	chmod 755 $@
 
 cfgfiles:
-	cat etcfiles/hobbit-apache.conf.DIST | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@CGIDIR@!$(CGIDIR)!g' | sed -e 's!@BBHOSTURL@!$(BBHOSTURL)!g' | sed -e 's!@BBCGIURL@!$(BBCGIURL)!g' >etcfiles/hobbit-apache.conf
-	cat etcfiles/hobbitserver.cfg.DIST | sed -e 's!@BBTOPDIR@!$(BBTOPDIR)!g'| sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g'| sed -e 's!@BBHOSTNAME@!$(BBHOSTNAME)!g'| sed -e 's!@BBHOSTIP@!$(BBHOSTIP)!g'| sed -e 's!@BBHOSTOS@!$(BBHOSTOS)!g' | sed -e 's!@BBHOSTURL@!$(BBHOSTURL)!g' | sed -e 's!@BBCGIURL@!$(BBCGIURL)!g' | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBVAR@!$(BBVAR)!g' | sed -e 's!@FPING@!$(FPING)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >etcfiles/hobbitserver.cfg
+	cat etcfiles/hobbit-apache.conf.DIST | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@CGIDIR@!$(CGIDIR)!g' | sed -e 's!@SECURECGIDIR@!$(SECURECGIDIR)!g' | sed -e 's!@BBHOSTURL@!$(BBHOSTURL)!g' | sed -e 's!@BBCGIURL@!$(BBCGIURL)!g' | sed -e 's!@SECUREBBCGIURL@!$(SECUREBBCGIURL)!g' >etcfiles/hobbit-apache.conf
+	cat etcfiles/hobbitserver.cfg.DIST | sed -e 's!@BBTOPDIR@!$(BBTOPDIR)!g'| sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g'| sed -e 's!@BBHOSTNAME@!$(BBHOSTNAME)!g'| sed -e 's!@BBHOSTIP@!$(BBHOSTIP)!g'| sed -e 's!@BBHOSTOS@!$(BBHOSTOS)!g' | sed -e 's!@BBHOSTURL@!$(BBHOSTURL)!g' | sed -e 's!@BBCGIURL@!$(BBCGIURL)!g' | sed -e 's!@SECUREBBCGIURL@!$(SECUREBBCGIURL)!g' | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBVAR@!$(BBVAR)!g' | sed -e 's!@FPING@!$(FPING)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >etcfiles/hobbitserver.cfg
 	cat etcfiles/bb-hosts.DIST | sed -e 's!@BBHOSTNAME@!$(BBHOSTNAME)!g'| sed -e 's!@BBHOSTIP@!$(BBHOSTIP)!g' >etcfiles/bb-hosts
 	cat etcfiles/hobbit-alerts.cfg.DIST >etcfiles/hobbit-alerts.cfg
 	cat etcfiles/hobbitlaunch.cfg.DIST | sed -e 's!@BBHOME@!$(BBHOME)!g' >etcfiles/hobbitlaunch.cfg
-	cat wwwfiles/menu/menu_items.js.DIST | sed -e 's!@BBHOSTURL@!$(BBHOSTURL)!g' | sed -e 's!@BBCGIURL@!$(BBCGIURL)!g' >wwwfiles/menu/menu_items.js
+	cat wwwfiles/menu/menu_items.js.DIST | sed -e 's!@BBHOSTURL@!$(BBHOSTURL)!g' | sed -e 's!@BBCGIURL@!$(BBCGIURL)!g' | sed -e 's!@SECUREBBCGIURL@!$(SECUREBBCGIURL)!g' >wwwfiles/menu/menu_items.js
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f $(PROGRAMS) $(CGISCRIPTS) *.o *~ larrd/*~ moverrd.sh
+	rm -f $(PROGRAMS) $(CGISCRIPTS) $(SECCGISCRIPTS) *.o *~ larrd/*~ moverrd.sh
 	rm -f etcfiles/hobbit-apache.conf etcfiles/hobbitserver.cfg etcfiles/bb-hosts etcfiles/hobbit-alerts.cfg etcfiles/hobbitlaunch.cfg
 	rm -f wwwfiles/menu/menu_items.js
 	(find etcfiles/ -name "*~"; find wwwfiles/ -name "*~"; find webfiles/ -name "*~") | xargs rm -f
@@ -103,6 +104,8 @@ install-bin:
 install-cgi:
 	mkdir -p $(CGIDIR)
 	cp -fp $(CGISCRIPTS) $(CGIDIR)/
+	mkdir -p $(SECURECGIDIR)
+	cp -fp $(SECCGISCRIPTS) $(SECURECGIDIR)/
 	cd etcfiles; ../../build/install-nooverwrite.sh etc/ hobbitgraph.cfg columndoc.csv
 
 install-man:
@@ -122,7 +125,7 @@ setup:
 	cd webfiles; tar cf - . | (cd $(BBHOME)/web/; tar xf -)
 	cd etcfiles; ../../build/install-nooverwrite.sh etc/ hobbit-apache.conf hobbitserver.cfg bb-hosts hobbit-alerts.cfg hobbitlaunch.cfg hobbitgraph.cfg
 	mkdir -p $(BBLOGDIR)
-	chown $(BBUSER)         $(BBLOGDIR) $(BBHOME) $(BBHOME)/* $(BBHOME)/bin/* $(BBHOME)/etc/* $(BBHOME)/ext/* $(BBHOME)/web/* $(BBHOME)/www/gifs $(BBHOME)/www/gifs/* $(BBHOME)/www/menu $(BBHOME)/www/menu/* $(BBHOME)/www/help $(BBHOME)/www/help/* $(BBHOME)/www/notes $(BBHOME)/www/html $(BBHOME)/www/wml $(BBVAR) $(BBVAR)/* $(CGIDIR) $(CGIDIR)/*
-	chgrp `$(IDTOOL) -g $(BBUSER)` $(BBLOGDIR) $(BBHOME) $(BBHOME)/* $(BBHOME)/bin/* $(BBHOME)/etc/* $(BBHOME)/ext/* $(BBHOME)/web/* $(BBHOME)/www/gifs $(BBHOME)/www/gifs/* $(BBHOME)/www/menu $(BBHOME)/www/menu/* $(BBHOME)/www/help $(BBHOME)/www/help/* $(BBHOME)/www/notes $(BBHOME)/www/html $(BBHOME)/www/wml $(BBVAR) $(BBVAR)/* $(CGIDIR) $(CGIDIR)/*
+	chown $(BBUSER)         $(BBLOGDIR) $(BBHOME) $(BBHOME)/* $(BBHOME)/bin/* $(BBHOME)/etc/* $(BBHOME)/ext/* $(BBHOME)/web/* $(BBHOME)/www/gifs $(BBHOME)/www/gifs/* $(BBHOME)/www/menu $(BBHOME)/www/menu/* $(BBHOME)/www/help $(BBHOME)/www/help/* $(BBHOME)/www/notes $(BBHOME)/www/html $(BBHOME)/www/wml $(BBVAR) $(BBVAR)/* $(CGIDIR) $(CGIDIR)/* $(SECURECGIDIR) $(SECURECGIDIR)/*
+	chgrp `$(IDTOOL) -g $(BBUSER)` $(BBLOGDIR) $(BBHOME) $(BBHOME)/* $(BBHOME)/bin/* $(BBHOME)/etc/* $(BBHOME)/ext/* $(BBHOME)/web/* $(BBHOME)/www/gifs $(BBHOME)/www/gifs/* $(BBHOME)/www/menu $(BBHOME)/www/menu/* $(BBHOME)/www/help $(BBHOME)/www/help/* $(BBHOME)/www/notes $(BBHOME)/www/html $(BBHOME)/www/wml $(BBVAR) $(BBVAR)/* $(CGIDIR) $(CGIDIR)/* $(SECURECGIDIR) $(SECURECGIDIR)/*
 	cd $(BBHOME); rm -f starthobbit.sh; ln -sf bin/starthobbit.sh .
 
