@@ -8,7 +8,7 @@
 [hobbitd]
 	HEARTBEAT
 	ENVFILE @BBHOME@/etc/hobbitserver.cfg
-	CMD hobbitd --restart=$BBTMP/hobbitd.chk --checkpoint-file=$BBTMP/hobbitd.chk --checkpoint-interval=600 --purple-conn=conn --log=$BBSERVERLOGS/hobbitd.log --admin-senders=127.0.0.1,$BBSERVERIP
+	CMD hobbitd --restart=$BBTMP/hobbitd.chk --checkpoint-file=$BBTMP/hobbitd.chk --checkpoint-interval=600 --log=$BBSERVERLOGS/hobbitd.log --admin-senders=127.0.0.1,$BBSERVERIP
 
 
 # "bbstatus" saves status-logs in text- and html-format, like the old Big Brother 
