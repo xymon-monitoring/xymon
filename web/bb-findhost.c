@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.1 2003-12-02 22:44:35 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.2 2003-12-10 20:58:11 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -48,6 +48,7 @@ void errormsg(char *msg)
 void parse_query(void)
 {
 	char *query;
+	char *token;
 
 	if (getenv("QUERY_STRING") == NULL) {
 		errormsg("Invalid request");
@@ -60,24 +61,27 @@ void parse_query(void)
 		return;
 	}
 
-	if (argnmatch(query, "host=")) {
-		char *token;
-		int idx = 0;
+	token = strtok(query, "&");
+	while (token) {
+		if (argnmatch(token, "host=")) {
+			int idx = 0;
 
-		/* How many hosts ? Count the number of spaces = (number of hosts - 1) */
-		for (token = strchr(query, ' '), idx=1; (token); token=strchr(token+1, ' '), idx++);
-		/* And remember to add an extra for the final NULL */
-		hostlist = (char **)malloc((idx+1)*sizeof(char *));
+			/* How many hosts ? Count the number of spaces = (number of hosts - 1) */
+			for (token = strchr(query, ' '), idx=1; (token); token=strchr(token+1, ' '), idx++);
+			/* And remember to add an extra for the final NULL */
+			hostlist = (char **)malloc((idx+1)*sizeof(char *));
 
-		token = strtok(query+5, " ");
-		idx = 0;
-		while (token) {
-			hostlist[idx] = malcop(token);
-			idx++;
+			token = strtok(query+5, " ");
+			idx = 0;
+			while (token) {
+				hostlist[idx] = malcop(token);
+				idx++;
 
-			token = strtok(NULL, " ");
+				token = strtok(NULL, " ");
+			}
+			hostlist[idx] = NULL;
 		}
-		hostlist[idx] = NULL;
+		else token = strtok(NULL, "&");
 	}
 
 	free(query);
