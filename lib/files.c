@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: files.c,v 1.2 2004-11-17 16:23:52 henrik Exp $";
+static char rcsid[] = "$Id: files.c,v 1.3 2004-11-18 13:22:03 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -24,15 +24,19 @@ static char rcsid[] = "$Id: files.c,v 1.2 2004-11-17 16:23:52 henrik Exp $";
 #include "errormsg.h"
 #include "files.h"
 
-void dropdirectory(char *dirfn)
+void dropdirectory(char *dirfn, int background)
 {
 	DIR *dirfd;
 	struct dirent *de;
 	char fn[PATH_MAX];
 	struct stat st;
-	pid_t childpid;
+	pid_t childpid = 0;
 
-	childpid = fork();
+	if (background) {
+		/* Caller wants us to run as a background task. */
+		childpid = fork();
+	}
+
 	if (childpid == 0) {
 		dprintf("Starting to remove directory %s\n", dirfn);
 		dirfd = opendir(dirfn);
@@ -46,7 +50,7 @@ void dropdirectory(char *dirfn)
 					}
 					else if (S_ISDIR(st.st_mode)) {
 						dprintf("Recurse into %s\n", fn);
-						dropdirectory(fn);
+						dropdirectory(fn, 0); /* Dont background the recursive calls! */
 					}
 				}
 			}
@@ -54,6 +58,10 @@ void dropdirectory(char *dirfn)
 		}
 		dprintf("Removing directory %s\n", dirfn);
 		rmdir(dirfn);
+		if (background) {
+			/* Background task just exits */
+			exit(0);
+		}
 	}
 	else if (childpid < 0) {
 		errprintf("Could not fork child to remove directory %s\n", dirfn);

@@ -11,7 +11,7 @@
 #ifndef __FILES_H__
 #define __FILES_H__
 
-extern void dropdirectory(char *dirfn);
+extern void dropdirectory(char *dirfn, int background);
 
 #endif
 
