@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.41 2003-04-24 21:43:39 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.42 2003-04-24 22:00:38 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -43,6 +43,7 @@ char *includecolumns = NULL;
 int  sort_grouponly_items = 0; /* Standard BB behaviour: Dont sort group-only items */
 char *documentationcgi = NULL;
 char *htmlextension = ".html"; /* Filename extension for generated files */
+char *defaultpagetitle = NULL;
 
 char *hf_prefix[3];            /* header/footer prefixes for BB, BB2, BBNK pages*/
 
@@ -650,11 +651,12 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums)
 
 	headfoot(output, hf_prefix[PAGE_BB], pagepath, "header", page->color);
 
-	if (page->subpages || page->pretitle) {
+	if (page->subpages || page->pretitle || defaultpagetitle) {
 		/* Print the "Pages hosted locally" header - either the defined pretitle, or the default */
 		fprintf(output, "<CENTER><TABLE BORDER=0>\n");
-		fprintf(output, "  <TR><TD><CENTER><FONT %s>%s</FONT></CENTER></TD></TR>\n", 
-			getenv("MKBBTITLE"), (page->pretitle ? page->pretitle : getenv("MKBBLOCAL")));
+		fprintf(output, "  <TR><TD><br><CENTER><FONT %s>%s</FONT></CENTER></TD></TR>\n", 
+			getenv("MKBBTITLE"), 
+			(page->pretitle ? page->pretitle : (defaultpagetitle ? defaultpagetitle : getenv("MKBBLOCAL"))));
 		fprintf(output, "  <TR><TD><HR WIDTH=100%%></TD></TR>\n");
 		fprintf(output, "</TABLE></CENTER>\n");
 	}
