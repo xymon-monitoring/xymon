@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.35 2005-02-27 11:36:36 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.36 2005-02-27 11:48:59 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
 			sprintf(logfn, "%s/%s.%s", filedir, commafy(hostname), testname);
 			expiretime = atoi(items[6]);
 			statusdata = msg_data(statusdata);
-			sscanf(items[1], "%d.%*d", &logtime);
+			sscanf(items[1], "%d.%*d", (int *)&logtime);
 			timesincechange = logtime - atoi(items[10]);
 			update_file(logfn, "w", statusdata, expiretime, items[2], timesincechange, seq);
 			if (htmldir) {
