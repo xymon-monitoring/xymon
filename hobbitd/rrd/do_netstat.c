@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.6 2004-11-25 11:46:31 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.7 2005-01-11 23:26:35 henrik Exp $";
 
 static char *netstat_params[] = { "rrdcreate", rrdfn, 
 	                          "DS:udpInDatagrams:DERIVE:600:0:U", 
@@ -253,7 +253,7 @@ int do_netstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		break;
 
 	  case OS_WIN32:
-		havedata = do_valbeforemarker(netstat_win32_markers, datapart, outp);
+		havedata = do_valaftermarkerequal(netstat_win32_markers, datapart, outp);
 		break;
 
 	  case OS_SCO:
