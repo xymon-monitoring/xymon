@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.22 2004-08-24 20:46:07 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.23 2004-08-27 20:56:17 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -264,6 +264,7 @@ retry_connect:
 	res = connect(sockfd, (struct sockaddr *)&saddr, sizeof(saddr));
 	if ((res == -1) && (errno != EINPROGRESS)) {
 		close(sockfd);
+		errprintf("connect to bbd failed - %s\n", strerror(errno));
 		return BB_ECONNFAILED;
 	}
 
@@ -292,7 +293,6 @@ retry_connect:
 				goto retry_connect;	/* Yuck! */
 			}
 
-			errprintf("Timeout while talking to bbd!\n");
 			return BB_ETIMEOUT;
 		}
 		else {
@@ -306,7 +306,7 @@ retry_connect:
 				isconnected = (connres == 0);
 				if (!isconnected) {
 					close(sockfd);
-					errprintf("Could not connect to bbd!\n");
+					errprintf("Could not connect to bbd - %s\n", strerror(connres));
 					return BB_ECONNFAILED;
 				}
 			}
@@ -483,7 +483,7 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, int fullresponse)
 		  default:                statustext = "Unknown error"; break;
 		};
 
-		errprintf("Whoops ! bb failed to send message - %s (%d)\n", statustext, res);
+		errprintf("Whoops ! bb failed to send message - %s\n", statustext, res);
 	}
 
 	/* Give it a break */
@@ -516,7 +516,7 @@ void combo_flush(void)
 	if (debug) {
 		char *p1, *p2;
 
-		printf("Flushing combo message\n");
+		dprintf("Flushing combo message\n");
 		p1 = p2 = bbmsg;
 
 		do {
