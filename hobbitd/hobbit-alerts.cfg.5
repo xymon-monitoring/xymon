@@ -19,8 +19,22 @@ recipient is eligible for receiving an alert.
 A rule consists of one of more filters using these keywords:
 .sp
 .BR "PAGE=targetstring"
-Rule matching an alert by the name of the page in BB. This is the name following
-the "page", "subpage" or "subparent" keyword in the bb-hosts file.
+Rule matching an alert by the name of the page in BB. This is the path of
+the page as defined in the bb-hosts file. E.g. if you have this setup:
+.IP
+.nf
+page servers All Servers
+subpage web Webservers
+10.0.0.1 www1.foo.com
+subpage db Database servers
+10.0.0.2 db1.foo.com
+.fi
+.LP
+Then the "All servers" page is found with \fBPAGE=servers\fR, the 
+"Webservers" page is \fBPAGE=servers/web\fR and the "Database servers"
+page is \fBPAGE=servers/db\fR. Note that you can also use regular expressions 
+to specify the page name, e.g. \fBPAGE=%.*/db\fR would find the "Database
+servers" page regardless of where this page was placed in the hierarchy.
 .sp
 .BR "EXPAGE=targetstring"
 Rule excluding an alert if the pagename matches.
