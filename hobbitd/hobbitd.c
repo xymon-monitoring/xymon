@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.7 2004-10-06 13:41:48 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.8 2004-10-06 14:06:29 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -76,7 +76,6 @@ typedef struct cookie_t {
 cookie_t *cookiehead = NULL, *cookietail = NULL;
 
 enum droprencmd_t { CMD_DROPHOST, CMD_DROPTEST, CMD_RENAMEHOST, CMD_RENAMETEST };
-static char *droprencommands[] = { "drophost", "droptest", "renamehost", "renametest" };
 
 static volatile int running = 1;
 static volatile int reloadconfig = 1;
@@ -96,7 +95,7 @@ int ghosthandling = -1;
 char *checkpointfn = NULL;
 
 void posttochannel(bbd_channel_t *channel, char *channelmarker, 
-		   char *msg, char *sender, char *hostname, void *arg)
+		   char *msg, char *sender, char *hostname, void *arg, char *readymsg)
 {
 	bbd_log_t *log;
 	char *testname;
@@ -108,15 +107,7 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 	struct timezone tz;
 	char *ackmsg = NULL, *dismsg = NULL;
 
-	/* If any message outstanding, wait until it has been noticed.... */
-	s.sem_num = 0;
-	s.sem_op = 0;  /* wait until all reads are done (semaphore is 0) */
-	s.sem_flg = 0; /* no flags - perhaps IPC_NOWAIT .... */
-	dprintf("Waiting for readers to notice last message\n");
-	n = semop(channel->semid, &s, 1);
-	dprintf("All readers have seen it (sem 0 is 0)\n");
-	
-	/* ... and picked up. */
+	/* First see how many users are on this channel */
 	n = shmctl(channel->shmid, IPC_STAT, &chninfo);
 	clients = chninfo.shm_nattch-1;
 	if (clients == 0) {
@@ -124,74 +115,88 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 		return;
 	}
 
+	/* If any message is pending, wait until it has been noticed.... */
+	s.sem_num = 0;
+	s.sem_op = 0;  /* wait until all reads are done (semaphore is 0) */
+	s.sem_flg = 0;
+	dprintf("Waiting for readers to notice last message\n");
+	n = semop(channel->semid, &s, 1);
+	dprintf("All readers have seen it (sem 0 is 0)\n");
+
+	/* ... and picked up. */
 	s.sem_num = 1;
-	s.sem_op = -clients;
+	s.sem_op = -clients;	/* Each client does an UP, so wait until we get it to 0 */
 	s.sem_flg = 0;
 	dprintf("Waiting for %d readers to finish with message\n", clients);
 	n = semop(channel->semid, &s, 1);
 	dprintf("Readers are done with last message\n");
 
 	/* All clear, post the message */
-	gettimeofday(&tstamp, &tz);
-	switch(channel->channelid) {
-	  case C_STATUS:
-		log = (bbd_log_t *)arg;
-		if (log->ackmsg) ackmsg = base64encode(log->ackmsg);
-		if (log->dismsg) dismsg = base64encode(log->dismsg);
-		sprintf(channel->channelbuf, 
-			"@@%s|%d.%06d|%s|%s|%s|%d|%s|%s|%d|%d|%s|%d|%s\n%s\n", 
-			channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
-			log->test->testname, (int) log->validtime, 
-			colnames[log->color], colnames[log->oldcolor], (int) log->lastchange, 
-			(int)log->acktime, (ackmsg ? ackmsg : ""), 
-			(int)log->enabletime, (dismsg ? dismsg : ""),
-			msg);
-		if (dismsg) free(dismsg);
-		if (ackmsg) free(ackmsg);
-		break;
-
-	  case C_STACHG:
-		log = (bbd_log_t *)arg;
-		sprintf(channel->channelbuf, 
-			"@@%s|%d.%06d|%s|%s|%s|%d|%s|%s|%d\n%s\n", 
-			channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
-			log->test->testname, (int) log->validtime, 
-			colnames[log->color], colnames[log->oldcolor], (int) log->lastchange, 
-			msg);
-		break;
-
-	  case C_PAGE:
-		log = (bbd_log_t *)arg;
-		if (strcmp(channelmarker, "ack") == 0) {
+	if (readymsg) {
+		strcpy(channel->channelbuf, readymsg);
+	}
+	else {
+		gettimeofday(&tstamp, &tz);
+		switch(channel->channelid) {
+		  case C_STATUS:
+			log = (bbd_log_t *)arg;
+			if (log->ackmsg) ackmsg = base64encode(log->ackmsg);
+			if (log->dismsg) dismsg = base64encode(log->dismsg);
 			sprintf(channel->channelbuf, 
-				"@@%s|%d.%06d|%s|%s|%s|%d\n%s\n", 
+				"@@%s|%d.%06d|%s|%s|%s|%d|%s|%s|%d|%d|%s|%d|%s\n%s\n", 
 				channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
-				log->test->testname, (int) log->acktime, msg);
-		}
-		else {
+				log->test->testname, (int) log->validtime, 
+				colnames[log->color], colnames[log->oldcolor], (int) log->lastchange, 
+				(int)log->acktime, (ackmsg ? ackmsg : ""), 
+				(int)log->enabletime, (dismsg ? dismsg : ""),
+				msg);
+			if (dismsg) free(dismsg);
+			if (ackmsg) free(ackmsg);
+			break;
+
+		  case C_STACHG:
+			log = (bbd_log_t *)arg;
 			sprintf(channel->channelbuf, 
 				"@@%s|%d.%06d|%s|%s|%s|%d|%s|%s|%d\n%s\n", 
 				channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
 				log->test->testname, (int) log->validtime, 
-				colnames[log->color], colnames[log->oldcolor], (int) log->lastchange,
+				colnames[log->color], colnames[log->oldcolor], (int) log->lastchange, 
 				msg);
+			break;
+
+		  case C_PAGE:
+			log = (bbd_log_t *)arg;
+			if (strcmp(channelmarker, "ack") == 0) {
+				sprintf(channel->channelbuf, 
+					"@@%s|%d.%06d|%s|%s|%s|%d\n%s\n", 
+					channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
+					log->test->testname, (int) log->acktime, msg);
+			}
+			else {
+				sprintf(channel->channelbuf, 
+					"@@%s|%d.%06d|%s|%s|%s|%d|%s|%s|%d\n%s\n", 
+					channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
+					log->test->testname, (int) log->validtime, 
+					colnames[log->color], colnames[log->oldcolor], (int) log->lastchange,
+					msg);
+			}
+			break;
+
+		  case C_DATA:
+			testname = (char *)arg;
+			sprintf(channel->channelbuf, 
+				"@@%s|%d.%06d|%s|%s|%s\n%s\n", 
+				channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
+				testname, msg);
+			break;
+
+		  case C_NOTES:
+			sprintf(channel->channelbuf, 
+				"@@%s|%d.%06d|%s|%s\n%s\n", 
+				channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
+				msg);
+			break;
 		}
-		break;
-
-	  case C_DATA:
-		testname = (char *)arg;
-		sprintf(channel->channelbuf, 
-			"@@%s|%d.%06d|%s|%s|%s\n%s\n", 
-			channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
-			testname, msg);
-		break;
-
-	  case C_NOTES:
-		sprintf(channel->channelbuf, 
-			"@@%s|%d.%06d|%s|%s\n%s\n", 
-			channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
-			msg);
-		break;
 	}
 
 	/* Let the readers know it is there.  */
@@ -440,26 +445,26 @@ void handle_status(unsigned char *msg, int msglen, char *sender, char *hostname,
 		if (oldalertstatus != newalertstatus) {
 			/* alert status changed. Tell the pagers */
 			dprintf("posting to page channel\n");
-			posttochannel(pagechn, channelnames[C_PAGE], msg, sender, hostname, (void *) log);
+			posttochannel(pagechn, channelnames[C_PAGE], msg, sender, hostname, (void *) log, NULL);
 		}
 
 		dprintf("posting to stachg channel\n");
-		posttochannel(stachgchn, channelnames[C_STACHG], msg, sender, hostname, (void *) log);
+		posttochannel(stachgchn, channelnames[C_STACHG], msg, sender, hostname, (void *) log, NULL);
 		log->lastchange = time(NULL);
 	}
 
 	dprintf("posting to status channel\n");
-	posttochannel(statuschn, channelnames[C_STATUS], msg, sender, hostname, (void *) log);
+	posttochannel(statuschn, channelnames[C_STATUS], msg, sender, hostname, (void *) log, NULL);
 }
 
 void handle_data(char *msg, int msglen, char *sender, char *hostname, char *testname)
 {
-	posttochannel(datachn, channelnames[C_DATA], msg, sender, hostname, (void *)testname);
+	posttochannel(datachn, channelnames[C_DATA], msg, sender, hostname, (void *)testname, NULL);
 }
 
 void handle_notes(char *msg, int msglen, char *sender, char *hostname)
 {
-	posttochannel(noteschn, channelnames[C_NOTES], msg, sender, hostname, NULL);
+	posttochannel(noteschn, channelnames[C_NOTES], msg, sender, hostname, NULL, NULL);
 }
 
 void handle_enadis(int enabled, char *msg, int msglen, char *sender)
@@ -605,7 +610,7 @@ void handle_ack(char *msg, char *sender, bbd_log_t *log, int duration)
 	log->ackmsg = strdup(p);
 
 	/* Tell the pagers */
-	posttochannel(pagechn, "ack", log->ackmsg, sender, log->host->hostname, (void *)log);
+	posttochannel(pagechn, "ack", log->ackmsg, sender, log->host->hostname, (void *)log, NULL);
 	return;
 }
 
@@ -616,13 +621,18 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	bbd_hostlist_t *hwalk;
 	bbd_testlist_t *twalk, *newt;
 	bbd_log_t *lwalk;
+	char msgbuf[MAXMSG];
+	struct timeval tstamp;
+	struct timezone tz;
 
+	msgbuf[0] = '\0';
 	hostname = knownhost(hostname, sender, ghosthandling, &maybedown);
 	if (hostname == NULL) return;
 
 	for (hwalk = hosts; (hwalk && strcasecmp(hostname, hwalk->hostname)); hwalk = hwalk->next) ;
 	if (hwalk == NULL) return;
 
+	gettimeofday(&tstamp, &tz);
 	switch (cmd) {
 	  case CMD_DROPTEST:
 		for (twalk = tests; (twalk && strcasecmp(n1, twalk->testname)); twalk = twalk->next) ;
@@ -643,7 +653,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		if (lwalk->ackmsg) free(lwalk->ackmsg);
 		free(lwalk);
 		if (hwalk->logs != NULL) {
-			/* FIXME - Tell the worker modules */
+			sprintf(msgbuf, "droptest|%d.%06d|%s|%s\n", (int)tstamp.tv_sec, (int)tstamp.tv_usec, hostname, n1);
 			break;
 		}
 		/* Fallthrough and drop the host when it has no more log entries */
@@ -674,7 +684,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 
 		/* Free the hostlist entry */
 		free(hwalk);
-		/* FIXME - Tell the worker modules */
+		sprintf(msgbuf, "drophost|%d.%06d|%s\n", (int)tstamp.tv_sec, (int)tstamp.tv_usec, hostname);
 		break;
 
 	  case CMD_RENAMEHOST:
@@ -685,7 +695,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			free(hwalk->hostname);
 			hwalk->hostname = strdup(n1);
 		}
-		/* FIXME - Tell the worker modules */
+		sprintf(msgbuf, "renamehost|%d.%06d|%s|%s\n", (int)tstamp.tv_sec, (int)tstamp.tv_usec, hostname, n1);
 		break;
 
 	  case CMD_RENAMETEST:
@@ -701,8 +711,17 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			tests = newt;
 		}
 		lwalk->test = newt;
-		/* FIXME - Tell the worker modules */
+		sprintf(msgbuf, "renametest|%d.%06d|%s|%s|%s\n", (int)tstamp.tv_sec, (int)tstamp.tv_usec, hostname, n1, n2);
 		break;
+	}
+
+	if (strlen(msgbuf)) {
+		/* Tell the workers */
+		posttochannel(statuschn, NULL, NULL, NULL, NULL, NULL, msgbuf);
+		posttochannel(stachgchn, NULL, NULL, NULL, NULL, NULL, msgbuf);
+		posttochannel(pagechn, NULL, NULL, NULL, NULL, NULL, msgbuf);
+		posttochannel(datachn, NULL, NULL, NULL, NULL, NULL, msgbuf);
+		posttochannel(noteschn, NULL, NULL, NULL, NULL, NULL, msgbuf);
 	}
 }
 
