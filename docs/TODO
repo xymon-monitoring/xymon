@@ -15,6 +15,9 @@ Suggestions from users
 Ideas of my own
 ---------------
 * Check of RPC services using getrpcent and rpcinfo
+* Implement the "local" tests (cpu, disk, memory,
+  process, services - NOT logs) as network tests
+  using SNMP
 * Some way of defining acceptable responsetimes for 
   services, and then go yellow/red if the threshold is 
   exceeded.
