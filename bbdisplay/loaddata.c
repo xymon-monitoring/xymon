@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.54 2003-04-23 16:08:10 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.55 2003-04-23 20:32:59 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -42,6 +42,7 @@ int     enable_purpleupd = 1;
 int	purpledelay = 0;			/* Lifetime of purple status-messages. Default 0 for
 						   compatibility with standard bb-display.sh behaviour */
 char	*ignorecolumns = NULL;			/* Columns that will be ignored totally */
+char	*defaultpagetitle = NULL;
 
 link_t  null_link = { "", "", "", NULL };	/* Null link for pages/hosts/whatever with no link */
 col_t   null_column = { "", NULL };		/* Null column */
@@ -808,13 +809,17 @@ bbgen_page_t *load_bbhosts(void)
 			if (curpage == NULL) {
 				/* First page - hook it on toppage as a subpage from there */
 				curpage = toppage->subpages = init_page(name, link);
+				curpage->pretitle = defaultpagetitle;
 			}
 			else {
 				curpage = curpage->next = init_page(name, link);
 			}
 
 			curpage->parent = toppage;
-			if (curtitle) { curpage->pretitle = curtitle; curtitle = NULL; }
+			if (curtitle) { 
+				curpage->pretitle = curtitle; 
+				curtitle = NULL; 
+			}
 			cursubpage = NULL;
 			cursubparent = NULL;
 			curgroup = NULL;
@@ -825,12 +830,16 @@ bbgen_page_t *load_bbhosts(void)
 			getnamelink(l, &name, &link);
 			if (cursubpage == NULL) {
 				cursubpage = curpage->subpages = init_page(name, link);
+				cursubpage->pretitle = defaultpagetitle;
 			}
 			else {
 				cursubpage = cursubpage->next = init_page(name, link);
 			}
 			cursubpage->parent = curpage;
-			if (curtitle) { cursubpage->pretitle = curtitle; curtitle = NULL; }
+			if (curtitle) { 
+				cursubpage->pretitle = curtitle; 
+				curtitle = NULL;
+			}
 			cursubparent = NULL;
 			curgroup = NULL;
 			curhost = NULL;
@@ -843,12 +852,16 @@ bbgen_page_t *load_bbhosts(void)
 			cursubparent = init_page(name, link);
 			if (parentpage->subpages == NULL) {
 				parentpage->subpages = cursubparent;
+				cursubparent->pretitle = defaultpagetitle;
 			} 
 			else {
 				for (walk = parentpage->subpages; (walk->next); (walk = walk->next)) ;
 				walk->next = cursubparent;
 			}
-			if (curtitle) { cursubparent->pretitle = curtitle; curtitle = NULL; }
+			if (curtitle) { 
+				cursubparent->pretitle = curtitle; 
+				curtitle = NULL;
+			}
 			cursubparent->parent = parentpage;
 			curgroup = NULL;
 			curhost = NULL;
