@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.9 2003-04-14 07:45:30 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.10 2003-04-14 10:23:18 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -57,6 +57,7 @@ typedef struct {
 service_t	*svchead = NULL;
 testedhost_t	*testhosthead = NULL;
 testitem_t	*testhead = NULL;
+char		*nonetpage = NULL;
 
 service_t *add_service(char *name, int port, int namelen)
 {
@@ -90,6 +91,10 @@ void load_services(void)
 		p = strtok(NULL, " ");
 	}
 	free(netsvcs);
+
+	nonetpage = malloc(strlen(getenv("NONETPAGE"))+3);
+	sprintf(nonetpage, ",%s,", getenv("NONETPAGE"));
+	for (p=nonetpage; (*p); p++) if (*p == ' ') *p = ',';
 }
 
 
@@ -332,10 +337,18 @@ void send_results(service_t *service)
 	int		color;
 	char		msgline[MAXMSG];
 	char		*svcname;
+	char		*nopagename;
+	int		nopage = 0;
 
 	svcname = malloc(strlen(service->testname)+1);
 	strcpy(svcname, service->testname);
 	if (service->namelen) svcname[service->namelen] = '\0';
+
+	/* Check if this service is a NOPAGENET service. */
+	nopagename = malloc(strlen(svcname)+3);
+	sprintf(nopagename, ",%s,", svcname);
+	nopage = (strstr(nonetpage, svcname) != NULL);
+	free(nopagename);
 
 	for (t=service->items; (t); t = t->next) {
 		color = COL_GREEN;
@@ -350,6 +363,9 @@ void send_results(service_t *service)
 
 		/* Dialup hosts and dialup tests report red as clear */
 		if ((color != COL_GREEN) && (t->host->dialup || t->dialup)) color = COL_CLEAR;
+
+		/* NOPAGENET services that are down are reported as yellow */
+		if (nopage && (color == COL_RED)) color = COL_YELLOW;
 
 		init_status(color);
 		sprintf(msgline, "status %s.%s %s %s %s %s\n", 
@@ -389,6 +405,7 @@ int main(int argc, char *argv[])
 
 	init_timestamp();
 	load_services();
+
 	for (s = svchead; (s); s = s->next) {
 		dprintf("Service %s port %d\n", s->testname, s->portnum);
 	}
