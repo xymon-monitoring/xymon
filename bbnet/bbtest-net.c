@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.73 2003-07-09 14:51:14 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.74 2003-07-10 09:11:44 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -77,6 +77,8 @@ int		testcount = 0;
 int		notesthostcount = 0;
 char		**selectedhosts;
 int		selectedcount = 0;
+time_t		frequenttesttime = 1800;	/* Interval (seconds) when failing hosts are retried frequently */
+
 
 testitem_t *find_test(char *hostname, char *testname)
 {
@@ -222,6 +224,7 @@ testedhost_t *init_testedhost(char *hostname, int timeout, int conntimeout, int 
 	newhost->dnserror = 0;
 	newhost->dodns = 0;
 	newhost->okexpected = okexpected;
+	newhost->repeattest = 0;
 
 	newhost->noconn = 0;
 	newhost->noping = 0;
@@ -658,21 +661,23 @@ void save_fping_status(void)
 	FILE *statusfd;
 	char statusfn[MAX_PATH];
 	testitem_t *t;
+	int didany = 0;
 
 	sprintf(statusfn, "%s/fping.%s.status", getenv("BBTMP"), location);
 	statusfd = fopen(statusfn, "w");
 	if (statusfd == NULL) return;
 
 	for (t=pingtest->items; (t); t = t->next) {
-		if (!t->open) {
-			t->host->downcount++;
+		if (t->host->downcount) {
 			if (t->host->downcount == 1) t->host->downstart = time(NULL);
 			fprintf(statusfd, "%s %d %lu\n", t->host->hostname, t->host->downcount, t->host->downstart);
+			didany = 1;
+			t->host->repeattest = ((time(NULL) - t->host->downstart) < frequenttesttime);
 		}
-		else t->host->downcount = 0;
 	}
 
 	fclose(statusfd);
+	if (!didany) unlink(statusfn);
 }
 
 void load_test_status(service_t *test)
@@ -724,11 +729,39 @@ void save_test_status(service_t *test)
 			if (t->downcount == 1) t->downstart = time(NULL);
 			fprintf(statusfd, "%s %d %lu\n", t->host->hostname, t->downcount, t->downstart);
 			didany = 1;
+			t->host->repeattest = ((time(NULL) - t->downstart) < frequenttesttime);
 		}
 	}
 
 	fclose(statusfd);
 	if (!didany) unlink(statusfn);
+}
+
+
+void save_frequenttestlist(int argc, char *argv[])
+{
+	FILE *fd;
+	char fn[MAX_PATH];
+	testedhost_t *h;
+	int didany = 0;
+	int i;
+
+	sprintf(fn, "%s/frequenttests.%s", getenv("BBTMP"), location);
+	fd = fopen(fn, "w");
+	if (fd == NULL) return;
+
+	for (i=1; (i<argc); i++) {
+		if (!argnmatch(argv[i], "--report")) fprintf(fd, "\"%s\" ", argv[i]);
+	}
+	for (h = testhosthead; (h); h = h->next) {
+		if (h->repeattest) {
+			fprintf(fd, "%s ", h->hostname);
+			didany = 1;
+		}
+	}
+
+	fclose(fd);
+	if (!didany) unlink(fn);
 }
 
 
@@ -904,6 +937,96 @@ int run_fping_service(service_t *service)
 }
 
 
+int decide_color(service_t *service, char *svcname, testitem_t *test)
+{
+	int color = COL_GREEN;
+	int countasdown = 0;
+
+	if (service == pingtest) {
+		/*
+		 * "noconn" is handled elsewhere.
+		 * "noping" always sends back a status "clear".
+		 * If DNS error, return red and count as down.
+		 */
+		if (test->host->noping) { color = COL_CLEAR; }
+		else if (test->host->dnserror) { color = COL_RED; countasdown = 1; }
+		else {
+			/* Red if (open=0, reverse=0) or (open=1, reverse=1) */
+			if ((test->open + test->reverse) != 1) { color = COL_RED; countasdown = 1; }
+		}
+
+		/* Handle the "route" tag dependencies. */
+		if ((color == COL_RED) && test->host->deprouterdown) { color = COL_YELLOW; }
+
+		/* Handle "badconn" */
+		if ((color == COL_RED) && (test->host->downcount < test->host->badconn[2])) {
+			if      (test->host->downcount >= test->host->badconn[1]) color = COL_YELLOW;
+			else if (test->host->downcount >= test->host->badconn[0]) color = COL_CLEAR;
+			else                                                      color = COL_GREEN;
+		}
+	}
+	else {
+		/* TCP test */
+		if (test->host->dnserror) { color = COL_RED; countasdown = 1; }
+		else {
+			if (test->reverse) {
+				if (test->open) { color = COL_RED; countasdown = 1; }
+			}
+			else {
+				if (!test->open) {
+					if ((test->host->downcount != 0) && !test->alwaystrue) {
+						color = COL_CLEAR; countasdown = 0;
+					}
+					else {
+						color = COL_RED; countasdown = 1;
+					}
+				}
+			}
+		}
+
+		/* Handle test dependencies */
+		if ( (color == COL_RED) && !test->alwaystrue && deptest_failed(test->host, test->service->testname) ) {
+			color = COL_CLEAR;
+		}
+
+		/* Handle the "badtest" stuff for other tests */
+		if ((color == COL_RED) && (test->downcount < test->badtest[2])) {
+			if      (test->downcount >= test->badtest[1]) color = COL_YELLOW;
+			else if (test->downcount >= test->badtest[0]) color = COL_CLEAR;
+			else                                          color = COL_GREEN;
+		}
+	}
+
+
+	/* If non-green and it was not expected to be up, report as BLUE */
+	if ((color != COL_GREEN) && !test->host->okexpected) color = COL_BLUE;
+
+	/* Dialup hosts and dialup tests report red as clear */
+	if ( ((color == COL_RED) || (color == COL_YELLOW)) && (test->host->dialup || test->dialup) ) { 
+		color = COL_CLEAR; countasdown = 0; 
+	}
+
+	/* If a NOPAGENET service, downgrade RED to YELLOW */
+	if (color == COL_RED) {
+		char *nopagename;
+
+		/* Check if this service is a NOPAGENET service. */
+		nopagename = malloc(strlen(svcname)+3);
+		sprintf(nopagename, ",%s,", svcname);
+		if (strstr(nonetpage, svcname) != NULL) color = COL_YELLOW;
+		free(nopagename);
+	}
+
+	if (service == pingtest) {
+		if (countasdown) test->host->downcount++; else test->host->downcount = 0;
+	}
+	else {
+		if (countasdown) test->downcount++; else test->downcount = 0;
+	}
+	return color;
+}
+
+
 void send_results(service_t *service)
 {
 	testitem_t	*t;
@@ -911,18 +1034,10 @@ void send_results(service_t *service)
 	char		msgline[MAXMSG];
 	char		msgtext[MAXMSG];
 	char		*svcname;
-	char		*nopagename;
-	int		nopage = 0;
 
 	svcname = malloc(strlen(service->testname)+1);
 	strcpy(svcname, service->testname);
 	if (service->namelen) svcname[service->namelen] = '\0';
-
-	/* Check if this service is a NOPAGENET service. */
-	nopagename = malloc(strlen(svcname)+3);
-	sprintf(nopagename, ",%s,", svcname);
-	nopage = (strstr(nonetpage, svcname) != NULL);
-	free(nopagename);
 
 	dprintf("Sending results for service %s\n", svcname);
 
@@ -942,87 +1057,7 @@ void send_results(service_t *service)
 		flags[i++] = (t->host->dnserror ? 'E' : 'e');
 		flags[i++] = '\0';
 
-		if ((service == pingtest) && t->host->noping) {
-			color = COL_CLEAR;
-		}
-		else {
-			color = COL_GREEN;
-
-			/*
-			 * DNS error: Red
-			 * Ping test:
-			 *    !open -> red unless t->reverse
-			 * Non-ping test:
-			 *    Open: Red if t->reverse, green if !t->reverse
-			 *    !open && (pingOK or alwaystruetest): 
-			 *        Green if t->reverse
-			 *        Red if !t->reverse
-			 *    !open && !pingOK
-			 *        Clear
-			 */
-			if (t->host->dnserror) color = COL_RED;
-			if (service == pingtest) {
-				/* Red if (open=0, reverse=0) or (open=1, reverse=1) */
-				if ((t->open + t->reverse) != 1) color = COL_RED;
-			} 
-			else {
-				if (t->open) {
-					color = (t->reverse ? COL_RED : COL_GREEN);
-				}
-				else {	
-					/* Not open */
-					if (t->alwaystrue || t->host->noconn || t->host->noping) {
-						color = (t->reverse ? COL_GREEN : COL_RED);
-					}
-					else {
-						if (t->host->downcount == 0) {
-							color = (t->reverse ? COL_GREEN : COL_RED);
-						}
-						else {
-							color = COL_CLEAR;
-						}
-					}
-				}
-			}
-
-			/* Update the failure count */
-			if ((color == COL_RED) || (color == COL_CLEAR)) t->downcount++;
-
-			/* Dialup hosts and dialup tests report red as clear */
-			if ( ((color == COL_RED) || (color == COL_YELLOW)) && (t->host->dialup || t->dialup) ) color = COL_CLEAR;
-
-			/* If not inside SLA and non-green, report as BLUE */
-			if (!t->host->okexpected && (color != COL_GREEN)) color = COL_BLUE;
-		}
-
-		/* Handle the "route" tag dependencies. */
-		if ((service == pingtest) && (color == COL_RED) && t->host->deprouterdown) {
-			color = COL_YELLOW;
-		}
-
-		/* Handle the "badconn" stuff for ping checks */
-		if ((service == pingtest) && (color == COL_RED) && (t->host->downcount < t->host->badconn[2])) {
-			if      (t->host->downcount >= t->host->badconn[1]) color = COL_YELLOW;
-			else if (t->host->downcount >= t->host->badconn[0]) color = COL_CLEAR;
-			else                                                color = COL_GREEN;
-		}
-
-		/* Handle the "badtest" stuff for other tests */
-		if ((color == COL_RED) && (t->downcount < t->badtest[2])) {
-			if      (t->downcount >= t->badtest[1]) color = COL_YELLOW;
-			else if (t->downcount >= t->badtest[0]) color = COL_CLEAR;
-			else                                    color = COL_GREEN;
-		}
-
-		/* Handle test dependencies */
-		if ( ((color == COL_RED) || (color == COL_YELLOW)) && /* Test failed */
-		     deptest_failed(t->host, t->service->testname) &&
-		     (!t->alwaystrue)                              )  /* No "~testname" flag */ {
-			color = COL_CLEAR;
-		}
-
-		/* NOPAGENET services that are down are reported as yellow */
-		if (nopage && (color == COL_RED)) color = COL_YELLOW;
+		color = decide_color(service, svcname, t);
 
 		init_status(color);
 		sprintf(msgline, "status %s.%s %s <!-- [flags:%s] --> %s %s %s ", 
@@ -1170,6 +1205,10 @@ int main(int argc, char *argv[])
 			else egocolumn = "bbtest";
 			timing = 1;
 		}
+		else if (argnmatch(argv[argi], "--frequentpolltime=")) {
+			char *p = strchr(argv[argi], '=');
+			p++; frequenttesttime = atoi(p);
+		}
 
 		/* Options for TCP tests */
 		else if (argnmatch(argv[argi], "--concurrency=")) {
@@ -1238,6 +1277,7 @@ int main(int argc, char *argv[])
 			printf("    --timeout=N                 : Timeout (in seconds) for service tests\n");
 			printf("    --dns=[only|ip|standard]    : How IP's are decided\n");
 			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbtest-net\n");
+			printf("    --frequentpolltime=N        : Seconds after detecting failures in which we poll frequently\n");
 			printf("\nOptions for services in BBNETSVCS (tcp tests):\n");
 			printf("    --concurrency=N             : Number of tests run in parallel\n");
 			printf("\nOptions for PING (connectivity) tests:\n");
@@ -1396,6 +1436,23 @@ int main(int argc, char *argv[])
 
 	/* Save current status files */
 	for (s = svchead; (s); s = s->next) { if (s != pingtest) save_test_status(s); }
+
+	/*
+	 * The list of hosts to test frequently because of a failure must
+	 * be saved - it is then picked up by the frequent-test ext script
+	 * that runs bbtest-net again with the frequent-test hosts as
+	 * parameter.
+	 *
+	 * Should the retest itself update the frequent-test file ? It
+	 * would allow us to kick hosts from the frequent-test file sooner.
+	 * However, it is simpler (no races) if we just let the normal
+	 * test-engine be alone in updating the file. 
+	 * At the worst, we'll re-test a host going up a couple of times
+	 * too much.
+	 *
+	 * So for now update the list only if we ran with no host-parameters.
+	 */
+	if (selectedcount == 0) save_frequenttestlist(argc, argv);
 
 	shutdown_http_library();
 	add_timestamp("bbtest-net completed");
