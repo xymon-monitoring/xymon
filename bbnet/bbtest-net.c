@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.80 2003-07-13 06:18:10 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.81 2003-07-15 18:40:15 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -78,6 +78,7 @@ int		notesthostcount = 0;
 char		**selectedhosts;
 int		selectedcount = 0;
 time_t		frequenttestlimit = 1800;	/* Interval (seconds) when failing hosts are retried frequently */
+int		checktcpresponse = 0;
 
 testitem_t *find_test(char *hostname, char *testname)
 {
@@ -936,11 +937,12 @@ int run_fping_service(service_t *service, int updatestatus)
 }
 
 
-int decide_color(service_t *service, char *svcname, testitem_t *test, int failgoesclear)
+int decide_color(service_t *service, char *svcname, testitem_t *test, int failgoesclear, char *cause)
 {
 	int color = COL_GREEN;
 	int countasdown = 0;
 
+	*cause = '\0';
 	if (service == pingtest) {
 		/*
 		 * "noconn" is handled elsewhere.
@@ -949,18 +951,26 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 		 */
 		if (test->host->noping) { 
 			/* Ping test disabled - go "clear". End of story. */
+			strcpy(cause, "Ping test disabled (noping)");
 			return COL_CLEAR; 
 		}
 		else if (test->host->dnserror) { 
+			strcpy(cause, "DNS lookup failure");
 			color = COL_RED; countasdown = 1; 
 		}
 		else {
 			/* Red if (open=0, reverse=0) or (open=1, reverse=1) */
-			if ((test->open + test->reverse) != 1) { color = COL_RED; countasdown = 1; }
+			if ((test->open + test->reverse) != 1) { 
+				sprintf(cause, "Host %s respond to ping", (test->open ? "does" : "does not"));
+				color = COL_RED; countasdown = 1; 
+			}
 		}
 
 		/* Handle the "route" tag dependencies. */
-		if ((color == COL_RED) && test->host->deprouterdown) { color = COL_YELLOW; }
+		if ((color == COL_RED) && test->host->deprouterdown) { 
+			strcat(cause, "\nIntermediate router down");
+			color = COL_YELLOW; 
+		}
 
 		/* Handle "badconn" */
 		if ((color == COL_RED) && (test->host->downcount < test->host->badconn[2])) {
@@ -972,19 +982,32 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 	else {
 		/* TCP test */
 		if (test->host->dnserror) { 
+			strcpy(cause, "DNS lookup failure");
 			color = COL_RED; countasdown = 1; 
 		}
 		else {
 			if (test->reverse) {
-				if (test->open) { color = COL_RED; countasdown = 1; }
+				if (test->open) { 
+					strcpy(cause, "Service responds when it should not");
+					color = COL_RED; countasdown = 1; 
+				}
 			}
 			else {
 				if (!test->open) {
 					if (failgoesclear && (test->host->downcount != 0) && !test->alwaystrue) {
+						strcpy(cause, "Host appears to be down");
 						color = COL_CLEAR; countasdown = 0;
 					}
 					else {
+						strcpy(cause, "Service does not respond");
 						color = COL_RED; countasdown = 1;
+					}
+				}
+				else {
+					/* Check if we got the expected data */
+					if (checktcpresponse && !tcp_got_expected(test->testresult)) {
+						strcpy(cause, "Unexpected service response");
+						color = COL_YELLOW; countasdown = 1;
 					}
 				}
 			}
@@ -992,6 +1015,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 
 		/* Handle test dependencies */
 		if ( failgoesclear && (color == COL_RED) && !test->alwaystrue && deptest_failed(test->host, test->service->testname) ) {
+			strcat(cause, "\nProblem appears to be with another service or host");
 			color = COL_CLEAR;
 		}
 
@@ -1005,10 +1029,14 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 
 
 	/* If non-green and it was not expected to be up, report as BLUE */
-	if ((color != COL_GREEN) && !test->host->okexpected) color = COL_BLUE;
+	if ((color != COL_GREEN) && !test->host->okexpected) {
+		strcat(cause, "\nHost or service was not expected to be up");
+		color = COL_BLUE;
+	}
 
 	/* Dialup hosts and dialup tests report red as clear */
 	if ( ((color == COL_RED) || (color == COL_YELLOW)) && (test->host->dialup || test->dialup) ) { 
+		strcat(cause, "\nDialup host or service");
 		color = COL_CLEAR; countasdown = 0; 
 	}
 
@@ -1039,6 +1067,7 @@ void send_results(service_t *service, int failgoesclear)
 	int		color;
 	char		msgline[MAXMSG];
 	char		msgtext[MAXMSG];
+	char		causetext[1024];
 	char		*svcname;
 
 	svcname = malloc(strlen(service->testname)+1);
@@ -1063,7 +1092,7 @@ void send_results(service_t *service, int failgoesclear)
 		flags[i++] = (t->host->dnserror ? 'E' : 'e');
 		flags[i++] = '\0';
 
-		color = decide_color(service, svcname, t, failgoesclear);
+		color = decide_color(service, svcname, t, failgoesclear, causetext);
 
 		init_status(color);
 		sprintf(msgline, "status %s.%s %s <!-- [flags:%s] --> %s %s %s ", 
@@ -1098,8 +1127,8 @@ void send_results(service_t *service, int failgoesclear)
 					strcat(msgtext, "\n");
 				  }
 				  else {
-				  	strcat(msgtext, "not OK ");
-				  	strcat(msgtext, (t->reverse ? "(up)" : "(down)"));
+				  	strcat(msgtext, "not OK : ");
+				  	strcat(msgtext, causetext);
 				  	strcat(msgtext, "\n");
 				  }
 				  break;
@@ -1137,7 +1166,7 @@ void send_results(service_t *service, int failgoesclear)
 			  case COL_BLUE:
 				  strcat(msgline, ": Temporarily disabled");
 				  strcat(msgtext, "OK\n");
-				  strcat(msgtext, "Host currently not monitored due to SLA setting.\n");
+				  strcat(msgtext, "Host currently not monitored due to DOWNTIME setting.\n");
 				  break;
 			}
 			strcat(msgtext, "\n");
@@ -1224,6 +1253,9 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			p++; concurrency = atoi(p);
 		}
+		else if (strcmp(argv[argi], "--checkresponse") == 0) {
+			checktcpresponse = 1;
+		}
 
 		/* Options for PING tests */
 		else if (argnmatch(argv[argi], "--ping")) {
@@ -1289,6 +1321,7 @@ int main(int argc, char *argv[])
 			printf("    --frequenttestlimit=N       : Seconds after detecting failures in which we poll frequently\n");
 			printf("\nOptions for services in BBNETSVCS (tcp tests):\n");
 			printf("    --concurrency=N             : Number of tests run in parallel\n");
+			printf("    --checkresponse             : Check response from known services\n");
 			printf("\nOptions for PING (connectivity) tests:\n");
 			printf("    --ping[=COLUMNNAME]         : Enable ping checking, default columname is \"conn\"\n");
 			printf("    --noping                    : Disable ping checking\n");
