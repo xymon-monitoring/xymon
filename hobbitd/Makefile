@@ -14,7 +14,7 @@ LARRDOBJS     = hobbitd_larrd.o     hobbitd_worker.o do_larrd.o
 SAMPLEOBJS    = hobbitd_sample.o    hobbitd_worker.o
 HOBBITGRAPHOBJS= hobbitgraph.o
 
-all: $(PROGRAMS) $(CGISCRIPTS) cfgfiles
+all: $(PROGRAMS) $(CGISCRIPTS) cfgfiles moverrd.sh
 
 # Need NETLIBS on Solaris for getservbyname(), called by parse_url()
 
@@ -61,6 +61,10 @@ bb-ack.sh: bb-ack.sh.DIST
 
 hobbitgraph.sh: hobbitgraph.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' >$@
+	chmod 755 $@
+
+moverrd.sh: moverrd.sh.DIST
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBVAR@!$(BBVAR)!g' >$@
 	chmod 755 $@
 
 maint.pl: maint.pl.DIST
