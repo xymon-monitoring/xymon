@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.16 2003-02-08 08:06:47 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.17 2003-02-08 08:26:24 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -37,7 +37,7 @@ static char rcsid[] = "$Id: pagegen.c,v 1.16 2003-02-08 08:06:47 henrik Exp $";
 
 char *bb_headfoot = "bb";
 int  subpagecolumns=1;
-
+int  hostsbeforepages = 0;
 
 int interesting_column(int pagetype, int color, int alert, char *columnname, char *onlycols)
 {
@@ -439,9 +439,10 @@ void do_bb_page(page_t *page, dispsummary_t *sums, char *filename)
 
 	headfoot(output, bb_headfoot, "", "", "header", page->color);
 
-	do_page_subpages(output, page->next, "MKBBLOCAL", NULL);
+	if (!hostsbeforepages) do_page_subpages(output, page->next, "MKBBLOCAL", NULL);
 	do_hosts(page->hosts, NULL, output, "", PAGE_BB);
 	do_groups(page->groups, output);
+	if (hostsbeforepages) do_page_subpages(output, page->next, "MKBBLOCAL", NULL);
 	do_summaries(dispsums, output);
 
 	/* Support for extension scripts */
@@ -465,9 +466,10 @@ void do_page(page_t *page, char *filename, char *upperpagename)
 
 	headfoot(output, bb_headfoot, page->name, "", "header", page->color);
 
-	do_page_subpages(output, page->subpages, "MKBBSUBLOCAL", upperpagename);
+	if (!hostsbeforepages) do_page_subpages(output, page->subpages, "MKBBSUBLOCAL", upperpagename);
 	do_hosts(page->hosts, NULL, output, "", PAGE_BB);
 	do_groups(page->groups, output);
+	if (hostsbeforepages) do_page_subpages(output, page->subpages, "MKBBSUBLOCAL", upperpagename);
 
 	headfoot(output, bb_headfoot, page->name, "", "footer", page->color);
 

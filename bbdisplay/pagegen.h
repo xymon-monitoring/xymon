@@ -21,6 +21,7 @@
 
 extern char *bb_headfoot;
 extern int subpagecolumns;
+extern int hostsbeforepages;
 
 extern void do_bb_page(page_t *page, dispsummary_t *sums, char *filename);
 extern void do_page(page_t *page, char *filename, char *upperpagename);

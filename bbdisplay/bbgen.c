@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.66 2003-02-07 13:10:24 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.67 2003-02-08 08:26:24 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -91,6 +91,12 @@ int main(int argc, char *argv[])
 	for (i = 1; (i < argc); i++) {
 		if (strcmp(argv[i], "--recentgifs") == 0) {
 			use_recentgifs = 1;
+		}
+		else if (strcmp(argv[i], "--pages-first") == 0) {
+			hostsbeforepages = 0;
+		}
+		else if (strcmp(argv[i], "--pages-last") == 0) {
+			hostsbeforepages = 1;
 		}
 		else if (strncmp(argv[i], "--purplelifetime=", 17) == 0) {
 			char *lp = strchr(argv[i], '=');
@@ -172,20 +178,24 @@ int main(int argc, char *argv[])
 			printf("Options:\n");
 			printf("    --nopurple             : Disable purple status-updates\n");
 			printf("    --purplelifetime=N     : Purple messages have a lifetime of N minutes\n");
+			printf("\nPage layout options:\n");
+			printf("    --pages-last           : Put page- and subpage-links after hosts (as BB does)\n");
+			printf("    --pages-first          : Put page- and subpage-links before hosts (default)\n");
 			printf("    --subpagecolumns=N     : Number of columns for links to pages and subpages\n");
 			printf("    --recentgifs           : Use xxx-recent.gif icons for newly changed tests\n");
+			printf("\nStatus propagation control options:\n");
+			printf("    --noprop=test[,test]   : Disable upwards status propagation when YELLOW\n");
+			printf("    --nopropred=test[,test]: Disable upwards status propagation when RED or YELLOW\n");
+			printf("\nInfo column options:\n");
 			printf("    --info[=INFOCOLUMN]    : Generate INFO data in column INFOCOLUMN\n");
 			printf("    --infoupdate=N         : time between updates of INFO column pages in seconds\n");
 			printf("\nLARRD support options:\n");
 			printf("    --larrd[=LARRDCOLUMN]  : LARRD data in column LARRDCOLUMN, and handle larrd-html\n");
 			printf("    --larrdupdate=N        : time between updates of LARRD pages in seconds\n");
 			printf("    --rrddir=RRD-directory : Directory for LARRD RRD files\n");
-			printf("\nStatus propagation control options:\n");
-			printf("    --noprop=test[,test]   : Disable upwards status propagation when YELLOW\n");
-			printf("    --nopropred=test[,test]: Disable upwards status propagation when RED or YELLOW\n");
-			printf("\n");
+			printf("Alternate pageset generation support:\n");
+			printf("    --bbpageONLY           : Generate the standard (bb.html) page only\n");
 			printf("    --template=TEMPLATE    : template for header and footer files\n");
-			printf("    --bbpageONLY           : Standard page generation only\n");
 #ifdef DEBUG
 			printf("\n");
 			printf("    --debug                : Dumps internal state-table\n");
