@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.13 2004-10-07 15:12:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.14 2004-10-07 21:16:20 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -213,24 +213,6 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 }
 
 
-char *msg_data(char *msg)
-{
-	/* Find the start position of the data following the "status host.test " message */
-	char *result;
-	
-	result = strchr(msg, '.');		/* Hits the '.' in "host.test" */
-	if (!result) {
-		dprintf("Msg was not what I expected: '%s'\n", msg);
-		return msg;
-	}
-
-	result += strcspn(result, " \t\n");	/* Skip anything until we see a space, TAB or NL */
-	result += strspn(result, " \t");	/* Skip all whitespace */
-
-	return result;
-}
-
-
 int durationvalue(char *dur)
 {
 	/* 
@@ -338,6 +320,7 @@ void get_hts(char *msg, char *sender,
 			lwalk = (bbd_log_t *)malloc(sizeof(bbd_log_t));
 			lwalk->color = lwalk->oldcolor = NO_COLOR;
 			lwalk->testflags = NULL;
+			lwalk->sender[0] = '\0';
 			lwalk->host = hwalk;
 			lwalk->test = twalk;
 			lwalk->message = NULL;
@@ -423,6 +406,7 @@ void handle_status(unsigned char *msg, int msglen, char *sender, char *hostname,
 	log->validtime = now + validity*60;
 	oldcolor = log->color;
 	log->color = newcolor;
+	strcpy(log->sender, sender);
 	if (msg != log->message) {	/* They can be the same when called from handle_enadis() */
 		if ((log->message == NULL) || (log->msgsz = 0)) {
 			log->message = strdup(msg);
@@ -856,7 +840,8 @@ void do_message(conn_t *msg)
 
 			msg->doingwhat = RESPONDING;
 			if (eoln) *eoln = '\0';
-			msg->bufp = msg->buf = strdup(msg_data(log->message));
+			strcpy(msg->buf, msg_data(log->message));
+			msg->bufp = msg->buf;
 			msg->buflen = strlen(msg->buf);
 			if (eoln) *eoln = '\n';
 		}
@@ -869,11 +854,17 @@ void do_message(conn_t *msg)
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 0, 0);
 		if (log) {
 			msg->doingwhat = RESPONDING;
-			msg->bufp = msg->buf = strdup(log->message);
+			sprintf(msg->buf, "%s|%s|%s|%s|%d|%d|%s\n%s", 
+				h->hostname, log->test->testname, 
+				colnames[log->color], 
+				(log->testflags ? log->testflags : ""),
+				(int) log->lastchange, (int) log->validtime, log->sender,
+				msg_data(log->message));
+			msg->bufp = msg->buf;
 			msg->buflen = strlen(msg->buf);
 		}
 	}
-	else if (strcmp(msg->buf, "bbgendboard") == 0) {
+	else if (strncmp(msg->buf, "bbgendboard", 11) == 0) {
 		/* Request for a summmary of all known status logs */
 		bbd_hostlist_t *hwalk;
 		bbd_log_t *lwalk;
@@ -895,18 +886,19 @@ void do_message(conn_t *msg)
 					buf = (char *)realloc(buf, bufsz);
 					bufp = buf + buflen;
 				}
-				n = sprintf(bufp, "%s|%s|%s|%s|%d|%d|%s\n", 
+				n = sprintf(bufp, "%s|%s|%s|%s|%d|%d|%s|%s\n", 
 					hwalk->hostname, lwalk->test->testname, 
 					colnames[lwalk->color], 
 					(lwalk->testflags ? lwalk->testflags : ""),
 					(int) lwalk->lastchange, (int) lwalk->validtime,
-					msg_data(lwalk->message));
+					lwalk->sender, msg_data(lwalk->message));
 				bufp += n;
 				buflen += n;
 				if (eoln) *eoln = '\n';
 			}
 		}
 
+		free(msg->buf);
 		msg->doingwhat = RESPONDING;
 		msg->bufp = msg->buf = buf;
 		msg->buflen = buflen;
@@ -1007,8 +999,8 @@ void save_checkpoint(void)
 			if (lwalk->dismsg) disablemsg = base64encode(lwalk->dismsg);
 			if (lwalk->ackmsg) ackmsg = base64encode(lwalk->ackmsg);
 
-			fprintf(fd, "@@BBGENDCHK-V1|%s|%s|%s|%s|%s|%d|%d|%d|%d|%s|%s|%s\n", 
-				hwalk->hostname, lwalk->test->testname, 
+			fprintf(fd, "@@BBGENDCHK-V1|%s|%s|%s|%s|%s|%s|%d|%d|%d|%d|%s|%s|%s\n", 
+				hwalk->hostname, lwalk->test->testname, lwalk->sender,
 				colnames[lwalk->color], 
 				(lwalk->testflags ? lwalk->testflags : ""),
 				colnames[lwalk->oldcolor],
@@ -1037,7 +1029,7 @@ void load_checkpoint(char *fn)
 	bbd_hostlist_t *htail = NULL;
 	bbd_testlist_t *t = NULL;
 	bbd_log_t *ltail = NULL;
-	char *hostname, *testname, *testflags, *statusmsg, *disablemsg, *ackmsg;
+	char *hostname, *testname, *sender, *testflags, *statusmsg, *disablemsg, *ackmsg;
 	time_t lastchange, validtime, enabletime, acktime;
 	int color, oldcolor;
 
@@ -1048,7 +1040,7 @@ void load_checkpoint(char *fn)
 	}
 
 	while (fgets(l, sizeof(l)-1, fd)) {
-		hostname = testname = testflags = statusmsg = disablemsg = NULL;
+		hostname = testname = sender = testflags = statusmsg = disablemsg = NULL;
 		lastchange = validtime = enabletime = acktime = 0;
 		err =0;
 
@@ -1058,16 +1050,17 @@ void load_checkpoint(char *fn)
 			  case 0: err = (strcmp(item, "@@BBGENDCHK-V1") != 0); break;
 			  case 1: hostname = item; break;
 			  case 2: testname = item; break;
-			  case 3: color = parse_color(item); if (color == -1) err = 1; break;
-			  case 4: testflags = item; break;
-			  case 5: oldcolor = parse_color(item); if (color == -1) err = 1; break;
-			  case 6: lastchange = atoi(item); break;
-			  case 7: validtime = atoi(item); break;
-			  case 8: enabletime = atoi(item); break;
-			  case 9: acktime = atoi(item); break;
-			  case 10: statusmsg = item; break;
-			  case 11: disablemsg = item; break;
-			  case 12: ackmsg = item; break;
+			  case 3: sender = item; break;
+			  case 4: color = parse_color(item); if (color == -1) err = 1; break;
+			  case 5: testflags = item; break;
+			  case 6: oldcolor = parse_color(item); if (color == -1) err = 1; break;
+			  case 7: lastchange = atoi(item); break;
+			  case 8: validtime = atoi(item); break;
+			  case 9: enabletime = atoi(item); break;
+			  case 10: acktime = atoi(item); break;
+			  case 11: statusmsg = item; break;
+			  case 12: disablemsg = item; break;
+			  case 13: ackmsg = item; break;
 			  default: err = 1;
 			}
 
@@ -1109,6 +1102,7 @@ void load_checkpoint(char *fn)
 		ltail->test = t;
 		ltail->host = htail;
 		ltail->color = color;
+		strcpy(ltail->sender, sender);
 		ltail->testflags = ( (testflags && strlen(testflags)) ? strdup(testflags) : NULL);
 		ltail->lastchange = lastchange;
 		ltail->validtime = validtime;
