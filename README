@@ -182,9 +182,6 @@ information used by Big Brother. If you use any of my non-standard
 bb-hosts extensions (see the bbhost-extenstions.txt file), these
 will also show up here.
 
-Paging configuration is currently not included in the "info" column
-display - this will be added as soon as possible.
-
 The "info" column is always included in the bb2.html and in the
 non-standard bbnk.html page, so the information is available to
 the people troubleshooting a problem with a service or host.
