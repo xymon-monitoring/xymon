@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.5 2004-11-24 12:39:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.6 2004-11-30 22:38:53 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -121,21 +121,21 @@ int main(int argc, char *argv[])
 		else if ((metacount > 5) && (strncmp(metadata[0], "@@renametest", 12) == 0)) {
 			/* Not implemented. See "droptest". */
 		}
-		else if ((metacount >= 13) && (strncmp(metadata[0], "@@status", 8) == 0)) {
+		else if ((metacount >= 14) && (strncmp(metadata[0], "@@status", 8) == 0)) {
 			/*
-			 * @@status|timestamp|sender|hostname|testname|expiretime|color|testflags|prevcolor|changetime|\
-			 * ackexpiretime|ackmessage|disableexpiretime|disablemessage 
+			 * @@status|timestamp|sender|origin|hostname|testname|expiretime|color|testflags|\
+			 * prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage 
 			 */
-			int color = parse_color(metadata[6]);
+			int color = parse_color(metadata[7]);
 
 			switch (color) {
 			  case COL_GREEN:
 			  case COL_YELLOW:
 			  case COL_RED:
 				tstamp = atoi(metadata[1]);
-				hostname = metadata[3]; 
-				testname = metadata[4];
-				ldef = find_larrd(testname, metadata[7]);
+				hostname = metadata[4]; 
+				testname = metadata[5];
+				ldef = find_larrd(testname, metadata[8]);
 				update_larrd(hostname, testname, restofmsg, tstamp, ldef);
 				break;
 
@@ -144,11 +144,11 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
-		else if ((metacount > 4) && (strncmp(metadata[0], "@@data", 6) == 0)) {
-			/* @@data|timestamp|sender|hostname|testname */
+		else if ((metacount > 5) && (strncmp(metadata[0], "@@data", 6) == 0)) {
+			/* @@data|timestamp|sender|origin|hostname|testname */
 			tstamp = atoi(metadata[1]);
-			hostname = metadata[3]; 
-			testname = metadata[4];
+			hostname = metadata[4]; 
+			testname = metadata[5];
 			ldef = find_larrd(testname, "");
 			update_larrd(hostname, testname, restofmsg, tstamp, ldef);
 		}

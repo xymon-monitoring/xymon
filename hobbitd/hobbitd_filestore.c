@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.23 2004-11-19 22:12:29 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.24 2004-11-30 22:38:53 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -245,36 +245,36 @@ int main(int argc, char *argv[])
 			p = gettok(NULL, "|");
 		}
 
-		if ((role == ROLE_STATUS) && (metacount >= 13) && (strncmp(items[0], "@@status", 8) == 0)) {
-			/* @@status|timestamp|sender|hostname|testname|expiretime|color|testflags|prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage */
+		if ((role == ROLE_STATUS) && (metacount >= 14) && (strncmp(items[0], "@@status", 8) == 0)) {
+			/* @@status|timestamp|sender|origin|hostname|testname|expiretime|color|testflags|prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage */
 			int logtime, timesincechange;
 
-			hostname = items[3];
-			testname = items[4];
+			hostname = items[4];
+			testname = items[5];
 			if (!wantedtest(onlytests, testname)) continue;
 
 			sprintf(logfn, "%s/%s.%s", filedir, commafy(hostname), testname);
-			expiretime = atoi(items[5]);
+			expiretime = atoi(items[6]);
 			statusdata = msg_data(statusdata);
 			sscanf(items[1], "%d.%*d", &logtime);
-			timesincechange = logtime - atoi(items[9]);
+			timesincechange = logtime - atoi(items[10]);
 			update_file(logfn, "w", statusdata, expiretime, items[2], timesincechange, seq);
 			if (htmldir) {
 				char *ackmsg = NULL;
 				char htmllogfn[PATH_MAX];
 
-				if (items[11] && strlen(items[11])) ackmsg = items[11];
+				if (items[12] && strlen(items[12])) ackmsg = items[12];
 				if (ackmsg) nldecode(ackmsg);
 
 				sprintf(htmllogfn, "%s/%s.%s.%s", htmldir, hostname, testname, htmlextension);
-				update_htmlfile(htmllogfn, statusdata, hostname, testname, parse_color(items[6]),
-						     items[2], items[7], logtime, timesincechange, ackmsg);
+				update_htmlfile(htmllogfn, statusdata, hostname, testname, parse_color(items[7]),
+						     items[2], items[8], logtime, timesincechange, ackmsg);
 			}
 		}
-		else if ((role == ROLE_DATA) && (metacount > 4) && (strncmp(items[0], "@@data", 6) == 0)) {
+		else if ((role == ROLE_DATA) && (metacount > 5) && (strncmp(items[0], "@@data", 6) == 0)) {
 			/* @@data|timestamp|sender|hostname|testname */
-			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
-			testname = items[4];
+			p = hostname = items[4]; while ((p = strchr(p, '.')) != NULL) *p = ',';
+			testname = items[5];
 			if (!wantedtest(onlytests, testname)) continue;
 
 			statusdata = msg_data(statusdata); if (*statusdata == '\n') statusdata++;

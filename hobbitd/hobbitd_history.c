@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.22 2004-11-24 12:21:55 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.23 2004-11-30 22:38:53 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -140,14 +140,14 @@ int main(int argc, char *argv[])
 			p = gettok(NULL, "|");
 		}
 
-		if ((metacount > 8) && (strncmp(items[0], "@@stachg", 8) == 0)) {
-			/* @@stachg#seq|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime */
+		if ((metacount > 9) && (strncmp(items[0], "@@stachg", 8) == 0)) {
+			/* @@stachg#seq|timestamp|sender|origin|hostname|testname|expiretime|color|prevcolor|changetime */
 			sscanf(items[1], "%d.%*d", &tstamp_i); tstamp = tstamp_i;
-			hostname = items[3];
-			testname = items[4];
-			newcolor = parse_color(items[6]);
-			oldcolor = parse_color(items[7]);
-			lastchg = atoi(items[8]);
+			hostname = items[4];
+			testname = items[5];
+			newcolor = parse_color(items[7]);
+			oldcolor = parse_color(items[8]);
+			lastchg = atoi(items[9]);
 
 			if (save_histlogs) {
 				char *hostdash;
@@ -188,6 +188,7 @@ int main(int argc, char *argv[])
 				stat(statuslogfn, &st);
 				statuslogfd = fopen(statuslogfn, "r+");
 				logexists = (statuslogfd != NULL);
+				*oldcol = '\0';
 
 				if (logexists) {
 					/*
@@ -261,6 +262,14 @@ int main(int argc, char *argv[])
 					 */
 					lastchg = tstamp;
 					statuslogfd = fopen(statuslogfn, "w");
+				}
+
+				if (strcmp(oldcol, colorname(newcolor)) == 0) {
+					/* We wont update history unless the color did change. */
+					errprintf("Will not update %s - color unchanged (%s)\n", statuslogfn, oldcol);
+					if (hostnamecommas) free(hostnamecommas);
+					if (statuslogfd) fclose(statuslogfd);
+					continue;
 				}
 
 				if (statuslogfd) {
