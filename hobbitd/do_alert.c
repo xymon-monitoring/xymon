@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.22 2005-01-01 19:49:08 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.23 2005-01-04 06:54:03 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -98,7 +98,7 @@ typedef struct criteria_t {
 	pcre *exsvcspecre;
 	int colors;
 	char *timespec;
-	int minduration, maxduration;
+	int minduration, maxduration;	/* In seconds */
 	int sendrecovered;
 } criteria_t;
 
@@ -110,7 +110,7 @@ typedef struct recip_t {
 	char *recipient;
 	char *scriptname;
 	enum msgformat_t format;
-	time_t interval;
+	time_t interval;		/* In seconds */
 	struct recip_t *next;
 } recip_t;
 
@@ -472,8 +472,8 @@ void load_alertconfig(char *configfn, int defcolors)
 
 				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
 				crit = setup_criteria(&currule, &currcp);
-				if (*(p+8) == '>') crit->minduration = durationvalue(p+9);
-				else if (*(p+8) == '<') crit->maxduration = durationvalue(p+9);
+				if (*(p+8) == '>') crit->minduration = 60*durationvalue(p+9);
+				else if (*(p+8) == '<') crit->maxduration = 60*durationvalue(p+9);
 			}
 			else if (strncasecmp(p, "RECOVERED", 9) == 0) {
 				criteria_t *crit;
@@ -563,7 +563,7 @@ void load_alertconfig(char *configfn, int defcolors)
 				else if (strcmp(p+7, "SCRIPT") == 0) currcp->format = FRM_SCRIPT;
 			}
 			else if ((pstate == P_RECIP) && (strncasecmp(p, "REPEAT=", 7) == 0)) {
-				currcp->interval = durationvalue(p+7);
+				currcp->interval = 60*durationvalue(p+7);
 			}
 
 			if (p) p = strtok(NULL, " ");
