@@ -37,12 +37,13 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.7 2004-11-17 16:11:50 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.8 2004-11-18 23:21:03 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <limits.h>
 
 /*[wm] For the POSIX regex support*/
 #include <sys/types.h> 
@@ -155,6 +156,33 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if ((getenv("QUERY_STRING") == NULL) || (strlen(getenv("QUERY_STRING")) == 0)) {
+		/* Present the query form */
+		FILE *formfile;
+		char formfn[PATH_MAX];
+
+		sprintf(formfn, "%s/web/findhost_form", getenv("BBHOME"));
+		formfile = fopen(formfn, "r");
+
+		if (formfile) {
+			int n;
+			char inbuf[8192];
+
+			printf("Content-Type: text/html\n\n");
+			sethostenv("", "", "", colorname(COL_BLUE));
+
+			headfoot(stdout, "findhost", "", "header", COL_BLUE);
+			do {
+				n = fread(inbuf, 1, sizeof(inbuf), formfile);
+				if (n > 0) fwrite(inbuf, 1, n, stdout);
+			} while (n == sizeof(inbuf));
+			headfoot(stdout, "findhost", "", "footer", COL_BLUE);
+
+			fclose(formfile);
+		}
+		return 0;
+	}
+
 	parse_query();
 
 	setvbuf(stdout, NULL, _IONBF, 0);   		/* [wm] unbuffer stdout */
@@ -162,7 +190,7 @@ int main(int argc, char *argv[])
 
         /* It's ok with these hardcoded values, as they are not used for this page */
         sethostenv("", "", "", colorname(COL_BLUE));
-        headfoot(stdout, "hostsvc", "", "header", COL_BLUE);
+        headfoot(stdout, "findhost", "", "header", COL_BLUE);
 
 	pagehead = load_bbhosts(pageset);
 
@@ -221,7 +249,7 @@ int main(int argc, char *argv[])
 
 	printf("</TABLE></CENTER>\n");
 
-        headfoot(stdout, "hostsvc", "", "footer", COL_BLUE);
+        headfoot(stdout, "findhost", "", "footer", COL_BLUE);
 
 	/* [wm] - Free the strdup allocated memory */
 	if (pSearchPat) free (pSearchPat);
