@@ -3,5 +3,6 @@
 # This is the bbgen snapshot CGI wrapper
 # It is the Hobbit version
 
-exec @BBHOME@/bin/bb-snapshot.cgi --env=@BBHOME@/etc/hobbitserver.cfg 
+. @BBHOME@/etc/hobbitserver.cfg
+exec @BBHOME@/bin/bb-snapshot.cgi --env=@BBHOME@/etc/hobbitserver.cfg $BBGENSNAPOPTS
 
