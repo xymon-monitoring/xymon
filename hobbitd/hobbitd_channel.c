@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.23 2004-11-22 14:57:26 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.24 2004-11-24 12:04:50 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -106,6 +106,7 @@ int main(int argc, char *argv[])
 			char *cn = strchr(argv[argi], '=') + 1;
 
 			for (cnid = 0; (channelnames[cnid] && strcmp(channelnames[cnid], cn)); cnid++) ;
+			if (channelnames[cnid] == NULL) cnid = -1;
 		}
 		else if (argnmatch(argv[argi], "--daemon")) {
 			daemonize = 1;
@@ -130,7 +131,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (cnid == -1) {
-		errprintf("No channel specified\n");
+		errprintf("No channel/unknown channel specified\n");
 		return 1;
 	}
 
@@ -284,12 +285,16 @@ int main(int argc, char *argv[])
 		 * We've picked up messages from the master. Now we 
 		 * must push them to the worker process. Since there 
 		 * is no way to hang off both a semaphore and select(),
-		 * this boils down to doing a kind of busy waiting.
-		 * In practice, the queue will be empty most of the
-		 * time and then we will just wait on the GOCHILD 
-		 * semaphore, so it isn't really much of a concern.
+		 * we'll just push as much data as possible into the 
+		 * pipe. If we get to a point where we would block,
+		 * then wait a teeny bit of time and restart the 
+		 * whole loop with checking for new messages from the
+		 * master etc.
 		 *
-		 * Maybe it could be optimized via SIGIO ... 
+		 * In theory, this could become an almost busy-wait loop.
+		 * In practice, however, the queue will be empty most
+		 * of the time because we'll just shove the data to the
+		 * worker child.
 		 */
 		canwrite = 1;
 		while (head && canwrite) {
