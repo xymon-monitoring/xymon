@@ -8,15 +8,20 @@
 # historical data to Hobbit.
 #
 # Set these variables to match your local setup
-BBHOME=/usr/local/bb/bb
-BBHOSTS=$BBHOME/etc/bb-hosts
+
+# The directory where Big Brother+LARRD has your RRD files currently
 SRCDIR=/usr/local/bb/bbvar/rrd
-DSTDIR=/usr/local/bb/bbvar/newrrd
+
+# These are the Hobbit directories and filenames
+BBHOME=@BBHOME@
+BBHOSTS=$BBHOME/etc/bb-hosts
+DSTDIR=@BBVAR@/rrd		# Where the files should end up.
+
 OP="cp -f"			# Set to "mv" to move files instead of copying
 
 # You should not need to modify anything below here.
 
-export BBHOME BBHOSTS SRCDIR DSTDIR OP
+export SRCDIR BBHOME BBHOSTS DSTDIR OP
 
 
 cd $SRCDIR || (echo "Cannot go to $SRCDIR"; exit 0)
