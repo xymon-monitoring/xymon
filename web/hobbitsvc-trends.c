@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.32 2003-10-30 12:49:40 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.33 2003-11-10 22:01:47 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -52,6 +52,12 @@ rrdlayout_t rrdnames[] = {
 	{ "ntpstat", 	NULL,        0 },
 	{ "vmio",    	NULL,        0 },
 	{ "temperature",NULL,        0 },
+	{ "apache",	NULL,        0 },
+	{ "bind",	NULL,        0 },
+	{ "sendmail",	NULL,        0 },
+	{ "nmailq",	NULL,        0 },
+	{ "socks",	NULL,        0 },
+	{ "imap2",	NULL,        0 },
 	{ NULL,      	NULL,        0 }
 };
 
