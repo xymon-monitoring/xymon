@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.30 2003-03-02 17:39:08 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.31 2003-03-04 08:29:21 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -353,15 +353,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 
 		if (newhost == NULL) {
 			/* New summary "host" */
-
-			newhost = malloc(sizeof(host_t));
-			strcpy(newhost->hostname, s->row);
-			strcpy(newhost->ip, "");
-			newhost->dialup = 0;
-			newhost->color = -1;
-			newhost->link = &null_link;
-			newhost->entries = NULL;
-			newhost->next = NULL;
+			newhost = init_host(s->row, 0,0,0,0, 0, NULL, NULL, NULL, NULL);
 
 			/* Insert into sorted host list */
 			if ((!sumhosts) || (strcmp(newhost->hostname, sumhosts->hostname) < 0)) {
@@ -393,6 +385,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 					newentry->oldage = 1; /* Use standard gifs */
 					newentry->acked = 0;
 					newentry->alert = 0;
+					newentry->propagate = 1;
 					newentry->sumurl = s2->url;
 					newentry->next = newhost->entries;
 					newhost->entries = newentry;
