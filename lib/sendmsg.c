@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.32 2004-10-24 20:48:00 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.33 2004-10-24 22:05:46 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -482,7 +482,8 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 	static char *bbdisp = NULL;
 	int res = 0;
 
-	if ((bbdisp == NULL) && (recipient == NULL)) recipient = bbdisp = malcop(getenv("BBDISP"));
+ 	if (bbdisp == NULL) bbdisp = malcop(getenv("BBDISP"));
+	if (recipient == NULL) recipient = bbdisp;
 
 	if ((strncmp(msg, "status", 6) == 0) || (strncmp(msg, "combo", 5) == 0)) {
 		res = sendstatus((recipient ? recipient : bbdisp), msg);
