@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.56 2004-08-28 11:06:36 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.57 2004-08-30 15:46:28 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1324,8 +1324,9 @@ void show_tcp_test_results(void)
 			printf("httpstatus = %ld, open=%d, errcode=%d, parsestatus=%d\n",
 				httptest->httpstatus, httptest->tcptest->open, httptest->tcptest->errcode, httptest->parsestatus);
 			printf("Response:\n");
-				if (httptest->headers) printf("%s\n", httptest->headers); else printf("(no headers)\n");
-				if (httptest->output) printf("%s", httptest->output);
+			if (httptest->headers) printf("%s\n", httptest->headers); else printf("(no headers)\n");
+			if (httptest->contentcheck == CONTENTCHECK_DIGEST) printf("Content digest: %s\n", httptest->digest);
+			if (httptest->output) printf("%s", httptest->output);
 		}
 	}
 }
