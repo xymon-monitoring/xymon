@@ -55,6 +55,12 @@ file) to create and store the HTML logs whenever a status update is
 received. Setting "BBLOGSTATUS=STATIC" is \fBdiscouraged\fR since the
 I/O load on the Hobbit server will increase significantly.
 
+.IP PINGCOLUMN
+Defines the name of the column for "ping" test status. The data from
+the "ping" test is used internally by Hobbit, so it must be defined
+here so all of the Hobbit tools know which column to watch for this 
+data. The default setting is PINGCOLUMN=conn.
+
 
 .SH DIRECTORIES
 
