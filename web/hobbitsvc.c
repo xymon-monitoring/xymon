@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.30 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.31 2005-02-24 20:39:39 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -120,6 +120,7 @@ int main(int argc, char *argv[])
 	char *ackmsg = NULL, *dismsg = NULL;
 	enum source_t source = SRC_BBLOGS;
 	int wantserviceid = 1;
+	char *multigraphs = ",disk,inode,qtree,";
 
 	getenv_default("USEHOBBITD", "FALSE", NULL);
 	if (strcmp(xgetenv("USEHOBBITD"), "TRUE") == 0) source = SRC_HOBBITD;
@@ -152,6 +153,12 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			sethostenv_template(p+1);
 		}
+		else if (argnmatch(argv[argi], "--multigraphs=")) {
+			char *p = strchr(argv[argi], '=');
+			multigraphs = (char *)malloc(strlen(p+1) + 3);
+			sprintf(multigraphs, ",%s,", p+1);
+		}
+
 	}
 
 	envcheck(reqenv);
@@ -312,6 +319,7 @@ int main(int argc, char *argv[])
 			  wantserviceid, 
 			  (strcmp(service, "info") == 0),
 			  (source == SRC_HOBBITD),
+			  multigraphs,
 			  stdout);
 	return 0;
 }

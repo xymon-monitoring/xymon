@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.33 2005-02-23 08:16:42 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.34 2005-02-24 20:39:39 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -29,6 +29,8 @@ static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.33 2005-02-23 08:16:42 henri
 #include "libbbgen.h"
 
 #include "hobbitd_worker.h"
+
+static char *multigraphs = ",disk,inode,qtree,";
 
 enum role_t { ROLE_STATUS, ROLE_DATA, ROLE_NOTES, ROLE_ENADIS};
 
@@ -113,7 +115,7 @@ void update_htmlfile(char *fn, char *msg,
 			logtime, timestr,
 			firstline, restofmsg, ackmsg,
 			disabletime, dismsg,
-			0, 1, 0, 1, output);
+			0, 1, 0, 1, multigraphs, output);
 
 		fclose(output);
 		rename(tmpfn, fn);
@@ -213,6 +215,11 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=') + 1;
 			onlytests = (char *)malloc(3 + strlen(p));
 			sprintf(onlytests, ",%s,", p);
+		}
+		else if (argnmatch(argv[argi], "--multigraphs=")) {
+			char *p = strchr(argv[argi], '=');
+			multigraphs = (char *)malloc(strlen(p+1) + 3);
+			sprintf(multigraphs, ",%s,", p+1);
 		}
 	}
 

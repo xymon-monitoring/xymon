@@ -69,6 +69,11 @@ Default: $BBHTML
 Set the filename extension for generated HTML files. By default, HTML
 files are saved with a ".html" extension.
 
+.IP "--multigraphs=TEST1[,TEST2]"
+This causes hobbitd_filestore to generate HTML status pages with links to 
+service graphs that are split up into multiple images, with at most 5 graphs
+per image. If not specified, only the "disk" status is split up this way.
+
 .IP "--only=test[,test,test]"
 Save status messages only for the listed set of tests. This can be useful
 if you have an external script that needs to parse some of the status logs,

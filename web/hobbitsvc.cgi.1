@@ -58,6 +58,12 @@ Do not include the HTML tags to identify the hostname/service
 on the generated web page. Useful is this already happens in 
 the hostsvc_header template file, for instance.
 
+.IP "--multigraphs=TEST1[,TEST2]"
+This causes bb-hostsvc.cgi to generate links to service graphs 
+that are split up into multiple images, with at most 5 graphs
+per image. This option only works in Hobbit mode. If not
+specified, only the "disk" status is split up this way.
+
 .SH FILES
 .IP "$BBHOME/web/hostsvc_header"
 HTML template header
