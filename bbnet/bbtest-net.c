@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.210 2005-04-03 15:39:02 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.211 2005-04-04 21:57:47 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -811,7 +811,7 @@ void load_tests(void)
 			}
 	
 			strcpy(h->ip, bbh_item(hwalk, BBH_IP));
-			if (!h->testip) add_host_to_dns_queue(h->hostname);
+			if (!h->testip && (dnsmethod != IP_ONLY)) add_host_to_dns_queue(h->hostname);
 			h->next = testhosthead;
 			testhosthead = h;
 		}
