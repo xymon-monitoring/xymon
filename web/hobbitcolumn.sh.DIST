@@ -1,0 +1,4 @@
+#!/bin/sh
+
+QUERY_STRING="key=$QUERY_STRING&db=columndoc.csv" exec @BBHOME@/bin/bb-csvinfo.cgi --env=@BBHOME@/etc/hobbitserver.cfg --color=purple --hffile=columndoc
+
