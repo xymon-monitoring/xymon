@@ -13,11 +13,9 @@
 #ifndef __DIGEST_H_
 #define __DIGEST_H_
 
-#include <openssl/evp.h>
-
 typedef struct digestctx_t {
 	char *digestname;
-	EVP_MD_CTX mdctx;
+	void *mdctx;
 } digestctx_t;
 
 extern digestctx_t *digest_init(char *digest);

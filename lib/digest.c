@@ -10,12 +10,16 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: digest.c,v 1.3 2004-11-08 22:12:29 henrik Exp $";
+static char rcsid[] = "$Id: digest.c,v 1.4 2004-12-08 11:51:04 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef BBGEN_SSL
+#include <openssl/evp.h>
+#endif
 
 #include "digest.h"
 #include "errormsg.h"
@@ -43,11 +47,12 @@ digestctx_t *digest_init(char *digest)
 		return NULL;
         }
 
+	ctx->mdctx = (void *)malloc(sizeof(EVP_MD_CTX));
 #if OPENSSL_VERSION_NUMBER >= 0x00907000L
-	EVP_MD_CTX_init(&ctx->mdctx);
-	EVP_DigestInit_ex(&ctx->mdctx, md, NULL);
+	EVP_MD_CTX_init(ctx->mdctx);
+	EVP_DigestInit_ex(ctx->mdctx, md, NULL);
 #else
-	EVP_DigestInit(&ctx->mdctx, md);
+	EVP_DigestInit(ctx->mdctx, md);
 #endif
 
 #else
@@ -61,7 +66,7 @@ digestctx_t *digest_init(char *digest)
 int digest_data(digestctx_t *ctx, char *buf, int buflen)
 {
 #ifdef BBGEN_SSL
-	EVP_DigestUpdate(&ctx->mdctx, buf, buflen);
+	EVP_DigestUpdate(ctx->mdctx, buf, buflen);
 #endif
 	return 0;
 }
@@ -78,9 +83,9 @@ char *digest_done(digestctx_t *ctx)
 	char *p;
 
 #if OPENSSL_VERSION_NUMBER >= 0x00907000L
-	EVP_DigestFinal_ex(&ctx->mdctx, md_value, &md_len);
+	EVP_DigestFinal_ex(ctx->mdctx, md_value, &md_len);
 #else
-	EVP_DigestFinal(&ctx->mdctx, md_value, &md_len);
+	EVP_DigestFinal(ctx->mdctx, md_value, &md_len);
 #endif
 
 	sprintf(md_string, "%s:", ctx->digestname);
@@ -90,11 +95,12 @@ char *digest_done(digestctx_t *ctx)
 	}
 
 #if OPENSSL_VERSION_NUMBER >= 0x00907000L
-	EVP_MD_CTX_cleanup(&ctx->mdctx);
+	EVP_MD_CTX_cleanup(ctx->mdctx);
 #else
 	EVP_cleanup();
 #endif
 
+	free(ctx->mdctx);
 	free(ctx);
 
 	result = (char *) malloc(strlen(md_string)+1);
