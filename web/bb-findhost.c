@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.5 2004-10-14 06:07:31 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.6 2004-10-30 15:36:08 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -51,20 +51,15 @@ static char rcsid[] = "$Id: bb-findhost.c,v 1.5 2004-10-14 06:07:31 henrik Exp $
 
 
 #include "bbgen.h"
-#include "loadhosts.h"
 #include "util.h"
-#include "debug.h"
-
-
+#include "loadhosts.h"
 
 /* Global vars */
 bbgen_page_t    *pagehead = NULL;                       /* Head of page list */
-link_t          *linkhead = NULL;                       /* Head of links list */
-hostlist_t      *hosthead = NULL;                       /* Head of hosts list */
 summary_t       *sumhead = NULL;                        /* Summaries we send out */
-int             fqdn = 1;                               /* BB FQDN setting */
 time_t          reportstart = 0;
 double          reportwarnlevel = 97.0;
+int             fqdn = 1;                               /* BB FQDN setting */
 
 /*
  * [wm] To support regex searching

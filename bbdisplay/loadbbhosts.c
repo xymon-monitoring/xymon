@@ -16,8 +16,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.4 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.5 2004-10-30 15:39:56 henrik Exp $";
 
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -31,14 +32,12 @@ static char rcsid[] = "$Id: loadbbhosts.c,v 1.4 2004-10-29 10:21:57 henrik Exp $
 #include "bbgen.h"
 #include "util.h"
 #include "loadhosts.h"
-#include "debug.h"
 
 #define MAX_TARGETPAGES_PER_HOST 10
 
 time_t	snapshot = 0;				/* Set if we are doing a snapshot */
 
 char	*null_text = "";
-link_t  null_link = { "", "", "", NULL };	/* Null link for pages/hosts/whatever with no link */
 
 static pagelist_t *pagelisthead = NULL;
 int	pagecount = 0;
@@ -485,7 +484,7 @@ link_t *load_links(const char *directory, const char *urlprefix)
 {
 	DIR		*bblinks;
 	struct dirent 	*d;
-	char		fn[MAX_PATH];
+	char		fn[PATH_MAX];
 	link_t		*curlink, *toplink, *newlink;
 
 	dprintf("load_links(%s, %s)\n", textornull(directory), textornull(urlprefix));
@@ -517,7 +516,7 @@ link_t *load_links(const char *directory, const char *urlprefix)
 link_t *load_all_links(void)
 {
 	link_t *l, *head1, *head2;
-	char dirname[MAX_PATH];
+	char dirname[PATH_MAX];
 	char *p;
 
 	dprintf("load_all_links()\n");

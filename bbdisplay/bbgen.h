@@ -20,9 +20,7 @@
 #define __BBGEN_H_
 
 #include <time.h>
-#include <stddef.h>
-
-#define VERSION "3.3"
+#include "libbbgen.h"
 
 /* Structure defs for bbgen */
 
@@ -110,41 +108,13 @@
   contains "help" or "notes" depending on where the file is located.
 */
 
-#define COL_GREEN	0
-#define COL_CLEAR 	1
-#define COL_BLUE  	2
-#define COL_PURPLE 	3
-#define COL_YELLOW	4
-#define COL_RED		5
-#define COL_COUNT       (COL_RED+1)
-
 #define PAGE_BB		0
 #define PAGE_BB2	1
 #define PAGE_NK		2
 
 
-/* Max length of a single line in bb-hosts */
-#define MAX_LINE_LEN 4096
-
-/* Max size of a BB message - this MUST match your MAXSIZE setting in bb.h */
-/* Normally this is picked up from the configure script. */
-#ifndef MAXMSG
-#warning Using MAXMSG 8192 - check that this matches MAXLINE in your BBHOME/src/bb.h
-#define MAXMSG 8192
-#endif
-
 /* Max number of purple messages in one run */
 #define MAX_PURPLE_PER_RUN	30
-
-/* Max length of a filename */
-#ifndef MAX_PATH
-#ifndef MAXPATHLEN
-#define MAX_PATH 4096
-#else
-#define MAX_PATH MAXPATHLEN
-#endif
-#endif
-
 
 /* Info-link definitions. */
 typedef struct link_t {

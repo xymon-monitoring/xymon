@@ -8,24 +8,20 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostshow.c,v 1.4 2003-11-03 09:32:53 henrik Exp $";
+static char rcsid[] = "$Id: bbhostshow.c,v 1.5 2004-10-30 15:47:55 henrik Exp $";
 
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-#include "bbgen.h"
-#include "util.h"
-
-/* These are dummy vars needed by stuff in util.c */
-hostlist_t      *hosthead = NULL;
-link_t          *linkhead = NULL;
-link_t  null_link = { "", "", "", NULL };
+#include "version.h"
+#include "libbbgen.h"
 
 int main(int argc, char *argv[])
 { 
 	FILE *bbhosts;
-	char fn[MAX_PATH];
+	char fn[PATH_MAX];
 	char l[MAX_LINE_LEN];
 	int argi;
 	char *include2 = NULL;

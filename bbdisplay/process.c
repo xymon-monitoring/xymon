@@ -16,8 +16,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.23 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: process.c,v 1.24 2004-10-30 15:39:39 henrik Exp $";
 
+#include <limits.h>
 #include <string.h>
 #include <sys/types.h>
 #include <dirent.h>
@@ -29,9 +30,6 @@ static char rcsid[] = "$Id: process.c,v 1.23 2004-10-29 10:21:57 henrik Exp $";
 
 #include "bbgen.h"
 #include "process.h"
-#include "util.h"
-#include "debug.h"
-#include "sendmsg.h"
 
 static int wantedcolumn(char *current, char *wanted)
 {
@@ -166,7 +164,7 @@ void delete_old_acks(void)
 	struct dirent   *d;
 	struct stat     st;
 	time_t		now = time(NULL);
-	char		fn[MAX_PATH];
+	char		fn[PATH_MAX];
 
 	bbacks = opendir(getenv("BBACKS"));
 	if (!bbacks) {

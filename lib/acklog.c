@@ -16,8 +16,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: acklog.c,v 1.4 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: acklog.c,v 1.5 2004-10-30 15:34:57 henrik Exp $";
 
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -31,7 +32,6 @@ static char rcsid[] = "$Id: acklog.c,v 1.4 2004-10-29 10:21:57 henrik Exp $";
 
 #include "bbgen.h"
 #include "util.h"
-#include "debug.h"
 #include "acklog.h"
 
 int havedoneacklog = 0;
@@ -39,7 +39,7 @@ int havedoneacklog = 0;
 void do_acklog(FILE *output, int maxcount, int maxminutes)
 {
 	FILE *acklog;
-	char acklogfilename[MAX_PATH];
+	char acklogfilename[PATH_MAX];
 	time_t cutoff;
 	struct stat st;
 	char l[MAX_LINE_LEN];
@@ -76,7 +76,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 
 	while (fgets(l, sizeof(l), acklog)) {
 		char ackedby[MAX_LINE_LEN], hosttest[MAX_LINE_LEN], color[10], ackmsg[MAX_LINE_LEN];
-		char ackfn[MAX_PATH];
+		char ackfn[PATH_MAX];
 		char *testname;
 		int ok;
 

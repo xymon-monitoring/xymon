@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.43 2004-10-27 13:35:01 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.44 2004-10-30 15:52:01 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -46,6 +46,7 @@ static char rcsid[] = "$Id: hobbitd.c,v 1.43 2004-10-27 13:35:01 henrik Exp $";
 #include <netdb.h>
 #include <ctype.h>
 #include <signal.h>
+#include <time.h>
 
 #include <sys/ipc.h>
 #include <sys/sem.h>
@@ -53,9 +54,8 @@ static char rcsid[] = "$Id: hobbitd.c,v 1.43 2004-10-27 13:35:01 henrik Exp $";
 #include <sys/shm.h>
 #include <sys/wait.h>
 
-#include "bbgen.h"
-#include "util.h"
-#include "debug.h"
+#include "libbbgen.h"
+
 #include "bbgend.h"
 #include "bbdutil.h"
 #include "bbdworker.h"

@@ -11,17 +11,16 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-csvinfo.c,v 1.3 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: bb-csvinfo.c,v 1.4 2004-10-30 15:35:44 henrik Exp $";
 
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <ctype.h>
 
-#include "bbgen.h"
-#include "debug.h"
-#include "util.h"
+#include "libbbgen.h"
 
 #define MAXCOLUMNS 80
 
@@ -29,12 +28,6 @@ char *srcdb = "hostinfo.csv";
 char *wantedname = "";
 int keycolumn = 0;
 char delimiter = ';';
-
-
-/* These are dummy vars needed by stuff in util.c */
-hostlist_t      *hosthead = NULL;
-link_t          *linkhead = NULL;
-link_t  null_link = { "", "", "", NULL };
 
 
 void errormsg(char *msg)
@@ -92,7 +85,7 @@ void parse_query(void)
 int main(int argc, char *argv[])
 {
 	FILE *db;
-	char dbfn[MAX_PATH];
+	char dbfn[PATH_MAX];
 	char buf[MAX_LINE_LEN];
 
 	char *headers[MAXCOLUMNS];
@@ -109,7 +102,7 @@ int main(int argc, char *argv[])
 	sprintf(dbfn, "%s/etc/%s", getenv("BBHOME"), srcdb);
 	db = fopen(dbfn, "r");
 	if (db == NULL) {
-		char msg[MAX_PATH];
+		char msg[PATH_MAX];
 
 		sprintf(msg, "Cannot open sourcedb %s\n", dbfn);
 		errormsg(msg);

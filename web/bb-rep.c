@@ -15,8 +15,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.17 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.18 2004-10-30 15:37:02 henrik Exp $";
 
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -29,8 +30,6 @@ static char rcsid[] = "$Id: bb-rep.c,v 1.17 2004-10-29 10:21:57 henrik Exp $";
 #include <signal.h>
 
 #include "bbgen.h"
-#include "util.h"
-#include "debug.h"
 
 /*
  * This program is invoked via CGI with QUERY_STRING containing:
@@ -166,7 +165,7 @@ void cleandir(char *dirname)
 	DIR *dir;
 	struct dirent *d;
 	struct stat st;
-	char fn[MAX_PATH];
+	char fn[PATH_MAX];
 	time_t killtime = time(NULL)-86400;
 
 	dir = opendir(dirname);
@@ -193,17 +192,12 @@ void cleandir(char *dirname)
 }
 
 
-/* These are dummy vars needed by stuff in util.c */
-hostlist_t      *hosthead = NULL;
-link_t          *linkhead = NULL;
-link_t  null_link = { "", "", "", NULL };
-
 int main(int argc, char *argv[])
 {
-	char dirid[MAX_PATH];
-	char outdir[MAX_PATH];
-	char bbwebenv[MAX_PATH];
-	char bbgencmd[MAX_PATH];
+	char dirid[PATH_MAX];
+	char outdir[PATH_MAX];
+	char bbwebenv[PATH_MAX];
+	char bbgencmd[PATH_MAX];
 	char bbgentimeopt[100];
 	char *bbgen_argv[20];
 	int i, newargc;

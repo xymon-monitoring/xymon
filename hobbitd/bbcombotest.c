@@ -8,8 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.27 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.28 2004-10-30 15:37:55 henrik Exp $";
 
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -17,12 +18,10 @@ static char rcsid[] = "$Id: bbcombotest.c,v 1.27 2004-10-29 10:21:57 henrik Exp 
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <time.h>
 
-#include "bbgen.h"
-#include "debug.h"
-#include "util.h"
-#include "calc.h"
-#include "sendmsg.h"
+#include "version.h"
+#include "libbbgen.h"
 
 typedef struct value_t {
 	char *symbol;
@@ -76,7 +75,7 @@ static char *gettname(char *spec)
 static void loadtests(void)
 {
 	FILE *fd;
-	char fn[MAX_PATH];
+	char fn[PATH_MAX];
 	char l[MAX_LINE_LEN];
 
 	sprintf(fn, "%s/etc/bbcombotest.cfg", getenv("BBHOME"));
@@ -136,7 +135,7 @@ static void loadtests(void)
 
 static int getfilevalue(char *hostname, char *testname, char **errptr)
 {
-	char fn[MAX_PATH];
+	char fn[PATH_MAX];
 	FILE *fd;
 	char l[MAX_LINE_LEN];
 	struct stat st;
@@ -335,11 +334,6 @@ static long evaluate(char *symbolicexpr, char **resultexpr, value_t **valuelist,
 	*valuelist = valhead;
 	return result;
 }
-
-/* These are dummy vars needed by stuff in util.c */
-hostlist_t      *hosthead = NULL;
-link_t          *linkhead = NULL;
-link_t  null_link = { "", "", "", NULL };
 
 char *reqenv[] = {
 "BB",

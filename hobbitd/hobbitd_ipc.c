@@ -22,7 +22,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.7 2004-10-27 10:47:12 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.8 2004-10-30 15:54:17 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -35,9 +35,8 @@ static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.7 2004-10-27 10:47:12 henrik Exp $
 #include <string.h>
 #include <errno.h>
 
-#include "bbgen.h"
-#include "debug.h"
-#include "util.h"
+#include "libbbgen.h"
+
 #include "bbgend.h"
 #include "bbdutil.h"
 

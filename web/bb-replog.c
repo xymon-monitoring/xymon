@@ -15,8 +15,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.22 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.23 2004-10-30 15:37:20 henrik Exp $";
 
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,7 +26,6 @@ static char rcsid[] = "$Id: bb-replog.c,v 1.22 2004-10-29 10:21:57 henrik Exp $"
 #include "bbgen.h"
 #include "util.h"
 #include "reportdata.h"
-#include "debug.h"
 #include "bb-replog.h"
 
 char *stylenames[3] = { "crit", "nongr", "all" };
@@ -347,11 +347,6 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
  *
  */
 
-/* These are dummy vars needed by stuff in util.c */
-hostlist_t      *hosthead = NULL;
-link_t          *linkhead = NULL;
-link_t  null_link = { "", "", "", NULL };
-
 /* These are needed, but not actually used */
 double reportgreenlevel = 99.995;
 double reportwarnlevel = 98.0;
@@ -453,9 +448,9 @@ static void parse_query(void)
 
 int main(int argc, char *argv[])
 {
-	char histlogfn[MAX_PATH];
+	char histlogfn[PATH_MAX];
 	FILE *fd;
-	char textrepfullfn[MAX_PATH], textrepfn[1024], textrepurl[MAX_PATH];
+	char textrepfullfn[PATH_MAX], textrepfn[1024], textrepurl[PATH_MAX];
 	FILE *textrep;
 	reportinfo_t repinfo;
 

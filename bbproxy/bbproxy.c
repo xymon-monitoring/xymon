@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.32 2004-10-04 09:18:21 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.33 2004-10-30 15:46:58 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -29,15 +29,10 @@ static char rcsid[] = "$Id: bbproxy.c,v 1.32 2004-10-04 09:18:21 henrik Exp $";
 #include <netdb.h>
 #include <ctype.h>
 #include <signal.h>
+#include <time.h>
 
-#include "bbgen.h"
-#include "util.h"
-#include "debug.h"
-
-/* These are dummy vars needed by stuff in util.c */
-hostlist_t      *hosthead = NULL;
-link_t          *linkhead = NULL;
-link_t  null_link = { "", "", "", NULL };
+#include "version.h"
+#include "libbbgen.h"
 
 enum phase_t {
 	P_IDLE, 

@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.3 2004-10-27 10:47:42 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.4 2004-10-30 15:55:20 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -20,8 +20,8 @@ static char rcsid[] = "$Id: loadhosts.c,v 1.3 2004-10-27 10:47:42 henrik Exp $";
 #include <stdlib.h>
 #include <time.h>
 
-#include "bbgen.h"
-#include "util.h"
+#include "libbbgen.h"
+
 #include "loadhosts.h"
 
 typedef struct pagelist_t {

@@ -11,8 +11,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: rssgen.c,v 1.9 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: rssgen.c,v 1.10 2004-10-30 15:39:13 henrik Exp $";
 
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -184,8 +185,8 @@ void do_rss_footer(FILE *fd)
 void do_netscape_sidebar(char *nssidebarfilename, host_t *hosts)
 {
 	FILE *fd;
-	char tmpfn[MAX_PATH];
-	char destfn[MAX_PATH];
+	char tmpfn[PATH_MAX];
+	char destfn[PATH_MAX];
 	int ttlvalue;
 	host_t *h;
 	int anyshown;

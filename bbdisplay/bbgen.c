@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.181 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.182 2004-10-30 15:41:51 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -26,8 +26,11 @@ static char rcsid[] = "$Id: bbgen.c,v 1.181 2004-10-29 10:21:57 henrik Exp $";
 #include <sys/stat.h>
 #include <signal.h>
 
+#include "version.h"
+
 #include "bbgen.h"
 #include "util.h"
+#include "debug.h"
 #include "loadhosts.h"
 #include "loaddata.h"
 #include "process.h"
@@ -35,17 +38,13 @@ static char rcsid[] = "$Id: bbgen.c,v 1.181 2004-10-29 10:21:57 henrik Exp $";
 #include "larrdgen.h"
 #include "infogen.h"
 #include "alert.h"
-#include "debug.h"
 #include "wmlgen.h"
 #include "bb-replog.h"
-#include "sendmsg.h"
 #include "rssgen.h"
 #include "bbconvert.h"
 
 /* Global vars */
 bbgen_page_t	*pagehead = NULL;			/* Head of page list */
-link_t  	*linkhead = NULL;			/* Head of links list */
-hostlist_t	*hosthead = NULL;			/* Head of hosts list */
 state_t		*statehead = NULL;			/* Head of list of all state entries */
 summary_t	*sumhead = NULL;			/* Summaries we send out */
 dispsummary_t	*dispsums = NULL;			/* Summaries we received and display */

@@ -13,8 +13,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.36 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.37 2004-10-30 15:36:26 henrik Exp $";
 
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,9 +24,8 @@ static char rcsid[] = "$Id: bb-hist.c,v 1.36 2004-10-29 10:21:57 henrik Exp $";
 #include "bbgen.h"
 #include "util.h"
 #include "reportdata.h"
-#include "debug.h"
 
-static char selfurl[MAX_PATH];
+static char selfurl[PATH_MAX];
 static time_t req_endtime = 0;
 
 static int len1d = 24;
@@ -579,11 +579,6 @@ void generate_history(FILE *htmlrep, 			/* output file */
  *	ENTRIES=50
  */
 
-/* These are dummy vars needed by stuff in util.c */
-hostlist_t      *hosthead = NULL;
-link_t          *linkhead = NULL;
-link_t  null_link = { "", "", "", NULL };
-
 double reportgreenlevel = 99.995;
 double reportwarnlevel = 98.0;
 
@@ -670,8 +665,8 @@ static void parse_query(void)
 
 int main(int argc, char *argv[])
 {
-	char histlogfn[MAX_PATH];
-	char tailcmd[MAX_PATH];
+	char histlogfn[PATH_MAX];
+	char tailcmd[PATH_MAX];
 	FILE *fd;
 	time_t start1d, start1w, start4w, start1y;
 	reportinfo_t repinfo1d, repinfo1w, repinfo4w, repinfo1y, dummyrep;

@@ -10,9 +10,10 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.74 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.75 2004-10-30 15:44:57 henrik Exp $";
 
 #include <sys/types.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -20,9 +21,9 @@ static char rcsid[] = "$Id: httptest.c,v 1.74 2004-10-29 10:21:57 henrik Exp $";
 #include <ctype.h>
 #include <sys/stat.h>
 
-#include "bbgen.h"
-#include "util.h"
-#include "debug.h"
+#include "version.h"
+#include "libbbgen.h"
+
 #include "bbtest-net.h"
 #include "contest.h"
 #include "httptest.h"
@@ -45,7 +46,7 @@ static void load_cookies(void)
 {
 	static int loaded = 0;
 
-	char cookiefn[MAX_PATH];
+	char cookiefn[PATH_MAX];
 	FILE *fd;
 	char l[4096];
 	char *c_host, *c_path, *c_name, *c_value;
@@ -449,7 +450,7 @@ void add_http_test(testitem_t *t)
 	  case BBTEST_CONTENT:
 		{
 			FILE *contentfd;
-			char contentfn[MAX_PATH];
+			char contentfn[PATH_MAX];
 			sprintf(contentfn, "%s/content/%s.substring", getenv("BBHOME"), commafy(t->host->hostname));
 			contentfd = fopen(contentfn, "r");
 			if (contentfd) {

@@ -13,21 +13,15 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.15 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.16 2004-10-30 15:47:55 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
 
-#include "bbgen.h"
-#include "debug.h"
-#include "util.h"
-
-/* These are dummy vars needed by stuff in util.c */
-hostlist_t      *hosthead = NULL;
-link_t          *linkhead = NULL;
-link_t  null_link = { "", "", "", NULL };
+#include "version.h"
+#include "libbbgen.h"
 
 int main(int argc, char *argv[])
 { 

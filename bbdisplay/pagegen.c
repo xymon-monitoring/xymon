@@ -16,8 +16,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.116 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.117 2004-10-30 15:40:33 henrik Exp $";
 
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -31,17 +32,15 @@ static char rcsid[] = "$Id: pagegen.c,v 1.116 2004-10-29 10:21:57 henrik Exp $";
 
 #include "bbgen.h"
 #include "util.h"
-#include "debug.h"
 #include "loadhosts.h"
-#include "pagegen.h"
 #include "larrdgen.h"
 #include "infogen.h"
 #include "eventlog.h"
 #include "acklog.h"
 #include "bb-replog.h"
 #include "reportdata.h"
-#include "sendmsg.h"
 #include "rssgen.h"
+#include "pagegen.h"
 
 int  subpagecolumns = 1;
 int  hostsbeforepages = 0;
@@ -251,7 +250,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 
 void setup_htaccess(const char *pagepath)
 {
-	char htaccessfn[MAX_PATH];
+	char htaccessfn[PATH_MAX];
 	char htaccesscontent[1024];
 
 	if (htaccess == NULL) return;
@@ -575,9 +574,9 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char 
 						}
 						else {
 							FILE *htmlrep, *textrep;
-							char htmlrepfn[MAX_PATH];
-							char textrepfn[MAX_PATH];
-							char textrepurl[MAX_PATH];
+							char htmlrepfn[PATH_MAX];
+							char textrepfn[PATH_MAX];
+							char textrepurl[PATH_MAX];
 
 							/* File names are relative - current directory is the output dir */
 							/* pagepath is either empty, or it ends with a '/' */
@@ -756,7 +755,7 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *pagepath)
 	bbgen_page_t	*p;
 	link_t  *link;
 	int	currentcolumn;
-	char	pagelink[MAX_PATH];
+	char	pagelink[PATH_MAX];
 
 	if (subs) {
 		fprintf(output, "<A NAME=\"pages-blk\">&nbsp;</A>\n");
@@ -836,11 +835,11 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 {
 	FILE	*output = NULL;
 	FILE	*rssoutput = NULL;
-	char	pagepath[MAX_PATH];
-	char	filename[MAX_PATH];
-	char	tmpfilename[MAX_PATH];
-	char	rssfilename[MAX_PATH];
-	char	tmprssfilename[MAX_PATH];
+	char	pagepath[PATH_MAX];
+	char	filename[PATH_MAX];
+	char	tmpfilename[PATH_MAX];
+	char	rssfilename[PATH_MAX];
+	char	tmprssfilename[PATH_MAX];
 	char	*dirdelim;
 	char	*mkbblocal;
 
@@ -852,7 +851,7 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 	}
 	else {
 		if (page->parent == NULL) {
-			char	indexfilename[MAX_PATH];
+			char	indexfilename[PATH_MAX];
 
 			/* top level page */
 			sprintf(filename, "bb%s", htmlextension);
@@ -862,7 +861,7 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 			dprintf("Symlinking %s -> %s\n", filename, indexfilename);
 		}
 		else {
-			char tmppath[MAX_PATH];
+			char tmppath[PATH_MAX];
 			bbgen_page_t *pgwalk;
 	
 			for (pgwalk = page; (pgwalk); pgwalk = pgwalk->parent) {
@@ -882,8 +881,8 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 		/* Try creating the output file. If it fails, we may need to create the directories */
 		output = fopen(tmpfilename, "w");
 		if (output == NULL) {
-			char indexfilename[MAX_PATH];
-			char pagebasename[MAX_PATH];
+			char indexfilename[PATH_MAX];
+			char pagebasename[PATH_MAX];
 			char *p;
 			int res;
 
@@ -998,7 +997,7 @@ static void do_bb2ext(FILE *output, char *extenv, char *family)
 	 */
 	char *bbexts, *p;
 	FILE *inpipe;
-	char extfn[MAX_PATH];
+	char extfn[PATH_MAX];
 	char buf[4096];
 	
 	p = getenv(extenv);
@@ -1038,10 +1037,10 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 	bbgen_page_t	bb2page;
 	FILE		*output = NULL;
 	FILE		*rssoutput = NULL;
-	char		filename[MAX_PATH];
-	char		tmpfilename[MAX_PATH];
-	char		rssfilename[MAX_PATH];
-	char		tmprssfilename[MAX_PATH];
+	char		filename[PATH_MAX];
+	char		tmpfilename[PATH_MAX];
+	char		rssfilename[PATH_MAX];
+	char		tmprssfilename[PATH_MAX];
 	hostlist_t 	*h;
 
 	/* Build a "page" with the hosts that should be included in bb2 page */
@@ -1220,7 +1219,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 		char *msgptr;
 		char msgline[MAX_LINE_LEN];
 		FILE *nklog;
-		char nklogfn[MAX_PATH];
+		char nklogfn[PATH_MAX];
 		char svcspace;
 
 		sprintf(nklogfn, "%s/nkstatus.log", getenv("BBHOME"));

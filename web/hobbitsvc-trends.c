@@ -16,8 +16,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.38 2004-10-26 17:23:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.39 2004-10-30 15:41:02 henrik Exp $";
 
+#include <limits.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
@@ -31,8 +32,6 @@ static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.38 2004-10-26 17:23:18 henrik
 #include "bbgen.h"
 #include "util.h"
 #include "larrdgen.h"
-#include "debug.h"
-#include "sendmsg.h"
 #include "savelog.h"
 
 char    *larrdcol = "larrd";
@@ -247,7 +246,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int bbgend
 {
 	DIR *rrddir;
 	struct dirent *d;
-	char fn[MAX_PATH];
+	char fn[PATH_MAX];
 	hostlist_t *hostwalk;
 	rrd_t *rwalk;
 	int i;

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.17 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.18 2004-10-30 15:44:43 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -21,10 +21,8 @@ static char rcsid[] = "$Id: ldaptest.c,v 1.17 2004-10-29 10:21:57 henrik Exp $";
 #include <unistd.h>
 #include <signal.h>
 
-#include "bbgen.h"
-#include "util.h"
-#include "sendmsg.h"
-#include "debug.h"
+#include "libbbgen.h"
+
 #include "bbtest-net.h"
 #include "ldaptest.h"
 

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.18 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.19 2004-10-30 15:46:20 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -19,15 +19,15 @@ static char rcsid[] = "$Id: dns.c,v 1.18 2004-10-29 10:21:57 henrik Exp $";
 #include <arpa/inet.h>
 #include <arpa/nameser.h>
 #include <netdb.h>
+#include <sys/time.h>
 
-#include "bbgen.h"
-#include "util.h"
-#include "debug.h"
-#include "bbtest-net.h"
+#include "libbbgen.h"
+
 #include "dns.h"
 #include "dns2.h"
 
 #include <ares.h>
+
 static ares_channel stdchannel;
 static int stdchannelactive = 0;
 int use_ares_lookup = 1;

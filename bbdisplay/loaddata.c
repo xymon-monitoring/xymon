@@ -16,8 +16,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.129 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.130 2004-10-30 15:40:51 henrik Exp $";
 
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -30,13 +31,11 @@ static char rcsid[] = "$Id: loaddata.c,v 1.129 2004-10-29 10:21:57 henrik Exp $"
 
 #include "bbgen.h"
 #include "util.h"
-#include "sendmsg.h"
 #include "loadhosts.h"
 #include "loaddata.h"
 #include "reportdata.h"
-#include "larrdgen.h"
 #include "infogen.h"
-#include "debug.h"
+#include "larrdgen.h"
 
 int		statuscount = 0;
 
@@ -113,7 +112,7 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 	char		*testname;
 	state_t 	*newstate;
 	char		l[MAXMSG];
-	char		fullfn[MAX_PATH];
+	char		fullfn[PATH_MAX];
 	host_t		*host;
 	struct stat 	log_st;
 	time_t		now = time(NULL);
@@ -300,7 +299,7 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 	else {
 		if (!reportstart && !snapshot && host && (newstate->entry->color != COL_GREEN)) {
 			struct stat ack_st;
-			char ackfilename[MAX_PATH];
+			char ackfilename[PATH_MAX];
 
 			/*
 			 * ACK's are named by the client alias, if that exists.
@@ -485,7 +484,7 @@ dispsummary_t *init_displaysummary(char *fn, logdata_t *log)
 		strcpy(l, log->msg);
 	}
 	else {
-		char sumfn[MAX_PATH];
+		char sumfn[PATH_MAX];
 		FILE *fd;
 		struct stat st;
 
@@ -552,7 +551,7 @@ dispsummary_t *init_displaysummary(char *fn, logdata_t *log)
 void init_modembank_status(char *fn, logdata_t *log)
 {
 	FILE *fd;
-	char statusfn[MAX_PATH];
+	char statusfn[PATH_MAX];
 	struct stat st;
 	char l[MAXMSG];
 	host_t *targethost;
@@ -649,7 +648,7 @@ state_t *load_state(dispsummary_t **sumhead)
 {
 	DIR		*bblogs = NULL;
 	struct dirent 	*d;
-	char		fn[MAX_PATH];
+	char		fn[PATH_MAX];
 	state_t		*newstate, *topstate;
 	dispsummary_t	*newsum, *topsum;
 	int		dopurple;

@@ -10,8 +10,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.66 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.67 2004-10-30 15:46:20 henrik Exp $";
 
+#include <limits.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -30,13 +31,11 @@ static char rcsid[] = "$Id: contest.c,v 1.66 2004-10-29 10:21:57 henrik Exp $";
 #include <netdb.h>
 #include <ctype.h>
 
+#include "libbbgen.h"
+
 #include "bbtest-net.h"
 #include "contest.h"
 #include "httptest.h"
-
-#include "bbgen.h"
-#include "debug.h"
-#include "util.h"
 #include "dns.h"
 
 /* BSD uses RLIMIT_OFILE */
@@ -149,7 +148,7 @@ static char *binview(unsigned char *buf, int buflen)
 
 char *init_tcp_services(void)
 {
-	char filename[MAX_PATH];
+	char filename[PATH_MAX];
 	FILE *fd = NULL;
 	char buf[MAX_LINE_LEN];
 	svclist_t *head = NULL;
@@ -546,7 +545,7 @@ static int cert_password_cb(char *buf, int size, int rwflag, void *userdata)
 {
 	FILE *passfd;
 	char *p;
-	char passfn[MAX_PATH];
+	char passfn[PATH_MAX];
 	char passphrase[1024];
 	tcptest_t *item = (tcptest_t *)userdata;
 
@@ -628,7 +627,7 @@ static void setup_ssl(tcptest_t *item)
 	if (!ssl_init_complete) {
 		/* Setup entropy */
 		if (RAND_status() != 1) {
-			char path[MAX_PATH];	/* Path for the random file */
+			char path[PATH_MAX];	/* Path for the random file */
 
 			/* load entropy from files */
 			RAND_load_file(RAND_file_name(path, sizeof (path)), -1);
@@ -686,7 +685,7 @@ static void setup_ssl(tcptest_t *item)
 
 		if (item->ssloptions->clientcert) {
 			int status;
-			char certfn[MAX_PATH];
+			char certfn[PATH_MAX];
 
 			SSL_CTX_set_default_passwd_cb(item->sslctx, cert_password_cb);
 			SSL_CTX_set_default_passwd_cb_userdata(item->sslctx, item);

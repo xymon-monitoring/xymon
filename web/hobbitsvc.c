@@ -10,8 +10,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.15 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.16 2004-10-30 15:36:46 henrik Exp $";
 
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -21,10 +22,11 @@ static char rcsid[] = "$Id: hobbitsvc.c,v 1.15 2004-10-29 10:21:57 henrik Exp $"
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include "libbbgen.h"
+#include "version.h"
+
 #include "bbgen.h"
-#include "debug.h"
 #include "util.h"
-#include "sendmsg.h"
 
 typedef struct {
    char *bbsvcname;
@@ -140,11 +142,6 @@ enum histbutton_t { HIST_TOP, HIST_BOTTOM, HIST_NONE };
  *
  *      HOSTSVC=www,sample,com.conn
  */
-
-/* These are dummy vars needed by stuff in util.c */
-hostlist_t      *hosthead = NULL;
-link_t          *linkhead = NULL;
-link_t  null_link = { "", "", "", NULL };
 
 char *reqenv[] = {
 	"BBDISP",
@@ -324,7 +321,7 @@ int main(int argc, char *argv[])
 		if (dismsg) nldecode(dismsg);
 	}
 	else {
-		char logfn[MAX_PATH];
+		char logfn[PATH_MAX];
 		struct stat st;
 		int fd;
 		char *receivedfromtext = "\nMessage received from ";

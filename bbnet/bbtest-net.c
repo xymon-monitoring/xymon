@@ -8,8 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.180 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.181 2004-10-30 15:46:20 henrik Exp $";
 
+#include <limits.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
@@ -26,21 +27,15 @@ static char rcsid[] = "$Id: bbtest-net.c,v 1.180 2004-10-29 10:21:57 henrik Exp 
 #include <rpc/rpcent.h>
 #endif
 
-#include "bbgen.h"
-#include "util.h"
-#include "sendmsg.h"
-#include "debug.h"
+#include "libbbgen.h"
+#include "version.h"
+
 #include "bbtest-net.h"
 #include "dns.h"
 #include "contest.h"
 #include "httptest.h"
 #include "httpresult.h"
 #include "ldaptest.h"
-
-/* These are dummy vars needed by stuff in util.c */
-hostlist_t      *hosthead = NULL;
-link_t          *linkhead = NULL;
-link_t  null_link = { "", "", "", NULL };
 
 char *reqenv[] = {
 	"BBNETSVCS",
@@ -94,9 +89,9 @@ int		checktcpresponse = 0;
 int		dotraceroute = 0;
 int		fqdn = 1;
 int		dosendflags = 1;
-char		fpingcmd[MAX_PATH];
-char		fpinglog[MAX_PATH];
-char		fpingerrlog[MAX_PATH];
+char		fpingcmd[PATH_MAX];
+char		fpinglog[PATH_MAX];
+char		fpingerrlog[PATH_MAX];
 int		respcheck_color = COL_YELLOW;
 
 void dump_hostlist(void)
@@ -996,7 +991,7 @@ void do_dns_lookups(void)
 void load_fping_status(void)
 {
 	FILE *statusfd;
-	char statusfn[MAX_PATH];
+	char statusfn[PATH_MAX];
 	char l[MAX_LINE_LEN];
 	char host[MAX_LINE_LEN];
 	int  downcount;
@@ -1025,7 +1020,7 @@ void load_fping_status(void)
 void save_fping_status(void)
 {
 	FILE *statusfd;
-	char statusfn[MAX_PATH];
+	char statusfn[PATH_MAX];
 	testitem_t *t;
 	int didany = 0;
 
@@ -1048,7 +1043,7 @@ void save_fping_status(void)
 void load_test_status(service_t *test)
 {
 	FILE *statusfd;
-	char statusfn[MAX_PATH];
+	char statusfn[PATH_MAX];
 	char l[MAX_LINE_LEN];
 	char host[MAX_LINE_LEN];
 	int  downcount;
@@ -1084,7 +1079,7 @@ void load_test_status(service_t *test)
 void save_test_status(service_t *test)
 {
 	FILE *statusfd;
-	char statusfn[MAX_PATH];
+	char statusfn[PATH_MAX];
 	testitem_t *t;
 	int didany = 0;
 
@@ -1108,7 +1103,7 @@ void save_test_status(service_t *test)
 void save_frequenttestlist(int argc, char *argv[])
 {
 	FILE *fd;
-	char fn[MAX_PATH];
+	char fn[PATH_MAX];
 	testedhost_t *h;
 	int didany = 0;
 	int i;
@@ -1157,7 +1152,7 @@ void run_ntp_service(service_t *service)
 	testitem_t	*t;
 	char		cmd[1024];
 	char		*p;
-	char		cmdpath[MAX_PATH];
+	char		cmdpath[PATH_MAX];
 
 	p = getenv("NTPDATE");
 	strcpy(cmdpath, (p ? p : "ntpdate"));
@@ -1175,7 +1170,7 @@ void run_rpcinfo_service(service_t *service)
 	testitem_t	*t;
 	char		cmd[1024];
 	char		*p;
-	char		cmdpath[MAX_PATH];
+	char		cmdpath[PATH_MAX];
 
 	p = getenv("RPCINFO");
 	strcpy(cmdpath, (p ? p : "rpcinfo"));
@@ -1409,7 +1404,7 @@ void run_modembank_service(service_t *service)
 	char		cmd[1024];
 	char		startip[16], endip[16];
 	char		*p;
-	char		cmdpath[MAX_PATH];
+	char		cmdpath[PATH_MAX];
 	FILE		*cmdpipe;
 	char		l[MAX_LINE_LEN];
 	int		ip1, ip2, ip3, ip4;
@@ -1543,7 +1538,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 
 		/* Run traceroute , but not on dialup or reverse-test hosts */
 		if ((color == COL_RED) && test->host->dotrace && !test->host->dialup && !test->reverse && !test->dialup) {
-			char cmd[MAX_PATH];
+			char cmd[PATH_MAX];
 
 			if (getenv("TRACEROUTE")) {
 				sprintf(cmd, "%s %s 2>&1", getenv("TRACEROUTE"), test->host->hostname);

@@ -16,8 +16,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbconvert.c,v 1.2 2004-10-28 09:57:23 henrik Exp $";
+static char rcsid[] = "$Id: bbconvert.c,v 1.3 2004-10-30 15:38:13 henrik Exp $";
 
+#include <limits.h>
 #include <sys/types.h>
 #include <stdio.h>
 #include <string.h>
@@ -26,8 +27,6 @@ static char rcsid[] = "$Id: bbconvert.c,v 1.2 2004-10-28 09:57:23 henrik Exp $";
 #include <sys/stat.h>
 
 #include "bbgen.h"
-#include "util.h"
-#include "debug.h"
 #include "bbconvert.h"
 
 static unsigned char *nlencode(unsigned char *msg)
@@ -88,7 +87,7 @@ void dump_bbgendchk(void)
 		host_t *h = hwalk->hostentry;
 
 		for (e = h->entries; (e); e = e->next) {
-			char logfn[MAX_PATH];
+			char logfn[PATH_MAX];
 			struct stat st;
 			FILE *logfd;
 			char *logbuf, *logenc;

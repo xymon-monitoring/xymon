@@ -16,8 +16,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.7 2004-08-29 15:59:19 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.8 2004-10-30 15:41:27 henrik Exp $";
 
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -31,7 +32,6 @@ static char rcsid[] = "$Id: eventlog.c,v 1.7 2004-08-29 15:59:19 henrik Exp $";
 
 #include "bbgen.h"
 #include "util.h"
-#include "debug.h"
 #include "eventlog.h"
 
 
@@ -54,7 +54,7 @@ static int wanted_eventcolumn(char *service)
 void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
 {
 	FILE *eventlog;
-	char eventlogfilename[MAX_PATH];
+	char eventlogfilename[PATH_MAX];
 	time_t cutoff;
 	event_t	*eventhead, *walk;
 	struct stat st;
@@ -228,12 +228,6 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
  * 	MAXTIME=240
  *
  */
-
-/* These are dummy vars needed by stuff in util.c */
-hostlist_t      *hosthead = NULL;
-link_t          *linkhead = NULL;
-link_t  null_link = { "", "", "", NULL };
-
 
 int	maxcount = 100;		/* Default: Include last 100 events */
 int	maxminutes = 240;	/* Default: for the past 4 hours */

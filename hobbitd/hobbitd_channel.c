@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.11 2004-10-27 10:46:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.12 2004-10-30 15:52:45 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -28,17 +28,10 @@ static char rcsid[] = "$Id: hobbitd_channel.c,v 1.11 2004-10-27 10:46:15 henrik 
 #include <string.h>
 #include <errno.h>
 
-#include "bbgen.h"
-#include "debug.h"
-#include "util.h"
+#include "libbbgen.h"
+
 #include "bbgend.h"
 #include "bbdutil.h"
-
-
-/* These are dummy vars needed by stuff in util.c */
-hostlist_t      *hosthead = NULL;
-link_t          *linkhead = NULL;
-link_t  null_link = { "", "", "", NULL };
 
 
 typedef struct msg_t {

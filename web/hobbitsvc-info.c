@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.55 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.56 2004-10-30 15:41:14 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -32,7 +32,6 @@ static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.55 2004-10-29 10:21:57 henrik E
 #include "pagegen.h"		/* for documentationurl variable */
 #include "infogen.h"
 #include "alert.h"
-#include "sendmsg.h"
 #include "savelog.h"
 
 char *infocol = "info";

@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.13 2004-10-27 10:47:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.14 2004-10-30 15:53:53 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -25,6 +25,10 @@ static char rcsid[] = "$Id: hobbitd_history.c,v 1.13 2004-10-27 10:47:00 henrik 
 #include <signal.h>
 #include <dirent.h>
 #include <sys/wait.h>
+#include <time.h>
+#include <limits.h>
+
+#include "libbbgen.h"
 
 #include "bbdworker.h"
 
@@ -32,7 +36,7 @@ static void dropdirectory(char *dirfn)
 {
 	DIR *dirfd;
 	struct dirent *de;
-	char fn[MAX_PATH];
+	char fn[PATH_MAX];
 	struct stat st;
 	pid_t childpid;
 
@@ -121,7 +125,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (save_allevents) {
-		char alleventsfn[MAX_PATH];
+		char alleventsfn[PATH_MAX];
 		sprintf(alleventsfn, "%s/allevents", histdir);
 		alleventsfd = fopen(alleventsfn, "a");
 		if (alleventsfd == NULL) {
@@ -176,7 +180,7 @@ int main(int argc, char *argv[])
 
 			if (save_histlogs) {
 				char *hostdash;
-				char fname[MAX_PATH];
+				char fname[PATH_MAX];
 				FILE *histlogfd;
 
 				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
@@ -204,7 +208,7 @@ int main(int argc, char *argv[])
 			p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
 
 			if (save_statusevents) {
-				char statuslogfn[MAX_PATH];
+				char statuslogfn[PATH_MAX];
 				int logexists;
 				FILE *statuslogfd;
 				char oldcol[100];
@@ -320,7 +324,7 @@ int main(int argc, char *argv[])
 			else                          trend = 0;	/* Shouldn't happen ... */
 
 			if (save_hostevents) {
-				char hostlogfn[MAX_PATH];
+				char hostlogfn[PATH_MAX];
 				FILE *hostlogfd;
 
 				sprintf(hostlogfn, "%s/%s", histdir, hostname);
@@ -350,7 +354,7 @@ int main(int argc, char *argv[])
 
 			if (save_histlogs) {
 				char *hostdash;
-				char testdir[MAX_PATH];
+				char testdir[PATH_MAX];
 
 				/* Remove all directories below the host-specific histlog dir */
 				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
@@ -360,7 +364,7 @@ int main(int argc, char *argv[])
 			}
 
 			if (save_hostevents) {
-				char hostlogfn[MAX_PATH];
+				char hostlogfn[PATH_MAX];
 				struct stat st;
 
 				sprintf(hostlogfn, "%s/%s", histdir, hostname);
@@ -373,7 +377,7 @@ int main(int argc, char *argv[])
 				DIR *dirfd;
 				struct dirent *de;
 				char *hostlead;
-				char statuslogfn[MAX_PATH];
+				char statuslogfn[PATH_MAX];
 				struct stat st;
 
 				/* Remove bbvar/hist/host,name.* */
@@ -406,7 +410,7 @@ int main(int argc, char *argv[])
 
 			if (save_histlogs) {
 				char *hostdash;
-				char testdir[MAX_PATH];
+				char testdir[PATH_MAX];
 
 				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
 				sprintf(testdir, "%s/%s/%s", histlogdir, hostdash, testname);
@@ -416,7 +420,7 @@ int main(int argc, char *argv[])
 
 			if (save_statusevents) {
 				char *hostnamecommas;
-				char statuslogfn[MAX_PATH];
+				char statuslogfn[PATH_MAX];
 				struct stat st;
 
 				p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
@@ -435,8 +439,8 @@ int main(int argc, char *argv[])
 			if (save_histlogs) {
 				char *hostdash;
 				char *newhostdash;
-				char olddir[MAX_PATH];
-				char newdir[MAX_PATH];
+				char olddir[PATH_MAX];
+				char newdir[PATH_MAX];
 
 				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
 				p = newhostdash = strdup(newhostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
@@ -448,8 +452,8 @@ int main(int argc, char *argv[])
 			}
 
 			if (save_hostevents) {
-				char hostlogfn[MAX_PATH];
-				char newhostlogfn[MAX_PATH];
+				char hostlogfn[PATH_MAX];
+				char newhostlogfn[PATH_MAX];
 
 				sprintf(hostlogfn, "%s/%s", histdir, hostname);
 				sprintf(newhostlogfn, "%s/%s", histdir, newhostname);
@@ -461,8 +465,8 @@ int main(int argc, char *argv[])
 				struct dirent *de;
 				char *hostlead;
 				char *newhostnamecommas;
-				char statuslogfn[MAX_PATH];
-				char newlogfn[MAX_PATH];
+				char statuslogfn[PATH_MAX];
+				char newlogfn[PATH_MAX];
 
 				p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
 				hostlead = malloc(strlen(hostname) + 2);
@@ -499,8 +503,8 @@ int main(int argc, char *argv[])
 
 			if (save_histlogs) {
 				char *hostdash;
-				char olddir[MAX_PATH];
-				char newdir[MAX_PATH];
+				char olddir[PATH_MAX];
+				char newdir[PATH_MAX];
 
 				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
 				sprintf(olddir, "%s/%s/%s", histlogdir, hostdash, testname);
@@ -511,8 +515,8 @@ int main(int argc, char *argv[])
 
 			if (save_statusevents) {
 				char *hostnamecommas;
-				char statuslogfn[MAX_PATH];
-				char newstatuslogfn[MAX_PATH];
+				char statuslogfn[PATH_MAX];
+				char newstatuslogfn[PATH_MAX];
 
 				p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
 				sprintf(statuslogfn, "%s/%s.%s", histdir, hostnamecommas, testname);

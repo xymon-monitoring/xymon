@@ -16,8 +16,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: wmlgen.c,v 1.14 2003-05-23 11:05:29 henrik Exp $";
+static char rcsid[] = "$Id: wmlgen.c,v 1.15 2004-10-30 15:38:42 henrik Exp $";
 
+#include <limits.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -29,11 +30,10 @@ static char rcsid[] = "$Id: wmlgen.c,v 1.14 2003-05-23 11:05:29 henrik Exp $";
 #include <sys/stat.h>
 
 #include "bbgen.h"
-#include "util.h"
 #include "wmlgen.h"
 
 int enable_wmlgen = 0;
-static char wmldir[MAX_PATH];
+static char wmldir[PATH_MAX];
 
 static void delete_old_cards(char *dirname)
 {
@@ -41,7 +41,7 @@ static void delete_old_cards(char *dirname)
 	struct dirent   *d;
 	struct stat     st;
 	time_t		now = time(NULL);
-	char		fn[MAX_PATH];
+	char		fn[PATH_MAX];
 
 	bbcards = opendir(dirname);
 	if (!bbcards) {
@@ -88,9 +88,9 @@ static void wml_header(FILE *output, char *cardid, int idpart)
 
 static void generate_wml_statuscard(host_t *host, entry_t *entry)
 {
-	char fn[MAX_PATH];
+	char fn[PATH_MAX];
 	FILE *fd;
-	char logfn[MAX_PATH];
+	char logfn[PATH_MAX];
 	FILE *logfd;
 	char l[MAX_LINE_LEN], lineout[MAX_LINE_LEN];
 	char *p, *outp;
@@ -235,7 +235,7 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 void do_wml_cards(char *webdir)
 {
 	FILE		*bb2fd, *hostfd;
-	char		bb2fn[MAX_PATH], hostfn[MAX_PATH];
+	char		bb2fn[PATH_MAX], hostfn[PATH_MAX];
 	hostlist_t	*h;
 	entry_t		*t;
 	int		bb2wapcolor;
@@ -358,7 +358,7 @@ void do_wml_cards(char *webdir)
 			 * multiple files and link from one file to the next.
 			 */
 			if (ftell(bb2fd) >= wmlmaxchars) {
-				char oldbb2fn[MAX_PATH];
+				char oldbb2fn[PATH_MAX];
 
 				/* WML link is from the bb2fn except leading wmldir+'/' */
 				strcpy(oldbb2fn, bb2fn+strlen(wmldir)+1);

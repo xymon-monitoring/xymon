@@ -54,8 +54,6 @@
 #define SSL void
 #endif
 
-#include "bbgen.h"
-#include "util.h"
 #include "digest.h"
 
 extern char *ssl_library_version;

@@ -16,8 +16,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.28 2004-10-29 10:21:57 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.29 2004-10-30 15:39:28 henrik Exp $";
 
+#include <limits.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
@@ -25,8 +26,6 @@ static char rcsid[] = "$Id: availability.c,v 1.28 2004-10-29 10:21:57 henrik Exp
 #include <stdlib.h>
 
 #include "bbgen.h"
-#include "debug.h"
-#include "util.h"
 #include "reportdata.h"
 
 typedef struct {
@@ -156,7 +155,7 @@ unsigned long reportingduration(time_t eventstart, time_t eventduration)
 
 char *parse_histlogfile(char *hostname, char *servicename, char *timespec)
 {
-	char fn[MAX_PATH];
+	char fn[PATH_MAX];
 	char *p;
 	FILE *fd;
 	char l[MAX_LINE_LEN];
@@ -509,11 +508,6 @@ int history_color(FILE *fd, time_t snapshot, time_t *starttime, char **histlogna
 time_t reportstart, reportend;
 double reportgreenlevel = 99.995;
 double reportwarnlevel = 98.0;
-
-/* These are dummy vars needed by stuff in util.c */
-hostlist_t      *hosthead = NULL;
-link_t          *linkhead = NULL;
-link_t  null_link = { "", "", "", NULL };
 
 int main(int argc, char *argv[])
 {
