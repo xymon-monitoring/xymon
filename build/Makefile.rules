@@ -18,6 +18,8 @@ ifdef BBGEND
 	INSTALLTARGETS += install-bbgend
 	INSTALLNOCGITARGETS += install-bbgend
 endif
+BBHOMEDIRS = bin etc ext tmp web www www/gifs www/help www/html www/menu www/notes www/rep www/wml
+BBVARDIRS = acks data disabled hist histlogs logs rrd
 
 all: $(BUILDTARGETS)
 	@echo ""
@@ -67,7 +69,7 @@ clean:
 	$(MAKE) -C bbnet clean
 	$(MAKE) -C bbproxy clean
 	$(MAKE) -C bbgend clean
-	rm -f {.,build,include}/*~
+	rm -f ./*~ build/*~ include/*~
 
 
 ####################
@@ -79,13 +81,11 @@ install-nocgi: $(INSTALLNOCGTARGETS)
 
 install-dirs:
 ifdef BBGEND
-	mkdir -p $(BBHOME)/{bin,etc,ext,tmp,web,www,www/gifs,www/help,www/html,www/menu,www/notes,www/rep,www/wml} $(BBVAR)/{acks,data,disabled,hist,histlogs,logs,rrd}
-	chown $(BBUSER) $(BBHOME)/{bin,etc,ext,tmp,web,www,www/gifs,www/help,www/html,www/menu,www/notes,www/rep,www/wml} $(BBVAR)/{acks,data,disabled,hist,histlogs,logs,rrd}
-	chgrp `id -g $(BBUSER)` $(BBHOME)/{bin,etc,ext,tmp,web,www,www/gifs,www/help,www/html,www/menu,www/notes,www/rep,www/wml} $(BBVAR)/{acks,data,disabled,hist,histlogs,logs,rrd}
-else
+	mkdir -p $(BBHOME) $(BBVAR)
+	cd $(BBHOME); mkdir -p $(BBHOMEDIRS); chown $(BBUSER) $(BBHOMEDIRS); chgrp ` id -g $(BBUSER)` $(BBHOMEDIRS)
+	cd $(BBVAR); mkdir -p $(BBVARDIRS); chown $(BBUSER) $(BBVARDIRS); chgrp ` id -g $(BBUSER)` $(BBVARDIRS)
 	chmod 775 $(BBHOME)/www/rep
 endif
-	echo ""
 
 install-common: install-dirs
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C common install
@@ -113,7 +113,7 @@ install-man:
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" $(MAKE) -C bbgend install-man
 
 setup: install
-	BBHOME="$(BBHOME)" BBLOGDIR="$(BBLOGDIR)" BBUSER="$(BBUSER)" $(MAKE) -C bbgend  setup
+	BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" CGIDIR="$(CGIDIR)" BBLOGDIR="$(BBLOGDIR)" BBUSER="$(BBUSER)" $(MAKE) -C bbgend  setup
 	@echo ""
 	@echo "Setup complete."
 	@echo ""
