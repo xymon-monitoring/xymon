@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.119 2003-09-11 20:48:28 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.120 2003-09-12 10:02:32 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -70,6 +70,7 @@ char *reqenv[] = {
 service_t	*svchead = NULL;		/* Head of all known services */
 service_t	*pingtest = NULL;		/* Identifies the pingtest within svchead list */
 service_t	*httptest = NULL;		/* Identifies the httptest within svchead list */
+service_t	*ftptest = NULL;		/* Identifies the ftptest within svchead list */
 service_t	*ldaptest = NULL;		/* Identifies the ldaptest within svchead list */
 service_t	*rpctest = NULL;		/* Identifies the rpctest within svchead list */
 service_t	*modembanktest = NULL;		/* Identifies the modembank test within svchead list */
@@ -328,6 +329,7 @@ testedhost_t *init_testedhost(char *hostname, int timeout, int conntimeout, int 
 	newhost->deprouterdown = NULL;
 
 	newhost->firsthttp = NULL;
+	newhost->firstftp = NULL;
 
 	newhost->firstldap = NULL;
 	newhost->ldapuser = NULL;
@@ -656,42 +658,26 @@ void load_tests(void)
 						errprintf("ldap test requested, but bbgen was built with no ldap support\n");
 #endif
 					}
-					else if (strncmp(testspec, "ftp://", 6) == 0) {
+					else if ( argnmatch(testspec, "ftp://")         ||
+						  argnmatch(testspec, "content=ftp://") ||
+						  argnmatch(testspec, "cont;ftp://") )     {
 						/*
 						 * FTP URL test. This uses ':' a lot, so save it here.
 						 */
-						s = httptest;
+						s = ftptest;
 						savedspec = malcop(testspec);
 					}
-					else if (strncmp(testspec, "http", 4) == 0) {
+					else if ( argnmatch(testspec, "http")         ||
+						  argnmatch(testspec, "content=http") ||
+						  argnmatch(testspec, "cont;http")    ||
+						  argnmatch(testspec, "post;http") )      {
 						/*
 						 * HTTP test. This uses ':' a lot, so save it here.
 						 */
 						s = httptest;
 						savedspec = malcop(testspec);
 					}
-					else if (strncmp(testspec, "content=", 8) == 0) {
-						/*
-						 * Content check. Like http above.
-						 */
-						s = httptest;
-						savedspec = malcop(testspec);
-					}
-					else if (strncmp(testspec, "cont;", 5) == 0) {
-						/*
-						 * Content check, "cont.sh" style. Like http above.
-						 */
-						s = httptest;
-						savedspec = malcop(testspec);
-					}
-					else if (strncmp(testspec, "post;", 5) == 0) {
-						/*
-						 * POST with content check, "cont.sh" style. Like http above.
-						 */
-						s = httptest;
-						savedspec = malcop(testspec);
-					}
-					else if (strncmp(testspec, "rpc", 3) == 0) {
+					else if (argnmatch(testspec, "rpc")) {
 						/*
 						 * rpc check via rpcinfo
 						 */
@@ -766,6 +752,7 @@ void load_tests(void)
 						s->items = newtest;
 
 						if (s == httptest) h->firsthttp = newtest;
+						else if (s == ftptest) h->firstftp = newtest;
 						else if (s == ldaptest) h->firstldap = newtest;
 					}
 
@@ -820,6 +807,7 @@ void load_tests(void)
 						for (swalk=svchead; (swalk && (strcmp(swalk->testname, testname) != 0)); swalk = swalk->next) ;
 						if (swalk) {
 							if (swalk == httptest) twalk = h->firsthttp;
+							else if (swalk == ftptest) twalk = h->firstftp;
 							else if (swalk == ldaptest) twalk = h->firstldap;
 							else {
 								for (twalk = swalk->items; (twalk && (twalk->host != h)); twalk = twalk->next) ;
@@ -1000,6 +988,7 @@ void load_test_status(service_t *test)
 			for (h=testhosthead; (h && (strcmp(h->hostname, host) != 0)); h = h->next) ;
 			if (h) {
 				if (test == httptest) walk = h->firsthttp;
+				else if (test == ftptest) walk = h->firstftp;
 				else if (test == ldaptest) walk = h->firstldap;
 				else for (walk = test->items; (walk && (walk->host != h)); walk = walk->next) ;
 
@@ -2039,6 +2028,7 @@ int main(int argc, char *argv[])
 	add_service("ntp", getportnumber("ntp"),    0, TOOL_NTP);
 	rpctest  = add_service("rpc", getportnumber("sunrpc"), 0, TOOL_RPCINFO);
 	httptest = add_service("http", getportnumber("http"),  0, TOOL_CURL);
+	ftptest = add_service("ftpurl", getportnumber("ftp"),  strlen("ftp"), TOOL_CURL);
 	ldaptest = add_service("ldapurl", getportnumber("ldap"), strlen("ldap"), TOOL_LDAP);
 	if (pingcolumn) pingtest = add_service(pingcolumn, 0, 0, TOOL_FPING);
 	modembanktest = add_service("dialup", 0, 0, TOOL_MODEMBANK);
@@ -2121,6 +2111,24 @@ int main(int argc, char *argv[])
 	}
 	add_timestamp("HTTP tests result collection completed");
 
+	/* Run the ftpurl tests */
+	for (t = ftptest->items; (t); t = t->next) add_http_test(t);
+	add_timestamp("FTPURL test engine setup completed");
+
+	run_http_tests(ftptest, 0, logfile, 0);
+	add_timestamp("FTPURL tests executed");
+
+	if (debug) show_http_test_results(ftptest);
+	for (t = ftptest->items; (t); t = t->next) {
+		if (t->privdata) {
+			http_data_t *testresult = (http_data_t *)t->privdata;
+
+			t->certinfo = testresult->certinfo;
+			t->certexpires = testresult->certexpires;
+		}
+	}
+	add_timestamp("FTPURL tests result collection completed");
+
 	/* Run the ldap tests */
 	for (t = ldaptest->items; (t); t = t->next) add_ldap_test(t);
 	add_timestamp("LDAP test engine setup completed");
@@ -2194,7 +2202,9 @@ int main(int argc, char *argv[])
 		}
 	}
 	for (h=testhosthead; (h); h = h->next) {
-		send_http_results(httptest, h, nonetpage, contenttestname, failgoesclear);
+		send_http_results(httptest, h, h->firsthttp, nonetpage, failgoesclear);
+		send_http_results(ftptest, h, h->firstftp, nonetpage, failgoesclear);
+		send_content_results(httptest, ftptest, h, nonetpage, contenttestname, failgoesclear);
 		send_ldap_results(ldaptest, h, nonetpage, failgoesclear);
 		if (ssltestname && !h->nosslcert) send_sslcert_status(h);
 	}

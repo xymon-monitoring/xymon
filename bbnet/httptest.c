@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.48 2003-09-12 08:32:52 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.49 2003-09-12 10:02:32 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -104,7 +104,6 @@ void add_http_test(testitem_t *t)
 	char *proxyuserpwd = NULL;
 	char *ip = NULL;
 	char *hosthdr = NULL;
-	int  isftp = 0;
 	int status;
 
 	/* 
@@ -116,7 +115,7 @@ void add_http_test(testitem_t *t)
 	/* Allocate the private data and initialize it */
 	req = (http_data_t *) malloc(sizeof(http_data_t));
 	t->privdata = (void *) req;
-	req->url = malcop(realurl(t->testspec, &proxy, &proxyuserpwd, &ip, &hosthdr, &isftp));
+	req->url = malcop(realurl(t->testspec, &proxy, &proxyuserpwd, &ip, &hosthdr));
 
 	if (proxy) {
 		req->proxy = malcop(proxy); 
@@ -126,7 +125,7 @@ void add_http_test(testitem_t *t)
 
 	if (ip) req->ip = malcop(ip); else req->ip = NULL;
 	if (hosthdr) req->hosthdr = malcop(hosthdr); else req->hosthdr = NULL;
-	req->is_ftp = isftp;
+	req->is_ftp = (strncmp(req->url, "ftp:", 4) == 0);
 	req->postdata = NULL;
 	req->sslversion = 0;
 	req->ciphers = NULL;
@@ -603,8 +602,8 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 }
 
 
-void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage, 
-		       char *contenttestname, int failgoesclear)
+void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firsttest,
+		       char *nonetpage, int failgoesclear)
 {
 	testitem_t *t;
 	int	color = -1;
@@ -612,12 +611,9 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 	char	msgtext[MAXMSG];
 	char    *nopagename;
 	int     nopage = 0;
-	int 	contentnum = 0;
-	char 	*conttest = (char *) malloc(strlen(contenttestname)+5);
-	testitem_t *http1 = host->firsthttp;
 	int	anydown = 0;
 
-	if (http1 == NULL) return;
+	if (firsttest == NULL) return;
 
 	/* Check if this service is a NOPAGENET service. */
 	nopagename = (char *) malloc(strlen(httptest->testname)+3);
@@ -627,7 +623,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 
 	dprintf("Calc http color host %s : ", host->hostname);
 	msgtext[0] = '\0';
-	for (t=host->firsthttp; (t && (t->host == host)); t = t->next) {
+	for (t=firsttest; (t && (t->host == host)); t = t->next) {
 		http_data_t *req = (http_data_t *) t->privdata;
 
 		req->httpcolor = statuscolor(host, req->httpstatus);
@@ -675,13 +671,13 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 		}
 	}
 
-	if (anydown) http1->downcount++; else http1->downcount = 0;
+	if (anydown) firsttest->downcount++; else firsttest->downcount = 0;
 
 	/* Handle the "badtest" stuff for http tests */
-	if ((color == COL_RED) && (http1->downcount < http1->badtest[2])) {
-		if      (http1->downcount >= http1->badtest[1]) color = COL_YELLOW;
-		else if (http1->downcount >= http1->badtest[0]) color = COL_CLEAR;
-		else                                            color = COL_GREEN;
+	if ((color == COL_RED) && (firsttest->downcount < firsttest->badtest[2])) {
+		if      (firsttest->downcount >= firsttest->badtest[1]) color = COL_YELLOW;
+		else if (firsttest->downcount >= firsttest->badtest[0]) color = COL_CLEAR;
+		else                                                    color = COL_GREEN;
 	}
 
 	if (nopage && (color == COL_RED)) color = COL_YELLOW;
@@ -695,7 +691,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 	addtostatus(msgtext);
 	addtostatus("\n");
 
-	for (t=host->firsthttp; (t && (t->host == host)); t = t->next) {
+	for (t=firsttest; (t && (t->host == host)); t = t->next) {
 		http_data_t *req = (http_data_t *) t->privdata;
 
 		if (req->ip == NULL) {
@@ -717,8 +713,51 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 	}
 	addtostatus("\n\n");
 	finish_status();
-	
-	for (t=host->firsthttp; (t && (t->host == host)); t = t->next) {
+}
+
+
+static testitem_t *nextcontenttest(service_t *httptest, service_t *ftptest, testedhost_t *host, testitem_t *current)
+{
+	testitem_t *result;
+
+	result = current->next;
+
+	if ((result == NULL) || (result->host != host)) {
+		if (current->service == httptest) result = host->firstftp;
+		if (current->service == ftptest)  result = NULL;
+	}
+
+	return result;
+}
+
+void send_content_results(service_t *httptest, service_t *ftptest, testedhost_t *host,
+			  char *nonetpage, char *contenttestname, int failgoesclear)
+{
+	testitem_t *t, *firsttest;
+	int	color = -1;
+	char	msgline[MAXMSG];
+	char	msgtext[MAXMSG];
+	char    *nopagename;
+	int     nopage = 0;
+	char    *conttest;
+	int 	contentnum = 0;
+	conttest = (char *) malloc(strlen(contenttestname)+5);
+
+	if ((host->firsthttp == NULL) && (host->firstftp == NULL)) return;
+
+	/* Check if this service is a NOPAGENET service. */
+	nopagename = (char *) malloc(strlen(contenttestname)+3);
+	sprintf(nopagename, ",%s,", contenttestname);
+	nopage = (strstr(nonetpage, contenttestname) != NULL);
+	free(nopagename);
+
+	dprintf("Calc http color host %s : ", host->hostname);
+	msgtext[0] = '\0';
+
+	firsttest = host->firsthttp;
+	if (firsttest == NULL) firsttest = host->firstftp;
+
+	for (t=firsttest; (t && (t->host == host)); t = nextcontenttest(httptest, ftptest, host, t)) {
 		http_data_t *req = (http_data_t *) t->privdata;
 		char cause[100];
 		int got_data = 1;
@@ -779,7 +818,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 			addtostatus(msgline);
 
 			if (!got_data) {
-				sprintf(msgline, "\nAn HTTP error occurred while testing <a href=\"%s\">URL %s</a>\n", 
+				sprintf(msgline, "\nAn error occurred while testing <a href=\"%s\">URL %s</a>\n", 
 					req->url, req->url);
 			}
 			else {
@@ -830,7 +869,6 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 	}
 
 	free(conttest);
-
 }
 
 
