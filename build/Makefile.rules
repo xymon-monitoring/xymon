@@ -82,6 +82,7 @@ clean:
 	$(MAKE) -C hobbitd clean
 	$(MAKE) -C docs clean
 	rm -f ./*~ include/*~
+	rm -f hobbit_*.dsc  hobbit_*.changes  hobbit_*.deb  hobbit_*.tar.gz
 
 
 ####################
