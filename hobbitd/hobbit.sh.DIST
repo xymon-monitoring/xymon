@@ -73,8 +73,20 @@ case "$1" in
 	fi
 	;;
 
+   "rotate")
+	if test -s @BBLOGDIR@/hobbitlaunch.pid
+	then
+		kill -HUP `cat @BBLOGDIR@/hobbitlaunch.pid`
+	fi
+
+	if test -s @BBLOGDIR@/hobbitd.pid
+	then
+		kill -HUP `cat @BBLOGDIR@/hobbitd.pid`
+	fi
+	;;
+
    *)
-   	echo "Usage: $0 start|stop|restart|status"
+   	echo "Usage: $0 start|stop|restart|reload|status|rotate"
 	break;
 esac
 
