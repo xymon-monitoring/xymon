@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.8 2004-12-12 16:15:42 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.9 2004-12-26 23:45:56 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -85,7 +85,8 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		       int color, char *sender, char *flags, 
 		       time_t logtime, char *timesincechange, 
 		       char *firstline, char *restofmsg, char *ackmsg, 
-		       int is_history, int wantserviceid, int htmlfmt, FILE *output)
+		       int is_history, int wantserviceid, int htmlfmt, int bbgend,
+		       FILE *output)
 {
 	int linecount;
 	char *p;
@@ -174,7 +175,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	}
 	if (larrd && graph) {
 		fprintf(output, "<!-- linecount=%d -->\n", linecount);
-		fprintf(output, "%s\n", larrd_graph_data(hostname, displayname, service, graph, linecount, 1, 0));
+		fprintf(output, "%s\n", larrd_graph_data(hostname, displayname, service, graph, linecount, 1, bbgend, 0));
 	}
 
 	if (!is_history && (histlocation == HIST_BOTTOM)) historybutton(cgibinurl, hostname, service, ip, output);
