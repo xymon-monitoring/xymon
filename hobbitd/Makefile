@@ -96,7 +96,7 @@ install-bin:
 install-cgi:
 	mkdir -p $(CGIDIR)
 	cp -fp $(CGISCRIPTS) $(CGIDIR)/
-	cd etcfiles; ../../build/install-nooverwrite.sh etc/ hobbitgraph.cfg
+	cd etcfiles; ../../build/install-nooverwrite.sh etc/ hobbitgraph.cfg columndoc.csv
 
 install-man:
 	mkdir -p $(MANROOT)/man1 $(MANROOT)/man5 $(MANROOT)/man8
