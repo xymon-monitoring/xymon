@@ -86,6 +86,18 @@ This can also be set on a per-host basis using the "DESCR:hosttype:description"
 tag, see
 .I bb-hosts(5)
 
+.IP MKBB2COLREPEAT
+Inspired by Jeff Stoner's col_repeat_patch.tgz patch, this defines
+the maximum number of rows before repeating the column headings
+on a webpage. This sets the default value for the 
+.I bbgen(1)
+"--maxrows" option; if the command-line option is also specifed,
+then it overrides this environment variable. Note that unlike
+Jeff's patch, bbgen implements this for both the bb2.html page
+and all other pages (bb.html, subpages, bbnk.html).
+.br
+Default: 0 (disables the feature)
+
 .IP BBHTACCESS
 Defines the contents of the top-level .htaccess file created by bbgen
 when run with the --htaccess option. This .htaccess file is
