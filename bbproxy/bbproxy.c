@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.36 2004-11-18 14:16:48 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.37 2004-11-19 22:06:05 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -624,10 +624,19 @@ int main(int argc, char *argv[])
 							cwalk->timelimit.tv_usec -= 1000000;
 						}
 
+						/*
+						 * Some clients (bbnt) send a trailing \0, so we cannot
+						 * rely on buflen being what we want it to be.
+						 */
+						cwalk->buflen = strlen(cwalk->buf);
+						cwalk->bufp = cwalk->buf + cwalk->buflen;
+
 						if ((cwalk->buflen + 50 ) < cwalk->bufsize) {
-							cwalk->buflen += sprintf(cwalk->bufp, 
-										 "\nStatus message received from %s\n", 
-										 inet_ntoa(*cwalk->clientip));
+							int n = sprintf(cwalk->bufp, 
+									"\nStatus message received from %s\n", 
+									inet_ntoa(*cwalk->clientip));
+							cwalk->bufp += n;
+							cwalk->buflen += n;
 						}
 
 						cwalk->state = P_REQ_COMBINING;
@@ -637,6 +646,13 @@ int main(int argc, char *argv[])
 						char *currmsg, *nextmsg;
 
 						msgs_combo++;
+
+						/*
+						 * Some clients (bbnt) send a trailing \0, so we cannot
+						 * rely on buflen being what we want it to be.
+						 */
+						cwalk->buflen = strlen(cwalk->buf);
+						cwalk->bufp = cwalk->buf + cwalk->buflen;
 
 						gettimeofday(&cwalk->timelimit, &tz);
 						cwalk->timelimit.tv_usec += COMBO_DELAY;
