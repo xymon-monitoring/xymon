@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.19 2005-03-25 21:13:41 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.20 2005-04-01 21:38:40 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -146,6 +146,7 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 
 #include "larrd/do_net.c"
 
+#include "larrd/do_ncv.c"
 #include "larrd/do_external.c"
 
 
@@ -185,6 +186,7 @@ void update_larrd(char *hostname, char *testname, char *msg, time_t tstamp, char
 	else if (strcmp(id, "iishealth") == 0)   res = do_iishealth_larrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "temperature") == 0) res = do_temperature_larrd(hostname, testname, msg, tstamp);
 
+	else if (strcmp(id, "ncv") == 0)         res = do_ncv_larrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "tcp") == 0)         res = do_net_larrd(hostname, testname, msg, tstamp);
 
 	else if (extids && exthandler) {
