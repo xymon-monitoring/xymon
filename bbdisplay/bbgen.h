@@ -182,7 +182,6 @@ typedef struct host_t {
 	int	bb2color;	/* Calculated */
 	int	bbnkcolor;	/* Calculated */
 	int     oldage;
-	int	prefer;
 	char	*alerts;
 	int	nktime;
 	int	anywaps;

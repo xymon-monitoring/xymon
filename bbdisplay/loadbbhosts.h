@@ -28,7 +28,7 @@ extern bbgen_page_t *load_bbhosts(char *pgset);
 extern host_t *init_host(const char *hostname, const char *displayname, const char *clientalias,
 			 const char *comment, const char *description,
 			 const int ip1, const int ip2, const int ip3, const int ip4,
-			 const int dialup, const int prefer, 
+			 const int dialup,
 			 const double warnpct, const char *reporttime,
 			 char *alerts, int nktime, char *waps, char *tags, 
 			 char *nopropyellowtests, char *nopropredtests, char *noproppurpletests, char *nopropacktests,
