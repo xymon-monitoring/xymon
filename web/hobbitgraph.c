@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.4 2004-12-26 16:23:29 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.5 2004-12-26 17:14:48 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -64,10 +64,15 @@ typedef struct gdef_t {
 } gdef_t;
 gdef_t *gdefs = NULL;
 
-char **rrdfns = NULL;
-char **rrdparams = NULL;
-int rrdfncount = 0;
-int rrdfnsize = 0;
+typedef struct rrddb_t {
+	char *key;
+	char *rrdfn;
+	char *rrdparam;
+} rrddb_t;
+
+rrddb_t *rrddbs = NULL;
+int rrddbcount = 0;
+int rrddbsize = 0;
 int rrdidx = 0;
 int paramlen = 0;
 
@@ -267,17 +272,17 @@ char *expand_tokens(char *tpl)
 		*p = '@';
 
 		if (strncmp(inp, "@RRDFN@", 7) == 0) {
-			strcpy(outp, colon_escape(rrdfns[rrdidx]));
+			strcpy(outp, colon_escape(rrddbs[rrdidx].rrdfn));
 			inp += 7;
 			outp += strlen(outp);
 		}
-		else if ((strncmp(inp, "@RRDPARAM@", 10) == 0) && rrdparams[rrdidx]) {
+		else if ((strncmp(inp, "@RRDPARAM@", 10) == 0) && rrddbs[rrdidx].rrdparam) {
 			/* 
 			 * We do a colon-escape first, then change all commas to slashes as
 			 * this is a common mangling used by multiple backends (disk, http, iostat...)
 			 */
 			char *p;
-			sprintf(outp, "%-*s", paramlen, colon_escape(rrdparams[rrdidx]));
+			sprintf(outp, "%-*s", paramlen, colon_escape(rrddbs[rrdidx].rrdparam));
 			p = outp; while ((p = strchr(p, ',')) != NULL) *p = '/';
 			inp += 10;
 			outp += strlen(outp);
@@ -310,6 +315,14 @@ char *expand_tokens(char *tpl)
 	*outp = '\0';
 
 	return result;
+}
+
+int rrd_name_compare(const void *v1, const void *v2)
+{
+	rrddb_t *r1 = (rrddb_t *)v1;
+	rrddb_t *r2 = (rrddb_t *)v2;
+
+	return strcmp(r1->key, r2->key);
 }
 
 int main(int argc, char *argv[])
@@ -450,12 +463,13 @@ int main(int argc, char *argv[])
 
 	/* What RRD files do we have matching this request? */
 	if (gdef->fnpat == NULL) {
-		rrdfncount = 1;
-		rrdfns = (char **)malloc((rrdfncount + 1) * sizeof(char *));
-		rrdparams = (char **) malloc((rrdfncount+1) * sizeof(char *));
+		rrddbcount = 1;
+		rrddbs = (rrddb_t *)malloc((rrddbcount + 1) * sizeof(rrddb_t));
 
-		rrdfns[0] = (char *)malloc(strlen(gdef->name) + strlen(".rrd") + 1);
-		sprintf(rrdfns[0], "%s.rrd", gdef->name);
+		rrddbs[0].key = strdup(service);
+		rrddbs[0].rrdfn = (char *)malloc(strlen(gdef->name) + strlen(".rrd") + 1);
+		sprintf(rrddbs[0].rrdfn, "%s.rrd", gdef->name);
+		rrddbs[0].rrdparam = NULL;
 	}
 	else {
 		struct dirent *d;
@@ -472,9 +486,8 @@ int main(int argc, char *argv[])
 		if (gdef->exfnpat) expat = pcre_compile(gdef->exfnpat, PCRE_CASELESS, &errmsg, &errofs, NULL);
 
 		/* Allocate an initial filename table */
-		rrdfnsize = 5;
-		rrdfns = (char **) malloc((rrdfnsize+1) * sizeof(char *));
-		rrdparams = (char **) malloc((rrdfnsize+1) * sizeof(char *));
+		rrddbsize = 5;
+		rrddbs = (rrddb_t *) malloc((rrddbsize+1) * sizeof(rrddb_t));
 
 		while ((d = readdir(dir)) != NULL) {
 			char *ext;
@@ -503,27 +516,42 @@ int main(int argc, char *argv[])
 			}
 
 			/* We have a matching file! */
-			rrdfns[rrdfncount] = strdup(d->d_name);
+			rrddbs[rrddbcount].rrdfn = strdup(d->d_name);
 			if (pcre_copy_substring(d->d_name, ovector, result, 1, param, sizeof(param)) > 0) {
-				rrdparams[rrdfncount] = strdup(param);
-				if (strlen(param) > paramlen) paramlen = strlen(param);
+				if ((strcmp(gdef->name, "disk") == 0) && (strcmp(param, ",root") == 0)) {
+					rrddbs[rrddbcount].rrdparam = strdup(",");
+				}
+				else if ((strcmp(gdef->name, "http") == 0) && (strncmp(param, "http", 4) != 0)) {
+					rrddbs[rrddbcount].rrdparam = (char *)malloc(strlen(param) + strlen("http://") + 1);
+					sprintf(rrddbs[rrddbcount].rrdparam, "http://%s", param);
+				}
+				else {
+					rrddbs[rrddbcount].rrdparam = strdup(param);
+				}
+
+				if (strlen(rrddbs[rrddbcount].rrdparam) > paramlen) {
+					paramlen = strlen(rrddbs[rrddbcount].rrdparam);
+				}
+
+				rrddbs[rrddbcount].key = strdup(rrddbs[rrddbcount].rrdparam);
 			}
 			else {
-				rrdparams[rrdfncount] = NULL;
+				rrddbs[rrddbcount].key = strdup(d->d_name);
+				rrddbs[rrddbcount].rrdparam = NULL;
 			}
 
-			rrdfncount++;
-			if (rrdfncount == rrdfnsize) {
-				rrdfnsize += 5;
-				rrdfns = (char **)realloc(rrdfns, (rrdfnsize+1) * sizeof(char *));
-				rrdparams = (char **)realloc(rrdparams, (rrdfnsize+1) * sizeof(char *));
+			rrddbcount++;
+			if (rrddbcount == rrddbsize) {
+				rrddbsize += 5;
+				rrddbs = (rrddb_t *)realloc(rrddbs, (rrddbsize+1) * sizeof(rrddb_t));
 			}
 		}
 		pcre_free(pat);
 		if (expat) pcre_free(expat);
 		closedir(dir);
 	}
-	rrdfns[rrdfncount] = rrdparams[rrdfncount] = NULL;
+	rrddbs[rrddbcount].key = rrddbs[rrddbcount].rrdfn = rrddbs[rrddbcount].rrdparam = NULL;
+	qsort(&rrddbs[0], rrddbcount, sizeof(rrddb_t), rrd_name_compare);
 
 	/* Setup the title */
 	if (graphtitle == NULL) {
@@ -540,7 +568,7 @@ int main(int argc, char *argv[])
 	 * there are multiple RRD-files to handle).
 	 */
 	for (pcount = 0; (gdef->defs[pcount]); pcount++) ;
-	argcount = (11 + pcount*rrdfncount + 1); argi = 0;
+	argcount = (11 + pcount*rrddbcount + 1); argi = 0;
 	rrdargs = (char **) calloc(argcount, sizeof(char *));
 	rrdargs[argi++]  = "rrdgraph";
 	rrdargs[argi++]  = graphfn;
@@ -553,7 +581,7 @@ int main(int argc, char *argv[])
 	rrdargs[argi++]  = gdef->yaxis;
 	rrdargs[argi++]  = "-a";
 	rrdargs[argi++] = "PNG";
-	for (rrdidx=0; (rrdidx < rrdfncount); rrdidx++) {
+	for (rrdidx=0; (rrdidx < rrddbcount); rrdidx++) {
 		int i;
 
 		for (i=0; (gdef->defs[i]); i++) rrdargs[argi++] = strdup(expand_tokens(gdef->defs[i]));
