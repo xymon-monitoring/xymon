@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.67 2003-05-22 13:51:22 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.68 2003-05-22 21:50:48 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -221,6 +221,7 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	else {
 		newhost->alerts = NULL;
 	}
+	newhost->anywaps = 0;
 	if (waps) {
 		char *p;
 		p = skipword(waps); if (*p) *p = '\0'; else p = NULL;

@@ -48,6 +48,7 @@
                                            color               |
                                            alerts              |
                                            waps                |
+					   anywaps             |
                                            nopropyellowtests   |
                                            nopropredtests      |
 					   rawentry            |
@@ -203,6 +204,7 @@ typedef struct {
 	entry_t	*entries;
 	int	color;		/* Calculated */
 	char	*alerts;
+	int	anywaps;
 	char	*waps;
 	char    *nopropyellowtests;
 	char    *nopropredtests;
