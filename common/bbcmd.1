@@ -1,0 +1,24 @@
+.TH BBCMD 1 "Version 3.3: 28 okt 2004" "bbgen toolkit"
+.SH NAME
+bbcmd \- Run a Big Brother command with environment
+.SH SYNOPSIS
+.B "bbcmd --env=ENVFILE COMMAND"
+
+.SH DESCRIPTION
+.I bbcmd
+is a utility that can setup the Big Brother environment variables
+as defined in a 
+.I bblaunch(8)
+compatible environment definition file, and the execute a command
+with this environment in place. It is mostly used for testing
+extension scripts or in other situations where you need to run
+a single command with the BB environment in place.
+
+The "--env=ENVFILE" option points bbcmd to the file where the 
+environment definitions are loaded from.
+
+COMMAND is the command to execute after setting up the environment.
+
+.SH "SEE ALSO"
+bblaunch(8), bbgen-intro(7)
+

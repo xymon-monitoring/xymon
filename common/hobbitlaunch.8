@@ -1,0 +1,65 @@
+.TH BBLAUNCH 8 "Version 3.3: 28 okt 2004" "bbgen toolkit"
+.SH NAME
+bblaunch \- Master program to launch other Big Brother programs
+
+.SH SYNOPSIS
+.B "bblaunch [options]"
+
+.SH DESCRIPTION
+.I bblaunch
+is the main program that controls the execution and scheduling of 
+all of the components in the Big Brother system. Standard BB uses
+the "runbb.sh" script to do this. 
+
+bblaunch allows the administrator to add, remove or change the set of
+Big Brother applications and extensions without restarting BB -
+bblaunch will automatically notice any changes in the set of tasks,
+and change the scheduling of activities accordingly.
+
+bblaunch also allows the administrator to setup specific logfiles for
+each component of the Big Brother system, instead of getting output
+from all components logged to a single file.
+
+.SH OPTIONS
+.IP "--config=FILENAME"
+This option defines the file that bblaunch scans for tasks it
+must launch. A description of this file is in 
+.I bbtasks.cfg(5)
+The default tasklist is /etc/bbtasks.cfg
+
+.IP "--log=FILENAME"
+Defines the logfile where bblaunch logs information about
+failures to launch tasks and other data about the operation of
+bblaunch. Logs from individual tasks are defined in the bbtasks.cfg
+file. By default this is logged to stdout.
+
+.IP "--dump"
+Just dump the contents of the bbtasks.cfg file after parsing it.
+Used for debugging.
+
+.IP "--debug"
+Enable debugging output while running.
+
+.IP "--no-daemon"
+bblaunch normally detaches from the controlling tty and runs as a
+background task. This option keeps it running in the foreground.
+
+.SH STARTING TASKS
+bblaunch will read the configuration file and start all of the tasks
+listed there.
+
+If a task completes abnormally (i.e. terminated by a signal or with
+a non-zero exit status), then bblaunch will attempt to restart it
+5 times. If it still will not run, then the task is disabled for 10
+minutes. This will be logged to the bblaunch logfile.
+
+If the configuration file changes, bblaunch will re-read it and 
+notice any changes. If a running task was removed from the configuration,
+then the task is stopped. If a new task was added, it will be started.
+If the command used for a task changed, or it was given a new environment
+definition file, or the logfile was changed, then the task is stopped
+and restarted with the new definition.
+
+.SH "SEE ALSO"
+bbtasks.cfg(5), bbgen-intro(7)
+
