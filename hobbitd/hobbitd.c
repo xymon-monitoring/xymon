@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.1 2004-10-03 16:13:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.2 2004-10-04 19:56:00 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -148,6 +148,24 @@ void posttochannel(bbd_channel_t *channel, char *msg, int msglen,
 	return;
 }
 
+char *msg_data(char *msg)
+{
+	/* Find the start position of the data following the "status host.test " message */
+	char *result;
+	
+	result = strchr(msg, '.');		/* Hits the '.' in "host.test" */
+	if (!result) {
+		dprintf("Msg was not what I expected: '%s'\n", msg);
+		return msg;
+	}
+
+	result += strcspn(result, " \t\n");	/* Skip anything until we see a space, TAB or NL */
+	result += strspn(result, " \t");	/* Skip all whitespace */
+
+	return result;
+}
+
+
 void get_hts(char *msg, bbd_hostlist_t **host, bbd_testlist_t **test, bbd_log_t **log, 
 	     int *color, int createhost, int createlog)
 {
@@ -227,11 +245,10 @@ void get_hts(char *msg, bbd_hostlist_t **host, bbd_testlist_t **test, bbd_log_t 
 	free(l);
 }
 
-
 void handle_status(char *msg, int msglen, char *sender, char *hostname, char *testname, 
 		   bbd_log_t *log, int newcolor)
 {
-	int validity = 30*60;
+	int validity = 30;
 	int oldcolor = log->color;
 	time_t now = time(NULL);
 	char *umsg = msg;
@@ -242,19 +259,23 @@ void handle_status(char *msg, int msglen, char *sender, char *hostname, char *te
 	}
 
 	if (log->enabletime > now) {
+		char *chostname = strdup(hostname);
+		char *p;
+
 		/* The test is currently disabled. */
 		newcolor = COL_BLUE;
-		log->validtime = log->enabletime;
-		umsglen = msglen + strlen(log->dismsg) + 2;
+		umsglen = msglen + strlen(log->dismsg) + 512;
 		umsg = (unsigned char *)malloc(umsglen);
-		strcpy(umsg, log->dismsg);
-		strcat(umsg, "\n");
-		strcat(umsg, msg);
-	}
-	else {
-		log->validtime = now + validity;
+
+		p = chostname; while (p = strchr(p, '.')) *p = ',';
+		sprintf(umsg, "status %s.%s+%d blue disabled until %s\n", 
+			chostname, testname, validity, ctime(&log->enabletime));
+		strcat(umsg, log->dismsg);
+		strcat(umsg, "\n&");
+		strcat(umsg, msg_data(msg));
 	}
 
+	log->validtime = now + validity*60;
 	log->color = newcolor;
 	if ((log->message == NULL) || (log->msgsz = 0)) {
 		log->message = strdup(umsg);
@@ -280,17 +301,23 @@ void handle_status(char *msg, int msglen, char *sender, char *hostname, char *te
 			/* alert status changed. Tell the pagers */
 			dprintf("posting to page channel\n");
 			posttochannel(pagechn, umsg, umsglen, 
-					sender, hostname, testname, validity, newcolor, oldcolor, log->lastchange);
+					sender, hostname, testname, 
+					log->validtime, newcolor, oldcolor, log->lastchange);
 		}
 
 		dprintf("posting to stachg channel\n");
 		posttochannel(stachgchn, umsg, umsglen, 
-				sender, hostname, testname, validity, newcolor, oldcolor, log->lastchange);
+				sender, hostname, testname, 
+				log->validtime, newcolor, oldcolor, log->lastchange);
 		log->lastchange = time(NULL);
 	}
 
 	dprintf("posting to status channel\n");
-	posttochannel(statuschn, umsg, umsglen, sender, hostname, testname, validity, newcolor, oldcolor, log->lastchange);
+	posttochannel(statuschn, umsg, umsglen, 
+			sender, hostname, testname, 
+			log->validtime, newcolor, oldcolor, log->lastchange);
+
+	if (umsg != msg) free(umsg);
 }
 
 void handle_data(char *msg, int msglen, char *sender, char *hostname, char *testname)
@@ -383,19 +410,16 @@ void handle_enadis(int enabled, char *msg, int msglen, char *sender)
 	else {
 		/* disable code goes here */
 		time_t expires = time(NULL) + duration*60;
-		char *dismsg = malloc(msglen + 500);
+		char *dismsg;
 
 		p = hosttest; while (p = strchr(p, '.')) *p = ',';
-		sprintf(dismsg, "status %s.%s+%d blue disabled until %s\n", hosttest, tname, duration*60, ctime(&expires));
-		p = msg;
-		while (!isspace(*p)) p++;	/* Skip "disable".... */
-		while (isspace(*p)) p++;	/* and the space ... */
-		while (!isspace(*p)) p++;	/* and the host.test ... */
-		while (isspace(*p)) p++;	/* and the space ... */
-		while (!isspace(*p)) p++;	/* and the duration ... */
-		while (isspace(*p)) p++;	/* and the space */
-		strcat(dismsg, p);
-		strcat(dismsg, "\nStatus received while disabled was:\n");
+
+		dismsg = msg;
+		while (*dismsg && !isspace(*dismsg)) dismsg++;       /* Skip "disable".... */
+		while (*dismsg && isspace(*dismsg)) dismsg++;        /* and the space ... */
+		while (*dismsg && !isspace(*dismsg)) dismsg++;       /* and the host.test ... */
+		while (*dismsg && isspace(*dismsg)) dismsg++;        /* and the space ... */
+		while (*dismsg && !isspace(*dismsg)) dismsg++;       /* and the duration ... */
 
 		if (alltests) {
 			for (log = hwalk->logs; (log); log = log->next) {
@@ -483,30 +507,60 @@ void do_message(conn_t *msg)
 	else if (strncmp(msg->buf, "query", 5) == 0) {
 		get_hts(msg->buf, &h, &t, &log, &color, 0, 0);
 		if (log) {
-			unsigned char *p;
+			unsigned char *eoln = strchr(log->message, '\n');
 
 			msg->doingwhat = RESPONDING;
-			p = strchr(log->message, '\n');
-			if (p) msg->buflen = (p - log->message + 1); else msg->buflen = strlen(log->message);
+			if (eoln) *eoln = '\0';
+			msg->bufp = msg->buf = strdup(msg_data(log->message));
+			msg->buflen = strlen(msg->buf);
+			if (eoln) *eoln = '\n';
+		}
+	}
+	else if (strncmp(msg->buf, "bbgendlog ", 10) == 0) {
+		/* Request for a single status log */
+		get_hts(msg->buf, &h, &t, &log, &color, 0, 0);
+		if (log) {
+			msg->doingwhat = RESPONDING;
+			msg->bufp = msg->buf = strdup(log->message);
+			msg->buflen = strlen(msg->buf);
+		}
+	}
+	else if (strncmp(msg->buf, "bbgendbrd", 9) == 0) {
+		/* Request for a summmary of all known status logs */
+		bbd_hostlist_t *hwalk;
+		bbd_log_t *lwalk;
+		char *buf, *bufp;
+		int bufsz, buflen;
+		int n;
 
-			strncpy(msg->buf, log->message, msg->buflen);
-			*(msg->buf + msg->buflen) = '\0';
-			msg->bufp = msg->buf;
+		bufsz = 102400;
+		bufp = buf = (char *)malloc(bufsz);
+		buflen = 0;
 
-			if (strncmp(msg->bufp, "status", 6) == 0) { 
-				p = strchr(msg->bufp, '.'); /* Skip to the '.' in host.test */
-				if (p) {
-					int skipped;
+		for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
+			for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
+				char *eoln = strchr(lwalk->message, '\n');
 
-					do { p++; } while (!isspace((int) *p));
-					while (isspace((int) *p)) p++;
-
-					skipped = (p - msg->bufp); 
-					msg->buflen -= skipped;
-					msg->bufp += skipped;
+				if (eoln) *eoln = '\0';
+				if ((bufsz - buflen) < 1024) {
+					bufsz += 16384;
+					buf = (char *)realloc(buf, bufsz);
+					bufp = buf + buflen;
 				}
+				n = sprintf(bufp, "%s|%s|%s|%d|%d|%s\n", 
+					hwalk->hostname, lwalk->test->testname, 
+					colnames[lwalk->color],
+					lwalk->lastchange, lwalk->validtime,
+					msg_data(lwalk->message));
+				bufp += n;
+				buflen += n;
+				if (eoln) *eoln = '\n';
 			}
 		}
+
+		msg->doingwhat = RESPONDING;
+		msg->bufp = msg->buf = buf;
+		msg->buflen = buflen;
 	}
 
 	if (msg->doingwhat == RESPONDING) {
