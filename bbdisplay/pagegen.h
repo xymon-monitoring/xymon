@@ -28,6 +28,7 @@ extern int sort_grouponly_items;
 extern char *documentationurl;
 extern char *doctargetspec;
 extern char *htmlextension;
+extern char *rssextension;
 extern char *defaultpagetitle;
 extern char *eventignorecolumns;
 extern char *htaccess;
@@ -45,10 +46,11 @@ extern int  bb2eventlogmaxtime;
 extern char *lognkstatus;
 extern int  nkonlyreds;
 extern char *nkackname;
+extern int  wantrss;
 
 extern void select_headers_and_footers(char *prefix);
 extern void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded);
 extern void do_page_with_subs(bbgen_page_t *curpage, dispsummary_t *sums);
-extern int  do_bb2_page(char *filename, char *rssfilename, char *nssidebarfilename, int summarytype);
+extern int  do_bb2_page(char *nssidebarfilename, int summarytype);
 
 #endif
