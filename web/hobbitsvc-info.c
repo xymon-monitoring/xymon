@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.58 2004-11-04 11:47:34 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.59 2004-11-17 16:14:14 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -103,7 +103,7 @@ int generate_info(char *infocolumn, int bbgend)
 	if (bbgend) combo_start();
 
 	/* Load the alert setup */
-	load_alerts();
+	if (!usebbgend) load_alerts();
 
 	for (hostwalk=hosthead; (hostwalk); hostwalk = hostwalk->next) {
 		char *p, *alertspec, *slaspec, *noprop, *rawcopy;
@@ -380,7 +380,7 @@ int generate_info(char *infocolumn, int bbgend)
 		if (!firstcontent) addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
 		addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
-		alerts = find_alert(hostwalk->hostentry->hostname, 0, 0);
+		alerts = (usebbgend ? NULL : find_alert(hostwalk->hostentry->hostname, 0, 0));
 		if (!dialup) {
 			if (alerts) {
 				int wantedstate = 0;  /* Start with the normal rules */
