@@ -223,6 +223,7 @@ typedef struct {
 /* Aux. list definition for quick access to host records */
 typedef struct {
 	host_t	*hostentry;
+	void    *clones;
 	void	*next;
 } hostlist_t;
 

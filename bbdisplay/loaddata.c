@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.75 2003-06-06 08:10:07 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.76 2003-06-06 17:04:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -198,7 +198,7 @@ host_t *init_host(const char *hostname, const char *displayname,
 		  const char *larrdgraphs)
 {
 	host_t 		*newhost = malloc(sizeof(host_t));
-	hostlist_t	*newlist = malloc(sizeof(hostlist_t));
+	hostlist_t	*oldlist;
 
 	hostcount++;
 	dprintf("init_host(%s, %d,%d,%d.%d, %d, %s, %s, %s, %s)\n", 
@@ -277,9 +277,52 @@ host_t *init_host(const char *hostname, const char *displayname,
 	newhost->parent = newhost->next = NULL;
 	newhost->rrds = NULL;
 
-	newlist->hostentry = newhost;
-	newlist->next = hosthead;
-	hosthead = newlist;
+	/*
+	 * Add this host to the hostlist_t list of known hosts.
+	 * HOWEVER: It might be a duplicate! In that case, we need
+	 * to figure out which host record we want to use.
+	 */
+	for (oldlist = hosthead; (oldlist && (strcmp(oldlist->hostentry->hostname, hostname) != 0)); oldlist = oldlist->next) ;
+	if (oldlist == NULL) {
+		hostlist_t *newlist;
+
+		newlist = malloc(sizeof(hostlist_t));
+		newlist->hostentry = newhost;
+		newlist->clones = NULL;
+		newlist->next = hosthead;
+		hosthead = newlist;
+	}
+	else {
+		int usenew = 0;
+		hostlist_t *clone = malloc(sizeof(hostlist_t));
+
+		dprintf("Duplicate host definition for host '%s'\n", hostname);
+
+		if ( (strcmp(oldlist->hostentry->ip, "0.0.0.0") == 0) && (strcmp(newhost->ip, "0.0.0.0") != 0) ) {
+			usenew = 1;
+			dprintf("Using new entry as old one has IP 0.0.0.0\n");
+		}
+
+		if ( strstr(oldlist->hostentry->rawentry, "noconn") && (strstr(newhost->rawentry, "noconn") == NULL) ) {
+			usenew = 1;
+			dprintf("Using new entry as old one has noconn\n");
+		}
+
+		if (usenew) {
+			clone->hostentry = oldlist->hostentry;
+			clone->clones = NULL;
+			clone->next = oldlist->clones;
+			oldlist->clones = clone;
+
+			oldlist->hostentry = newhost;
+		}
+		else {
+			clone->hostentry = newhost;
+			clone->clones = NULL;
+			clone->next = oldlist->clones;
+			oldlist->clones = clone;
+		}
+	}
 
 	return newhost;
 }
@@ -601,19 +644,21 @@ state_t *init_state(const char *filename, int dopurple, int *is_purple)
 	if (host) {
         	hostlist_t      *l;
 
+		/* Add this state entry to the host's list of state entries. */
+		newstate->entry->next = host->entries;
+		host->entries = newstate->entry;
+
 		/* There may be multiple host entries, if a host is
 		 * listed in several locations in bb-hosts (for display purposes).
-		 * This is handled by updating ALL of the hostrecords that match
-		 * this hostname, instead of just the one found by find_host().
+		 * This is handled by updating ALL of the cloned host records.
 		 * Bug reported by Bluejay Adametz of Fuji.
 		 */
-		newstate->entry->next = host->entries;
-		for (l=hosthead; (l); l = l->next) {
-			if (strcmp(l->hostentry->hostname, host->hostname) == 0) {
-				l->hostentry->entries = newstate->entry;
-			}
-		}
 
+		/* Cannot use "find_host()" here, as we need the hostlink record, not the host record */
+		for (l=hosthead; (l && (strcmp(l->hostentry->hostname, host->hostname) != 0)); l=l->next);
+
+		/* Walk through the clone-list and set the "entries" for all hosts */
+		for (l=l->clones; (l); l = l->next) l->hostentry->entries = host->entries;
 	}
 	else {
 		/* No host for this test - must be missing from bb-hosts */

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.12 2003-05-22 05:56:18 henrik Exp $";
+static char rcsid[] = "$Id: process.c,v 1.13 2003-06-06 17:04:36 henrik Exp $";
 
 #include <string.h>
 #include <sys/types.h>
@@ -49,7 +49,7 @@ static int wantedcolumn(char *current, char *wanted)
 void calc_hostcolors(hostlist_t *head)
 {
 	int		color, oldage;
-	hostlist_t 	*h;
+	hostlist_t 	*h, *cwalk;
 	entry_t		*e;
 
 	for (h = head; (h); h = h->next) {
@@ -65,6 +65,12 @@ void calc_hostcolors(hostlist_t *head)
 
 		h->hostentry->color = color;
 		h->hostentry->oldage = oldage;
+
+		/* Need to update the clones also */
+		for (cwalk = h->clones; (cwalk); cwalk = cwalk->next) {
+			cwalk->hostentry->color = color;
+			cwalk->hostentry->oldage = oldage;
+		}
 	}
 }
 
