@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.49 2005-03-06 07:25:07 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.50 2005-03-06 07:35:03 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -219,6 +219,7 @@ int main(int argc, char *argv[])
 	FILE *acklogfd = NULL;
 	char notiflogfn[PATH_MAX];
 	FILE *notiflogfd = NULL;
+	char *tracefn = NULL;
 	struct sigaction sa;
 
 	MEMDEFINE(acklogfn);
@@ -310,7 +311,7 @@ int main(int argc, char *argv[])
 			return 0;
 		}
 		else if (argnmatch(argv[argi], "--trace=")) {
-			char *tracefn = strchr(argv[argi], '=')+1;
+			tracefn = strdup(strchr(argv[argi], '=')+1);
 			starttrace(tracefn);
 		}
 		else {
@@ -578,6 +579,11 @@ int main(int argc, char *argv[])
 			if (fn && strlen(fn)) {
 				freopen(fn, "a", stdout);
 				freopen(fn, "a", stderr);
+
+				if (tracefn) {
+					stoptrace();
+					starttrace(tracefn);
+				}
 			}
 			continue;
 		}
