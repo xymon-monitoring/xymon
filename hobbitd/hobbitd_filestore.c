@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.13 2004-10-27 10:46:46 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.14 2004-10-30 15:53:21 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -22,6 +22,9 @@ static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.13 2004-10-27 10:46:46 henri
 #include <unistd.h>
 #include <utime.h>
 #include <dirent.h>
+#include <limits.h>
+
+#include "libbbgen.h"
 
 #include "bbdworker.h"
 
@@ -30,7 +33,7 @@ enum role_t { ROLE_STATUS, ROLE_DATA, ROLE_NOTES, ROLE_ENADIS};
 void update_file(char *fn, char *mode, char *msg, time_t expire, char *sender, time_t timesincechange, int seq)
 {
 	FILE *logfd;
-	char tmpfn[MAX_PATH];
+	char tmpfn[PATH_MAX];
 	char *p;
 
 	dprintf("Updating seq %d file %s\n", seq, fn);
@@ -67,6 +70,10 @@ void update_file(char *fn, char *mode, char *msg, time_t expire, char *sender, t
 	rename(tmpfn, fn);
 }
 
+void update_htmlfile(char *fn, char *msg, char *sender, time_t timesincechange)
+{
+}
+
 void update_enable(char *fn, time_t expiretime)
 {
 	dprintf("Enable/disable file %s, time %d\n", fn, (int)expiretime);
@@ -91,6 +98,8 @@ void update_enable(char *fn, time_t expiretime)
 int main(int argc, char *argv[])
 {
 	char *filedir = NULL;
+	char *htmldir = NULL;
+	char *htmlextension = "html";
 	char *msg;
 	enum role_t role = ROLE_STATUS;
 	int argi;
@@ -101,6 +110,10 @@ int main(int argc, char *argv[])
 		if (argnmatch(argv[argi], "--status")) {
 			role = ROLE_STATUS;
 			if (!filedir) filedir = getenv("BBLOGS");
+		}
+		else if (argnmatch(argv[argi], "--html")) {
+			role = ROLE_STATUS;
+			if (!htmldir) htmldir = getenv("BBWWW");
 		}
 		else if (argnmatch(argv[argi], "--data")) {
 			role = ROLE_DATA;
@@ -120,6 +133,12 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--dir=")) {
 			filedir = strchr(argv[argi], '=')+1;
 		}
+		else if (argnmatch(argv[argi], "--htmldir=")) {
+			htmldir = strchr(argv[argi], '=')+1;
+		}
+		else if (argnmatch(argv[argi], "--htmlext=")) {
+			htmlextension = strchr(argv[argi], '=')+1;
+		}
 	}
 
 	if (filedir == NULL) {
@@ -134,7 +153,7 @@ int main(int argc, char *argv[])
 		int metacount;
 		char *hostname, *testname;
 		time_t expiretime = 0;
-		char logfn[MAX_PATH];
+		char logfn[PATH_MAX];
 
 		msg = get_bbgend_message("filestore", &seq, NULL);
 		if (msg == NULL) {
@@ -157,15 +176,19 @@ int main(int argc, char *argv[])
 		if ((role == ROLE_STATUS) && (metacount >= 13) && (strncmp(items[0], "@@status", 8) == 0)) {
 			/* @@status|timestamp|sender|hostname|testname|expiretime|color|testflags|prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage */
 			time_t timesincechange;
+			char htmllogfn[PATH_MAX];
 
-			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
+			hostname = items[3];
 			testname = items[4];
+			if (htmldir) sprintf(htmllogfn, "%s/%s.%s.%s", htmldir, hostname, testname, htmlextension);
+			p = hostname; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			sprintf(logfn, "%s/%s.%s", filedir, hostname, testname);
 			expiretime = atoi(items[5]);
 			statusdata = msg_data(statusdata);
 			sscanf(items[1], "%d.%*d", (int *) &timesincechange);
 			timesincechange -= atoi(items[9]);
 			update_file(logfn, "w", statusdata, expiretime, items[2], timesincechange, seq);
+			if (htmldir) update_htmlfile(htmllogfn, statusdata, items[2], timesincechange);
 		}
 		else if ((role == ROLE_DATA) && (metacount > 4) && (strncmp(items[0], "@@data", 6)) == 0) {
 			/* @@data|timestamp|sender|hostname|testname */
@@ -227,7 +250,7 @@ int main(int argc, char *argv[])
 			struct dirent *de;
 			char *hostlead;
 			char *newhostname;
-			char newlogfn[MAX_PATH];
+			char newlogfn[PATH_MAX];
 
 			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			hostlead = malloc(strlen(hostname) + 2);
@@ -251,7 +274,7 @@ int main(int argc, char *argv[])
 		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (metacount > 5) && (strncmp(items[0], "@@renametest", 12) == 0)) {
 			/* @@renametest|timestamp|sender|hostname|oldtestname|newtestname */
 			char *newtestname;
-			char newfn[MAX_PATH];
+			char newfn[PATH_MAX];
 
 			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			testname = items[4];
