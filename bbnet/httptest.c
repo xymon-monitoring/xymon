@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.61 2004-07-19 16:01:13 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.62 2004-08-05 08:22:35 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -18,6 +18,7 @@ static char rcsid[] = "$Id: httptest.c,v 1.61 2004-07-19 16:01:13 henrik Exp $";
 #include <string.h>
 #include <regex.h>
 #include <ctype.h>
+#include <sys/stat.h>
 
 #include "bbgen.h"
 #include "util.h"
@@ -470,8 +471,10 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 	http_data_t *req;
 	testitem_t *t;
 	char useragent[100];
+	char *cookiefn = NULL;
 	struct timeval tm1, tm2, tmdif;
 	struct timezone tz;
+	struct stat st;
 
 #ifdef MULTICURL
 	testitem_t *firstitem = NULL;
@@ -485,6 +488,13 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 		if (logfd) fprintf(logfd, "*** Starting web checks at %s ***\n", timestamp);
 	}
 	sprintf(useragent, "BigBrother bbtest-net/%s curl/%s-%s", VERSION, LIBCURL_VERSION, curl_version());
+
+	cookiefn = (char *) malloc(strlen(getenv("BBHOME")) + strlen("/etc/cookies") + 1);
+	sprintf(cookiefn, "%s/etc/cookies", getenv("BBHOME"));
+	if (stat(cookiefn, &st) != 0) {
+		free(cookiefn);
+		cookiefn = NULL;
+	}
 
 	for (t = httptest->items; (t); t = t->next) {
 		req = (http_data_t *) t->privdata;
@@ -577,6 +587,9 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 				curl_easy_setopt(req->curl, CURLOPT_PROXYUSERPWD, req->proxyuserpwd);
 			}
 		}
+
+		/* Cookies may be needed */
+		if (cookiefn) curl_easy_setopt(req->curl, CURLOPT_COOKIEFILE, cookiefn);
 
 		if (req->contentcheck == CONTENTCHECK_DIGEST) {
 			char *p;
@@ -762,6 +775,7 @@ void run_http_tests(service_t *httptest, long followlocations, char *logfile, in
 	}
 
 	if (logfd) fclose(logfd);
+	if (cookiefn) free(cookiefn);
 }
 
 
