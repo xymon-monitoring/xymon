@@ -1,7 +1,8 @@
 all: bbgen bbtest-web bbnethosts
 
 GENOBJS = bbgen.o debug.o loaddata.o larrdgen.o pagegen.o process.o util.o 
-TESTOBJS = bbtest-web.o util.o
+TESTOBJS = bbtest-web.o util.o debug.o
+NETOBJS = bbnethosts.o util.o debug.o
 
 bbgen: $(GENOBJS)
 	gcc -g -o bbgen $(GENOBJS)
@@ -9,8 +10,8 @@ bbgen: $(GENOBJS)
 bbtest-web: $(TESTOBJS)
 	gcc -g -o bbtest-web $(TESTOBJS)
 
-bbnethosts: bbnethosts.o util.o
-	gcc -g -o bbnethosts bbnethosts.o util.o
+bbnethosts: $(NETOBJS)
+	gcc -g -o bbnethosts $(NETOBJS)
 
 %.o: %.c
 	gcc -Wall -c -g -o $@ $<
