@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.31 2004-10-07 16:28:55 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.32 2004-10-24 20:48:00 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -349,12 +349,14 @@ retry_connect:
 						}
 						else if (respstr) {
 							char *respend;
-							if (n > respstrsz) {
-								respstrsz += 4096;
-								if (respstrsz == 4096)
-									*respstr = (char *)malloc(respstrsz);
-								else
-									*respstr = (char *)realloc(*respstr, respstrsz);
+
+							if (respstrsz == 0) {
+								respstrsz = (n+MAXMSG);
+								*respstr = (char *)malloc(respstrsz);
+							}
+							else if ((n+respstrlen) >= respstrsz) {
+								respstrsz += (n+MAXMSG);
+								*respstr = (char *)realloc(*respstr, respstrsz);
 							}
 							respend = (*respstr) + respstrlen;
 							memcpy(respend, outp, n);
