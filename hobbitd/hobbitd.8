@@ -29,7 +29,8 @@ environment variable.
 
 .IP "--checkpoint-file=FILENAME"
 With regular intervals, bbgend will dump all of its internal state 
-to this check-point file.
+to this check-point file. It is also dumped when bbgend terminates,
+or when it receives a SIGUSR1 signal.
 
 .IP "--checkpoint-interval=N"
 Specifies the interval (in seconds) between dumps to the check-point
@@ -73,6 +74,17 @@ proces. This option keeps it running as a foreground proces.
 .IP "--pid-file=FILENAME"
 If bbgend runs as a background process, the proces-ID of bbgend will
 be written to this file. This is for use in automated startup scripts.
+
+.SH SIGNALS
+.IP SIGHUP
+Re-read the bb-hosts configuration file.
+
+.IP SIGUSR1
+Force an immediate dump of the checkpoint file.
+
+.SH FILES
+If ghost-handling is enabled via the "--ghosts" option, the $BBHOSTS
+file is read to determine the names of all known hosts.
 
 .SH "SEE ALSO"
 bbgen-intro(7), bb-environ(5).
