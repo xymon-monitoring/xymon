@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.13 2003-02-14 12:06:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.14 2003-02-18 13:02:44 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -82,11 +82,11 @@ int generate_info(char *infocolumn)
 			commafy(hostwalk->hostentry->hostname), infocolumn);
 		if (getenv("BBHTML")) {
 			sprintf(htmlfn,"%s/%s.%s.html", getenv("BBHTML"), 
-				commafy(hostwalk->hostentry->hostname), infocolumn);
+				hostwalk->hostentry->hostname, infocolumn);
 		}
 		else {
 			sprintf(htmlfn,"%s/www/html/%s.%s.html", getenv("BBHOME"), 
-				commafy(hostwalk->hostentry->hostname), infocolumn);
+				hostwalk->hostentry->hostname, infocolumn);
 		}
 
 		infobuf[0] = '\0';
