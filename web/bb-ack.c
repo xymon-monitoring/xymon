@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.2 2004-11-18 23:22:27 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.3 2004-11-19 11:18:40 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -110,12 +110,12 @@ int main(int argc, char *argv[])
 			printf("Content-Type: text/html\n\n");
 			sethostenv("", "", "", colorname(COL_BLUE));
 
-			headfoot(stdout, "acknowledge", "", "header", COL_BLUE);
+			headfoot(stdout, "acknowledge", "", "header", COL_RED);
 			do {
 				n = fread(inbuf, 1, sizeof(inbuf), formfile);
 				if (n > 0) fwrite(inbuf, 1, n, stdout);
 			} while (n == sizeof(inbuf));
-			headfoot(stdout, "acknowledge", "", "footer", COL_BLUE);
+			headfoot(stdout, "acknowledge", "", "footer", COL_RED);
 
 			fclose(formfile);
 		}
