@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.71 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.72 2005-01-31 11:40:07 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -20,6 +20,12 @@ static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.71 2005-01-20 10:45:44 henrik E
 #include <sys/stat.h>
 #include <unistd.h>
 #include <utime.h>
+
+/* The following is for the DNS lookup we perform on DHCP adresses */
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 
 #include "libbbgen.h"
 
@@ -98,6 +104,12 @@ int generate_info(char *infocolumn, char *documentationurl, int hobbitd, int sen
 
 	hostwalk = hosthead;
 	while (hostwalk) {
+		val = bbh_item(hostwalk, BBH_FLAG_NOINFO);
+		if (val) {
+			hostwalk = hostwalk->next; 
+			continue;	/* Skip this host */
+		}
+
 		addtobuffer(&infobuf, &infobuflen, "<table width=\"100%\">\n");
 
 		sprintf(l, "<Hostname>%s</Hostname>\n", hostwalk->bbhostname);
@@ -124,6 +136,21 @@ int generate_info(char *infocolumn, char *documentationurl, int hobbitd, int sen
 		}
 
 		val = bbh_item(hostwalk, BBH_IP);
+		if (strcmp(val, "0.0.0.0") == 0) {
+			struct in_addr addr;
+			struct hostent *hent;
+			static char hostip[30];
+
+			hent = gethostbyname(hostwalk->bbhostname);
+			if (hent) {
+				memcpy(&addr, *(hent->h_addr_list), sizeof(struct in_addr));
+				strcpy(hostip, inet_ntoa(addr));
+				if (inet_aton(hostip, &addr) != 0) {
+					strcat(hostip, " (dynamic)");
+					val = hostip;
+				}
+			}
+		}
 		sprintf(l, "<IP>%s</IP>\n", val);
 		addtobuffer(&metabuf, &metabuflen, l);
 		sprintf(l, "<tr><th align=left>IP:</th><td align=left>%s</td></tr>\n", val);
