@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.4 2002-12-31 10:50:10 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.5 2003-01-05 08:11:23 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -66,7 +66,6 @@ void generate_larrd(char *rrddirname, char *larrdcolumn)
 	rrd_t *rwalk;
 	int i;
 	char *allrrdlinks;
-	char timestamp[100];
 	time_t now;
 	struct utimbuf logfiletime;
 
@@ -76,10 +75,6 @@ void generate_larrd(char *rrddirname, char *larrdcolumn)
 
 	for (i=0; rrdnames[i]; i++) ;
 	allrrdlinks = malloc(256*i);
-
-	now = time(NULL);
-	strcpy(timestamp, ctime(&now));
-	timestamp[strlen(timestamp)-1] = '\0';
 
 	i = atoi(getenv("PURPLEDELAY"));
 	logfiletime.actime = logfiletime.modtime = now + i*60;
