@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.86 2003-07-31 07:05:45 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.87 2003-08-06 10:43:12 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -994,9 +994,18 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 		}
 		else {
 			if (test->reverse) {
+				/*
+				 * Reverse tests go RED when open.
+				 * If not open, they may go CLEAR if the ping test failed
+				 */
+
 				if (test->open) { 
 					strcpy(cause, "Service responds when it should not");
 					color = COL_RED; countasdown = 1; 
+				}
+				else if (failgoesclear && (test->host->downcount != 0) && !test->alwaystrue) {
+					strcpy(cause, "Host appears to be down");
+					color = COL_CLEAR; countasdown = 0;
 				}
 			}
 			else {
