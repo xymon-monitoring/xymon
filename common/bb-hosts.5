@@ -492,13 +492,13 @@ silently ignored.
 Normally when a network test fails, the status changes to
 red immediately.  With a "badTEST:x:y:z" tag this behaviour changes:
 .br
-* While fewer than "x" successive tests fail, the column stays GREEN.
-.br
-* While "x" or more successive tests fail, but fewer than "y", the column goes CLEAR.
+* While "z" or more successive tests fail, the column goes RED.
 .br
 * While "y" or more successive tests fail, but fewer than "z", the column goes YELLOW.
 .br
-* While "z" or more successive tests fail, the column goes RED.
+* While "x" or more successive tests fail, but fewer than "y", the column goes CLEAR.
+.br
+* While fewer than "x" successive tests fail, the column stays GREEN.
 
 The optional timespecification can be used to limit this
 "badTEST" setting to a particular time of day, e.g. to 
