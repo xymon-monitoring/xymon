@@ -3,43 +3,50 @@ OS := $(shell uname -s)
 include Makefile.$(OS)
 
 
-all: bbgen bbtest-net bbhostgrep bbhostshow replog
+all: bbgen bbtest-net bbhostgrep bbhostshow bb-rep.cgi bb-replog.cgi
 
-GENOBJS = bbgen.o debug.o loaddata.o reportdata.o larrdgen.o pagegen.o process.o util.o infogen.o alert.o wmlgen.o
+GENOBJS = bbgen.o debug.o loaddata.o reportdata.o larrdgen.o pagegen.o process.o util.o infogen.o alert.o wmlgen.o bb-replog.o
 NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o
 HOSTGREPOBJS = bbhostgrep.o util.o debug.o
 HOSTSHOWOBJS = bbhostshow.o util.o debug.o
-REPLOGOBJS = replog.o reportdata.o debug.o util.o
+REPOBJS = bb-rep.o debug.o util.o
+REPLOGOBJS = bb-replog-cgi.o reportdata.o debug.o util.o
 
 bbgen: $(GENOBJS)
-	$(CC) $(CFLAGS) -o bbgen $(GENOBJS)
+	$(CC) $(CFLAGS) -o $@ $(GENOBJS)
 
 bbtest-net: $(NETTESTOBJS)
-	$(CC) $(CFLAGS) -o bbtest-net $(NETTESTOBJS) $(CURLLIB) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(NETTESTOBJS) $(CURLLIB) $(NETLIBS)
 
 bbhostgrep: $(HOSTGREPOBJS)
-	$(CC) $(CFLAGS) -o bbhostgrep $(HOSTGREPOBJS)
+	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS)
 
 bbhostshow: $(HOSTSHOWOBJS)
-	$(CC) $(CFLAGS) -o bbhostshow $(HOSTSHOWOBJS)
+	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS)
 
-replog: $(REPLOGOBJS)
-	$(CC) $(CFLAGS) -o replog $(REPLOGOBJS)
+bb-rep.cgi: $(REPOBJS)
+	$(CC) $(CFLAGS) -o $@ $(REPOBJS)
+
+bb-replog-cgi.o: bb-replog.c
+	$(CC) $(CFLAGS) -DCGI -c -o $@ $<
+
+bb-replog.cgi: $(REPLOGOBJS)
+	$(CC) $(CFLAGS) -o $@ $(REPLOGOBJS)
 
 alert: alert.c debug.c util.c
-	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o alert alert.c debug.c util.c
+	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ $alert.c debug.c util.c
 
 contest: contest.c debug.c util.c
-	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o contest contest.c debug.c util.c $(NETLIBS)
+	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ contest.c debug.c util.c $(NETLIBS)
 
 reptest: reportdata.c debug.c util.c
-	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o reptest reportdata.c debug.c util.c
+	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o $@ reportdata.c debug.c util.c
 
 httptest.o: httptest.c httptest.h
-	$(CC) $(CFLAGS) $(CURLINCLUDE) -c -o $@ $<
+	$(CC) $(CFLAGS) $(CURLINCLUDE) -c -o $@ httptest.c
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f *.o *~ bbgen bbtest-net bbhostgrep bbhostshow replog alert contest reptest
+	rm -f *.o *~ bbgen bbtest-net bbhostgrep bbhostshow bb-rep.cgi bb-replog.cgi alert contest reptest
