@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.16 2003-02-03 12:05:02 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.17 2003-02-10 22:17:52 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -148,6 +148,7 @@ char *weekday_text(char *dayspec)
 			case '-':
 				strcat(result, "-");
 				break;
+			case ' ':
 			case ',':
 				strcat(result, ",");
 				break;
