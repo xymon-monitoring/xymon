@@ -727,36 +727,70 @@ void dumpstatelist(state_t *head)
 	}
 }
 
-void do_hosts(host_t *head, FILE *output)
+void do_hosts(host_t *head, FILE *output, char *grouptitle)
 {
 	host_t	*h;
+	entry_t	*e;
 	col_list_t *groupcols, *gc;
 
 	groupcols = gen_column_list(head, NULL);
 	if (groupcols) {
-		fprintf(output, "    - columns: ");
-		for (gc=groupcols; (gc); gc = gc->next) {
-			fprintf(output, "%s ", gc->column->name);
-		}
-		fprintf(output, "\n");
-	}
+		/* fprintf(output, "    - columns: "); */
+		
+		fprintf(output, "<TABLE SUMMARY=\"Group Block\" BORDER=0> \n <TR><TD VALIGN=MIDDLE ROWSPAN=2 CELLPADDING=2><CENTER><FONT COLOR=ivory SIZE=+1>%s</FONT></CENTER></TD>\n", grouptitle);
 
-	for (h = head; (h); h = h->next) {
-		fprintf(output, "    host %s, color %s\n", h->hostname, colorname(h->color));
+		for (gc=groupcols; (gc); gc = gc->next) {
+			/* fprintf(output, "%s ", gc->column->name); */
+			fprintf(output, 
+			    " <TD ALIGN=CENTER VALIGN=BOTTOM WIDTH=45> <A HREF=\"/bb/%s/%s\"><FONT COLOR=teal SIZE=-1><B>%s</B></FONT></A> </TD>\n", 
+			    gc->column->link->urlprefix, gc->column->link->filename, gc->column->name);
+		}
+		fprintf(output, "</TR> \n<TR><TD COLSPAN=10><HR WIDTH=100%%></TD></TR>\n\n");
+		/* fprintf(output, "\n"); */
+
+		for (h = head; (h); h = h->next) {
+			/* fprintf(output, "    host %s, color %s\n", h->hostname, colorname(h->color)); */
+			fprintf(output, "<TR>\n <TD NOWRAP><A NAME=\"%s\">\n <A HREF=\"/bb/%s/%s\" TARGET=\"_blank\"><FONT SIZE=+1 COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\">%s</FONT></A>\n </TD>",
+				h->hostname, h->link->urlprefix, h->link->filename, h->hostname);
+
+			for (gc = groupcols; (gc); gc = gc->next) {
+				fprintf(output, "<TD ALIGN=CENTER>");
+
+				for (e = h->entries; (e && (e->column != gc->column)); e = e->next) ;
+				if (e == NULL) {
+					fprintf(output, "-");
+				}
+				else {
+					fprintf(output, "<A HREF=\"/cgi-bin/bb-hostsvc.sh?HOSTSVC=%s.%s\">",
+						h->hostname, e->column->name);
+					fprintf(output, "<IMG SRC=\"/bb/gifs/%s%s.gif\" ALT=\"%s:%s:%s\" HEIGHT=\"16\" WIDTH=\"16\" BORDER=0>",
+						colorname(e->color), (e->oldage ? "" : "-recent"), 
+						e->column->name, colorname(e->color), e->age);
+					fprintf(output, "</A>");
+				}
+				fprintf(output, "</TD>\n");
+			}
+
+			fprintf(output, "</TR>\n\n");
+		}
+
+		fprintf(output, "</TABLE><BR><BR>\n");
 	}
-	fprintf(output, "\n");
+	/* fprintf(output, "\n"); */
 }
 
 void do_groups(group_t *head, FILE *output)
 {
 	group_t *g;
 
-	for (g = head; (g); g = g->next) {
+	fprintf(output, "<CENTER> \n\n<A NAME=begindata>&nbsp;</A> \n<A NAME=hosts-blk>&nbsp;</A>\n\n");
 
-		fprintf(output, "    group %s\n", g->title);
-		do_hosts(g->hosts, output);
+	for (g = head; (g); g = g->next) {
+		/* fprintf(output, "    group %s\n", g->title); */
+		do_hosts(g->hosts, output, g->title);
 	}
-	fprintf(output, "\n");
+	/* fprintf(output, "\n"); */
+	fprintf(output, "\n</CENTER>\n");
 }
 
 void do_bb_page(page_t *page, char *filename)
@@ -777,7 +811,7 @@ void do_bb_page(page_t *page, char *filename)
 		fprintf(output, "  page %s - %s\n", p->name, colorname(p->color));
 	}
 
-	do_hosts(page->hosts, output);
+	do_hosts(page->hosts, output, "");
 	do_groups(page->groups, output);
 
 	fclose(output);
@@ -803,7 +837,7 @@ void do_page(page_t *page, char *filename)
 	}
 	fprintf(output, "\n");
 
-	do_hosts(page->hosts, output);
+	do_hosts(page->hosts, output, "");
 	do_groups(page->groups, output);
 
 	fclose(output);
@@ -822,7 +856,7 @@ void do_subpage(page_t *page, char *filename)
 	fprintf(output, "SDM subpage %s\n", page->title);
 	fprintf(output, "Color: %s\n", colorname(page->color));
 
-	do_hosts(page->hosts, output);
+	do_hosts(page->hosts, output, "");
 	do_groups(page->groups, output);
 
 	fclose(output);
