@@ -1,6 +1,6 @@
 <CENTER>
   <FORM ACTION="&CGIBINURL/bb-findhost.sh" METHOD="GET">
-    <TABLE WIDTH="80%" BORDER=0 CELLSPACING=5>
+    <TABLE WIDTH="80%" BORDER=0 CELLSPACING=5 SUMMARY="Hostname form">
        <TR BGCOLOR="#000033">
            <TD COLSPAN=2 ALIGN="CENTER">
                <FONT FACE="Arial, Helvetica">
@@ -13,7 +13,7 @@
                <BR>
                <FONT FACE="Arial, Helvetica">
                      <font size="+1">Pattern to look for</font>
-                     <INPUT TYPE="TEXT" NAME="host" VALUE="" MAXLENGTH=200 SIZE="80%"><BR>
+                     <INPUT TYPE="TEXT" NAME="host" VALUE="" MAXLENGTH=200 SIZE=70><BR>
                      <font size="+1">Case Sensitive</font>
 		     <INPUT TYPE="CHECKBOX" NAME="case_sensitive" checked>&nbsp;&nbsp;&nbsp;
                      <INPUT TYPE="SUBMIT" NAME="SUB" VALUE="Search" ALT="Search">
