@@ -1,5 +1,5 @@
-README file for bbgen and friends version 1.10
-==============================================
+README file for bbgen and friends version 2.0
+=============================================
 
 bbgen is a drop-in replacement for the bb-display.sh script that 
 ships with the Big Brother monitoring tool.
