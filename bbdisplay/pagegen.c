@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.133 2005-02-03 13:47:17 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.134 2005-02-03 13:57:19 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -71,6 +71,7 @@ char *bbsubpagehtaccess = NULL;
 
 char *hf_prefix[3];            /* header/footer prefixes for BB, BB2, BBNK pages*/
 
+static int hostblkidx = 0;
 
 void select_headers_and_footers(char *prefix)
 {
@@ -343,7 +344,9 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char 
 	/* Generate static or dynamic links (from BBLOGSTATUS) ? */
 	genstatic = generate_static();
 
-	fprintf(output, "<A NAME=hosts-blk>&nbsp;</A>\n\n");
+	if (hostblkidx == 0) fprintf(output, "<A NAME=hosts-blk>&nbsp;</A>\n\n");
+	else fprintf(output, "<A NAME=hosts-blk-%d>&nbsp;</A>\n\n", hostblkidx);
+	hostblkidx++;
 
 	for (h = head; (h); h = h->next) {
 		if (h->banksize > maxbanksize) maxbanksize = h->banksize;
@@ -881,6 +884,7 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 
 
 		/* Try creating the output file. If it fails, we may need to create the directories */
+		hostblkidx = 0;
 		output = fopen(tmpfilename, "w");
 		if (output == NULL) {
 			char indexfilename[PATH_MAX];
