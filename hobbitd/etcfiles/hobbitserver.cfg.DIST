@@ -90,7 +90,7 @@ SVCCODES="disk:100,cpu:200,procs:300,svcs:350,msgs:400,conn:500,http:600,dns:800
 CONNTEST="TRUE"					# Should we 'ping' hosts ?
 IPTEST_2_CLEAR_ON_FAILED_CONN="TRUE"		# If TRUE, then failing network tests go CLEAR if conn-test fails.
 NONETPAGE=""					# Network tests that go YELLOW upon failure
-FPING="fping"					# Path and options for the 'fping' program.
+FPING="@FPING@"					# Path and options for the 'fping' program.
 NTPDATE="ntpdate"				# Path to the 'ntpdate' program
 BBROUTERTEXT="router"				# What to call a failing intermediate network device.
 
