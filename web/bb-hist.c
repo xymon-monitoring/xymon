@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.41 2005-01-20 10:45:44 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.42 2005-02-03 13:08:56 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -90,7 +90,7 @@ static void generate_pct_summary(
 			reportinfo_t *repinfo, 		/* Percent summaries for period */
 			time_t secsperpixel)
 {
-	fprintf(htmlrep, "<TABLE BORDER=0 BGCOLOR=%s CELLPADDING=3>\n", barbkgcolor);
+	fprintf(htmlrep, "<TABLE BORDER=0 BGCOLOR=%s CELLPADDING=3 SUMMARY=\"Percent summary\">\n", barbkgcolor);
 
 	fprintf(htmlrep, "<TR BGCOLOR=\"#333333\"><TD COLSPAN=6 ALIGN=CENTER><FONT SIZE=\"+1\">%s</FONT></TD></TR>\n", caption);
 	fprintf(htmlrep, "<TR BGCOLOR=\"#333333\"><TD COLSPAN=6 ALIGN=CENTER><FONT SIZE=\"-1\">Min. duration shown: %s</FONT></TD></TR>\n", 
@@ -284,7 +284,7 @@ static void generate_colorbar(
 
 	fprintf(htmlrep, "  <TABLE SUMMARY=\"Adjustment, Past navigation\" WIDTH=\"100%%\" BORDER=0 CELLSPACING=0 CELLPADDING=0>\n");
 	if (usepct) {
-		fprintf(htmlrep, "  <TR><TD ALIGN=RIGHT VALIGN=TOP><A HREF=\"%s&amp&amp;PIXELS=%d\">Time reset</A></TD></TR>\n", 
+		fprintf(htmlrep, "  <TR><TD ALIGN=RIGHT VALIGN=TOP><A HREF=\"%s&amp;PIXELS=%d\">Time reset</A></TD></TR>\n", 
 			selfurl, (usepct ? 0 : pixels));
 	}
 	else {
@@ -313,7 +313,7 @@ static void generate_colorbar(
 
 	fprintf(htmlrep, "<TD>\n");
 	fprintf(htmlrep, "  <TABLE SUMMARY=\"Adjustment, Future navigation\" WIDTH=\"100%%\" BORDER=0 CELLSPACING=0 CELLPADDING=0>\n");
-	fprintf(htmlrep, "  <TR><TD ALIGN=LEFT VALIGN=TOP><A HREF=\"%s&amp&amp;PIXELS=%d\">Time reset</A></TD></TR>\n", 
+	fprintf(htmlrep, "  <TR><TD ALIGN=LEFT VALIGN=TOP><A HREF=\"%s&amp;PIXELS=%d\">Time reset</A></TD></TR>\n", 
 		selfurl, (usepct ? 0 : pixels));
 	if (!usepct) {
 		fprintf(htmlrep, "  <TR><TD ALIGN=LEFT VALIGN=TOP><A HREF=\"%s&amp;ENDTIME=%u&amp;PIXELS=%d\">Zoom reset</A></TD></TR>\n", 
@@ -415,7 +415,7 @@ static void generate_colorbar(
 	/* First entry may not start at our report-start time */
 	if (colorlog == NULL) {
 		/* No data for period - all white */
-		fprintf(htmlrep, "<TD WIDTH=\"100%%\" BGCOLOR=white NOWRAP>&nbsp</TD>\n");
+		fprintf(htmlrep, "<TD WIDTH=\"100%%\" BGCOLOR=white NOWRAP>&nbsp;</TD>\n");
 	}
 	else if (colorlog->starttime > begintime) {
 		/* Data starts after the bar does - so a white period in front */
@@ -423,7 +423,7 @@ static void generate_colorbar(
 
 		if (((colorlog->starttime - begintime) >= (secsperpixel/2)) && (pixels == 0)) pixels = 1;
 		if (pixels > 0) {
-			fprintf(htmlrep, "<TD WIDTH=\"%d%s\" BGCOLOR=%s NOWRAP>&nbsp</TD>\n", pixels, pctstr, "white");
+			fprintf(htmlrep, "<TD WIDTH=\"%d%s\" BGCOLOR=%s NOWRAP>&nbsp;</TD>\n", pixels, pctstr, "white");
 		}
 	}
 
@@ -436,7 +436,7 @@ static void generate_colorbar(
 		if ((walk->duration >= (secsperpixel/2)) && (pixels == 0)) pixels = 1;
 
 		if (pixels > 0) {
-			fprintf(htmlrep, "<TD WIDTH=\"%d%s\" BGCOLOR=%s NOWRAP>&nbsp</TD>\n", 
+			fprintf(htmlrep, "<TD WIDTH=\"%d%s\" BGCOLOR=%s NOWRAP>&nbsp;</TD>\n", 
 				pixels, pctstr, ((walk->color == COL_CLEAR) ? "white" : colorname(walk->color)));
 		}
 	}
@@ -459,7 +459,7 @@ static void generate_histlog_table(FILE *htmlrep,
 	int curbg = 0;
 	replog_t *walk;
 
-	fprintf(htmlrep, "<TABLE BORDER=0 BGCOLOR=\"#333333\" CELLSPACING=3>\n");
+	fprintf(htmlrep, "<TABLE BORDER=0 BGCOLOR=\"#333333\" CELLSPACING=3 SUMMARY=\"History logs\">\n");
 	fprintf(htmlrep, "<TR>\n");
 	if (entrycount) {
 		fprintf(htmlrep, "<TD COLSPAN=3 ALIGN=CENTER><B>Last %d log entries</B> ", entrycount);
