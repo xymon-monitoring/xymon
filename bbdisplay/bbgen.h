@@ -22,7 +22,7 @@
 #include <time.h>
 #include <stddef.h>
 
-#define VERSION "2.15"
+#define VERSION "2.16pre"
 
 /* Structure defs for bbgen */
 
@@ -236,6 +236,7 @@ typedef struct state_t {
 typedef struct host_t {
 	char	*hostname;
 	char	*displayname;
+	char    *clientalias;
 	char	*comment;
 	char    *description;
 	char	ip[16];
