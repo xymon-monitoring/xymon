@@ -2,7 +2,7 @@
 
 	LDAPINC=""
 	LDAPLIB=""
-	for DIR in /opt/openldap /opt/ldap /usr/local/openldap /usr/local/ldap /usr/local /usr
+	for DIR in /opt/openldap* /opt/ldap* /usr/local/openldap* /usr/local/ldap* /usr/local /usr
 	do
 		if test -f $DIR/include/ldap.h
 		then
@@ -31,22 +31,30 @@
 		LDAPLBER=-llber
 	fi
 
-	cd build
-	OS=`uname -s` make -f Makefile.test-ldap clean
-	OS=`uname -s` LDAPINC="-I$LDAPINC" make -f Makefile.test-ldap test-compile
-	if [ $? -eq 0 ]; then
-		echo "Found LDAP include files in $LDAPINC"
+	if test -z "$LDAPINC" -o -z "$LDAPLIB"; then
+		echo "(Open)LDAP include- or library-files not found."
+		echo "If you want to perform detailed LDAP tests (queries), you need to"
+		echo "install LDAP an LDAP client library that bbgen can use."
+		echo "OpenLDAP can be found at http://www.openldap.org/"
+		echo "Continuing with LDAP support disabled."
 	else
-		echo "WARNING: LDAP include files found in $LDAPINC, but compile fails."
-	fi
+		cd build
+		OS=`uname -s` make -f Makefile.test-ldap clean
+		OS=`uname -s` LDAPINC="-I$LDAPINC" make -f Makefile.test-ldap test-compile
+		if [ $? -eq 0 ]; then
+			echo "Found LDAP include files in $LDAPINC"
+		else
+			echo "WARNING: LDAP include files found in $LDAPINC, but compile fails."
+		fi
 
-	OS=`uname -s` LDAPLIB="-L$LDAPLIB" LDAPLBER="$LDAPLBER" make -f Makefile.test-ldap test-link
-	if [ $? -eq 0 ]; then
-		echo "Found LDAP libraries in $LDAPLIB"
-	else
-		echo "WARNING: LDAP library files found in $LDAPLIB, but link fails."
+		OS=`uname -s` LDAPLIB="-L$LDAPLIB" LDAPLBER="$LDAPLBER" make -f Makefile.test-ldap test-link
+		if [ $? -eq 0 ]; then
+			echo "Found LDAP libraries in $LDAPLIB"
+		else
+			echo "WARNING: LDAP library files found in $LDAPLIB, but link fails."
+		fi
+		OS=`uname -s` make -f Makefile.test-ldap clean
+		cd ..
 	fi
-	OS=`uname -s` make -f Makefile.test-ldap clean
-	cd ..
 
 
