@@ -1,0 +1,76 @@
+.TH BBPROXY 1 "Version 3.0:  6 sep 2004" "bbgen toolkit"
+.SH NAME
+bbproxy \- Big Brother message proxy
+.SH SYNOPSIS
+.B "bbproxy [options] --bbdisplay=$BBDISP"
+
+.SH DESCRIPTION
+.I bbproxy
+is a proxy for forwarding Big Brother messages from one
+server to another. It will typically be needed if you have
+clients behind a firewall, so they cannot send status
+messages to the BBDISPLAY server directly.
+
+The standard Big Brother daemon,
+.I bbd(1)
+can also do this via the BBRELAY setting. However, bbproxy
+has a much lower overhead since it runs as a single-thread
+application and does not launch new processes to handle 
+each incoming message.
+
+.SH OPTIONS
+.IP "--bbdisplay=SERVERIP[:PORT]"
+Specifies the IP-address and optional portnumber where incoming
+messages are forwarded to. The default portnumber is 1984, the
+standard Big Brother port number. If you have setup the normal
+Big Brother environment, you can use "--bbdisplay=$BBDISP".
+.br
+This option is required.
+
+.IP "--bbpager=SERVERIP[:PORT]"
+Specifies the IP-address and optional portnumber where incoming
+pager messages are forwarded to. The default portnumber is 1984, 
+the standard Big Brother port number. If you have setup the normal
+Big Brother environment, you can use "--bbpager=$BBPAGE".
+.br
+If this option is omitted, "page" messages are sent to the
+server listed in --bbdisplay.
+
+.IP "--local=LOCALIP[:PORT]"
+Specifies the IP-adress where bbproxy listens for incoming 
+connections. By default, bbproxy listens on all IP-adresses
+assigned to the host. If no portnumber is given, port 1984
+will be used.
+
+.IP "--timeout=N"
+Specifies the number of seconds after which a connection is
+aborted due to a timeout. Default: 10 seconds.
+
+.IP "--proxyname=BBHOSTNAME.BBSERVICE"
+If given, this option causes bbproxy to send a status report
+every 5 minutes to the BBDISPLAY server about itself. If you
+have set the standard Big Brother environment, you can use
+"--proxyname=$MACHINE.bbproxy".
+
+.IP "--lqueue=N"
+Size of the listen-queue where incoming connections can
+queue up before being processed. This should be large to
+accomodate bursts of activity from clients. Default: 512.
+
+.IP "--daemon"
+Run in daemon mode, i.e. detach and run as a background proces.
+This is the default.
+
+.IP "--no-daemon"
+Runs bbproxy as a foreground proces.
+
+.IP "--pidfile=FILENAME"
+Specifies the location of a file containing the proces-ID 
+of the bbproxy daemon proces. Default: /var/run/bbproxy.pid.
+
+.IP "--debug"
+Enable debugging output.
+
+.SH "SEE ALSO"
+bb(1), bbd(1), bbgen-intro(7)
+
