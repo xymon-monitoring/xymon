@@ -6,6 +6,10 @@ Bugfixes
 
 Improvements
 ------------
+* Optionally hide the URL and content output from HTTP/content
+  checks for "security reasons". Marco Avvisano, 20-sep-2004.
+* Use the "acked" gif for subpage/page/etc. links when there
+  are only acked tests on the page. Marco Avvisano.
 * Allow for enable/disable of TCP response check per host/service.
 * https proxying (proxy CONNECT protocol)
 * Improve the history colorbars in cases where there are many
