@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.3 2004-10-31 11:51:35 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.4 2004-11-01 16:04:26 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -136,11 +136,11 @@ int argnmatch(char *arg, char *match)
 void addtobuffer(char **buf, int *buflen, char *newtext)
 {
 	if (*buf == NULL) {
-		*buflen = 4096;
+		*buflen = strlen(newtext) + 4096;
 		*buf = (char *) malloc(*buflen);
 		**buf = '\0';
 	}
-	else if ((strlen(*buf) + strlen(newtext)) > *buflen) {
+	else if ((strlen(*buf) + strlen(newtext) + 1) > *buflen) {
 		*buflen += strlen(newtext) + 4096;
 		*buf = (char *) realloc(*buf, *buflen);
 	}
