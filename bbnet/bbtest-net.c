@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.151 2004-08-18 06:22:02 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.152 2004-08-18 06:35:11 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -517,7 +517,7 @@ void load_tests(void)
 						int dummy, newtimeout;
 
 						specialtag = 1;
-						if (sscanf(testspec, "TIMEOUT:%d:%d", dummy, nettimeout) == 2) {
+						if (sscanf(testspec, "TIMEOUT:%d:%d", &dummy, &newtimeout) == 2) {
 							/*
 							 * For compatibility, pick up the timeout
 							 * setting if specified for a host, but use it
