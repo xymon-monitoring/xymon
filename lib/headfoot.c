@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.16 2005-02-09 16:43:36 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.17 2005-03-15 12:58:26 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -33,6 +33,7 @@ static char *hostenv_host = NULL;
 static char *hostenv_ip = NULL;
 static char *hostenv_svc = NULL;
 static char *hostenv_color = NULL;
+static char *hostenv_pagepath = NULL;
 
 static time_t hostenv_reportstart = 0;
 static time_t hostenv_reportend = 0;
@@ -169,6 +170,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 		else if (strcmp(t_start, "BBREPPANIC") == 0)    fprintf(output, "%s", hostenv_reppanic);
 		else if (strcmp(t_start, "LOGTIME") == 0) 	fprintf(output, "%s", (hostenv_logtime ? hostenv_logtime : ""));
 		else if (strcmp(t_start, "BBREFRESH") == 0)     fprintf(output, "%d", hostenv_refresh);
+		else if (strcmp(t_start, "BBPAGEPATH") == 0)    fprintf(output, "%s", (hostenv_pagepath ? hostenv_pagepath : ""));
 
 		else if (strcmp(t_start, "REPMONLIST") == 0) {
 			int i;
@@ -287,6 +289,8 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 	}
 	fd = -1;
 
+	hostenv_pagepath = strdup(hfpath);
+
 	while ((fd == -1) && strlen(hfpath)) {
 		char *p;
 		char *elemstart;
@@ -350,6 +354,7 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 		fprintf(output, "<HTML><BODY> \n <HR size=4> \n <BR>%s is either missing or invalid, please create this file with your custom header<BR> \n<HR size=4>", filename);
 	}
 
+	xfree(hostenv_pagepath); hostenv_pagepath = NULL;
 	MEMUNDEFINE(filename);
 }
 
