@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.4 2004-10-05 11:43:36 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.5 2004-10-05 22:06:50 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -67,6 +67,14 @@ typedef struct conn_t {
 	struct conn_t *next;
 } conn_t;
 
+typedef struct cookie_t {
+	unsigned int cookie;
+	bbd_log_t *log;
+	time_t expires;
+	struct cookie_t *next;
+} cookie_t;
+cookie_t *cookiehead = NULL, *cookietail = NULL;
+
 static volatile int running = 1;
 static volatile int reloadconfig = 1;
 static volatile time_t nextcheckpoint = 0;
@@ -84,16 +92,18 @@ int alertcolors = ( (1 << COL_RED) | (1 << COL_YELLOW) | (1 << COL_PURPLE) );
 int ghosthandling = -1;
 char *checkpointfn = NULL;
 
-void posttochannel(bbd_channel_t *channel, char *msg, int msglen, 
-		   char *sender, char *hostname, char *testname, time_t validity, 
-		   int newcolor, int oldcolor, time_t lastchange)
+void posttochannel(bbd_channel_t *channel, char *channelmarker, 
+		   char *msg, char *sender, char *hostname, void *arg)
 {
+	bbd_log_t *log;
+	char *testname;
 	struct sembuf s;
 	struct shmid_ds chninfo;
 	int clients;
 	int n;
 	struct timeval tstamp;
 	struct timezone tz;
+	char *ackmsg = NULL, *dismsg = NULL;
 
 	/* If any message outstanding, wait until it has been noticed.... */
 	s.sem_num = 0;
@@ -120,11 +130,66 @@ void posttochannel(bbd_channel_t *channel, char *msg, int msglen,
 
 	/* All clear, post the message */
 	gettimeofday(&tstamp, &tz);
-	n = sprintf(channel->channelbuf, "@@%s|%d.%06d|%s|%s|%s|%d|%s|%s|%d\n", 
-		    channelnames[channel->channelid], (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
-		    sender, hostname, testname, (int) validity, colnames[newcolor], colnames[oldcolor], (int) lastchange);
-	memcpy(channel->channelbuf+n, msg, msglen);
-	*(channel->channelbuf + msglen + n) = '\0';
+	switch(channel->channelid) {
+	  case C_STATUS:
+		log = (bbd_log_t *)arg;
+		if (log->ackmsg) ackmsg = base64encode(log->ackmsg);
+		if (log->dismsg) dismsg = base64encode(log->dismsg);
+		sprintf(channel->channelbuf, 
+			"@@%s|%d.%06d|%s|%s|%s|%d|%s|%s|%d|%d|%s|%d|%s\n%s\n", 
+			channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
+			log->test->testname, (int) log->validtime, 
+			colnames[log->color], colnames[log->oldcolor], (int) log->lastchange, 
+			(int)log->acktime, (ackmsg ? ackmsg : ""), 
+			(int)log->enabletime, (dismsg ? dismsg : ""),
+			msg);
+		if (dismsg) free(dismsg);
+		if (ackmsg) free(ackmsg);
+		break;
+
+	  case C_STACHG:
+		log = (bbd_log_t *)arg;
+		sprintf(channel->channelbuf, 
+			"@@%s|%d.%06d|%s|%s|%s|%d|%s|%s|%d\n%s\n", 
+			channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
+			log->test->testname, (int) log->validtime, 
+			colnames[log->color], colnames[log->oldcolor], (int) log->lastchange, 
+			msg);
+		break;
+
+	  case C_PAGE:
+		log = (bbd_log_t *)arg;
+		if (strcmp(channelmarker, "ack") == 0) {
+			sprintf(channel->channelbuf, 
+				"@@%s|%d.%06d|%s|%s|%s|%d\n%s\n", 
+				channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
+				log->test->testname, (int) log->acktime, msg);
+		}
+		else {
+			sprintf(channel->channelbuf, 
+				"@@%s|%d.%06d|%s|%s|%s|%d|%s|%s|%d\n%s\n", 
+				channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
+				log->test->testname, (int) log->validtime, 
+				colnames[log->color], colnames[log->oldcolor], (int) log->lastchange,
+				msg);
+		}
+		break;
+
+	  case C_DATA:
+		testname = (char *)arg;
+		sprintf(channel->channelbuf, 
+			"@@%s|%d.%06d|%s|%s|%s\n%s\n", 
+			channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
+			testname, msg);
+		break;
+
+	  case C_NOTES:
+		sprintf(channel->channelbuf, 
+			"@@%s|%d.%06d|%s|%s\n%s\n", 
+			channelmarker, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender, hostname, 
+			msg);
+		break;
+	}
 
 	/* Let the readers know it is there.  */
 	s.sem_num = 0;
@@ -221,12 +286,13 @@ void get_hts(char *msg, char *sender,
 		for (lwalk = hwalk->logs; (lwalk && (lwalk->test != twalk)); lwalk = lwalk->next);
 		if (createlog && (lwalk == NULL)) {
 			lwalk = (bbd_log_t *)malloc(sizeof(bbd_log_t));
-			lwalk->color = NO_COLOR;
+			lwalk->color = lwalk->oldcolor = NO_COLOR;
+			lwalk->host = hwalk;
 			lwalk->test = twalk;
 			lwalk->message = NULL;
 			lwalk->msgsz = 0;
-			lwalk->dismsg = NULL;
-			lwalk->lastchange = lwalk->validtime = lwalk->enabletime = 0;
+			lwalk->dismsg = lwalk->ackmsg = NULL;
+			lwalk->lastchange = lwalk->validtime = lwalk->enabletime = lwalk->acktime = 0;
 			lwalk->next = hwalk->logs;
 			hwalk->logs = lwalk;
 		}
@@ -244,89 +310,111 @@ void get_hts(char *msg, char *sender,
 	free(l);
 }
 
-void handle_status(char *msg, int msglen, char *sender, char *hostname, char *testname, 
+void get_cookiedur(char *msg, char *sender, bbd_log_t **log, int *duration)
+{
+	unsigned int cookie;
+	
+	*log = NULL;
+	if (sscanf(msg, "%*s %u %d", &cookie, duration) == 2) {
+		cookie_t *cwalk;
+
+		for (cwalk = cookiehead; (cwalk && (cwalk->cookie != cookie)); cwalk = cwalk->next);
+
+		if (cwalk && (cwalk->expires > time(NULL))) {
+			*log = cwalk->log;
+			dprintf("Found cookie for status %s\n", (*log)->message);
+		}
+	}
+}
+
+void handle_status(unsigned char *msg, int msglen, char *sender, char *hostname, char *testname, 
 		   bbd_log_t *log, int newcolor)
 {
 	int validity = 30;
-	int oldcolor = log->color;
+	int oldcolor;
 	time_t now = time(NULL);
-	char *umsg = msg;
-	int umsglen = msglen;
 
 	if (strncmp(msg, "status+", 7) == 0) {
 		validity = atoi(msg+7);
 	}
 
 	if (log->enabletime > now) {
-		char *chostname = strdup(hostname);
-		char *p;
-
 		/* The test is currently disabled. */
 		newcolor = COL_BLUE;
-		umsglen = msglen + strlen(log->dismsg) + 512;
-		umsg = (unsigned char *)malloc(umsglen);
+	}
+	else if (log->enabletime) {
+		/* A disable has expired. Clear the timestamp and the message buffer */
+		log->enabletime = 0;
+		if (log->dismsg) { free(log->dismsg); log->dismsg = NULL; }
+	}
 
-		p = chostname; while ((p = strchr(p, '.')) != NULL) *p = ',';
-		sprintf(umsg, "status %s.%s+%d blue disabled until %s\n", 
-			chostname, testname, validity, ctime(&log->enabletime));
-		strcat(umsg, log->dismsg);
-		strcat(umsg, "\n&");
-		strcat(umsg, msg_data(msg));
+	if (log->acktime) {
+		/* Handling of ack'ed tests */
+
+		if (newcolor == COL_GREEN) {
+			/* The test recovered. Clear the ack. */
+			log->acktime = 0;
+		}
+
+		if (log->acktime > now) {
+			/* Dont need to do anything about an acked test */
+		}
+		else {
+			/* The acknowledge has expired. Clear the timestamp and the message buffer */
+			log->acktime = 0;
+			if (log->ackmsg) { free(log->ackmsg); log->ackmsg = NULL; }
+		}
 	}
 
 	log->validtime = now + validity*60;
+	oldcolor = log->color;
 	log->color = newcolor;
-	if ((log->message == NULL) || (log->msgsz = 0)) {
-		log->message = strdup(umsg);
-		log->msgsz = umsglen;
-	}
-	else if (log->msgsz >= umsglen) {
-		strcpy(log->message, umsg);
-	}
-	else {
-		log->message = realloc(log->message, umsglen);
-		strcpy(log->message, umsg);
-		log->msgsz = umsglen;
+	if (msg != log->message) {	/* They can be the same when called from handle_enadis() */
+		if ((log->message == NULL) || (log->msgsz = 0)) {
+			log->message = strdup(msg);
+			log->msgsz = msglen;
+		}
+		else if (log->msgsz >= msglen) {
+			strcpy(log->message, msg);
+		}
+		else {
+			log->message = realloc(log->message, msglen);
+			strcpy(log->message, msg);
+			log->msgsz = msglen;
+		}
 	}
 
 	if (oldcolor != newcolor) {
 		int oldalertstatus = ((alertcolors & (1 << oldcolor)) != 0);
 		int newalertstatus = ((alertcolors & (1 << newcolor)) != 0);
 
+		log->oldcolor = oldcolor;
 		dprintf("oldcolor=%d, oldas=%d, newcolor=%d, newas=%d\n", 
 			oldcolor, oldalertstatus, newcolor, newalertstatus);
 
 		if (oldalertstatus != newalertstatus) {
 			/* alert status changed. Tell the pagers */
 			dprintf("posting to page channel\n");
-			posttochannel(pagechn, umsg, umsglen, 
-					sender, hostname, testname, 
-					log->validtime, newcolor, oldcolor, log->lastchange);
+			posttochannel(pagechn, channelnames[C_PAGE], msg, sender, hostname, (void *) log);
 		}
 
 		dprintf("posting to stachg channel\n");
-		posttochannel(stachgchn, umsg, umsglen, 
-				sender, hostname, testname, 
-				log->validtime, newcolor, oldcolor, log->lastchange);
+		posttochannel(stachgchn, channelnames[C_STACHG], msg, sender, hostname, (void *) log);
 		log->lastchange = time(NULL);
 	}
 
 	dprintf("posting to status channel\n");
-	posttochannel(statuschn, umsg, umsglen, 
-			sender, hostname, testname, 
-			log->validtime, newcolor, oldcolor, log->lastchange);
-
-	if (umsg != msg) free(umsg);
+	posttochannel(statuschn, channelnames[C_STATUS], msg, sender, hostname, (void *) log);
 }
 
 void handle_data(char *msg, int msglen, char *sender, char *hostname, char *testname)
 {
-	posttochannel(datachn, msg, msglen, sender, hostname, testname, 0, NO_COLOR, NO_COLOR, -1);
+	posttochannel(datachn, channelnames[C_DATA], msg, sender, hostname, (void *)testname);
 }
 
 void handle_notes(char *msg, int msglen, char *sender, char *hostname)
 {
-	posttochannel(noteschn, msg, msglen, sender, hostname, "", 0, NO_COLOR, NO_COLOR, -1);
+	posttochannel(noteschn, channelnames[C_NOTES], msg, sender, hostname, NULL);
 }
 
 void handle_enadis(int enabled, char *msg, int msglen, char *sender)
@@ -445,10 +533,35 @@ void handle_enadis(int enabled, char *msg, int msglen, char *sender)
 				}
 			}
 		}
+
+		/* Trigger an immediate status update */
+		handle_status(log->message, strlen(log->message), sender, 
+			      log->host->hostname, log->test->testname, log, COL_BLUE);
 	}
 
 	return;
 }
+
+
+void handle_ack(char *msg, char *sender, bbd_log_t *log, int duration)
+{
+	char *p;
+
+	log->acktime = time(NULL)+duration*60;
+	p = msg;
+	p += strcspn(p, " \t");		/* Skip the keyword ... */
+	p += strspn(p, " \t");		/* and the space ... */
+	p += strspn(p, "0123456789");	/* and the cookie ... */
+	p += strspn(p, " \t");		/* and the space ... */
+	p += strspn(p, "0123456789");	/* and the duration ... */
+	p += strspn(p, " \t");		/* and the space ... */
+	log->ackmsg = strdup(p);
+
+	/* Tell the pagers */
+	posttochannel(pagechn, "ack", log->ackmsg, sender, log->host->hostname, (void *)log);
+	return;
+}
+
 
 int get_config(char *fn, conn_t *msg)
 {
@@ -501,14 +614,18 @@ void do_message(conn_t *msg)
 			if (nextmsg) { *(nextmsg+1) = '\0'; nextmsg += 2; }
 
 			get_hts(currmsg, sender, &h, &t, &log, &color, 1, 1);
-			if (log) handle_status(currmsg, strlen(currmsg), sender, h->hostname, t->testname, log, color);
+			if (log && (color != -1)) {
+				handle_status(currmsg, strlen(currmsg), sender, h->hostname, t->testname, log, color);
+			}
 
 			currmsg = nextmsg;
 		} while (currmsg);
 	}
 	else if (strncmp(msg->buf, "status", 6) == 0) {
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 1, 1);
-		if (log) handle_status(msg->buf, msg->buflen, sender, h->hostname, t->testname, log, color);
+		if (log && (color != -1)) {
+			handle_status(msg->buf, msg->buflen, sender, h->hostname, t->testname, log, color);
+		}
 	}
 	else if (strncmp(msg->buf, "data", 4) == 0) {
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 1, 1);
@@ -516,7 +633,9 @@ void do_message(conn_t *msg)
 	}
 	else if (strncmp(msg->buf, "summary", 7) == 0) {
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 1, 1);
-		handle_status(msg->buf, msg->buflen, sender, h->hostname, t->testname, log, color);
+		if (log && (color != -1)) {
+			handle_status(msg->buf, msg->buflen, sender, h->hostname, t->testname, log, color);
+		}
 	}
 	else if (strncmp(msg->buf, "notes", 5) == 0) {
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 1, 0);
@@ -537,7 +656,7 @@ void do_message(conn_t *msg)
 			msg->bufp = msg->buf;
 		}
 	}
-	else if (strncmp(msg->buf, "query", 5) == 0) {
+	else if (strncmp(msg->buf, "query ", 6) == 0) {
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 0, 0);
 		if (log) {
 			unsigned char *eoln = strchr(log->message, '\n');
@@ -550,7 +669,10 @@ void do_message(conn_t *msg)
 		}
 	}
 	else if (strncmp(msg->buf, "bbgendlog ", 10) == 0) {
-		/* Request for a single status log */
+		/* 
+		 * Request for a single status log
+		 * bbgendlog HOST.TEST
+		 */
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 0, 0);
 		if (log) {
 			msg->doingwhat = RESPONDING;
@@ -558,7 +680,7 @@ void do_message(conn_t *msg)
 			msg->buflen = strlen(msg->buf);
 		}
 	}
-	else if (strncmp(msg->buf, "bbgendbrd", 9) == 0) {
+	else if (strcmp(msg->buf, "bbgendbrd") == 0) {
 		/* Request for a summmary of all known status logs */
 		bbd_hostlist_t *hwalk;
 		bbd_log_t *lwalk;
@@ -595,6 +717,36 @@ void do_message(conn_t *msg)
 		msg->bufp = msg->buf = buf;
 		msg->buflen = buflen;
 	}
+	else if (strncmp(msg->buf, "bbgendcookie ", 13) == 0) {
+		/* bbgendcookie HOST.TEST */
+		get_hts(msg->buf, sender, &h, &t, &log, &color, 0, 0);
+		if (log) {
+			if (cookiehead == NULL) {
+				cookiehead = cookietail = (cookie_t *)malloc(sizeof(cookie_t));
+			}
+			else {
+				cookietail->next = (cookie_t *) malloc(sizeof(cookie_t));
+				cookietail = cookietail->next;
+			}
+
+			cookietail->log = log;
+			cookietail->cookie = random();
+			cookietail->expires = time(NULL) + 300;
+			cookietail->next = NULL;
+
+			msg->doingwhat = RESPONDING;
+			msg->buflen = sprintf(msg->buf, "%d\n", cookietail->cookie);
+			msg->bufp = msg->buf;
+		}
+	}
+	else if (strncmp(msg->buf, "bbgendack", 9) == 0) {
+		/* bbgendack COOKIE DURATION TEXT */
+		int duration = 30*60;
+		get_cookiedur(msg->buf, sender, &log, &duration);
+		if (log) {
+			handle_ack(msg->buf, sender, log, duration);
+		}
+	}
 
 	if (msg->doingwhat == RESPONDING) {
 		shutdown(msg->sock, SHUT_RD);
@@ -630,15 +782,20 @@ void save_checkpoint(void)
 		for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
 			char *statusmsg = base64encode(lwalk->message);
 			char *disablemsg = NULL;
+			char *ackmsg = NULL;
 			
 			if (lwalk->dismsg) disablemsg = base64encode(lwalk->dismsg);
+			if (lwalk->ackmsg) ackmsg = base64encode(lwalk->ackmsg);
 
-			fprintf(fd, "@@BBGENDCHK|%s|%s|%s|%d|%d|%d|%s|%s\n", 
-				hwalk->hostname, lwalk->test->testname, colnames[lwalk->color],
-				(int) lwalk->lastchange, (int) lwalk->validtime, (int) lwalk->enabletime,
-				statusmsg, (disablemsg ? disablemsg : ""));
+			fprintf(fd, "@@BBGENDCHK-V1|%s|%s|%s|%s|%d|%d|%d|%d|%s|%s|%s\n", 
+				hwalk->hostname, lwalk->test->testname, 
+				colnames[lwalk->color], colnames[lwalk->oldcolor],
+				(int) lwalk->lastchange, (int) lwalk->validtime, 
+				(int) lwalk->enabletime, (int) lwalk->acktime,
+				statusmsg, (disablemsg ? disablemsg : ""), (ackmsg ? ackmsg : ""));
 
 			if (disablemsg) free(disablemsg);
+			if (ackmsg) free(ackmsg);
 			free(statusmsg);
 		}
 	}
@@ -658,9 +815,9 @@ void load_checkpoint(char *fn)
 	bbd_hostlist_t *htail = NULL;
 	bbd_testlist_t *t = NULL;
 	bbd_log_t *ltail = NULL;
-	char *hostname, *testname, *statusmsg, *disablemsg;
-	time_t lastchange, validtime, enabletime;
-	int color;
+	char *hostname, *testname, *statusmsg, *disablemsg, *ackmsg;
+	time_t lastchange, validtime, enabletime, acktime;
+	int color, oldcolor;
 
 	fd = fopen(fn, "r");
 	if (fd == NULL) {
@@ -670,21 +827,24 @@ void load_checkpoint(char *fn)
 
 	while (fgets(l, sizeof(l)-1, fd)) {
 		hostname = testname = statusmsg = disablemsg = NULL;
-		lastchange = validtime = enabletime = 0;
+		lastchange = validtime = enabletime = acktime = 0;
 		err =0;
 
 		item = strtok(l, "|\n"); i = 0;
 		while (item && !err) {
 			switch (i) {
-			  case 0: err = (strcmp(item, "@@BBGENDCHK") != 0); break;
+			  case 0: err = (strcmp(item, "@@BBGENDCHK-V1") != 0); break;
 			  case 1: hostname = item; break;
 			  case 2: testname = item; break;
 			  case 3: color = parse_color(item); if (color == -1) err = 1; break;
-			  case 4: lastchange = atoi(item); break;
-			  case 5: validtime = atoi(item); break;
-			  case 6: enabletime = atoi(item); break;
-			  case 7: statusmsg = item; break;
-			  case 8: disablemsg = item; break;
+			  case 4: oldcolor = parse_color(item); if (color == -1) err = 1; break;
+			  case 5: lastchange = atoi(item); break;
+			  case 6: validtime = atoi(item); break;
+			  case 7: enabletime = atoi(item); break;
+			  case 8: acktime = atoi(item); break;
+			  case 9: statusmsg = item; break;
+			  case 10: disablemsg = item; break;
+			  case 11: ackmsg = item; break;
 			  default: err = 1;
 			}
 
@@ -724,13 +884,16 @@ void load_checkpoint(char *fn)
 		}
 
 		ltail->test = t;
+		ltail->host = htail;
 		ltail->color = color;
 		ltail->lastchange = lastchange;
 		ltail->validtime = validtime;
 		ltail->enabletime = enabletime;
+		ltail->acktime = acktime;
 		ltail->message = base64decode(statusmsg);
 		ltail->msgsz = strlen(ltail->message);
 		ltail->dismsg = ( (disablemsg && strlen(disablemsg)) ? base64decode(disablemsg) : NULL);
+		ltail->ackmsg = ( (ackmsg && strlen(ackmsg)) ? base64decode(ackmsg) : NULL);
 		ltail->next = NULL;
 	}
 
@@ -766,7 +929,7 @@ void sig_handler(int signum)
 
 int main(int argc, char *argv[])
 {
-	conn_t *chead = NULL;
+	conn_t *connhead = NULL, *conntail=NULL;
 	char *listenip = "0.0.0.0";
 	int listenport = 1984;
 	char *bbhostsfn = NULL;
@@ -775,7 +938,9 @@ int main(int argc, char *argv[])
 	int lsocket, opt;
 	int listenq = 512;
 	int argi;
-		
+	struct timeval tv;
+	struct timezone tz;
+
 	colnames[COL_GREEN] = "green";
 	colnames[COL_YELLOW] = "yellow";
 	colnames[COL_RED] = "red";
@@ -783,6 +948,8 @@ int main(int argc, char *argv[])
 	colnames[COL_BLUE] = "blue";
 	colnames[COL_PURPLE] = "purple";
 	colnames[NO_COLOR] = "none";
+	gettimeofday(&tv, &tz);
+	srandom(tv.tv_usec);
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
@@ -899,16 +1066,17 @@ int main(int argc, char *argv[])
 		fd_set fdread, fdwrite;
 		int maxfd, n;
 		conn_t *cwalk;
+		time_t now = time(NULL);
 
 		if (reloadconfig && bbhostsfn) {
 			reloadconfig = 0;
 			load_hostnames(bbhostsfn, 1);
 		}
 
-		if (time(NULL) > nextcheckpoint) {
+		if (now > nextcheckpoint) {
 			pid_t childpid;
 
-			nextcheckpoint = time(NULL) + checkpointinterval;
+			nextcheckpoint = now + checkpointinterval;
 			childpid = fork();
 			if (childpid == -1) {
 				errprintf("Could not fork checkpoing child:%s\n", strerror(errno));
@@ -922,7 +1090,7 @@ int main(int argc, char *argv[])
 		FD_ZERO(&fdread); FD_ZERO(&fdwrite);
 		FD_SET(lsocket, &fdread); maxfd = lsocket;
 
-		for (cwalk = chead; (cwalk); cwalk = cwalk->next) {
+		for (cwalk = connhead; (cwalk); cwalk = cwalk->next) {
 			switch (cwalk->doingwhat) {
 				case RECEIVING:
 					FD_SET(cwalk->sock, &fdread);
@@ -945,7 +1113,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		for (cwalk = chead; (cwalk); cwalk = cwalk->next) {
+		for (cwalk = connhead; (cwalk); cwalk = cwalk->next) {
 			switch (cwalk->doingwhat) {
 			  case RECEIVING:
 				if (FD_ISSET(cwalk->sock, &fdread)) {
@@ -989,31 +1157,46 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		while (chead && (chead->doingwhat == NOTALK)) {
-			conn_t *tmp = chead;
-			chead = chead->next;
+		/* Clean up conn structs that are no longer used */
+		while (connhead && (connhead->doingwhat == NOTALK)) {
+			conn_t *tmp = connhead;
+			connhead = connhead->next;
 			free(tmp->buf);
 			free(tmp);
 		}
+		if (connhead == NULL) conntail = NULL;
 
+		/* Clean up cookies that have expired */
+		while (cookiehead && (cookiehead->expires <= now)) {
+			cookie_t *tmp = cookiehead;
+			cookiehead = cookiehead->next;
+			free(tmp);
+		}
+		if (cookiehead == NULL) cookietail = NULL;
+
+		/* Pick up new connections */
 		if (FD_ISSET(lsocket, &fdread)) {
-			/* New connection */
 			struct sockaddr_in addr;
 			int addrsz = sizeof(addr);
 			int sock = accept(lsocket, (struct sockaddr *)&addr, &addrsz);
 
 			if (sock >= 0) {
-				conn_t *newconn = (conn_t *)malloc(sizeof(conn_t));
+				if (connhead == NULL) {
+					connhead = conntail = (conn_t *)malloc(sizeof(conn_t));
+				}
+				else {
+					conntail->next = (conn_t *)malloc(sizeof(conn_t));
+					conntail = conntail->next;
+				}
 
-				newconn->sock = sock;
-				memcpy(&newconn->addr, &addr, sizeof(addr));
-				newconn->doingwhat = RECEIVING;
-				newconn->buf = (unsigned char *)malloc(MAXMSG);
-				newconn->bufp = newconn->buf;
-				newconn->buflen = 0;
-				newconn->bufsz = MAXMSG;
-				newconn->next = chead;
-				chead = newconn;
+				conntail->sock = sock;
+				memcpy(&conntail->addr, &addr, sizeof(conntail->addr));
+				conntail->doingwhat = RECEIVING;
+				conntail->buf = (unsigned char *)malloc(MAXMSG);
+				conntail->bufp = conntail->buf;
+				conntail->buflen = 0;
+				conntail->bufsz = MAXMSG;
+				conntail->next = NULL;
 			}
 		}
 	} while (running);
