@@ -18,8 +18,8 @@ typedef struct activealerts_t {
 
 	/* Alert status */
 	int color;
-	char *pagemessage;
-	char *ackmessage;
+	unsigned char *pagemessage;
+	unsigned char *ackmessage;
 	time_t eventstart;
 	time_t nextalerttime;
 	enum astate_t state;
@@ -30,11 +30,15 @@ typedef struct activealerts_t {
 extern void load_alertconfig(char *configfn, int alertcolors);
 extern void dump_alertconfig(void);
 extern time_t next_alert(activealerts_t *alert);
+extern void cleanup_alert(activealerts_t *alert);
 extern void clear_interval(activealerts_t *alert);
 
 extern void start_alerts(void);
 extern void send_alert(activealerts_t *alert);
 extern void finish_alerts(void);
+
+extern void load_state(char *filename);
+extern void save_state(char *filename);
 
 #endif
 

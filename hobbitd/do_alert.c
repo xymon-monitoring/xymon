@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.5 2004-10-20 20:26:06 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.6 2004-10-21 15:03:25 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -878,6 +878,42 @@ time_t next_alert(activealerts_t *alert)
 	return nexttime;
 }
 
+void cleanup_alert(activealerts_t *alert)
+{
+	if (alert->state == A_RECOVERED) {
+		/*
+		 * A status has recovered and gone green. So we clear out all info
+		 * we have about this alert and it's recipients.
+		 */
+		char *id;
+		repeat_t *rptwalk, *rptprev;
+
+		id = (char *)malloc(strlen(alert->hostname->name)+strlen(alert->testname->name)+3);
+		sprintf(id, "%s|%s|", alert->hostname->name, alert->testname->name);
+		rptwalk = rpthead; rptprev = NULL;
+		do {
+			if (strncmp(rptwalk->recipid, id, strlen(id)) == 0) {
+				repeat_t *tmp = rptwalk;
+
+				if (rptwalk == rpthead) {
+					rptwalk = rpthead = rpthead->next;
+				}
+				else {
+					rptprev->next = rptwalk->next;
+					rptwalk = rptwalk->next;
+				}
+
+				free(tmp->recipid);
+				free(tmp);
+			}
+			else {
+				rptprev = rptwalk;
+				rptwalk = rptwalk->next;
+			}
+		} while (rptwalk);
+	}
+}
+
 void clear_interval(activealerts_t *alert)
 {
 	int first = 1;
@@ -893,3 +929,44 @@ void clear_interval(activealerts_t *alert)
 		}
 	}
 }
+
+void save_state(char *filename)
+{
+	FILE *fd = fopen(filename, "w");
+	repeat_t *walk;
+
+	if (fd == NULL) return;
+	for (walk = rpthead; (walk); walk = walk->next) {
+		fprintf(fd, "%d|%s\n", (int) walk->nextalert, walk->recipid);
+	}
+	fclose(fd);
+}
+
+void load_state(char *filename)
+{
+	FILE *fd = fopen(filename, "r");
+	char l[8192];
+	char *p;
+
+	if (fd == NULL) return;
+	while (fgets(l, sizeof(l), fd)) {
+		p = strchr(l, '\n'); if (p) *p = '\0';
+
+		p = strchr(l, '|');
+		if (p) {
+			repeat_t *newrpt;
+
+			*p = '\0';
+			if (atoi(l) > time(NULL)) {
+				newrpt = (repeat_t *)malloc(sizeof(repeat_t));
+				newrpt->recipid = strdup(p+1);
+				newrpt->nextalert = atoi(l);
+				newrpt->next = rpthead;
+				rpthead = newrpt;
+			}
+		}
+	}
+
+	fclose(fd);
+}
+

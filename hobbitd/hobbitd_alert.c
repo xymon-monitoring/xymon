@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.11 2004-10-20 20:26:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.12 2004-10-21 15:02:50 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -56,6 +56,24 @@ htnames_t *testnames = NULL;
 htnames_t *locations = NULL;
 activealerts_t *ahead = NULL;
 
+char *statename[] = {
+	"paging", "acked", "recovered", "dead"
+};
+
+htnames_t *find_name(htnames_t **head, char *name)
+{
+	htnames_t *walk;
+
+	for (walk = *head; (walk && strcmp(name, walk->name)); walk = walk->next) ;
+	if (walk == NULL) {
+		walk = (htnames_t *)malloc(sizeof(htnames_t));
+		walk->name = strdup(name);
+		walk->next = *head;
+		*head = walk;
+	}
+
+	return walk;
+}
 
 activealerts_t *find_active(char *hostname, char *testname)
 {
@@ -88,6 +106,82 @@ void sig_handler(int signum)
 	}
 }
 
+void save_checkpoint(char *filename)
+{
+	char *subfn;
+	FILE *fd = fopen(filename, "w");
+	activealerts_t *awalk;
+	unsigned char *pgmsg = "", *ackmsg = "";
+
+	if (fd == NULL) return;
+
+	for (awalk = ahead; (awalk); awalk = awalk->next) {
+		fprintf(fd, "%s|%s|%s|%s|%d|%d|%s|",
+			awalk->hostname->name, awalk->testname->name, awalk->location->name,
+			colorname(awalk->color),
+			(int) awalk->eventstart,
+			(int) awalk->nextalerttime,
+			statename[awalk->state]);
+		if (awalk->pagemessage) pgmsg = nlencode(awalk->pagemessage);
+		fprintf(fd, "%s|", pgmsg);
+		if (awalk->ackmessage) ackmsg = nlencode(awalk->ackmessage);
+		fprintf(fd, "%s\n", ackmsg);
+	}
+	fclose(fd);
+
+	subfn = (char *)malloc(strlen(filename)+5);
+	sprintf(subfn, "%s.sub", filename);
+	save_state(subfn);
+	free(subfn);
+}
+
+void load_checkpoint(char *filename)
+{
+	char *subfn;
+	FILE *fd = fopen(filename, "r");
+	char l[4*MAXMSG+1024];
+
+	if (fd == NULL) return;
+
+	while (fgets(l, sizeof(l), fd)) {
+		char *item[20], *p;
+		int i;
+
+		p = strchr(l, '\n'); if (p) *p = '\0';
+
+		i = 0; p = gettok(l, "|");
+		while (p && (i < 20)) {
+			item[i++] = p;
+			p = gettok(NULL, "|");
+		}
+
+		if (i > 8) {
+			activealerts_t *newalert = (activealerts_t *)malloc(sizeof(activealerts_t));
+			newalert->hostname = find_name(&hostnames, item[0]);
+			newalert->testname = find_name(&testnames, item[1]);
+			newalert->location = find_name(&locations, item[2]);
+			newalert->color = parse_color(item[3]);
+			newalert->eventstart = (time_t) atoi(item[4]);
+			newalert->nextalerttime = (time_t) atoi(item[5]);
+			newalert->state = A_PAGING;
+			while (strcmp(item[6], statename[newalert->state]) && (newalert->state < A_DEAD)) 
+				newalert->state++;
+			newalert->pagemessage = newalert->ackmessage = NULL;
+			nldecode(item[7]); nldecode(item[8]);
+			if (strlen(item[7])) newalert->pagemessage = strdup(item[7]);
+			if (strlen(item[8])) newalert->ackmessage = strdup(item[8]);
+			newalert->next = ahead;
+			ahead = newalert;
+		}
+	}
+	fclose(fd);
+
+	subfn = (char *)malloc(strlen(filename)+5);
+	sprintf(subfn, "%s.sub", filename);
+	load_state(subfn);
+	free(subfn);
+}
+
 int main(int argc, char *argv[])
 {
 	char *msg;
@@ -95,6 +189,8 @@ int main(int argc, char *argv[])
 	int argi;
 	int alertcolors = ( (1 << COL_RED) | (1 << COL_YELLOW) | (1 << COL_PURPLE) );
 	char *configfn = NULL;
+	char *checkfn = NULL;
+	time_t nextcheckpoint = time(NULL) + 300;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
@@ -118,12 +214,17 @@ int main(int argc, char *argv[])
 		else if (strncmp(argv[argi], "--config=", 9) == 0) {
 			configfn = strdup(strchr(argv[argi], '=')+1);
 		}
+		else if (strncmp(argv[argi], "--checkpoint-file=", 13) == 0) {
+			checkfn = strdup(strchr(argv[argi], '=')+1);
+		}
 		else if (strcmp(argv[argi], "--dump-config") == 0) {
 			load_alertconfig(configfn, alertcolors);
 			dump_alertconfig();
 			return 0;
 		}
 	}
+
+	if (checkfn) load_checkpoint(checkfn);
 
 	setup_signalhandler("bbd_alert");
 	signal(SIGCHLD, sig_handler);
@@ -140,6 +241,11 @@ int main(int argc, char *argv[])
 		time_t now;
 		int anytogo;
 		activealerts_t *awalk, *khead, *tmp;
+
+		if (checkfn && (time(NULL) > nextcheckpoint)) {
+			nextcheckpoint = time(NULL)+300;
+			save_checkpoint(checkfn);
+		}
 
 		timeout.tv_sec = 60; timeout.tv_usec = 0;
 		msg = get_bbgend_message("bbd_alert", &seq, &timeout);
@@ -181,37 +287,9 @@ int main(int argc, char *argv[])
 			dprintf("Got page message from %s:%s\n", hostname, testname);
 			awalk = find_active(hostname, testname);
 			if (awalk == NULL) {
-				htnames_t *hwalk;
-				htnames_t *twalk;
-				htnames_t *pwalk;
-
-				dprintf("New alert\n");
-				for (hwalk = hostnames; (hwalk && strcmp(hostname, hwalk->name)); hwalk = hwalk->next) ;
-				if (hwalk == NULL) {
-					hwalk = (htnames_t *)malloc(sizeof(htnames_t));
-					hwalk->name = strdup(hostname);
-					hwalk->next = hostnames;
-					hostnames = hwalk;
-					dprintf("Created new hostname record %s\n", hostname);
-				}
-
-				for (twalk = testnames; (twalk && strcmp(testname, twalk->name)); twalk = twalk->next) ;
-				if (twalk == NULL) {
-					twalk = (htnames_t *)malloc(sizeof(htnames_t));
-					twalk->name = strdup(testname);
-					twalk->next = testnames;
-					testnames = twalk;
-					dprintf("Created new testname record %s\n", testname);
-				}
-
-				for (pwalk = locations; (pwalk && strcmp(metadata[9], pwalk->name)); pwalk = pwalk->next) ;
-				if (pwalk == NULL) {
-					pwalk = (htnames_t *)malloc(sizeof(htnames_t));
-					pwalk->name = strdup(metadata[9]);
-					pwalk->next = testnames;
-					locations = pwalk;
-					dprintf("Created new location record %s\n", metadata[9]);
-				}
+				htnames_t *hwalk = find_name(&hostnames, hostname);
+				htnames_t *twalk = find_name(&testnames, testname);
+				htnames_t *pwalk = find_name(&locations, metadata[9]);
 
 				awalk = (activealerts_t *)malloc(sizeof(activealerts_t));
 				awalk->hostname = hwalk;
@@ -373,6 +451,7 @@ int main(int argc, char *argv[])
 						awalk->state = A_PAGING;
 					}
 					else if (awalk->state == A_RECOVERED) {
+						cleanup_alert(awalk);
 						awalk->state = A_DEAD;
 					}
 				}
@@ -429,6 +508,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if (checkfn) save_checkpoint(checkfn);
 	return 0;
 }
 
