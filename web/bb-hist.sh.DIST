@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# This is the bbgen drop-in replacement for the Big Brother history
+# script, bb-hist.sh
+# It is the bbgend version.
+
+exec @BBHOME@/bin/bb-hist.cgi --env=@BBHOME@/etc/bbserver.env
+

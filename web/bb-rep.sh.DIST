@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# This is the bbgen drop-in replacement for the Big Brother reporting
+# script, bb-rep.sh
+# It is the bbgend version
+
+exec @BBHOME@/bin/bb-rep.cgi --env=@BBHOME@/etc/bbserver.env
+

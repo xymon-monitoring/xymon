@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# This is the bbgen drop-in replacement for the Big Brother histlog
+# script, bb-histlog.sh
+# It is the bbgend version.
+
+exec @BBGEND@/bin/bb-hostsvc.cgi --env=@BBGEND@/etc/bbserver.env --historical
+

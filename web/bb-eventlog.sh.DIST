@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# This is the bbgen CGI script to display the eventlog
+# It is the bbgend version
+#
+# Install this script in your webservers' cgi-bin directory
+
+exec @BBHOME@/bin/bb-eventlog.cgi --env=@BBHOME@/etc/bbserver.env
+

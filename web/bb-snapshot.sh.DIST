@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# This is the bbgen snapshot CGI wrapper
+# It is the bbgend version
+
+exec @BBHOME@/bin/bb-snapshot.cgi --env=@BBHOME@/etc/bbserver.env 
+

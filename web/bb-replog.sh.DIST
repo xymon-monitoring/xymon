@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# This is the bbgen drop-in replacement for the Big Brother reporting
+# script, bb-replog.sh
+# It is the bbgend version
+
+exec @BBHOME@/bin/bb-replog.cgi --env=@BBHOME@/etc/bbserver.env
+

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# This is the bbgen drop-in replacement for the Big Brother acknowledgement
+# script, bb-ack.sh, when using bbgend.
+#
+# Install this script in your webservers' cgi-bin directory, where you
+# already have a bb-ack.sh script.
+#
+
+exec @BBHOME@/bin/bb-ack.cgi --env=@BBHOME@/etc/bbserver.env
+
