@@ -47,18 +47,43 @@ Provide a summary of available commandline options.
 .IP "--version"
 Prints the version number of bbtest-net
 
+.IP --debug
+Dumps a bunch of status about the tests as they
+progress to stdout.
+
+.IP --no-update
+Don't send any status updates to the BBDISPLAY server. Instead,
+all messages are dumped to stdout.
+
+.IP --report[=COLUMNNAME]
+With this option, bbtest-net will send a status message with details 
+of how many hosts were processed, how many tests were generated, 
+any errors that occurred during the run, and some timing statistics. 
+The default columnname is "bbtest".
+
+.IP --timing
+Causes bbtest-net to collect information about
+the time spent in different parts of the program.
+The information is printed on stdout just before
+the program ends. Note that this information is also
+included in the status report sent with the "--report"
+option.
+
+
+.SH OPTIONS FOR THE PING TEST
 .IP --ping[=conn-column-name]
 Enables bbtest-net's ping test, and optionally specifies
 the column name used to report the results of the ping test.
-If not specifed, bbtest-net assumes a "--ping=conn" setting.
 .br
 Note that bbtest-net uses the
 .I fping(1) 
 tool to implement ping checks, so this must be installed.
 .br
-If you prefer to use another tool to implement ping checks, 
-either set the CONNTEST environment variable to false,
-or run bbtest-net with the "--noping".
+If not specifed, bbtest-net uses the CONNTEST environment
+variable to determine if it should perform the ping test
+or not. So if you prefer to use another tool to implement 
+ping checks, either set the CONNTEST environment variable 
+to false, or run bbtest-net with the "--noping".
 .br
 bbtest-net has support for the "badconn" tag that 
 fping.sh uses, see
@@ -67,21 +92,19 @@ fping.sh uses, see
 .IP --noping
 Disable the connectivity test.
 
+.SH OPTIONS FOR THE SIMPLE TCP SERVICES
+.IP --checkresponse
+When testing FTP, SSH, SMTP, POP-2, POP-3, IMAP, NNTP and rsync
+services, bbtest-net will look for a valid service-specific
+"OK" response. If another reponse is seen, this will cause
+the test to report a warning (yellow) status.
+
 .IP --concurrency=N 
 Determines the number of network tests that
 run in parallel. Default is operating system dependent,
 but will usually be 256. If bbtest-net begins to complain 
 about not being able to get a "socket", try running
 bbtest-net with a lower value like 50 or 100.
-
-.IP --timeout=N
-Determines the timeout (in seconds) for each
-service that is tested. For TCP tests (those from BBNETSVCS),
-if the connection to the service does not succeed within N 
-seconds, the service is reported as being down. For HTTP
-tests, this is the absolute limit for the entire request
-to the webserver (the time needed to connect to the server,
-plus the time it takes the server to respond to the request).
 
 .IP --dns=[ip|only]
 Determines how bbtest-net finds the IP adresses of the hosts to test. 
@@ -98,27 +121,17 @@ it will use the IP adresse specified in bb-hosts for
 the tests. Thus, this setting is equivalent to having
 the "testip" tag on all hosts.
 
-.IP --debug
-Dumps a bunch of status about the tests as they
-progress to stdout.
-
-.IP --no-update
-Don't send any status updates to the BBDISPLAY server. Instead,
-all messages are dumped to stdout.
-
-.IP --timing
-Causes bbtest-net to collect information about
-the time spent in different parts of the program.
-
-.IP --report[=COLUMNNAME]
-With this option, bbtest-net will send a status message with details 
-of how many hosts were processed, how many tests were generated, 
-any errors that occurred during the run, and some timing statistics. 
-The default columnname is "bbtest".
+.IP --timeout=N
+Determines the timeout (in seconds) for each
+service that is tested. For TCP tests (those from BBNETSVCS),
+if the connection to the service does not succeed within N 
+seconds, the service is reported as being down. For HTTP
+tests, this is the absolute limit for the entire request
+to the webserver (the time needed to connect to the server,
+plus the time it takes the server to respond to the request).
 
 
 .SH OPTIONS FOR HTTP (WEB) TESTS
-
 .IP --conntimeout=N
 Determines the connection timeout for a HTTP test. This only 
 applies to HTTP tests, and sets a limit for the time it takes 
@@ -130,6 +143,10 @@ Determines the name of the column BB displays for content checks.
 The default is "content".  If you have used the "cont.sh" or "cont2.sh" 
 scripts earlier, you may want to use "--content=cont" to report content
 checks using the same test name as these scripts do.
+
+.IP --log=LOGFILENAME
+Enables logging of all traffic from HTTP/HTTPS servers. Mostly useful for 
+debugging.
 
 .IP --ssl=SSLCERTTESTNAME
 determines the name of the column BB displays for the SSL certificate checks 
@@ -143,10 +160,6 @@ Disables reporting of the SSL certificate check.
 Determines the number of days before an SSL certificate
 expires, where bbtest-net will generate a warning or
 alarm status for the SSL certificate column.
-
-.IP --log=LOGFILENAME
-Enables logging of all traffic from HTTP/HTTPS servers. Mostly useful for 
-debugging.
 
 
 .SH USING MULTIPLE BBNET SYSTEMS
