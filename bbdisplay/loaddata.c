@@ -312,6 +312,19 @@ state_t *init_state(const char *filename, int dopurple)
 	return newstate;
 }
 
+summary_t *init_summary(char *name, char *receiver, char *url)
+{
+	summary_t *newsum;
+
+	newsum = malloc(sizeof(summary_t));
+	strcpy(newsum->name, name);
+	strcpy(newsum->receiver, receiver);
+	strcpy(newsum->url, url);
+	newsum->next = NULL;
+
+	return newsum;
+}
+
 void getnamelink(char *l, char **name, char **link)
 {
 	unsigned char *p;
@@ -505,6 +518,19 @@ page_t *load_bbhosts(void)
 			}
 			else {
 				curhost = curhost->next = init_host(hostname, ip1, ip2, ip3, ip4, dialup, alertlist);
+			}
+		}
+		else if (strncmp(l, "summary", 7) == 0) {
+			/* summary row.column      IP-ADDRESS-OF-PARENT    http://bb4.com/ */
+			char sumname[100];
+			char receiver[60];
+			char url[250];
+			summary_t *newsum;
+
+			if (sscanf(l, "summary %s %s %s", sumname, receiver, url) == 3) {
+				newsum = init_summary(sumname, receiver, url);
+				newsum->next = sumhead;
+				sumhead = newsum;
 			}
 		}
 		else {
