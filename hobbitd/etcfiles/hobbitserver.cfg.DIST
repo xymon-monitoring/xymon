@@ -44,7 +44,6 @@ BBLOGSTATUS="DYNAMIC"		# Are HTML status logs statically or dynamically generate
 
 PINGCOLUMN="conn"		# Column where the ping-test reports results.
 
-DOCOMBO="TRUE"			# Ignored by everyone except maint.pl...
 BBMAXMSGSPERCOMBO="0"           # How many individual messages to combine in a combo-message. 0=unlimited.
 BBSLEEPBETWEENMSGS="0"          # Delay between sending each combo message, in milliseconds.
 
