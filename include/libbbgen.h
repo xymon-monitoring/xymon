@@ -36,6 +36,7 @@ typedef struct htnames_t {
 #include "../lib/timefunc.h"
 #include "../lib/timing.h"
 #include "../lib/url.h"
+#include "version.h"
 
 #endif
 
