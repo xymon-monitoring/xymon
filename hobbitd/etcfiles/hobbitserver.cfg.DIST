@@ -36,11 +36,13 @@ FQDN="TRUE"			# Use fully-qualified hostnames internally. Keep it TRUE unless yo
 USEHOBBITD="TRUE"		# Set this TRUE if you are using a Hobbit server, FALSE if standard bbd.
 BBGHOSTS="1"                    # How to handle status messages from unknown hosts.
                                 # 0=accept message, 1=discard message, 2=discard message and log the event
-PAGELEVELS="red yellow purple"	# Status colors that trigger an alert. Used by 'bb' talking to bbd, not Hobbit.
-PURPLEDELAY="30"		# Lifetime of info- and larrd-pages. Used only when generating for bbd, not Hobbit.
+PAGELEVELS="red yellow purple"	# Status colors that trigger an alert. Used by 'bb' talking to bbd, not by Hobbit.
+PURPLEDELAY="30"		# Lifetime of info- and larrd-pages. Used only when generating for bbd, not for Hobbit.
 
 BBLOGSTATUS="DYNAMIC"		# Are HTML status logs statically or dynamically generated?
 				# Use DYNAMIC with Hobbit, unless you run hobbitd_filestore --status --html
+
+PINGCOLUMN="conn"		# Column where the ping-test reports results.
 
 DOCOMBO="TRUE"			# Ignored by everyone except maint.pl...
 BBMAXMSGSPERCOMBO="0"           # How many individual messages to combine in a combo-message. 0=unlimited.
