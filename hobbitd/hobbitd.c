@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.74 2004-12-07 22:50:23 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.75 2004-12-08 17:56:51 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1173,6 +1173,18 @@ int get_config(char *fn, conn_t *msg)
 	return 0;
 }
 
+char *timestr(time_t tstamp)
+{
+	static char result[30];
+	char *p;
+
+	if (tstamp == 0) return "N/A";
+	strcpy(result, ctime(&tstamp));
+	p = strchr(result, '\n'); if (p) *p = '\0';
+
+	return result;
+}
+
 void do_message(conn_t *msg, char *origin)
 {
 	bbgend_hostlist_t *h;
@@ -1384,6 +1396,68 @@ void do_message(conn_t *msg, char *origin)
 			msg->buflen = (bufp - buf);
 		}
 	}
+	else if (strncmp(msg->buf, "bbgendxlog ", 11) == 0) {
+		/* 
+		 * Request for a single status log in XML format
+		 * bbgendxlog HOST.TEST
+		 *
+		 */
+		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+
+		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, 0, 0);
+		if (log) {
+			char *buf, *bufp;
+			int bufsz, buflen;
+
+			if (log->message == NULL) {
+				errprintf("%s.%s has a NULL message\n", log->host->hostname, log->test->testname);
+				log->message = strdup("");
+			}
+
+			bufsz = 4096 + strlen(log->message);
+			if (log->ackmsg) bufsz += strlen(log->ackmsg);
+			if (log->dismsg) bufsz += strlen(log->dismsg);
+
+			free(msg->buf);
+			bufp = buf = (char *)malloc(bufsz);
+			buflen = 0;
+
+			bufp += sprintf(bufp, "<?xml version='1.0' encoding='ISO-8859-1'?>\n");
+			bufp += sprintf(bufp, "<ServerStatus>\n");
+			bufp += sprintf(bufp, "  <ServerName>%s</ServerName>\n", h->hostname);
+			bufp += sprintf(bufp, "  <Type>%s</Type>\n", log->test->testname);
+			bufp += sprintf(bufp, "  <Status>%s</Status>\n", colnames[log->color]);
+			bufp += sprintf(bufp, "  <TestFlags>%s</TestFlags>\n", (log->testflags ? log->testflags : ""));
+			bufp += sprintf(bufp, "  <LastChange>%s</LastChange>\n", timestr(log->lastchange));
+			bufp += sprintf(bufp, "  <LogTime>%s</LogTime>\n", timestr(log->logtime));
+			bufp += sprintf(bufp, "  <ValidTime>%s</ValidTime>\n", timestr(log->validtime));
+			bufp += sprintf(bufp, "  <AckTime>%s</AckTime>\n", timestr(log->acktime));
+			bufp += sprintf(bufp, "  <DisableTime>%s</DisableTime>\n", timestr(log->enabletime));
+			bufp += sprintf(bufp, "  <Sender>%s</Sender>\n", log->sender);
+
+			if (log->cookie > 0)
+				bufp += sprintf(bufp, "  <Cookie>%d</Cookie>\n", log->cookie);
+			else
+				bufp += sprintf(bufp, "  <Cookie>N/A</Cookie>\n");
+
+			if (log->ackmsg && (log->acktime > now))
+				bufp += sprintf(bufp, "  <AckMsg>%s</AckMsg>\n", log->ackmsg);
+			else
+				bufp += sprintf(bufp, "  <AckMsg>N/A</AckMsg>\n");
+
+			if (log->dismsg && (log->enabletime > now))
+				bufp += sprintf(bufp, "  <DisMsg>%s</DisMsg>\n", log->dismsg);
+			else
+				bufp += sprintf(bufp, "  <DisMsg>N/A</DisMsg>\n");
+
+			bufp += sprintf(bufp, "  <Message>%s</Message>\n", msg_data(log->message));
+			bufp += sprintf(bufp, "</ServerStatus>\n");
+
+			msg->doingwhat = RESPONDING;
+			msg->bufp = msg->buf = buf;
+			msg->buflen = (bufp - buf);
+		}
+	}
 	else if (strncmp(msg->buf, "bbgendboard", 11) == 0) {
 		/* 
 		 * Request for a summmary of all known status logs
@@ -1414,7 +1488,7 @@ void do_message(conn_t *msg, char *origin)
 				eoln = strchr(lwalk->message, '\n');
 				if (eoln) *eoln = '\0';
 				if ((bufsz - buflen - strlen(lwalk->message)) < 1024) {
-					bufsz += 16384;
+					bufsz += (16384 + strlen(lwalk->message));
 					buf = (char *)realloc(buf, bufsz);
 					bufp = buf + buflen;
 				}
@@ -1436,6 +1510,71 @@ void do_message(conn_t *msg, char *origin)
 		msg->doingwhat = RESPONDING;
 		msg->bufp = msg->buf = buf;
 		msg->buflen = buflen;
+	}
+	else if (strncmp(msg->buf, "bbgendxboard", 12) == 0) {
+		/* 
+		 * Request for a summmary of all known status logs in XML format
+		 *
+		 */
+		bbgend_hostlist_t *hwalk;
+		bbgend_log_t *lwalk;
+		char *buf, *bufp;
+		int bufsz;
+
+		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+
+		bufsz = 16384;
+		bufp = buf = (char *)malloc(bufsz);
+
+		bufp += sprintf(bufp, "<?xml version='1.0' encoding='ISO-8859-1'?>\n");
+		bufp += sprintf(bufp, "<StatusBoard>\n");
+
+		for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
+			for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
+				char *eoln;
+				int buflen = (bufp - buf);
+				
+				if (lwalk->message == NULL) {
+					errprintf("%s.%s has a NULL message\n", lwalk->host->hostname, lwalk->test->testname);
+					lwalk->message = strdup("");
+				}
+
+				eoln = strchr(lwalk->message, '\n');
+				if (eoln) *eoln = '\0';
+				if ((bufsz - buflen - strlen(lwalk->message)) < 4096) {
+					bufsz += (16384 + strlen(lwalk->message));
+					buf = (char *)realloc(buf, bufsz);
+					bufp = buf + buflen;
+				}
+
+				bufp += sprintf(bufp, "  <ServerStatus>\n");
+				bufp += sprintf(bufp, "    <ServerName>%s</ServerName>\n", hwalk->hostname);
+				bufp += sprintf(bufp, "    <Type>%s</Type>\n", lwalk->test->testname);
+				bufp += sprintf(bufp, "    <Status>%s</Status>\n", colnames[lwalk->color]);
+				bufp += sprintf(bufp, "    <TestFlags>%s</TestFlags>\n", (lwalk->testflags ? lwalk->testflags : ""));
+				bufp += sprintf(bufp, "    <LastChange>%s</LastChange>\n", timestr(lwalk->lastchange));
+				bufp += sprintf(bufp, "    <LogTime>%s</LogTime>\n", timestr(lwalk->logtime));
+				bufp += sprintf(bufp, "    <ValidTime>%s</ValidTime>\n", timestr(lwalk->validtime));
+				bufp += sprintf(bufp, "    <AckTime>%s</AckTime>\n", timestr(lwalk->acktime));
+				bufp += sprintf(bufp, "    <DisableTime>%s</DisableTime>\n", timestr(lwalk->enabletime));
+				bufp += sprintf(bufp, "    <Sender>%s</Sender>\n", lwalk->sender);
+
+				if (lwalk->cookie > 0)
+					bufp += sprintf(bufp, "    <Cookie>%d</Cookie>\n", lwalk->cookie);
+				else
+					bufp += sprintf(bufp, "    <Cookie>N/A</Cookie>\n");
+
+				bufp += sprintf(bufp, "    <MessageSummary>%s</MessageSummary>\n", lwalk->message);
+				bufp += sprintf(bufp, "  </ServerStatus>\n");
+				if (eoln) *eoln = '\n';
+			}
+		}
+		bufp += sprintf(bufp, "</StatusBoard>\n");
+
+		free(msg->buf);
+		msg->doingwhat = RESPONDING;
+		msg->bufp = msg->buf = buf;
+		msg->buflen = (bufp - buf);
 	}
 	else if (strncmp(msg->buf, "bbgendlist", 10) == 0) {
 		/* 

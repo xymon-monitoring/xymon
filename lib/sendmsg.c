@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.41 2004-11-18 17:11:04 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.42 2004-12-08 17:56:51 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -752,7 +752,13 @@ int main(int argc, char *argv[])
 		else if (strncmp(msg, "bbgendlog ", 10) == 0) {
 			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 		}
+		else if (strncmp(msg, "bbgendxlog ", 11) == 0) {
+			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
+		}
 		else if (strncmp(msg, "bbgendboard", 11) == 0) {
+			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
+		}
+		else if (strncmp(msg, "bbgendxboard", 12) == 0) {
 			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 		}
 		else if (strncmp(msg, "bbgendlist", 10) == 0) {
