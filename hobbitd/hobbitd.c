@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.92 2005-01-11 22:23:37 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.93 2005-01-11 23:25:51 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -76,7 +76,7 @@ typedef struct hobbitd_log_t {
 	struct hobbitd_hostlist_t *host;
 	struct hobbitd_testlist_t *test;
 	struct htnames_t *origin;
-	int color, oldcolor;
+	int color, oldcolor, activealert;
 	char *testflags;
 	char sender[16];
 	time_t lastchange;	/* time when the currently logged status began */
@@ -608,6 +608,7 @@ void get_hts(char *msg, char *sender, char *origin,
 		if (createlog && (lwalk == NULL)) {
 			lwalk = (hobbitd_log_t *)malloc(sizeof(hobbitd_log_t));
 			lwalk->color = lwalk->oldcolor = NO_COLOR;
+			lwalk->activealert = 0;
 			lwalk->testflags = NULL;
 			lwalk->sender[0] = '\0';
 			lwalk->host = hwalk;
@@ -797,14 +798,17 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 
 		/*
 		 * We pass the message to the page channel, IF
-		 * - alertstate remains in A_ALERT, but the color changes (we already know the color has changed)
-		 * - alertstate goes from A_OK -> A_ALERT (new alert)
-		 * - alertstate goes from !A_OK -> A_OK (recovery)
+		 * - alertstate goes from A_OK -> A_ALERT (direct alert)
+		 * - alertstate goes from A_ALERT -> A_OK (direct recovery)
+		 * - alertstate goes from A_UNDECIDED -> A_ALERT, and we have no active alert (gradually critical)
+		 * - alertstate goes from A_UNDECIDED -> A_OK, and we have an active alert (gradual recovery)
 		 */
-		if ( ((oldalertstatus == A_ALERT) && (newalertstatus == A_ALERT)) ||
-		     ((oldalertstatus == A_OK) && (newalertstatus == A_ALERT))    ||
-		     ((oldalertstatus != A_OK) && (newalertstatus == A_OK))         ) {
+		if ( ((oldalertstatus == A_OK) && (newalertstatus == A_ALERT)) ||
+		     ((oldalertstatus == A_ALERT) && (newalertstatus == A_OK)) ||
+		     ((oldalertstatus == A_UNDECIDED) && (newalertstatus == A_ALERT) && !log->activealert) ||
+		     ((oldalertstatus == A_UNDECIDED) && (newalertstatus == A_OK) && log->activealert) ) {
 
+			log->activealert = (newalertstatus == A_ALERT);
 			dprintf("posting to page channel\n");
 			posttochannel(pagechn, channelnames[C_PAGE], msg, sender, hostname, log, NULL);
 		}
@@ -1912,6 +1916,7 @@ void load_checkpoint(char *fn)
 		ltail->origin = origin;
 		ltail->color = color;
 		ltail->oldcolor = oldcolor;
+		ltail->activealert = 0;
 		ltail->testflags = ( (testflags && strlen(testflags)) ? strdup(testflags) : NULL);
 		strcpy(ltail->sender, sender);
 		ltail->logtime = logtime;
