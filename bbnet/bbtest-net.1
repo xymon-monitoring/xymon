@@ -189,9 +189,11 @@ environment to execute ping-tests. See
 for a description of how to customize this, e.g. if you
 need to run it with "sudo" or a similar tool.
 
-.IP --ping[=conn-column-name]
-Enables bbtest-net's ping test, and optionally specifies
-the column name used to report the results of the ping test.
+.IP --ping
+Enables bbtest-net's ping test. The column name used for
+ping test results is defined by the PINGCOLUMN environment 
+variable in 
+.I hobbitserver.cfg(5).
 .br
 Note that bbtest-net uses the
 .I fping(1) 
