@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.100 2003-07-22 06:58:22 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.101 2003-08-01 12:43:07 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -188,7 +188,7 @@ group_t *init_group(const char *title, const char *onlycols)
 
 host_t *init_host(const char *hostname, const char *displayname, const char *comment,
 		  const int ip1, const int ip2, const int ip3, const int ip4, 
-		  const int dialup, const int prefer, const double warnpct, const char *reporttime,
+		  const int dialup, const int prefer, const double warnpct, char *reporttime,
 		  const char *alerts, int nktime, const char *waps, char *tags,
 		  const char *nopropyellowtests, const char *nopropredtests,
 		  const char *larrdgraphs)
@@ -346,7 +346,7 @@ link_t *init_link(char *filename, const char *urlprefix)
 
 	newlink = malloc(sizeof(link_t));
 	newlink->filename = malcop(filename);
-	newlink->urlprefix = urlprefix; /* malcop(urlprefix); */
+	newlink->urlprefix = malcop(urlprefix);
 	newlink->next = NULL;
 
 	p = strrchr(filename, '.');
