@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.51 2004-11-09 12:23:53 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.52 2004-11-13 08:19:57 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -56,10 +56,41 @@ static char rcsid[] = "$Id: hobbitd.c,v 1.51 2004-11-09 12:23:53 henrik Exp $";
 
 #include "libbbgen.h"
 
-#include "bbgend.h"
-#include "bbdutil.h"
-#include "bbdworker.h"
+#include "bbgend_ipc.h"
 #include "loadhosts.h"
+
+/* This holds the names of the tests we have seen reports for */
+typedef struct bbd_testlist_t {
+	char *testname;
+	struct bbd_testlist_t *next;
+} bbd_testlist_t;
+
+/* This holds all information about a single status */
+typedef struct bbd_log_t {
+	struct bbd_hostlist_t *host;
+	struct bbd_testlist_t *test;
+	int color, oldcolor;
+	char *testflags;
+	char sender[16];
+	time_t lastchange;	/* time when the currently logged status began */
+	time_t logtime;		/* time when last update was received */
+	time_t validtime;	/* time when status is no longer valid */
+	time_t enabletime;	/* time when test auto-enables after a disable */
+	time_t acktime;		/* time when test acknowledgement expires */
+	unsigned char *message;
+	int msgsz;
+	unsigned char *dismsg, *ackmsg;
+	int cookie;
+	time_t cookieexpires;
+	struct bbd_log_t *next;
+} bbd_log_t;
+
+/* This is a list of the hosts we have seen reports for, and links to their status logs */
+typedef struct bbd_hostlist_t {
+	char *hostname;
+	bbd_log_t *logs;
+	struct bbd_hostlist_t *next;
+} bbd_hostlist_t;
 
 bbd_hostlist_t *hosts = NULL;		/* The hosts we have reports from */
 bbd_testlist_t *tests = NULL;		/* The tests we have seen */
@@ -99,17 +130,6 @@ int ghosthandling = -1;
 char *checkpointfn = NULL;
 char *purpleclientconn = NULL;
 
-#if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
-/* union semun is defined by including <sys/sem.h> */
-#else
-/* according to X/OPEN we have to define it ourselves */
-union semun {
-	int val;                  /* value for SETVAL */
-	struct semid_ds *buf;     /* buffer for IPC_STAT, IPC_SET */
-	unsigned short *array;    /* array for GETALL, SETALL */
-};
-#endif
-
 void posttochannel(bbd_channel_t *channel, char *channelmarker, 
 		   char *msg, char *sender, char *hostname, void *arg, char *readymsg)
 {
@@ -121,7 +141,6 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 	int n;
 	struct timeval tstamp;
 	struct timezone tz;
-	union semun su;
 	int semerr = 0;
 
 	/* First see how many users are on this channel */
@@ -251,10 +270,7 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 	/* Make sure GOCLIENT is 0 */
 	n = semctl(channel->semid, GOCLIENT, GETVAL);
 	if (n > 0) {
-		errprintf("Oops ... GOCLIENT is high, forcing low\n");
-		su.val = 0;
-		n = semctl(channel->semid, GOCLIENT, SETVAL, &su);
-		usleep(1000);
+		errprintf("Oops ... GOCLIENT is high (%d)\n", n);
 	}
 
 	s.sem_num = GOCLIENT; s.sem_op = clients; s.sem_flg = 0; 		/* Up GOCLIENT */
