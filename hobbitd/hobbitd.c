@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.107 2005-01-25 22:07:20 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.108 2005-02-03 22:01:36 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -854,19 +854,30 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		log->lastchange = time(NULL);
 	}
 
-	if (newalertstatus == A_ALERT) {
-		/* Status is critical, send alerts */
-		dprintf("posting to page channel\n");
+	if (!issummary) {
+		if (newalertstatus == A_ALERT) {
+			/* Status is critical, send alerts */
+			dprintf("posting alert to page channel\n");
 
-		log->activealert = 1;
-		posttochannel(pagechn, channelnames[C_PAGE], msg, sender, hostname, log, NULL);
-	}
-	else if (log->activealert && (oldalertstatus != A_OK) && (newalertstatus == A_OK)) {
-		/* Status has recovered, send recovery notice */
-		dprintf("posting to page channel\n");
+			log->activealert = 1;
+			posttochannel(pagechn, channelnames[C_PAGE], msg, sender, hostname, log, NULL);
+		}
+		else if (log->activealert && (oldalertstatus != A_OK) && (newalertstatus == A_OK)) {
+			/* Status has recovered, send recovery notice */
+			dprintf("posting recovery to page channel\n");
 
-		log->activealert = 0;
-		posttochannel(pagechn, channelnames[C_PAGE], msg, sender, hostname, log, NULL);
+			log->activealert = 0;
+			posttochannel(pagechn, channelnames[C_PAGE], msg, sender, hostname, log, NULL);
+		}
+		else if (log->activealert && (log->oldcolor != newcolor)) {
+			/* 
+			 * Status is in-between critical and recovered, but we do have an
+			 * active alert for this status. So tell the pager module that the
+			 * color has changed.
+			 */
+			dprintf("posting color change to page channel\n");
+			posttochannel(pagechn, channelnames[C_PAGE], msg, sender, hostname, log, NULL);
+		}
 	}
 
 	dprintf("posting to status channel\n");
