@@ -11,7 +11,7 @@
 #ifndef __TIMEFUNC_H__
 #define __TIMEFUNC_H__
 
-extern char timestamp[];
+extern char *timestamp;
 
 extern void init_timestamp(void);
 extern char *weekday_text(char *dayspec);
