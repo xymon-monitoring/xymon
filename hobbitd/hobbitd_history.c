@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.24 2004-12-29 08:42:35 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.25 2004-12-29 08:47:47 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
 	setup_signalhandler("bbgend_history");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
-	sigaction(SIGCHILD, &sa, NULL);
+	sigaction(SIGCHLD, &sa, NULL);
 	signal(SIGPIPE, SIG_DFL);
 
 	while (running) {

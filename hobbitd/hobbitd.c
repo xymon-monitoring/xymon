@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.86 2004-12-29 08:42:35 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.87 2004-12-29 08:47:47 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -2025,8 +2025,6 @@ void check_purple_status(void)
 
 void sig_handler(int signum)
 {
-	int status;
-
 	switch (signum) {
 	  case SIGCHLD:
 		break;
