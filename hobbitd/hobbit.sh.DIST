@@ -22,8 +22,15 @@ fi
 
 case "$1" in
    "start")
-	@RUNTIMEDEFS@ @BBHOME@/bin/hobbitlaunch --config=@BBHOME@/etc/hobbitlaunch.cfg --env=@BBHOME@/etc/hobbitserver.cfg --log=@BBLOGDIR@/hobbitlaunch.log --pidfile=@BBLOGDIR@/hobbitlaunch.pid
-	echo "Hobbit started"
+	if test -s @BBLOGDIR@/hobbitlaunch.pid
+	then
+		echo "Hobbit appears to be running (PID `cat @BBLOGDIR@/hobbitlaunch.pid`)"
+		echo "If not, remove @BBLOGDIR@/hobbitlaunch.pid"
+		exit 1
+	else
+		@RUNTIMEDEFS@ @BBHOME@/bin/hobbitlaunch --config=@BBHOME@/etc/hobbitlaunch.cfg --env=@BBHOME@/etc/hobbitserver.cfg --log=@BBLOGDIR@/hobbitlaunch.log --pidfile=@BBLOGDIR@/hobbitlaunch.pid
+		echo "Hobbit started"
+	fi
 	;;
 
    "stop")
