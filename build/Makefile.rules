@@ -25,6 +25,9 @@ bbnethosts: $(NETOBJS)
 bbgmchosts: $(GMCOBJS)
 	$(CC) $(CFLAGS) -o bbgmchosts $(GMCOBJS)
 
+alert: alert.c debug.c
+	$(CC) -g -DSTANDALONE -DDEBUG -Wall -o alert alert.c debug.c
+
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
