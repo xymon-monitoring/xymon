@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.132 2005-03-25 21:13:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.133 2005-03-26 16:53:58 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -825,16 +825,14 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	/*
 	 * Decide how long this status is valid.
 	 *
-	 * If the status is not disabled, then just set the valid time according 
-	 * to the validity of the status report (the normal case).
-	 *
-	 * If the status is disabled, dont change the valid timestamp.
+	 * Normally we'll just set the valid time according 
+	 * to the validity of the status report.
 	 *
 	 * If the status is acknowledged, make it valid for the longest period
 	 * of the acknowledgment and the normal validity (so an acknowledged status
 	 * does not go purple because it is not being updated due to the host being down).
 	 */
-	if (log->enabletime == 0) log->validtime = now + validity*60;
+	log->validtime = now + validity*60;
 	if (log->acktime && (log->acktime > log->validtime)) log->validtime = log->acktime;
 
 	strncpy(log->sender, sender, sizeof(log->sender)-1);
