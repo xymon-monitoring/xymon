@@ -169,7 +169,7 @@ else
 	#read ENABLEARES
 	#if test "$ENABLEARES" = "" -o "$ENABLEARES" = "y"
 	#then
-	#	ARESDEF="-DUSE_ARES"
+	#	ARESDEF="-DUSE_ARES -I./ares-1.1.1/"
 	#	ARESLIB="libares.a"
 	#else
 		ARESDEF=""
@@ -327,7 +327,7 @@ else
 	echo "MANROOT = $MANROOT"             >>Makefile
 	echo "#"                              >>Makefile
 	echo "# ARES settings"                >>Makefile
-	echo "ARESFLAGS = $ARESDEF -I./ares-1.1.1/"        >>Makefile
+	echo "ARESFLAGS = $ARESDEF"           >>Makefile
 	echo "ARESLIB = $ARESLIB"             >>Makefile
 	echo "#"                              >>Makefile
 	echo "# $CURLMSG"                     >>Makefile
