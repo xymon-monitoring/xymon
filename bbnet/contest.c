@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.30 2003-08-20 15:57:20 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.31 2003-08-22 15:02:39 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -118,20 +118,26 @@ static int do_telnet_options(test_t *item)
 	 * by "Hobbit" <hobbit@avian.org>.
 	 */
 
-	unsigned char *obuf = (unsigned char *)malloc(item->telnetbuflen);
+	unsigned char *obuf;
 	int remain;
 	unsigned char y;
 	unsigned char *inp;
 	unsigned char *outp;
 	int result = 0;
 
+	if (item->telnetbuflen == 0) {
+		dprintf("Ignoring telnet option with length 0\n");
+		return 0;
+	}
+
+	obuf = (unsigned char *)malloc(item->telnetbuflen);
 	y = 0;
 	inp = item->telnetbuf;
 	remain = item->telnetbuflen;
 	outp = obuf;
 
 	while (remain > 0) {
-		if (*inp != 255) {                     /* IAC? */
+		if ((remain < 3) || (*inp != 255)) {                     /* IAC? */
 			/*
 			 * End of options. 
 			 * We probably have the banner in the remainder of the
@@ -160,7 +166,7 @@ notiac:
 	} /* while remain */
 
 	item->telnetbuflen = (outp-obuf);
-	memcpy(item->telnetbuf, obuf, item->telnetbuflen);
+	if (item->telnetbuflen) memcpy(item->telnetbuf, obuf, item->telnetbuflen);
 	item->telnetbuf[item->telnetbuflen] = '\0';
 	free(obuf);
 	return result;
@@ -407,7 +413,7 @@ void do_tcp_tests(int conntimeout, int concurrency)
 							}
 
 							item->readpending = (!item->silenttest && item->svcinfo->grabbanner);
-							if (outbuf) {
+							if (outbuf && outlen) {
 								/*
 								 * It may be that we cannot write all of the
 								 * data we want to. Tough ... 
@@ -441,17 +447,21 @@ void do_tcp_tests(int conntimeout, int concurrency)
 						int wantmoredata = 0;
 
 						res = read(item->fd, msgbuf, sizeof(msgbuf)-1);
-						if (res > 0) {
+						dprintf("read %d bytes from socket\n", res);
+
+						if (res) {
 							msgbuf[res] = '\0';
-							if (item->banner == NULL) 
-								item->banner = malcop(msgbuf);
+							if (item->banner == NULL) {
+								item->banner = (char *)malloc(res+1);
+								memcpy(item->banner, msgbuf, res+1);
+							}
 							else {
 								item->banner = (char *)realloc(item->banner, strlen(item->banner)+strlen(msgbuf)+1);
 								strcat(item->banner, msgbuf);
 							}
 						}
 
-						if (item->telnetnegotiate) {
+						if (res && item->telnetnegotiate) {
 							/*
 							 * telnet data has telnet options first.
 							 * We must negotiate the session before we
