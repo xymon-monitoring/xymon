@@ -5,9 +5,6 @@ Probably
 --------
 * Convert the acklog.sh extension for bb2.html
 * Convert the mkbwml.sh script to generate WAP pages
-* Build some kind of page/subpage/group links into bb2.html
-  so admins can quickly figure out what page/subpage/group
-  a host belongs to (mostly useful for bb2.html).
 
 Probably not
 ------------
