@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.20 2005-03-25 07:40:15 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.21 2005-04-03 12:14:22 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -600,6 +600,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			if (strncmp(l, "dialup", 6) != 0) {
 				/* Ordinary host - get the info */
 				bbhost = hostinfo(hostname);
+				if (bbhost == NULL) continue;
 				strcpy(hostname, bbh_item(bbhost, BBH_HOSTNAME)); /* For fqdn mods. */
 			}
 
