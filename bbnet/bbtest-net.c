@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.173 2004-09-02 14:04:25 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.174 2004-09-10 20:39:18 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -2310,9 +2310,13 @@ int main(int argc, char *argv[])
 	/* First run the TCP/IP and HTTP tests */
 	for (s = svchead; (s); s = s->next) {
 		if ((s->items) && (s->toolid == TOOL_CONTEST)) {
+			char tname[128];
+
 			for (t = s->items; (t); t = t->next) {
 				if (!t->host->dnserror) {
-					t->privdata = (void *)add_tcp_test(t->host->ip, s->portnum, s->testname, NULL, 
+					strcpy(tname, s->testname);
+					if (s->namelen) tname[s->namelen] = '\0';
+					t->privdata = (void *)add_tcp_test(t->host->ip, s->portnum, tname, NULL, 
 									   t->silenttest, NULL, 
 									   NULL, NULL, NULL);
 				}
