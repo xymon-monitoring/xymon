@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.177 2004-09-13 20:41:18 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.178 2004-09-24 16:11:48 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1330,10 +1330,7 @@ int finish_fping_service(service_t *service)
 		p = strchr(l, '\n'); if (p) *p = '\0';
 		if (sscanf(l, "%d.%d.%d.%d ", &ip1, &ip2, &ip3, &ip4) == 4) {
 
-			p = strchr(l, ' ');
-			if (p) *p = '\0';
-			strcpy(pingip, l);
-			if (p) *p = ' ';
+			sprintf(pingip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 
 			/*
 			 * Need to loop through all testitems - there may be multiple entries for
@@ -1341,6 +1338,7 @@ int finish_fping_service(service_t *service)
 			 */
 			for (t=service->items; (t); t = t->next) {
 				if (strcmp(t->host->ip, pingip) == 0) {
+					if (t->open) dprintf("More than one ping result for %s\n", pingip);
 					t->open = (strstr(l, "is alive") != NULL);
 					t->banner = malcop(l);
 					t->bannerbytes = strlen(l);
@@ -1350,6 +1348,7 @@ int finish_fping_service(service_t *service)
 					ipping_t *walk;
 					for (walk = t->host->extrapings->iplist; (walk); walk = walk->next) {
 						if (strcmp(walk->ip, pingip) == 0) {
+							if (t->open) dprintf("More than one ping result for %s\n", pingip);
 							walk->open = (strstr(l, "is alive") != NULL);
 							walk->banner = malcop(l);
 							walk->bannerbytes = strlen(l);
