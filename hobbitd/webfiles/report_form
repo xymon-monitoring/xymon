@@ -1,0 +1,59 @@
+<BR>
+
+<CENTER>
+  <FONT COLOR="#FF0000" FACE="Arial, Helvetica">
+  <TABLE WIDTH=80% BORDER=0 CELLSPACING=5>
+    <TR BGCOLOR="#000033">
+       <TD COLSPAN=2><FONT FACE="Arial, Helvetica"  SIZE="+1">
+           <CENTER><B>Big Brother Availability Report</B></CENTER>
+       </TD>
+    </TR>
+    <TR>
+       <TD BGCOLOR="#333333"><FONT FACE="Arial, Helvetica">
+       <BR>
+       <H6><CENTER>
+
+       <FORM ACTION="/bb-cgi/bb-rep.sh">
+          <SELECT NAME="start-mon">
+          &REPMONLIST
+          </SELECT>
+
+          <SELECT NAME="start-day">
+          &REPDAYLIST
+          </SELECT>
+
+          <SELECT NAME="start-yr">
+          &REPYEARLIST
+          </SELECT>
+
+          <FONT SIZE=+1>- to -</FONT SIZE=-1>
+
+          <SELECT NAME="end-mon">
+          &REPMONLIST
+          </SELECT>
+
+          <SELECT NAME="end-day">
+          &REPDAYLIST
+          </SELECT>
+
+          <SELECT NAME="end-yr">
+          &REPYEARLIST
+          </SELECT>
+
+          <SELECT NAME="style">
+          <OPTION VALUE="crit" SELECTED>Display only critical events
+          <OPTION VALUE="nongr">Display non-green events
+          <OPTION VALUE="all">Display all events
+          </SELECT>
+
+          <BR><BR>
+          <INPUT TYPE="SUBMIT" NAME="SUB" VALUE="Generate Report" ALT="Generate Report" BORDER=0 METHOD="GET">
+       </FORM>
+       </CENTER></H6>
+       </TD>
+      </TR>
+   </TABLE>
+</CENTER>
+
+<BR><BR><BR>
+

@@ -1,0 +1,128 @@
+# NB : Even though it might look like a shell-script, it is NOT.
+#
+BBSERVERROOT="@BBTOPDIR@"		# Where BB is installed - top level directory holds the bb and bbvar sub-dirs.
+BBSERVERLOGS="@BBLOGDIR@"		# Directory for server logs. The bb user must have write-access here.
+
+BBSERVERHOSTNAME="@BBHOSTNAME@"		# The hostname of your server
+BBSERVERIP="@BBHOSTIP@"			# The IP-address of your server. Use the real one, not 127.0.0.1 .
+BBSERVEROS="@BBHOSTOS@"			# The operating system of your server. linux,freebsd,solaris,hpux,aix,osf
+
+BBSERVERWWWNAME="@BBHOSTNAME@"		# The name used for this hosts' webserver
+BBSERVERWWWURL="/bb"			# The top URL for the BB webpages
+BBSERVERCGIURL="/bb-cgi"		# The URL for the BB CGI scripts.
+
+# BBLOCATION="foo"			# The network location, makes bbtest-net test only hosts with NET:foo
+					# You only need to set this if you have multiple network test servers with
+					# a shared bb-hosts file.
+
+# Make sure the path includes the directories where you have fping, mail and (optionally) ntpdate installed,
+# as well as the BBHOME/bin directory where all of the bbgend tools reside.
+PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:$BBSERVERROOT/bb/bin"
+
+
+##### Normally you do not need to modify anything below this point #####
+
+# General settings
+BBPORT="1984"			# Portnumber where bbgend/bbd listens
+BBDISP="$BBSERVERIP"		# IP of a single bbgend/bbd server
+BBDISPLAYS=""			# IP of multiple bbgend/bbd servers. If used, BBDISP must be 0.0.0.0
+BBPAGE="$BBSERVERIP"		# IP of a single bbd BBPAGE server. Not used by bbgend.
+BBPAGERS=""			# IP of multiple bbd BBPAGE servers. If used, BBPAGE must be 0.0.0.0
+FQDN="TRUE"			# Use fully-qualified hostnames internally. Keep it TRUE unless you know better.
+USEBBGEND="TRUE"		# Set this TRUE if you are using a bbgend server, FALSE if standard bbd.
+DOCOMBO="TRUE"			# Ignored by everyone except maint.pl...
+PAGELEVELS="red yellow purple"	# Status colors that trigger an alert. Used by 'bb' talking to bbd, not bbgend
+PURPLEDELAY="30"		# Lifetime of info- and larrd-pages. Used only when generating for bbd, not bbgend
+
+BBLOGSTATUS="DYNAMIC"		# Are HTML status logs statically or dynamically generated?
+				# Use DYNAMIC with bbgend, unless you run bbgend_filestore --status --html
+
+# Specific to this host
+BBOSTYPE="$BBSERVEROS"		# Hosttype (operating system). Not used by server-side, but clients use this.
+MACHINEDOTS="$BBSERVERHOSTNAME"	# This systems hostname
+MACHINEADDR="$BBSERVERIP"	# This systems IP-address
+
+# URL's generated/used by bbgen
+BBWEBHOST="http://$BBSERVERWWWNAME"		# Just the host part of the URL - http://www.foo.com
+BBWEBHOSTURL="$BBWEBHOST$BBSERVERWWWURL"	# Prefix for all static BB pages - http://www.foo.com/bb
+BBWEBHTMLLOGS="$BBWEBHOSTURL/html"		# Prefix for the BB HTML logs (only if BBLOGSTATUS=STATIC)
+BBWEB="$BBSERVERWWWURL"				# BB URL prefix without the host part
+BBSKIN="$BBSERVERWWWURL/gifs"			# BB URL prefix for the GIF files
+BBREPURL="$BBSERVERWWWURL/rep"			# BB URL prefix for the BB availability reports
+BBWAP="$BBSERVERWWWURL/wml"			# BB URL prefix for the WAP/WML files.
+CGIBINURL="$BBSERVERCGIURL"			# URL prefix for the BB CGI-scripts - /cgi-bin
+
+# Locations of system-wide files and directories
+BBHOME="$BBSERVERROOT/bb"			# The BB home directory. 
+BBTMP="$BBHOME/tmp"				# Directory used for temporary files.
+BB="$BBHOME/bin/bb"				# The 'bb' client program
+BBHOSTS="$BBHOME/etc/bb-hosts"			# The bb-hosts file
+
+# Server specific directories
+BBVAR="$BBSERVERROOT/bbvar"			# The bbvar directory holds all monitoring data
+BBACKS="$BBVAR/acks"				# Acknowledge event info stored here (bbgend_alert)
+BBDATA="$BBVAR/data"				# Data files go here (bbgend_filestore --data)
+BBDISABLED="$BBVAR/disabled"			# Enabled/disabled flags are stored here (bbgend_filestore --enadis)
+BBHIST="$BBVAR/hist"				# History logs are stored here (bbgend_history)
+BBHISTLOGS="$BBVAR/histlogs"			# Historical detail status-loge are stored here (bbgend_history)
+BBLOGS="$BBVAR/logs"				# Status logs go here (bbgend_filestore --status). Not needed by bbgend
+BBWWW="$BBHOME/www"				# The directory for BB www files.
+BBHTML="$BBWWW/html"				# HTML status logs go here (bbgend_filestore --status --html)
+BBNOTES="$BBWWW/notes"				# For notes-files (bbgend_filestore --notes)
+BBREP="$BBWWW/rep"				# Top-level directory for BB reports.
+
+
+# For bbgend
+RECVFROMMSG="Status message received from"	# The text showing where a status log came from
+STATUNCHMSG="Status unchanged in"		# The text showing how long a status has been unchanged
+
+# For the bbgend_history module
+BBALLHISTLOG="TRUE"				# Save a common log of all events (used for the bb2 webpage)
+BBHOSTHISTLOG="TRUE"				# Save a log of all events for a host (not used by any tool currently)
+SAVESTATUSLOG="TRUE"				# Save the detailed status log each time the status changes.
+
+# For the bbgend_alert module
+MAILC="mail"					# Command used to send an e-mail with no subject
+MAIL="$MAILC -s"				# Command used to send an e-mail with a subject
+SVCCODES="disk:100,cpu:200,procs:300,svcs:350,msgs:400,conn:500,http:600,dns:800,smtp:725,telnet:723,ftp:721,pop:810,pop3:810,pop-3:810,ssh:722,imap:843,ssh1:722,ssh2:722,imap2:843,imap3:843,imap4:843,pop2:809,pop-2:809,nntp:819,test:901"
+
+# For bbtest-net
+CONNTEST="TRUE"					# Should we 'ping' hosts ?
+IPTEST_2_CLEAR_ON_FAILED_CONN="TRUE"		# If TRUE, then failing network tests go CLEAR if conn-test fails.
+NONETPAGE=""					# Network tests that go YELLOW upon failure
+FPING="fping"					# Path and options for the 'fping' program.
+NTPDATE="ntpdate"				# Path to the 'ntpdate' program
+BBROUTERTEXT="router"				# What to call a failing intermediate network device.
+
+
+############################################################
+# These determine some parts of how bbgen generates webpages
+############################################################
+SUMMARY_SET_BKG="FALSE"				# Do summaries affect the background color of the BB webpage ?
+BBMKBB2EXT="eventlog.sh acklog.sh"		# What extensions to have on the BB2 page.
+BBREL="bbgend"					# Used by the standard BB web headers, not by bbgend
+BBRELDATE=""					# Used by the standard BB web headers, not by bbgend
+DOTHEIGHT="16"					# Height (in pixels) of the color GIF's
+DOTWIDTH="16"					# Width (in pixels) of the color GIF's
+
+# Fonts and texts
+MKBBLOCAL="<B><I>Pages Hosted Locally</I></B>"
+MKBBREMOTE="<B><I>Remote Status Display</I></B>"
+MKBBSUBLOCAL="<B><I>Subpages Hosted Locally</I></B>"
+MKBBACKFONT="COLOR=silver SIZE=-1"		# Size and color of the 'Current acknowledgement...' text in the html log.
+MKBBCOLFONT="COLOR=\"#87a9e5\" SIZE=-1"		# Size and color of the column headings text
+MKBBROWFONT="SIZE=+1 COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\""   # Size,color,font of text in each row (hostname)
+MKBBTITLE="COLOR=ivory SIZE=+1"			# Size and color of the BB titles
+BBDATEFORMAT="%a %b %d %H:%M:%S %Y"		# Date format
+BBRSSTITLE="Big Brother Alerts"			# Title for the RSS and WML outputs.
+
+# For WML output
+WMLMAXCHARS="1500"				# Max number of bytes in a WAP message
+WML_OUTPUT="FALSE"				# Should we generate WML output ?
+
+# For BB reports
+BBREPWARN="97"					# Default availability causing yellow status on availability report.
+
+# For the bb-hist CGI 
+BBHISTEXT=""					# What extensions to run on history pages.
+
