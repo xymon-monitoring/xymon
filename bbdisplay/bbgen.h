@@ -22,7 +22,7 @@
 #include <time.h>
 #include <stddef.h>
 
-#define VERSION "2.13"
+#define VERSION "2.14pre"
 
 /* Structure defs for bbgen */
 
@@ -167,7 +167,8 @@ typedef struct rrd_t {
 /* Basically a list of all possible column */
 /* names with links to their help-texts    */
 typedef struct bbgen_col_t {
-	char		*name;
+	char	*name;
+	char	*listname;	/* The ",NAME," string used for searches */
 	struct link_t		*link;
 	struct bbgen_col_t	*next;
 } bbgen_col_t;
@@ -240,6 +241,7 @@ typedef struct host_t {
 	struct link_t	*link;
 	struct entry_t	*entries;
 	int	color;		/* Calculated */
+	int	bb2color;	/* Calculated */
 	int     oldage;
 	int	prefer;
 	char	*alerts;

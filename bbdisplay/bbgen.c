@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.165 2003-12-02 22:46:00 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.166 2003-12-10 20:55:00 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -139,6 +139,14 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 			ignorecolumns = (char *) malloc(strlen(lp)+2);
 			sprintf(ignorecolumns, ",%s,", (lp+1));
+		}
+		else if (argnmatch(argv[i], "--bb2-ignorecolumns=")) {
+			char *lp = strchr(argv[i], '=');
+			bb2ignorecolumns = (char *) malloc(strlen(lp)+2);
+			sprintf(bb2ignorecolumns, ",%s,", (lp+1));
+		}
+		else if (argnmatch(argv[i], "--bb2-ignorepurples")) {
+			bb2includepurples = 0;
 		}
 		else if (argnmatch(argv[i], "--includecolumns=")) {
 			char *lp = strchr(argv[i], '=');
@@ -300,6 +308,9 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[i], "--no-acklog") == 0) {
 			bb2acklog = 0;
 		}
+		else if (strcmp(argv[i], "--unpatched-bbd") == 0) {
+			unpatched_bbd = 1;
+		}
 
 		else if (argnmatch(argv[i], "--noprop=")) {
 			char *lp = strchr(argv[i], '=');
@@ -440,7 +451,9 @@ int main(int argc, char *argv[])
 			printf("    --nopurple                  : Disable purple status-updates\n");
 			printf("    --purplelifetime=N          : Purple messages have a lifetime of N minutes\n");
 			printf("    --ignorecolumns=test[,test] : Completely ignore these columns\n");
-			printf("    --includecolumns=test[,test]: Always include these columns on bb2 page\n");
+			printf("    --bb2-ignorecolumns=test[,test]: Ignore these columns for the BB2 page\n");
+			printf("    --bb2-ignorepurples         : Ignore all-purple hosts on BB2 page\n");
+			printf("    --includecolumns=test[,test]: Always include these columns on BB2 page\n");
 		        printf("    --max-eventcount=N          : Max number of events to include in eventlog\n");
 		        printf("    --max-eventtime=N           : Show events that occurred within the last N minutes\n");
 			printf("    --eventignore=test[,test]   : Columns to ignore in bb2 event-log display\n");
@@ -486,11 +499,12 @@ int main(int argc, char *argv[])
 			printf("    --nstab=FILENAME            : Generate a Netscape Sidebar feed\n");
 			printf("    --rss=FILENME               : Generate a RSS/RDF feed of alerts\n");
 			printf("    --rssversion={0.91|0.92|1.0|2.0} : Specify RSS/RDF version (default: 0.91)\n");
-			printf("\nDebugging options:\n");
+			printf("\nDebugging/troubleshooting options:\n");
 			printf("    --timing                    : Collect timing information\n");
 			printf("    --debug                     : Debugging information\n");
 			printf("    --version                   : Show version information\n");
 			printf("    --purplelog=FILENAME        : Create a log of purple hosts and tests\n");
+			printf("    --unpatched-bbd             : BB has not been patched with bbd-background.patch\n");
 			exit(0);
 		}
 		else if (argnmatch(argv[i], "-")) {
@@ -581,7 +595,7 @@ int main(int argc, char *argv[])
 	add_timestamp("Load STATE done");
 
 	/* Calculate colors of hosts and pages */
-	calc_hostcolors(hosthead);
+	calc_hostcolors(hosthead, bb2ignorecolumns);
 	calc_pagecolors(pagehead);
 
 	/* Topmost page (background color for bb.html) */
