@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.28 2004-10-04 12:44:03 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.29 2004-10-07 15:16:26 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -705,7 +705,10 @@ int main(int argc, char *argv[])
 		else if (strncmp(msg, "bbgendlog ", 10) == 0) {
 			result = sendmessage(msg, recipient, stdout, 1);
 		}
-		else if (strncmp(msg, "bbgendbrd", 9) == 0) {
+		else if (strncmp(msg, "bbgendboard", 9) == 0) {
+			result = sendmessage(msg, recipient, stdout, 1);
+		}
+		else if (strncmp(msg, "bbgendcookie ", 13) == 0) {
 			result = sendmessage(msg, recipient, stdout, 1);
 		}
 		else {
