@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.19 2004-09-21 12:43:07 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.20 2004-09-21 13:33:27 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -104,6 +104,7 @@ typedef struct conn_t {
 int keeprunning = 1;
 time_t laststatus = 0;
 char *logfile = NULL;
+unsigned long msgs_timeout_from[P_CLEANUP+1] = { 0, };
 
 void sigterm_handler(int signum)
 {
@@ -148,6 +149,7 @@ static void do_read(int sockfd, char *addr, conn_t *conn, enum phase_t completed
 	if (n == -1) {
 		/* Error - abort */
 		errprintf("READ error from %s: %s\n", addr, strerror(errno));
+		msgs_timeout_from[conn->state]++;
 		conn->state = P_CLEANUP;
 	}
 	else if (n == 0) {
@@ -169,6 +171,7 @@ static void do_write(int sockfd, char *addr, conn_t *conn, enum phase_t complete
 	if (n == -1) {
 		/* Error - abort */
 		errprintf("WRITE error to %s: %s\n", addr, strerror(errno));
+		msgs_timeout_from[conn->state]++;
 		conn->state = P_CLEANUP;
 	}
 	else if (n > 0) { 
@@ -214,7 +217,6 @@ int main(int argc, char *argv[])
 	unsigned long msgs_page = 0;
 	unsigned long msgs_combo = 0;
 	unsigned long msgs_other = 0;
-	unsigned long msgs_timeout_from[P_CLEANUP+1] = { 0, };
 
 	/* Dont save the output from errprintf() */
 	save_errbuf = 0;
@@ -443,7 +445,7 @@ int main(int argc, char *argv[])
 					msgs_page, msgs_other,
 					ccount, bufspace / 1024);
 				p = stentry->buf + strlen(stentry->buf);
-				p += sprintf(p, "\nTimeout details:\n");
+				p += sprintf(p, "\nTimeout/failure details\n");
 				p += sprintf(p, "- %-22s : %10lu\n", statename[P_REQ_READING], msgs_timeout_from[P_REQ_READING]);
 				p += sprintf(p, "- %-22s : %10lu\n", statename[P_REQ_CONNECTING], msgs_timeout_from[P_REQ_CONNECTING]);
 				p += sprintf(p, "- %-22s : %10lu\n", statename[P_REQ_SENDING], msgs_timeout_from[P_REQ_SENDING]);
