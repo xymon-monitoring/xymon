@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.93 2003-08-26 15:33:43 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.94 2003-08-27 20:20:48 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -52,6 +52,7 @@ char *reqenv[] = {
 #define TOOL_NTP        3
 #define TOOL_FPING      4
 #define TOOL_CURL       5
+#define TOOL_MODEMBANK  6
 
 /* dnslookup values */
 #define DNS_THEN_IP     0	/* Try DNS - if it fails, use IP from bb-hosts */
@@ -61,6 +62,7 @@ char *reqenv[] = {
 service_t	*svchead = NULL;		/* Head of all known services */
 service_t	*pingtest = NULL;		/* Identifies the pingtest within svchead list */
 service_t	*httptest = NULL;		/* Identifies the httptest within svchead list */
+service_t	*modembanktest = NULL;		/* Identifies the modembank test within svchead list */
 testedhost_t	*testhosthead = NULL;		/* Head of all hosts */
 char		*nonetpage = NULL;		/* The "NONETPAGE" env. variable */
 int		dnsmethod = DNS_THEN_IP;	/* How to do DNS lookups */
@@ -292,7 +294,7 @@ void load_tests(void)
 	FILE 	*bbhosts;
 	char 	l[MAX_LINE_LEN];	/* With multiple http tests, we may have long lines */
 	char	hostname[MAX_LINE_LEN];
-	int	ip1, ip2, ip3, ip4;
+	int	ip1, ip2, ip3, ip4, banksize;
 	char	*netstring;
 	char 	*p;
 
@@ -605,6 +607,26 @@ void load_tests(void)
 					notesthostcount++;
 				}
 			}
+		}
+		else if (sscanf(l, "dialup %s %3d.%3d.%3d.%3d %d", hostname, &ip1, &ip2, &ip3, &ip4, &banksize) == 6) {
+			/* Modembank entry: "dialup displayname startIP count" */
+
+			testitem_t *newtest;
+			modembank_t *newentry;
+			int i;
+
+			newtest = init_testitem(NULL, modembanktest, NULL, 0, 0, 0, 0);
+			newtest->next = modembanktest->items;
+			modembanktest->items = newtest;
+
+			newtest->privdata = (void *)malloc(sizeof(modembank_t));
+			newentry = (modembank_t *)newtest->privdata;
+
+			newentry->hostname = malcop(hostname);
+			newentry->startip = IPtou32(ip1, ip2, ip3, ip4);
+			newentry->banksize = banksize;
+			newentry->responses = (int *) malloc(banksize * sizeof(int));
+			for (i=0; i<banksize; i++) newentry->responses[i] = 0;
 		}
 		else {
 			/* Other bb-hosts line - ignored */
@@ -962,6 +984,60 @@ int run_fping_service(service_t *service)
 	return 0;
 }
 
+void run_modembank_service(service_t *service)
+{
+	testitem_t	*t;
+	char		cmd[1024];
+	char		startip[16], endip[16];
+	char		*p;
+	char		cmdpath[MAX_PATH];
+	FILE		*cmdpipe;
+	char		l[MAX_LINE_LEN];
+	int		ip1, ip2, ip3, ip4;
+
+	for (t=service->items; (t); t = t->next) {
+		modembank_t *req = (modembank_t *)t->privdata;
+
+		p = getenv("FPING");
+		strcpy(cmdpath, (p ? p : "fping"));
+		strcpy(startip, u32toIP(req->startip));
+		strcpy(endip, u32toIP(req->startip + req->banksize - 1));
+		sprintf(cmd, "%s -g -Ae %s %s 2>/dev/null", cmdpath, startip, endip);
+
+		dprintf("Running command: '%s'\n", cmd);
+		cmdpipe = popen(cmd, "r");
+		if (cmdpipe == NULL) {
+			errprintf("Could not run the fping command %s\n", cmd);
+			return;
+		}
+
+		while (fgets(l, sizeof(l), cmdpipe)) {
+			dprintf("modembank response: %s", l);
+
+			if (sscanf(l, "%d.%d.%d.%d ", &ip1, &ip2, &ip3, &ip4) == 4) {
+				unsigned int idx = IPtou32(ip1, ip2, ip3, ip4) - req->startip;
+
+				if (idx >= req->banksize) {
+					errprintf("Unexpected response for IP not in bank - %d.%d.%d.%d", 
+						  ip1, ip2, ip3, ip4);
+				}
+				else {
+					req->responses[idx] = (strstr(l, "is alive") != NULL);
+				}
+			}
+		}
+		pclose(cmdpipe);
+
+		if (debug) {
+			int i;
+
+			dprintf("Results for modembank start=%s, length %d\n", u32toIP(req->startip), req->banksize);
+			for (i=0; (i<req->banksize); i++)
+				dprintf("\t%s is %d\n", u32toIP(req->startip+i), req->responses[i]);
+		}
+	}
+}
+
 
 int decide_color(service_t *service, char *svcname, testitem_t *test, int failgoesclear, char *cause)
 {
@@ -1237,6 +1313,43 @@ void send_results(service_t *service, int failgoesclear)
 }
 
 
+void send_modembank_results(service_t *service)
+{
+	testitem_t	*t;
+	char		msgline[1024];
+	int		i, color, inuse;
+	char		startip[16], endip[16];
+
+	inuse = 0;
+	for (t=service->items; (t); t = t->next) {
+		modembank_t *req = (modembank_t *)t->privdata;
+
+		strcpy(startip, u32toIP(req->startip));
+		strcpy(endip, u32toIP(req->startip + req->banksize - 1));
+
+		init_status(COL_GREEN);		/* Modembanks are always green */
+		sprintf(msgline, "status dialup.%s %s %s FROM %s TO %s DATA ", 
+			commafy(req->hostname), colorname(COL_GREEN), timestamp, startip, endip);
+		addtostatus(msgline);
+		for (i=0; i<req->banksize; i++) {
+			if (req->responses[i]) {
+				color = COL_GREEN;
+				inuse++;
+			}
+			else {
+				color = COL_CLEAR;
+			}
+
+			sprintf(msgline, "%s ", colorname(color));
+			addtostatus(msgline);
+		}
+
+		sprintf(msgline, "\n\nUsage: %d of %d (%d%%)\n", inuse, req->banksize, ((inuse * 100) / req->banksize));
+		addtostatus(msgline);
+		finish_status();
+	}
+}
+
 void send_sslcert_status(testedhost_t *host)
 {
 	int color = -1;
@@ -1483,6 +1596,7 @@ int main(int argc, char *argv[])
 	add_service("ntp", getportnumber("ntp"),    0, TOOL_NTP);
 	httptest = add_service("http", getportnumber("http"),  0, TOOL_CURL);
 	if (pingcolumn) pingtest = add_service(pingcolumn, 0, 0, TOOL_FPING);
+	modembanktest = add_service("dialup", 0, 0, TOOL_MODEMBANK);
 	add_timestamp("Service definitions loaded");
 
 	load_tests();
@@ -1577,6 +1691,10 @@ int main(int argc, char *argv[])
 					run_ntp_service(s); 
 					add_timestamp("NTP tests executed");
 					break;
+				case TOOL_MODEMBANK:
+					run_modembank_service(s); 
+					add_timestamp("Modembank tests executed");
+					break;
 			}
 		}
 	}
@@ -1593,6 +1711,10 @@ int main(int argc, char *argv[])
 
 			case TOOL_FPING:
 			case TOOL_CURL:
+				break;
+
+			case TOOL_MODEMBANK:
+				send_modembank_results(s);
 				break;
 		}
 	}

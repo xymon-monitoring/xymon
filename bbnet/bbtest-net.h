@@ -104,6 +104,13 @@ typedef struct testitem_t {
 	struct testitem_t *next;
 } testitem_t;
 
+typedef struct modembank_t {
+	char		*hostname;
+	unsigned int 	startip;	/* Saved as 32-bit binary */
+	int		banksize;
+	int		*responses;
+} modembank_t;
+
 extern char *deptest_failed(testedhost_t *host, char *testname);
 
 #endif
