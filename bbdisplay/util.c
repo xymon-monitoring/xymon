@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.85 2003-08-26 20:45:31 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.86 2003-08-27 20:19:00 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -274,22 +274,28 @@ char *colorname(int color)
 
 int parse_color(char *colortext)
 {
-	if (strncmp(colortext, "green ", 6) == 0) {
+	char inpcolor[10];
+
+	strncpy(inpcolor, colortext, 7);
+	inpcolor[7] = '\0';
+	strcat(inpcolor, " ");
+
+	if (strncmp(inpcolor, "green ", 6) == 0) {
 		return COL_GREEN;
 	}
-	else if (strncmp(colortext, "yellow ", 7) == 0) {
+	else if (strncmp(inpcolor, "yellow ", 7) == 0) {
 		return COL_YELLOW;
 	}
-	else if (strncmp(colortext, "red ", 4) == 0) {
+	else if (strncmp(inpcolor, "red ", 4) == 0) {
 		return COL_RED;
 	}
-	else if (strncmp(colortext, "blue ", 5) == 0) {
+	else if (strncmp(inpcolor, "blue ", 5) == 0) {
 		return COL_BLUE;
 	}
-	else if (strncmp(colortext, "clear ", 6) == 0) {
+	else if (strncmp(inpcolor, "clear ", 6) == 0) {
 		return COL_CLEAR;
 	}
-	else if (strncmp(colortext, "purple ", 7) == 0) {
+	else if (strncmp(inpcolor, "purple ", 7) == 0) {
 		return COL_PURPLE;
 	}
 
@@ -1396,6 +1402,25 @@ time_t sslcert_expiretime(char *timestr)
 	dprintf("Output says it expires: %s", exptime);
 	dprintf("I think it expires at (localtime) %s\n", asctime(localtime(&result)));
 
+	return result;
+}
+
+unsigned int IPtou32(int ip1, int ip2, int ip3, int ip4)
+{
+	return ((ip1 << 24) | (ip2 << 16) | (ip3 << 8) | (ip4));
+}
+
+char *u32toIP(unsigned int ip32)
+{
+	int ip1, ip2, ip3, ip4;
+	static char result[16];
+
+	ip1 = ((ip32 >> 24) & 0xFF);
+	ip2 = ((ip32 >> 16) & 0xFF);
+	ip3 = ((ip32 >> 8) & 0xFF);
+	ip4 = (ip32 & 0xFF);
+
+	sprintf(result, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 	return result;
 }
 
