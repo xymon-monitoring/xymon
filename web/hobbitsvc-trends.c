@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.27 2003-08-04 11:49:38 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.28 2003-08-11 15:36:30 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -72,7 +72,7 @@ static char *rrdlink_url(char *hostname, char *dispname, rrd_t *rrd, int larrd04
 		rrdurl[0] = '\0';
 
 		do {
-			int last = first+rrd->rrdname->maxgraphs;
+			int last = (first-1)+rrd->rrdname->maxgraphs;
 
 			if (last > rrd->count) last = rrd->count;
 			sprintf(svcurl, "%s/larrd-grapher.cgi?host=%s&amp;service=%s&amp;%s=%d..%d", 
