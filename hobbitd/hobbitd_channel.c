@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.12 2004-10-30 15:52:45 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.13 2004-10-30 22:19:39 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -74,11 +74,11 @@ int main(int argc, char *argv[])
 	msg_t *newmsg;
 	int daemonize = 1;
 
-	int cnid;
+	int cnid = -1;
 	int pfd[2];
 	pid_t childpid = 0;
-	char *childcmd;
-	char **childargs;
+	char *childcmd = "";
+	char **childargs = NULL;
 	struct timespec tmo;
 
 	for (argi=1; (argi < argc); argi++) {
@@ -102,6 +102,11 @@ int main(int argc, char *argv[])
 			childargs = (char **) calloc((1 + argc - argi), sizeof(char *));
 			while (argi < argc) { childargs[i++] = argv[argi++]; }
 		}
+	}
+
+	if (cnid == -1) {
+		errprintf("No channel specified\n");
+		return 1;
 	}
 
 	/* Go daemon */
