@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.2 2004-10-31 11:38:09 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.3 2004-11-06 10:02:20 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -23,15 +23,6 @@ static char rcsid[] = "$Id: htmllog.c,v 1.2 2004-10-31 11:38:09 henrik Exp $";
 #include "version.h"
 
 #include "htmllog.h"
-
-typedef struct {
-   char *bbsvcname;
-   char *larrdsvcname;
-   char *larrdpartname;
-} larrdsvc_t;
-
-
-static larrdsvc_t *larrdsvcs = NULL;
 
 static char *cgibinurl = NULL;
 static char *colfont = NULL;
@@ -45,7 +36,6 @@ static void hostsvc_setup(void)
 
 	if (setup_done) return;
 
-	getenv_default("LARRDS", "cpu=la,content=http,http,conn,fping=conn,ftp,ssh,telnet,nntp,pop,pop-2,pop-3,pop2,pop3,smtp,imap,disk,vmstat,memory,iostat,netstat,citrix,bbgen,bbtest,bbproxy,time=ntpstat,vmio,temperature", NULL);
 	getenv_default("NONHISTS", "info,larrd,trends,graphs", NULL);
 	getenv_default("BBREL", "bbgen", NULL);
 	getenv_default("BBRELDATE", VERSION, NULL);
@@ -63,46 +53,6 @@ static void hostsvc_setup(void)
 	setup_done = 1;
 }
 
-static larrdsvc_t *find_larrd(char *service, char *flags)
-{
-	larrdsvc_t *result;
-	larrdsvc_t *lrec;
-
-	if (strchr(flags, 'R')) {
-		/* Dont do LARRD for reverse tests, since they have no data */
-		return NULL;
-	}
-
-	if (larrdsvcs == NULL) {
-		char *lenv = getenv("LARRDS");
-		int lcount = 0;
-		char *ldef, *p;
-
-		p = lenv; do { lcount++; p = strchr(p+1, ','); } while (p);
-		larrdsvcs = (larrdsvc_t *)calloc(sizeof(larrdsvc_t), (lcount+1));
-
-		lrec = larrdsvcs; ldef = strtok(lenv, ",");
-		while (ldef) {
-			p = strchr(ldef, '=');
-			if (p) {
-				*p = '\0'; 
-				lrec->bbsvcname = strdup(ldef);
-				lrec->larrdsvcname = strdup(p+1);
-			}
-			else {
-				lrec->bbsvcname = lrec->larrdsvcname = strdup(ldef);
-			}
-
-			if (strcmp(ldef, "disk") == 0) lrec->larrdpartname = "disk_part";
-
-			ldef = strtok(NULL, ",");
-			lrec++;
-		}
-	}
-
-	lrec = larrdsvcs; while (lrec->bbsvcname && strcmp(lrec->bbsvcname, service)) lrec++;
-	return (lrec->bbsvcname ? lrec : NULL);
-}
 
 static void historybutton(char *cgibinurl, char *hostname, char *service, char *ip, FILE *output) 
 {
