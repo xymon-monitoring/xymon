@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbnet_rcsid[] = "$Id: do_net.c,v 1.3 2004-11-08 17:11:41 henrik Exp $";
+static char bbnet_rcsid[] = "$Id: do_net.c,v 1.4 2004-11-12 21:35:35 henrik Exp $";
 
 static char *bbnet_params[]       = { "rrdcreate", rrdfn, "DS:sec:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
@@ -54,19 +54,19 @@ int do_net_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	}
 	else if ((strcmp(testname, "conn") == 0) || (strcmp(testname, "ping") == 0) || (strcmp(testname, "fping") == 0)) {
 		/*
-		 * Ping-tests, possible using fping.
+		 * Ping-tests, possibly using fping.
 		 */
 		char *tmod = "ms";
 
 		if ((p = strstr(msg, "time=")) != NULL) {
 			/* Standard ping, reports ".... time=0.2 ms" */
 			seconds = atof(p+5);
-			tmod = p + 5; tmod += strspn(p, "0123456789. ");
+			tmod = p + 5; tmod += strspn(tmod, "0123456789. ");
 		}
 		else if ((p = strstr(msg, "alive")) != NULL) {
 			/* fping, reports ".... alive (0.43 ms)" */
 			seconds = atof(p+7);
-			tmod = p + 5; tmod += strspn(p, "0123456789. ");
+			tmod = p + 7; tmod += strspn(tmod, "0123456789. ");
 		}
 
 		if (strncmp(tmod, "ms", 2) == 0) seconds = seconds / 1000.0;
