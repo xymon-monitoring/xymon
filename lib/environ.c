@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.3 2005-01-18 17:13:50 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.4 2005-01-18 22:24:35 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -128,7 +128,10 @@ char *xgetenv(const char *name)
 	if (result == NULL) {
 		for (i=0; (hobbitenv[i].name && (strcmp(hobbitenv[i].name, name) != 0)); i++) ;
 		if (hobbitenv[i].name) result = expand_env(hobbitenv[i].val);
-		if (result == NULL) return NULL;
+		if (result == NULL) {
+			errprintf("xgetenv: Cannot find value for variable %s\n", name);
+			return NULL;
+		}
 
 		/* 
 		 * If we got a result, put it into the environment so it will stay there.
