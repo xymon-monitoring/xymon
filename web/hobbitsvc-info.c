@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.74 2005-02-19 22:59:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.75 2005-02-20 08:20:46 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -120,6 +120,8 @@ void generate_hobbit_alertinfo(char *hostname, char **buf, int *buflen, char *co
 			statuslist = NULL;
 			return;
 		}
+
+		alert_printmode(1);
 	}
 
 	if (statuslist == NULL) return;
@@ -160,7 +162,7 @@ void generate_hobbit_alertinfo(char *hostname, char **buf, int *buflen, char *co
 
 	sprintf(l, "<table summary=\"%s Alerts\" border=1>\n", hostname);
 	addtobuffer(buf, buflen, l);
-	addtobuffer(buf, buflen, "<tr><th>Service</th><th>Recipient</th><th>Wait before 1st</th><th>Stop after</th><th>Repeat</th><th>Time of Day</th><th>Colors</th><th>Recovery message</th><th>Stoprule</th></tr>\n");
+	addtobuffer(buf, buflen, "<tr><th>Service</th><th>Recipient</th><th>Delay before 1st</th><th>Stop after</th><th>Repeat</th><th>Time of Day</th><th>Colors</th><th>Recovery message</th><th>Stoprule</th></tr>\n");
 
 	hname.name = hostname; hname.next = NULL;
 	lname.name = (hi ? hi->page->pagepath : ""); lname.next = NULL;
