@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.71 2003-02-11 16:29:52 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.72 2003-02-12 22:37:58 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -34,6 +34,7 @@ static char rcsid[] = "$Id: bbgen.c,v 1.71 2003-02-11 16:29:52 henrik Exp $";
 #include "infogen.h"
 #include "alert.h"
 #include "debug.h"
+#include "wmlgen.h"
 
 /* Global vars */
 bbgen_page_t	*pagehead = NULL;			/* Head of page list */
@@ -304,6 +305,8 @@ int main(int argc, char *argv[])
 	/* Reduced summary (alerts) page - bbnk.html */
 	if (!bbpageONLY) do_bb2_page("bbnk.html", 1);
 
+	/* Generate a hosts file for the WML generator */
+	if (!bbpageONLY) do_wml_cards();
 	return 0;
 }
 
