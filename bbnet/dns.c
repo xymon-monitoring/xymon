@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.12 2004-09-11 07:14:43 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.13 2004-09-11 15:58:04 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -231,6 +231,10 @@ int dns_test_server(char *serverip, char *hostname, char **banner, int *bannerby
 	struct timeval *tspent;
 	struct timezone tz;
 	char msg[100];
+	char *tspec, *tst;
+	dns_resp_t *responses = NULL;
+	dns_resp_t *walk;
+	int i;
 
 	if (inet_aton(serverip, &serveraddr) == 0) {
 		errprintf("dns_test_server: serverip '%s' not a valid IP\n", serverip);
@@ -247,15 +251,45 @@ int dns_test_server(char *serverip, char *hostname, char **banner, int *bannerby
 		return 1;
 	}
 
+	tspec = malcop(hostname);
 	gettimeofday(&starttime, &tz);
-	dprintf("ares_search: hostname='%s', class=%d, type=%d\n",
-		hostname, C_IN, T_A);
-	ares_search(channel, hostname, C_IN, T_A, dns_detail_callback, NULL);
+	tst = strtok(tspec, ",");
+	do {
+		dns_resp_t *newtest = (dns_resp_t *)malloc(sizeof(dns_resp_t));
+		char *p, *tlookup;
+		int atype = T_A;
+
+		newtest->next = NULL;
+		if (responses == NULL) responses = newtest; else walk->next = newtest;
+		walk = newtest;
+
+		p = strchr(tst, ':');
+		tlookup = (p ? p+1 : tst);
+		if (p) { *p = '\0'; atype = dns_name_type(tst); *p = ':'; }
+
+		dprintf("ares_search: tlookup='%s', class=%d, type=%d\n", tlookup, C_IN, atype);
+		ares_search(channel, tlookup, C_IN, atype, dns_detail_callback, newtest);
+		tst = strtok(NULL, ",");
+	} while (tst);
+
 	dns_queue_run(channel);
 	gettimeofday(&endtime, &tz);
 	tspent = tvdiff(&starttime, &endtime, NULL);
-	*banner = dns_detail_response(&status);
-	*bannerbytes = strlen(*banner);
+	*banner = NULL; *bannerbytes = 0; status = ARES_SUCCESS;
+	strcpy(tspec, hostname);
+	tst = strtok(tspec, ",");
+	for (walk = responses, i=1; (walk); walk = walk->next, i++) {
+		/* Print an identifying line if more than one query */
+		if ((walk != responses) || (walk->next)) {
+			sprintf(msg, "\n*** DNS lookup of '%s' ***\n", tst);
+			addtobuffer(banner, bannerbytes, msg);
+		}
+		addtobuffer(banner, bannerbytes, walk->msgbuf);
+		if (walk->msgstatus != ARES_SUCCESS) status = walk->msgstatus;
+		free(walk->msgbuf);
+		tst = strtok(NULL, ",");
+	}
+	free(tspec);
 	sprintf(msg, "\nSeconds: %u.%03u\n", (unsigned int)tspent->tv_sec, (unsigned int)tspent->tv_usec/1000);
 	addtobuffer(banner, bannerbytes, msg);
 
