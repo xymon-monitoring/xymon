@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.33 2004-10-24 22:05:46 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.34 2004-10-26 15:34:05 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -114,7 +114,7 @@ static void setup_transport(char *recipient)
 	dprintf("bbdispproxyport = %d\n", bbdispproxyport);
 }
 
-static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respstr, int fullresponse)
+static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respstr, int fullresponse, int timeout)
 {
 	struct in_addr addr;
 	struct sockaddr_in saddr;
@@ -277,8 +277,8 @@ retry_connect:
 		FD_ZERO(&readfds);
 		if (!rdone) FD_SET(sockfd, &readfds);
 		if (!wdone) FD_SET(sockfd, &writefds);
-		tmo.tv_sec = 5;  tmo.tv_usec = 0; /* 5 seconds timeout to connect to bbd */
-		res = select(sockfd+1, &readfds, &writefds, NULL, &tmo);
+		tmo.tv_sec = timeout;  tmo.tv_usec = 0;
+		res = select(sockfd+1, &readfds, &writefds, NULL, (timeout ? &tmo : NULL));
 		if (res == -1) {
 			errprintf("Select failure while sending to bbd!\n");
 			shutdown(sockfd, SHUT_RDWR);
@@ -398,19 +398,19 @@ retry_connect:
 	return BB_OK;
 }
 
-static int sendtomany(char *onercpt, char *morercpts, char *msg)
+static int sendtomany(char *onercpt, char *morercpts, char *msg, int timeout)
 {
 	int result = 0;
 
 	if (strcmp(onercpt, "0.0.0.0") != 0)
-		result = sendtobbd(onercpt, msg, NULL, NULL, 0);
+		result = sendtobbd(onercpt, msg, NULL, NULL, 0, timeout);
 	else if (morercpts) {
 		char *bbdlist, *rcpt;
 
 		bbdlist = malcop(morercpts);
 		rcpt = strtok(bbdlist, " \t");
 		while (rcpt) {
-			result += sendtobbd(rcpt, msg, NULL, NULL, 0);
+			result += sendtobbd(rcpt, msg, NULL, NULL, 0, timeout);
 			rcpt = strtok(NULL, " \t");
 		}
 
@@ -424,13 +424,13 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg)
 	return result;
 }
 
-static int sendstatus(char *bbdisp, char *msg)
+static int sendstatus(char *bbdisp, char *msg, int timeout)
 {
 	int statusresult, pageresult;
 	char statuscolor[256];
 	char *pagelevels;
 
-	statusresult = sendtomany(bbdisp, getenv("BBDISPLAYS"), msg);
+	statusresult = sendtomany(bbdisp, getenv("BBDISPLAYS"), msg, timeout);
 
 	/* If no BBPAGE defined, drop paging */
 	if (getenv("BBPAGE") == NULL) return statusresult;
@@ -468,7 +468,7 @@ static int sendstatus(char *bbdisp, char *msg)
 		*outp = '\0';
 
 		if (firstnl) { *firstnl = '\n'; strcat(pagemsg, firstnl); }
-		pageresult = sendtomany(getenv("BBPAGE"), getenv("BBPAGERS"), pagemsg);
+		pageresult = sendtomany(getenv("BBPAGE"), getenv("BBPAGERS"), pagemsg, timeout);
 		free(pagemsg);
 	}
 
@@ -477,7 +477,7 @@ static int sendstatus(char *bbdisp, char *msg)
 }
 
 
-int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fullresponse)
+int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fullresponse, int timeout)
 {
 	static char *bbdisp = NULL;
 	int res = 0;
@@ -486,10 +486,10 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 	if (recipient == NULL) recipient = bbdisp;
 
 	if ((strncmp(msg, "status", 6) == 0) || (strncmp(msg, "combo", 5) == 0)) {
-		res = sendstatus((recipient ? recipient : bbdisp), msg);
+		res = sendstatus((recipient ? recipient : bbdisp), msg, timeout);
 	}
 	else {
-		res = sendtobbd(recipient, msg, respfd, respstr, fullresponse);
+		res = sendtobbd(recipient, msg, respfd, respstr, fullresponse, timeout);
 	}
 
 	if (res != BB_OK) {
@@ -558,7 +558,7 @@ static void combo_flush(void)
 		} while (p1 && p2);
 	}
 
-	sendmessage(bbmsg, NULL, NULL, NULL, 0);
+	sendmessage(bbmsg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
 	combo_start();	/* Get ready for the next */
 }
 
@@ -622,7 +622,7 @@ void finish_status(void)
 		default:
 			/* Red, yellow and purple messages go out NOW. Or we get no alarms ... */
 			bbnocombocount++;
-			sendmessage(msgbuf, NULL, NULL, NULL, 0);
+			sendmessage(msgbuf, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
 			break;
 	}
 }
@@ -639,6 +639,7 @@ int main(int argc, char *argv[])
 	int showhelp = 0;
 	int result = 1;
 	int cgimode = 0;
+	int timeout = BBTALK_TIMEOUT;
 	char *recipient = NULL;
 	char *msg = NULL;
 	FILE *respfd = stdout;
@@ -667,6 +668,11 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--str") == 0) {
 			respfd = NULL;
+		}
+		else if (strncmp(argv[argi], "--timeout=", 10) == 0) {
+			char *p = strchr(argv[argi], '=');
+
+			timeout = atoi(p+1);
 		}
 		else if (strcmp(argv[argi], "-?") == 0) {
 			showhelp = 1;
@@ -712,33 +718,30 @@ int main(int argc, char *argv[])
 		} while (spaceleft > 0);
 
 		if (cgimode) printf("Content-Type: application/octet-stream\n\n");
-		result = sendmessage(msg, recipient, stdout, NULL, 1);
+		result = sendmessage(msg, recipient, stdout, NULL, 1, timeout);
 	}
 	else if (strcmp(msg, "-") == 0) {
 		char msg[MAXMSG];
 
 		while (fgets(msg, sizeof(msg), stdin)) {
-			result = sendmessage(msg, recipient, NULL, NULL, 0);
+			result = sendmessage(msg, recipient, NULL, NULL, 0, timeout);
 		}
 	}
 	else {
 		if (strncmp(msg, "query ", 6) == 0) {
-			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 0);
+			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 0, timeout);
 		}
 		else if (strncmp(msg, "config ", 7) == 0) {
-			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1);
+			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 		}
 		else if (strncmp(msg, "bbgendlog ", 10) == 0) {
-			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1);
+			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 		}
 		else if (strncmp(msg, "bbgendboard", 9) == 0) {
-			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1);
-		}
-		else if (strncmp(msg, "bbgendcookie ", 13) == 0) {
-			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1);
+			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 		}
 		else {
-			result = sendmessage(msg, recipient, NULL, NULL, 0);
+			result = sendmessage(msg, recipient, NULL, NULL, 0, timeout);
 		}
 
 		if (response) {

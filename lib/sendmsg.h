@@ -15,6 +15,7 @@
 #define BBDPORTNUMBER 1984
 #endif
 
+#define BBTALK_TIMEOUT 5  /* Default timeout for a request going to bbd */
 #define PAGELEVELSDEFAULT "red purple"
 
 #define BB_OK			0
@@ -33,7 +34,7 @@ extern int bbstatuscount;
 extern int bbnocombocount;
 extern int dontsendmessages;
 
-extern int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fullresponse);
+extern int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fullresponse, int timeout);
 
 extern void combo_start(void);
 extern void combo_end(void);
