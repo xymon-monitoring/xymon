@@ -9,6 +9,7 @@ then
 fi
 
 cd ~/hobbit
+rm -f docs/*~ docs/manpages/index.html* docs/manpages/man1/* docs/manpages/man5/* docs/manpages/man7/* docs/manpages/man8/*
 
 for DIR in bbdisplay bbnet bbproxy common hobbitd
 do
@@ -25,7 +26,5 @@ do
 			fi
 		done
 	done
-
-	# for FILE in $DIR/html_*.8; do if [ -r $FILE ]; then man2html -r $FILE | tail --lines=+2 >docs/manpages/man8/`basename $FILE`.html; fi; done
 done
 
