@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.50 2004-11-08 22:52:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.51 2004-11-09 12:23:53 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -923,6 +923,7 @@ void do_message(conn_t *msg)
 	int color;
 	char sender[20];
 	time_t now;
+	char *msgfrom;
 
 	/* Most likely, we will not send a response */
 	msg->doingwhat = NOTALK;
@@ -939,6 +940,12 @@ void do_message(conn_t *msg)
 
 			get_hts(currmsg, sender, &h, &t, &log, &color, 1, 1);
 			if (log && (color != -1)) {
+				msgfrom = strstr(currmsg, "\nStatus message received from ");
+				if (msgfrom) {
+					sscanf(msgfrom, "\nStatus message received from %s\n", sender);
+					*msgfrom = '\0';
+				}
+
 				handle_status(currmsg, sender, h->hostname, t->testname, log, color);
 			}
 
@@ -948,6 +955,12 @@ void do_message(conn_t *msg)
 	else if (strncmp(msg->buf, "status", 6) == 0) {
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 1, 1);
 		if (log && (color != -1)) {
+			msgfrom = strstr(msg->buf, "\nStatus message received from ");
+			if (msgfrom) {
+				sscanf(msgfrom, "\nStatus message received from %s\n", sender);
+				*msgfrom = '\0';
+			}
+
 			handle_status(msg->buf, sender, h->hostname, t->testname, log, color);
 		}
 	}
