@@ -48,6 +48,7 @@ typedef struct {
 	char	ip[16];
 	link_t	*link;
 	entry_t	*entries;
+	int	color;		/* Calculated */
 	void	*next;
 } host_t;
 
@@ -67,7 +68,7 @@ typedef struct {
 typedef struct {
 	char	name[20];
 	char	title[200];
-	int	color;
+	int	color;		/* Calculated */
 	void	*next;
 	void	*subpages;
 	group_t	*groups;
