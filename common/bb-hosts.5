@@ -670,20 +670,32 @@ a password of "Wilma1", before requesting the proxy to fetch
 the Big Brother homepage.
 
 
-.SH BBTEST-NET TAGS FOR WEB CONTENT CHECKS
-.IP cont;URL;expected_data_regexp
+.SH BBTEST-NET TAGS FOR CONTENT CHECKS
+.IP cont;URL;[expected_data_regexp|#digesttype:digest]
 This tag is used to specify a http/https check, where 
-it is also checked that a pre-defined string is present in
-the webserver response.
+it is also checked that specific content is present in
+the server response.
 
-The data that must be present on the webpage is specified
-as a regular expression - except that <space> is not allowed.
+The data that must be returned can be specified either
+as a regular expression (except that <space> is not allowed)
+or as a message digest (typically MD5 sum or SHA-1 hash).
+
+Message digests can use whatever digest algorithms your
+libcrypto implementation (usually OpenSSL) supports. 
+Common message digests are "md5" and "sha1". The digest
+is calculated on the data portion of the response from 
+the server, i.e. HTTP headers are not included in the
+digest (as they change from one request to the next).
+
+The expected digest value can be computed with the
+.I bbdigest(1)
+utility.
 
 "cont" tags in bb-hosts result in two status reports: One
 status with the "http" check, and another with the "content" 
 check.
 
-As with normal web URL's, the extended syntax described above
+As with normal URL's, the extended syntax described above
 can be used e.g. when testing SSL sites that require the use of 
 SSLv2 or strong ciphers.
 
@@ -701,34 +713,7 @@ reported in the column "content1", the third in "content2" etc.
 This syntax is deprecated. You should use the "cont"
 tag instead, see above.
 
-This tag can be used to specify a http/https check, where
-it is also checked that a pre-defined string is present in
-the webserver response.
-
-There must be a file $BBHOME/content/HOSTNAME.substring with
-a single line of text. This text must be present in the 
-webserver response.
-
-NB: The content filename must be HOSTNAME.substring, where
-HOSTNAME is the name of the hosts, with dots replaced by
-commas if fully qualified domain names are used.
-
-E.g. if you have this line in your bb-hosts
-
-   12.34.56.78 www.acme.com  # content=http://www.acme.com/index.html
-
-then there must be a file $BBHOME/content/www,acme,com.substring
-with the text that you are looking for in the webserver response.
-
-"content" tags in bb-hosts result in two status reports: One
-status with the "http" check, and another with the "content" 
-check.
-
-As with normal web URL's, the extended syntax described above
-can be used when testing SSL sites that require the use of SSLv2
-or strong ciphers.
-
-.IP post;URL;form-data;expected_data_regexp
+.IP post;URL;form-data;[expected_data_regexp|#digesttype:digest]
 This tag can be used to test web pages, that use an input
 form. Data can be posted to the form by specifying them 
 in the form-data field, and the result can be checked
@@ -758,15 +743,16 @@ would be
 
 Note that any spaces in the input value is replaced with '+'.
 
-The expected_data_regexp is a regular expresssion that
-describes the expected output from the form submission.
-If you are only interested in knowing if it is possible to
-submit the form (but don't care about the data), this
-can be an empty string - but the ';' at the end is required.
+The [expected_data_regexp|#digesttype:digest] is the expected
+data returned from the server in response to the POST.
+See the "cont;" tag above for details. If you are only interested 
+in knowing if it is possible to submit the form (but don't care 
+about the data), this can be an empty string - but the ';' at the 
+end is required.
 
 .SH FILES
 .I $BBHOME/etc/bb-hosts
 
 .SH "SEE ALSO"
-bbgen(1), bbtest-net(1), bbgen-intro(7)
+bbgen(1), bbtest-net(1), bbdigest(1), bbgen-intro(7)
 
