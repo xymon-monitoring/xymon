@@ -243,6 +243,13 @@ in time. It uses
 .I bbgen(1)
 as the back-end engine.
 
+.I bb-eventlog.cgi(1)
+is a CGI program to show the Big Brother eventlog. Normally
+the eventlog is included on the bb2.html page, but this CGI
+can be used to have custom eventlog dísplays e.g. with the
+past 200 events.
+
+
 .SH REQUIREMENTS
 What you need to install bbgen:
 
@@ -321,16 +328,6 @@ hosts, and these will affect the background color of the
 bb.html and bb2.html pages.  The bbgen toolkit ignores logs 
 from hosts not listed in the bb-hosts file.
 
-.IP "The eventlog and ack-log are always generated"
-Standard BB provides two extension-scripts for the bb2.html
-page, which are enabled by default by being listed in the 
-BBMKBB2EXT environment variable: The eventlog.sh script,
-and the acklog.sh script. These have been integrated into
-the bbgen webpage generator, and are therefore always generated,
-regardless of the contents of the BBMKBB2EXT environment 
-variable. Any other extension scripts listed in BBMKBB2EXT
-are therefore shown \fBafter\fP the eventlog and acklog.
-
 .SH DEMONSTRATION SITE
 A site running this software can be seen at http://www.hswn.dk/bb/
 
@@ -360,4 +357,4 @@ an e-mail to
 bbgen(1), bbtest-net(1), bbretest-net.sh(1), bbcombotest(1)
 bbhostgrep(1), bbhostshow(1),
 bb-rep.cgi(1), bb-replog.cgi(1), bb-hist.cgi(1), bb-snapshot.cgi(1),
-bb-hosts(5), bb-environ(5), bbcombotest.cfg(5)
+bb-eventlog.cgi(1), bb-hosts(5), bb-environ(5), bbcombotest.cfg(5)
