@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.147 2005-03-22 09:03:37 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.148 2005-04-02 12:08:48 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -743,7 +743,7 @@ state_t *load_state(dispsummary_t **sumhead)
 			int i;
 
 			nextline = strchr(nextline, '\n');
-			if (nextline) { *nextline = '\0'; nextline++; }
+			if (nextline) { *nextline = '\0'; nextline++; } else done = 1;
 
 			if (strlen(bol) == 0) {
 				done = 1;
