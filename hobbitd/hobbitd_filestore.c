@@ -79,10 +79,10 @@ int main(int argc, char *argv[])
 			statusdata = p+1;
 		}
 
-		p = strtok(msg, "|"); icount = 0;
+		p = gettok(msg, "|"); icount = 0;
 		while (p && (icount < 20)) {
 			items[icount++] = p;
-			p = strtok(NULL, "|");
+			p = gettok(NULL, "|");
 		}
 
 		if ((role == ROLE_STATUS) && (strcmp(items[0], "@@status") == 0)) {

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.14 2004-10-07 21:16:20 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.15 2004-10-08 13:11:54 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1044,7 +1044,7 @@ void load_checkpoint(char *fn)
 		lastchange = validtime = enabletime = acktime = 0;
 		err =0;
 
-		item = strtok(l, "|\n"); i = 0;
+		item = gettok(l, "|\n"); i = 0;
 		while (item && !err) {
 			switch (i) {
 			  case 0: err = (strcmp(item, "@@BBGENDCHK-V1") != 0); break;
@@ -1064,7 +1064,12 @@ void load_checkpoint(char *fn)
 			  default: err = 1;
 			}
 
-			item = strtok(NULL, "|\n"); i++;
+			item = gettok(NULL, "|\n"); i++;
+		}
+
+		if (i < 13) {
+			errprintf("Too few fields in record - found %d, expected 13\n", i);
+			err = 1;
 		}
 
 		if (err) continue;

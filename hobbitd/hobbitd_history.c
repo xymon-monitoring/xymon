@@ -135,10 +135,10 @@ int main(int argc, char *argv[])
 			*p = '\0'; 
 			statusdata = msg_data(p+1);
 		}
-		p = strtok(msg, "|"); icount = 0;
+		p = gettok(msg, "|"); icount = 0;
 		while (p && (icount < 20)) {
 			items[icount++] = p;
-			p = strtok(NULL, "|");
+			p = gettok(NULL, "|");
 		}
 
 		if (strcmp(items[0], "@@stachg") == 0) {
