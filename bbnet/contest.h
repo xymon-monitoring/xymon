@@ -54,8 +54,10 @@
 
 typedef struct svcinfo_t {
 	char *svcname;
-	char *sendtxt;
-	char *exptext;
+	unsigned char *sendtxt;
+	int  sendlen;
+	unsigned char *exptext;
+	int  expofs, explen;
 	unsigned int flags;
 } svcinfo_t;
 
@@ -74,6 +76,7 @@ typedef struct test_t {
 	int  silenttest;		/* Banner grabbing can be disabled per test */
 	int  readpending;               /* Temp status while reading banner */
 	unsigned char *banner;          /* Banner text from service */
+	unsigned int bannerbytes;       /* Number of bytes in banner */
 
 	/* For testing SSL-wrapped services */
 	SSL_CTX *sslctx;		/* SSL context pointer */

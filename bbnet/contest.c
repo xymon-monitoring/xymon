@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.40 2004-06-24 08:16:40 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.41 2004-08-05 09:09:14 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -48,40 +48,48 @@ static char rcsid[] = "$Id: contest.c,v 1.40 2004-06-24 08:16:40 henrik Exp $";
 static test_t *thead = NULL;
 
 /*
+ * tnsping data taken from http://www.mail-archive.com/whatsup_forum@list.ipswitch.com/msg06678.html:
+ * "%0%87%0%0%1%0%0%0%1%54%1%44%0%0%8%0%127%255%163%10%0%0%1%0%0%29%0%58%0%0%0% 0%0%0%0%0%0%0%0%0%0%0%0%0%2%8%0%0%0%1%0%0%0%0%0%0%0%0(CONNECT_DATA=(COMMAND=ping))"
+ */
+
+static unsigned char tnspingcmd[] = "\00\x57\x00\x00\x01\x00\x00\x00\x01\x36\x01\x2C\x00\x00\x08\x00\x7F\xFF\xA3\x0A\x00\x00\x01\x00\x00\x1D\x00\x3A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x08\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00(CONNECT_DATA=(COMMAND=ping))";
+
+/*
  * Services we know how to handle:
  * This defines what to send to them to shut down the 
  * session nicely, and whether we want to grab the
  * banner or not.
  */
 static svcinfo_t svcinfo[] = {
-	{ "ftp",     "quit\r\n",          "220",	(TCP_GET_BANNER) },
-	{ "ssh",     NULL,                "SSH",	(TCP_GET_BANNER) },
-	{ "ssh1",    NULL,                "SSH",	(TCP_GET_BANNER) },
-	{ "ssh2",    NULL,                "SSH",	(TCP_GET_BANNER) },
-	{ "telnet",  NULL,                NULL,		(TCP_GET_BANNER|TCP_TELNET) },
-	{ "smtp",    "mail\r\nquit\r\n",  "220",	(TCP_GET_BANNER) }, /* Send "MAIL" to avoid sendmail NOQUEUE logs */
-	{ "pop",     "quit\r\n",          "+OK",	(TCP_GET_BANNER) },
-	{ "pop2",    "quit\r\n",          "+OK",	(TCP_GET_BANNER) },
-	{ "pop-2",   "quit\r\n",          "+OK",	(TCP_GET_BANNER) },
-	{ "pop3",    "quit\r\n",          "+OK",	(TCP_GET_BANNER) },
-	{ "pop-3",   "quit\r\n",          "+OK",	(TCP_GET_BANNER) },
-	{ "imap",    "ABC123 LOGOUT\r\n", "* OK",	(TCP_GET_BANNER) },
-	{ "imap2",   "ABC123 LOGOUT\r\n", "* OK",	(TCP_GET_BANNER) },
-	{ "imap3",   "ABC123 LOGOUT\r\n", "* OK",	(TCP_GET_BANNER) },
-	{ "imap4",   "ABC123 LOGOUT\r\n", "* OK",	(TCP_GET_BANNER) },
-	{ "nntp",    "quit\r\n",          "200",	(TCP_GET_BANNER) },
-	{ "ldap",    NULL,                NULL,         (0) },
-	{ "rsync",   NULL,                "@RSYNCD",	(TCP_GET_BANNER) },
-	{ "bbd",     "dummy",             NULL,		(0) },
-	{ "ftps",    "quit\r\n",          "220",	(TCP_GET_BANNER|TCP_SSL) },
-	{ "telnets", NULL,                NULL, 	(TCP_GET_BANNER|TCP_TELNET|TCP_SSL) },
-	{ "smtps",   "mail\r\nquit\r\n",  "220",	(TCP_GET_BANNER|TCP_SSL) }, /* Non-standard - IANA */
-	{ "pop3s",   "quit\r\n",          "+OK",	(TCP_GET_BANNER|TCP_SSL) },
-	{ "imaps",   "ABC123 LOGOUT\r\n", "* OK",	(TCP_GET_BANNER|TCP_SSL) },
-	{ "nntps",   "quit\r\n",          "200",	(TCP_GET_BANNER|TCP_SSL) },
-	{ "ldaps",   NULL,                NULL,         (TCP_SSL) },
-	{ "clamd",   "PING\r\n"           "PONG",       (0) },
-	{ NULL,      NULL,                NULL,		(0) }	/* Default behaviour: Just try a connect */
+	{ "ftp",     "quit\r\n",          0,                  "220",	0, 0,	(TCP_GET_BANNER) },
+	{ "ssh",     NULL,                0,                  "SSH",	0, 0,	(TCP_GET_BANNER) },
+	{ "ssh1",    NULL,                0,                  "SSH",	0, 0,	(TCP_GET_BANNER) },
+	{ "ssh2",    NULL,                0,                  "SSH",	0, 0,	(TCP_GET_BANNER) },
+	{ "telnet",  NULL,                0,                  NULL,	0, 0,	(TCP_GET_BANNER|TCP_TELNET) },
+	{ "smtp",    "mail\r\nquit\r\n",  0,                  "220",	0, 0,	(TCP_GET_BANNER) }, /* Send "MAIL" to avoid sendmail NOQUEUE logs */
+	{ "pop",     "quit\r\n",          0,                  "+OK",	0, 0,	(TCP_GET_BANNER) },
+	{ "pop2",    "quit\r\n",          0,                  "+OK",	0, 0,	(TCP_GET_BANNER) },
+	{ "pop-2",   "quit\r\n",          0,                  "+OK",	0, 0,	(TCP_GET_BANNER) },
+	{ "pop3",    "quit\r\n",          0,                  "+OK",	0, 0,	(TCP_GET_BANNER) },
+	{ "pop-3",   "quit\r\n",          0,                  "+OK",	0, 0,	(TCP_GET_BANNER) },
+	{ "imap",    "ABC123 LOGOUT\r\n", 0,                  "* OK",	0, 0,	(TCP_GET_BANNER) },
+	{ "imap2",   "ABC123 LOGOUT\r\n", 0,                  "* OK",	0, 0,	(TCP_GET_BANNER) },
+	{ "imap3",   "ABC123 LOGOUT\r\n", 0,                  "* OK",	0, 0,	(TCP_GET_BANNER) },
+	{ "imap4",   "ABC123 LOGOUT\r\n", 0,                  "* OK",	0, 0,	(TCP_GET_BANNER) },
+	{ "nntp",    "quit\r\n",          0,                  "200",	0, 0,	(TCP_GET_BANNER) },
+	{ "ldap",    NULL,                0,                  NULL,     0, 0,	(0) },
+	{ "rsync",   NULL,                0,                  "@RSYNCD",0, 0,	(TCP_GET_BANNER) },
+	{ "bbd",     "dummy",             0,                  NULL,	0, 0,	(0) },
+	{ "ftps",    "quit\r\n",          0,                  "220",	0, 0,	(TCP_GET_BANNER|TCP_SSL) },
+	{ "telnets", NULL,                0,                  NULL, 	0, 0,	(TCP_GET_BANNER|TCP_TELNET|TCP_SSL) },
+	{ "smtps",   "mail\r\nquit\r\n",  0,                  "220",	0, 0,	(TCP_GET_BANNER|TCP_SSL) }, /* Non-standard - IANA */
+	{ "pop3s",   "quit\r\n",          0,                  "+OK",	0, 0,	(TCP_GET_BANNER|TCP_SSL) },
+	{ "imaps",   "ABC123 LOGOUT\r\n", 0,                  "* OK",	0, 0,	(TCP_GET_BANNER|TCP_SSL) },
+	{ "nntps",   "quit\r\n",          0,                  "200",	0, 0,	(TCP_GET_BANNER|TCP_SSL) },
+	{ "ldaps",   NULL,                0,                  NULL,     0, 0,	(TCP_SSL) },
+	{ "clamd",   "PING\r\n",          0,                  "PONG",   0, 0,	(0) },
+	{ "oratns",  tnspingcmd,          sizeof(tnspingcmd), NULL,     0, 0,	(TCP_GET_BANNER) },
+	{ NULL,      NULL,                0,                  NULL,	0, 0,	(0) }	/* Default behaviour: Just try a connect */
 };
 
 
@@ -126,6 +134,7 @@ test_t *add_tcp_test(char *ip, int port, char *service, int silent)
 	newtest->sslrunning = ((svcinfo[i].flags & TCP_SSL) ? SSLSETUP_PENDING : 0);
 
 	newtest->banner = NULL;
+	newtest->bannerbytes = 0;
 	newtest->next = thead;
 
 	thead = newtest;
@@ -178,6 +187,7 @@ static int do_telnet_options(test_t *item)
 			 * buffer, so copy it over, and return it.
 			 */
 			item->banner = malcop(inp);
+			item->bannerbytes = strlen(inp);
 			item->telnetbuflen = 0;
 			free(obuf);
 			return 0;
@@ -701,7 +711,7 @@ void do_tcp_tests(int conntimeout, int concurrency)
 							}
 							else if (item->svcinfo->sendtxt && !item->silenttest) {
 								outbuf = item->svcinfo->sendtxt;
-								outlen = strlen(outbuf);
+								outlen = (item->svcinfo->sendlen ? item->svcinfo->sendlen : strlen(outbuf));
 							}
 
 							if (outbuf && outlen) {
@@ -758,10 +768,12 @@ void do_tcp_tests(int conntimeout, int concurrency)
 							if (item->banner == NULL) {
 								item->banner = (unsigned char *)malloc(res+1);
 								memcpy(item->banner, msgbuf, res+1);
+								item->bannerbytes += res;
 							}
 							else {
-								item->banner = (unsigned char *)realloc(item->banner, strlen(item->banner)+strlen(msgbuf)+1);
-								strcat(item->banner, msgbuf);
+								item->banner = (unsigned char *)realloc(item->banner, item->bannerbytes+res+1);
+								memcpy(item->banner+item->bannerbytes, msgbuf, res+1);
+								item->bannerbytes += res;
 							}
 						}
 
@@ -790,6 +802,7 @@ void do_tcp_tests(int conntimeout, int concurrency)
 							if (do_telnet_options(item)) {
 								/* Still havent seen the session banner */
 								item->banner = NULL;
+								item->bannerbytes = 0;
 								item->readpending = 0;
 								wantmoredata = 1;
 							}
@@ -844,8 +857,19 @@ int tcp_got_expected(test_t *test)
 {
 	if (test == NULL) return 1;
 
-	if (test->banner && test->svcinfo && test->svcinfo->exptext) 
-		return (strncmp(test->svcinfo->exptext, test->banner, strlen(test->svcinfo->exptext)) == 0);
+	if (test->banner && test->svcinfo && test->svcinfo->exptext) {
+		int compbytes; /* Number of bytes to compare */
+
+		compbytes = (test->svcinfo->explen ? test->svcinfo->explen : strlen(test->svcinfo->exptext));
+
+		/* Did we get enough data? */
+		if ((test->svcinfo->expofs + compbytes) > test->bannerbytes) {
+			dprintf("tcp_got_expected: Not enough data");
+			return 0;
+		}
+
+		return (memcmp(test->svcinfo->exptext+test->svcinfo->expofs, test->banner, compbytes) == 0);
+	}
 	else
 		return 1;
 }
