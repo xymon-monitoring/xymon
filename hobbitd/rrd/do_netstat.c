@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother message daemon.                                                */
+/* Hobbit RRD handler module.                                                 */
 /*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
 /*                                                                            */
@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.9 2005-02-02 22:23:49 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.10 2005-02-06 08:49:02 henrik Exp $";
 
 static char *netstat_params[] = { "rrdcreate", rrdfn, 
 	                          "DS:udpInDatagrams:DERIVE:600:0:U", 

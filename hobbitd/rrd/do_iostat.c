@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother message daemon.                                                */
+/* Hobbit RRD handler module.                                                 */
 /*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
 /*                                                                            */
@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char iostat_rcsid[] = "$Id: do_iostat.c,v 1.6 2005-01-15 17:38:33 henrik Exp $";
+static char iostat_rcsid[] = "$Id: do_iostat.c,v 1.7 2005-02-06 08:49:02 henrik Exp $";
 
 /*
  * BEGINKEY

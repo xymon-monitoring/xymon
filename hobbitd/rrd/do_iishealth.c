@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother message daemon.                                                */
+/* Hobbit RRD handler module.                                                 */
 /*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
 /*                                                                            */
@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char iishealth_rcsid[] = "$Id: do_iishealth.c,v 1.2 2005-01-15 22:27:28 henrik Exp $";
+static char iishealth_rcsid[] = "$Id: do_iishealth.c,v 1.3 2005-02-06 08:49:02 henrik Exp $";
 
 static char *iishealth_params[] = { "rrdcreate", rrdfn, "DS:realmempct:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 

@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother message daemon.                                                */
+/* Hobbit RRD handler module.                                                 */
 /*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
 /*                                                                            */
@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ntpstat_rcsid[] = "$Id: do_ntpstat.c,v 1.5 2004-11-13 22:02:10 henrik Exp $";
+static char ntpstat_rcsid[] = "$Id: do_ntpstat.c,v 1.6 2005-02-06 08:49:02 henrik Exp $";
 
 static char *ntpstat_params[]     = { "rrdcreate", rrdfn, "DS:offsetms:GAUGE:600:U:U", rra1, rra2, rra3, rra4, NULL };
 

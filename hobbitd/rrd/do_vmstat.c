@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother message daemon.                                                */
+/* Hobbit RRD handler module.                                                 */
 /*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
 /*                                                                            */
@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.11 2005-01-27 22:11:53 henrik Exp $";
+static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.12 2005-02-06 08:49:02 henrik Exp $";
 
 typedef struct vmstat_layout_t {
 	int index;

@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother message daemon.                                                */
+/* Hobbit RRD handler module.                                                 */
 /*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
 /*                                                                            */
@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char external_rcsid[] = "$Id: do_external.c,v 1.1 2005-02-06 08:46:35 henrik Exp $";
+static char external_rcsid[] = "$Id: do_external.c,v 1.2 2005-02-06 08:49:02 henrik Exp $";
 
 
 int do_external_larrd(char *hostname, char *testname, char *msg, time_t tstamp) 

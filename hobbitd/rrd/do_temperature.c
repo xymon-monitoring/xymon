@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother message daemon.                                                */
+/* Hobbit RRD handler module.                                                 */
 /*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
 /*                                                                            */
@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char temperature_rcsid[] = "$Id: do_temperature.c,v 1.1 2005-02-04 14:34:15 henrik Exp $";
+static char temperature_rcsid[] = "$Id: do_temperature.c,v 1.2 2005-02-06 08:49:02 henrik Exp $";
 
 static char *temperature_params[] = { "rrdcreate", rrdfn, 
 				      "DS:temperature:GAUGE:600:1:U",

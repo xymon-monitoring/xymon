@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Big Brother message daemon.                                                */
+/* Hobbit RRD handler module.                                                 */
 /*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
 /*                                                                            */
@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char apache_rcsid[] = "$Id: do_apache.c,v 1.3 2004-12-11 23:18:28 henrik Exp $";
+static char apache_rcsid[] = "$Id: do_apache.c,v 1.4 2005-02-06 08:49:02 henrik Exp $";
 
 static char *apache_params[] = { "rrdcreate", rrdfn, 
 				 "DS:TA:DERIVE:600:0:U",

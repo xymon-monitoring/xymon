@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Hobbit RRD handler module.                                                 */
 /*                                                                            */
 /* Copyright (C) 2004 Henrik Storner <henrik@hswn.dk>                         */
 /*                                                                            */
@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char hobbitd_rcsid[] = "$Id: do_hobbitd.c,v 1.3 2005-01-04 09:38:38 henrik Exp $";
+static char hobbitd_rcsid[] = "$Id: do_hobbitd.c,v 1.4 2005-02-06 08:49:02 henrik Exp $";
 
 static char *hobbitd_params[] = { "rrdcreate", rrdfn, 
 				 "DS:inmessages:DERIVE:600:0:U", 
