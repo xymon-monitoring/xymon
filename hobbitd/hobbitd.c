@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.99 2005-01-18 21:52:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.100 2005-01-18 22:25:59 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -229,7 +229,7 @@ char *generate_stats(void)
 		(int)(uptime / 86400), (int)(uptime % 86400)/3600, (int)(uptime % 3600)/60, (int)(uptime % 60));
 
 	bufp += sprintf(bufp, "status %s.hobbitd %s\nStatistics for Hobbit daemon\nUp since %s (%s)\n\n",
-			getenv("MACHINE"), colorname(errbuf ? COL_YELLOW : COL_GREEN), bootuptxt, uptimetxt);
+			xgetenv("MACHINE"), colorname(errbuf ? COL_YELLOW : COL_GREEN), bootuptxt, uptimetxt);
 	bufp += sprintf(bufp, "Incoming messages      : %10ld\n", msgs_total);
 	i = 0;
 	while (hobbitd_stats[i].cmd) {
@@ -2208,12 +2208,12 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (getenv("BBHOSTS") && (bbhostsfn == NULL)) {
-		bbhostsfn = xstrdup(getenv("BBHOSTS"));
+	if (xgetenv("BBHOSTS") && (bbhostsfn == NULL)) {
+		bbhostsfn = xstrdup(xgetenv("BBHOSTS"));
 	}
 
 	if (ghosthandling == -1) {
-		if (getenv("BBGHOSTS")) ghosthandling = atoi(getenv("BBGHOSTS"));
+		if (xgetenv("BBGHOSTS")) ghosthandling = atoi(xgetenv("BBGHOSTS"));
 		else ghosthandling = 0;
 	}
 

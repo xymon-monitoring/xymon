@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.24 2005-01-15 17:38:55 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.25 2005-01-18 22:25:59 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -77,7 +77,7 @@ void parse_query(void)
 
 	startday = startmon = startyear = endday = endmon = endyear = -1;
 
-	if (getenv("QUERY_STRING") == NULL) {
+	if (xgetenv("QUERY_STRING") == NULL) {
 		errormsg("Invalid request");
 		return;
 	}
@@ -237,12 +237,12 @@ int main(int argc, char *argv[])
 	bbgen_argv[newargi++] = outdir;
 	bbgen_argv[newargi++] = NULL;
 
-	if ((getenv("QUERY_STRING") == NULL) || (strlen(getenv("QUERY_STRING")) == 0)) {
+	if ((xgetenv("QUERY_STRING") == NULL) || (strlen(xgetenv("QUERY_STRING")) == 0)) {
 		/* Present the query form */
 		int formfile;
 		char formfn[PATH_MAX];
 
-		sprintf(formfn, "%s/web/report_form", getenv("BBHOME"));
+		sprintf(formfn, "%s/web/report_form", xgetenv("BBHOME"));
 		formfile = open(formfn, O_RDONLY);
 
 		if (formfile >= 0) {
@@ -275,17 +275,17 @@ int main(int argc, char *argv[])
 	 * We cannot do it before, because we need the environment that the the commandline options 
 	 * might provide.
 	 */
-	if (getenv("BBGEN")) sprintf(bbgencmd, "%s", getenv("BBGEN"));
-	else sprintf(bbgencmd, "%s/bin/bbgen", getenv("BBHOME"));
+	if (xgetenv("BBGEN")) sprintf(bbgencmd, "%s", xgetenv("BBGEN"));
+	else sprintf(bbgencmd, "%s/bin/bbgen", xgetenv("BBHOME"));
 
 	sprintf(bbgentimeopt, "--reportopts=%u:%u:1:%s", (unsigned int)starttime, (unsigned int)endtime, style);
 
 	sprintf(dirid, "%u-%u", (unsigned int)getpid(), (unsigned int)time(NULL));
-	sprintf(outdir, "%s/%s", getenv("BBREP"), dirid);
+	sprintf(outdir, "%s/%s", xgetenv("BBREP"), dirid);
 	mkdir(outdir, 0755);
 
 
-	sprintf(bbwebenv, "BBWEB=%s/%s", getenv("BBREPURL"), dirid);
+	sprintf(bbwebenv, "BBWEB=%s/%s", xgetenv("BBREPURL"), dirid);
 	putenv(bbwebenv);
 
 	/* Output the "please wait for report ... " thing */
@@ -323,24 +323,24 @@ int main(int argc, char *argv[])
 			char msg[4096];
 
 			printf("--%s\n\n", htmldelim);
-			sprintf(msg, "Could not generate report.<br>\nCheck that the %s/www/rep/ directory has permissions '-rwxrwxr-x' (775)<br>\n and that is is set to group %d", getenv("BBHOME"), (int)getgid());
+			sprintf(msg, "Could not generate report.<br>\nCheck that the %s/www/rep/ directory has permissions '-rwxrwxr-x' (775)<br>\n and that is is set to group %d", xgetenv("BBHOME"), (int)getgid());
 			errormsg(msg);
 		}
 		else {
 			/* Send the browser off to the report */
-			printf("Done...Report is <A HREF=\"%s/%s/%s\">here</a>.</P></BODY></HTML>\n", getenv("BBREPURL"), dirid, suburl);
+			printf("Done...Report is <A HREF=\"%s/%s/%s\">here</a>.</P></BODY></HTML>\n", xgetenv("BBREPURL"), dirid, suburl);
 			fflush(stdout);
 			printf("--%s\n\n", htmldelim);
 			printf("Content-Type: text/html\n\n");
 			printf("<HTML><HEAD>\n");
 			printf("<META HTTP-EQUIV=\"REFRESH\" CONTENT=\"0; URL=%s/%s/%s\"\n", 
-					getenv("BBREPURL"), dirid, suburl);
+					xgetenv("BBREPURL"), dirid, suburl);
 			printf("</HEAD><BODY BGCOLOR=\"000000\"></BODY></HTML>\n");
 			printf("\n--%s\n", htmldelim);
 			fflush(stdout);
 		}
 
-		if (cleanupoldreps) cleandir(getenv("BBREP"));
+		if (cleanupoldreps) cleandir(xgetenv("BBREP"));
 	}
 	else {
 		printf("--%s\n\n", htmldelim);

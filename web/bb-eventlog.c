@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-eventlog.c,v 1.11 2005-01-15 17:38:55 henrik Exp $";
+static char rcsid[] = "$Id: bb-eventlog.c,v 1.12 2005-01-18 22:25:59 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -66,7 +66,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
 	cutoff = ( (maxminutes) ? (time(NULL) - maxminutes*60) : 0);
 	if (!maxcount) maxcount = 100;
 
-	sprintf(eventlogfilename, "%s/allevents", getenv("BBHIST"));
+	sprintf(eventlogfilename, "%s/allevents", xgetenv("BBHIST"));
 	eventlog = fopen(eventlogfilename, "r");
 	if (!eventlog) {
 		errprintf("Cannot open eventlog\n");
@@ -178,16 +178,16 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, int allowallhosts)
 			fprintf(output, "<TD><A HREF=\"%s\">\n", 
 				histlogurl(walk->host->hostname, walk->service->name, walk->changetime));
 			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=\"%s\" TITLE=\"%s\"></A>\n", 
-				getenv("BBSKIN"), dotgiffilename(walk->oldcolor, 0, 0), 
-				getenv("DOTHEIGHT"), getenv("DOTWIDTH"), 
+				xgetenv("BBSKIN"), dotgiffilename(walk->oldcolor, 0, 0), 
+				xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"), 
 				colorname(walk->oldcolor), colorname(walk->oldcolor));
 			fprintf(output, "<IMG SRC=\"%s/arrow.gif\" BORDER=0 ALT=\"From -&gt; To\">\n", 
-				getenv("BBSKIN"));
+				xgetenv("BBSKIN"));
 			fprintf(output, "<TD><A HREF=\"%s\">\n", 
 				histlogurl(walk->host->hostname, walk->service->name, walk->eventtime));
 			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=\"%s\" TITLE=\"%s\"></A>\n", 
-				getenv("BBSKIN"), dotgiffilename(walk->newcolor, 0, 0), 
-				getenv("DOTHEIGHT"), getenv("DOTWIDTH"), 
+				xgetenv("BBSKIN"), dotgiffilename(walk->newcolor, 0, 0), 
+				xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"), 
 				colorname(walk->newcolor), colorname(walk->newcolor));
 		}
 
@@ -252,7 +252,7 @@ static void parse_query(void)
 {
 	char *query, *token;
 
-	if (getenv("QUERY_STRING") == NULL) {
+	if (xgetenv("QUERY_STRING") == NULL) {
 		errormsg("Invalid request");
 		return;
 	}

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.14 2005-01-15 17:39:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.15 2005-01-18 22:25:59 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -84,7 +84,7 @@ static void larrd_setup(void)
 
 	/* Setup the larrdrrds table, mapping test-names to RRD files */
 	getenv_default("LARRDS", default_rrds, NULL);
-	lenv = xstrdup(getenv("LARRDS"));
+	lenv = xstrdup(xgetenv("LARRDS"));
 	p = lenv+strlen(lenv)-1; if (*p == ',') *p = '\0';	/* Drop a trailing comma */
 	count = 0; p = lenv; do { count++; p = strchr(p+1, ','); } while (p);
 	larrdrrds = (larrdrrd_t *)xcalloc(sizeof(larrdrrd_t), (count+1));
@@ -108,7 +108,7 @@ static void larrd_setup(void)
 
 	/* Setup the larrdgraphs table, describing how to make graphs from an RRD */
 	getenv_default("GRAPHS", default_graphs, NULL);
-	lenv = xstrdup(getenv("GRAPHS"));
+	lenv = xstrdup(xgetenv("GRAPHS"));
 	p = lenv+strlen(lenv)-1; if (*p == ',') *p = '\0';	/* Drop a trailing comma */
 	count = 0; p = lenv; do { count++; p = strchr(p+1, ','); } while (p);
 	larrdgraphs = (larrdgraph_t *)xcalloc(sizeof(larrdgraph_t), (count+1));
@@ -206,7 +206,7 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 	}
 
 	svcurllen = 2048                        + 
-		    strlen(getenv("CGIBINURL")) + 
+		    strlen(xgetenv("CGIBINURL")) + 
 		    strlen(hostname)            + 
 		    strlen(rrdservicename)  + 
 		    (dispname ? strlen(urlencode(dispname)) : 0);
@@ -237,11 +237,11 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 		do {
 			if (itemcount > 0) {
 				sprintf(svcurl, "%s/hobbitgraph.sh?host=%s&amp;service=%s&amp;first=%d&amp;count=%d", 
-					getenv("CGIBINURL"), hostname, rrdservicename, first, step);
+					xgetenv("CGIBINURL"), hostname, rrdservicename, first, step);
 			}
 			else {
 				sprintf(svcurl, "%s/hobbitgraph.sh?host=%s&amp;service=%s", 
-					getenv("CGIBINURL"), hostname, rrdservicename);
+					xgetenv("CGIBINURL"), hostname, rrdservicename);
 			}
 
 			if (dispname) {
@@ -270,7 +270,7 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 			last = (first-1)+graphdef->maxgraphs; if (last > itemcount) last = itemcount;
 
 			sprintf(svcurl, "%s/larrd-grapher.cgi?host=%s&amp;service=%s&amp;%s=%d..%d", 
-				getenv("CGIBINURL"), hostname, rrdservicename,
+				xgetenv("CGIBINURL"), hostname, rrdservicename,
 				graphdef->larrdpartname, first, last);
 			if (dispname) {
 				strcat(svcurl, "&amp;disp=");
@@ -288,7 +288,7 @@ static char *larrd_graph_text(char *hostname, char *dispname, char *service,
 	}
 	else {
 		sprintf(svcurl, "%s/larrd-grapher.cgi?host=%s&amp;service=%s", 
-			getenv("CGIBINURL"), hostname, rrdservicename);
+			xgetenv("CGIBINURL"), hostname, rrdservicename);
 		if (dispname) {
 			strcat(svcurl, "&amp;disp=");
 			strcat(svcurl, urlencode(dispname));

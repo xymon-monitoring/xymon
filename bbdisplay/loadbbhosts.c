@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.16 2005-01-15 17:38:55 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.17 2005-01-18 22:25:59 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -442,7 +442,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	char	*p;
 	namelist_t *allhosts;
 
-	allhosts = load_hostnames(getenv("BBHOSTS"), "dispinclude", get_fqdn(), NULL);
+	allhosts = load_hostnames(xgetenv("BBHOSTS"), "dispinclude", get_fqdn(), NULL);
 
 	dprintf("load_bbhosts(pgset=%s)\n", textornull(pgset));
 
@@ -450,9 +450,9 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	 * load_hostnames() picks up the hostname definitions, but not the page
 	 * layout. So we will scan the file again, this time doing the layout.
 	 */
-	bbhosts = stackfopen(getenv("BBHOSTS"), "r");
+	bbhosts = stackfopen(xgetenv("BBHOSTS"), "r");
 	if (bbhosts == NULL) {
-		errprintf("Cannot open the BBHOSTS file '%s'\n", getenv("BBHOSTS"));
+		errprintf("Cannot open the BBHOSTS file '%s'\n", xgetenv("BBHOSTS"));
 		return NULL;
 	}
 

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.49 2005-01-15 17:39:50 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.50 2005-01-18 22:25:59 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -71,7 +71,7 @@ static void setup_transport(char *recipient)
 		 */
 		default_port = 80;
 
-		if (proxysetting == NULL) proxysetting = getenv("http_proxy");
+		if (proxysetting == NULL) proxysetting = xgetenv("http_proxy");
 		if (proxysetting) {
 			char *p;
 
@@ -96,7 +96,7 @@ static void setup_transport(char *recipient)
 		 */
 		default_port = BBDPORTNUMBER;
 
-		if (getenv("BBPORT")) bbdportnumber = atoi(getenv("BBPORT"));
+		if (xgetenv("BBPORT")) bbdportnumber = atoi(xgetenv("BBPORT"));
 	
 	
 		/* Next is /etc/services "bbd" entry */
@@ -436,16 +436,16 @@ static int sendstatus(char *bbdisp, char *msg, int timeout)
 	char statuscolor[256];
 	char *pagelevels;
 
-	statusresult = sendtomany(bbdisp, getenv("BBDISPLAYS"), msg, timeout);
+	statusresult = sendtomany(bbdisp, xgetenv("BBDISPLAYS"), msg, timeout);
 
 	/* If no BBPAGE defined, drop paging */
-	if (getenv("BBPAGE") == NULL) return statusresult;
+	if (xgetenv("BBPAGE") == NULL) return statusresult;
 
 	/* If we're using hobbitd, drop the page message */
 	if (strcmp(getenv_default("USEHOBBITD", "FALSE", NULL), "TRUE") == 0) return statusresult;
 
 	/* Check if we should send a "page" message also */
-	pagelevels = xstrdup(getenv("PAGELEVELS") ? getenv("PAGELEVELS") : PAGELEVELSDEFAULT);
+	pagelevels = xstrdup(xgetenv("PAGELEVELS") ? xgetenv("PAGELEVELS") : PAGELEVELSDEFAULT);
 	sscanf(msg, "%*s %*s %255s", statuscolor);
 	if (strstr(pagelevels, statuscolor)) {
 		/* Reformat the message into a "page" message */
@@ -477,7 +477,7 @@ static int sendstatus(char *bbdisp, char *msg, int timeout)
 		*outp = '\0';
 
 		if (firstnl) { *firstnl = '\n'; strcat(pagemsg, firstnl); }
-		pageresult = sendtomany(getenv("BBPAGE"), getenv("BBPAGERS"), pagemsg, timeout);
+		pageresult = sendtomany(xgetenv("BBPAGE"), xgetenv("BBPAGERS"), pagemsg, timeout);
 		xfree(pagemsg);
 	}
 
@@ -491,7 +491,7 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 	static char *bbdisp = NULL;
 	int res = 0;
 
- 	if ((bbdisp == NULL) && getenv("BBDISP")) bbdisp = xstrdup(getenv("BBDISP"));
+ 	if ((bbdisp == NULL) && xgetenv("BBDISP")) bbdisp = xstrdup(xgetenv("BBDISP"));
 	if (recipient == NULL) recipient = bbdisp;
 	if (recipient == NULL) {
 		errprintf("No recipient for message\n");
@@ -502,7 +502,7 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 		res = sendstatus((recipient ? recipient : bbdisp), msg, timeout);
 	}
 	else if (strncmp(msg, "data", 4) == 0) {
-		res = sendtomany((recipient ? recipient : bbdisp), getenv("BBDISPLAYS"), msg, timeout);
+		res = sendtomany((recipient ? recipient : bbdisp), xgetenv("BBDISPLAYS"), msg, timeout);
 	}
 	else {
 		res = sendtobbd(recipient, msg, respfd, respstr, fullresponse, timeout);
@@ -541,10 +541,10 @@ void combo_start(void)
 	strcpy(bbmsg, "combo\n");
 	bbmsgqueued = 0;
 
-	if ((maxmsgspercombo == 0) && getenv("BBMAXMSGSPERCOMBO")) 
-		maxmsgspercombo = atoi(getenv("BBMAXMSGSPERCOMBO"));
-	if ((sleepbetweenmsgs == 0) && getenv("BBSLEEPBETWEENMSGS")) 
-		sleepbetweenmsgs = atoi(getenv("BBSLEEPBETWEENMSGS"));
+	if ((maxmsgspercombo == 0) && xgetenv("BBMAXMSGSPERCOMBO")) 
+		maxmsgspercombo = atoi(xgetenv("BBMAXMSGSPERCOMBO"));
+	if ((sleepbetweenmsgs == 0) && xgetenv("BBSLEEPBETWEENMSGS")) 
+		sleepbetweenmsgs = atoi(xgetenv("BBSLEEPBETWEENMSGS"));
 }
 
 void meta_start(void)

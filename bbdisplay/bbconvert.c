@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbconvert.c,v 1.7 2005-01-15 17:38:55 henrik Exp $";
+static char rcsid[] = "$Id: bbconvert.c,v 1.8 2005-01-18 22:25:59 henrik Exp $";
 
 #include <limits.h>
 #include <sys/types.h>
@@ -56,7 +56,7 @@ void dump_hobbitdchk(void)
 			int cookie = -1;
 			time_t cookieexpires = 0;
 
-			sprintf(logfn, "%s/%s.%s", getenv("BBLOGS"), commafy(h->hostname), e->column->name);
+			sprintf(logfn, "%s/%s.%s", xgetenv("BBLOGS"), commafy(h->hostname), e->column->name);
 			if (stat(logfn, &st) == -1) continue;
 			logfd = fopen(logfn, "r");
 			if (logfd == NULL) continue;
@@ -91,7 +91,7 @@ void dump_hobbitdchk(void)
 			if (sender) { p = strchr(sender, '\n'); if (p) *p = '\0'; } else sender = "";
 			if (unchstr) { p = strchr(unchstr, '\n'); if (p) *p = '\0'; } else unchstr = "";
 
-			sprintf(logfn, "%s/%s.%s", getenv("BBHIST"), commafy(h->hostname), e->column->name);
+			sprintf(logfn, "%s/%s.%s", xgetenv("BBHIST"), commafy(h->hostname), e->column->name);
 			stat(logfn, &st);
 			logfd = fopen(logfn, "r");
 			if (logfd) {
@@ -108,7 +108,7 @@ void dump_hobbitdchk(void)
 			}
 			fclose(logfd);
 
-			sprintf(logfn, "%s/%s.%s", getenv("BBDISABLED"), commafy(h->hostname), e->column->name);
+			sprintf(logfn, "%s/%s.%s", xgetenv("BBDISABLED"), commafy(h->hostname), e->column->name);
 			if (stat(logfn, &st) == 0) enabletime = st.st_mtime;
 
 			printf("@@HOBBITDCHK-V1|%s|%s|%s|%s|%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%s",

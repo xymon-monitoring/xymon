@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sig.c,v 1.3 2004-11-18 14:11:07 henrik Exp $";
+static char rcsid[] = "$Id: sig.c,v 1.4 2005-01-18 22:25:59 henrik Exp $";
 
 #include <limits.h>
 #include <signal.h>
@@ -80,18 +80,18 @@ void setup_signalhandler(char *programname)
 	lim.rlim_cur = RLIM_INFINITY;
 	setrlimit(RLIMIT_CORE, &lim);
 
-	if (getenv("BB") == NULL) return;
-	if (getenv("BBDISP") == NULL) return;
+	if (xgetenv("BB") == NULL) return;
+	if (xgetenv("BBDISP") == NULL) return;
 
 	/*
 	 * Used inside signal-handler. Must be setup in
 	 * advance.
 	 */
-	strcpy(signal_bbcmd, getenv("BB"));
-	strcpy(signal_bbdisp, getenv("BBDISP"));
-	strcpy(signal_bbtmp, getenv("BBTMP"));
+	strcpy(signal_bbcmd, xgetenv("BB"));
+	strcpy(signal_bbdisp, xgetenv("BBDISP"));
+	strcpy(signal_bbtmp, xgetenv("BBTMP"));
 	sprintf(signal_msg, "status %s.%s red - Program crashed\n\nFatal signal caught!\n", 
-		(getenv("MACHINE") ? getenv("MACHINE") : "BBDISPLAY"), programname);
+		(xgetenv("MACHINE") ? xgetenv("MACHINE") : "BBDISPLAY"), programname);
 
 	sigaction(SIGSEGV, &sa, NULL);
 #ifdef SIGBUS

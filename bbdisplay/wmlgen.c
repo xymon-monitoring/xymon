@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: wmlgen.c,v 1.18 2005-01-15 17:38:55 henrik Exp $";
+static char rcsid[] = "$Id: wmlgen.c,v 1.19 2005-01-18 22:25:59 henrik Exp $";
 
 #include <limits.h>
 #include <stdlib.h>
@@ -100,7 +100,7 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 		struct stat st;
 		int n;
 
-		sprintf(logfn, "%s/%s.%s", getenv("BBLOGS"), commafy(host->hostname), entry->column->name);
+		sprintf(logfn, "%s/%s.%s", xgetenv("BBLOGS"), commafy(host->hostname), entry->column->name);
 		if (stat(logfn, &st) == -1) {
 			errprintf("WML: Cannot stat file %s\n", logfn);
 			return;
@@ -296,8 +296,8 @@ void do_wml_cards(char *webdir)
 	}
 
 	/* Make sure this is set sensibly */
-	if (getenv("WMLMAXCHARS")) {
-		wmlmaxchars = atol(getenv("WMLMAXCHARS"));
+	if (xgetenv("WMLMAXCHARS")) {
+		wmlmaxchars = atol(xgetenv("WMLMAXCHARS"));
 	}
 
 	/*

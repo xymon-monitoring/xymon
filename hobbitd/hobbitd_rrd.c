@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.11 2005-01-15 17:38:28 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.12 2005-01-18 22:25:59 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -57,8 +57,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if ((rrddir == NULL) && getenv("BBRRDS")) {
-		rrddir = xstrdup(getenv("BBRRDS"));
+	if ((rrddir == NULL) && xgetenv("BBRRDS")) {
+		rrddir = xstrdup(xgetenv("BBRRDS"));
 	}
 
 	save_errbuf = 0;

@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.39 2005-01-15 17:38:55 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.40 2005-01-18 22:25:59 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -99,17 +99,17 @@ static void generate_pct_summary(
 	fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
 
 	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		getenv("BBSKIN"), dotgiffilename(COL_GREEN, 0, 1), colorname(COL_GREEN), colorname(COL_GREEN), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+		xgetenv("BBSKIN"), dotgiffilename(COL_GREEN, 0, 1), colorname(COL_GREEN), colorname(COL_GREEN), xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		getenv("BBSKIN"), dotgiffilename(COL_YELLOW, 0, 1), colorname(COL_YELLOW), colorname(COL_YELLOW), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+		xgetenv("BBSKIN"), dotgiffilename(COL_YELLOW, 0, 1), colorname(COL_YELLOW), colorname(COL_YELLOW), xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		getenv("BBSKIN"), dotgiffilename(COL_RED, 0, 1), colorname(COL_RED), colorname(COL_RED), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+		xgetenv("BBSKIN"), dotgiffilename(COL_RED, 0, 1), colorname(COL_RED), colorname(COL_RED), xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		getenv("BBSKIN"), dotgiffilename(COL_PURPLE, 0, 1), colorname(COL_PURPLE), colorname(COL_PURPLE), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+		xgetenv("BBSKIN"), dotgiffilename(COL_PURPLE, 0, 1), colorname(COL_PURPLE), colorname(COL_PURPLE), xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		getenv("BBSKIN"), dotgiffilename(COL_CLEAR, 0, 1), colorname(COL_CLEAR), colorname(COL_CLEAR), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+		xgetenv("BBSKIN"), dotgiffilename(COL_CLEAR, 0, 1), colorname(COL_CLEAR), colorname(COL_CLEAR), xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		getenv("BBSKIN"), dotgiffilename(COL_BLUE, 0, 1), colorname(COL_BLUE), colorname(COL_BLUE), getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+		xgetenv("BBSKIN"), dotgiffilename(COL_BLUE, 0, 1), colorname(COL_BLUE), colorname(COL_BLUE), xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "<TR BGCOLOR=\"#000033\">\n");
 	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_GREEN]);
@@ -471,9 +471,9 @@ static void generate_histlog_table(FILE *htmlrep,
 	}
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "<TR BGCOLOR=\"#333333\">\n");
-	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Date</B></FONT></TD>\n", getenv("MKBBCOLFONT"));
-	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Status</B></FONT></TD>\n", getenv("MKBBCOLFONT"));
-	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Duration</B></FONT></TD>\n", getenv("MKBBCOLFONT"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Date</B></FONT></TD>\n", xgetenv("MKBBCOLFONT"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Status</B></FONT></TD>\n", xgetenv("MKBBCOLFONT"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Duration</B></FONT></TD>\n", xgetenv("MKBBCOLFONT"));
 	fprintf(htmlrep, "</TR>\n");
 
 	for (walk = loghead; (walk); walk = walk->next) {
@@ -485,10 +485,10 @@ static void generate_histlog_table(FILE *htmlrep,
 		fprintf(htmlrep, "<TD ALIGN=LEFT NOWRAP>%s</TD>\n", start);
 		fprintf(htmlrep, "<TD ALIGN=CENTER BGCOLOR=\"#000000\">");
 		fprintf(htmlrep, "<A HREF=\"%s/bb-histlog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s\">", 
-			getenv("CGIBINURL"), hostname, service, walk->timespec);
+			xgetenv("CGIBINURL"), hostname, service, walk->timespec);
 		fprintf(htmlrep, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0>", 
-			getenv("BBSKIN"), dotgiffilename(walk->color, 0, 1), colorname(walk->color), colorname(walk->color),
-			getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+			xgetenv("BBSKIN"), dotgiffilename(walk->color, 0, 1), colorname(walk->color), colorname(walk->color),
+			xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 		fprintf(htmlrep, "</A></TD>\n");
 
 		fprintf(htmlrep, "<TD ALIGN=CENTER>%s</TD>\n", durationstr(walk->duration));
@@ -528,7 +528,7 @@ void generate_history(FILE *htmlrep, 			/* output file */
 
 	fprintf(htmlrep, "\n");
 	fprintf(htmlrep, "<CENTER>\n");
-	fprintf(htmlrep, "<BR><FONT %s><B>%s - %s</B></FONT>\n", getenv("MKBBROWFONT"), hostname, service);
+	fprintf(htmlrep, "<BR><FONT %s><B>%s - %s</B></FONT>\n", xgetenv("MKBBROWFONT"), hostname, service);
 	fprintf(htmlrep, "<BR><BR>\n");
 
 	/* Create the color-bars */
@@ -612,7 +612,7 @@ static void parse_query(void)
 {
 	char *query, *token;
 
-	if (getenv("QUERY_STRING") == NULL) {
+	if (xgetenv("QUERY_STRING") == NULL) {
 		errormsg("Invalid request");
 		return;
 	}
@@ -685,7 +685,7 @@ int main(int argc, char *argv[])
 	parse_query();
 
 	/* Build our own URL */
-	sprintf(selfurl, "%s/bb-hist.sh?HISTFILE=%s.%s", getenv("CGIBINURL"), commafy(hostname), service);
+	sprintf(selfurl, "%s/bb-hist.sh?HISTFILE=%s.%s", xgetenv("CGIBINURL"), commafy(hostname), service);
 
 	p = selfurl + strlen(selfurl);
 	sprintf(p, "&amp;BARSUMS=%d", barsums);
@@ -715,7 +715,7 @@ int main(int argc, char *argv[])
 		len1y = 10; bartitle1y = "10 month summary";
 	}
 
-	sprintf(histlogfn, "%s/%s.%s", getenv("BBHIST"), commafy(hostname), service);
+	sprintf(histlogfn, "%s/%s.%s", xgetenv("BBHIST"), commafy(hostname), service);
 	fd = fopen(histlogfn, "r");
 	if (fd == NULL) {
 		errormsg("Cannot open history file");

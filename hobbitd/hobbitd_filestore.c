@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.28 2005-01-15 17:38:28 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.29 2005-01-18 22:25:59 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -172,23 +172,23 @@ int main(int argc, char *argv[])
 	for (argi = 1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--status") == 0) {
 			role = ROLE_STATUS;
-			if (!filedir) filedir = getenv("BBLOGS");
+			if (!filedir) filedir = xgetenv("BBLOGS");
 		}
 		else if (strcmp(argv[argi], "--html") == 0) {
 			role = ROLE_STATUS;
-			if (!htmldir) htmldir = getenv("BBHTML");
+			if (!htmldir) htmldir = xgetenv("BBHTML");
 		}
 		else if (strcmp(argv[argi], "--data") == 0) {
 			role = ROLE_DATA;
-			if (!filedir) filedir = getenv("BBDATA");
+			if (!filedir) filedir = xgetenv("BBDATA");
 		}
 		else if (strcmp(argv[argi], "--notes") == 0) {
 			role = ROLE_NOTES;
-			if (!filedir) filedir = getenv("BBNOTES");
+			if (!filedir) filedir = xgetenv("BBNOTES");
 		}
 		else if (strcmp(argv[argi], "--enadis") == 0) {
 			role = ROLE_ENADIS;
-			if (!filedir) filedir = getenv("BBDISABLED");
+			if (!filedir) filedir = xgetenv("BBDISABLED");
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.71 2005-01-17 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.72 2005-01-18 22:25:59 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -161,20 +161,20 @@ char *init_tcp_services(void)
 	int svccount = 1;
 	int i;
 
-	if (getenv("BBNETSVCS") == NULL) {
+	if (xgetenv("BBNETSVCS") == NULL) {
 		putenv("BBNETSVCS=smtp telnet ftp pop pop3 pop-3 ssh imap ssh1 ssh2 imap2 imap3 imap4 pop2 pop-2 nntp");
 	}
 
 	filename[0] = '\0';
-	if (getenv("BBHOME")) {
-		sprintf(filename, "%s/etc/", getenv("BBHOME"));
+	if (xgetenv("BBHOME")) {
+		sprintf(filename, "%s/etc/", xgetenv("BBHOME"));
 	}
 	strcat(filename, "bb-services");
 
 	fd = fopen(filename, "r");
 	if (fd == NULL) {
 		errprintf("Cannot open TCP service-definitions file %s - using defaults\n", filename);
-		return xstrdup(getenv("BBNETSVCS"));
+		return xstrdup(xgetenv("BBNETSVCS"));
 	}
 
 	head = (svclist_t *)xmalloc(sizeof(svclist_t));
@@ -268,13 +268,13 @@ char *init_tcp_services(void)
 		svcinfo[i].port    = walk->rec->port;
 	}
 
-	searchstring = xstrdup(getenv("BBNETSVCS"));
-	bbnetsvcs = (char *) xmalloc(strlen(getenv("BBNETSVCS")) + svcnamebytes + 1);
-	strcpy(bbnetsvcs, getenv("BBNETSVCS"));
+	searchstring = xstrdup(xgetenv("BBNETSVCS"));
+	bbnetsvcs = (char *) xmalloc(strlen(xgetenv("BBNETSVCS")) + svcnamebytes + 1);
+	strcpy(bbnetsvcs, xgetenv("BBNETSVCS"));
 	for (i=0; (svcinfo[i].svcname); i++) {
 		char *p;
 
-		strcpy(searchstring, getenv("BBNETSVCS"));
+		strcpy(searchstring, xgetenv("BBNETSVCS"));
 		p = strtok(searchstring, " ");
 		while (p && (strcmp(p, svcinfo[i].svcname) != 0)) p = strtok(NULL, " ");
 
@@ -606,7 +606,7 @@ static int cert_password_cb(char *buf, int size, int rwflag, void *userdata)
 	 * Private key passphrases are stored in the file named same as the
 	 * certificate itself, but with extension ".pass"
 	 */
-	sprintf(passfn, "%s/certs/%s", getenv("BBHOME"), item->ssloptions->clientcert);
+	sprintf(passfn, "%s/certs/%s", xgetenv("BBHOME"), item->ssloptions->clientcert);
 	p = strrchr(passfn, '.'); if (p == NULL) p = passfn+strlen(passfn);
 	strcpy(p, ".pass");
 
@@ -741,7 +741,7 @@ static void setup_ssl(tcptest_t *item)
 			SSL_CTX_set_default_passwd_cb(item->sslctx, cert_password_cb);
 			SSL_CTX_set_default_passwd_cb_userdata(item->sslctx, item);
 
-			sprintf(certfn, "%s/certs/%s", getenv("BBHOME"), item->ssloptions->clientcert);
+			sprintf(certfn, "%s/certs/%s", xgetenv("BBHOME"), item->ssloptions->clientcert);
 			status = SSL_CTX_use_certificate_chain_file(item->sslctx, certfn);
 			if (status == 1) {
 				status = SSL_CTX_use_PrivateKey_file(item->sslctx, certfn, SSL_FILETYPE_PEM);
@@ -1455,7 +1455,7 @@ int main(int argc, char *argv[])
 	int timeout = 0;
 	int concurrency = 0;
 
-	if (getenv("BBNETSVCS") == NULL) putenv("BBNETSVCS=");
+	if (xgetenv("BBNETSVCS") == NULL) putenv("BBNETSVCS=");
 	init_tcp_services();
 
 	for (argi=1; (argi<argc); argi++) {

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.69 2005-01-15 17:38:55 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.70 2005-01-18 22:25:59 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -142,20 +142,20 @@ int generate_info(char *infocolumn, char *documentationurl, int hobbitd, int sen
 			sprintf(l, "<HostNotesURL>%s</HostNotesURL>\n", val);
 			addtobuffer(&metabuf, &metabuflen, l);
 			sprintf(l, "<tr><th align=left>Notes:</th><td align=left><a href=\"%s\">%s%s</a>\n", 
-				val, getenv("BBWEBHOST"), val);
+				val, xgetenv("BBWEBHOST"), val);
 			addtobuffer(&infobuf, &infobuflen, l);
 		}
 
 		val = bbh_item(hostwalk, BBH_PAGEPATH);
 		sprintf(l, "<tr><th align=left>Page/subpage:</th><td align=left><a href=\"%s/%s\">%s</a>\n", 
-			getenv("BBWEB"), val, bbh_item(hostwalk, BBH_PAGEPATHTITLE));
+			xgetenv("BBWEB"), val, bbh_item(hostwalk, BBH_PAGEPATHTITLE));
 		addtobuffer(&infobuf, &infobuflen, l);
 
 		clonewalk = hostwalk->next;
 		while (clonewalk && (strcmp(hostwalk->bbhostname, clonewalk->bbhostname) == 0)) {
 			val = bbh_item(clonewalk, BBH_PAGEPATH);
 			sprintf(l, "<br><a href=\"%s/%s/\">%s</a>\n", 
-				getenv("BBWEB"), val, bbh_item(clonewalk, BBH_PAGEPATHTITLE));
+				xgetenv("BBWEB"), val, bbh_item(clonewalk, BBH_PAGEPATHTITLE));
 			addtobuffer(&infobuf, &infobuflen, l);
 			clonewalk = clonewalk->next;
 		}
@@ -234,7 +234,7 @@ int generate_info(char *infocolumn, char *documentationurl, int hobbitd, int sen
 			addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
 
 			val = bbh_item(hostwalk, BBH_WARNPCT);
-			if (val == NULL) val = getenv("BBREPWARN");
+			if (val == NULL) val = xgetenv("BBREPWARN");
 			if (val == NULL) val = "(not set)";
 
 			sprintf(l, "<MinimumAvailabilityPCT>%s</MinimumAvailabilityPCT>\n", val);
@@ -499,7 +499,7 @@ int main(int argc, char *argv[])
 	int sendmeta = 0;
 
 	getenv_default("USEHOBBITD", "FALSE", NULL);
-	usehobbitd = (strcmp(getenv("USEHOBBITD"), "TRUE") == 0);
+	usehobbitd = (strcmp(xgetenv("USEHOBBITD"), "TRUE") == 0);
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
@@ -528,7 +528,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (bbhostsfn == NULL) bbhostsfn = getenv("BBHOSTS");
+	if (bbhostsfn == NULL) bbhostsfn = xgetenv("BBHOSTS");
 
 	hosthead = load_hostnames(bbhostsfn, NULL, get_fqdn(), docurl);
 	load_all_links();

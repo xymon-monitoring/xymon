@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.26 2005-01-15 17:38:55 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.27 2005-01-18 22:25:59 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -57,7 +57,7 @@ static void parse_query(void)
 {
 	char *query, *token;
 
-	if (getenv("QUERY_STRING") == NULL) {
+	if (xgetenv("QUERY_STRING") == NULL) {
 		errormsg("Invalid request");
 		return;
 	}
@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 	int wantserviceid = 1;
 
 	getenv_default("USEHOBBITD", "FALSE", NULL);
-	if (strcmp(getenv("USEHOBBITD"), "TRUE") == 0) source = SRC_HOBBITD;
+	if (strcmp(xgetenv("USEHOBBITD"), "TRUE") == 0) source = SRC_HOBBITD;
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--historical") == 0) {
@@ -213,13 +213,13 @@ int main(int argc, char *argv[])
 		int n;
 
 		if (source == SRC_BBLOGS) {
-			sprintf(logfn, "%s/%s.%s", getenv("BBLOGS"), commafy(hostname), service);
+			sprintf(logfn, "%s/%s.%s", xgetenv("BBLOGS"), commafy(hostname), service);
 		}
 		else if (source == SRC_HISTLOGS) {
 			char *hostnamedash = xstrdup(hostname);
 			p = hostnamedash; while ((p = strchr(p, '.')) != NULL) *p = '_';
 			p = hostnamedash; while ((p = strchr(p, ',')) != NULL) *p = '_';
-			sprintf(logfn, "%s/%s/%s/%s", getenv("BBHISTLOGS"), hostnamedash, service, tstamp);
+			sprintf(logfn, "%s/%s/%s/%s", xgetenv("BBHISTLOGS"), hostnamedash, service, tstamp);
 			xfree(hostnamedash);
 			p = tstamp; while ((p = strchr(p, '_')) != NULL) *p = ' ';
 			sethostenv_histlog(tstamp);

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.41 2005-01-15 17:39:08 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.42 2005-01-18 22:25:59 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -353,12 +353,12 @@ int main(int argc, char *argv[])
 			char *p1 = strchr(argv[opt], '=')+1;
 
 			if (strchr(p1, '.') == NULL) {
-				if (getenv("MACHINE") == NULL) {
+				if (xgetenv("MACHINE") == NULL) {
 					errprintf("Environment variable MACHINE is undefined\n");
 					return 1;
 				}
 
-				proxyname = xstrdup(getenv("MACHINE"));
+				proxyname = xstrdup(xgetenv("MACHINE"));
 				proxyname = (char *)xrealloc(proxyname, strlen(proxyname) + strlen(p1) + 1);
 				strcat(proxyname, ".");
 				strcat(proxyname, p1);

@@ -22,7 +22,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.13 2005-01-15 17:38:28 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.14 2005-01-18 22:25:59 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -57,12 +57,12 @@ hobbitd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	hobbitd_channel_t *newch;
 	int flags = ((role == CHAN_MASTER) ? (IPC_CREAT | 0600) : 0);
 
-	if ( (getenv("BBHOME") == NULL) || (stat(getenv("BBHOME"), &st) == -1) ) {
+	if ( (xgetenv("BBHOME") == NULL) || (stat(xgetenv("BBHOME"), &st) == -1) ) {
 		errprintf("BBHOME not defined, or points to invalid directory - cannot continue.\n");
 		return NULL;
 	}
 
-	key = ftok(getenv("BBHOME"), chnid);
+	key = ftok(xgetenv("BBHOME"), chnid);
 	newch = (hobbitd_channel_t *)xmalloc(sizeof(hobbitd_channel_t));
 
 	newch->seq = 0;

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.18 2005-01-15 17:39:19 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.19 2005-01-18 22:25:59 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -547,7 +547,7 @@ int main(int argc, char *argv[])
 					}
 
 					/* Go! */
-					dprintf("%s -> Running '%s', BBHOME=%s\n", twalk->key, cmd, getenv("BBHOME"));
+					dprintf("%s -> Running '%s', BBHOME=%s\n", twalk->key, cmd, xgetenv("BBHOME"));
 					execvp(cmd, cmdargs);
 
 					/* Should never go here */

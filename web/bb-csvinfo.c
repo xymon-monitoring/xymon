@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-csvinfo.c,v 1.8 2005-01-15 17:38:55 henrik Exp $";
+static char rcsid[] = "$Id: bb-csvinfo.c,v 1.9 2005-01-18 22:25:59 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -42,7 +42,7 @@ void parse_query(void)
 {
         char *query, *token;
 
-        if (getenv("QUERY_STRING") == NULL) {
+        if (xgetenv("QUERY_STRING") == NULL) {
                 errormsg("Missing request");
                 return;
         }
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	sprintf(dbfn, "%s/etc/%s", getenv("BBHOME"), srcdb);
+	sprintf(dbfn, "%s/etc/%s", xgetenv("BBHOME"), srcdb);
 	db = fopen(dbfn, "r");
 	if (db == NULL) {
 		char msg[PATH_MAX];

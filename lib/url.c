@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: url.c,v 1.6 2005-01-15 17:39:50 henrik Exp $";
+static char rcsid[] = "$Id: url.c,v 1.7 2005-01-18 22:25:59 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -78,9 +78,9 @@ char *urlunescape(char *url)
  */
 char *urldecode(char *envvar)
 {
-	if (getenv(envvar) == NULL) return NULL;
+	if (xgetenv(envvar) == NULL) return NULL;
 
-	return urlunescape(getenv(envvar));
+	return urlunescape(xgetenv(envvar));
 }
 
 /*
@@ -165,7 +165,7 @@ static void load_netrc(void)
 	if (loaded) return;
 	loaded = 1;
 
-	sprintf(netrcfn, "%s/.netrc", getenv("HOME"));
+	sprintf(netrcfn, "%s/.netrc", xgetenv("HOME"));
 	fd = fopen(netrcfn, "r");
 	if (fd == NULL) return;
 

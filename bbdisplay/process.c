@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.25 2005-01-15 17:38:55 henrik Exp $";
+static char rcsid[] = "$Id: process.c,v 1.26 2005-01-18 22:25:59 henrik Exp $";
 
 #include <limits.h>
 #include <string.h>
@@ -166,13 +166,13 @@ void delete_old_acks(void)
 	time_t		now = time(NULL);
 	char		fn[PATH_MAX];
 
-	bbacks = opendir(getenv("BBACKS"));
+	bbacks = opendir(xgetenv("BBACKS"));
 	if (!bbacks) {
-		errprintf("No BBACKS! Cannot cd to directory %s\n", getenv("BBACKS"));
+		errprintf("No BBACKS! Cannot cd to directory %s\n", xgetenv("BBACKS"));
 		return;
         }
 
-	chdir(getenv("BBACKS"));
+	chdir(xgetenv("BBACKS"));
 	while ((d = readdir(bbacks))) {
 		strcpy(fn, d->d_name);
 		if (strncmp(fn, "ack.", 4) == 0) {
@@ -204,8 +204,8 @@ void send_summaries(summary_t *sumhead)
 			p = strchr(suburl, '/');	/* Find next '/' */
 			if (p) suburl = p;
 		}
-		if (strncmp(suburl, getenv("BBWEB"), strlen(getenv("BBWEB"))) == 0) 
-			suburl += strlen(getenv("BBWEB"));
+		if (strncmp(suburl, xgetenv("BBWEB"), strlen(xgetenv("BBWEB"))) == 0) 
+			suburl += strlen(xgetenv("BBWEB"));
 		if (*suburl == '/') suburl++;
 
 		if (debug) printf("summ1: s->url=%s, suburl=%s\n", s->url, suburl);

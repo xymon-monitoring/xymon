@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.26 2005-01-18 21:52:33 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.27 2005-01-18 22:25:59 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -265,12 +265,12 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 	recip_t *currcp = NULL, *rcptail = NULL;
 
 	if (bbcompat_mode) {
-		sprintf(bbcompatscript, "%s/ext/bbcompatalert.sh", getenv("BBHOME"));
+		sprintf(bbcompatscript, "%s/ext/bbcompatalert.sh", xgetenv("BBHOME"));
 		bbload_alerts();
 		return;
 	}
 
-	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/hobbit-alerts.cfg", getenv("BBHOME"));
+	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/hobbit-alerts.cfg", xgetenv("BBHOME"));
 	if (stat(fn, &st) == -1) return;
 	if (st.st_mtime == lastload) return;
 
@@ -654,7 +654,7 @@ static int servicecode(char *testname)
 	char *p;
 
 	if (svccodes == NULL) {
-		p = getenv("SVCCODES");
+		p = xgetenv("SVCCODES");
 		if (p == NULL) p = "none";
 		svccodes = (char *)xmalloc(strlen(p)+2);
 		sprintf(svccodes, ",%s", p);
@@ -1053,7 +1053,7 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 		addtobuffer(&buf, &buflen, msg_data(alert->pagemessage));
 		addtobuffer(&buf, &buflen, "\n");
 		sprintf(info, "See %s%s/bb-hostsvc.sh?HOSTSVC=%s.%s\n", 
-			getenv("BBWEBHOST"), getenv("CGIBINURL"), 
+			xgetenv("BBWEBHOST"), xgetenv("CGIBINURL"), 
 			commafy(alert->hostname->name), alert->testname->name);
 		addtobuffer(&buf, &buflen, info);
 		return buf;
@@ -1121,16 +1121,16 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 				mailsubj = message_subject(alert, recip);
 
 				if (mailsubj) {
-					if (getenv("MAIL")) 
-						sprintf(cmd, "%s \"%s\" ", getenv("MAIL"), mailsubj);
-					else if (getenv("MAILC"))
-						sprintf(cmd, "%s -s \"%s\" ", getenv("MAILC"), mailsubj);
+					if (xgetenv("MAIL")) 
+						sprintf(cmd, "%s \"%s\" ", xgetenv("MAIL"), mailsubj);
+					else if (xgetenv("MAILC"))
+						sprintf(cmd, "%s -s \"%s\" ", xgetenv("MAILC"), mailsubj);
 					else 
 						sprintf(cmd, "mail -s \"%s\" ", mailsubj);
 				}
 				else {
-					if (getenv("MAILC"))
-						sprintf(cmd, "%s ", getenv("MAILC"));
+					if (xgetenv("MAILC"))
+						sprintf(cmd, "%s ", xgetenv("MAILC"));
 					else 
 						sprintf(cmd, "mail ");
 				}

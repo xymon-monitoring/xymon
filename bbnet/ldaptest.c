@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.19 2005-01-15 17:39:01 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.20 2005-01-18 22:25:59 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -486,7 +486,7 @@ int main(int argc, char *argv[])
 
 	/* For testing, dont crash in sendmsg when no BBDISP defined */
 	dontsendmessages = 1;
-	if (getenv("BBDISP") == NULL) putenv("BBDISP=127.0.0.1");
+	if (xgetenv("BBDISP") == NULL) putenv("BBDISP=127.0.0.1");
 
 	memset(&item, 0, sizeof(item));
 	memset(&host, 0, sizeof(host));

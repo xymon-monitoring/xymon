@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-snapshot.c,v 1.8 2005-01-15 17:38:55 henrik Exp $";
+static char rcsid[] = "$Id: bb-snapshot.c,v 1.9 2005-01-18 22:25:59 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -63,7 +63,7 @@ void parse_query(void)
 
 	day = mon = year = hour = min = sec = -1;
 
-	if (getenv("QUERY_STRING") == NULL) {
+	if (xgetenv("QUERY_STRING") == NULL) {
 		errormsg("Invalid request");
 		return;
 	}
@@ -186,12 +186,12 @@ int main(int argc, char *argv[])
 	bbgen_argv[newargi++] = outdir;
 	bbgen_argv[newargi++] = NULL;
 
-	if ((getenv("QUERY_STRING") == NULL) || (strlen(getenv("QUERY_STRING")) == 0)) {
+	if ((xgetenv("QUERY_STRING") == NULL) || (strlen(xgetenv("QUERY_STRING")) == 0)) {
 		/* Present the query form */
 		int formfile;
 		char formfn[PATH_MAX];
 
-		sprintf(formfn, "%s/web/snapshot_form", getenv("BBHOME"));
+		sprintf(formfn, "%s/web/snapshot_form", xgetenv("BBHOME"));
 		formfile = open(formfn, O_RDONLY);
 
 		if (formfile >= 0) {
@@ -223,16 +223,16 @@ int main(int argc, char *argv[])
 	 * Need to set these up AFTER putting them into bbgen_argv, since we
 	 * need to have option parsing done first.
 	 */
-	if (getenv("BBGEN")) sprintf(bbgencmd, "%s", getenv("BBGEN"));
-	else sprintf(bbgencmd, "%s/bin/bbgen", getenv("BBHOME"));
+	if (xgetenv("BBGEN")) sprintf(bbgencmd, "%s", xgetenv("BBGEN"));
+	else sprintf(bbgencmd, "%s/bin/bbgen", xgetenv("BBHOME"));
 
 	sprintf(bbgentimeopt, "--snapshot=%u", (unsigned int)starttime);
 
 	sprintf(dirid, "%u-%u", (unsigned int)getpid(), (unsigned int)time(NULL));
-	sprintf(outdir, "%s/%s", getenv("BBSNAP"), dirid);
+	sprintf(outdir, "%s/%s", xgetenv("BBSNAP"), dirid);
 	if (mkdir(outdir, 0755) == -1) errormsg("Cannot create output directory");
 
-	sprintf(bbwebenv, "BBWEB=%s/%s", getenv("BBSNAPURL"), dirid);
+	sprintf(bbwebenv, "BBWEB=%s/%s", xgetenv("BBSNAPURL"), dirid);
 	putenv(bbwebenv);
 
 	/* Output the "please wait for report ... " thing */
@@ -279,13 +279,13 @@ int main(int argc, char *argv[])
 			printf("Content-Type: text/html\n\n");
 			printf("<HTML><HEAD>\n");
 			printf("<META HTTP-EQUIV=\"REFRESH\" CONTENT=\"0; URL=%s/%s/\"\n", 
-					getenv("BBSNAPURL"), dirid);
+					xgetenv("BBSNAPURL"), dirid);
 			printf("</HEAD><BODY BGCOLOR=\"000000\"></BODY></HTML>\n");
 			printf("\n%s\n", htmldelim);
 			fflush(stdout);
 		}
 
-		cleandir(getenv("BBSNAP"));
+		cleandir(xgetenv("BBSNAP"));
 	}
 	else {
 		printf("%s\n\n", htmldelim);

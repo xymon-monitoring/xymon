@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.27 2005-01-15 17:38:28 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.28 2005-01-18 22:25:59 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -60,9 +60,9 @@ int main(int argc, char *argv[])
 	/* Dont save the error buffer */
 	save_errbuf = 0;
 
-	if (getenv("BBALLHISTLOG")) save_allevents = (strcmp(getenv("BBALLHISTLOG"), "TRUE") == 0);
-	if (getenv("BBHOSTHISTLOG")) save_hostevents = (strcmp(getenv("BBHOSTHISTLOG"), "TRUE") == 0);
-	if (getenv("SAVESTATUSLOG")) save_histlogs = (strcmp(getenv("SAVESTATUSLOG"), "TRUE") == 0);
+	if (xgetenv("BBALLHISTLOG")) save_allevents = (strcmp(xgetenv("BBALLHISTLOG"), "TRUE") == 0);
+	if (xgetenv("BBHOSTHISTLOG")) save_hostevents = (strcmp(xgetenv("BBHOSTHISTLOG"), "TRUE") == 0);
+	if (xgetenv("SAVESTATUSLOG")) save_histlogs = (strcmp(xgetenv("SAVESTATUSLOG"), "TRUE") == 0);
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--histdir=")) {
@@ -76,16 +76,16 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (getenv("BBHIST") && (histdir == NULL)) {
-		histdir = xstrdup(getenv("BBHIST"));
+	if (xgetenv("BBHIST") && (histdir == NULL)) {
+		histdir = xstrdup(xgetenv("BBHIST"));
 	}
 	if (histdir == NULL) {
 		errprintf("No history directory given, aborting\n");
 		return 1;
 	}
 
-	if (save_histlogs && (histlogdir == NULL) && getenv("BBHISTLOGS")) {
-		histlogdir = xstrdup(getenv("BBHISTLOGS"));
+	if (save_histlogs && (histlogdir == NULL) && xgetenv("BBHISTLOGS")) {
+		histlogdir = xstrdup(xgetenv("BBHISTLOGS"));
 	}
 	if (save_histlogs && (histlogdir == NULL)) {
 		errprintf("No history-log directory given, aborting\n");

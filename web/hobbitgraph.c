@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.13 2005-01-18 12:47:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.14 2005-01-18 22:25:59 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -90,7 +90,7 @@ void parse_query(void)
 {
 	char *query, *token;
 
-	if (getenv("QUERY_STRING") == NULL) {
+	if (xgetenv("QUERY_STRING") == NULL) {
 		errormsg("Missing request");
 		return;
 	}
@@ -391,16 +391,16 @@ int main(int argc, char *argv[])
 		fprintf(stdout, "<table align=\"center\">\n");
 		fprintf(stdout, "<tr><th><br>Hourly</th></tr>\n");
 		fprintf(stdout, "<tr><td><img src=\"%s&graph=hourly\" alt=\"%s Hourly\"></td></tr>\n",
-			getenv("REQUEST_URI"), service);
+			xgetenv("REQUEST_URI"), service);
 		fprintf(stdout, "<tr><th><br>Daily</th></tr>\n");
 		fprintf(stdout, "<tr><td><img src=\"%s&graph=daily\" alt=\"%s Daily\"></td></tr>\n",
-			getenv("REQUEST_URI"), service);
+			xgetenv("REQUEST_URI"), service);
 		fprintf(stdout, "<tr><th><br>Weekly</th></tr>\n");
 		fprintf(stdout, "<tr><td><img src=\"%s&graph=weekly\" alt=\"%s Weekly\"></td></tr>\n",
-			getenv("REQUEST_URI"), service);
+			xgetenv("REQUEST_URI"), service);
 		fprintf(stdout, "<tr><th><br>Monthly</th></tr>\n");
 		fprintf(stdout, "<tr><td><img src=\"%s&graph=monthly\" alt=\"%s Monthly\"></td></tr>\n",
-			getenv("REQUEST_URI"), service);
+			xgetenv("REQUEST_URI"), service);
 		fprintf(stdout, "</table>\n");
 
 		headfoot(stdout, "graphs", "", "footer", COL_GREEN);
@@ -410,7 +410,7 @@ int main(int argc, char *argv[])
 	/* Find the config-file and load it */
 	if (gdeffn == NULL) {
 		char fnam[PATH_MAX];
-		sprintf(fnam, "%s/etc/hobbitgraph.cfg", getenv("BBHOME"));
+		sprintf(fnam, "%s/etc/hobbitgraph.cfg", xgetenv("BBHOME"));
 		gdeffn = xstrdup(fnam);
 	}
 	load_gdefs(gdeffn);
@@ -422,8 +422,8 @@ int main(int argc, char *argv[])
 	if (rrddir == NULL) {
 		char dnam[PATH_MAX];
 
-		if (getenv("BBRRDS")) sprintf(dnam, "%s/%s", getenv("BBRRDS"), hostname);
-		else sprintf(dnam, "%s/rrd/%s", getenv("BBVAR"), hostname);
+		if (xgetenv("BBRRDS")) sprintf(dnam, "%s/%s", xgetenv("BBRRDS"), hostname);
+		else sprintf(dnam, "%s/rrd/%s", xgetenv("BBVAR"), hostname);
 
 		rrddir = xstrdup(dnam);
 	}

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.76 2005-01-15 17:39:01 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.77 2005-01-18 22:25:59 henrik Exp $";
 
 #include <sys/types.h>
 #include <limits.h>
@@ -57,7 +57,7 @@ static void load_cookies(void)
 	if (loaded) return;
 	loaded = 1;
 
-	sprintf(cookiefn, "%s/etc/cookies", getenv("BBHOME"));
+	sprintf(cookiefn, "%s/etc/cookies", xgetenv("BBHOME"));
 	fd = fopen(cookiefn, "r");
 	if (fd == NULL) return;
 
@@ -451,7 +451,7 @@ void add_http_test(testitem_t *t)
 		{
 			FILE *contentfd;
 			char contentfn[PATH_MAX];
-			sprintf(contentfn, "%s/content/%s.substring", getenv("BBHOME"), commafy(t->host->hostname));
+			sprintf(contentfn, "%s/content/%s.substring", xgetenv("BBHOME"), commafy(t->host->hostname));
 			contentfd = fopen(contentfn, "r");
 			if (contentfd) {
 				char l[MAX_LINE_LEN];

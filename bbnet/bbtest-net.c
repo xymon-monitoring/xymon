@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.190 2005-01-15 17:39:01 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.191 2005-01-18 22:25:59 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -301,8 +301,8 @@ void load_services(void)
 	xfree(netsvcs);
 
 	/* Save NONETPAGE env. var in ",test1,test2," format for easy and safe grepping */
-	nonetpage = (char *) xmalloc(strlen(getenv("NONETPAGE"))+3);
-	sprintf(nonetpage, ",%s,", getenv("NONETPAGE"));
+	nonetpage = (char *) xmalloc(strlen(xgetenv("NONETPAGE"))+3);
+	sprintf(nonetpage, ",%s,", xgetenv("NONETPAGE"));
 	for (p=nonetpage; (*p); p++) if (*p == ' ') *p = ',';
 }
 
@@ -411,7 +411,7 @@ void load_tests(void)
 	namelist_t *hosts, *hwalk;
 	testedhost_t *h;
 
-	hosts = load_hostnames(getenv("BBHOSTS"), "netinclude", get_fqdn(), NULL);
+	hosts = load_hostnames(xgetenv("BBHOSTS"), "netinclude", get_fqdn(), NULL);
 	if (hosts == NULL) {
 		errprintf("Cannot load bb-hosts\n");
 		return;
@@ -851,7 +851,7 @@ void load_fping_status(void)
 	time_t downstart;
 	testedhost_t *h;
 
-	sprintf(statusfn, "%s/fping.%s.status", getenv("BBTMP"), location);
+	sprintf(statusfn, "%s/fping.%s.status", xgetenv("BBTMP"), location);
 	statusfd = fopen(statusfn, "r");
 	if (statusfd == NULL) return;
 
@@ -877,7 +877,7 @@ void save_fping_status(void)
 	testitem_t *t;
 	int didany = 0;
 
-	sprintf(statusfn, "%s/fping.%s.status", getenv("BBTMP"), location);
+	sprintf(statusfn, "%s/fping.%s.status", xgetenv("BBTMP"), location);
 	statusfd = fopen(statusfn, "w");
 	if (statusfd == NULL) return;
 
@@ -904,7 +904,7 @@ void load_test_status(service_t *test)
 	testedhost_t *h;
 	testitem_t *walk;
 
-	sprintf(statusfn, "%s/%s.%s.status", getenv("BBTMP"), test->testname, location);
+	sprintf(statusfn, "%s/%s.%s.status", xgetenv("BBTMP"), test->testname, location);
 	statusfd = fopen(statusfn, "r");
 	if (statusfd == NULL) return;
 
@@ -936,7 +936,7 @@ void save_test_status(service_t *test)
 	testitem_t *t;
 	int didany = 0;
 
-	sprintf(statusfn, "%s/%s.%s.status", getenv("BBTMP"), test->testname, location);
+	sprintf(statusfn, "%s/%s.%s.status", xgetenv("BBTMP"), test->testname, location);
 	statusfd = fopen(statusfn, "w");
 	if (statusfd == NULL) return;
 
@@ -961,7 +961,7 @@ void save_frequenttestlist(int argc, char *argv[])
 	int didany = 0;
 	int i;
 
-	sprintf(fn, "%s/frequenttests.%s", getenv("BBTMP"), location);
+	sprintf(fn, "%s/frequenttests.%s", xgetenv("BBTMP"), location);
 	fd = fopen(fn, "w");
 	if (fd == NULL) return;
 
@@ -1006,7 +1006,7 @@ void run_ntp_service(service_t *service)
 	char		*p;
 	char		cmdpath[PATH_MAX];
 
-	p = getenv("NTPDATE");
+	p = xgetenv("NTPDATE");
 	strcpy(cmdpath, (p ? p : "ntpdate"));
 	for (t=service->items; (t); t = t->next) {
 		if (!t->host->dnserror) {
@@ -1024,7 +1024,7 @@ void run_rpcinfo_service(service_t *service)
 	char		*p;
 	char		cmdpath[PATH_MAX];
 
-	p = getenv("RPCINFO");
+	p = xgetenv("RPCINFO");
 	strcpy(cmdpath, (p ? p : "rpcinfo"));
 	for (t=service->items; (t); t = t->next) {
 		if (!t->host->dnserror) {
@@ -1060,8 +1060,8 @@ int start_fping_service(service_t *service)
 	fpingcmd = xrealloc(fpingcmd, strlen(fpingcmd)+5);
 	strcat(fpingcmd, " -Ae");
 
-	sprintf(fpinglog, "%s/fping-stdout.%lu", getenv("BBTMP"), (unsigned long)getpid());
-	sprintf(fpingerrlog, "%s/fping-stderr.%lu", getenv("BBTMP"), (unsigned long)getpid());
+	sprintf(fpinglog, "%s/fping-stdout.%lu", xgetenv("BBTMP"), (unsigned long)getpid());
+	sprintf(fpingerrlog, "%s/fping-stderr.%lu", xgetenv("BBTMP"), (unsigned long)getpid());
 
 	/* Setup command line and arguments */
 	cmdargs = setup_commandargs(fpingcmd, &cmd);
@@ -1255,7 +1255,7 @@ void run_modembank_service(service_t *service)
 	for (t=service->items; (t); t = t->next) {
 		modembank_t *req = (modembank_t *)t->privdata;
 
-		p = getenv("FPING");
+		p = xgetenv("FPING");
 		strcpy(cmdpath, (p ? p : "fping"));
 		strcpy(startip, u32toIP(req->startip));
 		strcpy(endip, u32toIP(req->startip + req->banksize - 1));
@@ -1363,7 +1363,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 			char *routertext;
 
 			routertext = test->host->deprouterdown->hosttype;
-			if (routertext == NULL) routertext = getenv("BBROUTERTEXT");
+			if (routertext == NULL) routertext = xgetenv("BBROUTERTEXT");
 			if (routertext == NULL) routertext = "router";
 
 			strcat(cause, "\nIntermediate ");
@@ -1383,8 +1383,8 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 		if ((color == COL_RED) && test->host->dotrace && !test->host->dialup && !test->reverse && !test->dialup) {
 			char cmd[PATH_MAX];
 
-			if (getenv("TRACEROUTE")) {
-				sprintf(cmd, "%s %s 2>&1", getenv("TRACEROUTE"), test->host->ip);
+			if (xgetenv("TRACEROUTE")) {
+				sprintf(cmd, "%s %s 2>&1", xgetenv("TRACEROUTE"), test->host->ip);
 			}
 			else {
 				sprintf(cmd, "traceroute -n -q 2 -w 2 -m 15 %s 2>&1", test->host->ip);
@@ -1577,7 +1577,7 @@ void send_results(service_t *service, int failgoesclear)
 					char *routertext;
 
 					routertext = t->host->deprouterdown->hosttype;
-					if (routertext == NULL) routertext = getenv("BBROUTERTEXT");
+					if (routertext == NULL) routertext = xgetenv("BBROUTERTEXT");
 					if (routertext == NULL) routertext = "router";
 
 					strcat(msgline, ": Intermediate ");
@@ -1605,7 +1605,7 @@ void send_results(service_t *service, int failgoesclear)
 						char *routertext;
 
 						routertext = t->host->deprouterdown->hosttype;
-						if (routertext == NULL) routertext = getenv("BBROUTERTEXT");
+						if (routertext == NULL) routertext = xgetenv("BBROUTERTEXT");
 						if (routertext == NULL) routertext = "router";
 
 						strcat(msgline, ": Intermediate ");
@@ -1919,8 +1919,8 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	if (getenv("CONNTEST") && (strcmp(getenv("CONNTEST"), "FALSE") == 0)) pingcolumn = NULL;
-	runtimewarn = (getenv("BBSLEEP") ? atol(getenv("BBSLEEP")) : 300);
+	if (xgetenv("CONNTEST") && (strcmp(xgetenv("CONNTEST"), "FALSE") == 0)) pingcolumn = NULL;
+	runtimewarn = (xgetenv("BBSLEEP") ? atol(xgetenv("BBSLEEP")) : 300);
 
 	for (argi=1; (argi < argc); argi++) {
 		if      (argnmatch(argv[argi], "--timeout=")) {
@@ -2130,9 +2130,9 @@ int main(int argc, char *argv[])
 	/* Setup SEGV handler */
 	setup_signalhandler(egocolumn ? egocolumn : "bbtest");
 
-	if (getenv("BBLOCATION")) location = xstrdup(getenv("BBLOCATION"));
-	if (pingcolumn && getenv("IPTEST_2_CLEAR_ON_FAILED_CONN")) {
-		failgoesclear = (strcmp(getenv("IPTEST_2_CLEAR_ON_FAILED_CONN"), "TRUE") == 0);
+	if (xgetenv("BBLOCATION")) location = xstrdup(xgetenv("BBLOCATION"));
+	if (pingcolumn && xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN")) {
+		failgoesclear = (strcmp(xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN"), "TRUE") == 0);
 	}
 
 	if (debug) {
@@ -2140,9 +2140,9 @@ int main(int argc, char *argv[])
 		printf("Command: bbtest-net");
 		for (i=1; (i<argc); i++) printf(" '%s'", argv[i]);
 		printf("\n");
-		printf("Environment BBLOCATION='%s'\n", textornull(getenv("BBLOCATION")));
-		printf("Environment CONNTEST='%s'\n", textornull(getenv("CONNTEST")));
-		printf("Environment IPTEST_2_CLEAR_ON_FAILED_CONN='%s'\n", textornull(getenv("IPTEST_2_CLEAR_ON_FAILED_CONN")));
+		printf("Environment BBLOCATION='%s'\n", textornull(xgetenv("BBLOCATION")));
+		printf("Environment CONNTEST='%s'\n", textornull(xgetenv("CONNTEST")));
+		printf("Environment IPTEST_2_CLEAR_ON_FAILED_CONN='%s'\n", textornull(xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN")));
 		printf("\n");
 	}
 
@@ -2382,7 +2382,7 @@ int main(int argc, char *argv[])
 
 		combo_start();
 		init_status(color);
-		sprintf(msgline, "status %s.%s %s %s\n\n", getenv("MACHINE"), egocolumn, colorname(color), timestamp);
+		sprintf(msgline, "status %s.%s %s %s\n\n", xgetenv("MACHINE"), egocolumn, colorname(color), timestamp);
 		addtostatus(msgline);
 
 		sprintf(msgline, "bbtest-net version %s\n", VERSION);

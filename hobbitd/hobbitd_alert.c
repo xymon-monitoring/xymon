@@ -36,7 +36,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.35 2005-01-18 21:52:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.36 2005-01-18 22:25:59 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -280,10 +280,10 @@ int main(int argc, char *argv[])
 	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGCHLD, &sa, NULL);
 
-	if (getenv("BBACKS")) {
-		sprintf(acklogfn, "%s/acklog", getenv("BBACKS"));
+	if (xgetenv("BBACKS")) {
+		sprintf(acklogfn, "%s/acklog", xgetenv("BBACKS"));
 		acklogfd = fopen(acklogfn, "a");
-		sprintf(notiflogfn, "%s/notifications.log", getenv("BBACKS"));
+		sprintf(notiflogfn, "%s/notifications.log", xgetenv("BBACKS"));
 		notiflogfd = fopen(notiflogfn, "a");
 	}
 

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.8 2005-01-15 17:39:50 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.9 2005-01-18 22:25:59 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -98,7 +98,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 		savechar = *t_next; *t_next = '\0';
 
 		if (strcmp(t_start, "BBDATE") == 0) {
-			char *bbdatefmt = getenv("BBDATEFORMAT");
+			char *bbdatefmt = xgetenv("BBDATEFORMAT");
 			char datestr[100];
 
 			/*
@@ -130,7 +130,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 		else if (strcmp(t_start, "BBBACKGROUND") == 0)  {
 			if (unpatched_bbd && (strcmp(pagetype, "hostsvc") == 0)) {
 				fprintf(output, "%s/bkg-%s.gif", 
-					getenv("BBSKIN"), colorname(bgcolor));
+					xgetenv("BBSKIN"), colorname(bgcolor));
 			}
 			else {
 				fprintf(output, "%s", colorname(bgcolor));
@@ -215,8 +215,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			}
 		}
 
-		else if (getenv(t_start)) {
-			fprintf(output, "%s", getenv(t_start));
+		else if (xgetenv(t_start)) {
+			fprintf(output, "%s", xgetenv(t_start));
 		}
 
 		else fprintf(output, "&%s", t_start);		/* No substitution - copy all unchanged. */
@@ -237,7 +237,7 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 	char	*templatedata;
 	char	*hfpath;
 
-	if (getenv("HOBBITDREL") == NULL) {
+	if (xgetenv("HOBBITDREL") == NULL) {
 		char *hobbitdrel = (char *)xmalloc(12+strlen(VERSION));
 		sprintf(hobbitdrel, "HOBBITDREL=%s", VERSION);
 		putenv(hobbitdrel);
@@ -269,7 +269,7 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 			sprintf(filename, "%s/", hostenv_templatedir);
 		}
 		else {
-			sprintf(filename, "%s/web/", getenv("BBHOME"));
+			sprintf(filename, "%s/web/", xgetenv("BBHOME"));
 		}
 
 		p = strchr(hfpath, '/'); elemstart = hfpath;
@@ -302,7 +302,7 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 			sprintf(filename, "%s/%s_%s", hostenv_templatedir, pagetype, head_or_foot);
 		}
 		else {
-			sprintf(filename, "%s/web/%s_%s", getenv("BBHOME"), pagetype, head_or_foot);
+			sprintf(filename, "%s/web/%s_%s", xgetenv("BBHOME"), pagetype, head_or_foot);
 		}
 
 		dprintf("Trying header/footer file '%s'\n", filename);

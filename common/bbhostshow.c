@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostshow.c,v 1.5 2004-10-30 15:47:55 henrik Exp $";
+static char rcsid[] = "$Id: bbhostshow.c,v 1.6 2005-01-18 22:25:59 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -50,8 +50,8 @@ int main(int argc, char *argv[])
 	}
 
 	if (strlen(fn) == 0) {
-		if (getenv("BBHOSTS")) {
-			strcpy(fn, getenv("BBHOSTS"));
+		if (xgetenv("BBHOSTS")) {
+			strcpy(fn, xgetenv("BBHOSTS"));
 		}
 		else {
 			errprintf("Environment variable BBHOSTS is not set - aborting\n");

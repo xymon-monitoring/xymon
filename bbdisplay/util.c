@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.144 2005-01-15 17:38:55 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.145 2005-01-18 22:25:59 henrik Exp $";
 
 #include <limits.h>
 #include <sys/types.h>
@@ -243,7 +243,7 @@ char *histlogurl(char *hostname, char *service, time_t histtime)
 
 	/* cgi-bin/bb-histlog.sh?HOST=SLS-P-CE1.slsdomain.sls.dk&SERVICE=msgs&TIMEBUF=Fri_Nov_7_16:01:08_2002 */
 	sprintf(url, "%s/bb-histlog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s", 
-		getenv("CGIBINURL"), hostname, service, histlogtime(histtime));
+		xgetenv("CGIBINURL"), hostname, service, histlogtime(histtime));
 
 	return url;
 }

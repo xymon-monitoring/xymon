@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.32 2005-01-16 11:21:30 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.33 2005-01-18 22:25:59 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -168,7 +168,7 @@ char *parse_histlogfile(char *hostname, char *servicename, char *timespec)
 
 	cause[0] = '\0';
 
-	sprintf(fn, "%s/%s", getenv("BBHISTLOGS"), commafy(hostname));
+	sprintf(fn, "%s/%s", xgetenv("BBHISTLOGS"), commafy(hostname));
 	for (p = strrchr(fn, '/'); (*p); p++) if (*p == ',') *p = '_';
 	sprintf(p, "/%s/%s", servicename, timespec);
 

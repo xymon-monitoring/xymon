@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.199 2005-01-15 17:38:55 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.200 2005-01-18 22:25:59 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -115,14 +115,14 @@ int main(int argc, char *argv[])
 	fqdn = get_fqdn();
 
 	/* Setup values from env. vars that may be overridden via commandline options */
-	if (getenv("MKBB2COLREPEAT")) {
-		int i = atoi(getenv("MKBB2COLREPEAT"));
+	if (xgetenv("MKBB2COLREPEAT")) {
+		int i = atoi(xgetenv("MKBB2COLREPEAT"));
 
 		if (i > 0) maxrowsbeforeheading = i;
 	}
 
 	getenv_default("USEHOBBITD", "FALSE", NULL);
-	usehobbitd = (strcmp(getenv("USEHOBBITD"), "TRUE") == 0);
+	usehobbitd = (strcmp(xgetenv("USEHOBBITD"), "TRUE") == 0);
 
 	for (i = 1; (i < argc); i++) {
 		if (strcmp(argv[i], "--hobbitd") == 0) {
@@ -175,8 +175,8 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[i], "--doccgi=")) {
 			char *lp = strchr(argv[i], '=');
-			documentationurl = (char *)xmalloc(strlen(getenv("CGIBINURL"))+strlen(lp+1)+2);
-			sprintf(documentationurl, "%s/%s", getenv("CGIBINURL"), lp+1);
+			documentationurl = (char *)xmalloc(strlen(xgetenv("CGIBINURL"))+strlen(lp+1)+2);
+			sprintf(documentationurl, "%s/%s", xgetenv("CGIBINURL"), lp+1);
 		}
 		else if (argnmatch(argv[i], "--docurl=")) {
 			char *lp = strchr(argv[i], '=');
@@ -251,8 +251,8 @@ int main(int argc, char *argv[])
 			if (reportstart < 788918400) reportstart = 788918400;
 			if (reportend > time(NULL)) reportend = time(NULL);
 
-			if (getenv("BBREPWARN")) reportwarnlevel = atof(getenv("BBREPWARN"));
-			if (getenv("BBREPGREEN")) reportgreenlevel = atof(getenv("BBREPGREEN"));
+			if (xgetenv("BBREPWARN")) reportwarnlevel = atof(xgetenv("BBREPWARN"));
+			if (xgetenv("BBREPGREEN")) reportgreenlevel = atof(xgetenv("BBREPGREEN"));
 
 			if ((reportwarnlevel < 0.0) || (reportwarnlevel > 100.0)) reportwarnlevel = 97.0;
 			if ((reportgreenlevel < 0.0) || (reportgreenlevel > 100.0)) reportgreenlevel = 99.995;
@@ -401,8 +401,8 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 			if (*(lp+1) == '/') purplelogfn = xstrdup(lp+1);
 			else {
-				purplelogfn = (char *) xmalloc(strlen(getenv("BBHOME"))+1+strlen(lp+1)+1);
-				sprintf(purplelogfn, "%s/%s", getenv("BBHOME"), (lp+1));
+				purplelogfn = (char *) xmalloc(strlen(xgetenv("BBHOME"))+1+strlen(lp+1)+1);
+				sprintf(purplelogfn, "%s/%s", xgetenv("BBHOME"), (lp+1));
 			}
 		}
 		else if (argnmatch(argv[i], "--report=") || (strcmp(argv[i], "--report") == 0)) {
@@ -522,7 +522,7 @@ int main(int argc, char *argv[])
 		printf("Command: bbgen");
 		for (i=1; (i<argc); i++) printf(" '%s'", argv[i]);
 		printf("\n");
-		printf("Environment BBHOSTS='%s'\n", textornull(getenv("BBHOSTS")));
+		printf("Environment BBHOSTS='%s'\n", textornull(xgetenv("BBHOSTS")));
 		printf("\n");
 	}
 
@@ -535,18 +535,18 @@ int main(int argc, char *argv[])
 	setup_signalhandler("bbgen");
 
 	if (pagedir == NULL) {
-		if (getenv("BBWWW")) {
-			pagedir = xstrdup(getenv("BBWWW"));
+		if (xgetenv("BBWWW")) {
+			pagedir = xstrdup(xgetenv("BBWWW"));
 		}
 		else {
-			pagedir = (char *) xmalloc(strlen(getenv("BBHOME"))+5);
-			sprintf(pagedir, "%s/www", getenv("BBHOME"));
+			pagedir = (char *) xmalloc(strlen(xgetenv("BBHOME"))+5);
+			sprintf(pagedir, "%s/www", xgetenv("BBHOME"));
 		}
 	}
 
-	if (getenv("BBHTACCESS")) bbhtaccess = xstrdup(getenv("BBHTACCESS"));
-	if (getenv("BBPAGEHTACCESS")) bbpagehtaccess = xstrdup(getenv("BBPAGEHTACCESS"));
-	if (getenv("BBSUBPAGEHTACCESS")) bbsubpagehtaccess = xstrdup(getenv("BBSUBPAGEHTACCESS"));
+	if (xgetenv("BBHTACCESS")) bbhtaccess = xstrdup(xgetenv("BBHTACCESS"));
+	if (xgetenv("BBPAGEHTACCESS")) bbpagehtaccess = xstrdup(xgetenv("BBPAGEHTACCESS"));
+	if (xgetenv("BBSUBPAGEHTACCESS")) bbsubpagehtaccess = xstrdup(xgetenv("BBSUBPAGEHTACCESS"));
 
 	/*
 	 * When doing alternate pagesets, disable some stuff:
@@ -596,7 +596,7 @@ int main(int argc, char *argv[])
 	}
 	bb_color = pagehead->color;
 
-	if (getenv("SUMMARY_SET_BKG") && (strcmp(getenv("SUMMARY_SET_BKG"), "TRUE") == 0)) {
+	if (xgetenv("SUMMARY_SET_BKG") && (strcmp(xgetenv("SUMMARY_SET_BKG"), "TRUE") == 0)) {
 		/*
 		 * Displayed summaries affect the BB page only, 
 		 * but should not go into the color we report to
@@ -664,7 +664,7 @@ int main(int argc, char *argv[])
 	if (egocolumn) {
 		char msgline[MAXMSG];
 		char *timestamps;
-		long bbsleep = (getenv("BBSLEEP") ? atol(getenv("BBSLEEP")) : 300);
+		long bbsleep = (xgetenv("BBSLEEP") ? atol(xgetenv("BBSLEEP")) : 300);
 		int color;
 
 		/* Go yellow if it runs for too long */
@@ -675,7 +675,7 @@ int main(int argc, char *argv[])
 
 		combo_start();
 		init_status(color);
-		sprintf(msgline, "status %s.%s %s %s\n\n", getenv("MACHINE"), egocolumn, colorname(color), timestamp);
+		sprintf(msgline, "status %s.%s %s %s\n\n", xgetenv("MACHINE"), egocolumn, colorname(color), timestamp);
 		addtostatus(msgline);
 
 		sprintf(msgline, "bbgen version %s %s\n", VERSION, (usehobbitd ? "with hobbitd" : ""));

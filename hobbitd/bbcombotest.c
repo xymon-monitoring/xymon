@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.32 2005-01-15 17:38:55 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.33 2005-01-18 22:25:59 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -78,18 +78,18 @@ static void loadtests(void)
 	char fn[PATH_MAX];
 	char l[MAX_LINE_LEN];
 
-	sprintf(fn, "%s/etc/bbcombotest.cfg", getenv("BBHOME"));
+	sprintf(fn, "%s/etc/bbcombotest.cfg", xgetenv("BBHOME"));
 	fd = fopen(fn, "r");
 	if (fd == NULL) {
 		/* 
 		 * Why this ? Because I goofed and released a version using bbcombotests.cfg,
 		 * and you shouldn't break peoples' setups when fixing silly bugs.
 		 */
-		sprintf(fn, "%s/etc/bbcombotests.cfg", getenv("BBHOME"));
+		sprintf(fn, "%s/etc/bbcombotests.cfg", xgetenv("BBHOME"));
 		fd = fopen(fn, "r");
 	}
 	if (fd == NULL) {
-		errprintf("Cannot open %s/etc/bbcombotest.cfg\n", getenv("BBHOME"));
+		errprintf("Cannot open %s/etc/bbcombotest.cfg\n", xgetenv("BBHOME"));
 		return;
 	}
 
@@ -142,11 +142,11 @@ static int getfilevalue(char *hostname, char *testname, char **errptr)
 	int statres;
 	int result = COL_CLEAR;
 
-	sprintf(fn, "%s/%s.%s", getenv("BBLOGS"), commafy(hostname), testname);
+	sprintf(fn, "%s/%s.%s", xgetenv("BBLOGS"), commafy(hostname), testname);
 	statres = stat(fn, &st);
 	if (statres) {
 		/* No file ? Maybe it is using the wrong (non-commafied) hostname */
-		sprintf(fn, "%s/%s.%s", getenv("BBLOGS"), hostname, testname);
+		sprintf(fn, "%s/%s.%s", xgetenv("BBLOGS"), hostname, testname);
 		statres = stat(fn, &st);
 	}
 
@@ -396,7 +396,7 @@ int main(int argc, char *argv[])
 	setup_signalhandler("bbcombotest");
 
 	getenv_default("USEHOBBITD", "FALSE", NULL);
-	usehobbitd = (strcmp(getenv("USEHOBBITD"), "TRUE") == 0);
+	usehobbitd = (strcmp(xgetenv("USEHOBBITD"), "TRUE") == 0);
 
 	for (argi = 1; (argi < argc); argi++) {
 		if ((strcmp(argv[argi], "--help") == 0)) {

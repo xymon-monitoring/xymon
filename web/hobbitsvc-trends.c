@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.56 2005-01-15 17:38:55 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.57 2005-01-18 22:25:59 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -317,7 +317,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn, int larrd043, int hobbit
 		}
 	}
 
-	chdir(getenv("BBLOGS"));
+	chdir(xgetenv("BBLOGS"));
 
 	if (hobbitd) {
 		combo_start();
@@ -394,7 +394,7 @@ int main(int argc, char *argv[])
 	int usehobbitd = 0;
 
 	getenv_default("USEHOBBITD", "FALSE", NULL);
-	usehobbitd = (strcmp(getenv("USEHOBBITD"), "TRUE") == 0);
+	usehobbitd = (strcmp(xgetenv("USEHOBBITD"), "TRUE") == 0);
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
@@ -427,11 +427,11 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (bbhostsfn == NULL) bbhostsfn = getenv("BBHOSTS");
+	if (bbhostsfn == NULL) bbhostsfn = xgetenv("BBHOSTS");
 	if (rrddir == NULL) {
 		char dname[PATH_MAX];
 
-		sprintf(dname, "%s/rrd", getenv("BBVAR"));
+		sprintf(dname, "%s/rrd", xgetenv("BBVAR"));
 		rrddir = xstrdup(dname);
 	}
 	if (larrdcol == NULL) larrdcol = "trends";

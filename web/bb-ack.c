@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.7 2005-01-15 17:38:55 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.8 2005-01-18 22:25:59 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -53,7 +53,7 @@ static void parse_query(void)
 {
 	char *query, *token;
 
-	if (getenv("QUERY_STRING") == NULL) {
+	if (xgetenv("QUERY_STRING") == NULL) {
 		errormsg("Invalid request");
 		return;
 	}
@@ -98,12 +98,12 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if ((getenv("QUERY_STRING") == NULL) || (strlen(getenv("QUERY_STRING")) == 0)) {
+	if ((xgetenv("QUERY_STRING") == NULL) || (strlen(xgetenv("QUERY_STRING")) == 0)) {
 		/* Present the query form */
 		int formfile;
 		char formfn[PATH_MAX];
 
-		sprintf(formfn, "%s/web/acknowledge_form", getenv("BBHOME"));
+		sprintf(formfn, "%s/web/acknowledge_form", xgetenv("BBHOME"));
 		formfile = open(formfn, O_RDONLY);
 
 		if (formfile >= 0) {

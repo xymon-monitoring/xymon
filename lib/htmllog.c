@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.12 2005-01-15 17:39:50 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.13 2005-01-18 22:25:59 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -46,8 +46,8 @@ static void hostsvc_setup(void)
 	getenv_default("MKBBROWFONT", "SIZE=+1 COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\"", &rowfont);
 	getenv_default("BBWEB", "/bb", NULL);
 	{
-		char *dbuf = xmalloc(strlen(getenv("BBWEB")) + 6);
-		sprintf(dbuf, "%s/gifs", getenv("BBWEB"));
+		char *dbuf = xmalloc(strlen(xgetenv("BBWEB")) + 6);
+		sprintf(dbuf, "%s/gifs", xgetenv("BBWEB"));
 		getenv_default("BBSKIN", dbuf, NULL);
 		xfree(dbuf);
 	}
@@ -62,9 +62,9 @@ static void historybutton(char *cgibinurl, char *hostname, char *service, char *
 	char *tmp2 = (char *)xmalloc(strlen(service)+3);
 
 	getenv_default("NONHISTS", "info,larrd,trends", NULL);
-	tmp1 =  (char *)xmalloc(strlen(getenv("NONHISTS"))+3);
+	tmp1 =  (char *)xmalloc(strlen(xgetenv("NONHISTS"))+3);
 
-	sprintf(tmp1, ",%s,", getenv("NONHISTS"));
+	sprintf(tmp1, ",%s,", xgetenv("NONHISTS"));
 	sprintf(tmp2, ",%s,", service);
 	if (strstr(tmp1, tmp2) == NULL) {
 		fprintf(output, "<BR><BR><CENTER><FORM ACTION=\"%s/bb-hist.sh\"> \
@@ -147,9 +147,9 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			}
 			else {
 				fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0>",
-                                                        getenv("BBSKIN"), dotgiffilename(color, 0, 0),
+                                                        xgetenv("BBSKIN"), dotgiffilename(color, 0, 0),
 							colorname(color),
-                                                        getenv("DOTHEIGHT"), getenv("DOTWIDTH"));
+                                                        xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 
 				restofmsg = p+1+strlen(colorname(color));
 			}

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: acklog.c,v 1.9 2005-01-15 17:38:55 henrik Exp $";
+static char rcsid[] = "$Id: acklog.c,v 1.10 2005-01-18 22:25:59 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -52,7 +52,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 	cutoff = ( (maxminutes) ? (time(NULL) - maxminutes*60) : 0);
 	if ((!maxcount) || (maxcount > 100)) maxcount = 100;
 
-	sprintf(acklogfilename, "%s/acklog", getenv("BBACKS"));
+	sprintf(acklogfilename, "%s/acklog", xgetenv("BBACKS"));
 	acklog = fopen(acklogfilename, "r");
 	if (!acklog) {
 		/* If no acklog, that is OK - some people dont use acks */
@@ -114,7 +114,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 			/* Show only the first 30 characters in message */
 			ackmsg[30] = '\0';
 
-			sprintf(ackfn, "%s/ack.%s", getenv("BBACKS"), hosttest);
+			sprintf(ackfn, "%s/ack.%s", xgetenv("BBACKS"), hosttest);
 
 			testname = strrchr(hosttest, '.');
 			if (testname) {
@@ -193,7 +193,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 
 			if (acks[num].color != -1) {
    				fprintf(output, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\"></TD>\n", 
-					getenv("BBSKIN"), 
+					xgetenv("BBSKIN"), 
 					dotgiffilename(acks[num].color, acks[num].ackvalid, 1));
 			}
 			else

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.20 2005-01-17 23:13:41 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.21 2005-01-18 22:25:59 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -269,13 +269,13 @@ int get_fqdn(void)
 {
 	/* Get FQDN setting */
 	getenv_default("FQDN", "TRUE", NULL);
-	return (strcmp(getenv("FQDN"), "TRUE") == 0);
+	return (strcmp(xgetenv("FQDN"), "TRUE") == 0);
 }
 
 int generate_static(void)
 {
 	getenv_default("BBLOGSTATUS", "STATIC", NULL);
-	return (strcmp(getenv("BBLOGSTATUS"), "STATIC") == 0);
+	return (strcmp(xgetenv("BBLOGSTATUS"), "STATIC") == 0);
 }
 
 
@@ -334,7 +334,7 @@ void do_bbext(FILE *output, char *extenv, char *family)
 	char extfn[PATH_MAX];
 	char buf[4096];
 
-	p = getenv(extenv);
+	p = xgetenv(extenv);
 	if (p == NULL) {
 		/* No extension */
 		return;
@@ -347,7 +347,7 @@ void do_bbext(FILE *output, char *extenv, char *family)
 		/* Dont redo the eventlog or acklog things */
 		if ((strcmp(p, "eventlog.sh") != 0) &&
 		    (strcmp(p, "acklog.sh") != 0)) {
-			sprintf(extfn, "%s/ext/%s/%s", getenv("BBHOME"), family, p);
+			sprintf(extfn, "%s/ext/%s/%s", xgetenv("BBHOME"), family, p);
 			inpipe = popen(extfn, "r");
 			if (inpipe) {
 				while (fgets(buf, sizeof(buf), inpipe)) 

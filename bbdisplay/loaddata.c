@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.138 2005-01-18 14:18:51 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.139 2005-01-18 22:25:59 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -157,7 +157,7 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 		logexpired = (log->validtime < now);
 	}
 	else {
-		sprintf(fullfn, "%s/%s", getenv(((reportstart || snapshot) ? "BBHIST" : "BBLOGS")), filename);
+		sprintf(fullfn, "%s/%s", xgetenv(((reportstart || snapshot) ? "BBHIST" : "BBLOGS")), filename);
 
 		/* Check that we can access this file */
 		if ( (stat(fullfn, &log_st) == -1)       || 
@@ -310,7 +310,7 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 			/*
 			 * ACK's are named by the client alias, if that exists.
 			 */
-			sprintf(ackfilename, "%s/ack.%s.%s", getenv("BBACKS"), 
+			sprintf(ackfilename, "%s/ack.%s.%s", xgetenv("BBACKS"), 
 				(host->clientalias ? host->clientalias : host->hostname), testname);
 			newstate->entry->acked = (stat(ackfilename, &ack_st) == 0);
 		}
@@ -389,14 +389,14 @@ state_t *init_state(const char *filename, logdata_t *log, int dopurple, int *is_
 			strcat(purplemsg, l);
 
 			sprintf(l, "This entry is no longer listed in %s/etc/bb-hosts.  To remove this\n",
-				getenv("BBHOME"));
+				xgetenv("BBHOME"));
 			strcat(purplemsg, l);
 
 			sprintf(l, "purple message, please delete the log files for this host located in\n");
 			strcat(purplemsg, l);
 
 			sprintf(l, "%s, %s and %s if this host is no longer monitored.\n",
-				getenv("BBLOGS"), getenv("BBHIST"), getenv("BBHISTLOGS"));
+				xgetenv("BBLOGS"), xgetenv("BBHIST"), xgetenv("BBHISTLOGS"));
 			strcat(purplemsg, l);
 		}
 
@@ -494,7 +494,7 @@ dispsummary_t *init_displaysummary(char *fn, logdata_t *log)
 		FILE *fd;
 		struct stat st;
 
-		sprintf(sumfn, "%s/%s", getenv("BBLOGS"), fn);
+		sprintf(sumfn, "%s/%s", xgetenv("BBLOGS"), fn);
 
 		/* Check that we can access this file */
 		if ( (stat(sumfn, &st) == -1)          || 
@@ -570,7 +570,7 @@ void init_modembank_status(char *fn, logdata_t *log)
 		strcpy(l, log->msg);
 	}
 	else {
-		sprintf(statusfn, "%s/%s", getenv("BBLOGS"), fn);
+		sprintf(statusfn, "%s/%s", xgetenv("BBLOGS"), fn);
 
 		/* Check that we can access this file */
 		if ( (stat(statusfn, &st) == -1)          || 
@@ -667,7 +667,7 @@ state_t *load_state(dispsummary_t **sumhead)
 	logdata_t	log;
 	char		*logdir;
 
-	logdir = getenv("BBLOGS");
+	logdir = xgetenv("BBLOGS");
 
 	dprintf("load_state()\n");
 	if (usehobbitd) {

@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.14 2005-01-15 17:38:55 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.15 2005-01-18 22:25:59 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -76,7 +76,7 @@ void parse_query(void)
 	char *query;
 	char *token;
 
-	if (getenv("QUERY_STRING") == NULL) {
+	if (xgetenv("QUERY_STRING") == NULL) {
 		errormsg("Invalid request: QUERY_STRING is NULL/Empty!");
 		return;
 	}
@@ -146,12 +146,12 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if ((getenv("QUERY_STRING") == NULL) || (strlen(getenv("QUERY_STRING")) == 0)) {
+	if ((xgetenv("QUERY_STRING") == NULL) || (strlen(xgetenv("QUERY_STRING")) == 0)) {
 		/* Present the query form */
 		int formfile;
 		char formfn[PATH_MAX];
 
-		sprintf(formfn, "%s/web/findhost_form", getenv("BBHOME"));
+		sprintf(formfn, "%s/web/findhost_form", xgetenv("BBHOME"));
 		formfile = open(formfn, O_RDONLY);
 
 		if (formfile >= 0) {
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
         sethostenv("", "", "", colorname(COL_BLUE));
         headfoot(stdout, "findhost", "", "header", COL_BLUE);
 
-	hosthead = load_hostnames(getenv("BBHOSTS"), NULL, get_fqdn(), NULL);
+	hosthead = load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn(), NULL);
 
 	printf("<br><br><CENTER><TABLE CELLPADDING=5 SUMMARY=\"Hostlist\">\n");
 	printf("<tr><th align=left>Hostname (DisplayName)</th><th align=left>Location (Group Name)</th></tr>\n");
@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
 				printf("<tr>\n");
 				printf("<td align=left> %s </td>\n", displayname ? displayname : hostname);
 				printf("<td align=left> <a href=\"%s/%s#%s\">%s</a>\n",
-	                     		getenv("BBWEB"), 
+	                     		xgetenv("BBWEB"), 
 					bbh_item(hostwalk, BBH_PAGEPATH),
 					hostname,
 					bbh_item(hostwalk, BBH_PAGEPATHTITLE));
@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
 				clonewalk = hostwalk->next;
 				while (clonewalk && (strcmp(hostwalk->bbhostname, clonewalk->bbhostname) == 0)) {
 					printf("<br><a href=\"%s/%s#%s\">%s</a>\n",
-						getenv("BBWEB"), 
+						xgetenv("BBWEB"), 
 						bbh_item(clonewalk, BBH_PAGEPATH),
 						clonewalk->bbhostname,
 						bbh_item(clonewalk, BBH_PAGEPATHTITLE));

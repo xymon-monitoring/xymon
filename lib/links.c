@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: links.c,v 1.4 2005-01-15 17:39:50 henrik Exp $";
+static char rcsid[] = "$Id: links.c,v 1.5 2005-01-18 22:25:59 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -114,21 +114,21 @@ void load_all_links(void)
 	if (helpskin) { xfree(helpskin); helpskin = NULL; }
 	if (columndocurl) { xfree(columndocurl); columndocurl = NULL; }
 
-	if (getenv("BBNOTESSKIN")) notesskin = xstrdup(getenv("BBNOTESSKIN"));
+	if (xgetenv("BBNOTESSKIN")) notesskin = xstrdup(xgetenv("BBNOTESSKIN"));
 	else { 
-		notesskin = (char *) xmalloc(strlen(getenv("BBWEB")) + strlen("/notes") + 1);
-		sprintf(notesskin, "%s/notes", getenv("BBWEB"));
+		notesskin = (char *) xmalloc(strlen(xgetenv("BBWEB")) + strlen("/notes") + 1);
+		sprintf(notesskin, "%s/notes", xgetenv("BBWEB"));
 	}
 
-	if (getenv("BBHELPSKIN")) helpskin = xstrdup(getenv("BBHELPSKIN"));
+	if (xgetenv("BBHELPSKIN")) helpskin = xstrdup(xgetenv("BBHELPSKIN"));
 	else { 
-		helpskin = (char *) xmalloc(strlen(getenv("BBWEB")) + strlen("/help") + 1);
-		sprintf(helpskin, "%s/help", getenv("BBWEB"));
+		helpskin = (char *) xmalloc(strlen(xgetenv("BBWEB")) + strlen("/help") + 1);
+		sprintf(helpskin, "%s/help", xgetenv("BBWEB"));
 	}
 
-	if (getenv("COLUMNDOCURL")) columndocurl = xstrdup(getenv("COLUMNDOCURL"));
+	if (xgetenv("COLUMNDOCURL")) columndocurl = xstrdup(xgetenv("COLUMNDOCURL"));
 
-	strcpy(dirname, getenv("BBNOTES"));
+	strcpy(dirname, xgetenv("BBNOTES"));
 	head1 = load_links(dirname, notesskin);
 
 	/* Change xxx/xxx/xxx/notes into xxx/xxx/xxx/help */
@@ -177,7 +177,7 @@ char *columnlink(char *colname)
 		sprintf(linkurl, "%s/%s", link->urlprefix, link->filename);
 	}
 	else {
-		sprintf(linkurl, "%s/help/bb-help.html#%s", getenv("BBWEB"), colname);
+		sprintf(linkurl, "%s/help/bb-help.html#%s", xgetenv("BBWEB"), colname);
 	}
 	
 	return linkurl;
