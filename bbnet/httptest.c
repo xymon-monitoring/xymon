@@ -51,11 +51,13 @@ void add_http_test(testitem_t *t)
 
 	http_data_t *req;
 	char *proto = NULL;
+	char *proxy = NULL;
 	int status;
 
 	/* Allocate the private data and initialize it */
 	t->private = req = malloc(sizeof(http_data_t));
-	req->url = malcop(realurl(t->testspec));
+	req->url = malcop(realurl(t->testspec, &proxy));
+	if (proxy) req->proxy = malcop(proxy); else req->proxy = NULL;
 	req->sslversion = 0;
 	req->ciphers = NULL;
 	req->proxy = NULL;
@@ -264,6 +266,9 @@ void run_http_tests(service_t *httptest)
 		curl_easy_setopt(req->curl, CURLOPT_WRITEFUNCTION, data_callback);
 		curl_easy_setopt(req->curl, CURLOPT_ERRORBUFFER, &req->errorbuffer);
 
+		/* If needed, get username/password from $HOME/.netrc */
+		curl_easy_setopt(req->curl, CURLOPT_NETRC, CURL_NETRC_OPTIONAL);
+
 		/* Select SSL version, if requested */
 		if (req->sslversion > 0) curl_easy_setopt(req->curl, CURLOPT_SSLVERSION, req->sslversion);
 
@@ -385,11 +390,11 @@ void send_http_results(service_t *httptest, testedhost_t *host, char *nonetpage,
 
 			if (color == COL_CLEAR) {
 				sprintf(msgline, "An HTTP error occurred while testing <a href=\"%s\">URL %s</a>\n", 
-					realurl(req->url), realurl(req->url));
+					realurl(req->url, NULL), realurl(req->url, NULL));
 			}
 			else {
 				sprintf(msgline, "\n&%s %s - Testing <a href=\"%s\">URL</a> yields:\n",
-					colorname(color), realurl(req->url), realurl(req->url));
+					colorname(color), realurl(req->url, NULL), realurl(req->url, NULL));
 			}
 			addtostatus(msgline);
 
