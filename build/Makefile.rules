@@ -5,10 +5,10 @@
 CFLAGS += -DMAXMSG=$(MAXMSG) -DBBDPORTNUMBER=$(BBPORT)
 
 
-PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bbdigest bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi
-CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh
+PROGRAMS = bbgen bbtest-net bbhostgrep bbhostshow bbdigest bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi bb-hostlink.cgi
+CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh bb-hostlink.sh
 EXTENSIONS = bbcombotest bbretest-net.sh
-MAN1PAGES = bbgen.1 bbtest-net.1 bbhostgrep.1 bbhostshow.1 bbdigest.1 bb-rep.cgi.1 bb-replog.cgi.1 bb-hist.cgi.1 bb-snapshot.cgi.1 bb-eventlog.cgi.1 bbcombotest.1 bbretest-net.sh.1
+MAN1PAGES = bbgen.1 bbtest-net.1 bbhostgrep.1 bbhostshow.1 bbdigest.1 bb-rep.cgi.1 bb-replog.cgi.1 bb-hist.cgi.1 bb-snapshot.cgi.1 bb-eventlog.cgi.1 bbcombotest.1 bbretest-net.sh.1 bb-hostlink.cgi.1
 MAN5PAGES = bbcombotest.cfg.5 bb-hosts.5 bb-environ.5
 MAN7PAGES = bbgen-intro.7
 
@@ -22,7 +22,7 @@ all: $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) libcheck
 	@echo "and then you can later run 'make install-cgi' to install cgi scripts"
 	@echo ""
 
-GENOBJS = bbgen.o debug.o loaddata.o reportdata.o larrdgen.o pagegen.o eventlog.o acklog.o process.o util.o infogen.o alert.o wmlgen.o rssgen.o bb-replog.o sendmsg.o
+GENOBJS = bbgen.o debug.o loadhosts.o loaddata.o reportdata.o larrdgen.o pagegen.o eventlog.o acklog.o process.o util.o infogen.o alert.o wmlgen.o rssgen.o bb-replog.o sendmsg.o
 NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o ldaptest.o sendmsg.o digest.o
 HOSTGREPOBJS = bbhostgrep.o util.o debug.o
 HOSTSHOWOBJS = bbhostshow.o util.o debug.o
@@ -33,7 +33,7 @@ HISTOBJS = bb-hist.o reportdata.o debug.o util.o
 COMBOTESTOBJS = bbcombotest.o util.o debug.o calc.o sendmsg.o
 SNAPOBJS = bb-snapshot.o debug.o util.o
 EVENTLOGOBJS = bb-eventlog.o debug.o util.o
-
+HOSTLINKOBJS = bb-hostlink.o loadhosts.o debug.o util.o
 
 bbgen: $(GENOBJS)
 	$(CC) $(CFLAGS) -o $@ $(GENOBJS) $(NETLIBS)
@@ -64,6 +64,9 @@ bb-snapshot.cgi: $(SNAPOBJS)
 
 bb-eventlog.cgi: $(EVENTLOGOBJS)
 	$(CC) $(CFLAGS) -o $@ $(EVENTLOGOBJS)
+
+bb-hostlink.cgi: $(HOSTLINKOBJS)
+	$(CC) $(CFLAGS) -o $@ $(HOSTLINKOBJS)
 
 bbcombotest: $(COMBOTESTOBJS)
 	$(CC) $(CFLAGS) -o $@ $(COMBOTESTOBJS) $(NETLIBS)
