@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.198 2005-02-21 14:32:38 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.199 2005-02-21 15:28:27 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -1924,7 +1924,7 @@ int main(int argc, char *argv[])
 	testitem_t *t;
 	int argi;
 	int concurrency = 0;
-	char *pingcolumn = "conn";
+	char *pingcolumn = "";
 	char *egocolumn = NULL;
 	int failgoesclear = 0;		/* IPTEST_2_CLEAR_ON_FAILED_CONN */
 	int dumpdata = 0;
@@ -2017,7 +2017,7 @@ int main(int argc, char *argv[])
 			if (p) {
 				p++; pingcolumn = p;
 			}
-			else pingcolumn = "conn";
+			else pingcolumn = "";
 		}
 		else if (strcmp(argv[argi], "--noping") == 0) {
 			pingcolumn = NULL;
@@ -2149,6 +2149,7 @@ int main(int argc, char *argv[])
 	setup_signalhandler(egocolumn ? egocolumn : "bbtest");
 
 	if (xgetenv("BBLOCATION")) location = strdup(xgetenv("BBLOCATION"));
+	if (pingcolumn && (strlen(pingcolumn) == 0)) pingcolumn = xgetenv("PINGCOLUMN");
 	if (pingcolumn && xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN")) {
 		failgoesclear = (strcmp(xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN"), "TRUE") == 0);
 	}
