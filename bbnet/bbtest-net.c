@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.18 2003-04-16 09:06:40 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.19 2003-04-16 09:07:58 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -303,8 +303,8 @@ int run_command(char *cmd, char *errortext, char **banner)
 	}
 
 	while (fgets(l, sizeof(l), cmdpipe)) {
-		if (strstr(l, errortext) != NULL) result = 1;
 		if (banner && ((strlen(l) + strlen(*banner)) < 1024)) strcat(*banner, l);
+		if (strstr(l, errortext) != NULL) result = 1;
 	}
 	piperes = pclose(cmdpipe);
 	if (!WIFEXITED(piperes) || (WEXITSTATUS(piperes) != 0)) {
