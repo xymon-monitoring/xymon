@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.18 2003-08-04 22:21:56 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.19 2003-08-05 09:52:15 henrik Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,26 +50,46 @@ static int usepct = 0;
 static int pixels = DEFPIXELS;
 #endif
 
+/* What colorbars and summaries to show by default */
+#define BARSUM_1D 0x0001	/* 1-day bar */
+#define BARSUM_1W 0x0002	/* 1-week bar */
+#define BARSUM_4W 0x0004	/* 4-week bar */
+#define BARSUM_1Y 0x0008	/* 1-year bar */
+
+#ifndef DEFBARSUMS
+#define DEFBARSUMS (BARSUM_1D|BARSUM_1W)
+#endif
+
+static unsigned int barsums = DEFBARSUMS;
+
+
 static void generate_colorbar(
-			FILE *htmlrep,
-			time_t periodlen, int periodcount,
-			time_t startofperiod, time_t startofbar, time_t today,
-			replog_t *periodlog,
-			char *caption,
-			char *tagfmt
-)
+			FILE *htmlrep,		/* Output file */
+			time_t periodlen, 	/* Length of one peiod on the bar. Usually 1 hour/day/month */
+			int periodcount,	/* # of periodlen items on the bar */
+			time_t startofperiod, 	/* Starttime of the last (incomplete) period */
+			time_t startofbar, 	/* Start of the colorbar */
+			time_t today,		/* End of the colorbar */
+			replog_t *periodlog,	/* Log entries for period */
+			char *caption,		/* Title */
+			char *tagfmt)		/* strftime() formatstring for tags */
 {
+	/* Generate the colorbar "graph" */
+
 	int secsperpixel, periodpixels, pixelsfirst, pixelslast, pixelssum;
 	replog_t *colorlog, *walk, *tmp;
-	char *pctstr;
+	char *pctstr = "";
 
+	/*
+	 * Pixel-based charts are better, but for backwards
+	 * compatibility allow for a graph that has 100 "pixels"
+	 * and adds a "%" to the width specs.
+	 */
 	if (usepct) {
 		pixels = 100;
 		pctstr = "%";
 	}
-	else {
-		pctstr = "";
-	}
+
 	secsperpixel = (periodlen*periodcount / pixels);	/* How many seconds required for 1 pixel */
 	periodpixels = (pixels / periodcount);			/* Same as: periodlen / secsperpixel */
 
@@ -154,10 +174,12 @@ static void generate_colorbar(
 
 	/* First entry may not start at our report-start time */
 	if (colorlog == NULL) {
+		/* No data for period - all white */
 		pixelssum += secsperpixel;
 		fprintf(htmlrep, "<TD WIDTH=100%% BGCOLOR=white NOWRAP>&nbsp</TD>\n");
 	}
 	else if (colorlog->starttime > startofbar) {
+		/* Data starts after the bar does - so a white period in front */
 		int pixels = ((colorlog->starttime - startofbar) / secsperpixel);
 
 		if (((colorlog->starttime - startofbar) >= (secsperpixel/2)) && (pixels == 0)) pixels = 1;
@@ -168,9 +190,13 @@ static void generate_colorbar(
 	}
 
 	for (walk = colorlog; (walk); walk = walk->next) {
+		/* Show each interval we have data for */
+
 		int pixels = (walk->duration / secsperpixel);
 
+		/* Intervals that give between 0.5 and 1 pixel are enlarged */
 		if ((walk->duration >= (secsperpixel/2)) && (pixels == 0)) pixels = 1;
+
 		if (pixels > 0) {
 			pixelssum += pixels;
 			fprintf(htmlrep, "<TD WIDTH=\"%d%s\" BGCOLOR=%s NOWRAP>&nbsp</TD>\n", 
@@ -292,18 +318,23 @@ void generate_history(FILE *htmlrep, 			/* output file */
 		      char *hostname, char *service, 	/* Host and service we report on */
 		      char *ip, 			/* IP - for the header only */
 		      time_t today,			/* End time of color-bar graphs */
-                      time_t start1d,
+
+                      time_t start1d,			/* Starttime of 1-day period */
 		      reportinfo_t *repinfo1d, 		/* Percent summaries for 1-day period */
 		      replog_t *log1d, 			/* Events during past 1 day */
-                      time_t start1w,
+
+                      time_t start1w,			/* Starttime of 1-week period */
 		      reportinfo_t *repinfo1w, 		/* Percent summaries for 1-week period */
 		      replog_t *log1w, 			/* Events during past 1 week */
-                      time_t start4w,
+
+                      time_t start4w,			/* Starttime of 4-week period */
 		      reportinfo_t *repinfo4w, 		/* Percent summaries for 4-week period */
 		      replog_t *log4w, 			/* Events during past 4 weeks */
-                      time_t start1y,
+
+                      time_t start1y,			/* Starttime of 1-year period */
 		      reportinfo_t *repinfo1y, 		/* Percent summaries for 1-year period */
 		      replog_t *log1y, 			/* Events during past 1 yeary */
+
 		      int entrycount,			/* Log entry maxcount */
 		      replog_t *loghead)		/* Eventlog for entrycount events back */
 {
@@ -318,31 +349,77 @@ void generate_history(FILE *htmlrep, 			/* output file */
 	fprintf(htmlrep, "<BR><FONT %s><B>%s - %s</B></FONT>\n", getenv("MKBBROWFONT"), hostname, service);
 	fprintf(htmlrep, "<BR><BR>\n");
 
-	/* Create the color-bar */
-	tmbuf = localtime(&today); 
-	tmbuf->tm_min = tmbuf->tm_sec = 0; 
-	startofperiod = mktime(tmbuf);
-	generate_colorbar(htmlrep, 3600, len1d, startofperiod, start1d, today, log1d, bartitle1d, "%H");
+	/* Create the color-bars */
 
-	tmbuf = localtime(&today); 
-	tmbuf->tm_hour = tmbuf->tm_min = tmbuf->tm_sec = 0;
-	startofperiod = mktime(tmbuf);
-	generate_colorbar(htmlrep, 86400, len1w, startofperiod, start1w, today, log1w, bartitle1w, "%a");
-	generate_colorbar(htmlrep, 86400, len4w, startofperiod, start4w, today, log4w, bartitle4w, "%d");
+	if (log1d) {
+		/* 1-day bar: Last period starts at beginning of hour, periods are 1 hour long */
+		tmbuf = localtime(&today); 
+		tmbuf->tm_min = tmbuf->tm_sec = 0; 
+		startofperiod = mktime(tmbuf);
+		generate_colorbar(htmlrep, 3600, len1d, startofperiod, start1d, today, log1d, bartitle1d, "%H");
+	}
 
-	tmbuf = localtime(&today); 
-	tmbuf->tm_hour = tmbuf->tm_min = tmbuf->tm_sec = 0;
-	tmbuf->tm_mday = 1;
-	startofperiod = mktime(tmbuf);
-	generate_colorbar(htmlrep, 30*86400, len1y, startofperiod, start1y, today, log1y, bartitle1y, "%b");
+	if (log1w) {
+		/* 1-week bar: Last period starts at beginning of day, periods are 1 day long */
+		tmbuf = localtime(&today); 
+		tmbuf->tm_hour = tmbuf->tm_min = tmbuf->tm_sec = 0;
+		startofperiod = mktime(tmbuf);
+		generate_colorbar(htmlrep, 86400, len1w, startofperiod, start1w, today, log1w, bartitle1w, "%a");
+	}
+
+	if (log4w) {
+		/* 4-week bar: Last period starts at beginning of day, periods are 1 day long */
+		tmbuf = localtime(&today); 
+		tmbuf->tm_hour = tmbuf->tm_min = tmbuf->tm_sec = 0;
+		startofperiod = mktime(tmbuf);
+		generate_colorbar(htmlrep, 86400, len4w, startofperiod, start4w, today, log4w, bartitle4w, "%d");
+	}
+
+	if (log1y) {
+		/* 1-year bar: Last period starts at beginning of month, periods are 30 days long */
+		tmbuf = localtime(&today); 
+		tmbuf->tm_hour = tmbuf->tm_min = tmbuf->tm_sec = 0;
+		tmbuf->tm_mday = 1;
+		startofperiod = mktime(tmbuf);
+		generate_colorbar(htmlrep, 30*86400, len1y, startofperiod, start1y, today, log1y, bartitle1y, "%b");
+	}
 
 
 	/* Availability percentage summary */
 	fprintf(htmlrep, "<CENTER>\n");
-	generate_pct_summary(htmlrep, hostname, service, summarytitle1d, repinfo1d, 1, 0);
-	generate_pct_summary(htmlrep, hostname, service, summarytitle1w, repinfo1w, 0, 0);
-	generate_pct_summary(htmlrep, hostname, service, summarytitle4w, repinfo4w, 0, 0);
-	generate_pct_summary(htmlrep, hostname, service, summarytitle1y, repinfo1y, 0, 1);
+	{
+		int isfirst;
+		int islast[4];
+
+		isfirst = 1;
+		islast[0] = islast[1] = islast[2] = islast[3] = 0;
+
+		/*
+		 * We (ab)use the log* params to see if we should generate a summary
+		 * for the period - even though the summary is not using the log* data!
+		 */
+		if (log1y) islast[3] = 1;
+		else if (log4w) islast[2] = 1;
+		else if (log1w) islast[1] = 1;
+		else islast[0] = 1;
+
+		if (log1d) {
+			generate_pct_summary(htmlrep, hostname, service, summarytitle1d, repinfo1d, isfirst, islast[0]);
+			isfirst = 0;
+		}
+		if (log1w) {
+			generate_pct_summary(htmlrep, hostname, service, summarytitle1w, repinfo1w, isfirst, islast[1]);
+			isfirst = 0;
+		}
+		if (log4w) {
+			generate_pct_summary(htmlrep, hostname, service, summarytitle4w, repinfo4w, isfirst, islast[2]);
+			isfirst = 0;
+		}
+		if (log1y) {
+			generate_pct_summary(htmlrep, hostname, service, summarytitle1y, repinfo1y, isfirst, islast[3]);
+			isfirst = 0;
+		}
+	}
 	fprintf(htmlrep, "</CENTER>\n");
 
 	fprintf(htmlrep, "<BR><BR>\n");
@@ -442,10 +519,13 @@ static void parse_query(void)
 		}
 		else if (argnmatch(token, "PIXELS")) {
 			pixels = atoi(val);
-			usepct = 0;
+			if (pixels > 0) usepct = 0; else usepct = 1;
 		}
 		else if (argnmatch(token, "OFFSET")) {
 			startoffset = atoi(val);
+		}
+		else if (argnmatch(token, "BARSUMS")) {
+			barsums = atoi(val);
 		}
 
 		token = strtok(NULL, "&");
@@ -474,9 +554,12 @@ int main(int argc, char *argv[])
 	/* Build our own URL */
 	sprintf(selfurl, "%s/bb-hist.sh?HISTFILE=%s.%s", getenv("CGIBINURL"), commafy(hostname), service);
 
+	p = selfurl + strlen(selfurl);
+	sprintf(p, "&amp;BARSUMS=%d", barsums);
+
 	if (strlen(ip)) {
-		strcat(selfurl, "&amp;IP=");
-		strcat(selfurl, ip);
+		p = selfurl + strlen(selfurl);
+		sprintf(p, "&amp;IP=%s", ip);
 	}
 
 	if (entrycount) {
@@ -487,10 +570,17 @@ int main(int argc, char *argv[])
 
 	if (usepct) {
 		/* Must modify 4-week charts to be 5-weeks, or the last day is 19% of the bar */
+		/*
+		 * Percent-based charts look awful with 24 hours / 7 days / 28 days / 12 months as basis
+		 * because these numbers dont divide into 100 neatly. So the last item becomes
+		 * too large (worst with the 28-day char: 100/28 = 3, last becomes (100-27*3) = 19% wide).
+		 * So adjust the periods to something that matches percent-based calculations better.
+		 */
 		len1d = 25; bartitle1d = "25 hours"; summarytitle1d = "25 hour summary";
 		len1w = 10; bartitle1w = "10 days"; summarytitle1w = "10 day summary";
 		len4w = 33; bartitle4w = "33 days"; summarytitle4w = "33 day summary";
 		len1y = 10; bartitle1y = "10 months"; summarytitle1y = "10 month summary";
+		strcat(selfurl, "&amp;PIXELS=0");
 	}
 	else {
 		p = selfurl + strlen(selfurl);
@@ -502,23 +592,37 @@ int main(int argc, char *argv[])
 	if (fd == NULL) {
 		errormsg("Cannot open history file");
 	}
+
+	log1d = log1w = log4w = log1y = NULL;
 	now = time(NULL) - startoffset*86400;
-
 	starttm = localtime(&now); starttm->tm_hour -= len1d; start1d = mktime(starttm);
-	parse_historyfile(fd, &repinfo1d, NULL, NULL, start1d, now, 1, reportwarnlevel, reportgreenlevel, NULL);
-	log1d = save_replogs();
-
 	starttm = localtime(&now); starttm->tm_mday -= len1w; start1w = mktime(starttm);
-	parse_historyfile(fd, &repinfo1w, NULL, NULL, start1w, now, 1, reportwarnlevel, reportgreenlevel, NULL);
-	log1w = save_replogs();
-
 	starttm = localtime(&now); starttm->tm_mday -= len4w; start4w = mktime(starttm);
-	parse_historyfile(fd, &repinfo4w, NULL, NULL, start4w, now, 1, reportwarnlevel, reportgreenlevel, NULL);
-	log4w = save_replogs();
-
 	starttm = localtime(&now); starttm->tm_mday -= 30*len1y; start1y = mktime(starttm);
-	parse_historyfile(fd, &repinfo1y, NULL, NULL, start1y, now, 1, reportwarnlevel, reportgreenlevel, NULL);
-	log1y = save_replogs();
+
+	/*
+	 * Collect data for the color-bars and summaries. Multiple scans over the history file,
+	 * but doing it all in one go would be hideously complex.
+	 */
+	if (barsums & BARSUM_1D) {
+		parse_historyfile(fd, &repinfo1d, NULL, NULL, start1d, now, 1, reportwarnlevel, reportgreenlevel, NULL);
+		log1d = save_replogs();
+	}
+
+	if (barsums & BARSUM_1W) {
+		parse_historyfile(fd, &repinfo1w, NULL, NULL, start1w, now, 1, reportwarnlevel, reportgreenlevel, NULL);
+		log1w = save_replogs();
+	}
+
+	if (barsums & BARSUM_4W) {
+		parse_historyfile(fd, &repinfo4w, NULL, NULL, start4w, now, 1, reportwarnlevel, reportgreenlevel, NULL);
+		log4w = save_replogs();
+	}
+
+	if (barsums & BARSUM_1Y) {
+		parse_historyfile(fd, &repinfo1y, NULL, NULL, start1y, now, 1, reportwarnlevel, reportgreenlevel, NULL);
+		log1y = save_replogs();
+	}
 
 	if (entrycount == 0) {
 		/* All entries - just rewind the history file and do all of them */
