@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.18 2003-03-01 22:29:36 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.19 2003-03-15 17:13:22 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -51,6 +51,87 @@ char	*rrdnames[] = {
 	"ntpstat",
         NULL
 };
+
+
+static char *rrdlink_url(char *hostname, char *rrdname)
+{
+	static char rrdurl[4096];
+
+	sprintf(rrdurl, "<p><A HREF=\"%s/larrd-grapher.cgi?host=%s&service=%s\"><IMG SRC=\"%s/larrd-grapher.cgi?host=%s&service=%s&graph=hourly\" ALT=\"larrd is accumulating %s\" BORDER=0></A></p>\n",
+		getenv("CGIBINURL"), hostname, rrdname,
+		getenv("CGIBINURL"), hostname, rrdname, rrdname);
+
+	return rrdurl;
+}
+
+static char *rrdlink_text(host_t *host, rrd_t *rrd)
+{
+	static char rrdlink[4096];
+	char *graphdef, *p;
+
+	/* If no larrdgraphs definition, include all with default links */
+	if (host->larrdgraphs == NULL) {
+		return rrdlink_url(host->hostname, rrd->rrdname);
+	}
+
+	/* Find this rrd definition in the larrdgraphs */
+	graphdef = strstr(host->larrdgraphs, rrd->rrdname);
+
+	/* If not found ... */
+	if (graphdef == NULL) {
+		/* Do we include all by default ? */
+		if (*(host->larrdgraphs) == '*') 
+			/* Yes, return default link for this RRD */
+			return rrdlink_url(host->hostname, rrd->rrdname);
+		else
+			/* No, return empty string */
+			return "";
+	}
+
+	/* We now know that larrdgraphs explicitly define what to do with this RRD */
+
+	/* Does he want to explicitly exclude this RRD ? */
+	if ((graphdef > host->larrdgraphs) && (*(graphdef-1) == '!')) return "";
+
+
+	/* It must be included. */
+	rrdlink[0] = '\0';
+
+	p = graphdef + strlen(rrd->rrdname);
+	if (*p == ':') {
+		/* There is an explicit list of graphs to add for this RRD. */
+		char savechar;
+		char *enddef;
+
+		/* First, null-terminate this graph definition so we only look at the active RRD */
+		enddef = strchr(graphdef, ',');
+		if (enddef) *enddef = '\0';
+
+		graphdef = (p+1);
+		do {
+			p = strchr(graphdef, '|');			/* Ends at '|' ? */
+			if (p == NULL) p = graphdef + strlen(graphdef);	/* Ends at end of string */
+			savechar = *p; *p = '\0'; 
+
+			strcat(rrdlink, rrdlink_url(host->hostname, graphdef));
+			*p = savechar;
+
+			graphdef = p;
+			if (*graphdef != '\0') graphdef++;
+
+		} while (*graphdef);
+
+		if (enddef) *enddef = ',';
+		return rrdlink;
+	}
+	else {
+		/* It is included with the default graph */
+		return rrdlink_url(host->hostname, rrd->rrdname);
+	}
+
+	return "";
+}
+
 
 int generate_larrd(char *rrddirname, char *larrdcolumn)
 {
@@ -158,7 +239,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn)
 
 	for (hostwalk=hosthead; (hostwalk); hostwalk = hostwalk->next) {
 		char logfn[MAX_PATH], htmlfn[MAX_PATH];
-		char rrdlink[4096];	/* FIXME: Should be dynamic ... */
+		char *rrdlink;
 		FILE *fd;
 		int i;
 
@@ -179,11 +260,7 @@ int generate_larrd(char *rrddirname, char *larrdcolumn)
 		for (i=0; rrdnames[i]; i++) {
 			for (rwalk = hostwalk->hostentry->rrds; (rwalk && (rwalk->rrdname != rrdnames[i])); rwalk = rwalk->next) ;
 			if (rwalk) {
-				sprintf(rrdlink, "<p><A HREF=\"%s/larrd-grapher.cgi?host=%s&service=%s\"><IMG SRC=\"%s/larrd-grapher.cgi?host=%s&service=%s&graph=hourly\" ALT=\"larrd is accumulating %s\" BORDER=0></A>\n\n",
-					getenv("CGIBINURL"), hostwalk->hostentry->hostname, rwalk->rrdname,
-					getenv("CGIBINURL"), hostwalk->hostentry->hostname, rwalk->rrdname,
-					rwalk->rrdname);
-
+				rrdlink = rrdlink_text(hostwalk->hostentry, rwalk);
 				if ((strlen(allrrdlinks) + strlen(rrdlink)) >= allrrdlinksize) {
 					allrrdlinksize += 4096;
 					allrrdlinks = realloc(allrrdlinks, allrrdlinksize);
