@@ -12,5 +12,8 @@ var MENU_ITEMS = [
 		['Acknowledge alert', '@BBCGIURL@/bb-ack.sh'],
 		['Enable/disable', '@BBCGIURL@/maint.pl'],
 	],
+        ['Help', null, null,
+                ['Hobbit Manual', '@BBHOSTURL@/help/hobbit.html'],
+        ],
 ];
 
