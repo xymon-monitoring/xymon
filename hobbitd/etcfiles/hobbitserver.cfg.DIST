@@ -30,12 +30,18 @@ BBPAGE="$BBSERVERIP"		# IP of a single bbd BBPAGE server. Not used by Hobbit.
 BBPAGERS=""			# IP of multiple bbd BBPAGE servers. If used, BBPAGE must be 0.0.0.0
 FQDN="TRUE"			# Use fully-qualified hostnames internally. Keep it TRUE unless you know better.
 USEHOBBITD="TRUE"		# Set this TRUE if you are using a Hobbit server, FALSE if standard bbd.
-DOCOMBO="TRUE"			# Ignored by everyone except maint.pl...
+BBGHOSTS="1"                    # How to handle status messages from unknown hosts.
+                                # 0=accept message, 1=discard message, 2=discard message and log the event
 PAGELEVELS="red yellow purple"	# Status colors that trigger an alert. Used by 'bb' talking to bbd, not Hobbit.
 PURPLEDELAY="30"		# Lifetime of info- and larrd-pages. Used only when generating for bbd, not Hobbit.
 
 BBLOGSTATUS="DYNAMIC"		# Are HTML status logs statically or dynamically generated?
 				# Use DYNAMIC with Hobbit, unless you run hobbitd_filestore --status --html
+
+DOCOMBO="TRUE"			# Ignored by everyone except maint.pl...
+BBMAXMSGSPERCOMBO="0"           # How many individual messages to combine in a combo-message. 0=unlimited.
+BBSLEEPBETWEENMSGS="0"          # Delay between sending each combo message, in milliseconds.
+
 
 # Specific to this host
 BBOSTYPE="$BBSERVEROS"		# Hosttype (operating system). Not used by server-side, but clients use this.
@@ -48,15 +54,19 @@ BBWEBHOSTURL="$BBWEBHOST$BBSERVERWWWURL"	# Prefix for all static Hobbit pages - 
 BBWEBHTMLLOGS="$BBWEBHOSTURL/html"		# Prefix for the Hobbit HTML logs (only if BBLOGSTATUS=STATIC)
 BBWEB="$BBSERVERWWWURL"				# Hobbit URL prefix without the host part
 BBSKIN="$BBSERVERWWWURL/gifs"			# Hobbit URL prefix for the GIF files
+BBHELPSKIN="$BBSERVERWWWURL/help"               # Hobbit URL prefix for the online help files.
+BBNOTESSKIN="$BBSERVERWWWURL/notes"             # Hobbit URL prefix for the online notes-files.
 BBREPURL="$BBSERVERWWWURL/rep"			# Hobbit URL prefix for the Hobbit availability reports
+BBSNAPURL="$BBSERVERWWWURL/snap"		# Hobbit URL prefix for the Hobbit snapshots
 BBWAP="$BBSERVERWWWURL/wml"			# Hobbit URL prefix for the WAP/WML files.
 CGIBINURL="$BBSERVERCGIURL"			# URL prefix for the Hobbit CGI-scripts - /cgi-bin
 
 # Locations of system-wide files and directories
 BBHOME="@BBHOME@"				# The Hobbit server directory, where programs and configurations go. 
 BBTMP="$BBHOME/tmp"				# Directory used for temporary files.
-BB="$BBHOME/bin/bb"				# The 'bb' client program
 BBHOSTS="$BBHOME/etc/bb-hosts"			# The bb-hosts file
+BB="$BBHOME/bin/bb"				# The 'bb' client program
+BBGEN="$BBHOME/bin/bbgen"			# The bbgen program
 
 # Server specific directories
 BBVAR="@BBVAR@"					# The bbvar directory holds all monitoring data
@@ -70,11 +80,8 @@ BBWWW="$BBHOME/www"				# The directory for Hobbit webpage files.
 BBHTML="$BBWWW/html"				# HTML status logs go here (hobbitd_filestore --status --html)
 BBNOTES="$BBWWW/notes"				# For notes-files (hobbitd_filestore --notes)
 BBREP="$BBWWW/rep"				# Top-level directory for Hobbit reports.
+BBSNAP="$BBWWW/snap"				# Top-level directory for Hobbit snapshots.
 
-
-# For hobbitd
-RECVFROMMSG="Status message received from"	# The text showing where a status log came from
-STATUNCHMSG="Status unchanged in"		# The text showing how long a status has been unchanged
 
 # For the hobbitd_history module
 BBALLHISTLOG="TRUE"				# Save a common log of all events (used for the bb2 webpage)
@@ -92,6 +99,7 @@ IPTEST_2_CLEAR_ON_FAILED_CONN="TRUE"		# If TRUE, then failing network tests go C
 NONETPAGE=""					# Network tests that go YELLOW upon failure
 FPING="@FPING@"					# Path and options for the 'fping' program.
 NTPDATE="ntpdate"				# Path to the 'ntpdate' program
+TRACEROUTE="traceroute"                         # How to do traceroute on failing ping tests. Requires "trace" in bb-hosts.
 BBROUTERTEXT="router"				# What to call a failing intermediate network device.
 
 
@@ -135,14 +143,17 @@ MKBBCOLFONT="COLOR=\"#87a9e5\" SIZE=\"-1\""	# Size and color of the column headi
 MKBBROWFONT="SIZE=\"+1\" COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\""   # Size,color,font of text in each row (hostname)
 MKBBTITLE="COLOR=ivory SIZE=\"+1\""		# Size and color of the BB titles
 BBDATEFORMAT="%a %b %d %H:%M:%S %Y"		# Date format
-BBRSSTITLE="Big Brother Alerts"			# Title for the RSS and WML outputs.
+BBRSSTITLE="Hobbit Alerts"			# Title for the RSS and WML outputs.
 
 # For WML output
 WMLMAXCHARS="1500"				# Max number of bytes in a WAP message
-WML_OUTPUT="FALSE"				# Should we generate WML output ?
 
 # For BB reports
 BBREPWARN="97"					# Default availability causing yellow status on availability report.
+BBGENREPOPTS="--recentgifs --subpagecolumns=2"  # bbgen(1) options used when generating availability reports.
+
+# For BB snapshots
+BBGENSNAPOPTS="--recentgifs --subpagecolumns=2" # bbgen(1) options used when generating snapshots.
 
 # For the bb-hist CGI 
 BBHISTEXT=""					# What extensions to run on history pages.
