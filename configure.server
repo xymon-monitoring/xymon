@@ -23,6 +23,7 @@ else
 		echo "Ooops ... cannot find the Big Brother configuration in $BBHOME"
 		echo "I trust you know better, so I will use that setting anyway."
 	fi
+	echo ""
 
 	echo -n "Where is your Webserver CGI-BIN directory [/var/apache/cgi-bin] ? "
 	read CGIDIR
@@ -38,10 +39,36 @@ else
 		echo "Ooops ... cannot find the Big Brother CGI scripts in $CGIDIR"
 		echo "I trust you know better, so I will use that setting anyway."
 	fi
+	echo ""
+
+	echo "The bbgen history CGI replacement can use a different method to"
+	echo "create the 24-hour summary graph on the history page. This method"
+	echo "gives a more accurate view (more detailed), but uses a fixed-width"
+	echo "graph instead of the standard Big Brother graph that automatically"
+	echo "resizes to your browser window."
+	echo ""
+	echo -n "Use the standard Big Brother history graph (y/n) [y] ? "
+	read USEPCTHIST
+	if test "$USEPCTHIST" = "n"
+	then
+		echo -n "   What width should I use for the graph [960] ? "
+		read PIXELCOUNT
+		if test "$PIXELCOUNT" = ""
+		then
+			HISTGRAPHDEF="-DDEFPIXEL=960"
+			export HISTGRAPHDEF
+		else
+			HISTGRAPHDEF="-DDEFPIXEL=${PIXELCOUNT}"
+			export HISTGRAPHDEF
+		fi
+	else
+		HISTGRAPHDEF=""
+	fi
 
 	echo "# configure settings" >Makefile.local
-	echo "BBHOME = $BBHOME" >>Makefile.local
-	echo "CGIDIR = $CGIDIR" >>Makefile.local
+	echo "BBHOME = $BBHOME"             >>Makefile.local
+	echo "CGIDIR = $CGIDIR"             >>Makefile.local
+	echo "HISTGRAPHDEF = $HISTGRAPHDEF" >> Makefile.local
 
 	if test -f Makefile.`uname -s`
 	then
