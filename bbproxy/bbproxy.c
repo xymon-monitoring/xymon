@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.13 2004-09-19 20:30:13 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.14 2004-09-20 14:52:21 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -27,7 +27,6 @@ static char rcsid[] = "$Id: bbproxy.c,v 1.13 2004-09-19 20:30:13 henrik Exp $";
 #include <stdio.h>
 #include <netdb.h>
 #include <ctype.h>
-#include <signal.h>
 
 #include "bbgen.h"
 #include "util.h"
@@ -73,6 +72,7 @@ char *statename[] = {
 
 typedef struct conn_t {
 	enum phase_t state;
+	int dontcount;
 	int csocket;
 	struct sockaddr_in caddr;
 	char clientip[16];
@@ -329,7 +329,7 @@ int main(int argc, char *argv[])
 		setsid();
 	}
 
-	signal(SIGPIPE, SIG_IGN);
+	setup_signalhandler("bbproxy");
 
 	do {
 		fd_set fdread, fdwrite;
@@ -381,6 +381,7 @@ int main(int argc, char *argv[])
 				}
 				laststatus = now;
 				msgs_total_last = msgs_total;
+				stentry->dontcount = 1;
 				stentry->buflen = strlen(stentry->buf);
 				stentry->bufp = stentry->buf;
 				stentry->state = P_REQ_CONNECTING;
@@ -405,9 +406,11 @@ int main(int argc, char *argv[])
 			  case P_REQ_READY:
 				shutdown(cwalk->csocket, SHUT_RD);
 
-				if (strncmp(cwalk->buf, "status", 5) == 0) msgs_status++;
-				else if (strncmp(cwalk->buf, "combo", 5) == 0) msgs_combo++;
-				else if (strncmp(cwalk->buf, "page", 4) == 0) msgs_page++;
+				if (!cwalk->dontcount) {
+					if (strncmp(cwalk->buf, "status", 5) == 0) msgs_status++;
+					else if (strncmp(cwalk->buf, "combo", 5) == 0) msgs_combo++;
+					else if (strncmp(cwalk->buf, "page", 4) == 0) msgs_page++;
+				}
 
 				cwalk->bufp = cwalk->buf;
 				cwalk->state = P_REQ_CONNECTING;
@@ -426,7 +429,7 @@ int main(int argc, char *argv[])
 				if (cwalk->conntries < 0) {
 					errprintf("Server not responding, message lost\n");
 					cwalk->state = P_CLEANUP;
-					msgs_lost++;
+					if (!cwalk->dontcount) msgs_lost++;
 					break;
 				}
 
@@ -471,7 +474,7 @@ int main(int argc, char *argv[])
 				cwalk->bufp = cwalk->buf; cwalk->buflen = 0;
 				memset(cwalk->buf, 0, cwalk->bufsize);
 				cwalk->state = P_RESP_READING;
-				msgs_delivered++;
+				if (!cwalk->dontcount) msgs_delivered++;
 				/* Fallthrough */
 
 			  case P_RESP_READING:
@@ -554,9 +557,19 @@ int main(int argc, char *argv[])
 				  case P_CLEANUP:
 					break;
 
-				  default: 
-					msgs_timeout++;
-					msgs_timeout_from[cwalk->state]++;
+				  case P_REQ_READING:
+				  case P_REQ_READY:
+				  case P_REQ_CONNECTING:
+				  case P_REQ_DONE:
+				  case P_REQ_SENDING:
+				  case P_RESP_READING:
+				  case P_RESP_READY:
+				  case P_RESP_SENDING:
+				  case P_RESP_DONE:
+					if (!cwalk->dontcount) {
+						msgs_timeout++;
+						msgs_timeout_from[cwalk->state]++;
+					}
 					cwalk->state = P_CLEANUP;
 					break;
 				}
@@ -629,6 +642,7 @@ int main(int argc, char *argv[])
 					newconn->buf = newconn->bufp = malloc(newconn->bufsize);
 				}
 
+				newconn->dontcount = 0;
 				newconn->ssocket = -1;
 				newconn->serverip = NULL;
 				newconn->conntries = 0;
