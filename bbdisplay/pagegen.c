@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.8 2002-12-02 22:35:46 hstoerne Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.9 2003-01-01 11:47:02 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -331,6 +331,43 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 	fprintf(output, "</CENTER>\n");
 }
 
+void do_bbext(FILE *output, char *extenv)
+{
+	/* Extension scripts. These are ad-hoc, and implemented as a
+	 * simple pipe. So we do a fork here ...
+	 */
+
+	char *bbexts, *p;
+	FILE *inpipe;
+	char extfn[200];
+	char buf[4096];
+	
+	p = getenv(extenv);
+	if (p == NULL)
+		/* No extension */
+		return;
+
+	bbexts = malloc(strlen(p)+1);
+	strcpy(bbexts, p);
+	p = strtok(bbexts, "\t ");
+
+	while (p) {
+		/* Dont redo the eventlog thing */
+		if (strcmp(p, "eventlog.sh") != 0) {
+			sprintf(extfn, "%s/ext/mkbb/%s", getenv("BBHOME"), p);
+			inpipe = popen(extfn, "r");
+			if (inpipe) {
+				while (fgets(buf, sizeof(buf), inpipe)) 
+					fputs(buf, output);
+				pclose(inpipe);
+			}
+		}
+		p = strtok(NULL, "\t ");
+	}
+
+	free(bbexts);
+}
+
 void do_bb_page(page_t *page, dispsummary_t *sums, char *filename)
 {
 	FILE	*output;
@@ -384,6 +421,9 @@ void do_bb_page(page_t *page, dispsummary_t *sums, char *filename)
 	do_hosts(page->hosts, NULL, output, "", PAGE_BB);
 	do_groups(page->groups, output);
 	do_summaries(dispsums, output);
+
+	/* Support for extension scripts */
+	do_bbext(output, "MKBBEXT");
 
 	headfoot(output, "bb", "", "", "footer", page->color);
 
@@ -546,7 +586,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 		fprintf(output, "<TR BGCOLOR=\"333333\">\n");
 		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"teal\">%s</FONT></TD></TR>\n", title);
 
-		for (num = lastevent; (num != firstevent); num = ((num == 0) ? (maxcount-1) : (num - 1)) ) {
+		for (num = lastevent; (eventintime_count); eventintime_count--, num = ((num == 0) ? (maxcount-1) : (num - 1)) ) {
 			fprintf(output, "<TR BGCOLOR=%s>\n", bgcolors[bgcolor]);
 			bgcolor = ((bgcolor + 1) % 2);
 
@@ -683,6 +723,7 @@ void do_bb2_page(char *filename, int summarytype)
 
 	if (summarytype == 0) {
 		do_eventlog(output, 0, 240);
+		do_bbext(output, "BBMKBB2EXT");
 	}
 
 	fprintf(output, "</center>\n");
