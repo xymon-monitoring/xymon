@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.29 2004-10-22 15:16:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.30 2004-10-23 06:37:31 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -46,7 +46,6 @@ static char rcsid[] = "$Id: hobbitd.c,v 1.29 2004-10-22 15:16:50 henrik Exp $";
 
 bbd_hostlist_t *hosts = NULL;		/* The hosts we have reports from */
 bbd_testlist_t *tests = NULL;		/* The tests we have seen */
-bbd_log_t *logs = NULL;			/* The current logs we have (equivalent to bbvar/logs/ */
 
 #define NOTALK 0
 #define RECEIVING 1
@@ -61,14 +60,6 @@ typedef struct conn_t {
 	int doingwhat;			/* Communications state (NOTALK, READING, RESPONDING) */
 	struct conn_t *next;
 } conn_t;
-
-typedef struct cookie_t {
-	unsigned int cookie;
-	bbd_log_t *log;
-	time_t expires;
-	struct cookie_t *next;
-} cookie_t;
-cookie_t *cookiehead = NULL, *cookietail = NULL;
 
 enum droprencmd_t { CMD_DROPHOST, CMD_DROPTEST, CMD_RENAMEHOST, CMD_RENAMETEST };
 
@@ -192,12 +183,12 @@ void posttochannel(bbd_channel_t *channel, char *channelmarker,
 			}
 			else {
 				sprintf(channel->channelbuf, 
-					"@@%s#%u|%d.%06d|%s|%s|%s|%d|%s|%s|%d|%s\n%s\n@@\n", 
+					"@@%s#%u|%d.%06d|%s|%s|%s|%d|%s|%s|%d|%s|%d\n%s\n@@\n", 
 					channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 					sender, hostname, 
 					log->test->testname, (int) log->validtime, 
 					colnames[log->color], colnames[log->oldcolor], (int) log->lastchange,
-					hostpagename(hostname), msg);
+					hostpagename(hostname), log->cookie, msg);
 			}
 			break;
 
@@ -371,6 +362,8 @@ void get_hts(char *msg, char *sender,
 			lwalk->msgsz = 0;
 			lwalk->dismsg = lwalk->ackmsg = NULL;
 			lwalk->lastchange = lwalk->validtime = lwalk->enabletime = lwalk->acktime = 0;
+			lwalk->cookie = -1;
+			lwalk->cookieexpires = 0;
 			lwalk->next = hwalk->logs;
 			hwalk->logs = lwalk;
 		}
@@ -388,23 +381,23 @@ void get_hts(char *msg, char *sender,
 	free(l);
 }
 
-void get_cookiedur(char *msg, char *sender, bbd_log_t **log, int *duration)
+bbd_log_t * find_cookie(int cookie)
 {
-	unsigned int cookie;
-	char durstr[100];
-	
-	*log = NULL;
-	if (sscanf(msg, "%*s %u %99s", &cookie, durstr) == 2) {
-		cookie_t *cwalk;
+	bbd_log_t *result = NULL;
+	bbd_hostlist_t *hwalk;
+	bbd_log_t *lwalk;
+	int found = 0;
 
-		for (cwalk = cookiehead; (cwalk && (cwalk->cookie != cookie)); cwalk = cwalk->next);
-
-		if (cwalk && (cwalk->expires > time(NULL))) {
-			*log = cwalk->log;
-			*duration = durationvalue(durstr);
-			dprintf("Found cookie for status %s\n", (*log)->message);
-		}
+	for (hwalk = hosts; (hwalk && !found); hwalk = hwalk->next) {
+		for (lwalk = hwalk->logs; (lwalk && (lwalk->cookie != cookie)); lwalk = lwalk->next);
+		found = (lwalk != NULL);
 	}
+
+	if (found && lwalk && (lwalk->cookieexpires > time(NULL))) {
+		result = lwalk;
+	}
+
+	return result;
 }
 
 void handle_status(unsigned char *msg, char *sender, char *hostname, char *testname, bbd_log_t *log, int newcolor)
@@ -414,6 +407,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	char *p;
 	int msglen = strlen(msg);
 	int issummary = (strncmp(msg, "summary", 7) == 0);
+	int oldalertstatus, newalertstatus;
 
 	if (strncmp(msg, "status+", 7) == 0) {
 		validity = durationvalue(msg+7);
@@ -449,9 +443,11 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 
 	log->logtime = now;
 	log->validtime = now + validity*60;
+	strncpy(log->sender, sender, sizeof(log->sender)-1);
 	log->oldcolor = log->color;
 	log->color = newcolor;
-	strncpy(log->sender, sender, sizeof(log->sender)-1);
+	oldalertstatus = ((alertcolors & (1 << log->oldcolor)) != 0);
+	newalertstatus = ((alertcolors & (1 << newcolor)) != 0);
 
 	if (msg != log->message) {	/* They can be the same when called from handle_enadis() */
 		/*
@@ -504,10 +500,27 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		}
 	}
 
-	if ((log->oldcolor != newcolor) && !issummary) {
-		int oldalertstatus = ((alertcolors & (1 << log->oldcolor)) != 0);
-		int newalertstatus = ((alertcolors & (1 << newcolor)) != 0);
+	/* If in an alert state, we may need to generate a cookie */
+	if (newalertstatus) {
+		if (log->cookieexpires < now) {
+			int newcookie;
 
+			/* Need to ensure that cookies are unique, hence the loop */
+			log->cookie = -1; log->cookieexpires = 0;
+			do {
+				newcookie = (random() % 1000000);
+			} while (find_cookie(newcookie));
+
+			log->cookie = newcookie;
+			log->cookieexpires = log->validtime;
+		}
+	}
+	else {
+		log->cookie = -1;
+		log->cookieexpires = 0;
+	}
+
+	if ((log->oldcolor != newcolor) && !issummary) {
 		dprintf("oldcolor=%d, oldas=%d, newcolor=%d, newas=%d\n", 
 			log->oldcolor, oldalertstatus, newcolor, newalertstatus);
 
@@ -843,10 +856,12 @@ void do_message(conn_t *msg)
 	bbd_log_t *log;
 	int color;
 	char sender[20];
+	time_t now;
 
 	/* Most likely, we will not send a response */
 	msg->doingwhat = NOTALK;
 	strcpy(sender, inet_ntoa(msg->addr.sin_addr));
+	now = time(NULL);
 
 	if (strncmp(msg->buf, "combo\n", 6) == 0) {
 		char *currmsg, *nextmsg;
@@ -924,13 +939,22 @@ void do_message(conn_t *msg)
 		 */
 		get_hts(msg->buf, sender, &h, &t, &log, &color, 0, 0);
 		if (log) {
+			char *bp, *ackmsg = "", *dismsg = "";
+
 			msg->doingwhat = RESPONDING;
-			sprintf(msg->buf, "%s|%s|%s|%s|%d|%d|%d|%s\n%s", 
-				h->hostname, log->test->testname, 
-				colnames[log->color], 
-				(log->testflags ? log->testflags : ""),
-				(int) log->logtime, (int) log->lastchange, (int) log->validtime, log->sender,
-				msg_data(log->message));
+			bp = msg->buf;
+			bp += sprintf(bp, "%s|%s|%s|%s|%d|%d|%d|%s|%d", 
+					h->hostname, log->test->testname, 
+					colnames[log->color], 
+					(log->testflags ? log->testflags : ""),
+					(int) log->logtime, (int) log->lastchange, (int) log->validtime, 
+					log->sender, log->cookie);
+
+			if (log->ackmsg && (log->acktime > now)) ackmsg = nlencode(log->ackmsg);
+			bp += sprintf(bp, "|%s", ackmsg);
+			if (log->dismsg && (log->enabletime > now)) dismsg = nlencode(log->dismsg);
+			bp += sprintf(bp, "|%s", dismsg);
+			bp += sprintf(bp, "\n%s", msg_data(log->message));
 			msg->bufp = msg->buf;
 			msg->buflen = strlen(msg->buf);
 		}
@@ -957,12 +981,12 @@ void do_message(conn_t *msg)
 					buf = (char *)realloc(buf, bufsz);
 					bufp = buf + buflen;
 				}
-				n = sprintf(bufp, "%s|%s|%s|%s|%d|%d|%d|%s|%s\n", 
+				n = sprintf(bufp, "%s|%s|%s|%s|%d|%d|%d|%s|%d|%s\n", 
 					hwalk->hostname, lwalk->test->testname, 
 					colnames[lwalk->color], 
 					(lwalk->testflags ? lwalk->testflags : ""),
 					(int) lwalk->logtime, (int) lwalk->lastchange, (int) lwalk->validtime,
-					lwalk->sender, msg_data(lwalk->message));
+					lwalk->sender, lwalk->cookie, msg_data(lwalk->message));
 				bufp += n;
 				buflen += n;
 				if (eoln) *eoln = '\n';
@@ -974,34 +998,17 @@ void do_message(conn_t *msg)
 		msg->bufp = msg->buf = buf;
 		msg->buflen = buflen;
 	}
-	else if (strncmp(msg->buf, "bbgendcookie ", 13) == 0) {
-		/* bbgendcookie HOST.TEST */
-		get_hts(msg->buf, sender, &h, &t, &log, &color, 0, 0);
-		if (log) {
-			if (cookiehead == NULL) {
-				cookiehead = cookietail = (cookie_t *)malloc(sizeof(cookie_t));
-			}
-			else {
-				cookietail->next = (cookie_t *) malloc(sizeof(cookie_t));
-				cookietail = cookietail->next;
-			}
-
-			cookietail->log = log;
-			cookietail->cookie = random();
-			cookietail->expires = time(NULL) + 300;
-			cookietail->next = NULL;
-
-			msg->doingwhat = RESPONDING;
-			msg->buflen = sprintf(msg->buf, "%d\n", cookietail->cookie);
-			msg->bufp = msg->buf;
-		}
-	}
 	else if (strncmp(msg->buf, "bbgendack", 9) == 0) {
 		/* bbgendack COOKIE DURATION TEXT */
-		int duration = 30*60;
-		get_cookiedur(msg->buf, sender, &log, &duration);
-		if (log) {
-			handle_ack(msg->buf, sender, log, duration);
+		int cookie, duration;
+		char durstr[100];
+
+		if (sscanf(msg->buf, "%*s %d %99s", &cookie, durstr) == 2) {
+			log = find_cookie(cookie);
+			if (log) {
+				duration = durationvalue(durstr);
+				handle_ack(msg->buf, sender, log, duration);
+			}
 		}
 	}
 	else if (strncmp(msg->buf, "bbgenddrop ", 11) == 0) {
@@ -1063,13 +1070,14 @@ void save_checkpoint(void)
 
 	for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
 		for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
-			fprintf(fd, "@@BBGENDCHK-V1|%s|%s|%s|%s|%s|%s|%d|%d|%d|%d|%d|%s", 
+			fprintf(fd, "@@BBGENDCHK-V1|%s|%s|%s|%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%s", 
 				hwalk->hostname, lwalk->test->testname, lwalk->sender,
 				colnames[lwalk->color], 
 				(lwalk->testflags ? lwalk->testflags : ""),
 				colnames[lwalk->oldcolor],
 				(int)lwalk->logtime, (int) lwalk->lastchange, (int) lwalk->validtime, 
-				(int) lwalk->enabletime, (int) lwalk->acktime,
+				(int) lwalk->enabletime, (int) lwalk->acktime, 
+				lwalk->cookie, (int) lwalk->cookieexpires,
 				nlencode(lwalk->message));
 			fprintf(fd, "|%s", nlencode(lwalk->dismsg));
 			fprintf(fd, "|%s", nlencode(lwalk->ackmsg));
@@ -1093,8 +1101,8 @@ void load_checkpoint(char *fn)
 	bbd_testlist_t *t = NULL;
 	bbd_log_t *ltail = NULL;
 	char *hostname, *testname, *sender, *testflags, *statusmsg, *disablemsg, *ackmsg;
-	time_t logtime, lastchange, validtime, enabletime, acktime;
-	int color, oldcolor;
+	time_t logtime, lastchange, validtime, enabletime, acktime, cookieexpires;
+	int color, oldcolor, cookie;
 
 	fd = fopen(fn, "r");
 	if (fd == NULL) {
@@ -1122,17 +1130,19 @@ void load_checkpoint(char *fn)
 			  case 9: validtime = atoi(item); break;
 			  case 10: enabletime = atoi(item); break;
 			  case 11: acktime = atoi(item); break;
-			  case 12: if (strlen(item)) statusmsg = item; else err=1; break;
-			  case 13: disablemsg = item; break;
-			  case 14: ackmsg = item; break;
+			  case 12: cookie = atoi(item); break;
+			  case 13: cookieexpires = atoi(item); break;
+			  case 14: if (strlen(item)) statusmsg = item; else err=1; break;
+			  case 15: disablemsg = item; break;
+			  case 16: ackmsg = item; break;
 			  default: err = 1;
 			}
 
 			item = gettok(NULL, "|\n"); i++;
 		}
 
-		if (i < 14) {
-			errprintf("Too few fields in record - found %d, expected 14\n", i);
+		if (i < 16) {
+			errprintf("Too few fields in record - found %d, expected 16\n", i);
 			err = 1;
 		}
 
@@ -1194,6 +1204,8 @@ void load_checkpoint(char *fn)
 		}
 		else 
 			ltail->ackmsg = NULL;
+		ltail->cookie = cookie;
+		ltail->cookieexpires = cookieexpires;
 		ltail->next = NULL;
 	}
 
@@ -1512,14 +1524,6 @@ int main(int argc, char *argv[])
 			free(tmp);
 		}
 		if (connhead == NULL) conntail = NULL;
-
-		/* Clean up cookies that have expired */
-		while (cookiehead && (cookiehead->expires <= now)) {
-			cookie_t *tmp = cookiehead;
-			cookiehead = cookiehead->next;
-			free(tmp);
-		}
-		if (cookiehead == NULL) cookietail = NULL;
 
 		/* Pick up new connections */
 		if (FD_ISSET(lsocket, &fdread)) {
