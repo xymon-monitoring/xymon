@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.9 2002-11-26 12:03:04 hstoerne Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.10 2002-11-26 13:52:02 hstoerne Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -85,27 +85,29 @@ host_t *init_host(const char *hostname, const int ip1, const int ip2, const int 
 	return newhost;
 }
 
-link_t *init_link(const char *filename, const char *urlprefix)
+link_t *init_link(char *filename, const char *urlprefix)
 {
 	char *p;
 	link_t *newlink = NULL;
 
+	newlink = malloc(sizeof(link_t));
+	strcpy(newlink->filename, filename);
+	strcpy(newlink->urlprefix, urlprefix);
+	newlink->next = NULL;
+
 	p = strrchr(filename, '.');
-	if (p == NULL) return NULL;	/* Filename with no extension - not linkable */
+	if (p == NULL) p = (filename + strlen(filename));
 
-	if ( (strcmp(p, ".php") == 0)   ||
-	     (strcmp(p, ".html") == 0)  ||
-	     (strcmp(p, ".htm") == 0)) {
-
-		newlink = malloc(sizeof(link_t));
-		strcpy(newlink->filename, filename);
-
+	if ( (strcmp(p, ".php") == 0)    ||
+             (strcmp(p, ".php3") == 0)   ||
+	     (strcmp(p, ".shtml") == 0)  ||
+	     (strcmp(p, ".html") == 0)   ||
+	     (strcmp(p, ".htm") == 0))      
+	{
 		*p = '\0';
-		strcpy(newlink->name, filename);  /* Without extension, this time */
-
-		strcpy(newlink->urlprefix, urlprefix);
-		newlink->next = NULL;
 	}
+
+	strcpy(newlink->name, filename);  /* Without extension, this time */
 
 	return newlink;
 }
