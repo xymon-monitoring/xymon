@@ -919,31 +919,33 @@ void do_bb_page(page_t *page, char *filename)
 
 	headfoot(output, "", "", "header", page->color);
 
-	fprintf(output, "<BR><BR>\n<CENTER>\n");
+	fprintf(output, "<BR>\n<CENTER>\n");
 
-	fprintf(output, "<A NAME=\"pages-blk\">\n");
-	fprintf(output, "<TABLE SUMMARY=\"Page Block\" BORDER=0>\n");
+	if (page->next) {
+		fprintf(output, "<A NAME=\"pages-blk\">\n");
+		fprintf(output, "<TABLE SUMMARY=\"Page Block\" BORDER=0>\n");
 
-	fprintf(output, "<TR><TD COLSPAN=2><CENTER> \n<FONT %s>\n", getenv("MKBBTITLE"));
-	fprintf(output, "   %s\n", getenv("MKBBLOCAL"));
-	fprintf(output, "</FONT></CENTER></TD></TR>\n");
-	fprintf(output, "<TR><TD COLSPAN=2><HR WIDTH=100%%></TD></TR>\n");
+		fprintf(output, "<TR><TD COLSPAN=2><CENTER> \n<FONT %s>\n", getenv("MKBBTITLE"));
+		fprintf(output, "   %s\n", getenv("MKBBLOCAL"));
+		fprintf(output, "</FONT></CENTER></TD></TR>\n");
+		fprintf(output, "<TR><TD COLSPAN=2><HR WIDTH=100%%></TD></TR>\n");
 
-	for (p = page->next; (p); p = p->next) {
+		for (p = page->next; (p); p = p->next) {
 
-		/* FIXME: Page notes missing */
-		fprintf(output, "<TR><TD><FONT %s>%s</FONT></TD>\n", getenv("MKBBROWFONT"), p->title);
+			/* FIXME: Page notes missing */
+			fprintf(output, "<TR><TD><FONT %s>%s</FONT></TD>\n", getenv("MKBBROWFONT"), p->title);
 
-		fprintf(output, "<TD><CENTER><A HREF=\"%s/%s/%s.html\">\n", getenv("BBWEB"), p->name, p->name);
-		fprintf(output, "<IMG SRC=\"%s/%s.gif\" WIDTH=\"%s\" HEIGHT=\"%s\" BORDER=0 ALT=\"%s\"></A>\n", 
-			getenv("BBSKIN"), colorname(p->color), 
-			getenv("DOTWIDTH"), getenv("DOTHEIGHT"),
-			colorname(p->color));
-		fprintf(output, "</CENTER></TD></TR>\n");
+			fprintf(output, "<TD><CENTER><A HREF=\"%s/%s/%s.html\">\n", getenv("BBWEB"), p->name, p->name);
+			fprintf(output, "<IMG SRC=\"%s/%s.gif\" WIDTH=\"%s\" HEIGHT=\"%s\" BORDER=0 ALT=\"%s\"></A>\n", 
+				getenv("BBSKIN"), colorname(p->color), 
+				getenv("DOTWIDTH"), getenv("DOTHEIGHT"),
+				colorname(p->color));
+			fprintf(output, "</CENTER></TD></TR>\n");
+		}
+
+		fprintf(output, "</TABLE><BR><BR>\n");
+		fprintf(output, "</CENTER>\n");
 	}
-
-	fprintf(output, "</TABLE><BR><BR>\n");
-	fprintf(output, "</CENTER>\n");
 
 	do_hosts(page->hosts, output, "");
 	do_groups(page->groups, output);
@@ -967,31 +969,33 @@ void do_page(page_t *page, char *filename, char *upperpagename)
 
 	headfoot(output, page->name, "", "header", page->color);
 
-	fprintf(output, "<BR><BR>\n<CENTER>\n");
+	fprintf(output, "<BR>\n<CENTER>\n");
 
-	fprintf(output, "<A NAME=\"pages-blk\">\n");
-	fprintf(output, "<TABLE SUMMARY=\"Page Block\" BORDER=0>\n");
+	if (page->subpages) {
+		fprintf(output, "<A NAME=\"pages-blk\">\n");
+		fprintf(output, "<TABLE SUMMARY=\"Page Block\" BORDER=0>\n");
 
-	fprintf(output, "<TR><TD COLSPAN=2><CENTER> \n<FONT %s>\n", getenv("MKBBTITLE"));
-	fprintf(output, "   %s\n", getenv("MKBBSUBLOCAL"));
-	fprintf(output, "</FONT></CENTER></TD></TR>\n");
-	fprintf(output, "<TR><TD COLSPAN=2><HR WIDTH=100%%></TD></TR>");
+		fprintf(output, "<TR><TD COLSPAN=2><CENTER> \n<FONT %s>\n", getenv("MKBBTITLE"));
+		fprintf(output, "   %s\n", getenv("MKBBSUBLOCAL"));
+		fprintf(output, "</FONT></CENTER></TD></TR>\n");
+		fprintf(output, "<TR><TD COLSPAN=2><HR WIDTH=100%%></TD></TR>");
 
-	for (p = page->subpages; (p); p = p->next) {
+		for (p = page->subpages; (p); p = p->next) {
 
-		/* FIXME: Page notes missing */
-		fprintf(output, "<TR><TD><FONT %s>%s</FONT></TD>\n", getenv("MKBBROWFONT"), p->title);
+			/* FIXME: Page notes missing */
+			fprintf(output, "<TR><TD><FONT %s>%s</FONT></TD>\n", getenv("MKBBROWFONT"), p->title);
 
-		fprintf(output, "<TD><CENTER><A HREF=\"%s/%s/%s/%s.html\">\n", getenv("BBWEB"), upperpagename, p->name, p->name);
-		fprintf(output, "<IMG SRC=\"%s/%s.gif\" WIDTH=\"%s\" HEIGHT=\"%s\" BORDER=0 ALT=\"%s\"></A>\n", 
-			getenv("BBSKIN"), colorname(p->color), 
-			getenv("DOTWIDTH"), getenv("DOTHEIGHT"),
-			colorname(p->color));
-		fprintf(output, "</CENTER></TD></TR>\n");
+			fprintf(output, "<TD><CENTER><A HREF=\"%s/%s/%s/%s.html\">\n", getenv("BBWEB"), upperpagename, p->name, p->name);
+			fprintf(output, "<IMG SRC=\"%s/%s.gif\" WIDTH=\"%s\" HEIGHT=\"%s\" BORDER=0 ALT=\"%s\"></A>\n", 
+				getenv("BBSKIN"), colorname(p->color), 
+				getenv("DOTWIDTH"), getenv("DOTHEIGHT"),
+				colorname(p->color));
+			fprintf(output, "</CENTER></TD></TR>\n");
+		}
+
+		fprintf(output, "</TABLE><BR><BR>\n");
+		fprintf(output, "</CENTER>\n");
 	}
-
-	fprintf(output, "</TABLE><BR><BR>\n");
-	fprintf(output, "</CENTER>\n");
 
 	do_hosts(page->hosts, output, "");
 	do_groups(page->groups, output);
