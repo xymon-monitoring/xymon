@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.79 2005-02-27 16:11:07 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.80 2005-03-13 06:27:40 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -35,6 +35,7 @@ static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.79 2005-02-27 16:11:07 henrik E
 #endif
 
 static int alertcolors = ( (1 << COL_RED) | (1 << COL_YELLOW) | (1 << COL_PURPLE) );
+static int alertinterval = 60*30;
 
 static namelist_t *hosthead = NULL;
 
@@ -111,7 +112,6 @@ void generate_hobbit_alertinfo(char *hostname, char **buf, int *buflen, char *co
 
 	if (!gotconfig) {
 		char configfn[PATH_MAX];
-		int alertinterval = 60*30;
 
 		sprintf(configfn, "%s/etc/hobbit-alerts.cfg", xgetenv("BBHOME"));
 		load_alertconfig(configfn, alertcolors, alertinterval);
@@ -689,6 +689,11 @@ int main(int argc, char *argv[])
 			}
 
 			alertcolors = ac;
+		}
+		else if (argnmatch(argv[argi], "--repeat=")) {
+			char *p = strchr(argv[argi], '=') + 1;
+
+			alertinterval = atoi(p);
 		}
 	}
 
