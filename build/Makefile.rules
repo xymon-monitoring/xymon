@@ -28,7 +28,7 @@ all: $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS) libcheck
 	@echo ""
 
 GENOBJS = bbgen.o debug.o loadhosts.o loaddata.o reportdata.o larrdgen.o pagegen.o eventlog.o acklog.o process.o util.o infogen.o alert.o wmlgen.o rssgen.o bb-replog.o sendmsg.o
-NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o httpresult.o ldaptest.o sendmsg.o digest.o dns.o libcares.a
+NETTESTOBJS = bbtest-net.o util.o debug.o contest.o httptest.o httpresult.o ldaptest.o sendmsg.o digest.o dns.o dns2.o libcares.a
 HOSTGREPOBJS = bbhostgrep.o util.o debug.o
 HOSTSHOWOBJS = bbhostshow.o util.o debug.o
 DIGESTOBJS = bbdigest.o
@@ -133,6 +133,9 @@ bb-hist.o: bb-hist.c
 
 dns.o: libcares.a dns.c dns.h
 	$(CC) $(CFLAGS) $(DNSFLAGS) -c -o $@ dns.c
+
+dns2.o: dns2.c dns2.h
+	$(CC) $(CFLAGS) $(DNSFLAGS) -c -o $@ dns2.c
 
 libcares.a: c-ares-1.2.0/libcares.a
 	cp c-ares-1.2.0/libcares.a .
