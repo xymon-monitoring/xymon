@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.49 2005-02-27 07:53:00 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.50 2005-02-27 22:16:22 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -953,7 +953,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	}
 
 	if (result)
-		traceprintf("*** Match with '%s' ***\n", crit->cfline);
+		traceprintf("*** Match with '%s' ***\n", (crit ? crit->cfline : "<rule line>"));
 	else
 		traceprintf("%s\n", "Failed (color)");
 
