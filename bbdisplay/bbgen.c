@@ -1219,7 +1219,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 		fprintf(output, "<TR BGCOLOR=\"333333\">\n");
 		fprintf(output, "<TD ALIGN=CENTER COLSPAN=5><FONT SIZE=-1 COLOR=\"teal\">%s</FONT></TD></TR>\n", title);
 
-		for (num = firstevent; (num != lastevent); num = (num + 1) % maxcount) {
+		for (num = lastevent; (num != firstevent); num = ((num == 0) ? (maxcount-1) : (num - 1)) ) {
 			fprintf(output, "<TR BGCOLOR=%s>\n", bgcolors[bgcolor]);
 			bgcolor = ((bgcolor + 1) % 2);
 
