@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.126 2003-10-07 20:20:54 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.127 2003-10-08 20:51:50 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -1374,9 +1374,19 @@ int run_fping_service(service_t *service)
 		}
 	}
 	fpingstatus = pclose(cmdpipe);
-	if (fpingstatus) {
-		errprintf("Execution of '%s' failed with errorcode %d\n", 
-				cmd, WEXITSTATUS(fpingstatus));
+	switch (fpingstatus) {
+	  case 0: /* All hosts reachable */
+	  case 1: /* Some hosts unreachable */
+	  case 2: /* Some IP's not found (should not happen) */
+		break;
+
+	  case 3: /* Bad command-line args, or not suid-root */
+		errprintf("Execution of '%s' failed - program not suid root?\n", cmd);
+		break;
+
+	  default:
+		errprintf("Execution of '%s' failed with error-code %d\n", 
+			cmd, WEXITSTATUS(fpingstatus));
 	}
 
 	/* Load status of previously failed tests */
