@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.9 2003-08-12 21:16:05 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.10 2003-08-16 07:12:50 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -243,6 +243,8 @@ int main(int argc, char *argv[])
 	testspec_t *t;
 	int argi, pending;
 	int showeval = 1;
+
+	setup_signalhandler("bbcombotest");
 
 	for (argi = 1; (argi < argc); argi++) {
 		if ((strcmp(argv[argi], "--help") == 0)) {
