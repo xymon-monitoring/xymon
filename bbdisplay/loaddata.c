@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.101 2003-08-01 12:43:07 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.102 2003-08-01 12:45:37 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -188,7 +188,7 @@ group_t *init_group(const char *title, const char *onlycols)
 
 host_t *init_host(const char *hostname, const char *displayname, const char *comment,
 		  const int ip1, const int ip2, const int ip3, const int ip4, 
-		  const int dialup, const int prefer, const double warnpct, char *reporttime,
+		  const int dialup, const int prefer, const double warnpct, const char *reporttime,
 		  const char *alerts, int nktime, const char *waps, char *tags,
 		  const char *nopropyellowtests, const char *nopropredtests,
 		  const char *larrdgraphs)
@@ -214,7 +214,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *com
 	newhost->prefer = prefer;
 	newhost->dialup = dialup;
 	newhost->reportwarnlevel = warnpct;
-	newhost->reporttime = (reporttime ? reporttime : NULL);	/* malloc()'ed by load_hosts() */
+	newhost->reporttime = (reporttime ? malcop(reporttime) : NULL);
 	if (alerts && nktime) {
 		char *p;
 		p = skipword(alerts); if (*p) *p = '\0'; else p = NULL;
@@ -1374,6 +1374,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			if (nopropyellowlist) free(nopropyellowlist);
 			if (nopropredlist) free(nopropredlist);
 			if (larrdgraphs) free(larrdgraphs);
+			if (reporttime) free(reporttime);
 			for (targetpagecount=0; (targetpagecount < MAX_TARGETPAGES_PER_HOST); targetpagecount++) 
 				if (targetpagelist[targetpagecount]) free(targetpagelist[targetpagecount]);
 		}
