@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.20 2005-03-28 12:05:10 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.21 2005-04-04 21:32:55 henrik Exp $";
 
 static char *disk_params[] = { "rrdcreate", rrdfn, "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", 
 				rra1, rra2, rra3, rra4, NULL };
@@ -31,7 +31,7 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	while (curline)  {
 		char *fsline, *p;
 		char *columns[20];
-		int i;
+		int columncount;
 		char *diskname = NULL;
 		int pused = -1;
 		unsigned long long aused = 0;
@@ -50,9 +50,9 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			if ((strstr(curline, " red ") || strstr(curline, " yellow "))) goto nextline;
 		}
 
-		for (i=0; (i<20); i++) columns[i] = "";
-		fsline = xstrdup(curline); i = 0; p = strtok(fsline, " ");
-		while (p && (i < 20)) { columns[i++] = p; p = strtok(NULL, " "); }
+		for (columncount=0; (columncount<20); columncount++) columns[columncount] = "";
+		fsline = xstrdup(curline); columncount = 0; p = strtok(fsline, " ");
+		while (p && (columncount < 20)) { columns[columncount++] = p; p = strtok(NULL, " "); }
 
 		/* 
 		 * Some Unix filesystem reports contain the word "Filesystem".
@@ -72,7 +72,18 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		  case DT_AS400:
 			diskname = xstrdup(",DASD");
 			p = strchr(columns[12], '%'); if (p) *p = ' ';
-			pused = atoi(columns[12]);
+			/* 
+			 * Yikes ... the format of this line varies depending on the color.
+			 * Red:
+			 *    March 23, 2005 12:32:54 PM EST DASD on deltacdc at panic level at 90.4967% 
+			 * Yellow: 
+			 *    April 4, 2005 9:20:26 AM EST DASD on deltacdc at warning level at 81.8919%
+			 * Green:
+			 *    April 3, 2005 7:53:53 PM EST DASD on deltacdc OK at 79.6986%
+			 *
+			 * So we'll just pick out the number from the last column.
+			 */
+			pused = atoi(columns[columncount-1]);
 			aused = 0; /* Not available */
 			break;
 		  case DT_NT:
