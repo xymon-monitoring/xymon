@@ -140,6 +140,7 @@ GRAPHS="la,disk,inode,qtree,memory,users,vmstat,iostat,tcp.http,tcp,netstat,mrtg
 ############################################################
 # These determine some parts of how bbgen generates webpages
 ############################################################
+BBGENOPTS="--recentgifs --subpagecolumns=2"     # Standard options for bbgen.
 SUMMARY_SET_BKG="FALSE"				# Do summaries affect the background color of the BB webpage ?
 BBMKBB2EXT="eventlog.sh acklog.sh"		# What extensions to have on the BB2 page.
 BBREL="Hobbit"					# Used by the standard BB web headers, not by Hobbit
@@ -167,10 +168,11 @@ WMLMAXCHARS="1500"				# Max number of bytes in a WAP message
 # For BB reports
 BBREPWARN="97"					# Default availability causing yellow status on availability report.
 BBREPGREEN="99.995"				# Default availability causing green status on availability report.
-BBGENREPOPTS="--recentgifs --subpagecolumns=2"  # bbgen(1) options used when generating availability reports.
+BBGENREPOPTS="$BBGENOPTS"			# bbgen(1) options used when generating availability reports.
+BBREPEXT=""					# What extensions to run on report pages.
 
 # For BB snapshots
-BBGENSNAPOPTS="--recentgifs --subpagecolumns=2" # bbgen(1) options used when generating snapshots.
+BBGENSNAPOPTS="$BBGENOPTS"			# bbgen(1) options used when generating snapshots.
 
 # For the bb-hist CGI 
 BBHISTEXT=""					# What extensions to run on history pages.
