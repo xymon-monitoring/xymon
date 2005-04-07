@@ -1,4 +1,4 @@
-PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filter hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_larrd hobbitd_sample hobbitgraph.cgi hobbitsvc.cgi hobbit-mailack trimhistory
+PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filter hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_larrd hobbitd_sample hobbitgraph.cgi hobbitsvc.cgi hobbit-mailack trimhistory hobbitreports.sh
 CGISCRIPTS = hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh
 SECCGISCRIPTS = bb-ack.sh maint.pl
 
@@ -77,6 +77,10 @@ trimhistory: $(TRIMHISTOBJS)
 
 hobbit.sh: hobbit.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g' | sed -e 's!@BBUSER@!$(BBUSER)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
+	chmod 755 $@
+
+hobbitreports.sh: hobbitreports.sh.DIST
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' >$@
 	chmod 755 $@
 
 bb-ack.sh: bb-ack.sh.DIST
