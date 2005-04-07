@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.19 2005-04-03 15:39:02 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.20 2005-04-07 10:09:02 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
 			sethostenv("", "", "", colorname(COL_BLUE));
 
 			headfoot(stdout, "findhost", "", "header", COL_BLUE);
-			output_parsed(stdout, inbuf, COL_BLUE, "findhost");
+			output_parsed(stdout, inbuf, COL_BLUE, "findhost", time(NULL));
 			headfoot(stdout, "findhost", "", "footer", COL_BLUE);
 
 			xfree(inbuf);

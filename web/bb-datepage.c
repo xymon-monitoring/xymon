@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-datepage.c,v 1.2 2005-04-06 21:40:09 henrik Exp $";
+static char rcsid[] = "$Id: bb-datepage.c,v 1.3 2005-04-07 10:09:02 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -193,20 +193,27 @@ int main(int argc, char *argv[])
 	else {
                 int formfile;
                 char formfn[PATH_MAX];
+		time_t seltime;
+		struct tm *seltm;
 
 		parse_query(NULL);
+
+		seltime = time(NULL); seltm = localtime(&seltime);
 
                 /* Present the query form */
 		switch (frmtype) {
 		  case FRM_DAY:
+			seltm->tm_mday -= 1; seltime = mktime(seltm);
 			sprintf(formfn, "%s/web/%s_form_daily", xgetenv("BBHOME"), hffile);
 			break;
 
 		  case FRM_WEEK:
+			seltm->tm_mday -= 7; seltime = mktime(seltm);
 			sprintf(formfn, "%s/web/%s_form_weekly", xgetenv("BBHOME"), hffile);
 			break;
 
 		  case FRM_MONTH:
+			seltm->tm_mon -= 1; seltime = mktime(seltm);
 			sprintf(formfn, "%s/web/%s_form_monthly", xgetenv("BBHOME"), hffile);
 			break;
 
@@ -229,7 +236,7 @@ int main(int argc, char *argv[])
                         sethostenv("", "", "", colorname(bgcolor));
 
                         headfoot(stdout, hffile, "", "header", bgcolor);
-                        output_parsed(stdout, inbuf, COL_BLUE, "report");
+                        output_parsed(stdout, inbuf, COL_BLUE, "report", seltime);
                         headfoot(stdout, hffile, "", "footer", bgcolor);
 
                         xfree(inbuf);

@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-eventlog.c,v 1.18 2005-04-04 13:30:13 henrik Exp $";
+static char rcsid[] = "$Id: bb-eventlog.c,v 1.19 2005-04-07 10:09:02 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
 			sethostenv("", "", "", colorname(COL_BLUE));
 
 			headfoot(stdout, "event", "", "header", COL_BLUE);
-			output_parsed(stdout, inbuf, COL_BLUE, "report");
+			output_parsed(stdout, inbuf, COL_BLUE, "report", time(NULL));
 			headfoot(stdout, "event", "", "footer", COL_BLUE);
 
 			xfree(inbuf);

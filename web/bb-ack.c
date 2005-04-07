@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.13 2005-03-22 09:03:37 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.14 2005-04-07 10:09:02 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
 			sethostenv("", "", "", colorname(COL_RED));
 
 			headfoot(stdout, "acknowledge", "", "header", COL_RED);
-			output_parsed(stdout, inbuf, COL_RED, "acknowledge");
+			output_parsed(stdout, inbuf, COL_RED, "acknowledge", time(NULL));
 			headfoot(stdout, "acknowledge", "", "footer", COL_RED);
 
 			xfree(inbuf);

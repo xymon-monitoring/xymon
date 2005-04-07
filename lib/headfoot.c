@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.20 2005-04-07 06:03:16 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.21 2005-04-07 10:09:02 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -93,7 +93,7 @@ void sethostenv_refresh(int n)
 	hostenv_refresh = n;
 }
 
-void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype)
+void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype, time_t selectedtime)
 {
 	char	*t_start, *t_next;
 	char	savechar;
@@ -181,9 +181,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 
 			MEMDEFINE(mname);
 
-			nowtm = localtime(&now);
-			nowtm->tm_mon -= 1; yesterday = mktime(nowtm); nowtm = localtime(&yesterday);
-
+			nowtm = localtime(&selectedtime);
 			for (i=1; (i <= 12); i++) {
 				if (i == (nowtm->tm_mon + 1)) selstr = "SELECTED"; else selstr = "";
 				monthtm.tm_mon = (i-1); monthtm.tm_mday = 1; monthtm.tm_year = nowtm->tm_year;
@@ -200,9 +198,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			int weeknum;
 			char *selstr;
 
-			nowtm = localtime(&now);
-			nowtm->tm_mday -= 7; yesterday = mktime(nowtm); nowtm = localtime(&yesterday);
-
+			nowtm = localtime(&selectedtime);
 			strftime(weekstr, sizeof(weekstr)-1, "%V", nowtm); weeknum = atoi(weekstr);
 			for (i=1; (i <= 53); i++) {
 				if (i == weeknum) selstr = "SELECTED"; else selstr = "";
@@ -213,9 +209,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			int i;
 			char *selstr;
 
-			nowtm = localtime(&now);
-			nowtm->tm_mday -= 1; yesterday = mktime(nowtm); nowtm = localtime(&yesterday);
-
+			nowtm = localtime(&selectedtime);
 			for (i=1; (i <= 31); i++) {
 				if (i == nowtm->tm_mday) selstr = "SELECTED"; else selstr = "";
 				fprintf(output, "<OPTION VALUE=\"%d\" %s>%d\n", i, selstr, i);
@@ -226,7 +220,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			char *selstr;
 			int beginyear, endyear;
 
-			nowtm = localtime(&now);
+			nowtm = localtime(&selectedtime);
 			beginyear = nowtm->tm_year + 1900 - 5;
 			endyear = nowtm->tm_year + 1900;
 
@@ -370,7 +364,7 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 		templatedata[st.st_size] = '\0';
 		close(fd);
 
-		output_parsed(output, templatedata, bgcolor, pagetype);
+		output_parsed(output, templatedata, bgcolor, pagetype, time(NULL));
 
 		xfree(templatedata);
 	}
