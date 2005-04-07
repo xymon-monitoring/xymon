@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.19 2005-04-06 21:38:25 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.20 2005-04-07 06:03:16 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -99,6 +99,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 	char	savechar;
 	time_t	now = time(NULL);
 	time_t  yesterday = time(NULL) - 86400;
+	struct tm *nowtm;
 
 	for (t_start = templatedata, t_next = strchr(t_start, '&'); (t_next); ) {
 		/* Copy from t_start to t_next unchanged */
@@ -174,12 +175,14 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 
 		else if (strcmp(t_start, "REPMONLIST") == 0) {
 			int i;
-			struct tm *nowtm = localtime(&yesterday);
 			struct tm monthtm;
 			char mname[20];
 			char *selstr;
 
 			MEMDEFINE(mname);
+
+			nowtm = localtime(&now);
+			nowtm->tm_mon -= 1; yesterday = mktime(nowtm); nowtm = localtime(&yesterday);
 
 			for (i=1; (i <= 12); i++) {
 				if (i == (nowtm->tm_mon + 1)) selstr = "SELECTED"; else selstr = "";
@@ -193,10 +196,12 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 		}
 		else if (strcmp(t_start, "REPWEEKLIST") == 0) {
 			int i;
-			struct tm *nowtm = localtime(&yesterday);
 			char weekstr[5];
 			int weeknum;
 			char *selstr;
+
+			nowtm = localtime(&now);
+			nowtm->tm_mday -= 7; yesterday = mktime(nowtm); nowtm = localtime(&yesterday);
 
 			strftime(weekstr, sizeof(weekstr)-1, "%V", nowtm); weeknum = atoi(weekstr);
 			for (i=1; (i <= 53); i++) {
@@ -206,8 +211,10 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 		}
 		else if (strcmp(t_start, "REPDAYLIST") == 0) {
 			int i;
-			struct tm *nowtm = localtime(&yesterday);
 			char *selstr;
+
+			nowtm = localtime(&now);
+			nowtm->tm_mday -= 1; yesterday = mktime(nowtm); nowtm = localtime(&yesterday);
 
 			for (i=1; (i <= 31); i++) {
 				if (i == nowtm->tm_mday) selstr = "SELECTED"; else selstr = "";
@@ -216,10 +223,14 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 		}
 		else if (strcmp(t_start, "REPYEARLIST") == 0) {
 			int i;
-			struct tm *nowtm = localtime(&yesterday);
 			char *selstr;
+			int beginyear, endyear;
 
-			for (i=1999; (i <= 2009); i++) {
+			nowtm = localtime(&now);
+			beginyear = nowtm->tm_year + 1900 - 5;
+			endyear = nowtm->tm_year + 1900;
+
+			for (i=beginyear; (i <= endyear); i++) {
 				if (i == (nowtm->tm_year + 1900)) selstr = "SELECTED"; else selstr = "";
 				fprintf(output, "<OPTION VALUE=\"%d\" %s>%d\n", i, selstr, i);
 			}
