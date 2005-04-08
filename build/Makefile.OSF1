@@ -1,12 +1,14 @@
 # bbgen compile-time settings for a OSF/1 system
 #
 
+OSDEF = -DOSF
+
 # NETLIBS: You may need to add -lresolv or similar to pick up network libraries
 NETLIBS =
 
 # Compile flags for normal build
 CC = cc
-CFLAGS = -g -O -D_REENTRANT -DNO_VSNPRINTF
+CFLAGS = -g -O -D_REENTRANT -DNO_VSNPRINTF $(OSDEF)
 
 # Compile flags for debugging
 # CFLAGS = -g -DDEBUG -D_REENTRANT -DNO_VSNPRINTF

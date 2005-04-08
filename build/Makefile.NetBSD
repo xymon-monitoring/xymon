@@ -9,12 +9,12 @@ NETLIBS =
 # Compile flags for normal build
 CC= gcc
 PKGDIR?=/usr/pkg
-CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT  \
+CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT $(OSDEF) \
        -I${PKGDIR}/include -L${PKGDIR}/lib, -Wl,--rpath=${PKGDIR}/lib
 RPATH = "-Wl,--rpath="
 #
 # Compile flags for debugging
-# CFLAGS = -g -DDEBUG -Wall -D_REENTRANT \
+# CFLAGS = -g -DDEBUG -Wall -D_REENTRANT $(OSDEF) \
        -I${PKGDIR}/include -L${PKGDIR}/lib, -Wl,--rpath=${PKGDIR}/lib
 
 # Mail program: This must support "CMD -s SUBJECT ADDRESS" to send out a mail with a subject
