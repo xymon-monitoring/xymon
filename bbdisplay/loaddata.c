@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.149 2005-04-03 20:19:10 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.150 2005-04-08 07:24:51 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -752,6 +752,7 @@ state_t *load_state(dispsummary_t **sumhead)
 				continue;
 			}
 
+			memset(&log, 0, sizeof(log));
 			strcpy(onelog, bol);;
 			p = gettok(onelog, "|"); i = 0;
 			while (p) {
@@ -774,6 +775,7 @@ state_t *load_state(dispsummary_t **sumhead)
 				p = gettok(NULL, "|");
 				i++;
 			}
+			if (!log.msg) log.msg = "";
 			sprintf(fn, "%s.%s", commafy(log.hostname), log.testname);
 		}
 		else {
