@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.21 2005-03-25 21:13:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.22 2005-04-08 15:02:47 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -533,9 +533,6 @@ int main(int argc, char *argv[])
 		gdeffn = strdup(fnam);
 	}
 	load_gdefs(gdeffn);
-
-	/* Dont use local names for week-days etc - the RRD fonts dont support it. */
-	putenv("LC_TIME=C");
 
 	/* Determine the directory with the host RRD files, and go there. */
 	if (rrddir == NULL) {
