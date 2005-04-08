@@ -68,7 +68,7 @@ bb-webpage: $(WEBPAGEOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(WEBPAGEOBJS) ../lib/libbbgen.a
 
 bb-datepage.cgi: $(DATEPAGEOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(DATEPAGEOBJS) ../lib/libbbgen.a
+	$(CC) $(CFLAGS) -o $@ $(DATEPAGEOBJS) ../lib/libbbgen.a $(NETLIBS)
 
 
 ################################################
