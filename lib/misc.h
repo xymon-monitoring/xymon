@@ -34,7 +34,7 @@ extern int run_command(char *cmd, char *errortext, char **banner, int *bannerbyt
 extern void do_bbext(FILE *output, char *extenv, char *family);
 extern char **setup_commandargs(char *cmdline, char **cmd);
 
-#if defined(HPUX)
+#if defined(HPUX) || defined(BSD)
 #define atoll my_atoll
 #endif
 
