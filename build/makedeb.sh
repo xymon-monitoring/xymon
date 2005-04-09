@@ -8,7 +8,7 @@ fi
 
 cd ~/hobbit
 rm -rf debbuild
-mkdir ~/hobbit/debbuild/hobbit-$REL
+mkdir -p ~/hobbit/debbuild/hobbit-$REL
 for f in bbdisplay bbnet bbpatches bbproxy build common docs hobbitd include lib scripts
 do
         find $f/ | grep -v RCS | cpio -pdvmu ~/hobbit/debbuild/hobbit-$REL/
