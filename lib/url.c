@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: url.c,v 1.12 2005-03-22 09:16:49 henrik Exp $";
+static char rcsid[] = "$Id: url.c,v 1.13 2005-04-10 07:14:49 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -172,8 +172,15 @@ static void load_netrc(void)
 	MEMDEFINE(netrcfn);
 	MEMDEFINE(l);
 
-	sprintf(netrcfn, "%s/.netrc", xgetenv("HOME"));
+	/* Look for $BBHOME/etc/netrc first, then the default ~/.netrc */
+	sprintf(netrcfn, "%s/etc/netrc", xgetenv("BBHOME"));
 	fd = fopen(netrcfn, "r");
+	/* Can HOME be undefined ? Yes, on Solaris when started during boot */
+	if ((fd == NULL) && getenv("HOME")) {
+		sprintf(netrcfn, "%s/.netrc", xgetenv("HOME"));
+		fd = fopen(netrcfn, "r");
+	}
+
 	if (fd == NULL) {
 		MEMUNDEFINE(netrcfn);
 		MEMUNDEFINE(l);
