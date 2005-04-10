@@ -14,6 +14,20 @@ mail alerts, and converts the reply mail into an acknowledge
 message that is sent to the Hobbit system. This permits an
 administrator to acknowledge an alert via e-mail.
 
+.SH ADDING INFORMATION TO THE REPLY MAIL
+By default, an acknowledgment is valid for 1 hour. If you know
+in advance that solving the problem is going to take longer,
+you can change this by adding \fBdelay=DURATION\fR to the subject
+of your mail reply. Duration is in minutes, unless you add a
+trailing 'h' (for 'hours'), 'd' (for 'days') or 'w' (for 'weeks').
+
+You can also include a message that will show up on the status-page
+together with the acknowledgment, e.g. to provide an explanation for
+the issue or some other information to the users. You can either
+put it at the end of the subject line as \fBmsg=Some random text\fR, 
+or you can just enter it in the e-mail as the first non-blank line of
+text in the mail.
+
 .SH USE WITH PROCMAIL
 To setup hobbit-mailack, create a \fB.procmailrc\fR file in
 the hobbit-users home-directory with the following contents:
