@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.18 2005-03-27 06:56:44 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.19 2005-04-10 12:06:21 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -345,32 +345,42 @@ int durationvalue(char *dur)
 
 char *durationstring(time_t secs)
 {
+#define ONE_WEEK   (7*24*60*60)
+#define ONE_DAY    (24*60*60)
+#define ONE_HOUR   (60*60)
+#define ONE_MINUTE (60)
+
 	static char result[50];
 	char *p = result;
 	time_t v = secs;
+	int n;
 
 	if (secs == 0) return "-";
 
 	*result = '\0';
 
-	if (v >= 7*24*60*60) {
-		p += sprintf(p, "%dw ", (int)(v / (7*24*60*60)));
-		v = (v % 7*24*60*60);
+	if (v >= ONE_WEEK) {
+		n = (int) (v / ONE_WEEK);
+		p += sprintf(p, "%dw ", n);
+		v -= (n * ONE_WEEK);
 	}
 
-	if (v >= 24*60*60) {
-		p += sprintf(p, "%dd ", (int)(v / (24*60*60)));
-		v = (v % 24*60*60);
+	if (v >= ONE_DAY) {
+		n = (int) (v / ONE_DAY);
+		p += sprintf(p, "%dd ", n);
+		v -= (n * ONE_DAY);
 	}
 
-	if (v >= 60*60) {
-		p += sprintf(p, "%dh ", (int)(v / (60*60)));
-		v = (v % 60*60);
+	if (v >= ONE_HOUR) {
+		n = (int) (v / ONE_HOUR);
+		p += sprintf(p, "%dh ", n);
+		v -= (n * ONE_HOUR);
 	}
 
-	if (v >= 60) {
-		p += sprintf(p, "%dm ", (int)(v / 60));
-		v = (v % 60);
+	if (v >= ONE_MINUTE) {
+		n = (int) (v / ONE_MINUTE);
+		p += sprintf(p, "%dm ", n);
+		v -= (n * ONE_MINUTE);
 	}
 
 	if (v > 0) {
