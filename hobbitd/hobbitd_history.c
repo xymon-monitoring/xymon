@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.33 2005-03-25 21:13:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.34 2005-04-10 12:58:21 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -174,6 +174,20 @@ int main(int argc, char *argv[])
 
 				histlogfd = fopen(fname, "w");
 				if (histlogfd) {
+					/*
+					 * When a host gets disabled or goes purple, the status
+					 * message data is not changed - so it will include a
+					 * wrong color as the first word of the message.
+					 * Therefore we need to fixup this so it matches the
+					 * newcolor value.
+					 */
+					int txtcolor = parse_color(statusdata);
+
+					if (txtcolor != -1) {
+						fprintf(histlogfd, "%s", colorname(newcolor));
+						statusdata += strlen(colorname(txtcolor));
+					}
+
 					fwrite(statusdata, strlen(statusdata), 1, histlogfd);
 					fprintf(histlogfd, "Status unchanged in 0.00 minutes\n");
 					fprintf(histlogfd, "Message received from %s\n", items[2]);
