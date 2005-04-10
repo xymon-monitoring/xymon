@@ -516,10 +516,11 @@ defining services in the bb-services file. See
 .I bb-services(5)
 for details on this file.
 
-.IP "~/.netrc - authentication data for password-protected webs"
-If you have password-protected sites, you can put the username and 
-password into the ".netrc" file in the home-directory of the user
-running your BB network tests.
+.IP "$BBHOME/etc/netrc - authentication data for password-protected webs"
+If you have password-protected sites, you can put the usernames and 
+passwords for these here. They will then get picked up automatically
+when running your network tests.  This works for web-sites that use 
+the "Basic" authentication scheme in HTTP.
 See 
 .I ftp(1)
 for details - a sample entry would look like this
@@ -528,10 +529,8 @@ for details - a sample entry would look like this
 .br
 Note that the machine-name must be the name you use in the
 http://machinename/ URL setting - it need not be the one you
-use for the system-name in Big Brother.
+use for the system-name in Hobbit.
 
-This works for web-sites that use the "Basic" authentication
-scheme in HTTP.
 .sp
 .IP "$BBHOME/etc/cookies"
 This file may contain website cookies, in the Netscape HTTP
