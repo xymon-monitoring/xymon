@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.21 2005-04-04 21:32:55 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.22 2005-04-10 11:09:06 henrik Exp $";
 
 static char *disk_params[] = { "rrdcreate", rrdfn, "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", 
 				rra1, rra2, rra3, rra4, NULL };
@@ -45,7 +45,7 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		if ((dsystype != DT_AS400) && (strchr(curline, '/') == NULL)) goto nextline;
 
 		/* red/yellow filesystems show up twice */
-		if ((dsystype != DT_NETAPP) && (dsystype != DT_NETWARE)) {
+		if ((dsystype != DT_NETAPP) && (dsystype != DT_NETWARE) && (dsystype != DT_AS400)) {
 			if (*curline == '&') goto nextline; 
 			if ((strstr(curline, " red ") || strstr(curline, " yellow "))) goto nextline;
 		}
@@ -71,7 +71,7 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			break;
 		  case DT_AS400:
 			diskname = xstrdup(",DASD");
-			p = strchr(columns[12], '%'); if (p) *p = ' ';
+			p = strchr(columns[columncount-1], '%'); if (p) *p = ' ';
 			/* 
 			 * Yikes ... the format of this line varies depending on the color.
 			 * Red:
