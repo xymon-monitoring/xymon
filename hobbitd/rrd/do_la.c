@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char la_rcsid[] = "$Id: do_la.c,v 1.13 2005-04-10 11:49:41 henrik Exp $";
+static char la_rcsid[] = "$Id: do_la.c,v 1.14 2005-04-10 16:35:47 henrik Exp $";
 
 static char *la_params[]          = { "rrdcreate", rrdfn, "DS:la:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
@@ -17,9 +17,62 @@ static pcre *zVM_exp = NULL;
 
 int do_la_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
-	char *p, *eoln;
+	char *p, *eoln = NULL;
 	int gotusers=0, gotprocs=0, gotload=0;
 	int users=0, procs=0, load=0;
+
+	if (strstr(msg, "bb-xsnmp")) {
+		/*
+		 * bb-xsnmp.pl script output.
+		 *
+		 * green Tue Apr  5 12:57:37 2005 up: 254.58 days, CPU Usage=  9%
+		 *
+		 * &green  CPU Time in Busy Mode:   9%
+		 * &green  CPU Time in Idle Mode:  91%
+		 *
+		 * &yellow CPU Usage Threshold: 90%
+		 * &red CPU Usage Threshold: 95%
+		 *
+		 * <!-- Enterprise: netapp , Version: 6.42 -->
+		 * bb-xsnmp.pl Version: 1.78
+		 */
+
+		p = strstr(msg, "CPU Usage=");
+		if (p) {
+			p += strlen("CPU Usage=");
+			gotload = 1;
+			load = atoi(p);
+		}
+
+		goto done_parsing;
+	}
+	else if (strstr(msg, "z/VM")) {
+		/* z/VM cpu message. Looks like this, from Rich Smrcina:
+		 * green 5 Apr 2005 20:07:34  CPU Utilization  7% z/VM Version 4 Release 4.0, service level 0402 (32-bit) AVGPROC-007% 01
+		 */
+
+		int ovector[30];
+		char w[100];
+		int res;
+
+		if (zVM_exp == NULL) {
+			const char *errmsg = NULL;
+			int errofs = 0;
+
+			zVM_exp = pcre_compile(".* CPU Utilization *([0-9]+)%", PCRE_CASELESS, &errmsg, &errofs, NULL);
+		}
+
+		res = pcre_exec(zVM_exp, NULL, msg, strlen(msg), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+		if (res >= 0) {
+			/* We have a match - pick up the data. */
+			*w = '\0'; if (res > 0) pcre_copy_substring(msg, ovector, res, 1, w, sizeof(w));
+			if (strlen(w)) {
+				load = atoi(w); gotload = 1;
+			}
+		}
+
+		goto done_parsing;
+	}
 
 	eoln = strchr(msg, '\n'); if (eoln) *eoln = '\0';
 	p = strstr(msg, "up: ");
@@ -66,31 +119,6 @@ int do_la_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			}
 		}
 	}
-	else if (strstr(msg, "z/VM")) {
-		/* z/VM cpu message. Looks like this, from Rich Smrcina:
-		 * green 5 Apr 2005 20:07:34  CPU Utilization  7% z/VM Version 4 Release 4.0, service level 0402 (32-bit) AVGPROC-007% 01
-		 */
-
-		int ovector[30];
-		char w[100];
-		int res;
-
-		if (zVM_exp == NULL) {
-			const char *errmsg = NULL;
-			int errofs = 0;
-
-			zVM_exp = pcre_compile(".* CPU Utilization *([0-9]+)%", PCRE_CASELESS, &errmsg, &errofs, NULL);
-		}
-
-		res = pcre_exec(zVM_exp, NULL, msg, strlen(msg), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
-		if (res >= 0) {
-			/* We have a match - pick up the data. */
-			*w = '\0'; if (res > 0) pcre_copy_substring(msg, ovector, res, 1, w, sizeof(w));
-			if (strlen(w)) {
-				load = atoi(w); gotload = 1;
-			}
-		}
-	}
 	else {
 		/* 
 		 * No "uptime" in message - could be from an AS/400. They look like this:
@@ -123,6 +151,7 @@ int do_la_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		}
 	}
 
+done_parsing:
 	if (eoln) *eoln = '\n';
 
 	if (!gotload) {
