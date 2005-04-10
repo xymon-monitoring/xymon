@@ -48,7 +48,7 @@
 # the PAGE, HOST and SERVICE definitions, by putting a "%"
 # in front of the regex. E.g.
 #
-# HOST=%www.*
+# HOST=%^www.*
 #      MAIL webadmin@foo.com EXHOST=www.testsite.foo.com
 #
 # This sets up a rule so that alerts from any hostname 
