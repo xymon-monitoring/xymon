@@ -8,11 +8,12 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char la_rcsid[] = "$Id: do_la.c,v 1.12 2005-03-25 21:15:26 henrik Exp $";
+static char la_rcsid[] = "$Id: do_la.c,v 1.13 2005-04-10 11:49:41 henrik Exp $";
 
 static char *la_params[]          = { "rrdcreate", rrdfn, "DS:la:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
 static pcre *as400_exp = NULL;
+static pcre *zVM_exp = NULL;
 
 int do_la_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -62,6 +63,31 @@ int do_la_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			else {
 				gotload = 1; 
 				load = atoi(p);
+			}
+		}
+	}
+	else if (strstr(msg, "z/VM")) {
+		/* z/VM cpu message. Looks like this, from Rich Smrcina:
+		 * green 5 Apr 2005 20:07:34  CPU Utilization  7% z/VM Version 4 Release 4.0, service level 0402 (32-bit) AVGPROC-007% 01
+		 */
+
+		int ovector[30];
+		char w[100];
+		int res;
+
+		if (zVM_exp == NULL) {
+			const char *errmsg = NULL;
+			int errofs = 0;
+
+			zVM_exp = pcre_compile(".* CPU Utilization *([0-9]+)%", PCRE_CASELESS, &errmsg, &errofs, NULL);
+		}
+
+		res = pcre_exec(zVM_exp, NULL, msg, strlen(msg), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+		if (res >= 0) {
+			/* We have a match - pick up the data. */
+			*w = '\0'; if (res > 0) pcre_copy_substring(msg, ovector, res, 1, w, sizeof(w));
+			if (strlen(w)) {
+				load = atoi(w); gotload = 1;
 			}
 		}
 	}
