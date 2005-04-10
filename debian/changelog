@@ -1,3 +1,9 @@
+hobbit (4.0.2-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Sun, 10 Apr 2005 19:39:15 +0200
+
 hobbit (4.0.1-1) unstable; urgency=low
 
   * Build problems fixed on Solaris, HP-UX
