@@ -1,6 +1,6 @@
 Name: hobbit
 Version: @VER@
-Release: 4
+Release: 1
 Group: Networking/Daemons
 URL: http://hobbitmon.sourceforge.net/
 License: GPL
@@ -104,4 +104,7 @@ chkconfig --del hobbit
 %attr(-, hobbit, hobbit) /var/lib/hobbit
 %attr(775, hobbit, apache) %dir /var/lib/hobbit/www/rep
 %attr(775, hobbit, apache) %dir /var/lib/hobbit/www/snap
+%attr(644, root, root) %config /var/lib/hobbit/www/menu/menu_items.js
+%attr(644, root, root) %config /var/lib/hobbit/www/menu/menu_tpl.js
+%attr(644, root, root) %config /var/lib/hobbit/www/menu/menu.css
 
