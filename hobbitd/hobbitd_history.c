@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.34 2005-04-10 12:58:21 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.35 2005-04-10 16:37:21 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -124,8 +124,8 @@ int main(int argc, char *argv[])
 		int metacount;
 		char *p;
 		char *statusdata = "";
-		char *hostname, *hostnamecommas, *testname;
-		time_t tstamp, lastchg;
+		char *hostname, *hostnamecommas, *testname, *dismsg;
+		time_t tstamp, lastchg, disabletime;
 		int tstamp_i, lastchg_i;
 		int newcolor, oldcolor;
 		struct tm tstamptm;
@@ -150,13 +150,15 @@ int main(int argc, char *argv[])
 		}
 
 		if ((metacount > 9) && (strncmp(items[0], "@@stachg", 8) == 0)) {
-			/* @@stachg#seq|timestamp|sender|origin|hostname|testname|expiretime|color|prevcolor|changetime */
+			/* @@stachg#seq|timestamp|sender|origin|hostname|testname|expiretime|color|prevcolor|changetime|disabletime|disablemsg */
 			sscanf(items[1], "%d.%*d", &tstamp_i); tstamp = tstamp_i;
 			hostname = items[4];
 			testname = items[5];
 			newcolor = parse_color(items[7]);
 			oldcolor = parse_color(items[8]);
-			lastchg = atoi(items[9]);
+			lastchg  = atoi(items[9]);
+			disabletime = atoi(items[10]);
+			dismsg   = items[11];
 
 			if (save_histlogs) {
 				char *hostdash;
@@ -182,10 +184,19 @@ int main(int argc, char *argv[])
 					 * newcolor value.
 					 */
 					int txtcolor = parse_color(statusdata);
+					char *origstatus = statusdata;
 
 					if (txtcolor != -1) {
 						fprintf(histlogfd, "%s", colorname(newcolor));
 						statusdata += strlen(colorname(txtcolor));
+					}
+
+					if ((disabletime > 0) && (strlen(dismsg) > 0)) {
+						nldecode(dismsg);
+						fprintf(histlogfd, " Disabled until %s\n%s\n\n", 
+							ctime(&disabletime), dismsg);
+						fprintf(histlogfd, "Status message when disabled follows:\n\n");
+						statusdata = origstatus;
 					}
 
 					fwrite(statusdata, strlen(statusdata), 1, histlogfd);
