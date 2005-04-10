@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char memory_rcsid[] = "$Id: do_memory.c,v 1.11 2005-03-25 21:15:26 henrik Exp $";
+static char memory_rcsid[] = "$Id: do_memory.c,v 1.12 2005-04-10 15:21:09 henrik Exp $";
 
 static char *memory_params[]      = { "rrdcreate", rrdfn, "DS:realmempct:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
@@ -69,29 +69,72 @@ int do_memory_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		}
 	}
 
-	phys = strstr(msg, "Physical"); if (phys == NULL) phys = strstr(msg, "Real");
-	swap = strstr(msg, "Swap"); if (swap == NULL) swap = strstr(msg, "Page");
-	actual = strstr(msg, "Actual"); if (actual == NULL) actual = strstr(msg, "Virtual");
+	if (strstr(msg, "Total Cache Buffers")) {
+		/* Netware nwstat2bb memory report.
+		 *
+		 * some.host.com|memory|green||1111681798|1111681982|1111699982|0|0|127.0.0.1|-1||
+		 * green Thu Mar 24 17:33:02 CET 2005 - Memory OK
+		 * &green Original Cache Buffers                                   : 326622
+		 * &green Total Cache Buffers                                      : 56%
+		 * &green Dirty Cache Buffers                                      : 0%
+		 * &green Long Term Cache Hit Percentage                           : 0%
+		 * &green Least Recently Used (LRU) sitting time                   : 3 weeks, 2 days, 4 hours, 25 minutes, 36 seconds
+		 */
+		char *p;
+		int val;
 
-	if (phys && swap) {
-		char *eoln;
-		int physval = -1, swapval = -1, actval = -1;
-
-		eoln = strchr(phys, '\n'); if (eoln) *eoln = '\0';
-		physval = get_mem_percent(phys);
-		if (eoln) *eoln = '\n';
-
-		eoln = strchr(swap, '\n'); if (eoln) *eoln = '\0';
-		swapval = get_mem_percent(swap);
-		if (eoln) *eoln = '\n';
-
-		if (actual) {
-			eoln = strchr(actual, '\n'); if (eoln) *eoln = '\0';
-			actval = get_mem_percent(actual);
-			if (eoln) *eoln = '\n';
+		p = strstr(msg, "Total Cache Buffers");
+		if (p) {
+			p += strspn(p, " :");
+			val = atoi(p);
+			sprintf(rrdfn, "memory.tcb.rrd");
+			sprintf(rrdvalues, "%d:%d", (int)tstamp, val);
+			create_and_update_rrd(hostname, rrdfn, memory_params, update_params);
 		}
 
-		do_memory_larrd_update(tstamp, hostname, physval, swapval, actval);
+		p = strstr(msg, "Dirty Cache Buffers");
+		if (p) {
+			p += strspn(p, " :");
+			val = atoi(p);
+			sprintf(rrdfn, "memory.dcb.rrd");
+			sprintf(rrdvalues, "%d:%d", (int)tstamp, val);
+			create_and_update_rrd(hostname, rrdfn, memory_params, update_params);
+		}
+
+		p = strstr(msg, "Long Term Cache Hit Percentage");
+		if (p) {
+			p += strspn(p, " :");
+			val = atoi(p);
+			sprintf(rrdfn, "memory.ltch.rrd");
+			sprintf(rrdvalues, "%d:%d", (int)tstamp, val);
+			create_and_update_rrd(hostname, rrdfn, memory_params, update_params);
+		}
+	}
+	else {
+		phys = strstr(msg, "Physical"); if (phys == NULL) phys = strstr(msg, "Real");
+		swap = strstr(msg, "Swap"); if (swap == NULL) swap = strstr(msg, "Page");
+		actual = strstr(msg, "Actual"); if (actual == NULL) actual = strstr(msg, "Virtual");
+
+		if (phys && swap) {
+			char *eoln;
+			int physval = -1, swapval = -1, actval = -1;
+
+			eoln = strchr(phys, '\n'); if (eoln) *eoln = '\0';
+			physval = get_mem_percent(phys);
+			if (eoln) *eoln = '\n';
+
+			eoln = strchr(swap, '\n'); if (eoln) *eoln = '\0';
+			swapval = get_mem_percent(swap);
+			if (eoln) *eoln = '\n';
+
+			if (actual) {
+				eoln = strchr(actual, '\n'); if (eoln) *eoln = '\0';
+				actval = get_mem_percent(actual);
+				if (eoln) *eoln = '\n';
+			}
+
+			do_memory_larrd_update(tstamp, hostname, physval, swapval, actval);
+		}
 	}
 
 	return 0;
