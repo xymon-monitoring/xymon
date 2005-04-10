@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.137 2005-04-08 07:19:31 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.138 2005-04-10 16:37:00 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -485,12 +485,18 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 
 		  case C_STACHG:
 			n = snprintf(channel->channelbuf, (SHAREDBUFSZ-5),
-				"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d\n%s", 
+				"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d", 
 				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 				sender, log->origin->name, hostname, log->test->testname, 
 				(int) log->validtime, colnames[log->color], 
-				colnames[log->oldcolor], (int) log->lastchange, 
-				msg);
+				colnames[log->oldcolor], (int) log->lastchange);
+			if (n < (SHAREDBUFSZ-5)) {
+				n += snprintf(channel->channelbuf+n, (SHAREDBUFSZ-n-5), "|%d|%s",
+					(int)log->enabletime, nlencode(log->dismsg));
+			}
+			if (n < (SHAREDBUFSZ-5)) {
+				n += snprintf(channel->channelbuf+n, (SHAREDBUFSZ-n-5), "\n%s", msg);
+			}
 			if (n > (SHAREDBUFSZ-5)) {
 				errprintf("Oversize stachg msg from %s:%s truncated (n=%d)\n", 
 					hostname, log->test->testname, n);
