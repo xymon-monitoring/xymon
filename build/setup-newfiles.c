@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <errno.h>
 
 #include "libbbgen.h"
 
@@ -22,15 +23,20 @@ int main(int argc, char *argv[])
 			FILE *sumfd;
 			printf("Loading md5-data ... ");
 			sumfd = fopen(argv[2], "r");
-			sumbuf = (char *)malloc(st.st_size + 1);
-			if (fread(sumbuf, 1, st.st_size, sumfd) == st.st_size) {
-				printf("OK\n");
+			if (sumfd) {
+				sumbuf = (char *)malloc(st.st_size + 1);
+				if (fread(sumbuf, 1, st.st_size, sumfd) == st.st_size) {
+					printf("OK\n");
+				}
+				else {
+					printf("failed\n");
+					free(sumbuf);
+					sumbuf = NULL;
+				}
 				fclose(sumfd);
 			}
 			else {
 				printf("failed\n");
-				free(sumbuf);
-				sumbuf = NULL;
 			}
 		}
 	}
@@ -55,6 +61,7 @@ int main(int argc, char *argv[])
 		if (((fd = fopen(srcfn, "r")) != NULL) && ((ctx = digest_init("md5")) != NULL)) {
 			while ((buflen = fread(buf, 1, sizeof(buf), fd)) > 0) digest_data(ctx, buf, buflen);
 			strcpy(srcmd5, digest_done(ctx));
+			fclose(fd);
 		}
 
 		if (stat(destfn, &st) == 0) {
@@ -67,6 +74,7 @@ int main(int argc, char *argv[])
 			if ((ctx = digest_init("md5")) == NULL) continue;
 			while ((buflen = fread(buf, 1, sizeof(buf), fd)) > 0) digest_data(ctx, buf, buflen);
 			md5sum = digest_done(ctx);
+			fclose(fd);
 
 			if (strstr(sumbuf, md5sum) == NULL) continue;  /* Not one of our known versions */
 			if (strcmp(srcmd5, md5sum) == 0) continue; /* Already installed */
@@ -90,7 +98,17 @@ int main(int argc, char *argv[])
 			int n;
 
 			infd = fopen(srcfn, "r");
+			if (infd == NULL) {
+				/* Dont know how this can happen, but .. */
+				fprintf(stderr, "Cannot open input file %s: %s\n", srcfn, strerror(errno));
+				return 1;
+			}
 			outfd = fopen(destfn, "w");
+			if (outfd == NULL) {
+				/* Dont know how this can happen, but .. */
+				fprintf(stderr, "Cannot create output file %s: %s\n", destfn, strerror(errno));
+				return 1;
+			}
 			while ( (n = fread(buf, 1, sizeof(buf), infd)) > 0) fwrite(buf, 1, n, outfd);
 			fclose(infd); fclose(outfd);
 			chmod(destfn, st.st_mode);
