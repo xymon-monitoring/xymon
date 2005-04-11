@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.138 2005-04-10 16:37:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.139 2005-04-11 20:33:54 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -923,7 +923,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 			 * That's for 4.1 - for now, we'll just give it a long enough 
 			 * lifetime so that cookies will be valid.
 			 */
-			log->cookieexpires = 86400; /* Valid for 1 day */
+			log->cookieexpires = now + 86400; /* Valid for 1 day */
 		}
 	}
 	else {
