@@ -1,3 +1,9 @@
+hobbit (4.0.3-1) unstable; urgency=low
+
+  * New upstream release. Fixes acknowledgment failure.
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Wed, 13 Apr 2005 13:31:57 +0200
+
 hobbit (4.0.2-1) unstable; urgency=low
 
   * New upstream release.
