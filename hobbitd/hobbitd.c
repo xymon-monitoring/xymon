@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.139 2005-04-11 20:33:54 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.140 2005-04-13 11:27:05 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -189,6 +189,7 @@ hobbitd_statistics_t hobbitd_stats[] = {
 	{ "rename", 0 },
 	{ "dummy", 0 },
 	{ "notify", 0 },
+	{ "schedule", 0 },
 	{ NULL, 0 }
 };
 
@@ -225,6 +226,17 @@ enum boardfield_t boardfields[F_LAST];
 unsigned long msgs_total = 0;
 unsigned long msgs_total_last = 0;
 time_t last_stats_time = 0;
+
+/* List of scheduled (future) tasks */
+typedef struct scheduletask_t {
+	int id;
+	time_t executiontime;
+	char *command;
+	char *sender;
+	struct scheduletask_t *next;
+} scheduletask_t;
+scheduletask_t *schedulehead = NULL;
+int nextschedid = 1;
 
 void update_statistics(char *cmd)
 {
@@ -2086,6 +2098,83 @@ void do_message(conn_t *msg, char *origin)
 		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, 0, 0);
 		if (log) handle_notify(msg->buf, sender, log);
 	}
+	else if (strncmp(msg->buf, "schedule", 8) == 0) {
+		char *cmd;
+
+		/*
+		 * Schedule a later command. This is either
+		 * "schedule" - no params: list the currently scheduled commands.
+		 * "schedule TIME COMMAND": Add a COMMAND to run at TIME.
+		 * "schedule cancel ID": Cancel the scheduled command with id ID.
+		 */
+		cmd = msg->buf + 8; cmd += strspn(cmd, " ");
+
+		if (strlen(cmd) == 0) {
+			char *buf, *bufp;
+			int bufsz, buflen;
+			scheduletask_t *swalk;
+
+			bufsz = 4096;
+			bufp = buf = (char *)malloc(bufsz);
+			*buf = '\0'; buflen = 0;
+
+			for (swalk = schedulehead; (swalk); swalk = swalk->next) {
+				int needed = 128 + strlen(swalk->command);
+
+				if ((bufsz - (bufp - buf)) < needed) {
+					int buflen = (bufp - buf);
+					bufsz += 4096 + needed;
+					buf = (char *)realloc(buf, bufsz);
+					bufp = buf + buflen;
+				}
+
+				bufp += sprintf(bufp, "%d|%d|%s|%s\n", swalk->id,
+						(int)swalk->executiontime, swalk->sender, nlencode(swalk->command));
+			}
+
+			xfree(msg->buf);
+			msg->doingwhat = RESPONDING;
+			msg->bufp = msg->buf = buf;
+			msg->buflen = (bufp - buf);
+		}
+		else {
+			if (strncmp(cmd, "cancel", 6) != 0) {
+				scheduletask_t *newitem = (scheduletask_t *)malloc(sizeof(scheduletask_t));
+
+				newitem->id = nextschedid++;
+				newitem->executiontime = (time_t) atoi(cmd);
+				cmd += strspn(cmd, "0123456789");
+				cmd += strspn(cmd, " ");
+				newitem->sender = strdup(sender);
+				newitem->command = strdup(cmd);
+				newitem->next = schedulehead;
+				schedulehead = newitem;
+			}
+			else {
+				scheduletask_t *swalk, *sprev;
+				int id;
+				
+				id = atoi(cmd + 6);
+				swalk = schedulehead; sprev = NULL; 
+				while (swalk && (swalk->id != id)) {
+					sprev = swalk; 
+					swalk = swalk->next;
+				}
+
+				if (swalk) {
+					xfree(swalk->sender);
+					xfree(swalk->command);
+					if (sprev == NULL) {
+						schedulehead = swalk->next;
+					}
+					else {
+						sprev->next = swalk->next;
+					}
+					xfree(swalk);
+				}
+			}
+		}
+	}
 
 done:
 	if (msg->doingwhat == RESPONDING) {
@@ -2108,6 +2197,7 @@ void save_checkpoint(void)
 	hobbitd_hostlist_t *hwalk;
 	hobbitd_log_t *lwalk;
 	time_t now = time(NULL);
+	scheduletask_t *swalk;
 
 	if (checkpointfn == NULL) return;
 
@@ -2148,6 +2238,11 @@ void save_checkpoint(void)
 		}
 	}
 
+	for (swalk = schedulehead; (swalk); swalk = swalk->next) {
+		fprintf(fd, "@@HOBBITDCHK-V1|.task.|%d|%d|%s|%s\n", 
+			swalk->id, (int)swalk->executiontime, swalk->sender, nlencode(swalk->command));
+	}
+
 	fclose(fd);
 	rename(tempfn, checkpointfn);
 	xfree(tempfn);
@@ -2183,7 +2278,36 @@ void load_checkpoint(char *fn)
 	while (fgets(l, sizeof(l)-1, fd)) {
 		hostname = testname = sender = testflags = statusmsg = disablemsg = ackmsg = NULL;
 		lastchange = validtime = enabletime = acktime = 0;
-		err =0;
+		err = 0;
+
+		if (strncmp(l, "@@HOBBITDCHK-V1|.task.|", 23) == 0) {
+			scheduletask_t *newtask = (scheduletask_t *)calloc(1, sizeof(scheduletask_t));
+
+			item = gettok(l, "|\n"); i = 0;
+			while (item && !err) {
+				switch (i) {
+				  case 0: break;
+				  case 1: break;
+				  case 2: newtask->id = atoi(item); break;
+				  case 3: newtask->executiontime = (time_t) atoi(item); break;
+				  case 4: newtask->sender = strdup(item); break;
+				  case 5: nldecode(item); newtask->command = strdup(item); break;
+				  default: break;
+				}
+			}
+
+			if (newtask->id && (newtask->executiontime > time(NULL)) && newtask->sender && newtask->command) {
+				newtask->next = schedulehead;
+				schedulehead = newtask;
+			}
+			else {
+				if (newtask->sender) xfree(newtask->sender);
+				if (newtask->command) xfree(newtask->command);
+				xfree(newtask);
+			}
+
+			continue;
+		}
 
 		item = gettok(l, "|\n"); i = 0;
 		while (item && !err) {
@@ -2844,6 +2968,40 @@ int main(int argc, char *argv[])
 					}
 				}
 				break;
+			}
+		}
+
+		/* Any scheduled tasks that need attending to? */
+		{
+			scheduletask_t *swalk, *sprev;
+
+			swalk = schedulehead; sprev = NULL;
+			while (swalk) {
+				if (swalk->executiontime <= now) {
+					scheduletask_t *runtask = swalk;
+					conn_t task;
+
+					/* Unlink the entry */
+					if (sprev == NULL) 
+						schedulehead = swalk->next;
+					else
+						sprev->next = swalk->next;
+					swalk = swalk->next;
+
+					memset(&task, 0, sizeof(task));
+					inet_aton(runtask->sender, (struct in_addr *) &task.addr.sin_addr.s_addr);
+					task.buf = task.bufp = runtask->command;
+					task.buflen = strlen(runtask->command); task.bufsz = task.buflen+1;
+					do_message(&task, "");
+
+					errprintf("Ran scheduled task %d from %s: %s\n", 
+						  runtask->id, runtask->sender, runtask->command);
+					xfree(runtask->sender); xfree(runtask->command); xfree(runtask);
+				}
+				else {
+					sprev = swalk;
+					swalk = swalk->next;
+				}
 			}
 		}
 
