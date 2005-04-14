@@ -1,5 +1,5 @@
-PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filter hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_larrd hobbitd_sample hobbitgraph.cgi hobbitsvc.cgi hobbit-mailack trimhistory hobbitreports.sh
-CGISCRIPTS = hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh
+PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filter hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_larrd hobbitd_sample hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-mailack trimhistory hobbitreports.sh
+CGISCRIPTS = hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh hobbit-enadis.sh
 SECCGISCRIPTS = bb-ack.sh maint.pl
 
 LIBOBJS = ../lib/libbbgen.a
@@ -16,6 +16,7 @@ LARRDOBJS     = hobbitd_larrd.o     hobbitd_worker.o do_larrd.o
 SAMPLEOBJS    = hobbitd_sample.o    hobbitd_worker.o
 HOBBITGRAPHOBJS= hobbitgraph.o
 HOBBITSVCOBJS = hobbitsvc.o hobbitsvc-info.o hobbitsvc-trends.o do_alert.o
+HOBBITENADISOBJS= hobbit-enadis.o
 MAILACKOBJS   = hobbit-mailack.o
 TRIMHISTOBJS  = trimhistory.o
 
@@ -66,6 +67,9 @@ hobbitgraph.cgi: $(HOBBITGRAPHOBJS)
 hobbitsvc.cgi: $(HOBBITSVCOBJS)
 	$(CC) $(CFLAGS) -o $@ $(HOBBITSVCOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 
+hobbit-enadis.cgi: $(HOBBITENADISOBJS)
+	$(CC) $(CFLAGS) -o $@ $(HOBBITENADISOBJS) ../lib/libbbgen.a $(NETLIBS)
+
 hobbit-mailack.o: hobbit-mailack.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ hobbit-mailack.c
 
@@ -92,6 +96,10 @@ hobbitgraph.sh: hobbitgraph.sh.DIST
 	chmod 755 $@
 
 bb-hostsvc.sh: hobbitsvc.sh.DIST
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
+	chmod 755 $@
+
+hobbit-enadis.sh: hobbit-enadis.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
