@@ -10,6 +10,7 @@ BBSERVEROS="@BBHOSTOS@"			# The operating system of your server. linux,freebsd,s
 BBSERVERWWWNAME="@BBHOSTNAME@"		# The name used for this hosts' webserver
 BBSERVERWWWURL="@BBHOSTURL@"		# The top URL for the Hobbit webpages
 BBSERVERCGIURL="@BBCGIURL@"		# The URL for the Hobbit CGI scripts.
+BBSERVERSECURECGIURL="@SECUREBBCGIURL@"	# The URL for the secured Hobbit CGI scripts.
 
 # BBLOCATION="foo"			# The network location, makes bbtest-net test only hosts with NET:foo
 					# You only need to set this if you have multiple network test servers with
@@ -68,6 +69,7 @@ BBREPURL="$BBSERVERWWWURL/rep"			# Hobbit URL prefix for the Hobbit availability
 BBSNAPURL="$BBSERVERWWWURL/snap"		# Hobbit URL prefix for the Hobbit snapshots
 BBWAP="$BBSERVERWWWURL/wml"			# Hobbit URL prefix for the WAP/WML files.
 CGIBINURL="$BBSERVERCGIURL"			# URL prefix for the Hobbit CGI-scripts - /cgi-bin
+SECURECGIBINURL="$BBSERVERSECURECGIURL"		# URL prefix for the secured Hobbit CGI-scripts - /cgi-secure
 
 # Locations of system-wide files and directories
 BBHOME="@BBHOME@"				# The Hobbit server directory, where programs and configurations go. 
