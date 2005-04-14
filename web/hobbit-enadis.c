@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-enadis.c,v 1.1 2005-04-14 08:24:42 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-enadis.c,v 1.2 2005-04-14 13:01:23 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -16,17 +16,20 @@ static char rcsid[] = "$Id: hobbit-enadis.c,v 1.1 2005-04-14 08:24:42 henrik Exp
 #include <unistd.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <time.h>
 
 #include "libbbgen.h"
 
-enum { ACT_NONE, ACT_ENABLE, ACT_DISABLE } action = ACT_NONE;
+enum { ACT_NONE, ACT_ENABLE, ACT_DISABLE, ACT_SCHED_DISABLE, ACT_SCHED_CANCEL } action = ACT_NONE;
 char *hostname = NULL;
 char *enabletest = NULL;
 int duration = 0;
 int scale = 1;
 int disablecount = 0;
 char **disabletest = NULL;
-char *disablemsg = NULL;
+char *disablemsg = "No reason given";
+time_t schedtime = 0;
+int cancelid = 0;
 
 void errormsg(char *msg)
 {
@@ -40,6 +43,9 @@ void parse_query(void)
 {
 	char l[4096];
         char *token;
+	struct tm schedtm;
+
+	memset(&schedtm, 0, sizeof(schedtm));
 
 	while (fgets(l, sizeof(l), stdin)) {
 		l[sizeof(l)-1] = '\0';
@@ -53,7 +59,9 @@ void parse_query(void)
 
 			if (strcmp(token, "go") == 0) {
 				if (strcasecmp(val, "enable") == 0) action = ACT_ENABLE;
-				else if (strcasecmp(val, "disable") == 0) action = ACT_DISABLE;
+				else if (strcasecmp(val, "disable now") == 0) action = ACT_DISABLE;
+				else if (strcasecmp(val, "schedule disable") == 0) action = ACT_SCHED_DISABLE;
+				else if (strcasecmp(val, "cancel") == 0) action = ACT_SCHED_CANCEL;
 			}
 			else if (strcmp(token, "duration") == 0) {
 				duration = atoi(val);
@@ -84,10 +92,31 @@ void parse_query(void)
 					disablecount++;
 				}
 			}
+			else if (strcmp(token, "year") == 0) {
+				schedtm.tm_year = atoi(val) - 1900;
+			}
+			else if (strcmp(token, "month") == 0) {
+				schedtm.tm_mon = atoi(val) - 1;
+			}
+			else if (strcmp(token, "day") == 0) {
+				schedtm.tm_mday = atoi(val);
+			}
+			else if (strcmp(token, "hour") == 0) {
+				schedtm.tm_hour = atoi(val);
+			}
+			else if (strcmp(token, "minute") == 0) {
+				schedtm.tm_min = atoi(val);
+			}
+			else if (strcmp(token, "canceljob") == 0) {
+				cancelid = atoi(val);
+			}
 
 			token = strtok(NULL, "&");
 		}
 	}
+
+	schedtm.tm_isdst = -1;
+	schedtime = mktime(&schedtm);
 }
 
 
@@ -95,7 +124,14 @@ int main(int argc, char *argv[])
 {
 	int argi, i, result;
 	char hobbitcmd[4096];
+	char *username = getenv("REMOTE_USER");
+	char *userhost = getenv("REMOTE_HOST");
+	char *userip   = getenv("REMOTE_ADDR");
+	char *fullmsg = "No cause specified";
 
+	if ((username == NULL) || (strlen(username) == 0)) username = "unknown";
+	if ((userhost == NULL) || (strlen(userhost) == 0)) userhost = userip;
+	
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
@@ -107,6 +143,8 @@ int main(int argc, char *argv[])
 	}
 
 	parse_query();
+	fullmsg = (char *)malloc(strlen(username) + strlen(userhost) + strlen(disablemsg) + 1024);
+	sprintf(fullmsg, "\nDisabled by: %s @ %s\nReason: %s\n", username, userhost, disablemsg);
 
 	/*
 	 * Ready ... go build the webpage.
@@ -136,8 +174,26 @@ int main(int argc, char *argv[])
 				    dprintf("Duration = %d, scale = %d\n", duration, scale);
 				    dprintf("Cause = %s\n", textornull(disablemsg));
 				    break;
+
+		  case ACT_SCHED_DISABLE:
+				    dprintf("Action = schedule\n");
+				    dprintf("Time = %s\n", ctime(&schedtime));
+				    dprintf("Tests = ");
+				    for (i=0; (i < disablecount); i++) printf("%s ", disabletest[i]);
+				    printf("\n");
+				    dprintf("Duration = %d, scale = %d\n", duration, scale);
+				    dprintf("Cause = %s\n", textornull(disablemsg));
+				    break;
+
+		  case ACT_SCHED_CANCEL:
+				    dprintf("Action = cancel\n");
+				    dprintf("ID = %d\n", cancelid);
+				    break;
 		}
+		printf("</pre>\n");
 	}
+
+	printf("<table align=\"center\" summary=\"Actions performed\" width=\"60%%\">\n");
 
 	switch (action) {
 	  case ACT_NONE:
@@ -146,21 +202,39 @@ int main(int argc, char *argv[])
 	  case ACT_ENABLE:
 		sprintf(hobbitcmd, "enable %s.%s", commafy(hostname), enabletest);
 		result = sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
-		printf("Enabling host %s test %s : %s\n", hostname, enabletest, ((result == BB_OK) ? "OK" : "Failed"));
+		printf("<tr><td>Enabling host <b>%s</b> test <b>%s</b> : %s</td></tr>\n", hostname, enabletest, ((result == BB_OK) ? "OK" : "Failed"));
 		break;
 
 	  case ACT_DISABLE:
 		for (i=0; (i < disablecount); i++) {
 			sprintf(hobbitcmd, "disable %s.%s %d %s", 
-				commafy(hostname), disabletest[i], duration*scale, disablemsg);
+				commafy(hostname), disabletest[i], duration*scale, fullmsg);
 			result = sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
-			printf("Disabling host %s test %s: %s\n", 
+			printf("<tr><td>Disabling host <b>%s</b> test <b>%s</b>: %s</td></tr>\n", 
 				hostname, disabletest[i], ((result == BB_OK) ? "OK" : "Failed"));
 		}
 		break;
+
+	  case ACT_SCHED_DISABLE:
+		for (i=0; (i < disablecount); i++) {
+			sprintf(hobbitcmd, "schedule %d disable %s.%s %d %s", 
+				(int) schedtime, commafy(hostname), disabletest[i], duration*scale, fullmsg);
+			result = sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+			printf("<tr><td>Scheduling disable of host <b>%s</b> test <b>%s</b> at <b>%s</b>: %s</td></tr>\n", 
+				hostname, disabletest[i], ctime(&schedtime), ((result == BB_OK) ? "OK" : "Failed"));
+		}
+		break;
+
+	  case ACT_SCHED_CANCEL:
+		sprintf(hobbitcmd, "schedule cancel %d", cancelid);
+		result = sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+		printf("<tr><td>Canceling job <b>%d</b> : %s</td></tr>\n", cancelid, ((result == BB_OK) ? "OK" : "Failed"));
+		break;
 	}
 
-	printf("</pre>\n");
+	printf("<tr><td><br>Please wait while refreshing status list ...</td></tr>\n");
+	printf("</table>\n");
+
 	headfoot(stdout, "maint", "", "footer", COL_BLUE);
 
 	return 0;
