@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.86 2005-04-03 16:21:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.87 2005-04-14 13:02:09 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -33,6 +33,24 @@ static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.86 2005-04-03 16:21:18 henrik E
 #include "libbbgen.h"
 
 #include "hobbitd_alert.h"
+
+typedef struct hinf_t {
+	char *name;
+	int color;
+	char *dismsg;
+	time_t distime;
+	struct hinf_t *next;
+} hinf_t;
+hinf_t *tnames = NULL;
+int testcount = 0;
+
+typedef struct sched_t {
+	int id;
+	time_t when;
+	char *srcip, *cmd;
+	struct sched_t *next;
+} sched_t;
+sched_t *schedtasks = NULL;
 
 static void timespec_text(char *spec, char **infobuf, int *infobuflen)
 {
@@ -78,71 +96,114 @@ static void timespec_text(char *spec, char **infobuf, int *infobuflen)
 
 static int test_name_compare(const void *v1, const void *v2)
 {
-	htnames_t *r1 = (htnames_t *)v1;
-	htnames_t *r2 = (htnames_t *)v2;
+	hinf_t *r1 = (hinf_t *)v1;
+	hinf_t *r2 = (hinf_t *)v2;
 
 	return strcmp(r1->name, r2->name);
 }
 
-static void generate_hobbit_alertinfo(char *hostname, char **buf, int *buflen)
+static int fetch_status(char *hostname)
 {
-	static int gotconfig = 0;
-	static char *statuslist = NULL;
+	char *commaname;
+	char *statuslist = NULL;
+	char *hobbitcmd = (char *)malloc(1024 + strlen(hostname));
+	char *walk;
+	int testsz;
 
-	namelist_t *hi = hostinfo(hostname);
-	htnames_t hname, lname;
-	activealerts_t alert;
-	char *key, *walk;
-	htnames_t *tnames = NULL;
-	int testsz, testcount, i, rcount;
-	char l[1024];
-
-	if (!gotconfig) {
-		char *hobbitcmd = (char *)malloc(1024 + strlen(hostname));
-		gotconfig = 1;
-
-		sprintf(hobbitcmd, "hobbitdboard fields=hostname,testname host=%s", hostname);
-		if (sendmessage(hobbitcmd, NULL, NULL, &statuslist, 1, 30) != BB_OK) {
-			addtobuffer(buf, buflen, "Alert configuration unavailable");
-			statuslist = NULL;
-			return;
-		}
-
-		alert_printmode(1);
+	sprintf(hobbitcmd, "hobbitdboard fields=testname,color,disabletime,dismsg host=%s", hostname);
+	if (sendmessage(hobbitcmd, NULL, NULL, &statuslist, 1, 30) != BB_OK) {
+		return 1;
 	}
 
-	if (statuslist == NULL) return;
-
 	testsz = 10;
-	tnames = (htnames_t *)malloc(testsz * sizeof(htnames_t));
+	tnames = (hinf_t *)malloc(testsz * sizeof(hinf_t));
 
-	key = (char *)malloc(1 + strlen(hostname) + 1);
-	sprintf(key, "%s|", hostname);
 	walk = statuslist;
 	testcount = 0;
-	while ((walk = strstr(walk, key)) != NULL) {
-		char *eol, *t;
+	while (walk) {
+		char *eol, *tok;
 
-		eol = strchr(walk+strlen(key), '\n'); if (eol) *eol = '\0';
-		t = (walk+strlen(key));
+		eol = strchr(walk, '\n'); if (eol) *eol = '\0';
 
-		if ( (strcmp(t, xgetenv("INFOCOLUMN")) != 0) && (strcmp(t, xgetenv("LARRDCOLUMN")) != 0) ) {
-			tnames[testcount].name = strdup(t);
+		tok = gettok(walk, "|");
+		if ( tok && (strcmp(tok, xgetenv("INFOCOLUMN")) != 0) && (strcmp(tok, xgetenv("LARRDCOLUMN")) != 0) ) {
+			tnames[testcount].name = strdup(tok); tok = gettok(NULL, "|"); 
+			if (tok) { tnames[testcount].color = parse_color(tok); tok = gettok(NULL, "|"); }
+			if (tok) { tnames[testcount].distime = atoi(tok); tok = gettok(NULL, "|"); }
+			if (tok) { tnames[testcount].dismsg = strdup(tok); }
 			tnames[testcount].next = NULL;
 			testcount++;
 			if (testcount == testsz) {
 				testsz += 10;
-				tnames = (htnames_t *)realloc(tnames, (testsz * sizeof(htnames_t)));
+				tnames = (hinf_t *)realloc(tnames, (testsz * sizeof(hinf_t)));
 			}
 		}
 
-		if (eol) *eol = '\n';
-		walk += strlen(key);
+		if (eol) {
+			walk = eol + 1;
+		}
+		else {
+			walk = NULL;
+		}
 	}
-	free(key);
 
 	/* Sort them so the display looks prettier */
-	qsort(&tnames[0], testcount, sizeof(htnames_t), test_name_compare);
+	qsort(&tnames[0], testcount, sizeof(hinf_t), test_name_compare);
+	xfree(statuslist); statuslist = NULL;
+
+
+	sprintf(hobbitcmd, "schedule");
+	if (sendmessage(hobbitcmd, NULL, NULL, &statuslist, 1, 30) != BB_OK) {
+		return 1;
+	}
+
+	commaname = strdup(commafy(hostname));
+	walk = statuslist;
+	while (walk) {
+		char *eol, *tok = NULL;
+
+		eol = strchr(walk, '\n'); if (eol) *eol = '\0';
+
+		/* Not quite fool-proof, but filters out most of the stuff that does not belong to this host. */
+		if (strstr(walk, hostname) || strstr(walk, commaname)) tok = gettok(walk, "|");
+
+		if (tok && strlen(tok)) {
+			sched_t *newitem = (sched_t *)calloc(1, sizeof(sched_t));
+
+			newitem->id = atoi(tok); tok = gettok(NULL, "|");
+			if (tok) { newitem->when  = (int)atoi(tok); tok = gettok(NULL, "|"); }
+			if (tok) { newitem->srcip = strdup(tok);    tok = gettok(NULL, "\n"); }
+			if (tok) newitem->cmd = strdup(tok);
+
+			if (newitem->id && newitem->when && newitem->srcip && newitem->cmd) {
+				newitem->next = schedtasks;
+				schedtasks = newitem;
+			}
+			else {
+				if (newitem->cmd) xfree(newitem->cmd);
+				if (newitem->srcip) xfree(newitem->srcip);
+				xfree(newitem);
+			}
+		}
+
+		if (eol) {
+			walk = eol + 1;
+		}
+		else {
+			walk = NULL;
+		}
+	}
+
+	return 0;
+}
+
+static void generate_hobbit_alertinfo(char *hostname, char **buf, int *buflen)
+{
+	namelist_t *hi = hostinfo(hostname);
+	htnames_t hname, lname, tname;
+	activealerts_t alert;
+	char l[1024];
+	int i, rcount;
 
 	sprintf(l, "<table summary=\"%s Alerts\" border=1>\n", hostname);
 	addtobuffer(buf, buflen, l);
@@ -150,8 +211,10 @@ static void generate_hobbit_alertinfo(char *hostname, char **buf, int *buflen)
 
 	hname.name = hostname; hname.next = NULL;
 	lname.name = (hi ? hi->page->pagepath : ""); lname.next = NULL;
+	tname.next = NULL;
 	alert.hostname = &hname;
 	alert.location = &lname;
+	alert.testname = &tname;
 	strcpy(alert.ip, "127.0.0.1");
 	alert.color = COL_RED;
 	alert.pagemessage = "";
@@ -163,12 +226,11 @@ static void generate_hobbit_alertinfo(char *hostname, char **buf, int *buflen)
 	alert.next = NULL;
 	rcount = 0;
 
+	alert_printmode(1);
 	for (i = 0; (i < testcount); i++) {
-		alert.testname = &tnames[i];
+		tname.name = tnames[i].name;
 		if (have_recipient(&alert)) { rcount++; print_alert_recipients(&alert, buf, buflen); }
-		free(tnames[i].name);
 	}
-	free(tnames);
 
 	if (rcount == 0) {
 		/* No alerts defined. */
@@ -176,6 +238,230 @@ static void generate_hobbit_alertinfo(char *hostname, char **buf, int *buflen)
 	}
 	addtobuffer(buf, buflen, "</table>\n");
 }
+
+
+static void generate_hobbit_disable(char *hostname, char **buf, int *buflen)
+{
+	int i;
+	char l[1024];
+	time_t now = time(NULL);
+	int beginyear, endyear;
+	struct tm monthtm;
+	struct tm *nowtm;
+	char mname[20];
+	char *selstr;
+
+	nowtm = localtime(&now);
+	beginyear = nowtm->tm_year + 1900 - 5;
+	endyear = nowtm->tm_year + 1900;
+
+	sprintf(l, "<form method=\"post\" action=\"%s/hobbit-enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
+	addtobuffer(buf, buflen, l);
+	sprintf(l, "<table summary=\"%s disable\" border=1>\n", hostname);
+	addtobuffer(buf, buflen, l);
+
+	addtobuffer(buf, buflen, "<tr><th>Tests</th><th>How long</th><th>Cause</th></tr>\n");
+
+	addtobuffer(buf, buflen, "<tr>\n");
+
+	addtobuffer(buf, buflen, "<td rowspan=2><select multiple size=\"5\" name=\"disabletest\">\n");
+	addtobuffer(buf, buflen, "<option value=\"*\">ALL</option>\n");
+	for (i=0; (i < testcount); i++) {
+		sprintf(l, "<option value=\"%s\">%s</option>\n", tnames[i].name, tnames[i].name);
+		addtobuffer(buf, buflen, l);
+	}
+	addtobuffer(buf, buflen, "</select></td>\n");
+
+	addtobuffer(buf, buflen, "<td><input name=\"duration\" type=text size=5 maxlength=5 value=\"4\">&nbsp;\n");
+	addtobuffer(buf, buflen, "<select name=\"scale\">\n");
+	addtobuffer(buf, buflen, "<option value=1>minutes</option>\n");
+	addtobuffer(buf, buflen, "<option value=60 selected>hours</option>\n");
+	addtobuffer(buf, buflen, "<option value=1440>days</option>\n");
+	addtobuffer(buf, buflen, "<option value=10080>weeks</option>\n");
+	addtobuffer(buf, buflen, "</select></td>\n");
+
+	addtobuffer(buf, buflen, "<td><input name=\"cause\" type=text size=50 maxlength=80></td>\n");
+	addtobuffer(buf, buflen, "</tr>\n");
+
+	addtobuffer(buf, buflen, "<tr>\n");
+	addtobuffer(buf, buflen, "<td align=\"center\"><input name=\"go\" type=submit value=\"Disable now\"></td>\n");
+
+	addtobuffer(buf, buflen, "<td>\n");
+
+	/* Months */
+	addtobuffer(buf, buflen, "<SELECT NAME=\"month\">\n");
+	for (i=1; (i <= 12); i++) {
+		if (i == (nowtm->tm_mon + 1)) selstr = "SELECTED"; else selstr = "";
+		monthtm.tm_mon = (i-1); monthtm.tm_mday = 1; monthtm.tm_year = nowtm->tm_year;
+		monthtm.tm_hour = monthtm.tm_min = monthtm.tm_sec = monthtm.tm_isdst = 0;
+		strftime(mname, sizeof(mname)-1, "%B", &monthtm);
+		sprintf(l, "<OPTION VALUE=\"%d\" %s>%s</OPTION>\n", i, selstr, mname);
+		addtobuffer(buf, buflen, l);
+	}
+	addtobuffer(buf, buflen, "</SELECT>\n");
+
+	/* Days */
+	addtobuffer(buf, buflen, "<SELECT NAME=\"day\">\n");
+	for (i=1; (i <= 31); i++) {
+		if (i == nowtm->tm_mday) selstr = "SELECTED"; else selstr = "";
+		sprintf(l, "<OPTION VALUE=\"%d\" %s>%d</OPTION>\n", i, selstr, i);
+		addtobuffer(buf, buflen, l);
+	}
+	addtobuffer(buf, buflen, "</SELECT>\n");
+
+	/* Years */
+	addtobuffer(buf, buflen, "<SELECT NAME=\"year\">\n");
+	for (i=beginyear; (i <= endyear); i++) {
+		if (i == (nowtm->tm_year + 1900)) selstr = "SELECTED"; else selstr = "";
+		sprintf(l, "<OPTION VALUE=\"%d\" %s>%d</OPTION>\n", i, selstr, i);
+		addtobuffer(buf, buflen, l);
+	}
+	addtobuffer(buf, buflen, "</SELECT>\n");
+
+	/* Hours */
+	addtobuffer(buf, buflen, "<SELECT NAME=\"hour\">\n");
+	for (i=0; (i <= 24); i++) {
+		if (i == nowtm->tm_hour) selstr = "SELECTED"; else selstr = "";
+		sprintf(l, "<OPTION VALUE=\"%d\" %s>%d</OPTION>\n", i, selstr, i);
+		addtobuffer(buf, buflen, l);
+	}
+	addtobuffer(buf, buflen, "</SELECT>\n");
+
+	/* Minutes */
+	addtobuffer(buf, buflen, "<SELECT NAME=\"minute\">");
+	for (i=0; (i <= 59); i++) {
+		if (i == nowtm->tm_min) selstr = "SELECTED"; else selstr = "";
+		sprintf(l, "<OPTION VALUE=\"%02d\" %s>%02d</OPTION>\n", i, selstr, i);
+		addtobuffer(buf, buflen, l);
+	}
+	addtobuffer(buf, buflen, "</SELECT>\n");
+
+	addtobuffer(buf, buflen, "<br><center><input name=\"go\" type=submit value=\"Schedule disable\"></center>\n");
+
+	addtobuffer(buf, buflen, "</td>\n");
+	addtobuffer(buf, buflen, "</tr>\n");
+
+	addtobuffer(buf, buflen, "</table>\n");
+
+	sprintf(l, "<input name=\"hostname\" type=hidden value=\"%s\">\n", hostname);
+	addtobuffer(buf, buflen, l);
+	addtobuffer(buf, buflen, "</form>\n");
+}
+
+static void generate_hobbit_enable(char *hostname, char **buf, int *buflen)
+{
+	int i;
+	char l[1024];
+	char *msg, *eoln;
+
+	sprintf(l, "<table summary=\"%s disabled tests\" border=1>\n", hostname);
+	addtobuffer(buf, buflen, l);
+
+	addtobuffer(buf, buflen, "<tr><th>Test</th><th>Disabled until</th><th>Cause</th><th>&nbsp;</th></tr>\n");
+
+	for (i=0; (i < testcount); i++) {
+		if (tnames[i].distime <= 0) continue;
+
+		addtobuffer(buf, buflen, "<tr>\n");
+
+		sprintf(l, "<td>%s</td>\n", tnames[i].name);
+		addtobuffer(buf, buflen, l);
+		sprintf(l, "<td>%s</td>\n", ctime(&tnames[i].distime));
+		addtobuffer(buf, buflen, l);
+
+		/* Add an HTML'ized form of the disable-message */
+		msg = tnames[i].dismsg; nldecode(msg); msg += strspn(msg, "0123456789 \t\n");
+		addtobuffer(buf, buflen, "<td>");
+		while ((eoln = strchr(msg, '\n')) != NULL) {
+			*eoln = '\0';
+			addtobuffer(buf, buflen, msg);
+			addtobuffer(buf, buflen, "<br>");
+			msg = (eoln + 1);
+		}
+		addtobuffer(buf, buflen, msg);
+		addtobuffer(buf, buflen, "</td>\n");
+
+		addtobuffer(buf, buflen, "<td>");
+		sprintf(l, "<form method=\"post\" action=\"%s/hobbit-enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
+		addtobuffer(buf, buflen, l);
+		sprintf(l, "<input name=\"hostname\" type=hidden value=\"%s\">\n", hostname);
+		addtobuffer(buf, buflen, l);
+		sprintf(l, "<input name=\"enabletest\" type=hidden value=\"%s\">\n", tnames[i].name);
+		addtobuffer(buf, buflen, l);
+		addtobuffer(buf, buflen, "<input name=\"go\" type=submit value=\"Enable\">\n");
+		addtobuffer(buf, buflen, "</form>\n");
+		addtobuffer(buf, buflen, "</td>\n");
+
+		addtobuffer(buf, buflen, "</tr>\n");
+	}
+
+	addtobuffer(buf, buflen, "<tr><td>ALL</td><td>&nbsp;</td><td>&nbsp;</td>\n");
+
+	addtobuffer(buf, buflen, "<td>");
+	sprintf(l, "<form method=\"post\" action=\"%s/hobbit-enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
+	addtobuffer(buf, buflen, l);
+	sprintf(l, "<input name=\"hostname\" type=hidden value=\"%s\">\n", hostname);
+	addtobuffer(buf, buflen, l);
+	sprintf(l, "<input name=\"enabletest\" type=hidden value=\"%s\">\n", "*");
+	addtobuffer(buf, buflen, l);
+	addtobuffer(buf, buflen, "<input name=\"go\" type=submit value=\"Enable\">\n");
+	addtobuffer(buf, buflen, "</form>\n");
+	addtobuffer(buf, buflen, "</td>\n");
+
+	addtobuffer(buf, buflen, "</tr>\n");
+
+	addtobuffer(buf, buflen, "</table>\n");
+}
+
+
+static void generate_hobbit_scheduled(char *hostname, char **buf, int *buflen)
+{
+	char l[1024];
+	sched_t *swalk;
+	char *msg, *eoln;
+
+	sprintf(l, "<table summary=\"%s scheduled disables\" border=1>\n", hostname);
+	addtobuffer(buf, buflen, l);
+
+	addtobuffer(buf, buflen, "<tr><th>ID</th><th>When</th><th>Command</th><th>&nbsp;</th></tr>\n");
+	for (swalk = schedtasks; (swalk); swalk = swalk->next) {
+		addtobuffer(buf, buflen, "<tr>\n");
+
+		sprintf(l, "<td>%d</td>\n", swalk->id);
+		addtobuffer(buf, buflen, l);
+
+		sprintf(l, "<td>%s</td>\n", ctime(&swalk->when));
+		addtobuffer(buf, buflen, l);
+
+		/* Add an HTML'ized form of the command */
+		msg = swalk->cmd; nldecode(msg);
+		addtobuffer(buf, buflen, "<td>");
+		while ((eoln = strchr(msg, '\n')) != NULL) {
+			*eoln = '\0';
+			addtobuffer(buf, buflen, msg);
+			addtobuffer(buf, buflen, "<br>");
+			msg = (eoln + 1);
+		}
+		addtobuffer(buf, buflen, msg);
+		addtobuffer(buf, buflen, "</td>\n");
+
+		addtobuffer(buf, buflen, "<td>");
+		sprintf(l, "<form method=\"post\" action=\"%s/hobbit-enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
+		addtobuffer(buf, buflen, l);
+		sprintf(l, "<input name=\"hostname\" type=hidden value=\"%s\">\n", hostname);
+		addtobuffer(buf, buflen, l);
+		sprintf(l, "<input name=\"canceljob\" type=hidden value=\"%d\">\n", swalk->id);
+		addtobuffer(buf, buflen, l);
+		addtobuffer(buf, buflen, "<input name=\"go\" type=submit value=\"Cancel\">\n");
+		addtobuffer(buf, buflen, "</form>\n");
+		addtobuffer(buf, buflen, "</td>\n");
+
+		addtobuffer(buf, buflen, "</tr>\n");
+	}
+
+	addtobuffer(buf, buflen, "</table>\n");
+}
+
 
 char *generate_info(char *hostname)
 {
@@ -185,7 +471,7 @@ char *generate_info(char *hostname)
 	namelist_t *hostwalk;
 	char *val;
 	namelist_t *clonewalk;
-	int ping, first;
+	int ping, first, gotstatus;
 	int alertcolors, alertinterval;
 
 	/* Get host info */
@@ -204,6 +490,9 @@ char *generate_info(char *hostname)
 
 	/* Load links */
 	load_all_links();
+
+	/* Fetch the current host status */
+	gotstatus = (fetch_status(hostname) == 0);
 
 	addtobuffer(&infobuf, &infobuflen, "<table width=\"100%\" summary=\"Host Information\">\n");
 
@@ -443,10 +732,37 @@ char *generate_info(char *hostname)
 
 	if (!bbh_item(hostwalk, BBH_FLAG_DIALUP)) {
 		addtobuffer(&infobuf, &infobuflen, "<tr><th align=left valign=top>Alerting:</th><td align=left>\n");
-		generate_hobbit_alertinfo(hostname, &infobuf, &infobuflen);
+		if (gotstatus) 
+			generate_hobbit_alertinfo(hostname, &infobuf, &infobuflen);
+		else
+			addtobuffer(&infobuf, &infobuflen, "Alert configuration unavailable");
 		addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
 	}
 	addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
+
+	if (gotstatus) {
+		int i, anydisabled = 0;
+
+		addtobuffer(&infobuf, &infobuflen, "<tr><th align=left valign=top>Disable tests</th><td align=left>\n");
+		generate_hobbit_disable(hostname, &infobuf, &infobuflen);
+		addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
+		addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
+
+		for (i=0; (i < testcount); i++) anydisabled = (anydisabled || (tnames[i].distime > 0));
+		if (anydisabled) {
+			addtobuffer(&infobuf, &infobuflen, "<tr><th align=left valign=top>Enable tests</th><td align=left>\n");
+			generate_hobbit_enable(hostname, &infobuf, &infobuflen);
+			addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
+			addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
+		}
+
+		if (schedtasks) {
+			addtobuffer(&infobuf, &infobuflen, "<tr><th align=left valign=top>Scheduled tasks</th><td align=left>\n");
+			generate_hobbit_scheduled(hostname, &infobuf, &infobuflen);
+			addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
+			addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
+		}
+	}
 
 	addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>Other tags:</th><td align=left>");
 	val = bbh_item_walk(hostwalk);
