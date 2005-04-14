@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# This is a wrapper for the Hobbit hobbit-enadis script
+
+@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbit-enadis.cgi --env=@BBHOME@/etc/hobbitserver.cfg
+
