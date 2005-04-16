@@ -17,6 +17,9 @@ loadhosts.o: loadhosts.c loadhosts_file.c
 digest.o: digest.c
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ digest.c
 
+headfoot.o: headfoot.c
+	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ headfoot.c
+
 environ.o: environ.c
 	$(CC) $(CFLAGS) -DBBTOPDIR=\"$(BBTOPDIR)\" -DBBLOGDIR=\"$(BBLOGDIR)\" -DBBHOSTNAME=\"$(BBHOSTNAME)\" -DBBHOSTIP=\"$(BBHOSTIP)\" -DBBHOSTOS=\"$(BBHOSTOS)\" -c -o $@ environ.c
 
