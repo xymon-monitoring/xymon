@@ -117,7 +117,7 @@
 
               <TR>
 	         <td align=center colspan=3>
-                     <input name=apply type=submit value="Apply">
+                     <input name=apply type="button" onClick="validateDisable(this.form)" value="Apply">
                      &nbsp;&nbsp;<INPUT TYPE="CHECKBOX" NAME=preview>&nbsp;Test
                  </td>
               </TR>
