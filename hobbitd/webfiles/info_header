@@ -21,19 +21,11 @@ function setcheck(field,val) {
 
 <script language="JavaScript1.2" type="text/javascript">
 
-function isInternetExplorer() {
-	if (window.navigator.appName.indexOf("Internet Explorer") != -1) return true;
-	else return false;
-}
-
 function validateDisable(theform) {
-	// Next validation works on Mozilla, but does not work on MSIE browser
-	if (! isInternetExplorer()) {
-		if (theform.disabletest.value == null || theform.disabletest.value == "") {
-			alert("You must select the Test(s) to disable!");
-			theform.disabletest.focus();
-			return false;
-		}
+	if (theform.disabletest.value == null || theform.disabletest.value == "") {
+		alert("You must select the Test(s) to disable!");
+		theform.disabletest.focus();
+		return false;
 	}
 
 	if (theform.cause.value == null || theform.cause.value == "") {
