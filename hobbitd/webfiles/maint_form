@@ -101,7 +101,7 @@
                        </tr>
                        <tr>
 	                   <td align="left">
-                              <input name=go type=radio value="Schedule disable">Schedule disable at
+                              <input name=go type=radio value="Schedule disable"> Schedule disable at
                               <br>
 	                      <SELECT NAME=month> &REPMONLIST </SELECT>
 	                      <SELECT NAME=day> &REPDAYLIST </SELECT>
