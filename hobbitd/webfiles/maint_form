@@ -103,11 +103,11 @@
 	                   <td align="left">
                               <input name=go type=radio value="Schedule disable"> Schedule disable at
                               <br>
-	                      <SELECT NAME=month> &REPMONLIST </SELECT>
-	                      <SELECT NAME=day> &REPDAYLIST </SELECT>
-	                      <SELECT NAME=year> &REPYEARLIST </SELECT> &nbsp;
-	                      <SELECT NAME=hour> &REPHOURLIST </SELECT>
-	                      <SELECT NAME=minute> &REPMINLIST </SELECT>
+	                      <SELECT NAME=month onClick="setcheck(this.form.go,true)"> &REPMONLIST </SELECT>
+	                      <SELECT NAME=day onClick="setcheck(this.form.go,true)"> &REPDAYLIST </SELECT>
+	                      <SELECT NAME=year onClick="setcheck(this.form.go,true)"> &REPYEARLIST </SELECT> &nbsp;
+	                      <SELECT NAME=hour onClick="setcheck(this.form.go,true)"> &REPHOURLIST </SELECT>
+	                      <SELECT NAME=minute onClick="setcheck(this.form.go,true)"> &REPMINLIST </SELECT>
                            </td>
                        </tr>
                      </table>
