@@ -8,10 +8,13 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-enadis.c,v 1.2 2005-04-14 13:01:23 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-enadis.c,v 1.3 2005-04-16 09:54:44 henrik Exp $";
 
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <limits.h>
 #include <stdio.h>
+#include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -20,16 +23,22 @@ static char rcsid[] = "$Id: hobbit-enadis.c,v 1.2 2005-04-14 13:01:23 henrik Exp
 
 #include "libbbgen.h"
 
-enum { ACT_NONE, ACT_ENABLE, ACT_DISABLE, ACT_SCHED_DISABLE, ACT_SCHED_CANCEL } action = ACT_NONE;
-char *hostname = NULL;
+enum { ACT_NONE, ACT_FILTER, ACT_ENABLE, ACT_DISABLE, ACT_SCHED_DISABLE, ACT_SCHED_CANCEL } action = ACT_NONE;
+int hostcount = 0;
+char **hostnames  = NULL;
+int disablecount = 0;
+char **disabletest = NULL;
 char *enabletest = NULL;
 int duration = 0;
 int scale = 1;
-int disablecount = 0;
-char **disabletest = NULL;
 char *disablemsg = "No reason given";
 time_t schedtime = 0;
 int cancelid = 0;
+int preview = 0;
+
+char *hostpattern = NULL;
+char *pagepattern = NULL;
+char *ippattern = NULL;
 
 void errormsg(char *msg)
 {
@@ -39,7 +48,7 @@ void errormsg(char *msg)
         exit(1);
 }
 
-void parse_query(void)
+void parse_post(void)
 {
 	char l[4096];
         char *token;
@@ -57,11 +66,17 @@ void parse_query(void)
 			val = strchr(token, '='); if (val) { *val = '\0'; val++; }
 			if (val) val = urlunescape(val);
 
-			if (strcmp(token, "go") == 0) {
-				if (strcasecmp(val, "enable") == 0) action = ACT_ENABLE;
-				else if (strcasecmp(val, "disable now") == 0) action = ACT_DISABLE;
+			/*
+			 * When handling the "go", the "Disable now" and "Schedule disable"
+			 * radio buttons mess things up. So ignore the "go" if we have seen a
+			 * "filter" request already.
+			 */
+			if ((strcmp(token, "go") == 0) && (action != ACT_FILTER)) {
+				if      (strcasecmp(val, "enable") == 0)           action = ACT_ENABLE;
+				else if (strcasecmp(val, "disable now") == 0)      action = ACT_DISABLE;
 				else if (strcasecmp(val, "schedule disable") == 0) action = ACT_SCHED_DISABLE;
-				else if (strcasecmp(val, "cancel") == 0) action = ACT_SCHED_CANCEL;
+				else if (strcasecmp(val, "cancel") == 0)           action = ACT_SCHED_CANCEL;
+				else if (strcasecmp(val, "apply filters") == 0)    action = ACT_FILTER;
 			}
 			else if (strcmp(token, "duration") == 0) {
 				duration = atoi(val);
@@ -73,7 +88,18 @@ void parse_query(void)
 				disablemsg = strdup(val);
 			}
 			else if (strcmp(token, "hostname") == 0) {
-				hostname = strdup(val);
+				if (hostnames == NULL) {
+					hostnames = (char **)malloc(2 * sizeof(char *));
+					hostnames[0] = strdup(val);
+					hostnames[1] = NULL;
+					hostcount = 1;
+				}
+				else {
+					hostnames = (char **)realloc(hostnames, (hostcount + 2) * sizeof(char *));
+					hostnames[hostcount] = strdup(val);
+					hostnames[hostcount+1] = NULL;
+					hostcount++;
+				}
 			}
 			else if (strcmp(token, "enabletest") == 0) {
 				enabletest = strdup(val);
@@ -110,6 +136,18 @@ void parse_query(void)
 			else if (strcmp(token, "canceljob") == 0) {
 				cancelid = atoi(val);
 			}
+			else if (strcmp(token, "preview") == 0) {
+				preview = (strcasecmp(val, "on") == 0);
+			}
+			else if ((strcmp(token, "hostpattern") == 0) && val && strlen(val)) {
+				hostpattern = strdup(val);
+			}
+			else if ((strcmp(token, "pagepattern") == 0) && val && strlen(val)) {
+				pagepattern = strdup(val);
+			}
+			else if ((strcmp(token, "ippattern") == 0)   && val && strlen(val)) {
+				ippattern = strdup(val);
+			}
 
 			token = strtok(NULL, "&");
 		}
@@ -119,11 +157,54 @@ void parse_query(void)
 	schedtime = mktime(&schedtm);
 }
 
+void do_one_host(char *hostname, char *fullmsg)
+{
+	char hobbitcmd[4096];
+	int i, result;
+
+	switch (action) {
+	  case ACT_ENABLE:
+		sprintf(hobbitcmd, "enable %s.%s", commafy(hostname), enabletest);
+		result = (preview ? 0 : sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT));
+		printf("<tr><td>Enabling host <b>%s</b> test <b>%s</b> : %s</td></tr>\n", hostname, enabletest, ((result == BB_OK) ? "OK" : "Failed"));
+		break;
+
+	  case ACT_DISABLE:
+		for (i=0; (i < disablecount); i++) {
+			sprintf(hobbitcmd, "disable %s.%s %d %s", 
+				commafy(hostname), disabletest[i], duration*scale, fullmsg);
+			result = (preview ? 0 : sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT));
+			printf("<tr><td>Disabling host <b>%s</b> test <b>%s</b>: %s</td></tr>\n", 
+				hostname, disabletest[i], ((result == BB_OK) ? "OK" : "Failed"));
+		}
+		break;
+
+	  case ACT_SCHED_DISABLE:
+		for (i=0; (i < disablecount); i++) {
+			sprintf(hobbitcmd, "schedule %d disable %s.%s %d %s", 
+				(int) schedtime, commafy(hostname), disabletest[i], duration*scale, fullmsg);
+			result = (preview ? 0 : sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT));
+			printf("<tr><td>Scheduling disable of host <b>%s</b> test <b>%s</b> at <b>%s</b>: %s</td></tr>\n", 
+				hostname, disabletest[i], ctime(&schedtime), ((result == BB_OK) ? "OK" : "Failed"));
+		}
+		break;
+
+	  case ACT_SCHED_CANCEL:
+		sprintf(hobbitcmd, "schedule cancel %d", cancelid);
+		result = (preview ? 0 : sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT));
+		printf("<tr><td>Canceling job <b>%d</b> : %s</td></tr>\n", cancelid, ((result == BB_OK) ? "OK" : "Failed"));
+		break;
+
+	  default:
+		errprintf("No action\n");
+		break;
+	}
+}
 
 int main(int argc, char *argv[])
 {
-	int argi, i, result;
-	char hobbitcmd[4096];
+	int argi, i;
+	int waittime = 3;
 	char *username = getenv("REMOTE_USER");
 	char *userhost = getenv("REMOTE_HOST");
 	char *userip   = getenv("REMOTE_ADDR");
@@ -139,12 +220,51 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
+			waittime = 15;
 		}
 	}
 
-	parse_query();
+	if (strcmp(getenv("REQUEST_METHOD"), "POST") == 0) parse_post();
+	else action = ACT_FILTER;
+
+	if (action == ACT_FILTER) {
+		/* Present the query form */
+		int formfile;
+		char formfn[PATH_MAX];
+
+		sethostenv_filter(hostpattern, pagepattern, ippattern);
+
+		load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+
+		sprintf(formfn, "%s/web/maint_form", xgetenv("BBHOME"));
+		formfile = open(formfn, O_RDONLY);
+
+		if (formfile >= 0) {
+			char *inbuf;
+			struct stat st;
+
+			fstat(formfile, &st);
+			inbuf = (char *) malloc(st.st_size + 1);
+			read(formfile, inbuf, st.st_size);
+			inbuf[st.st_size] = '\0';
+			close(formfile);
+
+			printf("Content-Type: text/html\n\n");
+			sethostenv("", "", "", colorname(COL_BLUE));
+
+			headfoot(stdout, "maint", "", "header", COL_BLUE);
+			output_parsed(stdout, inbuf, COL_BLUE, "report", time(NULL));
+			headfoot(stdout, "maint", "", "footer", COL_BLUE);
+
+			xfree(inbuf);
+		}
+		return 0;
+	}
+
 	fullmsg = (char *)malloc(strlen(username) + strlen(userhost) + strlen(disablemsg) + 1024);
 	sprintf(fullmsg, "\nDisabled by: %s @ %s\nReason: %s\n", username, userhost, disablemsg);
+
+	if (preview) waittime = 60;
 
 	/*
 	 * Ready ... go build the webpage.
@@ -152,7 +272,7 @@ int main(int argc, char *argv[])
 	printf("Content-Type: text/html\n\n");
 	printf("<html>\n");
 	printf("<head>\n<meta http-equiv=\"refresh\" content=\"%d; URL=%s\"></head>\n", 
-		(debug ? 15 : 5), xgetenv("HTTP_REFERER"));
+		waittime, xgetenv("HTTP_REFERER"));
 
         /* It's ok with these hardcoded values, as they are not used for this page */
 	sethostenv("", "", "", colorname(COL_BLUE));
@@ -160,9 +280,10 @@ int main(int argc, char *argv[])
 
 	if (debug) {
 		printf("<pre>\n");
-		dprintf("Hostname = %s\n", hostname);
 		switch (action) {
 		  case ACT_NONE   : dprintf("Action = none\n"); break;
+
+		  case ACT_FILTER : dprintf("Action = filter\n"); break;
 
 		  case ACT_ENABLE : dprintf("Action = enable, Test = %s\n", textornull(enabletest)); 
 				    break;
@@ -194,44 +315,12 @@ int main(int argc, char *argv[])
 	}
 
 	printf("<table align=\"center\" summary=\"Actions performed\" width=\"60%%\">\n");
-
-	switch (action) {
-	  case ACT_NONE:
-		break;
-
-	  case ACT_ENABLE:
-		sprintf(hobbitcmd, "enable %s.%s", commafy(hostname), enabletest);
-		result = sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
-		printf("<tr><td>Enabling host <b>%s</b> test <b>%s</b> : %s</td></tr>\n", hostname, enabletest, ((result == BB_OK) ? "OK" : "Failed"));
-		break;
-
-	  case ACT_DISABLE:
-		for (i=0; (i < disablecount); i++) {
-			sprintf(hobbitcmd, "disable %s.%s %d %s", 
-				commafy(hostname), disabletest[i], duration*scale, fullmsg);
-			result = sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
-			printf("<tr><td>Disabling host <b>%s</b> test <b>%s</b>: %s</td></tr>\n", 
-				hostname, disabletest[i], ((result == BB_OK) ? "OK" : "Failed"));
-		}
-		break;
-
-	  case ACT_SCHED_DISABLE:
-		for (i=0; (i < disablecount); i++) {
-			sprintf(hobbitcmd, "schedule %d disable %s.%s %d %s", 
-				(int) schedtime, commafy(hostname), disabletest[i], duration*scale, fullmsg);
-			result = sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
-			printf("<tr><td>Scheduling disable of host <b>%s</b> test <b>%s</b> at <b>%s</b>: %s</td></tr>\n", 
-				hostname, disabletest[i], ctime(&schedtime), ((result == BB_OK) ? "OK" : "Failed"));
-		}
-		break;
-
-	  case ACT_SCHED_CANCEL:
-		sprintf(hobbitcmd, "schedule cancel %d", cancelid);
-		result = sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
-		printf("<tr><td>Canceling job <b>%d</b> : %s</td></tr>\n", cancelid, ((result == BB_OK) ? "OK" : "Failed"));
-		break;
+	if (action == ACT_SCHED_CANCEL) {
+		do_one_host(NULL, NULL);
 	}
-
+	else {
+		for (i = 0; (i < hostcount); i++) do_one_host(hostnames[i], fullmsg);
+	}
 	printf("<tr><td><br>Please wait while refreshing status list ...</td></tr>\n");
 	printf("</table>\n");
 
