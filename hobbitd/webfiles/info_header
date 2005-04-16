@@ -27,11 +27,6 @@ function isInternetExplorer() {
 }
 
 function validateDisable(theform) {
-	if (theform.hostname.value == null || theform.hostname.value == "") {
-		alert("You must select the Host(s) to disable!");
-		theform.hostname.focus();
-		return false;
-	}
 	// Next validation works on Mozilla, but does not work on MSIE browser
 	if (! isInternetExplorer()) {
 		if (theform.disabletest.value == null || theform.disabletest.value == "") {
@@ -49,11 +44,6 @@ function validateDisable(theform) {
 
 	if (!(ispositive(theform.duration.value))) {
 		alert("Duration must be a positive integer.");
-		return false;
-	}
-
-	var selectedhost=theform.hostname.options[theform.hostname.options.selectedIndex].value;
-	if ((selectedhost == "ALL") && !(confirm("Do you really want to disable ALL Hosts?  This could take a while."))) {
 		return false;
 	}
 
