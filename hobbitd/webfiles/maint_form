@@ -23,22 +23,21 @@
 </TD>
 
 <TD WIDTH="40%">
-  <FORM METHOD="POST" ACTION="&REQUEST_URI">
+  <FORM METHOD="POST" NAME=selectionform ACTION="&REQUEST_URI">
     <TABLE SUMMARY="Selection table" BORDER=0 WIDTH="100%">
         <TR><TD WIDTH="100%">
             <TABLE SUMMARY="Maintenance input" BORDER=0>
               <TR><TH ALIGN=LEFT>Hosts</TH><TH ALIGN=LEFT>Tests</TH><TH>&nbsp;<TH></TR>
               <TR>
                  <TD WIDTH="50%" ALIGN=LEFT>
-                    <SELECT MULTIPLE NAME=hostname SIZE=15>
+                    <SELECT MULTIPLE NAME=hostname SIZE=15 onChange="updateOptions(window.document.selectionform.hostname.options[selectedIndex].text);">
                        &HOSTLIST
                     </SELECT>
                  </TD>
    
                  <TD WIDTH="20%" ALIGN=LEFT>
                      <SELECT MULTIPLE NAME=disabletest SIZE=15>
-                       <OPTION VALUE="*" SELECTED>ALL</OPTION>
-                       &TESTLIST
+                       <OPTION VALUE="">-- Select a host --</OPTION>
                      </SELECT>
                  </TD>
               </TR>
