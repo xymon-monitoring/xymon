@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.89 2005-04-16 17:41:42 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.90 2005-04-16 21:32:10 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -252,8 +252,8 @@ static void generate_hobbit_disable(char *hostname, char **buf, int *buflen)
 	char *selstr;
 
 	nowtm = localtime(&now);
-	beginyear = nowtm->tm_year + 1900 - 5;
-	endyear = nowtm->tm_year + 1900;
+	beginyear = nowtm->tm_year + 1900;
+	endyear = nowtm->tm_year + 1900 + 5;
 
 	sprintf(l, "<form method=\"post\" action=\"%s/hobbit-enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
 	addtobuffer(buf, buflen, l);
