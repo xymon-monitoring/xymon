@@ -36,6 +36,16 @@ function swapOptions(arrayName) {
 	for (i = 0, len = NewOptions.length; i < len; i++)
 		window.document.selectionform.disabletest.options[i] = new Option(NewOptions[i]);
 }
+
+function setcheck(field,val) {
+        var length = eval(field.length);
+        if (length)
+                for (i = 0; i < length; i++)
+                        field[i].checked = val;
+        else
+                field.checked = val;
+}
+
 </script>
 
 </HEAD>
