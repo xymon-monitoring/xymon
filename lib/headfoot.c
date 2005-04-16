@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.21 2005-04-07 10:09:02 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.22 2005-04-16 07:21:43 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -22,6 +22,7 @@ static char rcsid[] = "$Id: headfoot.c,v 1.21 2005-04-07 10:09:02 henrik Exp $";
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
+#include <pcre.h>
 
 #include "libbbgen.h"
 #include "version.h"
@@ -45,6 +46,17 @@ static time_t hostenv_snapshot = 0;
 static char *hostenv_logtime = NULL;
 static char *hostenv_templatedir = NULL;
 static int hostenv_refresh = 60;
+
+static char *statusboard = NULL;
+static char *scheduleboard = NULL;
+
+static pcre *hostpattern = NULL;
+static pcre *pagepattern = NULL;
+static pcre *ippattern = NULL;
+static char **hostlist = NULL;
+static int hostcount = 0;
+static char **testlist = NULL;
+static int testcount = 0;
 
 void sethostenv(char *host, char *ip, char *svc, char *color)
 {
@@ -93,13 +105,107 @@ void sethostenv_refresh(int n)
 	hostenv_refresh = n;
 }
 
+void sethostenv_filter(char *hostptn, char *pageptn, char *ipptn)
+{
+	const char *errmsg;
+	int errofs;
+
+	if (hostpattern) { pcre_free(hostpattern); hostpattern = NULL; }
+	if (pagepattern) { pcre_free(pagepattern); pagepattern = NULL; }
+	if (ippattern) { pcre_free(ippattern); ippattern = NULL; }
+
+	/* Setup the pattern to match names against */
+	if (hostptn) hostpattern = pcre_compile(hostptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
+	if (pageptn) pagepattern = pcre_compile(pageptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
+	if (ipptn)   ippattern = pcre_compile(ipptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
+}
+
+static int namecompare(const void *v1, const void *v2)
+{
+	char **n1 = (char **)v1;
+	char **n2 = (char **)v2;
+	int result;
+
+	result = strcmp(*n1, *n2);
+
+	return result;
+}
+
+static void fetch_board(void)
+{
+	char *walk, *eoln;
+	int i;
+
+	if (sendmessage("hobbitdboard fields=hostname,testname,disabletime,dismsg", 
+			NULL, NULL, &statusboard, 1, BBTALK_TIMEOUT) != BB_OK)
+		return;
+
+	walk = statusboard;
+	while (walk) {
+		eoln = strchr(walk, '\n'); if (eoln) *eoln = '\0';
+		if (strlen(walk) && (strncmp(walk, "summary|", 8) != 0) && (strncmp(walk, "dialup|", 7) != 0)) {
+			char *buf, *hname = NULL, *tname = NULL;
+
+			buf = strdup(walk);
+
+			hname = gettok(buf, "|");
+			if (hname) tname = gettok(NULL, "|");
+
+			if (hostcount == 0) {
+				hostcount++;
+				hostlist = (char **)malloc(sizeof(char *));
+				hostlist[0] = strdup(hname);
+			}
+			else {
+				for (i = 0; ((i < hostcount) && strcmp(hname, hostlist[i])); i++) ;
+				if (i == hostcount) {
+					hostcount++;
+					hostlist = (char **)realloc(hostlist, hostcount * sizeof(char *));
+					hostlist[hostcount-1] = strdup(hname);
+				}
+			}
+
+			if (testcount == 0) {
+				testcount++;
+				testlist = (char **)malloc(sizeof(char *));
+				testlist[0] = strdup(tname);
+			}
+			else {
+				for (i = 0; ((i < testcount) && strcmp(tname, testlist[i])); i++) ;
+				if (i == testcount) {
+					testcount++;
+					testlist = (char **)realloc(testlist, testcount * sizeof(char *));
+					testlist[testcount-1] = strdup(tname);
+				}
+			}
+
+			xfree(buf);
+		}
+
+		if (eoln) {
+			*eoln = '\n';
+			walk = eoln + 1;
+		}
+		else
+			walk = NULL;
+	}
+
+	if (hostcount) qsort(hostlist, hostcount, sizeof(char *), namecompare);
+	if (testcount) qsort(&testlist[0], testcount, sizeof(char *), namecompare);
+
+	if (sendmessage("schedule", NULL, NULL, &scheduleboard, 1, BBTALK_TIMEOUT) != BB_OK)
+		return;
+}
+
+
+
 void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype, time_t selectedtime)
 {
 	char	*t_start, *t_next;
 	char	savechar;
 	time_t	now = time(NULL);
 	time_t  yesterday = time(NULL) - 86400;
-	struct tm *nowtm;
+	struct  tm *nowtm;
 
 	for (t_start = templatedata, t_next = strchr(t_start, '&'); (t_next); ) {
 		/* Copy from t_start to t_next unchanged */
@@ -256,6 +362,179 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			for (i=0; (i <= 59); i++) {
 				if (i == 0) selstr = "SELECTED"; else selstr = "";
 				fprintf(output, "<OPTION VALUE=\"%02d\" %s>%02d\n", i, selstr, i);
+			}
+		}
+		else if (strcmp(t_start, "HOSTLIST") == 0) {
+			int i, result;
+			int ovector[30];
+
+			if (!hostlist) fetch_board();
+
+			for (i = 0; (i < hostcount); i++) {
+				namelist_t *hinfo = hostinfo(hostlist[i]);
+
+				if (hostpattern) {
+					result = pcre_exec(hostpattern, NULL, hostlist[i], strlen(hostlist[i]), 0, 0,
+							ovector, (sizeof(ovector)/sizeof(int)));
+					if (result < 0) continue;
+				}
+
+				if (pagepattern && hinfo) {
+					char *pname = bbh_item(hinfo, BBH_PAGEPATH);
+					result = pcre_exec(pagepattern, NULL, pname, strlen(pname), 0, 0,
+							ovector, (sizeof(ovector)/sizeof(int)));
+					if (result < 0) continue;
+				}
+
+				if (ippattern && hinfo) {
+					char *hostip = bbh_item(hinfo, BBH_IP);
+					result = pcre_exec(ippattern, NULL, hostip, strlen(hostip), 0, 0,
+							ovector, (sizeof(ovector)/sizeof(int)));
+					if (result < 0) continue;
+				}
+
+				fprintf(output, "<OPTION VALUE=\"%s\">%s</OPTION>\n", hostlist[i], hostlist[i]);
+			}
+		}
+		else if (strcmp(t_start, "TESTLIST") == 0) {
+			int i;
+
+			if (!testlist) fetch_board();
+
+			for (i = 0; (i < testcount); i++) {
+				fprintf(output, "<OPTION VALUE=\"%s\">%s</OPTION>\n", testlist[i], testlist[i]);
+			}
+		}
+		else if (strcmp(t_start, "DISABLELIST") == 0) {
+			char *walk, *eoln;
+			int gotany = 0;
+
+			if (!statusboard) fetch_board();
+
+			walk = statusboard;
+			while (walk) {
+				eoln = strchr(walk, '\n'); if (eoln) *eoln = '\0';
+				if (*walk) {
+					char *buf, *hname, *tname, *dismsg, *p;
+					time_t distime;
+
+					buf = strdup(walk);
+					hname = tname = dismsg = NULL; distime = 0;
+
+					hname = gettok(buf, "|");
+					if (hname) tname = gettok(NULL, "|");
+					if (tname) { p = gettok(NULL, "|"); if (p) distime = atoi(p); }
+					if (distime) dismsg = gettok(NULL, "|\n");
+
+					if (hname && tname && (distime > 0) && dismsg) {
+						char *msg, *eoln;
+
+						gotany = 1;
+						nldecode(dismsg);
+						fprintf(output, "<TR>");
+						fprintf(output, "<TD>%s&nbsp;%s</TD>", hname, tname);
+
+						fprintf(output, "<TD>");
+						msg = dismsg;
+						msg += strspn(msg, "0123456789 \t\n");
+						while ((eoln = strchr(msg, '\n')) != NULL) {
+							*eoln = '\0';
+							fprintf(output, "%s<BR>", msg);
+							msg = (eoln + 1);
+						}
+						fprintf(output, "%s<BR>Until: %s</TD>", msg, ctime(&distime));
+
+						fprintf(output, "<td>\n");
+						fprintf(output,"<form method=\"post\" action=\"%s/hobbit-enadis.sh\">\n",
+							xgetenv("SECURECGIBINURL"));
+						fprintf(output, "<input name=\"hostname\" type=hidden value=\"%s\">\n", 
+							hname);
+						fprintf(output, "<input name=\"enabletest\" type=hidden value=\"%s\">\n", 
+							tname);
+						fprintf(output, "<input name=\"go\" type=submit value=\"Enable\">\n");
+						fprintf(output, "</form>\n");
+						fprintf(output, "</td>\n");
+
+						fprintf(output, "</TR>\n");
+					}
+
+					xfree(buf);
+				}
+
+				if (eoln) {
+					*eoln = '\n';
+					walk = eoln+1;
+				}
+				else {
+					walk = NULL;
+				}
+			}
+
+			if (!gotany) {
+				fprintf(output, "<tr><th align=center colspan=3><i>No tests disabled</i></th></tr>\n");
+			}
+		}
+		else if (strcmp(t_start, "SCHEDULELIST") == 0) {
+			char *walk, *eoln;
+			int gotany = 0;
+
+			if (!scheduleboard) fetch_board();
+
+			walk = scheduleboard;
+			while (walk) {
+				eoln = strchr(walk, '\n'); if (eoln) *eoln = '\0';
+				if (*walk) {
+					int id = 0;
+					time_t executiontime = 0;
+					char *sender = NULL, *cmd = NULL, *buf, *p, *eoln;
+
+					buf = strdup(walk);
+					p = gettok(buf, "|");
+					if (p) { id = atoi(p); p = gettok(NULL, "|"); }
+					if (p) { executiontime = atoi(p); p = gettok(NULL, "|"); }
+					if (p) { sender = p; p = gettok(NULL, "|"); }
+					if (p) { cmd = p; }
+
+					if (id && executiontime && sender && cmd) {
+						gotany = 1;
+						nldecode(cmd);
+						fprintf(output, "<TR>\n");
+
+						fprintf(output, "<TD>%s</TD>\n", ctime(&executiontime));
+
+						fprintf(output, "<TD>");
+						p = cmd;
+						while ((eoln = strchr(p, '\n')) != NULL) {
+							*eoln = '\0';
+							fprintf(output, "%s<BR>", p);
+							p = (eoln + 1);
+						}
+						fprintf(output, "</TD>\n");
+
+						fprintf(output, "<td>\n");
+						fprintf(output, "<form method=\"post\" action=\"%s/hobbit-enadis.sh\">\n",
+							xgetenv("SECURECGIBINURL"));
+						fprintf(output, "<input name=canceljob type=hidden value=\"%d\">\n", 
+							id);
+						fprintf(output, "<input name=go type=submit value=\"Cancel\">\n");
+						fprintf(output, "</form></td>\n");
+
+						fprintf(output, "</TR>\n");
+					}
+					xfree(buf);
+				}
+
+				if (eoln) {
+					*eoln = '\n';
+					walk = eoln+1;
+				}
+				else {
+					walk = NULL;
+				}
+			}
+
+			if (!gotany) {
+				fprintf(output, "<tr><th align=center colspan=3><i>No tasks scheduled</i></th></tr>\n");
 			}
 		}
 
