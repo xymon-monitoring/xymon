@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.23 2005-03-22 09:16:49 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.24 2005-04-16 17:01:36 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -96,6 +96,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	char *p, *multikey;
 	larrdrrd_t *larrd = NULL;
 	larrdgraph_t *graph = NULL;
+	char *tplfile = "hostsvc";
 
 	hostsvc_setup();
 	if (multigraphs == NULL) multigraphs = ",disk,";
@@ -128,7 +129,9 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	sethostenv(displayname, ip, service, colorname(color));
 	if (logtime) sethostenv_snapshot(logtime);
 
-	headfoot(output, (is_history ? "histlog" : "hostsvc"), "", "header", color);
+	if (is_history) tplfile = "histlog";
+	if (strcmp(service, xgetenv("INFOCOLUMN")) == 0) tplfile = "info";
+	headfoot(output, tplfile, "", "header", color);
 
 	fprintf(output, "<br><br><a name=\"begindata\">&nbsp;</a>\n");
 
@@ -239,6 +242,6 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	if (!is_history && (histlocation == HIST_BOTTOM)) historybutton(cgibinurl, hostname, service, ip, displayname, output);
 
 	fprintf(output,"</CENTER>\n");
-	headfoot(output, (is_history ? "histlog" : "hostsvc"), "", "footer", color);
+	headfoot(output, tplfile, "", "footer", color);
 }
 
