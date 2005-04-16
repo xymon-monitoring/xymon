@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.23 2005-04-16 15:35:34 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.24 2005-04-16 21:30:15 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -359,6 +359,20 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			nowtm = localtime(&selectedtime);
 			beginyear = nowtm->tm_year + 1900 - 5;
 			endyear = nowtm->tm_year + 1900;
+
+			for (i=beginyear; (i <= endyear); i++) {
+				if (i == (nowtm->tm_year + 1900)) selstr = "SELECTED"; else selstr = "";
+				fprintf(output, "<OPTION VALUE=\"%d\" %s>%d\n", i, selstr, i);
+			}
+		}
+		else if (strcmp(t_start, "FUTUREYEARLIST") == 0) {
+			int i;
+			char *selstr;
+			int beginyear, endyear;
+
+			nowtm = localtime(&selectedtime);
+			beginyear = nowtm->tm_year + 1900;
+			endyear = nowtm->tm_year + 1900 + 5;
 
 			for (i=beginyear; (i <= endyear); i++) {
 				if (i == (nowtm->tm_year + 1900)) selstr = "SELECTED"; else selstr = "";
