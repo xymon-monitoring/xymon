@@ -8,6 +8,17 @@
 <!-- Styles for the menu bar -->
 <link rel="stylesheet" type="text/css" href="&BBMENUSKIN/menu.css">
 
+<script language="JavaScript" type="text/javascript">
+function setcheck(field,val) {
+        var length = eval(field.length);
+        if (length)
+                for (i = 0; i < length; i++)
+                        field[i].checked = val;
+        else
+                field.checked = val;
+}
+</script>
+
 </HEAD>
 
 <BODY BGCOLOR="&BBBACKGROUND" BACKGROUND="&BBSKIN/bkg-&BBBACKGROUND.gif" TEXT="#D8D8BF" LINK="#00FFAA" VLINK="#FFFF44">
