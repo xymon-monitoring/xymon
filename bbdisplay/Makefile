@@ -32,43 +32,43 @@ all: $(PROGRAMS) $(EXTENSIONS) $(CGISCRIPTS)
 
 
 bbgen: $(GENOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(GENOBJS) ../lib/libbbgen.a $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(GENOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 
 bbcombotest: $(COMBOTESTOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(COMBOTESTOBJS) ../lib/libbbgen.a $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(COMBOTESTOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 
 bb-rep.cgi: $(REPOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(REPOBJS) ../lib/libbbgen.a $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(REPOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 
 bb-replog.cgi: $(REPLOGOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(REPLOGOBJS) ../lib/libbbgen.a $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(REPLOGOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 
 bb-hist.cgi: $(HISTOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(HISTOBJS) ../lib/libbbgen.a $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(HISTOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 
 bb-snapshot.cgi: $(SNAPOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(SNAPOBJS) ../lib/libbbgen.a $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(SNAPOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 
 bb-eventlog.cgi: $(EVENTLOGOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(EVENTLOGOBJS) ../lib/libbbgen.a $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(EVENTLOGOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 
 bb-findhost.cgi: $(FINDHOSTOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(FINDHOSTOBJS) ../lib/libbbgen.a $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(FINDHOSTOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 
 bb-csvinfo.cgi: $(CSVINFOOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(CSVINFOOBJS) ../lib/libbbgen.a $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(CSVINFOOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 
 bbmessage.cgi: $(MESSAGECGIOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(MESSAGECGIOBJS) ../lib/libbbgen.a $(NETLIBS)
 
 bb-ack.cgi: $(ACKCGIOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(ACKCGIOBJS) ../lib/libbbgen.a $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(ACKCGIOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 
 bb-webpage: $(WEBPAGEOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(WEBPAGEOBJS) ../lib/libbbgen.a
+	$(CC) $(CFLAGS) -o $@ $(WEBPAGEOBJS) ../lib/libbbgen.a $(PCRELIBS)
 
 bb-datepage.cgi: $(DATEPAGEOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(DATEPAGEOBJS) ../lib/libbbgen.a $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(DATEPAGEOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 
 
 ################################################
