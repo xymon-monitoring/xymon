@@ -1,0 +1,134 @@
+<TABLE WIDTH="100%" BORDER=0>
+
+<TR><TH ALIGN=LEFT><I>Current Status</I></TH><TH ALIGN=LEFT><I>Select what to Disable</I></TH></TR>
+
+<TR>
+
+<TD WIDTH="55%" VALIGN=TOP>
+   <TABLE SUMMARY="Status table" BORDER=0 WIDTH="90%" ALIGN=LEFT>
+      <TR><TD>
+         <TABLE SUMMARY="Disabled tests" BORDER=1 WIDTH="100%">
+            <TR><TH COLSPAN=3>Currently disabled tests</TH></TR>
+            &DISABLELIST
+         </TABLE>
+      </TD></TR>
+      <TR><TD>&nbsp;</TD></TR>
+      <TR><TD>
+         <TABLE SUMMARY="Scheduled actions" BORDER=1 WIDTH="100%">
+            <TR><TH COLSPAN=3>Scheduled actions</TH></TR>
+            &SCHEDULELIST
+         </TABLE>
+      </TD></TR>
+   </TABLE>
+</TD>
+
+<TD WIDTH="40%">
+  <FORM METHOD="POST" ACTION="&REQUEST_URI">
+    <TABLE SUMMARY="Selection table" BORDER=0 WIDTH="100%">
+        <TR><TD WIDTH="100%">
+            <TABLE SUMMARY="Maintenance input" BORDER=0>
+              <TR><TH ALIGN=LEFT>Hosts</TH><TH ALIGN=LEFT>Tests</TH><TH>&nbsp;<TH></TR>
+              <TR>
+                 <TD WIDTH="50%" ALIGN=LEFT>
+                    <SELECT MULTIPLE NAME=hostname SIZE=15>
+                       &HOSTLIST
+                    </SELECT>
+                 </TD>
+   
+                 <TD WIDTH="20%" ALIGN=LEFT>
+                     <SELECT MULTIPLE NAME=disabletest SIZE=15>
+                       <OPTION VALUE="*" SELECTED>ALL</OPTION>
+                       &TESTLIST
+                     </SELECT>
+                 </TD>
+              </TR>
+
+              <TR><TD>&nbsp;</TD></TR>
+
+              <TR><TD WIDTH="100%" COLSPAN=2>
+                 <TABLE SUMMARY="Host filters" BORDER=1 WIDTH="100%">
+                    <TR><TH COLSPAN=2><FONT SIZE=-1><I>Filter hostlist</I></FONT></TH></TR>
+                    <TR>
+                       <TD>
+                          <FONT SIZE=-1>Hostname pattern</FONT><BR>
+                          <INPUT TYPE=TEXT NAME=hostpattern VALUE="" SIZE=20 MAXLENGTH=80>
+                      </TD>
+                      <TD ROWSPAN=3 ALIGN=CENTER>
+                          <INPUT TYPE=SUBMIT NAME=go VALUE="Apply filters" ALT="Submit">
+                      </TD>
+                    </TR>
+                    <TR>
+                       <TD>
+                          <FONT SIZE=-1>Pagename pattern</FONT><BR>
+                          <INPUT TYPE=TEXT NAME=pagepattern VALUE="" SIZE=20 MAXLENGTH=80>
+                      </TD>
+                    </TR>
+                    <TR>
+                       <TD>
+                          <FONT SIZE=-1>IP address pattern</FONT><BR>
+                          <INPUT TYPE=TEXT NAME=ippattern VALUE="" SIZE=20 MAXLENGTH=80>
+                      </TD>
+                    </TR>
+                 </TABLE>
+              </TD></TR>
+
+              <TR><TD>&nbsp;</TD></TR>
+
+              <TR>
+	         <td COLSPAN=3>Cause:&nbsp;<input name=cause type=text size=50 maxlength=80></td>
+              </TR>
+
+              <TR>
+                 <TD COLSPAN=3>
+                     Duration:&nbsp;<INPUT NAME=duration TYPE=TEXT SIZE=5 MAXLENGTH=5 value="4">&nbsp;
+	             <select name=scale>
+	                <option value=1>minutes</option>
+                        <option value=60 selected>hours</option>
+			<option value=1440>days</option>
+			<option value=10080>weeks</option>
+		     </select>
+                 </td>
+              </TR>
+
+              <TR><TD>&nbsp;</TD></TR>
+
+              <TR>
+                 <td COLSPAN=3 ALIGN=LEFT>
+                     <table summary="When to disable" border=1 width="100%">
+                       <tr>
+	                   <td align="left">
+                              <input name=go type=radio value="Disable now" checked> Disable now
+                           </td>
+                       </tr>
+                       <tr>
+	                   <td align="left">
+                              <input name=go type=radio value="Schedule disable">Schedule disable at
+                              <br>
+	                      <SELECT NAME=month> &REPMONLIST </SELECT>
+	                      <SELECT NAME=day> &REPDAYLIST </SELECT>
+	                      <SELECT NAME=year> &REPYEARLIST </SELECT> &nbsp;
+	                      <SELECT NAME=hour> &REPHOURLIST </SELECT>
+	                      <SELECT NAME=minute> &REPMINLIST </SELECT>
+                           </td>
+                       </tr>
+                     </table>
+                 </td>
+              </TR>
+
+
+              <TR>
+	         <td align=center colspan=3>
+                     <input name=apply type=submit value="Apply">
+                     &nbsp;&nbsp;<INPUT TYPE="CHECKBOX" NAME=preview CHECKED>&nbsp;Test
+                 </td>
+              </TR>
+            </TABLE>
+        </TD></TR>
+    </TABLE>
+  </FORM>
+</TD>
+
+</TR>
+
+</TABLE>
+
