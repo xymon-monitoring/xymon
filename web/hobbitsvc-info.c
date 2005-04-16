@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.87 2005-04-14 13:02:09 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.88 2005-04-16 17:02:07 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -260,11 +260,9 @@ static void generate_hobbit_disable(char *hostname, char **buf, int *buflen)
 	sprintf(l, "<table summary=\"%s disable\" border=1>\n", hostname);
 	addtobuffer(buf, buflen, l);
 
-	addtobuffer(buf, buflen, "<tr><th>Tests</th><th>How long</th><th>Cause</th></tr>\n");
-
 	addtobuffer(buf, buflen, "<tr>\n");
 
-	addtobuffer(buf, buflen, "<td rowspan=2><select multiple size=\"5\" name=\"disabletest\">\n");
+	addtobuffer(buf, buflen, "<td rowspan=2><select multiple size=\"15\" name=\"disabletest\">\n");
 	addtobuffer(buf, buflen, "<option value=\"*\">ALL</option>\n");
 	for (i=0; (i < testcount); i++) {
 		sprintf(l, "<option value=\"%s\">%s</option>\n", tnames[i].name, tnames[i].name);
@@ -272,24 +270,32 @@ static void generate_hobbit_disable(char *hostname, char **buf, int *buflen)
 	}
 	addtobuffer(buf, buflen, "</select></td>\n");
 
-	addtobuffer(buf, buflen, "<td><input name=\"duration\" type=text size=5 maxlength=5 value=\"4\">&nbsp;\n");
-	addtobuffer(buf, buflen, "<select name=\"scale\">\n");
-	addtobuffer(buf, buflen, "<option value=1>minutes</option>\n");
-	addtobuffer(buf, buflen, "<option value=60 selected>hours</option>\n");
-	addtobuffer(buf, buflen, "<option value=1440>days</option>\n");
-	addtobuffer(buf, buflen, "<option value=10080>weeks</option>\n");
-	addtobuffer(buf, buflen, "</select></td>\n");
-
-	addtobuffer(buf, buflen, "<td><input name=\"cause\" type=text size=50 maxlength=80></td>\n");
-	addtobuffer(buf, buflen, "</tr>\n");
-
-	addtobuffer(buf, buflen, "<tr>\n");
-	addtobuffer(buf, buflen, "<td align=\"center\"><input name=\"go\" type=submit value=\"Disable now\"></td>\n");
-
 	addtobuffer(buf, buflen, "<td>\n");
+	addtobuffer(buf, buflen, "   <table summary=\"Disable parameters\" border=0>\n");
+	addtobuffer(buf, buflen, "      <tr> <td>Cause: <input name=\"cause\" type=text size=50 maxlength=80></td> </tr>\n");
+
+	addtobuffer(buf, buflen, "      <tr>\n");
+	addtobuffer(buf, buflen, "        <td>Duration: <input name=\"duration\" type=text size=5 maxlength=5 value=\"4\"> &nbsp;\n");
+	addtobuffer(buf, buflen, "            <select name=\"scale\">\n");
+	addtobuffer(buf, buflen, "               <option value=1>minutes</option>\n");
+	addtobuffer(buf, buflen, "               <option value=60 selected>hours</option>\n");
+	addtobuffer(buf, buflen, "               <option value=1440>days</option>\n");
+	addtobuffer(buf, buflen, "               <option value=10080>weeks</option>\n");
+	addtobuffer(buf, buflen, "            </select>\n");
+	addtobuffer(buf, buflen, "        </td>\n");
+	addtobuffer(buf, buflen, "      </tr>\n");
+
+	addtobuffer(buf, buflen, "      <tr> <td>&nbsp;</td> </tr>\n");
+ 
+	addtobuffer(buf, buflen, "      <tr>\n");
+	addtobuffer(buf, buflen, "         <td align=center width=90%>\n");
+	addtobuffer(buf, buflen, "            <table summary=\"When to disable\" border=1>\n");
+	addtobuffer(buf, buflen, "              <tr><td align=left><input name=go type=radio value=\"Disable now\" checked> Disable now</td></tr>\n");
+	addtobuffer(buf, buflen, "              <tr><td align=left><input name=go type=radio value=\"Schedule disable\"> Schedule disable at\n");
+	addtobuffer(buf, buflen, "                    <br>\n");
 
 	/* Months */
-	addtobuffer(buf, buflen, "<SELECT NAME=\"month\">\n");
+	addtobuffer(buf, buflen, "<SELECT NAME=\"month\" onClick=\"setcheck(this.form.go,true)\">\n");
 	for (i=1; (i <= 12); i++) {
 		if (i == (nowtm->tm_mon + 1)) selstr = "SELECTED"; else selstr = "";
 		monthtm.tm_mon = (i-1); monthtm.tm_mday = 1; monthtm.tm_year = nowtm->tm_year;
@@ -301,7 +307,7 @@ static void generate_hobbit_disable(char *hostname, char **buf, int *buflen)
 	addtobuffer(buf, buflen, "</SELECT>\n");
 
 	/* Days */
-	addtobuffer(buf, buflen, "<SELECT NAME=\"day\">\n");
+	addtobuffer(buf, buflen, "<SELECT NAME=\"day\" onClick=\"setcheck(this.form.go,true)\">\n");
 	for (i=1; (i <= 31); i++) {
 		if (i == nowtm->tm_mday) selstr = "SELECTED"; else selstr = "";
 		sprintf(l, "<OPTION VALUE=\"%d\" %s>%d</OPTION>\n", i, selstr, i);
@@ -310,7 +316,7 @@ static void generate_hobbit_disable(char *hostname, char **buf, int *buflen)
 	addtobuffer(buf, buflen, "</SELECT>\n");
 
 	/* Years */
-	addtobuffer(buf, buflen, "<SELECT NAME=\"year\">\n");
+	addtobuffer(buf, buflen, "<SELECT NAME=\"year\" onClick=\"setcheck(this.form.go,true)\">\n");
 	for (i=beginyear; (i <= endyear); i++) {
 		if (i == (nowtm->tm_year + 1900)) selstr = "SELECTED"; else selstr = "";
 		sprintf(l, "<OPTION VALUE=\"%d\" %s>%d</OPTION>\n", i, selstr, i);
@@ -319,7 +325,7 @@ static void generate_hobbit_disable(char *hostname, char **buf, int *buflen)
 	addtobuffer(buf, buflen, "</SELECT>\n");
 
 	/* Hours */
-	addtobuffer(buf, buflen, "<SELECT NAME=\"hour\">\n");
+	addtobuffer(buf, buflen, "<SELECT NAME=\"hour\" onClick=\"setcheck(this.form.go,true)\">\n");
 	for (i=0; (i <= 24); i++) {
 		if (i == nowtm->tm_hour) selstr = "SELECTED"; else selstr = "";
 		sprintf(l, "<OPTION VALUE=\"%d\" %s>%d</OPTION>\n", i, selstr, i);
@@ -328,18 +334,21 @@ static void generate_hobbit_disable(char *hostname, char **buf, int *buflen)
 	addtobuffer(buf, buflen, "</SELECT>\n");
 
 	/* Minutes */
-	addtobuffer(buf, buflen, "<SELECT NAME=\"minute\">");
+	addtobuffer(buf, buflen, "<SELECT NAME=\"minute\" onClick=\"setcheck(this.form.go,true)\">\n");
 	for (i=0; (i <= 59); i++) {
 		if (i == nowtm->tm_min) selstr = "SELECTED"; else selstr = "";
 		sprintf(l, "<OPTION VALUE=\"%02d\" %s>%02d</OPTION>\n", i, selstr, i);
 		addtobuffer(buf, buflen, l);
 	}
 	addtobuffer(buf, buflen, "</SELECT>\n");
-
-	addtobuffer(buf, buflen, "<br><center><input name=\"go\" type=submit value=\"Schedule disable\"></center>\n");
-
+	addtobuffer(buf, buflen, "              </td></tr>\n");
+	addtobuffer(buf, buflen, "            </table> \n");
+	addtobuffer(buf, buflen, "         </td>\n");
+	addtobuffer(buf, buflen, "      </tr>\n");
+	addtobuffer(buf, buflen, "      <tr> <td align=center> <input name=apply type=submit value=\"Apply\"></td> </tr>\n");
+	addtobuffer(buf, buflen, "   </table>\n");
 	addtobuffer(buf, buflen, "</td>\n");
-	addtobuffer(buf, buflen, "</tr>\n");
+
 
 	addtobuffer(buf, buflen, "</table>\n");
 
