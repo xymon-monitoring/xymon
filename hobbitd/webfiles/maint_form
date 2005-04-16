@@ -118,7 +118,7 @@
               <TR>
 	         <td align=center colspan=3>
                      <input name=apply type=submit value="Apply">
-                     &nbsp;&nbsp;<INPUT TYPE="CHECKBOX" NAME=preview CHECKED>&nbsp;Test
+                     &nbsp;&nbsp;<INPUT TYPE="CHECKBOX" NAME=preview>&nbsp;Test
                  </td>
               </TR>
             </TABLE>
