@@ -7,6 +7,37 @@
 <!-- Styles for the menu bar -->
 <link rel="stylesheet" type="text/css" href="&BBMENUSKIN/menu.css">
 
+<!--
+ * Stuff for the enable/disable page.
+ *
+ * This JavaScript has been copied from the "maint.pl"
+ * script by Tom Schmidt, released under the "Artistic" license.
+ -->
+<script language="JavaScript" type="text/javascript">
+&JSHOSTLIST
+
+function updateOptions(arrayName) {
+	var selectedHosts = 0;
+	for (var i = 0; i < window.document.selectionform.hostname.options.length; i++)
+		if (window.document.selectionform.hostname.options[i].selected)
+			selectedHosts++;
+	if (selectedHosts == 1)
+		swapOptions(arrayName);
+	else
+		swapOptions("ALL");
+}
+
+function swapOptions(arrayName) {
+	var i = 0;
+	while (window.document.selectionform.disabletest.options.length > 0)
+		window.document.selectionform.disabletest.options[0] = null;
+
+	var NewOptions = hosts[arrayName];
+	for (i = 0, len = NewOptions.length; i < len; i++)
+		window.document.selectionform.disabletest.options[i] = new Option(NewOptions[i]);
+}
+</script>
+
 </HEAD>
 
 <BODY BGCOLOR="&BBBACKGROUND" BACKGROUND="&BBSKIN/bkg-&BBBACKGROUND.gif" TEXT="#D8D8BF" LINK="#00FFAA" VLINK="#FFFF44">
