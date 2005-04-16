@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-enadis.c,v 1.3 2005-04-16 09:54:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-enadis.c,v 1.4 2005-04-16 15:32:20 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -102,9 +102,12 @@ void parse_post(void)
 				}
 			}
 			else if (strcmp(token, "enabletest") == 0) {
+				if (strcmp(val, "ALL") == 0) val = "*";
 				enabletest = strdup(val);
 			}
 			else if (strcmp(token, "disabletest") == 0) {
+				if (strcmp(val, "ALL") == 0) val = "*";
+
 				if (disabletest == NULL) {
 					disabletest = (char **)malloc(2 * sizeof(char *));
 					disabletest[0] = strdup(val);
