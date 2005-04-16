@@ -1,6 +1,6 @@
 PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filter hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_larrd hobbitd_sample hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-mailack trimhistory hobbitreports.sh
-CGISCRIPTS = hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh hobbit-enadis.sh
-SECCGISCRIPTS = bb-ack.sh maint.pl
+CGISCRIPTS = hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh
+SECCGISCRIPTS = bb-ack.sh maint.pl hobbit-enadis.sh
 
 LIBOBJS = ../lib/libbbgen.a
 
@@ -35,7 +35,7 @@ hobbitd_channel: $(CHANNELOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(RPATHOPT) $(CHANNELOBJS) $(LIBOBJS)
 
 hobbitd_filestore: $(FILESTOREOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(RPATHOPT) $(FILESTOREOBJS) $(LIBOBJS) $(NETLIBS)
+	$(CC) -o $@ $(RPATHOPT) $(FILESTOREOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
 hobbitd_history: $(HISTORYOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(RPATHOPT) $(HISTORYOBJS) $(LIBOBJS)
@@ -68,7 +68,7 @@ hobbitsvc.cgi: $(HOBBITSVCOBJS)
 	$(CC) $(CFLAGS) -o $@ $(HOBBITSVCOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 
 hobbit-enadis.cgi: $(HOBBITENADISOBJS)
-	$(CC) $(CFLAGS) -o $@ $(HOBBITENADISOBJS) ../lib/libbbgen.a $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(HOBBITENADISOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 
 hobbit-mailack.o: hobbit-mailack.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ hobbit-mailack.c
