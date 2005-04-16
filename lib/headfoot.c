@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.22 2005-04-16 07:21:43 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.23 2005-04-16 15:35:34 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -198,6 +198,36 @@ static void fetch_board(void)
 }
 
 
+static namelist_t *wanted_host(char *hostname)
+{
+	namelist_t *hinfo = hostinfo(hostname);
+	int result, ovector[30];
+
+	if (!hinfo) return NULL;
+
+	if (hostpattern) {
+		result = pcre_exec(hostpattern, NULL, hostname, strlen(hostname), 0, 0,
+				ovector, (sizeof(ovector)/sizeof(int)));
+		if (result < 0) return NULL;
+	}
+
+	if (pagepattern && hinfo) {
+		char *pname = bbh_item(hinfo, BBH_PAGEPATH);
+		result = pcre_exec(pagepattern, NULL, pname, strlen(pname), 0, 0,
+				ovector, (sizeof(ovector)/sizeof(int)));
+		if (result < 0) return NULL;
+	}
+
+	if (ippattern && hinfo) {
+		char *hostip = bbh_item(hinfo, BBH_IP);
+		result = pcre_exec(ippattern, NULL, hostip, strlen(hostip), 0, 0,
+				ovector, (sizeof(ovector)/sizeof(int)));
+		if (result < 0) return NULL;
+	}
+
+	return hinfo;
+}
+
 
 void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype, time_t selectedtime)
 {
@@ -365,36 +395,72 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			}
 		}
 		else if (strcmp(t_start, "HOSTLIST") == 0) {
-			int i, result;
-			int ovector[30];
+			int i;
 
 			if (!hostlist) fetch_board();
 
 			for (i = 0; (i < hostcount); i++) {
-				namelist_t *hinfo = hostinfo(hostlist[i]);
-
-				if (hostpattern) {
-					result = pcre_exec(hostpattern, NULL, hostlist[i], strlen(hostlist[i]), 0, 0,
-							ovector, (sizeof(ovector)/sizeof(int)));
-					if (result < 0) continue;
+				if (wanted_host(hostlist[i])) {
+					fprintf(output, "<OPTION VALUE=\"%s\">%s</OPTION>\n", hostlist[i], hostlist[i]);
 				}
-
-				if (pagepattern && hinfo) {
-					char *pname = bbh_item(hinfo, BBH_PAGEPATH);
-					result = pcre_exec(pagepattern, NULL, pname, strlen(pname), 0, 0,
-							ovector, (sizeof(ovector)/sizeof(int)));
-					if (result < 0) continue;
-				}
-
-				if (ippattern && hinfo) {
-					char *hostip = bbh_item(hinfo, BBH_IP);
-					result = pcre_exec(ippattern, NULL, hostip, strlen(hostip), 0, 0,
-							ovector, (sizeof(ovector)/sizeof(int)));
-					if (result < 0) continue;
-				}
-
-				fprintf(output, "<OPTION VALUE=\"%s\">%s</OPTION>\n", hostlist[i], hostlist[i]);
 			}
+		}
+		else if (strcmp(t_start, "JSHOSTLIST") == 0) {
+			int i, tcount, tidx;
+			char **tlist;
+
+			if (!hostlist) fetch_board();
+
+			tlist = malloc((testcount+1) * sizeof(char *));
+
+			fprintf(output, "var hosts = new Array();\n");
+			fprintf(output, "hosts[\"ALL\"] = [ \"ALL\"");
+			for (tidx = 0; (tidx < testcount); tidx++) {
+				fprintf(output, ", \"%s\"", testlist[tidx]);
+			}
+			fprintf(output, " ];\n");
+
+			for (i = 0; (i < hostcount); i++) {
+				if (wanted_host(hostlist[i])) {
+					char *bwalk, *tname, *p;
+					char *key = (char *)malloc(strlen(hostlist[i]) + 3);
+
+					tcount = 0;
+
+					/* Setup the search key and find the first occurrence. */
+					sprintf(key, "\n%s|", hostlist[i]);
+					if (strncmp(statusboard, (key+1), strlen(key+1)) == 0)
+						bwalk = statusboard;
+					else {
+						bwalk = strstr(statusboard, key);
+						if (bwalk) bwalk++;
+					}
+
+					while (bwalk) {
+						tname = bwalk + strlen(key+1);
+						p = strchr(tname, '|'); if (p) *p = '\0';
+						if ( (strcmp(tname, xgetenv("INFOCOLUMN")) != 0) &&
+						     (strcmp(tname, xgetenv("LARRDCOLUMN")) != 0) ) {
+							tlist[tcount++] = strdup(tname);
+						}
+						if (p) *p = '|';
+
+						bwalk = strstr(tname, key); if (bwalk) bwalk++;
+					}
+					if (tcount) qsort(tlist, tcount, sizeof(char *), namecompare);
+
+					fprintf(output, "hosts[\"%s\"] = [ \"ALL\"", hostlist[i]);
+					for (tidx = 0; (tidx < tcount); tidx++) {
+						fprintf(output, ", \"%s\"", tlist[tidx]);
+						xfree(tlist[tidx]);
+					}
+					fprintf(output, " ];\n");
+
+					xfree(key);
+				}
+			}
+
+			xfree(tlist);
 		}
 		else if (strcmp(t_start, "TESTLIST") == 0) {
 			int i;
