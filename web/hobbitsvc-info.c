@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.88 2005-04-16 17:02:07 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.89 2005-04-16 17:41:42 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -288,7 +288,7 @@ static void generate_hobbit_disable(char *hostname, char **buf, int *buflen)
 	addtobuffer(buf, buflen, "      <tr> <td>&nbsp;</td> </tr>\n");
  
 	addtobuffer(buf, buflen, "      <tr>\n");
-	addtobuffer(buf, buflen, "         <td align=center width=90%>\n");
+	addtobuffer(buf, buflen, "         <td align=center width=\"90%\">\n");
 	addtobuffer(buf, buflen, "            <table summary=\"When to disable\" border=1>\n");
 	addtobuffer(buf, buflen, "              <tr><td align=left><input name=go type=radio value=\"Disable now\" checked> Disable now</td></tr>\n");
 	addtobuffer(buf, buflen, "              <tr><td align=left><input name=go type=radio value=\"Schedule disable\"> Schedule disable at\n");
@@ -345,7 +345,7 @@ static void generate_hobbit_disable(char *hostname, char **buf, int *buflen)
 	addtobuffer(buf, buflen, "            </table> \n");
 	addtobuffer(buf, buflen, "         </td>\n");
 	addtobuffer(buf, buflen, "      </tr>\n");
-	addtobuffer(buf, buflen, "      <tr> <td align=center> <input name=apply type=submit value=\"Apply\"></td> </tr>\n");
+	addtobuffer(buf, buflen, "      <tr> <td align=center> <input name=apply type=\"button\" onClick=\"validateDisable(this.form)\" value=\"Apply\"></td> </tr>\n");
 	addtobuffer(buf, buflen, "   </table>\n");
 	addtobuffer(buf, buflen, "</td>\n");
 
