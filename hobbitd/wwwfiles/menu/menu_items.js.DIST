@@ -12,7 +12,7 @@ var MENU_ITEMS = [
 	['Administration', null, null,
 		['Find host', '@BBCGIURL@/bb-findhost.sh'],
 		['Acknowledge alert', '@SECUREBBCGIURL@/bb-ack.sh'],
-		['Enable/disable', '@SECUREBBCGIURL@/maint.pl'],
+		['Enable/disable', '@SECUREBBCGIURL@/hobbit-enadis.sh'],
 	],
         ['Help', null, null,
 		['About Hobbit', '@BBHOSTURL@/help/about.html'],
