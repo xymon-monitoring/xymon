@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.36 2005-04-09 11:17:48 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.37 2005-04-17 19:34:17 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -358,7 +358,12 @@ int main(int argc, char *argv[])
 			multigraphs = (char *)malloc(strlen(p+1) + 3);
 			sprintf(multigraphs, ",%s,", p+1);
 		}
-
+		else if (strcmp(argv[argi], "--no-disable") == 0) {
+			showenadis = 0;
+		}
+		else if (strcmp(argv[argi], "--no-jsvalidation") == 0) {
+			usejsvalidation = 0;
+		}
 	}
 
 	*errortxt = '\0';

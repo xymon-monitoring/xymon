@@ -64,6 +64,23 @@ that are split up into multiple images, with at most 5 graphs
 per image. This option only works in Hobbit mode. If not
 specified, only the "disk" status is split up this way.
 
+.IP "--no-disable"
+By default, the info-column page includes a form allowing users 
+to disable and re-enable tests. If your setup uses the default
+separation of administration tools into a separate, password-
+protected area, then use of the disable- and enable-functions
+requires access to the administration tools. If you prefer to 
+do this only via the dedicated administration page, this option
+will remove the disable-function from the info page.
+
+.IP "--no-jsvalidation"
+The disable-function on the info-column page by default uses
+JavaScript to validate the form before submitting the input
+to the Hobbit server. However, some browsers cannot handle the
+Javascript code correctly so the form does not work. This 
+option disables the use of Javascript for form-validation,
+allowing these browsers to use the disable-function.
+
 .SH FILES
 .IP "$BBHOME/web/hostsvc_header"
 HTML template header

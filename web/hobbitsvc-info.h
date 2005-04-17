@@ -11,6 +11,9 @@
 #ifndef __HOBBITSVC_INFO_H__
 #define __HOBBITSVC_INFO_H__
 
+extern int showenadis;
+extern int usejsvalidation;
+
 extern char *generate_info(char *hostname);
 
 #endif

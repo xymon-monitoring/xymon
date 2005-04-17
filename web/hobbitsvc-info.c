@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.90 2005-04-16 21:32:10 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.91 2005-04-17 19:34:17 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -33,6 +33,9 @@ static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.90 2005-04-16 21:32:10 henrik E
 #include "libbbgen.h"
 
 #include "hobbitd_alert.h"
+
+int showenadis = 1;
+int usejsvalidation = 1;
 
 typedef struct hinf_t {
 	char *name;
@@ -345,7 +348,12 @@ static void generate_hobbit_disable(char *hostname, char **buf, int *buflen)
 	addtobuffer(buf, buflen, "            </table> \n");
 	addtobuffer(buf, buflen, "         </td>\n");
 	addtobuffer(buf, buflen, "      </tr>\n");
-	addtobuffer(buf, buflen, "      <tr> <td align=center> <input name=apply type=\"button\" onClick=\"validateDisable(this.form)\" value=\"Apply\"></td> </tr>\n");
+	if (usejsvalidation) {
+		addtobuffer(buf, buflen, "      <tr> <td align=center> <input name=apply type=\"button\" onClick=\"validateDisable(this.form)\" value=\"Apply\"></td> </tr>\n");
+	}
+	else {
+		addtobuffer(buf, buflen, "      <tr> <td align=center> <input name=apply type=\"submit\" value=\"Apply\"></td> </tr>\n");
+	}
 	addtobuffer(buf, buflen, "   </table>\n");
 	addtobuffer(buf, buflen, "</td>\n");
 
@@ -749,7 +757,7 @@ char *generate_info(char *hostname)
 	}
 	addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
-	if (gotstatus) {
+	if (gotstatus && showenadis) {
 		int i, anydisabled = 0;
 
 		addtobuffer(&infobuf, &infobuflen, "<tr><th align=left valign=top>Disable tests</th><td align=left>\n");
