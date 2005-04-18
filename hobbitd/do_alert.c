@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.60 2005-03-27 06:58:46 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.61 2005-04-18 21:26:40 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -1203,6 +1203,10 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 		addtobuffer(&buf, &buflen, info);
 		addtobuffer(&buf, &buflen, msg_data(alert->pagemessage));
 		addtobuffer(&buf, &buflen, "\n");
+		sprintf(info, "See %s%s/bb-hostsvc.sh?HOSTSVC=%s.%s\n", 
+			xgetenv("BBWEBHOST"), xgetenv("CGIBINURL"), 
+			commafy(alert->hostname->name), alert->testname->name);
+		addtobuffer(&buf, &buflen, info);
 		MEMUNDEFINE(info);
 		return buf;
 
