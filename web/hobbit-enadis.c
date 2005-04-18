@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-enadis.c,v 1.5 2005-04-18 11:13:16 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-enadis.c,v 1.6 2005-04-18 12:31:06 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -240,9 +240,10 @@ int main(int argc, char *argv[])
 
 		cookie = getenv("HTTP_COOKIE");
 		if (cookie && ((p = strstr(cookie, "pagepath=")) != NULL)) {
-			p+= strlen("pagepath=");
+			p += strlen("pagepath=");
 			pagepattern = strdup(p);
 			p = strchr(pagepattern, ';'); if (p) *p = '\0';
+			if (strlen(pagepattern) == 0) { xfree(pagepattern); pagepattern = 0; }
 			sethostenv_filter(NULL, pagepattern, NULL);
 		}
 	}
