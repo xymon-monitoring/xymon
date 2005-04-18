@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-datepage.c,v 1.3 2005-04-07 10:09:02 henrik Exp $";
+static char rcsid[] = "$Id: bb-datepage.c,v 1.4 2005-04-18 12:30:42 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -136,9 +136,9 @@ int main(int argc, char *argv[])
 		}
 
 		p = strstr(cookie, "pagepath="); if (p) p+= strlen("pagepath=");
-		if ((p == NULL) || (strlen(p) == 0)) {
+		if ((p == NULL) || (strlen(p) == 0) || (*p == ';')) {
 			p = strstr(cookie, "host="); if (p) p += strlen("host=");
-			if ((p == NULL) || (strlen(p) == 0)) {
+			if ((p == NULL) || (strlen(p) == 0) || (*p == ';')) {
 				pagepath = "";
 			}
 			else {
