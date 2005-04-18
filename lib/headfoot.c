@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.25 2005-04-18 09:37:19 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.26 2005-04-18 10:43:55 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -50,8 +50,11 @@ static int hostenv_refresh = 60;
 static char *statusboard = NULL;
 static char *scheduleboard = NULL;
 
+static char *hostpattern_text = NULL;
 static pcre *hostpattern = NULL;
+static char *pagepattern_text = NULL;
 static pcre *pagepattern = NULL;
+static char *ippattern_text = NULL;
 static pcre *ippattern = NULL;
 static char **hostlist = NULL;
 static int hostcount = 0;
@@ -110,14 +113,26 @@ void sethostenv_filter(char *hostptn, char *pageptn, char *ipptn)
 	const char *errmsg;
 	int errofs;
 
+	if (hostpattern_text) xfree(hostpattern_text);
 	if (hostpattern) { pcre_free(hostpattern); hostpattern = NULL; }
+	if (pagepattern_text) xfree(pagepattern_text);
 	if (pagepattern) { pcre_free(pagepattern); pagepattern = NULL; }
+	if (ippattern_text) xfree(ippattern_text);
 	if (ippattern) { pcre_free(ippattern); ippattern = NULL; }
 
 	/* Setup the pattern to match names against */
-	if (hostptn) hostpattern = pcre_compile(hostptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
-	if (pageptn) pagepattern = pcre_compile(pageptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
-	if (ipptn)   ippattern = pcre_compile(ipptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
+	if (hostptn) {
+		hostpattern_text = strdup(hostptn);
+		hostpattern = pcre_compile(hostptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
+	}
+	if (pageptn) {
+		pagepattern_text = strdup(pageptn);
+		pagepattern = pcre_compile(pageptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
+	}
+	if (ipptn) {
+		ippattern_text = strdup(ipptn);
+		ippattern = pcre_compile(ipptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
+	}
 }
 
 static int namecompare(const void *v1, const void *v2)
@@ -408,6 +423,15 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 				fprintf(output, "<OPTION VALUE=\"%02d\" %s>%02d\n", i, selstr, i);
 			}
 		}
+		else if (strcmp(t_start, "HOSTFILTER") == 0) {
+			if (hostpattern_text) fprintf(output, "%s", hostpattern_text);
+		}
+		else if (strcmp(t_start, "PAGEFILTER") == 0) {
+			if (pagepattern_text) fprintf(output, "%s", pagepattern_text);
+		}
+		else if (strcmp(t_start, "IPFILTER") == 0) {
+			if (ippattern_text) fprintf(output, "%s", ippattern_text);
+		}
 		else if (strcmp(t_start, "HOSTLIST") == 0) {
 			int i;
 
@@ -489,7 +513,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			char *walk, *eoln;
 			int gotany = 0;
 
-			if (!statusboard) fetch_board();
+			if (!statusboard || !hostlist) fetch_board();
 
 			walk = statusboard;
 			while (walk) {
@@ -506,7 +530,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 					if (tname) { p = gettok(NULL, "|"); if (p) distime = atoi(p); }
 					if (distime) dismsg = gettok(NULL, "|\n");
 
-					if (hname && tname && (distime > 0) && dismsg) {
+					if (hname && tname && (distime > 0) && dismsg && wanted_host(hname)) {
 						char *msg, *eoln;
 
 						gotany = 1;

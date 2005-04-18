@@ -22,7 +22,7 @@
    </TABLE>
 </TD>
 
-<TD WIDTH="40%">
+<TD WIDTH="40%" VALIGN=TOP>
   <FORM METHOD="POST" NAME=selectionform ACTION="&REQUEST_URI">
     <TABLE SUMMARY="Selection table" BORDER=0 WIDTH="100%">
         <TR><TD WIDTH="100%">
@@ -50,7 +50,7 @@
                     <TR>
                        <TD>
                           <FONT SIZE=-1>Hostname pattern</FONT><BR>
-                          <INPUT TYPE=TEXT NAME=hostpattern VALUE="" SIZE=20 MAXLENGTH=80>
+                          <INPUT TYPE=TEXT NAME=hostpattern VALUE="&HOSTFILTER" SIZE=20 MAXLENGTH=80>
                       </TD>
                       <TD ROWSPAN=3 ALIGN=CENTER>
                           <INPUT TYPE=SUBMIT NAME=go VALUE="Apply filters" ALT="Submit">
@@ -59,13 +59,13 @@
                     <TR>
                        <TD>
                           <FONT SIZE=-1>Pagename pattern</FONT><BR>
-                          <INPUT TYPE=TEXT NAME=pagepattern VALUE="" SIZE=20 MAXLENGTH=80>
+                          <INPUT TYPE=TEXT NAME=pagepattern VALUE="&PAGEFILTER" SIZE=20 MAXLENGTH=80>
                       </TD>
                     </TR>
                     <TR>
                        <TD>
                           <FONT SIZE=-1>IP address pattern</FONT><BR>
-                          <INPUT TYPE=TEXT NAME=ippattern VALUE="" SIZE=20 MAXLENGTH=80>
+                          <INPUT TYPE=TEXT NAME=ippattern VALUE="&IPFILTER" SIZE=20 MAXLENGTH=80>
                       </TD>
                     </TR>
                  </TABLE>
