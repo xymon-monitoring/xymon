@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.24 2005-04-16 21:30:15 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.25 2005-04-18 09:37:19 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -512,9 +512,9 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 						gotany = 1;
 						nldecode(dismsg);
 						fprintf(output, "<TR>");
-						fprintf(output, "<TD>%s&nbsp;%s</TD>", hname, tname);
+						fprintf(output, "<TD>%s&nbsp;%s<BR>", hname, tname);
 
-						fprintf(output, "<TD>");
+						fprintf(output, "<BR>");
 						msg = dismsg;
 						msg += strspn(msg, "0123456789 \t\n");
 						while ((eoln = strchr(msg, '\n')) != NULL) {
