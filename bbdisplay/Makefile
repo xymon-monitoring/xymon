@@ -65,7 +65,7 @@ bb-ack.cgi: $(ACKCGIOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(ACKCGIOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 
 bb-webpage: $(WEBPAGEOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(WEBPAGEOBJS) ../lib/libbbgen.a $(PCRELIBS)
+	$(CC) $(CFLAGS) -o $@ $(WEBPAGEOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 
 bb-datepage.cgi: $(DATEPAGEOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(DATEPAGEOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
