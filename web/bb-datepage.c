@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-datepage.c,v 1.4 2005-04-18 12:30:42 henrik Exp $";
+static char rcsid[] = "$Id: bb-datepage.c,v 1.5 2005-04-20 12:51:30 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -87,8 +87,14 @@ static void parse_query(char *buf)
 static void get_post_data(void)
 {
 	char l[8192];
+	int lefttoread = atoi(xgetenv("CONTENT_LENGTH"));
 
-	while (fgets(l, sizeof(l), stdin)) {
+	while (lefttoread > 0) {
+		if (fgets(l, sizeof(l), stdin) == NULL) {
+			errormsg("Error reading POST data\n");
+		}
+		lefttoread -= strlen(l);
+
 		parse_query(l);
 	}
 }
