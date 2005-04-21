@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.17 2005-03-25 21:13:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.18 2005-04-21 07:40:46 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -175,6 +175,7 @@ int main(int argc, char *argv[])
 			  case COL_GREEN:
 			  case COL_YELLOW:
 			  case COL_RED:
+			  case COL_BLUE: /* Blue is OK, because it only arrives here when an update is sent */
 				tstamp = atoi(metadata[1]);
 				sender = metadata[2];
 				hostname = metadata[4]; 
