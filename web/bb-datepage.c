@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-datepage.c,v 1.5 2005-04-20 12:51:30 henrik Exp $";
+static char rcsid[] = "$Id: bb-datepage.c,v 1.6 2005-04-21 10:52:35 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -86,17 +86,24 @@ static void parse_query(char *buf)
 
 static void get_post_data(void)
 {
-	char l[8192];
-	int lefttoread = atoi(xgetenv("CONTENT_LENGTH"));
+	char *postdata = NULL;
+	int postsize = atoi(xgetenv("CONTENT_LENGTH"));
 
-	while (lefttoread > 0) {
-		if (fgets(l, sizeof(l), stdin) == NULL) {
-			errormsg("Error reading POST data\n");
+	if (postsize < 1024*1024) {
+		size_t n;
+
+		postdata = (char *)malloc(postsize + 1);
+		n = fread(postdata, 1, postsize, stdin);
+		if (n <= postsize) {
+			errormsg("Error getting POST data\n");
 		}
-		lefttoread -= strlen(l);
-
-		parse_query(l);
 	}
+	else {
+		errormsg("POST too large\n");
+	}
+
+	parse_query(postdata);
+	xfree(postdata);
 }
 
 
