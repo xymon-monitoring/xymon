@@ -57,10 +57,10 @@
 
 
 # "bbenadis" updates the files used to indicate that a host or test has been enabled or disabled.
-# These files are used by bbgen and the "maint.pl" script to determine what is currently enabled
-# and disabled, so you probably want to run this module.
+# Unless you are running server side scripts that look at these files, you do not need this.
 
 [bbenadis]
+	DISABLED
 	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	NEEDS hobbitd
 	CMD hobbitd_channel --channel=enadis --log=$BBSERVERLOGS/enadis.log hobbitd_filestore --enadis
