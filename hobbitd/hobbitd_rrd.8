@@ -234,9 +234,9 @@ FNAME="$3"
 if [ "$TESTNAME" = "weather" ]
 then
 	# Analyze the message we got
-	TEMP=`grep "^Temperature:" $FNAME | awk '{print $2}'
-	WIND=`grep "^Wind:" $FNAME | awk '{print $2}'
-	HMTY=`grep "^Humidity:" $FNAME | awk '{print $2}'
+	TEMP=`grep "^Temperature:" $FNAME | awk '{print $2}'`
+	WIND=`grep "^Wind:" $FNAME | awk '{print $2}'`
+	HMTY=`grep "^Humidity:" $FNAME | awk '{print $2}'`
 
 	# The RRD dataset definitions
 	echo "DS:temperature:GAUGE:600:-30:50"
