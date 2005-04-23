@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-mailack.c,v 1.5 2005-03-25 21:13:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-mailack.c,v 1.6 2005-04-23 06:21:56 henrik Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
 	int errofs, result;
 	int ovector[30];
 	char cookie[10];
-	int duration;
+	int duration = 0;
 	int argi;
 
 	for (argi=1; (argi < argc); argi++) {
@@ -52,8 +52,16 @@ int main(int argc, char *argv[])
 		p = buf + strcspn(buf, "\r\n"); *p = '\0';
 
 		if (!inheaders) {
+			/* We're in the message body. Look for a "delay=N" line here. */
+			if ((duration == 0) && (strncasecmp(buf, "delay=", 6) == 0)) {
+				duration = durationvalue(buf+6);
+				continue;
+			}
 			/* Save the first line of the message body, but ignore blank lines */
-			if (*buf && !firsttxtline) firsttxtline = strdup(buf);
+			else if (*buf && !firsttxtline) {
+				firsttxtline = strdup(buf);
+			}
+
 			continue;	/* We dont care about the rest of the message body */
 		}
 
@@ -90,7 +98,6 @@ int main(int argc, char *argv[])
 	pcre_free(subjexp);
 
 	/* See if there's a "DELAY=" delay-value also */
-	duration = 30;
 	subjexp = pcre_compile(".*DELAY[ =]+([0-9]+[mhdw]*)", PCRE_CASELESS, &errmsg, &errofs, NULL);
 	if (subjexp == NULL) {
 		dprintf("pcre compile failed - 2\n");
@@ -129,6 +136,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Setup the acknowledge message */
+	if (duration == 0) duration = 30;	/* Default: Ack for 30 minutes */
 	p = buf;
 	p += sprintf(p, "hobbitdack %s %d %s", cookie, duration, firsttxtline);
 	if (fromline) {
