@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.61 2005-04-18 21:26:40 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.62 2005-04-23 06:45:04 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -874,15 +874,19 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 
 	time_t duration;
 	int result;
+	char *pgname = alert->location->name;
+
+	/* The top-level page needs a name - cannot match against an empty string */
+	if (strlen(pgname) == 0) pgname = "/";
 
 	traceprintf("Matching host:service:page '%s:%s:%s' against rule line %d\n",
 			alert->hostname->name, alert->testname->name, alert->location->name, (crit ? crit->cfid : -1));
 
-	if (crit && crit->pagespec && !namematch(alert->location->name, crit->pagespec, crit->pagespecre)) { 
+	if (crit && crit->pagespec && !namematch(pgname, crit->pagespec, crit->pagespecre)) { 
 		traceprintf("Failed (pagename not in include list)\n");
 		return 0; 
 	}
-	if (crit && crit->expagespec && namematch(alert->location->name, crit->expagespec, crit->expagespecre)) { 
+	if (crit && crit->expagespec && namematch(pgname, crit->expagespec, crit->expagespecre)) { 
 		traceprintf("Failed (pagename excluded)\n");
 		return 0; 
 	}
