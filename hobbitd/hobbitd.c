@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.140 2005-04-13 11:27:05 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.141 2005-04-23 06:22:31 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -1394,11 +1394,13 @@ done:
 
 int get_config(char *fn, conn_t *msg)
 {
+	char fullfn[PATH_MAX];
 	FILE *fd = NULL;
 	int done = 0;
 	int n;
 
-	fd = stackfopen(fn, "r");
+	sprintf(fullfn, "%s/etc/%s", xgetenv("BBHOME"), fn);
+	fd = stackfopen(fullfn, "r");
 	if (fd == NULL) return -1;
 
 	*msg->buf = '\0';
