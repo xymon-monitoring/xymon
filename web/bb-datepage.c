@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-datepage.c,v 1.6 2005-04-21 10:52:35 henrik Exp $";
+static char rcsid[] = "$Id: bb-datepage.c,v 1.7 2005-04-24 20:51:49 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -36,76 +36,39 @@ static void errormsg(char *msg)
 	exit(1);
 }
 
-static void parse_query(char *buf)
+static void parse_query(void)
 {
-	char *query, *token;
+	cgidata_t *cgidata = cgi_request();
+	cgidata_t *cwalk;
 
-	if (!buf) {
-		if (xgetenv("QUERY_STRING") == NULL) return;
-
-		query = urldecode("QUERY_STRING");
-		if (!urlvalidate(query, NULL)) {
-			errormsg("Invalid request");
-			return;
-		}
-	}
-	else {
-		query = buf;
+	if (cgidata == NULL) {
+		errormsg(cgi_error());
 	}
 
-	token = strtok(query, "&");
-	while (token) {
-		char *val;
-		
-		val = strchr(token, '='); if (val) { *val = '\0'; val++; }
-
-		if (strcasecmp(token, "YEAR") == 0) {
-			year = atoi(val);
+	cwalk = cgidata;
+	while (cwalk) {
+		if (strcasecmp(cwalk->name, "YEAR") == 0) {
+			year = atoi(cwalk->value);
 		}
-		else if (strcasecmp(token, "MONTH") == 0) {
-			month = atoi(val);
+		else if (strcasecmp(cwalk->name, "MONTH") == 0) {
+			month = atoi(cwalk->value);
 		}
-		else if (strcasecmp(token, "DAY") == 0) {
-			day = atoi(val);
+		else if (strcasecmp(cwalk->name, "DAY") == 0) {
+			day = atoi(cwalk->value);
 		}
-		else if (strcasecmp(token, "WEEK") == 0) {
-			week = atoi(val);
+		else if (strcasecmp(cwalk->name, "WEEK") == 0) {
+			week = atoi(cwalk->value);
 		}
-		else if (strcasecmp(token, "TYPE") == 0) {
-			if (strcasecmp(val, "month") == 0) frmtype = FRM_MONTH;
-			else if (strcasecmp(val, "week") == 0) frmtype = FRM_WEEK;
-			else if (strcasecmp(val, "day") == 0) frmtype = FRM_DAY;
+		else if (strcasecmp(cwalk->name, "TYPE") == 0) {
+			if (strcasecmp(cwalk->value, "month") == 0) frmtype = FRM_MONTH;
+			else if (strcasecmp(cwalk->value, "week") == 0) frmtype = FRM_WEEK;
+			else if (strcasecmp(cwalk->value, "day") == 0) frmtype = FRM_DAY;
 			else errormsg("Bad type parameter\n");
 		}
 
-		token = strtok(NULL, "&");
+		cwalk = cwalk->next;
 	}
-
-	free(query);
 }
-
-static void get_post_data(void)
-{
-	char *postdata = NULL;
-	int postsize = atoi(xgetenv("CONTENT_LENGTH"));
-
-	if (postsize < 1024*1024) {
-		size_t n;
-
-		postdata = (char *)malloc(postsize + 1);
-		n = fread(postdata, 1, postsize, stdin);
-		if (n <= postsize) {
-			errormsg("Error getting POST data\n");
-		}
-	}
-	else {
-		errormsg("POST too large\n");
-	}
-
-	parse_query(postdata);
-	xfree(postdata);
-}
-
 
 int main(int argc, char *argv[])
 {
@@ -136,11 +99,11 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (strcmp(xgetenv("REQUEST_METHOD"), "POST") == 0) {
+	parse_query();
+
+	if (cgi_method == CGI_POST) {
 		char *cookie, *pagepath, *p;
 		char *endurl;
-
-		get_post_data();
 
 		cookie = getenv("HTTP_COOKIE");
 		if (cookie == NULL) {
@@ -203,13 +166,11 @@ int main(int argc, char *argv[])
 		fprintf(stdout, "Content-type: text/html\n\n");
 		fprintf(stdout, "<html><head><meta http-equiv=\"refresh\" content=\"0; URL=%s\"></head></html>\n", endurl);
 	}
-	else {
+	else if (cgi_method == CGI_GET) {
                 int formfile;
                 char formfn[PATH_MAX];
 		time_t seltime;
 		struct tm *seltm;
-
-		parse_query(NULL);
 
 		seltime = time(NULL); seltm = localtime(&seltime);
 
