@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.22 2005-04-08 15:02:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.23 2005-04-24 20:04:13 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -327,16 +327,18 @@ char *expand_tokens(char *tpl)
 			inp += 7;
 			outp += strlen(outp);
 		}
-		else if ((strncmp(inp, "@RRDPARAM@", 10) == 0) && rrddbs[rrdidx].rrdparam) {
+		else if (strncmp(inp, "@RRDPARAM@", 10) == 0) {
 			/* 
 			 * We do a colon-escape first, then change all commas to slashes as
 			 * this is a common mangling used by multiple backends (disk, http, iostat...)
 			 */
-			char *p;
-			sprintf(outp, "%-*s", paramlen, colon_escape(rrddbs[rrdidx].rrdparam));
-			p = outp; while ((p = strchr(p, ',')) != NULL) *p = '/';
+			if (rrddbs[rrdidx].rrdparam) {
+				char *p;
+				sprintf(outp, "%-*s", paramlen, colon_escape(rrddbs[rrdidx].rrdparam));
+				p = outp; while ((p = strchr(p, ',')) != NULL) *p = '/';
+				outp += strlen(outp);
+			}
 			inp += 10;
-			outp += strlen(outp);
 		}
 		else if (strncmp(inp, "@RRDIDX@", 8) == 0) {
 			char numstr[10];
