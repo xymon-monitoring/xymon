@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-enadis.c,v 1.7 2005-04-21 16:28:32 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-enadis.c,v 1.8 2005-04-24 20:49:51 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -28,7 +28,8 @@ int hostcount = 0;
 char **hostnames  = NULL;
 int disablecount = 0;
 char **disabletest = NULL;
-char *enabletest = NULL;
+int enablecount = 0;
+char **enabletest = NULL;
 int duration = 0;
 int scale = 1;
 char *disablemsg = "No reason given";
@@ -48,77 +49,77 @@ void errormsg(char *msg)
         exit(1);
 }
 
-void parse_post(void)
+void parse_cgi(void)
 {
-	char *postdata = NULL;
-	int postsize = atoi(xgetenv("CONTENT_LENGTH"));
-        char *token;
+	cgidata_t *postdata, *pwalk;
 	struct tm schedtm;
 
-	if (postsize < 1024*1024) {
-		size_t n;
-
-		postdata = (char *)malloc(postsize+1);
-		n = fread(postdata, 1, postsize, stdin);
-		if (n < postsize) {
-			errormsg("Error reading POST data\n");
-		}
-		postdata[n] = '\0';
-	}
-	else {
-		errormsg("Request too large\n");
-	}
-
 	memset(&schedtm, 0, sizeof(schedtm));
+	postdata = cgi_request();
+	if (cgi_method == CGI_GET) return;
 
-	token = strtok(postdata, "&");
+	if (!postdata) {
+		errormsg(cgi_error());
+	}
 
-	while (token) {
-		char *val;
-
-		val = strchr(token, '='); if (val) { *val = '\0'; val++; }
-		if (val) val = urlunescape(val);
-
+	pwalk = postdata;
+	while (pwalk) {
 		/*
 		 * When handling the "go", the "Disable now" and "Schedule disable"
 		 * radio buttons mess things up. So ignore the "go" if we have seen a
 		 * "filter" request already.
 		 */
-		if ((strcmp(token, "go") == 0) && (action != ACT_FILTER)) {
-			if      (strcasecmp(val, "enable") == 0)           action = ACT_ENABLE;
-			else if (strcasecmp(val, "disable now") == 0)      action = ACT_DISABLE;
-			else if (strcasecmp(val, "schedule disable") == 0) action = ACT_SCHED_DISABLE;
-			else if (strcasecmp(val, "cancel") == 0)           action = ACT_SCHED_CANCEL;
-			else if (strcasecmp(val, "apply filters") == 0)    action = ACT_FILTER;
+		if ((strcmp(pwalk->name, "go") == 0) && (action != ACT_FILTER)) {
+			if      (strcasecmp(pwalk->value, "enable") == 0)           action = ACT_ENABLE;
+			else if (strcasecmp(pwalk->value, "disable now") == 0)      action = ACT_DISABLE;
+			else if (strcasecmp(pwalk->value, "schedule disable") == 0) action = ACT_SCHED_DISABLE;
+			else if (strcasecmp(pwalk->value, "cancel") == 0)           action = ACT_SCHED_CANCEL;
+			else if (strcasecmp(pwalk->value, "apply filters") == 0)    action = ACT_FILTER;
 		}
-		else if (strcmp(token, "duration") == 0) {
-			duration = atoi(val);
+		else if (strcmp(pwalk->name, "duration") == 0) {
+			duration = atoi(pwalk->value);
 		}
-		else if (strcmp(token, "scale") == 0) {
-			scale = atoi(val);
+		else if (strcmp(pwalk->name, "scale") == 0) {
+			scale = atoi(pwalk->value);
 		}
-		else if (strcmp(token, "cause") == 0) {
-			disablemsg = strdup(val);
+		else if (strcmp(pwalk->name, "cause") == 0) {
+			disablemsg = strdup(pwalk->value);
 		}
-		else if (strcmp(token, "hostname") == 0) {
+		else if (strcmp(pwalk->name, "hostname") == 0) {
 			if (hostnames == NULL) {
 				hostnames = (char **)malloc(2 * sizeof(char *));
-				hostnames[0] = strdup(val);
+				hostnames[0] = strdup(pwalk->value);
 				hostnames[1] = NULL;
 				hostcount = 1;
 			}
 			else {
 				hostnames = (char **)realloc(hostnames, (hostcount + 2) * sizeof(char *));
-				hostnames[hostcount] = strdup(val);
+				hostnames[hostcount] = strdup(pwalk->value);
 				hostnames[hostcount+1] = NULL;
 				hostcount++;
 			}
 		}
-		else if (strcmp(token, "enabletest") == 0) {
+		else if (strcmp(pwalk->name, "enabletest") == 0) {
+			char *val = pwalk->value;
+
 			if (strcmp(val, "ALL") == 0) val = "*";
-			enabletest = strdup(val);
+
+			if (enabletest == NULL) {
+				enabletest = (char **)malloc(2 * sizeof(char *));
+				enabletest[0] = strdup(val);
+				enabletest[1] = NULL;
+				enablecount = 1;
+			}
+			else {
+				enabletest = (char **)realloc(enabletest, (enablecount + 2) * sizeof(char *));
+				enabletest[enablecount] = strdup(val);
+				enabletest[enablecount+1] = NULL;
+				enablecount++;
+			}
 		}
-		else if (strcmp(token, "disabletest") == 0) {
+		else if (strcmp(pwalk->name, "disabletest") == 0) {
+			char *val = pwalk->value;
+
 			if (strcmp(val, "ALL") == 0) val = "*";
 
 			if (disabletest == NULL) {
@@ -134,40 +135,39 @@ void parse_post(void)
 				disablecount++;
 			}
 		}
-		else if (strcmp(token, "year") == 0) {
-			schedtm.tm_year = atoi(val) - 1900;
+		else if (strcmp(pwalk->name, "year") == 0) {
+			schedtm.tm_year = atoi(pwalk->value) - 1900;
 		}
-		else if (strcmp(token, "month") == 0) {
-			schedtm.tm_mon = atoi(val) - 1;
+		else if (strcmp(pwalk->name, "month") == 0) {
+			schedtm.tm_mon = atoi(pwalk->value) - 1;
 		}
-		else if (strcmp(token, "day") == 0) {
-			schedtm.tm_mday = atoi(val);
+		else if (strcmp(pwalk->name, "day") == 0) {
+			schedtm.tm_mday = atoi(pwalk->value);
 		}
-		else if (strcmp(token, "hour") == 0) {
-			schedtm.tm_hour = atoi(val);
+		else if (strcmp(pwalk->name, "hour") == 0) {
+			schedtm.tm_hour = atoi(pwalk->value);
 		}
-		else if (strcmp(token, "minute") == 0) {
-			schedtm.tm_min = atoi(val);
+		else if (strcmp(pwalk->name, "minute") == 0) {
+			schedtm.tm_min = atoi(pwalk->value);
 		}
-		else if (strcmp(token, "canceljob") == 0) {
-			cancelid = atoi(val);
+		else if (strcmp(pwalk->name, "canceljob") == 0) {
+			cancelid = atoi(pwalk->value);
 		}
-		else if (strcmp(token, "preview") == 0) {
-			preview = (strcasecmp(val, "on") == 0);
+		else if (strcmp(pwalk->name, "preview") == 0) {
+			preview = (strcasecmp(pwalk->value, "on") == 0);
 		}
-		else if ((strcmp(token, "hostpattern") == 0) && val && strlen(val)) {
-			hostpattern = strdup(val);
+		else if ((strcmp(pwalk->name, "hostpattern") == 0) && pwalk->value && strlen(pwalk->value)) {
+			hostpattern = strdup(pwalk->value);
 		}
-		else if ((strcmp(token, "pagepattern") == 0) && val && strlen(val)) {
-			pagepattern = strdup(val);
+		else if ((strcmp(pwalk->name, "pagepattern") == 0) && pwalk->value && strlen(pwalk->value)) {
+			pagepattern = strdup(pwalk->value);
 		}
-		else if ((strcmp(token, "ippattern") == 0)   && val && strlen(val)) {
-			ippattern = strdup(val);
+		else if ((strcmp(pwalk->name, "ippattern") == 0)   && pwalk->value && strlen(pwalk->value)) {
+			ippattern = strdup(pwalk->value);
 		}
 
-		token = strtok(NULL, "&");
+		pwalk = pwalk->next;
 	}
-	xfree(postdata);
 
 	schedtm.tm_isdst = -1;
 	schedtime = mktime(&schedtm);
@@ -180,9 +180,12 @@ void do_one_host(char *hostname, char *fullmsg)
 
 	switch (action) {
 	  case ACT_ENABLE:
-		sprintf(hobbitcmd, "enable %s.%s", commafy(hostname), enabletest);
-		result = (preview ? 0 : sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT));
-		printf("<tr><td>Enabling host <b>%s</b> test <b>%s</b> : %s</td></tr>\n", hostname, enabletest, ((result == BB_OK) ? "OK" : "Failed"));
+		for (i=0; (i < enablecount); i++) {
+			sprintf(hobbitcmd, "enable %s.%s", commafy(hostname), enabletest[i]);
+			result = (preview ? 0 : sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT));
+			printf("<tr><td>Enabling host <b>%s</b> test <b>%s</b> : %s</td></tr>\n", 
+				hostname, enabletest[i], ((result == BB_OK) ? "OK" : "Failed"));
+		}
 		break;
 
 	  case ACT_DISABLE:
@@ -240,8 +243,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (strcmp(getenv("REQUEST_METHOD"), "POST") == 0) parse_post();
-	else {
+	parse_cgi();
+	if (cgi_method == CGI_GET) {
 		/*
 		 * It's a GET , so the initial request.
 		 * If we have a pagepath cookie, use that as the initial
@@ -319,7 +322,10 @@ int main(int argc, char *argv[])
 
 		  case ACT_FILTER : dprintf("Action = filter\n"); break;
 
-		  case ACT_ENABLE : dprintf("Action = enable, Test = %s\n", textornull(enabletest)); 
+		  case ACT_ENABLE : dprintf("Action = enable\n"); 
+				    dprintf("Tests = ");
+				    for (i=0; (i < enablecount); i++) printf("%s ", enabletest[i]);
+				    printf("\n");
 				    break;
 
 		  case ACT_DISABLE: dprintf("Action = disable\n"); 
