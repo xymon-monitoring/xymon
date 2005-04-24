@@ -8,6 +8,9 @@
 <!-- Styles for the menu bar -->
 <link rel="stylesheet" type="text/css" href="&BBMENUSKIN/menu.css">
 
+<!-- The favicon image -->
+<link rel="shortcut icon" href="&BBSKIN/favicon-&BBBACKGROUND.ico">
+
 <script language="JavaScript" type="text/javascript">
 function setcheck(field,val) {
         var length = eval(field.length);

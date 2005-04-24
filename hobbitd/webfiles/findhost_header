@@ -7,6 +7,9 @@
 <!-- Styles for the menu bar -->
 <link rel="stylesheet" type="text/css" href="&BBMENUSKIN/menu.css">
 
+<!-- The favicon image -->
+<link rel="shortcut icon" href="&BBSKIN/favicon-&BBBACKGROUND.ico">
+
 </HEAD>
 
 <BODY BGCOLOR="&BBBACKGROUND" BACKGROUND="&BBSKIN/bkg-&BBBACKGROUND.gif" TEXT="#D8D8BF" LINK="#00FFAA" VLINK="#FFFF44">
