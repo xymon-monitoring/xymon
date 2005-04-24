@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char mailq_rcsid[] = "$Id: do_mailq.c,v 1.9 2005-03-25 21:15:26 henrik Exp $";
+static char mailq_rcsid[] = "$Id: do_mailq.c,v 1.10 2005-04-24 20:52:40 henrik Exp $";
 
 static char *mailq_params[]       = { "rrdcreate", rrdfn, "DS:mailq:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 
@@ -55,11 +55,16 @@ int do_mailq_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 	}
 	else {
+		char *bol, *eol;
+
 		/* Looking for "... N requests ... " */
-		p = strstr(msg, "requests");
-		if (p) {
-			while ((p > msg) && (isspace((int) *(p-1)) || isdigit((int) *(p-1)))) p--;
-			mailq = atoi(p);
+		bol = strstr(msg, "requests");
+		if (bol) {
+			while ((bol > msg) && (*bol != '\n')) bol--;
+			eol = strchr(bol, '\n'); if (eol) *eol = '\0';
+
+			bol += strcspn(bol, "0123456789");
+			mailq = atoi(bol);
 
 			sprintf(rrdfn, "mailq.rrd");
 			sprintf(rrdvalues, "%d:%d", (int)tstamp, mailq);
