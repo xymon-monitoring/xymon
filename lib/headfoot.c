@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.27 2005-04-24 20:50:32 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.28 2005-04-24 21:30:43 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -548,8 +548,12 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 
 					if (hname && tname && (distime > 0) && dismsg && wanted_host(hname)) {
 						nldecode(dismsg);
-						for (hwalk=dhosts, hprev=NULL; (hwalk && (strcmp(hwalk->name, hname) != 1)); hprev=hwalk, hwalk = hwalk->next) ;
-						if (!hwalk || (strcmp(hwalk->name, hname) != 0)) {
+						hwalk = dhosts; hprev = NULL;
+						while (hwalk && (strcasecmp(hname, hwalk->name) > 0)) {
+							hprev = hwalk;
+							hwalk = hwalk->next;
+						}
+						if (!hwalk || (strcasecmp(hname, hwalk->name) != 0)) {
 							dishost_t *newitem = (dishost_t *) malloc(sizeof(dishost_t));
 							newitem->name = strdup(hname);
 							newitem->tests = NULL;
