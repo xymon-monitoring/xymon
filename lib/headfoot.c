@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.26 2005-04-18 10:43:55 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.27 2005-04-24 20:50:32 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -206,7 +206,7 @@ static void fetch_board(void)
 	}
 
 	if (hostcount) qsort(hostlist, hostcount, sizeof(char *), namecompare);
-	if (testcount) qsort(&testlist[0], testcount, sizeof(char *), namecompare);
+	if (testcount) qsort(testlist, testcount, sizeof(char *), namecompare);
 
 	if (sendmessage("schedule", NULL, NULL, &scheduleboard, 1, BBTALK_TIMEOUT) != BB_OK)
 		return;
@@ -243,6 +243,19 @@ static namelist_t *wanted_host(char *hostname)
 	return hinfo;
 }
 
+
+typedef struct distest_t {
+	char *name;
+	char *cause;
+	time_t until;
+	struct distest_t *next;
+} distest_t;
+
+typedef struct dishost_t {
+	char *name;
+	struct distest_t *tests;
+	struct dishost_t *next;
+} dishost_t;
 
 void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype, time_t selectedtime)
 {
@@ -511,7 +524,10 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 		}
 		else if (strcmp(t_start, "DISABLELIST") == 0) {
 			char *walk, *eoln;
-			int gotany = 0;
+			dishost_t *dhosts = NULL, *hwalk, *hprev;
+			distest_t *twalk;
+			char **alltests = NULL;
+			int alltestcount = 0, i;
 
 			if (!statusboard || !hostlist) fetch_board();
 
@@ -531,35 +547,36 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 					if (distime) dismsg = gettok(NULL, "|\n");
 
 					if (hname && tname && (distime > 0) && dismsg && wanted_host(hname)) {
-						char *msg, *eoln;
-
-						gotany = 1;
 						nldecode(dismsg);
-						fprintf(output, "<TR>");
-						fprintf(output, "<TD>%s&nbsp;%s<BR>", hname, tname);
-
-						fprintf(output, "<BR>");
-						msg = dismsg;
-						msg += strspn(msg, "0123456789 \t\n");
-						while ((eoln = strchr(msg, '\n')) != NULL) {
-							*eoln = '\0';
-							fprintf(output, "%s<BR>", msg);
-							msg = (eoln + 1);
+						for (hwalk=dhosts, hprev=NULL; (hwalk && (strcmp(hwalk->name, hname) != 1)); hprev=hwalk, hwalk = hwalk->next) ;
+						if (!hwalk || (strcmp(hwalk->name, hname) != 0)) {
+							dishost_t *newitem = (dishost_t *) malloc(sizeof(dishost_t));
+							newitem->name = strdup(hname);
+							newitem->tests = NULL;
+							newitem->next = hwalk;
+							if (!hprev)
+								dhosts = newitem;
+							else 
+								hprev->next = newitem;
+							hwalk = newitem;
 						}
-						fprintf(output, "%s<BR>Until: %s</TD>", msg, ctime(&distime));
+						twalk = (distest_t *) malloc(sizeof(distest_t));
+						twalk->name = strdup(tname);
+						twalk->cause = strdup(dismsg);
+						twalk->until = distime;
+						twalk->next = hwalk->tests;
+						hwalk->tests = twalk;
 
-						fprintf(output, "<td>\n");
-						fprintf(output,"<form method=\"post\" action=\"%s/hobbit-enadis.sh\">\n",
-							xgetenv("SECURECGIBINURL"));
-						fprintf(output, "<input name=\"hostname\" type=hidden value=\"%s\">\n", 
-							hname);
-						fprintf(output, "<input name=\"enabletest\" type=hidden value=\"%s\">\n", 
-							tname);
-						fprintf(output, "<input name=\"go\" type=submit value=\"Enable\">\n");
-						fprintf(output, "</form>\n");
-						fprintf(output, "</td>\n");
-
-						fprintf(output, "</TR>\n");
+						for (i=0; ((i < alltestcount) && strcmp(alltests[i], tname)); i++) ;
+						if (i == alltestcount) {
+							if (alltests == NULL) {
+								alltests = (char **)malloc(sizeof(char *));
+							}
+							else {
+								alltests = (char **)realloc(alltests, (alltestcount+1)*sizeof(char *));
+							}
+							alltests[alltestcount++] = strdup(tname);
+						}
 					}
 
 					xfree(buf);
@@ -574,7 +591,87 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 				}
 			}
 
-			if (!gotany) {
+			if (dhosts) {
+				if (alltestcount) qsort(alltests, alltestcount, sizeof(char *), namecompare);
+
+				/* Insert the "All hosts" record first. */
+				hwalk = (dishost_t *)calloc(1, sizeof(dishost_t));
+				hwalk->next = dhosts;
+				dhosts = hwalk;
+
+				for (hwalk = dhosts; (hwalk); hwalk = hwalk->next) {
+					fprintf(output, "<TR>");
+					fprintf(output, "<TD>");
+					fprintf(output,"<form method=\"post\" action=\"%s/hobbit-enadis.sh\">\n",
+						xgetenv("SECURECGIBINURL"));
+
+					fprintf(output, "<table summary=\"%s disabled tests\" width=\"100%%\">\n", 
+						hwalk->name);
+
+					fprintf(output, "<tr>\n");
+					fprintf(output, "<TH COLSPAN=3><I>%s</I></TH>", 
+							(hwalk->name ? hwalk->name : "All hosts"));
+					fprintf(output, "</tr>\n");
+
+
+					fprintf(output, "<tr>\n");
+
+					fprintf(output, "<td>\n");
+					if (hwalk->name) {
+						fprintf(output, "<input name=\"hostname\" type=hidden value=\"%s\">\n", 
+							hwalk->name);
+
+						fprintf(output, "<textarea name=\"%s causes\" rows=\"8\" cols=\"50\" readonly style=\"font-size: 10pt\">\n", hwalk->name);
+						for (twalk = hwalk->tests; (twalk); twalk = twalk->next) {
+							char *msg = twalk->cause;
+							msg += strspn(msg, "0123456789 ");
+							fprintf(output, "%s\n%s\nUntil: %s\n---------------------\n", 
+								twalk->name, msg, ctime(&twalk->until));
+						}
+						fprintf(output, "</textarea>\n");
+					}
+					else {
+						dishost_t *hw2;
+						fprintf(output, "<select multiple size=8 name=\"hostname\">\n");
+						for (hw2 = hwalk->next; (hw2); hw2 = hw2->next)
+							fprintf(output, "<option value=\"%s\">%s</option>\n", 
+								hw2->name, hw2->name);
+						fprintf(output, "</select>\n");
+					}
+					fprintf(output, "</td>\n");
+
+					fprintf(output, "<td align=center>\n");
+					fprintf(output, "<select multiple size=8 name=\"enabletest\">\n");
+					fprintf(output, "<option value=\"*\" selected>ALL</option>\n");
+					if (hwalk->tests) {
+						for (twalk = hwalk->tests; (twalk); twalk = twalk->next) {
+							fprintf(output, "<option value=\"%s\">%s</option>\n",
+								twalk->name, twalk->name);
+						}
+					}
+					else {
+						int i;
+						for (i = 0; (i < alltestcount); i++) {
+							fprintf(output, "<option value=\"%s\">%s</option>\n",
+								alltests[i], alltests[i]);
+						}
+					}
+					fprintf(output, "</select>\n");
+					fprintf(output, "</td>\n");
+
+					fprintf(output, "<td align=center>\n");
+					fprintf(output, "<input name=\"go\" type=submit value=\"Enable\">\n");
+					fprintf(output, "</td>\n");
+
+					fprintf(output, "</tr>\n");
+
+					fprintf(output, "</table>\n");
+					fprintf(output, "</form>\n");
+					fprintf(output, "</td>\n");
+					fprintf(output, "</TR>\n");
+				}
+			}
+			else {
 				fprintf(output, "<tr><th align=center colspan=3><i>No tests disabled</i></th></tr>\n");
 			}
 		}
