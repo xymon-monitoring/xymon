@@ -22,6 +22,7 @@ typedef struct htnames_t {
 #include "../lib/bbalert.h"
 #include "../lib/bblarrd.h"
 #include "../lib/calc.h"
+#include "../lib/cgi.h"
 #include "../lib/color.h"
 #include "../lib/digest.h"
 #include "../lib/encoding.h"
