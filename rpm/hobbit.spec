@@ -58,6 +58,8 @@ rm -rf $RPM_BUILD_ROOT
 	cp %{SOURCE1} $RPM_BUILD_ROOT/etc/init.d/hobbit
 	mkdir -p $RPM_BUILD_ROOT/etc/logrotate.d
 	cp %{SOURCE2} $RPM_BUILD_ROOT/etc/logrotate.d/hobbit
+	mkdir -p $RPM_BUILD_ROOT/usr/bin
+	cd $RPM_BUILD_ROOT/usr/bin && ln -s ../lib/hobbit/server/bin/{bb,bbcmd} .
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -100,6 +102,7 @@ chkconfig --del hobbit
 %attr(755, root, root) /etc/init.d/hobbit
 %attr(644, root, root) /etc/logrotate.d/hobbit
 %attr(-, root, root) /usr/lib/hobbit
+%attr(-, root, root) /usr/bin/*
 %attr(-, hobbit, hobbit) /var/lib/hobbit
 %attr(775, hobbit, apache) %dir /var/lib/hobbit/www/rep
 %attr(775, hobbit, apache) %dir /var/lib/hobbit/www/snap
