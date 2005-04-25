@@ -1,6 +1,6 @@
 .TH BBCOMBOTEST 1 "Version 4.0.2: 10 apr 2005" "Hobbit Monitor"
 .SH NAME
-bbcombotest \- Big Brother combination test tool
+bbcombotest \- Hobbit combination test tool
 .SH SYNOPSIS
 .B "bbcombotest --help"
 .br
@@ -10,22 +10,18 @@ bbcombotest \- Big Brother combination test tool
 
 .SH DESCRIPTION
 \fBbbcombotest\fR
-is a BB extension script that runs on the BBDISPLAY server. 
+is a Hobbit extension script that runs on the BBDISPLAY server. 
 It combines the results of one or more of the normal
-Big Brother test results into a combined test result, using
+Hobbit test results into a combined test result, using
 standard arithmetic og logical operators.
 
-The resulting tests are sent to the Big Brother display server as any 
-normal test - so all of the standard Big Brother functions (history,
+The resulting tests are sent to the Hobbit display server as any 
+normal test - so all of the standard Hobbit functions (history,
 statistics etc.) are available for the combined tests.
 
 The tool was born from the need to monitor systems with built-in
 redundancy and automatic failover - e.g. load-balanced web servers.
 But other uses are possible.
-
-When used with Big Brother, bbcombotest must be installed on the BBDISPLAY 
-server as an extension script, i.e. added to the $BBHOME/etc/bb-bbexttab 
-file. It is enabled by default in a Hobbit setup.
 
 .SH OPTIONS
 .IP "--quiet"
@@ -33,14 +29,6 @@ Normally, the test status sent by bbcombotest includes information
 about the underlying test results used to determine the current
 value of the combined test. "--quiet" eliminates this information
 from the test status page.
-
-.IP "--clean"
-Big Brother normally does not permit the ampersand and pipe characters
-in status messages, so the status message from bbcombotest may look a
-bit odd. You can either permit all characters in status messages (by
-recompiling the Big Brother daemon with the -DDONTCLEANSTRING option
-enabled), or you can use this option with bbcombotest. It replaces
-"||" with "OR", "&&" with "AND", "|" with "bOR" and "&" with "bAND".
 
 .IP "--debug"
 Provide debugging output for use in troubleshooting problems with
@@ -58,13 +46,9 @@ from $BBVAR/logs/
 .SH FILES
 .IP $BBHOME/etc/bbcombotest.cfg
 Configuration file for bbcombotest, where the combined tests are defined
-.IP $BBHOME/etc/bb-bbexttab
-Big Brother extension-scripts file. bbcombotest must be added to this file
-on the BBDISPLAY server so it will run as a Big Brother extension script.
-.IP $BBLOGS/hostname.test
-Big Brother status files, used to determine the current status of 
-tests included in a combo-test.
+.IP $BBHOME/etc/hobbitlaunch.cfg
+Configuration file controlling when bbcombotest is run.
 
 .SH "SEE ALSO"
-bbcombotest.cfg(5), bb-hosts(5), hobbitserver.cfg(5)
+bbcombotest.cfg(5), bb-hosts(5), hobbitserver.cfg(5), hobbitlaunch.cfg(5)
 

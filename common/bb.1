@@ -1,13 +1,13 @@
 .TH BB 1 "Version 4.0.2: 10 apr 2005" "Hobbit Monitor"
 .SH NAME
-bb \- Hobbit / Big Brother client communication program
+bb \- Hobbit client communication program
 .SH SYNOPSIS
 .B "bb [options] RECIPIENT message"
 
 .SH DESCRIPTION
 .I bb(1)
 is the client program used to communicate with a
-Hobbit or Big Brother server. It is frequently used by Big Brother
+Hobbit server. It is frequently used by Hobbit
 client systems to send in status messages and pager
 alerts on local tests.
 
@@ -19,19 +19,15 @@ hosts that are down for longer periods of time.
 .IP "--debug"
 Enable debugging. This prints out details about how the
 connection to the BBDISPLAY server is being established.
-This is a Hobbit extension, it is not available in
-the Big Brother implementation of the bb command
 
 .IP "--proxy=http://PROXYSERVER:PROXYPORT/"
 When sending the status messages via HTTP, use this server
 as an HTTP proxy instead of connecting directly to the BBDISPLAY
-server. This is a Hobbit extension, it is not available in
-the Big Brother implementation of the bb command.
+server.
 
 .IP "--timeout=N"
-Specifies the timeout for connecting to the BB server, in
-seconds. The default is 5 seconds. This is a Hobbit extension, 
-it is not available in the Big Brother implementation of the bb command.
+Specifies the timeout for connecting to the Hobbit server, in
+seconds. The default is 5 seconds.
 
 .IP "RECIPIENT"
 The \fBRECIPIENT\fR parameter defines which server receives
@@ -41,16 +37,15 @@ or BBPAGERS environment variable (for "status" and "page" messages,
 respectively). 
 
 Usually, a client will use "$BBDISP" for the \fBRECIPIENT\fR 
-parameter, as this is defined by the Big Brother client scripts
+parameter, as this is defined by the client scripts
 to automatically contain the correct value from the
 .I bb-hosts(5)
 file.
 
 The \fBRECIPIENT\fR parameter may be a URL for a webserver
 that has the bbmessage.cgi or similar script installed. This
-tunnels the Big Brother messages to the BBDISPLAY server 
-using standard HTTP protocol. Note that this is an extension
-available only with the bbgen replacement for the bb tool. The 
+tunnels the Hobbit messages to the BBDISPLAY server 
+using standard HTTP protocol. The 
 .I bbmessage.cgi(1)
 CGI script provided as part of the bbgen toolkit must be
 installed on the webserver for the HTTP transport to work.
@@ -58,20 +53,19 @@ installed on the webserver for the HTTP transport to work.
 
 .IP MESSAGE
 The \fBmessage\fR parameter is the message to be sent across
-to the Big Brother server. Messages must be enclosed in quotes,
+to the Hobbit server. Messages must be enclosed in quotes,
 but by doing so they can span multiple lines. The maximum size
 of a message is defined by the MAXMSG compile-time setting
-and defaults to 32 KB in Hobbit, 8 KB in Big Brother.
+and defaults to 32 KB.
 
-.SH BB MESSAGE SYNTAX
+.SH HOBBIT MESSAGE SYNTAX
 
-This section lists the most commonly used messages in the Big Brother
-protocol. If you are running Big Brother, there is also a summary
-in the Big Brother Installation and Configuration Guide, section 3.9.
+This section lists the most commonly used messages in the Hobbit
+protocol.
 
-Each message must begin with one of the Hobbit / Big Brother commands. Where
+Each message must begin with one of the Hobbit commands. Where
 a HOSTNAME is specified, it must have any dots in the hostname changed
-to commas if the Big Brother FQDN setting is enabled (which is the default).
+to commas if the Hobbit FQDN setting is enabled (which is the default).
 So e.g. the host "www.foo.com" would report as "www,foo,com".
 
 .IP "status HOSTNAME.TESTNAME COLOR <additional text>"
@@ -80,21 +74,12 @@ TESTNAME is the name of the column where this test will show up; any
 name is valid except that using dots in the testname will not work.
 COLOR must be one of the valid colors: "green", "yellow", "red" or "clear".
 The colors "blue" and "purple" - although valid colors - should not be sent in a
-status-message, as these are handled specially by the Big Brother server.
+status-message, as these are handled specially by the Hobbit server.
 .br
 The "additional text" normally includes a local timestamp and a summary
 of the test result on the first line. Any lines following the first one
 are free-form, and can include any information that may be useful to
 diagnose the problem being reported.
-
-.IP "page HOSTNAME.TESTNAME COLOR <additional text>"
-This triggers the paging facility, generating a page following the
-rules defined for this particular host/test combination. NOTE: 
-The Hobbit daemon ignores such messages; this is provided only for
-compatibility with BB servers. Clients will not normally need to use 
-this command, since a "status" message where the color is red, yellow 
-or purple will automatically (in the bb program) result in a "page" 
-message being sent as well.
 
 .IP "notify HOSTNAME.TESTNAME <message text>"
 Hobbit only, not supported by BB. This triggers an informational 
@@ -107,7 +92,7 @@ general way of notifying server administrators.
 
 .IP "data HOSTNAME.DATANAME<newline><additional text>"
 The "data" message allows tools to send data about a host, without
-it appearing as a column on the Hobbit / Big Brother webpages. This
+it appearing as a column on the Hobbit webpages. This
 is used e.g. to report statistics about a host, e.g. vmstat data which
 does not in itself represent something that has a red, yellow or
 green identity. It is used by LARRD bottom-feeder modules, among
@@ -129,9 +114,6 @@ in seconds/minutes/hours/days respectively.
 .IP "enable HOSTNAME.TESTNAME"
 Re-enables a test that had been disabled.
 
-The following commands are specific to the Hobbit implementation
-and are not available in the standard Big Brother client.
-
 .IP "query HOSTNAME.TESTNAME"
 Query the BBDISPLAY server for the latest status reported for this
 particular test. If the host/test status is known, the response is
@@ -139,23 +121,23 @@ the first line of the status report - the current color will be the
 first word on the line. Additional lines of text that might be 
 present on the status-message cannot be retrieved.
 .br
-This allows any BB client to determine the status of a particular
+This allows any Hobbit client to determine the status of a particular
 test, whether it is one pertaining to the host where the client
 is running, some other host, or perhaps the result of a combined
 test from multiple hosts managed by
 .I bbcombotest(1)
-This will typically be useful to BB client extension scripts, that
+This will typically be useful to Hobbit client extension scripts, that
 need to determine the status of other hosts e.g. to decide if an
 automatic recovery action should be initiated.
 
 .IP "config FILENAME"
-Retrieve one of the Hobbit / Big Brother configuration files from the
+Retrieve one of the Hobbit configuration files from the
 server. This command allows a client to pull files from the
 $BBHOME/etc/ directory on the server, allowing for semi-automatic
 updates of the client configuration. Since the configuration files 
 are designed to have a common file for the configuration of all hosts 
 in the system - and this is in fact the recommended way of configuring 
-your Big Brother clients - this makes it easier to keep the configuration 
+your clients - this makes it easier to keep the configuration 
 files synchronized.
 
 .IP "drop HOSTNAME"
@@ -272,7 +254,7 @@ as for the "hobbitdboard" command.
 .SH EXAMPLE
 
 Send a normal status message to the BBDISPLAY server, using the
-standard Big Brother protocol on TCP port 1984:
+standard Hobbit protocol on TCP port 1984:
 .br
    $ $BB $BBDISP "status www,foo,com.http green `date` Web OK"
 
@@ -309,6 +291,5 @@ The Hobbit version of the bb client program is compatible
 with version 1.9e-BTF of the Big Brother bb client.
 
 .SH "SEE ALSO"
-bbcombotest(1), bb-hosts(5), hobbitserver.cfg(5), hobbit(7),
-the Big Brother Installation and Configuration guide.
+bbcombotest(1), bb-hosts(5), hobbitserver.cfg(5), hobbit(7)
 

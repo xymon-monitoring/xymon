@@ -22,7 +22,6 @@ endif
 Makefile: configure
 	dh_testdir
 	# Add here commands to configure the package.
-	TARGET=hobbit \
 	ENABLESSL=y \
 	ENABLELDAP=y \
 	ENABLELDAPSSL=y \

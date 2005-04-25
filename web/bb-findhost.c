@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.20 2005-04-07 10:09:02 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.21 2005-04-25 12:54:48 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -66,7 +66,7 @@ int 	re_flag     = REG_EXTENDED|REG_NOSUB|REG_ICASE; /* default regcomp flags se
 void errormsg(char *msg)
 {
 	printf("Content-type: text/html\n\n");
-	printf("<html><head><title>BigBrother (bbgen) FindHost Error</title></head>\n");
+	printf("<html><head><title>Hobbit FindHost Error</title></head>\n");
 	printf("<body><BR><BR><BR>%s</body></html>\n", msg);
 	exit(1);
 }

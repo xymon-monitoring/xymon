@@ -4,16 +4,8 @@ hobbitserver.cfg \- Hobbit environment variables
 
 .SH DESCRIPTION
 Hobbit programs use multiple environment variables beside the
-normal set of variables. Even when the Hobbit tools are used
-together with a Big Brother server, some additional environment
-variables must be defined.
-
-If running with a full Hobbit server, the environment definitions
+normal set of variables.  The environment definitions
 are stored in the ~hobbit/server/etc/hobbitserver.cfg file. 
-
-When running Hobbit tools on top of a Big Brother installation,
-the environment definition should be put in $BBHOME/etc/bbsys.local .
-
 
 .SH GENERAL SETTINGS
 
@@ -37,11 +29,6 @@ If set to TRUE, Hobbit will use fully-qualified hostnames throughout.
 If set to FALSE, hostnames are stripped of their domain-part before
 being processed. It is \fBhighly recommended\fR that you keep this
 set to TRUE. Default: TRUE.
-
-.IP USEHOBBITD
-If set to TRUE, all programs assume that the system is running Hobbit
-instead of Big Brother. This is equivalent to running all tools with
-the "--hobbitd" option.
 
 .IP BBLOGSTATUS
 Controls how the HTML page for a status log is generated. If set to
@@ -299,10 +286,6 @@ file.
 Controls how status messages from unknown hosts (i.e. hosts not
 listed in the bb-hosts file) are handled.
 .sp
-.BR BBGHOSTS=0:
-Allow reports from unknown hosts. This is the default behaviour
-in Big Brother.
-.sp
 .BR BBGHOSTS=1:
 Causes the status report to be silently discarded. This is the
 default behaviour in Hobbit.
@@ -336,7 +319,7 @@ If set to TRUE,
 .I hobbitd_history(8)
 will update the host-specific eventlog that keeps record
 of all status changes for a host. This logfile is not used
-by any Hobbit or Big Brother tool.
+by any Hobbit tool.
 
 .IP SAVESTATUSLOG
 If set to TRUE,
@@ -465,15 +448,15 @@ it at about 30-35 pixels high, and 100-150 pixels wide.
 
 .IP MKBBLOCAL
 The string "Pages hosted locally" that appears above all of the pages
-linked from the main BB page.
+linked from the main Hobbit webpage.
 
 .IP MKBBSUBLOCAL
 The string "Subpages hosted locally" that appears above all of the sub-pages
-linked from pages below the main BB page.
+linked from pages below the main Hobbit webpage.
 
 .IP MKBBREMOTE
 The string "Remote status display" that appears about the summary
-statuses displayed on the min BB page.
+statuses displayed on the min Hobbit webpage.
 
 .IP MKBBTITLE
 HTML tags designed to go in a <FONT> tag, to choose the font for 
@@ -521,7 +504,7 @@ and all other pages (bb.html, subpages, bbnk.html).
 
 .IP SUMMARY_SET_BKG
 If set to TRUE, then summaries will affect the color of the
-main BB page. Default: FALSE.
+main Hobbit webpage. Default: FALSE.
 
 .IP DOTHEIGHT
 The height (in pixels) of the icons showing the color of a status.
@@ -564,12 +547,10 @@ by default.
 
 .IP BBGENSNAPOPTS
 Default bbgen options used by snapshots. This should be identical to
-the options you normally used when building Big Brother webpages.
+the options you normally used when building Hobbit webpages.
 
 .SH FILES
-.BR "~hobbit/server/etc/hobbitserver.cfg (Hobbit only)"
-.sp
-.BR "$BBHOME/etc/bbsys.local (Big Brother)"
+.BR "~hobbit/server/etc/hobbitserver.cfg"
 
 .SH "SEE ALSO"
 hobbit(7)

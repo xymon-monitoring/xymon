@@ -57,7 +57,7 @@
  */
 
 typedef struct service_t {
-	char *testname;		/* Name of the test = column name in BB report */
+	char *testname;		/* Name of the test = column name in Hobbit report */
 	int namelen;		/* Length of name - "testname:port" has this as strlen(testname), others 0 */
 	int portnum;		/* Port number this service runs on */
 	int toolid;		/* Which tool to use */

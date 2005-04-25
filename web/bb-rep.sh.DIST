@@ -1,8 +1,6 @@
 #!/bin/sh
 
-# This is the bbgen drop-in replacement for the Big Brother reporting
-# script, bb-rep.sh
-# It is the Hobbit version
+# This it the Hobbit wrapper for the bb-rep.cgi tool
 
 . @BBHOME@/etc/hobbitserver.cfg
 @RUNTIMEDEFS@ exec @BBHOME@/bin/bb-rep.cgi --env=@BBHOME@/etc/hobbitserver.cfg $BBGENREPOPTS

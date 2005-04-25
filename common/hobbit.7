@@ -40,15 +40,11 @@ had some scalability problems that could not be solved without
 a complete re-implementation of the system.  With the introduction 
 of the Hobbit network daemon in version 4, this goal was achieved.
 
-The Hobbit tools store data in a format that is compatible with
-Big Brother, so it is possible to use Hobbit as an add-on to
-an existing Big Brother installation. However, the preferred
-method of installing Hobbit is as a full replacement for the
+The Hobbit tools provide a complete replacement for the
 Big Brother server. Detailed information about installing
-and configuring Hobbit - with or without Big Brother - is
-available on-line in the web-pages for your Hobbit server
-(under the "Help" menu), or in the Hobbit source-tree in the
-"docs/" directory.
+and configuring Hobbit is available on-line in the web-pages for 
+your Hobbit server (under the "Help" menu), or in the Hobbit 
+source-tree in the "docs/" directory.
 
 .SH FEATURES
 The Hobbit tools are designed for installations that need to 
@@ -74,7 +70,7 @@ Hobbit features:
 .IP "Monitoring of hosts and networks"
 Networked applications can be monitored by mimicking the requests
 sent by an end-user. Hosts can be monitored at the operating system
-level through the use of Big Brother clients installed on each host.
+level through the use of clients installed on each host.
 
 The network test tool knows how to test most commonly used protocols,
 including HTTP, SMTP (e-mail), DNS, LDAP (directory services), and 
@@ -160,7 +156,7 @@ past and easy-to-use zoom-in on the event.
 Reports of service availability can be generated on-the-fly, or
 pre-generated e.g. for monthly reporting of SLA's. Pre-generated
 reports can be exported to e.g. portal sites, so users without
-direct access to the Big Brother website can view the report data.
+direct access to the Hobbit website can view the report data.
 
 You can configure planned downtime, agreed service availability level 
 service availability time and generate availability reports directly 
@@ -186,26 +182,19 @@ These tools take care of generating and updating the various
 Hobbit web-pages.
 
 .I bbgen(1)
-takes care of updating the Hobbit / Big Brother webpages. It
-is a drop-in replacement for the bb-display.sh webpage generator
-script from the Big Brother monitoring tool.
+takes care of updating the Hobbit webpages.
 
 .I bb-hostsvc.cgi(1)
 This CGI program generates an HTML view of a single status log.
-It is used to present the Hobbit status-logs, and is also a 
-replacement for the bb-hostsvc.sh and bb-histlog.sh scripts included 
-in the standard Big Brother package. 
+It is used to present the Hobbit status-logs.
 
 .I hobbitgraph.cgi(1)
 This CGI program generates graphs of the trend-data collected
-by Hobbit. It is available only for pure Hobbit installations,
-not when Hobbit is used on top of Big Brother.
+by Hobbit.
 
 .I bb-hist.cgi(1)
 This CGI program generates a webpage with the most recent history 
 of a particular host+service combination.
-It is a replacement for the bb-hist.sh script included in the standard 
-Big Brother package. 
 
 .I bb-ack.cgi(1)
 This CGI program allows a user to acknowledge an alert he received
@@ -219,19 +208,9 @@ problem is being handled.
 is a tool for processing acknowledgements sent via e-mail, e.g. as a 
 response to an e-mail alert.
 
-.I bb-larrdcolumn(1)
-generates a status column for each host, where the available 
-trend graphs can be seen. It replaces the LARRD "larrd-html.pl"
-script.
-
-.I bb-infocolumn(1)
-generates a status column for each host with static information
-about the host such as the IP-address, location on the Hobbit
-webpages, who receives alerts etc.
-
 .I bb-findhost.cgi(1)
-is a CGI program that finds a given host in the Big Brother
-webpages. As you Big Brother installation grows, it can become
+is a CGI program that finds a given host in the Hobbit
+webpages. As your Hobbit installation grows, it can become
 difficult to remember exactly which page a host is on; this CGI
 script lets you find hosts easily.
 
@@ -245,23 +224,21 @@ database program.
 This CGI program triggers the generation of Hobbit availability 
 reports, using
 .I bbgen(1)
-as the reporting back-end engine. It is a drop-in replacement for 
-the bb-rep.sh script included in the standard Big Brother package.
+as the reporting back-end engine.
 
 .I bb-replog.cgi(1)
 This CGI program generates the detailed availability report for a 
-particular host+service combination. It is a drop-in replacement 
-for the bb-replog.sh script included in the standard Big Brother package. 
+particular host+service combination.
 
 .I bb-snapshot.cgi(1)
-is a CGI program to build the Big Brother webpages in a "snapshot"
+is a CGI program to build the Hobbit webpages in a "snapshot"
 mode, showing the look of the webpages at a particular point 
 in time. It uses
 .I bbgen(1)
 as the back-end engine.
 
 .I bb-eventlog.cgi(1)
-is a CGI program to show the Big Brother eventlog. Normally
+is a CGI program to show the Hobbit eventlog. Normally
 the eventlog is included on the bb2.html page, but this CGI
 can be used to have custom eventlog displays e.g. with the
 past 200 events.
@@ -270,8 +247,7 @@ past 200 events.
 These tools are used on servers that execute tests of network services.
 
 .I bbtest-net(1)
-runs the network service tests. It is a drop-in replacement for the 
-bb-network.sh network test script from Big Brother.
+runs the network service tests.
 
 .I bbretest-net.sh(1)
 is an extension script for re-doing failed network tests with a higher 
@@ -284,15 +260,15 @@ less downtime being recorded.
 .I bb(1)
 is a drop-in replacement for the standard Big Brother
 bb client tool. It provides support for HTTP transfer of
-status messages, allows BB clients to query the state
+status messages, allows clients to query the state
 of tests on the central BBDISPLAY server, and retrieve
-BB configuration files, besides being compatible with the
+Hobbit configuration files, besides being compatible with the
 standard bb client. The server-side script 
 .I bbmessage.cgi(1) 
 that receives messages sent via HTTP is also included.
 
 .I bbhostgrep(1)
-is a utility for use by BB extension scripts. It
+is a utility for use by Hobbit extension scripts. It
 allows an extension script to easily pick out the hosts that
 are relevant to a script, so it need not parse a huge
 bb-hosts file with lots of unwanted test-specifications.
@@ -307,15 +283,15 @@ is a utility to compute message digest values for use in
 content checks that use digests.
 
 .I bbcombotest(1)
-is a Big Brother extension script for the BBDISPLAY server,
+is a Hobbit extension script for the BBDISPLAY server,
 allowing you to build complicated tests from simpler
-BB test results. E.g. you can define a test that uses the results
+Hobbit test results. E.g. you can define a test that uses the results
 from testing your webserver, database server and router to have a 
 single test showing the availability of your enterprise web
 application.
 
 .I bbproxy(8)
-is a proxy-server that forwards Big Brother messages between
+is a proxy-server that forwards Hobbit messages between
 clients and the BBDISPLAY server.
 
 .I trimhistory(8)
@@ -353,55 +329,6 @@ how to install Hobbit, refer to the online documentation "Installing
 Hobbit" available from the Hobbit webserver (via the "Help" menu),
 or from the "docs/install.html" file in the Hobbit source archive.
 
-.SH COMPATIBILITY WITH BIG BROTHER
-Hobbit is for the most part fully compatible with Big Brother
-version 1.9c and 1.9e. The following are known differences in
-behaviour between Big Brother and Hobbit:
-
-.IP "group directive"
-A "group" directive in the 
-.I bb-hosts(5)
-file is treated as a "group-compress".
-
-.IP "Page-links are at top of page instead of bottom"
-Hobbit defaults to putting page- and subpage-links at the
-top of each page, whereas standard Big Brother puts them
-at the bottom of the page. If you prefer the Big Brother
-display style, run bbgen with the "--pages-last" option.
-
-.IP "Status messages from hosts not in bb-hosts are ignored"
-Standard Big Brother will process status-logs from unknown
-hosts, and these will affect the background color of the 
-bb.html and bb2.html pages.  Hobbit ignores logs 
-from hosts not listed in the bb-hosts file.
-
-.IP "Modembanks can be placed in subpages"
-Standard BB always displays modem-banks on the front-page
-(bb.html). Hobbit treats modembanks like normal hosts, so
-they will appear on a page or subpage according to their
-placement in the bb-hosts file. If you want them on the
-bb.html page, place the "dialup" directive before any
-"page" directives in bb-hosts, but after a "group" directive.
-
-.IP "Connectivity tests use the hostname"
-Standard BB always uses the IP-address listed in the bb-hosts
-file for the connectivity (ping) test. Hobbit (bbtest-net) will attempt
-a DNS lookup of the hostname to determine the IP-address,
-but fallback to using the IP-address if the DNS lookup fails.
-This behaviour can be changed with the "testip" tag (on a per-host
-basis), or via the "--dns" tag (globally).
-
-.IP "Multiple http tests must be separated with spaces"
-Standard Big Brother allows you to define multiple http tests
-in the bb-hosts file separated by a pipe character or space. 
-Hobbit requires that you use space.
-
-.IP ":q and :Q modifiers are ignored"
-The ":q" and ":Q" modifiers on individual tests are ignored.
-These modifiers are only relevant for the standard Big 
-Brother network test tool bbnet, which is not used when
-you install the Hobbit network test tools.
-
 .SH DEMONSTRATION SITE
 A site running this software can be seen at http://www.hswn.dk/bb/
 
@@ -417,10 +344,10 @@ is allowed.  See the file COPYING for details.
 .SH "MAILING LISTS"
 hobbit@hswn.dk is an open mailing list for discussions about Hobbit.
 If you would like to participate, send an e-mail to \fBhobbit-subscribe@hswn.dk\fR
-to join the list. Please do not use the Big Brother mailing lists hosted
+to join the list. Please do not use the Hobbit mailing lists hosted
 by BB4 technologies for questions about Hobbit - the people behind
 Big Brother have requested that questions about Hobbit are kept off
-the BB lists.
+their mailing lists.
 
 If you just want to be notified of new releases of Hobbit, please
 subscribe to the hobbit-announce mailing list. This is a moderated list,

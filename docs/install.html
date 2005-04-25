@@ -10,12 +10,12 @@
 <p>This describes how to setup a Hobbit server for monitoring your systems.
 It assumes that you are setting up a full Hobbit server - i.e. either you
 do not have a Big Brother server, or you will replace it completely with
-Hobbit. If that is not the case, you can still follow this description to
-configure and build the Hobbit tools, but after running <tt>'make install'</tt>
-please refer to the <a href="hobbit-bigbrother.html">Using Hobbit with Big Brother</a>
-document for additional instructions.</p>
+Hobbit.</p>
 
-<p>If you are migrating from Big Brother to Hobbit, then you should
+<p>Note to Big Brother users: Although some of the Hobbit tools have evolved 
+from the bbgen toolkit that was used on top of a Big Brother server installation, 
+the Hobbit versions of these tools now require that you run Hobbit - not 
+Big Brother. If you are migrating from Big Brother to Hobbit, then you should 
 follow the <a href="bb-to-hobbit.html">migration guide</a>.</p>
 
 <h2>Prerequisites - before you install Hobbit</h2>
@@ -120,10 +120,6 @@ monitoring of your entire network.</p>
 programs, adds new template-files that were not present in your previous version,
 and updates your configuration files with any new sections that have been added.
 Any changes you have made yourself are preserved.</p>
-
-<p>If you are setting up Hobbit for use with an existing Big Brother
-installation, please go to the <a href="hobbit-bigbrother.html">Using Hobbit with Big Brother</a>
-document for additional instructions.</p>
 
 <h2>Configuring your webserver</h2>
 <p>Hobbit uses a web-based front-end. So you need to configure your webserver so

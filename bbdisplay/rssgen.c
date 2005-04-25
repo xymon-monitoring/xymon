@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: rssgen.c,v 1.15 2005-03-24 07:21:53 henrik Exp $";
+static char rcsid[] = "$Id: rssgen.c,v 1.16 2005-04-25 12:54:24 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -25,11 +25,7 @@ static char rcsid[] = "$Id: rssgen.c,v 1.15 2005-03-24 07:21:53 henrik Exp $";
 char *rssversion = "0.91";
 int  rsscolorlimit = COL_RED;
 int  nssidebarcolorlimit = COL_RED;
-#ifdef HOBBITD
 char *rsstitle = "Hobbit Critical Alerts";
-#else
-char *rsstitle = "Big Brother Critical Alerts";
-#endif
 
 #define RSS091 0
 #define RSS092 1

@@ -1,13 +1,13 @@
 .TH BB-SNAPSHOT.CGI 1 "Version 4.0.2: 10 apr 2005" "Hobbit Monitor"
 .SH NAME
-bb-snapshot.cgi \- CGI program to rebuild the Big Brother pages for a specific point in time.
+bb-snapshot.cgi \- CGI program to rebuild the Hobbit webpages for a specific point in time.
 .SH SYNOPSIS
 .B "bb-snapshot.cgi"
 
 .SH DESCRIPTION
 \fBbb-snapshot.cgi\fR
 is invoked as a CGI script via the bb-snapshot.sh CGI wrapper.
-It rebuilds the Big Brother web pages to the look they had 
+It rebuilds the Hobbit web pages to the look they had 
 at a particular point in time, based upon the historical information
 logged about events.
 
@@ -47,15 +47,11 @@ program building the snapshot files.
 bbgen options passed by default to the bb-snapshot.cgi script. 
 This happens in the bb-snapshot.sh CGI wrapper script.
 .IP BBHOME
-Home directory of the Big Brother files
+Home directory of the Hobbit server files
 .IP BBSNAP
 Directory where generated snapshots are stored. This directory must
 be writable by the userid executing the CGI script, typically
 "www", "apache" or "nobody". Default: $BBHOME/www/snap/
-.br
-NB: This directory is not created automatically when you install 
-Big Brother or bbgen - it must be created by hand and the 
-permissions set correctly.
 .IP BBSNAPURL
 The URL prefix to use when accessing the reports via a browser.
 Default: $BBWEB/snap

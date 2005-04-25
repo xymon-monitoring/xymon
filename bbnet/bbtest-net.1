@@ -1,6 +1,6 @@
 .TH BBTEST-NET 1 "Version 4.0.2: 10 apr 2005" "Hobbit Monitor"
 .SH NAME
-bbtest-net \- Hobbit / Big Brother network test tool
+bbtest-net \- Hobbit network test tool
 .SH SYNOPSIS
 .B "bbtest-net -?"
 .br
@@ -20,12 +20,6 @@ file, bb-hosts. It is normally run at regular intervals by
 via an entry in the
 .I hobbitlaunch.cfg(5)
 file.
-
-bbtest-net can also act as a drop-in replacement for the 
-Big Brother network test script, bb-network.sh. In this
-setup, bbtest-net is normally run from a modified bb-network.sh
-script; a sample script to accomplish this is shipped with 
-the bbgen distribution.
 
 bbtest-net does all of the normal tests of TCP-based network
 services (telnet, ftp, ssh, smtp, pop, imap ....) - i.e. 
@@ -50,8 +44,7 @@ NTPDATE environment variable to point at the location of your
 .I ntpdate(1)
 program.
 
-Note: Unlike the standard Big Brother network test tool,
-bbtest-net performs the connectivity test (ping) based on the
+Note: bbtest-net performs the connectivity test (ping) based on the
 hostname, unless the host is tagged with "testip" or the 
 "--dns=ip" option is used. So the target of the connectivity
 test can be determined by your /etc/hosts file or DNS.
@@ -178,7 +171,7 @@ to be sent when the service does not respond as expected.
 By default, bbtest-net sends some extra information in the
 status messages, called "flags". These are used by bbgen
 e.g. to pick different icons for reversed tests when
-generating the Big Brother webpages. This option makes
+generating the Hobbit webpages. This option makes
 bbtest-net omit these flags from the status messages.
 
 
@@ -227,7 +220,7 @@ hosts by putting a "notrace" tag on the host-entry.
 
 .SH OPTIONS FOR HTTP (WEB) TESTS
 .IP --content=CONTENTTESTNAME 
-Determines the name of the column BB displays for content checks. 
+Determines the name of the column Hobbit displays for content checks. 
 The default is "content".  If you have used the "cont.sh" or "cont2.sh" 
 scripts earlier, you may want to use "--content=cont" to report content
 checks using the same test name as these scripts do.
@@ -235,7 +228,7 @@ checks using the same test name as these scripts do.
 
 .SH OPTIONS FOR SSL CERTIFICATE TESTS
 .IP --ssl=SSLCERTTESTNAME
-Determines the name of the column BB displays for the SSL certificate checks.
+Determines the name of the column Hobbit displays for the SSL certificate checks.
 The default is "sslcert".
 .IP --no-ssl
 Disables reporting of the SSL certificate check.
@@ -429,26 +422,6 @@ The "ntp" and "rpcinfo" checks rely on external programs to
 do each test. Thus, they perform only marginally better than the
 standard bb-network.sh script. 
 
-.SH BBTEST-NET PERFORMANCE
-The speed of bbtest-net depends on a number of circumstances,
-including your mix of services to test, network bandwidth
-etc. However, it is safe to say that it is magnitudes faster than 
-the stock Big Brother tools.
-
-In addition to being fast, it is also much lighter on your system
-load than the normal Big Brother tools. By using a single program
-for most of the work, it significantly reduces the load on your
-BBNET host - I've seen load averages drop by a factor 10 when
-moving from standard BB test tools to bbtest-net.
-
-If you really want some numbers:
-.IP
-bbtest-net checks 300 web sites in 15 seconds on a slow Sun Ultra5.
-Half of those are SSL sites.
-.IP
-bbtest-net checks 1000 tcp services in 20 seconds on a recent
-FreeBSD 4.6.2 system
-
 .SH ENVIRONMENT VARIABLES
 .IP BBLOCATION
 Defines the network segment where bbtest-net is currently running.
@@ -461,9 +434,9 @@ tests for only those hosts.
 Defines the maximum number of status messages that can be sent in 
 one combo message. Default is 0 - no limit.
 .br
-In practice, the maximum size of a single BB message
+In practice, the maximum size of a single Hobbit message
 sets a limit - the default value for the maximum message
-size is 8 KB, but that will easily accomodate 50 status
+size is 32 KB, but that will easily accomodate 100 status
 messages per transmission. So if you want to experiment
 with this setting, I suggest starting with a value of 10.
 
@@ -508,7 +481,6 @@ utility. Used by bbtest-net for the "rpc" service checks.
 
 .SH FILES
 .IP "~/server/etc/bb-services (Hobbit)"
-.IP "$BBHOME/etc/bb-services (Big Brother)"
 This file contains definitions of TCP services that bbtest-net
 can test. Definitions for a default set of common services is built
 into bbtest-net, but these can be overridden or supplemented by

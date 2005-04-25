@@ -20,8 +20,7 @@ go via the
 CGI script.
 
 bb-replog.cgi is passed a QUERY_STRING environment variable 
-with the following parameters (also provided by standard 
-Big Brother scripts):
+with the following parameters:
 
    HOSTSVC (the host and service to report on)
    STYLE (report style: "crit", "non-crit", "all")
@@ -42,14 +41,6 @@ modify the availability calculation to handle reporting
 against agreed Service Level Agreements re. the time of
 day when the service must be available, and the agreed
 availability level.
-
-The following options are passed by default from the Big
-Brother report pages, but are ignored by this script as it
-re-calculates all of them by itself:
-
-   COLOR PCT FSTATE
-   REDCNT YELCNT GRECNT PURCNT CLECNT BLUCNT
-   RED YEL GRE PUR CLE BLU
 
 .SH OPTIONS
 .IP "--env=FILENAME"
