@@ -168,16 +168,12 @@ endif
 ifndef PKGBUILD
 	chown $(BBUSER) $(INSTALLROOT)$(INSTALLWWWDIR) $(INSTALLROOT)$(INSTALLWWWDIR)/gifs $(INSTALLROOT)$(INSTALLWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(INSTALLWWWDIR)/menu $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap $(INSTALLROOT)$(INSTALLWWWDIR)/wml
 	chgrp `$(IDTOOL) -g $(BBUSER)`  $(INSTALLROOT)$(INSTALLWWWDIR) $(INSTALLROOT)$(INSTALLWWWDIR)/gifs $(INSTALLROOT)$(INSTALLWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(INSTALLWWWDIR)/menu $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap $(INSTALLROOT)$(INSTALLWWWDIR)/wml
-
-
-# The www/rep and www/snap directories must be writable by the apache daemon
-ifndef PKGBUILD
 ifdef HTTPDGID
+# The www/rep and www/snap directories must be writable by the apache daemon
 	chgrp $(HTTPDGID) $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap
 endif
-endif
 	chmod g+w $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap
-
+endif
 
 	mkdir -p $(INSTALLROOT)$(BBVAR)/acks
 ifndef PKGBUILD
@@ -219,8 +215,6 @@ endif
 ifndef PKGBUILD
 	chown $(BBUSER) $(INSTALLROOT)$(BBVAR)/rrd
 	chgrp `$(IDTOOL) -g $(BBUSER)` $(INSTALLROOT)$(BBVAR)/rrd
-endif
-
 endif
 
 install-common: install-dirs
