@@ -18,8 +18,6 @@ extern char	*dialupskin;
 extern char	*reverseskin;
 extern time_t   recentgif_limit;
 
-extern int	enable_purpleupd;
-extern int	purpledelay;
 extern int 	purplecount;
 extern char 	*purplelogfn;
 

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: wmlgen.c,v 1.21 2005-03-22 09:03:37 henrik Exp $";
+static char rcsid[] = "$Id: wmlgen.c,v 1.22 2005-04-25 12:58:51 henrik Exp $";
 
 #include <limits.h>
 #include <stdlib.h>
@@ -77,7 +77,7 @@ static void wml_header(FILE *output, char *cardid, int idpart)
 	fprintf(output, "<head>\n");
 	fprintf(output, "<meta http-equiv=\"Cache-Control\" content=\"max-age=0\"/>\n");
 	fprintf(output, "</head>\n");
-	fprintf(output, "<card id=\"%s%d\" title=\"BigBrother\">\n", cardid, idpart);
+	fprintf(output, "<card id=\"%s%d\" title=\"Hobbit\">\n", cardid, idpart);
 }
 
 
@@ -88,55 +88,24 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 	char *msg = NULL, *logbuf = NULL;
 	char l[MAX_LINE_LEN], lineout[MAX_LINE_LEN];
 	char *p, *outp, *nextline;
+	char hobbitdreq[1024];
+	int hobbitdresult;
 
-	if (!usehobbitd) {
-		char logfn[PATH_MAX];
-		FILE *logfd = NULL;
-		struct stat st;
-		int n;
+	sprintf(hobbitdreq, "hobbitdlog %s.%s", host->hostname, entry->column->name);
+	hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &logbuf, 1, 30);
+	if ((hobbitdresult != BB_OK) || (logbuf == NULL) || (strlen(logbuf) == 0)) {
+		errprintf("WML: Status not available\n");
+		return;
+	}
 
-		sprintf(logfn, "%s/%s.%s", xgetenv("BBLOGS"), commafy(host->hostname), entry->column->name);
-		if (stat(logfn, &st) == -1) {
-			errprintf("WML: Cannot stat file %s\n", logfn);
-			return;
-		}
-
-		logfd = fopen(logfn, "r");
-		if (logfd == NULL) {
-			errprintf("WML: Cannot open file %s\n", logfn);
-			return;
-		}
-
-		msg = logbuf = (char *)malloc(st.st_size+1);
-		n = fread(logbuf, st.st_size, 1, logfd);
-		if (n == -1) {
-			errprintf("WML: I/O error while reading logfile %s\n", logfn);
-			fclose(logfd);
-			xfree(logbuf);
-			return;
-		}
-		fclose(logfd);
+	msg = strchr(logbuf, '\n');
+	if (msg) {
+		msg++;
 	}
 	else {
-		char hobbitdreq[1024];
-		int hobbitdresult;
-
-		sprintf(hobbitdreq, "hobbitdlog %s.%s", host->hostname, entry->column->name);
-		hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &logbuf, 1, 30);
-		if ((hobbitdresult != BB_OK) || (logbuf == NULL) || (strlen(logbuf) == 0)) {
-			errprintf("WML: Status not available\n");
-			return;
-		}
-
-		msg = strchr(logbuf, '\n');
-		if (msg) {
-			msg++;
-		}
-		else {
-			errprintf("WML: Unable to parse log data\n");
-			xfree(logbuf);
-			return;
-		}
+		errprintf("WML: Unable to parse log data\n");
+		xfree(logbuf);
+		return;
 	}
 
 	nextline = msg;

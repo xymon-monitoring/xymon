@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.205 2005-03-22 09:03:37 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.206 2005-04-25 12:58:51 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -41,8 +41,7 @@ state_t		*statehead = NULL;			/* Head of list of all state entries */
 summary_t	*sumhead = NULL;			/* Summaries we send out */
 dispsummary_t	*dispsums = NULL;			/* Summaries we received and display */
 int		bb_color, bb2_color, bbnk_color;	/* Top-level page colors */
-int		fqdn = 1;				/* BB FQDN setting */
-int		usehobbitd = 0;
+int		fqdn = 1;				/* Hobbit FQDN setting */
 
 time_t		reportstart = 0;
 time_t		reportend = 0;
@@ -114,12 +113,11 @@ int main(int argc, char *argv[])
 		if (i > 0) maxrowsbeforeheading = i;
 	}
 
-	getenv_default("USEHOBBITD", "FALSE", NULL);
-	usehobbitd = (strcmp(xgetenv("USEHOBBITD"), "TRUE") == 0);
-
 	for (i = 1; (i < argc); i++) {
-		if (strcmp(argv[i], "--hobbitd") == 0) {
-			usehobbitd = 1;
+		if ( (strcmp(argv[i], "--hobbitd") == 0)       ||
+		     (argnmatch(argv[i], "--purplelifetime=")) ||
+		     (strcmp(argv[i], "--nopurple") == 0)      ) {
+			/* Deprecated */
 		}
 		else if (argnmatch(argv[i], "--env=")) {
 			char *lp = strchr(argv[i], '=');
@@ -127,17 +125,6 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[i], "--hobbitddump")) {
 			hobbitddump = 1;
-			usehobbitd = 0;
-			enable_purpleupd = 0;
-		}
-		else if (strcmp(argv[i], "--nopurple") == 0) {
-			enable_purpleupd = 0;
-		}
-		else if (argnmatch(argv[i], "--purplelifetime=")) {
-			char *lp = strchr(argv[i], '=');
-
-			purpledelay = atoi(lp+1);
-			if (purpledelay < 0) purpledelay=0;
 		}
 
 		else if (argnmatch(argv[i], "--ignorecolumns=")) {
@@ -425,12 +412,9 @@ int main(int argc, char *argv[])
 		}
 
 		else if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-?") == 0)) {
-			printf("bbgen version %s\n\n", VERSION);
-			if (usehobbitd) printf("Using hobbitd interface\n");
+			printf("bbgen for Hobbit version %s\n\n", VERSION);
 			printf("Usage: %s [options] [WebpageDirectory]\n", argv[0]);
 			printf("Options:\n");
-			printf("    --nopurple                  : Disable purple status-updates\n");
-			printf("    --purplelifetime=N          : Purple messages have a lifetime of N minutes\n");
 			printf("    --ignorecolumns=test[,test] : Completely ignore these columns\n");
 			printf("    --nk-reds-only              : Only show red statuses on the NK page\n");
 			printf("    --bb2-ignorecolumns=test[,test]: Ignore these columns for the BB2 page\n");
@@ -445,11 +429,11 @@ int main(int argc, char *argv[])
 			printf("    --no-doc-window             : Open doc-links in same window\n");
 			printf("    --htmlextension=.EXT        : Sets filename extension for generated file (default: .html\n");
 			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbgen\n");
-			printf("    --reportopts=ST:END:DYN:STL : Run in BB Reporting mode\n");
+			printf("    --reportopts=ST:END:DYN:STL : Run in Hobbit Reporting mode\n");
 			printf("    --snapshot=TIME             : Snapshot mode\n");
 			printf("\nPage layout options:\n");
-			printf("    --pages-last                : Put page- and subpage-links after hosts (as BB does)\n");
 			printf("    --pages-first               : Put page- and subpage-links before hosts (default)\n");
+			printf("    --pages-last                : Put page- and subpage-links after hosts\n");
 			printf("    --subpagecolumns=N          : Number of columns for links to pages and subpages\n");
 			printf("    --maxrows=N                 : Repeat column headings for every N hosts shown\n");
 			printf("    --recentgifs                : Use xxx-recent.gif icons for newly changed tests\n");
@@ -480,7 +464,6 @@ int main(int argc, char *argv[])
 			printf("    --debug                     : Debugging information\n");
 			printf("    --version                   : Show version information\n");
 			printf("    --purplelog=FILENAME        : Create a log of purple hosts and tests\n");
-			printf("    --unpatched-bbd             : BB has not been patched with bbd-background.patch\n");
 			exit(0);
 		}
 		else if (argnmatch(argv[i], "-")) {
@@ -533,7 +516,7 @@ int main(int argc, char *argv[])
 	 * If we did those, we would send double purple updates, 
 	 * generate wrong links for info pages etc.
 	 */
-	if (pageset || embedded || snapshot) enable_purpleupd = enable_wmlgen = wantrss = 0;
+	if (pageset || embedded || snapshot) enable_wmlgen = wantrss = 0;
 	if (embedded) {
 		egocolumn = htaccess = NULL;
 
@@ -602,9 +585,9 @@ int main(int argc, char *argv[])
 	}
 
 	/* The main page - bb.html and pages/subpages thereunder */
-	add_timestamp("BB pagegen start");
+	add_timestamp("Hobbit pagegen start");
 	do_page_with_subs(pagehead, dispsums);
-	add_timestamp("BB pagegen done");
+	add_timestamp("Hobbit pagegen done");
 
 	if (reportstart) {
 		/* Reports end here */
@@ -657,7 +640,7 @@ int main(int argc, char *argv[])
 		sprintf(msgline, "status %s.%s %s %s\n\n", xgetenv("MACHINE"), egocolumn, colorname(color), timestamp);
 		addtostatus(msgline);
 
-		sprintf(msgline, "bbgen version %s %s\n", VERSION, (usehobbitd ? "with hobbitd" : ""));
+		sprintf(msgline, "bbgen for Hobbit version %s\n", VERSION);
 		addtostatus(msgline);
 
 		sprintf(msgline, "\nStatistics:\n Hosts               : %5d\n Status messages     : %5d\n Purple messages     : %5d\n Pages               : %5d\n", 
