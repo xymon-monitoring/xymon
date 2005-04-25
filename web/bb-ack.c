@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.14 2005-04-07 10:09:02 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.15 2005-04-25 15:55:13 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -90,15 +90,11 @@ int main(int argc, char *argv[])
 	int argi, bbresult;
 	char bbmsg[MAXMSG];
 	char *respmsgfmt = "";
-	int hobbitd = 0;
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
 			loadenv(p+1);
-		}
-		else if (strcmp(argv[argi], "--hobbitd") == 0) {
-			hobbitd = 1;
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
@@ -150,9 +146,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		sprintf(bbmsg, "%s %d %d %s %s", 
-			(hobbitd ? "hobbitdack" : "ack ack_event"),
-			acknum, validity, ackmsg, acking_user);
+		sprintf(bbmsg, "hobbitdack %d %d %s %s", acknum, validity, ackmsg, acking_user);
 		bbresult = sendmessage(bbmsg, NULL, NULL, NULL, 0, 30);
 		if (bbresult != BB_OK) {
 			respmsgfmt = "<center><h4>Could not contact %s servers</h4></center>\n";
@@ -173,7 +167,7 @@ int main(int argc, char *argv[])
 	fprintf(stdout, "Content-type: text/html\n\n");
 	
 	headfoot(stdout, "acknowledge", "", "header", COL_RED);
-	fprintf(stdout, respmsgfmt, (hobbitd ? "Hobbit" : "BB"));
+	fprintf(stdout, respmsgfmt, "Hobbit");
 	headfoot(stdout, "acknowledge", "", "footer", COL_RED);
 
 	return 0;

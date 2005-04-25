@@ -2,5 +2,5 @@
 
 # This is a wrapper for the Hobbit hobbitsvc.cgi script
 
-@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbitsvc.cgi --env=@BBHOME@/etc/hobbitserver.cfg --hobbitd --no-svcid --history=top
+@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbitsvc.cgi --env=@BBHOME@/etc/hobbitserver.cfg --no-svcid --history=top
 

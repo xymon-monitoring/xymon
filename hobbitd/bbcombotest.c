@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.38 2005-03-22 09:03:37 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.39 2005-04-25 15:55:43 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -44,7 +44,6 @@ typedef struct testspec_t {
 static testspec_t *testhead = NULL;
 static int testcount = 0;
 static int cleanexpr = 0;
-static int usehobbitd = 0;
 
 static char *gethname(char *spec)
 {
@@ -133,50 +132,6 @@ static void loadtests(void)
 	fclose(fd);
 }
 
-static int getfilevalue(char *hostname, char *testname, char **errptr)
-{
-	char fn[PATH_MAX];
-	FILE *fd;
-	char l[MAX_LINE_LEN];
-	struct stat st;
-	int statres;
-	int result = COL_CLEAR;
-
-	sprintf(fn, "%s/%s.%s", xgetenv("BBLOGS"), commafy(hostname), testname);
-	statres = stat(fn, &st);
-	if (statres) {
-		/* No file ? Maybe it is using the wrong (non-commafied) hostname */
-		sprintf(fn, "%s/%s.%s", xgetenv("BBLOGS"), hostname, testname);
-		statres = stat(fn, &st);
-	}
-
-	if (statres) {
-		*errptr += sprintf(*errptr, "No status file for host=%s, test=%s\n", hostname, testname);
-	}
-	else if (st.st_mtime < time(NULL)) {
-		dprintf("Will not use a stale logfile for combo-tests - setting purple\n");
-		result = COL_PURPLE;
-	}
-	else {
-		fd = fopen(fn, "r");
-		if (fd == NULL) {
-			*errptr += sprintf(*errptr, "Cannot open file %s\n", fn);
-		}
-		else {
-			if (fgets(l, sizeof(l), fd)) {
-				result = parse_color(l);
-			}
-			else {
-				*errptr += sprintf(*errptr, "Cannot read status file %s\n", fn);
-			}
-	
-			fclose(fd);
-		}
-	}
-
-	return result;
-}
-
 static int gethobbitdvalue(char *hostname, char *testname, char **errptr)
 {
 	static char *board = NULL;
@@ -231,7 +186,7 @@ static long getvalue(char *hostname, char *testname, int *color, char **errbuf)
 		return walk->result;
 	}
 
-	*color = (usehobbitd ? gethobbitdvalue(hostname, testname, &errptr) : getfilevalue(hostname, testname, &errptr));
+	*color = gethobbitdvalue(hostname, testname, &errptr);
 
 	/* Save error messages */
 	if (strlen(errtext) > 0) {
@@ -386,9 +341,6 @@ int main(int argc, char *argv[])
 
 	setup_signalhandler("bbcombotest");
 
-	getenv_default("USEHOBBITD", "FALSE", NULL);
-	usehobbitd = (strcmp(xgetenv("USEHOBBITD"), "TRUE") == 0);
-
 	for (argi = 1; (argi < argc); argi++) {
 		if ((strcmp(argv[argi], "--help") == 0)) {
 			printf("bbcombotest version %s\n\n", VERSION);
@@ -410,9 +362,6 @@ int main(int argc, char *argv[])
 		}
 		else if ((strcmp(argv[argi], "--clean") == 0)) {
 			cleanexpr = 1;
-		}
-		else if ((strcmp(argv[argi], "--hobbitd") == 0)) {
-			usehobbitd = 1;
 		}
 	}
 
