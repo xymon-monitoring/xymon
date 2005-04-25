@@ -1,14 +1,11 @@
 # Makefile for bbgen - bbdisplay programs
 #
 
-
 PROGRAMS = bbgen bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlog.cgi bb-findhost.cgi bb-csvinfo.cgi bb-ack.cgi bb-webpage bb-datepage.cgi
 
 EXTENSIONS = bbcombotest
 
 CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh bb-findhost.sh bb-csvinfo.sh bbmessage.cgi hobbitcolumn.sh bb-datepage.sh
-
-TEMPLATES = acknowledge_header acknowledge_footer acknowledge_form findhost_header findhost_footer findhost_form report_header report_footer report_form snapshot_header snapshot_footer snapshot_form event_header event_footer event_form
 
 GENOBJS = bbgen.o loadbbhosts.o loaddata.o reportdata.o bbconvert.o pagegen.o eventlog.o acklog.o process.o wmlgen.o rssgen.o bb-replog.o util.o debug.o
 COMBOTESTOBJS = bbcombotest.o
@@ -23,9 +20,6 @@ MESSAGECGIOBJS = sendmsg-cgi.o
 ACKCGIOBJS = bb-ack.o
 WEBPAGEOBJS = bb-webpage.o
 DATEPAGEOBJS = bb-datepage.o
-
-HTMLPAGES = bb-findhost.html
-GIFFILES = bbfindhost1.gif bbfindhost2.gif
 
 
 all: $(PROGRAMS) $(EXTENSIONS) $(CGISCRIPTS)
@@ -100,15 +94,9 @@ sendmsg-cgi.o: ../lib/sendmsg.c
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-ifdef HOBBITD
-%.sh: %.sh-hobbitd.DIST
+%.sh: %.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
-else
-%.sh: %.sh-bbd.DIST
-	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
-	chmod 755 $@
-endif
 
 clean:
 	rm -f *.o *.a *~ $(PROGRAMS) $(EXTENSIONS) $(CGISCRIPTS)
@@ -116,11 +104,7 @@ clean:
 
 install: install-nocgi install-cgi
 
-ifdef HOBBITD
 install-nocgi: install-bin install-exts install-man install-obsoleted
-else
-install-nocgi: install-bin install-exts install-man install-html install-gif install-templates
-endif
 
 install-bin: $(PROGRAMS)
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
@@ -132,24 +116,8 @@ install-exts: $(EXTENSIONS)
 	cp -fp $(EXTENSIONS) $(INSTALLROOT)$(INSTALLEXTDIR)/
 
 install-cgi: $(CGISCRIPTS)
-ifndef HOBBITD
-	@echo ""
-	@echo "  WARNING : About to overwrite any existing Big Brother CGI scripts"
-	@echo "            Hit ctrl-C NOW if you want to save them first!"
-	@echo ""
-	@sleep 5
-endif
 	mkdir -p $(INSTALLROOT)$(CGIDIR)
 	cp -fp $(CGISCRIPTS) $(INSTALLROOT)$(CGIDIR)/
-
-install-html: $(HTMLPAGES)
-	cp -fp $(HTMLPAGES) $(INSTALLROOT)$(BBHOME)/www/help/
-
-install-gif: $(GIFFILES)
-	BBHOME=$(BBHOME) ../build/install-nooverwrite.sh $(INSTALLROOT)www/gifs $(GIFFILES)
-
-install-templates: $(TEMPLATES)
-	BBHOME=$(BBHOME) ../build/install-nooverwrite.sh $(INSTALLROOT)web $(TEMPLATES)
 
 install-man:
 	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5
