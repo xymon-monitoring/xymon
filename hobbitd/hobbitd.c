@@ -9,10 +9,10 @@
 /* This daemon maintains the full state of the Hobbit system in memory,       */
 /* eliminating the need for file-based storage of e.g. status logs. The web   */
 /* frontend programs (bbgen, bbcombotest, bb-hostsvc.cgi etc) can retrieve    */
-/* current statuslogs from this daemon to build the BB webpages. However,     */
+/* current statuslogs from this daemon to build the Hobbit webpages. However, */
 /* a "plugin" mechanism is also implemented to allow "worker modules" to      */
 /* pickup various types of events that occur in the system. This allows       */
-/* such modules to e.g. maintain the standard BB file-based storage, or       */
+/* such modules to e.g. maintain the standard Hobbit file-based storage, or   */
 /* implement history logging or RRD database updates. This plugin mechanism   */
 /* uses System V IPC mechanisms for a high-performance/low-latency communi-   */
 /* cation between hobbitd and the worker modules - under no circumstances     */
@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.141 2005-04-23 06:22:31 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.142 2005-04-25 12:39:51 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -119,7 +119,7 @@ sender_t *wwwsenders = NULL;
 #define RECEIVING 1
 #define RESPONDING 2
 
-/* This struct describes an active connection with a BB client */
+/* This struct describes an active connection with a Hobbit client */
 typedef struct conn_t {
 	int sock;			/* Communications socket */
 	struct sockaddr_in addr;	/* Client source address */

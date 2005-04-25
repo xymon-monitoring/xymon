@@ -22,7 +22,6 @@ functionality and performance improvements.
 rm -rf $RPM_BUILD_ROOT
 
 %setup
-        TARGET=hobbit \
         ENABLESSL=y \
         ENABLELDAP=y \
         ENABLELDAPSSL=y \

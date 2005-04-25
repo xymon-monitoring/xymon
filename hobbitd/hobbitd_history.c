@@ -2,9 +2,9 @@
 /* Hobbit message daemon.    .                                                */
 /*                                                                            */
 /* This is a hobbitd worker module for the "stachg" channel.                  */
-/* This module implements the Big Brother file-based history logging, and     */
-/* keeps the historical logfiles in bbvar/hist/ and bbvar/histlogs/ updated   */
-/* to keep track of the status changes.                                       */
+/* This module implements the file-based history logging, and keeps the       */
+/* historical logfiles in bbvar/hist/ and bbvar/histlogs/ updated to keep     */
+/* track of the status changes.                                               */
 /*                                                                            */
 /* Copyright (C) 2004-2005 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.35 2005-04-10 16:37:21 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.36 2005-04-25 12:39:51 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>

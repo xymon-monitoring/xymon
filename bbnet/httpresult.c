@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.12 2005-04-02 12:09:39 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.13 2005-04-25 12:39:51 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -388,9 +388,9 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 				if (nopage && (color == COL_RED)) color = COL_YELLOW;
 			}
 			else {
-				/* This only happens upon internal errors in BB test system */
+				/* This only happens upon internal errors in Hobbit test system */
 				color = statuscolor(t->host, req->contstatus);
-				strcpy(cause, "Internal BB error");
+				strcpy(cause, "Internal Hobbit error");
 			}
 
 			/* Send the content status message */

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.212 2005-04-07 15:42:35 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.213 2005-04-25 12:39:51 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -666,7 +666,7 @@ void load_tests(void)
 						 * "SERVICE_PORT" so we can merge tests for this service+port
 						 * combination for multiple hosts.
 						 *
-						 * According to BB docs, this type of services must be in
+						 * According to Hobbit docs, this type of services must be in
 						 * BBNETSVCS - so it is known already.
 						 */
 						int specialport = 0;
