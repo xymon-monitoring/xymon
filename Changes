@@ -1,3 +1,66 @@
+Changes from 4.0.2 -> 4.0.3
+---------------------------
+Bugfixes:
+* Acknowledgments were broken in 4.0.2.
+* Fix file-descriptor leak in the "setup-newfiles" tool
+  used during installation. This could cause "make install"
+  to abort while installing new files, on systems with a 
+  low setting for the max. number of simultaneous open files.
+* The BBALPHAMSG text passed to scripts as a default alert
+  message now includes the URL link to the statuslog.
+* Some header/footer files for the snapshot report HTML docs
+  were missing.
+* The bb-datepage CGI tool was reading the POST data in
+  an incorrect way; it worked on most systems, but did not
+  adhere to the CGI specification.
+* The "info_header" and "info_footer" files were not being
+  used for the "info" column pages.
+* Using PAGE=... in hobbit-alerts.cfg to pick out hosts
+  on the front-page was not possible. The front page is
+  now recognized with the name "/", so PAGE=/ will find
+  them.
+* hobbitgraph.cgi could show "@RRDPARAM@" on graphs if
+  it was matched by a NULL string (would happen for mailq
+  graphs).
+* The "disk1" graph definition failed to take into account
+  that the numbers logged were already in KB of data. So
+  the axis-label was wrong.
+* RRD files were not being updated while a status was 
+  blue (disabled), even though status messages were received.
+  Changed so that blue logs are passed off to the RRD
+  parser - we might as well track data when it's there.
+* The "mailq" RRD handler now finds the queue-length 
+  regardless of whether it is before or after the "requests"
+  keyword in the "mailq" or "nmailq" status message.
+
+Improvements:
+* All remnants of Big Brother compatibility have been 
+  removed. If you want to stick with the old Big Brother
+  tool, use bbgen. This allowed for some much needed 
+  cleaning up of the bbgen code that loaded the status
+  data, especially for the handling of purple status logs.
+* The maint.pl script has been removed. A new tool, 
+  hobbit-enadis.cgi, replaces this with a native Hobbit
+  tool. If you are upgrading, you should change the
+  ~/server/www/menu/menu_items.js file to point link to
+  "hobbit-enadis.sh" instead of "maint.pl".
+* The "info" column page now includes a form to disable
+  and enable tests for a single host. If you prefer not
+  to have this on the info page, add the option "--no-disable"
+  to the hobbit-cgi/bb-hostsvc.sh wrapper.
+* The hobbit-mailack CGI will now find a "delay=DURATION"
+  line in the mail message, and use that as the duration of
+  the acknowledgment. Reports show that there are some
+  types of mail/SMS systems where you cannot modify the 
+  message subject.
+* Paul D. Backer contributed "favicon" images generated
+  from the Hobbit "recent" GIF files. These have been added
+  and are now loaded from the Hobbit web/*_header files,
+  so that browsers supporting this (Mozilla, Firefox) will
+  display a favicon-image in the titlebar or on the
+  page-tab holding the Hobbit webpage.
+
+
 Changes from 4.0 -> 4.0.2
 -------------------------
 Bugfixes:
