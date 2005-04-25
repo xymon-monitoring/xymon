@@ -5,8 +5,7 @@ hobbitd \- Master network daemon for a Hobbit server
 .B "hobbitd [options]"
 
 .SH DESCRIPTION
-hobbitd is the core daemon in the Hobbit Monitor, and can act as 
-a replacement for the bbd daemon from the Big Brother package. 
+hobbitd is the core daemon in the Hobbit Monitor.
 It is designed to handle monitoring of a large number of hosts, 
 with a strong focus on being a high-speed, low-overhead implementation 
 of a Big Brother compatible server.
@@ -16,7 +15,7 @@ of the monitored systems in memory, instead of storing it in
 the host filesystem. A number of plug-ins can be enabled to
 enhance the basic operation; e.g. a set of plugins are provided
 to implement persistent storage in a way that is compatible 
-with the standard Big Brother daemon. However, even with these
+with the Big Brother daemon. However, even with these
 plugins enabled, hobbitd still performs much faster than the
 standard bbd daemon.
 
@@ -27,7 +26,7 @@ in the hobbitlaunch.cfg file.
 
 .SH OPTIONS
 .IP "--bbhosts=FILENAME"
-Specifies the path to the Hobbit / Big Brother bb-hosts file. This is used
+Specifies the path to the Hobbit bb-hosts file. This is used
 to check if incoming status messages refer to known hosts; depending
 on the "--ghosts" option, messages for unknown hosts may be dropped.
 If this option is omitted, the default path used is set by the BBHOSTS
@@ -98,7 +97,7 @@ commands to hobbitd.
 By default, any host can send status-updates. If this option is used, 
 then status-updates are accepted only if they are sent by one of the 
 IP-adresses listed here, or if they are sent from the IP-address of the 
-host that the updates pertains to (this is to allow BB clients to send in their
+host that the updates pertains to (this is to allow Hobbit clients to send in their
 own status updates, without having to list all clients here). So typically
 you will need to list your BBNET servers here.
 
@@ -129,7 +128,7 @@ by
 .I bbgen(1)
 and
 .I bbcombotest(1)
-to retrieve the state of the BB system so they can generate the BB webpages.
+to retrieve the state of the Hobbit system so they can generate the Hobbit webpages.
 
 .IP "--admin-senders=IP[/MASK][,IP/MASK]"
 Controls which hosts may send administrative commands to hobbitd. These

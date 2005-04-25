@@ -1,6 +1,6 @@
 .TH HOBBITD_FILESTORE 8 "Version 4.0.2: 10 apr 2005" "Hobbit Monitor"
 .SH NAME
-hobbitd_filestore \- hobbitd worker module for storing Hobbit / Big Brother files
+hobbitd_filestore \- hobbitd worker module for storing Hobbit data
 .SH SYNOPSIS
 .B "hobbitd_channel --channel=status hobbitd_filestore --status [options]"
 .br
@@ -25,10 +25,10 @@ messages for more than one channel.
 .IP "--status"
 Incoming messages are "status" messages, they will be stored in the
 $BBLOGS/ directory. If you are using 
-.I bbgen(1)
-throughout your Big Brother server, you will not need to run this
+.I hobbit(7)
+throughout your Hobbit server, you will not need to run this
 module to save status messages, unless you have a third-party 
-Big Brother add-on that reads the status-logs directly.
+add-on that reads the status-logs directly.
 This module is NOT needed for LARRD, you should run the 
 .I hobbitd_larrd(8)
 module instead.
@@ -45,13 +45,12 @@ module instead.
 Incoming messages are "notes" messages, they will be stored in the
 $BBNOTES directory. This modules is only needed if you want to 
 allow people to remotely update the notes-files available on the
-Big Brother webpages.
+Hobbit webpages.
 
 .IP "--enadis"
 Incoming messages are enable/disable messages, they will update 
 files in the $BBDISABLED directory. This is only needed if you have
-third-party add-ons that use these files, e.g. the "maint.pl" script
-for disabling or enabling hosts in Big Brother.
+third-party add-ons that use these files.
 
 .IP "--dir=DIRECTORY"
 Overrides the default output directory.
