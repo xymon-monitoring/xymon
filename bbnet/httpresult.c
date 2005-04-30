@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.13 2005-04-25 12:39:51 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.14 2005-04-30 15:52:35 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -81,7 +81,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 	char	msgtext[MAXMSG];
 	char    *nopagename;
 	int     nopage = 0;
-	int	anydown = 0;
+	int	anydown = 0, totalreports = 0;
 
 	if (firsttest == NULL) return;
 
@@ -102,6 +102,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		/* Skip the data-reports for now */
 		if (t->senddata) continue;
 
+		totalreports++;
 		req->httpcolor = statuscolor(host, req->httpstatus);
 		if (req->httpcolor == COL_RED) anydown++;
 
@@ -184,6 +185,12 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		else {
 			strcat(msgtext, "OK");
 		}
+	}
+
+	/* It could be that we have 0 http tests - if we only do the apache one */
+	if (totalreports == 0) {
+		xfree(svcname);
+		return;
 	}
 
 	if (anydown) {
