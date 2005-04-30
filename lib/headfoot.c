@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.28 2005-04-24 21:30:43 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.29 2005-04-30 06:57:19 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -610,7 +610,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 						xgetenv("SECURECGIBINURL"));
 
 					fprintf(output, "<table summary=\"%s disabled tests\" width=\"100%%\">\n", 
-						hwalk->name);
+						(hwalk->name ? hwalk->name : ""));
 
 					fprintf(output, "<tr>\n");
 					fprintf(output, "<TH COLSPAN=3><I>%s</I></TH>", 
