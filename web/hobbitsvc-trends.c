@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.64 2005-04-03 16:23:38 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.65 2005-04-30 07:16:05 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -188,8 +188,8 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, int larrd043, int hobb
 
 			myrrd->gdef->larrdrrdname = graphdef;
 			myrrd->gdef->larrdpartname = NULL;
-			myrrd->gdef->maxgraphs = 999;
-			myrrd->count = 1;
+			myrrd->gdef->maxgraphs = 0;
+			myrrd->count = rrd->count;
 			myrrd->next = NULL;
 			partlink = larrd_graph_data(host->bbhostname, hostdisplayname, NULL, myrrd->gdef, myrrd->count, larrd043, hobbitd, wantmeta);
 			if ((strlen(rrdlink) + strlen(partlink) + 1) >= rrdlinksize) {
