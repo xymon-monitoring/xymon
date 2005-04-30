@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.62 2005-04-23 06:45:04 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.63 2005-04-30 06:56:35 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -400,6 +400,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				crit = setup_criteria(&currule, &currcp);
 				crit->pagespec = strdup(val);
 				if (*(crit->pagespec) == '%') crit->pagespecre = compileregex(crit->pagespec+1);
+				firsttoken = 0;
 			}
 			else if ((strncasecmp(p, "EXPAGE=", 7) == 0) || (strncasecmp(p, "EXPAGES=", 8) == 0)) {
 				char *val;
@@ -410,6 +411,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				crit = setup_criteria(&currule, &currcp);
 				crit->expagespec = strdup(val);
 				if (*(crit->expagespec) == '%') crit->expagespecre = compileregex(crit->expagespec+1);
+				firsttoken = 0;
 			}
 			else if ((strncasecmp(p, "HOST=", 5) == 0) || (strncasecmp(p, "HOSTS=", 6) == 0)) {
 				char *val;
@@ -420,6 +422,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				crit = setup_criteria(&currule, &currcp);
 				crit->hostspec = strdup(val);
 				if (*(crit->hostspec) == '%') crit->hostspecre = compileregex(crit->hostspec+1);
+				firsttoken = 0;
 			}
 			else if ((strncasecmp(p, "EXHOST=", 7) == 0) || (strncasecmp(p, "EXHOSTS=", 8) == 0)) {
 				char *val;
@@ -430,6 +433,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				crit = setup_criteria(&currule, &currcp);
 				crit->exhostspec = strdup(val);
 				if (*(crit->exhostspec) == '%') crit->exhostspecre = compileregex(crit->exhostspec+1);
+				firsttoken = 0;
 			}
 			else if ((strncasecmp(p, "SERVICE=", 8) == 0) || (strncasecmp(p, "SERVICES=", 9) == 0)) {
 				char *val;
@@ -440,6 +444,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				crit = setup_criteria(&currule, &currcp);
 				crit->svcspec = strdup(val);
 				if (*(crit->svcspec) == '%') crit->svcspecre = compileregex(crit->svcspec+1);
+				firsttoken = 0;
 			}
 			else if ((strncasecmp(p, "EXSERVICE=", 10) == 0) || (strncasecmp(p, "EXSERVICES=", 11) == 0)) {
 				char *val;
@@ -450,6 +455,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				crit = setup_criteria(&currule, &currcp);
 				crit->exsvcspec = strdup(val);
 				if (*(crit->exsvcspec) == '%') crit->exsvcspecre = compileregex(crit->exsvcspec+1);
+				firsttoken = 0;
 			}
 			else if ((strncasecmp(p, "COLOR=", 6) == 0) || (strncasecmp(p, "COLORS=", 7) == 0)) {
 				criteria_t *crit;
@@ -483,6 +489,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 
 					if (c2) c1 = (c2+1); else c1 = NULL;
 				} while (c1);
+				firsttoken = 0;
 			}
 			else if ((strncasecmp(p, "TIME=", 5) == 0) || (strncasecmp(p, "TIMES=", 6) == 0)) {
 				char *val;
@@ -492,6 +499,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				val = strchr(p, '=')+1;
 				crit = setup_criteria(&currule, &currcp);
 				crit->timespec = strdup(val);
+				firsttoken = 0;
 			}
 			else if (strncasecmp(p, "DURATION", 8) == 0) {
 				criteria_t *crit;
@@ -501,6 +509,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				if (*(p+8) == '>') crit->minduration = 60*durationvalue(p+9);
 				else if (*(p+8) == '<') crit->maxduration = 60*durationvalue(p+9);
 				else errprintf("Ignoring invalid DURATION at line %d: %s\n",cfid, p);
+				firsttoken = 0;
 			}
 			else if (strncasecmp(p, "RECOVERED", 9) == 0) {
 				criteria_t *crit;
@@ -508,6 +517,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
 				crit = setup_criteria(&currule, &currcp);
 				crit->sendrecovered = SR_WANTED;
+				firsttoken = 0;
 			}
 			else if (strncasecmp(p, "NORECOVERED", 11) == 0) {
 				criteria_t *crit;
@@ -515,6 +525,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
 				crit = setup_criteria(&currule, &currcp);
 				crit->sendrecovered = SR_NOTWANTED;
+				firsttoken = 0;
 			}
 			else if (strncasecmp(p, "NOTICE", 6) == 0) {
 				criteria_t *crit;
@@ -522,6 +533,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
 				crit = setup_criteria(&currule, &currcp);
 				crit->sendnotice = SR_WANTED;
+				firsttoken = 0;
 			}
 			else if (strncasecmp(p, "NONOTICE", 8) == 0) {
 				criteria_t *crit;
@@ -529,6 +541,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
 				crit = setup_criteria(&currule, &currcp);
 				crit->sendnotice = SR_NOTWANTED;
+				firsttoken = 0;
 			}
 			else if ((pstate == P_RECIP) && (strncasecmp(p, "FORMAT=", 7) == 0)) {
 				if      (strcasecmp(p+7, "TEXT") == 0) currcp->format = FRM_TEXT;
@@ -536,18 +549,23 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				else if (strcasecmp(p+7, "SMS") == 0) currcp->format = FRM_SMS;
 				else if (strcasecmp(p+7, "PAGER") == 0) currcp->format = FRM_PAGER;
 				else if (strcasecmp(p+7, "SCRIPT") == 0) currcp->format = FRM_SCRIPT;
+				firsttoken = 0;
 			}
 			else if ((pstate == P_RECIP) && (strncasecmp(p, "REPEAT=", 7) == 0)) {
 				currcp->interval = 60*durationvalue(p+7);
+				firsttoken = 0;
 			}
 			else if ((pstate == P_RECIP) && (strcasecmp(p, "STOP") == 0)) {
 				currcp->stoprule = 1;
+				firsttoken = 0;
 			}
 			else if ((pstate == P_RECIP) && (strcasecmp(p, "UNMATCHED") == 0)) {
 				currcp->unmatchedonly = 1;
+				firsttoken = 0;
 			}
 			else if ((pstate == P_RECIP) && (strncasecmp(p, "NOALERT", 7) == 0)) {
 				currcp->noalerts = 1;
+				firsttoken = 0;
 			}
 			else if (currule && ((strncasecmp(p, "MAIL", 4) == 0) || mailcmdactive) ) {
 				recip_t *newrcp;
@@ -598,6 +616,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 					errprintf("Ignoring MAIL with no recipient at line %d\n", cfid);
 					xfree(newrcp);
 				}
+				firsttoken = 0;
 			}
 			else if (currule && ((strncasecmp(p, "SCRIPT", 6) == 0) || scriptcmdactive)) {
 				recip_t *newrcp;
@@ -658,10 +677,13 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 					if (newrcp->scriptname) xfree(newrcp->scriptname);
 					xfree(newrcp);
 				}
+				firsttoken = 0;
+			}
+			else {
+				errprintf("Ignored unknown token '%s'\n", p);
 			}
 
 			if (p) p = strtok(NULL, " ");
-			firsttoken = 0;
 		}
 
 		if (curlinerecips && currcp && (curlinerecips != currcp)) {
