@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.23 2005-05-02 06:20:05 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.24 2005-05-02 21:11:52 henrik Exp $";
 
 static char *disk_params[] = { "rrdcreate", rrdfn, "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", 
 				rra1, rra2, rra3, rra4, NULL };
@@ -31,12 +31,14 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		ptn = getenv("RRDDISKS");
 		if (ptn && strlen(ptn)) {
 			inclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
-			if (!inclpattern) errprintf("PCRE compile of RRDDISKS='%s' failed\n", ptn);
+			if (!inclpattern) errprintf("PCRE compile of RRDDISKS='%s' failed, error %s, offset %d\n", 
+						    ptn, errmsg, errofs);
 		}
 		ptn = getenv("NORRDDISKS");
 		if (ptn && strlen(ptn)) {
 			exclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
-			if (!inclpattern) errprintf("PCRE compile of NORRDDISKS='%s' failed\n", ptn);
+			if (!exclpattern) errprintf("PCRE compile of NORRDDISKS='%s' failed, error %s, offset %d\n", 
+						    ptn, errmsg, errofs);
 		}
 	}
 
