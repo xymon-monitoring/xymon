@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.206 2005-04-25 12:58:51 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.207 2005-05-02 10:30:50 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -34,6 +34,7 @@ static char rcsid[] = "$Id: bbgen.c,v 1.206 2005-04-25 12:58:51 henrik Exp $";
 #include "bb-replog.h"
 #include "rssgen.h"
 #include "bbconvert.h"
+#include "csvreport.h"
 
 /* Global vars */
 bbgen_page_t	*pagehead = NULL;			/* Head of page list */
@@ -95,6 +96,8 @@ int main(int argc, char *argv[])
 	char		*pageset = NULL;
 	char		*nssidebarfilename = NULL;
 	char		*egocolumn = NULL;
+	char		*csvfile = NULL;
+	char		csvdelim = ',';
 	int		embedded = 0;
 	int		hobbitddump = 0;
 
@@ -239,6 +242,14 @@ int main(int argc, char *argv[])
 
 			select_headers_and_footers("bbrep");
 			sethostenv_report(reportstart, reportend, reportwarnlevel, reportgreenlevel);
+		}
+		else if (argnmatch(argv[i], "--csv="))  {
+			char *lp = strchr(argv[i], '=');
+			csvfile = strdup(lp+1);
+		}
+		else if (argnmatch(argv[i], "--csvdelim="))  {
+			char *lp = strchr(argv[i], '=');
+			csvdelim = *(lp+1);
 		}
 		else if (argnmatch(argv[i], "--snapshot=")) {
 			char *lp = strchr(argv[i], '=');
@@ -430,6 +441,8 @@ int main(int argc, char *argv[])
 			printf("    --htmlextension=.EXT        : Sets filename extension for generated file (default: .html\n");
 			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbgen\n");
 			printf("    --reportopts=ST:END:DYN:STL : Run in Hobbit Reporting mode\n");
+			printf("    --csv=FILENAME              : For Hobbit Reporting, output CSV file\n");
+			printf("    --csvdelim=CHARACTER        : Delimiter in CSV file output (default: comma)\n");
 			printf("    --snapshot=TIME             : Snapshot mode\n");
 			printf("\nPage layout options:\n");
 			printf("    --pages-first               : Put page- and subpage-links before hosts (default)\n");
@@ -586,7 +599,12 @@ int main(int argc, char *argv[])
 
 	/* The main page - bb.html and pages/subpages thereunder */
 	add_timestamp("Hobbit pagegen start");
-	do_page_with_subs(pagehead, dispsums);
+	if (reportstart && csvfile) {
+		csv_availability(csvfile, csvdelim);
+	}
+	else {
+		do_page_with_subs(pagehead, dispsums);
+	}
 	add_timestamp("Hobbit pagegen done");
 
 	if (reportstart) {
