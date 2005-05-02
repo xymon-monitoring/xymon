@@ -59,7 +59,7 @@ hobbitd_sample: $(SAMPLEOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(RPATHOPT) $(SAMPLEOBJS) $(LIBOBJS)
 
 hobbitgraph.o: hobbitgraph.c
-	$(CC) $(CFLAGS) $(PCREINCDIR) $(RRDINCDIR) -c -o $@ hobbitgraph.c
+	$(CC) $(CFLAGS) $(PCREINCDIR) $(RRDDEF) $(RRDINCDIR) -c -o $@ hobbitgraph.c
 
 hobbitgraph.cgi: $(HOBBITGRAPHOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(HOBBITGRAPHOBJS) $(LIBOBJS) $(PCRELIBS) $(RRDLIBS) $(NETLIBS)

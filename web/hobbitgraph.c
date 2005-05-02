@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.23 2005-04-24 20:04:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.24 2005-05-02 07:09:50 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -421,6 +421,7 @@ int main(int argc, char *argv[])
 	DIR *dir;
 	char **calcpr  = NULL;
 	int argi, pcount, argcount, rrdargcount, xsize, ysize, result;
+	double ymin, ymax;
 	time_t now;
 	char timestamp[100];
 	char graphtitle[1024];
@@ -762,7 +763,11 @@ int main(int argc, char *argv[])
 
 	/* All set - generate the graph */
 	rrd_clear_error();
+#ifdef RRDTOOL12
+	result = rrd_graph(rrdargcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
+#else
 	result = rrd_graph(rrdargcount, rrdargs, &calcpr, &xsize, &ysize);
+#endif
 
 	/* Was it OK ? */
 	if (rrd_test_error() || (result != 0)) {

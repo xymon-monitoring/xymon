@@ -1,5 +1,6 @@
 	echo "Checking for RRDtool ..."
 
+	RRDDEF=""
 	RRDINC=""
 	RRDLIB=""
 	PNGLIB=""
@@ -55,7 +56,14 @@
 	else
 		cd build
 		OS=`uname -s` $MAKE -f Makefile.test-rrd clean
-		OS=`uname -s` RRDINC="-I$RRDINC" $MAKE -f Makefile.test-rrd test-compile
+		OS=`uname -s` RRDDEF="$RRDDEF" RRDINC="-I$RRDINC" $MAKE -f Makefile.test-rrd test-compile
+		if [ $? -ne 0 ]; then
+			# See if it's the new RRDtool 1.2.x
+			echo "Not RRDtool 1.0.x, checking for 1.2.x"
+			RRDDEF="-DRRDTOOL12"
+			OS=`uname -s` $MAKE -f Makefile.test-rrd clean
+			OS=`uname -s` RRDDEF="$RRDDEF" RRDINC="-I$RRDINC" $MAKE -f Makefile.test-rrd test-compile
+		fi
 		if [ $? -eq 0 ]; then
 			echo "Found RRDtool include files in $RRDINC"
 		else

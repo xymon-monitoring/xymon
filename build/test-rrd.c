@@ -20,10 +20,15 @@ int main(int argc, char *argv[])
 	char **calcpr=NULL;
 
 	int pcount, result, xsize, ysize;
+	double ymin, ymax;
 
 	for (pcount = 0; (rrdargs[pcount]); pcount++);
 	rrd_clear_error();
+#ifdef RRDTOOL12
+	result = rrd_graph(pcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
+#else
 	result = rrd_graph(pcount, rrdargs, &calcpr, &xsize, &ysize);
+#endif
 
 	return 0;
 }

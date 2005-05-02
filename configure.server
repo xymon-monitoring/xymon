@@ -509,6 +509,7 @@ echo "PERLBINARY=$PERLBINARY"            >>Makefile
 
 echo ""                                  >>Makefile
 echo "# RRDtool settings"                >>Makefile
+echo "RRDDEF = $RRDDEF"                  >>Makefile
 echo "RRDINCDIR = -I$RRDINC"             >>Makefile
 echo "RRDLIBS = -L$RRDLIB -lrrd $PNGLIB" >>Makefile
 echo "RPATHVAL += ${RRDLIB}"             >>Makefile
