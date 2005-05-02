@@ -7,7 +7,7 @@ EXTENSIONS = bbcombotest
 
 CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh bb-findhost.sh bb-csvinfo.sh bbmessage.cgi hobbitcolumn.sh bb-datepage.sh
 
-GENOBJS = bbgen.o loadbbhosts.o loaddata.o reportdata.o bbconvert.o pagegen.o eventlog.o acklog.o process.o wmlgen.o rssgen.o bb-replog.o util.o debug.o
+GENOBJS = bbgen.o loadbbhosts.o loaddata.o reportdata.o bbconvert.o pagegen.o eventlog.o acklog.o process.o wmlgen.o rssgen.o bb-replog.o util.o debug.o csvreport.o
 COMBOTESTOBJS = bbcombotest.o
 REPOBJS = bb-rep.o
 REPLOGOBJS = bb-replog-cgi.o reportdata.o
