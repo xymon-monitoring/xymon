@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.25 2005-05-02 20:03:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.26 2005-05-02 21:18:15 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -634,7 +634,24 @@ int main(int argc, char *argv[])
 
 		/* Setup the pattern to match filenames against */
 		pat = pcre_compile(gdef->fnpat, PCRE_CASELESS, &errmsg, &errofs, NULL);
-		if (gdef->exfnpat) expat = pcre_compile(gdef->exfnpat, PCRE_CASELESS, &errmsg, &errofs, NULL);
+		if (!pat) {
+			char msg[8192];
+
+			snprintf(msg, sizeof(msg), "hobbitgraph.cfg error, PCRE pattern %s invalid: %s, offset %d\n",
+				 gdef->fnpat, errmsg, errofs);
+			errormsg(msg);
+		}
+		if (gdef->exfnpat) {
+			expat = pcre_compile(gdef->exfnpat, PCRE_CASELESS, &errmsg, &errofs, NULL);
+			if (!expat) {
+				char msg[8192];
+
+				snprintf(msg, sizeof(msg), 
+					 "hobbitgraph.cfg error, PCRE pattern %s invalid: %s, offset %d\n",
+					 gdef->exfnpat, errmsg, errofs);
+				errormsg(msg);
+			}
+		}
 
 		/* Allocate an initial filename table */
 		rrddbsize = 5;
