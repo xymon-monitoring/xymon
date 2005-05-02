@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.14 2005-04-30 15:52:35 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.15 2005-05-02 20:01:33 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -188,64 +188,62 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 	}
 
 	/* It could be that we have 0 http tests - if we only do the apache one */
-	if (totalreports == 0) {
-		xfree(svcname);
-		return;
-	}
+	if (totalreports > 0) {
+		if (anydown) {
+			firsttest->downcount++; 
+			if(firsttest->downcount == 1) firsttest->downstart = time(NULL);
+		} 
+		else firsttest->downcount = 0;
 
-	if (anydown) {
-		firsttest->downcount++; 
-		if(firsttest->downcount == 1) firsttest->downstart = time(NULL);
-	} 
-	else firsttest->downcount = 0;
-
-	/* Handle the "badtest" stuff for http tests */
-	if ((color == COL_RED) && (firsttest->downcount < firsttest->badtest[2])) {
-		if      (firsttest->downcount >= firsttest->badtest[1]) color = COL_YELLOW;
-		else if (firsttest->downcount >= firsttest->badtest[0]) color = COL_CLEAR;
-		else                                                    color = COL_GREEN;
-	}
-
-	if (nopage && (color == COL_RED)) color = COL_YELLOW;
-	dprintf(" --> %s\n", colorname(color));
-
-	/* Send off the http status report */
-	init_status(color);
-	sprintf(msgline, "status %s.%s %s %s", 
-		commafy(host->hostname), svcname, colorname(color), timestamp);
-	addtostatus(msgline);
-	addtostatus(msgtext);
-	addtostatus("\n");
-
-	for (t=firsttest; (t && (t->host == host)); t = t->next) {
-		http_data_t *req = (http_data_t *) t->privdata;
-
-		/* Skip the "data" reports */
-		if (t->senddata) continue;
-
-		sprintf(msgline, "\n&%s %s - ", colorname(req->httpcolor), req->url);
-		if (req->httpcolor == COL_GREEN) strcat(msgline, "OK");
-		else {
-			if (req->errorcause) strcat(msgline, req->errorcause);
-			else strcat(msgline, "failed");
+		/* Handle the "badtest" stuff for http tests */
+		if ((color == COL_RED) && (firsttest->downcount < firsttest->badtest[2])) {
+			if      (firsttest->downcount >= firsttest->badtest[1]) color = COL_YELLOW;
+			else if (firsttest->downcount >= firsttest->badtest[0]) color = COL_CLEAR;
+			else                                                    color = COL_GREEN;
 		}
-		strcat(msgline, "\n");
-		addtostatus(msgline);
 
-		if (req->headers) {
-			sprintf(msgline, "\n%s", req->headers);
+		if (nopage && (color == COL_RED)) color = COL_YELLOW;
+		dprintf(" --> %s\n", colorname(color));
+
+		/* Send off the http status report */
+		init_status(color);
+		sprintf(msgline, "status %s.%s %s %s", 
+			commafy(host->hostname), svcname, colorname(color), timestamp);
+		addtostatus(msgline);
+		addtostatus(msgtext);
+		addtostatus("\n");
+
+		for (t=firsttest; (t && (t->host == host)); t = t->next) {
+			http_data_t *req = (http_data_t *) t->privdata;
+
+			/* Skip the "data" reports */
+			if (t->senddata) continue;
+
+			sprintf(msgline, "\n&%s %s - ", colorname(req->httpcolor), req->url);
+			if (req->httpcolor == COL_GREEN) strcat(msgline, "OK");
+			else {
+				if (req->errorcause) strcat(msgline, req->errorcause);
+				else strcat(msgline, "failed");
+			}
+			strcat(msgline, "\n");
+			addtostatus(msgline);
+
+			if (req->headers) {
+				sprintf(msgline, "\n%s", req->headers);
+				addtostatus(msgline);
+			}
+			if (req->faileddeps) addtostatus(req->faileddeps);
+
+			sprintf(msgline, "\nSeconds: %5d.%02d\n\n", 
+				(unsigned int)req->tcptest->totaltime.tv_sec, 
+				(unsigned int)req->tcptest->totaltime.tv_usec / 10000 );
 			addtostatus(msgline);
 		}
-		if (req->faileddeps) addtostatus(req->faileddeps);
-
-		sprintf(msgline, "\nSeconds: %5d.%02d\n\n", 
-			(unsigned int)req->tcptest->totaltime.tv_sec, 
-			(unsigned int)req->tcptest->totaltime.tv_usec / 10000 );
-		addtostatus(msgline);
+		addtostatus("\n\n");
+		finish_status();
 	}
-	addtostatus("\n\n");
-	finish_status();
 
+	/* Send off any "data" messages now */
 	for (t=firsttest; (t && (t->host == host)); t = t->next) {
 		http_data_t *req;
 		char *data = "";
