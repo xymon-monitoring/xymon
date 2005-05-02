@@ -138,6 +138,11 @@ LARRDS="cpu=la,disk,inode,qtree,memory,$PINGCOLUMN=tcp,http=tcp,dns=tcp,dig=tcp,
 # and the order in which they appear.
 GRAPHS="la,disk,inode,qtree,memory,users,vmstat,iostat,tcp.http,tcp,netstat,mrtg::1,temperature,ntpstat,apache,bind,sendmail,mailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd"
 
+# These two settings can be used to restrict what filesystems are being
+# tracked (i.e. have their utilisation graphed) by Hobbit.
+# NORRDDISKS=""		# Filesystems that will NOT be tracked
+# RRDDISKS=""		# Only track these filesystems
+
 
 ############################################################
 # These determine some parts of how bbgen generates webpages

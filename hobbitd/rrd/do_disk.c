@@ -8,17 +8,37 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.22 2005-04-10 11:09:06 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.23 2005-05-02 06:20:05 henrik Exp $";
 
 static char *disk_params[] = { "rrdcreate", rrdfn, "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", 
 				rra1, rra2, rra3, rra4, NULL };
 
-/* This is ported almost directly from disk-larrd.pl */
 
 int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
 	enum { DT_IRIX, DT_AS400, DT_NT, DT_UNIX, DT_NETAPP, DT_NETWARE } dsystype;
 	char *eoln, *curline;
+	static int ptnsetup = 0;
+	static pcre *inclpattern = NULL;
+	static pcre *exclpattern = NULL;
+
+	if (!ptnsetup) {
+		const char *errmsg;
+		int errofs;
+		char *ptn;
+
+		ptnsetup = 1;
+		ptn = getenv("RRDDISKS");
+		if (ptn && strlen(ptn)) {
+			inclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
+			if (!inclpattern) errprintf("PCRE compile of RRDDISKS='%s' failed\n", ptn);
+		}
+		ptn = getenv("NORRDDISKS");
+		if (ptn && strlen(ptn)) {
+			exclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
+			if (!inclpattern) errprintf("PCRE compile of NORRDDISKS='%s' failed\n", ptn);
+		}
+	}
 
 	if (strstr(msg, " xfs ") || strstr(msg, " efs ") || strstr(msg, " cxfs ")) dsystype = DT_IRIX;
 	else if (strstr(msg, "DASD")) dsystype = DT_AS400;
@@ -34,6 +54,7 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		int columncount;
 		char *diskname = NULL;
 		int pused = -1;
+		int wanteddisk = 1;
 		unsigned long long aused = 0;
 
 		eoln = strchr(curline, '\n'); if (eoln) *eoln = '\0';
@@ -64,13 +85,12 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		switch (dsystype) {
 		  case DT_IRIX:
 			diskname = xstrdup(columns[6]);
-			p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
 			p = strchr(columns[5], '%'); if (p) *p = ' ';
 			pused = atoi(columns[5]);
 			aused = atoi(columns[3]);
 			break;
 		  case DT_AS400:
-			diskname = xstrdup(",DASD");
+			diskname = xstrdup("/DASD");
 			p = strchr(columns[columncount-1], '%'); if (p) *p = ' ';
 			/* 
 			 * Yikes ... the format of this line varies depending on the color.
@@ -88,21 +108,19 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			break;
 		  case DT_NT:
 			diskname = xmalloc(strlen(columns[0])+2);
-			sprintf(diskname, ",%s", columns[0]);
+			sprintf(diskname, "/%s", columns[0]);
 			p = strchr(columns[4], '%'); if (p) *p = ' ';
 			pused = atoi(columns[4]);
 			aused = atoi(columns[2]);
 			break;
 		  case DT_UNIX:
 			diskname = xstrdup(columns[5]);
-			p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
 			p = strchr(columns[4], '%'); if (p) *p = ' ';
 			pused = atoi(columns[4]);
 			aused = atoi(columns[2]);
 			break;
 		  case DT_NETAPP:
 			diskname = xstrdup(columns[1]);
-			p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
 			pused = atoi(columns[5]);
 			p = columns[3] + strspn(columns[3], "0123456789");
 			aused = atoll(columns[3]);
@@ -113,13 +131,34 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			break;
 		  case DT_NETWARE:
 			diskname = xstrdup(columns[1]);
-			p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
 			aused = atoll(columns[3]);
 			pused = atoi(columns[7]);
 			break;
 		}
 
-		if (diskname && (pused != -1)) {
+		/* Check include/exclude patterns */
+		wanteddisk = 1;
+		if (exclpattern) {
+			int ovector[30];
+			int result;
+
+			result = pcre_exec(exclpattern, NULL, diskname, strlen(diskname), 
+					   0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+
+			wanteddisk = (result < 0);
+		}
+		if (wanteddisk && inclpattern) {
+			int ovector[30];
+			int result;
+
+			result = pcre_exec(inclpattern, NULL, diskname, strlen(diskname), 
+					   0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+
+			wanteddisk = (result >= 0);
+		}
+
+		if (wanteddisk && diskname && (pused != -1)) {
+			p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
 			if (strcmp(diskname, ",") == 0) {
 				diskname = xrealloc(diskname, 6);
 				strcpy(diskname, ",root");

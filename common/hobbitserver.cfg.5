@@ -367,6 +367,25 @@ the "trends" column. This is used by the
 .I bb-larrdcolumn(1)
 tool that generates the "trends" column data.
 
+.IP NORRDDISKS
+This is used to disable the tracking of certain filesystems. By default
+all filesystems reported by a client are tracked. In some cases you may want 
+to disable this for certain filesystems, e.g. database filesystems since they
+are always completely full. This setting is a regular expression that is matched
+against the filesystem name (the Unix mount-point, or the Windows disk-letter) -
+if the filesystem name matches this expression, then it will not be tracked
+by Hobbit.
+.br
+Note: Setting this does not affect filesystems that are already being tracked
+by Hobbit - to remove them, you must remove the RRD files for the unwanted filesystems
+from the ~hobbit/data/rrd/HOSTNAME/ directory.
+
+.IP RRDDISKS
+This is used to enable tracking of only selected filesystems (see the NORRDDISKS
+setting above). By default all filesystems are being tracked, setting this changes 
+that default so that only those filesystems that match this pattern will be 
+tracked.
+
 
 .SH BBTEST-NET NETWORK TEST SETTINGS
 
