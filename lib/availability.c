@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.35 2005-03-22 09:03:37 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.36 2005-05-02 10:30:12 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -464,10 +464,16 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 		}
 	}
 	else {
-		repinfo->reportavailability = repinfo->fullavailability;
 		if (repinfo->fullavailability > greenlevel) color = COL_GREEN;
 		else if (repinfo->fullavailability >= warnlevel) color = COL_YELLOW;
 		else color = COL_RED;
+
+		/* Copy the full percentages/durations to the SLA ones */
+		repinfo->reportavailability = repinfo->fullavailability;
+		for (i=0; (i<COL_COUNT); i++) {
+			repinfo->reportduration[i] = repinfo->fullduration[i];
+			repinfo->reportpct[i] = repinfo->fullpct[i];
+		}
 	}
 
 	if (fileerrors) repinfo->fstate = "NOTOK";
