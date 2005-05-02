@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.24 2005-05-02 07:09:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.25 2005-05-02 20:03:44 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -497,14 +497,33 @@ int main(int argc, char *argv[])
 
 		{
 			char zoomjsfn[PATH_MAX];
-			FILE *fd;
-			char buf[8192];
-			int n;
+			struct stat st;
 
 			sprintf(zoomjsfn, "%s/web/zoom.js", xgetenv("BBHOME"));
-			fd = fopen(zoomjsfn, "r");
-			while (fd && (n = fread(buf, 1, sizeof(buf), fd))) fwrite(buf, 1, n, stdout);
-			if (fd) fclose(fd);
+			if (stat(zoomjsfn, &st) == 0) {
+				FILE *fd;
+				char *buf;
+				int n;
+				char *zoomrightoffsetmarker = "var cZoomBoxRightOffset = -";
+				char *zoomrightoffsetp;
+
+				fd = fopen(zoomjsfn, "r");
+				if (fd) {
+					buf = (char *)malloc(st.st_size+1);
+					n = fread(buf, 1, st.st_size, fd);
+					fclose(fd);
+
+#ifdef RRDTOOL12
+					zoomrightoffsetp = strstr(buf, zoomrightoffsetmarker);
+					if (zoomrightoffsetp) {
+						zoomrightoffsetp += strlen(zoomrightoffsetmarker);
+						memcpy(zoomrightoffsetp, "30", 2);
+					}
+#endif
+
+					fwrite(buf, 1, n, stdout);
+				}
+			}
 		}
 
 
@@ -741,7 +760,11 @@ int main(int argc, char *argv[])
 		}
 	}
 
+#ifdef RRDTOOL12
+	strftime(timestamp, sizeof(timestamp), "COMMENT:Updated\\: %d-%b-%Y %H\\:%M\\:%S", localtime(&now));
+#else
 	strftime(timestamp, sizeof(timestamp), "COMMENT:Updated: %d-%b-%Y %H:%M:%S", localtime(&now));
+#endif
 	rrdargs[argi++] = strdup(timestamp);
 
 
