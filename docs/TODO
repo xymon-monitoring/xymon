@@ -77,6 +77,3 @@ Various ideas that have appeared on the BB mailing list
   And since I am throwing things out, how about embedding a 13 week rolling
   availability into the status/history page?
   Scott Walters, "Reporting based on history", Sep 9 2004
-* Comma-separated output from the report generator, to allow importing
-  into a spreadsheet or similar. Suggested by Asif Iqbal.
-
