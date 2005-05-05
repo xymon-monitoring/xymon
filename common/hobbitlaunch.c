@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.25 2005-04-01 09:47:51 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.26 2005-05-05 20:21:00 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -492,7 +492,7 @@ int main(int argc, char *argv[])
 			for (twalk = taskhead; (twalk); twalk = twalk->next) {
 				if (twalk->heartbeat && twalk->pid && ((*(twalk->heartbeat) + HEARTBEAT_TIMEOUT) < now)) {
 					errprintf("Heartbeat lost for task %s, %s it\n", 
-						  twalk->key, (twalk->beingkilled ? "bouncing" : "killing"));
+						  twalk->key, (twalk->beingkilled ? "killing" : "bouncing"));
 					kill(twalk->pid, (twalk->beingkilled ? SIGKILL : SIGTERM));
 					twalk->beingkilled = 1;
 				}
@@ -567,6 +567,11 @@ int main(int argc, char *argv[])
 				}
 
 				dprintf("About to start task %s\n", twalk->key);
+
+				if (twalk->heartbeat) {
+					/* When we start the heartbeat-checked task, dont kill it off right away */
+					nexthbcheck = now + 60;
+				}
 
 				twalk->laststart = now;
 				twalk->pid = fork();
