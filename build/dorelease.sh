@@ -63,6 +63,7 @@ do
 done
 cp -p Changes configure COPYING CREDITS README $RELDIR/
 find $RELDIR -type d|xargs chmod 755
+cd $RELDIR && make -f ~/hobbit/Makefile.osiris distclean
 cd $RELDIR/../ && tar zcf hobbit-$REL.tar.gz `basename $RELDIR`
 
 exit 0
