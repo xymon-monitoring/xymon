@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.63 2005-04-30 06:56:35 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.64 2005-05-05 06:01:49 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -895,39 +895,45 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	 */
 
 	time_t duration;
-	int result;
+	int result, cfid = 0;
 	char *pgname = alert->location->name;
+	char *cfline = NULL;
 
 	/* The top-level page needs a name - cannot match against an empty string */
 	if (strlen(pgname) == 0) pgname = "/";
 
+	if (crit) { cfid = crit->cfid; cfline = crit->cfline; }
+	if (!cfid && rulecrit) cfid = rulecrit->cfid;
+	if (!cfline && rulecrit) cfline = rulecrit->cfline;
+	if (!cfline) cfline = "<undefined>";
+
 	traceprintf("Matching host:service:page '%s:%s:%s' against rule line %d\n",
-			alert->hostname->name, alert->testname->name, alert->location->name, (crit ? crit->cfid : -1));
+			alert->hostname->name, alert->testname->name, alert->location->name, cfid);
 
 	if (crit && crit->pagespec && !namematch(pgname, crit->pagespec, crit->pagespecre)) { 
-		traceprintf("Failed (pagename not in include list)\n");
+		traceprintf("Failed '%s' (pagename not in include list)\n", cfline);
 		return 0; 
 	}
 	if (crit && crit->expagespec && namematch(pgname, crit->expagespec, crit->expagespecre)) { 
-		traceprintf("Failed (pagename excluded)\n");
+		traceprintf("Failed '%s' (pagename excluded)\n", cfline);
 		return 0; 
 	}
 
 	if (crit && crit->hostspec && !namematch(alert->hostname->name, crit->hostspec, crit->hostspecre)) { 
-		traceprintf("Failed (hostname not in include list)\n");
+		traceprintf("Failed '%s' (hostname not in include list)\n", cfline);
 		return 0; 
 	}
 	if (crit && crit->exhostspec && namematch(alert->hostname->name, crit->exhostspec, crit->exhostspecre)) { 
-		traceprintf("Failed (hostname excluded)\n");
+		traceprintf("Failed '%s' (hostname excluded)\n", cfline);
 		return 0; 
 	}
 
 	if (crit && crit->svcspec && !namematch(alert->testname->name, crit->svcspec, crit->svcspecre))  { 
-		traceprintf("Failed (service not in include list)\n");
+		traceprintf("Failed '%s' (service not in include list)\n", cfline);
 		return 0; 
 	}
 	if (crit && crit->exsvcspec && namematch(alert->testname->name, crit->exsvcspec, crit->exsvcspecre))  { 
-		traceprintf("Failed (service excluded)\n");
+		traceprintf("Failed '%s' (service excluded)\n", cfline);
 		return 0; 
 	}
 
@@ -949,23 +955,23 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 			result = 1;
 		}
 
-		if (!result) traceprintf("Failed (notice not wanted)\n");
+		if (!result) traceprintf("Failed '%s' (notice not wanted)\n", cfline);
 		return result;
 	}
 
 	duration = (time(NULL) - alert->eventstart);
 	if (crit && crit->minduration && (duration < crit->minduration)) { 
-		traceprintf("Failed (min. duration %d<%d)\n", duration, crit->minduration);
+		traceprintf("Failed '%s' (min. duration %d<%d)\n", cfline, duration, crit->minduration);
 		if (!printmode) return 0; 
 	}
 
 	if (crit && crit->maxduration && (duration > crit->maxduration)) { 
-		traceprintf("Failed (max. duration %d>%d)\n", duration, crit->maxduration);
+		traceprintf("Failed '%s' (max. duration %d>%d)\n", cfline, duration, crit->maxduration);
 		if (!printmode) return 0; 
 	}
 
 	if (crit && crit->timespec && !timematch(crit->timespec)) { 
-		traceprintf("Failed (time criteria)\n");
+		traceprintf("Failed '%s' (time criteria)\n", cfline);
 		if (!printmode) return 0; 
 	}
 
@@ -979,7 +985,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 		if (printmode) return 1;
 	}
 	if (!result) {
-		traceprintf("Failed (color)\n");
+		traceprintf("Failed '%s' (color)\n", cfline);
 		return result;
 	}
 
@@ -1005,7 +1011,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	}
 
 	if (result) {
-		traceprintf("*** Match with '%s' ***\n", (crit ? crit->cfline : "<rule line>"));
+		traceprintf("*** Match with '%s' ***\n", cfline);
 	}
 
 	return result;
