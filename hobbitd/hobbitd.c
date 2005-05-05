@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.142 2005-04-25 12:39:51 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.143 2005-05-05 17:06:52 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -2296,6 +2296,7 @@ void load_checkpoint(char *fn)
 				  case 5: nldecode(item); newtask->command = strdup(item); break;
 				  default: break;
 				}
+				item = gettok(NULL, "|\n"); i++;
 			}
 
 			if (newtask->id && (newtask->executiontime > time(NULL)) && newtask->sender && newtask->command) {
