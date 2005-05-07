@@ -17,6 +17,14 @@
 		then
 			LDAPLIB=$DIR/lib
 		fi
+		if test -f $DIR/lib64/libldap.so
+		then
+			LDAPLIB=$DIR/lib64
+		fi
+		if test -f $DIR/lib64/libldap.a
+		then
+			LDAPLIB=$DIR/lib64
+		fi
 	done
 
 	if test "$USERLDAPINC" != ""; then

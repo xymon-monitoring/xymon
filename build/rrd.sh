@@ -20,6 +20,14 @@
 		then
 			RRDLIB=$DIR/lib
 		fi
+		if test -f $DIR/lib64/librrd.so
+		then
+			RRDLIB=$DIR/lib64
+		fi
+		if test -f $DIR/lib64/librrd.a
+		then
+			RRDLIB=$DIR/lib64
+		fi
 
 		if test -f $DIR/lib/libpng.so
 		then
@@ -29,6 +37,14 @@
 		then
 			PNGLIB="-L$DIR/lib -lpng"
 		fi
+		if test -f $DIR/lib64/libpng.so
+		then
+			PNGLIB="-L$DIR/lib64 -lpng"
+		fi
+		if test -f $DIR/lib64/libpng.a
+		then
+			PNGLIB="-L$DIR/lib64 -lpng"
+		fi
 
 		if test -f $DIR/lib/libz.so
 		then
@@ -37,6 +53,14 @@
 		if test -f $DIR/lib/libz.a
 		then
 			ZLIB="-L$DIR/lib -lz"
+		fi
+		if test -f $DIR/lib64/libz.so
+		then
+			ZLIB="-L$DIR/lib64 -lz"
+		fi
+		if test -f $DIR/lib64/libz.a
+		then
+			ZLIB="-L$DIR/lib64 -lz"
 		fi
 	done
 

@@ -21,6 +21,14 @@
 		then
 			PCRELIB=$DIR/lib
 		fi
+		if test -f $DIR/lib64/libpcre.so
+		then
+			PCRELIB=$DIR/lib64
+		fi
+		if test -f $DIR/lib64/libpcre.a
+		then
+			PCRELIB=$DIR/lib64
+		fi
 	done
 
 	if test "$USERPCREINC" != ""; then

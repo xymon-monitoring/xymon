@@ -17,6 +17,15 @@
 		then
 			OSSLLIB=$DIR/lib
 		fi
+
+		if test -f $DIR/lib64/libcrypto.so
+		then
+			OSSLLIB=$DIR/lib64
+		fi
+		if test -f $DIR/lib64/libcrypto.a
+		then
+			OSSLLIB=$DIR/lib64
+		fi
 	done
 
 	if test "$USEROSSLINC" != ""; then
