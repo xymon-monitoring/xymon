@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-enadis.c,v 1.11 2005-05-07 15:32:07 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-enadis.c,v 1.12 2005-05-07 15:48:00 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -173,7 +173,7 @@ void parse_cgi(void)
 	schedtime = mktime(&schedtm);
 }
 
-void do_one_host(char *hostname, char *fullmsg)
+void do_one_host(char *hostname, char *fullmsg, char *username)
 {
 	char hobbitcmd[4096];
 	int i, result;
@@ -181,8 +181,15 @@ void do_one_host(char *hostname, char *fullmsg)
 	switch (action) {
 	  case ACT_ENABLE:
 		for (i=0; (i < enablecount); i++) {
-			sprintf(hobbitcmd, "enable %s.%s", commafy(hostname), enabletest[i]);
-			result = (preview ? 0 : sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT));
+			if (preview) result = 0;
+			else {
+				sprintf(hobbitcmd, "enable %s.%s", commafy(hostname), enabletest[i]);
+				result = sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+				sprintf(hobbitcmd, "notify %s.%s\nMonitoring of %s:%s has been ENABLED by %s\n", 
+					commafy(hostname), enabletest[i], 
+					hostname, enabletest[i], username);
+				sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+			}
 			printf("<tr><td>Enabling host <b>%s</b> test <b>%s</b> : %s</td></tr>\n", 
 				hostname, enabletest[i], ((result == BB_OK) ? "OK" : "Failed"));
 		}
@@ -190,9 +197,16 @@ void do_one_host(char *hostname, char *fullmsg)
 
 	  case ACT_DISABLE:
 		for (i=0; (i < disablecount); i++) {
-			sprintf(hobbitcmd, "disable %s.%s %d %s", 
-				commafy(hostname), disabletest[i], duration*scale, fullmsg);
-			result = (preview ? 0 : sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT));
+			if (preview) result = 0;
+			else {
+				sprintf(hobbitcmd, "disable %s.%s %d %s", 
+					commafy(hostname), disabletest[i], duration*scale, fullmsg);
+				result = sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+				sprintf(hobbitcmd, "notify %s.%s\nMonitoring of %s:%s has been DISABLED by %s for %d minutes\n%s", 
+					commafy(hostname), enabletest[i], 
+					hostname, enabletest[i], username, duration*scale, fullmsg);
+				result = sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+			}
 			printf("<tr><td>Disabling host <b>%s</b> test <b>%s</b>: %s</td></tr>\n", 
 				hostname, disabletest[i], ((result == BB_OK) ? "OK" : "Failed"));
 		}
@@ -360,10 +374,10 @@ int main(int argc, char *argv[])
 
 	printf("<table align=\"center\" summary=\"Actions performed\" width=\"60%%\">\n");
 	if (action == ACT_SCHED_CANCEL) {
-		do_one_host(NULL, NULL);
+		do_one_host(NULL, NULL, username);
 	}
 	else {
-		for (i = 0; (i < hostcount); i++) do_one_host(hostnames[i], fullmsg);
+		for (i = 0; (i < hostcount); i++) do_one_host(hostnames[i], fullmsg, username);
 	}
 	if (!preview) {
 		printf("<tr><td><br>Please wait while refreshing status list ...</td></tr>\n");
