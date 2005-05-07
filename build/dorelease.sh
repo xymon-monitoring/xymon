@@ -1,5 +1,7 @@
 #!/bin/sh
 
+SRCDIRS="bbdisplay bbnet bbproxy build common contrib docs hobbitd include lib scripts"
+
 case "$1" in
 	"tag"|"untag"|"release")
 		CMD="$1"
@@ -23,7 +25,10 @@ esac
 
 cd ~/hobbit
 RCSTAG=`echo $REL | sed 's/\./_/g'`
-DIRLIST=`find . -name RCS | sed -e 's/\/RCS//'|grep -v private|xargs echo`
+DIRLIST=""
+for D in $SRCDIRS; do
+    DIRLIST="$DIRLIST `find $D -name RCS | sed -e 's/\/RCS//'|grep -v private|xargs echo`"
+done
 
 case "$CMD" in
 	"release")
@@ -57,7 +62,7 @@ esac
 # It's a release - copy the files
 cd ~/hobbit
 mkdir $RELDIR
-for f in bbdisplay bbnet bbpatches bbproxy build common docs hobbitd include lib scripts
+for f in $SRCDIRS
 do
 	find $f/ | grep -v RCS | cpio -pdvmu $RELDIR/
 done
