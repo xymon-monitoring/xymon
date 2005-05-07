@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char apache_rcsid[] = "$Id: do_apache.c,v 1.5 2005-03-25 21:15:26 henrik Exp $";
+static char apache_rcsid[] = "$Id: do_apache.c,v 1.6 2005-05-07 21:31:37 henrik Exp $";
 
 static char *apache_params[] = { "rrdcreate", rrdfn, 
 				 "DS:TA:DERIVE:600:0:U",
@@ -25,6 +25,10 @@ int do_apache_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			    "BusyWorkers:", "IdleWorkers:", "CPULoad:", "ReqPerSec:", NULL };
 	int i;
 	char *p, *eoln;
+
+	/* Apache 1.x uses BusyServers/IdleServers. Convert the status to Apache 2.0 format */
+	if ((p = strstr(msg, "BusyServers:")) != NULL) memcpy(p, "BusyWorkers:", strlen("BusyWorkers:"));
+	if ((p = strstr(msg, "IdleServers:")) != NULL) memcpy(p, "IdleWorkers:", strlen("IdleWorkers:"));
 
 	strcpy(rrdfn, "apache.rrd");
 	sprintf(rrdvalues, "%d", (int)tstamp);
