@@ -5,7 +5,7 @@ PROGRAMS = bbgen bb-rep.cgi bb-replog.cgi bb-hist.cgi bb-snapshot.cgi bb-eventlo
 
 EXTENSIONS = bbcombotest
 
-CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh bb-findhost.sh bb-csvinfo.sh bbmessage.cgi hobbitcolumn.sh bb-datepage.sh
+CGISCRIPTS = bb-rep.sh bb-replog.sh bb-hist.sh bb-snapshot.sh bb-eventlog.sh bb-findhost.sh bb-csvinfo.sh hobbitcolumn.sh bb-datepage.sh
 
 GENOBJS = bbgen.o loadbbhosts.o loaddata.o reportdata.o bbconvert.o pagegen.o eventlog.o acklog.o process.o wmlgen.o rssgen.o bb-replog.o util.o debug.o csvreport.o
 COMBOTESTOBJS = bbcombotest.o
@@ -16,7 +16,6 @@ SNAPOBJS = bb-snapshot.o
 EVENTLOGOBJS = bb-eventlog.o util.o loadbbhosts.o		# util.o for histlogurl, find_or_create_column
 FINDHOSTOBJS = bb-findhost.o
 CSVINFOOBJS = bb-csvinfo.o
-MESSAGECGIOBJS = sendmsg-cgi.o
 ACKCGIOBJS = bb-ack.o
 WEBPAGEOBJS = bb-webpage.o
 DATEPAGEOBJS = bb-datepage.o
@@ -52,9 +51,6 @@ bb-findhost.cgi: $(FINDHOSTOBJS) ../lib/libbbgen.a
 bb-csvinfo.cgi: $(CSVINFOOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(CSVINFOOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 
-bbmessage.cgi: $(MESSAGECGIOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(MESSAGECGIOBJS) ../lib/libbbgen.a $(NETLIBS)
-
 bb-ack.cgi: $(ACKCGIOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(ACKCGIOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 
@@ -84,9 +80,6 @@ bb-eventlog.o: eventlog.o
 
 bb-replog-cgi.o: bb-replog.c
 	$(CC) $(CFLAGS) -DCGI -c -o $@ bb-replog.c
-
-sendmsg-cgi.o: ../lib/sendmsg.c
-	$(CC) $(CFLAGS) -DCGI -c -o $@ ../lib/sendmsg.c
 
 ################################################
 # Default compilation rules

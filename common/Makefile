@@ -1,12 +1,13 @@
 # bbgen - common tools
 #
 
-PROGRAMS = bbhostgrep bbhostshow bbdigest bb hobbitlaunch bbcmd
+PROGRAMS = bbhostgrep bbhostshow bbdigest bb hobbitlaunch bbcmd bbmessage.cgi
 
 HOSTGREPOBJS = bbhostgrep.o
 HOSTSHOWOBJS = bbhostshow.o
 DIGESTOBJS = bbdigest.o
 MSGOBJS = sendmsg-std.o
+MSGCGIOBJS = sendmsg-cgi.o
 LAUNCHOBJS = hobbitlaunch.o
 CMDOBJS = bbcmd.o
 
@@ -31,9 +32,14 @@ hobbitlaunch: $(LAUNCHOBJS) ../lib/libbbgen.a
 bbcmd: $(CMDOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/libbbgen.a
 
+bbmessage.cgi: $(MSGCGIOBJS) ../lib/libbbgen.a
+	$(CC) $(CFLAGS) -o $@ $(MSGCGIOBJS) ../lib/libbbgen.a $(NETLIBS)
+
 sendmsg-std.o: ../lib/sendmsg.c
 	$(CC) $(CFLAGS) -DSTANDALONE -c -o $@ ../lib/sendmsg.c
 
+sendmsg-cgi.o: ../lib/sendmsg.c
+	$(CC) $(CFLAGS) -DCGI -c -o $@ ../lib/sendmsg.c
 
 ################################################
 # Default compilation rules
