@@ -115,7 +115,7 @@
 	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	NEEDS hobbitd
 	GROUP generators
-	CMD bbgen --recentgifs --subpagecolumns=2 --report
+	CMD bbgen $BBGENOPTS --report
 	LOGFILE $BBSERVERLOGS/bb-display.log
 	INTERVAL 1m
 
