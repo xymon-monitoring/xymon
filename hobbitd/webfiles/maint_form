@@ -25,7 +25,7 @@
 <TD WIDTH="40%" VALIGN=TOP>
   <FORM METHOD="POST" NAME=selectionform ACTION="&REQUEST_URI">
     <TABLE SUMMARY="Selection table" BORDER=0 WIDTH="100%">
-        <TR><TD WIDTH="100%">
+        <TR><TD WIDTH="100%" VALIGN=TOP>
             <TABLE SUMMARY="Maintenance input" BORDER=0>
               <TR><TH ALIGN=LEFT>Hosts</TH><TH ALIGN=LEFT>Tests</TH><TH>&nbsp;<TH></TR>
               <TR>
