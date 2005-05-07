@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-enadis.c,v 1.10 2005-05-07 09:24:20 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-enadis.c,v 1.11 2005-05-07 15:32:07 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -223,7 +223,6 @@ void do_one_host(char *hostname, char *fullmsg)
 int main(int argc, char *argv[])
 {
 	int argi, i;
-	int waittime = 3;
 	char *username = getenv("REMOTE_USER");
 	char *userhost = getenv("REMOTE_HOST");
 	char *userip   = getenv("REMOTE_ADDR");
@@ -244,11 +243,12 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
-			waittime = 15;
 		}
 	}
 
 	parse_cgi();
+	if (debug) preview = 1;
+
 	if (cgi_method == CGI_GET) {
 		/*
 		 * It's a GET , so the initial request.
@@ -306,15 +306,14 @@ int main(int argc, char *argv[])
 	fullmsg = (char *)malloc(strlen(username) + strlen(userhost) + strlen(disablemsg) + 1024);
 	sprintf(fullmsg, "\nDisabled by: %s @ %s\nReason: %s\n", username, userhost, disablemsg);
 
-	if (preview) waittime = 60;
-
 	/*
 	 * Ready ... go build the webpage.
 	 */
 	printf("Content-Type: text/html\n\n");
 	printf("<html>\n");
-	printf("<head>\n<meta http-equiv=\"refresh\" content=\"%d; URL=%s\"></head>\n", 
-		waittime, xgetenv("HTTP_REFERER"));
+	if (!preview) {
+		printf("<head>\n<meta http-equiv=\"refresh\" content=\"3; URL=%s\"></head>\n", xgetenv("HTTP_REFERER"));
+	}
 
         /* It's ok with these hardcoded values, as they are not used for this page */
 	sethostenv("", "", "", colorname(COL_BLUE));
@@ -366,7 +365,12 @@ int main(int argc, char *argv[])
 	else {
 		for (i = 0; (i < hostcount); i++) do_one_host(hostnames[i], fullmsg);
 	}
-	printf("<tr><td><br>Please wait while refreshing status list ...</td></tr>\n");
+	if (!preview) {
+		printf("<tr><td><br>Please wait while refreshing status list ...</td></tr>\n");
+	}
+	else {
+		printf("<tr><td align=center><br><br><form method=\"GET\" ACTION=\"%s\"><input type=submit value=\"Continue\"></form></td></tr>\n", xgetenv("HTTP_REFERER"));
+	}
 	printf("</table>\n");
 
 	headfoot(stdout, "maint", "", "footer", COL_BLUE);
