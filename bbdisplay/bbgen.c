@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.208 2005-05-07 07:00:56 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.209 2005-05-07 09:24:20 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -100,6 +100,7 @@ int main(int argc, char *argv[])
 	char		csvdelim = ',';
 	int		embedded = 0;
 	int		hobbitddump = 0;
+	char		*envarea = NULL;
 
 	/* Setup standard header+footer (might be modified by option pageset) */
 	select_headers_and_footers("bb");
@@ -124,7 +125,11 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[i], "--env=")) {
 			char *lp = strchr(argv[i], '=');
-			loadenv(lp+1, NULL);
+			loadenv(lp+1, envarea);
+		}
+		else if (argnmatch(argv[i], "--area=")) {
+			char *lp = strchr(argv[i], '=');
+			envarea = strdup(lp+1);
 		}
 		else if (argnmatch(argv[i], "--hobbitddump")) {
 			hobbitddump = 1;

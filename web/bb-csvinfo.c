@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-csvinfo.c,v 1.13 2005-05-07 07:00:56 henrik Exp $";
+static char rcsid[] = "$Id: bb-csvinfo.c,v 1.14 2005-05-07 09:24:20 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -91,6 +91,7 @@ int main(int argc, char *argv[])
 	char buf[MAX_LINE_LEN];
 	char *hffile = "info";
 	int bgcolor = COL_BLUE;
+	char *envarea = NULL;
 
 	char *headers[MAXCOLUMNS];
 	char *items[MAXCOLUMNS];
@@ -101,7 +102,11 @@ int main(int argc, char *argv[])
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, NULL);
+			loadenv(p+1, envarea);
+		}
+		else if (argnmatch(argv[argi], "--area=")) {
+			char *p = strchr(argv[argi], '=');
+			envarea = strdup(p+1);
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;

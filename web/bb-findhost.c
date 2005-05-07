@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.22 2005-05-07 07:00:56 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.23 2005-05-07 09:24:20 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -129,6 +129,7 @@ int main(int argc, char *argv[])
 {
 	namelist_t *hosthead, *hostwalk, *clonewalk;
 	int argi;
+	char *envarea = NULL;
 
 	int gotany = 0;
 
@@ -142,7 +143,11 @@ int main(int argc, char *argv[])
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, NULL);
+			loadenv(p+1, envarea);
+		}
+		else if (argnmatch(argv[argi], "--area=")) {
+			char *p = strchr(argv[argi], '=');
+			envarea = strdup(p+1);
 		}
 	}
 

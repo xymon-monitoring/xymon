@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.40 2005-05-07 07:00:56 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.41 2005-05-07 09:24:20 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -83,6 +83,7 @@ int main(int argc, char *argv[])
 	int daemonize = 0;
 	char *logfn = NULL;
 	char *pidfile = NULL;
+	char *envarea = NULL;
 
 	int cnid = -1;
 	int pfd[2];
@@ -129,7 +130,11 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, NULL);
+			loadenv(p+1, envarea);
+		}
+		else if (argnmatch(argv[argi], "--area=")) {
+			char *p = strchr(argv[argi], '=');
+			envarea = strdup(p+1);
 		}
 		else {
 			int i = 0;

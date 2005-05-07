@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-enadis.c,v 1.9 2005-05-07 07:00:56 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-enadis.c,v 1.10 2005-05-07 09:24:20 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -228,6 +228,7 @@ int main(int argc, char *argv[])
 	char *userhost = getenv("REMOTE_HOST");
 	char *userip   = getenv("REMOTE_ADDR");
 	char *fullmsg = "No cause specified";
+	char *envarea = NULL;
 
 	if ((username == NULL) || (strlen(username) == 0)) username = "unknown";
 	if ((userhost == NULL) || (strlen(userhost) == 0)) userhost = userip;
@@ -235,7 +236,11 @@ int main(int argc, char *argv[])
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, NULL);
+			loadenv(p+1, envarea);
+		}
+		else if (argnmatch(argv[argi], "--area=")) {
+			char *p = strchr(argv[argi], '=');
+			envarea = strdup(p+1);
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;

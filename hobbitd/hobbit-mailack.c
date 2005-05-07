@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-mailack.c,v 1.7 2005-05-07 07:00:56 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-mailack.c,v 1.8 2005-05-07 09:24:20 henrik Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -37,6 +37,7 @@ int main(int argc, char *argv[])
 	char cookie[10];
 	int duration = 0;
 	int argi;
+	char *envarea = NULL;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
@@ -44,7 +45,11 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, NULL);
+			loadenv(p+1, envarea);
+		}
+		else if (argnmatch(argv[argi], "--area=")) {
+			char *p = strchr(argv[argi], '=');
+			envarea = strdup(p+1);
 		}
 	}
 

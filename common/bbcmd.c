@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcmd.c,v 1.9 2005-05-07 07:00:56 henrik Exp $";
+static char rcsid[] = "$Id: bbcmd.c,v 1.10 2005-05-07 09:24:20 henrik Exp $";
 
 #include <sys/types.h>
 #include <string.h>
@@ -28,7 +28,9 @@ int main(int argc, char *argv[])
 	char *cmd = NULL;
 	char **cmdargs = NULL;
 	int argcount = 0;
-	int haveenv = 0;
+	char *envfile = NULL;
+	char *envarea = NULL;
+	char envfn[PATH_MAX];
 
 	cmdargs = (char **) calloc(argc+2, sizeof(char *));
 	for (argi=1; (argi < argc); argi++) {
@@ -37,8 +39,11 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, NULL);
-			haveenv=1;
+			envfile = strdup(p+1);
+		}
+		else if (argnmatch(argv[argi], "--area=")) {
+			char *p = strchr(argv[argi], '=');
+			envarea = strdup(p+1);
 		}
 		else {
 			if (argcount == 0) {
@@ -49,12 +54,13 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (!haveenv) {
-		char defenvfn[PATH_MAX];
-
-		sprintf(defenvfn, "%s/etc/hobbitserver.cfg", xgetenv("BBHOME"));
-		errprintf("Using default environment file %s\n", defenvfn);
-		loadenv(defenvfn);
+	if (!envfile) {
+		sprintf(envfn, "%s/etc/hobbitserver.cfg", xgetenv("BBHOME"));
+		errprintf("Using default environment file %s\n", envfn);
+		loadenv(envfn, envarea);
+	}
+	else {
+		loadenv(envfile, envarea);
 	}
 
 	/* Go! */

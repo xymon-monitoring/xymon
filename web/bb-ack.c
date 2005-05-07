@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.16 2005-05-07 07:00:56 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.17 2005-05-07 09:24:20 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -90,11 +90,16 @@ int main(int argc, char *argv[])
 	int argi, bbresult;
 	char bbmsg[MAXMSG];
 	char *respmsgfmt = "";
+	char *envarea = NULL;
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, NULL);
+			loadenv(p+1, envarea);
+		}
+		else if (argnmatch(argv[argi], "--area=")) {
+			char *p = strchr(argv[argi], '=');
+			envarea = strdup(p+1);
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;

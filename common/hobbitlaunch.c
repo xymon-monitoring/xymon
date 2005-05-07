@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.27 2005-05-07 07:00:56 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.28 2005-05-07 09:24:20 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -58,7 +58,7 @@ typedef struct tasklist_t {
 	char *cmd;
 	int interval;
 	char *logfile;
-	char *envfile;
+	char *envfile, *envarea;
 	pid_t pid;
 	time_t laststart;
 	int exitcode;
@@ -108,6 +108,16 @@ void update_task(tasklist_t *newtask)
 		else {
 			envfilechanged = 0;
 		}
+
+		if (twalk->envarea && newtask->envarea) {
+			envfilechanged = strcmp(twalk->envarea, newtask->envarea);
+		}
+		else if (twalk->envarea || newtask->envarea) {
+			envfilechanged = 1;
+		}
+		else {
+			envfilechanged = 0;
+		}
 	}
 
 	if (newtask->cmd == NULL) {
@@ -128,9 +138,11 @@ void update_task(tasklist_t *newtask)
 		xfree(twalk->cmd); 
 		if (twalk->logfile) xfree(twalk->logfile);
 		if (twalk->envfile) xfree(twalk->envfile);
+		if (twalk->envarea) xfree(twalk->envarea);
 		twalk->cmd = strdup(newtask->cmd);
 		if (newtask->logfile) twalk->logfile = strdup(newtask->logfile); else twalk->logfile = NULL;
 		if (newtask->envfile) twalk->envfile = strdup(newtask->envfile); else twalk->envfile = NULL;
+		if (newtask->envarea) twalk->envarea = strdup(newtask->envarea); else twalk->envarea = NULL;
 
 		/* Must bounce the task */
 		twalk->cfload = 1;
@@ -153,6 +165,7 @@ void update_task(tasklist_t *newtask)
 		if (newtask->cmd) xfree(newtask->cmd);
 		if (newtask->logfile) xfree(newtask->logfile);
 		if (newtask->envfile) xfree(newtask->envfile);
+		if (newtask->envarea) xfree(newtask->envarea);
 		xfree(newtask);
 	}
 }
@@ -268,6 +281,11 @@ void load_config(char *conffn)
 			p += strspn(p, " \t");
 			curtask->envfile = strdup(p);
 		}
+		else if (curtask && (strncasecmp(p, "ENVAREA ", 8) == 0)) {
+			p += 7;
+			p += strspn(p, " \t");
+			curtask->envarea = strdup(p);
+		}
 		else if (curtask && (strcasecmp(p, "HEARTBEAT") == 0)) {
 			curtask->heartbeat = &heartbeat;
 		}
@@ -292,6 +310,7 @@ void load_config(char *conffn)
 			xfree(twalk->cmd); 
 			if (twalk->logfile) xfree(twalk->logfile);
 			if (twalk->envfile) xfree(twalk->envfile);
+			if (twalk->envarea) xfree(twalk->envarea);
 			break;
 
 		  case 0:
@@ -379,6 +398,7 @@ int main(int argc, char *argv[])
 	pid_t cpid;
 	int status;
 	struct sigaction sa;
+	char *envarea = NULL;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
@@ -395,9 +415,13 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			logfn = strdup(expand_env(p+1));
 		}
+		else if (argnmatch(argv[argi], "--area=")) {
+			char *p = strchr(argv[argi], '=');
+			envarea = strdup(p+1);
+		}
 		else if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, NULL);
+			loadenv(p+1, envarea);
 		}
 		else if (argnmatch(argv[argi], "--pidfile=")) {
 			char *p = strchr(argv[argi], '=');
@@ -419,6 +443,7 @@ int main(int argc, char *argv[])
 				if (twalk->interval) printf("\tINTERVAL %d\n", twalk->interval);
 				if (twalk->logfile)  printf("\tLOGFILE %s\n", twalk->logfile);
 				if (twalk->envfile)  printf("\tENVFILE %s\n", twalk->envfile);
+				if (twalk->envarea)  printf("\tENVAREA %s\n", twalk->envarea);
 				printf("\n");
 			}
 			return 0;
@@ -583,8 +608,10 @@ int main(int argc, char *argv[])
 
 					/* Setup environment */
 					if (twalk->envfile) {
-						dprintf("%s -> Loading environment from %s\n", twalk->key, expand_env(twalk->envfile));
-						loadenv(expand_env(twalk->envfile));
+						dprintf("%s -> Loading environment from %s area %s\n", 
+							twalk->key, expand_env(twalk->envfile), 
+							(twalk->envarea ? twalk->envarea : ""));
+						loadenv(expand_env(twalk->envfile), twalk->envarea);
 					}
 
 					/* Setup BBSLEEP to match the interval */
