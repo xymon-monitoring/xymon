@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: cgi.c,v 1.1 2005-04-24 20:53:49 henrik Exp $";
+static char rcsid[] = "$Id: cgi.c,v 1.2 2005-05-07 06:21:57 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -45,6 +45,7 @@ cgidata_t *cgi_request(void)
 {
 	char *method = NULL;
 	char *reqdata = NULL;
+	char *conttype = NULL;
         char *token;
 	cgidata_t *head = NULL, *tail = NULL;
 
@@ -56,6 +57,8 @@ cgidata_t *cgi_request(void)
 		lcgi_error("CGI violation - no REQUEST_METHOD\n");
 		return NULL;
 	}
+
+	conttype = getenv("CONTENT_TYPE");
 
 	if (strcasecmp(method, "POST") == 0) {
 		char *contlen = getenv("CONTENT_LENGTH");
@@ -109,28 +112,37 @@ cgidata_t *cgi_request(void)
 
 	dprintf("CGI: Request method='%s', data='%s'\n", method, reqdata);
 
-	token = strtok(reqdata, "&");
+	if (conttype && (strcasecmp(conttype, "application/x-www-form-urlencoded") == 0)) {
+		token = strtok(reqdata, "&");
 
-	while (token) {
-		cgidata_t *newitem = (cgidata_t *)malloc(sizeof(cgidata_t));
-		char *val;
+		while (token) {
+			cgidata_t *newitem = (cgidata_t *)malloc(sizeof(cgidata_t));
+			char *val;
 
-		val = strchr(token, '='); if (val) { *val = '\0'; val++; }
-		if (val) val = urlunescape(val);
+			val = strchr(token, '='); if (val) { *val = '\0'; val++; }
+			if (val) val = urlunescape(val);
 
-		newitem->name = strdup(token);
-		newitem->value = strdup(val);
-		newitem->next = NULL;
+			newitem->name = strdup(token);
+			newitem->value = strdup(val);
+			newitem->next = NULL;
 
-		if (!tail) {
-			head = newitem;
+			if (!tail) {
+				head = newitem;
+			}
+			else {
+				tail->next = newitem;
+			}
+			tail = newitem;
+
+			token = strtok(NULL, "&");
 		}
-		else {
-			tail->next = newitem;
-		}
-		tail = newitem;
-
-		token = strtok(NULL, "&");
+	}
+	else {
+		/* Raw data - return a single record to caller */
+		head = (cgidata_t *)malloc(sizeof(cgidata_t));
+		head->name = strdup("");
+		head->value = strdup(reqdata);
+		head->next = NULL;
 	}
 
 	return head;
