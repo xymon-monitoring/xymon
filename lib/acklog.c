@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: acklog.c,v 1.16 2005-03-22 09:03:37 henrik Exp $";
+static char rcsid[] = "$Id: acklog.c,v 1.17 2005-05-07 15:03:32 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -47,8 +47,13 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 	cutoff = ( (maxminutes) ? (time(NULL) - maxminutes*60) : 0);
 	if ((!maxcount) || (maxcount > 100)) maxcount = 100;
 
-	sprintf(acklogfilename, "%s/acklog", xgetenv("BBACKS"));
+	sprintf(acklogfilename, "%s/acknowledge.log", xgetenv("BBSERVERLOGS"));
 	acklog = fopen(acklogfilename, "r");
+	if (!acklog) {
+		/* BB compatible naming */
+		sprintf(acklogfilename, "%s/acklog", xgetenv("BBACKS"));
+		acklog = fopen(acklogfilename, "r");
+	}
 	if (!acklog) {
 		/* If no acklog, that is OK - some people dont use acks */
 		dprintf("Cannot open acklog\n");
