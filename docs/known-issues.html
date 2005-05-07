@@ -9,6 +9,15 @@
 <p>This describes some known problems you may encounter when
 using Hobbit to monitor servers.</p>
 
+<h3>Internet Explorer complains about Javascript errors in Enable/Disable</h3>
+<p>This happens for some, but works for most people. One workaround
+is to disable the Javascript validation code in the enable/disable
+function: Edit ~hobbit/cgi-bin/hobbit-enadis.sh script and add the 
+option "--no-jsvalidation" to the hobbisvc.cgi command - this disables
+Javascript validation on the "info" page - and edit the file 
+~hobbit/server/web/maint_form so you remove the text 'onClick="validateDisable(this.form)"'
+from the input-tag near the end of that file.</p>
+
 <h3>DNS error reported for network tests</h3>
 <p>The bbtest-net network tester uses the built-in ARES library for
 DNS lookups. There have been reports that this library fails on
