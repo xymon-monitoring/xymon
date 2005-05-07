@@ -6,6 +6,27 @@ hobbitserver.cfg \- Hobbit environment variables
 Hobbit programs use multiple environment variables beside the
 normal set of variables.  The environment definitions
 are stored in the ~hobbit/server/etc/hobbitserver.cfg file. 
+Each line in this file is of the form \fBNAME=VALUE\fR and defines
+one environment variable NAME with the value VALUE.
+
+.SH ENVIRONMENT AREAS
+In some cases it may be useful to have different values for an environment
+variable, depending on where it is used. This is possible by defining
+variables with an associated "area". Such definitions have the form
+\fBAREA/NAME=VALUE\fR.
+
+E.g. to define a special setup of the BBDISPLAY variable when it is used
+by an application in the "management" area, you would do this:
+.IP
+.nf
+  BBDISP="127.0.0.1"            # Default definition
+  management/BBDISP="10.1.0.5"  # Definition in the "management" area
+.fi
+.LP
+Areas are invoked by using the "--area" option for all tools, or via the 
+ENVAREA setting in the
+.I hobbitlaunch.cfg(5)
+file.
 
 .SH GENERAL SETTINGS
 
