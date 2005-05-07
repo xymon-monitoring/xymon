@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.55 2005-04-13 11:01:17 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.56 2005-05-07 06:22:55 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -71,7 +71,7 @@ static void setup_transport(char *recipient)
 		 */
 		default_port = 80;
 
-		if (proxysetting == NULL) proxysetting = xgetenv("http_proxy");
+		if (proxysetting == NULL) proxysetting = getenv("http_proxy");
 		if (proxysetting) {
 			char *p;
 
@@ -714,22 +714,25 @@ void finish_meta(void)
 
 int main(int argc, char *argv[])
 {
+	int timeout = BBTALK_TIMEOUT;
+	int result = 1;
+
+#ifdef CGI
+	cgidata_t *cgidata = NULL;
+
+	cgidata = cgi_request();
+	if (cgidata) {
+		printf("Content-Type: application/octet-stream\n\n");
+		result = sendmessage(cgidata->value, "127.0.0.1", stdout, NULL, 1, timeout);
+	}
+#else
 	int argi;
 	int showhelp = 0;
-	int result = 1;
-	int cgimode = 0;
-	int timeout = BBTALK_TIMEOUT;
 	char *recipient = NULL;
 	char *msg = NULL;
 	FILE *respfd = stdout;
 	char *response = NULL;
 
-#ifdef CGI
-	cgimode = 1;
-	recipient = "127.0.0.1";
-	msg = "";
-#else
-	cgimode = 0;
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
@@ -783,9 +786,8 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "  DATA: Message to send, or \"-\" to read from stdin\n");
 		return 1;
 	}
-#endif
 
-	if (cgimode || (strcmp(msg, "@") == 0)) {
+	if (strcmp(msg, "@") == 0) {
 		char msg[MAXMSG];
 		char *bufp = msg;
 		int spaceleft = sizeof(msg)-1;
@@ -799,14 +801,15 @@ int main(int argc, char *argv[])
 				spaceleft = 0;
 			}
 		} while (spaceleft > 0);
+		msg[MAXMSG-1] = '\0';
 
-		if (cgimode) printf("Content-Type: application/octet-stream\n\n");
 		result = sendmessage(msg, recipient, stdout, NULL, 1, timeout);
 	}
 	else if (strcmp(msg, "-") == 0) {
 		char msg[MAXMSG];
 
 		while (fgets(msg, sizeof(msg), stdin)) {
+			msg[MAXMSG-1] = '\0';
 			result = sendmessage(msg, recipient, NULL, NULL, 0, timeout);
 		}
 	}
@@ -840,6 +843,7 @@ int main(int argc, char *argv[])
 			printf("Buffered response is '%s'\n", response);
 		}
 	}
+#endif
 
 	return result;
 }
