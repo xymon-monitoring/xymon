@@ -79,6 +79,12 @@ instance to run e.g. both the server- and client-side Hobbit
 tasks. If this option is not present, then the environment 
 defined to hobbitlaunch is used.
 
+The \fBENVAREA\fR setting modifies which environment variables
+are loaded, by picking up the ones that are defined for this
+specific "area". See 
+.I hobbitserver.cfg(5)
+for information about environment areas.
+
 The \fBLOGFILE\fR setting defines a logfile for the task.
 hobbitlaunch will start the task with stdout and stderr redirected
 to this file. If this option is not present, then the output
