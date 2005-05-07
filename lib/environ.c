@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.18 2005-04-03 15:43:16 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.19 2005-05-07 07:22:31 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -187,7 +187,7 @@ void envcheck(char *envvars[])
 	}
 }
 
-void loadenv(char *envfile)
+void loadenv(char *envfile, char *area)
 {
 	FILE *fd;
 	char l[32768];
@@ -202,15 +202,32 @@ void loadenv(char *envfile)
 			grok_input(l);
 
 			if (strlen(l) && strchr(l, '=')) {
-				oneenv = strdup(expand_env(l));
-				p = strchr(oneenv, '=');
-				if (*(p+1) == '"') {
-					/* Move string over the first '"' */
-					memmove(p+1, p+2, strlen(p+2)+1);
-					/* Kill a trailing '"' */
-					if (*(oneenv + strlen(oneenv) - 1) == '"') *(oneenv + strlen(oneenv) - 1) = '\0';
+				oneenv = NULL;
+
+				/*
+				 * Do the environment "area" stuff: If the input
+				 * is of the form AREA/NAME=VALUE, then setup the variable
+				 * only if we're called with the correct AREA setting.
+				 */
+				p = l + strcspn(l, "=/");
+				if (*p == '/') {
+					if (area) {
+						*p = '\0';
+						if (strcasecmp(l, area) == 0) oneenv = strdup(expand_env(p+1));
+					}
 				}
-				n = putenv(oneenv);
+				else oneenv = strdup(expand_env(l));
+
+				if (oneenv) {
+					p = strchr(oneenv, '=');
+					if (*(p+1) == '"') {
+						/* Move string over the first '"' */
+						memmove(p+1, p+2, strlen(p+2)+1);
+						/* Kill a trailing '"' */
+						if (*(oneenv + strlen(oneenv) - 1) == '"') *(oneenv + strlen(oneenv) - 1) = '\0';
+					}
+					n = putenv(oneenv);
+				}
 			}
 		}
 		stackfclose(fd);
