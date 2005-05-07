@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.44 2005-03-22 09:03:37 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.45 2005-05-07 07:00:56 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -683,7 +683,7 @@ int main(int argc, char *argv[])
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
-			loadenv(p+1);
+			loadenv(p+1, NULL);
 		}
 		else if (strcmp(argv[argi], "--no-svcid") == 0) {
 			wantserviceid = 0;

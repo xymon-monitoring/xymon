@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: trimhistory.c,v 1.6 2005-04-03 15:36:36 henrik Exp $";
+static char rcsid[] = "$Id: trimhistory.c,v 1.7 2005-05-07 07:00:56 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -372,7 +372,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
-			loadenv(p+1);
+			loadenv(p+1, NULL);
 		}
 	}
 

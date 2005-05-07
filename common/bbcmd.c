@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcmd.c,v 1.8 2005-03-25 21:09:39 henrik Exp $";
+static char rcsid[] = "$Id: bbcmd.c,v 1.9 2005-05-07 07:00:56 henrik Exp $";
 
 #include <sys/types.h>
 #include <string.h>
@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
-			loadenv(p+1);
+			loadenv(p+1, NULL);
 			haveenv=1;
 		}
 		else {

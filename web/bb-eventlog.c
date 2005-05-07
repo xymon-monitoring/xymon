@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-eventlog.c,v 1.19 2005-04-07 10:09:02 henrik Exp $";
+static char rcsid[] = "$Id: bb-eventlog.c,v 1.20 2005-05-07 07:00:56 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -292,7 +292,7 @@ int main(int argc, char *argv[])
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
-			loadenv(p+1);
+			loadenv(p+1, NULL);
 		}
 	}
 

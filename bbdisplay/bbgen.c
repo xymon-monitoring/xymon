@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.207 2005-05-02 10:30:50 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.208 2005-05-07 07:00:56 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[i], "--env=")) {
 			char *lp = strchr(argv[i], '=');
-			loadenv(lp+1);
+			loadenv(lp+1, NULL);
 		}
 		else if (argnmatch(argv[i], "--hobbitddump")) {
 			hobbitddump = 1;

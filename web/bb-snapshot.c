@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-snapshot.c,v 1.12 2005-04-07 10:09:02 henrik Exp $";
+static char rcsid[] = "$Id: bb-snapshot.c,v 1.13 2005-05-07 07:00:56 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
-			loadenv(p+1);
+			loadenv(p+1, NULL);
 		}
 		else {
 			bbgen_argv[newargi++] = argv[argi];

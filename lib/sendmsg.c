@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.56 2005-05-07 06:22:55 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.57 2005-05-07 07:00:56 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -758,7 +758,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
-			loadenv(p+1);
+			loadenv(p+1, NULL);
 		}
 		else if (strcmp(argv[argi], "-?") == 0) {
 			showhelp = 1;

@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.39 2005-03-25 21:13:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.40 2005-05-07 07:00:56 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
-			loadenv(p+1);
+			loadenv(p+1, NULL);
 		}
 		else {
 			int i = 0;

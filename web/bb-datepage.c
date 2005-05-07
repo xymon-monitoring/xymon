@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-datepage.c,v 1.7 2005-04-24 20:51:49 henrik Exp $";
+static char rcsid[] = "$Id: bb-datepage.c,v 1.8 2005-05-07 07:00:56 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
-			loadenv(p+1);
+			loadenv(p+1, NULL);
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
