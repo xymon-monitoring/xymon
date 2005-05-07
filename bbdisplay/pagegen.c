@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.142 2005-04-10 14:59:07 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.143 2005-05-07 15:03:07 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -1235,7 +1235,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 		char nklogfn[PATH_MAX];
 		char svcspace;
 
-		sprintf(nklogfn, "%s/nkstatus.log", xgetenv("BBHOME"));
+		sprintf(nklogfn, "%s/nkstatus.log", xgetenv("BBSERVERLOGS"));
 		nklog = fopen(nklogfn, "a");
 		if (nklog == NULL) {
 			errprintf("Cannot log NK status to %s: %s\n", nklogfn, strerror(errno));
