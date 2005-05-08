@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.21 2005-05-02 20:04:26 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.22 2005-05-08 19:37:05 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -37,7 +37,6 @@ static char rra1[] = "RRA:AVERAGE:0.5:1:576";
 static char rra2[] = "RRA:AVERAGE:0.5:6:576";
 static char rra3[] = "RRA:AVERAGE:0.5:24:576";
 static char rra4[] = "RRA:AVERAGE:0.5:288:576";
-static char *update_params[]      = { "rrdupdate", rrdfn, rrdvalues, NULL };
 
 static char *senderip = NULL;
 
@@ -62,12 +61,48 @@ void setup_exthandler(char *handlerpath, char *ids)
 	MEMUNDEFINE(rrdvalues); MEMUNDEFINE(rrdfn);
 }
 
-static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], char *updparams[])
+static char *setup_template(char *params[])
+{
+	int i;
+	char *result = NULL;
+
+	for (i = 0; (params[i]); i++) {
+		if (strncasecmp(params[i], "DS:", 3) == 0) {
+			char *pname, *pend;
+
+			pname = params[i] + 3;
+			pend = strchr(pname, ':');
+			if (pend) {
+				int plen = (pend - pname);
+
+				if (result == NULL) {
+					result = (char *)malloc(plen + 1);
+					*result = '\0';
+				}
+				else {
+					/* Hackish way of getting the colon delimiter */
+					pname--; plen++;
+					result = (char *)realloc(result, strlen(result) + plen + 1);
+				}
+				strncat(result, pname, plen);
+			}
+		}
+	}
+
+	return result;
+}
+
+static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], char *template)
 {
 	char filedir[PATH_MAX];
 	struct stat st;
 	int pcount, result;
-
+#ifdef RRDTOOL12
+	char *tplstr = NULL;
+	char *updparams[] = { "rrdupdate", filedir, "-t", template, rrdvalues, NULL };
+#else
+	char *updparams[] = { "rrdupdate", filedir, rrdvalues, NULL };
+#endif
 	if ((fn == NULL) || (strlen(fn) == 0)) {
 		errprintf("RRD update for no file\n");
 		return -1;
@@ -86,12 +121,20 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 		}
 	}
 	strcat(filedir, "/"); strcat(filedir, fn);
-	creparams[1] = updparams[1] = filedir;	/* Icky */
+	creparams[1] = filedir;	/* Icky */
 
 	if (stat(filedir, &st) == -1) {
 		dprintf("Creating rrd %s\n", filedir);
 
 		for (pcount = 0; (creparams[pcount]); pcount++);
+		if (debug) {
+			int i;
+
+			for (i = 0; (creparams[i]); i++) {
+				dprintf("RRD create param %02d: '%s'\n", i, creparams[i]);
+			}
+		}
+
 		rrd_clear_error();
 		result = rrd_create(pcount, creparams);
 		if (result != 0) {
@@ -102,10 +145,31 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 		}
 	}
 
-	dprintf("Updating %s with '%s'\n", filedir, rrdvalues);
+#ifdef RRDTOOL12
+	if (template) {
+		updparams[3] = template;
+	}
+	else {
+		tplstr = setup_template(creparams);
+		updparams[3] = tplstr;
+	}
+#endif
+
 	for (pcount = 0; (updparams[pcount]); pcount++);
+	if (debug) {
+		int i;
+
+		for (i = 0; (updparams[i]); i++) {
+			dprintf("RRD update param %02d: '%s'\n", i, updparams[i]);
+		}
+	}
+
 	rrd_clear_error();
 	result = rrd_update(pcount, updparams);
+#ifdef RRDTOOL12
+	if (tplstr) xfree(tplstr); 
+#endif
+
 	if (result != 0) {
 		errprintf("RRD error updating %s from %s: %s\n", 
 			  filedir, (senderip ? senderip : "unknown"), 
@@ -119,6 +183,26 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 	MEMUNDEFINE(rrdvalues); MEMUNDEFINE(rrdfn);
 
 	return 0;
+}
+
+static int rrddatasets(char *hostname, char *fn, char ***dsnames)
+{
+	char filedir[PATH_MAX];
+	struct stat st;
+
+	int result;
+	char *fetch_params[] = { "rrdfetch", filedir, "AVERAGE", "-s", "-30m", NULL };
+	time_t starttime, endtime;
+	unsigned long steptime, dscount;
+	rrd_value_t *rrddata;
+
+	sprintf(filedir, "%s/%s/%s", rrddir, hostname, fn);
+	if (stat(filedir, &st) == -1) return 0;
+
+	result = rrd_fetch(5, fetch_params, &starttime, &endtime, &steptime, &dscount, dsnames, &rrddata);
+	free(rrddata);	/* No use for the actual data */
+
+	return dscount;
 }
 
 
