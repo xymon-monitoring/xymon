@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.39 2005-05-07 09:24:20 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.40 2005-05-08 16:37:31 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -113,7 +113,7 @@ int do_request(void)
 {
 	static time_t lastload = 0;
 	time_t now = time(NULL);
-	int color;
+	int color = 0;
 	char timesincechange[100];
 	time_t logtime = 0, acktime = 0, disabletime = 0;
 	char *log = NULL, *firstline = NULL, *sender = NULL, *flags = NULL;	/* These are free'd */
