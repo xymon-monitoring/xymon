@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.22 2005-05-08 19:37:05 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.23 2005-05-08 20:31:24 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -97,12 +97,9 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 	char filedir[PATH_MAX];
 	struct stat st;
 	int pcount, result;
-#ifdef RRDTOOL12
 	char *tplstr = NULL;
 	char *updparams[] = { "rrdupdate", filedir, "-t", template, rrdvalues, NULL };
-#else
-	char *updparams[] = { "rrdupdate", filedir, rrdvalues, NULL };
-#endif
+
 	if ((fn == NULL) || (strlen(fn) == 0)) {
 		errprintf("RRD update for no file\n");
 		return -1;
@@ -135,7 +132,11 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 			}
 		}
 
-		rrd_clear_error();
+		/*
+		 * Ugly! RRDtool uses getopt() for parameter parsing, so
+		 * we MUST reset this before every call.
+		 */
+		optind = opterr = 0; rrd_clear_error();
 		result = rrd_create(pcount, creparams);
 		if (result != 0) {
 			errprintf("RRD error creating %s: %s\n", filedir, rrd_get_error());
@@ -145,7 +146,6 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 		}
 	}
 
-#ifdef RRDTOOL12
 	if (template) {
 		updparams[3] = template;
 	}
@@ -153,7 +153,6 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 		tplstr = setup_template(creparams);
 		updparams[3] = tplstr;
 	}
-#endif
 
 	for (pcount = 0; (updparams[pcount]); pcount++);
 	if (debug) {
@@ -164,11 +163,13 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 		}
 	}
 
-	rrd_clear_error();
+	/*
+	 * Ugly! RRDtool uses getopt() for parameter parsing, so
+	 * we MUST reset this before every call.
+	 */
+	optind = opterr = 0; rrd_clear_error();
 	result = rrd_update(pcount, updparams);
-#ifdef RRDTOOL12
 	if (tplstr) xfree(tplstr); 
-#endif
 
 	if (result != 0) {
 		errprintf("RRD error updating %s from %s: %s\n", 
@@ -199,6 +200,7 @@ static int rrddatasets(char *hostname, char *fn, char ***dsnames)
 	sprintf(filedir, "%s/%s/%s", rrddir, hostname, fn);
 	if (stat(filedir, &st) == -1) return 0;
 
+	optind = opterr = 0; rrd_clear_error();
 	result = rrd_fetch(5, fetch_params, &starttime, &endtime, &steptime, &dscount, dsnames, &rrddata);
 	free(rrddata);	/* No use for the actual data */
 
