@@ -8,19 +8,21 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.24 2005-05-02 21:11:52 henrik Exp $";
-
-static char *disk_params[] = { "rrdcreate", rrdfn, "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", 
-				rra1, rra2, rra3, rra4, NULL };
-
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.25 2005-05-08 19:35:29 henrik Exp $";
 
 int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
+	static char *disk_params[] = { "rrdcreate", rrdfn, "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", 
+					rra1, rra2, rra3, rra4, NULL };
+	static char *disk_tpl      = NULL;
+
 	enum { DT_IRIX, DT_AS400, DT_NT, DT_UNIX, DT_NETAPP, DT_NETWARE } dsystype;
 	char *eoln, *curline;
 	static int ptnsetup = 0;
 	static pcre *inclpattern = NULL;
 	static pcre *exclpattern = NULL;
+
+	if (disk_tpl == NULL) disk_tpl = setup_template(disk_params);
 
 	if (!ptnsetup) {
 		const char *errmsg;
@@ -174,7 +176,7 @@ int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			 */
 			sprintf(rrdfn, "%s%s.rrd", testname, diskname);
 			sprintf(rrdvalues, "%d:%d:%llu", (int)tstamp, pused, aused);
-			create_and_update_rrd(hostname, rrdfn, disk_params, update_params);
+			create_and_update_rrd(hostname, rrdfn, disk_params, disk_tpl);
 		}
 		if (diskname) { xfree(diskname); diskname = NULL; }
 

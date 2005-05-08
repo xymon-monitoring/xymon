@@ -8,36 +8,37 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char hobbitd_rcsid[] = "$Id: do_hobbitd.c,v 1.6 2005-03-25 21:15:26 henrik Exp $";
-
-static char *hobbitd_params[] = { "rrdcreate", rrdfn, 
-				 "DS:inmessages:DERIVE:600:0:U", 
-				 "DS:statusmessages:DERIVE:600:0:U", 
-				 "DS:combomessages:DERIVE:600:0:U", 
-				 "DS:pagemessages:DERIVE:600:0:U", 
-				 "DS:summarymessages:DERIVE:600:0:U", 
-				 "DS:datamessages:DERIVE:600:0:U", 
-				 "DS:notesmessages:DERIVE:600:0:U", 
-				 "DS:enablemessages:DERIVE:600:0:U", 
-				 "DS:disablemessages:DERIVE:600:0:U", 
-				 "DS:ackmessages:DERIVE:600:0:U", 
-				 "DS:configmessages:DERIVE:600:0:U", 
-				 "DS:querymessages:DERIVE:600:0:U", 
-				 "DS:boardmessages:DERIVE:600:0:U", 
-				 "DS:listmessages:DERIVE:600:0:U", 
-				 "DS:logmessages:DERIVE:600:0:U", 
-				 "DS:dropmessages:DERIVE:600:0:U", 
-				 "DS:renamemessages:DERIVE:600:0:U", 
-				 "DS:statuschmsgs:DERIVE:600:0:U", 
-				 "DS:stachgchmsgs:DERIVE:600:0:U", 
-				 "DS:pagechmsgs:DERIVE:600:0:U", 
-				 "DS:datachmsgs:DERIVE:600:0:U", 
-				 "DS:noteschmsgs:DERIVE:600:0:U", 
-				 "DS:enadischmsgs:DERIVE:600:0:U", 
-				 rra1, rra2, rra3, rra4, NULL };
+static char hobbitd_rcsid[] = "$Id: do_hobbitd.c,v 1.7 2005-05-08 19:35:29 henrik Exp $";
 
 int do_hobbitd_larrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
+	static char *hobbitd_params[] = { "rrdcreate", rrdfn, 
+					 "DS:inmessages:DERIVE:600:0:U", 
+					 "DS:statusmessages:DERIVE:600:0:U", 
+					 "DS:combomessages:DERIVE:600:0:U", 
+					 "DS:pagemessages:DERIVE:600:0:U", 
+					 "DS:summarymessages:DERIVE:600:0:U", 
+					 "DS:datamessages:DERIVE:600:0:U", 
+					 "DS:notesmessages:DERIVE:600:0:U", 
+					 "DS:enablemessages:DERIVE:600:0:U", 
+					 "DS:disablemessages:DERIVE:600:0:U", 
+					 "DS:ackmessages:DERIVE:600:0:U", 
+					 "DS:configmessages:DERIVE:600:0:U", 
+					 "DS:querymessages:DERIVE:600:0:U", 
+					 "DS:boardmessages:DERIVE:600:0:U", 
+					 "DS:listmessages:DERIVE:600:0:U", 
+					 "DS:logmessages:DERIVE:600:0:U", 
+					 "DS:dropmessages:DERIVE:600:0:U", 
+					 "DS:renamemessages:DERIVE:600:0:U", 
+					 "DS:statuschmsgs:DERIVE:600:0:U", 
+					 "DS:stachgchmsgs:DERIVE:600:0:U", 
+					 "DS:pagechmsgs:DERIVE:600:0:U", 
+					 "DS:datachmsgs:DERIVE:600:0:U", 
+					 "DS:noteschmsgs:DERIVE:600:0:U", 
+					 "DS:enadischmsgs:DERIVE:600:0:U", 
+					 rra1, rra2, rra3, rra4, NULL };
+	static char *hobbitd_tpl       = NULL;
+
 	struct {
 		char *marker;
 		unsigned long val;
@@ -73,6 +74,9 @@ int do_hobbitd_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	char	valstr[10];
 
 	MEMDEFINE(valstr);
+
+	if (hobbitd_tpl == NULL) hobbitd_tpl = setup_template(hobbitd_params);
+
 	sprintf(rrdvalues, "%d", (int)tstamp);
 	i = 0;
 	while (hobbitd_data[i].marker) {
@@ -102,7 +106,7 @@ int do_hobbitd_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		}
 
 		MEMUNDEFINE(valstr);
-		return create_and_update_rrd(hostname, rrdfn, hobbitd_params, update_params);
+		return create_and_update_rrd(hostname, rrdfn, hobbitd_params, hobbitd_tpl);
 	}
 
 	MEMUNDEFINE(valstr);

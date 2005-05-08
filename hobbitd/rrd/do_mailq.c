@@ -8,15 +8,18 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char mailq_rcsid[] = "$Id: do_mailq.c,v 1.10 2005-04-24 20:52:40 henrik Exp $";
-
-static char *mailq_params[]       = { "rrdcreate", rrdfn, "DS:mailq:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
+static char mailq_rcsid[] = "$Id: do_mailq.c,v 1.11 2005-05-08 19:35:29 henrik Exp $";
 
 int do_mailq_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
+	static char *mailq_params[]       = { "rrdcreate", rrdfn, "DS:mailq:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
+	static char *mailq_tpl            = NULL;
+
 	char	*p;
 	char    *inqueue, *outqueue;
 	int	mailq, inq, outq;
+
+	if (mailq_tpl == NULL) mailq_tpl = setup_template(mailq_params);
 
 	/* 
 	 * The normail "mailq" report only has a "... N requests" line and a single graph.
@@ -46,11 +49,11 @@ int do_mailq_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		/* Update RRD's */
 		sprintf(rrdfn, "mailqin.rrd");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, inq);
-		create_and_update_rrd(hostname, rrdfn, mailq_params, update_params);
+		create_and_update_rrd(hostname, rrdfn, mailq_params, mailq_tpl);
 
 		sprintf(rrdfn, "mailqout.rrd");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, outq);
-		create_and_update_rrd(hostname, rrdfn, mailq_params, update_params);
+		create_and_update_rrd(hostname, rrdfn, mailq_params, mailq_tpl);
 		return 0;
 
 	}
@@ -68,7 +71,7 @@ int do_mailq_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 			sprintf(rrdfn, "mailq.rrd");
 			sprintf(rrdvalues, "%d:%d", (int)tstamp, mailq);
-			return create_and_update_rrd(hostname, rrdfn, mailq_params, update_params);
+			return create_and_update_rrd(hostname, rrdfn, mailq_params, mailq_tpl);
 		}
 	}
 

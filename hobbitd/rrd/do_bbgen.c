@@ -8,14 +8,17 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbgen_rcsid[] = "$Id: do_bbgen.c,v 1.8 2005-03-25 21:15:26 henrik Exp $";
-
-static char *bbgen_params[] = { "rrdcreate", rrdfn, "DS:runtime:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
+static char bbgen_rcsid[] = "$Id: do_bbgen.c,v 1.9 2005-05-08 19:35:29 henrik Exp $";
 
 int do_bbgen_larrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
+	static char *bbgen_params[] = { "rrdcreate", rrdfn, "DS:runtime:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
+	static char *bbgen_tpl      = NULL;
+
 	char	*p;
 	float	runtime;
+
+	if (bbgen_tpl == NULL) bbgen_tpl = setup_template(bbgen_params);
 
 	p = strstr(msg, "TIME TOTAL");
 	if (p && (sscanf(p, "TIME TOTAL %f", &runtime) == 1)) {
@@ -26,7 +29,7 @@ int do_bbgen_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			strcpy(rrdfn, "bbgen.rrd");
 		}
 		sprintf(rrdvalues, "%d:%.2f", (int)tstamp, runtime);
-		return create_and_update_rrd(hostname, rrdfn, bbgen_params, update_params);
+		return create_and_update_rrd(hostname, rrdfn, bbgen_params, bbgen_tpl);
 	}
 
 	return 0;

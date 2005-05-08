@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.12 2005-03-25 21:15:26 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.13 2005-05-08 19:35:29 henrik Exp $";
 
 static char *netstat_params[] = { "rrdcreate", rrdfn, 
 	                          "DS:udpInDatagrams:DERIVE:600:0:U", 
@@ -28,6 +28,7 @@ static char *netstat_params[] = { "rrdcreate", rrdfn,
 	                          "DS:tcpInUnorderPackets:DERIVE:600:0:U", 
 	                          "DS:tcpRetransPackets:DERIVE:600:0:U", 
 				  rra1, rra2, rra3, rra4, NULL };
+static char *netstat_tpl       = NULL;
 
 /* This one matches the netstat output from Solaris 8, and also the hpux and aix from bf-netstat in larrd 0.43c */
 static char *netstat_unix_markers[] = {
@@ -212,6 +213,8 @@ int do_netstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	char *outp;
 	int havedata = 0;
 
+	if (netstat_tpl == NULL) netstat_tpl = setup_template(netstat_params);
+
 	if ((strncmp(msg, "status", 6) == 0) || (strncmp(msg, "data", 4) == 0)) {
 		/* Skip the first line of full status- and data-messages. */
 		datapart = strchr(msg, '\n');
@@ -296,7 +299,7 @@ int do_netstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 	if (havedata) {
 		sprintf(rrdfn, "netstat.rrd");
-		return create_and_update_rrd(hostname, rrdfn, netstat_params, update_params);
+		return create_and_update_rrd(hostname, rrdfn, netstat_params, netstat_tpl);
 	}
 	else {
 		return -1;

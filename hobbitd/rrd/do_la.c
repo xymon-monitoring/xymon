@@ -8,18 +8,21 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char la_rcsid[] = "$Id: do_la.c,v 1.14 2005-04-10 16:35:47 henrik Exp $";
-
-static char *la_params[]          = { "rrdcreate", rrdfn, "DS:la:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
-
-static pcre *as400_exp = NULL;
-static pcre *zVM_exp = NULL;
+static char la_rcsid[] = "$Id: do_la.c,v 1.15 2005-05-08 19:35:29 henrik Exp $";
 
 int do_la_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
+	static char *la_params[]          = { "rrdcreate", rrdfn, "DS:la:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
+	static char *la_tpl               = NULL;
+
+	static pcre *as400_exp = NULL;
+	static pcre *zVM_exp = NULL;
+
 	char *p, *eoln = NULL;
 	int gotusers=0, gotprocs=0, gotload=0;
 	int users=0, procs=0, load=0;
+
+	if (la_tpl == NULL) la_tpl = setup_template(la_params);
 
 	if (strstr(msg, "bb-xsnmp")) {
 		/*
@@ -168,19 +171,19 @@ done_parsing:
 	if (gotload) {
 		sprintf(rrdfn, "la.rrd");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, load);
-		create_and_update_rrd(hostname, rrdfn, la_params, update_params);
+		create_and_update_rrd(hostname, rrdfn, la_params, la_tpl);
 	}
 
 	if (gotprocs) {
 		sprintf(rrdfn, "procs.rrd");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, procs);
-		create_and_update_rrd(hostname, rrdfn, la_params, update_params);
+		create_and_update_rrd(hostname, rrdfn, la_params, la_tpl);
 	}
 
 	if (gotusers) {
 		sprintf(rrdfn, "users.rrd");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, users);
-		create_and_update_rrd(hostname, rrdfn, la_params, update_params);
+		create_and_update_rrd(hostname, rrdfn, la_params, la_tpl);
 	}
 
 	if (memhosts_init && (rbtFind(memhosts, hostname) == rbtEnd(memhosts))) {

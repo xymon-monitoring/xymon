@@ -8,13 +8,16 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char iishealth_rcsid[] = "$Id: do_iishealth.c,v 1.5 2005-03-25 21:15:26 henrik Exp $";
-
-static char *iishealth_params[] = { "rrdcreate", rrdfn, "DS:realmempct:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
+static char iishealth_rcsid[] = "$Id: do_iishealth.c,v 1.6 2005-05-08 19:35:29 henrik Exp $";
 
 int do_iishealth_larrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
+	static char *iishealth_params[] = { "rrdcreate", rrdfn, "DS:realmempct:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
+	static char *iishealth_tpl      = NULL;
+
 	char *bol, *eoln, *tok;
+
+	if (iishealth_tpl == NULL) iishealth_tpl = setup_template(iishealth_params);
 
 	bol = strchr(msg, '\n'); if (bol) bol++; else return 0;
 
@@ -47,7 +50,7 @@ int do_iishealth_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				sprintf(rrdvalues, "%d:%lu", (int)tstamp, atol(tok));
 			}
 
-			if (*rrdfn) create_and_update_rrd(hostname, rrdfn, iishealth_params, update_params);
+			if (*rrdfn) create_and_update_rrd(hostname, rrdfn, iishealth_params, iishealth_tpl);
 		}
 
 		bol = (eoln ? eoln+1 : NULL);

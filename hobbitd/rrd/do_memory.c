@@ -8,9 +8,10 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char memory_rcsid[] = "$Id: do_memory.c,v 1.12 2005-04-10 15:21:09 henrik Exp $";
+static char memory_rcsid[] = "$Id: do_memory.c,v 1.13 2005-05-08 19:35:29 henrik Exp $";
 
 static char *memory_params[]      = { "rrdcreate", rrdfn, "DS:realmempct:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
+static char *memory_tpl           = NULL;
 
 /*
  * Use the R/B tree to hold names of the hosts
@@ -37,18 +38,20 @@ static int get_mem_percent(char *l)
 
 void do_memory_larrd_update(time_t tstamp, char *hostname, int physval, int swapval, int actval)
 {
+	if (memory_tpl == NULL) memory_tpl = setup_template(memory_params);
+
 	sprintf(rrdfn, "memory.real.rrd");
 	sprintf(rrdvalues, "%d:%d", (int)tstamp, physval);
-	create_and_update_rrd(hostname, rrdfn, memory_params, update_params);
+	create_and_update_rrd(hostname, rrdfn, memory_params, memory_tpl);
 
 	sprintf(rrdfn, "memory.swap.rrd");
 	sprintf(rrdvalues, "%d:%d", (int)tstamp, swapval);
-	create_and_update_rrd(hostname, rrdfn, memory_params, update_params);
+	create_and_update_rrd(hostname, rrdfn, memory_params, memory_tpl);
 
 	if ((actval >= 0) && (actval <= 100)) {
 		sprintf(rrdfn, "memory.actual.rrd");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, actval);
-		create_and_update_rrd(hostname, rrdfn, memory_params, update_params);
+		create_and_update_rrd(hostname, rrdfn, memory_params, memory_tpl);
 	}
 }
 
@@ -89,7 +92,7 @@ int do_memory_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			val = atoi(p);
 			sprintf(rrdfn, "memory.tcb.rrd");
 			sprintf(rrdvalues, "%d:%d", (int)tstamp, val);
-			create_and_update_rrd(hostname, rrdfn, memory_params, update_params);
+			create_and_update_rrd(hostname, rrdfn, memory_params, memory_tpl);
 		}
 
 		p = strstr(msg, "Dirty Cache Buffers");
@@ -98,7 +101,7 @@ int do_memory_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			val = atoi(p);
 			sprintf(rrdfn, "memory.dcb.rrd");
 			sprintf(rrdvalues, "%d:%d", (int)tstamp, val);
-			create_and_update_rrd(hostname, rrdfn, memory_params, update_params);
+			create_and_update_rrd(hostname, rrdfn, memory_params, memory_tpl);
 		}
 
 		p = strstr(msg, "Long Term Cache Hit Percentage");
@@ -107,7 +110,7 @@ int do_memory_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			val = atoi(p);
 			sprintf(rrdfn, "memory.ltch.rrd");
 			sprintf(rrdvalues, "%d:%d", (int)tstamp, val);
-			create_and_update_rrd(hostname, rrdfn, memory_params, update_params);
+			create_and_update_rrd(hostname, rrdfn, memory_params, memory_tpl);
 		}
 	}
 	else {

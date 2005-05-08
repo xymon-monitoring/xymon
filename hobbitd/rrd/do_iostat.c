@@ -8,40 +8,41 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char iostat_rcsid[] = "$Id: do_iostat.c,v 1.9 2005-03-25 21:15:26 henrik Exp $";
-
-/*
- * BEGINKEY
- * d0 /
- * d5 /var
- * d6 /export
- * ENDKEY
- * BEGINDATA
- *     r/s    w/s   kr/s   kw/s wait actv wsvc_t asvc_t  %w  %b s/w h/w trn tot device
- *     0.9    2.8    7.3    1.8  0.0  0.0    2.7    9.3   1   2   0   0   0   0 d0
- *     0.1    0.3    0.8    0.5  0.0  0.0    5.2   11.0   0   0   0   0   0   0 d5
- *     0.1    0.2    1.0    1.1  0.0  0.0    6.9   12.9   0   0   0   0   0   0 d6
- * ENDDATA
- */
-
-static char *iostat_params[] = { "rrdcreate", rrdfn, 
-				"DS:rs:GAUGE:600:1:U", "DS:ws:GAUGE:600:1:U", 
-				"DS:krs:GAUGE:600:1:U", "DS:kws:GAUGE:600:1:U", 
-				"DS:wait:GAUGE:600:1:U", "DS:actv:GAUGE:600:1:U", 
-				"DS:wsvc_t:GAUGE:600:1:U", "DS:asvc_t:GAUGE:600:1:U", 
-				"DS:w:GAUGE:600:1:U", "DS:b:GAUGE:600:1:U", 
-				"DS:sw:GAUGE:600:1:U", "DS:hw:GAUGE:600:1:U", 
-				"DS:trn:GAUGE:600:1:U", "DS:tot:GAUGE:600:1:U", 
-				rra1, rra2, rra3, rra4, NULL };
-
-typedef struct iostatkey_t { 
-	char *key; 
-	char *value; 
-	struct iostatkey_t *next;
-} iostatkey_t;
+static char iostat_rcsid[] = "$Id: do_iostat.c,v 1.10 2005-05-08 19:35:29 henrik Exp $";
 
 int do_iostat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
+	/*
+	 * BEGINKEY
+	 * d0 /
+	 * d5 /var
+	 * d6 /export
+	 * ENDKEY
+	 * BEGINDATA
+	 *     r/s    w/s   kr/s   kw/s wait actv wsvc_t asvc_t  %w  %b s/w h/w trn tot device
+	 *     0.9    2.8    7.3    1.8  0.0  0.0    2.7    9.3   1   2   0   0   0   0 d0
+	 *     0.1    0.3    0.8    0.5  0.0  0.0    5.2   11.0   0   0   0   0   0   0 d5
+	 *     0.1    0.2    1.0    1.1  0.0  0.0    6.9   12.9   0   0   0   0   0   0 d6
+	 * ENDDATA
+	 */
+
+	static char *iostat_params[] = { "rrdcreate", rrdfn, 
+					"DS:rs:GAUGE:600:1:U", "DS:ws:GAUGE:600:1:U", 
+					"DS:krs:GAUGE:600:1:U", "DS:kws:GAUGE:600:1:U", 
+					"DS:wait:GAUGE:600:1:U", "DS:actv:GAUGE:600:1:U", 
+					"DS:wsvc_t:GAUGE:600:1:U", "DS:asvc_t:GAUGE:600:1:U", 
+					"DS:w:GAUGE:600:1:U", "DS:b:GAUGE:600:1:U", 
+					"DS:sw:GAUGE:600:1:U", "DS:hw:GAUGE:600:1:U", 
+					"DS:trn:GAUGE:600:1:U", "DS:tot:GAUGE:600:1:U", 
+					rra1, rra2, rra3, rra4, NULL };
+	static char *iostat_tpl      = NULL;
+
+	typedef struct iostatkey_t { 
+		char *key; 
+		char *value; 
+		struct iostatkey_t *next;
+	} iostatkey_t;
+
 	enum { S_NONE, S_KEYS, S_DATA } state;
 	iostatkey_t *keyhead = NULL;
 	iostatkey_t *newkey;
@@ -51,6 +52,8 @@ int do_iostat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	char marker[MAX_LINE_LEN];
 
 	MEMDEFINE(marker);
+
+	if (iostat_tpl == NULL) iostat_tpl = setup_template(iostat_params);
 
 	curline = msg; state = S_NONE;
 	while (curline) {
@@ -107,7 +110,7 @@ int do_iostat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 							(int) tstamp, 
 							v[0], v[1], v[2], v[3], v[4], v[5], v[6],
 							v[7], v[8], v[9], v[10], v[11], v[12], v[13]);
-						create_and_update_rrd(hostname, rrdfn, iostat_params, update_params);
+						create_and_update_rrd(hostname, rrdfn, iostat_params, iostat_tpl);
 					}
 				}
 				xfree(buf);

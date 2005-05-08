@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char external_rcsid[] = "$Id: do_external.c,v 1.7 2005-04-04 10:53:01 henrik Exp $";
+static char external_rcsid[] = "$Id: do_external.c,v 1.8 2005-05-08 19:35:29 henrik Exp $";
 
 int do_external_larrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -101,7 +101,7 @@ int do_external_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 				  case R_DATA:
 					sprintf(rrdvalues, "%d:%s", (int)tstamp, l);
-					create_and_update_rrd(hostname, rrdfn, params, update_params);
+					create_and_update_rrd(hostname, rrdfn, params, NULL);
 					pstate = R_NEXT;
 					break;
 

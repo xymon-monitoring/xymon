@@ -8,14 +8,17 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbnet_rcsid[] = "$Id: do_net.c,v 1.11 2005-03-25 21:15:26 henrik Exp $";
-
-static char *bbnet_params[]       = { "rrdcreate", rrdfn, "DS:sec:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
+static char bbnet_rcsid[] = "$Id: do_net.c,v 1.12 2005-05-08 19:35:29 henrik Exp $";
 
 int do_net_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
+	static char *bbnet_params[]       = { "rrdcreate", rrdfn, "DS:sec:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
+	static char *bbnet_tpl            = NULL;
+
 	char *p;
 	float seconds;
+
+	if (bbnet_tpl == NULL) bbnet_tpl = setup_template(bbnet_params);
 
 	if (strcmp(testname, "http") == 0) {
 		char *line1, *url = NULL, *eoln;
@@ -42,7 +45,7 @@ int do_net_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				p = urlfn; while ((p = strchr(p, '/')) != NULL) *p = ',';
 				sprintf(rrdfn, "tcp.http.%s.rrd", urlfn);
 				sprintf(rrdvalues, "%d:%.2f", (int)tstamp, seconds);
-				create_and_update_rrd(hostname, rrdfn, bbnet_params, update_params);
+				create_and_update_rrd(hostname, rrdfn, bbnet_params, bbnet_tpl);
 				xfree(url); url = NULL;
 			}
 
@@ -73,7 +76,7 @@ int do_net_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 		sprintf(rrdfn, "tcp.%s.rrd", testname);
 		sprintf(rrdvalues, "%d:%.6f", (int)tstamp, seconds);
-		return create_and_update_rrd(hostname, rrdfn, bbnet_params, update_params);
+		return create_and_update_rrd(hostname, rrdfn, bbnet_params, bbnet_tpl);
 	}
 	else {
 		/*
@@ -83,7 +86,7 @@ int do_net_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		if (p && (sscanf(p+1, "Seconds: %f", &seconds) == 1)) {
 			sprintf(rrdfn, "tcp.%s.rrd", testname);
 			sprintf(rrdvalues, "%d:%.2f", (int)tstamp, seconds);
-			return create_and_update_rrd(hostname, rrdfn, bbnet_params, update_params);
+			return create_and_update_rrd(hostname, rrdfn, bbnet_params, bbnet_tpl);
 		}
 	}
 

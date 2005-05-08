@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.1 2005-04-01 21:38:09 henrik Exp $";
+static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.2 2005-05-08 19:35:29 henrik Exp $";
 
 int do_ncv_larrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -64,7 +64,7 @@ int do_ncv_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		params[++paridx] = strdup(rra4);
 		params[++paridx] = NULL;
 
-		create_and_update_rrd(hostname, rrdfn, params, update_params);
+		create_and_update_rrd(hostname, rrdfn, params, NULL);
 
 		for (paridx=2; (params[paridx] != NULL); paridx++)
 		xfree(params[paridx]);
