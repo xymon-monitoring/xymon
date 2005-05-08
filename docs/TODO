@@ -26,14 +26,13 @@ Bugfixes
 Improvements
 ------------
 * hobbitgraph.cgi change to make zoom work in two dimensions. 
-  Requires a custom RRDtool 1.0.x package.
+  Requires RRDtool 1.2.x.
 * Configuration of which graph(s) to show by default, including 
   limiting it to e.g. one of the 7 disk graphs. Ref. mail from
   Charles Jones 15-feb-2005.
 * Something similar to larrd-graphs.cgi for picking out a bunch
   of graphs to show on one page.
 * More reports: Check out bb-reports on deadcat
-* Macros in the bb-hosts file, to avoid repeating common setups.
 * Multi-line macros in hobbit-alerts.cfg
 * Allow for regex's in the TCP response match code.
 * Merging of alerts based on some criteria, e.g. merge all
@@ -45,7 +44,6 @@ Improvements
   same status report (if process "httpd" is down, call the webpeople,
   if process "orad" is down, call the DBA guys).
 * Implement "--follow" in the new HTTP tester.
-* Allow for some tags (e.g. badconn) to be set for all hosts.
 * https proxying (proxy CONNECT protocol)
 * Optionally hide the URL and content output from HTTP/content
   checks for "security reasons". Marco Avvisano, 20-sep-2004.
@@ -66,6 +64,9 @@ Improvements
   shortlived statuses. They should not automatically be given 1
   pixel each, as that will cause the history graph to be *very*
   wide.
+* Display-only tags should work on duplicate host-entries in bb-hosts,
+  e.g. you should be able to put a "NAME:foo" tag on a host and have it
+  show up with different names for the same host.
 
 Various ideas that have appeared on the BB mailing list
 -------------------------------------------------------
