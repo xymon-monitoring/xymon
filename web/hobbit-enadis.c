@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-enadis.c,v 1.12 2005-05-07 15:48:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-enadis.c,v 1.13 2005-05-09 20:39:30 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -203,8 +203,8 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 					commafy(hostname), disabletest[i], duration*scale, fullmsg);
 				result = sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
 				sprintf(hobbitcmd, "notify %s.%s\nMonitoring of %s:%s has been DISABLED by %s for %d minutes\n%s", 
-					commafy(hostname), enabletest[i], 
-					hostname, enabletest[i], username, duration*scale, fullmsg);
+					commafy(hostname), disabletest[i], 
+					hostname, disabletest[i], username, duration*scale, fullmsg);
 				result = sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
 			}
 			printf("<tr><td>Disabling host <b>%s</b> test <b>%s</b>: %s</td></tr>\n", 
