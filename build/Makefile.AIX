@@ -8,7 +8,7 @@ NETLIBS =
 
 # Compile flags for normal build with gcc
 # CC = gcc
-# CFLAGS = -O -D_REENTRANT
+# CFLAGS = -O -D_REENTRANT $(OSDEF)
 
 # Compile flags for normal build with IBM compiler
 CC = cc
