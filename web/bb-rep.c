@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.30 2005-05-07 09:24:20 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.31 2005-05-09 16:01:49 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -40,7 +40,8 @@ static char rcsid[] = "$Id: bb-rep.c,v 1.30 2005-05-07 09:24:20 henrik Exp $";
  *	end-yr=2003&
  *	style=crit&
  *	suburl=path&
- *	SUB=Generate+Report
+ *	DoReport=Generate+Report
+ *	DoCSV=Generate+spreadsheet
  *
  */
 
@@ -54,6 +55,8 @@ char *style = "";
 time_t starttime = 0;
 time_t endtime = 0;
 char *suburl = "";
+int  csvoutput = 0;
+char csvdelim = ',';
 
 char *monthnames[13] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", NULL };
 
@@ -126,6 +129,15 @@ void parse_query(void)
 		}
 		else if (argnmatch(token, "suburl")) {
 			suburl = strdup(val);
+		}
+		else if (argnmatch(token, "DoReport")) {
+			csvoutput = 0;
+		}
+		else if (argnmatch(token, "DoCSV")) {
+			csvoutput = 1;
+		}
+		else if (argnmatch(token, "csvdelim")) {
+			csvdelim = *val;
 		}
 
 		token = strtok(NULL, "&");
@@ -207,6 +219,7 @@ int main(int argc, char *argv[])
 	char bbwebenv[PATH_MAX];
 	char bbgencmd[PATH_MAX];
 	char bbgentimeopt[100];
+	char csvdelimopt[100];
 	char *bbgen_argv[20];
 	pid_t childpid;
 	int childstat;
@@ -236,8 +249,6 @@ int main(int argc, char *argv[])
 			bbgen_argv[newargi++] = argv[argi];
 		}
 	}
-	bbgen_argv[newargi++] = outdir;
-	bbgen_argv[newargi++] = NULL;
 
 	if ((xgetenv("QUERY_STRING") == NULL) || (strlen(xgetenv("QUERY_STRING")) == 0)) {
 		/* Present the query form */
@@ -283,12 +294,21 @@ int main(int argc, char *argv[])
 	sprintf(bbgentimeopt, "--reportopts=%u:%u:1:%s", (unsigned int)starttime, (unsigned int)endtime, style);
 
 	sprintf(dirid, "%u-%u", (unsigned int)getpid(), (unsigned int)time(NULL));
-	sprintf(outdir, "%s/%s", xgetenv("BBREP"), dirid);
-	mkdir(outdir, 0755);
+	if (!csvoutput) {
+		sprintf(outdir, "%s/%s", xgetenv("BBREP"), dirid);
+		mkdir(outdir, 0755);
+		bbgen_argv[newargi++] = outdir;
+		sprintf(bbwebenv, "BBWEB=%s/%s", xgetenv("BBREPURL"), dirid);
+		putenv(bbwebenv);
+	}
+	else {
+		sprintf(outdir, "--csv=%s/%s.csv", xgetenv("BBREP"), dirid);
+		bbgen_argv[newargi++] = outdir;
+		sprintf(csvdelimopt, "--csvdelim=%c", csvdelim);
+		bbgen_argv[newargi++] = csvdelimopt;
+	}
 
-
-	sprintf(bbwebenv, "BBWEB=%s/%s", xgetenv("BBREPURL"), dirid);
-	putenv(bbwebenv);
+	bbgen_argv[newargi++] = NULL;
 
 	/* Output the "please wait for report ... " thing */
 	sprintf(htmldelim, "bbrep-%u-%u", (int)getpid(), (unsigned int)time(NULL));
@@ -335,9 +355,18 @@ int main(int argc, char *argv[])
 			printf("--%s\n\n", htmldelim);
 			printf("Content-Type: text/html\n\n");
 			printf("<HTML><HEAD>\n");
-			printf("<META HTTP-EQUIV=\"REFRESH\" CONTENT=\"0; URL=%s/%s/%s\"\n", 
+			if (!csvoutput) {
+				printf("<META HTTP-EQUIV=\"REFRESH\" CONTENT=\"0; URL=%s/%s/%s\"\n", 
 					xgetenv("BBREPURL"), dirid, suburl);
-			printf("</HEAD><BODY BGCOLOR=\"000000\"></BODY></HTML>\n");
+				printf("</HEAD><BODY>Report is available <a href=\"%s/%s/%s\">here</a></BODY></HTML>\n",
+					xgetenv("BBREPURL"), dirid, suburl);
+			}
+			else {
+				printf("<META HTTP-EQUIV=\"REFRESH\" CONTENT=\"0; URL=%s/%s.csv\"\n", 
+					xgetenv("BBREPURL"), dirid);
+				printf("</HEAD><BODY>Report is available <a href=\"%s/%s.csv\">here</a></BODY></HTML>\n",
+					xgetenv("BBREPURL"), dirid);
+			}
 			printf("\n--%s\n", htmldelim);
 			fflush(stdout);
 		}
