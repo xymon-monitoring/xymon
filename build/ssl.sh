@@ -45,8 +45,6 @@
 		echo "If you have OpenSSL installed, use the \"--sslinclude DIR\" and \"--ssllib DIR\""
 		echo "options to configure to specify where they are."
 		echo ""
-		sleep 3
-		echo "Continuing with SSL support disabled."
 	else
 		# Red Hat in their wisdom ships an openssl that depends on Kerberos,
 		# and then puts the Kerberos includes where they are not found automatically.
@@ -62,8 +60,10 @@
 		OS=`uname -s` OSSLINC="-I$OSSLINC $OSSLINC2" $MAKE -f Makefile.test-ssl test-compile
 		if [ $? -eq 0 ]; then
 			echo "Found OpenSSL include files in $OSSLINC"
+			OSSLINC="$OSSLINC $OSSLINC2"
 		else
 			echo "WARNING: OpenSSL include files found in $OSSLINC, but compile fails."
+			OSSLINC=""
 		fi
 	
 		OS=`uname -s` OSSLLIB="-L$OSSLLIB" $MAKE -f Makefile.test-ssl test-link
@@ -71,10 +71,16 @@
 			echo "Found OpenSSL libraries in $OSSLLIB"
 		else
 			echo "WARNING: OpenSSL library files found in $OSSLLIB, but link fails."
+			OSSLINC=""
+			OSSLLIB=""
 		fi
 		OS=`uname -s` $MAKE -f Makefile.test-ssl clean
 		cd ..
 
-		OSSLINC="$OSSLINC $OSSLINC2"
+	fi
+
+	if test -z "$OSSLINC" -o -z "$OSSLLIB"; then
+		sleep 3
+		echo "Continuing with SSL support disabled."
 	fi
 

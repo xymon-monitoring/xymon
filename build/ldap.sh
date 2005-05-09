@@ -55,8 +55,6 @@
 		echo "If you have OpenLDAP installed, use the \"--ldapinclude DIR\" and \"--ldaplib DIR\""
 		echo "options to configure to specify where they are."
 		echo ""
-		sleep 3
-		echo "Continuing with LDAP support disabled."
 	else
 		cd build
 		OS=`uname -s` $MAKE -f Makefile.test-ldap clean
@@ -65,19 +63,27 @@
 			echo "Found LDAP include files in $LDAPINC"
 		else
 			echo "WARNING: LDAP include files found in $LDAPINC, but compile fails."
+			LDAPINC=""
+			LDAPLIB=""
 		fi
 
 		OS=`uname -s` LDAPLIB="-L$LDAPLIB" LDAPLBER="$LDAPLBER" $MAKE -f Makefile.test-ldap test-link
 		if [ $? -eq 0 ]; then
 			echo "Found LDAP libraries in $LDAPLIB"
+			LDAPVENDOR=`./test-ldap`
 		else
 			echo "WARNING: LDAP library files found in $LDAPLIB, but link fails."
+			LDAPINC=""
+			LDAPLIB=""
 		fi
 
-		LDAPVENDOR=`./test-ldap`
 
 		OS=`uname -s` $MAKE -f Makefile.test-ldap clean
 		cd ..
 	fi
 
+	if test -z "$LDAPINC" -o -z "$LDAPLIB"; then
+		sleep 3
+		echo "Continuing with LDAP support disabled."
+	fi
 
