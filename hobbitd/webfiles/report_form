@@ -46,7 +46,9 @@
           </SELECT>
 
           <BR><BR>
-          <INPUT TYPE="SUBMIT" NAME="SUB" VALUE="Generate Report" ALT="Generate Report">
+	  <INPUT TYPE="HIDDEN" NAME="csvdelim" VALUE=",">
+          <INPUT TYPE="SUBMIT" NAME="DoReport" VALUE="Generate Report" ALT="Generate Report">
+          <INPUT TYPE="SUBMIT" NAME="DoCSV" VALUE="Generate spreadsheet" ALT="Generate spreadsheet file">
        </FORM>
 
        </CENTER>
