@@ -327,6 +327,12 @@ the report; DYNAMIC is 0 for a pre-built report and 1 for a dynamic
 events, "non-crit" to include all non-green events, and "all" to
 include all events.
 .sp
+.IP "--csv=FILENAME"
+Used together with --reportopts, this causes bbgen to generate an
+availability report in the form of a comma-separated values (CSV) file.
+This format is commonly used for importing into spreadsheets for further
+processing.
+.sp
 .IP "--snapshot=TIME"
 Generate a snapshot of the Hobbit pages, as they appeared at
 TIME. TIME is given as seconds since Jan 1st 1970 00:00 UTC. Normally
