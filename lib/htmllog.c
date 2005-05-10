@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.24 2005-04-16 17:01:36 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.25 2005-05-10 15:03:17 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -56,7 +56,7 @@ static void hostsvc_setup(void)
 }
 
 
-static void historybutton(char *cgibinurl, char *hostname, char *service, char *ip, char *displayname, FILE *output) 
+static void historybutton(char *cgibinurl, char *hostname, char *service, char *ip, char *displayname, char *btntxt, FILE *output) 
 {
 	char *tmp1;
 	char *tmp2 = (char *)malloc(strlen(service)+3);
@@ -68,13 +68,13 @@ static void historybutton(char *cgibinurl, char *hostname, char *service, char *
 	sprintf(tmp2, ",%s,", service);
 	if (strstr(tmp1, tmp2) == NULL) {
 		fprintf(output, "<BR><BR><CENTER><FORM ACTION=\"%s/bb-hist.sh\"> \
-			<INPUT TYPE=SUBMIT VALUE=\"HISTORY\"> \
+			<INPUT TYPE=SUBMIT VALUE=\"%s\"> \
 			<INPUT TYPE=HIDDEN NAME=\"HISTFILE\" VALUE=\"%s.%s\"> \
 			<INPUT TYPE=HIDDEN NAME=\"ENTRIES\" VALUE=\"50\"> \
 			<INPUT TYPE=HIDDEN NAME=\"IP\" VALUE=\"%s\"> \
 			<INPUT TYPE=HIDDEN NAME=\"DISPLAYNAME\" VALUE=\"%s\"> \
 			</FORM></CENTER>\n",
-			cgibinurl, hostname, service, ip, displayname);
+			cgibinurl, btntxt, hostname, service, ip, displayname);
 	}
 
 	xfree(tmp2);
@@ -135,7 +135,10 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 	fprintf(output, "<br><br><a name=\"begindata\">&nbsp;</a>\n");
 
-	if (!is_history && (histlocation == HIST_TOP)) historybutton(cgibinurl, hostname, service, ip, displayname, output);
+	if (histlocation == HIST_TOP) {
+		historybutton(cgibinurl, hostname, service, ip, displayname,
+			      (is_history ? "Full History" : "HISTORY"), output);
+	}
 
 	fprintf(output, "<CENTER><TABLE ALIGN=CENTER BORDER=0 SUMMARY=\"Detail Status\">\n");
 	if (wantserviceid) fprintf(output, "<TR><TH><FONT %s>%s - %s</FONT><BR><HR WIDTH=\"60%%\"></TH></TR>\n", rowfont, displayname, service);
@@ -239,7 +242,10 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		fprintf(output, "%s\n", larrd_graph_data(hostname, displayname, service, graph, linecount, 1, hobbitd, 0));
 	}
 
-	if (!is_history && (histlocation == HIST_BOTTOM)) historybutton(cgibinurl, hostname, service, ip, displayname, output);
+	if (histlocation == HIST_BOTTOM) {
+		historybutton(cgibinurl, hostname, service, ip, displayname,
+			      (is_history ? "Full History" : "HISTORY"), output);
+	}
 
 	fprintf(output,"</CENTER>\n");
 	headfoot(output, tplfile, "", "footer", color);
