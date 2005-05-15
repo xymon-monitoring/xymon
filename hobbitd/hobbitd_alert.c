@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.55 2005-05-07 15:04:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.56 2005-05-15 06:29:18 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -269,7 +269,19 @@ int main(int argc, char *argv[])
 				return 1;
 			}
 
-			if (testpage == NULL) testpage = "";
+			if (testpage == NULL) {
+				namelist_t *hinfo;
+
+				load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+				hinfo = hostinfo(testhost);
+				if (hinfo) {
+					testpage = strdup(bbh_item(hinfo, BBH_PAGEPATH));
+				}
+				else {
+					errprintf("Host not found in bb-hosts - assuming it is on the top page\n");
+					testpage = "";
+				}
+			}
 
 			awalk = (activealerts_t *)malloc(sizeof(activealerts_t));
 			awalk->hostname = find_name(&hostnames, testhost);
