@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.28 2005-05-07 09:24:20 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.29 2005-05-15 07:16:20 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -734,7 +734,33 @@ int main(int argc, char *argv[])
 	qsort(&rrddbs[0], rrddbcount, sizeof(rrddb_t), rrd_name_compare);
 
 	/* Setup the title */
-	sprintf(graphtitle, "%s %s %s", displayname, gdef->title, glegend);
+	if (!gdef->title) gdef->title = strdup("");
+	if (strncmp(gdef->title, "exec:", 5) == 0) {
+		char *pcmd;
+		int i, pcmdlen = 0;
+		FILE *pfd;
+		char *p;
+
+		pcmdlen = strlen(gdef->title+5) + strlen(displayname) + strlen(service) + strlen(glegend) + 5;
+		for (i=0; (i<rrddbcount); i++) pcmdlen += (strlen(rrddbs[i].rrdfn) + 3);
+
+		p = pcmd = (char *)malloc(pcmdlen+1);
+		p += sprintf(p, "%s %s %s \"%s\"", gdef->title+5, displayname, service, glegend);
+		for (i=0; (i<rrddbcount); i++) {
+			p += sprintf(p, " \"%s\"", rrddbs[i].rrdfn);
+		}
+		pfd = popen(pcmd, "r");
+		if (pfd) {
+			fgets(graphtitle, sizeof(graphtitle), pfd);
+			pclose(pfd);
+		}
+
+		/* Drop any newline at end of the title */
+		p = strchr(graphtitle, '\n'); if (p) *p = '\0';
+	}
+	else {
+		sprintf(graphtitle, "%s %s %s", displayname, gdef->title, glegend);
+	}
 
 	/*
 	 * Setup the arguments for calling rrd_graph. 

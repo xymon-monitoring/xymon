@@ -94,6 +94,20 @@ for the graph legend:
 .br
         GPRINT:p@RRDIDX@:AVERAGE: \: %5.1lf (avg)\n
 
+.SH ADVANCED GRAPH  TITLES
+Normally the title of a graph is a static text defined in
+the hobbitgraph.cfg file. However, there may be situations where
+you want to use different titles for the same type of graph, e.g.
+if you are incorporating RRD files from MRTG into Hobbit. In that
+case you can setup the TITLE definition so that it runs a custom
+script to determine the graph title. Like this:
+.sp
+	TITLE exec:/usr/local/bin/graphitle
+.sp
+The \fB/usr/local/bin/graphtitle\fR command is then called with 
+the hostname, the graphtype, the period string, and all of the 
+RRD files used as parameters. The script must generate one line of output,
+which is then used as the title of the graph.
 
 .SH ENVIRONMENT
 .BR LARRDS
