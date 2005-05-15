@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.29 2005-05-15 07:16:20 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.30 2005-05-15 07:40:32 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -747,7 +747,9 @@ int main(int argc, char *argv[])
 		p = pcmd = (char *)malloc(pcmdlen+1);
 		p += sprintf(p, "%s %s %s \"%s\"", gdef->title+5, displayname, service, glegend);
 		for (i=0; (i<rrddbcount); i++) {
-			p += sprintf(p, " \"%s\"", rrddbs[i].rrdfn);
+			if ((firstidx == -1) || ((i >= firstidx) && (i <= lastidx))) {
+				p += sprintf(p, " \"%s\"", rrddbs[i].rrdfn);
+			}
 		}
 		pfd = popen(pcmd, "r");
 		if (pfd) {
