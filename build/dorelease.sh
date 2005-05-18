@@ -1,6 +1,6 @@
 #!/bin/sh
 
-SRCDIRS="bbdisplay bbnet bbproxy build common contrib docs hobbitd include lib scripts"
+SRCDIRS="bbdisplay bbnet bbproxy build common contrib docs hobbitd include lib scripts debian rpm"
 
 case "$1" in
 	"tag"|"untag"|"release")
@@ -69,6 +69,7 @@ done
 cp -p Changes configure COPYING CREDITS README $RELDIR/
 find $RELDIR -type d|xargs chmod 755
 cd $RELDIR && make -f ~/hobbit/Makefile.osiris distclean
+cd $RELDIR && rm -f {debian,rpm}/pkg/*
 cd $RELDIR/../ && tar zcf hobbit-$REL.tar.gz `basename $RELDIR`
 
 exit 0
