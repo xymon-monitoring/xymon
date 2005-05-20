@@ -41,13 +41,13 @@ EOF
 	  "--pcrelib")
 	  	USERPCRELIB="$1"; shift
 		;;
-	  "--sslinc")
+	  "--sslinclude")
 	  	USEROSSLINC="$1"; shift
 		;;
 	  "--ssllib")
 	  	USEROSSLLIB="$1"; shift
 		;;
-	  "--ldapinc")
+	  "--ldapinclude")
 	  	USERLDAPINC="$1"; shift
 		;;
 	  "--ldaplib")
