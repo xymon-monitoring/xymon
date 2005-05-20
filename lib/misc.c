@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.31 2005-03-22 17:54:58 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.32 2005-05-20 20:54:08 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -53,6 +53,7 @@ enum ostype_t get_ostype(char *osname)
 	else if (strcasecmp(osname, "rhel3") == 0)       result = OS_RHEL3;
 	else if (strcasecmp(osname, "snmp") == 0)        result = OS_SNMP;
 	else if (strcasecmp(osname, "snmpnetstat") == 0) result = OS_SNMP;
+	else if (strncasecmp(osname, "irix", 4) == 0)    result = OS_IRIX;
 
 	if (result == OS_UNKNOWN) dprintf("Unknown OS: '%s'\n", osname);
 
