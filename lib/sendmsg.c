@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.58 2005-05-07 09:24:20 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.59 2005-05-20 20:49:28 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -33,6 +33,9 @@ static char rcsid[] = "$Id: sendmsg.c,v 1.58 2005-05-07 09:24:20 henrik Exp $";
 #include "libbbgen.h"
 
 #define BBSENDRETRIES 2
+
+/* These commands go to BBDISPLAYS */
+static char *multircptcmds[] = { "status", "combo", "meta", "data", "notify", "enable", "disable", "schedule", "drop", "rename", NULL };
 
 /* Stuff for combo message handling */
 int		bbmsgcount = 0;		/* Number of messages transmitted */
@@ -430,66 +433,12 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg, int timeout)
 	return result;
 }
 
-static int sendstatus(char *bbdisp, char *msg, int timeout)
-{
-	int statusresult, pageresult;
-	char statuscolor[256];
-	char *pagelevels;
-
-	statusresult = sendtomany(bbdisp, xgetenv("BBDISPLAYS"), msg, timeout);
-
-	/* If no BBPAGE defined, drop paging */
-	if (xgetenv("BBPAGE") == NULL) return statusresult;
-
-	/* If we're using hobbitd, drop the page message */
-	if (strcmp(getenv_default("USEHOBBITD", "FALSE", NULL), "TRUE") == 0) return statusresult;
-
-	/* Check if we should send a "page" message also */
-	pagelevels = strdup(xgetenv("PAGELEVELS") ? xgetenv("PAGELEVELS") : PAGELEVELSDEFAULT);
-	sscanf(msg, "%*s %*s %255s", statuscolor);
-	if (strstr(pagelevels, statuscolor)) {
-		/* Reformat the message into a "page" message */
-		char *pagemsg = (char *) malloc(strlen(msg)+1);
-		char *firstnl;
-		char *inp, *outp;
-
-		/* Split message into first line and the rest */
-		firstnl = strchr(msg, '\n');
-		if (firstnl) { *firstnl = '\0';  firstnl++; }
-
-		/* Start the page message with the "page" keyword */
-		strcpy(pagemsg, "page ");
-		outp = pagemsg + strlen(pagemsg);
-
-		/* Skip past the "status" word (incl. any duration string) and copy from there */
-		inp = skipwhitespace(skipword(msg));
-		while (inp && (*inp)) {
-			if (strncmp(inp, "<!--", 4) == 0) {
-				/* HTML comments must be stripped from the page message */
-				inp = strstr(inp, "-->");
-				if (inp) inp += 3;
-			}
-			else {
-				*outp = *inp;
-				outp++; inp++;
-			}
-		}
-		*outp = '\0';
-
-		if (firstnl) { *firstnl = '\n'; strcat(pagemsg, firstnl); }
-		pageresult = sendtomany(xgetenv("BBPAGE"), xgetenv("BBPAGERS"), pagemsg, timeout);
-		xfree(pagemsg);
-	}
-
-	xfree(pagelevels);
-	return statusresult;
-}
-
 
 int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fullresponse, int timeout)
 {
 	static char *bbdisp = NULL;
 	int res = 0;
+	int i;
 
  	if ((bbdisp == NULL) && xgetenv("BBDISP")) bbdisp = strdup(xgetenv("BBDISP"));
 	if (recipient == NULL) recipient = bbdisp;
@@ -498,10 +447,8 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 		return BB_EBADIP;
 	}
 
-	if ((strncmp(msg, "status", 6) == 0) || (strncmp(msg, "combo", 5) == 0)) {
-		res = sendstatus((recipient ? recipient : bbdisp), msg, timeout);
-	}
-	else if (strncmp(msg, "data", 4) == 0) {
+	for (i = 0; (multircptcmds[i] && strncmp(multircptcmds[i], msg, strlen(multircptcmds[i]))); i++) ;
+	if (multircptcmds[i]) {
 		res = sendtomany((recipient ? recipient : bbdisp), xgetenv("BBDISPLAYS"), msg, timeout);
 	}
 	else {
