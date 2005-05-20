@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.78 2005-03-25 21:06:57 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.79 2005-05-20 14:31:44 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -306,8 +306,9 @@ char *ssl_library_version = NULL;
  */
 static void setup_ssl(tcptest_t *item)
 {
-	dprintf("SSL service checked as simple TCP test - bbtest-net compiled without SSL\n");
+	errprintf("SSL test, but bbtest-net was built without SSL support\n");
 	item->sslrunning = 0;
+	item->errcode = CONTEST_ESSL;
 }
 
 static int socket_write(tcptest_t *item, unsigned char *outbuf, int outlen)
