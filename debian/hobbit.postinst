@@ -6,7 +6,9 @@
 set -e
 
 # Substitute in the values from the debconf db.
-CONFIGFILE=/etc/hobbit/hobbitserver.cfg
+# Must remove the area-specific envs - debconf chokes on them.
+egrep "^[a-zA-Z0-9_]+=" /etc/hobbit/hobbitserver.cfg >/etc/hobbit/hobbitserver.cfg.dbinst
+CONFIGFILE=/etc/hobbit/hobbitserver.cfg.dbinst
 . /usr/share/debconf/confmodule
 
 
@@ -64,5 +66,6 @@ esac
 
 #DEBHELPER#
 
+rm -f /etc/hobbit/hobbitserver.cfg.dbinst
 exit 0
 
