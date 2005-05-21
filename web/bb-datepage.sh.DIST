@@ -1,9 +1,8 @@
 #!/bin/sh
 
-# This is the bbgen CGI script to select a pre-generated report.
-# It is the Hobbit version
-#
-# Install this script in your webservers' cgi-bin directory
+# This is the Hobbit CGI script to select a pre-generated report.
 
-@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-datepage.cgi --env=@BBHOME@/etc/hobbitserver.cfg --url=/hobbit/periodic
+. @BBHOME@/etc/hobbitcgi.cfg
+
+@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-datepage.cgi $CGI_DATEPAGE_OPTS
 

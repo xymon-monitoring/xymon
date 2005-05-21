@@ -3,5 +3,6 @@
 # This is the wrapper for hobbitsvc.cgi when viewing a 
 # a historical logfile.
 
-@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbitsvc.cgi --env=@BBHOME@/etc/hobbitserver.cfg --historical --no-svcid
+. @BBHOME@/etc/hobbitcgi.cfg
+@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbitsvc.cgi $CGI_SVCHIST_OPTS --historical
 

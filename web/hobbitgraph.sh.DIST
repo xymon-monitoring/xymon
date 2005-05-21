@@ -4,5 +4,6 @@
 #
 # Install this script in your webservers' cgi-bin directory
 
-@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbitgraph.cgi --env=@BBHOME@/etc/hobbitserver.cfg
+. @BBHOME@/etc/hobbitcgi.cfg
+@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbitgraph.cgi $CGI_HOBBITGRAPH_OPTS
 

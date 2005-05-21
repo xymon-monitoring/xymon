@@ -2,5 +2,7 @@
 
 # This is the Hobbit wrapper for the bb-replog.cgi tool.
 
-@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-replog.cgi --env=@BBHOME@/etc/hobbitserver.cfg
+. @BBHOME@/etc/hobbitcgi.cfg
+
+@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-replog.cgi $CGI_REPLOG_OPTS
 

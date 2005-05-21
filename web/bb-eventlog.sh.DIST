@@ -1,9 +1,8 @@
 #!/bin/sh
 
-# This is the bbgen CGI script to display the eventlog
-# It is the Hobbit version
-#
-# Install this script in your webservers' cgi-bin directory
+# This is the Hobbit CGI script to display the eventlog
 
-@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-eventlog.cgi --env=@BBHOME@/etc/hobbitserver.cfg
+. @BBHOME@/etc/hobbitcgi.cfg
+
+@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-eventlog.cgi $CGI_EVENTLOG_OPTS
 
