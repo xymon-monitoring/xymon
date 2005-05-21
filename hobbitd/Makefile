@@ -124,6 +124,7 @@ cfgfiles:
 	cat etcfiles/bb-hosts.DIST | sed -e 's!@BBHOSTNAME@!$(BBHOSTNAME)!g'| sed -e 's!@BBHOSTIP@!$(BBHOSTIP)!g' >etcfiles/bb-hosts
 	cat etcfiles/hobbit-alerts.cfg.DIST >etcfiles/hobbit-alerts.cfg
 	cat etcfiles/hobbitlaunch.cfg.DIST | sed -e 's!@BBHOME@!$(BBHOME)!g' >etcfiles/hobbitlaunch.cfg
+	cat etcfiles/hobbitcgi.cfg.DIST | sed -e 's!@BBHOME@!$(BBHOME)!g' >etcfiles/hobbitcgi.cfg
 	cat wwwfiles/menu/menu_items.js.DIST | sed -e 's!@BBHOSTURL@!$(BBHOSTURL)!g' | sed -e 's!@BBCGIURL@!$(BBCGIURL)!g' | sed -e 's!@SECUREBBCGIURL@!$(SECUREBBCGIURL)!g' >wwwfiles/menu/menu_items.js
 
 %.o: %.c
@@ -154,6 +155,7 @@ install-man:
 
 install-cfg:
 	cd etcfiles; ../../build/merge-lines hobbitserver.cfg $(INSTALLROOT)$(INSTALLETCDIR)/hobbitserver.cfg
+	cd etcfiles; ../../build/merge-lines hobbitcgi.cfg $(INSTALLROOT)$(INSTALLETCDIR)/hobbitcgi.cfg
 	cd etcfiles; ../../build/merge-sects hobbitlaunch.cfg $(INSTALLROOT)$(INSTALLETCDIR)/hobbitlaunch.cfg
 	cd etcfiles; ../../build/merge-sects hobbitgraph.cfg $(INSTALLROOT)$(INSTALLETCDIR)/hobbitgraph.cfg
 	cd etcfiles; ../../build/merge-lines columndoc.csv $(INSTALLROOT)$(INSTALLETCDIR)/columndoc.csv
