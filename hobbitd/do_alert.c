@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.64 2005-05-05 06:01:49 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.65 2005-05-22 07:31:22 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -544,36 +544,37 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				firsttoken = 0;
 			}
 			else if ((pstate == P_RECIP) && (strncasecmp(p, "FORMAT=", 7) == 0)) {
-				if      (strcasecmp(p+7, "TEXT") == 0) currcp->format = FRM_TEXT;
+				if (!currcp) errprintf("FORMAT used without a recipient (line %d), ignored\n", cfid);
+				else if (strcasecmp(p+7, "TEXT") == 0) currcp->format = FRM_TEXT;
 				else if (strcasecmp(p+7, "PLAIN") == 0) currcp->format = FRM_PLAIN;
 				else if (strcasecmp(p+7, "SMS") == 0) currcp->format = FRM_SMS;
 				else if (strcasecmp(p+7, "PAGER") == 0) currcp->format = FRM_PAGER;
 				else if (strcasecmp(p+7, "SCRIPT") == 0) currcp->format = FRM_SCRIPT;
+				else errprintf("Unknown FORMAT setting '%s' ignored\n", p);
 				firsttoken = 0;
 			}
 			else if ((pstate == P_RECIP) && (strncasecmp(p, "REPEAT=", 7) == 0)) {
-				currcp->interval = 60*durationvalue(p+7);
+				if (!currcp) errprintf("REPEAT used without a recipient (line %d), ignored\n", cfid);
+				else currcp->interval = 60*durationvalue(p+7);
 				firsttoken = 0;
 			}
 			else if ((pstate == P_RECIP) && (strcasecmp(p, "STOP") == 0)) {
-				currcp->stoprule = 1;
+				if (!currcp) errprintf("STOP used without a recipient (line %d), ignored\n", cfid);
+				else currcp->stoprule = 1;
 				firsttoken = 0;
 			}
 			else if ((pstate == P_RECIP) && (strcasecmp(p, "UNMATCHED") == 0)) {
-				currcp->unmatchedonly = 1;
+				if (!currcp) errprintf("UNMATCHED used without a recipient (line %d), ignored\n", cfid);
+				else currcp->unmatchedonly = 1;
 				firsttoken = 0;
 			}
 			else if ((pstate == P_RECIP) && (strncasecmp(p, "NOALERT", 7) == 0)) {
-				currcp->noalerts = 1;
+				if (!currcp) errprintf("NOALERT used without a recipient (line %d), ignored\n", cfid);
+				else currcp->noalerts = 1;
 				firsttoken = 0;
 			}
 			else if (currule && ((strncasecmp(p, "MAIL", 4) == 0) || mailcmdactive) ) {
 				recip_t *newrcp;
-
-				if (currule == NULL) {
-					errprintf("Recipient '%s' defined with no preceeding rule\n", p);
-					continue;
-				}
 
 				mailcmdactive = 1;
 				newrcp = (recip_t *)malloc(sizeof(recip_t));
@@ -620,11 +621,6 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 			}
 			else if (currule && ((strncasecmp(p, "SCRIPT", 6) == 0) || scriptcmdactive)) {
 				recip_t *newrcp;
-
-				if (currule == NULL) {
-					errprintf("Recipient '%s' defined with no preceeding rule\n", p);
-					continue;
-				}
 
 				scriptcmdactive = 1;
 				newrcp = (recip_t *)malloc(sizeof(recip_t));
@@ -680,7 +676,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				firsttoken = 0;
 			}
 			else {
-				errprintf("Ignored unknown token '%s'\n", p);
+				errprintf("Ignored unknown/unexpected token '%s' at line %d\n", p, cfid);
 			}
 
 			if (p) p = strtok(NULL, " ");
