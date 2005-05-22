@@ -1,37 +1,69 @@
 Changes from 4.0.2 -> 4.0.3
 ---------------------------
-Bugfixes:
+
+Bugfixes (general):
+* The bb-datepage and bbmessage CGI tools were reading the 
+  POST data in an incorrect way; it worked on most systems, 
+  but did not adhere to the CGI specification.
+
+Bugfixes (alerting):
 * Acknowledgments were broken in 4.0.2.
-* Fix file-descriptor leak in the "setup-newfiles" tool
-  used during installation. This could cause "make install"
-  to abort while installing new files, on systems with a 
-  low setting for the max. number of simultaneous open files.
-* The BBALPHAMSG text passed to scripts as a default alert
-  message now includes the URL link to the statuslog.
-* Some header/footer files for the snapshot report HTML docs
-  were missing.
-* The bb-datepage CGI tool was reading the POST data in
-  an incorrect way; it worked on most systems, but did not
-  adhere to the CGI specification.
-* The "info_header" and "info_footer" files were not being
-  used for the "info" column pages.
 * Using PAGE=... in hobbit-alerts.cfg to pick out hosts
   on the front-page was not possible. The front page is
   now recognized with the name "/", so PAGE=/ will find
   them.
+* The hobbitd_alert --test option would not pick up the 
+  correct page-path settings from the bb-hosts file.
+* The BBALPHAMSG text passed to scripts as a default alert
+  message now includes the URL link to the statuslog.
+
+Bugfixes (graphs and trends):
 * hobbitgraph.cgi could show "@RRDPARAM@" on graphs if
   it was matched by a NULL string (would happen for mailq
   graphs).
-* The "disk1" graph definition failed to take into account
-  that the numbers logged were already in KB of data. So
-  the axis-label was wrong.
 * RRD files were not being updated while a status was 
   blue (disabled), even though status messages were received.
   Changed so that blue logs are passed off to the RRD
+* The "disk1" graph definition failed to take into account
+  that the numbers logged were already in KB of data. So
+  the axis-label was wrong.
   parser - we might as well track data when it's there.
 * The "mailq" RRD handler now finds the queue-length 
   regardless of whether it is before or after the "requests"
   keyword in the "mailq" or "nmailq" status message.
+* If the "apache" data collection was specified for a host,
+  but the host had no "http" tests, a bogus http status report
+  was being generated.
+* Network statistics used a conversion that would overflow
+  on 32-bit systems.
+
+Bugfixes (web pages):
+* Some header/footer files for the snapshot report
+  were missing.
+* The "info_header" and "info_footer" files were not being
+  used for the "info" column pages.
+
+Bugfixes (installation):
+* Fix file-descriptor leak in the "setup-newfiles" tool
+  used during installation. This could cause "make install"
+  to abort while installing new files, on systems with a 
+  low setting for the max. number of simultaneous open files.
+* Some systems keep libraries in a /lib64 directory - this was
+  not being searched by the configure script.
+* If Hobbit was built without SSL support and an SSL network
+  test is configured, it will now always fail with a meaningful
+  error message.
+* If the configure script found SSL- or LDAP-libraries, but
+  these could not link, the build would not disable SSL-
+  and LDAP-support and therefore it failed. If the libraries
+  do not work, disable the support.
+* The SSL test would link without required network support
+  libraries on some platforms.
+* The options for overriding SSL- and LDAP-include files
+  did not match the documented name.
+* AIX systems built with gcc were missing the OSDEF compile-
+  flags.
+
 
 Improvements:
 * All remnants of Big Brother compatibility have been 
@@ -39,6 +71,10 @@ Improvements:
   tool, use bbgen. This allowed for some much needed 
   cleaning up of the bbgen code that loaded the status
   data, especially for the handling of purple status logs.
+  Also, the sending of messages has dropped all support 
+  for the Big Brother method of sending "page" messages
+  when a status-message is sent with an alert-color, so
+  the BBPAGE and BBPAGERS settings are no longer used.
 * The maint.pl script has been removed. A new tool, 
   hobbit-enadis.cgi, replaces this with a native Hobbit
   tool. If you are upgrading, you should change the
@@ -48,6 +84,12 @@ Improvements:
   and enable tests for a single host. If you prefer not
   to have this on the info page, add the option "--no-disable"
   to the hobbit-cgi/bb-hostsvc.sh wrapper.
+* Some logfiles have been moved to the normal log-file
+  directory - /var/log/hobbit:
+  - nkstatus.log (from ~hobbit/server/)
+  - notifications.log (from ~hobbit/data/acks/)
+  - acklog (from ~hobbit/data/acks), also renamed to 
+    acknowledge.log
 * The hobbit-mailack CGI will now find a "delay=DURATION"
   line in the mail message, and use that as the duration of
   the acknowledgment. Reports show that there are some
@@ -59,6 +101,45 @@ Improvements:
   so that browsers supporting this (Mozilla, Firefox) will
   display a favicon-image in the titlebar or on the
   page-tab holding the Hobbit webpage.
+* Two new settings in hobbitserver.cfg can be used to
+  restrict which filesystems are being tracked by Hobbit.
+  The NORRDDISKS / RRDDISKS settings are regular-expressions
+  that the filesystem names are matched against. See the
+  hobbitserver.cfg(5) man-page.
+* Hobbit now works with RRDtool 1.2.x. Due to a bug in
+  the first 1.2.x releases of RRDtool, you must use at least 
+  version 1.2.2 with Hobbit.
+* A new report-output option lets you save a CSV (comma-
+  separated values) file with the availability data for
+  each host+test in Hobbit. This allows for further 
+  processing of the availability data eg. importing it
+  into a spreadsheet. This can be selected from the report
+  request webpage.
+* It is now possible to define different values for an environment
+  setting in hobbitserver.cfg, depending on a new "--area=..."
+  command-line option for all tools. See hobbitserver.cfg.
+* Apache 1.x performance data are now graphed correctly,
+  by mapping the "BusyServers/IdleServers" data into the
+  BusyWorkers/IdleWorkers datasets used by Apache 2.0 RRD
+  graphs.
+* sendmail RRD's for sendmail 8.13+ now tracks the number
+  of "quarantined" messages also. You must delete any existing
+  sendmail.rrd files for this new data item to be tracked.
+* All RRD-updates now use the RRDtool "--template" option to
+  map values to RRD datasets. This should keep us from 
+  updating datasets with wrong values.
+* Graphs can now get their title from a script, instead of
+  using a static string in hobbitgraph.cfg. This lets you 
+  e.g. pick up the graphtitle from the mrtg.cfg.
+* All CGI's now pick up commandline options from a new
+  configuration file, hobbitcgi.cfg. This is to ease
+  packaging and make sure the CGI's can be updated without
+  losing local configurations.
+* The debian- and rpm-specific packaging files are now 
+  included in the distribution tarfile.
+* A historical status-log now includes a "Full History"
+  button to go to the history overview.
+* "irix" is now recognized as operating system.
 
 
 Changes from 4.0 -> 4.0.2
