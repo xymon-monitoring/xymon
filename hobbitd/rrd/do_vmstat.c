@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.15 2005-05-08 19:35:29 henrik Exp $";
+static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.16 2005-05-22 07:58:23 henrik Exp $";
 
 typedef struct vmstat_layout_t {
 	int index;
@@ -76,6 +76,17 @@ static vmstat_layout_t vmstat_aix_layout[] = {
 	{ 14, "cpu_sys" },
 	{ 15, "cpu_idl" },
 	{ 16, "cpu_wait" },
+	{ -1, NULL }
+};
+
+/* This one for Christian Perrier's hacked IRIX "vmstat" done with sar */
+static vmstat_layout_t vmstat_irix_layout[] = {
+	{ 1, "cpu_usr" },
+	{ 2, "cpu_sys" },
+	{ 3, "cpu_int" },
+	{ 4, "cpu_wait" },
+	{ 5, "cpu_idl" },
+	{ -1, "cpu_csw" },	/* Not available, but having it in the RRD makes vmstat3 graph (int+csw) work */
 	{ -1, NULL }
 };
 
@@ -272,6 +283,8 @@ int do_vmstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		layout = vmstat_osf_layout; break;
 	  case OS_AIX: 
 		layout = vmstat_aix_layout; break;
+	  case OS_IRIX:
+		layout = vmstat_irix_layout; break;
 	  case OS_HPUX: 
 		layout = vmstat_hpux_layout; break;
 	  case OS_WIN32:
