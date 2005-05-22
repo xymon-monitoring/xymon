@@ -139,7 +139,9 @@ Improvements:
   included in the distribution tarfile.
 * A historical status-log now includes a "Full History"
   button to go to the history overview.
-* "irix" is now recognized as operating system.
+* "irix" is now recognized as operating system. A preliminary
+  vmstat RRD will be generated, but this may change in a
+  future version. "netstat" reports are not yet handled. 
 
 
 Changes from 4.0 -> 4.0.2
