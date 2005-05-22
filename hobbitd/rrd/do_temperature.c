@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char temperature_rcsid[] = "$Id: do_temperature.c,v 1.6 2005-05-08 19:35:29 henrik Exp $";
+static char temperature_rcsid[] = "$Id: do_temperature.c,v 1.7 2005-05-22 07:57:08 henrik Exp $";
 
 int do_temperature_larrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -73,13 +73,13 @@ int do_temperature_larrd(char *hostname, char *testname, char *msg, time_t tstam
 			bol += strspn(bol, " \t");
 
 			p = bol + strlen(bol) - 1;
-			while ((p > bol) && isspace(*p)) p--;
-			while ((p > bol) && isdigit(*p)) p--;
+			while ((p > bol) && isspace((int)*p)) p--;
+			while ((p > bol) && isdigit((int)*p)) p--;
 			tmpF = atoi(p);
-			while ((p > bol) && isspace(*p)) p--;
-			while ((p > bol) && isdigit(*p)) p--;
+			while ((p > bol) && isspace((int)*p)) p--;
+			while ((p > bol) && isdigit((int)*p)) p--;
 			tmpC = atoi(p);
-			while ((p > bol) && isspace(*p)) p--;
+			while ((p > bol) && isspace((int)*p)) p--;
 
 			savech = *(p+1); *(p+1) = '\0'; sprintf(rrdfn, "temperature.%s.rrd", bol); *(p+1) = savech;
 			while ((p = strchr(rrdfn, ' ')) != NULL) *p = '_';
