@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.13 2005-05-08 19:35:29 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.14 2005-05-22 06:57:52 henrik Exp $";
 
 static char *netstat_params[] = { "rrdcreate", rrdfn, 
 	                          "DS:udpInDatagrams:DERIVE:600:0:U", 
@@ -170,7 +170,14 @@ static int do_valaftermarkerequal(char *layout[], char *msg, char *outp)
 			if (ln) {
 				ln += strlen(layout[i]);
 				ln += strspn(ln, " \t");
-				if (*ln == '=') { outp += sprintf(outp, ":%lu", atol(ln+1)); gotany = gotval = 1; }
+				if (*ln == '=') { 
+					int numlen;
+					ln++; ln += strspn(ln, " \t");
+					numlen = strspn(ln, "0123456789");
+					memcpy(outp, ln+1, numlen);
+					outp += numlen; *outp = '\0';
+					gotany = gotval = 1;
+				}
 			}
 		}
 
@@ -194,7 +201,11 @@ static int do_valbeforemarker(char *layout[], char *msg, char *outp)
 			ln = strstr(msg, layout[i]);
 			while (ln && (ln > msg) && (*ln != '\n')) ln--;
 			if (ln) {
-				outp += sprintf(outp, ":%lu", atol(ln+1));
+				int numlen;
+				if (ln == '\n') ln++; ln += strspn(ln, " \t");
+				numlen = strspn(ln, "0123456789");
+				memcpy(outp, ln+1, numlen);
+				outp += numlen; *outp = '\0';
 				gotany = gotval = 1;
 			}
 		}
