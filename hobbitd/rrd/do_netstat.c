@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.15 2005-05-22 07:43:01 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.16 2005-05-22 07:57:19 henrik Exp $";
 
 static char *netstat_params[] = { "rrdcreate", rrdfn, 
 	                          "DS:udpInDatagrams:DERIVE:600:0:U", 
@@ -302,6 +302,10 @@ int do_netstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	  case OS_SNMP:
 		havedata = do_valbeforemarker(netstat_snmp_markers, datapart, outp);
 		break;
+
+	  case OS_IRIX:
+		errprintf("Cannot grok irix netstat from host '%s' \n", hostname);
+		return -1;
 
 	  case OS_UNKNOWN:
 		errprintf("Host '%s' reports netstat for an unknown OS\n", hostname);
