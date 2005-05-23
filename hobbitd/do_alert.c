@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.65 2005-05-22 07:31:22 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.66 2005-05-23 09:59:07 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -679,7 +679,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				errprintf("Ignored unknown/unexpected token '%s' at line %d\n", p, cfid);
 			}
 
-			if (p) p = strtok(NULL, " ");
+			if (p) p = strtok(NULL, " \t");
 		}
 
 		if (curlinerecips && currcp && (curlinerecips != currcp)) {
