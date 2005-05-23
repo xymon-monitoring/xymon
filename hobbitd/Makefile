@@ -61,22 +61,22 @@ hobbitd_sample: $(SAMPLEOBJS) $(LIBOBJS)
 hobbitgraph.o: hobbitgraph.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) $(RRDDEF) $(RRDINCDIR) -c -o $@ hobbitgraph.c
 
-hobbitgraph.cgi: $(HOBBITGRAPHOBJS)
+hobbitgraph.cgi: $(HOBBITGRAPHOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(HOBBITGRAPHOBJS) $(LIBOBJS) $(PCRELIBS) $(RRDLIBS) $(NETLIBS)
 
-hobbitsvc.cgi: $(HOBBITSVCOBJS)
-	$(CC) $(CFLAGS) -o $@ $(HOBBITSVCOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
+hobbitsvc.cgi: $(HOBBITSVCOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(HOBBITSVCOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
-hobbit-enadis.cgi: $(HOBBITENADISOBJS)
-	$(CC) $(CFLAGS) -o $@ $(HOBBITENADISOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
+hobbit-enadis.cgi: $(HOBBITENADISOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(HOBBITENADISOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
 hobbit-mailack.o: hobbit-mailack.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ hobbit-mailack.c
 
-hobbit-mailack: $(MAILACKOBJS)
+hobbit-mailack: $(MAILACKOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(MAILACKOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
-trimhistory: $(TRIMHISTOBJS)
+trimhistory: $(TRIMHISTOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(TRIMHISTOBJS) $(LIBOBJS) $(NETLIBS)
 
 hobbit.sh: hobbit.sh.DIST
