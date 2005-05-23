@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.16 2005-05-22 07:57:19 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.17 2005-05-23 06:13:10 henrik Exp $";
 
 static char *netstat_params[] = { "rrdcreate", rrdfn, 
 	                          "DS:udpInDatagrams:DERIVE:600:0:U", 
@@ -174,8 +174,7 @@ static int do_valaftermarkerequal(char *layout[], char *msg, char *outp)
 					int numlen;
 					ln++; ln += strspn(ln, " \t");
 					numlen = strspn(ln, "0123456789");
-					memcpy(outp, ln+1, numlen);
-					outp += numlen; *outp = '\0';
+					*outp = ':'; outp++; memcpy(outp, ln, numlen); outp += numlen; *outp = '\0';
 					gotany = gotval = 1;
 				}
 			}
@@ -204,8 +203,7 @@ static int do_valbeforemarker(char *layout[], char *msg, char *outp)
 				int numlen;
 				if (*ln == '\n') ln++; ln += strspn(ln, " \t");
 				numlen = strspn(ln, "0123456789");
-				memcpy(outp, ln+1, numlen);
-				outp += numlen; *outp = '\0';
+				*outp = ':'; outp++; memcpy(outp, ln, numlen); outp += numlen; *outp = '\0';
 				gotany = gotval = 1;
 			}
 		}
