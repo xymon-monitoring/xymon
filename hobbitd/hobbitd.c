@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.145 2005-05-07 09:24:20 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.146 2005-05-23 16:24:23 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -2489,6 +2489,12 @@ void check_purple_status(void)
 							newcolor = COL_PURPLE;
 							break;
 						}
+					}
+
+					/* Tests on dialup hosts go clear, not purple */
+					if (color == COL_PURPLE) {
+						namelist_t *hinfo = hostinfo(hwalk->hostname);
+						if (hinfo && bbh_item(hinfo, BBH_FLAG_DIALUP)) color = COL_CLEAR;
 					}
 
 					handle_status(lwalk->message, "hobbitd", 
