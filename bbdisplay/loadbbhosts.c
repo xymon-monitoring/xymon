@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.24 2005-04-06 21:39:00 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.25 2005-05-23 16:23:58 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -595,8 +595,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			int targetpagecount;
 			char *bbval;
 
-			/* Check for no-display and ".default." hosts - they are ignored. */
-			if ((*hostname == '@') || (*hostname == '.')) continue;
+			/* Check for ".default." hosts - they are ignored. */
+			if (*hostname == '.') continue;
 
 			if (!fqdn) {
 				/* Strip any domain from the hostname */
@@ -610,6 +610,9 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				errprintf("Confused - hostname '%s' cannot be found. Ignored\n", hostname);
 				continue;
 			}
+
+			/* Check for no-display hosts - they are ignored. */
+			if (bbh_item(bbhost, BBH_FLAG_NODISP) != NULL) continue;
 
 			for (targetpagecount=0; (targetpagecount < MAX_TARGETPAGES_PER_HOST); targetpagecount++) 
 				targetpagelist[targetpagecount] = NULL;
