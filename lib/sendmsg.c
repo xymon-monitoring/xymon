@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.59 2005-05-20 20:49:28 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.60 2005-05-23 15:04:12 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -35,7 +35,7 @@ static char rcsid[] = "$Id: sendmsg.c,v 1.59 2005-05-20 20:49:28 henrik Exp $";
 #define BBSENDRETRIES 2
 
 /* These commands go to BBDISPLAYS */
-static char *multircptcmds[] = { "status", "combo", "meta", "data", "notify", "enable", "disable", "schedule", "drop", "rename", NULL };
+static char *multircptcmds[] = { "status", "combo", "meta", "data", "notify", "enable", "disable", "drop", "rename", NULL };
 
 /* Stuff for combo message handling */
 int		bbmsgcount = 0;		/* Number of messages transmitted */
@@ -439,6 +439,7 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 	static char *bbdisp = NULL;
 	int res = 0;
 	int i;
+	int scheduleaction = 0;
 
  	if ((bbdisp == NULL) && xgetenv("BBDISP")) bbdisp = strdup(xgetenv("BBDISP"));
 	if (recipient == NULL) recipient = bbdisp;
@@ -447,8 +448,16 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 		return BB_EBADIP;
 	}
 
+	/* 
+	 * "schedule" is special - when scheduling an action there is no response, but 
+	 * when it is the blank "schedule" command there will be a response. So a 
+	 * schedule action goes to all BBDISPLAYS, the blank "schedule" goes to a single
+	 * server.
+	 */
+	scheduleaction = ((strncmp(msg, "schedule", 8) == 0) && (strlen(msg) > 8));
+
 	for (i = 0; (multircptcmds[i] && strncmp(multircptcmds[i], msg, strlen(multircptcmds[i]))); i++) ;
-	if (multircptcmds[i]) {
+	if (scheduleaction || multircptcmds[i]) {
 		res = sendtomany((recipient ? recipient : bbdisp), xgetenv("BBDISPLAYS"), msg, timeout);
 	}
 	else {
