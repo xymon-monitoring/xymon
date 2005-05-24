@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.40 2005-05-08 16:37:31 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.41 2005-05-24 08:39:39 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -370,6 +370,8 @@ int main(int argc, char *argv[])
 			usejsvalidation = 0;
 		}
 	}
+
+	redirect_cgilog("hobbitsvc");
 
 	*errortxt = '\0';
 	hostname = displayname = service = ip = tstamp = NULL;

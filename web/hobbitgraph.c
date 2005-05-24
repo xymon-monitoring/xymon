@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.30 2005-05-15 07:40:32 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.31 2005-05-24 08:39:39 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -461,6 +461,8 @@ int main(int argc, char *argv[])
 			graphfn = strdup(p+1);
 		}
 	}
+
+	redirect_cgilog("hobbitgraph");
 
 	strcpy(okuri, xgetenv("REQUEST_URI"));
 	p = strchr(okuri, '?'); if (p) *p = '\0'; else p = okuri + strlen(okuri);

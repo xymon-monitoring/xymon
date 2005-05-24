@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-enadis.c,v 1.13 2005-05-09 20:39:30 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-enadis.c,v 1.14 2005-05-24 08:39:39 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -259,6 +259,8 @@ int main(int argc, char *argv[])
 			debug = 1;
 		}
 	}
+
+	redirect_cgilog("hobbit-enadis");
 
 	parse_cgi();
 	if (debug) preview = 1;
