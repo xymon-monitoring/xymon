@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.23 2005-05-07 09:24:20 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.24 2005-05-24 08:39:56 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -150,6 +150,8 @@ int main(int argc, char *argv[])
 			envarea = strdup(p+1);
 		}
 	}
+
+	redirect_cgilog("bb-findhost");
 
 	if ((xgetenv("QUERY_STRING") == NULL) || (strlen(xgetenv("QUERY_STRING")) == 0)) {
 		/* Present the query form */

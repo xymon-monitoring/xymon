@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.31 2005-05-07 09:24:20 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.32 2005-05-24 08:39:56 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -462,6 +462,8 @@ int main(int argc, char *argv[])
 			envarea = strdup(p+1);
 		}
 	}
+
+	redirect_cgilog("bb-replog");
 
 	envcheck(reqenv);
 	parse_query();

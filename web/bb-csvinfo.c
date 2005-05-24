@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-csvinfo.c,v 1.14 2005-05-07 09:24:20 henrik Exp $";
+static char rcsid[] = "$Id: bb-csvinfo.c,v 1.15 2005-05-24 08:39:56 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -120,6 +120,8 @@ int main(int argc, char *argv[])
 			bgcolor = parse_color(p+1);
 		}
 	}
+
+	redirect_cgilog("bb-csvinfo");
 
 	parse_query();
 	if (strlen(wantedname) == 0) {

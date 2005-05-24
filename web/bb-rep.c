@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.31 2005-05-09 16:01:49 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.32 2005-05-24 08:39:56 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -249,6 +249,8 @@ int main(int argc, char *argv[])
 			bbgen_argv[newargi++] = argv[argi];
 		}
 	}
+
+	redirect_cgilog("bb-rep");
 
 	if ((xgetenv("QUERY_STRING") == NULL) || (strlen(xgetenv("QUERY_STRING")) == 0)) {
 		/* Present the query form */

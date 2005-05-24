@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.46 2005-05-07 09:24:20 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.47 2005-05-24 08:39:56 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -694,6 +694,8 @@ int main(int argc, char *argv[])
 			wantserviceid = 0;
 		}
 	}
+
+	redirect_cgilog("bb-hist");
 
 	envcheck(reqenv);
 	parse_query();
