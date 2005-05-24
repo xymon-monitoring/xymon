@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: errormsg.c,v 1.7 2005-03-22 09:16:49 henrik Exp $";
+static char rcsid[] = "$Id: errormsg.c,v 1.8 2005-05-24 08:40:13 henrik Exp $";
 
 #include <sys/types.h>
 #include <string.h>
@@ -20,12 +20,14 @@ static char rcsid[] = "$Id: errormsg.c,v 1.7 2005-03-22 09:16:49 henrik Exp $";
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <limits.h>
 
 #include "libbbgen.h"
 
 char *errbuf = NULL;
 int save_errbuf = 1;
 static unsigned int errbufsize = 0;
+static char *errappname = NULL;
 
 int debug = 0;
 static FILE *tracefd = NULL;
@@ -43,6 +45,7 @@ void errprintf(const char *fmt, ...)
 
 	strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S", localtime(&now));
 	fprintf(stderr, "%s ", timestr);
+	if (errappname) fprintf(stderr, "%s ", errappname);
 
 	va_start(args, fmt);
 #ifdef NO_VSNPRINTF
@@ -140,5 +143,14 @@ void traceprintf(const char *fmt, ...)
 
 		MEMUNDEFINE(timestr);
 	}
+}
+
+void redirect_cgilog(char *cginame)
+{
+	char logfn[PATH_MAX];
+
+	if (cginame) errappname = strdup(cginame);
+	sprintf(logfn, "%s/cgierror.log", xgetenv("BBSERVERLOGS"));
+	freopen(logfn, "a", stderr);
 }
 

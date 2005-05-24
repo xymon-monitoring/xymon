@@ -23,5 +23,7 @@ extern void starttrace(const char *fn);
 extern void stoptrace(void);
 extern void traceprintf(const char *fmt, ...);
 
+extern void redirect_cgilog(char *cginame);
+
 #endif
 
