@@ -184,10 +184,22 @@ e.g. be used to store information about the physical location
 of the device, contact persons etc. If the text contain whitespace,
 you must enclose it in double-quotes, e.g.  DESCR:"switch:4th floor Marketing switch"
 
+.IP dialup
+The keyword "dialup" for a host means that it is OK for it to be
+off-line - this should not trigger an alert. All network tests
+will go "clear" upon failure, and any missing reports from e.g.
+cpu- and disk-status will not go purple when they are not updated.
+
 .IP nobb2
 Ignore this host on the BB2 page. Even if it has an active alert,
 it will not be included in the BB2 page. This also removes the
 host from the event-log display.
+
+.IP nodisp
+Ignore this host completely when generating the Hobbit webpages.
+Can be useful for monitoring a host without having it show up on
+the webpages, e.g. because it is not yet in production use. Or for
+hiding a host that is shown only on a second pageset.
 
 .IP prefer
 When a single host is defined multiple time in the bb-hosts file,
