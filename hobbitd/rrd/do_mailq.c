@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char mailq_rcsid[] = "$Id: do_mailq.c,v 1.12 2005-05-23 21:13:23 henrik Exp $";
+static char mailq_rcsid[] = "$Id: do_mailq.c,v 1.13 2005-05-24 08:38:28 henrik Exp $";
 
 int do_mailq_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -58,18 +58,18 @@ int do_mailq_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 	}
 	else {
-		char *bol, *eol;
+		char *valptr;
 
 		/* Looking for "... N requests ... " */
-		bol = strstr(msg, "requests");
-		if (bol) {
+		valptr = strstr(msg, "requests");
+		if (valptr) {
 			/* Go back past any whitespace before "requests" */
-			do { bol--; } while ((bol > msg) && (*bol != '\n') && isspace((int)*bol));
+			do { valptr--; } while ((valptr > msg) && (*valptr != '\n') && isspace((int)*valptr));
 
 			/* Go back to the beginning of the number */
-			while ((bol > msg) && isdigit((int) *(bol-1))) bol--;
+			while ((valptr > msg) && isdigit((int) *(valptr-1))) valptr--;
 
-			mailq = atoi(bol);
+			mailq = atoi(valptr);
 
 			sprintf(rrdfn, "mailq.rrd");
 			sprintf(rrdvalues, "%d:%d", (int)tstamp, mailq);
