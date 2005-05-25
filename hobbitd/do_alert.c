@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.66 2005-05-23 09:59:07 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.67 2005-05-25 19:46:56 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -379,7 +379,7 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 			delim = strchr(l, '=');
 			*delim = '\0';
 			newtok->name = strdup(l+1);	/* Skip the '$' */
-			newtok->value = strdup(delim+1);
+			newtok->value = strdup(preprocess(delim+1));
 			newtok->next = tokhead;
 			tokhead = newtok;
 			continue;
