@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.56 2005-05-15 06:29:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.57 2005-05-26 12:13:44 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -254,33 +254,29 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--test")) {
 			char *testhost = NULL, *testservice = NULL, *testpage = NULL, *testcolor = "red";
+			namelist_t *hinfo;
 			int testdur = 0;
 			FILE *logfd = NULL;
 			activealerts_t *awalk = NULL;;
 
 			argi++; if (argi < argc) testhost = argv[argi];
 			argi++; if (argi < argc) testservice = argv[argi];
-			argi++; if (argi < argc) testpage = argv[argi];
 			argi++; if (argi < argc) testdur = atoi(argv[argi]);
 			argi++; if (argi < argc) testcolor = argv[argi];
 
 			if ((testhost == NULL) || (testservice == NULL)) {
-				printf("Usage: hobbitd_alert --test HOST SERVICE [PAGE [duration [color]]]\n");
+				printf("Usage: hobbitd_alert --test HOST SERVICE [duration [color]]\n");
 				return 1;
 			}
 
-			if (testpage == NULL) {
-				namelist_t *hinfo;
-
-				load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
-				hinfo = hostinfo(testhost);
-				if (hinfo) {
-					testpage = strdup(bbh_item(hinfo, BBH_PAGEPATH));
-				}
-				else {
-					errprintf("Host not found in bb-hosts - assuming it is on the top page\n");
-					testpage = "";
-				}
+			load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+			hinfo = hostinfo(testhost);
+			if (hinfo) {
+				testpage = strdup(bbh_item(hinfo, BBH_PAGEPATH));
+			}
+			else {
+				errprintf("Host not found in bb-hosts - assuming it is on the top page\n");
+				testpage = "";
 			}
 
 			awalk = (activealerts_t *)malloc(sizeof(activealerts_t));
