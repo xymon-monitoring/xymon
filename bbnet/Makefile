@@ -3,16 +3,16 @@
 # ARES settings. c-ares is included
 DNSFLAGS = -I./c-ares
 
-PROGRAMS = bbtest-net
+PROGRAMS = bbtest-net beastat
 EXTENSIONS = bbretest-net.sh
 
 all: $(PROGRAMS) $(EXTENSIONS)
 
 NETTESTOBJS = bbtest-net.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o
+BEASTATOBJS = beastat.o
 
 bbtest-net: $(NETTESTOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) ../lib/libbbgen.a libcares.a $(LDAPLIBS) $(SSLLIBS) $(NETLIBS)
-
 
 bbtest-net.o: bbtest-net.c
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(LDAPFLAGS) $(SSLINCDIR) $(LDAPINCDIR) -c -o $@ bbtest-net.c
@@ -50,6 +50,13 @@ c-ares/configure: c-ares-$(ARESVER).tar.gz
 	mv c-ares-$(ARESVER) c-ares
 	# Must touch "configure", or it will trigger a rebuild because it is older than the tar.gz file.
 	touch c-ares/configure
+
+beastat: $(BEASTATOBJS) ../lib/libbbgen.a
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(BEASTATOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
+
+beastat.o: beastat.c
+	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ beastat.c
+
 
 ################################################
 # Default compilation rules
