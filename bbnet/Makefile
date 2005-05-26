@@ -69,7 +69,7 @@ beastat.o: beastat.c
 	chmod 755 $@
 
 clean:
-	rm -f *.o *.a *~ bbtest-net bbretest-net.sh
+	rm -f *.o *.a *~ $(PROGRAMS) $(EXTENSIONS)
 
 
 install: install-bin install-ext install-config install-man
