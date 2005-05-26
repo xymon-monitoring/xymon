@@ -1,6 +1,6 @@
 #!/bin/sh
 
-SRCDIRS="bbdisplay bbnet bbproxy build common contrib docs hobbitd include lib scripts debian rpm"
+SRCDIRS="bbdisplay bbnet bbproxy build common contrib docs hobbitd include lib debian rpm"
 
 case "$1" in
 	"tag"|"untag"|"release")

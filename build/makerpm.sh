@@ -29,7 +29,7 @@ cp rpm/hobbit-init.d rpmbuild/SOURCES/
 cp rpm/hobbit.logrotate rpmbuild/SOURCES/
 
 mkdir -p rpmbuild/hobbit-$REL
-for f in bbdisplay bbnet bbpatches bbproxy build common docs hobbitd include lib scripts
+for f in bbdisplay bbnet bbpatches bbproxy build common contrib docs hobbitd include lib
 do
         find $f/ | grep -v RCS | cpio -pdvmu ~/hobbit/rpmbuild/hobbit-$REL/
 done
