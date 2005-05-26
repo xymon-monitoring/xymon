@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: beastat.c,v 1.1 2005-05-24 15:43:02 henrik Exp $";
+static char rcsid[] = "$Id: beastat.c,v 1.2 2005-05-26 12:52:39 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -19,15 +19,16 @@ static char rcsid[] = "$Id: beastat.c,v 1.1 2005-05-24 15:43:02 henrik Exp $";
 #include <limits.h>
 #include <errno.h>
 #include <ctype.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#include <pcre.h>
 
 #include "libbbgen.h"
+#include "version.h"
 
-#define DEFAULT_SNMP_PORT 1161
 #define DEFAULT_SNMP_COMMUNITY "public"
-
-char statusmsg[MAXMSG];
-char msgline[MAXMSG];
-int statuscolor = COL_GREEN;
+#define DEFAULT_SNMP_PORT 161
 
 typedef struct bea_idx_t {
         char *idx;
@@ -35,6 +36,14 @@ typedef struct bea_idx_t {
 } bea_idx_t;
 
 static bea_idx_t *bea_idxhead = NULL;
+static char msgline[MAX_LINE_LEN];
+static char statusmsg[MAXMSG];
+static int statuscolor = COL_GREEN;
+
+/* Set with environment or commandline options */
+static char *location = "";		/* BBLOCATION value */
+static int testuntagged = 0;
+
 
 static void find_idxes(char *buf, char *searchstr)
 {
@@ -71,9 +80,6 @@ static void find_idxes(char *buf, char *searchstr)
                 if (eoln) *eoln = '\n';
         }
 }
-
-char *location = "";		/* BBLOCATION value */
-int testuntagged = 0;
 
 int wanted_host(namelist_t *host, char *netstring)
 {
@@ -168,10 +174,25 @@ void send_data(namelist_t *host, char *beadomain, char *databuf, char **items)
 int main(int argc, char *argv[])
 {
         namelist_t *hosts, *hwalk;
+	int argi;
 
-	/* FIXME */
-	dontsendmessages = 1;
-	debug = 1;
+	for (argi = 1; (argi < argc); argi++) {
+		if ((strcmp(argv[argi], "--help") == 0)) {
+			printf("beastat version %s\n\n", VERSION);
+			printf("Usage:\n%s [--debug] [--no-update]\n", argv[0]);
+			exit(0);
+		}
+		else if ((strcmp(argv[argi], "--version") == 0)) {
+			printf("beastat version %s\n", VERSION);
+			exit(0);
+		}
+		else if ((strcmp(argv[argi], "--debug") == 0)) {
+			debug = 1;
+		}
+		else if ((strcmp(argv[argi], "--no-update") == 0)) {
+			dontsendmessages = 1;
+		}
+	}
 
         hosts = load_hostnames(xgetenv("BBHOSTS"), "netinclude", get_fqdn());
         if (hosts == NULL) {
@@ -179,10 +200,9 @@ int main(int argc, char *argv[])
                 return 1;
         }
 
-	init_timestamp();
-
         if (xgetenv("BBLOCATION")) location = strdup(xgetenv("BBLOCATION"));
 
+	init_timestamp();
 	combo_start();
 
 	for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
@@ -251,6 +271,8 @@ int main(int argc, char *argv[])
 			strcat(statusmsg, msgline);
 		}
 
+		/* FUTURE: Have the statuscolor/statusmsg be updated to check against thresholds */
+		/* Right now, the "bea" status is always green */
 		init_status(statuscolor);
 		sprintf(msgline, "status %s.%s %s %s\n\n", commafy(bbh_item(hwalk, BBH_HOSTNAME)), "bea", colorname(statuscolor), timestamp);
 		addtostatus(msgline);
