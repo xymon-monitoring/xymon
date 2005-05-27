@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.57 2005-05-26 12:13:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.58 2005-05-27 05:57:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -263,9 +263,10 @@ int main(int argc, char *argv[])
 			argi++; if (argi < argc) testservice = argv[argi];
 			argi++; if (argi < argc) testdur = atoi(argv[argi]);
 			argi++; if (argi < argc) testcolor = argv[argi];
+			argi++; if (argi < argc) fakestarttime = (time_t) atoi(argv[argi]);
 
 			if ((testhost == NULL) || (testservice == NULL)) {
-				printf("Usage: hobbitd_alert --test HOST SERVICE [duration [color]]\n");
+				printf("Usage: hobbitd_alert --test HOST SERVICE [duration [color [time]]]\n");
 				return 1;
 			}
 
