@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: beastat.c,v 1.2 2005-05-26 12:52:39 henrik Exp $";
+static char rcsid[] = "$Id: beastat.c,v 1.3 2005-05-27 12:15:44 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -27,9 +27,6 @@ static char rcsid[] = "$Id: beastat.c,v 1.2 2005-05-26 12:52:39 henrik Exp $";
 #include "libbbgen.h"
 #include "version.h"
 
-#define DEFAULT_SNMP_COMMUNITY "public"
-#define DEFAULT_SNMP_PORT 161
-
 typedef struct bea_idx_t {
         char *idx;
         struct bea_idx_t *next;
@@ -43,6 +40,8 @@ static int statuscolor = COL_GREEN;
 /* Set with environment or commandline options */
 static char *location = "";		/* BBLOCATION value */
 static int testuntagged = 0;
+static int default_port = 161;
+static char *default_community = "public";
 
 
 static void find_idxes(char *buf, char *searchstr)
@@ -179,7 +178,8 @@ int main(int argc, char *argv[])
 	for (argi = 1; (argi < argc); argi++) {
 		if ((strcmp(argv[argi], "--help") == 0)) {
 			printf("beastat version %s\n\n", VERSION);
-			printf("Usage:\n%s [--debug] [--no-update]\n", argv[0]);
+			printf("Usage:\n%s [--debug] [--no-update] [--port=SNMPPORT] [--community=SNMPCOMMUNITY]\n", 
+				argv[0]);
 			exit(0);
 		}
 		else if ((strcmp(argv[argi], "--version") == 0)) {
@@ -191,6 +191,14 @@ int main(int argc, char *argv[])
 		}
 		else if ((strcmp(argv[argi], "--no-update") == 0)) {
 			dontsendmessages = 1;
+		}
+		else if (argnmatch(argv[argi], "--port=")) {
+			char *p = strchr(argv[argi], '=');
+			default_port = atoi(p+1);
+		}
+		else if (argnmatch(argv[argi], "--community=")) {
+			char *p = strchr(argv[argi], '=');
+			default_community = strdup(p+1);
 		}
 	}
 
@@ -207,9 +215,9 @@ int main(int argc, char *argv[])
 
 	for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
 		char *tspec = bbh_custom_item(hwalk, "bea=");
-		char *snmpcommunity = DEFAULT_SNMP_COMMUNITY;
+		char *snmpcommunity = default_community;
 		char *beadomain = "";
-		int snmpport = DEFAULT_SNMP_PORT;
+		int snmpport = default_port;
 		char *p;
 		char pipecmd[4096];
 		char *jrockout, *qout;
