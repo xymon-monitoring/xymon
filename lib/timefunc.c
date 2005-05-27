@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.19 2005-04-10 12:06:21 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.20 2005-05-27 05:57:13 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -22,6 +22,29 @@ static char rcsid[] = "$Id: timefunc.c,v 1.19 2005-04-10 12:06:21 henrik Exp $";
 
 #include "libbbgen.h"
 
+#ifdef time
+#undef time
+#endif
+
+time_t fakestarttime = 0;
+
+time_t getcurrenttime(time_t *retparm)
+{
+	static time_t firsttime = 0;
+
+	if (fakestarttime != 0) {
+		time_t result;
+
+		if (firsttime == 0) firsttime = time(NULL);
+		result = fakestarttime + (time(NULL) - firsttime);
+		if (retparm) *retparm = result;
+		return result;
+	}
+	else
+		return time(retparm);
+}
+
+
 char *timestamp = NULL;
 void init_timestamp(void)
 {
@@ -29,7 +52,7 @@ void init_timestamp(void)
 
 	if (timestamp == NULL) timestamp = (char *)malloc(30);
 
-        now = time(NULL);
+        now = getcurrenttime(NULL);
         strcpy(timestamp, ctime(&now));
         timestamp[strlen(timestamp)-1] = '\0';
 
@@ -133,7 +156,7 @@ int within_sla(char *timespec, int defresult)
 
 	if (!timespec) return defresult;
 
-	tnow = time(NULL);
+	tnow = getcurrenttime(NULL);
 	now = localtime(&tnow);
 	curtime = now->tm_hour*60+now->tm_min;
 
@@ -258,7 +281,7 @@ int periodcoversnow(char *tag)
 	     !(*(p+4) == ':') )          goto out;
 	else *(endtime+4) = '\0';
 
-	tnow = time(NULL);
+	tnow = getcurrenttime(NULL);
 	now = localtime(&tnow);
 
 
