@@ -1,8 +1,14 @@
+hobbit (4.0.4rc1-0) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Fri, 27 May 2005 09:31:00 +0200
+
 hobbit (4.0.3-1) unstable; urgency=low
 
   * New upstream release.
 
- -- Henrik Stoerner <henrik@hswn.dk>  Wed, 22 May 2005 09:34:57 +0200
+ -- Henrik Stoerner <henrik@hswn.dk>  Sun, 22 May 2005 09:34:57 +0200
 
 hobbit (4.0.2-1) unstable; urgency=low
 
