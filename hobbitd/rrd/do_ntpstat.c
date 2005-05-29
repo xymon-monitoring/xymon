@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ntpstat_rcsid[] = "$Id: do_ntpstat.c,v 1.10 2005-05-29 06:33:20 henrik Exp $";
+static char ntpstat_rcsid[] = "$Id: do_ntpstat.c,v 1.11 2005-05-29 06:44:36 henrik Exp $";
 
 int do_ntpstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -27,9 +27,10 @@ int do_ntpstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 	/* Or maybe it's just the "ntpq -c rv" output */
 	if (!gotdata) {
-		p = strstr(msg, " offset=");
-		if (!p) p = strstr(msg, "\noffset=");
-		gotdata = (p && (sscanf(p+1, "offset=%f", &offset) == 1));
+		p = strstr(msg, "offset=");
+		if (p && (isspace((int)*(p-1)) || (*(p-1) == ','))) {
+			gotdata = (p && (sscanf(p, "offset=%f", &offset) == 1));
+		}
 	}
 
 	if (gotdata) {
