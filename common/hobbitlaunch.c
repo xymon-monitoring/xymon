@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.28 2005-05-07 09:24:20 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.29 2005-05-29 09:59:50 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -43,7 +43,7 @@ static char rcsid[] = "$Id: hobbitlaunch.c,v 1.28 2005-05-07 09:24:20 henrik Exp
 
 #define MAX_FAILS 5
 #define HEARTBEAT_CHECK   5	/* How often to check the heartbeat */
-#define HEARTBEAT_TIMEOUT 15	/* Max time between heartbeats. */
+#define HEARTBEAT_TIMEOUT 60	/* Max time between heartbeats. */
 
 typedef struct grouplist_t {
 	char *groupname;
@@ -76,7 +76,7 @@ grouplist_t *grouphead = NULL;
 volatile time_t nextcfgload = 0;
 volatile int running = 1;
 volatile int dologswitch = 0;
-time_t heartbeat;
+volatile time_t heartbeat;
 time_t nexthbcheck = 0;
 
 void update_task(tasklist_t *newtask)
@@ -595,7 +595,7 @@ int main(int argc, char *argv[])
 
 				if (twalk->heartbeat) {
 					/* When we start the heartbeat-checked task, dont kill it off right away */
-					nexthbcheck = now + 60;
+					nexthbcheck = now + 3*HEARTBEAT_TIMEOUT;
 				}
 
 				twalk->laststart = now;
