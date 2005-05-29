@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.29 2005-05-29 09:59:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.30 2005-05-29 10:03:21 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -66,7 +66,7 @@ typedef struct tasklist_t {
 	int cfload;	/* Used while reloading a configuration */
 	int beingkilled;
 	struct tasklist_t *depends;
-	time_t *heartbeat;
+	volatile time_t *heartbeat;
 	struct tasklist_t *next;
 } tasklist_t;
 tasklist_t *taskhead = NULL;
