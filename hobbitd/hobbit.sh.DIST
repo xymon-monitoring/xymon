@@ -24,13 +24,18 @@ case "$1" in
    "start")
 	if test -s @BBLOGDIR@/hobbitlaunch.pid
 	then
-		echo "Hobbit appears to be running (PID `cat @BBLOGDIR@/hobbitlaunch.pid`)"
-		echo "If not, remove @BBLOGDIR@/hobbitlaunch.pid"
-		exit 1
-	else
-		@RUNTIMEDEFS@ @BBHOME@/bin/hobbitlaunch --config=@BBHOME@/etc/hobbitlaunch.cfg --env=@BBHOME@/etc/hobbitserver.cfg --log=@BBLOGDIR@/hobbitlaunch.log --pidfile=@BBLOGDIR@/hobbitlaunch.pid
-		echo "Hobbit started"
+		kill -0 `cat @BBLOGDIR@/hobbitlaunch.pid`
+		if test $? -eq 0
+		then
+			echo "Hobbit appears to be running, doing restart"
+			$0 stop
+		else
+			rm -f @BBLOGDIR@/hobbitlaunch.pid
+		fi
 	fi
+
+	@RUNTIMEDEFS@ @BBHOME@/bin/hobbitlaunch --config=@BBHOME@/etc/hobbitlaunch.cfg --env=@BBHOME@/etc/hobbitserver.cfg --log=@BBLOGDIR@/hobbitlaunch.log --pidfile=@BBLOGDIR@/hobbitlaunch.pid
+	echo "Hobbit started"
 	;;
 
    "stop")
@@ -41,12 +46,20 @@ case "$1" in
 	else
 		echo "Hobbit is not running"
 	fi
+	rm -f @BBLOGDIR@/hobbitlaunch.pid
 	;;
 
    "status")
 	if test -s @BBLOGDIR@/hobbitlaunch.pid
 	then
-		echo "Hobbit (hobbitlaunch) running with PID `cat @BBLOGDIR@/hobbitlaunch.pid`"
+		kill -0 `cat @BBLOGDIR@/hobbitlaunch.pid`
+		if test $? -eq 0
+		then
+			echo "Hobbit (hobbitlaunch) running with PID `cat @BBLOGDIR@/hobbitlaunch.pid`"
+		else
+			echo "Hobbit not running, removing stale PID file"
+			rm -f @BBLOGDIR@/hobbitlaunch.pid
+		fi
 	else
 		echo "Hobbit (hobbitlaunch) does not appear to be running"
 	fi
