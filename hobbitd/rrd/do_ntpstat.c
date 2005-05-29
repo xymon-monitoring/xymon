@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ntpstat_rcsid[] = "$Id: do_ntpstat.c,v 1.8 2005-05-08 19:35:29 henrik Exp $";
+static char ntpstat_rcsid[] = "$Id: do_ntpstat.c,v 1.9 2005-05-29 06:21:26 henrik Exp $";
 
 int do_ntpstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -17,11 +17,21 @@ int do_ntpstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 	char *p;
 	float offset;
+	int gotdata = 0;
 
 	if (ntpstat_tpl == NULL) ntpstat_tpl = setup_template(ntpstat_params);
 
+	/* First check for the old LARRD ntpstat BF script */
 	p = strstr(msg, "\nOffset:");
-	if (p && (sscanf(p+1, "Offset: %f", &offset) == 1)) {
+	gotdata = (p && (sscanf(p+1, "Offset: %f", &offset) == 1));
+
+	/* Or maybe it's just the "ntpq -c rv" output */
+	if (!gotdata) {
+		p = strstr(msg, " offset=");
+		gotdata = (p && (sscanf(p+1, "offset=%f", &offset) == 1));
+	}
+
+	if (gotdata) {
 		sprintf(rrdfn, "ntpstat.rrd");
 		sprintf(rrdvalues, "%d:%.6f", (int)tstamp, offset);
 		return create_and_update_rrd(hostname, rrdfn, ntpstat_params, ntpstat_tpl);
