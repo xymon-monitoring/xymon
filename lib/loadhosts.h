@@ -97,6 +97,7 @@ extern int knownloghost(char *logdir);
 extern namelist_t *hostinfo(char *hostname);
 extern char *bbh_item(namelist_t *host, enum bbh_item_t item);
 extern char *bbh_custom_item(namelist_t *host, char *key);
+extern char *bbh_item_byname(namelist_t *host, char *item);
 extern char *bbh_item_walk(namelist_t *host);
 extern int bbh_item_idx(char *value);
 

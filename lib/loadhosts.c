@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.30 2005-04-03 15:34:51 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.31 2005-05-31 14:50:16 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -27,6 +27,7 @@ static pagelist_t *pghead = NULL;
 static namelist_t *namehead = NULL;
 static namelist_t *defaulthost = NULL;
 static const char *bbh_item_key[BBH_LAST];
+static const char *bbh_item_name[BBH_LAST];
 
 static void bbh_item_list_setup(void)
 {
@@ -38,43 +39,90 @@ static void bbh_item_list_setup(void)
 	/* Doing it this way makes sure the index matches the value */
 	setupdone = 1;
 	memset(bbh_item_key, 0, sizeof(bbh_item_key));
-	bbh_item_key[BBH_NET] = "NET:";
-	bbh_item_key[BBH_DISPLAYNAME] = "NAME:";
-	bbh_item_key[BBH_CLIENTALIAS] = "CLIENT:";
-	bbh_item_key[BBH_COMMENT] = "COMMENT:";
-	bbh_item_key[BBH_DESCRIPTION] = "DESCR:";
-	bbh_item_key[BBH_DOCURL] = "DOC:";
-	bbh_item_key[BBH_NK] = "NK:";
-	bbh_item_key[BBH_NKTIME] = "NKTIME=";
-	bbh_item_key[BBH_LARRD] = "LARRD:";
-	bbh_item_key[BBH_WML] = "WML:";
-	bbh_item_key[BBH_NOPROP] = "NOPROP:";
-	bbh_item_key[BBH_NOPROPRED] = "NOPROPRED:";
-	bbh_item_key[BBH_NOPROPYELLOW] = "NOPROPYELLOW:";
-	bbh_item_key[BBH_NOPROPPURPLE] = "NOPROPPURPLE:";
-	bbh_item_key[BBH_NOPROPACK] = "NOPROPACK:";
-	bbh_item_key[BBH_REPORTTIME] = "REPORTTIME=";
-	bbh_item_key[BBH_WARNPCT] = "WARNPCT:";
-	bbh_item_key[BBH_DOWNTIME] = "DOWNTIME=";
-	bbh_item_key[BBH_SSLDAYS] = "ssldays=";
-	bbh_item_key[BBH_DEPENDS] = "depends=";
-	bbh_item_key[BBH_FLAG_NOINFO] = "noinfo";
-	bbh_item_key[BBH_FLAG_NOTRENDS] = "notrends";
-	bbh_item_key[BBH_FLAG_NODISP] = "nodisp";
-	bbh_item_key[BBH_FLAG_NOBB2] = "nobb2";
-	bbh_item_key[BBH_FLAG_PREFER] = "prefer";
-	bbh_item_key[BBH_FLAG_NOSSLCERT] = "nosslcert";
-	bbh_item_key[BBH_FLAG_TRACE] = "trace";
-	bbh_item_key[BBH_FLAG_NOTRACE] = "notrace";
-	bbh_item_key[BBH_FLAG_NOCONN] = "noconn";
-	bbh_item_key[BBH_FLAG_NOPING] = "noping";
-	bbh_item_key[BBH_FLAG_DIALUP] = "dialup";
-	bbh_item_key[BBH_FLAG_TESTIP] = "testip";
-	bbh_item_key[BBH_FLAG_BBDISPLAY] = "BBDISPLAY";
-	bbh_item_key[BBH_FLAG_BBNET] = "BBNET";
-	bbh_item_key[BBH_FLAG_BBPAGER] = "BBPAGER";
-	bbh_item_key[BBH_FLAG_LDAPFAILYELLOW] = "ldapyellowfail";
-	bbh_item_key[BBH_LDAPLOGIN] = "ldaplogin=";
+	memset(bbh_item_name, 0, sizeof(bbh_item_key));
+	bbh_item_key[BBH_NET]                  = "NET:";
+	bbh_item_name[BBH_NET]                 = "BBH_NET";
+	bbh_item_key[BBH_DISPLAYNAME]          = "NAME:";
+	bbh_item_name[BBH_DISPLAYNAME]         = "BBH_DISPLAYNAME";
+	bbh_item_key[BBH_CLIENTALIAS]          = "CLIENT:";
+	bbh_item_name[BBH_CLIENTALIAS]         = "BBH_CLIENTALIAS";
+	bbh_item_key[BBH_COMMENT]              = "COMMENT:";
+	bbh_item_name[BBH_COMMENT]             = "BBH_COMMENT";
+	bbh_item_key[BBH_DESCRIPTION]          = "DESCR:";
+	bbh_item_name[BBH_DESCRIPTION]         = "BBH_DESCRIPTION";
+	bbh_item_key[BBH_DOCURL]               = "DOC:";
+	bbh_item_name[BBH_DOCURL]              = "BBH_DOCURL";
+	bbh_item_key[BBH_NK]                   = "NK:";
+	bbh_item_name[BBH_NK]                  = "BBH_NK";
+	bbh_item_key[BBH_NKTIME]               = "NKTIME=";
+	bbh_item_name[BBH_NKTIME]              = "BBH_NKTIME";
+	bbh_item_key[BBH_LARRD]                = "LARRD:";
+	bbh_item_name[BBH_LARRD]               = "BBH_LARRD";
+	bbh_item_key[BBH_WML]                  = "WML:";
+	bbh_item_name[BBH_WML]                 = "BBH_WML";
+	bbh_item_key[BBH_NOPROP]               = "NOPROP:";
+	bbh_item_name[BBH_NOPROP]              = "BBH_NOPROP";
+	bbh_item_key[BBH_NOPROPRED]            = "NOPROPRED:";
+	bbh_item_name[BBH_NOPROPRED]           = "BBH_NOPROPRED";
+	bbh_item_key[BBH_NOPROPYELLOW]         = "NOPROPYELLOW:";
+	bbh_item_name[BBH_NOPROPYELLOW]        = "BBH_NOPROPYELLOW";
+	bbh_item_key[BBH_NOPROPPURPLE]         = "NOPROPPURPLE:";
+	bbh_item_name[BBH_NOPROPPURPLE]        = "BBH_NOPROPPURPLE";
+	bbh_item_key[BBH_NOPROPACK]            = "NOPROPACK:";
+	bbh_item_name[BBH_NOPROPACK]           = "BBH_NOPROPACK";
+	bbh_item_key[BBH_REPORTTIME]           = "REPORTTIME=";
+	bbh_item_name[BBH_REPORTTIME]          = "BBH_REPORTTIME";
+	bbh_item_key[BBH_WARNPCT]              = "WARNPCT:";
+	bbh_item_name[BBH_WARNPCT]             = "BBH_WARNPCT";
+	bbh_item_key[BBH_DOWNTIME]             = "DOWNTIME=";
+	bbh_item_name[BBH_DOWNTIME]            = "BBH_DOWNTIME";
+	bbh_item_key[BBH_SSLDAYS]              = "ssldays=";
+	bbh_item_name[BBH_SSLDAYS]             = "BBH_SSLDAYS";
+	bbh_item_key[BBH_DEPENDS]              = "depends=";
+	bbh_item_name[BBH_DEPENDS]             = "BBH_DEPENDS";
+	bbh_item_key[BBH_FLAG_NOINFO]          = "noinfo";
+	bbh_item_name[BBH_FLAG_NOINFO]         = "BBH_FLAG_NOINFO";
+	bbh_item_key[BBH_FLAG_NOTRENDS]        = "notrends";
+	bbh_item_name[BBH_FLAG_NOTRENDS]       = "BBH_FLAG_NOTRENDS";
+	bbh_item_key[BBH_FLAG_NODISP]          = "nodisp";
+	bbh_item_name[BBH_FLAG_NODISP]         = "BBH_FLAG_NODISP";
+	bbh_item_key[BBH_FLAG_NOBB2]           = "nobb2";
+	bbh_item_name[BBH_FLAG_NOBB2]          = "BBH_FLAG_NOBB2";
+	bbh_item_key[BBH_FLAG_PREFER]          = "prefer";
+	bbh_item_name[BBH_FLAG_PREFER]         = "BBH_FLAG_PREFER";
+	bbh_item_key[BBH_FLAG_NOSSLCERT]       = "nosslcert";
+	bbh_item_name[BBH_FLAG_NOSSLCERT]      = "BBH_FLAG_NOSSLCERT";
+	bbh_item_key[BBH_FLAG_TRACE]           = "trace";
+	bbh_item_name[BBH_FLAG_TRACE]          = "BBH_FLAG_TRACE";
+	bbh_item_key[BBH_FLAG_NOTRACE]         = "notrace";
+	bbh_item_name[BBH_FLAG_NOTRACE]        = "BBH_FLAG_NOTRACE";
+	bbh_item_key[BBH_FLAG_NOCONN]          = "noconn";
+	bbh_item_name[BBH_FLAG_NOCONN]         = "BBH_FLAG_NOCONN";
+	bbh_item_key[BBH_FLAG_NOPING]          = "noping";
+	bbh_item_name[BBH_FLAG_NOPING]         = "BBH_FLAG_NOPING";
+	bbh_item_key[BBH_FLAG_DIALUP]          = "dialup";
+	bbh_item_name[BBH_FLAG_DIALUP]         = "BBH_FLAG_DIALUP";
+	bbh_item_key[BBH_FLAG_TESTIP]          = "testip";
+	bbh_item_name[BBH_FLAG_TESTIP]         = "BBH_FLAG_TESTIP";
+	bbh_item_key[BBH_FLAG_BBDISPLAY]       = "BBDISPLAY";
+	bbh_item_name[BBH_FLAG_BBDISPLAY]      = "BBH_FLAG_BBDISPLAY";
+	bbh_item_key[BBH_FLAG_BBNET]           = "BBNET";
+	bbh_item_name[BBH_FLAG_BBNET]          = "BBH_FLAG_BBNET";
+	bbh_item_key[BBH_FLAG_BBPAGER]         = "BBPAGER";
+	bbh_item_name[BBH_FLAG_BBPAGER]        = "BBH_FLAG_BBPAGER";
+	bbh_item_key[BBH_FLAG_LDAPFAILYELLOW]  = "ldapyellowfail";
+	bbh_item_name[BBH_FLAG_LDAPFAILYELLOW] = "BBH_FLAG_LDAPFAILYELLOW";
+	bbh_item_key[BBH_LDAPLOGIN]            = "ldaplogin=";
+	bbh_item_name[BBH_LDAPLOGIN]           = "BBH_LDAPLOGIN";
+
+	bbh_item_name[BBH_IP]                  = "BBH_IP";
+	bbh_item_name[BBH_CLIENTALIAS]         = "BBH_CLIENTALIAS";
+	bbh_item_name[BBH_BANKSIZE]            = "BBH_BANKSIZE";
+	bbh_item_name[BBH_HOSTNAME]            = "BBH_HOSTNAME";
+	bbh_item_name[BBH_PAGENAME]            = "BBH_PAGENAME";
+	bbh_item_name[BBH_PAGEPATH]            = "BBH_PAGEPATH";
+	bbh_item_name[BBH_PAGETITLE]           = "BBH_PAGETITLE";
+	bbh_item_name[BBH_PAGEPATHTITLE]       = "BBH_PAGEPATHTITLE";
 
 	i = 0; while (bbh_item_key[i]) i++;
 	if (i != BBH_IP) {
@@ -270,6 +318,14 @@ char *bbh_custom_item(namelist_t *host, char *key)
 	while (host->elems[i] && strncmp(host->elems[i], key, strlen(key))) i++;
 
 	return host->elems[i];
+}
+
+char *bbh_item_byname(namelist_t *host, char *item)
+{
+	enum bbh_item_t i;
+
+	i = 0; while (bbh_item_name[i] && strcmp(bbh_item_name[i], item)) i++;
+	if (bbh_item_name[i]) return bbh_item(host, i); else return NULL;
 }
 
 char *bbh_item_walk(namelist_t *host)
