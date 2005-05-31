@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.29 2005-04-30 06:57:19 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.30 2005-05-31 14:50:41 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -740,6 +740,20 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 
 			if (!gotany) {
 				fprintf(output, "<tr><th align=center colspan=3><i>No tasks scheduled</i></th></tr>\n");
+			}
+		}
+
+		else if (strncmp(t_start, "BBH_", 4) == 0) {
+			namelist_t *hinfo = hostinfo(hostenv_host);
+			if (hinfo) {
+				char *s = bbh_item_byname(hinfo, t_start);
+
+				if (!s) {
+					fprintf(output, "&%s", t_start);
+				}
+				else {
+					fprintf(output, "%s", s);
+				}
 			}
 		}
 
