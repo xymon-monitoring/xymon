@@ -1,3 +1,41 @@
+Changes from 4.0.3 -> 4.0.4
+---------------------------
+
+Bugfixes:
+* "nodisp" tag re-implemented for hosts that should not
+  appear on the Hobbit webpages.
+* Enabling the "apache" data collection could crash bbtest-net
+  if the /server-status page returned was larger than 32 KB.
+* The "bbcmd" tool would not pass a --debug option to the command
+  it was running.
+* Nested macros in hobbit-alerts.cfg were not working.
+* Using TAB's in hobbit-alerts.cfg could confuse the alert module.
+* hobbitd_alert's --test option now determines the page-name for
+  a host automatically. It will also now accept a time-parameter
+  to simulate how alerts are processed at specific time-of-day.
+* Status messages from "dialup" hosts should not go purple.
+* The "mailq" RRD handler would pick up the first number from 
+  the "requests" line, which might not be the right number.
+* Scheduling a "disable" did not work.
+* The startup-script was modified to correctly handle stale PID
+  files left over from an unclean shutdown of Hobbit. These are
+  now removed, and startup will proceed normally.
+
+Improvements:
+* CGI tools now log error-output to dedicated logs in
+  /var/log/hobbit/
+* The "bea-snmpstats.sh" script has been removed, and replaced
+  with an enhanced tool "beastat". This collects statistics via
+  SNMP from BEA Weblogic servers, and reports these via "data"
+  messages to Hobbit. The data collected are run-time data for
+  the JRockIT JVM and thread/memory utilization data from each
+  Weblogic server instance.
+* The "ntpstat" RRD handler now accepts the raw output from
+  "ntpq -c rv"
+* The heartbeat-timeout for hobbitd has been increased to 60 
+  seconds.
+
+
 Changes from 4.0.2 -> 4.0.3
 ---------------------------
 
