@@ -14,6 +14,7 @@ using Hobbit to monitor servers.</p>
 	<li><a href="#dnserror">DNS error reported for network tests</a></li>
 	<li><a href="#netfail">Network tests fail sporadically</a></li>
 	<li><a href="#solarisrandom">"Failed to find enough entropy" on Solaris</a></li>
+	<li><a href="#freebsdkernelsem">Hobbit fails on FreeBSD with &quot;Could not get sem: No space left on device&quot;</a></li>
 </ul>
 
 <h3><a name="bugreport">How to report bugs</a></h3>
@@ -74,6 +75,37 @@ doesn't have a standard way of getting random data, so OpenSSL cannot
 get all of the randomness it needs. Solaris <b>patch 112438</b> solves this
 by adding a /dev/random device that provides random data to applications.<br>
 Thanks to Scott Kelley for the pointer to the Solaris patch.</p>
+
+<h3><a name="freebsdkernelsem">Hobbit fails on FreeBSD with &quot;Could not get sem: No space left on device&quot;</a></h3>
+<p>Hobbit uses some kernel ressources - semaphores and shared memory. 
+If you get the following error message in hobbitlaunch.log when trying
+to start Hobbit:</p>
+<pre><tt>
+2005-05-29 20:25:14 Setting up hobbitd channels
+2005-05-29 20:25:14 Could not get sem: No space left on device
+2005-05-29 20:25:14 Cannot setup status channel
+2005-05-29 20:25:14 Task hobbitd terminated, status 1
+</tt></pre>
+<p>then you need to increase the number of semaphore sets and
+individual semaphores available to applications.</p>
+
+<p>The current settings for your kernel can be found with 
+&quot;<tt>sysctl kern.ipc.semmni</tt>&quot; (semaphore sets)
+and &quot;<tt>sysctl kern.ipc.semmns</tt>&quot; (total number
+of semaphores). Hobbit uses 6 semaphore sets, with a total of 18 semaphores.</p>
+
+<p>To increase this, put these two lines in /boot/loader.conf on your system:</p>
+<tt><pre>
+kern.ipc.semmni="40"
+kern.ipc.semmns="100"
+</pre></tt>
+<p>Adjust the values to something reasonable for your system - considering the
+current settings (from the <tt>sysctl</tt> output), and Hobbit's needs
+(6 sets with 18 semaphores).</p>
+
+<p>More information about tuning the FreeBSD kernel parameters is available in
+<a href="http://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/configtuning-sysctl.html">
+the FreeBSD Handbook</a></p>
 
 </body>
 </html>
