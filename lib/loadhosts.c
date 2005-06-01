@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.31 2005-05-31 14:50:16 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.32 2005-06-01 09:20:43 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -365,6 +365,9 @@ int main(int argc, char *argv[])
 	hosts = load_hostnames(argv[1], NULL, 1);
 
 	for (argi = 2; (argi < argc); argi++) {
+		char s[1024];
+		char *p;
+
 		h = hostinfo(argv[argi]);
 
 		if (h == NULL) { printf("Host %s not found\n", argv[argi]); continue; }
@@ -376,14 +379,15 @@ int main(int argc, char *argv[])
 			val = bbh_item_walk(NULL);
 		}
 
-		val = bbh_custom_item(h, "GMC:");
-		if (val) printf("\tGMC value is: %s\n", val);
-
-		val = bbh_item(h, BBH_NET);
-		if (val) printf("\tBBH_NET is %s\n", val);
-
-		val = bbh_item(h, BBH_PAGEPATH);
-		if (val) printf("\tBBH_PAGEPATH is %s\n", val);
+		do {
+			printf("Pick item:"); fflush(stdout); fgets(s, sizeof(s), stdin);
+			p = strchr(s, '\n'); if (p) *p = '\0';
+			if (*s) {
+				val = bbh_item_byname(h, s);
+				if (val) printf("\t%s value is: '%s'\n", s, val);
+				else printf("\t%s not found\n", s);
+			}
+		} while (*s);
 	}
 
 	return 0;
