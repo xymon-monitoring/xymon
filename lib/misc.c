@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.32 2005-05-20 20:54:08 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.33 2005-06-01 09:34:29 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -459,6 +459,24 @@ unsigned long long my_atoll(char *s)
 		p++;
 	}
 
+	return result;
+}
+
+int checkalert(char *alertlist, char *testname)
+{
+	char *alist, *aname;
+	int result;
+
+	if (!alertlist) return 0;
+
+	list = (char *) malloc(strlen(alertlist) + 3);
+	sprintf(alist, ",%s,", alertlist);
+	name = (char *) malloc(strlen(testname) + 3);
+	sprintf(aname, ",%s,", testname);
+
+	result = (strstr(alist, aname) != NULL);
+
+	xfree(aname); xfree(alist);
 	return result;
 }
 
