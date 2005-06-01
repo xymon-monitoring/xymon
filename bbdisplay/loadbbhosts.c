@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.25 2005-05-23 16:23:58 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.26 2005-06-01 09:44:02 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -195,12 +195,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	newhost->reportwarnlevel = warnpct;
 	newhost->reporttime = (reporttime ? strdup(reporttime) : NULL);
 	if (alerts && nktime) {
-		char *p;
-		p = skipword(alerts); if (*p) *p = '\0'; else p = NULL;
-
-		newhost->alerts = (char *) malloc(strlen(alerts)+3);
-		sprintf(newhost->alerts, ",%s,", alerts);
-		if (p) *p = ' ';
+		newhost->alerts = strdup(alerts);
 	}
 	else {
 		newhost->alerts = NULL;
@@ -215,10 +210,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	 * - NULL
 	 */
 	if (waps || alerts) {
-		char *p;
-		p = skipword((waps ? waps : alerts)); if (*p) *p = '\0'; else p = NULL;
-		newhost->waps = strdup(build_noprop(wapcolumns, (waps ? waps : alerts)));
-		if (p) *p = ' ';
+		newhost->waps = strdup(waps ? waps : alerts);
 	}
 	else {
 		newhost->waps = wapcolumns;
