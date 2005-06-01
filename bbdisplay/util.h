@@ -17,7 +17,6 @@ extern hostlist_t *hosthead;
 extern char *alttag(entry_t *e);
 extern char *hostpage_link(host_t *host);
 extern char *hostpage_name(host_t *host);
-extern int checkalert(char *alertlist, char *test);
 extern int checkpropagation(host_t *host, char *test, int color, int acked);
 extern char *urldoclink(const char *docurl, const char *hostname);
 extern host_t *find_host(const char *hostname);

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.147 2005-03-22 09:03:37 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.148 2005-06-01 09:21:19 henrik Exp $";
 
 #include <limits.h>
 #include <sys/types.h>
@@ -98,22 +98,6 @@ char *hostpage_name(host_t *host)
 	return pagename;
 }
 
-
-
-int checkalert(char *alertlist, char *test)
-{
-	char *testname;
-	int result;
-
-	if (!alertlist) return 0;
-
-	testname = (char *) malloc(strlen(test)+3);
-	sprintf(testname, ",%s,", test);
-	result = (strstr(alertlist, testname) ? 1 : 0);
-
-	xfree(testname);
-	return result;
-}
 
 
 static int checknopropagation(char *testname, char *noproptests)
