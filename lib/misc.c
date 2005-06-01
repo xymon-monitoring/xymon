@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.33 2005-06-01 09:34:29 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.34 2005-06-01 09:43:34 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -469,9 +469,9 @@ int checkalert(char *alertlist, char *testname)
 
 	if (!alertlist) return 0;
 
-	list = (char *) malloc(strlen(alertlist) + 3);
+	alist = (char *) malloc(strlen(alertlist) + 3);
 	sprintf(alist, ",%s,", alertlist);
-	name = (char *) malloc(strlen(testname) + 3);
+	aname = (char *) malloc(strlen(testname) + 3);
 	sprintf(aname, ",%s,", testname);
 
 	result = (strstr(alist, aname) != NULL);
