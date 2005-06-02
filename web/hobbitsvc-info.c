@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.91 2005-04-17 19:34:17 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.92 2005-06-02 21:23:35 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -54,48 +54,6 @@ typedef struct sched_t {
 	struct sched_t *next;
 } sched_t;
 sched_t *schedtasks = NULL;
-
-static void timespec_text(char *spec, char **infobuf, int *infobuflen)
-{
-	char l[MAX_LINE_LEN];
-	char *sCopy;
-	char *sItem;
-
-	sCopy = strdup(spec);
-	sCopy[strcspn(sCopy, " \t\r\n")] = '\0';
-	sItem = strtok(sCopy, ",");
-	while (sItem) {
-		l[0] = '\0';
-
-		switch (*sItem) {
-			case '*': sprintf(l, "All days%s", (sItem+1));
-				  break;
-			case 'W': sprintf(l, "Weekdays%s", (sItem+1));
-				  break;
-			case '0': sprintf(l, "Sunday%s", (sItem+1));
-				  break;
-			case '1': sprintf(l, "Monday%s", (sItem+1));
-				  break;
-			case '2': sprintf(l, "Tuesday%s", (sItem+1));
-				  break;
-			case '3': sprintf(l, "Wednesday%s", (sItem+1));
-				  break;
-			case '4': sprintf(l, "Thursday%s", (sItem+1));
-				  break;
-			case '5': sprintf(l, "Friday%s", (sItem+1));
-				  break;
-			case '6': sprintf(l, "Saturday%s", (sItem+1));
-				  break;
-			default:
-				  break;
-		}
-
-		sItem = strtok(NULL, ",");
-		if (sItem) strcat(l, ", ");
-		addtobuffer(infobuf, infobuflen, l);
-	}
-	xfree(sCopy);
-}
 
 static int test_name_compare(const void *v1, const void *v2)
 {
@@ -613,22 +571,25 @@ char *generate_info(char *hostname)
 
 	val = bbh_item(hostwalk, BBH_NKTIME);
 	if (val) {
+		char *s = timespec_text(val);
 		addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>NK alerts shown:</th><td align=left>");
-		timespec_text(val, &infobuf, &infobuflen);
+		addtobuffer(&infobuf, &infobuflen, s);
 		addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
 	}
 
 	val = bbh_item(hostwalk, BBH_DOWNTIME);
 	if (val) {
+		char *s = timespec_text(val);
 		addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>Planned downtime:</th><td align=left>");
-		timespec_text(val, &infobuf, &infobuflen);
+		addtobuffer(&infobuf, &infobuflen, s);
 		addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
 	}
 
 	val = bbh_item(hostwalk, BBH_REPORTTIME);
 	if (val) {
+		char *s = timespec_text(val);
 		addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>SLA report period:</th><td align=left>");
-		timespec_text(val, &infobuf, &infobuflen);
+		addtobuffer(&infobuf, &infobuflen, s);
 		addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
 
 		val = bbh_item(hostwalk, BBH_WARNPCT);
