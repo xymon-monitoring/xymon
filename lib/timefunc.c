@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.20 2005-05-27 05:57:13 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.21 2005-06-02 21:23:07 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -109,6 +109,54 @@ char *time_text(char *timespec)
 	return result;
 }
 
+
+char *timespec_text(char *spec)
+{
+	static char *result = NULL;
+	char l[MAX_LINE_LEN];
+	char *sCopy;
+	char *sItem;
+	int reslen = 0;
+
+	if (result) { xfree(result); result = NULL; }
+
+	sCopy = strdup(spec);
+	sCopy[strcspn(sCopy, " \t\r\n")] = '\0';
+	sItem = strtok(sCopy, ",");
+	while (sItem) {
+		l[0] = '\0';
+
+		switch (*sItem) {
+			case '*': sprintf(l, "All days%s", (sItem+1));
+				  break;
+			case 'W': sprintf(l, "Weekdays%s", (sItem+1));
+				  break;
+			case '0': sprintf(l, "Sunday%s", (sItem+1));
+				  break;
+			case '1': sprintf(l, "Monday%s", (sItem+1));
+				  break;
+			case '2': sprintf(l, "Tuesday%s", (sItem+1));
+				  break;
+			case '3': sprintf(l, "Wednesday%s", (sItem+1));
+				  break;
+			case '4': sprintf(l, "Thursday%s", (sItem+1));
+				  break;
+			case '5': sprintf(l, "Friday%s", (sItem+1));
+				  break;
+			case '6': sprintf(l, "Saturday%s", (sItem+1));
+				  break;
+			default:
+				  break;
+		}
+
+		sItem = strtok(NULL, ",");
+		if (sItem) strcat(l, ", ");
+		addtobuffer(&result, &reslen, l);
+	}
+	xfree(sCopy);
+
+	return result;
+}
 
 struct timeval *tvdiff(struct timeval *tstart, struct timeval *tend, struct timeval *result)
 {

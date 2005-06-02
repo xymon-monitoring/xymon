@@ -20,6 +20,7 @@ extern time_t getcurrenttime(time_t *retparm);
 extern void init_timestamp(void);
 extern char *weekday_text(char *dayspec);
 extern char *time_text(char *timespec);
+extern char *timespec_text(char *spec);
 extern struct timeval *tvdiff(struct timeval *tstart, struct timeval *tend, struct timeval *result);
 extern int within_sla(char *l, int defresult);
 extern int periodcoversnow(char *tag);
