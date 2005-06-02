@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-confreport.c,v 1.1 2005-06-01 22:05:22 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-confreport.c,v 1.2 2005-06-02 21:24:05 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -31,9 +31,19 @@ typedef struct hostlist_t {
 	struct hostlist_t *next;
 } hostlist_t;
 
+typedef struct coltext_t {
+	char *colname;
+	char *coldescr;
+	int used;
+	struct coltext_t *next;
+} coltext_t;
+
 hostlist_t *hosthead = NULL;
 static char *pingcolumn = "conn";
 static char *pingplus = "conn=";
+static char *coldelim = ";";
+static coltext_t *chead = NULL;
+static int ccount = 0;
 
 void errormsg(char *msg)
 {
@@ -72,10 +82,19 @@ static int is_net_test(char *tname)
 }
 
 
+void use_columndoc(char *column)
+{
+	coltext_t *cwalk;
+
+	for (cwalk = chead; (cwalk && strcasecmp(cwalk->colname, column)); cwalk = cwalk->next);
+	if (cwalk) cwalk->used = 1;
+}
+
 typedef struct tag_t {
 	char *columnname;
 	char *visualdata;	/* The URL or other end-user visible test spec. */
 	char *expdata;
+	int b1, b2, b3;
 	struct tag_t *next;
 } tag_t;
 
@@ -85,6 +104,7 @@ static void print_host(char *hostname, htnames_t *testnames[], int testcount)
 	namelist_t *hinfo = hostinfo(hostname);
 	char *dispname = NULL, *clientalias = NULL, *comment = NULL, *description = NULL;
 	char *net = NULL, *nkalerts = NULL;
+	char *nktime = NULL, *downtime = NULL, *reporttime = NULL;
 	char *itm;
 	tag_t *taghead = NULL;
 	int contidx = 0, haveping = 0;
@@ -104,14 +124,20 @@ static void print_host(char *hostname, htnames_t *testnames[], int testcount)
 	comment = bbh_item(hinfo, BBH_COMMENT);
 	description = bbh_item(hinfo, BBH_DESCRIPTION); 
 	net = bbh_item(hinfo, BBH_NET);
+	nktime = bbh_item(hinfo, BBH_NKTIME); if (!nktime) nktime = "24x7"; else nktime = strdup(timespec_text(nktime));
+	downtime = bbh_item(hinfo, BBH_DOWNTIME); if (downtime) downtime = strdup(timespec_text(downtime));
+	reporttime = bbh_item(hinfo, BBH_REPORTTIME); if (!reporttime) reporttime = "24x7"; else reporttime = strdup(timespec_text(reporttime));
 
 	rowcount = 1;
 	if (dispname || clientalias) rowcount++;
 	if (comment) rowcount++;
 	if (description) rowcount++;
+	if (nktime) rowcount++;
+	if (downtime) rowcount++;
+	if (reporttime) rowcount++;
 
 	fprintf(stdout, "<tr>\n");
-	fprintf(stdout, "<th rowspan=%d align=left width=\"25%%\">Basics</th>\n", rowcount);
+	fprintf(stdout, "<th rowspan=%d align=left width=\"25%%\" valign=top>Basics</th>\n", rowcount);
 	fprintf(stdout, "<th align=center>%s (%s)</th>\n", 
 		(dispname ? dispname : hostname), bbh_item(hinfo, BBH_IP));
 	fprintf(stdout, "</tr>\n");
@@ -124,6 +150,9 @@ static void print_host(char *hostname, htnames_t *testnames[], int testcount)
 	}
 	if (comment) fprintf(stdout, "<tr><td>Comment: %s</td></tr>\n", comment);
 	if (description) fprintf(stdout, "<tr><td>Description: %s</td></tr>\n", description);
+	if (nktime) fprintf(stdout, "<tr><td>NK monitoring period: %s</td></tr>\n", nktime);
+	if (downtime) fprintf(stdout, "<tr><td>Planned downtime: %s</td></tr>\n", downtime);
+	if (reporttime) fprintf(stdout, "<tr><td>SLA Reporting Period: %s</td></tr>\n", reporttime);
 
 
 	nkalerts = bbh_item(hinfo, BBH_NK);
@@ -201,7 +230,7 @@ addtolist:
 			for (newitem = taghead; (newitem && strcmp(newitem->columnname, colname)); newitem = newitem->next);
 
 			if (!newitem) {
-				newitem = (tag_t *)malloc(sizeof(tag_t));
+				newitem = (tag_t *)calloc(1, sizeof(tag_t));
 				newitem->columnname = strdup(colname);
 				newitem->visualdata = (visdata ? strdup(visdata) : NULL);
 				newitem->expdata = (expdata ? strdup(expdata) : NULL);
@@ -229,14 +258,37 @@ addtolist:
 	if (!haveping) {
 		for (testi = 0; (testi < testcount); testi++) {
 			if (strcmp(testnames[testi]->name, pingcolumn) == 0) {
-				tag_t *newitem = (tag_t *)malloc(sizeof(tag_t));
+				tag_t *newitem = (tag_t *)calloc(1, sizeof(tag_t));
 				newitem->columnname = strdup(pingcolumn);
-				newitem->visualdata = NULL;
-				newitem->expdata = NULL;
 				newitem->next = taghead;
 				taghead = newitem;
 			}
 		}
+	}
+
+	/* Add the "badFOO" settings */
+	itm = bbh_item_walk(hinfo);
+	while (itm) {
+		if (strncmp(itm, "bad", 3) == 0) {
+			char *tname, *p;
+			int b1, b2, b3, n = -1;
+			tag_t *tag = NULL;
+
+			tname = itm+3; 
+			p = strchr(tname, ':'); 
+			if (p) {
+				*p = '\0';
+				n = sscanf(p+1, "%d:%d:%d", &b1, &b2, &b3);
+				for (tag = taghead; (tag && strcmp(tag->columnname, tname)); tag = tag->next);
+				*p = ':';
+			}
+
+			if (tag && (n == 3)) {
+				tag->b1 = b1; tag->b2 = b2; tag->b3 = b3;
+			}
+		}
+
+		itm = bbh_item_walk(NULL);
 	}
 
 	if (taghead) {
@@ -246,7 +298,7 @@ addtolist:
 		fprintf(stdout, "</th>\n");
 
 		fprintf(stdout, "<td><table border=0 cellpadding=\"3\" cellspacing=\"5\" summary=\"%s network tests\">\n", hostname);
-		fprintf(stdout, "   <tr><th align=left>Name</th><th align=left>NK</th><th align=left>Specifics</th></tr>\n");
+		fprintf(stdout, "<tr><th align=left valign=top>Name</th><th align=left valign=top>NK</th><th align=left valign=top>C/Y/R limits</th><th align=left valign=top>Specifics</th></tr>\n");
 	}
 	for (testi = 0, netcount = 0; (testi < testcount); testi++) {
 		tag_t *twalk;
@@ -254,11 +306,21 @@ addtolist:
 		for (twalk = taghead; (twalk && strcasecmp(twalk->columnname, testnames[testi]->name)); twalk = twalk->next);
 		if (!twalk) continue;
 
+		use_columndoc(testnames[testi]->name);
 		fprintf(stdout, "<tr>");
 		fprintf(stdout, "<td valign=top>%s</td>", testnames[testi]->name);
 		fprintf(stdout, "<td valign=top>%s</td>", (checkalert(nkalerts, testnames[testi]->name) ? "Yes" : "No"));
 
-		fprintf(stdout, "<td>");
+		fprintf(stdout, "<td valign=top>");
+		if (twalk->b1 || twalk->b2 || twalk->b3) {
+			fprintf(stdout, "%d/%d/%d", twalk->b1, twalk->b2, twalk->b3);
+		}
+		else {
+			fprintf(stdout, "-/-/-");
+		}
+		fprintf(stdout, "</td>");
+
+		fprintf(stdout, "<td valign=top>");
 		fprintf(stdout, "<i>%s</i>", (twalk->visualdata ? twalk->visualdata : "&nbsp;"));
 		if (twalk->expdata) fprintf(stdout, " must return <i>'%s'</i>", twalk->expdata);
 		fprintf(stdout, "</td>");
@@ -276,7 +338,7 @@ addtolist:
 		fprintf(stdout, "<tr>\n");
 		fprintf(stdout, "<th align=left valign=top>Local tests</th>\n");
 		fprintf(stdout, "<td><table border=0 cellpadding=\"3\" cellspacing=\"5\" summary=\"%s local tests\">\n", hostname);
-		fprintf(stdout, "   <tr><th align=left>Name</th><th align=left>NK</th></tr>\n");
+		fprintf(stdout, "<tr><th align=left valign=top>Name</th><th align=left valign=top>NK</th><th align=left valign=top>C/Y/R limits</th><th align=left valign=top>Default configuration</th></tr>\n");
 	}
 	for (testi = 0; (testi < testcount); testi++) {
 		tag_t *twalk;
@@ -284,9 +346,29 @@ addtolist:
 		for (twalk = taghead; (twalk && strcasecmp(twalk->columnname, testnames[testi]->name)); twalk = twalk->next);
 		if (twalk) continue;
 
+		use_columndoc(testnames[testi]->name);
 		fprintf(stdout, "<tr>");
-		fprintf(stdout, "<td>%s</td>", testnames[testi]->name);
-		fprintf(stdout, "<td>%s</td>", (checkalert(nkalerts, testnames[testi]->name) ? "Yes" : "No"));
+		fprintf(stdout, "<td valign=top>%s</td>", testnames[testi]->name);
+		fprintf(stdout, "<td valign=top>%s</td>", (checkalert(nkalerts, testnames[testi]->name) ? "Yes" : "No"));
+		fprintf(stdout, "<td valign=top>-/-/-</td>");
+
+		/* Make up some default configuration data */
+		fprintf(stdout, "<td valign=top>");
+		if (strcmp(testnames[testi]->name, "cpu") == 0) {
+			fprintf(stdout, "UNIX - Yellow: Load average > 1.5, Red: Load average > 3.0<br>");
+			fprintf(stdout, "Windows - Yellow: CPU utilisation > 80%%, Red: CPU utilisation > 95%%");
+		}
+		else if (strcmp(testnames[testi]->name, "disk") == 0) {
+			fprintf(stdout, "All local disks/filesystems - Yellow: 90%% full, Red: 95%% full");
+		}
+		else if (strcmp(testnames[testi]->name, "memory") == 0) {
+			fprintf(stdout, "Yellow: swap/pagefile use > 80%%, Red: swap/pagefile use > 90%%");
+		}
+		else {
+			fprintf(stdout, "&nbsp;");
+		}
+		fprintf(stdout, "</td>");
+
 		fprintf(stdout, "</tr>");
 	}
 	if (netcount != testcount) {
@@ -332,6 +414,70 @@ addtolist:
 	fprintf(stdout, "</table>\n");
 }
 
+
+static int coltext_compare(const void *v1, const void *v2)
+{
+	coltext_t **t1 = (coltext_t **)v1;
+	coltext_t **t2 = (coltext_t **)v2;
+
+	return strcmp((*t1)->colname, (*t2)->colname);
+}
+
+void load_columndocs(void)
+{
+	char fn[PATH_MAX];
+	char l[4096];
+	FILE *fd;
+
+	sprintf(fn, "%s/etc/columndoc.csv", xgetenv("BBHOME"));
+	fd = fopen(fn, "r"); if (!fd) return;
+
+	/* Skip the header line */
+	if (!fgets(l, sizeof(l), fd)) { fclose(fd); return; }
+
+	while (fgets(l, sizeof(l), fd)) {
+		char *s1, *s2;
+
+		s1 = strtok(l, coldelim);
+		if (s1) s2 = strtok(NULL, coldelim);
+
+		if (s1 && s2) {
+			coltext_t *newitem = (coltext_t *)calloc(1, sizeof(coltext_t));
+			newitem->colname = strdup(s1);
+			newitem->coldescr = strdup(s2);
+			newitem->next = chead;
+			chead = newitem;
+			ccount++;
+		}
+	}
+	fclose(fd);
+}
+
+
+void print_columndocs(void)
+{
+	coltext_t **clist;
+	coltext_t *cwalk;
+	int i;
+
+	clist = (coltext_t **)malloc(ccount * sizeof(coltext_t *));
+	for (i=0, cwalk=chead; (cwalk); cwalk=cwalk->next,i++) clist[i] = cwalk;
+	qsort(&clist[0], ccount, sizeof(coltext_t **), coltext_compare);
+
+	fprintf(stdout, "<p style=\"page-break-before: always\">\n"); 
+	fprintf(stdout, "<table width=\"100%%\" border=1 summary=\"Column descriptions\">\n");
+	fprintf(stdout, "<tr><th colspan=2>Hobbit column descriptions</th></tr>\n");
+	for (i=0; (i<ccount); i++) {
+		if (clist[i]->used) {
+			fprintf(stdout, "<tr><td align=left valign=top>%s</td><td>%s</td></tr>\n",
+				clist[i]->colname, clist[i]->coldescr);
+		}
+	}
+
+	fprintf(stdout, "</table>\n");
+}
+
+
 int main(int argc, char *argv[])
 {
 	int argi, hosti, testi;
@@ -346,6 +492,7 @@ int main(int argc, char *argv[])
 	hostlist_t **allhosts = NULL;
 	htnames_t **alltests = NULL;
 	int hostcount = 0, maxtests = 0;
+	time_t now = time(NULL);
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -359,6 +506,10 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
 		}
+		else if (argnmatch(argv[argi], "--delimiter=")) {
+			char *p = strchr(argv[argi], '=');
+			coldelim = strdup(p+1);
+		}
 	}
 
 	redirect_cgilog("hobbit-confreport");
@@ -371,7 +522,8 @@ int main(int argc, char *argv[])
 		p = strchr(pagepattern, ';'); if (p) *p = '\0';
 		if (strlen(pagepattern) == 0) { xfree(pagepattern); pagepattern = NULL; }
 	}
-	else if (cookie && ((p = strstr(cookie, "host=")) != NULL)) {
+
+	if (cookie && (!pagepattern) && ((p = strstr(cookie, "host=")) != NULL)) {
 		p += strlen("host=");
 		hostpattern = strdup(p);
 		p = strchr(hostpattern, ';'); if (p) *p = '\0';
@@ -450,11 +602,24 @@ int main(int argc, char *argv[])
 	alertinterval = 60*atoi(xgetenv("ALERTREPEAT"));
 	sprintf(configfn, "%s/etc/hobbit-alerts.cfg", xgetenv("BBHOME"));
 	load_alertconfig(configfn, alertcolors, alertinterval);
+	load_columndocs();
 
 
 	printf("Content-Type: text/html\n\n");
 	sethostenv("", "", "", colorname(COL_BLUE));
 	headfoot(stdout, "confreport", "", "header", COL_BLUE);
+
+	fprintf(stdout, "<table width=\"100%%\" border=0>\n");
+	fprintf(stdout, "<tr><th align=center colspan=2><font size=\"+2\">Hobbit configuration Report</font></th></tr>\n");
+	fprintf(stdout, "<tr><th valign=top align=left>Date</th><td>%s</td></tr>\n", ctime(&now));
+	fprintf(stdout, "<tr><th valign=top align=left>Hosts included</th><td>\n");
+	for (hosti=0; (hosti < hostcount); hosti++) {
+		fprintf(stdout, "%s ", allhosts[hosti]->hostname);
+	}
+	fprintf(stdout, "</td></tr>\n");
+	fprintf(stdout, "</table>\n");
+
+	headfoot(stdout, "confreport", "", "front", COL_BLUE);
 
 	for (hosti=0; (hosti < hostcount); hosti++) {
 		for (twalk = allhosts[hosti]->tests, testi = 0; (twalk); twalk = twalk->next, testi++) {
@@ -464,6 +629,9 @@ int main(int argc, char *argv[])
 
 		print_host(allhosts[hosti]->hostname, alltests, allhosts[hosti]->testcount);
 	}
+
+	headfoot(stdout, "confreport", "", "back", COL_BLUE);
+	print_columndocs();
 
 	headfoot(stdout, "confreport", "", "footer", COL_BLUE);
 
