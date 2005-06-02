@@ -1,4 +1,4 @@
-PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filter hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_larrd hobbitd_sample hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-mailack trimhistory hobbitreports.sh
+PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filter hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_larrd hobbitd_sample hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-mailack trimhistory hobbitreports.sh
 CGISCRIPTS = hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh
 SECCGISCRIPTS = bb-ack.sh hobbit-enadis.sh
 
@@ -17,6 +17,7 @@ SAMPLEOBJS    = hobbitd_sample.o    hobbitd_worker.o
 HOBBITGRAPHOBJS= hobbitgraph.o
 HOBBITSVCOBJS = hobbitsvc.o hobbitsvc-info.o hobbitsvc-trends.o do_alert.o
 HOBBITENADISOBJS= hobbit-enadis.o
+CONFREPOBJS   = hobbit-confreport.o do_alert.o
 MAILACKOBJS   = hobbit-mailack.o
 TRIMHISTOBJS  = trimhistory.o
 
@@ -69,6 +70,9 @@ hobbitsvc.cgi: $(HOBBITSVCOBJS) $(LIBOBJS)
 
 hobbit-enadis.cgi: $(HOBBITENADISOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(HOBBITENADISOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
+
+hobbit-confreport.cgi: $(CONFREPOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(CONFREPOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
 hobbit-mailack.o: hobbit-mailack.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ hobbit-mailack.c
