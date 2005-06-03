@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-snapshot.c,v 1.15 2005-05-24 08:39:56 henrik Exp $";
+static char rcsid[] = "$Id: bb-snapshot.c,v 1.16 2005-06-03 15:24:51 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -174,6 +174,8 @@ int main(int argc, char *argv[])
 	char startstr[20];
 	int argi, newargi;
 	char *envarea = NULL;
+	char *useragent;
+	int usemultipart = 1;
 
 	newargi = 0;
 	bbgen_argv[newargi++] = bbgencmd;
@@ -230,6 +232,12 @@ int main(int argc, char *argv[])
 	envcheck(reqenv);
 	parse_query();
 
+	useragent = getenv("HTTP_USER_AGENT");
+	if (useragent && strstr(useragent, "KHTML")) {
+		/* KHTML (Konqueror, Safari) cannot handle multipart documents. */
+		usemultipart = 0;
+	}
+
 	/*
 	 * Need to set these up AFTER putting them into bbgen_argv, since we
 	 * need to have option parsing done first.
@@ -246,24 +254,26 @@ int main(int argc, char *argv[])
 	sprintf(bbwebenv, "BBWEB=%s/%s", xgetenv("BBSNAPURL"), dirid);
 	putenv(bbwebenv);
 
-	/* Output the "please wait for report ... " thing */
-	sprintf(htmldelim, "bbrep-%u-%u", (int)getpid(), (unsigned int)time(NULL));
-	printf("Content-type: multipart/mixed;boundary=%s\n", htmldelim);
-	printf("\n");
-	printf("%s\n", htmldelim);
-	printf("Content-type: text/html\n\n");
+	if (usemultipart) {
+		/* Output the "please wait for report ... " thing */
+		sprintf(htmldelim, "bbrep-%u-%u", (int)getpid(), (unsigned int)time(NULL));
+		printf("Content-type: multipart/mixed;boundary=%s\n", htmldelim);
+		printf("\n");
+		printf("%s\n", htmldelim);
+		printf("Content-type: text/html\n\n");
 
-	/* It's ok with these hardcoded values, as they are not used for this page */
-	sethostenv("", "", "", colorname(COL_BLUE));
-	sethostenv_report(starttime, starttime, 97.0, 99.995);
-	headfoot(stdout, "bbrep", "", "header", COL_BLUE);
+		/* It's ok with these hardcoded values, as they are not used for this page */
+		sethostenv("", "", "", colorname(COL_BLUE));
+		sethostenv_report(starttime, starttime, 97.0, 99.995);
+		headfoot(stdout, "bbrep", "", "header", COL_BLUE);
 
-	strftime(startstr, sizeof(startstr), "%b %d %Y", localtime(&starttime));
-	printf("<CENTER><A NAME=begindata>&nbsp;</A>\n");
-	printf("<BR><BR><BR><BR>\n");
-	printf("<H3>Generating snapshot: %s<BR>\n", startstr);
-	printf("<P><P>\n");
-	fflush(stdout);
+		strftime(startstr, sizeof(startstr), "%b %d %Y", localtime(&starttime));
+		printf("<CENTER><A NAME=begindata>&nbsp;</A>\n");
+		printf("<BR><BR><BR><BR>\n");
+		printf("<H3>Generating snapshot: %s<BR>\n", startstr);
+		printf("<P><P>\n");
+		fflush(stdout);
+	}
 
 
 	/* Go do the report */
@@ -278,28 +288,30 @@ int main(int argc, char *argv[])
 		signal(SIGHUP, SIG_IGN);
 
 		if (WIFEXITED(childstat) && (WEXITSTATUS(childstat) != 0) ) {
-			printf("%s\n\n", htmldelim);
+			if (usemultipart) printf("%s\n\n", htmldelim);
 			printf("Content-Type: text/html\n\n");
 			errormsg("Could not generate report");
 		}
 		else {
 			/* Send the browser off to the report */
-			printf("Done...<P></BODY></HTML>\n");
-			fflush(stdout);
-			printf("%s\n\n", htmldelim);
+			if (usemultipart) {
+				printf("Done...<P></BODY></HTML>\n");
+				fflush(stdout);
+				printf("%s\n\n", htmldelim);
+			}
 			printf("Content-Type: text/html\n\n");
 			printf("<HTML><HEAD>\n");
 			printf("<META HTTP-EQUIV=\"REFRESH\" CONTENT=\"0; URL=%s/%s/\"\n", 
 					xgetenv("BBSNAPURL"), dirid);
 			printf("</HEAD><BODY BGCOLOR=\"000000\"></BODY></HTML>\n");
-			printf("\n%s\n", htmldelim);
+			if (usemultipart) printf("\n%s\n", htmldelim);
 			fflush(stdout);
 		}
 
 		cleandir(xgetenv("BBSNAP"));
 	}
 	else {
-		printf("%s\n\n", htmldelim);
+		if (usemultipart) printf("%s\n\n", htmldelim);
 		printf("Content-Type: text/html\n\n");
 		errormsg("Fork failed");
 	}
