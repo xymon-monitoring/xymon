@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.209 2005-05-07 09:24:20 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.210 2005-06-03 22:11:21 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -530,9 +530,7 @@ int main(int argc, char *argv[])
 
 	/*
 	 * When doing alternate pagesets, disable some stuff:
-	 * No LARRD, no INFO, no purple updates, no WML 
-	 * If we did those, we would send double purple updates, 
-	 * generate wrong links for info pages etc.
+	 * No WML or RSS pages.
 	 */
 	if (pageset || embedded || snapshot) enable_wmlgen = wantrss = 0;
 	if (embedded) {
