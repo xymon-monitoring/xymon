@@ -170,7 +170,7 @@ Ignore all purple status messages when generating the BB2 page.
 Always include these columns on bb2 page Will include certain columns on 
 the bb2.html page, regardless of its color. Normally, bb2.html drops a 
 test-column, if all tests are green. This can be used e.g. to always have 
-a link to the LARRD data from your bb2.html page.
+a link to the trends column (with the RRD graphs) from your bb2.html page.
 .sp
 .IP "--eventignore=test[,test]"
 Ignore these tests in the BB2 event log display.
@@ -471,7 +471,7 @@ scripts in $BBHOME/bin/
 
 You can use bbgen commandline options when generating reports,
 e.g. to exclude certain types of tests (e.g. "--ignorecolumns=msgs") 
-from the reports, to specify the name of the LARRD- and info-
+from the reports, to specify the name of the trends- and info-
 columns that should not be in the report, or to format the report 
 differently (e.g. "--subpagecolumns=2"). If you want certain
 options to be used when a report is generated from the web
@@ -582,10 +582,7 @@ available from the archive at www.deadcat.net.
 events).
 
 Other bbgen options can be used, e.g. "--ignorecolumns" if you 
-want to exclude certain tests from the report. The LARRD and INFO
-columns are automatically removed from the report, but you may 
-have to specify the name of the LARRD- and info-columns if you 
-do not use the default ("larrd" and "info", respectively).
+want to exclude certain tests from the report.
 
 You will normally also need to specify the BBWEB environment 
 variable (it must match the base URL for where the report will
