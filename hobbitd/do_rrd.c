@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.23 2005-05-08 20:31:24 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.24 2005-06-05 09:32:18 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -25,7 +25,7 @@ static char rcsid[] = "$Id: do_rrd.c,v 1.23 2005-05-08 20:31:24 henrik Exp $";
 
 #include "libbbgen.h"
 
-#include "do_larrd.h"
+#include "do_rrd.h"
 
 char *rrddir = NULL;
 static char *exthandler = NULL;
@@ -209,79 +209,79 @@ static int rrddatasets(char *hostname, char *fn, char ***dsnames)
 
 
 /* Include all of the sub-modules. */
-#include "larrd/do_bbgen.c"
-#include "larrd/do_bbtest.c"
-#include "larrd/do_bbproxy.c"
-#include "larrd/do_hobbitd.c"
-#include "larrd/do_citrix.c"
-#include "larrd/do_ntpstat.c"
+#include "rrd/do_bbgen.c"
+#include "rrd/do_bbtest.c"
+#include "rrd/do_bbproxy.c"
+#include "rrd/do_hobbitd.c"
+#include "rrd/do_citrix.c"
+#include "rrd/do_ntpstat.c"
 
-#include "larrd/do_memory.c"	/* Must go before do_la.c */
-#include "larrd/do_la.c"
-#include "larrd/do_disk.c"
-#include "larrd/do_netstat.c"
-#include "larrd/do_vmstat.c"
-#include "larrd/do_iostat.c"
+#include "rrd/do_memory.c"	/* Must go before do_la.c */
+#include "rrd/do_la.c"
+#include "rrd/do_disk.c"
+#include "rrd/do_netstat.c"
+#include "rrd/do_vmstat.c"
+#include "rrd/do_iostat.c"
 
-#include "larrd/do_apache.c"
-#include "larrd/do_bind.c"
-#include "larrd/do_sendmail.c"
-#include "larrd/do_mailq.c"
-#include "larrd/do_bea.c"
-#include "larrd/do_iishealth.c"
-#include "larrd/do_temperature.c"
+#include "rrd/do_apache.c"
+#include "rrd/do_bind.c"
+#include "rrd/do_sendmail.c"
+#include "rrd/do_mailq.c"
+#include "rrd/do_bea.c"
+#include "rrd/do_iishealth.c"
+#include "rrd/do_temperature.c"
 
-#include "larrd/do_net.c"
+#include "rrd/do_net.c"
 
-#include "larrd/do_ncv.c"
-#include "larrd/do_external.c"
+#include "rrd/do_ncv.c"
+#include "rrd/do_external.c"
 
 
-void update_larrd(char *hostname, char *testname, char *msg, time_t tstamp, char *sender, larrdrrd_t *ldef)
+void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *sender, hobbitrrd_t *ldef)
 {
 	int res = 0;
 	char *id;
 
 	MEMDEFINE(rrdvalues); MEMDEFINE(rrdfn);
 
-	if (ldef) id = ldef->larrdrrdname; else id = testname;
+	if (ldef) id = ldef->hobbitrrdname; else id = testname;
 	senderip = sender;
 
-	if      (strcmp(id, "bbgen") == 0)       res = do_bbgen_larrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "bbtest") == 0)      res = do_bbtest_larrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "bbproxy") == 0)     res = do_bbproxy_larrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "hobbitd") == 0)     res = do_hobbitd_larrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "citrix") == 0)      res = do_citrix_larrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "ntpstat") == 0)     res = do_ntpstat_larrd(hostname, testname, msg, tstamp);
+	if      (strcmp(id, "bbgen") == 0)       res = do_bbgen_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "bbtest") == 0)      res = do_bbtest_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "bbproxy") == 0)     res = do_bbproxy_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "hobbitd") == 0)     res = do_hobbitd_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "citrix") == 0)      res = do_citrix_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "ntpstat") == 0)     res = do_ntpstat_rrd(hostname, testname, msg, tstamp);
 
-	else if (strcmp(id, "la") == 0)          res = do_la_larrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "disk") == 0)        res = do_disk_larrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "memory") == 0)      res = do_memory_larrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "netstat") == 0)     res = do_netstat_larrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "vmstat") == 0)      res = do_vmstat_larrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "iostat") == 0)      res = do_iostat_larrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "la") == 0)          res = do_la_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "disk") == 0)        res = do_disk_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "memory") == 0)      res = do_memory_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "netstat") == 0)     res = do_netstat_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "vmstat") == 0)      res = do_vmstat_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "iostat") == 0)      res = do_iostat_rrd(hostname, testname, msg, tstamp);
 
 	/* These two come from the filerstats2bb.pl script. The reports are in disk-format */
-	else if (strcmp(id, "inode") == 0)       res = do_disk_larrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "qtree") == 0)       res = do_disk_larrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "inode") == 0)       res = do_disk_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "qtree") == 0)       res = do_disk_rrd(hostname, testname, msg, tstamp);
 
-	else if (strcmp(id, "apache") == 0)      res = do_apache_larrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "bind") == 0)        res = do_bind_larrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "sendmail") == 0)    res = do_sendmail_larrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "mailq") == 0)       res = do_mailq_larrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "bea") == 0)         res = do_bea_larrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "iishealth") == 0)   res = do_iishealth_larrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "temperature") == 0) res = do_temperature_larrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "apache") == 0)      res = do_apache_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "bind") == 0)        res = do_bind_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "sendmail") == 0)    res = do_sendmail_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "mailq") == 0)       res = do_mailq_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "bea") == 0)         res = do_bea_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "iishealth") == 0)   res = do_iishealth_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "temperature") == 0) res = do_temperature_rrd(hostname, testname, msg, tstamp);
 
-	else if (strcmp(id, "ncv") == 0)         res = do_ncv_larrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "tcp") == 0)         res = do_net_larrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "ncv") == 0)         res = do_ncv_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "tcp") == 0)         res = do_net_rrd(hostname, testname, msg, tstamp);
 
 	else if (extids && exthandler) {
 		int i;
 
 		for (i=0; (extids[i] && strcmp(extids[i], id)); i++) ;
 
-		if (extids[i]) res = do_external_larrd(hostname, testname, msg, tstamp);
+		if (extids[i]) res = do_external_rrd(hostname, testname, msg, tstamp);
 	}
 
 	senderip = NULL;
