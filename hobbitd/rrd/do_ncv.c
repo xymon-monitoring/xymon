@@ -11,9 +11,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.2 2005-05-08 19:35:29 henrik Exp $";
+static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.3 2005-06-05 09:24:39 henrik Exp $";
 
-int do_ncv_larrd(char *hostname, char *testname, char *msg, time_t tstamp) 
+int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
 	char **params = NULL;
 	int paridx;

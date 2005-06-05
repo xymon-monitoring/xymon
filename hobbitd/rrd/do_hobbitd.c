@@ -8,9 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char hobbitd_rcsid[] = "$Id: do_hobbitd.c,v 1.7 2005-05-08 19:35:29 henrik Exp $";
+static char hobbitd_rcsid[] = "$Id: do_hobbitd.c,v 1.8 2005-06-05 09:24:39 henrik Exp $";
 
-int do_hobbitd_larrd(char *hostname, char *testname, char *msg, time_t tstamp) 
+int do_hobbitd_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
 	static char *hobbitd_params[] = { "rrdcreate", rrdfn, 
 					 "DS:inmessages:DERIVE:600:0:U", 

@@ -8,9 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbtest_rcsid[] = "$Id: do_bbtest.c,v 1.9 2005-05-08 19:35:29 henrik Exp $";
+static char bbtest_rcsid[] = "$Id: do_bbtest.c,v 1.10 2005-06-05 09:24:39 henrik Exp $";
 
-int do_bbtest_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_bbtest_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 { 
 	static char *bbtest_params[] = { "rrdcreate", rrdfn, "DS:runtime:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 	static char *bbtest_tpl      = NULL;

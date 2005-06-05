@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.17 2005-05-23 06:13:10 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.18 2005-06-05 09:24:39 henrik Exp $";
 
 static char *netstat_params[] = { "rrdcreate", rrdfn, 
 	                          "DS:udpInDatagrams:DERIVE:600:0:U", 
@@ -30,7 +30,7 @@ static char *netstat_params[] = { "rrdcreate", rrdfn,
 				  rra1, rra2, rra3, rra4, NULL };
 static char *netstat_tpl       = NULL;
 
-/* This one matches the netstat output from Solaris 8, and also the hpux and aix from bf-netstat in larrd 0.43c */
+/* This one matches the netstat output from Solaris 8, and also the hpux and aix from bf-netstat */
 static char *netstat_unix_markers[] = {
 	"udpInDatagrams",
 	"udpOutDatagrams",
@@ -215,7 +215,7 @@ static int do_valbeforemarker(char *layout[], char *msg, char *outp)
 	return gotany;
 }
 
-int do_netstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_netstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
 	enum ostype_t ostype;
 	char *datapart = msg;
@@ -256,7 +256,7 @@ int do_netstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 	  case OS_AIX: 
 	  case OS_HPUX: 
-		/* The bf-netstat from larrd 0.43c claims to report as follows:
+		/* The bf-netstat claims to report as follows:
 		 *
 		 * udpInDatagrams = 0
 		 * udpOutDatagrams = 0

@@ -8,9 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char la_rcsid[] = "$Id: do_la.c,v 1.15 2005-05-08 19:35:29 henrik Exp $";
+static char la_rcsid[] = "$Id: do_la.c,v 1.16 2005-06-05 09:24:39 henrik Exp $";
 
-int do_la_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_la_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
 	static char *la_params[]          = { "rrdcreate", rrdfn, "DS:la:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 	static char *la_tpl               = NULL;
@@ -217,7 +217,7 @@ done_parsing:
 			swapuse = 100 - ((pageavail * 100) / pagetotal);
 		}
 
-		do_memory_larrd_update(tstamp, hostname, realuse, swapuse, -1);
+		do_memory_rrd_update(tstamp, hostname, realuse, swapuse, -1);
 	}
 
 	return 0;

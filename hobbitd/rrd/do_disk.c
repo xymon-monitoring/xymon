@@ -8,9 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.25 2005-05-08 19:35:29 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.26 2005-06-05 09:24:39 henrik Exp $";
 
-int do_disk_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
 	static char *disk_params[] = { "rrdcreate", rrdfn, "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", 
 					rra1, rra2, rra3, rra4, NULL };

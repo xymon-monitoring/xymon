@@ -8,9 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char temperature_rcsid[] = "$Id: do_temperature.c,v 1.7 2005-05-22 07:57:08 henrik Exp $";
+static char temperature_rcsid[] = "$Id: do_temperature.c,v 1.8 2005-06-05 09:24:39 henrik Exp $";
 
-int do_temperature_larrd(char *hostname, char *testname, char *msg, time_t tstamp) 
+int do_temperature_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
 	static char *temperature_params[] = { "rrdcreate", rrdfn, 
 					      "DS:temperature:GAUGE:600:1:U",

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.16 2005-05-22 07:58:23 henrik Exp $";
+static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.17 2005-06-05 09:24:39 henrik Exp $";
 
 typedef struct vmstat_layout_t {
 	int index;
@@ -236,7 +236,7 @@ static vmstat_layout_t vmstat_linux22_layout[] = {
 
 #define MAX_VMSTAT_VALUES 30
 
-int do_vmstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_vmstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
 	enum ostype_t ostype;
 	vmstat_layout_t *layout = NULL;

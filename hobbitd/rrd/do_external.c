@@ -8,9 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char external_rcsid[] = "$Id: do_external.c,v 1.8 2005-05-08 19:35:29 henrik Exp $";
+static char external_rcsid[] = "$Id: do_external.c,v 1.9 2005-06-05 09:24:39 henrik Exp $";
 
-int do_external_larrd(char *hostname, char *testname, char *msg, time_t tstamp) 
+int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
 	pid_t childpid;
 

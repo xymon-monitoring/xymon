@@ -8,9 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char apache_rcsid[] = "$Id: do_apache.c,v 1.7 2005-05-08 19:35:29 henrik Exp $";
+static char apache_rcsid[] = "$Id: do_apache.c,v 1.8 2005-06-05 09:24:39 henrik Exp $";
 
-int do_apache_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_apache_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
 	static char *apache_params[] = { "rrdcreate", rrdfn, 
 					 "DS:TA:DERIVE:600:0:U",

@@ -8,9 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ntpstat_rcsid[] = "$Id: do_ntpstat.c,v 1.11 2005-05-29 06:44:36 henrik Exp $";
+static char ntpstat_rcsid[] = "$Id: do_ntpstat.c,v 1.12 2005-06-05 09:24:39 henrik Exp $";
 
-int do_ntpstat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_ntpstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
 	static char *ntpstat_params[]     = { "rrdcreate", rrdfn, "DS:offsetms:GAUGE:600:U:U", rra1, rra2, rra3, rra4, NULL };
 	static char *ntpstat_tpl          = NULL;

@@ -8,9 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char sendmail_rcsid[] = "$Id: do_sendmail.c,v 1.7 2005-05-08 19:34:34 henrik Exp $";
+static char sendmail_rcsid[] = "$Id: do_sendmail.c,v 1.8 2005-06-05 09:24:39 henrik Exp $";
 
-int do_sendmail_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_sendmail_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
 	static char *sendmail_params_1[] = { "rrdcreate", rrdfn, 
 					     "DS:msgsfr:DERIVE:600:0:U",

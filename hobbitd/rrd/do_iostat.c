@@ -8,9 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char iostat_rcsid[] = "$Id: do_iostat.c,v 1.10 2005-05-08 19:35:29 henrik Exp $";
+static char iostat_rcsid[] = "$Id: do_iostat.c,v 1.11 2005-06-05 09:24:39 henrik Exp $";
 
-int do_iostat_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_iostat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
 	/*
 	 * BEGINKEY

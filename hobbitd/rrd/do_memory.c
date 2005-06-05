@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char memory_rcsid[] = "$Id: do_memory.c,v 1.13 2005-05-08 19:35:29 henrik Exp $";
+static char memory_rcsid[] = "$Id: do_memory.c,v 1.14 2005-06-05 09:24:39 henrik Exp $";
 
 static char *memory_params[]      = { "rrdcreate", rrdfn, "DS:realmempct:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 static char *memory_tpl           = NULL;
@@ -36,7 +36,7 @@ static int get_mem_percent(char *l)
 	return atoi(p+1);
 }
 
-void do_memory_larrd_update(time_t tstamp, char *hostname, int physval, int swapval, int actval)
+void do_memory_rrd_update(time_t tstamp, char *hostname, int physval, int swapval, int actval)
 {
 	if (memory_tpl == NULL) memory_tpl = setup_template(memory_params);
 
@@ -55,7 +55,7 @@ void do_memory_larrd_update(time_t tstamp, char *hostname, int physval, int swap
 	}
 }
 
-int do_memory_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_memory_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
 	char *phys = NULL;
 	char *swap = NULL;
@@ -136,7 +136,7 @@ int do_memory_larrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				if (eoln) *eoln = '\n';
 			}
 
-			do_memory_larrd_update(tstamp, hostname, physval, swapval, actval);
+			do_memory_rrd_update(tstamp, hostname, physval, swapval, actval);
 		}
 	}
 
