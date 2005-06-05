@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.67 2005-05-25 19:46:56 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.68 2005-06-05 10:07:11 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -1677,6 +1677,12 @@ void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
 
 	MEMDEFINE(l);
 	MEMDEFINE(codes);
+
+	if (printmode == 2) {
+		/* For print-out usage - e.g. hobbit-confreport.cgi */
+		normalfont = "COLOR=\"#000000\" FACE=\"Tahoma, Arial, Helvetica\"";
+		stopfont = "COLOR=\"#FF0000\" FACE=\"Tahoma, Arial, Helvetica\"";
+	}
 
 	fontspec = normalfont;
 	stoprulefound = 0;
