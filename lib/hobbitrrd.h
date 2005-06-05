@@ -8,28 +8,28 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __BBLARRD_H__
-#define __BBLARRD_H__
+#ifndef __HOBBITRRD_H__
+#define __HOBBITRRD_H__
 
 /* This is for mapping a service -> an RRD file */
 typedef struct {
    char *bbsvcname;
-   char *larrdrrdname;
-} larrdrrd_t;
+   char *hobbitrrdname;
+} hobbitrrd_t;
 
 /* This is for displaying an RRD file. */
 typedef struct {
-   char *larrdrrdname;
-   char *larrdpartname;
+   char *hobbitrrdname;
+   char *hobbitpartname;
    int  maxgraphs;
-} larrdgraph_t;
+} hobbitgraph_t;
 
-extern larrdrrd_t *larrdrrds;
-extern larrdgraph_t *larrdgraphs;
+extern hobbitrrd_t *hobbitrrds;
+extern hobbitgraph_t *hobbitgraphs;
 
-extern larrdrrd_t *find_larrd_rrd(char *service, char *flags);
-extern larrdgraph_t *find_larrd_graph(char *rrdname);
-extern char *larrd_graph_data(char *hostname, char *dispname, char *service, larrdgraph_t *graphdef, int itemcount, int larrd043, int hobbitd, int wantmeta);
+extern hobbitrrd_t *find_hobbit_rrd(char *service, char *flags);
+extern hobbitgraph_t *find_hobbit_graph(char *rrdname);
+extern char *hobbit_graph_data(char *hostname, char *dispname, char *service, hobbitgraph_t *graphdef, int itemcount, int wantmeta);
 
 #endif
 
