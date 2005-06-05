@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.30 2005-05-31 14:50:41 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.31 2005-06-05 09:39:38 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -491,7 +491,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 						tname = bwalk + strlen(key+1);
 						p = strchr(tname, '|'); if (p) *p = '\0';
 						if ( (strcmp(tname, xgetenv("INFOCOLUMN")) != 0) &&
-						     (strcmp(tname, xgetenv("LARRDCOLUMN")) != 0) ) {
+						     (strcmp(tname, xgetenv("TRENDSCOLUMN")) != 0) ) {
 							tlist[tcount++] = strdup(tname);
 						}
 						if (p) *p = '|';
