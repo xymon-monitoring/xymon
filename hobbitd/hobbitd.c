@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.148 2005-05-23 18:42:03 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.149 2005-06-05 09:33:57 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -1822,7 +1822,7 @@ void do_message(conn_t *msg, char *origin)
 		memset(&infologrec, 0, sizeof(infologrec));
 		infologrec.test = &infotestrec;
 
-		rrdtestrec.testname = xgetenv("LARRDCOLUMN");
+		rrdtestrec.testname = xgetenv("TRENDSCOLUMN");
 		rrdtestrec.next = NULL;
 		memset(&rrdlogrec, 0, sizeof(rrdlogrec));
 		rrdlogrec.test = &rrdtestrec;
@@ -2352,7 +2352,7 @@ void load_checkpoint(char *fn)
 
 		/* Ignore the "info" and "trends" data, since we generate on the fly now. */
 		if (strcmp(testname, xgetenv("INFOCOLUMN")) == 0) continue;
-		if (strcmp(testname, xgetenv("LARRDCOLUMN")) == 0) continue;
+		if (strcmp(testname, xgetenv("TRENDSCOLUMN")) == 0) continue;
 
 		if ((hosts == NULL) || (strcmp(hostname, htail->hostname) != 0)) {
 			/* New host */

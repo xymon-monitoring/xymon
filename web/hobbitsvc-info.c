@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.92 2005-06-02 21:23:35 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.93 2005-06-05 09:36:19 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -87,7 +87,7 @@ static int fetch_status(char *hostname)
 		eol = strchr(walk, '\n'); if (eol) *eol = '\0';
 
 		tok = gettok(walk, "|");
-		if ( tok && (strcmp(tok, xgetenv("INFOCOLUMN")) != 0) && (strcmp(tok, xgetenv("LARRDCOLUMN")) != 0) ) {
+		if ( tok && (strcmp(tok, xgetenv("INFOCOLUMN")) != 0) && (strcmp(tok, xgetenv("TRENDSCOLUMN")) != 0) ) {
 			tnames[testcount].name = strdup(tok); tok = gettok(NULL, "|"); 
 			if (tok) { tnames[testcount].color = parse_color(tok); tok = gettok(NULL, "|"); }
 			if (tok) { tnames[testcount].distime = atoi(tok); tok = gettok(NULL, "|"); }
