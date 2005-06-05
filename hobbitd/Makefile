@@ -158,7 +158,7 @@ install-man:
 	cp -fp *.8 $(INSTALLROOT)$(MANROOT)/man8/
 
 install-cfg:
-	cd etcfiles; ../../build/merge-lines hobbitserver.cfg $(INSTALLROOT)$(INSTALLETCDIR)/hobbitserver.cfg
+	cd etcfiles; ../../build/merge-lines hobbitserver.cfg $(INSTALLROOT)$(INSTALLETCDIR)/hobbitserver.cfg LARRDCOLUMN=TRENDSCOLUMN LARRDS=TEST2RRD
 	cd etcfiles; ../../build/merge-lines hobbitcgi.cfg $(INSTALLROOT)$(INSTALLETCDIR)/hobbitcgi.cfg
 	cd etcfiles; ../../build/merge-sects hobbitlaunch.cfg $(INSTALLROOT)$(INSTALLETCDIR)/hobbitlaunch.cfg
 	cd etcfiles; ../../build/merge-sects hobbitgraph.cfg $(INSTALLROOT)$(INSTALLETCDIR)/hobbitgraph.cfg
