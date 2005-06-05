@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.25 2005-05-10 15:03:17 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.26 2005-06-05 09:42:21 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -37,7 +37,7 @@ static void hostsvc_setup(void)
 
 	if (setup_done) return;
 
-	getenv_default("NONHISTS", "info,larrd,trends,graphs", NULL);
+	getenv_default("NONHISTS", "info,trends,graphs", NULL);
 	getenv_default("BBREL", "bbgen", NULL);
 	getenv_default("BBRELDATE", VERSION, NULL);
 	getenv_default("CGIBINURL", "/cgi-bin", &cgibinurl);
@@ -61,7 +61,7 @@ static void historybutton(char *cgibinurl, char *hostname, char *service, char *
 	char *tmp1;
 	char *tmp2 = (char *)malloc(strlen(service)+3);
 
-	getenv_default("NONHISTS", "info,larrd,trends", NULL);
+	getenv_default("NONHISTS", "info,trends", NULL);
 	tmp1 =  (char *)malloc(strlen(xgetenv("NONHISTS"))+3);
 
 	sprintf(tmp1, ",%s,", xgetenv("NONHISTS"));
@@ -94,8 +94,8 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 {
 	int linecount = 0;
 	char *p, *multikey;
-	larrdrrd_t *larrd = NULL;
-	larrdgraph_t *graph = NULL;
+	hobbitrrd_t *rrd = NULL;
+	hobbitgraph_t *graph = NULL;
 	char *tplfile = "hostsvc";
 
 	hostsvc_setup();
@@ -111,7 +111,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	multikey = (char *)malloc(strlen(service) + 3);
 	sprintf(multikey, ",%s,", service);
 	if (strstr(multigraphs, multikey)) {
-		/* Count how many lines are in the status message. This is needed by LARRD later */
+		/* Count how many lines are in the status message. This is needed by hobbitd_graph later */
 		linecount = 0; p = restofmsg;
 		do {
 			/* First skip all whitespace and blank lines */
@@ -226,20 +226,20 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	fprintf(output, "</font></td></tr>\n");
 	fprintf(output, "</table>\n");
 
-	/* larrd stuff here */
+	/* trends stuff here */
 	if (!is_history) {
-		larrd = find_larrd_rrd(service, flags);
-		if (larrd) {
-			graph = find_larrd_graph(larrd->larrdrrdname);
+		rrd = find_hobbit_rrd(service, flags);
+		if (rrd) {
+			graph = find_hobbit_graph(rrd->hobbitrrdname);
 			if (graph == NULL) {
 				errprintf("Setup error: Service %s has a graph %s, but no graph-definition\n",
-					  service, larrd->larrdrrdname);
+					  service, rrd->hobbitrrdname);
 			}
 		}
 	}
-	if (larrd && graph) {
+	if (rrd && graph) {
 		fprintf(output, "<!-- linecount=%d -->\n", linecount);
-		fprintf(output, "%s\n", larrd_graph_data(hostname, displayname, service, graph, linecount, 1, hobbitd, 0));
+		fprintf(output, "%s\n", hobbit_graph_data(hostname, displayname, service, graph, linecount, 0));
 	}
 
 	if (histlocation == HIST_BOTTOM) {
