@@ -15,7 +15,7 @@ Each definition of a graph type begins with a "[SERVICE]" indicator,
 this is the name passed as the "service" parameter to 
 .I hobbitgraph.cgi(1).
 If the service name passed to hobbitgraph.cgi is not found, it will
-attempt to match the service name to a graph via the LARRDS environment
+attempt to match the service name to a graph via the TEST2RRD environment
 variable. So calling hobbitgraph.cgi with "service=cpu" or "service=la"
 will end up producing the same graph.
 
@@ -24,9 +24,9 @@ texts shown as the title of the graph, and the YAXIS heading respectively.
 (The X-axis is always time-based).
 
 If a fixed set of RRD files are used for the graph, you just write those
-in the RRDtool definitions. Note that unlike LARRD, Hobbit keeps all RRD
-files for a host in a separate directory per host, so you need not worry
-about the hostname being part of the RRD filename.
+in the RRDtool definitions. Note that Hobbit keeps all RRD files for a host 
+in a separate directory per host, so you need not worry about the hostname 
+being part of the RRD filename.
 
 For graphs that use multiple RRD files as input, you specify a filename
 pattern in the FNPATTERN statement, and optionally a pattern of files
@@ -110,7 +110,7 @@ RRD files used as parameters. The script must generate one line of output,
 which is then used as the title of the graph.
 
 .SH ENVIRONMENT
-.BR LARRDS
+.BR TEST2RRD
 Maps service names to graph definitions.
 
 .SH NOTES
