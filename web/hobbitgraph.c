@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.31 2005-05-24 08:39:39 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.32 2005-06-05 09:36:03 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -597,7 +597,7 @@ int main(int argc, char *argv[])
 	/*
 	 * Lookup which RRD file corresponds to the service-name, and how we handle this graph.
 	 * We first lookup the service name in the graph definition list.
-	 * If that fails, then we try mapping it via the BB service -> LARRD map.
+	 * If that fails, then we try mapping it via the BB service -> RRD map.
 	 */
 	for (gdef = gdefs; (gdef && strcmp(service, gdef->name)); gdef = gdef->next) ;
 	if (gdef == NULL) {
@@ -605,9 +605,9 @@ int main(int argc, char *argv[])
 			gdef = gdefuser;
 		}
 		else {
-			larrdrrd_t *ldef = find_larrd_rrd(service, NULL);
+			hobbitrrd_t *ldef = find_hobbit_rrd(service, NULL);
 			if (ldef) {
-				for (gdef = gdefs; (gdef && strcmp(ldef->larrdrrdname, gdef->name)); gdef = gdef->next) ;
+				for (gdef = gdefs; (gdef && strcmp(ldef->hobbitrrdname, gdef->name)); gdef = gdef->next) ;
 				wantsingle = 1;
 			}
 		}

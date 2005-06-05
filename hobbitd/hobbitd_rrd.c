@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.18 2005-04-21 07:40:46 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.19 2005-06-05 09:35:03 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -26,7 +26,7 @@ static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.18 2005-04-21 07:40:46 henrik Exp 
 #include "libbbgen.h"
 #include "hobbitd_worker.h"
 
-#include "do_larrd.h"
+#include "do_rrd.h"
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 	}
 
 	save_errbuf = 0;
-	setup_signalhandler("hobbitd_larrd");
+	setup_signalhandler("hobbitd_rrd");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGCHLD, &sa, NULL);
@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
 		int metacount;
 		char *p;
 		char *hostname = NULL, *testname = NULL, *sender = NULL;
-		larrdrrd_t *ldef = NULL;
+		hobbitrrd_t *ldef = NULL;
 		time_t tstamp;
 		int childstat;
 
@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
 		}
 		else if ((metacount > 4) && (strncmp(metadata[0], "@@droptest", 10) == 0)) {
 			/*
-			 * Not implemented. Mappings of testnames -> larrd rrd files is
+			 * Not implemented. Mappings of testnames -> rrd files is
 			 * too complex, so on the rare occasion that a single test
 			 * is deleted, they will have to delete the rrd files themselves.
 			 */
@@ -180,8 +180,8 @@ int main(int argc, char *argv[])
 				sender = metadata[2];
 				hostname = metadata[4]; 
 				testname = metadata[5];
-				ldef = find_larrd_rrd(testname, metadata[8]);
-				update_larrd(hostname, testname, restofmsg, tstamp, sender, ldef);
+				ldef = find_hobbit_rrd(testname, metadata[8]);
+				update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef);
 				break;
 
 			  default:
@@ -195,8 +195,8 @@ int main(int argc, char *argv[])
 			sender = metadata[2];
 			hostname = metadata[4]; 
 			testname = metadata[5];
-			ldef = find_larrd_rrd(testname, "");
-			update_larrd(hostname, testname, restofmsg, tstamp, sender, ldef);
+			ldef = find_hobbit_rrd(testname, "");
+			update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef);
 		}
 
 		/* 
