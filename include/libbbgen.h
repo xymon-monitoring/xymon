@@ -20,7 +20,6 @@ typedef struct htnames_t {
 } htnames_t;
 
 #include "../lib/bbalert.h"
-#include "../lib/bblarrd.h"
 #include "../lib/calc.h"
 #include "../lib/cgi.h"
 #include "../lib/color.h"
@@ -30,6 +29,7 @@ typedef struct htnames_t {
 #include "../lib/errormsg.h"
 #include "../lib/headfoot.h"
 #include "../lib/files.h"
+#include "../lib/hobbitrrd.h"
 #include "../lib/htmllog.h"
 #include "../lib/links.h"
 #include "../lib/loadhosts.h"
