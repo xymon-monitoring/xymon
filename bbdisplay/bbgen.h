@@ -49,12 +49,12 @@
 					   rawentry            V
                                            entries ---------> entry_t
                                            dialup               column -------> bbgen_col_t
-                                           larrdgraphs          color             name
-                                           reportwarnlevel      age               next
-                                           comment              oldage
-                                           banks                acked
-                                           banksize             alert
-                                           next                 onwap
+                                           reportwarnlevel      color             name
+                                           comment              age               next
+                                           banks                oldage
+                                           banksize             acked
+                                           next                 alert
+                                                                onwap
                                                                 propagate
                                                                 reportinfo
                                                                 next
@@ -278,8 +278,6 @@ extern double           reportwarnlevel, reportgreenlevel;
 extern int		reportstyle;
 extern int		dynamicreport;
 extern int              fqdn;
-extern char		*larrdcol;
-extern char		*infocol;
 
 #endif
 
