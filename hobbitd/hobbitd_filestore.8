@@ -29,16 +29,16 @@ $BBLOGS/ directory. If you are using
 throughout your Hobbit server, you will not need to run this
 module to save status messages, unless you have a third-party 
 add-on that reads the status-logs directly.
-This module is NOT needed for LARRD, you should run the 
-.I hobbitd_larrd(8)
+This module is NOT needed to get trend graphs, you should run the 
+.I hobbitd_rrd(8)
 module instead.
 
 .IP "--data"
 Incoming messages are "data" messages, they will be stored in the
 $BBDATA directory. This module is not needed, unless you have a
 third-party module that processes the data-files. This module is
-NOT needed for LARRD, you should run the 
-.I hobbitd_larrd(8)
+NOT needed to get trend graphs, you should run the 
+.I hobbitd_rrd(8)
 module instead.
 
 .IP "--notes"
@@ -85,5 +85,5 @@ Enable debugging output.
 This module does not rely on any configuration files.
 
 .SH "SEE ALSO"
-hobbitd_channel(8), hobbitd_larrd(8), hobbitd(8), hobbit(7)
+hobbitd_channel(8), hobbitd_rrd(8), hobbitd(8), hobbit(7)
 
