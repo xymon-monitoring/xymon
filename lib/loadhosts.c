@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.32 2005-06-01 09:20:43 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.33 2005-06-05 09:43:02 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -56,8 +56,8 @@ static void bbh_item_list_setup(void)
 	bbh_item_name[BBH_NK]                  = "BBH_NK";
 	bbh_item_key[BBH_NKTIME]               = "NKTIME=";
 	bbh_item_name[BBH_NKTIME]              = "BBH_NKTIME";
-	bbh_item_key[BBH_LARRD]                = "LARRD:";
-	bbh_item_name[BBH_LARRD]               = "BBH_LARRD";
+	bbh_item_key[BBH_TRENDS]               = "TRENDS:";
+	bbh_item_name[BBH_TRENDS]              = "BBH_TRENDS";
 	bbh_item_key[BBH_WML]                  = "WML:";
 	bbh_item_name[BBH_WML]                 = "BBH_WML";
 	bbh_item_key[BBH_NOPROP]               = "NOPROP:";
@@ -140,6 +140,13 @@ static char *bbh_find_item(namelist_t *host, enum bbh_item_t item)
 	i = 0;
 	while (host->elems[i] && strncasecmp(host->elems[i], bbh_item_key[item], strlen(bbh_item_key[item]))) i++;
 	result = (host->elems[i] ? (host->elems[i] + strlen(bbh_item_key[item])) : NULL);
+
+	/* Handle the LARRD: tag in Hobbit 4.0.4 and earlier */
+	if (!result && (item == BBH_TRENDS)) {
+		i = 0;
+		while (host->elems[i] && strncasecmp(host->elems[i], "LARRD:", 6)) i++;
+		result = (host->elems[i] ? (host->elems[i] + 6) : NULL);
+	}
 
 	if (result || !host->defaulthost || (strcasecmp(host->bbhostname, ".default.") == 0))
 		return result;
