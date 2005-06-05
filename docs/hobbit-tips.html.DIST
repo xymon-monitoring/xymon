@@ -148,7 +148,7 @@ Now, assuming you are getting back the server-status info, time to make
 sure your bb-hosts is correctly configured to collect and graph the
 data.  Heres what I have in mine:
 
-1.2.3.4    my.server.com  # conn ssh http://1.2.3.4 apache=http://1.2.3.4/server-status?auto LARRD:*,apache:apache|apache1|apache2|apache3
+1.2.3.4    my.server.com  # conn ssh http://1.2.3.4 apache=http://1.2.3.4/server-status?auto TRENDS:*,apache:apache|apache1|apache2|apache3
 
  From what you said of your setup, I'm guessing your only problem is
  using the wrong url for the apache tag (you used
