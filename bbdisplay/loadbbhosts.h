@@ -30,7 +30,6 @@ extern char	*nopropyellowdefault;
 extern char	*nopropreddefault;
 extern char	*noproppurpledefault;
 extern char	*nopropackdefault;
-extern char	*larrdgraphs_default;
 extern char     *wapcolumns;
 extern time_t   snapshot;
 
