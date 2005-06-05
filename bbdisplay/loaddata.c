@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.151 2005-04-25 12:58:51 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.152 2005-06-05 09:26:58 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -115,13 +115,13 @@ state_t *init_state(const char *filename, logdata_t *log)
 	}
 
 	if (reportstart || snapshot) {
-		/* Dont do reports for info- and larrd-columns */
+		/* Dont do reports for info- and trends-columns */
 		p = strrchr(filename, '.');
 		if (p == NULL) return NULL;
 		p++;
 
 		if (strcmp(p, xgetenv("INFOCOLUMN")) == 0) return NULL;
-		if (strcmp(p, xgetenv("LARRDCOLUMN")) == 0) return NULL;
+		if (strcmp(p, xgetenv("TRENDSCOLUMN")) == 0) return NULL;
 
 		/*
 		 * When doing reports, we are scanning the BBHIST directory. It may
