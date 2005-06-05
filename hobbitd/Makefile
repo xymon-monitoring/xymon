@@ -1,4 +1,4 @@
-PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filter hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_larrd hobbitd_sample hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-mailack trimhistory hobbitreports.sh
+PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filter hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-mailack trimhistory hobbitreports.sh
 CGISCRIPTS = hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh
 SECCGISCRIPTS = bb-ack.sh hobbit-enadis.sh
 
@@ -12,7 +12,7 @@ SAMPLEOBJS    = hobbitd_sample.o    hobbitd_worker.o
 FILESTOREOBJS = hobbitd_filestore.o hobbitd_worker.o
 HISTORYOBJS   = hobbitd_history.o   hobbitd_worker.o
 ALERTOBJS     = hobbitd_alert.o     hobbitd_worker.o do_alert.o
-LARRDOBJS     = hobbitd_larrd.o     hobbitd_worker.o do_larrd.o
+RRDOBJS       = hobbitd_rrd.o       hobbitd_worker.o do_rrd.o
 SAMPLEOBJS    = hobbitd_sample.o    hobbitd_worker.o
 HOBBITGRAPHOBJS= hobbitgraph.o
 HOBBITSVCOBJS = hobbitsvc.o hobbitsvc-info.o hobbitsvc-trends.o do_alert.o
@@ -44,8 +44,8 @@ hobbitd_history: $(HISTORYOBJS) $(LIBOBJS)
 hobbitd_alert: $(ALERTOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(RPATHOPT) $(ALERTOBJS) $(LIBOBJS) $(PCRELIBS)
 
-hobbitd_larrd: $(LARRDOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(RPATHOPT) $(LARRDOBJS) $(LIBOBJS) $(RRDLIBS) $(PCRELIBS) $(NETLIBS)
+hobbitd_rrd: $(RRDOBJS) $(LIBOBJS)
+	$(CC) -o $@ $(RPATHOPT) $(RRDOBJS) $(LIBOBJS) $(RRDLIBS) $(PCRELIBS) $(NETLIBS)
 
 hobbitd_filter: $(FILTEROBJS) $(LIBOBJS)
 	$(CC) -o $@ $(RPATHOPT) $(FILTEROBJS) $(LIBOBJS)
@@ -53,8 +53,8 @@ hobbitd_filter: $(FILTEROBJS) $(LIBOBJS)
 do_alert.o: do_alert.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ do_alert.c
 
-do_larrd.o: do_larrd.c do_larrd.h larrd/*.c
-	$(CC) $(CFLAGS) $(RRDINCDIR) $(PCREINCDIR) -c -o $@ do_larrd.c
+do_rrd.o: do_rrd.c do_rrd.h rrd/*.c
+	$(CC) $(CFLAGS) $(RRDINCDIR) $(PCREINCDIR) -c -o $@ do_rrd.c
 
 hobbitd_sample: $(SAMPLEOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(RPATHOPT) $(SAMPLEOBJS) $(LIBOBJS)
@@ -135,12 +135,12 @@ cfgfiles:
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f $(PROGRAMS) $(CGISCRIPTS) $(SECCGISCRIPTS) *.o *~ larrd/*~ moverrd.sh
+	rm -f $(PROGRAMS) $(CGISCRIPTS) $(SECCGISCRIPTS) *.o *~ rrd/*~ moverrd.sh
 	rm -f etcfiles/hobbit-apache.conf etcfiles/hobbitserver.cfg etcfiles/bb-hosts etcfiles/hobbit-alerts.cfg etcfiles/hobbitlaunch.cfg etcfiles/hobbitcgi.cfg
 	rm -f wwwfiles/menu/menu_items.js
 	(find etcfiles/ -name "*~"; find wwwfiles/ -name "*~"; find webfiles/ -name "*~") | xargs rm -f
 
-install: install-bin install-cgi install-man install-cfg
+install: install-bin install-cgi install-man install-cfg install-obsoleted
 
 install-bin:
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
@@ -173,4 +173,9 @@ ifndef PKGBUILD
 	chown $(BBUSER) $(INSTALLROOT)$(BBLOGDIR) $(INSTALLROOT)$(BBHOME) $(INSTALLROOT)$(BBHOME)/* $(INSTALLROOT)$(INSTALLBINDIR)/* $(INSTALLROOT)$(INSTALLETCDIR)/* $(INSTALLROOT)$(INSTALLEXTDIR)/* $(INSTALLROOT)$(INSTALLWEBDIR)/* $(INSTALLROOT)$(INSTALLWWWDIR)/gifs $(INSTALLROOT)$(INSTALLWWWDIR)/gifs/* $(INSTALLROOT)$(INSTALLWWWDIR)/menu $(INSTALLROOT)$(INSTALLWWWDIR)/menu/* $(INSTALLROOT)$(INSTALLWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(INSTALLWWWDIR)/wml $(INSTALLROOT)$(BBVAR) $(INSTALLROOT)$(BBVAR)/* $(INSTALLROOT)$(CGIDIR) $(INSTALLROOT)$(CGIDIR)/* $(INSTALLROOT)$(SECURECGIDIR) $(INSTALLROOT)$(SECURECGIDIR)/*
 	chgrp `$(IDTOOL) -g $(BBUSER)` $(INSTALLROOT)$(BBLOGDIR) $(INSTALLROOT)$(BBHOME) $(INSTALLROOT)$(BBHOME)/* $(INSTALLROOT)$(INSTALLBINDIR)/* $(INSTALLROOT)$(INSTALLETCDIR)/* $(INSTALLROOT)$(INSTALLEXTDIR)/* $(INSTALLROOT)$(INSTALLWEBDIR)/* $(INSTALLROOT)$(INSTALLWWWDIR)/gifs $(INSTALLROOT)$(INSTALLWWWDIR)/gifs/* $(INSTALLROOT)$(INSTALLWWWDIR)/menu $(INSTALLROOT)$(INSTALLWWWDIR)/menu/* $(INSTALLROOT)$(INSTALLWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(INSTALLWWWDIR)/wml $(INSTALLROOT)$(BBVAR) $(INSTALLROOT)$(BBVAR)/* $(INSTALLROOT)$(CGIDIR) $(INSTALLROOT)$(CGIDIR)/* $(INSTALLROOT)$(SECURECGIDIR) $(INSTALLROOT)$(SECURECGIDIR)/*
 endif
+
+install-obsoleted:
+	if test -f $(INSTALLROOT)$(INSTALLBINDIR)/hobbitd_larrd; then rm -f $(INSTALLROOT)$(INSTALLBINDIR)/hobbitd_larrd; fi
+	cd $(INSTALLROOT)$(INSTALLBINDIR) && ln -s hobbitd_rrd hobbitd_larrd
+
 
