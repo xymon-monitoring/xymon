@@ -19,7 +19,7 @@ enum bbh_item_t {
 	BBH_DESCRIPTION,
 	BBH_NK,
 	BBH_NKTIME,
-	BBH_LARRD,
+	BBH_TRENDS,
 	BBH_WML,
 	BBH_NOPROPRED,
 	BBH_NOPROPYELLOW,
@@ -88,8 +88,6 @@ typedef struct namelist_t {
 	char *clientname;	/* CLIENT: tag - host alias */
 	char *downtime;		/* DOWNTIME tag - when host has planned downtime. */
 } namelist_t;
-
-extern char *larrdgraphs_default;
 
 extern namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn);
 extern char *knownhost(char *filename, char *hostip, int ghosthandling, int *maybedown);
