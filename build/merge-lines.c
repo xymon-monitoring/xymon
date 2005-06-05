@@ -16,8 +16,14 @@ typedef struct entry_t {
 	struct entry_t *next;
 } entry_t;
 
+typedef struct newname_t {
+	char *oldname, *newname;
+	struct newname_t *next;
+} newname_t;
+
 entry_t *head = NULL;
 entry_t *tail = NULL;
+newname_t *newnames = NULL;
 
 int main(int argc, char *argv[])
 {
@@ -31,6 +37,23 @@ int main(int argc, char *argv[])
 
 	srcfn = strdup(argv[1]);
 	curfn = strdup(argv[2]);
+	if (argc > 3) {
+		int i;
+		char *p;
+
+		for (i=3; (i < argc); i++) {
+			p = strchr(argv[i], '=');
+			if (p) {
+				newname_t *newitem = (newname_t *)malloc(sizeof(newname_t));
+				*p = '\0';
+				newitem->oldname = strdup(argv[i]);
+				newitem->newname = strdup(p+1);
+				newitem->next = newnames;
+				newnames = newitem;
+			}
+		}
+	}
+
 	curbckfn = (char *)malloc(strlen(curfn) + 5);
 	sprintf(curbckfn, "%s.bak", curfn);
 
@@ -91,8 +114,26 @@ nooriginal:
 
 		p = strchr(bol, delim);
 		if (p) {
+			/* Find the old value */
 			*p = '\0';
 			for (ewalk = head; (ewalk && strcmp(ewalk->name, bol)); ewalk = ewalk->next) ;
+			if (!ewalk) {
+				/* See if it's been renamed */
+				newname_t *nwalk;
+				for (nwalk = newnames; (nwalk && strcmp(nwalk->newname, bol)); nwalk = nwalk->next) ;
+				if (nwalk) {
+					/* It has - find the value of the old setting */
+					for (ewalk = head; (ewalk && strcmp(ewalk->name, nwalk->oldname)); ewalk = ewalk->next) ;
+					if (ewalk) {
+						/* Merge it with the new name */
+						char *newval;
+						char *oval = strchr(ewalk->val, delim);
+						newval = (char *)malloc(strlen(nwalk->newname) + strlen(oval) + 1);
+						sprintf(newval, "%s%s", nwalk->newname, oval);
+						ewalk->val = newval;
+					}
+				}
+			}
 			*p = delim;
 
 			if (ewalk) {
