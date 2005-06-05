@@ -95,9 +95,9 @@ The "data" message allows tools to send data about a host, without
 it appearing as a column on the Hobbit webpages. This
 is used e.g. to report statistics about a host, e.g. vmstat data which
 does not in itself represent something that has a red, yellow or
-green identity. It is used by LARRD bottom-feeder modules, among
+green identity. It is used by RRD bottom-feeder modules, among
 others. In Hobbit, data messages are by default processed only by the
-.I hobbitd_larrd(8)
+.I hobbitd_rrd(8)
 module. If you want to handle data-messages by an external application,
 you may want to enable the 
 .I hobbitd_filestore(8)
