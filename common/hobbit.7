@@ -143,8 +143,8 @@ monitoring data in XML format.
 
 .IP "Integrated trend analysis, historical data and SLA reporting"
 The LARRD trend analysis package is a popular add-on to Big Brother,
-but also fairly complicated to setup. Hobbit includes all of the
-LARRD functionality in the base package, so that the trends data
+but also fairly complicated to setup. Hobbit includes all of this
+functionality in the base package, so that the trends data
 for network response-times, disk utilisation etc is automatically
 collected and made available as graphical data.
 
@@ -175,7 +175,7 @@ is the core network daemon that collects all reports about the
 status of your hosts. It uses a number of helper modules to
 implement certain tasks such as updating logfiles and sending
 out alerts: hobbitd_filestore, hobbitd_history, hobbitd_alert
-and hobbitd_larrd.
+and hobbitd_rrd.
 
 .SH HOBBIT TOOLS HANDLING THE WEB USER-INTERFACE
 These tools take care of generating and updating the various
@@ -356,9 +356,9 @@ an e-mail to \fBhobbit-announce-subscribe@hswn.dk\fR.
 
 .SH "SEE ALSO"
 hobbitlaunch(8), hobbitlaunch.cfg(5), 
-hobbitd(8), hobbitd_filestore(8), hobbitd_history(8), hobbitd_alert(8), hobbitd_larrd(8), hobbit-mailack(8),
+hobbitd(8), hobbitd_filestore(8), hobbitd_history(8), hobbitd_alert(8), hobbitd_rrd(8), hobbit-mailack(8),
 bbgen(1), bb-hostsvc.cgi(1), hobbitgraph.cgi(1), bb-hist.cgi(1), bb-ack.cgi(1),
-bb-larrdcolumn(1), bb-infocolumn(1), bb-findhost.cgi(1), bb-csvinfo.cgi(1), bb-rep.cgi(1), 
+bb-findhost.cgi(1), bb-csvinfo.cgi(1), bb-rep.cgi(1), 
 bb-replog.cgi(1), bb-snapshot.cgi(1), bb-eventlog.cgi(1),
 bbtest-net(1), bbretest-net.sh(1), bb-services(5),
 bb(1), bbmessage.cgi(1), bbhostgrep(1), bbhostshow(1), bbdigest(1), bbcombotest(1), bbcombotest.cfg(5),
