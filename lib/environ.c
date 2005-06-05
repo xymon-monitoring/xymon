@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.19 2005-05-07 07:22:31 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.20 2005-06-05 09:39:14 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -49,7 +49,7 @@ const static struct {
 	{ "BBLOGSTATUS", "DYNAMIC" },
 	{ "PINGCOLUMN", "conn" },
 	{ "INFOCOLUMN", "info" },
-	{ "LARRDCOLUMN", "trends" },
+	{ "TRENDSCOLUMN", "trends" },
 	{ "DOCOMBO", "TRUE" },
 	{ "BBMAXMSGSPERCOMBO", "0" },
 	{ "BBSLEEPBETWEENMSGS", "0" },
@@ -103,7 +103,7 @@ const static struct {
 	{ "RPCINFO", "rpcinfo" },
 	{ "BBROUTERTEXT", "router" },
 	{ "BBRRDS", "$BBVAR/rrd" },
-	{ "LARRDS", "cpu=la,disk,memory,$PINGCOLUMN=tcp,http=tcp,dns=tcp,dig=tcp,time=ntpstat,vmstat,iostat,netstat,temperature,apache,bind,sendmail,nmailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd" },
+	{ "TEST2RRD", "cpu=la,disk,memory,$PINGCOLUMN=tcp,http=tcp,dns=tcp,dig=tcp,time=ntpstat,vmstat,iostat,netstat,temperature,apache,bind,sendmail,nmailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd" },
 	{ "GRAPHS", "la,disk:disk_part:5,memory,users,vmstat,iostat,tcp.http,tcp,netstat,temperature,ntpstat,apache,bind,sendmail,nmailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd" },
 	{ "SUMMARY_SET_BKG", "FALSE" },
 	{ "BBMKBB2EXT", "eventlog.sh acklog.sh" },
