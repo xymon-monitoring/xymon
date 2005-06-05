@@ -45,7 +45,7 @@ BBLOGSTATUS="DYNAMIC"		# Are HTML status logs statically or dynamically generate
 
 PINGCOLUMN="conn"		# Column where the ping-test reports results.
 INFOCOLUMN="info"		# Column where the info-pages are reported.
-LARRDCOLUMN="trends"		# Column where the RRD graphs are reported.
+TRENDSCOLUMN="trends"		# Column where the RRD graphs are reported.
 
 BBMAXMSGSPERCOMBO="0"           # How many individual messages to combine in a combo-message. 0=unlimited.
 BBSLEEPBETWEENMSGS="0"          # Delay between sending each combo message, in milliseconds.
@@ -116,25 +116,25 @@ TRACEROUTE="traceroute"                         # How to do traceroute on failin
 BBROUTERTEXT="router"				# What to call a failing intermediate network device.
 
 
-# Settings for the LARRD graphs
+# Settings for the RRD graphs
 
 # Top level directory for the RRD files
 BBRRDS="$BBVAR/rrd"
 
-# This defines the status- and data-messages you want to collect LARRD data
+# TEST2RRD defines the status- and data-messages you want to collect RRD data
 # about. You will normally not need to modify this, unless you have added a
 # script to pick up RRD data from custom tests (the hobbitd_larrd --extra-script
 # and --extra-tests options).
 # Note that network tests defined in the bb-services file are automatically
 # included.
-# The format here is "BBCOLUMN=LARRDSERVICE". If you leave out the "=LARRDSERVICE"
-# part, it is assumed to be the same as the BBCOLUMN value.
+# The format here is "COLUMN=RRDSERVICE". If you leave out the "=RRDSERVICE"
+# part, it is assumed to be the same as the COLUMN value.
 #
 # This is also used by the bb-hostsvc.cgi script to determine if the detailed
 # status view of a test should include a graph.
-LARRDS="cpu=la,disk,inode,qtree,memory,$PINGCOLUMN=tcp,http=tcp,dns=tcp,dig=tcp,time=ntpstat,vmstat,iostat,netstat,temperature,apache,bind,sendmail,mailq,nmailq=mailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd"
+TEST2RRD="cpu=la,disk,inode,qtree,memory,$PINGCOLUMN=tcp,http=tcp,dns=tcp,dig=tcp,time=ntpstat,vmstat,iostat,netstat,temperature,apache,bind,sendmail,mailq,nmailq=mailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd"
 
-# This defines which LARRD RRD files to include on the "trends" column webpage,
+# This defines which RRD files to include on the "trends" column webpage,
 # and the order in which they appear.
 GRAPHS="la,disk,inode,qtree,memory,users,vmstat,iostat,tcp.http,tcp,netstat,mrtg::1,temperature,ntpstat,apache,bind,sendmail,mailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd"
 
