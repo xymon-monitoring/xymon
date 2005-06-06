@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.33 2005-06-05 09:43:02 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.34 2005-06-06 20:10:33 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -28,6 +28,7 @@ static namelist_t *namehead = NULL;
 static namelist_t *defaulthost = NULL;
 static const char *bbh_item_key[BBH_LAST];
 static const char *bbh_item_name[BBH_LAST];
+static int configloaded = 0;
 
 static void bbh_item_list_setup(void)
 {
@@ -247,6 +248,8 @@ namelist_t *hostinfo(char *hostname)
 {
 	namelist_t *walk;
 
+	if (!configloaded) load_hostnames(xgetenv("BBHOST"), NULL, get_fqdn());
+
 	for (walk = namehead; (walk && (strcmp(walk->bbhostname, hostname) != 0)); walk = walk->next);
 	return walk;
 }
@@ -369,7 +372,7 @@ int main(int argc, char *argv[])
 	namelist_t *hosts, *h;
 	char *val;
 
-	hosts = load_hostnames(argv[1], NULL, 1);
+	hosts = load_hostnames(argv[1], NULL, get_fqdn());
 
 	for (argi = 2; (argi < argc); argi++) {
 		char s[1024];

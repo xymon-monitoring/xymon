@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.9 2005-04-03 15:35:33 henrik Exp $";
+static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.10 2005-06-06 20:10:33 henrik Exp $";
 
 
 static int get_page_name_title(char *buf, char *key, char **name, char **title)
@@ -58,6 +58,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 	MEMDEFINE(hostname);
 	MEMDEFINE(l);
 
+	configloaded = 1;
 	initialize_hostlist();
 	curpage = curtoppage = pgtail = pghead;
 
