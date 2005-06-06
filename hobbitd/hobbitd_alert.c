@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.58 2005-05-27 05:57:36 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.59 2005-06-06 09:27:07 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -65,7 +65,7 @@ htnames_t *locations = NULL;
 activealerts_t *ahead = NULL;
 
 char *statename[] = {
-	"paging", "acked", "recovered", "dead"
+	"paging", "norecip", "acked", "recovered", "dead"
 };
 
 htnames_t *find_name(htnames_t **head, char *name)
@@ -180,6 +180,8 @@ void load_checkpoint(char *filename)
 			newalert->state = A_PAGING;
 			while (strcmp(item[7], statename[newalert->state]) && (newalert->state < A_DEAD)) 
 				newalert->state++;
+			/* Config might have changed while we were down */
+			if (newalert->state == A_NORECIP) newalert->state = A_PAGING;
 			newalert->pagemessage = newalert->ackmessage = NULL;
 			if (strlen(item[8])) {
 				nldecode(item[8]);
@@ -219,6 +221,7 @@ int main(int argc, char *argv[])
 	FILE *notiflogfd = NULL;
 	char *tracefn = NULL;
 	struct sigaction sa;
+	int configchanged;
 
 	MEMDEFINE(acklogfn);
 	MEMDEFINE(notiflogfn);
@@ -597,12 +600,26 @@ int main(int argc, char *argv[])
 		 * notification child and let it handle all of it. But there is no
 		 * reason to fork a child process unless it is going to do something.
 		 */
-		load_alertconfig(configfn, alertcolors, alertinterval);
+		configchanged = load_alertconfig(configfn, alertcolors, alertinterval);
 		anytogo = 0;
 		for (awalk = ahead; (awalk); awalk = awalk->next) {
+			int anymatch = 0;
+
 			switch (awalk->state) {
+			  case A_NORECIP:
+				if (!configchanged) break;
+				else awalk->state = A_PAGING;
+				/* Fall through */
+
 			  case A_PAGING:
-				if ((awalk->nextalerttime <= now) && have_recipient(awalk)) anytogo++;
+				if (awalk->nextalerttime <= now) {
+					if (have_recipient(awalk, &anymatch)) {
+						anytogo++;
+					}
+					else {
+						if (!anymatch) awalk->state = A_NORECIP;
+					}
+				}
 				break;
 
 			  case A_ACKED:
@@ -649,6 +666,7 @@ int main(int argc, char *argv[])
 						send_alert(awalk, notiflogfd);
 						break;
 
+					  case A_NORECIP:
 					  case A_DEAD:
 						break;
 					}
@@ -677,6 +695,7 @@ int main(int argc, char *argv[])
 						awalk->state = A_DEAD;
 						break;
 
+					  case A_NORECIP:
 					  case A_DEAD:
 						break;
 					}
@@ -692,6 +711,7 @@ int main(int argc, char *argv[])
 			  case A_ACKED: 
 				  break;
 
+			  case A_NORECIP:
 			  case A_PAGING: 
 				  break;
 

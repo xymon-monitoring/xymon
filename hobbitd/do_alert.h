@@ -14,7 +14,7 @@
 #include <time.h>
 #include <stdio.h>
 
-enum astate_t { A_PAGING, A_ACKED, A_RECOVERED, A_NOTIFY, A_DEAD };
+enum astate_t { A_PAGING, A_NORECIP, A_ACKED, A_RECOVERED, A_NOTIFY, A_DEAD };
 
 typedef struct activealerts_t {
 	/* Identification of the alert */
@@ -38,7 +38,7 @@ typedef struct activealerts_t {
 extern int include_configid;
 extern int testonly;
 
-extern void load_alertconfig(char *configfn, int alertcolors, int alertinterval);
+extern int load_alertconfig(char *configfn, int alertcolors, int alertinterval);
 extern void dump_alertconfig(void);
 extern time_t next_alert(activealerts_t *alert);
 extern void cleanup_alert(activealerts_t *alert);
@@ -48,7 +48,7 @@ extern void start_alerts(void);
 extern void send_alert(activealerts_t *alert, FILE *logfd);
 extern void finish_alerts(void);
 
-extern int have_recipient(activealerts_t *alert);
+extern int have_recipient(activealerts_t *alert, int *anymatch);
 
 extern void load_state(char *filename);
 extern void save_state(char *filename);

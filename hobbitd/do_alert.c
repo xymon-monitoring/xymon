@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.68 2005-06-05 10:07:11 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.69 2005-06-06 09:27:07 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -289,7 +289,7 @@ static void free_criteria(criteria_t *crit)
 	if (crit->timespec)     xfree(crit->timespec);
 }
 
-void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
+int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 {
 	/* (Re)load the configuration file without leaking memory */
 	static time_t lastload = 0;	/* Last time the config file was loaded */
@@ -304,12 +304,12 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 	MEMDEFINE(fn);
 
 	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/hobbit-alerts.cfg", xgetenv("BBHOME"));
-	if (stat(fn, &st) == -1) { MEMUNDEFINE(fn); return; }
-	if (st.st_mtime == lastload) { MEMUNDEFINE(fn); return; }
+	if (stat(fn, &st) == -1) { MEMUNDEFINE(fn); return 0; }
+	if (st.st_mtime == lastload) { MEMUNDEFINE(fn); return 0; }
 	lastload = st.st_mtime;
 
 	fd = fopen(fn, "r");
-	if (!fd) { MEMUNDEFINE(fn); return; }
+	if (!fd) { MEMUNDEFINE(fn); return 0; }
 
 	/* First, clean out the old rule set */
 	while (rulehead) {
@@ -701,6 +701,8 @@ void load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 
 	MEMUNDEFINE(cfline);
 	MEMUNDEFINE(fn);
+
+	return 1;
 }
 
 static void dump_criteria(criteria_t *crit, int isrecip)
@@ -883,7 +885,7 @@ static int timematch(char *tspec)
 	return result;
 }
 
-static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *rulecrit)
+static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *rulecrit, int *anymatch)
 {
 	/*
 	 * See if the "crit" matches the "alert".
@@ -955,6 +957,9 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 		return result;
 	}
 
+	/* At this point, we know the configuration may result in an alert. */
+	if (anymatch) (*anymatch)++;
+
 	duration = (time(NULL) - alert->eventstart);
 	if (crit && crit->minduration && (duration < crit->minduration)) { 
 		traceprintf("Failed '%s' (min. duration %d<%d)\n", cfline, duration, crit->minduration);
@@ -1013,17 +1018,19 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	return result;
 }
 
-static recip_t *next_recipient(activealerts_t *alert, int *first)
+static recip_t *next_recipient(activealerts_t *alert, int *first, int *anymatch)
 {
 	static rule_t *rulewalk = NULL;
 	static recip_t *recipwalk = NULL;
+
+	if (anymatch) *anymatch = 0;
 
 	do {
 		if (*first) {
 			/* Start at beginning of rules-list and find the first matching rule. */
 			*first = 0;
 			rulewalk = rulehead;
-			while (rulewalk && !criteriamatch(alert, rulewalk->criteria, NULL)) rulewalk = rulewalk->next;
+			while (rulewalk && !criteriamatch(alert, rulewalk->criteria, NULL, NULL)) rulewalk = rulewalk->next;
 			if (rulewalk) {
 				/* Point recipwalk at the list of possible candidates */
 				dprintf("Found a first matching rule\n");
@@ -1044,7 +1051,7 @@ static recip_t *next_recipient(activealerts_t *alert, int *first)
 				/* End of recipients in current rule. Go to the next matching rule */
 				do {
 					rulewalk = rulewalk->next;
-				} while (rulewalk && !criteriamatch(alert, rulewalk->criteria, NULL));
+				} while (rulewalk && !criteriamatch(alert, rulewalk->criteria, NULL, NULL));
 
 				if (rulewalk) {
 					/* Point recipwalk at the list of possible candidates */
@@ -1058,7 +1065,7 @@ static recip_t *next_recipient(activealerts_t *alert, int *first)
 				}
 			}
 		}
-	} while (rulewalk && recipwalk && !criteriamatch(alert, recipwalk->criteria, rulewalk->criteria));
+	} while (rulewalk && recipwalk && !criteriamatch(alert, recipwalk->criteria, rulewalk->criteria, anymatch));
 
 	stoprulefound = (recipwalk && recipwalk->stoprule);
 
@@ -1134,6 +1141,7 @@ static char *message_subject(activealerts_t *alert, recip_t *recip)
 			 alert->hostname->name, alert->testname->name, recip->cfid);
 		break;
 
+	  case A_NORECIP:
 	  case A_DEAD:
 		/* Cannot happen */
 		break;
@@ -1261,7 +1269,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 
 	stoprulefound = 0;
 
-	while (!stoprulefound && ((recip = next_recipient(alert, &first)) != NULL)) {
+	while (!stoprulefound && ((recip = next_recipient(alert, &first, NULL)) != NULL)) {
 		/* If this is an "UNMATCHED" rule, ignore it if we have already sent out some alert */
 		if (recip->unmatchedonly && (alertcount != 0)) {
 			traceprintf("Recipient '%s' dropped, not unmatched (count=%d)\n", recip->recipient, alertcount);
@@ -1519,7 +1527,7 @@ time_t next_alert(activealerts_t *alert)
 	repeat_t *rpt;
 
 	stoprulefound = 0;
-	while (!stoprulefound && ((recip = next_recipient(alert, &first)) != NULL)) {
+	while (!stoprulefound && ((recip = next_recipient(alert, &first, NULL)) != NULL)) {
 		found = 1;
 		/* 
 		 * This runs in the parent hobbitd_alert proces, so we must create
@@ -1597,7 +1605,7 @@ void clear_interval(activealerts_t *alert)
 
 	alert->nextalerttime = 0;
 	stoprulefound = 0;
-	while (!stoprulefound && ((recip = next_recipient(alert, &first)) != NULL)) {
+	while (!stoprulefound && ((recip = next_recipient(alert, &first, NULL)) != NULL)) {
 		rpt = find_repeatinfo(alert, recip, 0);
 		if (rpt) {
 			dprintf("Cleared repeat interval for %s\n", rpt->recipid);
@@ -1606,11 +1614,11 @@ void clear_interval(activealerts_t *alert)
 	}
 }
 
-int have_recipient(activealerts_t *alert)
+int have_recipient(activealerts_t *alert, int *anymatch)
 {
 	int first = 1;
 
-	return (next_recipient(alert, &first) != NULL);
+	return (next_recipient(alert, &first, anymatch) != NULL);
 }
 
 void save_state(char *filename)
@@ -1686,7 +1694,7 @@ void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
 
 	fontspec = normalfont;
 	stoprulefound = 0;
-	while ((recip = next_recipient(alert, &first)) != NULL) {
+	while ((recip = next_recipient(alert, &first, NULL)) != NULL) {
 		int mindur = 0, maxdur = 0;
 		char *timespec = NULL;
 		int colors = defaultcolors;
