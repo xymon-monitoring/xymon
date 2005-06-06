@@ -24,5 +24,5 @@ find debian | egrep -v "RCS|pkg" | cpio -pdvmu ~/hobbit/debbuild/hobbit-$REL/
 
 cd debbuild/hobbit-$REL
 dpkg-buildpackage -rfakeroot
-mv ../hobbit_$REL-* ../../debian/pkg/
+mv ../hobbit_$REL*.{deb,dsc,changes} ../../debian/pkg/
 
