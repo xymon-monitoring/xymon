@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-confreport.c,v 1.3 2005-06-06 12:57:22 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-confreport.c,v 1.4 2005-06-06 20:08:12 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -572,7 +572,7 @@ htnames_t *get_proclist(char *hostname, char *statusbuf)
 		if (marker) {
 			marker += strspn(marker, " \t");
 
-			p = strstr(marker, "\\n"); if (p) *p = '\0';
+			p = strstr(marker, " - "); if (p) *p = '\0';
 			newitem = (htnames_t *)malloc(sizeof(htnames_t));
 			newitem->name = strdup(marker);
 			newitem->next = NULL;
@@ -585,7 +585,7 @@ htnames_t *get_proclist(char *hostname, char *statusbuf)
 			}
 
 			if (p) {
-				*p = '\\';
+				*p = ' ';
 				marker = p;
 			}
 
@@ -679,6 +679,11 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	if (!respbuf) {
+		errormsg("Unable to find host information\n");
+		return 1;
+	}
+
 	/* Parse it into a usable list */
 	nexthost = respbuf;
 	do {
@@ -739,7 +744,7 @@ int main(int argc, char *argv[])
 
 
 	printf("Content-Type: text/html\n\n");
-	sethostenv("", "", "", colorname(COL_BLUE));
+	sethostenv("", "", "", colorname(COL_BLUE), NULL);
 	headfoot(stdout, "confreport", "", "header", COL_BLUE);
 
 	fprintf(stdout, "<table width=\"100%%\" border=0>\n");
