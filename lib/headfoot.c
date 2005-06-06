@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.31 2005-06-05 09:39:38 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.32 2005-06-06 20:09:18 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -30,6 +30,7 @@ static char rcsid[] = "$Id: headfoot.c,v 1.31 2005-06-05 09:39:38 henrik Exp $";
 int	unpatched_bbd = 0;
 
 /* Stuff for headfoot - variables we can set dynamically */
+static char *hostenv_hikey = NULL;
 static char *hostenv_host = NULL;
 static char *hostenv_ip = NULL;
 static char *hostenv_svc = NULL;
@@ -61,13 +62,15 @@ static int hostcount = 0;
 static char **testlist = NULL;
 static int testcount = 0;
 
-void sethostenv(char *host, char *ip, char *svc, char *color)
+void sethostenv(char *host, char *ip, char *svc, char *color, char *hikey)
 {
+	if (hostenv_hikey) xfree(hostenv_hikey);
 	if (hostenv_host)  xfree(hostenv_host);
 	if (hostenv_ip)    xfree(hostenv_ip);
 	if (hostenv_svc)   xfree(hostenv_svc);
 	if (hostenv_color) xfree(hostenv_color);
 
+	hostenv_hikey = (hikey ? strdup(hikey) : NULL);
 	hostenv_host = strdup(host);
 	hostenv_ip = strdup(ip);
 	hostenv_svc = strdup(svc);
@@ -326,6 +329,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 		else if (strcmp(t_start, "BBCOLOR") == 0)       fprintf(output, "%s", hostenv_color);
 		else if (strcmp(t_start, "BBSVC") == 0)         fprintf(output, "%s", hostenv_svc);
 		else if (strcmp(t_start, "BBHOST") == 0)        fprintf(output, "%s", hostenv_host);
+		else if (strcmp(t_start, "BBHIKEY") == 0)       fprintf(output, "%s", (hostenv_hikey ? hostenv_hikey : hostenv_host));
 		else if (strcmp(t_start, "BBIP") == 0)          fprintf(output, "%s", hostenv_ip);
 		else if (strcmp(t_start, "BBIPNAME") == 0) {
 			if (strcmp(hostenv_ip, "0.0.0.0") == 0) fprintf(output, "%s", hostenv_host);
@@ -743,8 +747,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			}
 		}
 
-		else if (strncmp(t_start, "BBH_", 4) == 0) {
-			namelist_t *hinfo = hostinfo(hostenv_host);
+		else if (hostenv_hikey && (strncmp(t_start, "BBH_", 4) == 0)) {
+			namelist_t *hinfo = hostinfo(hostenv_hikey);
 			if (hinfo) {
 				char *s = bbh_item_byname(hinfo, t_start);
 
