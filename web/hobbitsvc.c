@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.42 2005-06-05 09:37:29 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.43 2005-06-06 20:57:47 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -132,6 +132,7 @@ int do_request(void)
 	}
 
 	if ((strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) || (strcmp(service, xgetenv("INFOCOLUMN")) == 0)) {
+		sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
 		sethostenv_refresh(600);
 		color = COL_GREEN;
 		logtime = time(NULL);
@@ -152,6 +153,7 @@ int do_request(void)
 		time_t logage;
 		char *sumline, *msg, *p;
 
+		sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
 		sethostenv_refresh(60);
 		sprintf(hobbitdreq, "hobbitdlog %s.%s", hostname, service);
 		hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &log, 1, 30);
