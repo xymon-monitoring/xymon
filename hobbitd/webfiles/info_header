@@ -2,7 +2,7 @@
 <HTML>
 <HEAD>
 <META HTTP-EQUIV="Set-Cookie" CONTENT="pagepath=; path=/">
-<META HTTP-EQUIV="Set-Cookie" CONTENT="host=&BBHOST; path=/">
+<META HTTP-EQUIV="Set-Cookie" CONTENT="host=&BBHIKEY; path=/">
 <TITLE>Hobbit - Host Information</TITLE>
 
 <!-- Styles for the menu bar -->

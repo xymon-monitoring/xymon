@@ -2,7 +2,7 @@
 <HTML>
 <HEAD>
 <META HTTP-EQUIV="Set-Cookie" CONTENT="pagepath=; path=/">
-<META HTTP-EQUIV="Set-Cookie" CONTENT="host=&BBHOST; path=/">
+<META HTTP-EQUIV="Set-Cookie" CONTENT="host=&BBHIKEY; path=/">
 <TITLE>&BBBACKGROUND : Hobbit - History @ &BBDATE</TITLE>
 
 <!-- Styles for the menu bar -->
