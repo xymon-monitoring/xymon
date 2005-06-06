@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.93 2005-06-05 09:36:19 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.94 2005-06-06 09:28:41 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -190,7 +190,7 @@ static void generate_hobbit_alertinfo(char *hostname, char **buf, int *buflen)
 	alert_printmode(1);
 	for (i = 0; (i < testcount); i++) {
 		tname.name = tnames[i].name;
-		if (have_recipient(&alert)) { rcount++; print_alert_recipients(&alert, buf, buflen); }
+		if (have_recipient(&alert, NULL)) { rcount++; print_alert_recipients(&alert, buf, buflen); }
 	}
 
 	if (rcount == 0) {
