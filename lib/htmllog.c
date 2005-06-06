@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.26 2005-06-05 09:42:21 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.27 2005-06-06 20:08:45 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -126,7 +126,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	}
 	xfree(multikey);
 
-	sethostenv(displayname, ip, service, colorname(color));
+	sethostenv(displayname, ip, service, colorname(color), hostname);
 	if (logtime) sethostenv_snapshot(logtime);
 
 	if (is_history) tplfile = "histlog";

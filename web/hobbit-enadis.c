@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-enadis.c,v 1.14 2005-05-24 08:39:39 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-enadis.c,v 1.15 2005-06-06 20:07:17 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -308,7 +308,7 @@ int main(int argc, char *argv[])
 			close(formfile);
 
 			printf("Content-Type: text/html\n\n");
-			sethostenv("", "", "", colorname(COL_BLUE));
+			sethostenv("", "", "", colorname(COL_BLUE), NULL);
 
 			headfoot(stdout, "maint", "", "header", COL_BLUE);
 			output_parsed(stdout, inbuf, COL_BLUE, "report", time(NULL));
@@ -332,7 +332,7 @@ int main(int argc, char *argv[])
 	}
 
         /* It's ok with these hardcoded values, as they are not used for this page */
-	sethostenv("", "", "", colorname(COL_BLUE));
+	sethostenv("", "", "", colorname(COL_BLUE), NULL);
 	headfoot(stdout, "maint", "", "header", COL_BLUE);
 
 	if (debug) {

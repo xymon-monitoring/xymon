@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.18 2005-05-24 08:39:56 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.19 2005-06-06 20:06:56 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
 			close(formfile);
 
 			printf("Content-Type: text/html\n\n");
-			sethostenv("", "", "", colorname(COL_RED));
+			sethostenv("", "", "", colorname(COL_RED), NULL);
 
 			headfoot(stdout, "acknowledge", "", "header", COL_RED);
 			output_parsed(stdout, inbuf, COL_RED, "acknowledge", time(NULL));

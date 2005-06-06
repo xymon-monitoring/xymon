@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-eventlog.c,v 1.22 2005-05-24 08:39:56 henrik Exp $";
+static char rcsid[] = "$Id: bb-eventlog.c,v 1.23 2005-06-06 20:06:56 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -322,7 +322,7 @@ int main(int argc, char *argv[])
 			close(formfile);
 
 			printf("Content-Type: text/html\n\n");
-			sethostenv("", "", "", colorname(COL_BLUE));
+			sethostenv("", "", "", colorname(COL_BLUE), NULL);
 
 			headfoot(stdout, "event", "", "header", COL_BLUE);
 			output_parsed(stdout, inbuf, COL_BLUE, "report", time(NULL));

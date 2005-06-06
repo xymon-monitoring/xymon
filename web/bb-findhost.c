@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.24 2005-05-24 08:39:56 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.25 2005-06-06 20:06:56 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
 			close(formfile);
 
 			printf("Content-Type: text/html\n\n");
-			sethostenv("", "", "", colorname(COL_BLUE));
+			sethostenv("", "", "", colorname(COL_BLUE), NULL);
 
 			headfoot(stdout, "findhost", "", "header", COL_BLUE);
 			output_parsed(stdout, inbuf, COL_BLUE, "findhost", time(NULL));
@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 	printf("Content-Type: text/html\n\n");
 
         /* It's ok with these hardcoded values, as they are not used for this page */
-        sethostenv("", "", "", colorname(COL_BLUE));
+        sethostenv("", "", "", colorname(COL_BLUE), NULL);
         headfoot(stdout, "findhost", "", "header", COL_BLUE);
 
 	hosthead = load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());

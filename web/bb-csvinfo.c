@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-csvinfo.c,v 1.15 2005-05-24 08:39:56 henrik Exp $";
+static char rcsid[] = "$Id: bb-csvinfo.c,v 1.16 2005-06-06 20:06:56 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
 	printf("Content-Type: text/html\n\n");
 
         /* It's ok with these hardcoded values, as they are not used for this page */
-        sethostenv(wantedname, "", "", colorname(bgcolor));
+        sethostenv(wantedname, "", "", colorname(bgcolor), NULL);
         headfoot(stdout, hffile, "", "header", bgcolor);
 
 	printf("<table align=center border=1 summary=\"Information table\">\n");

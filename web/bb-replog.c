@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.32 2005-05-24 08:39:56 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.33 2005-06-06 20:06:56 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -36,7 +36,7 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 	char *bgcols[2] = { "\"#000000\"", "\"#000033\"" };
 	int curbg = 0;
 
-	sethostenv(hostname, ip, service, colorname(color));
+	sethostenv(hostname, ip, service, colorname(color), hostname);
 	sethostenv_report(st, end, reportwarnlevel, reportgreenlevel);
 
 	headfoot(htmlrep, "replog", "", "header", color);

@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-snapshot.c,v 1.16 2005-06-03 15:24:51 henrik Exp $";
+static char rcsid[] = "$Id: bb-snapshot.c,v 1.17 2005-06-06 20:06:56 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
 			close(formfile);
 
 			printf("Content-Type: text/html\n\n");
-			sethostenv("", "", "", colorname(COL_BLUE));
+			sethostenv("", "", "", colorname(COL_BLUE), NULL);
 
 			headfoot(stdout, "snapshot", "", "header", COL_BLUE);
 			output_parsed(stdout, inbuf, COL_BLUE, "report", time(NULL));
@@ -263,7 +263,7 @@ int main(int argc, char *argv[])
 		printf("Content-type: text/html\n\n");
 
 		/* It's ok with these hardcoded values, as they are not used for this page */
-		sethostenv("", "", "", colorname(COL_BLUE));
+		sethostenv("", "", "", colorname(COL_BLUE), NULL);
 		sethostenv_report(starttime, starttime, 97.0, 99.995);
 		headfoot(stdout, "bbrep", "", "header", COL_BLUE);
 

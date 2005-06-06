@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.32 2005-06-05 09:36:03 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.33 2005-06-06 20:07:39 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -474,7 +474,7 @@ int main(int argc, char *argv[])
 	switch (action) {
 	  case ACT_MENU:
 		fprintf(stdout, "Content-type: text/html\n\n");
-		sethostenv(displayname, "", service, colorname(COL_GREEN));
+		sethostenv(displayname, "", service, colorname(COL_GREEN), hostname);
 		headfoot(stdout, "graphs", "", "header", COL_GREEN);
 
 		fprintf(stdout, "<table align=\"center\" summary=\"Graphs\">\n");
@@ -491,7 +491,7 @@ int main(int argc, char *argv[])
 
 	  case ACT_SELZOOM:
 		fprintf(stdout, "Content-type: text/html\n\n");
-		sethostenv(displayname, "", service, colorname(COL_GREEN));
+		sethostenv(displayname, "", service, colorname(COL_GREEN), hostname);
 		headfoot(stdout, "graphs", "", "header", COL_GREEN);
 
 
@@ -539,7 +539,7 @@ int main(int argc, char *argv[])
 
 	  case ACT_SHOWZOOM:
 		fprintf(stdout, "Content-type: text/html\n\n");
-		sethostenv(displayname, "", service, colorname(COL_GREEN));
+		sethostenv(displayname, "", service, colorname(COL_GREEN), hostname);
 		headfoot(stdout, "graphs", "", "header", COL_GREEN);
 
 		fprintf(stdout, "<table align=\"center\" summary=\"Graphs\">\n");

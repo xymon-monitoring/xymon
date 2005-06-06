@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.47 2005-05-24 08:39:56 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.48 2005-06-06 20:06:56 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -522,7 +522,7 @@ void generate_history(FILE *htmlrep, 			/* output file */
 		      int entrycount,			/* Log entry maxcount */
 		      replog_t *loghead)		/* Eventlog for entrycount events back */
 {
-	sethostenv(displayname, ip, service, colorname(COL_GREEN));
+	sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
 	headfoot(htmlrep, "hist", "", "header", COL_GREEN);
 
 	fprintf(htmlrep, "\n");
