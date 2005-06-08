@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.34 2005-06-06 20:10:33 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.35 2005-06-08 12:06:52 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -248,7 +248,7 @@ namelist_t *hostinfo(char *hostname)
 {
 	namelist_t *walk;
 
-	if (!configloaded) load_hostnames(xgetenv("BBHOST"), NULL, get_fqdn());
+	if (!configloaded) load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 
 	for (walk = namehead; (walk && (strcmp(walk->bbhostname, hostname) != 0)); walk = walk->next);
 	return walk;
