@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.36 2005-04-25 12:39:51 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.37 2005-06-14 20:16:59 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
 			oldcolor = parse_color(items[8]);
 			lastchg  = atoi(items[9]);
 			disabletime = atoi(items[10]);
-			dismsg   = items[11];
+			dismsg   = items[11]; if (!dismsg) dismsg = "(No reason given)";
 
 			if (save_histlogs) {
 				char *hostdash;
