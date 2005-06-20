@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.149 2005-06-05 09:33:57 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.150 2005-06-20 12:29:27 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -98,10 +98,9 @@ typedef struct hobbitd_hostlist_t {
 	char *hostname;
 	char ip[16];
 	hobbitd_log_t *logs;
-	struct hobbitd_hostlist_t *next;
 } hobbitd_hostlist_t;
 
-hobbitd_hostlist_t *hosts = NULL;		/* The hosts we have reports from */
+RbtHandle rbhosts;				/* The hosts we have reports from */
 hobbitd_testlist_t *tests = NULL;		/* The tests we have seen */
 htnames_t *origins = NULL;
 
@@ -237,6 +236,11 @@ typedef struct scheduletask_t {
 } scheduletask_t;
 scheduletask_t *schedulehead = NULL;
 int nextschedid = 1;
+
+static int hostname_compare(void *a, void *b)
+{
+	return strcasecmp((char *)a, (char *)b);
+}
 
 void update_statistics(char *cmd)
 {
@@ -653,6 +657,7 @@ void get_hts(char *msg, char *sender, char *origin,
 	char *firstline, *p;
 	char *hosttest, *hostname, *testname, *colstr;
 	char hostip[20];
+	RbtIterator hosthandle;
 	hobbitd_hostlist_t *hwalk = NULL;
 	hobbitd_testlist_t *twalk = NULL;
 	htnames_t *owalk = NULL;
@@ -705,15 +710,23 @@ void get_hts(char *msg, char *sender, char *origin,
 		hostname = knownname;
 	}
 
-	for (hwalk = hosts; (hwalk && strcasecmp(hostname, hwalk->hostname)); hwalk = hwalk->next) ;
-	if (createhost && (hwalk == NULL)) {
+	hosthandle = rbtFind(rbhosts, hostname);
+	if (hosthandle == rbtEnd(rbhosts)) hwalk = NULL;
+	else {
+		char *key;
+		rbtKeyValue(rbhosts, hosthandle, (void**)&key, (void**)&hwalk);
+	}
+
+	if (createhost && (hosthandle == rbtEnd(rbhosts))) {
 		hwalk = (hobbitd_hostlist_t *)malloc(sizeof(hobbitd_hostlist_t));
 		hwalk->hostname = strdup(hostname);
 		strcpy(hwalk->ip, hostip);
 		hwalk->logs = NULL;
-		hwalk->next = hosts;
-		hosts = hwalk;
+		if (rbtInsert(rbhosts, hwalk->hostname, hwalk)) {
+			errprintf("Insert into rbhosts failed\n");
+		}
 	}
+
 	for (twalk = tests; (twalk && strcasecmp(testname, twalk->testname)); twalk = twalk->next);
 	if (createlog && (twalk == NULL)) {
 		twalk = (hobbitd_testlist_t *)malloc(sizeof(hobbitd_testlist_t));
@@ -772,11 +785,15 @@ hobbitd_log_t *find_cookie(int cookie)
 	 * Find a cookie we have issued.
 	 */
 	hobbitd_log_t *result = NULL;
-	hobbitd_hostlist_t *hwalk = NULL;
+	RbtIterator hosthandle;
 	hobbitd_log_t *lwalk = NULL;
 	int found = 0;
 
-	for (hwalk = hosts; (hwalk && !found); hwalk = hwalk->next) {
+	for (hosthandle = rbtBegin(rbhosts); ((hosthandle != rbtEnd(rbhosts)) && !found); hosthandle = rbtNext(rbhosts, hosthandle)) {
+		char *key;
+		hobbitd_hostlist_t *hwalk;
+
+		rbtKeyValue(rbhosts, hosthandle, (void **)&key, (void **)&hwalk);
 		for (lwalk = hwalk->logs; (lwalk && (lwalk->cookie != cookie)); lwalk = lwalk->next);
 		found = (lwalk != NULL);
 	}
@@ -1063,6 +1080,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 	int duration = 0;
 	int assignments;
 	int alltests = 0;
+	RbtIterator hosthandle;
 	hobbitd_hostlist_t *hwalk = NULL;
 	hobbitd_testlist_t *twalk = NULL;
 	hobbitd_log_t *log;
@@ -1109,10 +1127,14 @@ void handle_enadis(int enabled, char *msg, char *sender)
 	if (p == NULL) goto done;
 	strcpy(hosttest, p);
 
-	for (hwalk = hosts; (hwalk && strcasecmp(hosttest, hwalk->hostname)); hwalk = hwalk->next) ;
-	if (hwalk == NULL) {
+	hosthandle = rbtFind(rbhosts, hosttest);
+	if (hosthandle == rbtEnd(rbhosts)) {
 		/* Unknown host */
 		goto done;
+	}
+	else {
+		char *key;
+		rbtKeyValue(rbhosts, hosthandle, (void **)&key, (void **)&hwalk);
 	}
 
 	if (tname) {
@@ -1251,6 +1273,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 {
 	int maybedown;
 	char hostip[20];
+	RbtIterator hosthandle;
 	hobbitd_hostlist_t *hwalk;
 	hobbitd_testlist_t *twalk, *newt;
 	hobbitd_log_t *lwalk;
@@ -1311,8 +1334,12 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	canonhostname = knownhost(hostname, hostip, ghosthandling, &maybedown);
 	if (canonhostname) hostname = canonhostname;
 
-	for (hwalk = hosts; (hwalk && strcasecmp(hostname, hwalk->hostname)); hwalk = hwalk->next) ;
-	if (hwalk == NULL) goto done;
+	hosthandle = rbtFind(rbhosts, hostname);
+	if (hosthandle == rbtEnd(rbhosts)) goto done;
+	else {
+		char *key;
+		rbtKeyValue(rbhosts, hosthandle, (void **)&key, (void **)&hwalk);
+	}
 
 	switch (cmd) {
 	  case CMD_DROPTEST:
@@ -1335,15 +1362,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	  case CMD_DROPHOST:
 	  case CMD_DROPSTATE:
 		/* Unlink the hostlist entry */
-		if (hwalk == hosts) {
-			hosts = hosts->next;
-		}
-		else {
-			hobbitd_hostlist_t *phost;
-
-			for (phost = hosts; (phost->next != hwalk); phost = phost->next) ;
-			phost->next = hwalk->next;
-		}
+		rbtErase(rbhosts, hosthandle);
 
 		/* Loop through the host logs and free them */
 		lwalk = hwalk->logs;
@@ -1359,6 +1378,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		break;
 
 	  case CMD_RENAMEHOST:
+		rbtErase(rbhosts, hosthandle);
 		if (strlen(hwalk->hostname) <= strlen(n1)) {
 			strcpy(hwalk->hostname, n1);
 		}
@@ -1366,6 +1386,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			xfree(hwalk->hostname);
 			hwalk->hostname = strdup(n1);
 		}
+		rbtInsert(rbhosts, hwalk->hostname, hwalk);
 		break;
 
 	  case CMD_RENAMETEST:
@@ -1800,6 +1821,7 @@ void do_message(conn_t *msg, char *origin)
 		 *
 		 * hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|1st line of message
 		 */
+		RbtIterator hosthandle;
 		hobbitd_hostlist_t *hwalk;
 		hobbitd_log_t *lwalk, *firstlog;
 		hobbitd_log_t infologrec, rrdlogrec;
@@ -1830,8 +1852,11 @@ void do_message(conn_t *msg, char *origin)
 		infologrec.color = rrdlogrec.color = COL_GREEN;
 		infologrec.message = rrdlogrec.message = "";
 
-		for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
+		for (hosthandle = rbtBegin(rbhosts); (hosthandle != rbtEnd(rbhosts)); hosthandle = rbtNext(rbhosts, hosthandle)) {
+			char *hkey;
 			namelist_t *hinfo;
+
+			rbtKeyValue(rbhosts, hosthandle, (void **)&hkey, (void **)&hwalk);
 
 			/* Host pagename filter */
 			if (spage) {
@@ -1925,6 +1950,7 @@ void do_message(conn_t *msg, char *origin)
 		 * Request for a summmary of all known status logs in XML format
 		 *
 		 */
+		RbtIterator hosthandle;
 		hobbitd_hostlist_t *hwalk;
 		hobbitd_log_t *lwalk;
 		char *buf, *bufp;
@@ -1942,7 +1968,10 @@ void do_message(conn_t *msg, char *origin)
 		bufp += sprintf(bufp, "<?xml version='1.0' encoding='ISO-8859-1'?>\n");
 		bufp += sprintf(bufp, "<StatusBoard>\n");
 
-		for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
+		for (hosthandle = rbtBegin(rbhosts); (hosthandle != rbtEnd(rbhosts)); hosthandle = rbtNext(rbhosts, hosthandle)) {
+			char *hkey;
+
+			rbtKeyValue(rbhosts, hosthandle, (void **)&hkey, (void **)&hwalk);
 
 			/* Host pagename filter */
 			if (spage) {
@@ -2196,6 +2225,7 @@ void save_checkpoint(void)
 {
 	char *tempfn;
 	FILE *fd;
+	RbtIterator hosthandle;
 	hobbitd_hostlist_t *hwalk;
 	hobbitd_log_t *lwalk;
 	time_t now = time(NULL);
@@ -2213,7 +2243,11 @@ void save_checkpoint(void)
 		return;
 	}
 
-	for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
+	for (hosthandle = rbtBegin(rbhosts); (hosthandle != rbtEnd(rbhosts)); hosthandle = rbtNext(rbhosts, hosthandle)) {
+		char *hkey;
+
+		rbtKeyValue(rbhosts, hosthandle, (void **)&hkey, (void **)&hwalk);
+
 		for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
 			if (lwalk->dismsg && (lwalk->enabletime < now)) {
 				xfree(lwalk->dismsg);
@@ -2259,7 +2293,8 @@ void load_checkpoint(char *fn)
 	char *item;
 	int i, err, maybedown;
 	char hostip[20];
-	hobbitd_hostlist_t *htail = NULL;
+	RbtIterator hosthandle;
+	hobbitd_hostlist_t *hitem = NULL;
 	hobbitd_testlist_t *t = NULL;
 	hobbitd_log_t *ltail = NULL;
 	htnames_t *origin = NULL;
@@ -2354,19 +2389,18 @@ void load_checkpoint(char *fn)
 		if (strcmp(testname, xgetenv("INFOCOLUMN")) == 0) continue;
 		if (strcmp(testname, xgetenv("TRENDSCOLUMN")) == 0) continue;
 
-		if ((hosts == NULL) || (strcmp(hostname, htail->hostname) != 0)) {
+		hosthandle = rbtFind(rbhosts, hostname);
+		if (hosthandle == rbtEnd(rbhosts)) {
 			/* New host */
-			if (hosts == NULL) {
-				htail = hosts = (hobbitd_hostlist_t *) malloc(sizeof(hobbitd_hostlist_t));
-			}
-			else {
-				htail->next = (hobbitd_hostlist_t *) malloc(sizeof(hobbitd_hostlist_t));
-				htail = htail->next;
-			}
-			htail->hostname = strdup(hostname);
-			strcpy(htail->ip, hostip);
-			htail->logs = NULL;
-			htail->next = NULL;
+			hitem = (hobbitd_hostlist_t *) malloc(sizeof(hobbitd_hostlist_t));
+			hitem->hostname = strdup(hostname);
+			strcpy(hitem->ip, hostip);
+			hitem->logs = NULL;
+			rbtInsert(rbhosts, hitem->hostname, hitem);
+		}
+		else {
+			char *key;
+			rbtKeyValue(rbhosts, hosthandle, (void **)&key, (void **)&hitem);
 		}
 
 		for (t=tests; (t && (strcmp(t->testname, testname) != 0)); t = t->next) ;
@@ -2385,8 +2419,8 @@ void load_checkpoint(char *fn)
 			origins = origin;
 		}
 
-		if (htail->logs == NULL) {
-			ltail = htail->logs = (hobbitd_log_t *) malloc(sizeof(hobbitd_log_t));
+		if (hitem->logs == NULL) {
+			ltail = hitem->logs = (hobbitd_log_t *) malloc(sizeof(hobbitd_log_t));
 		}
 		else {
 			ltail->next = (hobbitd_log_t *)malloc(sizeof(hobbitd_log_t));
@@ -2398,7 +2432,7 @@ void load_checkpoint(char *fn)
 		if (validtime < enabletime) validtime = enabletime;
 
 		ltail->test = t;
-		ltail->host = htail;
+		ltail->host = hitem;
 		ltail->origin = origin;
 		ltail->color = color;
 		ltail->oldcolor = oldcolor;
@@ -2439,12 +2473,17 @@ void load_checkpoint(char *fn)
 
 void check_purple_status(void)
 {
+	RbtIterator hosthandle;
 	hobbitd_hostlist_t *hwalk;
 	hobbitd_log_t *lwalk;
 	time_t now = time(NULL);
 
 	dprintf("Start check for purple logs\n");
-	for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
+	for (hosthandle = rbtBegin(rbhosts); (hosthandle != rbtEnd(rbhosts)); hosthandle = rbtNext(rbhosts, hosthandle)) {
+		char *hkey;
+
+		rbtKeyValue(rbhosts, hosthandle, (void **)&hkey, (void **)&hwalk);
+
 		lwalk = hwalk->logs;
 		while (lwalk) {
 			if (lwalk->validtime < now) {
@@ -2709,9 +2748,12 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+	rbhosts = rbtNew(hostname_compare);
+
+	errprintf("Loading hostnames\n");
+	load_hostnames(bbhostsfn, NULL, get_fqdn());
+
 	if (restartfn) {
-		errprintf("Loading hostnames\n");
-		load_hostnames(bbhostsfn, NULL, get_fqdn());
 		errprintf("Loading saved state\n");
 		load_checkpoint(restartfn);
 	}
@@ -2851,14 +2893,28 @@ int main(int argc, char *argv[])
 		}
 
 		if (reloadconfig && bbhostsfn) {
-			hobbitd_hostlist_t *hwalk, *nexth;
+			RbtIterator hosthandle;
 
 			reloadconfig = 0;
 			load_hostnames(bbhostsfn, NULL, get_fqdn());
-			for (hwalk = hosts; (hwalk); hwalk = nexth) {
-				nexth = hwalk->next;  /* hwalk might disappear */
+
+			/* Scan our list of hosts and weed out those we do not know about any more */
+			hosthandle = rbtBegin(rbhosts);
+			while (hosthandle != rbtEnd(rbhosts)) {
+				char *hkey;
+				hobbitd_hostlist_t *hwalk;
+
+				rbtKeyValue(rbhosts, hosthandle, (void **)&hkey, (void **)&hwalk);
+
 				if (hostinfo(hwalk->hostname) == NULL) {
+					/* Remove all state info about this host. This will NOT remove files. */
 					handle_dropnrename(CMD_DROPSTATE, "hobbitd", hwalk->hostname, NULL, NULL);
+
+					/* Must restart tree-walk after deleting node from the tree */
+					hosthandle = rbtBegin(rbhosts);
+				}
+				else {
+					hosthandle = rbtNext(rbhosts, hosthandle);
 				}
 			}
 		}
