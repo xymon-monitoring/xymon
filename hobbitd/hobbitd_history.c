@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.37 2005-06-14 20:16:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.38 2005-06-20 15:33:00 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
 			oldcolor = parse_color(items[8]);
 			lastchg  = atoi(items[9]);
 			disabletime = atoi(items[10]);
-			dismsg   = items[11]; if (!dismsg) dismsg = "(No reason given)";
+			dismsg   = items[11];
 
 			if (save_histlogs) {
 				char *hostdash;
@@ -191,10 +191,10 @@ int main(int argc, char *argv[])
 						statusdata += strlen(colorname(txtcolor));
 					}
 
-					if ((disabletime > 0) && (strlen(dismsg) > 0)) {
-						nldecode(dismsg);
+					if (disabletime > 0) {
+						if (dismsg) nldecode(dismsg);
 						fprintf(histlogfd, " Disabled until %s\n%s\n\n", 
-							ctime(&disabletime), dismsg);
+							ctime(&disabletime), (dismsg ? dismsg : ""));
 						fprintf(histlogfd, "Status message when disabled follows:\n\n");
 						statusdata = origstatus;
 					}
