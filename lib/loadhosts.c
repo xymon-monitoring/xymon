@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.35 2005-06-08 12:06:52 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.36 2005-06-20 12:30:20 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -29,6 +29,7 @@ static namelist_t *defaulthost = NULL;
 static const char *bbh_item_key[BBH_LAST];
 static const char *bbh_item_name[BBH_LAST];
 static int configloaded = 0;
+static RbtHandle rbhosts;
 
 static void bbh_item_list_setup(void)
 {
@@ -162,6 +163,7 @@ static void initialize_hostlist(void)
 		defaulthost = defaulthost->defaulthost;
 
 		if (walk->bbhostname) xfree(walk->bbhostname);
+		if (walk->logname) xfree(walk->logname);
 		if (walk->allelems) xfree(walk->allelems);
 		if (walk->elems) xfree(walk->elems);
 		xfree(walk);
@@ -173,6 +175,7 @@ static void initialize_hostlist(void)
 		namehead = namehead->next;
 
 		if (walk->bbhostname) xfree(walk->bbhostname);
+		if (walk->logname) xfree(walk->logname);
 		if (walk->allelems) xfree(walk->allelems);
 		if (walk->elems) xfree(walk->elems);
 		xfree(walk);
@@ -194,6 +197,38 @@ static void initialize_hostlist(void)
 	pghead->next = NULL;
 }
 
+static int hostname_compare(void *a, void *b)
+{
+	return strcasecmp((char *)a, (char *)b);
+}
+
+static void build_hosttree(void)
+{
+	static int hosttree_exists = 0;
+	RbtIterator hosthandle;
+	namelist_t *walk;
+	RbtStatus status;
+
+	if (hosttree_exists) rbtDelete(rbhosts);
+	rbhosts = rbtNew(hostname_compare);
+	
+	for (walk = namehead; (walk); walk = walk->next) {
+		status = rbtInsert(rbhosts, walk->bbhostname, walk);
+
+		switch (status) {
+		  case RBT_STATUS_OK:
+		  case RBT_STATUS_DUPLICATE_KEY:
+			break;
+		  case RBT_STATUS_MEM_EXHAUSTED:
+			errprintf("loadhosts:build_hosttree - insert into tree failed (out of memory)\n");
+			break;
+		  default:
+			errprintf("loadhosts:build_hosttree - insert into tree failed code %d\n", status);
+			break;
+		}
+	}
+}
+
 #include "loadhosts_file.c"
 
 char *knownhost(char *hostname, char *hostip, int ghosthandling, int *maybedown)
@@ -203,17 +238,20 @@ char *knownhost(char *hostname, char *hostip, int ghosthandling, int *maybedown)
 	 * ghosthandling = 1 : Case-insensitive, no logging, drop ghosts
 	 * ghosthandling = 2 : Case-insensitive, log ghosts, drop ghosts
 	 */
+	RbtIterator hosthandle;
 	namelist_t *walk = NULL;
 	static char *result = NULL;
 
 	if (result == NULL) result = (char *)malloc(MAXMSG);
 
 	/* Find the host */
-	for (walk = namehead; (walk && (strcasecmp(walk->bbhostname, hostname) != 0) && (strcasecmp(walk->clientname, hostname) != 0)); walk = walk->next);
-	if (walk) {
+	hosthandle = rbtFind(rbhosts, hostname);
+	if (hosthandle != rbtEnd(rbhosts)) {
 		/*
 		 * Force our version of the hostname. Done here so CLIENT works always.
 		 */
+		char *key;
+		rbtKeyValue(rbhosts, hosthandle, (void **)&key, (void **)&walk);
 		strcpy(hostip, walk->ip);
 		strcpy(result, walk->bbhostname);
 		if (walk->downtime) *maybedown = within_sla(walk->downtime, 0);
@@ -239,6 +277,7 @@ int knownloghost(char *logdir)
 	namelist_t *walk = NULL;
 
 	/* Find the host */
+	/* Must do the linear string search, since the tree is indexed by the bbhostname, not logname */
 	for (walk = namehead; (walk && (strcasecmp(walk->logname, logdir) != 0)); walk = walk->next);
 
 	return (walk != NULL);
@@ -246,12 +285,18 @@ int knownloghost(char *logdir)
 
 namelist_t *hostinfo(char *hostname)
 {
-	namelist_t *walk;
+	RbtIterator hosthandle;
+	namelist_t *result = NULL;
 
 	if (!configloaded) load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 
-	for (walk = namehead; (walk && (strcmp(walk->bbhostname, hostname) != 0)); walk = walk->next);
-	return walk;
+	hosthandle = rbtFind(rbhosts, hostname);
+	if (hosthandle != rbtEnd(rbhosts)) {
+		char *key;
+		rbtKeyValue(rbhosts, hosthandle, (void **)&key, (void **)&result);
+	}
+
+	return result;
 }
 
 char *bbh_item(namelist_t *host, enum bbh_item_t item)
@@ -333,6 +378,8 @@ char *bbh_custom_item(namelist_t *host, char *key)
 char *bbh_item_byname(namelist_t *host, char *item)
 {
 	enum bbh_item_t i;
+
+	bbh_item_list_setup();
 
 	i = 0; while (bbh_item_name[i] && strcmp(bbh_item_name[i], item)) i++;
 	if (bbh_item_name[i]) return bbh_item(host, i); else return NULL;
