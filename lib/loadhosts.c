@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.36 2005-06-20 12:30:20 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.37 2005-06-21 09:36:43 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -30,6 +30,7 @@ static const char *bbh_item_key[BBH_LAST];
 static const char *bbh_item_name[BBH_LAST];
 static int configloaded = 0;
 static RbtHandle rbhosts;
+static RbtHandle rbclients;
 
 static void bbh_item_list_setup(void)
 {
@@ -209,11 +210,16 @@ static void build_hosttree(void)
 	namelist_t *walk;
 	RbtStatus status;
 
-	if (hosttree_exists) rbtDelete(rbhosts);
+	if (hosttree_exists) {
+		rbtDelete(rbhosts);
+		rbtDelete(rbclients);
+	}
 	rbhosts = rbtNew(hostname_compare);
+	rbclients = rbtNew(hostname_compare);
 	
 	for (walk = namehead; (walk); walk = walk->next) {
 		status = rbtInsert(rbhosts, walk->bbhostname, walk);
+		if (walk->clientname) rbtInsert(rbclients, walk->clientname, walk);
 
 		switch (status) {
 		  case RBT_STATUS_OK:
@@ -241,25 +247,33 @@ char *knownhost(char *hostname, char *hostip, int ghosthandling, int *maybedown)
 	RbtIterator hosthandle;
 	namelist_t *walk = NULL;
 	static char *result = NULL;
+	char *key;
 
 	if (result == NULL) result = (char *)malloc(MAXMSG);
 
-	/* Find the host */
+	/* Find the host in the normal hostname list */
 	hosthandle = rbtFind(rbhosts, hostname);
 	if (hosthandle != rbtEnd(rbhosts)) {
+		rbtKeyValue(rbhosts, hosthandle, (void **)&key, (void **)&walk);
+	}
+	else {
+		/* Not found - lookup in the client alias list */
+		hosthandle = rbtFind(rbclients, hostname);
+		if (hosthandle != rbtEnd(rbclients)) rbtKeyValue(rbclients, hosthandle, (void **)&key, (void **)&walk);
+	}
+
+	if (walk) {
 		/*
 		 * Force our version of the hostname. Done here so CLIENT works always.
 		 */
-		char *key;
-		rbtKeyValue(rbhosts, hosthandle, (void **)&key, (void **)&walk);
 		strcpy(hostip, walk->ip);
 		strcpy(result, walk->bbhostname);
 		if (walk->downtime) *maybedown = within_sla(walk->downtime, 0);
 	}
 	else {
+		*hostip = '\0';
 		strcpy(result, hostname);
 		*maybedown = 0;
-		*hostip = '\0';
 	}
 
 	/* If default method, just say yes */
