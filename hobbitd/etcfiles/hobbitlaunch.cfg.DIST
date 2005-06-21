@@ -73,7 +73,7 @@
 [bbpage]
 	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	NEEDS hobbitd
-	CMD hobbitd_channel --channel=page   --log=$BBSERVERLOGS/page.log hobbitd_alert
+	CMD hobbitd_channel --channel=page  --log=$BBSERVERLOGS/page.log hobbitd_alert --checkpoint-file=$BBTMP/alert.chk --checkpoint-interval=600
 
 
 # "larrdstatus" updates RRD files with information that arrives as "status" messages.
