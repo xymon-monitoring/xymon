@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.37 2005-06-21 09:36:43 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.38 2005-06-21 11:27:05 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -206,7 +206,6 @@ static int hostname_compare(void *a, void *b)
 static void build_hosttree(void)
 {
 	static int hosttree_exists = 0;
-	RbtIterator hosthandle;
 	namelist_t *walk;
 	RbtStatus status;
 
@@ -438,8 +437,19 @@ int main(int argc, char *argv[])
 	for (argi = 2; (argi < argc); argi++) {
 		char s[1024];
 		char *p;
+		char *hname;
+		char hostip[20];
+		int maybedown = 0;
 
-		h = hostinfo(argv[argi]);
+		hname = knownhost(argv[argi], hostip, 1, &maybedown);
+		if (hname == NULL) {
+			printf("Unknown host '%s'\n", argv[argi]);
+			continue;
+		}
+		if (strcmp(hname, argv[argi])) {
+			printf("Using canonical name '%s'\n", hname);
+		}
+		h = hostinfo(hname);
 
 		if (h == NULL) { printf("Host %s not found\n", argv[argi]); continue; }
 
