@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.150 2005-06-20 12:29:27 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.151 2005-06-22 06:19:19 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -132,7 +132,7 @@ typedef struct conn_t {
 enum droprencmd_t { CMD_DROPHOST, CMD_DROPTEST, CMD_RENAMEHOST, CMD_RENAMETEST, CMD_DROPSTATE };
 
 static volatile int running = 1;
-static volatile int reloadconfig = 1;
+static volatile int reloadconfig = 0;
 static volatile time_t nextcheckpoint = 0;
 static volatile int dologswitch = 0;
 static volatile int gotalarm = 0;
@@ -1374,6 +1374,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		}
 
 		/* Free the hostlist entry */
+		xfree(hwalk->hostname);
 		xfree(hwalk);
 		break;
 
