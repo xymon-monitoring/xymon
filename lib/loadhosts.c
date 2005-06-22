@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.38 2005-06-21 11:27:05 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.39 2005-06-22 06:19:45 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -215,7 +215,8 @@ static void build_hosttree(void)
 	}
 	rbhosts = rbtNew(hostname_compare);
 	rbclients = rbtNew(hostname_compare);
-	
+	hosttree_exists = 1;
+
 	for (walk = namehead; (walk); walk = walk->next) {
 		status = rbtInsert(rbhosts, walk->bbhostname, walk);
 		if (walk->clientname) rbtInsert(rbclients, walk->clientname, walk);
