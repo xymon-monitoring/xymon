@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.151 2005-06-22 06:19:19 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.152 2005-06-22 07:20:43 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -2907,7 +2907,11 @@ int main(int argc, char *argv[])
 
 				rbtKeyValue(rbhosts, hosthandle, (void **)&hkey, (void **)&hwalk);
 
-				if (hostinfo(hwalk->hostname) == NULL) {
+				if (strcmp(hwalk->hostname, "summary") == 0) {
+					/* Leave the summaries as-is */
+					hosthandle = rbtNext(rbhosts, hosthandle);
+				}
+				else if (hostinfo(hwalk->hostname) == NULL) {
 					/* Remove all state info about this host. This will NOT remove files. */
 					handle_dropnrename(CMD_DROPSTATE, "hobbitd", hwalk->hostname, NULL, NULL);
 
