@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.43 2005-06-06 20:57:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.44 2005-06-23 09:34:38 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -118,6 +118,7 @@ int do_request(void)
 	time_t logtime = 0, acktime = 0, disabletime = 0;
 	char *log = NULL, *firstline = NULL, *sender = NULL, *flags = NULL;	/* These are free'd */
 	char *restofmsg = NULL, *ackmsg = NULL, *dismsg = NULL;			/* These are just used */
+	int ishtmlformatted = 0;
 
 	if (parse_query() != 0) return 1;
 
@@ -132,6 +133,7 @@ int do_request(void)
 	}
 
 	if ((strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) || (strcmp(service, xgetenv("INFOCOLUMN")) == 0)) {
+		ishtmlformatted = 1;
 		sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
 		sethostenv_refresh(600);
 		color = COL_GREEN;
@@ -301,7 +303,7 @@ int do_request(void)
 			  disabletime, dismsg,
 		          (source == SRC_HISTLOGS), 
 			  wantserviceid, 
-			  (strcmp(service, xgetenv("INFOCOLUMN")) == 0),
+			  ishtmlformatted,
 			  (source == SRC_HOBBITD),
 			  multigraphs,
 			  stdout);
