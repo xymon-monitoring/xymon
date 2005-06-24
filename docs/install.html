@@ -45,6 +45,12 @@ You will also need a "make" utility - many systems have one by default, but you 
 <a href="http://directory.fsf.org/make.html">GNU make</a> utility. On some systems,
 this is pre-installed as "gmake" or "gnumake". The configure-script checks this for you.</p>
 
+<p><b>HP-UX users</b> should note that the HP C compiler is known to mis-compile the
+lib/environ.c file, and produces an output file lib/environ.o of length 0 bytes.
+The GNU C compiler works fine on HP-UX. More details in 
+<a href="http://www.hswn.dk/hobbiton/2005/06/msg00079.html">this e-mail</a> from
+the Hobbit mailing list.</p>
+
 <h4>PCRE, RRDtool, libpng, OpenSSL, OpenLDAP libraries.</h4>
 <p>Hobbit relies on a number of Open-Source libraries - these must be installed
 before you start building Hobbit. On many systems you already have these 
