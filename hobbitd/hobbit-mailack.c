@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-mailack.c,v 1.8 2005-05-07 09:24:20 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-mailack.c,v 1.9 2005-06-25 06:20:00 henrik Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Setup the acknowledge message */
-	if (duration == 0) duration = 30;	/* Default: Ack for 30 minutes */
+	if (duration == 0) duration = 60;	/* Default: Ack for 60 minutes */
 	p = buf;
 	p += sprintf(p, "hobbitdack %s %d %s", cookie, duration, firsttxtline);
 	if (fromline) {
