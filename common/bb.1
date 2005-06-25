@@ -68,7 +68,7 @@ a HOSTNAME is specified, it must have any dots in the hostname changed
 to commas if the Hobbit FQDN setting is enabled (which is the default).
 So e.g. the host "www.foo.com" would report as "www,foo,com".
 
-.IP "status HOSTNAME.TESTNAME COLOR <additional text>"
+.IP "status[+LIFETIME] HOSTNAME.TESTNAME COLOR <additional text>"
 This sends in a status message for a single test (column) on a single host.
 TESTNAME is the name of the column where this test will show up; any
 name is valid except that using dots in the testname will not work.
@@ -80,6 +80,16 @@ The "additional text" normally includes a local timestamp and a summary
 of the test result on the first line. Any lines following the first one
 are free-form, and can include any information that may be useful to
 diagnose the problem being reported.
+.br
+The LIFETIME defines how long this status is valid after being received
+by the Hobbit server. The default is 30 minutes, but you can set any
+period you like. E.g. for a custom test that runs once an hour, you will
+want to set this to at least 60 minutes - otherwise the status will go
+purple after 30 minutes. It is a good idea to set the LIFETIME to
+sligtly more than the interval between your tests, to allow for variations
+in the time it takes your test to complete. The LIFETIME is in minutes,
+unless you add an "h" (hours), "d" (days) or "w" (weeks) immediately after
+the number, e.g. "status+5h" for a status that is valid for 5 hours.
 
 .IP "notify HOSTNAME.TESTNAME <message text>"
 Hobbit only, not supported by BB. This triggers an informational 
