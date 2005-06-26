@@ -57,6 +57,7 @@
                                                                 onwap
                                                                 propagate
                                                                 reportinfo
+								fileage
                                                                 next
 
 
@@ -143,6 +144,7 @@ typedef struct entry_t {
 	int	color;
 	char	age[20];
 	int	oldage;
+	time_t  fileage;
 	int	acked;
 	int	alert;
 	int	onwap;

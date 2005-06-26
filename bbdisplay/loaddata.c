@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.152 2005-06-05 09:26:58 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.153 2005-06-26 20:13:16 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -232,6 +232,7 @@ state_t *init_state(const char *filename, logdata_t *log)
 		newstate->entry->color = history_color(fd, snapshot, &histentry_start, &newstate->entry->histlogname);
 
 		newstate->entry->oldage = (fileage >= recentgif_limit);
+		newstate->entry->fileage = fileage;
 		if (fileage >= 86400)
 			sprintf(newstate->entry->age, "%.2f days", (fileage / 86400.0));
 		else if (fileage > 3600)
@@ -250,6 +251,7 @@ state_t *init_state(const char *filename, logdata_t *log)
 		newstate->entry->acked = (log->acktime > now);
 
 		newstate->entry->oldage = (fileage >= recentgif_limit);
+		newstate->entry->fileage = fileage;
 		if (log->lastchange == 0)
 			strcpy(newstate->entry->age, "");
 		else if (fileage >= 86400)
