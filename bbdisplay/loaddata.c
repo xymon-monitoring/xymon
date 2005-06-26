@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.153 2005-06-26 20:13:16 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.154 2005-06-26 20:51:47 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -251,7 +251,7 @@ state_t *init_state(const char *filename, logdata_t *log)
 		newstate->entry->acked = (log->acktime > now);
 
 		newstate->entry->oldage = (fileage >= recentgif_limit);
-		newstate->entry->fileage = fileage;
+		newstate->entry->fileage = (log->lastchange ? fileage : -1);
 		if (log->lastchange == 0)
 			strcpy(newstate->entry->age, "");
 		else if (fileage >= 86400)
