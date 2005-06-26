@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.145 2005-06-26 20:16:28 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.146 2005-06-26 20:58:05 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -221,8 +221,8 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, int mintime, int max
 		 */
 
 		for (e = h->entries; (e); e = e->next) {
-			if ((mintime != -1) && (e->fileage < mintime)) continue;
-			if ((maxtime != -1) && (e->fileage > maxtime)) continue;
+			if ((mintime != -1) && (e->fileage != -1) && (e->fileage < mintime)) continue;
+			if ((maxtime != -1) && (e->fileage != -1) && (e->fileage > maxtime)) continue;
 
 			if (interesting_column(pagetype, e->color, e->alert, e->column, onlycols)) {
 				/* See where e->column should go in list */
@@ -357,9 +357,24 @@ int do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char *
 	}
 
 	if (maxbanksize == 0) {
+		int realcolumncount = 0;
+
 		/* No modembanks - normal hostlist with columns and stuff */
 		groupcols = gen_column_list(head, pagetype, mintime, maxtime, onlycols);
-		for (columncount=0, gc=groupcols; (gc); gc = gc->next, columncount++) ;
+		for (columncount=0, gc=groupcols; (gc); gc = gc->next, columncount++) {
+			if (strcmp(gc->column->name, xgetenv("INFOCOLUMN")) && strcmp(gc->column->name, xgetenv("TRENDSCOLUMN"))) realcolumncount++;
+		}
+
+		/* For NK style pages, drop the host if only the INFO and TRENDSCOLUMN show up */
+		if ((pagetype == PAGE_NK) && (realcolumncount == 0)) {
+			while (groupcols) {
+				gc = groupcols;
+				groupcols = groupcols->next;
+				xfree(gc);
+			}
+			groupcols = NULL;
+			columncount = 0;
+		}
 	}
 	else {
 		/* There are modembanks here! */
@@ -1105,7 +1120,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 		  case PAGE_NK:
 			/* The NK page */
 			for (useit=0, e=h->hostentry->entries; (e && !useit); e=e->next) {
-				if (e->alert && !e->acked && (e->fileage < (nkviewtime*60))) {
+				if (e->alert && !e->acked && ((e->fileage == -1) || (e->fileage < (nkviewtime*60))) ) {
 					if (e->color == COL_RED) {
 						useit = 1;
 					}
@@ -1213,7 +1228,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 				fprintf(output, "<FONT SIZE=+1 FACE=\"Arial, Helvetica\"><BR><I>No new alerts last %d minutes</I></FONT><BR>\n", nknewtime);
 			}
 
-			fprintf(output, "<br><hr><br>\n");
+			fprintf(output, "<br><hr width=\"85%%\"><br>\n");
 			if (do_hosts(bb2page.hosts, NULL, output, rssoutput, "", summarytype, nknewtime*60+1, nkviewtime*60, NULL) == 0) {
 				fprintf(output, "<FONT SIZE=+1 FACE=\"Arial, Helvetica\"><BR><I>No alerts older than %d minutes</I></FONT><BR>\n", nkviewtime);
 			}
