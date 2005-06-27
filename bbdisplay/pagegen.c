@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.146 2005-06-26 20:58:05 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.147 2005-06-27 07:19:36 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -1224,13 +1224,21 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 			do_hosts(bb2page.hosts, NULL, output, rssoutput, "", summarytype, -1, -1, NULL);
 		}
 		else {
-			if (do_hosts(bb2page.hosts, NULL, output, rssoutput, "", summarytype, 0, nknewtime*60, NULL) == 0) {
-				fprintf(output, "<FONT SIZE=+1 FACE=\"Arial, Helvetica\"><BR><I>No new alerts last %d minutes</I></FONT><BR>\n", nknewtime);
-			}
+			if (nknewtime == -1) 
+				do_hosts(bb2page.hosts, NULL, output, rssoutput, "", summarytype, -1, -1, NULL);
+			else {
+				int lowlim, uplim;
 
-			fprintf(output, "<br><hr width=\"85%%\"><br>\n");
-			if (do_hosts(bb2page.hosts, NULL, output, rssoutput, "", summarytype, nknewtime*60+1, nkviewtime*60, NULL) == 0) {
-				fprintf(output, "<FONT SIZE=+1 FACE=\"Arial, Helvetica\"><BR><I>No alerts older than %d minutes</I></FONT><BR>\n", nkviewtime);
+				lowlim = nknewtime*60;
+				uplim = ((nkviewtime == -1) ? -1 : nkviewtime*60);
+				if (do_hosts(bb2page.hosts, NULL, output, rssoutput, "", summarytype, 0, lowlim, NULL) == 0) {
+					fprintf(output, "<FONT SIZE=+1 FACE=\"Arial, Helvetica\"><BR><I>No new alerts last %d minutes</I></FONT><BR>\n", nknewtime);
+				}
+
+				fprintf(output, "<br><hr width=\"85%%\"><br>\n");
+				if (do_hosts(bb2page.hosts, NULL, output, rssoutput, "", summarytype, lowlim+1, uplim, NULL) == 0) {
+					fprintf(output, "<FONT SIZE=+1 FACE=\"Arial, Helvetica\"><BR><I>No alerts older than %d minutes</I></FONT><BR>\n", nkviewtime);
+				}
 			}
 		}
 	}
