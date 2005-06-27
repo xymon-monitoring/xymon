@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.213 2005-04-25 12:39:51 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.214 2005-06-27 12:39:29 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -59,6 +59,7 @@ char *reqenv[] = {
 #define TOOL_LDAP	7
 #define TOOL_RPCINFO	8
 
+
 service_t	*svchead = NULL;		/* Head of all known services */
 service_t	*pingtest = NULL;		/* Identifies the pingtest within svchead list */
 int		pingcount = 0;
@@ -92,6 +93,7 @@ char		*fpingcmd = NULL;
 char		fpinglog[PATH_MAX];
 char		fpingerrlog[PATH_MAX];
 int		respcheck_color = COL_YELLOW;
+int		extcmdtimeout = 30;
 
 void dump_hostlist(void)
 {
@@ -1032,7 +1034,7 @@ void run_ntp_service(service_t *service)
 	for (t=service->items; (t); t = t->next) {
 		if (!t->host->dnserror) {
 			sprintf(cmd, "%s -u -q -p 2 %s 2>&1", cmdpath, t->host->ip);
-			t->open = (run_command(cmd, "no server suitable for synchronization", &t->banner, &t->bannerbytes, 1) == 0);
+			t->open = (run_command(cmd, "no server suitable for synchronization", &t->banner, &t->bannerbytes, 1, extcmdtimeout) == 0);
 		}
 	}
 }
@@ -1050,7 +1052,7 @@ void run_rpcinfo_service(service_t *service)
 	for (t=service->items; (t); t = t->next) {
 		if (!t->host->dnserror) {
 			sprintf(cmd, "%s -p %s 2>&1", cmdpath, t->host->ip);
-			t->open = (run_command(cmd, NULL, &t->banner, &t->bannerbytes, 1) == 0);
+			t->open = (run_command(cmd, NULL, &t->banner, &t->bannerbytes, 1, extcmdtimeout) == 0);
 		}
 	}
 }
@@ -1422,7 +1424,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 			else {
 				sprintf(cmd, "traceroute -n -q 2 -w 2 -m 15 %s 2>&1", test->host->ip);
 			}
-			run_command(cmd, NULL, &test->host->traceroute, NULL, 0);
+			run_command(cmd, NULL, &test->host->traceroute, NULL, 0, extcmdtimeout);
 		}
 	}
 	else {
@@ -1966,6 +1968,10 @@ int main(int argc, char *argv[])
 			p++; newtimeout = atoi(p);
 			if (newtimeout > timeout) timeout = newtimeout;
 			errprintf("Deprecated option '--conntimeout' should not be used\n");
+		}
+		else if (argnmatch(argv[argi], "--cmdtimeout=")) {
+			char *p = strchr(argv[argi], '=');
+			p++; extcmdtimeout = atoi(p);
 		}
 		else if (argnmatch(argv[argi], "--concurrency=")) {
 			char *p = strchr(argv[argi], '=');

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: beastat.c,v 1.3 2005-05-27 12:15:44 henrik Exp $";
+static char rcsid[] = "$Id: beastat.c,v 1.4 2005-06-27 12:39:29 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -42,7 +42,7 @@ static char *location = "";		/* BBLOCATION value */
 static int testuntagged = 0;
 static int default_port = 161;
 static char *default_community = "public";
-
+static int extcmdtimeout = 30;
 
 static void find_idxes(char *buf, char *searchstr)
 {
@@ -192,6 +192,10 @@ int main(int argc, char *argv[])
 		else if ((strcmp(argv[argi], "--no-update") == 0)) {
 			dontsendmessages = 1;
 		}
+		else if (argnmatch(argv[argi], "--timeout=")) {
+			char *p = strchr(argv[argi], '=');
+			extcmdtimeout = atoi(p+1);
+		}
 		else if (argnmatch(argv[argi], "--port=")) {
 			char *p = strchr(argv[argi], '=');
 			default_port = atoi(p+1);
@@ -252,7 +256,7 @@ int main(int argc, char *argv[])
 		/* Setup the snmpwalk pipe-command for jrockit stats */
 		sprintf(pipecmd, "snmpwalk -m BEA-WEBLOGIC-MIB -c %s@%s -v 1 %s:%d enterprises.140.625.302.1",
 			snmpcommunity, beadomain, bbh_item(hwalk, BBH_IP), snmpport);
-		jrockres = run_command(pipecmd, NULL, &jrockout, &jrockoutbytes, 0);
+		jrockres = run_command(pipecmd, NULL, &jrockout, &jrockoutbytes, 0, extcmdtimeout);
 		if (jrockres == 0) {
 			find_idxes(jrockout, "BEA-WEBLOGIC-MIB::jrockitRuntimeIndex.");
 			send_data(hwalk, beadomain, jrockout, jrockitems);
@@ -267,7 +271,7 @@ int main(int argc, char *argv[])
 		/* Setup the snmpwalk pipe-command for executeQueur stats */
 		sprintf(pipecmd, "snmpwalk -m BEA-WEBLOGIC-MIB -c %s@%s -v 1 %s:%d enterprises.140.625.180.1",
 			snmpcommunity, beadomain, bbh_item(hwalk, BBH_IP), snmpport);
-		qres = run_command(pipecmd, NULL, &qout, &qoutbytes, 0);
+		qres = run_command(pipecmd, NULL, &qout, &qoutbytes, 0, extcmdtimeout);
 		if (qres == 0) {
 			find_idxes(qout, "BEA-WEBLOGIC-MIB::executeQueueRuntimeIndex.");
 			send_data(hwalk, beadomain, qout, qitems);
