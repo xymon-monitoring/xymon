@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.44 2005-03-25 21:07:42 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.45 2005-06-29 14:49:00 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -366,7 +366,7 @@ int main(int argc, char *argv[])
 			}
 			else {
 				proxyname = strdup(p1);
-				proxynamesvc = strchr(p1, '.')+1;
+				proxynamesvc = strchr(proxyname, '.')+1;
 			}
 		}
 		else if (strcmp(argv[opt], "--debug") == 0) {
