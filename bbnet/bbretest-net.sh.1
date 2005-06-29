@@ -1,14 +1,13 @@
 .TH BBRETEST-NET.SH 1 "Version 4.0.4: 29 May 2005" "Hobbit Monitor"
 .SH NAME
-bbretest-net.sh \- Hobbit / Big Brother network re-test tool
+bbretest-net.sh \- Hobbit network re-test tool
 .SH SYNOPSIS
 .B "bbretest-net.sh"
 
 .SH DESCRIPTION
 \fBbbretest-net.sh\fR
 is an extension script for Hobbit that runs on the network
-test server, or for Big Brother where it runs on the BBNET server. 
-It picks up the failing network tests executed by the 
+test server.  It picks up the failing network tests executed by the 
 .I bbtest-net(1)
 program, and repeats these tests with a faster test cycle
 than the normal bbtest-net schedule. This means that when
@@ -25,22 +24,9 @@ bbtest-net.
 
 
 .SH INSTALLATION
-For Hobbit, add the script to the
+This script runs by default from your
 .I hobbitlaunch.cfg(5)
-file. It is enabled by default on Hobbit installations,
-so you normally do not need to do anything to run it.
-You do not need to restart Hobbit after changing the
-configuration.
-
-For Big Brother, the bbretest-net.sh script must be listed in your
-\fB$BBHOME/etc/bb-bbexttab\fR file on the BBNET server.  E.g. if you 
-run network tests from the "bbnet.foo.com" server, your bb-bbexttab
-entry would be
-
-  bbnet.foo.com : : bbretest-net.sh;60
-
-The Big Brother service must be restarted to pick up
-this change.
+file.
 
 
 .SH FILES
