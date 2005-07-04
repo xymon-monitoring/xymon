@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.34 2005-06-01 09:43:34 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.35 2005-07-04 08:44:50 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -20,6 +20,7 @@ static char rcsid[] = "$Id: misc.c,v 1.34 2005-06-01 09:43:34 henrik Exp $";
 #include <sys/wait.h>
 #include <limits.h>
 #include <errno.h>
+#include <signal.h>
 
 #include "libbbgen.h"
 #include "version.h"
@@ -290,7 +291,7 @@ int generate_static(void)
 }
 
 
-int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int showcmd)
+int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int showcmd, int timeout)
 {
 	FILE	*cmdpipe;
 	char	l[1024];
