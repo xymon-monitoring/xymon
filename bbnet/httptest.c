@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.79 2005-03-25 21:06:57 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.80 2005-07-04 08:42:48 henrik Exp $";
 
 #include <sys/types.h>
 #include <limits.h>
@@ -587,7 +587,7 @@ void add_http_test(testitem_t *t)
 	{
 		char useragent[100];
 
-		sprintf(useragent, "User-Agent: BigBrother bbtest-net/%s\r\n", VERSION);
+		sprintf(useragent, "User-Agent: Hobbit bbtest-net/%s\r\n", VERSION);
 		addtobuffer(&httprequest, &httprequestlen, useragent);
 	}
 	if (httptest->bburl.desturl->auth) {
