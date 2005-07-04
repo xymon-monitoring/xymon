@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.152 2005-06-22 07:20:43 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.153 2005-07-04 10:39:04 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -727,18 +727,26 @@ void get_hts(char *msg, char *sender, char *origin,
 		}
 	}
 
-	for (twalk = tests; (twalk && strcasecmp(testname, twalk->testname)); twalk = twalk->next);
-	if (createlog && (twalk == NULL)) {
-		twalk = (hobbitd_testlist_t *)malloc(sizeof(hobbitd_testlist_t));
-		twalk->testname = strdup(testname);
-		twalk->next = tests;
-		tests = twalk;
+	if (testname) {
+		for (twalk = tests; (twalk && strcasecmp(testname, twalk->testname)); twalk = twalk->next);
+		if (createlog && (twalk == NULL)) {
+			twalk = (hobbitd_testlist_t *)malloc(sizeof(hobbitd_testlist_t));
+			twalk->testname = strdup(testname);
+			twalk->next = tests;
+			tests = twalk;
+		}
 	}
-	for (owalk = origins; (owalk && strcasecmp(origin, owalk->name)); owalk = owalk->next);
-	if (createlog && (owalk == NULL)) {
-		owalk = (htnames_t *)malloc(sizeof(htnames_t));
-		owalk->name = strdup(origin);
-		origins = owalk;
+	else {
+		if (createlog) errprintf("Bogus message from %s: No testname '%s'\n", sender, msg);
+	}
+
+	if (origin) {
+		for (owalk = origins; (owalk && strcasecmp(origin, owalk->name)); owalk = owalk->next);
+		if (createlog && (owalk == NULL)) {
+			owalk = (htnames_t *)malloc(sizeof(htnames_t));
+			owalk->name = strdup(origin);
+			origins = owalk;
+		}
 	}
 	if (hwalk && twalk && owalk) {
 		for (lwalk = hwalk->logs; (lwalk && ((lwalk->test != twalk) || (lwalk->origin != owalk))); lwalk = lwalk->next);
@@ -819,6 +827,16 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	}
 
 	msglen = strlen(msg);
+	if (strlen(msg) == 0) {
+		errprintf("Bogus status message contains no data: Sent from %s\n", sender);
+		return;
+	}
+	if (msg_data(msg) == (char *)msg) {
+		errprintf("Bogus status message: msg_data finds no host.test. Sent from: '%s', data:'%s'\n",
+			  sender, msg);
+		return;
+	}
+
 	issummary = (strncmp(msg, "summary", 7) == 0);
 
 	if (strncmp(msg, "status+", 7) == 0) {
@@ -906,13 +924,8 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 
 		/* Get at the test flags. They are immediately after the color */
 		p = msg_data(msg);
-		if (p) {
-			p += strlen(colorname(newcolor));
-		}
-		else {
-			p = "";
-			errprintf("msg_data returned a NULL\n");
-		}
+		p += strlen(colorname(newcolor));
+
 		if (strncmp(p, " <!-- [flags:", 13) == 0) {
 			char *flagstart = p+13;
 			char *flagend = strchr(flagstart, ']');
@@ -1551,7 +1564,7 @@ void do_message(conn_t *msg, char *origin)
 				/* Count individual status-messages also */
 				update_statistics(currmsg);
 
-				if (log && (color != -1)) {
+				if (h && t && log && (color != -1)) {
 					handle_status(currmsg, sender, h->hostname, t->testname, log, color);
 				}
 			}
@@ -1568,7 +1581,7 @@ void do_message(conn_t *msg, char *origin)
 			if (nextmsg) { *(nextmsg+1) = '\0'; nextmsg += 2; }
 
 			get_hts(currmsg, sender, origin, &h, &t, &log, &color, 0, 0);
-			if (log && oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, currmsg)) {
+			if (h && t && log && oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, currmsg)) {
 				handle_meta(currmsg, log);
 			}
 
@@ -1590,7 +1603,7 @@ void do_message(conn_t *msg, char *origin)
 			fprintf(dbgfd, "\n---- status message from %s ----\n%s---- end message ----\n", sender, msg->buf);
 			fflush(dbgfd);
 		}
-		if (log && (color != -1)) {
+		if (h && t && log && (color != -1)) {
 			handle_status(msg->buf, sender, h->hostname, t->testname, log, color);
 		}
 	}
@@ -1630,7 +1643,7 @@ void do_message(conn_t *msg, char *origin)
 	else if (strncmp(msg->buf, "summary", 7) == 0) {
 		/* Summaries are always allowed. Or should we ? */
 		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, 1, 1);
-		if (log && (color != -1)) {
+		if (h && t && log && (color != -1)) {
 			handle_status(msg->buf, sender, h->hostname, t->testname, log, color);
 		}
 	}
@@ -1845,7 +1858,10 @@ void do_message(conn_t *msg, char *origin)
 		memset(&infologrec, 0, sizeof(infologrec));
 		infologrec.test = &infotestrec;
 
-		rrdtestrec.testname = xgetenv("TRENDSCOLUMN");
+		rrdtestrec.testname = getenv("TRENDSCOLUMN");
+		if (!rrdtestrec.testname || (strlen(rrdtestrec.testname) == 0)) rrdtestrec.testname = getenv("LARRDCOLUMN");
+		if (!rrdtestrec.testname || (strlen(rrdtestrec.testname) == 0)) rrdtestrec.testname = "trends";
+
 		rrdtestrec.next = NULL;
 		memset(&rrdlogrec, 0, sizeof(rrdlogrec));
 		rrdlogrec.test = &rrdtestrec;
