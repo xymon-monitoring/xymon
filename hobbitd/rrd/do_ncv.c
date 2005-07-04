@@ -11,14 +11,16 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.3 2005-06-05 09:24:39 henrik Exp $";
+static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.4 2005-07-04 08:45:53 henrik Exp $";
 
 int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
 	char **params = NULL;
 	int paridx;
 	char dsdef[1024];
-	char *l, *eoln, *name, *val;
+	char *l, *name, *val;
+	char *envnam;
+	char *dstypes = NULL;
 
 	sprintf(rrdfn, "%s.rrd", testname);
 	sprintf(rrdvalues, "%d", (int)tstamp);
@@ -28,33 +30,67 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	params[1] = rrdfn;
 	paridx = 1;
 
-	l = strchr(msg, '\n'); if (l) l++;
-	while (l) {
-		eoln = strchr(l, '\n'); if (eoln) *eoln = '\0';
+	envnam = (char *)malloc(4 + strlen(testname) + 1); sprintf(envnam, "NCV_%s", testname);
+	l = getenv(envnam);
+	if (l) {
+		dstypes = (char *)malloc(strlen(l)+3);
+		sprintf(dstypes, ",%s,", l);
+	}
+	xfree(envnam);
 
+	l = strchr(msg, '\n'); if (l) l++;
+	while (l && *l && strncmp(l, "@@\n", 3)) {
 		name = val = NULL;
-		name = strtok(l, " \t:=");
-		if (name) val = strtok(NULL, " \t\r");
+
+		l += strspn(l, " \t\n");
+		if (*l) { name = l; l += strcspn(l, ":="); *l = '\0'; l++; }
+		if (name) { val = l + strspn(l, " \t"); l = val + strspn(val, "0123456789."); *l = '\0'; l++; }
 
 		if (name && val) {
 			char *endptr;
 
 			strtod(val, &endptr);
-			if (*endptr == '\0') {
+			if (isspace(*endptr) || (*endptr == '\0')) {
+				char dsname[20];
+				char dskey[22];
+				char *dstype = NULL;
+				char *inp;
+				int outidx;
+
 				/* val contains a valid number */
-				if (strlen(name) > 19) *(name+19) = '\0'; /* RRD limitation */
+				for (inp=name,outidx=0; (*inp && (outidx < 19)); inp++) {
+					if ( ((*inp >= 'A') && (*inp <= 'Z')) ||
+					     ((*inp >= 'a') && (*inp <= 'z')) ||
+					     ((*inp >= '0') && (*inp <= '9')) ) {
+						dsname[outidx++] = *inp;
+					}
+				}
+				dsname[outidx] = '\0';
+				sprintf(dskey, ",%s:", dsname);
 
-				sprintf(dsdef, "DS:%s:DERIVE:600:0:U", name);
-				paridx++;
-				params = (char **)realloc(params, (7 + paridx)*sizeof(char *));
-				params[paridx] = strdup(dsdef);
-				params[paridx+1] = NULL;
+				if (dstypes) dstype = strstr(dstypes, dskey);
+				if (dstype) {
+					char *p;
 
-				sprintf(rrdvalues+strlen(rrdvalues), ":%s", val);
+					dstype += strlen(dskey);
+					p = strchr(dstype, ','); if (p) *p = '\0';
+					sprintf(dsdef, "DS:%s:%s:600:0:U", dsname, dstype);
+					if (p) *p = ',';
+				}
+				else {
+					sprintf(dsdef, "DS:%s:DERIVE:600:0:U", dsname);
+				}
+
+				if (!dstype || (strncasecmp(dstype, "NONE", 4) != 0)) {
+					paridx++;
+					params = (char **)realloc(params, (7 + paridx)*sizeof(char *));
+					params[paridx] = strdup(dsdef);
+					params[paridx+1] = NULL;
+
+					sprintf(rrdvalues+strlen(rrdvalues), ":%s", val);
+				}
 			}
 		}
-
-		l = (eoln ? eoln + 1 : NULL);
 	}
 
 	if (paridx > 1) {
@@ -71,6 +107,7 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	}
 
 	xfree(params);
+	if (dstypes) xfree(dstypes);
 
 	return 0;
 }
