@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.153 2005-07-04 10:39:04 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.154 2005-07-04 20:18:58 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -245,6 +245,8 @@ static int hostname_compare(void *a, void *b)
 void update_statistics(char *cmd)
 {
 	int i;
+
+	if (!cmd) return;
 
 	msgs_total++;
 
@@ -727,7 +729,7 @@ void get_hts(char *msg, char *sender, char *origin,
 		}
 	}
 
-	if (testname) {
+	if (testname && *testname) {
 		for (twalk = tests; (twalk && strcasecmp(testname, twalk->testname)); twalk = twalk->next);
 		if (createlog && (twalk == NULL)) {
 			twalk = (hobbitd_testlist_t *)malloc(sizeof(hobbitd_testlist_t));
@@ -822,7 +824,8 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	enum alertstate_t oldalertstatus, newalertstatus;
 
 	if (msg == NULL) {
-		errprintf("handle_status got a NULL message for %s.%s, sender %s\n", hostname, testname, sender);
+		errprintf("handle_status got a NULL message for %s.%s, sender %s\n", 
+			  textornull(hostname), textornull(testname), textornull(sender));
 		return;
 	}
 
@@ -1543,6 +1546,8 @@ void do_message(conn_t *msg, char *origin)
 
 		currmsg = msg->buf+6;
 		do {
+			int validsender = 1;
+
 			nextmsg = strstr(currmsg, "\n\nstatus");
 			if (nextmsg) { *(nextmsg+1) = '\0'; nextmsg += 2; }
 
@@ -1553,8 +1558,12 @@ void do_message(conn_t *msg, char *origin)
 				*msgfrom = '\0';
 			}
 
-			get_hts(currmsg, sender, origin, &h, &t, &log, &color, 0, 0);
-			if (oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, currmsg)) {
+			if (statussenders) {
+				get_hts(currmsg, sender, origin, &h, &t, &log, &color, 0, 0);
+				if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, currmsg)) validsender = 0;
+			}
+
+			if (validsender) {
 				get_hts(currmsg, sender, origin, &h, &t, &log, &color, 1, 1);
 				if (h && dbgfd && dbghost && (strcasecmp(h->hostname, dbghost) == 0)) {
 					fprintf(dbgfd, "\n---- combo message from %s ----\n%s---- end message ----\n", sender, currmsg);
@@ -1595,8 +1604,10 @@ void do_message(conn_t *msg, char *origin)
 			*msgfrom = '\0';
 		}
 
-		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, 0, 0);
-		if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, msg->buf)) goto done;
+		if (statussenders) {
+			get_hts(msg->buf, sender, origin, &h, &t, &log, &color, 0, 0);
+			if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, msg->buf)) goto done;
+		}
 
 		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, 1, 1);
 		if (h && dbgfd && dbghost && (strcasecmp(h->hostname, dbghost) == 0)) {
