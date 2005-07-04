@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.69 2005-06-06 09:27:07 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.70 2005-07-04 08:43:18 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -960,20 +960,26 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	/* At this point, we know the configuration may result in an alert. */
 	if (anymatch) (*anymatch)++;
 
-	duration = (time(NULL) - alert->eventstart);
-	if (crit && crit->minduration && (duration < crit->minduration)) { 
-		traceprintf("Failed '%s' (min. duration %d<%d)\n", cfline, duration, crit->minduration);
-		if (!printmode) return 0; 
-	}
+	/* 
+	 * Time checks should be done on real paging messages only. 
+	 * Not on recovery- or notify-messages.
+	 */
+	if (alert->state == A_PAGING) {
+		duration = (time(NULL) - alert->eventstart);
+		if (crit && crit->minduration && (duration < crit->minduration)) { 
+			traceprintf("Failed '%s' (min. duration %d<%d)\n", cfline, duration, crit->minduration);
+			if (!printmode) return 0; 
+		}
 
-	if (crit && crit->maxduration && (duration > crit->maxduration)) { 
-		traceprintf("Failed '%s' (max. duration %d>%d)\n", cfline, duration, crit->maxduration);
-		if (!printmode) return 0; 
-	}
+		if (crit && crit->maxduration && (duration > crit->maxduration)) { 
+			traceprintf("Failed '%s' (max. duration %d>%d)\n", cfline, duration, crit->maxduration);
+			if (!printmode) return 0; 
+		}
 
-	if (crit && crit->timespec && !timematch(crit->timespec)) { 
-		traceprintf("Failed '%s' (time criteria)\n", cfline);
-		if (!printmode) return 0; 
+		if (crit && crit->timespec && !timematch(crit->timespec)) { 
+			traceprintf("Failed '%s' (time criteria)\n", cfline);
+			if (!printmode) return 0; 
+		}
 	}
 
 	/* Check color. For RECOVERED messages, this holds the color of the alert, not the recovery state */
