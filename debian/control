@@ -2,13 +2,12 @@ Source: hobbit
 Section: net
 Priority: optional
 Maintainer: Henrik Stoerner <henrik@hswn.dk>
-Depends: fping
 Build-Depends: debhelper (>= 4.0.0), librrd0-dev, libssl-dev, libldap2-dev, libpcre3-dev
 Standards-Version: 3.6.1
 
 Package: hobbit
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: fping, ${shlibs:Depends}, ${misc:Depends}
 Description: The Hobbit network monitor
  Hobbit is a network- and applications-monitoring system designed
  for use in large-scale networks. But it will also work just fine
