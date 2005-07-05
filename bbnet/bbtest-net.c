@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.214 2005-06-27 12:39:29 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.215 2005-07-05 14:12:33 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -97,7 +97,6 @@ int		extcmdtimeout = 30;
 
 void dump_hostlist(void)
 {
-#ifdef DEBUG
 	testedhost_t *walk;
 
 	for (walk = testhosthead; (walk); walk = walk->next) {
@@ -126,11 +125,9 @@ void dump_hostlist(void)
 		printf("\tSSL alerts   : %d:%d\n", walk->sslwarndays, walk->sslalarmdays);
 		printf("\n");
 	}
-#endif
 }
 void dump_testitems(void)
 {
-#ifdef DEBUG
 	service_t *swalk;
 	testitem_t *iwalk;
 
@@ -171,7 +168,6 @@ void dump_testitems(void)
 
 		printf("\n");
 	}
-#endif
 }
 
 testitem_t *find_test(char *hostname, char *testname)
@@ -829,38 +825,31 @@ void load_tests(void)
 	return;
 }
 
-void do_dns_lookups(void)
+char *ip_to_test(testedhost_t *h)
 {
-	testedhost_t	*h;
 	char *dnsresult;
+	int nullip = (strcmp(h->ip, "0.0.0.0") == 0);
 
-	for (h=testhosthead; (h); h=h->next) {
-		/* 
-		 * Determine the IP address to test. We do it here,
-		 * to avoid multiple DNS lookups for each service 
-		 * we test on a host.
-		 */
-		int nullip = (strcmp(h->ip, "0.0.0.0") == 0);
+	if (!nullip && (h->testip || (dnsmethod == IP_ONLY))) {
+		/* Already have the IP setup */
+	}
+	else if (h->dodns) {
+		dnsresult = dnsresolve(h->hostname);
 
-		if (!nullip && (h->testip || (dnsmethod == IP_ONLY))) {
+		if (dnsresult) {
+			strcpy(h->ip, dnsresult);
+		}
+		else if ((dnsmethod == DNS_THEN_IP) && !nullip) {
 			/* Already have the IP setup */
 		}
-		else if (h->dodns) {
-			dnsresult = dnsresolve(h->hostname);
-
-			if (dnsresult) {
-				strcpy(h->ip, dnsresult);
-			}
-			else if ((dnsmethod == DNS_THEN_IP) && !nullip) {
-				/* Already have the IP setup */
-			}
-			else {
-				/* Cannot resolve hostname */
-				h->dnserror = 1;
-				errprintf("bbtest-net: Cannot resolve IP for host %s\n", h->hostname);
-			}
+		else {
+			/* Cannot resolve hostname */
+			h->dnserror = 1;
+			errprintf("bbtest-net: Cannot resolve IP for host %s\n", h->hostname);
 		}
 	}
+
+	return h->ip;
 }
 
 
@@ -1017,7 +1006,7 @@ void run_nslookup_service(service_t *service)
 				lookup = t->host->hostname;
 			}
 
-			t->open = (dns_test_server(t->host->ip, lookup, &t->banner, &t->bannerbytes) == 0);
+			t->open = (dns_test_server(ip_to_test(t->host), lookup, &t->banner, &t->bannerbytes) == 0);
 		}
 	}
 }
@@ -1033,7 +1022,7 @@ void run_ntp_service(service_t *service)
 	strcpy(cmdpath, (p ? p : "ntpdate"));
 	for (t=service->items; (t); t = t->next) {
 		if (!t->host->dnserror) {
-			sprintf(cmd, "%s -u -q -p 2 %s 2>&1", cmdpath, t->host->ip);
+			sprintf(cmd, "%s -u -q -p 2 %s 2>&1", cmdpath, ip_to_test(t->host));
 			t->open = (run_command(cmd, "no server suitable for synchronization", &t->banner, &t->bannerbytes, 1, extcmdtimeout) == 0);
 		}
 	}
@@ -1051,7 +1040,7 @@ void run_rpcinfo_service(service_t *service)
 	strcpy(cmdpath, (p ? p : "rpcinfo"));
 	for (t=service->items; (t); t = t->next) {
 		if (!t->host->dnserror) {
-			sprintf(cmd, "%s -p %s 2>&1", cmdpath, t->host->ip);
+			sprintf(cmd, "%s -p %s 2>&1", cmdpath, ip_to_test(t->host));
 			t->open = (run_command(cmd, NULL, &t->banner, &t->bannerbytes, 1, extcmdtimeout) == 0);
 		}
 	}
@@ -1142,7 +1131,7 @@ int start_fping_service(service_t *service)
 		/* Feed the IP's to test to the child */
 		for (t=service->items; (t); t = t->next) {
 			if (!t->host->dnserror && !t->host->noping) {
-				sprintf(ip, "%s\n", t->host->ip);
+				sprintf(ip, "%s\n", ip_to_test(t->host));
 				status = write(pfd[1], ip, strlen(ip));
 				pingcount++;
 				if (t->host->extrapings) {
@@ -2105,9 +2094,6 @@ int main(int argc, char *argv[])
 			if (ssl_library_version) printf("SSL library : %s\n", ssl_library_version);
 			if (ldap_library_version) printf("LDAP library: %s\n", ldap_library_version);
 			printf("Compile settings: MAXMSG=%d, BBDPORTNUMBER=%d", MAXMSG, BBDPORTNUMBER);
-#ifdef DEBUG
-			printf(", DEBUG");
-#endif
 			printf("\n");
 			return 0;
 		}
@@ -2207,7 +2193,7 @@ int main(int argc, char *argv[])
 	load_tests();
 	add_timestamp(use_ares_lookup ? "Tests loaded" : "Tests loaded, hostname lookups done");
 
-	do_dns_lookups();
+	flush_dnsqueue();
 	if (use_ares_lookup) add_timestamp("DNS lookups completed");
 
 	if (dumpdata & 1) { dump_hostlist(); dump_testitems(); }
@@ -2227,7 +2213,7 @@ int main(int argc, char *argv[])
 				if (!t->host->dnserror) {
 					strcpy(tname, s->testname);
 					if (s->namelen) tname[s->namelen] = '\0';
-					t->privdata = (void *)add_tcp_test(t->host->ip, s->portnum, tname, NULL, 
+					t->privdata = (void *)add_tcp_test(ip_to_test(t->host), s->portnum, tname, NULL, 
 									   t->silenttest, NULL, 
 									   NULL, NULL, NULL);
 				}
