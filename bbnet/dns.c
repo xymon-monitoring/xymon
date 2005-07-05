@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.24 2005-03-25 21:06:57 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.25 2005-07-05 14:11:53 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -225,17 +225,22 @@ static void dns_queue_run(ares_channel channel)
 	}
 }
 
+void flush_dnsqueue(void)
+{
+	if (stdchannelactive) {
+		dns_queue_run(stdchannel);
+		stdchannelactive = 0;
+	}
+}
+
 char *dnsresolve(char *hostname)
 {
 	char *result;
 
 	if (hostname == NULL) return NULL;
 
+	flush_dnsqueue();
 	dns_stats_lookups++;
-	if (stdchannelactive) {
-		dns_queue_run(stdchannel);
-		stdchannelactive = 0;
-	}
 
 	result = find_dnscache(hostname);
 	if (result == NULL) {
