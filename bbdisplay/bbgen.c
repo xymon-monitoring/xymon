@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.211 2005-06-26 20:17:39 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.212 2005-07-05 13:38:49 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -428,9 +428,6 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[i], "--version") == 0) {
 			printf("bbgen version %s\n", VERSION);
 			printf("Compile settings: MAXMSG=%d, BBDPORTNUMBER=%d", MAXMSG, BBDPORTNUMBER);
-#ifdef DEBUG
-			printf(", DEBUG");
-#endif
 			printf("\n");
 			exit(0);
 		}
