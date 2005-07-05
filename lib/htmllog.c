@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.27 2005-06-06 20:08:45 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.28 2005-07-05 13:14:37 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -79,6 +79,40 @@ static void historybutton(char *cgibinurl, char *hostname, char *service, char *
 
 	xfree(tmp2);
 	xfree(tmp1);
+}
+
+static void textwithcolorimg(char *msg, FILE *output)
+{
+	char *p, *restofmsg;
+
+	restofmsg = msg;
+	do {
+		int color;
+
+		p = strchr(restofmsg, '&');
+		if (p) {
+			*p = '\0';
+			fprintf(output, "%s", restofmsg);
+
+			color = parse_color(p+1);
+			if (color == -1) {
+				fprintf(output, "&");
+				restofmsg = p+1;
+			}
+			else {
+				fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0>",
+                                                        xgetenv("BBSKIN"), dotgiffilename(color, 0, 0),
+							colorname(color),
+                                                        xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
+
+				restofmsg = p+1+strlen(colorname(color));
+			}
+		}
+		else {
+			fprintf(output, "%s", restofmsg);
+			restofmsg = NULL;
+		}
+	} while (restofmsg);
 }
 
 
@@ -149,7 +183,11 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		fprintf(output, "<TR><TD><BR><HR>Current status message follows:<HR><BR></TD></TR>\n");
 
 		fprintf(output, "<TR><TD>");
-		if (strlen(firstline)) fprintf(output, "<H3>%s</H3>", firstline);	/* Drop the color */
+		if (strlen(firstline)) {
+			fprintf(output, "<H3>");
+			textwithcolorimg(firstline, output);
+			fprintf(output, "</H3>");	/* Drop the color */
+		}
 		fprintf(output, "\n");
 			
 	}
@@ -157,41 +195,18 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		char *txt = skipword(firstline);
 
 		fprintf(output, "<TR><TD>");
-		if (strlen(txt)) fprintf(output, "<H3>%s</H3>", txt);	/* Drop the color */
+		if (strlen(txt)) {
+			fprintf(output, "<H3>");
+			textwithcolorimg(txt, output);
+			fprintf(output, "</H3>");	/* Drop the color */
+		}
 		fprintf(output, "\n");
 	}
 
 	if (!htmlfmt) fprintf(output, "<PRE>\n");
-
-	do {
-		int color;
-
-		p = strchr(restofmsg, '&');
-		if (p) {
-			*p = '\0';
-			fprintf(output, "%s", restofmsg);
-
-			color = parse_color(p+1);
-			if (color == -1) {
-				fprintf(output, "&");
-				restofmsg = p+1;
-			}
-			else {
-				fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0>",
-                                                        xgetenv("BBSKIN"), dotgiffilename(color, 0, 0),
-							colorname(color),
-                                                        xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
-
-				restofmsg = p+1+strlen(colorname(color));
-			}
-		}
-		else {
-			fprintf(output, "%s", restofmsg);
-			restofmsg = NULL;
-		}
-	} while (restofmsg);
-
+	textwithcolorimg(restofmsg, output);
 	if (!htmlfmt) fprintf(output, "\n</PRE>\n");
+
 	fprintf(output, "</TD></TR></TABLE>\n");
 
 	fprintf(output, "<br><br>\n");
