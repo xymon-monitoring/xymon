@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.215 2005-07-05 14:12:33 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.216 2005-07-05 18:45:36 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -75,6 +75,7 @@ int		dnsmethod = DNS_THEN_IP;	/* How to do DNS lookups */
 int 		timeout=10;			/* The timeout (seconds) for all TCP-tests */
 char		*contenttestname = "content";   /* Name of the content checks column */
 char		*ssltestname = "sslcert";       /* Name of the SSL certificate checks column */
+char		*failtext = "not OK";
 int             sslwarndays = 30;		/* If cert expires in fewer days, SSL cert column = yellow */
 int             sslalarmdays = 10;		/* If cert expires in fewer days, SSL cert column = red */
 char		*location = "";			/* BBLOCATION value */
@@ -1608,17 +1609,14 @@ void send_results(service_t *service, int failgoesclear)
 					strcat(msgline, routertext);
 					strcat(msgline, " down");
 
-					strcat(msgtext, "not OK.\nThe ");
-					strcat(msgtext, routertext); strcat(msgtext, " ");
-					strcat(msgtext, ((testedhost_t *)t->host->deprouterdown)->hostname);
-					strcat(msgtext, " (IP:");
-					strcat(msgtext, ((testedhost_t *)t->host->deprouterdown)->ip);
-					strcat(msgtext, ") is not reachable, causing this host to be unreachable.\n");
+					sprintf(msgtext+strlen(msgtext), 
+						"%s.\nThe %s %s (IP:%s) is not reachable, causing this host to be unreachable.\n",
+						failtext, routertext, 
+						((testedhost_t *)t->host->deprouterdown)->hostname,
+						((testedhost_t *)t->host->deprouterdown)->ip);
 				  }
 				  else {
-				  	strcat(msgtext, "not OK : ");
-				  	strcat(msgtext, causetext);
-				  	strcat(msgtext, "\n");
+					sprintf(msgtext+strlen(msgtext), "%s : %s\n", failtext, causetext);
 				  }
 				  break;
 
@@ -2160,6 +2158,7 @@ int main(int argc, char *argv[])
 	if (pingcolumn && xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN")) {
 		failgoesclear = (strcmp(xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN"), "TRUE") == 0);
 	}
+	if (xgetenv("NETFAILTEXT")) failtext = strdup(xgetenv("NETFAILTEXT"));
 
 	if (debug) {
 		int i;

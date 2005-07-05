@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.20 2005-06-05 09:39:14 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.21 2005-07-05 18:45:36 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -102,6 +102,7 @@ const static struct {
 	{ "TRACEROUTE", "traceroute" },
 	{ "RPCINFO", "rpcinfo" },
 	{ "BBROUTERTEXT", "router" },
+	{ "NETFAILTEXT", "not OK" },
 	{ "BBRRDS", "$BBVAR/rrd" },
 	{ "TEST2RRD", "cpu=la,disk,memory,$PINGCOLUMN=tcp,http=tcp,dns=tcp,dig=tcp,time=ntpstat,vmstat,iostat,netstat,temperature,apache,bind,sendmail,nmailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd" },
 	{ "GRAPHS", "la,disk:disk_part:5,memory,users,vmstat,iostat,tcp.http,tcp,netstat,temperature,ntpstat,apache,bind,sendmail,nmailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd" },
