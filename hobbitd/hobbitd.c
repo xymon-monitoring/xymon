@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.154 2005-07-04 20:18:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.155 2005-07-05 21:18:06 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -1897,11 +1897,16 @@ void do_message(conn_t *msg, char *origin)
 
 			/* Handle NOINFO and NOTRENDS here */
 			hinfo = hostinfo(hwalk->hostname);
-			infologrec.next = &rrdlogrec;
-			rrdlogrec.next = hwalk->logs;
-			firstlog = &infologrec;
-			if (bbh_item(hinfo, BBH_FLAG_NOINFO)) firstlog = firstlog->next;
-			if (bbh_item(hinfo, BBH_FLAG_NOTRENDS)) firstlog = firstlog->next;
+			firstlog = hwalk->logs;
+
+			if (!bbh_item(hinfo, BBH_FLAG_NOINFO)) {
+				infologrec.next = firstlog;
+				firstlog = &infologrec;
+			}
+			if (!bbh_item(hinfo, BBH_FLAG_NOTRENDS)) {
+				rrdlogrec.next = firstlog;
+				firstlog = &rrdlogrec;
+			}
 
 			for (lwalk = firstlog; (lwalk); lwalk = lwalk->next) {
 				char *eoln;
