@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.30 2005-05-29 10:03:21 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.31 2005-07-06 14:34:24 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -392,6 +392,7 @@ int main(int argc, char *argv[])
 	grouplist_t *gwalk;
 	int argi;
 	int daemonize = 1;
+	int verbose = 0;
 	char *config = "/etc/hobbitlaunch.cfg";
 	char *logfn = NULL;
 	char *pidfn = NULL;
@@ -406,6 +407,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--no-daemon") == 0) {
 			daemonize = 0;
+		}
+		else if (strcmp(argv[argi], "--verbose") == 0) {
+			verbose = 1;
 		}
 		else if (argnmatch(argv[argi], "--config=")) {
 			char *p = strchr(argv[argi], '=');
@@ -647,7 +651,7 @@ int main(int argc, char *argv[])
 				}
 				else {
 					if (twalk->group) twalk->group->currentuse++;
-					errprintf("Task %s started with PID %d\n", twalk->key, (int)twalk->pid);
+					if (verbose) errprintf("Task %s started with PID %d\n", twalk->key, (int)twalk->pid);
 				}
 			}
 			else if (twalk->pid > 0) {
