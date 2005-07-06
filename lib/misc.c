@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.35 2005-07-04 08:44:50 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.36 2005-07-06 21:04:53 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -157,6 +157,8 @@ char *msg_data(char *msg)
 {
 	/* Find the start position of the data following the "status host.test " message */
 	char *result;
+
+	if (!msg || (*msg == '\0')) return msg;
 
 	result = strchr(msg, '.');              /* Hits the '.' in "host.test" */
 	if (!result) {
