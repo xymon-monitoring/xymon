@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.155 2005-07-05 21:18:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.156 2005-07-06 21:05:46 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -246,13 +246,20 @@ void update_statistics(char *cmd)
 {
 	int i;
 
-	if (!cmd) return;
+	dprintf("-> update_statistics\n");
+
+	if (!cmd) {
+		dprintf("No command for update_statistics\n");
+		return;
+	}
 
 	msgs_total++;
 
 	i = 0;
 	while (hobbitd_stats[i].cmd && strncmp(hobbitd_stats[i].cmd, cmd, strlen(hobbitd_stats[i].cmd))) { i++; }
 	hobbitd_stats[i].count++;
+
+	dprintf("<- update_statistics\n");
 }
 
 char *generate_stats(void)
@@ -265,6 +272,8 @@ char *generate_stats(void)
 	char bootuptxt[40];
 	char uptimetxt[40];
 	time_t uptime = (now - boottime);
+
+	dprintf("-> generate_stats\n");
 
 	MEMDEFINE(bootuptxt);
 	MEMDEFINE(uptimetxt);
@@ -341,6 +350,8 @@ char *generate_stats(void)
 	MEMUNDEFINE(bootuptxt);
 	MEMUNDEFINE(uptimetxt);
 
+	dprintf("<- generate_stats\n");
+
 	return statsbuf;
 }
 
@@ -350,6 +361,8 @@ sender_t *getsenderlist(char *iplist)
 	char *p, *tok;
 	sender_t *result;
 	int count;
+
+	dprintf("-> getsenderlist\n");
 
 	count = 0; p = iplist; do { count++; p = strchr(p, ','); if (p) p++; } while (p);
 	result = (sender_t *) calloc(1, sizeof(sender_t) * (count+1));
@@ -371,6 +384,8 @@ sender_t *getsenderlist(char *iplist)
 		count++;
 	}
 
+	dprintf("<- getsenderlist\n");
+
 	return result;
 }
 
@@ -380,20 +395,31 @@ int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgb
 	unsigned long int tg_ip;
 	char *eoln;
 
+	dprintf("-> oksender\n");
+
 	/* If oklist is empty, we're not doing any access checks - so return OK */
-	if (oklist == NULL) return 1;
+	if (oklist == NULL) {
+		dprintf("<- oksender(1-a)\n");
+		return 1;
+	}
 
 	/* If we know the target, it would be ok for the host to report on itself. */
 	if (targetip) {
 		if (strcmp(targetip, "0.0.0.0") == 0) return 1; /* DHCP hosts can report from any address */
 		tg_ip = ntohl(inet_addr(targetip));
-		if (ntohl(sender.s_addr) == tg_ip) return 1;
+		if (ntohl(sender.s_addr) == tg_ip) {
+			dprintf("<- oksender(1-b)\n");
+			return 1;
+		}
 	}
 
 	/* It's someone else reporting about the host. Check the access list */
 	i = 0;
 	do {
-		if ((oklist[i].ipval & oklist[i].ipmask) == (ntohl(sender.s_addr) & oklist[i].ipmask)) return 1;
+		if ((oklist[i].ipval & oklist[i].ipmask) == (ntohl(sender.s_addr) & oklist[i].ipmask)) {
+			dprintf("<- oksender(1-c)\n");
+			return 1;
+		}
 		i++;
 	} while (oklist[i].ipval != 0);
 
@@ -401,6 +427,8 @@ int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgb
 	eoln = strchr(msgbuf, '\n'); if (eoln) *eoln = '\0';
 	errprintf("Refused message from %s: %s\n", inet_ntoa(sender), msgbuf);
 	if (eoln) *eoln = '\n';
+
+	dprintf("<- oksender(0)\n");
 
 	return 0;
 }
@@ -422,6 +450,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 	struct timeval tstamp;
 	struct timezone tz;
 	int semerr = 0;
+
+	dprintf("-> posttochannel\n");
 
 	/* First see how many users are on this channel */
 	clients = semctl(channel->semid, CLIENTCOUNT, GETVAL);
@@ -617,7 +647,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 
 	s.sem_num = GOCLIENT; s.sem_op = clients; s.sem_flg = 0; 		/* Up GOCLIENT */
 	n = semop(channel->semid, &s, 1);
-	dprintf("Message posted\n");
+
+	dprintf("<- posttochannel\n");
 
 	return;
 }
@@ -626,6 +657,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 void log_ghost(char *hostname, char *sender, char *msg)
 {
 	ghostlist_t *gwalk;
+
+	dprintf("-> log_ghost\n");
 
 	/* If debugging, log the full request */
 	if (dbgfd) {
@@ -643,6 +676,8 @@ void log_ghost(char *hostname, char *sender, char *msg)
 		gwalk->next = ghostlist;
 		ghostlist = gwalk;
 	}
+
+	dprintf("<- log_ghost\n");
 }
 
 void get_hts(char *msg, char *sender, char *origin,
@@ -665,6 +700,8 @@ void get_hts(char *msg, char *sender, char *origin,
 	htnames_t *owalk = NULL;
 	hobbitd_log_t *lwalk = NULL;
 	int maybedown = 0;
+
+	dprintf("-> get_hts\n");
 
 	MEMDEFINE(hostip);
 	*hostip = '\0';
@@ -786,6 +823,8 @@ done:
 	xfree(firstline);
 
 	MEMUNDEFINE(hostip);
+
+	dprintf("<- get_hts\n");
 }
 
 
@@ -798,6 +837,8 @@ hobbitd_log_t *find_cookie(int cookie)
 	RbtIterator hosthandle;
 	hobbitd_log_t *lwalk = NULL;
 	int found = 0;
+
+	dprintf("-> find_cookie\n");
 
 	for (hosthandle = rbtBegin(rbhosts); ((hosthandle != rbtEnd(rbhosts)) && !found); hosthandle = rbtNext(rbhosts, hosthandle)) {
 		char *key;
@@ -812,6 +853,8 @@ hobbitd_log_t *find_cookie(int cookie)
 		result = lwalk;
 	}
 
+	dprintf("<- find_cookie\n");
+
 	return result;
 }
 
@@ -822,6 +865,8 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	time_t now = time(NULL);
 	int msglen, issummary;
 	enum alertstate_t oldalertstatus, newalertstatus;
+
+	dprintf("->handle_status\n");
 
 	if (msg == NULL) {
 		errprintf("handle_status got a NULL message for %s.%s, sender %s\n", 
@@ -1016,6 +1061,8 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 
 	dprintf("posting to status channel\n");
 	posttochannel(statuschn, channelnames[C_STATUS], msg, sender, hostname, log, NULL);
+
+	dprintf("<-handle_status\n");
 	return;
 }
 
@@ -1027,6 +1074,8 @@ void handle_meta(char *msg, hobbitd_log_t *log)
 	char *metaname = NULL, *eoln, *line1 = NULL;
 	htnames_t *nwalk;
 	hobbitd_meta_t *mwalk;
+
+	dprintf("-> handle_meta\n");
 
 	eoln = strchr(msg, '\n'); 
 	if (eoln) {
@@ -1069,21 +1118,29 @@ void handle_meta(char *msg, hobbitd_log_t *log)
 	}
 
 	if (line1) xfree(line1);
+
+	dprintf("<- handle_meta\n");
 }
 
 void handle_data(char *msg, char *sender, char *origin, char *hostname, char *testname)
 {
-	char *chnbuf = (char *)malloc(strlen(origin) + strlen(hostname) + strlen(testname) + strlen(msg) + 4);
+	char *chnbuf;
 
+	dprintf("->handle_data\n");
+
+	chnbuf = (char *)malloc(strlen(origin) + strlen(hostname) + strlen(testname) + strlen(msg) + 4);
 	sprintf(chnbuf, "%s|%s|%s\n%s",
 		origin, hostname, testname, msg);
 	posttochannel(datachn, channelnames[C_DATA], msg, sender, hostname, NULL, chnbuf);
 	xfree(chnbuf);
+	dprintf("<-handle_data\n");
 }
 
 void handle_notes(char *msg, char *sender, char *hostname)
 {
+	dprintf("->handle_notes\n");
 	posttochannel(noteschn, channelnames[C_NOTES], msg, sender, hostname, NULL, NULL);
+	dprintf("<-handle_notes\n");
 }
 
 void handle_enadis(int enabled, char *msg, char *sender)
@@ -1102,6 +1159,8 @@ void handle_enadis(int enabled, char *msg, char *sender)
 	hobbitd_log_t *log;
 	char *p;
 	int maybedown;
+
+	dprintf("->handle_enadis\n");
 
 	MEMDEFINE(firstline);
 	MEMDEFINE(hosttest);
@@ -1233,6 +1292,8 @@ done:
 	MEMUNDEFINE(hostip);
 	MEMUNDEFINE(durstr);
 
+	dprintf("<-handle_enadis\n");
+
 	return;
 }
 
@@ -1240,6 +1301,8 @@ done:
 void handle_ack(char *msg, char *sender, hobbitd_log_t *log, int duration)
 {
 	char *p;
+
+	dprintf("->handle_ack\n");
 
 	log->acktime = time(NULL)+duration*60;
 	if (log->validtime < log->acktime) log->validtime = log->acktime;
@@ -1254,15 +1317,23 @@ void handle_ack(char *msg, char *sender, hobbitd_log_t *log, int duration)
 
 	/* Tell the pagers */
 	posttochannel(pagechn, "ack", log->ackmsg, sender, log->host->hostname, log, NULL);
+
+	dprintf("<-handle_ack\n");
 	return;
 }
 
 void handle_notify(char *msg, char *sender, hobbitd_log_t *log)
 {
-	char *msgtext = msg_data(msg);
+	char *msgtext;
+
+	dprintf("-> handle_notify\n");
+
+	msgtext = msg_data(msg);
 
 	/* Tell the pagers */
 	posttochannel(pagechn, "notify", msgtext, sender, log->host->hostname, log, NULL);
+
+	dprintf("<- handle_notify\n");
 	return;
 }
 
@@ -1270,6 +1341,7 @@ void free_log_t(hobbitd_log_t *zombie)
 {
 	hobbitd_meta_t *mwalk, *mtmp;
 
+	dprintf("-> free_log_t\n");
 	mwalk = zombie->metas;
 	while (mwalk) {
 		mtmp = mwalk;
@@ -1283,6 +1355,7 @@ void free_log_t(hobbitd_log_t *zombie)
 	if (zombie->dismsg) xfree(zombie->dismsg);
 	if (zombie->ackmsg) xfree(zombie->ackmsg);
 	xfree(zombie);
+	dprintf("<- free_log_t\n");
 }
 
 void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, char *n1, char *n2)
@@ -1297,6 +1370,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	char *marker = NULL;
 	char *canonhostname;
 
+	dprintf("-> handle_dropnrename\n");
 	MEMDEFINE(hostip);
 	MEMDEFINE(msgbuf);
 
@@ -1425,6 +1499,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 done:
 	MEMUNDEFINE(hostip);
 	MEMUNDEFINE(msgbuf);
+	dprintf("<- handle_dropnrename\n");
 
 	return;
 }
@@ -1437,9 +1512,13 @@ int get_config(char *fn, conn_t *msg)
 	int done = 0;
 	int n;
 
+	dprintf("-> get_config %s\n", fn);
 	sprintf(fullfn, "%s/etc/%s", xgetenv("BBHOME"), fn);
 	fd = stackfopen(fullfn, "r");
-	if (fd == NULL) return -1;
+	if (fd == NULL) {
+		errprintf("Config file %s not found\n", fn);
+		return -1;
+	}
 
 	*msg->buf = '\0';
 	msg->bufp = msg->buf;
@@ -1459,6 +1538,8 @@ int get_config(char *fn, conn_t *msg)
 	} while (!done);
 
 	stackfclose(fd);
+	dprintf("<- get_config\n");
+
 	return 0;
 }
 
@@ -1485,6 +1566,8 @@ void setup_filter(char *buf, char **spage, char **shost, char **stest, int *scol
 {
 	char *tok, *s;
 	int idx = 0;
+
+	dprintf("-> setup_filter: %s\n", buf);
 
 	*spage = *shost = *stest = *fields = NULL;
 	*scolor = -1;
@@ -1519,10 +1602,13 @@ void setup_filter(char *buf, char **spage, char **shost, char **stest, int *scol
 	boardfields[idx++] = F_NONE;
 
 	xfree(s);
+
+	dprintf("<- setup_filter: %s\n", buf);
 }
 
 void do_message(conn_t *msg, char *origin)
 {
+	static int nesting = 0;
 	hobbitd_hostlist_t *h;
 	hobbitd_testlist_t *t;
 	hobbitd_log_t *log;
@@ -1531,11 +1617,22 @@ void do_message(conn_t *msg, char *origin)
 	time_t now;
 	char *msgfrom;
 
+	nesting++;
+
+	if (debug) {
+		int msglen = strlen(msg->buf);
+		char *eoln = strchr(msg->buf, '\n');
+
+		if (eoln) *eoln = '\0';
+		dprintf("-> do_message/%d (%d bytes): %s\n", nesting, msglen, msg->buf);
+		if (eoln) *eoln = '\n';
+	}
+
 	MEMDEFINE(sender);
 
 	/* Most likely, we will not send a response */
 	msg->doingwhat = NOTALK;
-	strcpy(sender, inet_ntoa(msg->addr.sin_addr));
+	strncpy(sender, inet_ntoa(msg->addr.sin_addr), sizeof(sender));
 	now = time(NULL);
 
 	/* Count statistics */
@@ -2251,6 +2348,9 @@ done:
 	}
 
 	MEMUNDEFINE(sender);
+
+	dprintf("<- do_message/%d\n", nesting);
+	nesting--;
 }
 
 
@@ -2266,7 +2366,7 @@ void save_checkpoint(void)
 
 	if (checkpointfn == NULL) return;
 
-	dprintf("Start save_checkpoint\n");
+	dprintf("-> save_checkpoint\n");
 	tempfn = malloc(strlen(checkpointfn) + 20);
 	sprintf(tempfn, "%s.%d", checkpointfn, (int)now);
 	fd = fopen(tempfn, "w");
@@ -2315,7 +2415,7 @@ void save_checkpoint(void)
 	fclose(fd);
 	rename(tempfn, checkpointfn);
 	xfree(tempfn);
-	dprintf("End save_checkpoint\n");
+	dprintf("<- save_checkpoint\n");
 }
 
 
