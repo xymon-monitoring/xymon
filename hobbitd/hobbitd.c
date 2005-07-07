@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.156 2005-07-06 21:05:46 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.157 2005-07-07 08:13:26 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -113,6 +113,7 @@ sender_t *maintsenders = NULL;
 sender_t *statussenders = NULL;
 sender_t *adminsenders = NULL;
 sender_t *wwwsenders = NULL;
+sender_t *tracelist = NULL;
 
 #define NOTALK 0
 #define RECEIVING 1
@@ -1618,13 +1619,11 @@ void do_message(conn_t *msg, char *origin)
 	char *msgfrom;
 
 	nesting++;
-
 	if (debug) {
-		int msglen = strlen(msg->buf);
 		char *eoln = strchr(msg->buf, '\n');
 
 		if (eoln) *eoln = '\0';
-		dprintf("-> do_message/%d (%d bytes): %s\n", nesting, msglen, msg->buf);
+		dprintf("-> do_message/%d (%d bytes): %s\n", nesting, msg->buflen, msg->buf);
 		if (eoln) *eoln = '\n';
 	}
 
@@ -1634,6 +1633,33 @@ void do_message(conn_t *msg, char *origin)
 	msg->doingwhat = NOTALK;
 	strncpy(sender, inet_ntoa(msg->addr.sin_addr), sizeof(sender));
 	now = time(NULL);
+
+	if (tracelist) {
+		int i = 0, found = 0;
+		do {
+			if ((tracelist[i].ipval & tracelist[i].ipmask) == (ntohl(msg->addr.sin_addr.s_addr) & tracelist[i].ipmask)) {
+				found = 1;
+			}
+			i++;
+		} while (!found && (tracelist[i].ipval != 0));
+
+		if (found) {
+			char tracefn[PATH_MAX];
+			struct timeval tv;
+			struct timezone tz;
+			FILE *fd;
+
+			gettimeofday(&tv, &tz);
+
+			sprintf(tracefn, "%s/%s_%d_%06d.trace", xgetenv("BBTMP"), sender, (int) tv.tv_sec, (int) tv.tv_usec);
+			fd = fopen(tracefn, "w");
+			if (fd) {
+				fwrite(msg->buf, msg->buflen, 1, fd);
+				fclose(fd);
+			}
+			goto done;
+		}
+	}
 
 	/* Count statistics */
 	update_statistics(msg->buf);
@@ -2845,6 +2871,10 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--area=")) {
 			char *p = strchr(argv[argi], '=');
 			envarea = strdup(p+1);
+		}
+		else if (argnmatch(argv[argi], "--trace=")) {
+			char *p = strchr(argv[argi], '=');
+			tracelist = getsenderlist(p+1);
 		}
 		else if (argnmatch(argv[argi], "--help")) {
 			printf("Options:\n");
