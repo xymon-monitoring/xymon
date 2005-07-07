@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char la_rcsid[] = "$Id: do_la.c,v 1.16 2005-06-05 09:24:39 henrik Exp $";
+static char la_rcsid[] = "$Id: do_la.c,v 1.17 2005-07-07 11:34:29 henrik Exp $";
 
 int do_la_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -207,7 +207,7 @@ done_parsing:
 			if (p) { found++; pagetotal = atol(strchr(p, ':') + 1); }
 		}
 
-		if (found == 2) {
+		if (found == 3) {
 			p = strstr(msg, "Available PageFile size:"); 
 			if (p) { found++; pageavail = atol(strchr(p, ':') + 1); }
 		}
