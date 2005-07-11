@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.157 2005-07-07 08:13:26 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.158 2005-07-11 16:01:18 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -1126,12 +1126,25 @@ void handle_meta(char *msg, hobbitd_log_t *log)
 void handle_data(char *msg, char *sender, char *origin, char *hostname, char *testname)
 {
 	char *chnbuf;
+	int buflen = 0;
 
 	dprintf("->handle_data\n");
 
-	chnbuf = (char *)malloc(strlen(origin) + strlen(hostname) + strlen(testname) + strlen(msg) + 4);
-	sprintf(chnbuf, "%s|%s|%s\n%s",
-		origin, hostname, testname, msg);
+	if (origin) buflen += strlen(origin); else dprintf("   origin is NULL\n");
+	if (hostname) buflen += strlen(hostname); else dprintf("  hostname is NULL\n");
+	if (testname) buflen += strlen(testname); else dprintf("  testname is NULL\n");
+	if (msg) buflen += strlen(msg); else dprintf("  msg is NULL\n");
+	buflen += 4;
+	dprintf("  data: allocating %d bytes\n", buflen);
+
+	chnbuf = (char *)malloc(buflen);
+	snprintf(chnbuf, buflen, "%s|%s|%s\n%s", 
+		 (origin ? origin : ""), 
+		 (hostname ? hostname : ""), 
+		 (testname ? testname : ""), 
+		 msg);
+	dprintf("  data: buffer is %d bytes long\n", strlen(chnbuf));
+
 	posttochannel(datachn, channelnames[C_DATA], msg, sender, hostname, NULL, chnbuf);
 	xfree(chnbuf);
 	dprintf("<-handle_data\n");
@@ -1677,7 +1690,7 @@ void do_message(conn_t *msg, char *origin)
 			/* Pick out the real sender of this message */
 			msgfrom = strstr(currmsg, "\nStatus message received from ");
 			if (msgfrom) {
-				sscanf(msgfrom, "\nStatus message received from %s\n", sender);
+				sscanf(msgfrom, "\nStatus message received from %16s\n", sender);
 				*msgfrom = '\0';
 			}
 
@@ -1686,7 +1699,11 @@ void do_message(conn_t *msg, char *origin)
 				if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, currmsg)) validsender = 0;
 			}
 
-			if (validsender) {
+			if (color == COL_PURPLE) {
+				errprintf("Ignored PURPLE status update from %s for %s.%s\n",
+					  sender, (h ? h->hostname : "<unknown>"), (t ? t->testname : "unknown"));
+			}
+			else if (validsender) {
 				get_hts(currmsg, sender, origin, &h, &t, &log, &color, 1, 1);
 				if (h && dbgfd && dbghost && (strcasecmp(h->hostname, dbghost) == 0)) {
 					fprintf(dbgfd, "\n---- combo message from %s ----\n%s---- end message ----\n", sender, currmsg);
@@ -1696,7 +1713,7 @@ void do_message(conn_t *msg, char *origin)
 				/* Count individual status-messages also */
 				update_statistics(currmsg);
 
-				if (h && t && log && (color != -1)) {
+				if (h && t && log && (color != -1) && (color != COL_PURPLE)) {
 					handle_status(currmsg, sender, h->hostname, t->testname, log, color);
 				}
 			}
@@ -1723,7 +1740,7 @@ void do_message(conn_t *msg, char *origin)
 	else if (strncmp(msg->buf, "status", 6) == 0) {
 		msgfrom = strstr(msg->buf, "\nStatus message received from ");
 		if (msgfrom) {
-			sscanf(msgfrom, "\nStatus message received from %s\n", sender);
+			sscanf(msgfrom, "\nStatus message received from %16s\n", sender);
 			*msgfrom = '\0';
 		}
 
@@ -1742,37 +1759,62 @@ void do_message(conn_t *msg, char *origin)
 		}
 	}
 	else if (strncmp(msg->buf, "data", 4) == 0) {
-		char tok[MAXMSG];
 		char *hostname = NULL, *testname = NULL;
-		int maybedown;
-		char hostip[20];
-
-		MEMDEFINE(tok); MEMDEFINE(hostip);
+		char *bhost, *ehost, *btest;
+		char savechar;
 
 		msgfrom = strstr(msg->buf, "\nStatus message received from ");
 		if (msgfrom) {
-			sscanf(msgfrom, "\nStatus message received from %s\n", sender);
+			sscanf(msgfrom, "\nStatus message received from %16s\n", sender);
 			*msgfrom = '\0';
 		}
 
-		if (sscanf(msg->buf, "data %s\n", tok) == 1) {
-			if ((testname = strrchr(tok, '.')) != NULL) {
-				char *p;
-				*testname = '\0'; 
-				testname++; 
-				p = tok; while ((p = strchr(p, ',')) != NULL) *p = '.';
-				hostname = knownhost(tok, hostip, ghosthandling, &maybedown);
-				if (hostname == NULL) log_ghost(tok, sender, msg->buf);
-			}
+		bhost = msg->buf + strlen("data"); bhost += strspn(bhost, " \t");
+		ehost = bhost + strcspn(bhost, " \t\r\n");
+		savechar = *ehost; *ehost = '\0';
 
-			if (!oksender(statussenders, hostip, msg->addr.sin_addr, msg->buf)) {
-				MEMUNDEFINE(tok); MEMUNDEFINE(hostip);
-				goto done;
-			}
-			if (hostname && testname) handle_data(msg->buf, sender, origin, hostname, testname);
+		btest = strrchr(bhost, '.');
+		if (btest) {
+			char *p;
+
+			*btest = '\0';
+			hostname = strdup(bhost);
+			p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
+			*btest = '.';
+			testname = strdup(btest+1);
+
+			if (*hostname == '\0') { errprintf("Invalid data message - blank hostname\n"); xfree(hostname); hostname = NULL; }
+			if (*testname == '\0') { errprintf("Invalid data message - blank testname\n"); xfree(testname); testname = NULL; }
+		}
+		else {
+			errprintf("Invalid data message - no testname in '%s'\n", bhost);
 		}
 
-		MEMUNDEFINE(tok); MEMUNDEFINE(hostip);
+		*ehost = savechar;
+
+		if (hostname && testname) {
+			char *hname, hostip[20];
+			int maybedown;
+
+			MEMDEFINE(hostip);
+
+			hname = knownhost(bhost, hostip, ghosthandling, &maybedown);
+
+			if (hname == NULL) {
+				log_ghost(hostname, sender, msg->buf);
+			}
+			else if (!oksender(statussenders, hostip, msg->addr.sin_addr, msg->buf)) {
+				/* Invalid sender */
+				errprintf("Invalid data message - sender %s not allowed for host %s\n", sender, hostname);
+			}
+			else {
+				handle_data(msg->buf, sender, origin, hname, testname);
+			}
+
+			xfree(hostname); xfree(testname);
+
+			MEMUNDEFINE(hostip);
+		}
 	}
 	else if (strncmp(msg->buf, "summary", 7) == 0) {
 		/* Summaries are always allowed. Or should we ? */
@@ -1782,25 +1824,40 @@ void do_message(conn_t *msg, char *origin)
 		}
 	}
 	else if (strncmp(msg->buf, "notes", 5) == 0) {
-		char tok[MAXMSG];
-		char *hostname;
-		int maybedown;
-		char hostip[20];
+		char *hostname, *bhost, *ehost, *p;
+		char savechar;
 
-		MEMDEFINE(tok); MEMDEFINE(hostip);
-		if (sscanf(msg->buf, "notes %s\n", tok) == 1) {
-			char *p;
+		bhost = msg->buf + strlen("notes"); bhost += strspn(bhost, " \t");
+		ehost = bhost + strcspn(bhost, " \t\r\n");
+		savechar = *ehost; *ehost = '\0';
+		hostname = strdup(bhost);
+		*ehost = savechar;
 
-			p = tok; while ((p = strchr(p, ',')) != NULL) *p = '.';
-			hostname = knownhost(tok, hostip, ghosthandling, &maybedown);
+		p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
+		if (*hostname == '\0') { errprintf("Invalid notes message - blank hostname\n"); xfree(hostname); hostname = NULL; }
 
-			if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) {
-				MEMUNDEFINE(tok); MEMUNDEFINE(hostip);
-				goto done;
+		if (hostname) {
+			char *hname, hostip[20];
+			int maybedown;
+
+			MEMDEFINE(hostip);
+
+			hname = knownhost(hostname, hostip, ghosthandling, &maybedown);
+			if (hname == NULL) {
+				log_ghost(hostname, sender, msg->buf);
 			}
-			if (hostname) handle_notes(msg->buf, sender, hostname);
+			else if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) {
+				/* Invalid sender */
+				errprintf("Invalid notes message - sender %s not allowed for host %s\n", sender, hostname);
+			}
+			else {
+				handle_notes(msg->buf, sender, hostname);
+			}
+
+			xfree(hostname);
+
+			MEMUNDEFINE(hostip);
 		}
-		MEMUNDEFINE(tok); MEMUNDEFINE(hostip);
 	}
 	else if (strncmp(msg->buf, "enable", 6) == 0) {
 		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
