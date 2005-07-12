@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.161 2005-07-12 09:24:35 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.162 2005-07-12 10:47:22 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -1161,40 +1161,35 @@ void handle_notes(char *msg, char *sender, char *hostname)
 
 void handle_enadis(int enabled, char *msg, char *sender)
 {
-	char firstline[MAXMSG];
-	char hosttest[200];
-	char hostip[20];
-	char *tname = NULL;
-	char durstr[100];
+	char *firstline = NULL, hosttest = NULL, durstr = NULL;
+	char *hname = NULL, *tname = NULL;
 	int duration = 0;
-	int assignments;
 	int alltests = 0;
 	RbtIterator hosthandle;
 	hobbitd_hostlist_t *hwalk = NULL;
 	hobbitd_testlist_t *twalk = NULL;
 	hobbitd_log_t *log;
 	char *p;
+	char hostip[20];
 	int maybedown;
 
 	dprintf("->handle_enadis\n");
 
-	MEMDEFINE(firstline);
-	MEMDEFINE(hosttest);
 	MEMDEFINE(hostip);
-	MEMDEFINE(durstr);
 
-	p = strchr(msg, '\n'); 
-	if (p == NULL) {
-		strncpy(firstline, msg, sizeof(firstline)-1);
+	p = strchr(msg, '\n'); if (p) *p = '\0';
+	firstline = strdup(msg);
+	if (p) *p = '\n';
+
+	p = strtok(firstline, " \t");
+	if (p) hosttest = strtok(NULL, " \t");
+	if (hosttest) durstr = strtok(NULL, " \t");
+	if (!hosttest || !durstr) {
+		errprintf("Invalid enable/disable from %s - host/test='%s', duration='%s'\n",
+			  sender, textornull(hosttest), textornull(durstr));
+		goto done;
 	}
-	else {
-		*p = '\0';
-		strncpy(firstline, msg, sizeof(firstline)-1);
-		*p = '\n';
-	}
-	*(firstline + sizeof(firstline) - 1) = '\0';
-	assignments = sscanf(firstline, "%*s %199s %99s", hosttest, durstr);
-	if (assignments < 1) goto done;
+
 	duration = durationvalue(durstr);
 	p = hosttest + strlen(hosttest) - 1;
 	if (*p == '*') {
@@ -1212,13 +1207,10 @@ void handle_enadis(int enabled, char *msg, char *sender)
 		tname = (p+1);
 	}
 	p = hosttest; while ((p = strchr(p, ',')) != NULL) *p = '.';
+	hname = knownhost(hosttest, hostip, ghosthandling, &maybedown);
+	if (hname == NULL) goto done;
 
-
-	p = knownhost(hosttest, hostip, ghosthandling, &maybedown);
-	if (p == NULL) goto done;
-	strcpy(hosttest, p);
-
-	hosthandle = rbtFind(rbhosts, hosttest);
+	hosthandle = rbtFind(rbhosts, hname);
 	if (hosthandle == rbtEnd(rbhosts)) {
 		/* Unknown host */
 		goto done;
@@ -1265,8 +1257,6 @@ void handle_enadis(int enabled, char *msg, char *sender)
 		time_t expires = time(NULL) + duration*60;
 		char *dismsg;
 
-		p = hosttest; while ((p = strchr(p, '.')) != NULL) *p = ',';
-
 		dismsg = msg;
 		while (*dismsg && !isspace((int)*dismsg)) dismsg++;       /* Skip "disable".... */
 		while (*dismsg && isspace((int)*dismsg)) dismsg++;        /* and the space ... */
@@ -1303,10 +1293,8 @@ void handle_enadis(int enabled, char *msg, char *sender)
 	}
 
 done:
-	MEMUNDEFINE(firstline);
-	MEMUNDEFINE(hosttest);
 	MEMUNDEFINE(hostip);
-	MEMUNDEFINE(durstr);
+	xfree(firstline);
 
 	dprintf("<-handle_enadis\n");
 
@@ -1382,53 +1370,58 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	hobbitd_hostlist_t *hwalk;
 	hobbitd_testlist_t *twalk, *newt;
 	hobbitd_log_t *lwalk;
-	char msgbuf[MAXMSG];
 	char *marker = NULL;
 	char *canonhostname;
 
 	dprintf("-> handle_dropnrename\n");
 	MEMDEFINE(hostip);
-	MEMDEFINE(msgbuf);
 
-	/*
-	 * We pass drop- and rename-messages to the workers, whether 
-	 * we know about this host or not. It could be that the drop command
-	 * arrived after we had already re-loaded the bb-hosts file, and 
-	 * so the host is no longer known by us - but there is still some
-	 * data stored about it that needs to be cleaned up.
-	 */
-	msgbuf[0] = '\0';
-	switch (cmd) {
-	  case CMD_DROPTEST:
-		marker = "droptest";
-		sprintf(msgbuf, "%s|%s", hostname, n1);
-		break;
-	  case CMD_DROPHOST:
-		marker = "drophost";
-		sprintf(msgbuf, "%s", hostname);
-		break;
-	  case CMD_RENAMEHOST:
-		marker = "renamehost";
-		sprintf(msgbuf, "%s|%s", hostname, n1);
-		break;
-	  case CMD_RENAMETEST:
-		marker = "renametest";
-		sprintf(msgbuf, "%s|%s|%s", hostname, n1, n2);
-		break;
-	  case CMD_DROPSTATE:
-		marker = "dropstate";
-		sprintf(msgbuf, "%s", hostname);
-		break;
-	}
+	{
+		/*
+		 * We pass drop- and rename-messages to the workers, whether 
+		 * we know about this host or not. It could be that the drop command
+		 * arrived after we had already re-loaded the bb-hosts file, and 
+		 * so the host is no longer known by us - but there is still some
+		 * data stored about it that needs to be cleaned up.
+		 */
 
-	if (strlen(msgbuf)) {
-		/* Tell the workers */
-		posttochannel(statuschn, marker, NULL, sender, NULL, NULL, msgbuf);
-		posttochannel(stachgchn, marker, NULL, sender, NULL, NULL, msgbuf);
-		posttochannel(pagechn, marker, NULL, sender, NULL, NULL, msgbuf);
-		posttochannel(datachn, marker, NULL, sender, NULL, NULL, msgbuf);
-		posttochannel(noteschn, marker, NULL, sender, NULL, NULL, msgbuf);
-		posttochannel(enadischn, marker, NULL, sender, NULL, NULL, msgbuf);
+		char *msgbuf = (char *)malloc(20 + strlen(hostname) + (n1 ? strlen(n1) : 0) + (n2 ? strlen(n2) : 0));
+
+		*msgbuf = '\0';
+		switch (cmd) {
+		  case CMD_DROPTEST:
+			marker = "droptest";
+			sprintf(msgbuf, "%s|%s", hostname, n1);
+			break;
+		  case CMD_DROPHOST:
+			marker = "drophost";
+			sprintf(msgbuf, "%s", hostname);
+			break;
+		  case CMD_RENAMEHOST:
+			marker = "renamehost";
+			sprintf(msgbuf, "%s|%s", hostname, n1);
+			break;
+		  case CMD_RENAMETEST:
+			marker = "renametest";
+			sprintf(msgbuf, "%s|%s|%s", hostname, n1, n2);
+			break;
+		  case CMD_DROPSTATE:
+			marker = "dropstate";
+			sprintf(msgbuf, "%s", hostname);
+			break;
+		}
+
+		if (strlen(msgbuf)) {
+			/* Tell the workers */
+			posttochannel(statuschn, marker, NULL, sender, NULL, NULL, msgbuf);
+			posttochannel(stachgchn, marker, NULL, sender, NULL, NULL, msgbuf);
+			posttochannel(pagechn, marker, NULL, sender, NULL, NULL, msgbuf);
+			posttochannel(datachn, marker, NULL, sender, NULL, NULL, msgbuf);
+			posttochannel(noteschn, marker, NULL, sender, NULL, NULL, msgbuf);
+			posttochannel(enadischn, marker, NULL, sender, NULL, NULL, msgbuf);
+		}
+
+		xfree(msgbuf);
 	}
 
 
@@ -1515,7 +1508,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 
 done:
 	MEMUNDEFINE(hostip);
-	MEMUNDEFINE(msgbuf);
+
 	dprintf("<- handle_dropnrename\n");
 
 	return;
@@ -1880,19 +1873,16 @@ void do_message(conn_t *msg, char *origin)
 		handle_enadis(0, msg->buf, sender);
 	}
 	else if (strncmp(msg->buf, "config", 6) == 0) {
-		char conffn[1024];
+		char *conffn, *p;
 
 		if (!oksender(statussenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
-		MEMDEFINE(conffn);
-
-		if ( (sscanf(msg->buf, "config %1023s", conffn) == 1) &&
-		     (strstr("../", conffn) == NULL) && (get_config(conffn, msg) == 0) ) {
+		p = msg->buf + 6; p += strspn(p, " \t");
+		conffn = strtok(p, " \t\r\n");
+		if (conffn && (strstr("../", conffn) == NULL) && (get_config(conffn, msg) == 0) ) {
 			msg->doingwhat = RESPONDING;
 			msg->bufp = msg->buf;
 		}
-
-		MEMUNDEFINE(conffn);
 	}
 	else if (strncmp(msg->buf, "query ", 6) == 0) {
 		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, 0, 0);
@@ -2312,44 +2302,41 @@ void do_message(conn_t *msg, char *origin)
 		MEMUNDEFINE(durstr);
 	}
 	else if (strncmp(msg->buf, "drop ", 5) == 0) {
-		char hostname[200];
-		char testname[200];
-		int n;
+		char *hostname = NULL, *testname = NULL;
+		char *p;
 
 		if (!oksender(adminsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
-		MEMDEFINE(hostname); MEMDEFINE(testname);
+		p = msg->buf + 4; p += strspn(p, " \t");
+		hostname = strtok(p, " \t"); if (hostname) n++;
+		if (hostname) testname = strtok(NULL, " \t");
 
-		n = sscanf(msg->buf, "drop %199s %199s", hostname, testname);
-		if (n == 1) {
+		if (hostname && !testname)
 			handle_dropnrename(CMD_DROPHOST, sender, hostname, NULL, NULL);
 		}
-		else if (n == 2) {
+		else if (hostname && testname) {
 			handle_dropnrename(CMD_DROPTEST, sender, hostname, testname, NULL);
 		}
-
-		MEMUNDEFINE(hostname); MEMUNDEFINE(testname);
 	}
 	else if (strncmp(msg->buf, "rename ", 7) == 0) {
-		char hostname[200];
-		char n1[200], n2[200];
-		int n;
+		char *hostname = NULL, *n1 = NULL, *n2 = NULL;
+		char *p;
 
 		if (!oksender(adminsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
-		MEMDEFINE(hostname); MEMDEFINE(n1); MEMDEFINE(n2);
+		p = msg->buf + 6; p += strspn(p, " \t");
+		hostname = strtok(p, " \t"); if (hostname) n++;
+		if (hostname) n1 = strtok(NULL, " \t");
+		if (n1) n2 = strtok(NULL, " \t");
 
-		n = sscanf(msg->buf, "rename %199s %199s %199s", hostname, n1, n2);
-		if (n == 2) {
+		if (hostname && n1 && !n2) {
 			/* Host rename */
 			handle_dropnrename(CMD_RENAMEHOST, sender, hostname, n1, NULL);
 		}
-		else if (n == 3) {
+		else if (hostname && n1 && n2) {
 			/* Test rename */
 			handle_dropnrename(CMD_RENAMETEST, sender, hostname, n1, n2);
 		}
-
-		MEMUNDEFINE(hostname); MEMUNDEFINE(n1); MEMUNDEFINE(n2);
 	}
 	else if (strncmp(msg->buf, "dummy", 5) == 0) {
 		/* Do nothing */
