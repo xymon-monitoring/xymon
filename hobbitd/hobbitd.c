@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.160 2005-07-12 06:46:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.161 2005-07-12 09:24:35 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -880,7 +880,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	}
 
 	msglen = strlen(msg);
-	if (strlen(msg) == 0) {
+	if (msglen == 0) {
 		errprintf("Bogus status message contains no data: Sent from %s\n", sender);
 		return;
 	}
@@ -1139,7 +1139,6 @@ void handle_data(char *msg, char *sender, char *origin, char *hostname, char *te
 	if (testname) buflen += strlen(testname); else dprintf("  testname is NULL\n");
 	if (msg) buflen += strlen(msg); else dprintf("  msg is NULL\n");
 	buflen += 4;
-	dprintf("  data: allocating %d bytes\n", buflen);
 
 	chnbuf = (char *)malloc(buflen);
 	snprintf(chnbuf, buflen, "%s|%s|%s\n%s", 
@@ -1147,7 +1146,6 @@ void handle_data(char *msg, char *sender, char *origin, char *hostname, char *te
 		 (hostname ? hostname : ""), 
 		 (testname ? testname : ""), 
 		 msg);
-	dprintf("  data: buffer is %d bytes long\n", strlen(chnbuf));
 
 	posttochannel(datachn, channelnames[C_DATA], msg, sender, hostname, NULL, chnbuf);
 	xfree(chnbuf);
