@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.212 2005-07-05 13:38:49 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.213 2005-07-12 19:52:57 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -142,14 +142,6 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[i], "--nk-reds-only")) {
 			nkonlyreds = 1;
-		}
-		else if (argnmatch(argv[i], "--nk-new=")) {
-			char *lp = strchr(argv[i], '=');
-			nknewtime = atoi(lp+1);
-		}
-		else if (argnmatch(argv[i], "--nk-view=")) {
-			char *lp = strchr(argv[i], '=');
-			nkviewtime = atoi(lp+1);
 		}
 		else if (argnmatch(argv[i], "--bb2-ignorecolumns=")) {
 			char *lp = strchr(argv[i], '=');

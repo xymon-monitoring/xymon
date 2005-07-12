@@ -39,9 +39,6 @@ extern int  nkonlyreds;
 extern char *nkackname;
 extern int  wantrss;
 
-extern int nknewtime;
-extern int nkviewtime;
-
 extern void select_headers_and_footers(char *prefix);
 extern void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded);
 extern void do_page_with_subs(bbgen_page_t *curpage, dispsummary_t *sums);

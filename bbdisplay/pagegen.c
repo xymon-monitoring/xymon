@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.147 2005-06-27 07:19:36 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.148 2005-07-12 19:52:57 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -57,10 +57,6 @@ char *lognkstatus = NULL;
 int  nkonlyreds = 0;
 char *nkackname = "NK";
 int  wantrss = 0;
-
-/* These are in minutes */
-int nknewtime = 10;	/* How long an alert stays at the top of the NK page */
-int nkviewtime = 60;	/* How long an alert stays on the NK page at all */
 
 /* Format strings for htaccess files */
 char *htaccess = NULL;
@@ -148,7 +144,7 @@ int interesting_column(int pagetype, int color, int alert, bbgen_col_t *column, 
 	return 0;
 }
 
-col_list_t *gen_column_list(host_t *hostlist, int pagetype, int mintime, int maxtime, char *onlycols)
+col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 {
 	/*
 	 * Build a list of all the columns that are in use by
@@ -221,9 +217,6 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, int mintime, int max
 		 */
 
 		for (e = h->entries; (e); e = e->next) {
-			if ((mintime != -1) && (e->fileage != -1) && (e->fileage < mintime)) continue;
-			if ((maxtime != -1) && (e->fileage != -1) && (e->fileage > maxtime)) continue;
-
 			if (interesting_column(pagetype, e->color, e->alert, e->column, onlycols)) {
 				/* See where e->column should go in list */
 				collist_walk = head; 
@@ -319,7 +312,7 @@ static char *nameandcomment(host_t *host)
 	return result;
 }
 
-int do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char *grouptitle, int pagetype, int mintime, int maxtime, char *pagepath)
+void do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char *grouptitle, int pagetype, char *pagepath)
 {
 	/*
 	 * This routine outputs the host part of a page or a group.
@@ -337,10 +330,9 @@ int do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char *
 	int	anyplainhosts = 0;
 	int	rowcount = 0;
 	char	*hostlinkurl;
-	int	result = 0;
 
 	if (head == NULL)
-		return 0;
+		return;
 
 	bbskin = strdup(xgetenv("BBSKIN"));
 
@@ -357,24 +349,9 @@ int do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char *
 	}
 
 	if (maxbanksize == 0) {
-		int realcolumncount = 0;
-
 		/* No modembanks - normal hostlist with columns and stuff */
-		groupcols = gen_column_list(head, pagetype, mintime, maxtime, onlycols);
-		for (columncount=0, gc=groupcols; (gc); gc = gc->next, columncount++) {
-			if (strcmp(gc->column->name, xgetenv("INFOCOLUMN")) && strcmp(gc->column->name, xgetenv("TRENDSCOLUMN"))) realcolumncount++;
-		}
-
-		/* For NK style pages, drop the host if only the INFO and TRENDSCOLUMN show up */
-		if ((pagetype == PAGE_NK) && (realcolumncount == 0)) {
-			while (groupcols) {
-				gc = groupcols;
-				groupcols = groupcols->next;
-				xfree(gc);
-			}
-			groupcols = NULL;
-			columncount = 0;
-		}
+		groupcols = gen_column_list(head, pagetype, onlycols);
+		for (columncount=0, gc=groupcols; (gc); gc = gc->next, columncount++) ;
 	}
 	else {
 		/* There are modembanks here! */
@@ -398,8 +375,6 @@ int do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char *
 
 		/* Generate the host rows */
 		for (h = head; (h); h = h->next) {
-			result++;
-
 			/* If there is a host pretitle, show it. */
 			dprintf("Host:%s, pretitle:%s\n", h->hostname, textornull(h->pretitle));
 
@@ -651,8 +626,6 @@ int do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char *
 	}
 
 	xfree(bbskin);
-
-	return result;
 }
 
 void do_groups(group_t *head, FILE *output, FILE *rssoutput, char *pagepath)
@@ -678,7 +651,7 @@ void do_groups(group_t *head, FILE *output, FILE *rssoutput, char *pagepath)
 			fprintf(output, "</TABLE></CENTER>\n");
 		}
 
-		do_hosts(g->hosts, g->onlycols, output, rssoutput, g->title, PAGE_BB, -1, -1, pagepath);
+		do_hosts(g->hosts, g->onlycols, output, rssoutput, g->title, PAGE_BB, pagepath);
 	}
 	fprintf(output, "\n</CENTER>\n");
 }
@@ -768,7 +741,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 	fprintf(output, "<CENTER>\n");
 	fprintf(output, "<TABLE SUMMARY=\"Summary Block\" BORDER=0>\n");
 	fprintf(output, "<TR><TD>\n");
-	do_hosts(sumhosts, NULL, output, NULL, xgetenv("MKBBREMOTE"), 0, -1, -1, NULL);
+	do_hosts(sumhosts, NULL, output, NULL, xgetenv("MKBBREMOTE"), 0, NULL);
 	fprintf(output, "</TD></TR>\n");
 	fprintf(output, "</TABLE>\n");
 	fprintf(output, "</CENTER>\n");
@@ -985,7 +958,7 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 	}
 
 	if (!embedded && !hostsbeforepages && page->subpages) do_page_subpages(output, page->subpages, pagepath);
-	do_hosts(page->hosts, NULL, output, rssoutput, "", PAGE_BB, -1, -1, pagepath);
+	do_hosts(page->hosts, NULL, output, rssoutput, "", PAGE_BB, pagepath);
 	do_groups(page->groups, output, rssoutput, pagepath);
 	if (!embedded && hostsbeforepages && page->subpages) do_page_subpages(output, page->subpages, pagepath);
 
@@ -1120,7 +1093,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 		  case PAGE_NK:
 			/* The NK page */
 			for (useit=0, e=h->hostentry->entries; (e && !useit); e=e->next) {
-				if (e->alert && !e->acked && ((e->fileage == -1) || (e->fileage < (nkviewtime*60))) ) {
+				if (e->alert && !e->acked) {
 					if (e->color == COL_RED) {
 						useit = 1;
 					}
@@ -1220,27 +1193,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 	fprintf(output, "\n<A NAME=begindata>&nbsp;</A> \n<A NAME=\"hosts-blk\">&nbsp;</A>\n");
 
 	if (bb2page.hosts) {
-		if (summarytype == PAGE_BB2) {
-			do_hosts(bb2page.hosts, NULL, output, rssoutput, "", summarytype, -1, -1, NULL);
-		}
-		else {
-			if (nknewtime == -1) 
-				do_hosts(bb2page.hosts, NULL, output, rssoutput, "", summarytype, -1, -1, NULL);
-			else {
-				int lowlim, uplim;
-
-				lowlim = nknewtime*60;
-				uplim = ((nkviewtime == -1) ? -1 : nkviewtime*60);
-				if (do_hosts(bb2page.hosts, NULL, output, rssoutput, "", summarytype, 0, lowlim, NULL) == 0) {
-					fprintf(output, "<FONT SIZE=+1 FACE=\"Arial, Helvetica\"><BR><I>No new alerts last %d minutes</I></FONT><BR>\n", nknewtime);
-				}
-
-				fprintf(output, "<br><hr width=\"85%%\"><br>\n");
-				if (do_hosts(bb2page.hosts, NULL, output, rssoutput, "", summarytype, lowlim+1, uplim, NULL) == 0) {
-					fprintf(output, "<FONT SIZE=+1 FACE=\"Arial, Helvetica\"><BR><I>No alerts older than %d minutes</I></FONT><BR>\n", nkviewtime);
-				}
-			}
-		}
+		do_hosts(bb2page.hosts, NULL, output, rssoutput, "", summarytype, NULL);
 	}
 	else {
 		/* "All Monitored Systems OK */
