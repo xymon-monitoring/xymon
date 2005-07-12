@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: digest.c,v 1.9 2005-03-22 09:16:49 henrik Exp $";
+static char rcsid[] = "$Id: digest.c,v 1.10 2005-07-12 06:47:55 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -84,7 +84,8 @@ int digest_data(digestctx_t *ctx, char *buf, int buflen)
 char *digest_done(digestctx_t *ctx)
 {
 	char *result = NULL;
-	int i, md_len = 0;
+	int i;
+	unsigned int md_len = 0;
 	char *p;
 
 #ifdef BBGEN_SSL
