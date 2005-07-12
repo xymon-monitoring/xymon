@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.159 2005-07-12 06:39:27 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.160 2005-07-12 06:46:58 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -115,6 +115,7 @@ sender_t *adminsenders = NULL;
 sender_t *wwwsenders = NULL;
 sender_t *tracelist = NULL;
 int      traceall = 0;
+int      ignoretraced = 0;
 
 #define NOTALK 0
 #define RECEIVING 1
@@ -1682,6 +1683,8 @@ void do_message(conn_t *msg, char *origin)
 				fwrite(msg->buf, msg->buflen, 1, fd);
 				fclose(fd);
 			}
+
+			if (ignoretraced) goto done;
 		}
 	}
 
@@ -2952,6 +2955,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--trace-all") == 0) {
 			traceall = 1;
+		}
+		else if (strcmp(argv[argi], "--ignore-traced") == 0) {
+			ignoretraced = 1;
 		}
 		else if (argnmatch(argv[argi], "--help")) {
 			printf("Options:\n");
