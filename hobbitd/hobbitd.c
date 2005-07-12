@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.163 2005-07-12 21:40:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.164 2005-07-12 22:09:50 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -1807,7 +1807,7 @@ void do_message(conn_t *msg, char *origin)
 
 			MEMDEFINE(hostip);
 
-			hname = knownhost(bhost, hostip, ghosthandling, &maybedown);
+			hname = knownhost(hostname, hostip, ghosthandling, &maybedown);
 
 			if (hname == NULL) {
 				log_ghost(hostname, sender, msg->buf);
@@ -2067,7 +2067,6 @@ void do_message(conn_t *msg, char *origin)
 
 		for (hosthandle = rbtBegin(rbhosts); (hosthandle != rbtEnd(rbhosts)); hosthandle = rbtNext(rbhosts, hosthandle)) {
 			char *hkey;
-			namelist_t *hinfo;
 
 			rbtKeyValue(rbhosts, hosthandle, (void **)&hkey, (void **)&hwalk);
 			if (!hwalk) {
@@ -2075,28 +2074,31 @@ void do_message(conn_t *msg, char *origin)
 				continue;
 			}
 
-			hinfo = hostinfo(hwalk->hostname);
-			if (!hinfo) {
-				errprintf("Hostname %s in tree, but no host-info\n", hwalk->hostname);
-				continue;
-			}
-
 			/* Hostname filter */
 			if (shost && (strcmp(hwalk->hostname, shost) != 0)) continue;
 
-			/* Host pagename filter */
-			if (spage && (strncmp(hinfo->page->pagepath, spage, strlen(spage)) != 0)) continue;
-
-			/* Handle NOINFO and NOTRENDS here */
 			firstlog = hwalk->logs;
 
-			if (!bbh_item(hinfo, BBH_FLAG_NOINFO)) {
-				infologrec.next = firstlog;
-				firstlog = &infologrec;
-			}
-			if (!bbh_item(hinfo, BBH_FLAG_NOTRENDS)) {
-				rrdlogrec.next = firstlog;
-				firstlog = &rrdlogrec;
+			if ((strcmp(hwalk->hostname, "summary") != 0) && (strcmp(hwalk->hostname, "dialup") != 0)) {
+				namelist_t *hinfo = hostinfo(hwalk->hostname);
+
+				if (!hinfo) {
+					errprintf("Hostname '%s' in tree, but no host-info\n", hwalk->hostname);
+					continue;
+				}
+
+				/* Host pagename filter */
+				if (spage && (strncmp(hinfo->page->pagepath, spage, strlen(spage)) != 0)) continue;
+
+				/* Handle NOINFO and NOTRENDS here */
+				if (!bbh_item(hinfo, BBH_FLAG_NOINFO)) {
+					infologrec.next = firstlog;
+					firstlog = &infologrec;
+				}
+				if (!bbh_item(hinfo, BBH_FLAG_NOTRENDS)) {
+					rrdlogrec.next = firstlog;
+					firstlog = &rrdlogrec;
+				}
 			}
 
 			for (lwalk = firstlog; (lwalk); lwalk = lwalk->next) {
