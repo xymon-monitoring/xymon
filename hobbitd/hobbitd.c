@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.158 2005-07-11 16:01:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.159 2005-07-12 06:39:27 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -114,6 +114,7 @@ sender_t *statussenders = NULL;
 sender_t *adminsenders = NULL;
 sender_t *wwwsenders = NULL;
 sender_t *tracelist = NULL;
+int      traceall = 0;
 
 #define NOTALK 0
 #define RECEIVING 1
@@ -165,6 +166,7 @@ FILE *dbgfd = NULL;
 char *dbghost = NULL;
 time_t boottime;
 pid_t parentpid = 0;
+int  hostcount = 0;
 
 typedef struct hobbitd_statistics_t {
 	char *cmd;
@@ -765,6 +767,7 @@ void get_hts(char *msg, char *sender, char *origin,
 		if (rbtInsert(rbhosts, hwalk->hostname, hwalk)) {
 			errprintf("Insert into rbhosts failed\n");
 		}
+		hostcount++;
 	}
 
 	if (testname && *testname) {
@@ -1467,6 +1470,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	  case CMD_DROPSTATE:
 		/* Unlink the hostlist entry */
 		rbtErase(rbhosts, hosthandle);
+		hostcount--;
 
 		/* Loop through the host logs and free them */
 		lwalk = hwalk->logs;
@@ -1647,14 +1651,21 @@ void do_message(conn_t *msg, char *origin)
 	strncpy(sender, inet_ntoa(msg->addr.sin_addr), sizeof(sender));
 	now = time(NULL);
 
-	if (tracelist) {
-		int i = 0, found = 0;
-		do {
-			if ((tracelist[i].ipval & tracelist[i].ipmask) == (ntohl(msg->addr.sin_addr.s_addr) & tracelist[i].ipmask)) {
-				found = 1;
-			}
-			i++;
-		} while (!found && (tracelist[i].ipval != 0));
+	if (traceall || tracelist) {
+		int found = 0;
+
+		if (traceall) {
+			found = 1;
+		}
+		else {
+			int i = 0;
+			do {
+				if ((tracelist[i].ipval & tracelist[i].ipmask) == (ntohl(msg->addr.sin_addr.s_addr) & tracelist[i].ipmask)) {
+					found = 1;
+				}
+				i++;
+			} while (!found && (tracelist[i].ipval != 0));
+		}
 
 		if (found) {
 			char tracefn[PATH_MAX];
@@ -1664,13 +1675,13 @@ void do_message(conn_t *msg, char *origin)
 
 			gettimeofday(&tv, &tz);
 
-			sprintf(tracefn, "%s/%s_%d_%06d.trace", xgetenv("BBTMP"), sender, (int) tv.tv_sec, (int) tv.tv_usec);
+			sprintf(tracefn, "%s/%d_%06d_%s.trace", xgetenv("BBTMP"), 
+				(int) tv.tv_sec, (int) tv.tv_usec, sender);
 			fd = fopen(tracefn, "w");
 			if (fd) {
 				fwrite(msg->buf, msg->buflen, 1, fd);
 				fclose(fd);
 			}
-			goto done;
 		}
 	}
 
@@ -2035,12 +2046,11 @@ void do_message(conn_t *msg, char *origin)
 		int bufsz;
 		char *spage = NULL, *shost = NULL, *stest = NULL, *fields = NULL;
 		int scolor = -1;
-		namelist_t *hi = NULL;
 
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		setup_filter(msg->buf, &spage, &shost, &stest, &scolor, &fields);
-		bufsz = 16384;
+		bufsz = hostcount*8*1024; /* A guesstimate - 8 tests per hosts, each of 1KB (only 1st line of msg) */
 		bufp = buf = (char *)malloc(bufsz);
 
 		/* Setup fake log-records for the "info" and "trends" data. */
@@ -2065,18 +2075,24 @@ void do_message(conn_t *msg, char *origin)
 			namelist_t *hinfo;
 
 			rbtKeyValue(rbhosts, hosthandle, (void **)&hkey, (void **)&hwalk);
+			if (!hwalk) {
+				errprintf("host-tree has a record with no data\n");
+				continue;
+			}
 
-			/* Host pagename filter */
-			if (spage) {
-				hi = hostinfo(hwalk->hostname);
-				if (hi && (strncmp(hi->page->pagepath, spage, strlen(spage)) != 0)) continue;
+			hinfo = hostinfo(hwalk->hostname);
+			if (!hinfo) {
+				errprintf("Hostname %s in tree, but no host-info\n", hwalk->hostname);
+				continue;
 			}
 
 			/* Hostname filter */
 			if (shost && (strcmp(hwalk->hostname, shost) != 0)) continue;
 
+			/* Host pagename filter */
+			if (spage && (strncmp(hinfo->page->pagepath, spage, strlen(spage)) != 0)) continue;
+
 			/* Handle NOINFO and NOTRENDS here */
-			hinfo = hostinfo(hwalk->hostname);
 			firstlog = hwalk->logs;
 
 			if (!bbh_item(hinfo, BBH_FLAG_NOINFO)) {
@@ -2105,19 +2121,19 @@ void do_message(conn_t *msg, char *origin)
 
 				for (f_idx = 0; (boardfields[f_idx] != F_NONE); f_idx++) {
 					int needed = 1024;
+					int used = (bufp - buf);
 
 					switch (boardfields[f_idx]) {
-					  case F_ACKMSG: if (lwalk->ackmsg) needed = 2*strlen(lwalk->ackmsg); break;
-					  case F_DISMSG: if (lwalk->dismsg) needed = 2*strlen(lwalk->dismsg); break;
-					  case F_MSG: needed = 2*strlen(lwalk->message); break;
+					  case F_ACKMSG: if (lwalk->ackmsg) needed += 2*strlen(lwalk->ackmsg); break;
+					  case F_DISMSG: if (lwalk->dismsg) needed += 2*strlen(lwalk->dismsg); break;
+					  case F_MSG: needed += 2*strlen(lwalk->message); break;
 					  default: break;
 					}
 
-					if ((bufsz - (bufp - buf)) < needed) {
-						int buflen = (bufp - buf);
+					if ((bufsz - used) < needed) {
 						bufsz += 4096 + needed;
 						buf = (char *)realloc(buf, bufsz);
-						bufp = buf + buflen;
+						bufp = buf + used;
 					}
 
 					if (f_idx > 0) bufp += sprintf(bufp, "|");
@@ -2175,7 +2191,7 @@ void do_message(conn_t *msg, char *origin)
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		setup_filter(msg->buf, &spage, &shost, &stest, &scolor, &fields);
-		bufsz = 16384;
+		bufsz = hostcount*8*2048; /* A guesstimate - 8 tests per hosts, each of 2KB (only 1st line of msg) */
 		bufp = buf = (char *)malloc(bufsz);
 
 		bufp += sprintf(bufp, "<?xml version='1.0' encoding='ISO-8859-1'?>\n");
@@ -2188,7 +2204,7 @@ void do_message(conn_t *msg, char *origin)
 
 			/* Host pagename filter */
 			if (spage) {
-				hi = hostinfo(hwalk->hostname);
+				namelist_t *hi = hostinfo(hwalk->hostname);
 				if (hi && (strncmp(hi->page->pagepath, spage, strlen(spage)) != 0)) continue;
 			}
 
@@ -2613,6 +2629,7 @@ void load_checkpoint(char *fn)
 			strcpy(hitem->ip, hostip);
 			hitem->logs = NULL;
 			rbtInsert(rbhosts, hitem->hostname, hitem);
+			hostcount++;
 		}
 		else {
 			char *key;
@@ -2933,6 +2950,9 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			tracelist = getsenderlist(p+1);
 		}
+		else if (strcmp(argv[argi], "--trace-all") == 0) {
+			traceall = 1;
+		}
 		else if (argnmatch(argv[argi], "--help")) {
 			printf("Options:\n");
 			printf("\t--listen=IP:PORT              : The address the daemon listens on\n");
@@ -3074,6 +3094,8 @@ int main(int argc, char *argv[])
 	if (enadischn == NULL) { errprintf("Cannot setup enadis channel\n"); return 1; }
 
 	errprintf("Setting up logfiles\n");
+	setvbuf(stdout, NULL, _IONBF, 0);
+	setvbuf(stderr, NULL, _IONBF, 0);
 	freopen("/dev/null", "r", stdin);
 	if (logfn) {
 		freopen(logfn, "a", stdout);
