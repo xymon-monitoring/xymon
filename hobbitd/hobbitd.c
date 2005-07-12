@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.162 2005-07-12 10:47:22 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.163 2005-07-12 21:40:44 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -1161,7 +1161,7 @@ void handle_notes(char *msg, char *sender, char *hostname)
 
 void handle_enadis(int enabled, char *msg, char *sender)
 {
-	char *firstline = NULL, hosttest = NULL, durstr = NULL;
+	char *firstline = NULL, *hosttest = NULL, *durstr = NULL, *txtstart = NULL;
 	char *hname = NULL, *tname = NULL;
 	int duration = 0;
 	int alltests = 0;
@@ -1184,13 +1184,24 @@ void handle_enadis(int enabled, char *msg, char *sender)
 	p = strtok(firstline, " \t");
 	if (p) hosttest = strtok(NULL, " \t");
 	if (hosttest) durstr = strtok(NULL, " \t");
-	if (!hosttest || !durstr) {
-		errprintf("Invalid enable/disable from %s - host/test='%s', duration='%s'\n",
-			  sender, textornull(hosttest), textornull(durstr));
+	if (!hosttest) {
+		errprintf("Invalid enable/disable from %s - no host/test specified\n", sender);
 		goto done;
 	}
 
-	duration = durationvalue(durstr);
+	if (!enabled) {
+		if (durstr) {
+			duration = durationvalue(durstr);
+			txtstart = msg + (durstr + strlen(durstr) - firstline);
+			txtstart += strspn(txtstart, " \t\r\n");
+			if (*txtstart == '\0') txtstart = "(No reason given)";
+		}
+		else {
+			errprintf("Invalid disable from %s - no duration specified\n", sender);
+			goto done;
+		}
+	}
+
 	p = hosttest + strlen(hosttest) - 1;
 	if (*p == '*') {
 		/* It ends with a '*' so assume this is for all tests */
@@ -1255,20 +1266,13 @@ void handle_enadis(int enabled, char *msg, char *sender)
 	else {
 		/* disable code goes here */
 		time_t expires = time(NULL) + duration*60;
-		char *dismsg;
-
-		dismsg = msg;
-		while (*dismsg && !isspace((int)*dismsg)) dismsg++;       /* Skip "disable".... */
-		while (*dismsg && isspace((int)*dismsg)) dismsg++;        /* and the space ... */
-		while (*dismsg && !isspace((int)*dismsg)) dismsg++;       /* and the host.test ... */
-		while (*dismsg && isspace((int)*dismsg)) dismsg++;        /* and the space ... */
 
 		if (alltests) {
 			for (log = hwalk->logs; (log); log = log->next) {
 				log->enabletime = log->validtime = expires;
-				if (dismsg) {
+				if (txtstart) {
 					if (log->dismsg) xfree(log->dismsg);
-					log->dismsg = strdup(dismsg);
+					log->dismsg = strdup(txtstart);
 				}
 				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, log, NULL);
 				/* Trigger an immediate status update */
@@ -1279,9 +1283,9 @@ void handle_enadis(int enabled, char *msg, char *sender)
 			for (log = hwalk->logs; (log && (log->test != twalk)); log = log->next) ;
 			if (log) {
 				log->enabletime = log->validtime = expires;
-				if (dismsg) {
+				if (txtstart) {
 					if (log->dismsg) xfree(log->dismsg);
-					log->dismsg = strdup(dismsg);
+					log->dismsg = strdup(txtstart);
 				}
 				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, log, NULL);
 
@@ -2308,10 +2312,10 @@ void do_message(conn_t *msg, char *origin)
 		if (!oksender(adminsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		p = msg->buf + 4; p += strspn(p, " \t");
-		hostname = strtok(p, " \t"); if (hostname) n++;
+		hostname = strtok(p, " \t");
 		if (hostname) testname = strtok(NULL, " \t");
 
-		if (hostname && !testname)
+		if (hostname && !testname) {
 			handle_dropnrename(CMD_DROPHOST, sender, hostname, NULL, NULL);
 		}
 		else if (hostname && testname) {
@@ -2325,7 +2329,7 @@ void do_message(conn_t *msg, char *origin)
 		if (!oksender(adminsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		p = msg->buf + 6; p += strspn(p, " \t");
-		hostname = strtok(p, " \t"); if (hostname) n++;
+		hostname = strtok(p, " \t");
 		if (hostname) n1 = strtok(NULL, " \t");
 		if (n1) n2 = strtok(NULL, " \t");
 
