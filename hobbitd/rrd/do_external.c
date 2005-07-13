@@ -8,11 +8,15 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char external_rcsid[] = "$Id: do_external.c,v 1.9 2005-06-05 09:24:39 henrik Exp $";
+static char external_rcsid[] = "$Id: do_external.c,v 1.10 2005-07-13 14:44:46 henrik Exp $";
 
 int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
 	pid_t childpid;
+	int olddebug = debug;
+
+	debug = 1;
+	dprintf("-> do_external(%s, %s)\n", hostname, testname);
 
 	childpid = fork();
 	if (childpid == 0) {
@@ -25,10 +29,13 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		char *p;
 		char **params = NULL;
 		int paridx = 1;
+		pid_t mypid = getpid();
 		
 		MEMDEFINE(fn); MEMDEFINE(extcmd); MEMDEFINE(l);
 
 		sprintf(fn, "%s/rrd_msg_%d", xgetenv("BBTMP"), (int) getpid());
+		dprintf("%09d : Saving msg to file %s\n", (int)mypid, fn);
+
 		fd = fopen(fn, "w");
 		if (fd == NULL) {
 			errprintf("Cannot create temp file %s\n", fn);
@@ -38,16 +45,18 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			errprintf("Error writing to file %s: %s\n", fn, strerror(errno));
 			exit(1) ;
 		}
-		fclose(fd);
+		if (fclose(fd)) errprintf("Error closing file %s: %s\n", fn, strerror(errno));
 
 		/* Now call the external helper */
 		sprintf(extcmd, "%s %s %s %s", exthandler, hostname, testname, fn);
+		dprintf("%09d : Calling helper script %s\n", (int)mypid, extcmd);
 		extfd = popen(extcmd, "r");
 		if (extfd) {
 			pstate = R_DEFS;
 
 			while (fgets(l, sizeof(l)-1, extfd)) {
 				p = strchr(l, '\n'); if (p) *p = '\0';
+				dprintf("%09d : Helper input '%s'\n", (int)mypid, l);
 				if (strlen(l) == 0) continue;
 
 				if (pstate == R_NEXT) {
@@ -121,6 +130,7 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			xfree(params);
 		}
 
+		dprintf("%09d : Unlinking temp file\n", (int)mypid);
 		unlink(fn);
 
 		exit(0);
@@ -131,6 +141,8 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	else {
 		errprintf("Fork failed in RRD handler: %s\n", strerror(errno));
 	}
+
+	debug = olddebug;
 
 	return 0;
 }
