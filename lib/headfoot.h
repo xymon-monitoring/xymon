@@ -13,8 +13,6 @@
 
 #include <time.h>
 
-extern int unpatched_bbd;
-
 extern void sethostenv(char *host, char *ip, char *svc, char *color, char *hikey);
 extern void sethostenv_report(time_t reportstart, time_t reportend, double repwarn, double reppanic);
 extern void sethostenv_snapshot(time_t snapshot);

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.32 2005-06-06 20:09:18 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.33 2005-07-13 22:08:11 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -26,8 +26,6 @@ static char rcsid[] = "$Id: headfoot.c,v 1.32 2005-06-06 20:09:18 henrik Exp $";
 
 #include "libbbgen.h"
 #include "version.h"
-
-int	unpatched_bbd = 0;
 
 /* Stuff for headfoot - variables we can set dynamically */
 static char *hostenv_hikey = NULL;
@@ -318,13 +316,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 		}
 
 		else if (strcmp(t_start, "BBBACKGROUND") == 0)  {
-			if (unpatched_bbd && (strcmp(pagetype, "hostsvc") == 0)) {
-				fprintf(output, "%s/bkg-%s.gif", 
-					xgetenv("BBSKIN"), colorname(bgcolor));
-			}
-			else {
-				fprintf(output, "%s", colorname(bgcolor));
-			}
+			fprintf(output, "%s", colorname(bgcolor));
 		}
 		else if (strcmp(t_start, "BBCOLOR") == 0)       fprintf(output, "%s", hostenv_color);
 		else if (strcmp(t_start, "BBSVC") == 0)         fprintf(output, "%s", hostenv_svc);
