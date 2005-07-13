@@ -11,16 +11,22 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.36 2005-07-06 21:04:53 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.37 2005-07-13 15:48:09 henrik Exp $";
 
+#include <limits.h>
+#include <sys/time.h>
+#include <sys/types.h>
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <sys/wait.h>
-#include <limits.h>
 #include <errno.h>
 #include <signal.h>
+#if !defined(HPUX)              /* HP-UX has select() and friends in sys/types.h */
+#include <sys/select.h>         /* Someday I'll move to GNU Autoconf for this ... */
+#endif
 
 #include "libbbgen.h"
 #include "version.h"
@@ -295,11 +301,11 @@ int generate_static(void)
 
 int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int showcmd, int timeout)
 {
-	FILE	*cmdpipe;
-	char	l[1024];
 	int	result;
-	int	piperes;
 	int	bannersize = 0;
+	char	l[1024];
+	int	pfd[2];
+	pid_t	childpid; 
 
 	MEMDEFINE(l);
 
@@ -310,28 +316,106 @@ int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int
 		**banner = '\0';
 		if (showcmd) sprintf(*banner, "Command: %s\n\n", cmd); 
 	}
-	cmdpipe = popen(cmd, "r");
-	if (cmdpipe == NULL) {
-		errprintf("Could not open pipe for command %s\n", cmd);
-		if (banner) strcat(*banner, "popen() failed to run command\n");
+
+	/* Adapted from Stevens' popen()/pclose() example */
+	if (pipe(pfd) > 0) {
+		errprintf("Could not create pipe: %s\n", strerror(errno));
 		MEMUNDEFINE(l);
 		return -1;
 	}
 
-	while (fgets(l, sizeof(l), cmdpipe)) {
-		if (banner) {
-			if ((strlen(l) + strlen(*banner)) > bannersize) {
-				bannersize += strlen(l) + 4096;
-				*banner = (char *) realloc(*banner, bannersize);
-			}
-			strcat(*banner, l);
-		}
-		if (errortext && (strstr(l, errortext) != NULL)) result = 1;
+	if ((childpid = fork()) < 0) {
+		errprintf("Could not fork child process: %s\n", strerror(errno));
+		MEMUNDEFINE(l);
+		return -1;
 	}
-	piperes = pclose(cmdpipe);
-	if (!WIFEXITED(piperes) || (WEXITSTATUS(piperes) != 0)) {
-		/* Something failed */
-		result = 1;
+
+	if (childpid == 0) {
+		/* The child runs here */
+		close(pfd[0]);
+		if (pfd[1] != STDOUT_FILENO) {
+			dup2(pfd[1], STDOUT_FILENO);
+			dup2(pfd[1], STDERR_FILENO);
+			close(pfd[1]);
+		}
+
+		execl("/bin/sh", "sh", "-c", cmd, NULL);
+		exit(127);
+	}
+	else {
+		/* The parent runs here */
+		int done = 0, didterm = 0, n;
+		struct timeval tmo, timestamp, cutoff;
+		struct timezone tz;
+
+		close(pfd[1]);
+
+		gettimeofday(&cutoff, &tz);
+		cutoff.tv_sec += timeout;
+
+		while (!done) {
+			fd_set readfds;
+
+			gettimeofday(&timestamp, &tz);
+			tvdiff(&timestamp, &cutoff, &tmo);
+			if ((tmo.tv_sec < 0) || (tmo.tv_usec < 0)) {
+				/* Timeout already happened */
+				n = 0;
+			}
+			else {
+				FD_ZERO(&readfds);
+				FD_SET(pfd[0], &readfds);
+				n = select(pfd[0]+1, &readfds, NULL, NULL, &tmo);
+			}
+
+			if (n == -1) {
+				errprintf("select() error: %s\n", strerror(errno));
+				result = -1;
+				done = 1;
+			}
+			else if (n == 0) {
+				/* Timeout */
+				errprintf("Timeout waiting for data from child, killing it\n");
+				kill(childpid, (didterm ? SIGKILL : SIGTERM));
+				if (!didterm) didterm = 1; else { done = 1; result = -1; }
+			}
+			else if (FD_ISSET(pfd[0], &readfds)) {
+				n = read(pfd[0], l, sizeof(l)-1);
+				l[n] = '\0';
+
+				if (n == 0) {
+					done = 1;
+				}
+				else {
+					if (banner) {
+						if ((strlen(l) + strlen(*banner)) > bannersize) {
+							bannersize += strlen(l) + 4096;
+							*banner = (char *) realloc(*banner, bannersize);
+						}
+						strcat(*banner, l);
+					}
+					if (errortext && (strstr(l, errortext) != NULL)) result = 1;
+				}
+			}
+		}
+
+		close(pfd[0]);
+
+		result = 0;
+		while ((result == 0) && (waitpid(childpid, &result, 0) < 0)) {
+			if (errno != EINTR) {
+				errprintf("Error picking up child exit status: %s\n", strerror(errno));
+				result = -1;
+			}
+		}
+
+		if (WIFEXITED(result)) {
+			result = WEXITSTATUS(result);
+		}
+		else if (WIFSIGNALED(result)) {
+			errprintf("Child process terminated with signal %d\n", WTERMSIG(result));
+			result = -1;
+		}
 	}
 
 	if (bannerbytes) *bannerbytes = strlen(*banner);
