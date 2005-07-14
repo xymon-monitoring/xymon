@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.60 2005-05-23 15:04:12 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.61 2005-07-14 16:46:32 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -42,8 +42,10 @@ int		bbmsgcount = 0;		/* Number of messages transmitted */
 int		bbstatuscount = 0;	/* Number of status items reported */
 int		bbnocombocount = 0;	/* Number of status items reported outside combo msgs */
 static int	bbmsgqueued;		/* Anything in the buffer ? */
-static char	bbmsg[MAXMSG];		/* Complete combo message buffer */
-static char	msgbuf[MAXMSG-50];	/* message buffer for one status message */
+static char	*bbmsg = NULL;		/* Complete combo message buffer */
+static int	bbmsgsz;		/* Bytes allocated for bbmsg */
+static char	*msgbuf = NULL;		/* message buffer for one status message */
+static int	msgbufsz;		/* Bytes allocated for msgbuf */
 static int	msgcolor;		/* color of status message in msgbuf */
 static int      maxmsgspercombo = 0;	/* 0 = no limit */
 static int      sleepbetweenmsgs = 0;
@@ -53,8 +55,10 @@ static int      bbdispproxyport = 0;
 static char	*proxysetting = NULL;
 
 static int	bbmetaqueued;		/* Anything in the buffer ? */
-static char	metamsg[MAXMSG];
-static char	metabuf[MAXMSG-50];	/* message buffer for one status message */
+static char	*metamsg = NULL;	/* Complete meta message buffer */
+static int	metamsgsz;		/* Bytes allocated for metamsg */
+static char	*metabuf = NULL;	/* message buffer for one meta message */
+static int	metabufsz;		/* Bytes allocated for metabuf */
 
 int dontsendmessages = 0;
 
@@ -97,7 +101,7 @@ static void setup_transport(char *recipient)
 		 * Non-HTTP transport - lookup portnumber in both BBPORT env.
 		 * and the "bbd" entry from /etc/services.
 		 */
-		default_port = BBDPORTNUMBER;
+		default_port = 1984;
 
 		if (xgetenv("BBPORT")) bbdportnumber = atoi(xgetenv("BBPORT"));
 	
@@ -137,7 +141,7 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 	int rcptport = 0;
 	int connretries = BBSENDRETRIES;
 	char *httpmessage = NULL;
-	char response[MAXMSG];
+	char recvbuf[32768];
 	int haveseenhttphdrs = 1;
 	int respstrsz = 0;
 	int respstrlen = 0;
@@ -329,10 +333,10 @@ retry_connect:
 				char *outp;
 				int n;
 
-				n = recv(sockfd, response, MAXMSG-1, 0);
+				n = recv(sockfd, recvbuf, sizeof(recvbuf)-1, 0);
 				if (n > 0) {
 					dprintf("Read %d bytes\n", n);
-					response[n] = '\0';
+					recvbuf[n] = '\0';
 
 					/*
 					 * When running over a HTTP transport, we must strip
@@ -342,15 +346,15 @@ retry_connect:
 					 * (Non-http transport sets "haveseenhttphdrs" to 1)
 					 */
 					if (!haveseenhttphdrs) {
-						outp = strstr(response, "\r\n\r\n");
+						outp = strstr(recvbuf, "\r\n\r\n");
 						if (outp) {
 							outp += 4;
-							n -= (outp - response);
+							n -= (outp - recvbuf);
 							haveseenhttphdrs = 1;
 						}
 						else n = 0;
 					}
-					else outp = response;
+					else outp = recvbuf;
 
 					if (n > 0) {
 						if (respfd) {
@@ -360,11 +364,11 @@ retry_connect:
 							char *respend;
 
 							if (respstrsz == 0) {
-								respstrsz = (n+MAXMSG);
+								respstrsz = (n+sizeof(recvbuf));
 								*respstr = (char *)malloc(respstrsz);
 							}
 							else if ((n+respstrlen) >= respstrsz) {
-								respstrsz += (n+MAXMSG);
+								respstrsz += (n+sizeof(recvbuf));
 								*respstr = (char *)realloc(*respstr, respstrsz);
 							}
 							respend = (*respstr) + respstrlen;
@@ -494,7 +498,8 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 /* Routines for handling combo message transmission */
 void combo_start(void)
 {
-	strcpy(bbmsg, "combo\n");
+	if (bbmsg) *bbmsg = '\0';
+	addtobuffer(&bbmsg, &bbmsgsz, "combo\n");
 	bbmsgqueued = 0;
 
 	if ((maxmsgspercombo == 0) && xgetenv("BBMAXMSGSPERCOMBO")) 
@@ -505,7 +510,7 @@ void combo_start(void)
 
 void meta_start(void)
 {
-	metamsg[0] = '\0';
+	if (metamsg) *metamsg = '\0';
 	bbmetaqueued = 0;
 }
 
@@ -554,34 +559,32 @@ static void meta_flush(void)
 static void combo_add(char *buf)
 {
 	/* Check if there is room for the message + 2 newlines */
-	if ( ((strlen(bbmsg) + strlen(buf) + 200) >= MAXMSG) || 
-	     (maxmsgspercombo && (bbmsgqueued >= maxmsgspercombo)) ) {
+	if (maxmsgspercombo && (bbmsgqueued >= maxmsgspercombo)) {
 		/* Nope ... flush buffer */
 		combo_flush();
 	}
 	else {
 		/* Yep ... add delimiter before new status (but not before the first!) */
-		if (bbmsgqueued) strcat(bbmsg, "\n\n");
+		if (bbmsgqueued) addtobuffer(&bbmsg, &bbmsgsz, "\n\n");
 	}
 
-	strcat(bbmsg, buf);
+	addtobuffer(&bbmsg, &bbmsgsz, buf);
 	bbmsgqueued++;
 }
 
 static void meta_add(char *buf)
 {
 	/* Check if there is room for the message + 2 newlines */
-	if ( ((strlen(metamsg) + strlen(buf) + 200) >= MAXMSG) || 
-	     (maxmsgspercombo && (bbmetaqueued >= maxmsgspercombo)) ) {
+	if (maxmsgspercombo && (bbmetaqueued >= maxmsgspercombo)) {
 		/* Nope ... flush buffer */
 		meta_flush();
 	}
 	else {
 		/* Yep ... add delimiter before new status (but not before the first!) */
-		if (bbmetaqueued) strcat(metamsg, "\n\n");
+		if (bbmetaqueued) addtobuffer(&metamsg, &metamsgsz, "\n\n");
 	}
 
-	strcat(metamsg, buf);
+	addtobuffer(&metamsg, &metamsgsz, buf);
 	bbmetaqueued++;
 }
 
@@ -598,34 +601,26 @@ void meta_end(void)
 
 void init_status(int color)
 {
-	msgbuf[0] = '\0';
+	if (msgbuf) xfree(msgbuf);
+	msgbuf = NULL;
 	msgcolor = color;
 	bbstatuscount++;
 }
 
 void init_meta(char *metaname)
 {
-	metabuf[0] = '\0';
+	if (metabuf) xfree(metabuf);
+	metabuf = NULL;
 }
 
 void addtostatus(char *p)
 {
-	if ((strlen(msgbuf) + strlen(p)) < sizeof(msgbuf))
-		strcat(msgbuf, p);
-	else {
-		strncat(msgbuf, p, sizeof(msgbuf)-strlen(msgbuf)-1);
-		*(msgbuf + sizeof(msgbuf) - 1) = '\0';
-	}
+	addtobuffer(&msgbuf, &msgbufsz, p);
 }
 
 void addtometa(char *p)
 {
-	if ((strlen(metabuf) + strlen(p)) < sizeof(metabuf))
-		strcat(metabuf, p);
-	else {
-		strncat(metabuf, p, sizeof(metabuf)-strlen(metabuf)-1);
-		*(metabuf + sizeof(metabuf) - 1) = '\0';
-	}
+	addtobuffer(&metabuf, &metabufsz, p);
 }
 
 void finish_status(void)
@@ -749,29 +744,22 @@ int main(int argc, char *argv[])
 	}
 
 	if (strcmp(msg, "@") == 0) {
-		char msg[MAXMSG];
-		char *bufp = msg;
-		int spaceleft = sizeof(msg)-1;
+		char *msg = NULL;
+		int msgsz;
+		char *inpline = NULL;
+		int inplinesz;
 
-		do {
-			if (fgets(bufp, spaceleft, stdin)) {
-				spaceleft -= strlen(bufp);
-				bufp += strlen(bufp);
-			}
-			else {
-				spaceleft = 0;
-			}
-		} while (spaceleft > 0);
-		msg[MAXMSG-1] = '\0';
-
+		unlimfgets(NULL, NULL, NULL);
+		while (unlimfgets(&inpline, &inplinesz, stdin)) addtobuffer(&msg, &msgsz, inpline);
 		result = sendmessage(msg, recipient, stdout, NULL, 1, timeout);
 	}
 	else if (strcmp(msg, "-") == 0) {
-		char msg[MAXMSG];
+		char *inpline = NULL;
+		int inplinesz;
 
-		while (fgets(msg, sizeof(msg), stdin)) {
-			msg[MAXMSG-1] = '\0';
-			result = sendmessage(msg, recipient, NULL, NULL, 0, timeout);
+		unlimfgets(NULL, NULL, NULL);
+		while (unlimfgets(&inpline, &inplinesz, stdin)) {
+			result = sendmessage(inpline, recipient, NULL, NULL, 0, timeout);
 		}
 	}
 	else {
