@@ -8,7 +8,7 @@
 # Build targets
 #####################
 
-CFLAGS += -DMAXMSG=$(MAXMSG) -DBBDPORTNUMBER=$(BBPORT) -I. -I$(BUILDTOPDIR)/include
+CFLAGS += -I. -I$(BUILDTOPDIR)/include
 
 BUILDTARGETS = lib-build common-build bbdisplay-build bbnet-build bbproxy-build docs-build build-build hobbitd-build
 INSTALLTARGETS = install-bbdisplay install-bbnet install-bbproxy install-man install-hobbitd install-docs
