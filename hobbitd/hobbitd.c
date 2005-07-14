@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.164 2005-07-12 22:09:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.165 2005-07-14 16:47:25 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -2515,7 +2515,8 @@ void save_checkpoint(void)
 void load_checkpoint(char *fn)
 {
 	FILE *fd;
-	char l[4*MAXMSG];
+	char *inbuf = NULL;
+	int inbufsz;
 	char *item;
 	int i, err, maybedown;
 	char hostip[20];
@@ -2528,6 +2529,7 @@ void load_checkpoint(char *fn)
 	char *statusmsg = NULL, *disablemsg = NULL, *ackmsg = NULL;
 	time_t logtime = 0, lastchange = 0, validtime = 0, enabletime = 0, acktime = 0, cookieexpires = 0;
 	int color = COL_GREEN, oldcolor = COL_GREEN, cookie = -1;
+	int count = 0;
 
 	fd = fopen(fn, "r");
 	if (fd == NULL) {
@@ -2535,18 +2537,18 @@ void load_checkpoint(char *fn)
 		return;
 	}
 
-	MEMDEFINE(l);
 	MEMDEFINE(hostip);
 
-	while (fgets(l, sizeof(l)-1, fd)) {
+	unlimfgets(NULL, NULL, NULL);
+	while (unlimfgets(&inbuf, &inbufsz, fd)) {
 		hostname = testname = sender = testflags = statusmsg = disablemsg = ackmsg = NULL;
 		lastchange = validtime = enabletime = acktime = 0;
 		err = 0;
 
-		if (strncmp(l, "@@HOBBITDCHK-V1|.task.|", 23) == 0) {
+		if (strncmp(inbuf, "@@HOBBITDCHK-V1|.task.|", 23) == 0) {
 			scheduletask_t *newtask = (scheduletask_t *)calloc(1, sizeof(scheduletask_t));
 
-			item = gettok(l, "|\n"); i = 0;
+			item = gettok(inbuf, "|\n"); i = 0;
 			while (item && !err) {
 				switch (i) {
 				  case 0: break;
@@ -2573,7 +2575,7 @@ void load_checkpoint(char *fn)
 			continue;
 		}
 
-		item = gettok(l, "|\n"); i = 0;
+		item = gettok(inbuf, "|\n"); i = 0;
 		while (item && !err) {
 			switch (i) {
 			  case 0: err = ((strcmp(item, "@@HOBBITDCHK-V1") != 0) && (strcmp(item, "@@BBGENDCHK-V1") != 0)); break;
@@ -2614,6 +2616,8 @@ void load_checkpoint(char *fn)
 		/* Ignore the "info" and "trends" data, since we generate on the fly now. */
 		if (strcmp(testname, xgetenv("INFOCOLUMN")) == 0) continue;
 		if (strcmp(testname, xgetenv("TRENDSCOLUMN")) == 0) continue;
+
+		dprintf("Status: Host=%s, test=%s\n", hostname, testname); count++;
 
 		hosthandle = rbtFind(rbhosts, hostname);
 		if (hosthandle == rbtEnd(rbhosts)) {
@@ -2692,8 +2696,9 @@ void load_checkpoint(char *fn)
 	}
 
 	fclose(fd);
+	if (inbuf) xfree(inbuf);
+	dprintf("Loaded %d status logs\n", count);
 
-	MEMUNDEFINE(l);
 	MEMDEFINE(hostip);
 }
 
@@ -3398,7 +3403,7 @@ int main(int argc, char *argv[])
 				conntail->sock = sock;
 				memcpy(&conntail->addr, &addr, sizeof(conntail->addr));
 				conntail->doingwhat = RECEIVING;
-				conntail->bufsz = MAXMSG+2048;
+				conntail->bufsz = 32768;
 				conntail->buf = (unsigned char *)malloc(conntail->bufsz);
 				conntail->bufp = conntail->buf;
 				conntail->buflen = 0;
