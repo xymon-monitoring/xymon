@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.216 2005-07-05 18:45:36 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.217 2005-07-14 08:16:13 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -1543,8 +1543,8 @@ void send_results(service_t *service, int failgoesclear)
 {
 	testitem_t	*t;
 	int		color;
-	char		msgline[MAXMSG];
-	char		msgtext[MAXMSG];
+	char		msgline[4096];
+	char		msgtext[4096];
 	char		causetext[1024];
 	char		*svcname;
 
@@ -2091,7 +2091,6 @@ int main(int argc, char *argv[])
 			printf("bbtest-net version %s\n", VERSION);
 			if (ssl_library_version) printf("SSL library : %s\n", ssl_library_version);
 			if (ldap_library_version) printf("LDAP library: %s\n", ldap_library_version);
-			printf("Compile settings: MAXMSG=%d, BBDPORTNUMBER=%d", MAXMSG, BBDPORTNUMBER);
 			printf("\n");
 			return 0;
 		}
@@ -2395,7 +2394,7 @@ int main(int argc, char *argv[])
 
 	/* Tell about us */
 	if (egocolumn) {
-		char msgline[MAXMSG];
+		char msgline[4096];
 		char *timestamps;
 		int color;
 
