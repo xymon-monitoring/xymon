@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.45 2005-06-29 14:49:00 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.46 2005-07-14 08:13:04 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -93,6 +93,7 @@ typedef struct conn_t {
 #define BUFSZ_INC  8192		/* How much to grow the buffer when it is too small */
 #define MAX_OPEN_SOCKS 256
 #define MINIMUM_FOR_COMBO 2048	/* To start merging messages, at least have 2 KB free */
+#define MAXIMUM_FOR_COMBO 32768 /* Max. size of a combined message */
 #define COMBO_DELAY 250000	/* Delay before sending a combo message (in microseconds) */
 
 int keeprunning = 1;
@@ -917,7 +918,7 @@ int main(int argc, char *argv[])
 						/*
 						 * Yep. It might be worthwhile to go for a combo.
 						 */
-						while (cextra && (cwalk->buflen < (MAXMSG-20))) {
+						while (cextra && (cwalk->buflen < (MAXIMUM_FOR_COMBO-20))) {
 							if (strncmp(cextra->buf+6, "status", 6) == 0) {
 								int newsize;
 
@@ -930,7 +931,7 @@ int main(int argc, char *argv[])
 								 */
 								newsize = cwalk->buflen + 2 + (cextra->buflen - 6);
 
-								if ((newsize < cwalk->bufsize) && (newsize < MAXMSG)) {
+								if ((newsize < cwalk->bufsize) && (newsize < MAXIMUM_FOR_COMBO)) {
 									/*
 									 * There's room for it. Add it to the
 									 * cwalk buffer, but without the leading
