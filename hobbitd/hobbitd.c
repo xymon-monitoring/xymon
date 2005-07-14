@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.165 2005-07-14 16:47:25 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.166 2005-07-14 18:11:36 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -2041,11 +2041,20 @@ void do_message(conn_t *msg, char *origin)
 		int bufsz;
 		char *spage = NULL, *shost = NULL, *stest = NULL, *fields = NULL;
 		int scolor = -1;
+		static unsigned int lastboardsize = 0;
 
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		setup_filter(msg->buf, &spage, &shost, &stest, &scolor, &fields);
-		bufsz = hostcount*8*1024; /* A guesstimate - 8 tests per hosts, each of 1KB (only 1st line of msg) */
+
+		if (lastboardsize == 0) {
+			/* A guesstimate - 8 tests per hosts, 1KB/test (only 1st line of msg) */
+			bufsz = hostcount*8*1024; 
+		}
+		else {
+			/* Add 10% to the last size we used */
+			bufsz = lastboardsize + (lastboardsize / 10);
+		}
 		bufp = buf = (char *)malloc(bufsz);
 
 		/* Setup fake log-records for the "info" and "trends" data. */
@@ -2169,7 +2178,7 @@ void do_message(conn_t *msg, char *origin)
 		xfree(msg->buf);
 		msg->doingwhat = RESPONDING;
 		msg->bufp = msg->buf = buf;
-		msg->buflen = (bufp - buf);
+		msg->buflen = lastboardsize = (bufp - buf);
 	}
 	else if (strncmp(msg->buf, "hobbitdxboard", 13) == 0) {
 		/* 
@@ -2184,11 +2193,20 @@ void do_message(conn_t *msg, char *origin)
 		char *spage = NULL, *shost = NULL, *stest = NULL, *fields = NULL;
 		int scolor = -1;
 		namelist_t *hi = NULL;
+		static unsigned int lastboardsize = 0;
 
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		setup_filter(msg->buf, &spage, &shost, &stest, &scolor, &fields);
-		bufsz = hostcount*8*2048; /* A guesstimate - 8 tests per hosts, each of 2KB (only 1st line of msg) */
+
+		if (lastboardsize == 0) {
+			/* A guesstimate - 8 tests per hosts, 2KB/test (only 1st line of msg) */
+			bufsz = hostcount*8*2048; 
+		}
+		else {
+			/* Add 10% to the last size we used */
+			bufsz = lastboardsize + (lastboardsize / 10);
+		}
 		bufp = buf = (char *)malloc(bufsz);
 
 		bufp += sprintf(bufp, "<?xml version='1.0' encoding='ISO-8859-1'?>\n");
@@ -2258,7 +2276,7 @@ void do_message(conn_t *msg, char *origin)
 		xfree(msg->buf);
 		msg->doingwhat = RESPONDING;
 		msg->bufp = msg->buf = buf;
-		msg->buflen = (bufp - buf);
+		msg->buflen = lastboardsize = (bufp - buf);
 	}
 	else if ((strncmp(msg->buf, "hobbitdack", 10) == 0) || (strncmp(msg->buf, "ack ack_event", 13) == 0)) {
 		/* hobbitdack COOKIE DURATION TEXT */
