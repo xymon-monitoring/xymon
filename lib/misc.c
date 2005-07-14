@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.37 2005-07-13 15:48:09 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.38 2005-07-14 21:27:13 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -206,8 +206,13 @@ char *gettok(char *s, char *delims)
 		whereat++;
 		result = "";
 	}
+	else if (n == strlen(whereat)) {
+		/* Last token */
+		result = whereat;
+		whereat += n;
+	}
 	else {
-		/* Null-teminate the token */
+		/* Mid-string token - null-teminate the token */
 		*(whereat + n) = '\0';
 		result = whereat;
 
