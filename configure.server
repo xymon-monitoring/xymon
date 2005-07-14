@@ -347,9 +347,7 @@ then
 fi
 echo ""; echo ""
 
-# Hobbit defaults to 32KB message max.
 BBHOSTOS=`uname -s | tr [A-Z] [a-z]`
-MAXMSG=32768
 if test "$BBHOME" = ""; then
 	BBHOME=$BBTOPDIR/server
 fi
