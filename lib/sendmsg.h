@@ -11,10 +11,6 @@
 #ifndef __SENDMSG_H_
 #define __SENDMSG_H_
 
-#ifndef BBDPORTNUMBER
-#define BBDPORTNUMBER 1984
-#endif
-
 #define BBTALK_TIMEOUT 5  /* Default timeout for a request going to bbd */
 #define PAGELEVELSDEFAULT "red purple"
 
