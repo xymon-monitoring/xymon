@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: netservices.c,v 1.6 2005-03-22 09:16:49 henrik Exp $";
+static char rcsid[] = "$Id: netservices.c,v 1.7 2005-07-14 17:10:25 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -74,14 +74,17 @@ typedef struct svclist_t {
 
 static char *binview(unsigned char *buf, int buflen)
 {
+	/* Encode a string with possibly binary data into an ascii-printable form */
+
 	static char hexchars[16] = "0123456789ABCDEF";
-	static char result[MAX_LINE_LEN];
+	static char *result = NULL;
 	unsigned char *inp, *outp;
 	int i;
 
-	MEMDEFINE(result);
-
+	if (result) xfree(result);
 	if (buf && (buflen == 0)) buflen = strlen(buf);
+	result = (char *)malloc(4*buflen + 1);	/* Worst case: All binary */
+
 	for (inp=buf, i=0, outp=result; (i<buflen); i++,inp++) {
 		if (isprint(*inp)) {
 			*outp = *inp;
@@ -108,8 +111,6 @@ static char *binview(unsigned char *buf, int buflen)
 	}
 	*outp = '\0';
 
-	MEMUNDEFINE(result);
-
 	return result;
 }
 
@@ -121,7 +122,8 @@ char *init_tcp_services(void)
 	char filename[PATH_MAX];
 	struct stat st;
 	FILE *fd = NULL;
-	char buf[MAX_LINE_LEN];
+	char *inbuf = NULL;
+	int inbufsz;
 	svclist_t *head, *tail, *first, *walk;
 	char *searchstring;
 	int svcnamebytes = 0;
@@ -129,7 +131,6 @@ char *init_tcp_services(void)
 	int i;
 
 	MEMDEFINE(filename);
-	MEMDEFINE(buf);
 
 	filename[0] = '\0';
 	if (xgetenv("BBHOME")) {
@@ -165,18 +166,18 @@ char *init_tcp_services(void)
 		bbnetsvcs = strdup(xgetenv("BBNETSVCS"));
 
 		MEMUNDEFINE(filename);
-		MEMUNDEFINE(buf);
 		return bbnetsvcs;
 	}
 
 	lastupdate = st.st_mtime;
 	head = tail = first = NULL;
 
-	while (fd && fgets(buf, sizeof(buf), fd)) {
+	unlimfgets(NULL, NULL, NULL);
+	while (fd && unlimfgets(&inbuf, &inbufsz, fd)) {
 		char *l, *eol;
 
-		l = strchr(buf, '\n'); if (l) *l = '\0';
-		l = skipwhitespace(buf);
+		l = strchr(inbuf, '\n'); if (l) *l = '\0';
+		l = skipwhitespace(inbuf);
 
 		if (*l == '[') {
 			char *svcname;
@@ -259,6 +260,7 @@ char *init_tcp_services(void)
 	}
 
 	if (fd) fclose(fd);
+	if (inbuf) xfree(inbuf);
 
 	/* Copy from the svclist to svcinfo table */
 	svcinfo = (svcinfo_t *) malloc((svccount+1) * sizeof(svcinfo_t));
@@ -314,7 +316,6 @@ char *init_tcp_services(void)
 	}
 
 	MEMUNDEFINE(filename);
-	MEMUNDEFINE(buf);
 	return bbnetsvcs;
 }
 

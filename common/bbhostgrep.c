@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.27 2005-04-03 15:39:02 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.28 2005-07-14 17:09:46 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -97,9 +97,9 @@ int main(int argc, char *argv[])
 		     (curnet && netstring && (strcmp(curnet, netstring) == 0)) || 
 		     (testuntagged && (curnet == NULL)) ) {
 			char *item;
-			char wantedtags[MAX_LINE_LEN];
+			char *wantedtags = NULL;
+			int wantedtagsz;
 
-			*wantedtags = '\0';
 			for (item = bbh_item_walk(hwalk); (item); item = bbh_item_walk(NULL)) {
 				int i;
 				char *realitem = item + strspn(item, "!~?");
@@ -118,27 +118,31 @@ int main(int argc, char *argv[])
 
 					if (outitem) {
 						int needquotes = ((strchr(outitem, ' ') != NULL) || (strchr(outitem, '\t') != NULL));
-						strcat(wantedtags, " ");
-						if (needquotes) strcat(wantedtags, "\"");
-						strcat(wantedtags, outitem);
-						if (needquotes) strcat(wantedtags, "\"");
+						addtobuffer(&wantedtags, &wantedtagsz, " ");
+						if (needquotes) addtobuffer(&wantedtags, &wantedtagsz, "\"");
+						addtobuffer(&wantedtags, &wantedtagsz, outitem);
+						if (needquotes) addtobuffer(&wantedtags, &wantedtagsz, "\"");
 					}
 				}
 			}
 
-			if ((*wantedtags != '\0') && extras) {
-				if (bbh_item(hwalk, BBH_FLAG_DIALUP)) strcat(wantedtags, " dialup");
-				if (bbh_item(hwalk, BBH_FLAG_TESTIP)) strcat(wantedtags, " testip");
+			if (wantedtags && (*wantedtags != '\0') && extras) {
+				if (bbh_item(hwalk, BBH_FLAG_DIALUP)) addtobuffer(&wantedtags, &wantedtagsz, " dialup");
+				if (bbh_item(hwalk, BBH_FLAG_TESTIP)) addtobuffer(&wantedtags, &wantedtagsz, " testip");
 				if ((item = bbh_item(hwalk, BBH_DOWNTIME)) != NULL) {
 					if (within_sla(item, 0))
-						strcat(wantedtags, " OUTSIDESLA");
+						addtobuffer(&wantedtags, &wantedtagsz, " OUTSIDESLA");
 					else
-						strcat(wantedtags, " INSIDESLA");
+						addtobuffer(&wantedtags, &wantedtagsz, " INSIDESLA");
 				}
 			}
 
-			if (*wantedtags != '\0') {
-				printf("%s %s #%s\n", bbh_item(hwalk, BBH_IP), bbh_item(hwalk, BBH_HOSTNAME), wantedtags);
+			if (wantedtags) {
+				if (*wantedtags != '\0') {
+					printf("%s %s #%s\n", bbh_item(hwalk, BBH_IP), bbh_item(hwalk, BBH_HOSTNAME), wantedtags);
+				}
+
+				xfree(wantedtags);
 			}
 		}
 

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.21 2005-06-02 21:23:07 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.22 2005-07-14 17:10:51 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -113,7 +113,7 @@ char *time_text(char *timespec)
 char *timespec_text(char *spec)
 {
 	static char *result = NULL;
-	char l[MAX_LINE_LEN];
+	char l[1024];
 	char *sCopy;
 	char *sItem;
 	int reslen = 0;
@@ -124,34 +124,34 @@ char *timespec_text(char *spec)
 	sCopy[strcspn(sCopy, " \t\r\n")] = '\0';
 	sItem = strtok(sCopy, ",");
 	while (sItem) {
-		l[0] = '\0';
+		*l = '\0';
 
 		switch (*sItem) {
-			case '*': sprintf(l, "All days%s", (sItem+1));
+			case '*': snprintf(l, sizeof(l), "All days%s", (sItem+1));
 				  break;
-			case 'W': sprintf(l, "Weekdays%s", (sItem+1));
+			case 'W': snprintf(l, sizeof(l), "Weekdays%s", (sItem+1));
 				  break;
-			case '0': sprintf(l, "Sunday%s", (sItem+1));
+			case '0': snprintf(l, sizeof(l), "Sunday%s", (sItem+1));
 				  break;
-			case '1': sprintf(l, "Monday%s", (sItem+1));
+			case '1': snprintf(l, sizeof(l), "Monday%s", (sItem+1));
 				  break;
-			case '2': sprintf(l, "Tuesday%s", (sItem+1));
+			case '2': snprintf(l, sizeof(l), "Tuesday%s", (sItem+1));
 				  break;
-			case '3': sprintf(l, "Wednesday%s", (sItem+1));
+			case '3': snprintf(l, sizeof(l), "Wednesday%s", (sItem+1));
 				  break;
-			case '4': sprintf(l, "Thursday%s", (sItem+1));
+			case '4': snprintf(l, sizeof(l), "Thursday%s", (sItem+1));
 				  break;
-			case '5': sprintf(l, "Friday%s", (sItem+1));
+			case '5': snprintf(l, sizeof(l), "Friday%s", (sItem+1));
 				  break;
-			case '6': sprintf(l, "Saturday%s", (sItem+1));
+			case '6': snprintf(l, sizeof(l), "Saturday%s", (sItem+1));
 				  break;
 			default:
 				  break;
 		}
+		addtobuffer(&result, &reslen, l);
 
 		sItem = strtok(NULL, ",");
-		if (sItem) strcat(l, ", ");
-		addtobuffer(&result, &reslen, l);
+		if (sItem) addtobuffer(&result, &reslen, ", ");
 	}
 	xfree(sCopy);
 
