@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: stackio.c,v 1.5 2005-03-22 09:16:49 henrik Exp $";
+static char rcsid[] = "$Id: stackio.c,v 1.6 2005-07-14 16:28:17 henrik Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -96,61 +96,6 @@ int stackfclose(FILE *fd)
 	return result;
 }
 
-static char *read_line_1(struct linebuf_t *buffer, FILE *stream, int *docontinue)
-{
-	char l[PATH_MAX];
-	char *p, *start;
-
-	MEMDEFINE(l);
-
-	*docontinue = 0;
-	if (fgets(l, sizeof(l), stream) == NULL) {
-		MEMUNDEFINE(l);
-		return NULL;
-	}
-
-	p = strchr(l, '\n'); if (p) *p = '\0';
-
-	/* Strip leading spaces */
-	for (start=l; (*start && isspace((int) *start)); start++) ;
-
-	/* Strip trailing spaces while looking for continuation character */
-	for (p = start + strlen(start) - 1; ((p > start) && (isspace((int) *p) || (*p == '\\')) ); p--) {
-		if (*p == '\\') *docontinue = 1;
-	}
-	*(p+1) = '\0';
-
-	if ((strlen(start) + strlen(buffer->buf) + 2) > buffer->buflen) {
-		buffer->buflen += MAX_LINE_LEN;
-		buffer->buf = (char *)realloc(buffer->buf, buffer->buflen);
-	}
-
-	strcat(buffer->buf, start);
-	if (*docontinue) strcat(buffer->buf, " ");
-
-	MEMUNDEFINE(l);
-
-	return buffer->buf;
-}
-
-char *read_line(struct linebuf_t *buffer, FILE *stream)
-{
-	char *result = NULL;
-	int docontinue = 0;
-
-	if (buffer->buf == NULL) {
-		buffer->buflen = MAX_LINE_LEN;
-		buffer->buf = (char *)malloc(buffer->buflen);
-	}
-	*(buffer->buf) = '\0';
-
-	do {
-		result = read_line_1(buffer, stream, &docontinue);
-	} while (result && docontinue);
-
-	return result;
-}
-
 
 char *stackfgets(char *buffer, unsigned int bufferlen, char *includetag1, char *includetag2)
 {
@@ -185,5 +130,57 @@ char *stackfgets(char *buffer, unsigned int bufferlen, char *includetag1, char *
 	}
 
 	return result;
+}
+
+char *unlimfgets(char **buffer, int *bufsz, FILE *fd)
+{
+	static char inbuf[4096];
+	static char *inbufp = inbuf;
+	static int moretoread = 1;
+	size_t n;
+	char *eoln = NULL;
+
+	if (fd == NULL) {
+		/* Clear buffer and control vars */
+		*inbuf = '\0'; inbufp = inbuf; moretoread = 1;
+		return NULL;
+	}
+
+	/* End of file ? */
+	if (!moretoread && (*inbufp == '\0')) return NULL;
+
+	/* Make sure the output buffer is empty */
+	if (*buffer) **buffer = '\0';
+
+	while (!eoln && (moretoread || *inbufp)) {
+		if (*inbufp) {
+			/* Have some data in the buffer */
+			char savech;
+
+			eoln = strchr(inbufp, '\n');
+			if (eoln) { savech = *(eoln+1); *(eoln+1) = '\0'; }
+			addtobuffer(buffer, bufsz, inbufp);
+			if (eoln) { 
+				/* Advance inbufp */
+				*(eoln+1) = savech; 
+				inbufp = eoln+1; 
+			}
+			else {
+				/* Input buffer is now empty */
+				*inbuf = '\0';
+				inbufp = inbuf;
+			}
+		}
+
+		if (!eoln) {
+			/* Get data for the input buffer */
+			n = fread(inbuf, 1, sizeof(inbuf)-1, fd);
+			inbuf[n] = '\0';
+			inbufp = inbuf;
+			if (n < sizeof(inbuf)) moretoread = 0;
+		}
+	}
+
+	return *buffer;
 }
 
