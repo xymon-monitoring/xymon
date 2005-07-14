@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.19 2005-06-06 20:06:56 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.20 2005-07-14 08:12:25 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -88,7 +88,6 @@ static void parse_query(void)
 int main(int argc, char *argv[])
 {
 	int argi, bbresult;
-	char bbmsg[MAXMSG];
 	char *respmsgfmt = "";
 	char *envarea = NULL;
 
@@ -142,6 +141,7 @@ int main(int argc, char *argv[])
 	parse_query();
 
 	if (strcasecmp(action, "ack") == 0) {
+		char *bbmsg;
 		char *acking_user = "";
 
 		if (getenv("REMOTE_USER")) {
@@ -153,6 +153,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
+		bbmsg = (char *)malloc(1024 + strlen(ackmsg) + strlen(acking_user));
 		sprintf(bbmsg, "hobbitdack %d %d %s %s", acknum, validity, ackmsg, acking_user);
 		bbresult = sendmessage(bbmsg, NULL, NULL, NULL, 0, 30);
 		if (bbresult != BB_OK) {
@@ -163,6 +164,7 @@ int main(int argc, char *argv[])
 		}
 
 		if (strlen(acking_user)) xfree(acking_user);
+		xfree(bbmsg);
 	}
 	else if (strcasecmp(action, "page") == 0) {
 		respmsgfmt = "<center><h4>This system does not support paging the operator</h4></center>\n";

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.213 2005-07-12 19:52:57 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.214 2005-07-14 08:12:25 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -337,9 +337,6 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[i], "--no-acklog") == 0) {
 			bb2acklog = 0;
 		}
-		else if (strcmp(argv[i], "--unpatched-bbd") == 0) {
-			unpatched_bbd = 1;
-		}
 
 		else if (argnmatch(argv[i], "--noprop=")) {
 			char *lp = strchr(argv[i], '=');
@@ -419,7 +416,6 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[i], "--version") == 0) {
 			printf("bbgen version %s\n", VERSION);
-			printf("Compile settings: MAXMSG=%d, BBDPORTNUMBER=%d", MAXMSG, BBDPORTNUMBER);
 			printf("\n");
 			exit(0);
 		}
@@ -642,7 +638,7 @@ int main(int argc, char *argv[])
 
 	/* Tell about us */
 	if (egocolumn) {
-		char msgline[MAXMSG];
+		char msgline[4096];
 		char *timestamps;
 		long bbsleep = (xgetenv("BBSLEEP") ? atol(xgetenv("BBSLEEP")) : 300);
 		int color;

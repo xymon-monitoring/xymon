@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.154 2005-06-26 20:51:47 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.155 2005-07-14 08:12:25 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -97,8 +97,8 @@ state_t *init_state(const char *filename, logdata_t *log)
 	char		*p;
 	char		*hostname;
 	char		*testname;
+	char		*testnameidx;
 	state_t 	*newstate;
-	char		l[MAXMSG];
 	char		fullfn[PATH_MAX];
 	host_t		*host;
 	struct stat 	log_st;
@@ -170,13 +170,16 @@ state_t *init_state(const char *filename, logdata_t *log)
 		}
 	}
 
-	sprintf(l, ",%s,", testname);
-	if (ignorecolumns && strstr(ignorecolumns, l)) {
+	testnameidx = (char *)malloc(strlen(testname) + 3);
+	sprintf(testnameidx, ",%s,", testname);
+	if (ignorecolumns && strstr(ignorecolumns, testnameidx)) {
 		xfree(hostname);
 		xfree(testname);
+		xfree(testnameidx);
 		if (fd) fclose(fd);
 		return NULL;	/* Ignore this type of test */
 	}
+	xfree(testnameidx);
 
 	host = find_host(hostname);
 
@@ -356,14 +359,13 @@ dispsummary_t *init_displaysummary(char *fn, logdata_t *log)
 
 void init_modembank_status(char *fn, logdata_t *log)
 {
-	char l[MAXMSG];
+	char *msgcopy;
 	host_t *targethost;
 	time_t now = time(NULL);
 
 	dprintf("init_modembank_status(%s)\n", textornull(fn));
 
 	if (log->validtime < now) return;
-	strcpy(l, log->msg);
 
 	targethost = find_host(fn+strlen("dialup."));
 	if (targethost == NULL) {
@@ -371,12 +373,13 @@ void init_modembank_status(char *fn, logdata_t *log)
 		return;
 	}
 
-	if (strlen(l)) {
+	msgcopy = strdup(log->msg);
+	if (strlen(msgcopy)) {
 		char *startip, *endip, *tag;
 		int idx = -1;
 
 		startip = endip = NULL;
-		tag = strtok(l, " \n");
+		tag = strtok(msgcopy, " \n");
 		while (tag) {
 			if (idx >= 0) {
 				/* Next result */
@@ -415,6 +418,8 @@ void init_modembank_status(char *fn, logdata_t *log)
 				  fn, (idx-1), targethost->banksize);
 		}
 	}
+
+	xfree(msgcopy);
 }
 
 
@@ -461,7 +466,7 @@ state_t *load_state(dispsummary_t **sumhead)
 	done = 0; nextline = board;
 	while (!done) {
 		char *bol = nextline;
-		char onelog[MAXMSG];
+		char *onelog;
 		char *p;
 		int i;
 
@@ -474,7 +479,7 @@ state_t *load_state(dispsummary_t **sumhead)
 		}
 
 		memset(&log, 0, sizeof(log));
-		strcpy(onelog, bol);;
+		onelog = strdup(bol);
 		p = gettok(onelog, "|"); i = 0;
 		while (p) {
 			switch (i) {
@@ -522,6 +527,7 @@ state_t *load_state(dispsummary_t **sumhead)
 				}
 			}
 		}
+		xfree(onelog);
 	}
 
 	if (reportstart) sethostenv_report(oldestentry, reportend, reportwarnlevel, reportgreenlevel);

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.28 2005-03-22 09:03:37 henrik Exp $";
+static char rcsid[] = "$Id: process.c,v 1.29 2005-07-14 08:12:25 henrik Exp $";
 
 #include <limits.h>
 #include <string.h>
@@ -187,7 +187,7 @@ void send_summaries(summary_t *sumhead)
 	for (s = sumhead; (s); s = s->next) {
 		char *suburl;
 		int summarycolor = -1;
-		char summsg[MAXMSG];
+		char *summsg;
 
 		/* Decide which page to pick the color from for this summary. */
 		suburl = s->url;
@@ -203,7 +203,7 @@ void send_summaries(summary_t *sumhead)
 			suburl += strlen(xgetenv("BBWEB"));
 		if (*suburl == '/') suburl++;
 
-		if (debug) printf("summ1: s->url=%s, suburl=%s\n", s->url, suburl);
+		dprintf("summ1: s->url=%s, suburl=%s\n", s->url, suburl);
 
 		if      (strcmp(suburl, "bb.html") == 0) summarycolor = bb_color;
 		else if (strcmp(suburl, "index.html") == 0) summarycolor = bb_color;
@@ -252,9 +252,11 @@ void send_summaries(summary_t *sumhead)
 		}
 
 		/* Send the summary message */
+		summsg = (char *)malloc(1024 + strlen(s->name) + strlen(s->url) + strlen(timestamp));
 		sprintf(summsg, "summary summary.%s %s %s %s",
 			s->name, colorname(summarycolor), s->url, timestamp);
 		sendmessage(summsg, s->receiver, NULL, NULL, 0, BBTALK_TIMEOUT);
+		xfree(summsg);
 	}
 }
 
