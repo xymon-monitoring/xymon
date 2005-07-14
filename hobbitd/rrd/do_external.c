@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char external_rcsid[] = "$Id: do_external.c,v 1.10 2005-07-13 14:44:46 henrik Exp $";
+static char external_rcsid[] = "$Id: do_external.c,v 1.11 2005-07-14 16:40:26 henrik Exp $";
 
 int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -25,7 +25,8 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		enum { R_DEFS, R_FN, R_DATA, R_NEXT } pstate;
 		FILE *extfd;
 		char extcmd[2*PATH_MAX];
-		char l[MAXMSG];
+		char *inbuf = NULL;
+		int  inbufsz;
 		char *p;
 		char **params = NULL;
 		int paridx = 1;
@@ -53,15 +54,16 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		extfd = popen(extcmd, "r");
 		if (extfd) {
 			pstate = R_DEFS;
+			unlimfgets(NULL, NULL, NULL);
 
-			while (fgets(l, sizeof(l)-1, extfd)) {
-				p = strchr(l, '\n'); if (p) *p = '\0';
-				dprintf("%09d : Helper input '%s'\n", (int)mypid, l);
-				if (strlen(l) == 0) continue;
+			while (unlimfgets(&inbuf, &inbufsz, extfd)) {
+				p = strchr(inbuf, '\n'); if (p) *p = '\0';
+				dprintf("%09d : Helper input '%s'\n", (int)mypid, inbuf);
+				if (strlen(inbuf) == 0) continue;
 
 				if (pstate == R_NEXT) {
 					/* After doing one set of data, allow script to re-use the same DS defs */
-					if (strncasecmp(l, "DS:", 3) == 0) {
+					if (strncasecmp(inbuf, "DS:", 3) == 0) {
 						/* New DS definitions, scratch the old ones */
 						pstate = R_DEFS;
 
@@ -85,11 +87,11 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 						paridx = 1;
 					}
 
-					if (strncasecmp(l, "DS:", 3) == 0) {
+					if (strncasecmp(inbuf, "DS:", 3) == 0) {
 						/* Dataset definition */
 						paridx++;
 						params = (char **)realloc(params, (7 + paridx)*sizeof(char *));
-						params[paridx] = strdup(l);
+						params[paridx] = strdup(inbuf);
 						params[paridx+1] = NULL;
 						break;
 					}
@@ -104,12 +106,12 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 					}
 					/* Fall through */
 				  case R_FN:
-					strcpy(rrdfn, l);
+					strcpy(rrdfn, inbuf);
 					pstate = R_DATA;
 					break;
 
 				  case R_DATA:
-					sprintf(rrdvalues, "%d:%s", (int)tstamp, l);
+					sprintf(rrdvalues, "%d:%s", (int)tstamp, inbuf);
 					create_and_update_rrd(hostname, rrdfn, params, NULL);
 					pstate = R_NEXT;
 					break;
@@ -120,6 +122,7 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				}
 			}
 			pclose(extfd);
+			if (inbuf) xfree(inbuf);
 		}
 		else {
 			errprintf("Pipe open of RRD handler failed: %s\n", strerror(errno));
