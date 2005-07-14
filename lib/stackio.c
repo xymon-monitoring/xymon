@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: stackio.c,v 1.6 2005-07-14 16:28:17 henrik Exp $";
+static char rcsid[] = "$Id: stackio.c,v 1.7 2005-07-14 17:26:34 henrik Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -155,7 +155,7 @@ char *unlimfgets(char **buffer, int *bufsz, FILE *fd)
 	while (!eoln && (moretoread || *inbufp)) {
 		if (*inbufp) {
 			/* Have some data in the buffer */
-			char savech;
+			char savech = '\0';
 
 			eoln = strchr(inbufp, '\n');
 			if (eoln) { savech = *(eoln+1); *(eoln+1) = '\0'; }
