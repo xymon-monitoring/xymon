@@ -8,14 +8,12 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char external_rcsid[] = "$Id: do_external.c,v 1.11 2005-07-14 16:40:26 henrik Exp $";
+static char external_rcsid[] = "$Id: do_external.c,v 1.12 2005-07-14 17:36:53 henrik Exp $";
 
 int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
 	pid_t childpid;
-	int olddebug = debug;
 
-	debug = 1;
 	dprintf("-> do_external(%s, %s)\n", hostname, testname);
 
 	childpid = fork();
@@ -32,7 +30,7 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		int paridx = 1;
 		pid_t mypid = getpid();
 		
-		MEMDEFINE(fn); MEMDEFINE(extcmd); MEMDEFINE(l);
+		MEMDEFINE(fn); MEMDEFINE(extcmd);
 
 		sprintf(fn, "%s/rrd_msg_%d", xgetenv("BBTMP"), (int) getpid());
 		dprintf("%09d : Saving msg to file %s\n", (int)mypid, fn);
@@ -145,8 +143,7 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		errprintf("Fork failed in RRD handler: %s\n", strerror(errno));
 	}
 
-	debug = olddebug;
-
+	dprintf("<- do_external(%s, %s)\n", hostname, testname);
 	return 0;
 }
 
