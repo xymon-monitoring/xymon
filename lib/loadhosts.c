@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.39 2005-06-22 06:19:45 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.40 2005-07-14 08:21:37 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -249,7 +249,8 @@ char *knownhost(char *hostname, char *hostip, int ghosthandling, int *maybedown)
 	static char *result = NULL;
 	char *key;
 
-	if (result == NULL) result = (char *)malloc(MAXMSG);
+	if (result) xfree(result);
+	result = NULL;
 
 	/* Find the host in the normal hostname list */
 	hosthandle = rbtFind(rbhosts, hostname);
@@ -267,12 +268,12 @@ char *knownhost(char *hostname, char *hostip, int ghosthandling, int *maybedown)
 		 * Force our version of the hostname. Done here so CLIENT works always.
 		 */
 		strcpy(hostip, walk->ip);
-		strcpy(result, walk->bbhostname);
+		result = strdup(walk->bbhostname);
 		if (walk->downtime) *maybedown = within_sla(walk->downtime, 0);
 	}
 	else {
 		*hostip = '\0';
-		strcpy(result, hostname);
+		result = strdup(hostname);
 		*maybedown = 0;
 	}
 

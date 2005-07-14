@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.23 2005-03-25 21:06:57 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.24 2005-07-14 08:20:05 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -125,7 +125,8 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 		struct timeval	timeout;
 		LDAPMessage	*result;
 		LDAPMessage	*e;
-		char		response[MAXMSG];
+		char		*response;
+		int		responsesz;
 
 		req = (ldap_data_t *) t->privdata;
 		ludp = (LDAPURLDesc *) req->ldapdesc;
@@ -281,6 +282,8 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 
 		gettimeofday(&endtime, &tz);
 
+		responsesz = 4096;
+		response = (char *)malloc(responsesz);
 		sprintf(response, "Searching LDAP for %s yields %d results:\n\n", 
 			t->testspec, ldap_count_entries(ld, result));
 
@@ -293,7 +296,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 
 			dn = ldap_get_dn(ld, e);
 			sprintf(buf, "DN: %s\n", dn); 
-			strcat(response, buf);
+			addtobuffer(&response, &responsesz, buf);
 
 			/* Addtributes and values */
 			for (attribute = ldap_first_attribute(ld, e, &ber); (attribute != NULL); attribute = ldap_next_attribute(ld, e, ber) ) {
@@ -302,7 +305,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 
 					for(i = 0; (vals[i] != NULL); i++) {
 						sprintf(buf, "\t%s: %s\n", attribute, vals[i]);
-						strcat(response, buf);
+						addtobuffer(&response, &responsesz, buf);
 					}
 				}
 				/* Free memory used to store values */
@@ -314,10 +317,10 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 			ldap_memfree(dn);
 			if (ber != NULL) ber_free(ber, 0);
 
-			strcat(response, "\n");
+			addtobuffer(&response, &responsesz, "\n");
 		}
 		req->ldapstatus = BBGEN_LDAP_OK;
-		req->output = strdup(response);
+		req->output = response;
 		tvdiff(&starttime, &endtime, &req->duration);
 
 		ldap_msgfree(result);
@@ -352,7 +355,7 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 {
 	testitem_t *t;
 	int	color = -1;
-	char	msgline[MAXMSG];
+	char	msgline[4096];
 	char    *nopagename;
 	int     nopage = 0;
 	testitem_t *ldap1 = host->firstldap;
