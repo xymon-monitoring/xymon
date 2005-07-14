@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: beastat.c,v 1.4 2005-06-27 12:39:29 henrik Exp $";
+static char rcsid[] = "$Id: beastat.c,v 1.5 2005-07-14 16:36:26 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -34,7 +34,6 @@ typedef struct bea_idx_t {
 
 static bea_idx_t *bea_idxhead = NULL;
 static char msgline[MAX_LINE_LEN];
-static char statusmsg[MAXMSG];
 static int statuscolor = COL_GREEN;
 
 /* Set with environment or commandline options */
@@ -226,6 +225,8 @@ int main(int argc, char *argv[])
 		char pipecmd[4096];
 		char *jrockout, *qout;
 		int jrockres, qres, jrockoutbytes, qoutbytes;
+		char *statusmsg = NULL;
+		int statusmsgsz;
 
 		/* Check if we have a "bea" test for this host, and it is a host we want to test */
                 if (!tspec || !wanted_host(hwalk, location)) continue;
@@ -250,7 +251,6 @@ int main(int argc, char *argv[])
 		}
 
 		/* Prepare for the host status */
-		*statusmsg = '\0';
 		statuscolor = COL_GREEN;
 
 		/* Setup the snmpwalk pipe-command for jrockit stats */
@@ -265,7 +265,7 @@ int main(int argc, char *argv[])
 			if (statuscolor < COL_YELLOW) statuscolor = COL_YELLOW;
 			sprintf(msgline, "Could not retrieve BEA jRockit statistics from %s:%d domain %s (code %d)\n",
 				bbh_item(hwalk, BBH_IP), snmpport, beadomain, jrockres);
-			strcat(statusmsg, msgline);
+			addtobuffer(&statusmsg, &statusmsgsz, msgline);
 		}
 
 		/* Setup the snmpwalk pipe-command for executeQueur stats */
@@ -280,7 +280,7 @@ int main(int argc, char *argv[])
 			if (statuscolor < COL_YELLOW) statuscolor = COL_YELLOW;
 			sprintf(msgline, "Could not retrieve BEA executeQueue statistics from %s:%d domain %s (code %d)\n",
 				bbh_item(hwalk, BBH_IP), snmpport, beadomain, qres);
-			strcat(statusmsg, msgline);
+			addtobuffer(&statusmsg, &statusmsgsz, msgline);
 		}
 
 		/* FUTURE: Have the statuscolor/statusmsg be updated to check against thresholds */
@@ -288,9 +288,10 @@ int main(int argc, char *argv[])
 		init_status(statuscolor);
 		sprintf(msgline, "status %s.%s %s %s\n\n", commafy(bbh_item(hwalk, BBH_HOSTNAME)), "bea", colorname(statuscolor), timestamp);
 		addtostatus(msgline);
-		if (*statusmsg == '\0') sprintf(statusmsg, "All BEA monitors OK\n");
+		if (!statusmsg) addtobuffer(&statusmsg, &statusmsgsz, "All BEA monitors OK\n");
 		addtostatus(statusmsg);
 		finish_status();
+		xfree(statusmsg);
 	}
 
 	combo_end();
