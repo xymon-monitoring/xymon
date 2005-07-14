@@ -11,7 +11,7 @@
 #ifndef __HOBBITD_IPC_H__
 #define __HOBBITD_IPC_H__
 
-#define SHAREDBUFSZ (3*MAXMSG+4096)
+#define SHAREDBUFSZ 102400
 
 /* Semaphore numbers */
 #define BOARDBUSY   0
