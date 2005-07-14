@@ -347,9 +347,8 @@ then
 fi
 echo ""; echo ""
 
-# Hobbit defaults to standard port and 32KB message max.
+# Hobbit defaults to 32KB message max.
 BBHOSTOS=`uname -s | tr [A-Z] [a-z]`
-BBPORT=1984
 MAXMSG=32768
 if test "$BBHOME" = ""; then
 	BBHOME=$BBTOPDIR/server
@@ -470,10 +469,6 @@ echo "BBVAR = $BBVAR"                    >>Makefile
 echo "# CGI scripts go in CGIDIR"        >>Makefile
 echo "CGIDIR = $CGIDIR"                  >>Makefile
 echo "SECURECGIDIR = $SECURECGIDIR"      >>Makefile
-echo "# Maximum size of a status msg"    >>Makefile
-echo "MAXMSG = $MAXMSG"                  >>Makefile
-echo "# Port number for the daemon"      >>Makefile
-echo "BBPORT = $BBPORT"                  >>Makefile
 echo "# Where to install manpages"       >>Makefile
 echo "MANROOT = $MANROOT"                >>Makefile
 echo "# Default history graph setting"   >>Makefile
