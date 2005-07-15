@@ -16,8 +16,14 @@ typedef struct entry_t {
 	struct entry_t *next;
 } entry_t;
 
+typedef struct newname_t {
+	char *oldname, *newname;
+	struct newname_t *next;
+} newname_t;
+
 entry_t *head = NULL;
 entry_t *tail = NULL;
+newname_t *newnames = NULL;
 
 int main(int argc, char *argv[])
 {
@@ -37,6 +43,23 @@ int main(int argc, char *argv[])
 
 	srcfn = strdup(argv[1]);
 	curfn = strdup(argv[2]);
+        if (argc > 3) {
+		int i;
+		char *p;
+
+		for (i=3; (i < argc); i++) {
+			p = strchr(argv[i], '=');
+			if (p) {
+				newname_t *newitem = (newname_t *)malloc(sizeof(newname_t));
+				*p = '\0';
+				newitem->oldname = strdup(argv[i]);
+				newitem->newname = strdup(p+1);
+				newitem->next = newnames;
+				newnames = newitem;
+			}
+		}
+	}
+
 	curbckfn = (char *)malloc(strlen(curfn) + 5);
 	sprintf(curbckfn, "%s.bak", curfn);
 
@@ -49,6 +72,7 @@ int main(int argc, char *argv[])
 
 	while (fgets(l, sizeof(l), curfd)) {
 		char *bol, *p;
+		newname_t *nwalk;
 
 		fprintf(curbckfd, "%s", l);
 
@@ -58,9 +82,18 @@ int main(int argc, char *argv[])
 		if ((*bol == '[') && strchr(bol, ']')) {
 			newent = (entry_t *)malloc(sizeof(entry_t));
 			p = strchr(bol, ']'); *p = '\0';
-			newent->name = strdup(bol+1);
-			*p = ']';
-			newent->val = strdup(l);
+			for (nwalk = newnames; (nwalk && strcmp(nwalk->oldname, bol+1)); nwalk = nwalk->next);
+			if (nwalk) {
+				free(newent->name);
+				newent->name = strdup(nwalk->newname);
+				newent->val = (char *)malloc(strlen(nwalk->newname) + 4);
+				sprintf(newent->val, "[%s]\n", nwalk->newname);
+			}
+			else {
+				newent->name = strdup(bol+1);
+				*p = ']';
+				newent->val = strdup(l);
+			}
 			newent->copied = 0;
 			newent->next = NULL;
 
