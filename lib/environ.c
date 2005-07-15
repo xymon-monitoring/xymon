@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.21 2005-07-05 18:45:36 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.22 2005-07-15 09:44:06 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -51,7 +51,7 @@ const static struct {
 	{ "INFOCOLUMN", "info" },
 	{ "TRENDSCOLUMN", "trends" },
 	{ "DOCOMBO", "TRUE" },
-	{ "BBMAXMSGSPERCOMBO", "0" },
+	{ "BBMAXMSGSPERCOMBO", "100" },
 	{ "BBSLEEPBETWEENMSGS", "0" },
 	{ "BBOSTYPE", "$BBSERVEROS" },
 	{ "MACHINEDOTS", "$BBSERVERHOSTNAME" },
