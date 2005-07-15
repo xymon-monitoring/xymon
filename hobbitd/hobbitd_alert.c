@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.59 2005-06-06 09:27:07 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.60 2005-07-15 13:39:54 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -144,20 +144,20 @@ void load_checkpoint(char *filename)
 {
 	char *subfn;
 	FILE *fd;
-	char l[4*MAXMSG+1024];
+	char *inbuf = NULL;
+	int inbufsz;
 
 	fd = fopen(filename, "r");
 	if (fd == NULL) return;
 
-	MEMDEFINE(l);
-
-	while (fgets(l, sizeof(l), fd)) {
+	unlimfgets(NULL, NULL, NULL);
+	while (unlimfgets(&inbuf, &inbufsz, fd)) {
 		char *item[20], *p;
 		int i;
 
-		p = strchr(l, '\n'); if (p) *p = '\0';
+		p = strchr(inbuf, '\n'); if (p) *p = '\0';
 
-		i = 0; p = gettok(l, "|");
+		i = 0; p = gettok(inbuf, "|");
 		while (p && (i < 20)) {
 			item[i++] = p;
 			p = gettok(NULL, "|");
@@ -196,13 +196,12 @@ void load_checkpoint(char *filename)
 		}
 	}
 	fclose(fd);
+	if (inbuf) xfree(inbuf);
 
 	subfn = (char *)malloc(strlen(filename)+5);
 	sprintf(subfn, "%s.sub", filename);
 	load_state(subfn);
 	xfree(subfn);
-
-	MEMUNDEFINE(l);
 }
 
 int main(int argc, char *argv[])
