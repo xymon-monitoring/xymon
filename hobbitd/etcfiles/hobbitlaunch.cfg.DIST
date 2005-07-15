@@ -36,8 +36,8 @@
 # daemon does. Unless you are using add-ons that directly access the data-files, you 
 # will not need to run this module, and it is recommended that you keep it disabled
 # since storing the raw data on disk can cause a significant load on your BB server.
-# LARRD uses data-files, but since LARRD is handled by the hobbitd_larrd module, you do
-# not need to run the "bbdata" module to get LARRD graphs.
+# RRD graphs uses data-files, but since RRD is handled by the hobbitd_rrd module, you do
+# not need to run the "bbdata" module to get RRD graphs.
 
 [bbdata]
 	DISABLED
@@ -76,21 +76,21 @@
 	CMD hobbitd_channel --channel=page  --log=$BBSERVERLOGS/page.log hobbitd_alert --checkpoint-file=$BBTMP/alert.chk --checkpoint-interval=600
 
 
-# "larrdstatus" updates RRD files with information that arrives as "status" messages.
+# "rrdstatus" updates RRD files with information that arrives as "status" messages.
 # If you want RRD graphs of your monitoring data, then you want to run this.
 
-[larrdstatus]
+[rrdstatus]
 	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	NEEDS hobbitd
-	CMD hobbitd_channel --channel=status --log=$BBSERVERLOGS/larrd-status.log hobbitd_larrd --rrddir=$BBVAR/rrd
+	CMD hobbitd_channel --channel=status --log=$BBSERVERLOGS/rrd-status.log hobbitd_rrd --rrddir=$BBVAR/rrd
 
-# "larrddata" updates RRD files with information that arrives as "data" messages.
+# "rrddata" updates RRD files with information that arrives as "data" messages.
 # If you want RRD graphs of your monitoring BB data, then you want to run this.
 
-[larrddata]
+[rrddata]
 	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	NEEDS hobbitd
-	CMD hobbitd_channel --channel=data   --log=$BBSERVERLOGS/larrd-data.log hobbitd_larrd --rrddir=$BBVAR/rrd
+	CMD hobbitd_channel --channel=data   --log=$BBSERVERLOGS/rrd-data.log hobbitd_rrd --rrddir=$BBVAR/rrd
 
 
 # "bbproxy" is the Hobbit proxy server that allows you to forward status messages
