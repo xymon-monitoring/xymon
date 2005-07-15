@@ -160,7 +160,7 @@ install-man:
 install-cfg:
 	cd etcfiles; ../../build/merge-lines hobbitserver.cfg $(INSTALLROOT)$(INSTALLETCDIR)/hobbitserver.cfg LARRDCOLUMN=TRENDSCOLUMN LARRDS=TEST2RRD
 	cd etcfiles; ../../build/merge-lines hobbitcgi.cfg $(INSTALLROOT)$(INSTALLETCDIR)/hobbitcgi.cfg
-	cd etcfiles; ../../build/merge-sects hobbitlaunch.cfg $(INSTALLROOT)$(INSTALLETCDIR)/hobbitlaunch.cfg
+	cd etcfiles; ../../build/merge-sects hobbitlaunch.cfg $(INSTALLROOT)$(INSTALLETCDIR)/hobbitlaunch.cfg larrdstatus=rrdstatus larrddata=rrddata
 	cd etcfiles; ../../build/merge-sects hobbitgraph.cfg $(INSTALLROOT)$(INSTALLETCDIR)/hobbitgraph.cfg
 	cd etcfiles; ../../build/merge-lines columndoc.csv $(INSTALLROOT)$(INSTALLETCDIR)/columndoc.csv
 	cd etcfiles; (echo "bb-hosts"; echo "hobbit-alerts.cfg"; echo "bbcombotest.cfg") | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLETCDIR)/
