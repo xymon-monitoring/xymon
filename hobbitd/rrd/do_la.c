@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char la_rcsid[] = "$Id: do_la.c,v 1.17 2005-07-07 11:34:29 henrik Exp $";
+static char la_rcsid[] = "$Id: do_la.c,v 1.18 2005-07-15 07:30:17 henrik Exp $";
 
 int do_la_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -188,36 +188,52 @@ done_parsing:
 
 	if (memhosts_init && (rbtFind(memhosts, hostname) == rbtEnd(memhosts))) {
 		/* Pick up memory statistics */
-		int found, realuse, swapuse;
-		unsigned long phystotal, physavail, pagetotal, pageavail;
+		int found, overflow, realuse, swapuse;
+		long long phystotal, physavail, pagetotal, pageavail;
 
-		found = realuse = swapuse = 0;
+		found = overflow = realuse = swapuse = 0;
 		phystotal = physavail = pagetotal = pageavail = 0;
 
 		p = strstr(msg, "Total Physical memory:");
-		if (p) { found++; phystotal = atol(strchr(p, ':') + 1); }
+		if (p) { 
+			phystotal = strtoll(strchr(p, ':') + 1, NULL, 10); 
+			if (phystotal != LONG_MAX) found++; else overflow++;
+		}
 
 		if (found == 1) {
 			p = strstr(msg, "Available Physical memory:");
-			if (p) { found++; physavail = atol(strchr(p, ':') + 1); }
+			if (p) { 
+				physavail = strtoll(strchr(p, ':') + 1, NULL, 10); 
+				if (physavail != LONG_MAX) found++; else overflow++;
+			}
 		}
 
 		if (found == 2) {
 			p = strstr(msg, "Total PageFile size:"); 
-			if (p) { found++; pagetotal = atol(strchr(p, ':') + 1); }
+			if (p) { 
+				pagetotal = strtoll(strchr(p, ':') + 1, NULL, 10); 
+				if (pagetotal != LONG_MAX) found++; else overflow++;
+			}
 		}
 
 		if (found == 3) {
 			p = strstr(msg, "Available PageFile size:"); 
-			if (p) { found++; pageavail = atol(strchr(p, ':') + 1); }
+			if (p) { 
+				pageavail = strtoll(strchr(p, ':') + 1, NULL, 10); 
+				if (pageavail != LONG_MAX) found++; else overflow++;
+			}
 		}
 
 		if (found == 4) {
-			realuse = 100 - ((physavail * 100) / phystotal);
-			swapuse = 100 - ((pageavail * 100) / pagetotal);
+			phystotal = phystotal / 100;
+			pagetotal = pagetotal / 100;
+			realuse = 100 - (physavail / phystotal);
+			swapuse = 100 - (pageavail / pagetotal);
+			do_memory_rrd_update(tstamp, hostname, realuse, swapuse, -1);
 		}
-
-		do_memory_rrd_update(tstamp, hostname, realuse, swapuse, -1);
+		else if (overflow) {
+			errprintf("Host %s cpu report overflows in memory usage calculation\n", hostname);
+		}
 	}
 
 	return 0;
