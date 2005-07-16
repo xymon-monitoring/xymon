@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.33 2005-07-13 22:08:11 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.34 2005-07-16 21:14:40 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -796,8 +796,8 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 
 	hfpath = strdup(pagepath); 
 	/* Trim off excess trailing slashes */
-	while (*(hfpath + strlen(hfpath) - 1) == '/') {
-		*(hfpath + strlen(hfpath) - 1) = '\0';
+	if (*hfpath) {
+		while (*(hfpath + strlen(hfpath) - 1) == '/') *(hfpath + strlen(hfpath) - 1) = '\0';
 	}
 	fd = -1;
 
