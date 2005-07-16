@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.26 2005-06-01 09:44:02 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.27 2005-07-16 09:48:35 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -414,7 +414,8 @@ summary_t *init_summary(char *name, char *receiver, char *url)
 bbgen_page_t *load_bbhosts(char *pgset)
 {
 	FILE 	*bbhosts;
-	char 	l[MAX_LINE_LEN];
+	char    *inbuf = NULL;
+	int     inbufsz;
 	char	pagetag[100], subpagetag[100], subparenttag[100], 
 		grouptag[100], summarytag[100], titletag[100], hosttag[100];
 	char 	*name, *link, *onlycols;
@@ -461,24 +462,24 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	cursubparent = NULL;
 	curtitle = NULL;
 
-	while (stackfgets(l, sizeof(l), "include", "dispinclude")) {
-		p = strchr(l, '\n'); 
+	while (stackfgets(&inbuf, &inbufsz, "include", "dispinclude")) {
+		p = strchr(inbuf, '\n'); 
 		if (p) {
 			*p = '\0'; 
 		}
 		else {
-			errprintf("Warning: Lines in bb-hosts too long or has no newline: '%s'\n", l);
+			errprintf("Warning: Lines in bb-hosts too long or has no newline: '%s'\n", inbuf);
 		}
 
-		dprintf("load_bbhosts: -- got line '%s'\n", l);
+		dprintf("load_bbhosts: -- got line '%s'\n", inbuf);
 
 		modembanksize = 0;
 
-		if ((l[0] == '#') || (strlen(l) == 0)) {
+		if ((inbuf[0] == '#') || (strlen(inbuf) == 0)) {
 			/* Do nothing - it's a comment */
 		}
-		else if (strncmp(l, pagetag, strlen(pagetag)) == 0) {
-			getnamelink(l, &name, &link);
+		else if (strncmp(inbuf, pagetag, strlen(pagetag)) == 0) {
+			getnamelink(inbuf, &name, &link);
 			if (curpage == NULL) {
 				/* First page - hook it on toppage as a subpage from there */
 				curpage = toppage->subpages = init_page(name, link);
@@ -498,13 +499,13 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			curhost = NULL;
 			addtopagelist(curpage);
 		}
-		else if (strncmp(l, subpagetag, strlen(subpagetag)) == 0) {
+		else if (strncmp(inbuf, subpagetag, strlen(subpagetag)) == 0) {
 			if (curpage == NULL) {
-				errprintf("'subpage' ignored, no preceding 'page' tag : %s\n", l);
+				errprintf("'subpage' ignored, no preceding 'page' tag : %s\n", inbuf);
 				continue;
 			}
 
-			getnamelink(l, &name, &link);
+			getnamelink(inbuf, &name, &link);
 			if (cursubpage == NULL) {
 				cursubpage = curpage->subpages = init_page(name, link);
 			}
@@ -521,12 +522,12 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			curhost = NULL;
 			addtopagelist(cursubpage);
 		}
-		else if (strncmp(l, subparenttag, strlen(subparenttag)) == 0) {
+		else if (strncmp(inbuf, subparenttag, strlen(subparenttag)) == 0) {
 			bbgen_page_t *parentpage, *walk;
 
-			getparentnamelink(l, toppage, &parentpage, &name, &link);
+			getparentnamelink(inbuf, toppage, &parentpage, &name, &link);
 			if (parentpage == NULL) {
-				errprintf("'subparent' ignored, unknown parent page: %s\n", l);
+				errprintf("'subparent' ignored, unknown parent page: %s\n", inbuf);
 				continue;
 			}
 
@@ -547,8 +548,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			curhost = NULL;
 			addtopagelist(cursubparent);
 		}
-		else if (strncmp(l, grouptag, strlen(grouptag)) == 0) {
-			getgrouptitle(l, pgset, &link, &onlycols);
+		else if (strncmp(inbuf, grouptag, strlen(grouptag)) == 0) {
+			getgrouptitle(inbuf, pgset, &link, &onlycols);
 			if (curgroup == NULL) {
 				curgroup = init_group(link, onlycols);
 				if (cursubparent != NULL) {
@@ -574,8 +575,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			if (curtitle) { curgroup->pretitle = curtitle; curtitle = NULL; }
 			curhost = NULL;
 		}
-		else if ( (sscanf(l, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) ||
-		          (!reportstart && !snapshot && (sscanf(l, "dialup %s %d.%d.%d.%d %d", hostname, &ip1, &ip2, &ip3, &ip4, &modembanksize) == 6) && (modembanksize > 0)) ) {
+		else if ( (sscanf(inbuf, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) ||
+		          (!reportstart && !snapshot && (sscanf(inbuf, "dialup %s %d.%d.%d.%d %d", hostname, &ip1, &ip2, &ip3, &ip4, &modembanksize) == 6) && (modembanksize > 0)) ) {
 
 			namelist_t *bbhost = NULL;
 			int dialup, nobb2, nktime = 1;
@@ -772,22 +773,22 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				}
 			}
 		}
-		else if (strncmp(l, summarytag, strlen(summarytag)) == 0) {
+		else if (strncmp(inbuf, summarytag, strlen(summarytag)) == 0) {
 			/* summary row.column      IP-ADDRESS-OF-PARENT    http://bb4.com/ */
 			char sumname[MAX_LINE_LEN];
 			char receiver[MAX_LINE_LEN];
 			char url[MAX_LINE_LEN];
 			summary_t *newsum;
 
-			if (sscanf(l, "summary %s %s %s", sumname, receiver, url) == 3) {
+			if (sscanf(inbuf, "summary %s %s %s", sumname, receiver, url) == 3) {
 				newsum = init_summary(sumname, receiver, url);
 				newsum->next = sumhead;
 				sumhead = newsum;
 			}
 		}
-		else if (strncmp(l, titletag, strlen(titletag)) == 0) {
+		else if (strncmp(inbuf, titletag, strlen(titletag)) == 0) {
 			/* Save the title for the next entry */
-			curtitle = strdup(skipwhitespace(skipword(l)));
+			curtitle = strdup(skipwhitespace(skipword(inbuf)));
 		}
 		else {
 			/* Probably a comment */
@@ -795,6 +796,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	}
 
 	stackfclose(bbhosts);
+	if (inbuf) xfree(inbuf);
+
 	return toppage;
 }
 

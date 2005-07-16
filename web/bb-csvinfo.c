@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-csvinfo.c,v 1.16 2005-06-06 20:06:56 henrik Exp $";
+static char rcsid[] = "$Id: bb-csvinfo.c,v 1.17 2005-07-16 09:48:35 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -88,7 +88,8 @@ int main(int argc, char *argv[])
 {
 	FILE *db;
 	char dbfn[PATH_MAX];
-	char buf[MAX_LINE_LEN];
+	char *inbuf = NULL;
+	int inbufsz;
 	char *hffile = "info";
 	int bgcolor = COL_BLUE;
 	char *envarea = NULL;
@@ -141,10 +142,11 @@ int main(int argc, char *argv[])
 
 	/* First, load the headers from line 1 of the sourcedb */
 	memset(headers, 0, sizeof(headers));
-	if (fgets(buf, sizeof(buf), db)) {
+	initfgets(db);
+	if (unlimfgets(&inbuf, &inbufsz, db)) {
 		char *p1, *p2;
 
-		for (i=0, p1=buf, p2=strchr(buf, delimiter); (p1 && p2 && strlen(p1)); i++,p1=p2+1,p2=strchr(p1, delimiter)) {
+		for (i=0, p1=inbuf, p2=strchr(inbuf, delimiter); (p1 && p2 && strlen(p1)); i++,p1=p2+1,p2=strchr(p1, delimiter)) {
 			*p2 = '\0';
 			headers[i] = strdup(p1);
 		}
@@ -158,19 +160,21 @@ int main(int argc, char *argv[])
 	for (i=0; i<MAXCOLUMNS; i++) items[i] = malloc(MAX_LINE_LEN);
 
 	found = 0;
-	while (!found && fgets(buf, sizeof(buf), db)) {
+	while (!found && unlimfgets(&inbuf, &inbufsz, db)) {
 
 		char *p1, *p2;
 
 		for (i=0; i<MAXCOLUMNS; i++) *(items[i]) = '\0';
 
-		for (i=0, p1=buf, p2=strchr(buf, delimiter); (p1 && p2 && strlen(p1)); i++,p1=p2+1,p2=strchr(p1, delimiter)) {
+		for (i=0, p1=inbuf, p2=strchr(inbuf, delimiter); (p1 && p2 && strlen(p1)); i++,p1=p2+1,p2=strchr(p1, delimiter)) {
 			*p2 = '\0';
 			strcpy(items[i], (strlen(p1) ? p1 : "&nbsp;"));
 		}
 
 		found = (strcasecmp(items[keycolumn], wantedname) == 0);
 	}
+	fclose(db);
+	if (inbuf) xfree(inbuf);
 
 	if (!found) {
 		errormsg("No match");

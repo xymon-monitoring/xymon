@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.39 2005-04-25 15:55:43 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.40 2005-07-16 09:48:35 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -75,7 +75,8 @@ static void loadtests(void)
 {
 	FILE *fd;
 	char fn[PATH_MAX];
-	char l[MAX_LINE_LEN];
+	char *inbuf = NULL;
+	int inbufsz;
 
 	sprintf(fn, "%s/etc/bbcombotest.cfg", xgetenv("BBHOME"));
 	fd = fopen(fn, "r");
@@ -92,13 +93,14 @@ static void loadtests(void)
 		return;
 	}
 
-	while (fgets(l, sizeof(l), fd)) {
+	initfgets(fd);
+	while (unlimfgets(&inbuf, &inbufsz, fd)) {
 		char *p, *comment;
 		char *inp, *outp;
 
-		p = strchr(l, '\n'); if (p) *p = '\0';
+		p = strchr(inbuf, '\n'); if (p) *p = '\0';
 		/* Strip whitespace */
-		for (inp=outp=l; ((*inp >= ' ') && (*inp != '#')); inp++) {
+		for (inp=outp=inbuf; ((*inp >= ' ') && (*inp != '#')); inp++) {
 			if (isspace((int)*inp)) {
 			}
 			else {
@@ -109,14 +111,14 @@ static void loadtests(void)
 		*outp = '\0';
 		if (strlen(inp)) memmove(outp, inp, strlen(inp)+1);
 
-		if (strlen(l) && (l[0] != '#') && (p = strchr(l, '=')) ) {
+		if (strlen(inbuf) && (inbuf[0] != '#') && (p = strchr(inbuf, '=')) ) {
 			testspec_t *newtest = (testspec_t *) malloc(sizeof(testspec_t));
 
 			*p = '\0';
 			comment = strchr(p+1, '#');
 			if (comment) *comment = '\0';
-			newtest->reshostname = strdup(gethname(l));
-			newtest->restestname = strdup(gettname(l));
+			newtest->reshostname = strdup(gethname(inbuf));
+			newtest->restestname = strdup(gettname(inbuf));
 			newtest->expression = strdup(p+1);
 			newtest->comment = (comment ? strdup(comment+1) : NULL);
 			newtest->resultexpr = NULL;
@@ -130,6 +132,7 @@ static void loadtests(void)
 	}
 
 	fclose(fd);
+	if (inbuf) xfree(inbuf);
 }
 
 static int gethobbitdvalue(char *hostname, char *testname, char **errptr)
