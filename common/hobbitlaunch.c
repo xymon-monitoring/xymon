@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.31 2005-07-06 14:34:24 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.32 2005-07-16 09:49:47 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -176,8 +176,9 @@ void load_config(char *conffn)
 
 	struct stat st;
 	tasklist_t *twalk, *curtask = NULL;
-	char l[32768];
 	FILE *fd;
+	char *inbuf = NULL;
+	int inbufsz;
 	char *p;
 
 	/* Check the timestamp of the configuration file */
@@ -196,10 +197,16 @@ void load_config(char *conffn)
 	}
 
 	fd = fopen(conffn, "r");
-	while (fgets(l, sizeof(l), fd)) {
-		p = strchr(l, '\n'); if (p) *p = '\0';
+	if (fd == NULL) {
+		errprintf("Cannot open configuration file %s: %s\n", conffn, strerror(errno));
+		return;
+	}
 
-		p = l + strspn(l, " \t");
+	initfgets(fd);
+	while (unlimfgets(&inbuf, &inbufsz, fd)) {
+		p = strchr(inbuf, '\n'); if (p) *p = '\0';
+
+		p = inbuf + strspn(inbuf, " \t");
 		if ((*p == '\0') || (*p == '#')) {
 			/* Comment or blank line - ignore */
 		}
@@ -295,6 +302,7 @@ void load_config(char *conffn)
 	}
 	if (curtask) update_task(curtask);
 	fclose(fd);
+	if (inbuf) xfree(inbuf);
 
 	/* Running tasks that have been deleted or changed are killed off now. */
 	for (twalk = taskhead; (twalk); twalk = twalk->next) {
