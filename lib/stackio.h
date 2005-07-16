@@ -13,10 +13,11 @@
 
 #define MAX_LINE_LEN 16384
 
+extern int initfgets(FILE *fd);
+extern char *unlimfgets(char **buffer, int *bufsz, FILE *fd);
 extern FILE *stackfopen(char *filename, char *mode);
 extern int stackfclose(FILE *fd);
-extern char *stackfgets(char *buffer, unsigned int bufferlen, char *includetag1, char *includetag2);
-extern char *unlimfgets(char **buffer, int *bufsz, FILE *fd);
+extern char *stackfgets(char **buffer, unsigned int *bufferlen, char *includetag1, char *includetag2);
 
 #endif
 
