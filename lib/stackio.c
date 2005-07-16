@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: stackio.c,v 1.8 2005-07-16 09:45:28 henrik Exp $";
+static char rcsid[] = "$Id: stackio.c,v 1.9 2005-07-16 10:11:46 henrik Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -109,7 +109,7 @@ char *unlimfgets(char **buffer, int *bufsz, FILE *fd)
 			if (eoln) { 
 				/* See if there's a continuation character just before the eoln */
 				char *contchar = eoln-1;
-				while ((contchar > fg->inbufp) && isspace(*contchar) && (*contchar != '\\')) contchar--;
+				while ((contchar > fg->inbufp) && isspace((int)*contchar) && (*contchar != '\\')) contchar--;
 				continued = (*contchar == '\\');
 
 				if (continued) {
@@ -145,7 +145,7 @@ char *unlimfgets(char **buffer, int *bufsz, FILE *fd)
 			if (*buffer) {
 				int n = strlen(*buffer);
 				char *contchar = *buffer + n - 1;
-				while ((contchar > *buffer) && isspace(*contchar) && (*contchar != '\\')) contchar--;
+				while ((contchar > *buffer) && isspace((int)*contchar) && (*contchar != '\\')) contchar--;
 
 				if (*contchar == '\\') {
 					/*
