@@ -5,7 +5,7 @@ BBGENLIBOBJS = calc.o cgi.o color.o digest.o encoding.o environ.o errormsg.o fil
 
 CFLAGS += -I. -I../include 
 
-all: libbbgen.a loadhosts
+all: libbbgen.a loadhosts stackio
 
 libbbgen.a: $(BBGENLIBOBJS)
 	ar cr libbbgen.a $(BBGENLIBOBJS)
@@ -26,6 +26,9 @@ environ.o: environ.c
 loadhosts: loadhosts.c libbbgen.a
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ loadhosts.c ./libbbgen.a
 
+stackio: stackio.c libbbgen.a
+	$(CC) $(CFLAGS) -DSTANDALONE -o $@ stackio.c ./libbbgen.a
+
 clean:
-	rm -f *.o *.a *~ loadhosts
+	rm -f *.o *.a *~ loadhosts stackio
 
