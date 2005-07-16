@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-confreport.c,v 1.5 2005-07-16 09:52:25 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-confreport.c,v 1.6 2005-07-16 21:24:15 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -724,11 +724,11 @@ int main(int argc, char *argv[])
 	} while (nexthost);
 
 	allhosts = (hostlist_t **) malloc(hostcount * sizeof(hostlist_t *));
-	alltests = (htnames_t **) malloc(maxtests * sizeof(htnames_t *));
 	for (hwalk = hosthead, hosti=0; (hwalk); hwalk = hwalk->next, hosti++) {
 		allhosts[hosti] = hwalk;
 		if (hwalk->testcount > maxtests) maxtests = hwalk->testcount;
 	}
+	alltests = (htnames_t **) malloc(maxtests * sizeof(htnames_t *));
 	qsort(&allhosts[0], hostcount, sizeof(hostlist_t **), host_compare);
 
 	/* Get the static info */
