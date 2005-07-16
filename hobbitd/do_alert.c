@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.70 2005-07-04 08:43:18 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.71 2005-07-16 09:51:05 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -296,7 +296,8 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 	char fn[PATH_MAX];
 	struct stat st;
 	FILE *fd;
-	char l[8192];
+	char *inbuf = NULL;
+	int inbufsz;
 	char *p;
 	rule_t *currule = NULL;
 	recip_t *currcp = NULL, *rcptail = NULL;
@@ -359,37 +360,38 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 
 	MEMDEFINE(cfline);
 
+	initfgets(fd);
 	cfid = 0;
-	while (fgets(l, sizeof(l), fd)) {
+	while (unlimfgets(&inbuf, &inbufsz, fd)) {
 		int firsttoken = 1;
 		int mailcmdactive = 0, scriptcmdactive = 0;
 		recip_t *curlinerecips = NULL;
 
 		cfid++;
-		grok_input(l);
+		grok_input(inbuf);
 
 		/* Skip empty lines */
-		if (strlen(l) == 0) continue;
+		if (strlen(inbuf) == 0) continue;
 
-		if ((*l == '$') && strchr(l, '=')) {
+		if ((*inbuf == '$') && strchr(inbuf, '=')) {
 			/* Define a macro */
 			token_t *newtok = (token_t *) malloc(sizeof(token_t));
 			char *delim;
 
-			delim = strchr(l, '=');
+			delim = strchr(inbuf, '=');
 			*delim = '\0';
-			newtok->name = strdup(l+1);	/* Skip the '$' */
+			newtok->name = strdup(inbuf+1);	/* Skip the '$' */
 			newtok->value = strdup(preprocess(delim+1));
 			newtok->next = tokhead;
 			tokhead = newtok;
 			continue;
 		}
 
-		strncpy(cfline, l, (sizeof(cfline)-1));
+		strncpy(cfline, inbuf, (sizeof(cfline)-1));
 		cfline[sizeof(cfline)-1] = '\0';
 
 		/* Expand macros inside the line before parsing */
-		p = strtok(preprocess(l), " \t");
+		p = strtok(preprocess(inbuf), " \t");
 		while (p) {
 			if ((strncasecmp(p, "PAGE=", 5) == 0) || (strncasecmp(p, "PAGES=", 6) == 0)) {
 				char *val;
@@ -698,6 +700,7 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 
 	flush_rule(currule);
 	fclose(fd);
+	if (inbuf) xfree(inbuf);
 
 	MEMUNDEFINE(cfline);
 	MEMUNDEFINE(fn);
@@ -1642,25 +1645,25 @@ void save_state(char *filename)
 void load_state(char *filename)
 {
 	FILE *fd = fopen(filename, "r");
-	char l[8192];
+	char *inbuf = NULL;
+	int inbufsz;
 	char *p;
 
 	if (fd == NULL) return;
 
-	MEMDEFINE(l);
+	initfgets(fd);
+	while (unlimfgets(&inbuf, &inbufsz, fd)) {
+		p = strchr(inbuf, '\n'); if (p) *p = '\0';
 
-	while (fgets(l, sizeof(l), fd)) {
-		p = strchr(l, '\n'); if (p) *p = '\0';
-
-		p = strchr(l, '|');
+		p = strchr(inbuf, '|');
 		if (p) {
 			repeat_t *newrpt;
 
 			*p = '\0';
-			if (atoi(l) > time(NULL)) {
+			if (atoi(inbuf) > time(NULL)) {
 				newrpt = (repeat_t *)malloc(sizeof(repeat_t));
 				newrpt->recipid = strdup(p+1);
-				newrpt->nextalert = atoi(l);
+				newrpt->nextalert = atoi(inbuf);
 				newrpt->next = rpthead;
 				rpthead = newrpt;
 			}
@@ -1668,8 +1671,7 @@ void load_state(char *filename)
 	}
 
 	fclose(fd);
-
-	MEMUNDEFINE(l);
+	if (inbuf) xfree(inbuf);
 }
 
 void alert_printmode(int on)
