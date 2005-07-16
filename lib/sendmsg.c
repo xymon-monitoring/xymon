@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.62 2005-07-16 09:58:59 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.63 2005-07-16 14:59:51 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -47,7 +47,7 @@ static int	bbmsgsz;		/* Bytes allocated for bbmsg */
 static char	*msgbuf = NULL;		/* message buffer for one status message */
 static int	msgbufsz;		/* Bytes allocated for msgbuf */
 static int	msgcolor;		/* color of status message in msgbuf */
-static int      maxmsgspercombo = 0;	/* 0 = no limit */
+static int      maxmsgspercombo = 100;	/* 0 = no limit. 100 is a reasonable default. */
 static int      sleepbetweenmsgs = 0;
 static int      bbdportnumber = 0;
 static char     *bbdispproxyhost = NULL;
@@ -496,16 +496,31 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 
 
 /* Routines for handling combo message transmission */
+static void combo_params(void)
+{
+	static int issetup = 0;
+
+	if (issetup) return;
+
+	issetup = 1;
+
+	if (xgetenv("BBMAXMSGSPERCOMBO")) maxmsgspercombo = atoi(xgetenv("BBMAXMSGSPERCOMBO"));
+	if (maxmsgspercombo == 0) {
+		/* Force it to 100 */
+		dprintf("BBMAXMSGSPERCOMBO is 0, setting it to 100\n");
+		maxmsgspercombo = 100;
+	}
+
+	if (xgetenv("BBSLEEPBETWEENMSGS")) sleepbetweenmsgs = atoi(xgetenv("BBSLEEPBETWEENMSGS"));
+}
+
 void combo_start(void)
 {
+	combo_params();
+
 	if (bbmsg) *bbmsg = '\0';
 	addtobuffer(&bbmsg, &bbmsgsz, "combo\n");
 	bbmsgqueued = 0;
-
-	if ((maxmsgspercombo == 0) && xgetenv("BBMAXMSGSPERCOMBO")) 
-		maxmsgspercombo = atoi(xgetenv("BBMAXMSGSPERCOMBO"));
-	if ((sleepbetweenmsgs == 0) && xgetenv("BBSLEEPBETWEENMSGS")) 
-		sleepbetweenmsgs = atoi(xgetenv("BBSLEEPBETWEENMSGS"));
 }
 
 void meta_start(void)
