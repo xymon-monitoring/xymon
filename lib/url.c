@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: url.c,v 1.13 2005-04-10 07:14:49 henrik Exp $";
+static char rcsid[] = "$Id: url.c,v 1.14 2005-07-16 09:58:17 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -162,7 +162,8 @@ static void load_netrc(void)
 
 	char netrcfn[MAXPATHLEN];
 	FILE *fd;
-	char l[4096];
+	char *inbuf = NULL;
+	int inbufsz;
 	char *host, *login, *password, *p;
 	int state = WANT_TOKEN;
 
@@ -170,7 +171,6 @@ static void load_netrc(void)
 	loaded = 1;
 
 	MEMDEFINE(netrcfn);
-	MEMDEFINE(l);
 
 	/* Look for $BBHOME/etc/netrc first, then the default ~/.netrc */
 	sprintf(netrcfn, "%s/etc/netrc", xgetenv("BBHOME"));
@@ -183,22 +183,21 @@ static void load_netrc(void)
 
 	if (fd == NULL) {
 		MEMUNDEFINE(netrcfn);
-		MEMUNDEFINE(l);
-
 		return;
 	}
 
 	host = login = password = NULL;
-	while (fgets(l, sizeof(l), fd)) {
-		p = strchr(l, '\n'); 
+	initfgets(fd);
+	while (unlimfgets(&inbuf, &inbufsz, fd)) {
+		p = strchr(inbuf, '\n'); 
 		if (p) {
 			*p = '\0';
 			p--;
-			if ((p > l) && (*p == '\r')) *p = '\0';
+			if ((p > inbuf) && (*p == '\r')) *p = '\0';
 		}
 
-		if ((l[0] != '#') && strlen(l)) {
-			p = strtok(l, " \t");
+		if ((inbuf[0] != '#') && strlen(inbuf)) {
+			p = strtok(inbuf, " \t");
 			while (p) {
 				switch (state) {
 				  case WANT_TOKEN:
@@ -241,9 +240,9 @@ static void load_netrc(void)
 	}
 
 	fclose(fd);
+	if (inbuf) xfree(inbuf);
 
 	MEMUNDEFINE(netrcfn);
-	MEMUNDEFINE(l);
 }
 
 /*
