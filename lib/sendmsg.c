@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.61 2005-07-14 16:46:32 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.62 2005-07-16 09:58:59 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -749,7 +749,7 @@ int main(int argc, char *argv[])
 		char *inpline = NULL;
 		int inplinesz;
 
-		unlimfgets(NULL, NULL, NULL);
+		initfgets(stdin);
 		while (unlimfgets(&inpline, &inplinesz, stdin)) addtobuffer(&msg, &msgsz, inpline);
 		result = sendmessage(msg, recipient, stdout, NULL, 1, timeout);
 	}
@@ -757,7 +757,7 @@ int main(int argc, char *argv[])
 		char *inpline = NULL;
 		int inplinesz;
 
-		unlimfgets(NULL, NULL, NULL);
+		initfgets(stdin);
 		while (unlimfgets(&inpline, &inplinesz, stdin)) {
 			result = sendmessage(inpline, recipient, NULL, NULL, 0, timeout);
 		}
