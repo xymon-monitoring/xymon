@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-confreport.c,v 1.4 2005-06-06 20:08:12 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-confreport.c,v 1.5 2005-07-16 09:52:25 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -482,19 +482,22 @@ static int coltext_compare(const void *v1, const void *v2)
 void load_columndocs(void)
 {
 	char fn[PATH_MAX];
-	char l[4096];
 	FILE *fd;
+	char *inbuf = NULL;
+	int inbufsz;
 
 	sprintf(fn, "%s/etc/columndoc.csv", xgetenv("BBHOME"));
 	fd = fopen(fn, "r"); if (!fd) return;
 
-	/* Skip the header line */
-	if (!fgets(l, sizeof(l), fd)) { fclose(fd); return; }
+	initfgets(fd);
 
-	while (fgets(l, sizeof(l), fd)) {
+	/* Skip the header line */
+	if (!unlimfgets(&inbuf, &inbufsz, fd)) { fclose(fd); return; }
+
+	while (unlimfgets(&inbuf, &inbufsz, fd)) {
 		char *s1 = NULL, *s2 = NULL;
 
-		s1 = strtok(l, coldelim);
+		s1 = strtok(inbuf, coldelim);
 		if (s1) s2 = strtok(NULL, coldelim);
 
 		if (s1 && s2) {
@@ -507,6 +510,7 @@ void load_columndocs(void)
 		}
 	}
 	fclose(fd);
+	if (inbuf) xfree(inbuf);
 }
 
 
