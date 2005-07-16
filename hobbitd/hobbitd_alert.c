@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.60 2005-07-15 13:39:54 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.61 2005-07-16 09:53:49 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -150,7 +150,7 @@ void load_checkpoint(char *filename)
 	fd = fopen(filename, "r");
 	if (fd == NULL) return;
 
-	unlimfgets(NULL, NULL, NULL);
+	initfgets(fd);
 	while (unlimfgets(&inbuf, &inbufsz, fd)) {
 		char *item[20], *p;
 		int i;

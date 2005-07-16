@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: netservices.c,v 1.7 2005-07-14 17:10:25 henrik Exp $";
+static char rcsid[] = "$Id: netservices.c,v 1.8 2005-07-16 09:57:38 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -172,8 +172,8 @@ char *init_tcp_services(void)
 	lastupdate = st.st_mtime;
 	head = tail = first = NULL;
 
-	unlimfgets(NULL, NULL, NULL);
-	while (fd && unlimfgets(&inbuf, &inbufsz, fd)) {
+	initfgets(fd);
+	while (unlimfgets(&inbuf, &inbufsz, fd)) {
 		char *l, *eol;
 
 		l = strchr(inbuf, '\n'); if (l) *l = '\0';

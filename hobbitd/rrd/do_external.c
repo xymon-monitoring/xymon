@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char external_rcsid[] = "$Id: do_external.c,v 1.12 2005-07-14 17:36:53 henrik Exp $";
+static char external_rcsid[] = "$Id: do_external.c,v 1.13 2005-07-16 09:58:41 henrik Exp $";
 
 int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -52,7 +52,7 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		extfd = popen(extcmd, "r");
 		if (extfd) {
 			pstate = R_DEFS;
-			unlimfgets(NULL, NULL, NULL);
+			initfgets(extfd);
 
 			while (unlimfgets(&inbuf, &inbufsz, extfd)) {
 				p = strchr(inbuf, '\n'); if (p) *p = '\0';
