@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.33 2005-06-06 20:07:39 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.34 2005-07-16 09:54:13 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -195,7 +195,8 @@ void parse_query(void)
 void load_gdefs(char *fn)
 {
 	FILE *fd;
-	char l[4096];
+	char *inbuf = NULL;
+	int inbufsz;
 	char *p;
 	gdef_t *newitem = NULL;
 	char **alldefs = NULL;
@@ -203,9 +204,9 @@ void load_gdefs(char *fn)
 
 	fd = stackfopen(fn, "r");
 	if (fd == NULL) errormsg("Cannot load graph definitions");
-	while (stackfgets(l, sizeof(l), "include", NULL)) {
-		p = strchr(l, '\n'); if (p) *p = '\0';
-		p = l; p += strspn(p, " \t");
+	while (stackfgets(&inbuf, &inbufsz, "include", NULL)) {
+		p = strchr(inbuf, '\n'); if (p) *p = '\0';
+		p = inbuf; p += strspn(p, " \t");
 		if ((strlen(p) == 0) || (*p == '#')) continue;
 
 		if (*p == '[') {
@@ -261,6 +262,7 @@ void load_gdefs(char *fn)
 	}
 
 	stackfclose(fd);
+	if (inbuf) xfree(inbuf);
 }
 
 char *colon_escape(char *buf)

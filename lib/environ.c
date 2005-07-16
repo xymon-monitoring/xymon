@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.22 2005-07-15 09:44:06 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.23 2005-07-16 09:51:49 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -191,7 +191,8 @@ void envcheck(char *envvars[])
 void loadenv(char *envfile, char *area)
 {
 	FILE *fd;
-	char l[32768];
+	char *inbuf = NULL;
+	int inbufsz;
 	char *p, *oneenv;
 	int n;
 
@@ -199,10 +200,10 @@ void loadenv(char *envfile, char *area)
 
 	fd = stackfopen(envfile, "r");
 	if (fd) {
-		while (stackfgets(l, sizeof(l), "include", NULL)) {
-			grok_input(l);
+		while (stackfgets(&inbuf, &inbufsz, "include", NULL)) {
+			grok_input(inbuf);
 
-			if (strlen(l) && strchr(l, '=')) {
+			if (strlen(inbuf) && strchr(inbuf, '=')) {
 				oneenv = NULL;
 
 				/*
@@ -210,14 +211,14 @@ void loadenv(char *envfile, char *area)
 				 * is of the form AREA/NAME=VALUE, then setup the variable
 				 * only if we're called with the correct AREA setting.
 				 */
-				p = l + strcspn(l, "=/");
+				p = inbuf + strcspn(inbuf, "=/");
 				if (*p == '/') {
 					if (area) {
 						*p = '\0';
-						if (strcasecmp(l, area) == 0) oneenv = strdup(expand_env(p+1));
+						if (strcasecmp(inbuf, area) == 0) oneenv = strdup(expand_env(p+1));
 					}
 				}
-				else oneenv = strdup(expand_env(l));
+				else oneenv = strdup(expand_env(inbuf));
 
 				if (oneenv) {
 					p = strchr(oneenv, '=');
@@ -232,12 +233,13 @@ void loadenv(char *envfile, char *area)
 			}
 		}
 		stackfclose(fd);
+		if (inbuf) xfree(inbuf);
 
 		/* If MACHINE is undefined, but MACHINEDOTS is there, create MACHINE  */
 		if (getenv("MACHINE") == NULL && xgetenv("MACHINEDOTS")) {
-			sprintf(l, "MACHINE=%s", xgetenv("MACHINEDOTS"));
-			p = l; while ((p = strchr(p, '.')) != NULL) *p = ',';
-			oneenv = strdup(l);
+			oneenv = (char *)malloc(10 + strlen(xgetenv("MACHINEDOTS")));
+			sprintf(oneenv, "MACHINE=%s", xgetenv("MACHINEDOTS"));
+			p = oneenv; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			putenv(oneenv);
 		}
 	}

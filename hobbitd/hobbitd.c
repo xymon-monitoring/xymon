@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.166 2005-07-14 18:11:36 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.167 2005-07-16 09:55:18 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -1525,6 +1525,8 @@ int get_config(char *fn, conn_t *msg)
 	FILE *fd = NULL;
 	int done = 0;
 	int n;
+	char *inbuf = NULL;
+	int inbufsz;
 
 	dprintf("-> get_config %s\n", fn);
 	sprintf(fullfn, "%s/etc/%s", xgetenv("BBHOME"), fn);
@@ -1538,20 +1540,18 @@ int get_config(char *fn, conn_t *msg)
 	msg->bufp = msg->buf;
 	msg->buflen = 0;
 	do {
-		if ((msg->bufsz - msg->buflen) < 1024) {
-			msg->bufsz += 4096;
-			msg->buf = realloc(msg->buf, msg->bufsz);
-			msg->bufp = msg->buf + msg->buflen;
-		}
-		done = (stackfgets(msg->bufp, (msg->bufsz - msg->buflen), "include", NULL) == NULL);
+		done = (stackfgets(&inbuf, &inbufsz, "include", NULL) == NULL);
 		if (!done) {
-			n = strlen(msg->bufp);
+			addtobuffer(&msg->buf, &msg->bufsz, inbuf);
+			n = strlen(inbuf);
 			msg->buflen += n;
 			msg->bufp += n;
 		}
 	} while (!done);
 
 	stackfclose(fd);
+	if (inbuf) xfree(inbuf);
+
 	dprintf("<- get_config\n");
 
 	return 0;
@@ -2557,7 +2557,7 @@ void load_checkpoint(char *fn)
 
 	MEMDEFINE(hostip);
 
-	unlimfgets(NULL, NULL, NULL);
+	initfgets(fd);
 	while (unlimfgets(&inbuf, &inbufsz, fd)) {
 		hostname = testname = sender = testflags = statusmsg = disablemsg = ackmsg = NULL;
 		lastchange = validtime = enabletime = acktime = 0;

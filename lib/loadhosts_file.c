@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.11 2005-06-20 12:30:20 henrik Exp $";
+static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.12 2005-07-16 09:56:00 henrik Exp $";
 
 
 static int get_page_name_title(char *buf, char *key, char **name, char **title)
@@ -51,7 +51,8 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 	FILE *bbhosts;
 	int ip1, ip2, ip3, ip4, banksize;
 	char hostname[4096];
-	char l[4096];
+	char *inbuf = NULL;
+	int inbufsz;
 	pagelist_t *curtoppage, *curpage, *pgtail;
 	namelist_t *nametail = NULL;
 
@@ -63,16 +64,16 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 	curpage = curtoppage = pgtail = pghead;
 
 	bbhosts = stackfopen(bbhostsfn, "r");
-	while (stackfgets(l, sizeof(l), "include", extrainclude)) {
+	while (stackfgets(&inbuf, &inbufsz, "include", extrainclude)) {
 		char *eoln;
 
-		eoln = strchr(l, '\n'); if (eoln) *eoln = '\0';
+		eoln = strchr(inbuf, '\n'); if (eoln) *eoln = '\0';
 
-		if (strncmp(l, "page ", 5) == 0) {
+		if (strncmp(inbuf, "page ", 5) == 0) {
 			pagelist_t *newp;
 			char *name, *title;
 
-			if (get_page_name_title(l, "page", &name, &title) == 0) {
+			if (get_page_name_title(inbuf, "page", &name, &title) == 0) {
 				newp = (pagelist_t *)malloc(sizeof(pagelist_t));
 				newp->pagepath = strdup(name);
 				newp->pagetitle = (title ? strdup(title) : NULL);
@@ -84,11 +85,11 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 				curpage = curtoppage = newp;
 			}
 		}
-		else if (strncmp(l, "subpage ", 8) == 0) {
+		else if (strncmp(inbuf, "subpage ", 8) == 0) {
 			pagelist_t *newp;
 			char *name, *title;
 
-			if (get_page_name_title(l, "subpage", &name, &title) == 0) {
+			if (get_page_name_title(inbuf, "subpage", &name, &title) == 0) {
 				newp = (pagelist_t *)malloc(sizeof(pagelist_t));
 				newp->pagepath = malloc(strlen(curtoppage->pagepath) + strlen(name) + 2);
 				sprintf(newp->pagepath, "%s/%s", curtoppage->pagepath, name);
@@ -102,12 +103,12 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 				curpage = newp;
 			}
 		}
-		else if (strncmp(l, "subparent ", 10) == 0) {
+		else if (strncmp(inbuf, "subparent ", 10) == 0) {
 			pagelist_t *newp, *parent;
 			char *pname, *name, *title;
 
 			parent = NULL;
-			if (get_page_name_title(l, "subparent", &pname, &title) == 0) {
+			if (get_page_name_title(inbuf, "subparent", &pname, &title) == 0) {
 				for (parent = pghead; (parent && !pagematch(parent, pname)); parent = parent->next);
 			}
 
@@ -125,7 +126,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 				curpage = newp;
 			}
 		}
-		else if (sscanf(l, "%d.%d.%d.%d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
+		else if (sscanf(inbuf, "%d.%d.%d.%d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
 			char *startoftags, *tag, *delim;
 			int elemidx, elemsize;
 			char clientname[4096];
@@ -159,7 +160,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 			newitem->defaulthost = defaulthost;
 
 			clientname[0] = downtime[0] = '\0';
-			startoftags = strchr(l, '#');
+			startoftags = strchr(inbuf, '#');
 			if (startoftags == NULL) startoftags = ""; else startoftags++;
 			startoftags += strspn(startoftags, " \t\r\n");
 			newitem->allelems = strdup(startoftags);
@@ -255,7 +256,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 			MEMUNDEFINE(clientname);
 			MEMUNDEFINE(downtime);
 		}
-		else if (sscanf(l, "dialup %s %d.%d.%d.%d %d", hostname, &ip1, &ip2, &ip3, &ip4, &banksize) == 6) {
+		else if (sscanf(inbuf, "dialup %s %d.%d.%d.%d %d", hostname, &ip1, &ip2, &ip3, &ip4, &banksize) == 6) {
 			namelist_t *newitem = calloc(1, sizeof(namelist_t));
 
 			sprintf(newitem->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
@@ -277,6 +278,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 		}
 	}
 	stackfclose(bbhosts);
+	if (inbuf) xfree(inbuf);
 
 	MEMUNDEFINE(hostname);
 	MEMUNDEFINE(l);
