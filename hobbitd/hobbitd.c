@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.167 2005-07-16 09:55:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.168 2005-07-16 15:37:14 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -57,6 +57,19 @@ static char rcsid[] = "$Id: hobbitd.c,v 1.167 2005-07-16 09:55:18 henrik Exp $";
 #include "libbbgen.h"
 
 #include "hobbitd_ipc.h"
+
+/*
+ * The absolute maximum size we'll grow our buffers to accomodate an incoming message.
+ * This is really just an upper bound to squash the bad guys trying to data-flood us. 
+ */
+#define MAX_HOBBIT_INBUFSZ (10*1024*1024)	/* 10 MB */
+
+/* The initial size of an input buffer. Make this large enough for most traffic. */
+#define HOBBIT_INBUF_INITIAL   (32768)
+
+/* How much the input buffer grows per re-allocation */
+#define HOBBIT_INBUF_INCREMENT (8192)
+
 
 /* This holds the names of the tests we have seen reports for */
 typedef struct hobbitd_testlist_t {
@@ -505,7 +518,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			    "@@%s#%u|%d.%06d|%s|%s", 
 			    channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender,
 			    readymsg);
-		if (n > (SHAREDBUFSZ-5)) errprintf("Oversize data msg from %s truncated (n=%d)\n", sender, n);
+		if (n > (SHAREDBUFSZ-5)) errprintf("Oversize data msg from %s truncated (n=%d, limit %d)\n", 
+						   sender, n, SHAREDBUFSZ);
 		*(channel->channelbuf + SHAREDBUFSZ - 5) = '\0';
 	}
 	else {
@@ -529,8 +543,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 				n += snprintf(channel->channelbuf+n, (SHAREDBUFSZ-n-5), "\n%s", msg);
 			}
 			if (n > (SHAREDBUFSZ-5)) {
-				errprintf("Oversize status msg from %s:%s truncated (n=%d)\n", 
-					hostname, log->test->testname, n);
+				errprintf("Oversize status msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
+					sender, hostname, log->test->testname, n, SHAREDBUFSZ);
 			}
 			*(channel->channelbuf + SHAREDBUFSZ - 5) = '\0';
 			break;
@@ -550,8 +564,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 				n += snprintf(channel->channelbuf+n, (SHAREDBUFSZ-n-5), "\n%s", msg);
 			}
 			if (n > (SHAREDBUFSZ-5)) {
-				errprintf("Oversize stachg msg from %s:%s truncated (n=%d)\n", 
-					hostname, log->test->testname, n);
+				errprintf("Oversize stachg msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
+					sender, hostname, log->test->testname, n, SHAREDBUFSZ);
 			}
 			*(channel->channelbuf + SHAREDBUFSZ - 5) = '\0';
 			break;
@@ -589,8 +603,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 					log->cookie, msg);
 			}
 			if (n > (SHAREDBUFSZ-5)) {
-				errprintf("Oversize page/ack/notify msg from %s:%s truncated (n=%d)\n", 
-					hostname, (log->test ? log->test->testname : "<none>"), n);
+				errprintf("Oversize page/ack/notify msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
+					sender, hostname, (log->test ? log->test->testname : "<none>"), n, SHAREDBUFSZ);
 			}
 			*(channel->channelbuf + SHAREDBUFSZ - 5) = '\0';
 			break;
@@ -605,8 +619,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 				sender, hostname, msg);
 			if (n > (SHAREDBUFSZ-5)) {
-				errprintf("Oversize notes msg from %s:%s truncated (n=%d)\n", 
-					hostname, log->test->testname, n);
+				errprintf("Oversize notes msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
+					sender, hostname, log->test->testname, n, SHAREDBUFSZ);
 			}
 			*(channel->channelbuf + SHAREDBUFSZ - 5) = '\0';
 			break;
@@ -617,8 +631,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 				channelmarker, channel->seq, (int) tstamp.tv_sec, (int)tstamp.tv_usec,
 				sender, hostname, log->test->testname, (int) log->enabletime);
 			if (n > (SHAREDBUFSZ-5)) {
-				errprintf("Oversize enadis msg from %s:%s truncated (n=%d)\n", 
-					hostname, log->test->testname, n);
+				errprintf("Oversize enadis msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
+					sender, hostname, log->test->testname, n, SHAREDBUFSZ);
 			}
 			*(channel->channelbuf + SHAREDBUFSZ - 5) = '\0';
 			break;
@@ -2728,7 +2742,7 @@ void check_purple_status(void)
 	hobbitd_log_t *lwalk;
 	time_t now = time(NULL);
 
-	dprintf("Start check for purple logs\n");
+	dprintf("-> check_purple_status\n");
 	for (hosthandle = rbtBegin(rbhosts); (hosthandle != rbtEnd(rbhosts)); hosthandle = rbtNext(rbhosts, hosthandle)) {
 		char *hkey;
 
@@ -2796,7 +2810,7 @@ void check_purple_status(void)
 			}
 		}
 	}
-	dprintf("End check for purple logs\n");
+	dprintf("<- check_purple_status\n");
 }
 
 void sig_handler(int signum)
@@ -3135,12 +3149,31 @@ int main(int argc, char *argv[])
 
 	errprintf("Setup complete\n");
 	do {
+		/*
+		 * The endless loop.
+		 *
+		 * First attend to the housekeeping chores:
+		 * - send out our heartbeat signal;
+		 * - rotate logs, if we have been asked to;
+		 * - re-load the bb-hosts configuration if needed;
+		 * - check for stale status-logs that must go purple;
+		 * - inject our own statistics message.
+		 * - save the checkpoint file;
+		 *
+		 * Then do the network I/O.
+		 */
 		struct timeval seltmo;
 		fd_set fdread, fdwrite;
 		int maxfd, n;
 		conn_t *cwalk;
 		time_t now = time(NULL);
 		int childstat;
+
+		if (parentpid && (nextheartbeat <= now)) {
+			dprintf("Sending heartbeat to pid %d\n", (int) parentpid);
+			nextheartbeat = now + 5;
+			kill(parentpid, SIGUSR2);
+		}
 
 		if (logfn && dologswitch) {
 			freopen(logfn, "a", stdout);
@@ -3185,21 +3218,6 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		if (now > nextcheckpoint) {
-			pid_t childpid;
-
-			reloadconfig = 1;
-			nextcheckpoint = now + checkpointinterval;
-			childpid = fork();
-			if (childpid == -1) {
-				errprintf("Could not fork checkpoint child:%s\n", strerror(errno));
-			}
-			else if (childpid == 0) {
-				save_checkpoint();
-				exit(0);
-			}
-		}
-
 		if (do_purples && (now > nextpurpleupdate)) {
 			nextpurpleupdate = time(NULL) + 60;
 			check_purple_status();
@@ -3225,6 +3243,26 @@ int main(int argc, char *argv[])
 			flush_errbuf();
 		}
 
+		if (now > nextcheckpoint) {
+			pid_t childpid;
+
+			reloadconfig = 1;
+			nextcheckpoint = now + checkpointinterval;
+			childpid = fork();
+			if (childpid == -1) {
+				errprintf("Could not fork checkpoint child:%s\n", strerror(errno));
+			}
+			else if (childpid == 0) {
+				save_checkpoint();
+				exit(0);
+			}
+		}
+
+		/*
+		 * Prepare for the network I/O.
+		 * Find the largest open socket we have, from our active sockets,
+		 * and setup the select() FD sets.
+		 */
 		FD_ZERO(&fdread); FD_ZERO(&fdwrite);
 		FD_SET(lsocket, &fdread); maxfd = lsocket;
 
@@ -3241,12 +3279,12 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		if (parentpid && (nextheartbeat <= now)) {
-			dprintf("Sending heartbeat to pid %d\n", (int) parentpid);
-			nextheartbeat = now + 5;
-			kill(parentpid, SIGUSR2);
-		}
-
+		/* 
+		 * Do the select() with a static 5 second timeout. 
+		 * This is long enough that we will suspend activity for
+		 * some time if there's nothing to do, but short enough for
+		 * us to attend to the housekeeping stuff without undue delay.
+		 */
 		seltmo.tv_sec = 5; seltmo.tv_usec = 0;
 		n = select(maxfd+1, &fdread, &fdwrite, NULL, &seltmo);
 		if (n <= 0) {
@@ -3260,25 +3298,41 @@ int main(int argc, char *argv[])
 			}
 		}
 
+		/*
+		 * Now do the actual data exchange over the net.
+		 */
 		for (cwalk = connhead; (cwalk); cwalk = cwalk->next) {
 			switch (cwalk->doingwhat) {
 			  case RECEIVING:
 				if (FD_ISSET(cwalk->sock, &fdread)) {
 					n = read(cwalk->sock, cwalk->bufp, (cwalk->bufsz - cwalk->buflen - 1));
 					if (n <= 0) {
+						/* End of input data on this connection */
 						*(cwalk->bufp) = '\0';
 
 						/* FIXME - need to set origin here */
 						do_message(cwalk, "");
 					}
 					else {
+						/* Add data to the input buffer - within reason ... */
 						cwalk->bufp += n;
 						cwalk->buflen += n;
 						*(cwalk->bufp) = '\0';
 						if ((cwalk->bufsz - cwalk->buflen) < 2048) {
-							cwalk->bufsz += 2048;
-							cwalk->buf = (unsigned char *) realloc(cwalk->buf, cwalk->bufsz);
-							cwalk->bufp = cwalk->buf + cwalk->buflen;
+							if (cwalk->bufsz < MAX_HOBBIT_INBUFSZ) {
+								cwalk->bufsz += HOBBIT_INBUF_INCREMENT;
+								cwalk->buf = (unsigned char *) realloc(cwalk->buf, cwalk->bufsz);
+								cwalk->bufp = cwalk->buf + cwalk->buflen;
+							}
+							else {
+								/* Someone is flooding us */
+								errprintf("Data flooding from %s, closing connection\n",
+									  inet_ntoa(cwalk->addr.sin_addr));
+								shutdown(cwalk->sock, SHUT_RDWR);
+								close(cwalk->sock); 
+								cwalk->sock = -1; 
+								cwalk->doingwhat = NOTALK;
+							}
 						}
 					}
 				}
@@ -3421,7 +3475,7 @@ int main(int argc, char *argv[])
 				conntail->sock = sock;
 				memcpy(&conntail->addr, &addr, sizeof(conntail->addr));
 				conntail->doingwhat = RECEIVING;
-				conntail->bufsz = 32768;
+				conntail->bufsz = HOBBIT_INBUF_INITIAL;
 				conntail->buf = (unsigned char *)malloc(conntail->bufsz);
 				conntail->bufp = conntail->buf;
 				conntail->buflen = 0;
