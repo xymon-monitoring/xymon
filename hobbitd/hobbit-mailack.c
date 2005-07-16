@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-mailack.c,v 1.9 2005-06-25 06:20:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-mailack.c,v 1.10 2005-07-16 09:53:14 henrik Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -23,7 +23,8 @@ static char rcsid[] = "$Id: hobbit-mailack.c,v 1.9 2005-06-25 06:20:00 henrik Ex
 
 int main(int argc, char *argv[])
 {
-	char buf[4096];
+	char *inbuf = NULL, *ackbuf;
+	int inbufsz;
 	char *subjectline = NULL;
 	char *returnpathline = NULL;
 	char *fromline = NULL;
@@ -53,31 +54,33 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	while (fgets(buf, sizeof(buf), stdin)) {
-		p = buf + strcspn(buf, "\r\n"); *p = '\0';
+	initfgets(stdin);
+	while (unlimfgets(&inbuf, &inbufsz, stdin)) {
+		p = inbuf + strcspn(inbuf, "\r\n"); *p = '\0';
 
 		if (!inheaders) {
 			/* We're in the message body. Look for a "delay=N" line here. */
-			if ((duration == 0) && (strncasecmp(buf, "delay=", 6) == 0)) {
-				duration = durationvalue(buf+6);
+			if ((duration == 0) && (strncasecmp(inbuf, "delay=", 6) == 0)) {
+				duration = durationvalue(inbuf+6);
 				continue;
 			}
 			/* Save the first line of the message body, but ignore blank lines */
-			else if (*buf && !firsttxtline) {
-				firsttxtline = strdup(buf);
+			else if (*inbuf && !firsttxtline) {
+				firsttxtline = strdup(inbuf);
 			}
 
 			continue;	/* We dont care about the rest of the message body */
 		}
 
 		/* See if we're at the end of the mail headers */
-		if (inheaders && (strlen(buf) == 0)) { inheaders = 0; continue; }
+		if (inheaders && (strlen(inbuf) == 0)) { inheaders = 0; continue; }
 
 		/* Is it one of those we want to keep ? */
-		if (strncasecmp(buf, "return-path:", 12) == 0) returnpathline = strdup(skipwhitespace(buf+12));
-		else if (strncasecmp(buf, "from:", 5) == 0)    fromline = strdup(skipwhitespace(buf+5));
-		else if (strncasecmp(buf, "subject:", 8) == 0) subjectline = strdup(skipwhitespace(buf+8));
+		if (strncasecmp(inbuf, "return-path:", 12) == 0) returnpathline = strdup(skipwhitespace(inbuf+12));
+		else if (strncasecmp(inbuf, "from:", 5) == 0)    fromline = strdup(skipwhitespace(inbuf+5));
+		else if (strncasecmp(inbuf, "subject:", 8) == 0) subjectline = strdup(skipwhitespace(inbuf+8));
 	}
+	if (inbuf) xfree(inbuf);
 
 	/* No subject ? No deal */
 	if (subjectline == NULL) {
@@ -142,18 +145,19 @@ int main(int argc, char *argv[])
 
 	/* Setup the acknowledge message */
 	if (duration == 0) duration = 60;	/* Default: Ack for 60 minutes */
-	p = buf;
+	ackbuf = (char *)malloc(4096 + strlen(firsttxtline) + (fromline ? strlen(fromline) : 0));
+	p = ackbuf;
 	p += sprintf(p, "hobbitdack %s %d %s", cookie, duration, firsttxtline);
 	if (fromline) {
 		p += sprintf(p, "\nAcked by: %s", fromline);
 	}
 
 	if (debug) {
-		printf("%s\n", buf);
+		printf("%s\n", ackbuf);
 		return 0;
 	}
 
-	sendmessage(buf, NULL, NULL, NULL, 0, 30);
+	sendmessage(ackbuf, NULL, NULL, NULL, 0, 30);
 	return 0;
 }
 
