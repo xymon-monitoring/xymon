@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.79 2005-05-20 14:31:44 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.80 2005-07-16 21:14:13 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -70,6 +70,8 @@ static time_t sslcert_expiretime(char *timestr)
 	struct tm *t;
 	struct tm exptime;
 	time_t gmtofs, result;
+
+	memset(&exptime, 0, sizeof(exptime));
 
 	/* expire date: 2004-01-02 08:04:15 GMT */
 	res = sscanf(timestr, "%4d-%2d-%2d %2d:%2d:%2d", 
