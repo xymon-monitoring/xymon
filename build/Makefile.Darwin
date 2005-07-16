@@ -8,7 +8,7 @@ NETLIBS =
 
 # Compile flags for normal build
 CC = gcc
-CFLAGS = -g -O -D_REENTRANT -DBIND_8_COMPAT=1 $(OSDEF)
+CFLAGS = -g -O -Wall -Wno-strict-alias -Wno-unused -D_REENTRANT -DBIND_8_COMPAT=1 $(OSDEF)
 
 # Compile flags for debugging
 # CFLAGS = -g -DDEBUG -D_REENTRANT -DBIND_8_COMPAT=1
