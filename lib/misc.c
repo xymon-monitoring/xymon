@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.38 2005-07-14 21:27:13 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.39 2005-07-16 09:57:03 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -27,6 +27,7 @@ static char rcsid[] = "$Id: misc.c,v 1.38 2005-07-14 21:27:13 henrik Exp $";
 #if !defined(HPUX)              /* HP-UX has select() and friends in sys/types.h */
 #include <sys/select.h>         /* Someday I'll move to GNU Autoconf for this ... */
 #endif
+#include <fcntl.h>
 
 #include "libbbgen.h"
 #include "version.h"
@@ -355,6 +356,12 @@ int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int
 
 		close(pfd[1]);
 
+		/* Make our reads non-blocking */
+		if (fcntl(pfd[0], F_SETFL, O_NONBLOCK) == -1) {
+			/* Failed .. but lets try and run this anyway */
+			errprintf("Could not set non-blocking reads on pipe: %s\n", strerror(errno));
+		}
+
 		gettimeofday(&cutoff, &tz);
 		cutoff.tv_sec += timeout;
 
@@ -440,7 +447,8 @@ void do_bbext(FILE *output, char *extenv, char *family)
 	char *bbexts, *p;
 	FILE *inpipe;
 	char extfn[PATH_MAX];
-	char buf[4096];
+	char *inbuf = NULL;
+	int inbufsz;
 
 	p = xgetenv(extenv);
 	if (p == NULL) {
@@ -449,7 +457,6 @@ void do_bbext(FILE *output, char *extenv, char *family)
 	}
 
 	MEMDEFINE(extfn);
-	MEMDEFINE(buf);
 
 	bbexts = strdup(p);
 	p = strtok(bbexts, "\t ");
@@ -461,9 +468,11 @@ void do_bbext(FILE *output, char *extenv, char *family)
 			sprintf(extfn, "%s/ext/%s/%s", xgetenv("BBHOME"), family, p);
 			inpipe = popen(extfn, "r");
 			if (inpipe) {
-				while (fgets(buf, sizeof(buf), inpipe)) 
-					fputs(buf, output);
+				initfgets(inpipe);
+				while (unlimfgets(&inbuf, &inbufsz, inpipe)) 
+					fputs(inbuf, output);
 				pclose(inpipe);
+				if (inbuf) xfree(inbuf);
 			}
 		}
 		p = strtok(NULL, "\t ");
