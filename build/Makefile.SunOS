@@ -7,7 +7,7 @@ NETLIBS = -lresolv -lsocket -lnsl
 
 # Compile flags for normal build
 CC = gcc
-CFLAGS = -g -O2 -Wall -Wno-unused -Wno-strict-alias -D_REENTRANT -DHAVE_RPCENT $(OSDEF)
+CFLAGS = -g -O2 -Wall -Wno-unused -Wno-strict-aliasing -D_REENTRANT -DHAVE_RPCENT $(OSDEF)
 
 # Compile flags for debugging
 # CFLAGS = -g -DDEBUG -Wall -D_REENTRANT -DHAVE_RPCENT $(OSDEF)
