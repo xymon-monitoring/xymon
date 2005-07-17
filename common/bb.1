@@ -37,26 +37,28 @@ or BBPAGERS environment variable (for "status" and "page" messages,
 respectively). 
 
 Usually, a client will use "$BBDISP" for the \fBRECIPIENT\fR 
-parameter, as this is defined by the client scripts
-to automatically contain the correct value from the
-.I bb-hosts(5)
-file.
+parameter, as this is defined for the client scripts
+to automatically contain the correct value.
 
 The \fBRECIPIENT\fR parameter may be a URL for a webserver
 that has the bbmessage.cgi or similar script installed. This
 tunnels the Hobbit messages to the BBDISPLAY server 
 using standard HTTP protocol. The 
 .I bbmessage.cgi(1)
-CGI script provided as part of the bbgen toolkit must be
-installed on the webserver for the HTTP transport to work.
+CGI tool (included in Hobbit) must be installed on the webserver 
+for the HTTP transport to work.
 .br
 
 .IP MESSAGE
 The \fBmessage\fR parameter is the message to be sent across
 to the Hobbit server. Messages must be enclosed in quotes,
 but by doing so they can span multiple lines. The maximum size
-of a message is defined by the MAXMSG compile-time setting
-and defaults to 32 KB.
+of a message is defined by the maximum allowed length of your
+shell's commandline, and is typically 8-32 KB. 
+
+If you need to send longer status messages, you can specify "@" 
+as the message: bb will then read the status message from its
+stdin.
 
 .SH HOBBIT MESSAGE SYNTAX
 
@@ -215,11 +217,35 @@ After the first line comes the full status log in plain text format.
 Retrieves an XML-string with the status log as for the 
 "hobbitdlog" command.
 
-.IP "hobbitdboard"
+.IP "hobbitdboard [CRITERIA] [fields=FIELDLIST]"
 Retrieves a summary of the status of all known tests available to
-the Hobbit daemon. This returns one line for each HOSTNAME.TESTNAME
-combination that has reported to Hobbit, with the following information
-for each status (fields are separated by pipe-signs):
+the Hobbit daemon. 
+
+By default - if no CRITERIA is provided - it returns one line for all 
+status messages that are found in Hobbit. You can filter the response
+by selecting a page, a host, a test or a color - wildcards are not 
+supported, so you can pick only one page, host, test or color. 
+.sp
+.BR page=PAGEPATH
+Include only tests from hosts found on the PAGEPATH page in the bb-hosts
+file.
+.sp
+.BR host=HOSTNAME
+Include only tests from the host HOSTNAME
+.sp
+.BR test=TESTNAME
+Include only tests with the testname TESTNAME
+.sp
+.BR color=COLORNAME
+Include only tests where the status color is COLORNAME
+.sp
+You can filter on e.g. both a hostname and a testname. 
+
+The response is one line for each status that matches the CRITERIA,
+or all statuses if no criteria is specified. The line is composed of
+a number of fields, separated by a pipe-sign. You can select what
+fields to retrieve by listing them in the FIELDLIST. The following
+fields are available:
 .sp
 .BR hostname
 The name of the host
@@ -230,7 +256,7 @@ The name of the test
 .BR color
 Status color (green, yellow, red, blue, clear, purple)
 .sp
-.BR testflags
+.BR flags
 For network tests, the flags indicating details about the test (used by bbgen).
 .sp
 .BR lastchange
@@ -254,7 +280,26 @@ IP-address where the status was received from.
 .BR cookie
 -1, or the cookie value used to acknowledge an alert.
 .sp
-.BR "First line of status log"
+.BR line1
+First line of status log.
+.sp
+.BR ackmsg
+Empty (if no acknowledge is active), or the text of the acknowledge
+message.
+.sp
+.BR dismsg
+Empty (if the status is currently enabled), or the text of the disable message.
+.sp
+.BR msg
+The full text of the current status message.
+
+The ackmsg, dismsg and msg fields have certain characters encoded: Newline
+is "\\n", TAB is "\\t", carriage return is "\\r", a pipe-sign is "\\p", 
+and a backslash is "\\\\".
+
+If the "fields" parameter is omitted, a default set of
+hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1
+is used.
 
 .IP "hobbitdxboard"
 Retrieves an XML-string with the summary of all status logs
@@ -289,6 +334,12 @@ if we get a response):
        mv /tmp/bb-dftab.new $BBHOME/etc/bb-dftab
      fi
 
+Send a very large status message that has been built in the
+file "statusmsg.txt". Instead of providing it on the command line, 
+pass it via stdin to the bb command:
+
+   $ cat statusmsg.txt | $BB $BBDISP "@"
+
 .SH NOTES
 This man-page describes the bb client program provided
 as part of Hobbit . This implementation provides features 
@@ -296,9 +347,6 @@ not present in the standard Big Brother bb client -
 specifically, the support for sending messages over HTTP, 
 and many commands such as "query" and "config" are not part 
 of the bb client shipped with Big Brother.
-
-The Hobbit version of the bb client program is compatible
-with version 1.9e-BTF of the Big Brother bb client.
 
 .SH "SEE ALSO"
 bbcombotest(1), bb-hosts(5), hobbitserver.cfg(5), hobbit(7)
