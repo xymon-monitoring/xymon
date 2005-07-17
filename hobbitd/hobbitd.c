@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.168 2005-07-16 15:37:14 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.169 2005-07-17 12:50:30 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -160,6 +160,7 @@ hobbitd_channel_t *pagechn   = NULL;	/* Receives alert messages (triggered from 
 hobbitd_channel_t *datachn   = NULL;	/* Receives raw "data" messages */
 hobbitd_channel_t *noteschn  = NULL;	/* Receives raw "notes" messages */
 hobbitd_channel_t *enadischn = NULL;	/* Receives "enable" and "disable" messages */
+hobbitd_channel_t *clientchn = NULL;	/* Receives "client" messages */
 
 #define NO_COLOR (COL_COUNT)
 static char *colnames[COL_COUNT+1];
@@ -335,6 +336,8 @@ char *generate_stats(void)
 	bufp += sprintf(bufp, "notes  channel messages: %10ld (%d readers)\n", noteschn->msgcount, clients);
 	clients = semctl(enadischn->semid, CLIENTCOUNT, GETVAL);
 	bufp += sprintf(bufp, "enadis channel messages: %10ld (%d readers)\n", enadischn->msgcount, clients);
+	clients = semctl(clientchn->semid, CLIENTCOUNT, GETVAL);
+	bufp += sprintf(bufp, "client channel messages: %10ld (%d readers)\n", clientchn->msgcount, clients);
 
 	if (ghostlist) {
 		ghostlist_t *tmp;
@@ -610,6 +613,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			break;
 
 		  case C_DATA:
+		  case C_CLIENT:
 			/* Data channel messages are pre-formatted so we never go here */
 			break;
 
@@ -1359,6 +1363,31 @@ void handle_notify(char *msg, char *sender, hobbitd_log_t *log)
 	return;
 }
 
+void handle_client(char *msg, char *sender, char *hostname, char *clienttype)
+{
+	char *chnbuf;
+	int buflen = 0;
+
+	dprintf("->handle_client\n");
+
+	if (hostname) buflen += strlen(hostname); else dprintf("  hostname is NULL\n");
+	if (clienttype) buflen += strlen(clienttype); else dprintf("  clienttype is NULL\n");
+	if (msg) buflen += strlen(msg); else dprintf("  msg is NULL\n");
+	buflen += 4;
+
+	chnbuf = (char *)malloc(buflen);
+	snprintf(chnbuf, buflen, "%s|%s\n%s", 
+		 (hostname ? hostname : ""), 
+		 (clienttype ? clienttype : ""), 
+		 msg);
+
+	posttochannel(clientchn, channelnames[C_CLIENT], msg, sender, hostname, NULL, chnbuf);
+	xfree(chnbuf);
+	dprintf("<-handle_client\n");
+}
+
+
+
 void free_log_t(hobbitd_log_t *zombie)
 {
 	hobbitd_meta_t *mwalk, *mtmp;
@@ -1437,6 +1466,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			posttochannel(datachn, marker, NULL, sender, NULL, NULL, msgbuf);
 			posttochannel(noteschn, marker, NULL, sender, NULL, NULL, msgbuf);
 			posttochannel(enadischn, marker, NULL, sender, NULL, NULL, msgbuf);
+			posttochannel(clientchn, marker, NULL, sender, NULL, NULL, msgbuf);
 		}
 
 		xfree(msgbuf);
@@ -2461,6 +2491,64 @@ void do_message(conn_t *msg, char *origin)
 			}
 		}
 	}
+	else if (strncmp(msg->buf, "client", 6) == 0) {
+		char *hostname = NULL, *clienttype = NULL;
+		char *bhost, *ehost, *btype;
+		char savechar;
+
+		msgfrom = strstr(msg->buf, "\nStatus message received from ");
+		if (msgfrom) {
+			sscanf(msgfrom, "\nStatus message received from %16s\n", sender);
+			*msgfrom = '\0';
+		}
+
+		bhost = msg->buf + strlen("client"); bhost += strspn(bhost, " \t");
+		ehost = bhost + strcspn(bhost, " \t\r\n");
+		savechar = *ehost; *ehost = '\0';
+
+		btype = strrchr(bhost, '.');
+		if (btype) {
+			char *p;
+
+			*btype = '\0';
+			hostname = strdup(bhost);
+			p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
+			*btype = '.';
+			clienttype = strdup(btype+1);
+
+			if (*hostname == '\0') { errprintf("Invalid client message - blank hostname\n"); xfree(hostname); hostname = NULL; }
+			if (*clienttype == '\0') { errprintf("Invalid client message - blank type\n"); xfree(clienttype); clienttype = NULL; }
+		}
+		else {
+			errprintf("Invalid client message - no type in '%s'\n", bhost);
+		}
+
+		*ehost = savechar;
+
+		if (hostname && clienttype) {
+			char *hname, hostip[20];
+			int maybedown;
+
+			MEMDEFINE(hostip);
+
+			hname = knownhost(hostname, hostip, ghosthandling, &maybedown);
+
+			if (hname == NULL) {
+				log_ghost(hostname, sender, msg->buf);
+			}
+			else if (!oksender(statussenders, hostip, msg->addr.sin_addr, msg->buf)) {
+				/* Invalid sender */
+				errprintf("Invalid client message - sender %s not allowed for host %s\n", sender, hostname);
+			}
+			else {
+				handle_client(msg->buf, sender, hname, clienttype);
+			}
+
+			xfree(hostname); xfree(clienttype);
+
+			MEMUNDEFINE(hostip);
+		}
+	}
 
 done:
 	if (msg->doingwhat == RESPONDING) {
@@ -3126,6 +3214,8 @@ int main(int argc, char *argv[])
 	if (noteschn == NULL) { errprintf("Cannot setup notes channel\n"); return 1; }
 	enadischn  = setup_channel(C_ENADIS, CHAN_MASTER);
 	if (enadischn == NULL) { errprintf("Cannot setup enadis channel\n"); return 1; }
+	clientchn  = setup_channel(C_CLIENT, CHAN_MASTER);
+	if (clientchn == NULL) { errprintf("Cannot setup client channel\n"); return 1; }
 
 	errprintf("Setting up logfiles\n");
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -3185,6 +3275,7 @@ int main(int argc, char *argv[])
 			posttochannel(datachn, "logrotate", NULL, "hobbitd", NULL, NULL, "");
 			posttochannel(noteschn, "logrotate", NULL, "hobbitd", NULL, NULL, "");
 			posttochannel(enadischn, "logrotate", NULL, "hobbitd", NULL, NULL, "");
+			posttochannel(clientchn, "logrotate", NULL, "hobbitd", NULL, NULL, "");
 		}
 
 		if (reloadconfig && bbhostsfn) {
@@ -3496,6 +3587,7 @@ int main(int argc, char *argv[])
 	posttochannel(datachn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
 	posttochannel(noteschn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
 	posttochannel(enadischn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
+	posttochannel(clientchn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
 	running = 0;
 
 	/* Close the channels */
@@ -3505,6 +3597,7 @@ int main(int argc, char *argv[])
 	close_channel(datachn, CHAN_MASTER);
 	close_channel(noteschn, CHAN_MASTER);
 	close_channel(enadischn, CHAN_MASTER);
+	close_channel(clientchn, CHAN_MASTER);
 
 	save_checkpoint();
 	unlink(pidfile);
