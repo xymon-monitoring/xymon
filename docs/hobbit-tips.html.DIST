@@ -191,7 +191,7 @@ definition from the default one to the one below that shows Fahrenheit graphs.</
 instead of TEXT.</p>
 
 <hr>
-<h3><a name="mancgi">I cannot see the the man-pages on the web</a></h3>
+<h3><a name="mancgi">I cannot see the man-pages on the web</a></h3>
 <p>A common Apache configuration mistakenly believes any filename containing
 ".cgi" is a CGI-script, so it refuses to present the man-pages for the CGI
 scripts. Stephen Beaudry found the solution:</p>
