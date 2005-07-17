@@ -13,15 +13,24 @@ to perform all of the tasks needed by the Hobbit monitor.
 A task is defined by a \fBkey\fR, a \fBcommand\fR, and optionally 
 also \fBinterval\fR, \fBenvironment\fR, and \fBlogfile\fR.
 
+Blank lines and lines starting with a hash mark (#) are treated as 
+comments and ignored.  Long lines can be broken up by putting a 
+backslash at the end of the line and continuing the entry on the 
+next line.
+
 An entry looks like this:
 .sp
     [hobbitd]
 .br
-          CMD /usr/local/bb/bb/bin/hobbitd
-.sp
-    [bbdisplay]
+          ENVFILE /usr/local/hobbit/server/etc/hobbitserver.cfg
 .br
-          CMD /usr/local/bb/bb/bin/bbgen
+          CMD /usr/local/hobbit/server/bin/hobbitd
+.sp
+    [updateweb]
+.br
+          ENVFILE /usr/local/hobbit/server/etc/hobbitserver.cfg
+.br
+          CMD /usr/local/hobbit/server/bin/bbgen
 .br
           NEEDS hobbitd
 .br
@@ -29,9 +38,7 @@ An entry looks like this:
 .br
           INTERVAL 5m
 .br
-          ENVFILE /usr/local/bb/bb/etc/hobbitserver.env
-.br
-          LOGFILE /var/log/bb/bbdisplay.log
+          LOGFILE /var/log/hobbit/updateweb.log
 .sp
 The \fBkey\fR is enclosed in angle brackets, and must be unique
 for each task. You can choose your key-names as you like, they
