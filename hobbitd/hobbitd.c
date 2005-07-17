@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.169 2005-07-17 12:50:30 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.170 2005-07-17 13:19:21 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -194,6 +194,7 @@ hobbitd_statistics_t hobbitd_stats[] = {
 	{ "page", 0 },
 	{ "summary", 0 },
 	{ "data", 0 },
+	{ "client", 0 },
 	{ "notes", 0 },
 	{ "enable", 0 },
 	{ "disable", 0 },
