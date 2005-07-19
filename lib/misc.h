@@ -35,11 +35,7 @@ extern void do_bbext(FILE *output, char *extenv, char *family);
 extern char **setup_commandargs(char *cmdline, char **cmd);
 extern int checkalert(char *alertlist, char *test);
 
-#if defined(HPUX) || defined(BSD) || defined(AIX)
-#define atoll my_atoll
-#endif
-
-extern unsigned long long my_atoll(char *s);
+extern long long str2ll(char *s, char **errptr);
 
 #endif
 

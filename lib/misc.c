@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.39 2005-07-16 09:57:03 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.40 2005-07-19 20:49:27 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -546,23 +546,25 @@ char **setup_commandargs(char *cmdline, char **cmd)
 	return cmdargs;
 }
 
-unsigned long long my_atoll(char *s)
+long long str2ll(char *s, char **errptr)
 {
-	/*
-	 * Since atoll may not exist, we do our own
-	 */
-	unsigned long long result = 0;
-	char *p;
+	long long result = 0;
+	int negative = 0;
+	char *inp;
 
-	p = s + strspn(s, " \t");
-	while (*p && isdigit((int)*p)) {
-		result = (result * 10) + (*p - '0');
-		p++;
+	inp = s + strspn(s, " \t");
+	if (*inp == '-') { negative = 1; inp++; }
+	while (isdigit((int)*inp)) { 
+		result = 10*result + (*inp - '0'); 
+		inp++;
 	}
+
+	if (errptr && (*inp != '\0') && (!isspace((int)*inp))) *errptr = inp;
+
+	if (negative) result = -result;
 
 	return result;
 }
-
 int checkalert(char *alertlist, char *testname)
 {
 	char *alist, *aname;
@@ -580,4 +582,5 @@ int checkalert(char *alertlist, char *testname)
 	xfree(aname); xfree(alist);
 	return result;
 }
+
 

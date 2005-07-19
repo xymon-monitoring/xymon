@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char la_rcsid[] = "$Id: do_la.c,v 1.19 2005-07-19 06:27:56 henrik Exp $";
+static char la_rcsid[] = "$Id: do_la.c,v 1.20 2005-07-19 20:49:27 henrik Exp $";
 
 int do_la_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -189,21 +189,21 @@ done_parsing:
 	if (memhosts_init && (rbtFind(memhosts, hostname) == rbtEnd(memhosts))) {
 		/* Pick up memory statistics */
 		int found, overflow, realuse, swapuse;
-		long phystotal, physavail, pagetotal, pageavail;
+		long long phystotal, physavail, pagetotal, pageavail;
 
 		found = overflow = realuse = swapuse = 0;
 		phystotal = physavail = pagetotal = pageavail = 0;
 
 		p = strstr(msg, "Total Physical memory:");
 		if (p) { 
-			phystotal = strtol(strchr(p, ':') + 1, NULL, 10); 
+			phystotal = str2ll(strchr(p, ':') + 1, NULL); 
 			if (phystotal != LONG_MAX) found++; else overflow++;
 		}
 
 		if (found == 1) {
 			p = strstr(msg, "Available Physical memory:");
 			if (p) { 
-				physavail = strtol(strchr(p, ':') + 1, NULL, 10); 
+				physavail = str2ll(strchr(p, ':') + 1, NULL); 
 				if (physavail != LONG_MAX) found++; else overflow++;
 			}
 		}
@@ -211,7 +211,7 @@ done_parsing:
 		if (found == 2) {
 			p = strstr(msg, "Total PageFile size:"); 
 			if (p) { 
-				pagetotal = strtol(strchr(p, ':') + 1, NULL, 10); 
+				pagetotal = str2ll(strchr(p, ':') + 1, NULL); 
 				if (pagetotal != LONG_MAX) found++; else overflow++;
 			}
 		}
@@ -219,7 +219,7 @@ done_parsing:
 		if (found == 3) {
 			p = strstr(msg, "Available PageFile size:"); 
 			if (p) { 
-				pageavail = strtol(strchr(p, ':') + 1, NULL, 10); 
+				pageavail = str2ll(strchr(p, ':') + 1, NULL); 
 				if (pageavail != LONG_MAX) found++; else overflow++;
 			}
 		}

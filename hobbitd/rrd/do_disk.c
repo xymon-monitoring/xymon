@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.26 2005-06-05 09:24:39 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.27 2005-07-19 20:49:27 henrik Exp $";
 
 int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -59,7 +59,7 @@ int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		char *diskname = NULL;
 		int pused = -1;
 		int wanteddisk = 1;
-		unsigned long long aused = 0;
+		long long aused = 0;
 
 		eoln = strchr(curline, '\n'); if (eoln) *eoln = '\0';
 
@@ -127,7 +127,7 @@ int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			diskname = xstrdup(columns[1]);
 			pused = atoi(columns[5]);
 			p = columns[3] + strspn(columns[3], "0123456789");
-			aused = atoll(columns[3]);
+			aused = str2ll(columns[3], NULL);
 			/* Convert to KB if there's a modifier after the numbers */
 			if (*p == 'M') aused *= 1024;
 			else if (*p == 'G') aused *= (1024*1024);
@@ -135,7 +135,7 @@ int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			break;
 		  case DT_NETWARE:
 			diskname = xstrdup(columns[1]);
-			aused = atoll(columns[3]);
+			aused = str2ll(columns[3], NULL);
 			pused = atoi(columns[7]);
 			break;
 		}
