@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.170 2005-07-17 13:19:21 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.171 2005-07-19 06:04:58 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -2577,6 +2577,7 @@ void save_checkpoint(void)
 	hobbitd_log_t *lwalk;
 	time_t now = time(NULL);
 	scheduletask_t *swalk;
+	int iores = 0;
 
 	if (checkpointfn == NULL) return;
 
@@ -2585,13 +2586,14 @@ void save_checkpoint(void)
 	sprintf(tempfn, "%s.%d", checkpointfn, (int)now);
 	fd = fopen(tempfn, "w");
 	if (fd == NULL) {
-		errprintf("Cannot open checkpoint file %s\n", tempfn);
+		errprintf("Cannot open checkpoint file %s : %s\n", tempfn, strerror(errno));
 		xfree(tempfn);
 		return;
 	}
 
-	for (hosthandle = rbtBegin(rbhosts); (hosthandle != rbtEnd(rbhosts)); hosthandle = rbtNext(rbhosts, hosthandle)) {
+	for (hosthandle = rbtBegin(rbhosts); ((hosthandle != rbtEnd(rbhosts)) && (iores >= 0)); hosthandle = rbtNext(rbhosts, hosthandle)) {
 		char *hkey;
+		char *msgstr;
 
 		rbtKeyValue(rbhosts, hosthandle, (void **)&hkey, (void **)&hwalk);
 
@@ -2606,7 +2608,7 @@ void save_checkpoint(void)
 				lwalk->ackmsg = NULL;
 				lwalk->acktime = 0;
 			}
-			fprintf(fd, "@@HOBBITDCHK-V1|%s|%s|%s|%s|%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%s", 
+			iores = fprintf(fd, "@@HOBBITDCHK-V1|%s|%s|%s|%s|%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%s", 
 				lwalk->origin->name, hwalk->hostname, lwalk->test->testname, lwalk->sender,
 				colnames[lwalk->color], 
 				(lwalk->testflags ? lwalk->testflags : ""),
@@ -2615,19 +2617,36 @@ void save_checkpoint(void)
 				(int) lwalk->enabletime, (int) lwalk->acktime, 
 				lwalk->cookie, (int) lwalk->cookieexpires,
 				nlencode(lwalk->message));
-			fprintf(fd, "|%s", nlencode(lwalk->dismsg));
-			fprintf(fd, "|%s", nlencode(lwalk->ackmsg));
-			fprintf(fd, "\n");
+			if (lwalk->dismsg) msgstr = nlencode(lwalk->dismsg); else msgstr = "";
+			if (iores >= 0) iores = fprintf(fd, "|%s", msgstr);
+			if (lwalk->ackmsg) msgstr = nlencode(lwalk->ackmsg); else msgstr = "";
+			if (iores >= 0) iores = fprintf(fd, "|%s", msgstr);
+			if (iores >= 0) iores = fprintf(fd, "\n");
 		}
 	}
 
-	for (swalk = schedulehead; (swalk); swalk = swalk->next) {
-		fprintf(fd, "@@HOBBITDCHK-V1|.task.|%d|%d|%s|%s\n", 
+	for (swalk = schedulehead; (swalk && (iores >= 0)); swalk = swalk->next) {
+		iores = fprintf(fd, "@@HOBBITDCHK-V1|.task.|%d|%d|%s|%s\n", 
 			swalk->id, (int)swalk->executiontime, swalk->sender, nlencode(swalk->command));
 	}
 
-	fclose(fd);
-	rename(tempfn, checkpointfn);
+	if (iores < 0) {
+		errprintf("I/O error while saving the checkpoint file: %s\n", strerror(errno));
+		exit(1);
+	}
+
+	iores = fclose(fd);
+	if (iores == EOF) {
+		errprintf("I/O error while closing the checkpoint file: %s\n", strerror(errno));
+		exit(1);
+	}
+
+	iores = rename(tempfn, checkpointfn);
+	if (iores == -1) {
+		errprintf("I/O error while renaming the checkpoint file: %s\n", strerror(errno));
+		exit(1);
+	}
+
 	xfree(tempfn);
 	dprintf("<- save_checkpoint\n");
 }
