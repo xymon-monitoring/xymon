@@ -7,7 +7,7 @@ NETLIBS =
 
 # Compile flags for normal build
 CC = gcc
-CFLAGS = -g -O2 -Wall -Wno-unused -Wno-strict-aliasing -D_REENTRANT -I/usr/local/include -L/usr/local/lib $(OSDEF)
+CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT -I/usr/local/include -L/usr/local/lib $(OSDEF)
 # According to reports, this does not work on OpenBSD
 # RPATH = "-Wl,--rpath="
 
