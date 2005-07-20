@@ -10,9 +10,14 @@
 
 CFLAGS += -I. -I$(BUILDTOPDIR)/include
 
-BUILDTARGETS = lib-build common-build bbdisplay-build bbnet-build bbproxy-build docs-build build-build hobbitd-build
-INSTALLTARGETS = install-bbdisplay install-bbnet install-bbproxy install-man install-hobbitd install-docs
-INSTALLNOCGITARGETS = install-bbdisplay-nocgi install-bbnet install-bbproxy install-hobbitd install-docs
+ifeq ($(CLIENTONLY),yes)
+	BUILDTARGETS = client
+	INSTALLTARGETS = install-client install-clientmsg
+else
+	BUILDTARGETS = lib-build common-build bbdisplay-build bbnet-build bbproxy-build docs-build build-build hobbitd-build
+	INSTALLTARGETS = install-bbdisplay install-bbnet install-bbproxy install-man install-hobbitd install-docs install-servermsg
+	INSTALLNOCGITARGETS = install-bbdisplay-nocgi install-bbnet install-bbproxy install-hobbitd install-docs install-servermsg
+endif
 
 ifndef INSTALLBINDIR
 INSTALLBINDIR = $(BBHOME)/bin
@@ -113,6 +118,8 @@ clean:
 ####################
 
 install: $(INSTALLTARGETS)
+
+install-servermsg:
 	@echo ""
 	@echo "Installation complete."
 	@echo ""
@@ -268,4 +275,10 @@ client-install: install-client
 
 install-client: client
 	BBHOME="$(BBTOPDIR)/client" INSTALLROOT="$(INSTALLROOT)" BBUSER="$(BBUSER)" $(MAKE) -C client install
+
+install-clientmsg:
+	@echo ""
+	@echo "Installation complete."
+	@echo ""
+	@echo "To start the Hobbit client, as the $(BBUSER) user run '${BBHOME}/runclient.sh start'"
 
