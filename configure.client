@@ -1,0 +1,175 @@
+#!/bin/sh
+
+# Configure script for Hobbit CLIENT
+# $Id: configure.client,v 1.1 2005-07-20 06:27:16 henrik Exp $
+
+echo ""
+echo "Configuration script for Hobbit client"
+echo ""
+
+if test -r Makefile
+then
+	echo "Already configured - remove Makefile to re-configure"
+	exit 1
+fi
+
+echo "This script asks a few questions and builds a Makefile to compile Hobbit"
+echo ""
+
+if test "$MAKE" = ""; then
+	MAKE=make
+fi
+echo "Checking your make-utility"
+MAKEVER=`$MAKE -version 2>&1 | head -1 | awk '{print $1 " " $2}'`
+if test "$MAKEVER" != "GNU Make"
+then
+	echo "GNU make is required to build Hobbit."
+	echo "If it is available as \"gmake\", run configure as: 'MAKE=gmake $0'"
+	exit 1
+fi
+
+echo "What userid will be running Hobbit [hobbit] ?"
+if test -z "$BBUSER"
+then
+	read BBUSER
+fi
+if test -z "$BBUSER"
+then
+	BBUSER="hobbit"
+fi
+
+if test -z "$BBTOPDIR"
+then
+	if test "`uname -s`" = "Darwin"
+	then
+		# Use "nireport" to pick data on Mac OSX. From Peter Welter
+		USERDATA="`nireport / /users name home | grep $BBUSER`"
+		if test "$USERDATA" != ""
+		then
+			echo "Found NetInfo entry for user: $USERDATA"
+		else
+			echo "FAILURE: The user $BBUSER does not exist. Create user and try again."
+			exit 1
+		fi
+		echo ""; echo ""
+		HOMEDIR="`echo $USERDATA | awk '{print $2}'`"
+	else
+		USERDATA=`getent passwd $BBUSER 2>/dev/null || grep "^${BBUSER}:" /etc/passwd`
+		if test $? -eq 0
+		then
+			echo "Found passwd entry for user $USERDATA"
+		else
+			echo "FAILURE: The user $BBUSER does not exist. Create user and try again."
+			exit 1
+		fi
+		echo ""; echo ""
+		HOMEDIR="`echo $USERDATA|cut -d: -f6`"
+	fi
+else
+	HOMEDIR="$BBTOPDIR"
+fi
+
+echo "Where do you want the Hobbit installation [${HOMEDIR}] ?"
+if test -z "$BBTOPDIR"
+then
+	read BBTOPDIR
+fi
+if test -z "$BBTOPDIR"
+then
+	BBTOPDIR=${HOMEDIR}
+fi
+if test -d "$BBTOPDIR"
+then
+	echo "OK, will configure to use $BBTOPDIR as the Hobbit toplevel directory"
+else
+	echo "WARNING: $BBTOPDIR does not exist."
+fi
+echo ""; echo ""
+
+echo "What is the IP-address of your Hobbit server [127.0.0.1] ? "
+if test -z "$BBHOSTIP"
+then
+	read BBHOSTIP
+fi
+if test -z "$BBHOSTIP"
+then
+	echo "** NOTE: Using 127.0.0.1 (loopback), but it is probably not what you want **"
+	BBHOSTIP=127.0.0.1
+fi
+echo ""; echo ""
+
+BBHOSTOS=`uname -s | tr [A-Z] [a-z]`
+if test "$BBHOME" = ""; then
+	BBHOME=$BBTOPDIR/client
+fi
+
+echo "# Toplevel Makefile for Hobbit"    > Makefile
+
+echo "BUILDTOPDIR=\`pwd\`"               >>Makefile
+echo "CLIENTONLY = yes"                  >>Makefile
+echo ""                                  >>Makefile
+echo "# configure settings for Hobbit"   >>Makefile
+echo "#"                                 >>Makefile
+echo "# Toplevel dir"                    >>Makefile
+echo "BBTOPDIR = $BBTOPDIR"              >>Makefile
+echo "# Server home dir for etc/, www/"  >>Makefile
+echo "BBHOME = $BBHOME"                  >>Makefile
+echo ""                                  >>Makefile
+echo "# hobbit settings follows"         >>Makefile
+echo "#"                                 >>Makefile
+echo "# Username running hobbit"         >>Makefile
+echo "BBUSER = $BBUSER"                  >>Makefile
+echo "# Hobbit server IP-address"        >>Makefile
+echo "BBHOSTIP = $BBHOSTIP"              >>Makefile
+echo "" >>Makefile
+if test -r build/Makefile.`uname -s`
+then
+	echo "include build/Makefile.`uname -s`" >>Makefile
+	echo ""
+	echo "Using `uname -s` Makefile settings"
+	echo ""
+else
+	echo "include build/Makefile.generic" >>Makefile
+	echo ""
+	echo "Using GENERIC Makefile settings"
+	echo ""
+	echo "If this fails, change the compile settings in Makefile"
+	echo ""
+	echo "I would appreciate it if you send the changes to"
+	echo "hobbit-owner@hswn.dk so I can include it in the next version."
+	echo ""
+fi
+echo "" >>Makefile
+if test "$INSTALLBINDIR" != ""; then
+	echo "INSTALLBINDIR = $INSTALLBINDIR"   >>Makefile
+fi
+if test "$INSTALLETCDIR" != ""; then
+	echo "INSTALLETCDIR = $INSTALLETCDIR"   >>Makefile
+fi
+if test "$INSTALLEXTDIR" != ""; then
+	echo "INSTALLEXTDIR = $INSTALLEXTDIR"   >>Makefile
+fi
+if test "$INSTALLTMPDIR" != ""; then
+	echo "INSTALLTMPDIR = $INSTALLTMPDIR"   >>Makefile
+fi
+if test "$INSTALLWEBDIR" != ""; then
+	echo "INSTALLWEBDIR = $INSTALLWEBDIR"   >>Makefile
+fi
+if test "$INSTALLWWWDIR" != ""; then
+	echo "INSTALLWWWDIR = $INSTALLWWWDIR"   >>Makefile
+fi
+echo "" >>Makefile
+echo "# Add local CFLAGS etc. settings here" >>Makefile
+echo "" >>Makefile
+echo "include build/Makefile.rules" >> Makefile
+echo "" >> Makefile
+
+echo ""; echo ""
+echo "Created Makefile with the necessary information to build Hobbit"
+echo "Some defaults are used, so do look at the Makefile before continuing."
+echo ""
+
+echo "Configuration complete - now run $MAKE (GNU make) to build the tools"
+
+exit 0
+
