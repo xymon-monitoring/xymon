@@ -1,4 +1,4 @@
-PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filter hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-mailack trimhistory hobbitreports.sh moverrd.sh
+PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filter hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-mailack trimhistory hobbitreports.sh moverrd.sh
 CGISCRIPTS = hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh
 SECCGISCRIPTS = bb-ack.sh hobbit-enadis.sh
 
@@ -14,6 +14,7 @@ HISTORYOBJS   = hobbitd_history.o   hobbitd_worker.o
 ALERTOBJS     = hobbitd_alert.o     hobbitd_worker.o do_alert.o
 RRDOBJS       = hobbitd_rrd.o       hobbitd_worker.o do_rrd.o
 SAMPLEOBJS    = hobbitd_sample.o    hobbitd_worker.o
+CLIENTOBJS    = hobbitd_client.o    hobbitd_worker.o
 HOBBITGRAPHOBJS= hobbitgraph.o
 HOBBITSVCOBJS = hobbitsvc.o hobbitsvc-info.o hobbitsvc-trends.o do_alert.o
 HOBBITENADISOBJS= hobbit-enadis.o
@@ -58,6 +59,12 @@ do_rrd.o: do_rrd.c do_rrd.h rrd/*.c
 
 hobbitd_sample: $(SAMPLEOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(RPATHOPT) $(SAMPLEOBJS) $(LIBOBJS)
+
+hobbitd_client: $(CLIENTOBJS) $(LIBOBJS)
+	$(CC) -o $@ $(RPATHOPT) $(CLIENTOBJS) $(LIBOBJS) $(NETLIBS)
+
+hobbitd_client.o: hobbitd_client*.c
+	$(CC) $(CFLAGS) -c -o $@ hobbitd_client.c
 
 hobbitgraph.o: hobbitgraph.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) $(RRDDEF) $(RRDINCDIR) -c -o $@ hobbitgraph.c
