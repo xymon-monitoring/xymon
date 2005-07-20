@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.1 2005-07-20 05:41:46 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.2 2005-07-20 06:13:31 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -206,7 +206,7 @@ void unix_memory_report(char *hostname, char *fromline, char *timestr,
 
 	memphyspct = (100 * memphysused) / memphystotal;
 	memswappct = (100 * memswapused) / memswaptotal;
-	if (memactused != -1) memactpct = (100 * memactused) / memphystotal;
+	if (memactused != -1) memactpct = (100 * memactused) / memphystotal; else memactpct = 0;
 
 	if ((memswappct > 50) || ((memactused != -1) && (memactpct > 90))) {
 		memorycolor = COL_YELLOW;
