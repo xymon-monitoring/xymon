@@ -8,6 +8,8 @@ echo "[uname]"
 uname -a
 echo "[uptime]"
 uptime
+echo "[who]"
+who
 echo "[df]"
 /usr/xpg4/bin/df -F ufs -k
 echo "[prtconf]"

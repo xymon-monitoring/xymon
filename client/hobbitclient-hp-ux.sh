@@ -8,6 +8,8 @@ echo "[uname]"
 uname -a
 echo "[uptime]"
 uptime
+echo "[who]"
+who
 echo "[df]"
 df -Pk
 echo "[memory]"

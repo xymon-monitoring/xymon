@@ -8,8 +8,8 @@ echo "[uname]"
 uname -a
 echo "[uptime]"
 uptime
-echo "[upsecs]"
-cat /proc/uptime | awk '{print $1}'
+echo "[who]"
+who
 echo "[df]"
 df -Pl -x none -x tmpfs -x shmfs
 echo "[free]"
