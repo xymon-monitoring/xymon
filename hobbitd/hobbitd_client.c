@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.2 2005-07-20 06:13:31 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.3 2005-07-20 07:20:08 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -126,11 +126,30 @@ void unix_cpu_report(char *hostname, char *fromline, char *timestr, char *uptime
 	int  msgsz;
 	char msgline[4096];
 
+	if (!uptimestr) return;
+
 	p = strstr(uptimestr, " up ");
 	if (p) {
-		p += 4;
+		char *daymark;
+		char *hourmark;
+		long uphour, upmin;
+		uptimesecs = 0;
+
+		p += 3;
 		uptimeresult = strdup(p);
-		p = strchr(uptimeresult, ','); if (p) *p = '\0';
+		daymark = strstr(uptimeresult, " day");
+
+		if (daymark) {
+			uptimesecs = atoi(uptimeresult) * 86400;
+			hourmark = strchr(daymark, ',');
+			if (hourmark) hourmark++; else hourmark = "";
+		}
+		else {
+			hourmark = uptimeresult;
+		}
+		hourmark += strspn(hourmark, " ");
+		if (sscanf(hourmark, "%ld:%ld", &uphour, &upmin) == 2) uptimesecs += 60*(60*uphour + upmin);
+		p = strchr(hourmark, ','); if (p) *p = '\0';
 	}
 
 	*loadresult = '\0';
@@ -150,6 +169,7 @@ void unix_cpu_report(char *hostname, char *fromline, char *timestr, char *uptime
 		commafy(hostname), colorname(cpucolor), timestr, 
 		uptimeresult, linecount(whostr), linecount(psstr)-1, loadresult);
 	addtobuffer(&msg, &msgsz, msgline);
+	if ((uptimesecs != -1) && (uptimesecs < 3600)) addtobuffer(&msg, &msgsz, "Machine recently rebooted");
 	if (topstr) {
 		addtobuffer(&msg, &msgsz, "\n\n");
 		addtobuffer(&msg, &msgsz, topstr);
@@ -171,6 +191,8 @@ void unix_disk_report(char *hostname, char *fromline, char *timestr, char *dfstr
 	char *msg = NULL;
 	int  msgsz;
 	char msgline[4096];
+
+	if (!dfstr) return;
 
 	sprintf(msgline, "status %s.disk %s %s - Disk partitions OK\n",
 		commafy(hostname), colorname(diskcolor), timestr);
@@ -248,43 +270,42 @@ void unix_memory_report(char *hostname, char *fromline, char *timestr,
 
 void unix_netstat_report(char *hostname, char *osid, char *netstatstr)
 {
-	if (netstatstr) {
-		char *msg = NULL;
-		int  msgsz;
-		char msgline[4096];
+	char *msg = NULL;
+	int  msgsz;
+	char msgline[4096];
 
-		sprintf(msgline, "data %s.netstat\n%s\n", commafy(hostname), osid);
-		addtobuffer(&msg, &msgsz, msgline);
-		addtobuffer(&msg, &msgsz, netstatstr);
-		sendmessage(msg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+	if (!netstatstr) return;
 
-		if (msg) xfree(msg);
-	}
+	sprintf(msgline, "data %s.netstat\n%s\n", commafy(hostname), osid);
+	addtobuffer(&msg, &msgsz, msgline);
+	addtobuffer(&msg, &msgsz, netstatstr);
+	sendmessage(msg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+
+	if (msg) xfree(msg);
 }
 
 
 void unix_vmstat_report(char *hostname, char *osid, char *vmstatstr)
 {
-	if (vmstatstr) {
-		char *msg = NULL;
-		int  msgsz;
-		char msgline[4096];
+	char *msg = NULL;
+	int  msgsz;
+	char msgline[4096];
 
-		char *p;
+	char *p;
 
-		sprintf(msgline, "data %s.vmstat\n%s\n", commafy(hostname), osid);
-		addtobuffer(&msg, &msgsz, msgline);
-		p = strrchr(vmstatstr, '\n');
-		if (strlen(p) == 1) {
-			/* Go back to the previous line */
-			p = strrchr(p-1, '\n');
-		}
-		addtobuffer(&msg, &msgsz, p+1);
-		sendmessage(msg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+	if (!vmstatstr) return;
 
-		if (msg) xfree(msg);
+	sprintf(msgline, "data %s.vmstat\n%s\n", commafy(hostname), osid);
+	addtobuffer(&msg, &msgsz, msgline);
+	p = strrchr(vmstatstr, '\n');
+	if (strlen(p) == 1) {
+		/* Go back to the previous line */
+		do { p--; } while ((p > vmstatstr) && (*p != '\n'));
 	}
+	addtobuffer(&msg, &msgsz, p+1);
+	sendmessage(msg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
 
+	if (msg) xfree(msg);
 }
 
 #include "client/linux.c"
