@@ -2,6 +2,7 @@
 #
 
 PROGRAMS = bbhostgrep bbhostshow bbdigest bb hobbitlaunch bbcmd bbmessage.cgi
+CLIENTPROGRAMS = ../client/bb ../client/hobbitlaunch
 
 HOSTGREPOBJS = bbhostgrep.o
 HOSTSHOWOBJS = bbhostshow.o
@@ -13,6 +14,7 @@ CMDOBJS = bbcmd.o
 
 all: $(PROGRAMS)
 
+client: $(CLIENTPROGRAMS)
 
 bbhostgrep: $(HOSTGREPOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/libbbgen.a
@@ -26,8 +28,14 @@ bbdigest: $(DIGESTOBJS) ../lib/libbbgen.a
 bb: $(MSGOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(MSGOBJS) ../lib/libbbgen.a $(NETLIBS)
 
+../client/bb: $(MSGOBJS) ../lib/hobbitclient.a
+	$(CC) $(CFLAGS) -o $@ $(MSGOBJS) ../lib/hobbitclient.a $(NETLIBS)
+
 hobbitlaunch: $(LAUNCHOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/libbbgen.a
+
+../client/hobbitlaunch: $(LAUNCHOBJS) ../lib/hobbitclient.a
+	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/hobbitclient.a
 
 bbcmd: $(CMDOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/libbbgen.a
