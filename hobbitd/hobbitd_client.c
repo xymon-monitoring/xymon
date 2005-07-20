@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.3 2005-07-20 07:20:08 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.4 2005-07-20 09:36:14 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -105,7 +105,7 @@ int linecount(char *msg)
 
 	nl = msg - 1;
 	while (nl) {
-		nl++; result++;
+		nl++; if (*nl >= ' ') result++;
 		nl = strchr(nl, '\n');
 	}
 
@@ -119,6 +119,7 @@ void unix_cpu_report(char *hostname, char *fromline, char *timestr, char *uptime
 	float load1, load5, load15;
 	char loadresult[100];
 	long uptimesecs = -1;
+	char myupstr[100];
 
 	int cpucolor = COL_GREEN;
 
@@ -165,9 +166,19 @@ void unix_cpu_report(char *hostname, char *fromline, char *timestr, char *uptime
 	if ((uptimesecs != -1) && (uptimesecs < 3600)) cpucolor = COL_YELLOW;
 	if (load5 > 8.0) cpucolor = COL_RED;
 
-	sprintf(msgline, "status %s.cpu %s %s up: %s, %d users, %d procs, load=%s\n",
+	if (uptimesecs != -1) {
+		int days = (uptimesecs / 86400);
+		int hours = (uptimesecs % 86400) / 3600;
+		int mins = (uptimesecs % 3600) / 60;
+
+		if (days) sprintf(myupstr, "up: %d days", days);
+		else sprintf(myupstr, "up: %02d:%02d", hours, mins);
+	}
+	else *myupstr = '\0';
+
+	sprintf(msgline, "status %s.cpu %s %s %s, %d users, %d procs, load=%s\n",
 		commafy(hostname), colorname(cpucolor), timestr, 
-		uptimeresult, linecount(whostr), linecount(psstr)-1, loadresult);
+		myupstr, linecount(whostr), linecount(psstr)-1, loadresult);
 	addtobuffer(&msg, &msgsz, msgline);
 	if ((uptimesecs != -1) && (uptimesecs < 3600)) addtobuffer(&msg, &msgsz, "Machine recently rebooted");
 	if (topstr) {
