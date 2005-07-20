@@ -46,14 +46,23 @@ all: $(BUILDTARGETS)
 	@echo "Build complete. Now run '${MAKE} install' as root"
 	@echo ""
 
+client: lib-client common-client build-build
+	CC="$(CC)" CFLAGS="$(CFLAGS)" BBHOME="$(BBTOPDIR)/client" BBHOSTIP="$(BBHOSTIP)" $(MAKE) -C client all
+
 build-build:
 	CC="$(CC)" CFLAGS="$(CFLAGS)" RPATHOPT="$(RPATHOPT)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" $(MAKE) -C build all
 
 lib-build:
 	CC="$(CC)" CFLAGS="$(CFLAGS)" RPATHOPT="$(RPATHOPT)" PCREINCDIR="$(PCREINCDIR)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBTOPDIR="$(BBTOPDIR)" BBLOGDIR="$(BBLOGDIR)" BBHOSTNAME="$(BBHOSTNAME)" BBHOSTIP="$(BBHOSTIP)" BBHOSTOS="$(BBHOSTOS)" $(MAKE) -C lib all
 
+lib-client:
+	CC="$(CC)" CFLAGS="$(CFLAGS)" RPATHOPT="$(RPATHOPT)" PCREINCDIR="$(PCREINCDIR)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBTOPDIR="$(BBTOPDIR)" BBLOGDIR="$(BBLOGDIR)" BBHOSTNAME="$(BBHOSTNAME)" BBHOSTIP="$(BBHOSTIP)" BBHOSTOS="$(BBHOSTOS)" $(MAKE) -C lib client
+
 common-build: lib-build
 	CC="$(CC)" CFLAGS="$(CFLAGS)" RPATHOPT="$(RPATHOPT)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" $(MAKE) -C common all
+
+common-client: lib-client
+	CC="$(CC)" CFLAGS="$(CFLAGS)" RPATHOPT="$(RPATHOPT)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" $(MAKE) -C common client
 
 bbdisplay-build: lib-build common-build
 	CC="$(CC)" CFLAGS="$(CFLAGS)" RPATHOPT="$(RPATHOPT)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" HISTGRAPHDEF="$(HISTGRAPHDEF)" RUNTIMEDEFS="$(RUNTIMEDEFS)" PCREINCDIR="$(PCREINCDIR)" PCRELIBS="$(PCRELIBS)" $(MAKE) -C bbdisplay all
@@ -94,6 +103,7 @@ clean:
 	$(MAKE) -C bbproxy clean
 	$(MAKE) -C hobbitd clean
 	$(MAKE) -C docs clean
+	$(MAKE) -C client clean
 	$(MAKE) -C custom clean || echo ""
 	rm -f ./*~ include/*~ debian/*~ rpm/*~ contrib/*~
 
@@ -252,4 +262,10 @@ install-docs:
 
 install-custom:
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" INSTALLROOT="$(INSTALLROOT)" INSTALLBINDIR="$(INSTALLBINDIR)" INSTALLETCDIR="$(INSTALLETCDIR)" INSTALLEXTDIR="$(INSTALLEXTDIR)" INSTALLTMPDIR="$(INSTALLTMPDIR)" INSTALLWEBDIR="$(INSTALLWEBDIR)" INSTALLWWWDIR="$(INSTALLWWWDIR)" $(MAKE) -C custom install || echo "Skipped custom modules"
+
+
+client-install: install-client
+
+install-client: client
+	BBHOME="$(BBTOPDIR)/client" INSTALLROOT="$(INSTALLROOT)" BBUSER="$(BBUSER)" $(MAKE) -C client install
 
