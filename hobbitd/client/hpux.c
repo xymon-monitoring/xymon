@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char hpux_rcsid[] = "$Id: hpux.c,v 1.1 2005-07-20 05:42:15 henrik Exp $";
+static char hpux_rcsid[] = "$Id: hpux.c,v 1.2 2005-07-20 07:20:43 henrik Exp $";
 
 void handle_hpux_client(char *hostname, char *sender, time_t timestamp, char *clientdata)
 {
@@ -20,6 +20,8 @@ void handle_hpux_client(char *hostname, char *sender, time_t timestamp, char *cl
 	char *psstr;
 	char *topstr;
 	char *dfstr;
+	char *memorystr;
+	char *swapinfostr;
 	char *netstatstr;
 	char *vmstatstr;
 
@@ -37,6 +39,8 @@ void handle_hpux_client(char *hostname, char *sender, time_t timestamp, char *cl
 	psstr = getdata("ps");
 	topstr = getdata("top");
 	dfstr = getdata("df");
+	memorystr = getdata("memory");
+	swapinfostr = getdata("swapinfo");
 	netstatstr = getdata("netstat");
 	vmstatstr = getdata("vmstat");
 
@@ -45,10 +49,25 @@ void handle_hpux_client(char *hostname, char *sender, time_t timestamp, char *cl
 	unix_cpu_report(hostname, fromline, timestr, uptimestr, whostr, psstr, topstr);
 	unix_disk_report(hostname, fromline, timestr, dfstr);
 
-#if 0
-	unix_memory_report(hostname, fromline, timestr,
-			   memphystotal, memphysused, memactused, memswaptotal, memswapused);
-#endif
+	if (memorystr && swapinfostr) {
+		unsigned long memphystotal, memphysfree, memphysused;
+		unsigned long memswaptotal, memswapfree, memswapused;
+		int found = 0;
+
+		p = strstr(memorystr, "Total:"); if (p) { memphystotal = atol(p+6); found++; }
+		p = strstr(memorystr, "Free:");  if (p) { memphysfree  = atol(p+5); found++; }
+		memphysused = memphystotal - memphysfree;
+
+		p = strstr(swapinfostr, "\ntotal");
+		if (p && (sscanf(p, "\ntotal %ld %ld %ld", &memswaptotal, &memswapused, &memswapfree) >= 2)) {
+			found++;
+		}
+
+		if (found == 3) {
+			unix_memory_report(hostname, fromline, timestr,
+				   memphystotal, memphysused, -1, memswaptotal, memswapused);
+		}
+	}
 
 	combo_end();
 
