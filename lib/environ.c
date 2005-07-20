@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.23 2005-07-16 09:51:49 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.24 2005-07-20 05:21:18 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -145,6 +145,17 @@ char *xgetenv(const char *name)
 	int i;
 
 	result = getenv(name);
+	if ((result == NULL) && (strcmp(name, "MACHINE") == 0) && xgetenv("MACHINEDOTS")) {
+		/* If MACHINE is undefined, but MACHINEDOTS is there, create MACHINE  */
+		char *oneenv, *p;
+		
+		oneenv = (char *)malloc(10 + strlen(xgetenv("MACHINEDOTS")));
+		sprintf(oneenv, "%s=%s", name, xgetenv("MACHINEDOTS"));
+		p = oneenv; while ((p = strchr(p, '.')) != NULL) *p = ',';
+		putenv(oneenv);
+		result = getenv(name);
+	}
+
 	if (result == NULL) {
 		for (i=0; (hobbitenv[i].name && (strcmp(hobbitenv[i].name, name) != 0)); i++) ;
 		if (hobbitenv[i].name) result = expand_env(hobbitenv[i].val);
@@ -234,14 +245,6 @@ void loadenv(char *envfile, char *area)
 		}
 		stackfclose(fd);
 		if (inbuf) xfree(inbuf);
-
-		/* If MACHINE is undefined, but MACHINEDOTS is there, create MACHINE  */
-		if (getenv("MACHINE") == NULL && xgetenv("MACHINEDOTS")) {
-			oneenv = (char *)malloc(10 + strlen(xgetenv("MACHINEDOTS")));
-			sprintf(oneenv, "MACHINE=%s", xgetenv("MACHINEDOTS"));
-			p = oneenv; while ((p = strchr(p, '.')) != NULL) *p = ',';
-			putenv(oneenv);
-		}
 	}
 	else {
 		errprintf("Cannot open env file %s - %s\n", envfile, strerror(errno));
