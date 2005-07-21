@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char hpux_rcsid[] = "$Id: hpux.c,v 1.2 2005-07-20 07:20:43 henrik Exp $";
+static char hpux_rcsid[] = "$Id: hpux.c,v 1.3 2005-07-21 17:15:08 henrik Exp $";
 
 void handle_hpux_client(char *hostname, char *sender, time_t timestamp, char *clientdata)
 {
@@ -68,6 +68,8 @@ void handle_hpux_client(char *hostname, char *sender, time_t timestamp, char *cl
 				   memphystotal, memphysused, -1, memswaptotal, memswapused);
 		}
 	}
+
+	unix_procs_report(hostname, fromline, timestr, "COMMAND", psstr);
 
 	combo_end();
 

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char freebsd_rcsid[] = "$Id: freebsd.c,v 1.1 2005-07-21 14:54:34 henrik Exp $";
+static char freebsd_rcsid[] = "$Id: freebsd.c,v 1.2 2005-07-21 17:15:08 henrik Exp $";
 
 void handle_freebsd_client(char *hostname, char *sender, time_t timestamp, char *clientdata)
 {
@@ -88,6 +88,8 @@ void handle_freebsd_client(char *hostname, char *sender, time_t timestamp, char 
 				   memphystotal, memphysused, -1, memswaptotal, memswapused);
 		}
 	}
+
+	unix_procs_report(hostname, fromline, timestr, "COMMAND", psstr);
 
 	combo_end();
 
