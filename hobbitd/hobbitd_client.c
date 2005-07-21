@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.7 2005-07-21 19:56:55 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.8 2005-07-21 20:02:35 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -301,11 +301,9 @@ void unix_procs_report(char *hostname, char *fromline, char *timestr, char *cmdh
 {
 	int pscolor = COL_GREEN;
 
-	char *msg = NULL;
-	int  msgsz;
-	char msgline[4096];
 	int cmdofs = -1;
 	char *p, *bol, *nl;
+	char msgline[4096];
 	char *monmsg = NULL;
 	int monsz;
 
@@ -350,23 +348,23 @@ void unix_procs_report(char *hostname, char *fromline, char *timestr, char *cmdh
 	}
 
 	/* Now we know the result, so generate a status message */
+	init_status(pscolor);
 	sprintf(msgline, "status %s.procs %s %s - Processes %s\n",
 		commafy(hostname), colorname(pscolor), timestr, ((pscolor == COL_GREEN) ? "OK" : "Not OK"));
-	addtobuffer(&msg, &msgsz, msgline);
+	addtostatus(msgline);
 
 	/* And add the info about what's wrong */
-	addtobuffer(&msg, &msgsz, monmsg);
-	addtobuffer(&msg, &msgsz, "\n");
+	if (monmsg) {
+		addtostatus(monmsg);
+		addtostatus("\n");
+		xfree(monmsg);
+	}
 
 	/* And the full ps output for those who want it */
-	addtobuffer(&msg, &msgsz, psstr);
+	addtostatus(psstr);
 
-	init_status(pscolor);
-	addtostatus(msg);
 	addtostatus(fromline);
 	finish_status();
-
-	if (msg) xfree(msg);
 }
 
 void unix_netstat_report(char *hostname, char *osid, char *netstatstr)
