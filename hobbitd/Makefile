@@ -63,7 +63,7 @@ hobbitd_sample: $(SAMPLEOBJS) $(LIBOBJS)
 hobbitd_client: $(CLIENTOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(RPATHOPT) $(CLIENTOBJS) $(LIBOBJS) $(NETLIBS)
 
-hobbitd_client.o: hobbitd_client*.c
+hobbitd_client.o: hobbitd_client.c client/*.c
 	$(CC) $(CFLAGS) -c -o $@ hobbitd_client.c
 
 hobbitgraph.o: hobbitgraph.c
