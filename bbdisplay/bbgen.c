@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.214 2005-07-14 08:12:25 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.215 2005-07-21 14:41:28 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -101,6 +101,7 @@ int main(int argc, char *argv[])
 	int		embedded = 0;
 	int		hobbitddump = 0;
 	char		*envarea = NULL;
+	int		do_normal_pages = 1;
 
 	/* Setup standard header+footer (might be modified by option pageset) */
 	select_headers_and_footers("bb");
@@ -337,6 +338,9 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[i], "--no-acklog") == 0) {
 			bb2acklog = 0;
 		}
+		else if (strcmp(argv[i], "--no-pages") == 0) {
+			do_normal_pages = 0;
+		}
 
 		else if (argnmatch(argv[i], "--noprop=")) {
 			char *lp = strchr(argv[i], '=');
@@ -434,6 +438,7 @@ int main(int argc, char *argv[])
 			printf("    --eventignore=test[,test]   : Columns to ignore in bb2 event-log display\n");
 			printf("    --no-eventlog               : Do not generate the bb2 eventlog display\n");
 			printf("    --no-acklog                 : Do not generate the bb2 ack-log display\n");
+			printf("    --no-pages                  : Generate only the bb2 and bbnk pages\n");
 			printf("    --docurl=documentation-URL  : Hostnames link to a general (dynamic) web page for docs\n");
 			printf("    --no-doc-window             : Open doc-links in same window\n");
 			printf("    --htmlextension=.EXT        : Sets filename extension for generated file (default: .html\n");
@@ -598,7 +603,7 @@ int main(int argc, char *argv[])
 	if (reportstart && csvfile) {
 		csv_availability(csvfile, csvdelim);
 	}
-	else {
+	else if (do_normal_pages) {
 		do_page_with_subs(pagehead, dispsums);
 	}
 	add_timestamp("Hobbit pagegen done");
