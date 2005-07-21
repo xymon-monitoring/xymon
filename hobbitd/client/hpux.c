@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char hpux_rcsid[] = "$Id: hpux.c,v 1.3 2005-07-21 17:15:08 henrik Exp $";
+static char hpux_rcsid[] = "$Id: hpux.c,v 1.4 2005-07-21 21:36:00 henrik Exp $";
 
 void handle_hpux_client(char *hostname, char *sender, time_t timestamp, char *clientdata)
 {
@@ -47,7 +47,7 @@ void handle_hpux_client(char *hostname, char *sender, time_t timestamp, char *cl
 	combo_start();
 
 	unix_cpu_report(hostname, fromline, timestr, uptimestr, whostr, psstr, topstr);
-	unix_disk_report(hostname, fromline, timestr, dfstr);
+	unix_disk_report(hostname, fromline, timestr, "Capacity", "Mounted on", dfstr);
 
 	if (memorystr && swapinfostr) {
 		unsigned long memphystotal, memphysfree, memphysused;

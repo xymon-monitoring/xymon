@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char linux_rcsid[] = "$Id: linux.c,v 1.2 2005-07-21 17:15:08 henrik Exp $";
+static char linux_rcsid[] = "$Id: linux.c,v 1.3 2005-07-21 21:36:00 henrik Exp $";
 
 void handle_linux_client(char *hostname, char *sender, time_t timestamp, char *clientdata)
 {
@@ -50,7 +50,7 @@ void handle_linux_client(char *hostname, char *sender, time_t timestamp, char *c
 	combo_start();
 
 	unix_cpu_report(hostname, fromline, timestr, uptimestr, whostr, psstr, topstr);
-	unix_disk_report(hostname, fromline, timestr, dfstr);
+	unix_disk_report(hostname, fromline, timestr, "Capacity", "Mounted on", dfstr);
 
 	memphystotal = memswaptotal = memphysused = memswapused = memactused = -1;
 	p = strstr(freestr, "\nMem:");
