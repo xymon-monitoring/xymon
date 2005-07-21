@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.8 2005-07-21 20:02:35 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.9 2005-07-21 21:37:12 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -19,6 +19,7 @@ static char rcsid[] = "$Id: hobbitd_client.c,v 1.8 2005-07-21 20:02:35 henrik Ex
 #include <sys/time.h>
 #include <signal.h>
 #include <time.h>
+#include <ctype.h>
 
 #include "libbbgen.h"
 #include "hobbitd_worker.h"
@@ -112,20 +113,93 @@ int linecount(char *msg)
 	return result;
 }
 
+void get_cpu_thresholds(char *hostname, float *loadyellow, float *loadred, int *recentlimit, int *ancientlimit)
+{
+	*loadyellow = 5.0;
+	*loadred = 10.0;
+	*recentlimit = 3600;
+	*ancientlimit = -1;
+}
+
+void get_disk_thresholds(char *hostname, char *fsname, int *warnlevel, int *paniclevel)
+{
+	*warnlevel = 60;
+	*paniclevel = 95;
+}
+
+void get_memory_thresholds(char *hostname, 
+		int *physyellow, int *physred, int *swapyellow, int *swapred, int *actyellow, int *actred)
+{
+	*physyellow = 100;
+	*physred = 101;
+	*swapyellow = 50;
+	*swapred = 80;
+	*actyellow = 90;
+	*actred = 97;
+}
+
+typedef struct plist_t {
+	char *pname;
+	int pmin, pmax, pcount;
+	struct plist_t *next;
+} plist_t;
+plist_t pldummy = { "hobbitlaunch", 1, -1, 0, NULL };
+plist_t *phead = &pldummy;
+plist_t *pokwalk = NULL;
+
+void clear_process_counts(char *hostname)
+{
+	plist_t *pwalk;
+
+	for (pwalk = phead; (pwalk); pwalk = pwalk->next) pwalk->pcount = 0;
+	pokwalk = phead;
+}
+
+void add_process_count(char *pname)
+{
+	plist_t *pwalk;
+
+	for (pwalk = phead; (pwalk); pwalk = pwalk->next) {
+		if (strstr(pname, pwalk->pname)) pwalk->pcount++;
+	}
+}
+
+char *check_process_count(int *pcount, int *lowlim, int *uplim, int *pok)
+{
+	char *result;
+
+	if (pokwalk == NULL) return NULL;
+
+	result = pokwalk->pname;
+	*pcount = pokwalk->pcount;
+	*lowlim = pokwalk->pmin;
+	*uplim = pokwalk->pmax;
+	*pok = 1;
+
+	if ((pokwalk->pmin !=  0) && (pokwalk->pcount < pokwalk->pmin)) pok = 0;
+	if ((pokwalk->pmax != -1) && (pokwalk->pcount > pokwalk->pmax)) pok = 0;
+
+	pokwalk = pokwalk->next;
+
+	return result;
+}
+
 void unix_cpu_report(char *hostname, char *fromline, char *timestr, char *uptimestr, char *whostr, char *psstr, char *topstr)
 {
 	char *p;
 	char *uptimeresult = NULL;
 	float load1, load5, load15;
+	float loadyellow, loadred;
+	int recentlimit, ancientlimit;
 	char loadresult[100];
 	long uptimesecs = -1;
 	char myupstr[100];
 
 	int cpucolor = COL_GREEN;
 
-	char *msg = NULL;
-	int  msgsz;
 	char msgline[4096];
+	char *upmsg = NULL;
+	int upmsgsz;
 
 	if (!uptimestr) return;
 
@@ -170,20 +244,6 @@ void unix_cpu_report(char *hostname, char *fromline, char *timestr, char *uptime
 		p = strchr(hourmark, ','); if (p) *p = '\0';
 	}
 
-	*loadresult = '\0';
-	p = strstr(uptimestr, "load average: ");
-	if (!p) p = strstr(uptimestr, "load averages: "); /* Many BSD's */
-	if (p) {
-		p = strchr(p, ':') + 1; p += strspn(p, " ");
-		if (sscanf(p, "%f, %f, %f", &load1, &load5, &load15) == 3) {
-			sprintf(loadresult, "%.2f", load5);
-		}
-	}
-
-	if (load5 > 5.0) cpucolor = COL_YELLOW;
-	if ((uptimesecs != -1) && (uptimesecs < 3600)) cpucolor = COL_YELLOW;
-	if (load5 > 8.0) cpucolor = COL_RED;
-
 	if (uptimesecs != -1) {
 		int days = (uptimesecs / 86400);
 		int hours = (uptimesecs % 86400) / 3600;
@@ -194,46 +254,145 @@ void unix_cpu_report(char *hostname, char *fromline, char *timestr, char *uptime
 	}
 	else *myupstr = '\0';
 
-	sprintf(msgline, "status %s.cpu %s %s %s, %d users, %d procs, load=%s\n",
-		commafy(hostname), colorname(cpucolor), timestr, 
-		myupstr, linecount(whostr), linecount(psstr)-1, loadresult);
-	addtobuffer(&msg, &msgsz, msgline);
-	if ((uptimesecs != -1) && (uptimesecs < 3600)) addtobuffer(&msg, &msgsz, "Machine recently rebooted");
-	if (topstr) {
-		addtobuffer(&msg, &msgsz, "\n\n");
-		addtobuffer(&msg, &msgsz, topstr);
+	*loadresult = '\0';
+	p = strstr(uptimestr, "load average: ");
+	if (!p) p = strstr(uptimestr, "load averages: "); /* Many BSD's */
+	if (p) {
+		p = strchr(p, ':') + 1; p += strspn(p, " ");
+		if (sscanf(p, "%f, %f, %f", &load1, &load5, &load15) == 3) {
+			sprintf(loadresult, "%.2f", load5);
+		}
+	}
+
+	get_cpu_thresholds(hostname, &loadyellow, &loadred, &recentlimit, &ancientlimit);
+
+	if ((uptimesecs != -1) && (recentlimit != -1) && (uptimesecs < recentlimit)) {
+		cpucolor = COL_YELLOW;
+		addtobuffer(&upmsg, &upmsgsz, "&yellow Machine recently rebooted\n");
+	}
+	if ((uptimesecs != -1) && (ancientlimit != -1) && (uptimesecs > ancientlimit)) {
+		cpucolor = COL_YELLOW;
+		sprintf(msgline, "&yellow Machine has been up more than %d days\n", (ancientlimit / 86400));
+		addtobuffer(&upmsg, &upmsgsz, msgline);
+	}
+	if (load5 > loadyellow) {
+		cpucolor = COL_YELLOW;
+		addtobuffer(&upmsg, &upmsgsz, "&red Load is HIGH\n");
+	}
+	if (load5 > loadred) {
+		cpucolor = COL_RED;
+		addtobuffer(&upmsg, &upmsgsz, "&red Load is CRITICAL\n");
 	}
 
 	init_status(cpucolor);
-	addtostatus(msg);
+	sprintf(msgline, "status %s.cpu %s %s %s, %d users, %d procs, load=%s\n",
+		commafy(hostname), colorname(cpucolor), timestr, 
+		myupstr, linecount(whostr), linecount(psstr)-1, loadresult);
+	addtostatus(msgline);
+	if (upmsg) {
+		addtostatus(upmsg);
+		addtostatus("\n");
+		xfree(upmsg);
+	}
+	if (topstr) {
+		addtostatus("\n");
+		addtostatus(topstr);
+	}
+
 	addtostatus(fromline);
 	finish_status();
-
-	if (msg) xfree(msg);
 }
 
 
-void unix_disk_report(char *hostname, char *fromline, char *timestr, char *dfstr)
+void unix_disk_report(char *hostname, char *fromline, char *timestr, char *capahdr, char *mnthdr, char *dfstr)
 {
 	int diskcolor = COL_GREEN;
 
-	char *msg = NULL;
-	int  msgsz;
+	int capaofs = -1;
+	int mntofs  = -1;
+	char *p, *bol, *nl;
 	char msgline[4096];
+	char *monmsg = NULL;
+	int monsz;
 
 	if (!dfstr) return;
 
-	sprintf(msgline, "status %s.disk %s %s - Disk partitions OK\n",
-		commafy(hostname), colorname(diskcolor), timestr);
-	addtobuffer(&msg, &msgsz, msgline);
-	addtobuffer(&msg, &msgsz, dfstr);
+	/* 
+	 * Find where the disk capacity is located. We look for the header for 
+	 * the capacity, and calculate the offset from the beginning of the line.
+	 */
+	p = strstr(dfstr, capahdr);
+	if (p) capaofs = (p - dfstr);
+	p = strstr(dfstr, mnthdr);
+	if (p) mntofs = (p - dfstr);
 
+	if ((capaofs >= 0) && (mntofs >= 0)) {
+		/* Go through the monitored disks and check against thresholds */
+		int minlen;
+
+		minlen = mntofs; if (capaofs > minlen) minlen = capaofs;
+
+		bol = dfstr;
+		while (bol) {
+			char *fsname, *usestr;
+			int linelen;
+
+			nl = strchr(bol, '\n'); if (nl) *nl = '\0';
+
+			linelen = strlen(bol);
+			if (linelen > minlen) {
+				usestr = (bol + capaofs); usestr += strspn(usestr, " ");
+				fsname = (bol + mntofs); fsname += strspn(fsname, " ");
+
+				if (isdigit((int)*usestr)) {
+					int usage, warnlevel, paniclevel;
+
+					usage = atoi(usestr);
+					get_disk_thresholds(hostname, fsname, &warnlevel, &paniclevel);
+
+					if (usage >= paniclevel) {
+						if (diskcolor < COL_RED) diskcolor = COL_RED;
+						sprintf(msgline, "&red %s (%d %%) has reached the PANIC level (%d %%)\n",
+							fsname, usage, paniclevel);
+						addtobuffer(&monmsg, &monsz, msgline);
+					}
+					else if (usage >= warnlevel) {
+						if (diskcolor < COL_YELLOW) diskcolor = COL_YELLOW;
+						sprintf(msgline, "&yellow %s (%d %%) has reached the WARNING level (%d %%)\n",
+							fsname, usage, warnlevel);
+						addtobuffer(&monmsg, &monsz, msgline);
+					}
+				}
+			}
+
+			if (nl) { *nl = '\n'; bol = nl+1; } else bol = NULL;
+		}
+	}
+	else {
+		diskcolor = COL_YELLOW;
+		sprintf(msgline, "&red Expected string (%s and %s) not found in df output header\n", 
+			capahdr, mnthdr);
+		addtobuffer(&monmsg, &monsz, msgline);
+	}
+
+	/* Now we know the result, so generate a status message */
 	init_status(diskcolor);
-	addtostatus(msg);
+	sprintf(msgline, "status %s.disk %s %s - Filesystems %s\n",
+		commafy(hostname), colorname(diskcolor), timestr, ((diskcolor == COL_GREEN) ? "OK" : "NOT ok"));
+	addtostatus(msgline);
+
+	/* And add the info about what's wrong */
+	if (monmsg) {
+		addtostatus(monmsg);
+		addtostatus("\n");
+		xfree(monmsg);
+	}
+
+	/* And the full df output */
+	addtostatus(dfstr);
+
 	addtostatus(fromline);
 	finish_status();
-
-	if (msg) xfree(msg);
 }
 
 void unix_memory_report(char *hostname, char *fromline, char *timestr, 
@@ -241,6 +400,7 @@ void unix_memory_report(char *hostname, char *fromline, char *timestr,
 			long memswaptotal, long memswapused)
 {
 	unsigned long memphyspct, memswappct, memactpct;
+	int physyellow, physred, swapyellow, swapred, actyellow, actred;
 
 	int memorycolor = COL_GREEN;
 
@@ -259,11 +419,13 @@ void unix_memory_report(char *hostname, char *fromline, char *timestr,
 	memswappct = (100 * memswapused) / memswaptotal;
 	if (memactused != -1) memactpct = (100 * memactused) / memphystotal; else memactpct = 0;
 
-	if ((memswappct > 50) || ((memactused != -1) && (memactpct > 90))) {
+	get_memory_thresholds(hostname, &physyellow, &physred, &swapyellow, &swapred, &actyellow, &actred);
+
+	if ((memphyspct > physyellow) || (memswappct > swapyellow) || ((memactused != -1) && (memactpct > actyellow))) {
 		memorycolor = COL_YELLOW;
 		memorysummary = "low";
 	}
-	if ((memswappct > 70) || ((memactused != -1) && (memactpct > 95))) {
+	if ((memphyspct > physred) || (memswappct > swapred) || ((memactused != -1) && (memactpct > actred))) {
 		memorycolor = COL_RED;
 		memorysummary = "CRITICAL";
 	}
@@ -306,8 +468,8 @@ void unix_procs_report(char *hostname, char *fromline, char *timestr, char *cmdh
 	char msgline[4096];
 	char *monmsg = NULL;
 	int monsz;
-
-	int hlcount = 0;
+	char *pname;
+	int pcount, pmin, pmax, pok;
 
 	if (!psstr) return;
 
@@ -321,24 +483,37 @@ void unix_procs_report(char *hostname, char *fromline, char *timestr, char *cmdh
 	if (cmdofs >= 0) {
 		/* Count how many instances of each monitored process is running */
 		bol = psstr;
+		clear_process_counts(hostname);
 		while (bol) {
 			nl = strchr(bol, '\n'); if (nl) *nl = '\0';
-	
-			if (strlen(bol) > cmdofs) {
-				if (strstr(bol+cmdofs, "hobbitlaunch")) hlcount++;
-			}
+
+			add_process_count(bol+cmdofs);
 
 			if (nl) { *nl = '\n'; bol = nl+1; } else bol = NULL;
 		}
 
 		/* Check the number found for each monitored process */
-		if (hlcount < 1) {
-			pscolor = COL_RED;
-			addtobuffer(&monmsg, &monsz, "&red hobbitlaunch NOT running\n");
-		}
-		else {
-			sprintf(msgline, "&green hobbitlaunch running (%d)\n", hlcount);
-			addtobuffer(&monmsg, &monsz, msgline);
+		while ((pname = check_process_count(&pcount, &pmin, &pmax, &pok)) != NULL) {
+			char limtxt[1024];
+
+			if (pmax == -1) {
+				if (pmin > 0) sprintf(limtxt, " req. %d or more", pmin);
+				else if (pmin == 0) sprintf(limtxt, " req. none");
+			}
+			else {
+				if (pmin > 0) sprintf(limtxt, " req. between %d and %d", pmin, pmax);
+				else if (pmin == 0) sprintf(limtxt, "req. at most %d", pmax);
+			}
+
+			if (pok) {
+				sprintf(msgline, "&green %s (found %d, %s)\n", pname, pcount, limtxt);
+				addtobuffer(&monmsg, &monsz, msgline);
+			}
+			else {
+				pscolor = COL_RED;
+				sprintf(msgline, "&red %s (found %d, req. %s)\n", pname, pcount, limtxt);
+				addtobuffer(&monmsg, &monsz, msgline);
+			}
 		}
 	}
 	else {
@@ -350,7 +525,7 @@ void unix_procs_report(char *hostname, char *fromline, char *timestr, char *cmdh
 	/* Now we know the result, so generate a status message */
 	init_status(pscolor);
 	sprintf(msgline, "status %s.procs %s %s - Processes %s\n",
-		commafy(hostname), colorname(pscolor), timestr, ((pscolor == COL_GREEN) ? "OK" : "Not OK"));
+		commafy(hostname), colorname(pscolor), timestr, ((pscolor == COL_GREEN) ? "OK" : "NOT ok"));
 	addtostatus(msgline);
 
 	/* And add the info about what's wrong */
