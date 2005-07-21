@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.9 2005-07-21 21:37:12 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.10 2005-07-21 22:02:21 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -123,7 +123,7 @@ void get_cpu_thresholds(char *hostname, float *loadyellow, float *loadred, int *
 
 void get_disk_thresholds(char *hostname, char *fsname, int *warnlevel, int *paniclevel)
 {
-	*warnlevel = 60;
+	*warnlevel = 90;
 	*paniclevel = 95;
 }
 
@@ -138,21 +138,45 @@ void get_memory_thresholds(char *hostname,
 	*actred = 97;
 }
 
+
 typedef struct plist_t {
 	char *pname;
 	int pmin, pmax, pcount;
 	struct plist_t *next;
 } plist_t;
-plist_t pldummy = { "hobbitlaunch", 1, -1, 0, NULL };
-plist_t *phead = &pldummy;
+
+typedef struct phost_t {
+	char *hostname;
+	struct plist_t *phead;
+	struct phost_t *next;
+} phost_t;
+
+plist_t *phead = NULL;
 plist_t *pokwalk = NULL;
 
-void clear_process_counts(char *hostname)
-{
-	plist_t *pwalk;
+plist_t pldummy2 = { "sendmail", 0, 0, 0, NULL };
+plist_t pldummy1 = { "hobbitlaunch", 1, -1, 0, &pldummy2 };
+phost_t phdummy = { "localhost", &pldummy1, NULL };
+phost_t *phhead = &phdummy;
 
-	for (pwalk = phead; (pwalk); pwalk = pwalk->next) pwalk->pcount = 0;
-	pokwalk = phead;
+
+int clear_process_counts(char *hostname)
+{
+	phost_t *hwalk;
+	plist_t *pwalk;
+	int count = 0;
+
+	for (hwalk = phhead; (hwalk && strcmp(hwalk->hostname, hostname)); hwalk = hwalk->next) ;
+	if (!hwalk) return 0;
+
+	phead = pokwalk = hwalk->phead;
+
+	for (pwalk = phead; (pwalk); pwalk = pwalk->next) {
+		pwalk->pcount = 0;
+		count++;
+	}
+
+	return count;
 }
 
 void add_process_count(char *pname)
@@ -463,13 +487,12 @@ void unix_procs_report(char *hostname, char *fromline, char *timestr, char *cmdh
 {
 	int pscolor = COL_GREEN;
 
+	int pchecks;
 	int cmdofs = -1;
-	char *p, *bol, *nl;
+	char *p;
 	char msgline[4096];
 	char *monmsg = NULL;
 	int monsz;
-	char *pname;
-	int pcount, pmin, pmax, pok;
 
 	if (!psstr) return;
 
@@ -480,10 +503,18 @@ void unix_procs_report(char *hostname, char *fromline, char *timestr, char *cmdh
 	p = strstr(psstr, cmdhdr);
 	if (p) cmdofs = (p - psstr);
 
-	if (cmdofs >= 0) {
+	pchecks = clear_process_counts(hostname);
+
+	if (pchecks == 0) {
+		/* Nothing to check */
+		addtobuffer(&monmsg, &monsz, "&green No process checks defined\n");
+	}
+	else if (cmdofs >= 0) {
 		/* Count how many instances of each monitored process is running */
+		char *pname, *bol, *nl;
+		int pcount, pmin, pmax, pok;
+
 		bol = psstr;
-		clear_process_counts(hostname);
 		while (bol) {
 			nl = strchr(bol, '\n'); if (nl) *nl = '\0';
 
@@ -518,7 +549,7 @@ void unix_procs_report(char *hostname, char *fromline, char *timestr, char *cmdh
 	}
 	else {
 		pscolor = COL_YELLOW;
-		sprintf(msgline, "&red Expected string %s not found in ps output header\n", cmdhdr);
+		sprintf(msgline, "&yellow Expected string %s not found in ps output header\n", cmdhdr);
 		addtobuffer(&monmsg, &monsz, msgline);
 	}
 
