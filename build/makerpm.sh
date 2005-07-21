@@ -29,11 +29,11 @@ cp rpm/hobbit-init.d rpmbuild/SOURCES/
 cp rpm/hobbit.logrotate rpmbuild/SOURCES/
 
 mkdir -p rpmbuild/hobbit-$REL
-for f in bbdisplay bbnet bbpatches bbproxy build common contrib docs hobbitd include lib
+for f in bbdisplay bbnet bbpatches bbproxy build common contrib docs hobbitd include lib client
 do
         find $f/ | grep -v RCS | cpio -pdvmu ~/hobbit/rpmbuild/hobbit-$REL/
 done
-cp -p Changes configure COPYING CREDITS README ~/hobbit/rpmbuild/hobbit-$REL/
+cp -p Changes configure configure.server configure.client COPYING CREDITS README ~/hobbit/rpmbuild/hobbit-$REL/
 find ~/hobbit/rpmbuild/hobbit-$REL -type d|xargs chmod 755
 
 cd rpmbuild
