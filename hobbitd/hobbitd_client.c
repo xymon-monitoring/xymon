@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.5 2005-07-21 15:23:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.6 2005-07-21 17:27:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -290,6 +290,78 @@ void unix_memory_report(char *hostname, char *fromline, char *timestr,
 	addtobuffer(&msg, &msgsz, msgline);
 
 	init_status(memorycolor);
+	addtostatus(msg);
+	addtostatus(fromline);
+	finish_status();
+
+	if (msg) xfree(msg);
+}
+
+void unix_procs_report(char *hostname, char *fromline, char *timestr, char *cmdhdr, char *psstr)
+{
+	int pscolor = COL_GREEN;
+
+	char *msg = NULL;
+	int  msgsz;
+	char msgline[4096];
+	int cmdofs = -1;
+	char *p, *bol, *nl;
+	char *monmsg = NULL;
+	int monsz;
+
+	int hlcount = 0;
+
+	if (!psstr) return;
+
+	/* 
+	 * Find where the command is located. We look for the header for the command,
+	 * and calculate the offset from the beginning of the line.
+	 */
+	p = strstr(psstr, cmdhdr);
+	if (p) cmdofs = (p - psstr);
+
+	if (cmdofs >= 0) {
+		/* Count how many instances of each monitored process is running */
+		bol = psstr;
+		while (bol) {
+			nl = strchr(bol, '\n'); if (nl) *nl = '\0';
+	
+			if (strlen(bol) > cmdofs) {
+				if (strstr(bol+cmdofs, "hobbitlaunch")) hlcount++;
+			}
+
+			if (nl) { *nl = '\n'; bol = nl+1; } else bol = NULL;
+		}
+
+		/* Check the number found for each monitored process */
+		if (hlcount < 1) {
+			pscolor = COL_RED;
+			addtobuffer(&monmsg, &monsz, "&red hobbitlaunch NOT running\n");
+		}
+		else {
+			sprintf(msgline, "&green hobbitlaunch running (%d)\n", hlcount);
+			addtobuffer(&monmsg, &monsz, msgline);
+		}
+	}
+	else {
+		pscolor = COL_YELLOW;
+		sprintf(msgline, "&red Expected string %s not found in ps output header\n", cmdhdr);
+		addtobuffer(&monmsg, &monsz, msgline);
+	}
+
+	/* Now we know the result, so generate a status message */
+	sprintf(msgline, "status %s.procs %s %s - Processes %s\n",
+		commafy(hostname), colorname(pscolor), timestr, ((pscolor == COL_GREEN) ? "OK" : "Not OK"));
+	addtobuffer(&msg, &msgsz, msgline);
+
+	/* And add the info about what's wrong */
+	addtobuffer(&monmsg, &monsz, msgline);
+	addtobuffer(&msg, &msgsz, "\n");
+
+	/* And the full ps output for those who want it */
+	addtobuffer(&msg, &msgsz, psstr);
+
+	init_status(pscolor);
 	addtostatus(msg);
 	addtostatus(fromline);
 	finish_status();
