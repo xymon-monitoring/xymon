@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.17 2005-06-05 09:24:39 henrik Exp $";
+static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.18 2005-07-21 14:40:11 henrik Exp $";
 
 typedef struct vmstat_layout_t {
 	int index;
@@ -137,6 +137,29 @@ static vmstat_layout_t vmstat_netbsd_layout[] = {
 	{ 17, "cpu_usr" },
 	{ 18, "cpu_sys" },
 	{ 19, "cpu_idl" },
+	{ -1, NULL }
+};
+
+static vmstat_layout_t vmstat_openbsd_layout[] = {
+	{ 0, "cpu_r" },
+	{ 1, "cpu_b" },
+	{ 2, "cpu_w" },
+	{ 3, "mem_avm" },
+	{ 4, "mem_free" },
+	{ 5, "mem_flt" },
+	{ 6, "mem_re" },
+	{ 7, "mem_pi" },
+	{ 8, "mem_po" },
+	{ 9, "mem_fr" },
+	{ 10, "sr" },
+	{ 11, "dsk_wd0" },
+	{ 12, "dsk_cd0" },
+	{ 13, "cpu_int" },
+	{ 14, "cpu_syc" },
+	{ 15, "cpu_csw" },
+	{ 16, "cpu_usr" },
+	{ 17, "cpu_sys" },
+	{ 18, "cpu_idl" },
 	{ -1, NULL }
 };
 
@@ -295,8 +318,7 @@ int do_vmstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	  case OS_NETBSD:
 		layout = vmstat_netbsd_layout; break;
 	  case OS_OPENBSD:
-		errprintf("Cannot handle OpenBSD vmstat from host '%s' \n", hostname);
-		return -1;
+		layout = vmstat_openbsd_layout; break;
 	  case OS_LINUX22:
 		layout = vmstat_linux22_layout; break;
 	  case OS_LINUX:
