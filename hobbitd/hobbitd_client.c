@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.6 2005-07-21 17:27:57 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.7 2005-07-21 19:56:55 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -355,7 +355,7 @@ void unix_procs_report(char *hostname, char *fromline, char *timestr, char *cmdh
 	addtobuffer(&msg, &msgsz, msgline);
 
 	/* And add the info about what's wrong */
-	addtobuffer(&monmsg, &monsz, msgline);
+	addtobuffer(&msg, &msgsz, monmsg);
 	addtobuffer(&msg, &msgsz, "\n");
 
 	/* And the full ps output for those who want it */
