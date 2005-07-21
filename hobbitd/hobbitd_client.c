@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.4 2005-07-20 09:36:14 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.5 2005-07-21 15:23:06 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -133,7 +133,7 @@ void unix_cpu_report(char *hostname, char *fromline, char *timestr, char *uptime
 	if (p) {
 		char *daymark;
 		char *hourmark;
-		long uphour, upmin;
+		long uphour, upmin, upsecs;
 		uptimesecs = 0;
 
 		p += 3;
@@ -149,14 +149,32 @@ void unix_cpu_report(char *hostname, char *fromline, char *timestr, char *uptime
 			hourmark = uptimeresult;
 		}
 		hourmark += strspn(hourmark, " ");
-		if (sscanf(hourmark, "%ld:%ld", &uphour, &upmin) == 2) uptimesecs += 60*(60*uphour + upmin);
+		if (sscanf(hourmark, "%ld:%ld", &uphour, &upmin) == 2) {
+			uptimesecs += 60*(60*uphour + upmin);
+		}
+		else if (sscanf(hourmark, "%ld hours %ld mins", &uphour, &upmin) == 2) {
+			uptimesecs += 60*(60*uphour + upmin);
+		}
+		else if (strstr(hourmark, " secs") && (sscanf(hourmark, "%ld secs", &upsecs) == 1)) {
+			uptimesecs += upsecs;
+		}
+		else if (strstr(hourmark, "mins") && (sscanf(hourmark, "%ld mins", &upmin) == 1)) {
+			uptimesecs += 60*upmin;
+		}
+		else if (strncmp(hourmark, "1 hr", 4) == 0) {
+			uptimesecs = 3600;
+		}
+		else {
+			uptimesecs = -1;
+		}
 		p = strchr(hourmark, ','); if (p) *p = '\0';
 	}
 
 	*loadresult = '\0';
 	p = strstr(uptimestr, "load average: ");
+	if (!p) p = strstr(uptimestr, "load averages: "); /* Many BSD's */
 	if (p) {
-		p += strlen("load average: ");
+		p = strchr(p, ':') + 1; p += strspn(p, " ");
 		if (sscanf(p, "%f, %f, %f", &load1, &load5, &load15) == 3) {
 			sprintf(loadresult, "%.2f", load5);
 		}
@@ -219,8 +237,8 @@ void unix_disk_report(char *hostname, char *fromline, char *timestr, char *dfstr
 }
 
 void unix_memory_report(char *hostname, char *fromline, char *timestr, 
-			unsigned long memphystotal, unsigned long memphysused, unsigned long memactused,
-			unsigned long memswaptotal, unsigned long memswapused)
+			long memphystotal, long memphysused, long memactused,
+			long memswaptotal, long memswapused)
 {
 	unsigned long memphyspct, memswappct, memactpct;
 
@@ -320,6 +338,9 @@ void unix_vmstat_report(char *hostname, char *osid, char *vmstatstr)
 }
 
 #include "client/linux.c"
+#include "client/freebsd.c"
+#include "client/netbsd.c"
+#include "client/openbsd.c"
 #include "client/solaris.c"
 #include "client/hpux.c"
 
@@ -392,6 +413,15 @@ int main(int argc, char *argv[])
 
 			if (strcasecmp(clienttype, "Linux") == 0) {
 				handle_linux_client(hostname, sender, timestamp, restofmsg);
+			}
+			else if (strcasecmp(clienttype, "freebsd") == 0) {
+				handle_freebsd_client(hostname, sender, timestamp, restofmsg);
+			}
+			else if (strcasecmp(clienttype, "netbsd") == 0) {
+				handle_netbsd_client(hostname, sender, timestamp, restofmsg);
+			}
+			else if (strcasecmp(clienttype, "openbsd") == 0) {
+				handle_openbsd_client(hostname, sender, timestamp, restofmsg);
 			}
 			else if (strcasecmp(clienttype, "SunOS") == 0) {
 				handle_solaris_client(hostname, sender, timestamp, restofmsg);
