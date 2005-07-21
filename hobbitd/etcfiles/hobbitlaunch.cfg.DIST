@@ -97,7 +97,7 @@
 [clientdata]
 	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	NEEDS hobbitd
-	CMD hobbitd_channel --channel=data   --log=$BBSERVERLOGS/clientdata.log hobbitd_client
+	CMD hobbitd_channel --channel=client --log=$BBSERVERLOGS/clientdata.log hobbitd_client
 
 
 # "bbproxy" is the Hobbit proxy server that allows you to forward status messages
