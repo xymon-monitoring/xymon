@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.28 2005-07-05 13:14:37 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.29 2005-07-22 10:01:10 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -124,6 +124,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		       time_t disabletime, char *dismsg,
 		       int is_history, int wantserviceid, int htmlfmt, int hobbitd,
 		       char *multigraphs,
+		       char *linktoclient,
 		       FILE *output)
 {
 	int linecount = 0;
@@ -214,6 +215,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	fprintf(output, "<tr><td align=\"center\"><font %s>", colfont);
 	if (strlen(timesincechange)) fprintf(output, "Status unchanged in %s<br>\n", timesincechange);
 	if (sender) fprintf(output, "Status message received from %s<br>\n", sender);
+	if (linktoclient) fprintf(output, "<a href=\"%s\">Client data</a> available\n", linktoclient);
 	if (ackmsg) {
 		char *ackedby;
 		char ackuntil[200];

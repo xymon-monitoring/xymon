@@ -25,6 +25,7 @@ extern void generate_html_log(char *hostname, char *displayname, char *service, 
 		       time_t disabletime, char *dismsg,
 		       int is_history, int wantserviceid, int htmlfmt, int hobbitd,
 		       char *multigraphs,
+		       char *linktoclient,
 		       FILE *output);
 
 #endif
