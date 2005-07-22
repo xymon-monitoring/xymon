@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.171 2005-07-19 06:04:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.172 2005-07-22 10:07:55 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -111,6 +111,7 @@ typedef struct hobbitd_hostlist_t {
 	char *hostname;
 	char ip[16];
 	hobbitd_log_t *logs;
+	char *clientmsg;
 } hobbitd_hostlist_t;
 
 RbtHandle rbhosts;				/* The hosts we have reports from */
@@ -129,6 +130,7 @@ sender_t *wwwsenders = NULL;
 sender_t *tracelist = NULL;
 int      traceall = 0;
 int      ignoretraced = 0;
+int      save_clientlogs = 1;
 
 #define NOTALK 0
 #define RECEIVING 1
@@ -784,6 +786,7 @@ void get_hts(char *msg, char *sender, char *origin,
 		hwalk->hostname = strdup(hostname);
 		strcpy(hwalk->ip, hostip);
 		hwalk->logs = NULL;
+		hwalk->clientmsg = NULL;
 		if (rbtInsert(rbhosts, hwalk->hostname, hwalk)) {
 			errprintf("Insert into rbhosts failed\n");
 		}
@@ -1367,14 +1370,36 @@ void handle_notify(char *msg, char *sender, hobbitd_log_t *log)
 void handle_client(char *msg, char *sender, char *hostname, char *clienttype)
 {
 	char *chnbuf;
-	int buflen = 0;
+	int msglen, buflen = 0;
+	RbtIterator hosthandle;
 
 	dprintf("->handle_client\n");
 
 	if (hostname) buflen += strlen(hostname); else dprintf("  hostname is NULL\n");
 	if (clienttype) buflen += strlen(clienttype); else dprintf("  clienttype is NULL\n");
-	if (msg) buflen += strlen(msg); else dprintf("  msg is NULL\n");
+	if (msg) { msglen = strlen(msg); buflen += msglen; } else { dprintf("  msg is NULL\n"); return; }
 	buflen += 4;
+
+	if (save_clientlogs) {
+		hosthandle = rbtFind(rbhosts, hostname);
+		if (hosthandle != rbtEnd(rbhosts)) {
+			char *key;
+			hobbitd_hostlist_t *hwalk;
+			rbtKeyValue(rbhosts, hosthandle, (void**)&key, (void**)&hwalk);
+
+			if (hwalk->clientmsg) {
+				if (strlen(hwalk->clientmsg) >= msglen)
+					strcpy(hwalk->clientmsg, msg);
+				else {
+					xfree(hwalk->clientmsg);
+					hwalk->clientmsg = strdup(msg);
+				}
+			}
+			else {
+				hwalk->clientmsg = strdup(msg);
+			}
+		}
+	}
 
 	chnbuf = (char *)malloc(buflen);
 	snprintf(chnbuf, buflen, "%s|%s\n%s", 
@@ -1524,6 +1549,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 
 		/* Free the hostlist entry */
 		xfree(hwalk->hostname);
+		if (hwalk->clientmsg) xfree(hwalk->clientmsg);
 		xfree(hwalk);
 		break;
 
@@ -1960,7 +1986,7 @@ void do_message(conn_t *msg, char *origin)
 		 * Request for a single status log
 		 * hobbitdlog HOST.TEST
 		 *
-		 * hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|ackmsg|dismsg
+		 * hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|ackmsg|dismsg|clientavail
 		 */
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
@@ -1996,6 +2022,8 @@ void do_message(conn_t *msg, char *origin)
 
 			if (log->dismsg && (log->enabletime > now)) dismsg = nlencode(log->dismsg);
 			bufp += sprintf(bufp, "|%s", dismsg);
+
+			bufp += sprintf(bufp, (h->clientmsg ? "|Y" : "|N"));
 
 			bufp += sprintf(bufp, "\n%s", msg_data(log->message));
 
@@ -2492,7 +2520,7 @@ void do_message(conn_t *msg, char *origin)
 			}
 		}
 	}
-	else if (strncmp(msg->buf, "client", 6) == 0) {
+	else if (strncmp(msg->buf, "client ", 7) == 0) {
 		char *hostname = NULL, *clienttype = NULL;
 		char *bhost, *ehost, *btype;
 		char savechar;
@@ -2548,6 +2576,28 @@ void do_message(conn_t *msg, char *origin)
 			xfree(hostname); xfree(clienttype);
 
 			MEMUNDEFINE(hostip);
+		}
+	}
+	else if (strncmp(msg->buf, "clientlog ", 10) == 0) {
+		char *hostname, *p;
+		RbtIterator hosthandle;
+		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+
+		hostname = msg->buf + strlen("clientlog"); hostname += strspn(hostname, " ");
+		p = hostname + strcspn(hostname, " \t\r\n"); *p = '\0';
+
+		hosthandle = rbtFind(rbhosts, hostname);
+		if (hosthandle != rbtEnd(rbhosts)) {
+			char *key;
+			hobbitd_hostlist_t *hwalk;
+			rbtKeyValue(rbhosts, hosthandle, (void**)&key, (void**)&hwalk);
+
+			if (hwalk->clientmsg) {
+				msg->doingwhat = RESPONDING;
+				xfree(msg->buf);
+				msg->bufp = msg->buf = strdup(hwalk->clientmsg);
+				msg->buflen = strlen(msg->buf);
+			}
 		}
 	}
 
@@ -2766,6 +2816,7 @@ void load_checkpoint(char *fn)
 			hitem->hostname = strdup(hostname);
 			strcpy(hitem->ip, hostip);
 			hitem->logs = NULL;
+			hitem->clientmsg = NULL;
 			rbtInsert(rbhosts, hitem->hostname, hitem);
 			hostcount++;
 		}
@@ -3095,13 +3146,14 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--ignore-traced") == 0) {
 			ignoretraced = 1;
 		}
+		else if (strcmp(argv[argi], "--no-clientlog") == 0) {
+			 save_clientlogs = 0;
+		}
 		else if (argnmatch(argv[argi], "--help")) {
 			printf("Options:\n");
 			printf("\t--listen=IP:PORT              : The address the daemon listens on\n");
 			printf("\t--bbhosts=FILENAME            : The bb-hosts file\n");
 			printf("\t--ghosts=allow|drop|log       : How to handle unknown hosts\n");
-			printf("\t--alertcolors=COLOR[,COLOR]   : What colors trigger an alert\n");
-			printf("\t--okcolors=COLOR[,COLOR]      : What colors trigger an recovery alert\n");
 			return 1;
 		}
 		else {
