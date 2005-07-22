@@ -14,7 +14,7 @@ HISTORYOBJS   = hobbitd_history.o   hobbitd_worker.o
 ALERTOBJS     = hobbitd_alert.o     hobbitd_worker.o do_alert.o
 RRDOBJS       = hobbitd_rrd.o       hobbitd_worker.o do_rrd.o
 SAMPLEOBJS    = hobbitd_sample.o    hobbitd_worker.o
-CLIENTOBJS    = hobbitd_client.o    hobbitd_worker.o
+CLIENTOBJS    = hobbitd_client.o    hobbitd_worker.o client_config.o
 HOBBITGRAPHOBJS= hobbitgraph.o
 HOBBITSVCOBJS = hobbitsvc.o hobbitsvc-info.o hobbitsvc-trends.o do_alert.o
 HOBBITENADISOBJS= hobbit-enadis.o
@@ -61,7 +61,7 @@ hobbitd_sample: $(SAMPLEOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(RPATHOPT) $(SAMPLEOBJS) $(LIBOBJS)
 
 hobbitd_client: $(CLIENTOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(RPATHOPT) $(CLIENTOBJS) $(LIBOBJS) $(NETLIBS)
+	$(CC) -o $@ $(RPATHOPT) $(CLIENTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
 hobbitd_client.o: hobbitd_client.c client/*.c
 	$(CC) $(CFLAGS) -c -o $@ hobbitd_client.c
