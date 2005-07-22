@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.10 2005-07-21 22:02:21 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.11 2005-07-22 10:08:22 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -234,18 +234,28 @@ void unix_cpu_report(char *hostname, char *fromline, char *timestr, char *uptime
 		long uphour, upmin, upsecs;
 		uptimesecs = 0;
 
-		p += 3;
-		uptimeresult = strdup(p);
-		daymark = strstr(uptimeresult, " day");
+		uptimeresult = strdup(p+3);
 
+		/* 
+		 * Linux: " up 178 days,  9:15,"
+		 * BSD: ""
+		 * Solaris: " up 21 days 20:58,"
+		 */
+		daymark = strstr(uptimeresult, " day");
 		if (daymark) {
 			uptimesecs = atoi(uptimeresult) * 86400;
-			hourmark = strchr(daymark, ',');
-			if (hourmark) hourmark++; else hourmark = "";
+			if (strncmp(daymark, " days ", 6) == 0) {
+				hourmark = daymark + 6;
+			}
+			else {
+				hourmark = strchr(daymark, ',');
+				if (hourmark) hourmark++; else hourmark = "";
+			}
 		}
 		else {
 			hourmark = uptimeresult;
 		}
+
 		hourmark += strspn(hourmark, " ");
 		if (sscanf(hourmark, "%ld:%ld", &uphour, &upmin) == 2) {
 			uptimesecs += 60*(60*uphour + upmin);
