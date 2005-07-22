@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.72 2005-07-22 16:03:05 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.73 2005-07-22 16:35:00 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -305,12 +305,20 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 	MEMDEFINE(fn);
 
 	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/hobbit-alerts.cfg", xgetenv("BBHOME"));
-	if (stat(fn, &st) == -1) { MEMUNDEFINE(fn); return 0; }
+	if (stat(fn, &st) == -1) { 
+		errprintf("Cannot stat configuration file %s: %s\n", fn, strerror(errno));
+		MEMUNDEFINE(fn); 
+		return 0; 
+	}
 	if (st.st_mtime == lastload) { MEMUNDEFINE(fn); return 0; }
 	lastload = st.st_mtime;
 
 	fd = fopen(fn, "r");
-	if (!fd) { MEMUNDEFINE(fn); return 0; }
+	if (!fd) { 
+		errprintf("Cannot open configuration file %s: %s\n", fn, strerror(errno));
+		MEMUNDEFINE(fn); 
+		return 0; 
+	}
 
 	/* First, clean out the old rule set */
 	while (rulehead) {
