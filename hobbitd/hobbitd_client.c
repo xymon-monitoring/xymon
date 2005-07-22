@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.11 2005-07-22 10:08:22 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.12 2005-07-22 11:04:29 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -701,6 +701,9 @@ int main(int argc, char *argv[])
 				handle_linux_client(hostname, sender, timestamp, restofmsg);
 			}
 			else if (strcasecmp(clienttype, "freebsd") == 0) {
+				handle_freebsd_client(hostname, sender, timestamp, restofmsg);
+			}
+			else if (strcasecmp(clienttype, "darwin") == 0) {
 				handle_freebsd_client(hostname, sender, timestamp, restofmsg);
 			}
 			else if (strcasecmp(clienttype, "netbsd") == 0) {
