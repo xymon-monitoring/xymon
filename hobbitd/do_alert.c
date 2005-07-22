@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.73 2005-07-22 16:35:00 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.74 2005-07-22 22:11:10 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -236,22 +236,6 @@ static char *preprocess(char *buf)
 		}
 	}
 	*outp = '\0';
-
-	return result;
-}
-
-static pcre *compileregex(char *pattern)
-{
-	pcre *result;
-	const char *errmsg;
-	int errofs;
-
-	dprintf("Compiling regex %s\n", pattern);
-	result = pcre_compile(pattern, PCRE_CASELESS, &errmsg, &errofs, NULL);
-	if (result == NULL) {
-		errprintf("pcre compile '%s' failed (offset %d): %s\n", pattern, errofs, errmsg);
-		return NULL;
-	}
 
 	return result;
 }

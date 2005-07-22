@@ -13,6 +13,7 @@
 
 #include <pcre.h>
 
+extern pcre *compileregex(char *pattern);
 extern int timematch(char *tspec);
 extern int namematch(char *needle, char *haystack, pcre *pcrecode);
 

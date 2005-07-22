@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: matching.c,v 1.1 2005-07-22 16:03:32 henrik Exp $";
+static char rcsid[] = "$Id: matching.c,v 1.2 2005-07-22 22:11:10 henrik Exp $";
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -21,6 +21,22 @@ static char rcsid[] = "$Id: matching.c,v 1.1 2005-07-22 16:03:32 henrik Exp $";
 #include <pcre.h>
 
 #include "libbbgen.h"
+
+pcre *compileregex(char *pattern)
+{
+	pcre *result;
+	const char *errmsg;
+	int errofs;
+
+	dprintf("Compiling regex %s\n", pattern);
+	result = pcre_compile(pattern, PCRE_CASELESS, &errmsg, &errofs, NULL);
+	if (result == NULL) {
+		errprintf("pcre compile '%s' failed (offset %d): %s\n", pattern, errofs, errmsg);
+		return NULL;
+	}
+
+	return result;
+}
 
 int namematch(char *needle, char *haystack, pcre *pcrecode)
 {
