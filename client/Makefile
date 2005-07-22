@@ -12,6 +12,9 @@ endif
 ifeq ($(OSTYPE),openbsd)
 	EXTRATOOLS=openbsd-meminfo
 endif
+ifeq ($(OSTYPE),darwin)
+	EXTRATOOLS=darwin-meminfo
+endif
 
 all: hobbitlaunch bb hobbitclient.cfg clientlaunch.cfg hobbitclient.cfg $(EXTRATOOLS)
 
