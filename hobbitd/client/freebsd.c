@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char freebsd_rcsid[] = "$Id: freebsd.c,v 1.3 2005-07-21 21:36:00 henrik Exp $";
+static char freebsd_rcsid[] = "$Id: freebsd.c,v 1.4 2005-07-22 11:03:47 henrik Exp $";
 
 void handle_freebsd_client(char *hostname, char *sender, time_t timestamp, char *clientdata)
 {
@@ -83,7 +83,7 @@ void handle_freebsd_client(char *hostname, char *sender, time_t timestamp, char 
 			memswaptotal /= 1024; memswapused /= 1024; memswapfree /= 1024;
 		}
 
-		if (found == 3) {
+		if (found >= 2) {
 			unix_memory_report(hostname, fromline, timestr,
 				   memphystotal, memphysused, -1, memswaptotal, memswapused);
 		}
