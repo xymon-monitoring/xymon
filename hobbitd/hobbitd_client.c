@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.12 2005-07-22 11:04:29 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.13 2005-07-22 16:12:48 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -23,6 +23,7 @@ static char rcsid[] = "$Id: hobbitd_client.c,v 1.12 2005-07-22 11:04:29 henrik E
 
 #include "libbbgen.h"
 #include "hobbitd_worker.h"
+#include "client_config.h"
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 
@@ -113,102 +114,9 @@ int linecount(char *msg)
 	return result;
 }
 
-void get_cpu_thresholds(char *hostname, float *loadyellow, float *loadred, int *recentlimit, int *ancientlimit)
-{
-	*loadyellow = 5.0;
-	*loadred = 10.0;
-	*recentlimit = 3600;
-	*ancientlimit = -1;
-}
 
-void get_disk_thresholds(char *hostname, char *fsname, int *warnlevel, int *paniclevel)
-{
-	*warnlevel = 90;
-	*paniclevel = 95;
-}
-
-void get_memory_thresholds(char *hostname, 
-		int *physyellow, int *physred, int *swapyellow, int *swapred, int *actyellow, int *actred)
-{
-	*physyellow = 100;
-	*physred = 101;
-	*swapyellow = 50;
-	*swapred = 80;
-	*actyellow = 90;
-	*actred = 97;
-}
-
-
-typedef struct plist_t {
-	char *pname;
-	int pmin, pmax, pcount;
-	struct plist_t *next;
-} plist_t;
-
-typedef struct phost_t {
-	char *hostname;
-	struct plist_t *phead;
-	struct phost_t *next;
-} phost_t;
-
-plist_t *phead = NULL;
-plist_t *pokwalk = NULL;
-
-plist_t pldummy2 = { "sendmail", 0, 0, 0, NULL };
-plist_t pldummy1 = { "hobbitlaunch", 1, -1, 0, &pldummy2 };
-phost_t phdummy = { "localhost", &pldummy1, NULL };
-phost_t *phhead = &phdummy;
-
-
-int clear_process_counts(char *hostname)
-{
-	phost_t *hwalk;
-	plist_t *pwalk;
-	int count = 0;
-
-	for (hwalk = phhead; (hwalk && strcmp(hwalk->hostname, hostname)); hwalk = hwalk->next) ;
-	if (!hwalk) return 0;
-
-	phead = pokwalk = hwalk->phead;
-
-	for (pwalk = phead; (pwalk); pwalk = pwalk->next) {
-		pwalk->pcount = 0;
-		count++;
-	}
-
-	return count;
-}
-
-void add_process_count(char *pname)
-{
-	plist_t *pwalk;
-
-	for (pwalk = phead; (pwalk); pwalk = pwalk->next) {
-		if (strstr(pname, pwalk->pname)) pwalk->pcount++;
-	}
-}
-
-char *check_process_count(int *pcount, int *lowlim, int *uplim, int *pok)
-{
-	char *result;
-
-	if (pokwalk == NULL) return NULL;
-
-	result = pokwalk->pname;
-	*pcount = pokwalk->pcount;
-	*lowlim = pokwalk->pmin;
-	*uplim = pokwalk->pmax;
-	*pok = 1;
-
-	if ((pokwalk->pmin !=  0) && (pokwalk->pcount < pokwalk->pmin)) pok = 0;
-	if ((pokwalk->pmax != -1) && (pokwalk->pcount > pokwalk->pmax)) pok = 0;
-
-	pokwalk = pokwalk->next;
-
-	return result;
-}
-
-void unix_cpu_report(char *hostname, char *fromline, char *timestr, char *uptimestr, char *whostr, char *psstr, char *topstr)
+void unix_cpu_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, 
+		     char *uptimestr, char *whostr, char *psstr, char *topstr)
 {
 	char *p;
 	char *uptimeresult = NULL;
@@ -298,7 +206,7 @@ void unix_cpu_report(char *hostname, char *fromline, char *timestr, char *uptime
 		}
 	}
 
-	get_cpu_thresholds(hostname, &loadyellow, &loadred, &recentlimit, &ancientlimit);
+	get_cpu_thresholds(hinfo, &loadyellow, &loadred, &recentlimit, &ancientlimit);
 
 	if ((uptimesecs != -1) && (recentlimit != -1) && (uptimesecs < recentlimit)) {
 		cpucolor = COL_YELLOW;
@@ -338,7 +246,8 @@ void unix_cpu_report(char *hostname, char *fromline, char *timestr, char *uptime
 }
 
 
-void unix_disk_report(char *hostname, char *fromline, char *timestr, char *capahdr, char *mnthdr, char *dfstr)
+void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, 
+		      char *capahdr, char *mnthdr, char *dfstr)
 {
 	int diskcolor = COL_GREEN;
 
@@ -382,7 +291,7 @@ void unix_disk_report(char *hostname, char *fromline, char *timestr, char *capah
 					int usage, warnlevel, paniclevel;
 
 					usage = atoi(usestr);
-					get_disk_thresholds(hostname, fsname, &warnlevel, &paniclevel);
+					get_disk_thresholds(hinfo, fsname, &warnlevel, &paniclevel);
 
 					if (usage >= paniclevel) {
 						if (diskcolor < COL_RED) diskcolor = COL_RED;
@@ -429,7 +338,7 @@ void unix_disk_report(char *hostname, char *fromline, char *timestr, char *capah
 	finish_status();
 }
 
-void unix_memory_report(char *hostname, char *fromline, char *timestr, 
+void unix_memory_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, 
 			long memphystotal, long memphysused, long memactused,
 			long memswaptotal, long memswapused)
 {
@@ -453,7 +362,7 @@ void unix_memory_report(char *hostname, char *fromline, char *timestr,
 	memswappct = (100 * memswapused) / memswaptotal;
 	if (memactused != -1) memactpct = (100 * memactused) / memphystotal; else memactpct = 0;
 
-	get_memory_thresholds(hostname, &physyellow, &physred, &swapyellow, &swapred, &actyellow, &actred);
+	get_memory_thresholds(hinfo, &physyellow, &physred, &swapyellow, &swapred, &actyellow, &actred);
 
 	if ((memphyspct > physyellow) || (memswappct > swapyellow) || ((memactused != -1) && (memactpct > actyellow))) {
 		memorycolor = COL_YELLOW;
@@ -493,7 +402,8 @@ void unix_memory_report(char *hostname, char *fromline, char *timestr,
 	if (msg) xfree(msg);
 }
 
-void unix_procs_report(char *hostname, char *fromline, char *timestr, char *cmdhdr, char *psstr)
+void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, 
+		       char *cmdhdr, char *psstr)
 {
 	int pscolor = COL_GREEN;
 
@@ -513,7 +423,7 @@ void unix_procs_report(char *hostname, char *fromline, char *timestr, char *cmdh
 	p = strstr(psstr, cmdhdr);
 	if (p) cmdofs = (p - psstr);
 
-	pchecks = clear_process_counts(hostname);
+	pchecks = clear_process_counts(hinfo);
 
 	if (pchecks == 0) {
 		/* Nothing to check */
@@ -522,7 +432,7 @@ void unix_procs_report(char *hostname, char *fromline, char *timestr, char *cmdh
 	else if (cmdofs >= 0) {
 		/* Count how many instances of each monitored process is running */
 		char *pname, *bol, *nl;
-		int pcount, pmin, pmax, pok;
+		int pcount, pmin, pmax, pcolor;
 
 		bol = psstr;
 		while (bol) {
@@ -534,7 +444,7 @@ void unix_procs_report(char *hostname, char *fromline, char *timestr, char *cmdh
 		}
 
 		/* Check the number found for each monitored process */
-		while ((pname = check_process_count(&pcount, &pmin, &pmax, &pok)) != NULL) {
+		while ((pname = check_process_count(&pcount, &pmin, &pmax, &pcolor)) != NULL) {
 			char limtxt[1024];
 
 			if (pmax == -1) {
@@ -546,13 +456,14 @@ void unix_procs_report(char *hostname, char *fromline, char *timestr, char *cmdh
 				else if (pmin == 0) sprintf(limtxt, "req. at most %d", pmax);
 			}
 
-			if (pok) {
+			if (pcolor == COL_GREEN) {
 				sprintf(msgline, "&green %s (found %d, %s)\n", pname, pcount, limtxt);
 				addtobuffer(&monmsg, &monsz, msgline);
 			}
 			else {
-				pscolor = COL_RED;
-				sprintf(msgline, "&red %s (found %d, req. %s)\n", pname, pcount, limtxt);
+				if (pcolor > pscolor) pscolor = pcolor;
+				sprintf(msgline, "&%s %s (found %d, req. %s)\n", 
+					colorname(pcolor), pname, pcount, limtxt);
 				addtobuffer(&monmsg, &monsz, msgline);
 			}
 		}
@@ -583,7 +494,7 @@ void unix_procs_report(char *hostname, char *fromline, char *timestr, char *cmdh
 	finish_status();
 }
 
-void unix_netstat_report(char *hostname, char *osid, char *netstatstr)
+void unix_netstat_report(char *hostname, namelist_t *hinfo, char *osid, char *netstatstr)
 {
 	char *msg = NULL;
 	int  msgsz;
@@ -600,7 +511,7 @@ void unix_netstat_report(char *hostname, char *osid, char *netstatstr)
 }
 
 
-void unix_vmstat_report(char *hostname, char *osid, char *vmstatstr)
+void unix_vmstat_report(char *hostname, namelist_t *hinfo, char *osid, char *vmstatstr)
 {
 	char *msg = NULL;
 	int  msgsz;
@@ -636,11 +547,17 @@ int main(int argc, char *argv[])
 	int running;
 	int argi, seq;
 	struct timeval *timeout = NULL;
+	time_t nextconfigload = 0;
+	char *configfn = NULL;
 
 	/* Handle program options. */
 	for (argi = 1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
+		}
+		else if (argnmatch(argv[argi], "--config=")) {
+			char *lp = strchr(argv[argi], '=');
+			configfn = strdup(lp+1);
 		}
 	}
 
@@ -658,6 +575,12 @@ int main(int argc, char *argv[])
 		if (msg == NULL) {
 			running = 0;
 			continue;
+		}
+
+		if (time(NULL) >= nextconfigload) {
+			nextconfigload = time(NULL) + 600;
+			load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+			load_client_config(configfn);
 		}
 
 		/* Split the message in the first line (with meta-data), and the rest */
@@ -696,30 +619,31 @@ int main(int argc, char *argv[])
 			char *sender = metadata[2];
 			char *hostname = metadata[3];
 			char *clienttype = metadata[4];
+			namelist_t *hinfo = hostinfo(hostname);
 
 			if (strcasecmp(clienttype, "Linux") == 0) {
-				handle_linux_client(hostname, sender, timestamp, restofmsg);
+				handle_linux_client(hostname, hinfo, sender, timestamp, restofmsg);
 			}
 			else if (strcasecmp(clienttype, "freebsd") == 0) {
-				handle_freebsd_client(hostname, sender, timestamp, restofmsg);
+				handle_freebsd_client(hostname, hinfo, sender, timestamp, restofmsg);
 			}
 			else if (strcasecmp(clienttype, "darwin") == 0) {
-				handle_freebsd_client(hostname, sender, timestamp, restofmsg);
+				handle_freebsd_client(hostname, hinfo, sender, timestamp, restofmsg);
 			}
 			else if (strcasecmp(clienttype, "netbsd") == 0) {
-				handle_netbsd_client(hostname, sender, timestamp, restofmsg);
+				handle_netbsd_client(hostname, hinfo, sender, timestamp, restofmsg);
 			}
 			else if (strcasecmp(clienttype, "openbsd") == 0) {
-				handle_openbsd_client(hostname, sender, timestamp, restofmsg);
+				handle_openbsd_client(hostname, hinfo, sender, timestamp, restofmsg);
 			}
 			else if (strcasecmp(clienttype, "SunOS") == 0) {
-				handle_solaris_client(hostname, sender, timestamp, restofmsg);
+				handle_solaris_client(hostname, hinfo, sender, timestamp, restofmsg);
 			}
 			else if (strcasecmp(clienttype, "Solaris") == 0) {
-				handle_solaris_client(hostname, sender, timestamp, restofmsg);
+				handle_solaris_client(hostname, hinfo, sender, timestamp, restofmsg);
 			}
 			else if (strcasecmp(clienttype, "hpux") == 0) {
-				handle_hpux_client(hostname, sender, timestamp, restofmsg);
+				handle_hpux_client(hostname, hinfo, sender, timestamp, restofmsg);
 			}
 		}
 		else {
