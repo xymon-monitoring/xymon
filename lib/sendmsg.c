@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.63 2005-07-16 14:59:51 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.64 2005-07-22 06:48:52 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -784,19 +784,22 @@ int main(int argc, char *argv[])
 		else if (strncmp(msg, "config ", 7) == 0) {
 			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 		}
-		else if (strncmp(msg, "hobbitdlog ", 10) == 0) {
+		else if (strncmp(msg, "hobbitdlog ", 11) == 0) {
 			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 		}
-		else if (strncmp(msg, "hobbitdxlog ", 11) == 0) {
+		else if (strncmp(msg, "hobbitdxlog ", 12) == 0) {
 			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 		}
-		else if (strncmp(msg, "hobbitdboard", 11) == 0) {
+		else if (strncmp(msg, "hobbitdboard", 12) == 0) {
 			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 		}
-		else if (strncmp(msg, "hobbitdxboard", 12) == 0) {
+		else if (strncmp(msg, "hobbitdxboard", 13) == 0) {
 			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 		}
 		else if (strcmp(msg, "schedule") == 0) {
+			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
+		}
+		else if (strncmp(msg, "clientlog ", 10) == 0) {
 			result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 		}
 		else {
