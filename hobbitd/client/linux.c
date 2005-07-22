@@ -10,9 +10,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char linux_rcsid[] = "$Id: linux.c,v 1.3 2005-07-21 21:36:00 henrik Exp $";
+static char linux_rcsid[] = "$Id: linux.c,v 1.4 2005-07-22 16:12:04 henrik Exp $";
 
-void handle_linux_client(char *hostname, char *sender, time_t timestamp, char *clientdata)
+void handle_linux_client(char *hostname, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
 	char *timestr;
 	char *uptimestr, *uptimesecsstr;
@@ -49,8 +49,8 @@ void handle_linux_client(char *hostname, char *sender, time_t timestamp, char *c
 
 	combo_start();
 
-	unix_cpu_report(hostname, fromline, timestr, uptimestr, whostr, psstr, topstr);
-	unix_disk_report(hostname, fromline, timestr, "Capacity", "Mounted on", dfstr);
+	unix_cpu_report(hostname, hinfo, fromline, timestr, uptimestr, whostr, psstr, topstr);
+	unix_disk_report(hostname, hinfo, fromline, timestr, "Capacity", "Mounted on", dfstr);
 
 	memphystotal = memswaptotal = memphysused = memswapused = memactused = -1;
 	p = strstr(freestr, "\nMem:");
@@ -71,14 +71,14 @@ void handle_linux_client(char *hostname, char *sender, time_t timestamp, char *c
 		memactfree /= 1024;
 	}
 	else memactused = memactfree = -1;
-	unix_memory_report(hostname, fromline, timestr,
+	unix_memory_report(hostname, hinfo, fromline, timestr,
 			   memphystotal, memphysused, memactused, memswaptotal, memswapused);
 
-	unix_procs_report(hostname, fromline, timestr, "CMD", psstr);
+	unix_procs_report(hostname, hinfo, fromline, timestr, "CMD", psstr);
 
 	combo_end();
 
-	unix_netstat_report(hostname, "linux", netstatstr);
-	unix_vmstat_report(hostname, "linux", vmstatstr);
+	unix_netstat_report(hostname, hinfo, "linux", netstatstr);
+	unix_vmstat_report(hostname, hinfo, "linux", vmstatstr);
 }
 

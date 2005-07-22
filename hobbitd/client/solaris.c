@@ -10,9 +10,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char solaris_rcsid[] = "$Id: solaris.c,v 1.3 2005-07-21 21:36:00 henrik Exp $";
+static char solaris_rcsid[] = "$Id: solaris.c,v 1.4 2005-07-22 16:12:04 henrik Exp $";
 
-void handle_solaris_client(char *hostname, char *sender, time_t timestamp, char *clientdata)
+void handle_solaris_client(char *hostname, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
 	char *timestr;
 	char *uptimestr;
@@ -50,8 +50,8 @@ void handle_solaris_client(char *hostname, char *sender, time_t timestamp, char 
 
 	combo_start();
 
-	unix_cpu_report(hostname, fromline, timestr, uptimestr, whostr, psstr, topstr);
-	unix_disk_report(hostname, fromline, timestr, "Capacity", "Mounted on", dfstr);
+	unix_cpu_report(hostname, hinfo, fromline, timestr, uptimestr, whostr, psstr, topstr);
+	unix_disk_report(hostname, hinfo, fromline, timestr, "Capacity", "Mounted on", dfstr);
 
 	memphystotal = memphysfree = memswapfree = memswapused = -1;
 	p = strstr(prtconfstr, "\nMemory size:");
@@ -66,16 +66,16 @@ void handle_solaris_client(char *hostname, char *sender, time_t timestamp, char 
 		unsigned long memphysused = memphystotal - memphysfree;
 		unsigned long memswaptotal = memswapused + memswapfree;
 
-		unix_memory_report(hostname, fromline, timestr,
+		unix_memory_report(hostname, hinfo, fromline, timestr,
 				   memphystotal, memphysused, -1,
 				   memswaptotal, memswapused);
 	}
 
-	unix_procs_report(hostname, fromline, timestr, "CMD", psstr);
+	unix_procs_report(hostname, hinfo, fromline, timestr, "CMD", psstr);
 
 	combo_end();
 
-	unix_netstat_report(hostname, "solaris", netstatstr);
-	unix_vmstat_report(hostname, "solaris", vmstatstr);
+	unix_netstat_report(hostname, hinfo, "solaris", netstatstr);
+	unix_vmstat_report(hostname, hinfo, "solaris", vmstatstr);
 }
 

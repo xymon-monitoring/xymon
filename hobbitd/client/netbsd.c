@@ -10,9 +10,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netbsd_rcsid[] = "$Id: netbsd.c,v 1.3 2005-07-21 21:36:00 henrik Exp $";
+static char netbsd_rcsid[] = "$Id: netbsd.c,v 1.4 2005-07-22 16:12:04 henrik Exp $";
 
-void handle_netbsd_client(char *hostname, char *sender, time_t timestamp, char *clientdata)
+void handle_netbsd_client(char *hostname, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
 	char *timestr;
 	char *uptimestr;
@@ -50,8 +50,8 @@ void handle_netbsd_client(char *hostname, char *sender, time_t timestamp, char *
 
 	combo_start();
 
-	unix_cpu_report(hostname, fromline, timestr, uptimestr, whostr, psstr, topstr);
-	unix_disk_report(hostname, fromline, timestr, "Capacity", "Mounted on", dfstr);
+	unix_cpu_report(hostname, hinfo, fromline, timestr, uptimestr, whostr, psstr, topstr);
+	unix_disk_report(hostname, hinfo, fromline, timestr, "Capacity", "Mounted on", dfstr);
 
 	if (meminfostr) {
 		unsigned long memphystotal, memphysfree, memphysused;
@@ -66,16 +66,16 @@ void handle_netbsd_client(char *hostname, char *sender, time_t timestamp, char *
 		memswapfree = memswaptotal - memswapused;
 
 		if (found == 4) {
-			unix_memory_report(hostname, fromline, timestr,
+			unix_memory_report(hostname, hinfo, fromline, timestr,
 				   memphystotal, memphysused, -1, memswaptotal, memswapused);
 		}
 	}
 
-	unix_procs_report(hostname, fromline, timestr, "COMMAND", psstr);
+	unix_procs_report(hostname, hinfo, fromline, timestr, "COMMAND", psstr);
 
 	combo_end();
 
-	unix_netstat_report(hostname, "netbsd", netstatstr);
-	unix_vmstat_report(hostname, "netbsd", vmstatstr);
+	unix_netstat_report(hostname, hinfo, "netbsd", netstatstr);
+	unix_vmstat_report(hostname, hinfo, "netbsd", vmstatstr);
 }
 

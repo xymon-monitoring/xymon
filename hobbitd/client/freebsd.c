@@ -10,9 +10,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char freebsd_rcsid[] = "$Id: freebsd.c,v 1.4 2005-07-22 11:03:47 henrik Exp $";
+static char freebsd_rcsid[] = "$Id: freebsd.c,v 1.5 2005-07-22 16:12:04 henrik Exp $";
 
-void handle_freebsd_client(char *hostname, char *sender, time_t timestamp, char *clientdata)
+void handle_freebsd_client(char *hostname, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
 	char *timestr;
 	char *uptimestr;
@@ -50,8 +50,8 @@ void handle_freebsd_client(char *hostname, char *sender, time_t timestamp, char 
 
 	combo_start();
 
-	unix_cpu_report(hostname, fromline, timestr, uptimestr, whostr, psstr, topstr);
-	unix_disk_report(hostname, fromline, timestr, "Capacity", "Mounted on", dfstr);
+	unix_cpu_report(hostname, hinfo, fromline, timestr, uptimestr, whostr, psstr, topstr);
+	unix_disk_report(hostname, hinfo, fromline, timestr, "Capacity", "Mounted on", dfstr);
 
 	if (meminfostr && swapinfostr) {
 		unsigned long memphystotal, memphysfree, memphysused;
@@ -84,16 +84,16 @@ void handle_freebsd_client(char *hostname, char *sender, time_t timestamp, char 
 		}
 
 		if (found >= 2) {
-			unix_memory_report(hostname, fromline, timestr,
+			unix_memory_report(hostname, hinfo, fromline, timestr,
 				   memphystotal, memphysused, -1, memswaptotal, memswapused);
 		}
 	}
 
-	unix_procs_report(hostname, fromline, timestr, "COMMAND", psstr);
+	unix_procs_report(hostname, hinfo, fromline, timestr, "COMMAND", psstr);
 
 	combo_end();
 
-	unix_netstat_report(hostname, "freebsd", netstatstr);
-	unix_vmstat_report(hostname, "freebsd", vmstatstr);
+	unix_netstat_report(hostname, hinfo, "freebsd", netstatstr);
+	unix_vmstat_report(hostname, hinfo, "freebsd", vmstatstr);
 }
 
