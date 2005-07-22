@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.44 2005-06-23 09:34:38 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.45 2005-07-22 10:07:25 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -38,6 +38,8 @@ static char *service = NULL;
 static char *ip = NULL;
 static char *displayname = NULL;
 static char *tstamp = NULL;
+static enum { FRM_STATUS, FRM_CLIENT } outform = FRM_STATUS;
+static char *clienturi = NULL;
 
 static char errortxt[1000];
 
@@ -95,6 +97,14 @@ static int parse_query(void)
 		else if (val && argnmatch(token, "TIMEBUF")) {
 			if (n == strlen(val)) tstamp = strdup(val);
 		}
+		else if (val && argnmatch(token, "CLIENT")) {
+			char *p;
+
+			if (n == strlen(val)) hostname = strdup(val);
+			service = strdup("");
+			outform = FRM_CLIENT;
+			p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
+		}
 
 		token = strtok(NULL, "&");
 	}
@@ -104,6 +114,16 @@ static int parse_query(void)
 	if (!hostname || !service) {
 		errormsg("Invalid request");
 		return 1;
+	}
+
+	if (outform == FRM_STATUS) {
+		char *p, *endp, *req;
+
+		req = xgetenv("REQUEST_URI");
+		clienturi = (char *)malloc(strlen(req) + 10 + strlen(hostname));
+		strcpy(clienturi, req);
+		p = strchr(clienturi, '?'); if (p) *p = '\0'; else p = clienturi + strlen(clienturi);
+		sprintf(p, "?CLIENT=%s", hostname);
 	}
 
 	return 0;
@@ -119,6 +139,7 @@ int do_request(void)
 	char *log = NULL, *firstline = NULL, *sender = NULL, *flags = NULL;	/* These are free'd */
 	char *restofmsg = NULL, *ackmsg = NULL, *dismsg = NULL;			/* These are just used */
 	int ishtmlformatted = 0;
+	int clientavail = 0;
 
 	if (parse_query() != 0) return 1;
 
@@ -132,7 +153,21 @@ int do_request(void)
 		return 1;
 	}
 
-	if ((strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) || (strcmp(service, xgetenv("INFOCOLUMN")) == 0)) {
+	if (outform == FRM_CLIENT) {
+		char hobbitdreq[200];
+		int hobbitdresult;
+
+		sprintf(hobbitdreq, "clientlog %s", hostname);
+		hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &log, 1, 30);
+		if ((hobbitdresult != BB_OK) || (log == NULL) || (strlen(log) == 0)) {
+			errormsg("Status not available\n");
+			return 1;
+		}
+
+		restofmsg = strchr(log, '\n');
+		if (restofmsg) restofmsg++; else restofmsg = log;
+	}
+	else if ((strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) || (strcmp(service, xgetenv("INFOCOLUMN")) == 0)) {
 		ishtmlformatted = 1;
 		sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
 		sethostenv_refresh(600);
@@ -184,7 +219,7 @@ int do_request(void)
 			p = gettok(NULL, "|");
 		}
 
-		/* hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|ackmsg|dismsg */
+		/* hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|ackmsg|dismsg|clientavail */
 		color = parse_color(items[2]);
 		flags = strdup(items[3]);
 		logage = time(NULL) - atoi(items[4]);
@@ -201,6 +236,20 @@ int do_request(void)
 
 		if (items[12] && strlen(items[12])) dismsg = items[12];
 		if (dismsg) nldecode(dismsg);
+
+		if (items[13]) clientavail = (*items[13] == 'Y');
+
+		if (clientavail) {
+			char *svccomma, *clientsvcs, *clientsvcscomma;
+
+			svccomma = (char *)malloc(strlen(service) + 3);
+			sprintf(svccomma, ",%s,", service);
+			clientsvcs = xgetenv("CLIENTSVCS");
+			clientsvcscomma = (char *)malloc(strlen(clientsvcs) + 3);
+			sprintf(clientsvcscomma, ",%s,", clientsvcs);
+			clientavail = (strstr(clientsvcscomma, svccomma) != NULL);
+			xfree(svccomma); xfree(clientsvcscomma);
+		}
 	}
 	else if (source == SRC_HISTLOGS) {
 		char logfn[PATH_MAX];
@@ -287,9 +336,13 @@ int do_request(void)
 		if (receivedfromstr) *receivedfromstr = '\0';
 	}
 
-	fprintf(stdout, "Content-type: text/html\n\n");
-
-	generate_html_log(hostname, 
+	if (outform == FRM_CLIENT) {
+		fprintf(stdout, "Content-type: text/plain\n\n");
+		fprintf(stdout, "%s", restofmsg);
+	}
+	else {
+		fprintf(stdout, "Content-type: text/html\n\n");
+		generate_html_log(hostname, 
 			  (displayname ? displayname : hostname), 
 			  service, 
 			  (ip ? ip : ""), 
@@ -305,8 +358,9 @@ int do_request(void)
 			  wantserviceid, 
 			  ishtmlformatted,
 			  (source == SRC_HOBBITD),
-			  multigraphs,
+			  multigraphs, (clientavail ? clienturi : NULL),
 			  stdout);
+	}
 
 	/* Cleanup CGI params */
 	if (hostname) xfree(hostname);
