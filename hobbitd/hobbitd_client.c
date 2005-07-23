@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.14 2005-07-23 08:04:01 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.15 2005-07-23 13:33:24 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -342,64 +342,67 @@ void unix_memory_report(char *hostname, namelist_t *hinfo, char *fromline, char 
 			long memphystotal, long memphysused, long memactused,
 			long memswaptotal, long memswapused)
 {
-	unsigned long memphyspct, memswappct, memactpct;
+	unsigned long memphyspct = 0, memswappct = 0, memactpct = 0;
 	int physyellow, physred, swapyellow, swapred, actyellow, actred;
 
-	int memorycolor = COL_GREEN;
-
-	char *msg = NULL;
-	int  msgsz;
-	char msgline[4096];
-
+	int memorycolor = COL_GREEN, physcolor = COL_GREEN, swapcolor = COL_GREEN, actcolor = COL_GREEN;
 	char *memorysummary = "OK";
+
+	char msgline[4096];
 
 	if (memphystotal == -1) return;
 	if (memphysused  == -1) return;
 	if (memswaptotal == -1) return;
 	if (memswapused  == -1) return;
 
-	memphyspct = (100 * memphysused) / memphystotal;
-	memswappct = (100 * memswapused) / memswaptotal;
-	if (memactused != -1) memactpct = (100 * memactused) / memphystotal; else memactpct = 0;
-
 	get_memory_thresholds(hinfo, &physyellow, &physred, &swapyellow, &swapred, &actyellow, &actred);
 
-	if ((memphyspct > physyellow) || (memswappct > swapyellow) || ((memactused != -1) && (memactpct > actyellow))) {
+	memphyspct = (100 * memphysused) / memphystotal;
+	if (memphyspct > physyellow) physcolor = COL_YELLOW;
+	if (memphyspct > physred)    physcolor = COL_RED;
+
+	memswappct = (100 * memswapused) / memswaptotal;
+	if (memswappct > swapyellow) swapcolor = COL_YELLOW;
+	if (memswappct > swapred)    swapcolor = COL_RED;
+
+	if (memactused != -1) {
+		memactpct = (100 * memactused) / memphystotal;
+		if (memactpct  > actyellow)  actcolor  = COL_YELLOW;
+		if (memactpct  > actred)     actcolor  = COL_RED;
+	}
+
+	if ((physcolor == COL_YELLOW) || (swapcolor == COL_YELLOW) || (actcolor == COL_YELLOW)) {
 		memorycolor = COL_YELLOW;
 		memorysummary = "low";
 	}
-	if ((memphyspct > physred) || (memswappct > swapred) || ((memactused != -1) && (memactpct > actred))) {
+	if ((physcolor == COL_RED) || (swapcolor == COL_RED) || (actcolor == COL_RED)) {
 		memorycolor = COL_RED;
 		memorysummary = "CRITICAL";
 	}
 
+	init_status(memorycolor);
 	sprintf(msgline, "status %s.memory %s %s - Memory %s\n",
 		commafy(hostname), colorname(memorycolor), timestr, memorysummary);
-	addtobuffer(&msg, &msgsz, msgline);
+	addtostatus(msgline);
 
 	sprintf(msgline, "   %-12s%12s%12s%12s\n", "Memory", "Used", "Total", "Percentage");
-	addtobuffer(&msg, &msgsz, msgline);
+	addtostatus(msgline);
 
-	sprintf(msgline, "&green %-12s%11luM%11luM%11lu%%\n", 
-		"Physical", memphysused, memphystotal, memphyspct);
-	addtobuffer(&msg, &msgsz, msgline);
+	sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%%\n", 
+		colorname(physcolor), "Physical", memphysused, memphystotal, memphyspct);
+	addtostatus(msgline);
 
 	if (memactused != -1) {
-		sprintf(msgline, "&green %-12s%11luM%11luM%11lu%%\n", 
-			"Actual", memactused, memphystotal, memactpct);
-		addtobuffer(&msg, &msgsz, msgline);
+		sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%%\n", 
+			colorname(actcolor), "Actual", memactused, memphystotal, memactpct);
+		addtostatus(msgline);
 	}
 
-	sprintf(msgline, "&green %-12s%11luM%11luM%11lu%%\n", 
-		"Swap", memswapused, memswaptotal, memswappct);
-	addtobuffer(&msg, &msgsz, msgline);
-
-	init_status(memorycolor);
-	addtostatus(msg);
+	sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%%\n", 
+		colorname(swapcolor), "Swap", memswapused, memswaptotal, memswappct);
+	addtostatus(msgline);
 	addtostatus(fromline);
 	finish_status();
-
-	if (msg) xfree(msg);
 }
 
 void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, 
