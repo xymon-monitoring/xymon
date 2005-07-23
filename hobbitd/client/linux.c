@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char linux_rcsid[] = "$Id: linux.c,v 1.4 2005-07-22 16:12:04 henrik Exp $";
+static char linux_rcsid[] = "$Id: linux.c,v 1.5 2005-07-23 19:30:39 henrik Exp $";
 
 void handle_linux_client(char *hostname, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -21,6 +21,7 @@ void handle_linux_client(char *hostname, namelist_t *hinfo, char *sender, time_t
 	char *topstr;
 	char *dfstr;
 	char *freestr;
+	char *msgsstr;
 	char *netstatstr;
 	char *vmstatstr;
 
@@ -44,6 +45,7 @@ void handle_linux_client(char *hostname, namelist_t *hinfo, char *sender, time_t
 	topstr = getdata("top");
 	dfstr = getdata("df");
 	freestr = getdata("free");
+	msgsstr = getdata("msgs");
 	netstatstr = getdata("netstat");
 	vmstatstr = getdata("vmstat");
 
@@ -75,6 +77,7 @@ void handle_linux_client(char *hostname, namelist_t *hinfo, char *sender, time_t
 			   memphystotal, memphysused, memactused, memswaptotal, memswapused);
 
 	unix_procs_report(hostname, hinfo, fromline, timestr, "CMD", psstr);
+	msgs_report(hostname, hinfo, fromline, timestr, msgsstr);
 
 	combo_end();
 

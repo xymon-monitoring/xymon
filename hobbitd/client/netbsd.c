@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netbsd_rcsid[] = "$Id: netbsd.c,v 1.5 2005-07-23 16:47:39 henrik Exp $";
+static char netbsd_rcsid[] = "$Id: netbsd.c,v 1.6 2005-07-23 19:30:39 henrik Exp $";
 
 void handle_netbsd_client(char *hostname, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -22,6 +22,7 @@ void handle_netbsd_client(char *hostname, namelist_t *hinfo, char *sender, time_
 	char *dfstr;
 	char *meminfostr;
 	char *swapctlstr;
+	char *msgsstr;
 	char *netstatstr;
 	char *vmstatstr;
 
@@ -41,6 +42,7 @@ void handle_netbsd_client(char *hostname, namelist_t *hinfo, char *sender, time_
 	dfstr = getdata("df");
 	meminfostr = getdata("meminfo");
 	swapctlstr = getdata("swapctl");
+	msgsstr = getdata("msgsstr");
 	netstatstr = getdata("netstat");
 	vmstatstr = getdata("vmstat");
 
@@ -71,6 +73,7 @@ void handle_netbsd_client(char *hostname, namelist_t *hinfo, char *sender, time_
 	}
 
 	unix_procs_report(hostname, hinfo, fromline, timestr, "COMMAND", psstr);
+	msgs_report(hostname, hinfo, fromline, timestr, msgsstr);
 
 	combo_end();
 
