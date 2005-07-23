@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.4 2005-07-04 08:45:53 henrik Exp $";
+static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.5 2005-07-23 16:48:00 henrik Exp $";
 
 int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -50,7 +50,7 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			char *endptr;
 
 			strtod(val, &endptr);
-			if (isspace(*endptr) || (*endptr == '\0')) {
+			if (isspace((int)*endptr) || (*endptr == '\0')) {
 				char dsname[20];
 				char dskey[22];
 				char *dstype = NULL;
