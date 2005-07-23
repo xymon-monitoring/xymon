@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.3 2005-07-23 13:37:22 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.4 2005-07-23 16:30:44 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -83,7 +83,6 @@ typedef struct c_rule_t {
 
 static c_rule_t *rulehead = NULL;
 static c_rule_t *ruletail = NULL;
-
 static exprlist_t *exprhead = NULL;
 
 static char *mytok(char *s, char *delims)
@@ -172,6 +171,7 @@ int load_client_config(char *configfn)
 		if (tmp->timespec) xfree(tmp->timespec);
 		xfree(tmp);
 	}
+	rulehead = ruletail = NULL;
 	while (exprhead) {
 		exprlist_t *tmp = exprhead;
 		exprhead = exprhead->next;
@@ -179,6 +179,7 @@ int load_client_config(char *configfn)
 		if (tmp->exp) pcre_free(tmp->exp);
 		xfree(tmp);
 	}
+	exprhead = NULL;
 
 	initfgets(fd);
 	curhost = curpage = curexhost = curexpage = NULL;
@@ -274,11 +275,15 @@ int load_client_config(char *configfn)
 				p = mytok(NULL, " \t"); 
 				if (p) currule->rule.proc.procexp = setup_expr(p);
 				p = mytok(NULL, " \t");
-				currule->rule.proc.pmin = (p ? atoi(p) : 0);
+				currule->rule.proc.pmin = (p ? atoi(p) : 1);
 				p = mytok(NULL, " \t");
 				currule->rule.proc.pmax = (p ? atoi(p) : -1);
 				p = mytok(NULL, " \t");
 				currule->rule.proc.color = (p ? parse_color(p) : COL_RED);
+
+				/* It's easy to set max=0 when you only want to define a minimum */
+				if (currule->rule.proc.pmin && (currule->rule.proc.pmax == 0))
+					currule->rule.proc.pmax = -1;
 			}
 
 			tok = mytok(NULL, " \t");
@@ -502,9 +507,43 @@ int clear_process_counts(namelist_t *hinfo)
 void add_process_count(char *pname)
 {
 	mon_proc_t *pwalk;
+	int ovector[10];
+	int result;
 
 	for (pwalk = phead; (pwalk); pwalk = pwalk->next) {
-		if (namematch(pname, pwalk->rule->rule.proc.procexp->pattern, pwalk->rule->rule.proc.procexp->exp)) pwalk->rule->rule.proc.pcount++;
+		if (!pwalk->rule->rule.proc.procexp->exp) {
+			/* 
+			 * No pattern, just see if the token in the config file is
+			 * present in the string we got from "ps". So you can setup
+			 * the config to look for "cron" and it will actually find "/usr/sbin/cron".
+			 */
+			char *p = strstr(pname, pwalk->rule->rule.proc.procexp->pattern);
+			if (p) {
+				char prevch, nextch;
+
+				/*
+				 * Check that the character after the command we want is
+				 * either whitespace or a NUL char (end of command).
+				 */
+				nextch = *(p+strlen(pwalk->rule->rule.proc.procexp->pattern));
+				if ((nextch != '\0') && (!isspace((int)nextch))) continue;
+
+				if (p > pname) {
+					/* 
+					 * Found it in the middle of a string. 
+					 * Check that the previous character is whitespace or a /
+					 */
+					prevch = *(p-1); 
+					if (!isspace((int)prevch) && (prevch != '/')) continue;
+				}
+
+				pwalk->rule->rule.proc.pcount++;
+			}
+		}
+		else {
+			if (namematch(pname, pwalk->rule->rule.proc.procexp->pattern, pwalk->rule->rule.proc.procexp->exp))
+				pwalk->rule->rule.proc.pcount++;
+		}
 	}
 }
 
