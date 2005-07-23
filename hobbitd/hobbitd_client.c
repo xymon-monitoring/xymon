@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.13 2005-07-22 16:12:48 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.14 2005-07-23 08:04:01 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -558,6 +558,101 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--config=")) {
 			char *lp = strchr(argv[argi], '=');
 			configfn = strdup(lp+1);
+		}
+		else if (argnmatch(argv[argi], "--dump-config")) {
+			load_client_config(configfn);
+			dump_client_config();
+			return 0;
+		}
+		else if (strcmp(argv[argi], "--test") == 0) {
+			namelist_t *hinfo, *oldhinfo = NULL;
+			char hostname[100];
+			char s[100];
+
+			load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+			load_client_config(configfn);
+			*hostname = '\0';
+
+			while (1) {
+				hinfo = NULL;
+				while (!hinfo) {
+					printf("Hostname (.=end, ?=dump, !=reload) [%s]: ", hostname); 
+					fflush(stdout); fgets(hostname, sizeof(hostname), stdin);
+					grok_input(hostname);
+
+					if (strlen(hostname) == 0) {
+						hinfo = oldhinfo;
+						strcpy(hostname, bbh_item(hinfo, BBH_HOSTNAME));
+					}
+					else if (strcmp(hostname, ".") == 0) 
+						return 0;
+					else if (strcmp(hostname, "!") == 0) {
+						load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+						load_client_config(configfn);
+						*hostname = '\0';
+					}
+					else if (strcmp(hostname, "?") == 0) {
+						dump_client_config();
+						if (oldhinfo) strcpy(hostname, bbh_item(oldhinfo, BBH_HOSTNAME));
+					}
+					else {
+						hinfo = hostinfo(hostname);
+						if (!hinfo) printf("Unknown host\n");
+					}
+				}
+				oldhinfo = hinfo;
+
+				printf("Test (cpu, mem, disk, proc): "); fflush(stdout); 
+				fgets(s, sizeof(s), stdin); grok_input(s);
+				if (strcmp(s, "cpu") == 0) {
+					float loadyellow, loadred;
+					int recentlimit, ancientlimit;
+	
+					get_cpu_thresholds(hinfo, &loadyellow, &loadred, &recentlimit, &ancientlimit);
+
+					printf("Load: Yellow at %.2f, red at %.2f\n", loadyellow, loadred);
+					printf("Uptime: From boot until %s,", durationstring(recentlimit));
+					printf("and after %s uptime\n", durationstring(ancientlimit));
+				}
+				else if (strcmp(s, "mem") == 0) {
+					int physyellow, physred, swapyellow, swapred, actyellow, actred;
+
+					get_memory_thresholds(hinfo, &physyellow, &physred, 
+							&swapyellow, &swapred, &actyellow, &actred);
+					printf("Phys: Yellow at %d, red at %d\n", physyellow, physred);
+					printf("Swap: Yellow at %d, red at %d\n", swapyellow, swapred);
+					printf("Act.: Yellow at %d, red at %d\n", actyellow, actred);
+				}
+				else if (strcmp(s, "disk") == 0) {
+					int warnlevel, paniclevel;
+
+					printf("Filesystem: "); fflush(stdout);
+					fgets(s, sizeof(s), stdin); grok_input(s);
+					get_disk_thresholds(hinfo, s, &warnlevel, &paniclevel);
+					printf("Yellow at %d, red at %d\n", warnlevel, paniclevel);
+				}
+				else if (strcmp(s, "proc") == 0) {
+					int pchecks = clear_process_counts(hinfo);
+					char *pname;
+					int pcount, pmin, pmax, pcolor;
+
+					if (pchecks == 0) {
+						printf("No process checks for this host\n");
+						continue;
+					}
+
+					do {
+						printf("ps command string: "); fflush(stdout);
+						fgets(s, sizeof(s), stdin); grok_input(s);
+						if (*s) add_process_count(s);
+					} while (*s);
+
+					while ((pname = check_process_count(&pcount, &pmin, &pmax, &pcolor)) != NULL) {
+						printf("Process %s color %s: Count=%d, min=%d, max=%d\n",
+							pname, colorname(pcolor), pcount, pmin, pmax);
+					}
+				}
+			}
 		}
 	}
 
