@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.15 2005-07-23 13:33:24 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.16 2005-07-23 19:48:40 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -492,6 +492,35 @@ void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 
 	/* And the full ps output for those who want it */
 	addtostatus(psstr);
+
+	addtostatus(fromline);
+	finish_status();
+}
+
+void msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, char *msgsstr)
+{
+	int msgscolor = COL_GREEN;
+	char msgline[4096];
+	char *summary = "All logs OK";
+
+	if (msgsstr) {
+		if (strstr(msgsstr, "&clear ")) { msgscolor = COL_CLEAR; summary = "No log data available"; }
+		if (strstr(msgsstr, "&yellow ")) { msgscolor = COL_YELLOW; summary = "WARNING"; }
+		if (strstr(msgsstr, "&red ")) { msgscolor = COL_RED; summary = "CRITICAL"; }
+	}
+	else {
+		msgscolor = COL_CLEAR; summary = "No log data available";
+	}
+
+	init_status(msgscolor);
+	sprintf(msgline, "status %s.msgs %s System logs at %s : %s\n",
+		commafy(hostname), colorname(msgscolor), timestr, summary);
+	addtostatus(msgline);
+
+	if (msgsstr)
+		addtostatus(msgsstr);
+	else
+		addtostatus("The client did not report any logfile data\n");
 
 	addtostatus(fromline);
 	finish_status();
