@@ -14,6 +14,7 @@
 #include "libbbgen.h"
 
 extern int load_client_config(char *configfn);
+extern void dump_client_config(void);
 
 extern void get_cpu_thresholds(namelist_t *hinfo, float *loadyellow, float *loadred, int *recentlimit, int *ancientlimit);
 extern void get_disk_thresholds(namelist_t *hhinfo, char *fsname, int *warnlevel, int *paniclevel);
