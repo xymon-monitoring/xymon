@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.2 2005-07-23 08:05:12 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.3 2005-07-23 13:37:22 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -148,7 +148,7 @@ int load_client_config(char *configfn)
 
 	MEMDEFINE(fn);
 
-	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/clientrules.cfg", xgetenv("BBHOME"));
+	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/hobbit-clients.cfg", xgetenv("BBHOME"));
 	if (stat(fn, &st) == -1) {
 		errprintf("Cannot stat config file %s: %s\n", fn, strerror(errno)); 
 		MEMUNDEFINE(fn); 
