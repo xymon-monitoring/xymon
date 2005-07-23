@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char hpux_rcsid[] = "$Id: hpux.c,v 1.5 2005-07-22 16:12:04 henrik Exp $";
+static char hpux_rcsid[] = "$Id: hpux.c,v 1.6 2005-07-23 16:47:39 henrik Exp $";
 
 void handle_hpux_client(char *hostname, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -53,6 +53,9 @@ void handle_hpux_client(char *hostname, namelist_t *hinfo, char *sender, time_t 
 		unsigned long memphystotal, memphysfree, memphysused;
 		unsigned long memswaptotal, memswapfree, memswapused;
 		int found = 0;
+
+		memphystotal = memphysfree = memphysused = 0;
+		memswaptotal = memswapfree = memswapused = 0;
 
 		p = strstr(memorystr, "Total:"); if (p) { memphystotal = atol(p+6); found++; }
 		p = strstr(memorystr, "Free:");  if (p) { memphysfree  = atol(p+5); found++; }

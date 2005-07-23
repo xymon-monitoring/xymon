@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char openbsd_rcsid[] = "$Id: openbsd.c,v 1.4 2005-07-22 16:12:04 henrik Exp $";
+static char openbsd_rcsid[] = "$Id: openbsd.c,v 1.5 2005-07-23 16:47:39 henrik Exp $";
 
 void handle_openbsd_client(char *hostname, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -26,11 +26,6 @@ void handle_openbsd_client(char *hostname, namelist_t *hinfo, char *sender, time
 	char *vmstatstr;
 
 	char *p;
-
-	unsigned long memphystotal, memphysused, memphysfree,
-		      memactused, memactfree,
-		      memswaptotal, memswapused, memswapfree;
-
 	char fromline[1024];
 
 	sprintf(fromline, "\nStatus message received from %s\n", sender);
@@ -57,6 +52,9 @@ void handle_openbsd_client(char *hostname, namelist_t *hinfo, char *sender, time
 		unsigned long memphystotal, memphysfree, memphysused;
 		unsigned long memswaptotal, memswapfree, memswapused;
 		int found = 0;
+
+		memphystotal = memphysfree = memphysused = 0;
+		memswaptotal = memswapfree = memswapused = 0;
 
 		p = strstr(meminfostr, "Total:"); if (p) { memphystotal = atol(p+6); found++; }
 		p = strstr(meminfostr, "Free:");  if (p) { memphysfree  = atol(p+5); found++; }
