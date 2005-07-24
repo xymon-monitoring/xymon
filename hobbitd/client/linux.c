@@ -10,9 +10,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char linux_rcsid[] = "$Id: linux.c,v 1.6 2005-07-24 06:20:57 henrik Exp $";
+static char linux_rcsid[] = "$Id: linux.c,v 1.7 2005-07-24 10:13:56 henrik Exp $";
 
-void handle_linux_client(char *hostname, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
+void handle_linux_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
 	char *timestr;
 	char *uptimestr;
@@ -82,6 +82,19 @@ void handle_linux_client(char *hostname, namelist_t *hinfo, char *sender, time_t
 	combo_end();
 
 	unix_netstat_report(hostname, hinfo, "linux", netstatstr);
-	unix_vmstat_report(hostname, hinfo, "linux", vmstatstr);
+
+	switch (os) {
+	  case OS_LINUX22:
+		unix_vmstat_report(hostname, hinfo, "linux22", vmstatstr);
+		break;
+
+	  case OS_RHEL3:
+		unix_vmstat_report(hostname, hinfo, "rhel3", vmstatstr);
+		break;
+
+	  default:
+		unix_vmstat_report(hostname, hinfo, "linux", vmstatstr);
+		break;
+	}
 }
 
