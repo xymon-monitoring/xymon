@@ -10,12 +10,12 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char linux_rcsid[] = "$Id: linux.c,v 1.5 2005-07-23 19:30:39 henrik Exp $";
+static char linux_rcsid[] = "$Id: linux.c,v 1.6 2005-07-24 06:20:57 henrik Exp $";
 
 void handle_linux_client(char *hostname, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
 	char *timestr;
-	char *uptimestr, *uptimesecsstr;
+	char *uptimestr;
 	char *whostr;
 	char *psstr;
 	char *topstr;
@@ -25,12 +25,6 @@ void handle_linux_client(char *hostname, namelist_t *hinfo, char *sender, time_t
 	char *netstatstr;
 	char *vmstatstr;
 
-	char *p;
-
-	unsigned long memphystotal, memphysused, memphysfree,
-		      memactused, memactfree,
-		      memswaptotal, memswapused, memswapfree;
-
 	char fromline[1024];
 
 	sprintf(fromline, "\nStatus message received from %s\n", sender);
@@ -39,7 +33,6 @@ void handle_linux_client(char *hostname, namelist_t *hinfo, char *sender, time_t
 
 	timestr = getdata("date");
 	uptimestr = getdata("uptime");
-	uptimesecsstr = getdata("uptimesecs");
 	whostr = getdata("who");
 	psstr = getdata("ps");
 	topstr = getdata("top");
@@ -54,27 +47,34 @@ void handle_linux_client(char *hostname, namelist_t *hinfo, char *sender, time_t
 	unix_cpu_report(hostname, hinfo, fromline, timestr, uptimestr, whostr, psstr, topstr);
 	unix_disk_report(hostname, hinfo, fromline, timestr, "Capacity", "Mounted on", dfstr);
 
-	memphystotal = memswaptotal = memphysused = memswapused = memactused = -1;
-	p = strstr(freestr, "\nMem:");
-	if (p && (sscanf(p, "\nMem: %ld %ld %ld", &memphystotal, &memphysused, &memphysfree) == 3)) {
-		memphystotal /= 1024;
-		memphysused /= 1024;
-		memphysfree /= 1024;
+	if (freestr) {
+		char *p;
+		unsigned long memphystotal, memphysused, memphysfree,
+			      memactused, memactfree,
+			      memswaptotal, memswapused, memswapfree;
+
+		memphystotal = memswaptotal = memphysused = memswapused = memactused = memactfree = -1;
+		p = strstr(freestr, "\nMem:");
+		if (p && (sscanf(p, "\nMem: %lu %lu %lu", &memphystotal, &memphysused, &memphysfree) == 3)) {
+			memphystotal /= 1024;
+			memphysused /= 1024;
+			memphysfree /= 1024;
+		}
+		p = strstr(freestr, "\nSwap:");
+		if (p && (sscanf(p, "\nSwap: %lu %lu %lu", &memswaptotal, &memswapused, &memswapfree) == 3)) {
+			memswaptotal /= 1024;
+			memswapused /= 1024;
+			memswapfree /= 1024;
+		}
+		p = strstr(freestr, "\n-/+ buffers/cache:");
+		if (p && (sscanf(p, "\n-/+ buffers/cache: %lu %lu", &memactused, &memactfree) == 2)) {
+			memactused /= 1024;
+			memactfree /= 1024;
+		}
+
+		unix_memory_report(hostname, hinfo, fromline, timestr,
+				   memphystotal, memphysused, memactused, memswaptotal, memswapused);
 	}
-	p = strstr(freestr, "\nSwap:");
-	if (p && (sscanf(p, "\nSwap: %ld %ld %ld", &memswaptotal, &memswapused, &memswapfree) == 3)) {
-		memswaptotal /= 1024;
-		memswapused /= 1024;
-		memswapfree /= 1024;
-	}
-	p = strstr(freestr, "\n-/+ buffers/cache:");
-	if (p && (sscanf(p, "\n-/+ buffers/cache: %ld %ld", &memactused, &memactfree) == 2)) {
-		memactused /= 1024;
-		memactfree /= 1024;
-	}
-	else memactused = memactfree = -1;
-	unix_memory_report(hostname, hinfo, fromline, timestr,
-			   memphystotal, memphysused, memactused, memswaptotal, memswapused);
 
 	unix_procs_report(hostname, hinfo, fromline, timestr, "CMD", psstr);
 	msgs_report(hostname, hinfo, fromline, timestr, msgsstr);
