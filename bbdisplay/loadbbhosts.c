@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.27 2005-07-16 09:48:35 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.28 2005-07-24 12:00:07 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -605,7 +605,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			}
 
 			/* Check for no-display hosts - they are ignored. */
-			if (bbh_item(bbhost, BBH_FLAG_NODISP) != NULL) continue;
+			/* But only when we're building the default pageset */
+			if ((strlen(pgset) == 0) && (bbh_item(bbhost, BBH_FLAG_NODISP) != NULL)) continue;
 
 			for (targetpagecount=0; (targetpagecount < MAX_TARGETPAGES_PER_HOST); targetpagecount++) 
 				targetpagelist[targetpagecount] = NULL;
