@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.66 2005-07-24 10:35:50 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.67 2005-07-24 10:37:33 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -461,7 +461,7 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 	 */
 	scheduleaction = ((strncmp(msg, "schedule", 8) == 0) && (strlen(msg) > 8));
 
-	p = msg + strcspn(msg, " \t"); savech = *p; *p = '\0';
+	p = msg + strcspn(msg, " \t\r\n"); savech = *p; *p = '\0';
 	for (i = 0; (multircptcmds[i] && strcmp(multircptcmds[i], msg)); i++) ;
 	*p = savech;
 	if (scheduleaction || multircptcmds[i]) {
