@@ -92,8 +92,7 @@
 	NEEDS hobbitd
 	CMD hobbitd_channel --channel=data   --log=$BBSERVERLOGS/rrd-data.log hobbitd_rrd --rrddir=$BBVAR/rrd
 
-# The client back-end module. 
-# NOTE: This is experimental.
+# The client back-end module. You need this if you are running the Hobbit client on any system.
 [clientdata]
 	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	NEEDS hobbitd
