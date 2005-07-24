@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.17 2005-07-24 06:34:56 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.18 2005-07-24 07:11:31 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -624,7 +624,7 @@ int main(int argc, char *argv[])
 				while (!hinfo) {
 					printf("Hostname (.=end, ?=dump, !=reload) [%s]: ", hostname); 
 					fflush(stdout); fgets(hostname, sizeof(hostname), stdin);
-					grok_input(hostname);
+					sanitize_input(hostname);
 
 					if (strlen(hostname) == 0) {
 						hinfo = oldhinfo;
@@ -649,7 +649,7 @@ int main(int argc, char *argv[])
 				oldhinfo = hinfo;
 
 				printf("Test (cpu, mem, disk, proc): "); fflush(stdout); 
-				fgets(s, sizeof(s), stdin); grok_input(s);
+				fgets(s, sizeof(s), stdin); sanitize_input(s);
 				if (strcmp(s, "cpu") == 0) {
 					float loadyellow, loadred;
 					int recentlimit, ancientlimit;
@@ -673,7 +673,7 @@ int main(int argc, char *argv[])
 					int warnlevel, paniclevel;
 
 					printf("Filesystem: "); fflush(stdout);
-					fgets(s, sizeof(s), stdin); grok_input(s);
+					fgets(s, sizeof(s), stdin); sanitize_input(s);
 					get_disk_thresholds(hinfo, s, &warnlevel, &paniclevel);
 					printf("Yellow at %d, red at %d\n", warnlevel, paniclevel);
 				}
@@ -689,7 +689,7 @@ int main(int argc, char *argv[])
 
 					do {
 						printf("ps command string: "); fflush(stdout);
-						fgets(s, sizeof(s), stdin); grok_input(s);
+						fgets(s, sizeof(s), stdin); sanitize_input(s);
 						if (*s) add_process_count(s);
 					} while (*s);
 
