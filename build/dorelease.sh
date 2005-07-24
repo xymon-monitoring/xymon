@@ -66,7 +66,7 @@ for f in $SRCDIRS
 do
 	find $f/ | grep -v RCS | cpio -pdvmu $RELDIR/
 done
-cp -p Changes configure configure.server configure.client COPYING CREDITS README $RELDIR/
+cp -p Changes configure configure.server configure.client COPYING CREDITS README README.CLIENT $RELDIR/
 find $RELDIR -type d|xargs chmod 755
 cd $RELDIR && make -f ~/hobbit/Makefile.home distclean
 cd $RELDIR && rm -f {debian,rpm}/pkg/*
