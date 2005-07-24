@@ -1,6 +1,15 @@
 #!/bin/sh
-
-# Linux client for Hobbit
+#----------------------------------------------------------------------------#
+# Linux client for Hobbit                                                    #
+#                                                                            #
+# Copyright (C) 2005 Henrik Storner <henrik@hswn.dk>                         #
+#                                                                            #
+# This program is released under the GNU General Public License (GPL),       #
+# version 2. See the file "COPYING" for details.                             #
+#                                                                            #
+#----------------------------------------------------------------------------#
+#
+# $Id: hobbitclient-linux.sh,v 1.4 2005-07-24 11:32:51 henrik Exp $
 
 echo "[date]"
 date

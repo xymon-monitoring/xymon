@@ -1,6 +1,16 @@
 #!/bin/sh
-
-# Darwin (Mac OS X) client for Hobbit
+#
+#----------------------------------------------------------------------------#
+# Darwin (Mac OS X) client for Hobbit                                        #
+#                                                                            #
+# Copyright (C) 2005 Henrik Storner <henrik@hswn.dk>                         #
+#                                                                            #
+# This program is released under the GNU General Public License (GPL),       #
+# version 2. See the file "COPYING" for details.                             #
+#                                                                            #
+#----------------------------------------------------------------------------#
+#
+# $Id: hobbitclient-darwin.sh,v 1.3 2005-07-24 11:32:51 henrik Exp $
 
 echo "[date]"
 date

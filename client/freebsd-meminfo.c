@@ -1,3 +1,16 @@
+/*----------------------------------------------------------------------------*/
+/* Hobbit memory information tool for FreeBSD.                                */
+/* This tool retrieves information about the total and free RAM.              */
+/*                                                                            */
+/* Copyright (C) 2005 Henrik Storner <henrik@hswn.dk>                         */
+/*                                                                            */
+/* This program is released under the GNU General Public License (GPL),       */
+/* version 2. See the file "COPYING" for details.                             */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+static char rcsid[] = "$Id: freebsd-meminfo.c,v 1.2 2005-07-24 11:32:51 henrik Exp $";
+
 #include <sys/types.h>
 #include <sys/sysctl.h>
 #include <vm/vm_param.h>
