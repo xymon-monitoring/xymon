@@ -14,9 +14,8 @@ ifeq ($(CLIENTONLY),yes)
 	BUILDTARGETS = client
 	INSTALLTARGETS = install-client install-clientmsg
 else
-	BUILDTARGETS = lib-build common-build bbdisplay-build bbnet-build bbproxy-build docs-build build-build hobbitd-build
-	INSTALLTARGETS = install-bbdisplay install-bbnet install-bbproxy install-man install-hobbitd install-docs install-servermsg
-	INSTALLNOCGITARGETS = install-bbdisplay-nocgi install-bbnet install-bbproxy install-hobbitd install-docs install-servermsg
+	BUILDTARGETS = lib-build common-build bbdisplay-build bbnet-build bbproxy-build docs-build build-build hobbitd-build client
+	INSTALLTARGETS = install-bbdisplay install-bbnet install-bbproxy install-man install-hobbitd install-docs install-client install-servermsg
 endif
 
 ifndef INSTALLBINDIR
@@ -130,8 +129,6 @@ install-servermsg:
 	@echo ""
 	@echo "To start Hobbit, as the $(BBUSER) user run '${BBHOME}/bin/hobbit.sh start'"
 	@echo "To view the Hobbit webpages, go to http://${BBHOSTNAME}${BBHOSTURL}"
-
-install-nocgi: $(INSTALLNOCGITARGETS)
 
 install-dirs:
 	mkdir -p $(INSTALLROOT)$(BBHOME) $(INSTALLROOT)$(BBVAR)
