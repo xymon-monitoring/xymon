@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.18 2005-06-05 09:24:39 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.19 2005-07-24 10:09:25 henrik Exp $";
 
 static char *netstat_params[] = { "rrdcreate", rrdfn, 
 	                          "DS:udpInDatagrams:DERIVE:600:0:U", 
@@ -294,6 +294,7 @@ int do_netstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	  case OS_FREEBSD:
 	  case OS_NETBSD:
 	  case OS_OPENBSD:
+	  case OS_DARWIN:
 		havedata = do_valbeforemarker(netstat_freebsd_markers, datapart, outp);
 		break;
 
