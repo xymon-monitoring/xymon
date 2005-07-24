@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.40 2005-07-19 20:49:27 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.41 2005-07-24 07:49:31 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -222,6 +222,110 @@ char *gettok(char *s, char *delims)
 	}
 
 	return result;
+}
+
+
+char *wstok(char *s)
+{
+	/*
+	 * This works like strtok(s, " \t"), but can handle quoted fields.
+	 */
+
+	static char *source = NULL;
+	static char *whereat = NULL;
+	int n;
+	char *result;
+
+	if ((source == NULL) && (s == NULL)) return NULL;
+	if (s) source = whereat = s + strspn(s, " \t");		/* First call */
+
+	if (*whereat == '\0') {
+		/* End of string ... clear local state and return NULL */
+		source = whereat = NULL;
+		return NULL;
+	}
+
+	n = 0;
+	do {
+		n += strcspn(whereat+n, " \t\"");
+		if (*(whereat+n) == '"') {
+			char *p = strchr(whereat+n+1, '"');
+			if (!p) n = strlen(whereat);
+			else n = (p - whereat) + 1;
+		}
+	} while (*(whereat+n) && (*(whereat+n) != ' ') && (*(whereat+n) != '\t'));
+
+	if (n == strlen(whereat)) {
+		/* Last token */
+		result = whereat;
+		whereat += n;
+	}
+	else {
+		/* Mid-string token - null-teminate the token */
+		*(whereat + n) = '\0';
+		result = whereat;
+
+		/* Move past this token and the delimiter */
+		whereat += (n+1);
+		whereat += strspn(whereat, " \t");
+	}
+
+	/* Strip leading/trailing quote */
+	{
+		char *p;
+
+		if (*result == '"') result++;
+		p = result + strlen(result) - 1;
+		if (*p == '"') *p = '\0';
+	}
+
+	return result;
+}
+
+
+void sanitize_input(char *l)
+{
+	/*
+	 * This routine sanitizes an input line, stripping off leading/trailing whitespace and comments.
+	 */
+	char *p, *inp, *outp;
+	int inquote, inhyphen;
+
+	p = l + strcspn(l, "\r\n"); *p = '\0';
+
+	/* Remove comments and leading whitespace */
+	p = l + strspn(l, " \t");
+	if (*p == '#') { *l = '\0'; return; }	/* Comment line */
+	if (p > l) memmove(l, p, strlen(p)+1);	/* Leading whitespace */
+
+	inp = outp = l;
+	inquote = inhyphen = 0;
+	while (*inp) {
+		if (*inp == '"') {
+			inquote = (1 - inquote);
+			if (outp != inp) *outp = *inp;
+			inp++; outp++;
+		}
+		else if (*inp == '\'') {
+			inhyphen = (1 - inhyphen);
+			if (outp != inp) *outp = *inp;
+			inp++; outp++;
+		}
+		else if ((*inp == '#') && !inquote && !inhyphen) {
+			*outp = '\0';
+			inp = outp;
+		}
+		else {
+			if (outp != inp) *outp = *inp;
+			inp++; outp++;
+		}
+	}
+	*outp = '\0';
+
+	/* Remove trailing whitespace */
+	p = outp;
+	while ((p > l) && (isspace((int) *(p-1)))) p--;
+	*p = '\0';
 }
 
 void grok_input(char *l)
