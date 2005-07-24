@@ -1,3 +1,122 @@
+Changes from 4.0.4 -> 4.1.0
+---------------------------
+
+A Hobbit client for Unix systems has been implemented,
+and this was found important enough to warrant bumping 
+the version number to 4.1.
+
+The README.CLIENT file has the details on how to use it.
+The client is automatically installed as part of a 
+server installation.
+
+Server bugfixes:
+* [SECURITY] The Hobbit daemon (hobbitd) could crash when 
+  processing certain types of messages. It is believed that
+  this could only be used for a denial-of-service attack
+  against Hobbit, although it cannot completely be ruled
+  out that an attacker might be able to exploit it to run
+  arbitrary code with the privileges of the hobbit user.
+  Thanks to Vernon Everett and Stefan Loos for their efforts
+  in helping me track down these bugs.
+* Workaround a bug in KHTML based browsers (KDE's Konqueror,
+  Mac OS X Safari) when generating reports: They cannot handle
+  "multipart/mixed" documents, but only offer to save the 
+  document instead of sending you off to the report URL.
+* Fix a build problem on OpenBSD: Apparently OpenBSD's linker
+  does not recognize the --rpath option.
+* A memory leak in the Hobbit daemon has been fixed (it would
+  leak memory upon each reload of the bb-hosts file, which is
+  done every 5 minutes).
+* Status messages using "&green" or another color in the first
+  line of the status message would display the "&green" text 
+  instead of the color GIF image.
+* bbtest-net's collection of DNS responses has been delayed until
+  an actual test is queued. Previously, a host with a "testip"
+  flag could end up with a DNS lookup which doesn't really
+  make sense.
+* Handling of the "notrends" tag was broken.
+* The duration string should no longer be included in the
+  webpage showing a disabled test. (Only applies to tests
+  disabled after installing Hobbit 4.0.5).
+* bbtest-net now reports "Hobbit" in the User-Agent header
+  of all web requests, instead of "BigBrother".
+* If an alert was configured to be sent only during certain
+  periods of time, the recovery message would be suppressed if
+  the recovery happened outside of the alerting period. Changed
+  so that recovery messages ignore the time-based restrictions.
+* hobbit-mailack would generate ack's valid for 30 minutes, instead
+  of the documented 60 minutes. Changed to use 60 minutes.
+* An off-by-one error in the routine generating the HTML document
+  headers and footers was caught by Valgrind.
+* A number of minor documentation fixes.
+* Memory reports from Win32 clients using the Big Brother client
+  could trigger an overflow when calculating the memory usage,
+  resulting in memory utilization being reported as 0. Changed
+  to use a larger internal representation for the memory sizes.
+
+Server improvements:
+* A new reporting tool, hobbit-confreport.cgi, provides a 
+  way of generating a printable report summarizing the Hobbit
+  monitoring configuration for a single server or a group of
+  servers.
+* If a "custom" directory exists, you can have custom Hobbit
+  tools located there and have them built during the normal 
+  build proces.
+* A status handed off to the hobbitd_alert module, but for which
+  there is no alert recipient configured, would be re-checked
+  every minute causing a heavy spike in the CPU load if there
+  were many such statuses. A small code change allows us to 
+  skip these until the configuration file changes.
+* The code handling lookups of data from the bb-hosts file was
+  changed to access the data via a tree-based search instead of
+  a linear search. On large systems this provides a much more
+  efficient retrieval of these data, reducing the overall load
+  of Hobbit.
+* The internal representation of status-data inside the hobbitd
+  daemon now uses a more efficient tree-structure instead of a
+  simple linked list.
+* The NETFAILTEXT environment variable can be used to change
+  the "not OK" text added to status messages of failed network
+  tests.
+* External commands used in network testing (ntpdate, rpcinfo,
+  traceroute) now have max. 30 seconds to complete. This is to
+  avoid a broken ntpdate or similar to lock up the network tests.
+  The "--cmdtimeout=N" option controls the length of the timeout.
+* hobbitlaunch no longer logs every task started to the 
+  hobbitlaunch.log file - this could result in the log file growing
+  to huge proportions. The "--verbose" option for hobbitlaunch 
+  will restore the old behaviour, if needed.
+* A number of arbitrary limits on the size of various buffers,
+  messages, queries and responses have been removed. Hobbit will
+  now handle status-messages of practically any size, except
+  that the interface between the main daemon and the worker modules
+  (handling history, RRD files and alerts) is limited to 100 KB
+  message size. Configuration files (bb-hosts, hobbit-alerts.cfg,
+  hobbitserver.cfg, hobbitlaunch.cfg) can have lines of any length.
+  Continuation lines are now supported in all configuration files.
+* The moverrd.sh is now included in the default installation.
+* OpenBSD vmstat output now supported.
+
+
+LARRD / Hobbit cleanup:
+Upon request from Craig Cook, the code and docs were changed to
+clarify that Hobbit and LARRD are not related. I therefore
+decided to remove references to "LARRD" in the configuration files,
+resulting in these changes:
+
+* LARRDCOLUMN renamed to TRENDSCOLUMN, and LARRDS renamed to TEST2RRD 
+  in hobbitserver.cfg (handled automatically by "make install").
+* The bb-hosts "LARRD:" tag was renamed to "TRENDS:". Existing bb-hosts
+  files using the old tag still work, though.
+* The hobbitd_larrd program were renamed to hobbitd_rrd. The default
+  hobbitlaunch.cfg file was also changed to reflect this, and the
+  names of the logfiles from the two RRD update tasks were changed as
+  well. All of this should happen automatically when running "make
+  install", but if you have added extra options - e.g. for custom graphs -
+  then you may need to re-do those modifications in hobbitlaunch.cfg.
+
+
+
 Changes from 4.0.3 -> 4.0.4
 ---------------------------
 
