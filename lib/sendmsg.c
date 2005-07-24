@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.64 2005-07-22 06:48:52 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.65 2005-07-24 09:39:09 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -35,7 +35,7 @@ static char rcsid[] = "$Id: sendmsg.c,v 1.64 2005-07-22 06:48:52 henrik Exp $";
 #define BBSENDRETRIES 2
 
 /* These commands go to BBDISPLAYS */
-static char *multircptcmds[] = { "status", "combo", "meta", "data", "notify", "enable", "disable", "drop", "rename", NULL };
+static char *multircptcmds[] = { "status", "combo", "meta", "data", "notify", "enable", "disable", "drop", "rename", "client", NULL };
 
 /* Stuff for combo message handling */
 int		bbmsgcount = 0;		/* Number of messages transmitted */
