@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.18 2005-07-24 07:11:31 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.19 2005-07-24 10:14:32 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -766,34 +766,51 @@ int main(int argc, char *argv[])
 			char *sender = metadata[2];
 			char *hostname = metadata[3];
 			char *clienttype = metadata[4];
+			enum ostype_t os;
 			namelist_t *hinfo = hostinfo(hostname);
 
-			if (strcasecmp(clienttype, "Linux") == 0) {
-				handle_linux_client(hostname, hinfo, sender, timestamp, restofmsg);
-			}
-			else if (strcasecmp(clienttype, "freebsd") == 0) {
+			if (!hinfo) continue;
+			os = get_ostype(clienttype);
+
+			switch (os) {
+			  case OS_FREEBSD: 
 				handle_freebsd_client(hostname, hinfo, sender, timestamp, restofmsg);
-			}
-			else if (strcasecmp(clienttype, "darwin") == 0) {
-				handle_freebsd_client(hostname, hinfo, sender, timestamp, restofmsg);
-			}
-			else if (strcasecmp(clienttype, "netbsd") == 0) {
+				break;
+
+			  case OS_NETBSD: 
 				handle_netbsd_client(hostname, hinfo, sender, timestamp, restofmsg);
-			}
-			else if (strcasecmp(clienttype, "openbsd") == 0) {
+				break;
+
+			  case OS_OPENBSD: 
 				handle_openbsd_client(hostname, hinfo, sender, timestamp, restofmsg);
-			}
-			else if (strcasecmp(clienttype, "SunOS") == 0) {
+				break;
+
+			  case OS_LINUX22: 
+			  case OS_LINUX: 
+			  case OS_RHEL3: 
+				handle_linux_client(hostname, os, hinfo, sender, timestamp, restofmsg);
+				break;
+
+			  case OS_DARWIN:
+				handle_freebsd_client(hostname, hinfo, sender, timestamp, restofmsg);
+				break;
+
+			  case OS_SOLARIS: 
 				handle_solaris_client(hostname, hinfo, sender, timestamp, restofmsg);
-			}
-			else if (strcasecmp(clienttype, "Solaris") == 0) {
-				handle_solaris_client(hostname, hinfo, sender, timestamp, restofmsg);
-			}
-			else if (strcasecmp(clienttype, "hpux") == 0) {
+				break;
+
+			  case OS_HPUX: 
 				handle_hpux_client(hostname, hinfo, sender, timestamp, restofmsg);
-			}
-			else {
+				break;
+
+			  case OS_OSF: 
+			  case OS_AIX: 
+			  case OS_IRIX:
+			  case OS_WIN32: 
+			  case OS_SNMP: 
+			  case OS_UNKNOWN:
 				errprintf("No client backend for OS '%s' sent by %s\n", clienttype, sender);
+				break;
 			}
 		}
 		else {
