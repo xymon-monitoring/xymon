@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.4 2005-07-23 16:30:44 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.5 2005-07-24 07:50:13 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -84,20 +84,6 @@ typedef struct c_rule_t {
 static c_rule_t *rulehead = NULL;
 static c_rule_t *ruletail = NULL;
 static exprlist_t *exprhead = NULL;
-
-static char *mytok(char *s, char *delims)
-{
-	static int atend = 0;
-	char *result = NULL;
-
-	if (s) atend = 0;
-	if (!atend) {
-		result = strtok(s, delims);
-		if (!result) atend = 1;
-	}
-
-	return result;
-}
 
 static exprlist_t *setup_expr(char *ptn)
 {
@@ -188,14 +174,14 @@ int load_client_config(char *configfn)
 		exprlist_t *newhost, *newpage, *newexhost, *newexpage;
 		char *newtime;
 
-		grok_input(inbuf);
+		sanitize_input(inbuf);
 		if (strlen(inbuf) == 0) continue;
 
 		newhost = newpage = newexhost = newexpage = NULL;
 		newtime = NULL;
 		currule = NULL;
 
-		tok = mytok(inbuf, " \t");
+		tok = wstok(inbuf);
 		while (tok) {
 			if (strncasecmp(tok, "HOST=", 5) == 0) {
 				p = strchr(tok, '=');
@@ -224,61 +210,61 @@ int load_client_config(char *configfn)
 			}
 			else if (strcasecmp(tok, "UP") == 0) {
 				currule = setup_rule(C_UPTIME, curhost, curexhost, curpage, curexpage, curtime);
-				p = mytok(NULL, " \t"); 
+				p = wstok(NULL); 
 				currule->rule.uptime.recentlimit = (p ? 60*durationvalue(p): 3600);
-				p = mytok(NULL, " \t");
+				p = wstok(NULL);
 				currule->rule.uptime.ancientlimit = (p ? 60*durationvalue(p): -1);
 			}
 			else if (strcasecmp(tok, "LOAD") == 0) {
 				currule = setup_rule(C_LOAD, curhost, curexhost, curpage, curexpage, curtime);
-				p = mytok(NULL, " \t"); 
+				p = wstok(NULL); 
 				currule->rule.load.warnlevel = (p ? atof(p) : 5.0);
-				p = mytok(NULL, " \t"); 
+				p = wstok(NULL); 
 				currule->rule.load.paniclevel = (p ? atof(p): 8.0);
 			}
 			else if (strcasecmp(tok, "DISK") == 0) {
 				currule = setup_rule(C_DISK, curhost, curexhost, curpage, curexpage, curtime);
-				p = mytok(NULL, " \t"); 
+				p = wstok(NULL); 
 				if (p) currule->rule.disk.fsexp = setup_expr(p);
-				p = mytok(NULL, " \t");
+				p = wstok(NULL);
 				currule->rule.disk.warnlevel = (p ? atoi(p) : 90);
-				p = mytok(NULL, " \t");
+				p = wstok(NULL);
 				currule->rule.disk.paniclevel = (p ? atoi(p): 95);
-				p = mytok(NULL, " \t");
+				p = wstok(NULL);
 			}
 			else if ((strcasecmp(tok, "MEMREAL") == 0) || (strcasecmp(tok, "MEM") == 0)) {
 				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curtime);
 				currule->rule.mem.memtype = C_MEM_PHYS;
-				p = mytok(NULL, " \t");
+				p = wstok(NULL);
 				currule->rule.mem.warnlevel = (p ? atoi(p) : 100);
-				p = mytok(NULL, " \t");
+				p = wstok(NULL);
 				currule->rule.mem.paniclevel = (p ? atoi(p) : 101);
 			}
 			else if ((strcasecmp(tok, "MEMSWAP") == 0) || (strcasecmp(tok, "SWAP") == 0)) {
 				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curtime);
 				currule->rule.mem.memtype = C_MEM_SWAP;
-				p = mytok(NULL, " \t");
+				p = wstok(NULL);
 				currule->rule.mem.warnlevel = (p ? atoi(p) : 50);
-				p = mytok(NULL, " \t");
+				p = wstok(NULL);
 				currule->rule.mem.paniclevel = (p ? atoi(p) : 80);
 			}
 			else if ((strcasecmp(tok, "MEMACT") == 0) || (strcasecmp(tok, "ACTUAL") == 0)) {
 				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curtime);
 				currule->rule.mem.memtype = C_MEM_ACT;
-				p = mytok(NULL, " \t");
+				p = wstok(NULL);
 				currule->rule.mem.warnlevel = (p ? atoi(p) : 90);
-				p = mytok(NULL, " \t");
+				p = wstok(NULL);
 				currule->rule.mem.paniclevel = (p ? atoi(p) : 97);
 			}
 			else if (strcasecmp(tok, "PROC") == 0) {
 				currule = setup_rule(C_PROC, curhost, curexhost, curpage, curexpage, curtime);
-				p = mytok(NULL, " \t"); 
+				p = wstok(NULL); 
 				if (p) currule->rule.proc.procexp = setup_expr(p);
-				p = mytok(NULL, " \t");
+				p = wstok(NULL);
 				currule->rule.proc.pmin = (p ? atoi(p) : 1);
-				p = mytok(NULL, " \t");
+				p = wstok(NULL);
 				currule->rule.proc.pmax = (p ? atoi(p) : -1);
-				p = mytok(NULL, " \t");
+				p = wstok(NULL);
 				currule->rule.proc.color = (p ? parse_color(p) : COL_RED);
 
 				/* It's easy to set max=0 when you only want to define a minimum */
@@ -286,7 +272,7 @@ int load_client_config(char *configfn)
 					currule->rule.proc.pmax = -1;
 			}
 
-			tok = mytok(NULL, " \t");
+			tok = wstok(NULL);
 		}
 
 		if (!currule) {
@@ -332,8 +318,15 @@ void dump_client_config(void)
 			printf(" %d %d", rwalk->rule.mem.warnlevel, rwalk->rule.mem.paniclevel);
 			break;
 		  case C_PROC:
-			printf("PROC %s %d %d", rwalk->rule.proc.procexp->pattern,
-			       rwalk->rule.proc.pmin, rwalk->rule.proc.pmax);
+			if (strchr(rwalk->rule.proc.procexp->pattern, ' ') ||
+			    strchr(rwalk->rule.proc.procexp->pattern, '\t')) {
+				printf("PROC \"%s\" %d %d", rwalk->rule.proc.procexp->pattern,
+				       rwalk->rule.proc.pmin, rwalk->rule.proc.pmax);
+			}
+			else {
+				printf("PROC %s %d %d", rwalk->rule.proc.procexp->pattern,
+				       rwalk->rule.proc.pmin, rwalk->rule.proc.pmax);
+			}
 			break;
 		}
 
