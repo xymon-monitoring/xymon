@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.16 2005-07-23 19:48:40 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.17 2005-07-24 06:34:56 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -573,11 +573,25 @@ void unix_vmstat_report(char *hostname, namelist_t *hinfo, char *osid, char *vms
 #include "client/solaris.c"
 #include "client/hpux.c"
 
+static volatile int reloadconfig = 0;
+
+void sig_handler(int signum)
+{
+	switch (signum) {
+	  case SIGHUP:
+		reloadconfig = 1;
+		break;
+	  default:
+		break;
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	char *msg;
 	int running;
 	int argi, seq;
+	struct sigaction sa;
 	struct timeval *timeout = NULL;
 	time_t nextconfigload = 0;
 	char *configfn = NULL;
@@ -688,11 +702,16 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	/* Signals */
 	setup_signalhandler("hobbitd_client");
-	save_errbuf = 0;
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = sig_handler;
+	sigaction(SIGHUP, &sa, NULL);
 	signal(SIGCHLD, SIG_IGN);
 
+	save_errbuf = 0;
 	running = 1;
+
 	while (running) {
 		char *eoln, *restofmsg, *p;
 		char *metadata[MAX_META+1];
@@ -704,8 +723,9 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		if (time(NULL) >= nextconfigload) {
+		if (reloadconfig || (time(NULL) >= nextconfigload)) {
 			nextconfigload = time(NULL) + 600;
+			reloadconfig = 0;
 			load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 			load_client_config(configfn);
 		}
@@ -771,6 +791,9 @@ int main(int argc, char *argv[])
 			}
 			else if (strcasecmp(clienttype, "hpux") == 0) {
 				handle_hpux_client(hostname, hinfo, sender, timestamp, restofmsg);
+			}
+			else {
+				errprintf("No client backend for OS '%s' sent by %s\n", clienttype, sender);
 			}
 		}
 		else {
