@@ -159,3 +159,16 @@
 	LOGFILE $BBSERVERLOGS/bb-retest.log
 	INTERVAL 1m
 
+
+# "hobbitclient" runs the Hobbit client. The client is installed automatically
+# when you install a Hobbit server (presumably, you do want to monitor the 
+# Hobbit server ?), but there's no need to have two hobbitlaunch instances
+# running at the same time. So we'll just run it from here.
+# Note: If you are using another client package, you should disable this one.
+
+[hobbitclient]
+	ENVFILE @BBTOPDIR@/client/etc/hobbitclient.cfg
+	NEEDS hobbitd
+	CMD @BBTOPDIR@/client/bin/hobbitclient.sh
+	LOGFILE $BBSERVERLOGS/hobbitclient.log
+
