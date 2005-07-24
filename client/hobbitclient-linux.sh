@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Experimental Linux client for Hobbit
+# Linux client for Hobbit
 
 echo "[date]"
 date

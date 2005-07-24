@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Experimental Darwin (Mac OS X) client for Hobbit
+# Darwin (Mac OS X) client for Hobbit
 
 echo "[date]"
 date

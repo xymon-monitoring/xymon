@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Experimental HP-UX client for Hobbit
+# HP-UX client for Hobbit
 
 echo "[date]"
 date

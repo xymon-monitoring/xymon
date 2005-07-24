@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Experimental NetBSD client for Hobbit
+# NetBSD client for Hobbit
 
 echo "[date]"
 date

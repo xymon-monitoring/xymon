@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Experimental Solaris client for Hobbit
+# Solaris client for Hobbit
 
 echo "[date]"
 date

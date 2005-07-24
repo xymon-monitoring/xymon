@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Experimental FreeBSD client for Hobbit
+# FreeBSD client for Hobbit
 
 echo "[date]"
 date
