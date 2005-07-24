@@ -1,0 +1,78 @@
+Unix client for Hobbit
+======================
+As of version 4.1, Hobbit ships with a native client for
+most Unix-based systems.
+
+The Hobbit client will report data for the "cpu", "disk", 
+"memory" and "procs" columns to Hobbit, in addition to
+data for the "vmstat" and "netstat" graphs. It does not
+currently provide any data for the system-log "msgs"
+column.
+
+All configuration of disk thresholds, load limits, which
+processes to monitor etc. is done on the Hobbit server,
+NOT on the client. This is to allow centralized configuration
+of the monitoring system.
+
+The Hobbit client is released under the GNU GPL, version 2
+or later. See the file COPYING for details.
+
+
+Installation
+============
+Building the client package requires a working C compiler
+and GNU make on the target platform. None of the extra libraries
+needed for building Hobbit are used by the client - so a
+plain C compiler installation with GNU make is all that is 
+needed.
+
+To build the client:
+
+	- create a "hobbit" userid on the system
+	  (not required, but recommended).
+	- extract the Hobbit source archive
+	- cd to the hobbit-X.X directory
+	- run "./configure --client; make"
+	- as root, run "make install"
+
+The client installation is kept entirely within
+the "hobbit" users' home-directory. All client-related
+files are in the ~hobbit/client/ directory. If convenient,
+this directory can be copied directly to other systems
+of the same type, so you need not build the client from
+source on all systems.
+
+
+Running it
+==========
+To start the client, su to the "hobbit" user, then run
+   $HOME/client/runclient.sh start
+
+You should arrange for your boot-time scripts to run this
+command at startup.
+
+
+Configuration
+=============
+NB: Thresholds for the CPU load, disk- and memory-utilization,
+which processes to monitor etc. is done on the Hobbit SERVER,
+not on the client.
+
+The client installation uses two configuration files kept
+in the ~/client/etc/ directory:
+
+	- clientlaunch.cfg configures the client copy
+	  of "hobbitlaunch". If you need to run extension
+	  scripts for your client, you can add them to
+	  this file. The environment variables commonly 
+	  used by Big Brother-based extensions are made
+	  available by hobbitlaunch for the scripts.
+
+	- hobbitclient.cfg defines environment variables
+	  for the tools run by hobbitlaunch. You can add
+	  or customize the environment for the client and
+	  extensions by changing this file.
+
+
+Henrik Stoerner, 2005-07-24.
+
