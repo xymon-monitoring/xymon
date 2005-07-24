@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.67 2005-07-24 10:37:33 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.68 2005-07-24 10:54:26 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -444,7 +444,7 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 	int res = 0;
 	int i;
 	int scheduleaction = 0;
-	char *p, savech;
+	char *msgcmd;
 
  	if ((bbdisp == NULL) && xgetenv("BBDISP")) bbdisp = strdup(xgetenv("BBDISP"));
 	if (recipient == NULL) recipient = bbdisp;
@@ -461,9 +461,13 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 	 */
 	scheduleaction = ((strncmp(msg, "schedule", 8) == 0) && (strlen(msg) > 8));
 
-	p = msg + strcspn(msg, " \t\r\n"); savech = *p; *p = '\0';
-	for (i = 0; (multircptcmds[i] && strcmp(multircptcmds[i], msg)); i++) ;
-	*p = savech;
+	/* See if this is a multi-recipient command */
+	i = strcspn(msg, " \t\r\n");
+	msgcmd = (char *)malloc(i+1);
+	strncpy(msgcmd, msg, i); *(msgcmd+i) = '\0';
+	for (i = 0; (multircptcmds[i] && strcmp(multircptcmds[i], msgcmd)); i++) ;
+	xfree(msgcmd);
+
 	if (scheduleaction || multircptcmds[i]) {
 		res = sendtomany((recipient ? recipient : bbdisp), xgetenv("BBDISPLAYS"), msg, timeout);
 	}
