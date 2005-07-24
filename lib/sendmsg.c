@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.65 2005-07-24 09:39:09 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.66 2005-07-24 10:35:50 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -444,6 +444,7 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 	int res = 0;
 	int i;
 	int scheduleaction = 0;
+	char *p, savech;
 
  	if ((bbdisp == NULL) && xgetenv("BBDISP")) bbdisp = strdup(xgetenv("BBDISP"));
 	if (recipient == NULL) recipient = bbdisp;
@@ -460,7 +461,9 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 	 */
 	scheduleaction = ((strncmp(msg, "schedule", 8) == 0) && (strlen(msg) > 8));
 
-	for (i = 0; (multircptcmds[i] && strncmp(multircptcmds[i], msg, strlen(multircptcmds[i]))); i++) ;
+	p = msg + strcspn(msg, " \t"); savech = *p; *p = '\0';
+	for (i = 0; (multircptcmds[i] && strcmp(multircptcmds[i], msg)); i++) ;
+	*p = savech;
 	if (scheduleaction || multircptcmds[i]) {
 		res = sendtomany((recipient ? recipient : bbdisp), xgetenv("BBDISPLAYS"), msg, timeout);
 	}
