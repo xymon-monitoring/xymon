@@ -17,6 +17,7 @@ ifeq ($(CLIENTONLY),yes)
 else
 	BUILDTARGETS = lib-build common-build bbdisplay-build bbnet-build bbproxy-build docs-build build-build hobbitd-build client
 	INSTALLTARGETS = install-bbdisplay install-bbnet install-bbproxy install-man install-hobbitd install-docs install-client install-servermsg
+	CFLAGS += $(PCREINCDIR)
 endif
 
 ifndef INSTALLBINDIR
