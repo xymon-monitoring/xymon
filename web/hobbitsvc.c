@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.45 2005-07-22 10:07:25 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.46 2005-07-25 13:17:45 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -140,6 +140,7 @@ int do_request(void)
 	char *restofmsg = NULL, *ackmsg = NULL, *dismsg = NULL;			/* These are just used */
 	int ishtmlformatted = 0;
 	int clientavail = 0;
+	namelist_t *hinfo = NULL;
 
 	if (parse_query() != 0) return 1;
 
@@ -148,10 +149,13 @@ int do_request(void)
 		lastload = now;
 	}
 
-	if (!hostinfo(hostname)) {
+	if ((hinfo = hostinfo(hostname)) == NULL) {
 		errormsg("No such host");
 		return 1;
 	}
+
+	if (!ip) ip = strdup(bbh_item(hinfo, BBH_IP));
+	if (!displayname) displayname = strdup(hostname);
 
 	if (outform == FRM_CLIENT) {
 		char hobbitdreq[200];
@@ -343,9 +347,9 @@ int do_request(void)
 	else {
 		fprintf(stdout, "Content-type: text/html\n\n");
 		generate_html_log(hostname, 
-			  (displayname ? displayname : hostname), 
+			  displayname,
 			  service, 
-			  (ip ? ip : ""), 
+			  ip,
 		          color, 
 			  (sender ? sender : "Hobbit"), 
 			  (flags ? flags : ""),
