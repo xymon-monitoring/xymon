@@ -171,4 +171,5 @@
 	NEEDS hobbitd
 	CMD @BBTOPDIR@/client/bin/hobbitclient.sh
 	LOGFILE $BBSERVERLOGS/hobbitclient.log
+	INTERVAL 5m
 
