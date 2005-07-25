@@ -11,10 +11,13 @@
 #ifndef __MATCHING_H__
 #define __MATCHING_H__
 
+/* The clients probably dont have the pcre headers */
+#ifndef CLIENTONLY
 #include <pcre.h>
 
 extern pcre *compileregex(char *pattern);
 extern int timematch(char *tspec);
 extern int namematch(char *needle, char *haystack, pcre *pcrecode);
+#endif
 
 #endif
