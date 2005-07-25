@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char linux_rcsid[] = "$Id: linux.c,v 1.7 2005-07-24 10:13:56 henrik Exp $";
+static char linux_rcsid[] = "$Id: linux.c,v 1.8 2005-07-25 09:18:39 henrik Exp $";
 
 void handle_linux_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -45,7 +45,7 @@ void handle_linux_client(char *hostname, enum ostype_t os, namelist_t *hinfo, ch
 	combo_start();
 
 	unix_cpu_report(hostname, hinfo, fromline, timestr, uptimestr, whostr, psstr, topstr);
-	unix_disk_report(hostname, hinfo, fromline, timestr, "Capacity", "Mounted on", dfstr);
+	unix_disk_report(hostname, hinfo, fromline, timestr, "Capacity", "Mounted", dfstr);
 
 	if (freestr) {
 		char *p;

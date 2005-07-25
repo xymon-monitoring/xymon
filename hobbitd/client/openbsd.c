@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char openbsd_rcsid[] = "$Id: openbsd.c,v 1.6 2005-07-23 19:30:39 henrik Exp $";
+static char openbsd_rcsid[] = "$Id: openbsd.c,v 1.7 2005-07-25 09:18:39 henrik Exp $";
 
 void handle_openbsd_client(char *hostname, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -48,7 +48,7 @@ void handle_openbsd_client(char *hostname, namelist_t *hinfo, char *sender, time
 	combo_start();
 
 	unix_cpu_report(hostname, hinfo, fromline, timestr, uptimestr, whostr, psstr, topstr);
-	unix_disk_report(hostname, hinfo, fromline, timestr, "Capacity", "Mounted on", dfstr);
+	unix_disk_report(hostname, hinfo, fromline, timestr, "Capacity", "Mounted", dfstr);
 
 	if (meminfostr) {
 		unsigned long memphystotal, memphysfree, memphysused;
