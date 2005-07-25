@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.19 2005-07-24 10:14:32 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.20 2005-07-25 09:18:39 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -114,12 +114,10 @@ int linecount(char *msg)
 	return result;
 }
 
-
 void unix_cpu_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, 
 		     char *uptimestr, char *whostr, char *psstr, char *topstr)
 {
 	char *p;
-	char *uptimeresult = NULL;
 	float load1, load5, load15;
 	float loadyellow, loadred;
 	int recentlimit, ancientlimit;
@@ -137,6 +135,7 @@ void unix_cpu_report(char *hostname, namelist_t *hinfo, char *fromline, char *ti
 
 	p = strstr(uptimestr, " up ");
 	if (p) {
+		char *uptimeresult;
 		char *daymark;
 		char *hourmark;
 		long uphour, upmin, upsecs;
@@ -150,6 +149,8 @@ void unix_cpu_report(char *hostname, namelist_t *hinfo, char *fromline, char *ti
 		 * Solaris: " up 21 days 20:58,"
 		 */
 		daymark = strstr(uptimeresult, " day");
+		dprintf("CPU check host %s: daymark '%s'\n", hostname, daymark);
+
 		if (daymark) {
 			uptimesecs = atoi(uptimeresult) * 86400;
 			if (strncmp(daymark, " days ", 6) == 0) {
@@ -165,6 +166,7 @@ void unix_cpu_report(char *hostname, namelist_t *hinfo, char *fromline, char *ti
 		}
 
 		hourmark += strspn(hourmark, " ");
+		dprintf("CPU check host %s: hourmark '%s'\n", hostname, hourmark);
 		if (sscanf(hourmark, "%ld:%ld", &uphour, &upmin) == 2) {
 			uptimesecs += 60*(60*uphour + upmin);
 		}
@@ -183,7 +185,8 @@ void unix_cpu_report(char *hostname, namelist_t *hinfo, char *fromline, char *ti
 		else {
 			uptimesecs = -1;
 		}
-		p = strchr(hourmark, ','); if (p) *p = '\0';
+
+		xfree(uptimeresult);
 	}
 
 	if (uptimesecs != -1) {
@@ -251,8 +254,9 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 {
 	int diskcolor = COL_GREEN;
 
-	int capaofs = -1;
-	int mntofs  = -1;
+	int capacol = -1;
+	int mntcol  = -1;
+	int line1 = 1;
 	char *p, *bol, *nl;
 	char msgline[4096];
 	char *monmsg = NULL;
@@ -260,63 +264,65 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 
 	if (!dfstr) return;
 
-	/* 
-	 * Find where the disk capacity is located. We look for the header for 
-	 * the capacity, and calculate the offset from the beginning of the line.
-	 */
-	p = strstr(dfstr, capahdr);
-	if (p) capaofs = (p - dfstr);
-	p = strstr(dfstr, mnthdr);
-	if (p) mntofs = (p - dfstr);
+	dprintf("Disk check host %s\n", hostname);
 
-	if ((capaofs >= 0) && (mntofs >= 0)) {
-		/* Go through the monitored disks and check against thresholds */
-		int minlen;
+	bol = dfstr;
+	while (bol) {
+		char *fsname, *usestr;
 
-		minlen = mntofs; if (capaofs > minlen) minlen = capaofs;
+		nl = strchr(bol, '\n'); if (nl) *nl = '\0';
 
-		bol = dfstr;
-		while (bol) {
-			char *fsname, *usestr;
-			int linelen;
+		if ((capacol == -1) && (mntcol == -1)) {
+			/* First line: Check the header and find the columns we want */
+			p = strdup(bol);
+			capacol = selectcolumn(p, capahdr);
+			strcpy(p, bol);
+			mntcol = selectcolumn(p, mnthdr);
+			xfree(p);
+			dprintf("Disk check: header '%s', columns %d and %d\n", bol, capacol, mntcol);
 
-			nl = strchr(bol, '\n'); if (nl) *nl = '\0';
+			if ((capacol == -1) && (mntcol == -1)) {
+				diskcolor = COL_YELLOW;
+				sprintf(msgline, "&red Expected string (%s and %s) not found in df output header\n", 
+					capahdr, mnthdr);
+				addtobuffer(&monmsg, &monsz, msgline);
+				nl = bol = NULL; /* Abandon loop */
+			}
+		}
+		else {
+			int usage, warnlevel, paniclevel;
 
-			linelen = strlen(bol);
-			if (linelen > minlen) {
-				usestr = (bol + capaofs); usestr += strspn(usestr, " ");
-				fsname = (bol + mntofs); fsname += strspn(fsname, " ");
+			p = strdup(bol); usestr = getcolumn(p, capacol);
+			if (isdigit((int)*usestr)) usage = atoi(usestr); else usage = -1;
 
-				if (isdigit((int)*usestr)) {
-					int usage, warnlevel, paniclevel;
+			strcpy(p, bol); fsname = getcolumn(p, mntcol);
 
-					usage = atoi(usestr);
-					get_disk_thresholds(hinfo, fsname, &warnlevel, &paniclevel);
+			if (usage != -1) {
+				get_disk_thresholds(hinfo, fsname, &warnlevel, &paniclevel);
 
-					if (usage >= paniclevel) {
-						if (diskcolor < COL_RED) diskcolor = COL_RED;
-						sprintf(msgline, "&red %s (%d %%) has reached the PANIC level (%d %%)\n",
-							fsname, usage, paniclevel);
-						addtobuffer(&monmsg, &monsz, msgline);
-					}
-					else if (usage >= warnlevel) {
-						if (diskcolor < COL_YELLOW) diskcolor = COL_YELLOW;
-						sprintf(msgline, "&yellow %s (%d %%) has reached the WARNING level (%d %%)\n",
-							fsname, usage, warnlevel);
-						addtobuffer(&monmsg, &monsz, msgline);
-					}
+				dprintf("Disk check: FS='%s' usage %d (thresholds: %d/%d)\n",
+					fsname, usage, warnlevel, paniclevel);
+
+				if (usage >= paniclevel) {
+					if (diskcolor < COL_RED) diskcolor = COL_RED;
+					sprintf(msgline, "&red %s (%d %%) has reached the PANIC level (%d %%)\n",
+						fsname, usage, paniclevel);
+					addtobuffer(&monmsg, &monsz, msgline);
+				}
+				else if (usage >= warnlevel) {
+					if (diskcolor < COL_YELLOW) diskcolor = COL_YELLOW;
+					sprintf(msgline, "&yellow %s (%d %%) has reached the WARNING level (%d %%)\n",
+						fsname, usage, warnlevel);
+					addtobuffer(&monmsg, &monsz, msgline);
 				}
 			}
 
-			if (nl) { *nl = '\n'; bol = nl+1; } else bol = NULL;
+			xfree(p);
 		}
+
+		if (nl) { *nl = '\n'; bol = nl+1; } else bol = NULL;
 	}
-	else {
-		diskcolor = COL_YELLOW;
-		sprintf(msgline, "&red Expected string (%s and %s) not found in df output header\n", 
-			capahdr, mnthdr);
-		addtobuffer(&monmsg, &monsz, msgline);
-	}
+
 
 	/* Now we know the result, so generate a status message */
 	init_status(diskcolor);
