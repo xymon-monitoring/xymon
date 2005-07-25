@@ -39,5 +39,9 @@ extern int checkalert(char *alertlist, char *test);
 
 extern long long str2ll(char *s, char **errptr);
 
+extern char *nextcolumn(char *s);
+extern int selectcolumn(char *heading, char *wanted);
+extern char *getcolumn(char *s, int wanted);
+
 #endif
 

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.42 2005-07-24 10:09:43 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.43 2005-07-25 09:18:39 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -689,4 +689,42 @@ int checkalert(char *alertlist, char *testname)
 	return result;
 }
 
+char *nextcolumn(char *s)
+{
+	static char *ofs = NULL;
+	char *result;
+
+	if (s) ofs = s + strspn(s, " \t");
+	if (!s && !ofs) return NULL;
+
+	result = ofs;
+	ofs += strcspn(ofs, " \t");
+	if (*ofs) { *ofs = '\0'; ofs += 1 + strspn(ofs+1, " \t"); } else ofs = NULL;
+
+	return result;
+}
+
+int selectcolumn(char *heading, char *wanted)
+{
+	char *hdr;
+	int result = 0;
+
+	hdr = nextcolumn(heading);
+	while (hdr && strcasecmp(hdr, wanted)) {
+		result++;
+		hdr = nextcolumn(NULL);
+	}
+
+	if (hdr) return result; else return -1;
+}
+
+char *getcolumn(char *s, int wanted)
+{
+	char *result;
+	int i;
+
+	for (i=0, result=nextcolumn(s); (i < wanted); i++, result = nextcolumn(NULL));
+
+	return result;
+}
 
