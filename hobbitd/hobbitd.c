@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.172 2005-07-22 10:07:55 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.173 2005-07-25 14:55:15 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -2883,6 +2883,7 @@ void load_checkpoint(char *fn)
 			ltail->ackmsg = NULL;
 		ltail->cookie = cookie;
 		ltail->cookieexpires = cookieexpires;
+		ltail->metas = NULL;
 		ltail->next = NULL;
 	}
 
