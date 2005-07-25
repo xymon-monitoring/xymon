@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.20 2005-07-25 09:18:39 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.21 2005-07-25 13:57:56 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -559,13 +559,15 @@ void unix_vmstat_report(char *hostname, namelist_t *hinfo, char *osid, char *vms
 
 	if (!vmstatstr) return;
 
-	sprintf(msgline, "data %s.vmstat\n%s\n", commafy(hostname), osid);
-	addtobuffer(&msg, &msgsz, msgline);
 	p = strrchr(vmstatstr, '\n');
+	if (!p) return;  /* No NL in vmstat output ? Unlikely. */
+
 	if (strlen(p) == 1) {
 		/* Go back to the previous line */
 		do { p--; } while ((p > vmstatstr) && (*p != '\n'));
 	}
+	sprintf(msgline, "data %s.vmstat\n%s\n", commafy(hostname), osid);
+	addtobuffer(&msg, &msgsz, msgline);
 	addtobuffer(&msg, &msgsz, p+1);
 	sendmessage(msg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
 
