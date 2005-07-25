@@ -1,3 +1,31 @@
+Changes from 4.1.0 -> 4.1.1
+---------------------------
+
+Bugfixes:
+* The Hobbit client mis-interpreted the "df" output from 
+  filesystems with longer-than-usual device names (e.g.
+  network-mounted filesystems, resulting in some rather
+  incredible values for the disk utilisation.
+* hobbitsvc.cgi could crash if some of the input parameters
+  from the URL were missing. This would only happen if
+  you accessed it via a URL that was not created by Hobbit.
+* The hobbitlaunch.cfg file for the server was missing a line,
+  causing it to run the local client much more often than
+  intended.
+* A faulty initialisation when reloading the Hobbit daemon state 
+  could leave a broken pointer in a log-record. If this 
+  was then accessed by a "hobbitdxboard" or a "drop" command,
+  hobbitd would crash.
+
+Build problems:
+* The "configure" script failed on certain systems with a
+  "cannot shift" error.
+* Building the client on systems without the PCRE headers
+  would fail.
+* Building Hobbit - client or server - would fail on a 
+  system if the PCRE headers were in a non-standard location.
+
+
 Changes from 4.0.4 -> 4.1.0
 ---------------------------
 
