@@ -3,15 +3,15 @@
 # Configuration script for Hobbit.
 
 BASEDIR="`dirname $0`"
+TARGET="$1"
+if test "$TARGET" != ""; then shift; fi
 
-case "$1" in
+case "$TARGET" in
   "--client")
-  	shift
 	$BASEDIR/configure.client $*
 	;;
 
   "--server"|"")
-  	shift
 	$BASEDIR/configure.server $*
 	;;
 
