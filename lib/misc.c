@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.43 2005-07-25 09:18:39 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.44 2005-07-30 15:42:45 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -37,12 +37,13 @@ enum ostype_t get_ostype(char *osname)
 	char savech;
 	enum ostype_t result = OS_UNKNOWN;
 
-	int n = strspn(osname, "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+	int n = strspn(osname, "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-/");
 	savech = *(osname+n); *(osname+n) = '\0';
 
 	if      (strcasecmp(osname, "solaris") == 0)     result = OS_SOLARIS;
 	else if (strcasecmp(osname, "sunos") == 0)       result = OS_SOLARIS;
 	else if (strcasecmp(osname, "hpux") == 0)        result = OS_HPUX;
+	else if (strcasecmp(osname, "hp-ux") == 0)       result = OS_HPUX;
 	else if (strcasecmp(osname, "aix") == 0)         result = OS_AIX;
 	else if (strcasecmp(osname, "osf") == 0)         result = OS_OSF;
 	else if (strcasecmp(osname, "win32") == 0)       result = OS_WIN32;
