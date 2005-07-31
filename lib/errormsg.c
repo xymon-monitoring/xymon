@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: errormsg.c,v 1.8 2005-05-24 08:40:13 henrik Exp $";
+static char rcsid[] = "$Id: errormsg.c,v 1.9 2005-07-31 19:50:03 henrik Exp $";
 
 #include <sys/types.h>
 #include <string.h>
@@ -48,11 +48,7 @@ void errprintf(const char *fmt, ...)
 	if (errappname) fprintf(stderr, "%s ", errappname);
 
 	va_start(args, fmt);
-#ifdef NO_VSNPRINTF
-	vsprintf(msg, fmt, args);
-#else
 	vsnprintf(msg, sizeof(msg), fmt, args);
-#endif
 	va_end(args);
 
 	fprintf(stderr, "%s", msg);
