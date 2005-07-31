@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Configure script for Hobbit server
-# $Id: configure.server,v 1.59 2005-07-20 06:27:16 henrik Exp $
+# $Id: configure.server,v 1.60 2005-07-31 19:51:10 henrik Exp $
 
 echo ""
 echo "Configuration script for Hobbit"
@@ -188,7 +188,7 @@ then
 		echo ""; echo ""
 		HOMEDIR="`echo $USERDATA | awk '{print $2}'`"
 	else
-		USERDATA=`getent passwd $BBUSER 2>/dev/null || grep "^${BBUSER}:" /etc/passwd`
+		USERDATA=`getent passwd $BBUSER 2>/dev/null || ypmatch "${BBUSER}" passwd || grep "^${BBUSER}:" /etc/passwd`
 		if test $? -eq 0
 		then
 			echo "Found passwd entry for user $USERDATA"
