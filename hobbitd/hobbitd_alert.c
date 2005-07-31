@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.61 2005-07-16 09:53:49 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.62 2005-07-31 19:53:49 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -607,16 +607,20 @@ int main(int argc, char *argv[])
 			switch (awalk->state) {
 			  case A_NORECIP:
 				if (!configchanged) break;
-				else awalk->state = A_PAGING;
+				else {
+					awalk->state = A_PAGING;
+					clear_interval(awalk);
+				}
 				/* Fall through */
 
 			  case A_PAGING:
-				if (awalk->nextalerttime <= now) {
-					if (have_recipient(awalk, &anymatch)) {
-						anytogo++;
-					}
-					else {
-						if (!anymatch) awalk->state = A_NORECIP;
+				if (have_recipient(awalk, &anymatch)) {
+					if (awalk->nextalerttime <= now) anytogo++;
+				}
+				else {
+					if (!anymatch) {
+						awalk->state = A_NORECIP;
+						cleanup_alert(awalk);
 					}
 				}
 				break;
