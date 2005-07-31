@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.21 2005-07-25 13:57:56 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.22 2005-07-31 12:35:58 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -580,6 +580,7 @@ void unix_vmstat_report(char *hostname, namelist_t *hinfo, char *osid, char *vms
 #include "client/openbsd.c"
 #include "client/solaris.c"
 #include "client/hpux.c"
+#include "client/osf.c"
 
 static volatile int reloadconfig = 0;
 
@@ -812,6 +813,9 @@ int main(int argc, char *argv[])
 				break;
 
 			  case OS_OSF: 
+				handle_osf_client(hostname, os, hinfo, sender, timestamp, restofmsg);
+				break;
+
 			  case OS_AIX: 
 			  case OS_IRIX:
 			  case OS_WIN32: 
