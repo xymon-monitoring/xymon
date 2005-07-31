@@ -37,8 +37,8 @@ install:
 	if test ! -d $(INSTALLROOT)$(BBHOME)/etc ; then mkdir -p $(INSTALLROOT)$(BBHOME)/etc ; fi
 	if test ! -d $(INSTALLROOT)$(BBHOME)/tmp ; then mkdir -p $(INSTALLROOT)$(BBHOME)/tmp ; fi
 	if test ! -d $(INSTALLROOT)$(BBHOME)/logs; then mkdir -p $(INSTALLROOT)$(BBHOME)/logs; fi
-	cp -p runclient.sh $(INSTALLROOT)$(BBHOME)
-	cp -p hobbitlaunch bb hobbitclient*.sh $(EXTRATOOLS) $(INSTALLROOT)$(BBHOME)/bin/
+	cp -fp runclient.sh $(INSTALLROOT)$(BBHOME)
+	cp -fp hobbitlaunch bb hobbitclient*.sh $(EXTRATOOLS) $(INSTALLROOT)$(BBHOME)/bin/
 	../build/merge-sects clientlaunch.cfg $(INSTALLROOT)$(BBHOME)/etc/clientlaunch.cfg
 	../build/merge-lines hobbitclient.cfg $(INSTALLROOT)$(BBHOME)/etc/hobbitclient.cfg
 	chown -R $(BBUSER) $(INSTALLROOT)$(BBHOME)
