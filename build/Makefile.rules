@@ -47,22 +47,25 @@ ifdef RPATH
 RPATHOPT := $(RPATH)$(shell echo $(RPATHVAL) | sed -e 's/ / $(RPATH)/g')
 endif
 
-all: $(BUILDTARGETS)
+all: include/config.h $(BUILDTARGETS)
 	@echo ""
 	@echo "Build complete. Now run '${MAKE} install' as root"
 	@echo ""
 
-client: lib-client common-client build-build
+client: include/config.h lib-client common-client build-build
 	CC="$(CC)" CFLAGS="$(CFLAGS)" BBHOME="$(BBTOPDIR)/client" BBHOSTIP="$(BBHOSTIP)" $(MAKE) -C client all
+
+include/config.h:
+	MAKE="$(MAKE)" $(BUILDTOPDIR)/build/genconfig.sh
 
 build-build:
 	CC="$(CC)" CFLAGS="$(CFLAGS)" RPATHOPT="$(RPATHOPT)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" $(MAKE) -C build all
 
 lib-build:
-	CC="$(CC)" CFLAGS="$(CFLAGS)" RPATHOPT="$(RPATHOPT)" PCREINCDIR="$(PCREINCDIR)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBTOPDIR="$(BBTOPDIR)" BBLOGDIR="$(BBLOGDIR)" BBHOSTNAME="$(BBHOSTNAME)" BBHOSTIP="$(BBHOSTIP)" BBHOSTOS="$(BBHOSTOS)" $(MAKE) -C lib all
+	CC="$(CC)" CFLAGS="$(CFLAGS)" OSDEF="$(OSDEF)" RPATHOPT="$(RPATHOPT)" PCREINCDIR="$(PCREINCDIR)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBTOPDIR="$(BBTOPDIR)" BBLOGDIR="$(BBLOGDIR)" BBHOSTNAME="$(BBHOSTNAME)" BBHOSTIP="$(BBHOSTIP)" BBHOSTOS="$(BBHOSTOS)" $(MAKE) -C lib all
 
 lib-client:
-	CC="$(CC)" CFLAGS="$(CFLAGS)" RPATHOPT="$(RPATHOPT)" PCREINCDIR="$(PCREINCDIR)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBTOPDIR="$(BBTOPDIR)" BBLOGDIR="$(BBLOGDIR)" BBHOSTNAME="$(BBHOSTNAME)" BBHOSTIP="$(BBHOSTIP)" BBHOSTOS="$(BBHOSTOS)" $(MAKE) -C lib client
+	CC="$(CC)" CFLAGS="$(CFLAGS)" OSDEF="$(OSDEF)" RPATHOPT="$(RPATHOPT)" PCREINCDIR="$(PCREINCDIR)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBTOPDIR="$(BBTOPDIR)" BBLOGDIR="$(BBLOGDIR)" BBHOSTNAME="$(BBHOSTNAME)" BBHOSTIP="$(BBHOSTIP)" BBHOSTOS="$(BBHOSTOS)" $(MAKE) -C lib client
 
 common-build: lib-build
 	CC="$(CC)" CFLAGS="$(CFLAGS)" RPATHOPT="$(RPATHOPT)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" $(MAKE) -C common all
@@ -99,6 +102,7 @@ distclean: allclean
 
 allclean: clean
 	(cd bbnet/c-ares && $(MAKE) clean) || true
+	rm -f include/config.h
 
 clean:
 	$(MAKE) -C build clean
