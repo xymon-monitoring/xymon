@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-hp-ux.sh,v 1.4 2005-07-24 11:32:51 henrik Exp $
+# $Id: hobbitclient-hp-ux.sh,v 1.5 2005-07-31 07:49:23 henrik Exp $
 
 echo "[date]"
 date
@@ -23,8 +23,7 @@ who
 echo "[df]"
 df -Pk
 echo "[memory]"
-echo "Total:`bb-hp-memsz -p`"
-echo "Free:`bb-hp-memsz -f`"
+$BBHOME/bin/hpux-meminfo
 echo "[swapinfo]"
 /usr/sbin/swapinfo -tm
 echo "[netstat]"
