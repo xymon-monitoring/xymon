@@ -19,6 +19,10 @@ typedef struct htnames_t {
 	struct htnames_t *next;
 } htnames_t;
 
+#include "version.h"
+#include "config.h"
+#include "../lib/osdefs.h"
+
 #include "../lib/calc.h"
 #include "../lib/cgi.h"
 #include "../lib/color.h"
@@ -44,7 +48,6 @@ typedef struct htnames_t {
 #include "../lib/timefunc.h"
 #include "../lib/timing.h"
 #include "../lib/url.h"
-#include "version.h"
 
 #endif
 
