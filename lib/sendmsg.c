@@ -11,7 +11,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.68 2005-07-24 10:54:26 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.69 2005-07-31 21:13:36 henrik Exp $";
+
+#include "config.h"
 
 #include <unistd.h>
 #include <string.h>
@@ -22,7 +24,7 @@ static char rcsid[] = "$Id: sendmsg.c,v 1.68 2005-07-24 10:54:26 henrik Exp $";
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#if !defined(HPUX)
+#ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
 #include <errno.h>

@@ -10,7 +10,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.80 2005-07-16 21:14:13 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.81 2005-07-31 21:13:36 henrik Exp $";
+
+#include "config.h"
 
 #include <limits.h>
 #include <sys/time.h>
@@ -18,7 +20,7 @@ static char rcsid[] = "$Id: contest.c,v 1.80 2005-07-16 21:14:13 henrik Exp $";
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#if !defined(HPUX)		/* HP-UX has select() and friends in sys/types.h */
+#ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>		/* Someday I'll move to GNU Autoconf for this ... */
 #endif
 #include <errno.h>

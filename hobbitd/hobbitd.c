@@ -25,7 +25,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.173 2005-07-25 14:55:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.174 2005-07-31 21:13:36 henrik Exp $";
+
+#include "config.h"
 
 #include <limits.h>
 #include <sys/time.h>
@@ -34,7 +36,7 @@ static char rcsid[] = "$Id: hobbitd.c,v 1.173 2005-07-25 14:55:15 henrik Exp $";
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#if !defined(HPUX)              /* HP-UX has select() and friends in sys/types.h */
+#ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>         /* Someday I'll move to GNU Autoconf for this ... */
 #endif
 #include <errno.h>

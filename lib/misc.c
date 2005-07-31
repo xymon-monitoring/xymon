@@ -11,7 +11,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.45 2005-07-31 12:35:07 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.46 2005-07-31 21:13:36 henrik Exp $";
+
+#include "config.h"
 
 #include <limits.h>
 #include <sys/time.h>
@@ -24,7 +26,7 @@ static char rcsid[] = "$Id: misc.c,v 1.45 2005-07-31 12:35:07 henrik Exp $";
 #include <sys/wait.h>
 #include <errno.h>
 #include <signal.h>
-#if !defined(HPUX)              /* HP-UX has select() and friends in sys/types.h */
+#ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>         /* Someday I'll move to GNU Autoconf for this ... */
 #endif
 #include <fcntl.h>
