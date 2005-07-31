@@ -56,7 +56,7 @@ client: include/config.h lib-client common-client build-build
 	CC="$(CC)" CFLAGS="$(CFLAGS)" BBHOME="$(BBTOPDIR)/client" BBHOSTIP="$(BBHOSTIP)" $(MAKE) -C client all
 
 include/config.h:
-	MAKE="$(MAKE)" $(BUILDTOPDIR)/build/genconfig.sh
+	MAKE="$(MAKE)" CC="$(CC)" CFLAGS="$(CFLAGS)" $(BUILDTOPDIR)/build/genconfig.sh
 
 build-build:
 	CC="$(CC)" CFLAGS="$(CFLAGS)" RPATHOPT="$(RPATHOPT)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" $(MAKE) -C build all

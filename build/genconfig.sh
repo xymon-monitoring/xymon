@@ -5,7 +5,7 @@
 echo "/* This file is auto-generated */" >include/config.h
 
 echo "Checking for socklen_t"
-$MAKE -C build test-socklent 1>/dev/null 2>&1
+$CC -c -o build/testfile.o $CFLAGS build/test-socklent.c
 if test $? -eq 0; then
 	echo "#define HAVE_SOCKLEN_T 1" >>include/config.h
 else
@@ -13,7 +13,7 @@ else
 fi
 
 echo "Checking for snprintf"
-$MAKE -C build test-snprintf 1>/dev/null 2>&1
+$CC -c -o build/testfile.o $CFLAGS build/test-snprintf.c
 if test $? -eq 0; then
 	echo "#define HAVE_SNPRINTF 1" >>include/config.h
 else
@@ -21,7 +21,7 @@ else
 fi
 
 echo "Checking for vsnprintf"
-$MAKE -C build test-vsnprintf 1>/dev/null 2>&1
+$CC -c -o build/testfile.o $CFLAGS build/test-vsnprintf.c
 if test $? -eq 0; then
 	echo "#define HAVE_VSNPRINTF 1" >>include/config.h
 else
@@ -29,7 +29,7 @@ else
 fi
 
 echo "Checking for rpc/rpcent.h"
-$MAKE -C build test-rpcenth 1>/dev/null 2>&1
+$CC -c -o build/testfile.o $CFLAGS build/test-rpcenth.c
 if test $? -eq 0; then
 	echo "#define HAVE_RPCENT_H 1" >>include/config.h
 else
