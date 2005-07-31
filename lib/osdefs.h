@@ -12,6 +12,8 @@
 #ifndef __LIBBBGEN_OSDEFS_H__
 #define __LIBBBGEN_OSDEFS_H__
 
+#include "config.h"
+
 #include <sys/types.h>
 #include <stdarg.h>
 
