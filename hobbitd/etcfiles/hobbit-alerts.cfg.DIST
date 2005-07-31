@@ -97,6 +97,7 @@
 # Script get the following environment variables pre-defined so
 # that they can send a meaningful alert:
 #
+#    BBCOLORLEVEL  - The color of the alert: "red", "yellow" or "purple"
 #    BBALPHAMSG    - The full text of the status log triggering the alert
 #    ACKCODE       - The "cookie" that can be used to acknowledge the alert
 #    RCPT          - The recipient, from the SCRIPT entry
