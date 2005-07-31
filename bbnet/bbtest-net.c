@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.218 2005-07-31 19:51:32 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.219 2005-07-31 20:13:02 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -23,6 +23,8 @@ static char rcsid[] = "$Id: bbtest-net.c,v 1.218 2005-07-31 19:51:32 henrik Exp 
 #include <rpc/rpc.h>
 #include <fcntl.h>
 #include <errno.h>
+
+#include "config.h"
 
 #ifdef HAVE_RPCENT_H
 #include <rpc/rpcent.h>
