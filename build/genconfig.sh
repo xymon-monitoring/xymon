@@ -36,6 +36,14 @@ else
 	echo "#undef HAVE_RPCENT_H" >>include/config.h
 fi
 
+echo "Checking for sys/select.h"
+$CC -c -o build/testfile.o $CFLAGS build/test-sysselecth.c 1>/dev/null 2>&1
+if test $? -eq 0; then
+	echo "#define HAVE_SYS_SELECT_H 1" >>include/config.h
+else
+	echo "#undef HAVE_SYS_SELECT_H" >>include/config.h
+fi
+
 echo "config.h created"
 exit 0
 
