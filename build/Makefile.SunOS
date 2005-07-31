@@ -7,10 +7,10 @@ NETLIBS = -lresolv -lsocket -lnsl
 
 # Compile flags for normal build
 CC = gcc
-CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT -DHAVE_RPCENT $(OSDEF)
+CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT $(OSDEF)
 
 # Compile flags for debugging
-# CFLAGS = -g -DDEBUG -Wall -D_REENTRANT -DHAVE_RPCENT $(OSDEF)
+# CFLAGS = -g -DDEBUG -Wall -D_REENTRANT $(OSDEF)
 
 # Mail program: This must support "CMD -s SUBJECT ADDRESS" to send out a mail with a subject
 # Typically, this will be "mail" or "mailx"
