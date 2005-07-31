@@ -3,6 +3,8 @@
 # Simpler than autoconf, but it does what we need it to do right now.
 
 echo "/* This file is auto-generated */" >include/config.h
+echo "#ifndef __CONFIG_H__" >>include/config.h
+echo "#define __CONFIG_H__ 1" >>include/config.h
 
 echo "Checking for socklen_t"
 $CC -c -o build/testfile.o $CFLAGS build/test-socklent.c 1>/dev/null 2>&1
@@ -43,6 +45,8 @@ if test $? -eq 0; then
 else
 	echo "#undef HAVE_SYS_SELECT_H" >>include/config.h
 fi
+
+echo "#endif" >>include/config.h
 
 echo "config.h created"
 exit 0
