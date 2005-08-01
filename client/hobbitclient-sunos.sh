@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-sunos.sh,v 1.4 2005-07-24 11:32:51 henrik Exp $
+# $Id: hobbitclient-sunos.sh,v 1.5 2005-08-01 05:58:29 henrik Exp $
 
 echo "[date]"
 date
@@ -19,8 +19,19 @@ echo "[uptime]"
 uptime
 echo "[who]"
 who
+
 echo "[df]"
-/usr/xpg4/bin/df -F ufs -k
+# All of this because Solaris df cannot show multiple fs-types, or exclude certain fs types.
+FSTYPES=`/bin/df -n|awk '{print $3}'|egrep -v "^proc|^fd|^mntfs"|sort|uniq`
+if test "$FSTYPES" = ""; then FSTYPES="ufs"; fi
+set $FSTYPES
+/bin/df -F $1 -k
+shift
+while test "$1" != ""; do
+	/bin/df -F $1 -k|tail +2
+	shift
+done
+
 echo "[prtconf]"
 /usr/sbin/prtconf
 echo "[memory]"
