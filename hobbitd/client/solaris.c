@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char solaris_rcsid[] = "$Id: solaris.c,v 1.6 2005-07-25 09:18:39 henrik Exp $";
+static char solaris_rcsid[] = "$Id: solaris.c,v 1.7 2005-08-01 05:57:34 henrik Exp $";
 
 void handle_solaris_client(char *hostname, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -73,7 +73,7 @@ void handle_solaris_client(char *hostname, namelist_t *hinfo, char *sender, time
 				   memswaptotal, memswapused);
 	}
 
-	unix_procs_report(hostname, hinfo, fromline, timestr, "CMD", psstr);
+	unix_procs_report(hostname, hinfo, fromline, timestr, "CMD", "COMMAND", psstr);
 	msgs_report(hostname, hinfo, fromline, timestr, msgsstr);
 
 	combo_end();

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.22 2005-07-31 12:35:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.23 2005-08-01 05:57:34 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -412,7 +412,7 @@ void unix_memory_report(char *hostname, namelist_t *hinfo, char *fromline, char 
 }
 
 void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, 
-		       char *cmdhdr, char *psstr)
+		       char *cmdhdr, char *altcmdhdr, char *psstr)
 {
 	int pscolor = COL_GREEN;
 
@@ -430,6 +430,7 @@ void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 	 * and calculate the offset from the beginning of the line.
 	 */
 	p = strstr(psstr, cmdhdr);
+	if ((p == NULL) && (altcmdhdr != NULL)) p = strstr(psstr, altcmdhdr);
 	if (p) cmdofs = (p - psstr);
 
 	pchecks = clear_process_counts(hinfo);
