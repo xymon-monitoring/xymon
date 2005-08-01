@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.174 2005-07-31 21:13:36 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.175 2005-08-01 13:34:56 henrik Exp $";
 
 #include "config.h"
 
@@ -1966,16 +1966,15 @@ void do_message(conn_t *msg, char *origin)
 		if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, msg->buf)) goto done;
 
 		if (log) {
+			xfree(msg->buf);
 			msg->doingwhat = RESPONDING;
 			if (log->message) {
 				unsigned char *eoln;
 
-				eoln = strchr(log->message, '\n');
-				if (eoln) *eoln = '\0';
-				strcpy(msg->buf, msg_data(log->message));
-				msg->bufp = msg->buf;
-				msg->buflen = strlen(msg->buf);
+				eoln = strchr(log->message, '\n'); if (eoln) *eoln = '\0';
+				msg->buf = msg->bufp = strdup(msg_data(log->message));
 				if (eoln) *eoln = '\n';
+				msg->buflen = strlen(msg->buf);
 			}
 			else {
 				msg->buf = msg->bufp = strdup("");
@@ -3022,7 +3021,7 @@ int main(int argc, char *argv[])
 	int daemonize = 0;
 	char *pidfile = NULL;
 	struct sigaction sa;
-	time_t conn_timeout = 10;
+	time_t conn_timeout = 30;
 	time_t nextheartbeat = 0;
 	char *envarea = NULL;
 
@@ -3446,12 +3445,12 @@ int main(int argc, char *argv[])
 		}
 
 		/* 
-		 * Do the select() with a static 5 second timeout. 
+		 * Do the select() with a static 2 second timeout. 
 		 * This is long enough that we will suspend activity for
 		 * some time if there's nothing to do, but short enough for
 		 * us to attend to the housekeeping stuff without undue delay.
 		 */
-		seltmo.tv_sec = 5; seltmo.tv_usec = 0;
+		seltmo.tv_sec = 2; seltmo.tv_usec = 0;
 		n = select(maxfd+1, &fdread, &fdwrite, NULL, &seltmo);
 		if (n <= 0) {
 			if ((errno == EINTR) || (n == 0)) {
