@@ -11,7 +11,7 @@
 #ifndef __SENDMSG_H_
 #define __SENDMSG_H_
 
-#define BBTALK_TIMEOUT 5  /* Default timeout for a request going to bbd */
+#define BBTALK_TIMEOUT 15  /* Default timeout for a request going to bbd */
 #define PAGELEVELSDEFAULT "red purple"
 
 #define BB_OK			0
