@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: matching.c,v 1.2 2005-07-22 22:11:10 henrik Exp $";
+static char rcsid[] = "$Id: matching.c,v 1.3 2005-08-02 12:55:03 henrik Exp $";
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -22,7 +22,7 @@ static char rcsid[] = "$Id: matching.c,v 1.2 2005-07-22 22:11:10 henrik Exp $";
 
 #include "libbbgen.h"
 
-pcre *compileregex(char *pattern)
+pcre *compileregex(const char *pattern)
 {
 	pcre *result;
 	const char *errmsg;

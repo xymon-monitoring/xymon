@@ -15,7 +15,7 @@
 #ifndef CLIENTONLY
 #include <pcre.h>
 
-extern pcre *compileregex(char *pattern);
+extern pcre *compileregex(const char *pattern);
 extern int timematch(char *tspec);
 extern int namematch(char *needle, char *haystack, pcre *pcrecode);
 #endif
