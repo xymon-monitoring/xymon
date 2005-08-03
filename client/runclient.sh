@@ -12,25 +12,58 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: runclient.sh,v 1.2 2005-07-24 11:32:51 henrik Exp $
+# $Id: runclient.sh,v 1.3 2005-08-03 22:07:33 henrik Exp $
 
-# Settings for this client
+# Default settings for this client
 MACHINEDOTS="`uname -n`"			# This systems hostname
 BBOSTYPE="`uname -s | tr '[A-Z]' '[a-z]'`"	# This systems operating system in lowercase
 
-# No modifications needed after this line
-export MACHINEDOTS BBOSTYPE
+# Commandline mods for the defaults
+while test "$1" != ""
+do
+	case "$1" in
+	  --hostname=*)
+	  	MACHINEDOTS="`echo $1 | sed -e's/--hostname=//'`"
+		;;
+	  --os=*)
+	  	BBOSTYPE="`echo $1 | sed -e's/--os=//' | tr '[A-Z]' '[a-z]'`"
+		;;
+	  --help)
+	  	echo "Usage: $0 [--hostname=CLIENTNAME] [--os=rhel3|linux22] start|stop"
+		exit 0
+		;;
+	  start)
+	  	CMD=$1
+		;;
+	  stop)
+	  	CMD=$1
+		;;
+	esac
+
+	shift
+done
 
 BASEDIR="`dirname $0`"
+MACHINE="`echo $MACHINEDOTS | sed -e's/\./,/g'`"
 
-case "$1" in
+export MACHINE MACHINEDOTS BBOSTYPE
+
+case "$CMD" in
   "start")
 	$BASEDIR/bin/hobbitlaunch --config=$BASEDIR/etc/clientlaunch.cfg --log=$BASEDIR/logs/clientlaunch.log --pidfile=$BASEDIR/logs/clientlaunch.pid
+	if test $? -eq 0; then
+		echo "Hobbit client for $BBOSTYPE started on $MACHINEDOTS"
+	else
+		echo "Hobbit client startup failed"
+	fi
 	;;
 
   "stop")
   	if test -f $BASEDIR/logs/clientlaunch.pid; then
 		kill `cat $BASEDIR/logs/clientlaunch.pid`
+		echo "Hobbit client stopped"
+	else
+		echo "Hobbit client not running"
 	fi
 	;;
 esac
