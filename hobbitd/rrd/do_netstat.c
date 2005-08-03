@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.20 2005-08-03 13:20:17 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.21 2005-08-03 21:01:40 henrik Exp $";
 
 static char *netstat_params[] = { "rrdcreate", rrdfn, 
 	                          "DS:udpInDatagrams:DERIVE:600:0:U", 
@@ -44,27 +44,6 @@ static char *tcpoutdatabytes = NULL, *tcpoutdatapackets = NULL,
 	    *tcpoutorderbytes = NULL, *tcpoutorderpackets = NULL,
             *tcpretransbytes = NULL, *tcpretranspackets = NULL;
 
-
-/* This one matches the netstat output from Solaris 8, and also the hpux and aix from bf-netstat */
-static char *netstat_unix_markers[] = {
-	"udpInDatagrams",
-	"udpOutDatagrams",
-	"udpInErrors",
-	"tcpActiveOpens",
-	"tcpPassiveOpens",
-	"tcpAttemptFails",
-	"tcpEstabResets",
-	"tcpCurrEstab",
-	"tcpOutDataBytes",
-	"tcpInInorderBytes",
-	"tcpInUnorderBytes",
-	"tcpRetransBytes",
-	"tcpOutDataSegs",
-	"tcpInInorderSegs",
-	"tcpInUnorderSegs",
-	"tcpRetransSegs",
-	NULL
-};
 
 static pcre **compile_exprs(char *id, const char **patterns, int count)
 {
@@ -134,55 +113,42 @@ static void prepare_update(char *outp)
 	outp += sprintf(outp, ":%s", (tcpretranspackets ? tcpretranspackets : "U")); if (tcpretranspackets) xfree(tcpretranspackets);
 }
 
-static int handle_osf_netstat(char *msg, char *outp)
+static int handle_pcre_netstat(char *msg, pcre **pcreset, char *outp)
 {
-	static const char *netstat_osf_exprs[] = {
-		/* TCP patterns */
-		"^[\t ]*([0-9]+) data packets \\(([0-9]+) bytes\\) retransmitted$",
-		"^[\t ]*([0-9]+) data packets \\(([0-9]+) bytes\\)$",
-		"^[\t ]*([0-9]+) packets \\(([0-9]+) bytes\\) received in-sequence$",
-		"^[\t ]*([0-9]+) out-of-order packets \\(([0-9]+) bytes\\)$",
-		"^[\t ]*([0-9]+) connection requests$",
-		"^[\t ]*([0-9]+) connection accepts$",
-		/* UDP patterns */
-		"^[\t ]*([0-9]+) packets received$",
-		"^[\t ]*([0-9]+) packets sent$"
-	};
-	static pcre **netstat_osf_pcres = NULL;
 	enum { AT_NONE, AT_TCP, AT_UDP } sect = AT_NONE;
 	int havedata = 0;
 	char *datapart, *eoln;
+	char *udperr1 = NULL, *udperr2 = NULL, *udperr3 = NULL;
+	unsigned long udperrs, udperrtotal = 0;
+	char udpstr[20];
 
-	if (netstat_osf_pcres == NULL) {
-		netstat_osf_pcres = compile_exprs("OSF", netstat_osf_exprs, 
-						 (sizeof(netstat_osf_exprs) / sizeof(netstat_osf_exprs[0])));
-		if (netstat_osf_pcres == NULL) return -1;
-	}
-	
 	datapart = strstr(msg, "\ntcp:");	/* Skip to the start of "tcp" (udp comes after) */
 	if (!datapart) return -1; else datapart++;
 
-	while (datapart) {
+	while (datapart && (havedata != 11)) {
 		eoln = strchr(datapart, '\n'); if (eoln) *eoln = '\0';
 
-		if (strncmp(datapart, "tcp:", 4) == 0) 
+		if (strncasecmp(datapart, "tcp:", 4) == 0) 
 			sect = AT_TCP;
-		else if (strncmp(datapart, "udp:", 4) == 0)
+		else if (strncasecmp(datapart, "udp:", 4) == 0)
 			sect = AT_UDP;
 		else {
 			switch (sect) {
 			  case AT_TCP:
-				if (pickdata(datapart, netstat_osf_pcres[0], &tcpretranspackets, &tcpretransbytes)   ||
-				    pickdata(datapart, netstat_osf_pcres[1], &tcpoutdatapackets, &tcpoutdatabytes)   ||
-				    pickdata(datapart, netstat_osf_pcres[2], &tcpinorderpackets, &tcpinorderbytes)   ||
-				    pickdata(datapart, netstat_osf_pcres[3], &tcpoutorderpackets, &tcpoutorderbytes) ||
-				    pickdata(datapart, netstat_osf_pcres[4], &tcpconnrequests)                       ||
-				    pickdata(datapart, netstat_osf_pcres[5], &tcpconnaccepts)) havedata++;
+				if (pickdata(datapart, pcreset[0], &tcpretranspackets, &tcpretransbytes)   ||
+				    pickdata(datapart, pcreset[1], &tcpoutdatapackets, &tcpoutdatabytes)   ||
+				    pickdata(datapart, pcreset[2], &tcpinorderpackets, &tcpinorderbytes)   ||
+				    pickdata(datapart, pcreset[3], &tcpoutorderpackets, &tcpoutorderbytes) ||
+				    pickdata(datapart, pcreset[4], &tcpconnrequests)                       ||
+				    pickdata(datapart, pcreset[5], &tcpconnaccepts)) havedata++;
 				break;
 
 			  case AT_UDP:
-				if (pickdata(datapart, netstat_osf_pcres[6], &udpreceived)   ||
-				    pickdata(datapart, netstat_osf_pcres[7], &udpsent)) havedata++;
+				if (pickdata(datapart, pcreset[6], &udpreceived)   ||
+				    pickdata(datapart, pcreset[7], &udpsent)       ||
+				    pickdata(datapart, pcreset[8], &udperr1)       ||
+				    pickdata(datapart, pcreset[9], &udperr2)       ||
+				    pickdata(datapart, pcreset[10], &udperr3)) havedata++;
 				break;
 
 			  default:
@@ -192,28 +158,123 @@ static int handle_osf_netstat(char *msg, char *outp)
 		if (eoln) { *eoln = '\n'; datapart = (eoln+1); } else datapart = NULL;
 	}
 
+	if (udperr1) { udperrs = atol(udperr1); udperrtotal += udperrs; xfree(udperr1); }
+	if (udperr2) { udperrs = atol(udperr2); udperrtotal += udperrs; xfree(udperr2); }
+	if (udperr3) { udperrs = atol(udperr3); udperrtotal += udperrs; xfree(udperr3); }
+	sprintf(udpstr, "%ld", udperrtotal); udperrors = strdup(udpstr);
+
 	prepare_update(outp);
-	return (havedata == 8);
+	return (havedata != 0);
 }
 
-/* This is for the native netstat output from HP-UX (and AIX) */
-static char *netstat_hpux_markers[] = {
-	"",				/* udpInDatagrams */
-	"",				/* udpOutDatagrams */
-	"",				/* udpInErrors */
+
+/* PCRE for OSF/1 */
+static const char *netstat_osf_exprs[] = {
+	/* TCP patterns */
+	"^[\t ]*([0-9]+) data packets \\(([0-9]+) bytes\\) retransmitted$",
+	"^[\t ]*([0-9]+) data packets \\(([0-9]+) bytes\\)$",
+	"^[\t ]*([0-9]+) packets \\(([0-9]+) bytes\\) received in-sequence$",
+	"^[\t ]*([0-9]+) out-of-order packets \\(([0-9]+) bytes\\)$",
+	"^[\t ]*([0-9]+) connection requests$",
+	"^[\t ]*([0-9]+) connection accepts$",
+	/* UDP patterns */
+	"^[\t ]*([0-9]+) packets received$",
+	"^[\t ]*([0-9]+) packets sent$",
+	"^[\t ]*([0-9]+) incomplete headers$",
+	"^[\t ]*([0-9]+) bad data length fields$",
+	"^[\t ]*([0-9]+) bad checksums$"
+};
+
+/* PCRE for AIX: Matches AIX 4.3.3 5.1 5.2 5.3 and probably others */
+static const char *netstat_aix_exprs[] = {
+	/* TCP patterns */
+	"^[\t ]*([0-9]+) data packets \\(([0-9]+) bytes\\) retransmitted$",
+	"^[\t ]*([0-9]+) data packets \\(([0-9]+) bytes\\)$",
+	"^[\t ]*([0-9]+) packets \\(([0-9]+) bytes\\) received in-sequence$",
+	"^[\t ]*([0-9]+) out-of-order packets \\(([0-9]+) bytes\\)$",
+	"^[\t ]*([0-9]+) connection requests$",
+	"^[\t ]*([0-9]+) connection accepts$",
+	/* UDP patterns */
+	"^[\t ]*([0-9]+) datagrams received$",
+	"^[\t ]*([0-9]+) datagrams output$",
+	"^[\t ]*([0-9]+) incomplete headers$",
+	"^[\t ]*([0-9]+) bad data length fields$",
+	"^[\t ]*([0-9]+) bad checksums$"
+};
+
+/* PCRE for HP-UX: Matches HP-UX 11.11, possibly others */
+static const char *netstat_hpux_exprs[] = {
+	/* TCP patterns */
+	"^[\t ]*([0-9]+) data packets \\(([0-9]+) bytes\\) retransmitted$",
+	"^[\t ]*([0-9]+) data packets \\(([0-9]+) bytes\\)$",
+	"^[\t ]*([0-9]+) packets \\(([0-9]+) bytes\\) received in-sequence$",
+	"^[\t ]*([0-9]+) out of order packets \\(([0-9]+) bytes\\)$",
+	"^[\t ]*([0-9]+) connection requests$",
+	"^[\t ]*([0-9]+) connection accepts$",
+	/* UDP patterns */
+	"^[\t ]*([0-9]+) datagrams received$",		/* Seems HP-UX dont count UDP packets */
+	"^[\t ]*([0-9]+) datagrams output$",		/* Seems HP-UX dont count UDP packets */
+	"^[\t ]*([0-9]+) incomplete headers$",
+	"^[\t ]*([0-9]+) bad data length fields$",
+	"^[\t ]*([0-9]+) bad checksums$"
+};
+
+/* PCRE for *BSD: FreeBSD 4.10, OpenBSD and NetBSD */
+static const char *netstat_bsd_exprs[] = {
+	/* TCP patterns */
+	"^[\t ]*([0-9]+) data packets \\(([0-9]+) bytes\\) retransmitted$",
+	"^[\t ]*([0-9]+) data packets \\(([0-9]+) bytes\\)$",
+	"^[\t ]*([0-9]+) packets \\(([0-9]+) bytes\\) received in-sequence$",
+	"^[\t ]*([0-9]+) out-of-order packets \\(([0-9]+) bytes\\)$",
+	"^[\t ]*([0-9]+) connection requests$",
+	"^[\t ]*([0-9]+) connection accepts$",
+	/* UDP patterns */
+	"^[\t ]*([0-9]+) datagrams received$",
+	"^[\t ]*([0-9]+) datagrams output$",
+	"^[\t ]*([0-9]+) with incomplete header$",
+	"^[\t ]*([0-9]+) with bad data length field$",
+	"^[\t ]*([0-9]+) with bad checksum$",
+};
+
+/* This one matches the netstat output from Solaris 8, and also the hpux and aix from bf-netstat */
+static char *netstat_unix_markers[] = {
+	"udpInDatagrams",
+	"udpOutDatagrams",
+	"udpInErrors",
+	"tcpActiveOpens",
+	"tcpPassiveOpens",
+	"tcpAttemptFails",
+	"tcpEstabResets",
+	"tcpCurrEstab",
+	"tcpOutDataBytes",
+	"tcpInInorderBytes",
+	"tcpInUnorderBytes",
+	"tcpRetransBytes",
+	"tcpOutDataSegs",
+	"tcpInInorderSegs",
+	"tcpInUnorderSegs",
+	"tcpRetransSegs",
+	NULL
+};
+
+/* This one matches the *BSD's */
+static char *netstat_freebsd_markers[] = {
+	"datagrams received",
+	"datagrams output",
+	"",  /* Multiple counters, wont add them up. */
 	"connection requests",
 	"connection accepts",
-	"",				/* tcpAttemptFails */
-	"",				/* tcpEstabResets */
-	"",				/* tcpCurrEstab */
+	"bad connection attempts",
+	"",  /* Appears not to count resets */
+	"connections established",
 	"",
 	"",
 	"",
 	"",
-	"data packets",
+	"packets sent",
 	"received in-sequence",
-	"out of order packets",
-	"retransmitted",
+	"out-of-order packets",
+	"",  /* N data packets (X bytes) retransmitted */
 	NULL
 };
 
@@ -235,27 +296,6 @@ static char *netstat_linux_markers[] = {
 	"segments received",
 	"",
 	"segments retransmited",
-	NULL
-};
-
-/* This one matches FreeBSD 4.10. Untested. */
-static char *netstat_freebsd_markers[] = {
-	"datagrams received",
-	"datagrams output",
-	"",  /* Multiple counters, wont add them up. */
-	"connection requests",
-	"connection accepts",
-	"bad connection attempts",
-	"",  /* Appears not to count resets */
-	"connections established",
-	"",
-	"",
-	"",
-	"",
-	"packets sent",
-	"received in-sequence",
-	"out-of-order packets",
-	"",  /* N data packets (X bytes) retransmitted */
 	NULL
 };
 
@@ -362,12 +402,29 @@ static int do_valbeforemarker(char *layout[], char *msg, char *outp)
 
 int do_netstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
+	static int pcres_compiled = 0;
+	static pcre **netstat_osf_pcres = NULL;
+	static pcre **netstat_aix_pcres = NULL;
+	static pcre **netstat_hpux_pcres = NULL;
+	static pcre **netstat_bsd_pcres = NULL;
+
 	enum ostype_t ostype;
 	char *datapart = msg;
 	char *outp;
 	int havedata = 0;
 
 	if (netstat_tpl == NULL) netstat_tpl = setup_template(netstat_params);
+	if (pcres_compiled == 0) {
+		pcres_compiled = 1;
+		netstat_osf_pcres = compile_exprs("OSF", netstat_osf_exprs, 
+						 (sizeof(netstat_osf_exprs) / sizeof(netstat_osf_exprs[0])));
+		netstat_aix_pcres = compile_exprs("AIX", netstat_aix_exprs, 
+						 (sizeof(netstat_aix_exprs) / sizeof(netstat_aix_exprs[0])));
+		netstat_hpux_pcres= compile_exprs("HP-UX", netstat_hpux_exprs, 
+						 (sizeof(netstat_hpux_exprs) / sizeof(netstat_hpux_exprs[0])));
+		netstat_bsd_pcres = compile_exprs("BSD", netstat_bsd_exprs, 
+						 (sizeof(netstat_bsd_exprs) / sizeof(netstat_bsd_exprs[0])));
+	}
 
 	if ((strncmp(msg, "status", 6) == 0) || (strncmp(msg, "data", 4) == 0)) {
 		/* Skip the first line of full status- and data-messages. */
@@ -399,33 +456,28 @@ int do_netstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		havedata = do_valaftermarkerequal(netstat_unix_markers, datapart, outp);
 		break;
 
-	  case OS_AIX: 
-	  case OS_HPUX: 
-		/* The bf-netstat claims to report as follows:
-		 *
-		 * udpInDatagrams = 0
-		 * udpOutDatagrams = 0
-		 * udpInErrors = 0
-		 * tcpActiveOpens = 0
-		 * tcpPassiveOpens = $tcpPassiveOpens
-		 * tcpAttemptFails = 0
-		 * tcpEstabResets = 0
-		 * tcpCurrEstab = $tcpCurrEstab
-		 * tcpOutDataBytes = $tcpOutDataBytes
-		 * tcpInInorderBytes = $tcpInInorderBytes
-		 * tcpInUnorderBytes = $tcpInUnorderBytes
-		 * tcpRetransBytes = $tcpRetransBytes
-		 */
-		havedata = do_valaftermarkerequal(netstat_unix_markers, datapart, outp);
-		if (!havedata) havedata = do_valbeforemarker(netstat_hpux_markers, datapart, outp);
-		break;
-
-	  case OS_WIN32:
-		havedata = do_valaftermarkerequal(netstat_win32_markers, datapart, outp);
-		break;
-
 	  case OS_OSF:
-		havedata = handle_osf_netstat(datapart, outp);
+		havedata = handle_pcre_netstat(datapart, netstat_osf_pcres, outp);
+		break;
+
+	  case OS_AIX: 
+		havedata = handle_pcre_netstat(datapart, netstat_aix_pcres, outp);
+		/* Handle the bf-netstat output, for old clients */
+		if (!havedata) havedata = do_valaftermarkerequal(netstat_unix_markers, datapart, outp);
+		break;
+
+	  case OS_HPUX: 
+		havedata = handle_pcre_netstat(datapart, netstat_hpux_pcres, outp);
+		/* Handle the bf-netstat output, for old clients */
+		if (!havedata) havedata = do_valaftermarkerequal(netstat_unix_markers, datapart, outp);
+		break;
+
+	  case OS_FREEBSD:
+	  case OS_NETBSD:
+	  case OS_OPENBSD:
+	  case OS_DARWIN:
+		havedata = handle_pcre_netstat(datapart, netstat_bsd_pcres, outp);
+		if (!havedata) havedata = do_valbeforemarker(netstat_freebsd_markers, datapart, outp);
 		break;
 
 	  case OS_LINUX22:
@@ -436,15 +488,12 @@ int do_netstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		if (datapart) havedata = do_valbeforemarker(netstat_linux_markers, datapart, outp);
 		break;
 
-	  case OS_FREEBSD:
-	  case OS_NETBSD:
-	  case OS_OPENBSD:
-	  case OS_DARWIN:
-		havedata = do_valbeforemarker(netstat_freebsd_markers, datapart, outp);
-		break;
-
 	  case OS_SNMP:
 		havedata = do_valbeforemarker(netstat_snmp_markers, datapart, outp);
+		break;
+
+	  case OS_WIN32:
+		havedata = do_valaftermarkerequal(netstat_win32_markers, datapart, outp);
 		break;
 
 	  case OS_IRIX:
