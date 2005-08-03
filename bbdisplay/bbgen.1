@@ -75,14 +75,21 @@ The BBSUBPAGEHTACCESS variable may contain two "%s" instances: The first is
 replaced with the pagename, the second with the subpagename.
 .sp
 .IP "--max-eventcount=N"
-Limit the eventlog on the BB2 page to only N events.
+Limit the eventlog on the BB2 page to only N events. Default: 100.
 .sp
 .IP "--max-eventtime=N"
 Limit the eventlog on the BB2 page to events that happened within
-the past N seconds.
+the past N minutes. Default: 240.
 .sp
 .IP "--no-eventlog"
 Disable the eventlog normally displayed on the BB2 page
+.sp
+.IP "--max-ackcount=N"
+Limit the acknowledgment log on the BB2 page to only N events. Default: 25.
+.sp
+.IP "--max-acktime=N"
+Limit the acknowledgment log on the BB2 page to acks that happened within
+the past N minutes. Default: 240.
 .sp
 .IP "--no-acklog"
 Disable the acknowledgement log normally displayed on the BB2 page.

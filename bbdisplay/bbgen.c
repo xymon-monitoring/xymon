@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.215 2005-07-21 14:41:28 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.216 2005-08-03 13:38:21 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -334,6 +334,16 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 
 			bb2eventlogmaxtime = atoi(lp+1);
+		}
+		else if (argnmatch(argv[i], "--max-ackcount=")) {
+			char *lp = strchr(argv[i], '=');
+
+			bb2acklogmaxcount = atoi(lp+1);
+		}
+		else if (argnmatch(argv[i], "--max-acktime=")) {
+			char *lp = strchr(argv[i], '=');
+
+			bb2acklogmaxtime = atoi(lp+1);
 		}
 		else if (strcmp(argv[i], "--no-acklog") == 0) {
 			bb2acklog = 0;

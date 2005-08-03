@@ -34,6 +34,8 @@ extern int  bb2eventlog;
 extern int  bb2acklog;
 extern int  bb2eventlogmaxcount;
 extern int  bb2eventlogmaxtime;
+extern int  bb2acklogmaxcount;
+extern int  bb2acklogmaxtime;
 extern char *lognkstatus;
 extern int  nkonlyreds;
 extern char *nkackname;
