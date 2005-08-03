@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-hp-ux.sh,v 1.6 2005-08-03 13:27:57 henrik Exp $
+# $Id: hobbitclient-hp-ux.sh,v 1.7 2005-08-03 18:45:08 henrik Exp $
 
 echo "[date]"
 date
@@ -35,7 +35,7 @@ echo "[top]"
 top -d 1 -f $BBHOME/tmp/top.OUT
 cat $BBHOME/tmp/top.OUT
 rm $BBHOME/tmp/top.OUT
-echo "[vmstat]"
+# vmstat
 nohup sh -c "vmstat 300 2 1>$BBTMP/hobbit_vmstat.$$ 2>&1; mv $BBTMP/hobbit_vmstat.$$ $BBTMP/hobbit_vmstat" </dev/null >/dev/null 2>&1 &
 sleep 5
 if test -f $BBTMP/hobbit_vmstat; then echo "[vmstat]"; cat $BBTMP/hobbit_vmstat; rm -f $BBTMP/hobbit_vmstat; fi
