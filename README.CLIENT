@@ -64,12 +64,8 @@ The client reports to Hobbit using the hostname taken from
 the "uname -n" command output. Whether this provides a fully
 qualified DNS name (myserver.foo.com) or a simple hostname
 (myserver) varies a lot. If your client gets it wrong, you
-can change the hostname to the one used in Hobbit by setting 
-the MACHINEDOTS setting the the client/etc/hobbitclient.cfg
-file. Alternatively, you can add a "CLIENT:hostname" tag
-for this host's entry in the bb-hosts file on the Hobbit
-server, to define the hostname used by the client as an
-alias.
+can override the default with the "--hostname=CLIENT.HOST.NAME"
+option to the runclient.sh startup command.
 
 OS detection on Linux systems
 -----------------------------
@@ -84,9 +80,8 @@ vmstat graphs to fail for certain types of systems:
 	- Systems running Linux kernels 2.2.x (Debian Woody)
 	  Should report "linux22" instead.
 
-To override the auto-detected operating system, set the
-BBOSTYPE setting in the client/etc/hobbitclient.cfg
-file.
+To override the default, start the client using the 
+"--os=OSNAME" option to the runclient.sh startup command.
 
 Extension scripts
 -----------------
@@ -127,5 +122,5 @@ then you'll need to modify the client/etc/clientlaunch.cfg and
 client/etc/hobbitclient.cfg files to reflect the new directory.
 
 
-Henrik Stoerner, 2005-Aug-03.
+Henrik Stoerner, 2005-Aug-04.
 
