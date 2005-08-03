@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.19 2005-07-24 10:09:25 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.20 2005-08-03 13:20:17 henrik Exp $";
 
 static char *netstat_params[] = { "rrdcreate", rrdfn, 
 	                          "DS:udpInDatagrams:DERIVE:600:0:U", 
@@ -30,6 +30,21 @@ static char *netstat_params[] = { "rrdcreate", rrdfn,
 				  rra1, rra2, rra3, rra4, NULL };
 static char *netstat_tpl       = NULL;
 
+static char *udpreceived = NULL,
+	    *udpsent = NULL,
+	    *udperrors = NULL;
+
+static char *tcpconnrequests = NULL,
+	    *tcpconnaccepts = NULL,
+	    *tcpconnfails = NULL,
+	    *tcpconncurrent = NULL;
+
+static char *tcpoutdatabytes = NULL, *tcpoutdatapackets = NULL,
+	    *tcpinorderbytes = NULL, *tcpinorderpackets = NULL,
+	    *tcpoutorderbytes = NULL, *tcpoutorderpackets = NULL,
+            *tcpretransbytes = NULL, *tcpretranspackets = NULL;
+
+
 /* This one matches the netstat output from Solaris 8, and also the hpux and aix from bf-netstat */
 static char *netstat_unix_markers[] = {
 	"udpInDatagrams",
@@ -50,6 +65,136 @@ static char *netstat_unix_markers[] = {
 	"tcpRetransSegs",
 	NULL
 };
+
+static pcre **compile_exprs(char *id, const char **patterns, int count)
+{
+	pcre **result = NULL;
+	int i;
+
+	result = (pcre **)calloc(count, sizeof(pcre *));
+	for (i=0; (i < count); i++) {
+		result[i] = compileregex(patterns[i]);
+		if (!result[i]) {
+			errprintf("Internal error: %s netstat PCRE-compile failed\n", id);
+			for (i=0; (i < count); i++) if (result[i]) pcre_free(result[i]);
+			xfree(result);
+			return NULL;
+		}
+	}
+
+	return result;
+}
+
+static int pickdata(char *buf, pcre *expr, ...)
+{
+	int res, i;
+	int ovector[30];
+	va_list ap;
+	char **ptr;
+	char w[100];
+
+	res = pcre_exec(expr, NULL, buf, strlen(buf), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+	if (res < 0) return 0;
+
+	va_start(ap, expr);
+
+	for (i=1; (i < res); i++) {
+		*w = '\0';
+		pcre_copy_substring(buf, ovector, res, i, w, sizeof(w));
+		ptr = va_arg(ap, char **);
+		if (*ptr == NULL) {
+			*ptr = strdup(w);
+		}
+		else {
+			errprintf("Internal error: Duplicate match ignored\n");
+		}
+	}
+
+	va_end(ap);
+
+	return 1;
+}
+
+static void prepare_update(char *outp)
+{
+	outp += sprintf(outp, ":%s", (udpreceived ? udpreceived : "U")); if (udpreceived) xfree(udpreceived);
+	outp += sprintf(outp, ":%s", (udpsent ? udpsent : "U")); if (udpsent) xfree(udpsent);
+	outp += sprintf(outp, ":%s", (udperrors ? udperrors : "U")); if (udperrors) xfree(udperrors);
+	outp += sprintf(outp, ":%s", (tcpconnrequests ? tcpconnrequests : "U")); if (tcpconnrequests) xfree(tcpconnrequests);
+	outp += sprintf(outp, ":%s", (tcpconnaccepts ? tcpconnaccepts : "U")); if (tcpconnaccepts) xfree(tcpconnaccepts);
+	outp += sprintf(outp, ":%s", (tcpconnfails ? tcpconnfails : "U")); if (tcpconnfails) xfree(tcpconnfails);
+	outp += sprintf(outp, ":%s", (tcpconncurrent ? tcpconncurrent : "U")); if (tcpconncurrent) xfree(tcpconncurrent);
+	outp += sprintf(outp, ":%s", (tcpoutdatabytes ? tcpoutdatabytes : "U")); if (tcpoutdatabytes) xfree(tcpoutdatabytes);
+	outp += sprintf(outp, ":%s", (tcpinorderbytes ? tcpinorderbytes : "U")); if (tcpinorderbytes) xfree(tcpinorderbytes);
+	outp += sprintf(outp, ":%s", (tcpoutorderbytes ? tcpoutorderbytes : "U")); if (tcpoutorderbytes) xfree(tcpoutorderbytes);
+	outp += sprintf(outp, ":%s", (tcpretransbytes ? tcpretransbytes : "U")); if (tcpretransbytes) xfree(tcpretransbytes);
+	outp += sprintf(outp, ":%s", (tcpoutdatapackets ? tcpoutdatapackets : "U")); if (tcpoutdatapackets) xfree(tcpoutdatapackets);
+	outp += sprintf(outp, ":%s", (tcpinorderpackets ? tcpinorderpackets : "U")); if (tcpinorderpackets) xfree(tcpinorderpackets);
+	outp += sprintf(outp, ":%s", (tcpoutorderpackets ? tcpoutorderpackets : "U")); if (tcpoutorderpackets) xfree(tcpoutorderpackets);
+	outp += sprintf(outp, ":%s", (tcpretranspackets ? tcpretranspackets : "U")); if (tcpretranspackets) xfree(tcpretranspackets);
+}
+
+static int handle_osf_netstat(char *msg, char *outp)
+{
+	static const char *netstat_osf_exprs[] = {
+		/* TCP patterns */
+		"^[\t ]*([0-9]+) data packets \\(([0-9]+) bytes\\) retransmitted$",
+		"^[\t ]*([0-9]+) data packets \\(([0-9]+) bytes\\)$",
+		"^[\t ]*([0-9]+) packets \\(([0-9]+) bytes\\) received in-sequence$",
+		"^[\t ]*([0-9]+) out-of-order packets \\(([0-9]+) bytes\\)$",
+		"^[\t ]*([0-9]+) connection requests$",
+		"^[\t ]*([0-9]+) connection accepts$",
+		/* UDP patterns */
+		"^[\t ]*([0-9]+) packets received$",
+		"^[\t ]*([0-9]+) packets sent$"
+	};
+	static pcre **netstat_osf_pcres = NULL;
+	enum { AT_NONE, AT_TCP, AT_UDP } sect = AT_NONE;
+	int havedata = 0;
+	char *datapart, *eoln;
+
+	if (netstat_osf_pcres == NULL) {
+		netstat_osf_pcres = compile_exprs("OSF", netstat_osf_exprs, 
+						 (sizeof(netstat_osf_exprs) / sizeof(netstat_osf_exprs[0])));
+		if (netstat_osf_pcres == NULL) return -1;
+	}
+	
+	datapart = strstr(msg, "\ntcp:");	/* Skip to the start of "tcp" (udp comes after) */
+	if (!datapart) return -1; else datapart++;
+
+	while (datapart) {
+		eoln = strchr(datapart, '\n'); if (eoln) *eoln = '\0';
+
+		if (strncmp(datapart, "tcp:", 4) == 0) 
+			sect = AT_TCP;
+		else if (strncmp(datapart, "udp:", 4) == 0)
+			sect = AT_UDP;
+		else {
+			switch (sect) {
+			  case AT_TCP:
+				if (pickdata(datapart, netstat_osf_pcres[0], &tcpretranspackets, &tcpretransbytes)   ||
+				    pickdata(datapart, netstat_osf_pcres[1], &tcpoutdatapackets, &tcpoutdatabytes)   ||
+				    pickdata(datapart, netstat_osf_pcres[2], &tcpinorderpackets, &tcpinorderbytes)   ||
+				    pickdata(datapart, netstat_osf_pcres[3], &tcpoutorderpackets, &tcpoutorderbytes) ||
+				    pickdata(datapart, netstat_osf_pcres[4], &tcpconnrequests)                       ||
+				    pickdata(datapart, netstat_osf_pcres[5], &tcpconnaccepts)) havedata++;
+				break;
+
+			  case AT_UDP:
+				if (pickdata(datapart, netstat_osf_pcres[6], &udpreceived)   ||
+				    pickdata(datapart, netstat_osf_pcres[7], &udpsent)) havedata++;
+				break;
+
+			  default:
+				break;
+			}
+		}
+		if (eoln) { *eoln = '\n'; datapart = (eoln+1); } else datapart = NULL;
+	}
+
+	prepare_update(outp);
+	return (havedata == 8);
+}
 
 /* This is for the native netstat output from HP-UX (and AIX) */
 static char *netstat_hpux_markers[] = {
@@ -280,8 +425,8 @@ int do_netstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		break;
 
 	  case OS_OSF:
-		errprintf("Cannot grok osf netstat from host '%s' \n", hostname);
-		return -1;
+		havedata = handle_osf_netstat(datapart, outp);
+		break;
 
 	  case OS_LINUX22:
 	  case OS_LINUX:
