@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.25 2005-08-03 18:52:57 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.26 2005-08-03 21:25:02 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -176,7 +176,7 @@ void unix_cpu_report(char *hostname, namelist_t *hinfo, char *fromline, char *ti
 		else if (strstr(hourmark, " secs") && (sscanf(hourmark, "%ld secs", &upsecs) == 1)) {
 			uptimesecs += upsecs;
 		}
-		else if (strstr(hourmark, "mins") && (sscanf(hourmark, "%ld mins", &upmin) == 1)) {
+		else if (strstr(hourmark, "min") && (sscanf(hourmark, "%ld min", &upmin) == 1)) {
 			uptimesecs += 60*upmin;
 		}
 		else if (strncmp(hourmark, "1 hr", 4) == 0) {
