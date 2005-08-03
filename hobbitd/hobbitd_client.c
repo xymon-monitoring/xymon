@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.23 2005-08-01 05:57:34 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.24 2005-08-03 16:24:08 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -363,16 +363,16 @@ void unix_memory_report(char *hostname, namelist_t *hinfo, char *fromline, char 
 
 	get_memory_thresholds(hinfo, &physyellow, &physred, &swapyellow, &swapred, &actyellow, &actred);
 
-	memphyspct = (100 * memphysused) / memphystotal;
+	memphyspct = (memphystotal > 0) ? ((100 * memphysused) / memphystotal) : 0;
 	if (memphyspct > physyellow) physcolor = COL_YELLOW;
 	if (memphyspct > physred)    physcolor = COL_RED;
 
-	memswappct = (100 * memswapused) / memswaptotal;
+	memswappct = (memswaptotal > 0) ? ((100 * memswapused) / memswaptotal) : 0;
 	if (memswappct > swapyellow) swapcolor = COL_YELLOW;
 	if (memswappct > swapred)    swapcolor = COL_RED;
 
 	if (memactused != -1) {
-		memactpct = (100 * memactused) / memphystotal;
+		memactpct = (memphystotal > 0) ? ((100 * memactused) / memphystotal) : 0;
 		if (memactpct  > actyellow)  actcolor  = COL_YELLOW;
 		if (memactpct  > actred)     actcolor  = COL_RED;
 	}
@@ -384,6 +384,11 @@ void unix_memory_report(char *hostname, namelist_t *hinfo, char *fromline, char 
 	if ((physcolor == COL_RED) || (swapcolor == COL_RED) || (actcolor == COL_RED)) {
 		memorycolor = COL_RED;
 		memorysummary = "CRITICAL";
+	}
+
+	if ((memphystotal == 0) && (memorycolor == COL_GREEN)) {
+		memorycolor = COL_YELLOW;
+		memorysummary = "detection FAILED"
 	}
 
 	init_status(memorycolor);
