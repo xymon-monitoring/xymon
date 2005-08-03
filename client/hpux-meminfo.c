@@ -9,7 +9,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hpux-meminfo.c,v 1.2 2005-07-24 11:32:51 henrik Exp $";
+static char rcsid[] = "$Id: hpux-meminfo.c,v 1.3 2005-08-03 16:26:52 henrik Exp $";
 
 #include <sys/pstat.h>
 #include <stdio.h>
@@ -22,7 +22,7 @@ main(int argc, char *argv[])
 	unsigned long kpages;
 
 	pstat_getstatic(&sbuf, sizeof(sbuf), 1, 0);
-	pstat_getdynamic(&dbuf, sizeof(sbuf), 1, 0);
+	pstat_getdynamic(&dbuf, sizeof(dbuf), 1, 0);
 	pgsizekb = sbuf.page_size / 1024;
 	kpages = dbuf.psd_free / 1024;
 
