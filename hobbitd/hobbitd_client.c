@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.24 2005-08-03 16:24:08 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.25 2005-08-03 18:52:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -388,7 +388,7 @@ void unix_memory_report(char *hostname, namelist_t *hinfo, char *fromline, char 
 
 	if ((memphystotal == 0) && (memorycolor == COL_GREEN)) {
 		memorycolor = COL_YELLOW;
-		memorysummary = "detection FAILED"
+		memorysummary = "detection FAILED";
 	}
 
 	init_status(memorycolor);
@@ -587,6 +587,7 @@ void unix_vmstat_report(char *hostname, namelist_t *hinfo, char *osid, char *vms
 #include "client/solaris.c"
 #include "client/hpux.c"
 #include "client/osf.c"
+#include "client/aix.c"
 
 static volatile int reloadconfig = 0;
 
@@ -823,6 +824,9 @@ int main(int argc, char *argv[])
 				break;
 
 			  case OS_AIX: 
+				handle_aix_client(hostname, os, hinfo, sender, timestamp, restofmsg);
+				break;
+
 			  case OS_IRIX:
 			  case OS_WIN32: 
 			  case OS_SNMP: 
