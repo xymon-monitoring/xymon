@@ -52,27 +52,80 @@ You should arrange for your boot-time scripts to run this
 command at startup.
 
 
-Configuration
-=============
+Client configuration
+====================
 NB: Thresholds for the CPU load, disk- and memory-utilization,
 which processes to monitor etc. is done on the Hobbit SERVER,
 not on the client.
 
-The client installation uses two configuration files kept
-in the ~/client/etc/ directory:
+Hostname detection
+------------------
+The client reports to Hobbit using the hostname taken from
+the "uname -n" command output. Whether this provides a fully
+qualified DNS name (myserver.foo.com) or a simple hostname
+(myserver) varies a lot. If your client gets it wrong, you
+can change the hostname to the one used in Hobbit by setting 
+the MACHINEDOTS setting the the client/etc/hobbitclient.cfg
+file. Alternatively, you can add a "CLIENT:hostname" tag
+for this host's entry in the bb-hosts file on the Hobbit
+server, to define the hostname used by the client as an
+alias.
 
-	- clientlaunch.cfg configures the client copy
-	  of "hobbitlaunch". If you need to run extension
-	  scripts for your client, you can add them to
-	  this file. The environment variables commonly 
-	  used by Big Brother-based extensions are made
-	  available by hobbitlaunch for the scripts.
+OS detection on Linux systems
+-----------------------------
+The client normally determines the operating system auto-
+matically from the "uname -s" output. This results in all
+Linux systems reporting as "Linux" - which causes the
+vmstat graphs to fail for certain types of systems:
 
-	- hobbitclient.cfg defines environment variables
-	  for the tools run by hobbitlaunch. You can add
-	  or customize the environment for the client and
-	  extensions by changing this file.
+	- Red Hat Enterprise Linux
+	  Should report "rhel3" instead.
+
+	- Systems running Linux kernels 2.2.x (Debian Woody)
+	  Should report "linux22" instead.
+
+To override the auto-detected operating system, set the
+BBOSTYPE setting in the client/etc/hobbitclient.cfg
+file.
+
+Extension scripts
+-----------------
+The file client/etc/clientlaunch.cfg configures the "hobbitlaunch"
+used to run the client scripts. If you need to run extension
+scripts for your client, you can add them to this file. The 
+environment variables commonly used by Big Brother-based extensions 
+are made available by hobbitlaunch for the scripts.
+
+Each script should have a separate section in the file, like the
+default one that runs the core client:
+
+[myextension]
+	ENVFILE /usr/lib/hobbit/client/etc/hobbitclient.cfg
+	CMD /usr/lib/hobbit/client/ext/myscript.sh
+	INTERVAL 5m
+	LOGFILE /usr/lib/hobbit/client/logs/myscript.log
+
+See the hobbitlaunch.cfg(5) man-page for a full description 
+of this file.
 
 
-Henrik Stoerner, 2005-07-24.
+Installing on multiple systems
+==============================
+After building and installing the client on one system, you can
+copy the client installation to other systems. You need only copy
+the directory structure with the "client" directory. 
+
+If you maintain the entire installation diretory tree - e.g. your
+build system installed the client in /usr/local/hobbit/client/, and
+this is the directory used on all of the other boxes - then no
+configuration is needed when you copy the client to the other systems.
+
+If you move the installation directory to another location - e.g.
+your build system installed the client in /usr/local/hobbit/client/,
+but on some boxes you'll want the client in /home/hobbit/client - 
+then you'll need to modify the client/etc/clientlaunch.cfg and 
+client/etc/hobbitclient.cfg files to reflect the new directory.
+
+
+Henrik Stoerner, 2005-Aug-03.
 
