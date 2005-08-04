@@ -12,7 +12,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: runclient.sh,v 1.3 2005-08-03 22:07:33 henrik Exp $
+# $Id: runclient.sh,v 1.4 2005-08-04 12:16:27 henrik Exp $
 
 # Default settings for this client
 MACHINEDOTS="`uname -n`"			# This systems hostname
@@ -43,14 +43,27 @@ do
 	shift
 done
 
-BASEDIR="`dirname $0`"
+OLDDIR="`pwd`"
+cd "`dirname $0`"
+HOBBITCLIENTHOME="`pwd`"
+cd "$OLDDIR"
+
 MACHINE="`echo $MACHINEDOTS | sed -e's/\./,/g'`"
 
-export MACHINE MACHINEDOTS BBOSTYPE
+export MACHINE MACHINEDOTS BBOSTYPE HOBBITCLIENTHOME
 
 case "$CMD" in
   "start")
-	$BASEDIR/bin/hobbitlaunch --config=$BASEDIR/etc/clientlaunch.cfg --log=$BASEDIR/logs/clientlaunch.log --pidfile=$BASEDIR/logs/clientlaunch.pid
+  	if test ! -w $HOBBITCLIENTHOME/logs; then
+		echo "Cannot write to the $HOBBITCLIENTHOME/logs directory"
+		exit 1
+	fi
+  	if test ! -w $HOBBITCLIENTHOME/tmp; then
+		echo "Cannot write to the $HOBBITCLIENTHOME/tmp directory"
+		exit 1
+	fi
+
+	$HOBBITCLIENTHOME/bin/hobbitlaunch --config=$HOBBITCLIENTHOME/etc/clientlaunch.cfg --log=$HOBBITCLIENTHOME/logs/clientlaunch.log --pidfile=$HOBBITCLIENTHOME/logs/clientlaunch.pid
 	if test $? -eq 0; then
 		echo "Hobbit client for $BBOSTYPE started on $MACHINEDOTS"
 	else
@@ -59,8 +72,8 @@ case "$CMD" in
 	;;
 
   "stop")
-  	if test -f $BASEDIR/logs/clientlaunch.pid; then
-		kill `cat $BASEDIR/logs/clientlaunch.pid`
+  	if test -f $HOBBITCLIENTHOME/logs/clientlaunch.pid; then
+		kill `cat $HOBBITCLIENTHOME/logs/clientlaunch.pid`
 		echo "Hobbit client stopped"
 	else
 		echo "Hobbit client not running"
