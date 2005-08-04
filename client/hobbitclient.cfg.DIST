@@ -1,14 +1,7 @@
 # Environment settings for the Hobbit client.
 
-# The hostname used for client reports is normally found automatically
-# from the "uname -n" output. If this does not match what you have in
-# the bb-hosts file for this host, you can change the name that the
-# client reports here in the MACHINEDOTS setting.
-
-# MACHINEDOTS="localhost"
-
 # You normally dont need to modify anything below here
-BBHOME="@BBHOME@"               # Directory for the Hobbit client files
+BBHOME="$HOBBITCLIENTHOME"      # Directory for the Hobbit client files
 BBDISP="@BBHOSTIP@"             # IP address of the Hobbit server
 BBDISPLAYS=""                   # IP of multiple Hobbit servers. BBDISP must be "0.0.0.0".
 BBPORT="1984"                   # Portnumber where hobbitd listens
