@@ -2,6 +2,8 @@
 #
 BBSERVERROOT="@BBTOPDIR@"		# Where Hobbit is installed - holds the server and bbvar sub-dirs.
 BBSERVERLOGS="@BBLOGDIR@"		# Directory for server logs. The hobbit user must have write-access here.
+HOBBITCLIENTHOME="@BBTOPDIR@/client"    # BBHOME directory for the client
+
 
 BBSERVERHOSTNAME="@BBHOSTNAME@"		# The hostname of your server
 BBSERVERIP="@BBHOSTIP@"			# The IP-address of your server. Use the real one, not 127.0.0.1 .
@@ -91,7 +93,6 @@ BBHTML="$BBWWW/html"				# HTML status logs go here (hobbitd_filestore --status -
 BBNOTES="$BBWWW/notes"				# For notes-files (hobbitd_filestore --notes)
 BBREP="$BBWWW/rep"				# Top-level directory for Hobbit reports.
 BBSNAP="$BBWWW/snap"				# Top-level directory for Hobbit snapshots.
-
 
 # For the hobbitd_history module
 BBALLHISTLOG="TRUE"				# Save a common log of all events (used for the bb2 webpage)
