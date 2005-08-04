@@ -93,7 +93,7 @@ chkconfig --del hobbit
 
 
 %files
-%attr(-, root, root) %doc README Changes* COPYING CREDITS
+%attr(-, root, root) %doc README README.CLIENT Changes* COPYING CREDITS
 %attr(644, root, root) %doc /usr/share/man/man*/*
 %attr(644, root, root) %config /etc/hobbit/*
 %attr(755, root, root) %dir /etc/hobbit 
@@ -109,4 +109,6 @@ chkconfig --del hobbit
 %attr(644, root, root) %config /var/lib/hobbit/www/menu/menu_items.js
 %attr(644, root, root) %config /var/lib/hobbit/www/menu/menu_tpl.js
 %attr(644, root, root) %config /var/lib/hobbit/www/menu/menu.css
+%attr(755, hobbit, hobbit) %dir /usr/lib/hobbit/client/logs
+%attr(755, hobbit, hobbit) %dir /usr/lib/hobbit/client/tmp
 
