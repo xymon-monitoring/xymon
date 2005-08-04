@@ -19,20 +19,26 @@ ifeq ($(OSTYPE),darwin)
 	EXTRATOOLS=darwin-meminfo
 endif
 
-all: hobbitlaunch bb hobbitclient.cfg clientlaunch.cfg hobbitclient.cfg $(EXTRATOOLS)
+all: hobbitlaunch bb hobbitclient.cfg $(EXTRATOOLS)
 
 hobbitclient.cfg: hobbitclient.cfg.DIST
-	cat hobbitclient.cfg.DIST | sed -e's!@BBHOME@!$(BBHOME)!g' | sed -e's!@BBHOSTIP@!$(BBHOSTIP)!g' >hobbitclient.cfg
+	cat hobbitclient.cfg.DIST | sed -e's!@BBHOSTIP@!$(BBHOSTIP)!g' >hobbitclient.cfg
 	../build/bb-commands.sh >>hobbitclient.cfg
-
-clientlaunch.cfg: clientlaunch.cfg.DIST
-	cat clientlaunch.cfg.DIST | sed -e's!@BBHOME@!$(BBHOME)!g' >clientlaunch.cfg
 
 hpux-meminfo: hpux-meminfo.c
 	$(CC) -o $@ hpux-meminfo.c
 
-bsd-meminfo: bsd-meminfo.c
-	$(CC) -o $@ bsd-meminfo.c
+freebsd-meminfo: freebsd-meminfo.c
+	$(CC) -o $@ freebsd-meminfo.c
+
+openbsd-meminfo: openbsd-meminfo.c
+	$(CC) -o $@ openbsd-meminfo.c
+
+netbsd-meminfo: netbsd-meminfo.c
+	$(CC) -o $@ netbsd-meminfo.c
+
+darwin-meminfo: darwin-meminfo.c
+	$(CC) -o $@ darwin-meminfo.c
 
 install:
 	if test ! -d $(INSTALLROOT)$(BBHOME)     ; then mkdir -p $(INSTALLROOT)$(BBHOME)     ; fi
@@ -40,12 +46,15 @@ install:
 	if test ! -d $(INSTALLROOT)$(BBHOME)/etc ; then mkdir -p $(INSTALLROOT)$(BBHOME)/etc ; fi
 	if test ! -d $(INSTALLROOT)$(BBHOME)/tmp ; then mkdir -p $(INSTALLROOT)$(BBHOME)/tmp ; fi
 	if test ! -d $(INSTALLROOT)$(BBHOME)/logs; then mkdir -p $(INSTALLROOT)$(BBHOME)/logs; fi
+	if test ! -d $(INSTALLROOT)$(BBHOME)/ext ; then mkdir -p $(INSTALLROOT)$(BBHOME)/ext ; fi
 	cp -fp runclient.sh $(INSTALLROOT)$(BBHOME)
 	cp -fp hobbitlaunch bb hobbitclient*.sh $(EXTRATOOLS) $(INSTALLROOT)$(BBHOME)/bin/
 	../build/merge-sects clientlaunch.cfg $(INSTALLROOT)$(BBHOME)/etc/clientlaunch.cfg
 	../build/merge-lines hobbitclient.cfg $(INSTALLROOT)$(BBHOME)/etc/hobbitclient.cfg
+ifndef PKGBUILD
 	chown -R $(BBUSER) $(INSTALLROOT)$(BBHOME)
+endif
 
 clean:
-	rm -f bb hobbitlaunch bb clientlaunch.cfg hobbitclient.cfg *-meminfo *~
+	rm -f hobbitlaunch bb hobbitclient.cfg $(EXTRATOOLS) *~
 
