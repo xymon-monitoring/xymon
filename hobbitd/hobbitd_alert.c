@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.62 2005-07-31 19:53:49 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.63 2005-08-06 14:35:47 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -58,6 +58,7 @@ static char rcsid[] = "$Id: hobbitd_alert.c,v 1.62 2005-07-31 19:53:49 henrik Ex
 #include "hobbitd_alert.h"
 
 static volatile int running = 1;
+static volatile time_t nextcheckpoint = 0;
 
 htnames_t *hostnames = NULL;
 htnames_t *testnames = NULL;
@@ -103,6 +104,10 @@ void sig_handler(int signum)
 {
 	switch (signum) {
 	  case SIGCHLD:
+		  break;
+
+	  case SIGUSR1:
+		  nextcheckpoint = 0;
 		  break;
 
 	  default:
@@ -213,7 +218,6 @@ int main(int argc, char *argv[])
 	char *configfn = NULL;
 	char *checkfn = NULL;
 	int checkpointinterval = 900;
-	time_t nextcheckpoint = 0;
 	char acklogfn[PATH_MAX];
 	FILE *acklogfd = NULL;
 	char notiflogfn[PATH_MAX];
@@ -221,6 +225,7 @@ int main(int argc, char *argv[])
 	char *tracefn = NULL;
 	struct sigaction sa;
 	int configchanged;
+	time_t lastxmit = 0;
 
 	MEMDEFINE(acklogfn);
 	MEMDEFINE(notiflogfn);
@@ -325,8 +330,9 @@ int main(int argc, char *argv[])
 	sa.sa_handler = sig_handler;
 	sigaction(SIGPIPE, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
-	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGINT,  &sa, NULL);
 	sigaction(SIGCHLD, &sa, NULL);
+	sigaction(SIGUSR1, &sa, NULL);
 
 	if (xgetenv("BBSERVERLOGS")) {
 		sprintf(acklogfn, "%s/acknowledge.log", xgetenv("BBSERVERLOGS"));
@@ -363,9 +369,10 @@ int main(int argc, char *argv[])
 		activealerts_t *awalk, *khead, *tmp;
 		int childstat;
 
-		if (checkfn && (time(NULL) > nextcheckpoint)) {
+		now = time(NULL);
+		if (checkfn && (now > nextcheckpoint)) {
 			dprintf("Saving checkpoint\n");
-			nextcheckpoint = time(NULL)+checkpointinterval;
+			nextcheckpoint = now + checkpointinterval;
 			save_checkpoint(checkfn);
 
 			if (acklogfd) acklogfd = freopen(acklogfn, "a", acklogfd);
@@ -593,6 +600,15 @@ int main(int argc, char *argv[])
 			/* Timeout */
 		}
 
+		/*
+		 * When a burst of alerts happen, we get lots of alert messages
+		 * coming in quickly. So lets handle them in bunches and only 
+		 * do the full alert handling once every 10 secs - that lets us
+		 * combine a bunch of alerts into one transmission process.
+		 */
+		if (now < (lastxmit+10)) continue;
+		lastxmit = now;
+
 		/* 
 		 * Loop through the activealerts list and see if anything is pending.
 		 * This is an optimization, we could just as well just fork off the
@@ -607,10 +623,10 @@ int main(int argc, char *argv[])
 			switch (awalk->state) {
 			  case A_NORECIP:
 				if (!configchanged) break;
-				else {
-					awalk->state = A_PAGING;
-					clear_interval(awalk);
-				}
+
+				/* The configuration has changed - switch NORECIP -> PAGING */
+				awalk->state = A_PAGING;
+				clear_interval(awalk);
 				/* Fall through */
 
 			  case A_PAGING:
@@ -679,51 +695,33 @@ int main(int argc, char *argv[])
 				/* Child does not continue */
 				exit(0);
 			}
-			else if (childpid > 0) {
-				/* The parent updates the next-alert timestamps */
-				for (awalk = ahead; (awalk); awalk = awalk->next) {
-					switch (awalk->state) {
-					  case A_PAGING:
-						if (awalk->nextalerttime <= now) {
-							awalk->nextalerttime = next_alert(awalk);
-						}
-						break;
-
-					  case A_ACKED:
-						/* Still cannot get here except if ack is still valid */
-						break;
-
-					  case A_RECOVERED:
-					  case A_NOTIFY:
-						awalk->state = A_DEAD;
-						break;
-
-					  case A_NORECIP:
-					  case A_DEAD:
-						break;
-					}
-				}
-			}
-			else {
+			else if (childpid < 0) {
 				errprintf("Fork failed, cannot send alerts: %s\n", strerror(errno));
 			}
 		}
 
+		/* Update the state flag and the next-alert timestamp */
 		for (awalk = ahead; (awalk); awalk = awalk->next) {
 			switch (awalk->state) {
-			  case A_ACKED: 
-				  break;
+			  case A_PAGING:
+				if (awalk->nextalerttime <= now) awalk->nextalerttime = next_alert(awalk);
+				break;
 
 			  case A_NORECIP:
-			  case A_PAGING: 
-				  break;
+				break;
 
-			  case A_RECOVERED: 
-			  case A_NOTIFY: 
-			  case A_DEAD: 
-				  cleanup_alert(awalk); 
-				  awalk->state = A_DEAD; 
-				  break;
+			  case A_ACKED:
+				/* Still cannot get here except if ack is still valid */
+				break;
+
+			  case A_RECOVERED:
+			  case A_NOTIFY:
+				awalk->state = A_DEAD;
+				/* Fall through */
+
+			  case A_DEAD:
+				cleanup_alert(awalk); 
+				break;
 			}
 		}
 
