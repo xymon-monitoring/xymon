@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: acklog.c,v 1.17 2005-05-07 15:03:32 henrik Exp $";
+static char rcsid[] = "$Id: acklog.c,v 1.18 2005-08-06 21:00:23 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -80,6 +80,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 		char ackedby[MAX_LINE_LEN], hosttest[MAX_LINE_LEN], color[10], ackmsg[MAX_LINE_LEN];
 		char ackfn[PATH_MAX];
 		char *testname;
+		namelist_t *hinfo;
 		int ok;
 
 		if (atol(l) >= cutoff) {
@@ -139,7 +140,9 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 			if (ok && (acks[num].acktime < cutoff)) ok = 0;
 
 			/* Unknown host ? */
-			if (ok && (find_host(hosttest) == NULL)) ok = 0;
+			hinfo = hostinfo(hosttest);
+			if (!hinfo) ok = 0;
+			if (hinfo && bbh_item(hinfo, BBH_FLAG_NOBB2)) ok = 0;
 
 			if (ok) {
 				char *ackerp;
