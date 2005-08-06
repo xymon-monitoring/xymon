@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.76 2005-08-06 14:37:30 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.77 2005-08-06 22:09:03 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -1546,6 +1546,8 @@ void cleanup_alert(activealerts_t *alert)
 			rptwalk = rptwalk->next;
 		}
 	}
+
+	xfree(id);
 }
 
 void clear_interval(activealerts_t *alert)
