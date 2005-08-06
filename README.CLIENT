@@ -89,7 +89,9 @@ The file client/etc/clientlaunch.cfg configures the "hobbitlaunch"
 used to run the client scripts. If you need to run extension
 scripts for your client, you can add them to this file. The 
 environment variables commonly used by Big Brother-based extensions 
-are made available by hobbitlaunch for the scripts.
+are made available by hobbitlaunch for the scripts, so in most
+cases extensions written for the Big Brother client will work 
+without modifications on Hobbit.
 
 Each script should have a separate section in the file, like the
 default one that runs the core client:
@@ -110,17 +112,12 @@ After building and installing the client on one system, you can
 copy the client installation to other systems. You need only copy
 the directory structure with the "client" directory. 
 
-If you maintain the entire installation diretory tree - e.g. your
-build system installed the client in /usr/local/hobbit/client/, and
-this is the directory used on all of the other boxes - then no
-configuration is needed when you copy the client to the other systems.
-
-If you move the installation directory to another location - e.g.
-your build system installed the client in /usr/local/hobbit/client/,
-but on some boxes you'll want the client in /home/hobbit/client - 
-then you'll need to modify the client/etc/clientlaunch.cfg and 
-client/etc/hobbitclient.cfg files to reflect the new directory.
+The client does not have any hardcoded file- or directory-paths
+embedded in it, so you can put the client files anywhere you
+like, as long as you preserve the directory structure below the
+"client" directory.
 
 
-Henrik Stoerner, 2005-Aug-04.
+
+Henrik Stoerner, 2005-Aug-06.
 
