@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.75 2005-07-24 07:11:31 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.76 2005-08-06 14:37:30 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -809,14 +809,14 @@ void start_alerts(void)
 	return;
 }
 
-static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *rulecrit, int *anymatch)
+static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *rulecrit, int *anymatch, time_t *nexttime)
 {
 	/*
 	 * See if the "crit" matches the "alert".
 	 * Match on pagespec, hostspec, svcspec, colors, timespec, minduration, maxduration, sendrecovered
 	 */
 
-	time_t duration;
+	time_t duration = (time(NULL) - alert->eventstart);
 	int result, cfid = 0;
 	char *pgname = alert->location->name;
 	char *cfline = NULL;
@@ -831,6 +831,14 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 
 	traceprintf("Matching host:service:page '%s:%s:%s' against rule line %d\n",
 			alert->hostname->name, alert->testname->name, alert->location->name, cfid);
+
+	if (alert->state == A_PAGING) {
+		/* Check max-duration now - it's fast and easy. */
+		if (crit && crit->maxduration && (duration > crit->maxduration)) { 
+			traceprintf("Failed '%s' (max. duration %d>%d)\n", cfline, duration, crit->maxduration);
+			if (!printmode) return 0; 
+		}
+	}
 
 	if (crit && crit->pagespec && !namematch(pgname, crit->pagespec, crit->pagespecre)) { 
 		traceprintf("Failed '%s' (pagename not in include list)\n", cfline);
@@ -889,14 +897,13 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	 * Not on recovery- or notify-messages.
 	 */
 	if (alert->state == A_PAGING) {
-		duration = (time(NULL) - alert->eventstart);
 		if (crit && crit->minduration && (duration < crit->minduration)) { 
-			traceprintf("Failed '%s' (min. duration %d<%d)\n", cfline, duration, crit->minduration);
-			if (!printmode) return 0; 
-		}
+			if (nexttime) {
+				time_t mynext = alert->eventstart + crit->minduration;
 
-		if (crit && crit->maxduration && (duration > crit->maxduration)) { 
-			traceprintf("Failed '%s' (max. duration %d>%d)\n", cfline, duration, crit->maxduration);
+				if ((*nexttime == -1) || (*nexttime > mynext)) *nexttime = mynext;
+			}
+			traceprintf("Failed '%s' (min. duration %d<%d)\n", cfline, duration, crit->minduration);
 			if (!printmode) return 0; 
 		}
 
@@ -948,7 +955,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	return result;
 }
 
-static recip_t *next_recipient(activealerts_t *alert, int *first, int *anymatch)
+static recip_t *next_recipient(activealerts_t *alert, int *first, int *anymatch, time_t *nexttime)
 {
 	static rule_t *rulewalk = NULL;
 	static recip_t *recipwalk = NULL;
@@ -960,7 +967,7 @@ static recip_t *next_recipient(activealerts_t *alert, int *first, int *anymatch)
 			/* Start at beginning of rules-list and find the first matching rule. */
 			*first = 0;
 			rulewalk = rulehead;
-			while (rulewalk && !criteriamatch(alert, rulewalk->criteria, NULL, NULL)) rulewalk = rulewalk->next;
+			while (rulewalk && !criteriamatch(alert, rulewalk->criteria, NULL, NULL, NULL)) rulewalk = rulewalk->next;
 			if (rulewalk) {
 				/* Point recipwalk at the list of possible candidates */
 				dprintf("Found a first matching rule\n");
@@ -981,7 +988,7 @@ static recip_t *next_recipient(activealerts_t *alert, int *first, int *anymatch)
 				/* End of recipients in current rule. Go to the next matching rule */
 				do {
 					rulewalk = rulewalk->next;
-				} while (rulewalk && !criteriamatch(alert, rulewalk->criteria, NULL, NULL));
+				} while (rulewalk && !criteriamatch(alert, rulewalk->criteria, NULL, NULL, NULL));
 
 				if (rulewalk) {
 					/* Point recipwalk at the list of possible candidates */
@@ -995,7 +1002,7 @@ static recip_t *next_recipient(activealerts_t *alert, int *first, int *anymatch)
 				}
 			}
 		}
-	} while (rulewalk && recipwalk && !criteriamatch(alert, recipwalk->criteria, rulewalk->criteria, anymatch));
+	} while (rulewalk && recipwalk && !criteriamatch(alert, recipwalk->criteria, rulewalk->criteria, anymatch, nexttime));
 
 	stoprulefound = (recipwalk && recipwalk->stoprule);
 
@@ -1199,7 +1206,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 
 	stoprulefound = 0;
 
-	while (!stoprulefound && ((recip = next_recipient(alert, &first, NULL)) != NULL)) {
+	while (!stoprulefound && ((recip = next_recipient(alert, &first, NULL, NULL)) != NULL)) {
 		/* If this is an "UNMATCHED" rule, ignore it if we have already sent out some alert */
 		if (recip->unmatchedonly && (alertcount != 0)) {
 			traceprintf("Recipient '%s' dropped, not unmatched (count=%d)\n", recip->recipient, alertcount);
@@ -1455,9 +1462,10 @@ time_t next_alert(activealerts_t *alert)
 	time_t nexttime = now+(30*86400);	/* 30 days from now */
 	recip_t *recip;
 	repeat_t *rpt;
+	time_t r_next = -1;
 
 	stoprulefound = 0;
-	while (!stoprulefound && ((recip = next_recipient(alert, &first, NULL)) != NULL)) {
+	while (!stoprulefound && ((recip = next_recipient(alert, &first, NULL, &r_next)) != NULL)) {
 		found = 1;
 		/* 
 		 * This runs in the parent hobbitd_alert proces, so we must create
@@ -1467,6 +1475,9 @@ time_t next_alert(activealerts_t *alert)
 		if (rpt) {
 			if (rpt->nextalert <= now) rpt->nextalert = (now + recip->interval);
 			if (rpt->nextalert < nexttime) nexttime = rpt->nextalert;
+		}
+		else if (r_next != -1) {
+			if (r_next < nexttime) nexttime = r_next;
 		}
 		else {
 			/* 
@@ -1480,11 +1491,21 @@ time_t next_alert(activealerts_t *alert)
 		}
 	}
 
-	/*
-	 * If no current recipients, then try again real soon - we're probably
-	 * just waiting for a minimum duration to trigger.
-	 */
-	if (!found) nexttime = now + 60;
+	if (r_next != -1) {
+		/*
+		 * Waiting for a minimum duration to trigger
+		 */
+		if (r_next < nexttime) nexttime = r_next;
+	}
+	else if (!found) {
+		/*
+		 * There IS a potential recipient (or we would not be here).
+		 * And it's not a DURATION waiting to happen.
+		 * Probably waiting for a TIME restriction to trigger, so try 
+		 * again soon.
+		 */
+		nexttime = now + 60;
+	}
 
 	return nexttime;
 }
@@ -1535,7 +1556,7 @@ void clear_interval(activealerts_t *alert)
 
 	alert->nextalerttime = 0;
 	stoprulefound = 0;
-	while (!stoprulefound && ((recip = next_recipient(alert, &first, NULL)) != NULL)) {
+	while (!stoprulefound && ((recip = next_recipient(alert, &first, NULL, NULL)) != NULL)) {
 		rpt = find_repeatinfo(alert, recip, 0);
 		if (rpt) {
 			dprintf("Cleared repeat interval for %s\n", rpt->recipid);
@@ -1548,7 +1569,7 @@ int have_recipient(activealerts_t *alert, int *anymatch)
 {
 	int first = 1;
 
-	return (next_recipient(alert, &first, anymatch) != NULL);
+	return (next_recipient(alert, &first, anymatch, NULL) != NULL);
 }
 
 void save_state(char *filename)
@@ -1623,7 +1644,7 @@ void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
 
 	fontspec = normalfont;
 	stoprulefound = 0;
-	while ((recip = next_recipient(alert, &first, NULL)) != NULL) {
+	while ((recip = next_recipient(alert, &first, NULL, NULL)) != NULL) {
 		int mindur = 0, maxdur = 0;
 		char *timespec = NULL;
 		int colors = defaultcolors;
