@@ -207,6 +207,7 @@ typedef struct hostlist_t {
 typedef struct group_t {
 	char	*title;
 	char	*onlycols;
+	char	*exceptcols;
 	struct host_t	*hosts;
 	char	*pretitle;
 	struct group_t	*next;

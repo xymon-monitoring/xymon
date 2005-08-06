@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.29 2005-07-14 08:12:25 henrik Exp $";
+static char rcsid[] = "$Id: process.c,v 1.30 2005-08-06 21:28:24 henrik Exp $";
 
 #include <limits.h>
 #include <string.h>
@@ -100,12 +100,12 @@ void calc_pagecolors(bbgen_page_t *phead)
 		/* Then adjust with the color of hosts in immediate groups */
 		for (g = toppage->groups; (g); g = g->next) {
 			for (h = g->hosts; (h); h = h->next) {
-				if (g->onlycols == NULL) {
-					/* No group-only directive - use host color */
+				if ((g->onlycols == NULL) && (g->exceptcols == NULL)) {
+					/* No group-only or group-except directives - use host color */
 					if (h->color > color) color = h->color;
 					oldage &= h->oldage;
 				}
-				else {
+				else if (g->onlycols) {
 					/* This is a group-only directive. Color must be
 					 * based on the tests included in the group-only
 					 * directive, NOT all tests present for the host.
@@ -118,6 +118,26 @@ void calc_pagecolors(bbgen_page_t *phead)
 						if ( e->propagate && 
 						     (e->color > color) &&
 						     wantedcolumn(e->column->name, g->onlycols) )
+							color = e->color;
+							oldage &= e->oldage;
+					}
+
+					/* Blue and clear is not propagated upwards */
+					if ((color == COL_CLEAR) || (color == COL_BLUE)) color = COL_GREEN;
+				}
+				else if (g->exceptcols) {
+					/* This is a group-except directive. Color must be
+					 * based on the tests NOT included in the group-except
+					 * directive, NOT all tests present for the host.
+					 * So we need to re-calculate host color from only
+					 * the selected tests.
+					 */
+					entry_t *e;
+
+					for (e = h->entries; (e); e = e->next) {
+						if ( e->propagate && 
+						     (e->color > color) &&
+						     !wantedcolumn(e->column->name, g->exceptcols) )
 							color = e->color;
 							oldage &= e->oldage;
 					}

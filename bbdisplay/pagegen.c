@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.149 2005-08-03 13:38:21 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.150 2005-08-06 21:28:24 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -78,7 +78,7 @@ void select_headers_and_footers(char *prefix)
 }
 
 
-int interesting_column(int pagetype, int color, int alert, bbgen_col_t *column, char *onlycols)
+int interesting_column(int pagetype, int color, int alert, bbgen_col_t *column, char *onlycols, char *exceptcols)
 {
 	/*
 	 * Decides if a given column is to be included on a page.
@@ -97,6 +97,17 @@ int interesting_column(int pagetype, int color, int alert, bbgen_col_t *column, 
 			search = (char *) malloc(strlen(column->name)+3);
 			sprintf(search, "|%s|", column->name);
 			result = (strstr(onlycols, search) != NULL);
+			xfree(search);
+		}
+
+		if (exceptcols) {
+			/* exceptcols explicitly list the columns to exclude (for bb page only) */
+			char *search;
+
+			/* loaddata::init_group guarantees that exceptcols start and end with a '|' */
+			search = (char *) malloc(strlen(column->name)+3);
+			sprintf(search, "|%s|", column->name);
+			result = (strstr(exceptcols, search) == NULL);
 			xfree(search);
 		}
 
@@ -146,7 +157,7 @@ int interesting_column(int pagetype, int color, int alert, bbgen_col_t *column, 
 	return 0;
 }
 
-col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
+col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols, char *exceptcols)
 {
 	/*
 	 * Build a list of all the columns that are in use by
@@ -219,7 +230,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols)
 		 */
 
 		for (e = h->entries; (e); e = e->next) {
-			if (interesting_column(pagetype, e->color, e->alert, e->column, onlycols)) {
+			if (interesting_column(pagetype, e->color, e->alert, e->column, onlycols, exceptcols)) {
 				/* See where e->column should go in list */
 				collist_walk = head; 
 				while ( (collist_walk->next && 
@@ -314,7 +325,7 @@ static char *nameandcomment(host_t *host)
 	return result;
 }
 
-void do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char *grouptitle, int pagetype, char *pagepath)
+void do_hosts(host_t *head, char *onlycols, char *exceptcols, FILE *output, FILE *rssoutput, char *grouptitle, int pagetype, char *pagepath)
 {
 	/*
 	 * This routine outputs the host part of a page or a group.
@@ -352,7 +363,7 @@ void do_hosts(host_t *head, char *onlycols, FILE *output, FILE *rssoutput, char 
 
 	if (maxbanksize == 0) {
 		/* No modembanks - normal hostlist with columns and stuff */
-		groupcols = gen_column_list(head, pagetype, onlycols);
+		groupcols = gen_column_list(head, pagetype, onlycols, exceptcols);
 		for (columncount=0, gc=groupcols; (gc); gc = gc->next, columncount++) ;
 	}
 	else {
@@ -653,7 +664,7 @@ void do_groups(group_t *head, FILE *output, FILE *rssoutput, char *pagepath)
 			fprintf(output, "</TABLE></CENTER>\n");
 		}
 
-		do_hosts(g->hosts, g->onlycols, output, rssoutput, g->title, PAGE_BB, pagepath);
+		do_hosts(g->hosts, g->onlycols, g->exceptcols, output, rssoutput, g->title, PAGE_BB, pagepath);
 	}
 	fprintf(output, "\n</CENTER>\n");
 }
@@ -743,7 +754,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 	fprintf(output, "<CENTER>\n");
 	fprintf(output, "<TABLE SUMMARY=\"Summary Block\" BORDER=0>\n");
 	fprintf(output, "<TR><TD>\n");
-	do_hosts(sumhosts, NULL, output, NULL, xgetenv("MKBBREMOTE"), 0, NULL);
+	do_hosts(sumhosts, NULL, NULL, output, NULL, xgetenv("MKBBREMOTE"), 0, NULL);
 	fprintf(output, "</TD></TR>\n");
 	fprintf(output, "</TABLE>\n");
 	fprintf(output, "</CENTER>\n");
@@ -960,7 +971,7 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 	}
 
 	if (!embedded && !hostsbeforepages && page->subpages) do_page_subpages(output, page->subpages, pagepath);
-	do_hosts(page->hosts, NULL, output, rssoutput, "", PAGE_BB, pagepath);
+	do_hosts(page->hosts, NULL, NULL, output, rssoutput, "", PAGE_BB, pagepath);
 	do_groups(page->groups, output, rssoutput, pagepath);
 	if (!embedded && hostsbeforepages && page->subpages) do_page_subpages(output, page->subpages, pagepath);
 
@@ -1071,7 +1082,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 		int	useit = 0;
 
 		/*
-		 * Why dont we use the interesting_column() * routine here ? 
+		 * Why dont we use the interesting_column() routine here ? 
 		 *
 		 * Well, because what we are interested in for now is
 		 * to determine if this HOST should be included on the page.
@@ -1195,7 +1206,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 	fprintf(output, "\n<A NAME=begindata>&nbsp;</A> \n<A NAME=\"hosts-blk\">&nbsp;</A>\n");
 
 	if (bb2page.hosts) {
-		do_hosts(bb2page.hosts, NULL, output, rssoutput, "", summarytype, NULL);
+		do_hosts(bb2page.hosts, NULL, NULL, output, rssoutput, "", summarytype, NULL);
 	}
 	else {
 		/* "All Monitored Systems OK */

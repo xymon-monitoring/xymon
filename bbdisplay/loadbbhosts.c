@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.28 2005-07-24 12:00:07 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.29 2005-08-06 21:28:24 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -141,7 +141,7 @@ bbgen_page_t *init_page(const char *name, const char *title)
 	return newpage;
 }
 
-group_t *init_group(const char *title, const char *onlycols)
+group_t *init_group(const char *title, const char *onlycols, const char *exceptcols)
 {
 	group_t *newgroup = (group_t *) malloc(sizeof(group_t));
 
@@ -157,6 +157,11 @@ group_t *init_group(const char *title, const char *onlycols)
 		sprintf(newgroup->onlycols, "|%s|", onlycols);
 	}
 	else newgroup->onlycols = NULL;
+	if (exceptcols) {
+		newgroup->exceptcols = (char *) malloc(strlen(exceptcols)+3); /* Add a '|' at start and end */
+		sprintf(newgroup->exceptcols, "|%s|", exceptcols);
+	}
+	else newgroup->exceptcols = NULL;
 	newgroup->pretitle = NULL;
 	newgroup->hosts = NULL;
 	newgroup->next = NULL;
@@ -363,14 +368,15 @@ void getparentnamelink(char *l, bbgen_page_t *toppage, bbgen_page_t **parent, ch
 }
 
 
-void getgrouptitle(char *l, char *pageset, char **title, char **onlycols)
+void getgrouptitle(char *l, char *pageset, char **title, char **onlycols, char **exceptcols)
 {
-	char grouponlytag[100], grouptag[100];
+	char grouponlytag[100], groupexcepttag[100], grouptag[100];
 
 	*title = null_text;
 	*onlycols = NULL;
 
 	sprintf(grouponlytag, "%sgroup-only", pageset);
+	sprintf(groupexcepttag, "%sgroup-except", pageset);
 	sprintf(grouptag, "%sgroup", pageset);
 
 	dprintf("getgrouptitle(%s, ...)\n", textornull(l));
@@ -381,6 +387,17 @@ void getgrouptitle(char *l, char *pageset, char **title, char **onlycols)
 		*onlycols = skipwhitespace(skipword(l));
 
 		p = skipword(*onlycols);
+		if (*p) {
+			*p = '\0'; p++;
+			*title = skipwhitespace(p);
+		}
+	}
+	else if (strncmp(l, groupexcepttag, strlen(groupexcepttag)) == 0) {
+		char *p;
+
+		*exceptcols = skipwhitespace(skipword(l));
+
+		p = skipword(*exceptcols);
 		if (*p) {
 			*p = '\0'; p++;
 			*title = skipwhitespace(p);
@@ -418,7 +435,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	int     inbufsz;
 	char	pagetag[100], subpagetag[100], subparenttag[100], 
 		grouptag[100], summarytag[100], titletag[100], hosttag[100];
-	char 	*name, *link, *onlycols;
+	char 	*name, *link, *onlycols, *exceptcols;
 	char 	hostname[MAX_LINE_LEN];
 	bbgen_page_t 	*toppage, *curpage, *cursubpage, *cursubparent;
 	group_t *curgroup;
@@ -549,9 +566,9 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			addtopagelist(cursubparent);
 		}
 		else if (strncmp(inbuf, grouptag, strlen(grouptag)) == 0) {
-			getgrouptitle(inbuf, pgset, &link, &onlycols);
+			getgrouptitle(inbuf, pgset, &link, &onlycols, &exceptcols);
 			if (curgroup == NULL) {
-				curgroup = init_group(link, onlycols);
+				curgroup = init_group(link, onlycols, exceptcols);
 				if (cursubparent != NULL) {
 					cursubparent->groups = curgroup;
 				}
@@ -569,7 +586,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				}
 			}
 			else {
-				curgroup->next = init_group(link, onlycols);
+				curgroup->next = init_group(link, onlycols, exceptcols);
 				curgroup = curgroup->next;
 			}
 			if (curtitle) { curgroup->pretitle = curtitle; curtitle = NULL; }
