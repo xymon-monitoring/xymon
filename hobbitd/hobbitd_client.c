@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.27 2005-08-07 07:00:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.28 2005-08-07 21:13:14 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -205,7 +205,8 @@ void unix_cpu_report(char *hostname, namelist_t *hinfo, char *fromline, char *ti
 	if (!p) p = strstr(uptimestr, "load averages: "); /* Many BSD's */
 	if (p) {
 		p = strchr(p, ':') + 1; p += strspn(p, " ");
-		if (sscanf(p, "%f, %f, %f", &load1, &load5, &load15) == 3) {
+		if ((sscanf(p, "%f, %f, %f", &load1, &load5, &load15) == 3) ||
+		    (sscanf(p, "%f %f %f", &load1, &load5, &load15) == 3)) {
 			sprintf(loadresult, "%.2f", load5);
 		}
 	}
@@ -233,7 +234,7 @@ void unix_cpu_report(char *hostname, namelist_t *hinfo, char *fromline, char *ti
 	init_status(cpucolor);
 	sprintf(msgline, "status %s.cpu %s %s %s, %d users, %d procs, load=%s\n",
 		commafy(hostname), colorname(cpucolor), timestr, 
-		myupstr, linecount(whostr), linecount(psstr)-1, loadresult);
+		myupstr, (whostr ? linecount(whostr) : 0), (psstr ? linecount(psstr)-1 : 0), loadresult);
 	addtostatus(msgline);
 	if (upmsg) {
 		addtostatus(upmsg);
@@ -589,6 +590,7 @@ void unix_vmstat_report(char *hostname, namelist_t *hinfo, char *osid, char *vms
 #include "client/hpux.c"
 #include "client/osf.c"
 #include "client/aix.c"
+#include "client/darwin.c"
 
 static volatile int reloadconfig = 0;
 
@@ -812,7 +814,7 @@ int main(int argc, char *argv[])
 				break;
 
 			  case OS_DARWIN:
-				handle_freebsd_client(hostname, hinfo, sender, timestamp, restofmsg);
+				handle_darwin_client(hostname, hinfo, sender, timestamp, restofmsg);
 				break;
 
 			  case OS_SOLARIS: 
