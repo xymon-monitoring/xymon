@@ -15,9 +15,6 @@ endif
 ifeq ($(OSTYPE),openbsd)
 	EXTRATOOLS=openbsd-meminfo
 endif
-ifeq ($(OSTYPE),darwin)
-	EXTRATOOLS=darwin-meminfo
-endif
 
 all: hobbitlaunch bb hobbitclient.cfg $(EXTRATOOLS)
 
@@ -36,9 +33,6 @@ openbsd-meminfo: openbsd-meminfo.c
 
 netbsd-meminfo: netbsd-meminfo.c
 	$(CC) -o $@ netbsd-meminfo.c
-
-darwin-meminfo: darwin-meminfo.c
-	$(CC) -o $@ darwin-meminfo.c
 
 install:
 	if test ! -d $(INSTALLROOT)$(BBHOME)     ; then mkdir -p $(INSTALLROOT)$(BBHOME)     ; fi
