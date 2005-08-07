@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-osf1.sh,v 1.2 2005-07-31 21:31:30 henrik Exp $
+# $Id: hobbitclient-osf1.sh,v 1.3 2005-08-07 20:08:26 henrik Exp $
 
 echo "[date]"
 date
@@ -19,6 +19,10 @@ echo "[uptime]"
 uptime
 echo "[who]"
 who
+echo "[memory]"
+vmstat -P
+echo "[swap]"
+swapon -s
 echo "[df]"
 df -t noprocfs
 echo "[netstat]"
