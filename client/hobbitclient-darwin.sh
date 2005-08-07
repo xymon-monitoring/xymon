@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-darwin.sh,v 1.4 2005-08-07 20:41:04 henrik Exp $
+# $Id: hobbitclient-darwin.sh,v 1.5 2005-08-07 21:12:50 henrik Exp $
 
 echo "[date]"
 date
@@ -21,7 +21,7 @@ uptime
 echo "[who]"
 who
 echo "[df]"
-df -H -T nonfs,nullfs,cd9660,procfs
+df -H -T nonfs,nullfs,cd9660,procfs,volfs,devfs,fdesc
 echo "[meminfo]"
 vm_stat
 echo "[netstat]"
