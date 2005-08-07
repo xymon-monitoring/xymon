@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.26 2005-08-03 21:25:02 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.27 2005-08-07 07:00:13 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -34,6 +34,7 @@ typedef struct sectlist_t {
 	struct sectlist_t *next;
 } sectlist_t;
 sectlist_t *sections = NULL;
+int pslistinprocs = 1;
 
 void splitmsg(char *clientdata)
 {
@@ -503,7 +504,7 @@ void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 	}
 
 	/* And the full ps output for those who want it */
-	addtostatus(psstr);
+	if (pslistinprocs) addtostatus(psstr);
 
 	addtostatus(fromline);
 	finish_status();
@@ -616,6 +617,9 @@ int main(int argc, char *argv[])
 	for (argi = 1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
+		}
+		else if (strcmp(argv[argi], "--no-ps-listing") == 0) {
+			pslistinprocs = 0;
 		}
 		else if (argnmatch(argv[argi], "--config=")) {
 			char *lp = strchr(argv[argi], '=');
