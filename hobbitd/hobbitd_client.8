@@ -1,0 +1,50 @@
+.TH HOBBITD_CLIENT 8 "Version 4.1.1: 25 Jul 2005" "Hobbit Monitor"
+.SH NAME
+hobbitd_client \- hobbitd worker module for client data
+.SH SYNOPSIS
+.B "hobbitd_channel --channel=client hobbitd_client [options]"
+
+.SH DESCRIPTION
+hobbitd_client is a worker module for hobbitd, and as such it is normally
+run via the
+.I hobbitd_channel(8)
+program. It receives hobbitd client messages sent from systems that
+have the the Hobbit client installed, and use the client data to
+generate the Hobbit status messages for the cpu-, disk-, memory- and
+procs-columns. It also feeds Hobbit data messages with the netstat-
+and vmstat-data collected by the client.
+
+When generating these status messages from the client data, hobbitd_client
+will use the configuration rules defined in the 
+.I hobbit-clients.cfg(5)
+file to determine the color of each status message.
+
+.SH OPTIONS
+.IP "--no-ps-listing"
+Normally the "procs" status message includes the full process-listing
+received from the client. If you prefer to just have the monitored
+processes shown, this option will turn off the full ps-listing.
+
+.IP "--config=FILENAME"
+Sets the filename for the 
+.I hobbit-clients.cfg
+file. The default value is "etc/hobbit-clients.cfg" below the Hobbit
+server directory.
+
+.IP "--dump-config"
+Dumps the configuration after parsing it. May be useful to track
+down problems with configuration file errors.
+
+.IP "--test"
+Starts an interactive session where you can test the hobbit-clients.cfg
+configuration.
+
+.IP "--debug"
+Enable debugging output.
+
+.SH FILES
+.IP "~hobbit/server/etc/hobbit-clients.cfg"
+
+.SH "SEE ALSO"
+hobbit-clients.cfg(5), hobbitd(8), hobbitd_channel(8), hobbit(7)
+
