@@ -14,6 +14,6 @@
 extern char *eventignorecolumns;
 extern int havedoneeventlog;
 
-extern void do_eventlog(FILE *output, int maxcount, int maxminutes);
+extern void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, char *totime, char *hostmatch, char *testmatch, char *colormatch);
 
 #endif
