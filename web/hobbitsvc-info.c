@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.94 2005-06-06 09:28:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.95 2005-08-08 21:59:13 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -46,6 +46,7 @@ typedef struct hinf_t {
 } hinf_t;
 hinf_t *tnames = NULL;
 int testcount = 0;
+char *unametxt = NULL;
 
 typedef struct sched_t {
 	int id;
@@ -70,8 +71,9 @@ static int fetch_status(char *hostname)
 	char *hobbitcmd = (char *)malloc(1024 + strlen(hostname));
 	char *walk;
 	int testsz;
+	int haveuname = 0;
 
-	sprintf(hobbitcmd, "hobbitdboard fields=testname,color,disabletime,dismsg host=%s", hostname);
+	sprintf(hobbitcmd, "hobbitdboard fields=testname,color,disabletime,dismsg,client host=%s", hostname);
 	if (sendmessage(hobbitcmd, NULL, NULL, &statuslist, 1, 30) != BB_OK) {
 		return 1;
 	}
@@ -91,7 +93,8 @@ static int fetch_status(char *hostname)
 			tnames[testcount].name = strdup(tok); tok = gettok(NULL, "|"); 
 			if (tok) { tnames[testcount].color = parse_color(tok); tok = gettok(NULL, "|"); }
 			if (tok) { tnames[testcount].distime = atoi(tok); tok = gettok(NULL, "|"); }
-			if (tok) { tnames[testcount].dismsg = strdup(tok); }
+			if (tok) { tnames[testcount].dismsg = strdup(tok); tok = gettok(NULL, "|"); }
+			if (tok) { haveuname |= (*tok == 'Y'); }
 			tnames[testcount].next = NULL;
 			testcount++;
 			if (testcount == testsz) {
@@ -152,6 +155,13 @@ static int fetch_status(char *hostname)
 		}
 		else {
 			walk = NULL;
+		}
+	}
+
+	if (haveuname) {
+		sprintf(hobbitcmd, "clientlog %s section=uname", hostname);
+		if (sendmessage(hobbitcmd, NULL, NULL, &unametxt, 1, 30) != BB_OK) {
+			return 1;
 		}
 	}
 
@@ -484,6 +494,11 @@ char *generate_info(char *hostname)
 	val = bbh_item(hostwalk, BBH_CLIENTALIAS);
 	if (val && (strcmp(val, hostname) != 0)) {
 		sprintf(l, "<tr><th align=left>Client alias:</th><td align=left>%s</td></tr>\n", val);
+		addtobuffer(&infobuf, &infobuflen, l);
+	}
+
+	if (unametxt) {
+		sprintf(l, "<tr><th align=left>OS:</th><td align=left>%s</td></tr>\n", unametxt);
 		addtobuffer(&infobuf, &infobuflen, l);
 	}
 
