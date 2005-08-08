@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.177 2005-08-08 21:28:17 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.178 2005-08-08 21:55:00 henrik Exp $";
 
 #include "config.h"
 
@@ -2243,7 +2243,7 @@ void do_message(conn_t *msg, char *origin)
 					  case F_ACKMSG: if (lwalk->ackmsg) bufp += sprintf(bufp, "%s", nlencode(lwalk->ackmsg)); break;
 					  case F_DISMSG: if (lwalk->dismsg) bufp += sprintf(bufp, "%s", nlencode(lwalk->dismsg)); break;
 					  case F_MSG: bufp += sprintf(bufp, "%s", nlencode(lwalk->message)); break;
-					  case F_CLIENT: bufp += sprintf(bufp, "%s", (hwalk->clientmsg ? "|Y" : "|N")); break;
+					  case F_CLIENT: bufp += sprintf(bufp, "%s", (hwalk->clientmsg ? "Y" : "|N")); break;
 					  case F_LAST: break;
 					}
 				}
