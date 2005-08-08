@@ -70,13 +70,16 @@ digest.o: digest.c
 bb-hist.o: bb-hist.c
 	$(CC) $(CFLAGS) $(HISTGRAPHDEF) -c -o $@ bb-hist.c
 
+eventlog.o: eventlog.c
+	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ eventlog.c
+
 
 ################################################
 # Objects compiled differently for use in 
 # bbgen/bbtest-net, and in standalone programs
 ################################################
 bb-eventlog.o: eventlog.o
-	$(CC) $(CFLAGS) -DCGI -c -o $@ eventlog.c
+	$(CC) $(CFLAGS) -DCGI -c -o $@ $(PCREINCDIR) eventlog.c
 
 bb-replog-cgi.o: bb-replog.c
 	$(CC) $(CFLAGS) -DCGI -c -o $@ bb-replog.c
