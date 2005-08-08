@@ -6,13 +6,14 @@
 /* time, as a reporting function.                                             */
 /*                                                                            */
 /* Copyright (C) 2002-2005 Henrik Storner <henrik@storner.dk>                 */
+/* Host/test/color/start/end filtering code by Eric Schwimmer 2005            */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-eventlog.c,v 1.23 2005-06-06 20:06:56 henrik Exp $";
+static char rcsid[] = "$Id: bb-eventlog.c,v 1.24 2005-08-08 16:23:42 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -25,6 +26,9 @@ static char rcsid[] = "$Id: bb-eventlog.c,v 1.23 2005-06-06 20:06:56 henrik Exp 
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <time.h>
+
+#include <pcre.h>
 
 #include "bbgen.h"
 #include "loadbbhosts.h"
@@ -48,20 +52,93 @@ static int wanted_eventcolumn(char *service)
 	return result;
 }
 
-void do_eventlog(FILE *output, int maxcount, int maxminutes)
+time_t convert_time(char *timestamp)
+{
+	time_t event = 0;
+	unsigned int year,month,day,hour,min,sec,count;
+	struct tm timeinfo;
+
+	count = sscanf(timestamp, "%d/%d/%d@%d:%d:%d",
+		&year, &month, &day, &hour, &min, &sec);
+	if(count != 6) {
+		return -1;
+	}
+	if(year < 1970) {
+		return 0;
+	}
+	else {
+		memset(&timeinfo, 0, sizeof(timeinfo));
+		timeinfo.tm_year  = year - 1900;
+		timeinfo.tm_mon   = month - 1;
+		timeinfo.tm_mday  = day;
+		timeinfo.tm_hour  = hour;
+		timeinfo.tm_min   = min;
+		timeinfo.tm_sec   = sec;
+		timeinfo.tm_isdst = -1;
+		event = mktime(&timeinfo);		
+	}
+
+	return event;
+}
+
+
+void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
+		 char *totime, char *hostregex, char *testregex, char *colrregex)
 {
 	FILE *eventlog;
 	char eventlogfilename[PATH_MAX];
-	time_t cutoff;
+	time_t firstevent = 0;
+	time_t lastevent = time(NULL);
 	event_t	*eventhead, *walk;
 	struct stat st;
 	char l[MAX_LINE_LEN];
 	char title[200];
 
+	/* For the PCRE matching */
+	const char *errmsg = NULL;
+	int errofs = 0;
+	pcre *hostregexp = NULL;
+	pcre *testregexp = NULL;
+	pcre *colrregexp = NULL;
+
 	havedoneeventlog = 1;
 
-	cutoff = ( (maxminutes) ? (time(NULL) - maxminutes*60) : 0);
+	if (maxminutes && (fromtime || totime)) {
+		fprintf(output, "<B>Only one time interval type is allowed!</B>");
+		return;
+	}
+
+	if (fromtime) {
+		firstevent = convert_time(fromtime);
+		if(firstevent < 0) {
+			fprintf(output,"<B>Invalid 'from' time: %s</B>", fromtime);
+			return;
+		}
+	}
+	else if (maxminutes) {
+		firstevent = time(NULL) - maxminutes*60;
+	}
+	else {
+		firstevent = time(NULL) - 86400;
+	}
+
+	if (totime) {
+		lastevent = convert_time(totime);
+		if (lastevent < 0) {
+			fprintf(output,"<B>Invalid 'to' time: %s</B>", totime);
+			return;
+		}
+		if (lastevent < firstevent) {
+			fprintf(output,"<B>'to' time must be after 'from' time.</B>");
+			return;
+		}
+	}
+
 	if (!maxcount) maxcount = 100;
+
+	if (hostregex) hostregexp = pcre_compile(hostregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
+	if (testregex) testregexp = pcre_compile(testregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
+	if (colrregex) colrregexp = pcre_compile(colrregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
 
 	sprintf(eventlogfilename, "%s/allevents", xgetenv("BBHIST"));
 	eventlog = fopen(eventlogfilename, "r");
@@ -74,7 +151,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 		time_t curtime;
 		int done = 0;
 
-		/* Find a spot in the eventlog file close to where the cutoff time is */
+		/* Find a spot in the eventlog file close to where the firstevent time is */
 		fseek(eventlog, 0, SEEK_END);
 		do {
 			/* Go back maxcount*80 bytes - one entry is ~80 bytes */
@@ -85,7 +162,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 				fgets(l, sizeof(l), eventlog);
 				sscanf(l, "%*s %*s %u %*u %*u %*s %*s %*d", &uicurtime);
 				curtime = uicurtime;
-				done = (curtime < cutoff);
+				done = (curtime < firstevent);
 			}
 			else {
 				rewind(eventlog);
@@ -101,36 +178,58 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 		time_t eventtime, changetime, duration;
 		unsigned int uievt, uicht, uidur;
 		char hostname[MAX_LINE_LEN], svcname[MAX_LINE_LEN], newcol[MAX_LINE_LEN], oldcol[MAX_LINE_LEN];
-		int state, itemsfound;
+		char *colname;
+		int state, itemsfound, hostmatch, testmatch, colrmatch;
 		event_t *newevent;
 		struct host_t *eventhost;
 		struct bbgen_col_t *eventcolumn;
+		int ovector[30];
 
 		itemsfound = sscanf(l, "%s %s %u %u %u %s %s %d",
 			hostname, svcname,
 			&uievt, &uicht, &uidur, 
 			newcol, oldcol, &state);
 		eventtime = uievt; changetime = uicht; duration = uidur;
-
+		colname = colorname(eventcolor(newcol));
+		if (eventtime > lastevent) break;
 		eventhost = find_host(hostname);
 		eventcolumn = find_or_create_column(svcname, 1);
 
 		if ( (itemsfound == 8) && 
-		     (eventtime > cutoff) && 
+		     (eventtime > firstevent) && 
 		     (eventhost && !eventhost->nobb2) && 
 		     (wanted_eventcolumn(svcname)) ) {
+			if (hostregexp)
+				hostmatch = (pcre_exec(hostregexp, NULL, hostname, strlen(hostname), 0, 0, 
+						ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+			else
+				hostmatch = 1;
 
-			newevent = (event_t *) malloc(sizeof(event_t));
-			newevent->host       = eventhost;
-			newevent->service    = eventcolumn;
-			newevent->eventtime  = eventtime;
-			newevent->changetime = changetime;
-			newevent->duration   = duration;
-			newevent->newcolor   = eventcolor(newcol);
-			newevent->oldcolor   = eventcolor(oldcol);
+			if (testregexp)
+				testmatch = (pcre_exec(testregexp, NULL, svcname, strlen(svcname), 0, 0, 
+						ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+			else
+				testmatch = 1;
 
-			newevent->next = eventhead;
-			eventhead = newevent;
+			if (colrregexp) 
+				colrmatch = (pcre_exec(colrregexp, NULL, colname, strlen(colname), 0, 0,
+						ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+			else
+				colrmatch = 1;
+
+			if (hostmatch && testmatch && colrmatch) {
+				newevent = (event_t *) malloc(sizeof(event_t));
+				newevent->host       = eventhost;
+				newevent->service    = eventcolumn;
+				newevent->eventtime  = eventtime;
+				newevent->changetime = changetime;
+				newevent->duration   = duration;
+				newevent->newcolor   = eventcolor(newcol);
+				newevent->oldcolor   = eventcolor(oldcol);
+
+				newevent->next = eventhead;
+				eventhead = newevent;
+			}
 		}
 	}
 
@@ -148,11 +247,16 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 			walk = walk->next;
 		} while (walk && (count<maxcount));
 
-		sprintf(title, "%d events received in the past %u minutes",
-			count, (unsigned int)((time(NULL) - lasttoshow->eventtime) / 60));
+		if (maxminutes)  { 
+			sprintf(title, "%d events received in the past %u minutes", 
+				count, (unsigned int)((time(NULL) - lasttoshow->eventtime) / 60));
+		}
+		else {
+			sprintf(title, "%d events received.", count);
+		}
 
 		fprintf(output, "<BR><BR>\n");
-        	fprintf(output, "<TABLE SUMMARY=\"$EVENTSTITLE\" BORDER=0>\n");
+		fprintf(output, "<TABLE SUMMARY=\"$EVENTSTITLE\" BORDER=0>\n");
 		fprintf(output, "<TR BGCOLOR=\"#333333\">\n");
 		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"#33ebf4\">%s</FONT></TD></TR>\n", title);
 
@@ -213,6 +317,10 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 	}
 
 	fclose(eventlog);
+
+	if (hostregexp) pcre_free(hostregexp);
+	if (testregexp) pcre_free(testregexp);
+	if (colrregexp) pcre_free(colrregexp);
 }
 
 
@@ -228,6 +336,11 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes)
 
 int	maxcount = 100;		/* Default: Include last 100 events */
 int	maxminutes = 240;	/* Default: for the past 4 hours */
+char	*totime = NULL;
+char	*fromtime = NULL;
+char	*hostregex = NULL;
+char	*testregex = NULL;
+char	*colrregex = NULL;
 
 char *reqenv[] = {
 "BBHOSTS",
@@ -276,6 +389,21 @@ static void parse_query(void)
 		}
 		else if (argnmatch(token, "MAXTIME")) {
 			maxminutes = atoi(val);
+		}
+		else if (argnmatch(token, "FROMTIME")) {
+			if (*val) fromtime = strdup(val);
+		}
+		else if (argnmatch(token, "TOTIME")) {
+			if (*val) totime = strdup(val);
+		}
+		else if (argnmatch(token, "HOSTMATCH")) {
+			if (*val) hostregex = strdup(val);
+		}
+		else if (argnmatch(token, "TESTMATCH")) {
+			if (*val) testregex = strdup(val);
+		}
+		else if (argnmatch(token, "COLORMATCH")) {
+			if (*val) colrregex = strdup(val);
 		}
 
 		token = strtok(NULL, "&");
@@ -342,7 +470,7 @@ int main(int argc, char *argv[])
 
 	headfoot(stdout, "event", "", "header", COL_GREEN);
 	fprintf(stdout, "<center>\n");
-	do_eventlog(stdout, maxcount, maxminutes);
+	do_eventlog(stdout, maxcount, maxminutes, fromtime, totime, hostregex, testregex, colrregex);
 	fprintf(stdout, "</center>\n");
 	headfoot(stdout, "event", "", "footer", COL_GREEN);
 
