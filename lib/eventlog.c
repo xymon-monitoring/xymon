@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.24 2005-08-08 16:23:42 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.25 2005-08-08 16:39:04 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -178,7 +178,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 		time_t eventtime, changetime, duration;
 		unsigned int uievt, uicht, uidur;
 		char hostname[MAX_LINE_LEN], svcname[MAX_LINE_LEN], newcol[MAX_LINE_LEN], oldcol[MAX_LINE_LEN];
-		char *colname;
+		char *newcolname, *oldcolname;
 		int state, itemsfound, hostmatch, testmatch, colrmatch;
 		event_t *newevent;
 		struct host_t *eventhost;
@@ -190,7 +190,8 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 			&uievt, &uicht, &uidur, 
 			newcol, oldcol, &state);
 		eventtime = uievt; changetime = uicht; duration = uidur;
-		colname = colorname(eventcolor(newcol));
+		oldcolname = colorname(eventcolor(oldcol));
+		newcolname = colorname(eventcolor(newcol));
 		if (eventtime > lastevent) break;
 		eventhost = find_host(hostname);
 		eventcolumn = find_or_create_column(svcname, 1);
@@ -211,9 +212,12 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 			else
 				testmatch = 1;
 
-			if (colrregexp) 
-				colrmatch = (pcre_exec(colrregexp, NULL, colname, strlen(colname), 0, 0,
-						ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+			if (colrregexp) {
+				colrmatch = ( (pcre_exec(colrregexp, NULL, newcolname, strlen(newcolname), 0, 0,
+							ovector, (sizeof(ovector)/sizeof(int))) >= 0) ||
+					      (pcre_exec(colrregexp, NULL, oldcolname, strlen(oldcolname), 0, 0,
+							ovector, (sizeof(ovector)/sizeof(int))) >= 0) );
+			}
 			else
 				colrmatch = 1;
 
