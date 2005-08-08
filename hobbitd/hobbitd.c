@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.176 2005-08-08 20:50:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.177 2005-08-08 21:28:17 henrik Exp $";
 
 #include "config.h"
 
@@ -218,7 +218,7 @@ hobbitd_statistics_t hobbitd_stats[] = {
 enum boardfield_t { F_NONE, F_HOSTNAME, F_TESTNAME, F_COLOR, F_FLAGS, 
 		    F_LASTCHANGE, F_LOGTIME, F_VALIDTIME, F_ACKTIME, F_DISABLETIME,
 		    F_SENDER, F_COOKIE, F_LINE1,
-		    F_ACKMSG, F_DISMSG, F_MSG, 
+		    F_ACKMSG, F_DISMSG, F_MSG, F_CLIENT,
 		    F_LAST };
 
 typedef struct boardfieldnames_t {
@@ -241,6 +241,7 @@ boardfieldnames_t boardfieldnames[] = {
 	{ "ackmsg", F_ACKMSG },
 	{ "dismsg", F_DISMSG },
 	{ "msg", F_MSG },
+	{ "client", F_CLIENT },
 	{ NULL, F_LAST },
 };
 enum boardfield_t boardfields[F_LAST];
@@ -2242,6 +2243,7 @@ void do_message(conn_t *msg, char *origin)
 					  case F_ACKMSG: if (lwalk->ackmsg) bufp += sprintf(bufp, "%s", nlencode(lwalk->ackmsg)); break;
 					  case F_DISMSG: if (lwalk->dismsg) bufp += sprintf(bufp, "%s", nlencode(lwalk->dismsg)); break;
 					  case F_MSG: bufp += sprintf(bufp, "%s", nlencode(lwalk->message)); break;
+					  case F_CLIENT: bufp += sprintf(bufp, "%s", (hwalk->clientmsg ? "|Y" : "|N")); break;
 					  case F_LAST: break;
 					}
 				}
