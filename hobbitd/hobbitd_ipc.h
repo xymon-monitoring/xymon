@@ -11,7 +11,8 @@
 #ifndef __HOBBITD_IPC_H__
 #define __HOBBITD_IPC_H__
 
-#define SHAREDBUFSZ 102400
+#define SHAREDBUFSZ_STD      (256*1024)	/* 256 KB */
+#define SHAREDBUFSZ_CLIENT  (1024*1024)	/* 1 MB */
 
 /* Semaphore numbers */
 #define BOARDBUSY   0

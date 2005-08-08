@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_worker.c,v 1.19 2005-07-31 21:13:36 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_worker.c,v 1.20 2005-08-08 20:50:47 henrik Exp $";
 
 #include "config.h"
 
@@ -41,7 +41,7 @@ static int ioerror = 0;
 
 static char *readlntimed(char *buffer, size_t bufsize, struct timeval *timeout)
 {
-	static char stdinbuf[SHAREDBUFSZ+1];
+	static char stdinbuf[SHAREDBUFSZ_CLIENT+1];
 	static int stdinbuflen = 0;
 	struct timeval cutoff, now, tmo;
 	struct timezone tz;
@@ -145,8 +145,8 @@ static char *readlntimed(char *buffer, size_t bufsize, struct timeval *timeout)
 unsigned char *get_hobbitd_message(char *id, int *seq, struct timeval *timeout)
 {
 	static unsigned int seqnum = 0;
-	static unsigned char buf[SHAREDBUFSZ];
-	static int bufsz = SHAREDBUFSZ;
+	static unsigned char buf[SHAREDBUFSZ_CLIENT];
+	static int bufsz = SHAREDBUFSZ_CLIENT;
 	unsigned char *bufp;
 	int buflen;
 	int complete;

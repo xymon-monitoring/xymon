@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.41 2005-05-07 09:24:20 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.42 2005-08-08 20:50:47 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -78,7 +78,8 @@ int main(int argc, char *argv[])
 	int argi, n;
 
 	struct sembuf s;
-	char buf[SHAREDBUFSZ];
+	char *buf;
+	int bufsz;
 	hobbit_msg_t *newmsg;
 	int daemonize = 0;
 	char *logfn = NULL;
@@ -98,8 +99,6 @@ int main(int argc, char *argv[])
 	struct timezone tz;
 	unsigned long curwait, maxwait = 0;	/* 1 second in microseconds */
 #endif
-
-	MEMDEFINE(buf);
 
 	/* Dont save the error buffer */
 	save_errbuf = 0;
@@ -151,6 +150,13 @@ int main(int argc, char *argv[])
 
 	if (cnid == -1) {
 		errprintf("No channel/unknown channel specified\n");
+		return 1;
+	}
+
+	bufsz = ((cnid == C_CLIENT) ? SHAREDBUFSZ_CLIENT : SHAREDBUFSZ_STD);
+	buf = (char *)malloc(bufsz);
+	if (buf == NULL) {
+		errprintf("Cannot allocate buffer of size %s\n", bufsz);
 		return 1;
 	}
 
@@ -247,7 +253,7 @@ int main(int argc, char *argv[])
 			 * GOCLIENT went high, and so we got alerted about a new
 			 * message arriving. Copy the message to our own buffer queue.
 			 */
-			strcpy(buf, channel->channelbuf);
+			strncpy(buf, channel->channelbuf, bufsz);
 
 			/* 
 			 * Now we have safely stored the new message in our buffer.
@@ -394,7 +400,7 @@ int main(int argc, char *argv[])
 
 	if (pidfile) unlink(pidfile);
 
-	MEMUNDEFINE(buf);
+	xfree(buf);
 	return (childexit != -1) ? 1 : 0;
 }
 

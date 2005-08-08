@@ -22,7 +22,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.24 2005-07-17 12:49:42 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.25 2005-08-08 20:50:47 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -59,11 +59,14 @@ hobbitd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	hobbitd_channel_t *newch;
 	int flags = ((role == CHAN_MASTER) ? (IPC_CREAT | 0600) : 0);
 	char *bbh = xgetenv("BBHOME");
+	unsigned int shbufsz = SHAREDBUFSZ_STD;
 
 	if ( (bbh == NULL) || (stat(bbh, &st) == -1) ) {
 		errprintf("BBHOME not defined, or points to invalid directory - cannot continue.\n");
 		return NULL;
 	}
+
+	if (chnid == C_CLIENT) shbufsz = SHAREDBUFSZ_CLIENT;
 
 	dprintf("Setting up %s channel (id=%d)\n", channelnames[chnid], chnid);
 
@@ -79,9 +82,9 @@ hobbitd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	newch->seq = 0;
 	newch->channelid = chnid;
 	newch->msgcount = 0;
-	newch->shmid = shmget(key, SHAREDBUFSZ, flags);
+	newch->shmid = shmget(key, shbufsz, flags);
 	if (newch->shmid == -1) {
-		errprintf("Could not get shm of size %d: %s\n", SHAREDBUFSZ, strerror(errno));
+		errprintf("Could not get shm of size %d: %s\n", shbufsz, strerror(errno));
 		xfree(newch);
 		return NULL;
 	}
@@ -132,7 +135,7 @@ hobbitd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	}
 
 #ifdef MEMORY_DEBUG
-	add_to_memlist(newch->channelbuf, SHAREDBUFSZ);
+	add_to_memlist(newch->channelbuf, shbufsz);
 #endif
 	return newch;
 }
