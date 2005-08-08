@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.29 2005-08-06 21:28:24 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.30 2005-08-08 16:09:13 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -180,11 +180,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	hostlist_t	*oldlist;
 
 	hostcount++;
-	dprintf("init_host(%s, %d,%d,%d.%d, %d, %d, %s, %s, %s, %s %s)\n", 
-		textornull(hostname), ip1, ip2, ip3, ip4,
-		dialup, textornull(alerts),
-		textornull(nopropyellowtests), textornull(nopropredtests), 
-		textornull(noproppurpletests), textornull(nopropacktests));
+	dprintf("init_host(%s)\n", textornull(hostname));
 
 	newhost->hostname = newhost->displayname = strdup(hostname);
 	if (displayname) newhost->displayname = strdup(displayname);
