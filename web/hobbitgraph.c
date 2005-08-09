@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.34 2005-07-16 09:54:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.35 2005-08-09 15:24:43 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -47,6 +47,8 @@ int haveupper = 0;
 double upperlimit = 0.0;
 int havelower = 0;
 double lowerlimit = 0.0;
+int graphwidth = 0;
+int graphheight = 0;
 
 int coloridx = 0;
 char *colorlist[] = { 
@@ -181,6 +183,12 @@ void parse_query(void)
 		}
 		else if (strcmp(token, "lower") == 0) {
 			if (val) { lowerlimit = atof(val); havelower = 1; }
+		}
+		else if (strcmp(token, "graph_width") == 0) {
+			if (val) graphwidth = atoi(val);
+		}
+		else if (strcmp(token, "graph_height") == 0) {
+			if (val) graphheight = atoi(val);
 		}
 
 		token = strtok(NULL, "&");
@@ -399,8 +407,8 @@ void graph_link(FILE *output, char *uri, char *grtype, time_t seconds)
 		if (graphend == 0) gend = time(NULL); else gend = graphend;
 		if (graphstart == 0) gstart = gend - persecs; else gstart = graphstart;
 
-		fprintf(output, "  <td align=\"left\"><img id='zoomGraphImage' src=\"%s&amp;graph=%s&amp;action=view&amp;graph_start=%u&amp;graph_end=%u&amp;graph_height=120&amp;graph_width=575\" alt=\"Zoom source image\"></td>\n",
-			uri, grtype, (int) gstart, (int) gend);
+		fprintf(output, "  <td align=\"left\"><img id='zoomGraphImage' src=\"%s&amp;graph=%s&amp;action=view&amp;graph_start=%u&amp;graph_end=%u&amp;graph_height=%d&amp;graph_width=%d\" alt=\"Zoom source image\"></td>\n",
+			uri, grtype, (int) gstart, (int) gend, graphheight, graphwidth);
 		break;
 
 	  case ACT_VIEW:
@@ -429,9 +437,14 @@ int main(int argc, char *argv[])
 	char timestamp[100];
 	char graphtitle[1024];
 	char graphopt[30];
+	char heightopt[30];
+	char widthopt[30];
 
 	char okuri[32768];
 	char *p;
+
+	graphwidth = atoi(xgetenv("RRDWIDTH"));
+	graphheight = atoi(xgetenv("RRDHEIGHT"));
 
 	/* See what we want to do - i.e. get hostname, service and graph-type */
 	parse_query();
@@ -468,7 +481,8 @@ int main(int argc, char *argv[])
 
 	strcpy(okuri, xgetenv("REQUEST_URI"));
 	p = strchr(okuri, '?'); if (p) *p = '\0'; else p = okuri + strlen(okuri);
-	p += sprintf(p, "?host=%s&amp;service=%s", hostname, service);
+	p += sprintf(p, "?host=%s&amp;service=%s&amp;graph_height=%d&amp;graph_width=%d", 
+		     hostname, service, graphheight, graphwidth);
 	if (displayname != hostname) p += sprintf(p, "&amp;disp=%s", displayname);
 	if (firstidx != -1) p += sprintf(p, "&amp;first=%d", firstidx+1);
 	if (idxcount != -1) p += sprintf(p, "&amp;count=%d", idxcount);
@@ -774,6 +788,8 @@ int main(int argc, char *argv[])
 	 * graph-specific ones (which may be repeated if
 	 * there are multiple RRD-files to handle).
 	 */
+	sprintf(heightopt, "-h%d", graphheight);
+	sprintf(widthopt, "-w%d", graphwidth);
 	for (pcount = 0; (gdef->defs[pcount]); pcount++) ;
 	argcount = (15 + pcount*rrddbcount + 1); argi = 0;
 	rrdargs = (char **) calloc(argcount+1, sizeof(char *));
@@ -781,8 +797,8 @@ int main(int argc, char *argv[])
 	rrdargs[argi++]  = graphfn;
 	rrdargs[argi++]  = "--title";
 	rrdargs[argi++]  = graphtitle;
-	rrdargs[argi++]  = "-w576";
-	rrdargs[argi++]  = "-h120";
+	rrdargs[argi++]  = widthopt;
+	rrdargs[argi++]  = heightopt;
 	rrdargs[argi++]  = "-v";
 	rrdargs[argi++]  = gdef->yaxis;
 	rrdargs[argi++]  = "-a";
