@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.36 2005-08-09 17:29:45 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.37 2005-08-09 18:14:43 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -210,7 +210,7 @@ void parse_query(void)
 		xfree(hostlist); hostlist = NULL;
 	}
 	else {
-		displayname = hostname = strdup("Multi-host");
+		displayname = hostname = strdup("");
 	}
 
 	if ((hostname == NULL) || (service == NULL)) errormsg("Invalid request - no host or service");
