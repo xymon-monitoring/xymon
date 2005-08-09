@@ -57,6 +57,13 @@
      </TR>
 
      <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Ignore dialup hosts</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=CHECKBOX NAME="NODIALUPS"></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver">&nbsp;</FONT></TD>
+     </TR>
+
+     <TR>
         <TD COLSPAN=3 ALIGN=CENTER>
           <BR><BR>
           <INPUT TYPE="SUBMIT" NAME="Send" VALUE="View log" ALT="View log">
