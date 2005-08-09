@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.35 2005-08-09 15:24:43 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.36 2005-08-09 17:29:45 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -34,6 +34,8 @@ static char rcsid[] = "$Id: hobbitgraph.c,v 1.35 2005-08-09 15:24:43 henrik Exp 
 #define MONTH_GRAPH "e-576d"
 
 char *hostname = NULL;
+char **hostlist = NULL;
+int hostlistsize = 0;
 char *displayname = NULL;
 char *service = NULL;
 char *period = NULL;
@@ -118,6 +120,16 @@ void parse_query(void)
 		val = strchr(token, '='); if (val) { *val = '\0'; val++; }
 		if (strcmp(token, "host") == 0) {
 			hostname = strdup(val);
+			if (hostlist == NULL) {
+				hostlistsize = 1;
+				hostlist = (char **)malloc(sizeof(char *));
+				hostlist[0] = hostname;
+			}
+			else {
+				hostlistsize++;
+				hostlist = (char **)realloc(hostlist, (hostlistsize * sizeof(char *)));
+				hostlist[hostlistsize-1] = hostname;
+			}
 		}
 		else if (strcmp(token, "service") == 0) {
 			service = strdup(val);
@@ -192,6 +204,13 @@ void parse_query(void)
 		}
 
 		token = strtok(NULL, "&");
+	}
+
+	if (hostlistsize == 1) {
+		xfree(hostlist); hostlist = NULL;
+	}
+	else {
+		displayname = hostname = strdup("Multi-host");
 	}
 
 	if ((hostname == NULL) || (service == NULL)) errormsg("Invalid request - no host or service");
@@ -440,8 +459,8 @@ int main(int argc, char *argv[])
 	char heightopt[30];
 	char widthopt[30];
 
-	char okuri[32768];
-	char *p;
+	char *okuri, *p;
+	int urilen;
 
 	graphwidth = atoi(xgetenv("RRDWIDTH"));
 	graphheight = atoi(xgetenv("RRDHEIGHT"));
@@ -479,10 +498,25 @@ int main(int argc, char *argv[])
 
 	redirect_cgilog("hobbitgraph");
 
-	strcpy(okuri, xgetenv("REQUEST_URI"));
+	p = xgetenv("REQUEST_URI");
+	urilen = strlen(p);
+	if (hostlist) { int i; for (i = 0; (i < hostlistsize); i++) urilen += (strlen(hostlist[i]) + 10); }
+	okuri = (char *)malloc(urilen + 2048);
+
+	strcpy(okuri, p);
 	p = strchr(okuri, '?'); if (p) *p = '\0'; else p = okuri + strlen(okuri);
-	p += sprintf(p, "?host=%s&amp;service=%s&amp;graph_height=%d&amp;graph_width=%d", 
-		     hostname, service, graphheight, graphwidth);
+
+	if (hostlist) {
+		int i;
+
+		p += sprintf(p, "?");
+		for (i = 0; (i < hostlistsize); i++) p += sprintf(p, "host=%s&amp;", hostlist[i]);
+	}
+	else
+		p += sprintf(p, "?host=%s&amp;", hostname);
+
+	p += sprintf(p, "service=%s&amp;graph_height=%d&amp;graph_width=%d", 
+		     service, graphheight, graphwidth);
 	if (displayname != hostname) p += sprintf(p, "&amp;disp=%s", displayname);
 	if (firstidx != -1) p += sprintf(p, "&amp;first=%d", firstidx+1);
 	if (idxcount != -1) p += sprintf(p, "&amp;count=%d", idxcount);
@@ -583,8 +617,8 @@ int main(int argc, char *argv[])
 	if (rrddir == NULL) {
 		char dnam[PATH_MAX];
 
-		if (xgetenv("BBRRDS")) sprintf(dnam, "%s/%s", xgetenv("BBRRDS"), hostname);
-		else sprintf(dnam, "%s/rrd/%s", xgetenv("BBVAR"), hostname);
+		if (hostlist) sprintf(dnam, "%s", xgetenv("BBRRDS"));
+		else sprintf(dnam, "%s/%s", xgetenv("BBRRDS"), hostname);
 
 		rrddir = strdup(dnam);
 	}
@@ -630,20 +664,48 @@ int main(int argc, char *argv[])
 	}
 	if (gdef == NULL) errormsg("Unknown graph requested");
 
+	if (hostlist && (gdef->fnpat == NULL)) {
+		char *multiname = (char *)malloc(strlen(gdef->name) + 7);
+		sprintf(multiname, "%s-multi", gdef->name);
+		for (gdef = gdefs; (gdef && strcmp(multiname, gdef->name)); gdef = gdef->next) ;
+		if (gdef == NULL) errormsg("Unknown multi-graph requested");
+		xfree(multiname);
+	}
+
 	/* What RRD files do we have matching this request? */
-	if (gdef->fnpat == NULL) {
+	if (hostlist || (gdef->fnpat == NULL)) {
 		/*
 		 * No pattern, just a single file. It doesnt matter if it exists, because
 		 * these types of graphs usually have a hard-coded value for the RRD filename
 		 * in the graph definition.
 		 */
-		rrddbcount = rrddbsize = 1;
+		rrddbcount = rrddbsize = (hostlist ? hostlistsize : 1);
 		rrddbs = (rrddb_t *)malloc((rrddbsize + 1) * sizeof(rrddb_t));
 
-		rrddbs[0].key = strdup(service);
-		rrddbs[0].rrdfn = (char *)malloc(strlen(gdef->name) + strlen(".rrd") + 1);
-		sprintf(rrddbs[0].rrdfn, "%s.rrd", gdef->name);
-		rrddbs[0].rrdparam = NULL;
+		if (!hostlist) {
+			rrddbs[0].key = strdup(service);
+			rrddbs[0].rrdfn = (char *)malloc(strlen(gdef->name) + strlen(".rrd") + 1);
+			sprintf(rrddbs[0].rrdfn, "%s.rrd", gdef->name);
+			rrddbs[0].rrdparam = NULL;
+		}
+		else {
+			int i, maxlen;
+			char paramfmt[10];
+
+			for (i=0, maxlen=0; (i < hostlistsize); i++) {
+				if (strlen(hostlist[i]) > maxlen) maxlen = strlen(hostlist[i]);
+			}
+			sprintf(paramfmt, "%%-%ds", maxlen+1);
+
+			for (i=0; (i < hostlistsize); i++) {
+				rrddbs[i].key = strdup(service);
+				rrddbs[i].rrdfn = (char *)malloc(strlen(hostlist[i]) + strlen(gdef->fnpat) + 2);
+				sprintf(rrddbs[i].rrdfn, "%s/%s", hostlist[i], gdef->fnpat);
+
+				rrddbs[i].rrdparam = (char *)malloc(maxlen + 2);
+				sprintf(rrddbs[i].rrdparam, paramfmt, hostlist[i]);
+			}
+		}
 	}
 	else {
 		struct dirent *d;
