@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.37 2005-08-09 18:14:43 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.38 2005-08-09 21:25:38 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -102,6 +102,7 @@ void errormsg(char *msg)
 void parse_query(void)
 {
 	char *query, *token;
+	char *stp1, *stp2;
 
 	if (xgetenv("QUERY_STRING") == NULL) {
 		errormsg("Missing request");
@@ -114,22 +115,31 @@ void parse_query(void)
 		return;
 	}
 
-	token = strtok(query, "&");
+	token = strtok_r(query, "&", &stp1);
 	while (token) {
 		char *val = NULL;
 		val = strchr(token, '='); if (val) { *val = '\0'; val++; }
 		if (strcmp(token, "host") == 0) {
-			hostname = strdup(val);
-			if (hostlist == NULL) {
-				hostlistsize = 1;
-				hostlist = (char **)malloc(sizeof(char *));
-				hostlist[0] = hostname;
+			char *hnames = strdup(val);
+
+			hostname = strtok_r(val, ",", &stp2);
+			while (hostname) {
+				if (hostlist == NULL) {
+					hostlistsize = 1;
+					hostlist = (char **)malloc(sizeof(char *));
+					hostlist[0] = strdup(hostname);
+				}
+				else {
+					hostlistsize++;
+					hostlist = (char **)realloc(hostlist, (hostlistsize * sizeof(char *)));
+					hostlist[hostlistsize-1] = strdup(hostname);
+				}
+
+				hostname = strtok_r(NULL, ",", &stp2);
 			}
-			else {
-				hostlistsize++;
-				hostlist = (char **)realloc(hostlist, (hostlistsize * sizeof(char *)));
-				hostlist[hostlistsize-1] = hostname;
-			}
+
+			xfree(hnames);
+			if (hostlist) hostname = hostlist[0];
 		}
 		else if (strcmp(token, "service") == 0) {
 			service = strdup(val);
@@ -203,7 +213,7 @@ void parse_query(void)
 			if (val) graphheight = atoi(val);
 		}
 
-		token = strtok(NULL, "&");
+		token = strtok_r(NULL, "&", &stp1);
 	}
 
 	if (hostlistsize == 1) {
@@ -509,13 +519,13 @@ int main(int argc, char *argv[])
 	if (hostlist) {
 		int i;
 
-		p += sprintf(p, "?");
-		for (i = 0; (i < hostlistsize); i++) p += sprintf(p, "host=%s&amp;", hostlist[i]);
+		p += sprintf(p, "?host=%s", hostlist[0]);
+		for (i = 1; (i < hostlistsize); i++) p += sprintf(p, ",%s", hostlist[i]);
 	}
 	else
-		p += sprintf(p, "?host=%s&amp;", hostname);
+		p += sprintf(p, "?host=%s", hostname);
 
-	p += sprintf(p, "service=%s&amp;graph_height=%d&amp;graph_width=%d", 
+	p += sprintf(p, "&amp;service=%s&amp;graph_height=%d&amp;graph_width=%d", 
 		     service, graphheight, graphwidth);
 	if (displayname != hostname) p += sprintf(p, "&amp;disp=%s", displayname);
 	if (firstidx != -1) p += sprintf(p, "&amp;first=%d", firstidx+1);
