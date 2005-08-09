@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.151 2005-08-08 16:22:25 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.152 2005-08-09 08:39:25 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -39,6 +39,7 @@ int  subpagecolumns = 1;
 int  hostsbeforepages = 0;
 char *includecolumns = NULL;
 char *bb2ignorecolumns = "";
+int  bb2nodialups = 0;
 int  bb2includepurples = 1;
 int  sort_grouponly_items = 0; /* Standard BB behaviour: Dont sort group-only items */
 char *documentationurl = NULL;
@@ -1039,7 +1040,7 @@ static void do_bb2ext(FILE *output, char *extenv, char *family)
 		/* Dont redo the eventlog or acklog things */
 		if (strcmp(p, "eventlog.sh") == 0) {
 			if (bb2eventlog && !havedoneeventlog) do_eventlog(output, bb2eventlogmaxcount, bb2eventlogmaxtime,
-				NULL, NULL, NULL, NULL, NULL);
+				NULL, NULL, NULL, NULL, NULL, bb2nodialups);
 		}
 		else if (strcmp(p, "acklog.sh") == 0) {
 			if (bb2acklog && !havedoneacklog) do_acklog(output, bb2acklogmaxcount, bb2acklogmaxtime);
@@ -1096,7 +1097,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 		switch (summarytype) {
 		  case PAGE_BB2:
 			/* Normal BB2 page */
-			if (h->hostentry->nobb2) 
+			if (h->hostentry->nobb2 || (bb2nodialups && h->hostentry->dialup)) 
 				useit = 0;
 			else
 				useit = ( (h->hostentry->bb2color == COL_RED) || 
@@ -1218,7 +1219,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 		do_bb2ext(output, "BBMKBB2EXT", "mkbb");
 
 		/* Dont redo the eventlog or acklog things */
-		if (bb2eventlog && !havedoneeventlog) do_eventlog(output, bb2eventlogmaxcount, bb2eventlogmaxtime, NULL, NULL, NULL, NULL, NULL);
+		if (bb2eventlog && !havedoneeventlog) do_eventlog(output, bb2eventlogmaxcount, bb2eventlogmaxtime, NULL, NULL, NULL, NULL, NULL, bb2nodialups);
 		if (bb2acklog && !havedoneacklog) do_acklog(output, bb2acklogmaxcount, bb2acklogmaxtime);
 	}
 
