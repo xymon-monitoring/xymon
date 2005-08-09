@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.216 2005-08-03 13:38:21 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.217 2005-08-09 08:39:25 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -151,6 +151,9 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[i], "--bb2-ignorepurples")) {
 			bb2includepurples = 0;
+		}
+		else if (argnmatch(argv[i], "--bb2-ignoredialups")) {
+			bb2nodialups = 1;
 		}
 		else if (argnmatch(argv[i], "--includecolumns=")) {
 			char *lp = strchr(argv[i], '=');
