@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.25 2005-08-08 16:39:04 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.26 2005-08-09 08:39:25 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -83,7 +83,8 @@ time_t convert_time(char *timestamp)
 
 
 void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
-		 char *totime, char *hostregex, char *testregex, char *colrregex)
+		 char *totime, char *hostregex, char *testregex, char *colrregex,
+		 int ignoredialups)
 {
 	FILE *eventlog;
 	char eventlogfilename[PATH_MAX];
@@ -93,6 +94,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 	struct stat st;
 	char l[MAX_LINE_LEN];
 	char title[200];
+	namelist_t *hinfo;
 
 	/* For the PCRE matching */
 	const char *errmsg = NULL;
@@ -205,12 +207,14 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 						ovector, (sizeof(ovector)/sizeof(int))) >= 0);
 			else
 				hostmatch = 1;
+			if (!hostmatch) continue;
 
 			if (testregexp)
 				testmatch = (pcre_exec(testregexp, NULL, svcname, strlen(svcname), 0, 0, 
 						ovector, (sizeof(ovector)/sizeof(int))) >= 0);
 			else
 				testmatch = 1;
+			if (!testmatch) continue;
 
 			if (colrregexp) {
 				colrmatch = ( (pcre_exec(colrregexp, NULL, newcolname, strlen(newcolname), 0, 0,
@@ -220,20 +224,23 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 			}
 			else
 				colrmatch = 1;
+			if (!colrmatch) continue;
 
-			if (hostmatch && testmatch && colrmatch) {
-				newevent = (event_t *) malloc(sizeof(event_t));
-				newevent->host       = eventhost;
-				newevent->service    = eventcolumn;
-				newevent->eventtime  = eventtime;
-				newevent->changetime = changetime;
-				newevent->duration   = duration;
-				newevent->newcolor   = eventcolor(newcol);
-				newevent->oldcolor   = eventcolor(oldcol);
-
-				newevent->next = eventhead;
-				eventhead = newevent;
+			if (ignoredialups) {
+				hinfo = hostinfo(hostname);
+				if (bbh_item(hinfo, BBH_FLAG_DIALUP)) continue;
 			}
+
+			newevent = (event_t *) malloc(sizeof(event_t));
+			newevent->host       = eventhost;
+			newevent->service    = eventcolumn;
+			newevent->eventtime  = eventtime;
+			newevent->changetime = changetime;
+			newevent->duration   = duration;
+			newevent->newcolor   = eventcolor(newcol);
+			newevent->oldcolor   = eventcolor(oldcol);
+			newevent->next = eventhead;
+			eventhead = newevent;
 		}
 	}
 
@@ -345,6 +352,7 @@ char	*fromtime = NULL;
 char	*hostregex = NULL;
 char	*testregex = NULL;
 char	*colrregex = NULL;
+int	ignoredialups = 0;
 
 char *reqenv[] = {
 "BBHOSTS",
@@ -408,6 +416,9 @@ static void parse_query(void)
 		}
 		else if (argnmatch(token, "COLORMATCH")) {
 			if (*val) colrregex = strdup(val);
+		}
+		else if (argnmatch(token, "NODIALUPS")) {
+			ignoredialups = 1;
 		}
 
 		token = strtok(NULL, "&");
@@ -474,7 +485,7 @@ int main(int argc, char *argv[])
 
 	headfoot(stdout, "event", "", "header", COL_GREEN);
 	fprintf(stdout, "<center>\n");
-	do_eventlog(stdout, maxcount, maxminutes, fromtime, totime, hostregex, testregex, colrregex);
+	do_eventlog(stdout, maxcount, maxminutes, fromtime, totime, hostregex, testregex, colrregex, ignoredialups);
 	fprintf(stdout, "</center>\n");
 	headfoot(stdout, "event", "", "footer", COL_GREEN);
 
