@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.32 2005-06-05 09:40:25 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.33 2005-08-09 15:16:44 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -28,8 +28,6 @@ hobbitrrd_t *hobbitrrds = NULL;
 
 /* This is the information needed to generate links on the trends column page  */
 hobbitgraph_t *hobbitgraphs = NULL;
-
-static const char *bblinkfmt = "<br><A HREF=\"%s\"><IMG BORDER=0 SRC=\"%s&amp;graph=hourly\" ALT=\"Hobbit is accumulating %s\"></A>\n";
 
 static const char *hobbitlinkfmt = "<table summary=\"%s Graph\"><tr><td><A HREF=\"%s&amp;action=menu\"><IMG BORDER=0 SRC=\"%s&amp;graph=hourly&amp;action=view\" ALT=\"hobbit graph %s\"></A></td><td> <td align=\"left\" valign=\"top\"> <a href=\"%s&amp;graph=hourly&amp;action=selzoom\"> <img src=\"%s/zoom.gif\" border=0 alt=\"Zoom graph\" style='padding: 3px'> </a> </td></tr></table>\n";
 
@@ -188,11 +186,17 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service,
 {
 	static char *rrdurl = NULL;
 	static int rrdurlsize = 0;
+	static int gwidth = 0, gheight = 0;
 	char *svcurl;
 	int svcurllen, rrdparturlsize;
 	char rrdservicename[100];
 
 	MEMDEFINE(rrdservicename);
+
+	if (!gwidth) {
+		gwidth = atoi(xgetenv("RRDWIDTH"));
+		gheight = atoi(xgetenv("RRDHEIGHT"));
+	}
 
 	dprintf("rrdlink_url: host %s, rrd %s (partname:%s, maxgraphs:%d, count=%d)\n", 
 		hostname, 
@@ -241,12 +245,15 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service,
 		rrdparturl = (char *) malloc(rrdparturlsize);
 		do {
 			if (itemcount > 0) {
-				sprintf(svcurl, "%s/hobbitgraph.sh?host=%s&amp;service=%s&amp;first=%d&amp;count=%d", 
-					xgetenv("CGIBINURL"), hostname, rrdservicename, first, step);
+				sprintf(svcurl, "%s/hobbitgraph.sh?host=%s&amp;service=%s&amp;graph_width=%d&amp;graph_height=%d&amp;first=%d&amp;count=%d", 
+					xgetenv("CGIBINURL"), hostname, rrdservicename, 
+					gwidth, gheight,
+					first, step);
 			}
 			else {
-				sprintf(svcurl, "%s/hobbitgraph.sh?host=%s&amp;service=%s", 
-					xgetenv("CGIBINURL"), hostname, rrdservicename);
+				sprintf(svcurl, "%s/hobbitgraph.sh?host=%s&amp;service=%s&amp;graph_width=%d&amp;graph_height=%d", 
+					xgetenv("CGIBINURL"), hostname, rrdservicename,
+					gwidth, gheight);
 			}
 
 			strcat(svcurl, "&amp;disp=");
