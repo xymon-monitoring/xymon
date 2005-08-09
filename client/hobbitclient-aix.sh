@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-aix.sh,v 1.1 2005-08-03 18:45:30 henrik Exp $
+# $Id: hobbitclient-aix.sh,v 1.2 2005-08-09 18:12:30 henrik Exp $
 
 echo "[date]"
 date
@@ -25,7 +25,7 @@ echo "[realmem]"
 lsattr -El sys0 -a realmem
 echo "[freemem]"
 vmstat 1 2 | tail -1
-echo "[swap]²
+echo "[swap]"
 lsps -s
 echo "[netstat]"
 netstat -s
