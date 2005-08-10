@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.40 2005-07-14 08:21:37 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.41 2005-08-10 08:18:32 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -115,6 +115,8 @@ static void bbh_item_list_setup(void)
 	bbh_item_name[BBH_FLAG_BBPAGER]        = "BBH_FLAG_BBPAGER";
 	bbh_item_key[BBH_FLAG_LDAPFAILYELLOW]  = "ldapyellowfail";
 	bbh_item_name[BBH_FLAG_LDAPFAILYELLOW] = "BBH_FLAG_LDAPFAILYELLOW";
+	bbh_item_key[BBH_FLAG_NOCLEAR]         = "NOCLEAR";
+	bbh_item_name[BBH_FLAG_NOCLEAR]        = "BBH_FLAG_NOCLEAR";
 	bbh_item_key[BBH_LDAPLOGIN]            = "ldaplogin=";
 	bbh_item_name[BBH_LDAPLOGIN]           = "BBH_LDAPLOGIN";
 
