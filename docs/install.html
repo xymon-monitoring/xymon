@@ -34,6 +34,12 @@ It will probably work on any Unix-like system that supports the Unix System V
 IPC mechanisms (shared memory, semaphores) - that should be just about anything
 Unix-like you are likely to have.</p>
 
+<h4>Sufficient SYSV IPC ressources on your system</h4>
+<p>Experience shows that some systems need tuning to provide the necessary
+IPC channels that Hobbit uses. Specifically, when installing on Solaris you
+need to increase the "shmseg" kernel parameter from the default 6 to at least 7.
+See <a href="http://www.hswn.dk/hobbiton/2005/08/msg00183.html">http://www.hswn.dk/hobbiton/2005/08/msg00183.html</a> for more information about these issues.</p>
+
 <h4>A webserver</h4>
 <p>Hobbit is designed with a web-based front-end. So you should have a webserver
 such as <a href="http://httpd.apache.org/">Apache</a> running on the server where
