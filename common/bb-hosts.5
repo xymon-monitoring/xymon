@@ -439,6 +439,20 @@ Note: The "--test-untagged" option modifies this behaviour,
 see
 .I bbtest-net(1)
 
+.IP noclear
+Some network tests depend on others. E.g. if the host does not
+respond to ping, then there's a good chance that the entire host 
+is down and all network tests will fail. Or if the http server
+is down, then any web content checks are also likely to fail.
+To avoid floods of alerts, the default behaviour is for bbtest-net
+to change the status of these tests that fail because of another
+problem to "clear" instead of "red". The "noclear" tag disables this
+behaviour and causes all failing tests to be reported with their
+true color.
+
+Note that this behaviour can also be implemented on a per-test
+basis by putting the "~" flag on any network test.
+
 .IP nosslcert
 Disables the standard check of any SSL certificates for
 this host. By default, if an SSL-enabled service is tested,
