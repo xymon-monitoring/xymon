@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.219 2005-07-31 20:13:02 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.220 2005-08-10 15:13:21 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -509,7 +509,8 @@ void load_tests(void)
 		testspec = bbh_item_walk(hwalk);
 		while (testspec) {
 			service_t *s = NULL;
-			int dialuptest = 0, reversetest = 0, alwaystruetest = 0, silenttest = 0, sendasdata = 0;
+			int dialuptest = 0, reversetest = 0, silenttest = 0, sendasdata = 0;
+			int alwaystruetest = (bbh_item(hwalk, BBH_FLAG_NOCLEAR) != NULL);
 
 			if (bbh_item_idx(testspec) == -1) {
 
