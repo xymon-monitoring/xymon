@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.28 2005-08-07 21:13:14 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.29 2005-08-10 06:04:27 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -35,6 +35,7 @@ typedef struct sectlist_t {
 } sectlist_t;
 sectlist_t *sections = NULL;
 int pslistinprocs = 1;
+int sendclearmsgs = 1;
 
 void splitmsg(char *clientdata)
 {
@@ -522,9 +523,11 @@ void msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 		if (strstr(msgsstr, "&yellow ")) { msgscolor = COL_YELLOW; summary = "WARNING"; }
 		if (strstr(msgsstr, "&red ")) { msgscolor = COL_RED; summary = "CRITICAL"; }
 	}
-	else {
+	else if (sendclearmsgs) {
 		msgscolor = COL_CLEAR; summary = "No log data available";
 	}
+	else 
+		return;
 
 	init_status(msgscolor);
 	sprintf(msgline, "status %s.msgs %s System logs at %s : %s\n",
@@ -622,6 +625,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--no-ps-listing") == 0) {
 			pslistinprocs = 0;
+		}
+		else if (strcmp(argv[argi], "--no-clear-msgs") == 0) {
+			sendclearmsgs = 0;
 		}
 		else if (argnmatch(argv[argi], "--config=")) {
 			char *lp = strchr(argv[argi], '=');

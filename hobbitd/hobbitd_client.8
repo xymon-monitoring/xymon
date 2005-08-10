@@ -25,6 +25,13 @@ Normally the "procs" status message includes the full process-listing
 received from the client. If you prefer to just have the monitored
 processes shown, this option will turn off the full ps-listing.
 
+.IP "--no-clear-msgs"
+The Hobbit client does not currently generate data for a "msgs" status
+column. To avoid any such column from going purple, hobbitd_client will
+generate a "clear" status (indicating "no data") instead. If you are
+running a separate script on your clients that generates the "msgs"
+column, you must disable this default message by using this option.
+
 .IP "--config=FILENAME"
 Sets the filename for the 
 .I hobbit-clients.cfg
