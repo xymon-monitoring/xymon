@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char aix_rcsid[] = "$Id: aix.c,v 1.1 2005-08-03 18:53:18 henrik Exp $";
+static char aix_rcsid[] = "$Id: aix.c,v 1.2 2005-08-11 20:49:40 henrik Exp $";
 
 void handle_aix_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -27,10 +27,7 @@ void handle_aix_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char
 	char *freememstr;
 	char *swapmemstr;
 
-	unsigned long memphystotal, memphysused, memphysfree, memswaptotal, memswappct;
 	char fromline[1024];
-
-	memphystotal = memphysused = memswaptotal = memswappct = -1;
 
 	sprintf(fromline, "\nStatus message received from %s\n", sender);
 
@@ -56,21 +53,23 @@ void handle_aix_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char
 	unix_procs_report(hostname, hinfo, fromline, timestr, "COMMAND", "CMD", psstr);
 	msgs_report(hostname, hinfo, fromline, timestr, msgsstr);
 
-	if (realmemstr && (strncmp(realmemstr, "realmem ", 8) == 0)) memphystotal = atoi(realmemstr+8) / 1024;
-	if (freememstr && (sscanf(freememstr, "%*d %*d %*d %ld", &memphysfree) == 1)) memphysfree /= 256;
-	if (swapmemstr) {
+	if (realmemstr && freememstr && swapmemstr) {
+		long memphystotal, memphysused, memphysfree, memswaptotal, memswappct;
 		char *p;
+
+		memphystotal = memphysused = memswaptotal = memswappct = 0;
+
+		if (strncmp(realmemstr, "realmem ", 8) == 0) memphystotal = atoi(realmemstr+8) / 1024;
+		if (sscanf(freememstr, "%*d %*d %*d %ld", &memphysfree) == 1) memphysfree /= 256;
 
 		p = strchr(swapmemstr, '\n'); if (p) p++;
 		if (p && (sscanf(p, " %ldMB %ld%%", &memswaptotal, &memswappct) != 2)) {
 			memswaptotal = memswappct = -1;
 		}
-	}
 
-	if ((memphystotal > 0) && (memphysfree >= 0) && (memswaptotal >= 0) && (memswappct >= 0)) {
 		unix_memory_report(hostname, hinfo, fromline, timestr,
-			memphystotal, (memphystotal - memphysfree), -1,
-			memswaptotal, ((memswaptotal * memswappct) / 100));
+				memphystotal, (memphystotal - memphysfree), -1,
+				memswaptotal, ((memswaptotal * memswappct) / 100));
 	}
 
 	combo_end();

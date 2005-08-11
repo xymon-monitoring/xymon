@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char solaris_rcsid[] = "$Id: solaris.c,v 1.7 2005-08-01 05:57:34 henrik Exp $";
+static char solaris_rcsid[] = "$Id: solaris.c,v 1.8 2005-08-11 20:49:40 henrik Exp $";
 
 void handle_solaris_client(char *hostname, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -26,10 +26,6 @@ void handle_solaris_client(char *hostname, namelist_t *hinfo, char *sender, time
 	char *msgsstr;
 	char *netstatstr;
 	char *vmstatstr;
-
-	char *p;
-
-	unsigned long memphystotal, memphysfree, memswapused, memswapfree;
 
 	char fromline[1024];
 
@@ -55,22 +51,24 @@ void handle_solaris_client(char *hostname, namelist_t *hinfo, char *sender, time
 	unix_cpu_report(hostname, hinfo, fromline, timestr, uptimestr, whostr, psstr, topstr);
 	unix_disk_report(hostname, hinfo, fromline, timestr, "Capacity", "Mounted", dfstr);
 
-	memphystotal = memphysfree = memswapfree = memswapused = -1;
-	p = strstr(prtconfstr, "\nMemory size:");
-	if (p && (sscanf(p, "\nMemory size: %ld Megabytes", &memphystotal) == 1)) ;
-	if (memorystr && (sscanf(memorystr, "%*d %*d %*d %*d %ld", &memphysfree) == 1)) memphysfree /= 1024;
-	p = strchr(swapstr, '=');
-	if (p && sscanf(p, "= %ldk used, %ldk available", &memswapused, &memswapfree) == 2) {
-		memswapused /= 1024;
-		memswapfree /= 1024;
-	}
-	if (memphystotal && memphysfree && memswapused && memswapfree) {
-		unsigned long memphysused = memphystotal - memphysfree;
-		unsigned long memswaptotal = memswapused + memswapfree;
+	if (prtconfstr && memorystr && swapstr) {
+		long memphystotal, memphysfree, memswapused, memswapfree;
+		char *p;
 
-		unix_memory_report(hostname, hinfo, fromline, timestr,
-				   memphystotal, memphysused, -1,
-				   memswaptotal, memswapused);
+		memphystotal = memphysfree = memswapfree = memswapused = -1;
+		p = strstr(prtconfstr, "\nMemory size:");
+		if (p && (sscanf(p, "\nMemory size: %ld Megabytes", &memphystotal) == 1)) ;
+		if (sscanf(memorystr, "%*d %*d %*d %*d %ld", &memphysfree) == 1) memphysfree /= 1024;
+		p = strchr(swapstr, '=');
+		if (p && sscanf(p, "= %ldk used, %ldk available", &memswapused, &memswapfree) == 2) {
+			memswapused /= 1024;
+			memswapfree /= 1024;
+		}
+		if ((memphystotal>=0) && (memphysfree>=0) && (memswapused>=0) && (memswapfree>=0)) {
+			unix_memory_report(hostname, hinfo, fromline, timestr,
+					   memphystotal, (memphystotal - memphysfree), -1,
+					   (memswapused + memswapfree), memswapused);
+		}
 	}
 
 	unix_procs_report(hostname, hinfo, fromline, timestr, "CMD", "COMMAND", psstr);

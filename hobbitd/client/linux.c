@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char linux_rcsid[] = "$Id: linux.c,v 1.9 2005-08-01 05:57:34 henrik Exp $";
+static char linux_rcsid[] = "$Id: linux.c,v 1.10 2005-08-11 20:49:40 henrik Exp $";
 
 void handle_linux_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -49,9 +49,9 @@ void handle_linux_client(char *hostname, enum ostype_t os, namelist_t *hinfo, ch
 
 	if (freestr) {
 		char *p;
-		unsigned long memphystotal, memphysused, memphysfree,
-			      memactused, memactfree,
-			      memswaptotal, memswapused, memswapfree;
+		long memphystotal, memphysused, memphysfree,
+		     memactused, memactfree,
+		     memswaptotal, memswapused, memswapfree;
 
 		memphystotal = memswaptotal = memphysused = memswapused = memactused = memactfree = -1;
 		p = strstr(freestr, "\nMem:");

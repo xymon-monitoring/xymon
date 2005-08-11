@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char osf_rcsid[] = "$Id: osf.c,v 1.3 2005-08-07 20:10:32 henrik Exp $";
+static char osf_rcsid[] = "$Id: osf.c,v 1.4 2005-08-11 20:49:40 henrik Exp $";
 
 void handle_osf_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -53,7 +53,7 @@ void handle_osf_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char
 
 	if (memorystr && swapstr) {
 		char *p, *bol, *eoln;
-		unsigned long phystotal, physfree, swaptotal, swapfree, pagecnt, pagesize;
+		long phystotal, physfree, swaptotal, swapfree, pagecnt, pagesize;
 
 		/*
 		 * Total Physical Memory =  5120.00 M
