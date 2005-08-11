@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.220 2005-08-10 15:13:21 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.221 2005-08-11 21:12:29 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -773,9 +773,12 @@ void load_tests(void)
 			if (timespec) inscope = periodcoversnow(timespec);
 
 			if (strlen(testname) && badcounts && inscope) {
+				char *p;
 				twalk = NULL;
 
+				p = strchr(testname, ':'); if (p) *p = '\0';
 				for (swalk=svchead; (swalk && strcmp(swalk->testname, testname)); swalk = swalk->next) ;
+				if (p) *p = ':';
 				if (swalk) {
 					if (swalk == httptest) twalk = h->firsthttp;
 					else if (swalk == ldaptest) twalk = h->firstldap;
