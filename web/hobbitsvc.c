@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.46 2005-07-25 13:17:45 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.47 2005-08-11 21:21:44 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -430,6 +430,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--no-jsvalidation") == 0) {
 			usejsvalidation = 0;
+		}
+		else if (strcmp(argv[argi], "--debug") == 0) {
+			debug = 1;
 		}
 	}
 
