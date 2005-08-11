@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.5 2005-07-24 07:50:13 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.6 2005-08-11 21:11:49 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -510,28 +510,8 @@ void add_process_count(char *pname)
 			 * present in the string we got from "ps". So you can setup
 			 * the config to look for "cron" and it will actually find "/usr/sbin/cron".
 			 */
-			char *p = strstr(pname, pwalk->rule->rule.proc.procexp->pattern);
-			if (p) {
-				char prevch, nextch;
-
-				/*
-				 * Check that the character after the command we want is
-				 * either whitespace or a NUL char (end of command).
-				 */
-				nextch = *(p+strlen(pwalk->rule->rule.proc.procexp->pattern));
-				if ((nextch != '\0') && (!isspace((int)nextch))) continue;
-
-				if (p > pname) {
-					/* 
-					 * Found it in the middle of a string. 
-					 * Check that the previous character is whitespace or a /
-					 */
-					prevch = *(p-1); 
-					if (!isspace((int)prevch) && (prevch != '/')) continue;
-				}
-
+			if (strstr(pname, pwalk->rule->rule.proc.procexp->pattern))
 				pwalk->rule->rule.proc.pcount++;
-			}
 		}
 		else {
 			if (namematch(pname, pwalk->rule->rule.proc.procexp->pattern, pwalk->rule->rule.proc.procexp->exp))
