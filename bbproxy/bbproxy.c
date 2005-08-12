@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.47 2005-07-31 21:13:36 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.48 2005-08-12 09:29:47 henrik Exp $";
 
 #include "config.h"
 
@@ -115,6 +115,7 @@ void sigmisc_handler(int signum)
 
 	  case SIGHUP:
 		if (logfile) {
+			freopen(logfile, "a", stdout);
 			freopen(logfile, "a", stderr);
 			errprintf("Caught SIGHUP, reopening logfile\n");
 		}
@@ -435,7 +436,10 @@ int main(int argc, char *argv[])
 	}
 
 	/* Redirect logging to the logfile, if requested */
-	sigmisc_handler(SIGHUP);
+	if (logfile) {
+		freopen(logfile, "a", stdout);
+		freopen(logfile, "a", stderr);
+	}
 
 	errprintf("bbproxy version %s starting\n", VERSION);
 	errprintf("Listening on %s:%d\n", inet_ntoa(laddr.sin_addr), ntohs(laddr.sin_port));
@@ -458,8 +462,7 @@ int main(int argc, char *argv[])
 	if (daemonize) {
 		pid_t childpid;
 
-		fclose(stdin);
-		fclose(stdout);
+		freopen(stdin, "a", "/dev/null");
 
 		/* Become a daemon */
 		childpid = fork();
