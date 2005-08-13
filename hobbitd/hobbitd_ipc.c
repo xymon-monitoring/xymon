@@ -22,7 +22,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.25 2005-08-08 20:50:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.26 2005-08-13 15:46:48 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -57,17 +57,16 @@ hobbitd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	struct stat st;
 	struct sembuf s;
 	hobbitd_channel_t *newch;
+	unsigned int bufsz;
 	int flags = ((role == CHAN_MASTER) ? (IPC_CREAT | 0600) : 0);
 	char *bbh = xgetenv("BBHOME");
-	unsigned int shbufsz = SHAREDBUFSZ_STD;
 
 	if ( (bbh == NULL) || (stat(bbh, &st) == -1) ) {
 		errprintf("BBHOME not defined, or points to invalid directory - cannot continue.\n");
 		return NULL;
 	}
 
-	if (chnid == C_CLIENT) shbufsz = SHAREDBUFSZ_CLIENT;
-
+	bufsz = shbufsz(chnid);
 	dprintf("Setting up %s channel (id=%d)\n", channelnames[chnid], chnid);
 
 	dprintf("calling ftok('%s',%d)\n", bbh, chnid);
@@ -82,9 +81,9 @@ hobbitd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	newch->seq = 0;
 	newch->channelid = chnid;
 	newch->msgcount = 0;
-	newch->shmid = shmget(key, shbufsz, flags);
+	newch->shmid = shmget(key, bufsz, flags);
 	if (newch->shmid == -1) {
-		errprintf("Could not get shm of size %d: %s\n", shbufsz, strerror(errno));
+		errprintf("Could not get shm of size %d: %s\n", bufsz, strerror(errno));
 		xfree(newch);
 		return NULL;
 	}
@@ -135,7 +134,7 @@ hobbitd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	}
 
 #ifdef MEMORY_DEBUG
-	add_to_memlist(newch->channelbuf, shbufsz);
+	add_to_memlist(newch->channelbuf, bufsz);
 #endif
 	return newch;
 }

@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.42 2005-08-08 20:50:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.43 2005-08-13 15:46:48 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	bufsz = ((cnid == C_CLIENT) ? SHAREDBUFSZ_CLIENT : SHAREDBUFSZ_STD);
+	bufsz = shbufsz(cnid);
 	buf = (char *)malloc(bufsz);
 	if (buf == NULL) {
 		errprintf("Cannot allocate buffer of size %s\n", bufsz);

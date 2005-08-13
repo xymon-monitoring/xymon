@@ -13,7 +13,9 @@
 
 #include <sys/time.h>
 
-extern unsigned char *get_hobbitd_message(char *id, int *seq, struct timeval *timeout);
+#include "hobbitd_ipc.h"
+
+extern unsigned char *get_hobbitd_message(enum msgchannels_t chnid, char *id, int *seq, struct timeval *timeout);
 
 #endif
 

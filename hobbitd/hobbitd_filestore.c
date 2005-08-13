@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.41 2005-07-22 10:01:10 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.42 2005-08-13 15:46:48 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -179,6 +179,7 @@ int main(int argc, char *argv[])
 	char *onlytests = NULL;
 	char *msg;
 	enum role_t role = ROLE_STATUS;
+	enum msgchannels_t chnid = C_STATUS;
 	int argi;
 	int seq;
 	int running = 1;
@@ -189,22 +190,27 @@ int main(int argc, char *argv[])
 	for (argi = 1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--status") == 0) {
 			role = ROLE_STATUS;
+			chnid = C_STATUS;
 			if (!filedir) filedir = xgetenv("BBLOGS");
 		}
 		else if (strcmp(argv[argi], "--html") == 0) {
 			role = ROLE_STATUS;
+			chnid = C_STATUS;
 			if (!htmldir) htmldir = xgetenv("BBHTML");
 		}
 		else if (strcmp(argv[argi], "--data") == 0) {
 			role = ROLE_DATA;
+			chnid = C_DATA;
 			if (!filedir) filedir = xgetenv("BBDATA");
 		}
 		else if (strcmp(argv[argi], "--notes") == 0) {
 			role = ROLE_NOTES;
+			chnid = C_NOTES;
 			if (!filedir) filedir = xgetenv("BBNOTES");
 		}
 		else if (strcmp(argv[argi], "--enadis") == 0) {
 			role = ROLE_ENADIS;
+			chnid = C_ENADIS;
 			if (!filedir) filedir = xgetenv("BBDISABLED");
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
@@ -251,7 +257,7 @@ int main(int argc, char *argv[])
 
 		MEMDEFINE(logfn);
 
-		msg = get_hobbitd_message("filestore", &seq, NULL);
+		msg = get_hobbitd_message(chnid, "filestore", &seq, NULL);
 		if (msg == NULL) {
 			running = 0;
 			MEMUNDEFINE(logfn);

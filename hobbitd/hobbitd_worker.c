@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_worker.c,v 1.20 2005-08-08 20:50:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_worker.c,v 1.21 2005-08-13 15:46:48 henrik Exp $";
 
 #include "config.h"
 
@@ -39,9 +39,9 @@ static char rcsid[] = "$Id: hobbitd_worker.c,v 1.20 2005-08-08 20:50:47 henrik E
 static int didtimeout = 0;
 static int ioerror = 0;
 
-static char *readlntimed(char *buffer, size_t bufsize, struct timeval *timeout)
+static char *readlntimed(unsigned int inbufsz, char *buffer, size_t bufsize, struct timeval *timeout)
 {
-	static char stdinbuf[SHAREDBUFSZ_CLIENT+1];
+	static char *stdinbuf = NULL;
 	static int stdinbuflen = 0;
 	struct timeval cutoff, now, tmo;
 	struct timezone tz;
@@ -53,7 +53,7 @@ static char *readlntimed(char *buffer, size_t bufsize, struct timeval *timeout)
 		return NULL;
 	}
 
-	MEMDEFINE(stdinbuf);
+	if (stdinbuf == NULL) stdinbuf = (char *)malloc(inbufsz + 1);
 
 	/* Make sure the stdin buffer is null terminated */
 	stdinbuf[stdinbuflen] = '\0';
@@ -133,26 +133,27 @@ static char *readlntimed(char *buffer, size_t bufsize, struct timeval *timeout)
 			stdinbuf[stdinbuflen] = '\0';
 		}
 
-		MEMUNDEFINE(stdinbuf);
 		return buffer;
 	}
 
-	MEMUNDEFINE(stdinbuf);
 	return NULL;
 }
 
 
-unsigned char *get_hobbitd_message(char *id, int *seq, struct timeval *timeout)
+unsigned char *get_hobbitd_message(enum msgchannels_t chnid, char *id, int *seq, struct timeval *timeout)
 {
 	static unsigned int seqnum = 0;
-	static unsigned char buf[SHAREDBUFSZ_CLIENT];
-	static int bufsz = SHAREDBUFSZ_CLIENT;
+	static unsigned char *buf = NULL;
+	static int bufsz = 0;
 	unsigned char *bufp;
 	int buflen;
 	int complete;
 	char *p;
 
-	MEMDEFINE(buf);
+	if (buf == NULL) {
+		bufsz = shbufsz(chnid);
+		buf = (unsigned char *)malloc(bufsz);
+	}
 
 startagain:
 	bufp = buf;
@@ -160,7 +161,7 @@ startagain:
 	complete = 0;
 
 	while (!complete) {
-		if (readlntimed(bufp, (bufsz - buflen), timeout) == NULL) {
+		if (readlntimed(bufsz, bufp, (bufsz - buflen), timeout) == NULL) {
 			if (didtimeout) {
 				*seq = 0;
 				strcpy(buf, "@@idle\n");
@@ -227,8 +228,6 @@ startagain:
 		dprintf("%s: Got message with no serial\n", id);
 		*seq = 0;
 	}
-
-	MEMUNDEFINE(buf);
 
 	return ((!complete || (buflen == 0)) ? NULL : buf);
 }

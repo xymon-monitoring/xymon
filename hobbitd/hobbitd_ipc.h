@@ -11,8 +11,7 @@
 #ifndef __HOBBITD_IPC_H__
 #define __HOBBITD_IPC_H__
 
-#define SHAREDBUFSZ_STD      (256*1024)	/* 256 KB */
-#define SHAREDBUFSZ_CLIENT  (1024*1024)	/* 1 MB */
+#include "hobbitd_buffer.h"
 
 /* Semaphore numbers */
 #define BOARDBUSY   0
@@ -21,8 +20,6 @@
 
 #define CHAN_MASTER 0
 #define CHAN_CLIENT 1
-
-enum msgchannels_t { C_STATUS=1, C_STACHG, C_PAGE, C_DATA, C_NOTES, C_ENADIS, C_CLIENT, C_LAST };
 
 typedef struct hobbitd_channel_t {
 	enum msgchannels_t channelid;

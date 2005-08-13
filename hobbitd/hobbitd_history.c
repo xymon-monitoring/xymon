@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.38 2005-06-20 15:33:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.39 2005-08-13 15:47:31 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
 		int trend;
 		int childstat;
 
-		msg = get_hobbitd_message("hobbitd_history", &seq, NULL);
+		msg = get_hobbitd_message(C_STACHG, "hobbitd_history", &seq, NULL);
 		if (msg == NULL) {
 			running = 0;
 			continue;

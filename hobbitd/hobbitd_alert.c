@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.63 2005-08-06 14:35:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.64 2005-08-13 15:46:48 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -380,7 +380,7 @@ int main(int argc, char *argv[])
 		}
 
 		timeout.tv_sec = 60; timeout.tv_usec = 0;
-		msg = get_hobbitd_message("hobbitd_alert", &seq, &timeout);
+		msg = get_hobbitd_message(C_PAGE, "hobbitd_alert", &seq, &timeout);
 		if (msg == NULL) {
 			running = 0;
 			continue;

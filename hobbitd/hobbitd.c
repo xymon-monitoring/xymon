@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.178 2005-08-08 21:55:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.179 2005-08-13 15:46:48 henrik Exp $";
 
 #include "config.h"
 
@@ -58,6 +58,7 @@ static char rcsid[] = "$Id: hobbitd.c,v 1.178 2005-08-08 21:55:00 henrik Exp $";
 
 #include "libbbgen.h"
 
+#include "hobbitd_buffer.h"
 #include "hobbitd_ipc.h"
 
 /*
@@ -67,10 +68,10 @@ static char rcsid[] = "$Id: hobbitd.c,v 1.178 2005-08-08 21:55:00 henrik Exp $";
 #define MAX_HOBBIT_INBUFSZ (10*1024*1024)	/* 10 MB */
 
 /* The initial size of an input buffer. Make this large enough for most traffic. */
-#define HOBBIT_INBUF_INITIAL   (32768)
+#define HOBBIT_INBUF_INITIAL   (128*1024)
 
 /* How much the input buffer grows per re-allocation */
-#define HOBBIT_INBUF_INCREMENT (8192)
+#define HOBBIT_INBUF_INCREMENT (32*1024)
 
 
 /* This holds the names of the tests we have seen reports for */
@@ -476,7 +477,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 	struct timeval tstamp;
 	struct timezone tz;
 	int semerr = 0;
-	unsigned int bufsz = ((channel->channelid == C_CLIENT) ? SHAREDBUFSZ_CLIENT : SHAREDBUFSZ_STD);
+	unsigned int bufsz = shbufsz(channel->channelid);
 
 	dprintf("-> posttochannel\n");
 

@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_sample.c,v 1.16 2005-03-25 21:13:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_sample.c,v 1.17 2005-08-13 15:46:48 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -89,13 +89,18 @@ int main(int argc, char *argv[])
 		 * All messages have a sequence number ranging from 1-999999.
 		 *
 		 *
-		 * The first parameter is the name of the calling module; this is
+		 * The first paramater is the channel you're handling - this is used
+		 * to determine the needed input buffer size. If you dont know what
+		 * channel you're handling, use C_LAST and you'll get a buffer large
+		 * enough for the largest channel.
+		 *
+		 * The second parameter is the name of the calling module; this is
 		 * only used for debugging output.
 		 *
-		 * The second parameter must be an (int *), which then receives the
+		 * The third parameter must be an (int *), which then receives the
 		 * sequence number of the message returned.
 		 *
-		 * The third parameter is optional; you can pass a filled-in (struct
+		 * The fourth parameter is optional; you can pass a filled-in (struct
 		 * timeval) here, which then defines the maximum time get_hobbitd_message()
 		 * will wait for a new message. get_hobbitd_message() does not modify
 		 * the content of the timeout parameter.
@@ -105,7 +110,7 @@ int main(int argc, char *argv[])
 		 * or the timeout setting expires, or the channel is closed.
 		 */
 
-		msg = get_hobbitd_message(argv[0], &seq, timeout);
+		msg = get_hobbitd_message(C_LAST, argv[0], &seq, timeout);
 		if (msg == NULL) {
 			/*
 			 * get_hobbitd_message will return NULL if hobbitd_channel closes
