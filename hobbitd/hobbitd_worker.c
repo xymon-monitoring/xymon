@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_worker.c,v 1.21 2005-08-13 15:46:48 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_worker.c,v 1.22 2005-08-13 20:48:16 henrik Exp $";
 
 #include "config.h"
 
@@ -100,7 +100,7 @@ static char *readlntimed(unsigned int inbufsz, char *buffer, size_t bufsize, str
 			didtimeout = 1;
 		}
 		else if (FD_ISSET(STDIN_FILENO, &fdread)) {
-			res = read(STDIN_FILENO, (stdinbuf+stdinbuflen), (sizeof(stdinbuf) - stdinbuflen - 1));
+			res = read(STDIN_FILENO, (stdinbuf+stdinbuflen), ((inbufsz+1) - stdinbuflen - 1));
 			if (res <= 0) {
 				/* read() returns 0 --> End-of-file */
 				ioerror = 1;
