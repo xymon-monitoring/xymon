@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_buffer.c,v 1.2 2005-08-13 16:04:05 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_buffer.c,v 1.3 2005-08-13 20:47:42 henrik Exp $";
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -26,18 +26,18 @@ unsigned int shbufsz(enum msgchannels_t chnid)
 
 	if (chnid != C_LAST) {
 		switch (chnid) {
-		  case C_STATUS: v = getenv("MAXMSG_STATUS"); defvalue = 256; break;
-		  case C_CLIENT: v = getenv("MAXMSG_CLIENT"); defvalue = 512; break;
-		  case C_DATA:   v = getenv("MAXMSG_DATA");   defvalue = 256; break;
-		  case C_NOTES:  v = getenv("MAXMSG_NOTES");  defvalue = 256; break;
+		  case C_STATUS: v = getenv("MAXMSG_STATUS"); defvalue = 256*1024; break;
+		  case C_CLIENT: v = getenv("MAXMSG_CLIENT"); defvalue = 512*1024; break;
+		  case C_DATA:   v = getenv("MAXMSG_DATA");   defvalue = 256*1024; break;
+		  case C_NOTES:  v = getenv("MAXMSG_NOTES");  defvalue = 256*1024; break;
 		  case C_STACHG: v = getenv("MAXMSG_STACHG"); defvalue = shbufsz(C_STATUS); break;
 		  case C_PAGE:   v = getenv("MAXMSG_PAGE");   defvalue = shbufsz(C_STATUS); break;
-		  case C_ENADIS: v = getenv("MAXMSG_ENADIS"); defvalue =  32; break;
+		  case C_ENADIS: v = getenv("MAXMSG_ENADIS"); defvalue =  32*1024; break;
 		  default: break;
 		}
 
 		if (v) result = atoi(v);
-		if (result < 32) result = defvalue;
+		if (result < (32*1024)) result = defvalue;
 	}
 	else {
 		enum msgchannels_t i;
@@ -51,6 +51,6 @@ unsigned int shbufsz(enum msgchannels_t chnid)
 		}
 	}
 
-	return 1024*result;
+	return result;
 }
 
