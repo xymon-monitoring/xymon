@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.41 2005-08-10 08:18:32 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.42 2005-08-14 09:49:14 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -249,7 +249,7 @@ char *knownhost(char *hostname, char *hostip, int ghosthandling, int *maybedown)
 	RbtIterator hosthandle;
 	namelist_t *walk = NULL;
 	static char *result = NULL;
-	char *key;
+	void *k1, *k2;
 
 	if (result) xfree(result);
 	result = NULL;
@@ -257,12 +257,16 @@ char *knownhost(char *hostname, char *hostip, int ghosthandling, int *maybedown)
 	/* Find the host in the normal hostname list */
 	hosthandle = rbtFind(rbhosts, hostname);
 	if (hosthandle != rbtEnd(rbhosts)) {
-		rbtKeyValue(rbhosts, hosthandle, (void **)&key, (void **)&walk);
+		rbtKeyValue(rbhosts, hosthandle, &k1, &k2);
+		walk = (namelist_t *)k2;
 	}
 	else {
 		/* Not found - lookup in the client alias list */
 		hosthandle = rbtFind(rbclients, hostname);
-		if (hosthandle != rbtEnd(rbclients)) rbtKeyValue(rbclients, hosthandle, (void **)&key, (void **)&walk);
+		if (hosthandle != rbtEnd(rbclients)) {
+			rbtKeyValue(rbclients, hosthandle, &k1, &k2);
+			walk = (namelist_t *)k2;
+		}
 	}
 
 	if (walk) {
@@ -309,8 +313,10 @@ namelist_t *hostinfo(char *hostname)
 
 	hosthandle = rbtFind(rbhosts, hostname);
 	if (hosthandle != rbtEnd(rbhosts)) {
-		char *key;
-		rbtKeyValue(rbhosts, hosthandle, (void **)&key, (void **)&result);
+		void *k1, *k2;
+
+		rbtKeyValue(rbhosts, hosthandle, &k1, &k2);
+		result = (namelist_t *)k2;
 	}
 
 	return result;
