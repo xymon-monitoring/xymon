@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char osf_rcsid[] = "$Id: osf.c,v 1.4 2005-08-11 20:49:40 henrik Exp $";
+static char osf_rcsid[] = "$Id: osf.c,v 1.5 2005-08-14 20:23:40 henrik Exp $";
 
 void handle_osf_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -48,7 +48,7 @@ void handle_osf_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char
 
 	unix_cpu_report(hostname, hinfo, fromline, timestr, uptimestr, whostr, psstr, topstr);
 	unix_disk_report(hostname, hinfo, fromline, timestr, "Capacity", "Mounted", dfstr);
-	unix_procs_report(hostname, hinfo, fromline, timestr, "CMD", NULL, psstr);
+	unix_procs_report(hostname, hinfo, fromline, timestr, "CMD", "COMMAND", psstr);
 	msgs_report(hostname, hinfo, fromline, timestr, msgsstr);
 
 	if (memorystr && swapstr) {
