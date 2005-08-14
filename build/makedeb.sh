@@ -13,7 +13,7 @@ for f in bbdisplay bbnet bbpatches bbproxy build common contrib docs hobbitd inc
 do
         find $f/ | grep -v RCS | cpio -pdvmu ~/hobbit/debbuild/hobbit-$REL/
 done
-cp -p Changes configure configure.server configure.client COPYING CREDITS README ~/hobbit/debbuild/hobbit-$REL/
+cp -p Changes configure configure.server configure.client COPYING CREDITS README README.CLIENT ~/hobbit/debbuild/hobbit-$REL/
 find ~/hobbit/debbuild/hobbit-$REL -type d|xargs chmod 755
 
 cd debbuild
