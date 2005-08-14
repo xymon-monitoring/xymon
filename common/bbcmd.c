@@ -11,9 +11,10 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcmd.c,v 1.11 2005-05-23 12:29:52 henrik Exp $";
+static char rcsid[] = "$Id: bbcmd.c,v 1.12 2005-08-14 19:32:44 henrik Exp $";
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -55,7 +56,10 @@ int main(int argc, char *argv[])
 	}
 
 	if (!envfile) {
+		struct stat st;
+
 		sprintf(envfn, "%s/etc/hobbitserver.cfg", xgetenv("BBHOME"));
+		if (stat(envfn, &st) == -1) sprintf(envfn, "%s/etc/hobbitclient.cfg", xgetenv("BBHOME"));
 		errprintf("Using default environment file %s\n", envfn);
 		loadenv(envfn, envarea);
 	}
