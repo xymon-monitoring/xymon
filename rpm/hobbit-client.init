@@ -1,0 +1,59 @@
+#! /bin/sh
+#
+# hobbitclient    This shell script takes care of starting and stopping
+#                 the hobbit client.
+#
+# chkconfig: 2345 80 20
+# description: hobbit is a network monitoring tool that allows \
+# you to monitor hosts and services. This client reports local \
+# system statistics (cpu-, memory-, disk-utilisation etc) \
+# to the Hobbit server.
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/usr/lib/hobbit/client/runclient.sh
+NAME=hobbitclient
+DESC=hobbitclient
+
+test -x $DAEMON || exit 0
+
+# Include hobbitclient defaults if available
+DMNOPTS=""
+if [ -f /etc/default/hobbitclient ] ; then
+	. /etc/default/hobbitclient
+	if [ "$CLIENTHOSTNAME" != "" ]; then
+		DMNOPTS="${DMNOPTS} --hostname=${CLIENTHOSTNAME}"
+	fi
+	if [ "$CLIENTOS" != "" ]; then
+		DMNOPTS="${DMNOPTS} --os=${CLIENTOS}"
+	fi
+fi
+
+set -e
+
+case "$1" in
+  start)
+	echo -n "Starting $DESC: "
+	su -c "$DAEMON $DMNOPTS start" - hobbit
+	echo "$NAME."
+	;;
+  stop)
+	echo -n "Stopping $DESC: "
+	su -c "$DAEMON stop" - hobbit
+	echo "$NAME."
+	;;
+  restart)
+	echo -n "Restarting $DESC: "
+	su -c "$DAEMON stop" - hobbit
+	su -c "$DAEMON $DMNOPTS start" - hobbit
+	echo "$NAME."
+	;;
+  *)
+	N=/etc/init.d/$NAME
+	# echo "Usage: $N {start|stop|restart}" >&2
+	echo "Usage: $N {start|stop|restart}" >&2
+	exit 1
+	;;
+esac
+
+exit 0
+

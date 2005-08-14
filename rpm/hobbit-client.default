@@ -1,0 +1,10 @@
+# Configure the Hobbit client settings.
+#
+# The defaults usually suffice, but you can tweak the
+# hostname that the client reports data with, and the
+# OS name used (typically needed only on RHEL or RHAS
+# servers).
+
+# CLIENTHOSTNAME=""
+# CLIENTOS="rhel3"
+
