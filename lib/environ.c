@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.26 2005-08-09 15:04:51 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.27 2005-08-14 16:58:35 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -35,7 +35,7 @@ const static struct {
 	{ "BBSERVERCGIURL", "/hobbit-cgi" },
 	{ "BBSERVERSECCGIURL", "/hobbit-cgisecure" },
 	{ "BBLOCATION", "" },
-	{ "PATH", "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:$BBSERVERROOT/server/bin" },
+	{ "PATH", "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:"BUILD_HOME"/bin" },
 	{ "BBPORT", "1984" },
 	{ "BBDISP", "$BBSERVERIP" },
 	{ "BBDISPLAYS", "" },
@@ -68,7 +68,7 @@ const static struct {
 	{ "BBSNAPURL", "$BBSERVERWWWURL/snap" },
 	{ "BBWAP", "$BBSERVERWWWURL/wml" },
 	{ "CGIBINURL", "$BBSERVERCGIURL" },
-	{ "BBHOME", "$BBSERVERROOT/server" },
+	{ "BBHOME", BUILD_HOME },
 	{ "BBTMP", "$BBHOME/tmp" },
 	{ "BBHOSTS", "$BBHOME/etc/bb-hosts" },
 	{ "BB", "$BBHOME/bin/bb" },
