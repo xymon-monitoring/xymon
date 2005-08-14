@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_buffer.c,v 1.3 2005-08-13 20:47:42 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_buffer.c,v 1.4 2005-08-14 09:54:55 henrik Exp $";
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -21,8 +21,8 @@ static char rcsid[] = "$Id: hobbitd_buffer.c,v 1.3 2005-08-13 20:47:42 henrik Ex
 
 unsigned int shbufsz(enum msgchannels_t chnid)
 {
-	unsigned int defvalue, result = 0;
-	char *v;
+	unsigned int defvalue = 0, result = 0;
+	char *v = NULL;
 
 	if (chnid != C_LAST) {
 		switch (chnid) {
