@@ -16,7 +16,9 @@ ifeq ($(OSTYPE),openbsd)
 	EXTRATOOLS=openbsd-meminfo
 endif
 
-all: hobbitlaunch bb hobbitclient.cfg $(EXTRATOOLS)
+COMMONTOOLS=bb bbcmd bbhostgrep bbhostshow
+
+all: hobbitlaunch $(COMMONTOOLS) hobbitclient.cfg $(EXTRATOOLS)
 
 hobbitclient.cfg: hobbitclient.cfg.DIST
 	cat hobbitclient.cfg.DIST | sed -e's!@BBHOSTIP@!$(BBHOSTIP)!g' >hobbitclient.cfg
@@ -42,7 +44,7 @@ install:
 	if test ! -d $(INSTALLROOT)$(BBHOME)/logs; then mkdir -p $(INSTALLROOT)$(BBHOME)/logs; fi
 	if test ! -d $(INSTALLROOT)$(BBHOME)/ext ; then mkdir -p $(INSTALLROOT)$(BBHOME)/ext ; fi
 	cp -fp runclient.sh $(INSTALLROOT)$(BBHOME)
-	cp -fp hobbitlaunch bb hobbitclient*.sh $(EXTRATOOLS) $(INSTALLROOT)$(BBHOME)/bin/
+	cp -fp hobbitlaunch hobbitclient*.sh $(COMMONTOOLS) $(EXTRATOOLS) $(INSTALLROOT)$(BBHOME)/bin/
 	../build/merge-sects clientlaunch.cfg $(INSTALLROOT)$(BBHOME)/etc/clientlaunch.cfg
 	../build/merge-lines hobbitclient.cfg $(INSTALLROOT)$(BBHOME)/etc/hobbitclient.cfg
 ifndef PKGBUILD
@@ -50,5 +52,5 @@ ifndef PKGBUILD
 endif
 
 clean:
-	rm -f hobbitlaunch bb hobbitclient.cfg $(EXTRATOOLS) *~
+	rm -f hobbitlaunch $(COMMONTOOLS) hobbitclient.cfg $(EXTRATOOLS) *~
 
