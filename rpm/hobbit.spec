@@ -7,16 +7,33 @@ License: GPL
 Source: hobbit-@VER@.tar.gz
 Source1: hobbit-init.d
 Source2: hobbit.logrotate
+Source3: hobbitclient-init.d
+Source4: hobbitclient-default
 Summary: Hobbit network monitor
 BuildRoot: /tmp/hobbit-root
 Requires: fping
-# BuildRequires: openssl-devel, pcre-devel, rrdtool-devel, openldap-devel
+#BuildRequires: openssl-devel
+#BuildRequires: pcre-devel
+#BuildRequires: rrdtool-devel
+#BuildRequires: openldap-devel
+Conflicts: hobbit-client
 
 %description
 Hobbit is a system for monitoring your network servers and
 applications. It is heavily inspired by the Big Brother
 tool, but is a complete re-implementation with a lot of added
 functionality and performance improvements.
+
+%package client
+Summary: Hobbit client reporting data to the Hobbit server
+Group: Applications/System
+Conflicts: hobbit
+
+%description client
+This package contains a client for the Hobbit monitor. Clients
+report data about the local system to the monitor, allowing it
+to check on the status of the system load, filesystem utilisation,
+processes that must be running etc.
 
 %prep
 rm -rf $RPM_BUILD_ROOT
@@ -56,10 +73,19 @@ rm -rf $RPM_BUILD_ROOT
         INSTALLROOT=$RPM_BUILD_ROOT PKGBUILD=1 make install
 	mkdir -p $RPM_BUILD_ROOT/etc/init.d
 	cp %{SOURCE1} $RPM_BUILD_ROOT/etc/init.d/hobbit
+	cp %{SOURCE3} $RPM_BUILD_ROOT/etc/init.d/hobbitclient
 	mkdir -p $RPM_BUILD_ROOT/etc/logrotate.d
 	cp %{SOURCE2} $RPM_BUILD_ROOT/etc/logrotate.d/hobbit
+	mkdir -p $RPM_BUILD_ROOT/etc/default
+	cp %{SOURCE4} $RPM_BUILD_ROOT/etc/default/hobbitclient
 	mkdir -p $RPM_BUILD_ROOT/usr/bin
 	cd $RPM_BUILD_ROOT/usr/bin && ln -s ../lib/hobbit/server/bin/{bb,bbcmd} .
+	mkdir -p $RPM_BUILD_ROOT/etc/httpd/conf.d
+	mv $RPM_BUILD_ROOT/etc/hobbit/hobbit-apache.conf $RPM_BUILD_ROOT/etc/httpd/conf.d/
+	rmdir $RPM_BUILD_ROOT/usr/lib/hobbit/client/tmp
+	cd $RPM_BUILD_ROOT/usr/lib/hobbit/client && ln -s /tmp tmp
+	rmdir $RPM_BUILD_ROOT/usr/lib/hobbit/client/logs
+	cd $RPM_BUILD_ROOT/usr/lib/hobbit/client && ln -s ../../../../var/log/hobbit logs
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -72,16 +98,29 @@ then
    groupadd hobbit || true
    useradd -g hobbit -c "Hobbit user" -d /usr/lib/hobbit hobbit
 fi
-
 if [ -e /var/log/hobbit/hobbitlaunch.pid -a -x /etc/init.d/hobbit ]
 then
 	/etc/init.d/hobbit stop || true
 fi
 
+%pre client
+id hobbit 1>/dev/null 2>&1
+if [ $? -ne 0 ]
+then
+   groupadd hobbit || true
+   useradd -g hobbit -c "Hobbit user" -d /usr/lib/hobbit hobbit
+fi
+if [ -e /var/log/hobbit/clientlaunch.pid -a -x /etc/init.d/hobbitclient ]
+then
+	/etc/init.d/hobbitclient stop || true
+fi
 
 
 %post
 chkconfig --add hobbit
+
+%post client
+chkconfig --add hobbitclient
 
 
 %preun
@@ -91,11 +130,19 @@ then
 fi
 chkconfig --del hobbit
 
+%preun client
+if [ -e /var/log/hobbit/clientlaunch.pid -a -x /etc/init.d/hobbitclient ]
+then
+	/etc/init.d/hobbitclient stop || true
+fi
+chkconfig --del hobbitclient
+
 
 %files
 %attr(-, root, root) %doc README README.CLIENT Changes* COPYING CREDITS
 %attr(644, root, root) %doc /usr/share/man/man*/*
 %attr(644, root, root) %config /etc/hobbit/*
+%attr(644, root, root) %config /etc/httpd/conf.d/hobbit-apache.conf
 %attr(755, root, root) %dir /etc/hobbit 
 %attr(755, root, root) %dir /etc/hobbit/web
 %attr(755, hobbit, hobbit) %dir /var/log/hobbit
@@ -109,6 +156,13 @@ chkconfig --del hobbit
 %attr(644, root, root) %config /var/lib/hobbit/www/menu/menu_items.js
 %attr(644, root, root) %config /var/lib/hobbit/www/menu/menu_tpl.js
 %attr(644, root, root) %config /var/lib/hobbit/www/menu/menu.css
-%attr(755, hobbit, hobbit) %dir /usr/lib/hobbit/client/logs
-%attr(755, hobbit, hobbit) %dir /usr/lib/hobbit/client/tmp
+%attr(755, hobbit, hobbit) %dir /usr/lib/hobbit/client/ext
+
+%files client
+%attr(-, root, root) %doc README README.CLIENT Changes* COPYING CREDITS
+%attr(-, root, root) /usr/lib/hobbit/client
+%attr(755, root, root) /etc/init.d/hobbitclient
+%attr(644, root, root) %config /etc/default/hobbitclient
+%attr(755, hobbit, hobbit) %dir /var/log/hobbit
+%attr(755, hobbit, hobbit) %dir /usr/lib/hobbit/client/ext
 
