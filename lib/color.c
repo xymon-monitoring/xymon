@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: color.c,v 1.9 2005-08-15 11:40:05 henrik Exp $";
+static char rcsid[] = "$Id: color.c,v 1.10 2005-08-15 13:12:16 henrik Exp $";
 
 #include <string.h>
 
@@ -112,17 +112,19 @@ char *dotgiffilename(int color, int acked, int oldage)
 
 int colorset(char *colspec, int excludeset)
 {
+	char *cspeccopy = strdup(colspec);
 	int c, ac;
 	char *p;
 	char *pp;
 
-	p = strtok_r(colspec, ",", &pp);
+	p = strtok_r(cspeccopy, ",", &pp);
 	ac = 0;
 	while (p) {
 		c = parse_color(p);
 		if (c != -1) ac = (ac | (1 << c));
 		p = strtok_r(NULL, ",", &pp);
 	}
+	xfree(cspeccopy);
 
 	/* Some color may be forbidden */
 	ac = (ac & ~excludeset);
