@@ -2,8 +2,10 @@
 # -*- makefile -*-
 
 # Uncomment this to turn on verbose mode.
-#export DH_VERBOSE=1
+# export DH_VERBOSE=1
 
+# Must be exported
+export DH_OPTIONS
 
 # These are used for cross-compiling and for saving the configure script
 # from having to guess our platform (since we know it already)
@@ -64,10 +66,7 @@ clean:
 	dh_testroot
 	rm -f build-stamp 
 
-	# Add here commands to clean up after the build process.
 	-$(MAKE) distclean
-
-
 	dh_clean 
 
 install: build
@@ -75,18 +74,29 @@ install: build
 	dh_testroot
 	dh_clean -k 
 	dh_installdirs
-
-	# Add here commands to install the package into debian/hobbit.
 	PKGBUILD=1 INSTALLROOT=$(CURDIR)/debian/hobbit/ $(MAKE) install
 	cd $(CURDIR)/debian/hobbit/usr/bin && ln -s ../lib/hobbit/server/bin/{bb,bbcmd} .
+
+install-client: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k 
+	dh_installdirs
+	PKGBUILD=1 INSTALLROOT=$(CURDIR)/debian/hobbit-client/ $(MAKE) install-client
+	cp debian/hobbit-client.default $(CURDIR)/debian/hobbit-client/etc/default/hobbit-client
+	mkdir -p $(CURDIR)/debian/hobbit-client/var/log/hobbit
+	cd $(CURDIR)/debian/hobbit-client/usr/lib/hobbit/client && rmdir logs && ln -s ../../../../var/log/hobbit logs
+	cd $(CURDIR)/debian/hobbit-client/usr/lib/hobbit/client && rmdir tmp && ln -s /tmp tmp
+	mv $(CURDIR)/debian/hobbit-client/usr/lib/hobbit/client/etc/hobbitclient.cfg /tmp/hobbitclient.cfg.$$
+	cat /tmp/hobbitclient.cfg.$$ | sed -e's!^BBDISP=.*!include /var/run/hobbitclient-runtime.cfg!' | grep -v "^BBDISPLAYS=" >$(CURDIR)/debian/hobbit-client/usr/lib/hobbit/client/etc/hobbitclient.cfg
 
 
 # Build architecture-independent files here.
 binary-indep: build install
 # We have nothing to do by default.
 
-# Build architecture-dependent files here.
-binary-arch: build install
+hobbit: DH_OPTIONS=--package=hobbit
+hobbit: build install
 	dh_testdir
 	dh_testroot
 	dh_installchangelogs Changes
@@ -115,6 +125,39 @@ binary-arch: build install
 	dh_gencontrol
 	dh_md5sums
 	dh_builddeb
+
+hobbit-client: DH_OPTIONS=--package=hobbit-client
+hobbit-client: build install-client
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs Changes
+	dh_installdocs
+	dh_installexamples
+#	dh_install
+#	dh_installmenu
+	dh_installdebconf	
+	dh_installlogrotate
+#	dh_installemacsen
+#	dh_installpam
+#	dh_installmime
+	dh_installinit
+#	dh_installcron
+#	dh_installinfo
+	dh_installman
+	dh_link
+#	dh_strip
+	dh_compress
+	dh_fixperms
+#	dh_perl
+#	dh_python
+#	dh_makeshlibs
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary-arch: hobbit hobbit-client
 
 binary: binary-indep binary-arch
 .PHONY: build clean binary-indep binary-arch binary install 
