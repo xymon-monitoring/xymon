@@ -8,7 +8,7 @@ Standards-Version: 3.6.1
 Package: hobbit
 Architecture: any
 Depends: fping, ${shlibs:Depends}, ${misc:Depends}
-Description: The Hobbit network monitor
+Description: monitoring system for systems, networks and applications
  Hobbit is a network- and applications-monitoring system designed
  for use in large-scale networks. But it will also work just fine
  on a small network with just a few nodes. It is low-overhead and
@@ -24,5 +24,10 @@ Description: The Hobbit network monitor
 Package: hobbit-client
 Architecture: any
 Conflicts: hobbit
-Description: Client for the Hobbit network monitor
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: client for the Hobbit network monitor
+ Client data collection package for Hobbit. This gathers
+ statistics and data from a single system and reports
+ it to the Hobbit monitor. You should run this on all
+ systems if you have a Hobbit server installed.
 
