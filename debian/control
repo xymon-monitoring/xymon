@@ -21,3 +21,8 @@ Description: The Hobbit network monitor
  Hobbit has a great deal of inspiration from the non-free Big Brother 
  package, but does not include any Big Brother code.
 
+Package: hobbit-client
+Architecture: any
+Conflicts: hobbit
+Description: Client for the Hobbit network monitor
+
