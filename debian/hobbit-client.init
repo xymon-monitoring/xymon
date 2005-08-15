@@ -55,7 +55,7 @@ case "$CMD" in
 	su -c "$DAEMON stop" - hobbit
 	echo "$NAME."
 	;;
-  restart)
+  restart|force-reload)
 	echo -n "Restarting $DESC: "
 	su -c "$DAEMON stop" - hobbit
 	su -c "$DAEMON $DMNOPTS start" - hobbit
@@ -63,8 +63,7 @@ case "$CMD" in
 	;;
   *)
 	N=/etc/init.d/$NAME
-	# echo "Usage: $N {start|stop|restart}" >&2
-	echo "Usage: $N {start|stop|restart}" >&2
+	echo "Usage: $N {start|stop|restart|force-reload}" >&2
 	exit 1
 	;;
 esac
