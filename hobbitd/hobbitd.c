@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.180 2005-08-14 09:49:14 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.181 2005-08-15 13:15:39 henrik Exp $";
 
 #include "config.h"
 
@@ -1670,7 +1670,7 @@ void setup_filter(char *buf, char **spage, char **shost, char **stest, int *scol
 		else if (strncmp(tok, "host=", 5) == 0) *shost = tok+5;
 		else if (strncmp(tok, "test=", 5) == 0) *stest = tok+5;
 		else if (strncmp(tok, "fields=", 7) == 0) *fields = tok+7;
-		else if (strncmp(tok, "color=", 6) == 0) *scolor = parse_color(tok+6);
+		else if (strncmp(tok, "color=", 6) == 0) *scolor = colorset(tok+6, 0);
 
 		tok = strtok(NULL, " \t\r\n");
 	}
@@ -2190,7 +2190,7 @@ void do_message(conn_t *msg, char *origin)
 				if (stest && (strcmp(lwalk->test->testname, stest) != 0)) continue;
 
 				/* Color filter */
-				if ((scolor != -1) && (lwalk->color != scolor)) continue;
+				if ((scolor != -1) && (((1 << lwalk->color) & scolor) == 0)) continue;
 
 				if (lwalk->message == NULL) {
 					errprintf("%s.%s has a NULL message\n", lwalk->host->hostname, lwalk->test->testname);
