@@ -50,7 +50,7 @@ extern void finish_alerts(void);
 
 extern int have_recipient(activealerts_t *alert, int *anymatch);
 
-extern void load_state(char *filename);
+extern void load_state(char *filename, char *statusbuf);
 extern void save_state(char *filename);
 
 extern void alert_printmode(int on);

@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.77 2005-08-06 22:09:03 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.78 2005-08-15 13:14:46 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -1586,7 +1586,7 @@ void save_state(char *filename)
 	fclose(fd);
 }
 
-void load_state(char *filename)
+void load_state(char *filename, char *statusbuf)
 {
 	FILE *fd = fopen(filename, "r");
 	char *inbuf = NULL;
@@ -1605,6 +1605,24 @@ void load_state(char *filename)
 
 			*p = '\0';
 			if (atoi(inbuf) > time(NULL)) {
+				char *found = NULL;
+
+				if (statusbuf) {
+					char *htend;
+
+					/* statusbuf contains lines with "HOSTNAME|TESTNAME|COLOR" */
+					htend = strchr(p+1, '|'); if (htend) htend = strchr(htend+1, '|');
+					if (htend) {
+						*htend = '\0';
+						*p = '\n';
+						found = strstr(statusbuf, p);
+						if (!found && (strncmp(statusbuf, p+1, strlen(p+1)) == 0)) 
+							found = statusbuf;
+						*htend = '|';
+					}
+				}
+				if (!found) continue;
+
 				newrpt = (repeat_t *)malloc(sizeof(repeat_t));
 				newrpt->recipid = strdup(p+1);
 				newrpt->nextalert = atoi(inbuf);

@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.64 2005-08-13 15:46:48 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.65 2005-08-15 13:14:46 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -151,9 +151,14 @@ void load_checkpoint(char *filename)
 	FILE *fd;
 	char *inbuf = NULL;
 	int inbufsz;
+	char statuscmd[1024];
+	char *statusbuf = NULL;
 
 	fd = fopen(filename, "r");
 	if (fd == NULL) return;
+
+	sprintf(statuscmd, "hobbitdboard color=%s fields=hostname,testname,color", xgetenv("ALERTCOLORS"));
+	sendmessage(statuscmd, NULL, NULL, &statusbuf, 1, BBTALK_TIMEOUT);
 
 	initfgets(fd);
 	while (unlimfgets(&inbuf, &inbufsz, fd)) {
@@ -174,6 +179,7 @@ void load_checkpoint(char *filename)
 		}
 
 		if (i > 9) {
+			char *key, *valid = NULL;
 			activealerts_t *newalert = (activealerts_t *)malloc(sizeof(activealerts_t));
 			newalert->hostname = find_name(&hostnames, item[0]);
 			newalert->testname = find_name(&testnames, item[1]);
@@ -183,6 +189,19 @@ void load_checkpoint(char *filename)
 			newalert->eventstart = (time_t) atoi(item[5]);
 			newalert->nextalerttime = (time_t) atoi(item[6]);
 			newalert->state = A_PAGING;
+
+			if (statusbuf) {
+				key = (char *)malloc(strlen(newalert->hostname->name) + strlen(newalert->testname->name) + 100);
+				sprintf(key, "\n%s|%s|%s\n", newalert->hostname->name, newalert->testname->name, colorname(newalert->color));
+				valid = strstr(statusbuf, key);
+				if (!valid && (strncmp(statusbuf, key+1, strlen(key+1)) == 0)) valid = statusbuf;
+			}
+			if (!valid) {
+				errprintf("Stale alert for %s:%s dropped\n", newalert->hostname->name, newalert->testname->name);
+				xfree(newalert);
+				continue;
+			}
+
 			while (strcmp(item[7], statename[newalert->state]) && (newalert->state < A_DEAD)) 
 				newalert->state++;
 			/* Config might have changed while we were down */
@@ -205,8 +224,9 @@ void load_checkpoint(char *filename)
 
 	subfn = (char *)malloc(strlen(filename)+5);
 	sprintf(subfn, "%s.sub", filename);
-	load_state(subfn);
+	load_state(subfn, statusbuf);
 	xfree(subfn);
+	if (statusbuf) xfree(statusbuf);
 }
 
 int main(int argc, char *argv[])
