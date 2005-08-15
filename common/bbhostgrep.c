@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.28 2005-07-14 17:09:46 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.29 2005-08-15 05:59:12 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 	}
 	lookv[lookc] = NULL;
 
-	if (bbhostsfn == NULL) {
+	if ((bbhostsfn == NULL) || (strlen(bbhostsfn) == 0)) {
 		errprintf("Environment variable BBHOSTS is not set - aborting\n");
 		exit(2);
 	}

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostshow.c,v 1.8 2005-07-16 09:49:47 henrik Exp $";
+static char rcsid[] = "$Id: bbhostshow.c,v 1.9 2005-08-15 05:59:12 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -21,14 +21,12 @@ static char rcsid[] = "$Id: bbhostshow.c,v 1.8 2005-07-16 09:49:47 henrik Exp $"
 int main(int argc, char *argv[])
 { 
 	FILE *bbhosts;
-	char fn[PATH_MAX];
+	char *fn = NULL;
 	char *inbuf = NULL;
 	int inbufsz;
 	int argi;
 	char *include2 = NULL;
 
-
-	fn[0] = '\0';
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--version") == 0) {
@@ -46,15 +44,13 @@ int main(int argc, char *argv[])
 			include2 = "dispinclude";
 		}
 		else if (*argv[argi] != '-') {
-			strcpy(fn, argv[argi]);
+			fn = strdup(argv[argi]);
 		}
 	}
 
-	if (strlen(fn) == 0) {
-		if (xgetenv("BBHOSTS")) {
-			strcpy(fn, xgetenv("BBHOSTS"));
-		}
-		else {
+	if (!fn || (strlen(fn) == 0)) {
+		fn = getenv("BBHOSTS");
+		if (!fn) {
 			errprintf("Environment variable BBHOSTS is not set - aborting\n");
 			exit(2);
 		}
@@ -62,7 +58,7 @@ int main(int argc, char *argv[])
 
 	bbhosts = stackfopen(fn, "r");
 	if (bbhosts == NULL) {
-		printf("Cannot open the BBHOSTS file '%s'\n", argv[1]);
+		printf("Cannot open the BBHOSTS file '%s'\n", fn);
 		exit(1);
 	}
 
