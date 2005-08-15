@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: color.c,v 1.8 2005-04-03 11:01:01 henrik Exp $";
+static char rcsid[] = "$Id: color.c,v 1.9 2005-08-15 11:40:05 henrik Exp $";
 
 #include <string.h>
 
@@ -114,13 +114,14 @@ int colorset(char *colspec, int excludeset)
 {
 	int c, ac;
 	char *p;
+	char *pp;
 
-	p = strtok(colspec, ",");
+	p = strtok_r(colspec, ",", &pp);
 	ac = 0;
 	while (p) {
 		c = parse_color(p);
 		if (c != -1) ac = (ac | (1 << c));
-		p = strtok(NULL, ",");
+		p = strtok_r(NULL, ",", &pp);
 	}
 
 	/* Some color may be forbidden */
