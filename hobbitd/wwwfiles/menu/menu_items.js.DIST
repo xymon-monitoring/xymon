@@ -8,6 +8,7 @@ var MENU_ITEMS = [
 		['Event log Report', '@BBCGIURL@/bb-eventlog.sh'],
 		['Availability Report', '@BBCGIURL@/bb-rep.sh'],
 		['Snapshot Report', '@BBCGIURL@/bb-snapshot.sh'],
+		['Config Report', '@BBCGIURL@/hobbit-confreport.sh'],
 	],
 	['Administration', null, null,
 		['Find host', '@BBCGIURL@/bb-findhost.sh'],
