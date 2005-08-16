@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.30 2005-08-13 15:46:48 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.31 2005-08-16 21:32:33 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -296,11 +296,12 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 			int usage, warnlevel, paniclevel;
 
 			p = strdup(bol); usestr = getcolumn(p, capacol);
-			if (isdigit((int)*usestr)) usage = atoi(usestr); else usage = -1;
+
+			if (usestr && isdigit((int)*usestr)) usage = atoi(usestr); else usage = -1;
 
 			strcpy(p, bol); fsname = getcolumn(p, mntcol);
 
-			if (usage != -1) {
+			if (fsname && (usage != -1)) {
 				get_disk_thresholds(hinfo, fsname, &warnlevel, &paniclevel);
 
 				dprintf("Disk check: FS='%s' usage %d (thresholds: %d/%d)\n",
