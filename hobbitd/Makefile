@@ -42,7 +42,7 @@ hobbitd_history: $(HISTORYOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(RPATHOPT) $(HISTORYOBJS) $(LIBOBJS)
 
 hobbitd_alert: $(ALERTOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(RPATHOPT) $(ALERTOBJS) $(LIBOBJS) $(PCRELIBS)
+	$(CC) -o $@ $(RPATHOPT) $(ALERTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
 hobbitd_rrd: $(RRDOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(RPATHOPT) $(RRDOBJS) $(LIBOBJS) $(RRDLIBS) $(PCRELIBS) $(NETLIBS)
