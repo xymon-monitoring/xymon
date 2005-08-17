@@ -7,8 +7,8 @@ License: GPL
 Source: hobbit-@VER@.tar.gz
 Source1: hobbit-init.d
 Source2: hobbit.logrotate
-Source3: hobbitclient-init.d
-Source4: hobbitclient-default
+Source3: hobbit-client.init
+Source4: hobbit-client.default
 Summary: Hobbit network monitor
 BuildRoot: /tmp/hobbit-root
 Requires: fping
@@ -73,11 +73,11 @@ rm -rf $RPM_BUILD_ROOT
         INSTALLROOT=$RPM_BUILD_ROOT PKGBUILD=1 make install
 	mkdir -p $RPM_BUILD_ROOT/etc/init.d
 	cp %{SOURCE1} $RPM_BUILD_ROOT/etc/init.d/hobbit
-	cp %{SOURCE3} $RPM_BUILD_ROOT/etc/init.d/hobbitclient
+	cp %{SOURCE3} $RPM_BUILD_ROOT/etc/init.d/hobbit-client
 	mkdir -p $RPM_BUILD_ROOT/etc/logrotate.d
 	cp %{SOURCE2} $RPM_BUILD_ROOT/etc/logrotate.d/hobbit
 	mkdir -p $RPM_BUILD_ROOT/etc/default
-	cp %{SOURCE4} $RPM_BUILD_ROOT/etc/default/hobbitclient
+	cp %{SOURCE4} $RPM_BUILD_ROOT/etc/default/hobbit-client
 	mkdir -p $RPM_BUILD_ROOT/usr/bin
 	cd $RPM_BUILD_ROOT/usr/bin && ln -s ../lib/hobbit/server/bin/{bb,bbcmd} .
 	mkdir -p $RPM_BUILD_ROOT/etc/httpd/conf.d
