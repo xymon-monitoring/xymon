@@ -20,15 +20,15 @@ CMD="$1"
 
 # Include hobbitclient defaults if available
 DMNOPTS=""
-if [ -f /etc/default/hobbitclient ] ; then
-	. /etc/default/hobbitclient
+if [ -f /etc/default/hobbit-client ] ; then
+	. /etc/default/hobbit-client
 else
-	echo "Installation failure - missing /etc/default/hobbitclient"
+	echo "Installation failure - missing /etc/default/hobbit-client"
 	exit 1
 fi
 
 if [ "$HOBBITSERVERS" = "" ]; then
-	echo "Please configure HOBBITSERVERS in /etc/default/hobbitclient"
+	echo "Please configure HOBBITSERVERS in /etc/default/hobbit-client"
 	exit 1
 fi
 
