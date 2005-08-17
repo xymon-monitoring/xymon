@@ -26,9 +26,9 @@ EOF2
 
 cat rpm/hobbit.spec | sed -e "s/@VER@/$REL/g" >rpmbuild/SPECS/hobbit.spec
 cp rpm/hobbit-init.d rpmbuild/SOURCES/
-cp rpm/hobbitclient-init.d rpmbuild/SOURCES/
 cp rpm/hobbit.logrotate rpmbuild/SOURCES/
-cp rpm/hobbitclient-default rpmbuild/SOURCES/
+cp rpm/hobbit-client.init rpmbuild/SOURCES/
+cp rpm/hobbit-client.default rpmbuild/SOURCES/
 
 mkdir -p rpmbuild/hobbit-$REL
 for f in bbdisplay bbnet bbpatches bbproxy build common contrib docs hobbitd include lib client

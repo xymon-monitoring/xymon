@@ -113,9 +113,9 @@ then
    groupadd hobbit || true
    useradd -g hobbit -c "Hobbit user" -d /usr/lib/hobbit hobbit
 fi
-if [ -e /var/log/hobbit/clientlaunch.pid -a -x /etc/init.d/hobbitclient ]
+if [ -e /var/log/hobbit/clientlaunch.pid -a -x /etc/init.d/hobbit-client ]
 then
-	/etc/init.d/hobbitclient stop || true
+	/etc/init.d/hobbit-client stop || true
 fi
 
 
@@ -123,7 +123,7 @@ fi
 chkconfig --add hobbit
 
 %post client
-chkconfig --add hobbitclient
+chkconfig --add hobbit-client
 
 
 %preun
@@ -134,11 +134,11 @@ fi
 chkconfig --del hobbit
 
 %preun client
-if [ -e /var/log/hobbit/clientlaunch.pid -a -x /etc/init.d/hobbitclient ]
+if [ -e /var/log/hobbit/clientlaunch.pid -a -x /etc/init.d/hobbit-client ]
 then
-	/etc/init.d/hobbitclient stop || true
+	/etc/init.d/hobbit-client stop || true
 fi
-chkconfig --del hobbitclient
+chkconfig --del hobbit-client
 
 
 %files
@@ -164,8 +164,8 @@ chkconfig --del hobbitclient
 %files client
 %attr(-, root, root) %doc README README.CLIENT Changes* COPYING CREDITS
 %attr(-, root, root) /usr/lib/hobbit/client
-%attr(755, root, root) /etc/init.d/hobbitclient
-%attr(644, root, root) %config /etc/default/hobbitclient
+%attr(755, root, root) /etc/init.d/hobbit-client
+%attr(644, root, root) %config /etc/default/hobbit-client
 %attr(755, hobbit, hobbit) %dir /var/log/hobbit
 %attr(755, hobbit, hobbit) %dir /usr/lib/hobbit/client/ext
 

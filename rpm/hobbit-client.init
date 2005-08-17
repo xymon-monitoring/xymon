@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# hobbitclient    This shell script takes care of starting and stopping
+# hobbit-client   This shell script takes care of starting and stopping
 #                 the hobbit client.
 #
 # chkconfig: 2345 80 20
@@ -11,14 +11,14 @@
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/lib/hobbit/client/runclient.sh
-NAME=hobbitclient
-DESC=hobbitclient
+NAME=hobbit-client
+DESC=hobbit-client
 
 test -x $DAEMON || exit 0
 
 CMD="$1"
 
-# Include hobbitclient defaults if available
+# Include hobbit-client defaults if available
 DMNOPTS=""
 if [ -f /etc/default/hobbit-client ] ; then
 	. /etc/default/hobbit-client
