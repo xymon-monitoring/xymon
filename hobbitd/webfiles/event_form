@@ -32,7 +32,7 @@
        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Max # of events</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
        <TD><INPUT TYPE=TEXT NAME="MAXCOUNT" SIZE=40 VALUE=100></TD>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( Default 100 )</TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( Default 100 )</FONT></TD>
      </TR>
 
      <TR>
