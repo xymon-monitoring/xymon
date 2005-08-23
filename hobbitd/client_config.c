@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.6 2005-08-11 21:11:49 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.7 2005-08-23 21:15:29 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -71,6 +71,7 @@ typedef struct c_rule_t {
 	exprlist_t *expageexp;
 	char *timespec;
 	ruletype_t ruletype;
+	int cfid;
 	struct c_rule_t *next;
 	union {
 		c_load_t load;
@@ -100,7 +101,8 @@ static exprlist_t *setup_expr(char *ptn)
 static c_rule_t *setup_rule(ruletype_t ruletype, 
 			    exprlist_t *curhost, exprlist_t *curexhost, 
 			    exprlist_t *curpage, exprlist_t *curexpage, 
-			    char *curtime)
+			    char *curtime,
+			    int cfid)
 {
 	c_rule_t *newitem = (c_rule_t *)calloc(1, sizeof(c_rule_t));
 	if (ruletail) { ruletail->next = newitem; ruletail = newitem; }
@@ -112,6 +114,7 @@ static c_rule_t *setup_rule(ruletype_t ruletype,
 	newitem->pageexp = curpage;
 	newitem->expageexp = curexpage;
 	if (curtime) newitem->timespec = strdup(curtime);
+	newitem->cfid = cfid;
 
 	return newitem;
 }
@@ -130,6 +133,7 @@ int load_client_config(char *configfn)
 	exprlist_t *curhost, *curpage, *curexhost, *curexpage;
 	char *curtime;
 	c_rule_t *currule = NULL;
+	int cfid = 0;
 
 	MEMDEFINE(fn);
 
@@ -173,7 +177,9 @@ int load_client_config(char *configfn)
 	while (unlimfgets(&inbuf, &inbufsz, fd)) {
 		exprlist_t *newhost, *newpage, *newexhost, *newexpage;
 		char *newtime;
+		int unknowntok = 0;
 
+		cfid++;
 		sanitize_input(inbuf);
 		if (strlen(inbuf) == 0) continue;
 
@@ -209,21 +215,21 @@ int load_client_config(char *configfn)
 				else newtime = strdup(p+1);
 			}
 			else if (strcasecmp(tok, "UP") == 0) {
-				currule = setup_rule(C_UPTIME, curhost, curexhost, curpage, curexpage, curtime);
+				currule = setup_rule(C_UPTIME, curhost, curexhost, curpage, curexpage, curtime, cfid);
 				p = wstok(NULL); 
 				currule->rule.uptime.recentlimit = (p ? 60*durationvalue(p): 3600);
 				p = wstok(NULL);
 				currule->rule.uptime.ancientlimit = (p ? 60*durationvalue(p): -1);
 			}
 			else if (strcasecmp(tok, "LOAD") == 0) {
-				currule = setup_rule(C_LOAD, curhost, curexhost, curpage, curexpage, curtime);
+				currule = setup_rule(C_LOAD, curhost, curexhost, curpage, curexpage, curtime, cfid);
 				p = wstok(NULL); 
 				currule->rule.load.warnlevel = (p ? atof(p) : 5.0);
 				p = wstok(NULL); 
 				currule->rule.load.paniclevel = (p ? atof(p): 8.0);
 			}
 			else if (strcasecmp(tok, "DISK") == 0) {
-				currule = setup_rule(C_DISK, curhost, curexhost, curpage, curexpage, curtime);
+				currule = setup_rule(C_DISK, curhost, curexhost, curpage, curexpage, curtime, cfid);
 				p = wstok(NULL); 
 				if (p) currule->rule.disk.fsexp = setup_expr(p);
 				p = wstok(NULL);
@@ -232,8 +238,8 @@ int load_client_config(char *configfn)
 				currule->rule.disk.paniclevel = (p ? atoi(p): 95);
 				p = wstok(NULL);
 			}
-			else if ((strcasecmp(tok, "MEMREAL") == 0) || (strcasecmp(tok, "MEM") == 0)) {
-				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curtime);
+			else if ((strcasecmp(tok, "MEMREAL") == 0) || (strcasecmp(tok, "MEMPHYS") == 0) || (strcasecmp(tok, "PHYS") == 0)) {
+				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curtime, cfid);
 				currule->rule.mem.memtype = C_MEM_PHYS;
 				p = wstok(NULL);
 				currule->rule.mem.warnlevel = (p ? atoi(p) : 100);
@@ -241,15 +247,15 @@ int load_client_config(char *configfn)
 				currule->rule.mem.paniclevel = (p ? atoi(p) : 101);
 			}
 			else if ((strcasecmp(tok, "MEMSWAP") == 0) || (strcasecmp(tok, "SWAP") == 0)) {
-				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curtime);
+				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curtime, cfid);
 				currule->rule.mem.memtype = C_MEM_SWAP;
 				p = wstok(NULL);
 				currule->rule.mem.warnlevel = (p ? atoi(p) : 50);
 				p = wstok(NULL);
 				currule->rule.mem.paniclevel = (p ? atoi(p) : 80);
 			}
-			else if ((strcasecmp(tok, "MEMACT") == 0) || (strcasecmp(tok, "ACTUAL") == 0)) {
-				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curtime);
+			else if ((strcasecmp(tok, "MEMACT") == 0) || (strcasecmp(tok, "ACTUAL") == 0) || (strcasecmp(tok, "ACT") == 0)) {
+				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curtime, cfid);
 				currule->rule.mem.memtype = C_MEM_ACT;
 				p = wstok(NULL);
 				currule->rule.mem.warnlevel = (p ? atoi(p) : 90);
@@ -257,7 +263,7 @@ int load_client_config(char *configfn)
 				currule->rule.mem.paniclevel = (p ? atoi(p) : 97);
 			}
 			else if (strcasecmp(tok, "PROC") == 0) {
-				currule = setup_rule(C_PROC, curhost, curexhost, curpage, curexpage, curtime);
+				currule = setup_rule(C_PROC, curhost, curexhost, curpage, curexpage, curtime, cfid);
 				p = wstok(NULL); 
 				if (p) currule->rule.proc.procexp = setup_expr(p);
 				p = wstok(NULL);
@@ -271,11 +277,15 @@ int load_client_config(char *configfn)
 				if (currule->rule.proc.pmin && (currule->rule.proc.pmax == 0))
 					currule->rule.proc.pmax = -1;
 			}
+			else {
+				unknowntok = 1;
+				errprintf("Unknown token '%s' ignored at line %d\n", tok, cfid);
+			}
 
-			tok = wstok(NULL);
+			tok = (unknowntok ? NULL : wstok(NULL));
 		}
 
-		if (!currule) {
+		if (!currule && !unknowntok) {
 			/* No rules on this line - its the new set of defaults */
 			curhost = newhost;
 			curpage = newpage;
@@ -335,7 +345,7 @@ void dump_client_config(void)
 		if (rwalk->exhostexp) printf(" EXHOST=%s", rwalk->exhostexp->pattern);
 		if (rwalk->pageexp) printf(" HOST=%s", rwalk->pageexp->pattern);
 		if (rwalk->expageexp) printf(" EXHOST=%s", rwalk->expageexp->pattern);
-		printf("\n");
+		printf(" (line: %d)\n", rwalk->cfid);
 	}
 }
 
