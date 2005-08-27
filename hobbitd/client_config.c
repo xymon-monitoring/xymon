@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.7 2005-08-23 21:15:29 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.8 2005-08-27 06:28:48 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -214,6 +214,9 @@ int load_client_config(char *configfn)
 				if (currule) currule->timespec = strdup(p+1);
 				else newtime = strdup(p+1);
 			}
+			else if (strncasecmp(tok, "DEFAULT", 6) == 0) {
+				currule = NULL;
+			}
 			else if (strcasecmp(tok, "UP") == 0) {
 				currule = setup_rule(C_UPTIME, curhost, curexhost, curpage, curexpage, curtime, cfid);
 				p = wstok(NULL); 
@@ -286,7 +289,7 @@ int load_client_config(char *configfn)
 		}
 
 		if (!currule && !unknowntok) {
-			/* No rules on this line - its the new set of defaults */
+			/* No rules on this line - its the new set of criteria */
 			curhost = newhost;
 			curpage = newpage;
 			curexhost = newexhost;
@@ -380,7 +383,7 @@ static c_rule_t *getrule(char *hostname, char *pagename, ruletype_t ruletype)
 	return NULL;
 }
 
-void get_cpu_thresholds(namelist_t *hinfo, float *loadyellow, float *loadred, int *recentlimit, int *ancientlimit)
+int get_cpu_thresholds(namelist_t *hinfo, float *loadyellow, float *loadred, int *recentlimit, int *ancientlimit)
 {
 	char *hostname, *pagename;
 	c_rule_t *rule;
@@ -406,10 +409,13 @@ void get_cpu_thresholds(namelist_t *hinfo, float *loadyellow, float *loadred, in
 	if (rule) {
 		*recentlimit  = rule->rule.uptime.recentlimit;
 		*ancientlimit = rule->rule.uptime.ancientlimit;
+		return rule->cfid;
 	}
+
+	return 0;
 }
 
-void get_disk_thresholds(namelist_t *hinfo, char *fsname, int *warnlevel, int *paniclevel)
+int get_disk_thresholds(namelist_t *hinfo, char *fsname, int *warnlevel, int *paniclevel)
 {
 	char *hostname, *pagename;
 	c_rule_t *rule;
@@ -428,7 +434,10 @@ void get_disk_thresholds(namelist_t *hinfo, char *fsname, int *warnlevel, int *p
 	if (rule) {
 		*warnlevel = rule->rule.disk.warnlevel;
 		*paniclevel = rule->rule.disk.paniclevel;
+		return rule->cfid;
 	}
+
+	return 0;
 }
 
 void get_memory_thresholds(namelist_t *hinfo, 
@@ -436,6 +445,7 @@ void get_memory_thresholds(namelist_t *hinfo,
 {
 	char *hostname, *pagename;
 	c_rule_t *rule;
+	int gotphys = 0, gotswap = 0, gotact = 0;
 
 	hostname = bbh_item(hinfo, BBH_HOSTNAME);
 	pagename = bbh_item(hinfo, BBH_PAGEPATH);
@@ -451,16 +461,25 @@ void get_memory_thresholds(namelist_t *hinfo,
 	while (rule) {
 		switch (rule->rule.mem.memtype) {
 		  case C_MEM_PHYS:
-			*physyellow = rule->rule.mem.warnlevel;
-			*physred    = rule->rule.mem.paniclevel;
+			if (!gotphys) {
+				*physyellow = rule->rule.mem.warnlevel;
+				*physred    = rule->rule.mem.paniclevel;
+				gotphys     = 1;
+			}
 			break;
 		  case C_MEM_ACT:
-			*actyellow  = rule->rule.mem.warnlevel;
-			*actred     = rule->rule.mem.paniclevel;
+			if (!gotact) {
+				*actyellow  = rule->rule.mem.warnlevel;
+				*actred     = rule->rule.mem.paniclevel;
+				gotact      = 1;
+			}
 			break;
 		  case C_MEM_SWAP:
-			*swapyellow = rule->rule.mem.warnlevel;
-			*swapred    = rule->rule.mem.paniclevel;
+			if (!gotswap) {
+				*swapyellow = rule->rule.mem.warnlevel;
+				*swapred    = rule->rule.mem.paniclevel;
+				gotswap     = 1;
+			}
 			break;
 		}
 		rule = getrule(NULL, NULL, C_MEM);
