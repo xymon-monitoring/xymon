@@ -15,7 +15,7 @@ ifeq ($(CLIENTONLY),yes)
 	INSTALLTARGETS = install-client install-clientmsg
 	CFLAGS += -DCLIENTONLY=1
 else
-	BUILDTARGETS = lib-build common-build bbdisplay-build bbnet-build bbproxy-build docs-build build-build hobbitd-build client
+	BUILDTARGETS = lib-build common-build bbdisplay-build bbnet-build bbproxy-build docs-build build-build hobbitd-build client demo-build
 	INSTALLTARGETS = install-bbdisplay install-bbnet install-bbproxy install-man install-hobbitd install-docs install-client install-servermsg
 	CFLAGS += $(PCREINCDIR)
 endif
@@ -92,6 +92,10 @@ docs-build:
 custom-build: lib-build
 	CC="$(CC)" CFLAGS="$(CFLAGS)" RPATHOPT="$(RPATHOPT)" RRDDEF="$(RRDDEF)" RRDINCDIR="$(RRDINCDIR)" PCREINCDIR="$(PCREINCDIR)" NETLIBS="$(NETLIBS)" RRDLIBS="$(RRDLIBS)" PCRELIBS="$(PCRELIBS)" BBTOPDIR="$(BBTOPDIR)" BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" BBLOGDIR="$(BBLOGDIR)" BBHOSTNAME="$(BBHOSTNAME)" BBHOSTIP="$(BBHOSTIP)" BBHOSTOS="$(BBHOSTOS)" BBUSER="$(BBUSER)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" BBHOSTURL="$(BBHOSTURL)" BBCGIURL="$(BBCGIURL)" SECUREBBCGIURL="$(SECUREBBCGIURL)" FPING="$(FPING)" MAILPROGRAM="$(MAILPROGRAM)" RUNTIMEDEFS="$(RUNTIMEDEFS)" PERLBINARY="$(PERLBINARY)" INSTALLWWWDIR="$(INSTALLWWWDIR)" INSTALLETCDIR="$(INSTALLETCDIR)" $(MAKE) -C custom all || echo "Skipped custom modules"
 
+demo-build:
+	CC="$(CC)" CFLAGS="$(CFLAGS)" RPATHOPT="$(RPATHOPT)" NETLIBS="$(NETLIBS)" $(MAKE) -C demotool all
+
+
 #####################
 # Cleanup targets
 #####################
@@ -113,6 +117,7 @@ clean:
 	$(MAKE) -C hobbitd clean
 	$(MAKE) -C docs clean
 	$(MAKE) -C client clean
+	$(MAKE) -C demotool clean
 	$(MAKE) -C custom clean || echo ""
 	rm -f ./*~ include/config.h include/*~ debian/*~ rpm/*~ contrib/*~
 
