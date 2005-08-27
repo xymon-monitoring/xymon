@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.31 2005-08-16 21:32:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.32 2005-08-27 06:29:56 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -643,6 +643,7 @@ int main(int argc, char *argv[])
 			namelist_t *hinfo, *oldhinfo = NULL;
 			char hostname[100];
 			char s[100];
+			int cfid;
 
 			load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 			load_client_config(configfn);
@@ -683,7 +684,7 @@ int main(int argc, char *argv[])
 					float loadyellow, loadred;
 					int recentlimit, ancientlimit;
 	
-					get_cpu_thresholds(hinfo, &loadyellow, &loadred, &recentlimit, &ancientlimit);
+					cfid = get_cpu_thresholds(hinfo, &loadyellow, &loadred, &recentlimit, &ancientlimit);
 
 					printf("Load: Yellow at %.2f, red at %.2f\n", loadyellow, loadred);
 					printf("Uptime: From boot until %s,", durationstring(recentlimit));
@@ -703,7 +704,7 @@ int main(int argc, char *argv[])
 
 					printf("Filesystem: "); fflush(stdout);
 					fgets(s, sizeof(s), stdin); sanitize_input(s);
-					get_disk_thresholds(hinfo, s, &warnlevel, &paniclevel);
+					cfid = get_disk_thresholds(hinfo, s, &warnlevel, &paniclevel);
 					printf("Yellow at %d, red at %d\n", warnlevel, paniclevel);
 				}
 				else if (strcmp(s, "proc") == 0) {
