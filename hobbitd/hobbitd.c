@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.181 2005-08-15 13:15:39 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.182 2005-09-01 05:45:29 henrik Exp $";
 
 #include "config.h"
 
@@ -2123,7 +2123,7 @@ void do_message(conn_t *msg, char *origin)
 
 		if (lastboardsize == 0) {
 			/* A guesstimate - 8 tests per hosts, 1KB/test (only 1st line of msg) */
-			bufsz = hostcount*8*1024; 
+			bufsz = (hostcount+1)*8*1024; 
 		}
 		else {
 			/* Add 10% to the last size we used */
@@ -2274,7 +2274,7 @@ void do_message(conn_t *msg, char *origin)
 
 		if (lastboardsize == 0) {
 			/* A guesstimate - 8 tests per hosts, 2KB/test (only 1st line of msg) */
-			bufsz = hostcount*8*2048; 
+			bufsz = (hostcount+1)*8*2048; 
 		}
 		else {
 			/* Add 10% to the last size we used */
