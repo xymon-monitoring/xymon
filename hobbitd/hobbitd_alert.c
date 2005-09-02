@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.65 2005-08-15 13:14:46 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.66 2005-09-02 18:59:54 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -450,22 +450,22 @@ int main(int argc, char *argv[])
 				htnames_t *twalk = find_name(&testnames, testname);
 				htnames_t *pwalk = find_name(&locations, metadata[10]);
 
-				awalk = (activealerts_t *)malloc(sizeof(activealerts_t));
+				awalk = (activealerts_t *)calloc(1, sizeof(activealerts_t));
 				awalk->hostname = hwalk;
 				awalk->testname = twalk;
-				awalk->ip[0] = '\0';
 				awalk->location = pwalk;
-				awalk->color = 0;
 				awalk->cookie = -1;
-				awalk->pagemessage = NULL;
-				awalk->ackmessage = NULL;
-				awalk->eventstart = time(NULL);
-				awalk->nextalerttime = 0;
 				awalk->state = A_DEAD;
 				awalk->next = ahead;
 				ahead = awalk;
 				traceprintf("New record\n");
 			}
+
+			/*
+			 * Use changetime here, if we restart the alert module then
+			 * this gets the duration values more right than using "now"
+			 */
+			awalk->eventstart = atoi(metadata[9]);
 
 			newcolor = parse_color(metadata[7]);
 			oldalertstatus = ((alertcolors & (1 << awalk->color)) != 0);
