@@ -9,7 +9,7 @@ fi
 cd ~/hobbit
 rm -rf debbuild
 mkdir -p ~/hobbit/debbuild/hobbit-$REL
-for f in bbdisplay bbnet bbpatches bbproxy build common contrib docs hobbitd include lib client
+for f in bbdisplay bbnet bbpatches bbproxy build common contrib docs hobbitd include lib client demotool
 do
         find $f/ | grep -v RCS | cpio -pdvmu ~/hobbit/debbuild/hobbit-$REL/
 done
