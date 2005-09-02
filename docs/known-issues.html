@@ -76,6 +76,13 @@ get all of the randomness it needs. Solaris <b>patch 112438</b> solves this
 by adding a /dev/random device that provides random data to applications.<br>
 Thanks to Scott Kelley for the pointer to the Solaris patch.</p>
 
+<p>Asif Iqbal notes: Patch 112438 only works for Solaris 8. For Solaris 
+6 and 7 you need to either install SUNWski pkg or ANDIrand pkg.
+See <a href="http://www.cosy.sbg.ac.at/~andi/SUNrand/">http://www.cosy.sbg.ac.at/~andi/SUNrand/</a>.
+I have been using ANDIrand since that did not require a reboot and easily
+available.
+</p>
+
 <h3><a name="freebsdkernelsem">Hobbit fails on FreeBSD with &quot;Could not get sem: No space left on device&quot;</a></h3>
 <p>Hobbit uses some kernel ressources - semaphores and shared memory. 
 If you get the following error message in hobbitlaunch.log when trying
