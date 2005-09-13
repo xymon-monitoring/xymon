@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.182 2005-09-01 05:45:29 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.183 2005-09-13 08:02:50 henrik Exp $";
 
 #include "config.h"
 
@@ -1865,8 +1865,8 @@ void do_message(conn_t *msg, char *origin)
 			*btest = '.';
 			testname = strdup(btest+1);
 
-			if (*hostname == '\0') { errprintf("Invalid data message - blank hostname\n"); xfree(hostname); hostname = NULL; }
-			if (*testname == '\0') { errprintf("Invalid data message - blank testname\n"); xfree(testname); testname = NULL; }
+			if (*hostname == '\0') { errprintf("Invalid data message from %s - blank hostname\n", sender); xfree(hostname); hostname = NULL; }
+			if (*testname == '\0') { errprintf("Invalid data message from %s - blank testname\n", sender); xfree(testname); testname = NULL; }
 		}
 		else {
 			errprintf("Invalid data message - no testname in '%s'\n", bhost);
@@ -1916,7 +1916,7 @@ void do_message(conn_t *msg, char *origin)
 		*ehost = savechar;
 
 		p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
-		if (*hostname == '\0') { errprintf("Invalid notes message - blank hostname\n"); xfree(hostname); hostname = NULL; }
+		if (*hostname == '\0') { errprintf("Invalid notes message from %s - blank hostname\n", sender); xfree(hostname); hostname = NULL; }
 
 		if (hostname) {
 			char *hname, hostip[20];
@@ -2543,8 +2543,8 @@ void do_message(conn_t *msg, char *origin)
 			*btype = '.';
 			clienttype = strdup(btype+1);
 
-			if (*hostname == '\0') { errprintf("Invalid client message - blank hostname\n"); xfree(hostname); hostname = NULL; }
-			if (*clienttype == '\0') { errprintf("Invalid client message - blank type\n"); xfree(clienttype); clienttype = NULL; }
+			if (*hostname == '\0') { errprintf("Invalid client message from %s - blank hostname\n", sender); xfree(hostname); hostname = NULL; }
+			if (*clienttype == '\0') { errprintf("Invalid client message from %s - blank type\n", sender); xfree(clienttype); clienttype = NULL; }
 		}
 		else {
 			errprintf("Invalid client message - no type in '%s'\n", bhost);
