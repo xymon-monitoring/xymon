@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.29 2005-07-22 10:01:10 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.30 2005-09-20 09:17:21 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -128,39 +128,11 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		       FILE *output)
 {
 	int linecount = 0;
-	char *p, *multikey;
 	hobbitrrd_t *rrd = NULL;
 	hobbitgraph_t *graph = NULL;
 	char *tplfile = "hostsvc";
 
 	hostsvc_setup();
-	if (multigraphs == NULL) multigraphs = ",disk,";
-
-	/* 
-	 * Some reports (disk) use the number of lines as a rough measure for how many
-	 * graphs to build.
-	 * What we *really* should do was to scan the RRD directory and count how many
-	 * RRD database files are present matching this service - but that is way too
-	 * much overhead for something that might be called on every status logged.
-	 */
-	multikey = (char *)malloc(strlen(service) + 3);
-	sprintf(multikey, ",%s,", service);
-	if (strstr(multigraphs, multikey)) {
-		/* Count how many lines are in the status message. This is needed by hobbitd_graph later */
-		linecount = 0; p = restofmsg;
-		do {
-			/* First skip all whitespace and blank lines */
-			while ((*p) && (isspace((int)*p) || iscntrl((int)*p))) p++;
-			if (*p) {
-				/* We found something that is not blank, so one more line */
-				linecount++;
-				/* Then skip forward to the EOLN */
-				p = strchr(p, '\n');
-			}
-		} while (p && (*p));
-	}
-	xfree(multikey);
-
 	sethostenv(displayname, ip, service, colorname(color), hostname);
 	if (logtime) sethostenv_snapshot(logtime);
 
@@ -255,6 +227,34 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		}
 	}
 	if (rrd && graph) {
+		char *p, *multikey;
+		if (multigraphs == NULL) multigraphs = ",disk,inode,qtree,";
+
+		/* 
+		 * Some reports (disk) use the number of lines as a rough measure for how many
+		 * graphs to build.
+		 * What we *really* should do was to scan the RRD directory and count how many
+		 * RRD database files are present matching this service - but that is way too
+		 * much overhead for something that might be called on every status logged.
+		 */
+		multikey = (char *)malloc(strlen(service) + 3);
+		sprintf(multikey, ",%s,", service);
+		if (strstr(multigraphs, multikey)) {
+			/* Count how many lines are in the status message. This is needed by hobbitd_graph later */
+			linecount = 0; p = restofmsg;
+			do {
+				/* First skip all whitespace and blank lines */
+				while ((*p) && (isspace((int)*p) || iscntrl((int)*p))) p++;
+				if (*p) {
+					/* We found something that is not blank, so one more line */
+					linecount++;
+					/* Then skip forward to the EOLN */
+					p = strchr(p, '\n');
+				}
+			} while (p && (*p));
+		}
+		xfree(multikey);
+
 		fprintf(output, "<!-- linecount=%d -->\n", linecount);
 		fprintf(output, "%s\n", hobbit_graph_data(hostname, displayname, service, graph, linecount, 0));
 	}
