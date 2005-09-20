@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.49 2005-08-13 17:33:29 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.50 2005-09-20 09:15:03 henrik Exp $";
 
 #include "config.h"
 
@@ -744,7 +744,7 @@ int main(int argc, char *argv[])
 				cwalk->conntime = ctime;
 				if (cwalk->conntries < 0) {
 					errprintf("Server not responding, message lost\n");
-					cwalk->state = P_CLEANUP;
+					cwalk->state = P_REQ_DONE;	/* Not CLENAUP - might be more servers */
 					msgs_timeout_from[P_REQ_CONNECTING]++;
 					break;
 				}
@@ -809,7 +809,6 @@ int main(int argc, char *argv[])
 					cwalk->bufp = cwalk->buf; cwalk->buflen = 0;
 					memset(cwalk->buf, 0, cwalk->bufsize);
 				}
-
 
 				msgs_delivered++;
 
