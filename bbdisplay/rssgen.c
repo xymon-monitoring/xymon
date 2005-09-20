@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: rssgen.c,v 1.16 2005-04-25 12:54:24 henrik Exp $";
+static char rcsid[] = "$Id: rssgen.c,v 1.17 2005-09-20 09:14:28 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -150,7 +150,34 @@ void do_rss_item(FILE *fd, host_t *h, entry_t *e)
 	}
 	fprintf(fd, "</link>\n");
 
-	if (e->shorttext) fprintf(fd, "<description>%s</description>\n", e->shorttext);
+	if (e->shorttext) {
+		char *inpos = e->shorttext;
+		int len;
+		char savech;
+
+		fprintf(fd, "<description>");
+		/* Must escape any '&', '<' and '>' -characters, or RSS readers will choke on them */
+		while (*inpos) {
+			len = strcspn(inpos, "&<>");
+
+			savech = *(inpos+len); 
+			*(inpos+len) = '\0';
+			fprintf(fd, "%s", inpos);
+			*(inpos+len) = savech;
+			inpos += len;
+
+			if (savech != '\0') {
+				switch (savech) {
+				  case '&': fprintf(fd, "&amp;"); break;
+				  case '>': fprintf(fd, "&gt;"); break;
+				  case '<': fprintf(fd, "&lt;"); break;
+				}
+
+				inpos++; /* Skip the escaped char we just output */
+			}
+		}
+		fprintf(fd, "</description>\n");
+	}
 
 	fprintf(fd, "  </item>\n");
 }
