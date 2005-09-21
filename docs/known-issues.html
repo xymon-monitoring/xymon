@@ -15,6 +15,7 @@ using Hobbit to monitor servers.</p>
 	<li><a href="#netfail">Network tests fail sporadically</a></li>
 	<li><a href="#solarisrandom">"Failed to find enough entropy" on Solaris</a></li>
 	<li><a href="#freebsdkernelsem">Hobbit fails on FreeBSD with &quot;Could not get sem: No space left on device&quot;</a></li>
+	<li><a href="#solarislinker">Hobbit on Solaris compiles but aborts with some "ld.so" error</a></li>
 </ul>
 
 <h3><a name="bugreport">How to report bugs</a></h3>
@@ -113,6 +114,45 @@ current settings (from the <tt>sysctl</tt> output), and Hobbit's needs
 <p>More information about tuning the FreeBSD kernel parameters is available in
 <a href="http://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/configtuning-sysctl.html">
 the FreeBSD Handbook</a></p>
+
+<h3><a name="solarislinker">Hobbit on Solaris compiles but aborts with some "ld.so" error</a></h3>
+<p><a href="http://www.hswn.dk/hobbiton/2005/09/msg00160.html">This info</a> was contributed by sladewig,
+with a few modifications:</p>
+
+<center>
+<table width="80%" border=1><tr><td>
+<p>The system loader/linker can't find your lib.</p>
+
+<p>Assuming you have the .so lib in /usr/local/lib, 
+You can add -R to the Makefile</p>
+<p><tt>
+&nbsp;&nbsp;&nbsp;&nbsp;PCRELIBS = -L/usr/local/lib -R/usr/local/lib -lpcre
+</tt></p>
+<p>The -R "hard code" the path to the library into the executable so env
+variable (LD_LIBRARY_PATH, ed.) will not be needed. The -L told it 
+where to find it while compiling.</p>
+
+<p>Or use crle to add /usr/local/lib to system wide runtime linking
+environment. See man crle. Be VERY CAREFUL with this or you will end up
+booting from cdrom to repair. Be sure to include the existing library paths!</p>
+
+<p>Command line:</p>
+<p><tt>
+&nbsp;&nbsp;&nbsp;&nbsp;crle -c /var/ld/ld.config -l /usr/lib:/usr/lib/secure:/usr/local/lib
+</tt></p>
+
+<p>I usally use the latter as nowadays gcc uses a .so for all its generated
+programs and then dragging around the LD_LIBRARY_PATH isn't needed.</p>
+</td></tr></table>
+</center>
+
+<p>Note: This information only applies if you are using the Solaris linker.
+The GNU linker uses the "-rpath" option which is defined differently: Add</p>
+<p><tt>
+&nbsp;&nbsp;&nbsp;&nbsp;RPATH = -Wl,--rpath=
+</tt></p>
+<p>at the bottom of the top-level Makefile.</p>
+
 
 </body>
 </html>
