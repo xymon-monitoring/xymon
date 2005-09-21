@@ -12,11 +12,13 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient.sh,v 1.3 2005-08-24 09:20:27 henrik Exp $
+# $Id: hobbitclient.sh,v 1.4 2005-09-21 08:48:48 henrik Exp $
 
 # Must make sure the commands return standard (english) texts.
 LANG=C
-export LANG
+LC_ALL=C
+LC_MESSAGES=C
+export LANG LC_ALL LC_MESSAGES
 
 echo "client $MACHINE.$BBOSTYPE"      >  $BBTMP/msg.txt
 $BBHOME/bin/hobbitclient-$BBOSTYPE.sh >> $BBTMP/msg.txt
