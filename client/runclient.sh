@@ -12,7 +12,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: runclient.sh,v 1.4 2005-08-04 12:16:27 henrik Exp $
+# $Id: runclient.sh,v 1.5 2005-09-21 08:49:20 henrik Exp $
 
 # Default settings for this client
 MACHINEDOTS="`uname -n`"			# This systems hostname
@@ -36,6 +36,9 @@ do
 	  	CMD=$1
 		;;
 	  stop)
+	  	CMD=$1
+		;;
+	  restart)
 	  	CMD=$1
 		;;
 	esac
@@ -63,6 +66,12 @@ case "$CMD" in
 		exit 1
 	fi
 
+  	if test -f $HOBBITCLIENTHOME/logs/clientlaunch.pid; then
+		echo "Hobbit client already running, re-starting it"
+		$0 stop
+		rm -f $HOBBITCLIENTHOME/logs/clientlaunch.pid
+	fi
+
 	$HOBBITCLIENTHOME/bin/hobbitlaunch --config=$HOBBITCLIENTHOME/etc/clientlaunch.cfg --log=$HOBBITCLIENTHOME/logs/clientlaunch.log --pidfile=$HOBBITCLIENTHOME/logs/clientlaunch.pid
 	if test $? -eq 0; then
 		echo "Hobbit client for $BBOSTYPE started on $MACHINEDOTS"
@@ -78,6 +87,16 @@ case "$CMD" in
 	else
 		echo "Hobbit client not running"
 	fi
+	;;
+
+  "restart")
+  	if test -f $HOBBITCLIENTHOME/logs/clientlaunch.pid; then
+		$0 stop
+	else
+		echo "Hobbit client not running, continuing to start it"
+	fi
+
+	$0 start
 	;;
 esac
 
