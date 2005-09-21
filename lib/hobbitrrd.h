@@ -24,12 +24,21 @@ typedef struct {
    int  maxgraphs;
 } hobbitgraph_t;
 
+typedef enum {
+	HG_WITHOUT_STALE_RRDS, HG_WITH_STALE_RRDS
+} hg_stale_rrds_t;
+
+typedef enum {
+	HG_PLAIN_LINK, HG_META_LINK
+} hg_link_t;
+
 extern hobbitrrd_t *hobbitrrds;
 extern hobbitgraph_t *hobbitgraphs;
 
 extern hobbitrrd_t *find_hobbit_rrd(char *service, char *flags);
 extern hobbitgraph_t *find_hobbit_graph(char *rrdname);
-extern char *hobbit_graph_data(char *hostname, char *dispname, char *service, hobbitgraph_t *graphdef, int itemcount, int wantmeta);
+extern char *hobbit_graph_data(char *hostname, char *dispname, char *service, hobbitgraph_t *graphdef, int itemcount, 
+		hg_stale_rrds_t nostale, hg_link_t wantmeta);
 
 #endif
 
