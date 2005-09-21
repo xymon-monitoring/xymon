@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.38 2005-08-09 21:25:38 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.39 2005-09-21 08:45:16 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -51,6 +51,7 @@ int havelower = 0;
 double lowerlimit = 0.0;
 int graphwidth = 0;
 int graphheight = 0;
+int ignorestalerrds = 0;
 
 int coloridx = 0;
 char *colorlist[] = { 
@@ -211,6 +212,9 @@ void parse_query(void)
 		}
 		else if (strcmp(token, "graph_height") == 0) {
 			if (val) graphheight = atoi(val);
+		}
+		else if (strcmp(token, "nostale") == 0) {
+			ignorestalerrds = 1;
 		}
 
 		token = strtok_r(NULL, "&", &stp1);
@@ -723,6 +727,8 @@ int main(int argc, char *argv[])
 		const char *errmsg;
 		int errofs, result;
 		int ovector[30];
+		struct stat st;
+		time_t now = time(NULL);
 
 		/* Scan the directory to see what RRD files are there that match */
 		dir = opendir("."); if (dir == NULL) errormsg("Unexpected error while accessing RRD directory");
@@ -776,6 +782,14 @@ int main(int argc, char *argv[])
 			if (wantsingle) {
 				/* "Single" graph, i.e. a graph for a service normally included in a bundle (tcp) */
 				if (strstr(d->d_name, service) == NULL) continue;
+			}
+
+			/* 
+			 * Has it been updated recently (within the past 24 hours) ? 
+			 * We dont want old graphs to mess up multi-displays.
+			 */
+			if (ignorestalerrds && (stat(d->d_name, &st) == 0) && ((now - st.st_mtime) > 86400)) {
+				continue;
 			}
 
 			/* We have a matching file! */
