@@ -24,6 +24,7 @@ raised with Hobbit.</p>
 	<li><a href="#mancgi">I cannot see the the man-pages on the web</a></li>
 	<li><a href="#mailnosubj">My alert emails come without a subject</a></li>
 	<li><a href="#snmptraps">Does Hobbit support receiving SNMP traps?</a></li>
+	<li><a href="#scripts">How can I create a custom test script?</a></li>
 </ul>
 <hr>
 
@@ -217,6 +218,114 @@ restarted after this change.</p>
 handle SNMP traps. A very elegant method of feeding traps into Hobbit has been
 described in <a href="http://cerebro.victoriacollege.edu/hobbit-trap.html">this
 article</a> by Andy Farrior.</p>
+
+<hr>
+<h3><a name="scripts">How can I create a custom test script?</a></h3>
+<p>Anything that can be automated via a script or a custom program can
+be added into Hobbit. A lot of extension scripts are available for
+Big Brother at the <a href="http://www.deadcat.net/">www.deadcat.net archive</a>,
+and these will typically work without modifications if you run them in
+Hobbit. Sometimes a few minor tweaks are needed - the Hobbit mailing list
+can help you if you dont know how to go about that.</p>
+<p>But if you have something unique you need to test, writing an extension
+script is pretty simple. You need to figure out some things:</p>
+<ul>
+  <li>What name will you use for the column?
+  <li>How will you test it?
+  <li>What criteria should decide if the test goes red, yellow or green?
+  <li>What extra data from the test will you include in the status message ?
+</ul>
+
+<p>A simple <b>client-side</b> extension script looks like this:</p>
+<pre><tt>
+   #!/bin/sh
+
+   COLUMN=mytest	# Name of the column
+   COLOR=green		# By default, everything is OK
+   MSG="Bad stuff status"
+
+   # Do whatever you need to test for something
+   # As an example, go red if /tmp/badstuff exists.
+   if test -f /tmp/badstuff
+   then
+      COLOR=red
+      MSG="${MSG}
+ 
+      `cat /tmp/badstuff`
+      "
+   else
+      MSG="${MSG}
+
+      All is OK
+      "
+   fi
+
+   # Tell Hobbit about it
+   $BB $BBDISP "status $MACHINE.$COLUMN $COLOR `date`
+
+   ${MSG}
+   "
+
+   exit 0
+</tt></pre>
+
+<p>You will notice that some environment variables are pre-defined:
+BB, BBDISP, MACHINE are all provided by Hobbit when you run your script via
+hobbitlaunch. Also note how the MSG variable is used to build the status
+message - it starts out with just the "Bad stuff status", then you add
+data to the message when we decided what the status is.</p>
+
+<p>To run this, save your script in the ~hobbit/client/ext/ directory 
+(i.e. in the ext/ directory off where you installed the Hobbit client),
+then add a new section to the ~hobbit/client/etc/clientlaunch.cfg file
+like this:</p>
+
+<pre><tt>
+   [myscript]
+	ENVFILE $HOBBITCLIENTHOME/etc/hobbitclient.cfg
+	CMD $HOBBITCLIENTHOME/ext/myscript.sh
+	LOGFILE $HOBBITCLIENTHOME/logs/myscript.log
+	INTERVAL 5m
+</tt></pre>
+
+<br><br>
+
+<p><b>Server-side scripts</b> look almost the same, but they will
+typically use the <a href="manpages/man1/bbhostgrep.1.html">bbhostgrep</a>
+utility to pick out hosts in the bb-hosts file that have a special tag 
+defined, and then send one status message for each of those hosts. 
+Like this:</p>
+<pre><tt>
+   #!/bin/sh
+
+   BBHTAG=foo           # What we put in bb-hosts to trigger this test
+   COLUMN=$BBHTAG	# Name of the column, often same as tag in bb-hosts
+
+   $BBHOME/bin/bbhostgrep $BBHTAG | while read L
+   do
+      set $L	# To get one line of output from bbhostgrep
+
+      HOSTIP="$1"
+      MACHINEDOTS="$2"
+      MACHINE=`echo $2 | $SED -e's/\./,/g'`
+
+      COLOR=green
+      MSG="$BBHTAG status for host $MACHINEDOTS"
+
+      #... do the test, perhaps modify COLOR and MSG
+
+      $BB $BBDISP "status $MACHINE.$COLUMN $COLOR `date`
+
+      ${MSG}
+      "
+    done
+
+    exit 0
+</tt></pre>
+
+<p>Note that for server side tests, you need to loop over the list
+of hosts found in the bb-hosts file, and send one status message for
+each host. Other than that, it is just like the client-side tests.</p>
 
 <hr>
 
