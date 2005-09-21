@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.21 2005-08-03 21:01:40 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.22 2005-09-21 12:54:49 henrik Exp $";
 
 static char *netstat_params[] = { "rrdcreate", rrdfn, 
 	                          "DS:udpInDatagrams:DERIVE:600:0:U", 
@@ -37,7 +37,8 @@ static char *udpreceived = NULL,
 static char *tcpconnrequests = NULL,
 	    *tcpconnaccepts = NULL,
 	    *tcpconnfails = NULL,
-	    *tcpconncurrent = NULL;
+	    *tcpconncurrent = NULL,
+	    *tcpconnresets = NULL;
 
 static char *tcpoutdatabytes = NULL, *tcpoutdatapackets = NULL,
 	    *tcpinorderbytes = NULL, *tcpinorderpackets = NULL,
@@ -103,6 +104,7 @@ static void prepare_update(char *outp)
 	outp += sprintf(outp, ":%s", (tcpconnaccepts ? tcpconnaccepts : "U")); if (tcpconnaccepts) xfree(tcpconnaccepts);
 	outp += sprintf(outp, ":%s", (tcpconnfails ? tcpconnfails : "U")); if (tcpconnfails) xfree(tcpconnfails);
 	outp += sprintf(outp, ":%s", (tcpconncurrent ? tcpconncurrent : "U")); if (tcpconncurrent) xfree(tcpconncurrent);
+	outp += sprintf(outp, ":%s", (tcpconnresets ? tcpconnresets : "U")); if (tcpconnresets) xfree(tcpconnresets);
 	outp += sprintf(outp, ":%s", (tcpoutdatabytes ? tcpoutdatabytes : "U")); if (tcpoutdatabytes) xfree(tcpoutdatabytes);
 	outp += sprintf(outp, ":%s", (tcpinorderbytes ? tcpinorderbytes : "U")); if (tcpinorderbytes) xfree(tcpinorderbytes);
 	outp += sprintf(outp, ":%s", (tcpoutorderbytes ? tcpoutorderbytes : "U")); if (tcpoutorderbytes) xfree(tcpoutorderbytes);
@@ -122,8 +124,15 @@ static int handle_pcre_netstat(char *msg, pcre **pcreset, char *outp)
 	unsigned long udperrs, udperrtotal = 0;
 	char udpstr[20];
 
-	datapart = strstr(msg, "\ntcp:");	/* Skip to the start of "tcp" (udp comes after) */
-	if (!datapart) return -1; else datapart++;
+	/* Skip to the start of "tcp" (udp comes after) */
+	if (strncmp(msg, "tcp:", 4) == 0) 
+		datapart = msg;
+	else {
+		datapart = strstr(msg, "\ntcp:");
+		if (datapart) datapart++;
+	}
+
+	if (!datapart) return 0;
 
 	while (datapart && (havedata != 11)) {
 		eoln = strchr(datapart, '\n'); if (eoln) *eoln = '\0';
@@ -212,8 +221,8 @@ static const char *netstat_hpux_exprs[] = {
 	"^[\t ]*([0-9]+) connection requests$",
 	"^[\t ]*([0-9]+) connection accepts$",
 	/* UDP patterns */
-	"^[\t ]*([0-9]+) datagrams received$",		/* Seems HP-UX dont count UDP packets */
-	"^[\t ]*([0-9]+) datagrams output$",		/* Seems HP-UX dont count UDP packets */
+	"^[\t ]*([0-9]+) datagrams received$",
+	"^[\t ]*([0-9]+) datagrams output$",
 	"^[\t ]*([0-9]+) incomplete headers$",
 	"^[\t ]*([0-9]+) bad data length fields$",
 	"^[\t ]*([0-9]+) bad checksums$"
@@ -505,7 +514,7 @@ int do_netstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		return -1;
 	}
 
-	if (havedata) {
+	if (havedata > 0) {
 		sprintf(rrdfn, "netstat.rrd");
 		return create_and_update_rrd(hostname, rrdfn, netstat_params, netstat_tpl);
 	}
