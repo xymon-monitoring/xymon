@@ -9,7 +9,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: freebsd-meminfo.c,v 1.2 2005-07-24 11:32:51 henrik Exp $";
+static char rcsid[] = "$Id: freebsd-meminfo.c,v 1.3 2005-09-21 08:48:11 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/sysctl.h>
@@ -20,10 +20,10 @@ static char rcsid[] = "$Id: freebsd-meminfo.c,v 1.2 2005-07-24 11:32:51 henrik E
 int main(int argc, char *argv[])
 {
 	int hw_physmem[] = { CTL_HW, HW_PHYSMEM };
-	int physmem;
+	unsigned long physmem;
 
 	int hw_pagesize[] = { CTL_HW, HW_PAGESIZE };
-	int pagesize;
+	unsigned long pagesize;
 
 	int vm_vmtotal[] = { CTL_VM, VM_METER };
 	struct vmtotal vmdata;
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 	result = sysctl(vm_vmtotal, sizeof(vm_vmtotal) / sizeof(*vm_vmtotal), &vmdata, &len, NULL, 0);
 
 	// printf("Pagesize:%d\n", pagesize);
-	printf("Total:%d\n", (physmem / (1024 * 1024)));
-	printf("Free:%d\n", (pagesize / 1024)*(vmdata.t_free / 1024));
+	printf("Total:%lu\n", (physmem / (1024 * 1024)));
+	printf("Free:%lu\n", (pagesize / 1024)*(vmdata.t_free / 1024));
 }
 
