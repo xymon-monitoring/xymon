@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.42 2005-08-13 15:46:48 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.43 2005-09-21 08:46:34 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -168,6 +168,9 @@ static int wantedtest(char *wanted, char *key)
 	p = strstr(wanted, ckey);
 	xfree(ckey);
 
+	if (p) dprintf("wantedtest: Found '%s' at '%s'\n", key, p);
+	else dprintf("wantedtest: '%s' not found\n", key);
+
 	return (p != NULL);
 }
 
@@ -246,6 +249,9 @@ int main(int argc, char *argv[])
 	setup_signalhandler("hobbitd_filestore");
 	signal(SIGPIPE, SIG_DFL);
 
+	if (onlytests) dprintf("Storing tests '%s' only\n", onlytests);
+	else dprintf("Storing all tests\n");
+
 	while (running) {
 		char *items[20] = { NULL, };
 		char *statusdata = "";
@@ -284,6 +290,7 @@ int main(int argc, char *argv[])
 			hostname = items[4];
 			testname = items[5];
 			if (!wantedtest(onlytests, testname)) {
+				dprintf("Status dropped - not wanted\n");
 				MEMUNDEFINE(logfn);
 				continue;
 			}
@@ -323,6 +330,7 @@ int main(int argc, char *argv[])
 			p = hostname = items[4]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			testname = items[5];
 			if (!wantedtest(onlytests, testname)) {
+				dprintf("data dropped - not wanted\n");
 				MEMUNDEFINE(logfn);
 				continue;
 			}
