@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-freebsd.sh,v 1.3 2005-07-24 11:32:51 henrik Exp $
+# $Id: hobbitclient-freebsd.sh,v 1.4 2005-09-21 08:48:33 henrik Exp $
 
 echo "[date]"
 date
@@ -21,7 +21,7 @@ uptime
 echo "[who]"
 who
 echo "[df]"
-df -H -tnonfs,nullfs,cd9660,procfs
+df -H -tnonfs,nullfs,cd9660,procfs,devfs
 echo "[meminfo]"
 $BBHOME/bin/freebsd-meminfo
 echo "[swapinfo]"
