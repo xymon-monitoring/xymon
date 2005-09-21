@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-linux.sh,v 1.4 2005-07-24 11:32:51 henrik Exp $
+# $Id: hobbitclient-linux.sh,v 1.5 2005-09-21 12:57:41 henrik Exp $
 
 echo "[date]"
 date
@@ -20,7 +20,7 @@ uptime
 echo "[who]"
 who
 echo "[df]"
-df -Pl -x none -x tmpfs -x shmfs
+df -Pl -x none -x tmpfs -x shmfs -x unknown
 echo "[free]"
 free
 echo "[netstat]"
