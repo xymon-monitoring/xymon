@@ -15,34 +15,42 @@ Bugfixes
   or implement "depends" throughout and treat "route"
   as a special-case of depends.
 
-* It's been reported that bbtest-net crashes when trying
-  to do http tests via an MS ISA Proxy server that requires
-  authentication. This is still being investigated.
 
-* It seems bbtest-net sometimes report an HTTP "500" status as
-  "DNS error".
+Things I must remember to look at
+---------------------------------
+* DOWNTIME on a per-test basis.
+* hobbitd_client process/disk alarms to different people depending
+  on *which* process/disk is in error.
+* CLASS tags for hobbit-alerts.cfg and hobbit-clients.cfg, to get
+  away from host/page name configs. Hosts can have a CLASS tag
+  defining them as belonging to one or more classes; the client-
+  and alert-config can then trigger on a class setting.
+* Configuration of which graph(s) to show by default, including 
+  limiting it to e.g. one of the 7 disk graphs. Ref. mail from
+  Charles Jones 15-feb-2005.
+  What we really want to do is customize on a per host/test
+  basis which graphs appear for which tests. So this means some
+  way of customizing hobbitsvc.cgi to include specific graphs.
+* Something similar to larrd-graphs.cgi for picking out a bunch
+  of graphs to show on one page.
+* Move all of the bbtest-net "badFOO" etc. stuff away from bbtest-net
+  and into hobbitd.
+* On Fri, Aug 05, 2005 at 09:39:15AM +0200, Thomas Bergauer wrote:
+  2. the NOPROP(RED|YELLOW|..) command in the BB-hosts file works as
+  announced, but I am looking for a possibility to tell NOPROP a "level"
+  of propagation. This means that an alarm should propagate to its
+  sub-page, but not further up to the main page.
 
 
 Improvements
 ------------
 * hobbitgraph.cgi change to make zoom work in two dimensions. 
   Requires RRDtool 1.2.x.
-* Configuration of which graph(s) to show by default, including 
-  limiting it to e.g. one of the 7 disk graphs. Ref. mail from
-  Charles Jones 15-feb-2005.
-* Something similar to larrd-graphs.cgi for picking out a bunch
-  of graphs to show on one page.
 * More reports: Check out bb-reports on deadcat
 * Multi-line macros in hobbit-alerts.cfg
 * Allow for regex's in the TCP response match code.
 * Merging of alerts based on some criteria, e.g. merge all
   purple alerts for a host into one message.
-* Filtering via RRD parser of incoming messages, allowing them
-  to modify the message. E.g. change color based on the disk-
-  space reports. Can be used to move client-side configuration into 
-  the server. Also to fire off alerts to different people from the
-  same status report (if process "httpd" is down, call the webpeople,
-  if process "orad" is down, call the DBA guys).
 * Implement "--follow" in the new HTTP tester.
 * https proxying (proxy CONNECT protocol)
 * Optionally hide the URL and content output from HTTP/content
