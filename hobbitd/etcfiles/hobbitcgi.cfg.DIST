@@ -21,6 +21,9 @@ CGI_SVCHIST_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg --no-svcid"
 # hobbitgraph.cgi options
 CGI_HOBBITGRAPH_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
 
+# hobbit-confreport.cgi options
+CGI_HOBBITCONFREPORT_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+
 # bb-datepage.cgi options
 CGI_DATEPAGE_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg --url=/hobbit/periodic"
 # bb-rep.cgi options
