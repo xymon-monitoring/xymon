@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.8 2005-08-27 06:28:48 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.9 2005-09-21 11:37:05 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -49,6 +49,8 @@ typedef struct c_uptime_t {
 typedef struct c_disk_t {
 	exprlist_t *fsexp;
 	int warnlevel, paniclevel;
+	int dmin, dmax, dcount;
+	int color;
 } c_disk_t;
 
 typedef struct c_mem_t {
@@ -240,6 +242,11 @@ int load_client_config(char *configfn)
 				p = wstok(NULL);
 				currule->rule.disk.paniclevel = (p ? atoi(p): 95);
 				p = wstok(NULL);
+				currule->rule.disk.dmin = (p ? atoi(p): 0);
+				p = wstok(NULL);
+				currule->rule.disk.dmax = (p ? atoi(p) : -1);
+				p = wstok(NULL);
+				currule->rule.disk.color = (p ? parse_color(p) : COL_RED);
 			}
 			else if ((strcasecmp(tok, "MEMREAL") == 0) || (strcasecmp(tok, "MEMPHYS") == 0) || (strcasecmp(tok, "PHYS") == 0)) {
 				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curtime, cfid);
@@ -319,8 +326,9 @@ void dump_client_config(void)
 			printf("LOAD %.2f %.2f", rwalk->rule.load.warnlevel, rwalk->rule.load.paniclevel);
 			break;
 		  case C_DISK:
-			printf("DISK %s %d %d", rwalk->rule.disk.fsexp->pattern,
-			       rwalk->rule.disk.warnlevel, rwalk->rule.disk.paniclevel);
+			printf("DISK %s %d %d %d %d %s", rwalk->rule.disk.fsexp->pattern,
+			       rwalk->rule.disk.warnlevel, rwalk->rule.disk.paniclevel,
+			       rwalk->rule.disk.dmin, rwalk->rule.disk.dmax, colorname(rwalk->rule.disk.color));
 			break;
 		  case C_MEM:
 			switch (rwalk->rule.mem.memtype) {
@@ -333,12 +341,12 @@ void dump_client_config(void)
 		  case C_PROC:
 			if (strchr(rwalk->rule.proc.procexp->pattern, ' ') ||
 			    strchr(rwalk->rule.proc.procexp->pattern, '\t')) {
-				printf("PROC \"%s\" %d %d", rwalk->rule.proc.procexp->pattern,
-				       rwalk->rule.proc.pmin, rwalk->rule.proc.pmax);
+				printf("PROC \"%s\" %d %d %s", rwalk->rule.proc.procexp->pattern,
+				       rwalk->rule.proc.pmin, rwalk->rule.proc.pmax, colorname(rwalk->rule.proc.color));
 			}
 			else {
-				printf("PROC %s %d %d", rwalk->rule.proc.procexp->pattern,
-				       rwalk->rule.proc.pmin, rwalk->rule.proc.pmax);
+				printf("PROC %s %d %d %s", rwalk->rule.proc.procexp->pattern,
+				       rwalk->rule.proc.pmin, rwalk->rule.proc.pmax, colorname(rwalk->rule.proc.color));
 			}
 			break;
 		}
@@ -490,82 +498,151 @@ typedef struct mon_proc_t {
 	c_rule_t *rule;
 	struct mon_proc_t *next;
 } mon_proc_t;
-static mon_proc_t *phead = NULL, *ptail = NULL, *pmonwalk = NULL;
 
-int clear_process_counts(namelist_t *hinfo)
+static int clear_counts(namelist_t *hinfo, ruletype_t ruletype, mon_proc_t **head, mon_proc_t **tail, mon_proc_t **walk)
 {
 	char *hostname, *pagename;
 	c_rule_t *rule;
 	int count = 0;
 
-	while (phead) {
-		mon_proc_t *tmp = phead;
-		phead = phead->next;
+	while (*head) {
+		mon_proc_t *tmp = *head;
+		*head = (*head)->next;
 		xfree(tmp);
 	}
-	phead = ptail = pmonwalk = NULL;
+	*head = *tail = *walk = NULL;
 
 	hostname = bbh_item(hinfo, BBH_HOSTNAME);
 	pagename = bbh_item(hinfo, BBH_PAGEPATH);
 
-	rule = getrule(hostname, pagename, C_PROC);
+	rule = getrule(hostname, pagename, ruletype);
 	while (rule) {
 		mon_proc_t *newitem = (mon_proc_t *)malloc(sizeof(mon_proc_t));
 
 		newitem->rule = rule;
 		newitem->next = NULL;
-		if (ptail) { ptail->next = newitem; ptail = newitem; }
-		else { phead = ptail = newitem; }
+		if (*tail) { (*tail)->next = newitem; *tail = newitem; }
+		else { *head = *tail = newitem; }
 
 		count++;
-		rule->rule.proc.pcount = 0;
-		rule = getrule(NULL, NULL, C_PROC);
+		switch (rule->ruletype) {
+		  case C_DISK : rule->rule.disk.dcount = 0; break;
+		  case C_PROC : rule->rule.proc.pcount = 0; break;
+		  default: break;
+		}
+
+		rule = getrule(NULL, NULL, ruletype);
 	}
 
-	pmonwalk = phead;
+	*walk = *head;
 	return count;
 }
 
-void add_process_count(char *pname)
+static void add_count(char *pname, mon_proc_t *head)
 {
 	mon_proc_t *pwalk;
 	int ovector[10];
 	int result;
 
-	for (pwalk = phead; (pwalk); pwalk = pwalk->next) {
-		if (!pwalk->rule->rule.proc.procexp->exp) {
-			/* 
-			 * No pattern, just see if the token in the config file is
-			 * present in the string we got from "ps". So you can setup
-			 * the config to look for "cron" and it will actually find "/usr/sbin/cron".
-			 */
-			if (strstr(pname, pwalk->rule->rule.proc.procexp->pattern))
-				pwalk->rule->rule.proc.pcount++;
-		}
-		else {
-			if (namematch(pname, pwalk->rule->rule.proc.procexp->pattern, pwalk->rule->rule.proc.procexp->exp))
-				pwalk->rule->rule.proc.pcount++;
+	for (pwalk = head; (pwalk); pwalk = pwalk->next) {
+		switch (pwalk->rule->ruletype) {
+		  case C_PROC:
+			if (!pwalk->rule->rule.proc.procexp->exp) {
+				/* 
+				 * No pattern, just see if the token in the config file is
+				 * present in the string we got from "ps". So you can setup
+				 * the config to look for "cron" and it will actually find "/usr/sbin/cron".
+				 */
+				if (strstr(pname, pwalk->rule->rule.proc.procexp->pattern))
+					pwalk->rule->rule.proc.pcount++;
+			}
+			else {
+				if (namematch(pname, pwalk->rule->rule.proc.procexp->pattern, pwalk->rule->rule.proc.procexp->exp))
+					pwalk->rule->rule.proc.pcount++;
+			}
+			break;
+
+		  case C_DISK:
+			if (!pwalk->rule->rule.disk.fsexp->exp) {
+				if (strstr(pname, pwalk->rule->rule.disk.fsexp->pattern))
+					pwalk->rule->rule.disk.dcount++;
+			}
+			else {
+				if (namematch(pname, pwalk->rule->rule.disk.fsexp->pattern, pwalk->rule->rule.disk.fsexp->exp))
+					pwalk->rule->rule.disk.dcount++;
+			}
+			break;
+
+		  default: break;
 		}
 	}
 }
 
-char *check_process_count(int *pcount, int *lowlim, int *uplim, int *pcolor)
+static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *uplim, int *color, mon_proc_t **walk)
 {
-	char *result;
+	char *result = NULL;
 
-	if (pmonwalk == NULL) return NULL;
+	if (*walk == NULL) return NULL;
 
-	result = pmonwalk->rule->rule.proc.procexp->pattern;
-	*pcount = pmonwalk->rule->rule.proc.pcount;
-	*lowlim = pmonwalk->rule->rule.proc.pmin;
-	*uplim = pmonwalk->rule->rule.proc.pmax;
-	*pcolor = COL_GREEN;
+	switch (ruletype) {
+	  case C_PROC:
+		result = (*walk)->rule->rule.proc.procexp->pattern;
+		*count = (*walk)->rule->rule.proc.pcount;
+		*lowlim = (*walk)->rule->rule.proc.pmin;
+		*uplim = (*walk)->rule->rule.proc.pmax;
+		*color = COL_GREEN;
+		if ((*lowlim !=  0) && (*count < *lowlim)) *color = (*walk)->rule->rule.proc.color;
+		if ((*uplim  != -1) && (*count > *uplim)) *color = (*walk)->rule->rule.proc.color;
+		break;
 
-	if ((*lowlim !=  0) && (*pcount < *lowlim)) *pcolor = pmonwalk->rule->rule.proc.color;
-	if ((*uplim  != -1) && (*pcount > *uplim)) *pcolor = pmonwalk->rule->rule.proc.color;
+	  case C_DISK:
+		result = (*walk)->rule->rule.disk.fsexp->pattern;
+		*count = (*walk)->rule->rule.disk.dcount;
+		*lowlim = (*walk)->rule->rule.disk.dmin;
+		*uplim = (*walk)->rule->rule.disk.dmax;
+		*color = COL_GREEN;
+		if ((*lowlim !=  0) && (*count < *lowlim)) *color = (*walk)->rule->rule.disk.color;
+		if ((*uplim  != -1) && (*count > *uplim)) *color = (*walk)->rule->rule.disk.color;
+		break;
 
-	pmonwalk = pmonwalk->next;
+	  default: break;
+	}
+
+	*walk = (*walk)->next;
 
 	return result;
+}
+
+static mon_proc_t *phead = NULL, *ptail = NULL, *pmonwalk = NULL;
+static mon_proc_t *dhead = NULL, *dtail = NULL, *dmonwalk = NULL;
+
+int clear_process_counts(namelist_t *hinfo)
+{
+	return clear_counts(hinfo, C_PROC, &phead, &ptail, &pmonwalk);
+}
+
+int clear_disk_counts(namelist_t *hinfo)
+{
+	return clear_counts(hinfo, C_DISK, &dhead, &dtail, &dmonwalk);
+}
+
+void add_process_count(char *pname)
+{
+	add_count(pname, phead);
+}
+
+void add_disk_count(char *dname)
+{
+	add_count(dname, dhead);
+}
+
+char *check_process_count(int *count, int *lowlim, int *uplim, int *color)
+{
+	return check_count(count, C_PROC, lowlim, uplim, color, &pmonwalk);
+}
+
+char *check_disk_count(int *count, int *lowlim, int *uplim, int *color)
+{
+	return check_count(count, C_DISK, lowlim, uplim, color, &dmonwalk);
 }
 

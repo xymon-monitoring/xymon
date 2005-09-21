@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.32 2005-08-27 06:29:56 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.33 2005-09-21 11:37:05 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -257,6 +257,7 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 {
 	int diskcolor = COL_GREEN;
 
+	int dchecks = 0;
 	int capacol = -1;
 	int mntcol  = -1;
 	int line1 = 1;
@@ -264,12 +265,16 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 	char msgline[4096];
 	char *monmsg = NULL;
 	int monsz;
+	char *dname;
+	int dmin, dmax, dcount, dcolor;
 
 	if (!dfstr) return;
 
 	dprintf("Disk check host %s\n", hostname);
 
-	bol = dfstr;
+	dchecks = clear_disk_counts(hinfo);
+
+	bol = (dchecks ? dfstr : NULL);	/* No need to go through it if no disk checks defined */
 	while (bol) {
 		char *fsname, *usestr;
 
@@ -300,6 +305,7 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 			if (usestr && isdigit((int)*usestr)) usage = atoi(usestr); else usage = -1;
 
 			strcpy(p, bol); fsname = getcolumn(p, mntcol);
+			add_disk_count(fsname);
 
 			if (fsname && (usage != -1)) {
 				get_disk_thresholds(hinfo, fsname, &warnlevel, &paniclevel);
@@ -327,6 +333,26 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 		if (nl) { *nl = '\n'; bol = nl+1; } else bol = NULL;
 	}
 
+	/* Check for filesystems that must (not) exist */
+	while ((dname = check_disk_count(&dcount, &dmin, &dmax, &dcolor)) != NULL) {
+		char limtxt[1024];
+
+		if (dmax == -1) {
+			if (dmin > 0) sprintf(limtxt, "%d or more", dmin);
+			else if (dmin == 0) sprintf(limtxt, "none");
+		}
+		else {
+			if (dmin > 0) sprintf(limtxt, "between %d and %d", dmin, dmax);
+			else if (dmin == 0) sprintf(limtxt, "at most %d", dmax);
+		}
+
+		if (dcolor != COL_GREEN) {
+			if (dcolor > diskcolor) diskcolor = dcolor;
+			sprintf(msgline, "&%s Filesystem %s (found %d, req. %s)\n", 
+				colorname(dcolor), dname, dcount, limtxt);
+			addtobuffer(&monmsg, &monsz, msgline);
+		}
+	}
 
 	/* Now we know the result, so generate a status message */
 	init_status(diskcolor);
@@ -467,12 +493,12 @@ void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 			char limtxt[1024];
 
 			if (pmax == -1) {
-				if (pmin > 0) sprintf(limtxt, " req. %d or more", pmin);
-				else if (pmin == 0) sprintf(limtxt, " req. none");
+				if (pmin > 0) sprintf(limtxt, "%d or more", pmin);
+				else if (pmin == 0) sprintf(limtxt, "none");
 			}
 			else {
-				if (pmin > 0) sprintf(limtxt, " req. between %d and %d", pmin, pmax);
-				else if (pmin == 0) sprintf(limtxt, "req. at most %d", pmax);
+				if (pmin > 0) sprintf(limtxt, "between %d and %d", pmin, pmax);
+				else if (pmin == 0) sprintf(limtxt, "at most %d", pmax);
 			}
 
 			if (pcolor == COL_GREEN) {

@@ -24,8 +24,12 @@ extern void get_memory_thresholds(namelist_t *hhinfo,
 				  int *actyellow, int *actred);
 
 extern int clear_process_counts(namelist_t *hinfo);
-extern char *check_process_count(int *pcount, int *lowlim, int *uplim, int *pcolor);
 extern void add_process_count(char *pname);
+extern char *check_process_count(int *pcount, int *lowlim, int *uplim, int *pcolor);
+
+extern int clear_disk_counts(namelist_t *hinfo);
+extern void add_disk_count(char *dname);
+extern char *check_disk_count(int *dcount, int *lowlim, int *uplim, int *dcolor);
 
 #endif
 
