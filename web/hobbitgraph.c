@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.39 2005-09-21 08:45:16 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.40 2005-09-21 12:12:43 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -534,6 +534,7 @@ int main(int argc, char *argv[])
 	if (displayname != hostname) p += sprintf(p, "&amp;disp=%s", displayname);
 	if (firstidx != -1) p += sprintf(p, "&amp;first=%d", firstidx+1);
 	if (idxcount != -1) p += sprintf(p, "&amp;count=%d", idxcount);
+	if (ignorestalerrds) p += sprintf(p, "&amp;nostale");
 
 	switch (action) {
 	  case ACT_MENU:
