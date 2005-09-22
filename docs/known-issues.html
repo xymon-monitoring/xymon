@@ -103,10 +103,10 @@ and &quot;<tt>sysctl kern.ipc.semmns</tt>&quot; (total number
 of semaphores). Hobbit uses 6 semaphore sets, with a total of 18 semaphores.</p>
 
 <p>To increase this, put these two lines in /boot/loader.conf on your system:</p>
-<tt><pre>
+<pre><tt>
 kern.ipc.semmni="40"
 kern.ipc.semmns="100"
-</pre></tt>
+</tt></pre>
 <p>Adjust the values to something reasonable for your system - considering the
 current settings (from the <tt>sysctl</tt> output), and Hobbit's needs
 (6 sets with 18 semaphores).</p>
