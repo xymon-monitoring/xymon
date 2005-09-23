@@ -84,7 +84,6 @@ int main(int argc, char *argv[])
 			p = strchr(bol, ']'); *p = '\0';
 			for (nwalk = newnames; (nwalk && strcmp(nwalk->oldname, bol+1)); nwalk = nwalk->next);
 			if (nwalk) {
-				free(newent->name);
 				newent->name = strdup(nwalk->newname);
 				newent->val = (char *)malloc(strlen(nwalk->newname) + 4);
 				sprintf(newent->val, "[%s]\n", nwalk->newname);
