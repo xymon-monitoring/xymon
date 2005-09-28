@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.33 2005-09-21 11:37:05 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.34 2005-09-28 21:21:56 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -54,6 +54,11 @@ void splitmsg(char *clientdata)
 		}
 
 		sections = NULL;
+	}
+
+	if (clientdata == NULL) {
+		errprintf("Got a NULL client data message\n");
+		return;
 	}
 
 	/* Find the start of the first section */
@@ -234,8 +239,12 @@ void unix_cpu_report(char *hostname, namelist_t *hinfo, char *fromline, char *ti
 
 	init_status(cpucolor);
 	sprintf(msgline, "status %s.cpu %s %s %s, %d users, %d procs, load=%s\n",
-		commafy(hostname), colorname(cpucolor), timestr, 
-		myupstr, (whostr ? linecount(whostr) : 0), (psstr ? linecount(psstr)-1 : 0), loadresult);
+		commafy(hostname), colorname(cpucolor), 
+		(timestr ? timestr : "<no timestamp data>"), 
+		myupstr, 
+		(whostr ? linecount(whostr) : 0), 
+		(psstr ? linecount(psstr)-1 : 0), 
+		loadresult);
 	addtostatus(msgline);
 	if (upmsg) {
 		addtostatus(upmsg);
@@ -247,7 +256,7 @@ void unix_cpu_report(char *hostname, namelist_t *hinfo, char *fromline, char *ti
 		addtostatus(topstr);
 	}
 
-	addtostatus(fromline);
+	if (fromline) addtostatus(fromline);
 	finish_status();
 }
 
@@ -276,7 +285,7 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 
 	bol = (dchecks ? dfstr : NULL);	/* No need to go through it if no disk checks defined */
 	while (bol) {
-		char *fsname, *usestr;
+		char *fsname = NULL, *usestr = NULL;
 
 		nl = strchr(bol, '\n'); if (nl) *nl = '\0';
 
@@ -337,6 +346,8 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 	while ((dname = check_disk_count(&dcount, &dmin, &dmax, &dcolor)) != NULL) {
 		char limtxt[1024];
 
+		*limtxt = '\0';
+
 		if (dmax == -1) {
 			if (dmin > 0) sprintf(limtxt, "%d or more", dmin);
 			else if (dmin == 0) sprintf(limtxt, "none");
@@ -357,7 +368,9 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 	/* Now we know the result, so generate a status message */
 	init_status(diskcolor);
 	sprintf(msgline, "status %s.disk %s %s - Filesystems %s\n",
-		commafy(hostname), colorname(diskcolor), timestr, ((diskcolor == COL_GREEN) ? "OK" : "NOT ok"));
+		commafy(hostname), colorname(diskcolor), 
+		(timestr ? timestr : "<No timestamp data>"), 
+		((diskcolor == COL_GREEN) ? "OK" : "NOT ok"));
 	addtostatus(msgline);
 
 	/* And add the info about what's wrong */
@@ -370,7 +383,7 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 	/* And the full df output */
 	addtostatus(dfstr);
 
-	addtostatus(fromline);
+	if (fromline) addtostatus(fromline);
 	finish_status();
 }
 
@@ -423,7 +436,9 @@ void unix_memory_report(char *hostname, namelist_t *hinfo, char *fromline, char 
 
 	init_status(memorycolor);
 	sprintf(msgline, "status %s.memory %s %s - Memory %s\n",
-		commafy(hostname), colorname(memorycolor), timestr, memorysummary);
+		commafy(hostname), colorname(memorycolor), 
+		(timestr ? timestr : "<No timestamp data>"),
+		memorysummary);
 	addtostatus(msgline);
 
 	sprintf(msgline, "   %-12s%12s%12s%12s\n", "Memory", "Used", "Total", "Percentage");
@@ -442,7 +457,7 @@ void unix_memory_report(char *hostname, namelist_t *hinfo, char *fromline, char 
 	sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%%\n", 
 		colorname(swapcolor), "Swap", memswapused, memswaptotal, memswappct);
 	addtostatus(msgline);
-	addtostatus(fromline);
+	if (fromline) addtostatus(fromline);
 	finish_status();
 }
 
@@ -522,7 +537,9 @@ void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 	/* Now we know the result, so generate a status message */
 	init_status(pscolor);
 	sprintf(msgline, "status %s.procs %s %s - Processes %s\n",
-		commafy(hostname), colorname(pscolor), timestr, ((pscolor == COL_GREEN) ? "OK" : "NOT ok"));
+		commafy(hostname), colorname(pscolor), 
+		(timestr ? timestr : "<No timestamp data>"), 
+		((pscolor == COL_GREEN) ? "OK" : "NOT ok"));
 	addtostatus(msgline);
 
 	/* And add the info about what's wrong */
@@ -535,7 +552,7 @@ void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 	/* And the full ps output for those who want it */
 	if (pslistinprocs) addtostatus(psstr);
 
-	addtostatus(fromline);
+	if (fromline) addtostatus(fromline);
 	finish_status();
 }
 
@@ -558,7 +575,9 @@ void msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 
 	init_status(msgscolor);
 	sprintf(msgline, "status %s.msgs %s System logs at %s : %s\n",
-		commafy(hostname), colorname(msgscolor), timestr, summary);
+		commafy(hostname), colorname(msgscolor), 
+		(timestr ? timestr : "<No timestamp data>"), 
+		summary);
 	addtostatus(msgline);
 
 	if (msgsstr)
@@ -566,7 +585,7 @@ void msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 	else
 		addtostatus("The client did not report any logfile data\n");
 
-	addtostatus(fromline);
+	if (fromline) addtostatus(fromline);
 	finish_status();
 }
 
