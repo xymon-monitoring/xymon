@@ -10,7 +10,7 @@
         nocreate
         sharedscripts
         postrotate
-                su -c "/etc/init.d/hobbit rotate" hobbit
+                /etc/init.d/hobbit rotate
         endscript
 }
 
