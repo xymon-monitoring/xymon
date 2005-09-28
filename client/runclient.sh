@@ -12,11 +12,12 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: runclient.sh,v 1.5 2005-09-21 08:49:20 henrik Exp $
+# $Id: runclient.sh,v 1.6 2005-09-28 21:21:17 henrik Exp $
 
 # Default settings for this client
 MACHINEDOTS="`uname -n`"			# This systems hostname
 BBOSTYPE="`uname -s | tr '[A-Z]' '[a-z]'`"	# This systems operating system in lowercase
+BBOSSCRIPT="hobbitclient-$BBOSTYPE.sh"
 
 # Commandline mods for the defaults
 while test "$1" != ""
@@ -53,7 +54,7 @@ cd "$OLDDIR"
 
 MACHINE="`echo $MACHINEDOTS | sed -e's/\./,/g'`"
 
-export MACHINE MACHINEDOTS BBOSTYPE HOBBITCLIENTHOME
+export MACHINE MACHINEDOTS BBOSTYPE BBOSSCRIPT HOBBITCLIENTHOME
 
 case "$CMD" in
   "start")
