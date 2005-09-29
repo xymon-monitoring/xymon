@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.221 2005-08-11 21:12:29 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.222 2005-09-29 15:33:26 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -1046,7 +1046,7 @@ void run_rpcinfo_service(service_t *service)
 	p = xgetenv("RPCINFO");
 	strcpy(cmdpath, (p ? p : "rpcinfo"));
 	for (t=service->items; (t); t = t->next) {
-		if (!t->host->dnserror) {
+		if (!t->host->dnserror && (t->host->downcount == 0)) {
 			sprintf(cmd, "%s -p %s 2>&1", cmdpath, ip_to_test(t->host));
 			t->open = (run_command(cmd, NULL, &t->banner, &t->bannerbytes, 1, extcmdtimeout) == 0);
 		}
