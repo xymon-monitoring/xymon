@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.5 2005-07-23 16:48:00 henrik Exp $";
+static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.6 2005-10-01 06:22:22 henrik Exp $";
 
 int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -43,10 +43,20 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		name = val = NULL;
 
 		l += strspn(l, " \t\n");
-		if (*l) { name = l; l += strcspn(l, ":="); *l = '\0'; l++; }
-		if (name) { val = l + strspn(l, " \t"); l = val + strspn(val, "0123456789."); *l = '\0'; l++; }
+		if (*l) { 
+			name = l; 
+			l += strcspn(l, ":="); 
+			if( *l ) { *l = '\0'; l++; }
+			else break;
+		}
+		if (name) { 
+			val = l + strspn(l, " \t"); 
+			l = val + strspn(val, "0123456789."); 
+			if( *l ) { *l = '\0'; l++; }
+			else break;
+		}
 
-		if (name && val) {
+		if (name && val && *val) {
 			char *endptr;
 
 			strtod(val, &endptr);
