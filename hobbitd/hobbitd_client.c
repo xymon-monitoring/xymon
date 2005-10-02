@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.35 2005-09-30 21:13:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.36 2005-10-02 15:32:23 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -219,22 +219,23 @@ void unix_cpu_report(char *hostname, namelist_t *hinfo, char *fromline, char *ti
 
 	get_cpu_thresholds(hinfo, &loadyellow, &loadred, &recentlimit, &ancientlimit);
 
-	if ((uptimesecs != -1) && (recentlimit != -1) && (uptimesecs < recentlimit)) {
-		cpucolor = COL_YELLOW;
-		addtobuffer(&upmsg, &upmsgsz, "&yellow Machine recently rebooted\n");
-	}
-	if ((uptimesecs != -1) && (ancientlimit != -1) && (uptimesecs > ancientlimit)) {
-		cpucolor = COL_YELLOW;
-		sprintf(msgline, "&yellow Machine has been up more than %d days\n", (ancientlimit / 86400));
-		addtobuffer(&upmsg, &upmsgsz, msgline);
-	}
-	if (load5 > loadyellow) {
-		cpucolor = COL_YELLOW;
-		addtobuffer(&upmsg, &upmsgsz, "&red Load is HIGH\n");
-	}
 	if (load5 > loadred) {
 		cpucolor = COL_RED;
 		addtobuffer(&upmsg, &upmsgsz, "&red Load is CRITICAL\n");
+	}
+	else if (load5 > loadyellow) {
+		cpucolor = COL_YELLOW;
+		addtobuffer(&upmsg, &upmsgsz, "&yellow Load is HIGH\n");
+	}
+
+	if ((uptimesecs != -1) && (recentlimit != -1) && (uptimesecs < recentlimit)) {
+		if (cpucolor == COL_GREEN) cpucolor = COL_YELLOW;
+		addtobuffer(&upmsg, &upmsgsz, "&yellow Machine recently rebooted\n");
+	}
+	if ((uptimesecs != -1) && (ancientlimit != -1) && (uptimesecs > ancientlimit)) {
+		if (cpucolor == COL_GREEN) cpucolor = COL_YELLOW;
+		sprintf(msgline, "&yellow Machine has been up more than %d days\n", (ancientlimit / 86400));
+		addtobuffer(&upmsg, &upmsgsz, msgline);
 	}
 
 	init_status(cpucolor);
