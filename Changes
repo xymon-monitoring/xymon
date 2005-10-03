@@ -1,3 +1,139 @@
+Changes from 4.1.1 -> 4.1.2
+---------------------------
+
+NOTE: If you are upgrading from 4.1.1, you MUST change the
+      ~hobbit/server/etc/hobbit-clients.cfg file and add a
+      line with the text "DEFAULT" before the default settings
+      in the file.
+
+Bugfixes:
+* The hobbit module handling client reports had several bugs
+  in the way it interpreted the hobbit-clients.cfg file. These
+  were fixed, but this necessitated that the default settings
+  are explicitly flagged with a "DEFAULT" line.
+* When multiple recipients of an alert had different minimum
+  duration and/or repeat-settings, they would mostly use only
+  the settings for the first recipient.
+* The alert module could continue sending alerts even though
+  the rules in hobbit-alerts.cfg that triggered the alert had
+  been modified.
+* The hobbitd daemon would leak memory when responding to a
+  "query" request. In extreme circumstances, it could also
+  crash.
+* The hobbitd_alert module could leak tiny amounts of memory.
+* The default timeouts on the server- and client-side have 
+  been increased to allow some more time to send in status
+  messages. Because of Hobbit's more agressive use of "combo"
+  messages and larger amounts of data, it could timeout
+  prematurely on busy servers.
+* Hosts flagged with "nobb2" no longer appear in the acknowledge
+  log on the BB2 page.
+* The size of the shared-memory buffers used to pass data between
+  the core hobbit daemon and the hobbitd_* modules has been 
+  increased, allowing for larger messages. These are now also
+  configurable, so you can change them without having to
+  recompile Hobbit (see the MAXMSG_* settings in hobbitserver.cfg(5)).
+* bbproxy: When sending to multiple servers and the connection to
+  one server fails, continue feeding a message to the other servers
+  instead of dropping it completely.
+* bbproxy: Rotating the logs will now also rotate the logfile for
+  any debugging output.
+* The RSS files now escape special characters, to make sure
+  the file has a valid RSS XML syntax.
+* The "cpu" status from a Hobbit client with a critical load
+  would include texts showing both that the load was "high"
+  and "critical". Changed to include only the most severe
+  condition.
+* The "ncv" (name-colon-value) data handler could easily 
+  read past end of input, and mis-interpret the input data.
+  Fixed by Matti Klock.
+
+Build fixes:
+* An "autoconf" type of script is now used to check for some
+  of the more common build problems. This should make the client
+  build without problems on more platforms.
+* The "configure" script will now recognize the "hobbit" user
+  on systems using NIS or NIS+.
+* "make install" would fail to set the proper permissions for the
+  Hobbit client directories.
+* The pre-built Debian- and RPM-packages failed to flag the
+  client configuration files as such, so they would be overwritten
+  by an upgrade. Note that this fix only takes effect AFTER you
+  have installed the new .deb or .rpm files.
+* The pre-built Debian- and RPM-packages failed to set permissions
+  on the client logs/ and tmp/ directories.
+* A separate "hobbit-client" package is now generated in both
+  .rpm and .deb format.
+* A bug in the "merge-sects" installation utility has been fixed. This
+  could cause the installation to abort prematurely.
+
+Server improvements:
+* The acknowledge log on the BB 2 page now has a configurable
+  max number and max time of the entries listed, via the
+  --max-ackcount and --max-acktime options for bbgen.
+* The eventlog script now lets you filter out events based on
+  the hostname, testname, color, and start/stop times. Thanks
+  to Eric Schwimmer for contributing this.
+* The "netstat" statistics module has been upgraded to collect
+  byte-counter statistics for HP-UX, AIX, OSF/1 and *BSD.
+  This might only work with the Hobbit client, not the BB/LARRD
+  bf-netstat module.
+* A "group-except" definition is now supported in the bb-hosts
+  file, to show all tests EXCEPT certain ones for a group of
+  hosts.
+* A "noclear" tag has been added. This is the equivalent of
+  defining all network test with the '~' - "always report true 
+  status" - flag.
+* RPC tests now only run if the ping check of the server did 
+  not fail.
+* The default size of the RRD graphs can be defined via the
+  RRDHEIGHT and RRDWIDTH settings in hobbitserver.cfg.
+* The hobbitgraph CGI can now generate comparison graphs 
+  with e.g. the load graphs from multiple hosts. However, a
+  front-end tool for requsting these has not yet been created.
+* Stale RRD files (.rrd files that haven't been updated for 
+  more than 1 day) are no longer included when generating the
+  graphs on the status pages. They still show up if you view
+  the graphs on the "trends" status column.
+* The hobbit-confreport CGI is now installed correctly,
+  including an item in the "Reports" menu.
+* The "info" column now include the "uname" data from the
+  Hobbit client, allowing you to see what operating system
+  is running on the host.
+
+Client improvements:
+* The "runclient.sh" script now accepts two commandline options:
+  "--hostname=CLIENT.HOST.NAME" lets you override the default
+  hostname that the client uses when it reports data to Hobbit;
+  "--os=OSNAME" lets you override the operating system name for
+  certain Linux systems. See the README.CLIENT file.
+* The client is now re-locatable. I.e. you can pack up the
+  "client" directory and move it to another box or another
+  location for easier deployment of the client on multiple
+  boxes running the same operating system.
+* Client installations on NIS-based systems should now work.
+* AIX is now supported - has been tested with 4.3.3 and 5.x.
+* OSF/1 is now supported (4.x and 5.x)
+* HP-UX support should work
+* Darwin / Mac OS X is now supported.
+* {Free,Net,Open}BSD-based systems failed to build the meminfo 
+  tool, so memory reporting was broken.
+* Solaris clients now reports all types of filesystems 
+  (notably "vxfs" filesystems were omitted before).
+* The client configuration now lets you check for filesystems
+  that MUST be mounted.
+* The clients now switch locale to use the POSIX locale - 
+  previously the system locale was used, which could result
+  in status messages in languages that the backend did
+  not expect.
+
+Other:
+* A new utility "demotool" can be used to simulate a number of
+  servers to Hobbit. This may be useful when demonstrating
+  Hobbit to new users. Note: This is not included in the 
+  default build - to build it, run "make demo-build".
+
+
 Changes from 4.1.0 -> 4.1.1
 ---------------------------
 
