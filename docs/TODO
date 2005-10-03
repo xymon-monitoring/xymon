@@ -18,6 +18,9 @@ Bugfixes
 
 Things I must remember to look at
 ---------------------------------
+* "cpu" status determined by the non-idle time reported by
+  vmstat, instead of the rather meaningless load average.
+* Option to pick what colors goes on the BB2 and BBNK pages.
 * DOWNTIME on a per-test basis.
 * hobbitd_client process/disk alarms to different people depending
   on *which* process/disk is in error.
