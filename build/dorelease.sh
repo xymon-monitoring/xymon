@@ -33,7 +33,7 @@ done
 case "$CMD" in
 	"release")
 		make distclean
-		for f in $DIRLIST
+		for f in . $DIRLIST
 		do
 			rcs -nrel_$RCSTAG: ~/hobbit/$f/RCS/*
 		done
@@ -48,7 +48,7 @@ case "$CMD" in
 		;;
 
 	"tag")
-		for f in $DIRLIST
+		for f in . $DIRLIST
 		do
 			rcs -nrel_$RCSTAG: ~/hobbit/$f/RCS/*
 		done
