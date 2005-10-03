@@ -1,0 +1,66 @@
+.TH HOBBIT-CLIENTS.CFG 5 "Version 4.1.2:  3 Oct 2005" "Hobbit Monitor"
+.SH NAME
+hobbit-clients.cfg \- Configuration for for hobbitd_client module
+
+.SH SYNOPSIS
+.B ~hobbit/server/etc/hobbit-clients.cfg
+
+.SH DESCRIPTION
+The hobbit-clients.cfg file controls what color is assigned to
+the status-messages that are generated from the Hobbit client
+data - typically the cpu, disk, memory and procs-columns.
+
+Note: This file is only used on the Hobbit server - it is not
+used by the Hobbit client, so there is no need to distribute
+it to your client systems.
+
+.SH FILE FORMAT
+Blank lines and lines starting with a hash mark (#) are treated as 
+comments and ignored. 
+
+
+.SH RULES
+A rule consists of one of more filters using these keywords:
+.sp
+.BR "PAGE=targetstring"
+Rule matching an alert by the name of the page in BB. This is the path of
+the page as defined in the bb-hosts file. E.g. if you have this setup:
+.IP
+.nf
+page servers All Servers
+subpage web Webservers
+10.0.0.1 www1.foo.com
+subpage db Database servers
+10.0.0.2 db1.foo.com
+.fi
+.LP
+Then the "All servers" page is found with \fBPAGE=servers\fR, the 
+"Webservers" page is \fBPAGE=servers/web\fR and the "Database servers"
+page is \fBPAGE=servers/db\fR. Note that you can also use regular expressions 
+to specify the page name, e.g. \fBPAGE=%.*/db\fR would find the "Database
+servers" page regardless of where this page was placed in the hierarchy.
+
+The top-level page has a the fixed name \fB/\fR, e.g. \fBPAGE=/\fR would 
+match all hosts on the Hobbit frontpage. If you need it in a regular
+expression, use \fBPAGE=%^/\fR to avoid matching the forward-slash
+present in subpage-names.
+
+.sp
+.BR "EXPAGE=targetstring"
+Rule excluding an alert if the pagename matches.
+.sp
+.BR "HOST=targetstring"
+Rule matching an alert by the hostname.
+.sp
+.BR "EXHOST=targetstring"
+Rule excluding an alert by matching the hostname.
+.sp
+.BR "TIME=timespecification"
+Rule matching an alert by the time-of-day. This is specified as the DOWNTIME timespecification in the bb-hosts file.
+
+The "targetstring" is either a simple pagename, hostname or servicename, OR a '%' followed by a Perl-compatible regular expression. E.g. "HOST=%www(.*)" will match any hostname that begins with "www".
+
+
+.SH "SEE ALSO"
+hobbitd_client(8), hobbitd(8), hobbit(7)
+
