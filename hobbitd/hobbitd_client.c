@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.36 2005-10-02 15:32:23 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.37 2005-10-05 05:34:03 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -518,7 +518,7 @@ void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 			}
 
 			if (pcolor == COL_GREEN) {
-				sprintf(msgline, "&green %s (found %d, %s)\n", pname, pcount, limtxt);
+				sprintf(msgline, "&green %s (found %d, req. %s)\n", pname, pcount, limtxt);
 				addtobuffer(&monmsg, &monsz, msgline);
 			}
 			else {
