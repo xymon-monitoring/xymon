@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.17 2005-07-14 16:34:47 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.18 2005-10-05 20:15:14 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -34,6 +34,7 @@ static int statuscolor(testedhost_t *h, long status)
 	  case 000:			/* transportlayer reports error */
 		result = (h->dialup ? COL_CLEAR : COL_RED);
 		break;
+	  case 100: /* Continue - should be ok */
 	  case 200: case 201: case 202: case 203: case 204: case 205: case 206:
 	  case 301: case 302: case 303: case 307:
 	  case 401: case 403: 		/* Is "Forbidden" an OK status ? */
