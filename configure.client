@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Configure script for Hobbit CLIENT
-# $Id: configure.client,v 1.2 2005-07-31 19:51:10 henrik Exp $
+# $Id: configure.client,v 1.3 2005-10-06 12:19:37 henrik Exp $
 
 echo ""
 echo "Configuration script for Hobbit client"
@@ -20,7 +20,7 @@ if test "$MAKE" = ""; then
 	MAKE=make
 fi
 echo "Checking your make-utility"
-MAKEVER=`$MAKE -version 2>&1 | head -1 | awk '{print $1 " " $2}'`
+MAKEVER=`$MAKE -version 2>&1 | head -n 1 | awk '{print $1 " " $2}'`
 if test "$MAKEVER" != "GNU Make"
 then
 	echo "GNU make is required to build Hobbit."

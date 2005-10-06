@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# $Id: bb-commands.sh,v 1.4 2005-08-10 06:01:14 henrik Exp $
+# $Id: bb-commands.sh,v 1.5 2005-10-06 12:19:37 henrik Exp $
 
 # Script to pick up most of the commands used by BB extension scripts.
 # This is used during installation, to build a hobbitserver.cfg that
@@ -26,17 +26,17 @@ echo ""
 for CMD in top uptime awk cat cp cut date egrep expr find grep head id ln ls mv rm sed sort tail touch tr uniq who
 do
 	ENVNAME=`echo $CMD | tr "[a-z]" "[A-Z]"`
-	PGM=`findbin $CMD | head -1`
+	PGM=`findbin $CMD | head -n 1`
 	echo "${ENVNAME}=\"${PGM}\""
 done
 
 # WC is special
-PGM=`findbin wc | head -1`
+PGM=`findbin wc | head -n 1`
 echo "WC=\"${PGM} -l\""
 echo "WCC=\"${PGM}\""
 
 # DFCMD is an alias for DF
-PGM=`findbin df | head -1`
+PGM=`findbin df | head -n 1`
 echo "# DF,DFCMD and PS are for compatibility only, NOT USED by the Hobbit client"
 echo "DF=\"${PGM} -Pk\""
 echo "DFCMD=\"${PGM} -Pk\""
