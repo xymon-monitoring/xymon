@@ -69,7 +69,7 @@ services. So there would not be any mails going to <tt>unixsupport@foo.com</tt> 
 fills up during the night.</p>
 
 <h3><a name="keywords">Keywords in rules and recipients</a></h3>
-<p>The full set of keywords and their meaning is as follows:</p>
+<p>These are the keywords for setting up rules:</p>
 <table width="80%" align="center" summary="hobbit-alerts.cfg keywords">
 	<tr><th align="left" valign="top">PAGE</th><td>rule matching an alert by the name of the page the host is displayed on. This is the name following the "page", "subpage" or "subparent" keyword in the bb-hosts file.</td></tr>
 	<tr><th align="left" valign="top">EXPAGE</th><td>rule excluding an alert if the pagename matches.</td></tr>
@@ -80,13 +80,17 @@ fills up during the night.</p>
 	<tr><th align="left" valign="top">COLOR</th><td>rule matching an alert by color. Can be "red", "yellow", or "purple".</td></tr>
 	<tr><th align="left" valign="top">TIME</th><td>rule matching an alert by the time-of-day. This is specified as the DOWNTIME timespecification in the bb-hosts file (see bb-hosts(5)).</td></tr>
 	<tr><th align="left" valign="top">DURATION</th><td>Rule matching an alert if the event has lasted longer/shorter than the given duration. E.g. <em>DURATION&gt;10m</em> (lasted longer than 10 minutes) or <em>DURATION&lt;2h</em> (only sends alerts the first 2 hours). Unless explicitly stated, this is in minutes - you can use 'm', 'h', 'd' for 'minutes', 'hours' and 'days' respectively.</td></tr>
+	<tr><th align="left" valign="top">UNMATCHED</th><td>This keyword on a recipient means that he will only get an alert, if no other alerts have been sent. So you can use it e.g. when setting up alerts to specific people for some services, then after those you add a recipient with the UNMATCHED keyword who will only get those alerts that were not sent anyone else. You can also use it to setup a "catch-all" alert recipient, use the UNMATHED keyword on a recipient at the end of the hobbit-alerts.cfg file.</td></tr>
 	<tr><th align="left" valign="top">RECOVERED</th><td>Rule matches if the alert has recovered from an alert state.</td></tr>
+	<tr><th align="left" valign="top">NOTICE</th><td>Rule matches if the message is a "notify" message. This type of message is sent when a host or test is disabled or enabled.</td></tr>
+</table>
+<p>These are the keywords for specifying a recipient:</p>
+<table width="80%" align="center" summary="hobbit-alerts.cfg keywords">
 	<tr><th align="left" valign="top">MAIL</th><td>Recipient who receives an e-mail alert. This takes one parameter, the e-mail address.</td></tr>
 	<tr><th align="left" valign="top">SCRIPT</th><td>Recipient that invokes a script. This takes two parameters: The script filename, and the recipient that gets passed to the script.</td></tr>
 	<tr><th align="left" valign="top">FORMAT</th><td>format of the text message with the alert. Default is "TEXT" (suitable for e-mail alerts). "PLAIN" is the same as TEXT, except it does not include the URL linking to the status webpage. "SMS" is a short message with no subject for SMS alerts. "SCRIPT" is a brief message template for scripts.</td></tr>
 	<tr><th align="left" valign="top">REPEAT</th><td>How often an alert gets repeated. As with the DURATION setting, this is in minutes unless explicitly modified with 'm', 'h', 'd'.</td></tr>
 	<tr><th align="left" valign="top">STOP</th><td>By default, hobbitd_alert looks at all the possible recipients in the hobbit-alerts.cfg file when handling an alert. If you would like it stop after a specific recipient gets an alert, add the STOP keyword to this recipient. This terminates the search for more recipients.</td></tr>
-	<tr><th align="left" valign="top">UNMATCHED</th><td>This keyword on a recipient means that he will only get an alert, if no other alerts have been sent. So you can use it e.g. when setting up alerts to specific people for some services, then after those you add a recipient with the UNMATCHED keyword who will only get those alerts that were not sent anyone else. You can also use it to setup a "catch-all" alert recipient, use the UNMATHED keyword on a recipient at the end of the hobbit-alerts.cfg file.</td></tr>
 </table>
 
 <h3><a name="wildcards">Wildcards - regular expressions</a></h3>
