@@ -1,6 +1,6 @@
 .TH HOBBIT-CLIENTS.CFG 5 "Version 4.1.2:  3 Oct 2005" "Hobbit Monitor"
 .SH NAME
-hobbit-clients.cfg \- Configuration for for hobbitd_client module
+hobbit-clients.cfg \- Configuration file for the hobbitd_client module
 
 .SH SYNOPSIS
 .B ~hobbit/server/etc/hobbit-clients.cfg
@@ -8,7 +8,9 @@ hobbit-clients.cfg \- Configuration for for hobbitd_client module
 .SH DESCRIPTION
 The hobbit-clients.cfg file controls what color is assigned to
 the status-messages that are generated from the Hobbit client
-data - typically the cpu, disk, memory and procs-columns.
+data - typically the cpu, disk, memory and procs-columns. Color
+is decided on the basis of some \fBsettings\fR defined in this file;
+settings apply to specific hosts through a set of \fBrules\fR.
 
 Note: This file is only used on the Hobbit server - it is not
 used by the Hobbit client, so there is no need to distribute
@@ -19,11 +21,154 @@ Blank lines and lines starting with a hash mark (#) are treated as
 comments and ignored. 
 
 
-.SH RULES
-A rule consists of one of more filters using these keywords:
+.SH CPU STATUS COLUMN SETTINGS
 .sp
+.BR "LOAD warnlevel paniclevel"
+.sp
+If the system load exceeds "warnlevel" or "paniclevel", the "cpu"
+status will go yellow or red, respectively. These are decimal
+numbers.
+.sp
+Defaults: warnlevel=5.0, paniclevel=10.0
+.sp
+.BR "UP bootlimit toolonglimit"
+.sp
+The cpu status goes yellow if the system has been up for less than
+"bootlimit" time, or longer than "toolonglimit". The time is in
+minutes, or you can add h/d/w for hours/days/weeks - eg. "2h" for
+two hours, or "4w" for 4 weeks.
+.sp
+Defaults: bootlimit=1h, toolonglimit=-1 (infinite).
+.sp
+Example: Go yellow if the load average exceeds 5, and red if it
+exceeds 10. Also, go yellow for 10 minutes after a reboot, and after 
+4 weeks uptime.
+.IP
+.nf
+LOAD 5 10
+UP 10m 4w
+.fi
+.LP
+
+.SH DISK STATUS COLUMN SETTINGS
+.sp
+.BR "DISK filesystem warnlevel paniclevel"
+.sp
+If the utilization of "filesystem" is reported to exceed "warnlevel"
+or "paniclevel", the "disk" status will go yellow or red, respectively.
+"warnlevel" and "paniclevel" are the percentage filled.
+"filesystem" is the mount-point where the filesystem is mounted, e.g.
+"/usr" or "/home". A filesystem-name that begins with "%" is interpreted
+as a Perl-compatible regular expression; e.g. "%^/oracle.*/" will match
+any filesystem whose mountpoint begins with "/oracle".
+.sp
+Defaults: warnlevel=90, paniclevel=95
+
+.SH MEMORY STATUS COLUMN SETTINGS
+.sp
+.BR "MEMPHYS warnlevel paniclevel"
+.br
+.BR "MEMACT warnlevel paniclevel"
+.br
+.BR "MEMSWAP warnlevel paniclevel"
+.sp
+If the memory utilization exceeds the "warnlevel" or "paniclevel", the
+"memory" status will change to yellow or red, respectively.
+Note: The words "PHYS", "ACT" and "SWAP" are also recognized.
+.sp
+Example: Go yellow if more than 20% swap is used, and red if
+more than 40% swap is used or the actual memory utilisation exceeds
+90%. Dont alert on physical memory usage.
+.IP
+.nf
+MEMSWAP 20 40
+MEMACT 90 90
+MEMPHYS 101 101
+.fi
+.LP
+Defaults:
+.IP
+.nf
+MEMPHYS warnlevel=100 paniclevel=101 (i.e. it will never go red).
+MEMSWAP warnlevel=50 paniclevel=80
+MEMACT  warnlevel=90 paniclevel=97
+.fi
+.LP
+
+.SH PROCS STATUS COLUMN SETTINGS
+.sp
+.BR "PROC processname minimumcount maximumcount color"
+.sp
+The "ps" listing sent by the client will be scanned for how many
+processes containing "processname" are running, and this is then
+matched against the min/max settings defined here. If the running
+count is outside the thresholds, the color of the "procs" status
+changes to "color".
+.sp
+To check for a process that must NOT be running: Set minimum and
+maximum to 0.
+.sp
+"processname" can be a simple string, in which case this string must
+show up in the "ps" listing as a command. The scanner will find
+a ps-listing of e.g. "/usr/sbin/cron" if you only specify "processname"
+as "cron".
+"processname" can also be a Perl-compatiable regular expression, e.g.
+"%java.*inst[0123]" can be used to find entries in the ps-listing for
+"java -Xmx512m inst2" and "java -Xmx256 inst3". In that case,
+"processname" must begin with "%" followed by the reg.expression.
+If "processname" contains whitespace (blanks or TAB), you must enclose
+the full string in double quotes - including the "%" if you use regular
+expression matching. E.g.
+.sp
+    PROC "%hobbitd_channel --channel=data.*hobbitd_rrd" 1 1 yellow
+.sp
+or
+.sp
+    PROC "java -DCLASSPATH=/opt/java/lib" 2 5
+.sp
+You can have multiple "PROC" entries for the same host, all of the
+checks are merged into the "procs" status and the most severe
+check defines the color of the status.
+.sp
+Example: Check that "cron" is running:
+.br
+	PROC cron
+.sp
+Example: Check that at least 5 "httpd" processes are running, but not more than 20:
+.br
+	PROC httpd 5 20
+.sp
+Defaults:
+.br
+	mincount=1, maxcount=-1 (unlimited), color="red".
+.br
+	Note that no processes are checked by default.
+
+.SH CHANGING THE DEFAULT SETTINGS
+If you would like to use different defaults for the settings described above, 
+then you can define the new defaults after a DEFAULT line. E.g. this would
+explicitly define all of the default settings:
+.IP
+.nf
+DEFAULT
+	UP      1h
+	LOAD    5.0 10.0
+	DISK    * 90 95
+	MEMPHYS 100 101
+	MEMSWAP 50 80
+	MEMACT  90 97
+.fi
+.LP
+
+.SH RULES TO SELECT HOSTS
+All of the settings can be applied to a group of hosts, by preceding them with
+rules. A rule defines of one of more filters using these keywords (note that
+this is identical to the rule definitions used in the
+.I hobbit-alerts.cfg(5)
+file).
+
 .BR "PAGE=targetstring"
-Rule matching an alert by the name of the page in BB. This is the path of
+Rule matching an alert by the name of the page in BB. "targetstring" is the path of
 the page as defined in the bb-hosts file. E.g. if you have this setup:
 .IP
 .nf
@@ -45,20 +190,60 @@ match all hosts on the Hobbit frontpage. If you need it in a regular
 expression, use \fBPAGE=%^/\fR to avoid matching the forward-slash
 present in subpage-names.
 
-.sp
 .BR "EXPAGE=targetstring"
 Rule excluding an alert if the pagename matches.
-.sp
+
 .BR "HOST=targetstring"
 Rule matching an alert by the hostname.
-.sp
+"targetstring" is either a comma-separated list of hostnames (from the bb-hosts file),
+"*" to indicate "all hosts", or a Perl-compatible regular expression.
+E.g. "HOST=dns.foo.com,www.foo.com" identifies two specific hosts;
+"HOST=%www.*.foo.com EXHOST=www-test.foo.com" matches all hosts with a name
+beginning with "www", except the "www-test" host.
+
 .BR "EXHOST=targetstring"
 Rule excluding an alert by matching the hostname.
-.sp
-.BR "TIME=timespecification"
-Rule matching an alert by the time-of-day. This is specified as the DOWNTIME timespecification in the bb-hosts file.
 
-The "targetstring" is either a simple pagename, hostname or servicename, OR a '%' followed by a Perl-compatible regular expression. E.g. "HOST=%www(.*)" will match any hostname that begins with "www".
+.BR "TIME=timespecification"
+Rule matching an alert by the time-of-day. This is specified as the DOWNTIME 
+time specification in the bb-hosts file.  E.g. "TIME=W:0800:2200"
+applied to a rule will make this rule active only on week-days between
+8AM and 10PM.
+
+.SH RULES: APPLYING SETTINGS TO SELECTED HOSTS
+Rules must be placed after the settings, e.g.
+.IP
+.nf
+LOAD 8.0 12.0  HOST=db.foo.com TIME=*:0800:1600
+.fi
+.LP
+
+If you have multiple settings that you want to apply the same rules to,
+you can write the rules *only* on one line, followed by the settings. E.g.
+.IP
+.nf
+HOST=%db.*.foo.com TIME=W:0800:1600
+	LOAD 8.0 12.0
+	DISK /db  98 100
+	PROC mysqld 1
+.fi
+.LP
+will apply the three settings to all of the "db" hosts on week-days between 8AM
+and 4PM. This can be combined with per-settings rule, in which case the
+per-settings rule overrides the general rule; e.g.
+.IP
+.nf
+HOST=%.*.foo.com
+	LOAD 7.0 12.0 HOST=bax.foo.com
+	LOAD 3.0 8.0
+.fi
+.LP
+will result in the load-limits being 7.0/12.0 for the "bax.foo.com" host,
+and 3.0/8.0 for all other foo.com hosts.
+
+The entire file is evaluated from the top to bottom, and the first
+match found is used. So you should put the specific settings first, and
+the generic ones last.
 
 
 .SH "SEE ALSO"
