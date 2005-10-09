@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-linux.sh,v 1.5 2005-09-21 12:57:41 henrik Exp $
+# $Id: hobbitclient-linux.sh,v 1.6 2005-10-09 11:16:52 henrik Exp $
 
 echo "[date]"
 date
@@ -26,7 +26,7 @@ free
 echo "[netstat]"
 netstat -s
 echo "[ps]"
-ps -ef
+ps -efw
 echo "[top]"
 top -b -n 1 
 # vmstat
