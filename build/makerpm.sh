@@ -39,6 +39,9 @@ cp -p Changes configure configure.server configure.client COPYING CREDITS README
 find ~/hobbit/rpmbuild/hobbit-$REL -type d|xargs chmod 755
 
 cd rpmbuild
+pushd hobbit-$REL
+make -f $HOME/hobbit/Makefile.home distclean
+popd
 tar zcf SOURCES/hobbit-$REL.tar.gz hobbit-$REL
 rm -rf hobbit-$REL
 HOME=`pwd` rpmbuild -ba --clean SPECS/hobbit.spec
