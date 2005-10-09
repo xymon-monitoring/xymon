@@ -41,13 +41,11 @@ raised with Hobbit.</p>
 <hr>
 
 <h3><a name="noclient">My client-side tests dont show up on the webpages</a></h3>
-<p>Did you install a client ? It is not included with Hobbit, so you
-need to install the Big Brother client for client side tests.</p>
-
-<p>If you prefer an open-source client package, there is a Hobbit
-client available on hobbitmon.sourceforge.net. It is currently only
-for NetBSD systems, but work is underway to port it to other Unix
-systems - including Linux, FreeBSD, and Solaris.</p>
+<p>Did you install a client ? The Hobbit client package is installed
+automatically only on the Hobbit server - on other systems, you must
+build the client package by running Hobbit's configure-script with
+the <tt>&quot;--client&quot;</tt> option and build the client package on the hosts you
+want to monitor.</p>
 
 <p>If you did install a client, then the two most probable causes for 
 this are:</p>
@@ -59,7 +57,10 @@ this are:</p>
 	a report about these unknown hosts.<br>
 	Either reconfigure the client to use the same hostname as is in the
 	bb-hosts file, or add a <tt>CLIENT:clienthostname</tt> tag in the
-	bb-hosts file so Hobbit knows what host matches the client hostname.</li>
+	bb-hosts file so Hobbit knows what host matches the client hostname.
+	The Hobbit client can be started with a <tt>&quot;--hostname=MYHOSTNAME&quot;</tt>
+	option to explicitly define the hostname that the client uses when
+	reporting data to Hobbit.</li>
 
 	<li>A firewall is blocking the client access to the Hobbit server.<br>
 	Clients must be able to connect to the Hobbit server on TCP port 1984
