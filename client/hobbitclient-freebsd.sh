@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-freebsd.sh,v 1.4 2005-09-21 08:48:33 henrik Exp $
+# $Id: hobbitclient-freebsd.sh,v 1.5 2005-10-09 20:11:25 henrik Exp $
 
 echo "[date]"
 date
@@ -21,7 +21,11 @@ uptime
 echo "[who]"
 who
 echo "[df]"
-df -H -tnonfs,nullfs,cd9660,procfs,devfs
+# The sed stuff is to make sure lines are not split into two.
+df -H -tnonfs,nullfs,cd9660,procfs,devfs | sed -e '/^[^ 	][^ 	]*$/{
+N
+s/[ 	]*\n[ 	]*/ /
+}'
 echo "[meminfo]"
 $BBHOME/bin/freebsd-meminfo
 echo "[swapinfo]"

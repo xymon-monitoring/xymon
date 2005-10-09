@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-hp-ux.sh,v 1.7 2005-08-03 18:45:08 henrik Exp $
+# $Id: hobbitclient-hp-ux.sh,v 1.8 2005-10-09 20:11:25 henrik Exp $
 
 echo "[date]"
 date
@@ -21,7 +21,11 @@ uptime
 echo "[who]"
 who
 echo "[df]"
-df -Pk
+# The sed stuff is to make sure lines are not split into two.
+df -Pk | sed -e '/^[^ 	][^ 	]*$/{
+N
+s/[ 	]*\n[ 	]*/ /
+}'
 echo "[memory]"
 $BBHOME/bin/hpux-meminfo
 echo "[swapinfo]"

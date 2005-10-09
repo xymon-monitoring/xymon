@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-netbsd.sh,v 1.4 2005-09-02 19:01:27 henrik Exp $
+# $Id: hobbitclient-netbsd.sh,v 1.5 2005-10-09 20:11:25 henrik Exp $
 
 echo "[date]"
 date
@@ -20,7 +20,10 @@ uptime
 echo "[who]"
 who
 echo "[df]"
-df -P -tnonfs,kernfs,procfs,cd9660,null
+df -P -tnonfs,kernfs,procfs,cd9660,null | sed -e '/^[^ 	][^ 	]*$/{
+N
+s/[ 	]*\n[ 	]*/ /
+}'
 echo "[meminfo]"
 $BBHOME/bin/netbsd-meminfo
 echo "[swapctl]"

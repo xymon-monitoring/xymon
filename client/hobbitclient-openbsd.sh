@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-openbsd.sh,v 1.3 2005-07-24 11:32:51 henrik Exp $
+# $Id: hobbitclient-openbsd.sh,v 1.4 2005-10-09 20:11:25 henrik Exp $
 
 echo "[date]"
 date
@@ -20,7 +20,10 @@ uptime
 echo "[who]"
 who
 echo "[df]"
-df -P -tnonfs,kernfs,procfs,cd9660
+df -P -tnonfs,kernfs,procfs,cd9660 | sed -e '/^[^ 	][^ 	]*$/{
+N
+s/[ 	]*\n[ 	]*/ /
+}'
 echo "[meminfo]"
 $BBHOME/bin/openbsd-meminfo
 echo "[swapctl]"

@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-linux.sh,v 1.6 2005-10-09 11:16:52 henrik Exp $
+# $Id: hobbitclient-linux.sh,v 1.7 2005-10-09 20:11:25 henrik Exp $
 
 echo "[date]"
 date
@@ -20,7 +20,11 @@ uptime
 echo "[who]"
 who
 echo "[df]"
-df -Pl -x none -x tmpfs -x shmfs -x unknown
+df -Pl -x none -x tmpfs -x shmfs -x unknown | sed -e '/^[^ 	][^ 	]*$/{
+N
+s/[ 	]*\n[ 	]*/ /
+}'
+echo "[meminfo]"
 echo "[free]"
 free
 echo "[netstat]"

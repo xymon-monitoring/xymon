@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-osf1.sh,v 1.3 2005-08-07 20:08:26 henrik Exp $
+# $Id: hobbitclient-osf1.sh,v 1.4 2005-10-09 20:11:25 henrik Exp $
 
 echo "[date]"
 date
@@ -24,7 +24,10 @@ vmstat -P
 echo "[swap]"
 swapon -s
 echo "[df]"
-df -t noprocfs
+df -t noprocfs | sed -e '/^[^ 	][^ 	]*$/{
+N
+s/[ 	]*\n[ 	]*/ /
+}'
 echo "[netstat]"
 netstat -s
 echo "[ps]"

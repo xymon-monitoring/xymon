@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-darwin.sh,v 1.5 2005-08-07 21:12:50 henrik Exp $
+# $Id: hobbitclient-darwin.sh,v 1.6 2005-10-09 20:11:25 henrik Exp $
 
 echo "[date]"
 date
@@ -21,7 +21,11 @@ uptime
 echo "[who]"
 who
 echo "[df]"
-df -H -T nonfs,nullfs,cd9660,procfs,volfs,devfs,fdesc
+# The sed stuff is to make sure lines are not split into two.
+df -H -T nonfs,nullfs,cd9660,procfs,volfs,devfs,fdesc | sed -e '/^[^ 	][^ 	]*$/{
+N
+s/[ 	]*\n[ 	]*/ /
+}'
 echo "[meminfo]"
 vm_stat
 echo "[netstat]"

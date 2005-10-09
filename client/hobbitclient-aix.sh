@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-aix.sh,v 1.2 2005-08-09 18:12:30 henrik Exp $
+# $Id: hobbitclient-aix.sh,v 1.3 2005-10-09 20:11:25 henrik Exp $
 
 echo "[date]"
 date
@@ -20,7 +20,11 @@ uptime
 echo "[who]"
 who
 echo "[df]"
-df -Ik
+# The sed stuff is to make sure lines are not split into two.
+df -Ik | sed -e '/^[^ 	][^ 	]*$/{
+N
+s/[ 	]*\n[ 	]*/ /
+}'
 echo "[realmem]"
 lsattr -El sys0 -a realmem
 echo "[freemem]"
