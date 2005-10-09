@@ -1,28 +1,15 @@
-osiris:~ $ cd hobbit
-osiris:~/hobbit $ ./configure
-
 Configuration script for Hobbit
 
 This script asks a few questions and builds a Makefile to compile Hobbit
 
-Are you setting up a Hobbit server (hobbit), or using Hobbit with BB (bb) [hobbit] ?
-
+Checking your make-utility
 Checking pre-requisites for building Hobbit
 
 Checking for fping ...
-Found fping in /usr/local/sbin/fping
-Checking to see if '/usr/local/sbin/fping 127.0.0.1' works ...
-This program can only be run by root, or it must be setuid root.
-
-Failed to run fping.
-If fping is not suid-root, you may want to use an suid-root wrapper
-like 'sudo' to run fping.
-
-Hobbit needs the fping utility. What command should it use to run fping ?
-sudo /usr/local/sbin/fping
-Checking to see if 'sudo /usr/local/sbin/fping 127.0.0.1' works ...
+Found fping in /usr/bin/fping
+Checking to see if '/usr/bin/fping 127.0.0.1' works ...
 127.0.0.1 is alive
-OK, will use 'sudo /usr/local/sbin/fping' for ping tests
+OK, will use '/usr/bin/fping' for ping tests
 NOTE: If you are using an suid-root wrapper, make sure the 'hobbit'
       user is also allowed to run fping without having to enter passwords.
       For 'sudo', add something like this to your 'sudoers' file:
@@ -31,8 +18,8 @@ NOTE: If you are using an suid-root wrapper, make sure the 'hobbit'
 
 
 Checking for RRDtool ...
-Found RRDtool include files in /usr/local/rrdtool-1.0.49/include
-Found RRDtool libraries in /usr/local/rrdtool-1.0.49/lib
+Found RRDtool include files in /usr/include
+Found RRDtool libraries in /usr/lib
 Linking RRD with PNG library: -L/usr/lib -lpng
 
 
@@ -50,7 +37,7 @@ like POP3S, IMAPS, NNTPS and TELNETS. If you have the OpenSSL
 library installed, I recommend that you enable this.
 
 Do you want to be able to test SSL-enabled services (y) ?
-
+y
 
 
 
@@ -61,9 +48,9 @@ Found LDAP libraries in /usr/lib
 Hobbit can use your OpenLDAP LDAP client library to test LDAP servers.
 
 Do you want to be able to test LDAP servers (y) ?
-
+y
 Enable experimental support for LDAP/SSL (OpenLDAP 2.x only) (y) ?
-
+y
 
 
 
@@ -72,19 +59,19 @@ Setting up for a Hobbit server
 
 What userid will be running Hobbit [hobbit] ?
 
-Found passwd entry for user hobbit:x:502:502:Hobbit server:/usr/local/hobbit:/bin/bash
+Found passwd entry for user hobbit:x:1000:100:Hobbit user:/usr/lib/hobbit:
 
 
-Where do you want the Hobbit installation [/usr/local/hobbit] ?
+Where do you want the Hobbit installation [/usr/lib/hobbit] ?
 
-OK, will configure to use /usr/local/hobbit as the Hobbit toplevel directory
+OK, will configure to use /usr/lib/hobbit as the Hobbit toplevel directory
 
 
 What URL will you use for the Hobbit webpages [/hobbit] ? 
 
 
 
-Where to put the Hobbit CGI scripts [/usr/local/hobbit/cgi-bin] ? 
+Where to put the Hobbit CGI scripts [/usr/lib/hobbit/cgi-bin] ? 
 
 
 
@@ -92,8 +79,25 @@ What is the URL for the Hobbit CGI directory [/hobbit-cgi] ?
 
 
 
+********************** SECURITY NOTICE ****************************
+If your Hobbit server is accessible by outsiders, then you should
+restrict access to the CGI scripts that handle enable/disable of
+hosts, and acknowledging of alerts. The easiest way to do this is
+to put these in a separate CGI directory and require a password to
+access them.
+If your Hobbit server is on a secure network (Intranet) and you trust
+your users, then you can keep all the CGI scripts in one directory.
+
+Where to put the Hobbit Administration CGI scripts [/usr/lib/hobbit/cgi-secure] ? 
+
+
+
+What is the URL for the Hobbit Administration CGI directory [/hobbit-seccgi] ? 
+
+
+
 ** Note that you may need to modify your webserver configuration.
-** After installing, see /usr/local/hobbit/server/etc/hobbit-apache.conf for an example configuration.
+** After installing, see /usr/lib/hobbit/server/etc/hobbit-apache.conf for an example configuration.
 
 
 To generate Hobbit availability reports, your webserver
@@ -104,15 +108,15 @@ what group-ID your webserver runs with. This is typically
 If you dont know, just hit ENTER and we will handle it later.
 
 What group-ID does your webserver use ?
-apache
+www-data
 
 
 Where to put the Hobbit logfiles [/var/log/hobbit] ? 
 
 
 
-What is the name of this host [osiris.hswn.dk] ? 
-
+What is the name of this host [osiris] ? 
+osiris.hswn.dk
 
 
 What is the IP-address of this host [127.0.0.1] ? 
@@ -157,6 +161,4 @@ Using Linux Makefile settings
 Created Makefile with the necessary information to build Hobbit
 Some defaults are used, so do look at the Makefile before continuing.
 
-Configuration complete - now run 'make' (GNU make) to build the tools
-osiris:~/hobbit $
-
+Configuration complete - now run make (GNU make) to build the tools
