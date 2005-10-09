@@ -17,6 +17,9 @@ cp -p Changes configure configure.server configure.client COPYING CREDITS README
 find ~/hobbit/debbuild/hobbit-$REL -type d|xargs chmod 755
 
 cd debbuild
+pushd hobbit-$REL
+make -f $HOME/hobbit/Makefile.home distclean
+popd
 tar zcf hobbit-$REL.tar.gz hobbit-$REL
 
 cd ~/hobbit
