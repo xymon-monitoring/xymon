@@ -1,8 +1,8 @@
-hobbit (4.1.2-0.rc1) unstable; urgency=low
+hobbit (4.1.2-1) unstable; urgency=low
 
-  * RC1 package for testing
+  * New upstream release
 
- -- Henrik Stoerner <henrik@hswn.dk>  Wed,  3 Aug 2005 15:19:00 +0200
+ -- Henrik Stoerner <henrik@hswn.dk>  Mon, 10 Oct 2005 22:30:00 +0200
 
 hobbit (4.1.1-1) unstable; urgency=low
 
