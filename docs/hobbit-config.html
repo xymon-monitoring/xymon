@@ -17,6 +17,7 @@ directory. If you look at this directory, you will see these files:</p>
 	you are checking, what subpage in the Hobbit web-pages this host is shown on etc.
 	The name of the file - "bb-hosts" - was chosen so it is compatible with the
 	Big Brother system which uses the same filename and file format.</li>
+	<li><a href="manpages/man5/hobbit-clients.cfg.5.html">hobbit-clients.cfg</a> is the configuration file for data reported by the Hobbit clients installed on the hosts you are monitoring. This defines the color of the cpu-, disk-, memory- and procs-columns, based on the information that is sent to Hobbit by the clients.</li>
 	<li><a href="manpages/man5/hobbit-alerts.cfg.5.html">hobbit-alerts.cfg</a> holds the alerting configuration. In this file,
 	you setup the rules for sending out alerts about services going down: Who gets
 	the alert, how is it sent, how often, whether to send alerts 24x7 or only between
@@ -138,17 +139,116 @@ configured in Hobbit 4.0 is as follows:</p>
 </table>
 
 <h3>Monitoring host-specific data with clients</h3>
-<p>You can install an agent on each of the hosts you monitor, to check 
-host-specific data such as CPU utilisation, disk usage, local logfiles, 
-if certain processes and services are running etc. Hobbit does not 
-include these agents, but since Big Brother and Hobbit are compatible,
-you can use the Big Brother agents even though you are running Hobbit
-on the server.</p>
+<p>You can install a client on each of the hosts you monitor, to check 
+host-specific data such as CPU utilisation, disk usage, if certain processes 
+and services are running etc. Hobbit includes clients for most Unix-like
+operating systems. A client for Windows is planned but the programming
+has not yet started.</p>
 
-<p>The Big Brother agents are available for download from the Big Brother
-site <a href="http://bb4.org/">bb4.org</a>. Note that depending on what
-the purpose is of your monitoring, you may have to buy a license to use
-the client software, so check the Big Brother license terms.</p>
+<p>First, make sure you have installed the Hobbit client on all of the
+hosts you want to monitor, and you have these hosts listed in your 
+bb-hosts file. The Hobbit client will pick up the hostname of the box
+it is running on automatically, but it is not uncommon for the name
+it finds to be different from what you've put into bb-hosts. So if
+you know that the client is running but no data appears, check that
+the hostname used by the Hobbit client is the one you expect. See
+<a href="hobbit-tips.html#noclient">this FAQ item</a> for details.</p>
+
+<p>With the Hobbit client running and reporting data into Hobbit, you
+should see the cpu-, disk-, memory- and procs-columns appear. The color
+of these status columns is determined by settings in the 
+<a href="manpages/man5/hobbit-clients.cfg.5.html"> hobbit-clients.cfg</a>
+configuration file. Here is an example of how to setup a host:</p>
+<p><img src="hobbit-clients.png"></p>
+
+<p>As you can see, there's first a definition of what hosts the
+following criteria applies to. Here, it is only a single host:
+voodoo.hswn.dk - but you can use various filters on hostnames,
+pagenames and time of day to determine what the thresholds should
+be for each of the criteria monitored with the client data.
+The <a href="manpages/man5/hobbit-clients.cfg.5.html">hobbit-clients.cfg</a>
+man-page describes this in detail.</p>
+<p>After the host filter comes the criteria used to determine the
+color of each of the status columns.</p>
+<table align="center" width="80%" summary="Client configuration critera">
+	<tr>
+		<th align="left" valign="top">UP</th>
+		<td>Sets the <b>cpu</b> column color, based on how long the host 
+			has been up. After the UP keyword you put two time limits:
+			The first one (30m in the example) defines how long after a
+			reboot the cpu column is yellow. The second (optional)
+			value causes the cpu column to go yellow after the host
+			has been up for this long - it may be useful, if you need
+			to reboot your servers regularly.
+		</td>
+	</tr>
+	<tr>
+		<th align="left" valign="top">LOAD</th>
+		<td>Sets the <b>cpu</b> column color, based on how much load is
+			on the system.
+			After the LOAD keyword you put two limits: The first number
+			is the limit where the cpu column goes yellow; the second
+			is the limit where the cpu column goes red.<br>
+			For Unix systems, this threshold is matched against the
+			5-minute load average value, as reported by the "uptime"
+			command - it is therefore a positive number.<br>
+			For Windows systems, this threshold is matched against
+			the CPU utilisation - this is a percentage between 0
+			and 100.<br>
+		</td>
+	</tr>
+	<tr>
+		<th align="left" valign="top">DISK</th>
+		<td>Sets the <b>disk</b> column color based on how full the filesystem
+			is. This takes three parameters: The name of the filesystems;
+			the threshold where it goes yellow; and the thresholds where it
+			goes red.<br>
+			The name of the filesystem is the mount point. You can specify
+			this either with the full path, or you can use <b>*</b> meaning
+			&quot;all filesystems&quot;. You can also use regular expressions
+			by prefixing the expression with a percent sign, e.g. &quot;%^/ora.*&quot;
+			would match all filesystems that are mounted on a path beginning with
+			&quot;/ora&quot; - &quot;/ora/db/vol1&quot; for instance. As shown
+			in the example, you can have multiple specifications with different
+			thresholds - these are evaluated from top to bottom, so it is best
+			to put the most specific ones first, and the general ones last.<br>
+			The yellow and red thresholds are percentages - they trigger when
+			the filesystem has filled up to the percentage you specify.
+		</td>
+	</tr>
+	<tr>
+		<th align="left" valign="top">PROC</th>
+		<td>Sets the <b>procs</b> column color based on what processes are running.
+			This takes at least one parameter: A string that is (part of) the 
+			command line that the process runs. You can have a simple string here
+			or a regular expression - Hobbit will scan the &quot;ps&quot; output
+			for the string or expression, and count how many times it appeared
+			in the ps listing.<br>
+			The process count is then matched against the thresholds that are
+			the second and third parameter - the second parameter is the minimum
+			count (by default: 1), and the third parameter is the maximum count
+			(default: -1, meaning unlimited). Note: If you want to set a maximum
+			count, then you must also set a minimum count - even if it is 1.<br>
+			The last parameter defines the color used for the procs column, if
+			the process count does not fall within the thresholds. By default it
+			will go red - you can put &quot;yellow&quot; as the last parameter.<br>
+			You can have several PROC entries for the same host, if you need to
+			monitor multiple processes.
+		</td>
+	</tr>
+	<tr>
+		<th align="left" valign="top">MEMPHYS<br>MEMACT<br>MEMSWAP</th>
+		<td>Set the <b>memory</b> column color based on the thresholds for memory
+			utilisation. Each of these keywords takes two parameters: The first
+			is the warning (yellow) threshold - in percent - of memory used. 
+			The second is the panic (red) threshold - in percent - of memory 
+			used.<br>
+			By using one of the three keywords, you can set thresholds for the
+			physical memory (RAM), the swap space, and - on platforms supporting
+			this, e.g. Linux - the actual amount of memory used for applications.
+		</td>
+	</tr>
+</table>
 
 </body>
 </html>
