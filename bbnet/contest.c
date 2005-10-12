@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.81 2005-07-31 21:13:36 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.82 2005-10-12 20:37:44 henrik Exp $";
 
 #include "config.h"
 
@@ -567,8 +567,11 @@ static void setup_ssl(tcptest_t *item)
 			break;
 		  case SSL_ERROR_SYSCALL:
 			ERR_error_string(ERR_get_error(), sslerrmsg);
-			errprintf("IO error in SSL_connect to %s on host %s: %s\n",
-				  portinfo, inet_ntoa(item->addr.sin_addr), sslerrmsg);
+			/* Filter out the bogus SSL error */
+			if (strstr(sslerrmsg, "error:00000000:") == NULL) {
+				errprintf("IO error in SSL_connect to %s on host %s: %s\n",
+					  portinfo, inet_ntoa(item->addr.sin_addr), sslerrmsg);
+			}
 			item->errcode = CONTEST_ESSL;
 			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
 			break;
