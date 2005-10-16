@@ -6,7 +6,7 @@
 
 [client]
 	ENVFILE $HOBBITCLIENTHOME/etc/hobbitclient.cfg
-	CMD $HOBBITCLIENTHOME/bin/hobbitclient.sh
+	CMD $HOBBITCLIENTHOME/bin/hobbitclient.sh @CLIENTFLAGS@
 	LOGFILE $HOBBITCLIENTHOME/logs/hobbitclient.log
 	INTERVAL 5m
 
