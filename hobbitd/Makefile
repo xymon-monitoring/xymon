@@ -1,6 +1,7 @@
 PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-mailack trimhistory hobbitreports.sh moverrd.sh
 CGISCRIPTS = hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh hobbit-confreport.sh
 SECCGISCRIPTS = bb-ack.sh hobbit-enadis.sh
+CLIENTPROGRAMS = ../client/hobbitd_client
 
 LIBOBJS = ../lib/libbbgen.a
 
@@ -28,6 +29,8 @@ IDTOOL := $(shell if test `uname -s` = "SunOS"; then echo /usr/xpg4/bin/id; else
 all: $(PROGRAMS) $(CGISCRIPTS) $(SECCGISCRIPTS) cfgfiles
 
 # Need NETLIBS on Solaris for getservbyname(), called by parse_url()
+
+client: $(CLIENTPROGRAMS)
 
 hobbitd: $(HOBBITDOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(RPATHOPT) $(HOBBITDOBJS) $(LIBOBJS) $(NETLIBS)
@@ -58,6 +61,9 @@ hobbitd_sample: $(SAMPLEOBJS) $(LIBOBJS)
 
 hobbitd_client: $(CLIENTOBJS) $(LIBOBJS)
 	$(CC) -o $@ $(RPATHOPT) $(CLIENTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
+
+../client/hobbitd_client: $(CLIENTOBJS) ../lib/hobbitclient.a
+	$(CC) -o $@ $(RPATHOPT) $(CLIENTOBJS) ../lib/hobbitclient.a $(PCRELIBS) $(NETLIBS)
 
 hobbitd_client.o: hobbitd_client.c client/*.c
 	$(CC) $(CFLAGS) -c -o $@ hobbitd_client.c

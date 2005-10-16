@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.37 2005-10-05 05:34:03 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.38 2005-10-16 07:30:17 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -36,6 +36,7 @@ typedef struct sectlist_t {
 sectlist_t *sections = NULL;
 int pslistinprocs = 1;
 int sendclearmsgs = 1;
+int localmode     = 0;
 
 void splitmsg(char *clientdata)
 {
@@ -257,7 +258,7 @@ void unix_cpu_report(char *hostname, namelist_t *hinfo, char *fromline, char *ti
 		addtostatus(topstr);
 	}
 
-	if (fromline) addtostatus(fromline);
+	if (fromline && !localmode) addtostatus(fromline);
 	finish_status();
 }
 
@@ -384,7 +385,7 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 	/* And the full df output */
 	addtostatus(dfstr);
 
-	if (fromline) addtostatus(fromline);
+	if (fromline && !localmode) addtostatus(fromline);
 	finish_status();
 }
 
@@ -458,7 +459,7 @@ void unix_memory_report(char *hostname, namelist_t *hinfo, char *fromline, char 
 	sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%%\n", 
 		colorname(swapcolor), "Swap", memswapused, memswaptotal, memswappct);
 	addtostatus(msgline);
-	if (fromline) addtostatus(fromline);
+	if (fromline && !localmode) addtostatus(fromline);
 	finish_status();
 }
 
@@ -553,7 +554,7 @@ void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 	/* And the full ps output for those who want it */
 	if (pslistinprocs) addtostatus(psstr);
 
-	if (fromline) addtostatus(fromline);
+	if (fromline && !localmode) addtostatus(fromline);
 	finish_status();
 }
 
@@ -586,7 +587,7 @@ void msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 	else
 		addtostatus("The client did not report any logfile data\n");
 
-	if (fromline) addtostatus(fromline);
+	if (fromline && !localmode) addtostatus(fromline);
 	finish_status();
 }
 
@@ -684,6 +685,9 @@ int main(int argc, char *argv[])
 			load_client_config(configfn);
 			dump_client_config();
 			return 0;
+		}
+		else if (strcmp(argv[argi], "--local") == 0) {
+			localmode = 1;
 		}
 		else if (strcmp(argv[argi], "--test") == 0) {
 			namelist_t *hinfo, *oldhinfo = NULL;
@@ -802,7 +806,7 @@ int main(int argc, char *argv[])
 		if (reloadconfig || (time(NULL) >= nextconfigload)) {
 			nextconfigload = time(NULL) + 600;
 			reloadconfig = 0;
-			load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+			if (!localmode) load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 			load_client_config(configfn);
 		}
 
@@ -843,8 +847,9 @@ int main(int argc, char *argv[])
 			char *hostname = metadata[3];
 			char *clienttype = metadata[4];
 			enum ostype_t os;
-			namelist_t *hinfo = hostinfo(hostname);
+			namelist_t *hinfo = NULL;
 
+			hinfo = (localmode ? localhostinfo(hostname) : hostinfo(hostname));
 			if (!hinfo) continue;
 			os = get_ostype(clienttype);
 
