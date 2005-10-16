@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.42 2005-08-14 09:49:14 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.43 2005-10-16 07:28:59 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -318,6 +318,43 @@ namelist_t *hostinfo(char *hostname)
 		rbtKeyValue(rbhosts, hosthandle, &k1, &k2);
 		result = (namelist_t *)k2;
 	}
+
+	return result;
+}
+
+namelist_t *localhostinfo(char *hostname)
+{
+	/* Returns a static fake hostrecord */
+	static namelist_t *result = NULL;
+
+	if (!result) {
+		initialize_hostlist();
+		result = (namelist_t *)calloc(1, sizeof(namelist_t));
+	}
+
+	strcpy(result->ip, "127.0.0.1");
+
+	if (result->bbhostname) xfree(result->bbhostname);
+	result->bbhostname = strdup(hostname);
+
+	if (result->logname) xfree(result->logname);
+
+	result->logname = strdup(hostname);
+	{ char *p = result->logname; while ((p = strchr(p, '.')) != NULL) { *p = '_'; } }
+
+	result->preference = 1;
+	result->page = pghead;
+
+	if (result->rawentry) xfree(result->rawentry);
+	result->rawentry = (char *)malloc(strlen(hostname) + 100);
+	sprintf(result->rawentry, "127.0.0.1 %s #", hostname);
+
+	if (result->allelems) xfree(result->allelems);
+	result->allelems = strdup("");
+
+	if (result->elems) xfree(result->elems);
+	result->elems = (char **)malloc(sizeof(char *));
+	result->elems[0] = NULL;
 
 	return result;
 }
