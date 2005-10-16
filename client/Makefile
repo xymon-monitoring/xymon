@@ -18,11 +18,18 @@ endif
 
 COMMONTOOLS=bb bbcmd bbhostgrep bbhostshow
 
-all: hobbitlaunch $(COMMONTOOLS) hobbitclient.cfg $(EXTRATOOLS)
+all: hobbitlaunch $(COMMONTOOLS) hobbitclient.cfg clientlaunch.cfg $(EXTRATOOLS)
 
 hobbitclient.cfg: hobbitclient.cfg.DIST
 	cat hobbitclient.cfg.DIST | sed -e's!@BBHOSTIP@!$(BBHOSTIP)!g' >hobbitclient.cfg
 	../build/bb-commands.sh >>hobbitclient.cfg
+
+clientlaunch.cfg: clientlaunch.cfg.DIST
+ifeq ($(LOCALCLIENT),yes)
+	cat clientlaunch.cfg.DIST | sed -e's!@CLIENTFLAGS@!--local!g' >clientlaunch.cfg
+else
+	cat clientlaunch.cfg.DIST | sed -e's!@CLIENTFLAGS@!!g' >clientlaunch.cfg
+endif
 
 hpux-meminfo: hpux-meminfo.c
 	$(CC) -o $@ hpux-meminfo.c
@@ -56,5 +63,5 @@ ifndef PKGBUILD
 endif
 
 clean:
-	rm -f hobbitlaunch hobbitd_client $(COMMONTOOLS) hobbitclient.cfg $(EXTRATOOLS) *~
+	rm -f hobbitlaunch hobbitd_client $(COMMONTOOLS) hobbitclient.cfg clientlaunch.cfg $(EXTRATOOLS) *~
 
