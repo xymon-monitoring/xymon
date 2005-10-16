@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Configure script for Hobbit CLIENT
-# $Id: configure.client,v 1.3 2005-10-06 12:19:37 henrik Exp $
+# $Id: configure.client,v 1.4 2005-10-16 07:33:33 henrik Exp $
 
 echo ""
 echo "Configuration script for Hobbit client"
@@ -27,6 +27,32 @@ then
 	echo "If it is available as \"gmake\", run configure as: 'MAKE=gmake $0'"
 	exit 1
 fi
+echo ""
+
+echo "Hobbit normally keeps all of the client configuration files"
+echo "on the Hobbit server. If you prefer, it is possible to use"
+echo "a local client configuration file instead - if so, answer"
+echo "'client' to the next question."
+echo "NB: Local configuration requires the PCRE libs on each host."
+echo ""
+echo "Server side client configuration, or client side [server] ?"
+if test -z "$CONFTYPE"
+then
+	read CONFTYPE
+fi
+if test -z "$CONFTYPE"
+then
+	CONFTYPE="server"
+fi
+echo ""
+
+if test "$CONFTYPE" = "client"
+then
+	echo "Checking for the PCRE libraries"
+	. build/pcre.sh
+	echo ""
+fi
+echo ""
 
 echo "What userid will be running Hobbit [hobbit] ?"
 if test -z "$BBUSER"
@@ -107,6 +133,12 @@ echo "# Toplevel Makefile for Hobbit"    > Makefile
 
 echo "BUILDTOPDIR=\`pwd\`"               >>Makefile
 echo "CLIENTONLY = yes"                  >>Makefile
+if test "$CONFTYPE" = "client"
+then
+	echo "LOCALCLIENT = yes"         >>Makefile
+else
+	echo "LOCALCLIENT = no"          >>Makefile
+fi
 echo ""                                  >>Makefile
 echo "# configure settings for Hobbit"   >>Makefile
 echo "#"                                 >>Makefile
@@ -159,6 +191,14 @@ if test "$INSTALLWWWDIR" != ""; then
 	echo "INSTALLWWWDIR = $INSTALLWWWDIR"   >>Makefile
 fi
 echo "" >>Makefile
+if test "$CONFTYPE" = "client"
+then
+	echo "# PCRE settings"                   >>Makefile
+	echo "PCREINCDIR = -I$PCREINC"           >>Makefile
+	echo "PCRELIBS = -L$PCRELIB -lpcre"      >>Makefile
+	echo "RPATHVAL += ${PCRELIB}"            >>Makefile
+fi
+echo "#"                                 >>Makefile
 echo "# Add local CFLAGS etc. settings here" >>Makefile
 echo "" >>Makefile
 echo "include build/Makefile.rules" >> Makefile
