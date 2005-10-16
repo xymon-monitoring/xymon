@@ -12,7 +12,7 @@
 #define __MATCHING_H__
 
 /* The clients probably dont have the pcre headers */
-#ifndef CLIENTONLY
+#if defined(LOCALCLIENT) || !defined(CLIENTONLY)
 #include <pcre.h>
 
 extern pcre *compileregex(const char *pattern);
