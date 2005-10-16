@@ -11,9 +11,10 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: color.c,v 1.10 2005-08-15 13:12:16 henrik Exp $";
+static char rcsid[] = "$Id: color.c,v 1.11 2005-10-16 06:59:47 henrik Exp $";
 
 #include <string.h>
+#include <stdlib.h>
 
 #include "libbbgen.h"
 
