@@ -61,7 +61,7 @@ all: include/config.h $(BUILDTARGETS)
 	@echo ""
 
 client: include/config.h $(CLIENTTARGETS)
-	CC="$(CC)" CFLAGS="$(CFLAGS)" BBHOME="$(BBTOPDIR)/client" BBHOSTIP="$(BBHOSTIP)" $(MAKE) -C client all
+	CC="$(CC)" CFLAGS="$(CFLAGS)" BBHOME="$(BBTOPDIR)/client" BBHOSTIP="$(BBHOSTIP)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C client all
 
 include/config.h:
 	MAKE="$(MAKE)" CC="$(CC)" CFLAGS="$(CFLAGS)" $(BUILDTOPDIR)/build/genconfig.sh
