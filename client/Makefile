@@ -43,8 +43,12 @@ install:
 	if test ! -d $(INSTALLROOT)$(BBHOME)/tmp ; then mkdir -p $(INSTALLROOT)$(BBHOME)/tmp ; fi
 	if test ! -d $(INSTALLROOT)$(BBHOME)/logs; then mkdir -p $(INSTALLROOT)$(BBHOME)/logs; fi
 	if test ! -d $(INSTALLROOT)$(BBHOME)/ext ; then mkdir -p $(INSTALLROOT)$(BBHOME)/ext ; fi
+	if test ! -f $(INSTALLROOT)$(BBHOME)/etc/localclient.cfg ; then cp localclient.cfg $(INSTALLROOT)$(BBHOME)/etc/ ; fi
 	cp -fp runclient.sh $(INSTALLROOT)$(BBHOME)
 	cp -fp hobbitlaunch hobbitclient*.sh $(COMMONTOOLS) $(EXTRATOOLS) $(INSTALLROOT)$(BBHOME)/bin/
+ifeq ($(LOCALCLIENT),yes)
+	cp -fp hobbitd_client $(COMMONTOOLS) $(EXTRATOOLS) $(INSTALLROOT)$(BBHOME)/bin/
+endif
 	../build/merge-sects clientlaunch.cfg $(INSTALLROOT)$(BBHOME)/etc/clientlaunch.cfg
 	../build/merge-lines hobbitclient.cfg $(INSTALLROOT)$(BBHOME)/etc/hobbitclient.cfg
 ifndef PKGBUILD
@@ -52,5 +56,5 @@ ifndef PKGBUILD
 endif
 
 clean:
-	rm -f hobbitlaunch $(COMMONTOOLS) hobbitclient.cfg $(EXTRATOOLS) *~
+	rm -f hobbitlaunch hobbitd_client $(COMMONTOOLS) hobbitclient.cfg $(EXTRATOOLS) *~
 
