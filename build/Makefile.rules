@@ -12,10 +12,18 @@ CFLAGS += -I. -I$(BUILDTOPDIR)/include
 
 ifeq ($(CLIENTONLY),yes)
 	BUILDTARGETS = client
-	INSTALLTARGETS = install-client install-clientmsg
 	CFLAGS += -DCLIENTONLY=1
+ifeq ($(LOCALCLIENT),yes)
+	CLIENTTARGETS = lib-client common-client build-build hobbitd-client
+	INSTALLTARGETS = install-client install-localclient install-clientmsg
+	CFLAGS += -DLOCALCLIENT=1 $(PCREINCDIR)
+else
+	CLIENTTARGETS = lib-client common-client build-build
+	INSTALLTARGETS = install-client install-clientmsg
+endif
 else
 	BUILDTARGETS = lib-build common-build bbdisplay-build bbnet-build bbproxy-build docs-build build-build hobbitd-build client
+	CLIENTTARGETS = lib-client common-client build-build
 	INSTALLTARGETS = install-bbdisplay install-bbnet install-bbproxy install-man install-hobbitd install-docs install-client install-servermsg
 	CFLAGS += $(PCREINCDIR)
 endif
@@ -52,7 +60,7 @@ all: include/config.h $(BUILDTARGETS)
 	@echo "Build complete. Now run '${MAKE} install' as root"
 	@echo ""
 
-client: include/config.h lib-client common-client build-build
+client: include/config.h $(CLIENTTARGETS)
 	CC="$(CC)" CFLAGS="$(CFLAGS)" BBHOME="$(BBTOPDIR)/client" BBHOSTIP="$(BBHOSTIP)" $(MAKE) -C client all
 
 include/config.h:
@@ -65,7 +73,7 @@ lib-build: include/config.h
 	CC="$(CC)" CFLAGS="$(CFLAGS)" OSDEF="$(OSDEF)" RPATHOPT="$(RPATHOPT)" PCREINCDIR="$(PCREINCDIR)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBTOPDIR="$(BBTOPDIR)" BBLOGDIR="$(BBLOGDIR)" BBHOSTNAME="$(BBHOSTNAME)" BBHOSTIP="$(BBHOSTIP)" BBHOSTOS="$(BBHOSTOS)" $(MAKE) -C lib all
 
 lib-client:
-	CC="$(CC)" CFLAGS="$(CFLAGS)" OSDEF="$(OSDEF)" RPATHOPT="$(RPATHOPT)" PCREINCDIR="$(PCREINCDIR)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBTOPDIR="$(BBTOPDIR)" BBLOGDIR="$(BBLOGDIR)" BBHOSTNAME="$(BBHOSTNAME)" BBHOSTIP="$(BBHOSTIP)" BBHOSTOS="$(BBHOSTOS)" $(MAKE) -C lib client
+	CC="$(CC)" CFLAGS="$(CFLAGS)" OSDEF="$(OSDEF)" RPATHOPT="$(RPATHOPT)" PCREINCDIR="$(PCREINCDIR)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBTOPDIR="$(BBTOPDIR)" BBLOGDIR="$(BBLOGDIR)" BBHOSTNAME="$(BBHOSTNAME)" BBHOSTIP="$(BBHOSTIP)" BBHOSTOS="$(BBHOSTOS)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C lib client
 
 common-build: lib-build
 	CC="$(CC)" CFLAGS="$(CFLAGS)" RPATHOPT="$(RPATHOPT)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" $(MAKE) -C common all
@@ -85,6 +93,9 @@ bbproxy-build: lib-build common-build
 
 hobbitd-build: lib-build build-build common-build 
 	CC="$(CC)" CFLAGS="$(CFLAGS)" RPATHOPT="$(RPATHOPT)" RRDDEF="$(RRDDEF)" RRDINCDIR="$(RRDINCDIR)" PCREINCDIR="$(PCREINCDIR)" NETLIBS="$(NETLIBS)" RRDLIBS="$(RRDLIBS)" PCRELIBS="$(PCRELIBS)" BBTOPDIR="$(BBTOPDIR)" BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" BBLOGDIR="$(BBLOGDIR)" BBHOSTNAME="$(BBHOSTNAME)" BBHOSTIP="$(BBHOSTIP)" BBHOSTOS="$(BBHOSTOS)" BBUSER="$(BBUSER)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" BBHOSTURL="$(BBHOSTURL)" BBCGIURL="$(BBCGIURL)" SECUREBBCGIURL="$(SECUREBBCGIURL)" FPING="$(FPING)" MAILPROGRAM="$(MAILPROGRAM)" RUNTIMEDEFS="$(RUNTIMEDEFS)" INSTALLWWWDIR="$(INSTALLWWWDIR)" INSTALLETCDIR="$(INSTALLETCDIR)" $(MAKE) -C hobbitd all
+
+hobbitd-client: lib-client build-build common-client 
+	CC="$(CC)" CFLAGS="$(CFLAGS)" RPATHOPT="$(RPATHOPT)" RRDDEF="$(RRDDEF)" RRDINCDIR="$(RRDINCDIR)" PCREINCDIR="$(PCREINCDIR)" NETLIBS="$(NETLIBS)" RRDLIBS="$(RRDLIBS)" PCRELIBS="$(PCRELIBS)" BBTOPDIR="$(BBTOPDIR)" BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" BBLOGDIR="$(BBLOGDIR)" BBHOSTNAME="$(BBHOSTNAME)" BBHOSTIP="$(BBHOSTIP)" BBHOSTOS="$(BBHOSTOS)" BBUSER="$(BBUSER)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" BBHOSTURL="$(BBHOSTURL)" BBCGIURL="$(BBCGIURL)" SECUREBBCGIURL="$(SECUREBBCGIURL)" FPING="$(FPING)" MAILPROGRAM="$(MAILPROGRAM)" RUNTIMEDEFS="$(RUNTIMEDEFS)" INSTALLWWWDIR="$(INSTALLWWWDIR)" INSTALLETCDIR="$(INSTALLETCDIR)" $(MAKE) -C hobbitd client
 
 docs-build:
 	BBHOSTURL="$(BBHOSTURL)" $(MAKE) -C docs all
@@ -281,7 +292,7 @@ install-custom:
 client-install: install-client
 
 install-client: client
-	BBHOME="$(BBTOPDIR)/client" INSTALLROOT="$(INSTALLROOT)" BBUSER="$(BBUSER)" $(MAKE) -C client install
+	BBHOME="$(BBTOPDIR)/client" INSTALLROOT="$(INSTALLROOT)" BBUSER="$(BBUSER)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C client install
 
 install-clientmsg:
 	@echo ""
