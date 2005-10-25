@@ -46,6 +46,16 @@ With this option, hosts with no NET: tag are included
 in the test, so that all hosts that either have a
 matching NET: tag, or no NET: tag at all are tested.
 
+.IP "--no-down[=TESTNAME]"
+bbhostgrep will query the Hobbit server for the current
+status of the "conn" test, and if TESTNAME is specified
+also for the current state of the specified test. If
+the status of the "conn" test for a host is non-green,
+or the status of the TESTNAME test is disabled, then this 
+host is ignored and will not be included in the output.
+This can be used to ignore hosts that are down, or hosts
+where the custom test is disabled.
+
 .IP "--bbdisp"
 Search the bb-hosts file following include statements as a
 BBDISPLAY server would.
