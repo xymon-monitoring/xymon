@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.39 2005-10-25 08:25:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.40 2005-10-25 10:47:27 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -309,8 +309,8 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 			}
 		}
 		else {
-			int usage, absolutes;
-			unsigned long warnlevel, paniclevel;
+			int absolutes;
+			unsigned long usage, warnlevel, paniclevel;
 
 			p = strdup(bol); usestr = getcolumn(p, capacol);
 			if (usestr && isdigit((int)*usestr)) usage = atoi(usestr); else usage = -1;
@@ -320,19 +320,21 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 			if (fsname && (usage != -1)) {
 				get_disk_thresholds(hinfo, fsname, &warnlevel, &paniclevel, &absolutes);
 
-				dprintf("Disk check: FS='%s' usage %d (thresholds: %d/%d)\n",
-					fsname, usage, warnlevel, paniclevel);
+				dprintf("Disk check: FS='%s' usage %lu (thresholds: %lu/%lu, abs: %d)\n",
+					fsname, usage, warnlevel, paniclevel, absolutes);
 
 				if (usage >= paniclevel) {
 					if (diskcolor < COL_RED) diskcolor = COL_RED;
-					sprintf(msgline, "&red %s (%d %%) has reached the PANIC level (%d %%)\n",
-						fsname, usage, paniclevel);
+					sprintf(msgline, "&red %s (%lu) has reached the PANIC level (%lu %c)\n",
+						fsname, usage, paniclevel,
+						((absolutes & 1) ? 'K' : '%'));
 					addtobuffer(&monmsg, &monsz, msgline);
 				}
 				else if (usage >= warnlevel) {
 					if (diskcolor < COL_YELLOW) diskcolor = COL_YELLOW;
-					sprintf(msgline, "&yellow %s (%d %%) has reached the WARNING level (%d %%)\n",
-						fsname, usage, warnlevel);
+					sprintf(msgline, "&yellow %s (%lu) has reached the WARNING level (%lu %c)\n",
+						fsname, usage, warnlevel,
+						((absolutes & 2) ? 'K' : '%'));
 					addtobuffer(&monmsg, &monsz, msgline);
 				}
 			}
