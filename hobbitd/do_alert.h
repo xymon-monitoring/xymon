@@ -14,7 +14,7 @@
 #include <time.h>
 #include <stdio.h>
 
-enum astate_t { A_PAGING, A_NORECIP, A_ACKED, A_RECOVERED, A_NOTIFY, A_DEAD };
+typedef enum { A_PAGING, A_NORECIP, A_ACKED, A_RECOVERED, A_NOTIFY, A_DEAD } astate_t;
 
 typedef struct activealerts_t {
 	/* Identification of the alert */
@@ -29,7 +29,7 @@ typedef struct activealerts_t {
 	unsigned char *ackmessage;
 	time_t eventstart;
 	time_t nextalerttime;
-	enum astate_t state;
+	astate_t state;
 	int cookie;
 
 	struct activealerts_t *next;

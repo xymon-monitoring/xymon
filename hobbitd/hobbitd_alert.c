@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.66 2005-09-02 18:59:54 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.67 2005-10-25 08:26:14 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -66,7 +66,8 @@ htnames_t *locations = NULL;
 activealerts_t *ahead = NULL;
 
 char *statename[] = {
-	"paging", "norecip", "acked", "recovered", "dead"
+	/* A_PAGING, A_NORECIP, A_ACKED, A_RECOVERED, A_NOTIFY, A_DEAD */
+	"paging", "norecip", "acked", "recovered", "notify", "dead"
 };
 
 htnames_t *find_name(htnames_t **head, char *name)
@@ -126,6 +127,8 @@ void save_checkpoint(char *filename)
 	if (fd == NULL) return;
 
 	for (awalk = ahead; (awalk); awalk = awalk->next) {
+		if (awalk->state == A_DEAD) continue;
+
 		fprintf(fd, "%s|%s|%s|%s|%s|%d|%d|%s|",
 			awalk->hostname->name, awalk->testname->name, awalk->location->name, awalk->ip,
 			colorname(awalk->color),
