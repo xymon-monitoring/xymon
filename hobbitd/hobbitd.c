@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.184 2005-10-25 08:30:31 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.185 2005-10-25 10:47:58 henrik Exp $";
 
 #include "config.h"
 
@@ -3340,6 +3340,7 @@ int main(int argc, char *argv[])
 		 *
 		 * First attend to the housekeeping chores:
 		 * - send out our heartbeat signal;
+		 * - pick up children to avoid zombies;
 		 * - rotate logs, if we have been asked to;
 		 * - re-load the bb-hosts configuration if needed;
 		 * - check for stale status-logs that must go purple;
@@ -3360,6 +3361,9 @@ int main(int argc, char *argv[])
 			nextheartbeat = now + 5;
 			kill(parentpid, SIGUSR2);
 		}
+
+		/* Pickup any finished child processes to avoid zombies */
+		while (wait3(&childstat, WNOHANG, NULL) > 0) ;
 
 		if (logfn && dologswitch) {
 			freopen(logfn, "a", stdout);
@@ -3669,9 +3673,6 @@ int main(int argc, char *argv[])
 				conntail->next = NULL;
 			}
 		}
-
-		/* Pickup any finished child processes to avoid zombies */
-		while (wait3(&childstat, WNOHANG, NULL) > 0) ;
 	} while (running);
 
 	/* Tell the workers we to shutdown also */
