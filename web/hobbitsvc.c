@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.47 2005-08-11 21:21:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.48 2005-10-25 08:32:13 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -280,13 +280,13 @@ int do_request(void)
 		sethostenv_histlog(tstamp);
 
 		if (stat(logfn, &st) == -1) {
-			errormsg("No such host/service\n");
+			errormsg("Historical status log not available\n");
 			return 1;
 		}
 
 		fd = open(logfn, O_RDONLY);
 		if (fd < 0) {
-			errormsg("Unable to access logfile\n");
+			errormsg("Unable to access historical logfile\n");
 			return 1;
 		}
 		log = (char *)malloc(st.st_size+1);
