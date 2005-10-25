@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.217 2005-08-09 08:39:25 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.218 2005-10-25 20:16:55 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -231,8 +231,11 @@ int main(int argc, char *argv[])
 					   &rstart, &rend, &dynamicreport, style);
 			reportstart = rstart; reportend = rend;
 
-			if (count < 1) reportstart = 788918400;	/* 01-Jan-1995 00:00 GMT */
-			if (count < 2) reportend = time(NULL);
+			if (count < 2) {
+				errprintf("Invalid --reportopts option: Must have start- and end-times\n");
+				return 1;
+			}
+
 			if (count < 3) dynamicreport = 1;
 			if (count == 4) {
 				if (strcmp(style, stylenames[STYLE_CRIT]) == 0) reportstyle = STYLE_CRIT;
