@@ -17,7 +17,7 @@ extern int load_client_config(char *configfn);
 extern void dump_client_config(void);
 
 extern int get_cpu_thresholds(namelist_t *hinfo, float *loadyellow, float *loadred, int *recentlimit, int *ancientlimit);
-extern int get_disk_thresholds(namelist_t *hhinfo, char *fsname, int *warnlevel, int *paniclevel);
+extern int get_disk_thresholds(namelist_t *hhinfo, char *fsname, unsigned long *warnlevel, unsigned long *paniclevel, int *absolutes);
 extern void get_memory_thresholds(namelist_t *hhinfo, 
 				  int *physyellow, int *physred, 
 				  int *swapyellow, int *swapred, 

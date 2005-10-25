@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.38 2005-10-16 07:30:17 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.39 2005-10-25 08:25:18 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -309,17 +309,16 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 			}
 		}
 		else {
-			int usage, warnlevel, paniclevel;
+			int usage, absolutes;
+			unsigned long warnlevel, paniclevel;
 
 			p = strdup(bol); usestr = getcolumn(p, capacol);
-
 			if (usestr && isdigit((int)*usestr)) usage = atoi(usestr); else usage = -1;
-
 			strcpy(p, bol); fsname = getcolumn(p, mntcol);
 			if (fsname) add_disk_count(fsname);
 
 			if (fsname && (usage != -1)) {
-				get_disk_thresholds(hinfo, fsname, &warnlevel, &paniclevel);
+				get_disk_thresholds(hinfo, fsname, &warnlevel, &paniclevel, &absolutes);
 
 				dprintf("Disk check: FS='%s' usage %d (thresholds: %d/%d)\n",
 					fsname, usage, warnlevel, paniclevel);
@@ -750,12 +749,15 @@ int main(int argc, char *argv[])
 					printf("Act.: Yellow at %d, red at %d\n", actyellow, actred);
 				}
 				else if (strcmp(s, "disk") == 0) {
-					int warnlevel, paniclevel;
+					unsigned long warnlevel, paniclevel;
+					int absolutes;
 
 					printf("Filesystem: "); fflush(stdout);
 					fgets(s, sizeof(s), stdin); sanitize_input(s);
-					cfid = get_disk_thresholds(hinfo, s, &warnlevel, &paniclevel);
-					printf("Yellow at %d, red at %d\n", warnlevel, paniclevel);
+					cfid = get_disk_thresholds(hinfo, s, &warnlevel, &paniclevel, &absolutes);
+					printf("Yellow at %lu%c, red at %lu%c\n", 
+						warnlevel, ((absolutes & 1) ? 'K' : '%'),
+						paniclevel, ((absolutes & 2) ? 'K' : '%'));
 				}
 				else if (strcmp(s, "proc") == 0) {
 					int pchecks = clear_process_counts(hinfo);

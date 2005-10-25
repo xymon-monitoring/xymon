@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.10 2005-09-30 21:13:44 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.11 2005-10-25 08:25:18 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -48,7 +48,8 @@ typedef struct c_uptime_t {
 
 typedef struct c_disk_t {
 	exprlist_t *fsexp;
-	int warnlevel, paniclevel;
+	unsigned long warnlevel, paniclevel;
+	int absolutes;
 	int dmin, dmax, dcount;
 	int color;
 } c_disk_t;
@@ -234,13 +235,36 @@ int load_client_config(char *configfn)
 				currule->rule.load.paniclevel = (p ? atof(p): 8.0);
 			}
 			else if (strcasecmp(tok, "DISK") == 0) {
+				char modchar = '\0';
 				currule = setup_rule(C_DISK, curhost, curexhost, curpage, curexpage, curtime, cfid);
 				p = wstok(NULL); 
 				if (p) currule->rule.disk.fsexp = setup_expr(p);
+
 				p = wstok(NULL);
-				currule->rule.disk.warnlevel = (p ? atoi(p) : 90);
+				currule->rule.disk.warnlevel = (p ? atol(p) : 90);
+				currule->rule.disk.absolutes = 0;
+				if (p) modchar = *(p + strspn(p, "0123456789"));
+				if (modchar && (modchar != '%')) {
+					currule->rule.disk.absolutes += 1;
+					switch (modchar) {
+					  case 'k': case 'K' : break;
+					  case 'm': case 'M' : currule->rule.disk.warnlevel *= 1024; break;
+					  case 'g': case 'G' : currule->rule.disk.warnlevel *= 1024*1024; break;
+					}
+				}
+
 				p = wstok(NULL);
-				currule->rule.disk.paniclevel = (p ? atoi(p): 95);
+				currule->rule.disk.paniclevel = (p ? atol(p): 95);
+				if (p) modchar = *(p + strspn(p, "0123456789"));
+				if (modchar && (modchar != '%')) {
+					currule->rule.disk.absolutes += 2;
+					switch (modchar) {
+					  case 'k': case 'K' : break;
+					  case 'm': case 'M' : currule->rule.disk.warnlevel *= 1024; break;
+					  case 'g': case 'G' : currule->rule.disk.warnlevel *= 1024*1024; break;
+					}
+				}
+
 				p = wstok(NULL);
 				currule->rule.disk.dmin = (p ? atoi(p): 0);
 				p = wstok(NULL);
@@ -326,9 +350,10 @@ void dump_client_config(void)
 			printf("LOAD %.2f %.2f", rwalk->rule.load.warnlevel, rwalk->rule.load.paniclevel);
 			break;
 		  case C_DISK:
-			printf("DISK %s %d %d %d %d %s", rwalk->rule.disk.fsexp->pattern,
-			       rwalk->rule.disk.warnlevel, rwalk->rule.disk.paniclevel,
-			       rwalk->rule.disk.dmin, rwalk->rule.disk.dmax, colorname(rwalk->rule.disk.color));
+			printf("DISK %s", rwalk->rule.disk.fsexp->pattern);
+			printf(" %lu%c", rwalk->rule.disk.warnlevel, (rwalk->rule.disk.absolutes & 1) ? 'K' : '%');
+			printf(" %lu%c", rwalk->rule.disk.paniclevel, (rwalk->rule.disk.absolutes & 2) ? 'K' : '%');
+			printf(" %d %d %s", rwalk->rule.disk.dmin, rwalk->rule.disk.dmax, colorname(rwalk->rule.disk.color));
 			break;
 		  case C_MEM:
 			switch (rwalk->rule.mem.memtype) {
@@ -423,7 +448,7 @@ int get_cpu_thresholds(namelist_t *hinfo, float *loadyellow, float *loadred, int
 	return 0;
 }
 
-int get_disk_thresholds(namelist_t *hinfo, char *fsname, int *warnlevel, int *paniclevel)
+int get_disk_thresholds(namelist_t *hinfo, char *fsname, unsigned long *warnlevel, unsigned long *paniclevel, int *absolutes)
 {
 	char *hostname, *pagename;
 	c_rule_t *rule;
@@ -433,6 +458,7 @@ int get_disk_thresholds(namelist_t *hinfo, char *fsname, int *warnlevel, int *pa
 
 	*warnlevel = 90;
 	*paniclevel = 95;
+	*absolutes = 0;
 
 	rule = getrule(hostname, pagename, C_DISK);
 	while (rule && !namematch(fsname, rule->rule.disk.fsexp->pattern, rule->rule.disk.fsexp->exp)) {
@@ -442,6 +468,7 @@ int get_disk_thresholds(namelist_t *hinfo, char *fsname, int *warnlevel, int *pa
 	if (rule) {
 		*warnlevel = rule->rule.disk.warnlevel;
 		*paniclevel = rule->rule.disk.paniclevel;
+		*absolutes = rule->rule.disk.absolutes;
 		return rule->cfid;
 	}
 
