@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.29 2005-08-15 05:59:12 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.30 2005-10-25 21:33:58 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -23,6 +23,75 @@ static char rcsid[] = "$Id: bbhostgrep.c,v 1.29 2005-08-15 05:59:12 henrik Exp $
 #include "version.h"
 #include "libbbgen.h"
 
+static char *connstatus = NULL;
+static char *teststatus = NULL;
+static char *conncolumn = "conn";
+static char *testcolumn = NULL;
+
+static void load_hoststatus()
+{
+	int res;
+	char msg[1024];
+
+	sprintf(msg, "hobbitdboard fields=hostname,testname,color test=%s", conncolumn);
+	res = sendmessage(msg, NULL, NULL, &connstatus, 1, 30);
+
+	if ((res == BB_OK) && testcolumn) {
+		sprintf(msg, "hobbitdboard fields=hostname,testname,color test=%s", testcolumn);
+		res = sendmessage(msg, NULL, NULL, &teststatus, 1, 30);
+	}
+
+	if (res != BB_OK) {
+		errprintf("Cannot fetch Hobbit status, ignoring --no-down\n");
+		connstatus = NULL;
+		teststatus = NULL;
+	}
+}
+
+static int netok(char *netstring, char *curnet, int testuntagged)
+{
+	return ( (netstring == NULL) || 
+		 (curnet && netstring && (strcmp(curnet, netstring) == 0)) || 
+		 (testuntagged && (curnet == NULL)) );
+}
+
+static int downok(char *hostname, int nodownhosts)
+{
+	char *mark, *colorstr;
+
+	if (!nodownhosts) return 1;
+
+	/* Check if the host is down (i.e. "conn" test is non-green) */
+	if (!connstatus) return 1;
+	mark = (char *)malloc(strlen(hostname) + strlen(conncolumn) + 4);
+	sprintf(mark, "\n%s|%s|", hostname, conncolumn);
+	colorstr = strstr(connstatus, mark);
+	if (colorstr) {
+		colorstr += strlen(mark);	/* Skip to the color data */
+	}
+	else if (strncmp(connstatus, mark+1, strlen(mark+1)) == 0) {
+		colorstr = connstatus + strlen(mark+1);	/* First entry we get */
+	}
+	xfree(mark);
+	if (colorstr && (parse_color(colorstr) != COL_GREEN)) return 0;
+
+	/* Check if the test is currently disabled */
+	if (!teststatus) return 1;
+	mark = (char *)malloc(strlen(hostname) + strlen(testcolumn) + 4);
+	sprintf(mark, "\n%s|%s|", hostname, testcolumn);
+	colorstr = strstr(teststatus, mark);
+	if (colorstr) {
+		colorstr += strlen(mark);	/* Skip to the color data */
+	}
+	else if (strncmp(teststatus, mark+1, strlen(mark+1)) == 0) {
+		colorstr = teststatus + strlen(mark+1);	/* First entry we get */
+	}
+	xfree(mark);
+	if (colorstr && (parse_color(colorstr) == COL_BLUE)) return 0;
+
+	return 1;
+}
+
 int main(int argc, char *argv[])
 { 
 	namelist_t *hostlist = NULL, *hwalk;
@@ -31,6 +100,7 @@ int main(int argc, char *argv[])
 	char *include2 = NULL;
 	int extras = 1;
 	int testuntagged = 0;
+	int nodownhosts = 0;
 	char *p;
 	char **lookv;
 	int argi, lookc;
@@ -44,6 +114,7 @@ int main(int argc, char *argv[])
 	lookc = 0;
 
 	bbhostsfn = xgetenv("BBHOSTS");
+	conncolumn = xgetenv("PINGCOLUMN");
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--noextras") == 0) {
@@ -51,6 +122,12 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--test-untagged") == 0) {
 			testuntagged = 1;
+		}
+		else if (argnmatch(argv[argi], "--no-down")) {
+			char *p;
+			nodownhosts = 1;
+			p = strchr(argv[argi], '=');
+			if (p) testcolumn = strdup(p+1);
 		}
 		else if (strcmp(argv[argi], "--version") == 0) {
 			printf("bbhostgrep version %s\n", VERSION);
@@ -83,6 +160,9 @@ int main(int argc, char *argv[])
 		exit(3);
 	}
 
+	/* If we must avoid downed or disabled hosts, let's find out what those are */
+	if (nodownhosts) load_hoststatus();
+
 	/* Each network test tagged with NET:locationname */
 	p = xgetenv("BBLOCATION");
 	if (p && strlen(p)) netstring = strdup(p);
@@ -93,9 +173,7 @@ int main(int argc, char *argv[])
 		char *curname = bbh_item(hwalk, BBH_HOSTNAME);
 
 		/* Only look at the hosts whose NET: definition matches the wanted one */
-		if ( (netstring == NULL) || 
-		     (curnet && netstring && (strcmp(curnet, netstring) == 0)) || 
-		     (testuntagged && (curnet == NULL)) ) {
+		if (netok(netstring, curnet, testuntagged) && downok(curname, nodownhosts)) {
 			char *item;
 			char *wantedtags = NULL;
 			int wantedtagsz;
