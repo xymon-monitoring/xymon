@@ -12,7 +12,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient.sh,v 1.6 2005-10-16 07:32:55 henrik Exp $
+# $Id: hobbitclient.sh,v 1.7 2005-10-25 05:52:56 henrik Exp $
 
 # Must make sure the commands return standard (english) texts.
 LANG=C
@@ -32,7 +32,7 @@ if test "$BBOSSCRIPT" = ""; then
 	BBOSSCRIPT="hobbitclient-`uname -s | tr '[A-Z]' '[a-z]'`.sh"
 fi
 
-TEMPFILE="$BBTMP/msg.txt"
+TEMPFILE="$BBTMP/msg.txt.$$"
 rm -f $TEMPFILE
 touch $TEMPFILE
 
@@ -49,6 +49,10 @@ if test "$LOCALMODE" = "yes"; then
 else
 	$BB $BBDISP "@" < $TEMPFILE
 fi
+
+# Save the latest file for debugging.
+rm -f $BBTMP/msg.txt
+mv $TEMPFILE $BBTMP/msg.txt
 
 exit 0
 
