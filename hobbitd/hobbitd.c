@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.183 2005-09-13 08:02:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.184 2005-10-25 08:30:31 henrik Exp $";
 
 #include "config.h"
 
@@ -92,7 +92,7 @@ typedef struct hobbitd_log_t {
 	struct hobbitd_hostlist_t *host;
 	struct hobbitd_testlist_t *test;
 	struct htnames_t *origin;
-	int color, oldcolor, activealert;
+	int color, oldcolor, activealert, histsynced;
 	char *testflags;
 	char sender[16];
 	time_t lastchange;	/* time when the currently logged status began */
@@ -830,6 +830,7 @@ void get_hts(char *msg, char *sender, char *origin,
 			lwalk = (hobbitd_log_t *)malloc(sizeof(hobbitd_log_t));
 			lwalk->color = lwalk->oldcolor = NO_COLOR;
 			lwalk->activealert = 0;
+			lwalk->histsynced = 0;
 			lwalk->testflags = NULL;
 			lwalk->sender[0] = '\0';
 			lwalk->host = hwalk;
@@ -1057,7 +1058,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		log->cookieexpires = 0;
 	}
 
-	if ((log->oldcolor != newcolor) && !issummary) {
+	if (!issummary && (!log->histsynced || (log->oldcolor != newcolor))) {
 		dprintf("oldcolor=%d, oldas=%d, newcolor=%d, newas=%d\n", 
 			log->oldcolor, oldalertstatus, newcolor, newalertstatus);
 
@@ -1067,6 +1068,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		dprintf("posting to stachg channel\n");
 		posttochannel(stachgchn, channelnames[C_STACHG], msg, sender, hostname, log, NULL);
 		log->lastchange = time(NULL);
+		log->histsynced = 1;
 	}
 
 	if (!issummary) {
@@ -2881,6 +2883,7 @@ void load_checkpoint(char *fn)
 		ltail->color = color;
 		ltail->oldcolor = oldcolor;
 		ltail->activealert = (decide_alertstate(color) == A_ALERT);
+		ltail->histsynced = 0;
 		ltail->testflags = ( (testflags && strlen(testflags)) ? strdup(testflags) : NULL);
 		strcpy(ltail->sender, sender);
 		ltail->logtime = logtime;
