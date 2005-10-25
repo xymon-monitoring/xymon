@@ -9,10 +9,18 @@ data for the "vmstat" and "netstat" graphs. It does not
 currently provide any data for the system-log "msgs"
 column.
 
-All configuration of disk thresholds, load limits, which
-processes to monitor etc. is done on the Hobbit server,
-NOT on the client. This is to allow centralized configuration
-of the monitoring system.
+In the default setup, all configuration of disk thresholds, 
+load limits, which processes to monitor etc. is done on the 
+Hobbit server, NOT on the client. This is to allow centralized 
+configuration of the monitored systems.
+
+If you prefer to have the client configuration done locally
+on each of the systems you monitor, this is an option when
+building the client. It is possible to have a mix of systems,
+with some systems configured locally, and others that use
+the central configuration. Note: The locally-configured
+client requires the PCRE libraries to be installed on the
+client host.
 
 The Hobbit client is released under the GNU GPL, version 2
 or later. See the file COPYING for details.
@@ -55,8 +63,9 @@ command at startup.
 Client configuration
 ====================
 NB: Thresholds for the CPU load, disk- and memory-utilization,
-which processes to monitor etc. is done on the Hobbit SERVER,
-not on the client.
+which processes to monitor etc. is normally done on the Hobbit 
+SERVER, not on the client (unless you explicitly requested this
+when building the client).
 
 Hostname detection
 ------------------
@@ -119,5 +128,5 @@ like, as long as you preserve the directory structure below the
 
 
 
-Henrik Stoerner, 2005-Aug-06.
+Henrik Stoerner, 2005-Oct-16.
 
