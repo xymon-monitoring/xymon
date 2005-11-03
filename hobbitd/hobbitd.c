@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.185 2005-10-25 10:47:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.186 2005-11-03 12:19:35 henrik Exp $";
 
 #include "config.h"
 
@@ -86,6 +86,14 @@ typedef struct hobbitd_meta_t {
 	char *value;
 	struct hobbitd_meta_t *next;
 } hobbitd_meta_t;
+
+typedef struct ackinfo_t {
+	int level;
+	time_t until;
+	char *ackedby;
+	char *msg;
+	struct ackinfo_t *next;
+} ackinfo_t;
 
 /* This holds all information about a single status */
 typedef struct hobbitd_log_t {
@@ -2253,7 +2261,8 @@ void do_message(conn_t *msg, char *origin)
 		xfree(msg->buf);
 		msg->doingwhat = RESPONDING;
 		msg->bufp = msg->buf = buf;
-		msg->buflen = lastboardsize = (bufp - buf);
+		msg->buflen = (bufp - buf);
+		if (msg->buflen > lastboardsize) lastboardsize = msg->buflen;
 	}
 	else if (strncmp(msg->buf, "hobbitdxboard", 13) == 0) {
 		/* 
@@ -2349,7 +2358,8 @@ void do_message(conn_t *msg, char *origin)
 		xfree(msg->buf);
 		msg->doingwhat = RESPONDING;
 		msg->bufp = msg->buf = buf;
-		msg->buflen = lastboardsize = (bufp - buf);
+		msg->buflen = (bufp - buf);
+		if (msg->buflen > lastboardsize) lastboardsize = msg->buflen;
 	}
 	else if ((strncmp(msg->buf, "hobbitdack", 10) == 0) || (strncmp(msg->buf, "ack ack_event", 13) == 0)) {
 		/* hobbitdack COOKIE DURATION TEXT */
