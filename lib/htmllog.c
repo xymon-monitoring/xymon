@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.32 2005-11-03 06:53:20 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.33 2005-11-03 22:59:31 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -247,12 +247,20 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 				/* First skip all whitespace and blank lines */
 				while ((*p) && (isspace((int)*p) || iscntrl((int)*p))) p++;
 				if (*p) {
-					/* We found something that is not blank, so one more line */
-					linecount++;
+					if ((*p == '&') && (parse_color(p+1) != -1)) {
+						/* A "warninglight" line - skip it */
+					}
+					else {
+						/* We found something that is not blank, so one more line */
+						linecount++;
+					}
 					/* Then skip forward to the EOLN */
 					p = strchr(p, '\n');
 				}
 			} while (p && (*p));
+
+			/* There is probably a header line ... */
+			if (linecount > 1) linecount--;
 		}
 		xfree(multikey);
 
