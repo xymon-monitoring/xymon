@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.31 2005-09-21 08:43:18 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.32 2005-11-03 06:53:20 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -93,6 +93,7 @@ static void textwithcolorimg(char *msg, FILE *output)
 		if (p) {
 			*p = '\0';
 			fprintf(output, "%s", restofmsg);
+			*p = '&';
 
 			color = parse_color(p+1);
 			if (color == -1) {
