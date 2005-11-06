@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.78 2005-08-15 13:14:46 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.79 2005-11-06 08:37:29 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -68,8 +68,8 @@ static char rcsid[] = "$Id: do_alert.c,v 1.78 2005-08-15 13:14:46 henrik Exp $";
 int include_configid = 0;  /* Whether to include the configuration file linenumber in alerts */
 int testonly = 0;	   /* Test mode, dont actually send out alerts */
 
-enum method_t { M_MAIL, M_SCRIPT };
-enum msgformat_t { FRM_TEXT, FRM_PLAIN, FRM_SMS, FRM_PAGER, FRM_SCRIPT };
+enum method_t { M_MAIL, M_SCRIPT, M_IGNORE };
+enum msgformat_t { FRM_TEXT, FRM_PLAIN, FRM_SMS, FRM_PAGER, FRM_SCRIPT, FRM_NONE };
 enum recovermsg_t { SR_UNKNOWN, SR_NOTWANTED, SR_WANTED };
 
 /* token's are the pre-processor macros we expand while parsing the config file */
@@ -669,6 +669,34 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				}
 				firsttoken = 0;
 			}
+			else if (currule && (strncasecmp(p, "IGNORE", 6) == 0)) {
+				recip_t *newrcp;
+
+				newrcp = (recip_t *)malloc(sizeof(recip_t));
+				newrcp->cfid = cfid;
+				newrcp->method = M_IGNORE;
+				newrcp->format = FRM_NONE;
+				newrcp->criteria = NULL;
+				newrcp->recipient = NULL;
+				newrcp->scriptname = NULL;
+				newrcp->interval = defaultinterval;
+				newrcp->stoprule = 1;
+				newrcp->unmatchedonly = 0;
+				newrcp->noalerts = 0;
+				newrcp->next = NULL;
+				currcp = newrcp;
+				if (curlinerecips == NULL) curlinerecips = newrcp;
+				pstate = P_RECIP;
+
+				if (currule->recipients == NULL)
+					currule->recipients = rcptail = newrcp;
+				else {
+					rcptail->next = newrcp;
+					rcptail = newrcp;
+				}
+
+				firsttoken = 0;
+			}
 			else {
 				errprintf("Ignored unknown/unexpected token '%s' at line %d\n", p, cfid);
 			}
@@ -753,6 +781,7 @@ void dump_alertconfig(void)
 			switch (recipwalk->method) {
 			  case M_MAIL   : printf("MAIL %s ", recipwalk->recipient); break;
 			  case M_SCRIPT : printf("SCRIPT %s %s ", recipwalk->scriptname, recipwalk->recipient); break;
+			  case M_IGNORE : printf("IGNORE "); break;
 			}
 			switch (recipwalk->format) {
 			  case FRM_TEXT  : printf("FORMAT=TEXT "); break;
@@ -760,6 +789,7 @@ void dump_alertconfig(void)
 			  case FRM_SMS   : printf("FORMAT=SMS "); break;
 			  case FRM_PAGER : printf("FORMAT=PAGER "); break;
 			  case FRM_SCRIPT: printf("FORMAT=SCRIPT "); break;
+			  case FRM_NONE  : break;
 			}
 			printf("REPEAT=%d ", (int)(recipwalk->interval / 60));
 			if (recipwalk->criteria) dump_criteria(recipwalk->criteria, 1);
@@ -1018,6 +1048,7 @@ static repeat_t *find_repeatinfo(activealerts_t *alert, recip_t *recip, int crea
 	switch (recip->method) {
 	  case M_MAIL: method = "mail"; break;
 	  case M_SCRIPT: method = "script"; break;
+	  case M_IGNORE: method = "ignore"; break;
 	}
 
 	id = (char *) malloc(strlen(alert->hostname->name) + strlen(alert->testname->name) + strlen(method) + strlen(recip->recipient) + 4);
@@ -1184,6 +1215,7 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 		return buf;
 
 	  case FRM_PAGER:
+	  case FRM_NONE:
 		MEMUNDEFINE(info);
 		return "";
 	}
@@ -1218,6 +1250,11 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 			continue;
 		}
 
+		if (recip->method == M_IGNORE) {
+			traceprintf("IGNORE rule found\n");
+			continue;
+		}
+
 		if (alert->state == A_PAGING) {
 			repeat_t *rpt = NULL;
 
@@ -1245,6 +1282,9 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 
 		dprintf("  Alert for %s:%s to %s\n", alert->hostname->name, alert->testname->name, recip->recipient);
 		switch (recip->method) {
+		  case M_IGNORE:
+			break;
+
 		  case M_MAIL:
 			{
 				char cmd[32768];
@@ -1707,7 +1747,8 @@ void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
 		     (recip->criteria && (recip->criteria->sendnotice == SR_WANTED)) ) notice = 1;
 
 		*codes = '\0';
-		if (recip->noalerts) strcat(codes, "-A");
+		if (recip->method == M_IGNORE) strcat(codes, "I");
+		if (recip->noalerts) { if (strlen(codes)) strcat(codes, ",A"); else strcat(codes, "-A"); }
 		if (recovered && !recip->noalerts) { if (strlen(codes)) strcat(codes, ",R"); else strcat(codes, "R"); }
 		if (notice) { if (strlen(codes)) strcat(codes, ",N"); else strcat(codes, "N"); }
 		if (recip->stoprule) { if (strlen(codes)) strcat(codes, ",S"); else strcat(codes, "S"); }
