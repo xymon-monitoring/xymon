@@ -17,10 +17,10 @@ all: $(PROGRAMS)
 client: $(CLIENTPROGRAMS)
 
 bbhostgrep: $(HOSTGREPOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/libbbgen.a
+	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/libbbgen.a $(NETLIBS)
 
 ../client/bbhostgrep: $(HOSTGREPOBJS) ../lib/hobbitclient.a
-	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/hobbitclient.a
+	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/hobbitclient.a $(NETLIBS)
 
 bbhostshow: $(HOSTSHOWOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/libbbgen.a
