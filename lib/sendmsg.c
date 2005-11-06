@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.69 2005-07-31 21:13:36 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.70 2005-11-06 08:48:28 henrik Exp $";
 
 #include "config.h"
 
@@ -649,8 +649,6 @@ void addtometa(char *p)
 
 void finish_status(void)
 {
-	int usehobbitd = (strcmp(getenv_default("USEHOBBITD", "FALSE", NULL), "TRUE") == 0);
-
 	if (debug) {
 		char *p = strchr(msgbuf, '\n');
 
@@ -659,24 +657,7 @@ void finish_status(void)
 		if (p) *p = '\n';
 	}
 
-	switch (msgcolor) {
-		case COL_GREEN:
-		case COL_BLUE:
-		case COL_CLEAR:
-			combo_add(msgbuf);
-			break;
-		default:
-			if (usehobbitd) {
-				/* hobbitd takes anything in combos */
-				combo_add(msgbuf);
-			}
-			else {
-				/* Old bbd: Red, yellow and purple messages go out NOW. Or we get no alarms ... */
-				bbnocombocount++;
-				sendmessage(msgbuf, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
-			}
-			break;
-	}
+	combo_add(msgbuf);
 }
 
 void finish_meta(void)

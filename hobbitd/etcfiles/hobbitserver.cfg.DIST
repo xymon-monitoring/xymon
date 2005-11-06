@@ -33,15 +33,9 @@ PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:@BBHOME@/bin"
 BBPORT="1984"			# Portnumber where hobbitd/bbd listens
 BBDISP="$BBSERVERIP"		# IP of a single hobbit/bbd server
 BBDISPLAYS=""			# IP of multiple hobbit/bbd servers. If used, BBDISP must be 0.0.0.0
-BBPAGE="$BBSERVERIP"		# IP of a single bbd BBPAGE server. Not used by Hobbit.
-BBPAGERS=""			# IP of multiple bbd BBPAGE servers. If used, BBPAGE must be 0.0.0.0
 FQDN="TRUE"			# Use fully-qualified hostnames internally. Keep it TRUE unless you know better.
-USEHOBBITD="TRUE"		# Set this TRUE if you are using a Hobbit server, FALSE if standard bbd.
 BBGHOSTS="1"                    # How to handle status messages from unknown hosts.
                                 # 0=accept message, 1=discard message, 2=discard message and log the event
-PAGELEVELS="red yellow purple"	# Status colors that trigger an alert. Used by 'bb' talking to bbd, not by Hobbit.
-PURPLEDELAY="30"		# Lifetime of info- and larrd-pages. Used only when generating for bbd, not for Hobbit.
-
 BBLOGSTATUS="DYNAMIC"		# Are HTML status logs statically or dynamically generated?
 				# Use DYNAMIC with Hobbit, unless you run hobbitd_filestore --status --html
 
@@ -156,8 +150,6 @@ GRAPHS="la,disk,inode,qtree,memory,users,vmstat,iostat,tcp.http,tcp,netstat,mrtg
 BBGENOPTS="--recentgifs --subpagecolumns=2"     # Standard options for bbgen.
 SUMMARY_SET_BKG="FALSE"				# Do summaries affect the background color of the BB webpage ?
 BBMKBB2EXT="eventlog.sh acklog.sh"		# What extensions to have on the BB2 page.
-BBREL="Hobbit"					# Used by the standard BB web headers, not by Hobbit
-BBRELDATE=""					# Used by the standard BB web headers, not by Hobbit
 DOTHEIGHT="16"					# Height (in pixels) of the color GIF's
 DOTWIDTH="16"					# Width (in pixels) of the color GIF's
 COLUMNDOCURL="$CGIBINURL/hobbitcolumn.sh?%s"	# URL formatting string for column-links
