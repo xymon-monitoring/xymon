@@ -1,17 +1,16 @@
 #
-# Master configuration file for Hobbit and Big Brother
+# Master configuration file for Hobbit
 #
 # This file defines several things:
 #
-# 1) By adding hosts to this file, you define hosts that are monitored
-#    by Hobbit / Big Brother. 
+# 1) By adding hosts to this file, you define hosts that are monitored by Hobbit
 # 2) By adding "page", "subpage", "group" definitions, you define the layout
-#    of the Hobbit / Big Brother webpages, and how hosts are divided among 
-#    the various webpages that Hobbit / Big Brother generates.
+#    of the Hobbit webpages, and how hosts are divided among the various webpages 
+#    that Hobbit generates.
 # 3) Several other definitions can be done for each host, see the bb-hosts(5)
 #    man-page.
 #
 # You need to define at least the Hobbit server itself here.
 
-@BBHOSTIP@   @BBHOSTNAME@      # BBDISPLAY BBPAGER BBNET bbd http://@BBHOSTNAME@/
+@BBHOSTIP@   @BBHOSTNAME@      # bbd http://@BBHOSTNAME@/
 
