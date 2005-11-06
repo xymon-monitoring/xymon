@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.48 2005-10-25 08:32:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.49 2005-11-06 07:25:25 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -105,6 +105,9 @@ static int parse_query(void)
 			outform = FRM_CLIENT;
 			p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
 		}
+		else if (val && argnmatch(token, "SECTION")) {
+			if (n == strlen(val)) service = strdup(val);
+		}
 
 		token = strtok(NULL, "&");
 	}
@@ -158,13 +161,18 @@ int do_request(void)
 	if (!displayname) displayname = strdup(hostname);
 
 	if (outform == FRM_CLIENT) {
-		char hobbitdreq[200];
+		char *hobbitdreq;
 		int hobbitdresult;
 
+		hobbitdreq = (char *)malloc(1024 + strlen(hostname) + (service ? strlen(service) : 0));
 		sprintf(hobbitdreq, "clientlog %s", hostname);
+		if (service && *service) sprintf(hobbitdreq + strlen(hobbitdreq), " section=%s", service);
+
 		hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &log, 1, 30);
 		if ((hobbitdresult != BB_OK) || (log == NULL) || (strlen(log) == 0)) {
-			errormsg("Status not available\n");
+			char errtxt[4096];
+			sprintf(errtxt, "Status not available: Req=%s, result=%d\n", hobbitdreq, hobbitdresult);
+			errormsg(errtxt);
 			return 1;
 		}
 
