@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.23 2005-11-08 13:35:37 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.24 2005-11-08 16:42:07 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -475,14 +475,17 @@ char *agestring(time_t secs)
 		left = (left % 86400);
 	}
 	if ((left > 3600) || *result) {
-		p += sprintf(p, "%02ldh", (left / 3600));
+		p += sprintf(p, (*result ? "%02ldh" : "%ldh"), (left / 3600));
 		left = (left % 3600);
 	}
 	if ((left > 60) || *result) {
-		p += sprintf(p, "%02ldm", (left / 60));
+		p += sprintf(p, (*result ? "%02ldm" : "%ldm"), (left / 60));
 		left = (left % 60);
 	}
-	p += sprintf(p, "%02lds", left);
+	/* Only show seconds if no other info */
+	if (*result == '\0') {
+		p += sprintf(p, "%02lds", left);
+	}
 
 	*p = '\0';
 	return result;
