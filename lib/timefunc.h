@@ -27,6 +27,7 @@ extern int periodcoversnow(char *tag);
 extern char *histlogtime(time_t histtime);
 extern int durationvalue(char *dur);
 extern char *durationstring(time_t secs);
+extern char *agestring(time_t secs);
 
 #endif
 

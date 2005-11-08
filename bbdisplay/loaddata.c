@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.155 2005-07-14 08:12:25 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.156 2005-11-08 13:35:37 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -236,12 +236,7 @@ state_t *init_state(const char *filename, logdata_t *log)
 
 		newstate->entry->oldage = (fileage >= recentgif_limit);
 		newstate->entry->fileage = fileage;
-		if (fileage >= 86400)
-			sprintf(newstate->entry->age, "%.2f days", (fileage / 86400.0));
-		else if (fileage > 3600)
-			sprintf(newstate->entry->age, "%.2f hours", (fileage / 3600.0));
-		else
-			sprintf(newstate->entry->age, "%.2f minutes", (fileage / 60.0));
+		strcpy(newstate->entry->age, agestring(fileage));
 	}
 	else {
 		time_t fileage = (now - log->lastchange);
@@ -257,12 +252,8 @@ state_t *init_state(const char *filename, logdata_t *log)
 		newstate->entry->fileage = (log->lastchange ? fileage : -1);
 		if (log->lastchange == 0)
 			strcpy(newstate->entry->age, "");
-		else if (fileage >= 86400)
-			sprintf(newstate->entry->age, "%.2f days", (fileage / 86400.0));
-		else if (fileage > 3600)
-			sprintf(newstate->entry->age, "%.2f hours", (fileage / 3600.0));
-		else
-			sprintf(newstate->entry->age, "%.2f minutes", (fileage / 60.0));
+		else 
+			strcpy(newstate->entry->age, agestring(fileage));
 	}
 
 	if (purplelog && (newstate->entry->color == COL_PURPLE)) {

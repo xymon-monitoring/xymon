@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.22 2005-07-14 17:10:51 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.23 2005-11-08 13:35:37 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -458,6 +458,33 @@ char *durationstring(time_t secs)
 		p += sprintf(p, "%ds ", (int)v);
 	}
 
+	return result;
+}
+
+char *agestring(time_t secs)
+{
+	static char result[128];
+	char *p;
+	time_t left = secs;
+
+	*result = '\0';
+	p = result;
+
+	if (left > 86400) {
+		p += sprintf(p, "%ldd", (left / 86400));
+		left = (left % 86400);
+	}
+	if ((left > 3600) || *result) {
+		p += sprintf(p, "%02ldh", (left / 3600));
+		left = (left % 3600);
+	}
+	if ((left > 60) || *result) {
+		p += sprintf(p, "%02ldm", (left / 60));
+		left = (left % 60);
+	}
+	p += sprintf(p, "%02lds", left);
+
+	*p = '\0';
 	return result;
 }
 
