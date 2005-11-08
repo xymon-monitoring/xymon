@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.148 2005-06-01 09:21:19 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.149 2005-11-08 13:37:25 henrik Exp $";
 
 #include <limits.h>
 #include <sys/types.h>
@@ -26,23 +26,6 @@ static char rcsid[] = "$Id: util.c,v 1.148 2005-06-01 09:21:19 henrik Exp $";
 
 char *htmlextension = ".html"; /* Filename extension for generated HTML files */
 hostlist_t      *hosthead = NULL;
-
-
-char *alttag(entry_t *e)
-{
-	static char tag[1024];
-
-	sprintf(tag, "%s:%s:", e->column->name, colorname(e->color));
-	if (e->acked) {
-		strcat(tag, "acked:");
-	}
-	if (!e->propagate) {
-		strcat(tag, "nopropagate:");
-	}
-	strcat(tag, e->age);
-
-	return tag;
-}
 
 
 char *hostpage_link(host_t *host)

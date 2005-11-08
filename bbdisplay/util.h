@@ -14,7 +14,6 @@
 extern char *htmlextension;
 extern hostlist_t *hosthead;
 
-extern char *alttag(entry_t *e);
 extern char *hostpage_link(host_t *host);
 extern char *hostpage_name(host_t *host);
 extern int checkpropagation(host_t *host, char *test, int color, int acked);
