@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.152 2005-08-09 08:39:25 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.153 2005-11-08 13:38:38 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -508,6 +508,8 @@ void do_hosts(host_t *head, char *onlycols, char *exceptcols, FILE *output, FILE
 				fprintf(output, "</TABLE></TD>\n");
 			}
 			for (gc = groupcols; (gc); gc = gc->next) {
+				char *htmlalttag;
+
 				fprintf(output, "<TD ALIGN=CENTER>");
 
 				/* Any column entry for this host ? */
@@ -517,17 +519,19 @@ void do_hosts(host_t *head, char *onlycols, char *exceptcols, FILE *output, FILE
 				}
 				else if (e->histlogname) {
 					/* Snapshot points to historical logfile */
+					htmlalttag = alttag(e->column->name, e->color, e->acked, e->propagate, e->age);
 					fprintf(output, "<A HREF=\"%s/bb-histlog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s\">", 
 						xgetenv("CGIBINURL"), h->hostname, e->column->name, e->histlogname);
 
 					fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
 						bbskin, dotgiffilename(e->color, 0, 1),
-						alttag(e), alttag(e),
+						htmlalttag, htmlalttag,
 						xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 				}
 				else if (reportstart == 0) {
 					/* Standard webpage */
 					char *skin;
+					htmlalttag = alttag(e->column->name, e->color, e->acked, e->propagate, e->age);
 
 					skin = (e->skin ? e->skin : bbskin);
 
@@ -555,7 +559,7 @@ void do_hosts(host_t *head, char *onlycols, char *exceptcols, FILE *output, FILE
 
 					fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
 						skin, dotgiffilename(e->color, e->acked, e->oldage),
-						alttag(e), alttag(e),
+						htmlalttag, htmlalttag,
 						xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 				}
 				else {
