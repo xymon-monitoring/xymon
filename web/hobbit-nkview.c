@@ -8,13 +8,14 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkview.c,v 1.1 2005-11-08 13:42:27 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkview.c,v 1.2 2005-11-08 22:24:18 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
 #include <limits.h>
+#include <ctype.h>
 
 #include "libbbgen.h"
 
@@ -37,6 +38,7 @@ typedef struct hstatus_t {
 } hstatus_t;
 
 static RbtHandle rbstate;
+static time_t oldlimit = 3600;
 
 
 void errormsg(char *s)
@@ -99,11 +101,12 @@ void loadconfig(char *fn, char *wantclass)
 	stackfclose(fd);
 }
 
-void loadstatus(void)
+void loadstatus(int maxprio, time_t maxage, int mincolor)
 {
 	int hobbitdresult;
 	char *board = NULL;
 	char *bol, *eol;
+	time_t now;
 
 	hobbitdresult = sendmessage("hobbitdboard color=red,yellow fields=hostname,testname,color,lastchange,logtime,validtime,acktime", NULL, NULL, &board, 1, BBTALK_TIMEOUT);
 	if (hobbitdresult != BB_OK) {
@@ -111,6 +114,7 @@ void loadstatus(void)
 		return;
 	}
 
+	now = getcurrenttime(NULL);
 	rbstate = rbtNew(key_compare);
 
 	bol = board;
@@ -129,22 +133,32 @@ void loadstatus(void)
 			*endkey = '|';
 
 			if (handle != rbtEnd(rbconf)) {
-				hstatus_t *newitem = (hstatus_t *)malloc(sizeof(hstatus_t));
+				hstatus_t *newitem;
 				void *k1, *k2;
+				nkconf_t *cfg;
 
 				rbtKeyValue(rbconf, handle, &k1, &k2);
+				cfg = (nkconf_t *)k2;
 
+				newitem = (hstatus_t *)malloc(sizeof(hstatus_t));
+				newitem->config     = cfg;
 				newitem->hostname   = gettok(bol, "|");
 				newitem->testname   = gettok(NULL, "|");
-				newitem->key        = (char *)malloc(strlen(newitem->hostname) + strlen(newitem->testname) + 2);
-				sprintf(newitem->key, "%s|%s", newitem->hostname, newitem->testname);
-				newitem->config     = (nkconf_t *)k2;
 				newitem->color      = parse_color(gettok(NULL, "|"));
 				newitem->lastchange = atoi(gettok(NULL, "|"));
 				newitem->logtime    = atoi(gettok(NULL, "|"));
 				newitem->validtime  = atoi(gettok(NULL, "|"));
 				newitem->acktime    = atoi(gettok(NULL, "|"));
-				status = rbtInsert(rbstate, newitem->key, newitem);
+				if ( (newitem->config->priority > maxprio) ||
+				     ((now - newitem->lastchange) > maxage) ||
+				     (newitem->color < mincolor) ) {
+					xfree(newitem);
+				}
+				else {
+					newitem->key        = (char *)malloc(strlen(newitem->hostname) + strlen(newitem->testname) + 2);
+					sprintf(newitem->key, "%s|%s", newitem->hostname, newitem->testname);
+					status = rbtInsert(rbstate, newitem->key, newitem);
+				}
 			}
 		}
 
@@ -153,7 +167,7 @@ void loadstatus(void)
 }
 
 
-RbtHandle columnlist(RbtHandle statetree, int prio)
+RbtHandle columnlist(RbtHandle statetree)
 {
 	RbtHandle rbcolumns;
 	RbtIterator hhandle;
@@ -166,8 +180,6 @@ RbtHandle columnlist(RbtHandle statetree, int prio)
 
 	        rbtKeyValue(statetree, hhandle, &k1, &k2);
 		itm = (hstatus_t *)k2;
-
-		if ((prio != -1) && (itm->config->priority != prio)) continue;
 
 		status = rbtInsert(rbcolumns, itm->testname, NULL);
 	}
@@ -288,7 +300,7 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 					column->config->ttgroup,
 					column->config->ttextra);
 				fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
-					xgetenv("BBSKIN"), dotgiffilename(column->color, 0, (age > 3600)),
+					xgetenv("BBSKIN"), dotgiffilename(column->color, 0, (age > oldlimit)),
 					htmlalttag, htmlalttag, 
 					xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 			}
@@ -330,10 +342,11 @@ void print_oneprio(FILE *output, RbtHandle rbstate, RbtHandle rbcolumns, int pri
 
 
 
-void generate_nkpage(FILE *output, char *hfprefix, int priolimit)
+void generate_nkpage(FILE *output, char *hfprefix)
 {
 	RbtIterator hhandle;
 	int color = COL_GREEN;
+	int maxprio = 0;
 
 	/* Determine background color and max. priority */
 	for (hhandle = rbtBegin(rbstate); (hhandle != rbtEnd(rbstate)); hhandle = rbtNext(rbstate, hhandle)) {
@@ -345,6 +358,7 @@ void generate_nkpage(FILE *output, char *hfprefix, int priolimit)
 		itm = (hstatus_t *)k2;
 
 		if (itm->color > color) color = itm->color;
+		if (itm->config->priority > maxprio) maxprio = itm->config->priority;
 	}
 
         headfoot(output, hfprefix, "", "header", color);
@@ -354,12 +368,12 @@ void generate_nkpage(FILE *output, char *hfprefix, int priolimit)
 		RbtHandle rbcolumns;
 		int prio;
 
-		rbcolumns = columnlist(rbstate, -1);
+		rbcolumns = columnlist(rbstate);
 
 		fprintf(output, "<TABLE BORDER=0 CELLPADDING=4>\n");
 		print_colheaders(output, rbcolumns);
 
-		for (prio = 1; (prio <= priolimit); prio++) {
+		for (prio = 1; (prio <= maxprio); prio++) {
 			print_oneprio(output, rbstate, rbcolumns, prio);
 		}
 
@@ -375,19 +389,66 @@ void generate_nkpage(FILE *output, char *hfprefix, int priolimit)
         headfoot(output, hfprefix, "", "footer", color);
 }
 
+
+static int maxprio = 3;
+static time_t maxage = INT_MAX;
+static int mincolor = COL_YELLOW;
+
+static void selectenv(char *name, char *val)
+{
+	char *env;
+	char *p;
+
+	env = (char *)malloc(strlen(name) + strlen(val) + 20);
+	sprintf(env, "SELECT_%s_%s=SELECTED", name, val);
+	for (p=env; (*p); p++) *p = toupper((int)*p);
+	putenv(env);
+}
+
+static void parse_query(void)
+{
+	cgidata_t *cgidata = cgi_request();
+	cgidata_t *cwalk;
+
+	cwalk = cgidata;
+	while (cwalk) {
+		if (strcasecmp(cwalk->name, "MAXPRIO") == 0) {
+			selectenv(cwalk->name, cwalk->value);
+			maxprio = atoi(cwalk->value);
+		}
+		else if (strcasecmp(cwalk->name, "MAXAGE") == 0) {
+			selectenv(cwalk->name, cwalk->value);
+			maxage = 60*atoi(cwalk->value);
+		}
+		else if (strcasecmp(cwalk->name, "MINCOLOR") == 0) {
+			selectenv(cwalk->name, cwalk->value);
+			mincolor = parse_color(cwalk->value);
+		}
+		else if (strcasecmp(cwalk->name, "OLDLIMIT") == 0) {
+			selectenv(cwalk->name, cwalk->value);
+			oldlimit = 60*atoi(cwalk->value);
+		}
+
+		cwalk = cwalk->next;
+	}
+}
+
+
 int main(int argc, char *argv[])
 {
 	char configfn[PATH_MAX];
 
+	parse_query();
 	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 	sprintf(configfn, "%s/etc/hobbitnk.cfg", xgetenv("BBHOME"));
 	loadconfig(configfn, NULL);
 	load_all_links();
-	loadstatus();
+	loadstatus(maxprio, maxage, mincolor);
 	use_recentgifs = 1;
+	headfoot_unknowns = 0;
 
 	fprintf(stdout, "Content-type: text/html\n\n");
-	generate_nkpage(stdout, "bbnk", 3);
+	generate_nkpage(stdout, "hobbitnk");
 
 	return 0;
 }
