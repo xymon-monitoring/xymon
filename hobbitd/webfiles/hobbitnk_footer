@@ -1,0 +1,63 @@
+<FORM METHOD="GET" ACTION="&REQUEST_URI">
+  <TABLE SUMMARY="Filters" WIDTH="70%" ALIGN=CENTER>
+    <TR>
+       <TH>Priority</TH>
+       <TH>Min. Color</TH>
+       <TH>Max. age</TH>
+       <TD ROWSPAN=2 VALIGN=MIDDLE>
+         <INPUT TYPE="SUBMIT" NAME="Submit" VALUE="Apply" ALT="Apply filter">
+       </TD>
+    </TR>
+    <TR>
+       <TD ALIGN=CENTER>
+          <SELECT NAME="MAXPRIO">
+	    <OPTION VALUE="3"      &SELECT_MAXPRIO_3>Priority 1+2+3
+	    <OPTION VALUE="2"      &SELECT_MAXPRIO_2>Priority 1+2
+	    <OPTION VALUE="1"      &SELECT_MAXPRIO_1>Priority 1 only
+	  </SELECT>
+       </TD>
+       <TD ALIGN=CENTER>
+          <SELECT NAME="MINCOLOR">
+	    <OPTION VALUE="yellow" &SELECT_MINCOLOR_YELLOW>Yellow
+	    <OPTION VALUE="red"    &SELECT_MINCOLOR_RED>Red
+	  </SELECT>
+       </TD>
+       <TD ALIGN=CENTER>
+          <SELECT NAME="MAXAGE">
+	    <OPTION VALUE="15"     &SELECT_MAXAGE_15>Last 15 minutes
+	    <OPTION VALUE="30"     &SELECT_MAXAGE_30>Last 30 minutes
+	    <OPTION VALUE="60"     &SELECT_MAXAGE_60>Last 1 hour
+	    <OPTION VALUE="180"    &SELECT_MAXAGE_180>Last 3 hours
+	    <OPTION VALUE="360"    &SELECT_MAXAGE_360>Last 6 hours
+	    <OPTION VALUE="720"    &SELECT_MAXAGE_720>Last 12 hours
+	    <OPTION VALUE="1440"   &SELECT_MAXAGE_1440>Last 24 hours
+	    <OPTION VALUE="525600" &SELECT_MAXAGE_525600>Unlimited
+	  </SELECT>
+       </TD>
+    </TR>
+  </TABLE>
+</FORM>
+<BR><BR>
+
+<TABLE SUMMARY="Bottomline" WIDTH="100%">
+<TR>
+  <TD> <HR WIDTH="100%"> </TD>
+</TR>
+<TR>
+  <TD ALIGN=RIGHT><FONT FACE="Arial, Helvetica" SIZE="-2" COLOR="silver"><B><A HREF="http://hobbitmon.sourceforge.net/" style="text-decoration: none">Hobbit Monitor &HOBBITDREL</A></B></FONT></TD>
+</TR>
+</TABLE>
+
+
+<!-- menu script itself. you should not modify this file -->
+<script type="text/javascript" language="JavaScript" src="&BBMENUSKIN/menu.js"></script>
+<!-- items structure. menu hierarchy and links are stored there -->
+<script type="text/javascript" language="JavaScript" src="&BBMENUSKIN/menu_items.js"></script>
+<!-- files with geometry and styles structures -->
+<script type="text/javascript" language="JavaScript" src="&BBMENUSKIN/menu_tpl.js"></script>
+<script type="text/javascript" language="JavaScript">
+        new menu (MENU_ITEMS, MENU_POS);
+</script>
+
+</BODY>
+</HTML>
