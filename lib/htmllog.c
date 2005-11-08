@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.33 2005-11-03 22:59:31 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.34 2005-11-08 13:39:27 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -126,6 +126,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		       int is_history, int wantserviceid, int htmlfmt, int hobbitd,
 		       char *multigraphs,
 		       char *linktoclient,
+		       char *nkprio, char *nkresolver, char *nkttgroup, char *nkttextra,
 		       FILE *output)
 {
 	int linecount = 0;
@@ -140,6 +141,23 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	if (is_history) tplfile = "histlog";
 	if (strcmp(service, xgetenv("INFOCOLUMN")) == 0) tplfile = "info";
 	headfoot(output, tplfile, "", "header", color);
+
+	if (nkprio) {
+		fprintf(output, "<table border=1 summary=\"NK info\" align=center>\n");
+		fprintf(output, "<tr>");
+		fprintf(output, "<th align=center>Priority</th>");
+		fprintf(output, "<th align=center>Resolver</th>");
+		fprintf(output, "<th align=center>TT group</th>");
+		fprintf(output, "<th align=center>Addl. info</th>");
+		fprintf(output, "</tr>\n");
+		fprintf(output, "<tr>");
+		fprintf(output, "<td align=center>%s</td>", nkprio);
+		fprintf(output, "<td align=center>%s</td>", (nkresolver ? nkresolver : ""));
+		fprintf(output, "<td align=center>%s</td>", (nkttgroup ? nkttgroup : ""));
+		fprintf(output, "<td align=center>%s</td>", (nkttextra ? nkttextra : ""));
+		fprintf(output, "</tr>\n");
+		fprintf(output, "</table>\n");
+	}
 
 	fprintf(output, "<br><br><a name=\"begindata\">&nbsp;</a>\n");
 
@@ -275,5 +293,22 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 	fprintf(output,"</CENTER>\n");
 	headfoot(output, tplfile, "", "footer", color);
+}
+
+char *alttag(char *columnname, int color, int acked, int propagate, char *age)
+{
+	static char tag[1024];
+	size_t remain;
+
+	remain = sizeof(tag) - 1;
+	remain -= snprintf(tag, remain, "%s:%s:", columnname, colorname(color));
+	if (remain > 20) {
+		if (acked) { strncat(tag, "acked:", remain); remain -= 6; }
+		if (!propagate) { strncat(tag, "nopropagate:", remain); remain -= 12; }
+		strncat(tag, age, remain);
+	}
+	tag[sizeof(tag)-1] = '\0';
+
+	return tag;
 }
 
