@@ -1,4 +1,4 @@
-PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-mailack trimhistory hobbitreports.sh moverrd.sh
+PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-mailack trimhistory hobbitreports.sh moverrd.sh hobbit-nkview.cgi
 CGISCRIPTS = hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh hobbit-confreport.sh
 SECCGISCRIPTS = bb-ack.sh hobbit-enadis.sh
 CLIENTPROGRAMS = ../client/hobbitd_client
@@ -18,6 +18,7 @@ CLIENTOBJS    = hobbitd_client.o    hobbitd_worker.o hobbitd_buffer.o client_con
 HOBBITGRAPHOBJS= hobbitgraph.o
 HOBBITSVCOBJS = hobbitsvc.o hobbitsvc-info.o hobbitsvc-trends.o do_alert.o
 HOBBITENADISOBJS= hobbit-enadis.o
+NKVIEWOBJS    = hobbit-nkview.o
 CONFREPOBJS   = hobbit-confreport.o do_alert.o
 MAILACKOBJS   = hobbit-mailack.o
 TRIMHISTOBJS  = trimhistory.o
@@ -88,6 +89,12 @@ hobbit-mailack.o: hobbit-mailack.c
 
 hobbit-mailack: $(MAILACKOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(MAILACKOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
+
+hobbit-nkview.cgi: $(NKVIEWOBJS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NKVIEWOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
+
+hobbit-nkview.o: hobbit-nkview.c
+	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ hobbit-nkview.c
 
 trimhistory: $(TRIMHISTOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(TRIMHISTOBJS) $(LIBOBJS) $(NETLIBS)
