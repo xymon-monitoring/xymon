@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.49 2005-11-06 07:25:25 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.50 2005-11-08 13:40:38 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -38,6 +38,7 @@ static char *service = NULL;
 static char *ip = NULL;
 static char *displayname = NULL;
 static char *tstamp = NULL;
+static char *nkprio = NULL, *nkresolver = NULL, *nkttgroup = NULL, *nkttextra = NULL;
 static enum { FRM_STATUS, FRM_CLIENT } outform = FRM_STATUS;
 static char *clienturi = NULL;
 
@@ -107,6 +108,18 @@ static int parse_query(void)
 		}
 		else if (val && argnmatch(token, "SECTION")) {
 			if (n == strlen(val)) service = strdup(val);
+		}
+		else if (val && argnmatch(token, "NKPRIO")) {
+			if (n == strlen(val)) nkprio = strdup(val);
+		}
+		else if (val && argnmatch(token, "NKRESOLVER")) {
+			if (n == strlen(val)) nkresolver = strdup(val);
+		}
+		else if (val && argnmatch(token, "NKTTGROUP")) {
+			if (n == strlen(val)) nkttgroup = strdup(val);
+		}
+		else if (val && argnmatch(token, "NKTTEXTRA")) {
+			if (n == strlen(val)) nkttextra = strdup(val);
 		}
 
 		token = strtok(NULL, "&");
@@ -371,6 +384,7 @@ int do_request(void)
 			  ishtmlformatted,
 			  (source == SRC_HOBBITD),
 			  multigraphs, (clientavail ? clienturi : NULL),
+			  nkprio, nkresolver, nkttgroup, nkttextra,
 			  stdout);
 	}
 
