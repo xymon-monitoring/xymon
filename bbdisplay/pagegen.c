@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.153 2005-11-08 13:38:38 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.154 2005-11-09 12:45:52 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -42,9 +42,7 @@ char *bb2ignorecolumns = "";
 int  bb2nodialups = 0;
 int  bb2includepurples = 1;
 int  sort_grouponly_items = 0; /* Standard BB behaviour: Dont sort group-only items */
-char *documentationurl = NULL;
 char *rssextension = ".rss"; /* Filename extension for generated RSS files */
-char *doctargetspec = " TARGET=\"_blank\"";
 char *defaultpagetitle = NULL;
 int  pagetitlelinks = 0;
 int  pagetextheadings = 0;
@@ -314,18 +312,6 @@ void setup_htaccess(const char *pagepath)
 }
 
 
-static char *nameandcomment(host_t *host)
-{
-	static char result[1024];
-
-	if (host->comment) {
-		sprintf(result, "%s (%s)", host->displayname, host->comment);
-	}
-	else strcpy(result, host->displayname);
-
-	return result;
-}
-
 void do_hosts(host_t *head, char *onlycols, char *exceptcols, FILE *output, FILE *rssoutput, char *grouptitle, int pagetype, char *pagepath)
 {
 	/*
@@ -344,6 +330,7 @@ void do_hosts(host_t *head, char *onlycols, char *exceptcols, FILE *output, FILE
 	int	anyplainhosts = 0;
 	int	rowcount = 0;
 	char	*hostlinkurl;
+	namelist_t *hinfo;
 
 	if (head == NULL)
 		return;
@@ -436,37 +423,8 @@ void do_hosts(host_t *head, char *onlycols, char *exceptcols, FILE *output, FILE
 			if (maxrowsbeforeheading) rowcount = (rowcount + 1) % maxrowsbeforeheading;
 			else rowcount++;
 
-			/* First the hostname and a notes-link.
-			 *
-			 * If a documentation CGI is defined, use that.
-			 *
-			 * else if a host has a direct notes-link, use that.
-			 *
-			 * else if no direct link and we are doing a BB2/BBNK page, 
-			 * provide a link to the main page with this host (there
-			 * may be links to documentation in some page-title).
-			 *
-			 * else just put the hostname there.
-			 */
-			if (documentationurl) {
-				fprintf(output, "<A HREF=\"%s\" %s><FONT %s>%s</FONT></A>\n </TD>",
-					urldoclink(documentationurl, h->hostname),
-					doctargetspec, xgetenv("MKBBROWFONT"), nameandcomment(h));
-			}
-			else if ((hostlinkurl = hostlink(h->hostname)) != NULL) {
-				fprintf(output, "<A HREF=\"%s\" %s><FONT %s>%s</FONT></A>\n </TD>",
-					hostlinkurl, doctargetspec, xgetenv("MKBBROWFONT"), nameandcomment(h));
-			}
-			else if (pagetype != PAGE_BB) {
-				/* Provide a link to the page where this host lives */
-				fprintf(output, "<A HREF=\"%s/%s\" %s><FONT %s>%s</FONT></A>\n </TD>",
-					xgetenv("BBWEB"), hostpage_link(h), doctargetspec,
-					xgetenv("MKBBROWFONT"), nameandcomment(h));
-			}
-			else {
-				fprintf(output, "<FONT %s>%s</FONT>\n </TD>",
-					xgetenv("MKBBROWFONT"), nameandcomment(h));
-			}
+			fprintf(output, "%s", 
+				hostnamehtml(h->hostname, ((pagetype != PAGE_BB) ? hostpage_link(h) : NULL)) );
 
 			/* Then the columns. */
 			if ((groupcols == NULL) && (h->banksize > 0)) {
