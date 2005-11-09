@@ -4,9 +4,7 @@
        <TH>Priority</TH>
        <TH>Min. Color</TH>
        <TH>Max. age</TH>
-       <TD ROWSPAN=2 VALIGN=MIDDLE>
-         <INPUT TYPE="SUBMIT" NAME="Submit" VALUE="Apply" ALT="Apply filter">
-       </TD>
+       <TH>&nbsp;</TH>
     </TR>
     <TR>
        <TD ALIGN=CENTER>
@@ -33,6 +31,9 @@
 	    <OPTION VALUE="1440"   &SELECT_MAXAGE_1440>Last 24 hours
 	    <OPTION VALUE="525600" &SELECT_MAXAGE_525600>Unlimited
 	  </SELECT>
+       </TD>
+       <TD ALIGN=CENTER>
+         <INPUT TYPE="SUBMIT" NAME="Submit" VALUE="Apply" ALT="Apply filter">
        </TD>
     </TR>
   </TABLE>
