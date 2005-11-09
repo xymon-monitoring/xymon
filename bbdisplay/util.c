@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.149 2005-11-08 13:37:25 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.150 2005-11-09 12:41:27 henrik Exp $";
 
 #include <limits.h>
 #include <sys/types.h>
@@ -125,26 +125,6 @@ int checkpropagation(host_t *host, char *test, int color, int acked)
 }
 
 
-
-char *urldoclink(const char *docurl, const char *hostname)
-{
-	/*
-	 * docurl is a user defined text string to build
-	 * a documentation url. It is expanded with the
-	 * hostname.
-	 */
-
-	static char linkurl[PATH_MAX];
-
-	if (docurl) {
-		sprintf(linkurl, docurl, hostname);
-	}
-	else {
-		linkurl[0] = '\0';
-	}
-
-	return linkurl;
-}
 
 
 

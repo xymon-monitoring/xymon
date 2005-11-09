@@ -17,7 +17,6 @@ extern hostlist_t *hosthead;
 extern char *hostpage_link(host_t *host);
 extern char *hostpage_name(host_t *host);
 extern int checkpropagation(host_t *host, char *test, int color, int acked);
-extern char *urldoclink(const char *docurl, const char *hostname);
 extern host_t *find_host(const char *hostname);
 extern bbgen_col_t *find_or_create_column(const char *testname, int create);
 extern char *histlogurl(char *hostname, char *service, time_t histtime);
