@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: links.c,v 1.8 2005-03-22 09:16:49 henrik Exp $";
+static char rcsid[] = "$Id: links.c,v 1.9 2005-11-09 15:01:54 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -31,6 +31,7 @@ typedef struct link_t {
 	struct link_t	*next;
 } link_t;
 
+static int linksloaded = 0;
 static link_t *linkhead = NULL;
 static char *notesskin = NULL;
 static char *helpskin = NULL;
@@ -153,6 +154,7 @@ void load_all_links(void)
 	}
 
 	linkhead = head1;
+	linksloaded = 1;
 
 	MEMUNDEFINE(dirname);
 }
@@ -180,6 +182,7 @@ char *columnlink(char *colname)
 	link_t *link = find_link(colname);
 
 	if (linkurl == NULL) linkurl = (char *)malloc(PATH_MAX);
+	if (!linksloaded) load_all_links();
 
 	if (columndocurl) {
 		sprintf(linkurl, columndocurl, colname);
@@ -198,9 +201,12 @@ char *columnlink(char *colname)
 char *hostlink(char *hostname)
 {
 	static char *linkurl = NULL;
-	link_t *link = find_link(hostname);
+	link_t *link;
 
 	if (linkurl == NULL) linkurl = (char *)malloc(PATH_MAX);
+	if (!linksloaded) load_all_links();
+
+	link = find_link(hostname);
 
 	if (link) {
 		sprintf(linkurl, "%s/%s", link->urlprefix, link->filename);
