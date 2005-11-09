@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.35 2005-11-08 22:23:04 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.36 2005-11-09 12:29:02 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -28,8 +28,6 @@ static char rcsid[] = "$Id: headfoot.c,v 1.35 2005-11-08 22:23:04 henrik Exp $";
 #include "version.h"
 
 /* Stuff for headfoot - variables we can set dynamically */
-int headfoot_unknowns = 1;
-
 static char *hostenv_hikey = NULL;
 static char *hostenv_host = NULL;
 static char *hostenv_ip = NULL;
@@ -755,13 +753,11 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			}
 		}
 
-		else if (strlen(t_start) && getenv(t_start)) {
-			fprintf(output, "%s", getenv(t_start));
+		else if (strlen(t_start) && xgetenv(t_start)) {
+			fprintf(output, "%s", xgetenv(t_start));
 		}
 
-		else if (headfoot_unknowns) {
-			fprintf(output, "&%s", t_start);		/* No substitution - copy all unchanged. */
-		}
+		else fprintf(output, "&%s", t_start);		/* No substitution - copy all unchanged. */
 			
 		*t_next = savechar; t_start = t_next; t_next = strchr(t_start, '&');
 	}
