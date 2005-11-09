@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.36 2005-11-09 12:29:02 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.37 2005-11-09 12:53:54 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -751,6 +751,20 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 					fprintf(output, "%s", s);
 				}
 			}
+		}
+
+		else if (*t_start && (savechar == ';')) {
+			/* A "&xxx;" is probably an HTML escape - output unchanged. */
+			fprintf(output, "&%s", t_start);
+		}
+
+		else if (*t_start && (strncmp(t_start, "SELECT_", 7) == 0)) {
+			/*
+			 * Special for getting the SELECTED tag into list boxes.
+			 * Cannot use xgetenv because it complains for undefined
+			 * environment variables.
+			 */
+			fprintf(output, "%s", getenv(t_start));
 		}
 
 		else if (strlen(t_start) && xgetenv(t_start)) {
