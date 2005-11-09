@@ -88,6 +88,14 @@ Recipient who receives an e-mail alert. This takes one parameter, the e-mail add
 .BR "SCRIPT /path/to/script recipientID"
 Recipient that invokes a script. This takes two parameters: The script filename, and the recipient that gets passed to the script.
 .sp
+.BR "IGNORE"
+This is used to define a recipient that does NOT trigger any alerts, and also terminates the
+search for more recipients. It is useful if you have a rule that handles most alerts, but
+there is just that one particular server where you dont want cpu alerts on Monday morning.
+Note that the IGNORE recipient always has the STOP flag defined, so when the IGNORE recipient
+is matched, no more recipients will be considered. So the location of this recipient in your
+set of recipients is important.
+.sp
 .BR "FORMAT=formatstring"
 Format of the text message with the alert. Default is "TEXT" (suitable for e-mail alerts). "PLAIN" is the same as text, but without the URL link to the status webpage. "SMS" is a short message with no subject for SMS alerts. "SCRIPT" is a brief message template for scripts.
 .sp
@@ -98,7 +106,7 @@ How often an alert gets repeated. As with DURATION, time is a number optionally 
 The alert is sent to this recipient ONLY if no other recipients received an alert for this event.
 .sp
 .BR STOP
-Stop looking for more recipients after this one matches.
+Stop looking for more recipients after this one matches. This is implicit on IGNORE recipients.
 .sp
 .BR Rules
 You can specify rules for a recipient also. This limits the alerts sent to this particular recipient.
