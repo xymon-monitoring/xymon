@@ -55,9 +55,50 @@ The "time" parameter is the time-of-day for the alert, expressed as an
 absolute time in the epoch format (seconds since Jan 1 1970). This is
 easily obtained with the GNU date utility using the "+%s" output format.
 
-
 .IP "--debug"
 Enable debugging output.
+
+.SH HOW HOBBIT DECIDES WHEN TO SEND ALERTS
+The hobbitd_alert module is responsible for sending out all alerts.
+When a status first goes to one of the ALERTCOLORS, hobbitd_alert
+is notified of this change. It notes that the status is now in an
+alert state, and records the \fBtimestamp\fR when this event started,
+and adds the alert to the list statuses that may potentially trigger
+one or more alert messages.
+
+This list is then matched against the hobbit-alerts.cfg configuration.
+This happens at least once a minute, but may happen more often. E.g.
+when status first goes into an alert state, this will always trigger
+the matching to happen.
+
+When scanning the configuration, hobbitd_alert looks at all of the
+configuration rules. It also checks the DURATION setting against
+how long time has elapsed since the event started - i.e. against
+the timestamp logged when hobbitd_alert first heard of this event.
+
+When an alert recipient is found, the alert is sent and it is recorded
+when this recipient is due for his next alert message, based on the
+REPEAT setting defined for this recipient. The next time hobbitd_alert
+scans the configuration for what alerts to send, it will still find
+this recipient because all of the configuration rules are fulfilled,
+but an alert message will not be generated until the repeat interval
+has elapsed.
+
+It can happen that a status first goes yellow and triggers an alert,
+and later it goes red - e.g. a disk filling up. In that case, hobbitd_alert
+clears the internal timer for when the next (repeat) alert is due
+for all recipients. You generally want to be told when something that
+has been in a warning state becomes critical, so in that case the REPEAT 
+setting is ignored and the alert is sent. This only happens the first
+time such a change occurs - if the status switches between yellow and red
+multiple times, only the first transition from yellow->red causes this
+override.
+
+When an status recovers, a recovery message may be sent - depending
+on the configuration - and then hobbitd_alert forgets everything about
+this status. So the next time it goes into an alert state, the entire
+process starts all over again.
+
 
 .SH ENVIRONMENT
 .IP MAIL
