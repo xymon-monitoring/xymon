@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkview.c,v 1.3 2005-11-09 13:29:22 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkview.c,v 1.4 2005-11-09 15:28:00 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -310,7 +310,8 @@ void print_oneprio(FILE *output, RbtHandle rbstate, RbtHandle rbcolumns, int pri
 		firsthost = 0;
 	}
 
-	fprintf(output, "<TR><TD>&nbsp;</TD></TR>\n");
+	/* If we did output any hosts, make some room for the next priority */
+	if (!firsthost) fprintf(output, "<TR><TD>&nbsp;</TD></TR>\n");
 }
 
 
