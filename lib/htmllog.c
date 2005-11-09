@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.36 2005-11-09 15:02:15 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.37 2005-11-09 15:23:43 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -147,26 +147,29 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 	if (nkprio) {
 		char *hostdoc = hostlink(hostname);
-		int colcount = 3;
 
 		fprintf(output, "<table border=1 summary=\"NK info\" align=center>\n");
 		fprintf(output, "<tr>");
 		fprintf(output, "<th align=center>Priority</th>");
 		fprintf(output, "<th align=center>Resolver</th>");
 		fprintf(output, "<th align=center>TT group</th>");
-		if (hostdoc) { fprintf(output, "<th align=center>Documentation</th>"); colcount++; }
+		fprintf(output, "<th align=center>Documentation</th>");
 		fprintf(output, "</tr>\n");
 
 		fprintf(output, "<tr>");
 		fprintf(output, "<td align=center>%s</td>", nkprio);
-		fprintf(output, "<td align=center>%s</td>", (nkresolver ? nkresolver : ""));
-		fprintf(output, "<td align=center>%s</td>", (nkttgroup ? nkttgroup : ""));
-		if (hostdoc) fprintf(output, "<td align=center><a href=\"%s\">Host info</a>", hostdoc);
+		fprintf(output, "<td align=center>%s</td>", ((nkresolver && *nkresolver) ? nkresolver : "&nbsp;"));
+		fprintf(output, "<td align=center>%s</td>", ((nkttgroup && *nkttgroup) ? nkttgroup : "&nbsp;"));
+		fprintf(output, "<td align=center>");
+		fprintf(output, "<a href=\"%s/bb-hostsvc.sh?HOSTSVC=%s.%s\">Host info</a>", 
+			xgetenv("CGIBINURL"), hostname, xgetenv("INFOCOLUMN"));
+		if (hostdoc) fprintf(output, "<br><a href=\"%s\">Host docs</a>", hostdoc);
+		fprintf(output, "</td>");
 		fprintf(output, "</tr>\n");
 
-		if (nkttextra) {
+		if (nkttextra && *nkttextra) {
 			fprintf(output, "<tr>\n");
-			fprintf(output, "<td colspan=%d align=center>%s</td>", colcount, nkttextra);
+			fprintf(output, "<td colspan=4 align=center>%s</td>", nkttextra);
 			fprintf(output, "</tr>\n");
 		}
 		fprintf(output, "</table>\n");
