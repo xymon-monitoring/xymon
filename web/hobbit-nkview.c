@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkview.c,v 1.2 2005-11-08 22:24:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkview.c,v 1.3 2005-11-09 13:29:22 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -155,7 +155,7 @@ void loadstatus(int maxprio, time_t maxage, int mincolor)
 					xfree(newitem);
 				}
 				else {
-					newitem->key        = (char *)malloc(strlen(newitem->hostname) + strlen(newitem->testname) + 2);
+					newitem->key = (char *)malloc(strlen(newitem->hostname) + strlen(newitem->testname) + 2);
 					sprintf(newitem->key, "%s|%s", newitem->hostname, newitem->testname);
 					status = rbtInsert(rbstate, newitem->key, newitem);
 				}
@@ -185,27 +185,6 @@ RbtHandle columnlist(RbtHandle statetree)
 	}
 
 	return rbcolumns;
-}
-
-static char *nameandcomment(namelist_t *host)
-{
-	static char *result = NULL;
-	char *cmt, *disp, *hname;
-
-	if (result) xfree(result);
-
-	hname = bbh_item(host, BBH_HOSTNAME);
-	disp = bbh_item(host, BBH_DISPLAYNAME);
-	cmt = bbh_item(host, BBH_COMMENT);
-	if (disp == NULL) disp = hname;
-
-	if (cmt) {
-		result = (char *)malloc(strlen(disp) + strlen(cmt) + 4);
-		sprintf(result, "%s (%s)", disp, cmt);
-		return result;
-	}
-	else 
-		return disp;
 }
 
 void print_colheaders(FILE *output, RbtHandle rbcolumns)
@@ -258,13 +237,7 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 	fprintf(output, "</TD>\n");
 
 	/* Print the hostname with a link to the NK info page */
-	fprintf(output, "<TD ALIGN=LEFT>");
-	fprintf(output, "<A HREF=\"%s/bb-hostsvc.sh?HOSTSVC=%s.%s&amp;IP=%s&amp;DISPLAYNAME=%s\">",
-		xgetenv("CGIBINURL"), commafy(itm->hostname), xgetenv("INFOCOLUMN"),
-		ip, (dispname ? dispname : itm->hostname));
-	fprintf(output, "<FONT %s>%s</FONT>", xgetenv("MKBBROWFONT"), nameandcomment(hinfo));
-	fprintf(output, "</A>");
-	fprintf(output, "</TD>\n");
+	fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", hostnamehtml(itm->hostname, NULL));
 
 	key = (char *)malloc(strlen(itm->hostname) + 1024);
 	for (colhandle = rbtBegin(columns); (colhandle != rbtEnd(columns)); colhandle = rbtNext(columns, colhandle)) {
@@ -437,6 +410,28 @@ static void parse_query(void)
 int main(int argc, char *argv[])
 {
 	char configfn[PATH_MAX];
+	char infocgi[PATH_MAX];
+	int argi;
+	char *envarea = NULL;
+
+	for (argi = 1; (argi < argc); argi++) {
+		if (argnmatch(argv[argi], "--env=")) {
+			char *p = strchr(argv[argi], '=');
+			loadenv(p+1, envarea);
+		}
+		else if (argnmatch(argv[argi], "--area=")) {
+			char *p = strchr(argv[argi], '=');
+			envarea = strdup(p+1);
+		}
+		else if (strcmp(argv[argi], "--debug") == 0) {
+			debug = 1;
+		}
+	}
+
+	redirect_cgilog("hobbit-nkview");
+
+	sprintf(infocgi, "%s/bb-hostsvc.sh?HOSTSVC=%%s.%s", xgetenv("CGIBINURL"), xgetenv("INFOCOLUMN"));
+	setdocurl(infocgi);
 
 	parse_query();
 	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
@@ -445,7 +440,6 @@ int main(int argc, char *argv[])
 	load_all_links();
 	loadstatus(maxprio, maxage, mincolor);
 	use_recentgifs = 1;
-	headfoot_unknowns = 0;
 
 	fprintf(stdout, "Content-type: text/html\n\n");
 	generate_nkpage(stdout, "hobbitnk");
