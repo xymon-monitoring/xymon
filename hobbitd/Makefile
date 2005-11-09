@@ -90,7 +90,7 @@ hobbit-mailack.o: hobbit-mailack.c
 hobbit-mailack: $(MAILACKOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(MAILACKOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
-hobbit-nkview.cgi: $(NKVIEWOBJS)
+hobbit-nkview.cgi: $(NKVIEWOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NKVIEWOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
 hobbit-nkview.o: hobbit-nkview.c
