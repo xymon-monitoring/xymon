@@ -18,6 +18,7 @@ a pager, sending an SMS, or however you prefer to get alerted.</p>
 	<li><a href="#wildcards">Using regular expressions for names</a></li>
 	<li><a href="#scripts">Alering via a script</a></li>
 	<li><a href="#macros">Using macros</a></li>
+	<li><a href="#ignorerules">There are rules ... and exceptions: IGNORE</a></li>
 </ul>
 
 <h3><a name="simple">A simple alert configuration</a></h3>
@@ -88,6 +89,7 @@ fills up during the night.</p>
 <table width="80%" align="center" summary="hobbit-alerts.cfg keywords">
 	<tr><th align="left" valign="top">MAIL</th><td>Recipient who receives an e-mail alert. This takes one parameter, the e-mail address.</td></tr>
 	<tr><th align="left" valign="top">SCRIPT</th><td>Recipient that invokes a script. This takes two parameters: The script filename, and the recipient that gets passed to the script.</td></tr>
+	<tr><th align="left" valign="top">IGNORE</th><td>Recipient that does NOT send an alert, and will cause Hobbit to stop looking for any more recipients. See the example below.</td></tr>
 	<tr><th align="left" valign="top">FORMAT</th><td>format of the text message with the alert. Default is "TEXT" (suitable for e-mail alerts). "PLAIN" is the same as TEXT, except it does not include the URL linking to the status webpage. "SMS" is a short message with no subject for SMS alerts. "SCRIPT" is a brief message template for scripts.</td></tr>
 	<tr><th align="left" valign="top">REPEAT</th><td>How often an alert gets repeated. As with the DURATION setting, this is in minutes unless explicitly modified with 'm', 'h', 'd'.</td></tr>
 	<tr><th align="left" valign="top">STOP</th><td>By default, hobbitd_alert looks at all the possible recipients in the hobbit-alerts.cfg file when handling an alert. If you would like it stop after a specific recipient gets an alert, add the STOP keyword to this recipient. This terminates the search for more recipients.</td></tr>
@@ -201,6 +203,23 @@ bar.com dns-servers.</p>
 <p>Note: Nesting macros is possible, except that you must define a macro before
 you use it in a subsequent macro definition.</p>
 
+<h3><a name="ignorerules">There are rules ... and exceptions: IGNORE</h3>
+<p>A common scenario is where you handle most of the alerts with a wildcard rule, but
+there is <i>just</i> that one exception where you dont want any cpu alerts
+from the marketing server on Thursday afternoon. Then it is time for the 
+IGNORE recipient:<br>
+<pre>
+	HOST=* COLOR=red
+		IGNORE HOST=marketing.foo.com SERVICE=cpu TIME=4:1500:1800
+		MAIL admin@foo.com
+</pre>
+<p>What this does is it defines a general catch-all alert: All red alerts
+go off to the admin@foo.com mailbox. There is just one exception: When the
+marketing.foo.com alerts on the "cpu" status on Thursdays between 3PM and
+6PM, that alert is ignored. The IGNORE recipient implicitly has a STOP 
+flag associated, so when the IGNORE recipient is matched, Hobbit will stop
+looking for more recipients - so the next line with the MAIL recipient is
+never looked at when handling that busy marketing server on Thursdays.</p>
 </body>
 </html>
 
