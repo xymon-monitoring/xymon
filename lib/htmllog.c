@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.35 2005-11-09 12:54:29 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.36 2005-11-09 15:02:15 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -146,19 +146,29 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	headfoot(output, tplfile, "", "header", color);
 
 	if (nkprio) {
+		char *hostdoc = hostlink(hostname);
+		int colcount = 3;
+
 		fprintf(output, "<table border=1 summary=\"NK info\" align=center>\n");
 		fprintf(output, "<tr>");
 		fprintf(output, "<th align=center>Priority</th>");
 		fprintf(output, "<th align=center>Resolver</th>");
 		fprintf(output, "<th align=center>TT group</th>");
-		fprintf(output, "<th align=center>Addl. info</th>");
+		if (hostdoc) { fprintf(output, "<th align=center>Documentation</th>"); colcount++; }
 		fprintf(output, "</tr>\n");
+
 		fprintf(output, "<tr>");
 		fprintf(output, "<td align=center>%s</td>", nkprio);
 		fprintf(output, "<td align=center>%s</td>", (nkresolver ? nkresolver : ""));
 		fprintf(output, "<td align=center>%s</td>", (nkttgroup ? nkttgroup : ""));
-		fprintf(output, "<td align=center>%s</td>", (nkttextra ? nkttextra : ""));
+		if (hostdoc) fprintf(output, "<td align=center><a href=\"%s\">Host info</a>", hostdoc);
 		fprintf(output, "</tr>\n");
+
+		if (nkttextra) {
+			fprintf(output, "<tr>\n");
+			fprintf(output, "<td colspan=%d align=center>%s</td>", colcount, nkttextra);
+			fprintf(output, "</tr>\n");
+		}
 		fprintf(output, "</table>\n");
 	}
 
