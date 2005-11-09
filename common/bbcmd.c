@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcmd.c,v 1.12 2005-08-14 19:32:44 henrik Exp $";
+static char rcsid[] = "$Id: bbcmd.c,v 1.13 2005-11-09 15:57:00 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -45,6 +45,10 @@ int main(int argc, char *argv[])
 		else if ((argcount == 0) && (argnmatch(argv[argi], "--area="))) {
 			char *p = strchr(argv[argi], '=');
 			envarea = strdup(p+1);
+		}
+		else if ((argcount == 0) && (strcmp(argv[argi], "--version") == 0)) {
+			fprintf(stdout, "Hobbit version %s\n", VERSION);
+			return 0;
 		}
 		else {
 			if (argcount == 0) {

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.70 2005-11-06 08:48:28 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.71 2005-11-09 15:57:00 henrik Exp $";
 
 #include "config.h"
 
@@ -705,6 +705,10 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--help") == 0) {
 			showhelp = 1;
 		}
+		else if (strcmp(argv[argi], "--version") == 0) {
+			fprintf(stdout, "Hobbit version %s\n", VERSION);
+			return 0;
+		}
 		else if (strcmp(argv[argi], "--str") == 0) {
 			respfd = NULL;
 		}
@@ -742,6 +746,7 @@ int main(int argc, char *argv[])
 	}
 
 	if ((recipient == NULL) || (msg == NULL) || showhelp) {
+		fprintf(stderr, "Hobbit version %s\n", VERSION);
 		fprintf(stderr, "Usage: %s [--debug] [--proxy=http://ip.of.the.proxy:port/] RECIPIENT DATA\n", argv[0]);
 		fprintf(stderr, "  RECIPIENT: IP-address, hostname or URL\n");
 		fprintf(stderr, "  DATA: Message to send, or \"-\" to read from stdin\n");
