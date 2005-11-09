@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.67 2005-10-25 08:26:14 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.68 2005-11-09 09:08:46 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -131,7 +131,7 @@ void save_checkpoint(char *filename)
 
 		fprintf(fd, "%s|%s|%s|%s|%s|%d|%d|%s|",
 			awalk->hostname->name, awalk->testname->name, awalk->location->name, awalk->ip,
-			colorname(awalk->color),
+			colorname(awalk->maxcolor),
 			(int) awalk->eventstart,
 			(int) awalk->nextalerttime,
 			statename[awalk->state]);
@@ -188,7 +188,7 @@ void load_checkpoint(char *filename)
 			newalert->testname = find_name(&testnames, item[1]);
 			newalert->location = find_name(&locations, item[2]);
 			strcpy(newalert->ip, item[3]);
-			newalert->color = parse_color(item[4]);
+			newalert->color = newalert->maxcolor = parse_color(item[4]);
 			newalert->eventstart = (time_t) atoi(item[5]);
 			newalert->nextalerttime = (time_t) atoi(item[6]);
 			newalert->state = A_PAGING;
@@ -315,7 +315,7 @@ int main(int argc, char *argv[])
 			awalk->testname = find_name(&testnames, testservice);
 			awalk->location = find_name(&locations, testpage);
 			strcpy(awalk->ip, "127.0.0.1");
-			awalk->color = parse_color(testcolor);
+			awalk->color = awalk->maxcolor = parse_color(testcolor);
 			awalk->pagemessage = "Test of the alert configuration";
 			awalk->ackmessage = NULL;
 			awalk->eventstart = time(NULL) - testdur*60;
@@ -459,16 +459,18 @@ int main(int argc, char *argv[])
 				awalk->location = pwalk;
 				awalk->cookie = -1;
 				awalk->state = A_DEAD;
+				/*
+				 * Use changetime here, if we restart the alert module then
+				 * this gets the duration values more right than using "now".
+				 * Also, define this only when a new alert arrives - we should
+				 * NOT clear this when a status goes yellow->red, or if it
+				 * flaps between yellow and red.
+				 */
+				awalk->eventstart = atoi(metadata[9]);
 				awalk->next = ahead;
 				ahead = awalk;
 				traceprintf("New record\n");
 			}
-
-			/*
-			 * Use changetime here, if we restart the alert module then
-			 * this gets the duration values more right than using "now"
-			 */
-			awalk->eventstart = atoi(metadata[9]);
 
 			newcolor = parse_color(metadata[7]);
 			oldalertstatus = ((alertcolors & (1 << awalk->color)) != 0);
@@ -480,6 +482,26 @@ int main(int argc, char *argv[])
 				/* It's in an alert state. */
 				awalk->color = newcolor;
 				awalk->state = A_PAGING;
+
+				if (newcolor > awalk->maxcolor) {
+					if (awalk->maxcolor != 0) {
+						/*
+						 * Severity has increased (yellow -> red).
+						 * Clear the repeat-interval, and set maxcolor to
+						 * the new color. If it drops to yellow again,
+						 * maxcolor stays at red, so a test that flaps
+						 * between yellow and red will only alert on red
+						 * the first time, and then follow the repeat
+						 * interval.
+						 */
+						dprintf("Severity increased, cleared repeat interval: %s/%s %s->%s\n",
+							awalk->hostname->name, awalk->testname->name,
+							colorname(awalk->maxcolor), colorname(newcolor));
+						clear_interval(awalk);
+					}
+
+					awalk->maxcolor = newcolor;
+				}
 			}
 			else {
 				/* 
