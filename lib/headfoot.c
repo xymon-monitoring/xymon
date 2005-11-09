@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.37 2005-11-09 12:53:54 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.38 2005-11-09 13:30:04 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -764,7 +764,9 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			 * Cannot use xgetenv because it complains for undefined
 			 * environment variables.
 			 */
-			fprintf(output, "%s", getenv(t_start));
+			char *val = getenv(t_start);
+
+			fprintf(output, "%s", (val ? val : ""));
 		}
 
 		else if (strlen(t_start) && xgetenv(t_start)) {
