@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.30 2005-10-25 21:33:58 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.31 2005-11-09 09:11:52 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -58,6 +58,7 @@ static int netok(char *netstring, char *curnet, int testuntagged)
 static int downok(char *hostname, int nodownhosts)
 {
 	char *mark, *colorstr;
+	int color;
 
 	if (!nodownhosts) return 1;
 
@@ -73,7 +74,8 @@ static int downok(char *hostname, int nodownhosts)
 		colorstr = connstatus + strlen(mark+1);	/* First entry we get */
 	}
 	xfree(mark);
-	if (colorstr && (parse_color(colorstr) != COL_GREEN)) return 0;
+	color = (colorstr ? parse_color(colorstr) : COL_GREEN);
+	if ((color == COL_RED) || (color == COL_BLUE)) return 0;
 
 	/* Check if the test is currently disabled */
 	if (!teststatus) return 1;
@@ -87,7 +89,8 @@ static int downok(char *hostname, int nodownhosts)
 		colorstr = teststatus + strlen(mark+1);	/* First entry we get */
 	}
 	xfree(mark);
-	if (colorstr && (parse_color(colorstr) == COL_BLUE)) return 0;
+	color = (colorstr ? parse_color(colorstr) : COL_GREEN);
+	if ((color == COL_RED) || (color == COL_BLUE)) return 0;
 
 	return 1;
 }
