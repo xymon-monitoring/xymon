@@ -30,4 +30,8 @@ extern void generate_html_log(char *hostname, char *displayname, char *service, 
 		       FILE *output);
 extern char *alttag(char *columnname, int color, int acked, int propagate, char *age);
 
+extern void setdocurl(char *url);
+extern void setdoctarget(char *target);
+extern char *hostnamehtml(char *hostname, char *defaultlink);
+
 #endif

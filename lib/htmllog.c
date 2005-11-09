@@ -11,13 +11,14 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.34 2005-11-08 13:39:27 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.35 2005-11-09 12:54:29 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#include <limits.h>
 
 #include "libbbgen.h"
 #include "version.h"
@@ -28,6 +29,8 @@ static char *cgibinurl = NULL;
 static char *colfont = NULL;
 static char *ackfont = NULL;
 static char *rowfont = NULL;
+static char *documentationurl = NULL;
+static char *doctarget = NULL;
 
 enum histbutton_t histlocation = HIST_BOTTOM;
 
@@ -310,5 +313,103 @@ char *alttag(char *columnname, int color, int acked, int propagate, char *age)
 	tag[sizeof(tag)-1] = '\0';
 
 	return tag;
+}
+
+
+static char *nameandcomment(namelist_t *host)
+{
+	static char *result = NULL;
+	char *cmt, *disp, *hname;
+
+	if (result) xfree(result);
+
+	hname = bbh_item(host, BBH_HOSTNAME);
+	disp = bbh_item(host, BBH_DISPLAYNAME);
+	cmt = bbh_item(host, BBH_COMMENT);
+	if (disp == NULL) disp = hname;
+
+	if (cmt) {
+		result = (char *)malloc(strlen(disp) + strlen(cmt) + 4);
+		sprintf(result, "%s (%s)", disp, cmt);
+		return result;
+	}
+	else 
+		return disp;
+}
+
+static char *urldoclink(const char *docurl, const char *hostname)
+{
+	/*
+	 * docurl is a user defined text string to build
+	 * a documentation url. It is expanded with the
+	 * hostname.
+	 */
+
+	static char linkurl[PATH_MAX];
+
+	if (docurl) {
+		sprintf(linkurl, docurl, hostname);
+	}
+	else {
+		linkurl[0] = '\0';
+	}
+
+	return linkurl;
+}
+
+
+void setdocurl(char *url)
+{
+	if (documentationurl) xfree(documentationurl);
+	documentationurl = strdup(url);
+}
+
+void setdoctarget(char *target)
+{
+	if (doctarget) xfree(doctarget);
+	doctarget = strdup(target);
+}
+
+char *hostnamehtml(char *hostname, char *defaultlink)
+{
+	static char result[4096];
+	namelist_t *hinfo = hostinfo(hostname);
+	char *hostlinkurl;
+
+	if (!doctarget) doctarget = strdup("");
+
+	/* First the hostname and a notes-link.
+	 *
+	 * If a documentation CGI is defined, use that.
+	 *
+	 * else if a host has a direct notes-link, use that.
+	 *
+	 * else if no direct link and we are doing a BB2/BBNK page, 
+	 * provide a link to the main page with this host (there
+	 * may be links to documentation in some page-title).
+	 *
+	 * else just put the hostname there.
+	 */
+	if (documentationurl) {
+		snprintf(result, sizeof(result), "<A HREF=\"%s\" %s><FONT %s>%s</FONT></A>",
+			urldoclink(documentationurl, hostname),
+			doctarget, xgetenv("MKBBROWFONT"), nameandcomment(hinfo));
+	}
+	else if ((hostlinkurl = hostlink(hostname)) != NULL) {
+		snprintf(result, sizeof(result), "<A HREF=\"%s\" %s><FONT %s>%s</FONT></A>",
+			hostlinkurl, doctarget, xgetenv("MKBBROWFONT"), nameandcomment(hinfo));
+	}
+	else if (defaultlink) {
+		/* Provide a link to the page where this host lives */
+		snprintf(result, sizeof(result), "<A HREF=\"%s/%s\" %s><FONT %s>%s</FONT></A>",
+			xgetenv("BBWEB"), defaultlink, doctarget,
+			xgetenv("MKBBROWFONT"), nameandcomment(hinfo));
+	}
+	else {
+		snprintf(result, sizeof(result), "<FONT %s>%s</FONT>",
+			xgetenv("MKBBROWFONT"), nameandcomment(hinfo));
+	}
+
+	return result;
 }
 
