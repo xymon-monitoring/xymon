@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char hpux_rcsid[] = "$Id: hpux.c,v 1.9 2005-08-01 05:57:34 henrik Exp $";
+static char hpux_rcsid[] = "$Id: hpux.c,v 1.10 2005-11-10 21:19:56 henrik Exp $";
 
 void handle_hpux_client(char *hostname, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -24,6 +24,7 @@ void handle_hpux_client(char *hostname, namelist_t *hinfo, char *sender, time_t 
 	char *swapinfostr;
 	char *msgsstr;
 	char *netstatstr;
+	char *ifstatstr;
 	char *vmstatstr;
 
 	char *p;
@@ -44,6 +45,7 @@ void handle_hpux_client(char *hostname, namelist_t *hinfo, char *sender, time_t 
 	swapinfostr = getdata("swapinfo");
 	msgsstr = getdata("msgs");
 	netstatstr = getdata("netstat");
+	ifstatstr = getdata("ifstat");
 	vmstatstr = getdata("vmstat");
 
 	combo_start();
@@ -80,6 +82,7 @@ void handle_hpux_client(char *hostname, namelist_t *hinfo, char *sender, time_t 
 	combo_end();
 
 	unix_netstat_report(hostname, hinfo, "hpux", netstatstr);
+	unix_ifstat_report(hostname, hinfo, "hpux", ifstatstr);
 	unix_vmstat_report(hostname, hinfo, "hpux", vmstatstr);
 }
 

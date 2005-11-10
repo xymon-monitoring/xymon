@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char openbsd_rcsid[] = "$Id: openbsd.c,v 1.8 2005-08-01 05:57:34 henrik Exp $";
+static char openbsd_rcsid[] = "$Id: openbsd.c,v 1.9 2005-11-10 21:19:56 henrik Exp $";
 
 void handle_openbsd_client(char *hostname, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -24,6 +24,7 @@ void handle_openbsd_client(char *hostname, namelist_t *hinfo, char *sender, time
 	char *swapctlstr;
 	char *msgsstr;
 	char *netstatstr;
+	char *ifstatstr;
 	char *vmstatstr;
 
 	char *p;
@@ -43,6 +44,7 @@ void handle_openbsd_client(char *hostname, namelist_t *hinfo, char *sender, time
 	swapctlstr = getdata("swapctl");
 	msgsstr = getdata("msgs");
 	netstatstr = getdata("netstat");
+	ifstatstr = getdata("ifstat");
 	vmstatstr = getdata("vmstat");
 
 	combo_start();
@@ -77,6 +79,7 @@ void handle_openbsd_client(char *hostname, namelist_t *hinfo, char *sender, time
 	combo_end();
 
 	unix_netstat_report(hostname, hinfo, "openbsd", netstatstr);
+	unix_ifstat_report(hostname, hinfo, "openbsd", ifstatstr);
 	unix_vmstat_report(hostname, hinfo, "openbsd", vmstatstr);
 }
 

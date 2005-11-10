@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char darwin_rcsid[] = "$Id: darwin.c,v 1.1 2005-08-07 21:14:00 henrik Exp $";
+static char darwin_rcsid[] = "$Id: darwin.c,v 1.2 2005-11-10 21:19:56 henrik Exp $";
 
 void handle_darwin_client(char *hostname, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -23,6 +23,7 @@ void handle_darwin_client(char *hostname, namelist_t *hinfo, char *sender, time_
 	char *meminfostr;
 	char *msgsstr;
 	char *netstatstr;
+	char *ifstatstr;
 
 	char *p;
 	char fromline[1024];
@@ -40,6 +41,7 @@ void handle_darwin_client(char *hostname, namelist_t *hinfo, char *sender, time_
 	meminfostr = getdata("meminfo");
 	msgsstr = getdata("msgs");
 	netstatstr = getdata("netstat");
+	ifstatstr = getdata("ifstat");
 
 	combo_start();
 
@@ -86,5 +88,6 @@ void handle_darwin_client(char *hostname, namelist_t *hinfo, char *sender, time_
 	combo_end();
 
 	unix_netstat_report(hostname, hinfo, "darwin", netstatstr);
+	unix_ifstat_report(hostname, hinfo, "darwin", ifstatstr);
 }
 

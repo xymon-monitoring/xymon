@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char aix_rcsid[] = "$Id: aix.c,v 1.2 2005-08-11 20:49:40 henrik Exp $";
+static char aix_rcsid[] = "$Id: aix.c,v 1.3 2005-11-10 21:19:56 henrik Exp $";
 
 void handle_aix_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -22,6 +22,7 @@ void handle_aix_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char
 	char *dfstr;
 	char *msgsstr;
 	char *netstatstr;
+	char *ifstatstr;
 	char *vmstatstr;
 	char *realmemstr;
 	char *freememstr;
@@ -41,6 +42,7 @@ void handle_aix_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char
 	dfstr = getdata("df");
 	msgsstr = getdata("msgs");
 	netstatstr = getdata("netstat");
+	ifstatstr = getdata("ifstat");
 	vmstatstr = getdata("vmstat");
 	realmemstr = getdata("realmem");
 	freememstr = getdata("freemem");
@@ -75,6 +77,7 @@ void handle_aix_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char
 	combo_end();
 
 	unix_netstat_report(hostname, hinfo, "aix", netstatstr);
+	unix_ifstat_report(hostname, hinfo, "aix", ifstatstr);
 	unix_vmstat_report(hostname, hinfo, "aix", vmstatstr);
 }
 

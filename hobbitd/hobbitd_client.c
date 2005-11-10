@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.40 2005-10-25 10:47:27 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.41 2005-11-10 21:19:56 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -608,6 +608,21 @@ void unix_netstat_report(char *hostname, namelist_t *hinfo, char *osid, char *ne
 	if (msg) xfree(msg);
 }
 
+void unix_ifstat_report(char *hostname, namelist_t *hinfo, char *osid, char *ifstatstr)
+{
+	char *msg = NULL;
+	int  msgsz;
+	char msgline[4096];
+
+	if (!ifstatstr) return;
+
+	sprintf(msgline, "data %s.ifstat\n%s\n", commafy(hostname), osid);
+	addtobuffer(&msg, &msgsz, msgline);
+	addtobuffer(&msg, &msgsz, ifstatstr);
+	sendmessage(msg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+
+	if (msg) xfree(msg);
+}
 
 void unix_vmstat_report(char *hostname, namelist_t *hinfo, char *osid, char *vmstatstr)
 {

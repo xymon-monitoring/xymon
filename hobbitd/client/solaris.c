@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char solaris_rcsid[] = "$Id: solaris.c,v 1.8 2005-08-11 20:49:40 henrik Exp $";
+static char solaris_rcsid[] = "$Id: solaris.c,v 1.9 2005-11-10 21:19:56 henrik Exp $";
 
 void handle_solaris_client(char *hostname, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -25,6 +25,7 @@ void handle_solaris_client(char *hostname, namelist_t *hinfo, char *sender, time
 	char *dfstr;
 	char *msgsstr;
 	char *netstatstr;
+	char *ifstatstr;
 	char *vmstatstr;
 
 	char fromline[1024];
@@ -44,6 +45,7 @@ void handle_solaris_client(char *hostname, namelist_t *hinfo, char *sender, time
 	swapstr = getdata("swap");
 	msgsstr = getdata("msgs");
 	netstatstr = getdata("netstat");
+	ifstatstr = getdata("ifstat");
 	vmstatstr = getdata("vmstat");
 
 	combo_start();
@@ -77,6 +79,7 @@ void handle_solaris_client(char *hostname, namelist_t *hinfo, char *sender, time
 	combo_end();
 
 	unix_netstat_report(hostname, hinfo, "solaris", netstatstr);
+	unix_ifstat_report(hostname, hinfo, "solaris", ifstatstr);
 	unix_vmstat_report(hostname, hinfo, "solaris", vmstatstr);
 }
 

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char linux_rcsid[] = "$Id: linux.c,v 1.10 2005-08-11 20:49:40 henrik Exp $";
+static char linux_rcsid[] = "$Id: linux.c,v 1.11 2005-11-10 21:19:56 henrik Exp $";
 
 void handle_linux_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -24,6 +24,7 @@ void handle_linux_client(char *hostname, enum ostype_t os, namelist_t *hinfo, ch
 	char *msgsstr;
 	char *netstatstr;
 	char *vmstatstr;
+	char *ifstatstr;
 
 	char fromline[1024];
 
@@ -40,6 +41,7 @@ void handle_linux_client(char *hostname, enum ostype_t os, namelist_t *hinfo, ch
 	freestr = getdata("free");
 	msgsstr = getdata("msgs");
 	netstatstr = getdata("netstat");
+	ifstatstr = getdata("ifstat");
 	vmstatstr = getdata("vmstat");
 
 	combo_start();
@@ -82,6 +84,7 @@ void handle_linux_client(char *hostname, enum ostype_t os, namelist_t *hinfo, ch
 	combo_end();
 
 	unix_netstat_report(hostname, hinfo, "linux", netstatstr);
+	unix_ifstat_report(hostname, hinfo, "linux", ifstatstr);
 
 	switch (os) {
 	  case OS_LINUX22:
