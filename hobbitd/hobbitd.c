@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.186 2005-11-03 12:19:35 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.187 2005-11-10 21:20:42 henrik Exp $";
 
 #include "config.h"
 
@@ -1791,22 +1791,24 @@ void do_message(conn_t *msg, char *origin)
 				if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, currmsg)) validsender = 0;
 			}
 
-			if (color == COL_PURPLE) {
-				errprintf("Ignored PURPLE status update from %s for %s.%s\n",
-					  sender, (h ? h->hostname : "<unknown>"), (t ? t->testname : "unknown"));
-			}
-			else if (validsender) {
+			if (validsender) {
 				get_hts(currmsg, sender, origin, &h, &t, &log, &color, 1, 1);
 				if (h && dbgfd && dbghost && (strcasecmp(h->hostname, dbghost) == 0)) {
 					fprintf(dbgfd, "\n---- combo message from %s ----\n%s---- end message ----\n", sender, currmsg);
 					fflush(dbgfd);
 				}
 
-				/* Count individual status-messages also */
-				update_statistics(currmsg);
+				if (color == COL_PURPLE) {
+					errprintf("Ignored PURPLE status update from %s for %s.%s\n",
+						  sender, (h ? h->hostname : "<unknown>"), (t ? t->testname : "unknown"));
+				}
+				else {
+					/* Count individual status-messages also */
+					update_statistics(currmsg);
 
-				if (h && t && log && (color != -1) && (color != COL_PURPLE)) {
-					handle_status(currmsg, sender, h->hostname, t->testname, log, color);
+					if (h && t && log && (color != -1) && (color != COL_PURPLE)) {
+						handle_status(currmsg, sender, h->hostname, t->testname, log, color);
+					}
 				}
 			}
 
@@ -1846,8 +1848,15 @@ void do_message(conn_t *msg, char *origin)
 			fprintf(dbgfd, "\n---- status message from %s ----\n%s---- end message ----\n", sender, msg->buf);
 			fflush(dbgfd);
 		}
-		if (h && t && log && (color != -1)) {
-			handle_status(msg->buf, sender, h->hostname, t->testname, log, color);
+
+		if (color == COL_PURPLE) {
+			errprintf("Ignored PURPLE status update from %s for %s.%s\n",
+				  sender, (h ? h->hostname : "<unknown>"), (t ? t->testname : "unknown"));
+		}
+		else {
+			if (h && t && log && (color != -1)) {
+				handle_status(msg->buf, sender, h->hostname, t->testname, log, color);
+			}
 		}
 	}
 	else if (strncmp(msg->buf, "data", 4) == 0) {
