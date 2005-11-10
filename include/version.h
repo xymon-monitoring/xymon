@@ -11,7 +11,7 @@
 #ifndef __VERSION_H__
 #define __VERSION_H__
 
-#define VERSION "4.1.2"
+#define VERSION "4.1.2p1"
 
 #endif
 
