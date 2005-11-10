@@ -2,8 +2,8 @@
   <TABLE SUMMARY="Filters" WIDTH="70%" ALIGN=CENTER>
     <TR>
        <TH>Priority</TH>
-       <TH>Min. Color</TH>
-       <TH>Max. age</TH>
+       <TH>Color</TH>
+       <TH>Age</TH>
        <TH>&nbsp;</TH>
     </TR>
     <TR>
@@ -16,20 +16,20 @@
        </TD>
        <TD ALIGN=CENTER>
           <SELECT NAME="MINCOLOR">
-	    <OPTION VALUE="yellow" &SELECT_MINCOLOR_YELLOW>Yellow
-	    <OPTION VALUE="red"    &SELECT_MINCOLOR_RED>Red
+	    <OPTION VALUE="yellow" &SELECT_MINCOLOR_YELLOW>Red+Yellow
+	    <OPTION VALUE="red"    &SELECT_MINCOLOR_RED>Red only
 	  </SELECT>
        </TD>
        <TD ALIGN=CENTER>
           <SELECT NAME="MAXAGE">
-	    <OPTION VALUE="15"     &SELECT_MAXAGE_15>Last 15 minutes
-	    <OPTION VALUE="30"     &SELECT_MAXAGE_30>Last 30 minutes
-	    <OPTION VALUE="60"     &SELECT_MAXAGE_60>Last 1 hour
-	    <OPTION VALUE="180"    &SELECT_MAXAGE_180>Last 3 hours
-	    <OPTION VALUE="360"    &SELECT_MAXAGE_360>Last 6 hours
-	    <OPTION VALUE="720"    &SELECT_MAXAGE_720>Last 12 hours
-	    <OPTION VALUE="1440"   &SELECT_MAXAGE_1440>Last 24 hours
-	    <OPTION VALUE="525600" &SELECT_MAXAGE_525600>Unlimited
+	    <OPTION VALUE="15"     &SELECT_MAXAGE_15>Within last 15 minutes
+	    <OPTION VALUE="30"     &SELECT_MAXAGE_30>Within last 30 minutes
+	    <OPTION VALUE="60"     &SELECT_MAXAGE_60>Within last 1 hour
+	    <OPTION VALUE="180"    &SELECT_MAXAGE_180>Within last 3 hours
+	    <OPTION VALUE="360"    &SELECT_MAXAGE_360>Within last 6 hours
+	    <OPTION VALUE="720"    &SELECT_MAXAGE_720>Within last 12 hours
+	    <OPTION VALUE="1440"   &SELECT_MAXAGE_1440>Within last 24 hours
+	    <OPTION VALUE="525600" &SELECT_MAXAGE_525600>Show all
 	  </SELECT>
        </TD>
        <TD ALIGN=CENTER>
