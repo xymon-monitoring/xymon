@@ -6,15 +6,17 @@ if [ "$REL" = "" ]; then
 	exit 1
 fi
 
-cd ~/hobbit
+BASEDIR=`pwd`
+cd $BASEDIR
+
 rm -rf debbuild
-mkdir -p ~/hobbit/debbuild/hobbit-$REL
+mkdir -p $BASEDIR/debbuild/hobbit-$REL
 for f in bbdisplay bbnet bbpatches bbproxy build common contrib docs hobbitd include lib client demotool
 do
-        find $f/ | grep -v RCS | cpio -pdvmu ~/hobbit/debbuild/hobbit-$REL/
+        find $f/ | grep -v RCS | cpio -pdvmu $BASEDIR/debbuild/hobbit-$REL/
 done
-cp -p Changes configure configure.server configure.client COPYING CREDITS README README.CLIENT ~/hobbit/debbuild/hobbit-$REL/
-find ~/hobbit/debbuild/hobbit-$REL -type d|xargs chmod 755
+cp -p Changes configure configure.server configure.client COPYING CREDITS README README.CLIENT $BASEDIR/debbuild/hobbit-$REL/
+find $BASEDIR/debbuild/hobbit-$REL -type d|xargs chmod 755
 
 cd debbuild
 pushd hobbit-$REL
@@ -22,8 +24,8 @@ make -f $HOME/hobbit/Makefile.home distclean
 popd
 tar zcf hobbit-$REL.tar.gz hobbit-$REL
 
-cd ~/hobbit
-find debian | egrep -v "RCS|pkg" | cpio -pdvmu ~/hobbit/debbuild/hobbit-$REL/
+cd $BASEDIR
+find debian | egrep -v "RCS|pkg" | cpio -pdvmu $BASEDIR/debbuild/hobbit-$REL/
 
 cd debbuild/hobbit-$REL
 dpkg-buildpackage -rfakeroot

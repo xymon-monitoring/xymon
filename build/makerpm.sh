@@ -6,7 +6,8 @@ if [ "$REL" = "" ]; then
 	exit 1
 fi
 
-cd ~/hobbit
+BASEDIR=`pwd`
+cd $BASEDIR
 rm -rf rpmbuild
 
 # Setup a temp. rpm build directory.
@@ -33,10 +34,10 @@ cp rpm/hobbit-client.default rpmbuild/SOURCES/
 mkdir -p rpmbuild/hobbit-$REL
 for f in bbdisplay bbnet bbpatches bbproxy build common contrib docs hobbitd include lib client demotool
 do
-        find $f/ | grep -v RCS | cpio -pdvmu ~/hobbit/rpmbuild/hobbit-$REL/
+        find $f/ | grep -v RCS | cpio -pdvmu $BASEDIR/rpmbuild/hobbit-$REL/
 done
-cp -p Changes configure configure.server configure.client COPYING CREDITS README README.CLIENT ~/hobbit/rpmbuild/hobbit-$REL/
-find ~/hobbit/rpmbuild/hobbit-$REL -type d|xargs chmod 755
+cp -p Changes configure configure.server configure.client COPYING CREDITS README README.CLIENT $BASEDIR/rpmbuild/hobbit-$REL/
+find $BASEDIR/rpmbuild/hobbit-$REL -type d|xargs chmod 755
 
 cd rpmbuild
 pushd hobbit-$REL
