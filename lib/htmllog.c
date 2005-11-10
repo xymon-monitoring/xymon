@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.37 2005-11-09 15:23:43 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.38 2005-11-10 21:24:27 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -172,6 +172,19 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			fprintf(output, "<td colspan=4 align=center>%s</td>", nkttextra);
 			fprintf(output, "</tr>\n");
 		}
+
+		fprintf(output, "<tr>");
+		fprintf(output, "<td colspan=4 align=center>\n");
+		fprintf(output, "  <form method=\"POST\" action=\"%s/hobbit-nkack.sh\">\n", 
+			xgetenv("CGIBINURL"));
+		fprintf(output, "    <INPUT TYPE=\"TEXT\" NAME=\"NOTE\" MAXLENGTH=60 SIZE=60 tabindex=\"0\">\n");
+		fprintf(output, "    <INPUT TYPE=\"HIDDEN\" NAME=\"HOST\" VALUE=\"%s\">\n", hostname);
+		fprintf(output, "    <INPUT TYPE=\"HIDDEN\" NAME=\"SERVICE\" VALUE=\"%s\">\n", service);
+		fprintf(output, "    <input name=ack type=\"button\" onClick=\"validateInput(this.form)\" value=\"Acknowledge\">\n");
+		fprintf(output, "  </form>\n");
+		fprintf(output, "</td>");
+		fprintf(output, "</tr>\n");
+
 		fprintf(output, "</table>\n");
 	}
 
