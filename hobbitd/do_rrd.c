@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.25 2005-08-02 12:59:12 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.26 2005-11-10 21:39:11 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -223,6 +223,7 @@ static int rrddatasets(char *hostname, char *fn, char ***dsnames)
 #include "rrd/do_netstat.c"
 #include "rrd/do_vmstat.c"
 #include "rrd/do_iostat.c"
+#include "rrd/do_ifstat.c"
 
 #include "rrd/do_apache.c"
 #include "rrd/do_bind.c"
@@ -261,6 +262,7 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	else if (strcmp(id, "netstat") == 0)     res = do_netstat_rrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "vmstat") == 0)      res = do_vmstat_rrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "iostat") == 0)      res = do_iostat_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "ifstat") == 0)      res = do_ifstat_rrd(hostname, testname, msg, tstamp);
 
 	/* These two come from the filerstats2bb.pl script. The reports are in disk-format */
 	else if (strcmp(id, "inode") == 0)       res = do_disk_rrd(hostname, testname, msg, tstamp);
