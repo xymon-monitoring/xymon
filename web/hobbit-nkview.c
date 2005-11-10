@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkview.c,v 1.4 2005-11-09 15:28:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkview.c,v 1.5 2005-11-10 21:21:43 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -229,7 +229,7 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 	fprintf(output, "<TR>\n");
 
 	/* Print the priority */
-	fprintf(output, "<TD ALIGN=LEFT VALIGN=TOP WIDTH=25%%>");
+	fprintf(output, "<TD ALIGN=LEFT VALIGN=TOP WIDTH=25%% NOWRAP>");
 	if (firsthost) 
 		fprintf(output, "<FONT %s>PRIO %d</FONT>", xgetenv("MKBBROWFONT"), prio);
 	else 
