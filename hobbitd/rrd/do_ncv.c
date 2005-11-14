@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.6 2005-10-01 06:22:22 henrik Exp $";
+static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.7 2005-11-14 15:41:47 henrik Exp $";
 
 int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -68,10 +68,12 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				int outidx;
 
 				/* val contains a valid number */
+				/* rrdcreate(1) says: ds must be in the set [a-zA-Z0-9_] */
 				for (inp=name,outidx=0; (*inp && (outidx < 19)); inp++) {
 					if ( ((*inp >= 'A') && (*inp <= 'Z')) ||
 					     ((*inp >= 'a') && (*inp <= 'z')) ||
-					     ((*inp >= '0') && (*inp <= '9')) ) {
+					     ((*inp >= '0') && (*inp <= '9')) ||
+					     (*inp == '_')                    ) {
 						dsname[outidx++] = *inp;
 					}
 				}
