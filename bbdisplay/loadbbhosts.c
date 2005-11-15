@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.30 2005-08-08 16:09:13 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.31 2005-11-15 12:10:24 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -370,6 +370,7 @@ void getgrouptitle(char *l, char *pageset, char **title, char **onlycols, char *
 
 	*title = null_text;
 	*onlycols = NULL;
+	*exceptcols = NULL;
 
 	sprintf(grouponlytag, "%sgroup-only", pageset);
 	sprintf(groupexcepttag, "%sgroup-except", pageset);
