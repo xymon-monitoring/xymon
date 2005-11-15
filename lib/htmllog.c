@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.38 2005-11-10 21:24:27 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.39 2005-11-15 14:02:12 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -129,7 +129,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		       int is_history, int wantserviceid, int htmlfmt, int hobbitd,
 		       char *multigraphs,
 		       char *linktoclient,
-		       char *nkprio, char *nkresolver, char *nkttgroup, char *nkttextra,
+		       char *nkprio, char *nkttgroup, char *nkttextra,
 		       FILE *output)
 {
 	int linecount = 0;
@@ -151,14 +151,12 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		fprintf(output, "<table border=1 summary=\"NK info\" align=center>\n");
 		fprintf(output, "<tr>");
 		fprintf(output, "<th align=center>Priority</th>");
-		fprintf(output, "<th align=center>Resolver</th>");
-		fprintf(output, "<th align=center>TT group</th>");
+		fprintf(output, "<th align=center>Responsible</th>");
 		fprintf(output, "<th align=center>Documentation</th>");
 		fprintf(output, "</tr>\n");
 
 		fprintf(output, "<tr>");
 		fprintf(output, "<td align=center>%s</td>", nkprio);
-		fprintf(output, "<td align=center>%s</td>", ((nkresolver && *nkresolver) ? nkresolver : "&nbsp;"));
 		fprintf(output, "<td align=center>%s</td>", ((nkttgroup && *nkttgroup) ? nkttgroup : "&nbsp;"));
 		fprintf(output, "<td align=center>");
 		fprintf(output, "<a href=\"%s/bb-hostsvc.sh?HOSTSVC=%s.%s\">Host info</a>", 
@@ -169,12 +167,12 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 		if (nkttextra && *nkttextra) {
 			fprintf(output, "<tr>\n");
-			fprintf(output, "<td colspan=4 align=center>%s</td>", nkttextra);
+			fprintf(output, "<td colspan=3 align=center>%s</td>", nkttextra);
 			fprintf(output, "</tr>\n");
 		}
 
 		fprintf(output, "<tr>");
-		fprintf(output, "<td colspan=4 align=center>\n");
+		fprintf(output, "<td colspan=3 align=center>\n");
 		fprintf(output, "  <form method=\"POST\" action=\"%s/hobbit-nkack.sh\">\n", 
 			xgetenv("CGIBINURL"));
 		fprintf(output, "    <INPUT TYPE=\"TEXT\" NAME=\"NOTE\" MAXLENGTH=60 SIZE=60 tabindex=\"0\">\n");

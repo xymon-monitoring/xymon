@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkview.c,v 1.5 2005-11-10 21:21:43 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkview.c,v 1.6 2005-11-15 14:02:12 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -22,7 +22,6 @@ static char rcsid[] = "$Id: hobbit-nkview.c,v 1.5 2005-11-10 21:21:43 henrik Exp
 typedef struct nkconf_t {
 	char *key;
 	int priority;
-	char *resolvergroup;
 	char *ttgroup;
 	char *ttextra;
 } nkconf_t;
@@ -68,8 +67,8 @@ void loadconfig(char *fn, char *wantclass)
 	}
 
 	while (stackfgets(&inbuf, &inbufsz, "include", NULL)) {
-		/* Class  Host  service  TIME  Resolvergroup TTPrio TTGroup TTExtra */
-		char *eclass, *ehost, *eservice, *etime, *rgroup, *ttgroup, *ttextra;
+		/* Class  Host  service  TIME  TTPrio TTGroup TTExtra */
+		char *eclass, *ehost, *eservice, *etime, *ttgroup, *ttextra;
 		int ttprio = 0;
 		nkconf_t *newitem;
 		RbtStatus status;
@@ -79,7 +78,6 @@ void loadconfig(char *fn, char *wantclass)
 		ehost = gettok(NULL, "|\n"); if (!ehost) continue;
 		eservice = gettok(NULL, "|\n"); if (!eservice) continue;
 		etime = gettok(NULL, "|\n"); if (!etime) continue;
-		rgroup = gettok(NULL, "|\n");
 		ttprio = atoi(gettok(NULL, "|\n"));
 		ttgroup = gettok(NULL, "|\n");
 		ttextra = gettok(NULL, "|\n");
@@ -91,7 +89,6 @@ void loadconfig(char *fn, char *wantclass)
 		newitem->key = (char *)malloc(strlen(ehost) + strlen(eservice) + 2);
 		sprintf(newitem->key, "%s|%s", ehost, eservice);
 		newitem->priority = ttprio;
-		newitem->resolvergroup = strdup(urlencode(rgroup));
 		newitem->ttgroup = strdup(urlencode(ttgroup));
 		newitem->ttextra = strdup(urlencode(ttextra));
 
@@ -265,11 +262,10 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 			else {
 				time_t age = now - column->lastchange;
 				htmlalttag = alttag(colname, column->color, 0, 1, agestring(age));
-				fprintf(output, "<A HREF=\"%s/bb-hostsvc.sh?HOSTSVC=%s.%s&amp;IP=%s&amp;DISPLAYNAME=%s&amp;NKPRIO=%d&amp;NKRESOLVER=%s&amp;NKTTGROUP=%s&amp;NKTTEXTRA=%s\">",
+				fprintf(output, "<A HREF=\"%s/bb-hostsvc.sh?HOSTSVC=%s.%s&amp;IP=%s&amp;DISPLAYNAME=%s&amp;NKPRIO=%d&amp;NKTTGROUP=%s&amp;NKTTEXTRA=%s\">",
 					xgetenv("CGIBINURL"), commafy(itm->hostname), colname,
 					ip, (dispname ? dispname : itm->hostname),
 					prio, 
-					column->config->resolvergroup, 
 					column->config->ttgroup,
 					column->config->ttextra);
 				fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
