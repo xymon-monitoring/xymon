@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcmd.c,v 1.13 2005-11-09 15:57:00 henrik Exp $";
+static char rcsid[] = "$Id: bbcmd.c,v 1.14 2005-11-18 06:47:21 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -70,6 +70,9 @@ int main(int argc, char *argv[])
 	else {
 		loadenv(envfile, envarea);
 	}
+
+	/* Make sure MACHINE is setup for our child */
+	xgetenv("MACHINE");
 
 	/* Go! */
 	if (cmd == NULL) cmd = cmdargs[0] = "/bin/sh";
