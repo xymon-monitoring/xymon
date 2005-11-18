@@ -303,6 +303,17 @@ NKTIME=*:0000:1159,*:1300:2359
 The interval between starttime and endtime may cross midnight, e.g. \fB*:2330:0200\fR
 would be valid and have the same effect as \fB*:2330:2400,*:0000:0200\fR.
 
+.IP NKSTART=timestamp
+Defines an absolute starttime for having this host appear on the NK overview page.
+The "timestamp" is an absolute time in the Unix epoch - the GNU date utility
+can generate these with the command "date +%s". E.g. to have the host appear on
+the NK page after Nov. 15 2005 9:00 AM CET, you would use "NKSTART=1132041600".
+
+.IP NKEND=timestamp
+Similar to the NKSTART setting, this provides a mechanism to remove a host from
+the NK page at a specific time.
+
+
 .SH HOBBIT TAGS FOR THE WML (WAP) CARDS
 If bbgen is run with the "--wml" option, it will generate a
 set of WAP-format output "cards" that can be viewed with a
