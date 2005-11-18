@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.51 2005-11-15 14:02:12 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.52 2005-11-18 12:58:10 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -150,7 +150,7 @@ int do_request(void)
 	char timesincechange[100];
 	time_t logtime = 0, acktime = 0, disabletime = 0;
 	char *log = NULL, *firstline = NULL, *sender = NULL, *flags = NULL;	/* These are free'd */
-	char *restofmsg = NULL, *ackmsg = NULL, *dismsg = NULL;			/* These are just used */
+	char *restofmsg = NULL, *ackmsg = NULL, *dismsg = NULL, *acklist=NULL;	/* These are just used */
 	int ishtmlformatted = 0;
 	int clientavail = 0;
 	namelist_t *hinfo = NULL;
@@ -205,7 +205,7 @@ int do_request(void)
 		}
 	}
 	else if (source == SRC_HOBBITD) {
-		char hobbitdreq[200];
+		char hobbitdreq[1024];
 		int hobbitdresult;
 		char *items[20];
 		int icount;
@@ -214,7 +214,7 @@ int do_request(void)
 
 		sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
 		sethostenv_refresh(60);
-		sprintf(hobbitdreq, "hobbitdlog %s.%s", hostname, service);
+		sprintf(hobbitdreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist", hostname, service);
 		hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &log, 1, 30);
 		if ((hobbitdresult != BB_OK) || (log == NULL) || (strlen(log) == 0)) {
 			errormsg("Status not available\n");
@@ -241,7 +241,23 @@ int do_request(void)
 			p = gettok(NULL, "|");
 		}
 
-		/* hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|ackmsg|dismsg|clientavail */
+		/*
+		 * hostname,		[0]
+		 * testname,		[1]
+		 * color,		[2]
+		 * flags,		[3]
+		 * lastchange,		[4]
+		 * logtime,		[5]
+		 * validtime,		[6]
+		 * acktime,		[7]
+		 * disabletime,		[8]
+		 * sender,		[9]
+		 * cookie,		[10]
+		 * ackmsg,		[11]
+		 * dismsg,		[12]
+		 * client,		[13]
+		 * acklist		[14]
+		 */
 		color = parse_color(items[2]);
 		flags = strdup(items[3]);
 		logage = time(NULL) - atoi(items[4]);
@@ -272,6 +288,8 @@ int do_request(void)
 			clientavail = (strstr(clientsvcscomma, svccomma) != NULL);
 			xfree(svccomma); xfree(clientsvcscomma);
 		}
+
+		acklist = strdup(items[14]);
 	}
 	else if (source == SRC_HISTLOGS) {
 		char logfn[PATH_MAX];
@@ -374,7 +392,7 @@ int do_request(void)
 		          logtime, timesincechange, 
 		          (firstline ? firstline : ""), 
 			  (restofmsg ? restofmsg : ""), 
-			  acktime, ackmsg, 
+			  acktime, ackmsg, acklist,
 			  disabletime, dismsg,
 		          (source == SRC_HISTLOGS), 
 			  wantserviceid, 
