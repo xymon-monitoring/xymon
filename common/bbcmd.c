@@ -11,17 +11,56 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcmd.c,v 1.14 2005-11-18 06:47:21 henrik Exp $";
+static char rcsid[] = "$Id: bbcmd.c,v 1.15 2005-11-18 09:52:34 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
 #include <limits.h>
 
 #include "libbbgen.h"
+
+static void hobbit_default_envs(void)
+{
+	FILE *fd;
+	char buf[1024];
+	char *evar;
+
+	if (getenv("MACHINEDOTS") == NULL) {
+		fd = popen("uname -n", "r");
+		if (fd) {
+			fgets(buf, sizeof(buf), fd);
+			pclose(fd);
+		}
+		else strcpy(buf, "localhost");
+
+		evar = (char *)malloc(strlen(buf) + 12);
+		sprintf(evar, "MACHINEDOTS=%s", buf);
+		putenv(evar);
+	}
+
+	xgetenv("MACHINE");
+
+	if (getenv("BBOSTYPE") == NULL) {
+		char *p;
+
+		fd = popen("uname -s", "r");
+		if (fd) {
+			fgets(buf, sizeof(buf), fd);
+			pclose(fd);
+		}
+		else strcpy(buf, "unix");
+		for (p=buf; (*p); p++) *p = (char) tolower((int)*p);
+
+		evar = (char *)malloc(strlen(buf) + 10);
+		sprintf(evar, "BBOSTYPE=%s", buf);
+		putenv(evar);
+	}
+}
 
 int main(int argc, char *argv[])
 {
@@ -71,8 +110,8 @@ int main(int argc, char *argv[])
 		loadenv(envfile, envarea);
 	}
 
-	/* Make sure MACHINE is setup for our child */
-	xgetenv("MACHINE");
+	/* Make sure BBOSTYPE, MACHINEDOTS and MACHINE are setup for our child */
+	hobbit_default_envs();
 
 	/* Go! */
 	if (cmd == NULL) cmd = cmdargs[0] = "/bin/sh";
