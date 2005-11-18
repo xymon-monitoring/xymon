@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkview.c,v 1.6 2005-11-15 14:02:12 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkview.c,v 1.7 2005-11-18 09:56:48 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -18,14 +18,6 @@ static char rcsid[] = "$Id: hobbit-nkview.c,v 1.6 2005-11-15 14:02:12 henrik Exp
 #include <ctype.h>
 
 #include "libbbgen.h"
-
-typedef struct nkconf_t {
-	char *key;
-	int priority;
-	char *ttgroup;
-	char *ttextra;
-} nkconf_t;
-static RbtHandle rbconf;
 
 typedef struct hstatus_t {
 	char *hostname;
@@ -51,52 +43,6 @@ static int key_compare(void *a, void *b)
 	return strcasecmp((char *)a, (char *)b);
 }
 
-
-void loadconfig(char *fn, char *wantclass)
-{
-	FILE *fd;
-	char *inbuf = NULL;
-	int inbufsz = 0;
-
-	rbconf = rbtNew(key_compare);
-
-	fd = stackfopen(fn, "r");
-	if (fd == NULL) {
-		errormsg("Cannot open configuration file\n");
-		return;
-	}
-
-	while (stackfgets(&inbuf, &inbufsz, "include", NULL)) {
-		/* Class  Host  service  TIME  TTPrio TTGroup TTExtra */
-		char *eclass, *ehost, *eservice, *etime, *ttgroup, *ttextra;
-		int ttprio = 0;
-		nkconf_t *newitem;
-		RbtStatus status;
-
-		eclass = gettok(inbuf, "|\n"); if (!eclass) continue;
-		if (wantclass && eclass && (strcmp(eclass, wantclass) != 0)) continue;
-		ehost = gettok(NULL, "|\n"); if (!ehost) continue;
-		eservice = gettok(NULL, "|\n"); if (!eservice) continue;
-		etime = gettok(NULL, "|\n"); if (!etime) continue;
-		ttprio = atoi(gettok(NULL, "|\n"));
-		ttgroup = gettok(NULL, "|\n");
-		ttextra = gettok(NULL, "|\n");
-
-		if ((ehost == NULL) || (eservice == NULL) || (ttprio == 0)) continue;
-		if (etime && *etime && !within_sla(etime, 0)) continue;
-
-		newitem = (nkconf_t *)malloc(sizeof(nkconf_t));
-		newitem->key = (char *)malloc(strlen(ehost) + strlen(eservice) + 2);
-		sprintf(newitem->key, "%s|%s", ehost, eservice);
-		newitem->priority = ttprio;
-		newitem->ttgroup = strdup(urlencode(ttgroup));
-		newitem->ttextra = strdup(urlencode(ttextra));
-
-		status = rbtInsert(rbconf, newitem->key, newitem);
-	}
-
-	stackfclose(fd);
-}
 
 void loadstatus(int maxprio, time_t maxage, int mincolor)
 {
@@ -125,19 +71,14 @@ void loadstatus(int maxprio, time_t maxage, int mincolor)
 		/* Find the config entry */
 		endkey = strchr(bol, '|'); if (endkey) endkey = strchr(endkey+1, '|'); 
 		if (endkey) {
+			nkconf_t *cfg;
+
 			*endkey = '\0';
-			handle = rbtFind(rbconf, bol);
+			cfg = get_nkconfig(bol);
 			*endkey = '|';
 
-			if (handle != rbtEnd(rbconf)) {
-				hstatus_t *newitem;
-				void *k1, *k2;
-				nkconf_t *cfg;
-
-				rbtKeyValue(rbconf, handle, &k1, &k2);
-				cfg = (nkconf_t *)k2;
-
-				newitem = (hstatus_t *)malloc(sizeof(hstatus_t));
+			if (cfg) {
+				hstatus_t *newitem = (hstatus_t *)malloc(sizeof(hstatus_t));
 				newitem->config     = cfg;
 				newitem->hostname   = gettok(bol, "|");
 				newitem->testname   = gettok(NULL, "|");
@@ -433,7 +374,7 @@ int main(int argc, char *argv[])
 	parse_query();
 	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 	sprintf(configfn, "%s/etc/hobbitnk.cfg", xgetenv("BBHOME"));
-	loadconfig(configfn, NULL);
+	load_nkconfig(configfn, NULL);
 	load_all_links();
 	loadstatus(maxprio, maxage, mincolor);
 	use_recentgifs = 1;
