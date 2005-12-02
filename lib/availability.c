@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.36 2005-05-02 10:30:12 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.37 2005-12-02 16:03:45 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -304,23 +304,27 @@ int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 static char *timename(char *timestring)
 {
 	static char timespec[26];
-
-	char timecopy[26];
-	char *token;
+	char *timecopy;
+	char *tokens[5];
 	int i;
 
 	/* Compute the timespec string used as the name of the historical logfile */
-	strncpy(timecopy, timestring, 25);
-	timecopy[25] = '\0';
+	*timespec = '\0';
+	timecopy = strdup(timestring);
+	tokens[0] = tokens[1] = tokens[2] = tokens[3] = tokens[4] = NULL;
 
-	token = strtok(timecopy, " ");
-	strcpy(timespec, token);
+	tokens[0] = strtok(timecopy, " "); i = 0;
+	while (tokens[i] && (i < 4)) { i++; tokens[i] = strtok(NULL, " "); }
 
-	for (i=1; i<5; i++) {
-		strcat(timespec, "_");
-		token = strtok(NULL, " ");
-		strcat(timespec, token);
+	if (tokens[4]) {
+		/* Got all 5 elements */
+		snprintf(timespec, sizeof(timespec), "%s_%s_%s_%s_%s",
+			 tokens[0], tokens[1], tokens[2], tokens[3], tokens[4]);
 	}
+	else {
+		errprintf("Bad timespec in history file: %s\n", timestring);
+	}
+	xfree(timecopy);
 
 	return timespec;
 }
@@ -410,12 +414,12 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 				newentry->color = color;
 				newentry->affectssla = (reporttime && (sladuration > 0));
 
-				if (!for_history && (color != COL_GREEN)) {
+				if (!for_history && timespec && (color != COL_GREEN)) {
 					newentry->cause = parse_histlogfile(hostname, servicename, timespec);
 				}
 				else newentry->cause = "";
 
-				newentry->timespec = strdup(timespec);
+				newentry->timespec = (timespec ? strdup(timespec): NULL);
 				newentry->next = reploghead;
 				reploghead = newentry;
 			}
@@ -502,7 +506,9 @@ int history_color(FILE *fd, time_t snapshot, time_t *starttime, char **histlogna
 	time_t duration;
 	char colstr[MAX_LINE_LEN];
 	int color;
+	char *p;
 
+	*histlogname = NULL;
 	fileerrors = scan_historyfile(fd, snapshot, snapshot, 
 				      l, sizeof(l), starttime, &duration, colstr);
 	
@@ -512,7 +518,8 @@ int history_color(FILE *fd, time_t snapshot, time_t *starttime, char **histlogna
 		color = -2;
 	}
 
-	*histlogname = strdup(timename(l));
+	p = timename(l);
+	if (p) *histlogname = strdup(p);
 
 	return color;
 }
