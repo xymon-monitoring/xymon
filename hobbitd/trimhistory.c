@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: trimhistory.c,v 1.8 2005-05-07 09:24:20 henrik Exp $";
+static char rcsid[] = "$Id: trimhistory.c,v 1.9 2005-12-07 10:34:09 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -57,11 +57,18 @@ int validstatus(char *hname, char *tname)
 		}
 
 		if (debug) {
+			char fname[PATH_MAX];
 			FILE *fd;
 
-			fd = fopen("/tmp/board.dbg", "w");
-			fwrite(board, strlen(board), 1, fd);
-			fclose(fd);
+			sprintf(fname, "%s/board.dbg", xgetenv("BBTMP"));
+			fd = fopen(fname, "w");
+			if (fd) {
+				fwrite(board, strlen(board), 1, fd);
+				fclose(fd);
+			}
+			else {
+				errprintf("Cannot open debug file %s: %s\n", fname, strerror(errno));
+			}
 		}
 	}
 
