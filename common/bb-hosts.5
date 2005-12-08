@@ -1145,6 +1145,49 @@ If you have certain tags that you want to apply to all hosts, you can
 define a host name ".default." and put the tags on that host. Note that
 per-host definitions will override the default ones.
 
+.SH SENDING SUMMARIES TO REMOTE HOBBIT SERVERS
+.IP "summary ROW.COLUMN IP URL"
+If you have multiple Hobbit servers, the "summary" directive lets you 
+form a hierarchy of servers by sending the overall status of this server
+to a remote Hobbit server, which then displays this in a special summary
+section. E.g. if your offices are spread over three locations, you can 
+have a Hobbit server at each office. These branch-office Hobbits have
+a "summary" definition in their bb-hosts file that makes them report
+the overall status of their branch Hobbit to the central Hobbit server
+you maintain at the corporate headquarters.
+
+Multiple "summary" definitions are allowed.
+
+The ROW.COLUMN setting defines how this summary is presented on the
+server that receives the summary. The ROW text will be used as the
+heading for a summary line, and the COLUMN defines the name of the
+column where this summary is shown - like the hostname and testname
+used in the normal displays. The IP is the IP-address of the \fBremote\fR 
+(upstream) Hobbit server, where this summary is sent). The URL is the
+URL of your \fBlocal\fR Hobbit server.
+
+The URL need not be that of your Hobbit server's main page - it could
+be the URL of a subpage on the local Hobbit server. Hobbit will report
+the summary using the color of the page found at the URL you specify.
+E.g. on your corporate Hobbit server you want a summary from the
+Las Vegas office - but you would like to know both what the overall 
+status is, and what is the status of the servers on the critical
+Sales department back-office servers in Las Vegas. So you configure
+the Las Vegas Hobbit server to send \fBtwo\fR summaries:
+.sp
+    summary Vegas.All 10.0.1.1 http://vegas.foo.com/hobbit/
+.br
+    summary Vegas.Sales 10.0.1.1 http://vegas.foo.com/hobbit/sales/
+.sp
+
+This gives you one summary line for Baltimore, with two columns: An
+"All" column showing the overall status, and a "Sales" column showing
+the status of the "sales" page on the Baltimore Hobbit server.
+
+Note: Pages defined using alternate pageset definitions cannot be used,
+the URL must point to a webpage from the default set of Hobbit webpages.
+
+
 .SH FILES
 .BR ~hobbit/server/etc/bb-hosts
 
