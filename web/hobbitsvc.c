@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.52 2005-11-18 12:58:10 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.53 2005-12-29 16:28:39 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -289,7 +289,7 @@ int do_request(void)
 			xfree(svccomma); xfree(clientsvcscomma);
 		}
 
-		acklist = strdup(items[14]);
+		acklist = (items[14] ? strdup(items[14]) : NULL);
 	}
 	else if (source == SRC_HISTLOGS) {
 		char logfn[PATH_MAX];
