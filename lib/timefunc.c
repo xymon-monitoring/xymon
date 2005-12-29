@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.24 2005-11-08 16:42:07 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.25 2005-12-29 16:21:04 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -59,64 +59,32 @@ void init_timestamp(void)
 }
 
 
-char *weekday_text(char *dayspec)
-{
-	static char *result = NULL;
-	static char *dayname[7] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
-	char *p;
-
-	if (result == NULL) result = (char *)malloc(80);
-
-	if (strcmp(dayspec, "*") == 0) {
-		strcpy(result, "All days");
-		return result;
-	}
-
-	result[0] = '\0';
-	for (p=dayspec; (*p); p++) {
-		switch (*p) {
-			case '0': case '1': case '2':
-			case '3': case '4': case '5':
-			case '6':
-				strcat(result, dayname[(*p)-'0']);
-				break;
-			case '-':
-				strcat(result, "-");
-				break;
-			case ' ':
-			case ',':
-				strcat(result, ",");
-				break;
-		}
-	}
-	return result;
-}
-
-
-char *time_text(char *timespec)
-{
-	static char *result = NULL;
-
-	if (result == NULL) result = (char *)malloc(80);
-
-	if (strcmp(timespec, "*") == 0) {
-		strcpy(result, "0000-2359");
-	}
-	else {
-		strcpy(result, timespec);
-	}
-
-	return result;
-}
-
-
 char *timespec_text(char *spec)
 {
+	static char *daynames[7] = { NULL, };
+	static char *wkdays = NULL;
 	static char *result = NULL;
-	char l[1024];
 	char *sCopy;
 	char *sItem;
 	int reslen = 0;
+
+	if (!daynames[0]) {
+		/* Use strftime to get the locale-specific weekday names */
+		time_t now;
+		int i;
+
+		now = time(NULL);
+		for (i=0; (i<7); i++) {
+			char dtext[10];
+			struct tm *tm = localtime(&now);
+			strftime(dtext, sizeof(dtext), "%a", tm);
+			daynames[tm->tm_wday] = strdup(dtext);
+			now -= 86400;
+		}
+
+		wkdays = (char *)malloc(strlen(daynames[1]) + strlen(daynames[5]) + 2);
+		sprintf(wkdays, "%s-%s", daynames[1], daynames[5]);
+	}
 
 	if (result) { xfree(result); result = NULL; }
 
@@ -124,31 +92,29 @@ char *timespec_text(char *spec)
 	sCopy[strcspn(sCopy, " \t\r\n")] = '\0';
 	sItem = strtok(sCopy, ",");
 	while (sItem) {
-		*l = '\0';
+		char *oneday, *dtext;
+		int daysdone = 0, firstday = 1;
+		oneday = sItem;
 
-		switch (*sItem) {
-			case '*': snprintf(l, sizeof(l), "All days%s", (sItem+1));
-				  break;
-			case 'W': snprintf(l, sizeof(l), "Weekdays%s", (sItem+1));
-				  break;
-			case '0': snprintf(l, sizeof(l), "Sunday%s", (sItem+1));
-				  break;
-			case '1': snprintf(l, sizeof(l), "Monday%s", (sItem+1));
-				  break;
-			case '2': snprintf(l, sizeof(l), "Tuesday%s", (sItem+1));
-				  break;
-			case '3': snprintf(l, sizeof(l), "Wednesday%s", (sItem+1));
-				  break;
-			case '4': snprintf(l, sizeof(l), "Thursday%s", (sItem+1));
-				  break;
-			case '5': snprintf(l, sizeof(l), "Friday%s", (sItem+1));
-				  break;
-			case '6': snprintf(l, sizeof(l), "Saturday%s", (sItem+1));
-				  break;
-			default:
-				  break;
+		while (!daysdone) {
+			switch (*oneday) {
+			  case '*': dtext = "All days"; break;
+			  case 'W': dtext = wkdays; break;
+			  case '0': dtext = daynames[0]; break;
+			  case '1': dtext = daynames[1]; break;
+			  case '2': dtext = daynames[2]; break;
+			  case '3': dtext = daynames[3]; break;
+			  case '4': dtext = daynames[4]; break;
+			  case '5': dtext = daynames[5]; break;
+			  case '6': dtext = daynames[6]; break;
+			  default : dtext = oneday; daysdone = firstday = 1; break;
+			}
+
+			if (!firstday) addtobuffer(&result, &reslen, "/");
+			addtobuffer(&result, &reslen, dtext);
+			oneday++;
+			firstday = 0;
 		}
-		addtobuffer(&result, &reslen, l);
 
 		sItem = strtok(NULL, ",");
 		if (sItem) addtobuffer(&result, &reslen, ", ");
