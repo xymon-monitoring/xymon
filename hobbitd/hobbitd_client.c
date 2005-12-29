@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.41 2005-11-10 21:19:56 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.42 2005-12-29 23:27:27 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -271,7 +271,6 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 	int dchecks = 0;
 	int capacol = -1;
 	int mntcol  = -1;
-	int line1 = 1;
 	char *p, *bol, *nl;
 	char msgline[4096];
 	char *monmsg = NULL;

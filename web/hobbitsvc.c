@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.53 2005-12-29 16:28:39 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.54 2005-12-29 23:27:27 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -130,7 +130,7 @@ static int parse_query(void)
 	}
 
 	if (outform == FRM_STATUS) {
-		char *p, *endp, *req;
+		char *p, *req;
 
 		req = xgetenv("REQUEST_URI");
 		clienturi = (char *)malloc(strlen(req) + 10 + strlen(hostname));

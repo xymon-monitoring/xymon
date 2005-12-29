@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.11 2005-10-25 08:25:18 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.12 2005-12-29 23:27:27 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -568,8 +568,6 @@ static int clear_counts(namelist_t *hinfo, ruletype_t ruletype, mon_proc_t **hea
 static void add_count(char *pname, mon_proc_t *head)
 {
 	mon_proc_t *pwalk;
-	int ovector[10];
-	int result;
 
 	if (!pname) return;
 

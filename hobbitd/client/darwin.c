@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char darwin_rcsid[] = "$Id: darwin.c,v 1.2 2005-11-10 21:19:56 henrik Exp $";
+static char darwin_rcsid[] = "$Id: darwin.c,v 1.3 2005-12-29 23:27:27 henrik Exp $";
 
 void handle_darwin_client(char *hostname, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -25,7 +25,6 @@ void handle_darwin_client(char *hostname, namelist_t *hinfo, char *sender, time_
 	char *netstatstr;
 	char *ifstatstr;
 
-	char *p;
 	char fromline[1024];
 
 	sprintf(fromline, "\nStatus message received from %s\n", sender);

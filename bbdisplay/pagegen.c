@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.154 2005-11-09 12:45:52 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.155 2005-12-29 23:27:27 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -329,8 +329,6 @@ void do_hosts(host_t *head, char *onlycols, char *exceptcols, FILE *output, FILE
 	int	maxbanksize = 0;
 	int	anyplainhosts = 0;
 	int	rowcount = 0;
-	char	*hostlinkurl;
-	namelist_t *hinfo;
 
 	if (head == NULL)
 		return;
