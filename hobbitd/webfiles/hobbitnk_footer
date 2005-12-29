@@ -4,6 +4,7 @@
        <TH>Priority</TH>
        <TH>Color</TH>
        <TH>Age</TH>
+       <TH>Acked</TH>
        <TH>&nbsp;</TH>
     </TR>
     <TR>
@@ -31,6 +32,11 @@
 	    <OPTION VALUE="1440"   &SELECT_MAXAGE_1440>Within last 24 hours
 	    <OPTION VALUE="525600" &SELECT_MAXAGE_525600>Show all
 	  </SELECT>
+       </TD>
+       <TD ALIGN=CENTER>
+          <SELECT NAME="WANTACKED">
+	    <OPTION VALUE="yes"    &SELECT_WANTACKED_YES>Yes
+	    <OPTION VALUE="no"     &SELECT_WANTACKED_NO>No
        </TD>
        <TD ALIGN=CENTER>
          <INPUT TYPE="SUBMIT" NAME="Submit" VALUE="Apply" ALT="Apply filter">
