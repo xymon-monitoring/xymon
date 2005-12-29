@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.18 2005-10-05 20:15:14 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.19 2005-12-29 16:19:20 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -61,11 +61,6 @@ static int statuscolor(testedhost_t *h, long status)
 	  default:
 		result = COL_YELLOW;	/* Unknown status */
 		break;
-	}
-
-	/* Drop failures if not inside SLA window */
-	if ((result >= COL_YELLOW) && (!h->okexpected)) {
-		result = COL_BLUE;
 	}
 
 	return result;
@@ -394,9 +389,6 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 				got_data = 0;
 				strcpy(cause, "Failed to get webpage");
 			}
-
-			/* If not inside SLA and non-green, report as BLUE */
-			if (!t->host->okexpected && (color != COL_GREEN)) color = COL_BLUE;
 
 			if (nopage && (color == COL_RED)) color = COL_YELLOW;
 		}
