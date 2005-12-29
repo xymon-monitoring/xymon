@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.31 2005-11-09 09:11:52 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.32 2005-12-29 16:22:13 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -210,12 +210,6 @@ int main(int argc, char *argv[])
 			if (wantedtags && (*wantedtags != '\0') && extras) {
 				if (bbh_item(hwalk, BBH_FLAG_DIALUP)) addtobuffer(&wantedtags, &wantedtagsz, " dialup");
 				if (bbh_item(hwalk, BBH_FLAG_TESTIP)) addtobuffer(&wantedtags, &wantedtagsz, " testip");
-				if ((item = bbh_item(hwalk, BBH_DOWNTIME)) != NULL) {
-					if (within_sla(item, 0))
-						addtobuffer(&wantedtags, &wantedtagsz, " OUTSIDESLA");
-					else
-						addtobuffer(&wantedtags, &wantedtagsz, " INSIDESLA");
-				}
 			}
 
 			if (wantedtags) {
