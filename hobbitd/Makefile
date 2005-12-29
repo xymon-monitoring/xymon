@@ -1,5 +1,5 @@
-PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-mailack trimhistory hobbitreports.sh moverrd.sh hobbit-nkview.cgi
-CGISCRIPTS = hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh hobbit-confreport.sh hobbit-nkview.sh
+PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-mailack trimhistory hobbitreports.sh moverrd.sh hobbit-nkview.cgi hobbit-ackinfo.cgi
+CGISCRIPTS = hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh hobbit-confreport.sh hobbit-nkview.sh hobbit-ackinfo.sh
 SECCGISCRIPTS = bb-ack.sh hobbit-enadis.sh
 CLIENTPROGRAMS = ../client/hobbitd_client
 
@@ -19,6 +19,7 @@ HOBBITGRAPHOBJS= hobbitgraph.o
 HOBBITSVCOBJS = hobbitsvc.o hobbitsvc-info.o hobbitsvc-trends.o do_alert.o
 HOBBITENADISOBJS= hobbit-enadis.o
 NKVIEWOBJS    = hobbit-nkview.o
+ACKINFOOBJS   = hobbit-ackinfo.o
 CONFREPOBJS   = hobbit-confreport.o do_alert.o
 MAILACKOBJS   = hobbit-mailack.o
 TRIMHISTOBJS  = trimhistory.o
@@ -96,6 +97,9 @@ hobbit-nkview.cgi: $(NKVIEWOBJS) $(LIBOBJS)
 hobbit-nkview.o: hobbit-nkview.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ hobbit-nkview.c
 
+hobbit-ackinfo.cgi: $(ACKINFOOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(ACKINFOOBJS) $(LIBOBJS) $(NETLIBS)
+
 trimhistory: $(TRIMHISTOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(TRIMHISTOBJS) $(LIBOBJS) $(NETLIBS)
 
@@ -120,6 +124,10 @@ bb-hostsvc.sh: hobbitsvc.sh.DIST
 	chmod 755 $@
 
 hobbit-nkview.sh: hobbit-nkview.sh.DIST
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
+	chmod 755 $@
+
+hobbit-ackinfo.sh: hobbit-ackinfo.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
