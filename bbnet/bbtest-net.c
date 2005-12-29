@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.222 2005-09-29 15:33:26 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.223 2005-12-29 16:18:42 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -113,7 +113,6 @@ void dump_hostlist(void)
 		if (walk->nosslcert) printf(" nosslcert");
 		if (walk->dodns) printf(" dodns");
 		if (walk->dnserror) printf(" dnserror");
-		if (walk->okexpected) printf(" okexpected");
 		if (walk->repeattest) printf(" repeattest");
 		if (walk->noconn) printf(" noconn");
 		if (walk->noping) printf(" noping");
@@ -308,7 +307,7 @@ void load_services(void)
 }
 
 
-testedhost_t *init_testedhost(char *hostname, int okexpected)
+testedhost_t *init_testedhost(char *hostname)
 {
 	testedhost_t *newhost;
 
@@ -323,7 +322,6 @@ testedhost_t *init_testedhost(char *hostname, int okexpected)
 	newhost->nosslcert = 0;
 	newhost->dnserror = 0;
 	newhost->dodns = 0;
-	newhost->okexpected = okexpected;
 	newhost->repeattest = 0;
 
 	newhost->noconn = 0;
@@ -425,7 +423,7 @@ void load_tests(void)
 	}
 
 	for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
-		int anytests = 0, okexpected = 1;
+		int anytests = 0;
 		int ping_dialuptest = 0, ping_reversetest = 0;
 		char *testspec;
 
@@ -460,9 +458,7 @@ void load_tests(void)
 		}
 
 
-		p = bbh_item(hwalk, BBH_DOWNTIME);
-		if (p) okexpected = (!within_sla(p, 0));
-		h = init_testedhost(hwalk->bbhostname, okexpected);
+		h = init_testedhost(hwalk->bbhostname);
 
 		p = bbh_custom_item(hwalk, "badconn:");
 		if (p) sscanf(p+strlen("badconn:"), "%d:%d:%d", &h->badconn[0], &h->badconn[1], &h->badconn[2]);
@@ -1504,12 +1500,6 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 	}
 
 
-	/* If non-green and it was not expected to be up, report as BLUE */
-	if ((color != COL_GREEN) && !test->host->okexpected) {
-		strcat(cause, "\nHost or service was not expected to be up");
-		color = COL_BLUE;
-	}
-
 	/* Dialup hosts and dialup tests report red as clear */
 	if ( ((color == COL_RED) || (color == COL_YELLOW)) && (test->host->dialup || test->dialup) && !test->reverse) { 
 		strcat(cause, "\nDialup host or service");
@@ -1570,7 +1560,6 @@ void send_results(service_t *service, int failgoesclear)
 		flags[i++] = (t->alwaystrue ? 'A' : 'a');
 		flags[i++] = (t->silenttest ? 'S' : 's');
 		flags[i++] = (t->host->testip ? 'T' : 't');
-		flags[i++] = (t->host->okexpected ? 'I' : 'i');
 		flags[i++] = (t->host->dodns ? 'L' : 'l');
 		flags[i++] = (t->host->dnserror ? 'E' : 'e');
 		flags[i++] = '\0';
@@ -1663,12 +1652,6 @@ void send_results(service_t *service, int failgoesclear)
 					  strcat(msgtext, "Dialup host/service, or test depends on another failed test\n");
 					  strcat(msgtext, causetext);
 				  }
-				  break;
-
-			  case COL_BLUE:
-				  strcat(msgline, ": Temporarily disabled");
-				  strcat(msgtext, "OK\n");
-				  strcat(msgtext, "Host currently not monitored due to DOWNTIME setting.\n");
 				  break;
 			}
 			strcat(msgtext, "\n");

@@ -37,7 +37,7 @@
  *                                   banner                      nosslcert             |    |
  *                                   certinfo                    dodns                 |    |
  *                                   duration                    dnserror              |    |
- *                                   badtest                     okexpected            |    |
+ *                                   badtest                     //////////            |    |
  *                                   downcount                   repeattest            |    |
  *                                   downstart                   noconn                |    |
  *                                   privdata ----+              noping                |    |
@@ -88,7 +88,6 @@ typedef struct testedhost_t {
 	int nosslcert;		/* nosslcert flag */
 	int dodns;              /* set while loading tests if we need to do a DNS lookup */
 	int dnserror;		/* set internally if we cannot find the host's IP */
-	int okexpected;		/* set internally if outside DOWNTIME period. If not, failed tests are blue */
 	int repeattest;         /* Set if this host goes on the quick poll list */
 	char *hosttype;         /* For the "Intermediate HOSTTYPE is down" message */
 
