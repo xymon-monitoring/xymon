@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: trimhistory.c,v 1.9 2005-12-07 10:34:09 henrik Exp $";
+static char rcsid[] = "$Id: trimhistory.c,v 1.10 2005-12-29 16:33:11 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -410,7 +410,7 @@ int main(int argc, char *argv[])
 	while ((hent = readdir(histdir)) != NULL) {
 		char *hostname = NULL;
 		char hostip[20];
-		int ghosthandling = 1, maybedown;
+		int ghosthandling = 1;
 
 		if (stat(hent->d_name, &st) == -1) {
 			errprintf("Odd entry %s - cannot stat: %s\n", hent->d_name, strerror(errno));
@@ -425,7 +425,7 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		hostname = knownhost(hent->d_name, hostip, ghosthandling, &maybedown);
+		hostname = knownhost(hent->d_name, hostip, ghosthandling);
 		if (hostname) {
 			/* Host history file. */
 			add_to_filelist(hent->d_name, F_HOSTHISTORY);
@@ -443,7 +443,7 @@ int main(int argc, char *argv[])
 
 			*delim = '\0'; hname = strdup(hent->d_name); tname = delim+1; *delim = '.';
 			p = strchr(hname, ','); while (p) { *p = '.'; p = strchr(p, ','); }
-			hostname = knownhost(hname, hostip, ghosthandling, &maybedown);
+			hostname = knownhost(hname, hostip, ghosthandling);
 			if (!hostname) {
 				errprintf("Orphaned service-history file %s - no host\n", hent->d_name);
 				if (dropfiles) add_to_filelist(hent->d_name, F_DROPIT);
