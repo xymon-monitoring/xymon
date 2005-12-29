@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.39 2005-11-15 14:02:12 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.40 2005-12-29 16:33:54 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -124,7 +124,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		       int color, char *sender, char *flags, 
 		       time_t logtime, char *timesincechange, 
 		       char *firstline, char *restofmsg, 
-		       time_t acktime, char *ackmsg, 
+		       time_t acktime, char *ackmsg, char *acklist,
 		       time_t disabletime, char *dismsg,
 		       int is_history, int wantserviceid, int htmlfmt, int hobbitd,
 		       char *multigraphs,
@@ -173,7 +173,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 		fprintf(output, "<tr>");
 		fprintf(output, "<td colspan=3 align=center>\n");
-		fprintf(output, "  <form method=\"POST\" action=\"%s/hobbit-nkack.sh\">\n", 
+		fprintf(output, "  <form method=\"POST\" action=\"%s/hobbit-ackinfo.sh\">\n", 
 			xgetenv("CGIBINURL"));
 		fprintf(output, "    <INPUT TYPE=\"TEXT\" NAME=\"NOTE\" MAXLENGTH=60 SIZE=60 tabindex=\"0\">\n");
 		fprintf(output, "    <INPUT TYPE=\"HIDDEN\" NAME=\"HOST\" VALUE=\"%s\">\n", hostname);
@@ -182,6 +182,56 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		fprintf(output, "  </form>\n");
 		fprintf(output, "</td>");
 		fprintf(output, "</tr>\n");
+
+		fprintf(output, "</table>\n");
+	}
+
+	if (acklist) {
+		/* received:validuntil:level:ackedby:msg */
+		time_t received, validuntil;
+		int level; 
+		char *ackedby, *msg;
+		char *bol, *eol, *tok;
+		char receivedstr[200];
+		char untilstr[200];
+
+		fprintf(output, "<table border=0 summary=\"Ack info\" align=center>\n");
+		fprintf(output, "<tr>");
+		fprintf(output, "<th align=center colspan=4><font %s>Acknowledgments</font></th>", ackfont);
+		fprintf(output, "</tr>\n");
+		fprintf(output, "<tr>");
+		fprintf(output, "<th align=left><font %s>Level</font></th>", ackfont);
+		fprintf(output, "<th align=left><font %s>From</font></th>", ackfont);
+		fprintf(output, "<th align=left><font %s>Validity</font></th>", ackfont);
+		fprintf(output, "<th align=left><font %s>Message</font></th>", ackfont);
+		fprintf(output, "</tr>\n");
+
+		nldecode(acklist);
+
+		bol = acklist;
+		do {
+			eol = strchr(bol, '\n'); if (eol) *eol = '\0';
+
+			tok = strtok(bol, ":");
+			if (tok) { received = atoi(tok); tok = strtok(NULL, ":"); } else received = 0;
+			if (tok) { validuntil = atoi(tok); tok = strtok(NULL, ":"); } else validuntil = 0;
+			if (tok) { level = atoi(tok); tok = strtok(NULL, ":"); } else level = -1;
+			if (tok) { ackedby = tok; tok = strtok(NULL, "\n"); } else ackedby = NULL;
+			if (tok) msg = tok; else msg = NULL;
+
+			if (received && validuntil && (level >= 0) && ackedby && msg) {
+				strftime(receivedstr, sizeof(receivedstr)-1, "%Y-%m-%d %H:%M", localtime(&received));
+				strftime(untilstr, sizeof(untilstr)-1, "%Y-%m-%d %H:%M", localtime(&validuntil));
+				fprintf(output, "<tr>");
+				fprintf(output, "<td align=middle><font %s>%d</font></td>", ackfont, level);
+				fprintf(output, "<td><font %s>%s</font></td>", ackfont, ackedby);
+				fprintf(output, "<td><font %s>%s&nbsp;-&nbsp;%s</font></td>", ackfont, receivedstr, untilstr);
+				fprintf(output, "<td><font %s>%s</font></td>", ackfont, msg);
+				fprintf(output, "</tr>\n");
+			}
+
+			if (eol) { *eol = '\n'; bol = eol+1; } else bol = NULL;
+		} while (bol);
 
 		fprintf(output, "</table>\n");
 	}
@@ -213,6 +263,11 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	else {
 		char *txt = skipword(firstline);
 
+		if (dismsg) {
+			fprintf(output, "<TR><TD><H3>Planned downtime: %s</H3></TD></TR>\n", dismsg);
+			fprintf(output, "<TR><TD><BR><HR>Current status message follows:<HR><BR></TD></TR>\n");
+		}
+
 		fprintf(output, "<TR><TD>");
 		if (strlen(txt)) {
 			fprintf(output, "<H3>");
@@ -233,7 +288,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	fprintf(output, "<tr><td align=\"center\"><font %s>", colfont);
 	if (strlen(timesincechange)) fprintf(output, "Status unchanged in %s<br>\n", timesincechange);
 	if (sender) fprintf(output, "Status message received from %s<br>\n", sender);
-	if (linktoclient) fprintf(output, "<a href=\"%s\">Client data</a> available\n", linktoclient);
+	if (linktoclient) fprintf(output, "<a href=\"%s\">Client data</a> available<br>\n", linktoclient);
 	if (ackmsg) {
 		char *ackedby;
 		char ackuntil[200];
@@ -257,7 +312,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 		MEMUNDEFINE(ackuntil);
 	}
-		
+
 	fprintf(output, "</font></td></tr>\n");
 	fprintf(output, "</table>\n");
 
