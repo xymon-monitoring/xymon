@@ -93,7 +93,7 @@ typedef struct namelist_t {
 } namelist_t;
 
 extern namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn);
-extern char *knownhost(char *filename, char *hostip, int ghosthandling, int *maybedown);
+extern char *knownhost(char *filename, char *hostip, int ghosthandling);
 extern int knownloghost(char *logdir);
 extern namelist_t *hostinfo(char *hostname);
 extern namelist_t *localhostinfo(char *hostname);
@@ -102,6 +102,8 @@ extern char *bbh_custom_item(namelist_t *host, char *key);
 extern char *bbh_item_byname(namelist_t *host, char *item);
 extern char *bbh_item_walk(namelist_t *host);
 extern int bbh_item_idx(char *value);
+extern namelist_t *first_host(void);
+extern char *check_downtime(char *hostname, char *testname);
 
 #endif
 
