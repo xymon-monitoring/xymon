@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.45 2005-12-29 16:25:49 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.46 2005-12-29 17:30:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -477,53 +477,6 @@ namelist_t *first_host(void)
 	return namehead;
 }
 
-char *check_downtime(char *hostname, char *testname)
-{
-	namelist_t *hinfo = hostinfo(hostname);
-	char *dtag;
-
-	if (hinfo == NULL) return NULL;
-
-	dtag = bbh_item(hinfo, BBH_DOWNTIME);
-	if (dtag) {
-		static char *downtag = NULL;
-		static unsigned char *cause = NULL;
-		static int causelen = 0;
-		char *s1, *s2, *s3, *s4, *s5, *p;
-		char timetxt[30];
-
-		if (downtag) xfree(downtag);
-		if (cause) xfree(cause);
-
-		p = downtag = strdup(dtag);
-		do {
-			/* Its either DAYS:START:END or SERVICE:DAYS:START:END:CAUSE */
-
-			s1 = p; p += strcspn(p, ":"); if (*p == ':') { *p = '\0'; p++; }
-			s2 = p; p += strcspn(p, ":"); if (*p == ':') { *p = '\0'; p++; }
-			s3 = p; p += strcspn(p, ":,"); 
-			if ((*p == ',') || (*p == '\0')) { 
-				if (*p == ',') { *p = '\0'; p++; }
-				snprintf(timetxt, sizeof(timetxt), "%s:%s:%s", s1, s2, s3);
-				cause = strdup("Planned downtime");
-				s1 = "*";
-			}
-			else if (*p == ':') {
-				*p = '\0'; p++; 
-				s4 = p; p += strcspn(p, ":"); if (*p == ':') { *p = '\0'; p++; }
-				s5 = p; p += strcspn(p, ","); if (*p == ',') { *p = '\0'; p++; }
-				snprintf(timetxt, sizeof(timetxt), "%s:%s:%s", s2, s3, s4);
-				getescapestring(s5, &cause, &causelen);
-			}
-
-			if ((strcmp(s1, "*") == 0) || (strcmp(s1, testname) == 0)) {
-				if (within_sla(timetxt, 0)) return cause;
-			}
-		} while (*p);
-	}
-
-	return NULL;
-}
 
 #ifdef STANDALONE
 

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.25 2005-12-29 16:21:04 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.26 2005-12-29 17:30:36 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -246,6 +246,61 @@ int within_sla(char *timespec, int defresult)
 	return found;
 }
 
+char *check_downtime(char *hostname, char *testname)
+{
+	namelist_t *hinfo = hostinfo(hostname);
+	char *dtag;
+
+	if (hinfo == NULL) return NULL;
+
+	dtag = bbh_item(hinfo, BBH_DOWNTIME);
+	if (dtag && *dtag) {
+		static char *downtag = NULL;
+		static unsigned char *cause = NULL;
+		static int causelen = 0;
+		char *s1, *s2, *s3, *s4, *s5, *p;
+		char timetxt[30];
+
+		if (downtag) xfree(downtag);
+		if (cause) xfree(cause);
+
+		p = downtag = strdup(dtag);
+		do {
+			/* Its either DAYS:START:END or SERVICE:DAYS:START:END:CAUSE */
+
+			s1 = p; p += strcspn(p, ":"); if (*p != '\0') { *p = '\0'; p++; }
+			s2 = p; p += strcspn(p, ":"); if (*p != '\0') { *p = '\0'; p++; }
+			s3 = p; p += strcspn(p, ":;,"); 
+			if ((*p == ',') || (*p == ';') || (*p == '\0')) { 
+				if (*p != '\0') { *p = '\0'; p++; }
+				snprintf(timetxt, sizeof(timetxt), "%s:%s:%s", s1, s2, s3);
+				cause = strdup("Planned downtime");
+				s1 = "*";
+			}
+			else if (*p == ':') {
+				*p = '\0'; p++; 
+				s4 = p; p += strcspn(p, ":"); if (*p != '\0') { *p = '\0'; p++; }
+				s5 = p; p += strcspn(p, ",;"); if (*p != '\0') { *p = '\0'; p++; }
+				snprintf(timetxt, sizeof(timetxt), "%s:%s:%s", s2, s3, s4);
+				getescapestring(s5, &cause, &causelen);
+			}
+
+			if (within_sla(timetxt, 0)) {
+				char *onesvc, *buf;
+
+				if (strcmp(s1, "*") == 0) return cause;
+
+				onesvc = strtok_r(s1, ",", &buf);
+				while (onesvc) {
+					if (strcmp(onesvc, testname) == 0) return cause;
+					onesvc = strtok_r(NULL, ",", &buf);
+				}
+			}
+		} while (*p);
+	}
+
+	return NULL;
+}
 
 int periodcoversnow(char *tag)
 {

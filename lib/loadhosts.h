@@ -103,7 +103,6 @@ extern char *bbh_item_byname(namelist_t *host, char *item);
 extern char *bbh_item_walk(namelist_t *host);
 extern int bbh_item_idx(char *value);
 extern namelist_t *first_host(void);
-extern char *check_downtime(char *hostname, char *testname);
 
 #endif
 
