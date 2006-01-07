@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: stackio.c,v 1.9 2005-07-16 10:11:46 henrik Exp $";
+static char rcsid[] = "$Id: stackio.c,v 1.10 2006-01-07 13:01:06 henrik Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -42,7 +42,7 @@ static char *stackfd_mode = NULL;
 /*
  * initfgets() and unlimfgets() implements a fgets() style
  * input routine that can handle arbitrarily long input lines.
- * Buffer space for the input is dynamically allocate and
+ * Buffer space for the input is dynamically allocated and
  * expanded, until the input hits a newline character.
  * Simultaneously, lines ending with a '\' character are
  * merged into one line, allowing for transparent handling
@@ -141,8 +141,16 @@ char *unlimfgets(char **buffer, int *bufsz, FILE *fd)
 			char *inpos = fg->inbuf;
 			size_t insize = sizeof(fg->inbuf);
 
-			/* If the last byte we read was a continuation char, we must do special stuff. */
-			if (*buffer) {
+			/* If the last byte we read was a continuation char, we must do special stuff.
+			 *
+			 * Mike Romaniw discovered that if we hit an input with a newline exactly at
+			 * the point of a buffer refill, then strlen(*buffer) is 0, and contchar then
+			 * points before the start of the buffer. Bad. But this can only happen when
+			 * the previous char WAS a newline, and hence it is not a continuation line.
+			 * So the simple fix is to only do the cont-char stuff if **buffer is not NUL.
+			 * Hence the test for both *buffer and **buffer.
+			 */
+			if (*buffer && **buffer) {
 				int n = strlen(*buffer);
 				char *contchar = *buffer + n - 1;
 				while ((contchar > *buffer) && isspace((int)*contchar) && (*contchar != '\\')) contchar--;
