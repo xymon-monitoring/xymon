@@ -20,9 +20,8 @@ Conflicts: hobbit-client
 
 %description
 Hobbit is a system for monitoring your network servers and
-applications. It is heavily inspired by the Big Brother
-tool, but is a complete re-implementation with a lot of added
-functionality and performance improvements.
+applications. This package contains the server side of the
+Hobbit package.
 
 %package client
 Summary: Hobbit client reporting data to the Hobbit server
