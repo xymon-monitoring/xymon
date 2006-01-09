@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-sunos.sh,v 1.5 2005-08-01 05:58:29 henrik Exp $
+# $Id: hobbitclient-sunos.sh,v 1.6 2006-01-09 11:28:58 henrik Exp $
 
 echo "[date]"
 date
@@ -40,6 +40,8 @@ echo "[swap]"
 /usr/sbin/swap -s
 echo "[netstat]"
 netstat -s
+echo "[ifstat]"
+/usr/bin/kstat -p -s '[or]bytes64'
 echo "[ps]"
 ps -ef
 echo "[top]"

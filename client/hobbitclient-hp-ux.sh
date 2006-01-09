@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-hp-ux.sh,v 1.8 2005-10-09 20:11:25 henrik Exp $
+# $Id: hobbitclient-hp-ux.sh,v 1.9 2006-01-09 11:29:53 henrik Exp $
 
 echo "[date]"
 date
@@ -32,6 +32,8 @@ echo "[swapinfo]"
 /usr/sbin/swapinfo -tm
 echo "[netstat]"
 netstat -s
+echo "[ifstat]"
+netstat -v
 echo "[ps]"
 ps -ef
 echo "[top]"

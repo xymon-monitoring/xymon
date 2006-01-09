@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-aix.sh,v 1.3 2005-10-09 20:11:25 henrik Exp $
+# $Id: hobbitclient-aix.sh,v 1.4 2006-01-09 11:28:58 henrik Exp $
 
 echo "[date]"
 date
@@ -33,6 +33,8 @@ echo "[swap]"
 lsps -s
 echo "[netstat]"
 netstat -s
+echo "[ifstat]"
+netstat -v
 echo "[ps]"
 ps axuww
 echo "[top]"
