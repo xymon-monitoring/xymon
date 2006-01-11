@@ -52,7 +52,7 @@ then
    SDAY=$1; SMON=$2; SYEAR=$3
 elif [ "$REPTYPE" == "weekly" ]
 then
-   REPDIR=$REPTYPE/`date --date="$TODAY -1 day" +"%Y/%V"`
+   REPDIR=$REPTYPE/`date --date="$TODAY -1 week" +"%Y/%V"`
    set `date --date="$TODAY -1 week" +"%d %b %Y"`
    SDAY=$1; SMON=$2; SYEAR=$3
 elif [ "$REPTYPE" == "monthly" ]
