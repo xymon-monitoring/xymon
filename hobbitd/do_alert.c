@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.79 2005-11-06 08:37:29 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.80 2006-01-12 13:33:23 henrik Exp $";
 
 /*
  * The alert API defines three functions that must be implemented:
@@ -1182,9 +1182,29 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 		 * Send a report containing a brief alert
 		 * and any lines that begin with a "&COLOR"
 		 */
-		sprintf(info, "%s:%s %s [%d]", 
-			alert->hostname->name, alert->testname->name, 
-			colorname(alert->color), alert->cookie);
+		switch (alert->state) {
+		  case A_PAGING:
+		  case A_ACKED:
+			sprintf(info, "%s:%s %s [%d]", 
+				alert->hostname->name, alert->testname->name, 
+				colorname(alert->color), alert->cookie);
+			break;
+
+		  case A_RECOVERED:
+			sprintf(info, "%s:%s RECOVERED", 
+				alert->hostname->name, alert->testname->name);
+			break;
+
+		  case A_NOTIFY:
+			sprintf(info, "%s:%s NOTICE", 
+				alert->hostname->name, alert->testname->name);
+			break;
+
+		  case A_NORECIP:
+		  case A_DEAD:
+			break;
+		}
+
 		addtobuffer(&buf, &buflen, info);
 		bom = msg_data(alert->pagemessage);
 		eoln = strchr(bom, '\n');
