@@ -1,5 +1,5 @@
-PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-mailack trimhistory hobbitreports.sh moverrd.sh hobbit-nkview.cgi hobbit-ackinfo.cgi
-CGISCRIPTS = hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh hobbit-confreport.sh hobbit-nkview.sh hobbit-ackinfo.sh
+PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-mailack trimhistory hobbitreports.sh moverrd.sh hobbit-nkview.cgi hobbit-ackinfo.cgi hobbit-statusreport.cgi
+CGISCRIPTS = hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh hobbit-confreport.sh hobbit-nkview.sh hobbit-ackinfo.sh hobbit-certreport.sh
 SECCGISCRIPTS = bb-ack.sh hobbit-enadis.sh
 CLIENTPROGRAMS = ../client/hobbitd_client
 
@@ -21,6 +21,7 @@ HOBBITENADISOBJS= hobbit-enadis.o
 NKVIEWOBJS    = hobbit-nkview.o
 ACKINFOOBJS   = hobbit-ackinfo.o
 CONFREPOBJS   = hobbit-confreport.o do_alert.o
+STATUSREPOBJS = hobbit-statusreport.o
 MAILACKOBJS   = hobbit-mailack.o
 TRIMHISTOBJS  = trimhistory.o
 
@@ -82,6 +83,9 @@ hobbitsvc.cgi: $(HOBBITSVCOBJS) $(LIBOBJS)
 hobbit-enadis.cgi: $(HOBBITENADISOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(HOBBITENADISOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
+hobbit-statusreport.cgi: $(STATUSREPOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(STATUSREPOBJS) $(LIBOBJS) $(NETLIBS)
+
 hobbit-confreport.cgi: $(CONFREPOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(CONFREPOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
@@ -140,6 +144,10 @@ bb-histlog.sh: hobbitsvc-hist.sh.DIST
 	chmod 755 $@
 
 hobbit-confreport.sh: hobbit-confreport.sh.DIST
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
+	chmod 755 $@
+
+hobbit-certreport.sh: hobbit-certreport.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
