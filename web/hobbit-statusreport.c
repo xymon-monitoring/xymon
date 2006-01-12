@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-statusreport.c,v 1.1 2006-01-12 12:41:08 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-statusreport.c,v 1.2 2006-01-12 13:35:06 henrik Exp $";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -24,7 +24,7 @@ static char rcsid[] = "$Id: hobbit-statusreport.c,v 1.1 2006-01-12 12:41:08 henr
 
 int main(int argc, char *argv[])
 {
-
+	char *envarea = NULL;
 	char *server = NULL;
 	char *cookie, *p, *pagefilter = "";
 	char *otherfilter = "";
