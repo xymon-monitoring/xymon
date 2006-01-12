@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.7 2005-11-14 15:41:47 henrik Exp $";
+static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.8 2006-01-12 09:52:10 henrik Exp $";
 
 int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -52,7 +52,19 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		if (name) { 
 			val = l + strspn(l, " \t"); 
 			l = val + strspn(val, "0123456789."); 
-			if( *l ) { *l = '\0'; l++; }
+			if( *l ) { 
+				int iseol = (*l == '\n');
+
+				*l = '\0'; 
+				if (!iseol) {
+					/* If extra data after the value, skip to end of line */
+					l = strchr(l+1, '\n');
+					if (l) l++; 
+				}
+				else {
+					l++;
+				}
+			}
 			else break;
 		}
 
@@ -72,15 +84,18 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				for (inp=name,outidx=0; (*inp && (outidx < 19)); inp++) {
 					if ( ((*inp >= 'A') && (*inp <= 'Z')) ||
 					     ((*inp >= 'a') && (*inp <= 'z')) ||
-					     ((*inp >= '0') && (*inp <= '9')) ||
-					     (*inp == '_')                    ) {
+					     ((*inp >= '0') && (*inp <= '9'))    ) {
 						dsname[outidx++] = *inp;
 					}
 				}
 				dsname[outidx] = '\0';
 				sprintf(dskey, ",%s:", dsname);
 
-				if (dstypes) dstype = strstr(dstypes, dskey);
+				if (dstypes) {
+					dstype = strstr(dstypes, dskey);
+					if (!dstype) { strcpy(dskey, ",*:"); dstype = strstr(dstypes, dskey); }
+				}
+
 				if (dstype) {
 					char *p;
 
