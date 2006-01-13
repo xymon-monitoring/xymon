@@ -23,12 +23,15 @@ typedef struct htnames_t {
 #include "config.h"
 #include "../lib/osdefs.h"
 
-#include "../lib/acklog.h"
+/* Defines CGI URL's */
 #include "../lib/cgiurls.h"
+#include "../lib/links.h"
+
+/* Generates HTML */
+#include "../lib/acklog.h"
 #include "../lib/eventlog.h"
 #include "../lib/headfoot.h"
 #include "../lib/htmllog.h"
-#include "../lib/links.h"
 #include "../lib/reportlog.h"
 
 #include "../lib/availability.h"
