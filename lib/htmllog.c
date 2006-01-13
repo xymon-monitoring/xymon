@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.40 2005-12-29 16:33:54 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.41 2006-01-13 17:34:04 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -159,8 +159,8 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		fprintf(output, "<td align=center>%s</td>", nkprio);
 		fprintf(output, "<td align=center>%s</td>", ((nkttgroup && *nkttgroup) ? nkttgroup : "&nbsp;"));
 		fprintf(output, "<td align=center>");
-		fprintf(output, "<a href=\"%s/bb-hostsvc.sh?HOSTSVC=%s.%s\">Host info</a>", 
-			xgetenv("CGIBINURL"), hostname, xgetenv("INFOCOLUMN"));
+		fprintf(output, "<a href=\"%s\">Host info</a>", 
+			hostsvcurl(hostname, xgetenv("INFOCOLUMN"), ip, displayname));
 		if (hostdoc) fprintf(output, "<br><a href=\"%s\">Host docs</a>", hostdoc);
 		fprintf(output, "</td>");
 		fprintf(output, "</tr>\n");
