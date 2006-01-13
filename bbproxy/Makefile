@@ -1,13 +1,17 @@
-# bbgen - bbproxy Makefile
+# bbproxy Makefile
 
-PROGRAMS = bbproxy
+PROGRAMS = bbproxy bbmessage.cgi
 
 PROXYOBJS = bbproxy.o
+BBCGIOBJS = bbmessage.o
 
 all: $(PROGRAMS)
 
 bbproxy: $(PROXYOBJS)
 	$(CC) $(CFLAGS) -o $@ $(PROXYOBJS) ../lib/libbbgen.a $(NETLIBS)
+
+bbmessage.cgi: $(BBCGIOBJS) ../lib/libbbgen.a
+	$(CC) $(CFLAGS) -o $@ $(BBCGIOBJS) ../lib/libbbgen.a $(NETLIBS)
 
 ################################################
 # Default compilation rules
