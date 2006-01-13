@@ -30,6 +30,7 @@ extern int bbstatuscount;
 extern int bbnocombocount;
 extern int dontsendmessages;
 
+extern void setproxy(char *proxy);
 extern int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fullresponse, int timeout);
 
 extern void combo_start(void);

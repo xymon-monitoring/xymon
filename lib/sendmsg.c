@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.72 2006-01-13 13:36:27 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.73 2006-01-13 13:50:13 henrik Exp $";
 
 #include "config.h"
 
@@ -64,6 +64,12 @@ static int	metabufsz;		/* Bytes allocated for metabuf */
 
 int dontsendmessages = 0;
 
+
+void setproxy(char *proxy)
+{
+	if (proxysetting) xfree(proxysetting);
+	proxysetting = strdup(proxy);
+}
 
 static void setup_transport(char *recipient)
 {
