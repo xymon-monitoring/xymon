@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.159 2006-01-13 13:25:42 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.160 2006-01-13 17:07:27 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -444,8 +444,8 @@ void do_hosts(host_t *head, char *onlycols, char *exceptcols, FILE *output, FILE
 								xgetenv("BBWEB"), h->hostname);
 						}
 						else {
-							fprintf(output, "<A HREF=\"%s/bb-hostsvc.sh?HOSTSVC=dialup.%s\">",
-								xgetenv("CGIBINURL"), commafy(h->hostname));
+							fprintf(output, "<A HREF=\"%s\">", 
+								hostsvcurl("dialup", commafy(h->hostname), NULL, NULL));
 						}
 	
 						sprintf(alttag, "%s:%s", u32toIP(baseip+j), colorname(h->banks[j]));
@@ -472,8 +472,8 @@ void do_hosts(host_t *head, char *onlycols, char *exceptcols, FILE *output, FILE
 				else if (e->histlogname) {
 					/* Snapshot points to historical logfile */
 					htmlalttag = alttag(e->column->name, e->color, e->acked, e->propagate, e->age);
-					fprintf(output, "<A HREF=\"%s/bb-histlog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s\">", 
-						xgetenv("CGIBINURL"), h->hostname, e->column->name, e->histlogname);
+					fprintf(output, "<A HREF=\"%s\">", 
+						histlogurl(h->hostname, e->column->name, 0, e->histlogname));
 
 					fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
 						bbskin, dotgiffilename(e->color, 0, 1),
@@ -503,9 +503,9 @@ void do_hosts(host_t *head, char *onlycols, char *exceptcols, FILE *output, FILE
 						do_rss_item(rssoutput, h, e);
 					}
 					else {
-						fprintf(output, "<A HREF=\"%s/bb-hostsvc.sh?HOSTSVC=%s.%s&amp;IP=%s&amp;DISPLAYNAME=%s\">",
-							xgetenv("CGIBINURL"), commafy(h->hostname), e->column->name,
-							h->ip, (h->displayname ? h->displayname : h->hostname));
+						fprintf(output, "<A HREF=\"%s\">",
+							hostsvcurl(h->hostname, e->column->name,
+								   h->ip, h->displayname));
 						do_rss_item(rssoutput, h, e);
 					}
 
@@ -524,25 +524,13 @@ void do_hosts(host_t *head, char *onlycols, char *exceptcols, FILE *output, FILE
 					}
 					else {
 						if (dynamicreport) {
-							fprintf(output, "<A HREF=\"%s/bb-replog.sh?HOSTSVC=%s.%s&amp;IP=%s",
-								xgetenv("CGIBINURL"), commafy(h->hostname), e->column->name, h->ip);
-							fprintf(output, "&amp;COLOR=%s&amp;PCT=%.2f&amp;ST=%u&amp;END=%u",
-								colorname(e->color), e->repinfo->fullavailability, 
-								(unsigned int)e->repinfo->reportstart, (unsigned int)reportend);
-							fprintf(output, "&amp;RED=%.2f&amp;YEL=%.2f&amp;GRE=%.2f&amp;PUR=%.2f&amp;CLE=%.2f&amp;BLU=%.2f",
-								e->repinfo->fullpct[COL_RED], e->repinfo->fullpct[COL_YELLOW], 
-								e->repinfo->fullpct[COL_GREEN], e->repinfo->fullpct[COL_PURPLE], 
-								e->repinfo->fullpct[COL_CLEAR], e->repinfo->fullpct[COL_BLUE]);
-							fprintf(output, "&amp;STYLE=%s&amp;FSTATE=%s",
-								stylenames[reportstyle], e->repinfo->fstate);
-							fprintf(output, "&amp;REDCNT=%d&amp;YELCNT=%d&amp;GRECNT=%d&amp;PURCNT=%d&amp;CLECNT=%d&amp;BLUCNT=%d",
-								e->repinfo->count[COL_RED], e->repinfo->count[COL_YELLOW], 
-								e->repinfo->count[COL_GREEN], e->repinfo->count[COL_PURPLE], 
-								e->repinfo->count[COL_CLEAR], e->repinfo->count[COL_BLUE]);
-							if (h->reporttime) fprintf(output, "&amp;REPORTTIME=%s", h->reporttime);
-							fprintf(output, "&amp;WARNPCT=%.2f", h->reportwarnlevel);
-							fprintf(output, "&amp;RECENTGIFS=%d", use_recentgifs);
-							fprintf(output, "\">\n");
+							fprintf(output, "<A HREF=\"%s\">",
+								replogurl(h->hostname, e->column->name, 
+									  h->ip, NULL, e->color, 
+									  stylenames[reportstyle], use_recentgifs,
+									  e->repinfo,
+									  h->reporttime, reportend,
+									  h->reportwarnlevel));
 						}
 						else {
 							FILE *htmlrep, *textrep;
