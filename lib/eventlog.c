@@ -1,11 +1,11 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit eventlog generator tool.                                            */
+/* Hobbit monitor library.                                                    */
 /*                                                                            */
 /* This displays the "eventlog" found on the "All non-green status" page.     */
 /* It also implements a CGI tool to show an eventlog for a given period of    */
 /* time, as a reporting function.                                             */
 /*                                                                            */
-/* Copyright (C) 2002-2005 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
 /* Host/test/color/start/end filtering code by Eric Schwimmer 2005            */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.26 2005-08-09 08:39:25 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.27 2006-01-13 12:50:49 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -30,11 +30,7 @@ static char rcsid[] = "$Id: eventlog.c,v 1.26 2005-08-09 08:39:25 henrik Exp $";
 
 #include <pcre.h>
 
-#include "bbgen.h"
-#include "loadbbhosts.h"
-#include "util.h"
-#include "eventlog.h"
-
+#include "libbbgen.h"
 
 char *eventignorecolumns = NULL;
 int havedoneeventlog = 0;
@@ -52,7 +48,7 @@ static int wanted_eventcolumn(char *service)
 	return result;
 }
 
-time_t convert_time(char *timestamp)
+static time_t convert_time(char *timestamp)
 {
 	time_t event = 0;
 	unsigned int year,month,day,hour,min,sec,count;
@@ -79,6 +75,22 @@ time_t convert_time(char *timestamp)
 	}
 
 	return event;
+}
+
+static htnames_t *namehead = NULL;
+static htnames_t *getname(char *name, int createit)
+{
+	htnames_t *walk;
+
+	for (walk = namehead; (walk && strcmp(walk->name, name)); walk = walk->next) ;
+	if (walk || (!createit)) return walk;
+
+	walk = (htnames_t *)malloc(sizeof(htnames_t));
+	walk->name = strdup(name);
+	walk->next = namehead;
+	namehead = walk;
+
+	return walk;
 }
 
 
@@ -183,8 +195,8 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 		char *newcolname, *oldcolname;
 		int state, itemsfound, hostmatch, testmatch, colrmatch;
 		event_t *newevent;
-		struct host_t *eventhost;
-		struct bbgen_col_t *eventcolumn;
+		struct namelist_t *eventhost;
+		struct htnames_t *eventcolumn;
 		int ovector[30];
 
 		itemsfound = sscanf(l, "%s %s %u %u %u %s %s %d",
@@ -195,12 +207,12 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 		oldcolname = colorname(eventcolor(oldcol));
 		newcolname = colorname(eventcolor(newcol));
 		if (eventtime > lastevent) break;
-		eventhost = find_host(hostname);
-		eventcolumn = find_or_create_column(svcname, 1);
+		eventhost = hostinfo(hostname);
+		eventcolumn = getname(svcname, 1);
 
 		if ( (itemsfound == 8) && 
 		     (eventtime > firstevent) && 
-		     (eventhost && !eventhost->nobb2) && 
+		     (eventhost && !bbh_item(eventhost, BBH_FLAG_NOBB2)) && 
 		     (wanted_eventcolumn(svcname)) ) {
 			if (hostregexp)
 				hostmatch = (pcre_exec(hostregexp, NULL, hostname, strlen(hostname), 0, 0, 
@@ -272,6 +284,8 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"#33ebf4\">%s</FONT></TD></TR>\n", title);
 
 		for (walk=eventhead; (walk != lasttoshow->next); walk=walk->next) {
+			char *hostname = bbh_item(walk->host, BBH_HOSTNAME);
+
 			fprintf(output, "<TR BGCOLOR=%s>\n", bgcolors[bgcolor]);
 			bgcolor = ((bgcolor + 1) % 2);
 
@@ -279,16 +293,16 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 
 			if (walk->newcolor == COL_CLEAR) {
 				fprintf(output, "<TD ALIGN=CENTER BGCOLOR=black><FONT COLOR=white>%s</FONT></TD>\n",
-					walk->host->hostname);
+					hostname);
 			}
 			else {
 				fprintf(output, "<TD ALIGN=CENTER BGCOLOR=%s><FONT COLOR=black>%s</FONT></TD>\n",
-					colorname(walk->newcolor), walk->host->hostname);
+					colorname(walk->newcolor), hostname);
 			}
 
 			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", walk->service->name);
 			fprintf(output, "<TD><A HREF=\"%s\">\n", 
-				histlogurl(walk->host->hostname, walk->service->name, walk->changetime));
+				histlogurl(hostname, walk->service->name, walk->changetime));
 			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=\"%s\" TITLE=\"%s\"></A>\n", 
 				xgetenv("BBSKIN"), dotgiffilename(walk->oldcolor, 0, 0), 
 				xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"), 
@@ -296,7 +310,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 			fprintf(output, "<IMG SRC=\"%s/arrow.gif\" BORDER=0 ALT=\"From -&gt; To\">\n", 
 				xgetenv("BBSKIN"));
 			fprintf(output, "<TD><A HREF=\"%s\">\n", 
-				histlogurl(walk->host->hostname, walk->service->name, walk->eventtime));
+				histlogurl(hostname, walk->service->name, walk->eventtime));
 			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=\"%s\" TITLE=\"%s\"></A>\n", 
 				xgetenv("BBSKIN"), dotgiffilename(walk->newcolor, 0, 0), 
 				xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"), 
