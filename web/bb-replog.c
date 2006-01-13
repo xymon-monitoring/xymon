@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.33 2005-06-06 20:06:56 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.34 2006-01-13 11:47:14 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -21,7 +21,6 @@ static char rcsid[] = "$Id: bb-replog.c,v 1.33 2005-06-06 20:06:56 henrik Exp $"
 
 #include "bbgen.h"
 #include "util.h"
-#include "reportdata.h"
 #include "bb-replog.h"
 
 char *stylenames[3] = { "crit", "nongr", "all" };
