@@ -1,15 +1,18 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit report-mode statuslog viewer.                                       */
+/* Hobbit monitor library.                                                    */
 /*                                                                            */
-/* Copyright (C) 2002-2005 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __BB_REPLOG_H__
-#define __BB_REPLOG_H__
+#ifndef __REPORTLOG_H__
+#define __REPORTLOG_H__
+
+#include <stdio.h>
+#include "availability.h"
 
 #define STYLE_CRIT 0
 #define STYLE_NONGR 1
