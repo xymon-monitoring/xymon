@@ -35,6 +35,7 @@ typedef struct htnames_t {
 #include "../lib/hobbitrrd.h"
 #include "../lib/htmllog.h"
 #include "../lib/links.h"
+#include "../lib/loadalerts.h"
 #include "../lib/loadhosts.h"
 #include "../lib/loadnkconf.h"
 #include "../lib/matching.h"
