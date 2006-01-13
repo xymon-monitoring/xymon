@@ -1,17 +1,17 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit webpage generator tool.                                             */
+/* Hobbit monitor library.                                                    */
 /*                                                                            */
 /* This file contains code to build the acknowledgement log shown on the      */
 /* "all non-green" page.                                                      */
 /*                                                                            */
-/* Copyright (C) 2002-2005 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: acklog.c,v 1.18 2005-08-06 21:00:23 henrik Exp $";
+static char rcsid[] = "$Id: acklog.c,v 1.19 2006-01-13 13:25:09 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -25,9 +25,7 @@ static char rcsid[] = "$Id: acklog.c,v 1.18 2005-08-06 21:00:23 henrik Exp $";
 #include <fcntl.h>
 #include <errno.h>
 
-#include "bbgen.h"
-#include "util.h"
-#include "acklog.h"
+#include "libbbgen.h"
 
 int havedoneacklog = 0;
 
