@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Configure script for Hobbit server
-# $Id: configure.server,v 1.62 2005-10-06 12:19:37 henrik Exp $
+# $Id: configure.server,v 1.63 2006-01-13 11:39:47 henrik Exp $
 
 echo ""
 echo "Configuration script for Hobbit"
@@ -365,92 +365,6 @@ then
 fi
 echo ""; echo ""
 
-echo "The Hobbit history webpage by default displays a 1-day"
-echo "graph of the history. It can also show a 1-week, 4-weeks and"
-echo "1-year graphs, or any combination of these."
-echo ""
-echo "Which graphs to show by default (1d/1w/4w/1y/all) [all]"
-if test -z "$BARS"
-then
-	read BARS
-fi
-if test "$BARS" = "all" -o "$BARS" = ""
-then
-	BARSUMS=15
-	export BARSUMS
-else
-	BARSUMS=0
-	export BARSUMS
-
-	echo $BARS | grep -c 1d >/dev/null
-	if test $? -eq 0
-	then
-		BARSUMS=`expr $BARSUMS + 1`
-		export BARSUMS
-	fi
-
-	echo $BARS | grep -c 1w >/dev/null
-	if test $? -eq 0
-	then
-		BARSUMS=`expr $BARSUMS + 2`
-		export BARSUMS
-	fi
-
-	echo $BARS | grep -c 4w >/dev/null
-	if test $? -eq 0
-	then
-		BARSUMS=`expr $BARSUMS + 4`
-		export BARSUMS
-	fi
-
-	echo $BARS | grep -c 1y >/dev/null
-	if test $? -eq 0
-	then
-		BARSUMS=`expr $BARSUMS + 8`
-		export BARSUMS
-	fi
-fi
-BARSUMDEF="-DDEFBARSUMS=$BARSUMS"
-export BARSUMDEF
-echo ""; echo ""
-
-echo "The Hobbit history webpage can use a new method to"
-echo "create the summary graphs on the history page. This method"
-echo "gives a more accurate view (more detailed), but uses a fixed-width"
-echo "graph instead of the standard Big Brother graph that automatically"
-echo "resizes to fit your browser window."
-echo ""
-echo "Use the new detailed Hobbit history graph (y/n) [y] ? "
-if test "$USENEWHIST" = ""
-then
-	read USENEWHIST
-fi
-if test "$USENEWHIST" = "" -o "$USENEWHIST" = "y"
-then
-	echo "   Tell me the display width (in pixels) to use for"
-	echo "   the history graph. This could be anything, but to"
-	echo "   eliminate as many rounding errors as possible, it"
-	echo "   is best to use a multiple of 24."
-	echo "   The default value (960) is good on 1024x768 displays"
-	echo ""
-	echo "   What width should I use for the graph [960] ? "
-	if test "$PIXELCOUNT" = ""
-	then
-		read PIXELCOUNT
-	fi
-	if test "$PIXELCOUNT" = ""
-	then
-		HISTGRAPHDEF="-DDEFPIXELS=960"
-		export HISTGRAPHDEF
-	else
-		HISTGRAPHDEF="-DDEFPIXELS=${PIXELCOUNT}"
-		export HISTGRAPHDEF
-	fi
-else
-	HISTGRAPHDEF=""
-fi
-echo ""; echo ""
-
 echo "# Toplevel Makefile for Hobbit"    > Makefile
 
 echo "BUILDTOPDIR=\`pwd\`"               >>Makefile
@@ -468,8 +382,6 @@ echo "CGIDIR = $CGIDIR"                  >>Makefile
 echo "SECURECGIDIR = $SECURECGIDIR"      >>Makefile
 echo "# Where to install manpages"       >>Makefile
 echo "MANROOT = $MANROOT"                >>Makefile
-echo "# Default history graph setting"   >>Makefile
-echo "HISTGRAPHDEF = $HISTGRAPHDEF $BARSUMDEF"   >>Makefile
 echo "# How to run fping"                >>Makefile
 echo "FPING=$FPING"                      >>Makefile
 echo ""                                  >>Makefile

@@ -54,9 +54,6 @@ rm -rf $RPM_BUILD_ROOT
         BBHOSTNAME=localhost \
         BBHOSTIP=127.0.0.1 \
         MANROOT=/usr/share/man \
-        BARS=all \
-        USENEWHIST=y \
-        PIXELCOUNT=960 \
         INSTALLBINDIR=/usr/lib/hobbit/server/bin \
         INSTALLETCDIR=/etc/hobbit \
         INSTALLWEBDIR=/etc/hobbit/web \
