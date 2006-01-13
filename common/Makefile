@@ -1,16 +1,15 @@
 # bbgen - common tools
 #
 
-PROGRAMS = bbhostgrep bbhostshow bbdigest bb hobbitlaunch bbcmd bbmessage.cgi
+PROGRAMS = bbhostgrep bbhostshow bbdigest bb bbcmd hobbitlaunch
 CLIENTPROGRAMS = ../client/bb ../client/hobbitlaunch ../client/bbcmd ../client/bbhostgrep ../client/bbhostshow
 
 HOSTGREPOBJS = bbhostgrep.o
 HOSTSHOWOBJS = bbhostshow.o
-DIGESTOBJS = bbdigest.o
-MSGOBJS = sendmsg-std.o
-MSGCGIOBJS = sendmsg-cgi.o
-LAUNCHOBJS = hobbitlaunch.o
-CMDOBJS = bbcmd.o
+DIGESTOBJS   = bbdigest.o
+BBOBJS       = bb.o
+LAUNCHOBJS   = hobbitlaunch.o
+CMDOBJS      = bbcmd.o
 
 all: $(PROGRAMS)
 
@@ -28,11 +27,11 @@ bbhostshow: $(HOSTSHOWOBJS) ../lib/libbbgen.a
 ../client/bbhostshow: $(HOSTSHOWOBJS) ../lib/hobbitclient.a
 	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/hobbitclient.a
 
-bb: $(MSGOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(MSGOBJS) ../lib/libbbgen.a $(NETLIBS)
+bb: $(BBOBJS) ../lib/libbbgen.a
+	$(CC) $(CFLAGS) -o $@ $(BBOBJS) ../lib/libbbgen.a $(NETLIBS)
 
-../client/bb: $(MSGOBJS) ../lib/hobbitclient.a
-	$(CC) $(CFLAGS) -o $@ $(MSGOBJS) ../lib/hobbitclient.a $(NETLIBS)
+../client/bb: $(BBOBJS) ../lib/hobbitclient.a
+	$(CC) $(CFLAGS) -o $@ $(BBOBJS) ../lib/hobbitclient.a $(NETLIBS)
 
 hobbitlaunch: $(LAUNCHOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/libbbgen.a
@@ -48,15 +47,6 @@ bbcmd: $(CMDOBJS) ../lib/libbbgen.a
 
 bbdigest: $(DIGESTOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(DIGESTOBJS) ../lib/libbbgen.a $(SSLLIBS) $(NETLIBS)
-
-bbmessage.cgi: $(MSGCGIOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(MSGCGIOBJS) ../lib/libbbgen.a $(NETLIBS)
-
-sendmsg-std.o: ../lib/sendmsg.c
-	$(CC) $(CFLAGS) -DSTANDALONE -c -o $@ ../lib/sendmsg.c
-
-sendmsg-cgi.o: ../lib/sendmsg.c
-	$(CC) $(CFLAGS) -DCGI -c -o $@ ../lib/sendmsg.c
 
 ################################################
 # Default compilation rules
