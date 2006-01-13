@@ -1,7 +1,7 @@
 # bbgen library Makefile
 #
 
-BBGENLIBOBJS = osdefs.o availability.o calc.o cgi.o color.o digest.o encoding.o environ.o errormsg.o files.o headfoot.o hobbitrrd.o htmllog.o loadalerts.o loadhosts.o loadnkconf.o links.o matching.o md5.o memory.o misc.o netservices.o rbtr.o reportlog.o sendmsg.o sig.o stackio.o timefunc.o timing.o url.o
+BBGENLIBOBJS = osdefs.o availability.o calc.o cgi.o cgiurls.o color.o digest.o encoding.o environ.o errormsg.o eventlog.o files.o headfoot.o hobbitrrd.o htmllog.o loadalerts.o loadhosts.o loadnkconf.o links.o matching.o md5.o memory.o misc.o netservices.o rbtr.o reportlog.o sendmsg.o sig.o stackio.o timefunc.o timing.o url.o
 
 CLIENTLIBOBJS = osdefs.o color.o digest.o encoding.o environ-client.o errormsg.o loadhosts.o md5.o memory.o misc.o rbtr.o sendmsg.o sig.o stackio.o timefunc.o
 ifeq ($(LOCALCLIENT),yes)
@@ -28,6 +28,9 @@ loadhosts.o: loadhosts.c loadhosts_file.c
 
 digest.o: digest.c
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ digest.c
+
+eventlog.o: eventlog.c
+	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
 
 headfoot.o: headfoot.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
