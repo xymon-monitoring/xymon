@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.34 2005-06-06 20:06:56 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.35 2006-01-13 11:08:45 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -27,7 +27,7 @@ static char rcsid[] = "$Id: bb-rep.c,v 1.34 2005-06-06 20:06:56 henrik Exp $";
 #include <signal.h>
 #include <fcntl.h>
 
-#include "bbgen.h"
+#include "libbbgen.h"
 
 /*
  * This program is invoked via CGI with QUERY_STRING containing:
