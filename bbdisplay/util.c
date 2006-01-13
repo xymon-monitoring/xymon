@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.150 2005-11-09 12:41:27 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.151 2006-01-13 12:48:42 henrik Exp $";
 
 #include <limits.h>
 #include <sys/types.h>
@@ -178,14 +178,3 @@ bbgen_col_t *find_or_create_column(const char *testname, int create)
 	return newcol;
 }
 
-
-char *histlogurl(char *hostname, char *service, time_t histtime)
-{
-	static char url[PATH_MAX];
-
-	/* cgi-bin/bb-histlog.sh?HOST=SLS-P-CE1.slsdomain.sls.dk&SERVICE=msgs&TIMEBUF=Fri_Nov_7_16:01:08_2002 */
-	sprintf(url, "%s/bb-histlog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s", 
-		xgetenv("CGIBINURL"), hostname, service, histlogtime(histtime));
-
-	return url;
-}
