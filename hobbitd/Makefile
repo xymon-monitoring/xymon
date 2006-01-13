@@ -1,4 +1,4 @@
-PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbit-mailack trimhistory hobbitreports.sh moverrd.sh
+PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbit-mailack trimhistory bbcombotest hobbitreports.sh moverrd.sh
 CLIENTPROGRAMS = ../client/hobbitd_client
 
 LIBOBJS = ../lib/libbbgen.a
@@ -12,6 +12,7 @@ ALERTOBJS     = hobbitd_alert.o     hobbitd_worker.o hobbitd_buffer.o do_alert.o
 RRDOBJS       = hobbitd_rrd.o       hobbitd_worker.o hobbitd_buffer.o do_rrd.o
 SAMPLEOBJS    = hobbitd_sample.o    hobbitd_worker.o hobbitd_buffer.o
 CLIENTOBJS    = hobbitd_client.o    hobbitd_worker.o hobbitd_buffer.o client_config.o
+COMBOTESTOBJS = bbcombotest.o
 MAILACKOBJS   = hobbit-mailack.o
 TRIMHISTOBJS  = trimhistory.o
 
@@ -60,6 +61,12 @@ hobbitd_client: $(CLIENTOBJS) $(LIBOBJS)
 
 hobbitd_client.o: hobbitd_client.c client/*.c
 	$(CC) $(CFLAGS) -c -o $@ hobbitd_client.c
+
+bbcombotest.o: bbcombotest.c
+	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
+
+bbcombotest: $(COMBOTESTOBJS) $(LIBOBJS)
+	$(CC) -o $@ $(RPATHOPT) $(COMBOTESTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
 hobbit-mailack.o: hobbit-mailack.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ hobbit-mailack.c
