@@ -20,7 +20,7 @@ bbmessage.cgi: $(BBCGIOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f *.o *.a *~ bbproxy
+	rm -f *.o *.a *~ $(PROGRAMS)
 
 install: install-bin install-man
 
