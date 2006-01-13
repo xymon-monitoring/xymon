@@ -1,13 +1,11 @@
 # Makefile for bbgen - bbdisplay programs
 #
 
-PROGRAMS = bbgen bb-replog.cgi bb-hist.cgi bb-eventlog.cgi
-CGISCRIPTS = bb-replog.sh bb-hist.sh bb-eventlog.sh
+PROGRAMS = bbgen bb-eventlog.cgi
+CGISCRIPTS = bb-eventlog.sh
 EXTENSIONS = bbcombotest
 
-GENOBJS = bbgen.o loadbbhosts.o loaddata.o reportdata.o bbconvert.o pagegen.o eventlog.o acklog.o process.o wmlgen.o rssgen.o bb-replog.o util.o debug.o csvreport.o
-REPLOGOBJS = bb-replog-cgi.o reportdata.o
-HISTOBJS = bb-hist.o reportdata.o
+GENOBJS = bbgen.o loadbbhosts.o loaddata.o bbconvert.o pagegen.o eventlog.o acklog.o process.o wmlgen.o rssgen.o util.o debug.o csvreport.o
 EVENTLOGOBJS = bb-eventlog.o util.o loadbbhosts.o		# util.o for histlogurl, find_or_create_column
 COMBOTESTOBJS = bbcombotest.o
 
@@ -17,12 +15,6 @@ all: $(PROGRAMS) $(CGISCRIPTS) $(EXTENSIONS)
 
 bbgen: $(GENOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(GENOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
-
-bb-replog.cgi: $(REPLOGOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(REPLOGOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
-
-bb-hist.cgi: $(HISTOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(HISTOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 
 bb-eventlog.cgi: $(EVENTLOGOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(EVENTLOGOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
@@ -38,9 +30,6 @@ bbcombotest: $(COMBOTESTOBJS) ../lib/libbbgen.a
 digest.o: digest.c
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ digest.c
 
-bb-hist.o: bb-hist.c
-	$(CC) $(CFLAGS) $(HISTGRAPHDEF) -c -o $@ bb-hist.c
-
 eventlog.o: eventlog.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ eventlog.c
 
@@ -51,9 +40,6 @@ eventlog.o: eventlog.c
 ################################################
 bb-eventlog.o: eventlog.o
 	$(CC) $(CFLAGS) -DCGI -c -o $@ $(PCREINCDIR) eventlog.c
-
-bb-replog-cgi.o: bb-replog.c
-	$(CC) $(CFLAGS) -DCGI -c -o $@ bb-replog.c
 
 ################################################
 # Default compilation rules
