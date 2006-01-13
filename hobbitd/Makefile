@@ -1,13 +1,10 @@
-PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-mailack trimhistory hobbitreports.sh moverrd.sh hobbit-nkview.cgi hobbit-ackinfo.cgi hobbit-statusreport.cgi
-CGISCRIPTS = hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh hobbit-confreport.sh hobbit-nkview.sh hobbit-ackinfo.sh hobbit-certreport.sh
-SECCGISCRIPTS = bb-ack.sh hobbit-enadis.sh
+PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbit-mailack trimhistory hobbitreports.sh moverrd.sh
 CLIENTPROGRAMS = ../client/hobbitd_client
 
 LIBOBJS = ../lib/libbbgen.a
 
-HOBBITDOBJS = hobbitd.o hobbitd_buffer.o hobbitd_ipc.o
-CHANNELOBJS = hobbitd_channel.o hobbitd_buffer.o hobbitd_ipc.o
-
+HOBBITDOBJS   = hobbitd.o hobbitd_buffer.o hobbitd_ipc.o
+CHANNELOBJS   = hobbitd_channel.o hobbitd_buffer.o hobbitd_ipc.o
 SAMPLEOBJS    = hobbitd_sample.o    hobbitd_worker.o hobbitd_buffer.o
 FILESTOREOBJS = hobbitd_filestore.o hobbitd_worker.o hobbitd_buffer.o
 HISTORYOBJS   = hobbitd_history.o   hobbitd_worker.o hobbitd_buffer.o
@@ -15,13 +12,6 @@ ALERTOBJS     = hobbitd_alert.o     hobbitd_worker.o hobbitd_buffer.o do_alert.o
 RRDOBJS       = hobbitd_rrd.o       hobbitd_worker.o hobbitd_buffer.o do_rrd.o
 SAMPLEOBJS    = hobbitd_sample.o    hobbitd_worker.o hobbitd_buffer.o
 CLIENTOBJS    = hobbitd_client.o    hobbitd_worker.o hobbitd_buffer.o client_config.o
-HOBBITGRAPHOBJS= hobbitgraph.o
-HOBBITSVCOBJS = hobbitsvc.o hobbitsvc-info.o hobbitsvc-trends.o do_alert.o
-HOBBITENADISOBJS= hobbit-enadis.o
-NKVIEWOBJS    = hobbit-nkview.o
-ACKINFOOBJS   = hobbit-ackinfo.o
-CONFREPOBJS   = hobbit-confreport.o do_alert.o
-STATUSREPOBJS = hobbit-statusreport.o
 MAILACKOBJS   = hobbit-mailack.o
 TRIMHISTOBJS  = trimhistory.o
 
@@ -29,7 +19,7 @@ TRIMHISTOBJS  = trimhistory.o
 IDTOOL := $(shell if test `uname -s` = "SunOS"; then echo /usr/xpg4/bin/id; else echo id; fi)
 
 
-all: $(PROGRAMS) $(CGISCRIPTS) $(SECCGISCRIPTS) cfgfiles
+all: $(PROGRAMS) cfgfiles
 
 # Need NETLIBS on Solaris for getservbyname(), called by parse_url()
 
@@ -71,38 +61,11 @@ hobbitd_client: $(CLIENTOBJS) $(LIBOBJS)
 hobbitd_client.o: hobbitd_client.c client/*.c
 	$(CC) $(CFLAGS) -c -o $@ hobbitd_client.c
 
-hobbitgraph.o: hobbitgraph.c
-	$(CC) $(CFLAGS) $(PCREINCDIR) $(RRDDEF) $(RRDINCDIR) -c -o $@ hobbitgraph.c
-
-hobbitgraph.cgi: $(HOBBITGRAPHOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(HOBBITGRAPHOBJS) $(LIBOBJS) $(PCRELIBS) $(RRDLIBS) $(NETLIBS)
-
-hobbitsvc.cgi: $(HOBBITSVCOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(HOBBITSVCOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
-
-hobbit-enadis.cgi: $(HOBBITENADISOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(HOBBITENADISOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
-
-hobbit-statusreport.cgi: $(STATUSREPOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(STATUSREPOBJS) $(LIBOBJS) $(NETLIBS)
-
-hobbit-confreport.cgi: $(CONFREPOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(CONFREPOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
-
 hobbit-mailack.o: hobbit-mailack.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ hobbit-mailack.c
 
 hobbit-mailack: $(MAILACKOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(MAILACKOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
-
-hobbit-nkview.cgi: $(NKVIEWOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NKVIEWOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
-
-hobbit-nkview.o: hobbit-nkview.c
-	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ hobbit-nkview.c
-
-hobbit-ackinfo.cgi: $(ACKINFOOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(ACKINFOOBJS) $(LIBOBJS) $(NETLIBS)
 
 trimhistory: $(TRIMHISTOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(TRIMHISTOBJS) $(LIBOBJS) $(NETLIBS)
@@ -113,42 +76,6 @@ hobbit.sh: hobbit.sh.DIST
 
 hobbitreports.sh: hobbitreports.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' >$@
-	chmod 755 $@
-
-bb-ack.sh: bb-ack.sh.DIST
-	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
-	chmod 755 $@
-
-hobbitgraph.sh: hobbitgraph.sh.DIST
-	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
-	chmod 755 $@
-
-bb-hostsvc.sh: hobbitsvc.sh.DIST
-	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
-	chmod 755 $@
-
-hobbit-nkview.sh: hobbit-nkview.sh.DIST
-	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
-	chmod 755 $@
-
-hobbit-ackinfo.sh: hobbit-ackinfo.sh.DIST
-	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
-	chmod 755 $@
-
-hobbit-enadis.sh: hobbit-enadis.sh.DIST
-	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
-	chmod 755 $@
-
-bb-histlog.sh: hobbitsvc-hist.sh.DIST
-	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
-	chmod 755 $@
-
-hobbit-confreport.sh: hobbit-confreport.sh.DIST
-	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
-	chmod 755 $@
-
-hobbit-certreport.sh: hobbit-certreport.sh.DIST
-	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
 moverrd.sh: moverrd.sh.DIST
@@ -175,21 +102,15 @@ cfgfiles:
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f $(PROGRAMS) $(CGISCRIPTS) $(SECCGISCRIPTS) *.o *~ client/*~ rrd/*~
+	rm -f $(PROGRAMS) *.o *~ client/*~ rrd/*~
 	rm -f etcfiles/hobbit-apache.conf etcfiles/hobbitserver.cfg etcfiles/bb-hosts etcfiles/hobbit-alerts.cfg etcfiles/hobbitlaunch.cfg etcfiles/hobbitcgi.cfg
 	rm -f wwwfiles/menu/menu_items.js
 	(find etcfiles/ -name "*~"; find wwwfiles/ -name "*~"; find webfiles/ -name "*~") | xargs rm -f
 
-install: install-bin install-cgi install-man install-cfg install-obsoleted
+install: install-bin install-man install-cfg install-obsoleted
 
 install-bin:
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
-
-install-cgi:
-	mkdir -p $(INSTALLROOT)$(CGIDIR)
-	cp -fp $(CGISCRIPTS) $(INSTALLROOT)$(CGIDIR)/
-	mkdir -p $(INSTALLROOT)$(SECURECGIDIR)
-	cp -fp $(SECCGISCRIPTS) $(INSTALLROOT)$(SECURECGIDIR)/
 
 install-man:
 	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man8
