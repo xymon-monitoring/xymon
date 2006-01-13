@@ -161,18 +161,23 @@ only whitespace, this module will fail.
 Only the valid letters (A-Z, a-z) and digits (0-9) are used in the 
 dataset names; whitespace and other characters are stripped off 
 automatically. Only the first 19 characters of a dataset name are
-used (this is an RRD limitation).
+used (this is an RRD limitation). Underscore '_' is not allowed,
+even though RRDtool permits this, and will be stripped from the
+name.
 
 Note that each "NAME : value" must be on a line by itself. If you have
 a custom script generating the status- or data-message that is fed
 into the NCV handler, make sure it inserts a newline before each
 of the data-items you want to track.
 
-To enable the ncv module for a status, change the TEST2RRD setting in 
+To enable the ncv module for a status, add a "COLUMNNAME=ncv" to the 
+TEST2RRD setting and the COLUMNNAME to the GRAPHS setting in
 .I hobbitserver.cfg(5)
-and add a "COLUMNNAME=ncv", then restart Hobbit. Hobbit will now send
+, then restart Hobbit. Hobbit will now send
 all status-messages for the column COLUMNNAME through the hobbitd_rrd
 ncv-handler.
+
+The name of the RRD file will be COLUMNNAME.rrd.
 
 By default, all of the datasets are generated as the RRD type "DERIVE"
 which works for all types of monotonically increasing counters. If you 
@@ -196,7 +201,19 @@ environment variable separated by commas, e.g.
 The dataset type "NONE" used above causes hobbitd_rrd to ignore this
 data, it is not included in the RRD file.
 
-The name of the RRD file is COLUMNNAME.rrd.
+You can use "*" as the dataset name to match all datasets not listed.
+E.g.
+.br
+    NCV_weather="Rain:DERIVE,*:GAUGE"
+.br
+will cause the "Rainfall" dataset to be of type DERIVE, and all others
+of type GAUGE. If you want to track only a few of the variables in
+your data, you can use "*:NONE" to drop any dataset not explicitly
+listed.
+
+For a more detailed "how to" description, see the on-line HTML
+documentation of "How to create graph custom data" available in
+the Help menu section on your Hobbit server.
 
 
 .SH CUSTOM RRD DATA VIA SCRIPTS
@@ -285,6 +302,7 @@ green Weather in Copenhagen is FAIR
 Temperature: 21 degrees Celsius
 Wind: 4 m/s
 Humidity: 72 %
+Rainfall: 5 mm since 6:00 AM
 .fi
 .LP
 A shell-script to track all of these variables could be written like this:
@@ -303,17 +321,19 @@ then
 	TEMP=`grep "^Temperature:" $FNAME | awk '{print $2}'`
 	WIND=`grep "^Wind:" $FNAME | awk '{print $2}'`
 	HMTY=`grep "^Humidity:" $FNAME | awk '{print $2}'`
+	RAIN=`grep "^Rainfall:" $FNAME | awk '{print $2}'`
 
 	# The RRD dataset definitions
 	echo "DS:temperature:GAUGE:600:-30:50"
 	echo "DS:wind:GAUGE:600:0:U"
 	echo "DS:humidity:GAUGE:600:0:100"
+	echo "DS:rainfall:DERIVE:600:0:100"
 
 	# The filename
 	echo "weather.rrd"
 
 	# The data
-	echo "$TEMP:$WIND:$HMTY"
+	echo "$TEMP:$WIND:$HMTY:$RAIN"
 fi
 
 exit 0
