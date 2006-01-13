@@ -1,10 +1,11 @@
-PROGRAMS = bb-hist.cgi bb-rep.cgi bb-replog.cgi bb-snapshot.cgi bb-findhost.cgi bb-csvinfo.cgi bb-ack.cgi bb-webpage bb-datepage.cgi hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-nkview.cgi hobbit-ackinfo.cgi hobbit-statusreport.cgi
-CGISCRIPTS = bb-hist.sh bb-rep.sh bb-replog.sh bb-snapshot.sh bb-findhost.sh bb-csvinfo.sh hobbitcolumn.sh bb-datepage.sh hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh hobbit-confreport.sh hobbit-nkview.sh hobbit-ackinfo.sh hobbit-certreport.sh
+PROGRAMS = bb-hist.cgi bb-eventlog.cgi bb-rep.cgi bb-replog.cgi bb-snapshot.cgi bb-findhost.cgi bb-csvinfo.cgi bb-ack.cgi bb-webpage bb-datepage.cgi hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-nkview.cgi hobbit-ackinfo.cgi hobbit-statusreport.cgi
+CGISCRIPTS = bb-hist.sh bb-eventlog.sh bb-rep.sh bb-replog.sh bb-snapshot.sh bb-findhost.sh bb-csvinfo.sh hobbitcolumn.sh bb-datepage.sh hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh hobbit-confreport.sh hobbit-nkview.sh hobbit-ackinfo.sh hobbit-certreport.sh
 SECCGISCRIPTS = bb-ack.sh hobbit-enadis.sh
 
 LIBOBJS = ../lib/libbbgen.a
 
 HISTOBJS        = bb-hist.o
+EVENTLOGOBJS    = bb-eventlog.o
 REPOBJS         = bb-rep.o
 REPLOGOBJS      = bb-replog.o
 SNAPOBJS        = bb-snapshot.o
@@ -31,6 +32,9 @@ all: $(PROGRAMS) $(CGISCRIPTS) $(SECCGISCRIPTS)
 
 bb-hist.cgi: $(HISTOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(HISTOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
+
+bb-eventlog.cgi: $(EVENTLOGOBJS) ../lib/libbbgen.a
+	$(CC) $(CFLAGS) -o $@ $(EVENTLOGOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 
 bb-rep.cgi: $(REPOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(REPOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
@@ -94,6 +98,10 @@ bb-csvinfo.sh: bb-csvinfo.sh.DIST
 	chmod 755 $@
 
 bb-datepage.sh: bb-datepage.sh.DIST
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
+	chmod 755 $@
+
+bb-eventlog.sh: bb-eventlog.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
