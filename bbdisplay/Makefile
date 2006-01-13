@@ -4,7 +4,7 @@
 PROGRAMS = bbgen
 EXTENSIONS = bbcombotest
 
-GENOBJS = bbgen.o loadbbhosts.o loaddata.o bbconvert.o pagegen.o acklog.o process.o wmlgen.o rssgen.o util.o debug.o csvreport.o
+GENOBJS = bbgen.o loadbbhosts.o loaddata.o bbconvert.o pagegen.o process.o wmlgen.o rssgen.o util.o debug.o csvreport.o
 COMBOTESTOBJS = bbcombotest.o
 
 

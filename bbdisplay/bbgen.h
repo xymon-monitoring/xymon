@@ -217,20 +217,6 @@ typedef struct dispsummary_t {
 	struct dispsummary_t	*next;
 } dispsummary_t;
 
-/* Format of records in $BBACKS/acklog file (TAB separated) */
-typedef struct ack_t {
-	time_t	acktime;
-	int	acknum;
-	int	duration;	/* Minutes */
-	int	acknum2;
-	char	*ackedby;
-	char	*hostname;
-	char	*testname;
-	int	color;
-	char	*ackmsg;
-	int	ackvalid;
-} ack_t;
-
 extern bbgen_page_t	*pagehead;
 extern hostlist_t	*hosthead;
 extern state_t		*statehead;
