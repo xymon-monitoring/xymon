@@ -1,17 +1,17 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit overview webpage generator tool.                                    */
+/* Hobbit monitor library.                                                    */
 /*                                                                            */
 /* This file contains code to calculate availability percentages and do       */
 /* SLA calculations.                                                          */
 /*                                                                            */
-/* Copyright (C) 2002-2005 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.37 2005-12-02 16:03:45 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.38 2006-01-13 11:44:37 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -20,8 +20,7 @@ static char rcsid[] = "$Id: availability.c,v 1.37 2005-12-02 16:03:45 henrik Exp
 #include <stdarg.h>
 #include <stdlib.h>
 
-#include "bbgen.h"
-#include "reportdata.h"
+#include "libbbgen.h"
 
 typedef struct {
 	int dow;
@@ -55,12 +54,12 @@ char *durationstr(time_t duration)
 	return dur;
 }
 
-time_t secs(int hour, int minute, int sec)
+static time_t secs(int hour, int minute, int sec)
 {
 	return (hour*3600 + minute*60 + sec);
 }
 
-void build_reportspecs(char *reporttime)
+static void build_reportspecs(char *reporttime)
 {
 	/* Timespec:  W:HHMM:HHMM */
 
@@ -100,7 +99,7 @@ void build_reportspecs(char *reporttime)
 	xfree(timespec);
 }
 
-unsigned long reportduration_oneday(int eventdow, time_t eventstart, time_t eventend)
+static unsigned long reportduration_oneday(int eventdow, time_t eventstart, time_t eventend)
 {
 	int i;
 	unsigned long result = 0;
@@ -123,7 +122,7 @@ unsigned long reportduration_oneday(int eventdow, time_t eventstart, time_t even
 	return result;
 }
 
-unsigned long reportingduration(time_t eventstart, time_t eventduration)
+static unsigned long reportingduration(time_t eventstart, time_t eventduration)
 {
 	struct tm start, end;
 	time_t eventend;
@@ -152,7 +151,7 @@ unsigned long reportingduration(time_t eventstart, time_t eventduration)
 }
 
 
-char *parse_histlogfile(char *hostname, char *servicename, char *timespec)
+static char *parse_histlogfile(char *hostname, char *servicename, char *timespec)
 {
 	char fn[PATH_MAX];
 	char *p;
@@ -208,7 +207,7 @@ char *parse_histlogfile(char *hostname, char *servicename, char *timespec)
 	return strdup(cause);
 }
 
-int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
+static int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 		char *buf, size_t bufsize, 
 		time_t *starttime, time_t *duration, char *colstr)
 {

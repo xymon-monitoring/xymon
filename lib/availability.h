@@ -1,15 +1,42 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit overview webpage generator tool.                                    */
+/* Hobbit monitor library.                                                    */
 /*                                                                            */
-/* Copyright (C) 2002-2005 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __REPORTDATA_H__
-#define __REPORTDATA_H__
+#ifndef __AVAILABILITY_H__
+#define __AVAILABILITY_H__
+
+#include "color.h"
+
+typedef struct reportinfo_t {
+	char *fstate;
+	time_t reportstart;
+	int count[COL_COUNT];
+
+	double fullavailability;
+	double fullpct[COL_COUNT];
+	unsigned long fullduration[COL_COUNT];
+
+	int withreport;
+	double reportavailability;
+	double reportpct[COL_COUNT];
+	unsigned long reportduration[COL_COUNT];
+} reportinfo_t;
+
+typedef struct replog_t {
+        time_t starttime;
+        time_t duration;
+        int color;
+	int affectssla;
+        char *cause;
+	char *timespec;
+        struct replog_t *next;
+} replog_t;
 
 extern replog_t *reploghead;
 
