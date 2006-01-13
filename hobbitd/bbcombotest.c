@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.40 2005-07-16 09:48:35 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.41 2006-01-13 15:40:24 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -43,55 +43,102 @@ typedef struct testspec_t {
 
 static testspec_t *testhead = NULL;
 static int testcount = 0;
-static int cleanexpr = 0;
 
 static char *gethname(char *spec)
 {
-	static char result[MAX_LINE_LEN];
+	static char *result = NULL;
 	char *p;
 
+	if (result) xfree(result);
+
 	/* grab the hostname part from a "www.xxx.com.testname" string */
-	strcpy(result, spec);
-	p = strrchr(result, '.');
+	p = strrchr(spec, '.');
 	if (p) *p = '\0';
+	result = strdup(spec);
+	if (p) *p = '.';
+
 	return result;
 }
 
 static char *gettname(char *spec)
 {
-	static char result[MAX_LINE_LEN];
+	static char *result = NULL;
 	char *p;
 
-	result[0] = '\0';
+	if (result) xfree(result);
 
 	/* grab the testname part from a "www.xxx.com.testname" string */
 	p = strrchr(spec, '.');
-	if (p) strcpy(result, p+1);
+	if (p) result = strdup(p+1); else result = "";
 
 	return result;
 }
 
+static void flush_valuelist(value_t *head)
+{
+	value_t *walk, *zombie;
+
+	walk = head;
+	while (walk) {
+		zombie = walk; walk = walk->next;
+		xfree(zombie->symbol);
+		xfree(zombie);
+	}
+}
+
+static void flush_testlist(void)
+{
+	testspec_t *walk, *zombie;
+
+	walk = testhead;
+	while (walk) {
+		zombie = walk; walk = walk->next;
+		if (zombie->reshostname) xfree(zombie->reshostname);
+		if (zombie->restestname) xfree(zombie->restestname);
+		if (zombie->expression) xfree(zombie->expression);
+		if (zombie->comment) xfree(zombie->comment);
+		if (zombie->resultexpr) xfree(zombie->resultexpr);
+		if (zombie->errbuf) xfree(zombie->errbuf);
+		flush_valuelist(zombie->valuelist);
+		xfree(zombie);
+	}
+	testhead = NULL;
+	testcount = 0;
+}
+
 static void loadtests(void)
 {
+	static time_t lastupdate = 0;
+	static char *fn = NULL;
+	struct stat st;
 	FILE *fd;
-	char fn[PATH_MAX];
 	char *inbuf = NULL;
 	int inbufsz;
 
-	sprintf(fn, "%s/etc/bbcombotest.cfg", xgetenv("BBHOME"));
-	fd = fopen(fn, "r");
-	if (fd == NULL) {
+	if (!fn) {
+		fn = (char *)malloc(1024 + strlen(xgetenv("BBHOME")));
+		*fn = '\0';
+	}
+
+	if (*fn == '\0') {
 		/* 
 		 * Why this ? Because I goofed and released a version using bbcombotests.cfg,
 		 * and you shouldn't break peoples' setups when fixing silly bugs.
 		 */
-		sprintf(fn, "%s/etc/bbcombotests.cfg", xgetenv("BBHOME"));
-		fd = fopen(fn, "r");
+		sprintf(fn, "%s/etc/bbcombotest.cfg", xgetenv("BBHOME"));
+		if (stat(fn, &st) == -1) sprintf(fn, "%s/etc/bbcombotests.cfg", xgetenv("BBHOME"));
 	}
+	if ((stat(fn, &st) == 0) && (st.st_mtime == lastupdate)) return;
+	lastupdate = st.st_mtime;
+
+	fd = fopen(fn, "r");
 	if (fd == NULL) {
-		errprintf("Cannot open %s/etc/bbcombotest.cfg\n", xgetenv("BBHOME"));
+		errprintf("Cannot open %s/bbcombotest.cfg\n", xgetenv("BBHOME"));
+		*fn = '\0';
 		return;
 	}
+
+	flush_testlist();
 
 	initfgets(fd);
 	while (unlimfgets(&inbuf, &inbufsz, fd)) {
@@ -283,16 +330,7 @@ static long evaluate(char *symbolicexpr, char **resultexpr, value_t **valuelist,
 	return result;
 }
 
-char *reqenv[] = {
-"BB",
-"BBDISP",
-"BBHOME",
-"BBLOGS",
-"BBTMP",
-NULL };
-
-
-char *printify(char *exp)
+static char *printify(char *exp, int cleanexpr)
 {
 	static char result[MAX_LINE_LEN];
 	char *inp, *outp;
@@ -336,39 +374,12 @@ char *printify(char *exp)
 	return result;
 }
 
-int main(int argc, char *argv[])
+int update_combotests(int showeval, int cleanexpr)
 {
 	testspec_t *t;
-	int argi, pending;
-	int showeval = 1;
+	int pending;
+	int remaining = 0;
 
-	setup_signalhandler("bbcombotest");
-
-	for (argi = 1; (argi < argc); argi++) {
-		if ((strcmp(argv[argi], "--help") == 0)) {
-			printf("bbcombotest version %s\n\n", VERSION);
-			printf("Usage:\n%s [--quiet] [--clean] [--debug] [--no-update]\n", argv[0]);
-			exit(0);
-		}
-		else if ((strcmp(argv[argi], "--version") == 0)) {
-			printf("bbcombotest version %s\n", VERSION);
-			exit(0);
-		}
-		else if ((strcmp(argv[argi], "--debug") == 0)) {
-			debug = 1;
-		}
-		else if ((strcmp(argv[argi], "--no-update") == 0)) {
-			dontsendmessages = 1;
-		}
-		else if ((strcmp(argv[argi], "--quiet") == 0)) {
-			showeval = 0;
-		}
-		else if ((strcmp(argv[argi], "--clean") == 0)) {
-			cleanexpr = 1;
-		}
-	}
-
-	envcheck(reqenv);
 	init_timestamp();
 	loadtests();
 
@@ -376,16 +387,17 @@ int main(int argc, char *argv[])
 	 * Loop over the tests to allow us "forward refs" in expressions.
 	 * We continue for as long as progress is being made.
 	 */
+	remaining = testcount;
 	do {
-		pending = testcount;
+		pending = remaining;
 		for (t=testhead; (t); t = t->next) {
 			if (t->result == -1) {
 				t->result = evaluate(t->expression, &t->resultexpr, &t->valuelist, &t->errbuf);
-				if (t->result != -1) testcount--;
+				if (t->result != -1) remaining--;
 			}
 		}
 
-	} while (pending != testcount);
+	} while (pending != remaining);
 
 	combo_start();
 	for (t=testhead; (t); t = t->next) {
@@ -399,9 +411,9 @@ int main(int argc, char *argv[])
 		addtostatus(msgline);
 		if (t->comment) { addtostatus(t->comment); addtostatus("\n\n"); }
 		if (showeval) {
-			addtostatus(printify(t->expression));
+			addtostatus(printify(t->expression, cleanexpr));
 			addtostatus(" = ");
-			addtostatus(printify(t->resultexpr));
+			addtostatus(printify(t->resultexpr, cleanexpr));
 			addtostatus(" = ");
 			sprintf(msgline, "%ld\n", t->result);
 			addtostatus(msgline);
@@ -421,5 +433,40 @@ int main(int argc, char *argv[])
 	combo_end();
 
 	return 0;
+}
+
+int main(int argc, char *argv[])
+{
+	int argi; 
+	int showeval = 1;
+	int cleanexpr = 0;
+
+	setup_signalhandler(argv[0]);
+
+	for (argi = 1; (argi < argc); argi++) {
+		if ((strcmp(argv[argi], "--help") == 0)) {
+			printf("%s version %s\n\n", argv[0], VERSION);
+			printf("Usage:\n%s [--quiet] [--clean] [--debug] [--no-update]\n", argv[0]);
+			exit(0);
+		}
+		else if ((strcmp(argv[argi], "--version") == 0)) {
+			printf("%s version %s\n", argv[0], VERSION);
+			exit(0);
+		}
+		else if ((strcmp(argv[argi], "--debug") == 0)) {
+			debug = 1;
+		}
+		else if ((strcmp(argv[argi], "--no-update") == 0)) {
+			dontsendmessages = 1;
+		}
+		else if ((strcmp(argv[argi], "--quiet") == 0)) {
+			showeval = 0;
+		}
+		else if ((strcmp(argv[argi], "--clean") == 0)) {
+			cleanexpr = 1;
+		}
+	}
+
+	return update_combotests(showeval, cleanexpr);
 }
 
