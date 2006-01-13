@@ -110,31 +110,6 @@ typedef struct col_list_t {
 	struct col_list_t	*next;
 } col_list_t;
 
-typedef struct reportinfo_t {
-	char *fstate;
-	time_t reportstart;
-	int count[COL_COUNT];
-
-	double fullavailability;
-	double fullpct[COL_COUNT];
-	unsigned long fullduration[COL_COUNT];
-
-	int withreport;
-	double reportavailability;
-	double reportpct[COL_COUNT];
-	unsigned long reportduration[COL_COUNT];
-} reportinfo_t;
-
-typedef struct replog_t {
-        time_t starttime;
-        time_t duration;
-        int color;
-	int affectssla;
-        char *cause;
-	char *timespec;
-        struct replog_t *next;
-} replog_t;
-
 /* Measurement entry definition               */
 /* This points to a column definition, and    */
 /* contains the actual color of a measurement */
