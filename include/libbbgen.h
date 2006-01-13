@@ -23,6 +23,7 @@ typedef struct htnames_t {
 #include "config.h"
 #include "../lib/osdefs.h"
 
+#include "../lib/availability.h"
 #include "../lib/calc.h"
 #include "../lib/cgi.h"
 #include "../lib/color.h"
