@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.48 2005-06-06 20:06:56 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.49 2006-01-13 11:45:31 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -18,9 +18,7 @@ static char rcsid[] = "$Id: bb-hist.c,v 1.48 2005-06-06 20:06:56 henrik Exp $";
 #include <string.h>
 #include <unistd.h>
 
-#include "bbgen.h"
-#include "util.h"
-#include "reportdata.h"
+#include "libbbgen.h"
 
 static char selfurl[PATH_MAX];
 static time_t req_endtime = 0;
@@ -36,27 +34,18 @@ static char *bartitle4w = "4 week summary";
 static int len1y = 12;
 static char *bartitle1y = "1 year summary";
 
-/* DEFPIXELS is defined by the configure script */
-#ifndef DEFPIXELS
-static int usepct = 1;
-#define DEFPIXELS 0
-#else
+#define DEFPIXELS 960
+
+/* The pixel setup */
 static int usepct = 0;
-#endif
 static int pixels = DEFPIXELS;
 
-/* What colorbars and summaries to show by default */
+/* What colorbars and summaries to show */
 #define BARSUM_1D 0x0001	/* 1-day bar */
 #define BARSUM_1W 0x0002	/* 1-week bar */
 #define BARSUM_4W 0x0004	/* 4-week bar */
 #define BARSUM_1Y 0x0008	/* 1-year bar */
-
-/* DEFBARSUMS is defined by the configure script */
-#ifndef DEFBARSUMS
-#define DEFBARSUMS (BARSUM_1D|BARSUM_1W)
-#endif
-
-static unsigned int barsums = DEFBARSUMS;
+static unsigned int barsums = (BARSUM_1D|BARSUM_1W);
 
 static char *barbkgcolor = "\"#000033\"";
 static char *tagcolors[COL_COUNT] = {
