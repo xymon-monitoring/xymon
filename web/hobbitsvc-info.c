@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.95 2005-08-08 21:59:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.96 2006-01-13 10:14:50 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -31,8 +31,6 @@ static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.95 2005-08-08 21:59:13 henrik E
 #include <netdb.h>
 
 #include "libbbgen.h"
-
-#include "hobbitd_alert.h"
 
 int showenadis = 1;
 int usejsvalidation = 1;

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-confreport.c,v 1.6 2005-07-16 21:24:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-confreport.c,v 1.7 2006-01-13 10:14:50 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -23,7 +23,6 @@ static char rcsid[] = "$Id: hobbit-confreport.c,v 1.6 2005-07-16 21:24:15 henrik
 #include <dirent.h>
 
 #include "libbbgen.h"
-#include "hobbitd_alert.h"
 
 typedef struct hostlist_t {
 	char *hostname;
