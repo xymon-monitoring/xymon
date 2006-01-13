@@ -1,15 +1,23 @@
-PROGRAMS = hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-nkview.cgi hobbit-ackinfo.cgi hobbit-statusreport.cgi
-CGISCRIPTS = hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh hobbit-confreport.sh hobbit-nkview.sh hobbit-ackinfo.sh hobbit-certreport.sh
+PROGRAMS = bb-rep.cgi bb-snapshot.cgi bb-findhost.cgi bb-csvinfo.cgi bb-ack.cgi bb-webpage bb-datepage.cgi hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-nkview.cgi hobbit-ackinfo.cgi hobbit-statusreport.cgi
+CGISCRIPTS = bb-rep.sh bb-snapshot.sh bb-findhost.sh bb-csvinfo.sh hobbitcolumn.sh bb-datepage.sh hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh hobbit-confreport.sh hobbit-nkview.sh hobbit-ackinfo.sh hobbit-certreport.sh
 SECCGISCRIPTS = bb-ack.sh hobbit-enadis.sh
 
 LIBOBJS = ../lib/libbbgen.a
 
+REPOBJS         = bb-rep.o
+SNAPOBJS        = bb-snapshot.o
+FINDHOSTOBJS    = bb-findhost.o
+CSVINFOOBJS     = bb-csvinfo.o
+ACKCGIOBJS      = bb-ack.o
+WEBPAGEOBJS     = bb-webpage.o
+DATEPAGEOBJS    = bb-datepage.o
+
 HOBBITGRAPHOBJS = hobbitgraph.o
-HOBBITSVCOBJS   = hobbitsvc.o hobbitsvc-info.o hobbitsvc-trends.o do_alert.o
+HOBBITSVCOBJS   = hobbitsvc.o hobbitsvc-info.o hobbitsvc-trends.o
 HOBBITENADISOBJS= hobbit-enadis.o
 NKVIEWOBJS      = hobbit-nkview.o
 ACKINFOOBJS     = hobbit-ackinfo.o
-CONFREPOBJS     = hobbit-confreport.o do_alert.o
+CONFREPOBJS     = hobbit-confreport.o
 STATUSREPOBJS   = hobbit-statusreport.o
 MAILACKOBJS     = hobbit-mailack.o
 
@@ -19,14 +27,31 @@ IDTOOL := $(shell if test `uname -s` = "SunOS"; then echo /usr/xpg4/bin/id; else
 
 all: $(PROGRAMS) $(CGISCRIPTS) $(SECCGISCRIPTS)
 
-# Need NETLIBS on Solaris for getservbyname(), called by parse_url()
+bb-rep.cgi: $(REPOBJS) ../lib/libbbgen.a
+	$(CC) $(CFLAGS) -o $@ $(REPOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 
-do_alert.o: ../hobbitd/do_alert.o
-	cp ../hobbitd/do_alert.o .
+bb-snapshot.cgi: $(SNAPOBJS) ../lib/libbbgen.a
+	$(CC) $(CFLAGS) -o $@ $(SNAPOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
+
+bb-findhost.cgi: $(FINDHOSTOBJS) ../lib/libbbgen.a
+	$(CC) $(CFLAGS) -o $@ $(FINDHOSTOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
+
+bb-csvinfo.cgi: $(CSVINFOOBJS) ../lib/libbbgen.a
+	$(CC) $(CFLAGS) -o $@ $(CSVINFOOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
+
+bb-ack.cgi: $(ACKCGIOBJS) ../lib/libbbgen.a
+	$(CC) $(CFLAGS) -o $@ $(ACKCGIOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
+
+bb-webpage: $(WEBPAGEOBJS) ../lib/libbbgen.a
+	$(CC) $(CFLAGS) -o $@ $(WEBPAGEOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
+
+bb-datepage.cgi: $(DATEPAGEOBJS) ../lib/libbbgen.a
+	$(CC) $(CFLAGS) -o $@ $(DATEPAGEOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
 
 hobbitgraph.o: hobbitgraph.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) $(RRDDEF) $(RRDINCDIR) -c -o $@ $<
 
+# Need NETLIBS on Solaris for getservbyname(), called by parse_url()
 hobbitgraph.cgi: $(HOBBITGRAPHOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(HOBBITGRAPHOBJS) $(LIBOBJS) $(PCRELIBS) $(RRDLIBS) $(NETLIBS)
 
@@ -46,12 +71,37 @@ hobbit-nkview.cgi: $(NKVIEWOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NKVIEWOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
 hobbit-nkview.o: hobbit-nkview.c
-	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ hobbit-nkview.c
+	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
 
 hobbit-ackinfo.cgi: $(ACKINFOOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(ACKINFOOBJS) $(LIBOBJS) $(NETLIBS)
 
+
 bb-ack.sh: bb-ack.sh.DIST
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
+	chmod 755 $@
+
+bb-csvinfo.sh: bb-csvinfo.sh.DIST
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
+	chmod 755 $@
+
+bb-datepage.sh: bb-datepage.sh.DIST
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
+	chmod 755 $@
+
+bb-findhost.sh: bb-findhost.sh.DIST
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
+	chmod 755 $@
+
+bb-rep.sh: bb-rep.sh.DIST
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
+	chmod 755 $@
+
+bb-snapshot.sh: bb-snapshot.sh.DIST
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
+	chmod 755 $@
+
+hobbitcolumn.sh: hobbitcolumn.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
