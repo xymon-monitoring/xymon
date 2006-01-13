@@ -32,7 +32,7 @@ cp rpm/hobbit-client.init rpmbuild/SOURCES/
 cp rpm/hobbit-client.default rpmbuild/SOURCES/
 
 mkdir -p rpmbuild/hobbit-$REL
-for f in bbdisplay bbnet bbpatches bbproxy build common contrib docs hobbitd include lib client demotool
+for f in bbdisplay bbnet bbpatches bbproxy build common contrib docs hobbitd web include lib client demotool
 do
         find $f/ | grep -v RCS | cpio -pdvmu $BASEDIR/rpmbuild/hobbit-$REL/
 done

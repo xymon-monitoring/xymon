@@ -11,7 +11,7 @@ cd $BASEDIR
 
 rm -rf debbuild
 mkdir -p $BASEDIR/debbuild/hobbit-$REL
-for f in bbdisplay bbnet bbpatches bbproxy build common contrib docs hobbitd include lib client demotool
+for f in bbdisplay bbnet bbpatches bbproxy build common contrib docs hobbitd web include lib client demotool
 do
         find $f/ | grep -v RCS | cpio -pdvmu $BASEDIR/debbuild/hobbit-$REL/
 done

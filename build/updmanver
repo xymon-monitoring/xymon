@@ -12,7 +12,7 @@ fi
 
 cd $HOME/hobbit || exit 1
 
-for DIR in bbdisplay bbnet bbproxy common hobbitd
+for DIR in bbdisplay bbnet bbproxy common hobbitd web
 do
    pushd $DIR
 
