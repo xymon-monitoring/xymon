@@ -45,6 +45,7 @@ typedef struct htnames_t {
 #include "../lib/misc.h"
 #include "../lib/netservices.h"
 #include "../lib/rbtr.h"
+#include "../lib/reportlog.h"
 #include "../lib/sendmsg.h"
 #include "../lib/sig.h"
 #include "../lib/stackio.h"
