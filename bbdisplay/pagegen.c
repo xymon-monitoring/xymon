@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.157 2006-01-13 12:06:26 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.158 2006-01-13 12:48:29 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -28,7 +28,6 @@ static char rcsid[] = "$Id: pagegen.c,v 1.157 2006-01-13 12:06:26 henrik Exp $";
 #include "bbgen.h"
 #include "util.h"
 #include "loadbbhosts.h"
-#include "eventlog.h"
 #include "acklog.h"
 #include "rssgen.h"
 #include "pagegen.h"
