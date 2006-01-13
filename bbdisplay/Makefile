@@ -31,5 +31,4 @@ install-obsoleted:
 install-man:
 	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5
 	cp -fp *.1 $(INSTALLROOT)$(MANROOT)/man1/
-	cp -fp *.5 $(INSTALLROOT)$(MANROOT)/man5/
 
