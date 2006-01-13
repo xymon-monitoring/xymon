@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.81 2006-01-13 10:17:42 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.82 2006-01-13 17:35:13 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -211,9 +211,9 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 		addtobuffer(&buf, &buflen, "\n");
 
 		if (recip->format == ALERTFORM_TEXT) {
-			sprintf(info, "See %s%s/bb-hostsvc.sh?HOSTSVC=%s.%s\n", 
-				xgetenv("BBWEBHOST"), xgetenv("CGIBINURL"), 
-				commafy(alert->hostname->name), alert->testname->name);
+			sprintf(info, "See %s%s\n", 
+				xgetenv("BBWEBHOST"), 
+				hostsvcurl(alert->hostname->name, alert->testname->name, NULL, NULL));
 			addtobuffer(&buf, &buflen, info);
 		}
 
@@ -270,9 +270,9 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 		addtobuffer(&buf, &buflen, info);
 		addtobuffer(&buf, &buflen, msg_data(alert->pagemessage));
 		addtobuffer(&buf, &buflen, "\n");
-		sprintf(info, "See %s%s/bb-hostsvc.sh?HOSTSVC=%s.%s\n", 
-			xgetenv("BBWEBHOST"), xgetenv("CGIBINURL"), 
-			commafy(alert->hostname->name), alert->testname->name);
+		sprintf(info, "See %s%s\n", 
+			xgetenv("BBWEBHOST"),
+			hostsvcurl(alert->hostname->name, alert->testname->name, NULL, NULL));
 		addtobuffer(&buf, &buflen, info);
 		MEMUNDEFINE(info);
 		return buf;

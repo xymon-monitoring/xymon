@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.49 2006-01-13 11:45:31 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.50 2006-01-13 17:34:28 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -472,8 +472,7 @@ static void generate_histlog_table(FILE *htmlrep,
 		fprintf(htmlrep, "<TR BGCOLOR=%s>\n", bgcols[curbg]); curbg = (1-curbg);
 		fprintf(htmlrep, "<TD ALIGN=LEFT NOWRAP>%s</TD>\n", start);
 		fprintf(htmlrep, "<TD ALIGN=CENTER BGCOLOR=\"#000000\">");
-		fprintf(htmlrep, "<A HREF=\"%s/bb-histlog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s&amp;DISPLAYNAME=%s\">", 
-			xgetenv("CGIBINURL"), hostname, service, walk->timespec, displayname);
+		fprintf(htmlrep, "<A HREF=\"%s\">", histlogurl(hostname, service, displayname, 0, walk->timespec));
 		fprintf(htmlrep, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0>", 
 			xgetenv("BBSKIN"), dotgiffilename(walk->color, 0, 1), colorname(walk->color), colorname(walk->color),
 			xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
@@ -690,7 +689,7 @@ int main(int argc, char *argv[])
 	parse_query();
 
 	/* Build our own URL */
-	sprintf(selfurl, "%s/bb-hist.sh?HISTFILE=%s.%s", xgetenv("CGIBINURL"), commafy(hostname), service);
+	sprintf(selfurl, "%s", histcgiurl(hostname, service));
 
 	p = selfurl + strlen(selfurl);
 	sprintf(p, "&amp;BARSUMS=%d", barsums);

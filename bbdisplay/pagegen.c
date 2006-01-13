@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.160 2006-01-13 17:07:27 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.161 2006-01-13 17:34:47 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -473,7 +473,7 @@ void do_hosts(host_t *head, char *onlycols, char *exceptcols, FILE *output, FILE
 					/* Snapshot points to historical logfile */
 					htmlalttag = alttag(e->column->name, e->color, e->acked, e->propagate, e->age);
 					fprintf(output, "<A HREF=\"%s\">", 
-						histlogurl(h->hostname, e->column->name, 0, e->histlogname));
+						histlogurl(h->hostname, e->column->name, NULL, 0, e->histlogname));
 
 					fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
 						bbskin, dotgiffilename(e->color, 0, 1),
