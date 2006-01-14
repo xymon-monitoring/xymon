@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.41 2006-01-13 17:34:04 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.42 2006-01-14 16:05:31 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -395,12 +395,15 @@ char *alttag(char *columnname, int color, int acked, int propagate, char *age)
 }
 
 
-static char *nameandcomment(namelist_t *host)
+static char *nameandcomment(namelist_t *host, char *hostname)
 {
 	static char *result = NULL;
 	char *cmt, *disp, *hname;
 
 	if (result) xfree(result);
+
+	/* For summary "hosts", we have no hinfo record. */
+	if (!host) return hostname;
 
 	hname = bbh_item(host, BBH_HOSTNAME);
 	disp = bbh_item(host, BBH_DISPLAYNAME);
@@ -472,21 +475,21 @@ char *hostnamehtml(char *hostname, char *defaultlink)
 	if (documentationurl) {
 		snprintf(result, sizeof(result), "<A HREF=\"%s\" %s><FONT %s>%s</FONT></A>",
 			urldoclink(documentationurl, hostname),
-			doctarget, xgetenv("MKBBROWFONT"), nameandcomment(hinfo));
+			doctarget, xgetenv("MKBBROWFONT"), nameandcomment(hinfo, hostname));
 	}
 	else if ((hostlinkurl = hostlink(hostname)) != NULL) {
 		snprintf(result, sizeof(result), "<A HREF=\"%s\" %s><FONT %s>%s</FONT></A>",
-			hostlinkurl, doctarget, xgetenv("MKBBROWFONT"), nameandcomment(hinfo));
+			hostlinkurl, doctarget, xgetenv("MKBBROWFONT"), nameandcomment(hinfo, hostname));
 	}
 	else if (defaultlink) {
 		/* Provide a link to the page where this host lives */
 		snprintf(result, sizeof(result), "<A HREF=\"%s/%s\" %s><FONT %s>%s</FONT></A>",
 			xgetenv("BBWEB"), defaultlink, doctarget,
-			xgetenv("MKBBROWFONT"), nameandcomment(hinfo));
+			xgetenv("MKBBROWFONT"), nameandcomment(hinfo, hostname));
 	}
 	else {
 		snprintf(result, sizeof(result), "<FONT %s>%s</FONT>",
-			xgetenv("MKBBROWFONT"), nameandcomment(hinfo));
+			xgetenv("MKBBROWFONT"), nameandcomment(hinfo, hostname));
 	}
 
 	return result;
