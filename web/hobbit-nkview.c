@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkview.c,v 1.7 2005-11-18 09:56:48 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkview.c,v 1.8 2006-01-14 16:07:17 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -25,6 +25,7 @@ typedef struct hstatus_t {
 	char *key;
 	int color;
 	time_t lastchange, logtime, validtime, acktime;
+	char *ackedby, *ackmsg;
 	nkconf_t *config;
 } hstatus_t;
 
@@ -44,14 +45,14 @@ static int key_compare(void *a, void *b)
 }
 
 
-void loadstatus(int maxprio, time_t maxage, int mincolor)
+void loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 {
 	int hobbitdresult;
 	char *board = NULL;
 	char *bol, *eol;
 	time_t now;
 
-	hobbitdresult = sendmessage("hobbitdboard color=red,yellow fields=hostname,testname,color,lastchange,logtime,validtime,acktime", NULL, NULL, &board, 1, BBTALK_TIMEOUT);
+	hobbitdresult = sendmessage("hobbitdboard color=red,yellow acklevel=0 fields=hostname,testname,color,lastchange,logtime,validtime,acklist", NULL, NULL, &board, 1, BBTALK_TIMEOUT);
 	if (hobbitdresult != BB_OK) {
 		errormsg("Unable to fetch current status\n");
 		return;
@@ -64,7 +65,6 @@ void loadstatus(int maxprio, time_t maxage, int mincolor)
 	while (bol && (*bol)) {
 		char *endkey;
 		RbtStatus status;
-		RbtIterator handle;
 
 		eol = strchr(bol, '\n'); if (eol) *eol = '\0';
 
@@ -72,13 +72,14 @@ void loadstatus(int maxprio, time_t maxage, int mincolor)
 		endkey = strchr(bol, '|'); if (endkey) endkey = strchr(endkey+1, '|'); 
 		if (endkey) {
 			nkconf_t *cfg;
+			char *ackstr, *ackrtimestr, *ackvtimestr, *acklevelstr, *ackbystr, *ackmsgstr;
 
 			*endkey = '\0';
 			cfg = get_nkconfig(bol);
 			*endkey = '|';
 
 			if (cfg) {
-				hstatus_t *newitem = (hstatus_t *)malloc(sizeof(hstatus_t));
+				hstatus_t *newitem = (hstatus_t *)calloc(1, sizeof(hstatus_t));
 				newitem->config     = cfg;
 				newitem->hostname   = gettok(bol, "|");
 				newitem->testname   = gettok(NULL, "|");
@@ -86,13 +87,31 @@ void loadstatus(int maxprio, time_t maxage, int mincolor)
 				newitem->lastchange = atoi(gettok(NULL, "|"));
 				newitem->logtime    = atoi(gettok(NULL, "|"));
 				newitem->validtime  = atoi(gettok(NULL, "|"));
-				newitem->acktime    = atoi(gettok(NULL, "|"));
-				if ( (newitem->config->priority > maxprio) ||
+				ackstr              = gettok(NULL, "|");
+				ackrtimestr = ackvtimestr = acklevelstr = ackbystr = ackmsgstr = NULL;
+
+				if (ackstr) {
+					nldecode(ackstr);
+					ackrtimestr = strtok(ackstr, ":");
+					if (ackrtimestr) ackvtimestr = strtok(NULL, ":");
+					if (ackvtimestr) acklevelstr = strtok(NULL, ":");
+					if (acklevelstr) ackbystr = strtok(NULL, ":");
+					if (ackbystr)    ackmsgstr = strtok(NULL, ":");
+				}
+
+				if ( (newitem->config->priority > maxprio)  ||
 				     ((now - newitem->lastchange) > maxage) ||
-				     (newitem->color < mincolor) ) {
+				     (newitem->color < mincolor)            ||
+				     (ackmsgstr && !wantacked)              ) {
 					xfree(newitem);
 				}
 				else {
+					if (ackvtimestr && ackbystr && ackmsgstr) {
+						newitem->acktime = atoi(ackvtimestr);
+						newitem->ackedby = strdup(ackbystr);
+						newitem->ackmsg  = strdup(ackmsgstr);
+					}
+
 					newitem->key = (char *)malloc(strlen(newitem->hostname) + strlen(newitem->testname) + 2);
 					sprintf(newitem->key, "%s|%s", newitem->hostname, newitem->testname);
 					status = rbtInsert(rbstate, newitem->key, newitem);
@@ -195,6 +214,7 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 		else {
 			hstatus_t *column;
 			char *htmlalttag;
+			char *htmlackstr;
 
 			rbtKeyValue(rbstate, sthandle, &k1, &k2);
 			column = (hstatus_t *)k2;
@@ -203,15 +223,16 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 			else {
 				time_t age = now - column->lastchange;
 				htmlalttag = alttag(colname, column->color, 0, 1, agestring(age));
-				fprintf(output, "<A HREF=\"%s/bb-hostsvc.sh?HOSTSVC=%s.%s&amp;IP=%s&amp;DISPLAYNAME=%s&amp;NKPRIO=%d&amp;NKTTGROUP=%s&amp;NKTTEXTRA=%s\">",
-					xgetenv("CGIBINURL"), commafy(itm->hostname), colname,
-					ip, (dispname ? dispname : itm->hostname),
+				htmlackstr = (column->ackmsg ? column->ackmsg : "");
+				fprintf(output, "<A HREF=\"%s&amp;NKPRIO=%d&amp;NKTTGROUP=%s&amp;NKTTEXTRA=%s\">",
+					hostsvcurl(itm->hostname, colname, ip, dispname),
 					prio, 
 					column->config->ttgroup,
 					column->config->ttextra);
-				fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
-					xgetenv("BBSKIN"), dotgiffilename(column->color, 0, (age > oldlimit)),
-					htmlalttag, htmlalttag, 
+				fprintf(output, "<IMG SRC=\"%s/%s\" TITLE=\"%s %s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
+					xgetenv("BBSKIN"), 
+					dotgiffilename(column->color, (column->acktime > 0), (age > oldlimit)),
+					htmlalttag, htmlackstr,
 					xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 			}
 		}
@@ -263,7 +284,6 @@ void generate_nkpage(FILE *output, char *hfprefix)
 	for (hhandle = rbtBegin(rbstate); (hhandle != rbtEnd(rbstate)); hhandle = rbtNext(rbstate, hhandle)) {
 		void *k1, *k2;
 		hstatus_t *itm;
-		RbtStatus status;
 
 	        rbtKeyValue(rbstate, hhandle, &k1, &k2);
 		itm = (hstatus_t *)k2;
@@ -304,6 +324,7 @@ void generate_nkpage(FILE *output, char *hfprefix)
 static int maxprio = 3;
 static time_t maxage = INT_MAX;
 static int mincolor = COL_YELLOW;
+static int wantacked = 0;
 
 static void selectenv(char *name, char *val)
 {
@@ -339,6 +360,10 @@ static void parse_query(void)
 			selectenv(cwalk->name, cwalk->value);
 			oldlimit = 60*atoi(cwalk->value);
 		}
+		else if (strcasecmp(cwalk->name, "WANTACKED") == 0) {
+			selectenv(cwalk->name, cwalk->value);
+			wantacked = (strcasecmp(cwalk->value, "yes") == 0);
+		}
 
 		cwalk = cwalk->next;
 	}
@@ -348,7 +373,6 @@ static void parse_query(void)
 int main(int argc, char *argv[])
 {
 	char configfn[PATH_MAX];
-	char infocgi[PATH_MAX];
 	int argi;
 	char *envarea = NULL;
 
@@ -368,15 +392,14 @@ int main(int argc, char *argv[])
 
 	redirect_cgilog("hobbit-nkview");
 
-	sprintf(infocgi, "%s/bb-hostsvc.sh?HOSTSVC=%%s.%s", xgetenv("CGIBINURL"), xgetenv("INFOCOLUMN"));
-	setdocurl(infocgi);
+	setdocurl(hostsvcurl("%s", xgetenv("INFOCOLUMN"), NULL, NULL));
 
 	parse_query();
 	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 	sprintf(configfn, "%s/etc/hobbitnk.cfg", xgetenv("BBHOME"));
 	load_nkconfig(configfn, NULL);
 	load_all_links();
-	loadstatus(maxprio, maxage, mincolor);
+	loadstatus(maxprio, maxage, mincolor, wantacked);
 	use_recentgifs = 1;
 
 	fprintf(stdout, "Content-type: text/html\n\n");
