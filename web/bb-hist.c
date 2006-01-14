@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.50 2006-01-13 17:34:28 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.51 2006-01-14 13:08:39 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -45,7 +45,7 @@ static int pixels = DEFPIXELS;
 #define BARSUM_1W 0x0002	/* 1-week bar */
 #define BARSUM_4W 0x0004	/* 4-week bar */
 #define BARSUM_1Y 0x0008	/* 1-year bar */
-static unsigned int barsums = (BARSUM_1D|BARSUM_1W);
+static unsigned int barsums = (BARSUM_1D|BARSUM_1W|BARSUM_4W|BARSUM_1Y);
 
 static char *barbkgcolor = "\"#000033\"";
 static char *tagcolors[COL_COUNT] = {
