@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.188 2006-01-13 14:57:39 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.189 2006-01-18 21:52:53 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -1470,7 +1470,7 @@ void handle_ackinfo(char *msg, char *sender, hobbitd_log_t *log)
 
 		newack->level = level;
 		newack->received = received;
-		newack->validuntil = validuntil;
+		newack->validuntil = newack->cleartime = validuntil;
 		newack->ackedby = ackedby;
 		newack->msg = ackmsg;
 
