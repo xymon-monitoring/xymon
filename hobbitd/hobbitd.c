@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.189 2006-01-18 21:52:53 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.190 2006-01-20 11:11:52 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -754,7 +754,7 @@ hobbitd_log_t *find_log(char *hostname, char *testname, char *origin, hobbitd_ho
 
 void get_hts(char *msg, char *sender, char *origin,
 	     hobbitd_hostlist_t **host, hobbitd_testlist_t **test, hobbitd_log_t **log, 
-	     int *color, char **downcause, int createhost, int createlog)
+	     int *color, char **downcause, int *alltests, int createhost, int createlog)
 {
 	/*
 	 * This routine takes care of finding existing status log records, or
@@ -782,6 +782,7 @@ void get_hts(char *msg, char *sender, char *origin,
 	*log = NULL;
 	*color = -1;
 	if (downcause) *downcause = NULL;
+	if (alltests) *alltests = 0;
 
 	hosttest = hostname = testname = colstr = NULL;
 	p = strchr(msg, '\n');
@@ -838,6 +839,11 @@ void get_hts(char *msg, char *sender, char *origin,
 	}
 
 	if (testname && *testname) {
+		if (alltests && (*testname == '*')) {
+			*alltests = 1;
+			return;
+		}
+
 		for (twalk = tests; (twalk && strcasecmp(testname, twalk->testname)); twalk = twalk->next);
 		if (createlog && (twalk == NULL)) {
 			twalk = (hobbitd_testlist_t *)malloc(sizeof(hobbitd_testlist_t));
@@ -2050,12 +2056,12 @@ void do_message(conn_t *msg, char *origin)
 			}
 
 			if (statussenders) {
-				get_hts(currmsg, sender, origin, &h, &t, &log, &color, &downcause, 0, 0);
+				get_hts(currmsg, sender, origin, &h, &t, &log, &color, &downcause, NULL, 0, 0);
 				if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, currmsg)) validsender = 0;
 			}
 
 			if (validsender) {
-				get_hts(currmsg, sender, origin, &h, &t, &log, &color, &downcause, 1, 1);
+				get_hts(currmsg, sender, origin, &h, &t, &log, &color, &downcause, NULL, 1, 1);
 				if (h && dbgfd && dbghost && (strcasecmp(h->hostname, dbghost) == 0)) {
 					fprintf(dbgfd, "\n---- combo message from %s ----\n%s---- end message ----\n", sender, currmsg);
 					fflush(dbgfd);
@@ -2086,7 +2092,7 @@ void do_message(conn_t *msg, char *origin)
 			nextmsg = strstr(currmsg, "\n\nmeta");
 			if (nextmsg) { *(nextmsg+1) = '\0'; nextmsg += 2; }
 
-			get_hts(currmsg, sender, origin, &h, &t, &log, &color, NULL, 0, 0);
+			get_hts(currmsg, sender, origin, &h, &t, &log, &color, NULL, NULL, 0, 0);
 			if (h && t && log && oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, currmsg)) {
 				handle_meta(currmsg, log);
 			}
@@ -2102,11 +2108,11 @@ void do_message(conn_t *msg, char *origin)
 		}
 
 		if (statussenders) {
-			get_hts(msg->buf, sender, origin, &h, &t, &log, &color, &downcause, 0, 0);
+			get_hts(msg->buf, sender, origin, &h, &t, &log, &color, &downcause, NULL, 0, 0);
 			if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, msg->buf)) goto done;
 		}
 
-		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, &downcause, 1, 1);
+		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, &downcause, NULL, 1, 1);
 		if (h && dbgfd && dbghost && (strcasecmp(h->hostname, dbghost) == 0)) {
 			fprintf(dbgfd, "\n---- status message from %s ----\n%s---- end message ----\n", sender, msg->buf);
 			fflush(dbgfd);
@@ -2181,7 +2187,7 @@ void do_message(conn_t *msg, char *origin)
 	}
 	else if (strncmp(msg->buf, "summary", 7) == 0) {
 		/* Summaries are always allowed. Or should we ? */
-		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, NULL, 1, 1);
+		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, NULL, NULL, 1, 1);
 		if (h && t && log && (color != -1)) {
 			handle_status(msg->buf, sender, h->hostname, t->testname, log, color, NULL);
 		}
@@ -2242,7 +2248,7 @@ void do_message(conn_t *msg, char *origin)
 		}
 	}
 	else if (strncmp(msg->buf, "query ", 6) == 0) {
-		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, NULL, 0, 0);
+		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, NULL, NULL, 0, 0);
 		if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, msg->buf)) goto done;
 
 		if (log) {
@@ -2323,7 +2329,7 @@ void do_message(conn_t *msg, char *origin)
 		 */
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
-		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, NULL, 0, 0);
+		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, NULL, NULL, 0, 0);
 		if (log) {
 			char *buf, *bufp;
 			int bufsz, buflen;
@@ -2636,11 +2642,23 @@ void do_message(conn_t *msg, char *origin)
 	}
 	else if (strncmp(msg->buf, "ackinfo ", 8) == 0) {
 		/* ackinfo HOST.TEST\nlevel\nvaliduntil\nackedby\nmsg */
+		int ackall = 0;
 
 		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
-		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, NULL, 0, 0);
-		if (log) handle_ackinfo(msg->buf, sender, log);
+		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, NULL, &ackall, 0, 0);
+		if (log) {
+			handle_ackinfo(msg->buf, sender, log);
+		}
+		else if (ackall) {
+			hobbitd_log_t *lwalk;
+
+			for (lwalk = h->logs; (lwalk); lwalk = lwalk->next) {
+				if (decide_alertstate(lwalk->color) != A_OK) {
+					handle_ackinfo(msg->buf, sender, lwalk);
+				}
+			}
+		}
 	}
 	else if (strncmp(msg->buf, "drop ", 5) == 0) {
 		char *hostname = NULL, *testname = NULL;
@@ -2684,7 +2702,7 @@ void do_message(conn_t *msg, char *origin)
 	}
 	else if (strncmp(msg->buf, "notify", 6) == 0) {
 		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
-		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, NULL, 0, 0);
+		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, NULL, NULL, 0, 0);
 		if (log) handle_notify(msg->buf, sender, log);
 	}
 	else if (strncmp(msg->buf, "schedule", 8) == 0) {
@@ -3725,7 +3743,7 @@ int main(int argc, char *argv[])
 			int color;
 
 			buf = generate_stats();
-			get_hts(buf, "hobbitd", "", &h, &t, &log, &color, NULL, 1, 1);
+			get_hts(buf, "hobbitd", "", &h, &t, &log, &color, NULL, NULL, 1, 1);
 			if (!h || !t || !log) {
 				errprintf("hobbitd servername MACHINE='%s' not listed in bb-hosts, dropping hobbitd status\n",
 					  xgetenv("MACHINE"));
