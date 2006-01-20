@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.38 2005-11-09 13:30:04 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.39 2006-01-20 16:11:28 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -134,6 +134,72 @@ void sethostenv_filter(char *hostptn, char *pageptn, char *ipptn)
 		ippattern_text = strdup(ipptn);
 		ippattern = pcre_compile(ipptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
 	}
+}
+
+static int nkeditprio = -1;
+static char *nkeditgroup = NULL;
+static time_t nkeditstarttime = 0;
+static time_t nkeditendtime = 0;
+static char *nkeditextra = NULL;
+static char *nkeditslawkdays = NULL;
+static char *nkeditslastart = NULL;
+static char *nkeditslaend = NULL;
+
+void sethostenv_nkedit(int prio, char *group, time_t starttime, time_t endtime, char *nktime, char *extra)
+{
+	char *p;
+
+	nkeditprio = prio;
+	nkeditstarttime = starttime;
+	nkeditendtime = endtime;
+
+	if (nkeditgroup) xfree(nkeditgroup);
+	nkeditgroup = strdup(group ? group : "");
+
+	if (nkeditextra) xfree(nkeditextra);
+	nkeditextra = strdup(extra ? extra : "");
+
+	if (nkeditslawkdays) xfree(nkeditslawkdays);
+	nkeditslawkdays = nkeditslastart = nkeditslaend = NULL;
+
+	if (nktime) {
+		nkeditslawkdays = strdup(nktime);
+		p = strchr(nkeditslawkdays, ':');
+		if (p) {
+			*p = '\0';
+			nkeditslastart = p+1;
+
+			p = strchr(nkeditslastart, ':');
+			if (p) {
+				*p = '\0';
+				nkeditslaend = p+1;
+			}
+		}
+
+		if (nkeditslawkdays && (!nkeditslastart || !nkeditslaend)) {
+			xfree(nkeditslawkdays);
+			nkeditslawkdays = nkeditslastart = nkeditslaend = NULL;
+		}
+	}
+}
+
+char *wkdayselect(char wkday, char *valtxt, int isdefault)
+{
+	static char result[100];
+	char *selstr;
+
+	if (!nkeditslawkdays) {
+		if (isdefault) selstr = "SELECTED";
+		else selstr = "";
+	}
+	else {
+		if (strchr(nkeditslawkdays, wkday)) selstr = "SELECTED";
+		else selstr = "";
+	}
+
+	sprintf(result, "<option value=\"%c\" %s>%s</option>\n", wkday, selstr, valtxt);
+
+	return result;
 }
 
 static int namecompare(const void *v1, const void *v2)
@@ -352,6 +418,23 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 
 			MEMUNDEFINE(mname);
 		}
+		else if (strcmp(t_start, "MONLIST") == 0) {
+			int i;
+			struct tm monthtm;
+			char mname[20];
+
+			MEMDEFINE(mname);
+
+			nowtm = localtime(&selectedtime);
+			for (i=1; (i <= 12); i++) {
+				monthtm.tm_mon = (i-1); monthtm.tm_mday = 1; monthtm.tm_year = nowtm->tm_year;
+				monthtm.tm_hour = monthtm.tm_min = monthtm.tm_sec = monthtm.tm_isdst = 0;
+				strftime(mname, sizeof(mname)-1, "%B", &monthtm);
+				fprintf(output, "<OPTION VALUE=\"%d\">%s\n", i, mname);
+			}
+
+			MEMUNDEFINE(mname);
+		}
 		else if (strcmp(t_start, "REPWEEKLIST") == 0) {
 			int i;
 			char weekstr[5];
@@ -373,6 +456,14 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			for (i=1; (i <= 31); i++) {
 				if (i == nowtm->tm_mday) selstr = "SELECTED"; else selstr = "";
 				fprintf(output, "<OPTION VALUE=\"%d\" %s>%d\n", i, selstr, i);
+			}
+		}
+		else if (strcmp(t_start, "DAYLIST") == 0) {
+			int i;
+
+			nowtm = localtime(&selectedtime);
+			for (i=1; (i <= 31); i++) {
+				fprintf(output, "<OPTION VALUE=\"%d\">%d\n", i, i);
 			}
 		}
 		else if (strcmp(t_start, "REPYEARLIST") == 0) {
@@ -403,6 +494,18 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 				fprintf(output, "<OPTION VALUE=\"%d\" %s>%d\n", i, selstr, i);
 			}
 		}
+		else if (strcmp(t_start, "YEARLIST") == 0) {
+			int i;
+			int beginyear, endyear;
+
+			nowtm = localtime(&selectedtime);
+			beginyear = nowtm->tm_year + 1900;
+			endyear = nowtm->tm_year + 1900 + 5;
+
+			for (i=beginyear; (i <= endyear); i++) {
+				fprintf(output, "<OPTION VALUE=\"%d\">%d\n", i, i);
+			}
+		}
 		else if (strcmp(t_start, "REPHOURLIST") == 0) { 
 			int i; 
 			struct tm *nowtm = localtime(&yesterday); 
@@ -413,6 +516,13 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 				fprintf(output, "<OPTION VALUE=\"%d\" %s>%d\n", i, selstr, i);
 			}
 		}
+		else if (strcmp(t_start, "HOURLIST") == 0) { 
+			int i; 
+
+			for (i=0; (i <= 24); i++) {
+				fprintf(output, "<OPTION VALUE=\"%d\">%d\n", i, i);
+			}
+		}
 		else if (strcmp(t_start, "REPMINLIST") == 0) {
 			int i;
 			struct tm *nowtm = localtime(&yesterday);
@@ -421,6 +531,13 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			for (i=0; (i <= 59); i++) {
 				if (i == nowtm->tm_min) selstr = "SELECTED"; else selstr = "";
 				fprintf(output, "<OPTION VALUE=\"%02d\" %s>%02d\n", i, selstr, i);
+			}
+		}
+		else if (strcmp(t_start, "MINLIST") == 0) {
+			int i;
+
+			for (i=0; (i <= 59); i++) {
+				fprintf(output, "<OPTION VALUE=\"%02d\">%02d\n", i, i);
 			}
 		}
 		else if (strcmp(t_start, "REPSECLIST") == 0) {
@@ -736,6 +853,127 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 
 			if (!gotany) {
 				fprintf(output, "<tr><th align=center colspan=3><i>No tasks scheduled</i></th></tr>\n");
+			}
+		}
+
+		else if (strcmp(t_start, "NKEDITPRIOLIST") == 0) {
+			int i;
+			char *selstr;
+
+			for (i=1; (i <= 3); i++) {
+				selstr = ((i == nkeditprio) ? "SELECTED" : "");
+				fprintf(output, "<option value=\"%d\" %s>%d</option>\n", i, selstr, i);
+			}
+		}
+
+		else if (strcmp(t_start, "NKEDITGROUP") == 0) {
+			fprintf(output, "%s", nkeditgroup);
+		}
+
+		else if (strcmp(t_start, "NKEDITEXTRA") == 0) {
+			fprintf(output, "%s", nkeditextra);
+		}
+
+		else if (strcmp(t_start, "NKEDITWKDAYS") == 0) {
+			fprintf(output, wkdayselect('*', "All days", 1));
+			fprintf(output, wkdayselect('W', "Mon-Fri", 0));
+			fprintf(output, wkdayselect('1', "Monday", 0));
+			fprintf(output, wkdayselect('2', "Tuesday", 0));
+			fprintf(output, wkdayselect('3', "Wednesday", 0));
+			fprintf(output, wkdayselect('4', "Thursday", 0));
+			fprintf(output, wkdayselect('5', "Friday", 0));
+			fprintf(output, wkdayselect('6', "Saturday", 0));
+			fprintf(output, wkdayselect('0', "Sunday", 0));
+		}
+
+		else if (strcmp(t_start, "NKEDITSTART") == 0) {
+			int i, curr;
+			char *selstr;
+
+			curr = (nkeditslastart ? (atoi(nkeditslastart) / 100) : 0);
+			for (i=0; (i <= 23); i++) {
+				selstr = ((i == curr) ? "SELECTED" : "");
+				fprintf(output, "<option value=\"%02i00\" %s>%02i:00</option>\n", i, selstr, i);
+			}
+		}
+
+		else if (strcmp(t_start, "NKEDITEND") == 0) {
+			int i, curr;
+			char *selstr;
+
+			curr = (nkeditslaend ? (atoi(nkeditslaend) / 100) : 24);
+			for (i=1; (i <= 24); i++) {
+				selstr = ((i == curr) ? "SELECTED" : "");
+				fprintf(output, "<option value=\"%02i00\" %s>%02i:00</option>\n", i, selstr, i);
+			}
+		}
+
+		else if (strncmp(t_start, "NKEDITDAYLIST", 13) == 0) {
+			time_t t = ((*(t_start+13) == '1') ? nkeditstarttime : nkeditendtime);
+			char *defstr = ((*(t_start+13) == '1') ? "Now" : "Never");
+			int i;
+			char *selstr;
+			struct tm *tm;
+
+			tm = localtime(&t);
+
+			selstr = ((t == 0) ? "SELECTED" : "");
+			fprintf(output, "<option value=\"0\" %s>%s</option>\n", selstr, defstr);
+
+			for (i=1; (i <= 31); i++) {
+				selstr = ( (t && (tm->tm_mday == i)) ? "SELECTED" : "");
+				fprintf(output, "<option value=\"%d\" %s>%d</option>\n", i, selstr, i);
+			}
+		}
+
+		else if (strncmp(t_start, "NKEDITMONLIST", 13) == 0) {
+			time_t t = ((*(t_start+13) == '1') ? nkeditstarttime : nkeditendtime);
+			char *defstr = ((*(t_start+13) == '1') ? "Now" : "Never");
+			int i;
+			char *selstr;
+			struct tm *tm;
+			time_t now;
+			struct tm *nowtm;
+			struct tm monthtm;
+			char mname[20];
+
+			tm = localtime(&t);
+			now = getcurrenttime(NULL); nowtm = localtime(&t);
+
+			selstr = ((t == 0) ? "SELECTED" : "");
+			fprintf(output, "<option value=\"0\" %s>%s</option>\n", selstr, defstr);
+
+			for (i=1; (i <= 12); i++) {
+				selstr = ( (t && (tm->tm_mon == (i -1))) ? "SELECTED" : "");
+				monthtm.tm_mon = (i-1); monthtm.tm_mday = 1; monthtm.tm_year = nowtm->tm_year;
+				monthtm.tm_hour = monthtm.tm_min = monthtm.tm_sec = monthtm.tm_isdst = 0;
+				strftime(mname, sizeof(mname)-1, "%B", &monthtm);
+				fprintf(output, "<OPTION VALUE=\"%d\" %s>%s</option>\n", i, selstr, mname);
+			}
+		}
+
+		else if (strncmp(t_start, "NKEDITYEARLIST", 14) == 0) {
+			time_t t = ((*(t_start+14) == '1') ? nkeditstarttime : nkeditendtime);
+			char *defstr = ((*(t_start+13) == '1') ? "Now" : "Never");
+			int i;
+			char *selstr;
+			struct tm *tm;
+			time_t now;
+			struct tm *nowtm;
+			int beginyear, endyear;
+
+			tm = localtime(&t);
+			now = getcurrenttime(NULL); nowtm = localtime(&t);
+
+			beginyear = nowtm->tm_year + 1900;
+			endyear = nowtm->tm_year + 1900 + 5;
+
+			selstr = ((t == 0) ? "SELECTED" : "");
+			fprintf(output, "<option value=\"0\" %s>%s</option>\n", selstr, defstr);
+
+			for (i=beginyear; (i <= endyear); i++) {
+				selstr = ( (t && (tm->tm_year == (i - 1900))) ? "SELECTED" : "");
+				fprintf(output, "<OPTION VALUE=\"%d\" %s>%d</option>\n", i, selstr, i);
 			}
 		}
 
