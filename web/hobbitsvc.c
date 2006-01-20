@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.54 2005-12-29 23:27:27 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.55 2006-01-20 16:12:48 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -113,10 +113,10 @@ static int parse_query(void)
 			if (n == strlen(val)) nkprio = strdup(val);
 		}
 		else if (val && argnmatch(token, "NKTTGROUP")) {
-			if (n == strlen(val)) nkttgroup = strdup(val);
+			if (n == strlen(val)) nkttgroup = strdup(urldecode(val));
 		}
 		else if (val && argnmatch(token, "NKTTEXTRA")) {
-			if (n == strlen(val)) nkttextra = strdup(val);
+			if (n == strlen(val)) nkttextra = strdup(urldecode(val));
 		}
 
 		token = strtok(NULL, "&");
