@@ -14,15 +14,25 @@
 #ifndef __LOADNKCONF_H__
 #define __LOADNKCONF_H__
 
+#include <time.h>
+
 typedef struct nkconf_t {
 	char *key;
 	int priority;
+	time_t starttime, endtime;
+	char *nktime;
 	char *ttgroup;
 	char *ttextra;
 } nkconf_t;
 
-extern int load_nkconfig(char *fn, char *wantclass);
-extern nkconf_t *get_nkconfig(char *key);
+#define NKCONF_TIMEFILTER 1
+#define NKCONF_FIRSTMATCH 2
+#define NKCONF_NEXTMATCH  3
+#define NKCONF_RAW_FIRST  4
+#define NKCONF_RAW_NEXT   5
+
+extern int load_nkconfig(char *fn);
+extern nkconf_t *get_nkconfig(char *key, int flags);
 
 #endif
 
