@@ -1,5 +1,5 @@
-PROGRAMS = bb-hist.cgi bb-eventlog.cgi bb-rep.cgi bb-replog.cgi bb-snapshot.cgi bb-findhost.cgi bb-csvinfo.cgi bb-ack.cgi bb-webpage bb-datepage.cgi hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-nkview.cgi hobbit-ackinfo.cgi hobbit-statusreport.cgi
-CGISCRIPTS = bb-hist.sh bb-eventlog.sh bb-rep.sh bb-replog.sh bb-snapshot.sh bb-findhost.sh bb-csvinfo.sh hobbitcolumn.sh bb-datepage.sh hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh hobbit-confreport.sh hobbit-nkview.sh hobbit-ackinfo.sh hobbit-certreport.sh
+PROGRAMS = bb-hist.cgi bb-eventlog.cgi bb-rep.cgi bb-replog.cgi bb-snapshot.cgi bb-findhost.cgi bb-csvinfo.cgi bb-ack.cgi bb-webpage bb-datepage.cgi hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-nkview.cgi hobbit-nkedit.cgi hobbit-ackinfo.cgi hobbit-statusreport.cgi
+CGISCRIPTS = bb-hist.sh bb-eventlog.sh bb-rep.sh bb-replog.sh bb-snapshot.sh bb-findhost.sh bb-csvinfo.sh hobbitcolumn.sh bb-datepage.sh hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh hobbit-confreport.sh hobbit-nkview.sh hobbit-nkedit.sh hobbit-ackinfo.sh hobbit-certreport.sh
 SECCGISCRIPTS = bb-ack.sh hobbit-enadis.sh
 
 LIBOBJS = ../lib/libbbgen.a
@@ -19,6 +19,7 @@ HOBBITGRAPHOBJS = hobbitgraph.o
 HOBBITSVCOBJS   = hobbitsvc.o hobbitsvc-info.o hobbitsvc-trends.o
 HOBBITENADISOBJS= hobbit-enadis.o
 NKVIEWOBJS      = hobbit-nkview.o
+NKEDITOBJS      = hobbit-nkedit.o
 ACKINFOOBJS     = hobbit-ackinfo.o
 CONFREPOBJS     = hobbit-confreport.o
 STATUSREPOBJS   = hobbit-statusreport.o
@@ -85,6 +86,9 @@ hobbit-nkview.cgi: $(NKVIEWOBJS) $(LIBOBJS)
 hobbit-nkview.o: hobbit-nkview.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
 
+hobbit-nkedit.cgi: $(NKEDITOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NKEDITOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
+
 hobbit-ackinfo.cgi: $(ACKINFOOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(ACKINFOOBJS) $(LIBOBJS) $(NETLIBS)
 
@@ -138,6 +142,10 @@ bb-hostsvc.sh: hobbitsvc.sh.DIST
 	chmod 755 $@
 
 hobbit-nkview.sh: hobbit-nkview.sh.DIST
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
+	chmod 755 $@
+
+hobbit-nkedit.sh: hobbit-nkedit.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
