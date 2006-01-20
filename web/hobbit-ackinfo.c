@@ -1,14 +1,14 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit CGI for sending in an "ackinfo" message.                            */
 /*                                                                            */
-/* Copyright (C) 2005 Henrik Storner <henrik@storner.dk>                      */
+/* Copyright (C) 2005-2006 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-ackinfo.c,v 1.1 2005-12-29 16:31:35 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-ackinfo.c,v 1.2 2006-01-20 11:18:24 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -21,8 +21,8 @@ static char rcsid[] = "$Id: hobbit-ackinfo.c,v 1.1 2005-12-29 16:31:35 henrik Ex
 
 static char *hostname = NULL;
 static char *testname = NULL;
-static int level = 0;
-static int validity = 0;
+static int level = -1;
+static int validity = -1;
 static char *ackedby = NULL;
 static char *ackmsg  = NULL;
 
@@ -39,17 +39,19 @@ static void parse_query(void)
 		else if (strcasecmp(cwalk->name, "SERVICE") == 0) {
 			testname = strdup(cwalk->value);
 		}
+		else if (strcasecmp(cwalk->name, "ALLTESTS") == 0) {
+			if (strcasecmp(cwalk->value, "on") == 0) testname = strdup("*");
+		}
 		else if (strcasecmp(cwalk->name, "NOTE") == 0) {
 			ackmsg = strdup(cwalk->value);
 		}
 		else if (strcasecmp(cwalk->name, "LEVEL") == 0) {
-			level = atoi(cwalk->value);
+			/* Commandline may override this */
+			if (level == -1) level = atoi(cwalk->value);
 		}
 		else if (strcasecmp(cwalk->name, "VALIDITY") == 0) {
-			validity = atoi(cwalk->value);
-		}
-		else if (strcasecmp(cwalk->name, "ACKEDBY") == 0) {
-			ackedby = strdup(cwalk->value);
+			/* Commandline may override this */
+			if (validity == -1) validity = atoi(cwalk->value);
 		}
 
 		cwalk = cwalk->next;
@@ -93,10 +95,15 @@ int main(int argc, char *argv[])
 	redirect_cgilog("hobbit-ackinfo");
 	parse_query();
 
-	if (hostname && *hostname && testname && *testname && (validity>0) && ackedby && *ackedby && ackmsg && *ackmsg) {
+	if (hostname && *hostname && testname && *testname && ((level == 0) || (validity>0)) && ackmsg && *ackmsg) {
 		char *p;
 
-		p = strchr(ackedby, '\n'); if (p) *p = '\0';
+		/* Get the login username */
+		if (!ackedby) ackedby = getenv("REMOTE_USER");
+		if (!ackedby) ackedby = "UnknownUser";
+
+		if (validity == -1) validity = 30*60; /* 30 minutes */
+
 		p = strchr(ackmsg, '\n'); if (p) *p = '\0';
 
 		/* ackinfo HOST.TEST\nlevel\nvaliduntil\nackedby\nmsg */
@@ -105,8 +112,16 @@ int main(int argc, char *argv[])
 			hostname, testname, level, validity, ackedby, ackmsg);
 		res = sendmessage(bbmsg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
 	}
+	else {
+		bbmsg = (char *)malloc(4096);
+		sprintf(bbmsg, "error in input params: hostname=%s, testname=%s, ackmsg=%s, validity=%d\n",
+			hostname, testname, ackmsg, validity);
+	}
 
-	fprintf(stdout, "Content-type: text/html\n\n");
+	fprintf(stdout, "Content-type: text/html\n");
+	fprintf(stdout, "Location: %s\n", getenv("HTTP_REFERER"));
+	fprintf(stdout, "\n");
+	fprintf(stdout, "Sent to hobbitd:\n%s\n", bbmsg);
 
 	return 0;
 }
