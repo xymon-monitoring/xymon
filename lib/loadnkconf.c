@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadnkconf.c,v 1.2 2006-01-20 11:10:45 henrik Exp $";
+static char rcsid[] = "$Id: loadnkconf.c,v 1.3 2006-01-20 13:53:54 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -117,8 +117,8 @@ int load_nkconfig(char *fn)
 			newitem->endtime  = ((eend && *eend) ? atoi(eend) : 0);
 			newitem->nktime   = ((etime && *etime) ? strdup(etime) : NULL);
 			newitem->priority = ttprio;
-			newitem->ttgroup  = strdup(urlencode(ttgroup));
-			newitem->ttextra  = strdup(urlencode(ttextra));
+			newitem->ttgroup  = strdup(ttgroup);
+			newitem->ttextra  = strdup(ttextra);
 
 			status = rbtInsert(rbconf, newitem->key, newitem);
 			while (status == RBT_STATUS_DUPLICATE_KEY) {
