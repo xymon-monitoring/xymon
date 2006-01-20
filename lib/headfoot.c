@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.39 2006-01-20 16:11:28 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.40 2006-01-20 17:14:53 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -963,7 +963,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			int beginyear, endyear;
 
 			tm = localtime(&t);
-			now = getcurrenttime(NULL); nowtm = localtime(&t);
+			now = getcurrenttime(NULL); nowtm = localtime(&now);
 
 			beginyear = nowtm->tm_year + 1900;
 			endyear = nowtm->tm_year + 1900 + 5;
