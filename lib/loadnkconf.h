@@ -32,7 +32,7 @@ typedef struct nkconf_t {
 #define NKCONF_RAW_NEXT   5
 
 extern int load_nkconfig(char *fn);
-extern nkconf_t *get_nkconfig(char *key, int flags);
+extern nkconf_t *get_nkconfig(char *key, int flags, char **resultkey);
 
 #endif
 

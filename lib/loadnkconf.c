@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadnkconf.c,v 1.3 2006-01-20 13:53:54 henrik Exp $";
+static char rcsid[] = "$Id: loadnkconf.c,v 1.4 2006-01-20 16:11:58 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -146,7 +146,7 @@ int load_nkconfig(char *fn)
 	return 0;
 }
 
-RbtHandle findrec(char *key)
+static RbtHandle findrec(char *key)
 {
 	RbtHandle handle;
 
@@ -181,7 +181,7 @@ RbtHandle findrec(char *key)
 	return handle;
 }
 
-int timecheck(time_t starttime, time_t endtime, char *nktime)
+static int timecheck(time_t starttime, time_t endtime, char *nktime)
 {
 	time_t now = getcurrenttime(NULL);
 
@@ -192,12 +192,14 @@ int timecheck(time_t starttime, time_t endtime, char *nktime)
 	return 0;
 }
 
-nkconf_t *get_nkconfig(char *key, int flags)
+nkconf_t *get_nkconfig(char *key, int flags, char **resultkey)
 {
 	static RbtHandle handle;
 	void *k1, *k2;
 	char *realkey;
 	nkconf_t *result = NULL;
+
+	if (resultkey) *resultkey = NULL;
 
 	switch (flags) {
 	  case NKCONF_TIMEFILTER:
@@ -248,6 +250,7 @@ nkconf_t *get_nkconfig(char *key, int flags)
 	if (handle == rbtEnd(rbconf)) return NULL;
 
 	rbtKeyValue(rbconf, handle, &k1, &k2);
+	if (resultkey) *resultkey = (char *)k1;
 	result = (nkconf_t *)k2;
 
 	return result;
