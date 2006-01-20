@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkview.c,v 1.8 2006-01-14 16:07:17 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkview.c,v 1.9 2006-01-20 11:19:43 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -75,7 +75,7 @@ void loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 			char *ackstr, *ackrtimestr, *ackvtimestr, *acklevelstr, *ackbystr, *ackmsgstr;
 
 			*endkey = '\0';
-			cfg = get_nkconfig(bol);
+			cfg = get_nkconfig(bol, NKCONF_TIMEFILTER);
 			*endkey = '|';
 
 			if (cfg) {
@@ -227,8 +227,8 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 				fprintf(output, "<A HREF=\"%s&amp;NKPRIO=%d&amp;NKTTGROUP=%s&amp;NKTTEXTRA=%s\">",
 					hostsvcurl(itm->hostname, colname, ip, dispname),
 					prio, 
-					column->config->ttgroup,
-					column->config->ttextra);
+					(column->config->ttgroup ? column->config->ttgroup : ""),
+					(column->config->ttextra ? column->config->ttextra : "")) ;
 				fprintf(output, "<IMG SRC=\"%s/%s\" TITLE=\"%s %s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
 					xgetenv("BBSKIN"), 
 					dotgiffilename(column->color, (column->acktime > 0), (age > oldlimit)),
@@ -372,7 +372,6 @@ static void parse_query(void)
 
 int main(int argc, char *argv[])
 {
-	char configfn[PATH_MAX];
 	int argi;
 	char *envarea = NULL;
 
@@ -396,8 +395,7 @@ int main(int argc, char *argv[])
 
 	parse_query();
 	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
-	sprintf(configfn, "%s/etc/hobbitnk.cfg", xgetenv("BBHOME"));
-	load_nkconfig(configfn, NULL);
+	load_nkconfig(NULL);
 	load_all_links();
 	loadstatus(maxprio, maxage, mincolor, wantacked);
 	use_recentgifs = 1;
