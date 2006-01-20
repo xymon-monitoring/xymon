@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.42 2006-01-14 16:05:31 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.43 2006-01-20 11:20:45 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -172,13 +172,17 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		}
 
 		fprintf(output, "<tr>");
-		fprintf(output, "<td colspan=3 align=center>\n");
+		fprintf(output, "<td colspan=3 align=center valign=middle>\n");
 		fprintf(output, "  <form method=\"POST\" action=\"%s/hobbit-ackinfo.sh\">\n", 
 			xgetenv("CGIBINURL"));
 		fprintf(output, "    <INPUT TYPE=\"TEXT\" NAME=\"NOTE\" MAXLENGTH=60 SIZE=60 tabindex=\"0\">\n");
+		fprintf(output, "    &nbsp;&nbsp;Host-ack\n");
+		fprintf(output, "    <INPUT TYPE=\"CHECKBOX\" NAME=\"ALLTESTS\" VALUE=\"OFF\">&nbsp;&nbsp;\n");
 		fprintf(output, "    <INPUT TYPE=\"HIDDEN\" NAME=\"HOST\" VALUE=\"%s\">\n", hostname);
 		fprintf(output, "    <INPUT TYPE=\"HIDDEN\" NAME=\"SERVICE\" VALUE=\"%s\">\n", service);
-		fprintf(output, "    <input name=ack type=\"button\" onClick=\"validateInput(this.form)\" value=\"Acknowledge\">\n");
+		fprintf(output, "    <INPUT TYPE=\"HIDDEN\" NAME=\"LEVEL\" VALUE=\"0\">\n");
+		fprintf(output, "    <INPUT TYPE=\"HIDDEN\" NAME=\"VALIDITY\" VALUE=\"-1\">\n");
+		fprintf(output, "    <input name=ack type=\"submit\" value=\"Acknowledge\">\n");
 		fprintf(output, "  </form>\n");
 		fprintf(output, "</td>");
 		fprintf(output, "</tr>\n");
