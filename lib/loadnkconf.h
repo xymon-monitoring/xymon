@@ -23,6 +23,7 @@ typedef struct nkconf_t {
 	char *nktime;
 	char *ttgroup;
 	char *ttextra;
+	char *updinfo;
 } nkconf_t;
 
 #define NKCONF_TIMEFILTER 1

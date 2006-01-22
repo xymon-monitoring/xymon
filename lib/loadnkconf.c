@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadnkconf.c,v 1.6 2006-01-22 13:30:19 henrik Exp $";
+static char rcsid[] = "$Id: loadnkconf.c,v 1.7 2006-01-22 14:37:47 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -95,7 +95,7 @@ int load_nkconfig(char *fn)
 	while (stackfgets(&inbuf, &inbufsz, "include", NULL)) {
 		/* Full record : Host  service  START  END  TIMESPEC  TTPrio TTGroup TTExtra */
 		/* Clone record: Host  =HOST */
-		char *ehost, *eservice, *estart, *eend, *etime, *ttgroup, *ttextra;
+		char *ehost, *eservice, *estart, *eend, *etime, *ttgroup, *ttextra, *updinfo;
 		int ttprio = 0;
 		nkconf_t *newitem;
 		RbtStatus status;
@@ -118,6 +118,7 @@ int load_nkconfig(char *fn)
 			ttprio = atoi(gettok(NULL, "|\n")); if (ttprio == 0) continue;
 			ttgroup = gettok(NULL, "|\n");
 			ttextra = gettok(NULL, "|\n");
+			updinfo = gettok(NULL, "|\n");
 
 			newitem = (nkconf_t *)malloc(sizeof(nkconf_t));
 			newitem->key = (char *)malloc(strlen(ehost) + strlen(eservice) + 15);
@@ -128,6 +129,7 @@ int load_nkconfig(char *fn)
 			newitem->priority = ttprio;
 			newitem->ttgroup  = strdup(ttgroup);
 			newitem->ttextra  = strdup(ttextra);
+			newitem->updinfo  = strdup(updinfo);
 
 			status = rbtInsert(rbconf, newitem->key, newitem);
 			while (status == RBT_STATUS_DUPLICATE_KEY) {
@@ -327,13 +329,14 @@ int update_nkconfig(nkconf_t *rec)
 			if (onerec->starttime > 0) sprintf(startstr, "%d", (int)onerec->starttime);
 			if (onerec->endtime > 0) sprintf(endstr, "%d", (int)onerec->endtime);
 
-			fprintf(fd, "%s|%s|%s|%s|%d|%s|%s\n",
+			fprintf(fd, "%s|%s|%s|%s|%d|%s|%s|%s\n",
 				onekey, 
 				startstr, endstr,
 				(onerec->nktime ? onerec->nktime : ""),
 				onerec->priority, 
 				(onerec->ttgroup ? onerec->ttgroup : ""), 
-				(onerec->ttextra ? onerec->ttextra : ""));
+				(onerec->ttextra ? onerec->ttextra : ""),
+				(onerec->updinfo ? onerec->updinfo : ""));
 		}
 
 		handle = rbtNext(rbconf, handle);

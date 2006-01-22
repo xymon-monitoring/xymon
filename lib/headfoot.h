@@ -20,7 +20,7 @@ extern void sethostenv_histlog(char *histtime);
 extern void sethostenv_template(char *dir);
 extern void sethostenv_refresh(int n);
 extern void sethostenv_filter(char *hostptn, char *pageptn, char *ipptn);
-extern void sethostenv_nkedit(int prio, char *group, time_t starttime, time_t endtime, char *nktime, char *extra);
+extern void sethostenv_nkedit(char *updinfo, int prio, char *group, time_t starttime, time_t endtime, char *nktime, char *extra);
 extern void sethostenv_nkclonelist_clear(void);
 extern void sethostenv_nkclonelist_add(char *hostname);
 extern void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype, time_t selectedtime);

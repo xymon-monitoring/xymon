@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.41 2006-01-22 12:31:14 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.42 2006-01-22 14:37:47 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -136,6 +136,7 @@ void sethostenv_filter(char *hostptn, char *pageptn, char *ipptn)
 	}
 }
 
+static char *nkeditupdinfo = NULL;
 static int nkeditprio = -1;
 static char *nkeditgroup = NULL;
 static time_t nkeditstarttime = 0;
@@ -147,9 +148,12 @@ static char *nkeditslaend = NULL;
 static char **nkeditclonelist = NULL;
 static int nkeditclonesize = 0;
 
-void sethostenv_nkedit(int prio, char *group, time_t starttime, time_t endtime, char *nktime, char *extra)
+void sethostenv_nkedit(char *updinfo, int prio, char *group, time_t starttime, time_t endtime, char *nktime, char *extra)
 {
 	char *p;
+
+	if (nkeditupdinfo) xfree(nkeditupdinfo);
+	nkeditupdinfo = strdup(updinfo);
 
 	nkeditprio = prio;
 	nkeditstarttime = starttime;
@@ -883,6 +887,10 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			if (!gotany) {
 				fprintf(output, "<tr><th align=center colspan=3><i>No tasks scheduled</i></th></tr>\n");
 			}
+		}
+
+		else if (strcmp(t_start, "NKEDITUPDINFO") == 0) {
+			fprintf(output, "%s", nkeditupdinfo);
 		}
 
 		else if (strcmp(t_start, "NKEDITPRIOLIST") == 0) {

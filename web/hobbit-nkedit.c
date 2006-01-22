@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.4 2006-01-22 14:04:29 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.5 2006-01-22 14:37:47 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -22,6 +22,8 @@ static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.4 2006-01-22 14:04:29 henrik Exp
 #include <sys/stat.h>
 
 #include "libbbgen.h"
+
+static char *operator = NULL;
 
 static enum { NKEDIT_FIND, NKEDIT_NEXT, NKEDIT_UPDATE, NKEDIT_DELETE, NKEDIT_ADDCLONE, NKEDIT_DROPCLONE } editaction = NKEDIT_FIND;
 static char *rq_hostname = NULL;
@@ -212,8 +214,8 @@ void findrecord(char *hostname, char *service, char *isclonewarning, char *hascl
 		hostname = service = "";
 	}
 
-	if (rec) sethostenv_nkedit(rec->priority, rec->ttgroup, rec->starttime, rec->endtime, rec->nktime, rec->ttextra);
-	else sethostenv_nkedit(0, NULL, 0, 0, NULL, NULL);
+	if (rec) sethostenv_nkedit(rec->updinfo, rec->priority, rec->ttgroup, rec->starttime, rec->endtime, rec->nktime, rec->ttextra);
+	else sethostenv_nkedit("", 0, NULL, 0, 0, NULL, NULL);
 
 	sprintf(formfn, "%s/web/nkedit_form", xgetenv("BBHOME"));
 	formfile = open(formfn, O_RDONLY);
@@ -286,7 +288,10 @@ void updaterecord(char *hostname, char *service)
 	if (hostname && service) {
 		char *key = (char *)malloc(strlen(hostname) + strlen(service) + 2);
 		char *realkey;
+		char datestr[20];
+		time_t now = getcurrenttime(NULL);
 
+		strftime(datestr, sizeof(datestr), "%Y-%m-%d %H:%M:%S", localtime(&now));
 		sprintf(key, "%s|%s", hostname, service);
 		rec = get_nkconfig(key, NKCONF_FIRSTMATCH, &realkey);
 		if (rec == NULL) {
@@ -306,6 +311,9 @@ void updaterecord(char *hostname, char *service)
 		rec->ttgroup = (rq_group ? strdup(rq_group) : NULL);
 		if (rec->ttextra) xfree(rec->ttextra); 
 		rec->ttextra = (rq_extra ? strdup(rq_extra) : NULL);
+		if (rec->updinfo) xfree(rec->updinfo);
+		rec->updinfo = (char *)malloc(strlen(operator) + strlen(datestr) + 2);
+		sprintf(rec->updinfo, "%s %s", operator, datestr);
 
 		update_nkconfig(rec);
 		xfree(key);
@@ -361,7 +369,9 @@ int main(int argc, char *argv[])
 	int argi;
 	char *envarea = NULL;
 	char *configfn = NULL;
-	char *operator = getenv("REMOTE_USER");
+		
+	operator = getenv("REMOTE_USER");
+	if (!operator) operator = "Anonymous";
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {

@@ -22,6 +22,10 @@
 		   <INPUT TYPE="SUBMIT" NAME="Next" VALUE="Next" ALT="Next record">
 		</TD>
 	     </TR>
+
+             <TR>
+	        <TD COLSPAN=3 ALIGN=CENTER>Last update by:&nbsp;&NKEDITUPDINFO</TD>
+             </TR>
 	  </TABLE>
 
           <TABLE BORDER=0 WIDTH="100%" SUMMARY="Host definition">
