@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadnkconf.c,v 1.4 2006-01-20 16:11:58 henrik Exp $";
+static char rcsid[] = "$Id: loadnkconf.c,v 1.5 2006-01-22 12:33:05 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -26,12 +26,33 @@ static char rcsid[] = "$Id: loadnkconf.c,v 1.4 2006-01-20 16:11:58 henrik Exp $"
 
 static RbtHandle rbconf;
 static char *defaultfn = NULL;
+static char *configfn = NULL;
 
 static int key_compare(void *a, void *b)
 {
 	return strcasecmp((char *)a, (char *)b);
 }
 
+
+static void flushrec(void *k1, void *k2)
+{
+	char *key;
+
+	key = (char *)k1;
+	if (*(key + strlen(key) - 1) == '=') {
+		/* Clone record just holds a char string pointing to the origin record */
+		char *pointsto = (char *)k2;
+		xfree(pointsto);
+	}
+	else {
+		/* Full record */
+		nkconf_t *rec = (nkconf_t *)k2;
+		if (rec->nktime)  xfree(rec->nktime);
+		if (rec->ttgroup) xfree(rec->ttgroup);
+		if (rec->ttextra) xfree(rec->ttextra);
+	}
+	xfree(key);
+}
 
 int load_nkconfig(char *fn)
 {
@@ -43,26 +64,11 @@ int load_nkconfig(char *fn)
 	if (!firsttime) {
 		/* Clean up existing datatree */
 		RbtHandle handle;
+		void *k1, *k2;
 
 		for (handle = rbtBegin(rbconf); (handle != rbtEnd(rbconf)); handle = rbtNext(rbconf, handle)) {
-			void *k1, *k2;
-			char *key;
-
 			rbtKeyValue(rbconf, handle, &k1, &k2);
-			key = (char *)k1;
-			if (*(key + strlen(key) - 1) == '=') {
-				/* Clone record just holds a char string pointing to the origin record */
-				char *pointsto = (char *)k2;
-				xfree(pointsto);
-			}
-			else {
-				/* Full record */
-				nkconf_t *rec = (nkconf_t *)k2;
-				if (rec->nktime)  xfree(rec->nktime);
-				if (rec->ttgroup) xfree(rec->ttgroup);
-				if (rec->ttextra) xfree(rec->ttextra);
-			}
-			xfree(key);
+			flushrec(k1, k2);
 		}
 
 		rbtDelete(rbconf);
@@ -82,6 +88,9 @@ int load_nkconfig(char *fn)
 
 	fd = stackfopen(fn, "r");
 	if (fd == NULL) return 1;
+
+	if (configfn) xfree(configfn);
+	configfn = strdup(fn);
 
 	while (stackfgets(&inbuf, &inbufsz, "include", NULL)) {
 		/* Full record : Host  service  START  END  TIMESPEC  TTPrio TTGroup TTExtra */
@@ -195,8 +204,8 @@ static int timecheck(time_t starttime, time_t endtime, char *nktime)
 nkconf_t *get_nkconfig(char *key, int flags, char **resultkey)
 {
 	static RbtHandle handle;
+	static char *realkey = NULL;
 	void *k1, *k2;
-	char *realkey;
 	nkconf_t *result = NULL;
 
 	if (resultkey) *resultkey = NULL;
@@ -219,40 +228,201 @@ nkconf_t *get_nkconfig(char *key, int flags, char **resultkey)
 			handle = rbtNext(rbconf, handle);
 			if (handle != rbtEnd(rbconf)) {
 				rbtKeyValue(rbconf, handle, &k1, &k2);
-				if (strncmp(key, ((nkconf_t *)k2)->key, strlen(realkey)) != 0) handle=rbtEnd(rbconf);
+				if (strncmp(realkey, ((nkconf_t *)k2)->key, strlen(realkey)) != 0) handle=rbtEnd(rbconf);
 			}
 		}
+		realkey = NULL;
 		break;
 
 	  case NKCONF_FIRSTMATCH:
 		handle = findrec(key);
+		realkey = NULL;
+		if (handle != rbtEnd(rbconf)) {
+			rbtKeyValue(rbconf, handle, &k1, &k2);
+			realkey = (char *)k1;
+		}
 		break;
 
 	  case NKCONF_NEXTMATCH:
-		rbtKeyValue(rbconf, handle, &k1, &k2);
-		realkey = (char *)k1;
+		if (!realkey || (handle == rbtEnd(rbconf))) return NULL;
 		handle = rbtNext(rbconf, handle);
 		if (handle != rbtEnd(rbconf)) {
 			rbtKeyValue(rbconf, handle, &k1, &k2);
-			if (strncmp(key, ((nkconf_t *)k2)->key, strlen(realkey)) != 0) handle=rbtEnd(rbconf);
+			if (strncmp(realkey, ((nkconf_t *)k2)->key, strlen(realkey)) != 0) handle=rbtEnd(rbconf);
 		}
 		break;
 
 	  case NKCONF_RAW_FIRST:
 		handle = rbtBegin(rbconf);
+		realkey = NULL;
 		break;
 
 	  case NKCONF_RAW_NEXT:
 		handle = rbtNext(rbconf, handle);
+		realkey = NULL;
 		break;
 	}
 
-	if (handle == rbtEnd(rbconf)) return NULL;
+	if (handle == rbtEnd(rbconf)) { realkey = NULL; return NULL; }
 
 	rbtKeyValue(rbconf, handle, &k1, &k2);
 	if (resultkey) *resultkey = (char *)k1;
 	result = (nkconf_t *)k2;
 
 	return result;
+}
+
+int update_nkconfig(nkconf_t *rec)
+{
+	RbtHandle handle;
+	FILE *fd;
+	char *tmpfn;
+	char *bakfn;
+	int result = 0;
+
+	tmpfn = (char *)malloc(strlen(configfn) + strlen(".tmp") + 1);
+	bakfn = (char *)malloc(strlen(configfn) + strlen(".bak") + 1);
+	sprintf(tmpfn, "%s.tmp", configfn);
+	sprintf(bakfn, "%s.bak", configfn);
+	unlink(tmpfn);
+	fd = fopen(tmpfn, "w");
+	if (fd == NULL) {
+		errprintf("Cannot open output file %s\n", tmpfn);
+		xfree(tmpfn);
+		xfree(bakfn);
+		return 1;
+	}
+
+	if (rec) {
+		handle = rbtFind(rbconf, rec->key);
+		if (handle == rbtEnd(rbconf)) rbtInsert(rbconf, rec->key, rec);
+	}
+
+	handle = rbtBegin(rbconf);
+	while (handle != rbtEnd(rbconf)) {
+		void *k1, *k2;
+		char *onekey;
+
+		rbtKeyValue(rbconf, handle, &k1, &k2);
+		onekey = (char *)k1;
+
+		if (*(onekey + strlen(onekey) - 1) == '=') {
+			char *pointsto = (char *)k2;
+			char *hostname;
+			
+			hostname = strdup(onekey);
+			*(hostname + strlen(hostname) - 1) = '\0';
+			fprintf(fd, "%s|=%s\n", hostname, pointsto);
+		}
+		else {
+			nkconf_t *onerec = (nkconf_t *)k2;
+			char startstr[10], endstr[10];
+
+			*startstr = *endstr = '\0';
+			if (onerec->starttime > 0) sprintf(startstr, "%d", (int)onerec->starttime);
+			if (onerec->endtime > 0) sprintf(endstr, "%d", (int)onerec->endtime);
+
+			fprintf(fd, "%s|%s|%s|%s|%d|%s|%s\n",
+				onekey, 
+				startstr, endstr,
+				(onerec->nktime ? onerec->nktime : ""),
+				onerec->priority, 
+				(onerec->ttgroup ? onerec->ttgroup : ""), 
+				(onerec->ttextra ? onerec->ttextra : ""));
+		}
+
+		handle = rbtNext(rbconf, handle);
+	}
+
+	fclose(fd);
+
+	unlink(bakfn);
+	if ((rename(configfn, bakfn) == 0) && (rename(tmpfn, configfn) == -1)) {
+		/* We got the backup, but the final rename failed. Revert to backup file */
+		errprintf("Rename of %s to %s failed, reverting\n", tmpfn, configfn);
+		rename (bakfn, configfn);
+		result = 2;
+	}
+
+	xfree(tmpfn);
+	xfree(bakfn);
+
+	return result;
+}
+
+void addclone_nkconfig(char *origin, char *newclone)
+{
+	char *newkey;
+	RbtHandle handle;
+
+	newkey = (char *)malloc(strlen(newclone) + 2);
+	sprintf(newkey, "%s=", newclone);
+	handle = rbtFind(rbconf, newkey);
+	if (handle != rbtEnd(rbconf)) dropclone_nkconfig(newclone);
+	rbtInsert(rbconf, newkey, strdup(origin));
+}
+
+void dropclone_nkconfig(char *drop)
+{
+	RbtHandle handle;
+	char *key;
+	void *k1, *k2;
+	char *dropkey, *dropsrc;
+
+	key = (char *)malloc(strlen(drop) + 2);
+	sprintf(key, "%s=", drop);
+	handle = rbtFind(rbconf, key);
+	if (handle == rbtEnd(rbconf)) return;
+
+	rbtKeyValue(rbconf, handle, &k1, &k2);
+	dropkey = k1; dropsrc = k2;
+	rbtErase(rbconf, handle);
+	xfree(dropkey); xfree(dropsrc);
+
+	xfree(key);
+}
+
+int delete_nkconfig(char *dropkey, int evenifcloned)
+{
+	RbtHandle handle;
+	void *k1, *k2;
+
+	handle = rbtFind(rbconf, dropkey);
+	if (handle == rbtEnd(rbconf)) return 0;
+
+	if (!evenifcloned) {
+		/* Check if this record has any clones attached to it */
+		char *hostname, *p;
+
+		hostname = strdup(dropkey);
+		p = strchr(hostname, '|'); if (p) *p = '\0';
+
+		handle = rbtBegin(rbconf);
+
+		while (handle != rbtEnd(rbconf)) {
+			void *k1, *k2;
+			char *key, *ptr;
+
+			rbtKeyValue(rbconf, handle, &k1, &k2);
+			key = (char *)k1; ptr = (char *)k2;
+			if ((*(key + strlen(key) - 1) == '=') && (strcmp(hostname, ptr) == 0)) {
+				xfree(hostname);
+				return 1;
+			}
+
+			handle = rbtNext(rbconf, handle);
+		}
+
+		xfree(hostname);
+	}
+
+	handle = rbtFind(rbconf, dropkey);
+	if (handle != rbtEnd(rbconf)) {
+		rbtKeyValue(rbconf, handle, &k1, &k2);
+		rbtErase(rbconf, handle);
+		flushrec(k1, k2);
+	}
+
+	return 0;
 }
 
