@@ -19,6 +19,7 @@
 		<TD>Status:&nbsp;<INPUT NAME="SERVICE" TYPE="TEXT" SIZE=10 VALUE="&BBSVC"></TD>
 		<TD>
 		   <INPUT TYPE="SUBMIT" NAME="Find" VALUE="Search" ALT="Find record">
+		   <INPUT TYPE="SUBMIT" NAME="Next" VALUE="Next" ALT="Next record">
 		</TD>
 	     </TR>
 	  </TABLE>
