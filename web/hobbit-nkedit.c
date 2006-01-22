@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.3 2006-01-22 13:30:19 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.4 2006-01-22 14:04:29 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -360,7 +360,8 @@ int main(int argc, char *argv[])
 {
 	int argi;
 	char *envarea = NULL;
-	char *operator = NULL;
+	char *configfn = NULL;
+	char *operator = getenv("REMOTE_USER");
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -371,6 +372,10 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			envarea = strdup(p+1);
 		}
+		else if (argnmatch(argv[argi], "--config=")) {
+			char *p = strchr(argv[argi], '=');
+			configfn = strdup(p+1);
+		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
 		}
@@ -378,13 +383,7 @@ int main(int argc, char *argv[])
 
 	redirect_cgilog("hobbit-nkedit");
 	parse_query();
-
-	/* Get the login username */
-	operator = getenv("REMOTE_USER");
-	if (!operator) {
-	}
-
-	load_nkconfig(NULL);
+	load_nkconfig(configfn);
 
 	switch (editaction) {
 	  case NKEDIT_FIND:
