@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.7 2006-01-22 21:47:38 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.8 2006-01-22 22:08:20 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -172,7 +172,6 @@ void findrecord(char *hostname, char *service, char *nodatawarning, char *isclon
 	nkconf_t *rec = NULL;
 	int isaclone = 0;
 	int hasclones = 0;
-	int newrecord = 0;
 
 	/* Setup the list of cloned records */
 	sethostenv_nkclonelist_clear();
@@ -199,7 +198,6 @@ void findrecord(char *hostname, char *service, char *nodatawarning, char *isclon
 
 			isaclone = 1;
 		}
-		else newrecord = 1;
 		xfree(key);
 
 		/* Next, see what hosts are clones of this one */
@@ -236,7 +234,7 @@ void findrecord(char *hostname, char *service, char *nodatawarning, char *isclon
 		sethostenv(hostname, "", service, colorname(COL_BLUE), NULL);
 
 		headfoot(stdout, "nkedit", "", "header", COL_BLUE);
-		if (newrecord && nodatawarning) {
+		if (!rec && nodatawarning) {
 			fprintf(stdout, "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('%s');</SCRIPT>\n",
 				nodatawarning);
 		}
