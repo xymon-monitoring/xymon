@@ -28,9 +28,10 @@ typedef struct nkconf_t {
 
 #define NKCONF_TIMEFILTER 1
 #define NKCONF_FIRSTMATCH 2
-#define NKCONF_NEXT       3
-#define NKCONF_RAW_FIRST  4
-#define NKCONF_RAW_NEXT   5
+#define NKCONF_FIRST      3
+#define NKCONF_NEXT       4
+#define NKCONF_RAW_FIRST  5
+#define NKCONF_RAW_NEXT   6
 
 extern int load_nkconfig(char *fn);
 extern nkconf_t *get_nkconfig(char *key, int flags, char **resultkey);

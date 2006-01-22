@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadnkconf.c,v 1.7 2006-01-22 14:37:47 henrik Exp $";
+static char rcsid[] = "$Id: loadnkconf.c,v 1.8 2006-01-22 21:38:14 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -245,6 +245,19 @@ nkconf_t *get_nkconfig(char *key, int flags, char **resultkey)
 			realkey = (char *)k1;
 		}
 		break;
+
+	  case NKCONF_FIRST:
+		realkey = NULL;
+		handle = rbtBegin(rbconf);
+		if (handle == rbtEnd(rbconf)) return NULL;
+		do {
+			rbtKeyValue(rbconf, handle, &k1, &k2);
+			realkey = (char *)k1;
+			isclone = (*(realkey + strlen(realkey) - 1) == '=');
+			if (isclone) handle = rbtNext(rbconf, handle);
+		} while (isclone && (handle != rbtEnd(rbconf)));
+		break;
+
 
 	  case NKCONF_NEXT:
 		if (!realkey || (handle == rbtEnd(rbconf))) return NULL;
