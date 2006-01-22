@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.5 2006-01-22 14:37:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.6 2006-01-22 21:38:40 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -172,6 +172,7 @@ void findrecord(char *hostname, char *service, char *isclonewarning, char *hascl
 	nkconf_t *rec = NULL;
 	int isaclone = 0;
 	int hasclones = 0;
+	int newrecord = 0;
 
 	/* Setup the list of cloned records */
 	sethostenv_nkclonelist_clear();
@@ -198,6 +199,7 @@ void findrecord(char *hostname, char *service, char *isclonewarning, char *hascl
 
 			isaclone = 1;
 		}
+		else newrecord = 1;
 		xfree(key);
 
 		/* Next, see what hosts are clones of this one */
@@ -234,6 +236,11 @@ void findrecord(char *hostname, char *service, char *isclonewarning, char *hascl
 		sethostenv(hostname, "", service, colorname(COL_BLUE), NULL);
 
 		headfoot(stdout, "nkedit", "", "header", COL_BLUE);
+		if (newrecord) {
+			fprintf(stdout, "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('%s');</SCRIPT>\n",
+				"No record for this host/service");
+		}
+
 		if (isaclone && isclonewarning) {
 			fprintf(stdout, "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('%s');</SCRIPT>\n",
 				isclonewarning);
@@ -265,7 +272,7 @@ void nextrecord(char *hostname, char *service, char *isclonewarning, char *hascl
 		xfree(key);
 	}
 	else {
-		rec = get_nkconfig(NULL, NKCONF_RAW_FIRST, NULL);
+		rec = get_nkconfig(NULL, NKCONF_FIRST, NULL);
 	}
 
 	if (rec) {
