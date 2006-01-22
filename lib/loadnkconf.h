@@ -33,6 +33,10 @@ typedef struct nkconf_t {
 
 extern int load_nkconfig(char *fn);
 extern nkconf_t *get_nkconfig(char *key, int flags, char **resultkey);
+extern int update_nkconfig(nkconf_t *rec);
+extern void addclone_nkconfig(char *origin, char *newclone);
+extern void dropclone_nkconfig(char *drop);
+extern int delete_nkconfig(char *dropkey, int evenifcloned);
 
 #endif
 
