@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.6 2006-01-22 21:38:40 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.7 2006-01-22 21:47:38 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -165,7 +165,7 @@ static void parse_query(void)
 	}
 }
 
-void findrecord(char *hostname, char *service, char *isclonewarning, char *hascloneswarning)
+void findrecord(char *hostname, char *service, char *nodatawarning, char *isclonewarning, char *hascloneswarning)
 {
 	int formfile;
 	char formfn[PATH_MAX];
@@ -236,9 +236,9 @@ void findrecord(char *hostname, char *service, char *isclonewarning, char *hascl
 		sethostenv(hostname, "", service, colorname(COL_BLUE), NULL);
 
 		headfoot(stdout, "nkedit", "", "header", COL_BLUE);
-		if (newrecord) {
+		if (newrecord && nodatawarning) {
 			fprintf(stdout, "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('%s');</SCRIPT>\n",
-				"No record for this host/service");
+				nodatawarning);
 		}
 
 		if (isaclone && isclonewarning) {
@@ -284,7 +284,7 @@ void nextrecord(char *hostname, char *service, char *isclonewarning, char *hascl
 		nextservice = "";
 	}
 
-	findrecord(nexthost, nextservice, isclonewarning, hascloneswarning);
+	findrecord(nexthost, nextservice, NULL, isclonewarning, hascloneswarning);
 	xfree(nexthost);
 }
 
@@ -326,7 +326,7 @@ void updaterecord(char *hostname, char *service)
 		xfree(key);
 	}
 
-	findrecord(hostname, service, NULL, NULL);
+	findrecord(hostname, service, NULL, NULL, NULL);
 }
 
 void addclone(char *origin, char *newhosts, char *service)
@@ -340,7 +340,7 @@ void addclone(char *origin, char *newhosts, char *service)
 	}
 
 	update_nkconfig(NULL);
-	findrecord(origin, service, NULL, NULL);
+	findrecord(origin, service, NULL, NULL, NULL);
 }
 
 void dropclone(char *origin, char *drops, char *service)
@@ -354,7 +354,7 @@ void dropclone(char *origin, char *drops, char *service)
 	}
 
 	update_nkconfig(NULL);
-	findrecord(origin, service, NULL, NULL);
+	findrecord(origin, service, NULL, NULL, NULL);
 }
 
 void deleterecord(char *hostname, char *service, int evenifcloned)
@@ -367,7 +367,7 @@ void deleterecord(char *hostname, char *service, int evenifcloned)
 		update_nkconfig(NULL);
 	}
 
-	findrecord(hostname, service, NULL, 
+	findrecord(hostname, service, NULL, NULL, 
 		   (evenifcloned ? "Warning: Orphans will be ignored" : "Will not delete record that is cloned"));
 }
 
@@ -404,7 +404,8 @@ int main(int argc, char *argv[])
 
 	switch (editaction) {
 	  case NKEDIT_FIND:
-		findrecord(rq_hostname, rq_service, "Cloned - showing master record", NULL);
+		findrecord(rq_hostname, rq_service, 
+			   "No record for this host/service", "Cloned - showing master record", NULL);
 		break;
 
 	  case NKEDIT_NEXT:
