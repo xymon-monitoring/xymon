@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.55 2006-01-20 16:12:48 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.56 2006-01-22 12:30:40 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -55,74 +55,57 @@ static void errormsg(char *msg)
 
 static int parse_query(void)
 {
-	char *query, *token;
+	cgidata_t *cgidata = cgi_request();
+	cgidata_t *cwalk;
 
-	if (xgetenv("QUERY_STRING") == NULL) {
-		errormsg("Invalid request");
-		return 1;
-	}
-	else query = urldecode("QUERY_STRING");
-
-	token = strtok(query, "&");
-	while (token) {
-		char *val;
-		int n = 0;
-
-		val = strchr(token, '='); 
-		if (val) { 
-			*val = '\0'; 
-			val++;
-			n = strcspn(val, "/");
-		}
-
-		if (val && argnmatch(token, "HOSTSVC")) {
-			if (n == strlen(val)) {
-				char *p = strrchr(val, '.');
-				if (p) { *p = '\0'; service = strdup(p+1); }
-				hostname = strdup(val);
-				while ((p = strchr(hostname, ','))) *p = '.';
-			}
-		}
-		else if (val && argnmatch(token, "IP")) {
-			ip = strdup(val);
-		}
-		else if (val && argnmatch(token, "DISPLAYNAME")) {
-			displayname = strdup(val);
-		}
-		else if (val && argnmatch(token, "HOST")) {
-			if (n == strlen(val)) hostname = strdup(val);
-		}
-		else if (val && argnmatch(token, "SERVICE")) {
-			if (n == strlen(val)) service = strdup(val);
-		}
-		else if (val && argnmatch(token, "TIMEBUF")) {
-			if (n == strlen(val)) tstamp = strdup(val);
-		}
-		else if (val && argnmatch(token, "CLIENT")) {
+	cwalk = cgidata;
+	while (cwalk) {
+		if (strcasecmp(cwalk->name, "HOSTSVC") == 0) {
 			char *p;
 
-			if (n == strlen(val)) hostname = strdup(val);
+			hostname = strdup(cwalk->value);
+			p = strchr(hostname, '.');
+			if (p) { *p = '\0'; service = strdup(p+1); }
+			while ((p = strchr(hostname, ','))) *p = '.';
+		}
+		else if (strcasecmp(cwalk->name, "IP") == 0) {
+			ip = strdup(cwalk->value);
+		}
+		else if (strcasecmp(cwalk->name, "DISPLAYNAME") == 0) {
+			displayname = strdup(cwalk->value);
+		}
+		else if (strcasecmp(cwalk->name, "HOST") == 0) {
+			hostname = strdup(cwalk->value);
+		}
+		else if (strcasecmp(cwalk->name, "SERVICE") == 0) {
+			service = strdup(cwalk->value);
+		}
+		else if (strcasecmp(cwalk->name, "TIMEBUF") == 0) {
+			tstamp = strdup(cwalk->value);
+		}
+		else if (strcasecmp(cwalk->name, "CLIENT") == 0) {
+			char *p;
+
+			hostname = strdup(cwalk->value);
+			p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
 			service = strdup("");
 			outform = FRM_CLIENT;
-			p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
 		}
-		else if (val && argnmatch(token, "SECTION")) {
-			if (n == strlen(val)) service = strdup(val);
+		else if (strcasecmp(cwalk->name, "SECTION") == 0) {
+			service = strdup(cwalk->value);
 		}
-		else if (val && argnmatch(token, "NKPRIO")) {
-			if (n == strlen(val)) nkprio = strdup(val);
+		else if (strcasecmp(cwalk->name, "NKPRIO") == 0) {
+			nkprio = strdup(cwalk->value);
 		}
-		else if (val && argnmatch(token, "NKTTGROUP")) {
-			if (n == strlen(val)) nkttgroup = strdup(urldecode(val));
+		else if (strcasecmp(cwalk->name, "NKTTGROUP") == 0) {
+			nkttgroup = strdup(cwalk->value);
 		}
-		else if (val && argnmatch(token, "NKTTEXTRA")) {
-			if (n == strlen(val)) nkttextra = strdup(urldecode(val));
+		else if (strcasecmp(cwalk->name, "NKTTEXTRA") == 0) {
+			nkttextra = strdup(cwalk->value);
 		}
 
-		token = strtok(NULL, "&");
+		cwalk = cwalk->next;
 	}
-
-        xfree(query);
 
 	if (!hostname || !service) {
 		errormsg("Invalid request");
