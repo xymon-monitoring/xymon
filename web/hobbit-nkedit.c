@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.2 2006-01-22 12:33:53 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.3 2006-01-22 13:30:19 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -23,7 +23,7 @@ static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.2 2006-01-22 12:33:53 henrik Exp
 
 #include "libbbgen.h"
 
-static enum { NKEDIT_FIND, NKEDIT_UPDATE, NKEDIT_DELETE, NKEDIT_ADDCLONE, NKEDIT_DROPCLONE } editaction = NKEDIT_FIND;
+static enum { NKEDIT_FIND, NKEDIT_NEXT, NKEDIT_UPDATE, NKEDIT_DELETE, NKEDIT_ADDCLONE, NKEDIT_DROPCLONE } editaction = NKEDIT_FIND;
 static char *rq_hostname = NULL;
 static char *rq_service = NULL;
 static int rq_priority = 0;
@@ -54,6 +54,9 @@ static void parse_query(void)
 	while (cwalk) {
 		if (strcasecmp(cwalk->name, "Find") == 0) {
 			editaction = NKEDIT_FIND;
+		}
+		else if (strcasecmp(cwalk->name, "Next") == 0) {
+			editaction = NKEDIT_NEXT;
 		}
 		else if (strcasecmp(cwalk->name, "Update") == 0) {
 			editaction = NKEDIT_UPDATE;
@@ -244,6 +247,38 @@ void findrecord(char *hostname, char *service, char *isclonewarning, char *hascl
 	}
 }
 
+void nextrecord(char *hostname, char *service, char *isclonewarning, char *hascloneswarning)
+{
+	nkconf_t *rec;
+	char *nexthost, *nextservice;
+
+	/* First check if the host+service is really a clone of something else */
+	if (hostname && service) {
+		char *key;
+
+		key = (char *)malloc(strlen(hostname) + strlen(service) + 2);
+		sprintf(key, "%s|%s", hostname, service);
+		rec = get_nkconfig(key, NKCONF_FIRSTMATCH, NULL);
+		if (rec) rec = get_nkconfig(NULL, NKCONF_NEXT, NULL);
+		xfree(key);
+	}
+	else {
+		rec = get_nkconfig(NULL, NKCONF_RAW_FIRST, NULL);
+	}
+
+	if (rec) {
+		nexthost = strdup(rec->key);
+		nextservice = strchr(nexthost, '|'); if (nextservice) { *nextservice = '\0'; nextservice++; }
+	}
+	else {
+		nexthost = strdup("");
+		nextservice = "";
+	}
+
+	findrecord(nexthost, nextservice, isclonewarning, hascloneswarning);
+	xfree(nexthost);
+}
+
 void updaterecord(char *hostname, char *service)
 {
 	nkconf_t *rec = NULL;
@@ -354,6 +389,10 @@ int main(int argc, char *argv[])
 	switch (editaction) {
 	  case NKEDIT_FIND:
 		findrecord(rq_hostname, rq_service, "Cloned - showing master record", NULL);
+		break;
+
+	  case NKEDIT_NEXT:
+		nextrecord(rq_hostname, rq_service, "Cloned - showing master record", NULL);
 		break;
 
 	  case NKEDIT_UPDATE:

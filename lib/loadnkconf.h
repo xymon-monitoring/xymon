@@ -27,7 +27,7 @@ typedef struct nkconf_t {
 
 #define NKCONF_TIMEFILTER 1
 #define NKCONF_FIRSTMATCH 2
-#define NKCONF_NEXTMATCH  3
+#define NKCONF_NEXT       3
 #define NKCONF_RAW_FIRST  4
 #define NKCONF_RAW_NEXT   5
 
