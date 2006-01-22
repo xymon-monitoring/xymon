@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.40 2006-01-20 17:14:53 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.41 2006-01-22 12:31:14 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -144,6 +144,8 @@ static char *nkeditextra = NULL;
 static char *nkeditslawkdays = NULL;
 static char *nkeditslastart = NULL;
 static char *nkeditslaend = NULL;
+static char **nkeditclonelist = NULL;
+static int nkeditclonesize = 0;
 
 void sethostenv_nkedit(int prio, char *group, time_t starttime, time_t endtime, char *nktime, char *extra)
 {
@@ -182,6 +184,33 @@ void sethostenv_nkedit(int prio, char *group, time_t starttime, time_t endtime, 
 		}
 	}
 }
+
+void sethostenv_nkclonelist_clear(void)
+{
+	int i;
+
+	if (nkeditclonelist) {
+		for (i=0; (nkeditclonelist[i]); i++) xfree(nkeditclonelist[i]);
+		xfree(nkeditclonelist);
+	}
+	nkeditclonelist = malloc(sizeof(char *));
+	nkeditclonelist[0] = NULL;
+	nkeditclonesize = 0;
+}
+
+void sethostenv_nkclonelist_add(char *hostname)
+{
+	char *p;
+
+	nkeditclonelist = (char **)realloc(nkeditclonelist, (nkeditclonesize + 2)*sizeof(char *));
+	nkeditclonelist[nkeditclonesize] = strdup(hostname);
+	p = nkeditclonelist[nkeditclonesize];
+	nkeditclonelist[++nkeditclonesize] = NULL;
+
+	p += (strlen(p) - 1);
+	if (*p == '=') *p = '\0';
+}
+
 
 char *wkdayselect(char wkday, char *valtxt, int isdefault)
 {
@@ -866,6 +895,13 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			}
 		}
 
+		else if (strcmp(t_start, "NKEDITCLONELIST") == 0) {
+			int i;
+			for (i=0; (nkeditclonelist[i]); i++) 
+				fprintf(output, "<option value=\"%s\">%s</option>\n", 
+					nkeditclonelist[i], nkeditclonelist[i]);
+		}
+
 		else if (strcmp(t_start, "NKEDITGROUP") == 0) {
 			fprintf(output, "%s", nkeditgroup);
 		}
@@ -931,21 +967,23 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 			char *defstr = ((*(t_start+13) == '1') ? "Now" : "Never");
 			int i;
 			char *selstr;
-			struct tm *tm;
+			struct tm tm;
 			time_t now;
-			struct tm *nowtm;
+			struct tm nowtm;
 			struct tm monthtm;
 			char mname[20];
 
-			tm = localtime(&t);
-			now = getcurrenttime(NULL); nowtm = localtime(&t);
+			memcpy(&tm, localtime(&t), sizeof(tm));
+
+			now = getcurrenttime(NULL);
+			memcpy(&nowtm, localtime(&now), sizeof(tm));
 
 			selstr = ((t == 0) ? "SELECTED" : "");
 			fprintf(output, "<option value=\"0\" %s>%s</option>\n", selstr, defstr);
 
 			for (i=1; (i <= 12); i++) {
-				selstr = ( (t && (tm->tm_mon == (i -1))) ? "SELECTED" : "");
-				monthtm.tm_mon = (i-1); monthtm.tm_mday = 1; monthtm.tm_year = nowtm->tm_year;
+				selstr = ( (t && (tm.tm_mon == (i -1))) ? "SELECTED" : "");
+				monthtm.tm_mon = (i-1); monthtm.tm_mday = 1; monthtm.tm_year = nowtm.tm_year;
 				monthtm.tm_hour = monthtm.tm_min = monthtm.tm_sec = monthtm.tm_isdst = 0;
 				strftime(mname, sizeof(mname)-1, "%B", &monthtm);
 				fprintf(output, "<OPTION VALUE=\"%d\" %s>%s</option>\n", i, selstr, mname);
@@ -954,25 +992,27 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 
 		else if (strncmp(t_start, "NKEDITYEARLIST", 14) == 0) {
 			time_t t = ((*(t_start+14) == '1') ? nkeditstarttime : nkeditendtime);
-			char *defstr = ((*(t_start+13) == '1') ? "Now" : "Never");
+			char *defstr = ((*(t_start+14) == '1') ? "Now" : "Never");
 			int i;
 			char *selstr;
-			struct tm *tm;
+			struct tm tm;
 			time_t now;
-			struct tm *nowtm;
+			struct tm nowtm;
 			int beginyear, endyear;
 
-			tm = localtime(&t);
-			now = getcurrenttime(NULL); nowtm = localtime(&now);
+			memcpy(&tm, localtime(&t), sizeof(tm));
 
-			beginyear = nowtm->tm_year + 1900;
-			endyear = nowtm->tm_year + 1900 + 5;
+			now = getcurrenttime(NULL);
+			memcpy(&nowtm, localtime(&now), sizeof(tm));
+
+			beginyear = nowtm.tm_year + 1900;
+			endyear = nowtm.tm_year + 1900 + 5;
 
 			selstr = ((t == 0) ? "SELECTED" : "");
 			fprintf(output, "<option value=\"0\" %s>%s</option>\n", selstr, defstr);
 
 			for (i=beginyear; (i <= endyear); i++) {
-				selstr = ( (t && (tm->tm_year == (i - 1900))) ? "SELECTED" : "");
+				selstr = ( (t && (tm.tm_year == (i - 1900))) ? "SELECTED" : "");
 				fprintf(output, "<OPTION VALUE=\"%d\" %s>%d</option>\n", i, selstr, i);
 			}
 		}
