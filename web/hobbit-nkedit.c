@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.8 2006-01-22 22:08:20 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.9 2006-01-23 21:31:50 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -403,7 +403,8 @@ int main(int argc, char *argv[])
 	switch (editaction) {
 	  case NKEDIT_FIND:
 		findrecord(rq_hostname, rq_service, 
-			   "No record for this host/service", "Cloned - showing master record", NULL);
+			   ((rq_hostname && rq_service) ? "No record for this host/service" : NULL),
+			   "Cloned - showing master record", NULL);
 		break;
 
 	  case NKEDIT_NEXT:
