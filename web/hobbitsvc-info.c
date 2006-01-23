@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.96 2006-01-13 10:14:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.97 2006-01-23 22:06:47 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -34,6 +34,7 @@ static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.96 2006-01-13 10:14:50 henrik E
 
 int showenadis = 1;
 int usejsvalidation = 1;
+int newnkconfig = 1;
 
 typedef struct hinf_t {
 	char *name;
@@ -564,30 +565,65 @@ char *generate_info(char *hostname)
 		addtobuffer(&infobuf, &infobuflen, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 	}
 
-	val = bbh_item(hostwalk, BBH_NK);
-	if (val) {
-		sprintf(l, "<tr><th align=left>NK Alerts:</th><td align=left>%s", val); 
-		addtobuffer(&infobuf, &infobuflen, l);
+	if (newnkconfig) {
+		/* Load the hobbit-nkview.cfg file and get the alerts for this host */
+		int i;
+		char *key;
+		nkconf_t *nkrec;
+		int firstrec = 1;
 
-		val = bbh_item(hostwalk, BBH_NKTIME);
-		if (val) {
-			sprintf(l, " (%s)", val);
+		load_nkconfig(NULL);
+		for (i=0; (i < testcount); i++) {
+			key = (char *)malloc(strlen(hostname) + strlen(tnames[i].name) + 2);
+			sprintf(key, "%s|%s", hostname, tnames[i].name);
+			nkrec = get_nkconfig(key, NKCONF_FIRSTMATCH, NULL);
+			if (!nkrec) continue;
+			if (firstrec) {
+				addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>NK alerts:</th>");
+				firstrec = 0;
+			}
+			else {
+				addtobuffer(&infobuf, &infobuflen, "<tr><td>&nbsp;</td>");
+			}
+
+			sprintf(l, "<td align=left>%s:", tnames[i].name);
 			addtobuffer(&infobuf, &infobuflen, l);
-		}
-		else addtobuffer(&infobuf, &infobuflen, " (24x7)");
 
-		addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
+			if (nkrec->nktime && *nkrec->nktime) {
+				sprintf(l, " %s", timespec_text(nkrec->nktime));
+				addtobuffer(&infobuf, &infobuflen, l);
+			}
+			else addtobuffer(&infobuf, &infobuflen, " 24x7");
+
+			sprintf(l, " priority %d", nkrec->priority);
+			addtobuffer(&infobuf, &infobuflen, l);
+
+			if (nkrec->ttgroup && *nkrec->ttgroup) {
+				sprintf(l, " resolver group %s", nkrec->ttgroup);
+				addtobuffer(&infobuf, &infobuflen, l);
+			}
+
+			addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
+		}
 	}
 	else {
-		addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>NK alerts:</th><td align=left>None</td></tr>\n");
-	}
+		val = bbh_item(hostwalk, BBH_NK);
+		if (val) {
+			sprintf(l, "<tr><th align=left>NK Alerts:</th><td align=left>%s", val); 
+			addtobuffer(&infobuf, &infobuflen, l);
 
-	val = bbh_item(hostwalk, BBH_NKTIME);
-	if (val) {
-		char *s = timespec_text(val);
-		addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>NK alerts shown:</th><td align=left>");
-		addtobuffer(&infobuf, &infobuflen, s);
-		addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
+			val = bbh_item(hostwalk, BBH_NKTIME);
+			if (val) {
+				sprintf(l, " (%s)", val);
+				addtobuffer(&infobuf, &infobuflen, l);
+			}
+			else addtobuffer(&infobuf, &infobuflen, " (24x7)");
+
+			addtobuffer(&infobuf, &infobuflen, "</td></tr>\n");
+		}
+		else {
+			addtobuffer(&infobuf, &infobuflen, "<tr><th align=left>NK alerts:</th><td align=left>None</td></tr>\n");
+		}
 	}
 
 	val = bbh_item(hostwalk, BBH_DOWNTIME);

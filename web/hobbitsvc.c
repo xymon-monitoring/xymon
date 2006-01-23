@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.56 2006-01-22 12:30:40 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.57 2006-01-23 22:06:47 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -450,6 +450,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--no-jsvalidation") == 0) {
 			usejsvalidation = 0;
+		}
+		else if (strcmp(argv[argi], "--old-nk-config") == 0) {
+			newnkconfig = 0;
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
