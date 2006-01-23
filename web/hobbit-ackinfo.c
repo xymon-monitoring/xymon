@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-ackinfo.c,v 1.2 2006-01-20 11:18:24 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-ackinfo.c,v 1.3 2006-01-23 15:45:25 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -102,7 +102,8 @@ int main(int argc, char *argv[])
 		if (!ackedby) ackedby = getenv("REMOTE_USER");
 		if (!ackedby) ackedby = "UnknownUser";
 
-		if (validity == -1) validity = 30*60; /* 30 minutes */
+		if (validity == -1) validity = 30; /* 30 minutes */
+		validity = validity*60;
 
 		p = strchr(ackmsg, '\n'); if (p) *p = '\0';
 
