@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.190 2006-01-20 11:11:52 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.191 2006-01-23 15:45:01 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -1432,8 +1432,6 @@ void handle_ackinfo(char *msg, char *sender, hobbitd_log_t *log)
 	char *tok, *item;
 	int itemno = 0;
 
-	debug = 1;
-
 	tok = msg;
 	while (tok) {
 		tok += strspn(tok, " \t\n");
@@ -1489,8 +1487,6 @@ void handle_ackinfo(char *msg, char *sender, hobbitd_log_t *log)
 		if (ackedby) xfree(ackedby);
 		if (ackmsg) xfree(ackmsg);
 	}
-
-	debug = 0;
 }
 
 void handle_notify(char *msg, char *sender, hobbitd_log_t *log)
