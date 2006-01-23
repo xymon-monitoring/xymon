@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.43 2006-01-20 11:20:45 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.44 2006-01-23 15:46:06 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -19,6 +19,9 @@ static char rcsid[] = "$Id: htmllog.c,v 1.43 2006-01-20 11:20:45 henrik Exp $";
 #include <string.h>
 #include <stdio.h>
 #include <limits.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "libbbgen.h"
 #include "version.h"
@@ -146,48 +149,28 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	headfoot(output, tplfile, "", "header", color);
 
 	if (nkprio) {
-		char *hostdoc = hostlink(hostname);
+		int formfile;
+		char formfn[PATH_MAX];
 
-		fprintf(output, "<table border=1 summary=\"NK info\" align=center>\n");
-		fprintf(output, "<tr>");
-		fprintf(output, "<th align=center>Priority</th>");
-		fprintf(output, "<th align=center>Responsible</th>");
-		fprintf(output, "<th align=center>Documentation</th>");
-		fprintf(output, "</tr>\n");
+		sprintf(formfn, "%s/web/nkack_form", xgetenv("BBHOME"));
+		formfile = open(formfn, O_RDONLY);
 
-		fprintf(output, "<tr>");
-		fprintf(output, "<td align=center>%s</td>", nkprio);
-		fprintf(output, "<td align=center>%s</td>", ((nkttgroup && *nkttgroup) ? nkttgroup : "&nbsp;"));
-		fprintf(output, "<td align=center>");
-		fprintf(output, "<a href=\"%s\">Host info</a>", 
-			hostsvcurl(hostname, xgetenv("INFOCOLUMN"), ip, displayname));
-		if (hostdoc) fprintf(output, "<br><a href=\"%s\">Host docs</a>", hostdoc);
-		fprintf(output, "</td>");
-		fprintf(output, "</tr>\n");
+		if (formfile >= 0) {
+			char *inbuf;
+			struct stat st;
 
-		if (nkttextra && *nkttextra) {
-			fprintf(output, "<tr>\n");
-			fprintf(output, "<td colspan=3 align=center>%s</td>", nkttextra);
-			fprintf(output, "</tr>\n");
+			fstat(formfile, &st);
+			inbuf = (char *) malloc(st.st_size + 1);
+			read(formfile, inbuf, st.st_size);
+			inbuf[st.st_size] = '\0';
+			close(formfile);
+
+			sethostenv_nkack(atoi(nkprio), nkttgroup, nkttextra, 
+				 hostsvcurl(hostname, xgetenv("INFOCOLUMN"), ip, displayname), hostlink(hostname));
+
+			output_parsed(output, inbuf, color, NULL, 0);
+			xfree(inbuf);
 		}
-
-		fprintf(output, "<tr>");
-		fprintf(output, "<td colspan=3 align=center valign=middle>\n");
-		fprintf(output, "  <form method=\"POST\" action=\"%s/hobbit-ackinfo.sh\">\n", 
-			xgetenv("CGIBINURL"));
-		fprintf(output, "    <INPUT TYPE=\"TEXT\" NAME=\"NOTE\" MAXLENGTH=60 SIZE=60 tabindex=\"0\">\n");
-		fprintf(output, "    &nbsp;&nbsp;Host-ack\n");
-		fprintf(output, "    <INPUT TYPE=\"CHECKBOX\" NAME=\"ALLTESTS\" VALUE=\"OFF\">&nbsp;&nbsp;\n");
-		fprintf(output, "    <INPUT TYPE=\"HIDDEN\" NAME=\"HOST\" VALUE=\"%s\">\n", hostname);
-		fprintf(output, "    <INPUT TYPE=\"HIDDEN\" NAME=\"SERVICE\" VALUE=\"%s\">\n", service);
-		fprintf(output, "    <INPUT TYPE=\"HIDDEN\" NAME=\"LEVEL\" VALUE=\"0\">\n");
-		fprintf(output, "    <INPUT TYPE=\"HIDDEN\" NAME=\"VALIDITY\" VALUE=\"-1\">\n");
-		fprintf(output, "    <input name=ack type=\"submit\" value=\"Acknowledge\">\n");
-		fprintf(output, "  </form>\n");
-		fprintf(output, "</td>");
-		fprintf(output, "</tr>\n");
-
-		fprintf(output, "</table>\n");
 	}
 
 	if (acklist) {
@@ -227,7 +210,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 				strftime(receivedstr, sizeof(receivedstr)-1, "%Y-%m-%d %H:%M", localtime(&received));
 				strftime(untilstr, sizeof(untilstr)-1, "%Y-%m-%d %H:%M", localtime(&validuntil));
 				fprintf(output, "<tr>");
-				fprintf(output, "<td align=middle><font %s>%d</font></td>", ackfont, level);
+				fprintf(output, "<td align=center><font %s>%d</font></td>", ackfont, level);
 				fprintf(output, "<td><font %s>%s</font></td>", ackfont, ackedby);
 				fprintf(output, "<td><font %s>%s&nbsp;-&nbsp;%s</font></td>", ackfont, receivedstr, untilstr);
 				fprintf(output, "<td><font %s>%s</font></td>", ackfont, msg);

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.42 2006-01-22 14:37:47 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.43 2006-01-23 15:46:06 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -134,6 +134,21 @@ void sethostenv_filter(char *hostptn, char *pageptn, char *ipptn)
 		ippattern_text = strdup(ipptn);
 		ippattern = pcre_compile(ipptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
 	}
+}
+
+static int nkackttprio = 0;
+static char *nkackttgroup = NULL;
+static char *nkackttextra = NULL;
+static char *nkackinfourl = NULL;
+static char *nkackdocurl = NULL;
+
+void sethostenv_nkack(int nkprio, char *nkttgroup, char *nkttextra, char *infourl, char *docurl)
+{
+	nkackttprio = nkprio;
+	if (nkackttgroup) xfree(nkackttgroup); nkackttgroup = strdup((nkttgroup && *nkttgroup) ? nkttgroup : "&nbsp;");
+	if (nkackttextra) xfree(nkackttextra); nkackttextra = strdup((nkttextra && *nkttextra) ? nkttextra : "&nbsp;");
+	if (nkackinfourl) xfree(nkackinfourl); nkackinfourl = strdup(infourl);
+	if (nkackdocurl) xfree(nkackdocurl); nkackdocurl = strdup((docurl && *docurl) ? docurl : "");
 }
 
 static char *nkeditupdinfo = NULL;
@@ -888,6 +903,12 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 				fprintf(output, "<tr><th align=center colspan=3><i>No tasks scheduled</i></th></tr>\n");
 			}
 		}
+
+		else if (strcmp(t_start, "NKACKTTPRIO") == 0) fprintf(output, "%d", nkackttprio);
+		else if (strcmp(t_start, "NKACKTTGROUP") == 0) fprintf(output, "%s", nkackttgroup);
+		else if (strcmp(t_start, "NKACKTTEXTRA") == 0) fprintf(output, "%s", nkackttextra);
+		else if (strcmp(t_start, "NKACKINFOURL") == 0) fprintf(output, "%s", nkackinfourl);
+		else if (strcmp(t_start, "NKACKDOCURL") == 0) fprintf(output, "%s", nkackdocurl);
 
 		else if (strcmp(t_start, "NKEDITUPDINFO") == 0) {
 			fprintf(output, "%s", nkeditupdinfo);
