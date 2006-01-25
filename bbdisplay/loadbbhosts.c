@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.32 2005-11-18 09:54:58 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.33 2006-01-25 21:00:20 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -631,12 +631,6 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			nobb2 = (bbh_item(bbhost, BBH_FLAG_NOBB2) != NULL);
 
 			alertlist = bbh_item(bbhost, BBH_NK);
-
-			bbval = bbh_item(bbhost, BBH_NKSTART);
-			if (bbval && (now < atoi(bbval))) alertlist = NULL;
-			bbval = bbh_item(bbhost, BBH_NKEND);
-			if (bbval && (now > atoi(bbval))) alertlist = NULL;
-
 			bbval = bbh_item(bbhost, BBH_NKTIME); if (bbval) nktime = within_sla(bbval, 0);
 
 			onwaplist = bbh_item(bbhost, BBH_WML);
