@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.9 2006-01-23 21:31:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.10 2006-01-25 11:43:03 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -176,14 +176,21 @@ void findrecord(char *hostname, char *service, char *nodatawarning, char *isclon
 	/* Setup the list of cloned records */
 	sethostenv_nkclonelist_clear();
 
-	if (hostname && service) {
+	if (hostname && *hostname) {
 		char *key, *realkey, *clonekey;
 		nkconf_t *clonerec;
 
-		/* First check if the host+service is really a clone of something else */
-		key = (char *)malloc(strlen(hostname) + strlen(service) + 2);
-		sprintf(key, "%s|%s", hostname, service);
-		rec = get_nkconfig(key, NKCONF_FIRSTMATCH, &realkey);
+		if (service && *service) {
+			/* First check if the host+service is really a clone of something else */
+			key = (char *)malloc(strlen(hostname) + strlen(service) + 2);
+			sprintf(key, "%s|%s", hostname, service);
+			rec = get_nkconfig(key, NKCONF_FIRSTMATCH, &realkey);
+		}
+		else {
+			key = strdup(hostname);
+			rec = get_nkconfig(key, NKCONF_FIRSTHOSTMATCH, &realkey);
+		}
+
 		if (rec && realkey && (strcmp(key, realkey) != 0)) {
 			char *p;
 
@@ -211,8 +218,10 @@ void findrecord(char *hostname, char *service, char *nodatawarning, char *isclon
 		}
 	}
 	else {
-		hostname = service = "";
+		hostname = "";
 	}
+
+	if (!service || !(*service)) service="";
 
 	if (rec) sethostenv_nkedit(rec->updinfo, rec->priority, rec->ttgroup, rec->starttime, rec->endtime, rec->nktime, rec->ttextra);
 	else sethostenv_nkedit("", 0, NULL, 0, 0, NULL, NULL);

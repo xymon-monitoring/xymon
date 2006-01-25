@@ -32,6 +32,7 @@ typedef struct nkconf_t {
 #define NKCONF_NEXT       4
 #define NKCONF_RAW_FIRST  5
 #define NKCONF_RAW_NEXT   6
+#define NKCONF_FIRSTHOSTMATCH 7
 
 extern int load_nkconfig(char *fn);
 extern nkconf_t *get_nkconfig(char *key, int flags, char **resultkey);
