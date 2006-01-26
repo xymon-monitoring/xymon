@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.191 2006-01-23 15:45:01 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.192 2006-01-26 21:58:37 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -197,6 +197,8 @@ char *dbghost = NULL;
 time_t boottime;
 pid_t parentpid = 0;
 int  hostcount = 0;
+char *ackinfologfn = NULL;
+FILE *ackinfologfd = NULL;
 
 typedef struct hobbitd_statistics_t {
 	char *cmd;
@@ -1481,6 +1483,18 @@ void handle_ackinfo(char *msg, char *sender, hobbitd_log_t *log)
 		if (isnew) {
 			newack->next = log->acklist;
 			log->acklist = newack;
+		}
+
+		if (ackinfologfd) {
+			char timestamp[25];
+
+			strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localtime(&received));
+			fprintf(ackinfologfd, "%s %s %s %s %d %d %d %d %s\n",
+				timestamp, log->host->hostname, log->test->testname,
+				newack->ackedby, newack->level, 
+				(int)log->lastchange, (int)newack->received, (int)newack->validuntil, 
+				nlencode(newack->msg));
+			fflush(ackinfologfd);
 		}
 	}
 	else {
@@ -3442,6 +3456,10 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			logfn = strdup(p+1);
 		}
+		else if (argnmatch(argv[argi], "--ack-log=")) {
+			char *p = strchr(argv[argi], '=');
+			ackinfologfn = strdup(p+1);
+		}
 		else if (argnmatch(argv[argi], "--maint-senders=")) {
 			/* Who is allowed to send us "enable", "disable", "ack", "notes" messages */
 			char *p = strchr(argv[argi], '=');
@@ -3637,6 +3655,13 @@ int main(int argc, char *argv[])
 		freopen(logfn, "a", stderr);
 	}
 
+	if (ackinfologfn) {
+		ackinfologfd = fopen(ackinfologfn, "a");
+		if (ackinfologfd == NULL) {
+			errprintf("Cannot open ack logfile %s: %s\n", ackinfologfn, strerror(errno));
+		}
+	}
+
 	if (dbghost) {
 		char fname[PATH_MAX];
 
@@ -3686,6 +3711,7 @@ int main(int argc, char *argv[])
 		if (logfn && dologswitch) {
 			freopen(logfn, "a", stdout);
 			freopen(logfn, "a", stderr);
+			if (ackinfologfd) freopen(ackinfologfn, "a", ackinfologfd);
 			dologswitch = 0;
 			posttochannel(statuschn, "logrotate", NULL, "hobbitd", NULL, NULL, "");
 			posttochannel(stachgchn, "logrotate", NULL, "hobbitd", NULL, NULL, "");
