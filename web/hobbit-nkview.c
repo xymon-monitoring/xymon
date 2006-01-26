@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkview.c,v 1.10 2006-01-20 16:13:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkview.c,v 1.11 2006-01-26 22:06:31 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -31,7 +31,7 @@ typedef struct hstatus_t {
 
 static RbtHandle rbstate;
 static time_t oldlimit = 3600;
-
+static int nkacklevel = 1;
 
 void errormsg(char *s)
 {
@@ -51,8 +51,11 @@ void loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 	char *board = NULL;
 	char *bol, *eol;
 	time_t now;
+	char msg[1024];
 
-	hobbitdresult = sendmessage("hobbitdboard color=red,yellow acklevel=0 fields=hostname,testname,color,lastchange,logtime,validtime,acklist", NULL, NULL, &board, 1, BBTALK_TIMEOUT);
+	sprintf(msg, "hobbitdboard color=red,yellow acklevel=%d fields=hostname,testname,color,lastchange,logtime,validtime,acklist", nkacklevel);
+
+	hobbitdresult = sendmessage(msg, NULL, NULL, &board, 1, BBTALK_TIMEOUT);
 	if (hobbitdresult != BB_OK) {
 		errormsg("Unable to fetch current status\n");
 		return;
@@ -392,6 +395,10 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
+		}
+		else if (argnmatch(argv[argi], "--nkacklevel=")) {
+			char *p = strchr(argv[argi], '=');
+			nkacklevel = atoi(p+1);
 		}
 	}
 
