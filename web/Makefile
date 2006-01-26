@@ -1,6 +1,6 @@
 PROGRAMS = bb-hist.cgi bb-eventlog.cgi bb-rep.cgi bb-replog.cgi bb-snapshot.cgi bb-findhost.cgi bb-csvinfo.cgi bb-ack.cgi bb-webpage bb-datepage.cgi hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-nkview.cgi hobbit-nkedit.cgi hobbit-ackinfo.cgi hobbit-statusreport.cgi
-CGISCRIPTS = bb-hist.sh bb-eventlog.sh bb-rep.sh bb-replog.sh bb-snapshot.sh bb-findhost.sh bb-csvinfo.sh hobbitcolumn.sh bb-datepage.sh hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh hobbit-confreport.sh hobbit-nkview.sh hobbit-nkedit.sh hobbit-ackinfo.sh hobbit-certreport.sh
-SECCGISCRIPTS = bb-ack.sh hobbit-enadis.sh
+CGISCRIPTS = bb-hist.sh bb-eventlog.sh bb-rep.sh bb-replog.sh bb-snapshot.sh bb-findhost.sh bb-csvinfo.sh hobbitcolumn.sh bb-datepage.sh hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh hobbit-confreport.sh hobbit-nkview.sh hobbit-ackinfo.sh hobbit-certreport.sh
+SECCGISCRIPTS = bb-ack.sh hobbit-enadis.sh hobbit-nkedit.sh
 
 LIBOBJS = ../lib/libbbgen.a
 
