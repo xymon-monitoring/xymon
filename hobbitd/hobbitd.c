@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.192 2006-01-26 21:58:37 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.193 2006-01-27 07:04:00 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -2972,10 +2972,10 @@ void save_checkpoint(void)
 			if (iores >= 0) iores = fprintf(fd, "\n");
 
 			for (awalk = lwalk->acklist; (awalk && (iores >= 0)); awalk = awalk->next) {
-				iores = fprintf(fd, "@@HOBBITDCHK-V1|.acklist.|%s|%s|%d|%d|%d|%s|%s\n",
+				iores = fprintf(fd, "@@HOBBITDCHK-V1|.acklist.|%s|%s|%d|%d|%d|%d|%s|%s\n",
 						hwalk->hostname, lwalk->test->testname,
-			 			(int)awalk->received, (int)awalk->validuntil, awalk->level, 
-						awalk->ackedby, awalk->msg);
+			 			(int)awalk->received, (int)awalk->validuntil, (int)awalk->cleartime,
+						awalk->level, awalk->ackedby, awalk->msg);
 			}
 		}
 	}
@@ -3091,9 +3091,10 @@ void load_checkpoint(char *fn)
 					break;
 				  case 4: newack->received = atoi(item); break;
 				  case 5: newack->validuntil = atoi(item); break;
-				  case 6: newack->level = atoi(item); break;
-				  case 7: newack->ackedby = strdup(item); break;
-				  case 8: newack->msg = strdup(item); break;
+				  case 6: newack->cleartime = atoi(item); break;
+				  case 7: newack->level = atoi(item); break;
+				  case 8: newack->ackedby = strdup(item); break;
+				  case 9: newack->msg = strdup(item); break;
 				  default: break;
 				}
 				item = gettok(NULL, "|\n"); i++;
@@ -3103,7 +3104,7 @@ void load_checkpoint(char *fn)
 				for (log = hitem->logs; (log && (log->test != t)); log = log->next) ;
 			}
 
-			if (log) {
+			if (log && newack->msg) {
 				newack->next = log->acklist;
 				log->acklist = newack;
 			}
