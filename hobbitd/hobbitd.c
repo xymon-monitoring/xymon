@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.193 2006-01-27 07:04:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.194 2006-01-30 09:04:44 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -741,6 +741,7 @@ hobbitd_log_t *find_log(char *hostname, char *testname, char *origin, hobbitd_ho
 	hobbitd_log_t *lwalk;
 
 	*host = NULL;
+	if ((hostname == NULL) || (testname == NULL)) return NULL;
 
 	hosthandle = rbtFind(rbhosts, hostname);
 	if (hosthandle != rbtEnd(rbhosts)) *host = hwalk = gettreeitem(rbhosts, hosthandle); else return NULL;
