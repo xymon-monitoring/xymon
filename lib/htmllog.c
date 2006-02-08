@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.45 2006-02-08 12:49:49 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.46 2006-02-08 22:00:33 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -141,6 +141,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	char *tplfile = "hostsvc";
 
 	hostsvc_setup();
+	if (!displayname) displayname = hostname;
 	sethostenv(displayname, ip, service, colorname(color), hostname);
 	if (logtime) sethostenv_snapshot(logtime);
 
@@ -173,7 +174,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		}
 	}
 
-	if (acklist) {
+	if (acklist && *acklist) {
 		/* received:validuntil:level:ackedby:msg */
 		time_t received, validuntil;
 		int level; 
