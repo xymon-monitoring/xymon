@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.162 2006-02-08 12:49:49 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.163 2006-02-08 22:17:20 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -525,7 +525,7 @@ void do_hosts(host_t *head, char *onlycols, char *exceptcols, FILE *output, FILE
 						if (dynamicreport) {
 							fprintf(output, "<A HREF=\"%s\">",
 								replogurl(h->hostname, e->column->name, 
-									  h->ip, NULL, e->color, 
+									  e->color, 
 									  stylenames[reportstyle], use_recentgifs,
 									  e->repinfo,
 									  h->reporttime, reportend,
@@ -552,8 +552,9 @@ void do_hosts(host_t *head, char *onlycols, char *exceptcols, FILE *output, FILE
 							/* Pre-build the test-specific report */
 							restore_replogs(e->causes);
 							generate_replog(htmlrep, textrep, textrepurl,
-									h->hostname, h->ip, e->column->name, e->color, 
-									reportstyle, reportstart, reportend,
+									h->hostname, e->column->name, e->color, reportstyle,
+									h->ip, h->displayname,
+									reportstart, reportend,
 									reportwarnlevel, reportgreenlevel, e->repinfo);
 
 							if (textrep) fclose(textrep);
