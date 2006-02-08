@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.57 2006-01-23 22:06:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.58 2006-02-08 22:06:25 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -35,8 +35,6 @@ static char *multigraphs = ",disk,inode,qtree,";
 /* CGI params */
 static char *hostname = NULL;
 static char *service = NULL;
-static char *ip = NULL;
-static char *displayname = NULL;
 static char *tstamp = NULL;
 static char *nkprio = NULL, *nkttgroup = NULL, *nkttextra = NULL;
 static enum { FRM_STATUS, FRM_CLIENT } outform = FRM_STATUS;
@@ -60,27 +58,14 @@ static int parse_query(void)
 
 	cwalk = cgidata;
 	while (cwalk) {
-		if (strcasecmp(cwalk->name, "HOSTSVC") == 0) {
-			char *p;
-
-			hostname = strdup(cwalk->value);
-			p = strchr(hostname, '.');
-			if (p) { *p = '\0'; service = strdup(p+1); }
-			while ((p = strchr(hostname, ','))) *p = '.';
-		}
-		else if (strcasecmp(cwalk->name, "IP") == 0) {
-			ip = strdup(cwalk->value);
-		}
-		else if (strcasecmp(cwalk->name, "DISPLAYNAME") == 0) {
-			displayname = strdup(cwalk->value);
-		}
-		else if (strcasecmp(cwalk->name, "HOST") == 0) {
+		if (strcasecmp(cwalk->name, "HOST") == 0) {
 			hostname = strdup(cwalk->value);
 		}
 		else if (strcasecmp(cwalk->name, "SERVICE") == 0) {
 			service = strdup(cwalk->value);
 		}
 		else if (strcasecmp(cwalk->name, "TIMEBUF") == 0) {
+			/* Only for the historical logs */
 			tstamp = strdup(cwalk->value);
 		}
 		else if (strcasecmp(cwalk->name, "CLIENT") == 0) {
@@ -125,9 +110,24 @@ static int parse_query(void)
 	return 0;
 }
 
+void loadhostdata(char *hostname, char **ip, char **displayname)
+{
+	namelist_t *hinfo = NULL;
+
+	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+
+	if ((hinfo = hostinfo(hostname)) == NULL) {
+		errormsg("No such host");
+		return 1;
+	}
+
+	*ip = bbh_item(hinfo, BBH_IP);
+	*displayname = bbh_item(hinfo, BBH_DISPLAYNAME);
+	if (!(*displayname)) *displayname = hostname;
+}
+
 int do_request(void)
 {
-	static time_t lastload = 0;
 	time_t now = time(NULL);
 	int color = 0;
 	char timesincechange[100];
@@ -136,22 +136,9 @@ int do_request(void)
 	char *restofmsg = NULL, *ackmsg = NULL, *dismsg = NULL, *acklist=NULL;	/* These are just used */
 	int ishtmlformatted = 0;
 	int clientavail = 0;
-	namelist_t *hinfo = NULL;
+	char *ip, *displayname;
 
 	if (parse_query() != 0) return 1;
-
-	if ((lastload + 300) < now) {
-		load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
-		lastload = now;
-	}
-
-	if ((hinfo = hostinfo(hostname)) == NULL) {
-		errormsg("No such host");
-		return 1;
-	}
-
-	if (!ip) ip = strdup(bbh_item(hinfo, BBH_IP));
-	if (!displayname) displayname = strdup(hostname);
 
 	if (outform == FRM_CLIENT) {
 		char *hobbitdreq;
@@ -173,6 +160,7 @@ int do_request(void)
 		if (restofmsg) restofmsg++; else restofmsg = log;
 	}
 	else if ((strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) || (strcmp(service, xgetenv("INFOCOLUMN")) == 0)) {
+		loadhostdata(hostname, &ip, &displayname);
 		ishtmlformatted = 1;
 		sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
 		sethostenv_refresh(600);
@@ -197,7 +185,7 @@ int do_request(void)
 
 		sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
 		sethostenv_refresh(60);
-		sprintf(hobbitdreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist", hostname, service);
+		sprintf(hobbitdreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,BBH_IP,BBH_DISPLAYNAME", hostname, service);
 		hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &log, 1, 30);
 		if ((hobbitdresult != BB_OK) || (log == NULL) || (strlen(log) == 0)) {
 			errormsg("Status not available\n");
@@ -240,6 +228,8 @@ int do_request(void)
 		 * dismsg,		[12]
 		 * client,		[13]
 		 * acklist		[14]
+		 * BBH_IP		[15]
+		 * BBH_DISPLAYNAME	[16]
 		 */
 		color = parse_color(items[2]);
 		flags = strdup(items[3]);
@@ -272,7 +262,10 @@ int do_request(void)
 			xfree(svccomma); xfree(clientsvcscomma);
 		}
 
-		acklist = (items[14] ? strdup(items[14]) : NULL);
+		acklist = ((items[14] && *items[14]) ? strdup(items[14]) : NULL);
+
+		ip = (items[15] ? items[15] : "");
+		displayname = (items[16] ? items[16] : hostname);
 	}
 	else if (source == SRC_HISTLOGS) {
 		char logfn[PATH_MAX];
@@ -290,6 +283,7 @@ int do_request(void)
 
 		if (!tstamp) errormsg("Invalid request");
 
+		loadhostdata(hostname, &ip, &displayname);
 		hostnamedash = strdup(hostname);
 		p = hostnamedash; while ((p = strchr(p, '.')) != NULL) *p = '_';
 		p = hostnamedash; while ((p = strchr(p, ',')) != NULL) *p = '_';
@@ -388,9 +382,7 @@ int do_request(void)
 
 	/* Cleanup CGI params */
 	if (hostname) xfree(hostname);
-	if (displayname) xfree(displayname);
 	if (service) xfree(service);
-	if (ip) xfree(ip);
 	if (tstamp) xfree(tstamp);
 
 	/* Cleanup main vars */
@@ -462,7 +454,7 @@ int main(int argc, char *argv[])
 	redirect_cgilog("hobbitsvc");
 
 	*errortxt = '\0';
-	hostname = displayname = service = ip = tstamp = NULL;
+	hostname = service = tstamp = NULL;
 	if (do_request() != 0) {
 		fprintf(stdout, "%s", errortxt);
 		return 1;
