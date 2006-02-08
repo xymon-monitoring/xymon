@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: cgiurls.c,v 1.4 2006-02-08 12:50:43 henrik Exp $";
+static char rcsid[] = "$Id: cgiurls.c,v 1.5 2006-02-08 22:12:57 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -75,7 +75,7 @@ char *histlogurl(char *hostname, char *service, time_t histtime, char *histtime_
 	return url;
 }
 
-char *replogurl(char *hostname, char *service, char *ip, char *displayname, int color, 
+char *replogurl(char *hostname, char *service, int color, 
 		char *style, int recentgifs,
 		reportinfo_t *repinfo, 
 		char *reportstart, time_t reportend, float reportwarnlevel)
@@ -86,10 +86,9 @@ char *replogurl(char *hostname, char *service, char *ip, char *displayname, int 
 	if (!cgibinurl) cgibinurl = xgetenv("CGIBINURL");
 
 	url = (char *)malloc(4096 + strlen(cgibinurl) + strlen(hostname) + strlen(service));
-	sprintf(url, "%s/bb-replog.sh?HOSTSVC=%s.%s&amp;IP=%s&amp;DISPLAYNAME=%s&amp;COLOR=%s&amp;PCT=%.2f&amp;ST=%u&amp;END=%u&amp;RED=%.2f&amp;YEL=%.2f&amp;GRE=%.2f&amp;PUR=%.2f&amp;CLE=%.2f&amp;BLU=%.2f&amp;STYLE=%s&amp;FSTATE=%s&amp;REDCNT=%d&amp;YELCNT=%d&amp;GRECNT=%d&amp;PURCNT=%d&amp;CLECNT=%d&amp;BLUCNT=%d&amp;WARNPCT=%.2f&amp;RECENTGIFS=%d",
+	sprintf(url, "%s/bb-replog.sh?HOST=%s&amp;SERVICE=%s&amp;COLOR=%s&amp;PCT=%.2f&amp;ST=%u&amp;END=%u&amp;RED=%.2f&amp;YEL=%.2f&amp;GRE=%.2f&amp;PUR=%.2f&amp;CLE=%.2f&amp;BLU=%.2f&amp;STYLE=%s&amp;FSTATE=%s&amp;REDCNT=%d&amp;YELCNT=%d&amp;GRECNT=%d&amp;PURCNT=%d&amp;CLECNT=%d&amp;BLUCNT=%d&amp;WARNPCT=%.2f&amp;RECENTGIFS=%d",
 		cgibinurl, 
-		commafy(hostname), service, ip, 
-		(displayname ? displayname : hostname),
+		hostname, service,
 		colorname(color), repinfo->fullavailability, 
 		(unsigned int)repinfo->reportstart, (unsigned int)reportend,
 		repinfo->fullpct[COL_RED], repinfo->fullpct[COL_YELLOW], 
