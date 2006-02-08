@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.82 2006-01-13 17:35:13 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.83 2006-02-08 12:49:49 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -213,7 +213,7 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 		if (recip->format == ALERTFORM_TEXT) {
 			sprintf(info, "See %s%s\n", 
 				xgetenv("BBWEBHOST"), 
-				hostsvcurl(alert->hostname->name, alert->testname->name, NULL, NULL));
+				hostsvcurl(alert->hostname->name, alert->testname->name));
 			addtobuffer(&buf, &buflen, info);
 		}
 
@@ -272,7 +272,7 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 		addtobuffer(&buf, &buflen, "\n");
 		sprintf(info, "See %s%s\n", 
 			xgetenv("BBWEBHOST"),
-			hostsvcurl(alert->hostname->name, alert->testname->name, NULL, NULL));
+			hostsvcurl(alert->hostname->name, alert->testname->name));
 		addtobuffer(&buf, &buflen, info);
 		MEMUNDEFINE(info);
 		return buf;
