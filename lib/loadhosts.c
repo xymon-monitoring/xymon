@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.47 2006-01-25 21:00:20 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.48 2006-02-08 12:51:30 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -128,6 +128,7 @@ static void bbh_item_list_setup(void)
 	bbh_item_name[BBH_PAGEPATH]            = "BBH_PAGEPATH";
 	bbh_item_name[BBH_PAGETITLE]           = "BBH_PAGETITLE";
 	bbh_item_name[BBH_PAGEPATHTITLE]       = "BBH_PAGEPATHTITLE";
+	bbh_item_name[BBH_GROUPID]             = "BBH_GROUPID";
 
 	i = 0; while (bbh_item_key[i]) i++;
 	if (i != BBH_IP) {
@@ -396,6 +397,9 @@ char *bbh_item(namelist_t *host, enum bbh_item_t item)
 	  case BBH_PAGEPATHTITLE:
 		  if (strlen(host->page->pagetitle)) return host->page->pagetitle;
 		  return "Top Page";
+
+	  case BBH_GROUPID:
+		  return host->groupid;
 
 	  case BBH_DOCURL:
 		  p = bbh_find_item(host, item);

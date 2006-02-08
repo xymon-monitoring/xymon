@@ -57,6 +57,7 @@ enum bbh_item_t {
 	BBH_PAGEPATH,
 	BBH_PAGETITLE,
 	BBH_PAGEPATHTITLE,
+	BBH_GROUPID,
 	BBH_LAST
 };
 
@@ -75,6 +76,7 @@ typedef struct namelist_t {
 	pagelist_t *page;	/* Host location in the page/subpage/subparent tree */
 	void *data;		/* Misc. data supplied by the user of this library function */
 	struct namelist_t *defaulthost;	/* Points to the latest ".default." host */
+	char *groupid;
 	struct namelist_t *next;
 
 	char *rawentry;		/* The raw bb-hosts entry for this host. */
