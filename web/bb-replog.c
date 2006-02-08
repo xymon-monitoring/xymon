@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.35 2006-01-13 12:05:33 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.36 2006-02-08 22:09:47 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -21,58 +21,16 @@ static char rcsid[] = "$Id: bb-replog.c,v 1.35 2006-01-13 12:05:33 henrik Exp $"
 
 #include "libbbgen.h"
 
-/*
- * This program is invoked via CGI with QUERY_STRING containing:
- *
- *	HOSTSVC=www,sample,com.conn
- *	IP=12.34.56.78
- *	REPORTTIME=*:HHHH:MMMM
- *	COLOR=yellow
- *	WARNPCT=98.5
- *	PCT=98.92
- *	ST=1028810893
- *	END=1054418399
- *	RED=1.08
- *	YEL=0.00
- *	GRE=98.34
- *	PUR=0.13
- *	CLE=0.00
- *	BLU=0.45
- *	STYLE=crit
- *	FSTATE=OK
- *	REDCNT=124
- *	YELCNT=0
- *	GRECNT=153
- *	PURCNT=5
- *	CLECNT=1
- *	BLUCNT=24
- *
- */
-
-/* These are needed, but not actually used */
-double reportgreenlevel = 99.995;
-double reportwarnlevel = 98.0;
-
-char *hostname = "";
-char *ip = "";
+char *hostname = NULL;
+char *displayname = NULL;
+char *ip = NULL;
 char *reporttime = NULL;
-char *service = "";
+char *service = NULL;
 time_t st, end;
 int style;
 int color;
-
-char *reqenv[] = {
-"BBHIST",
-"BBHISTLOGS",
-"BBREP",
-"BBREPURL",
-"BBSKIN",
-"CGIBINURL",
-"DOTWIDTH",
-"DOTHEIGHT",
-"MKBBCOLFONT",
-"MKBBROWFONT",
-NULL };
+double reportgreenlevel = 99.995;
+double reportwarnlevel = 98.0;
 
 static void errormsg(char *msg)
 {
@@ -110,8 +68,11 @@ static void parse_query(void)
 			hostname = strdup(val);
 			while ((p = strchr(hostname, ','))) *p = '.';
 		}
-		else if (argnmatch(token, "IP")) {
-			ip = strdup(val);
+		else if (argnmatch(token, "HOST")) {
+			hostname = strdup(val);
+		}
+		else if (argnmatch(token, "SERVICE")) {
+			service = strdup(val);
 		}
 		else if (argnmatch(token, "REPORTTIME")) {
 			reporttime = (char *) malloc(strlen(val)+strlen("REPORTTIME=")+1);
@@ -157,6 +118,7 @@ int main(int argc, char *argv[])
 	reportinfo_t repinfo;
 	int argi;
 	char *envarea = NULL;
+	namelist_t *hinfo;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -171,8 +133,15 @@ int main(int argc, char *argv[])
 
 	redirect_cgilog("bb-replog");
 
-	envcheck(reqenv);
 	parse_query();
+	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+        if ((hinfo = hostinfo(hostname)) == NULL) {
+		errormsg("No such host");
+		return 1;
+	}
+	ip = bbh_item(hinfo, BBH_IP);
+	displayname = bbh_item(hinfo, BBH_DISPLAYNAME);
+	if (!displayname) displayname = hostname;
 
 	sprintf(histlogfn, "%s/%s.%s", xgetenv("BBHIST"), commafy(hostname), service);
 	fd = fopen(histlogfn, "r");
@@ -192,8 +161,10 @@ int main(int argc, char *argv[])
 	printf("Content-Type: text/html\n\n");
 
 	generate_replog(stdout, textrep, textrepurl, 
-			hostname, ip, service, color, style, st, end, 
-			reportwarnlevel, reportgreenlevel, &repinfo);
+			hostname, service, color, style, 
+			ip, displayname,
+			st, end, reportwarnlevel, reportgreenlevel, 
+			&repinfo);
 
 	if (textrep) fclose(textrep);
 	return 0;
