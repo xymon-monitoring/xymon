@@ -21,7 +21,8 @@
 extern char *stylenames[];
 
 extern void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
-		     char *hostname, char *ip, char *service, int color, int style,
+		     char *hostname, char *service, int color, int style,
+		     char *ip, char *displayname,
 		     time_t st, time_t end, double reportwarnlevel, double reportgreenlevel, 
 		     reportinfo_t *repinfo);
 #endif

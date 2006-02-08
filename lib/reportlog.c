@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: reportlog.c,v 1.3 2006-02-08 12:49:26 henrik Exp $";
+static char rcsid[] = "$Id: reportlog.c,v 1.4 2006-02-08 22:08:53 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -24,7 +24,8 @@ static char rcsid[] = "$Id: reportlog.c,v 1.3 2006-02-08 12:49:26 henrik Exp $";
 char *stylenames[3] = { "crit", "nongr", "all" };
 
 void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
-		     char *hostname, char *ip, char *service, int color, int style,
+		     char *hostname, char *service, int color, int style,
+		     char *ip, char *displayname,
 		     time_t st, time_t end, double reportwarnlevel, double reportgreenlevel, 
 		     reportinfo_t *repinfo)
 {
@@ -32,7 +33,8 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 	char *bgcols[2] = { "\"#000000\"", "\"#000033\"" };
 	int curbg = 0;
 
-	sethostenv(hostname, ip, service, colorname(color), hostname);
+	if (!displayname) displayname = hostname;
+	sethostenv(displayname, ip, service, colorname(color), hostname);
 	sethostenv_report(st, end, reportwarnlevel, reportgreenlevel);
 
 	headfoot(htmlrep, "replog", "", "header", color);
@@ -40,7 +42,7 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 	fprintf(htmlrep, "\n");
 
 	fprintf(htmlrep, "<CENTER>\n");
-	fprintf(htmlrep, "<BR><FONT %s><B>%s - %s</B></FONT>\n", xgetenv("MKBBROWFONT"), hostname, service);
+	fprintf(htmlrep, "<BR><FONT %s><B>%s - %s</B></FONT>\n", xgetenv("MKBBROWFONT"), displayname, service);
 	fprintf(htmlrep, "<TABLE BORDER=0 BGCOLOR=\"#333333\" CELLPADDING=3 SUMMARY=\"Availability percentages\">\n");
 	fprintf(htmlrep, "<TR>\n");
 
@@ -126,7 +128,7 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 
 		fprintf(textrep, "\n");
 		fprintf(textrep, "\n");
-		fprintf(textrep, "				%s - %s\n", hostname, service);
+		fprintf(textrep, "				%s - %s\n", displayname, service);
 		fprintf(textrep, "\n");
 		if (repinfo->withreport) {
 			fprintf(textrep, "			Availability (24x7) :	%.2f%%\n", repinfo->fullavailability);
