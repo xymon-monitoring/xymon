@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.194 2006-01-30 09:04:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.195 2006-02-08 21:44:19 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -233,6 +233,7 @@ enum boardfield_t { F_NONE, F_HOSTNAME, F_TESTNAME, F_COLOR, F_FLAGS,
 		    F_SENDER, F_COOKIE, F_LINE1,
 		    F_ACKMSG, F_DISMSG, F_MSG, F_CLIENT,
 		    F_ACKLIST,
+		    F_HOSTINFO,
 		    F_LAST };
 
 typedef struct boardfieldnames_t {
@@ -257,9 +258,15 @@ boardfieldnames_t boardfieldnames[] = {
 	{ "msg", F_MSG },
 	{ "client", F_CLIENT },
 	{ "acklist", F_ACKLIST },
+	{ "BBH_", F_HOSTINFO },
 	{ NULL, F_LAST },
 };
-enum boardfield_t boardfields[F_LAST];
+typedef struct boardfields_t {
+	enum boardfield_t field;
+	enum bbh_item_t bbhfield;
+} boardfield_t;
+#define BOARDFIELDS_MAX 50
+boardfield_t boardfields[BOARDFIELDS_MAX+1];
 
 unsigned long msgs_total = 0;
 unsigned long msgs_total_last = 0;
@@ -1895,12 +1902,32 @@ void setup_filter(char *buf, char *defaultfields, char **spage, char **shost, ch
 	s = strdup(*fields);
 	tok = strtok(s, ",");
 	while (tok) {
-		enum boardfield_t i;
-		for (i=0; (boardfieldnames[i].name && strcmp(tok, boardfieldnames[i].name)); i++) ;
-		if (i < F_LAST) boardfields[idx++] = boardfieldnames[i].id;
+		enum boardfield_t fieldid = F_LAST;
+		enum bbh_item_t bbhfieldid = BBH_LAST;
+
+		if (strncmp(tok, "BBH_", 4) == 0) {
+			fieldid = F_HOSTINFO;
+			bbhfieldid = bbh_key_idx(tok);
+		}
+		else {
+			int i;
+			for (i=0; (boardfieldnames[i].name && strcmp(tok, boardfieldnames[i].name)); i++) ;
+			if (boardfieldnames[i].name) {
+				fieldid = boardfieldnames[i].id;
+				bbhfieldid = BBH_LAST;
+			}
+		}
+
+		if ((fieldid != F_LAST) && (idx < BOARDFIELDS_MAX)) {
+			boardfields[idx].field = fieldid;
+			boardfields[idx].bbhfield = bbhfieldid;
+			idx++;
+		}
+
 		tok = strtok(NULL, ",");
 	}
-	boardfields[idx++] = F_NONE;
+	boardfields[idx].field = F_NONE;
+	boardfields[idx].bbhfield = BBH_LAST;
 
 	xfree(s);
 
@@ -1914,17 +1941,19 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 	char *buf, *bufp;
 	int bufsz;
 	char *eoln;
+	namelist_t *hinfo = NULL;
 
 	buf = *outbuf;
 	bufp = *outpos;
 	bufsz = *outsz;
 
-	for (f_idx = 0; (boardfields[f_idx] != F_NONE); f_idx++) {
+	for (f_idx = 0; (boardfields[f_idx].field != F_NONE); f_idx++) {
 		int needed = 1024;
 		int used = (bufp - buf);
 		char *acklist = NULL;
+		char *infostr = NULL;
 
-		switch (boardfields[f_idx]) {
+		switch (boardfields[f_idx].field) {
 		  case F_ACKMSG: if (lwalk->ackmsg) needed += 2*strlen(lwalk->ackmsg); break;
 		  case F_DISMSG: if (lwalk->dismsg) needed += 2*strlen(lwalk->dismsg); break;
 		  case F_MSG: needed += 2*strlen(lwalk->message); break;
@@ -1933,6 +1962,14 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 			flush_acklist(lwalk, 0);
 			acklist = acklist_string(lwalk, acklevel);
 			if (acklist) needed += 2*strlen(acklist);
+			break;
+
+		  case F_HOSTINFO:
+			if (!hinfo) hinfo = hostinfo(hwalk->hostname);
+			if (hinfo) {
+				infostr = bbh_item(hinfo, boardfields[f_idx].bbhfield);
+				if (infostr) needed += strlen(infostr);
+			}
 			break;
 
 		  default: break;
@@ -1946,7 +1983,7 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 
 		if (f_idx > 0) bufp += sprintf(bufp, "|");
 
-		switch (boardfields[f_idx]) {
+		switch (boardfields[f_idx].field) {
 		  case F_NONE: break;
 		  case F_HOSTNAME: bufp += sprintf(bufp, "%s", hwalk->hostname); break;
 		  case F_TESTNAME: bufp += sprintf(bufp, "%s", lwalk->test->testname); break;
@@ -1971,6 +2008,8 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 		  case F_MSG: bufp += sprintf(bufp, "%s", nlencode(lwalk->message)); break;
 		  case F_CLIENT: bufp += sprintf(bufp, "%s", (hwalk->clientmsg ? "Y" : "N")); break;
 		  case F_ACKLIST: if (acklist) bufp += sprintf(bufp, "%s", nlencode(acklist)); break;
+		  case F_HOSTINFO: if (infostr) bufp += sprintf(bufp, "%s", infostr); break;
+
 		  case F_LAST: break;
 		}
 	}
