@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: cgiurls.c,v 1.3 2006-01-14 13:07:12 henrik Exp $";
+static char rcsid[] = "$Id: cgiurls.c,v 1.4 2006-02-08 12:50:43 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -25,7 +25,7 @@ static char rcsid[] = "$Id: cgiurls.c,v 1.3 2006-01-14 13:07:12 henrik Exp $";
 
 static char *cgibinurl = NULL;
 
-char *hostsvcurl(char *hostname, char *service, char *ip, char *displayname)
+char *hostsvcurl(char *hostname, char *service)
 {
 	static char *url;
 
@@ -35,12 +35,8 @@ char *hostsvcurl(char *hostname, char *service, char *ip, char *displayname)
 	url = (char *)malloc(1024 + 
 			     strlen(cgibinurl) + 
 			     strlen(hostname) + 
-			     strlen(service) + 
-			     (displayname ? strlen(displayname) : 0));
-	sprintf(url, "%s/bb-hostsvc.sh?HOSTSVC=%s.%s",
-		cgibinurl, commafy(hostname), service);
-	if (ip) sprintf(url+strlen(url), "&amp;IP=%s", ip);
-	if (displayname) sprintf(url+strlen(url), "&amp;DISPLAYNAME=%s", displayname);
+			     strlen(service));
+	sprintf(url, "%s/bb-hostsvc.sh?HOST=%s&amp;SERVICE=%s", cgibinurl, hostname, service);
 
 	return url;
 }
@@ -58,24 +54,22 @@ char *histcgiurl(char *hostname, char *service)
 	return url;
 }
 
-char *histlogurl(char *hostname, char *service, char *displayname, time_t histtime, char *histtime_txt)
+char *histlogurl(char *hostname, char *service, time_t histtime, char *histtime_txt)
 {
 	static char *url = NULL;
 
 	if (url) xfree(url);
 	if (!cgibinurl) cgibinurl = xgetenv("CGIBINURL");
 
-	if (!displayname) displayname = hostname;
-
 	/* cgi-bin/bb-histlog.sh?HOST=SLS-P-CE1.slsdomain.sls.dk&SERVICE=msgs&TIMEBUF=Fri_Nov_7_16:01:08_2002 */
-	url = (char *)malloc(1024 + strlen(cgibinurl) + strlen(hostname) + strlen(displayname) + strlen(service));
+	url = (char *)malloc(1024 + strlen(cgibinurl) + strlen(hostname) + strlen(service));
 	if (!histtime_txt) {
-		sprintf(url, "%s/bb-histlog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s&amp;DISPLAYNAME=%s",
-			xgetenv("CGIBINURL"), hostname, service, histlogtime(histtime), displayname);
+		sprintf(url, "%s/bb-histlog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s",
+			xgetenv("CGIBINURL"), hostname, service, histlogtime(histtime));
 	}
 	else {
-		sprintf(url, "%s/bb-histlog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s&amp;DISPLAYNAME=%s",
-			xgetenv("CGIBINURL"), hostname, service, histtime_txt, displayname);
+		sprintf(url, "%s/bb-histlog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s",
+			xgetenv("CGIBINURL"), hostname, service, histtime_txt);
 	}
 
 	return url;
