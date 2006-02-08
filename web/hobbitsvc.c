@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.58 2006-02-08 22:06:25 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.59 2006-02-08 22:16:50 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -118,7 +118,7 @@ void loadhostdata(char *hostname, char **ip, char **displayname)
 
 	if ((hinfo = hostinfo(hostname)) == NULL) {
 		errormsg("No such host");
-		return 1;
+		exit(1);
 	}
 
 	*ip = bbh_item(hinfo, BBH_IP);
