@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: reportlog.c,v 1.2 2006-01-13 17:34:04 henrik Exp $";
+static char rcsid[] = "$Id: reportlog.c,v 1.3 2006-02-08 12:49:26 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -197,7 +197,7 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 			fprintf(htmlrep, "<TD ALIGN=RIGHT NOWRAP>%s</TD>\n", end);
 			fprintf(htmlrep, "<TD ALIGN=CENTER BGCOLOR=\"#000000\">");
 			fprintf(htmlrep, "<A HREF=\"%s\">", 
-				histlogurl(hostname, service, NULL, 0, walk->timespec));
+				histlogurl(hostname, service, 0, walk->timespec));
 			fprintf(htmlrep, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0>", 
 				xgetenv("BBSKIN"), dotgiffilename(walk->color, 0, !angrygif), colorname(walk->color), colorname(walk->color),
 				xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));

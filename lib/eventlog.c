@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.29 2006-01-13 17:33:40 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.30 2006-02-08 12:49:26 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -302,7 +302,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 
 			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", walk->service->name);
 			fprintf(output, "<TD><A HREF=\"%s\">\n", 
-				histlogurl(hostname, walk->service->name, NULL, walk->changetime, NULL));
+				histlogurl(hostname, walk->service->name, walk->changetime, NULL));
 			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=\"%s\" TITLE=\"%s\"></A>\n", 
 				xgetenv("BBSKIN"), dotgiffilename(walk->oldcolor, 0, 0), 
 				xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"), 
@@ -310,7 +310,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 			fprintf(output, "<IMG SRC=\"%s/arrow.gif\" BORDER=0 ALT=\"From -&gt; To\">\n", 
 				xgetenv("BBSKIN"));
 			fprintf(output, "<TD><A HREF=\"%s\">\n", 
-				histlogurl(hostname, walk->service->name, NULL, walk->eventtime, NULL));
+				histlogurl(hostname, walk->service->name, walk->eventtime, NULL));
 			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=\"%s\" TITLE=\"%s\"></A>\n", 
 				xgetenv("BBSKIN"), dotgiffilename(walk->newcolor, 0, 0), 
 				xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"), 

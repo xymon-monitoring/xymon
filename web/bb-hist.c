@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.51 2006-01-14 13:08:39 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.52 2006-02-08 12:49:26 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -472,7 +472,7 @@ static void generate_histlog_table(FILE *htmlrep,
 		fprintf(htmlrep, "<TR BGCOLOR=%s>\n", bgcols[curbg]); curbg = (1-curbg);
 		fprintf(htmlrep, "<TD ALIGN=LEFT NOWRAP>%s</TD>\n", start);
 		fprintf(htmlrep, "<TD ALIGN=CENTER BGCOLOR=\"#000000\">");
-		fprintf(htmlrep, "<A HREF=\"%s\">", histlogurl(hostname, service, displayname, 0, walk->timespec));
+		fprintf(htmlrep, "<A HREF=\"%s\">", histlogurl(hostname, service, 0, walk->timespec));
 		fprintf(htmlrep, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0>", 
 			xgetenv("BBSKIN"), dotgiffilename(walk->color, 0, 1), colorname(walk->color), colorname(walk->color),
 			xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
