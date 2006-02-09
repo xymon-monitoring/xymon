@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.40 2005-12-29 16:27:54 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.41 2006-02-09 13:23:06 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -128,6 +128,7 @@ int main(int argc, char *argv[])
 		time_t tstamp, lastchg, disabletime;
 		int tstamp_i, lastchg_i;
 		int newcolor, oldcolor;
+		int downtimeactive;
 		struct tm tstamptm;
 		int trend;
 		int childstat;
@@ -150,7 +151,7 @@ int main(int argc, char *argv[])
 		}
 
 		if ((metacount > 9) && (strncmp(items[0], "@@stachg", 8) == 0)) {
-			/* @@stachg#seq|timestamp|sender|origin|hostname|testname|expiretime|color|prevcolor|changetime|disabletime|disablemsg */
+			/* @@stachg#seq|timestamp|sender|origin|hostname|testname|expiretime|color|prevcolor|changetime|disabletime|disablemsg|downtimeactive */
 			sscanf(items[1], "%d.%*d", &tstamp_i); tstamp = tstamp_i;
 			hostname = items[4];
 			testname = items[5];
@@ -159,6 +160,7 @@ int main(int argc, char *argv[])
 			lastchg  = atoi(items[9]);
 			disabletime = atoi(items[10]);
 			dismsg   = items[11];
+			downtimeactive = (atoi(items[12]) > 0);
 
 			if (save_histlogs) {
 				char *hostdash;
