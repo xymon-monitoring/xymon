@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.196 2006-02-09 13:25:21 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.197 2006-02-09 13:35:08 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -917,6 +917,9 @@ done:
 			if (cause) *color = COL_BLUE;
 			if (downcause) *downcause = cause;
 		}
+		else {
+			(*log)->downtimeactive = 0;
+		}
 	}
 	xfree(firstline);
 
@@ -1147,6 +1150,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 
 		/*
 		 * Dont update the log->lastchange timestamp while DOWNTIME is active.
+		 * (It is only seen as active if the color has been forced BLUE).
 		 */
 		if (!log->downtimeactive) {
 			log->lastchange = time(NULL);
