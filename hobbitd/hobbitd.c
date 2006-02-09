@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.195 2006-02-08 21:44:19 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.196 2006-02-09 13:25:21 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -101,7 +101,7 @@ typedef struct hobbitd_log_t {
 	struct hobbitd_hostlist_t *host;
 	struct hobbitd_testlist_t *test;
 	struct htnames_t *origin;
-	int color, oldcolor, activealert, histsynced;
+	int color, oldcolor, activealert, histsynced, downtimeactive;
 	char *testflags;
 	char sender[16];
 	time_t lastchange;	/* time when the currently logged status began */
@@ -601,6 +601,9 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 					(int)log->enabletime, nlencode(log->dismsg));
 			}
 			if (n < (bufsz-5)) {
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d", log->downtimeactive);
+			}
+			if (n < (bufsz-5)) {
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "\n%s", msg);
 			}
 			if (n > (bufsz-5)) {
@@ -881,6 +884,7 @@ void get_hts(char *msg, char *sender, char *origin,
 			lwalk->color = lwalk->oldcolor = NO_COLOR;
 			lwalk->activealert = 0;
 			lwalk->histsynced = 0;
+			lwalk->downtimeactive = 0;
 			lwalk->testflags = NULL;
 			lwalk->sender[0] = '\0';
 			lwalk->host = hwalk;
@@ -909,6 +913,7 @@ done:
 			char *cause;
 
 			cause = check_downtime(hostname, testname);
+			(*log)->downtimeactive = (cause != NULL);
 			if (cause) *color = COL_BLUE;
 			if (downcause) *downcause = cause;
 		}
@@ -1133,16 +1138,19 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	}
 
 	if (!issummary && (!log->histsynced || (log->oldcolor != newcolor))) {
-		dprintf("oldcolor=%d, oldas=%d, newcolor=%d, newas=%d\n", 
-			log->oldcolor, oldalertstatus, newcolor, newalertstatus);
+		/*
+		 * Change of color goes to the status-change channel.
+		 */
+		dprintf("posting to stachg channel: host=%s, test=%s\n", hostname, testname);
+		posttochannel(stachgchn, channelnames[C_STACHG], msg, sender, hostname, log, NULL);
+		log->histsynced = 1;
 
 		/*
-		 * Change of color always goes to the status-change channel.
+		 * Dont update the log->lastchange timestamp while DOWNTIME is active.
 		 */
-		dprintf("posting to stachg channel\n");
-		posttochannel(stachgchn, channelnames[C_STACHG], msg, sender, hostname, log, NULL);
-		log->lastchange = time(NULL);
-		log->histsynced = 1;
+		if (!log->downtimeactive) {
+			log->lastchange = time(NULL);
+		}
 	}
 
 	if (!issummary) {
