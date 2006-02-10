@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-darwin.sh,v 1.6 2005-10-09 20:11:25 henrik Exp $
+# $Id: hobbitclient-darwin.sh,v 1.7 2006-02-10 09:44:08 henrik Exp $
 
 echo "[date]"
 date
@@ -28,6 +28,10 @@ s/[ 	]*\n[ 	]*/ /
 }'
 echo "[meminfo]"
 vm_stat
+echo "[ifconfig]"
+ifconfig -a
+echo "[route]"
+netstat -r
 echo "[netstat]"
 netstat -s
 echo "[ps]"

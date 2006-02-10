@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-openbsd.sh,v 1.4 2005-10-09 20:11:25 henrik Exp $
+# $Id: hobbitclient-openbsd.sh,v 1.5 2006-02-10 09:44:08 henrik Exp $
 
 echo "[date]"
 date
@@ -28,6 +28,10 @@ echo "[meminfo]"
 $BBHOME/bin/openbsd-meminfo
 echo "[swapctl]"
 /sbin/swapctl -s
+echo "[ifconfig]"
+ifconfig -A
+echo "[route]"
+netstat -rn
 echo "[netstat]"
 netstat -s
 echo "[ps]"

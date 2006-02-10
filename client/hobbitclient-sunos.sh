@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-sunos.sh,v 1.6 2006-01-09 11:28:58 henrik Exp $
+# $Id: hobbitclient-sunos.sh,v 1.7 2006-02-10 09:44:08 henrik Exp $
 
 echo "[date]"
 date
@@ -38,6 +38,10 @@ echo "[memory]"
 vmstat 1 2 | tail -1
 echo "[swap]"
 /usr/sbin/swap -s
+echo "[ifconfig]"
+ifconfig -a
+echo "[route]"
+netstat -rn
 echo "[netstat]"
 netstat -s
 echo "[ifstat]"

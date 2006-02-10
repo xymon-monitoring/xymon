@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-aix.sh,v 1.4 2006-01-09 11:28:58 henrik Exp $
+# $Id: hobbitclient-aix.sh,v 1.5 2006-02-10 09:44:08 henrik Exp $
 
 echo "[date]"
 date
@@ -31,6 +31,10 @@ echo "[freemem]"
 vmstat 1 2 | tail -1
 echo "[swap]"
 lsps -s
+echo "[ifconfig]"
+ifconfig -a
+echo "[route]"
+netstat -r
 echo "[netstat]"
 netstat -s
 echo "[ifstat]"

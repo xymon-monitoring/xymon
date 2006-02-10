@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-hp-ux.sh,v 1.9 2006-01-09 11:29:53 henrik Exp $
+# $Id: hobbitclient-hp-ux.sh,v 1.10 2006-02-10 09:44:08 henrik Exp $
 
 echo "[date]"
 date
@@ -30,6 +30,10 @@ echo "[memory]"
 $BBHOME/bin/hpux-meminfo
 echo "[swapinfo]"
 /usr/sbin/swapinfo -tm
+echo "[ifconfig]"
+netstat -in
+echo "[route]"
+netstat -rn
 echo "[netstat]"
 netstat -s
 echo "[ifstat]"

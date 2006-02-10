@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-linux.sh,v 1.8 2006-01-09 11:28:58 henrik Exp $
+# $Id: hobbitclient-linux.sh,v 1.9 2006-02-10 09:44:08 henrik Exp $
 
 echo "[date]"
 date
@@ -26,6 +26,10 @@ s/[ 	]*\n[ 	]*/ /
 }'
 echo "[free]"
 free
+echo "[ifconfig]"
+/sbin/ifconfig
+echo "[route]"
+netstat -rn
 echo "[netstat]"
 netstat -s
 echo "[ifstat]"

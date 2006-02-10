@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-osf1.sh,v 1.4 2005-10-09 20:11:25 henrik Exp $
+# $Id: hobbitclient-osf1.sh,v 1.5 2006-02-10 09:44:08 henrik Exp $
 
 echo "[date]"
 date
@@ -28,6 +28,10 @@ df -t noprocfs | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }'
+echo "[ifconfig]"
+ifconfig -a
+echo "[route]"
+cat /etc/routes
 echo "[netstat]"
 netstat -s
 echo "[ps]"
