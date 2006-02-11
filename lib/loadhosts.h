@@ -58,6 +58,7 @@ enum bbh_item_t {
 	BBH_PAGETITLE,
 	BBH_PAGEPATHTITLE,
 	BBH_GROUPID,
+	BBH_RAW,
 	BBH_LAST
 };
 

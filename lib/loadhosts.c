@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.49 2006-02-08 21:43:06 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.50 2006-02-11 08:32:05 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -129,6 +129,7 @@ static void bbh_item_list_setup(void)
 	bbh_item_name[BBH_PAGETITLE]           = "BBH_PAGETITLE";
 	bbh_item_name[BBH_PAGEPATHTITLE]       = "BBH_PAGEPATHTITLE";
 	bbh_item_name[BBH_GROUPID]             = "BBH_GROUPID";
+	bbh_item_name[BBH_RAW]                 = "BBH_RAW";
 
 	i = 0; while (bbh_item_key[i]) i++;
 	if (i != BBH_IP) {
@@ -362,6 +363,8 @@ char *bbh_item(namelist_t *host, enum bbh_item_t item)
 {
 	static char *result;
 	static char *inttxt = NULL;
+	static char *rawtxt = NULL;
+	static int rawtxtsz = 0;
 	char *p;
 
 	if (inttxt == NULL) inttxt = (char *)malloc(10);
@@ -419,6 +422,16 @@ char *bbh_item(namelist_t *host, enum bbh_item_t item)
 			  return host->defaulthost->downtime;
 		  else
 			  return NULL;
+
+	  case BBH_RAW:
+		  if (rawtxt) *rawtxt = NULL;
+		  p = bbh_item_walk(host);
+		  while (p) {
+			  addtobuffer(&rawtxt, &rawtxtsz, nlencode(p));
+			  p = bbh_item_walk(NULL);
+			  if (p) addtobuffer(&rawtxt, &rawtxtsz, "|");
+		  }
+		  return rawtxt;
 
 	  default:
 		  return bbh_find_item(host, item);
