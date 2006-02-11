@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.197 2006-02-09 13:35:08 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.198 2006-02-11 10:13:42 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -1867,7 +1867,9 @@ char *timestr(time_t tstamp)
 	return result;
 }
 
-void setup_filter(char *buf, char *defaultfields, char **spage, char **shost, char **stest, int *scolor, int *acklevel, char **fields)
+void setup_filter(char *buf, char *defaultfields, 
+		  char **spage, char **shost, char **snet, 
+		  char **stest, int *scolor, int *acklevel, char **fields)
 {
 	char *tok, *s;
 	int idx = 0;
@@ -1886,6 +1888,7 @@ void setup_filter(char *buf, char *defaultfields, char **spage, char **shost, ch
 			if (strlen(*spage) == 0) *spage = NULL;
 		}
 		else if (strncmp(tok, "host=", 5) == 0) *shost = tok+5;
+		else if (strncmp(tok, "net=", 4) == 0) *snet = tok+4;
 		else if (strncmp(tok, "test=", 5) == 0) *stest = tok+5;
 		else if (strncmp(tok, "fields=", 7) == 0) *fields = tok+7;
 		else if (strncmp(tok, "color=", 6) == 0) *scolor = colorset(tok+6, 0);
@@ -1965,6 +1968,8 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 		char *acklist = NULL;
 		char *infostr = NULL;
 
+		if ((lwalk == NULL) && (boardfields[f_idx].field != F_HOSTINFO)) continue;
+
 		switch (boardfields[f_idx].field) {
 		  case F_ACKMSG: if (lwalk->ackmsg) needed += 2*strlen(lwalk->ackmsg); break;
 		  case F_DISMSG: if (lwalk->dismsg) needed += 2*strlen(lwalk->dismsg); break;
@@ -2023,6 +2028,51 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 		  case F_HOSTINFO: if (infostr) bufp += sprintf(bufp, "%s", infostr); break;
 
 		  case F_LAST: break;
+		}
+	}
+	bufp += sprintf(bufp, "\n");
+
+	*outbuf = buf;
+	*outpos = bufp;
+	*outsz = bufsz;
+}
+
+
+void generate_hostinfo_outbuf(char **outbuf, char **outpos, int *outsz, namelist_t *hinfo)
+{
+	int f_idx;
+	char *buf, *bufp;
+	int bufsz;
+	char *infostr;
+
+	buf = *outbuf;
+	bufp = *outpos;
+	bufsz = *outsz;
+
+	for (f_idx = 0; (boardfields[f_idx].field != F_NONE); f_idx++) {
+		int needed = 1024;
+		int used = (bufp - buf);
+
+		switch (boardfields[f_idx].field) {
+		  case F_HOSTINFO:
+			infostr = bbh_item(hinfo, boardfields[f_idx].bbhfield);
+			if (infostr) needed += strlen(infostr);
+			break;
+
+		  default: break;
+		}
+
+		if ((bufsz - used) < needed) {
+			bufsz += 4096 + needed;
+			buf = (char *)realloc(buf, bufsz);
+			bufp = buf + used;
+		}
+
+		if (f_idx > 0) bufp += sprintf(bufp, "|");
+
+		switch (boardfields[f_idx].field) {
+		  case F_HOSTINFO: if (infostr) bufp += sprintf(bufp, "%s", infostr); break;
+		  default: break;
 		}
 	}
 	bufp += sprintf(bufp, "\n");
@@ -2349,14 +2399,14 @@ void do_message(conn_t *msg, char *origin)
 		 *
 		 */
 
-		char *spage = NULL, *shost = NULL, *stest = NULL, *fields = NULL;
+		char *spage = NULL, *shost = NULL, *snet = NULL, *stest = NULL, *fields = NULL;
 		int scolor = -1, acklevel = -1;
 
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		setup_filter(msg->buf, 
 		 	     "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client",
-			     &spage, &shost, &stest, &scolor, &acklevel, &fields);
+			     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields);
 
 		log = find_log(shost, stest, "", &h);
 		if (log) {
@@ -2463,7 +2513,7 @@ void do_message(conn_t *msg, char *origin)
 		hobbitd_testlist_t infotestrec, rrdtestrec;
 		char *buf, *bufp;
 		int bufsz;
-		char *spage = NULL, *shost = NULL, *stest = NULL, *fields = NULL;
+		char *spage = NULL, *shost = NULL, *snet = NULL, *stest = NULL, *fields = NULL;
 		int scolor = -1, acklevel = -1;
 		static unsigned int lastboardsize = 0;
 
@@ -2471,7 +2521,7 @@ void do_message(conn_t *msg, char *origin)
 
 		setup_filter(msg->buf, 
 			     "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1",
-			     &spage, &shost, &stest, &scolor, &acklevel, &fields);
+			     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields);
 
 		if (lastboardsize == 0) {
 			/* A guesstimate - 8 tests per hosts, 1KB/test (only 1st line of msg) */
@@ -2567,7 +2617,7 @@ void do_message(conn_t *msg, char *origin)
 		hobbitd_log_t *lwalk;
 		char *buf, *bufp;
 		int bufsz;
-		char *spage = NULL, *shost = NULL, *stest = NULL, *fields = NULL;
+		char *spage = NULL, *shost = NULL, *snet = NULL, *stest = NULL, *fields = NULL;
 		int scolor = -1, acklevel = -1;
 		static unsigned int lastboardsize = 0;
 
@@ -2575,7 +2625,7 @@ void do_message(conn_t *msg, char *origin)
 
 		setup_filter(msg->buf,
 			     "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1",
-			     &spage, &shost, &stest, &scolor, &acklevel, &fields);
+			     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields);
 
 		if (lastboardsize == 0) {
 			/* A guesstimate - 8 tests per hosts, 2KB/test (only 1st line of msg) */
@@ -2655,6 +2705,67 @@ void do_message(conn_t *msg, char *origin)
 		msg->buflen = (bufp - buf);
 		if (msg->buflen > lastboardsize) lastboardsize = msg->buflen;
 	}
+	else if (strncmp(msg->buf, "hostinfo", 8) == 0) {
+		/* 
+		 * Request for host configuration info
+		 *
+		 */
+		namelist_t *hinfo;
+		char *walkstr;
+		char *buf, *bufp;
+		int bufsz;
+		char *spage = NULL, *shost = NULL, *stest = NULL, *snet = NULL, *fields = NULL;
+		int scolor = -1, acklevel = -1;
+		static unsigned int lastboardsize = 0;
+
+		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+
+		setup_filter(msg->buf, 
+			     "BBH_HOSTNAME,BBH_IP,BBH_RAW",
+			     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields);
+
+		if (lastboardsize == 0) {
+			/* A guesstimate - 500 bytes per host */
+			bufsz = (hostcount+1)*500;
+		}
+		else {
+			/* Add 10% to the last size we used */
+			bufsz = lastboardsize + (lastboardsize / 10);
+		}
+		bufp = buf = (char *)malloc(bufsz);
+
+		hinfo = first_host();
+		for (hinfo = first_host(); (hinfo); hinfo = hinfo->next) {
+			/* Hostname filter */
+			if (shost) {
+				walkstr = bbh_item(hinfo, BBH_HOSTNAME);
+				if (!walkstr || (strcmp(walkstr, shost) != 0)) continue;
+			}
+
+			/* Host pagename filter */
+			if (spage) {
+				walkstr = bbh_item(hinfo, BBH_PAGEPATH);
+				if (!walkstr || (strncmp(walkstr, spage, strlen(spage)) != 0)) continue;
+			}
+
+			/* Host network filter */
+			if (snet) {
+				walkstr = bbh_item(hinfo, BBH_NET);
+				if (!walkstr || (strcmp(walkstr, snet) != 0)) continue;
+			}
+
+			generate_hostinfo_outbuf(&buf, &bufp, &bufsz, hinfo);
+		}
+
+		*bufp = '\0';
+
+		xfree(msg->buf);
+		msg->doingwhat = RESPONDING;
+		msg->bufp = msg->buf = buf;
+		msg->buflen = (bufp - buf);
+		if (msg->buflen > lastboardsize) lastboardsize = msg->buflen;
+	}
+
 	else if ((strncmp(msg->buf, "hobbitdack", 10) == 0) || (strncmp(msg->buf, "ack ack_event", 13) == 0)) {
 		/* hobbitdack COOKIE DURATION TEXT */
 		char *p;
