@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.198 2006-02-11 10:13:42 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.199 2006-02-12 12:39:00 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -2075,6 +2075,7 @@ void generate_hostinfo_outbuf(char **outbuf, char **outpos, int *outsz, namelist
 		  default: break;
 		}
 	}
+
 	bufp += sprintf(bufp, "\n");
 
 	*outbuf = buf;
@@ -2721,7 +2722,7 @@ void do_message(conn_t *msg, char *origin)
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		setup_filter(msg->buf, 
-			     "BBH_HOSTNAME,BBH_IP,BBH_RAW",
+			     "BBH_HOSTNAME,BBH_IP,BBH_BANKSIZE,BBH_RAW",
 			     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields);
 
 		if (lastboardsize == 0) {
