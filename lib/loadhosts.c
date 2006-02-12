@@ -5,7 +5,7 @@
 /* file and keeping track of what hosts are known, their aliases and planned  */
 /* downtime settings etc.                                                     */
 /*                                                                            */
-/* Copyright (C) 2004-2005 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.50 2006-02-11 08:32:05 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.51 2006-02-12 12:39:34 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -379,6 +379,7 @@ char *bbh_item(namelist_t *host, enum bbh_item_t item)
 		  return host->ip;
 
 	  case BBH_BANKSIZE:
+		  if (host->banksize == 0) return NULL;
 		  sprintf(inttxt, "%d", host->banksize);
 		  return inttxt;
 
@@ -424,7 +425,7 @@ char *bbh_item(namelist_t *host, enum bbh_item_t item)
 			  return NULL;
 
 	  case BBH_RAW:
-		  if (rawtxt) *rawtxt = NULL;
+		  if (rawtxt) *rawtxt = '\0';
 		  p = bbh_item_walk(host);
 		  while (p) {
 			  addtobuffer(&rawtxt, &rawtxtsz, nlencode(p));
