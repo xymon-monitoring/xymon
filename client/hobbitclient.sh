@@ -12,7 +12,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient.sh,v 1.8 2006-02-13 22:01:55 henrik Exp $
+# $Id: hobbitclient.sh,v 1.9 2006-02-13 22:31:04 henrik Exp $
 
 # Must make sure the commands return standard (english) texts.
 LANG=C
@@ -22,7 +22,7 @@ export LANG LC_ALL LC_MESSAGES
 
 if test "$CONFIGCLASS" = ""
 then
-	CONFIGCLASS="$MACHINEDOTS"
+	CONFIGCLASS="$BBOSTYPE"
 	export CONFIGCLASS
 fi
 
