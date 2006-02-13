@@ -12,7 +12,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: runclient.sh,v 1.7 2006-02-13 22:01:26 henrik Exp $
+# $Id: runclient.sh,v 1.8 2006-02-13 22:31:04 henrik Exp $
 
 # Default settings for this client
 MACHINEDOTS="`uname -n`"			# This systems hostname
@@ -56,11 +56,6 @@ HOBBITCLIENTHOME="`pwd`"
 cd "$OLDDIR"
 
 MACHINE="`echo $MACHINEDOTS | sed -e's/\./,/g'`"
-
-if test "$CONFIGCLASS" = ""
-then
-	CONFIGCLASS="$MACHINEDOTS"
-fi
 
 export MACHINE MACHINEDOTS BBOSTYPE BBOSSCRIPT HOBBITCLIENTHOME CONFIGCLASS
 
