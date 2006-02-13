@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.200 2006-02-13 16:54:35 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.201 2006-02-13 21:02:38 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -931,24 +931,25 @@ void get_hts(char *msg, char *sender, char *origin,
 	}
 
 done:
-	*host = hwalk;
-	*test = twalk;
-	*log = lwalk;
 	if (colstr) {
 		*color = parse_color(colstr);
 		if ((*color == COL_RED) || (*color == COL_YELLOW)) {
 			char *cause;
 
 			cause = check_downtime(hostname, testname);
-			(*log)->downtimeactive = (cause != NULL);
+			if (lwalk) lwalk->downtimeactive = (cause != NULL);
 			if (cause) *color = COL_BLUE;
 			if (downcause) *downcause = cause;
 		}
 		else {
-			(*log)->downtimeactive = 0;
+			if (lwalk) lwalk->downtimeactive = 0;
 		}
 	}
 	xfree(firstline);
+
+	*host = hwalk;
+	*test = twalk;
+	*log = lwalk;
 
 	MEMUNDEFINE(hostip);
 
