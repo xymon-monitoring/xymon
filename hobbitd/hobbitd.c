@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.199 2006-02-12 12:39:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.200 2006-02-13 16:54:35 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -199,6 +199,7 @@ pid_t parentpid = 0;
 int  hostcount = 0;
 char *ackinfologfn = NULL;
 FILE *ackinfologfd = NULL;
+char *clientconfigs = NULL;
 
 typedef struct hobbitd_statistics_t {
 	char *cmd;
@@ -294,6 +295,32 @@ static hobbitd_hostlist_t *gettreeitem(RbtHandle rbhosts, RbtIterator hosthandle
 
 	rbtKeyValue(rbhosts, hosthandle, &k1, &k2);
 	return (hobbitd_hostlist_t *)k2;
+}
+
+void load_clientconfig(void)
+{
+	static time_t lastload = 0;
+	static char *configfn = NULL;
+	struct stat st;
+	FILE *fd;
+	int n;
+
+	if (!configfn) {
+		configfn = (char *)malloc(strlen(xgetenv("BBHOME"))+ strlen("/etc/client-local.cfg") + 1);
+		sprintf(configfn, "%s/etc/client-local.cfg", xgetenv("BBHOME"));
+	}
+	if (stat(configfn, &st) == -1) return;
+	if (st.st_mtime == lastload) return;
+
+	fd = fopen(configfn, "r"); if (!fd) return;
+	lastload = st.st_mtime;
+	if (clientconfigs) xfree(clientconfigs);
+
+	clientconfigs = (char *)malloc(st.st_size + 2);
+	*clientconfigs = '\n';
+	n = fread(clientconfigs+1, 1, st.st_size, fd);
+	if (n >= 0) *(clientconfigs + 1 + n) = '\0';
+	fclose(fd);
 }
 
 void update_statistics(char *cmd)
@@ -2957,9 +2984,8 @@ void do_message(conn_t *msg, char *origin)
 		}
 	}
 	else if (strncmp(msg->buf, "client ", 7) == 0) {
-		char *hostname = NULL, *clienttype = NULL;
-		char *bhost, *ehost, *btype;
-		char savechar;
+		char *hostname = NULL, *clienttype = NULL, *clientconf = NULL;
+		char *line1, *p;
 
 		msgfrom = strstr(msg->buf, "\nStatus message received from ");
 		if (msgfrom) {
@@ -2967,28 +2993,15 @@ void do_message(conn_t *msg, char *origin)
 			*msgfrom = '\0';
 		}
 
-		bhost = msg->buf + strlen("client"); bhost += strspn(bhost, " \t");
-		ehost = bhost + strcspn(bhost, " \t\r\n");
-		savechar = *ehost; *ehost = '\0';
-
-		btype = strrchr(bhost, '.');
-		if (btype) {
-			char *p;
-
-			*btype = '\0';
-			hostname = strdup(bhost);
-			p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
-			*btype = '.';
-			clienttype = strdup(btype+1);
-
-			if (*hostname == '\0') { errprintf("Invalid client message from %s - blank hostname\n", sender); xfree(hostname); hostname = NULL; }
-			if (*clienttype == '\0') { errprintf("Invalid client message from %s - blank type\n", sender); xfree(clienttype); clienttype = NULL; }
+		p = strchr(msg->buf, '\n'); if (p) *p = '\0';
+		line1 = strdup(msg->buf); if (p) *p = '\n';
+		p = strtok(line1, " \t"); /* Skip the client keyword */
+		if (p) hostname = strtok(NULL, " \t");
+		if (hostname) {
+			clienttype = strrchr(hostname, '.'); 
+			if (clienttype) { *clienttype = '\0'; clienttype++; }
+			clientconf = strtok(NULL, " \t");
 		}
-		else {
-			errprintf("Invalid client message - no type in '%s'\n", bhost);
-		}
-
-		*ehost = savechar;
 
 		if (hostname && clienttype) {
 			char *hname, hostip[20];
@@ -3008,10 +3021,31 @@ void do_message(conn_t *msg, char *origin)
 				handle_client(msg->buf, sender, hname, clienttype);
 			}
 
-			xfree(hostname); xfree(clienttype);
-
 			MEMUNDEFINE(hostip);
 		}
+
+		if (clientconf) {
+			char *key = malloc(5 + strlen(clientconf));
+			char *bconf, *econf;
+
+			sprintf(key, "\n[%s]\n", clientconf);
+			bconf = strstr(clientconfigs, key);
+			if (bconf) {
+				bconf += strlen(key);
+				econf = strstr(bconf, "\n["); if (econf) *(econf+1) = '\0';
+
+				msg->doingwhat = RESPONDING;
+				xfree(msg->buf);
+				msg->bufp = msg->buf = strdup(bconf);
+				msg->buflen = strlen(msg->buf);
+
+				if (econf) *(econf+1) = '[';
+			}
+
+			xfree(key);
+		}
+
+		xfree(line1);
 	}
 	else if (strncmp(msg->buf, "clientlog ", 10) == 0) {
 		char *hostname, *sect, *p;
@@ -3708,6 +3742,7 @@ int main(int argc, char *argv[])
 
 	errprintf("Loading hostnames\n");
 	load_hostnames(bbhostsfn, NULL, get_fqdn());
+	load_clientconfig();
 
 	if (restartfn) {
 		errprintf("Loading saved state\n");
@@ -3915,6 +3950,8 @@ int main(int argc, char *argv[])
 					hosthandle = rbtNext(rbhosts, hosthandle);
 				}
 			}
+
+			load_clientconfig();
 		}
 
 		if (do_purples && (now > nextpurpleupdate)) {
