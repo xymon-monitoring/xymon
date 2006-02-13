@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.59 2006-02-08 22:16:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.60 2006-02-13 21:59:40 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -156,8 +156,7 @@ int do_request(void)
 			return 1;
 		}
 
-		restofmsg = strchr(log, '\n');
-		if (restofmsg) restofmsg++; else restofmsg = log;
+		restofmsg = log;
 	}
 	else if ((strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) || (strcmp(service, xgetenv("INFOCOLUMN")) == 0)) {
 		loadhostdata(hostname, &ip, &displayname);
