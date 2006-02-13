@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.73 2006-01-13 13:50:13 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.74 2006-02-13 16:52:21 henrik Exp $";
 
 #include "config.h"
 
@@ -419,19 +419,26 @@ retry_connect:
 	return BB_OK;
 }
 
-static int sendtomany(char *onercpt, char *morercpts, char *msg, int timeout)
+static int sendtomany(char *onercpt, char *morercpts, char *msg, FILE *respfd, char **respstr, int fullresponse, int timeout)
 {
 	int result = 0;
 
 	if (strcmp(onercpt, "0.0.0.0") != 0)
-		result = sendtobbd(onercpt, msg, NULL, NULL, 0, timeout);
+		result = sendtobbd(onercpt, msg, respfd, respstr, fullresponse, timeout);
 	else if (morercpts) {
 		char *bbdlist, *rcpt;
+		int first = 1;
 
 		bbdlist = strdup(morercpts);
 		rcpt = strtok(bbdlist, " \t");
 		while (rcpt) {
-			result += sendtobbd(rcpt, msg, NULL, NULL, 0, timeout);
+			if (first) {
+				result += sendtobbd(rcpt, msg, respfd, respstr, fullresponse, timeout);
+				first = 0;
+			}
+			else {
+				result += sendtobbd(rcpt, msg, NULL, NULL, 0, timeout);
+			}
 			rcpt = strtok(NULL, " \t");
 		}
 
@@ -477,7 +484,7 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 	xfree(msgcmd);
 
 	if (scheduleaction || multircptcmds[i]) {
-		res = sendtomany((recipient ? recipient : bbdisp), xgetenv("BBDISPLAYS"), msg, timeout);
+		res = sendtomany((recipient ? recipient : bbdisp), xgetenv("BBDISPLAYS"), msg, respfd, respstr, fullresponse, timeout);
 	}
 	else {
 		res = sendtobbd(recipient, msg, respfd, respstr, fullresponse, timeout);
