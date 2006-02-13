@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-linux.sh,v 1.9 2006-02-10 09:44:08 henrik Exp $
+# $Id: hobbitclient-linux.sh,v 1.10 2006-02-13 22:02:33 henrik Exp $
 
 echo "[date]"
 date
@@ -42,6 +42,8 @@ top -b -n 1
 nohup sh -c "vmstat 300 2 1>$BBTMP/hobbit_vmstat.$$ 2>&1; mv $BBTMP/hobbit_vmstat.$$ $BBTMP/hobbit_vmstat" </dev/null >/dev/null 2>&1 &
 sleep 5
 if test -f $BBTMP/hobbit_vmstat; then echo "[vmstat]"; cat $BBTMP/hobbit_vmstat; rm -f $BBTMP/hobbit_vmstat; fi
+# logfiles
+$BBHOME/bin/logfetch $BBHOME/etc/logfetch.cfg $BBTMP/logfetch.status
 
 exit
 
