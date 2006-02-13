@@ -12,6 +12,8 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
+static char rcsid[] = "$Id: logfetch.c,v 1.2 2006-02-13 17:01:35 henrik Exp $";
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
