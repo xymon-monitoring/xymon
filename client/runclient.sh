@@ -12,7 +12,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: runclient.sh,v 1.6 2005-09-28 21:21:17 henrik Exp $
+# $Id: runclient.sh,v 1.7 2006-02-13 22:01:26 henrik Exp $
 
 # Default settings for this client
 MACHINEDOTS="`uname -n`"			# This systems hostname
@@ -29,8 +29,11 @@ do
 	  --os=*)
 	  	BBOSTYPE="`echo $1 | sed -e's/--os=//' | tr '[A-Z]' '[a-z]'`"
 		;;
+	  --class=*)
+	        CONFIGCLASS="`echo $1 | sed -e's/--os=//' | tr '[A-Z]' '[a-z]'`"
+		;;
 	  --help)
-	  	echo "Usage: $0 [--hostname=CLIENTNAME] [--os=rhel3|linux22] start|stop"
+	  	echo "Usage: $0 [--hostname=CLIENTNAME] [--os=rhel3|linux22] [--class=CLASSNAME] start|stop"
 		exit 0
 		;;
 	  start)
@@ -54,7 +57,12 @@ cd "$OLDDIR"
 
 MACHINE="`echo $MACHINEDOTS | sed -e's/\./,/g'`"
 
-export MACHINE MACHINEDOTS BBOSTYPE BBOSSCRIPT HOBBITCLIENTHOME
+if test "$CONFIGCLASS" = ""
+then
+	CONFIGCLASS="$MACHINEDOTS"
+fi
+
+export MACHINE MACHINEDOTS BBOSTYPE BBOSSCRIPT HOBBITCLIENTHOME CONFIGCLASS
 
 case "$CMD" in
   "start")
