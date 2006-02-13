@@ -18,7 +18,7 @@ endif
 
 COMMONTOOLS=bb bbcmd bbhostgrep bbhostshow
 
-all: hobbitlaunch $(COMMONTOOLS) hobbitclient.cfg clientlaunch.cfg $(EXTRATOOLS)
+all: hobbitlaunch logfetch $(COMMONTOOLS) hobbitclient.cfg clientlaunch.cfg $(EXTRATOOLS)
 
 hobbitclient.cfg: hobbitclient.cfg.DIST
 	cat hobbitclient.cfg.DIST | sed -e 's!@BBHOSTIP@!$(BBHOSTIP)!g' >hobbitclient.cfg
@@ -30,6 +30,9 @@ ifeq ($(LOCALCLIENT),yes)
 else
 	cat clientlaunch.cfg.DIST | sed -e 's!@CLIENTFLAGS@!!g' >clientlaunch.cfg
 endif
+
+logfetch: logfetch.c
+	$(CC) $(CFLAGS) -o $@ logfetch.c
 
 hpux-meminfo: hpux-meminfo.c
 	$(CC) -o $@ hpux-meminfo.c
@@ -52,7 +55,7 @@ install:
 	if test ! -d $(INSTALLROOT)$(BBHOME)/ext ; then mkdir -p $(INSTALLROOT)$(BBHOME)/ext ; fi
 	if test ! -f $(INSTALLROOT)$(BBHOME)/etc/localclient.cfg ; then cp localclient.cfg $(INSTALLROOT)$(BBHOME)/etc/ ; fi
 	cp -fp runclient.sh $(INSTALLROOT)$(BBHOME)
-	cp -fp hobbitlaunch hobbitclient*.sh $(COMMONTOOLS) $(EXTRATOOLS) $(INSTALLROOT)$(BBHOME)/bin/
+	cp -fp hobbitlaunch logfetch hobbitclient*.sh $(COMMONTOOLS) $(EXTRATOOLS) $(INSTALLROOT)$(BBHOME)/bin/
 ifeq ($(LOCALCLIENT),yes)
 	cp -fp hobbitd_client $(COMMONTOOLS) $(EXTRATOOLS) $(INSTALLROOT)$(BBHOME)/bin/
 endif
@@ -63,5 +66,5 @@ ifndef PKGBUILD
 endif
 
 clean:
-	rm -f hobbitlaunch hobbitd_client $(COMMONTOOLS) hobbitclient.cfg clientlaunch.cfg $(EXTRATOOLS) *~
+	rm -f hobbitlaunch logfetch hobbitd_client $(COMMONTOOLS) hobbitclient.cfg clientlaunch.cfg $(EXTRATOOLS) *~
 
