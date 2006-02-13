@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.3 2006-02-13 22:00:28 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.4 2006-02-13 22:19:15 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -95,18 +95,18 @@ char *logdata(logdef_t *logdef, int *truncated)
 	 */
 	if ((n > logdef->maxbytes) && logdef->trigger) {
 		if (logdef->trigger) {
-			regex_t *expr;
+			regex_t expr;
 			regmatch_t pmatch[1];
 			int status;
 
-			status = regcomp(expr, logdef->trigger, REG_EXTENDED|REG_ICASE);
+			status = regcomp(&expr, logdef->trigger, REG_EXTENDED|REG_ICASE);
 			if (status == 0) {
-				status = regexec(expr, buf, 1, pmatch, 0);
+				status = regexec(&expr, buf, 1, pmatch, 0);
 				if (status == 0) {
 					startpos += pmatch[0].rm_so;
 					n -= pmatch[0].rm_so;
 				}
-				regfree(expr);
+				regfree(&expr);
 			}
 		}
 	}
@@ -154,12 +154,14 @@ int main(int argc, char *argv[])
 	fd = fopen(cfgfn, "r"); if (fd == NULL) return 1;
 	while (fgets(l, sizeof(l), fd)) {
 		char *p, *tok;
+		logdef_t *newitem = NULL;
 
 		p = strchr(l, '\n'); if (p) *p = '\0';
 
-		logdef_t *newitem = calloc(sizeof(logdef_t), 1);
 		tok = l; p = strchr(tok, ':');
 		if ((*tok == '\0') || (*tok == '#')) continue;
+
+		newitem = calloc(sizeof(logdef_t), 1);
 		if (p) { *p = '\0'; newitem->filename = strdup(tok); tok = p+1; p = strchr(tok, ':'); }
 		if (p) { *p = '\0'; newitem->maxbytes = atoi(tok); tok = p+1; }
 		if (*tok) newitem->trigger = strdup(tok);
@@ -195,6 +197,7 @@ int main(int argc, char *argv[])
 		fprintf(stdout, "[msgs:%s]\n", lwalk->filename);
 		if (truncflag) fprintf(stdout, "<truncated>\n");
 		fprintf(stdout, "%s\n", data);
+		free(data);
 	}
 
 	fd = fopen(statfn, "w");
