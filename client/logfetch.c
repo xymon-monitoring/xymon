@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.2 2006-02-13 17:01:35 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.3 2006-02-13 22:00:28 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -126,6 +126,18 @@ char *logdata(logdef_t *logdef, int *truncated)
 		result = buf;
 	}
 
+	/* Avoid sending a '[' as the first char on a line */
+	{
+		char *p;
+
+		p = result;
+		while (p) {
+			if (*p == '[') *p = '.';
+			p = strstr(p, "\n[");
+			if (p) p++;
+		}
+	}
+
 	return result;
 }
 
@@ -157,21 +169,23 @@ int main(int argc, char *argv[])
 	fclose(fd);
 
 	fd = fopen(statfn, "r");
-	while (fgets(l, sizeof(l), fd)) {
-		char *fn, *tok;
-		int i;
+	if (fd) {
+		while (fgets(l, sizeof(l), fd)) {
+			char *fn, *tok;
+			int i;
 
-		tok = strtok(l, ":");
-		if (tok) fn = tok;
-		for (lwalk = loglist; (lwalk && strcmp(lwalk->filename, fn)); lwalk = lwalk->next) ;
-		if (!lwalk) continue;
+			tok = strtok(l, ":");
+			if (tok) fn = tok;
+			for (lwalk = loglist; (lwalk && strcmp(lwalk->filename, fn)); lwalk = lwalk->next) ;
+			if (!lwalk) continue;
 
-		for (i=0; (tok && (i < POSCOUNT)); i++) {
-			tok = strtok(NULL, ":\n");
-			if (tok) lwalk->lastpos[i] = atol(tok);
+			for (i=0; (tok && (i < POSCOUNT)); i++) {
+				tok = strtok(NULL, ":\n");
+				if (tok) lwalk->lastpos[i] = atol(tok);
+			}
 		}
+		fclose(fd);
 	}
-	fclose(fd);
 
 	for (lwalk = loglist; (lwalk); lwalk = lwalk->next) {
 		char *data;
@@ -184,14 +198,16 @@ int main(int argc, char *argv[])
 	}
 
 	fd = fopen(statfn, "w");
-	for (lwalk = loglist; (lwalk); lwalk = lwalk->next) {
-		int i;
+	if (fd) {
+		for (lwalk = loglist; (lwalk); lwalk = lwalk->next) {
+			int i;
 
-		fprintf(fd, "%s", lwalk->filename);
-		for (i = 0; (i < POSCOUNT); i++) fprintf(fd, ":%lu", lwalk->lastpos[i]);
-		fprintf(fd, "\n");
+			fprintf(fd, "%s", lwalk->filename);
+			for (i = 0; (i < POSCOUNT); i++) fprintf(fd, ":%lu", lwalk->lastpos[i]);
+			fprintf(fd, "\n");
+		}
+		fclose(fd);
 	}
-	fclose(fd);
 
 	return 0;
 }
