@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.5 2006-02-14 13:55:02 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.6 2006-02-14 21:54:17 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -27,6 +27,7 @@ static char rcsid[] = "$Id: logfetch.c,v 1.5 2006-02-14 13:55:02 henrik Exp $";
 /* Is it ok for these to be hardcoded ? */
 #define MAXMINUTES 30
 #define POSCOUNT ((MAXMINUTES / 5) + 1)
+#define LINES_AFTER_TRIGGER 10
 
 typedef struct logdef_t {
 	char *filename;
@@ -124,10 +125,12 @@ char *logdata(logdef_t *logdef, int *truncated)
 
 	/*
 	 * If it's too big, we may need to truncate ie. 
-	 * First check if there's a trigger string anywhere in the data - 
-	 * if there is, then we'll skip to that trigger string.
 	 */
 	if ((n > logdef->maxbytes) && logdef->trigger) {
+		/*
+		 * Check if there's a trigger string anywhere in the data - 
+		 * if there is, then we'll skip to that trigger string.
+		 */
 		if (logdef->trigger) {
 			regex_t expr;
 			regmatch_t pmatch[1];
@@ -141,6 +144,36 @@ char *logdata(logdef_t *logdef, int *truncated)
 					n -= pmatch[0].rm_so;
 				}
 				regfree(&expr);
+			}
+
+			/* If it's still too big, show the 10 lines after the trigger, and
+			 * then skip until it will fit.
+			 */
+			if (n > logdef->maxbytes) {
+				char *eoln;
+				int count = 0;
+
+				eoln = startpos;
+				while (eoln && (count < LINES_AFTER_TRIGGER)) {
+					eoln = strchr(eoln, '\n');
+					if (eoln) eoln++;
+					count++;
+				}
+
+				if (eoln) {
+					int used, left, keep, togo;
+					
+					left = strlen(eoln);
+					if (left > 20) {
+						memcpy(eoln, "...<TRUNCATED>...\n", 18);
+						eoln = strchr(eoln, '\n'); eoln++;
+						used = (eoln - startpos);
+						keep = (logdef->maxbytes - used);
+						togo = (left - keep);
+						memmove(eoln, eoln+togo, keep+1);
+						n = n - togo + 18;
+					}
+				}
 			}
 		}
 	}
