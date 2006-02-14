@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.4 2006-02-13 22:19:15 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.5 2006-02-14 13:55:02 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -32,6 +32,7 @@ typedef struct logdef_t {
 	char *filename;
 	off_t lastpos[POSCOUNT];
 	char *trigger;
+	char *ignore;
 	int maxbytes;
 	struct logdef_t *next;
 } logdef_t;
@@ -88,6 +89,39 @@ char *logdata(logdef_t *logdef, int *truncated)
 
 	fclose(fd);
 
+	/* Strip out the ignored lines */
+	if (logdef->ignore) {
+		regex_t expr;
+		int status;
+
+		status = regcomp(&expr, logdef->ignore, REG_EXTENDED|REG_ICASE|REG_NOSUB);
+		if (status == 0) {
+			int bofs, eofs;
+
+			bofs=0;
+			while (*(buf + bofs)) {
+				char savechar;
+
+				eofs = bofs + strcspn(buf + bofs, "\n");
+				savechar = *(buf + eofs);
+				*(buf + eofs) = '\0';
+
+				status = regexec(&expr, (buf + bofs), 0, NULL, 0);
+				if (status == 0) {
+					/* Ignore this line */
+					memmove(buf+bofs, buf+eofs+1, (n-eofs+1));
+					n -+ (eofs - bofs);
+				}
+				else {
+					*(buf + eofs) = savechar;
+					bofs = eofs+1;
+				}
+			}
+
+			regfree(&expr);
+		}
+	}
+
 	/*
 	 * If it's too big, we may need to truncate ie. 
 	 * First check if there's a trigger string anywhere in the data - 
@@ -141,58 +175,123 @@ char *logdata(logdef_t *logdef, int *truncated)
 	return result;
 }
 
+int loadconfig(char *cfgfn)
+{
+	FILE *fd;
+	char l[PATH_MAX + 1024];
+	logdef_t *currcfg = NULL;
+
+	/* Config items are in the form:
+	 *    log:filename:maxbytes
+	 *    ignore ignore-regexp (optional)
+	 *    trigger trigger-regexp (optional)
+	 */
+	fd = fopen(cfgfn, "r"); if (fd == NULL) return 1;
+	while (fgets(l, sizeof(l), fd) != NULL) {
+		char *p, *filename;
+		int maxbytes;
+
+		p = strchr(l, '\n'); if (p) *p = '\0';
+		p = l + strspn(l, " \t");
+		if ((*p == '\0') || (*p == '#')) continue;
+
+		if (strncmp(l, "log:", 4) == 0) {
+			char *tok;
+
+			filename = NULL; maxbytes = -1;
+			tok = strtok(l, ":");
+			if (tok) filename = strtok(NULL, ":");
+			if (filename) tok = strtok(NULL, ":");
+			if (tok) maxbytes = atoi(tok);
+
+			if ((filename != NULL) && (maxbytes != -1)) {
+				logdef_t *newitem = calloc(sizeof(logdef_t), 1);
+				newitem->filename = strdup(filename);
+				newitem->maxbytes = maxbytes;
+				newitem->next = loglist;
+				loglist = newitem;
+
+				currcfg = newitem;
+			}
+			else {
+				currcfg = NULL;
+			}
+		}
+		else if (currcfg && (strncmp(l, "ignore ", 7) == 0)) {
+			p = l + 7; p += strspn(p, " \t");
+			currcfg->ignore = strdup(p);
+		}
+		else if (currcfg && (strncmp(l, "trigger ", 8) == 0)) {
+			p = l + 8; p += strspn(p, " \t");
+			currcfg->trigger = strdup(p);
+		}
+		else currcfg = NULL;
+	}
+
+	fclose(fd);
+	return 0;
+}
+
+void loadstatus(char *statfn)
+{
+	FILE *fd;
+	char l[PATH_MAX + 1024];
+
+	fd = fopen(statfn, "r");
+	if (!fd) return;
+
+	while (fgets(l, sizeof(l), fd)) {
+		char *fn, *tok;
+		logdef_t *lwalk;
+		int i;
+
+		tok = strtok(l, ":");
+		if (tok) fn = tok;
+		for (lwalk = loglist; (lwalk && strcmp(lwalk->filename, fn)); lwalk = lwalk->next) ;
+		if (!lwalk) continue;
+
+		for (i=0; (tok && (i < POSCOUNT)); i++) {
+			tok = strtok(NULL, ":\n");
+			if (tok) lwalk->lastpos[i] = atol(tok);
+		}
+	}
+
+	fclose(fd);
+}
+
+void savestatus(char *statfn)
+{
+	FILE *fd;
+	logdef_t *lwalk;
+
+	fd = fopen(statfn, "w");
+	if (fd == NULL) return;
+
+	for (lwalk = loglist; (lwalk); lwalk = lwalk->next) {
+		int i;
+
+		fprintf(fd, "%s", lwalk->filename);
+		for (i = 0; (i < POSCOUNT); i++) fprintf(fd, ":%lu", lwalk->lastpos[i]);
+		fprintf(fd, "\n");
+	}
+	fclose(fd);
+}
+
 int main(int argc, char *argv[])
 {
 	char *cfgfn = argv[1];
 	char *statfn = argv[2];
-	FILE *fd;
-	char l[PATH_MAX + 1024];
 	logdef_t *lwalk;
 
 	if ((cfgfn == NULL) || (statfn == NULL)) return 1;
 
-	fd = fopen(cfgfn, "r"); if (fd == NULL) return 1;
-	while (fgets(l, sizeof(l), fd)) {
-		char *p, *tok;
-		logdef_t *newitem = NULL;
-
-		p = strchr(l, '\n'); if (p) *p = '\0';
-
-		tok = l; p = strchr(tok, ':');
-		if ((*tok == '\0') || (*tok == '#')) continue;
-
-		newitem = calloc(sizeof(logdef_t), 1);
-		if (p) { *p = '\0'; newitem->filename = strdup(tok); tok = p+1; p = strchr(tok, ':'); }
-		if (p) { *p = '\0'; newitem->maxbytes = atoi(tok); tok = p+1; }
-		if (*tok) newitem->trigger = strdup(tok);
-		newitem->next = loglist;
-		loglist = newitem;
-	}
-	fclose(fd);
-
-	fd = fopen(statfn, "r");
-	if (fd) {
-		while (fgets(l, sizeof(l), fd)) {
-			char *fn, *tok;
-			int i;
-
-			tok = strtok(l, ":");
-			if (tok) fn = tok;
-			for (lwalk = loglist; (lwalk && strcmp(lwalk->filename, fn)); lwalk = lwalk->next) ;
-			if (!lwalk) continue;
-
-			for (i=0; (tok && (i < POSCOUNT)); i++) {
-				tok = strtok(NULL, ":\n");
-				if (tok) lwalk->lastpos[i] = atol(tok);
-			}
-		}
-		fclose(fd);
-	}
+	if (loadconfig(cfgfn) != 0) return 1;
+	loadstatus(statfn);
 
 	for (lwalk = loglist; (lwalk); lwalk = lwalk->next) {
 		char *data;
 		int truncflag;
-		
+
 		data = logdata(lwalk, &truncflag);
 		fprintf(stdout, "[msgs:%s]\n", lwalk->filename);
 		if (truncflag) fprintf(stdout, "<truncated>\n");
@@ -200,17 +299,7 @@ int main(int argc, char *argv[])
 		free(data);
 	}
 
-	fd = fopen(statfn, "w");
-	if (fd) {
-		for (lwalk = loglist; (lwalk); lwalk = lwalk->next) {
-			int i;
-
-			fprintf(fd, "%s", lwalk->filename);
-			for (i = 0; (i < POSCOUNT); i++) fprintf(fd, ":%lu", lwalk->lastpos[i]);
-			fprintf(fd, "\n");
-		}
-		fclose(fd);
-	}
+	savestatus(statfn);
 
 	return 0;
 }
