@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.42 2005-12-29 23:27:27 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.43 2006-02-14 21:54:59 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -558,7 +558,7 @@ void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 	finish_status();
 }
 
-void msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, char *msgsstr)
+static void old_msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, char *msgsstr)
 {
 	int msgscolor = COL_GREEN;
 	char msgline[4096];
@@ -586,6 +586,37 @@ void msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 		addtostatus(msgsstr);
 	else
 		addtostatus("The client did not report any logfile data\n");
+
+	if (fromline && !localmode) addtostatus(fromline);
+	finish_status();
+}
+
+void msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, char *msgsstr)
+{
+	sectlist_t *swalk;
+	int msgscolor = COL_GREEN;
+	char msgline[4096];
+
+	for (swalk = sections; (swalk && strncmp(swalk->sname, "msgs:", 5)); swalk = swalk->next) ;
+
+	if (!swalk && msgsstr) {
+		old_msgs_report(hostname, hinfo, fromline, timestr, msgsstr);
+		return;
+	}
+
+	init_status(msgscolor);
+	sprintf(msgline, "status %s.msgs %s System logs at %s : %s\n",
+		commafy(hostname), colorname(msgscolor), 
+		(timestr ? timestr : "<No timestamp data>"), 
+		(swalk ? "Raw data" : "No logs monitored"));
+	addtostatus(msgline);
+
+	while (swalk) {
+		sprintf(msgline, "\nLog file %s\n", swalk->sname+5);
+		addtostatus(msgline);
+		addtostatus(swalk->sdata);
+		do { swalk=swalk->next; } while (swalk && strncmp(swalk->sname, "msgs:", 5));
+	}
 
 	if (fromline && !localmode) addtostatus(fromline);
 	finish_status();
