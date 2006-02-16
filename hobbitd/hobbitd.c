@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.202 2006-02-16 14:26:57 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.203 2006-02-16 14:33:52 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -314,7 +314,7 @@ void load_clientconfig(void)
 	if (clientconflist) {
 		if (!stackfmodified(clientconflist)){
 			dprintf("No files modified, skipping reload of %s\n", configfn);
-			return namehead;
+			return;
 		}
 		else {
 			stackfclist(&clientconflist);
