@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.32 2005-07-16 09:49:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.33 2006-02-16 14:54:56 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -172,22 +172,25 @@ void update_task(tasklist_t *newtask)
 
 void load_config(char *conffn)
 {
-	static time_t cfgtstamp = 0;
-
-	struct stat st;
+	static void *configfiles = NULL;
 	tasklist_t *twalk, *curtask = NULL;
 	FILE *fd;
 	char *inbuf = NULL;
 	int inbufsz;
 	char *p;
 
-	/* Check the timestamp of the configuration file */
-	if (stat(conffn, &st) == -1) {
-		errprintf("Cannot access configuration file %s\n", conffn);
-		return;
+	/* First check if there were no modifications at all */
+	if (configfiles) {
+		if (!stackfmodified(configfiles)){
+			dprintf("No files modified, skipping reload of %s\n", conffn);
+			return;
+		}
+		else {
+			stackfclist(&configfiles);
+			configfiles = NULL;
+		}
 	}
-	if (st.st_mtime == cfgtstamp) return; /* No change */
-	cfgtstamp = st.st_mtime;
+
 	errprintf("Loading tasklist configuration from %s\n", conffn);
 
 	/* The cfload flag: -1=delete task, 0=old task unchanged, 1=new/changed task */
@@ -196,14 +199,13 @@ void load_config(char *conffn)
 		twalk->group = NULL;
 	}
 
-	fd = fopen(conffn, "r");
+	fd = stackfopen(conffn, "r", &configfiles);
 	if (fd == NULL) {
 		errprintf("Cannot open configuration file %s: %s\n", conffn, strerror(errno));
 		return;
 	}
 
-	initfgets(fd);
-	while (unlimfgets(&inbuf, &inbufsz, fd)) {
+	while (stackfgets(&inbuf, &inbufsz, "include", NULL)) {
 		p = strchr(inbuf, '\n'); if (p) *p = '\0';
 
 		p = inbuf + strspn(inbuf, " \t");
@@ -301,7 +303,7 @@ void load_config(char *conffn)
 		}
 	}
 	if (curtask) update_task(curtask);
-	fclose(fd);
+	stackfclose(fd);
 	if (inbuf) xfree(inbuf);
 
 	/* Running tasks that have been deleted or changed are killed off now. */
