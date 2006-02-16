@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.51 2006-02-12 12:39:34 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.52 2006-02-16 14:23:06 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -168,6 +168,7 @@ static void initialize_hostlist(void)
 		defaulthost = defaulthost->defaulthost;
 
 		if (walk->bbhostname) xfree(walk->bbhostname);
+		if (walk->groupid) xfree(walk->groupid);
 		if (walk->logname) xfree(walk->logname);
 		if (walk->allelems) xfree(walk->allelems);
 		if (walk->elems) xfree(walk->elems);
@@ -180,6 +181,7 @@ static void initialize_hostlist(void)
 		namehead = namehead->next;
 
 		if (walk->bbhostname) xfree(walk->bbhostname);
+		if (walk->groupid) xfree(walk->groupid);
 		if (walk->logname) xfree(walk->logname);
 		if (walk->allelems) xfree(walk->allelems);
 		if (walk->elems) xfree(walk->elems);
@@ -516,6 +518,7 @@ int main(int argc, char *argv[])
 		char *hname;
 		char hostip[20];
 
+handlehost:
 		hname = knownhost(argv[argi], hostip, 1);
 		if (hname == NULL) {
 			printf("Unknown host '%s'\n", argv[argi]);
@@ -538,7 +541,12 @@ int main(int argc, char *argv[])
 		do {
 			printf("Pick item:"); fflush(stdout); fgets(s, sizeof(s), stdin);
 			p = strchr(s, '\n'); if (p) *p = '\0';
-			if (*s) {
+			if (*s == '!') {
+				hosts = load_hostnames(argv[1], NULL, get_fqdn());
+				/* Must restart! The "h" handle is no longer valid. */
+				goto handlehost;
+			}
+			else if (*s) {
 				val = bbh_item_byname(h, s);
 				if (val) printf("\t%s value is: '%s'\n", s, val);
 				else printf("\t%s not found\n", s);
