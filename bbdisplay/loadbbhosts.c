@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.33 2006-01-25 21:00:20 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.34 2006-02-16 14:26:57 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -453,7 +453,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	 * load_hostnames() picks up the hostname definitions, but not the page
 	 * layout. So we will scan the file again, this time doing the layout.
 	 */
-	bbhosts = stackfopen(xgetenv("BBHOSTS"), "r");
+	bbhosts = stackfopen(xgetenv("BBHOSTS"), "r", NULL);
 	if (bbhosts == NULL) {
 		errprintf("Cannot open the BBHOSTS file '%s'\n", xgetenv("BBHOSTS"));
 		return NULL;

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostshow.c,v 1.9 2005-08-15 05:59:12 henrik Exp $";
+static char rcsid[] = "$Id: bbhostshow.c,v 1.10 2006-02-16 14:26:57 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	bbhosts = stackfopen(fn, "r");
+	bbhosts = stackfopen(fn, "r", NULL);
 	if (bbhosts == NULL) {
 		printf("Cannot open the BBHOSTS file '%s'\n", fn);
 		exit(1);

@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.201 2006-02-13 21:02:38 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.202 2006-02-16 14:26:57 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -299,8 +299,8 @@ static hobbitd_hostlist_t *gettreeitem(RbtHandle rbhosts, RbtIterator hosthandle
 
 void load_clientconfig(void)
 {
-	static time_t lastload = 0;
 	static char *configfn = NULL;
+	static void *clientconflist = NULL;
 	struct stat st;
 	FILE *fd;
 	int n;
@@ -309,11 +309,20 @@ void load_clientconfig(void)
 		configfn = (char *)malloc(strlen(xgetenv("BBHOME"))+ strlen("/etc/client-local.cfg") + 1);
 		sprintf(configfn, "%s/etc/client-local.cfg", xgetenv("BBHOME"));
 	}
-	if (stat(configfn, &st) == -1) return;
-	if (st.st_mtime == lastload) return;
 
-	fd = fopen(configfn, "r"); if (!fd) return;
-	lastload = st.st_mtime;
+	/* First check if there were no modifications at all */
+	if (clientconflist) {
+		if (!stackfmodified(clientconflist)){
+			dprintf("No files modified, skipping reload of %s\n", configfn);
+			return namehead;
+		}
+		else {
+			stackfclist(&clientconflist);
+			clientconflist = NULL;
+		}
+	}
+
+	fd = stackfopen(configfn, "r", &clientconflist); if (!fd) return;
 	if (clientconfigs) xfree(clientconfigs);
 
 	clientconfigs = (char *)malloc(st.st_size + 2);
@@ -1849,7 +1858,7 @@ int get_config(char *fn, conn_t *msg)
 
 	dprintf("-> get_config %s\n", fn);
 	sprintf(fullfn, "%s/etc/%s", xgetenv("BBHOME"), fn);
-	fd = stackfopen(fullfn, "r");
+	fd = stackfopen(fullfn, "r", NULL);
 	if (fd == NULL) {
 		errprintf("Config file %s not found\n", fn);
 		return -1;

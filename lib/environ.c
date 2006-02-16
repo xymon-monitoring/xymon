@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.27 2005-08-14 16:58:35 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.28 2006-02-16 14:26:57 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -212,7 +212,7 @@ void loadenv(char *envfile, char *area)
 
 	MEMDEFINE(l);
 
-	fd = stackfopen(envfile, "r");
+	fd = stackfopen(envfile, "r", NULL);
 	if (fd) {
 		while (stackfgets(&inbuf, &inbufsz, "include", NULL)) {
 			grok_input(inbuf);
