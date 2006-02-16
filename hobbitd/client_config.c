@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.12 2005-12-29 23:27:27 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.13 2006-02-16 14:50:58 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -126,9 +126,8 @@ static c_rule_t *setup_rule(ruletype_t ruletype,
 int load_client_config(char *configfn)
 {
 	/* (Re)load the configuration file without leaking memory */
-	static time_t lastload = 0;     /* Last time the config file was loaded */
+	static void *configfiles = NULL;
 	char fn[PATH_MAX];
-	struct stat st;
 	FILE *fd;
 	char *inbuf = NULL;
 	int inbufsz;
@@ -141,16 +140,20 @@ int load_client_config(char *configfn)
 	MEMDEFINE(fn);
 
 	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/hobbit-clients.cfg", xgetenv("BBHOME"));
-	if (stat(fn, &st) == -1) {
-		errprintf("Cannot stat config file %s: %s\n", fn, strerror(errno)); 
-		MEMUNDEFINE(fn); 
-		return 0;
+
+	/* First check if there were no modifications at all */
+	if (configfiles) {
+		if (!stackfmodified(configfiles)){
+			dprintf("No files modified, skipping reload of %s\n", fn);
+			return 0;
+		}
+		else {
+			stackfclist(&configfiles);
+			configfiles = NULL;
+		}
 	}
 
-	if (st.st_mtime == lastload) { MEMUNDEFINE(fn); return 0; }
-	lastload = st.st_mtime;
-
-	fd = fopen(fn, "r");
+	fd = stackfopen(fn, "r", &configfiles);
 	if (!fd) { 
 		errprintf("Cannot load config file %s: %s\n", fn, strerror(errno)); 
 		MEMUNDEFINE(fn); 
@@ -174,10 +177,9 @@ int load_client_config(char *configfn)
 	}
 	exprhead = NULL;
 
-	initfgets(fd);
 	curhost = curpage = curexhost = curexpage = NULL;
 	curtime = NULL;
-	while (unlimfgets(&inbuf, &inbufsz, fd)) {
+	while (stackfgets(&inbuf, &inbufsz, "include", NULL)) {
 		exprlist_t *newhost, *newpage, *newexhost, *newexpage;
 		char *newtime;
 		int unknowntok = 0;
@@ -329,7 +331,7 @@ int load_client_config(char *configfn)
 		}
 	}
 
-	fclose(fd);
+	stackfclose(fd);
 	if (inbuf) xfree(inbuf);
 	if (curtime) xfree(curtime);
 

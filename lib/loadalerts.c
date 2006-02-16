@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadalerts.c,v 1.1 2006-01-13 10:13:33 henrik Exp $";
+static char rcsid[] = "$Id: loadalerts.c,v 1.2 2006-02-16 14:50:58 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -186,9 +186,8 @@ static void free_criteria(criteria_t *crit)
 int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 {
 	/* (Re)load the configuration file without leaking memory */
-	static time_t lastload = 0;	/* Last time the config file was loaded */
+	static void *configfiles = NULL;
 	char fn[PATH_MAX];
-	struct stat st;
 	FILE *fd;
 	char *inbuf = NULL;
 	int inbufsz;
@@ -199,15 +198,21 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 	MEMDEFINE(fn);
 
 	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/hobbit-alerts.cfg", xgetenv("BBHOME"));
-	if (stat(fn, &st) == -1) { 
-		errprintf("Cannot stat configuration file %s: %s\n", fn, strerror(errno));
-		MEMUNDEFINE(fn); 
-		return 0; 
-	}
-	if (st.st_mtime == lastload) { MEMUNDEFINE(fn); return 0; }
-	lastload = st.st_mtime;
 
-	fd = fopen(fn, "r");
+	/* First check if there were no modifications at all */
+	if (configfiles) {
+		if (!stackfmodified(configfiles)){
+			dprintf("No files modified, skipping reload of %s\n", fn);
+			MEMUNDEFINE(fn); 
+			return 0;
+		}
+		else {
+			stackfclist(&configfiles);
+			configfiles = NULL;
+		}
+	}
+
+	fd = stackfopen(fn, "r", &configfiles);
 	if (!fd) { 
 		errprintf("Cannot open configuration file %s: %s\n", fn, strerror(errno));
 		MEMUNDEFINE(fn); 
@@ -262,9 +267,8 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 
 	MEMDEFINE(cfline);
 
-	initfgets(fd);
 	cfid = 0;
-	while (unlimfgets(&inbuf, &inbufsz, fd)) {
+	while (stackfgets(&inbuf, &inbufsz, "include", NULL)) {
 		int firsttoken = 1;
 		int mailcmdactive = 0, scriptcmdactive = 0;
 		recip_t *curlinerecips = NULL;
@@ -629,7 +633,7 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 	}
 
 	flush_rule(currule);
-	fclose(fd);
+	stackfclose(fd);
 	if (inbuf) xfree(inbuf);
 
 	MEMUNDEFINE(cfline);

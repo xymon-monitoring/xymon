@@ -12,8 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.14 2006-02-08 12:51:30 henrik Exp $";
-
+static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.15 2006-02-16 14:50:58 henrik Exp $";
 
 static int get_page_name_title(char *buf, char *key, char **name, char **title)
 {
@@ -48,6 +47,7 @@ static int pagematch(pagelist_t *pg, char *name)
 
 namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 {
+	static void *bbhfiles = NULL;
 	FILE *bbhosts;
 	int ip1, ip2, ip3, ip4, banksize, groupid;
 	char hostname[4096];
@@ -55,6 +55,18 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 	int inbufsz;
 	pagelist_t *curtoppage, *curpage, *pgtail;
 	namelist_t *nametail = NULL;
+
+	/* First check if there were no modifications at all */
+	if (bbhfiles) {
+		if (!stackfmodified(bbhfiles)){
+			dprintf("No files modified, skipping reload of %s\n", bbhostsfn);
+			return namehead;
+		}
+		else {
+			stackfclist(&bbhfiles);
+			bbhfiles = NULL;
+		}
+	}
 
 	MEMDEFINE(hostname);
 	MEMDEFINE(l);
@@ -64,7 +76,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 	curpage = curtoppage = pgtail = pghead;
 	groupid = 0;
 
-	bbhosts = stackfopen(bbhostsfn, "r");
+	bbhosts = stackfopen(bbhostsfn, "r", &bbhfiles);
 	if (bbhosts == NULL) return NULL;
 
 	while (stackfgets(&inbuf, &inbufsz, "include", extrainclude)) {

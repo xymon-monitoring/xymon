@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadnkconf.c,v 1.9 2006-01-25 11:43:03 henrik Exp $";
+static char rcsid[] = "$Id: loadnkconf.c,v 1.10 2006-02-16 14:50:58 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -56,10 +56,23 @@ static void flushrec(void *k1, void *k2)
 
 int load_nkconfig(char *fn)
 {
+	static void *configfiles = NULL;
 	static int firsttime = 1;
 	FILE *fd;
 	char *inbuf = NULL;
 	int inbufsz = 0;
+
+	/* First check if there were no modifications at all */
+	if (configfiles) {
+		if (!stackfmodified(configfiles)){
+			dprintf("No files modified, skipping reload of %s\n", fn);
+			return 0;
+		}
+		else {
+			stackfclist(&configfiles);
+			configfiles = NULL;
+		}
+	}
 
 	if (!firsttime) {
 		/* Clean up existing datatree */
@@ -86,7 +99,7 @@ int load_nkconfig(char *fn)
 		fn = defaultfn;
 	}
 
-	fd = stackfopen(fn, "r");
+	fd = stackfopen(fn, "r", &configfiles);
 	if (fd == NULL) return 1;
 
 	if (configfn) xfree(configfn);
