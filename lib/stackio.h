@@ -15,9 +15,11 @@
 
 extern int initfgets(FILE *fd);
 extern char *unlimfgets(char **buffer, int *bufsz, FILE *fd);
-extern FILE *stackfopen(char *filename, char *mode);
+extern FILE *stackfopen(char *filename, char *mode, void **v_filelist);
 extern int stackfclose(FILE *fd);
 extern char *stackfgets(char **buffer, unsigned int *bufferlen, char *includetag1, char *includetag2);
+extern int stackfmodified(void *v_listhead);
+extern void stackfclist(void **v_listhead);
 
 #endif
 

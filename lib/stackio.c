@@ -11,8 +11,10 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: stackio.c,v 1.10 2006-01-07 13:01:06 henrik Exp $";
+static char rcsid[] = "$Id: stackio.c,v 1.11 2006-02-16 14:29:51 henrik Exp $";
 
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,6 +22,13 @@ static char rcsid[] = "$Id: stackio.c,v 1.10 2006-01-07 13:01:06 henrik Exp $";
 #include <limits.h>
 
 #include "libbbgen.h"
+
+typedef struct filelist_t {
+	char *filename;
+	time_t mtime;
+	size_t fsize;
+	struct filelist_t *next;
+} filelist_t;
 
 typedef struct fgetsbuf_t {
 	FILE *fd;
@@ -32,12 +41,12 @@ static fgetsbuf_t *fgetshead = NULL;
 
 typedef struct stackfd_t {
 	FILE *fd;
+	filelist_t **listhead;
 	struct stackfd_t *next;
 } stackfd_t;
 static stackfd_t *fdhead = NULL;
 static char *stackfd_base = NULL;
 static char *stackfd_mode = NULL;
-
 
 /*
  * initfgets() and unlimfgets() implements a fgets() style
@@ -177,11 +186,12 @@ char *unlimfgets(char **buffer, int *bufsz, FILE *fd)
 	return *buffer;
 }
 
-FILE *stackfopen(char *filename, char *mode)
+FILE *stackfopen(char *filename, char *mode, void **v_listhead)
 {
 	FILE *newfd;
 	stackfd_t *newitem;
 	char stackfd_filename[PATH_MAX];
+	filelist_t **listhead = (filelist_t **)v_listhead;
 
 	MEMDEFINE(stackfd_filename);
 
@@ -206,9 +216,23 @@ FILE *stackfopen(char *filename, char *mode)
 	if (newfd != NULL) {
 		newitem = (stackfd_t *) malloc(sizeof(stackfd_t));
 		newitem->fd = newfd;
+		newitem->listhead = listhead;
 		newitem->next = fdhead;
 		fdhead = newitem;
 		initfgets(newfd);
+
+		if (listhead) {
+			struct filelist_t *newlistitem;
+			struct stat st;
+
+			fstat(fileno(newfd), &st);
+			newlistitem = (filelist_t *)malloc(sizeof(filelist_t));
+			newlistitem->filename = strdup(stackfd_filename);
+			newlistitem->mtime = st.st_mtime;
+			newlistitem->fsize = st.st_size;
+			newlistitem->next = *listhead;
+			*listhead = newlistitem;
+		}
 	}
 
 	MEMUNDEFINE(stackfd_filename);
@@ -244,6 +268,35 @@ int stackfclose(FILE *fd)
 	return result;
 }
 
+int stackfmodified(void *v_listhead)
+{
+	filelist_t *walk;
+
+	for (walk=(filelist_t *)v_listhead; (walk); walk = walk->next) {
+		struct stat st;
+
+		if (stat(walk->filename, &st) == -1) return 1; /* File has disappeared */
+		if (st.st_mtime != walk->mtime) return 1; /* Timestamp has changed */
+		if (st.st_size != walk->fsize) return 1; /* Size has changed */
+	}
+
+	return 0;
+}
+
+void stackfclist(void **v_listhead)
+{
+	filelist_t *tmp;
+
+	if ((v_listhead == NULL) || (*v_listhead == NULL)) return;
+
+	while (*v_listhead) {
+		tmp = (filelist_t *) *v_listhead;
+		*v_listhead = ((filelist_t *) *v_listhead)->next;
+		xfree(tmp->filename);
+		xfree(tmp);
+	}
+	*v_listhead = NULL;
+}
 
 char *stackfgets(char **buffer, unsigned int *bufferlen, char *includetag1, char *includetag2)
 {
@@ -260,7 +313,7 @@ char *stackfgets(char **buffer, unsigned int *bufferlen, char *includetag1, char
 		while (newfn && *newfn && isspace((int)*newfn)) newfn++;
 		if (eol) *eol = '\0';
 		
-		if (newfn && (stackfopen(newfn, "r") != NULL))
+		if (newfn && (stackfopen(newfn, "r", (void **)fdhead->listhead) != NULL))
 			return stackfgets(buffer, bufferlen, includetag1, includetag2);
 		else {
 			errprintf("WARNING: Cannot open include file '%s', line was:%s\n", textornull(newfn), buffer);
@@ -290,7 +343,7 @@ int main(int argc, char *argv[])
 	int inbufsz;
 
 	fn = argv[1];
-	fd = stackfopen(fn, "r");
+	fd = stackfopen(fn, "r", NULL);
 	if (!fd) { errprintf("Cannot open file %s\n", fn); return 1; }
 
 	while (stackfgets(&inbuf, &inbufsz, "include", NULL)) printf("%s", inbuf);
