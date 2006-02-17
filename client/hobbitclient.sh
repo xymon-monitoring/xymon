@@ -12,7 +12,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient.sh,v 1.9 2006-02-13 22:31:04 henrik Exp $
+# $Id: hobbitclient.sh,v 1.10 2006-02-17 13:07:50 henrik Exp $
 
 # Must make sure the commands return standard (english) texts.
 LANG=C
@@ -53,12 +53,12 @@ if test "$LOCALMODE" = "yes"; then
 	echo "@@" >> $TEMPFILE
 	$BBHOME/bin/hobbitd_client --local --config=$BBHOME/etc/localclient.cfg <$TEMPFILE
 else
-	$BB $BBDISP "@" < $TEMPFILE >$BBHOME/etc/logfetch.cfg.tmp
-	if test -s $BBHOME/etc/logfetch.cfg.tmp
+	$BB $BBDISP "@" < $TEMPFILE >$BBTMP/logfetch.cfg.tmp
+	if test -s $BBTMP/logfetch.cfg.tmp
 	then
-		mv $BBHOME/etc/logfetch.cfg.tmp $BBHOME/etc/logfetch.cfg
+		mv $BBTMP/logfetch.cfg.tmp $BBTMP/logfetch.cfg
 	else
-		rm $BBHOME/etc/logfetch.cfg.tmp
+		rm $BBTMP/logfetch.cfg.tmp
 	fi
 fi
 

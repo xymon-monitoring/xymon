@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-darwin.sh,v 1.8 2006-02-13 22:02:33 henrik Exp $
+# $Id: hobbitclient-darwin.sh,v 1.9 2006-02-17 13:07:50 henrik Exp $
 
 echo "[date]"
 date
@@ -39,7 +39,7 @@ ps -axw
 echo "[top]"
 top -l 1 -n 20
 # logfiles
-$BBHOME/bin/logfetch $BBHOME/etc/logfetch.cfg $BBTMP/logfetch.status
+$BBHOME/bin/logfetch $BBTMP/logfetch.cfg $BBTMP/logfetch.status
 
 exit
 
