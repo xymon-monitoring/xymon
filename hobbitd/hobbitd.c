@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.203 2006-02-16 14:33:52 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.204 2006-02-17 13:08:53 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -3034,7 +3034,7 @@ void do_message(conn_t *msg, char *origin)
 			MEMUNDEFINE(hostip);
 		}
 
-		if (clientconf) {
+		if (clientconfigs && clientconf) {
 			char *key = malloc(5 + strlen(clientconf));
 			char *bconf, *econf;
 
