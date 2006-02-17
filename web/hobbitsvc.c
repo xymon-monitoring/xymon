@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.60 2006-02-13 21:59:40 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.61 2006-02-17 11:38:21 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -63,6 +63,16 @@ static int parse_query(void)
 		}
 		else if (strcasecmp(cwalk->name, "SERVICE") == 0) {
 			service = strdup(cwalk->value);
+		}
+		else if (strcasecmp(cwalk->name, "HOSTSVC") == 0) {
+			/* For backwards compatibility */
+			char *p = strrchr(cwalk->value, '.');
+			if (p) {
+				*p = '\0';
+				hostname = strdup(cwalk->value);
+				service = strdup(p+1);
+				for (p=strchr(hostname, ','); (p); p = strchr(p, ',')) *p = '.';
+			}
 		}
 		else if (strcasecmp(cwalk->name, "TIMEBUF") == 0) {
 			/* Only for the historical logs */
