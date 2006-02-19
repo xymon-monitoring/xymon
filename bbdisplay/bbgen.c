@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.220 2006-01-13 12:06:26 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.221 2006-02-19 12:54:38 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -148,8 +148,12 @@ int main(int argc, char *argv[])
 			bb2ignorecolumns = (char *) malloc(strlen(lp)+2);
 			sprintf(bb2ignorecolumns, ",%s,", (lp+1));
 		}
+		else if (argnmatch(argv[i], "--bb2-colors=")) {
+			char *lp = strchr(argv[i], '=') + 1;
+			bb2colors = colorset(lp, (1 << COL_GREEN));
+		}
 		else if (argnmatch(argv[i], "--bb2-ignorepurples")) {
-			bb2includepurples = 0;
+			bb2colors = (bb2colors & ~(1 << COL_PURPLE));
 		}
 		else if (argnmatch(argv[i], "--bb2-ignoredialups")) {
 			bb2nodialups = 1;

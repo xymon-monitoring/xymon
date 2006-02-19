@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.163 2006-02-08 22:17:20 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.164 2006-02-19 12:54:38 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -36,7 +36,6 @@ int  hostsbeforepages = 0;
 char *includecolumns = NULL;
 char *bb2ignorecolumns = "";
 int  bb2nodialups = 0;
-int  bb2includepurples = 1;
 int  sort_grouponly_items = 0; /* Standard BB behaviour: Dont sort group-only items */
 char *rssextension = ".rss"; /* Filename extension for generated RSS files */
 char *defaultpagetitle = NULL;
@@ -54,6 +53,7 @@ char *lognkstatus = NULL;
 int  nkonlyreds = 0;
 char *nkackname = "NK";
 int  wantrss = 0;
+int  bb2colors = ((1 << COL_RED) | (1 << COL_YELLOW));
 
 /* Format strings for htaccess files */
 char *htaccess = NULL;
@@ -128,7 +128,7 @@ int interesting_column(int pagetype, int color, int alert, bbgen_col_t *column, 
 	switch (pagetype) {
 	  case PAGE_BB2:
 		  /* Include all non-green tests */
-		  if ( (color == COL_RED) || (color == COL_YELLOW) || (bb2includepurples && (color == COL_PURPLE)) ) {
+		  if (( (1 << color) & bb2colors ) != 0) {
 			return (strstr(bb2ignorecolumns, column->listname) == NULL);
 		  }
 		  else return 0;
@@ -1044,9 +1044,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 			if (h->hostentry->nobb2 || (bb2nodialups && h->hostentry->dialup)) 
 				useit = 0;
 			else
-				useit = ( (h->hostentry->bb2color == COL_RED) || 
-					  (h->hostentry->bb2color == COL_YELLOW) || 
-					  (bb2includepurples && (h->hostentry->bb2color == COL_PURPLE)) );
+				useit = (( (1 << h->hostentry->bb2color) & bb2colors ) != 0);
 			break;
 
 		  case PAGE_NK:

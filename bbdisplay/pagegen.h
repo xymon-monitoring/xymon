@@ -15,7 +15,7 @@ extern int subpagecolumns;
 extern int hostsbeforepages;
 extern char *includecolumns;
 extern char *bb2ignorecolumns;
-extern int  bb2includepurples;
+extern int  bb2colors;
 extern int sort_grouponly_items;
 extern char *documentationurl;
 extern char *doctargetspec;
