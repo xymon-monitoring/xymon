@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.61 2006-02-17 11:38:21 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.62 2006-02-20 08:09:37 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -192,8 +192,6 @@ int do_request(void)
 		time_t logage;
 		char *sumline, *msg, *p;
 
-		sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
-		sethostenv_refresh(60);
 		sprintf(hobbitdreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,BBH_IP,BBH_DISPLAYNAME", hostname, service);
 		hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &log, 1, 30);
 		if ((hobbitdresult != BB_OK) || (log == NULL) || (strlen(log) == 0)) {
@@ -275,6 +273,9 @@ int do_request(void)
 
 		ip = (items[15] ? items[15] : "");
 		displayname = (items[16] ? items[16] : hostname);
+
+		sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
+		sethostenv_refresh(60);
 	}
 	else if (source == SRC_HISTLOGS) {
 		char logfn[PATH_MAX];
