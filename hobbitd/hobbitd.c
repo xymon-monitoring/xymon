@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.205 2006-02-21 22:02:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.206 2006-02-21 22:07:50 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -1032,11 +1032,9 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	}
 
 	if (log->enabletime == DISABLED_UNTIL_OK) {
-		errprintf("enabletime is until OK for %s:%s\n", hostname, testname);
 		/* The test is disabled until we get an OK status */
 		if ((newcolor != COL_BLUE) && (decide_alertstate(newcolor) == A_OK)) {
 			/* It's OK now - clear the disable status */
-			errprintf("Clearing enabletime is until OK for %s:%s, newcolor=%d\n", hostname, testname, newcolor);
 			log->enabletime = 0;
 			if (log->dismsg) { xfree(log->dismsg); log->dismsg = NULL; }
 			posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, log, NULL);
