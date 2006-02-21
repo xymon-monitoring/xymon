@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: cgi.c,v 1.3 2005-05-21 06:26:42 henrik Exp $";
+static char rcsid[] = "$Id: cgi.c,v 1.4 2006-02-21 16:15:24 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -110,7 +110,7 @@ cgidata_t *cgi_request(void)
 		}
 	}
 
-	dprintf("CGI: Request method='%s', data='%s'\n", method, reqdata);
+	dprintf("CGI: Request method='%s', data='%s'\n", method, textornull(reqdata));
 
 	if ((cgi_method == CGI_GET) || (conttype && (strcasecmp(conttype, "application/x-www-form-urlencoded") == 0))) {
 		token = strtok(reqdata, "&");
@@ -119,11 +119,14 @@ cgidata_t *cgi_request(void)
 			cgidata_t *newitem = (cgidata_t *)malloc(sizeof(cgidata_t));
 			char *val;
 
-			val = strchr(token, '='); if (val) { *val = '\0'; val++; }
-			if (val) val = urlunescape(val);
+			val = strchr(token, '='); 
+			if (val) { 
+				*val = '\0'; 
+				val = urlunescape(val+1);
+			}
 
 			newitem->name = strdup(token);
-			newitem->value = strdup(val);
+			newitem->value = strdup(val ? val : "");
 			newitem->next = NULL;
 
 			if (!tail) {
@@ -144,6 +147,8 @@ cgidata_t *cgi_request(void)
 		head->value = strdup(reqdata);
 		head->next = NULL;
 	}
+
+	if (reqdata) xfree(reqdata);
 
 	return head;
 }
