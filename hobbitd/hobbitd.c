@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.204 2006-02-17 13:08:53 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.205 2006-02-21 22:02:13 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -58,6 +58,8 @@ static char rcsid[] = "$Id: hobbitd.c,v 1.204 2006-02-17 13:08:53 henrik Exp $";
 
 #include "hobbitd_buffer.h"
 #include "hobbitd_ipc.h"
+
+#define DISABLED_UNTIL_OK -1
 
 /*
  * The absolute maximum size we'll grow our buffers to accomodate an incoming message.
@@ -325,6 +327,7 @@ void load_clientconfig(void)
 	fd = stackfopen(configfn, "r", &clientconflist); if (!fd) return;
 	if (clientconfigs) xfree(clientconfigs);
 
+	fstat(fileno(fd), &st);
 	clientconfigs = (char *)malloc(st.st_size + 2);
 	*clientconfigs = '\n';
 	n = fread(clientconfigs+1, 1, st.st_size, fd);
@@ -1028,7 +1031,22 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		validity = durationvalue(msg+7);
 	}
 
-	if (log->enabletime > now) {
+	if (log->enabletime == DISABLED_UNTIL_OK) {
+		errprintf("enabletime is until OK for %s:%s\n", hostname, testname);
+		/* The test is disabled until we get an OK status */
+		if ((newcolor != COL_BLUE) && (decide_alertstate(newcolor) == A_OK)) {
+			/* It's OK now - clear the disable status */
+			errprintf("Clearing enabletime is until OK for %s:%s, newcolor=%d\n", hostname, testname, newcolor);
+			log->enabletime = 0;
+			if (log->dismsg) { xfree(log->dismsg); log->dismsg = NULL; }
+			posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, log, NULL);
+		}
+		else {
+			/* Still not OK - keep it BLUE */
+			newcolor = COL_BLUE;
+		}
+	}
+	else if (log->enabletime > now) {
 		/* The test is currently disabled. */
 		newcolor = COL_BLUE;
 	}
@@ -1078,7 +1096,10 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	 */
 	log->validtime = now + validity*60;
 	if (log->acktime    && (log->acktime > log->validtime))    log->validtime = log->acktime;
-	if (log->enabletime && (log->enabletime > log->validtime)) log->validtime = log->enabletime;
+	if (log->enabletime) {
+		if (log->enabletime == DISABLED_UNTIL_OK) log->validtime = INT_MAX;
+		else if (log->enabletime > log->validtime) log->validtime = log->enabletime;
+	}
 
 	strncpy(log->sender, sender, sizeof(log->sender)-1);
 	*(log->sender + sizeof(log->sender) - 1) = '\0';
@@ -1319,7 +1340,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 {
 	char *firstline = NULL, *hosttest = NULL, *durstr = NULL, *txtstart = NULL;
 	char *hname = NULL, *tname = NULL;
-	int duration = 0;
+	time_t expires = 0;
 	int alltests = 0;
 	RbtIterator hosthandle;
 	hobbitd_hostlist_t *hwalk = NULL;
@@ -1346,7 +1367,13 @@ void handle_enadis(int enabled, char *msg, char *sender)
 
 	if (!enabled) {
 		if (durstr) {
-			duration = durationvalue(durstr);
+			if (strcmp(durstr, "-1") == 0) {
+				expires = DISABLED_UNTIL_OK;
+			}
+			else {
+				expires = 60*durationvalue(durstr) + time(NULL);
+			}
+
 			txtstart = msg + (durstr + strlen(durstr) - firstline);
 			txtstart += strspn(txtstart, " \t\r\n");
 			if (*txtstart == '\0') txtstart = "(No reason given)";
@@ -1417,11 +1444,11 @@ void handle_enadis(int enabled, char *msg, char *sender)
 	}
 	else {
 		/* disable code goes here */
-		time_t expires = time(NULL) + duration*60;
 
 		if (alltests) {
 			for (log = hwalk->logs; (log); log = log->next) {
-				log->enabletime = log->validtime = expires;
+				log->enabletime = expires;
+				log->validtime = (expires == DISABLED_UNTIL_OK) ? INT_MAX : log->validtime;
 				if (txtstart) {
 					if (log->dismsg) xfree(log->dismsg);
 					log->dismsg = strdup(txtstart);
@@ -1434,7 +1461,8 @@ void handle_enadis(int enabled, char *msg, char *sender)
 		else {
 			for (log = hwalk->logs; (log && (log->test != twalk)); log = log->next) ;
 			if (log) {
-				log->enabletime = log->validtime = expires;
+				log->enabletime = expires;
+				log->validtime = (expires == DISABLED_UNTIL_OK) ? INT_MAX : log->validtime;
 				if (txtstart) {
 					if (log->dismsg) xfree(log->dismsg);
 					log->dismsg = strdup(txtstart);
@@ -2080,7 +2108,7 @@ void generate_hostinfo_outbuf(char **outbuf, char **outpos, int *outsz, namelist
 	int f_idx;
 	char *buf, *bufp;
 	int bufsz;
-	char *infostr;
+	char *infostr = NULL;
 
 	buf = *outbuf;
 	bufp = *outpos;
