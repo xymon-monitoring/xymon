@@ -86,6 +86,7 @@
 			<option value=1440>days</option>
 			<option value=10080>weeks</option>
 		     </select>
+                     &nbsp;&nbsp;-&nbsp;OR&nbsp;-&nbsp;until&nbsp;OK:<input name="untilok" type=checkbox>
                  </td>
               </TR>
 

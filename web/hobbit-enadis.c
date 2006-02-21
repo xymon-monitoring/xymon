@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-enadis.c,v 1.15 2005-06-06 20:07:17 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-enadis.c,v 1.16 2006-02-21 22:02:13 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -78,6 +78,12 @@ void parse_cgi(void)
 		}
 		else if (strcmp(pwalk->name, "duration") == 0) {
 			duration = atoi(pwalk->value);
+		}
+		else if (strcmp(pwalk->name, "untilok") == 0) {
+			if (strcasecmp(pwalk->value, "on") == 0) {
+				duration = -1;
+				scale = 1;
+			}
 		}
 		else if (strcmp(pwalk->name, "scale") == 0) {
 			scale = atoi(pwalk->value);

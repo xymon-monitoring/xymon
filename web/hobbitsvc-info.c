@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.97 2006-01-23 22:06:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.98 2006-02-21 22:02:13 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -252,6 +252,7 @@ static void generate_hobbit_disable(char *hostname, char **buf, int *buflen)
 	addtobuffer(buf, buflen, "               <option value=1440>days</option>\n");
 	addtobuffer(buf, buflen, "               <option value=10080>weeks</option>\n");
 	addtobuffer(buf, buflen, "            </select>\n");
+	addtobuffer(buf, buflen, "            &nbsp;&nbsp;-&nbsp;OR&nbsp;-&nbsp;until&nbsp;OK:<input name=\"untilok\" type=checkbox>");
 	addtobuffer(buf, buflen, "        </td>\n");
 	addtobuffer(buf, buflen, "      </tr>\n");
 

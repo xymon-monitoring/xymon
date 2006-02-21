@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.46 2006-02-08 22:00:33 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.47 2006-02-21 22:02:13 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -234,8 +234,9 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	fprintf(output, "<CENTER><TABLE ALIGN=CENTER BORDER=0 SUMMARY=\"Detail Status\">\n");
 	if (wantserviceid) fprintf(output, "<TR><TH><FONT %s>%s - %s</FONT><BR><HR WIDTH=\"60%%\"></TH></TR>\n", rowfont, displayname, service);
 
-	if (disabletime > 0) {
-		fprintf(output, "<TR><TD><H3>Disabled until %s</H3></TD></TR>\n", ctime(&disabletime));
+	if (disabletime != 0) {
+		fprintf(output, "<TR><TD><H3>Disabled until %s</H3></TD></TR>\n", 
+			(disabletime == -1 ? "OK" : ctime(&disabletime)));
 		fprintf(output, "<TR><TD><PRE>%s</PRE></TD></TR>\n", dismsg);
 		fprintf(output, "<TR><TD><BR><HR>Current status message follows:<HR><BR></TD></TR>\n");
 
