@@ -11,7 +11,7 @@ endif
 
 CFLAGS += -I. -I../include 
 
-all: libbbgen.a hobbitclient.a loadhosts stackio
+all: libbbgen.a hobbitclient.a loadhosts stackio availability
 
 client: hobbitclient.a
 
@@ -52,6 +52,9 @@ loadhosts: loadhosts.c libbbgen.a
 
 stackio: stackio.c libbbgen.a
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ stackio.c ./libbbgen.a
+
+availability: availability.c libbbgen.a
+	$(CC) $(CFLAGS) -DSTANDALONE -o $@ availability.c ./libbbgen.a
 
 clean:
 	rm -f *.o *.a *~ loadhosts stackio

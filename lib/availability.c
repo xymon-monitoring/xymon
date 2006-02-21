@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.38 2006-01-13 11:44:37 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.39 2006-02-21 16:14:42 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -540,6 +540,12 @@ int main(int argc, char *argv[])
 
 	debug=1;
 
+	if (argc != 4) {
+		fprintf(stderr, "Usage: %s HISTFILE STARTTIME ENDTIME\n", argv[0]);
+		fprintf(stderr, "Start- and end-times are in Unix epoch format - date +%%s\n");
+		return 1;
+	}
+
 	fd = fopen(argv[1], "r");
 	if (fd == NULL) { printf("Cannot open %s\n", argv[1]); exit(1); }
 
@@ -552,12 +558,12 @@ int main(int argc, char *argv[])
 	p = strrchr(hostsvc, '/'); host = p+1;
 	while ((p = strchr(host, ','))) *p = '.';
 
-	color = parse_historyfile(fd, &repinfo, host, svc, reportstart, reportend, reportwarnlevel, reportgreenlevel, NULL);
+	color = parse_historyfile(fd, &repinfo, host, svc, reportstart, reportend, 0, reportwarnlevel, reportgreenlevel, NULL);
 
 	for (i=0; (i<COL_COUNT); i++) {
-		dprintf("Color %d: Count=%d, pct=%.2f\n", i, repinfo.count[i], repinfo.pct[i]);
+		dprintf("Color %d: Count=%d, pct=%.2f\n", i, repinfo.count[i], repinfo.fullpct[i]);
 	}
-	dprintf("Availability: %.2f, color =%d\n", repinfo.availability, color);
+	dprintf("Availability: %.2f, color =%d\n", repinfo.fullavailability, color);
 	dprintf("History file status: %s\n", repinfo.fstate);
 
 	fclose(fd);
