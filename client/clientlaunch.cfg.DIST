@@ -5,6 +5,10 @@
 # extensions); how often, and with which parameters, options 
 # and environment variables.
 #
+# Note: On the Hobbit *server* itself, this file is normally 
+#       NOT used. Instead, both the client- and server-tasks
+#       are controlled by the hobbitlaunch.cfg file.
+#
 
 [client]
 	ENVFILE $HOBBITCLIENTHOME/etc/hobbitclient.cfg
