@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.206 2006-02-21 22:07:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.207 2006-02-25 08:42:19 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -1894,7 +1894,7 @@ int get_config(char *fn, conn_t *msg)
 	msg->bufp = msg->buf;
 	msg->buflen = 0;
 	do {
-		done = (stackfgets(&inbuf, &inbufsz, "include", NULL) == NULL);
+		done = (stackfgets(&inbuf, &inbufsz, NULL) == NULL);
 		if (!done) {
 			addtobuffer(&msg->buf, &msg->bufsz, inbuf);
 			n = strlen(inbuf);

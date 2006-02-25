@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.13 2006-02-16 14:50:58 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.14 2006-02-25 08:42:19 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -179,7 +179,7 @@ int load_client_config(char *configfn)
 
 	curhost = curpage = curexhost = curexpage = NULL;
 	curtime = NULL;
-	while (stackfgets(&inbuf, &inbufsz, "include", NULL)) {
+	while (stackfgets(&inbuf, &inbufsz, NULL)) {
 		exprlist_t *newhost, *newpage, *newexhost, *newexpage;
 		char *newtime;
 		int unknowntok = 0;

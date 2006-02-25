@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadalerts.c,v 1.2 2006-02-16 14:50:58 henrik Exp $";
+static char rcsid[] = "$Id: loadalerts.c,v 1.3 2006-02-25 08:42:19 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -268,7 +268,7 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 	MEMDEFINE(cfline);
 
 	cfid = 0;
-	while (stackfgets(&inbuf, &inbufsz, "include", NULL)) {
+	while (stackfgets(&inbuf, &inbufsz, NULL)) {
 		int firsttoken = 1;
 		int mailcmdactive = 0, scriptcmdactive = 0;
 		recip_t *curlinerecips = NULL;

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadnkconf.c,v 1.10 2006-02-16 14:50:58 henrik Exp $";
+static char rcsid[] = "$Id: loadnkconf.c,v 1.11 2006-02-25 08:42:19 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -105,7 +105,7 @@ int load_nkconfig(char *fn)
 	if (configfn) xfree(configfn);
 	configfn = strdup(fn);
 
-	while (stackfgets(&inbuf, &inbufsz, "include", NULL)) {
+	while (stackfgets(&inbuf, &inbufsz, NULL)) {
 		/* Full record : Host  service  START  END  TIMESPEC  TTPrio TTGroup TTExtra */
 		/* Clone record: Host  =HOST */
 		char *ehost, *eservice, *estart, *eend, *etime, *ttgroup, *ttextra, *updinfo;

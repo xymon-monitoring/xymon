@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostshow.c,v 1.10 2006-02-16 14:26:57 henrik Exp $";
+static char rcsid[] = "$Id: bbhostshow.c,v 1.11 2006-02-25 08:42:19 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	while (stackfgets(&inbuf, &inbufsz, "include", include2)) {
+	while (stackfgets(&inbuf, &inbufsz, include2)) {
 		printf("%s", inbuf);
 	}
 

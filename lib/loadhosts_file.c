@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.15 2006-02-16 14:50:58 henrik Exp $";
+static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.16 2006-02-25 08:42:19 henrik Exp $";
 
 static int get_page_name_title(char *buf, char *key, char **name, char **title)
 {
@@ -79,7 +79,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 	bbhosts = stackfopen(bbhostsfn, "r", &bbhfiles);
 	if (bbhosts == NULL) return NULL;
 
-	while (stackfgets(&inbuf, &inbufsz, "include", extrainclude)) {
+	while (stackfgets(&inbuf, &inbufsz, extrainclude)) {
 		char *eoln;
 
 		eoln = strchr(inbuf, '\n'); if (eoln) *eoln = '\0';
