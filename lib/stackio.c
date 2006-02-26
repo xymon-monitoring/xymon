@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: stackio.c,v 1.11 2006-02-16 14:29:51 henrik Exp $";
+static char rcsid[] = "$Id: stackio.c,v 1.12 2006-02-26 12:57:12 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -20,6 +20,7 @@ static char rcsid[] = "$Id: stackio.c,v 1.11 2006-02-16 14:29:51 henrik Exp $";
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <dirent.h>
 
 #include "libbbgen.h"
 
@@ -47,6 +48,7 @@ typedef struct stackfd_t {
 static stackfd_t *fdhead = NULL;
 static char *stackfd_base = NULL;
 static char *stackfd_mode = NULL;
+static htnames_t *fnlist = NULL;
 
 /*
  * initfgets() and unlimfgets() implements a fgets() style
@@ -212,6 +214,7 @@ FILE *stackfopen(char *filename, char *mode, void **v_listhead)
 			sprintf(stackfd_filename, "%s/%s", stackfd_base, filename);
 	}
 
+	dprintf("Opening file %s\n", stackfd_filename);
 	newfd = fopen(stackfd_filename, stackfd_mode);
 	if (newfd != NULL) {
 		newitem = (stackfd_t *) malloc(sizeof(stackfd_t));
@@ -256,6 +259,11 @@ int stackfclose(FILE *fd)
 		}
 		xfree(stackfd_base);
 		xfree(stackfd_mode);
+		while (fnlist) {
+			htnames_t *tmp = fnlist;
+			fnlist = fnlist->next;
+			xfree(tmp->name); xfree(tmp);
+		}
 		result = 0;
 	}
 	else {
@@ -270,14 +278,23 @@ int stackfclose(FILE *fd)
 
 int stackfmodified(void *v_listhead)
 {
+	/* Walk the list of filenames, and see if any have changed */
 	filelist_t *walk;
+	struct stat st;
 
 	for (walk=(filelist_t *)v_listhead; (walk); walk = walk->next) {
-		struct stat st;
-
-		if (stat(walk->filename, &st) == -1) return 1; /* File has disappeared */
-		if (st.st_mtime != walk->mtime) return 1; /* Timestamp has changed */
-		if (st.st_size != walk->fsize) return 1; /* Size has changed */
+		if (stat(walk->filename, &st) == -1) {
+			dprintf("File %s no longer exists\n", walk->filename);
+			return 1; /* File has disappeared */
+		}
+		if (st.st_mtime != walk->mtime) {
+			dprintf("File %s new timestamp\n", walk->filename);
+			return 1; /* Timestamp has changed */
+		}
+		if (S_ISREG(st.st_mode) && (st.st_size != walk->fsize)) {
+			dprintf("File %s new size\n", walk->filename);
+			return 1; /* Size has changed */
+		}
 	}
 
 	return 0;
@@ -285,6 +302,7 @@ int stackfmodified(void *v_listhead)
 
 void stackfclist(void **v_listhead)
 {
+	/* Free the list of filenames */
 	filelist_t *tmp;
 
 	if ((v_listhead == NULL) || (*v_listhead == NULL)) return;
@@ -298,34 +316,141 @@ void stackfclist(void **v_listhead)
 	*v_listhead = NULL;
 }
 
-char *stackfgets(char **buffer, unsigned int *bufferlen, char *includetag1, char *includetag2)
+static int namecompare(const void *v1, const void *v2)
+{
+	char **n1 = (char **)v1;
+	char **n2 = (char **)v2;
+
+	/* Sort in reverse order, so when we add them to the list in LIFO, it will be alpha-sorted */
+	return -strcmp(*n1, *n2);
+}
+
+static void addtofnlist(char *dirname, void **v_listhead)
+{
+	filelist_t **listhead = (filelist_t **)v_listhead;
+	filelist_t *newlistitem;
+	DIR *dirfd;
+	struct dirent *d;
+	struct stat st;
+	char dirfn[PATH_MAX], fn[PATH_MAX];
+	char **fnames = NULL;
+	int fnsz = 0;
+	int i;
+
+	if (*dirname == '/') strcpy(dirfn, dirname); else sprintf(dirfn, "%s/%s", stackfd_base, dirname);
+
+	if ((dirfd = opendir(dirfn)) == NULL) {
+		errprintf("Cannot open directory %s\n", fn);
+		return;
+	}
+
+	/* Add the directory itself to the list of files we watch for modifications */
+	stat(dirfn, &st);
+	newlistitem = (filelist_t *)malloc(sizeof(filelist_t));
+	newlistitem->filename = strdup(dirfn);
+	newlistitem->mtime = st.st_mtime;
+	newlistitem->fsize = 0; /* We dont check sizes of directories */
+	newlistitem->next = *listhead;
+	*listhead = newlistitem;
+
+	while ((d = readdir(dirfd)) != NULL) {
+		if (*(d->d_name) == '.') continue;
+		if (*(d->d_name + strlen(d->d_name) - 1) == '~') continue;
+		sprintf(fn, "%s/%s", dirfn, d->d_name);
+		if (stat(fn, &st) == -1) continue;
+		if (!S_ISREG(st.st_mode)) continue;
+
+		if (fnsz == 0) fnames = (char **)malloc(2*sizeof(char **)); 
+		else fnames = (char **)realloc(fnames, (fnsz+2)*sizeof(char **));
+		fnames[fnsz] = strdup(fn);
+
+		fnsz++;
+	}
+
+	closedir(dirfd);
+
+	if (fnsz) qsort(fnames, fnsz, sizeof(char *), namecompare);
+	for (i=0; (i<fnsz); i++) {
+		htnames_t *newitem = malloc(sizeof(htnames_t));
+		newitem->name = fnames[i];
+		newitem->next = fnlist;
+		fnlist = newitem;
+	}
+
+	xfree(fnames);
+}
+
+char *stackfgets(char **buffer, unsigned int *bufferlen, char *extraincl)
 {
 	char *result;
 
 	result = unlimfgets(buffer, bufferlen, fdhead->fd);
 
-	if (result && 
-		( (strncmp(*buffer, includetag1, strlen(includetag1)) == 0) ||
-		  (includetag2 && (strncmp(*buffer, includetag2, strlen(includetag2)) == 0)) )) {
-		char *newfn = strchr(*buffer, ' ');
-		char *eol = strchr(*buffer, '\n');
+	if (result) {
+		if ( (strncmp(*buffer, "include ", 8) == 0) ||
+		     (extraincl && (strncmp(*buffer, extraincl, strlen(extraincl)) == 0)) ) {
+			char *newfn, *eol;
 
-		while (newfn && *newfn && isspace((int)*newfn)) newfn++;
-		if (eol) *eol = '\0';
+			eol = strchr(*buffer, '\n'); if (eol) *eol = '\0';
+			newfn = *buffer + 7;
+			newfn += strspn(newfn, " \t");
 		
-		if (newfn && (stackfopen(newfn, "r", (void **)fdhead->listhead) != NULL))
-			return stackfgets(buffer, bufferlen, includetag1, includetag2);
-		else {
-			errprintf("WARNING: Cannot open include file '%s', line was:%s\n", textornull(newfn), buffer);
-			if (eol) *eol = '\n';
-			return result;
+			if (*newfn && (stackfopen(newfn, "r", (void **)fdhead->listhead) != NULL))
+				return stackfgets(buffer, bufferlen, extraincl);
+			else {
+				errprintf("WARNING: Cannot open include file '%s', line was:%s\n", newfn, buffer);
+				if (eol) *eol = '\n';
+				return result;
+			}
+		}
+		else if (strncmp(*buffer, "directory ", 10) == 0) {
+			char *dirfn, *eol;
+
+			eol = strchr(*buffer, '\n'); if (eol) *eol = '\0';
+			dirfn = *buffer + 9;
+			dirfn += strspn(dirfn, " \t");
+
+			if (*dirfn) addtofnlist(dirfn, (void **)fdhead->listhead);
+			if (fnlist && (stackfopen(fnlist->name, "r", (void **)fdhead->listhead) != NULL)) {
+				htnames_t *tmp = fnlist;
+
+				fnlist = fnlist->next;
+				xfree(tmp->name); xfree(tmp);
+				return stackfgets(buffer, bufferlen, extraincl);
+			}
+			else {
+				htnames_t *tmp = fnlist;
+
+				errprintf("WARNING: Cannot open include file '%s', line was:%s\n", fnlist->name, buffer);
+				fnlist = fnlist->next;
+				xfree(tmp->name); xfree(tmp);
+				if (eol) *eol = '\n';
+				return result;
+			}
 		}
 	}
 	else if (result == NULL) {
 		/* end-of-file on read */
 		stackfclose(NULL);
-		if (fdhead != NULL)
-			return stackfgets(buffer, bufferlen, includetag1, includetag2);
+		if (fnlist) {
+			if (stackfopen(fnlist->name, "r", (void **)fdhead->listhead) != NULL) {
+				htnames_t *tmp = fnlist;
+
+				fnlist = fnlist->next;
+				xfree(tmp->name); xfree(tmp);
+				return stackfgets(buffer, bufferlen, extraincl);
+			}
+			else {
+				htnames_t *tmp = fnlist;
+
+				errprintf("WARNING: Cannot open include file '%s', line was:%s\n", fnlist->name, buffer);
+				fnlist = fnlist->next;
+				xfree(tmp->name); xfree(tmp);
+				return result;
+			}
+		}
+		else if (fdhead != NULL)
+			return stackfgets(buffer, bufferlen, extraincl);
 		else
 			return NULL;
 	}
@@ -337,19 +462,49 @@ char *stackfgets(char **buffer, unsigned int *bufferlen, char *includetag1, char
 #ifdef STANDALONE
 int main(int argc, char *argv[])
 {
-	char *fn;
+	char *fn, *p;
+	char cmd[1024];
 	FILE *fd;
 	char *inbuf = NULL;
 	int inbufsz;
+	void *listhead = NULL;
+	int done;
 
-	fn = argv[1];
-	fd = stackfopen(fn, "r", NULL);
-	if (!fd) { errprintf("Cannot open file %s\n", fn); return 1; }
+	debug = 1;
+	fn = strdup(argv[1]);
+	strcpy(cmd, "!");
+	done = 0;
+	while (!done) {
+		if (*cmd == '!') {
+			fd = stackfopen(fn, "r", &listhead);
+			if (!fd) { errprintf("Cannot open file %s\n", fn); continue; }
 
-	while (stackfgets(&inbuf, &inbufsz, "include", NULL)) printf("%s", inbuf);
+			while (stackfgets(&inbuf, &inbufsz, NULL)) printf("%s", inbuf);
+			stackfclose(fd);
+			if (inbuf) xfree(inbuf);
+		}
+		else if (*cmd == '?') {
+			if (stackfmodified(listhead)) printf("File(s) have been modified\n");
+			else printf("No changes\n");
+		}
+		else if (*cmd == '.') {
+			done = 1;
+			continue;
+		}
+		else {
+			xfree(fn); fn = strdup(cmd);
+			stackfclist(&listhead);
+			strcpy(cmd, "!");
+			continue;
+		}
 
-	stackfclose(fd);
-	if (inbuf) xfree(inbuf);
+		printf("\nCmd: "); fflush(stdout);
+		fgets(cmd, sizeof(cmd), stdin);
+		p = strchr(cmd, '\n'); if (p) *p = '\0';
+	}
+
+	xfree(fn);
+	stackfclist(&listhead);
 
 	return 0;
 }
