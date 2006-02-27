@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: stackio.c,v 1.13 2006-02-27 13:13:43 henrik Exp $";
+static char rcsid[] = "$Id: stackio.c,v 1.14 2006-02-27 20:59:29 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -371,7 +371,7 @@ static void addtofnlist(char *dirname, void **v_listhead)
 		if (S_ISDIR(st.st_mode)) {
 			/* Skip RCS sub-directories */
 			if (strcmp(d->d_name, "RCS") == 0) continue;
-			addtofnlist(fn, listhead);
+			addtofnlist(fn, v_listhead);
 		}
 
 		/* Skip everything that isn't a regular file */
@@ -504,7 +504,7 @@ int main(int argc, char *argv[])
 			filelist_t *walk = (filelist_t *)listhead;
 
 			while (walk) {
-				printf("%s %lu\n", walk->filename, walk->fsize);
+				printf("%s %lu\n", walk->filename, (unsigned long)walk->fsize);
 				walk = walk->next;
 			}
 			if (stackfmodified(listhead)) printf("File(s) have been modified\n");
