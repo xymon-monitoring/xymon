@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: stackio.c,v 1.12 2006-02-26 12:57:12 henrik Exp $";
+static char rcsid[] = "$Id: stackio.c,v 1.13 2006-02-27 13:13:43 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -354,10 +354,27 @@ static void addtofnlist(char *dirname, void **v_listhead)
 	*listhead = newlistitem;
 
 	while ((d = readdir(dirfd)) != NULL) {
+		int fnlen = strlen(d->d_name);
+
+		/* Skip all dot-files */
 		if (*(d->d_name) == '.') continue;
-		if (*(d->d_name + strlen(d->d_name) - 1) == '~') continue;
+
+		/* Skip editor backups - file ending wit '~' */
+		if (*(d->d_name + fnlen - 1) == '~') continue;
+
+		/* Skip RCS files - they end with ",v" */
+		if ((fnlen >= 2) && (strcmp(d->d_name + fnlen - 2, ",v") == 0)) continue;
+
 		sprintf(fn, "%s/%s", dirfn, d->d_name);
 		if (stat(fn, &st) == -1) continue;
+
+		if (S_ISDIR(st.st_mode)) {
+			/* Skip RCS sub-directories */
+			if (strcmp(d->d_name, "RCS") == 0) continue;
+			addtofnlist(fn, listhead);
+		}
+
+		/* Skip everything that isn't a regular file */
 		if (!S_ISREG(st.st_mode)) continue;
 
 		if (fnsz == 0) fnames = (char **)malloc(2*sizeof(char **)); 
@@ -484,6 +501,12 @@ int main(int argc, char *argv[])
 			if (inbuf) xfree(inbuf);
 		}
 		else if (*cmd == '?') {
+			filelist_t *walk = (filelist_t *)listhead;
+
+			while (walk) {
+				printf("%s %lu\n", walk->filename, walk->fsize);
+				walk = walk->next;
+			}
 			if (stackfmodified(listhead)) printf("File(s) have been modified\n");
 			else printf("No changes\n");
 		}
