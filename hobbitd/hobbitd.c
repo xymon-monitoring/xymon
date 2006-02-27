@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.207 2006-02-25 08:42:19 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.208 2006-02-27 20:59:47 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -226,6 +226,7 @@ hobbitd_statistics_t hobbitd_stats[] = {
 	{ "drop", 0 },
 	{ "rename", 0 },
 	{ "dummy", 0 },
+	{ "ping", 0 },
 	{ "notify", 0 },
 	{ "schedule", 0 },
 	{ NULL, 0 }
@@ -2936,6 +2937,16 @@ void do_message(conn_t *msg, char *origin)
 	}
 	else if (strncmp(msg->buf, "dummy", 5) == 0) {
 		/* Do nothing */
+	}
+	else if (strncmp(msg->buf, "ping", 4) == 0) {
+		/* Tell them we're here */
+		char id[128];
+
+		sprintf(id, "hobbitd %s\n", VERSION);
+		msg->doingwhat = RESPONDING;
+		xfree(msg->buf);
+		msg->bufp = msg->buf = strdup(id);
+		msg->buflen = strlen(msg->buf);
 	}
 	else if (strncmp(msg->buf, "notify", 6) == 0) {
 		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;

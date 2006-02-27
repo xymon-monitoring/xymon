@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb.c,v 1.3 2006-02-13 16:52:56 henrik Exp $";
+static char rcsid[] = "$Id: bb.c,v 1.4 2006-02-27 20:59:47 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -144,6 +144,9 @@ int main(int argc, char *argv[])
 		result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 	}
 	else if (strncmp(msg, "hostinfo", 8) == 0) {
+		result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
+	}
+	else if (strncmp(msg, "ping", 4) == 0) {
 		result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 	}
 	else {
