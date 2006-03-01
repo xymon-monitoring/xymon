@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.42 2006-02-25 08:43:01 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.43 2006-03-01 12:45:12 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -229,7 +229,16 @@ void parse_query(void)
 
 	if ((hostname == NULL) || (service == NULL)) errormsg("Invalid request - no host or service");
 	if (displayname == NULL) displayname = hostname;
-	if (graphstart && graphend) persecs = (graphend - graphstart);
+	if (graphstart && graphend) {
+		char t1[15], t2[15];
+
+		persecs = (graphend - graphstart);
+		
+		strftime(t1, sizeof(t1), "%d/%b/%Y", localtime(&graphstart));
+		strftime(t2, sizeof(t2), "%d/%b/%Y", localtime(&graphend));
+		glegend = (char *)malloc(40);
+		sprintf(glegend, "%s - %s", t1, t2);
+	}
 }
 
 
