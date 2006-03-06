@@ -1,6 +1,6 @@
 # bb-service
 #
-# $Id: bb-services,v 1.9 2005-03-08 22:03:14 henrik Exp $
+# $Id: bb-services,v 1.10 2006-03-06 09:38:06 henrik Exp $
 #
 # This file defines the way TCP services are tested by bbtest-net
 # (part of the bbgen toolkit).
@@ -54,6 +54,7 @@
    port 990
 
 [ssh|ssh1|ssh2]
+   send "SSH-2.0-OpenSSH_4.1\r\n"
    expect "SSH"
    options banner
    port 22
