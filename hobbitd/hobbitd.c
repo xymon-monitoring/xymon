@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.208 2006-02-27 20:59:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.209 2006-03-06 13:01:07 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -1997,7 +1997,7 @@ void setup_filter(char *buf, char *defaultfields,
 			}
 		}
 
-		if ((fieldid != F_LAST) && (idx < BOARDFIELDS_MAX)) {
+		if ((fieldid != F_LAST) && (idx < BOARDFIELDS_MAX) && (bbhfieldid != BBH_LAST)) {
 			boardfields[idx].field = fieldid;
 			boardfields[idx].bbhfield = bbhfieldid;
 			idx++;
