@@ -131,7 +131,7 @@
 [bbcombotest]
 	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	NEEDS hobbitd
-	CMD $BBHOME/ext/bbcombotest
+	CMD $BBHOME/bin/bbcombotest
 	LOGFILE $BBSERVERLOGS/bbcombotest.log
 	INTERVAL 5m
 
