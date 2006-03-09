@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.223 2005-12-29 16:18:42 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.224 2006-03-09 14:07:11 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -161,7 +161,7 @@ void dump_testitems(void)
 				printf("\tOpen        : %d\n", iwalk->open);
 				printf("\tBanner      : %s\n", textornull(iwalk->banner));
 				printf("\tcertinfo    : %s\n", textornull(iwalk->certinfo));
-				printf("\tDuration    : %ld.%06ld\n", iwalk->duration.tv_sec, iwalk->duration.tv_usec);
+				printf("\tDuration    : %ld.%06ld\n", (long int)iwalk->duration.tv_sec, (long int)iwalk->duration.tv_usec);
 				printf("\tbadtest     : %d:%d:%d\n", iwalk->badtest[0], iwalk->badtest[1], iwalk->badtest[2]);
 				printf("\tdowncount    : %d started %s", iwalk->downcount, ctime(&iwalk->downstart));
 				printf("\n");
