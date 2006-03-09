@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.209 2006-03-06 13:01:07 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.210 2006-03-09 13:50:56 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -2026,7 +2026,7 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 	bufp = *outpos;
 	bufsz = *outsz;
 
-	for (f_idx = 0; (boardfields[f_idx].field != F_NONE); f_idx++) {
+	for (f_idx = 0; ((boardfields[f_idx].field != F_NONE) && (boardfields[f_idx].field != F_LAST)); f_idx++) {
 		int needed = 1024;
 		int used = (bufp - buf);
 		char *acklist = NULL;
@@ -2588,7 +2588,7 @@ void do_message(conn_t *msg, char *origin)
 			     "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1",
 			     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields);
 
-		if (lastboardsize == 0) {
+		if (lastboardsize <= 8192) {
 			/* A guesstimate - 8 tests per hosts, 1KB/test (only 1st line of msg) */
 			bufsz = (hostcount+1)*8*1024; 
 		}
@@ -2692,7 +2692,7 @@ void do_message(conn_t *msg, char *origin)
 			     "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1",
 			     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields);
 
-		if (lastboardsize == 0) {
+		if (lastboardsize <= 8192) {
 			/* A guesstimate - 8 tests per hosts, 2KB/test (only 1st line of msg) */
 			bufsz = (hostcount+1)*8*2048; 
 		}
