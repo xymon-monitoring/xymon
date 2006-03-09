@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.211 2006-03-09 14:04:31 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.212 2006-03-09 16:52:07 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -3050,6 +3050,7 @@ void do_message(conn_t *msg, char *origin)
 			clienttype = strrchr(hostname, '.'); 
 			if (clienttype) { *clienttype = '\0'; clienttype++; }
 			clientconf = strtok(NULL, " \t");
+			p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
 		}
 
 		if (hostname && clienttype) {
