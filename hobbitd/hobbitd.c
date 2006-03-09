@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.210 2006-03-09 13:50:56 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.211 2006-03-09 14:04:31 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -1983,10 +1983,12 @@ void setup_filter(char *buf, char *defaultfields,
 	while (tok) {
 		enum boardfield_t fieldid = F_LAST;
 		enum bbh_item_t bbhfieldid = BBH_LAST;
+		int validfield = 1;
 
 		if (strncmp(tok, "BBH_", 4) == 0) {
 			fieldid = F_HOSTINFO;
 			bbhfieldid = bbh_key_idx(tok);
+			validfield = (bbhfieldid != BBH_LAST);
 		}
 		else {
 			int i;
@@ -1997,7 +1999,7 @@ void setup_filter(char *buf, char *defaultfields,
 			}
 		}
 
-		if ((fieldid != F_LAST) && (idx < BOARDFIELDS_MAX) && (bbhfieldid != BBH_LAST)) {
+		if ((fieldid != F_LAST) && (idx < BOARDFIELDS_MAX) && validfield) {
 			boardfields[idx].field = fieldid;
 			boardfields[idx].bbhfield = bbhfieldid;
 			idx++;
