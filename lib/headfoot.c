@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.43 2006-01-23 15:46:06 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.44 2006-03-10 09:30:05 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -372,7 +372,7 @@ typedef struct dishost_t {
 	struct dishost_t *next;
 } dishost_t;
 
-void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype, time_t selectedtime)
+void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selectedtime)
 {
 	char	*t_start, *t_next;
 	char	savechar;
@@ -1090,7 +1090,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, char *pagetype
 }
 
 
-void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, int bgcolor)
+void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, int bgcolor)
 {
 	int	fd;
 	char 	filename[PATH_MAX];
@@ -1164,10 +1164,10 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 	if (fd == -1) {
 		/* Fall back to default head/foot file. */
 		if (hostenv_templatedir) {
-			sprintf(filename, "%s/%s_%s", hostenv_templatedir, pagetype, head_or_foot);
+			sprintf(filename, "%s/%s_%s", hostenv_templatedir, template, head_or_foot);
 		}
 		else {
-			sprintf(filename, "%s/web/%s_%s", xgetenv("BBHOME"), pagetype, head_or_foot);
+			sprintf(filename, "%s/web/%s_%s", xgetenv("BBHOME"), template, head_or_foot);
 		}
 
 		dprintf("Trying header/footer file '%s'\n", filename);
@@ -1181,7 +1181,7 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 		templatedata[st.st_size] = '\0';
 		close(fd);
 
-		output_parsed(output, templatedata, bgcolor, pagetype, time(NULL));
+		output_parsed(output, templatedata, bgcolor, time(NULL));
 
 		xfree(templatedata);
 	}
@@ -1191,5 +1191,37 @@ void headfoot(FILE *output, char *pagetype, char *pagepath, char *head_or_foot, 
 
 	xfree(hostenv_pagepath); hostenv_pagepath = NULL;
 	MEMUNDEFINE(filename);
+}
+
+void showform(FILE *output, char *headertemplate, char *formtemplate, int color, time_t seltime, char *jstext)
+{
+	/* Present the query form */
+	int formfile;
+	char formfn[PATH_MAX];
+
+	sprintf(formfn, "%s/web/%s", xgetenv("BBHOME"), formtemplate);
+	formfile = open(formfn, O_RDONLY);
+
+	if (formfile >= 0) {
+		char *inbuf;
+		struct stat st;
+
+		fstat(formfile, &st);
+		inbuf = (char *) malloc(st.st_size + 1);
+		read(formfile, inbuf, st.st_size);
+		inbuf[st.st_size] = '\0';
+		close(formfile);
+
+		printf("Content-Type: text/html\n\n");
+
+		headfoot(output, headertemplate, "", "header", color);
+		if (jstext && *jstext) {
+			fprintf(output, "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\">%s</SCRIPT>\n", jstext);
+		}
+		output_parsed(output, inbuf, color, seltime);
+		headfoot(output, headertemplate, "", "footer", color);
+
+		xfree(inbuf);
+	}
 }
 
