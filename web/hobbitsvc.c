@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.62 2006-02-20 08:09:37 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.63 2006-03-10 09:32:10 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -138,7 +138,6 @@ void loadhostdata(char *hostname, char **ip, char **displayname)
 
 int do_request(void)
 {
-	time_t now = time(NULL);
 	int color = 0;
 	char timesincechange[100];
 	time_t logtime = 0, acktime = 0, disabletime = 0;
