@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.47 2006-02-21 22:02:13 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.48 2006-03-10 09:32:42 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -169,7 +169,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			sethostenv_nkack(atoi(nkprio), nkttgroup, nkttextra, 
 				 hostsvcurl(hostname, xgetenv("INFOCOLUMN")), hostlink(hostname));
 
-			output_parsed(output, inbuf, color, NULL, 0);
+			output_parsed(output, inbuf, color, 0);
 			xfree(inbuf);
 		}
 	}
