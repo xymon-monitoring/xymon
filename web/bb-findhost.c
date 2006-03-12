@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.25 2005-06-06 20:06:56 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.26 2006-03-12 16:38:32 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -61,7 +61,7 @@ static char rcsid[] = "$Id: bb-findhost.c,v 1.25 2005-06-06 20:06:56 henrik Exp 
 char	*pSearchPat = NULL;			/* What're searching for (now its regex, not a hostlist) */
 int 	re_flag     = REG_EXTENDED|REG_NOSUB|REG_ICASE; /* default regcomp flags see man 3 regcomp 	*/
 							/* You must remove REG_ICASE for case sensitive */
-
+cgidata_t *cgidata = NULL;
 
 void errormsg(char *msg)
 {
@@ -73,54 +73,25 @@ void errormsg(char *msg)
 
 void parse_query(void)
 {
-	char *query;
-	char *token;
+	cgidata_t *cwalk;
 
-	if (xgetenv("QUERY_STRING") == NULL) {
-		errormsg("Invalid request: QUERY_STRING is NULL/Empty!");
-		return;
-	}
-	else query = urldecode("QUERY_STRING");
+	cwalk = cgidata;
+	while (cwalk) {
+		/*
+		 * cwalk->name points to the name of the setting.
+		 * cwalk->value points to the value (may be an empty string).
+		 */
 
-	token = strtok(query, "&");
-	while (token) {
-		char *pEqual;	/* points to equal sign */
-		char *pVarName; /* Points to the var (var=value) start */
-		char *pValue;	/* Points to the value start */
-
-		if ( (pEqual = strchr(token, '=')) != NULL ) {
-			*pEqual++ = '\0';
-			pValue   = pEqual;
-			pVarName = token; 
-			
-			if ( strcmp (pVarName, "host") == 0 ) {
-
-				/* 
-				 * [wm] maybe we should use strndup
-				 *      or use malloc and strncpy to be safer 
-				 */
-				if (  (pSearchPat = (char *)strdup (pValue)) == NULL ){
-					errormsg("Insufficient memory to allocate search pattern");
-					return; 	/* never comes here than errormsg does exit */
-				}	
-
-			} else if ( strcmp (pVarName, "case_sensitive") == 0 ) {
-				/* remove the ignore case flag */
-
-				re_flag ^= REG_ICASE;
-
-			} else {
-				if ( 0 )  /* set this to 1 if you want debug info */
-					fprintf (stderr, "bb-findhost.cgi: Ignoring CGI Variable: %s\n", pVarName);
-			}
-			
+		if (strcasecmp(cwalk->name, "host") == 0) {
+			pSearchPat = (char *)strdup(cwalk->value);
+		}
+		else if (strcasecmp(cwalk->name, "case_sensitive") == 0 ) {
+			/* remove the ignore case flag */
+			re_flag ^= REG_ICASE;
 		}
 
-		/* get next token */
-		token = strtok(NULL, "&");
+		cwalk = cwalk->next;
 	}
-
-	xfree(query);
 }
 
 
@@ -153,33 +124,11 @@ int main(int argc, char *argv[])
 
 	redirect_cgilog("bb-findhost");
 
-	if ((xgetenv("QUERY_STRING") == NULL) || (strlen(xgetenv("QUERY_STRING")) == 0)) {
+	cgidata = cgi_request();
+	if (cgidata == NULL) {
 		/* Present the query form */
-		int formfile;
-		char formfn[PATH_MAX];
-
-		sprintf(formfn, "%s/web/findhost_form", xgetenv("BBHOME"));
-		formfile = open(formfn, O_RDONLY);
-
-		if (formfile >= 0) {
-			char *inbuf;
-			struct stat st;
-
-			fstat(formfile, &st);
-			inbuf = (char *) malloc(st.st_size + 1);
-			read(formfile, inbuf, st.st_size);
-			inbuf[st.st_size] = '\0';
-			close(formfile);
-
-			printf("Content-Type: text/html\n\n");
-			sethostenv("", "", "", colorname(COL_BLUE), NULL);
-
-			headfoot(stdout, "findhost", "", "header", COL_BLUE);
-			output_parsed(stdout, inbuf, COL_BLUE, "findhost", time(NULL));
-			headfoot(stdout, "findhost", "", "footer", COL_BLUE);
-
-			xfree(inbuf);
-		}
+		sethostenv("", "", "", colorname(COL_BLUE), NULL);
+		showform(stdout, "findhost", "findhost_form", COL_BLUE, getcurrenttime(NULL), NULL);
 		return 0;
 	}
 

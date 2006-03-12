@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.20 2005-07-14 08:12:25 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.21 2006-03-12 16:38:32 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -27,22 +27,11 @@ static char rcsid[] = "$Id: bb-ack.c,v 1.20 2005-07-14 08:12:25 henrik Exp $";
 #include "libbbgen.h"
 #include "version.h"
 
-/*
- * This program is invoked via CGI with QUERY_STRING containing:
- *
- *      ACTION=action&NUMBER=acknum&DELAY=validity&MESSAGE=text
- */
-
-char *reqenv[] = {
-	"BBDISP",
-	"BBHOME",
-	NULL 
-};
-
 static char *action = "";
 static int  acknum = 0;
 static int  validity = 0;
 static char *ackmsg = "";
+static cgidata_t *cgidata = NULL;
 
 static void errormsg(char *msg)
 {
@@ -54,35 +43,30 @@ static void errormsg(char *msg)
 
 static void parse_query(void)
 {
-	char *query, *token;
+	cgidata_t *cwalk;
 
-	if (xgetenv("QUERY_STRING") == NULL) {
-		errormsg("Invalid request");
-		return;
+	cwalk = cgidata;
+	while (cwalk) {
+		/*
+		 * cwalk->name points to the name of the setting.
+		 * cwalk->value points to the value (may be an empty string).
+		 */
+
+		if (strcasecmp(cwalk->name, "ACTION") == 0) {
+			action = strdup(cwalk->value);
+		}
+		else if (strcasecmp(cwalk->name, "NUMBER") == 0) {
+			acknum = atoi(cwalk->value);
+		}
+		else if (strcasecmp(cwalk->name, "DELAY") == 0) {
+			validity = atoi(cwalk->value);
+		}
+		else if (strcasecmp(cwalk->name, "MESSAGE") == 0) {
+			ackmsg = strdup(cwalk->value);
+		}
+
+		cwalk = cwalk->next;
 	}
-	else query = urldecode("QUERY_STRING");
-
-	token = strtok(query, "&");
-	while (token) {
-		char *val;
-		val = strchr(token, '='); if (val) { *val = '\0'; val++; }
-		if (argnmatch(token, "ACTION")) {
-			action = strdup(val);
-		}
-		else if (argnmatch(token, "NUMBER")) {
-			acknum = atoi(val);
-		}
-		else if (argnmatch(token, "DELAY")) {
-			validity = atoi(val);
-		}
-		else if (argnmatch(token, "MESSAGE")) {
-			ackmsg = strdup(val);
-		}
-
-		token = strtok(NULL, "&");
-	}
-
-        xfree(query);
 }
 
 int main(int argc, char *argv[])
@@ -107,37 +91,14 @@ int main(int argc, char *argv[])
 
 	redirect_cgilog("bb-ack");
 
-	if ((xgetenv("QUERY_STRING") == NULL) || (strlen(xgetenv("QUERY_STRING")) == 0)) {
+	cgidata = cgi_request();
+	if (cgidata == NULL) {
 		/* Present the query form */
-		int formfile;
-		char formfn[PATH_MAX];
-
-		sprintf(formfn, "%s/web/acknowledge_form", xgetenv("BBHOME"));
-		formfile = open(formfn, O_RDONLY);
-
-		if (formfile >= 0) {
-			char *inbuf;
-			struct stat st;
-
-			fstat(formfile, &st);
-			inbuf = (char *) malloc(st.st_size + 1);
-			read(formfile, inbuf, st.st_size);
-			inbuf[st.st_size] = '\0';
-			close(formfile);
-
-			printf("Content-Type: text/html\n\n");
-			sethostenv("", "", "", colorname(COL_RED), NULL);
-
-			headfoot(stdout, "acknowledge", "", "header", COL_RED);
-			output_parsed(stdout, inbuf, COL_RED, "acknowledge", time(NULL));
-			headfoot(stdout, "acknowledge", "", "footer", COL_RED);
-
-			xfree(inbuf);
-		}
+		sethostenv("", "", "", colorname(COL_RED), NULL);
+		showform(stdout, "acknowledge", "acknowledge_form", COL_RED, getcurrenttime(NULL), NULL);
 		return 0;
 	}
 
-	envcheck(reqenv);
 	parse_query();
 
 	if (strcasecmp(action, "ack") == 0) {

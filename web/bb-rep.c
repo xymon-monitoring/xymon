@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.35 2006-01-13 11:08:45 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.36 2006-03-12 16:38:32 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -29,22 +29,6 @@ static char rcsid[] = "$Id: bb-rep.c,v 1.35 2006-01-13 11:08:45 henrik Exp $";
 
 #include "libbbgen.h"
 
-/*
- * This program is invoked via CGI with QUERY_STRING containing:
- *
- *	start-mon=Jun&
- *	start-day=19&
- *	start-yr=2003&
- *	end-mon=Jun&
- *	end-day=19&
- *	end-yr=2003&
- *	style=crit&
- *	suburl=path&
- *	DoReport=Generate+Report
- *	DoCSV=Generate+spreadsheet
- *
- */
-
 char *reqenv[] = {
 "BBHOME",
 "BBREP",
@@ -57,6 +41,7 @@ time_t endtime = 0;
 char *suburl = "";
 int  csvoutput = 0;
 char csvdelim = ',';
+cgidata_t *cgidata = NULL;
 
 char *monthnames[13] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", NULL };
 
@@ -70,77 +55,66 @@ void errormsg(char *msg)
 
 void parse_query(void)
 {
-	char *query, *token;
+	cgidata_t *cwalk;
 	int startday, startmon, startyear;
 	int endday, endmon, endyear;
 	struct tm tmbuf;
 
 	startday = startmon = startyear = endday = endmon = endyear = -1;
+	cwalk = cgidata;
+	while (cwalk) {
+		/*
+		 * cwalk->name points to the name of the setting.
+		 * cwalk->value points to the value (may be an empty string).
+		 */
 
-	if (xgetenv("QUERY_STRING") == NULL) {
-		errormsg("Invalid request");
-		return;
-	}
-	else query = urldecode("QUERY_STRING");
-
-	if (!urlvalidate(query, NULL)) {
-		errormsg("Invalid request");
-		return;
-	}
-
-	token = strtok(query, "&");
-	while (token) {
-		char *val;
-		
-		val = strchr(token, '='); if (val) { *val = '\0'; val++; }
-
-		if (argnmatch(token, "start-day")) {
-			startday = atoi(val);
+		if (strcasecmp(cwalk->name, "start-day") == 0) {
+			startday = atoi(cwalk->value);
 		}
-		else if (argnmatch(token, "start-mon")) {
+		else if (strcasecmp(cwalk->name, "start-mon") == 0) {
 			char *errptr;
 
-			startmon = strtol(val, &errptr, 10) - 1;
-			if (errptr == val) {
-				for (startmon=0; (monthnames[startmon] && strcmp(val, monthnames[startmon])); startmon++) ;
+			startmon = strtol(cwalk->value, &errptr, 10) - 1;
+			if (errptr == cwalk->value) {
+				for (startmon=0; (monthnames[startmon] && strcmp(cwalk->value, monthnames[startmon])); startmon++) ;
 				if (startmon >= 12) startmon = -1;
 			}
 		}
-		else if (argnmatch(token, "start-yr")) {
-			startyear = atoi(val);
+		else if (strcasecmp(cwalk->name, "start-yr") == 0) {
+			startyear = atoi(cwalk->value);
 		}
-		else if (argnmatch(token, "end-day")) {
-			endday = atoi(val);
+		else if (strcasecmp(cwalk->name, "end-day") == 0) {
+			endday = atoi(cwalk->value);
 		}
-		else if (argnmatch(token, "end-mon")) {
+		else if (strcasecmp(cwalk->name, "end-mon") == 0) {
 			char *errptr;
 
-			endmon = strtol(val, &errptr, 10) - 1;
-			if (errptr == val) {
-				for (endmon=0; (monthnames[endmon] && strcmp(val, monthnames[endmon])); endmon++) ;
+			endmon = strtol(cwalk->value, &errptr, 10) - 1;
+			if (errptr == cwalk->value) {
+				for (endmon=0; (monthnames[endmon] && strcmp(cwalk->value, monthnames[endmon])); endmon++) ;
 				if (endmon > 12) endmon = -1;
 			}
 		}
-		else if (argnmatch(token, "end-yr")) {
-			endyear = atoi(val);
+		else if (strcasecmp(cwalk->name, "end-yr") == 0) {
+			endyear = atoi(cwalk->value);
 		}
-		else if (argnmatch(token, "style")) {
-			style = strdup(val);
+		else if (strcasecmp(cwalk->name, "style") == 0) {
+			style = strdup(cwalk->value);
 		}
-		else if (argnmatch(token, "suburl")) {
-			suburl = strdup(val);
+		else if (strcasecmp(cwalk->name, "suburl") == 0) {
+			suburl = strdup(cwalk->value);
 		}
-		else if (argnmatch(token, "DoReport")) {
+		else if (strcasecmp(cwalk->name, "DoReport") == 0) {
 			csvoutput = 0;
 		}
-		else if (argnmatch(token, "DoCSV")) {
+		else if (strcasecmp(cwalk->name, "DoCSV") == 0) {
 			csvoutput = 1;
 		}
-		else if (argnmatch(token, "csvdelim")) {
-			csvdelim = *val;
+		else if (strcasecmp(cwalk->name, "csvdelim") == 0) {
+			csvdelim = *cwalk->value;
 		}
 
-		token = strtok(NULL, "&");
+		cwalk = cwalk->next;
 	}
 
 	memset(&tmbuf, 0, sizeof(tmbuf));
@@ -175,8 +149,6 @@ void parse_query(void)
 		endtime = starttime;
 		starttime = tmp;
 	}
-
-	xfree(query);
 }
 
 
@@ -254,33 +226,11 @@ int main(int argc, char *argv[])
 
 	redirect_cgilog("bb-rep");
 
-	if ((xgetenv("QUERY_STRING") == NULL) || (strlen(xgetenv("QUERY_STRING")) == 0)) {
+	cgidata = cgi_request();
+	if (cgidata == NULL) {
 		/* Present the query form */
-		int formfile;
-		char formfn[PATH_MAX];
-
-		sprintf(formfn, "%s/web/report_form", xgetenv("BBHOME"));
-		formfile = open(formfn, O_RDONLY);
-
-		if (formfile >= 0) {
-			char *inbuf;
-			struct stat st;
-
-			fstat(formfile, &st);
-			inbuf = (char *) malloc(st.st_size + 1);
-			read(formfile, inbuf, st.st_size);
-			inbuf[st.st_size] = '\0';
-			close(formfile);
-
-			printf("Content-Type: text/html\n\n");
-			sethostenv("", "", "", colorname(COL_BLUE), NULL);
-
-			headfoot(stdout, "report", "", "header", COL_BLUE);
-			output_parsed(stdout, inbuf, COL_BLUE, "report", time(NULL));
-			headfoot(stdout, "report", "", "footer", COL_BLUE);
-
-			xfree(inbuf);
-		}
+		sethostenv("", "", "", colorname(COL_BLUE), NULL);
+		showform(stdout, "report", "report_form", COL_BLUE, getcurrenttime(NULL)-86400, 0);
 		return 0;
 	}
 

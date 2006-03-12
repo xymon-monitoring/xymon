@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.36 2006-02-08 22:09:47 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.37 2006-03-12 16:38:32 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -31,6 +31,7 @@ int style;
 int color;
 double reportgreenlevel = 99.995;
 double reportwarnlevel = 98.0;
+cgidata_t *cgidata = NULL;
 
 static void errormsg(char *msg)
 {
@@ -42,71 +43,59 @@ static void errormsg(char *msg)
 
 static void parse_query(void)
 {
-	char *query, *token;
+	cgidata_t *cwalk;
 
-	if (xgetenv("QUERY_STRING") == NULL) {
-		errormsg("Invalid request");
-		return;
-	}
-	else query = urldecode("QUERY_STRING");
+	cwalk = cgidata;
+	while (cwalk) {
+		/*
+		 * cwalk->name points to the name of the setting.
+		 * cwalk->value points to the value (may be an empty string).
+		 */
 
-	if (!urlvalidate(query, NULL)) {
-		errormsg("Invalid request");
-		return;
-	}
-
-	token = strtok(query, "&");
-	while (token) {
-		char *val;
-		
-		val = strchr(token, '='); if (val) { *val = '\0'; val++; }
-
-		if (argnmatch(token, "HOSTSVC")) {
-			char *p = strrchr(val, '.');
+		if (strcasecmp(cwalk->name, "HOSTSVC") == 0) {
+			char *p = strrchr(cwalk->value, '.');
 
 			if (p) { *p = '\0'; service = strdup(p+1); }
-			hostname = strdup(val);
+			hostname = strdup(cwalk->value);
 			while ((p = strchr(hostname, ','))) *p = '.';
 		}
-		else if (argnmatch(token, "HOST")) {
-			hostname = strdup(val);
+		else if (strcasecmp(cwalk->name, "HOST") == 0) {
+			hostname = strdup(cwalk->value);
 		}
-		else if (argnmatch(token, "SERVICE")) {
-			service = strdup(val);
+		else if (strcasecmp(cwalk->name, "SERVICE") == 0) {
+			service = strdup(cwalk->value);
 		}
-		else if (argnmatch(token, "REPORTTIME")) {
-			reporttime = (char *) malloc(strlen(val)+strlen("REPORTTIME=")+1);
-			sprintf(reporttime, "REPORTTIME=%s", val);
+		else if (strcasecmp(cwalk->name, "REPORTTIME") == 0) {
+			reporttime = (char *) malloc(strlen(cwalk->value)+strlen("REPORTTIME=")+1);
+			sprintf(reporttime, "REPORTTIME=%s", cwalk->value);
 		}
-		else if (argnmatch(token, "WARNPCT")) {
-			reportwarnlevel = atof(val);
+		else if (strcasecmp(cwalk->name, "WARNPCT") == 0) {
+			reportwarnlevel = atof(cwalk->value);
 		}
-		else if (argnmatch(token, "STYLE")) {
-			if (strcmp(val, "crit") == 0) style = STYLE_CRIT;
-			else if (strcmp(val, "nongr") == 0) style = STYLE_NONGR;
+		else if (strcasecmp(cwalk->name, "STYLE") == 0) {
+			if (strcmp(cwalk->value, "crit") == 0) style = STYLE_CRIT;
+			else if (strcmp(cwalk->value, "nongr") == 0) style = STYLE_NONGR;
 			else style = STYLE_OTHER;
 		}
-		else if (argnmatch(token, "ST")) {
+		else if (strcasecmp(cwalk->name, "ST") == 0) {
 			/* Must be after "STYLE" */
-			st = atol(val);
+			st = atol(cwalk->value);
 		}
-		else if (argnmatch(token, "END")) {
-			end = atol(val);
+		else if (strcasecmp(cwalk->name, "END") == 0) {
+			end = atol(cwalk->value);
 		}
-		else if (argnmatch(token, "COLOR")) {
-			char *colstr = (char *) malloc(strlen(val)+2);
-			sprintf(colstr, "%s ", val);
+		else if (strcasecmp(cwalk->name, "COLOR") == 0) {
+			char *colstr = (char *) malloc(strlen(cwalk->value)+2);
+			sprintf(colstr, "%s ", cwalk->value);
 			color = parse_color(colstr);
 			xfree(colstr);
 		}
-		else if (argnmatch(token, "RECENTGIFS")) {
-			use_recentgifs = atoi(val);
+		else if (strcasecmp(cwalk->name, "RECENTGIFS") == 0) {
+			use_recentgifs = atoi(cwalk->value);
 		}
 
-		token = strtok(NULL, "&");
+		cwalk = cwalk->next;
 	}
-
-	xfree(query);
 }
 
 int main(int argc, char *argv[])
@@ -133,6 +122,7 @@ int main(int argc, char *argv[])
 
 	redirect_cgilog("bb-replog");
 
+	cgidata = cgi_request();
 	parse_query();
 	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
         if ((hinfo = hostinfo(hostname)) == NULL) {

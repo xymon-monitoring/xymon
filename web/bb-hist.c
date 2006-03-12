@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.52 2006-02-08 12:49:26 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.53 2006-03-12 16:38:32 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -561,13 +561,6 @@ void generate_history(FILE *htmlrep, 			/* output file */
 }
 
 
-/*
- * This program is invoked via CGI with QUERY_STRING containing:
- *
- *	HISTFILE=www,sample,com.conn
- *	ENTRIES=50
- */
-
 double reportgreenlevel = 99.995;
 double reportwarnlevel = 98.0;
 
@@ -575,6 +568,7 @@ char *hostname = "";
 char *service = "";
 char *ip = "";
 int entrycount = 50;
+cgidata_t *cgidata = NULL;
 
 char *reqenv[] = {
 "BBHIST",
@@ -599,61 +593,49 @@ static void errormsg(char *msg)
 
 static void parse_query(void)
 {
-	char *query, *token;
+	cgidata_t *cwalk;
 
-	if (xgetenv("QUERY_STRING") == NULL) {
-		errormsg("Invalid request");
-		return;
-	}
-	else query = urldecode("QUERY_STRING");
+	cwalk = cgidata;
+	while (cwalk) {
+		/*
+		 * cwalk->name points to the name of the setting.
+		 * cwalk->value points to the value (may be an empty string).
+		 */
 
-	if (!urlvalidate(query, NULL)) {
-		errormsg("Invalid request");
-		return;
-	}
-
-	token = strtok(query, "&");
-	while (token) {
-		char *val;
-		
-		val = strchr(token, '='); if (val) { *val = '\0'; val++; }
-
-		if (argnmatch(token, "HISTFILE")) {
-			char *p = strrchr(val, '.');
+		if (strcasecmp(cwalk->name, "HISTFILE") == 0) {
+			char *p = strrchr(cwalk->value, '.');
 
 			if (p) { *p = '\0'; service = strdup(p+1); }
-			hostname = strdup(val);
+			hostname = strdup(cwalk->value);
 			while ((p = strchr(hostname, ','))) *p = '.';
 		}
-		else if (argnmatch(token, "IP")) {
-			ip = strdup(val);
+		else if (strcasecmp(cwalk->name, "IP") == 0) {
+			ip = strdup(cwalk->value);
 		}
-		else if (argnmatch(token, "ENTRIES")) {
-			if (strcmp(val, "all") == 0) entrycount = 0;
-			else entrycount = atoi(val);
+		else if (strcasecmp(cwalk->name, "ENTRIES") == 0) {
+			if (strcmp(cwalk->value, "all") == 0) entrycount = 0;
+			else entrycount = atoi(cwalk->value);
 			if (entrycount < 0) errormsg("Invalid parameter");
 		}
-		else if (argnmatch(token, "PIXELS")) {
-			pixels = atoi(val);
+		else if (strcasecmp(cwalk->name, "PIXELS") == 0) {
+			pixels = atoi(cwalk->value);
 			if (pixels > 0) usepct = 0; else usepct = 1;
 		}
-		else if (argnmatch(token, "ENDTIME")) {
-			req_endtime = atol(val);
+		else if (strcasecmp(cwalk->name, "ENDTIME") == 0) {
+			req_endtime = atol(cwalk->value);
 			if (req_endtime < 0) errormsg("Invalid parameter");
 		}
-		else if (argnmatch(token, "BARSUMS")) {
-			barsums = atoi(val);
+		else if (strcasecmp(cwalk->name, "BARSUMS") == 0) {
+			barsums = atoi(cwalk->value);
 		}
-		else if (argnmatch(token, "DISPLAYNAME")) {
-			displayname = strdup(val);
+		else if (strcasecmp(cwalk->name, "DISPLAYNAME") == 0) {
+			displayname = strdup(cwalk->value);
 		}
 
-		token = strtok(NULL, "&");
+		cwalk = cwalk->next;
 	}
 
 	if (!displayname) displayname = strdup(hostname);
-
-	free(query);
 }
 
 
@@ -686,6 +668,7 @@ int main(int argc, char *argv[])
 	redirect_cgilog("bb-hist");
 
 	envcheck(reqenv);
+	cgidata = cgi_request();
 	parse_query();
 
 	/* Build our own URL */

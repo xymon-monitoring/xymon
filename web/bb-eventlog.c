@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-eventlog.c,v 1.27 2006-01-13 12:51:35 henrik Exp $";
+static char rcsid[] = "$Id: bb-eventlog.c,v 1.28 2006-03-12 16:38:32 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -30,14 +30,6 @@ static char rcsid[] = "$Id: bb-eventlog.c,v 1.27 2006-01-13 12:51:35 henrik Exp 
 
 #include "libbbgen.h"
 
-/*
- * This program is invoked via CGI with QUERY_STRING containing:
- *
- * 	COUNT=50
- * 	MAXTIME=240
- *
- */
-
 int	maxcount = 100;		/* Default: Include last 100 events */
 int	maxminutes = 240;	/* Default: for the past 4 hours */
 char	*totime = NULL;
@@ -46,14 +38,7 @@ char	*hostregex = NULL;
 char	*testregex = NULL;
 char	*colrregex = NULL;
 int	ignoredialups = 0;
-
-char *reqenv[] = {
-"BBHOSTS",
-"BBHIST",
-"BBSKIN",
-"DOTWIDTH",
-"DOTHEIGHT",
-NULL };
+cgidata_t *cgidata = NULL;
 
 static void errormsg(char *msg)
 {
@@ -65,54 +50,42 @@ static void errormsg(char *msg)
 
 static void parse_query(void)
 {
-	char *query, *token;
+	cgidata_t *cwalk;
 
-	if (xgetenv("QUERY_STRING") == NULL) {
-		errormsg("Invalid request");
-		return;
-	}
-	else query = urldecode("QUERY_STRING");
+	cwalk = cgidata;
+	while (cwalk) {
+		/*
+		 * cwalk->name points to the name of the setting.
+		 * cwalk->value points to the value (may be an empty string).
+		 */
 
-	if (!urlvalidate(query, NULL)) {
-		errormsg("Invalid request");
-		return;
-	}
-
-	token = strtok(query, "&");
-	while (token) {
-		char *val;
-		
-		val = strchr(token, '='); if (val) { *val = '\0'; val++; }
-
-		if (argnmatch(token, "MAXCOUNT")) {
-			maxcount = atoi(val);
+		if (strcasecmp(cwalk->name, "MAXCOUNT") == 0) {
+			maxcount = atoi(cwalk->value);
 		}
-		else if (argnmatch(token, "MAXTIME")) {
-			maxminutes = atoi(val);
+		else if (strcasecmp(cwalk->name, "MAXTIME") == 0) {
+			maxminutes = atoi(cwalk->value);
 		}
-		else if (argnmatch(token, "FROMTIME")) {
-			if (*val) fromtime = strdup(val);
+		else if (strcasecmp(cwalk->name, "FROMTIME") == 0) {
+			if (*(cwalk->value)) fromtime = strdup(cwalk->value);
 		}
-		else if (argnmatch(token, "TOTIME")) {
-			if (*val) totime = strdup(val);
+		else if (strcasecmp(cwalk->name, "TOTIME") == 0) {
+			if (*(cwalk->value)) totime = strdup(cwalk->value);
 		}
-		else if (argnmatch(token, "HOSTMATCH")) {
-			if (*val) hostregex = strdup(val);
+		else if (strcasecmp(cwalk->name, "HOSTMATCH") == 0) {
+			if (*(cwalk->value)) hostregex = strdup(cwalk->value);
 		}
-		else if (argnmatch(token, "TESTMATCH")) {
-			if (*val) testregex = strdup(val);
+		else if (strcasecmp(cwalk->name, "TESTMATCH") == 0) {
+			if (*(cwalk->value)) testregex = strdup(cwalk->value);
 		}
-		else if (argnmatch(token, "COLORMATCH")) {
-			if (*val) colrregex = strdup(val);
+		else if (strcasecmp(cwalk->name, "COLORMATCH") == 0) {
+			if (*(cwalk->value)) colrregex = strdup(cwalk->value);
 		}
-		else if (argnmatch(token, "NODIALUPS")) {
+		else if (strcasecmp(cwalk->name, "NODIALUPS") == 0) {
 			ignoredialups = 1;
 		}
 
-		token = strtok(NULL, "&");
+		cwalk = cwalk->next;
 	}
-
-	xfree(query);
 }
 
 int main(int argc, char *argv[])
@@ -133,37 +106,14 @@ int main(int argc, char *argv[])
 
 	redirect_cgilog("bb-eventlog");
 
-	if ((xgetenv("QUERY_STRING") == NULL) || (strlen(xgetenv("QUERY_STRING")) == 0)) {
+	cgidata = cgi_request();
+	if (cgidata == NULL) {
 		/* Present the query form */
-		int formfile;
-		char formfn[PATH_MAX];
-
-		sprintf(formfn, "%s/web/event_form", xgetenv("BBHOME"));
-		formfile = open(formfn, O_RDONLY);
-
-		if (formfile >= 0) {
-			char *inbuf;
-			struct stat st;
-
-			fstat(formfile, &st);
-			inbuf = (char *) malloc(st.st_size + 1);
-			read(formfile, inbuf, st.st_size);
-			inbuf[st.st_size] = '\0';
-			close(formfile);
-
-			printf("Content-Type: text/html\n\n");
-			sethostenv("", "", "", colorname(COL_BLUE), NULL);
-
-			headfoot(stdout, "event", "", "header", COL_BLUE);
-			output_parsed(stdout, inbuf, COL_BLUE, "report", time(NULL));
-			headfoot(stdout, "event", "", "footer", COL_BLUE);
-
-			xfree(inbuf);
-		}
+		sethostenv("", "", "", colorname(COL_BLUE), NULL);
+		showform(stdout, "event", "event_form", COL_BLUE, getcurrenttime(NULL), NULL);
 		return 0;
 	}
 
-	envcheck(reqenv);
 	parse_query();
 	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-datepage.c,v 1.11 2005-06-06 20:06:56 henrik Exp $";
+static char rcsid[] = "$Id: bb-datepage.c,v 1.12 2006-03-12 16:38:32 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -173,7 +173,6 @@ int main(int argc, char *argv[])
 		fprintf(stdout, "<html><head><meta http-equiv=\"refresh\" content=\"0; URL=%s\"></head></html>\n", endurl);
 	}
 	else if (cgi_method == CGI_GET) {
-                int formfile;
                 char formfn[PATH_MAX];
 		time_t seltime;
 		struct tm *seltm;
@@ -184,43 +183,25 @@ int main(int argc, char *argv[])
 		switch (frmtype) {
 		  case FRM_DAY:
 			seltm->tm_mday -= 1; seltime = mktime(seltm);
-			sprintf(formfn, "%s/web/%s_form_daily", xgetenv("BBHOME"), hffile);
+			sprintf(formfn, "%s_form_daily", hffile);
 			break;
 
 		  case FRM_WEEK:
 			seltm->tm_mday -= 7; seltime = mktime(seltm);
-			sprintf(formfn, "%s/web/%s_form_weekly", xgetenv("BBHOME"), hffile);
+			sprintf(formfn, "%s_form_weekly", hffile);
 			break;
 
 		  case FRM_MONTH:
 			seltm->tm_mon -= 1; seltime = mktime(seltm);
-			sprintf(formfn, "%s/web/%s_form_monthly", xgetenv("BBHOME"), hffile);
+			sprintf(formfn, "%s_form_monthly", hffile);
 			break;
 
 		  case FRM_NONE:
 			errormsg("No report type defined");
 		}
 
-                formfile = open(formfn, O_RDONLY);
-                if (formfile >= 0) {
-                        char *inbuf;
-                        struct stat st;
-
-                        fstat(formfile, &st);
-                        inbuf = (char *) malloc(st.st_size + 1);
-                        read(formfile, inbuf, st.st_size);
-                        inbuf[st.st_size] = '\0';
-                        close(formfile);
-
-                        printf("Content-Type: text/html\n\n");
-                        sethostenv("", "", "", colorname(bgcolor), NULL);
-
-                        headfoot(stdout, hffile, "", "header", bgcolor);
-                        output_parsed(stdout, inbuf, COL_BLUE, "report", seltime);
-                        headfoot(stdout, hffile, "", "footer", bgcolor);
-
-                        xfree(inbuf);
-                }
+		sethostenv("", "", "", colorname(bgcolor), NULL);
+		showform(stdout, hffile, formfn, COL_BLUE, seltime, NULL);
 	}
 
 	return 0;

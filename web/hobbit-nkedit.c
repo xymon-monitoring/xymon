@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.10 2006-01-25 11:43:03 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.11 2006-03-12 16:38:32 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -167,11 +167,10 @@ static void parse_query(void)
 
 void findrecord(char *hostname, char *service, char *nodatawarning, char *isclonewarning, char *hascloneswarning)
 {
-	int formfile;
-	char formfn[PATH_MAX];
 	nkconf_t *rec = NULL;
 	int isaclone = 0;
 	int hasclones = 0;
+	char warnmsg[1024];
 
 	/* Setup the list of cloned records */
 	sethostenv_nkclonelist_clear();
@@ -226,42 +225,16 @@ void findrecord(char *hostname, char *service, char *nodatawarning, char *isclon
 	if (rec) sethostenv_nkedit(rec->updinfo, rec->priority, rec->ttgroup, rec->starttime, rec->endtime, rec->nktime, rec->ttextra);
 	else sethostenv_nkedit("", 0, NULL, 0, 0, NULL, NULL);
 
-	sprintf(formfn, "%s/web/nkedit_form", xgetenv("BBHOME"));
-	formfile = open(formfn, O_RDONLY);
+	sethostenv(hostname, "", service, colorname(COL_BLUE), NULL);
 
-	if (formfile >= 0) {
-		char *inbuf;
-		struct stat st;
+	*warnmsg = '\0';
+	if (!rec && nodatawarning) sprintf(warnmsg, "alert('%s');", nodatawarning);
+	if (isaclone && isclonewarning) sprintf(warnmsg, "alert('%s');", isclonewarning);
+	if (hasclones && hascloneswarning) sprintf(warnmsg, "alert('%s');", hascloneswarning);
 
-		fstat(formfile, &st);
-		inbuf = (char *) malloc(st.st_size + 1);
-		read(formfile, inbuf, st.st_size);
-		inbuf[st.st_size] = '\0';
-		close(formfile);
-
-		printf("Content-Type: text/html\n\n");
-		sethostenv(hostname, "", service, colorname(COL_BLUE), NULL);
-
-		headfoot(stdout, "nkedit", "", "header", COL_BLUE);
-		if (!rec && nodatawarning) {
-			fprintf(stdout, "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('%s');</SCRIPT>\n",
-				nodatawarning);
-		}
-
-		if (isaclone && isclonewarning) {
-			fprintf(stdout, "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('%s');</SCRIPT>\n",
-				isclonewarning);
-		}
-		if (hasclones && hascloneswarning) {
-			fprintf(stdout, "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('%s');</SCRIPT>\n",
-				hascloneswarning);
-		}
-		output_parsed(stdout, inbuf, COL_BLUE, "nkedit", time(NULL));
-		headfoot(stdout, "nkedit", "", "footer", COL_BLUE);
-
-		xfree(inbuf);
-	}
+	showform(stdout, "nkedit", "nkedit_form", COL_BLUE, getcurrenttime(NULL), warnmsg);
 }
+
 
 void nextrecord(char *hostname, char *service, char *isclonewarning, char *hascloneswarning)
 {

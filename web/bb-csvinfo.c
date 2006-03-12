@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-csvinfo.c,v 1.17 2005-07-16 09:48:35 henrik Exp $";
+static char rcsid[] = "$Id: bb-csvinfo.c,v 1.18 2006-03-12 16:38:32 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -30,6 +30,7 @@ char *srcdb = "hostinfo.csv";
 char *wantedname = "";
 int keycolumn = 0;
 char delimiter = ';';
+cgidata_t *cgidata = NULL;
 
 
 void errormsg(char *msg)
@@ -42,44 +43,36 @@ void errormsg(char *msg)
 
 void parse_query(void)
 {
-        char *query, *token;
+	cgidata_t *cwalk;
 
-        if (xgetenv("QUERY_STRING") == NULL) {
-                errormsg("Missing request");
-                return;
-        }
-        else query = urldecode("QUERY_STRING");
+	cwalk = cgidata;
+	while (cwalk) {
+		/*
+		 * cwalk->name points to the name of the setting.
+		 * cwalk->value points to the value (may be an empty string).
+		 */
 
-	if (!urlvalidate(query, NULL)) {
-		errormsg("Invalid request");
-		return;
-	}
-
-        token = strtok(query, "&");
-        while (token) {
-                char *val;
-
-                val = strchr(token, '='); if (val) { *val = '\0'; val++; }
-
-		if (argnmatch(token, "key")) {
-			wantedname = strdup(val);
+		if (strcasecmp(cwalk->name, "key") == 0) {
+			wantedname = strdup(cwalk->value);
 		}
-		else if (argnmatch(token, "db")) {
-			char *p;
+		else if (strcasecmp(cwalk->name, "db") == 0) {
+			char *val, *p;
 
 			/* Dont allow any slashes in the db-name */
+			val = cwalk->value;
 			p = strrchr(val, '/');
 			if (p) val = (p+1);
 
 			srcdb = strdup(val);
 		}
-		else if (argnmatch(token, "column")) {
-			keycolumn = atoi(val);
+		else if (strcasecmp(cwalk->name, "column") == 0) {
+			keycolumn = atoi(cwalk->value);
 		}
-		else if (argnmatch(token, "delimiter")) {
-			delimiter = *val;
+		else if (strcasecmp(cwalk->name, "delimiter") == 0) {
+			delimiter = *(cwalk->value);
 		}
-		token = strtok(NULL, "&");
+
+		cwalk = cwalk->next;
 	}
 }
 
@@ -124,6 +117,7 @@ int main(int argc, char *argv[])
 
 	redirect_cgilog("bb-csvinfo");
 
+	cgidata = cgi_request();
 	parse_query();
 	if (strlen(wantedname) == 0) {
 		errormsg("Invalid request");

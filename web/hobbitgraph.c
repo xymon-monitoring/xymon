@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.43 2006-03-01 12:45:12 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.44 2006-03-12 16:38:32 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -102,28 +102,17 @@ void errormsg(char *msg)
 
 void parse_query(void)
 {
-	char *query, *token;
-	char *stp1, *stp2;
+	cgidata_t *cgidata = NULL, *cwalk;
+	char *stp;
 
-	if (xgetenv("QUERY_STRING") == NULL) {
-		errormsg("Missing request");
-		return;
-	}
-	else query = urldecode("QUERY_STRING");
+	cgidata = cgi_request();
 
-	if (!urlvalidate(query, NULL)) {
-		errormsg("Invalid request");
-		return;
-	}
+	cwalk = cgidata;
+	while (cwalk) {
+		if (strcmp(cwalk->name, "host") == 0) {
+			char *hnames = strdup(cwalk->value);
 
-	token = strtok_r(query, "&", &stp1);
-	while (token) {
-		char *val = NULL;
-		val = strchr(token, '='); if (val) { *val = '\0'; val++; }
-		if (strcmp(token, "host") == 0) {
-			char *hnames = strdup(val);
-
-			hostname = strtok_r(val, ",", &stp2);
+			hostname = strtok_r(cwalk->value, ",", &stp);
 			while (hostname) {
 				if (hostlist == NULL) {
 					hostlistsize = 1;
@@ -136,88 +125,88 @@ void parse_query(void)
 					hostlist[hostlistsize-1] = strdup(hostname);
 				}
 
-				hostname = strtok_r(NULL, ",", &stp2);
+				hostname = strtok_r(NULL, ",", &stp);
 			}
 
 			xfree(hnames);
 			if (hostlist) hostname = hostlist[0];
 		}
-		else if (strcmp(token, "service") == 0) {
-			service = strdup(val);
+		else if (strcmp(cwalk->name, "service") == 0) {
+			service = strdup(cwalk->value);
 		}
-		else if (strcmp(token, "disp") == 0) {
-			displayname = strdup(val);
+		else if (strcmp(cwalk->name, "disp") == 0) {
+			displayname = strdup(cwalk->value);
 		}
-		else if (strcmp(token, "graph") == 0) {
-			if (strcmp(val, "hourly") == 0) {
+		else if (strcmp(cwalk->name, "graph") == 0) {
+			if (strcmp(cwalk->value, "hourly") == 0) {
 				period = HOUR_GRAPH;
 				persecs = 48*60*60;
-				gtype = strdup(val);
+				gtype = strdup(cwalk->value);
 				glegend = "Last 48 Hours";
 			}
-			else if (strcmp(val, "daily") == 0) {
+			else if (strcmp(cwalk->value, "daily") == 0) {
 				period = DAY_GRAPH;
 				persecs = 12*24*60*60;
-				gtype = strdup(val);
+				gtype = strdup(cwalk->value);
 				glegend = "Last 12 Days";
 			}
-			else if (strcmp(val, "weekly") == 0) {
+			else if (strcmp(cwalk->value, "weekly") == 0) {
 				period = WEEK_GRAPH;
 				persecs = 48*24*60*60;
-				gtype = strdup(val);
+				gtype = strdup(cwalk->value);
 				glegend = "Last 48 Days";
 			}
-			else if (strcmp(val, "monthly") == 0) {
+			else if (strcmp(cwalk->value, "monthly") == 0) {
 				period = MONTH_GRAPH;
 				persecs = 576*24*60*60;
-				gtype = strdup(val);
+				gtype = strdup(cwalk->value);
 				glegend = "Last 576 Days";
 			}
-			else if (strcmp(val, "custom") == 0) {
+			else if (strcmp(cwalk->value, "custom") == 0) {
 				period = NULL;
 				persecs = 0;
-				gtype = strdup(val);
+				gtype = strdup(cwalk->value);
 				glegend = "";
 			}
 		}
-		else if (strcmp(token, "first") == 0) {
-			firstidx = atoi(val) - 1;
+		else if (strcmp(cwalk->name, "first") == 0) {
+			firstidx = atoi(cwalk->value) - 1;
 		}
-		else if (strcmp(token, "count") == 0) {
-			idxcount = atoi(val);
+		else if (strcmp(cwalk->name, "count") == 0) {
+			idxcount = atoi(cwalk->value);
 			lastidx = firstidx + idxcount - 1;
 		}
-		else if (strcmp(token, "action") == 0) {
-			if (val) {
-				if      (strcmp(val, "menu") == 0) action = ACT_MENU;
-				else if (strcmp(val, "selzoom") == 0) action = ACT_SELZOOM;
-				else if (strcmp(val, "showzoom") == 0) action = ACT_SHOWZOOM;
-				else if (strcmp(val, "view") == 0) action = ACT_VIEW;
+		else if (strcmp(cwalk->name, "action") == 0) {
+			if (cwalk->value) {
+				if      (strcmp(cwalk->value, "menu") == 0) action = ACT_MENU;
+				else if (strcmp(cwalk->value, "selzoom") == 0) action = ACT_SELZOOM;
+				else if (strcmp(cwalk->value, "showzoom") == 0) action = ACT_SHOWZOOM;
+				else if (strcmp(cwalk->value, "view") == 0) action = ACT_VIEW;
 			}
 		}
-		else if (strcmp(token, "graph_start") == 0) {
-			if (val) graphstart = atoi(val);
+		else if (strcmp(cwalk->name, "graph_start") == 0) {
+			if (cwalk->value) graphstart = atoi(cwalk->value);
 		}
-		else if (strcmp(token, "graph_end") == 0) {
-			if (val) graphend = atoi(val);
+		else if (strcmp(cwalk->name, "graph_end") == 0) {
+			if (cwalk->value) graphend = atoi(cwalk->value);
 		}
-		else if (strcmp(token, "upper") == 0) {
-			if (val) { upperlimit = atof(val); haveupper = 1; }
+		else if (strcmp(cwalk->name, "upper") == 0) {
+			if (cwalk->value) { upperlimit = atof(cwalk->value); haveupper = 1; }
 		}
-		else if (strcmp(token, "lower") == 0) {
-			if (val) { lowerlimit = atof(val); havelower = 1; }
+		else if (strcmp(cwalk->name, "lower") == 0) {
+			if (cwalk->value) { lowerlimit = atof(cwalk->value); havelower = 1; }
 		}
-		else if (strcmp(token, "graph_width") == 0) {
-			if (val) graphwidth = atoi(val);
+		else if (strcmp(cwalk->name, "graph_width") == 0) {
+			if (cwalk->value) graphwidth = atoi(cwalk->value);
 		}
-		else if (strcmp(token, "graph_height") == 0) {
-			if (val) graphheight = atoi(val);
+		else if (strcmp(cwalk->name, "graph_height") == 0) {
+			if (cwalk->value) graphheight = atoi(cwalk->value);
 		}
-		else if (strcmp(token, "nostale") == 0) {
+		else if (strcmp(cwalk->name, "nostale") == 0) {
 			ignorestalerrds = 1;
 		}
 
-		token = strtok_r(NULL, "&", &stp1);
+		cwalk = cwalk->next;
 	}
 
 	if (hostlistsize == 1) {
@@ -521,7 +510,7 @@ int main(int argc, char *argv[])
 
 	redirect_cgilog("hobbitgraph");
 
-	p = xgetenv("REQUEST_URI");
+	p = xgetenv("SCRIPT_NAME");
 	urilen = strlen(p);
 	if (hostlist) { int i; for (i = 0; (i < hostlistsize); i++) urilen += (strlen(hostlist[i]) + 10); }
 	okuri = (char *)malloc(urilen + 2048);

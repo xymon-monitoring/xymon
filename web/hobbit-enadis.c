@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-enadis.c,v 1.16 2006-02-21 22:02:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-enadis.c,v 1.17 2006-03-12 16:38:32 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -293,35 +293,11 @@ int main(int argc, char *argv[])
 
 	if (action == ACT_FILTER) {
 		/* Present the query form */
-		int formfile;
-		char formfn[PATH_MAX];
-
-		sethostenv_filter(hostpattern, pagepattern, ippattern);
 
 		load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
-
-		sprintf(formfn, "%s/web/maint_form", xgetenv("BBHOME"));
-		formfile = open(formfn, O_RDONLY);
-
-		if (formfile >= 0) {
-			char *inbuf;
-			struct stat st;
-
-			fstat(formfile, &st);
-			inbuf = (char *) malloc(st.st_size + 1);
-			read(formfile, inbuf, st.st_size);
-			inbuf[st.st_size] = '\0';
-			close(formfile);
-
-			printf("Content-Type: text/html\n\n");
-			sethostenv("", "", "", colorname(COL_BLUE), NULL);
-
-			headfoot(stdout, "maint", "", "header", COL_BLUE);
-			output_parsed(stdout, inbuf, COL_BLUE, "report", time(NULL));
-			headfoot(stdout, "maint", "", "footer", COL_BLUE);
-
-			xfree(inbuf);
-		}
+		sethostenv("", "", "", colorname(COL_BLUE), NULL);
+		sethostenv_filter(hostpattern, pagepattern, ippattern);
+		showform(stdout, "maint", "maint_form", COL_BLUE, getcurrenttime(NULL), NULL);
 		return 0;
 	}
 

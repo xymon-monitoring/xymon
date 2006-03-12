@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-snapshot.c,v 1.18 2006-01-13 11:08:45 henrik Exp $";
+static char rcsid[] = "$Id: bb-snapshot.c,v 1.19 2006-03-12 16:38:32 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -29,25 +29,8 @@ static char rcsid[] = "$Id: bb-snapshot.c,v 1.18 2006-01-13 11:08:45 henrik Exp 
 
 #include "libbbgen.h"
 
-/*
- * This program is invoked via CGI with QUERY_STRING containing:
- *
- *	mon=Jun&
- *	day=19&
- *	yr=2003&
- *	hour=19&
- *	min=35&
- *	sec=21
- *
- */
-
-char *reqenv[] = {
-"BBHOME",
-"BBSNAP",
-"BBSNAPURL",
-NULL };
-
 time_t starttime = 0;
+cgidata_t *cgidata = NULL;
 
 char *monthnames[13] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", NULL };
 
@@ -61,55 +44,44 @@ void errormsg(char *msg)
 
 void parse_query(void)
 {
-	char *query, *token;
 	int day, mon, year, hour, min, sec;
 	struct tm tmbuf;
+	cgidata_t *cwalk;
 
 	day = mon = year = hour = min = sec = -1;
+	cwalk = cgidata;
+	while (cwalk) {
+		/*
+		 * cwalk->name points to the name of the setting.
+		 * cwalk->value points to the value (may be an empty string).
+		 */
 
-	if (xgetenv("QUERY_STRING") == NULL) {
-		errormsg("Invalid request");
-		return;
-	}
-	else query = urldecode("QUERY_STRING");
-
-	if (!urlvalidate(query, NULL)) {
-		errormsg("Invalid request");
-		return;
-	}
-
-	token = strtok(query, "&");
-	while (token) {
-		char *val;
-		
-		val = strchr(token, '='); if (val) { *val = '\0'; val++; }
-
-		if (argnmatch(token, "day")) {
-			day = atoi(val);
+		if (strcasecmp(cwalk->name, "day") == 0) {
+			day = atoi(cwalk->value);
 		}
-		else if (argnmatch(token, "mon")) {
+		else if (strcasecmp(cwalk->name, "mon") == 0) {
 			char *errptr;
 
-			mon = strtol(val, &errptr, 10) - 1;
-			if (errptr == val) {
-				for (mon=0; (monthnames[mon] && strcmp(val, monthnames[mon])); mon++) ;
+			mon = strtol(cwalk->value, &errptr, 10) - 1;
+			if (errptr == cwalk->value) {
+				for (mon=0; (monthnames[mon] && strcmp(cwalk->value, monthnames[mon])); mon++) ;
 				if (mon >= 12) mon = -1;
 			}
 		}
-		else if (argnmatch(token, "yr")) {
-			year = atoi(val);
+		else if (strcasecmp(cwalk->name, "yr") == 0) {
+			year = atoi(cwalk->value);
 		}
-		else if (argnmatch(token, "hour")) {
-			hour = atoi(val);
+		else if (strcasecmp(cwalk->name, "hour") == 0) {
+			hour = atoi(cwalk->value);
 		}
-		else if (argnmatch(token, "min")) {
-			min = atoi(val);
+		else if (strcasecmp(cwalk->name, "min") == 0) {
+			min = atoi(cwalk->value);
 		}
-		else if (argnmatch(token, "sec")) {
-			sec = atoi(val);
+		else if (strcasecmp(cwalk->name, "sec") == 0) {
+			sec = atoi(cwalk->value);
 		}
 
-		token = strtok(NULL, "&");
+		cwalk = cwalk->next;
 	}
 
 	memset(&tmbuf, 0, sizeof(tmbuf));
@@ -123,8 +95,6 @@ void parse_query(void)
 	starttime = mktime(&tmbuf);
 
 	if ((starttime == -1) || (starttime > time(NULL))) errormsg("Invalid parameters");
-
-	xfree(query);
 }
 
 
@@ -199,37 +169,14 @@ int main(int argc, char *argv[])
 
 	redirect_cgilog("bb-snapshot");
 
-	if ((xgetenv("QUERY_STRING") == NULL) || (strlen(xgetenv("QUERY_STRING")) == 0)) {
+	cgidata = cgi_request();
+	if (cgidata == NULL) {
 		/* Present the query form */
-		int formfile;
-		char formfn[PATH_MAX];
-
-		sprintf(formfn, "%s/web/snapshot_form", xgetenv("BBHOME"));
-		formfile = open(formfn, O_RDONLY);
-
-		if (formfile >= 0) {
-			char *inbuf;
-			struct stat st;
-
-			fstat(formfile, &st);
-			inbuf = (char *) malloc(st.st_size + 1);
-			read(formfile, inbuf, st.st_size);
-			inbuf[st.st_size] = '\0';
-			close(formfile);
-
-			printf("Content-Type: text/html\n\n");
-			sethostenv("", "", "", colorname(COL_BLUE), NULL);
-
-			headfoot(stdout, "snapshot", "", "header", COL_BLUE);
-			output_parsed(stdout, inbuf, COL_BLUE, "report", time(NULL));
-			headfoot(stdout, "snapshot", "", "footer", COL_BLUE);
-
-			xfree(inbuf);
-		}
+		sethostenv("", "", "", colorname(COL_BLUE), NULL);
+		showform(stdout, "snapshot", "snapshot_form", COL_BLUE, getcurrenttime(NULL), NULL);
 		return 0;
 	}
 
-	envcheck(reqenv);
 	parse_query();
 
 	useragent = getenv("HTTP_USER_AGENT");
