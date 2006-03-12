@@ -17,6 +17,8 @@
 #define STATUS_CONTENTMATCH_FAILED 902
 #define STATUS_CONTENTMATCH_BADREGEX 903
 
+#define MAX_CONTENT_DATA (1024*1024)	/* 1 MB should be enough for most */
+
 /*
  * Structure of the bbtest-net in-memory records
  *

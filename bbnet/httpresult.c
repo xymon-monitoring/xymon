@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.19 2005-12-29 16:19:20 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.20 2006-03-12 16:33:58 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -429,6 +429,12 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 		xfree(msgline);
 
 		if (req->output) {
+			/* Dont flood hobbitd with data */
+			if (req->outlen > MAX_CONTENT_DATA) {
+				*(req->output + MAX_CONTENT_DATA) = '\0';
+				req->outlen = MAX_CONTENT_DATA;
+			}
+
 			if ( (req->contenttype && (strncasecmp(req->contenttype, "text/html", 9) == 0)) ||
 			     (strncasecmp(req->output, "<html", 5) == 0) ) {
 				char *bodystart = NULL;
