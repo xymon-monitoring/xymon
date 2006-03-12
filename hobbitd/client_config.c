@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.14 2006-02-25 08:42:19 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.15 2006-03-12 16:32:42 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -89,6 +89,71 @@ static c_rule_t *rulehead = NULL;
 static c_rule_t *ruletail = NULL;
 static exprlist_t *exprhead = NULL;
 
+/* ruletree is a tree indexed by hostname of the rules. */
+typedef struct ruleset_t {
+	c_rule_t *rule;
+	struct ruleset_t *next;
+} ruleset_t;
+static int havetree = 0;
+static RbtHandle ruletree;
+
+static int hostname_compare(void *a, void *b)
+{
+	return strcasecmp((char *)a, (char *)b);
+}
+
+static ruleset_t *ruleset(char *hostname, char *pagename)
+{
+	/*
+	 * This routine manages a list of rules that apply to this particular host.
+	 *
+	 * We maintain a tree indexed by hostname. Each node in the tree contains
+	 * a list of c_rule_t records, which point to individual rules in the full
+	 * list of rules. So instead of walking the entire list of rules for all hosts,
+	 * we can just go through those rules that are relevant for a given host.
+	 * This should speed up client-rule matching tremendously, since all of
+	 * the expensive pagename/hostname matches are only performed initially 
+	 * when the list of rules for the host is decided.
+	 */
+	RbtIterator handle;
+	c_rule_t *rwalk;
+	ruleset_t *head, *tail, *itm;
+
+	handle = rbtFind(ruletree, hostname);
+	if (handle != rbtEnd(ruletree)) {
+		/* We have the tree for this host */
+		void *k1, *k2;
+		rbtKeyValue(ruletree, handle, &k1, &k2);
+		dprintf("Found list starting at cfid %d\n", ((ruleset_t *)k2)->rule->cfid);
+		return (ruleset_t *)k2;
+	}
+
+	/* We must build the list of rules for this host */
+	head = tail = NULL;
+	for (rwalk = rulehead; (rwalk); rwalk = rwalk->next) {
+		if (rwalk->exhostexp && namematch(hostname, rwalk->exhostexp->pattern, rwalk->exhostexp->exp)) continue;
+		if (rwalk->hostexp && !namematch(hostname, rwalk->hostexp->pattern, rwalk->hostexp->exp)) continue;
+		if (rwalk->expageexp && namematch(pagename, rwalk->expageexp->pattern, rwalk->expageexp->exp)) continue;
+		if (rwalk->pageexp && !namematch(pagename, rwalk->pageexp->pattern, rwalk->pageexp->exp)) continue;
+		/* All criteria match - add this rule to the list of rules for this host */
+		itm = (ruleset_t *)malloc(sizeof(ruleset_t));
+		itm->rule = rwalk;
+		itm->next = NULL;
+		if (head == NULL) {
+			head = tail = itm;
+		}
+		else { 
+			tail->next = itm;
+			tail = itm;
+		}
+	}
+
+	/* Add the list to the tree */
+	rbtInsert(ruletree, strdup(hostname), head);
+
+	return head;
+}
+
 static exprlist_t *setup_expr(char *ptn)
 {
 	exprlist_t *newitem = (exprlist_t *)calloc(1, sizeof(exprlist_t));
@@ -123,6 +188,19 @@ static c_rule_t *setup_rule(ruletype_t ruletype,
 }
 
 
+static int isqual(char *token)
+{
+	if (!token) return 1;
+
+	if ( (strncasecmp(token, "HOST=", 5) == 0)	||
+	     (strncasecmp(token, "EXHOST=", 7) == 0)	||
+	     (strncasecmp(token, "PAGE=", 5) == 0)	||
+	     (strncasecmp(token, "EXPAGE=", 7) == 0)	||
+	     (strncasecmp(token, "TIME=", 5) == 0)	) return 1;
+
+	return 0;
+}
+
 int load_client_config(char *configfn)
 {
 	/* (Re)load the configuration file without leaking memory */
@@ -131,7 +209,7 @@ int load_client_config(char *configfn)
 	FILE *fd;
 	char *inbuf = NULL;
 	int inbufsz;
-	char *p, *tok;
+	char *tok;
 	exprlist_t *curhost, *curpage, *curexhost, *curexpage;
 	char *curtime;
 	c_rule_t *currule = NULL;
@@ -177,6 +255,27 @@ int load_client_config(char *configfn)
 	}
 	exprhead = NULL;
 
+	if (havetree) {
+		RbtIterator handle;
+		void *k1, *k2;
+		char *key;
+		ruleset_t *head, *itm;
+
+		handle = rbtBegin(ruletree);
+		while (handle != rbtEnd(ruletree)) {
+			rbtKeyValue(ruletree, handle, &k1, &k2);
+			key = (char *)k1;
+			head = (ruleset_t *)k2;
+			xfree(key);
+			while (head) {
+				itm = head; head = head->next; xfree(itm);
+			}
+			handle = rbtNext(ruletree, handle);
+		}
+		rbtDelete(ruletree);
+		havetree = 0;
+	}
+
 	curhost = curpage = curexhost = curexpage = NULL;
 	curtime = NULL;
 	while (stackfgets(&inbuf, &inbufsz, NULL)) {
@@ -195,27 +294,27 @@ int load_client_config(char *configfn)
 		tok = wstok(inbuf);
 		while (tok) {
 			if (strncasecmp(tok, "HOST=", 5) == 0) {
-				p = strchr(tok, '=');
+				char *p = strchr(tok, '=');
 				newhost = setup_expr(p+1);
 				if (currule) currule->hostexp = newhost;
 			}
 			else if (strncasecmp(tok, "EXHOST=", 7) == 0) {
-				p = strchr(tok, '=');
+				char *p = strchr(tok, '=');
 				newexhost = setup_expr(p+1);
 				if (currule) currule->exhostexp = newexhost;
 			}
 			else if (strncasecmp(tok, "PAGE=", 5) == 0) {
-				p = strchr(tok, '=');
+				char *p = strchr(tok, '=');
 				newpage = setup_expr(p+1);
 				if (currule) currule->pageexp = newpage;
 			}
 			else if (strncasecmp(tok, "EXPAGE=", 7) == 0) {
-				p = strchr(tok, '=');
+				char *p = strchr(tok, '=');
 				newexpage = setup_expr(p+1);
 				if (currule) currule->expageexp = newexpage;
 			}
 			else if (strncasecmp(tok, "TIME=", 5) == 0) {
-				p = strchr(tok, '=');
+				char *p = strchr(tok, '=');
 				if (currule) currule->timespec = strdup(p+1);
 				else newtime = strdup(p+1);
 			}
@@ -224,29 +323,41 @@ int load_client_config(char *configfn)
 			}
 			else if (strcasecmp(tok, "UP") == 0) {
 				currule = setup_rule(C_UPTIME, curhost, curexhost, curpage, curexpage, curtime, cfid);
-				p = wstok(NULL); 
-				currule->rule.uptime.recentlimit = (p ? 60*durationvalue(p): 3600);
-				p = wstok(NULL);
-				currule->rule.uptime.ancientlimit = (p ? 60*durationvalue(p): -1);
+				currule->rule.uptime.recentlimit = 3600;
+				currule->rule.uptime.ancientlimit = -1;
+
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.uptime.recentlimit = 60*durationvalue(tok);
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.uptime.ancientlimit = 60*durationvalue(tok);
 			}
 			else if (strcasecmp(tok, "LOAD") == 0) {
 				currule = setup_rule(C_LOAD, curhost, curexhost, curpage, curexpage, curtime, cfid);
-				p = wstok(NULL); 
-				currule->rule.load.warnlevel = (p ? atof(p) : 5.0);
-				p = wstok(NULL); 
-				currule->rule.load.paniclevel = (p ? atof(p): 8.0);
+				currule->rule.load.warnlevel = 5.0;
+				currule->rule.load.paniclevel = atof(tok);
+
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.load.warnlevel = atof(tok);
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.load.paniclevel = atof(tok);
 			}
 			else if (strcasecmp(tok, "DISK") == 0) {
 				char modchar = '\0';
 				currule = setup_rule(C_DISK, curhost, curexhost, curpage, curexpage, curtime, cfid);
-				p = wstok(NULL); 
-				if (p) currule->rule.disk.fsexp = setup_expr(p);
-
-				p = wstok(NULL);
-				currule->rule.disk.warnlevel = (p ? atol(p) : 90);
 				currule->rule.disk.absolutes = 0;
-				if (p) modchar = *(p + strspn(p, "0123456789"));
-				if (modchar && (modchar != '%')) {
+				currule->rule.disk.warnlevel = 90;
+				currule->rule.disk.paniclevel = 95;
+				currule->rule.disk.dmin = 0;
+				currule->rule.disk.dmax = -1;
+				currule->rule.disk.color = COL_RED;
+
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.disk.fsexp = setup_expr(tok);
+
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.disk.warnlevel = atol(tok);
+				modchar = *(tok + strspn(tok, "0123456789"));
+				if (modchar != '%') {
 					currule->rule.disk.absolutes += 1;
 					switch (modchar) {
 					  case 'k': case 'K' : break;
@@ -255,10 +366,10 @@ int load_client_config(char *configfn)
 					}
 				}
 
-				p = wstok(NULL);
-				currule->rule.disk.paniclevel = (p ? atol(p): 95);
-				if (p) modchar = *(p + strspn(p, "0123456789"));
-				if (modchar && (modchar != '%')) {
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.disk.paniclevel = atol(tok);
+				modchar = *(tok + strspn(tok, "0123456789"));
+				if (modchar != '%') {
 					currule->rule.disk.absolutes += 2;
 					switch (modchar) {
 					  case 'k': case 'K' : break;
@@ -267,47 +378,60 @@ int load_client_config(char *configfn)
 					}
 				}
 
-				p = wstok(NULL);
-				currule->rule.disk.dmin = (p ? atoi(p): 0);
-				p = wstok(NULL);
-				currule->rule.disk.dmax = (p ? atoi(p) : -1);
-				p = wstok(NULL);
-				currule->rule.disk.color = (p ? parse_color(p) : COL_RED);
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.disk.dmin = atoi(tok);
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.disk.dmax = atoi(tok);
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.disk.color = parse_color(tok);
 			}
 			else if ((strcasecmp(tok, "MEMREAL") == 0) || (strcasecmp(tok, "MEMPHYS") == 0) || (strcasecmp(tok, "PHYS") == 0)) {
 				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curtime, cfid);
 				currule->rule.mem.memtype = C_MEM_PHYS;
-				p = wstok(NULL);
-				currule->rule.mem.warnlevel = (p ? atoi(p) : 100);
-				p = wstok(NULL);
-				currule->rule.mem.paniclevel = (p ? atoi(p) : 101);
+				currule->rule.mem.warnlevel = 100;
+				currule->rule.mem.paniclevel = 101;
+
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.mem.warnlevel = atoi(tok);
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.mem.paniclevel = atoi(tok);
 			}
 			else if ((strcasecmp(tok, "MEMSWAP") == 0) || (strcasecmp(tok, "SWAP") == 0)) {
 				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curtime, cfid);
 				currule->rule.mem.memtype = C_MEM_SWAP;
-				p = wstok(NULL);
-				currule->rule.mem.warnlevel = (p ? atoi(p) : 50);
-				p = wstok(NULL);
-				currule->rule.mem.paniclevel = (p ? atoi(p) : 80);
+				currule->rule.mem.warnlevel = 50;
+				currule->rule.mem.paniclevel = 80;
+
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.mem.warnlevel = atoi(tok);
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.mem.paniclevel = atoi(tok);
 			}
 			else if ((strcasecmp(tok, "MEMACT") == 0) || (strcasecmp(tok, "ACTUAL") == 0) || (strcasecmp(tok, "ACT") == 0)) {
 				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curtime, cfid);
 				currule->rule.mem.memtype = C_MEM_ACT;
-				p = wstok(NULL);
-				currule->rule.mem.warnlevel = (p ? atoi(p) : 90);
-				p = wstok(NULL);
-				currule->rule.mem.paniclevel = (p ? atoi(p) : 97);
+				currule->rule.mem.warnlevel = 90;
+				currule->rule.mem.paniclevel = 97;
+
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.mem.warnlevel = atoi(tok);
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.mem.paniclevel = atoi(tok);
 			}
 			else if (strcasecmp(tok, "PROC") == 0) {
 				currule = setup_rule(C_PROC, curhost, curexhost, curpage, curexpage, curtime, cfid);
-				p = wstok(NULL); 
-				if (p) currule->rule.proc.procexp = setup_expr(p);
-				p = wstok(NULL);
-				currule->rule.proc.pmin = (p ? atoi(p) : 1);
-				p = wstok(NULL);
-				currule->rule.proc.pmax = (p ? atoi(p) : -1);
-				p = wstok(NULL);
-				currule->rule.proc.color = (p ? parse_color(p) : COL_RED);
+				tok = wstok(NULL);
+				currule->rule.proc.procexp = setup_expr(tok);
+				currule->rule.proc.pmin = 1;
+				currule->rule.proc.pmax = -1;
+				currule->rule.proc.color = COL_RED;
+
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.proc.pmin = atoi(tok);
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.proc.pmax = atoi(tok);
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.proc.color = parse_color(tok);
 
 				/* It's easy to set max=0 when you only want to define a minimum */
 				if (currule->rule.proc.pmin && (currule->rule.proc.pmax == 0))
@@ -334,6 +458,10 @@ int load_client_config(char *configfn)
 	stackfclose(fd);
 	if (inbuf) xfree(inbuf);
 	if (curtime) xfree(curtime);
+
+	/* Create the ruletree, but leave it empty - it will be filled as clients report */
+	ruletree = rbtNew(hostname_compare);
+	havetree = 1;
 
 	MEMUNDEFINE(fn);
 	return 1;
@@ -389,30 +517,21 @@ void dump_client_config(void)
 
 static c_rule_t *getrule(char *hostname, char *pagename, ruletype_t ruletype)
 {
-	static c_rule_t *rwalk = NULL;
-	static char *ahost = NULL, *apage = NULL;
+	static ruleset_t *rwalk = NULL;
 
 	if (hostname || pagename) {
-		rwalk = rulehead; 
-		ahost = hostname;
-		apage = pagename;
+		rwalk = ruleset(hostname, pagename); 
 	}
 	else {
 		rwalk = rwalk->next;
 	}
 
 	for (; (rwalk); rwalk = rwalk->next) {
-		if (rwalk->ruletype != ruletype) continue;
-		if (rwalk->timespec && !timematch(rwalk->timespec)) continue;
-
-		if (rwalk->exhostexp && namematch(ahost, rwalk->exhostexp->pattern, rwalk->exhostexp->exp)) continue;
-		if (rwalk->hostexp && !namematch(ahost, rwalk->hostexp->pattern, rwalk->hostexp->exp)) continue;
-
-		if (rwalk->expageexp && namematch(apage, rwalk->expageexp->pattern, rwalk->expageexp->exp)) continue;
-		if (rwalk->pageexp && !namematch(apage, rwalk->pageexp->pattern, rwalk->pageexp->exp)) continue;
+		if (rwalk->rule->ruletype != ruletype) continue;
+		if (rwalk->rule->timespec && !timematch(rwalk->rule->timespec)) continue;
 
 		/* If we get here, then we have something that matches */
-		return rwalk;
+		return rwalk->rule;
 	}
 
 	return NULL;
