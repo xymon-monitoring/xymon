@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.43 2006-02-14 21:54:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.44 2006-03-12 16:31:15 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -20,6 +20,7 @@ static char rcsid[] = "$Id: hobbitd_client.c,v 1.43 2006-02-14 21:54:59 henrik E
 #include <signal.h>
 #include <time.h>
 #include <ctype.h>
+#include <limits.h>
 
 #include "libbbgen.h"
 #include "hobbitd_worker.h"
@@ -737,8 +738,8 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--test") == 0) {
 			namelist_t *hinfo, *oldhinfo = NULL;
-			char hostname[100];
-			char s[100];
+			char hostname[1024];
+			char s[4096];
 			int cfid;
 
 			load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
@@ -810,6 +811,8 @@ int main(int argc, char *argv[])
 					int pchecks = clear_process_counts(hinfo);
 					char *pname;
 					int pcount, pmin, pmax, pcolor;
+					FILE *fd;
+					char fname[PATH_MAX];
 
 					if (pchecks == 0) {
 						printf("No process checks for this host\n");
@@ -819,7 +822,17 @@ int main(int argc, char *argv[])
 					do {
 						printf("ps command string: "); fflush(stdout);
 						fgets(s, sizeof(s), stdin); sanitize_input(s);
-						if (*s) add_process_count(s);
+						if (*s == '@') {
+							fd = fopen(s+1, "r");
+							while (fd && fgets(s, sizeof(s), fd)) {
+								sanitize_input(s);
+								if (*s) add_process_count(s);
+							}
+							fclose(fd);
+						}
+						else {
+							if (*s) add_process_count(s);
+						}
 					} while (*s);
 
 					while ((pname = check_process_count(&pcount, &pmin, &pmax, &pcolor)) != NULL) {
