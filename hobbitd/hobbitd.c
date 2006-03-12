@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.212 2006-03-09 16:52:07 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.213 2006-03-12 17:03:56 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -920,24 +920,12 @@ void get_hts(char *msg, char *sender, char *origin,
 	if (hwalk && twalk && owalk) {
 		for (lwalk = hwalk->logs; (lwalk && ((lwalk->test != twalk) || (lwalk->origin != owalk))); lwalk = lwalk->next);
 		if (createlog && (lwalk == NULL)) {
-			lwalk = (hobbitd_log_t *)malloc(sizeof(hobbitd_log_t));
+			lwalk = (hobbitd_log_t *)calloc(1, sizeof(hobbitd_log_t));
 			lwalk->color = lwalk->oldcolor = NO_COLOR;
-			lwalk->activealert = 0;
-			lwalk->histsynced = 0;
-			lwalk->downtimeactive = 0;
-			lwalk->testflags = NULL;
-			lwalk->sender[0] = '\0';
 			lwalk->host = hwalk;
 			lwalk->test = twalk;
 			lwalk->origin = owalk;
-			lwalk->message = NULL;
-			lwalk->msgsz = 0;
-			lwalk->dismsg = lwalk->ackmsg = NULL;
-			lwalk->acklist = NULL;
-			lwalk->lastchange = lwalk->validtime = lwalk->enabletime = lwalk->acktime = 0;
 			lwalk->cookie = -1;
-			lwalk->cookieexpires = 0;
-			lwalk->metas = NULL;
 			lwalk->next = hwalk->logs;
 			hwalk->logs = lwalk;
 		}
@@ -1209,7 +1197,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		 * Dont update the log->lastchange timestamp while DOWNTIME is active.
 		 * (It is only seen as active if the color has been forced BLUE).
 		 */
-		if (!log->downtimeactive) {
+		if (!log->downtimeactive && (log->oldcolor != newcolor)) {
 			log->lastchange = time(NULL);
 		}
 	}
