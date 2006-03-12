@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: cgi.c,v 1.4 2006-02-21 16:15:24 henrik Exp $";
+static char rcsid[] = "$Id: cgi.c,v 1.5 2006-03-12 16:34:25 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -105,7 +105,7 @@ cgidata_t *cgi_request(void)
 			}
 		}
 		else {
-			lcgi_error("CGI violation - no QUERY_STRING\n");
+			/* This is OK - we may not have any query */
 			return NULL;
 		}
 	}
