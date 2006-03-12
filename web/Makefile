@@ -1,4 +1,4 @@
-PROGRAMS = bb-hist.cgi bb-eventlog.cgi bb-rep.cgi bb-replog.cgi bb-snapshot.cgi bb-findhost.cgi bb-csvinfo.cgi bb-ack.cgi bb-webpage bb-datepage.cgi hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-nkview.cgi hobbit-nkedit.cgi hobbit-ackinfo.cgi hobbit-statusreport.cgi
+PROGRAMS = bb-hist.cgi bb-eventlog.cgi bb-rep.cgi bb-replog.cgi bb-snapshot.cgi bb-findhost.cgi bb-csvinfo.cgi bb-ack.cgi bb-webpage bb-datepage.cgi hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-nkview.cgi hobbit-nkedit.cgi hobbit-ackinfo.cgi hobbit-statusreport.cgi boilerplate.cgi
 CGISCRIPTS = bb-hist.sh bb-eventlog.sh bb-rep.sh bb-replog.sh bb-snapshot.sh bb-findhost.sh bb-csvinfo.sh hobbitcolumn.sh bb-datepage.sh hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh hobbit-confreport.sh hobbit-nkview.sh hobbit-certreport.sh
 SECCGISCRIPTS = bb-ack.sh hobbit-enadis.sh hobbit-nkedit.sh hobbit-ackinfo.sh
 
@@ -24,6 +24,8 @@ ACKINFOOBJS     = hobbit-ackinfo.o
 CONFREPOBJS     = hobbit-confreport.o
 STATUSREPOBJS   = hobbit-statusreport.o
 MAILACKOBJS     = hobbit-mailack.o
+
+BOILERPLATEOBJS = boilerplate.o
 
 
 IDTOOL := $(shell if test `uname -s` = "SunOS"; then echo /usr/xpg4/bin/id; else echo id; fi)
@@ -91,6 +93,9 @@ hobbit-nkedit.cgi: $(NKEDITOBJS) $(LIBOBJS)
 
 hobbit-ackinfo.cgi: $(ACKINFOOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(ACKINFOOBJS) $(LIBOBJS) $(NETLIBS)
+
+boilerplate.cgi: $(BOILERPLATEOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(BOILERPLATEOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
 
 bb-ack.sh: bb-ack.sh.DIST
@@ -187,6 +192,8 @@ install-cgi:
 	cp -fp $(CGISCRIPTS) $(INSTALLROOT)$(CGIDIR)/
 	mkdir -p $(INSTALLROOT)$(SECURECGIDIR)
 	cp -fp $(SECCGISCRIPTS) $(INSTALLROOT)$(SECURECGIDIR)/
+	chown $(BBUSER) $(INSTALLROOT)$(CGIDIR) $(INSTALLROOT)$(CGIDIR)/* $(INSTALLROOT)$(SECURECGIDIR) $(INSTALLROOT)$(SECURECGIDIR)/*
+	chgrp `$(IDTOOL) -g $(BBUSER)` $(INSTALLROOT)$(CGIDIR) $(INSTALLROOT)$(CGIDIR)/* $(INSTALLROOT)$(SECURECGIDIR) $(INSTALLROOT)$(SECURECGIDIR)/*
 
 install-man:
 	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man8
