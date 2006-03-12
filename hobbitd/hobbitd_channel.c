@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.43 2005-08-13 15:46:48 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.44 2006-03-12 18:02:19 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -32,8 +32,6 @@ static char rcsid[] = "$Id: hobbitd_channel.c,v 1.43 2005-08-13 15:46:48 henrik 
 #include "libbbgen.h"
 
 #include "hobbitd_ipc.h"
-
-// #define WATCHLATENCY 1
 
 /* For our in-memory queue of messages received from hobbitd via IPC */
 typedef struct hobbit_msg_t {
@@ -78,8 +76,7 @@ int main(int argc, char *argv[])
 	int argi, n;
 
 	struct sembuf s;
-	char *buf;
-	int bufsz;
+	char *buf = NULL;
 	hobbit_msg_t *newmsg;
 	int daemonize = 0;
 	char *logfn = NULL;
@@ -93,12 +90,6 @@ int main(int argc, char *argv[])
 	char **childargs = NULL;
 	int canwrite;
 	struct sigaction sa;
-
-#ifdef WATCHLATENCY
-	struct timeval starttv, endtv, *elapsed;
-	struct timezone tz;
-	unsigned long curwait, maxwait = 0;	/* 1 second in microseconds */
-#endif
 
 	/* Dont save the error buffer */
 	save_errbuf = 0;
@@ -150,13 +141,6 @@ int main(int argc, char *argv[])
 
 	if (cnid == -1) {
 		errprintf("No channel/unknown channel specified\n");
-		return 1;
-	}
-
-	bufsz = shbufsz(cnid);
-	buf = (char *)malloc(bufsz);
-	if (buf == NULL) {
-		errprintf("Cannot allocate buffer of size %s\n", bufsz);
 		return 1;
 	}
 
@@ -253,7 +237,7 @@ int main(int argc, char *argv[])
 			 * GOCLIENT went high, and so we got alerted about a new
 			 * message arriving. Copy the message to our own buffer queue.
 			 */
-			strncpy(buf, channel->channelbuf, bufsz);
+			buf = strdup(channel->channelbuf);
 
 			/* 
 			 * Now we have safely stored the new message in our buffer.
@@ -267,24 +251,11 @@ int main(int argc, char *argv[])
 			 * and wait the full alarm-timer duration.
 			 */
 			gotalarm = 0; signal(SIGALRM, sig_handler); alarm(2); 
-#ifdef WATCHLATENCY
-			gettimeofday(&starttv, &tz);
-#endif
 			do {
 				s.sem_num = GOCLIENT; s.sem_op  = 0; s.sem_flg = 0;
 				n = semop(channel->semid, &s, 1);
 			} while ((n == -1) && (errno == EAGAIN) && running && (!gotalarm));
 			signal(SIGALRM, SIG_IGN);
-
-#ifdef WATCHLATENCY
-			gettimeofday(&endtv, &tz);
-			elapsed = tvdiff(&starttv, &endtv, NULL);
-			curwait = 1000000*elapsed->tv_sec + elapsed->tv_usec;
-			if (curwait > maxwait) {
-				maxwait = curwait;
-				errprintf("GOCLIENT: Delay of %d.%06d secs\n", elapsed->tv_sec, elapsed->tv_usec);
-			}
-#endif
 
 			if (gotalarm) {
 				errprintf("Gave up waiting for GOCLIENT to go low.\n");
@@ -307,7 +278,7 @@ int main(int argc, char *argv[])
 			 * Put the new message on our outbound queue.
 			 */
 			newmsg = (hobbit_msg_t *) malloc(sizeof(hobbit_msg_t));
-			newmsg->buf = strdup(buf);
+			newmsg->buf = buf;
 			newmsg->bufp = newmsg->buf;
 			newmsg->buflen = strlen(buf);
 			newmsg->next = NULL;
