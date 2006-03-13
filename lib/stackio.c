@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: stackio.c,v 1.14 2006-02-27 20:59:29 henrik Exp $";
+static char rcsid[] = "$Id: stackio.c,v 1.15 2006-03-13 11:50:18 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -409,7 +409,7 @@ char *stackfgets(char **buffer, unsigned int *bufferlen, char *extraincl)
 			char *newfn, *eol;
 
 			eol = strchr(*buffer, '\n'); if (eol) *eol = '\0';
-			newfn = *buffer + 7;
+			newfn = *buffer + strcspn(*buffer, " \t");
 			newfn += strspn(newfn, " \t");
 		
 			if (*newfn && (stackfopen(newfn, "r", (void **)fdhead->listhead) != NULL))
