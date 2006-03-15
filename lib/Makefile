@@ -57,5 +57,5 @@ availability: availability.c libbbgen.a
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ availability.c ./libbbgen.a
 
 clean:
-	rm -f *.o *.a *~ loadhosts stackio
+	rm -f *.o *.a *~ loadhosts stackio availability
 
