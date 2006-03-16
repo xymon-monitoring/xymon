@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.22 2005-08-13 15:46:48 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.23 2006-03-16 21:57:26 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -30,11 +30,15 @@ static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.22 2005-08-13 15:46:48 henrik Exp 
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 
+static volatile int running = 1;
 
 void sig_handler(int signum)
 {
 	switch (signum) {
 	  case SIGCHLD:
+		  break;
+	  case SIGTERM:
+		  running = 0;
 		  break;
 	}
 }
@@ -42,7 +46,6 @@ void sig_handler(int signum)
 int main(int argc, char *argv[])
 {
 	char *msg;
-	int running;
 	int argi, seq;
 	struct sigaction sa;
 	char *exthandler = NULL;
@@ -76,6 +79,7 @@ int main(int argc, char *argv[])
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGCHLD, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
 	signal(SIGPIPE, SIG_DFL);
 
 	if (exthandler && extids) setup_exthandler(exthandler, extids);
