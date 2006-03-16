@@ -18,7 +18,7 @@
 #include <stdarg.h>
 
 #ifndef HAVE_SOCKLEN_T
-typedef int socklen_t;
+typedef unsigned int socklen_t;
 #endif
 
 #ifndef HAVE_SNPRINTF
