@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.36 2006-03-17 09:36:19 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.37 2006-03-17 09:40:21 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -97,7 +97,7 @@ static void rrd_setup(void)
 	count = 0; p = lenv; do { count++; p = strchr(p+1, ','); } while (p);
 	hobbitrrds = (hobbitrrd_t *)calloc(sizeof(hobbitrrd_t), (count+1));
 
-	rbtNew(name_compare);
+	hobbitrrdtree = rbtNew(name_compare);
 	lrec = hobbitrrds; ldef = strtok(lenv, ",");
 	while (ldef) {
 		p = strchr(ldef, '=');
