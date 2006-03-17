@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.34 2005-09-21 08:43:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.35 2006-03-17 09:11:10 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -25,6 +25,7 @@ static char rcsid[] = "$Id: hobbitrrd.c,v 1.34 2005-09-21 08:43:18 henrik Exp $"
 
 /* This is for mapping a status-name -> RRD file */
 hobbitrrd_t *hobbitrrds = NULL;
+RbtHandle hobbitrrdtree;
 
 /* This is the information needed to generate links on the trends column page  */
 hobbitgraph_t *hobbitgraphs = NULL;
@@ -32,6 +33,11 @@ hobbitgraph_t *hobbitgraphs = NULL;
 static const char *hobbitlinkfmt = "<table summary=\"%s Graph\"><tr><td><A HREF=\"%s&amp;action=menu\"><IMG BORDER=0 SRC=\"%s&amp;graph=hourly&amp;action=view\" ALT=\"hobbit graph %s\"></A></td><td> <td align=\"left\" valign=\"top\"> <a href=\"%s&amp;graph=hourly&amp;action=selzoom\"> <img src=\"%s/zoom.gif\" border=0 alt=\"Zoom graph\" style='padding: 3px'> </a> </td></tr></table>\n";
 
 static const char *metafmt = "<RRDGraph>\n  <GraphType>%s</GraphType>\n  <GraphLink><![CDATA[%s]]></GraphLink>\n  <GraphImage><![CDATA[%s&amp;graph=hourly]]></GraphImage>\n</RRDGraph>\n";
+
+static int name_compare(void *a, void *b)
+{
+	return strcasecmp((char *)a, (char *)b);
+}
 
 /*
  * Define the mapping between BB columns and RRD graphs.
@@ -61,6 +67,7 @@ static void rrd_setup(void)
 		lrec++;
 	}
 	if (hobbitrrds) xfree(hobbitrrds);
+	rbtDelete(hobbitrrdtree);
 
 	grec = hobbitgraphs;
 	while (grec && grec->hobbitrrdname) {
@@ -88,6 +95,7 @@ static void rrd_setup(void)
 	count = 0; p = lenv; do { count++; p = strchr(p+1, ','); } while (p);
 	hobbitrrds = (hobbitrrd_t *)calloc(sizeof(hobbitrrd_t), (count+1));
 
+	rbtNew(name_compare);
 	lrec = hobbitrrds; ldef = strtok(lenv, ",");
 	while (ldef) {
 		p = strchr(ldef, '=');
@@ -99,6 +107,7 @@ static void rrd_setup(void)
 		else {
 			lrec->bbsvcname = lrec->hobbitrrdname = strdup(ldef);
 		}
+		rbtInsert(hobbitrrdtree, lrec->bbsvcname, lrec);
 
 		ldef = strtok(NULL, ",");
 		lrec++;
@@ -144,7 +153,7 @@ static void rrd_setup(void)
 hobbitrrd_t *find_hobbit_rrd(char *service, char *flags)
 {
 	/* Lookup an entry in the hobbitrrds table */
-	hobbitrrd_t *lrec;
+	RbtHandle handle;
 
 	rrd_setup();
 
@@ -153,8 +162,14 @@ hobbitrrd_t *find_hobbit_rrd(char *service, char *flags)
 		return NULL;
 	}
 
-	lrec = hobbitrrds; while (lrec->bbsvcname && strcmp(lrec->bbsvcname, service)) lrec++;
-	return (lrec->bbsvcname ? lrec : NULL);
+	handle = rbtFind(hobbitrrdtree, service);
+	if (handle == rbtEnd(hobbitrrdtree)) 
+		return NULL;
+	else {
+		void *k1, *k2;
+		rbtKeyValue(hobbitrrdtree, handle, &k1, &k2);
+		return (hobbitrrd_t *)k2;
+	}
 }
 
 hobbitgraph_t *find_hobbit_graph(char *rrdname)
