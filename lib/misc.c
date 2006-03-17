@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.46 2005-07-31 21:13:36 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.47 2006-03-17 09:11:49 henrik Exp $";
 
 #include "config.h"
 
@@ -128,19 +128,13 @@ char *commafy(char *hostname)
 
 char *skipword(char *l)
 {
-	char *p;
-
-	for (p=l; (*p && (!isspace((int)*p))); p++) ;
-	return p;
+	return l + strcspn(l, " \t");
 }
 
 
 char *skipwhitespace(char *l)
 {
-	char *p;
-
-	for (p=l; (*p && (isspace((int)*p))); p++) ;
-	return p;
+	return l + strspn(l, " \t");
 }
 
 
@@ -152,17 +146,29 @@ int argnmatch(char *arg, char *match)
 
 void addtobuffer(char **buf, int *bufsz, char *newtext)
 {
-	if (*buf == NULL) {
-		*bufsz = strlen(newtext) + 4096;
-		*buf = (char *) malloc(*bufsz);
-		**buf = '\0';
+	static char *prevbuf = NULL;
+	static int buflen = 0;
+	int newlen = strlen(newtext);
+
+	/* If we're passed an existing buffer, and it's empty or different from the last one, reset cache */
+	if (*buf && ((*buf != prevbuf) || (**buf == '\0'))) {
+		prevbuf = *buf;
+		buflen = strlen(*buf);
 	}
-	else if ((strlen(*buf) + strlen(newtext) + 1) > *bufsz) {
-		*bufsz += strlen(newtext) + 4096;
+
+	if (*buf == NULL) {
+		*bufsz = newlen + 4096;
+		*buf = prevbuf = (char *) malloc(*bufsz);
+		**buf = '\0';
+		buflen = 0;
+	}
+	else if ((buflen + newlen + 1) > *bufsz) {
+		*bufsz += (newlen + 4096);
 		*buf = (char *) realloc(*buf, *bufsz);
 	}
 
-	strcat(*buf, newtext);
+	strcat((*buf)+buflen, newtext);
+	buflen += newlen;
 }
 
 
