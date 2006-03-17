@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.35 2006-03-17 09:11:10 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.36 2006-03-17 09:36:19 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -66,8 +66,10 @@ static void rrd_setup(void)
 		xfree(lrec->bbsvcname);
 		lrec++;
 	}
-	if (hobbitrrds) xfree(hobbitrrds);
-	rbtDelete(hobbitrrdtree);
+	if (hobbitrrds) {
+		xfree(hobbitrrds);
+		rbtDelete(hobbitrrdtree);
+	}
 
 	grec = hobbitgraphs;
 	while (grec && grec->hobbitrrdname) {
