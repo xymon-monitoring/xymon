@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.83 2006-02-08 12:49:49 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.84 2006-03-18 07:34:45 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -94,8 +94,8 @@ static repeat_t *find_repeatinfo(activealerts_t *alert, recip_t *recip, int crea
 	  case M_IGNORE: method = "ignore"; break;
 	}
 
-	id = (char *) malloc(strlen(alert->hostname->name) + strlen(alert->testname->name) + strlen(method) + strlen(recip->recipient) + 4);
-	sprintf(id, "%s|%s|%s|%s", alert->hostname->name, alert->testname->name, method, recip->recipient);
+	id = (char *) malloc(strlen(alert->hostname) + strlen(alert->testname) + strlen(method) + strlen(recip->recipient) + 4);
+	sprintf(id, "%s|%s|%s|%s", alert->hostname, alert->testname, method, recip->recipient);
 	for (walk = rpthead; (walk && strcmp(walk->recipid, id)); walk = walk->next);
 
 	if ((walk == NULL) && create) {
@@ -137,19 +137,19 @@ static char *message_subject(activealerts_t *alert, recip_t *recip)
 	  case A_ACKED:
 		subjfmt = (include_configid ? "Hobbit [%d] %s:%s %s [cfid:%d]" :  "Hobbit [%d] %s:%s %s");
 		snprintf(subj, sizeof(subj)-1, subjfmt, 
-			 alert->cookie, alert->hostname->name, alert->testname->name, sev, recip->cfid);
+			 alert->cookie, alert->hostname, alert->testname, sev, recip->cfid);
 		break;
 
 	  case A_NOTIFY:
 		subjfmt = (include_configid ? "Hobbit %s:%s NOTICE [cfid:%d]" :  "Hobbit %s:%s NOTICE");
 		snprintf(subj, sizeof(subj)-1, subjfmt, 
-			 alert->hostname->name, alert->testname->name, recip->cfid);
+			 alert->hostname, alert->testname, recip->cfid);
 		break;
 
 	  case A_RECOVERED:
 		subjfmt = (include_configid ? "Hobbit %s:%s recovered [cfid:%d]" :  "Hobbit %s:%s recovered");
 		snprintf(subj, sizeof(subj)-1, subjfmt, 
-			 alert->hostname->name, alert->testname->name, recip->cfid);
+			 alert->hostname, alert->testname, recip->cfid);
 		break;
 
 	  case A_NORECIP:
@@ -176,7 +176,7 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 	if (buf) *buf = '\0';
 
 	if (alert->state == A_NOTIFY) {
-		sprintf(info, "%s:%s INFO\n", alert->hostname->name, alert->testname->name);
+		sprintf(info, "%s:%s INFO\n", alert->hostname, alert->testname);
 		addtobuffer(&buf, &buflen, info);
 		addtobuffer(&buf, &buflen, alert->pagemessage);
 		MEMUNDEFINE(info);
@@ -213,7 +213,7 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 		if (recip->format == ALERTFORM_TEXT) {
 			sprintf(info, "See %s%s\n", 
 				xgetenv("BBWEBHOST"), 
-				hostsvcurl(alert->hostname->name, alert->testname->name));
+				hostsvcurl(alert->hostname, alert->testname));
 			addtobuffer(&buf, &buflen, info);
 		}
 
@@ -229,18 +229,18 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 		  case A_PAGING:
 		  case A_ACKED:
 			sprintf(info, "%s:%s %s [%d]", 
-				alert->hostname->name, alert->testname->name, 
+				alert->hostname, alert->testname, 
 				colorname(alert->color), alert->cookie);
 			break;
 
 		  case A_RECOVERED:
 			sprintf(info, "%s:%s RECOVERED", 
-				alert->hostname->name, alert->testname->name);
+				alert->hostname, alert->testname);
 			break;
 
 		  case A_NOTIFY:
 			sprintf(info, "%s:%s NOTICE", 
-				alert->hostname->name, alert->testname->name);
+				alert->hostname, alert->testname);
 			break;
 
 		  case A_NORECIP:
@@ -266,13 +266,13 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 
 	  case ALERTFORM_SCRIPT:
 		sprintf(info, "%s:%s %s [%d]\n",
-			alert->hostname->name, alert->testname->name, colorname(alert->color), alert->cookie);
+			alert->hostname, alert->testname, colorname(alert->color), alert->cookie);
 		addtobuffer(&buf, &buflen, info);
 		addtobuffer(&buf, &buflen, msg_data(alert->pagemessage));
 		addtobuffer(&buf, &buflen, "\n");
 		sprintf(info, "See %s%s\n", 
 			xgetenv("BBWEBHOST"),
-			hostsvcurl(alert->hostname->name, alert->testname->name));
+			hostsvcurl(alert->hostname, alert->testname));
 		addtobuffer(&buf, &buflen, info);
 		MEMUNDEFINE(info);
 		return buf;
@@ -295,9 +295,9 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 	time_t now = time(NULL);
 	char *alerttxt[A_DEAD+1] = { "Paging", "Acked", "Recovered", "Notify", "Dead" };
 
-	dprintf("send_alert %s:%s state %d\n", alert->hostname->name, alert->testname->name, (int)alert->state);
+	dprintf("send_alert %s:%s state %d\n", alert->hostname, alert->testname, (int)alert->state);
 	traceprintf("send_alert %s:%s state %s\n", 
-		    alert->hostname->name, alert->testname->name, alerttxt[alert->state]);
+		    alert->hostname, alert->testname, alerttxt[alert->state]);
 
 	stoprulefound = 0;
 
@@ -343,7 +343,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 			alertcount++;
 		}
 
-		dprintf("  Alert for %s:%s to %s\n", alert->hostname->name, alert->testname->name, recip->recipient);
+		dprintf("  Alert for %s:%s to %s\n", alert->hostname, alert->testname, recip->recipient);
 		switch (recip->method) {
 		  case M_IGNORE:
 			break;
@@ -384,9 +384,9 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					if (logfd) {
 						init_timestamp();
 						fprintf(logfd, "%s %s.%s (%s) %s %d %d",
-							timestamp, alert->hostname->name, alert->testname->name,
+							timestamp, alert->hostname, alert->testname,
 							alert->ip, recip->recipient, (int)now, 
-							servicecode(alert->testname->name));
+							servicecode(alert->testname));
 						if (alert->state == A_RECOVERED) {
 							fprintf(logfd, " %d\n", (int)(now - alert->eventstart));
 						}
@@ -430,22 +430,22 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 				sprintf(rcpt, "RCPT=%s", recip->recipient);
 				putenv(rcpt);
 
-				bbhostname = (char *)malloc(strlen("BBHOSTNAME=") + strlen(alert->hostname->name) + 1);
-				sprintf(bbhostname, "BBHOSTNAME=%s", alert->hostname->name);
+				bbhostname = (char *)malloc(strlen("BBHOSTNAME=") + strlen(alert->hostname) + 1);
+				sprintf(bbhostname, "BBHOSTNAME=%s", alert->hostname);
 				putenv(bbhostname);
 
-				bbhostsvc = (char *)malloc(strlen("BBHOSTSVC=") + strlen(alert->hostname->name) + 1 + strlen(alert->testname->name) + 1);
-				sprintf(bbhostsvc, "BBHOSTSVC=%s.%s", alert->hostname->name, alert->testname->name);
+				bbhostsvc = (char *)malloc(strlen("BBHOSTSVC=") + strlen(alert->hostname) + 1 + strlen(alert->testname) + 1);
+				sprintf(bbhostsvc, "BBHOSTSVC=%s.%s", alert->hostname, alert->testname);
 				putenv(bbhostsvc);
 
-				bbhostsvccommas = (char *)malloc(strlen("BBHOSTSVCCOMMAS=") + strlen(alert->hostname->name) + 1 + strlen(alert->testname->name) + 1);
-				sprintf(bbhostsvccommas, "BBHOSTSVCCOMMAS=%s.%s", commafy(alert->hostname->name), alert->testname->name);
+				bbhostsvccommas = (char *)malloc(strlen("BBHOSTSVCCOMMAS=") + strlen(alert->hostname) + 1 + strlen(alert->testname) + 1);
+				sprintf(bbhostsvccommas, "BBHOSTSVCCOMMAS=%s.%s", commafy(alert->hostname), alert->testname);
 				putenv(bbhostsvccommas);
 
 				bbnumeric = (char *)malloc(strlen("BBNUMERIC=") + 22 + 1);
 				p = bbnumeric;
 				p += sprintf(p, "BBNUMERIC=");
-				p += sprintf(p, "%03d", servicecode(alert->testname->name));
+				p += sprintf(p, "%03d", servicecode(alert->testname));
 				sscanf(alert->ip, "%d.%d.%d.%d", &ip1, &ip2, &ip3, &ip4);
 				p += sprintf(p, "%03d%03d%03d%03d", ip1, ip2, ip3, ip4);
 				p += sprintf(p, "%d", alert->cookie);
@@ -455,12 +455,12 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 				sprintf(machip, "MACHIP=%03d%03d%03d%03d", ip1, ip2, ip3, ip4);
 				putenv(machip);
 
-				bbsvcname = (char *)malloc(strlen("BBSVCNAME=") + strlen(alert->testname->name) + 1);
-				sprintf(bbsvcname, "BBSVCNAME=%s", alert->testname->name);
+				bbsvcname = (char *)malloc(strlen("BBSVCNAME=") + strlen(alert->testname) + 1);
+				sprintf(bbsvcname, "BBSVCNAME=%s", alert->testname);
 				putenv(bbsvcname);
 
 				bbsvcnum = (char *)malloc(strlen("BBSVCNUM=") + 10);
-				sprintf(bbsvcnum, "BBSVCNUM=%d", servicecode(alert->testname->name));
+				sprintf(bbsvcnum, "BBSVCNUM=%d", servicecode(alert->testname));
 				putenv(bbsvcnum);
 
 				bbcolorlevel = (char *)malloc(strlen("BBCOLORLEVEL=") + strlen(colorname(alert->color)) + 1);
@@ -512,9 +512,9 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					if (logfd) {
 						init_timestamp();
 						fprintf(logfd, "%s %s.%s (%s) %s %d %d",
-							timestamp, alert->hostname->name, alert->testname->name,
+							timestamp, alert->hostname, alert->testname,
 							alert->ip, recip->recipient, (int)now, 
-							servicecode(alert->testname->name));
+							servicecode(alert->testname));
 						if (alert->state == A_RECOVERED) {
 							fprintf(logfd, " %d\n", (int)(now - alert->eventstart));
 						}
@@ -622,10 +622,10 @@ void cleanup_alert(activealerts_t *alert)
 	char *id;
 	repeat_t *rptwalk, *rptprev;
 
-	dprintf("cleanup_alert called for host %s, test %s\n", alert->hostname->name, alert->testname->name);
+	dprintf("cleanup_alert called for host %s, test %s\n", alert->hostname, alert->testname);
 
-	id = (char *)malloc(strlen(alert->hostname->name)+strlen(alert->testname->name)+3);
-	sprintf(id, "%s|%s|", alert->hostname->name, alert->testname->name);
+	id = (char *)malloc(strlen(alert->hostname)+strlen(alert->testname)+3);
+	sprintf(id, "%s|%s|", alert->hostname, alert->testname);
 	rptwalk = rpthead; rptprev = NULL;
 	while (rptwalk) {
 		if (strncmp(rptwalk->recipid, id, strlen(id)) == 0) {

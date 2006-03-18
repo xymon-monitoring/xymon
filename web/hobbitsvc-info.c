@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.98 2006-02-21 22:02:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.99 2006-03-18 07:31:38 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -170,7 +170,6 @@ static int fetch_status(char *hostname)
 static void generate_hobbit_alertinfo(char *hostname, char **buf, int *buflen)
 {
 	namelist_t *hi = hostinfo(hostname);
-	htnames_t hname, lname, tname;
 	activealerts_t alert;
 	char l[1024];
 	int i, rcount;
@@ -179,12 +178,8 @@ static void generate_hobbit_alertinfo(char *hostname, char **buf, int *buflen)
 	addtobuffer(buf, buflen, l);
 	addtobuffer(buf, buflen, "<tr><th>Service</th><th>Recipient</th><th>1st Delay</th><th>Stop after</th><th>Repeat</th><th>Time of Day</th><th>Colors</th></tr>\n");
 
-	hname.name = hostname; hname.next = NULL;
-	lname.name = (hi ? hi->page->pagepath : ""); lname.next = NULL;
-	tname.next = NULL;
-	alert.hostname = &hname;
-	alert.location = &lname;
-	alert.testname = &tname;
+	alert.hostname = hostname;
+	alert.location = (hi ? hi->page->pagepath : "");
 	strcpy(alert.ip, "127.0.0.1");
 	alert.color = COL_RED;
 	alert.pagemessage = "";
@@ -198,7 +193,7 @@ static void generate_hobbit_alertinfo(char *hostname, char **buf, int *buflen)
 
 	alert_printmode(1);
 	for (i = 0; (i < testcount); i++) {
-		tname.name = tnames[i].name;
+		alert.testname = tnames[i].name;
 		if (have_recipient(&alert, NULL)) { rcount++; print_alert_recipients(&alert, buf, buflen); }
 	}
 

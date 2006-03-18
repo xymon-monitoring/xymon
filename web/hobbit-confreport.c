@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-confreport.c,v 1.7 2006-01-13 10:14:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-confreport.c,v 1.8 2006-03-18 07:30:33 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -141,7 +141,6 @@ static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 	tag_t *taghead = NULL;
 	int contidx = 0, haveping = 0;
 	char contcol[1024];
-	htnames_t hname, lname, tname;
 	activealerts_t alert;
 	char *buf = NULL; 
 	int buflen = 0;
@@ -432,12 +431,8 @@ addtolist:
 	}
 
 	/* Do the alerts */
-	hname.name = host->hostname; hname.next = NULL;
-	lname.name = hinfo->page->pagepath; lname.next = NULL;
-	tname.next = NULL;
-	alert.hostname = &hname;
-	alert.location = &lname;
-	alert.testname = &tname;
+	alert.hostname = host->hostname;
+	alert.location = hinfo->page->pagepath;
 	strcpy(alert.ip, "127.0.0.1");
 	alert.color = COL_RED;
 	alert.pagemessage = "";
@@ -449,7 +444,7 @@ addtolist:
 	alert.next = NULL;
 	alert_printmode(2);
 	for (testi = 0; (testi < testcount); testi++) {
-		tname.name = testnames[testi]->name;
+		alert.testname = testnames[testi]->name;
 		if (have_recipient(&alert, NULL)) print_alert_recipients(&alert, &buf, &buflen);
 	}
 
