@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.45 2006-03-18 07:32:29 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.46 2006-03-18 07:45:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -812,7 +812,6 @@ int main(int argc, char *argv[])
 					char *pname;
 					int pcount, pmin, pmax, pcolor;
 					FILE *fd;
-					char fname[PATH_MAX];
 
 					if (pchecks == 0) {
 						printf("No process checks for this host\n");
