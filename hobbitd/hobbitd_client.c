@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.44 2006-03-12 16:31:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.45 2006-03-18 07:32:29 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -890,20 +890,7 @@ int main(int argc, char *argv[])
 		}
 		metadata[metacount] = NULL;
 
-		if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
-			printf("Shutting down\n");
-			running = 0;
-			continue;
-		}
-		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
-			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
-			if (fn && strlen(fn)) {
-				freopen(fn, "a", stdout);
-				freopen(fn, "a", stderr);
-			}
-			continue;
-		}
-		else if ((metacount > 4) && (strncmp(metadata[0], "@@client", 8) == 0)) {
+		if ((metacount > 4) && (strncmp(metadata[0], "@@client", 8) == 0)) {
 			time_t timestamp = atoi(metadata[1]);
 			char *sender = metadata[2];
 			char *hostname = metadata[3];
@@ -961,6 +948,19 @@ int main(int argc, char *argv[])
 				errprintf("No client backend for OS '%s' sent by %s\n", clienttype, sender);
 				break;
 			}
+		}
+		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
+			printf("Shutting down\n");
+			running = 0;
+			continue;
+		}
+		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
+			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
+			if (fn && strlen(fn)) {
+				freopen(fn, "a", stdout);
+				freopen(fn, "a", stderr);
+			}
+			continue;
 		}
 		else {
 			/* Unknown message - ignore it */
