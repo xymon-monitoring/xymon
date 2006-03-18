@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.69 2006-01-13 14:14:26 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.70 2006-03-18 07:38:37 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -60,9 +60,9 @@ static char rcsid[] = "$Id: hobbitd_alert.c,v 1.69 2006-01-13 14:14:26 henrik Ex
 static volatile int running = 1;
 static volatile time_t nextcheckpoint = 0;
 
-htnames_t *hostnames = NULL;
-htnames_t *testnames = NULL;
-htnames_t *locations = NULL;
+RbtHandle hostnames;
+RbtHandle testnames;
+RbtHandle locations;
 activealerts_t *ahead = NULL;
 
 char *statename[] = {
@@ -70,31 +70,42 @@ char *statename[] = {
 	"paging", "norecip", "acked", "recovered", "notify", "dead"
 };
 
-htnames_t *find_name(htnames_t **head, char *name)
+char *find_name(RbtHandle tree, char *name)
 {
-	htnames_t *walk;
+	char *result;
+	RbtIterator handle;
 
-	for (walk = *head; (walk && strcmp(name, walk->name)); walk = walk->next) ;
-	if (walk == NULL) {
-		walk = (htnames_t *)malloc(sizeof(htnames_t));
-		walk->name = strdup(name);
-		walk->next = *head;
-		*head = walk;
+	handle = rbtFind(tree, name);
+	if (handle == rbtEnd(tree)) {
+		result = strdup(name);
+		rbtInsert(tree, result, NULL);
 	}
+	else {
+		void *k1, *k2;
 
-	return walk;
+		rbtKeyValue(tree, handle, &k1, &k2);
+		result = (char *)k1;
+	}
+	
+	return result;
 }
 
 activealerts_t *find_active(char *hostname, char *testname)
 {
-	htnames_t *hwalk, *twalk;
+	RbtIterator handle;
+	void *k1, *k2;
+	char *hwalk, *twalk;
 	activealerts_t *awalk;
 
-	for (hwalk = hostnames; (hwalk && strcmp(hostname, hwalk->name)); hwalk = hwalk->next) ;
-	if (hwalk == NULL) return NULL;
+	handle = rbtFind(hostnames, hostname);
+	if (handle == rbtEnd(hostnames)) return NULL;
+	rbtKeyValue(hostnames, handle, &k1, &k2);
+	hwalk = (char *)k1;
 
-	for (twalk = testnames; (twalk && strcmp(testname, twalk->name)); twalk = twalk->next) ;
-	if (twalk == NULL) return NULL;
+	handle = rbtFind(testnames, testname);
+	if (handle == rbtEnd(testnames)) return NULL;
+	rbtKeyValue(testnames, handle, &k1, &k2);
+	twalk = (char *)k1;
 
 	for (awalk = ahead; (awalk && ((awalk->hostname != hwalk) || (awalk->testname != twalk))); awalk=awalk->next) ;
 	return awalk;
@@ -130,7 +141,7 @@ void save_checkpoint(char *filename)
 		if (awalk->state == A_DEAD) continue;
 
 		fprintf(fd, "%s|%s|%s|%s|%s|%d|%d|%s|",
-			awalk->hostname->name, awalk->testname->name, awalk->location->name, awalk->ip,
+			awalk->hostname, awalk->testname, awalk->location, awalk->ip,
 			colorname(awalk->maxcolor),
 			(int) awalk->eventstart,
 			(int) awalk->nextalerttime,
@@ -184,9 +195,9 @@ void load_checkpoint(char *filename)
 		if (i > 9) {
 			char *key, *valid = NULL;
 			activealerts_t *newalert = (activealerts_t *)malloc(sizeof(activealerts_t));
-			newalert->hostname = find_name(&hostnames, item[0]);
-			newalert->testname = find_name(&testnames, item[1]);
-			newalert->location = find_name(&locations, item[2]);
+			newalert->hostname = find_name(hostnames, item[0]);
+			newalert->testname = find_name(testnames, item[1]);
+			newalert->location = find_name(locations, item[2]);
 			strcpy(newalert->ip, item[3]);
 			newalert->color = newalert->maxcolor = parse_color(item[4]);
 			newalert->eventstart = (time_t) atoi(item[5]);
@@ -194,13 +205,13 @@ void load_checkpoint(char *filename)
 			newalert->state = A_PAGING;
 
 			if (statusbuf) {
-				key = (char *)malloc(strlen(newalert->hostname->name) + strlen(newalert->testname->name) + 100);
-				sprintf(key, "\n%s|%s|%s\n", newalert->hostname->name, newalert->testname->name, colorname(newalert->color));
+				key = (char *)malloc(strlen(newalert->hostname) + strlen(newalert->testname) + 100);
+				sprintf(key, "\n%s|%s|%s\n", newalert->hostname, newalert->testname, colorname(newalert->color));
 				valid = strstr(statusbuf, key);
 				if (!valid && (strncmp(statusbuf, key+1, strlen(key+1)) == 0)) valid = statusbuf;
 			}
 			if (!valid) {
-				errprintf("Stale alert for %s:%s dropped\n", newalert->hostname->name, newalert->testname->name);
+				errprintf("Stale alert for %s:%s dropped\n", newalert->hostname, newalert->testname);
 				xfree(newalert);
 				continue;
 			}
@@ -260,6 +271,11 @@ int main(int argc, char *argv[])
 	alertcolors = colorset(xgetenv("ALERTCOLORS"), ((1 << COL_GREEN) | (1 << COL_BLUE)));
 	alertinterval = 60*atoi(xgetenv("ALERTREPEAT"));
 
+	/* Create our loookup-trees */
+	hostnames = rbtNew(name_compare);
+	testnames = rbtNew(name_compare);
+	locations = rbtNew(name_compare);
+
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--debug")) {
 			debug = 1;
@@ -311,9 +327,9 @@ int main(int argc, char *argv[])
 			}
 
 			awalk = (activealerts_t *)malloc(sizeof(activealerts_t));
-			awalk->hostname = find_name(&hostnames, testhost);
-			awalk->testname = find_name(&testnames, testservice);
-			awalk->location = find_name(&locations, testpage);
+			awalk->hostname = find_name(hostnames, testhost);
+			awalk->testname = find_name(testnames, testservice);
+			awalk->location = find_name(locations, testpage);
 			strcpy(awalk->ip, "127.0.0.1");
 			awalk->color = awalk->maxcolor = parse_color(testcolor);
 			awalk->pagemessage = "Test of the alert configuration";
@@ -449,9 +465,9 @@ int main(int argc, char *argv[])
 
 			awalk = find_active(hostname, testname);
 			if (awalk == NULL) {
-				htnames_t *hwalk = find_name(&hostnames, hostname);
-				htnames_t *twalk = find_name(&testnames, testname);
-				htnames_t *pwalk = find_name(&locations, metadata[10]);
+				char *hwalk = find_name(hostnames, hostname);
+				char *twalk = find_name(testnames, testname);
+				char *pwalk = find_name(locations, metadata[10]);
 
 				awalk = (activealerts_t *)calloc(1, sizeof(activealerts_t));
 				awalk->hostname = hwalk;
@@ -495,7 +511,7 @@ int main(int argc, char *argv[])
 						 * interval.
 						 */
 						dprintf("Severity increased, cleared repeat interval: %s/%s %s->%s\n",
-							awalk->hostname->name, awalk->testname->name,
+							awalk->hostname, awalk->testname,
 							colorname(awalk->maxcolor), colorname(newcolor));
 						clear_interval(awalk);
 					}
@@ -561,9 +577,9 @@ int main(int argc, char *argv[])
 		else if ((metacount > 4) && (strncmp(metadata[0], "@@notify", 5) == 0)) {
 			/* @@notify|timestamp|sender|hostname|testname|pagepath */
 
-			htnames_t *hwalk = find_name(&hostnames, hostname);
-			htnames_t *twalk = find_name(&testnames, testname);
-			htnames_t *pwalk = find_name(&locations, (metadata[5] ? metadata[5] : ""));
+			char *hwalk = find_name(hostnames, hostname);
+			char *twalk = find_name(testnames, testname);
+			char *pwalk = find_name(locations, (metadata[5] ? metadata[5] : ""));
 
 			awalk = (activealerts_t *)malloc(sizeof(activealerts_t));
 			awalk->hostname = hwalk;
@@ -584,10 +600,16 @@ int main(int argc, char *argv[])
 			 ((strncmp(metadata[0], "@@drophost", 10) == 0) || (strncmp(metadata[0], "@@dropstate", 11) == 0))) {
 			/* @@drophost|timestamp|sender|hostname */
 			/* @@dropstate|timestamp|sender|hostname */
-			htnames_t *hwalk;
+			RbtIterator handle;
 
-			for (hwalk = hostnames; (hwalk && strcmp(hostname, hwalk->name)); hwalk = hwalk->next) ;
-			if (hwalk) {
+			handle = rbtFind(hostnames, hostname);
+			if (handle != rbtEnd(hostnames)) {
+				void *k1, *k2;
+				char *hwalk;
+
+				rbtKeyValue(hostnames, handle, &k1, &k2);
+				hwalk = (char *)k1;
+
 				for (awalk = ahead; (awalk); awalk = awalk->next) {
 					if (awalk->hostname == hwalk) awalk->state = A_DEAD;
 				}
@@ -608,9 +630,19 @@ int main(int argc, char *argv[])
 			 * active alert for the host, it will have to be dealt with when the next
 			 * status update arrives.
 			 */
-			for (hwalk = hostnames; (hwalk && strcmp(hostname, hwalk->name)); hwalk = hwalk->next) ;
-			for (awalk = ahead; (awalk); awalk = awalk->next) {
-				if (awalk->hostname == hwalk) awalk->state = A_DEAD;
+			RbtIterator handle;
+
+			handle = rbtFind(hostnames, hostname);
+			if (handle != rbtEnd(hostnames)) {
+				void *k1, *k2;
+				char *hwalk;
+
+				rbtKeyValue(hostnames, handle, &k1, &k2);
+				hwalk = (char *)k1;
+
+				for (awalk = ahead; (awalk); awalk = awalk->next) {
+					if (awalk->hostname == hwalk) awalk->state = A_DEAD;
+				}
 			}
 		}
 		else if ((metacount > 5) && (strncmp(metadata[0], "@@renametest", 12) == 0)) {
