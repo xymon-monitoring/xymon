@@ -17,6 +17,7 @@
 // reentrant red-black tree
 
 #include <stdlib.h>
+#include <strings.h>
 #include "libbbgen.h"
 
 typedef enum { BLACK, RED } NodeColor;
@@ -383,3 +384,25 @@ void *rbtFind(RbtHandle h, void *key) {
     }
     return NULL;
 }
+
+/* Utility functions used in many places in Hobbit */
+int name_compare(void *a, void *b)
+{
+	return strcasecmp((char *)a, (char *)b);
+}
+
+int int_compare(void *a, void *b)
+{
+	if ((int)a < (int)b) return -1;
+	else if ((int)a > (int)b) return 1;
+	else return 0;
+}
+
+void *gettreeitem(RbtHandle tree, RbtIterator handle)
+{
+	void *k1, *k2;
+
+	rbtKeyValue(tree, handle, &k1, &k2);
+	return k2;
+}
+
