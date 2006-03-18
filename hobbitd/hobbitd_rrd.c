@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.23 2006-03-16 21:57:26 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.24 2006-03-18 07:34:11 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -118,7 +118,41 @@ int main(int argc, char *argv[])
 		}
 		metadata[metacount] = NULL;
 
-		if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
+		if ((metacount >= 14) && (strncmp(metadata[0], "@@status", 8) == 0)) {
+			/*
+			 * @@status|timestamp|sender|origin|hostname|testname|expiretime|color|testflags|\
+			 * prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage 
+			 */
+			int color = parse_color(metadata[7]);
+
+			switch (color) {
+			  case COL_GREEN:
+			  case COL_YELLOW:
+			  case COL_RED:
+			  case COL_BLUE: /* Blue is OK, because it only arrives here when an update is sent */
+				tstamp = atoi(metadata[1]);
+				sender = metadata[2];
+				hostname = metadata[4]; 
+				testname = metadata[5];
+				ldef = find_hobbit_rrd(testname, metadata[8]);
+				update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef);
+				break;
+
+			  default:
+				/* Ignore reports with purple, blue or clear - they have no data we want. */
+				break;
+			}
+		}
+		else if ((metacount > 5) && (strncmp(metadata[0], "@@data", 6) == 0)) {
+			/* @@data|timestamp|sender|origin|hostname|testname */
+			tstamp = atoi(metadata[1]);
+			sender = metadata[2];
+			hostname = metadata[4]; 
+			testname = metadata[5];
+			ldef = find_hobbit_rrd(testname, "");
+			update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef);
+		}
+		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			running = 0;
 			continue;
 		}
@@ -167,40 +201,6 @@ int main(int argc, char *argv[])
 		}
 		else if ((metacount > 5) && (strncmp(metadata[0], "@@renametest", 12) == 0)) {
 			/* Not implemented. See "droptest". */
-		}
-		else if ((metacount >= 14) && (strncmp(metadata[0], "@@status", 8) == 0)) {
-			/*
-			 * @@status|timestamp|sender|origin|hostname|testname|expiretime|color|testflags|\
-			 * prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage 
-			 */
-			int color = parse_color(metadata[7]);
-
-			switch (color) {
-			  case COL_GREEN:
-			  case COL_YELLOW:
-			  case COL_RED:
-			  case COL_BLUE: /* Blue is OK, because it only arrives here when an update is sent */
-				tstamp = atoi(metadata[1]);
-				sender = metadata[2];
-				hostname = metadata[4]; 
-				testname = metadata[5];
-				ldef = find_hobbit_rrd(testname, metadata[8]);
-				update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef);
-				break;
-
-			  default:
-				/* Ignore reports with purple, blue or clear - they have no data we want. */
-				break;
-			}
-		}
-		else if ((metacount > 5) && (strncmp(metadata[0], "@@data", 6) == 0)) {
-			/* @@data|timestamp|sender|origin|hostname|testname */
-			tstamp = atoi(metadata[1]);
-			sender = metadata[2];
-			hostname = metadata[4]; 
-			testname = metadata[5];
-			ldef = find_hobbit_rrd(testname, "");
-			update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef);
 		}
 
 		/* 
