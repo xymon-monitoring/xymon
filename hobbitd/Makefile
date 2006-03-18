@@ -27,22 +27,22 @@ all: $(PROGRAMS) cfgfiles
 client: $(CLIENTPROGRAMS)
 
 hobbitd: $(HOBBITDOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(RPATHOPT) $(HOBBITDOBJS) $(LIBOBJS) $(NETLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HOBBITDOBJS) $(LIBOBJS) $(NETLIBS)
 
 hobbitd_channel: $(CHANNELOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(RPATHOPT) $(CHANNELOBJS) $(LIBOBJS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CHANNELOBJS) $(LIBOBJS)
 
 hobbitd_filestore: $(FILESTOREOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(RPATHOPT) $(FILESTOREOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(FILESTOREOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
 hobbitd_history: $(HISTORYOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(RPATHOPT) $(HISTORYOBJS) $(LIBOBJS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HISTORYOBJS) $(LIBOBJS)
 
 hobbitd_alert: $(ALERTOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(RPATHOPT) $(ALERTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(ALERTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
 hobbitd_rrd: $(RRDOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(RPATHOPT) $(RRDOBJS) $(LIBOBJS) $(RRDLIBS) $(PCRELIBS) $(NETLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(RRDOBJS) $(LIBOBJS) $(RRDLIBS) $(PCRELIBS) $(NETLIBS)
 
 do_alert.o: do_alert.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ do_alert.c
@@ -51,10 +51,10 @@ do_rrd.o: do_rrd.c do_rrd.h rrd/*.c
 	$(CC) $(CFLAGS) $(RRDINCDIR) $(PCREINCDIR) -c -o $@ do_rrd.c
 
 hobbitd_sample: $(SAMPLEOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(RPATHOPT) $(SAMPLEOBJS) $(LIBOBJS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(SAMPLEOBJS) $(LIBOBJS)
 
 hobbitd_client: $(CLIENTOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(RPATHOPT) $(CLIENTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CLIENTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
 ../client/hobbitd_client: $(CLIENTOBJS) ../lib/hobbitclient.a
 	$(CC) -o $@ $(RPATHOPT) $(CLIENTOBJS) ../lib/hobbitclient.a $(PCRELIBS) $(NETLIBS)
@@ -66,7 +66,7 @@ bbcombotest.o: bbcombotest.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
 
 bbcombotest: $(COMBOTESTOBJS) $(LIBOBJS)
-	$(CC) -o $@ $(RPATHOPT) $(COMBOTESTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(COMBOTESTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
 hobbit-mailack.o: hobbit-mailack.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ hobbit-mailack.c
