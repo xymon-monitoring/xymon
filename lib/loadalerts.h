@@ -22,9 +22,9 @@ typedef enum { A_PAGING, A_NORECIP, A_ACKED, A_RECOVERED, A_NOTIFY, A_DEAD } ast
 
 typedef struct activealerts_t {
 	/* Identification of the alert */
-	htnames_t *hostname;
-	htnames_t *testname;
-	htnames_t *location;
+	char *hostname;
+	char *testname;
+	char *location;
 	char ip[16];
 
 	/* Alert status */

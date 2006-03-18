@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadalerts.c,v 1.3 2006-02-25 08:42:19 henrik Exp $";
+static char rcsid[] = "$Id: loadalerts.c,v 1.4 2006-03-18 07:29:19 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -727,7 +727,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 
 	time_t duration = (time(NULL) - alert->eventstart);
 	int result, cfid = 0;
-	char *pgname = alert->location->name;
+	char *pgname = alert->location;
 	char *cfline = NULL;
 
 	/* The top-level page needs a name - cannot match against an empty string */
@@ -739,7 +739,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	if (!cfline) cfline = "<undefined>";
 
 	traceprintf("Matching host:service:page '%s:%s:%s' against rule line %d\n",
-			alert->hostname->name, alert->testname->name, alert->location->name, cfid);
+			alert->hostname, alert->testname, alert->location, cfid);
 
 	if (alert->state == A_PAGING) {
 		/* Check max-duration now - it's fast and easy. */
@@ -758,20 +758,20 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 		return 0; 
 	}
 
-	if (crit && crit->hostspec && !namematch(alert->hostname->name, crit->hostspec, crit->hostspecre)) { 
+	if (crit && crit->hostspec && !namematch(alert->hostname, crit->hostspec, crit->hostspecre)) { 
 		traceprintf("Failed '%s' (hostname not in include list)\n", cfline);
 		return 0; 
 	}
-	if (crit && crit->exhostspec && namematch(alert->hostname->name, crit->exhostspec, crit->exhostspecre)) { 
+	if (crit && crit->exhostspec && namematch(alert->hostname, crit->exhostspec, crit->exhostspecre)) { 
 		traceprintf("Failed '%s' (hostname excluded)\n", cfline);
 		return 0; 
 	}
 
-	if (crit && crit->svcspec && !namematch(alert->testname->name, crit->svcspec, crit->svcspecre))  { 
+	if (crit && crit->svcspec && !namematch(alert->testname, crit->svcspec, crit->svcspecre))  { 
 		traceprintf("Failed '%s' (service not in include list)\n", cfline);
 		return 0; 
 	}
-	if (crit && crit->exsvcspec && namematch(alert->testname->name, crit->exsvcspec, crit->exsvcspecre))  { 
+	if (crit && crit->exsvcspec && namematch(alert->testname, crit->exsvcspec, crit->exsvcspecre))  { 
 		traceprintf("Failed '%s' (service excluded)\n", cfline);
 		return 0; 
 	}
@@ -967,7 +967,7 @@ void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
 
 		addtobuffer(buf, buflen, "<tr>");
 		if (count == 1) {
-			sprintf(l, "<td valign=top rowspan=###>%s</td>", alert->testname->name);
+			sprintf(l, "<td valign=top rowspan=###>%s</td>", alert->testname);
 			addtobuffer(buf, buflen, l);
 		}
 
