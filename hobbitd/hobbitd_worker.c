@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_worker.c,v 1.22 2005-08-13 20:48:16 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_worker.c,v 1.23 2006-03-18 07:33:02 henrik Exp $";
 
 #include "config.h"
 
@@ -36,31 +36,85 @@ static char rcsid[] = "$Id: hobbitd_worker.c,v 1.22 2005-08-13 20:48:16 henrik E
 #include "hobbitd_ipc.h"
 #include "hobbitd_worker.h"
 
-static int didtimeout = 0;
-static int ioerror = 0;
 
-static char *readlntimed(unsigned int inbufsz, char *buffer, size_t bufsize, struct timeval *timeout)
+unsigned char *get_hobbitd_message(enum msgchannels_t chnid, char *id, int *seq, struct timeval *timeout)
 {
-	static char *stdinbuf = NULL;
-	static int stdinbuflen = 0;
-	struct timeval cutoff, now, tmo;
-	struct timezone tz;
-	char *eoln;
-	fd_set fdread;
+	static unsigned int seqnum = 0;
+	static char *idlemsg = NULL;
+	static char *buf = NULL;
+	static size_t bufsz = 0;
+	static char *startpos;	/* Where our unused data starts */
+	static char *endpos;	/* Where the first message ends */
+	static char *fillpos;	/* Where our unused data ends (the \0 byte) */
+	static char *movebuf = NULL; /* Result buffer - used only when we need to shuffle data around */
+	static int ioerror = 0;
 
-	if (ioerror) {
-		errprintf("readlntimed: Will not read past an I/O error\n");
-		return NULL;
+	struct timeval cutoff;
+	struct timezone tz;
+	int needmoredata;
+	char *endsrch;		/* Where in the buffer do we start looking for the end-message marker */
+	char *result;
+
+	/*
+	 * The way this works is to read data from stdin into a
+	 * buffer. Each read fetches as much data as possible,
+	 * i.e. all that is available up to the amount of 
+	 * buffer space we have.
+	 *
+	 * When the buffer contains a complete message,
+	 * we return a pointer to the message.
+	 *
+	 * Since a read into the buffer can potentially
+	 * fetch multiple messages, we need to keep track of
+	 * the start/end positions of the next message, and
+	 * where in the buffer new data should be read in.
+	 * As long as there is a complete message available
+	 * in the buffer, we just return that message - only
+	 * when there is no complete message do we read data
+	 * from stdin.
+	 *
+	 * A message is normally NOT copied, we just return
+	 * a pointer to our input buffer. The only time we 
+	 * need to shuffle data around is if the buffer
+	 * does not have room left to hold a complete message.
+	 * In that case, we use the "movebuf" to hold the
+	 * current result message, and move the remainder of
+	 * data (the incomplete next message) to the start of
+	 * the buffer.
+	 */
+
+startagain:
+	if (ioerror) return NULL;
+
+	if (movebuf) {
+		/* 
+		 * movebuf is used to return a message sometimes. So
+		 * we free it when it has been used.
+		 */
+		xfree(movebuf);
+		movebuf = NULL;
 	}
 
-	if (stdinbuf == NULL) stdinbuf = (char *)malloc(inbufsz + 1);
+	if (buf == NULL) {
+		/*
+		 * Initial setup of the buffers.
+		 * We allocate a buffer large enough for the largest message
+		 * that can arrive on this channel, and add 4KB extra room.
+		 * The extra 4KB is to allow the memmove() that will be
+		 * needed occasionally some room to work optimally.
+		 */
+		bufsz = shbufsz(chnid) + 4096;
+		buf = (char *)malloc(bufsz+1);
+		*buf = '\0';
+		startpos = fillpos = buf;
+		endpos = NULL;
 
-	/* Make sure the stdin buffer is null terminated */
-	stdinbuf[stdinbuflen] = '\0';
-	didtimeout = 0;
-	eoln = NULL;
+		/* idlemsg is used to return the idle message in case of timeouts. */
+		idlemsg = strdup("@@idle\n");
+	}
 
 	if (timeout) {
+		/* Calculate when the read should timeout. */
 		gettimeofday(&cutoff, &tz);
 		cutoff.tv_sec += timeout->tv_sec;
 		cutoff.tv_usec += timeout->tv_usec;
@@ -70,11 +124,23 @@ static char *readlntimed(unsigned int inbufsz, char *buffer, size_t bufsize, str
 		}
 	}
 
-	/* Loop reading from stdin until we have a newline in the buffer, or we get a timeout */
-	while (((eoln = strchr(stdinbuf, '\n')) == NULL) && !didtimeout && !ioerror) {
+	/*
+	 * Start looking for the end-of-message marker at the beginning of
+	 * the message. The next scans will only look at the new data we've
+	 * got when reading data in.
+	 */
+	endsrch = startpos;
+
+	/* We only need to read data, if we do not have an end-of-message marker */
+	needmoredata = (endpos == NULL);
+	while (needmoredata) {
+		/* Fill buffer with more data until we get an end-of-message marker */
+		struct timeval now, tmo;
+		fd_set fdread;
 		int res;
 
 		if (timeout) {
+			/* How long time until the timeout ? */
 			gettimeofday(&now, &tz);
 			tmo.tv_sec = cutoff.tv_sec - now.tv_sec;
 			tmo.tv_usec = cutoff.tv_usec - now.tv_usec;
@@ -89,145 +155,98 @@ static char *readlntimed(unsigned int inbufsz, char *buffer, size_t bufsize, str
 
 		res = select(STDIN_FILENO+1, &fdread, NULL, NULL, (timeout ? &tmo : NULL));
 
-		if (res == -1) {
+		if (res < 0) {
 			/* Some error happened */
 			if (errno != EINTR) {
 				ioerror = 1;
-			}
-		}
-		else if (res == 0) {
-			/* Timeout - dont touch stdinbuflen */
-			didtimeout = 1;
-		}
-		else if (FD_ISSET(STDIN_FILENO, &fdread)) {
-			res = read(STDIN_FILENO, (stdinbuf+stdinbuflen), ((inbufsz+1) - stdinbuflen - 1));
-			if (res <= 0) {
-				/* read() returns 0 --> End-of-file */
-				ioerror = 1;
-			}
-			else {
-				/* Got data */
-				stdinbuflen += res;
-			}
-			stdinbuf[stdinbuflen] = '\0';
-		}
-		else {
-			/* Cannot happen */
-		}
-	}
-
-	if (eoln) {
-		int n;
-
-		/* Copy the first line over to the result buffer */
-		n = (eoln - stdinbuf + 1);
-		memcpy(buffer, stdinbuf, n);
-		*(buffer + n) = '\0';
-		stdinbuflen -= n;
-
-		/* Now see if there is more data that we need to process later */
-		eoln++; /* Skip past the newline */
-		if (stdinbuflen) {
-			/* Move the rest of the data to start of buffer */
-			memmove(stdinbuf, eoln, stdinbuflen);
-			stdinbuf[stdinbuflen] = '\0';
-		}
-
-		return buffer;
-	}
-
-	return NULL;
-}
-
-
-unsigned char *get_hobbitd_message(enum msgchannels_t chnid, char *id, int *seq, struct timeval *timeout)
-{
-	static unsigned int seqnum = 0;
-	static unsigned char *buf = NULL;
-	static int bufsz = 0;
-	unsigned char *bufp;
-	int buflen;
-	int complete;
-	char *p;
-
-	if (buf == NULL) {
-		bufsz = shbufsz(chnid);
-		buf = (unsigned char *)malloc(bufsz);
-	}
-
-startagain:
-	bufp = buf;
-	buflen = 0;
-	complete = 0;
-
-	while (!complete) {
-		if (readlntimed(bufsz, bufp, (bufsz - buflen), timeout) == NULL) {
-			if (didtimeout) {
-				*seq = 0;
-				strcpy(buf, "@@idle\n");
-				return buf;
-			}
-			else {
 				return NULL;
 			}
 		}
+		else if (res == 0) {
+			/* 
+			 * Timeout - return the "idle" message.
+			 * NB: If select() was not passed a timeout parameter, this cannot trigger
+			 */
+			*seq = 0;
+			return idlemsg;
+		}
+		else if (FD_ISSET(STDIN_FILENO, &fdread)) {
+			size_t bufleft = bufsz - (fillpos - buf);
+			res = read(STDIN_FILENO, fillpos, bufleft);
+			if (res <= 0) {
+				/* read() returns 0 --> End-of-file */
+				ioerror = 1;
+				return NULL;
+			}
+			else {
+				/* 
+				 * Got data - null-terminate it, and update fillpos
+				 */
+				*(fillpos+res) = '\0';
+				fillpos += res;
 
-		if (strcmp(bufp, "@@\n") == 0) {
-			/* "@@\n" marks the end of a multi-line message */
-			bufp--; /* Backup over the final \n */
-			complete = 1;
-		}
-		else if ((bufp == buf) && (strncmp(bufp, "@@", 2) != 0)) {
-			/* A new message must begin with "@@" - if not, just drop those lines. */
-			errprintf("%s: Out-of-sync data in channel: %s\n", id, bufp);
-		}
-		else {
-			/* Add data to buffer */
-			int n = strlen(bufp);
-			buflen += n;
-			bufp += n;
-			if (buflen >= (bufsz-1)) {
-				/* Buffer is full - force message complete */
-				errprintf("%s: Buffer full, forcing message to complete\n", id);
-				complete = 1;
+				/* Did we get an end-of-message marker ? Then we're done. */
+				endpos = strstr(endsrch, "\n@@\n");
+				needmoredata = (endpos == NULL);
+
+				/*
+				 * If not done, update endsrch. We need to look at the
+				 * last 3 bytes of input we got - they could be "\n@@" so
+				 * all that is missing is the final "\n".
+				 */
+				if (needmoredata && (res >= 3)) endsrch = fillpos-3;
 			}
 		}
 	}
 
-	/* Make sure buffer is NULL terminated */
-	*bufp = '\0';
+	/* We have a complete message between startpos and endpos */
+	result = startpos;
+	*endpos = '\0';
+	startpos = endpos+4;
+	endpos = strstr(startpos, "\n@@\n");
 
-	p = buf + strcspn(buf, "0123456789|");
-	if (isdigit((int)*p)) {
-		*seq = atoi(p);
+	if ((endpos == NULL) && ((bufsz - (startpos - buf)) < (bufsz/2))) {
+		size_t usedbytes = (fillpos - startpos);
 
-		if (debug) {
-			p = strchr(buf, '\n'); if (p) *p = '\0';
-			dprintf("%s: Got message %u %s\n", id, *seq, buf);
-			if (p) *p = '\n';
-		}
-
-		if ((seqnum == 0) || (*seq == (seqnum + 1))) {
-			/* First message, or the correct sequence # */
-			seqnum = *seq;
-		}
-		else if (*seq == seqnum) {
-			/* Duplicate message - drop it */
-			errprintf("%s: Duplicate message %d dropped\n", id, *seq);
-			goto startagain;
-		}
-		else {
-			/* Out-of-sequence message. Cant do much except accept it */
-			errprintf("%s: Got message %u, expected %u\n", id, *seq, seqnum+1);
-			seqnum = *seq;
-		}
-
-		if (seqnum == 999999) seqnum = 0;
-	}
-	else {
-		dprintf("%s: Got message with no serial\n", id);
-		*seq = 0;
+		movebuf = strdup(result);
+		result = movebuf;
+		memmove(buf, startpos, usedbytes);
+		startpos = buf;
+		fillpos = startpos + usedbytes;
+		*fillpos = '\0';
 	}
 
-	return ((!complete || (buflen == 0)) ? NULL : buf);
+	/* Get and check the message sequence number */
+	{
+		char *p = result + strcspn(result, "0123456789|");
+		if (isdigit((int)*p)) {
+			*seq = atoi(p);
+
+			if (debug) {
+				p = strchr(result, '\n'); if (p) *p = '\0';
+				dprintf("%s: Got message %u %s\n", id, *seq, result);
+				if (p) *p = '\n';
+			}
+
+			if ((seqnum == 0) || (*seq == (seqnum + 1))) {
+				/* First message, or the correct sequence # */
+				seqnum = *seq;
+			}
+			else if (*seq == seqnum) {
+				/* Duplicate message - drop it */
+				errprintf("%s: Duplicate message %d dropped\n", id, *seq);
+				goto startagain;
+			}
+			else {
+				/* Out-of-sequence message. Cant do much except accept it */
+				errprintf("%s: Got message %u, expected %u\n", id, *seq, seqnum+1);
+				seqnum = *seq;
+			}
+
+			if (seqnum == 999999) seqnum = 0;
+		}
+	}
+
+	return result;
 }
+
