@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.53 2006-03-06 13:00:29 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.54 2006-03-18 07:29:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -204,11 +204,6 @@ static void initialize_hostlist(void)
 	pghead->next = NULL;
 }
 
-static int hostname_compare(void *a, void *b)
-{
-	return strcasecmp((char *)a, (char *)b);
-}
-
 static void build_hosttree(void)
 {
 	static int hosttree_exists = 0;
@@ -219,8 +214,8 @@ static void build_hosttree(void)
 		rbtDelete(rbhosts);
 		rbtDelete(rbclients);
 	}
-	rbhosts = rbtNew(hostname_compare);
-	rbclients = rbtNew(hostname_compare);
+	rbhosts = rbtNew(name_compare);
+	rbclients = rbtNew(name_compare);
 	hosttree_exists = 1;
 
 	for (walk = namehead; (walk); walk = walk->next) {

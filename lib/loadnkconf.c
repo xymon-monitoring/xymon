@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadnkconf.c,v 1.11 2006-02-25 08:42:19 henrik Exp $";
+static char rcsid[] = "$Id: loadnkconf.c,v 1.12 2006-03-18 07:29:57 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -27,11 +27,6 @@ static char rcsid[] = "$Id: loadnkconf.c,v 1.11 2006-02-25 08:42:19 henrik Exp $
 static RbtHandle rbconf;
 static char *defaultfn = NULL;
 static char *configfn = NULL;
-
-static int key_compare(void *a, void *b)
-{
-	return strcasecmp((char *)a, (char *)b);
-}
 
 
 static void flushrec(void *k1, void *k2)
@@ -88,7 +83,7 @@ int load_nkconfig(char *fn)
 	}
 
 	firsttime = 0;
-	rbconf = rbtNew(key_compare);
+	rbconf = rbtNew(name_compare);
 
 	if (!fn) {
 		if (!defaultfn) {
