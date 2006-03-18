@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkview.c,v 1.12 2006-02-08 12:49:49 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkview.c,v 1.13 2006-03-18 07:31:08 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -39,12 +39,6 @@ void errormsg(char *s)
 }
 
 
-static int key_compare(void *a, void *b)
-{
-	return strcasecmp((char *)a, (char *)b);
-}
-
-
 void loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 {
 	int hobbitdresult;
@@ -62,7 +56,7 @@ void loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 	}
 
 	now = getcurrenttime(NULL);
-	rbstate = rbtNew(key_compare);
+	rbstate = rbtNew(name_compare);
 
 	bol = board;
 	while (bol && (*bol)) {
@@ -132,7 +126,7 @@ RbtHandle columnlist(RbtHandle statetree)
 	RbtHandle rbcolumns;
 	RbtIterator hhandle;
 
-	rbcolumns = rbtNew(key_compare);
+	rbcolumns = rbtNew(name_compare);
 	for (hhandle = rbtBegin(statetree); (hhandle != rbtEnd(statetree)); hhandle = rbtNext(statetree, hhandle)) {
 		void *k1, *k2;
 		hstatus_t *itm;

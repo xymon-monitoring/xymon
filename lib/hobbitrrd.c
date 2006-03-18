@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.37 2006-03-17 09:40:21 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.38 2006-03-18 07:28:41 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -34,10 +34,6 @@ static const char *hobbitlinkfmt = "<table summary=\"%s Graph\"><tr><td><A HREF=
 
 static const char *metafmt = "<RRDGraph>\n  <GraphType>%s</GraphType>\n  <GraphLink><![CDATA[%s]]></GraphLink>\n  <GraphImage><![CDATA[%s&amp;graph=hourly]]></GraphImage>\n</RRDGraph>\n";
 
-static int name_compare(void *a, void *b)
-{
-	return strcasecmp((char *)a, (char *)b);
-}
 
 /*
  * Define the mapping between BB columns and RRD graphs.
