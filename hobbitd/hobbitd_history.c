@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.42 2006-02-13 21:02:07 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.43 2006-03-19 08:54:42 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -45,6 +45,7 @@ void sig_handler(int signum)
 
 int main(int argc, char *argv[])
 {
+	time_t starttime = time(NULL);
 	char *histdir = NULL;
 	char *histlogdir = NULL;
 	char *msg;
@@ -319,7 +320,11 @@ int main(int argc, char *argv[])
 
 				if (strcmp(oldcol, colorname(newcolor)) == 0) {
 					/* We wont update history unless the color did change. */
-					errprintf("Will not update %s - color unchanged (%s)\n", statuslogfn, oldcol);
+					if ((time(NULL) - starttime) > 300) {
+						errprintf("Will not update %s - color unchanged (%s)\n", 
+							  statuslogfn, oldcol);
+					}
+
 					if (hostnamecommas) xfree(hostnamecommas);
 					if (statuslogfd) fclose(statuslogfd);
 
