@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.214 2006-03-19 17:29:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.215 2006-03-20 10:27:18 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -126,6 +126,7 @@ RbtHandle rbhosts;				/* The hosts we have reports from */
 RbtHandle rbtests;				/* The tests (columns) we have seen */
 RbtHandle rborigins;				/* The origins we have seen */
 RbtHandle rbcookies;				/* The cookies we use */
+RbtHandle rbconfigs;				/* The client configs */
 
 typedef struct sender_t {
 	unsigned long int ipval;
@@ -289,6 +290,7 @@ void load_clientconfig(void)
 	FILE *fd;
 	char *buf = NULL;
 	int bufsz = 0;
+	char *sectstart;
 
 	if (!configfn) {
 		configfn = (char *)malloc(strlen(xgetenv("BBHOME"))+ strlen("/etc/client-local.cfg") + 1);
@@ -308,9 +310,14 @@ void load_clientconfig(void)
 	}
 
 	if (!clientconfigs) {
-		ccsize = 4096;
+		ccsize = 64*1024;
 		clientconfigs = malloc(ccsize);
 	}
+	else {
+		rbtDelete(rbconfigs);
+	}
+
+	rbconfigs = rbtNew(name_compare);
 	strcpy(clientconfigs, "\n");
 
 	fd = stackfopen(configfn, "r", &clientconflist); if (!fd) return;
@@ -318,6 +325,26 @@ void load_clientconfig(void)
 		addtobuffer(&clientconfigs, &ccsize, buf);
 	}
 	stackfclose(fd);
+
+	sectstart = strstr(clientconfigs, "\n[");
+	while (sectstart) {
+		char *key, *nextsect;
+
+		sectstart += 2;
+		key = sectstart;
+
+		sectstart += strcspn(sectstart, "]\n");
+		if (*sectstart == ']') {
+			*sectstart = '\0'; sectstart++;
+			sectstart += strcspn(sectstart, "\n");
+		}
+
+		nextsect = strstr(sectstart, "\n[");
+		if (nextsect) *(nextsect+1) = '\0';
+
+		rbtInsert(rbconfigs, key, sectstart+1);
+		sectstart = nextsect;
+	}
 }
 
 void update_statistics(char *cmd)
@@ -3064,25 +3091,23 @@ void do_message(conn_t *msg, char *origin)
 			MEMUNDEFINE(hostip);
 		}
 
-		if (clientconfigs && clientconf) {
-			char *key = malloc(5 + strlen(clientconf));
-			char *bconf, *econf;
+		if (clientconfigs) {
+			RbtIterator handle;
 
-			sprintf(key, "\n[%s]\n", clientconf);
-			bconf = strstr(clientconfigs, key);
-			if (bconf) {
-				bconf += strlen(key);
-				econf = strstr(bconf, "\n["); if (econf) *(econf+1) = '\0';
-
-				msg->doingwhat = RESPONDING;
-				xfree(msg->buf);
-				msg->bufp = msg->buf = strdup(bconf);
-				msg->buflen = strlen(msg->buf);
-
-				if (econf) *(econf+1) = '[';
+			if (clientconf && *clientconf) {
+				handle = rbtFind(rbconfigs, clientconf);
+				if (handle == rbtEnd(rbconfigs)) handle = rbtFind(rbconfigs, clienttype);
+			}
+			else {
+				handle = rbtFind(rbconfigs, clienttype);
 			}
 
-			xfree(key);
+			if (handle != rbtEnd(rbconfigs)) {
+				msg->doingwhat = RESPONDING;
+				xfree(msg->buf);
+				msg->bufp = msg->buf = strdup((char *)gettreeitem(rbconfigs, handle));
+				msg->buflen = strlen(msg->buf);
+			}
 		}
 
 		xfree(line1);
