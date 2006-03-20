@@ -35,8 +35,6 @@ typedef struct activealerts_t {
 	time_t nextalerttime;
 	astate_t state;
 	int cookie;
-
-	struct activealerts_t *next;
 } activealerts_t;
 
 /* These are the criteria we use when matching an alert. Used both generally for a rule, and for recipients */
