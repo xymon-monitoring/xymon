@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.72 2006-03-20 10:27:45 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.73 2006-03-21 21:57:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -63,7 +63,12 @@ static volatile time_t nextcheckpoint = 0;
 RbtHandle hostnames;
 RbtHandle testnames;
 RbtHandle locations;
-RbtHandle alerts;
+
+typedef struct alertanchor_t {
+	activealerts_t *head;
+} alertanchor_t;
+
+activealerts_t *ahead = NULL;
 
 char *statename[] = {
 	/* A_PAGING, A_NORECIP, A_ACKED, A_RECOVERED, A_NOTIFY, A_DEAD */
@@ -78,7 +83,14 @@ char *find_name(RbtHandle tree, char *name)
 	handle = rbtFind(tree, name);
 	if (handle == rbtEnd(tree)) {
 		result = strdup(name);
-		rbtInsert(tree, result, NULL);
+		if (tree == hostnames) {
+			alertanchor_t *anchor = malloc(sizeof(alertanchor_t));
+			anchor->head = NULL;
+			rbtInsert(tree, result, anchor);
+		}
+		else {
+			rbtInsert(tree, result, result);
+		}
 	}
 	else {
 		void *k1, *k2;
@@ -90,34 +102,105 @@ char *find_name(RbtHandle tree, char *name)
 	return result;
 }
 
-char *alertskey(char *hostname, char *testname)
+void add_active(char *hostname, activealerts_t *rec)
 {
-	static char result[1024];
+	RbtIterator handle;
+	alertanchor_t *anchor;
 
-	snprintf(result, sizeof(result)-1, "%s|%s", hostname, testname);
-	return result;
+	handle = rbtFind(hostnames, hostname);
+	if (handle == rbtEnd(hostnames)) return;
+	anchor = (alertanchor_t *)gettreeitem(hostnames, handle);
+	rec->next = anchor->head;
+	anchor->head = rec;
 }
 
-void addtoalerts(activealerts_t *rec)
+void clean_active(alertanchor_t *anchor)
 {
-	char *key;
+	activealerts_t *newhead = NULL, *tmp, *curr;
 
-	key = alertskey(rec->hostname, rec->testname);
-	rbtInsert(alerts, strdup(key), rec);
+	curr = anchor->head;
+	while (curr) {
+		tmp = curr;
+		curr = curr->next;
+
+		if (tmp->state == A_DEAD) {
+			if (tmp->pagemessage) xfree(tmp->pagemessage);
+			if (tmp->ackmessage) xfree(tmp->ackmessage);
+			xfree(tmp);
+		}
+		else {
+			tmp->next = newhead;
+			newhead = tmp;
+		}
+	}
+
+	anchor->head = newhead;
+}
+
+void clean_all_active(void)
+{
+	RbtIterator handle;
+
+	for (handle = rbtBegin(hostnames); handle != rbtEnd(hostnames); handle = rbtNext(hostnames, handle)) {
+		alertanchor_t *anchor = (alertanchor_t *)gettreeitem(hostnames, handle);
+		clean_active(anchor);
+	}
 }
 
 activealerts_t *find_active(char *hostname, char *testname)
 {
-	char *key;
 	RbtIterator handle;
+	alertanchor_t *anchor;
+	char *twalk;
+	activealerts_t *awalk;
 
-	key = alertskey(hostname, testname);
-	handle = rbtFind(alerts, key);
-	if (handle == rbtEnd(alerts)) return NULL;
+	handle = rbtFind(hostnames, hostname);
+	if (handle == rbtEnd(hostnames)) return NULL;
+	anchor = (alertanchor_t *)gettreeitem(hostnames, handle);
 
-	return gettreeitem(alerts, handle);
+	handle = rbtFind(testnames, testname);
+	if (handle == rbtEnd(testnames)) return NULL;
+	twalk = (char *)gettreeitem(testnames, handle);
+
+	for (awalk = anchor->head; (awalk && (awalk->testname != twalk)); awalk=awalk->next) ;
+
+	return awalk;
 }
 
+static RbtIterator alisthandle;
+static activealerts_t *alistwalk;
+activealerts_t *alistBegin(void)
+{
+	alisthandle = rbtBegin(hostnames);
+	alistwalk = NULL;
+
+	while ((alisthandle != rbtEnd(hostnames)) && (alistwalk == NULL)) {
+		alertanchor_t *anchor = (alertanchor_t *)gettreeitem(hostnames, alisthandle);
+		alistwalk = anchor->head;
+		if (alistwalk == NULL) alisthandle = rbtNext(hostnames, alisthandle);
+	}
+
+	return alistwalk;
+}
+
+activealerts_t *alistNext(void)
+{
+	if (!alistwalk) return NULL;
+
+	alistwalk = alistwalk->next;
+	if (alistwalk) return alistwalk;
+
+	alisthandle = rbtNext(hostnames, alisthandle);
+	alistwalk = NULL;
+
+	while ((alisthandle != rbtEnd(hostnames)) && (alistwalk == NULL)) {
+		alertanchor_t *anchor = (alertanchor_t *)gettreeitem(hostnames, alisthandle);
+		alistwalk = anchor->head;
+		if (alistwalk == NULL) alisthandle = rbtNext(hostnames, alisthandle);
+	}
+
+	return alistwalk;
+}
 
 void sig_handler(int signum)
 {
@@ -138,27 +221,24 @@ void sig_handler(int signum)
 void save_checkpoint(char *filename)
 {
 	char *subfn;
-	RbtIterator handle;
-	activealerts_t *rec;
-	unsigned char *pgmsg = "", *ackmsg = "";
 	FILE *fd = fopen(filename, "w");
+	activealerts_t *awalk;
+	unsigned char *pgmsg = "", *ackmsg = "";
 
 	if (fd == NULL) return;
 
-	for (handle = rbtBegin(alerts); handle != rbtEnd(alerts); handle = rbtNext(alerts, handle)) {
-		rec = gettreeitem(alerts, handle);
-
-		if (rec->state == A_DEAD) continue;
+	for (awalk = alistBegin(); (awalk); awalk = alistNext()) {
+		if (awalk->state == A_DEAD) continue;
 
 		fprintf(fd, "%s|%s|%s|%s|%s|%d|%d|%s|",
-			rec->hostname, rec->testname, rec->location, rec->ip,
-			colorname(rec->maxcolor),
-			(int) rec->eventstart,
-			(int) rec->nextalerttime,
-			statename[rec->state]);
-		if (rec->pagemessage) pgmsg = nlencode(rec->pagemessage);
+			awalk->hostname, awalk->testname, awalk->location, awalk->ip,
+			colorname(awalk->maxcolor),
+			(int) awalk->eventstart,
+			(int) awalk->nextalerttime,
+			statename[awalk->state]);
+		if (awalk->pagemessage) pgmsg = nlencode(awalk->pagemessage);
 		fprintf(fd, "%s|", pgmsg);
-		if (rec->ackmessage) ackmsg = nlencode(rec->ackmessage);
+		if (awalk->ackmessage) ackmsg = nlencode(awalk->ackmessage);
 		fprintf(fd, "%s\n", ackmsg);
 	}
 	fclose(fd);
@@ -239,8 +319,7 @@ void load_checkpoint(char *filename)
 				nldecode(item[9]);
 				newalert->ackmessage = strdup(item[9]);
 			}
-
-			addtoalerts(newalert);
+			add_active(newalert->hostname, newalert);
 		}
 	}
 	fclose(fd);
@@ -270,7 +349,6 @@ int main(int argc, char *argv[])
 	struct sigaction sa;
 	int configchanged;
 	time_t lastxmit = 0;
-	RbtIterator handle;
 
 	MEMDEFINE(acklogfn);
 	MEMDEFINE(notiflogfn);
@@ -286,7 +364,6 @@ int main(int argc, char *argv[])
 	hostnames = rbtNew(name_compare);
 	testnames = rbtNew(name_compare);
 	locations = rbtNew(name_compare);
-	alerts    = rbtNew(name_compare);
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--debug")) {
@@ -350,6 +427,7 @@ int main(int argc, char *argv[])
 			awalk->nextalerttime = 0;
 			awalk->state = A_PAGING;
 			awalk->cookie = 12345;
+			awalk->next = NULL;
 
 			logfd = fopen("/dev/null", "w");
 			starttrace(NULL);
@@ -494,7 +572,7 @@ int main(int argc, char *argv[])
 				 * flaps between yellow and red.
 				 */
 				awalk->eventstart = atoi(metadata[9]);
-				addtoalerts(awalk);
+				add_active(awalk->hostname, awalk);
 				traceprintf("New record\n");
 			}
 
@@ -603,25 +681,18 @@ int main(int argc, char *argv[])
 			awalk->eventstart = time(NULL);
 			awalk->nextalerttime = 0;
 			awalk->state = A_NOTIFY;
-			addtoalerts(awalk);
+			add_active(awalk->hostname, awalk);
 		}
 		else if ((metacount > 3) && 
 			 ((strncmp(metadata[0], "@@drophost", 10) == 0) || (strncmp(metadata[0], "@@dropstate", 11) == 0))) {
 			/* @@drophost|timestamp|sender|hostname */
 			/* @@dropstate|timestamp|sender|hostname */
+			RbtIterator handle;
 
 			handle = rbtFind(hostnames, hostname);
 			if (handle != rbtEnd(hostnames)) {
-				void *k1, *k2;
-				char *hwalk;
-
-				rbtKeyValue(hostnames, handle, &k1, &k2);
-				hwalk = (char *)k1;
-
-				for (handle = rbtBegin(alerts); handle != rbtEnd(alerts); handle = rbtNext(alerts, handle)) {
-					awalk = gettreeitem(alerts, handle);
-					if (awalk->hostname == hwalk) awalk->state = A_DEAD;
-				}
+				alertanchor_t *anchor = (alertanchor_t *)gettreeitem(hostnames, handle);
+				for (awalk = anchor->head; (awalk); awalk = awalk->next) awalk->state = A_DEAD;
 			}
 		}
 		else if ((metacount > 4) && (strncmp(metadata[0], "@@droptest", 10) == 0)) {
@@ -638,19 +709,12 @@ int main(int argc, char *argv[])
 			 * active alert for the host, it will have to be dealt with when the next
 			 * status update arrives.
 			 */
+			RbtIterator handle;
 
 			handle = rbtFind(hostnames, hostname);
 			if (handle != rbtEnd(hostnames)) {
-				void *k1, *k2;
-				char *hwalk;
-
-				rbtKeyValue(hostnames, handle, &k1, &k2);
-				hwalk = (char *)k1;
-
-				for (handle = rbtBegin(alerts); handle != rbtEnd(alerts); handle = rbtNext(alerts, handle)) {
-					awalk = gettreeitem(alerts, handle);
-					if (awalk->hostname == hwalk) awalk->state = A_DEAD;
-				}
+				alertanchor_t *anchor = (alertanchor_t *)gettreeitem(hostnames, handle);
+				for (awalk = anchor->head; (awalk); awalk = awalk->next) awalk->state = A_DEAD;
 			}
 		}
 		else if ((metacount > 5) && (strncmp(metadata[0], "@@renametest", 12) == 0)) {
@@ -702,10 +766,9 @@ int main(int argc, char *argv[])
 		 */
 		configchanged = load_alertconfig(configfn, alertcolors, alertinterval);
 		anytogo = 0;
-		for (handle = rbtBegin(alerts); handle != rbtEnd(alerts); handle = rbtNext(alerts, handle)) {
+		for (awalk = alistBegin(); (awalk); awalk = alistNext()) {
 			int anymatch = 0;
 
-			awalk = gettreeitem(alerts, handle);
 			switch (awalk->state) {
 			  case A_NORECIP:
 				if (!configchanged) break;
@@ -754,8 +817,7 @@ int main(int argc, char *argv[])
 			if (childpid == 0) {
 				/* The child */
 				start_alerts();
-				for (handle = rbtBegin(alerts); handle != rbtEnd(alerts); handle = rbtNext(alerts, handle)) {
-					awalk = gettreeitem(alerts, handle);
+				for (awalk = alistBegin(); (awalk); awalk = alistNext()) {
 					switch (awalk->state) {
 					  case A_PAGING:
 						if (awalk->nextalerttime <= now) {
@@ -788,8 +850,7 @@ int main(int argc, char *argv[])
 		}
 
 		/* Update the state flag and the next-alert timestamp */
-		for (handle = rbtBegin(alerts); handle != rbtEnd(alerts); handle = rbtNext(alerts, handle)) {
-			awalk = gettreeitem(alerts, handle);
+		for (awalk = alistBegin(); (awalk); awalk = alistNext()) {
 			switch (awalk->state) {
 			  case A_PAGING:
 				if (awalk->nextalerttime <= now) awalk->nextalerttime = next_alert(awalk);
@@ -813,34 +874,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		/* Remove the dead alerts */
-		{
-			RbtHandle newtree;
-
-			newtree = rbtNew(name_compare);
-
-			for (handle = rbtBegin(alerts); handle != rbtEnd(alerts); handle = rbtNext(alerts, handle)) {
-				void *k1, *k2;
-				char *key;
-
-				rbtKeyValue(alerts, handle, &k1, &k2);
-				key = (char *)k1;
-				awalk = (activealerts_t *)k2;
-
-				if (awalk->state != A_DEAD) {
-					rbtInsert(newtree, key, awalk);
-				}
-				else {
-					if (awalk->pagemessage) xfree(awalk->pagemessage);
-					if (awalk->ackmessage)  xfree(awalk->ackmessage);
-					xfree(key);
-					xfree(awalk);
-				}
-			}
-
-			rbtDelete(alerts);
-			alerts = newtree;
-		}
+		clean_all_active();
 
 		/* Pickup any finished child processes to avoid zombies */
 		while (wait3(&childstat, WNOHANG, NULL) > 0) ;
