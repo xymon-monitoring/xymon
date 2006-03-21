@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-mailack.c,v 1.10 2005-07-16 09:53:14 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-mailack.c,v 1.11 2006-03-21 21:53:35 henrik Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -60,12 +60,18 @@ int main(int argc, char *argv[])
 
 		if (!inheaders) {
 			/* We're in the message body. Look for a "delay=N" line here. */
-			if ((duration == 0) && (strncasecmp(inbuf, "delay=", 6) == 0)) {
+			if ((strncasecmp(inbuf, "delay=", 6) == 0) || (strncasecmp(inbuf, "delay ", 6) == 0)) {
 				duration = durationvalue(inbuf+6);
 				continue;
 			}
-			/* Save the first line of the message body, but ignore blank lines */
+			else if ((strncasecmp(inbuf, "ack=", 4) == 0) || (strncasecmp(inbuf, "ack ", 4) == 0)) {
+				/* Some systems cannot generate a subject. Allow them to ack
+				 * via text in the message body. */
+				subjectline = (char *)malloc(1024);
+				snprintf(subjectline, 1023, "Subject: Hobbit [%s]", inbuf+4);
+			}
 			else if (*inbuf && !firsttxtline) {
+				/* Save the first line of the message body, but ignore blank lines */
 				firsttxtline = strdup(inbuf);
 			}
 
