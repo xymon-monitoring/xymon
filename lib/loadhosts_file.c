@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.16 2006-02-25 08:42:19 henrik Exp $";
+static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.17 2006-03-22 22:15:33 henrik Exp $";
 
 static int get_page_name_title(char *buf, char *key, char **name, char **title)
 {
@@ -55,6 +55,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 	int inbufsz;
 	pagelist_t *curtoppage, *curpage, *pgtail;
 	namelist_t *nametail = NULL;
+	RbtHandle htree;
 
 	/* First check if there were no modifications at all */
 	if (bbhfiles) {
@@ -79,6 +80,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 	bbhosts = stackfopen(bbhostsfn, "r", &bbhfiles);
 	if (bbhosts == NULL) return NULL;
 
+	htree = rbtNew(name_compare);
 	while (stackfgets(&inbuf, &inbufsz, extrainclude)) {
 		char *eoln;
 
@@ -153,6 +155,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 			char clientname[4096];
 			char downtime[4096];
 			char groupidstr[10];
+			RbtIterator handle;
 
 			namelist_t *newitem = malloc(sizeof(namelist_t));
 			namelist_t *iwalk, *iprev;
@@ -240,13 +243,13 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 			newitem->elems[elemidx] = NULL;
 
 			/* See if this host is defined before */
-			for (iwalk = namehead, iprev = NULL; (iwalk && strcmp(iwalk->bbhostname, newitem->bbhostname)); iprev = iwalk, iwalk = iwalk->next) ;
+			handle = rbtFind(htree, newitem->bbhostname);
 			if (strcasecmp(newitem->bbhostname, ".default.") == 0) {
 				/* The pseudo DEFAULT host */
 				newitem->next = NULL;
 				defaulthost = newitem;
 			}
-			else if (iwalk == NULL) {
+			else if (handle == rbtEnd(htree)) {
 				/* New item, so add to end of list */
 				newitem->next = NULL;
 				if (namehead == NULL) 
@@ -255,21 +258,25 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 					nametail->next = newitem;
 					nametail = newitem;
 				}
-			}
- 			else if (newitem->preference <= iwalk->preference) {
-				/* Add after the existing (more preferred) entry */
-				newitem->next = iwalk->next;
-				iwalk->next = newitem;
+				rbtInsert(htree, newitem->bbhostname, newitem);
 			}
 			else {
-				/* New item has higher preference, so add before the iwalk item (i.e. after iprev) */
-				if (iprev == NULL) {
-					newitem->next = namehead;
-					namehead = newitem;
+				for (iwalk = namehead, iprev = NULL; (iwalk && strcasecmp(iwalk->bbhostname, newitem->bbhostname)); iprev = iwalk, iwalk = iwalk->next) ;
+ 				if (newitem->preference <= iwalk->preference) {
+					/* Add after the existing (more preferred) entry */
+					newitem->next = iwalk->next;
+					iwalk->next = newitem;
 				}
 				else {
-					newitem->next = iprev->next;
-					iprev->next = newitem;
+					/* New item has higher preference, so add before the iwalk item (i.e. after iprev) */
+					if (iprev == NULL) {
+						newitem->next = namehead;
+						namehead = newitem;
+					}
+					else {
+						newitem->next = iprev->next;
+						iprev->next = newitem;
+					}
 				}
 			}
 
@@ -306,6 +313,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 	}
 	stackfclose(bbhosts);
 	if (inbuf) xfree(inbuf);
+	rbtDelete(htree);
 
 	MEMUNDEFINE(hostname);
 	MEMUNDEFINE(l);
