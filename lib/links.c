@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: links.c,v 1.9 2005-11-09 15:01:54 henrik Exp $";
+static char rcsid[] = "$Id: links.c,v 1.10 2006-03-22 22:13:43 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -25,14 +25,13 @@ static char rcsid[] = "$Id: links.c,v 1.9 2005-11-09 15:01:54 henrik Exp $";
 
 /* Info-link definitions. */
 typedef struct link_t {
-	char	*name;
+	char	*key;
 	char	*filename;
 	char	*urlprefix;	/* "/help", "/notes" etc. */
-	struct link_t	*next;
 } link_t;
 
 static int linksloaded = 0;
-static link_t *linkhead = NULL;
+static RbtHandle linkstree;
 static char *notesskin = NULL;
 static char *helpskin = NULL;
 static char *columndocurl = NULL;
@@ -47,7 +46,6 @@ static link_t *init_link(char *filename, char *urlprefix)
 	newlink = (link_t *) malloc(sizeof(link_t));
 	newlink->filename = strdup(filename);
 	newlink->urlprefix = urlprefix;
-	newlink->next = NULL;
 
 	p = strrchr(filename, '.');
 	if (p == NULL) p = (filename + strlen(filename));
@@ -65,58 +63,49 @@ static link_t *init_link(char *filename, char *urlprefix)
 	}
 
 	/* Without extension, this time */
-	newlink->name = strdup(filename);
+	newlink->key = strdup(filename);
 
 	return newlink;
 }
 
-static link_t *load_links(const char *directory, char *urlprefix)
+static void load_links(const char *directory, char *urlprefix)
 {
 	DIR		*bblinks;
 	struct dirent 	*d;
 	char		fn[PATH_MAX];
-	link_t		*curlink, *toplink, *newlink;
 
 	dprintf("load_links(%s, %s)\n", textornull(directory), textornull(urlprefix));
 
-	toplink = curlink = NULL;
 	bblinks = opendir(directory);
 	if (!bblinks) {
 		errprintf("Cannot read links in directory %s\n", directory);
-		return NULL;
+		return;
 	}
 
 	MEMDEFINE(fn);
 
 	while ((d = readdir(bblinks))) {
+		link_t *newlink;
+
 		strcpy(fn, d->d_name);
 		newlink = init_link(fn, urlprefix);
-		if (newlink) {
-			if (toplink == NULL) {
-				toplink = newlink;
-			}
-			else {
-				curlink->next = newlink;
-			}
-			curlink = newlink;
-		}
+		rbtInsert(linkstree, newlink->key, newlink);
 	}
 	closedir(bblinks);
 
 	MEMUNDEFINE(fn);
-
-	return toplink;
 }
 
 void load_all_links(void)
 {
-	link_t *l, *head1, *head2;
 	char dirname[PATH_MAX];
 	char *p;
 
 	MEMDEFINE(dirname);
 
 	dprintf("load_all_links()\n");
+
+	linkstree = rbtNew(name_compare);
 
 	if (notesskin) { xfree(notesskin); notesskin = NULL; }
 	if (helpskin) { xfree(helpskin); helpskin = NULL; }
@@ -137,42 +126,27 @@ void load_all_links(void)
 	if (xgetenv("COLUMNDOCURL")) columndocurl = strdup(xgetenv("COLUMNDOCURL"));
 
 	strcpy(dirname, xgetenv("BBNOTES"));
-	head1 = load_links(dirname, notesskin);
+	load_links(dirname, notesskin);
 
 	/* Change xxx/xxx/xxx/notes into xxx/xxx/xxx/help */
 	p = strrchr(dirname, '/'); *p = '\0'; strcat(dirname, "/help");
-	head2 = load_links(dirname, helpskin);
+	load_links(dirname, helpskin);
 
-	if (head1) {
-		/* Append help-links to list of notes-links */
-		for (l = head1; (l->next); l = l->next) ;
-		l->next = head2;
-	}
-	else {
-		/* /notes was empty, so just return the /help list */
-		head1 = head2;
-	}
-
-	linkhead = head1;
 	linksloaded = 1;
 
 	MEMUNDEFINE(dirname);
 }
 
 
-static link_t *find_link(const char *name)
+static link_t *find_link(const char *key)
 {
-	/* We cache the last link searched for */
-	static link_t *lastlink = NULL;
-	link_t *l;
+	link_t *l = NULL;
+	RbtIterator handle;
 
-	if (lastlink && (strcmp(lastlink->name, name) == 0))
-		return lastlink;
+	handle = rbtFind(linkstree, key);
+	if (handle != rbtEnd(linkstree)) l = (link_t *)gettreeitem(linkstree, handle);
 
-	for (l=linkhead; (l && (strcmp(l->name, name) != 0)); l = l->next);
-	lastlink = l;
-
-	return (l ? l : NULL);
+	return l;
 }
 
 
