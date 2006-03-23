@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.36 2006-03-09 14:07:36 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.37 2006-03-23 06:38:37 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -168,7 +168,8 @@ group_t *init_group(const char *title, const char *onlycols, const char *exceptc
 	return newgroup;
 }
 
-host_t *init_host(const char *hostname, const char *displayname, const char *clientalias,
+host_t *init_host(const char *hostname, int issummary,
+		  const char *displayname, const char *clientalias,
 		  const char *comment, const char *description,
 		  const int ip1, const int ip2, const int ip3, const int ip4, 
 		  const int dialup, const double warnpct, const char *reporttime,
@@ -273,20 +274,22 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 	newhost->nobb2 = 0;
 	newhost->next = NULL;
 
+	/* Summary hosts don't go into the host list */
+	if (issummary) return newhost;
+
 	/*
 	 * Add this host to the hostlist_t list of known hosts.
 	 * HOWEVER: It might be a duplicate! In that case, we need
 	 * to figure out which host record we want to use.
 	 */
-	for (oldlist = hosthead; (oldlist && (strcmp(oldlist->hostentry->hostname, hostname) != 0)); oldlist = oldlist->next) ;
+	oldlist = find_hostlist(hostname);
 	if (oldlist == NULL) {
 		hostlist_t *newlist;
 
 		newlist = (hostlist_t *) malloc(sizeof(hostlist_t));
 		newlist->hostentry = newhost;
 		newlist->clones = NULL;
-		newlist->next = hosthead;
-		hosthead = newlist;
+		add_to_hostlist(newlist);
 	}
 	else {
 		hostlist_t *clone = (hostlist_t *) malloc(sizeof(hostlist_t));
@@ -294,8 +297,7 @@ host_t *init_host(const char *hostname, const char *displayname, const char *cli
 		dprintf("Duplicate host definition for host '%s'\n", hostname);
 
 		clone->hostentry = newhost;
-		clone->clones = NULL;
-		clone->next = oldlist->clones;
+		clone->clones = oldlist->clones;
 		oldlist->clones = clone;
 	}
 
@@ -670,7 +672,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				 * whatever group or page is current.
 				 */
 				if (curhost == NULL) {
-					curhost = init_host(hostname, displayname, clientalias,
+					curhost = init_host(hostname, 0, displayname, clientalias,
 							    comment, description,
 							    ip1, ip2, ip3, ip4, dialup, 
 							    warnpct, reporttime,
@@ -694,7 +696,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 					}
 				}
 				else {
-					curhost = curhost->next = init_host(hostname, displayname, clientalias,
+					curhost = curhost->next = init_host(hostname, 0, displayname, clientalias,
 									    comment, description,
 									    ip1, ip2, ip3, ip4, dialup,
 									    warnpct, reporttime,
@@ -742,7 +744,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 							targetpagename, pgset, hostname);
 					}
 					else {
-						host_t *newhost = init_host(hostname, displayname, clientalias,
+						host_t *newhost = init_host(hostname, 0, displayname, clientalias,
 									    comment, description,
 									    ip1, ip2, ip3, ip4, dialup,
 									    warnpct, reporttime,
