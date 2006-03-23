@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.164 2006-02-19 12:54:38 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.165 2006-03-23 06:41:10 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -641,13 +641,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 
 		if (newhost == NULL) {
 			/* New summary "host" */
-			newhost = init_host(s->row, NULL, NULL, NULL, NULL, 0,0,0,0, 0, 0.0, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0);
-
-			/*
-			 * Cannot have the pseudo host in the official hostlist,
-			 * it messes up the WML generator later.
-			 */
-			if (hosthead->hostentry == newhost) hosthead = hosthead->next;
+			newhost = init_host(s->row, 1, NULL, NULL, NULL, NULL, 0,0,0,0, 0, 0.0, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0);
 
 			/* Insert into sorted host list */
 			if ((!sumhosts) || (strcmp(newhost->hostname, sumhosts->hostname) < 0)) {
@@ -1023,7 +1017,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 	bb2page.hosts = NULL;
 	bb2page.next = NULL;
 
-	for (h=hosthead; (h); h=h->next) {
+	for (h=hostlistBegin(); (h); h=hostlistNext()) {
 		entry_t	*e;
 		int	useit = 0;
 
