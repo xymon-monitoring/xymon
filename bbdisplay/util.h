@@ -12,13 +12,16 @@
 #define __UTIL_H_
 
 extern char *htmlextension;
-extern hostlist_t *hosthead;
 
 extern char *hostpage_link(host_t *host);
 extern char *hostpage_name(host_t *host);
 extern int checkpropagation(host_t *host, char *test, int color, int acked);
-extern host_t *find_host(const char *hostname);
-extern bbgen_col_t *find_or_create_column(const char *testname, int create);
+extern host_t *find_host(char *hostname);
+extern hostlist_t *find_hostlist(char *hostname);
+extern hostlist_t *hostlistBegin(void);
+extern hostlist_t *hostlistNext(void);
+extern void add_to_hostlist(hostlist_t *rec);
+extern bbgen_col_t *find_or_create_column(char *testname, int create);
 
 #endif
 
