@@ -176,7 +176,6 @@ typedef struct host_t {
 typedef struct hostlist_t {
 	struct host_t		*hostentry;
 	struct hostlist_t    	*clones;
-	struct hostlist_t	*next;
 } hostlist_t;
 
 typedef struct group_t {
@@ -218,7 +217,6 @@ typedef struct dispsummary_t {
 } dispsummary_t;
 
 extern bbgen_page_t	*pagehead;
-extern hostlist_t	*hosthead;
 extern state_t		*statehead;
 extern bbgen_col_t	*colhead, null_column;
 extern summary_t	*sumhead;
