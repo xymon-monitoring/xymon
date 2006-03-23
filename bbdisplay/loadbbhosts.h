@@ -17,7 +17,8 @@ extern int pagecount;
 extern bbgen_page_t *load_bbhosts(char *pgset);
 
 /* Needed by the summary handling */
-extern host_t *init_host(const char *hostname, const char *displayname, const char *clientalias,
+extern host_t *init_host(const char *hostname, int issummary,
+			 const char *displayname, const char *clientalias,
 			 const char *comment, const char *description,
 			 const int ip1, const int ip2, const int ip3, const int ip4,
 			 const int dialup,
