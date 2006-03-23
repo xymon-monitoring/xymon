@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.151 2006-01-13 12:48:42 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.152 2006-03-23 06:44:08 henrik Exp $";
 
 #include <limits.h>
 #include <sys/types.h>
@@ -25,8 +25,11 @@ static char rcsid[] = "$Id: util.c,v 1.151 2006-01-13 12:48:42 henrik Exp $";
 #include "util.h"
 
 char *htmlextension = ".html"; /* Filename extension for generated HTML files */
-hostlist_t      *hosthead = NULL;
 
+static RbtHandle hosttree;
+static int havehosttree = 0;
+static RbtHandle columntree;
+static int havecolumntree = 0;
 
 char *hostpage_link(host_t *host)
 {
@@ -125,55 +128,98 @@ int checkpropagation(host_t *host, char *test, int color, int acked)
 }
 
 
-
-
-
-host_t *find_host(const char *hostname)
+host_t *find_host(char *hostname)
 {
-	static hostlist_t *lastsearch = NULL;
-	hostlist_t	*l;
+	RbtIterator handle;
 
-	/* We cache the last result */
-	if (lastsearch && (strcmp(lastsearch->hostentry->hostname, hostname) == 0)) 
-		return lastsearch->hostentry;
+	if (havehosttree == 0) return NULL;
 
 	/* Search for the host */
-	for (l=hosthead; (l && (strcmp(l->hostentry->hostname, hostname) != 0)); l = l->next) ;
-	lastsearch = l;
-
-	return (l ? l->hostentry : NULL);
+	handle = rbtFind(hosttree, hostname);
+	if (handle != rbtEnd(hosttree)) {
+		hostlist_t *entry = (hostlist_t *)gettreeitem(hosttree, handle);
+		return (entry ? entry->hostentry : NULL);
+	}
+	
+	return NULL;
 }
 
-
-bbgen_col_t *find_or_create_column(const char *testname, int create)
+hostlist_t *find_hostlist(char *hostname)
 {
-	static bbgen_col_t *colhead = NULL;	/* Head of column-name list */
-	static bbgen_col_t *lastcol = NULL;	/* Cache the last lookup */
-	bbgen_col_t *newcol;
+	RbtIterator handle;
+
+	if (havehosttree == 0) return NULL;
+
+	/* Search for the host */
+	handle = rbtFind(hosttree, hostname);
+	if (handle != rbtEnd(hosttree)) {
+		hostlist_t *entry = (hostlist_t *)gettreeitem(hosttree, handle);
+		return entry;
+	}
+	
+	return NULL;
+}
+
+void add_to_hostlist(hostlist_t *rec)
+{
+	if (havehosttree == 0) {
+		hosttree = rbtNew(name_compare);
+		havehosttree = 1;
+	}
+
+	rbtInsert(hosttree, rec->hostentry->hostname, rec);
+}
+
+static RbtIterator hostlistwalk;
+hostlist_t *hostlistBegin(void)
+{
+	hostlistwalk = rbtBegin(hosttree);
+
+	if (hostlistwalk != rbtEnd(hosttree)) {
+		return (hostlist_t *)gettreeitem(hosttree, hostlistwalk);
+	}
+	else {
+		return NULL;
+	}
+}
+
+hostlist_t *hostlistNext(void)
+{
+	if (hostlistwalk != rbtEnd(hosttree)) hostlistwalk = rbtNext(hosttree, hostlistwalk);
+
+	if (hostlistwalk != rbtEnd(hosttree)) {
+		return (hostlist_t *)gettreeitem(hosttree, hostlistwalk);
+	}
+	else {
+		return NULL;
+	}
+}
+
+bbgen_col_t *find_or_create_column(char *testname, int create)
+{
+	bbgen_col_t *newcol = NULL;
+	RbtIterator handle;
 
 	dprintf("find_or_create_column(%s)\n", textornull(testname));
-	if (lastcol && (strcmp(testname, lastcol->name) == 0))
-		return lastcol;
 
-	for (newcol = colhead; (newcol && (strcmp(testname, newcol->name) != 0)); newcol = newcol->next);
+	if (havecolumntree == 0) {
+		columntree = rbtNew(name_compare);
+		havecolumntree = 1;
+	}
+
+	handle = rbtFind(columntree, testname);
+	if (handle != rbtEnd(columntree)) newcol = (bbgen_col_t *)gettreeitem(columntree, handle);
+
 	if (newcol == NULL) {
 		if (!create) return NULL;
 
 		newcol = (bbgen_col_t *) malloc(sizeof(bbgen_col_t));
 		newcol->name = strdup(testname);
-		newcol->listname = (char *)malloc(strlen(testname)+1+2); sprintf(newcol->listname, ",%s,", testname);
+		newcol->listname = (char *)malloc(strlen(testname)+1+2); 
+		sprintf(newcol->listname, ",%s,", testname);
 
-		/* No need to maintain this list in order */
-		if (colhead == NULL) {
-			colhead = newcol;
-			newcol->next = NULL;
-		}
-		else {
-			newcol->next = colhead;
-			colhead = newcol;
-		}
+		rbtInsert(columntree, newcol->name, newcol);
 	}
-	lastcol = newcol;
 
 	return newcol;
 }
