@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.157 2006-01-13 11:47:14 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.158 2006-03-23 06:40:26 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -284,10 +284,10 @@ state_t *init_state(const char *filename, logdata_t *log)
 		 */
 
 		/* Cannot use "find_host()" here, as we need the hostlink record, not the host record */
-		for (l=hosthead; (l && (strcmp(l->hostentry->hostname, host->hostname) != 0)); l=l->next);
+		l = find_hostlist(hostname);
 
 		/* Walk through the clone-list and set the "entries" for all hosts */
-		for (l=l->clones; (l); l = l->next) l->hostentry->entries = host->entries;
+		for (l=l->clones; (l); l = l->clones) l->hostentry->entries = host->entries;
 	}
 	else {
 		/* No host for this test - must be missing from bb-hosts */
