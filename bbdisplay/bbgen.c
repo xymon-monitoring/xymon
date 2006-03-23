@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.221 2006-02-19 12:54:38 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.222 2006-03-23 06:37:26 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -587,7 +587,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Calculate colors of hosts and pages */
-	calc_hostcolors(hosthead, bb2ignorecolumns);
+	calc_hostcolors(bb2ignorecolumns);
 	calc_pagecolors(pagehead);
 
 	/* Topmost page (background color for bb.html) */
