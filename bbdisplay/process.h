@@ -11,7 +11,7 @@
 #ifndef __PROCESS_H_
 #define __PROCESS_H_
 
-extern void calc_hostcolors(hostlist_t *head, char *bb2ignores);
+extern void calc_hostcolors(char *bb2ignores);
 extern void calc_pagecolors(bbgen_page_t *phead);
 extern void delete_old_acks(void);
 extern void send_summaries(summary_t *sumhead);
