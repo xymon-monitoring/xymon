@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.30 2005-08-06 21:28:24 henrik Exp $";
+static char rcsid[] = "$Id: process.c,v 1.31 2006-03-23 06:41:45 henrik Exp $";
 
 #include <limits.h>
 #include <string.h>
@@ -25,6 +25,7 @@ static char rcsid[] = "$Id: process.c,v 1.30 2005-08-06 21:28:24 henrik Exp $";
 
 #include "bbgen.h"
 #include "process.h"
+#include "util.h"
 
 static int wantedcolumn(char *current, char *wanted)
 {
@@ -40,13 +41,13 @@ static int wantedcolumn(char *current, char *wanted)
 }
 
 
-void calc_hostcolors(hostlist_t *head, char *bb2ignores)
+void calc_hostcolors(char *bb2ignores)
 {
 	int		color, bb2color, bbnkcolor, oldage;
 	hostlist_t 	*h, *cwalk;
 	entry_t		*e;
 
-	for (h = head; (h); h = h->next) {
+	for (h = hostlistBegin(); (h); h = hostlistNext()) {
 		color = bb2color = bbnkcolor = 0; oldage = 1;
 
 		for (e = h->hostentry->entries; (e); e = e->next) {
@@ -71,7 +72,7 @@ void calc_hostcolors(hostlist_t *head, char *bb2ignores)
 		h->hostentry->oldage = oldage;
 
 		/* Need to update the clones also */
-		for (cwalk = h->clones; (cwalk); cwalk = cwalk->next) {
+		for (cwalk = h->clones; (cwalk); cwalk = cwalk->clones) {
 			cwalk->hostentry->color = color;
 			cwalk->hostentry->bb2color = bb2color;
 			cwalk->hostentry->bbnkcolor = bbnkcolor;
