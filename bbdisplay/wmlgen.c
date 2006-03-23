@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: wmlgen.c,v 1.22 2005-04-25 12:58:51 henrik Exp $";
+static char rcsid[] = "$Id: wmlgen.c,v 1.23 2006-03-23 06:42:50 henrik Exp $";
 
 #include <limits.h>
 #include <stdlib.h>
@@ -26,6 +26,7 @@ static char rcsid[] = "$Id: wmlgen.c,v 1.22 2005-04-25 12:58:51 henrik Exp $";
 
 #include "bbgen.h"
 #include "wmlgen.h"
+#include "util.h"
 
 int enable_wmlgen = 0;
 static char wmldir[PATH_MAX];
@@ -281,7 +282,7 @@ void do_wml_cards(char *webdir)
 	 * corresponding to the HTML file for the test logfile.
 	 */
 	bb2wapcolor = COL_GREEN;
-	for (h = hosthead; (h); h = h->next) {
+	for (h = hostlistBegin(); (h); h = hostlistNext()) {
 		h->hostentry->wapcolor = COL_GREEN;
 		for (t = h->hostentry->entries; (t); t = t->next) {
 			if (t->onwap && ((t->color == COL_RED) || (t->color == COL_YELLOW))) {
@@ -323,7 +324,7 @@ void do_wml_cards(char *webdir)
 	}
 
 	/* Now loop through the hostlist again, and generate the bb2wap links and host pages */
-	for (h = hosthead; (h); h = h->next) {
+	for (h = hostlistBegin(); (h); h = hostlistNext()) {
 		if (h->hostentry->anywaps) {
 
 			/* Create the host WAP card, with links to individual test results */

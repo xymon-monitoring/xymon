@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbconvert.c,v 1.10 2005-03-22 09:03:37 henrik Exp $";
+static char rcsid[] = "$Id: bbconvert.c,v 1.11 2006-03-23 06:37:05 henrik Exp $";
 
 #include <limits.h>
 #include <sys/types.h>
@@ -23,13 +23,14 @@ static char rcsid[] = "$Id: bbconvert.c,v 1.10 2005-03-22 09:03:37 henrik Exp $"
 
 #include "bbgen.h"
 #include "bbconvert.h"
+#include "util.h"
 
 void dump_hobbitdchk(void)
 {
 	hostlist_t *hwalk;
 	entry_t *e;
 
-	for (hwalk = hosthead; (hwalk); hwalk = hwalk->next) {
+	for (hwalk = hostlistBegin(); (hwalk); hwalk = hostlistNext()) {
 		host_t *h = hwalk->hostentry;
 
 		for (e = h->entries; (e); e = e->next) {

@@ -37,7 +37,7 @@ void csv_availability(char *fn, char csvdelim)
 	}
 	fprintf(fd, "%s\n", header);
 
-	for (hl = hosthead; (hl); hl = hl->next) {
+	for (hl = hostlistBegin(); (hl); hl = hostlistNext()) {
 		host_t *hwalk = hl->hostentry;
 		entry_t *ewalk;
 		int i;

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: debug.c,v 1.35 2005-03-22 09:03:37 henrik Exp $";
+static char rcsid[] = "$Id: debug.c,v 1.36 2006-03-23 06:38:20 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -20,6 +20,7 @@ static char rcsid[] = "$Id: debug.c,v 1.35 2005-03-22 09:03:37 henrik Exp $";
 #include <sys/time.h>
 
 #include "bbgen.h"
+#include "util.h"
 
 void dumphosts(host_t *head, char *prefix)
 {
@@ -64,7 +65,7 @@ void dumphostlist(hostlist_t *head)
 {
 	hostlist_t *h;
 
-	for (h=head; (h); h=h->next) {
+	for (h=hostlistBegin(); (h); h=hostlistNext()) {
 		printf("Hostlist entry: Hostname %s\n", h->hostentry->hostname);
 	}
 }
