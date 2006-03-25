@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.82 2005-10-12 20:37:44 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.83 2006-03-25 22:49:12 henrik Exp $";
 
 #include "config.h"
 
@@ -820,6 +820,7 @@ void do_tcp_tests(int timeout, int concurrency)
 		/* Ready to go - we have a bunch of connections being established */
 		dprintf("%d tests pending - %d active tests\n", pending, activesockets);
 
+restartselect:
 		/*
 		 * Setup the FDSET's
 		 */
@@ -893,7 +894,7 @@ void do_tcp_tests(int timeout, int concurrency)
 			 * select() failed - this is BAD!
 			 */
 			switch (selerr) {
-			   case EINTR : errprintf("select failed - EINTR\n"); break;
+			   case EINTR : errprintf("select failed - EINTR\n"); goto restartselect;
 			   case EBADF : errprintf("select failed - EBADF\n"); break;
 			   case EINVAL: errprintf("select failed - EINVAL, maxfd=%d, tmo=%u.%06u\n", maxfd, 
 						(unsigned int)tmo.tv_sec, (unsigned int)tmo.tv_usec); 
