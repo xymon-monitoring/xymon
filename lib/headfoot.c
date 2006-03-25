@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.44 2006-03-10 09:30:05 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.45 2006-03-25 22:48:47 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -1094,7 +1094,8 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 {
 	int	fd;
 	char 	filename[PATH_MAX];
-	struct stat st;
+	char    *bulletinfile;
+	struct  stat st;
 	char	*templatedata;
 	char	*hfpath;
 
@@ -1189,7 +1190,23 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 		fprintf(output, "<HTML><BODY> \n <HR size=4> \n <BR>%s is either missing or invalid, please create this file with your custom header<BR> \n<HR size=4>", filename);
 	}
 
+	/* Check for bulletin files */
+	bulletinfile = (char *)malloc(strlen(xgetenv("BBHOME")) + strlen("/web/bulletin_") + strlen(head_or_foot)+1);
+	sprintf(bulletinfile, "%s/web/bulletin_%s", xgetenv("BBHOME"), head_or_foot);
+	fd = open(bulletinfile, O_RDONLY);
+	if (fd != -1) {
+		fstat(fd, &st);
+		templatedata = (char *) malloc(st.st_size + 1);
+		read(fd, templatedata, st.st_size);
+		templatedata[st.st_size] = '\0';
+		close(fd);
+		output_parsed(output, templatedata, bgcolor, time(NULL));
+		xfree(templatedata);
+	}
+
 	xfree(hostenv_pagepath); hostenv_pagepath = NULL;
+	xfree(bulletinfile);
+
 	MEMUNDEFINE(filename);
 }
 
