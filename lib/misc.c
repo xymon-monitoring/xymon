@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.48 2006-03-29 16:01:17 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.49 2006-03-29 21:41:51 henrik Exp $";
 
 #include "config.h"
 
@@ -190,11 +190,14 @@ char *grabstrbuffer(strbuffer_t *buf)
 strbuffer_t *dupstrbuffer(char *src)
 {
 	strbuffer_t *newbuf;
-	int len = strlen(src);
+	int len = 0;
 	
 	newbuf = newstrbuffer(0);
-	newbuf->s = strdup(src);
-	newbuf->used = newbuf->sz = len;
+	if (src) {
+		newbuf->s = strdup(src);
+		len = strlen(src);
+		newbuf->used = newbuf->sz = len;
+	}
 
 	return newbuf;
 }
