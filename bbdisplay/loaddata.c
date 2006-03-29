@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.158 2006-03-23 06:40:26 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.159 2006-03-29 16:04:09 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -90,7 +90,7 @@ int testflag_set(entry_t *e, char flag)
 }
 
 
-state_t *init_state(const char *filename, logdata_t *log)
+state_t *init_state(char *filename, logdata_t *log)
 {
 	FILE 		*fd = NULL;
 	char		*p;
