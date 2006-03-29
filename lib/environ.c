@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.29 2006-02-25 08:42:19 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.30 2006-03-29 15:49:13 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -205,8 +205,7 @@ void envcheck(char *envvars[])
 void loadenv(char *envfile, char *area)
 {
 	FILE *fd;
-	char *inbuf = NULL;
-	int inbufsz;
+	strbuffer_t *inbuf = newstrbuffer(0);
 	char *p, *oneenv;
 	int n;
 
@@ -214,10 +213,10 @@ void loadenv(char *envfile, char *area)
 
 	fd = stackfopen(envfile, "r", NULL);
 	if (fd) {
-		while (stackfgets(&inbuf, &inbufsz, NULL)) {
-			grok_input(inbuf);
+		while (stackfgets(inbuf, NULL)) {
+			grok_input(STRBUF(inbuf));
 
-			if (strlen(inbuf) && strchr(inbuf, '=')) {
+			if (STRBUFLEN(inbuf) && strchr(STRBUF(inbuf), '=')) {
 				oneenv = NULL;
 
 				/*
@@ -225,14 +224,14 @@ void loadenv(char *envfile, char *area)
 				 * is of the form AREA/NAME=VALUE, then setup the variable
 				 * only if we're called with the correct AREA setting.
 				 */
-				p = inbuf + strcspn(inbuf, "=/");
+				p = STRBUF(inbuf) + strcspn(STRBUF(inbuf), "=/");
 				if (*p == '/') {
 					if (area) {
 						*p = '\0';
-						if (strcasecmp(inbuf, area) == 0) oneenv = strdup(expand_env(p+1));
+						if (strcasecmp(STRBUF(inbuf), area) == 0) oneenv = strdup(expand_env(p+1));
 					}
 				}
-				else oneenv = strdup(expand_env(inbuf));
+				else oneenv = strdup(expand_env(STRBUF(inbuf)));
 
 				if (oneenv) {
 					p = strchr(oneenv, '=');
@@ -247,7 +246,7 @@ void loadenv(char *envfile, char *area)
 			}
 		}
 		stackfclose(fd);
-		if (inbuf) xfree(inbuf);
+		freestrbuffer(inbuf);
 	}
 	else {
 		errprintf("Cannot open env file %s - %s\n", envfile, strerror(errno));
