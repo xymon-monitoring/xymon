@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: url.c,v 1.14 2005-07-16 09:58:17 henrik Exp $";
+static char rcsid[] = "$Id: url.c,v 1.15 2006-03-29 15:57:48 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -162,8 +162,7 @@ static void load_netrc(void)
 
 	char netrcfn[MAXPATHLEN];
 	FILE *fd;
-	char *inbuf = NULL;
-	int inbufsz;
+	strbuffer_t *inbuf;
 	char *host, *login, *password, *p;
 	int state = WANT_TOKEN;
 
@@ -188,16 +187,17 @@ static void load_netrc(void)
 
 	host = login = password = NULL;
 	initfgets(fd);
-	while (unlimfgets(&inbuf, &inbufsz, fd)) {
-		p = strchr(inbuf, '\n'); 
+	inbuf = newstrbuffer(0);
+	while (unlimfgets(inbuf, fd)) {
+		p = strchr(STRBUF(inbuf), '\n'); 
 		if (p) {
 			*p = '\0';
 			p--;
-			if ((p > inbuf) && (*p == '\r')) *p = '\0';
+			if ((p > STRBUF(inbuf)) && (*p == '\r')) *p = '\0';
 		}
 
-		if ((inbuf[0] != '#') && strlen(inbuf)) {
-			p = strtok(inbuf, " \t");
+		if ((*STRBUF(inbuf) != '#') && *STRBUF(inbuf)) {
+			p = strtok(STRBUF(inbuf), " \t");
 			while (p) {
 				switch (state) {
 				  case WANT_TOKEN:
@@ -240,7 +240,7 @@ static void load_netrc(void)
 	}
 
 	fclose(fd);
-	if (inbuf) xfree(inbuf);
+	freestrbuffer(inbuf);
 
 	MEMUNDEFINE(netrcfn);
 }

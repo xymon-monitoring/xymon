@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.41 2006-01-13 15:40:24 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.42 2006-03-29 16:08:03 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -112,8 +112,7 @@ static void loadtests(void)
 	static char *fn = NULL;
 	struct stat st;
 	FILE *fd;
-	char *inbuf = NULL;
-	int inbufsz;
+	strbuffer_t *inbuf;
 
 	if (!fn) {
 		fn = (char *)malloc(1024 + strlen(xgetenv("BBHOME")));
@@ -141,13 +140,14 @@ static void loadtests(void)
 	flush_testlist();
 
 	initfgets(fd);
-	while (unlimfgets(&inbuf, &inbufsz, fd)) {
+	inbuf = newstrbuffer(0);
+	while (unlimfgets(inbuf, fd)) {
 		char *p, *comment;
 		char *inp, *outp;
 
-		p = strchr(inbuf, '\n'); if (p) *p = '\0';
+		p = strchr(STRBUF(inbuf), '\n'); if (p) *p = '\0';
 		/* Strip whitespace */
-		for (inp=outp=inbuf; ((*inp >= ' ') && (*inp != '#')); inp++) {
+		for (inp=outp=STRBUF(inbuf); ((*inp >= ' ') && (*inp != '#')); inp++) {
 			if (isspace((int)*inp)) {
 			}
 			else {
@@ -158,14 +158,14 @@ static void loadtests(void)
 		*outp = '\0';
 		if (strlen(inp)) memmove(outp, inp, strlen(inp)+1);
 
-		if (strlen(inbuf) && (inbuf[0] != '#') && (p = strchr(inbuf, '=')) ) {
+		if (STRBUFLEN(inbuf) && (*STRBUF(inbuf) != '#') && (p = strchr(STRBUF(inbuf), '=')) ) {
 			testspec_t *newtest = (testspec_t *) malloc(sizeof(testspec_t));
 
 			*p = '\0';
 			comment = strchr(p+1, '#');
 			if (comment) *comment = '\0';
-			newtest->reshostname = strdup(gethname(inbuf));
-			newtest->restestname = strdup(gettname(inbuf));
+			newtest->reshostname = strdup(gethname(STRBUF(inbuf)));
+			newtest->restestname = strdup(gettname(STRBUF(inbuf)));
 			newtest->expression = strdup(p+1);
 			newtest->comment = (comment ? strdup(comment+1) : NULL);
 			newtest->resultexpr = NULL;
@@ -179,7 +179,7 @@ static void loadtests(void)
 	}
 
 	fclose(fd);
-	if (inbuf) xfree(inbuf);
+	freestrbuffer(inbuf);
 }
 
 static int gethobbitdvalue(char *hostname, char *testname, char **errptr)

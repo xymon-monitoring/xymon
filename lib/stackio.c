@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: stackio.c,v 1.15 2006-03-13 11:50:18 henrik Exp $";
+static char rcsid[] = "$Id: stackio.c,v 1.16 2006-03-29 16:00:24 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -81,7 +81,7 @@ int initfgets(FILE *fd)
 	return 0;
 }
 
-char *unlimfgets(char **buffer, int *bufsz, FILE *fd)
+char *unlimfgets(strbuffer_t *buffer, FILE *fd)
 {
 	fgetsbuf_t *fg;
 	size_t n;
@@ -109,7 +109,7 @@ char *unlimfgets(char **buffer, int *bufsz, FILE *fd)
 	}
 
 	/* Make sure the output buffer is empty */
-	if (*buffer) **buffer = '\0';
+	clearstrbuffer(buffer);
 
 	while (!eoln && (fg->moretoread || *(fg->inbufp))) {
 		int continued = 0;
@@ -125,21 +125,21 @@ char *unlimfgets(char **buffer, int *bufsz, FILE *fd)
 
 				if (continued) {
 					*contchar = '\0';
-					addtobuffer(buffer, bufsz, fg->inbufp);
+					addtobuffer(buffer, fg->inbufp);
 					fg->inbufp = eoln+1; 
 					eoln = NULL;
 				}
 				else {
 					char savech = *(eoln+1); 
 					*(eoln+1) = '\0';
-					addtobuffer(buffer, bufsz, fg->inbufp);
+					addtobuffer(buffer, fg->inbufp);
 					*(eoln+1) = savech; 
 					fg->inbufp = eoln+1; 
 				}
 			}
 			else {
 				/* No newline in buffer, so add all of it to the output buffer */
-				addtobuffer(buffer, bufsz, fg->inbufp);
+				addtobuffer(buffer, fg->inbufp);
 
 				/* Input buffer is now empty */
 				*(fg->inbuf) = '\0';
@@ -161,10 +161,10 @@ char *unlimfgets(char **buffer, int *bufsz, FILE *fd)
 			 * So the simple fix is to only do the cont-char stuff if **buffer is not NUL.
 			 * Hence the test for both *buffer and **buffer.
 			 */
-			if (*buffer && **buffer) {
-				int n = strlen(*buffer);
-				char *contchar = *buffer + n - 1;
-				while ((contchar > *buffer) && isspace((int)*contchar) && (*contchar != '\\')) contchar--;
+			if (STRBUF(buffer) && *STRBUF(buffer)) {
+				int n = STRBUFLEN(buffer);
+				char *contchar = STRBUF(buffer) + n - 1;
+				while ((contchar > STRBUF(buffer)) && isspace((int)*contchar) && (*contchar != '\\')) contchar--;
 
 				if (*contchar == '\\') {
 					/*
@@ -185,7 +185,7 @@ char *unlimfgets(char **buffer, int *bufsz, FILE *fd)
 		}
 	}
 
-	return *buffer;
+	return STRBUF(buffer);
 }
 
 FILE *stackfopen(char *filename, char *mode, void **v_listhead)
@@ -397,34 +397,35 @@ static void addtofnlist(char *dirname, void **v_listhead)
 	xfree(fnames);
 }
 
-char *stackfgets(char **buffer, unsigned int *bufferlen, char *extraincl)
+char *stackfgets(strbuffer_t *buffer, char *extraincl)
 {
 	char *result;
 
-	result = unlimfgets(buffer, bufferlen, fdhead->fd);
+	result = unlimfgets(buffer, fdhead->fd);
 
 	if (result) {
-		if ( (strncmp(*buffer, "include ", 8) == 0) ||
-		     (extraincl && (strncmp(*buffer, extraincl, strlen(extraincl)) == 0)) ) {
+		if ( (strncmp(STRBUF(buffer), "include ", 8) == 0) ||
+		     (extraincl && (strncmp(STRBUF(buffer), extraincl, strlen(extraincl)) == 0)) ) {
 			char *newfn, *eol;
 
-			eol = strchr(*buffer, '\n'); if (eol) *eol = '\0';
-			newfn = *buffer + strcspn(*buffer, " \t");
+			eol = strchr(STRBUF(buffer), '\n'); if (eol) *eol = '\0';
+			newfn = STRBUF(buffer) + strcspn(STRBUF(buffer), " \t");
 			newfn += strspn(newfn, " \t");
 		
 			if (*newfn && (stackfopen(newfn, "r", (void **)fdhead->listhead) != NULL))
-				return stackfgets(buffer, bufferlen, extraincl);
+				return stackfgets(buffer, extraincl);
 			else {
-				errprintf("WARNING: Cannot open include file '%s', line was:%s\n", newfn, buffer);
+				errprintf("WARNING: Cannot open include file '%s', line was:%s\n", 
+					  newfn, STRBUF(buffer));
 				if (eol) *eol = '\n';
 				return result;
 			}
 		}
-		else if (strncmp(*buffer, "directory ", 10) == 0) {
+		else if (strncmp(STRBUF(buffer), "directory ", 10) == 0) {
 			char *dirfn, *eol;
 
-			eol = strchr(*buffer, '\n'); if (eol) *eol = '\0';
-			dirfn = *buffer + 9;
+			eol = strchr(STRBUF(buffer), '\n'); if (eol) *eol = '\0';
+			dirfn = STRBUF(buffer) + 9;
 			dirfn += strspn(dirfn, " \t");
 
 			if (*dirfn) addtofnlist(dirfn, (void **)fdhead->listhead);
@@ -433,7 +434,7 @@ char *stackfgets(char **buffer, unsigned int *bufferlen, char *extraincl)
 
 				fnlist = fnlist->next;
 				xfree(tmp->name); xfree(tmp);
-				return stackfgets(buffer, bufferlen, extraincl);
+				return stackfgets(buffer, extraincl);
 			}
 			else {
 				htnames_t *tmp = fnlist;
@@ -455,7 +456,7 @@ char *stackfgets(char **buffer, unsigned int *bufferlen, char *extraincl)
 
 				fnlist = fnlist->next;
 				xfree(tmp->name); xfree(tmp);
-				return stackfgets(buffer, bufferlen, extraincl);
+				return stackfgets(buffer, extraincl);
 			}
 			else {
 				htnames_t *tmp = fnlist;
@@ -467,7 +468,7 @@ char *stackfgets(char **buffer, unsigned int *bufferlen, char *extraincl)
 			}
 		}
 		else if (fdhead != NULL)
-			return stackfgets(buffer, bufferlen, extraincl);
+			return stackfgets(buffer, extraincl);
 		else
 			return NULL;
 	}
@@ -482,8 +483,7 @@ int main(int argc, char *argv[])
 	char *fn, *p;
 	char cmd[1024];
 	FILE *fd;
-	char *inbuf = NULL;
-	int inbufsz;
+	strbuffer_t *inbuf = newstrbuffer(0);
 	void *listhead = NULL;
 	int done;
 
@@ -493,12 +493,12 @@ int main(int argc, char *argv[])
 	done = 0;
 	while (!done) {
 		if (*cmd == '!') {
+			clearstrbuffer(inbuf);
 			fd = stackfopen(fn, "r", &listhead);
 			if (!fd) { errprintf("Cannot open file %s\n", fn); continue; }
 
-			while (stackfgets(&inbuf, &inbufsz, NULL)) printf("%s", inbuf);
+			while (stackfgets(inbuf, NULL)) printf("%s", STRBUF(inbuf));
 			stackfclose(fd);
-			if (inbuf) xfree(inbuf);
 		}
 		else if (*cmd == '?') {
 			filelist_t *walk = (filelist_t *)listhead;

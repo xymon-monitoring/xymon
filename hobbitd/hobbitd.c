@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.215 2006-03-20 10:27:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.216 2006-03-29 16:12:23 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -196,8 +196,7 @@ pid_t parentpid = 0;
 int  hostcount = 0;
 char *ackinfologfn = NULL;
 FILE *ackinfologfd = NULL;
-char *clientconfigs = NULL;
-int ccsize = 0;
+strbuffer_t *clientconfigs = NULL;
 
 typedef struct hobbitd_statistics_t {
 	char *cmd;
@@ -288,8 +287,7 @@ void load_clientconfig(void)
 	static char *configfn = NULL;
 	static void *clientconflist = NULL;
 	FILE *fd;
-	char *buf = NULL;
-	int bufsz = 0;
+	strbuffer_t *buf;
 	char *sectstart;
 
 	if (!configfn) {
@@ -310,23 +308,22 @@ void load_clientconfig(void)
 	}
 
 	if (!clientconfigs) {
-		ccsize = 64*1024;
-		clientconfigs = malloc(ccsize);
+		clientconfigs = newstrbuffer(0);
 	}
 	else {
 		rbtDelete(rbconfigs);
+		clearstrbuffer(clientconfigs);
 	}
 
 	rbconfigs = rbtNew(name_compare);
-	strcpy(clientconfigs, "\n");
+	addtobuffer(clientconfigs, "\n");
+	buf = newstrbuffer(0);
 
 	fd = stackfopen(configfn, "r", &clientconflist); if (!fd) return;
-	while (stackfgets(&buf, &bufsz, NULL)) {
-		addtobuffer(&clientconfigs, &ccsize, buf);
-	}
+	while (stackfgets(buf, NULL)) addtostrbuffer(clientconfigs, buf);
 	stackfclose(fd);
 
-	sectstart = strstr(clientconfigs, "\n[");
+	sectstart = strstr(STRBUF(clientconfigs), "\n[");
 	while (sectstart) {
 		char *key, *nextsect;
 
@@ -345,6 +342,8 @@ void load_clientconfig(void)
 		rbtInsert(rbconfigs, key, sectstart+1);
 		sectstart = nextsect;
 	}
+
+	freestrbuffer(buf);
 }
 
 void update_statistics(char *cmd)
@@ -1692,24 +1691,24 @@ void flush_acklist(hobbitd_log_t *zombie, int flushall)
 
 char *acklist_string(hobbitd_log_t *log, int level)
 {
-	static char *res = NULL;
-	static int ressz = 0;
+	static strbuffer_t *res = NULL;
 	ackinfo_t *awalk;
 	char tmpstr[512];
 
 	if (log->acklist == NULL) return NULL;
 
-	if (res) *res = '\0';
+	if (res) clearstrbuffer(res); else res = newstrbuffer(0);
+
 	for (awalk = log->acklist; (awalk); awalk = awalk->next) {
 		if ((level != -1) && (awalk->level != level)) continue;
 		snprintf(tmpstr, sizeof(tmpstr), "%d:%d:%d:%s:%s\n", 
 			 (int)awalk->received, (int)awalk->validuntil, 
 			 awalk->level, awalk->ackedby, awalk->msg);
 		tmpstr[sizeof(tmpstr)-1] = '\0';
-		addtobuffer(&res, &ressz, tmpstr);
+		addtobuffer(res, tmpstr);
 	}
 
-	return res;
+	return STRBUF(res);
 }
 
 void free_log_t(hobbitd_log_t *zombie)
@@ -1891,10 +1890,7 @@ int get_config(char *fn, conn_t *msg)
 {
 	char fullfn[PATH_MAX];
 	FILE *fd = NULL;
-	int done = 0;
-	int n;
-	char *inbuf = NULL;
-	int inbufsz;
+	strbuffer_t *inbuf, *result;
 
 	dprintf("-> get_config %s\n", fn);
 	sprintf(fullfn, "%s/etc/%s", xgetenv("BBHOME"), fn);
@@ -1904,21 +1900,15 @@ int get_config(char *fn, conn_t *msg)
 		return -1;
 	}
 
-	*msg->buf = '\0';
-	msg->bufp = msg->buf;
-	msg->buflen = 0;
-	do {
-		done = (stackfgets(&inbuf, &inbufsz, NULL) == NULL);
-		if (!done) {
-			addtobuffer(&msg->buf, &msg->bufsz, inbuf);
-			n = strlen(inbuf);
-			msg->buflen += n;
-			msg->bufp += n;
-		}
-	} while (!done);
-
+	inbuf = newstrbuffer(0);
+	result = newstrbuffer(0);
+	while (stackfgets(inbuf, NULL) != NULL) addtostrbuffer(result, inbuf);
 	stackfclose(fd);
-	if (inbuf) xfree(inbuf);
+	freestrbuffer(inbuf);
+
+	msg->buflen = STRBUFLEN(result);
+	msg->buf = grabstrbuffer(result);
+	msg->bufp = msg->buf + msg->buflen;
 
 	dprintf("<- get_config\n");
 
@@ -3273,8 +3263,7 @@ void save_checkpoint(void)
 void load_checkpoint(char *fn)
 {
 	FILE *fd;
-	char *inbuf = NULL;
-	int inbufsz;
+	strbuffer_t *inbuf;
 	char *item;
 	int i, err;
 	char hostip[20];
@@ -3297,16 +3286,17 @@ void load_checkpoint(char *fn)
 
 	MEMDEFINE(hostip);
 
+	inbuf = newstrbuffer(0);
 	initfgets(fd);
-	while (unlimfgets(&inbuf, &inbufsz, fd)) {
+	while (unlimfgets(inbuf, fd)) {
 		hostname = testname = sender = testflags = statusmsg = disablemsg = ackmsg = NULL;
 		lastchange = validtime = enabletime = acktime = 0;
 		err = 0;
 
-		if (strncmp(inbuf, "@@HOBBITDCHK-V1|.task.|", 23) == 0) {
+		if (strncmp(STRBUF(inbuf), "@@HOBBITDCHK-V1|.task.|", 23) == 0) {
 			scheduletask_t *newtask = (scheduletask_t *)calloc(1, sizeof(scheduletask_t));
 
-			item = gettok(inbuf, "|\n"); i = 0;
+			item = gettok(STRBUF(inbuf), "|\n"); i = 0;
 			while (item && !err) {
 				switch (i) {
 				  case 0: break;
@@ -3333,13 +3323,13 @@ void load_checkpoint(char *fn)
 			continue;
 		}
 
-		if (strncmp(inbuf, "@@HOBBITDCHK-V1|.acklist.|", 26) == 0) {
+		if (strncmp(STRBUF(inbuf), "@@HOBBITDCHK-V1|.acklist.|", 26) == 0) {
 			hobbitd_log_t *log = NULL;
 			ackinfo_t *newack = (ackinfo_t *)calloc(1, sizeof(ackinfo_t));
 
 			hitem = NULL;
 
-			item = gettok(inbuf, "|\n"); i = 0;
+			item = gettok(STRBUF(inbuf), "|\n"); i = 0;
 			while (item) {
 
 				switch (i) {
@@ -3381,9 +3371,9 @@ void load_checkpoint(char *fn)
 			continue;
 		}
 
-		if (strncmp(inbuf, "@@HOBBITDCHK-V1|.", 17) == 0) continue;
+		if (strncmp(STRBUF(inbuf), "@@HOBBITDCHK-V1|.", 17) == 0) continue;
 
-		item = gettok(inbuf, "|\n"); i = 0;
+		item = gettok(STRBUF(inbuf), "|\n"); i = 0;
 		while (item && !err) {
 			switch (i) {
 			  case 0: err = ((strcmp(item, "@@HOBBITDCHK-V1") != 0) && (strcmp(item, "@@BBGENDCHK-V1") != 0)); break;
@@ -3506,7 +3496,7 @@ void load_checkpoint(char *fn)
 	}
 
 	fclose(fd);
-	if (inbuf) xfree(inbuf);
+	freestrbuffer(inbuf);
 	dprintf("Loaded %d status logs\n", count);
 
 	MEMDEFINE(hostip);

@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-csvinfo.c,v 1.18 2006-03-12 16:38:32 henrik Exp $";
+static char rcsid[] = "$Id: bb-csvinfo.c,v 1.19 2006-03-29 16:03:18 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -81,8 +81,7 @@ int main(int argc, char *argv[])
 {
 	FILE *db;
 	char dbfn[PATH_MAX];
-	char *inbuf = NULL;
-	int inbufsz;
+	strbuffer_t *inbuf;
 	char *hffile = "info";
 	int bgcolor = COL_BLUE;
 	char *envarea = NULL;
@@ -137,10 +136,11 @@ int main(int argc, char *argv[])
 	/* First, load the headers from line 1 of the sourcedb */
 	memset(headers, 0, sizeof(headers));
 	initfgets(db);
-	if (unlimfgets(&inbuf, &inbufsz, db)) {
+	inbuf = newstrbuffer(0);
+	if (unlimfgets(inbuf, db)) {
 		char *p1, *p2;
 
-		for (i=0, p1=inbuf, p2=strchr(inbuf, delimiter); (p1 && p2 && strlen(p1)); i++,p1=p2+1,p2=strchr(p1, delimiter)) {
+		for (i=0, p1=STRBUF(inbuf), p2=strchr(STRBUF(inbuf), delimiter); (p1 && p2 && strlen(p1)); i++,p1=p2+1,p2=strchr(p1, delimiter)) {
 			*p2 = '\0';
 			headers[i] = strdup(p1);
 		}
@@ -154,13 +154,13 @@ int main(int argc, char *argv[])
 	for (i=0; i<MAXCOLUMNS; i++) items[i] = malloc(MAX_LINE_LEN);
 
 	found = 0;
-	while (!found && unlimfgets(&inbuf, &inbufsz, db)) {
+	while (!found && unlimfgets(inbuf, db)) {
 
 		char *p1, *p2;
 
 		for (i=0; i<MAXCOLUMNS; i++) *(items[i]) = '\0';
 
-		for (i=0, p1=inbuf, p2=strchr(inbuf, delimiter); (p1 && p2 && strlen(p1)); i++,p1=p2+1,p2=strchr(p1, delimiter)) {
+		for (i=0, p1=STRBUF(inbuf), p2=strchr(STRBUF(inbuf), delimiter); (p1 && p2 && strlen(p1)); i++,p1=p2+1,p2=strchr(p1, delimiter)) {
 			*p2 = '\0';
 			strcpy(items[i], (strlen(p1) ? p1 : "&nbsp;"));
 		}
@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
 		found = (strcasecmp(items[keycolumn], wantedname) == 0);
 	}
 	fclose(db);
-	if (inbuf) xfree(inbuf);
+	freestrbuffer(inbuf);
 
 	if (!found) {
 		errormsg("No match");

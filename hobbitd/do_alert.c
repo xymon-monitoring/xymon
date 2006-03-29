@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.84 2006-03-18 07:34:45 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.85 2006-03-29 16:09:29 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -166,21 +166,20 @@ static char *message_subject(activealerts_t *alert, recip_t *recip)
 
 static char *message_text(activealerts_t *alert, recip_t *recip)
 {
-	static char *buf = NULL;
-	static int buflen = 0;
+	strbuffer_t *buf = NULL;
 	char *eoln, *bom, *p;
 	char info[4096];
 
 	MEMDEFINE(info);
 
-	if (buf) *buf = '\0';
+	if (!buf) buf = newstrbuffer(0); else clearstrbuffer(buf);
 
 	if (alert->state == A_NOTIFY) {
 		sprintf(info, "%s:%s INFO\n", alert->hostname, alert->testname);
-		addtobuffer(&buf, &buflen, info);
-		addtobuffer(&buf, &buflen, alert->pagemessage);
+		addtobuffer(buf, info);
+		addtobuffer(buf, alert->pagemessage);
 		MEMUNDEFINE(info);
-		return buf;
+		return STRBUF(buf);
 	}
 
 	switch (recip->format) {
@@ -192,33 +191,33 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 		/* If there's a "<-- flags:.... -->" then remove it from the message */
 		if ((p = strstr(bom, "<!--")) != NULL) {
 			/* Add the part of line 1 before the flags ... */
-			*p = '\0'; addtobuffer(&buf, &buflen, bom); *p = '<'; 
+			*p = '\0'; addtobuffer(buf, bom); *p = '<'; 
 
 			/* And the part of line 1 after the flags ... */
-			p = strstr(p, "-->"); if (p) addtobuffer(&buf, &buflen, p+3);
+			p = strstr(p, "-->"); if (p) addtobuffer(buf, p+3);
 
 			/* And if there is more than line 1, add it as well */
 			if (eoln) {
 				*eoln = '\n';
-				addtobuffer(&buf, &buflen, eoln);
+				addtobuffer(buf, eoln);
 			}
 		}
 		else {
 			if (eoln) *eoln = '\n';
-			addtobuffer(&buf, &buflen, bom);
+			addtobuffer(buf, bom);
 		}
 
-		addtobuffer(&buf, &buflen, "\n");
+		addtobuffer(buf, "\n");
 
 		if (recip->format == ALERTFORM_TEXT) {
 			sprintf(info, "See %s%s\n", 
 				xgetenv("BBWEBHOST"), 
 				hostsvcurl(alert->hostname, alert->testname));
-			addtobuffer(&buf, &buflen, info);
+			addtobuffer(buf, info);
 		}
 
 		MEMUNDEFINE(info);
-		return buf;
+		return STRBUF(buf);
 
 	  case ALERTFORM_SMS:
 		/*
@@ -248,7 +247,7 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 			break;
 		}
 
-		addtobuffer(&buf, &buflen, info);
+		addtobuffer(buf, info);
 		bom = msg_data(alert->pagemessage);
 		eoln = strchr(bom, '\n');
 		if (eoln) {
@@ -256,26 +255,26 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 			while ((bom = strstr(bom, "\n&")) != NULL) {
 				eoln = strchr(bom+1, '\n'); if (eoln) *eoln = '\0';
 				if ((strncmp(bom, "&red", 4) == 0) || (strncmp(bom, "&yellow", 7) == 0)) 
-					addtobuffer(&buf, &buflen, bom);
+					addtobuffer(buf, bom);
 				if (eoln) *eoln = '\n';
 				bom = (eoln ? eoln+1 : "");
 			}
 		}
 		MEMUNDEFINE(info);
-		return buf;
+		return STRBUF(buf);
 
 	  case ALERTFORM_SCRIPT:
 		sprintf(info, "%s:%s %s [%d]\n",
 			alert->hostname, alert->testname, colorname(alert->color), alert->cookie);
-		addtobuffer(&buf, &buflen, info);
-		addtobuffer(&buf, &buflen, msg_data(alert->pagemessage));
-		addtobuffer(&buf, &buflen, "\n");
+		addtobuffer(buf, info);
+		addtobuffer(buf, msg_data(alert->pagemessage));
+		addtobuffer(buf, "\n");
 		sprintf(info, "See %s%s\n", 
 			xgetenv("BBWEBHOST"),
 			hostsvcurl(alert->hostname, alert->testname));
-		addtobuffer(&buf, &buflen, info);
+		addtobuffer(buf, info);
 		MEMUNDEFINE(info);
-		return buf;
+		return STRBUF(buf);
 
 	  case ALERTFORM_PAGER:
 	  case ALERTFORM_NONE:
@@ -685,22 +684,22 @@ void save_state(char *filename)
 void load_state(char *filename, char *statusbuf)
 {
 	FILE *fd = fopen(filename, "r");
-	char *inbuf = NULL;
-	int inbufsz;
+	strbuffer_t *inbuf;
 	char *p;
 
 	if (fd == NULL) return;
 
 	initfgets(fd);
-	while (unlimfgets(&inbuf, &inbufsz, fd)) {
-		p = strchr(inbuf, '\n'); if (p) *p = '\0';
+	inbuf = newstrbuffer(0);
+	while (unlimfgets(inbuf, fd)) {
+		p = strchr(STRBUF(inbuf), '\n'); if (p) *p = '\0';
 
-		p = strchr(inbuf, '|');
+		p = strchr(STRBUF(inbuf), '|');
 		if (p) {
 			repeat_t *newrpt;
 
 			*p = '\0';
-			if (atoi(inbuf) > time(NULL)) {
+			if (atoi(STRBUF(inbuf)) > time(NULL)) {
 				char *found = NULL;
 
 				if (statusbuf) {
@@ -721,7 +720,7 @@ void load_state(char *filename, char *statusbuf)
 
 				newrpt = (repeat_t *)malloc(sizeof(repeat_t));
 				newrpt->recipid = strdup(p+1);
-				newrpt->nextalert = atoi(inbuf);
+				newrpt->nextalert = atoi(STRBUF(inbuf));
 				newrpt->next = rpthead;
 				rpthead = newrpt;
 			}
@@ -729,6 +728,6 @@ void load_state(char *filename, char *statusbuf)
 	}
 
 	fclose(fd);
-	if (inbuf) xfree(inbuf);
+	freestrbuffer(inbuf);
 }
 

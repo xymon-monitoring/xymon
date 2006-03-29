@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.73 2006-03-21 21:57:57 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.74 2006-03-29 16:10:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -253,8 +253,7 @@ void load_checkpoint(char *filename)
 {
 	char *subfn;
 	FILE *fd;
-	char *inbuf = NULL;
-	int inbufsz;
+	strbuffer_t *inbuf;
 	char statuscmd[1024];
 	char *statusbuf = NULL;
 
@@ -265,13 +264,14 @@ void load_checkpoint(char *filename)
 	sendmessage(statuscmd, NULL, NULL, &statusbuf, 1, BBTALK_TIMEOUT);
 
 	initfgets(fd);
-	while (unlimfgets(&inbuf, &inbufsz, fd)) {
+	inbuf = newstrbuffer(0);
+	while (unlimfgets(inbuf, fd)) {
 		char *item[20], *p;
 		int i;
 
-		p = strchr(inbuf, '\n'); if (p) *p = '\0';
+		p = strchr(STRBUF(inbuf), '\n'); if (p) *p = '\0';
 
-		i = 0; p = gettok(inbuf, "|");
+		i = 0; p = gettok(STRBUF(inbuf), "|");
 		while (p && (i < 20)) {
 			item[i++] = p;
 			p = gettok(NULL, "|");
@@ -323,7 +323,7 @@ void load_checkpoint(char *filename)
 		}
 	}
 	fclose(fd);
-	if (inbuf) xfree(inbuf);
+	freestrbuffer(inbuf);
 
 	subfn = (char *)malloc(strlen(filename)+5);
 	sprintf(subfn, "%s.sub", filename);

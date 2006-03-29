@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-confreport.c,v 1.8 2006-03-18 07:30:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-confreport.c,v 1.9 2006-03-29 16:03:18 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -142,8 +142,7 @@ static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 	int contidx = 0, haveping = 0;
 	char contcol[1024];
 	activealerts_t alert;
-	char *buf = NULL; 
-	int buflen = 0;
+	strbuffer_t *buf = newstrbuffer(0); 
 
 	fprintf(stdout, "<p style=\"page-break-before: always\">\n"); 
 	fprintf(stdout, "<table width=\"100%%\" border=1 summary=\"%s configuration\">\n", host->hostname);
@@ -445,7 +444,7 @@ addtolist:
 	alert_printmode(2);
 	for (testi = 0; (testi < testcount); testi++) {
 		alert.testname = testnames[testi]->name;
-		if (have_recipient(&alert, NULL)) print_alert_recipients(&alert, &buf, &buflen);
+		if (have_recipient(&alert, NULL)) print_alert_recipients(&alert, buf);
 	}
 
 	if (buf) {
@@ -454,7 +453,7 @@ addtolist:
 		fprintf(stdout, "<td><table border=0 cellpadding=\"3\" cellspacing=\"5\" summary=\"%s alerts\">\n", host->hostname);
 		fprintf(stdout, "<tr><th>Service</th><th>Recipient</th><th>1st Delay</th><th>Stop after</th><th>Repeat</th><th>Time of Day</th><th>Colors</th></tr>\n");
 
-		fprintf(stdout, "%s", buf);
+		fprintf(stdout, "%s", STRBUF(buf));
 
 		fprintf(stdout, "</table></td>\n");
 		fprintf(stdout, "</tr>\n");
@@ -462,6 +461,8 @@ addtolist:
 
 	/* Finish off this host */
 	fprintf(stdout, "</table>\n");
+
+	freestrbuffer(buf);
 }
 
 
@@ -477,21 +478,21 @@ void load_columndocs(void)
 {
 	char fn[PATH_MAX];
 	FILE *fd;
-	char *inbuf = NULL;
-	int inbufsz;
+	strbuffer_t *inbuf;
 
 	sprintf(fn, "%s/etc/columndoc.csv", xgetenv("BBHOME"));
 	fd = fopen(fn, "r"); if (!fd) return;
 
+	inbuf = newstrbuffer(0);
 	initfgets(fd);
 
 	/* Skip the header line */
-	if (!unlimfgets(&inbuf, &inbufsz, fd)) { fclose(fd); return; }
+	if (!unlimfgets(inbuf, fd)) { fclose(fd); freestrbuffer(inbuf); return; }
 
-	while (unlimfgets(&inbuf, &inbufsz, fd)) {
+	while (unlimfgets(inbuf, fd)) {
 		char *s1 = NULL, *s2 = NULL;
 
-		s1 = strtok(inbuf, coldelim);
+		s1 = strtok(STRBUF(inbuf), coldelim);
 		if (s1) s2 = strtok(NULL, coldelim);
 
 		if (s1 && s2) {
@@ -504,7 +505,7 @@ void load_columndocs(void)
 		}
 	}
 	fclose(fd);
-	if (inbuf) xfree(inbuf);
+	freestrbuffer(inbuf);
 }
 
 

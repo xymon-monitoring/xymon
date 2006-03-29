@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-mailack.c,v 1.11 2006-03-21 21:53:35 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-mailack.c,v 1.12 2006-03-29 16:10:20 henrik Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -23,8 +23,8 @@ static char rcsid[] = "$Id: hobbit-mailack.c,v 1.11 2006-03-21 21:53:35 henrik E
 
 int main(int argc, char *argv[])
 {
-	char *inbuf = NULL, *ackbuf;
-	int inbufsz;
+	strbuffer_t *inbuf;
+	char *ackbuf;
 	char *subjectline = NULL;
 	char *returnpathline = NULL;
 	char *fromline = NULL;
@@ -55,38 +55,39 @@ int main(int argc, char *argv[])
 	}
 
 	initfgets(stdin);
-	while (unlimfgets(&inbuf, &inbufsz, stdin)) {
-		p = inbuf + strcspn(inbuf, "\r\n"); *p = '\0';
+	inbuf = newstrbuffer(0);
+	while (unlimfgets(inbuf, stdin)) {
+		p = STRBUF(inbuf) + strcspn(STRBUF(inbuf), "\r\n"); *p = '\0';
 
 		if (!inheaders) {
 			/* We're in the message body. Look for a "delay=N" line here. */
-			if ((strncasecmp(inbuf, "delay=", 6) == 0) || (strncasecmp(inbuf, "delay ", 6) == 0)) {
-				duration = durationvalue(inbuf+6);
+			if ((strncasecmp(STRBUF(inbuf), "delay=", 6) == 0) || (strncasecmp(STRBUF(inbuf), "delay ", 6) == 0)) {
+				duration = durationvalue(STRBUF(inbuf)+6);
 				continue;
 			}
-			else if ((strncasecmp(inbuf, "ack=", 4) == 0) || (strncasecmp(inbuf, "ack ", 4) == 0)) {
+			else if ((strncasecmp(STRBUF(inbuf), "ack=", 4) == 0) || (strncasecmp(STRBUF(inbuf), "ack ", 4) == 0)) {
 				/* Some systems cannot generate a subject. Allow them to ack
 				 * via text in the message body. */
 				subjectline = (char *)malloc(1024);
-				snprintf(subjectline, 1023, "Subject: Hobbit [%s]", inbuf+4);
+				snprintf(subjectline, 1023, "Subject: Hobbit [%s]", STRBUF(inbuf)+4);
 			}
-			else if (*inbuf && !firsttxtline) {
+			else if (*STRBUF(inbuf) && !firsttxtline) {
 				/* Save the first line of the message body, but ignore blank lines */
-				firsttxtline = strdup(inbuf);
+				firsttxtline = strdup(STRBUF(inbuf));
 			}
 
 			continue;	/* We dont care about the rest of the message body */
 		}
 
 		/* See if we're at the end of the mail headers */
-		if (inheaders && (strlen(inbuf) == 0)) { inheaders = 0; continue; }
+		if (inheaders && (STRBUFLEN(inbuf) == 0)) { inheaders = 0; continue; }
 
 		/* Is it one of those we want to keep ? */
-		if (strncasecmp(inbuf, "return-path:", 12) == 0) returnpathline = strdup(skipwhitespace(inbuf+12));
-		else if (strncasecmp(inbuf, "from:", 5) == 0)    fromline = strdup(skipwhitespace(inbuf+5));
-		else if (strncasecmp(inbuf, "subject:", 8) == 0) subjectline = strdup(skipwhitespace(inbuf+8));
+		if (strncasecmp(STRBUF(inbuf), "return-path:", 12) == 0) returnpathline = strdup(skipwhitespace(STRBUF(inbuf)+12));
+		else if (strncasecmp(STRBUF(inbuf), "from:", 5) == 0)    fromline = strdup(skipwhitespace(STRBUF(inbuf)+5));
+		else if (strncasecmp(STRBUF(inbuf), "subject:", 8) == 0) subjectline = strdup(skipwhitespace(STRBUF(inbuf)+8));
 	}
-	if (inbuf) xfree(inbuf);
+	freestrbuffer(inbuf);
 
 	/* No subject ? No deal */
 	if (subjectline == NULL) {

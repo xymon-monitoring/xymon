@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.46 2006-03-18 07:45:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.47 2006-03-29 16:12:54 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -137,8 +137,7 @@ void unix_cpu_report(char *hostname, namelist_t *hinfo, char *fromline, char *ti
 	int cpucolor = COL_GREEN;
 
 	char msgline[4096];
-	char *upmsg = NULL;
-	int upmsgsz;
+	strbuffer_t *upmsg;
 
 	if (!uptimestr) return;
 
@@ -221,23 +220,25 @@ void unix_cpu_report(char *hostname, namelist_t *hinfo, char *fromline, char *ti
 
 	get_cpu_thresholds(hinfo, &loadyellow, &loadred, &recentlimit, &ancientlimit);
 
+	upmsg = newstrbuffer(0);
+
 	if (load5 > loadred) {
 		cpucolor = COL_RED;
-		addtobuffer(&upmsg, &upmsgsz, "&red Load is CRITICAL\n");
+		addtobuffer(upmsg, "&red Load is CRITICAL\n");
 	}
 	else if (load5 > loadyellow) {
 		cpucolor = COL_YELLOW;
-		addtobuffer(&upmsg, &upmsgsz, "&yellow Load is HIGH\n");
+		addtobuffer(upmsg, "&yellow Load is HIGH\n");
 	}
 
 	if ((uptimesecs != -1) && (recentlimit != -1) && (uptimesecs < recentlimit)) {
 		if (cpucolor == COL_GREEN) cpucolor = COL_YELLOW;
-		addtobuffer(&upmsg, &upmsgsz, "&yellow Machine recently rebooted\n");
+		addtobuffer(upmsg, "&yellow Machine recently rebooted\n");
 	}
 	if ((uptimesecs != -1) && (ancientlimit != -1) && (uptimesecs > ancientlimit)) {
 		if (cpucolor == COL_GREEN) cpucolor = COL_YELLOW;
 		sprintf(msgline, "&yellow Machine has been up more than %d days\n", (ancientlimit / 86400));
-		addtobuffer(&upmsg, &upmsgsz, msgline);
+		addtobuffer(upmsg, msgline);
 	}
 
 	init_status(cpucolor);
@@ -249,10 +250,9 @@ void unix_cpu_report(char *hostname, namelist_t *hinfo, char *fromline, char *ti
 		(psstr ? linecount(psstr)-1 : 0), 
 		loadresult);
 	addtostatus(msgline);
-	if (upmsg) {
-		addtostatus(upmsg);
+	if (STRBUFLEN(upmsg)) {
+		addtostatus(STRBUF(upmsg));
 		addtostatus("\n");
-		xfree(upmsg);
 	}
 	if (topstr) {
 		addtostatus("\n");
@@ -261,6 +261,8 @@ void unix_cpu_report(char *hostname, namelist_t *hinfo, char *fromline, char *ti
 
 	if (fromline && !localmode) addtostatus(fromline);
 	finish_status();
+
+	freestrbuffer(upmsg);
 }
 
 
@@ -274,8 +276,7 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 	int mntcol  = -1;
 	char *p, *bol, *nl;
 	char msgline[4096];
-	char *monmsg = NULL;
-	int monsz;
+	strbuffer_t *monmsg;
 	char *dname;
 	int dmin, dmax, dcount, dcolor;
 
@@ -283,6 +284,7 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 
 	dprintf("Disk check host %s\n", hostname);
 
+	monmsg = newstrbuffer(0);
 	dchecks = clear_disk_counts(hinfo);
 
 	bol = (dchecks ? dfstr : NULL);	/* No need to go through it if no disk checks defined */
@@ -304,7 +306,7 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 				diskcolor = COL_YELLOW;
 				sprintf(msgline, "&red Expected string (%s and %s) not found in df output header\n", 
 					capahdr, mnthdr);
-				addtobuffer(&monmsg, &monsz, msgline);
+				addtobuffer(monmsg, msgline);
 				nl = bol = NULL; /* Abandon loop */
 			}
 		}
@@ -328,14 +330,14 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 					sprintf(msgline, "&red %s (%lu) has reached the PANIC level (%lu %c)\n",
 						fsname, usage, paniclevel,
 						((absolutes & 1) ? 'K' : '%'));
-					addtobuffer(&monmsg, &monsz, msgline);
+					addtobuffer(monmsg, msgline);
 				}
 				else if (usage >= warnlevel) {
 					if (diskcolor < COL_YELLOW) diskcolor = COL_YELLOW;
 					sprintf(msgline, "&yellow %s (%lu) has reached the WARNING level (%lu %c)\n",
 						fsname, usage, warnlevel,
 						((absolutes & 2) ? 'K' : '%'));
-					addtobuffer(&monmsg, &monsz, msgline);
+					addtobuffer(monmsg, msgline);
 				}
 			}
 
@@ -364,7 +366,7 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 			if (dcolor > diskcolor) diskcolor = dcolor;
 			sprintf(msgline, "&%s Filesystem %s (found %d, req. %s)\n", 
 				colorname(dcolor), dname, dcount, limtxt);
-			addtobuffer(&monmsg, &monsz, msgline);
+			addtobuffer(monmsg, msgline);
 		}
 	}
 
@@ -377,10 +379,9 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 	addtostatus(msgline);
 
 	/* And add the info about what's wrong */
-	if (monmsg) {
-		addtostatus(monmsg);
+	if (STRBUFLEN(monmsg)) {
+		addtostatus(STRBUF(monmsg));
 		addtostatus("\n");
-		xfree(monmsg);
 	}
 
 	/* And the full df output */
@@ -388,6 +389,8 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 
 	if (fromline && !localmode) addtostatus(fromline);
 	finish_status();
+
+	freestrbuffer(monmsg);
 }
 
 void unix_memory_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, 
@@ -473,8 +476,7 @@ void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 	int cmdofs = -1;
 	char *p;
 	char msgline[4096];
-	char *monmsg = NULL;
-	int monsz;
+	strbuffer_t *monmsg;
 
 	if (!psstr) return;
 
@@ -490,7 +492,7 @@ void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 
 	if (pchecks == 0) {
 		/* Nothing to check */
-		addtobuffer(&monmsg, &monsz, "&green No process checks defined\n");
+		addtobuffer(monmsg, "&green No process checks defined\n");
 	}
 	else if (cmdofs >= 0) {
 		/* Count how many instances of each monitored process is running */
@@ -521,20 +523,20 @@ void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 
 			if (pcolor == COL_GREEN) {
 				sprintf(msgline, "&green %s (found %d, req. %s)\n", pname, pcount, limtxt);
-				addtobuffer(&monmsg, &monsz, msgline);
+				addtobuffer(monmsg, msgline);
 			}
 			else {
 				if (pcolor > pscolor) pscolor = pcolor;
 				sprintf(msgline, "&%s %s (found %d, req. %s)\n", 
 					colorname(pcolor), pname, pcount, limtxt);
-				addtobuffer(&monmsg, &monsz, msgline);
+				addtobuffer(monmsg, msgline);
 			}
 		}
 	}
 	else {
 		pscolor = COL_YELLOW;
 		sprintf(msgline, "&yellow Expected string %s not found in ps output header\n", cmdhdr);
-		addtobuffer(&monmsg, &monsz, msgline);
+		addtobuffer(monmsg, msgline);
 	}
 
 	/* Now we know the result, so generate a status message */
@@ -546,10 +548,9 @@ void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 	addtostatus(msgline);
 
 	/* And add the info about what's wrong */
-	if (monmsg) {
-		addtostatus(monmsg);
+	if (STRBUFLEN(monmsg)) {
+		addtostatus(STRBUF(monmsg));
 		addtostatus("\n");
-		xfree(monmsg);
 	}
 
 	/* And the full ps output for those who want it */
@@ -557,6 +558,8 @@ void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 
 	if (fromline && !localmode) addtostatus(fromline);
 	finish_status();
+
+	freestrbuffer(monmsg);
 }
 
 static void old_msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, char *msgsstr)
@@ -625,40 +628,39 @@ void msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 
 void unix_netstat_report(char *hostname, namelist_t *hinfo, char *osid, char *netstatstr)
 {
-	char *msg = NULL;
-	int  msgsz;
+	strbuffer_t *msg;
 	char msgline[4096];
 
 	if (!netstatstr) return;
 
+	msg = newstrbuffer(0);
 	sprintf(msgline, "data %s.netstat\n%s\n", commafy(hostname), osid);
-	addtobuffer(&msg, &msgsz, msgline);
-	addtobuffer(&msg, &msgsz, netstatstr);
-	sendmessage(msg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+	addtobuffer(msg, msgline);
+	addtobuffer(msg, netstatstr);
+	sendmessage(STRBUF(msg), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
 
-	if (msg) xfree(msg);
+	freestrbuffer(msg);
 }
 
 void unix_ifstat_report(char *hostname, namelist_t *hinfo, char *osid, char *ifstatstr)
 {
-	char *msg = NULL;
-	int  msgsz;
+	strbuffer_t *msg;
 	char msgline[4096];
 
 	if (!ifstatstr) return;
 
+	msg = newstrbuffer(0);
 	sprintf(msgline, "data %s.ifstat\n%s\n", commafy(hostname), osid);
-	addtobuffer(&msg, &msgsz, msgline);
-	addtobuffer(&msg, &msgsz, ifstatstr);
-	sendmessage(msg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+	addtobuffer(msg, msgline);
+	addtobuffer(msg, ifstatstr);
+	sendmessage(STRBUF(msg), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
 
-	if (msg) xfree(msg);
+	freestrbuffer(msg);
 }
 
 void unix_vmstat_report(char *hostname, namelist_t *hinfo, char *osid, char *vmstatstr)
 {
-	char *msg = NULL;
-	int  msgsz;
+	strbuffer_t *msg;
 	char msgline[4096];
 
 	char *p;
@@ -668,16 +670,17 @@ void unix_vmstat_report(char *hostname, namelist_t *hinfo, char *osid, char *vms
 	p = strrchr(vmstatstr, '\n');
 	if (!p) return;  /* No NL in vmstat output ? Unlikely. */
 
+	msg = newstrbuffer(0);
 	if (strlen(p) == 1) {
 		/* Go back to the previous line */
 		do { p--; } while ((p > vmstatstr) && (*p != '\n'));
 	}
 	sprintf(msgline, "data %s.vmstat\n%s\n", commafy(hostname), osid);
-	addtobuffer(&msg, &msgsz, msgline);
-	addtobuffer(&msg, &msgsz, p+1);
-	sendmessage(msg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+	addtobuffer(msg, msgline);
+	addtobuffer(msg, p+1);
+	sendmessage(STRBUF(msg), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
 
-	if (msg) xfree(msg);
+	freestrbuffer(msg);
 }
 
 #include "client/linux.c"
