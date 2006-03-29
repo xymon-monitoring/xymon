@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.26 2005-12-29 17:30:36 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.27 2006-03-29 15:57:12 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -63,10 +63,13 @@ char *timespec_text(char *spec)
 {
 	static char *daynames[7] = { NULL, };
 	static char *wkdays = NULL;
-	static char *result = NULL;
+	static strbuffer_t *result = NULL;
 	char *sCopy;
 	char *sItem;
 	int reslen = 0;
+
+	if (result == NULL) result = newstrbuffer(0);
+	clearstrbuffer(result);
 
 	if (!daynames[0]) {
 		/* Use strftime to get the locale-specific weekday names */
@@ -85,8 +88,6 @@ char *timespec_text(char *spec)
 		wkdays = (char *)malloc(strlen(daynames[1]) + strlen(daynames[5]) + 2);
 		sprintf(wkdays, "%s-%s", daynames[1], daynames[5]);
 	}
-
-	if (result) { xfree(result); result = NULL; }
 
 	sCopy = strdup(spec);
 	sCopy[strcspn(sCopy, " \t\r\n")] = '\0';
@@ -110,18 +111,18 @@ char *timespec_text(char *spec)
 			  default : dtext = oneday; daysdone = firstday = 1; break;
 			}
 
-			if (!firstday) addtobuffer(&result, &reslen, "/");
-			addtobuffer(&result, &reslen, dtext);
+			if (!firstday) addtobuffer(result, "/");
+			addtobuffer(result, dtext);
 			oneday++;
 			firstday = 0;
 		}
 
 		sItem = strtok(NULL, ",");
-		if (sItem) addtobuffer(&result, &reslen, ", ");
+		if (sItem) addtobuffer(result, ", ");
 	}
 	xfree(sCopy);
 
-	return result;
+	return STRBUF(result);
 }
 
 struct timeval *tvdiff(struct timeval *tstart, struct timeval *tend, struct timeval *result)
