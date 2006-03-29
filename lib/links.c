@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: links.c,v 1.10 2006-03-22 22:13:43 henrik Exp $";
+static char rcsid[] = "$Id: links.c,v 1.11 2006-03-29 15:44:16 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -68,7 +68,7 @@ static link_t *init_link(char *filename, char *urlprefix)
 	return newlink;
 }
 
-static void load_links(const char *directory, char *urlprefix)
+static void load_links(char *directory, char *urlprefix)
 {
 	DIR		*bblinks;
 	struct dirent 	*d;
@@ -138,7 +138,7 @@ void load_all_links(void)
 }
 
 
-static link_t *find_link(const char *key)
+static link_t *find_link(char *key)
 {
 	link_t *l = NULL;
 	RbtIterator handle;
