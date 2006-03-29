@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.47 2006-03-29 16:12:54 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.48 2006-03-29 16:17:55 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -251,7 +251,7 @@ void unix_cpu_report(char *hostname, namelist_t *hinfo, char *fromline, char *ti
 		loadresult);
 	addtostatus(msgline);
 	if (STRBUFLEN(upmsg)) {
-		addtostatus(STRBUF(upmsg));
+		addtostrstatus(upmsg);
 		addtostatus("\n");
 	}
 	if (topstr) {
@@ -380,7 +380,7 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 
 	/* And add the info about what's wrong */
 	if (STRBUFLEN(monmsg)) {
-		addtostatus(STRBUF(monmsg));
+		addtostrstatus(monmsg);
 		addtostatus("\n");
 	}
 
@@ -549,7 +549,7 @@ void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 
 	/* And add the info about what's wrong */
 	if (STRBUFLEN(monmsg)) {
-		addtostatus(STRBUF(monmsg));
+		addtostrstatus(monmsg);
 		addtostatus("\n");
 	}
 
