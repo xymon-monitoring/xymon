@@ -85,7 +85,7 @@ extern recip_t *next_recipient(activealerts_t *alert, int *first, int *anymatch,
 extern int have_recipient(activealerts_t *alert, int *anymatch);
 
 extern void alert_printmode(int on);
-extern void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen);
+extern void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf);
 #endif
 
 #endif
