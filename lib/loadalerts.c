@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadalerts.c,v 1.4 2006-03-18 07:29:19 henrik Exp $";
+static char rcsid[] = "$Id: loadalerts.c,v 1.5 2006-03-29 15:50:19 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -189,8 +189,7 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 	static void *configfiles = NULL;
 	char fn[PATH_MAX];
 	FILE *fd;
-	char *inbuf = NULL;
-	int inbufsz;
+	strbuffer_t *inbuf;
 	char *p;
 	rule_t *currule = NULL;
 	recip_t *currcp = NULL, *rcptail = NULL;
@@ -268,36 +267,37 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 	MEMDEFINE(cfline);
 
 	cfid = 0;
-	while (stackfgets(&inbuf, &inbufsz, NULL)) {
+	inbuf = newstrbuffer(0);
+	while (stackfgets(inbuf, NULL)) {
 		int firsttoken = 1;
 		int mailcmdactive = 0, scriptcmdactive = 0;
 		recip_t *curlinerecips = NULL;
 
 		cfid++;
-		sanitize_input(inbuf);
+		sanitize_input(STRBUF(inbuf));
 
 		/* Skip empty lines */
-		if (strlen(inbuf) == 0) continue;
+		if (STRBUFLEN(inbuf) == 0) continue;
 
-		if ((*inbuf == '$') && strchr(inbuf, '=')) {
+		if ((*STRBUF(inbuf) == '$') && strchr(STRBUF(inbuf), '=')) {
 			/* Define a macro */
 			token_t *newtok = (token_t *) malloc(sizeof(token_t));
 			char *delim;
 
-			delim = strchr(inbuf, '=');
+			delim = strchr(STRBUF(inbuf), '=');
 			*delim = '\0';
-			newtok->name = strdup(inbuf+1);	/* Skip the '$' */
+			newtok->name = strdup(STRBUF(inbuf)+1);	/* Skip the '$' */
 			newtok->value = strdup(preprocess(delim+1));
 			newtok->next = tokhead;
 			tokhead = newtok;
 			continue;
 		}
 
-		strncpy(cfline, inbuf, (sizeof(cfline)-1));
+		strncpy(cfline, STRBUF(inbuf), (sizeof(cfline)-1));
 		cfline[sizeof(cfline)-1] = '\0';
 
 		/* Expand macros inside the line before parsing */
-		p = strtok(preprocess(inbuf), " \t");
+		p = strtok(preprocess(STRBUF(inbuf)), " \t");
 		while (p) {
 			if ((strncasecmp(p, "PAGE=", 5) == 0) || (strncasecmp(p, "PAGES=", 6) == 0)) {
 				char *val;
@@ -634,7 +634,7 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 
 	flush_rule(currule);
 	stackfclose(fd);
-	if (inbuf) xfree(inbuf);
+	freestrbuffer(inbuf);
 
 	MEMUNDEFINE(cfline);
 	MEMUNDEFINE(fn);
@@ -933,7 +933,7 @@ void alert_printmode(int on)
 	printmode = on;
 }
 
-void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
+void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 {
 	char *normalfont = "COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\"";
 	char *stopfont = "COLOR=\"#33ebf4\" FACE=\"Tahoma, Arial, Helvetica\"";
@@ -965,10 +965,10 @@ void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
 
 		count++;
 
-		addtobuffer(buf, buflen, "<tr>");
+		addtobuffer(buf, "<tr>");
 		if (count == 1) {
 			sprintf(l, "<td valign=top rowspan=###>%s</td>", alert->testname);
-			addtobuffer(buf, buflen, l);
+			addtobuffer(buf, l);
 		}
 
 		if (printrule->criteria) mindur = printrule->criteria->minduration;
@@ -1010,38 +1010,38 @@ void print_alert_recipients(activealerts_t *alert, char **buf, int *buflen)
 			sprintf(l, "<td><font %s>%s</font></td>", fontspec, recip->recipient);
 		else
 			sprintf(l, "<td><font %s>%s (%s)</font></td>", fontspec, recip->recipient, codes);
-		addtobuffer(buf, buflen, l);
+		addtobuffer(buf, l);
 
 		sprintf(l, "<td align=center>%s</td>", durationstring(mindur));
-		addtobuffer(buf, buflen, l);
+		addtobuffer(buf, l);
 
 		sprintf(l, "<td align=center>%s</td>", durationstring(maxdur));
-		addtobuffer(buf, buflen, l);
+		addtobuffer(buf, l);
 
 		sprintf(l, "<td align=center>%s</td>", durationstring(recip->interval)); 
-		addtobuffer(buf, buflen, l);
+		addtobuffer(buf, l);
 
 		if (timespec) sprintf(l, "<td align=center>%s</td>", timespec); else strcpy(l, "<td align=center>-</td>");
-		addtobuffer(buf, buflen, l);
+		addtobuffer(buf, l);
 
-		addtobuffer(buf, buflen, "<td>");
+		addtobuffer(buf, "<td>");
 		for (i = 0; (i < COL_COUNT); i++) {
 			if ((1 << i) & colors) {
 				sprintf(l, "%s%s", (firstcolor ? "" : ","), colorname(i));
-				addtobuffer(buf, buflen, l);
+				addtobuffer(buf, l);
 				firstcolor = 0;
 			}
 		}
-		addtobuffer(buf, buflen, "</td>");
+		addtobuffer(buf, "</td>");
 
 		if (stoprulefound) fontspec = stopfont;
 
-		addtobuffer(buf, buflen, "</tr>\n");
+		addtobuffer(buf, "</tr>\n");
 	}
 
 	/* This is hackish - patch up the "rowspan" value, so it matches the number of recipient lines */
 	sprintf(l, "%d   ", count);
-	p = strstr(*buf, "rowspan=###");
+	p = strstr(STRBUF(buf), "rowspan=###");
 	if (p) { p += strlen("rowspan="); memcpy(p, l, 3); }
 
 	MEMUNDEFINE(l);

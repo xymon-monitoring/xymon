@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadnkconf.c,v 1.12 2006-03-18 07:29:57 henrik Exp $";
+static char rcsid[] = "$Id: loadnkconf.c,v 1.13 2006-03-29 15:50:19 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -54,8 +54,7 @@ int load_nkconfig(char *fn)
 	static void *configfiles = NULL;
 	static int firsttime = 1;
 	FILE *fd;
-	char *inbuf = NULL;
-	int inbufsz = 0;
+	strbuffer_t *inbuf;
 
 	/* First check if there were no modifications at all */
 	if (configfiles) {
@@ -100,7 +99,8 @@ int load_nkconfig(char *fn)
 	if (configfn) xfree(configfn);
 	configfn = strdup(fn);
 
-	while (stackfgets(&inbuf, &inbufsz, NULL)) {
+	inbuf = newstrbuffer(0);
+	while (stackfgets(inbuf, NULL)) {
 		/* Full record : Host  service  START  END  TIMESPEC  TTPrio TTGroup TTExtra */
 		/* Clone record: Host  =HOST */
 		char *ehost, *eservice, *estart, *eend, *etime, *ttgroup, *ttextra, *updinfo;
@@ -109,7 +109,7 @@ int load_nkconfig(char *fn)
 		RbtStatus status;
 		int idx = 0;
 
-		ehost = gettok(inbuf, "|\n"); if (!ehost) continue;
+		ehost = gettok(STRBUF(inbuf), "|\n"); if (!ehost) continue;
 		eservice = gettok(NULL, "|\n"); if (!eservice) continue;
 
 		if (*eservice == '=') {
@@ -149,6 +149,7 @@ int load_nkconfig(char *fn)
 	}
 
 	stackfclose(fd);
+	freestrbuffer(inbuf);
 
 	if (debug) {
 		RbtHandle handle;

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: netservices.c,v 1.8 2005-07-16 09:57:38 henrik Exp $";
+static char rcsid[] = "$Id: netservices.c,v 1.9 2006-03-29 15:50:52 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -122,8 +122,7 @@ char *init_tcp_services(void)
 	char filename[PATH_MAX];
 	struct stat st;
 	FILE *fd = NULL;
-	char *inbuf = NULL;
-	int inbufsz;
+	strbuffer_t *inbuf;
 	svclist_t *head, *tail, *first, *walk;
 	char *searchstring;
 	int svcnamebytes = 0;
@@ -172,12 +171,13 @@ char *init_tcp_services(void)
 	lastupdate = st.st_mtime;
 	head = tail = first = NULL;
 
+	inbuf = newstrbuffer(0);
 	initfgets(fd);
-	while (unlimfgets(&inbuf, &inbufsz, fd)) {
+	while (unlimfgets(inbuf, fd)) {
 		char *l, *eol;
 
-		l = strchr(inbuf, '\n'); if (l) *l = '\0';
-		l = skipwhitespace(inbuf);
+		l = strchr(STRBUF(inbuf), '\n'); if (l) *l = '\0';
+		l = skipwhitespace(STRBUF(inbuf));
 
 		if (*l == '[') {
 			char *svcname;
@@ -260,7 +260,7 @@ char *init_tcp_services(void)
 	}
 
 	if (fd) fclose(fd);
-	if (inbuf) xfree(inbuf);
+	freestrbuffer(inbuf);
 
 	/* Copy from the svclist to svcinfo table */
 	svcinfo = (svcinfo_t *) malloc((svccount+1) * sizeof(svcinfo_t));

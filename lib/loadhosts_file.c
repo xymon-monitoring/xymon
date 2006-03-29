@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.17 2006-03-22 22:15:33 henrik Exp $";
+static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.18 2006-03-29 15:50:19 henrik Exp $";
 
 static int get_page_name_title(char *buf, char *key, char **name, char **title)
 {
@@ -51,8 +51,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 	FILE *bbhosts;
 	int ip1, ip2, ip3, ip4, banksize, groupid;
 	char hostname[4096];
-	char *inbuf = NULL;
-	int inbufsz;
+	strbuffer_t *inbuf;
 	pagelist_t *curtoppage, *curpage, *pgtail;
 	namelist_t *nametail = NULL;
 	RbtHandle htree;
@@ -80,18 +79,19 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 	bbhosts = stackfopen(bbhostsfn, "r", &bbhfiles);
 	if (bbhosts == NULL) return NULL;
 
+	inbuf = newstrbuffer(0);
 	htree = rbtNew(name_compare);
-	while (stackfgets(&inbuf, &inbufsz, extrainclude)) {
+	while (stackfgets(inbuf, extrainclude)) {
 		char *eoln;
 
-		eoln = strchr(inbuf, '\n'); if (eoln) *eoln = '\0';
+		eoln = strchr(STRBUF(inbuf), '\n'); if (eoln) *eoln = '\0';
 
-		if (strncmp(inbuf, "page ", 5) == 0) {
+		if (strncmp(STRBUF(inbuf), "page ", 5) == 0) {
 			pagelist_t *newp;
 			char *name, *title;
 
 			groupid = 0;
-			if (get_page_name_title(inbuf, "page", &name, &title) == 0) {
+			if (get_page_name_title(STRBUF(inbuf), "page", &name, &title) == 0) {
 				newp = (pagelist_t *)malloc(sizeof(pagelist_t));
 				newp->pagepath = strdup(name);
 				newp->pagetitle = (title ? strdup(title) : NULL);
@@ -103,12 +103,12 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 				curpage = curtoppage = newp;
 			}
 		}
-		else if (strncmp(inbuf, "subpage ", 8) == 0) {
+		else if (strncmp(STRBUF(inbuf), "subpage ", 8) == 0) {
 			pagelist_t *newp;
 			char *name, *title;
 
 			groupid = 0;
-			if (get_page_name_title(inbuf, "subpage", &name, &title) == 0) {
+			if (get_page_name_title(STRBUF(inbuf), "subpage", &name, &title) == 0) {
 				newp = (pagelist_t *)malloc(sizeof(pagelist_t));
 				newp->pagepath = malloc(strlen(curtoppage->pagepath) + strlen(name) + 2);
 				sprintf(newp->pagepath, "%s/%s", curtoppage->pagepath, name);
@@ -122,13 +122,13 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 				curpage = newp;
 			}
 		}
-		else if (strncmp(inbuf, "subparent ", 10) == 0) {
+		else if (strncmp(STRBUF(inbuf), "subparent ", 10) == 0) {
 			pagelist_t *newp, *parent;
 			char *pname, *name, *title;
 
 			groupid = 0;
 			parent = NULL;
-			if (get_page_name_title(inbuf, "subparent", &pname, &title) == 0) {
+			if (get_page_name_title(STRBUF(inbuf), "subparent", &pname, &title) == 0) {
 				for (parent = pghead; (parent && !pagematch(parent, pname)); parent = parent->next);
 			}
 
@@ -146,10 +146,10 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 				curpage = newp;
 			}
 		}
-		else if (strncmp(inbuf, "group", 5) == 0) {
+		else if (strncmp(STRBUF(inbuf), "group", 5) == 0) {
 			groupid++;
 		}
-		else if (sscanf(inbuf, "%d.%d.%d.%d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
+		else if (sscanf(STRBUF(inbuf), "%d.%d.%d.%d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
 			char *startoftags, *tag, *delim;
 			int elemidx, elemsize;
 			char clientname[4096];
@@ -187,7 +187,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 			newitem->defaulthost = defaulthost;
 
 			clientname[0] = downtime[0] = '\0';
-			startoftags = strchr(inbuf, '#');
+			startoftags = strchr(STRBUF(inbuf), '#');
 			if (startoftags == NULL) startoftags = ""; else startoftags++;
 			startoftags += strspn(startoftags, " \t\r\n");
 			newitem->allelems = strdup(startoftags);
@@ -287,7 +287,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 			MEMUNDEFINE(clientname);
 			MEMUNDEFINE(downtime);
 		}
-		else if (sscanf(inbuf, "dialup %s %d.%d.%d.%d %d", hostname, &ip1, &ip2, &ip3, &ip4, &banksize) == 6) {
+		else if (sscanf(STRBUF(inbuf), "dialup %s %d.%d.%d.%d %d", hostname, &ip1, &ip2, &ip3, &ip4, &banksize) == 6) {
 			char groupidstr[10];
 			namelist_t *newitem = calloc(1, sizeof(namelist_t));
 
@@ -312,7 +312,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 		}
 	}
 	stackfclose(bbhosts);
-	if (inbuf) xfree(inbuf);
+	freestrbuffer(inbuf);
 	rbtDelete(htree);
 
 	MEMUNDEFINE(hostname);

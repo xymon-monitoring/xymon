@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.54 2006-03-18 07:29:57 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.55 2006-03-29 15:50:19 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -360,10 +360,10 @@ char *bbh_item(namelist_t *host, enum bbh_item_t item)
 {
 	static char *result;
 	static char *inttxt = NULL;
-	static char *rawtxt = NULL;
-	static int rawtxtsz = 0;
+	static strbuffer_t *rawtxt = NULL;
 	char *p;
 
+	if (rawtxt == NULL) rawtxt = newstrbuffer(0);
 	if (inttxt == NULL) inttxt = (char *)malloc(10);
 
 	if (host == NULL) return NULL;
@@ -422,14 +422,14 @@ char *bbh_item(namelist_t *host, enum bbh_item_t item)
 			  return NULL;
 
 	  case BBH_RAW:
-		  if (rawtxt) *rawtxt = '\0';
+		  if (rawtxt) clearstrbuffer(rawtxt);
 		  p = bbh_item_walk(host);
 		  while (p) {
-			  addtobuffer(&rawtxt, &rawtxtsz, nlencode(p));
+			  addtobuffer(rawtxt, nlencode(p));
 			  p = bbh_item_walk(NULL);
-			  if (p) addtobuffer(&rawtxt, &rawtxtsz, "|");
+			  if (p) addtobuffer(rawtxt, "|");
 		  }
-		  return rawtxt;
+		  return STRBUF(rawtxt);
 
 	  default:
 		  return bbh_find_item(host, item);
