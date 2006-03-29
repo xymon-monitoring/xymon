@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.74 2006-02-13 16:52:21 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.75 2006-03-29 15:58:19 henrik Exp $";
 
 #include "config.h"
 
@@ -44,10 +44,8 @@ int		bbmsgcount = 0;		/* Number of messages transmitted */
 int		bbstatuscount = 0;	/* Number of status items reported */
 int		bbnocombocount = 0;	/* Number of status items reported outside combo msgs */
 static int	bbmsgqueued;		/* Anything in the buffer ? */
-static char	*bbmsg = NULL;		/* Complete combo message buffer */
-static int	bbmsgsz;		/* Bytes allocated for bbmsg */
-static char	*msgbuf = NULL;		/* message buffer for one status message */
-static int	msgbufsz;		/* Bytes allocated for msgbuf */
+static strbuffer_t *bbmsg = NULL;	/* Complete combo message buffer */
+static strbuffer_t *msgbuf = NULL;	/* message buffer for one status message */
 static int	msgcolor;		/* color of status message in msgbuf */
 static int      maxmsgspercombo = 100;	/* 0 = no limit. 100 is a reasonable default. */
 static int      sleepbetweenmsgs = 0;
@@ -57,10 +55,8 @@ static int      bbdispproxyport = 0;
 static char	*proxysetting = NULL;
 
 static int	bbmetaqueued;		/* Anything in the buffer ? */
-static char	*metamsg = NULL;	/* Complete meta message buffer */
-static int	metamsgsz;		/* Bytes allocated for metamsg */
-static char	*metabuf = NULL;	/* message buffer for one meta message */
-static int	metabufsz;		/* Bytes allocated for metabuf */
+static strbuffer_t *metamsg = NULL;	/* Complete meta message buffer */
+static strbuffer_t *metabuf = NULL;	/* message buffer for one meta message */
 
 int dontsendmessages = 0;
 
@@ -540,14 +536,16 @@ void combo_start(void)
 {
 	combo_params();
 
-	if (bbmsg) *bbmsg = '\0';
-	addtobuffer(&bbmsg, &bbmsgsz, "combo\n");
+	if (bbmsg == NULL) bbmsg = newstrbuffer(0);
+	clearstrbuffer(bbmsg);
+	addtobuffer(bbmsg, "combo\n");
 	bbmsgqueued = 0;
 }
 
 void meta_start(void)
 {
-	if (metamsg) *metamsg = '\0';
+	if (metamsg == NULL) metamsg = newstrbuffer(0);
+	clearstrbuffer(metamsg);
 	bbmetaqueued = 0;
 }
 
@@ -563,7 +561,7 @@ static void combo_flush(void)
 		char *p1, *p2;
 
 		dprintf("Flushing combo message\n");
-		p1 = p2 = bbmsg;
+		p1 = p2 = STRBUF(bbmsg);
 
 		do {
 			p2++;
@@ -578,7 +576,7 @@ static void combo_flush(void)
 		} while (p1 && p2);
 	}
 
-	sendmessage(bbmsg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+	sendmessage(STRBUF(bbmsg), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
 	combo_start();	/* Get ready for the next */
 }
 
@@ -589,11 +587,11 @@ static void meta_flush(void)
 		return;
 	}
 
-	sendmessage(metamsg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+	sendmessage(STRBUF(metamsg), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
 	meta_start();	/* Get ready for the next */
 }
 
-static void combo_add(char *buf)
+static void combo_add(strbuffer_t *buf)
 {
 	/* Check if there is room for the message + 2 newlines */
 	if (maxmsgspercombo && (bbmsgqueued >= maxmsgspercombo)) {
@@ -602,14 +600,14 @@ static void combo_add(char *buf)
 	}
 	else {
 		/* Yep ... add delimiter before new status (but not before the first!) */
-		if (bbmsgqueued) addtobuffer(&bbmsg, &bbmsgsz, "\n\n");
+		if (bbmsgqueued) addtobuffer(bbmsg, "\n\n");
 	}
 
-	addtobuffer(&bbmsg, &bbmsgsz, buf);
+	addtostrbuffer(bbmsg, buf);
 	bbmsgqueued++;
 }
 
-static void meta_add(char *buf)
+static void meta_add(strbuffer_t *buf)
 {
 	/* Check if there is room for the message + 2 newlines */
 	if (maxmsgspercombo && (bbmetaqueued >= maxmsgspercombo)) {
@@ -618,10 +616,10 @@ static void meta_add(char *buf)
 	}
 	else {
 		/* Yep ... add delimiter before new status (but not before the first!) */
-		if (bbmetaqueued) addtobuffer(&metamsg, &metamsgsz, "\n\n");
+		if (bbmetaqueued) addtobuffer(metamsg, "\n\n");
 	}
 
-	addtobuffer(&metamsg, &metamsgsz, buf);
+	addtostrbuffer(metamsg, buf);
 	bbmetaqueued++;
 }
 
@@ -638,32 +636,32 @@ void meta_end(void)
 
 void init_status(int color)
 {
-	if (msgbuf) xfree(msgbuf);
-	msgbuf = NULL;
+	if (msgbuf == NULL) msgbuf = newstrbuffer(0);
+	clearstrbuffer(msgbuf);
 	msgcolor = color;
 	bbstatuscount++;
 }
 
 void init_meta(char *metaname)
 {
-	if (metabuf) xfree(metabuf);
-	metabuf = NULL;
+	if (metabuf == NULL) metabuf = newstrbuffer(0);
+	clearstrbuffer(metabuf);
 }
 
 void addtostatus(char *p)
 {
-	addtobuffer(&msgbuf, &msgbufsz, p);
+	addtobuffer(msgbuf, p);
 }
 
 void addtometa(char *p)
 {
-	addtobuffer(&metabuf, &metabufsz, p);
+	addtobuffer(metabuf, p);
 }
 
 void finish_status(void)
 {
 	if (debug) {
-		char *p = strchr(msgbuf, '\n');
+		char *p = strchr(STRBUF(msgbuf), '\n');
 
 		if (p) *p = '\0';
 		dprintf("Adding to combo msg: %s\n", msgbuf);
