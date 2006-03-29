@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.47 2006-03-17 09:11:49 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.48 2006-03-29 16:01:17 henrik Exp $";
 
 #include "config.h"
 
@@ -144,33 +144,88 @@ int argnmatch(char *arg, char *match)
 }
 
 
-void addtobuffer(char **buf, int *bufsz, char *newtext)
+strbuffer_t *newstrbuffer(int initialsize)
 {
-	static char *prevbuf = NULL;
-	static int buflen = 0;
-	int newlen = strlen(newtext);
+	strbuffer_t *newbuf;
+	
+	newbuf = calloc(1, sizeof(strbuffer_t));
 
-	/* If we're passed an existing buffer, and it's empty or different from the last one, reset cache */
-	if (*buf && ((*buf != prevbuf) || (**buf == '\0'))) {
-		prevbuf = *buf;
-		buflen = strlen(*buf);
+	if (initialsize) {
+		newbuf->s = (char *)malloc(initialsize);
+		*(newbuf->s) = '\0';
+		newbuf->sz = initialsize;
 	}
 
-	if (*buf == NULL) {
-		*bufsz = newlen + 4096;
-		*buf = prevbuf = (char *) malloc(*bufsz);
-		**buf = '\0';
-		buflen = 0;
-	}
-	else if ((buflen + newlen + 1) > *bufsz) {
-		*bufsz += (newlen + 4096);
-		*buf = (char *) realloc(*buf, *bufsz);
-	}
-
-	strcat((*buf)+buflen, newtext);
-	buflen += newlen;
+	return newbuf;
 }
 
+void freestrbuffer(strbuffer_t *buf)
+{
+	if (buf == NULL) return;
+
+	if (buf->s) xfree(buf->s);
+	xfree(buf);
+}
+
+void clearstrbuffer(strbuffer_t *buf)
+{
+	if (buf == NULL) return;
+
+	if (buf->s) {
+		*(buf->s) = '\0';
+		buf->used = 0;
+	}
+}
+
+char *grabstrbuffer(strbuffer_t *buf)
+{
+	if (buf == NULL) return NULL;
+
+	char *result = buf->s;
+	xfree(buf);
+
+	return result;
+}
+
+strbuffer_t *dupstrbuffer(char *src)
+{
+	strbuffer_t *newbuf;
+	int len = strlen(src);
+	
+	newbuf = newstrbuffer(0);
+	newbuf->s = strdup(src);
+	newbuf->used = newbuf->sz = len;
+
+	return newbuf;
+}
+
+static void strbuf_addtobuffer(strbuffer_t *buf, char *newtext, int newlen)
+{
+	if (buf->s == NULL) {
+		buf->used = 0;
+		buf->sz = newlen + 4096;
+		buf->s = (char *) malloc(buf->sz);
+		*(buf->s) = '\0';
+	}
+	else if ((buf->used + newlen + 1) > buf->sz) {
+		buf->sz += (newlen + 4096);
+		buf->s = (char *) realloc(buf->s, buf->sz);
+	}
+
+	/* Copy the NUL byte at end of newtext also */
+	memcpy(buf->s+buf->used, newtext, newlen+1);
+	buf->used += newlen;
+}
+
+void addtobuffer(strbuffer_t *buf, char *newtext)
+{
+	strbuf_addtobuffer(buf, newtext, strlen(newtext));
+}
+
+void addtostrbuffer(strbuffer_t *buf, strbuffer_t *newtext)
+{
+	strbuf_addtobuffer(buf, STRBUF(newtext), STRBUFLEN(newtext));
+}
 
 char *msg_data(char *msg)
 {
@@ -421,10 +476,9 @@ int generate_static(void)
 }
 
 
-int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int showcmd, int timeout)
+int run_command(char *cmd, char *errortext, strbuffer_t *banner, int showcmd, int timeout)
 {
 	int	result;
-	int	bannersize = 0;
 	char	l[1024];
 	int	pfd[2];
 	pid_t	childpid; 
@@ -432,11 +486,9 @@ int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int
 	MEMDEFINE(l);
 
 	result = 0;
-	if (banner) { 
-		bannersize = 4096;
-		*banner = (char *) malloc(bannersize); 
-		**banner = '\0';
-		if (showcmd) sprintf(*banner, "Command: %s\n\n", cmd); 
+	if (banner && showcmd) { 
+		sprintf(l, "Command: %s\n\n", cmd); 
+		addtobuffer(banner, l);
 	}
 
 	/* Adapted from Stevens' popen()/pclose() example */
@@ -515,13 +567,7 @@ int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int
 					done = 1;
 				}
 				else {
-					if (banner) {
-						if ((strlen(l) + strlen(*banner)) > bannersize) {
-							bannersize += strlen(l) + 4096;
-							*banner = (char *) realloc(*banner, bannersize);
-						}
-						strcat(*banner, l);
-					}
+					if (banner && *l) addtobuffer(banner, l);
 					if (errortext && (strstr(l, errortext) != NULL)) result = 1;
 				}
 			}
@@ -546,8 +592,6 @@ int run_command(char *cmd, char *errortext, char **banner, int *bannerbytes, int
 		}
 	}
 
-	if (bannerbytes) *bannerbytes = strlen(*banner);
-
 	MEMUNDEFINE(l);
 	return result;
 }
@@ -563,8 +607,7 @@ void do_bbext(FILE *output, char *extenv, char *family)
 	char *bbexts, *p;
 	FILE *inpipe;
 	char extfn[PATH_MAX];
-	char *inbuf = NULL;
-	int inbufsz;
+	strbuffer_t *inbuf;
 
 	p = xgetenv(extenv);
 	if (p == NULL) {
@@ -576,6 +619,7 @@ void do_bbext(FILE *output, char *extenv, char *family)
 
 	bbexts = strdup(p);
 	p = strtok(bbexts, "\t ");
+	inbuf = newstrbuffer(0);
 
 	while (p) {
 		/* Dont redo the eventlog or acklog things */
@@ -585,10 +629,9 @@ void do_bbext(FILE *output, char *extenv, char *family)
 			inpipe = popen(extfn, "r");
 			if (inpipe) {
 				initfgets(inpipe);
-				while (unlimfgets(&inbuf, &inbufsz, inpipe)) 
-					fputs(inbuf, output);
+				while (unlimfgets(inbuf, inpipe)) fputs(STRBUF(inbuf), output);
 				pclose(inpipe);
-				if (inbuf) xfree(inbuf);
+				freestrbuffer(inbuf);
 			}
 		}
 		p = strtok(NULL, "\t ");
