@@ -72,8 +72,7 @@ typedef struct service_t {
 typedef struct ipping_t {
 	char *ip;
 	int  open;
-	char *banner;
-	int bannerbytes;
+	strbuffer_t *banner;
 	struct ipping_t *next;
 } ipping_t;
 
@@ -102,7 +101,7 @@ typedef struct testedhost_t {
 	char *routerdeps;       /* Hosts from the "router:" tag */
 	struct testedhost_t *deprouterdown;    /* Set if dependant router is down */
 	int dotrace;		/* Run traceroute for this host */
-	char *traceroute;	/* traceroute results */
+	strbuffer_t *traceroute;/* traceroute results */
 	struct extraping_t *extrapings;
 
 	/* The following is for the HTTP/FTP URL tests */
@@ -137,8 +136,7 @@ typedef struct testitem_t {
 
 	/* These data may be filled in from the test engine private data */
 	int		open;		/* Is the service open ? NB: Shows true state of service, ignores flags */
-	char		*banner;
-	int		bannerbytes;
+	strbuffer_t	*banner;
 	char		*certinfo;
 	time_t		certexpires;
 	struct timeval	duration;
