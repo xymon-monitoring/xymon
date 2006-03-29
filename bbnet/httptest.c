@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.80 2005-07-04 08:42:48 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.81 2006-03-29 21:52:23 henrik Exp $";
 
 #include <sys/types.h>
 #include <limits.h>
@@ -408,8 +408,7 @@ void add_http_test(testitem_t *t)
 	int  httpversion = HTTPVER_11;
 	cookielist_t *ck = NULL;
 	int firstcookie = 1;
-	char *httprequest = NULL;
-	int httprequestlen = 0;
+	strbuffer_t *httprequest = newstrbuffer(0);
 
 	/* Allocate the private data and initialize it */
 	httptest = (http_data_t *) calloc(1, sizeof(http_data_t));
@@ -554,11 +553,11 @@ void add_http_test(testitem_t *t)
 	load_cookies();
 
 	/* Generate the request */
-	addtobuffer(&httprequest, &httprequestlen, (httptest->bburl.postdata ? "POST " : "GET "));
+	addtobuffer(httprequest, (httptest->bburl.postdata ? "POST " : "GET "));
 	switch (httpversion) {
 		case HTTPVER_10: 
-			addtobuffer(&httprequest, &httprequestlen, (httptest->bburl.proxyurl ? httptest->url : httptest->bburl.desturl->relurl));
-			addtobuffer(&httprequest, &httprequestlen, " HTTP/1.0\r\n"); 
+			addtobuffer(httprequest, (httptest->bburl.proxyurl ? httptest->url : httptest->bburl.desturl->relurl));
+			addtobuffer(httprequest, " HTTP/1.0\r\n"); 
 			break;
 
 		case HTTPVER_11: 
@@ -567,43 +566,43 @@ void add_http_test(testitem_t *t)
 			 * full URL, some servers (e.g. SunOne App server 7) choke on it.
 			 * So just send the good-old relative URL unless we're proxying.
 			 */
-			addtobuffer(&httprequest, &httprequestlen, (httptest->bburl.proxyurl ? httptest->url : httptest->bburl.desturl->relurl));
-			addtobuffer(&httprequest, &httprequestlen, " HTTP/1.1\r\n"); 
-			addtobuffer(&httprequest, &httprequestlen, "Connection: close\r\n"); 
+			addtobuffer(httprequest, (httptest->bburl.proxyurl ? httptest->url : httptest->bburl.desturl->relurl));
+			addtobuffer(httprequest, " HTTP/1.1\r\n"); 
+			addtobuffer(httprequest, "Connection: close\r\n"); 
 			break;
 	}
 
-	addtobuffer(&httprequest, &httprequestlen, "Host: ");
-	addtobuffer(&httprequest, &httprequestlen, httptest->bburl.desturl->host);
-	addtobuffer(&httprequest, &httprequestlen, "\r\n");
+	addtobuffer(httprequest, "Host: ");
+	addtobuffer(httprequest, httptest->bburl.desturl->host);
+	addtobuffer(httprequest, "\r\n");
 
 	if (httptest->bburl.postdata) {
 		char contlenhdr[100];
 
 		sprintf(contlenhdr, "Content-Length: %d\r\n", strlen(httptest->bburl.postdata));
-		addtobuffer(&httprequest, &httprequestlen, contlenhdr);
-		addtobuffer(&httprequest, &httprequestlen, "Content-Type: application/x-www-form-urlencoded\r\n");
+		addtobuffer(httprequest, contlenhdr);
+		addtobuffer(httprequest, "Content-Type: application/x-www-form-urlencoded\r\n");
 	}
 	{
 		char useragent[100];
 
 		sprintf(useragent, "User-Agent: Hobbit bbtest-net/%s\r\n", VERSION);
-		addtobuffer(&httprequest, &httprequestlen, useragent);
+		addtobuffer(httprequest, useragent);
 	}
 	if (httptest->bburl.desturl->auth) {
 		if (strncmp(httptest->bburl.desturl->auth, "CERT:", 5) == 0) {
 			sslopt_clientcert = httptest->bburl.desturl->auth+5;
 		}
 		else {
-			addtobuffer(&httprequest, &httprequestlen, "Authorization: Basic ");
-			addtobuffer(&httprequest, &httprequestlen, base64encode(httptest->bburl.desturl->auth));
-			addtobuffer(&httprequest, &httprequestlen, "\r\n");
+			addtobuffer(httprequest, "Authorization: Basic ");
+			addtobuffer(httprequest, base64encode(httptest->bburl.desturl->auth));
+			addtobuffer(httprequest, "\r\n");
 		}
 	}
 	if (httptest->bburl.proxyurl && httptest->bburl.proxyurl->auth) {
-		addtobuffer(&httprequest, &httprequestlen, "Proxy-Authorization: Basic ");
-		addtobuffer(&httprequest, &httprequestlen, base64encode(httptest->bburl.proxyurl->auth));
-		addtobuffer(&httprequest, &httprequestlen, "\r\n");
+		addtobuffer(httprequest, "Proxy-Authorization: Basic ");
+		addtobuffer(httprequest, base64encode(httptest->bburl.proxyurl->auth));
+		addtobuffer(httprequest, "\r\n");
 	}
 	for (ck = cookiehead; (ck); ck = ck->next) {
 		int useit = 0;
@@ -618,25 +617,25 @@ void add_http_test(testitem_t *t)
 
 		if (useit) {
 			if (firstcookie) {
-				addtobuffer(&httprequest, &httprequestlen, "Cookie: ");
+				addtobuffer(httprequest, "Cookie: ");
 				firstcookie = 0;
 			}
-			addtobuffer(&httprequest, &httprequestlen, ck->name);
-			addtobuffer(&httprequest, &httprequestlen, "=");
-			addtobuffer(&httprequest, &httprequestlen, ck->value);
-			addtobuffer(&httprequest, &httprequestlen, "\r\n");
+			addtobuffer(httprequest, ck->name);
+			addtobuffer(httprequest, "=");
+			addtobuffer(httprequest, ck->value);
+			addtobuffer(httprequest, "\r\n");
 		}
 	}
 
 	/* Some standard stuff */
-	addtobuffer(&httprequest, &httprequestlen, "Accept: */*\r\n");
-	addtobuffer(&httprequest, &httprequestlen, "Pragma: no-cache\r\n");
+	addtobuffer(httprequest, "Accept: */*\r\n");
+	addtobuffer(httprequest, "Pragma: no-cache\r\n");
 
 	/* The final blank line terminates the headers */
-	addtobuffer(&httprequest, &httprequestlen, "\r\n");
+	addtobuffer(httprequest, "\r\n");
 
 	/* Post data goes last */
-	if (httptest->bburl.postdata) addtobuffer(&httprequest, &httprequestlen, httptest->bburl.postdata);
+	if (httptest->bburl.postdata) addtobuffer(httprequest, httptest->bburl.postdata);
 
 	/* Pickup any SSL options the user wants */
 	if (sslopt_ciphers || (sslopt_version != SSLVERSION_DEFAULT) || sslopt_clientcert){
@@ -651,14 +650,14 @@ void add_http_test(testitem_t *t)
 		httptest->tcptest = add_tcp_test(httptest->bburl.desturl->ip, 
 						 httptest->bburl.desturl->port, 
 						 httptest->bburl.desturl->scheme,
-						 sslopt, 0, httprequest, 
+						 sslopt, 0, grabstrbuffer(httprequest), 
 						 httptest, tcp_http_data_callback, tcp_http_final_callback);
 	}
 	else {
 		httptest->tcptest = add_tcp_test(httptest->bburl.proxyurl->ip, 
 						 httptest->bburl.proxyurl->port, 
 						 httptest->bburl.proxyurl->scheme,
-						 sslopt, 0, httprequest, 
+						 sslopt, 0, grabstrbuffer(httprequest), 
 						 httptest, tcp_http_data_callback, tcp_http_final_callback);
 	}
 }
