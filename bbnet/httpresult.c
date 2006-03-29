@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.20 2006-03-12 16:33:58 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.21 2006-03-29 21:51:14 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -73,8 +73,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 	testitem_t *t;
 	int	color = -1;
 	char    *svcname;
-	char	*msgtext = NULL;
-	int	msgtextsz;
+	strbuffer_t *msgtext;
 	char    *nopagename;
 	int     nopage = 0;
 	int	anydown = 0, totalreports = 0;
@@ -92,6 +91,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 	dprintf("Calc http color host %s : ", host->hostname);
 
+	msgtext = newstrbuffer(0);
 	for (t=firsttest; (t && (t->host == host)); t = t->next) {
 		http_data_t *req = (http_data_t *) t->privdata;
 
@@ -129,7 +129,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		if (req->httpcolor > color) color = req->httpcolor;
 
 		/* Build the short msgtext which goes on line 1 of the status message. */
-		addtobuffer(&msgtext, &msgtextsz, ((msgtext && strlen(msgtext)) ? " ; " : ": ") );
+		addtobuffer(msgtext, (STRBUFLEN(msgtext) ? " ; " : ": ") );
 		if (req->tcptest->errcode != CONTEST_ENOERROR) {
 			switch (req->tcptest->errcode) {
 			  case CONTEST_ETIMEOUT: 
@@ -151,11 +151,11 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 				  req->errorcause =  "Xfer failed";
 			}
 
-			addtobuffer(&msgtext, &msgtextsz, req->errorcause);
+			addtobuffer(msgtext, req->errorcause);
 		} 
 		else if (req->tcptest->open == 0) {
 			req->errorcause = "Connect failed";
-			addtobuffer(&msgtext, &msgtextsz, req->errorcause);
+			addtobuffer(msgtext, req->errorcause);
 		}
 		else if ((req->httpcolor == COL_RED) || (req->httpcolor == COL_YELLOW)) {
 			char m1[30];
@@ -175,11 +175,11 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 			else {
 				sprintf(m1, "HTTP error %ld", req->httpstatus);
 			}
-			addtobuffer(&msgtext, &msgtextsz, m1);
+			addtobuffer(msgtext, m1);
 			req->errorcause = strdup(m1);
 		}
 		else {
-			addtobuffer(&msgtext, &msgtextsz, "OK");
+			addtobuffer(msgtext, "OK");
 		}
 	}
 
@@ -208,7 +208,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		sprintf(msgline, "status %s.%s %s %s", 
 			commafy(host->hostname), svcname, colorname(color), timestamp);
 		addtostatus(msgline);
-		addtostatus(msgtext);
+		addtostrstatus(msgtext);
 		addtostatus("\n");
 
 		for (t=firsttest; (t && (t->host == host)); t = t->next) {
@@ -262,7 +262,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 	}
 
 	xfree(svcname);
-	if (msgtext) xfree(msgtext);
+	freestrbuffer(msgtext);
 }
 
 
