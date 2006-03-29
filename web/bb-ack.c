@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.21 2006-03-12 16:38:32 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.22 2006-03-29 21:41:32 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -33,13 +33,6 @@ static int  validity = 0;
 static char *ackmsg = "";
 static cgidata_t *cgidata = NULL;
 
-static void errormsg(char *msg)
-{
-	printf("Content-type: text/html\n\n");
-	printf("<html><head><title>Invalid request</title></head>\n");
-	printf("<body>%s</body></html>\n", msg);
-	exit(1);
-}
 
 static void parse_query(void)
 {

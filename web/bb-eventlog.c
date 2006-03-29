@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-eventlog.c,v 1.28 2006-03-12 16:38:32 henrik Exp $";
+static char rcsid[] = "$Id: bb-eventlog.c,v 1.29 2006-03-29 21:41:32 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -39,14 +39,6 @@ char	*testregex = NULL;
 char	*colrregex = NULL;
 int	ignoredialups = 0;
 cgidata_t *cgidata = NULL;
-
-static void errormsg(char *msg)
-{
-	printf("Content-type: text/html\n\n");
-	printf("<html><head><title>Invalid request</title></head>\n");
-	printf("<body>%s</body></html>\n", msg);
-	exit(1);
-}
 
 static void parse_query(void)
 {
