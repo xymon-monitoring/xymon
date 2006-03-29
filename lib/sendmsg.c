@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.75 2006-03-29 15:58:19 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.76 2006-03-29 16:24:49 henrik Exp $";
 
 #include "config.h"
 
@@ -651,6 +651,11 @@ void init_meta(char *metaname)
 void addtostatus(char *p)
 {
 	addtobuffer(msgbuf, p);
+}
+
+void addtostrstatus(strbuffer_t *p)
+{
+	addtostrbuffer(msgbuf, p);
 }
 
 void addtometa(char *p)
