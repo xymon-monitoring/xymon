@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.24 2005-07-14 08:20:05 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.25 2006-03-29 21:53:09 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -125,8 +125,8 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 		struct timeval	timeout;
 		LDAPMessage	*result;
 		LDAPMessage	*e;
-		char		*response;
-		int		responsesz;
+		strbuffer_t	*response;
+		char		buf[MAX_LINE_LEN];
 
 		req = (ldap_data_t *) t->privdata;
 		ludp = (LDAPURLDesc *) req->ldapdesc;
@@ -282,21 +282,20 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 
 		gettimeofday(&endtime, &tz);
 
-		responsesz = 4096;
-		response = (char *)malloc(responsesz);
-		sprintf(response, "Searching LDAP for %s yields %d results:\n\n", 
+		response = newstrbuffer(0);
+		sprintf(buf, "Searching LDAP for %s yields %d results:\n\n", 
 			t->testspec, ldap_count_entries(ld, result));
+		addtobuffer(response, buf);
 
 		for(e = ldap_first_entry(ld, result); (e != NULL); e = ldap_next_entry(ld, e) ) {
 			char 		*dn;
 			BerElement	*ber;
 			char		*attribute;
 			char		**vals;
-			char		buf[MAX_LINE_LEN];
 
 			dn = ldap_get_dn(ld, e);
 			sprintf(buf, "DN: %s\n", dn); 
-			addtobuffer(&response, &responsesz, buf);
+			addtobuffer(response, buf);
 
 			/* Addtributes and values */
 			for (attribute = ldap_first_attribute(ld, e, &ber); (attribute != NULL); attribute = ldap_next_attribute(ld, e, ber) ) {
@@ -305,7 +304,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 
 					for(i = 0; (vals[i] != NULL); i++) {
 						sprintf(buf, "\t%s: %s\n", attribute, vals[i]);
-						addtobuffer(&response, &responsesz, buf);
+						addtobuffer(response, buf);
 					}
 				}
 				/* Free memory used to store values */
@@ -317,10 +316,10 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 			ldap_memfree(dn);
 			if (ber != NULL) ber_free(ber, 0);
 
-			addtobuffer(&response, &responsesz, "\n");
+			addtobuffer(response, "\n");
 		}
 		req->ldapstatus = BBGEN_LDAP_OK;
-		req->output = response;
+		req->output = grabstrbuffer(response);
 		tvdiff(&starttime, &endtime, &req->duration);
 
 		ldap_msgfree(result);
