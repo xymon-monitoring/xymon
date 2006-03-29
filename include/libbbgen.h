@@ -19,6 +19,14 @@ typedef struct htnames_t {
 	struct htnames_t *next;
 } htnames_t;
 
+typedef struct strbuffer_t {
+	char *s;
+	int used, sz;
+} strbuffer_t;
+
+#define STRBUF(buf) (buf->s)
+#define STRBUFLEN(buf) (buf->used)
+
 #include "version.h"
 #include "config.h"
 #include "../lib/osdefs.h"
