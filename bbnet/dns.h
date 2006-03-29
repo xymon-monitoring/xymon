@@ -29,7 +29,7 @@ extern void add_host_to_dns_queue(char *hostname);
 extern void add_url_to_dns_queue(char *hostname);
 extern void flush_dnsqueue(void);
 extern char *dnsresolve(char *hostname);
-extern int dns_test_server(char *serverip, char *hostname, char **banner, int *bannerbytes);
+extern int dns_test_server(char *serverip, char *hostname, strbuffer_t *banner);
 
 #endif
 

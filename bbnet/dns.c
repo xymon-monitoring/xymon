@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.25 2005-07-05 14:11:53 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.26 2006-03-29 21:48:23 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -252,7 +252,7 @@ char *dnsresolve(char *hostname)
 	return result;
 }
 
-int dns_test_server(char *serverip, char *hostname, char **banner, int *bannerbytes)
+int dns_test_server(char *serverip, char *hostname, strbuffer_t *banner)
 {
 	ares_channel channel;
 	struct ares_options options;
@@ -306,23 +306,23 @@ int dns_test_server(char *serverip, char *hostname, char **banner, int *bannerby
 	dns_queue_run(channel);
 	gettimeofday(&endtime, &tz);
 	tspent = tvdiff(&starttime, &endtime, NULL);
-	*banner = NULL; *bannerbytes = 0; status = ARES_SUCCESS;
+	clearstrbuffer(banner); status = ARES_SUCCESS;
 	strcpy(tspec, hostname);
 	tst = strtok(tspec, ",");
 	for (walk = responses, i=1; (walk); walk = walk->next, i++) {
 		/* Print an identifying line if more than one query */
 		if ((walk != responses) || (walk->next)) {
 			sprintf(msg, "\n*** DNS lookup of '%s' ***\n", tst);
-			addtobuffer(banner, bannerbytes, msg);
+			addtobuffer(banner, msg);
 		}
-		addtobuffer(banner, bannerbytes, walk->msgbuf);
+		addtostrbuffer(banner, walk->msgbuf);
 		if (walk->msgstatus != ARES_SUCCESS) status = walk->msgstatus;
 		xfree(walk->msgbuf);
 		tst = strtok(NULL, ",");
 	}
 	xfree(tspec);
 	sprintf(msg, "\nSeconds: %u.%03u\n", (unsigned int)tspent->tv_sec, (unsigned int)tspent->tv_usec/1000);
-	addtobuffer(banner, bannerbytes, msg);
+	addtobuffer(banner, msg);
 
 	return (status != ARES_SUCCESS);
 }
