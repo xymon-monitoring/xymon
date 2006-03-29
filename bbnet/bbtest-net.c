@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.224 2006-03-09 14:07:11 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.225 2006-03-29 21:54:30 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -159,7 +159,7 @@ void dump_testitems(void)
 				if (iwalk->alwaystrue) printf(" alwaystrue");
 				printf("\n");
 				printf("\tOpen        : %d\n", iwalk->open);
-				printf("\tBanner      : %s\n", textornull(iwalk->banner));
+				printf("\tBanner      : %s\n", textornull(STRBUF(iwalk->banner)));
 				printf("\tcertinfo    : %s\n", textornull(iwalk->certinfo));
 				printf("\tDuration    : %ld.%06ld\n", (long int)iwalk->duration.tv_sec, (long int)iwalk->duration.tv_usec);
 				printf("\tbadtest     : %d:%d:%d\n", iwalk->badtest[0], iwalk->badtest[1], iwalk->badtest[2]);
@@ -370,8 +370,7 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *testspec
 	newtest->testspec = (testspec ? strdup(testspec) : NULL);
 	newtest->privdata = NULL;
 	newtest->open = 0;
-	newtest->banner = NULL;
-	newtest->bannerbytes = 0;
+	newtest->banner = newstrbuffer(0);
 	newtest->certinfo = NULL;
 	newtest->certexpires = 0;
 	newtest->duration.tv_sec = newtest->duration.tv_usec = -1;
@@ -554,8 +553,7 @@ void load_tests(void)
 
 							newping->ip = ips;
 							newping->open = 0;
-							newping->banner = NULL;
-							newping->bannerbytes = 0;
+							newping->banner = newstrbuffer(0);
 							newping->next = h->extrapings->iplist;
 							h->extrapings->iplist = newping;
 							ips = strchr(ips, ',');
@@ -1009,7 +1007,7 @@ void run_nslookup_service(service_t *service)
 				lookup = t->host->hostname;
 			}
 
-			t->open = (dns_test_server(ip_to_test(t->host), lookup, &t->banner, &t->bannerbytes) == 0);
+			t->open = (dns_test_server(ip_to_test(t->host), lookup, t->banner) == 0);
 		}
 	}
 }
@@ -1026,7 +1024,7 @@ void run_ntp_service(service_t *service)
 	for (t=service->items; (t); t = t->next) {
 		if (!t->host->dnserror) {
 			sprintf(cmd, "%s -u -q -p 2 %s 2>&1", cmdpath, ip_to_test(t->host));
-			t->open = (run_command(cmd, "no server suitable for synchronization", &t->banner, &t->bannerbytes, 1, extcmdtimeout) == 0);
+			t->open = (run_command(cmd, "no server suitable for synchronization", t->banner, 1, extcmdtimeout) == 0);
 		}
 	}
 }
@@ -1044,7 +1042,7 @@ void run_rpcinfo_service(service_t *service)
 	for (t=service->items; (t); t = t->next) {
 		if (!t->host->dnserror && (t->host->downcount == 0)) {
 			sprintf(cmd, "%s -p %s 2>&1", cmdpath, ip_to_test(t->host));
-			t->open = (run_command(cmd, NULL, &t->banner, &t->bannerbytes, 1, extcmdtimeout) == 0);
+			t->open = (run_command(cmd, NULL, t->banner, 1, extcmdtimeout) == 0);
 		}
 	}
 }
@@ -1207,8 +1205,7 @@ int finish_fping_service(service_t *service)
 				if (strcmp(t->host->ip, pingip) == 0) {
 					if (t->open) dprintf("More than one ping result for %s\n", pingip);
 					t->open = (strstr(l, "is alive") != NULL);
-					t->banner = strdup(l);
-					t->bannerbytes = strlen(l);
+					t->banner = dupstrbuffer(l);
 				}
 
 				if (t->host->extrapings) {
@@ -1217,8 +1214,7 @@ int finish_fping_service(service_t *service)
 						if (strcmp(walk->ip, pingip) == 0) {
 							if (t->open) dprintf("More than one ping result for %s\n", pingip);
 							walk->open = (strstr(l, "is alive") != NULL);
-							walk->banner = strdup(l);
-							walk->bannerbytes = strlen(l);
+							walk->banner = dupstrbuffer(l);
 						}
 					}
 				}
@@ -1416,7 +1412,8 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 			else {
 				sprintf(cmd, "traceroute -n -q 2 -w 2 -m 15 %s 2>&1", test->host->ip);
 			}
-			run_command(cmd, NULL, &test->host->traceroute, NULL, 0, extcmdtimeout);
+			test->host->traceroute = newstrbuffer(0);
+			run_command(cmd, NULL, test->host->traceroute, 0, extcmdtimeout);
 		}
 	}
 	else {
@@ -1666,29 +1663,29 @@ void send_results(service_t *service, int failgoesclear)
 			addtostatus(msgtext);
 		}
 
-		if (t->banner) {
+		if (STRBUFLEN(t->banner)) {
 			if (service == pingtest) {
-				sprintf(msgtext, "\n&%s %s\n", colorname(t->open ? COL_GREEN : COL_RED), t->banner);
+				sprintf(msgtext, "\n&%s %s\n", colorname(t->open ? COL_GREEN : COL_RED), STRBUF(t->banner));
 				addtostatus(msgtext);
 				if (t->host->extrapings) {
 					ipping_t *walk;
 					for (walk = t->host->extrapings->iplist; (walk); walk = walk->next) {
-						if (walk->banner) {
+						if (STRBUFLEN(walk->banner)) {
 							sprintf(msgtext, "&%s %s\n", 
-								colorname(walk->open ? COL_GREEN : COL_RED), walk->banner);
+								colorname(walk->open ? COL_GREEN : COL_RED), STRBUF(walk->banner));
 							addtostatus(msgtext);
 						}
 					}
 				}
 			}
 			else {
-				addtostatus("\n"); addtostatus(t->banner); addtostatus("\n");
+				addtostatus("\n"); addtostrstatus(t->banner); addtostatus("\n");
 			}
 		}
 
 		if ((service == pingtest) && t->host->traceroute) {
 			addtostatus("Traceroute results:\n");
-			addtostatus(t->host->traceroute);
+			addtostrstatus(t->host->traceroute);
 			addtostatus("\n");
 		}
 
@@ -1762,7 +1759,7 @@ void send_rpcinfo_results(service_t *service, int failgoesclear)
 		p = strchr(t->testspec, '=');
 		if (p) wantedrpcsvcs = strdup(p+1);
 
-		if ((color == COL_GREEN) && t->banner && wantedrpcsvcs) {
+		if ((color == COL_GREEN) && STRBUFLEN(t->banner) && wantedrpcsvcs) {
 			char *rpcsvc, *aline;
 
 			rpcsvc = strtok(wantedrpcsvcs, ",");
@@ -1775,7 +1772,7 @@ void send_rpcinfo_results(service_t *service, int failgoesclear)
 				int  aport;
 
 				rpcinfo = getrpcbyname(rpcsvc);
-				aline = t->banner; 
+				aline = STRBUF(t->banner); 
 				while ((!svcfound) && rpcinfo && aline && (*aline != '\0')) {
 					p = strchr(aline, '\n');
 					if (p) *p = '\0';
@@ -1826,9 +1823,9 @@ void send_rpcinfo_results(service_t *service, int failgoesclear)
 
 		/* rpcinfo output */
 		if (t->open) {
-			if (t->banner) {
+			if (STRBUFLEN(t->banner)) {
 				addtostatus("\n\n");
-				addtostatus(t->banner);
+				addtostrstatus(t->banner);
 			}
 			else {
 				sprintf(msgline, "\n\nNo output from rpcinfo -p %s\n", t->host->ip);
@@ -1837,7 +1834,7 @@ void send_rpcinfo_results(service_t *service, int failgoesclear)
 		}
 		else {
 			addtostatus("\n\nCould not connect to the portmapper service\n");
-			if (t->banner) addtostatus(t->banner);
+			if (STRBUFLEN(t->banner)) addtostrstatus(t->banner);
 		}
 		finish_status();
 	}
@@ -2238,23 +2235,20 @@ int main(int argc, char *argv[])
 				 * If the test fails due to DNS error, t->privdata is NULL
 				 */
 				if (t->privdata) {
+					char *p;
+					int i;
 					tcptest_t *testresult = (tcptest_t *)t->privdata;
 
 					t->open = testresult->open;
-					t->banner = testresult->banner;
-					t->bannerbytes = testresult->bannerbytes;
+					t->banner = dupstrbuffer(testresult->banner);
 					t->certinfo = testresult->certinfo;
 					t->certexpires = testresult->certexpires;
 					t->duration.tv_sec = testresult->duration.tv_sec;
 					t->duration.tv_usec = testresult->duration.tv_usec;
 
-					if (t->banner && (t->bannerbytes > 0) && (strlen(t->banner) != t->bannerbytes)) {
-						/* Binary data in banner ... */
-						char *p;
-						int i;
-						for (i=0, p=t->banner; (i < t->bannerbytes); i++, p++) {
-							if (!isprint((int)*p)) *p = '.';
-						}
+					/* Binary data in banner ... */
+					for (i=0, p=STRBUF(t->banner); (i < STRBUFLEN(t->banner)); i++, p++) {
+						if (!isprint((int)*p)) *p = '.';
 					}
 				}
 			}
