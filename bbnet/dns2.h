@@ -13,8 +13,7 @@
 
 typedef struct dns_resp_t {
 	int msgstatus;
-	char *msgbuf;
-	int msglen;
+	strbuffer_t *msgbuf;
 	struct dns_resp_t *next;
 } dns_resp_t;
 
