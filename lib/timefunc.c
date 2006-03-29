@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.27 2006-03-29 15:57:12 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.28 2006-03-29 21:38:25 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -66,7 +66,6 @@ char *timespec_text(char *spec)
 	static strbuffer_t *result = NULL;
 	char *sCopy;
 	char *sItem;
-	int reslen = 0;
 
 	if (result == NULL) result = newstrbuffer(0);
 	clearstrbuffer(result);
