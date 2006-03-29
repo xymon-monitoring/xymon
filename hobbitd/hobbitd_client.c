@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.48 2006-03-29 16:17:55 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.49 2006-03-29 21:21:28 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -479,6 +479,8 @@ void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 	strbuffer_t *monmsg;
 
 	if (!psstr) return;
+
+	monmsg = newstrbuffer(0);
 
 	/* 
 	 * Find where the command is located. We look for the header for the command,
