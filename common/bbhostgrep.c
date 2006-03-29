@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.32 2005-12-29 16:22:13 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.33 2006-03-29 16:07:14 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -107,6 +107,7 @@ int main(int argc, char *argv[])
 	char *p;
 	char **lookv;
 	int argi, lookc;
+	strbuffer_t *wantedtags;
 
 	if ((argc <= 1) || (strcmp(argv[1], "--help") == 0)) {
 		printf("Usage:\n%s test1 [test1] [test2] ... \n", argv[0]);
@@ -171,6 +172,7 @@ int main(int argc, char *argv[])
 	if (p && strlen(p)) netstring = strdup(p);
 
 	hwalk = hostlist;
+	wantedtags = newstrbuffer(0);
 	while (hwalk) {
 		char *curnet = bbh_item(hwalk, BBH_NET);
 		char *curname = bbh_item(hwalk, BBH_HOSTNAME);
@@ -178,9 +180,8 @@ int main(int argc, char *argv[])
 		/* Only look at the hosts whose NET: definition matches the wanted one */
 		if (netok(netstring, curnet, testuntagged) && downok(curname, nodownhosts)) {
 			char *item;
-			char *wantedtags = NULL;
-			int wantedtagsz;
 
+			clearstrbuffer(wantedtags);
 			for (item = bbh_item_walk(hwalk); (item); item = bbh_item_walk(NULL)) {
 				int i;
 				char *realitem = item + strspn(item, "!~?");
@@ -199,25 +200,21 @@ int main(int argc, char *argv[])
 
 					if (outitem) {
 						int needquotes = ((strchr(outitem, ' ') != NULL) || (strchr(outitem, '\t') != NULL));
-						addtobuffer(&wantedtags, &wantedtagsz, " ");
-						if (needquotes) addtobuffer(&wantedtags, &wantedtagsz, "\"");
-						addtobuffer(&wantedtags, &wantedtagsz, outitem);
-						if (needquotes) addtobuffer(&wantedtags, &wantedtagsz, "\"");
+						addtobuffer(wantedtags, " ");
+						if (needquotes) addtobuffer(wantedtags, "\"");
+						addtobuffer(wantedtags, outitem);
+						if (needquotes) addtobuffer(wantedtags, "\"");
 					}
 				}
 			}
 
-			if (wantedtags && (*wantedtags != '\0') && extras) {
-				if (bbh_item(hwalk, BBH_FLAG_DIALUP)) addtobuffer(&wantedtags, &wantedtagsz, " dialup");
-				if (bbh_item(hwalk, BBH_FLAG_TESTIP)) addtobuffer(&wantedtags, &wantedtagsz, " testip");
+			if (STRBUF(wantedtags) && (*STRBUF(wantedtags) != '\0') && extras) {
+				if (bbh_item(hwalk, BBH_FLAG_DIALUP)) addtobuffer(wantedtags, " dialup");
+				if (bbh_item(hwalk, BBH_FLAG_TESTIP)) addtobuffer(wantedtags, " testip");
 			}
 
-			if (wantedtags) {
-				if (*wantedtags != '\0') {
-					printf("%s %s #%s\n", bbh_item(hwalk, BBH_IP), bbh_item(hwalk, BBH_HOSTNAME), wantedtags);
-				}
-
-				xfree(wantedtags);
+			if (STRBUF(wantedtags) && *STRBUF(wantedtags)) {
+				printf("%s %s #%s\n", bbh_item(hwalk, BBH_IP), bbh_item(hwalk, BBH_HOSTNAME), STRBUF(wantedtags));
 			}
 		}
 

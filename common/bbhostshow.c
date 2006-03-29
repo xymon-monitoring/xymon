@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostshow.c,v 1.11 2006-02-25 08:42:19 henrik Exp $";
+static char rcsid[] = "$Id: bbhostshow.c,v 1.12 2006-03-29 16:07:14 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -22,8 +22,7 @@ int main(int argc, char *argv[])
 { 
 	FILE *bbhosts;
 	char *fn = NULL;
-	char *inbuf = NULL;
-	int inbufsz;
+	strbuffer_t *inbuf;
 	int argi;
 	char *include2 = NULL;
 
@@ -62,12 +61,13 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	while (stackfgets(&inbuf, &inbufsz, include2)) {
-		printf("%s", inbuf);
+	inbuf = newstrbuffer(0);
+	while (stackfgets(inbuf, include2)) {
+		printf("%s", STRBUF(inbuf));
 	}
 
 	stackfclose(bbhosts);
-	if (inbuf) xfree(inbuf);
+	freestrbuffer(inbuf);
 	return 0;
 }
 

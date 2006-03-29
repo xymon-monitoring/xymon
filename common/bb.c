@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb.c,v 1.4 2006-02-27 20:59:47 henrik Exp $";
+static char rcsid[] = "$Id: bb.c,v 1.5 2006-03-29 16:07:14 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 	int argi;
 	int showhelp = 0;
 	char *recipient = NULL;
-	char *msg = NULL;
+	strbuffer_t *msg = newstrbuffer(0);
 	FILE *respfd = stdout;
 	char *response = NULL;
 	char *envarea = NULL;
@@ -78,8 +78,8 @@ int main(int argc, char *argv[])
 			if (recipient == NULL) {
 				recipient = argv[argi];
 			}
-			else if (msg == NULL) {
-				msg = argv[argi];
+			else if (STRBUF(msg) == NULL) {
+				msg = dupstrbuffer(argv[argi]);
 			}
 			else {
 				showhelp=1;
@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if ((recipient == NULL) || (msg == NULL) || showhelp) {
+	if ((recipient == NULL) || (STRBUF(msg) == NULL) || showhelp) {
 		fprintf(stderr, "Hobbit version %s\n", VERSION);
 		fprintf(stderr, "Usage: %s [--debug] [--proxy=http://ip.of.the.proxy:port/] RECIPIENT DATA\n", argv[0]);
 		fprintf(stderr, "  RECIPIENT: IP-address, hostname or URL\n");
@@ -95,62 +95,61 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	if (strcmp(msg, "-") == 0) {
-		char *inpline = NULL;
-		int inplinesz;
+	if (strcmp(STRBUF(msg), "-") == 0) {
+		strbuffer_t *inpline = newstrbuffer(0);
 
 		initfgets(stdin);
-		while (unlimfgets(&inpline, &inplinesz, stdin)) {
-			result = sendmessage(inpline, recipient, NULL, NULL, 0, timeout);
+		while (unlimfgets(inpline, stdin)) {
+			result = sendmessage(STRBUF(inpline), recipient, NULL, NULL, 0, timeout);
+			clearstrbuffer(inpline);
 		}
 
 		return result;
 	}
 
-	if (strcmp(msg, "@") == 0) {
-		int msgsz;
-		char *inpline = NULL;
-		int inplinesz;
+	if (strcmp(STRBUF(msg), "@") == 0) {
+		strbuffer_t *inpline = newstrbuffer(0);
 
-		msg = NULL; initfgets(stdin);
-		while (unlimfgets(&inpline, &inplinesz, stdin)) addtobuffer(&msg, &msgsz, inpline);
+		initfgets(stdin);
+		while (unlimfgets(inpline, stdin)) addtostrbuffer(msg, inpline);
+		freestrbuffer(inpline);
 	}
 
-	if (strncmp(msg, "query ", 6) == 0) {
-		result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 0, timeout);
+	if (strncmp(STRBUF(msg), "query ", 6) == 0) {
+		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 0, timeout);
 	}
-	else if (strncmp(msg, "client ", 7) == 0) {
-		result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
+	else if (strncmp(STRBUF(msg), "client ", 7) == 0) {
+		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 	}
-	else if (strncmp(msg, "config ", 7) == 0) {
-		result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
+	else if (strncmp(STRBUF(msg), "config ", 7) == 0) {
+		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 	}
-	else if (strncmp(msg, "hobbitdlog ", 11) == 0) {
-		result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
+	else if (strncmp(STRBUF(msg), "hobbitdlog ", 11) == 0) {
+		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 	}
-	else if (strncmp(msg, "hobbitdxlog ", 12) == 0) {
-		result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
+	else if (strncmp(STRBUF(msg), "hobbitdxlog ", 12) == 0) {
+		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 	}
-	else if (strncmp(msg, "hobbitdboard", 12) == 0) {
-		result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
+	else if (strncmp(STRBUF(msg), "hobbitdboard", 12) == 0) {
+		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 	}
-	else if (strncmp(msg, "hobbitdxboard", 13) == 0) {
-		result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
+	else if (strncmp(STRBUF(msg), "hobbitdxboard", 13) == 0) {
+		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 	}
-	else if (strcmp(msg, "schedule") == 0) {
-		result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
+	else if (strncmp(STRBUF(msg), "schedule", 8) == 0) {
+		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 	}
-	else if (strncmp(msg, "clientlog ", 10) == 0) {
-		result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
+	else if (strncmp(STRBUF(msg), "clientlog ", 10) == 0) {
+		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 	}
-	else if (strncmp(msg, "hostinfo", 8) == 0) {
-		result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
+	else if (strncmp(STRBUF(msg), "hostinfo", 8) == 0) {
+		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 	}
-	else if (strncmp(msg, "ping", 4) == 0) {
-		result = sendmessage(msg, recipient, respfd, (respfd ? NULL : &response), 1, timeout);
+	else if (strncmp(STRBUF(msg), "ping", 4) == 0) {
+		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 	}
 	else {
-		result = sendmessage(msg, recipient, NULL, NULL, 0, timeout);
+		result = sendmessage(STRBUF(msg), recipient, NULL, NULL, 0, timeout);
 	}
 
 	if (response) printf("Buffered response is '%s'\n", response);

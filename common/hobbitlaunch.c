@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.34 2006-02-25 08:42:19 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.35 2006-03-29 16:07:14 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -175,8 +175,7 @@ void load_config(char *conffn)
 	static void *configfiles = NULL;
 	tasklist_t *twalk, *curtask = NULL;
 	FILE *fd;
-	char *inbuf = NULL;
-	int inbufsz;
+	strbuffer_t *inbuf;
 	char *p;
 
 	/* First check if there were no modifications at all */
@@ -205,10 +204,11 @@ void load_config(char *conffn)
 		return;
 	}
 
-	while (stackfgets(&inbuf, &inbufsz, NULL)) {
-		p = strchr(inbuf, '\n'); if (p) *p = '\0';
+	inbuf = newstrbuffer(0);
+	while (stackfgets(inbuf, NULL)) {
+		p = strchr(STRBUF(inbuf), '\n'); if (p) *p = '\0';
 
-		p = inbuf + strspn(inbuf, " \t");
+		p = STRBUF(inbuf) + strspn(STRBUF(inbuf), " \t");
 		if ((*p == '\0') || (*p == '#')) {
 			/* Comment or blank line - ignore */
 		}
@@ -304,7 +304,7 @@ void load_config(char *conffn)
 	}
 	if (curtask) update_task(curtask);
 	stackfclose(fd);
-	if (inbuf) xfree(inbuf);
+	freestrbuffer(inbuf);
 
 	/* Running tasks that have been deleted or changed are killed off now. */
 	for (twalk = taskhead; (twalk); twalk = twalk->next) {
