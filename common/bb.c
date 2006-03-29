@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb.c,v 1.5 2006-03-29 16:07:14 henrik Exp $";
+static char rcsid[] = "$Id: bb.c,v 1.6 2006-03-29 21:21:42 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -110,6 +110,7 @@ int main(int argc, char *argv[])
 	if (strcmp(STRBUF(msg), "@") == 0) {
 		strbuffer_t *inpline = newstrbuffer(0);
 
+		clearstrbuffer(msg);
 		initfgets(stdin);
 		while (unlimfgets(inpline, stdin)) addtostrbuffer(msg, inpline);
 		freestrbuffer(inpline);
