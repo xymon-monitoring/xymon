@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.42 2006-03-29 16:08:03 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.43 2006-03-30 20:03:44 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -157,6 +157,7 @@ static void loadtests(void)
 		}
 		*outp = '\0';
 		if (strlen(inp)) memmove(outp, inp, strlen(inp)+1);
+		strbufferrecalc(inbuf);
 
 		if (STRBUFLEN(inbuf) && (*STRBUF(inbuf) != '#') && (p = strchr(STRBUF(inbuf), '=')) ) {
 			testspec_t *newtest = (testspec_t *) malloc(sizeof(testspec_t));
