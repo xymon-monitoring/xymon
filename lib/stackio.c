@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: stackio.c,v 1.16 2006-03-29 16:00:24 henrik Exp $";
+static char rcsid[] = "$Id: stackio.c,v 1.17 2006-03-30 06:58:50 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -162,8 +162,7 @@ char *unlimfgets(strbuffer_t *buffer, FILE *fd)
 			 * Hence the test for both *buffer and **buffer.
 			 */
 			if (STRBUF(buffer) && *STRBUF(buffer)) {
-				int n = STRBUFLEN(buffer);
-				char *contchar = STRBUF(buffer) + n - 1;
+				char *contchar = STRBUF(buffer) + STRBUFLEN(buffer) - 1;
 				while ((contchar > STRBUF(buffer)) && isspace((int)*contchar) && (*contchar != '\\')) contchar--;
 
 				if (*contchar == '\\') {
@@ -171,7 +170,7 @@ char *unlimfgets(strbuffer_t *buffer, FILE *fd)
 					 * Remove the cont. char from the output buffer, and stuff it into
 					 * the input buffer again - so we can check if there's a new-line coming.
 					 */
-					*contchar = '\0';
+					strbufferchop(buffer, 1);
 					*(fg->inbuf) = '\\';
 					inpos++;
 					insize--;
@@ -485,19 +484,21 @@ int main(int argc, char *argv[])
 	FILE *fd;
 	strbuffer_t *inbuf = newstrbuffer(0);
 	void *listhead = NULL;
-	int done;
+	int done, linenum;
 
-	debug = 1;
 	fn = strdup(argv[1]);
 	strcpy(cmd, "!");
 	done = 0;
 	while (!done) {
 		if (*cmd == '!') {
-			clearstrbuffer(inbuf);
 			fd = stackfopen(fn, "r", &listhead);
+			linenum = 1;
 			if (!fd) { errprintf("Cannot open file %s\n", fn); continue; }
 
-			while (stackfgets(inbuf, NULL)) printf("%s", STRBUF(inbuf));
+			while (stackfgets(inbuf, NULL)) {
+				linenum++;
+				printf("%s", STRBUF(inbuf));
+			}
 			stackfclose(fd);
 		}
 		else if (*cmd == '?') {
