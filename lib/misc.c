@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.50 2006-03-30 06:58:15 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.51 2006-03-30 19:59:50 henrik Exp $";
 
 #include "config.h"
 
@@ -267,22 +267,31 @@ char *wstok(char *s)
 }
 
 
-void sanitize_input(char *l)
+void sanitize_input(strbuffer_t *l)
 {
 	/*
 	 * This routine sanitizes an input line, stripping off leading/trailing whitespace and comments.
 	 */
 	char *p, *inp, *outp;
-	int inquote, inhyphen;
+	int inquote, inhyphen, count;
 
-	p = l + strcspn(l, "\r\n"); *p = '\0';
+	count = strcspn(STRBUF(l), "\r\n");
+	if (count != STRBUFLEN(l)) strbufferchop(l, (STRBUFLEN(l)-count));
 
 	/* Remove comments and leading whitespace */
-	p = l + strspn(l, " \t");
-	if (*p == '#') { *l = '\0'; return; }	/* Comment line */
-	if (p > l) memmove(l, p, strlen(p)+1);	/* Leading whitespace */
+	count = strspn(STRBUF(l), " \t");
+	if (count) {
+		memmove(l->s, l->s+count, STRBUFLEN(l)-count+1);
+		l->used = count;
+	}
 
-	inp = outp = l;
+	if ((*STRBUF(l) == '#') || (STRBUFLEN(l) == 0)){
+		/* Comment line */
+		clearstrbuffer(l);
+		return;
+	}
+
+	inp = outp = STRBUF(l);
 	inquote = inhyphen = 0;
 	while (*inp) {
 		if (*inp == '"') {
@@ -308,11 +317,56 @@ void sanitize_input(char *l)
 
 	/* Remove trailing whitespace */
 	p = outp;
-	while ((p > l) && (isspace((int) *(p-1)))) p--;
+	while ((p > STRBUF(l)) && (isspace((int) *(p-1)))) p--;
 	*p = '\0';
+
+	/* Must re-calc this */
+	l->used = strlen(l->s);
 }
 
-void grok_input(char *l)
+void grok_input(strbuffer_t *l)
+{
+	/*
+	 * This routine sanitizes an input line, stripping off whitespace,
+	 * removing comments and un-escaping \-escapes and quotes.
+	 */
+	char *p, *outp;
+	int inquote, inhyphen;
+
+	p = strchr(STRBUF(l), '\n'); if (p) *p = '\0';
+
+	/* Remove quotes, comments and leading whitespace */
+	p = STRBUF(l) + strspn(STRBUF(l), " \t"); outp = STRBUF(l); inquote = inhyphen = 0;
+	while (*p) {
+		if (*p == '\\') {
+			*outp = *(p+1);
+			outp++; p += 2;
+		}
+		else if (*p == '"') {
+			inquote = (1 - inquote);
+			p++;
+		}
+		else if (*p == '\'') {
+			inhyphen = (1 - inhyphen);
+			p++;
+		}
+		else if ((*p == '#') && !inquote && !inhyphen) {
+			*p = '\0';
+		}
+		else {
+			if (outp != p) *outp = *p;
+			outp++; p++;
+		}
+	}
+
+	/* Remove trailing whitespace */
+	while ((outp > STRBUF(l)) && (isspace((int) *(outp-1)))) outp--;
+	*outp = '\0';
+
+	l->used = strlen(l->s);
+}
+
+void grok_input_s(char *l)
 {
 	/*
 	 * This routine sanitizes an input line, stripping off whitespace,
@@ -596,7 +650,7 @@ char **setup_commandargs(char *cmdline, char **cmd)
 		savech = *earg;
 		*earg = '\0';
 
-		grok_input(barg);
+		grok_input_s(barg);
 		eqchar = strchr(barg, '=');
 		if (eqchar && (eqchar == (barg + strspn(barg, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")))) {
 			/* It's an environment definition */

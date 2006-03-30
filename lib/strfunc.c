@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: strfunc.c,v 1.2 2006-03-30 07:01:34 henrik Exp $";
+static char rcsid[] = "$Id: strfunc.c,v 1.3 2006-03-30 19:59:50 henrik Exp $";
 
 #include "config.h"
 
@@ -118,5 +118,17 @@ void strbufferchop(strbuffer_t *buf, int count)
 
 	buf->used -= count;
 	*(buf->s+buf->used) = '\0';
+}
+
+void strbufferrecalc(strbuffer_t *buf)
+{
+	if (buf == NULL) return;
+
+	if (buf->s == NULL) {
+		buf->used = 0;
+		return;
+	}
+
+	buf->used = strlen(buf->s);
 }
 
