@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-enadis.c,v 1.18 2006-03-30 14:57:10 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-enadis.c,v 1.19 2006-03-30 15:20:17 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -299,7 +299,6 @@ int main(int argc, char *argv[])
 			pagepattern = strdup(p);
 			p = strchr(pagepattern, ';'); if (p) *p = '\0';
 			if (strlen(pagepattern) == 0) { xfree(pagepattern); pagepattern = 0; }
-			sethostenv_filter(NULL, pagepattern, NULL);
 		}
 	}
 
