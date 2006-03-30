@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.46 2006-03-30 14:56:17 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.47 2006-03-30 15:21:03 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -265,59 +265,6 @@ char *wkdayselect(char wkday, char *valtxt, int isdefault)
 }
 
 
-static void fetch_board(void)
-{
-	static int haveboard = 0;
-	char *walk, *eoln;
-
-	if (haveboard) return;
-
-	if (sendmessage("hobbitdboard fields=hostname,testname,disabletime,dismsg", 
-			NULL, NULL, &statusboard, 1, BBTALK_TIMEOUT) != BB_OK)
-		return;
-
-	haveboard = 1;
-
-	hostnames = rbtNew(name_compare);
-	testnames = rbtNew(name_compare);
-	walk = statusboard;
-	while (walk) {
-		eoln = strchr(walk, '\n'); if (eoln) *eoln = '\0';
-		if (strlen(walk) && (strncmp(walk, "summary|", 8) != 0) && (strncmp(walk, "dialup|", 7) != 0)) {
-			char *buf, *hname = NULL, *tname = NULL;
-			treerec_t *newrec;
-
-			buf = strdup(walk);
-
-			hname = gettok(buf, "|");
-			if (hname) tname = gettok(NULL, "|");
-
-			newrec = (treerec_t *)malloc(sizeof(treerec_t));
-			newrec->name = strdup(hname);
-			newrec->flag = 0;
-			rbtInsert(hostnames, newrec->name, newrec);
-
-			newrec = (treerec_t *)malloc(sizeof(treerec_t));
-			newrec->name = strdup(tname);
-			newrec->flag = 0;
-			rbtInsert(testnames, strdup(tname), newrec);
-
-			xfree(buf);
-		}
-
-		if (eoln) {
-			*eoln = '\n';
-			walk = eoln + 1;
-		}
-		else
-			walk = NULL;
-	}
-
-	if (sendmessage("schedule", NULL, NULL, &scheduleboard, 1, BBTALK_TIMEOUT) != BB_OK)
-		return;
-}
-
-
 static namelist_t *wanted_host(char *hostname)
 {
 	namelist_t *hinfo = hostinfo(hostname);
@@ -346,6 +293,63 @@ static namelist_t *wanted_host(char *hostname)
 	}
 
 	return hinfo;
+}
+
+
+static void fetch_board(void)
+{
+	static int haveboard = 0;
+	char *walk, *eoln;
+
+	if (haveboard) return;
+
+	if (sendmessage("hobbitdboard fields=hostname,testname,disabletime,dismsg", 
+			NULL, NULL, &statusboard, 1, BBTALK_TIMEOUT) != BB_OK)
+		return;
+
+	haveboard = 1;
+
+	hostnames = rbtNew(name_compare);
+	testnames = rbtNew(name_compare);
+	walk = statusboard;
+	while (walk) {
+		eoln = strchr(walk, '\n'); if (eoln) *eoln = '\0';
+		if (strlen(walk) && (strncmp(walk, "summary|", 8) != 0) && (strncmp(walk, "dialup|", 7) != 0)) {
+			char *buf, *hname = NULL, *tname = NULL;
+			treerec_t *newrec;
+
+			buf = strdup(walk);
+
+			hname = gettok(buf, "|");
+
+			if (hname && wanted_host(hname)) {
+				newrec = (treerec_t *)malloc(sizeof(treerec_t));
+				newrec->name = strdup(hname);
+				newrec->flag = 0;
+				rbtInsert(hostnames, newrec->name, newrec);
+
+				tname = gettok(NULL, "|");
+				if (tname) {
+					newrec = (treerec_t *)malloc(sizeof(treerec_t));
+					newrec->name = strdup(tname);
+					newrec->flag = 0;
+					rbtInsert(testnames, strdup(tname), newrec);
+				}
+			}
+
+			xfree(buf);
+		}
+
+		if (eoln) {
+			*eoln = '\n';
+			walk = eoln + 1;
+		}
+		else
+			walk = NULL;
+	}
+
+	if (sendmessage("schedule", NULL, NULL, &scheduleboard, 1, BBTALK_TIMEOUT) != BB_OK)
+		return;
 }
 
 
