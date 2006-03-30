@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-enadis.c,v 1.17 2006-03-12 16:38:32 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-enadis.c,v 1.18 2006-03-30 14:57:10 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -196,8 +196,11 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 					hostname, enabletest[i], username);
 				sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
 			}
-			printf("<tr><td>Enabling host <b>%s</b> test <b>%s</b> : %s</td></tr>\n", 
-				hostname, enabletest[i], ((result == BB_OK) ? "OK" : "Failed"));
+
+			if (preview) {
+				printf("<tr><td>Enabling host <b>%s</b> test <b>%s</b> : %s</td></tr>\n", 
+					hostname, enabletest[i], ((result == BB_OK) ? "OK" : "Failed"));
+			}
 		}
 		break;
 
@@ -213,8 +216,11 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 					hostname, disabletest[i], username, duration*scale, fullmsg);
 				result = sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
 			}
-			printf("<tr><td>Disabling host <b>%s</b> test <b>%s</b>: %s</td></tr>\n", 
-				hostname, disabletest[i], ((result == BB_OK) ? "OK" : "Failed"));
+
+			if (preview) {
+				printf("<tr><td>Disabling host <b>%s</b> test <b>%s</b>: %s</td></tr>\n", 
+					hostname, disabletest[i], ((result == BB_OK) ? "OK" : "Failed"));
+			}
 		}
 		break;
 
@@ -223,15 +229,21 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 			sprintf(hobbitcmd, "schedule %d disable %s.%s %d %s", 
 				(int) schedtime, commafy(hostname), disabletest[i], duration*scale, fullmsg);
 			result = (preview ? 0 : sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT));
-			printf("<tr><td>Scheduling disable of host <b>%s</b> test <b>%s</b> at <b>%s</b>: %s</td></tr>\n", 
-				hostname, disabletest[i], ctime(&schedtime), ((result == BB_OK) ? "OK" : "Failed"));
+
+			if (preview) {
+				printf("<tr><td>Scheduling disable of host <b>%s</b> test <b>%s</b> at <b>%s</b>: %s</td></tr>\n", 
+					hostname, disabletest[i], ctime(&schedtime), ((result == BB_OK) ? "OK" : "Failed"));
+			}
 		}
 		break;
 
 	  case ACT_SCHED_CANCEL:
 		sprintf(hobbitcmd, "schedule cancel %d", cancelid);
 		result = (preview ? 0 : sendmessage(hobbitcmd, NULL, NULL, NULL, 0, BBTALK_TIMEOUT));
-		printf("<tr><td>Canceling job <b>%d</b> : %s</td></tr>\n", cancelid, ((result == BB_OK) ? "OK" : "Failed"));
+
+		if (preview) {
+			printf("<tr><td>Canceling job <b>%d</b> : %s</td></tr>\n", cancelid, ((result == BB_OK) ? "OK" : "Failed"));
+		}
 		break;
 
 	  default:
@@ -307,15 +319,17 @@ int main(int argc, char *argv[])
 	/*
 	 * Ready ... go build the webpage.
 	 */
-	printf("Content-Type: text/html\n\n");
-	printf("<html>\n");
+	printf("Content-Type: text/html\n");
 	if (!preview) {
-		printf("<head>\n<meta http-equiv=\"refresh\" content=\"3; URL=%s\"></head>\n", xgetenv("HTTP_REFERER"));
+		printf("Location: %s\n\n", xgetenv("HTTP_REFERER"));
+	}
+	else {
+		printf("\n");
 	}
 
         /* It's ok with these hardcoded values, as they are not used for this page */
 	sethostenv("", "", "", colorname(COL_BLUE), NULL);
-	headfoot(stdout, "maint", "", "header", COL_BLUE);
+	if (preview) headfoot(stdout, "maintact", "", "header", COL_BLUE);
 
 	if (debug) {
 		printf("<pre>\n");
@@ -356,22 +370,19 @@ int main(int argc, char *argv[])
 		printf("</pre>\n");
 	}
 
-	printf("<table align=\"center\" summary=\"Actions performed\" width=\"60%%\">\n");
+	if (preview) printf("<table align=\"center\" summary=\"Actions performed\" width=\"60%%\">\n");
 	if (action == ACT_SCHED_CANCEL) {
 		do_one_host(NULL, NULL, username);
 	}
 	else {
 		for (i = 0; (i < hostcount); i++) do_one_host(hostnames[i], fullmsg, username);
 	}
-	if (!preview) {
-		printf("<tr><td><br>Please wait while refreshing status list ...</td></tr>\n");
-	}
-	else {
+	if (preview) {
 		printf("<tr><td align=center><br><br><form method=\"GET\" ACTION=\"%s\"><input type=submit value=\"Continue\"></form></td></tr>\n", xgetenv("HTTP_REFERER"));
-	}
-	printf("</table>\n");
+		printf("</table>\n");
 
-	headfoot(stdout, "maint", "", "footer", COL_BLUE);
+		headfoot(stdout, "maintact", "", "footer", COL_BLUE);
+	}
 
 	return 0;
 }
