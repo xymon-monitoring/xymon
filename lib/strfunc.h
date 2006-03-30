@@ -19,6 +19,7 @@ extern void freestrbuffer(strbuffer_t *buf);
 extern char *grabstrbuffer(strbuffer_t *buf);
 extern strbuffer_t *dupstrbuffer(char *src);
 extern void strbufferchop(strbuffer_t *buf, int count);
+extern void strbufferrecalc(strbuffer_t *buf);
 
 #endif
 
