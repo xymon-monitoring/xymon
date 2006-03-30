@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.85 2006-03-29 16:09:29 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.86 2006-03-30 20:04:13 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -692,7 +692,7 @@ void load_state(char *filename, char *statusbuf)
 	initfgets(fd);
 	inbuf = newstrbuffer(0);
 	while (unlimfgets(inbuf, fd)) {
-		p = strchr(STRBUF(inbuf), '\n'); if (p) *p = '\0';
+		sanitize_input(inbuf);
 
 		p = strchr(STRBUF(inbuf), '|');
 		if (p) {

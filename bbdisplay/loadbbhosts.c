@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.38 2006-03-29 16:05:00 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.39 2006-03-30 20:03:25 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -479,22 +479,13 @@ bbgen_page_t *load_bbhosts(char *pgset)
 
 	inbuf = newstrbuffer(0);
 	while (stackfgets(inbuf, "dispinclude")) {
-		p = strchr(STRBUF(inbuf), '\n'); 
-		if (p) {
-			*p = '\0'; 
-		}
-		else {
-			errprintf("Warning: Lines in bb-hosts too long or has no newline: '%s'\n", STRBUF(inbuf));
-		}
+		sanitize_input(inbuf); if (STRBUFLEN(inbuf) == 0) continue;
 
 		dprintf("load_bbhosts: -- got line '%s'\n", STRBUF(inbuf));
 
 		modembanksize = 0;
 
-		if ((*STRBUF(inbuf) == '#') || (STRBUFLEN(inbuf) == 0)) {
-			/* Do nothing - it's a comment */
-		}
-		else if (strncmp(STRBUF(inbuf), pagetag, strlen(pagetag)) == 0) {
+		if (strncmp(STRBUF(inbuf), pagetag, strlen(pagetag)) == 0) {
 			getnamelink(STRBUF(inbuf), &name, &link);
 			if (curpage == NULL) {
 				/* First page - hook it on toppage as a subpage from there */
@@ -809,9 +800,6 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			/* Save the title for the next entry */
 			curtitle = strdup(skipwhitespace(skipword(STRBUF(inbuf))));
 		}
-		else {
-			/* Probably a comment */
-		};
 	}
 
 	stackfclose(bbhosts);

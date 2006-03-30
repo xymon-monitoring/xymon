@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-mailack.c,v 1.12 2006-03-29 16:10:20 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-mailack.c,v 1.13 2006-03-30 20:04:52 henrik Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 	initfgets(stdin);
 	inbuf = newstrbuffer(0);
 	while (unlimfgets(inbuf, stdin)) {
-		p = STRBUF(inbuf) + strcspn(STRBUF(inbuf), "\r\n"); *p = '\0';
+		sanitize_input(inbuf);
 
 		if (!inheaders) {
 			/* We're in the message body. Look for a "delay=N" line here. */
