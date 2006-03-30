@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.51 2006-03-30 19:59:50 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.52 2006-03-30 21:37:04 henrik Exp $";
 
 #include "config.h"
 
@@ -267,62 +267,56 @@ char *wstok(char *s)
 }
 
 
-void sanitize_input(strbuffer_t *l)
+void sanitize_input(strbuffer_t *l, int stripcomment)
 {
+	int i;
+
 	/*
 	 * This routine sanitizes an input line, stripping off leading/trailing whitespace and comments.
 	 */
-	char *p, *inp, *outp;
-	int inquote, inhyphen, count;
 
-	count = strcspn(STRBUF(l), "\r\n");
-	if (count != STRBUFLEN(l)) strbufferchop(l, (STRBUFLEN(l)-count));
+	/* Kill comments */
+	if (stripcomment && strchr(STRBUF(l), '#')) {
+		char *p, *commentstart = NULL;
+		int inquote = 0;
 
-	/* Remove comments and leading whitespace */
-	count = strspn(STRBUF(l), " \t");
-	if (count) {
-		memmove(l->s, l->s+count, STRBUFLEN(l)-count+1);
-		l->used = count;
+		p = STRBUF(l) + strcspn(STRBUF(l), "\"'#");
+		while (*p && (commentstart == NULL)) {
+			switch (*p) {
+			  case '"': 
+			  case '\'':
+				inquote = (1 - inquote);
+			  	break;
+
+			  case '#':
+				if (!inquote) commentstart = p;
+				break;
+			}
+
+			p += 1+strcspn(p+1, "\"'#");
+		}
+
+		if (commentstart) strbufferchop(l, STRBUFLEN(l) - (commentstart - STRBUF(l)));
 	}
 
-	if ((*STRBUF(l) == '#') || (STRBUFLEN(l) == 0)){
-		/* Comment line */
-		clearstrbuffer(l);
-		return;
+	/* Kill a trailing CR/NL */
+	i = strcspn(STRBUF(l), "\r\n");
+	if (i != STRBUFLEN(l)) strbufferchop(l, STRBUFLEN(l)-i);
+
+	/* Kill trailing whitespace */
+	i = STRBUFLEN(l);
+	while ((i > 0) && isspace((int)(*(STRBUF(l)+i-1)))) i--;
+	if (i != STRBUFLEN(l)) strbufferchop(l, STRBUFLEN(l)-i);
+
+	/* Kill leading whitespace */
+	i = strspn(STRBUF(l), " \t");
+	if (i > 0) {
+		memmove(STRBUF(l), STRBUF(l)+i, STRBUFLEN(l)-i);
+		strbufferchop(l, i);
 	}
 
-	inp = outp = STRBUF(l);
-	inquote = inhyphen = 0;
-	while (*inp) {
-		if (*inp == '"') {
-			inquote = (1 - inquote);
-			if (outp != inp) *outp = *inp;
-			inp++; outp++;
-		}
-		else if (*inp == '\'') {
-			inhyphen = (1 - inhyphen);
-			if (outp != inp) *outp = *inp;
-			inp++; outp++;
-		}
-		else if ((*inp == '#') && !inquote && !inhyphen) {
-			*outp = '\0';
-			inp = outp;
-		}
-		else {
-			if (outp != inp) *outp = *inp;
-			inp++; outp++;
-		}
-	}
-	*outp = '\0';
-
-	/* Remove trailing whitespace */
-	p = outp;
-	while ((p > STRBUF(l)) && (isspace((int) *(p-1)))) p--;
-	*p = '\0';
-
-	/* Must re-calc this */
-	l->used = strlen(l->s);
 }
+
 
 void grok_input(strbuffer_t *l)
 {

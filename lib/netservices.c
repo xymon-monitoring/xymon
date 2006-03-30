@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: netservices.c,v 1.10 2006-03-30 19:59:50 henrik Exp $";
+static char rcsid[] = "$Id: netservices.c,v 1.11 2006-03-30 21:37:04 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -176,7 +176,7 @@ char *init_tcp_services(void)
 	while (unlimfgets(inbuf, fd)) {
 		char *l, *eol;
 
-		sanitize_input(inbuf);
+		sanitize_input(inbuf, 1);
 		l = STRBUF(inbuf);
 
 		if (*l == '[') {

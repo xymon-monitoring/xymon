@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.36 2006-03-30 20:02:26 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.37 2006-03-30 21:37:04 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -206,8 +206,7 @@ void load_config(char *conffn)
 
 	inbuf = newstrbuffer(0);
 	while (stackfgets(inbuf, NULL)) {
-		sanitize_input(inbuf);
-		if ((STRBUFLEN(inbuf) == 0) || (*STRBUF(inbuf) == '#')) continue;
+		sanitize_input(inbuf, 1); if (STRBUFLEN(inbuf) == 0) continue;
 
 		p = STRBUF(inbuf);
 		if (*p == '[') {

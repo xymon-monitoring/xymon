@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: url.c,v 1.16 2006-03-30 19:59:50 henrik Exp $";
+static char rcsid[] = "$Id: url.c,v 1.17 2006-03-30 21:37:04 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -189,7 +189,7 @@ static void load_netrc(void)
 	initfgets(fd);
 	inbuf = newstrbuffer(0);
 	while (unlimfgets(inbuf, fd)) {
-		sanitize_input(inbuf);
+		sanitize_input(inbuf, 0);
 
 		if (STRBUFLEN(inbuf) != 0) {
 			p = strtok(STRBUF(inbuf), " \t");
