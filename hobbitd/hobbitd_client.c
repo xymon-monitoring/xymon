@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.49 2006-03-29 21:21:28 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.50 2006-03-30 20:05:58 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -708,6 +708,14 @@ void sig_handler(int signum)
 	}
 }
 
+void clean_instr(char *s)
+{
+	char *p;
+
+	p = s + strcspn(s, "\r\n");
+	*p = '\0';
+}
+
 int main(int argc, char *argv[])
 {
 	char *msg;
@@ -756,7 +764,7 @@ int main(int argc, char *argv[])
 				while (!hinfo) {
 					printf("Hostname (.=end, ?=dump, !=reload) [%s]: ", hostname); 
 					fflush(stdout); fgets(hostname, sizeof(hostname), stdin);
-					sanitize_input(hostname);
+					clean_instr(hostname);
 
 					if (strlen(hostname) == 0) {
 						hinfo = oldhinfo;
@@ -781,7 +789,7 @@ int main(int argc, char *argv[])
 				oldhinfo = hinfo;
 
 				printf("Test (cpu, mem, disk, proc): "); fflush(stdout); 
-				fgets(s, sizeof(s), stdin); sanitize_input(s);
+				fgets(s, sizeof(s), stdin); clean_instr(s);
 				if (strcmp(s, "cpu") == 0) {
 					float loadyellow, loadred;
 					int recentlimit, ancientlimit;
@@ -806,7 +814,7 @@ int main(int argc, char *argv[])
 					int absolutes;
 
 					printf("Filesystem: "); fflush(stdout);
-					fgets(s, sizeof(s), stdin); sanitize_input(s);
+					fgets(s, sizeof(s), stdin); clean_instr(s);
 					cfid = get_disk_thresholds(hinfo, s, &warnlevel, &paniclevel, &absolutes);
 					printf("Yellow at %lu%c, red at %lu%c\n", 
 						warnlevel, ((absolutes & 1) ? 'K' : '%'),
@@ -825,11 +833,11 @@ int main(int argc, char *argv[])
 
 					do {
 						printf("ps command string: "); fflush(stdout);
-						fgets(s, sizeof(s), stdin); sanitize_input(s);
+						fgets(s, sizeof(s), stdin); clean_instr(s);
 						if (*s == '@') {
 							fd = fopen(s+1, "r");
 							while (fd && fgets(s, sizeof(s), fd)) {
-								sanitize_input(s);
+								clean_instr(s);
 								if (*s) add_process_count(s);
 							}
 							fclose(fd);
