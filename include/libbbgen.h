@@ -64,6 +64,7 @@ typedef struct strbuffer_t {
 #include "../lib/sendmsg.h"
 #include "../lib/sig.h"
 #include "../lib/stackio.h"
+#include "../lib/strfunc.h"
 #include "../lib/timefunc.h"
 #include "../lib/timing.h"
 #include "../lib/url.h"
