@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.45 2006-03-25 22:48:47 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.46 2006-03-30 14:56:17 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -55,10 +55,24 @@ static char *pagepattern_text = NULL;
 static pcre *pagepattern = NULL;
 static char *ippattern_text = NULL;
 static pcre *ippattern = NULL;
-static char **hostlist = NULL;
-static int hostcount = 0;
-static char **testlist = NULL;
-static int testcount = 0;
+static RbtHandle hostnames;
+static RbtHandle testnames;
+
+typedef struct treerec_t {
+	char *name;
+	int flag;
+} treerec_t;
+
+static void clearflags(RbtHandle tree)
+{
+	RbtIterator handle;
+	treerec_t *rec;
+
+	for (handle = rbtBegin(tree); (handle != rbtEnd(tree)); handle = rbtNext(tree, handle)) {
+		rec = (treerec_t *)gettreeitem(tree, handle);
+		rec->flag = 0;
+	}
+}
 
 void sethostenv(char *host, char *ip, char *svc, char *color, char *hikey)
 {
@@ -250,64 +264,43 @@ char *wkdayselect(char wkday, char *valtxt, int isdefault)
 	return result;
 }
 
-static int namecompare(const void *v1, const void *v2)
-{
-	char **n1 = (char **)v1;
-	char **n2 = (char **)v2;
-	int result;
-
-	result = strcmp(*n1, *n2);
-
-	return result;
-}
 
 static void fetch_board(void)
 {
+	static int haveboard = 0;
 	char *walk, *eoln;
-	int i;
+
+	if (haveboard) return;
 
 	if (sendmessage("hobbitdboard fields=hostname,testname,disabletime,dismsg", 
 			NULL, NULL, &statusboard, 1, BBTALK_TIMEOUT) != BB_OK)
 		return;
 
+	haveboard = 1;
+
+	hostnames = rbtNew(name_compare);
+	testnames = rbtNew(name_compare);
 	walk = statusboard;
 	while (walk) {
 		eoln = strchr(walk, '\n'); if (eoln) *eoln = '\0';
 		if (strlen(walk) && (strncmp(walk, "summary|", 8) != 0) && (strncmp(walk, "dialup|", 7) != 0)) {
 			char *buf, *hname = NULL, *tname = NULL;
+			treerec_t *newrec;
 
 			buf = strdup(walk);
 
 			hname = gettok(buf, "|");
 			if (hname) tname = gettok(NULL, "|");
 
-			if (hostcount == 0) {
-				hostcount++;
-				hostlist = (char **)malloc(sizeof(char *));
-				hostlist[0] = strdup(hname);
-			}
-			else {
-				for (i = 0; ((i < hostcount) && strcmp(hname, hostlist[i])); i++) ;
-				if (i == hostcount) {
-					hostcount++;
-					hostlist = (char **)realloc(hostlist, hostcount * sizeof(char *));
-					hostlist[hostcount-1] = strdup(hname);
-				}
-			}
+			newrec = (treerec_t *)malloc(sizeof(treerec_t));
+			newrec->name = strdup(hname);
+			newrec->flag = 0;
+			rbtInsert(hostnames, newrec->name, newrec);
 
-			if (testcount == 0) {
-				testcount++;
-				testlist = (char **)malloc(sizeof(char *));
-				testlist[0] = strdup(tname);
-			}
-			else {
-				for (i = 0; ((i < testcount) && strcmp(tname, testlist[i])); i++) ;
-				if (i == testcount) {
-					testcount++;
-					testlist = (char **)realloc(testlist, testcount * sizeof(char *));
-					testlist[testcount-1] = strdup(tname);
-				}
-			}
+			newrec = (treerec_t *)malloc(sizeof(treerec_t));
+			newrec->name = strdup(tname);
+			newrec->flag = 0;
+			rbtInsert(testnames, strdup(tname), newrec);
 
 			xfree(buf);
 		}
@@ -319,9 +312,6 @@ static void fetch_board(void)
 		else
 			walk = NULL;
 	}
-
-	if (hostcount) qsort(hostlist, hostcount, sizeof(char *), namecompare);
-	if (testcount) qsort(testlist, testcount, sizeof(char *), namecompare);
 
 	if (sendmessage("schedule", NULL, NULL, &scheduleboard, 1, BBTALK_TIMEOUT) != BB_OK)
 		return;
@@ -607,40 +597,43 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			if (ippattern_text) fprintf(output, "%s", ippattern_text);
 		}
 		else if (strcmp(t_start, "HOSTLIST") == 0) {
-			int i;
+			RbtIterator handle;
+			treerec_t *rec;
 
-			if (!hostlist) fetch_board();
+			fetch_board();
 
-			for (i = 0; (i < hostcount); i++) {
-				if (wanted_host(hostlist[i])) {
-					fprintf(output, "<OPTION VALUE=\"%s\">%s</OPTION>\n", hostlist[i], hostlist[i]);
+			for (handle = rbtBegin(hostnames); (handle != rbtEnd(hostnames)); handle = rbtNext(hostnames, handle)) {
+				rec = (treerec_t *)gettreeitem(hostnames, handle);
+
+				if (wanted_host(rec->name)) {
+					fprintf(output, "<OPTION VALUE=\"%s\">%s</OPTION>\n", rec->name, rec->name);
 				}
 			}
 		}
 		else if (strcmp(t_start, "JSHOSTLIST") == 0) {
-			int i, tcount, tidx;
-			char **tlist;
+			RbtIterator handle;
 
-			if (!hostlist) fetch_board();
-
-			tlist = malloc((testcount+1) * sizeof(char *));
+			fetch_board();
+			clearflags(testnames);
 
 			fprintf(output, "var hosts = new Array();\n");
 			fprintf(output, "hosts[\"ALL\"] = [ \"ALL\"");
-			for (tidx = 0; (tidx < testcount); tidx++) {
-				fprintf(output, ", \"%s\"", testlist[tidx]);
+			for (handle = rbtBegin(testnames); (handle != rbtEnd(testnames)); handle = rbtNext(testnames, handle)) {
+				treerec_t *rec = gettreeitem(testnames, handle);
+				fprintf(output, ", \"%s\"", rec->name);
 			}
 			fprintf(output, " ];\n");
 
-			for (i = 0; (i < hostcount); i++) {
-				if (wanted_host(hostlist[i])) {
+			for (handle = rbtBegin(hostnames); (handle != rbtEnd(hostnames)); handle = rbtNext(hostnames, handle)) {
+				treerec_t *hrec = gettreeitem(hostnames, handle);
+				if (wanted_host(hrec->name)) {
+					RbtIterator thandle;
+					treerec_t *trec;
 					char *bwalk, *tname, *p;
-					char *key = (char *)malloc(strlen(hostlist[i]) + 3);
-
-					tcount = 0;
+					char *key = (char *)malloc(strlen(hrec->name) + 3);
 
 					/* Setup the search key and find the first occurrence. */
-					sprintf(key, "\n%s|", hostlist[i]);
+					sprintf(key, "\n%s|", hrec->name);
 					if (strncmp(statusboard, (key+1), strlen(key+1)) == 0)
 						bwalk = statusboard;
 					else {
@@ -653,44 +646,47 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 						p = strchr(tname, '|'); if (p) *p = '\0';
 						if ( (strcmp(tname, xgetenv("INFOCOLUMN")) != 0) &&
 						     (strcmp(tname, xgetenv("TRENDSCOLUMN")) != 0) ) {
-							tlist[tcount++] = strdup(tname);
+							thandle = rbtFind(testnames, tname);
+							if (thandle != rbtEnd(testnames)) {
+								trec = (treerec_t *)gettreeitem(testnames, thandle);
+								trec->flag = 1;
+							}
 						}
 						if (p) *p = '|';
 
 						bwalk = strstr(tname, key); if (bwalk) bwalk++;
 					}
-					if (tcount) qsort(tlist, tcount, sizeof(char *), namecompare);
 
-					fprintf(output, "hosts[\"%s\"] = [ \"ALL\"", hostlist[i]);
-					for (tidx = 0; (tidx < tcount); tidx++) {
-						fprintf(output, ", \"%s\"", tlist[tidx]);
-						xfree(tlist[tidx]);
+					fprintf(output, "hosts[\"%s\"] = [ \"ALL\"", hrec->name);
+					for (thandle = rbtBegin(testnames); (thandle != rbtEnd(testnames)); thandle = rbtNext(testnames, thandle)) {
+						trec = (treerec_t *)gettreeitem(testnames, thandle);
+						if (trec->flag == 0) continue;
+
+						trec->flag = 0;
+						fprintf(output, ", \"%s\"", trec->name);
 					}
 					fprintf(output, " ];\n");
-
-					xfree(key);
 				}
 			}
-
-			xfree(tlist);
 		}
 		else if (strcmp(t_start, "TESTLIST") == 0) {
-			int i;
+			RbtIterator handle;
+			treerec_t *rec;
 
-			if (!testlist) fetch_board();
+			fetch_board();
 
-			for (i = 0; (i < testcount); i++) {
-				fprintf(output, "<OPTION VALUE=\"%s\">%s</OPTION>\n", testlist[i], testlist[i]);
+			for (handle = rbtBegin(testnames); (handle != rbtEnd(testnames)); handle = rbtNext(testnames, handle)) {
+				rec = (treerec_t *)gettreeitem(testnames, handle);
+				fprintf(output, "<OPTION VALUE=\"%s\">%s</OPTION>\n", rec->name, rec->name);
 			}
 		}
 		else if (strcmp(t_start, "DISABLELIST") == 0) {
 			char *walk, *eoln;
 			dishost_t *dhosts = NULL, *hwalk, *hprev;
 			distest_t *twalk;
-			char **alltests = NULL;
-			int alltestcount = 0, i;
 
-			if (!statusboard || !hostlist) fetch_board();
+			fetch_board();
+			clearflags(testnames);
 
 			walk = statusboard;
 			while (walk) {
@@ -698,6 +694,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 				if (*walk) {
 					char *buf, *hname, *tname, *dismsg, *p;
 					time_t distime;
+					RbtIterator thandle;
+					treerec_t *rec;
 
 					buf = strdup(walk);
 					hname = tname = dismsg = NULL; distime = 0;
@@ -732,15 +730,10 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 						twalk->next = hwalk->tests;
 						hwalk->tests = twalk;
 
-						for (i=0; ((i < alltestcount) && strcmp(alltests[i], tname)); i++) ;
-						if (i == alltestcount) {
-							if (alltests == NULL) {
-								alltests = (char **)malloc(sizeof(char *));
-							}
-							else {
-								alltests = (char **)realloc(alltests, (alltestcount+1)*sizeof(char *));
-							}
-							alltests[alltestcount++] = strdup(tname);
+						thandle = rbtFind(testnames, tname);
+						if (thandle != rbtEnd(testnames)) {
+							rec = gettreeitem(testnames, thandle);
+							rec->flag = 1;
 						}
 					}
 
@@ -757,8 +750,6 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			}
 
 			if (dhosts) {
-				if (alltestcount) qsort(alltests, alltestcount, sizeof(char *), namecompare);
-
 				/* Insert the "All hosts" record first. */
 				hwalk = (dishost_t *)calloc(1, sizeof(dishost_t));
 				hwalk->next = dhosts;
@@ -815,10 +806,15 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 						}
 					}
 					else {
-						int i;
-						for (i = 0; (i < alltestcount); i++) {
+						RbtIterator tidx;
+						treerec_t *rec;
+
+						for (tidx = rbtBegin(testnames); (tidx != rbtEnd(testnames)); tidx = rbtNext(testnames, tidx)) {
+							rec = gettreeitem(testnames, tidx);
+							if (rec->flag == 0) continue;
+
 							fprintf(output, "<option value=\"%s\">%s</option>\n",
-								alltests[i], alltests[i]);
+								rec->name, rec->name);
 						}
 					}
 					fprintf(output, "</select>\n");
@@ -844,7 +840,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			char *walk, *eoln;
 			int gotany = 0;
 
-			if (!scheduleboard) fetch_board();
+			fetch_board();
 
 			walk = scheduleboard;
 			while (walk) {
