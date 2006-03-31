@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: strfunc.c,v 1.3 2006-03-30 19:59:50 henrik Exp $";
+static char rcsid[] = "$Id: strfunc.c,v 1.4 2006-03-31 16:36:54 henrik Exp $";
 
 #include "config.h"
 
@@ -22,6 +22,7 @@ static char rcsid[] = "$Id: strfunc.c,v 1.3 2006-03-30 19:59:50 henrik Exp $";
 #include "libbbgen.h"
 #include "version.h"
 
+#define BUFSZINCREMENT 4096
 
 strbuffer_t *newstrbuffer(int initialsize)
 {
@@ -85,12 +86,12 @@ static void strbuf_addtobuffer(strbuffer_t *buf, char *newtext, int newlen)
 {
 	if (buf->s == NULL) {
 		buf->used = 0;
-		buf->sz = newlen + 512;
+		buf->sz = newlen + BUFSZINCREMENT;
 		buf->s = (char *) malloc(buf->sz);
 		*(buf->s) = '\0';
 	}
 	else if ((buf->used + newlen + 1) > buf->sz) {
-		buf->sz += (newlen + 512);
+		buf->sz += (newlen + BUFSZINCREMENT);
 		buf->s = (char *) realloc(buf->s, buf->sz);
 	}
 
