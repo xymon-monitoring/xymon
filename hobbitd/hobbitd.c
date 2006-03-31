@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.216 2006-03-29 16:12:23 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.217 2006-03-31 15:24:08 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -1872,6 +1872,9 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		if (testhandle == rbtEnd(rbtests)) {
 			newt = strdup(n2);
 			rbtInsert(rbtests, newt, newt);
+		}
+		else {
+			newt = gettreeitem(rbtests, testhandle);
 		}
 		lwalk->test = newt;
 		break;
