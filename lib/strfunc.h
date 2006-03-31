@@ -12,6 +12,7 @@
 #define __STRFUNC_H__
 
 extern strbuffer_t *newstrbuffer(int initialsize);
+extern strbuffer_t *convertstrbuffer(char *buffer, int bufsz);
 extern void addtobuffer(strbuffer_t *buf, char *newtext);
 extern void addtostrbuffer(strbuffer_t *buf, strbuffer_t *newtext);
 extern void clearstrbuffer(strbuffer_t *buf);
