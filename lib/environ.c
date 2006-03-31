@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.31 2006-03-30 19:59:50 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.32 2006-03-31 15:21:22 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -205,25 +205,26 @@ void envcheck(char *envvars[])
 void loadenv(char *envfile, char *area)
 {
 	FILE *fd;
-	strbuffer_t *inbuf = newstrbuffer(0);
+	strbuffer_t *inbuf;
 	char *p, *oneenv;
 	int n;
 
 	MEMDEFINE(l);
+	inbuf = newstrbuffer(0);
 
 	fd = stackfopen(envfile, "r", NULL);
 	if (fd) {
 		while (stackfgets(inbuf, NULL)) {
-			grok_input(inbuf);
+			sanitize_input(inbuf, 1, 1);
 
 			if (STRBUFLEN(inbuf) && strchr(STRBUF(inbuf), '=')) {
-				oneenv = NULL;
-
 				/*
 				 * Do the environment "area" stuff: If the input
 				 * is of the form AREA/NAME=VALUE, then setup the variable
 				 * only if we're called with the correct AREA setting.
 				 */
+				oneenv = NULL;
+
 				p = STRBUF(inbuf) + strcspn(STRBUF(inbuf), "=/");
 				if (*p == '/') {
 					if (area) {
@@ -246,12 +247,12 @@ void loadenv(char *envfile, char *area)
 			}
 		}
 		stackfclose(fd);
-		freestrbuffer(inbuf);
 	}
 	else {
 		errprintf("Cannot open env file %s - %s\n", envfile, strerror(errno));
 	}
 
+	freestrbuffer(inbuf);
 	MEMUNDEFINE(l);
 }
 
