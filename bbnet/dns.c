@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.26 2006-03-29 21:48:23 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.27 2006-03-31 08:01:33 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -290,6 +290,7 @@ int dns_test_server(char *serverip, char *hostname, strbuffer_t *banner)
 		char *p, *tlookup;
 		int atype = T_A;
 
+		newtest->msgbuf = newstrbuffer(0);
 		newtest->next = NULL;
 		if (responses == NULL) responses = newtest; else walk->next = newtest;
 		walk = newtest;
