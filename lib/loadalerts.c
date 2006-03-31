@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadalerts.c,v 1.7 2006-03-30 21:37:04 henrik Exp $";
+static char rcsid[] = "$Id: loadalerts.c,v 1.8 2006-03-31 15:22:52 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -274,7 +274,7 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 		recip_t *curlinerecips = NULL;
 
 		cfid++;
-		sanitize_input(inbuf, 1);
+		sanitize_input(inbuf, 1, 0);
 
 		/* Skip empty lines */
 		if (STRBUFLEN(inbuf) == 0) continue;

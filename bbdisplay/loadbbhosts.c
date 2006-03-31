@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.40 2006-03-30 21:37:04 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.41 2006-03-31 15:22:52 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -479,7 +479,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 
 	inbuf = newstrbuffer(0);
 	while (stackfgets(inbuf, "dispinclude")) {
-		sanitize_input(inbuf, 0); if (STRBUFLEN(inbuf) == 0) continue;
+		sanitize_input(inbuf, 0, 0); if (STRBUFLEN(inbuf) == 0) continue;
 
 		dprintf("load_bbhosts: -- got line '%s'\n", STRBUF(inbuf));
 

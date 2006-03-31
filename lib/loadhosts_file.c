@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.20 2006-03-30 21:37:04 henrik Exp $";
+static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.21 2006-03-31 15:22:52 henrik Exp $";
 
 static int get_page_name_title(char *buf, char *key, char **name, char **title)
 {
@@ -82,7 +82,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 	inbuf = newstrbuffer(0);
 	htree = rbtNew(name_compare);
 	while (stackfgets(inbuf, extrainclude)) {
-		sanitize_input(inbuf, 0);
+		sanitize_input(inbuf, 0, 0);
 
 		if (strncmp(STRBUF(inbuf), "page ", 5) == 0) {
 			pagelist_t *newp;

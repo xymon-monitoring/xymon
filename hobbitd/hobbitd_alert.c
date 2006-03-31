@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.76 2006-03-30 21:37:04 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.77 2006-03-31 15:22:52 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -269,7 +269,7 @@ void load_checkpoint(char *filename)
 		char *item[20], *p;
 		int i;
 
-		sanitize_input(inbuf, 0);
+		sanitize_input(inbuf, 0, 0);
 
 		i = 0; p = gettok(STRBUF(inbuf), "|");
 		while (p && (i < 20)) {
