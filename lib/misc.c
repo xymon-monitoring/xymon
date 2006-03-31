@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.52 2006-03-30 21:37:04 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.53 2006-03-31 15:34:55 henrik Exp $";
 
 #include "config.h"
 
@@ -267,33 +267,46 @@ char *wstok(char *s)
 }
 
 
-void sanitize_input(strbuffer_t *l, int stripcomment)
+void sanitize_input(strbuffer_t *l, int stripcomment, int unescape)
 {
 	int i;
 
 	/*
-	 * This routine sanitizes an input line, stripping off leading/trailing whitespace and comments.
+	 * This routine sanitizes an input line, stripping off leading/trailing whitespace.
+	 * If requested, it also strips comments.
+	 * If requested, it also un-escapes \-escaped charactes.
 	 */
 
 	/* Kill comments */
-	if (stripcomment && strchr(STRBUF(l), '#')) {
+	if (stripcomment || unescape) {
 		char *p, *commentstart = NULL;
+		char *noquotemarkers = (unescape ? "\"'#\\" : "\"'#");
+		char *inquotemarkers = (unescape ? "\"'\\" : "\"'");
 		int inquote = 0;
 
-		p = STRBUF(l) + strcspn(STRBUF(l), "\"'#");
+		p = STRBUF(l) + strcspn(STRBUF(l), noquotemarkers);
 		while (*p && (commentstart == NULL)) {
 			switch (*p) {
+			  case '\\':
+				if (inquote)
+					p += 2+strcspn(p+2, inquotemarkers);
+				else
+					p += 2+strcspn(p+2, noquotemarkers);
+				break;
+
 			  case '"': 
 			  case '\'':
 				inquote = (1 - inquote);
+				if (inquote)
+					p += 1+strcspn(p+1, inquotemarkers);
+				else
+					p += 1+strcspn(p+1, noquotemarkers);
 			  	break;
 
 			  case '#':
 				if (!inquote) commentstart = p;
 				break;
 			}
-
-			p += 1+strcspn(p+1, "\"'#");
 		}
 
 		if (commentstart) strbufferchop(l, STRBUFLEN(l) - (commentstart - STRBUF(l)));
@@ -315,90 +328,18 @@ void sanitize_input(strbuffer_t *l, int stripcomment)
 		strbufferchop(l, i);
 	}
 
-}
+	if (unescape) {
+		char *p;
 
-
-void grok_input(strbuffer_t *l)
-{
-	/*
-	 * This routine sanitizes an input line, stripping off whitespace,
-	 * removing comments and un-escaping \-escapes and quotes.
-	 */
-	char *p, *outp;
-	int inquote, inhyphen;
-
-	p = strchr(STRBUF(l), '\n'); if (p) *p = '\0';
-
-	/* Remove quotes, comments and leading whitespace */
-	p = STRBUF(l) + strspn(STRBUF(l), " \t"); outp = STRBUF(l); inquote = inhyphen = 0;
-	while (*p) {
-		if (*p == '\\') {
-			*outp = *(p+1);
-			outp++; p += 2;
-		}
-		else if (*p == '"') {
-			inquote = (1 - inquote);
-			p++;
-		}
-		else if (*p == '\'') {
-			inhyphen = (1 - inhyphen);
-			p++;
-		}
-		else if ((*p == '#') && !inquote && !inhyphen) {
-			*p = '\0';
-		}
-		else {
-			if (outp != p) *outp = *p;
-			outp++; p++;
+		p = STRBUF(l) + strcspn(STRBUF(l), "\\");
+		while (*p) {
+			memmove(p, p+1, STRBUFLEN(l)-(p-STRBUF(l)));
+			strbufferchop(l, 1);
+			p = p + 1 + strcspn(p+1, "\\");
 		}
 	}
-
-	/* Remove trailing whitespace */
-	while ((outp > STRBUF(l)) && (isspace((int) *(outp-1)))) outp--;
-	*outp = '\0';
-
-	l->used = strlen(l->s);
 }
 
-void grok_input_s(char *l)
-{
-	/*
-	 * This routine sanitizes an input line, stripping off whitespace,
-	 * removing comments and un-escaping \-escapes and quotes.
-	 */
-	char *p, *outp;
-	int inquote, inhyphen;
-
-	p = strchr(l, '\n'); if (p) *p = '\0';
-
-	/* Remove quotes, comments and leading whitespace */
-	p = l + strspn(l, " \t"); outp = l; inquote = inhyphen = 0;
-	while (*p) {
-		if (*p == '\\') {
-			*outp = *(p+1);
-			outp++; p += 2;
-		}
-		else if (*p == '"') {
-			inquote = (1 - inquote);
-			p++;
-		}
-		else if (*p == '\'') {
-			inhyphen = (1 - inhyphen);
-			p++;
-		}
-		else if ((*p == '#') && !inquote && !inhyphen) {
-			*p = '\0';
-		}
-		else {
-			if (outp != p) *outp = *p;
-			outp++; p++;
-		}
-	}
-
-	/* Remove trailing whitespace */
-	while ((outp > l) && (isspace((int) *(outp-1)))) outp--;
-	*outp = '\0';
-}
 
 unsigned int IPtou32(int ip1, int ip2, int ip3, int ip4)
 {
@@ -608,6 +549,44 @@ void do_bbext(FILE *output, char *extenv, char *family)
 	MEMUNDEFINE(buf);
 }
 
+static void clean_cmdarg(char *l)
+{
+	/*
+	 * This routine sanitizes commandline argument, stripping off whitespace,
+	 * removing comments and un-escaping \-escapes and quotes.
+	 */
+	char *p, *outp;
+	int inquote, inhyphen;
+
+	/* Remove quotes, comments and leading whitespace */
+	p = l + strspn(l, " \t"); outp = l; inquote = inhyphen = 0;
+	while (*p) {
+		if (*p == '\\') {
+			*outp = *(p+1);
+			outp++; p += 2;
+		}
+		else if (*p == '"') {
+			inquote = (1 - inquote);
+			p++;
+		}
+		else if (*p == '\'') {
+			inhyphen = (1 - inhyphen);
+			p++;
+		}
+		else if ((*p == '#') && !inquote && !inhyphen) {
+			*p = '\0';
+		}
+		else {
+			if (outp != p) *outp = *p;
+			outp++; p++;
+		}
+	}
+
+	/* Remove trailing whitespace */
+	while ((outp > l) && (isspace((int) *(outp-1)))) outp--;
+	*outp = '\0';
+}
+
 char **setup_commandargs(char *cmdline, char **cmd)
 {
 	/*
@@ -629,6 +608,9 @@ char **setup_commandargs(char *cmdline, char **cmd)
 	argsz = 1; cmdargs = (char **) malloc((1+argsz)*sizeof(char *)); argi = 0;
 	cmdcp = strdup(expand_env(cmdline));
 
+	/* Kill a trailing CR/NL */
+	barg = cmdcp + strcspn(cmdcp, "\r\n"); *barg = '\0';
+
 	barg = cmdcp;
 	do {
 		earg = barg; argdone = 0; inquote = inhyphen = 0;
@@ -644,7 +626,7 @@ char **setup_commandargs(char *cmdline, char **cmd)
 		savech = *earg;
 		*earg = '\0';
 
-		grok_input_s(barg);
+		clean_cmdarg(barg);
 		eqchar = strchr(barg, '=');
 		if (eqchar && (eqchar == (barg + strspn(barg, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")))) {
 			/* It's an environment definition */
