@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.26 2006-03-12 16:38:32 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.27 2006-04-01 08:26:37 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -154,7 +154,8 @@ int main(int argc, char *argv[])
 		printf("<td align=left><font color=red>%s</font></td></tr>\n", re_errstr);
 	} else {
 
-	       	for (hostwalk=hosthead; (hostwalk); hostwalk = hostwalk->next) {
+		hostwalk = hosthead;
+		while (hostwalk) {
 			/* 
 			 * [wm] - Allow the search to be done on the hostname
 			 * 	also on the "displayname" and the host comment
@@ -195,6 +196,10 @@ int main(int argc, char *argv[])
 				printf("</td>\n</tr>\n");
 	
 				gotany++;
+				hostwalk = clonewalk;
+			}
+			else {
+				hostwalk = hostwalk->next;
 			}
 		}
 
