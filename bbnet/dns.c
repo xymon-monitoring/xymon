@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.27 2006-03-31 08:01:33 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.28 2006-04-01 23:05:52 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -56,12 +56,25 @@ typedef struct dnsitem_t {
 	struct timeval resolvetime;
 } dnsitem_t;
 
-static dnsitem_t *dnscache = NULL;
+static RbtHandle dnscache;
+static int dnscachepreped = 0;
+
+
+static void prepare_dnscache(void)
+{
+	if (dnscachepreped) return;
+
+	dnscache = rbtNew(name_compare);
+	dnscachepreped = 1;
+}
 
 static char *find_dnscache(char *hostname)
 {
 	struct in_addr inp;
+	RbtIterator handle;
 	dnsitem_t *dnsc;
+
+	if (!dnscachepreped) prepare_dnscache();
 
 	if (inet_aton(hostname, &inp) != 0) {
 		/* It is an IP, so just use that */
@@ -69,11 +82,11 @@ static char *find_dnscache(char *hostname)
 	}
 
 	/* In the cache ? */
-	for (dnsc = dnscache; (dnsc && (strcmp(dnsc->name, hostname) != 0)); dnsc = dnsc->next);
-	if (dnsc) return inet_ntoa(dnsc->addr);
+	handle = rbtFind(dnscache, hostname);
+	if (handle == rbtEnd(dnscache)) return NULL;
 
-	/* No such name */
-	return NULL;
+	dnsc = (dnsitem_t *)gettreeitem(dnscache, handle);
+	return inet_ntoa(dnsc->addr);
 }
 
 
@@ -103,6 +116,8 @@ void add_host_to_dns_queue(char *hostname)
 {
 	struct timezone tz;
 
+	if (!dnscachepreped) prepare_dnscache();
+
 	if (stdchannelactive && (pending_dns_count >= max_dns_per_run)) {
 		dns_queue_run(stdchannel);
 		pending_dns_count = 0;
@@ -129,10 +144,8 @@ void add_host_to_dns_queue(char *hostname)
 		}
 
 		dnsc->name = strdup(hostname);
-		dnsc->failed = 0;
-		dnsc->next = dnscache;
 		gettimeofday(&dnsc->resolvetime, &tz);
-		dnscache = dnsc;
+		rbtInsert(dnscache, dnsc->name, dnsc);
 
 		if (use_ares_lookup) {
 			ares_gethostbyname(stdchannel, hostname, AF_INET, dns_callback, dnsc);
@@ -161,6 +174,8 @@ void add_host_to_dns_queue(char *hostname)
 void add_url_to_dns_queue(char *url)
 {
 	bburl_t bburl;
+
+	if (!dnscachepreped) prepare_dnscache();
 
 	decode_url(url, &bburl);
 
@@ -227,6 +242,8 @@ static void dns_queue_run(ares_channel channel)
 
 void flush_dnsqueue(void)
 {
+	if (!dnscachepreped) prepare_dnscache();
+
 	if (stdchannelactive) {
 		dns_queue_run(stdchannel);
 		stdchannelactive = 0;
@@ -236,6 +253,8 @@ void flush_dnsqueue(void)
 char *dnsresolve(char *hostname)
 {
 	char *result;
+
+	if (!dnscachepreped) prepare_dnscache();
 
 	if (hostname == NULL) return NULL;
 
@@ -266,6 +285,8 @@ int dns_test_server(char *serverip, char *hostname, strbuffer_t *banner)
 	dns_resp_t *responses = NULL;
 	dns_resp_t *walk = NULL;
 	int i;
+
+	if (!dnscachepreped) prepare_dnscache();
 
 	if (inet_aton(serverip, &serveraddr) == 0) {
 		errprintf("dns_test_server: serverip '%s' not a valid IP\n", serverip);
