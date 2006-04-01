@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.33 2006-03-29 16:07:14 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.34 2006-04-01 08:58:37 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -104,6 +104,7 @@ int main(int argc, char *argv[])
 	int extras = 1;
 	int testuntagged = 0;
 	int nodownhosts = 0;
+	int onlypreferredentry = 0;
 	char *p;
 	char **lookv;
 	int argi, lookc;
@@ -139,9 +140,11 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--bbnet") == 0) {
 			include2 = "netinclude";
+			onlypreferredentry = 0;
 		}
 		else if (strcmp(argv[argi], "--bbdisp") == 0) {
 			include2 = "dispinclude";
+			onlypreferredentry = 1;
 		}
 		else if (argnmatch(argv[argi], "--bbhosts=")) {
 			bbhostsfn = strchr(argv[argi], '=') + 1;
@@ -218,7 +221,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		do { hwalk = hwalk->next; } while (hwalk && (strcmp(curname, hwalk->bbhostname) == 0));
+		do { hwalk = hwalk->next; } while (hwalk && onlypreferredentry && (strcmp(curname, hwalk->bbhostname) == 0));
 	}
 
 	return 0;
