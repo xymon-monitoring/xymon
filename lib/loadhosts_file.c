@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.21 2006-03-31 15:22:52 henrik Exp $";
+static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.22 2006-04-01 08:10:00 henrik Exp $";
 
 static int get_page_name_title(char *buf, char *key, char **name, char **title)
 {
@@ -259,7 +259,9 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 				rbtInsert(htree, newitem->bbhostname, newitem);
 			}
 			else {
-				for (iwalk = namehead, iprev = NULL; (iwalk && strcasecmp(iwalk->bbhostname, newitem->bbhostname)); iprev = iwalk, iwalk = iwalk->next) ;
+				/* Find the existing record - compare the record pointer instead of the name */
+				namelist_t *existingrec = (namelist_t *)gettreeitem(htree, handle);
+				for (iwalk = namehead, iprev = NULL; ((iwalk != existingrec) && iwalk); iprev = iwalk, iwalk = iwalk->next) ;
  				if (newitem->preference <= iwalk->preference) {
 					/* Add after the existing (more preferred) entry */
 					newitem->next = iwalk->next;
@@ -320,6 +322,4 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 
 	return namehead;
 }
-
-
 
