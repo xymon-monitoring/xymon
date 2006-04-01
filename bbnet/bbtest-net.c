@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.225 2006-03-29 21:54:30 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.226 2006-04-01 23:05:24 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -62,16 +62,16 @@ char *reqenv[] = {
 #define TOOL_RPCINFO	8
 
 
-service_t	*svchead = NULL;		/* Head of all known services */
-service_t	*pingtest = NULL;		/* Identifies the pingtest within svchead list */
+RbtHandle	svctree;			/* All known services, has service_t records */
+service_t	*pingtest = NULL;		/* Identifies the pingtest within svctree list */
 int		pingcount = 0;
-service_t	*dnstest = NULL;		/* Identifies the dnstest within svchead list */
-service_t	*digtest = NULL;		/* Identifies the digtest within svchead list */
-service_t	*httptest = NULL;		/* Identifies the httptest within svchead list */
-service_t	*ldaptest = NULL;		/* Identifies the ldaptest within svchead list */
-service_t	*rpctest = NULL;		/* Identifies the rpctest within svchead list */
-service_t	*modembanktest = NULL;		/* Identifies the modembank test within svchead list */
-testedhost_t	*testhosthead = NULL;		/* Head of all hosts */
+service_t	*dnstest = NULL;		/* Identifies the dnstest within svctree list */
+service_t	*digtest = NULL;		/* Identifies the digtest within svctree list */
+service_t	*httptest = NULL;		/* Identifies the httptest within svctree list */
+service_t	*ldaptest = NULL;		/* Identifies the ldaptest within svctree list */
+service_t	*rpctest = NULL;		/* Identifies the rpctest within svctree list */
+service_t	*modembanktest = NULL;		/* Identifies the modembank test within svctree list */
+RbtHandle       testhosttree;			/* All tested hosts, has testedhost_t records */
 char		*nonetpage = NULL;		/* The "NONETPAGE" env. variable */
 int		dnsmethod = DNS_THEN_IP;	/* How to do DNS lookups */
 int 		timeout=10;			/* The timeout (seconds) for all TCP-tests */
@@ -100,9 +100,11 @@ int		extcmdtimeout = 30;
 
 void dump_hostlist(void)
 {
+	RbtIterator handle;
 	testedhost_t *walk;
 
-	for (walk = testhosthead; (walk); walk = walk->next) {
+	for (handle = rbtBegin(testhosttree); (handle != rbtEnd(testhosttree)); handle = rbtNext(testhosttree, handle)) {
+		walk = (testedhost_t *)gettreeitem(testhosttree, handle);
 		printf("Hostname: %s\n", textornull(walk->hostname));
 		printf("\tIP           : %s\n", textornull(walk->ip));
 		printf("\tHosttype     : %s\n", textornull(walk->hosttype));
@@ -130,10 +132,13 @@ void dump_hostlist(void)
 }
 void dump_testitems(void)
 {
+	RbtIterator handle;
 	service_t *swalk;
 	testitem_t *iwalk;
 
-	for (swalk = svchead; (swalk); swalk = swalk->next) {
+	for (handle = rbtBegin(svctree); handle != rbtEnd(svctree); handle = rbtNext(svctree, handle)) {
+		swalk = (service_t *)gettreeitem(svctree, handle);
+
 		printf("Service %s, port %d, toolid %d\n", swalk->testname, swalk->portnum, swalk->toolid);
 
 		for (iwalk = swalk->items; (iwalk); iwalk = iwalk->next) {
@@ -174,15 +179,18 @@ void dump_testitems(void)
 
 testitem_t *find_test(char *hostname, char *testname)
 {
+	RbtIterator handle;
 	testedhost_t *h;
 	service_t *s;
 	testitem_t *t;
 
-	for (s=svchead; (s && (strcmp(s->testname, testname) != 0)); s = s->next);
-	if (s == NULL) return NULL;
+	handle = rbtFind(svctree, testname);
+	if (handle == rbtEnd(svctree)) return NULL;
+	s = (service_t *)gettreeitem(svctree, handle);
 
-	for (h=testhosthead; (h && (strcmp(h->hostname, hostname) != 0)); h = h->next) ;
-	if (h == NULL) return NULL;
+	handle = rbtFind(testhosttree, hostname);
+	if (handle == rbtEnd(testhosttree)) return NULL;
+	h = (testedhost_t *)gettreeitem(testhosttree, handle);
 
 	for (t=s->items; (t && (t->host != h)); t = t->next) ;
 
@@ -254,11 +262,15 @@ char *deptest_failed(testedhost_t *host, char *testname)
 
 service_t *add_service(char *name, int port, int namelen, int toolid)
 {
+	RbtIterator handle;
 	service_t *svc;
 
 	/* Avoid duplicates */
-	for (svc=svchead; (svc && (strcmp(svc->testname, name) != 0)); svc = svc->next);
-	if (svc) return svc;
+	handle = rbtFind(svctree, name);
+	if (handle != rbtEnd(svctree)) {
+		svc = (service_t *)gettreeitem(svctree, handle);
+		return svc;
+	}
 
 	svc = (service_t *) malloc(sizeof(service_t));
 	svc->portnum = port;
@@ -266,8 +278,7 @@ service_t *add_service(char *name, int port, int namelen, int toolid)
 	svc->toolid = toolid;
 	svc->namelen = namelen;
 	svc->items = NULL;
-	svc->next = svchead;
-	svchead = svc;
+	rbtInsert(svctree, svc->testname, svc);
 
 	return svc;
 }
@@ -314,40 +325,9 @@ testedhost_t *init_testedhost(char *hostname)
 	hostcount++;
 	newhost = (testedhost_t *) calloc(1, sizeof(testedhost_t));
 	newhost->hostname = strdup(hostname);
-	newhost->ip[0] = '\0';
-	newhost->hosttype = NULL;
-
-	newhost->dialup = 0;
-	newhost->testip = 0;
-	newhost->nosslcert = 0;
-	newhost->dnserror = 0;
-	newhost->dodns = 0;
-	newhost->repeattest = 0;
-
-	newhost->noconn = 0;
-	newhost->noping = 0;
-	newhost->badconn[0] = newhost->badconn[1] = newhost->badconn[2] = 0;
-	newhost->downcount = 0;
-	newhost->downstart = 0;
-	newhost->routerdeps = NULL;
-	newhost->deprouterdown = NULL;
 	newhost->dotrace = dotraceroute;
-	newhost->traceroute = NULL;
-	newhost->extrapings = NULL;
-
-	newhost->firsthttp = NULL;
-
-	newhost->firstldap = NULL;
-	newhost->ldapuser = NULL;
-	newhost->ldappasswd = NULL;
-	newhost->ldapsearchfailyellow = 0;
-
 	newhost->sslwarndays = sslwarndays;
 	newhost->sslalarmdays = sslalarmdays;
-
-	newhost->deptests = NULL;
-
-	newhost->next = NULL;
 
 	return newhost;
 }
@@ -644,6 +624,7 @@ void load_tests(void)
 					 * Simple TCP connect test. 
 					 */
 					char *option;
+					RbtIterator handle;
 
 					/* Remove any trailing ":s", ":q", ":Q", ":portnumber" */
 					option = strchr(testspec, ':'); 
@@ -653,8 +634,8 @@ void load_tests(void)
 					}
 	
 					/* Find the service */
-					for (s=svchead; (s && (strcmp(s->testname, testspec) != 0)); s = s->next) ;
-
+					handle = rbtFind(svctree, testspec);
+					s = ((handle == rbtEnd(svctree)) ? NULL : (service_t *)gettreeitem(svctree, handle));
 					if (option && s) {
 						/*
 						 * Check if it is a service with an explicit portnumber.
@@ -768,10 +749,12 @@ void load_tests(void)
 
 			if (strlen(testname) && badcounts && inscope) {
 				char *p;
+				RbtIterator handle;
 				twalk = NULL;
 
 				p = strchr(testname, ':'); if (p) *p = '\0';
-				for (swalk=svchead; (swalk && strcmp(swalk->testname, testname)); swalk = swalk->next) ;
+				handle = rbtFind(svctree, testname);
+				swalk = ((handle == rbtEnd(svctree)) ? NULL : (service_t *)gettreeitem(svctree, handle));
 				if (p) *p = ':';
 				if (swalk) {
 					if (swalk == httptest) twalk = h->firsthttp;
@@ -795,7 +778,7 @@ void load_tests(void)
 
 
 		if (anytests) {
-			testedhost_t *walk;
+			RbtStatus res;
 
 			/* 
 			 * Check for a duplicate host def. Causes all sorts of funny problems.
@@ -804,15 +787,13 @@ void load_tests(void)
 			 * tests belong to a non-existing host.
 			 */
 
-			for (walk=testhosthead; (walk && (strcmp(h->hostname, walk->hostname) != 0)); walk = walk->next);
-			if (walk) {
+			res = rbtInsert(testhosttree, h->hostname, h);
+			if (res == RBT_STATUS_DUPLICATE_KEY) {
 				errprintf("Host %s appears twice in bb-hosts! This may cause strange results\n", h->hostname);
 			}
 	
 			strcpy(h->ip, bbh_item(hwalk, BBH_IP));
 			if (!h->testip && (dnsmethod != IP_ONLY)) add_host_to_dns_queue(h->hostname);
-			h->next = testhosthead;
-			testhosthead = h;
 		}
 		else {
 			/* No network tests for this host, so ignore it */
@@ -862,6 +843,7 @@ void load_fping_status(void)
 	char host[MAX_LINE_LEN];
 	int  downcount;
 	time_t downstart;
+	RbtIterator handle;
 	testedhost_t *h;
 
 	sprintf(statusfn, "%s/fping.%s.status", xgetenv("BBTMP"), location);
@@ -872,10 +854,13 @@ void load_fping_status(void)
 		unsigned int uidownstart;
 		if (sscanf(l, "%s %d %u", host, &downcount, &uidownstart) == 3) {
 			downstart = uidownstart;
-			for (h=testhosthead; (h && (strcmp(h->hostname, host) != 0)); h = h->next) ;
-			if (h && !h->noping && !h->noconn) {
-				h->downcount = downcount;
-				h->downstart = downstart;
+			handle = rbtFind(testhosttree, host);
+			if (handle != rbtEnd(testhosttree)) {
+				h = (testedhost_t *)gettreeitem(testhosttree, handle);
+				if (!h->noping && !h->noconn) {
+					h->downcount = downcount;
+					h->downstart = downstart;
+				}
 			}
 		}
 	}
@@ -914,6 +899,7 @@ void load_test_status(service_t *test)
 	char host[MAX_LINE_LEN];
 	int  downcount;
 	time_t downstart;
+	RbtIterator handle;
 	testedhost_t *h;
 	testitem_t *walk;
 
@@ -925,8 +911,9 @@ void load_test_status(service_t *test)
 		unsigned int uidownstart;
 		if (sscanf(l, "%s %d %u", host, &downcount, &uidownstart) == 3) {
 			downstart = uidownstart;
-			for (h=testhosthead; (h && (strcmp(h->hostname, host) != 0)); h = h->next) ;
-			if (h) {
+			handle = rbtFind(testhosttree, host);
+			if (handle != rbtEnd(testhosttree)) {
+				h = (testedhost_t *)gettreeitem(testhosttree, handle);
 				if (test == httptest) walk = h->firsthttp;
 				else if (test == ldaptest) walk = h->firstldap;
 				else for (walk = test->items; (walk && (walk->host != h)); walk = walk->next) ;
@@ -970,6 +957,7 @@ void save_frequenttestlist(int argc, char *argv[])
 {
 	FILE *fd;
 	char fn[PATH_MAX];
+	RbtIterator handle;
 	testedhost_t *h;
 	int didany = 0;
 	int i;
@@ -981,7 +969,8 @@ void save_frequenttestlist(int argc, char *argv[])
 	for (i=1; (i<argc); i++) {
 		if (!argnmatch(argv[i], "--report")) fprintf(fd, "\"%s\" ", argv[i]);
 	}
-	for (h = testhosthead; (h); h = h->next) {
+	for (handle = rbtBegin(testhosttree); (handle != rbtEnd(testhosttree)); handle = rbtNext(testhosttree, handle)) {
+		h = (testedhost_t *)gettreeitem(testhosttree, handle);
 		if (h->repeattest) {
 			fprintf(fd, "%s ", h->hostname);
 			didany = 1;
@@ -1846,6 +1835,7 @@ void send_rpcinfo_results(service_t *service, int failgoesclear)
 void send_sslcert_status(testedhost_t *host)
 {
 	int color = -1;
+	RbtIterator handle;
 	service_t *s;
 	testitem_t *t;
 	char msgline[1024];
@@ -1858,7 +1848,8 @@ void send_sslcert_status(testedhost_t *host)
 	sslmsg = (char *)malloc(sslmsgsize);
 	*sslmsg = '\0';
 
-	for (s=svchead; (s); s = s->next) {
+	for (handle = rbtBegin(svctree); handle != rbtEnd(svctree); handle = rbtNext(svctree, handle)) {
+		s = (service_t *)gettreeitem(svctree, handle);
 		certowner = s->testname;
 
 		for (t=s->items; (t); t=t->next) {
@@ -1909,6 +1900,7 @@ void send_sslcert_status(testedhost_t *host)
 
 int main(int argc, char *argv[])
 {
+	RbtIterator handle;
 	service_t *s;
 	testedhost_t *h;
 	testitem_t *t;
@@ -2131,6 +2123,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	svctree = rbtNew(name_compare);
+	testhosttree = rbtNew(name_compare);
 	init_timestamp();
 	envcheck(reqenv);
 	fqdn = get_fqdn();
@@ -2186,10 +2180,14 @@ int main(int argc, char *argv[])
 	if (pingtest && pingtest->items) fpingrunning = (start_fping_service(pingtest) == 0);
 
 	/* Load current status files */
-	for (s = svchead; (s); s = s->next) { if (s != pingtest) load_test_status(s); }
+	for (handle = rbtBegin(svctree); handle != rbtEnd(svctree); handle = rbtNext(svctree, handle)) {
+		s = (service_t *)gettreeitem(svctree, handle);
+		if (s != pingtest) load_test_status(s);
+	}
 
 	/* First run the TCP/IP and HTTP tests */
-	for (s = svchead; (s); s = s->next) {
+	for (handle = rbtBegin(svctree); handle != rbtEnd(svctree); handle = rbtNext(svctree, handle)) {
+		s = (service_t *)gettreeitem(svctree, handle);
 		if ((s->items) && (s->toolid == TOOL_CONTEST)) {
 			char tname[128];
 
@@ -2228,7 +2226,8 @@ int main(int argc, char *argv[])
 		show_http_test_results(httptest);
 	}
 
-	for (s = svchead; (s); s = s->next) {
+	for (handle = rbtBegin(svctree); handle != rbtEnd(svctree); handle = rbtNext(svctree, handle)) {
+		s = (service_t *)gettreeitem(svctree, handle);
 		if ((s->items) && (s->toolid == TOOL_CONTEST)) {
 			for (t = s->items; (t); t = t->next) { 
 				/*
@@ -2286,7 +2285,8 @@ int main(int argc, char *argv[])
 
 
 	/* dns, dig, ntp tests */
-	for (s = svchead; (s); s = s->next) {
+	for (handle = rbtBegin(svctree); handle != rbtEnd(svctree); handle = rbtNext(svctree, handle)) {
+		s = (service_t *)gettreeitem(svctree, handle);
 		if (s->items) {
 			switch(s->toolid) {
 				case TOOL_NSLOOKUP:
@@ -2314,7 +2314,8 @@ int main(int argc, char *argv[])
 	}
 
 	combo_start();
-	for (s = svchead; (s); s = s->next) {
+	for (handle = rbtBegin(svctree); handle != rbtEnd(svctree); handle = rbtNext(svctree, handle)) {
+		s = (service_t *)gettreeitem(svctree, handle);
 		switch (s->toolid) {
 			case TOOL_CONTEST:
 			case TOOL_NSLOOKUP:
@@ -2338,7 +2339,8 @@ int main(int argc, char *argv[])
 				break;
 		}
 	}
-	for (h=testhosthead; (h); h = h->next) {
+	for (handle = rbtBegin(testhosttree); (handle != rbtEnd(testhosttree)); handle = rbtNext(testhosttree, handle)) {
+		h = (testedhost_t *)gettreeitem(testhosttree, handle);
 		send_http_results(httptest, h, h->firsthttp, nonetpage, failgoesclear);
 		send_content_results(httptest, h, nonetpage, contenttestname, failgoesclear);
 		send_ldap_results(ldaptest, h, nonetpage, failgoesclear);
@@ -2365,7 +2367,10 @@ int main(int argc, char *argv[])
 	 */
 	if (selectedcount == 0) {
 		/* Save current status files */
-		for (s = svchead; (s); s = s->next) { if (s != pingtest) save_test_status(s); }
+		for (handle = rbtBegin(svctree); handle != rbtEnd(svctree); handle = rbtNext(svctree, handle)) {
+			s = (service_t *)gettreeitem(svctree, handle);
+			if (s != pingtest) save_test_status(s);
+		}
 		/* Save frequent-test list */
 		save_frequenttestlist(argc, argv);
 	}

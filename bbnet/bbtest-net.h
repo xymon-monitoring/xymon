@@ -64,7 +64,6 @@ typedef struct service_t {
 	int portnum;		/* Port number this service runs on */
 	int toolid;		/* Which tool to use */
 	struct testitem_t *items; /* testitem_t linked list of tests for this service */
-	struct service_t *next;
 } service_t;
 
 #define MULTIPING_BEST 0
@@ -119,8 +118,6 @@ typedef struct testedhost_t {
 
 	/* For storing the test dependency tag. */
 	char *deptests;
-
-	struct testedhost_t *next;
 } testedhost_t;
 
 typedef struct testitem_t {
