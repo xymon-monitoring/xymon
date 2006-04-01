@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.217 2006-03-31 15:24:08 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.218 2006-04-01 08:09:14 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -119,6 +119,7 @@ typedef struct hobbitd_hostlist_t {
 	char *hostname;
 	char ip[16];
 	hobbitd_log_t *logs;
+	hobbitd_log_t *pinglog; /* Points to entry in logs list, but we need it often */
 	char *clientmsg;
 } hobbitd_hostlist_t;
 
@@ -892,11 +893,9 @@ void get_hts(char *msg, char *sender, char *origin,
 	else hwalk = gettreeitem(rbhosts, hosthandle);
 
 	if (createhost && (hosthandle == rbtEnd(rbhosts))) {
-		hwalk = (hobbitd_hostlist_t *)malloc(sizeof(hobbitd_hostlist_t));
+		hwalk = (hobbitd_hostlist_t *)calloc(1, sizeof(hobbitd_hostlist_t));
 		hwalk->hostname = strdup(hostname);
 		strcpy(hwalk->ip, hostip);
-		hwalk->logs = NULL;
-		hwalk->clientmsg = NULL;
 		if (rbtInsert(rbhosts, hwalk->hostname, hwalk)) {
 			errprintf("Insert into rbhosts failed\n");
 		}
@@ -940,6 +939,7 @@ void get_hts(char *msg, char *sender, char *origin,
 			lwalk->cookie = -1;
 			lwalk->next = hwalk->logs;
 			hwalk->logs = lwalk;
+			if (strcmp(testname, xgetenv("PINGCOLUMN")) == 0) hwalk->pinglog = lwalk;
 		}
 	}
 
@@ -1816,6 +1816,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 
 		for (lwalk = hwalk->logs; (lwalk && (lwalk->test != twalk)); lwalk = lwalk->next) ;
 		if (lwalk == NULL) goto done;
+		if (lwalk == hwalk->pinglog) hwalk->pinglog = NULL;
 		if (lwalk == hwalk->logs) {
 			hwalk->logs = hwalk->logs->next;
 		}
@@ -1867,6 +1868,8 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 
 		for (lwalk = hwalk->logs; (lwalk && (lwalk->test != twalk)); lwalk = lwalk->next) ;
 		if (lwalk == NULL) goto done;
+
+		if (lwalk == hwalk->pinglog) hwalk->pinglog = NULL;
 
 		testhandle = rbtFind(rbtests, n2);
 		if (testhandle == rbtEnd(rbtests)) {
@@ -3423,7 +3426,7 @@ void load_checkpoint(char *fn)
 		hosthandle = rbtFind(rbhosts, hostname);
 		if (hosthandle == rbtEnd(rbhosts)) {
 			/* New host */
-			hitem = (hobbitd_hostlist_t *) malloc(sizeof(hobbitd_hostlist_t));
+			hitem = (hobbitd_hostlist_t *) calloc(1, sizeof(hobbitd_hostlist_t));
 			hitem->hostname = strdup(hostname);
 			strcpy(hitem->ip, hostip);
 			hitem->logs = NULL;
@@ -3456,6 +3459,8 @@ void load_checkpoint(char *fn)
 			ltail->next = (hobbitd_log_t *)malloc(sizeof(hobbitd_log_t));
 			ltail = ltail->next;
 		}
+
+		if (strcmp(testname, xgetenv("PINGCOLUMN")) == 0) hitem->pinglog = ltail;
 
 		/* Fixup validtime in case of ack'ed or disabled tests */
 		if (validtime < acktime) validtime = acktime;
@@ -3541,16 +3546,14 @@ void check_purple_status(void)
 					free_log_t(tmp);
 				}
 				else {
-					hobbitd_log_t *tmp;
 					int newcolor = COL_PURPLE;
 
 					/*
 					 * See if this is a host where the "conn" test shows it is down.
 					 * If yes, then go CLEAR, instead of PURPLE.
 					 */
-					for (tmp = hwalk->logs; (tmp && strcmp(tmp->test, xgetenv("PINGCOLUMN"))); tmp = tmp->next) ;
-					if (tmp) {
-						switch (tmp->color) {
+					if (hwalk->pinglog) {
+						switch (hwalk->pinglog->color) {
 						  case COL_RED:
 						  case COL_YELLOW:
 						  case COL_BLUE:
