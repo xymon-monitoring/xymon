@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.17 2006-04-02 16:26:07 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.18 2006-04-02 20:27:14 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -457,9 +457,9 @@ int load_client_config(char *configfn)
 				currule->rule.log.matchexp  = setup_expr(tok, 1);
 				currule->rule.log.matchone  = setup_expr(tok, 0);
 				tok = wstok(NULL); if (isqual(tok)) continue;
-				currule->rule.log.ignoreexp = setup_expr(tok, 1);
-				tok = wstok(NULL); if (isqual(tok)) continue;
 				currule->rule.log.color     = parse_color(tok);
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.log.ignoreexp = setup_expr(tok, 1);
 			}
 			else {
 				unknowntok = 1;
