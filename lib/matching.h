@@ -16,8 +16,9 @@
 #include <pcre.h>
 
 extern pcre *compileregex(const char *pattern);
-extern int timematch(char *tspec);
+extern pcre *multilineregex(const char *pattern);
 extern int namematch(char *needle, char *haystack, pcre *pcrecode);
+extern int timematch(char *tspec);
 #endif
 
 #endif
