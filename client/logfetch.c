@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.6 2006-02-14 21:54:17 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.7 2006-04-02 16:25:07 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -111,7 +111,7 @@ char *logdata(logdef_t *logdef, int *truncated)
 				if (status == 0) {
 					/* Ignore this line */
 					memmove(buf+bofs, buf+eofs+1, (n-eofs+1));
-					n -+ (eofs - bofs);
+					n -= (eofs - bofs);
 				}
 				else {
 					*(buf + eofs) = savechar;
