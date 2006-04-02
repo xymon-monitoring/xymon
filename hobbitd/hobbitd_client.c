@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.52 2006-04-02 16:49:16 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.53 2006-04-02 17:06:23 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -607,7 +607,7 @@ void msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 
 	for (swalk = sections; (swalk && strncmp(swalk->sname, "msgs:", 5)); swalk = swalk->next) ;
 
-	if (!swalk && msgsstr) {
+	if (!swalk) {
 		old_msgs_report(hostname, hinfo, fromline, timestr, msgsstr);
 		return;
 	}
@@ -638,7 +638,8 @@ void msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 		addtostatus("\n");
 	}
 
-	addtostrstatus(logdata);
+	if (STRBUFLEN(logdata)) addtostrstatus(logdata);
+
 	if (fromline && !localmode) addtostatus(fromline);
 
 	finish_status();
