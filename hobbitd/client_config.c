@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.16 2006-04-02 12:15:57 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.17 2006-04-02 16:26:07 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -67,7 +67,7 @@ typedef struct c_proc_t {
 
 typedef struct c_log_t {
 	exprlist_t *logfile;
-	exprlist_t *matchexp, *ignoreexp;
+	exprlist_t *matchexp, *matchone, *ignoreexp;
 	int color;
 } c_log_t;
 
@@ -157,12 +157,17 @@ static ruleset_t *ruleset(char *hostname, char *pagename)
 	return head;
 }
 
-static exprlist_t *setup_expr(char *ptn)
+static exprlist_t *setup_expr(char *ptn, int multiline)
 {
 	exprlist_t *newitem = (exprlist_t *)calloc(1, sizeof(exprlist_t));
 
 	newitem->pattern = strdup(ptn);
-	if (*ptn == '%') newitem->exp = compileregex(ptn+1);
+	if (*ptn == '%') {
+		if (multiline)
+			newitem->exp = multilineregex(ptn+1);
+		else
+			newitem->exp = compileregex(ptn+1);
+	}
 	newitem->next = exprhead;
 	exprhead = newitem;
 
@@ -297,22 +302,22 @@ int load_client_config(char *configfn)
 		while (tok) {
 			if (strncasecmp(tok, "HOST=", 5) == 0) {
 				char *p = strchr(tok, '=');
-				newhost = setup_expr(p+1);
+				newhost = setup_expr(p+1, 0);
 				if (currule) currule->hostexp = newhost;
 			}
 			else if (strncasecmp(tok, "EXHOST=", 7) == 0) {
 				char *p = strchr(tok, '=');
-				newexhost = setup_expr(p+1);
+				newexhost = setup_expr(p+1, 0);
 				if (currule) currule->exhostexp = newexhost;
 			}
 			else if (strncasecmp(tok, "PAGE=", 5) == 0) {
 				char *p = strchr(tok, '=');
-				newpage = setup_expr(p+1);
+				newpage = setup_expr(p+1, 0);
 				if (currule) currule->pageexp = newpage;
 			}
 			else if (strncasecmp(tok, "EXPAGE=", 7) == 0) {
 				char *p = strchr(tok, '=');
-				newexpage = setup_expr(p+1);
+				newexpage = setup_expr(p+1, 0);
 				if (currule) currule->expageexp = newexpage;
 			}
 			else if (strncasecmp(tok, "TIME=", 5) == 0) {
@@ -354,7 +359,7 @@ int load_client_config(char *configfn)
 				currule->rule.disk.color = COL_RED;
 
 				tok = wstok(NULL); if (isqual(tok)) continue;
-				currule->rule.disk.fsexp = setup_expr(tok);
+				currule->rule.disk.fsexp = setup_expr(tok, 0);
 
 				tok = wstok(NULL); if (isqual(tok)) continue;
 				currule->rule.disk.warnlevel = atol(tok);
@@ -423,7 +428,7 @@ int load_client_config(char *configfn)
 			else if (strcasecmp(tok, "PROC") == 0) {
 				currule = setup_rule(C_PROC, curhost, curexhost, curpage, curexpage, curtime, cfid);
 				tok = wstok(NULL);
-				currule->rule.proc.procexp = setup_expr(tok);
+				currule->rule.proc.procexp = setup_expr(tok, 0);
 				currule->rule.proc.pmin = 1;
 				currule->rule.proc.pmax = -1;
 				currule->rule.proc.color = COL_RED;
@@ -441,16 +446,18 @@ int load_client_config(char *configfn)
 			}
 			else if (strcasecmp(tok, "LOG") == 0) {
 				currule = setup_rule(C_LOG, curhost, curexhost, curpage, curexpage, curtime, cfid);
-				currule->rule.log.matchexp = NULL;
+				currule->rule.log.matchexp  = NULL;
+				currule->rule.log.matchone  = NULL;
 				currule->rule.log.ignoreexp = NULL;
 				currule->rule.log.color     = COL_RED;
 
 				tok = wstok(NULL);
-				currule->rule.log.logfile   = setup_expr(tok);
+				currule->rule.log.logfile   = setup_expr(tok, 0);
 				tok = wstok(NULL);
-				currule->rule.log.matchexp  = setup_expr(tok);
+				currule->rule.log.matchexp  = setup_expr(tok, 1);
+				currule->rule.log.matchone  = setup_expr(tok, 0);
 				tok = wstok(NULL); if (isqual(tok)) continue;
-				currule->rule.log.ignoreexp = setup_expr(tok);
+				currule->rule.log.ignoreexp = setup_expr(tok, 1);
 				tok = wstok(NULL); if (isqual(tok)) continue;
 				currule->rule.log.color     = parse_color(tok);
 			}
@@ -664,6 +671,70 @@ void get_memory_thresholds(namelist_t *hinfo,
 		rule = getrule(NULL, NULL, C_MEM);
 	}
 }
+
+int scan_log(namelist_t *hinfo, char *logname, char *logdata, strbuffer_t *summarybuf)
+{
+	int result = COL_GREEN;
+	char *hostname, *pagename;
+	c_rule_t *rule;
+	int firstmatch = 1;
+	int anylines = 0;
+	char *boln, *eoln;
+	char msgline[1024];
+	strbuffer_t *linesfromlogfile;
+
+	hostname = bbh_item(hinfo, BBH_HOSTNAME);
+	pagename = bbh_item(hinfo, BBH_PAGEPATH);
+	linesfromlogfile = newstrbuffer(0);
+	
+	for (rule = getrule(hostname, pagename, C_LOG); (rule); rule = getrule(NULL, NULL, C_LOG)) {
+		/* First, check if the filename matches */
+		if (!namematch(logname, rule->rule.log.logfile->pattern, rule->rule.log.logfile->exp)) continue;
+
+		/* Next, check for a match anywhere in the data*/
+		if (!namematch(logdata, rule->rule.log.matchexp->pattern, rule->rule.log.matchexp->exp))
+			continue;
+
+		/* Some data in there matches what we want. Look at each line. */
+		boln = logdata;
+		while (boln) {
+			eoln = strchr(boln, '\n'); if (eoln) *eoln = '\0';
+			if (namematch(boln, rule->rule.log.matchone->pattern, rule->rule.log.matchone->exp)) {
+				/* It matches. But maybe we'll ignore it ? */
+				if (!(rule->rule.log.ignoreexp && namematch(boln, rule->rule.log.ignoreexp->pattern, rule->rule.log.ignoreexp->exp))) {
+					/* We wants it ... */
+					anylines++;
+					sprintf(msgline, "&%s ", colorname(rule->rule.log.color));
+					addtobuffer(linesfromlogfile, msgline);
+					addtobuffer(linesfromlogfile, boln);
+					addtobuffer(linesfromlogfile, "\n");
+				}
+			}
+
+			if (eoln) {
+				*eoln = '\n';
+				boln = eoln+1;
+			}
+			else boln = NULL;
+		}
+
+		/* We have a match */
+		if (anylines && (rule->rule.log.color > result)) result = rule->rule.log.color;
+
+		if (firstmatch) {
+			sprintf(msgline, "\nFound in %s:\n", logname);
+			addtobuffer(summarybuf, msgline);
+			firstmatch = 0;
+		}
+
+		addtostrbuffer(summarybuf, linesfromlogfile);
+		clearstrbuffer(linesfromlogfile);
+	}
+
+	freestrbuffer(linesfromlogfile);
+	return result;
+}
+
 
 typedef struct mon_proc_t {
 	c_rule_t *rule;
