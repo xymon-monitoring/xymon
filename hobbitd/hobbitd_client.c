@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.51 2006-04-02 16:28:43 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.52 2006-04-02 16:49:16 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -632,8 +632,12 @@ void msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 		commafy(hostname), colorname(msgscolor), 
 		(timestr ? timestr : "<No timestamp data>"));
 	addtostatus(msgline);
-	addtostrstatus(logsummary);
-	addtostatus("\n");
+
+	if (STRBUFLEN(logsummary)) {
+		addtostrstatus(logsummary);
+		addtostatus("\n");
+	}
+
 	addtostrstatus(logdata);
 	if (fromline && !localmode) addtostatus(fromline);
 
