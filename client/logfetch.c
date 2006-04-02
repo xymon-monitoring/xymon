@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.7 2006-04-02 16:25:07 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.8 2006-04-02 16:56:55 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -278,8 +278,8 @@ void loadstatus(char *statfn)
 		logdef_t *lwalk;
 		int i;
 
-		tok = strtok(l, ":");
-		if (tok) fn = tok;
+		tok = strtok(l, ":"); if (!tok) continue;
+		fn = tok;
 		for (lwalk = loglist; (lwalk && strcmp(lwalk->filename, fn)); lwalk = lwalk->next) ;
 		if (!lwalk) continue;
 
