@@ -5,14 +5,14 @@
 /* This file has routines that load the hobbitd_client configuration and      */
 /* finds the rules relevant for a particular test when applied.               */
 /*                                                                            */
-/* Copyright (C) 2005 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.15 2006-03-12 16:32:42 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.16 2006-04-02 12:15:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -65,7 +65,13 @@ typedef struct c_proc_t {
 	int color;
 } c_proc_t;
 
-typedef enum { C_LOAD, C_UPTIME, C_DISK, C_MEM, C_PROC } ruletype_t;
+typedef struct c_log_t {
+	exprlist_t *logfile;
+	exprlist_t *matchexp, *ignoreexp;
+	int color;
+} c_log_t;
+
+typedef enum { C_LOAD, C_UPTIME, C_DISK, C_MEM, C_PROC, C_LOG } ruletype_t;
 
 typedef struct c_rule_t {
 	exprlist_t *hostexp;
@@ -82,6 +88,7 @@ typedef struct c_rule_t {
 		c_disk_t disk;
 		c_mem_t mem;
 		c_proc_t proc;
+		c_log_t log;
 	} rule;
 } c_rule_t;
 
@@ -97,10 +104,6 @@ typedef struct ruleset_t {
 static int havetree = 0;
 static RbtHandle ruletree;
 
-static int hostname_compare(void *a, void *b)
-{
-	return strcasecmp((char *)a, (char *)b);
-}
 
 static ruleset_t *ruleset(char *hostname, char *pagename)
 {
@@ -207,8 +210,7 @@ int load_client_config(char *configfn)
 	static void *configfiles = NULL;
 	char fn[PATH_MAX];
 	FILE *fd;
-	char *inbuf = NULL;
-	int inbufsz;
+	strbuffer_t *inbuf;
 	char *tok;
 	exprlist_t *curhost, *curpage, *curexhost, *curexpage;
 	char *curtime;
@@ -278,20 +280,20 @@ int load_client_config(char *configfn)
 
 	curhost = curpage = curexhost = curexpage = NULL;
 	curtime = NULL;
-	while (stackfgets(&inbuf, &inbufsz, NULL)) {
+	inbuf = newstrbuffer(0);
+	while (stackfgets(inbuf, NULL)) {
 		exprlist_t *newhost, *newpage, *newexhost, *newexpage;
 		char *newtime;
 		int unknowntok = 0;
 
 		cfid++;
-		sanitize_input(inbuf);
-		if (strlen(inbuf) == 0) continue;
+		sanitize_input(inbuf, 1, 0); if (STRBUFLEN(inbuf) == 0) continue;
 
 		newhost = newpage = newexhost = newexpage = NULL;
 		newtime = NULL;
 		currule = NULL;
 
-		tok = wstok(inbuf);
+		tok = wstok(STRBUF(inbuf));
 		while (tok) {
 			if (strncasecmp(tok, "HOST=", 5) == 0) {
 				char *p = strchr(tok, '=');
@@ -357,7 +359,7 @@ int load_client_config(char *configfn)
 				tok = wstok(NULL); if (isqual(tok)) continue;
 				currule->rule.disk.warnlevel = atol(tok);
 				modchar = *(tok + strspn(tok, "0123456789"));
-				if (modchar != '%') {
+				if (modchar && (modchar != '%')) {
 					currule->rule.disk.absolutes += 1;
 					switch (modchar) {
 					  case 'k': case 'K' : break;
@@ -369,7 +371,7 @@ int load_client_config(char *configfn)
 				tok = wstok(NULL); if (isqual(tok)) continue;
 				currule->rule.disk.paniclevel = atol(tok);
 				modchar = *(tok + strspn(tok, "0123456789"));
-				if (modchar != '%') {
+				if (modchar && (modchar != '%')) {
 					currule->rule.disk.absolutes += 2;
 					switch (modchar) {
 					  case 'k': case 'K' : break;
@@ -437,6 +439,21 @@ int load_client_config(char *configfn)
 				if (currule->rule.proc.pmin && (currule->rule.proc.pmax == 0))
 					currule->rule.proc.pmax = -1;
 			}
+			else if (strcasecmp(tok, "LOG") == 0) {
+				currule = setup_rule(C_LOG, curhost, curexhost, curpage, curexpage, curtime, cfid);
+				currule->rule.log.matchexp = NULL;
+				currule->rule.log.ignoreexp = NULL;
+				currule->rule.log.color     = COL_RED;
+
+				tok = wstok(NULL);
+				currule->rule.log.logfile   = setup_expr(tok);
+				tok = wstok(NULL);
+				currule->rule.log.matchexp  = setup_expr(tok);
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.log.ignoreexp = setup_expr(tok);
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.log.color     = parse_color(tok);
+			}
 			else {
 				unknowntok = 1;
 				errprintf("Unknown token '%s' ignored at line %d\n", tok, cfid);
@@ -456,11 +473,11 @@ int load_client_config(char *configfn)
 	}
 
 	stackfclose(fd);
-	if (inbuf) xfree(inbuf);
+	freestrbuffer(inbuf);
 	if (curtime) xfree(curtime);
 
 	/* Create the ruletree, but leave it empty - it will be filled as clients report */
-	ruletree = rbtNew(hostname_compare);
+	ruletree = rbtNew(name_compare);
 	havetree = 1;
 
 	MEMUNDEFINE(fn);
@@ -503,6 +520,12 @@ void dump_client_config(void)
 				printf("PROC %s %d %d %s", rwalk->rule.proc.procexp->pattern,
 				       rwalk->rule.proc.pmin, rwalk->rule.proc.pmax, colorname(rwalk->rule.proc.color));
 			}
+			break;
+		  case C_LOG:
+			printf("LOG %s %s %s %s\n",
+				rwalk->rule.log.logfile->pattern, rwalk->rule.log.matchexp->pattern,
+				(rwalk->rule.log.ignoreexp ? rwalk->rule.log.ignoreexp->pattern : ""),
+				colorname(rwalk->rule.log.color));
 			break;
 		}
 
