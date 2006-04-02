@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.50 2006-03-30 20:05:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.51 2006-04-02 16:28:43 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -599,6 +599,8 @@ static void old_msgs_report(char *hostname, namelist_t *hinfo, char *fromline, c
 
 void msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, char *msgsstr)
 {
+	static strbuffer_t *logsummary = NULL;
+	static strbuffer_t *logdata = NULL;
 	sectlist_t *swalk;
 	int msgscolor = COL_GREEN;
 	char msgline[4096];
@@ -610,21 +612,31 @@ void msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 		return;
 	}
 
-	init_status(msgscolor);
-	sprintf(msgline, "status %s.msgs %s System logs at %s : %s\n",
-		commafy(hostname), colorname(msgscolor), 
-		(timestr ? timestr : "<No timestamp data>"), 
-		(swalk ? "Raw data" : "No logs monitored"));
-	addtostatus(msgline);
+	if (logsummary) clearstrbuffer(logsummary); else logsummary = newstrbuffer(0);
+	if (logdata) clearstrbuffer(logdata); else logdata = newstrbuffer(0);
 
 	while (swalk) {
+		int logcolor;
+
 		sprintf(msgline, "\nLog file %s\n", swalk->sname+5);
-		addtostatus(msgline);
-		addtostatus(swalk->sdata);
+		addtobuffer(logdata, msgline);
+		addtobuffer(logdata, swalk->sdata);
+
+		logcolor = scan_log(hinfo, swalk->sname+5, swalk->sdata, logsummary);
+		if (logcolor > msgscolor) msgscolor = logcolor;
 		do { swalk=swalk->next; } while (swalk && strncmp(swalk->sname, "msgs:", 5));
 	}
 
+	init_status(msgscolor);
+	sprintf(msgline, "status %s.msgs %s System logs at %s\n",
+		commafy(hostname), colorname(msgscolor), 
+		(timestr ? timestr : "<No timestamp data>"));
+	addtostatus(msgline);
+	addtostrstatus(logsummary);
+	addtostatus("\n");
+	addtostrstatus(logdata);
 	if (fromline && !localmode) addtostatus(fromline);
+
 	finish_status();
 }
 
