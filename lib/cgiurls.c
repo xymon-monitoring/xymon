@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: cgiurls.c,v 1.5 2006-02-08 22:12:57 henrik Exp $";
+static char rcsid[] = "$Id: cgiurls.c,v 1.6 2006-04-03 13:49:20 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -37,6 +37,25 @@ char *hostsvcurl(char *hostname, char *service)
 			     strlen(hostname) + 
 			     strlen(service));
 	sprintf(url, "%s/bb-hostsvc.sh?HOST=%s&amp;SERVICE=%s", cgibinurl, hostname, service);
+
+	return url;
+}
+
+char *hostsvcclienturl(char *hostname, char *section)
+{
+	static char *url;
+	int n;
+
+	if (url) xfree(url);
+	if (!cgibinurl) cgibinurl = xgetenv("CGIBINURL");
+
+	url = (char *)malloc(1024 + 
+			     strlen(cgibinurl) + 
+			     strlen(hostname) + 
+			     (section ? strlen(section) : 0));
+	n = sprintf(url, "%s/bb-hostsvc.sh?CLIENT=%s", cgibinurl, hostname);
+
+	if (section) sprintf(url+n, "&amp;SECTION=%s", section);
 
 	return url;
 }
