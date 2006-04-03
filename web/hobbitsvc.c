@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.64 2006-03-12 16:38:32 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.65 2006-04-03 13:49:42 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -158,14 +158,14 @@ int do_request(void)
 		if (service && *service) sprintf(hobbitdreq + strlen(hobbitdreq), " section=%s", service);
 
 		hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &log, 1, 30);
-		if ((hobbitdresult != BB_OK) || (log == NULL) || (strlen(log) == 0)) {
+		if (hobbitdresult != BB_OK) {
 			char errtxt[4096];
 			sprintf(errtxt, "Status not available: Req=%s, result=%d\n", hobbitdreq, hobbitdresult);
 			errormsg(errtxt);
 			return 1;
 		}
 
-		restofmsg = log;
+		restofmsg = (log ? log : strdup("<No data>\n"));
 	}
 	else if ((strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) || (strcmp(service, xgetenv("INFOCOLUMN")) == 0)) {
 		loadhostdata(hostname, &ip, &displayname);
