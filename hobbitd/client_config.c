@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.18 2006-04-02 20:27:14 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.19 2006-04-03 13:50:20 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -672,7 +672,7 @@ void get_memory_thresholds(namelist_t *hinfo,
 	}
 }
 
-int scan_log(namelist_t *hinfo, char *logname, char *logdata, strbuffer_t *summarybuf)
+int scan_log(namelist_t *hinfo, char *logname, char *logdata, char *section, strbuffer_t *summarybuf)
 {
 	int result = COL_GREEN;
 	char *hostname, *pagename;
@@ -680,7 +680,7 @@ int scan_log(namelist_t *hinfo, char *logname, char *logdata, strbuffer_t *summa
 	int firstmatch = 1;
 	int anylines = 0;
 	char *boln, *eoln;
-	char msgline[1024];
+	char msgline[PATH_MAX];
 	strbuffer_t *linesfromlogfile;
 
 	hostname = bbh_item(hinfo, BBH_HOSTNAME);
@@ -722,7 +722,8 @@ int scan_log(namelist_t *hinfo, char *logname, char *logdata, strbuffer_t *summa
 		if (anylines && (rule->rule.log.color > result)) result = rule->rule.log.color;
 
 		if (firstmatch) {
-			sprintf(msgline, "\nFound in %s:\n", logname);
+			sprintf(msgline, "\nFound in <a href=\"%s\">%s</a>:\n", 
+				hostsvcclienturl(hostname, section), logname);
 			addtobuffer(summarybuf, msgline);
 			firstmatch = 0;
 		}

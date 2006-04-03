@@ -23,7 +23,7 @@ extern void get_memory_thresholds(namelist_t *hhinfo,
 				  int *swapyellow, int *swapred, 
 				  int *actyellow, int *actred);
 
-extern int scan_log(namelist_t *hinfo, char *logname, char *logdata, strbuffer_t *summarybuf);
+extern int scan_log(namelist_t *hinfo, char *logname, char *logdata, char *section, strbuffer_t *summarybuf);
 
 extern int clear_process_counts(namelist_t *hinfo);
 extern void add_process_count(char *pname);
