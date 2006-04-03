@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.53 2006-04-02 17:06:23 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.54 2006-04-03 13:51:46 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -604,6 +604,7 @@ void msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 	sectlist_t *swalk;
 	int msgscolor = COL_GREEN;
 	char msgline[4096];
+	char sectionname[PATH_MAX];
 
 	for (swalk = sections; (swalk && strncmp(swalk->sname, "msgs:", 5)); swalk = swalk->next) ;
 
@@ -618,11 +619,14 @@ void msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 	while (swalk) {
 		int logcolor;
 
-		sprintf(msgline, "\nLog file %s\n", swalk->sname+5);
+		sprintf(sectionname, "msgs:%s", swalk->sname+5);
+		sprintf(msgline, "\nLog file <a href=\"%s\">%s</a>\n", 
+			hostsvcclienturl(hostname, sectionname), swalk->sname+5);
+
 		addtobuffer(logdata, msgline);
 		addtobuffer(logdata, swalk->sdata);
 
-		logcolor = scan_log(hinfo, swalk->sname+5, swalk->sdata, logsummary);
+		logcolor = scan_log(hinfo, swalk->sname+5, swalk->sdata, sectionname, logsummary);
 		if (logcolor > msgscolor) msgscolor = logcolor;
 		do { swalk=swalk->next; } while (swalk && strncmp(swalk->sname, "msgs:", 5));
 	}
