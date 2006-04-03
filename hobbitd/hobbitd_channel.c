@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.44 2006-03-12 18:02:19 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.45 2006-04-03 05:49:53 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -76,7 +76,6 @@ int main(int argc, char *argv[])
 	int argi, n;
 
 	struct sembuf s;
-	char *buf = NULL;
 	hobbit_msg_t *newmsg;
 	int daemonize = 0;
 	char *logfn = NULL;
@@ -237,7 +236,7 @@ int main(int argc, char *argv[])
 			 * GOCLIENT went high, and so we got alerted about a new
 			 * message arriving. Copy the message to our own buffer queue.
 			 */
-			buf = strdup(channel->channelbuf);
+			char *inbuf = strdup(channel->channelbuf);
 
 			/* 
 			 * Now we have safely stored the new message in our buffer.
@@ -278,9 +277,8 @@ int main(int argc, char *argv[])
 			 * Put the new message on our outbound queue.
 			 */
 			newmsg = (hobbit_msg_t *) malloc(sizeof(hobbit_msg_t));
-			newmsg->buf = buf;
-			newmsg->bufp = newmsg->buf;
-			newmsg->buflen = strlen(buf);
+			newmsg->buf = newmsg->bufp = inbuf;
+			newmsg->buflen = strlen(inbuf);
 			newmsg->next = NULL;
 			if (head == NULL) {
 				head = tail = newmsg;
@@ -294,7 +292,7 @@ int main(int argc, char *argv[])
 			 * See if they want us to rotate logs. We pass this on to
 			 * the worker module as well, but must handle our own logfile.
 			 */
-			if (strncmp(buf, "@@logrotate", 11) == 0) {
+			if (strncmp(inbuf, "@@logrotate", 11) == 0) {
 				freopen(logfn, "a", stdout);
 				freopen(logfn, "a", stderr);
 			}
@@ -371,7 +369,6 @@ int main(int argc, char *argv[])
 
 	if (pidfile) unlink(pidfile);
 
-	xfree(buf);
 	return (childexit != -1) ? 1 : 0;
 }
 
