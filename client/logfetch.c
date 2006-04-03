@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.8 2006-04-02 16:56:55 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.9 2006-04-03 12:55:20 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -213,6 +213,7 @@ int loadconfig(char *cfgfn)
 	FILE *fd;
 	char l[PATH_MAX + 1024];
 	logdef_t *currcfg = NULL;
+	logdef_t *firstpipeitem = NULL;
 
 	/* Config items are in the form:
 	 *    log:filename:maxbytes
@@ -238,13 +239,55 @@ int loadconfig(char *cfgfn)
 			if (tok) maxbytes = atoi(tok);
 
 			if ((filename != NULL) && (maxbytes != -1)) {
-				logdef_t *newitem = calloc(sizeof(logdef_t), 1);
-				newitem->filename = strdup(filename);
-				newitem->maxbytes = maxbytes;
-				newitem->next = loglist;
-				loglist = newitem;
+				logdef_t *newitem;
+				firstpipeitem = NULL;
 
-				currcfg = newitem;
+				if (*filename == '`') {
+					/* Run the command to get filenames */
+					char *cmd;
+					FILE *fd;
+
+					cmd = filename+1;
+					p = strchr(cmd, '`'); if (p) *p = '\0';
+					fd = popen(cmd, "r");
+					if (fd) {
+						char pline[PATH_MAX];
+						char *p;
+
+						while (fgets(pline, sizeof(pline), fd)) {
+							p = pline + strcspn(pline, "\r\n"); *p = '\0';
+
+							newitem = calloc(sizeof(logdef_t), 1);
+
+							newitem->filename = strdup(pline);
+							newitem->maxbytes = maxbytes;
+							newitem->next = loglist;
+							loglist = newitem;
+
+							/*
+							 * Since we insert new items at the head of the list,
+							 * currcfg points to the first item in the list of
+							 * these log configs. firstpipeitem points to the
+							 * last item inside the list which is part of this
+							 * configuration.
+							 */
+							currcfg = newitem;
+							if (!firstpipeitem) firstpipeitem = newitem;
+						}
+
+						pclose(fd);
+					}
+
+				}
+				else {
+					newitem = calloc(sizeof(logdef_t), 1);
+					newitem->filename = strdup(filename);
+					newitem->maxbytes = maxbytes;
+					newitem->next = loglist;
+					loglist = newitem;
+
+					currcfg = newitem;
+				}
 			}
 			else {
 				currcfg = NULL;
@@ -252,11 +295,35 @@ int loadconfig(char *cfgfn)
 		}
 		else if (currcfg && (strncmp(l, "ignore ", 7) == 0)) {
 			p = l + 7; p += strspn(p, " \t");
-			currcfg->ignore = strdup(p);
+
+			if (firstpipeitem) {
+				/* Fill in this ignore expression on all items in this pipe set */
+				logdef_t *walk = currcfg;
+
+				do {
+					walk->ignore = strdup(p);
+					walk = walk->next;
+				} while (walk && (walk != firstpipeitem->next));
+			}
+			else {
+				currcfg->ignore = strdup(p);
+			}
 		}
 		else if (currcfg && (strncmp(l, "trigger ", 8) == 0)) {
 			p = l + 8; p += strspn(p, " \t");
-			currcfg->trigger = strdup(p);
+
+			if (firstpipeitem) {
+				/* Fill in this trigger expression on all items in this pipe set */
+				logdef_t *walk = currcfg;
+
+				do {
+					walk->trigger = strdup(p);
+					walk = walk->next;
+				} while (walk && (walk != firstpipeitem->next));
+			}
+			else {
+				currcfg->trigger = strdup(p);
+			}
 		}
 		else currcfg = NULL;
 	}
