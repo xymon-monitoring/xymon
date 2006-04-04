@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.19 2006-04-03 13:50:20 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.20 2006-04-04 21:00:50 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -681,11 +681,9 @@ int scan_log(namelist_t *hinfo, char *logname, char *logdata, char *section, str
 	int anylines = 0;
 	char *boln, *eoln;
 	char msgline[PATH_MAX];
-	strbuffer_t *linesfromlogfile;
 
 	hostname = bbh_item(hinfo, BBH_HOSTNAME);
 	pagename = bbh_item(hinfo, BBH_PAGEPATH);
-	linesfromlogfile = newstrbuffer(0);
 	
 	for (rule = getrule(hostname, pagename, C_LOG); (rule); rule = getrule(NULL, NULL, C_LOG)) {
 		/* First, check if the filename matches */
@@ -705,9 +703,9 @@ int scan_log(namelist_t *hinfo, char *logname, char *logdata, char *section, str
 					/* We wants it ... */
 					anylines++;
 					sprintf(msgline, "&%s ", colorname(rule->rule.log.color));
-					addtobuffer(linesfromlogfile, msgline);
-					addtobuffer(linesfromlogfile, boln);
-					addtobuffer(linesfromlogfile, "\n");
+					addtobuffer(summarybuf, msgline);
+					addtobuffer(summarybuf, boln);
+					addtobuffer(summarybuf, "\n");
 				}
 			}
 
@@ -720,19 +718,8 @@ int scan_log(namelist_t *hinfo, char *logname, char *logdata, char *section, str
 
 		/* We have a match */
 		if (anylines && (rule->rule.log.color > result)) result = rule->rule.log.color;
-
-		if (firstmatch) {
-			sprintf(msgline, "\nFound in <a href=\"%s\">%s</a>:\n", 
-				hostsvcclienturl(hostname, section), logname);
-			addtobuffer(summarybuf, msgline);
-			firstmatch = 0;
-		}
-
-		addtostrbuffer(summarybuf, linesfromlogfile);
-		clearstrbuffer(linesfromlogfile);
 	}
 
-	freestrbuffer(linesfromlogfile);
 	return result;
 }
 
