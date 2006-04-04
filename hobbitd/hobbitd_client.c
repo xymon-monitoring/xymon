@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.54 2006-04-03 13:51:46 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.55 2006-04-04 20:59:29 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -599,11 +599,13 @@ static void old_msgs_report(char *hostname, namelist_t *hinfo, char *fromline, c
 
 void msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, char *msgsstr)
 {
-	static strbuffer_t *logsummary = NULL;
-	static strbuffer_t *logdata = NULL;
+	static strbuffer_t *greendata = NULL;
+	static strbuffer_t *yellowdata = NULL;
+	static strbuffer_t *reddata = NULL;
 	sectlist_t *swalk;
+	strbuffer_t *logsummary;
 	int msgscolor = COL_GREEN;
-	char msgline[4096];
+	char msgline[PATH_MAX];
 	char sectionname[PATH_MAX];
 
 	for (swalk = sections; (swalk && strncmp(swalk->sname, "msgs:", 5)); swalk = swalk->next) ;
@@ -613,23 +615,46 @@ void msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 		return;
 	}
 
-	if (logsummary) clearstrbuffer(logsummary); else logsummary = newstrbuffer(0);
-	if (logdata) clearstrbuffer(logdata); else logdata = newstrbuffer(0);
+	if (!greendata) greendata = newstrbuffer(0);
+	if (!yellowdata) yellowdata = newstrbuffer(0);
+	if (!reddata) reddata = newstrbuffer(0);
+
+	logsummary = newstrbuffer(0);
 
 	while (swalk) {
 		int logcolor;
 
+		clearstrbuffer(logsummary);
 		sprintf(sectionname, "msgs:%s", swalk->sname+5);
-		sprintf(msgline, "\nLog file <a href=\"%s\">%s</a>\n", 
-			hostsvcclienturl(hostname, sectionname), swalk->sname+5);
-
-		addtobuffer(logdata, msgline);
-		addtobuffer(logdata, swalk->sdata);
-
 		logcolor = scan_log(hinfo, swalk->sname+5, swalk->sdata, sectionname, logsummary);
 		if (logcolor > msgscolor) msgscolor = logcolor;
+
+		switch (logcolor) {
+		  case COL_GREEN:
+			sprintf(msgline, "\nNo entries in <a href=\"%s\">%s</a>\n", 
+				hostsvcclienturl(hostname, sectionname), swalk->sname+5);
+			addtobuffer(greendata, msgline);
+			break;
+
+		  case COL_YELLOW: 
+			sprintf(msgline, "\nWarnings in <a href=\"%s\">%s</a>\n", 
+				hostsvcclienturl(hostname, sectionname), swalk->sname+5);
+			addtobuffer(yellowdata, msgline);
+			addtostrbuffer(yellowdata, logsummary);
+			break;
+
+		  case COL_RED:
+			sprintf(msgline, "\nCritical entries in <a href=\"%s\">%s</a>\n", 
+				hostsvcclienturl(hostname, sectionname), swalk->sname+5);
+			addtobuffer(reddata, msgline);
+			addtostrbuffer(reddata, logsummary);
+			break;
+		}
+
 		do { swalk=swalk->next; } while (swalk && strncmp(swalk->sname, "msgs:", 5));
 	}
+
+	freestrbuffer(logsummary);
 
 	init_status(msgscolor);
 	sprintf(msgline, "status %s.msgs %s System logs at %s\n",
@@ -637,12 +662,37 @@ void msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 		(timestr ? timestr : "<No timestamp data>"));
 	addtostatus(msgline);
 
-	if (STRBUFLEN(logsummary)) {
-		addtostrstatus(logsummary);
+	if (STRBUFLEN(reddata)) {
+		addtostrstatus(reddata);
+		clearstrbuffer(reddata);
 		addtostatus("\n");
 	}
 
-	if (STRBUFLEN(logdata)) addtostrstatus(logdata);
+	if (STRBUFLEN(yellowdata)) {
+		addtostrstatus(yellowdata);
+		clearstrbuffer(yellowdata);
+		addtostatus("\n");
+	}
+
+	if (STRBUFLEN(greendata)) {
+		addtostrstatus(greendata);
+		clearstrbuffer(greendata);
+		addtostatus("\n");
+	}
+
+	/* 
+	 * Add the full log message data from each logfile.
+	 * It's probably faster to re-walk the section list than
+	 * stuffing the full messages into a temporary buffer.
+	 */
+	for (swalk = sections; (swalk && strncmp(swalk->sname, "msgs:", 5)); swalk = swalk->next) ;
+	while (swalk) {
+		sprintf(msgline, "\nFull log <a href=\"%s\">%s</a>\n", 
+			hostsvcclienturl(hostname, sectionname), swalk->sname+5);
+		addtostatus(msgline);
+		addtostatus(swalk->sdata);
+		do { swalk=swalk->next; } while (swalk && strncmp(swalk->sname, "msgs:", 5));
+	}
 
 	if (fromline && !localmode) addtostatus(fromline);
 
