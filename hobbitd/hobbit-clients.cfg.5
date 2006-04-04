@@ -8,7 +8,7 @@ hobbit-clients.cfg \- Configuration file for the hobbitd_client module
 .SH DESCRIPTION
 The hobbit-clients.cfg file controls what color is assigned to
 the status-messages that are generated from the Hobbit client
-data - typically the cpu, disk, memory and procs-columns. Color
+data - typically the cpu, disk, memory, procs- and msgs-columns. Color
 is decided on the basis of some \fBsettings\fR defined in this file;
 settings apply to specific hosts through a set of \fBrules\fR.
 
@@ -143,6 +143,52 @@ Defaults:
 	mincount=1, maxcount=-1 (unlimited), color="red".
 .br
 	Note that no processes are checked by default.
+
+.SH MSGS STATUS COLUMN SETTINGS
+.sp
+.BR "LOG logfilename pattern [color [excludepattern]]"
+.sp
+The Hobbit client extracts interesting lines from one or 
+more logfiles - see the
+.I client-local.cfg(5)
+man-page for information about how to configure which
+logs a client should look at.
+.sp
+The \fBLOG\fR setting determine how these extracts of log entries
+are processed, and what warnings or alerts trigger as a result.
+.sp
+"logfilename" is the base name of the logfile (without any directory).
+Only logentries from this filename will be matched against this rule.
+Note that "logfilename" can be a regular expression.
+.sp
+"pattern" is a string or regular expression. If the logfile data matches 
+"pattern", it will trigger the "msgs" column to change color. If
+no "color" parameter is present, the default is to go "red" when
+the pattern is matched. To match against a regular expression, "pattern"
+must begin with a "%" sign - e.g "%WARNING|NOTICE" will match any lines
+containing either of these two words.
+.sp
+"excludepattern" is a string or regular expression that can be used to 
+filter out any unwanted strings that happen to match "pattern".
+.sp
+Example: Trigger a red alert when the string "ERROR" appears in the "syslog" file:
+.br
+	LOG syslog ERROR
+.sp
+Example: Trigger a yellow warning on all occurrences of the word "WARNING"
+or "NOTICE" in the "daemon.log" file, except those from the "lpr" system:
+.br
+	LOG daemon.log %WARNING|NOTICE yellow lpr
+.sp
+Defaults:
+.br
+	color="red", no "excludepattern".
+.sp
+Note that no logfiles are checked by default. Any log
+data reported by a client will just show up on the "msgs"
+column with status OK (green).
+
+
 
 .SH CHANGING THE DEFAULT SETTINGS
 If you would like to use different defaults for the settings described above, 
