@@ -1,3 +1,175 @@
+Changes from 4.1.2p1 -> 4.2
+---------------------------
+New features:
+* A major overhaul of the "Critical Systems" (NK) webpage.
+  A new hobbit-nkview CGI has been added, allowing much more
+  flexible handling of the NK alerts. This allows the 24x7
+  monitoring staff to group alerts by priority, filter out
+  acknowledged alerts that have been delegated to resolver 
+  groups, to permanently enable or disable a status to
+  appear on their monitoring console when a system goes
+  into or is taken out of production, and also provides
+  direct acces to special instructions for the monitoring
+  staff.
+  To accomodate all of these new configuration items, a
+  separate "Critical Systems Configuration" file is
+  introduced, which is separate from the bb-hosts file.
+  A web-based configuration tool - the "hobbit-nkedit" CGI - 
+  is also provided, allowing the monitoring operations staff 
+  to control what systems appear and how their monitoring is 
+  setup.
+  Since hobbit-nkview is a CGI script, the Critical Systems
+  page will now always show a completely up-to-date version
+  of the Hobbit systems status.
+* The Hobbit client will now report logfile data as part of
+  the client data. Which logfiles to monitor and how much
+  data to send is configured centrally on the Hobbit server,
+  and automatically transmitted to the client when it contacts
+  the Hobbit server. See the logfetch(1) man-page for details.
+  Apart from size limitations, the logfile data is not filtered
+  by the client.
+* Disabling a status can now be done until the status goes to
+  an OK state.
+* A "bulletin_header" or "bulletin_footer" file can now be created
+  in the ~hobbit/server/web/ direectory. This will automatically
+  get added to the header or footer of all webpages.
+* All configuration files now support the use of "include"
+  statements to split the configuration into several files.
+* All configuration files now support the statement "directory
+  DIRNAME"; this causes all normal files in this directory and
+  below to be included as part of the configuration file. Note
+  that the sequence of files being included in this way is not
+  controllable.
+* An acknowledgment sent to Hobbit is only deleted after the
+  status has been OK for a while (12 minutes). This allows
+  a status to be acknowledged, then briefly go OK but return
+  to critical shortly after, without resetting the alert timers.
+
+Improvements:
+* All of the core programs have been profiled to identify 
+  performance bottlenecks. Several optimizations have been
+  implemented; these are definitely noticable when Hobbit is
+  used in large installations (more than 100 hosts). The 
+  most noticable effects is a drop of 25-40% in hobbitd
+  CPU utilisation, a 50% drop in CPU utilisation of the
+  hobbitd_client module, and a huge speedup in the 
+  hobbit-enadis CGI program.
+* DOWNTIME can now be applied to individual tests, and
+  you can specify a text explaining why the service is
+  down. The new format in the bb-hosts file is:
+     DOWNTIME=columns:days:starttime:endtime:cause
+  If you have more than one service that you want to set
+  the downtime for, "column" can be "*" to match all
+  services, or you can define multiple downtime-settings:
+  "DOWNTIME=http,ftp:*:0300:0315:CMS update;*:0:0200:0210:Reboot"
+* Status changes that happen during DOWNTIME periods do not
+  update the last-status-change timestamp in hobbitd. Hence
+  a service that was red before the start of DOWNTIME and
+  stays red during downtime will not appear to be changed
+  recently - so it wont reappear on the NK view when using
+  time-based filters.
+* A new hobbit-statusreport CGI has been added. This CGI can
+  generate an HTML report of all hosts with a given status
+  column, e.g. all SSL certificates. By using filters, you
+  can pick out those hosts where e.g. the status is non-green.
+  A sample hobbit-certreport.sh script is included that uses
+  this CGI to generate a report of all SSL certificates which
+  are about to expire, i.e. have a red or yellow status.
+* When using alerts with FORMAT=SMS, the text will now clearly
+  show when the status has RECOVERED.
+* The hobbitsvc CGI no longer needs to load the bb-hosts file
+  to get information about the hosts' IP-address and display-
+  name. Instead, it gets them from hobbitd as part of the
+  normal request to get the current status. This avoids a
+  lot of file I/O when looking at the detailed status page.
+* You can now explicitly choose which colors cause a status to
+  appear on the BB2 page, via the "--bb2-colors=COLOR,COLOR"
+  option to bbgen.
+* When zooming a graph, the legend now states the period 
+  that the graph covers.
+* bb-findhost now includes JavaScript code to make input
+  focus go to the input field immediately.
+* SSH testing now sends an SSH version string. This should
+  eliminate some logwarnings (note: requires updating of the
+  bb-services file).
+* All BLUE status handling is now done by hobbitd. As a result,
+  the detailed status shown while a status is BLUE will include
+  the original status message color in the status text, even
+  though the status will show up as blue.
+* bbhostgrep now support a "--no-down" option to omit hosts
+  that are currently known to be down. This is determined by
+  the current "conn" status.
+* The Hobbit clients now report network interface statistics.
+  This allows for Hobbit to track network utilisation, like
+  MRTG does.
+* The hobbit-mailack tool now recognizes ACK codes if given
+  as a line "ack NUMBER" inside the mail body. Also, the
+  duration of the acknowledge can be given through a
+  "delay MINUTES" line in the message body.
+* The hobbitd client module can now run in a "local" mode,
+  allowing for configurations to be maintained on individual
+  servers.
+* Historical status logs generated by planned downtime
+  settings now include a notice in the stored status log that
+  the status was blue due to planned downtime.
+* For the NCV RRD handler, you can now set all datasets to
+  a specific type by listing them as "NCV_foo=*:GAUGE".
+
+Bugs:
+* The hobbitreports.sh script would calculate the wrong year 
+  and week-number for the end-of-year weekly reports.
+* hobbitd_client ignored qualifiers for individual rules.
+* The "query" command would return the wrong color for a
+  disabled test.
+* The ncv handler would fail on input lines that had extra
+  text after the value, e.g. "Temp: 23 degrees".
+
+Other:
+* The "NK" and "NKTIME" tags in the bb-hosts file have been
+  deprecated with the introduction of the hobbit-nkview
+  CGI. Similarly, the static NK webpage generated from these
+  tags is now deprecated. They will continue to work for some
+  time, but support for these will be removed in a future
+  release of Hobbit.
+* The acknowledgment system has been redesigned, to allow 
+  for acks to happen at multiple levels of operation. E.g.
+  the 24x7 monitoring staff may acknowledge an alert after
+  raising a trouble-ticket, and a technician may acknowledge
+  the same alert when responding to the ticket. This is
+  currently used only by the new Critical Systems page,
+  but a future release will use this for more advanced
+  handling of alerts.
+
+
+Changes from 4.1.2 -> 4.1.2p1 (10 Nov 2005)
+-------------------------------------------
+Bugfixes:
+* hobbitd could crash when processing a "combo" message,
+  due to an incorrect test of the color of one message inside
+  the combo-message before that color was actually deciphered.
+* hobbitd_alert would crash when attempting to save a checkpoint
+  while cleaning up a "dead" alert.
+* Disk graphs would show up with all graphs in a single image,
+  when the status message included any colored icons
+  (typically, when the status was red or yellow).
+* The handling of alerts was counting the duration of an event
+  based on when the color last changed. This meant that each
+  time the color changed, any DURATION counters were reset.
+  This would cause alerts to not go out if a status was changing
+  between yellow and red faster than any DURATION setting.
+  Changed this to count the event start as the *first* time the
+  status went into an alert state (yellow or red, usually).
+* An idle hobbitd process would accumulate zombie processes.
+
+Improvements:
+* When a status goes yellow->red, the repeat-interval is
+  now cleared for any alerts. This makes sure you get an
+  alert immediately for the most severe state seen. This
+  only affects the first such transition; if the status
+  later changes between yellow/red, this normal REPEAT
+  interval applies.
+
+
 Changes from 4.1.1 -> 4.1.2 (11 Oct 2005)
 -----------------------------------------
 
