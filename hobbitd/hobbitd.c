@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.218 2006-04-01 08:09:14 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.219 2006-04-04 21:13:57 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -3046,7 +3046,9 @@ void do_message(conn_t *msg, char *origin)
 		}
 	}
 	else if (strncmp(msg->buf, "client ", 7) == 0) {
+		/* "client HOSTNAME.CLIENTTYPE CLIENTCONF" */
 		char *hostname = NULL, *clienttype = NULL, *clientconf = NULL;
+		char *hname;
 		char *line1, *p;
 
 		msgfrom = strstr(msg->buf, "\nStatus message received from ");
@@ -3058,7 +3060,7 @@ void do_message(conn_t *msg, char *origin)
 		p = strchr(msg->buf, '\n'); if (p) *p = '\0';
 		line1 = strdup(msg->buf); if (p) *p = '\n';
 		p = strtok(line1, " \t"); /* Skip the client keyword */
-		if (p) hostname = strtok(NULL, " \t");
+		if (p) hostname = strtok(NULL, " \t"); /* Actually, HOSTNAME.CLIENTTYPE */
 		if (hostname) {
 			clienttype = strrchr(hostname, '.'); 
 			if (clienttype) { *clienttype = '\0'; clienttype++; }
@@ -3067,7 +3069,7 @@ void do_message(conn_t *msg, char *origin)
 		}
 
 		if (hostname && clienttype) {
-			char *hname, hostip[20];
+			char hostip[20];
 
 			MEMDEFINE(hostip);
 
@@ -3090,13 +3092,15 @@ void do_message(conn_t *msg, char *origin)
 		if (clientconfigs) {
 			RbtIterator handle;
 
-			if (clientconf && *clientconf) {
+			/*
+			 * Find the client config.  Search for a HOSTNAME entry first, 
+			 * then the CLIENTCONF, then CLIENTTYPE.
+			 */
+			handle = rbtFind(rbconfigs, hname);
+			if ((handle == rbtEnd(rbconfigs)) && clientconf && *clientconf)
 				handle = rbtFind(rbconfigs, clientconf);
-				if (handle == rbtEnd(rbconfigs)) handle = rbtFind(rbconfigs, clienttype);
-			}
-			else {
+			if ((handle == rbtEnd(rbconfigs)) && clienttype && *clienttype)
 				handle = rbtFind(rbconfigs, clienttype);
-			}
 
 			if (handle != rbtEnd(rbconfigs)) {
 				msg->doingwhat = RESPONDING;
