@@ -248,7 +248,27 @@ color of each of the status columns.</p>
 			this, e.g. Linux - the actual amount of memory used for applications.
 		</td>
 	</tr>
+	<tr>
+		<th align="left" valign="top">LOG</th>
+		<td>Set the <b>msgs</b> column color. This takes at least two parameters:
+			The first is the name of the logfile, the second is a pattern
+			defining which logentries trigger a change of color.<br>
+			Optionally, this can be followed by a third parameter defining
+			which color this LOG entry causes, and fourth parameter which
+			is an "ignore" pattern you can use to filter out lines which
+			do match the first pattern of lines that trigger a change in
+			color, but that you really do not want to trigger a color change.<br>
+		</td>
+	</tr>
 </table>
+
+<h3>More about logfile monitoring</h3>
+<p>Configuring the LOG entries in the hobbit-clients.cfg file is only one half of
+the configuration - you also need to tell the Hobbit client running on the 
+monitored system that it must send in some data from that logfile in the
+first place. For that, you must configure the
+<a href="manpages/man5/client-local.cfg.5.html"> client-local.cfg</a> file
+with the name of the logfile.</p>
 
 </body>
 </html>
