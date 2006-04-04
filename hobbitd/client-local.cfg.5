@@ -1,0 +1,74 @@
+.TH CLIENT-LOCAL.CFG 5 "Version 4.1.2: 11 Oct 2005" "Hobbit Monitor"
+.SH NAME
+client-local.cfg \- Local configuration settings for Hobbit clients
+
+.SH SYNOPSIS
+.B ~hobbit/server/etc/client-local.cfg
+
+.SH DESCRIPTION
+The client-local.cfg file contains settings that are used by each 
+Hobbit client when it runs on a monitored host. It provides a
+convenient way of configuring clients from a central location
+without having to setup special configuration maintenance tools on
+all clients.
+
+The client-local.cfg file is currently used to configure what logfiles
+the client should fetch data from, to be used as the basis for the
+"msgs" status column.
+
+.SH PROPAGATION TO CLIENTS
+When clients connect to the Hobbit server to send in their client
+data, they will receive part of this file back from the Hobbit server.
+The configuration received by the client is then used the next time 
+the client runs.
+
+This method of propagating the configuration means that there is a
+delay of up to two poll cycles (i.e. 5-10 minutes) from a configuration
+change is entered into the client-local.cfg file, and until you see
+the result in the status messages reported by the client.
+
+.SH FILE FORMAT
+The file is divided into sections, delimited by "[name]" lines.
+A section name can be either an operating system identifier - 
+linux, solaris, hp-ux, aix, freebsd, openbsd, netbsd, darwin - 
+or a hostname. When deciding which section to send to a client,
+Hobbit will first look for a section named after the hostname of
+the client; if such a section does not exist, it will look for
+a section named by the operating system of the client. So you
+can configure special configurations for individual hosts, and have
+a default configuration for all other hosts of a certain type.
+
+Apart from the section delimiter, the file format is free-form, or
+rather it is defined by the tools that make use of the configuration.
+
+.SH LOGFILE CONFIGURATION ENTRIES
+A logfile configuration entry looks like this:
+.sp
+    [linux]
+.br
+    log:/var/log/messages:10240
+.br
+    ignore MARK
+.br
+    trigger Oops
+.sp
+The \fBlog:FILENAME:SIZE\fR line defines the filename of the log, and the
+maximum amount of data (in bytes) to send to the Hobbit server.
+.sp
+The \fBignore PATTERN\fR line (optional) defines lines in the logfile which
+are ignored entirely, i.e. they are stripped from the logfile data before
+sending it to the Hobbit server. It is used to remove completely unwanted
+"noise" entries from the logdata processed by Hobbit. "PATTERN" is a regular
+expression.
+.sp
+The \fBtrigger PATTERN\fR line (optional) is used only when there is more
+data in the log than the maximum size set in the "log:FILENAME:SIZE" line.
+The "trigger" pattern is then used to find particularly interesting lines
+in the logfile - these will always be sent to the Hobbit server. After
+picking out the "trigger" lines, any remaining space up to the maximum size
+is filled in with the most recent entries from the logfile. "PATTERN" is
+a regular expression.
+
+.SH "SEE ALSO"
+hobbit-clients.cfg(5), hobbitd_client(8), hobbitd(8), hobbit(7)
+
