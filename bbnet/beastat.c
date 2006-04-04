@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: beastat.c,v 1.5 2005-07-14 16:36:26 henrik Exp $";
+static char rcsid[] = "$Id: beastat.c,v 1.6 2006-04-04 21:26:43 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -144,35 +144,39 @@ char *qitems[] = {
 void send_data(namelist_t *host, char *beadomain, char *databuf, char **items)
 {
 	bea_idx_t *idxwalk;
-	char *msgbuf = NULL;
-	int msglen = 0;
+	strbuffer_t *msgbuf;
 	char *p;
 	int i;
 
+	msgbuf = newstrbuffer(0);
+
         for (idxwalk = bea_idxhead; (idxwalk); idxwalk = idxwalk->next) {
 		sprintf(msgline, "data %s.bea\n\n", commafy(bbh_item(host, BBH_HOSTNAME)));
-		addtobuffer(&msgbuf, &msglen, msgline);
+		addtobuffer(msgbuf, msgline);
 
 		if (beadomain && *beadomain) {
 			sprintf(msgline, "DOMAIN:%s\n", beadomain);
-			addtobuffer(&msgbuf, &msglen, msgline);
+			addtobuffer(msgbuf, msgline);
 		}
 
 		for (i=0; (items[i]); i++) {
 			p = getstring(databuf, idxwalk->idx, items[i]);
 			sprintf(msgline, "%s\n", p);
-			addtobuffer(&msgbuf, &msglen, msgline);
+			addtobuffer(msgbuf, msgline);
 		}
 
-		sendmessage(msgbuf, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
-		xfree(msgbuf); msgbuf = NULL; msglen = 0;
+		sendmessage(STRBUF(msgbuf), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+		clearstrbuffer(msgbuf);
 	}
+
+	freestrbuffer(msgbuf);
 }
 
 int main(int argc, char *argv[])
 {
         namelist_t *hosts, *hwalk;
 	int argi;
+	strbuffer_t *statusmsg, *jrockout, *qout;
 
 	for (argi = 1; (argi < argc); argi++) {
 		if ((strcmp(argv[argi], "--help") == 0)) {
@@ -215,6 +219,9 @@ int main(int argc, char *argv[])
 
 	init_timestamp();
 	combo_start();
+	statusmsg = newstrbuffer(0);
+	jrockout = newstrbuffer(0);
+	qout = newstrbuffer(0);
 
 	for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
 		char *tspec = bbh_custom_item(hwalk, "bea=");
@@ -223,10 +230,11 @@ int main(int argc, char *argv[])
 		int snmpport = default_port;
 		char *p;
 		char pipecmd[4096];
-		char *jrockout, *qout;
-		int jrockres, qres, jrockoutbytes, qoutbytes;
-		char *statusmsg = NULL;
-		int statusmsgsz;
+		int jrockres, qres;
+
+		clearstrbuffer(statusmsg);
+		clearstrbuffer(jrockout);
+		clearstrbuffer(qout);
 
 		/* Check if we have a "bea" test for this host, and it is a host we want to test */
                 if (!tspec || !wanted_host(hwalk, location)) continue;
@@ -256,31 +264,31 @@ int main(int argc, char *argv[])
 		/* Setup the snmpwalk pipe-command for jrockit stats */
 		sprintf(pipecmd, "snmpwalk -m BEA-WEBLOGIC-MIB -c %s@%s -v 1 %s:%d enterprises.140.625.302.1",
 			snmpcommunity, beadomain, bbh_item(hwalk, BBH_IP), snmpport);
-		jrockres = run_command(pipecmd, NULL, &jrockout, &jrockoutbytes, 0, extcmdtimeout);
+		jrockres = run_command(pipecmd, NULL, jrockout, 0, extcmdtimeout);
 		if (jrockres == 0) {
-			find_idxes(jrockout, "BEA-WEBLOGIC-MIB::jrockitRuntimeIndex.");
-			send_data(hwalk, beadomain, jrockout, jrockitems);
+			find_idxes(STRBUF(jrockout), "BEA-WEBLOGIC-MIB::jrockitRuntimeIndex.");
+			send_data(hwalk, beadomain, STRBUF(jrockout), jrockitems);
 		}
 		else {
 			if (statuscolor < COL_YELLOW) statuscolor = COL_YELLOW;
 			sprintf(msgline, "Could not retrieve BEA jRockit statistics from %s:%d domain %s (code %d)\n",
 				bbh_item(hwalk, BBH_IP), snmpport, beadomain, jrockres);
-			addtobuffer(&statusmsg, &statusmsgsz, msgline);
+			addtobuffer(statusmsg, msgline);
 		}
 
 		/* Setup the snmpwalk pipe-command for executeQueur stats */
 		sprintf(pipecmd, "snmpwalk -m BEA-WEBLOGIC-MIB -c %s@%s -v 1 %s:%d enterprises.140.625.180.1",
 			snmpcommunity, beadomain, bbh_item(hwalk, BBH_IP), snmpport);
-		qres = run_command(pipecmd, NULL, &qout, &qoutbytes, 0, extcmdtimeout);
+		qres = run_command(pipecmd, NULL, qout, 0, extcmdtimeout);
 		if (qres == 0) {
-			find_idxes(qout, "BEA-WEBLOGIC-MIB::executeQueueRuntimeIndex.");
-			send_data(hwalk, beadomain, qout, qitems);
+			find_idxes(STRBUF(qout), "BEA-WEBLOGIC-MIB::executeQueueRuntimeIndex.");
+			send_data(hwalk, beadomain, STRBUF(qout), qitems);
 		}
 		else {
 			if (statuscolor < COL_YELLOW) statuscolor = COL_YELLOW;
 			sprintf(msgline, "Could not retrieve BEA executeQueue statistics from %s:%d domain %s (code %d)\n",
 				bbh_item(hwalk, BBH_IP), snmpport, beadomain, qres);
-			addtobuffer(&statusmsg, &statusmsgsz, msgline);
+			addtobuffer(statusmsg, msgline);
 		}
 
 		/* FUTURE: Have the statuscolor/statusmsg be updated to check against thresholds */
@@ -288,13 +296,15 @@ int main(int argc, char *argv[])
 		init_status(statuscolor);
 		sprintf(msgline, "status %s.%s %s %s\n\n", commafy(bbh_item(hwalk, BBH_HOSTNAME)), "bea", colorname(statuscolor), timestamp);
 		addtostatus(msgline);
-		if (!statusmsg) addtobuffer(&statusmsg, &statusmsgsz, "All BEA monitors OK\n");
-		addtostatus(statusmsg);
+		if (STRBUFLEN(statusmsg) == 0) addtobuffer(statusmsg, "All BEA monitors OK\n");
+		addtostrstatus(statusmsg);
 		finish_status();
-		xfree(statusmsg);
 	}
 
 	combo_end();
+	freestrbuffer(statusmsg);
+	freestrbuffer(jrockout);
+	freestrbuffer(qout);
 
 	return 0;
 }
