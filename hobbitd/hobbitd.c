@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.219 2006-04-04 21:13:57 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.220 2006-04-04 21:37:16 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -3089,14 +3089,14 @@ void do_message(conn_t *msg, char *origin)
 			MEMUNDEFINE(hostip);
 		}
 
-		if (clientconfigs) {
+		if (clientconfigs && hostname) {
 			RbtIterator handle;
 
 			/*
 			 * Find the client config.  Search for a HOSTNAME entry first, 
 			 * then the CLIENTCONF, then CLIENTTYPE.
 			 */
-			handle = rbtFind(rbconfigs, hname);
+			handle = rbtFind(rbconfigs, hostname);
 			if ((handle == rbtEnd(rbconfigs)) && clientconf && *clientconf)
 				handle = rbtFind(rbconfigs, clientconf);
 			if ((handle == rbtEnd(rbconfigs)) && clienttype && *clienttype)
