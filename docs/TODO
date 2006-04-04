@@ -18,12 +18,20 @@ Bugfixes
 
 Things I must remember to look at
 ---------------------------------
+* Create a new hobbitd worker module off the stachg channel.
+  This will dynamically receive status updates, and therefore
+  it can have the full status of each PAGE without having to
+  load the hobbitd board (should do so regularly just in case).
+  This can be used to switch the overview pages to a CGI tool
+  instead of generating the static pages. NB: Must be able to
+  handle multiple page setups - or should we just have one
+  worker per setup with different config files ?
 * "cpu" status determined by the non-idle time reported by
   vmstat, instead of the rather meaningless load average.
-* Option to pick what colors goes on the BB2 and BBNK pages.
-* DOWNTIME on a per-test basis.
 * hobbitd_client process/disk alarms to different people depending
   on *which* process/disk is in error.
+* process checks that relate to a group of host (process "foo"
+  must exist on at least X of these Y nodes: HostA, HostB, HostC.
 * CLASS tags for hobbit-alerts.cfg and hobbit-clients.cfg, to get
   away from host/page name configs. Hosts can have a CLASS tag
   defining them as belonging to one or more classes; the client-
@@ -48,6 +56,8 @@ Things I must remember to look at
   is a protocol violation (e.g. SMTP servers may refuse us because
   we send data before seeing their "220" greeting). Should do this
   right and also cater for multiple http exchanges to follow redirects.
+* Better selection of which graphs go with what statuses. 
+* Easy way of grouping hosts for multi-graphs.
 
 
 Improvements
