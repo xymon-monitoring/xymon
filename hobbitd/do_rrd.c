@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.26 2005-11-10 21:39:11 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.27 2006-04-04 21:18:03 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -229,7 +229,6 @@ static int rrddatasets(char *hostname, char *fn, char ***dsnames)
 #include "rrd/do_bind.c"
 #include "rrd/do_sendmail.c"
 #include "rrd/do_mailq.c"
-#include "rrd/do_bea.c"
 #include "rrd/do_iishealth.c"
 #include "rrd/do_temperature.c"
 
@@ -238,6 +237,11 @@ static int rrddatasets(char *hostname, char *fn, char ***dsnames)
 #include "rrd/do_ncv.c"
 #include "rrd/do_external.c"
 
+#ifdef USE_BEA2
+#include "rrd/do_bea2.c"
+#else
+#include "rrd/do_bea.c"
+#endif
 
 void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *sender, hobbitrrd_t *ldef)
 {
@@ -272,7 +276,11 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	else if (strcmp(id, "bind") == 0)        res = do_bind_rrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "sendmail") == 0)    res = do_sendmail_rrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "mailq") == 0)       res = do_mailq_rrd(hostname, testname, msg, tstamp);
+#ifdef USE_BEA2
+	else if (strcmp(id, "bea2") == 0)        res = do_bea_rrd(hostname, testname, msg, tstamp);
+#else
 	else if (strcmp(id, "bea") == 0)         res = do_bea_rrd(hostname, testname, msg, tstamp);
+#endif
 	else if (strcmp(id, "iishealth") == 0)   res = do_iishealth_rrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "temperature") == 0) res = do_temperature_rrd(hostname, testname, msg, tstamp);
 
