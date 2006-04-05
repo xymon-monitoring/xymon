@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.47 2006-03-30 15:21:03 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.48 2006-04-05 08:23:18 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -1229,7 +1229,7 @@ void showform(FILE *output, char *headertemplate, char *formtemplate, int color,
 		inbuf[st.st_size] = '\0';
 		close(formfile);
 
-		printf("Content-Type: text/html\n\n");
+		printf("Content-Type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 
 		headfoot(output, headertemplate, "", "header", color);
 		if (jstext && *jstext) {
