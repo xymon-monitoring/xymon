@@ -14,7 +14,7 @@
  * Henrik Storner 2004-11-11 <henrik@storner.dk>
  */
 
-// reentrant red-black tree
+/* reentrant red-black tree */
 
 #include <stdlib.h>
 #include <strings.h>
@@ -23,21 +23,21 @@
 typedef enum { BLACK, RED } NodeColor;
 
 typedef struct NodeTag {
-    struct NodeTag *left;       // left child
-    struct NodeTag *right;      // right child
-    struct NodeTag *parent;     // parent
-    NodeColor color;            // node color (BLACK, RED)
-    void *key;                  // key used for searching
-    void *val;                  // user data
+    struct NodeTag *left;       /* left child */
+    struct NodeTag *right;      /* right child */
+    struct NodeTag *parent;     /* parent */
+    NodeColor color;            /* node color (BLACK, RED) */
+    void *key;                  /* key used for searching */
+    void *val;                  /* user data */
 } NodeType;
 
 typedef struct RbtTag {
-    NodeType *root;   // root of red-black tree
+    NodeType *root;   /* root of red-black tree */
     NodeType sentinel;
-    int (*compare)(void *a, void *b);    // compare keys
+    int (*compare)(void *a, void *b);    /* compare keys */
 } RbtType;
 
-// all leafs are sentinels
+/* all leafs are sentinels */
 #define SENTINEL &rbt->sentinel
 
 RbtHandle rbtNew(int(*rbtCompare)(void *a, void *b)) {
@@ -62,7 +62,7 @@ RbtHandle rbtNew(int(*rbtCompare)(void *a, void *b)) {
 static void deleteTree(RbtHandle h, NodeType *p) {
     RbtType *rbt = h;
 
-    // erase nodes depth-first
+    /* erase nodes depth-first */
     if (p == SENTINEL) return;
     deleteTree(h, p->left);
     deleteTree(h, p->right);
@@ -78,15 +78,15 @@ void rbtDelete(RbtHandle h) {
 
 static void rotateLeft(RbtType *rbt, NodeType *x) {
 
-    // rotate node x to left
+    /* rotate node x to left */
 
     NodeType *y = x->right;
 
-    // establish x->right link
+    /* establish x->right link */
     x->right = y->left;
     if (y->left != SENTINEL) y->left->parent = x;
 
-    // establish y->parent link
+    /* establish y->parent link */
     if (y != SENTINEL) y->parent = x->parent;
     if (x->parent) {
         if (x == x->parent->left)
@@ -97,22 +97,22 @@ static void rotateLeft(RbtType *rbt, NodeType *x) {
         rbt->root = y;
     }
 
-    // link x and y
+    /* link x and y */
     y->left = x;
     if (x != SENTINEL) x->parent = y;
 }
 
 static void rotateRight(RbtType *rbt, NodeType *x) {
 
-    // rotate node x to right
+    /* rotate node x to right */
 
     NodeType *y = x->left;
 
-    // establish x->left link
+    /* establish x->left link */
     x->left = y->right;
     if (y->right != SENTINEL) y->right->parent = x;
 
-    // establish y->parent link
+    /* establish y->parent link */
     if (y != SENTINEL) y->parent = x->parent;
     if (x->parent) {
         if (x == x->parent->right)
@@ -123,55 +123,55 @@ static void rotateRight(RbtType *rbt, NodeType *x) {
         rbt->root = y;
     }
 
-    // link x and y
+    /* link x and y */
     y->right = x;
     if (x != SENTINEL) x->parent = y;
 }
 
 static void insertFixup(RbtType *rbt, NodeType *x) {
 
-    // maintain red-black tree balance after inserting node x
+    /* maintain red-black tree balance after inserting node x */
 
-    // check red-black properties
+    /* check red-black properties */
     while (x != rbt->root && x->parent->color == RED) {
-        // we have a violation
+        /* we have a violation */
         if (x->parent == x->parent->parent->left) {
             NodeType *y = x->parent->parent->right;
             if (y->color == RED) {
 
-                // uncle is RED
+                /* uncle is RED */
                 x->parent->color = BLACK;
                 y->color = BLACK;
                 x->parent->parent->color = RED;
                 x = x->parent->parent;
             } else {
 
-                // uncle is BLACK
+                /* uncle is BLACK */
                 if (x == x->parent->right) {
-                    // make x a left child
+                    /* make x a left child */
                     x = x->parent;
                     rotateLeft(rbt, x);
                 }
 
-                // recolor and rotate
+                /* recolor and rotate */
                 x->parent->color = BLACK;
                 x->parent->parent->color = RED;
                 rotateRight(rbt, x->parent->parent);
             }
         } else {
 
-            // mirror image of above code
+            /* mirror image of above code */
             NodeType *y = x->parent->parent->left;
             if (y->color == RED) {
 
-                // uncle is RED
+                /* uncle is RED */
                 x->parent->color = BLACK;
                 y->color = BLACK;
                 x->parent->parent->color = RED;
                 x = x->parent->parent;
             } else {
 
-                // uncle is BLACK
+                /* uncle is BLACK */
                 if (x == x->parent->left) {
                     x = x->parent;
                     rotateRight(rbt, x);
@@ -189,9 +189,9 @@ RbtStatus rbtInsert(RbtHandle h, void *key, void *val) {
     NodeType *current, *parent, *x;
     RbtType *rbt = h;
 
-    // allocate node for data and insert in tree
+    /* allocate node for data and insert in tree */
 
-    // find future parent
+    /* find future parent */
     current = rbt->root;
     parent = 0;
     while (current != SENTINEL) {
@@ -202,7 +202,7 @@ RbtStatus rbtInsert(RbtHandle h, void *key, void *val) {
         current = (rc < 0) ? current->left : current->right;
     }
 
-    // setup new node
+    /* setup new node */
     if ((x = malloc (sizeof(*x))) == 0)
         return RBT_STATUS_MEM_EXHAUSTED;
     x->parent = parent;
@@ -212,7 +212,7 @@ RbtStatus rbtInsert(RbtHandle h, void *key, void *val) {
     x->key = key;
     x->val = val;
 
-    // insert node in tree
+    /* insert node in tree */
     if(parent) {
         if(rbt->compare(key, parent->key) < 0)
             parent->left = x;
@@ -229,7 +229,7 @@ RbtStatus rbtInsert(RbtHandle h, void *key, void *val) {
 
 void deleteFixup(RbtType *rbt, NodeType *x) {
 
-    // maintain red-black tree balance after deleting node x
+    /* maintain red-black tree balance after deleting node x */
 
     while (x != rbt->root && x->color == BLACK) {
         if (x == x->parent->left) {
@@ -291,21 +291,21 @@ RbtStatus rbtErase(RbtHandle h, RbtIterator i) {
     NodeType *z = i;
 
     if (z->left == SENTINEL || z->right == SENTINEL) {
-        // y has a SENTINEL node as a child
+        /* y has a SENTINEL node as a child */
         y = z;
     } else {
-        // find tree successor with a SENTINEL node as a child
+        /* find tree successor with a SENTINEL node as a child */
         y = z->right;
         while (y->left != SENTINEL) y = y->left;
     }
 
-    // x is y's only child
+    /* x is y's only child */
     if (y->left != SENTINEL)
         x = y->left;
     else
         x = y->right;
 
-    // remove y from the parent chain
+    /* remove y from the parent chain */
     x->parent = y->parent;
     if (y->parent)
         if (y == y->parent->left)
@@ -334,17 +334,17 @@ RbtIterator rbtNext(RbtHandle h, RbtIterator it) {
     NodeType *i = it;
 
     if (i->right != SENTINEL) {
-        // go right 1, then left to the end
+        /* go right 1, then left to the end */
         for (i = i->right; i->left != SENTINEL; i = i->left);
     } else {
-        // while you're the right child, chain up parent link
+        /* while you're the right child, chain up parent link */
         NodeType *p = i->parent;
         while (p && i == p->right) {
             i = p;
             p = p->parent;
         }
 
-        // return the "inorder" node
+        /* return the "inorder" node */
         i = p;
     }
     return i != SENTINEL ? i : NULL;
@@ -353,14 +353,14 @@ RbtIterator rbtNext(RbtHandle h, RbtIterator it) {
 RbtIterator rbtBegin(RbtHandle h) {
     RbtType *rbt = h;
 
-    // return pointer to first value
+    /* return pointer to first value */
     NodeType *i;
     for (i = rbt->root; i->left != SENTINEL; i = i->left);
     return i != SENTINEL ? i : NULL;
 }
 
 RbtIterator rbtEnd(RbtHandle h) {
-   // return pointer to one past last value
+   /* return pointer to one past last value */
    return NULL;
 }
 
