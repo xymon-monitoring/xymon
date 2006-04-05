@@ -4,7 +4,11 @@
 # with which parameters, options and environment variables.
 #
 
-# This is the main Hobbit daemon. You cannot live without this one.
+# This is the main Hobbit daemon. This must be running on at least
+# one server in your setup. If you are setting up a server to do
+# just network tests or run bbproxy, it is OK to disable this (then
+# you also need to remove the "NEEDS hobbitd" lines for the tasks
+# you want to run).
 [hobbitd]
 	HEARTBEAT
 	ENVFILE @BBHOME@/etc/hobbitserver.cfg
