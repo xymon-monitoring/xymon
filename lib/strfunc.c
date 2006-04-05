@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: strfunc.c,v 1.5 2006-03-31 20:55:52 henrik Exp $";
+static char rcsid[] = "$Id: strfunc.c,v 1.6 2006-04-05 12:28:57 henrik Exp $";
 
 #include "config.h"
 
@@ -71,9 +71,11 @@ void clearstrbuffer(strbuffer_t *buf)
 
 char *grabstrbuffer(strbuffer_t *buf)
 {
+	char *result;
+
 	if (buf == NULL) return NULL;
 
-	char *result = buf->s;
+	result = buf->s;
 	xfree(buf);
 
 	return result;
