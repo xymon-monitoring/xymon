@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-ackinfo.c,v 1.3 2006-01-23 15:45:25 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-ackinfo.c,v 1.4 2006-04-05 08:23:53 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
 			hostname, testname, ackmsg, validity);
 	}
 
-	fprintf(stdout, "Content-type: text/html\n");
+	fprintf(stdout, "Content-type: %s\n", xgetenv("HTMLCONTENTTYPE"));
 	fprintf(stdout, "Location: %s\n", getenv("HTTP_REFERER"));
 	fprintf(stdout, "\n");
 	fprintf(stdout, "Sent to hobbitd:\n%s\n", bbmsg);

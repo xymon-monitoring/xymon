@@ -154,6 +154,9 @@ DOTHEIGHT="16"					# Height (in pixels) of the color GIF's
 DOTWIDTH="16"					# Width (in pixels) of the color GIF's
 COLUMNDOCURL="$CGIBINURL/hobbitcolumn.sh?%s"	# URL formatting string for column-links
 
+# HTML content
+HTMLCONTENTTYPE="text/html"                     # You can add charset options here.
+
 # Fonts and texts
 HOBBITLOGO="Hobbit"                             # HTML inserted on all header pages at top-left corner.
 MKBBLOCAL="<B><I>Pages Hosted Locally</I></B>"

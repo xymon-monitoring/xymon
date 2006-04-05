@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.53 2006-03-12 16:38:32 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.54 2006-04-05 08:23:53 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -585,7 +585,7 @@ NULL };
 
 static void errormsg(char *msg)
 {
-	printf("Content-type: text/html\n\n");
+	printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 	printf("<html><head><title>Invalid request</title></head>\n");
 	printf("<body>%s</body></html>\n", msg);
 	exit(1);
@@ -761,7 +761,7 @@ int main(int argc, char *argv[])
 
 
 	/* Now generate the webpage */
-	printf("Content-Type: text/html\n\n");
+	printf("Content-Type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 
 	generate_history(stdout, 
 			 hostname, service, ip, req_endtime, 

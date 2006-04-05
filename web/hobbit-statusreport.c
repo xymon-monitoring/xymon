@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-statusreport.c,v 1.2 2006-01-12 13:35:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-statusreport.c,v 1.3 2006-04-05 08:23:53 henrik Exp $";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
 
 	if (res != BB_OK) return 1;
 
-	printf("Content-type: text/html\n\n");
+	printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 
 	printf("<html><head><title>%s report on %s</title></head>\n", testname, timestamp);
 	printf("<body><table border=1 cellpadding=5px><tr><th>Host</th><th align=left>Status</th></tr>\n");

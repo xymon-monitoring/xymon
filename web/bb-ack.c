@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.22 2006-03-29 21:41:32 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.23 2006-04-05 08:23:53 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
 		respmsgfmt = "<center><h4>Unknown action ignored</h4></center>\n";
 	}
 
-	fprintf(stdout, "Content-type: text/html\n\n");
+	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 	
 	headfoot(stdout, "acknowledge", "", "header", COL_RED);
 	fprintf(stdout, respmsgfmt, "Hobbit");

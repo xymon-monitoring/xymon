@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.27 2006-04-01 08:26:37 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.28 2006-04-05 08:23:53 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -65,7 +65,7 @@ cgidata_t *cgidata = NULL;
 
 void errormsg(char *msg)
 {
-	printf("Content-type: text/html\n\n");
+	printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 	printf("<html><head><title>Hobbit FindHost Error</title></head>\n");
 	printf("<body><BR><BR><BR>%s</body></html>\n", msg);
 	exit(1);
@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 	parse_query();
 
 	setvbuf(stdout, NULL, _IONBF, 0);   		/* [wm] unbuffer stdout */
-	printf("Content-Type: text/html\n\n");
+	printf("Content-Type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 
         /* It's ok with these hardcoded values, as they are not used for this page */
         sethostenv("", "", "", colorname(COL_BLUE), NULL);

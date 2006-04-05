@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: boilerplate.c,v 1.1 2006-04-04 21:02:37 henrik Exp $";
+static char rcsid[] = "$Id: boilerplate.c,v 1.2 2006-04-05 08:23:53 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -18,7 +18,7 @@ static char rcsid[] = "$Id: boilerplate.c,v 1.1 2006-04-04 21:02:37 henrik Exp $
 
 static void errormsg(char *msg)
 {
-	printf("Content-type: text/html\n\n");
+	printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 	printf("<html><head><title>Invalid request</title></head>\n");
 	printf("<body>%s</body></html>\n", msg);
 	exit(1);
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 
 	parse_query();
 
-	fprintf(stdout, "Content-type: text/html\n\n");
+	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 	headfoot(stdout, hffile, "", "header", bgcolor);
 
 	headfoot(stdout, hffile, "", "footer", bgcolor);

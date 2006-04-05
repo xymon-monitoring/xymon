@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkview.c,v 1.13 2006-03-18 07:31:08 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkview.c,v 1.14 2006-04-05 08:23:53 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -407,7 +407,7 @@ int main(int argc, char *argv[])
 	loadstatus(maxprio, maxage, mincolor, wantacked);
 	use_recentgifs = 1;
 
-	fprintf(stdout, "Content-type: text/html\n\n");
+	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 	generate_nkpage(stdout, "hobbitnk");
 
 	return 0;

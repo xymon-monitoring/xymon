@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-eventlog.c,v 1.29 2006-03-29 21:41:32 henrik Exp $";
+static char rcsid[] = "$Id: bb-eventlog.c,v 1.30 2006-04-05 08:23:53 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 
 	/* Now generate the webpage */
-	printf("Content-Type: text/html\n\n");
+	printf("Content-Type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 
 	headfoot(stdout, "event", "", "header", COL_GREEN);
 	fprintf(stdout, "<center>\n");

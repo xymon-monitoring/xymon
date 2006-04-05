@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-confreport.c,v 1.9 2006-03-29 16:03:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-confreport.c,v 1.10 2006-04-05 08:23:53 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -48,7 +48,7 @@ static int ccount = 0;
 
 void errormsg(char *msg)
 {
-        printf("Content-type: text/html\n\n");
+        printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
         printf("<html><head><title>Invalid request</title></head>\n");
         printf("<body>%s</body></html>\n", msg);
         exit(1);
@@ -742,7 +742,7 @@ int main(int argc, char *argv[])
 	load_columndocs();
 
 
-	printf("Content-Type: text/html\n\n");
+	printf("Content-Type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 	sethostenv("", "", "", colorname(COL_BLUE), NULL);
 	headfoot(stdout, "confreport", "", "header", COL_BLUE);
 

@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-snapshot.c,v 1.19 2006-03-12 16:38:32 henrik Exp $";
+static char rcsid[] = "$Id: bb-snapshot.c,v 1.20 2006-04-05 08:23:53 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -36,7 +36,7 @@ char *monthnames[13] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug",
 
 void errormsg(char *msg)
 {
-	printf("Content-type: text/html\n\n");
+	printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 	printf("<html><head><title>Invalid request</title></head>\n");
 	printf("<body>%s</body></html>\n", msg);
 	exit(1);
@@ -207,7 +207,7 @@ int main(int argc, char *argv[])
 		printf("Content-type: multipart/mixed;boundary=%s\n", htmldelim);
 		printf("\n");
 		printf("%s\n", htmldelim);
-		printf("Content-type: text/html\n\n");
+		printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 
 		/* It's ok with these hardcoded values, as they are not used for this page */
 		sethostenv("", "", "", colorname(COL_BLUE), NULL);
@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
 
 		if (WIFEXITED(childstat) && (WEXITSTATUS(childstat) != 0) ) {
 			if (usemultipart) printf("%s\n\n", htmldelim);
-			printf("Content-Type: text/html\n\n");
+			printf("Content-Type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 			errormsg("Could not generate report");
 		}
 		else {
@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
 				fflush(stdout);
 				printf("%s\n\n", htmldelim);
 			}
-			printf("Content-Type: text/html\n\n");
+			printf("Content-Type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 			printf("<HTML><HEAD>\n");
 			printf("<META HTTP-EQUIV=\"REFRESH\" CONTENT=\"0; URL=%s/%s/\"\n", 
 					xgetenv("BBSNAPURL"), dirid);
@@ -259,7 +259,7 @@ int main(int argc, char *argv[])
 	}
 	else {
 		if (usemultipart) printf("%s\n\n", htmldelim);
-		printf("Content-Type: text/html\n\n");
+		printf("Content-Type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 		errormsg("Fork failed");
 	}
 

@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-webpage.c,v 1.6 2005-05-07 09:24:20 henrik Exp $";
+static char rcsid[] = "$Id: bb-webpage.c,v 1.7 2006-04-05 08:23:53 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 
 	envcheck(reqenv);
 
-	fprintf(stdout, "Content-type: text/html\n\n");
+	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 	
 	headfoot(stdout, hffile, "", "header", bgcolor);
 	do {

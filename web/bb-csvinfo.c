@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-csvinfo.c,v 1.19 2006-03-29 16:03:18 henrik Exp $";
+static char rcsid[] = "$Id: bb-csvinfo.c,v 1.20 2006-04-05 08:23:53 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -35,7 +35,7 @@ cgidata_t *cgidata = NULL;
 
 void errormsg(char *msg)
 {
-        printf("Content-type: text/html\n\n");
+        printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
         printf("<html><head><title>Invalid request</title></head>\n");
         printf("<body>%s</body></html>\n", msg);
         exit(1);
@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
 	/*
 	 * Ready ... go build the webpage.
 	 */
-	printf("Content-Type: text/html\n\n");
+	printf("Content-Type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 
         /* It's ok with these hardcoded values, as they are not used for this page */
         sethostenv(wantedname, "", "", colorname(bgcolor), NULL);

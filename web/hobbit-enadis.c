@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-enadis.c,v 1.19 2006-03-30 15:20:17 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-enadis.c,v 1.20 2006-04-05 08:23:53 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -43,7 +43,7 @@ char *ippattern = NULL;
 
 void errormsg(char *msg)
 {
-        printf("Content-type: text/html\n\n");
+        printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
         printf("<html><head><title>Invalid request</title></head>\n");
         printf("<body>%s</body></html>\n", msg);
         exit(1);
@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
 	/*
 	 * Ready ... go build the webpage.
 	 */
-	printf("Content-Type: text/html\n");
+	printf("Content-Type: %s\n", xgetenv("HTMLCONTENTTYPE"));
 	if (!preview) {
 		printf("Location: %s\n\n", xgetenv("HTTP_REFERER"));
 	}

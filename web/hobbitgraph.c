@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.45 2006-03-29 16:03:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.46 2006-04-05 08:23:53 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -94,7 +94,7 @@ int lastidx = 0;
 
 void errormsg(char *msg)
 {
-	printf("Content-type: text/html\n\n");
+	printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 	printf("<html><head><title>Invalid request</title></head>\n");
 	printf("<body>%s</body></html>\n", msg);
 	exit(1);
@@ -536,7 +536,7 @@ int main(int argc, char *argv[])
 
 	switch (action) {
 	  case ACT_MENU:
-		fprintf(stdout, "Content-type: text/html\n\n");
+		fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 		sethostenv(displayname, "", service, colorname(COL_GREEN), hostname);
 		headfoot(stdout, "graphs", "", "header", COL_GREEN);
 
@@ -553,7 +553,7 @@ int main(int argc, char *argv[])
 		return 0;
 
 	  case ACT_SELZOOM:
-		fprintf(stdout, "Content-type: text/html\n\n");
+		fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 		sethostenv(displayname, "", service, colorname(COL_GREEN), hostname);
 		headfoot(stdout, "graphs", "", "header", COL_GREEN);
 
@@ -601,7 +601,7 @@ int main(int argc, char *argv[])
 		return 0;
 
 	  case ACT_SHOWZOOM:
-		fprintf(stdout, "Content-type: text/html\n\n");
+		fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 		sethostenv(displayname, "", service, colorname(COL_GREEN), hostname);
 		headfoot(stdout, "graphs", "", "header", COL_GREEN);
 

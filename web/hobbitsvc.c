@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.65 2006-04-03 13:49:42 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.66 2006-04-05 08:23:53 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -45,8 +45,8 @@ static char errortxt[1000];
 static void errormsg(char *msg)
 {
 	snprintf(errortxt, sizeof(errortxt),
-		 "Content-type: text/html\n\n<html><head><title>Invalid request</title></head>\n<body>%s</body></html>\n", 
-		 msg);
+		 "Content-type: %s\n\n<html><head><title>Invalid request</title></head>\n<body>%s</body></html>\n", 
+		 xgetenv("HTMLCONTENTTYPE"), msg);
 
 	errortxt[sizeof(errortxt)-1] = '\0';
 }
@@ -367,7 +367,7 @@ int do_request(void)
 		fprintf(stdout, "%s", restofmsg);
 	}
 	else {
-		fprintf(stdout, "Content-type: text/html\n\n");
+		fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 		generate_html_log(hostname, 
 			  displayname,
 			  service, 
