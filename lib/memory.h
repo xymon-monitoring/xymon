@@ -36,8 +36,6 @@ extern char *xstrncat(char *dest, const char *src, size_t maxlen);
 extern char *xstrncpy(char *dest, const char *src, size_t maxlen);
 extern int   xsprintf(char *dest, const char *fmt, ...);
 
-// strlen|strcmp|strncmp|strcasecmp|strncasecmp|strstr|strchr|strrchr|strspn|strcspn|strtok|strftime|strerror
-
 
 #ifndef LIB_MEMORY_C_COMPILE
 #undef calloc
