@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadnkconf.c,v 1.13 2006-03-29 15:50:19 henrik Exp $";
+static char rcsid[] = "$Id: loadnkconf.c,v 1.14 2006-04-05 20:57:57 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -56,6 +56,19 @@ int load_nkconfig(char *fn)
 	FILE *fd;
 	strbuffer_t *inbuf;
 
+	/* Setup the default configuration filename */
+	if (!fn) {
+		if (!defaultfn) {
+			char *bbhome = xgetenv("BBHOME");
+			defaultfn = (char *)malloc(strlen(bbhome) + strlen(DEFAULTCONFIG) + 2);
+			sprintf(defaultfn, "%s/%s", bbhome, DEFAULTCONFIG);
+		}
+		fn = defaultfn;
+	}
+
+	if (configfn) xfree(configfn);
+	configfn = strdup(fn);
+
 	/* First check if there were no modifications at all */
 	if (configfiles) {
 		if (!stackfmodified(configfiles)){
@@ -84,20 +97,8 @@ int load_nkconfig(char *fn)
 	firsttime = 0;
 	rbconf = rbtNew(name_compare);
 
-	if (!fn) {
-		if (!defaultfn) {
-			char *bbhome = xgetenv("BBHOME");
-			defaultfn = (char *)malloc(strlen(bbhome) + strlen(DEFAULTCONFIG) + 2);
-			sprintf(defaultfn, "%s/%s", bbhome, DEFAULTCONFIG);
-		}
-		fn = defaultfn;
-	}
-
 	fd = stackfopen(fn, "r", &configfiles);
 	if (fd == NULL) return 1;
-
-	if (configfn) xfree(configfn);
-	configfn = strdup(fn);
 
 	inbuf = newstrbuffer(0);
 	while (stackfgets(inbuf, NULL)) {
