@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char aix_rcsid[] = "$Id: aix.c,v 1.3 2005-11-10 21:19:56 henrik Exp $";
+static char aix_rcsid[] = "$Id: aix.c,v 1.4 2006-04-13 16:31:29 henrik Exp $";
 
 void handle_aix_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -54,6 +54,7 @@ void handle_aix_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char
 	unix_disk_report(hostname, hinfo, fromline, timestr, "%Used", "Mounted", dfstr);
 	unix_procs_report(hostname, hinfo, fromline, timestr, "COMMAND", "CMD", psstr);
 	msgs_report(hostname, hinfo, fromline, timestr, msgsstr);
+	file_report(hostname, hinfo, fromline, timestr);
 
 	if (realmemstr && freememstr && swapmemstr) {
 		long memphystotal, memphysused, memphysfree, memswaptotal, memswappct;
