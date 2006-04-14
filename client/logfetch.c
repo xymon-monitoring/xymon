@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.10 2006-04-14 11:24:38 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.11 2006-04-14 16:08:34 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -44,7 +44,7 @@ typedef struct logdef_t {
 } logdef_t;
 
 typedef struct filedef_t {
-	int domd5, dosha1;
+	int domd5, dosha1, dormd160;
 } filedef_t;
 
 typedef struct checkdef_t {
@@ -308,7 +308,7 @@ char *filesum(char *fn, char *dtype)
 	return result;
 }
 
-void printfiledata(FILE *fd, char *fn, int domd5, int dosha1)
+void printfiledata(FILE *fd, char *fn, int domd5, int dosha1, int dormd160)
 {
 	struct stat st;
 	struct passwd *pw;
@@ -346,8 +346,9 @@ void printfiledata(FILE *fd, char *fn, int domd5, int dosha1)
 		fprintf(fd, "ctime:%u (%s)\n", (unsigned int)st.st_ctime, timestr(st.st_ctime));
 		fprintf(fd, "mtime:%u (%s)\n", (unsigned int)st.st_mtime, timestr(st.st_mtime));
 		if (S_ISREG(st.st_mode)) {
-			if (domd5) fprintf(fd, "%s\n", filesum(fn, "md5"));
-			if (dosha1) fprintf(fd, "%s\n", filesum(fn, "sha1"));
+			if      (domd5) fprintf(fd, "%s\n", filesum(fn, "md5"));
+			else if (dosha1) fprintf(fd, "%s\n", filesum(fn, "sha1"));
+			else if (dormd160) fprintf(fd, "%s\n", filesum(fn, "rmd160"));
 		}
 	}
 
@@ -371,35 +372,35 @@ int loadconfig(char *cfgfn)
 	fd = fopen(cfgfn, "r"); if (fd == NULL) return 1;
 	while (fgets(l, sizeof(l), fd) != NULL) {
 		char *p, *filename;
-		int maxbytes, domd5, dosha1;
+		int maxbytes, domd5, dosha1, dormd160;
 
 		p = strchr(l, '\n'); if (p) *p = '\0';
 		p = l + strspn(l, " \t");
 		if ((*p == '\0') || (*p == '#')) continue;
 
 		if ((strncmp(l, "log:", 4) == 0) || (strncmp(l, "file:", 4) == 0)) {
-			checktype_t checktype = C_NONE;
+			checktype_t checktype;
 			char *tok;
 
-			filename = NULL; maxbytes = -1; domd5 = 0; dosha1 = 0;
+			filename = NULL; maxbytes = -1; domd5 = dosha1 = dormd160 = 0;
 			tok = strtok(l, ":");
+
 			if (strcmp(tok, "log") == 0) checktype = C_LOG;
 			else if (strcmp(tok, "file") == 0) checktype = C_FILE;
+			else checktype = C_NONE;
 
 			filename = strtok(NULL, ":"); if (filename) tok = strtok(NULL, ":");
 			switch (checktype) {
 			  case C_LOG:
 				if (tok) maxbytes = atoi(tok);
 				break;
+
 			  case C_FILE:
-				maxbytes = 0;
+				maxbytes = 0; /* Needed to get us into the put-into-list code */
 				if (tok) {
-					if (strcmp(tok, "md5") == 0) {
-						domd5 = 1;
-					}
-					else if (strcmp(tok, "sha1") == 0) {
-						dosha1 = 1;
-					}
+					if (strcmp(tok, "md5") == 0) domd5 = 1;
+					else if (strcmp(tok, "sha1") == 0) dosha1 = 1;
+					else if (strcmp(tok, "rmd160") == 0) dormd160 = 1;
 				}
 				break;
 
@@ -439,6 +440,7 @@ int loadconfig(char *cfgfn)
 							  case C_FILE:
 								newitem->check.filecheck.domd5 = domd5;
 								newitem->check.filecheck.dosha1 = dosha1;
+								newitem->check.filecheck.dormd160 = dormd160;
 								break;
 					  		  case C_NONE:
 								break;
@@ -460,7 +462,6 @@ int loadconfig(char *cfgfn)
 
 						pclose(fd);
 					}
-
 				}
 				else {
 					newitem = calloc(sizeof(checkdef_t), 1);
@@ -472,6 +473,10 @@ int loadconfig(char *cfgfn)
 						newitem->check.logcheck.maxbytes = maxbytes;
 						break;
 					  case C_FILE:
+						newitem->check.filecheck.domd5 = domd5;
+						newitem->check.filecheck.dosha1 = dosha1;
+						newitem->check.filecheck.dormd160 = dormd160;
+						break;
 					  case C_NONE:
 						break;
 					}
@@ -484,6 +489,7 @@ int loadconfig(char *cfgfn)
 			}
 			else {
 				currcfg = NULL;
+				firstpipeitem = NULL;
 			}
 		}
 		else if (currcfg && (currcfg->checktype == C_LOG)) {
@@ -526,7 +532,10 @@ int loadconfig(char *cfgfn)
 		else if (currcfg && (currcfg->checktype == C_NONE)) {
 			/* Nothing */
 		}
-		else currcfg = NULL;
+		else {
+			currcfg = NULL;
+			firstpipeitem = NULL;
+		}
 	}
 
 	fclose(fd);
@@ -548,7 +557,7 @@ void loadlogstatus(char *statfn)
 
 		tok = strtok(l, ":"); if (!tok) continue;
 		fn = tok;
-		for (walk = checklist; (walk && (walk->checktype == C_LOG) && (strcmp(walk->filename, fn) != 0)); walk = walk->next) ;
+		for (walk = checklist; (walk && ((walk->checktype != C_LOG) || (strcmp(walk->filename, fn) != 0))); walk = walk->next) ;
 		if (!walk) continue;
 
 		for (i=0; (tok && (i < POSCOUNT)); i++) {
@@ -609,14 +618,16 @@ int main(int argc, char *argv[])
 			if (fwalk == NULL) {
 				/* No specific file: entry, so make sure the logfile metadata is available */
 				fprintf(stdout, "[file:%s]\n", walk->filename);
-				printfiledata(stdout, walk->filename, 0, 0);
+				printfiledata(stdout, walk->filename, 0, 0, 0);
 			}
 			break;
 
 		  case C_FILE:
 			fprintf(stdout, "[file:%s]\n", walk->filename);
 			printfiledata(stdout, walk->filename, 
-					walk->check.filecheck.domd5, walk->check.filecheck.dosha1);
+					walk->check.filecheck.domd5, 
+					walk->check.filecheck.dosha1,
+					walk->check.filecheck.dormd160);
 			break;
 
 		  case C_NONE:
