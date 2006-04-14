@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: test-endianness.c,v 1.1 2006-04-14 10:17:06 henrik Exp $";
+static char rcsid[] = "$Id: test-endianness.c,v 1.2 2006-04-14 11:15:23 henrik Exp $";
 
 #include <string.h>
 #include <stdio.h>
@@ -35,16 +35,19 @@ int main(int argc, char **argv)
 	if (c == 65537) {
 		/* Big endian */
 		if (outform == 0)
-			printf("#ifndef BIG_ENDIAN\n#define BIG_ENDIAN\n#endif\n");
+			printf("#ifndef HOBBIT_BIG_ENDIAN\n#define HOBBIT_BIG_ENDIAN\n#endif\n");
 		else
-			printf(" -DBIG_ENDIAN");
+			printf(" -DHOBBIT_BIG_ENDIAN");
 	}
 	else if (c == 16777472) {
 		/* Little endian */
 		if (outform == 0)
-			printf("#ifndef LITTLE_ENDIAN\n#define LITTLE_ENDIAN\n#endif\n");
+			printf("#ifndef HOBBIT_LITTLE_ENDIAN\n#define HOBBIT_LITTLE_ENDIAN\n#endif\n");
 		else
-			printf(" -DLITTLE_ENDIAN");
+			printf(" -DHOBBIT_LITTLE_ENDIAN");
+	}
+	else {
+		fprintf(stderr, "UNKNOWN ENDIANNESS! testvalue is %u\n", c);
 	}
 
 	fflush(stdout);

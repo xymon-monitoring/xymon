@@ -26,13 +26,17 @@
 #include <string.h>
 #include "sha1.h"
 
+#if !defined(HOBBIT_BIG_ENDIAN) && !defined(HOBBIT_LITTLE_ENDIAN)
+#error "Endianness is UNDEFINED"
+#endif
+
 #define SHA1HANDSOFF
 
 #define rol(value, bits) (((value) << (bits)) | ((value) >> (32 - (bits))))
 
 /* blk0() and blk() perform the initial expand. */
 /* I got the idea of expanding during the round function from SSLeay */
-#ifdef BIG_ENDIAN
+#ifdef HOBBIT_BIG_ENDIAN
 #  define blk0(i) block->l[i]
 #else
 #  define blk0(i) (block->l[i] = (rol(block->l[i],24)&0xFF00FF00) \
@@ -224,6 +228,8 @@ int main(int argc, char *argv[])
 		printf("%02x", digest[i]);
 	}
 	printf("\n");
+
+	return 0;
 }
 
 #endif
