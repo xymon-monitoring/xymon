@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.55 2006-04-04 20:59:29 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.56 2006-04-14 11:25:51 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -692,6 +692,90 @@ void msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 		addtostatus(msgline);
 		addtostatus(swalk->sdata);
 		do { swalk=swalk->next; } while (swalk && strncmp(swalk->sname, "msgs:", 5));
+	}
+
+	if (fromline && !localmode) addtostatus(fromline);
+
+	finish_status();
+}
+
+void file_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr)
+{
+	static strbuffer_t *greendata = NULL;
+	static strbuffer_t *yellowdata = NULL;
+	static strbuffer_t *reddata = NULL;
+	sectlist_t *swalk;
+	strbuffer_t *filesummary;
+	int filecolor = COL_GREEN;
+	char msgline[PATH_MAX];
+	char sectionname[PATH_MAX];
+
+	for (swalk = sections; (swalk && strncmp(swalk->sname, "file:", 5)); swalk = swalk->next) ;
+	if (!swalk) return;
+
+	if (!greendata) greendata = newstrbuffer(0);
+	if (!yellowdata) yellowdata = newstrbuffer(0);
+	if (!reddata) reddata = newstrbuffer(0);
+
+	filesummary = newstrbuffer(0);
+
+	while (swalk) {
+		int onecolor;
+
+		clearstrbuffer(filesummary);
+		sprintf(sectionname, "file:%s", swalk->sname+5);
+		onecolor = check_file(hinfo, swalk->sname+5, swalk->sdata, sectionname, filesummary);
+		if (onecolor > filecolor) filecolor = onecolor;
+
+		switch (onecolor) {
+		  case COL_GREEN:
+			sprintf(msgline, "\n&green <a href=\"%s\">%s</a>\n", 
+				hostsvcclienturl(hostname, sectionname), swalk->sname+5);
+			addtobuffer(greendata, msgline);
+			break;
+
+		  case COL_YELLOW: 
+			sprintf(msgline, "\n&yellow <a href=\"%s\">%s</a>\n", 
+				hostsvcclienturl(hostname, sectionname), swalk->sname+5);
+			addtobuffer(yellowdata, msgline);
+			addtostrbuffer(yellowdata, filesummary);
+			break;
+
+		  case COL_RED:
+			sprintf(msgline, "\n&red <a href=\"%s\">%s</a>\n", 
+				hostsvcclienturl(hostname, sectionname), swalk->sname+5);
+			addtobuffer(reddata, msgline);
+			addtostrbuffer(reddata, filesummary);
+			break;
+		}
+
+		do { swalk=swalk->next; } while (swalk && strncmp(swalk->sname, "file:", 5));
+	}
+
+	freestrbuffer(filesummary);
+
+	init_status(filecolor);
+	sprintf(msgline, "status %s.files %s Files status at %s\n",
+		commafy(hostname), colorname(filecolor), 
+		(timestr ? timestr : "<No timestamp data>"));
+	addtostatus(msgline);
+
+	if (STRBUFLEN(reddata)) {
+		addtostrstatus(reddata);
+		clearstrbuffer(reddata);
+		addtostatus("\n");
+	}
+
+	if (STRBUFLEN(yellowdata)) {
+		addtostrstatus(yellowdata);
+		clearstrbuffer(yellowdata);
+		addtostatus("\n");
+	}
+
+	if (STRBUFLEN(greendata)) {
+		addtostrstatus(greendata);
+		clearstrbuffer(greendata);
+		addtostatus("\n");
 	}
 
 	if (fromline && !localmode) addtostatus(fromline);
