@@ -1,3 +1,10 @@
+/*----------------------------------------------------------------------------*/
+/* Hobbit monitor library.                                                    */
+/*                                                                            */
+/* This file is part of the Hobbit monitor library, but was written by        */
+/* Peter Deutsch and released under the GNU GPL.                              */
+/*----------------------------------------------------------------------------*/
+
 /*
   Copyright (C) 1999, 2002 Aladdin Enterprises.  All rights reserved.
 
@@ -21,7 +28,6 @@
   ghost@aladdin.com
 
  */
-/* $Id: md5.h,v 1.1 2005-02-21 07:40:38 henrik Exp $ */
 /*
   Independent implementation of MD5 (RFC 1321).
 
