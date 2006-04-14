@@ -2,7 +2,7 @@
 #
 
 PROGRAMS = bbhostgrep bbhostshow bbdigest bb bbcmd hobbitlaunch
-CLIENTPROGRAMS = ../client/bb ../client/hobbitlaunch ../client/bbcmd ../client/bbhostgrep ../client/bbhostshow
+CLIENTPROGRAMS = ../client/bb ../client/hobbitlaunch ../client/bbcmd ../client/bbhostgrep ../client/bbhostshow ../client/bbdigest
 
 HOSTGREPOBJS = bbhostgrep.o
 HOSTSHOWOBJS = bbhostshow.o
@@ -46,7 +46,10 @@ bbcmd: $(CMDOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/hobbitclient.a
 
 bbdigest: $(DIGESTOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(DIGESTOBJS) ../lib/libbbgen.a $(SSLLIBS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/libbbgen.a $(NETLIBS)
+
+../client/bbdigest: $(DIGESTOBJS) ../lib/hobbitclient.a
+	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/hobbitclient.a $(NETLIBS)
 
 ################################################
 # Default compilation rules
