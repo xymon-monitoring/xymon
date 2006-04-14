@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.22 2006-04-14 14:46:08 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.23 2006-04-14 16:09:21 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -641,9 +641,9 @@ int load_client_config(char *configfn)
 						currule->rule.fcheck.filechecks |= FCHK_SHA1;
 						currule->rule.fcheck.sha1hash = strdup(tok+5);
 					}
-					else if (strncasecmp(tok, "rmd160=", 5) == 0) {
+					else if (strncasecmp(tok, "rmd160=", 7) == 0) {
 						currule->rule.fcheck.filechecks |= FCHK_RMD160;
-						currule->rule.fcheck.rmd160hash = strdup(tok+5);
+						currule->rule.fcheck.rmd160hash = strdup(tok+7);
 					}
 					else {
 						int col = parse_color(tok);
@@ -1078,16 +1078,14 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 				rulecolor = rwalk->rule.fcheck.color;
 				addtobuffer(summarybuf, "File is missing\n");
 			}
-
-			continue; /* No need to bother with all the other checks */
+			goto nextcheck;
 		}
 
 		if (rwalk->rule.fcheck.filechecks & FCHK_NOEXIST) {
 			/* File exists, but it shouldn't */
 			rulecolor = rwalk->rule.fcheck.color;
 			addtobuffer(summarybuf, "File exists\n");
-
-			continue; /* No need to bother with all the other checks */
+			goto nextcheck;
 		}
 
 		if (rwalk->rule.fcheck.filechecks & FCHK_TYPE) {
@@ -1147,6 +1145,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 			}
 		}
 		if (rwalk->rule.fcheck.filechecks & FCHK_OWNERSTR) {
+			if (!ownerstr) ownerstr = "(No owner data)";
 			if (strcmp(ownerstr, rwalk->rule.fcheck.ownerstr) != 0) {
 				rulecolor = rwalk->rule.fcheck.color;
 				sprintf(msgline, "File is owned by user %s  - should be %s\n", 
@@ -1163,6 +1162,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 			}
 		}
 		if (rwalk->rule.fcheck.filechecks & FCHK_GROUPSTR) {
+			if (!groupstr) groupstr = "(No group data)";
 			if (strcmp(groupstr, rwalk->rule.fcheck.groupstr) != 0) {
 				rulecolor = rwalk->rule.fcheck.color;
 				sprintf(msgline, "File is owned by group %s  - should be %s\n", 
@@ -1219,6 +1219,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 			}
 		}
 		if (rwalk->rule.fcheck.filechecks & FCHK_MD5) {
+			if (!md5hash) md5hash = "(No MD5 data)";
 			if (strcmp(md5hash, rwalk->rule.fcheck.md5hash) != 0) {
 				rulecolor = rwalk->rule.fcheck.color;
 				sprintf(msgline, "File has MD5 hash %s  - should be %s\n", 
@@ -1227,6 +1228,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 			}
 		}
 		if (rwalk->rule.fcheck.filechecks & FCHK_SHA1) {
+			if (!sha1hash) sha1hash = "(No SHA1 data)";
 			if (strcmp(sha1hash, rwalk->rule.fcheck.sha1hash) != 0) {
 				rulecolor = rwalk->rule.fcheck.color;
 				sprintf(msgline, "File has SHA1 hash %s  - should be %s\n", 
@@ -1235,6 +1237,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 			}
 		}
 		if (rwalk->rule.fcheck.filechecks & FCHK_RMD160) {
+			if (!rmd160hash) rmd160hash = "(No RMD160 data)";
 			if (strcmp(rmd160hash, rwalk->rule.fcheck.rmd160hash) != 0) {
 				rulecolor = rwalk->rule.fcheck.color;
 				sprintf(msgline, "File has RMD160 hash %s  - should be %s\n", 
@@ -1243,6 +1246,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 			}
 		}
 
+nextcheck:
 		if (rulecolor > result) result = rulecolor;
 	}
 
