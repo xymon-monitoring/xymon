@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.21 2006-04-14 11:25:29 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.22 2006-04-14 14:46:08 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -95,6 +95,7 @@ typedef struct c_log_t {
 #define FCHK_ATIMEEQL (1 << 24)
 #define FCHK_MD5      (1 << 25)
 #define FCHK_SHA1     (1 << 26)
+#define FCHK_RMD160   (1 << 27)
  
 typedef struct c_file_t {
 	exprlist_t *filename;
@@ -109,7 +110,7 @@ typedef struct c_file_t {
 	unsigned int minctimedif, maxctimedif, ctimeeql;
 	unsigned int minmtimedif, maxmtimedif, mtimeeql;
 	unsigned int minatimedif, maxatimedif, atimeeql;
-	char *md5hash, *sha1hash;
+	char *md5hash, *sha1hash, *rmd160hash;
 } c_file_t;
 
 typedef enum { C_LOAD, C_UPTIME, C_DISK, C_MEM, C_PROC, C_LOG, C_FILE } ruletype_t;
@@ -640,6 +641,10 @@ int load_client_config(char *configfn)
 						currule->rule.fcheck.filechecks |= FCHK_SHA1;
 						currule->rule.fcheck.sha1hash = strdup(tok+5);
 					}
+					else if (strncasecmp(tok, "rmd160=", 5) == 0) {
+						currule->rule.fcheck.filechecks |= FCHK_RMD160;
+						currule->rule.fcheck.rmd160hash = strdup(tok+5);
+					}
 					else {
 						int col = parse_color(tok);
 						if (col != -1) currule->rule.fcheck.color = col;
@@ -771,6 +776,8 @@ void dump_client_config(void)
 				printf(" md5=%s", rwalk->rule.fcheck.md5hash);
 			if (rwalk->rule.fcheck.filechecks & FCHK_SHA1) 
 				printf(" sha1=%s", rwalk->rule.fcheck.sha1hash);
+			if (rwalk->rule.fcheck.filechecks & FCHK_RMD160) 
+				printf(" rmd160=%s", rwalk->rule.fcheck.rmd160hash);
 
 			printf("\n");
 		}
@@ -977,7 +984,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 	char *ownerstr = NULL, *groupstr = NULL;
 	unsigned int ctime = 0, mtime = 0, atime = 0, clock = 0;
 	unsigned int ctimedif, mtimedif, atimedif;
-	char *md5hash = NULL, *sha1hash = NULL;
+	char *md5hash = NULL, *sha1hash = NULL, *rmd160hash = NULL;
 
 	hostname = bbh_item(hinfo, BBH_HOSTNAME);
 	pagename = bbh_item(hinfo, BBH_PAGEPATH);
@@ -1046,6 +1053,9 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 		}
 		else if (strncmp(boln, "sha1:", 5) == 0) {
 			sha1hash = strdup(boln+5);
+		}
+		else if (strncmp(boln, "rmd160:", 7) == 0) {
+			rmd160hash = strdup(boln+7);
 		}
 
 		if (eoln) { *eoln = '\0'; boln = eoln+1; } else boln = NULL;
@@ -1221,6 +1231,14 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 				rulecolor = rwalk->rule.fcheck.color;
 				sprintf(msgline, "File has SHA1 hash %s  - should be %s\n", 
 					sha1hash, rwalk->rule.fcheck.sha1hash);
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		if (rwalk->rule.fcheck.filechecks & FCHK_RMD160) {
+			if (strcmp(rmd160hash, rwalk->rule.fcheck.rmd160hash) != 0) {
+				rulecolor = rwalk->rule.fcheck.color;
+				sprintf(msgline, "File has RMD160 hash %s  - should be %s\n", 
+					rmd160hash, rwalk->rule.fcheck.rmd160hash);
 				addtobuffer(summarybuf, msgline);
 			}
 		}
