@@ -11,9 +11,12 @@ endif
 
 CFLAGS += -I. -I../include 
 
-all: libbbgen.a hobbitclient.a loadhosts stackio availability
+all: test-endianness libbbgen.a hobbitclient.a loadhosts stackio availability sha1s
 
-client: hobbitclient.a
+client: test-endianness hobbitclient.a sha1c
+
+test-endianness: test-endianness.c
+	$(CC) $(CFLAGS) -o $@ $<
 
 libbbgen.a: $(BBGENLIBOBJS)
 	ar cr libbbgen.a $(BBGENLIBOBJS)
@@ -26,9 +29,6 @@ hobbitclient.a: $(CLIENTLIBOBJS)
 loadhosts.o: loadhosts.c loadhosts_file.c
 	$(CC) $(CFLAGS) -c -o $@ loadhosts.c
 
-digest.o: digest.c
-	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ digest.c
-
 eventlog.o: eventlog.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
 
@@ -40,6 +40,9 @@ loadalerts.o: loadalerts.c
 
 matching.o: matching.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
+
+sha1.o: sha1.c
+	$(CC) $(CFLAGS) `./test-endianness` -c -o $@ $<
 
 environ.o: environ.c
 	$(CC) $(CFLAGS) -DBBTOPDIR=\"$(BBTOPDIR)\" -DBBLOGDIR=\"$(BBLOGDIR)\" -DBBHOSTNAME=\"$(BBHOSTNAME)\" -DBBHOSTIP=\"$(BBHOSTIP)\" -DBBHOSTOS=\"$(BBHOSTOS)\" -DBUILD_HOME=\"$(BBTOPDIR)/server\" -c -o $@ environ.c
@@ -56,6 +59,12 @@ stackio: stackio.c libbbgen.a
 availability: availability.c libbbgen.a
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ availability.c ./libbbgen.a
 
+sha1s: sha1.c libbbgen.a
+	$(CC) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ sha1.c ./libbbgen.a
+
+sha1c: sha1.c hobbitclient.a
+	$(CC) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ sha1.c ./hobbitclient.a
+
 clean:
-	rm -f *.o *.a *~ loadhosts stackio availability
+	rm -f *.o *.a *~ loadhosts stackio availability test-endianness sha1c sha1s
 
