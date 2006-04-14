@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.23 2006-04-14 16:09:21 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.24 2006-04-14 22:30:26 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -113,7 +113,13 @@ typedef struct c_file_t {
 	char *md5hash, *sha1hash, *rmd160hash;
 } c_file_t;
 
-typedef enum { C_LOAD, C_UPTIME, C_DISK, C_MEM, C_PROC, C_LOG, C_FILE } ruletype_t;
+typedef struct c_dir_t {
+	exprlist_t *filename;
+	int color;
+	unsigned long maxsize;
+} c_dir_t;
+
+typedef enum { C_LOAD, C_UPTIME, C_DISK, C_MEM, C_PROC, C_LOG, C_FILE, C_DIR } ruletype_t;
 
 typedef struct c_rule_t {
 	exprlist_t *hostexp;
@@ -132,6 +138,7 @@ typedef struct c_rule_t {
 		c_proc_t proc;
 		c_log_t log;
 		c_file_t fcheck;
+		c_dir_t dcheck;
 	} rule;
 } c_rule_t;
 
@@ -651,6 +658,21 @@ int load_client_config(char *configfn)
 					}
 				} while (tok && (!isqual(tok)));
 			}
+			else if (strcasecmp(tok, "DIR") == 0) {
+				currule = setup_rule(C_DIR, curhost, curexhost, curpage, curexpage, curtime, cfid);
+				currule->rule.dcheck.filename = NULL;
+				currule->rule.dcheck.color = COL_RED;
+
+				tok = wstok(NULL);
+				currule->rule.dcheck.filename = setup_expr(tok, 0);
+				do {
+					tok = wstok(NULL); if (!tok || isqual(tok)) continue;
+
+					if (strncasecmp(tok, "size<", 5) == 0) {
+						currule->rule.dcheck.maxsize = atol(tok+5);
+					}
+				} while (tok && (!isqual(tok)));
+			}
 			else {
 				unknowntok = 1;
 				errprintf("Unknown token '%s' ignored at line %d\n", tok, cfid);
@@ -690,15 +712,18 @@ void dump_client_config(void)
 		  case C_UPTIME:
 			printf("UP %d %d", rwalk->rule.uptime.recentlimit, rwalk->rule.uptime.ancientlimit);
 			break;
+
 		  case C_LOAD:
 			printf("LOAD %.2f %.2f", rwalk->rule.load.warnlevel, rwalk->rule.load.paniclevel);
 			break;
+
 		  case C_DISK:
 			printf("DISK %s", rwalk->rule.disk.fsexp->pattern);
 			printf(" %lu%c", rwalk->rule.disk.warnlevel, (rwalk->rule.disk.absolutes & 1) ? 'K' : '%');
 			printf(" %lu%c", rwalk->rule.disk.paniclevel, (rwalk->rule.disk.absolutes & 2) ? 'K' : '%');
 			printf(" %d %d %s", rwalk->rule.disk.dmin, rwalk->rule.disk.dmax, colorname(rwalk->rule.disk.color));
 			break;
+
 		  case C_MEM:
 			switch (rwalk->rule.mem.memtype) {
 			  case C_MEM_PHYS: printf("MEMREAL"); break;
@@ -707,6 +732,7 @@ void dump_client_config(void)
 			}
 			printf(" %d %d", rwalk->rule.mem.warnlevel, rwalk->rule.mem.paniclevel);
 			break;
+
 		  case C_PROC:
 			if (strchr(rwalk->rule.proc.procexp->pattern, ' ') ||
 			    strchr(rwalk->rule.proc.procexp->pattern, '\t')) {
@@ -718,12 +744,14 @@ void dump_client_config(void)
 				       rwalk->rule.proc.pmin, rwalk->rule.proc.pmax, colorname(rwalk->rule.proc.color));
 			}
 			break;
+
 		  case C_LOG:
 			printf("LOG %s %s %s %s\n",
 				rwalk->rule.log.logfile->pattern, rwalk->rule.log.matchexp->pattern,
 				(rwalk->rule.log.ignoreexp ? rwalk->rule.log.ignoreexp->pattern : ""),
 				colorname(rwalk->rule.log.color));
 			break;
+
 		  case C_FILE:
 			printf("FILE %s %s", rwalk->rule.fcheck.filename->pattern, 
 				colorname(rwalk->rule.fcheck.color));
@@ -780,6 +808,14 @@ void dump_client_config(void)
 				printf(" rmd160=%s", rwalk->rule.fcheck.rmd160hash);
 
 			printf("\n");
+			break;
+
+		  case C_DIR:
+			printf("DIR %s size<%lu %s\n",
+				rwalk->rule.dcheck.filename->pattern, 
+				rwalk->rule.dcheck.maxsize,
+				colorname(rwalk->rule.dcheck.color));
+			break;
 		}
 
 		if (rwalk->timespec) printf(" TIME=%s", rwalk->timespec);
@@ -1252,6 +1288,63 @@ nextcheck:
 
 	return result;
 }
+
+int check_dir(namelist_t *hinfo, char *filename, char *filedata, char *section, strbuffer_t *summarybuf)
+{
+	int result = COL_GREEN;
+	char *hostname, *pagename;
+	c_rule_t *rwalk;
+	char *boln, *eoln;
+	char msgline[PATH_MAX];
+
+	unsigned long dsize = 0;
+
+	hostname = bbh_item(hinfo, BBH_HOSTNAME);
+	pagename = bbh_item(hinfo, BBH_PAGEPATH);
+	
+	boln = filedata;
+	while (boln && *boln) {
+		unsigned long sz;
+		char *p;
+
+		eoln = strchr(boln, '\n'); if (eoln) *eoln = '\0';
+
+		/*
+		 * We need to check the directory name on each line, to
+		 * find the line that gives us the exact directory we want.
+		 * NB: Assumes the output is in the form
+		 *    12345   /foo/bar/baz
+		 */
+		sz = atol(boln);
+		p = boln + strcspn(boln, " \t");
+		if (isspace((int)*p)) p += strspn(p, " \t");
+		if (strcmp(p, filename) == 0) dsize = sz;
+
+		if (eoln) { *eoln = '\0'; boln = eoln+1; } else boln = NULL;
+	}
+
+	/* Got the data? */
+	if (dsize == 0) return COL_CLEAR;
+
+	for (rwalk = getrule(hostname, pagename, C_DIR); (rwalk); rwalk = getrule(NULL, NULL, C_DIR)) {
+		int rulecolor = COL_GREEN;
+
+		/* First, check if the filename matches */
+		if (!namematch(filename, rwalk->rule.fcheck.filename->pattern, rwalk->rule.fcheck.filename->exp)) continue;
+
+		if (dsize > rwalk->rule.dcheck.maxsize) {
+			rulecolor = rwalk->rule.dcheck.color;
+			sprintf(msgline, "Directory has size %lu  - should be <%lu\n", 
+				dsize, rwalk->rule.dcheck.maxsize);
+			addtobuffer(summarybuf, msgline);
+		}
+
+		if (rulecolor > result) result = rulecolor;
+	}
+
+	return result;
+}
+
 
 typedef struct mon_proc_t {
 	c_rule_t *rule;

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.56 2006-04-14 11:25:51 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.57 2006-04-14 22:30:26 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -706,12 +706,9 @@ void file_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 	static strbuffer_t *reddata = NULL;
 	sectlist_t *swalk;
 	strbuffer_t *filesummary;
-	int filecolor = COL_GREEN;
+	int filecolor = COL_GREEN, onecolor;
 	char msgline[PATH_MAX];
 	char sectionname[PATH_MAX];
-
-	for (swalk = sections; (swalk && strncmp(swalk->sname, "file:", 5)); swalk = swalk->next) ;
-	if (!swalk) return;
 
 	if (!greendata) greendata = newstrbuffer(0);
 	if (!yellowdata) yellowdata = newstrbuffer(0);
@@ -719,12 +716,17 @@ void file_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 
 	filesummary = newstrbuffer(0);
 
-	while (swalk) {
-		int onecolor;
+	for (swalk = sections; (swalk); swalk = swalk->next) {
+		if (strncmp(swalk->sname, "file:", 5) == 0) {
+			sprintf(sectionname, "file:%s", swalk->sname+5);
+			onecolor = check_file(hinfo, swalk->sname+5, swalk->sdata, sectionname, filesummary);
+		}
+		else if (strncmp(swalk->sname, "dir:", 4) == 0) {
+			sprintf(sectionname, "dir:%s", swalk->sname+4);
+			onecolor = check_dir(hinfo, swalk->sname+4, swalk->sdata, sectionname, filesummary);
+		}
+		else continue;
 
-		clearstrbuffer(filesummary);
-		sprintf(sectionname, "file:%s", swalk->sname+5);
-		onecolor = check_file(hinfo, swalk->sname+5, swalk->sdata, sectionname, filesummary);
 		if (onecolor > filecolor) filecolor = onecolor;
 
 		switch (onecolor) {
@@ -749,7 +751,7 @@ void file_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 			break;
 		}
 
-		do { swalk=swalk->next; } while (swalk && strncmp(swalk->sname, "file:", 5));
+		clearstrbuffer(filesummary);
 	}
 
 	freestrbuffer(filesummary);
