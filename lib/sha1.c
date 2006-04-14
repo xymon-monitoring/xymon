@@ -24,7 +24,15 @@
 */
 
 #include <string.h>
-#include "sha1.h"
+
+typedef unsigned int uint32_t;
+
+typedef struct {
+	uint32_t state[5];
+	uint32_t count[2];
+	unsigned char buffer[64];
+} SHA1_CTX;
+
 
 #if !defined(HOBBIT_BIG_ENDIAN) && !defined(HOBBIT_LITTLE_ENDIAN)
 #error "Endianness is UNDEFINED"
@@ -56,7 +64,7 @@
 
 /* Hash a single 512-bit block. This is the core of the algorithm. */
 
-static void mySHA1Transform(uint32_t state[5], const unsigned char buffer[64])
+static void SHA1Transform(uint32_t state[5], const unsigned char buffer[64])
 {
 uint32_t a, b, c, d, e;
 typedef union {
@@ -117,7 +125,7 @@ CHAR64LONG16* block = (const CHAR64LONG16*)buffer;
 
 /* SHA1Init - Initialize new context */
 
-void mySHA1Init(mySHA1_CTX* context)
+static void SHA1Init(SHA1_CTX* context)
 {
     /* SHA1 initialization constants */
     context->state[0] = 0x67452301;
@@ -131,7 +139,7 @@ void mySHA1Init(mySHA1_CTX* context)
 
 /* Run your data through this. */
 
-void mySHA1Update(mySHA1_CTX* context, const unsigned char* data, uint32_t len)
+static void SHA1Update(SHA1_CTX* context, const unsigned char* data, uint32_t len)
 {
 uint32_t i;
 uint32_t j;
@@ -143,9 +151,9 @@ uint32_t j;
     j = (j >> 3) & 63;
     if ((j + len) > 63) {
         memcpy(&context->buffer[j], data, (i = 64-j));
-        mySHA1Transform(context->state, context->buffer);
+        SHA1Transform(context->state, context->buffer);
         for ( ; i + 63 < len; i += 64) {
-            mySHA1Transform(context->state, &data[i]);
+            SHA1Transform(context->state, &data[i]);
         }
         j = 0;
     }
@@ -156,7 +164,7 @@ uint32_t j;
 
 /* Add padding and return the message digest. */
 
-void mySHA1Final(unsigned char digest[20], mySHA1_CTX* context)
+static void SHA1Final(unsigned char digest[20], SHA1_CTX* context)
 {
 unsigned i;
 unsigned char finalcount[8];
@@ -185,12 +193,12 @@ unsigned char c;
     }
 #endif
     c = 0200;
-    mySHA1Update(context, &c, 1);
+    SHA1Update(context, &c, 1);
     while ((context->count[0] & 504) != 448) {
 	c = 0000;
-        mySHA1Update(context, &c, 1);
+        SHA1Update(context, &c, 1);
     }
-    mySHA1Update(context, finalcount, 8);  /* Should cause a mySHA1Transform() */
+    SHA1Update(context, finalcount, 8);  /* Should cause a SHA1Transform() */
     for (i = 0; i < 20; i++) {
         digest[i] = (unsigned char)
          ((context->state[i>>2] >> ((3-(i & 3)) * 8) ) & 255);
@@ -200,29 +208,40 @@ unsigned char c;
     memset(&finalcount, '\0', sizeof(finalcount));
 }
 
+/*
+ * Not part of the original file. Added for use with Hobbit,
+ * to avoid namespace-pollution when compiled with OpenSSL.
+ */
+
+int  mySHA1_Size(void) { return sizeof(SHA1_CTX); }
+void mySHA1_Init(void* context) { SHA1Init((SHA1_CTX *)context); }
+void mySHA1_Update(void* context, const unsigned char* data, uint32_t len) { SHA1Update((SHA1_CTX *)context, data, len); }
+void mySHA1_Final(unsigned char digest[20], void* context) { SHA1Final(digest, (SHA1_CTX *)context); }
+
 #ifdef STANDALONE
 
 #include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
 
 int main(int argc, char *argv[])
 {
 	FILE *fd;
 	int n;
 	unsigned char buf[8192];
-	mySHA1_CTX context;
+	void *context;
 	unsigned char digest[20];
 	int i;
 
 	fd = fopen(argv[1], "r");
 	if (fd == NULL) return 1;
 
-	mySHA1Init(&context);
-	while ((n = fread(buf, 1, sizeof(buf), fd)) > 0) {
-		mySHA1Update(&context, buf, n);
-	}
+	context = (void *)malloc(mySHA1_Size());
+	mySHA1_Init(context);
+	while ((n = fread(buf, 1, sizeof(buf), fd)) > 0) mySHA1_Update(context, buf, n);
 	fclose(fd);
 
-	mySHA1Final(digest, &context);
+	mySHA1_Final(digest, context);
 
 	for (i=0; (i < sizeof(digest)); i++) {
 		printf("%02x", digest[i]);

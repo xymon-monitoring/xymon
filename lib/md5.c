@@ -28,7 +28,7 @@
   ghost@aladdin.com
 
  */
-/* $Id: md5.c,v 1.2 2005-03-22 09:16:49 henrik Exp $ */
+/* $Id: md5.c,v 1.3 2006-04-14 14:37:13 henrik Exp $ */
 /*
   Independent implementation of MD5 (RFC 1321).
 
@@ -58,7 +58,19 @@
   1999-05-03 lpd Original version.
  */
 
-#include "md5.h"
+/************ HOBBIT SPECIFIC MODIFICATION *****************/
+/* For Hobbit: Moved these definitions from md5.h into here */
+typedef unsigned char md5_byte_t; /* 8-bit byte */
+typedef unsigned int md5_word_t; /* 32-bit word */
+
+/* Define the state of the MD5 Algorithm. */
+typedef struct md5_state_s {
+    md5_word_t count[2];	/* message length in bits, lsw first */
+    md5_word_t abcd[4];		/* digest buffer */
+    md5_byte_t buf[64];		/* accumulate block */
+} md5_state_t;
+/************ END HOBBIT SPECIFIC MODIFICATION *****************/
+
 #include <string.h>
 
 #undef BYTE_ORDER	/* 1 = big-endian, -1 = little-endian, 0 = unknown */
@@ -316,7 +328,7 @@ md5_process(md5_state_t *pms, const md5_byte_t *data /*[64]*/)
     pms->abcd[3] += d;
 }
 
-void
+static void
 md5_init(md5_state_t *pms)
 {
     pms->count[0] = pms->count[1] = 0;
@@ -326,7 +338,7 @@ md5_init(md5_state_t *pms)
     pms->abcd[3] = 0x10325476;
 }
 
-void
+static void
 md5_append(md5_state_t *pms, const md5_byte_t *data, int nbytes)
 {
     const md5_byte_t *p = data;
@@ -364,7 +376,7 @@ md5_append(md5_state_t *pms, const md5_byte_t *data, int nbytes)
 	memcpy(pms->buf, p, left);
 }
 
-void
+static void
 md5_finish(md5_state_t *pms, md5_byte_t digest[16])
 {
     static const md5_byte_t pad[64] = {
@@ -386,3 +398,42 @@ md5_finish(md5_state_t *pms, md5_byte_t digest[16])
     for (i = 0; i < 16; ++i)
 	digest[i] = (md5_byte_t)(pms->abcd[i >> 2] >> ((i & 3) << 3));
 }
+
+/* Added for use with Hobbit */
+int  myMD5_Size(void) { return sizeof(md5_state_t); }
+void myMD5_Init(void *pms) { md5_init((md5_state_t *)pms); }
+void myMD5_Update(void *pms, unsigned char *data, int nbytes) { md5_append((md5_state_t *)pms, (md5_byte_t *)data, nbytes); }
+void myMD5_Final(unsigned char digest[16], void *pms) { md5_finish((md5_state_t *)pms, (md5_byte_t *)digest); }
+
+#ifdef STANDALONE
+
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+int main(int argc, char *argv[])
+{
+	FILE *fd;
+	int n;
+	unsigned char buf[8192];
+	void *context;
+	unsigned char digest[16];
+	int i;
+
+	fd = fopen(argv[1], "r");
+	if (fd == NULL) return 1;
+
+	context = (void *)malloc(myMD5_Size());
+	myMD5_Init(context);
+	while ((n = fread(buf, 1, sizeof(buf), fd)) > 0) myMD5_Update(context, buf, n);
+	fclose(fd);
+
+	myMD5_Final(digest, context);
+
+	for (i=0; (i < sizeof(digest)); i++) printf("%02x", digest[i]);
+	printf("\n");
+	return 0;
+}
+
+#endif
+
