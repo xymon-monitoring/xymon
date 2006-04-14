@@ -13,8 +13,11 @@
 #ifndef __DIGEST_H_
 #define __DIGEST_H_
 
+typedef enum { D_OPENSSL, D_MD5, D_SHA1 } digesttype_t;
+
 typedef struct digestctx_t {
 	char *digestname;
+	digesttype_t digesttype;
 	void *mdctx;
 } digestctx_t;
 

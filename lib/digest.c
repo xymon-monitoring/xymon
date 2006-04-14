@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: digest.c,v 1.10 2005-07-12 06:47:55 henrik Exp $";
+static char rcsid[] = "$Id: digest.c,v 1.11 2006-04-14 10:19:22 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -38,6 +38,7 @@ digestctx_t *digest_init(char *digest)
 
 	ctx = (digestctx_t *) malloc(sizeof(digestctx_t));
 	ctx->digestname = strdup(digest);
+	ctx->digesttype = D_OPENSSL;
 	md = EVP_get_digestbyname(ctx->digestname);
 
 	if (!md) {
@@ -54,16 +55,26 @@ digestctx_t *digest_init(char *digest)
 #endif
 
 #else
-	if (strcmp(digest, "md5") != 0) {
+	if (strcmp(digest, "md5") == 0) {
+		/* Use the built in MD5 routines */
+		ctx = (digestctx_t *) malloc(sizeof(digestctx_t));
+		ctx->digestname = strdup(digest);
+		ctx->digesttype = D_MD5;
+		ctx->mdctx = (void *)malloc(sizeof(md5_state_t));
+		md5_init((md5_state_t *)ctx->mdctx);
+	}
+	else if (strcmp(digest, "sha1") == 0) {
+		/* Use the built in SHA1 routines */
+		ctx = (digestctx_t *) malloc(sizeof(digestctx_t));
+		ctx->digestname = strdup(digest);
+		ctx->digesttype = D_SHA1;
+		ctx->mdctx = (void *)malloc(sizeof(mySHA1_CTX));
+		mySHA1Init((mySHA1_CTX *)ctx->mdctx);
+	}
+	else {
 		errprintf("digest_init failure: bbgen was compiled without OpenSSL support\n");
 		return NULL;
 	}
-
-	/* Use the built in MD5 routines */
-	ctx = (digestctx_t *) malloc(sizeof(digestctx_t));
-	ctx->digestname = strdup(digest);
-	ctx->mdctx = (void *)malloc(sizeof(md5_state_t));
-	md5_init((md5_state_t *)ctx->mdctx);
 #endif
 
 	return ctx;
@@ -75,7 +86,16 @@ int digest_data(digestctx_t *ctx, char *buf, int buflen)
 #ifdef BBGEN_SSL
 	EVP_DigestUpdate(ctx->mdctx, buf, buflen);
 #else
-	md5_append((md5_state_t *)ctx->mdctx, (const md5_byte_t *)buf, buflen);
+	switch (ctx->digesttype) {
+	  case D_MD5:
+		md5_append((md5_state_t *)ctx->mdctx, (const md5_byte_t *)buf, buflen);
+		break;
+	  case D_SHA1:
+		mySHA1Update((mySHA1_CTX *)ctx->mdctx, buf, buflen);
+		break;
+	  case D_OPENSSL:
+		break;
+	}
 #endif
 	return 0;
 }
@@ -83,17 +103,15 @@ int digest_data(digestctx_t *ctx, char *buf, int buflen)
 
 char *digest_done(digestctx_t *ctx)
 {
-	char *result = NULL;
 	int i;
 	unsigned int md_len = 0;
 	char *p;
+	unsigned char *md_value;
+	char *md_string;
 
 #ifdef BBGEN_SSL
-	unsigned char md_value[EVP_MAX_MD_SIZE];
-	char md_string[2*EVP_MAX_MD_SIZE+128];
-
-	MEMDEFINE(md_string); 
-	MEMDEFINE(md_value);
+	md_value  = (unsigned char *)malloc(EVP_MAX_MD_SIZE*sizeof(unsigned char));
+	md_string = (char *)malloc(2*EVP_MAX_MD_SIZE+128);
 
 #if OPENSSL_VERSION_NUMBER >= 0x00907000L
 	EVP_DigestFinal_ex(ctx->mdctx, md_value, &md_len);
@@ -103,30 +121,35 @@ char *digest_done(digestctx_t *ctx)
 	EVP_cleanup();
 #endif
 
-	MEMUNDEFINE(md_value);
-
 #else
-	/* Built in MD5 hash */
-	md5_byte_t md_value[16];
-	char md_string[33];
-
-	MEMDEFINE(md_string); 
-	md5_finish((md5_state_t *)ctx->mdctx, md_value);
-	md_len = sizeof(md_value);
+	switch (ctx->digesttype) {
+	  case D_MD5:
+		/* Built in MD5 hash */
+		md_len = 16;
+		md_value = (unsigned char *)malloc(md_len*sizeof(unsigned char));
+		md_string = (char *)malloc((2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
+		md5_finish((md5_state_t *)ctx->mdctx, md_value);
+		break;
+	  case D_SHA1:
+		/* Built in SHA1 hash */
+		md_len = 20;
+		md_value = (unsigned char *)malloc(md_len*sizeof(unsigned char));
+		md_string = (char *)malloc((2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
+		mySHA1Final(md_value, (mySHA1_CTX *)ctx->mdctx);
+		break;
+	  case D_OPENSSL:
+		break;
+	}
 #endif
 
 	sprintf(md_string, "%s:", ctx->digestname);
-	for(i = 0, p = md_string + strlen(md_string); (i < md_len); i++) {
-		p += sprintf(p, "%02x", md_value[i]);
-		*p = '\0';
-	}
-	result = strdup(md_string);
+	for(i = 0, p = md_string + strlen(md_string); (i < md_len); i++) p += sprintf(p, "%02x", md_value[i]);
+	*p = '\0';
 
+	xfree(md_value);
 	xfree(ctx->mdctx);
 	xfree(ctx);
 
-	MEMUNDEFINE(md_string); 
-
-	return result;
+	return md_string;
 }
 
