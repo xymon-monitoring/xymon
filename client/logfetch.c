@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.11 2006-04-14 16:08:34 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.12 2006-04-14 22:28:01 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -34,7 +34,7 @@ static char rcsid[] = "$Id: logfetch.c,v 1.11 2006-04-14 16:08:34 henrik Exp $";
 #define POSCOUNT ((MAXMINUTES / 5) + 1)
 #define LINES_AFTER_TRIGGER 10
 
-typedef enum { C_NONE, C_LOG, C_FILE } checktype_t;
+typedef enum { C_NONE, C_LOG, C_FILE, C_DIR } checktype_t;
 
 typedef struct logdef_t {
 	off_t lastpos[POSCOUNT];
@@ -320,7 +320,9 @@ void printfiledata(FILE *fd, char *fn, int domd5, int dosha1, int dormd160)
 	*linknam = '\0';
 	staterror = lstat(fn, &st);
 	if ((staterror == 0) && S_ISLNK(st.st_mode)) {
-		if (readlink(fn, linknam, sizeof(linknam)) == -1) *linknam = '\0';
+		int n = readlink(fn, linknam, sizeof(linknam)-1);
+		if (n == -1) n = 0;
+		linknam[n] = '\0';
 		staterror = stat(fn, &st);
 	}
 
@@ -355,6 +357,30 @@ void printfiledata(FILE *fd, char *fn, int domd5, int dosha1, int dormd160)
 	fprintf(fd, "\n");
 }
 
+void printdirdata(FILE *fd, char *fn)
+{
+	char *ducmd;
+	FILE *cmdfd;
+	char *cmd;
+	char buf[4096];
+	int buflen;
+
+	ducmd = getenv("DU");
+	if (ducmd == NULL) ducmd = "du";
+
+	cmd = (char *)malloc(strlen(ducmd) + strlen(fn) + 2);
+	sprintf(cmd, "%s %s", ducmd, fn);
+
+	cmdfd = popen(cmd, "r");
+	xfree(cmd);
+	if (cmdfd == NULL) return;
+
+	while ((buflen = fread(buf, 1, sizeof(buf), cmdfd)) > 0) fwrite(buf, 1, buflen, fd);
+	pclose(cmdfd);
+
+	fprintf(fd, "\n");
+}
+
 int loadconfig(char *cfgfn)
 {
 	FILE *fd;
@@ -378,7 +404,7 @@ int loadconfig(char *cfgfn)
 		p = l + strspn(l, " \t");
 		if ((*p == '\0') || (*p == '#')) continue;
 
-		if ((strncmp(l, "log:", 4) == 0) || (strncmp(l, "file:", 4) == 0)) {
+		if ((strncmp(l, "log:", 4) == 0) || (strncmp(l, "file:", 5) == 0) || (strncmp(l, "dir:", 4) == 0)) {
 			checktype_t checktype;
 			char *tok;
 
@@ -387,6 +413,7 @@ int loadconfig(char *cfgfn)
 
 			if (strcmp(tok, "log") == 0) checktype = C_LOG;
 			else if (strcmp(tok, "file") == 0) checktype = C_FILE;
+			else if (strcmp(tok, "dir") == 0) checktype = C_DIR;
 			else checktype = C_NONE;
 
 			filename = strtok(NULL, ":"); if (filename) tok = strtok(NULL, ":");
@@ -402,6 +429,10 @@ int loadconfig(char *cfgfn)
 					else if (strcmp(tok, "sha1") == 0) dosha1 = 1;
 					else if (strcmp(tok, "rmd160") == 0) dormd160 = 1;
 				}
+				break;
+
+			  case C_DIR:
+				maxbytes = 0; /* Needed to get us into the put-into-list code */
 				break;
 
 			  case C_NONE:
@@ -442,6 +473,8 @@ int loadconfig(char *cfgfn)
 								newitem->check.filecheck.dosha1 = dosha1;
 								newitem->check.filecheck.dormd160 = dormd160;
 								break;
+							  case C_DIR:
+								break;
 					  		  case C_NONE:
 								break;
 							}
@@ -476,6 +509,8 @@ int loadconfig(char *cfgfn)
 						newitem->check.filecheck.domd5 = domd5;
 						newitem->check.filecheck.dosha1 = dosha1;
 						newitem->check.filecheck.dormd160 = dormd160;
+						break;
+					  case C_DIR:
 						break;
 					  case C_NONE:
 						break;
@@ -527,6 +562,9 @@ int loadconfig(char *cfgfn)
 			}
 		}
 		else if (currcfg && (currcfg->checktype == C_FILE)) {
+			/* Nothing */
+		}
+		else if (currcfg && (currcfg->checktype == C_DIR)) {
 			/* Nothing */
 		}
 		else if (currcfg && (currcfg->checktype == C_NONE)) {
@@ -628,6 +666,11 @@ int main(int argc, char *argv[])
 					walk->check.filecheck.domd5, 
 					walk->check.filecheck.dosha1,
 					walk->check.filecheck.dormd160);
+			break;
+
+		  case C_DIR:
+			fprintf(stdout, "[dir:%s]\n", walk->filename);
+			printdirdata(stdout, walk->filename);
 			break;
 
 		  case C_NONE:
