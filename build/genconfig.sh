@@ -56,6 +56,10 @@ else
 	echo "#undef HAVE_SYS_SELECT_H" >>include/config.h
 fi
 
+echo "Checking if big- or little-endian"
+$CC -o build/test-endianness $CFLAGS build/test-endianness.c
+./build/test-endianness --configh >>include/config.h
+
 echo "#endif" >>include/config.h
 
 echo "config.h created"
