@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 
 	while (fgets(srcfn, sizeof(srcfn), stdin)) {
 		FILE *fd;
-		char buf[8192];
+		unsigned char buf[8192];
 		int buflen;
 		digestctx_t *ctx;
 		char srcmd5[40];
