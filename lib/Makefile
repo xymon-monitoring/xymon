@@ -1,9 +1,9 @@
 # bbgen library Makefile
 #
 
-BBGENLIBOBJS = osdefs.o acklog.o availability.o calc.o cgi.o cgiurls.o color.o digest.o encoding.o environ.o errormsg.o eventlog.o files.o headfoot.o hobbitrrd.o htmllog.o loadalerts.o loadhosts.o loadnkconf.o links.o matching.o md5.o memory.o misc.o netservices.o rbtr.o reportlog.o sendmsg.o sha1.o sig.o stackio.o strfunc.o timefunc.o timing.o url.o
+BBGENLIBOBJS = osdefs.o acklog.o availability.o calc.o cgi.o cgiurls.o color.o digest.o encoding.o environ.o errormsg.o eventlog.o files.o headfoot.o hobbitrrd.o htmllog.o loadalerts.o loadhosts.o loadnkconf.o links.o matching.o md5.o memory.o misc.o netservices.o rbtr.o reportlog.o rmd160c.o sendmsg.o sha1.o sig.o stackio.o strfunc.o timefunc.o timing.o url.o
 
-CLIENTLIBOBJS = osdefs.o color.o digest.o encoding.o environ-client.o errormsg.o loadhosts.o md5.o memory.o misc.o rbtr.o sendmsg.o sha1.o sig.o stackio.o strfunc.o timefunc.o
+CLIENTLIBOBJS = osdefs.o color.o digest.o encoding.o environ-client.o errormsg.o loadhosts.o md5.o memory.o misc.o rbtr.o rmd160c.o sendmsg.o sha1.o sig.o stackio.o strfunc.o timefunc.o
 ifeq ($(LOCALCLIENT),yes)
 	CLIENTLIBOBJS += matching.o
 endif
@@ -11,9 +11,9 @@ endif
 
 CFLAGS += -I. -I../include 
 
-all: test-endianness libbbgen.a hobbitclient.a loadhosts stackio availability sha1s
+all: test-endianness libbbgen.a hobbitclient.a loadhosts stackio availability md5 sha1 rmd160
 
-client: test-endianness hobbitclient.a sha1c
+client: test-endianness hobbitclient.a
 
 test-endianness: test-endianness.c
 	$(CC) $(CFLAGS) -o $@ $<
@@ -59,12 +59,15 @@ stackio: stackio.c libbbgen.a
 availability: availability.c libbbgen.a
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ availability.c ./libbbgen.a
 
-sha1s: sha1.c libbbgen.a
-	$(CC) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ sha1.c ./libbbgen.a
+md5: md5.c libbbgen.a
+	$(CC) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ md5.c
 
-sha1c: sha1.c hobbitclient.a
-	$(CC) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ sha1.c ./hobbitclient.a
+sha1: sha1.c libbbgen.a
+	$(CC) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ sha1.c
+
+rmd160: rmd160c.c hobbitclient.a
+	$(CC) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ rmd160c.c
 
 clean:
-	rm -f *.o *.a *~ loadhosts stackio availability test-endianness sha1c sha1s
+	rm -f *.o *.a *~ loadhosts stackio availability test-endianness md5 sha1 rmd160
 
