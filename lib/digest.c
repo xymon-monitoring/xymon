@@ -3,14 +3,14 @@
 /*                                                                            */
 /* This is used to implement message digest functions (MD5, SHA1 etc.)        */
 /*                                                                            */
-/* Copyright (C) 2003-2005 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2003-2006 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: digest.c,v 1.13 2006-04-14 11:22:30 henrik Exp $";
+static char rcsid[] = "$Id: digest.c,v 1.14 2006-04-14 14:39:18 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -28,16 +28,24 @@ digestctx_t *digest_init(char *digest)
 		ctx = (digestctx_t *) malloc(sizeof(digestctx_t));
 		ctx->digestname = strdup(digest);
 		ctx->digesttype = D_MD5;
-		ctx->mdctx = (void *)malloc(sizeof(md5_state_t));
-		md5_init((md5_state_t *)ctx->mdctx);
+		ctx->mdctx = (void *)malloc(myMD5_Size());
+		myMD5_Init(ctx->mdctx);
 	}
 	else if (strcmp(digest, "sha1") == 0) {
 		/* Use the built in SHA1 routines */
 		ctx = (digestctx_t *) malloc(sizeof(digestctx_t));
 		ctx->digestname = strdup(digest);
 		ctx->digesttype = D_SHA1;
-		ctx->mdctx = (void *)malloc(sizeof(mySHA1_CTX));
-		mySHA1Init((mySHA1_CTX *)ctx->mdctx);
+		ctx->mdctx = (void *)malloc(mySHA1_Size());
+		mySHA1_Init(ctx->mdctx);
+	}
+	else if (strcmp(digest, "rmd160") == 0) {
+		/* Use the built in RMD160 routines */
+		ctx = (digestctx_t *) malloc(sizeof(digestctx_t));
+		ctx->digestname = strdup(digest);
+		ctx->digesttype = D_RMD160;
+		ctx->mdctx = (void *)malloc(myRIPEMD160_Size());
+		myRIPEMD160_Init(ctx->mdctx);
 	}
 	else {
 		errprintf("digest_init failure: Cannot handle digest %s\n", digest);
@@ -52,10 +60,13 @@ int digest_data(digestctx_t *ctx, unsigned char *buf, int buflen)
 {
 	switch (ctx->digesttype) {
 	  case D_MD5:
-		md5_append((md5_state_t *)ctx->mdctx, (const md5_byte_t *)buf, buflen);
+		myMD5_Update(ctx->mdctx, buf, buflen);
 		break;
 	  case D_SHA1:
-		mySHA1Update((mySHA1_CTX *)ctx->mdctx, buf, buflen);
+		mySHA1_Update(ctx->mdctx, buf, buflen);
+		break;
+	  case D_RMD160:
+		myRIPEMD160_Update(ctx->mdctx, buf, buflen);
 		break;
 	}
 
@@ -77,14 +88,21 @@ char *digest_done(digestctx_t *ctx)
 		md_len = 16;
 		md_value = (unsigned char *)malloc(md_len*sizeof(unsigned char));
 		md_string = (char *)malloc((2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
-		md5_finish((md5_state_t *)ctx->mdctx, md_value);
+		myMD5_Final(md_value, ctx->mdctx);
 		break;
 	  case D_SHA1:
 		/* Built in SHA1 hash */
 		md_len = 20;
 		md_value = (unsigned char *)malloc(md_len*sizeof(unsigned char));
 		md_string = (char *)malloc((2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
-		mySHA1Final(md_value, (mySHA1_CTX *)ctx->mdctx);
+		mySHA1_Final(md_value, ctx->mdctx);
+		break;
+	  case D_RMD160:
+		/* Built in RMD160 hash */
+		md_len = 20;
+		md_value = (unsigned char *)malloc(md_len*sizeof(unsigned char));
+		md_string = (char *)malloc((2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
+		myRIPEMD160_Final(md_value, ctx->mdctx);
 		break;
 	}
 
