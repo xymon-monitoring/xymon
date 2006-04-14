@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.20 2006-04-04 21:00:50 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.21 2006-04-14 11:25:29 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -71,7 +71,48 @@ typedef struct c_log_t {
 	int color;
 } c_log_t;
 
-typedef enum { C_LOAD, C_UPTIME, C_DISK, C_MEM, C_PROC, C_LOG } ruletype_t;
+#define FCHK_NOEXIST  (1 << 0)
+#define FCHK_TYPE     (1 << 1)
+#define FCHK_MODE     (1 << 2)
+#define FCHK_MINLINKS (1 << 3)
+#define FCHK_MAXLINKS (1 << 4)
+#define FCHK_EQLLINKS (1 << 5)
+#define FCHK_MINSIZE  (1 << 6)
+#define FCHK_MAXSIZE  (1 << 7)
+#define FCHK_EQLSIZE  (1 << 8)
+#define FCHK_OWNERID  (1 << 10)
+#define FCHK_OWNERSTR (1 << 11)
+#define FCHK_GROUPID  (1 << 12)
+#define FCHK_GROUPSTR (1 << 13)
+#define FCHK_CTIMEMIN (1 << 16)
+#define FCHK_CTIMEMAX (1 << 17)
+#define FCHK_CTIMEEQL (1 << 18)
+#define FCHK_MTIMEMIN (1 << 19)
+#define FCHK_MTIMEMAX (1 << 20)
+#define FCHK_MTIMEEQL (1 << 21)
+#define FCHK_ATIMEMIN (1 << 22)
+#define FCHK_ATIMEMAX (1 << 23)
+#define FCHK_ATIMEEQL (1 << 24)
+#define FCHK_MD5      (1 << 25)
+#define FCHK_SHA1     (1 << 26)
+ 
+typedef struct c_file_t {
+	exprlist_t *filename;
+	unsigned int filechecks;
+	int color;
+	int ftype;
+	unsigned long minsize, maxsize, eqlsize;
+	unsigned int minlinks, maxlinks, eqllinks;
+	unsigned int fmode;
+	int ownerid, groupid;
+	char *ownerstr, *groupstr;
+	unsigned int minctimedif, maxctimedif, ctimeeql;
+	unsigned int minmtimedif, maxmtimedif, mtimeeql;
+	unsigned int minatimedif, maxatimedif, atimeeql;
+	char *md5hash, *sha1hash;
+} c_file_t;
+
+typedef enum { C_LOAD, C_UPTIME, C_DISK, C_MEM, C_PROC, C_LOG, C_FILE } ruletype_t;
 
 typedef struct c_rule_t {
 	exprlist_t *hostexp;
@@ -89,6 +130,7 @@ typedef struct c_rule_t {
 		c_mem_t mem;
 		c_proc_t proc;
 		c_log_t log;
+		c_file_t fcheck;
 	} rule;
 } c_rule_t;
 
@@ -207,6 +249,18 @@ static int isqual(char *token)
 	     (strncasecmp(token, "TIME=", 5) == 0)	) return 1;
 
 	return 0;
+}
+
+static char *ftypestr(unsigned int ftype)
+{
+	if      (ftype == S_IFSOCK) return "socket";
+	else if (ftype == S_IFREG)  return "file";
+	else if (ftype == S_IFBLK)  return "block";
+	else if (ftype == S_IFCHR)  return "char";
+	else if (ftype == S_IFDIR)  return "dir";
+	else if (ftype == S_IFIFO)  return "fifo";
+
+	return "";
 }
 
 int load_client_config(char *configfn)
@@ -461,6 +515,137 @@ int load_client_config(char *configfn)
 				tok = wstok(NULL); if (isqual(tok)) continue;
 				currule->rule.log.ignoreexp = setup_expr(tok, 1);
 			}
+			else if (strcasecmp(tok, "FILE") == 0) {
+				currule = setup_rule(C_FILE, curhost, curexhost, curpage, curexpage, curtime, cfid);
+				currule->rule.fcheck.filename = NULL;
+				currule->rule.fcheck.color = COL_RED;
+				currule->rule.fcheck.filechecks = 0;
+
+				tok = wstok(NULL);
+				currule->rule.fcheck.filename = setup_expr(tok, 0);
+				do {
+					tok = wstok(NULL); if (!tok || isqual(tok)) continue;
+
+					if (strcasecmp(tok, "noexist") == 0) {
+						currule->rule.fcheck.filechecks |= FCHK_NOEXIST;
+					}
+					else if (strncasecmp(tok, "type=", 5) == 0) {
+						currule->rule.fcheck.filechecks |= FCHK_TYPE;
+						if (strcasecmp(tok+5, "socket") == 0) currule->rule.fcheck.ftype = S_IFSOCK;
+						else if (strcasecmp(tok+5, "file") == 0) currule->rule.fcheck.ftype = S_IFREG;
+						else if (strcasecmp(tok+5, "block") == 0) currule->rule.fcheck.ftype = S_IFBLK;
+						else if (strcasecmp(tok+5, "char") == 0) currule->rule.fcheck.ftype = S_IFCHR;
+						else if (strcasecmp(tok+5, "dir") == 0) currule->rule.fcheck.ftype = S_IFDIR;
+						else if (strcasecmp(tok+5, "fifo") == 0) currule->rule.fcheck.ftype = S_IFIFO;
+					}
+					else if (strncasecmp(tok, "size>", 5) == 0) {
+						currule->rule.fcheck.filechecks |= FCHK_MINSIZE;
+						currule->rule.fcheck.minsize = atol(tok+5);
+					}
+					else if (strncasecmp(tok, "size<", 5) == 0) {
+						currule->rule.fcheck.filechecks |= FCHK_MAXSIZE;
+						currule->rule.fcheck.maxsize = atol(tok+5);
+					}
+					else if (strncasecmp(tok, "size=", 5) == 0) {
+						currule->rule.fcheck.filechecks |= FCHK_EQLSIZE;
+						currule->rule.fcheck.eqlsize = atol(tok+5);
+					}
+					else if (strncasecmp(tok, "links>", 6) == 0) {
+						currule->rule.fcheck.filechecks |= FCHK_MINLINKS;
+						currule->rule.fcheck.minlinks = atol(tok+6);
+					}
+					else if (strncasecmp(tok, "links<", 6) == 0) {
+						currule->rule.fcheck.filechecks |= FCHK_MAXLINKS;
+						currule->rule.fcheck.maxlinks = atol(tok+6);
+					}
+					else if (strncasecmp(tok, "links=", 6) == 0) {
+						currule->rule.fcheck.filechecks |= FCHK_EQLLINKS;
+						currule->rule.fcheck.eqllinks = atol(tok+6);
+					}
+					else if (strncasecmp(tok, "mode=", 5) == 0) {
+						currule->rule.fcheck.filechecks |= FCHK_MODE;
+						currule->rule.fcheck.fmode = strtol(tok+5, NULL, 8);
+					}
+					else if (strncasecmp(tok, "owner=", 6) == 0) {
+						char *eptr;
+						int uid;
+						
+						uid = strtol(tok+6, &eptr, 10);
+						if (*eptr == '\0') {
+							/* All numeric */
+							currule->rule.fcheck.filechecks |= FCHK_OWNERID;
+							currule->rule.fcheck.ownerid = uid;
+						}
+						else {
+							currule->rule.fcheck.filechecks |= FCHK_OWNERSTR;
+							currule->rule.fcheck.ownerstr = strdup(tok+6);
+						}
+					}
+					else if (strncasecmp(tok, "group=", 6) == 0) {
+						char *eptr;
+						int uid;
+						
+						uid = strtol(tok+6, &eptr, 10);
+						if (*eptr == '\0') {
+							/* All numeric */
+							currule->rule.fcheck.filechecks |= FCHK_GROUPID;
+							currule->rule.fcheck.groupid = uid;
+						}
+						else {
+							currule->rule.fcheck.filechecks |= FCHK_GROUPSTR;
+							currule->rule.fcheck.groupstr = strdup(tok+6);
+						}
+					}
+					else if (strncasecmp(tok, "mtime>", 6) == 0) {
+						currule->rule.fcheck.filechecks |= FCHK_MTIMEMIN;
+						currule->rule.fcheck.minmtimedif = atol(tok+5);
+					}
+					else if (strncasecmp(tok, "mtime<", 6) == 0) {
+						currule->rule.fcheck.filechecks |= FCHK_MTIMEMAX;
+						currule->rule.fcheck.maxmtimedif = atol(tok+5);
+					}
+					else if (strncasecmp(tok, "mtime=", 6) == 0) {
+						currule->rule.fcheck.filechecks |= FCHK_MTIMEEQL;
+						currule->rule.fcheck.mtimeeql = atol(tok+5);
+					}
+					else if (strncasecmp(tok, "ctime>", 6) == 0) {
+						currule->rule.fcheck.filechecks |= FCHK_CTIMEMIN;
+						currule->rule.fcheck.minctimedif = atol(tok+5);
+					}
+					else if (strncasecmp(tok, "ctime<", 6) == 0) {
+						currule->rule.fcheck.filechecks |= FCHK_CTIMEMAX;
+						currule->rule.fcheck.maxctimedif = atol(tok+5);
+					}
+					else if (strncasecmp(tok, "ctime=", 6) == 0) {
+						currule->rule.fcheck.filechecks |= FCHK_CTIMEEQL;
+						currule->rule.fcheck.ctimeeql = atol(tok+5);
+					}
+					else if (strncasecmp(tok, "atime>", 6) == 0) {
+						currule->rule.fcheck.filechecks |= FCHK_ATIMEMIN;
+						currule->rule.fcheck.minatimedif = atol(tok+5);
+					}
+					else if (strncasecmp(tok, "atime<", 6) == 0) {
+						currule->rule.fcheck.filechecks |= FCHK_ATIMEMAX;
+						currule->rule.fcheck.maxatimedif = atol(tok+5);
+					}
+					else if (strncasecmp(tok, "atime=", 6) == 0) {
+						currule->rule.fcheck.filechecks |= FCHK_ATIMEEQL;
+						currule->rule.fcheck.atimeeql = atol(tok+5);
+					}
+					else if (strncasecmp(tok, "md5=", 4) == 0) {
+						currule->rule.fcheck.filechecks |= FCHK_MD5;
+						currule->rule.fcheck.md5hash = strdup(tok+4);
+					}
+					else if (strncasecmp(tok, "sha1=", 5) == 0) {
+						currule->rule.fcheck.filechecks |= FCHK_SHA1;
+						currule->rule.fcheck.sha1hash = strdup(tok+5);
+					}
+					else {
+						int col = parse_color(tok);
+						if (col != -1) currule->rule.fcheck.color = col;
+					}
+				} while (tok && (!isqual(tok)));
+			}
 			else {
 				unknowntok = 1;
 				errprintf("Unknown token '%s' ignored at line %d\n", tok, cfid);
@@ -534,6 +719,60 @@ void dump_client_config(void)
 				(rwalk->rule.log.ignoreexp ? rwalk->rule.log.ignoreexp->pattern : ""),
 				colorname(rwalk->rule.log.color));
 			break;
+		  case C_FILE:
+			printf("FILE %s %s", rwalk->rule.fcheck.filename->pattern, 
+				colorname(rwalk->rule.fcheck.color));
+
+			if (rwalk->rule.fcheck.filechecks & FCHK_NOEXIST) 
+				printf(" noexist");
+			if (rwalk->rule.fcheck.filechecks & FCHK_TYPE)
+				printf(" type=%s", ftypestr(rwalk->rule.fcheck.ftype));
+			if (rwalk->rule.fcheck.filechecks & FCHK_MODE) 
+				printf(" mode=%o", rwalk->rule.fcheck.fmode);
+			if (rwalk->rule.fcheck.filechecks & FCHK_MINSIZE) 
+				printf(" size>%lu", rwalk->rule.fcheck.minsize);
+			if (rwalk->rule.fcheck.filechecks & FCHK_MAXSIZE) 
+				printf(" size<%lu", rwalk->rule.fcheck.maxsize);
+			if (rwalk->rule.fcheck.filechecks & FCHK_EQLSIZE) 
+				printf(" size=%lu", rwalk->rule.fcheck.eqlsize);
+			if (rwalk->rule.fcheck.filechecks & FCHK_MINLINKS) 
+				printf(" links>%u", rwalk->rule.fcheck.minlinks);
+			if (rwalk->rule.fcheck.filechecks & FCHK_MAXLINKS) 
+				printf(" links<%u", rwalk->rule.fcheck.maxlinks);
+			if (rwalk->rule.fcheck.filechecks & FCHK_EQLLINKS) 
+				printf(" links=%u", rwalk->rule.fcheck.eqllinks);
+			if (rwalk->rule.fcheck.filechecks & FCHK_OWNERID) 
+				printf(" owner=%u", rwalk->rule.fcheck.ownerid);
+			if (rwalk->rule.fcheck.filechecks & FCHK_OWNERSTR) 
+				printf(" owner=%s", rwalk->rule.fcheck.ownerstr);
+			if (rwalk->rule.fcheck.filechecks & FCHK_GROUPID) 
+				printf(" group=%u", rwalk->rule.fcheck.groupid);
+			if (rwalk->rule.fcheck.filechecks & FCHK_GROUPSTR) 
+				printf(" group=%s", rwalk->rule.fcheck.groupstr);
+			if (rwalk->rule.fcheck.filechecks & FCHK_CTIMEMIN) 
+				printf(" ctime>%u", rwalk->rule.fcheck.minctimedif);
+			if (rwalk->rule.fcheck.filechecks & FCHK_CTIMEMAX) 
+				printf(" ctime<%u", rwalk->rule.fcheck.maxctimedif);
+			if (rwalk->rule.fcheck.filechecks & FCHK_CTIMEEQL) 
+				printf(" ctime=%u", rwalk->rule.fcheck.ctimeeql);
+			if (rwalk->rule.fcheck.filechecks & FCHK_MTIMEMIN) 
+				printf(" mtime>%u", rwalk->rule.fcheck.minmtimedif);
+			if (rwalk->rule.fcheck.filechecks & FCHK_MTIMEMAX) 
+				printf(" mtime<%u", rwalk->rule.fcheck.maxmtimedif);
+			if (rwalk->rule.fcheck.filechecks & FCHK_MTIMEEQL) 
+				printf(" mtime=%u", rwalk->rule.fcheck.mtimeeql);
+			if (rwalk->rule.fcheck.filechecks & FCHK_ATIMEMIN) 
+				printf(" atime>%u", rwalk->rule.fcheck.minatimedif);
+			if (rwalk->rule.fcheck.filechecks & FCHK_ATIMEMAX) 
+				printf(" atime<%u", rwalk->rule.fcheck.maxatimedif);
+			if (rwalk->rule.fcheck.filechecks & FCHK_ATIMEEQL) 
+				printf(" atime=%u", rwalk->rule.fcheck.atimeeql);
+			if (rwalk->rule.fcheck.filechecks & FCHK_MD5) 
+				printf(" md5=%s", rwalk->rule.fcheck.md5hash);
+			if (rwalk->rule.fcheck.filechecks & FCHK_SHA1) 
+				printf(" sha1=%s", rwalk->rule.fcheck.sha1hash);
+
+			printf("\n");
 		}
 
 		if (rwalk->timespec) printf(" TIME=%s", rwalk->timespec);
@@ -723,6 +962,274 @@ int scan_log(namelist_t *hinfo, char *logname, char *logdata, char *section, str
 	return result;
 }
 
+int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section, strbuffer_t *summarybuf)
+{
+	int result = COL_GREEN;
+	char *hostname, *pagename;
+	c_rule_t *rwalk;
+	char *boln, *eoln;
+	char msgline[PATH_MAX];
+
+	int exists = 1, ftype = 0;
+	unsigned long fsize = 0;
+	unsigned int fmode = 0, linkcount = 0;
+	int ownerid = -1, groupid = -1;
+	char *ownerstr = NULL, *groupstr = NULL;
+	unsigned int ctime = 0, mtime = 0, atime = 0, clock = 0;
+	unsigned int ctimedif, mtimedif, atimedif;
+	char *md5hash = NULL, *sha1hash = NULL;
+
+	hostname = bbh_item(hinfo, BBH_HOSTNAME);
+	pagename = bbh_item(hinfo, BBH_PAGEPATH);
+	
+	boln = filedata;
+	while (boln && *boln) {
+		eoln = strchr(boln, '\n'); if (eoln) *eoln = '\0';
+
+		if (strncmp(boln, "ERROR:", 6) == 0) {
+			exists = 0;
+		}
+		else if (strncmp(boln, "type:", 5) == 0) {
+			char *tstr;
+
+			tstr = strchr(boln, '(');
+			if (tstr) {
+				if (strncmp(tstr, "(file", 5) == 0) ftype = S_IFREG;
+				else if (strncmp(tstr, "(directory", 10) == 0) ftype = S_IFDIR;
+				else if (strncmp(tstr, "(char-device", 12) == 0) ftype = S_IFCHR;
+				else if (strncmp(tstr, "(block-device", 13) == 0) ftype = S_IFBLK;
+				else if (strncmp(tstr, "(FIFO", 5) == 0) ftype = S_IFIFO;
+				else if (strncmp(tstr, "(socket", 7) == 0) ftype = S_IFSOCK;
+			}
+		}
+		else if (strncmp(boln, "mode:", 5) == 0) {
+			fmode = strtol(boln+5, NULL, 8);
+		}
+		else if (strncmp(boln, "linkcount:", 10) == 0) {
+			linkcount = atoi(boln+6);
+		}
+		else if (strncmp(boln, "owner:", 6) == 0) {
+			ownerid = atoi(boln+6);
+			ownerstr = strchr(boln, '('); 
+			if (ownerstr) {
+				char *estr;
+				ownerstr++;
+				estr = strchr(ownerstr, ')'); if (estr) *estr = '\0';
+			}
+		}
+		else if (strncmp(boln, "group:", 6) == 0) {
+			groupid = atoi(boln+6);
+			groupstr = strchr(boln, '('); 
+			if (groupstr) {
+				char *estr;
+				groupstr++;
+				estr = strchr(groupstr, ')'); if (estr) *estr = '\0';
+			}
+		}
+		else if (strncmp(boln, "size:", 5) == 0) {
+			fsize = str2ll(boln+5, NULL);
+		}
+		else if (strncmp(boln, "clock:", 6) == 0) {
+			clock = atoi(boln+6);
+		}
+		else if (strncmp(boln, "atime:", 6) == 0) {
+			atime = atoi(boln+6);
+		}
+		else if (strncmp(boln, "ctime:", 6) == 0) {
+			ctime = atoi(boln+6);
+		}
+		else if (strncmp(boln, "mtime:", 6) == 0) {
+			mtime = atoi(boln+6);
+		}
+		else if (strncmp(boln, "md5:", 4) == 0) {
+			md5hash = strdup(boln+4);
+		}
+		else if (strncmp(boln, "sha1:", 5) == 0) {
+			sha1hash = strdup(boln+5);
+		}
+
+		if (eoln) { *eoln = '\0'; boln = eoln+1; } else boln = NULL;
+	}
+
+	if (clock == 0) clock = time(NULL);
+	ctimedif = clock - ctime;
+	atimedif = clock - atime;
+	mtimedif = clock - mtime;
+
+	for (rwalk = getrule(hostname, pagename, C_FILE); (rwalk); rwalk = getrule(NULL, NULL, C_FILE)) {
+		int rulecolor = COL_GREEN;
+
+		/* First, check if the filename matches */
+		if (!namematch(filename, rwalk->rule.fcheck.filename->pattern, rwalk->rule.fcheck.filename->exp)) continue;
+
+		if (!exists) {
+			if (!(rwalk->rule.fcheck.filechecks & FCHK_NOEXIST)) {
+				/* Required file does not exist */
+				rulecolor = rwalk->rule.fcheck.color;
+				addtobuffer(summarybuf, "File is missing\n");
+			}
+
+			continue; /* No need to bother with all the other checks */
+		}
+
+		if (rwalk->rule.fcheck.filechecks & FCHK_NOEXIST) {
+			/* File exists, but it shouldn't */
+			rulecolor = rwalk->rule.fcheck.color;
+			addtobuffer(summarybuf, "File exists\n");
+
+			continue; /* No need to bother with all the other checks */
+		}
+
+		if (rwalk->rule.fcheck.filechecks & FCHK_TYPE) {
+			if (rwalk->rule.fcheck.ftype != ftype) {
+				rulecolor = rwalk->rule.fcheck.color;
+				sprintf(msgline, "File is a %s - should be %s\n", 
+					ftypestr(ftype), ftypestr(rwalk->rule.fcheck.ftype));
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		if (rwalk->rule.fcheck.filechecks & FCHK_MODE) {
+			if (rwalk->rule.fcheck.fmode != fmode) {
+				rulecolor = rwalk->rule.fcheck.color;
+				sprintf(msgline, "File is mode %03o - should be %03o\n", 
+					fmode, rwalk->rule.fcheck.fmode);
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		if (rwalk->rule.fcheck.filechecks & FCHK_MINSIZE) {
+			if (fsize < rwalk->rule.fcheck.minsize) {
+				rulecolor = rwalk->rule.fcheck.color;
+				sprintf(msgline, "File has size %lu  - should be >%lu\n", 
+					fsize, rwalk->rule.fcheck.minsize);
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		if (rwalk->rule.fcheck.filechecks & FCHK_MAXSIZE) {
+			if (fsize > rwalk->rule.fcheck.maxsize) {
+				rulecolor = rwalk->rule.fcheck.color;
+				sprintf(msgline, "File has size %lu  - should be <%lu\n", 
+					fsize, rwalk->rule.fcheck.maxsize);
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		if (rwalk->rule.fcheck.filechecks & FCHK_MINLINKS) {
+			if (linkcount < rwalk->rule.fcheck.minlinks) {
+				rulecolor = rwalk->rule.fcheck.color;
+				sprintf(msgline, "File has linkcount %u  - should be >%u\n", 
+					linkcount, rwalk->rule.fcheck.minlinks);
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		if (rwalk->rule.fcheck.filechecks & FCHK_MAXLINKS) {
+			if (linkcount > rwalk->rule.fcheck.maxlinks) {
+				rulecolor = rwalk->rule.fcheck.color;
+				sprintf(msgline, "File has linkcount %u  - should be <%u\n", 
+					linkcount, rwalk->rule.fcheck.maxlinks);
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		if (rwalk->rule.fcheck.filechecks & FCHK_OWNERID) {
+			if (ownerid != rwalk->rule.fcheck.ownerid) {
+				rulecolor = rwalk->rule.fcheck.color;
+				sprintf(msgline, "File is owned by user %u  - should be %u\n", 
+					ownerid, rwalk->rule.fcheck.ownerid);
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		if (rwalk->rule.fcheck.filechecks & FCHK_OWNERSTR) {
+			if (strcmp(ownerstr, rwalk->rule.fcheck.ownerstr) != 0) {
+				rulecolor = rwalk->rule.fcheck.color;
+				sprintf(msgline, "File is owned by user %s  - should be %s\n", 
+					ownerstr, rwalk->rule.fcheck.ownerstr);
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		if (rwalk->rule.fcheck.filechecks & FCHK_GROUPID) {
+			if (groupid != rwalk->rule.fcheck.groupid) {
+				rulecolor = rwalk->rule.fcheck.color;
+				sprintf(msgline, "File is owned by group %u  - should be %u\n", 
+					groupid, rwalk->rule.fcheck.groupid);
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		if (rwalk->rule.fcheck.filechecks & FCHK_GROUPSTR) {
+			if (strcmp(groupstr, rwalk->rule.fcheck.groupstr) != 0) {
+				rulecolor = rwalk->rule.fcheck.color;
+				sprintf(msgline, "File is owned by group %s  - should be %s\n", 
+					groupstr, rwalk->rule.fcheck.groupstr);
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		if (rwalk->rule.fcheck.filechecks & FCHK_CTIMEMIN) {
+			if (ctimedif < rwalk->rule.fcheck.minctimedif) {
+				rulecolor = rwalk->rule.fcheck.color;
+				sprintf(msgline, "File status changed %u seconds ago - should be >%u\n", 
+					ctimedif, rwalk->rule.fcheck.minctimedif);
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		if (rwalk->rule.fcheck.filechecks & FCHK_CTIMEMAX) {
+			if (ctimedif > rwalk->rule.fcheck.maxctimedif) {
+				rulecolor = rwalk->rule.fcheck.color;
+				sprintf(msgline, "File status changed %u seconds ago - should be <%u\n", 
+					ctimedif, rwalk->rule.fcheck.maxctimedif);
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		if (rwalk->rule.fcheck.filechecks & FCHK_MTIMEMIN) {
+			if (mtimedif < rwalk->rule.fcheck.minmtimedif) {
+				rulecolor = rwalk->rule.fcheck.color;
+				sprintf(msgline, "File was modified %u seconds ago - should be >%u\n", 
+					mtimedif, rwalk->rule.fcheck.minmtimedif);
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		if (rwalk->rule.fcheck.filechecks & FCHK_MTIMEMAX) {
+			if (mtimedif > rwalk->rule.fcheck.maxmtimedif) {
+				rulecolor = rwalk->rule.fcheck.color;
+				sprintf(msgline, "File was modified %u seconds ago - should be <%u\n", 
+					mtimedif, rwalk->rule.fcheck.maxmtimedif);
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		if (rwalk->rule.fcheck.filechecks & FCHK_ATIMEMIN) {
+			if (atimedif < rwalk->rule.fcheck.minatimedif) {
+				rulecolor = rwalk->rule.fcheck.color;
+				sprintf(msgline, "File was accessed %u seconds ago - should be >%u\n", 
+					atimedif, rwalk->rule.fcheck.minatimedif);
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		if (rwalk->rule.fcheck.filechecks & FCHK_ATIMEMAX) {
+			if (atimedif > rwalk->rule.fcheck.maxatimedif) {
+				rulecolor = rwalk->rule.fcheck.color;
+				sprintf(msgline, "File was accessed %u seconds ago - should be <%u\n", 
+					atimedif, rwalk->rule.fcheck.maxatimedif);
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		if (rwalk->rule.fcheck.filechecks & FCHK_MD5) {
+			if (strcmp(md5hash, rwalk->rule.fcheck.md5hash) != 0) {
+				rulecolor = rwalk->rule.fcheck.color;
+				sprintf(msgline, "File has MD5 hash %s  - should be %s\n", 
+					md5hash, rwalk->rule.fcheck.md5hash);
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		if (rwalk->rule.fcheck.filechecks & FCHK_SHA1) {
+			if (strcmp(sha1hash, rwalk->rule.fcheck.sha1hash) != 0) {
+				rulecolor = rwalk->rule.fcheck.color;
+				sprintf(msgline, "File has SHA1 hash %s  - should be %s\n", 
+					sha1hash, rwalk->rule.fcheck.sha1hash);
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+
+		if (rulecolor > result) result = rulecolor;
+	}
+
+	return result;
+}
 
 typedef struct mon_proc_t {
 	c_rule_t *rule;
