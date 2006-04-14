@@ -12,5 +12,5 @@ setup-newfiles: setup-newfiles.c
 	$(CC) -o $@ $(CFLAGS) $(RPATHOPT) $< ../lib/hobbitclient.a $(SSLLIBS) $(NETLIBS)
 
 clean:
-	rm -f $(TOOLS) testfile *.o *~ test-endianness
+	rm -f $(TOOLS) testfile *.o *~
 
