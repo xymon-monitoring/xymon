@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: digest.c,v 1.12 2006-04-14 11:19:01 henrik Exp $";
+static char rcsid[] = "$Id: digest.c,v 1.13 2006-04-14 11:22:30 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -48,7 +48,7 @@ digestctx_t *digest_init(char *digest)
 }
 
 
-int digest_data(digestctx_t *ctx, char *buf, int buflen)
+int digest_data(digestctx_t *ctx, unsigned char *buf, int buflen)
 {
 	switch (ctx->digesttype) {
 	  case D_MD5:
