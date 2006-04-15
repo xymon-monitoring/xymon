@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.12 2006-04-14 22:28:01 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.13 2006-04-15 09:35:44 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -342,7 +342,7 @@ void printfiledata(FILE *fd, char *fn, int domd5, int dosha1, int dormd160)
 		fprintf(fd, "linkcount:%d\n", st.st_nlink);
 		fprintf(fd, "owner:%u (%s)\n", st.st_uid, (pw ? pw->pw_name : ""));
 		fprintf(fd, "group:%u (%s)\n", st.st_gid, (gr ? gr->gr_name : ""));
-		fprintf(fd, "size:%lu\n", (unsigned long) st.st_size);
+		fprintf(fd, "size:%lu\n", (unsigned long) (st.st_size>>10));
 		fprintf(fd, "clock:%u (%s)\n", (unsigned int)now, timestr(now));
 		fprintf(fd, "atime:%u (%s)\n", (unsigned int)st.st_atime, timestr(st.st_atime));
 		fprintf(fd, "ctime:%u (%s)\n", (unsigned int)st.st_ctime, timestr(st.st_ctime));
@@ -655,7 +655,7 @@ int main(int argc, char *argv[])
 			for (fwalk = checklist; (fwalk && ((fwalk->checktype != C_FILE) || (strcmp(fwalk->filename, walk->filename) != 0))); fwalk = fwalk->next) ;
 			if (fwalk == NULL) {
 				/* No specific file: entry, so make sure the logfile metadata is available */
-				fprintf(stdout, "[file:%s]\n", walk->filename);
+				fprintf(stdout, "[logfile:%s]\n", walk->filename);
 				printfiledata(stdout, walk->filename, 0, 0, 0);
 			}
 			break;
