@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.27 2006-04-04 21:18:03 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.28 2006-04-15 09:37:48 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -236,6 +236,7 @@ static int rrddatasets(char *hostname, char *fn, char ***dsnames)
 
 #include "rrd/do_ncv.c"
 #include "rrd/do_external.c"
+#include "rrd/do_filesizes.c"
 
 #ifdef USE_BEA2
 #include "rrd/do_bea2.c"
@@ -286,6 +287,8 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 
 	else if (strcmp(id, "ncv") == 0)         res = do_ncv_rrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "tcp") == 0)         res = do_net_rrd(hostname, testname, msg, tstamp);
+
+	else if (strcmp(id, "filesizes") == 0)  res = do_filesizes_rrd(hostname, testname, msg, tstamp);
 
 	else if (extids && exthandler) {
 		int i;
