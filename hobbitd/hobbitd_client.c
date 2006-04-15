@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.59 2006-04-15 14:59:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.60 2006-04-15 15:34:55 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -725,29 +725,33 @@ void file_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 	for (swalk = sections; (swalk); swalk = swalk->next) {
 		unsigned long sz;
 		int trackit;
+		char *sfn = NULL;
 
 		if (strncmp(swalk->sname, "file:", 5) == 0) {
-			sprintf(sectionname, "file:%s", swalk->sname+5);
-			onecolor = check_file(hinfo, swalk->sname+5, swalk->sdata, sectionname, filesummary, &sz, &trackit);
+			sfn = swalk->sname+5;
+			sprintf(sectionname, "file:%s", sfn);
+			onecolor = check_file(hinfo, sfn, swalk->sdata, sectionname, filesummary, &sz, &trackit);
 
 			if (trackit) {
 				/* Save the size data for later DATA message to track file sizes */
-				sprintf(msgline, "%s:%lu\n", swalk->sname+5, sz);
+				sprintf(msgline, "%s:%lu\n", sfn, sz);
 				addtobuffer(sizedata, msgline);
 				anyszdata = 1;
 			}
 		}
 		else if (strncmp(swalk->sname, "logfile:", 8) == 0) {
-			sprintf(sectionname, "logfile:%s", swalk->sname+8);
-			onecolor = check_file(hinfo, swalk->sname+8, swalk->sdata, sectionname, filesummary, &sz, &trackit);
+			sfn = swalk->sname+8;
+			sprintf(sectionname, "logfile:%s", sfn);
+			onecolor = check_file(hinfo, sfn, swalk->sdata, sectionname, filesummary, &sz, &trackit);
 		}
 		else if (strncmp(swalk->sname, "dir:", 4) == 0) {
-			sprintf(sectionname, "dir:%s", swalk->sname+4);
-			onecolor = check_dir(hinfo, swalk->sname+4, swalk->sdata, sectionname, filesummary, &sz, &trackit);
+			sfn = swalk->sname+4;
+			sprintf(sectionname, "dir:%s", sfn);
+			onecolor = check_dir(hinfo, sfn, swalk->sdata, sectionname, filesummary, &sz, &trackit);
 
 			if (trackit) {
 				/* Save the size data for later DATA message to track directory sizes */
-				sprintf(msgline, "%s:%lu\n", swalk->sname+4, sz);
+				sprintf(msgline, "%s:%lu\n", sfn, sz);
 				addtobuffer(sizedata, msgline);
 				anyszdata = 1;
 			}
@@ -759,20 +763,20 @@ void file_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 		switch (onecolor) {
 		  case COL_GREEN:
 			sprintf(msgline, "\n&green <a href=\"%s\">%s</a>\n", 
-				hostsvcclienturl(hostname, sectionname), swalk->sname+5);
+				hostsvcclienturl(hostname, sectionname), sfn);
 			addtobuffer(greendata, msgline);
 			break;
 
 		  case COL_YELLOW: 
 			sprintf(msgline, "\n&yellow <a href=\"%s\">%s</a>\n", 
-				hostsvcclienturl(hostname, sectionname), swalk->sname+5);
+				hostsvcclienturl(hostname, sectionname), sfn);
 			addtobuffer(yellowdata, msgline);
 			addtostrbuffer(yellowdata, filesummary);
 			break;
 
 		  case COL_RED:
 			sprintf(msgline, "\n&red <a href=\"%s\">%s</a>\n", 
-				hostsvcclienturl(hostname, sectionname), swalk->sname+5);
+				hostsvcclienturl(hostname, sectionname), sfn);
 			addtobuffer(reddata, msgline);
 			addtostrbuffer(reddata, filesummary);
 			break;
