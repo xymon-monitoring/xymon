@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.58 2006-04-15 09:37:25 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.59 2006-04-15 14:59:59 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -739,7 +739,7 @@ void file_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 		}
 		else if (strncmp(swalk->sname, "logfile:", 8) == 0) {
 			sprintf(sectionname, "logfile:%s", swalk->sname+8);
-			onecolor = check_file(hinfo, swalk->sname+5, swalk->sdata, sectionname, filesummary, &sz, &trackit);
+			onecolor = check_file(hinfo, swalk->sname+8, swalk->sdata, sectionname, filesummary, &sz, &trackit);
 		}
 		else if (strncmp(swalk->sname, "dir:", 4) == 0) {
 			sprintf(sectionname, "dir:%s", swalk->sname+4);
