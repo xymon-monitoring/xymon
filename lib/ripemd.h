@@ -66,14 +66,17 @@
 #ifndef HEADER_RIPEMD_H
 #define HEADER_RIPEMD_H
 
+#include "config.h"
+#ifndef HAVE_UINT32_TYPEDEF
+typedef unsigned int u_int32_t;
+#endif
+
 #define RIPEMD160_CBLOCK	64
 #define RIPEMD160_LBLOCK	16
 #define RIPEMD160_BLOCK		16
 #define RIPEMD160_LAST_BLOCK	56
 #define RIPEMD160_LENGTH_BLOCK	8
 #define RIPEMD160_DIGEST_LENGTH	20
-
-typedef unsigned int u_int32_t;
 
 typedef struct RIPEMD160state_st {
 	u_int32_t A,B,C,D,E;
