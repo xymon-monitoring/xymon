@@ -56,6 +56,14 @@ else
 	echo "#undef HAVE_SYS_SELECT_H" >>include/config.h
 fi
 
+echo "Checking for u_int32_t typedef"
+$CC -c -o build/testfile.o $CFLAGS build/test-uint.c 1>/dev/null 2>&1
+if test $? -eq 0; then
+	echo "#define HAVE_UINT32_TYPEDEF 1" >>include/config.h
+else
+	echo "#undef HAVE_UINT32_TYPEDEF" >>include/config.h
+fi
+
 echo "#endif" >>include/config.h
 
 echo "config.h created"
