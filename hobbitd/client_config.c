@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.24 2006-04-14 22:30:26 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.25 2006-04-15 06:39:43 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -115,8 +115,9 @@ typedef struct c_file_t {
 
 typedef struct c_dir_t {
 	exprlist_t *filename;
+	unsigned int dirchecks;
 	int color;
-	unsigned long maxsize;
+	unsigned long maxsize, minsize;
 } c_dir_t;
 
 typedef enum { C_LOAD, C_UPTIME, C_DISK, C_MEM, C_PROC, C_LOG, C_FILE, C_DIR } ruletype_t;
@@ -662,6 +663,7 @@ int load_client_config(char *configfn)
 				currule = setup_rule(C_DIR, curhost, curexhost, curpage, curexpage, curtime, cfid);
 				currule->rule.dcheck.filename = NULL;
 				currule->rule.dcheck.color = COL_RED;
+				currule->rule.dcheck.dirchecks = 0;
 
 				tok = wstok(NULL);
 				currule->rule.dcheck.filename = setup_expr(tok, 0);
@@ -669,7 +671,16 @@ int load_client_config(char *configfn)
 					tok = wstok(NULL); if (!tok || isqual(tok)) continue;
 
 					if (strncasecmp(tok, "size<", 5) == 0) {
+						currule->rule.dcheck.dirchecks |= FCHK_MAXSIZE;
 						currule->rule.dcheck.maxsize = atol(tok+5);
+					}
+					else if (strncasecmp(tok, "size>", 5) == 0) {
+						currule->rule.dcheck.dirchecks |= FCHK_MINSIZE;
+						currule->rule.dcheck.minsize = atol(tok+5);
+					}
+					else {
+						int col = parse_color(tok);
+						if (col != -1) currule->rule.dcheck.color = col;
 					}
 				} while (tok && (!isqual(tok)));
 			}
@@ -811,10 +822,15 @@ void dump_client_config(void)
 			break;
 
 		  case C_DIR:
-			printf("DIR %s size<%lu %s\n",
-				rwalk->rule.dcheck.filename->pattern, 
-				rwalk->rule.dcheck.maxsize,
+			printf("DIR %s %s", rwalk->rule.dcheck.filename->pattern, 
 				colorname(rwalk->rule.dcheck.color));
+
+			if (rwalk->rule.dcheck.dirchecks & FCHK_MINSIZE) 
+				printf(" size>%lu", rwalk->rule.dcheck.minsize);
+			if (rwalk->rule.dcheck.dirchecks & FCHK_MAXSIZE) 
+				printf(" size<%lu", rwalk->rule.dcheck.maxsize);
+
+			printf("\n");
 			break;
 		}
 
@@ -1332,11 +1348,21 @@ int check_dir(namelist_t *hinfo, char *filename, char *filedata, char *section, 
 		/* First, check if the filename matches */
 		if (!namematch(filename, rwalk->rule.fcheck.filename->pattern, rwalk->rule.fcheck.filename->exp)) continue;
 
-		if (dsize > rwalk->rule.dcheck.maxsize) {
-			rulecolor = rwalk->rule.dcheck.color;
-			sprintf(msgline, "Directory has size %lu  - should be <%lu\n", 
-				dsize, rwalk->rule.dcheck.maxsize);
-			addtobuffer(summarybuf, msgline);
+		if (rwalk->rule.dcheck.dirchecks & FCHK_MAXSIZE) {
+			if (dsize > rwalk->rule.dcheck.maxsize) {
+				rulecolor = rwalk->rule.dcheck.color;
+				sprintf(msgline, "Directory has size %lu  - should be <%lu\n", 
+					dsize, rwalk->rule.dcheck.maxsize);
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		else if (rwalk->rule.dcheck.dirchecks & FCHK_MINSIZE) {
+			if (dsize < rwalk->rule.dcheck.minsize) {
+				rulecolor = rwalk->rule.dcheck.color;
+				sprintf(msgline, "Directory has size %lu  - should be >%lu\n", 
+					dsize, rwalk->rule.dcheck.minsize);
+				addtobuffer(summarybuf, msgline);
+			}
 		}
 
 		if (rulecolor > result) result = rulecolor;
