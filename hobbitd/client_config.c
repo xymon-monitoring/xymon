@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.25 2006-04-15 06:39:43 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.26 2006-04-15 09:36:45 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -96,6 +96,7 @@ typedef struct c_log_t {
 #define FCHK_MD5      (1 << 25)
 #define FCHK_SHA1     (1 << 26)
 #define FCHK_RMD160   (1 << 27)
+#define FCHK_TRACKIT  (1 << 31)
  
 typedef struct c_file_t {
 	exprlist_t *filename;
@@ -653,6 +654,9 @@ int load_client_config(char *configfn)
 						currule->rule.fcheck.filechecks |= FCHK_RMD160;
 						currule->rule.fcheck.rmd160hash = strdup(tok+7);
 					}
+					else if (strcasecmp(tok, "track") == 0) {
+						currule->rule.fcheck.filechecks |= FCHK_TRACKIT;
+					}
 					else {
 						int col = parse_color(tok);
 						if (col != -1) currule->rule.fcheck.color = col;
@@ -677,6 +681,9 @@ int load_client_config(char *configfn)
 					else if (strncasecmp(tok, "size>", 5) == 0) {
 						currule->rule.dcheck.dirchecks |= FCHK_MINSIZE;
 						currule->rule.dcheck.minsize = atol(tok+5);
+					}
+					else if (strcasecmp(tok, "track") == 0) {
+						currule->rule.dcheck.dirchecks |= FCHK_TRACKIT;
 					}
 					else {
 						int col = parse_color(tok);
@@ -817,6 +824,8 @@ void dump_client_config(void)
 				printf(" sha1=%s", rwalk->rule.fcheck.sha1hash);
 			if (rwalk->rule.fcheck.filechecks & FCHK_RMD160) 
 				printf(" rmd160=%s", rwalk->rule.fcheck.rmd160hash);
+			if (rwalk->rule.fcheck.filechecks & FCHK_TRACKIT) 
+				printf(" track");
 
 			printf("\n");
 			break;
@@ -829,6 +838,8 @@ void dump_client_config(void)
 				printf(" size>%lu", rwalk->rule.dcheck.minsize);
 			if (rwalk->rule.dcheck.dirchecks & FCHK_MAXSIZE) 
 				printf(" size<%lu", rwalk->rule.dcheck.maxsize);
+			if (rwalk->rule.dcheck.dirchecks & FCHK_TRACKIT) 
+				printf(" track");
 
 			printf("\n");
 			break;
@@ -1021,7 +1032,7 @@ int scan_log(namelist_t *hinfo, char *logname, char *logdata, char *section, str
 	return result;
 }
 
-int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section, strbuffer_t *summarybuf)
+int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section, strbuffer_t *summarybuf, unsigned long *filesize, int *trackit)
 {
 	int result = COL_GREEN;
 	char *hostname, *pagename;
@@ -1040,7 +1051,8 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 
 	hostname = bbh_item(hinfo, BBH_HOSTNAME);
 	pagename = bbh_item(hinfo, BBH_PAGEPATH);
-	
+	*trackit = 0;
+
 	boln = filedata;
 	while (boln && *boln) {
 		eoln = strchr(boln, '\n'); if (eoln) *eoln = '\0';
@@ -1112,6 +1124,8 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 
 		if (eoln) { *eoln = '\0'; boln = eoln+1; } else boln = NULL;
 	}
+
+	*filesize = fsize;
 
 	if (clock == 0) clock = time(NULL);
 	ctimedif = clock - ctime;
@@ -1297,6 +1311,9 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 				addtobuffer(summarybuf, msgline);
 			}
 		}
+		if (rwalk->rule.fcheck.filechecks & FCHK_TRACKIT) {
+			*trackit = (trackit || (ftype == S_IFREG));
+		}
 
 nextcheck:
 		if (rulecolor > result) result = rulecolor;
@@ -1305,7 +1322,7 @@ nextcheck:
 	return result;
 }
 
-int check_dir(namelist_t *hinfo, char *filename, char *filedata, char *section, strbuffer_t *summarybuf)
+int check_dir(namelist_t *hinfo, char *filename, char *filedata, char *section, strbuffer_t *summarybuf, unsigned long *dirsize, int *trackit)
 {
 	int result = COL_GREEN;
 	char *hostname, *pagename;
@@ -1317,7 +1334,8 @@ int check_dir(namelist_t *hinfo, char *filename, char *filedata, char *section, 
 
 	hostname = bbh_item(hinfo, BBH_HOSTNAME);
 	pagename = bbh_item(hinfo, BBH_PAGEPATH);
-	
+	*trackit = 0;
+
 	boln = filedata;
 	while (boln && *boln) {
 		unsigned long sz;
@@ -1338,6 +1356,8 @@ int check_dir(namelist_t *hinfo, char *filename, char *filedata, char *section, 
 
 		if (eoln) { *eoln = '\0'; boln = eoln+1; } else boln = NULL;
 	}
+
+	*dirsize = dsize;
 
 	/* Got the data? */
 	if (dsize == 0) return COL_CLEAR;
@@ -1363,6 +1383,9 @@ int check_dir(namelist_t *hinfo, char *filename, char *filedata, char *section, 
 					dsize, rwalk->rule.dcheck.minsize);
 				addtobuffer(summarybuf, msgline);
 			}
+		}
+		if (rwalk->rule.dcheck.dirchecks & FCHK_TRACKIT) {
+			*trackit = 1;
 		}
 
 		if (rulecolor > result) result = rulecolor;
