@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.57 2006-04-14 22:30:26 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.58 2006-04-15 09:37:25 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -704,26 +704,53 @@ void file_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 	static strbuffer_t *greendata = NULL;
 	static strbuffer_t *yellowdata = NULL;
 	static strbuffer_t *reddata = NULL;
+	static strbuffer_t *sizedata = NULL;
 	sectlist_t *swalk;
 	strbuffer_t *filesummary;
 	int filecolor = COL_GREEN, onecolor;
 	char msgline[PATH_MAX];
 	char sectionname[PATH_MAX];
+	int anyszdata = 0;
 
 	if (!greendata) greendata = newstrbuffer(0);
 	if (!yellowdata) yellowdata = newstrbuffer(0);
 	if (!reddata) reddata = newstrbuffer(0);
+	if (!sizedata) sizedata = newstrbuffer(0);
 
 	filesummary = newstrbuffer(0);
 
+	sprintf(msgline, "data %s.filesizes\n", commafy(hostname));
+	addtobuffer(sizedata, msgline);
+
 	for (swalk = sections; (swalk); swalk = swalk->next) {
+		unsigned long sz;
+		int trackit;
+
 		if (strncmp(swalk->sname, "file:", 5) == 0) {
 			sprintf(sectionname, "file:%s", swalk->sname+5);
-			onecolor = check_file(hinfo, swalk->sname+5, swalk->sdata, sectionname, filesummary);
+			onecolor = check_file(hinfo, swalk->sname+5, swalk->sdata, sectionname, filesummary, &sz, &trackit);
+
+			if (trackit) {
+				/* Save the size data for later DATA message to track file sizes */
+				sprintf(msgline, "%s:%lu\n", swalk->sname+5, sz);
+				addtobuffer(sizedata, msgline);
+				anyszdata = 1;
+			}
+		}
+		else if (strncmp(swalk->sname, "logfile:", 8) == 0) {
+			sprintf(sectionname, "logfile:%s", swalk->sname+8);
+			onecolor = check_file(hinfo, swalk->sname+5, swalk->sdata, sectionname, filesummary, &sz, &trackit);
 		}
 		else if (strncmp(swalk->sname, "dir:", 4) == 0) {
 			sprintf(sectionname, "dir:%s", swalk->sname+4);
-			onecolor = check_dir(hinfo, swalk->sname+4, swalk->sdata, sectionname, filesummary);
+			onecolor = check_dir(hinfo, swalk->sname+4, swalk->sdata, sectionname, filesummary, &sz, &trackit);
+
+			if (trackit) {
+				/* Save the size data for later DATA message to track directory sizes */
+				sprintf(msgline, "%s:%lu\n", swalk->sname+4, sz);
+				addtobuffer(sizedata, msgline);
+				anyszdata = 1;
+			}
 		}
 		else continue;
 
@@ -783,6 +810,9 @@ void file_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 	if (fromline && !localmode) addtostatus(fromline);
 
 	finish_status();
+
+	if (anyszdata) sendmessage(STRBUF(sizedata), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+	clearstrbuffer(sizedata);
 }
 
 void unix_netstat_report(char *hostname, namelist_t *hinfo, char *osid, char *netstatstr)
