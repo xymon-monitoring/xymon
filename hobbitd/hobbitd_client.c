@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.62 2006-04-16 11:57:43 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.63 2006-04-16 15:50:17 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -707,7 +707,7 @@ void file_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 	static strbuffer_t *sizedata = NULL;
 	sectlist_t *swalk;
 	strbuffer_t *filesummary;
-	int filecolor = COL_GREEN, onecolor;
+	int filecolor = -1, onecolor;
 	char msgline[PATH_MAX];
 	char sectionname[PATH_MAX];
 	int anyszdata = 0;
@@ -790,6 +790,11 @@ void file_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 	}
 
 	freestrbuffer(filesummary);
+
+	if (filecolor == -1) {
+		filecolor = COL_CLEAR;
+		addtobuffer(greendata, "No files checked\n");
+	}
 
 	init_status(filecolor);
 	sprintf(msgline, "status %s.files %s Files status at %s\n",
