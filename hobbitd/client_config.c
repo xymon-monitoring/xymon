@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.26 2006-04-15 09:36:45 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.27 2006-04-16 06:25:26 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1032,7 +1032,7 @@ int scan_log(namelist_t *hinfo, char *logname, char *logdata, char *section, str
 	return result;
 }
 
-int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section, strbuffer_t *summarybuf, unsigned long *filesize, int *trackit)
+int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section, strbuffer_t *summarybuf, unsigned long *filesize, int *trackit, int *anyrules)
 {
 	int result = COL_GREEN;
 	char *hostname, *pagename;
@@ -1051,7 +1051,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 
 	hostname = bbh_item(hinfo, BBH_HOSTNAME);
 	pagename = bbh_item(hinfo, BBH_PAGEPATH);
-	*trackit = 0;
+	*trackit = *anyrules = 0;
 
 	boln = filedata;
 	while (boln && *boln) {
@@ -1113,16 +1113,16 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 			mtime = atoi(boln+6);
 		}
 		else if (strncmp(boln, "md5:", 4) == 0) {
-			md5hash = strdup(boln+4);
+			md5hash = boln+4;
 		}
 		else if (strncmp(boln, "sha1:", 5) == 0) {
-			sha1hash = strdup(boln+5);
+			sha1hash = boln+5;
 		}
 		else if (strncmp(boln, "rmd160:", 7) == 0) {
-			rmd160hash = strdup(boln+7);
+			rmd160hash = boln+7;
 		}
 
-		if (eoln) { *eoln = '\0'; boln = eoln+1; } else boln = NULL;
+		if (eoln) { boln = eoln+1; } else boln = NULL;
 	}
 
 	*filesize = fsize;
@@ -1138,6 +1138,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 		/* First, check if the filename matches */
 		if (!namematch(filename, rwalk->rule.fcheck.filename->pattern, rwalk->rule.fcheck.filename->exp)) continue;
 
+		*anyrules = 1;
 		if (!exists) {
 			if (!(rwalk->rule.fcheck.filechecks & FCHK_NOEXIST)) {
 				/* Required file does not exist */
