@@ -157,37 +157,106 @@ logs a client should look at.
 The \fBLOG\fR setting determine how these extracts of log entries
 are processed, and what warnings or alerts trigger as a result.
 .sp
-"logfilename" is the base name of the logfile (without any directory).
-Only logentries from this filename will be matched against this rule.
-Note that "logfilename" can be a regular expression.
+"logfilename" is the name of the logfile. Only logentries from this filename 
+will be matched against this rule.  Note that "logfilename" can be a regular 
+expression (if prefixed with a '%' character).
 .sp
 "pattern" is a string or regular expression. If the logfile data matches 
 "pattern", it will trigger the "msgs" column to change color. If
 no "color" parameter is present, the default is to go "red" when
 the pattern is matched. To match against a regular expression, "pattern"
-must begin with a "%" sign - e.g "%WARNING|NOTICE" will match any lines
+must begin with a '%' sign - e.g "%WARNING|NOTICE" will match any lines
 containing either of these two words.
 .sp
 "excludepattern" is a string or regular expression that can be used to 
 filter out any unwanted strings that happen to match "pattern".
 .sp
-Example: Trigger a red alert when the string "ERROR" appears in the "syslog" file:
+Example: Trigger a red alert when the string "ERROR" appears in the "/var/adm/syslog" file:
 .br
-	LOG syslog ERROR
+	LOG /var/adm/syslog ERROR
 .sp
 Example: Trigger a yellow warning on all occurrences of the word "WARNING"
 or "NOTICE" in the "daemon.log" file, except those from the "lpr" system:
 .br
-	LOG daemon.log %WARNING|NOTICE yellow lpr
+	LOG /var/log/daemon.log %WARNING|NOTICE yellow lpr
 .sp
 Defaults:
 .br
 	color="red", no "excludepattern".
 .sp
-Note that no logfiles are checked by default. Any log
-data reported by a client will just show up on the "msgs"
-column with status OK (green).
+Note that no logfiles are checked by default. Any log data reported by a client 
+will just show up on the "msgs" column with status OK (green).
 
+
+.SH FILES STATUS COLUMN SETTINGS
+.sp
+.BR "FILE filename [color] [things to check] [TRACK]"
+.sp
+.BR "DIR directoryname [color] [size<MAXSIZE] [size>MINSIZE] [TRACK]"
+.sp
+These entries control the status of the "files" column. They allow you to
+check on various data for files and directories.
+
+\fBfilename\fR and \fBdirectoryname\fR are names of files or directories,
+with a full path. You can use a regular expression to match the names of
+files and directories reported by the client, if you prefix the expression
+with a '%' character.
+
+\fBcolor\fR is the color that triggers when one or more of the checks fail.
+
+The \fBTRACK\fR keyword causes the size of the file or directory to be tracked
+in an RRD file, and presented in a graph on the "files" status display.
+
+For files, you can check one or more of the following:
+.IP "noexist"
+triggers a warning if the file exists. By default,
+a warning is triggered for files that have a FILE entry, but
+which do not exist.
+.IP "type=TYPE"
+where TYPE is one of "file", "dir", "char", "block",
+"fifo", or "socket". Triggers warning if the file is not of the
+specified type.
+.IP "owner=OWNER"
+triggers a warning if the owner does not match what is listed here.
+OWNER is specified either with the numeric uid, or the user name.
+.IP "group=GROUP"
+triggers a warning if the group does not match what is listed here.
+GROUP is specified either with the numeric gid, or the group name.
+.IP "mode=MODE"
+triggers a warning if the file permissions are not
+as listed. MODE is written in the standard octal notation, e.g.
+"644" for the rw-r--r-- permissions.
+.IP "size<MAX.SIZE and size>MIN.SIZE"
+triggers a warning it the file size is greater than MAX.SIZE or 
+less than MIN.SIZE, respectively. Filesizes are reported in KB, so 
+MAX.SIZE and MIN.SIZE must be given in KB. E.g. to warn if a file 
+grows larger than 1MB (1024 KB),use \fBsize<1024\fR.
+.IP "mtime>MIN.MTIME mtime<MAX.MTIME"
+checks how long ago the file was last modified (in seconds). E.g. 
+to check if a file was updated within the past 10 minutes (600 
+seconds): \fBmtime<600\fR. Or to check that a file has NOT been updated 
+in the past 24 hours: \fBmtime>86400\fR.
+.IP "mtime=TIMESTAMP"
+checks if a file was last modified at TIMESTAMP.  TIMESTAMP is a unix epoch 
+time (seconds since midnight Jan 1 1970 UTC).
+.IP "ctime>MIN.CTIME, ctime<MAX.CTIME, ctime=TIMESTAMP"
+acts as the mtime checks, but for the ctime timestamp (when the directory
+entry of the file was last changed, eg. by chown, chgrp or chmod).
+.IP "md5=MD5SUM, sha1=SHA1SUM, rmd160=RMD160SUM"
+trigger a warning if the file checksum using the MD5, SHA1 or RMD160 
+message digest algorithms do not match the one configured here. Note: 
+The "file" entry in the
+.I client-local.cfg(5)
+file must specify which algorithm to use.
+
+.LP
+For directories, you can check one or more of the following:
+.IP "size<MAX.SIZE and size>MIN.SIZE"
+triggers a warning it the directory size is greater than MAX.SIZE or 
+less than MIN.SIZE, respectively. Directory sizes are reported in 
+whatever unit the \fBdu\fR command on the client uses - often KB 
+or diskblocks - so MAX.SIZE and MIN.SIZE must be given in the same
+unit.
 
 
 .SH CHANGING THE DEFAULT SETTINGS
@@ -292,6 +361,24 @@ match found is used. So you should put the specific settings first, and
 the generic ones last.
 
 
+.SH NOTES
+For the LOG, FILE and DIR checks, it is necessary also to configure the actual 
+file- and directory-names in the
+.I client-local.cfg(5)
+file. If the filenames are not listed there, the clients will not collect
+any data about these files/directories, and the settings in the 
+hobbit-clients.cfg file will be silently ignored.
+
+The ability to compute file checksums with MD5, SHA1 or RMD160 should not be
+used for general-purpose file integrity checking, since the overhead of calculating
+these on a large number of files can be significant. If you need this, look at
+tools designed for this purpose - e.g. Tripwire or AIDE.
+
+At the time of writing (april 2006), the SHA-1 and RMD160 algorithms are considered
+cryptographically safe. The MD5 algorithm has been shown to have some weaknesses, and
+is not considered strong enough when a high level of security is required.
+
+
 .SH "SEE ALSO"
-hobbitd_client(8), hobbitd(8), hobbit(7)
+hobbitd_client(8), client-local.cfg(5), hobbitd(8), hobbit(7)
 
