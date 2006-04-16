@@ -156,6 +156,7 @@ chkconfig --del hobbit-client
 %attr(644, root, root) %config /var/lib/hobbit/www/menu/menu_tpl.js
 %attr(644, root, root) %config /var/lib/hobbit/www/menu/menu.css
 %attr(755, hobbit, hobbit) %dir /usr/lib/hobbit/client/ext
+%attr(664, hobbit, apache) %config /etc/hobbit/hobbit-nkview.cfg /etc/hobbit/hobbit-nkview.cfg.bak
 
 %files client
 %attr(-, root, root) %doc README README.CLIENT Changes* COPYING CREDITS
