@@ -11,14 +11,17 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadnkconf.c,v 1.14 2006-04-05 20:57:57 henrik Exp $";
+static char rcsid[] = "$Id: loadnkconf.c,v 1.15 2006-04-16 16:15:34 henrik Exp $";
 
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
 #include <limits.h>
 #include <ctype.h>
+#include <utime.h>
 
 #include "libbbgen.h"
 
@@ -329,22 +332,40 @@ nkconf_t *get_nkconfig(char *key, int flags, char **resultkey)
 
 int update_nkconfig(nkconf_t *rec)
 {
+	char *bakfn;
+	FILE *bakfd;
+	unsigned char buf[8192];
+	int n;
+	struct stat st;
+	struct utimbuf ut;
+
 	RbtHandle handle;
 	FILE *fd;
-	char *tmpfn;
-	char *bakfn;
 	int result = 0;
 
-	tmpfn = (char *)malloc(strlen(configfn) + strlen(".tmp") + 1);
-	bakfn = (char *)malloc(strlen(configfn) + strlen(".bak") + 1);
-	sprintf(tmpfn, "%s.tmp", configfn);
+	/* First, copy the old file */
+	bakfn = (char *)malloc(strlen(configfn) + 5);
 	sprintf(bakfn, "%s.bak", configfn);
-	unlink(tmpfn);
-	fd = fopen(tmpfn, "w");
+	if (stat(configfn, &st) == 0) {
+		ut.actime = st.st_atime;
+		ut.modtime = st.st_mtime;
+	}
+	else ut.actime = ut.modtime = time(NULL);
+	fd = fopen(configfn, "r");
+	if (fd) {
+		bakfd = fopen(bakfn, "w");
+		if (bakfd) {
+			while ((n = fread(buf, 1, sizeof(buf), fd)) > 0) fwrite(buf, 1, n, bakfd);
+			fclose(bakfd);
+			utime(bakfn, &ut);
+		}
+		fclose(fd);
+	}
+	xfree(bakfn);
+
+	fd = fopen(configfn, "w");
 	if (fd == NULL) {
-		errprintf("Cannot open output file %s\n", tmpfn);
-		xfree(tmpfn);
-		xfree(bakfn);
+		errprintf("Cannot open output file %s\n", configfn);
 		return 1;
 	}
 
@@ -391,17 +412,6 @@ int update_nkconfig(nkconf_t *rec)
 	}
 
 	fclose(fd);
-
-	unlink(bakfn);
-	if ((rename(configfn, bakfn) == 0) && (rename(tmpfn, configfn) == -1)) {
-		/* We got the backup, but the final rename failed. Revert to backup file */
-		errprintf("Rename of %s to %s failed, reverting\n", tmpfn, configfn);
-		rename (bakfn, configfn);
-		result = 2;
-	}
-
-	xfree(tmpfn);
-	xfree(bakfn);
 
 	return result;
 }
