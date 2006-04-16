@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.61 2006-04-16 06:24:03 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.62 2006-04-16 11:57:43 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -407,8 +407,6 @@ void unix_memory_report(char *hostname, namelist_t *hinfo, char *fromline, char 
 
 	if (memphystotal == -1) return;
 	if (memphysused  == -1) return;
-	if (memswaptotal == -1) return;
-	if (memswapused  == -1) return;
 
 	get_memory_thresholds(hinfo, &physyellow, &physred, &swapyellow, &swapred, &actyellow, &actred);
 
@@ -416,9 +414,11 @@ void unix_memory_report(char *hostname, namelist_t *hinfo, char *fromline, char 
 	if (memphyspct > physyellow) physcolor = COL_YELLOW;
 	if (memphyspct > physred)    physcolor = COL_RED;
 
-	memswappct = (memswaptotal > 0) ? ((100 * memswapused) / memswaptotal) : 0;
-	if (memswappct > swapyellow) swapcolor = COL_YELLOW;
-	if (memswappct > swapred)    swapcolor = COL_RED;
+	if (memswapused != -1) {
+		memswappct = (memswaptotal > 0) ? ((100 * memswapused) / memswaptotal) : 0;
+		if (memswappct > swapyellow) swapcolor = COL_YELLOW;
+		if (memswappct > swapred)    swapcolor = COL_RED;
+	}
 
 	if (memactused != -1) {
 		memactpct = (memphystotal > 0) ? ((100 * memactused) / memphystotal) : 0;
