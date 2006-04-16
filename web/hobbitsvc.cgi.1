@@ -1,11 +1,11 @@
 .TH BB-HOSTSVC.CGI 1 "Version 4.2: 16 Apr 2006" "Hobbit Monitor"
 .SH NAME
-bb-hostsvc.cgi \- CGI program to view Hobbit status logs
+hobbitsvc.cgi \- CGI program to view Hobbit status logs
 .SH SYNOPSIS
-.B "bb-hostsvc.cgi [--hobbitd|--historical] [--history={top|bottom}]"
+.B "hobbitsvc.cgi [--hobbitd|--historical] [--history={top|bottom}]"
 
 .SH DESCRIPTION
-\fBbb-hostsvc.cgi\fR
+\fBhobbitsvc.cgi\fR
 is a CGI program to present a Hobbit status log in HTML 
 form (ie, as a web page). It can be used both for the logs
 showing the current status, and for historical logs from the
@@ -63,7 +63,7 @@ on the generated web page. Useful is this already happens in
 the hostsvc_header template file, for instance.
 
 .IP "--multigraphs=TEST1[,TEST2]"
-This causes bb-hostsvc.cgi to generate links to service graphs 
+This causes hobbitsvc.cgi to generate links to service graphs 
 that are split up into multiple images, with at most 5 graphs
 per image. This option only works in Hobbit mode. If not
 specified, only the "disk" status is split up this way.
