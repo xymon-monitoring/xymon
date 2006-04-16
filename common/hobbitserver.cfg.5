@@ -83,6 +83,18 @@ Default: 120 pixels.
 The default width (in pixels) of the RRD graph images.
 Default: 576 pixels.
 
+.IP HTMLCONTENTTYPE
+The Content-type reported by the CGI scripts that generate web pages.
+By default, this it "text/html". If you have on-line help texts in
+character sets other than the ISO-8859-1 (western european) character
+set, it may be necessary to modify this to include a character set.
+E.g.
+.br
+   HTMLCONTENTTYPE="text/html; charset=euc-jp"
+.br
+for a Japanese character sets. Note: Some webservers will automatically
+add this, if configured to do so.
+
 .SH DIRECTORIES
 
 .IP BBSERVERROOT
