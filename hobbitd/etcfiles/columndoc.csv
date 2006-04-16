@@ -1,4 +1,5 @@
 Column;Description;
+files;The <b>files</b> test shows the status of file- and directory-checks performed on the host. This is typically tests that check the size of files or directories, or check that they exist with the correct owner/group/permissions.;
 conn;The <b>conn</b> test performs a "ping" of the host.;
 ftp;The <b>ftp</b> test shows the status when trying to communicate with the FTP server on the host. ftp is commonly used to download files.;
 ssh;The <b>ssh</b> column shows the status when trying to communicate with the Secure Shell (ssh) server on the host. ssh is commonly used for encrypted console access to Unix servers, or for copying files between systems.;
