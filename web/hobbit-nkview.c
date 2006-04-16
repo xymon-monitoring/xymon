@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkview.c,v 1.15 2006-04-16 21:45:19 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkview.c,v 1.16 2006-04-16 21:58:31 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -344,20 +344,24 @@ static void parse_query(void)
 {
 	cgidata_t *cgidata = cgi_request();
 	cgidata_t *cwalk;
+	int havemaxprio=0, havemaxage=0, havemincolor=0, havewantacked=0;
 
 	cwalk = cgidata;
 	while (cwalk) {
 		if (strcasecmp(cwalk->name, "MAXPRIO") == 0) {
 			selectenv(cwalk->name, cwalk->value);
 			maxprio = atoi(cwalk->value);
+			havemaxprio = 1;
 		}
 		else if (strcasecmp(cwalk->name, "MAXAGE") == 0) {
 			selectenv(cwalk->name, cwalk->value);
 			maxage = 60*atoi(cwalk->value);
+			havemaxage = 1;
 		}
 		else if (strcasecmp(cwalk->name, "MINCOLOR") == 0) {
 			selectenv(cwalk->name, cwalk->value);
 			mincolor = parse_color(cwalk->value);
+			havemincolor = 1;
 		}
 		else if (strcasecmp(cwalk->name, "OLDLIMIT") == 0) {
 			selectenv(cwalk->name, cwalk->value);
@@ -366,10 +370,16 @@ static void parse_query(void)
 		else if (strcasecmp(cwalk->name, "WANTACKED") == 0) {
 			selectenv(cwalk->name, cwalk->value);
 			wantacked = (strcasecmp(cwalk->value, "yes") == 0);
+			havewantacked = 1;
 		}
 
 		cwalk = cwalk->next;
 	}
+
+	if (!havemaxprio)   selectenv("MAXPRIO", "3");
+	if (!havemaxage)    selectenv("MAXAGE", "525600");
+	if (!havemincolor)  selectenv("MINCOLOR", "yellow");
+	if (!havewantacked) selectenv("WANTACKED", "no");
 }
 
 
