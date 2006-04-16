@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-eventlog.c,v 1.30 2006-04-05 08:23:53 henrik Exp $";
+static char rcsid[] = "$Id: bb-eventlog.c,v 1.31 2006-04-16 15:49:52 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -37,6 +37,7 @@ char	*fromtime = NULL;
 char	*hostregex = NULL;
 char	*testregex = NULL;
 char	*colrregex = NULL;
+char	*pageregex = NULL;
 int	ignoredialups = 0;
 cgidata_t *cgidata = NULL;
 
@@ -71,6 +72,9 @@ static void parse_query(void)
 		}
 		else if (strcasecmp(cwalk->name, "COLORMATCH") == 0) {
 			if (*(cwalk->value)) colrregex = strdup(cwalk->value);
+		}
+		else if (strcasecmp(cwalk->name, "PAGEMATCH") == 0) {
+			if (*(cwalk->value)) pageregex = strdup(cwalk->value);
 		}
 		else if (strcasecmp(cwalk->name, "NODIALUPS") == 0) {
 			ignoredialups = 1;
@@ -114,7 +118,7 @@ int main(int argc, char *argv[])
 
 	headfoot(stdout, "event", "", "header", COL_GREEN);
 	fprintf(stdout, "<center>\n");
-	do_eventlog(stdout, maxcount, maxminutes, fromtime, totime, hostregex, testregex, colrregex, ignoredialups);
+	do_eventlog(stdout, maxcount, maxminutes, fromtime, totime, pageregex, hostregex, testregex, colrregex, ignoredialups);
 	fprintf(stdout, "</center>\n");
 	headfoot(stdout, "event", "", "footer", COL_GREEN);
 

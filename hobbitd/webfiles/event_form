@@ -42,6 +42,13 @@
        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^host.*$ )</FONT></TD>
      </TR>
 
+      <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Pages to match</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="PAGEMATCH" SIZE=40></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^webservers/.*$ )</FONT></TD>
+     </TR>
+
      <TR>
        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Tests to match</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>

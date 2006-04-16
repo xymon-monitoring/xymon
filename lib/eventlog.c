@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.30 2006-02-08 12:49:26 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.31 2006-04-16 15:49:52 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -95,7 +95,7 @@ static htnames_t *getname(char *name, int createit)
 
 
 void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
-		 char *totime, char *hostregex, char *testregex, char *colrregex,
+		 char *totime, char *pageregex, char *hostregex, char *testregex, char *colrregex,
 		 int ignoredialups)
 {
 	FILE *eventlog;
@@ -106,11 +106,11 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 	struct stat st;
 	char l[MAX_LINE_LEN];
 	char title[200];
-	namelist_t *hinfo;
 
 	/* For the PCRE matching */
 	const char *errmsg = NULL;
 	int errofs = 0;
+	pcre *pageregexp = NULL;
 	pcre *hostregexp = NULL;
 	pcre *testregexp = NULL;
 	pcre *colrregexp = NULL;
@@ -150,6 +150,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 
 	if (!maxcount) maxcount = 100;
 
+	if (pageregex) pageregexp = pcre_compile(pageregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
 	if (hostregex) hostregexp = pcre_compile(hostregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
 	if (testregex) testregexp = pcre_compile(testregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
 	if (colrregex) colrregexp = pcre_compile(colrregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
@@ -193,7 +194,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 		unsigned int uievt, uicht, uidur;
 		char hostname[MAX_LINE_LEN], svcname[MAX_LINE_LEN], newcol[MAX_LINE_LEN], oldcol[MAX_LINE_LEN];
 		char *newcolname, *oldcolname;
-		int state, itemsfound, hostmatch, testmatch, colrmatch;
+		int state, itemsfound, pagematch, hostmatch, testmatch, colrmatch;
 		event_t *newevent;
 		struct namelist_t *eventhost;
 		struct htnames_t *eventcolumn;
@@ -214,6 +215,17 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 		     (eventtime > firstevent) && 
 		     (eventhost && !bbh_item(eventhost, BBH_FLAG_NOBB2)) && 
 		     (wanted_eventcolumn(svcname)) ) {
+			if (ignoredialups && bbh_item(eventhost, BBH_FLAG_DIALUP)) continue;
+
+			if (pageregexp) {
+				char *pagename = bbh_item(eventhost, BBH_PAGEPATH);
+				pagematch = (pcre_exec(pageregexp, NULL, pagename, strlen(pagename), 0, 0, 
+						ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+			}
+			else
+				pagematch = 1;
+			if (!pagematch) continue;
+
 			if (hostregexp)
 				hostmatch = (pcre_exec(hostregexp, NULL, hostname, strlen(hostname), 0, 0, 
 						ovector, (sizeof(ovector)/sizeof(int))) >= 0);
@@ -237,11 +249,6 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 			else
 				colrmatch = 1;
 			if (!colrmatch) continue;
-
-			if (ignoredialups) {
-				hinfo = hostinfo(hostname);
-				if (bbh_item(hinfo, BBH_FLAG_DIALUP)) continue;
-			}
 
 			newevent = (event_t *) malloc(sizeof(event_t));
 			newevent->host       = eventhost;
@@ -343,6 +350,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 
 	fclose(eventlog);
 
+	if (pageregexp) pcre_free(pageregexp);
 	if (hostregexp) pcre_free(hostregexp);
 	if (testregexp) pcre_free(testregexp);
 	if (colrregexp) pcre_free(colrregexp);
