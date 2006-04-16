@@ -37,6 +37,7 @@
           <SELECT NAME="WANTACKED">
 	    <OPTION VALUE="yes"    &SELECT_WANTACKED_YES>Yes
 	    <OPTION VALUE="no"     &SELECT_WANTACKED_NO>No
+	  </SELECT>
        </TD>
        <TD ALIGN=CENTER>
          <INPUT TYPE="SUBMIT" NAME="Submit" VALUE="Apply" ALT="Apply filter">

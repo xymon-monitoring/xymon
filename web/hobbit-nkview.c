@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkview.c,v 1.14 2006-04-05 08:23:53 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkview.c,v 1.15 2006-04-16 21:45:19 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -230,10 +230,10 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 					hostsvcurl(itm->hostname, colname),
 					prio, 
 					htmlgroupstr, htmlextrastr);
-				fprintf(output, "<IMG SRC=\"%s/%s\" TITLE=\"%s %s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
+				fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s %s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
 					xgetenv("BBSKIN"), 
 					dotgiffilename(column->color, (column->acktime > 0), (age > oldlimit)),
-					htmlalttag, htmlackstr,
+					colorname(column->color), htmlalttag, htmlackstr,
 					xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 				xfree(htmlgroupstr);
 				xfree(htmlextrastr);
@@ -304,7 +304,7 @@ void generate_nkpage(FILE *output, char *hfprefix)
 
 		rbcolumns = columnlist(rbstate);
 
-		fprintf(output, "<TABLE BORDER=0 CELLPADDING=4>\n");
+		fprintf(output, "<TABLE BORDER=0 CELLPADDING=4 SUMMARY=\"Critical status display\">\n");
 		print_colheaders(output, rbcolumns);
 
 		for (prio = 1; (prio <= maxprio); prio++) {
