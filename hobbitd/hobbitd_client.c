@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.60 2006-04-15 15:34:55 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.61 2006-04-16 06:24:03 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -724,13 +724,13 @@ void file_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 
 	for (swalk = sections; (swalk); swalk = swalk->next) {
 		unsigned long sz;
-		int trackit;
+		int trackit, anyrules;
 		char *sfn = NULL;
 
 		if (strncmp(swalk->sname, "file:", 5) == 0) {
 			sfn = swalk->sname+5;
 			sprintf(sectionname, "file:%s", sfn);
-			onecolor = check_file(hinfo, sfn, swalk->sdata, sectionname, filesummary, &sz, &trackit);
+			onecolor = check_file(hinfo, sfn, swalk->sdata, sectionname, filesummary, &sz, &trackit, &anyrules);
 
 			if (trackit) {
 				/* Save the size data for later DATA message to track file sizes */
@@ -742,7 +742,11 @@ void file_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 		else if (strncmp(swalk->sname, "logfile:", 8) == 0) {
 			sfn = swalk->sname+8;
 			sprintf(sectionname, "logfile:%s", sfn);
-			onecolor = check_file(hinfo, sfn, swalk->sdata, sectionname, filesummary, &sz, &trackit);
+			onecolor = check_file(hinfo, sfn, swalk->sdata, sectionname, filesummary, &sz, &trackit, &anyrules);
+			if (!anyrules) {
+				/* Dont clutter the display with logfiles unless they have rules */
+				continue;
+			}
 		}
 		else if (strncmp(swalk->sname, "dir:", 4) == 0) {
 			sfn = swalk->sname+4;
