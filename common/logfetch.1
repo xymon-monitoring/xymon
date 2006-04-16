@@ -5,7 +5,34 @@ logfetch \- Hobbit client data collector
 .B "logfetch CONFIGFILE STATUSFILE"
 
 .SH DESCRIPTION
-\fBlogfetch\fR
+\fBlogfetch\fR is part of the Hobbit client. It is responsible
+for collecting data from logfiles, and other file-related data,
+which is then sent to the Hobbit server for analysis.
+
+logfetch uses a configuration file, which is automatically
+retrieved from the Hobbit server. There is no configuration
+done locally. The configuration file is usually stored in
+the \fB$BBHOME/tmp/logfetch.cfg\fR file, but editing this file has
+no effect since it is re-written with data from the Hobbit 
+server each time the client runs.
+
+logfetch stores information about what parts of the monitored
+logfiles have been processed already in the \fB$BBHOME/tmp/logfetch.status\fR 
+file. This file is an internal file used by logfetch, and should
+not be edited. If deleted, it will be re-created automatically.
+
+.SH "ENVIRONMENT VARIABLES"
+.IP DU
+Command used to collect information about the size of directories.
+By default, this is the standard \fBdu\fR command. If the local
+du-command on the client does not report data in KB units, it is
+recommended that you set the DU environment variable in the 
+\fB$BBHOME/etc/hobbitclient.cfg\fR file so that it will report
+data in KB. E.g.
+.br
+    DU="du -k"
+.br
+will do this on Solaris.
 
 .SH FILES
 .IP $BBHOME/tmp/logfetch.cfg
