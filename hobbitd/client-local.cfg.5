@@ -14,9 +14,22 @@ all clients.
 
 The client-local.cfg file is currently used to configure what logfiles
 the client should fetch data from, to be used as the basis for the
-"msgs" status column.
+"msgs" status column; and to configure which files and directories
+are being monitored in the "files" status column.
+
+Note that there is a dependency between the client-local.cfg file 
+and the 
+.I hobbit-clients.cfg(5)
+file. When monitoring e.g. a logfile, you must first enter it into the 
+client-local.cfg file, to trigger the Hobbit client into reporting any 
+data about the logfile. Next, you must configure hobbit-clients.cfg 
+so the Hobbit server knows what to look for in the file data sent by 
+the client. So: client-local.cfg defines what raw data is collected 
+by the client, and hobbit-clients.cfg defines how to analyze them.
 
 .SH PROPAGATION TO CLIENTS
+The client-local.cfg file resides on the Hobbit server.
+
 When clients connect to the Hobbit server to send in their client
 data, they will receive part of this file back from the Hobbit server.
 The configuration received by the client is then used the next time 
@@ -44,8 +57,6 @@ rather it is defined by the tools that make use of the configuration.
 .SH LOGFILE CONFIGURATION ENTRIES
 A logfile configuration entry looks like this:
 .sp
-    [linux]
-.br
     log:/var/log/messages:10240
 .br
     ignore MARK
@@ -53,7 +64,12 @@ A logfile configuration entry looks like this:
     trigger Oops
 .sp
 The \fBlog:FILENAME:SIZE\fR line defines the filename of the log, and the
-maximum amount of data (in bytes) to send to the Hobbit server.
+maximum amount of data (in bytes) to send to the Hobbit server. FILENAME
+is usually an explicit full-path filename on the client. If it is enclosed
+in backticks, it is a command which the Hobbit client runs and each line 
+of output from this command is then used as a filename. This allows
+scripting which files to monitor, e.g. if you have logfiles that are
+named with some sort of timestamp.
 .sp
 The \fBignore PATTERN\fR line (optional) defines lines in the logfile which
 are ignored entirely, i.e. they are stripped from the logfile data before
@@ -68,6 +84,52 @@ in the logfile - these will always be sent to the Hobbit server. After
 picking out the "trigger" lines, any remaining space up to the maximum size
 is filled in with the most recent entries from the logfile. "PATTERN" is
 a regular expression.
+
+.SH FILE CONFIGURATION ENTRIES
+A file monitoring entry is used to watch the meta-data of a file: Owner,
+group, size, permissions, checksum etc. It looks like this:
+.sp
+    file:/var/log/messages[:HASH]
+.sp
+The \fBfile:FILENAME\fR line defines the filename of the file to monitor.
+As with the "log:" entries, a filename enclosed in backticks means a 
+command which will generate the filenames dynamically.
+The optional [:HASH] setting defines what type of hash to compute
+for the file: \fBmd5\fR, \fBsha1\fR or \fBrmd160\fR. By default, no 
+hash is calculated.
+
+.SH DIRECTORY CONFIGURATION ENTRIES
+A directory monitoring entry is used to watch the size of a directory 
+and any sub-directories. It looks like this:
+.sp
+    dir:DIRECTORYNAME
+.sp
+The \fBdir:DIRECTORYNAME\fR line defines the filename of the file to monitor.
+As with the "log:" entries, a filename enclosed in backticks means a 
+command which will generate the filenames dynamically. The Hobbit client
+will run the
+.I du(1)
+command with the directoryname as parameter, and send the output back to the
+Hobbit server.
+
+The "du" command used can be configured through the \fBDU\fR environment 
+variable. On some systems, by default \fBdu\fR reports data in disk blocks
+instead of KB (e.g. Solaris). So you may want to configure the Hobbit client
+to use a \fBdu\fR command which reports data in KB, e.g. by setting
+.br
+    DU="du -k"
+.br
+in the hobbitclient.cfg file.
+
+.SH NOTES
+The ability of the Hobbit client to calculate file hashes and monitor those
+can be used for file integrity validation on a small scale. However, there is
+a significant processing overhead in calculating these every time the Hobbit
+client runs, so this should not be considered a replacement for host-based
+intrusion detection systems such as Tripwire or AIDE.
+
+Use of the directory monitoring on directory structures with a large number
+of files and/or sub-directories can be quite ressource-intensive.
 
 .SH "SEE ALSO"
 hobbit-clients.cfg(5), hobbitd_client(8), hobbitd(8), hobbit(7)
