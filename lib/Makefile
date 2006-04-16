@@ -44,6 +44,9 @@ matching.o: matching.c
 sha1.o: sha1.c
 	$(CC) $(CFLAGS) `./test-endianness` -c -o $@ $<
 
+rmd160c.o: rmd160c.c
+	$(CC) $(CFLAGS) `./test-endianness` -c -o $@ $<
+
 environ.o: environ.c
 	$(CC) $(CFLAGS) -DBBTOPDIR=\"$(BBTOPDIR)\" -DBBLOGDIR=\"$(BBLOGDIR)\" -DBBHOSTNAME=\"$(BBHOSTNAME)\" -DBBHOSTIP=\"$(BBHOSTIP)\" -DBBHOSTOS=\"$(BBHOSTOS)\" -DBUILD_HOME=\"$(BBTOPDIR)/server\" -c -o $@ environ.c
 
@@ -59,13 +62,13 @@ stackio: stackio.c libbbgen.a
 availability: availability.c libbbgen.a
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ availability.c ./libbbgen.a
 
-md5: md5.c libbbgen.a
+md5: md5.c
 	$(CC) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ md5.c
 
-sha1: sha1.c libbbgen.a
+sha1: sha1.c
 	$(CC) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ sha1.c
 
-rmd160: rmd160c.c hobbitclient.a
+rmd160: rmd160c.c
 	$(CC) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ rmd160c.c
 
 clean:

@@ -66,10 +66,27 @@
 #ifndef HEADER_RIPEMD_H
 #define HEADER_RIPEMD_H
 
+/******************** Modifications for Hobbit ***************************/
 #include "config.h"
 #ifndef HAVE_UINT32_TYPEDEF
 typedef unsigned int u_int32_t;
 #endif
+
+#ifndef BYTE_ORDER
+#ifndef LITTLE_ENDIAN
+#define LITTLE_ENDIAN  1234
+#endif
+#ifndef BIG_ENDIAN
+#define BIG_ENDIAN     4321
+#endif
+
+#ifdef HOBBIT_LITTLE_ENDIAN
+#define BYTE_ORDER LITTLE_ENDIAN
+#else
+#define BYTE_ORDER BIG_ENDIAN
+#endif
+#endif
+/******************** End of modifications for Hobbit ***************************/
 
 #define RIPEMD160_CBLOCK	64
 #define RIPEMD160_LBLOCK	16
