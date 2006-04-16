@@ -33,6 +33,7 @@ case "$1" in
 	cd /var/lib/hobbit; chown hobbit:hobbit . acks data disabled hist histlogs logs rrd tmp www
 	cd /var/lib/hobbit/www; chown hobbit:hobbit . html notes wml rep snap; chgrp www-data rep snap; chmod g+w rep snap
 	cd /usr/lib/hobbit/client; chown hobbit:hobbit logs tmp; chmod u+w logs tmp
+	cd /etc/hobbit; chgrp www-data hobbit-nkview.cfg hobbit-nkview.cfg.bak; chmod g+w hobbit-nkview.cfg hobbit-nkview.cfg.bak
 
 	# Do the debconf stuff
 	db_get hobbit/BBSERVERHOSTNAME
