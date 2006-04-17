@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.31 2006-04-16 15:49:52 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.32 2006-04-17 08:44:39 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -54,7 +54,7 @@ static time_t convert_time(char *timestamp)
 	unsigned int year,month,day,hour,min,sec,count;
 	struct tm timeinfo;
 
-	count = sscanf(timestamp, "%d/%d/%d@%d:%d:%d",
+	count = sscanf(timestamp, "%u/%u/%u@%u:%u:%u",
 		&year, &month, &day, &hour, &min, &sec);
 	if(count != 6) {
 		return -1;

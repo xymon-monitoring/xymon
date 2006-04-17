@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char osf_rcsid[] = "$Id: osf.c,v 1.8 2006-04-13 16:31:29 henrik Exp $";
+static char osf_rcsid[] = "$Id: osf.c,v 1.9 2006-04-17 08:44:39 henrik Exp $";
 
 void handle_osf_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -104,9 +104,9 @@ void handle_osf_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char
 
 			n1 = n2 = 0;
 			p = strstr(bol, "Allocated space:");
-			if (p) n1 = sscanf(p, "Allocated space: %ld pages", &swappages);
+			if (p) n1 = sscanf(p, "Allocated space: %lu pages", &swappages);
 			p = strstr(bol, "Available space:");
-			if (p) n2 = sscanf(p, "Available space: %ld pages", &freepages);
+			if (p) n2 = sscanf(p, "Available space: %lu pages", &freepages);
 			if ((n1 == 1) && (n2 == 1)) {
 				swaptotal = swappages * pagesize / 1024;
 				swapfree = freepages  * pagesize / 1024;

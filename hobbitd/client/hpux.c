@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char hpux_rcsid[] = "$Id: hpux.c,v 1.11 2006-04-13 16:31:29 henrik Exp $";
+static char hpux_rcsid[] = "$Id: hpux.c,v 1.12 2006-04-17 08:44:39 henrik Exp $";
 
 void handle_hpux_client(char *hostname, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -66,7 +66,7 @@ void handle_hpux_client(char *hostname, namelist_t *hinfo, char *sender, time_t 
 		memphysused = memphystotal - memphysfree;
 
 		p = strstr(swapinfostr, "\ntotal");
-		if (p && (sscanf(p, "\ntotal %ld %ld %ld", &memswaptotal, &memswapused, &memswapfree) >= 2)) {
+		if (p && (sscanf(p, "\ntotal %lu %lu %lu", &memswaptotal, &memswapused, &memswapfree) >= 2)) {
 			found++;
 		}
 

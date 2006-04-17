@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.28 2006-04-15 09:37:48 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.29 2006-04-17 08:44:39 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -40,6 +40,7 @@ static char rra3[] = "RRA:AVERAGE:0.5:24:576";
 static char rra4[] = "RRA:AVERAGE:0.5:288:576";
 
 static char *senderip = NULL;
+static char filedir[PATH_MAX];
 
 void setup_exthandler(char *handlerpath, char *ids)
 {
@@ -95,11 +96,13 @@ static char *setup_template(char *params[])
 
 static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], char *template)
 {
-	char filedir[PATH_MAX];
 	struct stat st;
 	int pcount, result;
 	char *tplstr = NULL;
-	char *updparams[] = { "rrdupdate", filedir, "-t", template, rrdvalues, NULL };
+	char *updparams[] = { "rrdupdate", filedir, "-t", NULL, rrdvalues, NULL };
+
+	/* ISO C90: parameters cannot be used as initializers */
+	updparams[3] = template;
 
 	if ((fn == NULL) || (strlen(fn) == 0)) {
 		errprintf("RRD update for no file\n");
@@ -189,7 +192,6 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 
 static int rrddatasets(char *hostname, char *fn, char ***dsnames)
 {
-	char filedir[PATH_MAX];
 	struct stat st;
 
 	int result;

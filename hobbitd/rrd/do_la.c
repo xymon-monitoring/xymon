@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char la_rcsid[] = "$Id: do_la.c,v 1.20 2005-07-19 20:49:27 henrik Exp $";
+static char la_rcsid[] = "$Id: do_la.c,v 1.21 2006-04-17 08:44:39 henrik Exp $";
 
 int do_la_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -135,7 +135,7 @@ int do_la_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			const char *errmsg = NULL;
 			int errofs = 0;
 
-			as400_exp = pcre_compile(".* ([0-9]+) users ([0-9]+) jobs.* load=([0-9]+)\%", 
+			as400_exp = pcre_compile(".* ([0-9]+) users ([0-9]+) jobs.* load=([0-9]+)\\%", 
 						 PCRE_CASELESS, &errmsg, &errofs, NULL);
 		}
 

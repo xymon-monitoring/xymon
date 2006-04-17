@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char linux_rcsid[] = "$Id: linux.c,v 1.12 2006-04-13 16:31:29 henrik Exp $";
+static char linux_rcsid[] = "$Id: linux.c,v 1.13 2006-04-17 08:44:39 henrik Exp $";
 
 void handle_linux_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -57,19 +57,19 @@ void handle_linux_client(char *hostname, enum ostype_t os, namelist_t *hinfo, ch
 
 		memphystotal = memswaptotal = memphysused = memswapused = memactused = memactfree = -1;
 		p = strstr(freestr, "\nMem:");
-		if (p && (sscanf(p, "\nMem: %lu %lu %lu", &memphystotal, &memphysused, &memphysfree) == 3)) {
+		if (p && (sscanf(p, "\nMem: %ld %ld %ld", &memphystotal, &memphysused, &memphysfree) == 3)) {
 			memphystotal /= 1024;
 			memphysused /= 1024;
 			memphysfree /= 1024;
 		}
 		p = strstr(freestr, "\nSwap:");
-		if (p && (sscanf(p, "\nSwap: %lu %lu %lu", &memswaptotal, &memswapused, &memswapfree) == 3)) {
+		if (p && (sscanf(p, "\nSwap: %ld %ld %ld", &memswaptotal, &memswapused, &memswapfree) == 3)) {
 			memswaptotal /= 1024;
 			memswapused /= 1024;
 			memswapfree /= 1024;
 		}
 		p = strstr(freestr, "\n-/+ buffers/cache:");
-		if (p && (sscanf(p, "\n-/+ buffers/cache: %lu %lu", &memactused, &memactfree) == 2)) {
+		if (p && (sscanf(p, "\n-/+ buffers/cache: %ld %ld", &memactused, &memactfree) == 2)) {
 			memactused /= 1024;
 			memactfree /= 1024;
 		}
