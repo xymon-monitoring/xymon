@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.220 2006-04-04 21:37:16 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.221 2006-04-17 07:43:04 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -609,8 +609,13 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			    "@@%s#%u|%d.%06d|%s|%s", 
 			    channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender,
 			    readymsg);
-		if (n > (bufsz-5)) errprintf("Oversize data msg from %s truncated (n=%d, limit %d)\n", 
-						   sender, n, bufsz);
+		if (n > (bufsz-5)) {
+			char *p, *overmsg = readymsg;
+			*(overmsg+100) = '\0';
+			p = strchr(overmsg, '\n'); if (p) *p = '\0';
+			errprintf("Oversize data/client msg from %s truncated (n=%d, limit %d)\nFirst line: %s\n", 
+				   sender, n, bufsz, overmsg);
+		}
 		*(channel->channelbuf + bufsz - 5) = '\0';
 	}
 	else {
