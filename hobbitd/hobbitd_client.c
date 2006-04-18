@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.63 2006-04-16 15:50:17 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.64 2006-04-18 07:59:06 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -460,9 +460,11 @@ void unix_memory_report(char *hostname, namelist_t *hinfo, char *fromline, char 
 		addtostatus(msgline);
 	}
 
-	sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%%\n", 
-		colorname(swapcolor), "Swap", memswapused, memswaptotal, memswappct);
-	addtostatus(msgline);
+	if (memswapused != -1) {
+		sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%%\n", 
+			colorname(swapcolor), "Swap", memswapused, memswaptotal, memswappct);
+		addtostatus(msgline);
+	}
 	if (fromline && !localmode) addtostatus(fromline);
 	finish_status();
 }
