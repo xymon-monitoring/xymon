@@ -32,6 +32,11 @@ generate a "clear" status (indicating "no data") instead. If you are
 running a separate script on your clients that generates the "msgs"
 column, you must disable this default message by using this option.
 
+.IP "--no-port-listing"
+Normally the "ports" status message includes the full netstat-listing
+received from the client. If you prefer to just have the monitored
+ports shown, this option will turn off the full netstat-listing.
+
 .IP "--config=FILENAME"
 Sets the filename for the 
 .I hobbit-clients.cfg
