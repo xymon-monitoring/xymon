@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.76 2006-03-29 16:24:49 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.77 2006-04-19 16:50:38 henrik Exp $";
 
 #include "config.h"
 
@@ -669,7 +669,7 @@ void finish_status(void)
 		char *p = strchr(STRBUF(msgbuf), '\n');
 
 		if (p) *p = '\0';
-		dprintf("Adding to combo msg: %s\n", msgbuf);
+		dprintf("Adding to combo msg: %s\n", STRBUF(msgbuf));
 		if (p) *p = '\n';
 	}
 
