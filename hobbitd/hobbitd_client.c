@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.64 2006-04-18 07:59:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.65 2006-04-19 20:19:02 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -36,6 +36,7 @@ typedef struct sectlist_t {
 } sectlist_t;
 sectlist_t *sections = NULL;
 int pslistinprocs = 1;
+int portlistinports = 1;
 int sendclearmsgs = 1;
 int localmode     = 0;
 
@@ -479,10 +480,17 @@ void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 	char *p;
 	char msgline[4096];
 	strbuffer_t *monmsg;
+	static strbuffer_t *countdata = NULL;
+	int anycountdata = 0;
 
 	if (!psstr) return;
 
+	if (!countdata) countdata = newstrbuffer(0);
+
 	monmsg = newstrbuffer(0);
+
+	sprintf(msgline, "data %s.proccounts\n", commafy(hostname));
+	addtobuffer(countdata, msgline);
 
 	/* 
 	 * Find where the command is located. We look for the header for the command,
@@ -500,8 +508,8 @@ void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 	}
 	else if (cmdofs >= 0) {
 		/* Count how many instances of each monitored process is running */
-		char *pname, *bol, *nl;
-		int pcount, pmin, pmax, pcolor;
+		char *pname, *pid, *bol, *nl;
+		int pcount, pmin, pmax, pcolor, ptrack;
 
 		bol = psstr;
 		while (bol) {
@@ -513,7 +521,7 @@ void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 		}
 
 		/* Check the number found for each monitored process */
-		while ((pname = check_process_count(&pcount, &pmin, &pmax, &pcolor)) != NULL) {
+		while ((pname = check_process_count(&pcount, &pmin, &pmax, &pcolor, &pid, &ptrack)) != NULL) {
 			char limtxt[1024];
 
 			if (pmax == -1) {
@@ -534,6 +542,14 @@ void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 				sprintf(msgline, "&%s %s (found %d, req. %s)\n", 
 					colorname(pcolor), pname, pcount, limtxt);
 				addtobuffer(monmsg, msgline);
+			}
+
+			if (ptrack) {
+				/* Save the count data for later DATA message to track process counts */
+				if (!pid) pid = "default";
+				sprintf(msgline, "%s:%u\n", pid, pcount);
+				addtobuffer(countdata, msgline);
+				anycountdata = 1;
 			}
 		}
 	}
@@ -564,6 +580,9 @@ void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 	finish_status();
 
 	freestrbuffer(monmsg);
+
+	if (anycountdata) sendmessage(STRBUF(countdata), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+	clearstrbuffer(countdata);
 }
 
 static void old_msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, char *msgsstr)
@@ -887,6 +906,114 @@ void unix_vmstat_report(char *hostname, namelist_t *hinfo, char *osid, char *vms
 	freestrbuffer(msg);
 }
 
+
+void unix_ports_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, 
+		       int localcol, int remotecol, int statecol, char *portstr)
+{
+	int portcolor = COL_GREEN;
+	int pchecks;
+	char msgline[4096];
+	static strbuffer_t *monmsg = NULL;
+	static strbuffer_t *countdata = NULL;
+	int anycountdata = 0;
+
+	if (!portstr) return;
+
+	if (!monmsg) monmsg = newstrbuffer(0);
+	if (!countdata) countdata = newstrbuffer(0);
+
+	pchecks = clear_port_counts(hinfo);
+
+	sprintf(msgline, "data %s.portcounts\n", commafy(hostname));
+	addtobuffer(countdata, msgline);
+
+	if (pchecks == 0) {
+		/* Nothing to check */
+		addtobuffer(monmsg, "&green No port checks defined\n");
+	}
+	else {
+		/* Count how many instances of each monitored condition are found */
+		char *pname, *pid, *bol, *nc, *nl;
+		int pcount, pmin, pmax, pcolor, ptrack;
+		char *localstr, *remotestr, *statestr;
+
+		bol = portstr;
+		while (bol) {
+			char *p;
+
+			nl = strchr(bol, '\n'); if (nl) *nl = '\0';
+
+			/* Data lines */
+
+			p = strdup(bol); localstr = getcolumn(p, localcol);
+			strcpy(p, bol); remotestr = getcolumn(p, remotecol);
+			strcpy(p, bol); statestr = getcolumn(p, statecol);
+
+			add_port_count(localstr, remotestr, statestr);
+
+			xfree(p);
+
+			if (nl) { *nl = '\n'; bol = nl+1; } else bol = NULL;
+		}
+
+		/* Check the number found for each monitored port */
+ 		while ((pname = check_port_count(&pcount, &pmin, &pmax, &pcolor, &pid, &ptrack)) != NULL) {
+ 			char limtxt[1024];
+			
+			if (pmax == -1) {
+				if (pmin > 0) sprintf(limtxt, "%d or more", pmin);
+				else if (pmin == 0) sprintf(limtxt, "none");
+			}
+			else {
+				if (pmin > 0) sprintf(limtxt, "between %d and %d", pmin, pmax);
+				else if (pmin == 0) sprintf(limtxt, "at most %d", pmax);
+			}
+
+			if (pcolor == COL_GREEN) {
+				sprintf(msgline, "&green %s (found %d, req. %s)\n", pname, pcount, limtxt);
+				addtobuffer(monmsg, msgline);
+			}
+			else {
+				if (pcolor > portcolor) portcolor = pcolor;
+				sprintf(msgline, "&%s %s (found %d, req. %s)\n",
+					colorname(pcolor), pname, pcount, limtxt);
+				addtobuffer(monmsg, msgline);
+			}
+
+			if (ptrack) {
+				/* Save the size data for later DATA message to track port counts */
+				if (!pid) pid = "default";
+				sprintf(msgline, "%s:%u\n", pid, pcount);
+				addtobuffer(countdata, msgline);
+				anycountdata = 1;
+			}
+ 		}
+	}
+
+	/* Now we know the result, so generate a status message */
+	init_status(portcolor);
+	sprintf(msgline, "status %s.ports %s %s - Ports %s\n",
+		commafy(hostname), colorname(portcolor), 
+		(timestr ? timestr : "<No timestamp data>"), 
+		((portcolor == COL_GREEN) ? "OK" : "NOT ok"));
+	addtostatus(msgline);
+
+	/* And add the info about what's wrong */
+	addtostrstatus(monmsg);
+	addtostatus("\n");
+	clearstrbuffer(monmsg);
+
+	/* And the full port output for those who want it */
+	if (portlistinports) addtostatus(portstr);
+
+	if (fromline) addtostatus(fromline);
+	finish_status();
+
+	if (anycountdata) sendmessage(STRBUF(countdata), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+	clearstrbuffer(countdata);
+}
+
+
 #include "client/linux.c"
 #include "client/freebsd.c"
 #include "client/netbsd.c"
@@ -935,6 +1062,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--no-ps-listing") == 0) {
 			pslistinprocs = 0;
+		}
+		else if (strcmp(argv[argi], "--no-port-listing") == 0) {
+			portlistinports = 0;
 		}
 		else if (strcmp(argv[argi], "--no-clear-msgs") == 0) {
 			sendclearmsgs = 0;
@@ -1024,8 +1154,8 @@ int main(int argc, char *argv[])
 				}
 				else if (strcmp(s, "proc") == 0) {
 					int pchecks = clear_process_counts(hinfo);
-					char *pname;
-					int pcount, pmin, pmax, pcolor;
+					char *pname, *pid;
+					int pcount, pmin, pmax, pcolor, ptrack;
 					FILE *fd;
 
 					if (pchecks == 0) {
@@ -1049,7 +1179,7 @@ int main(int argc, char *argv[])
 						}
 					} while (*s);
 
-					while ((pname = check_process_count(&pcount, &pmin, &pmax, &pcolor)) != NULL) {
+					while ((pname = check_process_count(&pcount, &pmin, &pmax, &pcolor, &pid, &ptrack)) != NULL) {
 						printf("Process %s color %s: Count=%d, min=%d, max=%d\n",
 							pname, colorname(pcolor), pcount, pmin, pmax);
 					}
@@ -1116,6 +1246,7 @@ int main(int argc, char *argv[])
 			if (!hinfo) continue;
 			os = get_ostype(clienttype);
 
+			combo_start();
 			switch (os) {
 			  case OS_FREEBSD: 
 				handle_freebsd_client(hostname, hinfo, sender, timestamp, restofmsg);
@@ -1162,6 +1293,7 @@ int main(int argc, char *argv[])
 				errprintf("No client backend for OS '%s' sent by %s\n", clienttype, sender);
 				break;
 			}
+			combo_end();
 		}
 		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			printf("Shutting down\n");
