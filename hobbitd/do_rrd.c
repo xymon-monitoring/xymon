@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.29 2006-04-17 08:44:39 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.30 2006-04-19 16:51:11 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -239,6 +239,7 @@ static int rrddatasets(char *hostname, char *fn, char ***dsnames)
 #include "rrd/do_ncv.c"
 #include "rrd/do_external.c"
 #include "rrd/do_filesizes.c"
+#include "rrd/do_counts.c"
 
 #ifdef USE_BEA2
 #include "rrd/do_bea2.c"
@@ -290,7 +291,9 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	else if (strcmp(id, "ncv") == 0)         res = do_ncv_rrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "tcp") == 0)         res = do_net_rrd(hostname, testname, msg, tstamp);
 
-	else if (strcmp(id, "filesizes") == 0)  res = do_filesizes_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "filesizes") == 0)   res = do_filesizes_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "proccounts") == 0)  res = do_counts_rrd("processes", hostname, testname, msg, tstamp);
+	else if (strcmp(id, "portcounts") == 0)  res = do_counts_rrd("ports", hostname, testname, msg, tstamp);
 
 	else if (extids && exthandler) {
 		int i;
