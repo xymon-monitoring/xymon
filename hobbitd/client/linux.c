@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char linux_rcsid[] = "$Id: linux.c,v 1.13 2006-04-17 08:44:39 henrik Exp $";
+static char linux_rcsid[] = "$Id: linux.c,v 1.14 2006-04-19 20:17:44 henrik Exp $";
 
 void handle_linux_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -25,6 +25,7 @@ void handle_linux_client(char *hostname, enum ostype_t os, namelist_t *hinfo, ch
 	char *netstatstr;
 	char *vmstatstr;
 	char *ifstatstr;
+	char *portsstr;
 
 	char fromline[1024];
 
@@ -43,8 +44,7 @@ void handle_linux_client(char *hostname, enum ostype_t os, namelist_t *hinfo, ch
 	netstatstr = getdata("netstat");
 	ifstatstr = getdata("ifstat");
 	vmstatstr = getdata("vmstat");
-
-	combo_start();
+	portsstr = getdata("ports");
 
 	unix_cpu_report(hostname, hinfo, fromline, timestr, uptimestr, whostr, psstr, topstr);
 	unix_disk_report(hostname, hinfo, fromline, timestr, "Capacity", "Mounted", dfstr);
@@ -82,10 +82,9 @@ void handle_linux_client(char *hostname, enum ostype_t os, namelist_t *hinfo, ch
 	msgs_report(hostname, hinfo, fromline, timestr, msgsstr);
 	file_report(hostname, hinfo, fromline, timestr);
 
-	combo_end();
-
 	unix_netstat_report(hostname, hinfo, "linux", netstatstr);
 	unix_ifstat_report(hostname, hinfo, "linux", ifstatstr);
+	unix_ports_report(hostname, hinfo, fromline, timestr, 3, 4, 5, portsstr);
 
 	switch (os) {
 	  case OS_LINUX22:

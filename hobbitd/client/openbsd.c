@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char openbsd_rcsid[] = "$Id: openbsd.c,v 1.10 2006-04-13 16:31:29 henrik Exp $";
+static char openbsd_rcsid[] = "$Id: openbsd.c,v 1.11 2006-04-19 20:17:06 henrik Exp $";
 
 void handle_openbsd_client(char *hostname, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -25,6 +25,7 @@ void handle_openbsd_client(char *hostname, namelist_t *hinfo, char *sender, time
 	char *msgsstr;
 	char *netstatstr;
 	char *ifstatstr;
+	char *portsstr;
 	char *vmstatstr;
 
 	char *p;
@@ -45,9 +46,8 @@ void handle_openbsd_client(char *hostname, namelist_t *hinfo, char *sender, time
 	msgsstr = getdata("msgs");
 	netstatstr = getdata("netstat");
 	ifstatstr = getdata("ifstat");
+	portsstr = getdata("ports");
 	vmstatstr = getdata("vmstat");
-
-	combo_start();
 
 	unix_cpu_report(hostname, hinfo, fromline, timestr, uptimestr, whostr, psstr, topstr);
 	unix_disk_report(hostname, hinfo, fromline, timestr, "Capacity", "Mounted", dfstr);
@@ -77,10 +77,10 @@ void handle_openbsd_client(char *hostname, namelist_t *hinfo, char *sender, time
 	msgs_report(hostname, hinfo, fromline, timestr, msgsstr);
 	file_report(hostname, hinfo, fromline, timestr);
 
-	combo_end();
-
 	unix_netstat_report(hostname, hinfo, "openbsd", netstatstr);
 	unix_ifstat_report(hostname, hinfo, "openbsd", ifstatstr);
+	unix_ports_report(hostname, hinfo, fromline, timestr, 3, 4, 5, portsstr);
+
 	unix_vmstat_report(hostname, hinfo, "openbsd", vmstatstr);
 }
 

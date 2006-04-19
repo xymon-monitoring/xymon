@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-sunos.sh,v 1.9 2006-02-17 13:07:50 henrik Exp $
+# $Id: hobbitclient-sunos.sh,v 1.10 2006-04-19 20:17:06 henrik Exp $
 
 echo "[date]"
 date
@@ -44,6 +44,9 @@ echo "[route]"
 netstat -rn
 echo "[netstat]"
 netstat -s
+echo "[ports]"
+netstat -na -f inet -P tcp | tail +3
+netstat -na -f inet6 -P tcp | tail +5
 echo "[ifstat]"
 /usr/bin/kstat -p -s '[or]bytes64'
 echo "[ps]"
