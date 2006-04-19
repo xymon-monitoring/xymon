@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.27 2006-04-16 06:25:26 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.28 2006-04-19 20:20:23 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -96,11 +96,11 @@ typedef struct c_log_t {
 #define FCHK_MD5      (1 << 25)
 #define FCHK_SHA1     (1 << 26)
 #define FCHK_RMD160   (1 << 27)
-#define FCHK_TRACKIT  (1 << 31)
+
+#define CHK_TRACKIT   (1 << 31)
  
 typedef struct c_file_t {
 	exprlist_t *filename;
-	unsigned int filechecks;
 	int color;
 	int ftype;
 	unsigned long minsize, maxsize, eqlsize;
@@ -116,21 +116,29 @@ typedef struct c_file_t {
 
 typedef struct c_dir_t {
 	exprlist_t *filename;
-	unsigned int dirchecks;
 	int color;
 	unsigned long maxsize, minsize;
 } c_dir_t;
 
-typedef enum { C_LOAD, C_UPTIME, C_DISK, C_MEM, C_PROC, C_LOG, C_FILE, C_DIR } ruletype_t;
+typedef struct c_port_t {
+	exprlist_t *localexp;
+	exprlist_t *remoteexp;
+	exprlist_t *stateexp;
+	int pmin, pmax, pcount;
+	int color;
+} c_port_t;
+
+typedef enum { C_LOAD, C_UPTIME, C_DISK, C_MEM, C_PROC, C_LOG, C_FILE, C_DIR, C_PORT } ruletype_t;
 
 typedef struct c_rule_t {
 	exprlist_t *hostexp;
 	exprlist_t *exhostexp;
 	exprlist_t *pageexp;
 	exprlist_t *expageexp;
-	char *timespec;
+	char *timespec, *statustext, *rrdidstr;
 	ruletype_t ruletype;
 	int cfid;
+	unsigned int flags;
 	struct c_rule_t *next;
 	union {
 		c_load_t load;
@@ -141,6 +149,7 @@ typedef struct c_rule_t {
 		c_log_t log;
 		c_file_t fcheck;
 		c_dir_t dcheck;
+		c_port_t port;
 	} rule;
 } c_rule_t;
 
@@ -160,7 +169,7 @@ static RbtHandle ruletree;
 static ruleset_t *ruleset(char *hostname, char *pagename)
 {
 	/*
-	 * This routine manages a list of rules that apply to this particular host.
+	 * This routine manages a list of rules that apply to a particular host.
 	 *
 	 * We maintain a tree indexed by hostname. Each node in the tree contains
 	 * a list of c_rule_t records, which point to individual rules in the full
@@ -177,10 +186,7 @@ static ruleset_t *ruleset(char *hostname, char *pagename)
 	handle = rbtFind(ruletree, hostname);
 	if (handle != rbtEnd(ruletree)) {
 		/* We have the tree for this host */
-		void *k1, *k2;
-		rbtKeyValue(ruletree, handle, &k1, &k2);
-		dprintf("Found list starting at cfid %d\n", ((ruleset_t *)k2)->rule->cfid);
-		return (ruleset_t *)k2;
+		return (ruleset_t *)gettreeitem(ruletree, handle);
 	}
 
 	/* We must build the list of rules for this host */
@@ -229,7 +235,7 @@ static exprlist_t *setup_expr(char *ptn, int multiline)
 static c_rule_t *setup_rule(ruletype_t ruletype, 
 			    exprlist_t *curhost, exprlist_t *curexhost, 
 			    exprlist_t *curpage, exprlist_t *curexpage, 
-			    char *curtime,
+			    char *curtime, char *curtext,
 			    int cfid)
 {
 	c_rule_t *newitem = (c_rule_t *)calloc(1, sizeof(c_rule_t));
@@ -242,6 +248,7 @@ static c_rule_t *setup_rule(ruletype_t ruletype,
 	newitem->pageexp = curpage;
 	newitem->expageexp = curexpage;
 	if (curtime) newitem->timespec = strdup(curtime);
+	if (curtext) newitem->statustext = strdup(curtext);
 	newitem->cfid = cfid;
 
 	return newitem;
@@ -256,6 +263,7 @@ static int isqual(char *token)
 	     (strncasecmp(token, "EXHOST=", 7) == 0)	||
 	     (strncasecmp(token, "PAGE=", 5) == 0)	||
 	     (strncasecmp(token, "EXPAGE=", 7) == 0)	||
+	     (strncasecmp(token, "TEXT=", 5) == 0)	||
 	     (strncasecmp(token, "TIME=", 5) == 0)	) return 1;
 
 	return 0;
@@ -282,7 +290,7 @@ int load_client_config(char *configfn)
 	strbuffer_t *inbuf;
 	char *tok;
 	exprlist_t *curhost, *curpage, *curexhost, *curexpage;
-	char *curtime;
+	char *curtime, *curtext;
 	c_rule_t *currule = NULL;
 	int cfid = 0;
 
@@ -314,6 +322,8 @@ int load_client_config(char *configfn)
 		c_rule_t *tmp = rulehead;
 		rulehead = rulehead->next;
 		if (tmp->timespec) xfree(tmp->timespec);
+		if (tmp->statustext) xfree(tmp->statustext);
+		if (tmp->rrdidstr) xfree(tmp->rrdidstr);
 		xfree(tmp);
 	}
 	rulehead = ruletail = NULL;
@@ -348,18 +358,18 @@ int load_client_config(char *configfn)
 	}
 
 	curhost = curpage = curexhost = curexpage = NULL;
-	curtime = NULL;
+	curtime = curtext = NULL;
 	inbuf = newstrbuffer(0);
 	while (stackfgets(inbuf, NULL)) {
 		exprlist_t *newhost, *newpage, *newexhost, *newexpage;
-		char *newtime;
+		char *newtime, *newtext;
 		int unknowntok = 0;
 
 		cfid++;
 		sanitize_input(inbuf, 1, 0); if (STRBUFLEN(inbuf) == 0) continue;
 
 		newhost = newpage = newexhost = newexpage = NULL;
-		newtime = NULL;
+		newtime = newtext = NULL;
 		currule = NULL;
 
 		tok = wstok(STRBUF(inbuf));
@@ -368,32 +378,43 @@ int load_client_config(char *configfn)
 				char *p = strchr(tok, '=');
 				newhost = setup_expr(p+1, 0);
 				if (currule) currule->hostexp = newhost;
+				tok = wstok(NULL); continue;
 			}
 			else if (strncasecmp(tok, "EXHOST=", 7) == 0) {
 				char *p = strchr(tok, '=');
 				newexhost = setup_expr(p+1, 0);
 				if (currule) currule->exhostexp = newexhost;
+				tok = wstok(NULL); continue;
 			}
 			else if (strncasecmp(tok, "PAGE=", 5) == 0) {
 				char *p = strchr(tok, '=');
 				newpage = setup_expr(p+1, 0);
 				if (currule) currule->pageexp = newpage;
+				tok = wstok(NULL); continue;
 			}
 			else if (strncasecmp(tok, "EXPAGE=", 7) == 0) {
 				char *p = strchr(tok, '=');
 				newexpage = setup_expr(p+1, 0);
 				if (currule) currule->expageexp = newexpage;
+				tok = wstok(NULL); continue;
 			}
 			else if (strncasecmp(tok, "TIME=", 5) == 0) {
 				char *p = strchr(tok, '=');
 				if (currule) currule->timespec = strdup(p+1);
 				else newtime = strdup(p+1);
+				tok = wstok(NULL); continue;
+			}
+			else if (strncasecmp(tok, "TEXT=", 5) == 0) {
+				char *p = strchr(tok, '=');
+				if (currule) currule->statustext = strdup(p+1);
+				else newtext = strdup(p+1);
+				tok = wstok(NULL); continue;
 			}
 			else if (strncasecmp(tok, "DEFAULT", 6) == 0) {
 				currule = NULL;
 			}
 			else if (strcasecmp(tok, "UP") == 0) {
-				currule = setup_rule(C_UPTIME, curhost, curexhost, curpage, curexpage, curtime, cfid);
+				currule = setup_rule(C_UPTIME, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
 				currule->rule.uptime.recentlimit = 3600;
 				currule->rule.uptime.ancientlimit = -1;
 
@@ -403,7 +424,7 @@ int load_client_config(char *configfn)
 				currule->rule.uptime.ancientlimit = 60*durationvalue(tok);
 			}
 			else if (strcasecmp(tok, "LOAD") == 0) {
-				currule = setup_rule(C_LOAD, curhost, curexhost, curpage, curexpage, curtime, cfid);
+				currule = setup_rule(C_LOAD, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
 				currule->rule.load.warnlevel = 5.0;
 				currule->rule.load.paniclevel = atof(tok);
 
@@ -414,7 +435,7 @@ int load_client_config(char *configfn)
 			}
 			else if (strcasecmp(tok, "DISK") == 0) {
 				char modchar = '\0';
-				currule = setup_rule(C_DISK, curhost, curexhost, curpage, curexpage, curtime, cfid);
+				currule = setup_rule(C_DISK, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
 				currule->rule.disk.absolutes = 0;
 				currule->rule.disk.warnlevel = 90;
 				currule->rule.disk.paniclevel = 95;
@@ -457,7 +478,7 @@ int load_client_config(char *configfn)
 				currule->rule.disk.color = parse_color(tok);
 			}
 			else if ((strcasecmp(tok, "MEMREAL") == 0) || (strcasecmp(tok, "MEMPHYS") == 0) || (strcasecmp(tok, "PHYS") == 0)) {
-				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curtime, cfid);
+				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
 				currule->rule.mem.memtype = C_MEM_PHYS;
 				currule->rule.mem.warnlevel = 100;
 				currule->rule.mem.paniclevel = 101;
@@ -468,7 +489,7 @@ int load_client_config(char *configfn)
 				currule->rule.mem.paniclevel = atoi(tok);
 			}
 			else if ((strcasecmp(tok, "MEMSWAP") == 0) || (strcasecmp(tok, "SWAP") == 0)) {
-				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curtime, cfid);
+				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
 				currule->rule.mem.memtype = C_MEM_SWAP;
 				currule->rule.mem.warnlevel = 50;
 				currule->rule.mem.paniclevel = 80;
@@ -479,7 +500,7 @@ int load_client_config(char *configfn)
 				currule->rule.mem.paniclevel = atoi(tok);
 			}
 			else if ((strcasecmp(tok, "MEMACT") == 0) || (strcasecmp(tok, "ACTUAL") == 0) || (strcasecmp(tok, "ACT") == 0)) {
-				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curtime, cfid);
+				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
 				currule->rule.mem.memtype = C_MEM_ACT;
 				currule->rule.mem.warnlevel = 90;
 				currule->rule.mem.paniclevel = 97;
@@ -490,26 +511,53 @@ int load_client_config(char *configfn)
 				currule->rule.mem.paniclevel = atoi(tok);
 			}
 			else if (strcasecmp(tok, "PROC") == 0) {
-				currule = setup_rule(C_PROC, curhost, curexhost, curpage, curexpage, curtime, cfid);
-				tok = wstok(NULL);
-				currule->rule.proc.procexp = setup_expr(tok, 0);
+				int idx = 0;
+
+				currule = setup_rule(C_PROC, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
 				currule->rule.proc.pmin = 1;
 				currule->rule.proc.pmax = -1;
 				currule->rule.proc.color = COL_RED;
 
-				tok = wstok(NULL); if (isqual(tok)) continue;
-				currule->rule.proc.pmin = atoi(tok);
-				tok = wstok(NULL); if (isqual(tok)) continue;
-				currule->rule.proc.pmax = atoi(tok);
-				tok = wstok(NULL); if (isqual(tok)) continue;
-				currule->rule.proc.color = parse_color(tok);
+				tok = wstok(NULL);
+				currule->rule.proc.procexp = setup_expr(tok, 0);
+
+				do {
+					tok = wstok(NULL); if (!tok || isqual(tok)) continue;
+
+					if (strncasecmp(tok, "min=", 4) == 0) {
+						currule->rule.proc.pmin = atoi(tok+4);
+					}
+					else if (strncasecmp(tok, "max=", 4) == 0) {
+						currule->rule.proc.pmax = atoi(tok+4);
+					}
+					else if (strncasecmp(tok, "color=", 6) == 0) {
+						currule->rule.proc.color = parse_color(tok+6);
+					}
+					else if (strncasecmp(tok, "track", 5) == 0) {
+						currule->flags |= CHK_TRACKIT;
+						if (*(tok+5) == '=') currule->rrdidstr = strdup(tok+6);
+					}
+					else if (idx == 0) {
+						currule->rule.proc.pmin = atoi(tok);
+						idx++;
+					}
+					else if (idx == 1) {
+						currule->rule.proc.pmax = atoi(tok);
+						idx++;
+					}
+					else if (idx == 2) {
+						currule->rule.proc.color = parse_color(tok);
+						idx++;
+					}
+				} while (tok && (!isqual(tok)));
 
 				/* It's easy to set max=0 when you only want to define a minimum */
-				if (currule->rule.proc.pmin && (currule->rule.proc.pmax == 0))
+				if (currule->rule.proc.pmin && (currule->rule.proc.pmax == 0)) {
 					currule->rule.proc.pmax = -1;
+				}
 			}
 			else if (strcasecmp(tok, "LOG") == 0) {
-				currule = setup_rule(C_LOG, curhost, curexhost, curpage, curexpage, curtime, cfid);
+				currule = setup_rule(C_LOG, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
 				currule->rule.log.matchexp  = NULL;
 				currule->rule.log.matchone  = NULL;
 				currule->rule.log.ignoreexp = NULL;
@@ -526,10 +574,9 @@ int load_client_config(char *configfn)
 				currule->rule.log.ignoreexp = setup_expr(tok, 1);
 			}
 			else if (strcasecmp(tok, "FILE") == 0) {
-				currule = setup_rule(C_FILE, curhost, curexhost, curpage, curexpage, curtime, cfid);
+				currule = setup_rule(C_FILE, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
 				currule->rule.fcheck.filename = NULL;
 				currule->rule.fcheck.color = COL_RED;
-				currule->rule.fcheck.filechecks = 0;
 
 				tok = wstok(NULL);
 				currule->rule.fcheck.filename = setup_expr(tok, 0);
@@ -537,10 +584,10 @@ int load_client_config(char *configfn)
 					tok = wstok(NULL); if (!tok || isqual(tok)) continue;
 
 					if (strcasecmp(tok, "noexist") == 0) {
-						currule->rule.fcheck.filechecks |= FCHK_NOEXIST;
+						currule->flags |= FCHK_NOEXIST;
 					}
 					else if (strncasecmp(tok, "type=", 5) == 0) {
-						currule->rule.fcheck.filechecks |= FCHK_TYPE;
+						currule->flags |= FCHK_TYPE;
 						if (strcasecmp(tok+5, "socket") == 0) currule->rule.fcheck.ftype = S_IFSOCK;
 						else if (strcasecmp(tok+5, "file") == 0) currule->rule.fcheck.ftype = S_IFREG;
 						else if (strcasecmp(tok+5, "block") == 0) currule->rule.fcheck.ftype = S_IFBLK;
@@ -549,31 +596,31 @@ int load_client_config(char *configfn)
 						else if (strcasecmp(tok+5, "fifo") == 0) currule->rule.fcheck.ftype = S_IFIFO;
 					}
 					else if (strncasecmp(tok, "size>", 5) == 0) {
-						currule->rule.fcheck.filechecks |= FCHK_MINSIZE;
+						currule->flags |= FCHK_MINSIZE;
 						currule->rule.fcheck.minsize = atol(tok+5);
 					}
 					else if (strncasecmp(tok, "size<", 5) == 0) {
-						currule->rule.fcheck.filechecks |= FCHK_MAXSIZE;
+						currule->flags |= FCHK_MAXSIZE;
 						currule->rule.fcheck.maxsize = atol(tok+5);
 					}
 					else if (strncasecmp(tok, "size=", 5) == 0) {
-						currule->rule.fcheck.filechecks |= FCHK_EQLSIZE;
+						currule->flags |= FCHK_EQLSIZE;
 						currule->rule.fcheck.eqlsize = atol(tok+5);
 					}
 					else if (strncasecmp(tok, "links>", 6) == 0) {
-						currule->rule.fcheck.filechecks |= FCHK_MINLINKS;
+						currule->flags |= FCHK_MINLINKS;
 						currule->rule.fcheck.minlinks = atol(tok+6);
 					}
 					else if (strncasecmp(tok, "links<", 6) == 0) {
-						currule->rule.fcheck.filechecks |= FCHK_MAXLINKS;
+						currule->flags |= FCHK_MAXLINKS;
 						currule->rule.fcheck.maxlinks = atol(tok+6);
 					}
 					else if (strncasecmp(tok, "links=", 6) == 0) {
-						currule->rule.fcheck.filechecks |= FCHK_EQLLINKS;
+						currule->flags |= FCHK_EQLLINKS;
 						currule->rule.fcheck.eqllinks = atol(tok+6);
 					}
 					else if (strncasecmp(tok, "mode=", 5) == 0) {
-						currule->rule.fcheck.filechecks |= FCHK_MODE;
+						currule->flags |= FCHK_MODE;
 						currule->rule.fcheck.fmode = strtol(tok+5, NULL, 8);
 					}
 					else if (strncasecmp(tok, "owner=", 6) == 0) {
@@ -583,11 +630,11 @@ int load_client_config(char *configfn)
 						uid = strtol(tok+6, &eptr, 10);
 						if (*eptr == '\0') {
 							/* All numeric */
-							currule->rule.fcheck.filechecks |= FCHK_OWNERID;
+							currule->flags |= FCHK_OWNERID;
 							currule->rule.fcheck.ownerid = uid;
 						}
 						else {
-							currule->rule.fcheck.filechecks |= FCHK_OWNERSTR;
+							currule->flags |= FCHK_OWNERSTR;
 							currule->rule.fcheck.ownerstr = strdup(tok+6);
 						}
 					}
@@ -598,64 +645,65 @@ int load_client_config(char *configfn)
 						uid = strtol(tok+6, &eptr, 10);
 						if (*eptr == '\0') {
 							/* All numeric */
-							currule->rule.fcheck.filechecks |= FCHK_GROUPID;
+							currule->flags |= FCHK_GROUPID;
 							currule->rule.fcheck.groupid = uid;
 						}
 						else {
-							currule->rule.fcheck.filechecks |= FCHK_GROUPSTR;
+							currule->flags |= FCHK_GROUPSTR;
 							currule->rule.fcheck.groupstr = strdup(tok+6);
 						}
 					}
 					else if (strncasecmp(tok, "mtime>", 6) == 0) {
-						currule->rule.fcheck.filechecks |= FCHK_MTIMEMIN;
+						currule->flags |= FCHK_MTIMEMIN;
 						currule->rule.fcheck.minmtimedif = atol(tok+5);
 					}
 					else if (strncasecmp(tok, "mtime<", 6) == 0) {
-						currule->rule.fcheck.filechecks |= FCHK_MTIMEMAX;
+						currule->flags |= FCHK_MTIMEMAX;
 						currule->rule.fcheck.maxmtimedif = atol(tok+5);
 					}
 					else if (strncasecmp(tok, "mtime=", 6) == 0) {
-						currule->rule.fcheck.filechecks |= FCHK_MTIMEEQL;
+						currule->flags |= FCHK_MTIMEEQL;
 						currule->rule.fcheck.mtimeeql = atol(tok+5);
 					}
 					else if (strncasecmp(tok, "ctime>", 6) == 0) {
-						currule->rule.fcheck.filechecks |= FCHK_CTIMEMIN;
+						currule->flags |= FCHK_CTIMEMIN;
 						currule->rule.fcheck.minctimedif = atol(tok+5);
 					}
 					else if (strncasecmp(tok, "ctime<", 6) == 0) {
-						currule->rule.fcheck.filechecks |= FCHK_CTIMEMAX;
+						currule->flags |= FCHK_CTIMEMAX;
 						currule->rule.fcheck.maxctimedif = atol(tok+5);
 					}
 					else if (strncasecmp(tok, "ctime=", 6) == 0) {
-						currule->rule.fcheck.filechecks |= FCHK_CTIMEEQL;
+						currule->flags |= FCHK_CTIMEEQL;
 						currule->rule.fcheck.ctimeeql = atol(tok+5);
 					}
 					else if (strncasecmp(tok, "atime>", 6) == 0) {
-						currule->rule.fcheck.filechecks |= FCHK_ATIMEMIN;
+						currule->flags |= FCHK_ATIMEMIN;
 						currule->rule.fcheck.minatimedif = atol(tok+5);
 					}
 					else if (strncasecmp(tok, "atime<", 6) == 0) {
-						currule->rule.fcheck.filechecks |= FCHK_ATIMEMAX;
+						currule->flags |= FCHK_ATIMEMAX;
 						currule->rule.fcheck.maxatimedif = atol(tok+5);
 					}
 					else if (strncasecmp(tok, "atime=", 6) == 0) {
-						currule->rule.fcheck.filechecks |= FCHK_ATIMEEQL;
+						currule->flags |= FCHK_ATIMEEQL;
 						currule->rule.fcheck.atimeeql = atol(tok+5);
 					}
 					else if (strncasecmp(tok, "md5=", 4) == 0) {
-						currule->rule.fcheck.filechecks |= FCHK_MD5;
+						currule->flags |= FCHK_MD5;
 						currule->rule.fcheck.md5hash = strdup(tok+4);
 					}
 					else if (strncasecmp(tok, "sha1=", 5) == 0) {
-						currule->rule.fcheck.filechecks |= FCHK_SHA1;
+						currule->flags |= FCHK_SHA1;
 						currule->rule.fcheck.sha1hash = strdup(tok+5);
 					}
 					else if (strncasecmp(tok, "rmd160=", 7) == 0) {
-						currule->rule.fcheck.filechecks |= FCHK_RMD160;
+						currule->flags |= FCHK_RMD160;
 						currule->rule.fcheck.rmd160hash = strdup(tok+7);
 					}
-					else if (strcasecmp(tok, "track") == 0) {
-						currule->rule.fcheck.filechecks |= FCHK_TRACKIT;
+					else if (strncasecmp(tok, "track", 5) == 0) {
+						currule->flags |= CHK_TRACKIT;
+						if (*(tok+5) == '=') currule->rrdidstr = strdup(tok+6);
 					}
 					else {
 						int col = parse_color(tok);
@@ -664,10 +712,9 @@ int load_client_config(char *configfn)
 				} while (tok && (!isqual(tok)));
 			}
 			else if (strcasecmp(tok, "DIR") == 0) {
-				currule = setup_rule(C_DIR, curhost, curexhost, curpage, curexpage, curtime, cfid);
+				currule = setup_rule(C_DIR, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
 				currule->rule.dcheck.filename = NULL;
 				currule->rule.dcheck.color = COL_RED;
-				currule->rule.dcheck.dirchecks = 0;
 
 				tok = wstok(NULL);
 				currule->rule.dcheck.filename = setup_expr(tok, 0);
@@ -675,15 +722,16 @@ int load_client_config(char *configfn)
 					tok = wstok(NULL); if (!tok || isqual(tok)) continue;
 
 					if (strncasecmp(tok, "size<", 5) == 0) {
-						currule->rule.dcheck.dirchecks |= FCHK_MAXSIZE;
+						currule->flags |= FCHK_MAXSIZE;
 						currule->rule.dcheck.maxsize = atol(tok+5);
 					}
 					else if (strncasecmp(tok, "size>", 5) == 0) {
-						currule->rule.dcheck.dirchecks |= FCHK_MINSIZE;
+						currule->flags |= FCHK_MINSIZE;
 						currule->rule.dcheck.minsize = atol(tok+5);
 					}
-					else if (strcasecmp(tok, "track") == 0) {
-						currule->rule.dcheck.dirchecks |= FCHK_TRACKIT;
+					else if (strncasecmp(tok, "track", 5) == 0) {
+						currule->flags |= CHK_TRACKIT;
+						if (*(tok+5) == '=') currule->rrdidstr = strdup(tok+6);
 					}
 					else {
 						int col = parse_color(tok);
@@ -691,12 +739,57 @@ int load_client_config(char *configfn)
 					}
 				} while (tok && (!isqual(tok)));
 			}
+			else if (strcasecmp(tok, "PORT") == 0) {
+				currule = setup_rule(C_PORT, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
+
+				currule->rule.port.localexp = NULL;
+				currule->rule.port.remoteexp = NULL;
+				currule->rule.port.stateexp = NULL;
+				currule->rule.port.pmin = 1;
+				currule->rule.port.pmax = -1;
+				currule->rule.port.color = COL_RED;
+
+				/* parse syntax [local=ADDR] [remote=ADDR] [state=STATE] [min=mincount] [max=maxcount] [col=color] */
+				do {
+ 					tok = wstok(NULL); if (!tok || isqual(tok)) continue;
+
+					if (strncasecmp(tok, "local=", 6) == 0) {
+						currule->rule.port.localexp = setup_expr(tok+6, 0);
+					}
+					else if (strncasecmp(tok, "remote=", 7) == 0) {
+						currule->rule.port.remoteexp = setup_expr(tok+7, 0);
+					}
+					else if (strncasecmp(tok, "state=", 6) == 0) {
+						currule->rule.port.stateexp = setup_expr(tok+6, 0);
+					}
+					else if (strncasecmp(tok, "min=", 4) == 0) {
+						currule->rule.port.pmin = atoi(tok+4);
+					}
+					else if (strncasecmp(tok, "max=", 4) == 0) {
+						currule->rule.port.pmax = atoi(tok+4);
+					}
+					else if (strncasecmp(tok, "col=", 4) == 0) {
+						currule->rule.port.color = parse_color(tok+4);
+					}
+					else if (strncasecmp(tok, "color=", 6) == 0) {
+						currule->rule.port.color = parse_color(tok+6);
+					}
+					else if (strncasecmp(tok, "track", 5) == 0) {
+						currule->flags |= CHK_TRACKIT;
+						if (*(tok+5) == '=') currule->rrdidstr = strdup(tok+6);
+					}
+				} while (tok && (!isqual(tok)));
+
+				/* It's easy to set max=0 when you only want to define a minimum */
+				if (currule->rule.port.pmin && (currule->rule.port.pmax == 0))
+					currule->rule.port.pmax = -1;
+			}
 			else {
-				unknowntok = 1;
 				errprintf("Unknown token '%s' ignored at line %d\n", tok, cfid);
+				unknowntok = 1; tok = NULL; continue;
 			}
 
-			tok = (unknowntok ? NULL : wstok(NULL));
+			if (tok && !isqual(tok)) tok = wstok(NULL);
 		}
 
 		if (!currule && !unknowntok) {
@@ -706,12 +799,14 @@ int load_client_config(char *configfn)
 			curexhost = newexhost;
 			curexpage = newexpage;
 			if (curtime) xfree(curtime); curtime = newtime;
+			if (curtext) xfree(curtext); curtext = newtext;
 		}
 	}
 
 	stackfclose(fd);
 	freestrbuffer(inbuf);
 	if (curtime) xfree(curtime);
+	if (curtext) xfree(curtext);
 
 	/* Create the ruletree, but leave it empty - it will be filled as clients report */
 	ruletree = rbtNew(name_compare);
@@ -774,75 +869,87 @@ void dump_client_config(void)
 			printf("FILE %s %s", rwalk->rule.fcheck.filename->pattern, 
 				colorname(rwalk->rule.fcheck.color));
 
-			if (rwalk->rule.fcheck.filechecks & FCHK_NOEXIST) 
+			if (rwalk->flags & FCHK_NOEXIST) 
 				printf(" noexist");
-			if (rwalk->rule.fcheck.filechecks & FCHK_TYPE)
+			if (rwalk->flags & FCHK_TYPE)
 				printf(" type=%s", ftypestr(rwalk->rule.fcheck.ftype));
-			if (rwalk->rule.fcheck.filechecks & FCHK_MODE) 
+			if (rwalk->flags & FCHK_MODE) 
 				printf(" mode=%o", rwalk->rule.fcheck.fmode);
-			if (rwalk->rule.fcheck.filechecks & FCHK_MINSIZE) 
+			if (rwalk->flags & FCHK_MINSIZE) 
 				printf(" size>%lu", rwalk->rule.fcheck.minsize);
-			if (rwalk->rule.fcheck.filechecks & FCHK_MAXSIZE) 
+			if (rwalk->flags & FCHK_MAXSIZE) 
 				printf(" size<%lu", rwalk->rule.fcheck.maxsize);
-			if (rwalk->rule.fcheck.filechecks & FCHK_EQLSIZE) 
+			if (rwalk->flags & FCHK_EQLSIZE) 
 				printf(" size=%lu", rwalk->rule.fcheck.eqlsize);
-			if (rwalk->rule.fcheck.filechecks & FCHK_MINLINKS) 
+			if (rwalk->flags & FCHK_MINLINKS) 
 				printf(" links>%u", rwalk->rule.fcheck.minlinks);
-			if (rwalk->rule.fcheck.filechecks & FCHK_MAXLINKS) 
+			if (rwalk->flags & FCHK_MAXLINKS) 
 				printf(" links<%u", rwalk->rule.fcheck.maxlinks);
-			if (rwalk->rule.fcheck.filechecks & FCHK_EQLLINKS) 
+			if (rwalk->flags & FCHK_EQLLINKS) 
 				printf(" links=%u", rwalk->rule.fcheck.eqllinks);
-			if (rwalk->rule.fcheck.filechecks & FCHK_OWNERID) 
+			if (rwalk->flags & FCHK_OWNERID) 
 				printf(" owner=%u", rwalk->rule.fcheck.ownerid);
-			if (rwalk->rule.fcheck.filechecks & FCHK_OWNERSTR) 
+			if (rwalk->flags & FCHK_OWNERSTR) 
 				printf(" owner=%s", rwalk->rule.fcheck.ownerstr);
-			if (rwalk->rule.fcheck.filechecks & FCHK_GROUPID) 
+			if (rwalk->flags & FCHK_GROUPID) 
 				printf(" group=%u", rwalk->rule.fcheck.groupid);
-			if (rwalk->rule.fcheck.filechecks & FCHK_GROUPSTR) 
+			if (rwalk->flags & FCHK_GROUPSTR) 
 				printf(" group=%s", rwalk->rule.fcheck.groupstr);
-			if (rwalk->rule.fcheck.filechecks & FCHK_CTIMEMIN) 
+			if (rwalk->flags & FCHK_CTIMEMIN) 
 				printf(" ctime>%u", rwalk->rule.fcheck.minctimedif);
-			if (rwalk->rule.fcheck.filechecks & FCHK_CTIMEMAX) 
+			if (rwalk->flags & FCHK_CTIMEMAX) 
 				printf(" ctime<%u", rwalk->rule.fcheck.maxctimedif);
-			if (rwalk->rule.fcheck.filechecks & FCHK_CTIMEEQL) 
+			if (rwalk->flags & FCHK_CTIMEEQL) 
 				printf(" ctime=%u", rwalk->rule.fcheck.ctimeeql);
-			if (rwalk->rule.fcheck.filechecks & FCHK_MTIMEMIN) 
+			if (rwalk->flags & FCHK_MTIMEMIN) 
 				printf(" mtime>%u", rwalk->rule.fcheck.minmtimedif);
-			if (rwalk->rule.fcheck.filechecks & FCHK_MTIMEMAX) 
+			if (rwalk->flags & FCHK_MTIMEMAX) 
 				printf(" mtime<%u", rwalk->rule.fcheck.maxmtimedif);
-			if (rwalk->rule.fcheck.filechecks & FCHK_MTIMEEQL) 
+			if (rwalk->flags & FCHK_MTIMEEQL) 
 				printf(" mtime=%u", rwalk->rule.fcheck.mtimeeql);
-			if (rwalk->rule.fcheck.filechecks & FCHK_ATIMEMIN) 
+			if (rwalk->flags & FCHK_ATIMEMIN) 
 				printf(" atime>%u", rwalk->rule.fcheck.minatimedif);
-			if (rwalk->rule.fcheck.filechecks & FCHK_ATIMEMAX) 
+			if (rwalk->flags & FCHK_ATIMEMAX) 
 				printf(" atime<%u", rwalk->rule.fcheck.maxatimedif);
-			if (rwalk->rule.fcheck.filechecks & FCHK_ATIMEEQL) 
+			if (rwalk->flags & FCHK_ATIMEEQL) 
 				printf(" atime=%u", rwalk->rule.fcheck.atimeeql);
-			if (rwalk->rule.fcheck.filechecks & FCHK_MD5) 
+			if (rwalk->flags & FCHK_MD5) 
 				printf(" md5=%s", rwalk->rule.fcheck.md5hash);
-			if (rwalk->rule.fcheck.filechecks & FCHK_SHA1) 
+			if (rwalk->flags & FCHK_SHA1) 
 				printf(" sha1=%s", rwalk->rule.fcheck.sha1hash);
-			if (rwalk->rule.fcheck.filechecks & FCHK_RMD160) 
+			if (rwalk->flags & FCHK_RMD160) 
 				printf(" rmd160=%s", rwalk->rule.fcheck.rmd160hash);
-			if (rwalk->rule.fcheck.filechecks & FCHK_TRACKIT) 
-				printf(" track");
-
-			printf("\n");
 			break;
 
 		  case C_DIR:
 			printf("DIR %s %s", rwalk->rule.dcheck.filename->pattern, 
 				colorname(rwalk->rule.dcheck.color));
 
-			if (rwalk->rule.dcheck.dirchecks & FCHK_MINSIZE) 
+			if (rwalk->flags & FCHK_MINSIZE) 
 				printf(" size>%lu", rwalk->rule.dcheck.minsize);
-			if (rwalk->rule.dcheck.dirchecks & FCHK_MAXSIZE) 
+			if (rwalk->flags & FCHK_MAXSIZE) 
 				printf(" size<%lu", rwalk->rule.dcheck.maxsize);
-			if (rwalk->rule.dcheck.dirchecks & FCHK_TRACKIT) 
-				printf(" track");
-
-			printf("\n");
 			break;
+
+		  case C_PORT:
+			printf("PORT");
+			if (rwalk->rule.port.localexp)
+				printf(" local=%s", rwalk->rule.port.localexp->pattern);
+			if (rwalk->rule.port.remoteexp)
+				printf(" remote=%s", rwalk->rule.port.remoteexp->pattern);
+			if (rwalk->rule.port.stateexp)
+				printf(" state=%s", rwalk->rule.port.stateexp->pattern);
+			if (rwalk->rule.port.pmin != -1)
+				printf(" min=%d", rwalk->rule.port.pmin);
+			if (rwalk->rule.port.pmax != -1)
+				printf(" max=%d", rwalk->rule.port.pmax);
+			printf(" color=%s", colorname(rwalk->rule.port.color));
+			break;
+		}
+
+		if (rwalk->flags & CHK_TRACKIT) {
+			printf(" TRACK");
+			if (rwalk->rrdidstr) printf("=%s", rwalk->rrdidstr);
 		}
 
 		if (rwalk->timespec) printf(" TIME=%s", rwalk->timespec);
@@ -850,6 +957,7 @@ void dump_client_config(void)
 		if (rwalk->exhostexp) printf(" EXHOST=%s", rwalk->exhostexp->pattern);
 		if (rwalk->pageexp) printf(" HOST=%s", rwalk->pageexp->pattern);
 		if (rwalk->expageexp) printf(" EXHOST=%s", rwalk->expageexp->pattern);
+		if (rwalk->statustext) printf(" TEXT=%s", rwalk->statustext);
 		printf(" (line: %d)\n", rwalk->cfid);
 	}
 }
@@ -878,12 +986,12 @@ static c_rule_t *getrule(char *hostname, char *pagename, ruletype_t ruletype)
 
 int get_cpu_thresholds(namelist_t *hinfo, float *loadyellow, float *loadred, int *recentlimit, int *ancientlimit)
 {
+	int result = 0;
 	char *hostname, *pagename;
 	c_rule_t *rule;
 
 	hostname = bbh_item(hinfo, BBH_HOSTNAME);
 	pagename = bbh_item(hinfo, BBH_PAGEPATH);
-
 
 	*loadyellow = 5.0;
 	*loadred = 10.0;
@@ -892,8 +1000,8 @@ int get_cpu_thresholds(namelist_t *hinfo, float *loadyellow, float *loadred, int
 	if (rule) {
 		*loadyellow = rule->rule.load.warnlevel;
 		*loadred    = rule->rule.load.paniclevel;
+		result = rule->cfid;
 	}
-
 
 	*recentlimit = 3600;
 	*ancientlimit = -1;
@@ -902,10 +1010,10 @@ int get_cpu_thresholds(namelist_t *hinfo, float *loadyellow, float *loadred, int
 	if (rule) {
 		*recentlimit  = rule->rule.uptime.recentlimit;
 		*ancientlimit = rule->rule.uptime.ancientlimit;
-		return rule->cfid;
+		result = rule->cfid;
 	}
 
-	return 0;
+	return result;
 }
 
 int get_disk_thresholds(namelist_t *hinfo, char *fsname, unsigned long *warnlevel, unsigned long *paniclevel, int *absolutes)
@@ -1140,7 +1248,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 
 		*anyrules = 1;
 		if (!exists) {
-			if (!(rwalk->rule.fcheck.filechecks & FCHK_NOEXIST)) {
+			if (!(rwalk->flags & FCHK_NOEXIST)) {
 				/* Required file does not exist */
 				rulecolor = rwalk->rule.fcheck.color;
 				addtobuffer(summarybuf, "File is missing\n");
@@ -1148,14 +1256,14 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 			goto nextcheck;
 		}
 
-		if (rwalk->rule.fcheck.filechecks & FCHK_NOEXIST) {
+		if (rwalk->flags & FCHK_NOEXIST) {
 			/* File exists, but it shouldn't */
 			rulecolor = rwalk->rule.fcheck.color;
 			addtobuffer(summarybuf, "File exists\n");
 			goto nextcheck;
 		}
 
-		if (rwalk->rule.fcheck.filechecks & FCHK_TYPE) {
+		if (rwalk->flags & FCHK_TYPE) {
 			if (rwalk->rule.fcheck.ftype != ftype) {
 				rulecolor = rwalk->rule.fcheck.color;
 				sprintf(msgline, "File is a %s - should be %s\n", 
@@ -1163,7 +1271,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 				addtobuffer(summarybuf, msgline);
 			}
 		}
-		if (rwalk->rule.fcheck.filechecks & FCHK_MODE) {
+		if (rwalk->flags & FCHK_MODE) {
 			if (rwalk->rule.fcheck.fmode != fmode) {
 				rulecolor = rwalk->rule.fcheck.color;
 				sprintf(msgline, "File is mode %03o - should be %03o\n", 
@@ -1171,7 +1279,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 				addtobuffer(summarybuf, msgline);
 			}
 		}
-		if (rwalk->rule.fcheck.filechecks & FCHK_MINSIZE) {
+		if (rwalk->flags & FCHK_MINSIZE) {
 			if (fsize < rwalk->rule.fcheck.minsize) {
 				rulecolor = rwalk->rule.fcheck.color;
 				sprintf(msgline, "File has size %lu  - should be >%lu\n", 
@@ -1179,7 +1287,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 				addtobuffer(summarybuf, msgline);
 			}
 		}
-		if (rwalk->rule.fcheck.filechecks & FCHK_MAXSIZE) {
+		if (rwalk->flags & FCHK_MAXSIZE) {
 			if (fsize > rwalk->rule.fcheck.maxsize) {
 				rulecolor = rwalk->rule.fcheck.color;
 				sprintf(msgline, "File has size %lu  - should be <%lu\n", 
@@ -1187,7 +1295,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 				addtobuffer(summarybuf, msgline);
 			}
 		}
-		if (rwalk->rule.fcheck.filechecks & FCHK_MINLINKS) {
+		if (rwalk->flags & FCHK_MINLINKS) {
 			if (linkcount < rwalk->rule.fcheck.minlinks) {
 				rulecolor = rwalk->rule.fcheck.color;
 				sprintf(msgline, "File has linkcount %u  - should be >%u\n", 
@@ -1195,7 +1303,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 				addtobuffer(summarybuf, msgline);
 			}
 		}
-		if (rwalk->rule.fcheck.filechecks & FCHK_MAXLINKS) {
+		if (rwalk->flags & FCHK_MAXLINKS) {
 			if (linkcount > rwalk->rule.fcheck.maxlinks) {
 				rulecolor = rwalk->rule.fcheck.color;
 				sprintf(msgline, "File has linkcount %u  - should be <%u\n", 
@@ -1203,7 +1311,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 				addtobuffer(summarybuf, msgline);
 			}
 		}
-		if (rwalk->rule.fcheck.filechecks & FCHK_OWNERID) {
+		if (rwalk->flags & FCHK_OWNERID) {
 			if (ownerid != rwalk->rule.fcheck.ownerid) {
 				rulecolor = rwalk->rule.fcheck.color;
 				sprintf(msgline, "File is owned by user %u  - should be %u\n", 
@@ -1211,7 +1319,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 				addtobuffer(summarybuf, msgline);
 			}
 		}
-		if (rwalk->rule.fcheck.filechecks & FCHK_OWNERSTR) {
+		if (rwalk->flags & FCHK_OWNERSTR) {
 			if (!ownerstr) ownerstr = "(No owner data)";
 			if (strcmp(ownerstr, rwalk->rule.fcheck.ownerstr) != 0) {
 				rulecolor = rwalk->rule.fcheck.color;
@@ -1220,7 +1328,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 				addtobuffer(summarybuf, msgline);
 			}
 		}
-		if (rwalk->rule.fcheck.filechecks & FCHK_GROUPID) {
+		if (rwalk->flags & FCHK_GROUPID) {
 			if (groupid != rwalk->rule.fcheck.groupid) {
 				rulecolor = rwalk->rule.fcheck.color;
 				sprintf(msgline, "File is owned by group %u  - should be %u\n", 
@@ -1228,7 +1336,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 				addtobuffer(summarybuf, msgline);
 			}
 		}
-		if (rwalk->rule.fcheck.filechecks & FCHK_GROUPSTR) {
+		if (rwalk->flags & FCHK_GROUPSTR) {
 			if (!groupstr) groupstr = "(No group data)";
 			if (strcmp(groupstr, rwalk->rule.fcheck.groupstr) != 0) {
 				rulecolor = rwalk->rule.fcheck.color;
@@ -1237,7 +1345,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 				addtobuffer(summarybuf, msgline);
 			}
 		}
-		if (rwalk->rule.fcheck.filechecks & FCHK_CTIMEMIN) {
+		if (rwalk->flags & FCHK_CTIMEMIN) {
 			if (ctimedif < rwalk->rule.fcheck.minctimedif) {
 				rulecolor = rwalk->rule.fcheck.color;
 				sprintf(msgline, "File status changed %u seconds ago - should be >%u\n", 
@@ -1245,7 +1353,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 				addtobuffer(summarybuf, msgline);
 			}
 		}
-		if (rwalk->rule.fcheck.filechecks & FCHK_CTIMEMAX) {
+		if (rwalk->flags & FCHK_CTIMEMAX) {
 			if (ctimedif > rwalk->rule.fcheck.maxctimedif) {
 				rulecolor = rwalk->rule.fcheck.color;
 				sprintf(msgline, "File status changed %u seconds ago - should be <%u\n", 
@@ -1253,7 +1361,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 				addtobuffer(summarybuf, msgline);
 			}
 		}
-		if (rwalk->rule.fcheck.filechecks & FCHK_MTIMEMIN) {
+		if (rwalk->flags & FCHK_MTIMEMIN) {
 			if (mtimedif < rwalk->rule.fcheck.minmtimedif) {
 				rulecolor = rwalk->rule.fcheck.color;
 				sprintf(msgline, "File was modified %u seconds ago - should be >%u\n", 
@@ -1261,7 +1369,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 				addtobuffer(summarybuf, msgline);
 			}
 		}
-		if (rwalk->rule.fcheck.filechecks & FCHK_MTIMEMAX) {
+		if (rwalk->flags & FCHK_MTIMEMAX) {
 			if (mtimedif > rwalk->rule.fcheck.maxmtimedif) {
 				rulecolor = rwalk->rule.fcheck.color;
 				sprintf(msgline, "File was modified %u seconds ago - should be <%u\n", 
@@ -1269,7 +1377,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 				addtobuffer(summarybuf, msgline);
 			}
 		}
-		if (rwalk->rule.fcheck.filechecks & FCHK_ATIMEMIN) {
+		if (rwalk->flags & FCHK_ATIMEMIN) {
 			if (atimedif < rwalk->rule.fcheck.minatimedif) {
 				rulecolor = rwalk->rule.fcheck.color;
 				sprintf(msgline, "File was accessed %u seconds ago - should be >%u\n", 
@@ -1277,7 +1385,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 				addtobuffer(summarybuf, msgline);
 			}
 		}
-		if (rwalk->rule.fcheck.filechecks & FCHK_ATIMEMAX) {
+		if (rwalk->flags & FCHK_ATIMEMAX) {
 			if (atimedif > rwalk->rule.fcheck.maxatimedif) {
 				rulecolor = rwalk->rule.fcheck.color;
 				sprintf(msgline, "File was accessed %u seconds ago - should be <%u\n", 
@@ -1285,7 +1393,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 				addtobuffer(summarybuf, msgline);
 			}
 		}
-		if (rwalk->rule.fcheck.filechecks & FCHK_MD5) {
+		if (rwalk->flags & FCHK_MD5) {
 			if (!md5hash) md5hash = "(No MD5 data)";
 			if (strcmp(md5hash, rwalk->rule.fcheck.md5hash) != 0) {
 				rulecolor = rwalk->rule.fcheck.color;
@@ -1294,7 +1402,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 				addtobuffer(summarybuf, msgline);
 			}
 		}
-		if (rwalk->rule.fcheck.filechecks & FCHK_SHA1) {
+		if (rwalk->flags & FCHK_SHA1) {
 			if (!sha1hash) sha1hash = "(No SHA1 data)";
 			if (strcmp(sha1hash, rwalk->rule.fcheck.sha1hash) != 0) {
 				rulecolor = rwalk->rule.fcheck.color;
@@ -1303,7 +1411,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 				addtobuffer(summarybuf, msgline);
 			}
 		}
-		if (rwalk->rule.fcheck.filechecks & FCHK_RMD160) {
+		if (rwalk->flags & FCHK_RMD160) {
 			if (!rmd160hash) rmd160hash = "(No RMD160 data)";
 			if (strcmp(rmd160hash, rwalk->rule.fcheck.rmd160hash) != 0) {
 				rulecolor = rwalk->rule.fcheck.color;
@@ -1312,7 +1420,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 				addtobuffer(summarybuf, msgline);
 			}
 		}
-		if (rwalk->rule.fcheck.filechecks & FCHK_TRACKIT) {
+		if (rwalk->flags & CHK_TRACKIT) {
 			*trackit = (trackit || (ftype == S_IFREG));
 		}
 
@@ -1369,7 +1477,7 @@ int check_dir(namelist_t *hinfo, char *filename, char *filedata, char *section, 
 		/* First, check if the filename matches */
 		if (!namematch(filename, rwalk->rule.fcheck.filename->pattern, rwalk->rule.fcheck.filename->exp)) continue;
 
-		if (rwalk->rule.dcheck.dirchecks & FCHK_MAXSIZE) {
+		if (rwalk->flags & FCHK_MAXSIZE) {
 			if (dsize > rwalk->rule.dcheck.maxsize) {
 				rulecolor = rwalk->rule.dcheck.color;
 				sprintf(msgline, "Directory has size %lu  - should be <%lu\n", 
@@ -1377,7 +1485,7 @@ int check_dir(namelist_t *hinfo, char *filename, char *filedata, char *section, 
 				addtobuffer(summarybuf, msgline);
 			}
 		}
-		else if (rwalk->rule.dcheck.dirchecks & FCHK_MINSIZE) {
+		else if (rwalk->flags & FCHK_MINSIZE) {
 			if (dsize < rwalk->rule.dcheck.minsize) {
 				rulecolor = rwalk->rule.dcheck.color;
 				sprintf(msgline, "Directory has size %lu  - should be >%lu\n", 
@@ -1385,7 +1493,7 @@ int check_dir(namelist_t *hinfo, char *filename, char *filedata, char *section, 
 				addtobuffer(summarybuf, msgline);
 			}
 		}
-		if (rwalk->rule.dcheck.dirchecks & FCHK_TRACKIT) {
+		if (rwalk->flags & CHK_TRACKIT) {
 			*trackit = 1;
 		}
 
@@ -1430,6 +1538,7 @@ static int clear_counts(namelist_t *hinfo, ruletype_t ruletype, mon_proc_t **hea
 		switch (rule->ruletype) {
 		  case C_DISK : rule->rule.disk.dcount = 0; break;
 		  case C_PROC : rule->rule.proc.pcount = 0; break;
+		  case C_PORT : rule->rule.port.pcount = 0; break;
 		  default: break;
 		}
 
@@ -1480,7 +1589,65 @@ static void add_count(char *pname, mon_proc_t *head)
 	}
 }
 
-static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *uplim, int *color, mon_proc_t **walk)
+static void add_count3(char *pname0, char *pname1, char *pname2 , mon_proc_t *head)
+{
+	mon_proc_t *pwalk;
+	int mymatch;
+	
+	if (!pname0) return;
+	if (!pname1) return;
+	if (!pname2) return;
+
+	for (pwalk = head; (pwalk); pwalk = pwalk->next) {
+		switch (pwalk->rule->ruletype) {
+		  case C_PORT:
+		        mymatch = 0;
+			if (pwalk->rule->rule.port.localexp) {
+				if (!pwalk->rule->rule.port.localexp->exp) {
+					if (strstr(pname0, pwalk->rule->rule.port.localexp->pattern))
+						mymatch++;
+				}
+				else {
+					if (namematch(pname0, pwalk->rule->rule.port.localexp->pattern, pwalk->rule->rule.port.localexp->exp))
+						mymatch++;
+				}
+			}
+			else mymatch++;
+
+			if (pwalk->rule->rule.port.remoteexp) {
+				if (!pwalk->rule->rule.port.remoteexp->exp) {
+					if (strstr(pname1, pwalk->rule->rule.port.remoteexp->pattern))
+						mymatch++;
+				}
+				else {
+					if (namematch(pname1, pwalk->rule->rule.port.remoteexp->pattern, pwalk->rule->rule.port.remoteexp->exp))
+						mymatch++;
+				}
+			}
+			else mymatch++;
+
+			if (pwalk->rule->rule.port.stateexp) {
+				if (!pwalk->rule->rule.port.stateexp->exp) {
+					if (strstr(pname2, pwalk->rule->rule.port.stateexp->pattern))
+						mymatch++;
+				}
+				else {
+					if (namematch(pname2, pwalk->rule->rule.port.stateexp->pattern, pwalk->rule->rule.port.stateexp->exp))
+						mymatch++;
+				}
+			}
+			else mymatch++;
+
+			if (mymatch == 3) {pwalk->rule->rule.port.pcount++;}
+			break;
+
+		  default:
+			break;
+		}
+	}
+}
+
+static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *uplim, int *color, mon_proc_t **walk, char **id, int *trackit)
 {
 	char *result = NULL;
 
@@ -1488,13 +1655,16 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 
 	switch (ruletype) {
 	  case C_PROC:
-		result = (*walk)->rule->rule.proc.procexp->pattern;
+		result = (*walk)->rule->statustext;
+		if (!result) result = (*walk)->rule->rule.proc.procexp->pattern;
 		*count = (*walk)->rule->rule.proc.pcount;
 		*lowlim = (*walk)->rule->rule.proc.pmin;
 		*uplim = (*walk)->rule->rule.proc.pmax;
 		*color = COL_GREEN;
 		if ((*lowlim !=  0) && (*count < *lowlim)) *color = (*walk)->rule->rule.proc.color;
 		if ((*uplim  != -1) && (*count > *uplim)) *color = (*walk)->rule->rule.proc.color;
+		*trackit = ((*walk)->rule->flags & CHK_TRACKIT);
+		*id = (*walk)->rule->rrdidstr;
 		break;
 
 	  case C_DISK:
@@ -1507,6 +1677,42 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 		if ((*uplim  != -1) && (*count > *uplim)) *color = (*walk)->rule->rule.disk.color;
 		break;
 
+	  case C_PORT:
+		result = (*walk)->rule->statustext;
+		if (!result) {
+			int sz = 0;
+			char *p;
+
+			if ((*walk)->rule->rule.port.localexp)
+				sz += strlen((*walk)->rule->rule.port.localexp->pattern) + 6;
+			if ((*walk)->rule->rule.port.remoteexp)
+				sz += strlen((*walk)->rule->rule.port.remoteexp->pattern) + 7;
+			if ((*walk)->rule->rule.port.stateexp)
+				sz += strlen((*walk)->rule->rule.port.stateexp->pattern) + 6;
+
+			(*walk)->rule->statustext = (char *)malloc(sz + 10);
+			p = (*walk)->rule->statustext;
+			if ((*walk)->rule->rule.port.localexp)
+				p += sprintf(p, "local=%s ", (*walk)->rule->rule.port.localexp->pattern);
+			if ((*walk)->rule->rule.port.remoteexp)
+				p += sprintf(p, "remote=%s ", (*walk)->rule->rule.port.remoteexp->pattern);
+			if ((*walk)->rule->rule.port.stateexp)
+				p += sprintf(p, "state=%s ", (*walk)->rule->rule.port.stateexp->pattern);
+			*p = '\0';
+			strcat((*walk)->rule->statustext, ":");
+
+			result = (*walk)->rule->statustext;
+		}
+		*count = (*walk)->rule->rule.port.pcount;
+		*lowlim = (*walk)->rule->rule.port.pmin;
+		*uplim = (*walk)->rule->rule.port.pmax;
+		*color = COL_GREEN;
+		if ((*lowlim !=  0) && (*count < *lowlim)) *color = (*walk)->rule->rule.port.color;
+		if ((*uplim  != -1) && (*count > *uplim)) *color = (*walk)->rule->rule.port.color;
+		*trackit = ((*walk)->rule->flags & CHK_TRACKIT);
+		*id = (*walk)->rule->rrdidstr;
+		break;
+
 	  default: break;
 	}
 
@@ -1517,6 +1723,7 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 
 static mon_proc_t *phead = NULL, *ptail = NULL, *pmonwalk = NULL;
 static mon_proc_t *dhead = NULL, *dtail = NULL, *dmonwalk = NULL;
+static mon_proc_t *porthead = NULL, *porttail = NULL, *portmonwalk = NULL;
 
 int clear_process_counts(namelist_t *hinfo)
 {
@@ -1526,6 +1733,11 @@ int clear_process_counts(namelist_t *hinfo)
 int clear_disk_counts(namelist_t *hinfo)
 {
 	return clear_counts(hinfo, C_DISK, &dhead, &dtail, &dmonwalk);
+}
+
+int clear_port_counts(namelist_t *hinfo)
+{
+	return clear_counts(hinfo, C_PORT, &porthead, &porttail, &portmonwalk);
 }
 
 void add_process_count(char *pname)
@@ -1538,13 +1750,23 @@ void add_disk_count(char *dname)
 	add_count(dname, dhead);
 }
 
-char *check_process_count(int *count, int *lowlim, int *uplim, int *color)
+void add_port_count(char *localstr, char *foreignstr, char *stname)
 {
-	return check_count(count, C_PROC, lowlim, uplim, color, &pmonwalk);
+	add_count3(localstr, foreignstr, stname, porthead);
+}
+
+char *check_process_count(int *count, int *lowlim, int *uplim, int *color, char **id, int *trackit)
+{
+	return check_count(count, C_PROC, lowlim, uplim, color, &pmonwalk, id, trackit);
 }
 
 char *check_disk_count(int *count, int *lowlim, int *uplim, int *color)
 {
-	return check_count(count, C_DISK, lowlim, uplim, color, &dmonwalk);
+	return check_count(count, C_DISK, lowlim, uplim, color, &dmonwalk, NULL, NULL);
+}
+
+char *check_port_count(int *count, int *lowlim, int *uplim, int *color, char **id, int *trackit)
+{
+	return check_count(count, C_PORT, lowlim, uplim, color, &portmonwalk, id, trackit);
 }
 
