@@ -4,13 +4,14 @@
 /* Client backend module                                                      */
 /*                                                                            */
 /* Copyright (C) 2005 Henrik Storner <henrik@hswn.dk>                         */
+/* "PORT" handling (C) Mirko Saam                                             */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.65 2006-04-19 20:19:02 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.66 2006-04-19 20:24:09 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>

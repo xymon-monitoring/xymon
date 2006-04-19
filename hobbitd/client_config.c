@@ -6,13 +6,14 @@
 /* finds the rules relevant for a particular test when applied.               */
 /*                                                                            */
 /* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* "PORT" handling (C) Mirko Saam                                             */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.28 2006-04-19 20:20:23 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.29 2006-04-19 20:24:09 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
