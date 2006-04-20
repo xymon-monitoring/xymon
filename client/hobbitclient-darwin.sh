@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-darwin.sh,v 1.9 2006-02-17 13:07:50 henrik Exp $
+# $Id: hobbitclient-darwin.sh,v 1.10 2006-04-20 07:11:16 henrik Exp $
 
 echo "[date]"
 date
@@ -34,6 +34,8 @@ echo "[route]"
 netstat -r
 echo "[netstat]"
 netstat -s
+echo "[ports]"
+netstat -an|grep "^tcp"
 echo "[ps]"
 ps -axw
 echo "[top]"

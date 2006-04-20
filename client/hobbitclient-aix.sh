@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-aix.sh,v 1.7 2006-02-17 13:07:50 henrik Exp $
+# $Id: hobbitclient-aix.sh,v 1.8 2006-04-20 07:08:59 henrik Exp $
 
 echo "[date]"
 date
@@ -37,6 +37,8 @@ echo "[route]"
 netstat -r
 echo "[netstat]"
 netstat -s
+echo "[ports]"
+netstat -an | grep "^tcp"
 echo "[ifstat]"
 netstat -v
 echo "[ps]"
