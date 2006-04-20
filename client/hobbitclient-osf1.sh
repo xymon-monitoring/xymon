@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-osf1.sh,v 1.7 2006-02-17 13:07:50 henrik Exp $
+# $Id: hobbitclient-osf1.sh,v 1.8 2006-04-20 07:07:27 henrik Exp $
 
 echo "[date]"
 date
@@ -34,6 +34,8 @@ echo "[route]"
 cat /etc/routes
 echo "[netstat]"
 netstat -s
+echo "[ports]"
+netstat -an|grep "^tcp"
 echo "[ps]"
 ps -ef
 echo "[top]"

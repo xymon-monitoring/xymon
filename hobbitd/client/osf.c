@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char osf_rcsid[] = "$Id: osf.c,v 1.9 2006-04-17 08:44:39 henrik Exp $";
+static char osf_rcsid[] = "$Id: osf.c,v 1.10 2006-04-20 07:07:27 henrik Exp $";
 
 void handle_osf_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -23,6 +23,7 @@ void handle_osf_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char
 	char *msgsstr;
 	char *netstatstr;
 	char *ifstatstr;
+	char *portsstr;
 	char *vmstatstr;
 	char *memorystr;
 	char *swapstr;
@@ -42,11 +43,10 @@ void handle_osf_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char
 	msgsstr = getdata("msgs");
 	netstatstr = getdata("netstat");
 	ifstatstr = getdata("ifstat");
+	portsstr = getdata("ports");
 	vmstatstr = getdata("vmstat");
 	memorystr = getdata("memory");
 	swapstr = getdata("swap");
-
-	combo_start();
 
 	unix_cpu_report(hostname, hinfo, fromline, timestr, uptimestr, whostr, psstr, topstr);
 	unix_disk_report(hostname, hinfo, fromline, timestr, "Capacity", "Mounted", dfstr);
@@ -118,10 +118,10 @@ void handle_osf_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char
 				   swaptotal, (swaptotal - swapfree));
 	}
 
-	combo_end();
-
 	unix_netstat_report(hostname, hinfo, "osf", netstatstr);
 	unix_ifstat_report(hostname, hinfo, "osf", ifstatstr);
+	unix_ports_report(hostname, hinfo, fromline, timestr, 3, 4, 5, portsstr);
+
 	unix_vmstat_report(hostname, hinfo, "osf", vmstatstr);
 }
 

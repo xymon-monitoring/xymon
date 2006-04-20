@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char hpux_rcsid[] = "$Id: hpux.c,v 1.12 2006-04-17 08:44:39 henrik Exp $";
+static char hpux_rcsid[] = "$Id: hpux.c,v 1.13 2006-04-20 07:07:27 henrik Exp $";
 
 void handle_hpux_client(char *hostname, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
 {
@@ -25,6 +25,7 @@ void handle_hpux_client(char *hostname, namelist_t *hinfo, char *sender, time_t 
 	char *msgsstr;
 	char *netstatstr;
 	char *ifstatstr;
+	char *portsstr;
 	char *vmstatstr;
 
 	char *p;
@@ -46,9 +47,8 @@ void handle_hpux_client(char *hostname, namelist_t *hinfo, char *sender, time_t 
 	msgsstr = getdata("msgs");
 	netstatstr = getdata("netstat");
 	ifstatstr = getdata("ifstat");
+	portsstr = getdata("ports");
 	vmstatstr = getdata("vmstat");
-
-	combo_start();
 
 	unix_cpu_report(hostname, hinfo, fromline, timestr, uptimestr, whostr, psstr, topstr);
 	unix_disk_report(hostname, hinfo, fromline, timestr, "Capacity", "Mounted", dfstr);
@@ -80,10 +80,10 @@ void handle_hpux_client(char *hostname, namelist_t *hinfo, char *sender, time_t 
 	msgs_report(hostname, hinfo, fromline, timestr, msgsstr);
 	file_report(hostname, hinfo, fromline, timestr);
 
-	combo_end();
-
 	unix_netstat_report(hostname, hinfo, "hpux", netstatstr);
 	unix_ifstat_report(hostname, hinfo, "hpux", ifstatstr);
+	unix_ports_report(hostname, hinfo, fromline, timestr, 3, 4, 5, portsstr);
+
 	unix_vmstat_report(hostname, hinfo, "hpux", vmstatstr);
 }
 

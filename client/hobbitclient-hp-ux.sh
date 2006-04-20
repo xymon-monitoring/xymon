@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-hp-ux.sh,v 1.12 2006-02-17 13:07:50 henrik Exp $
+# $Id: hobbitclient-hp-ux.sh,v 1.13 2006-04-20 07:07:27 henrik Exp $
 
 echo "[date]"
 date
@@ -36,6 +36,8 @@ echo "[route]"
 netstat -rn
 echo "[netstat]"
 netstat -s
+echo "[ports]"
+netstat -an | grep "^tcp"
 echo "[ifstat]"
 netstat -v
 echo "[ps]"
