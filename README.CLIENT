@@ -3,11 +3,19 @@ Unix client for Hobbit
 As of version 4.1, Hobbit ships with a native client for
 most Unix-based systems.
 
-The Hobbit client will report data for the "cpu", "disk", 
-"memory" and "procs" columns to Hobbit, in addition to
-data for the "vmstat" and "netstat" graphs. It does not
-currently provide any data for the system-log "msgs"
-column.
+The Hobbit client will generate status columns for:
+* cpu    : CPU utilisation
+* disk   : Filesystem (disk) utilisation
+* files  : File- and directory attributes and sizes
+* memory : Memory and Swap utilisation
+* msgs   : Log file messages
+* ports  : TCP/IP Network connections
+* procs  : Processes
+
+It will also feed data to generate some graphs:
+* ifstat : Raw traffic data for network interfaces
+* netstat: TCP/IP statistics
+* vmstat : Various performance counters (OS-specific)
 
 In the default setup, all configuration of disk thresholds, 
 load limits, which processes to monitor etc. is done on the 
@@ -62,10 +70,9 @@ command at startup.
 
 Client configuration
 ====================
-NB: Thresholds for the CPU load, disk- and memory-utilization,
-which processes to monitor etc. is normally done on the Hobbit 
-SERVER, not on the client (unless you explicitly requested this
-when building the client).
+All of the normal configuration is done on the Hobbit SERVER.
+See the hobbit-clients.cfg(5) and client-local.cfg(5) man-
+pages on the Hobbit server.
 
 Hostname detection
 ------------------
@@ -128,5 +135,5 @@ like, as long as you preserve the directory structure below the
 
 
 
-Henrik Stoerner, 2005-Oct-16.
+Henrik Stoerner, 2006-Apr-23
 
