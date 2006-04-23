@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-hp-ux.sh,v 1.13 2006-04-20 07:07:27 henrik Exp $
+# $Id: hobbitclient-hp-ux.sh,v 1.14 2006-04-23 16:54:53 henrik Exp $
 
 echo "[date]"
 date
@@ -36,6 +36,8 @@ echo "[route]"
 netstat -rn
 echo "[netstat]"
 netstat -s
+echo "[ifstat]"
+/usr/sbin/lanscan -p | while read PPA; do /usr/sbin/lanadmin -g mibstats $PPA; done
 echo "[ports]"
 netstat -an | grep "^tcp"
 echo "[ifstat]"

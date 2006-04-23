@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.2 2006-04-23 12:16:55 henrik Exp $";
+static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.3 2006-04-23 16:54:53 henrik Exp $";
 
 static char *ifstat_params[] = { "rrdcreate", rrdfn, 
 	                         "DS:bytesSent:DERIVE:600:0:U", 
@@ -68,6 +68,21 @@ static const char *ifstat_aix_exprs[] = {
 };
 
 
+/* (lines dropped)
+PPA Number                      = 0
+Description                     = lan0 Hewlett-Packard LAN Interface Hw Rev 0
+Type (value)                    = ethernet-csmacd(6)
+MTU Size                        = 1500
+Operation Status (value)        = up(1)
+Inbound Octets                  = 3111235429
+Outbound Octets                 = 3892111463
+*/
+static const char *ifstat_hpux_exprs[] = {
+	"^PPA Number\\s+= (\\d+)",
+	"^Inbound Octets\\s+= (\\d+)",
+	"^Outbound Octets\\s+= (\\d+)",
+};
+
 int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
 	static int pcres_compiled = 0;
@@ -77,12 +92,13 @@ int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	static pcre **ifstat_netbsd_pcres = NULL;
 	static pcre **ifstat_solaris_pcres = NULL;
 	static pcre **ifstat_aix_pcres = NULL;
+	static pcre **ifstat_hpux_pcres = NULL;
 
 	enum ostype_t ostype;
 	char *datapart = msg;
 	char *outp;
 	char *bol, *eoln, *ifname, *rxstr, *txstr, *dummy;
-	int dcount;
+	int dmatch;
 
 	if (pcres_compiled == 0) {
 		pcres_compiled = 1;
@@ -98,6 +114,8 @@ int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 						 (sizeof(ifstat_solaris_exprs) / sizeof(ifstat_solaris_exprs[0])));
 		ifstat_aix_pcres = compile_exprs("AIX", ifstat_aix_exprs, 
 						 (sizeof(ifstat_aix_exprs) / sizeof(ifstat_aix_exprs[0])));
+		ifstat_hpux_pcres = compile_exprs("HPUX", ifstat_hpux_exprs, 
+						 (sizeof(ifstat_hpux_exprs) / sizeof(ifstat_hpux_exprs[0])));
 	}
 
 
@@ -122,7 +140,7 @@ int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	/* Setup the update string */
 	outp = rrdvalues + sprintf(rrdvalues, "%d", (int)tstamp);
 
-	dcount = 0;
+	dmatch = 0;
 	ifname = rxstr = txstr = dummy = NULL;
 
 	bol = datapart;
@@ -133,40 +151,45 @@ int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		  case OS_LINUX22:
 		  case OS_LINUX:
 		  case OS_RHEL3:
-			if (pickdata(bol, ifstat_linux_pcres[0], &ifname)) dcount |= 1;
-			else if (pickdata(bol, ifstat_linux_pcres[1], &rxstr, &txstr)) dcount |= 2;
+			if (pickdata(bol, ifstat_linux_pcres[0], &ifname)) dmatch |= 1;
+			else if (pickdata(bol, ifstat_linux_pcres[1], &rxstr, &txstr)) dmatch |= 6;
 			break;
 
 		  case OS_FREEBSD:
-			if (pickdata(bol, ifstat_freebsd_pcres[0], &ifname, &rxstr, &txstr)) dcount = 3;
+			if (pickdata(bol, ifstat_freebsd_pcres[0], &ifname, &rxstr, &txstr)) dmatch = 7;
 			break;
 
 		  case OS_OPENBSD:
-			if (pickdata(bol, ifstat_openbsd_pcres[0], &ifname, &rxstr, &txstr)) dcount = 3;
+			if (pickdata(bol, ifstat_openbsd_pcres[0], &ifname, &rxstr, &txstr)) dmatch = 7;
 			break;
 
 		  case OS_NETBSD:
-			if (pickdata(bol, ifstat_netbsd_pcres[0], &ifname, &rxstr, &txstr)) dcount = 3;
+			if (pickdata(bol, ifstat_netbsd_pcres[0], &ifname, &rxstr, &txstr)) dmatch = 7;
 			break;
 
 		  case OS_SOLARIS: 
-			if (pickdata(bol, ifstat_solaris_pcres[0], &ifname, &txstr)) dcount |= 1;
-			else if (pickdata(bol, ifstat_solaris_pcres[1], &dummy, &rxstr)) dcount |= 2;
+			if (pickdata(bol, ifstat_solaris_pcres[0], &ifname, &txstr)) dmatch |= 1;
+			else if (pickdata(bol, ifstat_solaris_pcres[1], &dummy, &rxstr)) dmatch |= 6;
 
 			if (ifname && dummy && (strcmp(ifname, dummy) != 0)) {
 				/* They must match, drop the data */
 				errprintf("Host %s has weird ifstat data - device name mismatch %s:%s\n", hostname, ifname, dummy);
 				xfree(ifname); xfree(txstr); xfree(rxstr); xfree(dummy);
-				dcount = 0;
+				dmatch = 0;
 			}
 			break;
 
 		  case OS_AIX: 
-			if (pickdata(bol, ifstat_aix_pcres[0], &ifname)) dcount |= 1;
-			else if (pickdata(bol, ifstat_aix_pcres[1], &txstr, &rxstr)) dcount |= 2;
+			if (pickdata(bol, ifstat_aix_pcres[0], &ifname)) dmatch |= 1;
+			else if (pickdata(bol, ifstat_aix_pcres[1], &txstr, &rxstr)) dmatch |= 6;
 			break;
 
 		  case OS_HPUX: 
+			if (pickdata(bol, ifstat_hpux_pcres[0], &ifname)) dmatch |= 1;
+			else if (pickdata(bol, ifstat_hpux_pcres[1], &rxstr)) dmatch |= 2;
+			else if (pickdata(bol, ifstat_hpux_pcres[2], &txstr)) dmatch |= 4;
+			break;
+
 		  case OS_DARWIN:
 		  case OS_OSF:
 		  case OS_IRIX:
@@ -176,14 +199,14 @@ int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			break;
 		}
 
-		if ((dcount == 3) && ifname && rxstr && txstr) {
+		if ((dmatch == 7) && ifname && rxstr && txstr) {
 			sprintf(rrdfn, "ifstat.%s.rrd", ifname);
 			sprintf(rrdvalues, "%d:%s:%s", (int)tstamp, txstr, rxstr);
 			create_and_update_rrd(hostname, rrdfn, ifstat_params, ifstat_tpl);
 			xfree(ifname); xfree(rxstr); xfree(txstr);
 			if (dummy) xfree(dummy);
 			ifname = rxstr = txstr = dummy = NULL;
-			dcount = 0;
+			dmatch = 0;
 		}
 
 		if (eoln) {
