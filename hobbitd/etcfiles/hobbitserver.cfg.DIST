@@ -136,7 +136,7 @@ TEST2RRD="cpu=la,disk,inode,qtree,memory,$PINGCOLUMN=tcp,http=tcp,dns=tcp,dig=tc
 
 # This defines which RRD files to include on the "trends" column webpage,
 # and the order in which they appear.
-GRAPHS="la,disk,inode,qtree,memory,users,vmstat,iostat,tcp.http,tcp,ncv,netstat,mrtg::1,temperature,ntpstat,apache,bind,sendmail,mailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd,files"
+GRAPHS="la,disk,inode,qtree,files,memory,users,vmstat,iostat,tcp.http,tcp,ncv,netstat,ifstat,mrtg::1,temperature,ntpstat,apache,bind,sendmail,mailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd"
 
 # These two settings can be used to restrict what filesystems are being
 # tracked (i.e. have their utilisation graphed) by Hobbit.
