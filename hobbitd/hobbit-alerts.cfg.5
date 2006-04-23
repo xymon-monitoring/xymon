@@ -41,10 +41,8 @@ page is \fBPAGE=servers/db\fR. Note that you can also use regular expressions
 to specify the page name, e.g. \fBPAGE=%.*/db\fR would find the "Database
 servers" page regardless of where this page was placed in the hierarchy.
 
-The top-level page has a the fixed name \fB/\fR, e.g. \fBPAGE=/\fR would 
-match all hosts on the Hobbit frontpage. If you need it in a regular
-expression, use \fBPAGE=%^/\fR to avoid matching the forward-slash
-present in subpage-names.
+The PAGE name of top-level page is an empty string. To match this, use
+\fBPAGE=%^$\fR to match the empty string.
 
 .sp
 .BR "EXPAGE=targetstring"
