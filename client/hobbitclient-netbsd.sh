@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-netbsd.sh,v 1.9 2006-04-19 20:17:06 henrik Exp $
+# $Id: hobbitclient-netbsd.sh,v 1.10 2006-04-23 12:13:37 henrik Exp $
 
 echo "[date]"
 date
@@ -34,6 +34,8 @@ echo "[route]"
 netstat -rn
 echo "[netstat]"
 netstat -s
+echo "[ifstat]"
+netstat -i -b -n | egrep -v "^lo|<Link"
 echo "[ports]"
 (netstat -na -f inet; netstat -na -f inet6) | grep "^tcp"
 echo "[ps]"

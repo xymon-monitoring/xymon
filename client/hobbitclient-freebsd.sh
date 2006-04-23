@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-freebsd.sh,v 1.9 2006-04-19 20:17:06 henrik Exp $
+# $Id: hobbitclient-freebsd.sh,v 1.10 2006-04-23 12:13:37 henrik Exp $
 
 echo "[date]"
 date
@@ -34,6 +34,8 @@ echo "[ifconfig]"
 ifconfig -a
 echo "[route]"
 netstat -rn
+echo "[ifstat]"
+netstat -i -b -n | egrep -v "^lo|<Link"
 echo "[netstat]"
 netstat -s
 echo "[ports]"
