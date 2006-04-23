@@ -97,7 +97,7 @@ MEMACT  warnlevel=90 paniclevel=97
 
 .SH PROCS STATUS COLUMN SETTINGS
 .sp
-.BR "PROC processname minimumcount maximumcount color"
+.BR "PROC processname minimumcount maximumcount color [TRACK=id] [TEXT=text]"
 .sp
 The "ps" listing sent by the client will be scanned for how many
 processes containing "processname" are running, and this is then
@@ -129,6 +129,28 @@ or
 You can have multiple "PROC" entries for the same host, all of the
 checks are merged into the "procs" status and the most severe
 check defines the color of the status.
+.sp
+The optional \fBTRACK=id\fR setting causes Hobbit to track the number of
+processes found in an RRD file, and put this into a graph which is shown
+on the "procs" status display. The \fBid\fR setting is a simple text string 
+which will be used as the legend for the graph, and also as part of the
+RRD filename. It is recommended that you use only letters and digits for
+the ID.
+.br
+Note that the process counts which are tracked are only performed once 
+when the client does a poll cycle - i.e. the counts represent snapshots
+of the system state, not an average value over the client poll cycle.
+Therefore there may be peaks or dips in the actual process counts which
+will not show up in the graphs, because they happen while the Hobbit client
+is not doing any polling.
+.sp
+The optional \fBTEXT=text\fR setting is used in the summary of the "procs"
+status. Normally, the summary will show the "processname" to identify the
+process and the related count and limits. But this may be a regular
+expression which is not easily recognizable, so if defined, the \fBtext\fR 
+setting string will be used instead. This only affects the "procs" status
+display - it has no effect on how the rule counts or recognizes processes
+in the "ps" output.
 .sp
 Example: Check that "cron" is running:
 .br
@@ -258,7 +280,69 @@ whatever unit the \fBdu\fR command on the client uses - often KB
 or diskblocks - so MAX.SIZE and MIN.SIZE must be given in the same
 unit.
 
-
+.SH PORTS STATUS COLUMN SETTINGS
+.sp
+.BR "PORT criteria [MIN=mincount] [MAX=maxcount] [COL=color] [TRACK=id] [TEXT=displaytext]"
+.sp
+The "netstat" listing sent by the client will be scanned for how many
+sockets match the \fBcriteria\fR listed.  The criteria you can use are:
+.IP "LOCAL=addr"
+"addr" is a (partial) local address specification in the format used on
+the output from netstat.
+.IP "REMOTE=addr"
+"addr" is a (partial) remote address specification in the format used on
+the output from netstat.
+.IP "STATE=state"
+Causes only the sockets in the specified state to be included, "state"
+is usually LISTEN or ESTABLISHED but can be any socket state reported by
+the clients "netstat" command.
+.LP
+"addr" is typically "10.0.0.1:80" for the IP 10.0.0.1, port 80. 
+Or "*:80" for any local address, port 80. Note that the Hobbit clients 
+normally report only the numeric data for IP-adresses and port-numbers, 
+so you must specify the port number (e.g. "80") instead of the service 
+name ("www").
+.br
+"addr" and "state" can also be a Perl-compatiable regular expression, e.g.
+"LOCAL=%(:80|:443)" can be used to find entries in the netstat local port for
+both http (port 80) and https (port 443). In that case, portname or state must
+begin with "%" followed by the reg.expression.
+.sp
+The socket count found is then matched against the min/max settings defined
+here. If the count is outside the thresholds, the color of the "ports"
+status changes to "color".  To check for a socket that must NOT exist: Set 
+minimum and maximum to 0.
+.sp
+The optional \fBTRACK=id\fR setting causes Hobbit to track the number of
+sockets found in an RRD file, and put this into a graph which is shown
+on the "ports" status display. The \fBid\fR setting is a simple text string 
+which will be used as the legend for the graph, and also as part of the
+RRD filename. It is recommended that you use only letters and digits for
+the ID.
+.br
+Note that the sockets counts which are tracked are only performed once 
+when the client does a poll cycle - i.e. the counts represent snapshots
+of the system state, not an average value over the client poll cycle.
+Therefore there may be peaks or dips in the actual sockets counts which
+will not show up in the graphs, because they happen while the Hobbit client
+is not doing any polling.
+.sp
+The \fBTEXT=displaytext\fR option affects how the port appears on the
+"ports" status page. By default, the port is listed with the
+local/remote/state rules as identification, but this may be somewhat
+difficult to understand. You can then use e.g. "TEXT=Secure Shell" to make
+these ports appear with the name "Secure Shell" instead.
+.sp
+Defaults: mincount=1, maxcount=-1 (unlimited), color="red".
+Note: No ports are checked by default.
+.sp
+Example: Check that the SSH daemon is listening on port 22. Track the
+number of active SSH connections, and warn if there are more than 5.
+.br
+        PORT LOCAL=:22 STATE=LISTEN "TEXT=SSH listener"
+.br
+        PORT LOCAL=:22 STATE=ESTABLISHED MAX=5 TRACK=ssh TEXT=SSH
+.sp
 .SH CHANGING THE DEFAULT SETTINGS
 If you would like to use different defaults for the settings described above, 
 then you can define the new defaults after a DEFAULT line. E.g. this would
