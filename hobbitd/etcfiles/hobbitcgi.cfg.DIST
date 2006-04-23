@@ -36,6 +36,8 @@ CGI_SNAPSHOT_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
 CGI_EVENTLOG_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
 # hobbit-nkview.cgi options
 CGI_NKVIEW_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+# hobbit-nkedit.cgi options
+CGI_NKEDIT_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
 # hobbit-ackinfo.cgi options
 CGI_ACKINFO_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
 
