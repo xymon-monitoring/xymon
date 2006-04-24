@@ -115,7 +115,12 @@ as "cron".
 "processname" can also be a Perl-compatiable regular expression, e.g.
 "%java.*inst[0123]" can be used to find entries in the ps-listing for
 "java -Xmx512m inst2" and "java -Xmx256 inst3". In that case,
-"processname" must begin with "%" followed by the reg.expression.
+"processname" must begin with "%" followed by the regular expression.
+Note that Hobbit defaults to case-insensitive pattern matching; if that
+is not what you want, put "(?-i)" between the "%" and the regular
+expression to turn this off. E.g. "%(?-i)HTTPD" will match the
+word HTTPD only when it is upper-case.
+.br
 If "processname" contains whitespace (blanks or TAB), you must enclose
 the full string in double quotes - including the "%" if you use regular
 expression matching. E.g.
@@ -189,6 +194,10 @@ no "color" parameter is present, the default is to go "red" when
 the pattern is matched. To match against a regular expression, "pattern"
 must begin with a '%' sign - e.g "%WARNING|NOTICE" will match any lines
 containing either of these two words.
+Note that Hobbit defaults to case-insensitive pattern matching; if that
+is not what you want, put "(?-i)" between the "%" and the regular
+expression to turn this off. E.g. "%(?-i)WARNING" will match the
+word WARNING only when it is upper-case.
 .sp
 "excludepattern" is a string or regular expression that can be used to 
 filter out any unwanted strings that happen to match "pattern".
