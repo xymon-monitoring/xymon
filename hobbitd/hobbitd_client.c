@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.66 2006-04-19 20:24:09 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.67 2006-04-24 21:01:44 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -934,7 +934,7 @@ void unix_ports_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 	}
 	else {
 		/* Count how many instances of each monitored condition are found */
-		char *pname, *pid, *bol, *nc, *nl;
+		char *pname, *pid, *bol, *nl;
 		int pcount, pmin, pmax, pcolor, ptrack;
 		char *localstr, *remotestr, *statestr;
 
@@ -1046,6 +1046,223 @@ void clean_instr(char *s)
 	*p = '\0';
 }
 
+void testmode(char *configfn)
+{
+	namelist_t *hinfo, *oldhinfo = NULL;
+	char hostname[1024];
+	char s[4096];
+	int cfid;
+
+	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	load_client_config(configfn);
+	*hostname = '\0';
+
+	while (1) {
+		hinfo = NULL;
+		while (!hinfo) {
+			printf("Hostname (.=end, ?=dump, !=reload) [%s]: ", hostname); 
+			fflush(stdout); fgets(hostname, sizeof(hostname), stdin);
+			clean_instr(hostname);
+
+			if (strlen(hostname) == 0) {
+				hinfo = oldhinfo;
+				if (hinfo) strcpy(hostname, bbh_item(hinfo, BBH_HOSTNAME));
+			}
+			else if (strcmp(hostname, ".") == 0) {
+				exit(0);
+			}
+			else if (strcmp(hostname, "!") == 0) {
+				load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+				load_client_config(configfn);
+				*hostname = '\0';
+			}
+			else if (strcmp(hostname, "?") == 0) {
+				dump_client_config();
+				if (oldhinfo) strcpy(hostname, bbh_item(oldhinfo, BBH_HOSTNAME));
+			}
+			else {
+				hinfo = hostinfo(hostname);
+				if (!hinfo) printf("Unknown host\n");
+			}
+		}
+		oldhinfo = hinfo;
+
+		printf("Test (cpu, mem, disk, proc, log, port): "); fflush(stdout); 
+		fgets(s, sizeof(s), stdin); clean_instr(s);
+		if (strcmp(s, "cpu") == 0) {
+			float loadyellow, loadred;
+			int recentlimit, ancientlimit;
+
+			cfid = get_cpu_thresholds(hinfo, &loadyellow, &loadred, &recentlimit, &ancientlimit);
+
+			printf("Load: Yellow at %.2f, red at %.2f\n", loadyellow, loadred);
+			printf("Uptime: From boot until %s,", durationstring(recentlimit));
+			printf("and after %s uptime\n", durationstring(ancientlimit));
+		}
+		else if (strcmp(s, "mem") == 0) {
+			int physyellow, physred, swapyellow, swapred, actyellow, actred;
+
+			get_memory_thresholds(hinfo, &physyellow, &physred, 
+					&swapyellow, &swapred, &actyellow, &actred);
+			printf("Phys: Yellow at %d, red at %d\n", physyellow, physred);
+			printf("Swap: Yellow at %d, red at %d\n", swapyellow, swapred);
+			printf("Act.: Yellow at %d, red at %d\n", actyellow, actred);
+		}
+		else if (strcmp(s, "disk") == 0) {
+			unsigned long warnlevel, paniclevel;
+			int absolutes;
+
+			printf("Filesystem: "); fflush(stdout);
+			fgets(s, sizeof(s), stdin); clean_instr(s);
+			cfid = get_disk_thresholds(hinfo, s, &warnlevel, &paniclevel, &absolutes);
+			printf("Yellow at %lu%c, red at %lu%c\n", 
+				warnlevel, ((absolutes & 1) ? 'K' : '%'),
+				paniclevel, ((absolutes & 2) ? 'K' : '%'));
+		}
+		else if (strcmp(s, "proc") == 0) {
+			int pchecks = clear_process_counts(hinfo);
+			char *pname, *pid;
+			int pcount, pmin, pmax, pcolor, ptrack;
+			FILE *fd;
+
+			if (pchecks == 0) {
+				printf("No process checks for this host\n");
+				continue;
+			}
+
+			printf("To read 'ps' data from a file, enter '@FILENAME' at the prompt\n");
+			do {
+				printf("ps command string: "); fflush(stdout);
+				fgets(s, sizeof(s), stdin); clean_instr(s);
+				if (*s == '@') {
+					fd = fopen(s+1, "r");
+					while (fd && fgets(s, sizeof(s), fd)) {
+						clean_instr(s);
+						if (*s) add_process_count(s);
+					}
+					fclose(fd);
+				}
+				else {
+					if (*s) add_process_count(s);
+				}
+			} while (*s);
+
+			while ((pname = check_process_count(&pcount, &pmin, &pmax, &pcolor, &pid, &ptrack)) != NULL) {
+				printf("Process %s color %s: Count=%d, min=%d, max=%d\n",
+					pname, colorname(pcolor), pcount, pmin, pmax);
+			}
+		}
+		else if (strcmp(s, "log") == 0) {
+			FILE *fd;
+			char *sectname;
+			strbuffer_t *logdata, *logsummary;
+			int logcolor;
+
+			printf("log filename: "); fflush(stdout);
+			fgets(s, sizeof(s), stdin); clean_instr(s);
+			sectname = (char *)malloc(strlen(s) + 20);
+			sprintf(sectname, "msgs:%s", s);
+
+			logdata = newstrbuffer(0);
+			logsummary = newstrbuffer(0);
+
+			printf("To read log data from a file, enter '@FILENAME' at the prompt\n");
+			do {
+				printf("log line: "); fflush(stdout);
+				fgets(s, sizeof(s), stdin); clean_instr(s);
+				if (*s == '@') {
+					fd = fopen(s+1, "r");
+					while (fd && fgets(s, sizeof(s), fd)) {
+						clean_instr(s);
+						if (*s) addtobuffer(logdata, s);
+					}
+					fclose(fd);
+				}
+				else {
+					if (*s) addtobuffer(logdata, s);
+				}
+			} while (*s);
+
+			clearstrbuffer(logsummary);
+			logcolor = scan_log(hinfo, sectname+5, STRBUF(logdata), sectname, logsummary);
+			printf("Log status is %s\n\n", colorname(logcolor));
+			if (STRBUFLEN(logsummary)) printf("%s\n", STRBUF(logsummary));
+			freestrbuffer(logsummary);
+			freestrbuffer(logdata);
+		}
+		else if (strcmp(s, "port") == 0) {
+			char *localstr, *remotestr, *statestr, *p, *pname, *pid;
+			int pcount, pmin, pmax, pcolor, pchecks, ptrack;
+			int localcol = 4, remotecol = 5, statecol = 6, portcolor = COL_GREEN;
+
+			pchecks = clear_port_counts(hinfo);
+			if (pchecks == 0) {
+				printf("No PORT checks for this host\n");
+				continue;
+			}
+
+			printf("Need to know netstat columns for 'Local address', 'Remote address' and 'State'\n");
+			printf("Enter columns [%d %d %d]: ", localcol, remotecol, statecol); fflush(stdout);
+			fgets(s, sizeof(s), stdin); clean_instr(s);
+			if (*s) sscanf(s, "%d %d %d", &localcol, &remotecol, &statecol);
+
+			printf("To read 'netstat' data from a file, enter '@FILENAME' at the prompt\n");
+			do {
+				printf("netstat line: "); fflush(stdout);
+				fgets(s, sizeof(s), stdin); clean_instr(s);
+				if (*s == '@') {
+					FILE *fd;
+
+					fd = fopen(s+1, "r");
+					while (fd && fgets(s, sizeof(s), fd)) {
+						clean_instr(s);
+						if (*s) {
+							p = strdup(s); localstr = getcolumn(p, localcol-1);
+							strcpy(p, s); remotestr = getcolumn(p, remotecol-1);
+							strcpy(p, s); statestr = getcolumn(p, statecol-1);
+							add_port_count(localstr, remotestr, statestr);
+							xfree(p);
+						}
+					}
+					fclose(fd);
+				}
+				else if (*s) {
+					p = strdup(s); localstr = getcolumn(p, localcol-1);
+					strcpy(p, s); remotestr = getcolumn(p, remotecol-1);
+					strcpy(p, s); statestr = getcolumn(p, statecol-1);
+					add_port_count(localstr, remotestr, statestr);
+					xfree(p);
+				}
+			} while (*s);
+
+			/* Check the number found for each monitored port */
+ 			while ((pname = check_port_count(&pcount, &pmin, &pmax, &pcolor, &pid, &ptrack)) != NULL) {
+ 				char limtxt[1024];
+			
+				if (pmax == -1) {
+					if (pmin > 0) sprintf(limtxt, "%d or more", pmin);
+					else if (pmin == 0) sprintf(limtxt, "none");
+				}
+				else {
+					if (pmin > 0) sprintf(limtxt, "between %d and %d", pmin, pmax);
+					else if (pmin == 0) sprintf(limtxt, "at most %d", pmax);
+				}
+
+				if (pcolor == COL_GREEN) {
+					printf("&green %s (found %d, req. %s)\n", pname, pcount, limtxt);
+				}
+				else {
+					if (pcolor > portcolor) portcolor = pcolor;
+					printf("&%s %s (found %d, req. %s)\n",
+						colorname(pcolor), pname, pcount, limtxt);
+				}
+ 			}
+		}
+	}
+
+	exit(0);
+}
+
 int main(int argc, char *argv[])
 {
 	char *msg;
@@ -1083,109 +1300,7 @@ int main(int argc, char *argv[])
 			localmode = 1;
 		}
 		else if (strcmp(argv[argi], "--test") == 0) {
-			namelist_t *hinfo, *oldhinfo = NULL;
-			char hostname[1024];
-			char s[4096];
-			int cfid;
-
-			load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
-			load_client_config(configfn);
-			*hostname = '\0';
-
-			while (1) {
-				hinfo = NULL;
-				while (!hinfo) {
-					printf("Hostname (.=end, ?=dump, !=reload) [%s]: ", hostname); 
-					fflush(stdout); fgets(hostname, sizeof(hostname), stdin);
-					clean_instr(hostname);
-
-					if (strlen(hostname) == 0) {
-						hinfo = oldhinfo;
-						strcpy(hostname, bbh_item(hinfo, BBH_HOSTNAME));
-					}
-					else if (strcmp(hostname, ".") == 0) 
-						return 0;
-					else if (strcmp(hostname, "!") == 0) {
-						load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
-						load_client_config(configfn);
-						*hostname = '\0';
-					}
-					else if (strcmp(hostname, "?") == 0) {
-						dump_client_config();
-						if (oldhinfo) strcpy(hostname, bbh_item(oldhinfo, BBH_HOSTNAME));
-					}
-					else {
-						hinfo = hostinfo(hostname);
-						if (!hinfo) printf("Unknown host\n");
-					}
-				}
-				oldhinfo = hinfo;
-
-				printf("Test (cpu, mem, disk, proc): "); fflush(stdout); 
-				fgets(s, sizeof(s), stdin); clean_instr(s);
-				if (strcmp(s, "cpu") == 0) {
-					float loadyellow, loadred;
-					int recentlimit, ancientlimit;
-	
-					cfid = get_cpu_thresholds(hinfo, &loadyellow, &loadred, &recentlimit, &ancientlimit);
-
-					printf("Load: Yellow at %.2f, red at %.2f\n", loadyellow, loadred);
-					printf("Uptime: From boot until %s,", durationstring(recentlimit));
-					printf("and after %s uptime\n", durationstring(ancientlimit));
-				}
-				else if (strcmp(s, "mem") == 0) {
-					int physyellow, physred, swapyellow, swapred, actyellow, actred;
-
-					get_memory_thresholds(hinfo, &physyellow, &physred, 
-							&swapyellow, &swapred, &actyellow, &actred);
-					printf("Phys: Yellow at %d, red at %d\n", physyellow, physred);
-					printf("Swap: Yellow at %d, red at %d\n", swapyellow, swapred);
-					printf("Act.: Yellow at %d, red at %d\n", actyellow, actred);
-				}
-				else if (strcmp(s, "disk") == 0) {
-					unsigned long warnlevel, paniclevel;
-					int absolutes;
-
-					printf("Filesystem: "); fflush(stdout);
-					fgets(s, sizeof(s), stdin); clean_instr(s);
-					cfid = get_disk_thresholds(hinfo, s, &warnlevel, &paniclevel, &absolutes);
-					printf("Yellow at %lu%c, red at %lu%c\n", 
-						warnlevel, ((absolutes & 1) ? 'K' : '%'),
-						paniclevel, ((absolutes & 2) ? 'K' : '%'));
-				}
-				else if (strcmp(s, "proc") == 0) {
-					int pchecks = clear_process_counts(hinfo);
-					char *pname, *pid;
-					int pcount, pmin, pmax, pcolor, ptrack;
-					FILE *fd;
-
-					if (pchecks == 0) {
-						printf("No process checks for this host\n");
-						continue;
-					}
-
-					do {
-						printf("ps command string: "); fflush(stdout);
-						fgets(s, sizeof(s), stdin); clean_instr(s);
-						if (*s == '@') {
-							fd = fopen(s+1, "r");
-							while (fd && fgets(s, sizeof(s), fd)) {
-								clean_instr(s);
-								if (*s) add_process_count(s);
-							}
-							fclose(fd);
-						}
-						else {
-							if (*s) add_process_count(s);
-						}
-					} while (*s);
-
-					while ((pname = check_process_count(&pcount, &pmin, &pmax, &pcolor, &pid, &ptrack)) != NULL) {
-						printf("Process %s color %s: Count=%d, min=%d, max=%d\n",
-							pname, colorname(pcolor), pcount, pmin, pmax);
-					}
-				}
-			}
+			testmode(configfn);
 		}
 	}
 
