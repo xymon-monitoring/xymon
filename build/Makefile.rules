@@ -308,3 +308,6 @@ install-clientmsg:
 	@echo ""
 	@echo "To start the Hobbit client, as the $(BBUSER) user run '${BBHOME}/runclient.sh start'"
 
+install-localclient:
+	BBHOME="$(BBTOPDIR)/client" INSTALLROOT="$(INSTALLROOT)" BBUSER="$(BBUSER)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C client install-localclient
+
