@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.29 2006-04-19 20:24:09 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.30 2006-04-24 21:00:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -558,21 +558,49 @@ int load_client_config(char *configfn)
 				}
 			}
 			else if (strcasecmp(tok, "LOG") == 0) {
+				int idx = 0;
+
 				currule = setup_rule(C_LOG, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
+				currule->rule.log.logfile   = NULL;
 				currule->rule.log.matchexp  = NULL;
 				currule->rule.log.matchone  = NULL;
 				currule->rule.log.ignoreexp = NULL;
 				currule->rule.log.color     = COL_RED;
 
-				tok = wstok(NULL);
-				currule->rule.log.logfile   = setup_expr(tok, 0);
-				tok = wstok(NULL);
-				currule->rule.log.matchexp  = setup_expr(tok, 1);
-				currule->rule.log.matchone  = setup_expr(tok, 0);
-				tok = wstok(NULL); if (isqual(tok)) continue;
-				currule->rule.log.color     = parse_color(tok);
-				tok = wstok(NULL); if (isqual(tok)) continue;
-				currule->rule.log.ignoreexp = setup_expr(tok, 1);
+				do {
+					tok = wstok(NULL); if (!tok || isqual(tok)) continue;
+
+					if (strncasecmp(tok, "file=", 5) == 0) {
+						currule->rule.log.logfile   = setup_expr(tok+5, 0);
+					}
+					else if (strncasecmp(tok, "match=", 6) == 0) {
+						currule->rule.log.matchexp = setup_expr(tok+6, 1);
+						currule->rule.log.matchone = setup_expr(tok+6, 0);
+					}
+					else if (strncasecmp(tok, "ignore=", 7) == 0) {
+						currule->rule.log.ignoreexp = setup_expr(tok+7, 1);
+					}
+					else if (strncasecmp(tok, "color=", 6) == 0) {
+						currule->rule.log.color = parse_color(tok+6);
+					}
+					else if (idx == 0) {
+						currule->rule.log.logfile   = setup_expr(tok, 0);
+						idx++;
+					}
+					else if (idx == 1) {
+						currule->rule.log.matchexp = setup_expr(tok, 1);
+						currule->rule.log.matchone = setup_expr(tok, 0);
+						idx++;
+					}
+					else if (idx == 2) {
+						currule->rule.log.color = parse_color(tok);
+						idx++;
+					}
+					else if (idx == 3) {
+						currule->rule.log.ignoreexp = setup_expr(tok, 1);
+						idx++;
+					}
+				} while (tok && (!isqual(tok)));
 			}
 			else if (strcasecmp(tok, "FILE") == 0) {
 				currule = setup_rule(C_FILE, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
@@ -860,10 +888,11 @@ void dump_client_config(void)
 			break;
 
 		  case C_LOG:
-			printf("LOG %s %s %s %s\n",
-				rwalk->rule.log.logfile->pattern, rwalk->rule.log.matchexp->pattern,
-				(rwalk->rule.log.ignoreexp ? rwalk->rule.log.ignoreexp->pattern : ""),
+			printf("LOG %s MATCH=%s COLOR=%s",
+				rwalk->rule.log.logfile->pattern, 
+				rwalk->rule.log.matchexp->pattern,
 				colorname(rwalk->rule.log.color));
+			if (rwalk->rule.log.ignoreexp) printf(" IGNORE=%s", rwalk->rule.log.ignoreexp->pattern);
 			break;
 
 		  case C_FILE:

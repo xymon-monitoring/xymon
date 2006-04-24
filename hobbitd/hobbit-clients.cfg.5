@@ -173,7 +173,7 @@ Defaults:
 
 .SH MSGS STATUS COLUMN SETTINGS
 .sp
-.BR "LOG logfilename pattern [color [excludepattern]]"
+.BR "LOG logfilename pattern [COLOR=color] [IGNORE=excludepattern]"
 .sp
 The Hobbit client extracts interesting lines from one or 
 more logfiles - see the
@@ -209,7 +209,7 @@ Example: Trigger a red alert when the string "ERROR" appears in the "/var/adm/sy
 Example: Trigger a yellow warning on all occurrences of the word "WARNING"
 or "NOTICE" in the "daemon.log" file, except those from the "lpr" system:
 .br
-	LOG /var/log/daemon.log %WARNING|NOTICE yellow lpr
+	LOG /var/log/daemon.log %WARNING|NOTICE COLOR=yellow IGNORE=lpr
 .sp
 Defaults:
 .br
