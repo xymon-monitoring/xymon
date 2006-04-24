@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.3 2006-04-23 16:54:53 henrik Exp $";
+static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.4 2006-04-24 05:49:13 henrik Exp $";
 
 static char *ifstat_params[] = { "rrdcreate", rrdfn, 
 	                         "DS:bytesSent:DERIVE:600:0:U", 
@@ -40,6 +40,15 @@ static const char *ifstat_openbsd_exprs[] = {
 /* lnc0 1500 172.16.10.0/24 172.16.10.151 1818   1802   */
 static const char *ifstat_netbsd_exprs[] = {
 	"^([a-z0-9]+)\\s+\\d+\\s+[0-9.\\/]+\\s+[0-9.]+\\s+(\\d+)\\s+(\\d+)"
+};
+
+/*
+Name  Mtu   Network       Address            Ipkts Ierrs     Ibytes        Opkts   Oerrs Obytes  Coll
+en0   1500  fe80::20d:9 fe80::20d:93ff:fe 2013711826     - 2131205566781 331648829     - 41815551289     -
+en0   1500  130.223.20/24 130.223.20.20   2013711826     - 2131205566781 331648829     - 41815551289     -
+*/
+static const char *ifstat_darwin_exprs[] = {
+	"^([a-z0-9]+)\\s+\\d+\\s+[0-9.\\/]+\\s+[0-9.]+\\s+\\d+\\s+[0-9-]+\\s+(\\d+)\\s+\\d+\\s+[0-9-]+\\s+(\\d+)\\s+[0-9-]+"
 };
 
 /* dmfe:0:dmfe0:obytes64   107901705585  */
@@ -90,6 +99,7 @@ int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	static pcre **ifstat_freebsd_pcres = NULL;
 	static pcre **ifstat_openbsd_pcres = NULL;
 	static pcre **ifstat_netbsd_pcres = NULL;
+	static pcre **ifstat_darwin_pcres = NULL;
 	static pcre **ifstat_solaris_pcres = NULL;
 	static pcre **ifstat_aix_pcres = NULL;
 	static pcre **ifstat_hpux_pcres = NULL;
@@ -110,6 +120,8 @@ int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 						 (sizeof(ifstat_openbsd_exprs) / sizeof(ifstat_openbsd_exprs[0])));
 		ifstat_netbsd_pcres = compile_exprs("NETBSD", ifstat_netbsd_exprs, 
 						 (sizeof(ifstat_netbsd_exprs) / sizeof(ifstat_netbsd_exprs[0])));
+		ifstat_darwin_pcres = compile_exprs("DARWIN", ifstat_darwin_exprs, 
+						 (sizeof(ifstat_darwin_exprs) / sizeof(ifstat_darwin_exprs[0])));
 		ifstat_solaris_pcres = compile_exprs("SOLARIS", ifstat_solaris_exprs, 
 						 (sizeof(ifstat_solaris_exprs) / sizeof(ifstat_solaris_exprs[0])));
 		ifstat_aix_pcres = compile_exprs("AIX", ifstat_aix_exprs, 
@@ -191,6 +203,9 @@ int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			break;
 
 		  case OS_DARWIN:
+			if (pickdata(bol, ifstat_darwin_pcres[0], &ifname, &rxstr, &txstr)) dmatch = 7;
+			break;
+
 		  case OS_OSF:
 		  case OS_IRIX:
 		  case OS_SNMP:
