@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.81 2006-03-29 21:52:23 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.82 2006-04-25 15:40:51 henrik Exp $";
 
 #include <sys/types.h>
 #include <limits.h>
@@ -650,14 +650,14 @@ void add_http_test(testitem_t *t)
 		httptest->tcptest = add_tcp_test(httptest->bburl.desturl->ip, 
 						 httptest->bburl.desturl->port, 
 						 httptest->bburl.desturl->scheme,
-						 sslopt, 0, grabstrbuffer(httprequest), 
+						 sslopt, t->testspec, 0, grabstrbuffer(httprequest), 
 						 httptest, tcp_http_data_callback, tcp_http_final_callback);
 	}
 	else {
 		httptest->tcptest = add_tcp_test(httptest->bburl.proxyurl->ip, 
 						 httptest->bburl.proxyurl->port, 
 						 httptest->bburl.proxyurl->scheme,
-						 sslopt, 0, grabstrbuffer(httprequest), 
+						 sslopt, t->testspec, 0, grabstrbuffer(httprequest), 
 						 httptest, tcp_http_data_callback, tcp_http_final_callback);
 	}
 }

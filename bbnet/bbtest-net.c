@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.226 2006-04-01 23:05:24 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.227 2006-04-25 15:40:51 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -1979,6 +1979,10 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			p++; runtimewarn = atol(p);
 		}
+		else if (strcmp(argv[argi], "--huge=") == 0) {
+			char *p = strchr(argv[argi], '=');
+			p++; warnbytesread = atoi(p);
+		}
 
 		/* Options for TCP tests */
 		else if (strcmp(argv[argi], "--checkresponse") == 0) {
@@ -2196,7 +2200,7 @@ int main(int argc, char *argv[])
 					strcpy(tname, s->testname);
 					if (s->namelen) tname[s->namelen] = '\0';
 					t->privdata = (void *)add_tcp_test(ip_to_test(t->host), s->portnum, tname, NULL, 
-									   t->silenttest, NULL, 
+									   NULL, t->silenttest, NULL, 
 									   NULL, NULL, NULL);
 				}
 			}

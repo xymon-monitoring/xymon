@@ -157,6 +157,13 @@ option has no effect, i.e. it will not terminate bbtest-net
 prematurely. So to eliminate any such warnings, use this
 option with a very high value of N.
 
+.IP --huge=N
+Warn if the response from a TCP test is more than N bytes.
+If you see from the bbtest status report that you are
+transferring large amounts of data for your tests, you can
+enable this option to see which tests have large replies.
+.br
+Default: 0 (disabled).
 
 .SH OPTIONS FOR TESTS OF THE SIMPLE TCP SERVICES
 .IP --checkresponse[=COLOR]

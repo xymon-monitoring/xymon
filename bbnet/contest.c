@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.83 2006-03-25 22:49:12 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.84 2006-04-25 15:40:51 henrik Exp $";
 
 #include "config.h"
 
@@ -58,6 +58,7 @@ unsigned int tcp_stats_plain    = 0;
 unsigned int tcp_stats_connects = 0;
 unsigned long tcp_stats_read    = 0;
 unsigned long tcp_stats_written = 0;
+unsigned int warnbytesread = 0;
 
 static tcptest_t *thead = NULL;
 
@@ -138,7 +139,7 @@ static int tcp_callback(unsigned char *buf, unsigned int len, void *priv)
 
 
 tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
-			int silent, unsigned char *reqmsg, 
+			char *tspec, int silent, unsigned char *reqmsg, 
 		     void *priv, f_callback_data datacallback, f_callback_final finalcallback)
 {
 	tcptest_t *newtest;
@@ -154,7 +155,10 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	tcp_stats_total++;
 	newtest = (tcptest_t *) malloc(sizeof(tcptest_t));
 
+	newtest->tspec = (tspec ? strdup(tspec) : NULL);
 	newtest->fd = -1;
+	newtest->bytesread = 0;
+	newtest->byteswritten = 0;
 	newtest->open = 0;
 	newtest->connres = -1;
 	newtest->errcode = CONTEST_ENOERROR;
@@ -317,17 +321,30 @@ static void setup_ssl(tcptest_t *item)
 
 static int socket_write(tcptest_t *item, unsigned char *outbuf, int outlen)
 {
-	return write(item->fd, outbuf, outlen);
+	int n = write(item->fd, outbuf, outlen);
+
+	item->byteswritten += n;
+	return n;
 }
 
 static int socket_read(tcptest_t *item, unsigned char *inbuf, int inbufsize)
 {
-	return read(item->fd, inbuf, inbufsize);
+	int n = read(item->fd, inbuf, inbufsize);
+	item->bytesread += n;
+	return n;
 }
 
 static void socket_shutdown(tcptest_t *item)
 {
 	shutdown(item->fd, SHUT_RDWR);
+
+	if (warnbytesread && (item->bytesread > warnbytesread)) {
+		if (item->tspec)
+			errprintf("Huge response %u bytes from %s\n", item->bytesread, item->tspec);
+		else
+			errprintf("Huge response %u bytes for %s:%s\n",
+				  item->bytesread, inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname);
+	}
 }
 
 #else
@@ -637,6 +654,7 @@ static int socket_write(tcptest_t *item, char *outbuf, int outlen)
 		res = write(item->fd, outbuf, outlen);
 	}
 
+	item->byteswritten += res;
 	return res;
 }
 
@@ -664,6 +682,7 @@ static int socket_read(tcptest_t *item, char *inbuf, int inbufsize)
 	}
 	else res = read(item->fd, inbuf, inbufsize);
 
+	item->bytesread += res;
 	return res;
 }
 
@@ -675,6 +694,14 @@ static void socket_shutdown(tcptest_t *item)
 		SSL_CTX_free(item->sslctx);
 	}
 	shutdown(item->fd, SHUT_RDWR);
+
+	if (warnbytesread && (item->bytesread > warnbytesread)) {
+		if (item->tspec)
+			errprintf("Huge response %u bytes from %s\n", item->bytesread, item->tspec);
+		else
+			errprintf("Huge response %u bytes for %s:%s\n",
+				  item->bytesread, inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname);
+	}
 }
 #endif
 
