@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.53 2006-03-31 15:34:55 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.54 2006-04-26 13:18:04 henrik Exp $";
 
 #include "config.h"
 
@@ -73,6 +73,29 @@ enum ostype_t get_ostype(char *osname)
 
 	*(osname+n) = savech;
 	return result;
+}
+
+char *osname(enum ostype_t os)
+{
+	switch (os) {
+		case OS_SOLARIS: return "solaris";
+		case OS_HPUX: return "hpux";
+		case OS_AIX: return "aix";
+		case OS_OSF: return "osf";
+		case OS_WIN32: return "win32";
+		case OS_FREEBSD: return "freebsd";
+		case OS_NETBSD: return "netbsd";
+		case OS_OPENBSD: return "openbsd";
+		case OS_LINUX22: return "linux22";
+		case OS_LINUX: return "linux";
+		case OS_RHEL3: return "rhel3";
+		case OS_SNMP: return "snmp";
+		case OS_IRIX: return "irix";
+		case OS_DARWIN: return "darwin";
+		case OS_UNKNOWN: return "unknown";
+	}
+
+	return "unknown";
 }
 
 int hexvalue(unsigned char c)

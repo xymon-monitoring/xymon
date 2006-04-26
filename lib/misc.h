@@ -16,6 +16,7 @@
 enum ostype_t { OS_UNKNOWN, OS_SOLARIS, OS_OSF, OS_AIX, OS_HPUX, OS_WIN32, OS_FREEBSD, OS_NETBSD, OS_OPENBSD, OS_LINUX22, OS_LINUX, OS_RHEL3, OS_SNMP, OS_IRIX, OS_DARWIN } ;
 
 extern enum ostype_t get_ostype(char *osname);
+extern char *osname(enum ostype_t os);
 extern int hexvalue(unsigned char c);
 extern char *commafy(char *hostname);
 extern char *skipword(char *l);
