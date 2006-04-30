@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitping.c,v 1.2 2006-04-30 15:56:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitping.c,v 1.3 2006-04-30 20:57:04 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -292,14 +292,11 @@ void show_results(void)
 		if (hosts[idx]->received > 0) {
 			printf("%s is alive", inet_ntoa(hosts[idx]->addr.sin_addr));
 			rtt_usecs = (hosts[idx]->rtt_total.tv_sec*1000000 + hosts[idx]->rtt_total.tv_usec) / hosts[idx]->received;
-			if (rtt_usecs >= 1000000) {
-				printf(" (%lu.%02lu s)\n", rtt_usecs / 1000000, (rtt_usecs % 1000000) / 10000);
-			}
-			else if (rtt_usecs >= 1000) {
-				printf(" (%lu.%02lu ms)\n", rtt_usecs / 1000, (rtt_usecs % 1000) / 10);
+			if (rtt_usecs >= 1000) {
+				printf(" (%lu ms)\n", rtt_usecs / 1000);
 			}
 			else {
-				printf(" (%lu us)\n", rtt_usecs);
+				printf(" (0.%02lu ms)\n", (rtt_usecs / 10));
 			}
 		}
 		else {
