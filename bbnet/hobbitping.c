@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitping.c,v 1.1 2006-04-30 11:05:55 henrik Exp $";
+static char rcsid[] = "$Id: hobbitping.c,v 1.2 2006-04-30 15:56:33 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -325,10 +325,13 @@ int main(int argc, char *argv[])
 		else if (strncmp(argv[argi], "--timeout=", 10) == 0) {
 			timeout = atoi(argv[argi]+10);
 		}
-		else {
+		else if (strcmp(argv[argi], "--help") == 0) {
 			fprintf(stderr, "%s [--retries=N] [--timeout=N]\n", argv[0]);
 			if (pingsocket >= 0) close(pingsocket);
 			return 1;
+		}
+		else {
+			/* Ignore everything else - for fping compatibility */
 		}
 	}
 
