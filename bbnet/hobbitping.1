@@ -1,0 +1,47 @@
+.TH HOBBITPING 1 "Version 4.2: 23 Apr 2006" "Hobbit Monitor"
+.SH NAME
+hobbitping \- Hobbit ping tool
+.SH SYNOPSIS
+.B "hobbitping [--retries=N] [--timeout=N]"
+
+.SH DESCRIPTION
+.I hobbitping(1)
+is used for ping testing of the hosts monitored by the
+.I hobbit(7)
+monitoring system. It reads a list of IP adresses from stdin,
+and performs a "ping" check to see if these hosts are alive.
+It is normally invoked by the
+.I bbtest-net(1)
+utility, which performs all of the Hobbit network tests.
+
+hobbitping only handles IP-adresses, not hostnames.
+
+hobbitping was inspired by the
+.I fping(1)
+tool, but has been written from scratch to implement a fast
+ping tester without much of the overhead found in other
+such utilities. The output from hobbitping is similar to that 
+of "fping -Ae".
+
+hobbitping probes multiple systems in parallel, and the runtime
+is therefore mostly dependant on the timeout-setting and the
+number of retries. With the default options, hobbitping takes
+approximately 18 seconds to ping all hosts (tested with an
+input set of 1500 IP adresses).
+
+.SH OPTIONS
+.IP --retries=N
+Sets the number of retries for hosts that fail to respond to
+the initial ping, i.e. the number of ping probes sent in addition
+to the initial probe. The default is --retries=2, to ping a host 
+3 times before concluding that it is not responding.
+
+.IP --timeout=N
+Determines the timeout (in seconds) for ping probes. If a
+host does not respond within N seconds, it is regarded as
+unavailable, unless it responds to one of the retries.
+The default is --timeout=5.
+
+.SH "SEE ALSO"
+hobbit(7), bbtest-net(1), fping(1)
+
