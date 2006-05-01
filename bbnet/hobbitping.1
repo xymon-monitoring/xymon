@@ -2,7 +2,7 @@
 .SH NAME
 hobbitping \- Hobbit ping tool
 .SH SYNOPSIS
-.B "hobbitping [--retries=N] [--timeout=N]"
+.B "hobbitping [--retries=N] [--timeout=N] [IP-adresses]"
 
 .SH DESCRIPTION
 .I hobbitping(1)
@@ -13,6 +13,10 @@ and performs a "ping" check to see if these hosts are alive.
 It is normally invoked by the
 .I bbtest-net(1)
 utility, which performs all of the Hobbit network tests.
+
+Optionally, if a list of IP-adresses is passed as commandline
+arguments, it will ping those IP's instead of reading them 
+from stdin.
 
 hobbitping only handles IP-adresses, not hostnames.
 
