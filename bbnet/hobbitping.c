@@ -10,15 +10,19 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitping.c,v 1.3 2006-04-30 20:57:04 henrik Exp $";
+static char rcsid[] = "$Id: hobbitping.c,v 1.4 2006-05-01 09:00:05 henrik Exp $";
+
+#include "config.h"
 
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/select.h>
 #include <sys/time.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
 #include <time.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
@@ -72,19 +76,49 @@ int calc_icmp_checksum(unsigned short *pkt, int pktlen)
 }
 
 
-void load_ips(void)
+char *nextip(int argc, char *argv[], FILE *fd)
 {
-	char l[4096];
+	static int argi = 0;
+	static int cmdmode = 0;
+	static char buf[4096];
+
+	if (argi == 0) {
+		/* Check if there are any commandline IP's */
+		struct sockaddr_in ina;
+
+		for (argi=1; ((argi < argc) && (inet_aton(argv[argi], &ina.sin_addr) == 0)); argi++) ;
+		cmdmode = (argi < argc);
+	}
+
+	if (cmdmode) {
+		/* Skip any options in-between the IP's */
+		while ((argi < argc) && (*(argv[argi]) == '-')) argi++;
+		if (argi < argc) {
+			argi++;
+			return argv[argi-1];
+		}
+	}
+	else {
+		if (fgets(buf, sizeof(buf), fd)) {
+			char *p;
+			p = strchr(buf, '\n'); if (p) *p = '\0';
+			return buf;
+		}
+	}
+
+	return NULL;
+}
+
+void load_ips(int argc, char *argv[], FILE *fd)
+{
+	char *l;
 	hostdata_t *tail = NULL;
 	hostdata_t *walk;
 	int i;
 
-	/* Read lines from stdin. Those that are an IP address get pinged. */
-	while (fgets(l, sizeof(l), stdin)) {
-		char *p;
+	while ((l = nextip(argc, argv, fd)) != NULL) {
 		hostdata_t *newitem;
 
-		p = strchr(l, '\n'); if (p) *p = '\0';
 		if (strlen(l) == 0) continue;
 
 		newitem = (hostdata_t *)calloc(1, sizeof(hostdata_t));
@@ -313,7 +347,12 @@ int main(int argc, char *argv[])
 
 	/* Get a raw socket, then drop all root privs. */
 	pingsocket = socket(AF_INET, SOCK_RAW, 1); sockerr = errno;
-	uid = getuid(); if (uid != 0) seteuid(uid);
+	uid = getuid();
+#ifdef HPUX
+	if (uid != 0) setresuid(-1, uid, -1);
+#else
+	if (uid != 0) seteuid(uid);
+#endif
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (strncmp(argv[argi], "--retries=", 10) == 0) {
@@ -327,7 +366,7 @@ int main(int argc, char *argv[])
 			if (pingsocket >= 0) close(pingsocket);
 			return 1;
 		}
-		else {
+		else if (*(argv[argi]) == '-') {
 			/* Ignore everything else - for fping compatibility */
 		}
 	}
@@ -341,7 +380,7 @@ int main(int argc, char *argv[])
 	/* Set the socket non-blocking - we use select() exclusively */
 	fcntl(pingsocket, F_SETFL, O_NONBLOCK);
 
-	load_ips();
+	load_ips(argc, argv, stdin);
 	pending = count_pending();
 
 	while (tries) {
