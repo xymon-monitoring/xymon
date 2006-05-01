@@ -16,9 +16,10 @@ ifeq ($(OSTYPE),openbsd)
 	EXTRATOOLS=openbsd-meminfo
 endif
 
+PROGRAMS=hobbitlaunch logfetch clientupdate
 COMMONTOOLS=bb bbcmd bbhostgrep bbhostshow bbdigest
 
-all: hobbitlaunch logfetch $(COMMONTOOLS) hobbitclient.cfg clientlaunch.cfg $(EXTRATOOLS)
+all: $(PROGRAMS) $(COMMONTOOLS) hobbitclient.cfg clientlaunch.cfg $(EXTRATOOLS)
 
 hobbitclient.cfg: hobbitclient.cfg.DIST
 	cat hobbitclient.cfg.DIST | sed -e 's!@BBHOSTIP@!$(BBHOSTIP)!g' >hobbitclient.cfg
@@ -33,6 +34,9 @@ endif
 
 logfetch: logfetch.c
 	$(CC) $(CFLAGS) -o $@ logfetch.c ../lib/hobbitclient.a
+
+clientupdate: clientupdate.c
+	$(CC) $(CFLAGS) -o $@ clientupdate.c ../lib/hobbitclient.a $(NETLIBS)
 
 hpux-meminfo: hpux-meminfo.c
 	$(CC) -o $@ hpux-meminfo.c
@@ -70,5 +74,5 @@ ifndef PKGBUILD
 endif
 
 clean:
-	rm -f hobbitlaunch logfetch hobbitd_client $(COMMONTOOLS) hobbitclient.cfg clientlaunch.cfg $(EXTRATOOLS) *~
+	rm -f $(PROGRAMS) $(COMMONTOOLS) hobbitd_client hobbitclient.cfg clientlaunch.cfg $(EXTRATOOLS) *~
 
