@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.22 2006-04-01 08:10:00 henrik Exp $";
+static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.23 2006-05-01 20:39:06 henrik Exp $";
 
 static int get_page_name_title(char *buf, char *key, char **name, char **title)
 {
@@ -155,7 +155,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 			char groupidstr[10];
 			RbtIterator handle;
 
-			namelist_t *newitem = malloc(sizeof(namelist_t));
+			namelist_t *newitem = calloc(1, sizeof(namelist_t));
 			namelist_t *iwalk, *iprev;
 
 			MEMDEFINE(clientname);
@@ -176,12 +176,9 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 
 			newitem->bbhostname = strdup(hostname);
 			if (ip1 || ip2 || ip3 || ip4) newitem->preference = 1; else newitem->preference = 0;
-			newitem->clientname = NULL;
 			newitem->logname = strdup(newitem->bbhostname);
 			{ char *p = newitem->logname; while ((p = strchr(p, '.')) != NULL) { *p = '_'; } }
-			newitem->downtime = NULL;
 			newitem->page = curpage;
-			newitem->data = NULL;
 			newitem->defaulthost = defaulthost;
 
 			clientname[0] = downtime[0] = '\0';
