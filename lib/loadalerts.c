@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadalerts.c,v 1.8 2006-03-31 15:22:52 henrik Exp $";
+static char rcsid[] = "$Id: loadalerts.c,v 1.9 2006-05-01 20:38:02 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -167,20 +167,24 @@ static void flush_rule(rule_t *currule)
 
 static void free_criteria(criteria_t *crit)
 {
-	if (crit->cfline)       xfree(crit->cfline);
-	if (crit->pagespec)     xfree(crit->pagespec);
-	if (crit->pagespecre)   pcre_free(crit->pagespecre);
-	if (crit->expagespec)   xfree(crit->expagespec);
-	if (crit->expagespecre) pcre_free(crit->expagespecre);
-	if (crit->hostspec)     xfree(crit->hostspec);
-	if (crit->hostspecre)   pcre_free(crit->hostspecre);
-	if (crit->exhostspec)   xfree(crit->exhostspec);
-	if (crit->exhostspecre) pcre_free(crit->exhostspecre);
-	if (crit->svcspec)      xfree(crit->svcspec);
-	if (crit->svcspecre)    pcre_free(crit->svcspecre);
-	if (crit->exsvcspec)    xfree(crit->exsvcspec);
-	if (crit->exsvcspecre)  pcre_free(crit->exsvcspecre);
-	if (crit->timespec)     xfree(crit->timespec);
+	if (crit->cfline)        xfree(crit->cfline);
+	if (crit->pagespec)      xfree(crit->pagespec);
+	if (crit->pagespecre)    pcre_free(crit->pagespecre);
+	if (crit->expagespec)    xfree(crit->expagespec);
+	if (crit->expagespecre)  pcre_free(crit->expagespecre);
+	if (crit->hostspec)      xfree(crit->hostspec);
+	if (crit->hostspecre)    pcre_free(crit->hostspecre);
+	if (crit->exhostspec)    xfree(crit->exhostspec);
+	if (crit->exhostspecre)  pcre_free(crit->exhostspecre);
+	if (crit->svcspec)       xfree(crit->svcspec);
+	if (crit->svcspecre)     pcre_free(crit->svcspecre);
+	if (crit->exsvcspec)     xfree(crit->exsvcspec);
+	if (crit->exsvcspecre)   pcre_free(crit->exsvcspecre);
+	if (crit->classspec)     xfree(crit->classspec);
+	if (crit->classspecre)   pcre_free(crit->classspecre);
+	if (crit->exclassspec)   xfree(crit->exclassspec);
+	if (crit->exclassspecre) pcre_free(crit->exclassspecre);
+	if (crit->timespec)      xfree(crit->timespec);
 }
 
 int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
@@ -363,6 +367,28 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				crit = setup_criteria(&currule, &currcp);
 				crit->exsvcspec = strdup(val);
 				if (*(crit->exsvcspec) == '%') crit->exsvcspecre = compileregex(crit->exsvcspec+1);
+				firsttoken = 0;
+			}
+			else if (strncasecmp(p, "CLASS=", 6) == 0) {
+				char *val;
+				criteria_t *crit;
+
+				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
+				val = strchr(p, '=')+1;
+				crit = setup_criteria(&currule, &currcp);
+				crit->classspec = strdup(val);
+				if (*(crit->classspec) == '%') crit->classspecre = compileregex(crit->classspec+1);
+				firsttoken = 0;
+			}
+			else if (strncasecmp(p, "EXCLASS=", 8) == 0) {
+				char *val;
+				criteria_t *crit;
+
+				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
+				val = strchr(p, '=')+1;
+				crit = setup_criteria(&currule, &currcp);
+				crit->exclassspec = strdup(val);
+				if (*(crit->exclassspec) == '%') crit->exclassspecre = compileregex(crit->exclassspec+1);
 				firsttoken = 0;
 			}
 			else if ((strncasecmp(p, "COLOR=", 6) == 0) || (strncasecmp(p, "COLORS=", 7) == 0)) {
@@ -650,6 +676,8 @@ static void dump_criteria(criteria_t *crit, int isrecip)
 	if (crit->exhostspec) printf("EXHOST=%s ", crit->exhostspec);
 	if (crit->svcspec) printf("SERVICE=%s ", crit->svcspec);
 	if (crit->exsvcspec) printf("EXSERVICE=%s ", crit->exsvcspec);
+	if (crit->classspec) printf("CLASS=%s ", crit->classspec);
+	if (crit->exclassspec) printf("EXCLASS=%s ", crit->exclassspec);
 	if (crit->colors) {
 		int i, first = 1;
 
@@ -722,7 +750,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 {
 	/*
 	 * See if the "crit" matches the "alert".
-	 * Match on pagespec, hostspec, svcspec, colors, timespec, minduration, maxduration, sendrecovered
+	 * Match on pagespec, hostspec, svcspec, classspec, colors, timespec, minduration, maxduration, sendrecovered
 	 */
 
 	time_t duration = (time(NULL) - alert->eventstart);
@@ -747,6 +775,15 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 			traceprintf("Failed '%s' (max. duration %d>%d)\n", cfline, duration, crit->maxduration);
 			if (!printmode) return 0; 
 		}
+	}
+
+	if (crit && crit->classspec && !namematch(pgname, crit->classspec, crit->classspecre)) { 
+		traceprintf("Failed '%s' (class not in include list)\n", cfline);
+		return 0; 
+	}
+	if (crit && crit->exclassspec && namematch(pgname, crit->exclassspec, crit->exclassspecre)) { 
+		traceprintf("Failed '%s' (class excluded)\n", cfline);
+		return 0; 
 	}
 
 	if (crit && crit->pagespec && !namematch(pgname, crit->pagespec, crit->pagespecre)) { 

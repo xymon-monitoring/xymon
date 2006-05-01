@@ -25,6 +25,8 @@ typedef struct activealerts_t {
 	char *hostname;
 	char *testname;
 	char *location;
+	char *osname;
+	char *classname;
 	char ip[16];
 
 	/* Alert status */
@@ -58,6 +60,10 @@ typedef struct criteria_t {
 	pcre *svcspecre;
 	char *exsvcspec;	/* Services to exclude */
 	pcre *exsvcspecre;
+	char *classspec;
+	pcre *classspecre;
+	char *exclassspec;
+	pcre *exclassspecre;
 	int colors;
 	char *timespec;
 	int minduration, maxduration;	/* In seconds */
