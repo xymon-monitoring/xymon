@@ -59,6 +59,8 @@ enum bbh_item_t {
 	BBH_PAGEPATHTITLE,
 	BBH_GROUPID,
 	BBH_RAW,
+	BBH_CLASS,
+	BBH_OS,
 	BBH_LAST
 };
 
@@ -78,6 +80,8 @@ typedef struct namelist_t {
 	void *data;		/* Misc. data supplied by the user of this library function */
 	struct namelist_t *defaulthost;	/* Points to the latest ".default." host */
 	char *groupid;
+	char *classname;
+	char *osname;
 	struct namelist_t *next;
 
 	char *rawentry;		/* The raw bb-hosts entry for this host. */
@@ -105,6 +109,7 @@ extern char *bbh_item_byname(namelist_t *host, char *item);
 extern char *bbh_item_walk(namelist_t *host);
 extern int bbh_item_idx(char *value);
 extern namelist_t *first_host(void);
+extern void bbh_set_item(namelist_t *host, enum bbh_item_t item, char *value);
 
 #endif
 

@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.55 2006-03-29 15:50:19 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.56 2006-05-01 20:39:30 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -119,6 +119,10 @@ static void bbh_item_list_setup(void)
 	bbh_item_name[BBH_FLAG_NOCLEAR]        = "BBH_FLAG_NOCLEAR";
 	bbh_item_key[BBH_LDAPLOGIN]            = "ldaplogin=";
 	bbh_item_name[BBH_LDAPLOGIN]           = "BBH_LDAPLOGIN";
+	bbh_item_key[BBH_CLASS]                = "CLASS=";
+	bbh_item_name[BBH_CLASS]               = "BBH_CLASS";
+	bbh_item_key[BBH_OS]                   = "OS=";
+	bbh_item_name[BBH_OS]                  = "BBH_OS";
 
 	bbh_item_name[BBH_IP]                  = "BBH_IP";
 	bbh_item_name[BBH_CLIENTALIAS]         = "BBH_CLIENTALIAS";
@@ -169,6 +173,7 @@ static void initialize_hostlist(void)
 
 		if (walk->bbhostname) xfree(walk->bbhostname);
 		if (walk->groupid) xfree(walk->groupid);
+		if (walk->classname) xfree(walk->classname);
 		if (walk->logname) xfree(walk->logname);
 		if (walk->allelems) xfree(walk->allelems);
 		if (walk->elems) xfree(walk->elems);
@@ -182,6 +187,7 @@ static void initialize_hostlist(void)
 
 		if (walk->bbhostname) xfree(walk->bbhostname);
 		if (walk->groupid) xfree(walk->groupid);
+		if (walk->classname) xfree(walk->classname);
 		if (walk->logname) xfree(walk->logname);
 		if (walk->allelems) xfree(walk->allelems);
 		if (walk->elems) xfree(walk->elems);
@@ -375,6 +381,16 @@ char *bbh_item(namelist_t *host, enum bbh_item_t item)
 	  case BBH_IP:
 		  return host->ip;
 
+	  case BBH_CLASS:
+		  if (host->classname) return host->classname;
+		  else return bbh_find_item(host, item);
+		  break;
+
+	  case BBH_OS:
+		  if (host->osname) return host->osname;
+		  else return bbh_find_item(host, item);
+		  break;
+
 	  case BBH_BANKSIZE:
 		  if (host->banksize == 0) return NULL;
 		  sprintf(inttxt, "%d", host->banksize);
@@ -494,6 +510,25 @@ int bbh_item_idx(char *value)
 namelist_t *first_host(void)
 {
 	return namehead;
+}
+
+
+void bbh_set_item(namelist_t *host, enum bbh_item_t item, char *value)
+{
+	switch (item) {
+	  case BBH_CLASS:
+		if (host->classname) xfree(host->classname);
+		host->classname = strdup(value);
+		break;
+
+	  case BBH_OS:
+		if (host->osname) xfree(host->osname);
+		host->osname = strdup(value);
+		break;
+
+	  default:
+		break;
+	}
 }
 
 
