@@ -10,9 +10,11 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char aix_rcsid[] = "$Id: aix.c,v 1.5 2006-04-20 07:08:59 henrik Exp $";
+static char aix_rcsid[] = "$Id: aix.c,v 1.6 2006-05-01 20:13:15 henrik Exp $";
 
-void handle_aix_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
+void handle_aix_client(char *hostname, char *clienttype, enum ostype_t os,
+		       namelist_t *hinfo, char *sender, time_t timestamp,
+		       char *clientdata)
 {
 	char *timestr;
 	char *uptimestr;
@@ -50,11 +52,17 @@ void handle_aix_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char
 	freememstr = getdata("freemem");
 	swapmemstr = getdata("swap");
 
-	unix_cpu_report(hostname, hinfo, fromline, timestr, uptimestr, whostr, psstr, topstr);
-	unix_disk_report(hostname, hinfo, fromline, timestr, "%Used", "Mounted", dfstr);
-	unix_procs_report(hostname, hinfo, fromline, timestr, "COMMAND", "CMD", psstr);
-	msgs_report(hostname, hinfo, fromline, timestr, msgsstr);
-	file_report(hostname, hinfo, fromline, timestr);
+	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, whostr, psstr, topstr);
+	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "%Used", "Mounted", dfstr);
+	unix_procs_report(hostname, clienttype, os, hinfo, fromline, timestr, "COMMAND", "CMD", psstr);
+	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 3, 4, 5, portsstr);
+
+	msgs_report(hostname, clienttype, os, hinfo, fromline, timestr, msgsstr);
+	file_report(hostname, clienttype, os, hinfo, fromline, timestr);
+
+	unix_ifstat_report(hostname, clienttype, os, hinfo, fromline, timestr, ifstatstr);
+	unix_netstat_report(hostname, clienttype, os, hinfo, fromline, timestr, netstatstr);
+	unix_vmstat_report(hostname, clienttype, os, hinfo, fromline, timestr, vmstatstr);
 
 	if (realmemstr && freememstr && swapmemstr) {
 		long memphystotal, memphysused, memphysfree, memswaptotal, memswappct;
@@ -70,15 +78,9 @@ void handle_aix_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char
 			memswaptotal = memswappct = -1;
 		}
 
-		unix_memory_report(hostname, hinfo, fromline, timestr,
+		unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
 				memphystotal, (memphystotal - memphysfree), -1,
 				memswaptotal, ((memswaptotal * memswappct) / 100));
 	}
-
-	unix_netstat_report(hostname, hinfo, "aix", netstatstr);
-	unix_ifstat_report(hostname, hinfo, "aix", ifstatstr);
-	unix_ports_report(hostname, hinfo, fromline, timestr, 3, 4, 5, portsstr);
-
-	unix_vmstat_report(hostname, hinfo, "aix", vmstatstr);
 }
 

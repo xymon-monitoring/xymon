@@ -10,9 +10,11 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char openbsd_rcsid[] = "$Id: openbsd.c,v 1.11 2006-04-19 20:17:06 henrik Exp $";
+static char openbsd_rcsid[] = "$Id: openbsd.c,v 1.12 2006-05-01 20:13:15 henrik Exp $";
 
-void handle_openbsd_client(char *hostname, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
+void handle_openbsd_client(char *hostname, char *clienttype, enum ostype_t os,
+			   namelist_t *hinfo, char *sender, time_t timestamp, 
+			   char *clientdata)
 {
 	char *timestr;
 	char *uptimestr;
@@ -49,8 +51,17 @@ void handle_openbsd_client(char *hostname, namelist_t *hinfo, char *sender, time
 	portsstr = getdata("ports");
 	vmstatstr = getdata("vmstat");
 
-	unix_cpu_report(hostname, hinfo, fromline, timestr, uptimestr, whostr, psstr, topstr);
-	unix_disk_report(hostname, hinfo, fromline, timestr, "Capacity", "Mounted", dfstr);
+	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, whostr, psstr, topstr);
+	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Capacity", "Mounted", dfstr);
+	unix_procs_report(hostname, clienttype, os, hinfo, fromline, timestr, "COMMAND", NULL, psstr);
+	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 3, 4, 5, portsstr);
+
+	msgs_report(hostname, clienttype, os, hinfo, fromline, timestr, msgsstr);
+	file_report(hostname, clienttype, os, hinfo, fromline, timestr);
+
+	unix_netstat_report(hostname, clienttype, os, hinfo, fromline, timestr, netstatstr);
+	unix_ifstat_report(hostname, clienttype, os, hinfo, fromline, timestr, ifstatstr);
+	unix_vmstat_report(hostname, clienttype, os, hinfo, fromline, timestr, vmstatstr);
 
 	if (meminfostr) {
 		unsigned long memphystotal, memphysfree, memphysused;
@@ -68,19 +79,9 @@ void handle_openbsd_client(char *hostname, namelist_t *hinfo, char *sender, time
 		memswapfree = memswaptotal - memswapused;
 
 		if (found == 4) {
-			unix_memory_report(hostname, hinfo, fromline, timestr,
+			unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
 				   memphystotal, memphysused, -1, memswaptotal, memswapused);
 		}
 	}
-
-	unix_procs_report(hostname, hinfo, fromline, timestr, "COMMAND", NULL, psstr);
-	msgs_report(hostname, hinfo, fromline, timestr, msgsstr);
-	file_report(hostname, hinfo, fromline, timestr);
-
-	unix_netstat_report(hostname, hinfo, "openbsd", netstatstr);
-	unix_ifstat_report(hostname, hinfo, "openbsd", ifstatstr);
-	unix_ports_report(hostname, hinfo, fromline, timestr, 3, 4, 5, portsstr);
-
-	unix_vmstat_report(hostname, hinfo, "openbsd", vmstatstr);
 }
 

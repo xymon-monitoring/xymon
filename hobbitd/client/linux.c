@@ -10,9 +10,11 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char linux_rcsid[] = "$Id: linux.c,v 1.14 2006-04-19 20:17:44 henrik Exp $";
+static char linux_rcsid[] = "$Id: linux.c,v 1.15 2006-05-01 20:13:15 henrik Exp $";
 
-void handle_linux_client(char *hostname, enum ostype_t os, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
+void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os, 
+			 namelist_t *hinfo, char *sender, time_t timestamp,
+			 char *clientdata)
 {
 	char *timestr;
 	char *uptimestr;
@@ -46,8 +48,17 @@ void handle_linux_client(char *hostname, enum ostype_t os, namelist_t *hinfo, ch
 	vmstatstr = getdata("vmstat");
 	portsstr = getdata("ports");
 
-	unix_cpu_report(hostname, hinfo, fromline, timestr, uptimestr, whostr, psstr, topstr);
-	unix_disk_report(hostname, hinfo, fromline, timestr, "Capacity", "Mounted", dfstr);
+	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, whostr, psstr, topstr);
+	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Capacity", "Mounted", dfstr);
+	unix_procs_report(hostname, clienttype, os, hinfo, fromline, timestr, "CMD", NULL, psstr);
+	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 3, 4, 5, portsstr);
+
+	msgs_report(hostname, clienttype, os, hinfo, fromline, timestr, msgsstr);
+	file_report(hostname, clienttype, os, hinfo, fromline, timestr);
+
+	unix_netstat_report(hostname, clienttype, os, hinfo, fromline, timestr, netstatstr);
+	unix_ifstat_report(hostname, clienttype, os, hinfo, fromline, timestr, ifstatstr);
+	unix_vmstat_report(hostname, clienttype, os, hinfo, fromline, timestr, vmstatstr);
 
 	if (freestr) {
 		char *p;
@@ -74,30 +85,8 @@ void handle_linux_client(char *hostname, enum ostype_t os, namelist_t *hinfo, ch
 			memactfree /= 1024;
 		}
 
-		unix_memory_report(hostname, hinfo, fromline, timestr,
+		unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
 				   memphystotal, memphysused, memactused, memswaptotal, memswapused);
-	}
-
-	unix_procs_report(hostname, hinfo, fromline, timestr, "CMD", NULL, psstr);
-	msgs_report(hostname, hinfo, fromline, timestr, msgsstr);
-	file_report(hostname, hinfo, fromline, timestr);
-
-	unix_netstat_report(hostname, hinfo, "linux", netstatstr);
-	unix_ifstat_report(hostname, hinfo, "linux", ifstatstr);
-	unix_ports_report(hostname, hinfo, fromline, timestr, 3, 4, 5, portsstr);
-
-	switch (os) {
-	  case OS_LINUX22:
-		unix_vmstat_report(hostname, hinfo, "linux22", vmstatstr);
-		break;
-
-	  case OS_RHEL3:
-		unix_vmstat_report(hostname, hinfo, "rhel3", vmstatstr);
-		break;
-
-	  default:
-		unix_vmstat_report(hostname, hinfo, "linux", vmstatstr);
-		break;
 	}
 }
 

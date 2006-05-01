@@ -10,9 +10,11 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char solaris_rcsid[] = "$Id: solaris.c,v 1.11 2006-04-19 20:17:06 henrik Exp $";
+static char solaris_rcsid[] = "$Id: solaris.c,v 1.12 2006-05-01 20:13:15 henrik Exp $";
 
-void handle_solaris_client(char *hostname, namelist_t *hinfo, char *sender, time_t timestamp, char *clientdata)
+void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
+			   namelist_t *hinfo, char *sender, time_t timestamp, 
+			   char *clientdata)
 {
 	char *timestr;
 	char *uptimestr;
@@ -50,8 +52,17 @@ void handle_solaris_client(char *hostname, namelist_t *hinfo, char *sender, time
 	portsstr = getdata("ports");
 	vmstatstr = getdata("vmstat");
 
-	unix_cpu_report(hostname, hinfo, fromline, timestr, uptimestr, whostr, psstr, topstr);
-	unix_disk_report(hostname, hinfo, fromline, timestr, "Capacity", "Mounted", dfstr);
+	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, whostr, psstr, topstr);
+	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Capacity", "Mounted", dfstr);
+	unix_procs_report(hostname, clienttype, os, hinfo, fromline, timestr, "CMD", "COMMAND", psstr);
+	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 0, 1, 6, portsstr);
+
+	msgs_report(hostname, clienttype, os, hinfo, fromline, timestr, msgsstr);
+	file_report(hostname, clienttype, os, hinfo, fromline, timestr);
+
+	unix_netstat_report(hostname, clienttype, os, hinfo, fromline, timestr, netstatstr);
+	unix_ifstat_report(hostname, clienttype, os, hinfo, fromline, timestr, ifstatstr);
+	unix_vmstat_report(hostname, clienttype, os, hinfo, fromline, timestr, vmstatstr);
 
 	if (prtconfstr && memorystr && swapstr) {
 		long memphystotal, memphysfree, memswapused, memswapfree;
@@ -67,20 +78,10 @@ void handle_solaris_client(char *hostname, namelist_t *hinfo, char *sender, time
 			memswapfree /= 1024;
 		}
 		if ((memphystotal>=0) && (memphysfree>=0) && (memswapused>=0) && (memswapfree>=0)) {
-			unix_memory_report(hostname, hinfo, fromline, timestr,
+			unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
 					   memphystotal, (memphystotal - memphysfree), -1,
 					   (memswapused + memswapfree), memswapused);
 		}
 	}
-
-	unix_procs_report(hostname, hinfo, fromline, timestr, "CMD", "COMMAND", psstr);
-	msgs_report(hostname, hinfo, fromline, timestr, msgsstr);
-	file_report(hostname, hinfo, fromline, timestr);
-
-	unix_netstat_report(hostname, hinfo, "solaris", netstatstr);
-	unix_ifstat_report(hostname, hinfo, "solaris", ifstatstr);
-	unix_ports_report(hostname, hinfo, fromline, timestr, 0, 1, 6, portsstr);
-
-	unix_vmstat_report(hostname, hinfo, "solaris", vmstatstr);
 }
 
