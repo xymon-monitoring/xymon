@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.77 2006-03-31 15:22:52 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.78 2006-05-01 20:40:05 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -545,7 +545,7 @@ int main(int argc, char *argv[])
 		if (metacount > 4) testname = metadata[4];
 
 		if ((metacount > 10) && (strncmp(metadata[0], "@@page", 6) == 0)) {
-			/* @@page|timestamp|sender|hostname|testname|hostip|expiretime|color|prevcolor|changetime|location|cookie */
+			/* @@page|timestamp|sender|hostname|testname|hostip|expiretime|color|prevcolor|changetime|location|cookie|osname|classname */
 
 			int newcolor, newalertstatus, oldalertstatus;
 
@@ -623,6 +623,8 @@ int main(int argc, char *argv[])
 
 			strcpy(awalk->ip, metadata[5]);
 			awalk->cookie = atoi(metadata[11]);
+			awalk->osname    = (metadata[12] ? strdup(metadata[12]) : NULL);
+			awalk->classname = (metadata[13] ? strdup(metadata[13]) : NULL);
 
 			if (awalk->pagemessage) xfree(awalk->pagemessage);
 			awalk->pagemessage = strdup(restofmsg);
