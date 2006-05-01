@@ -7,7 +7,7 @@ Standards-Version: 3.6.1
 
 Package: hobbit
 Architecture: any
-Depends: fping, ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: monitoring system for systems, networks and applications
  Hobbit is a network- and applications-monitoring system designed
  for use in large-scale networks. But it will also work just fine
