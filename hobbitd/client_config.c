@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.30 2006-04-24 21:00:41 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.31 2006-05-01 20:42:44 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -136,6 +136,8 @@ typedef struct c_rule_t {
 	exprlist_t *exhostexp;
 	exprlist_t *pageexp;
 	exprlist_t *expageexp;
+	exprlist_t *classexp;
+	exprlist_t *exclassexp;
 	char *timespec, *statustext, *rrdidstr;
 	ruletype_t ruletype;
 	int cfid;
@@ -167,7 +169,7 @@ static int havetree = 0;
 static RbtHandle ruletree;
 
 
-static ruleset_t *ruleset(char *hostname, char *pagename)
+static ruleset_t *ruleset(char *hostname, char *pagename, char *classname)
 {
 	/*
 	 * This routine manages a list of rules that apply to a particular host.
@@ -193,6 +195,8 @@ static ruleset_t *ruleset(char *hostname, char *pagename)
 	/* We must build the list of rules for this host */
 	head = tail = NULL;
 	for (rwalk = rulehead; (rwalk); rwalk = rwalk->next) {
+		if (rwalk->exclassexp && namematch(classname, rwalk->exclassexp->pattern, rwalk->exclassexp->exp)) continue;
+		if (rwalk->classexp && !namematch(classname, rwalk->classexp->pattern, rwalk->classexp->exp)) continue;
 		if (rwalk->exhostexp && namematch(hostname, rwalk->exhostexp->pattern, rwalk->exhostexp->exp)) continue;
 		if (rwalk->hostexp && !namematch(hostname, rwalk->hostexp->pattern, rwalk->hostexp->exp)) continue;
 		if (rwalk->expageexp && namematch(pagename, rwalk->expageexp->pattern, rwalk->expageexp->exp)) continue;
@@ -236,6 +240,7 @@ static exprlist_t *setup_expr(char *ptn, int multiline)
 static c_rule_t *setup_rule(ruletype_t ruletype, 
 			    exprlist_t *curhost, exprlist_t *curexhost, 
 			    exprlist_t *curpage, exprlist_t *curexpage, 
+			    exprlist_t *curclass, exprlist_t *curexclass, 
 			    char *curtime, char *curtext,
 			    int cfid)
 {
@@ -248,6 +253,8 @@ static c_rule_t *setup_rule(ruletype_t ruletype,
 	newitem->exhostexp = curexhost;
 	newitem->pageexp = curpage;
 	newitem->expageexp = curexpage;
+	newitem->classexp = curclass;
+	newitem->exclassexp = curexclass;
 	if (curtime) newitem->timespec = strdup(curtime);
 	if (curtext) newitem->statustext = strdup(curtext);
 	newitem->cfid = cfid;
@@ -264,6 +271,8 @@ static int isqual(char *token)
 	     (strncasecmp(token, "EXHOST=", 7) == 0)	||
 	     (strncasecmp(token, "PAGE=", 5) == 0)	||
 	     (strncasecmp(token, "EXPAGE=", 7) == 0)	||
+	     (strncasecmp(token, "CLASS=", 3) == 0)	||
+	     (strncasecmp(token, "EXCLASS=", 5) == 0)	||
 	     (strncasecmp(token, "TEXT=", 5) == 0)	||
 	     (strncasecmp(token, "TIME=", 5) == 0)	) return 1;
 
@@ -290,7 +299,7 @@ int load_client_config(char *configfn)
 	FILE *fd;
 	strbuffer_t *inbuf;
 	char *tok;
-	exprlist_t *curhost, *curpage, *curexhost, *curexpage;
+	exprlist_t *curhost, *curpage, *curclass, *curexhost, *curexpage, *curexclass;
 	char *curtime, *curtext;
 	c_rule_t *currule = NULL;
 	int cfid = 0;
@@ -358,18 +367,18 @@ int load_client_config(char *configfn)
 		havetree = 0;
 	}
 
-	curhost = curpage = curexhost = curexpage = NULL;
+	curhost = curpage = curclass = curexhost = curexpage = curexclass = NULL;
 	curtime = curtext = NULL;
 	inbuf = newstrbuffer(0);
 	while (stackfgets(inbuf, NULL)) {
-		exprlist_t *newhost, *newpage, *newexhost, *newexpage;
+		exprlist_t *newhost, *newpage, *newexhost, *newexpage, *newclass, *newexclass;
 		char *newtime, *newtext;
 		int unknowntok = 0;
 
 		cfid++;
 		sanitize_input(inbuf, 1, 0); if (STRBUFLEN(inbuf) == 0) continue;
 
-		newhost = newpage = newexhost = newexpage = NULL;
+		newhost = newpage = newexhost = newexpage = newclass = newexclass = NULL;
 		newtime = newtext = NULL;
 		currule = NULL;
 
@@ -399,6 +408,18 @@ int load_client_config(char *configfn)
 				if (currule) currule->expageexp = newexpage;
 				tok = wstok(NULL); continue;
 			}
+			else if (strncasecmp(tok, "CLASS=", 3) == 0) {
+				char *p = strchr(tok, '=');
+				newclass = setup_expr(p+1, 0);
+				if (currule) currule->classexp = newclass;
+				tok = wstok(NULL); continue;
+			}
+			else if (strncasecmp(tok, "EXCLASS=", 5) == 0) {
+				char *p = strchr(tok, '=');
+				newexclass = setup_expr(p+1, 0);
+				if (currule) currule->exclassexp = newexclass;
+				tok = wstok(NULL); continue;
+			}
 			else if (strncasecmp(tok, "TIME=", 5) == 0) {
 				char *p = strchr(tok, '=');
 				if (currule) currule->timespec = strdup(p+1);
@@ -415,7 +436,7 @@ int load_client_config(char *configfn)
 				currule = NULL;
 			}
 			else if (strcasecmp(tok, "UP") == 0) {
-				currule = setup_rule(C_UPTIME, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
+				currule = setup_rule(C_UPTIME, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, cfid);
 				currule->rule.uptime.recentlimit = 3600;
 				currule->rule.uptime.ancientlimit = -1;
 
@@ -425,7 +446,7 @@ int load_client_config(char *configfn)
 				currule->rule.uptime.ancientlimit = 60*durationvalue(tok);
 			}
 			else if (strcasecmp(tok, "LOAD") == 0) {
-				currule = setup_rule(C_LOAD, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
+				currule = setup_rule(C_LOAD, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, cfid);
 				currule->rule.load.warnlevel = 5.0;
 				currule->rule.load.paniclevel = atof(tok);
 
@@ -436,7 +457,7 @@ int load_client_config(char *configfn)
 			}
 			else if (strcasecmp(tok, "DISK") == 0) {
 				char modchar = '\0';
-				currule = setup_rule(C_DISK, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
+				currule = setup_rule(C_DISK, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, cfid);
 				currule->rule.disk.absolutes = 0;
 				currule->rule.disk.warnlevel = 90;
 				currule->rule.disk.paniclevel = 95;
@@ -479,7 +500,7 @@ int load_client_config(char *configfn)
 				currule->rule.disk.color = parse_color(tok);
 			}
 			else if ((strcasecmp(tok, "MEMREAL") == 0) || (strcasecmp(tok, "MEMPHYS") == 0) || (strcasecmp(tok, "PHYS") == 0)) {
-				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
+				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, cfid);
 				currule->rule.mem.memtype = C_MEM_PHYS;
 				currule->rule.mem.warnlevel = 100;
 				currule->rule.mem.paniclevel = 101;
@@ -490,7 +511,7 @@ int load_client_config(char *configfn)
 				currule->rule.mem.paniclevel = atoi(tok);
 			}
 			else if ((strcasecmp(tok, "MEMSWAP") == 0) || (strcasecmp(tok, "SWAP") == 0)) {
-				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
+				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, cfid);
 				currule->rule.mem.memtype = C_MEM_SWAP;
 				currule->rule.mem.warnlevel = 50;
 				currule->rule.mem.paniclevel = 80;
@@ -501,7 +522,7 @@ int load_client_config(char *configfn)
 				currule->rule.mem.paniclevel = atoi(tok);
 			}
 			else if ((strcasecmp(tok, "MEMACT") == 0) || (strcasecmp(tok, "ACTUAL") == 0) || (strcasecmp(tok, "ACT") == 0)) {
-				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
+				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, cfid);
 				currule->rule.mem.memtype = C_MEM_ACT;
 				currule->rule.mem.warnlevel = 90;
 				currule->rule.mem.paniclevel = 97;
@@ -514,7 +535,7 @@ int load_client_config(char *configfn)
 			else if (strcasecmp(tok, "PROC") == 0) {
 				int idx = 0;
 
-				currule = setup_rule(C_PROC, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
+				currule = setup_rule(C_PROC, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, cfid);
 				currule->rule.proc.pmin = 1;
 				currule->rule.proc.pmax = -1;
 				currule->rule.proc.color = COL_RED;
@@ -560,7 +581,7 @@ int load_client_config(char *configfn)
 			else if (strcasecmp(tok, "LOG") == 0) {
 				int idx = 0;
 
-				currule = setup_rule(C_LOG, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
+				currule = setup_rule(C_LOG, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, cfid);
 				currule->rule.log.logfile   = NULL;
 				currule->rule.log.matchexp  = NULL;
 				currule->rule.log.matchone  = NULL;
@@ -603,7 +624,7 @@ int load_client_config(char *configfn)
 				} while (tok && (!isqual(tok)));
 			}
 			else if (strcasecmp(tok, "FILE") == 0) {
-				currule = setup_rule(C_FILE, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
+				currule = setup_rule(C_FILE, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, cfid);
 				currule->rule.fcheck.filename = NULL;
 				currule->rule.fcheck.color = COL_RED;
 
@@ -741,7 +762,7 @@ int load_client_config(char *configfn)
 				} while (tok && (!isqual(tok)));
 			}
 			else if (strcasecmp(tok, "DIR") == 0) {
-				currule = setup_rule(C_DIR, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
+				currule = setup_rule(C_DIR, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, cfid);
 				currule->rule.dcheck.filename = NULL;
 				currule->rule.dcheck.color = COL_RED;
 
@@ -769,7 +790,7 @@ int load_client_config(char *configfn)
 				} while (tok && (!isqual(tok)));
 			}
 			else if (strcasecmp(tok, "PORT") == 0) {
-				currule = setup_rule(C_PORT, curhost, curexhost, curpage, curexpage, curtime, curtext, cfid);
+				currule = setup_rule(C_PORT, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, cfid);
 
 				currule->rule.port.localexp = NULL;
 				currule->rule.port.remoteexp = NULL;
@@ -825,8 +846,10 @@ int load_client_config(char *configfn)
 			/* No rules on this line - its the new set of criteria */
 			curhost = newhost;
 			curpage = newpage;
+			curclass = newclass;
 			curexhost = newexhost;
 			curexpage = newexpage;
+			curexclass = newexclass;
 			if (curtime) xfree(curtime); curtime = newtime;
 			if (curtext) xfree(curtext); curtext = newtext;
 		}
@@ -987,17 +1010,19 @@ void dump_client_config(void)
 		if (rwalk->exhostexp) printf(" EXHOST=%s", rwalk->exhostexp->pattern);
 		if (rwalk->pageexp) printf(" HOST=%s", rwalk->pageexp->pattern);
 		if (rwalk->expageexp) printf(" EXHOST=%s", rwalk->expageexp->pattern);
+		if (rwalk->classexp) printf(" CLASS=%s", rwalk->classexp->pattern);
+		if (rwalk->exclassexp) printf(" EXCLASS=%s", rwalk->exclassexp->pattern);
 		if (rwalk->statustext) printf(" TEXT=%s", rwalk->statustext);
 		printf(" (line: %d)\n", rwalk->cfid);
 	}
 }
 
-static c_rule_t *getrule(char *hostname, char *pagename, ruletype_t ruletype)
+static c_rule_t *getrule(char *hostname, char *pagename, char *classname, ruletype_t ruletype)
 {
 	static ruleset_t *rwalk = NULL;
 
 	if (hostname || pagename) {
-		rwalk = ruleset(hostname, pagename); 
+		rwalk = ruleset(hostname, pagename, classname); 
 	}
 	else {
 		rwalk = rwalk->next;
@@ -1014,7 +1039,8 @@ static c_rule_t *getrule(char *hostname, char *pagename, ruletype_t ruletype)
 	return NULL;
 }
 
-int get_cpu_thresholds(namelist_t *hinfo, float *loadyellow, float *loadred, int *recentlimit, int *ancientlimit)
+int get_cpu_thresholds(namelist_t *hinfo, char *classname, 
+		       float *loadyellow, float *loadred, int *recentlimit, int *ancientlimit)
 {
 	int result = 0;
 	char *hostname, *pagename;
@@ -1026,7 +1052,7 @@ int get_cpu_thresholds(namelist_t *hinfo, float *loadyellow, float *loadred, int
 	*loadyellow = 5.0;
 	*loadred = 10.0;
 
-	rule = getrule(hostname, pagename, C_LOAD);
+	rule = getrule(hostname, pagename, classname, C_LOAD);
 	if (rule) {
 		*loadyellow = rule->rule.load.warnlevel;
 		*loadred    = rule->rule.load.paniclevel;
@@ -1036,7 +1062,7 @@ int get_cpu_thresholds(namelist_t *hinfo, float *loadyellow, float *loadred, int
 	*recentlimit = 3600;
 	*ancientlimit = -1;
 
-	rule = getrule(hostname, pagename, C_UPTIME);
+	rule = getrule(hostname, pagename, classname, C_UPTIME);
 	if (rule) {
 		*recentlimit  = rule->rule.uptime.recentlimit;
 		*ancientlimit = rule->rule.uptime.ancientlimit;
@@ -1046,7 +1072,8 @@ int get_cpu_thresholds(namelist_t *hinfo, float *loadyellow, float *loadred, int
 	return result;
 }
 
-int get_disk_thresholds(namelist_t *hinfo, char *fsname, unsigned long *warnlevel, unsigned long *paniclevel, int *absolutes)
+int get_disk_thresholds(namelist_t *hinfo, char *classname, 
+			char *fsname, unsigned long *warnlevel, unsigned long *paniclevel, int *absolutes)
 {
 	char *hostname, *pagename;
 	c_rule_t *rule;
@@ -1058,9 +1085,9 @@ int get_disk_thresholds(namelist_t *hinfo, char *fsname, unsigned long *warnleve
 	*paniclevel = 95;
 	*absolutes = 0;
 
-	rule = getrule(hostname, pagename, C_DISK);
+	rule = getrule(hostname, pagename, classname, C_DISK);
 	while (rule && !namematch(fsname, rule->rule.disk.fsexp->pattern, rule->rule.disk.fsexp->exp)) {
-		rule = getrule(NULL, NULL, C_DISK);
+		rule = getrule(NULL, NULL, NULL, C_DISK);
 	}
 
 	if (rule) {
@@ -1073,8 +1100,8 @@ int get_disk_thresholds(namelist_t *hinfo, char *fsname, unsigned long *warnleve
 	return 0;
 }
 
-void get_memory_thresholds(namelist_t *hinfo, 
-		int *physyellow, int *physred, int *swapyellow, int *swapred, int *actyellow, int *actred)
+void get_memory_thresholds(namelist_t *hinfo, char *classname,
+			   int *physyellow, int *physred, int *swapyellow, int *swapred, int *actyellow, int *actred)
 {
 	char *hostname, *pagename;
 	c_rule_t *rule;
@@ -1090,7 +1117,7 @@ void get_memory_thresholds(namelist_t *hinfo,
 	*actyellow = 90;
 	*actred = 97;
 
-	rule = getrule(hostname, pagename, C_MEM);
+	rule = getrule(hostname, pagename, classname, C_MEM);
 	while (rule) {
 		switch (rule->rule.mem.memtype) {
 		  case C_MEM_PHYS:
@@ -1115,11 +1142,12 @@ void get_memory_thresholds(namelist_t *hinfo,
 			}
 			break;
 		}
-		rule = getrule(NULL, NULL, C_MEM);
+		rule = getrule(NULL, NULL, NULL, C_MEM);
 	}
 }
 
-int scan_log(namelist_t *hinfo, char *logname, char *logdata, char *section, strbuffer_t *summarybuf)
+int scan_log(namelist_t *hinfo, char *classname, 
+	     char *logname, char *logdata, char *section, strbuffer_t *summarybuf)
 {
 	int result = COL_GREEN;
 	char *hostname, *pagename;
@@ -1132,7 +1160,7 @@ int scan_log(namelist_t *hinfo, char *logname, char *logdata, char *section, str
 	hostname = bbh_item(hinfo, BBH_HOSTNAME);
 	pagename = bbh_item(hinfo, BBH_PAGEPATH);
 	
-	for (rule = getrule(hostname, pagename, C_LOG); (rule); rule = getrule(NULL, NULL, C_LOG)) {
+	for (rule = getrule(hostname, pagename, classname, C_LOG); (rule); rule = getrule(NULL, NULL, NULL, C_LOG)) {
 		/* First, check if the filename matches */
 		if (!namematch(logname, rule->rule.log.logfile->pattern, rule->rule.log.logfile->exp)) continue;
 
@@ -1170,7 +1198,9 @@ int scan_log(namelist_t *hinfo, char *logname, char *logdata, char *section, str
 	return result;
 }
 
-int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section, strbuffer_t *summarybuf, unsigned long *filesize, int *trackit, int *anyrules)
+int check_file(namelist_t *hinfo, char *classname, 
+	       char *filename, char *filedata, char *section, 
+	       strbuffer_t *summarybuf, unsigned long *filesize, int *trackit, int *anyrules)
 {
 	int result = COL_GREEN;
 	char *hostname, *pagename;
@@ -1270,7 +1300,7 @@ int check_file(namelist_t *hinfo, char *filename, char *filedata, char *section,
 	atimedif = clock - atime;
 	mtimedif = clock - mtime;
 
-	for (rwalk = getrule(hostname, pagename, C_FILE); (rwalk); rwalk = getrule(NULL, NULL, C_FILE)) {
+	for (rwalk = getrule(hostname, pagename, classname, C_FILE); (rwalk); rwalk = getrule(NULL, NULL, NULL, C_FILE)) {
 		int rulecolor = COL_GREEN;
 
 		/* First, check if the filename matches */
@@ -1461,7 +1491,9 @@ nextcheck:
 	return result;
 }
 
-int check_dir(namelist_t *hinfo, char *filename, char *filedata, char *section, strbuffer_t *summarybuf, unsigned long *dirsize, int *trackit)
+int check_dir(namelist_t *hinfo, char *classname, 
+	      char *filename, char *filedata, char *section, 
+	      strbuffer_t *summarybuf, unsigned long *dirsize, int *trackit)
 {
 	int result = COL_GREEN;
 	char *hostname, *pagename;
@@ -1501,7 +1533,7 @@ int check_dir(namelist_t *hinfo, char *filename, char *filedata, char *section, 
 	/* Got the data? */
 	if (dsize == 0) return COL_CLEAR;
 
-	for (rwalk = getrule(hostname, pagename, C_DIR); (rwalk); rwalk = getrule(NULL, NULL, C_DIR)) {
+	for (rwalk = getrule(hostname, pagename, classname, C_DIR); (rwalk); rwalk = getrule(NULL, NULL, NULL, C_DIR)) {
 		int rulecolor = COL_GREEN;
 
 		/* First, check if the filename matches */
@@ -1539,7 +1571,8 @@ typedef struct mon_proc_t {
 	struct mon_proc_t *next;
 } mon_proc_t;
 
-static int clear_counts(namelist_t *hinfo, ruletype_t ruletype, mon_proc_t **head, mon_proc_t **tail, mon_proc_t **walk)
+static int clear_counts(namelist_t *hinfo, char *classname, ruletype_t ruletype, 
+			mon_proc_t **head, mon_proc_t **tail, mon_proc_t **walk)
 {
 	char *hostname, *pagename;
 	c_rule_t *rule;
@@ -1555,7 +1588,7 @@ static int clear_counts(namelist_t *hinfo, ruletype_t ruletype, mon_proc_t **hea
 	hostname = bbh_item(hinfo, BBH_HOSTNAME);
 	pagename = bbh_item(hinfo, BBH_PAGEPATH);
 
-	rule = getrule(hostname, pagename, ruletype);
+	rule = getrule(hostname, pagename, classname, ruletype);
 	while (rule) {
 		mon_proc_t *newitem = (mon_proc_t *)malloc(sizeof(mon_proc_t));
 
@@ -1572,7 +1605,7 @@ static int clear_counts(namelist_t *hinfo, ruletype_t ruletype, mon_proc_t **hea
 		  default: break;
 		}
 
-		rule = getrule(NULL, NULL, ruletype);
+		rule = getrule(NULL, NULL, NULL, ruletype);
 	}
 
 	*walk = *head;
@@ -1755,19 +1788,19 @@ static mon_proc_t *phead = NULL, *ptail = NULL, *pmonwalk = NULL;
 static mon_proc_t *dhead = NULL, *dtail = NULL, *dmonwalk = NULL;
 static mon_proc_t *porthead = NULL, *porttail = NULL, *portmonwalk = NULL;
 
-int clear_process_counts(namelist_t *hinfo)
+int clear_process_counts(namelist_t *hinfo, char *classname)
 {
-	return clear_counts(hinfo, C_PROC, &phead, &ptail, &pmonwalk);
+	return clear_counts(hinfo, classname, C_PROC, &phead, &ptail, &pmonwalk);
 }
 
-int clear_disk_counts(namelist_t *hinfo)
+int clear_disk_counts(namelist_t *hinfo, char *classname)
 {
-	return clear_counts(hinfo, C_DISK, &dhead, &dtail, &dmonwalk);
+	return clear_counts(hinfo, classname, C_DISK, &dhead, &dtail, &dmonwalk);
 }
 
-int clear_port_counts(namelist_t *hinfo)
+int clear_port_counts(namelist_t *hinfo, char *classname)
 {
-	return clear_counts(hinfo, C_PORT, &porthead, &porttail, &portmonwalk);
+	return clear_counts(hinfo, classname, C_PORT, &porthead, &porttail, &portmonwalk);
 }
 
 void add_process_count(char *pname)
