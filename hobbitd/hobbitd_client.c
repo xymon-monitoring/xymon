@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.67 2006-04-24 21:01:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.68 2006-05-01 20:41:33 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -125,7 +125,8 @@ int linecount(char *msg)
 	return result;
 }
 
-void unix_cpu_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, 
+void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os, 
+		     namelist_t *hinfo, char *fromline, char *timestr, 
 		     char *uptimestr, char *whostr, char *psstr, char *topstr)
 {
 	char *p;
@@ -220,7 +221,7 @@ void unix_cpu_report(char *hostname, namelist_t *hinfo, char *fromline, char *ti
 		}
 	}
 
-	get_cpu_thresholds(hinfo, &loadyellow, &loadred, &recentlimit, &ancientlimit);
+	get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit);
 
 	upmsg = newstrbuffer(0);
 
@@ -268,7 +269,8 @@ void unix_cpu_report(char *hostname, namelist_t *hinfo, char *fromline, char *ti
 }
 
 
-void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, 
+void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
+		      namelist_t *hinfo, char *fromline, char *timestr, 
 		      char *capahdr, char *mnthdr, char *dfstr)
 {
 	int diskcolor = COL_GREEN;
@@ -287,7 +289,7 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 	dprintf("Disk check host %s\n", hostname);
 
 	monmsg = newstrbuffer(0);
-	dchecks = clear_disk_counts(hinfo);
+	dchecks = clear_disk_counts(hinfo, clientclass);
 
 	bol = (dchecks ? dfstr : NULL);	/* No need to go through it if no disk checks defined */
 	while (bol) {
@@ -322,7 +324,7 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 			if (fsname) add_disk_count(fsname);
 
 			if (fsname && (usage != -1)) {
-				get_disk_thresholds(hinfo, fsname, &warnlevel, &paniclevel, &absolutes);
+				get_disk_thresholds(hinfo, clientclass, fsname, &warnlevel, &paniclevel, &absolutes);
 
 				dprintf("Disk check: FS='%s' usage %lu (thresholds: %lu/%lu, abs: %d)\n",
 					fsname, usage, warnlevel, paniclevel, absolutes);
@@ -395,7 +397,8 @@ void unix_disk_report(char *hostname, namelist_t *hinfo, char *fromline, char *t
 	freestrbuffer(monmsg);
 }
 
-void unix_memory_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, 
+void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
+		        namelist_t *hinfo, char *fromline, char *timestr, 
 			long memphystotal, long memphysused, long memactused,
 			long memswaptotal, long memswapused)
 {
@@ -410,7 +413,7 @@ void unix_memory_report(char *hostname, namelist_t *hinfo, char *fromline, char 
 	if (memphystotal == -1) return;
 	if (memphysused  == -1) return;
 
-	get_memory_thresholds(hinfo, &physyellow, &physred, &swapyellow, &swapred, &actyellow, &actred);
+	get_memory_thresholds(hinfo, clientclass, &physyellow, &physred, &swapyellow, &swapred, &actyellow, &actred);
 
 	memphyspct = (memphystotal > 0) ? ((100 * memphysused) / memphystotal) : 0;
 	if (memphyspct > physyellow) physcolor = COL_YELLOW;
@@ -471,7 +474,8 @@ void unix_memory_report(char *hostname, namelist_t *hinfo, char *fromline, char 
 	finish_status();
 }
 
-void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, 
+void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
+		       namelist_t *hinfo, char *fromline, char *timestr, 
 		       char *cmdhdr, char *altcmdhdr, char *psstr)
 {
 	int pscolor = COL_GREEN;
@@ -501,7 +505,7 @@ void unix_procs_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 	if ((p == NULL) && (altcmdhdr != NULL)) p = strstr(psstr, altcmdhdr);
 	if (p) cmdofs = (p - psstr);
 
-	pchecks = clear_process_counts(hinfo);
+	pchecks = clear_process_counts(hinfo, clientclass);
 
 	if (pchecks == 0) {
 		/* Nothing to check */
@@ -619,7 +623,8 @@ static void old_msgs_report(char *hostname, namelist_t *hinfo, char *fromline, c
 	finish_status();
 }
 
-void msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, char *msgsstr)
+void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
+		 namelist_t *hinfo, char *fromline, char *timestr, char *msgsstr)
 {
 	static strbuffer_t *greendata = NULL;
 	static strbuffer_t *yellowdata = NULL;
@@ -648,7 +653,7 @@ void msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 
 		clearstrbuffer(logsummary);
 		sprintf(sectionname, "msgs:%s", swalk->sname+5);
-		logcolor = scan_log(hinfo, swalk->sname+5, swalk->sdata, sectionname, logsummary);
+		logcolor = scan_log(hinfo, clientclass, swalk->sname+5, swalk->sdata, sectionname, logsummary);
 		if (logcolor > msgscolor) msgscolor = logcolor;
 
 		switch (logcolor) {
@@ -721,7 +726,8 @@ void msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 	finish_status();
 }
 
-void file_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr)
+void file_report(char *hostname, char *clientclass, enum ostype_t os,
+		 namelist_t *hinfo, char *fromline, char *timestr)
 {
 	static strbuffer_t *greendata = NULL;
 	static strbuffer_t *yellowdata = NULL;
@@ -752,7 +758,7 @@ void file_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 		if (strncmp(swalk->sname, "file:", 5) == 0) {
 			sfn = swalk->sname+5;
 			sprintf(sectionname, "file:%s", sfn);
-			onecolor = check_file(hinfo, sfn, swalk->sdata, sectionname, filesummary, &sz, &trackit, &anyrules);
+			onecolor = check_file(hinfo, clientclass, sfn, swalk->sdata, sectionname, filesummary, &sz, &trackit, &anyrules);
 
 			if (trackit) {
 				/* Save the size data for later DATA message to track file sizes */
@@ -764,7 +770,7 @@ void file_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 		else if (strncmp(swalk->sname, "logfile:", 8) == 0) {
 			sfn = swalk->sname+8;
 			sprintf(sectionname, "logfile:%s", sfn);
-			onecolor = check_file(hinfo, sfn, swalk->sdata, sectionname, filesummary, &sz, &trackit, &anyrules);
+			onecolor = check_file(hinfo, clientclass, sfn, swalk->sdata, sectionname, filesummary, &sz, &trackit, &anyrules);
 			if (!anyrules) {
 				/* Dont clutter the display with logfiles unless they have rules */
 				continue;
@@ -773,7 +779,7 @@ void file_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 		else if (strncmp(swalk->sname, "dir:", 4) == 0) {
 			sfn = swalk->sname+4;
 			sprintf(sectionname, "dir:%s", sfn);
-			onecolor = check_dir(hinfo, sfn, swalk->sdata, sectionname, filesummary, &sz, &trackit);
+			onecolor = check_dir(hinfo, clientclass, sfn, swalk->sdata, sectionname, filesummary, &sz, &trackit);
 
 			if (trackit) {
 				/* Save the size data for later DATA message to track directory sizes */
@@ -850,7 +856,9 @@ void file_report(char *hostname, namelist_t *hinfo, char *fromline, char *timest
 	clearstrbuffer(sizedata);
 }
 
-void unix_netstat_report(char *hostname, namelist_t *hinfo, char *osid, char *netstatstr)
+void unix_netstat_report(char *hostname, char *clientclass, enum ostype_t os,
+		 	 namelist_t *hinfo, char *fromline, char *timestr,
+			 char *netstatstr)
 {
 	strbuffer_t *msg;
 	char msgline[4096];
@@ -858,7 +866,7 @@ void unix_netstat_report(char *hostname, namelist_t *hinfo, char *osid, char *ne
 	if (!netstatstr) return;
 
 	msg = newstrbuffer(0);
-	sprintf(msgline, "data %s.netstat\n%s\n", commafy(hostname), osid);
+	sprintf(msgline, "data %s.netstat\n%s\n", commafy(hostname), osname(os));
 	addtobuffer(msg, msgline);
 	addtobuffer(msg, netstatstr);
 	sendmessage(STRBUF(msg), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
@@ -866,7 +874,9 @@ void unix_netstat_report(char *hostname, namelist_t *hinfo, char *osid, char *ne
 	freestrbuffer(msg);
 }
 
-void unix_ifstat_report(char *hostname, namelist_t *hinfo, char *osid, char *ifstatstr)
+void unix_ifstat_report(char *hostname, char *clientclass, enum ostype_t os,
+		 	namelist_t *hinfo, char *fromline, char *timestr,
+			char *ifstatstr)
 {
 	strbuffer_t *msg;
 	char msgline[4096];
@@ -874,7 +884,7 @@ void unix_ifstat_report(char *hostname, namelist_t *hinfo, char *osid, char *ifs
 	if (!ifstatstr) return;
 
 	msg = newstrbuffer(0);
-	sprintf(msgline, "data %s.ifstat\n%s\n", commafy(hostname), osid);
+	sprintf(msgline, "data %s.ifstat\n%s\n", commafy(hostname), osname(os));
 	addtobuffer(msg, msgline);
 	addtobuffer(msg, ifstatstr);
 	sendmessage(STRBUF(msg), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
@@ -882,7 +892,9 @@ void unix_ifstat_report(char *hostname, namelist_t *hinfo, char *osid, char *ifs
 	freestrbuffer(msg);
 }
 
-void unix_vmstat_report(char *hostname, namelist_t *hinfo, char *osid, char *vmstatstr)
+void unix_vmstat_report(char *hostname, char *clientclass, enum ostype_t os,
+		 	namelist_t *hinfo, char *fromline, char *timestr,
+			char *vmstatstr)
 {
 	strbuffer_t *msg;
 	char msgline[4096];
@@ -899,7 +911,7 @@ void unix_vmstat_report(char *hostname, namelist_t *hinfo, char *osid, char *vms
 		/* Go back to the previous line */
 		do { p--; } while ((p > vmstatstr) && (*p != '\n'));
 	}
-	sprintf(msgline, "data %s.vmstat\n%s\n", commafy(hostname), osid);
+	sprintf(msgline, "data %s.vmstat\n%s\n", commafy(hostname), osname(os));
 	addtobuffer(msg, msgline);
 	addtobuffer(msg, p+1);
 	sendmessage(STRBUF(msg), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
@@ -908,7 +920,8 @@ void unix_vmstat_report(char *hostname, namelist_t *hinfo, char *osid, char *vms
 }
 
 
-void unix_ports_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, 
+void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
+		       namelist_t *hinfo, char *fromline, char *timestr, 
 		       int localcol, int remotecol, int statecol, char *portstr)
 {
 	int portcolor = COL_GREEN;
@@ -923,7 +936,7 @@ void unix_ports_report(char *hostname, namelist_t *hinfo, char *fromline, char *
 	if (!monmsg) monmsg = newstrbuffer(0);
 	if (!countdata) countdata = newstrbuffer(0);
 
-	pchecks = clear_port_counts(hinfo);
+	pchecks = clear_port_counts(hinfo, clientclass);
 
 	sprintf(msgline, "data %s.portcounts\n", commafy(hostname));
 	addtobuffer(countdata, msgline);
@@ -1049,13 +1062,14 @@ void clean_instr(char *s)
 void testmode(char *configfn)
 {
 	namelist_t *hinfo, *oldhinfo = NULL;
-	char hostname[1024];
+	char hostname[1024], clientclass[1024];
 	char s[4096];
 	int cfid;
 
 	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 	load_client_config(configfn);
 	*hostname = '\0';
+	*clientclass = '\0';
 
 	while (1) {
 		hinfo = NULL;
@@ -1063,6 +1077,9 @@ void testmode(char *configfn)
 			printf("Hostname (.=end, ?=dump, !=reload) [%s]: ", hostname); 
 			fflush(stdout); fgets(hostname, sizeof(hostname), stdin);
 			clean_instr(hostname);
+			printf("Hosttype (.=end, ?=dump, !=reload) [%s]: ", clientclass); 
+			fflush(stdout); fgets(clientclass, sizeof(clientclass), stdin);
+			clean_instr(clientclass);
 
 			if (strlen(hostname) == 0) {
 				hinfo = oldhinfo;
@@ -1093,7 +1110,7 @@ void testmode(char *configfn)
 			float loadyellow, loadred;
 			int recentlimit, ancientlimit;
 
-			cfid = get_cpu_thresholds(hinfo, &loadyellow, &loadred, &recentlimit, &ancientlimit);
+			cfid = get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit);
 
 			printf("Load: Yellow at %.2f, red at %.2f\n", loadyellow, loadred);
 			printf("Uptime: From boot until %s,", durationstring(recentlimit));
@@ -1102,7 +1119,7 @@ void testmode(char *configfn)
 		else if (strcmp(s, "mem") == 0) {
 			int physyellow, physred, swapyellow, swapred, actyellow, actred;
 
-			get_memory_thresholds(hinfo, &physyellow, &physred, 
+			get_memory_thresholds(hinfo, clientclass, &physyellow, &physred, 
 					&swapyellow, &swapred, &actyellow, &actred);
 			printf("Phys: Yellow at %d, red at %d\n", physyellow, physred);
 			printf("Swap: Yellow at %d, red at %d\n", swapyellow, swapred);
@@ -1114,13 +1131,13 @@ void testmode(char *configfn)
 
 			printf("Filesystem: "); fflush(stdout);
 			fgets(s, sizeof(s), stdin); clean_instr(s);
-			cfid = get_disk_thresholds(hinfo, s, &warnlevel, &paniclevel, &absolutes);
+			cfid = get_disk_thresholds(hinfo, clientclass, s, &warnlevel, &paniclevel, &absolutes);
 			printf("Yellow at %lu%c, red at %lu%c\n", 
 				warnlevel, ((absolutes & 1) ? 'K' : '%'),
 				paniclevel, ((absolutes & 2) ? 'K' : '%'));
 		}
 		else if (strcmp(s, "proc") == 0) {
-			int pchecks = clear_process_counts(hinfo);
+			int pchecks = clear_process_counts(hinfo, clientclass);
 			char *pname, *pid;
 			int pcount, pmin, pmax, pcolor, ptrack;
 			FILE *fd;
@@ -1184,7 +1201,7 @@ void testmode(char *configfn)
 			} while (*s);
 
 			clearstrbuffer(logsummary);
-			logcolor = scan_log(hinfo, sectname+5, STRBUF(logdata), sectname, logsummary);
+			logcolor = scan_log(hinfo, clientclass, sectname+5, STRBUF(logdata), sectname, logsummary);
 			printf("Log status is %s\n\n", colorname(logcolor));
 			if (STRBUFLEN(logsummary)) printf("%s\n", STRBUF(logsummary));
 			freestrbuffer(logsummary);
@@ -1195,7 +1212,7 @@ void testmode(char *configfn)
 			int pcount, pmin, pmax, pcolor, pchecks, ptrack;
 			int localcol = 4, remotecol = 5, statecol = 6, portcolor = COL_GREEN;
 
-			pchecks = clear_port_counts(hinfo);
+			pchecks = clear_port_counts(hinfo, clientclass);
 			if (pchecks == 0) {
 				printf("No PORT checks for this host\n");
 				continue;
@@ -1354,59 +1371,63 @@ int main(int argc, char *argv[])
 			time_t timestamp = atoi(metadata[1]);
 			char *sender = metadata[2];
 			char *hostname = metadata[3];
-			char *clienttype = metadata[4];
+			char *clientos = metadata[4];
+			char *clientclass = metadata[5];
 			enum ostype_t os;
 			namelist_t *hinfo = NULL;
 
 			hinfo = (localmode ? localhostinfo(hostname) : hostinfo(hostname));
 			if (!hinfo) continue;
-			os = get_ostype(clienttype);
+			os = get_ostype(clientos);
+
+			/* Default clientclass to the OS name */
+			if (!clientclass || (*clientclass == '\0')) clientclass = clientos;
 
 			combo_start();
 			switch (os) {
 			  case OS_FREEBSD: 
-				handle_freebsd_client(hostname, hinfo, sender, timestamp, restofmsg);
+				handle_freebsd_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 				break;
 
 			  case OS_NETBSD: 
-				handle_netbsd_client(hostname, hinfo, sender, timestamp, restofmsg);
+				handle_netbsd_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 				break;
 
 			  case OS_OPENBSD: 
-				handle_openbsd_client(hostname, hinfo, sender, timestamp, restofmsg);
+				handle_openbsd_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 				break;
 
 			  case OS_LINUX22: 
 			  case OS_LINUX: 
 			  case OS_RHEL3: 
-				handle_linux_client(hostname, os, hinfo, sender, timestamp, restofmsg);
+				handle_linux_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 				break;
 
 			  case OS_DARWIN:
-				handle_darwin_client(hostname, hinfo, sender, timestamp, restofmsg);
+				handle_darwin_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 				break;
 
 			  case OS_SOLARIS: 
-				handle_solaris_client(hostname, hinfo, sender, timestamp, restofmsg);
+				handle_solaris_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 				break;
 
 			  case OS_HPUX: 
-				handle_hpux_client(hostname, hinfo, sender, timestamp, restofmsg);
+				handle_hpux_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 				break;
 
 			  case OS_OSF: 
-				handle_osf_client(hostname, os, hinfo, sender, timestamp, restofmsg);
+				handle_osf_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 				break;
 
 			  case OS_AIX: 
-				handle_aix_client(hostname, os, hinfo, sender, timestamp, restofmsg);
+				handle_aix_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 				break;
 
 			  case OS_IRIX:
 			  case OS_WIN32: 
 			  case OS_SNMP: 
 			  case OS_UNKNOWN:
-				errprintf("No client backend for OS '%s' sent by %s\n", clienttype, sender);
+				errprintf("No client backend for OS '%s' sent by %s\n", clientos, sender);
 				break;
 			}
 			combo_end();
