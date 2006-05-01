@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.221 2006-04-17 07:43:04 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.222 2006-05-01 20:23:12 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -123,11 +123,18 @@ typedef struct hobbitd_hostlist_t {
 	char *clientmsg;
 } hobbitd_hostlist_t;
 
+typedef struct filecache_t {
+	char *fn;
+	long len;
+	unsigned char *fdata;
+} filecache_t;
+
 RbtHandle rbhosts;				/* The hosts we have reports from */
 RbtHandle rbtests;				/* The tests (columns) we have seen */
 RbtHandle rborigins;				/* The origins we have seen */
 RbtHandle rbcookies;				/* The cookies we use */
 RbtHandle rbconfigs;				/* The client configs */
+RbtHandle rbfilecache;
 
 typedef struct sender_t {
 	unsigned long int ipval;
@@ -225,6 +232,7 @@ hobbitd_statistics_t hobbitd_stats[] = {
 	{ "ping", 0 },
 	{ "notify", 0 },
 	{ "schedule", 0 },
+	{ "download", 0 },
 	{ NULL, 0 }
 };
 
@@ -691,15 +699,21 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			}
 			else {
 				namelist_t *hi = hostinfo(hostname);
+				char *pagepath, *classname, *osname;
+
+				pagepath = (hi ? bbh_item(hi, BBH_PAGEPATH) : "");
+				classname = (hi ? bbh_item(hi, BBH_CLASS) : "");
+				osname = (hi ? bbh_item(hi, BBH_OS) : "");
+				if (!classname) classname = "";
+				if (!osname) osname = "";
 
 				n = snprintf(channel->channelbuf, (bufsz-5),
-					"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d\n%s", 
+					"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d|%s|%s\n%s", 
 					channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 					sender, hostname, 
 					log->test, log->host->ip, (int) log->validtime, 
 					colnames[log->color], colnames[log->oldcolor], (int) log->lastchange,
-					(hi ? hi->page->pagepath : ""), 
-					log->cookie, msg);
+					pagepath, log->cookie, osname, classname, msg);
 			}
 			if (n > (bufsz-5)) {
 				errprintf("Oversize page/ack/notify msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
@@ -1617,18 +1631,19 @@ void handle_notify(char *msg, char *sender, hobbitd_log_t *log)
 	return;
 }
 
-void handle_client(char *msg, char *sender, char *hostname, char *clienttype)
+void handle_client(char *msg, char *sender, char *hostname, char *clientos, char *clientclass)
 {
-	char *chnbuf;
+	char *chnbuf, *theclass;
 	int msglen, buflen = 0;
 	RbtIterator hosthandle;
 
 	dprintf("->handle_client\n");
 
-	if (hostname) buflen += strlen(hostname); else dprintf("  hostname is NULL\n");
-	if (clienttype) buflen += strlen(clienttype); else dprintf("  clienttype is NULL\n");
+	/* Default class is the OS */
+	theclass = (clientclass ? clientclass : clientos);
+	buflen += strlen(hostname) + strlen(clientos) + strlen(theclass);
 	if (msg) { msglen = strlen(msg); buflen += msglen; } else { dprintf("  msg is NULL\n"); return; }
-	buflen += 4;
+	buflen += 5;
 
 	if (save_clientlogs) {
 		hosthandle = rbtFind(rbhosts, hostname);
@@ -1651,11 +1666,7 @@ void handle_client(char *msg, char *sender, char *hostname, char *clienttype)
 	}
 
 	chnbuf = (char *)malloc(buflen);
-	snprintf(chnbuf, buflen, "%s|%s\n%s", 
-		 (hostname ? hostname : ""), 
-		 (clienttype ? clienttype : ""), 
-		 msg);
-
+	snprintf(chnbuf, buflen, "%s|%s|%s\n%s", hostname, clientos, theclass, msg);
 	posttochannel(clientchn, channelnames[C_CLIENT], msg, sender, hostname, NULL, chnbuf);
 	xfree(chnbuf);
 	dprintf("<-handle_client\n");
@@ -1897,6 +1908,61 @@ done:
 }
 
 
+unsigned char *get_filecache(char *fn)
+{
+	RbtIterator handle;
+	filecache_t *item;
+	unsigned char *result;
+
+	handle = rbtFind(rbfilecache, fn);
+	if (handle == rbtEnd(rbfilecache)) return NULL;
+
+	item = (filecache_t *)gettreeitem(rbfilecache, handle);
+	if (item->len < 0) return NULL;
+
+	result = (unsigned char *)malloc(item->len);
+	memcpy(result, item->fdata, item->len);
+
+	return result;
+}
+
+
+void add_filecache(char *fn, unsigned char *buf, unsigned int buflen)
+{
+	RbtIterator handle;
+	filecache_t *newitem;
+
+	handle = rbtFind(rbfilecache, fn);
+	if (handle == rbtEnd(rbfilecache)) {
+		newitem = (filecache_t *)malloc(sizeof(filecache_t));
+		newitem->fn = strdup(fn);
+		newitem->len = buflen;
+		newitem->fdata = (unsigned char *)malloc(buflen);
+		memcpy(newitem->fdata, buf, buflen);
+		rbtInsert(rbfilecache, newitem->fn, newitem);
+	}
+	else {
+		newitem = (filecache_t *)gettreeitem(rbfilecache, handle);
+		if (newitem->fdata) xfree(newitem->fdata);
+		newitem->len = buflen;
+		newitem->fdata = (unsigned char *)malloc(buflen);
+		memcpy(newitem->fdata, buf, buflen);
+	}
+}
+
+
+void flush_filecache(void)
+{
+	RbtIterator handle;
+
+	for (handle = rbtBegin(rbfilecache); (handle != rbtEnd(rbfilecache)); handle = rbtNext(rbfilecache, handle)) {
+		filecache_t *item = (filecache_t *)gettreeitem(rbfilecache, handle);
+		if (item->fdata) xfree(item->fdata);
+		item->len = -1;
+	}
+}
+
+
 int get_config(char *fn, conn_t *msg)
 {
 	char fullfn[PATH_MAX];
@@ -1922,6 +1988,49 @@ int get_config(char *fn, conn_t *msg)
 	msg->bufp = msg->buf + msg->buflen;
 
 	dprintf("<- get_config\n");
+
+	return 0;
+}
+
+int get_binary(char *fn, conn_t *msg)
+{
+	char fullfn[PATH_MAX];
+	int fd;
+	struct stat st;
+	unsigned char *result;
+
+	dprintf("-> get_binary %s\n", fn);
+	sprintf(fullfn, "%s/download/%s", xgetenv("BBHOME"), fn);
+
+	result = get_filecache(fullfn);
+	if (!result) {
+		fd = open(fullfn, O_RDONLY);
+		if (fd == -1) {
+			errprintf("Download file %s not found\n", fn);
+			return -1;
+		}
+
+		if (fstat(fd, &st) == 0) {
+			int n;
+
+			result = (unsigned char *)malloc(st.st_size);
+			n = read(fd, result, st.st_size);
+			if (n != st.st_size) {
+				errprintf("Error reading from %s : %s\n", fn, strerror(errno));
+				xfree(result); result = NULL;
+				close(fd);
+				return -1;
+			}
+		}
+
+		add_filecache(fullfn, result, st.st_size);
+	}
+
+	msg->buflen = st.st_size;
+	msg->buf = result;
+	msg->bufp = msg->buf + msg->buflen;
+
+	dprintf("<- get_binary\n");
 
 	return 0;
 }
@@ -2446,11 +2555,30 @@ void do_message(conn_t *msg, char *origin)
 		if (!oksender(statussenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		p = msg->buf + 6; p += strspn(p, " \t");
-		conffn = strtok(p, " \t\r\n");
+		p = strtok(p, " \t\r\n");
+		conffn = strdup(p);
+		xfree(msg->buf);
 		if (conffn && (strstr("../", conffn) == NULL) && (get_config(conffn, msg) == 0) ) {
 			msg->doingwhat = RESPONDING;
 			msg->bufp = msg->buf;
 		}
+	}
+	else if (strncmp(msg->buf, "download", 8) == 0) {
+		char *fn, *p;
+
+		if (!oksender(statussenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+
+		p = msg->buf + 8; p += strspn(p, " \t");
+		p = strtok(p, " \t\r\n");
+		fn = strdup(p);
+		xfree(msg->buf);
+		if (fn && (strstr("../", fn) == NULL) && (get_binary(fn, msg) == 0) ) {
+			msg->doingwhat = RESPONDING;
+			msg->bufp = msg->buf;
+		}
+	}
+	else if (strncmp(msg->buf, "flush filecache", 15) == 0) {
+		flush_filecache();
 	}
 	else if (strncmp(msg->buf, "query ", 6) == 0) {
 		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, NULL, NULL, 0, 0);
@@ -3052,8 +3180,8 @@ void do_message(conn_t *msg, char *origin)
 	}
 	else if (strncmp(msg->buf, "client ", 7) == 0) {
 		/* "client HOSTNAME.CLIENTTYPE CLIENTCONF" */
-		char *hostname = NULL, *clienttype = NULL, *clientconf = NULL;
-		char *hname;
+		char *hostname = NULL, *clientos = NULL, *clientclass = NULL;
+		char *hname = NULL;
 		char *line1, *p;
 
 		msgfrom = strstr(msg->buf, "\nStatus message received from ");
@@ -3067,13 +3195,13 @@ void do_message(conn_t *msg, char *origin)
 		p = strtok(line1, " \t"); /* Skip the client keyword */
 		if (p) hostname = strtok(NULL, " \t"); /* Actually, HOSTNAME.CLIENTTYPE */
 		if (hostname) {
-			clienttype = strrchr(hostname, '.'); 
-			if (clienttype) { *clienttype = '\0'; clienttype++; }
-			clientconf = strtok(NULL, " \t");
+			clientos = strrchr(hostname, '.'); 
+			if (clientos) { *clientos = '\0'; clientos++; }
 			p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
+			clientclass = strtok(NULL, " \t");
 		}
 
-		if (hostname && clienttype) {
+		if (hostname && clientos) {
 			char hostip[20];
 
 			MEMDEFINE(hostip);
@@ -3086,26 +3214,35 @@ void do_message(conn_t *msg, char *origin)
 			else if (!oksender(statussenders, hostip, msg->addr.sin_addr, msg->buf)) {
 				/* Invalid sender */
 				errprintf("Invalid client message - sender %s not allowed for host %s\n", sender, hostname);
+				hname = NULL;
 			}
 			else {
-				handle_client(msg->buf, sender, hname, clienttype);
+				namelist_t *hinfo = hostinfo(hname);
+
+				handle_client(msg->buf, sender, hname, clientos, clientclass);
+
+				/* If the client sends an explicit class, make sure we keep it */
+				if (hinfo) {
+					if (clientos) bbh_set_item(hinfo, BBH_OS, clientos);
+					if (clientclass) bbh_set_item(hinfo, BBH_CLASS, clientclass);
+				}
 			}
 
 			MEMUNDEFINE(hostip);
 		}
 
-		if (clientconfigs && hostname) {
+		if (clientconfigs && hname) {
 			RbtIterator handle;
 
 			/*
 			 * Find the client config.  Search for a HOSTNAME entry first, 
-			 * then the CLIENTCONF, then CLIENTTYPE.
+			 * then the CLIENTCLASS, then CLIENTOS.
 			 */
-			handle = rbtFind(rbconfigs, hostname);
-			if ((handle == rbtEnd(rbconfigs)) && clientconf && *clientconf)
-				handle = rbtFind(rbconfigs, clientconf);
-			if ((handle == rbtEnd(rbconfigs)) && clienttype && *clienttype)
-				handle = rbtFind(rbconfigs, clienttype);
+			handle = rbtFind(rbconfigs, hname);
+			if ((handle == rbtEnd(rbconfigs)) && clientclass && *clientclass)
+				handle = rbtFind(rbconfigs, clientclass);
+			if ((handle == rbtEnd(rbconfigs)) && clientos && *clientos)
+				handle = rbtFind(rbconfigs, clientos);
 
 			if (handle != rbtEnd(rbconfigs)) {
 				msg->doingwhat = RESPONDING;
@@ -3813,6 +3950,7 @@ int main(int argc, char *argv[])
 	rbtests = rbtNew(name_compare);
 	rborigins = rbtNew(name_compare);
 	rbcookies = rbtNew(int_compare);
+	rbfilecache = rbtNew(name_compare);
 
 	errprintf("Loading hostnames\n");
 	load_hostnames(bbhostsfn, NULL, get_fqdn());
