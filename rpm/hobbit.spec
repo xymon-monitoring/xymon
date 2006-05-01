@@ -11,7 +11,6 @@ Source3: hobbit-client.init
 Source4: hobbit-client.default
 Summary: Hobbit network monitor
 BuildRoot: /tmp/hobbit-root
-Requires: fping
 #BuildRequires: openssl-devel
 #BuildRequires: pcre-devel
 #BuildRequires: rrdtool-devel
@@ -143,6 +142,7 @@ chkconfig --del hobbit-client
 %attr(644, root, root) %config /etc/hobbit/*
 %attr(644, root, root) %config /etc/httpd/conf.d/hobbit-apache.conf
 %attr(755, root, root) %dir /etc/hobbit 
+%attr(755, root, root) %dir /etc/hobbit/download
 %attr(755, root, root) %dir /etc/hobbit/web
 %attr(755, hobbit, hobbit) %dir /var/log/hobbit
 %attr(755, root, root) /etc/init.d/hobbit
@@ -157,6 +157,7 @@ chkconfig --del hobbit-client
 %attr(644, root, root) %config /var/lib/hobbit/www/menu/menu.css
 %attr(755, hobbit, hobbit) %dir /usr/lib/hobbit/client/ext
 %attr(664, hobbit, apache) %config /etc/hobbit/hobbit-nkview.cfg /etc/hobbit/hobbit-nkview.cfg.bak
+%attr(4755, root, root) /usr/lib/hobbit/server/bin/hobbitping
 
 %files client
 %attr(-, root, root) %doc README README.CLIENT Changes* COPYING CREDITS
