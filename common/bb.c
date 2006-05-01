@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb.c,v 1.6 2006-03-29 21:21:42 henrik Exp $";
+static char rcsid[] = "$Id: bb.c,v 1.7 2006-05-01 20:14:14 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -54,6 +54,10 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--str") == 0) {
 			respfd = NULL;
+		}
+		else if (strncmp(argv[argi], "--out=", 6) == 0) {
+			char *fn = argv[argi]+6;
+			respfd = fopen(fn, "wb");
 		}
 		else if (strncmp(argv[argi], "--timeout=", 10) == 0) {
 			char *p = strchr(argv[argi], '=');
@@ -123,6 +127,9 @@ int main(int argc, char *argv[])
 		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 	}
 	else if (strncmp(STRBUF(msg), "config ", 7) == 0) {
+		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
+	}
+	else if (strncmp(STRBUF(msg), "download ", 9) == 0) {
 		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
 	}
 	else if (strncmp(STRBUF(msg), "hobbitdlog ", 11) == 0) {
