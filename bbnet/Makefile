@@ -3,16 +3,20 @@
 # ARES settings. c-ares is included
 DNSFLAGS = -I./c-ares
 
-PROGRAMS = bbtest-net beastat
+PROGRAMS = bbtest-net hobbitping beastat
 EXTENSIONS = bbretest-net.sh
 
 all: $(PROGRAMS) $(EXTENSIONS)
 
 NETTESTOBJS = bbtest-net.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o
+PINGTESTOBJS = hobbitping.o
 BEASTATOBJS = beastat.o
 
 bbtest-net: $(NETTESTOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) ../lib/libbbgen.a libcares.a $(LDAPLIBS) $(SSLLIBS) $(NETLIBS)
+
+hobbitping: $(PINGTESTOBJS) ../lib/libbbgen.a
+	$(CC) $(CFLAGS) -o $@ $(PINGTESTOBJS) $(NETLIBS)
 
 bbtest-net.o: bbtest-net.c
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(LDAPFLAGS) $(SSLINCDIR) $(LDAPINCDIR) -c -o $@ bbtest-net.c
@@ -76,6 +80,10 @@ install: install-bin install-ext install-config install-man
 
 install-bin: $(PROGRAMS)
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
+ifndef PKGBUILD
+	chown root $(INSTALLROOT)$(INSTALLBINDIR)/hobbitping
+	chmod 4755 $(INSTALLROOT)$(INSTALLBINDIR)/hobbitping
+endif
 
 install-ext: $(EXTENSIONS)
 	cp -fp $(EXTENSIONS) $(INSTALLROOT)$(INSTALLEXTDIR)/
