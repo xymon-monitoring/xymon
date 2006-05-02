@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.223 2006-05-02 12:07:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.224 2006-05-02 13:18:22 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -1927,7 +1927,7 @@ unsigned char *get_filecache(char *fn)
 }
 
 
-void add_filecache(char *fn, unsigned char *buf, size_t buflen)
+void add_filecache(char *fn, unsigned char *buf, off_t buflen)
 {
 	RbtIterator handle;
 	filecache_t *newitem;
@@ -2011,7 +2011,7 @@ int get_binary(char *fn, conn_t *msg)
 		}
 
 		if (fstat(fd, &st) == 0) {
-			size_t n;
+			ssize_t n;
 
 			result = (unsigned char *)malloc(st.st_size);
 			n = read(fd, result, st.st_size);
