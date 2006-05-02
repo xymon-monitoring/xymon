@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.33 2006-04-05 08:22:26 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.34 2006-05-02 21:17:13 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -97,7 +97,7 @@ const static struct {
 	{ "CONNTEST", "TRUE" },
 	{ "IPTEST_2_CLEAR_ON_FAILED_CONN", "TRUE" },
 	{ "NONETPAGE", "" },
-	{ "FPING", "fping" },
+	{ "FPING", "hobbitping" },
 	{ "NTPDATE", "ntpdate" },
 	{ "TRACEROUTE", "traceroute" },
 	{ "RPCINFO", "rpcinfo" },

@@ -188,7 +188,10 @@ bbtest-net omit these flags from the status messages.
 
 .SH OPTIONS FOR THE PING TEST
 Note: bbtest-net uses the program defined by the FPING
-environment to execute ping-tests. See
+environment to execute ping-tests - by default, that is
+the
+.I hobbitping(1)
+utility. See
 .I hobbitserver.cfg(5)
 for a description of how to customize this, e.g. if you
 need to run it with "sudo" or a similar tool.
@@ -199,19 +202,11 @@ ping test results is defined by the PINGCOLUMN environment
 variable in 
 .I hobbitserver.cfg(5).
 .br
-Note that bbtest-net uses the
-.I fping(1) 
-tool to implement ping checks, so this must be installed.
-.br
 If not specifed, bbtest-net uses the CONNTEST environment
 variable to determine if it should perform the ping test
 or not. So if you prefer to use another tool to implement 
 ping checks, either set the CONNTEST environment variable 
 to false, or run bbtest-net with the "--noping".
-.br
-bbtest-net has support for the "badconn" tag that 
-fping.sh uses, see
-.I bb-hosts(5)
 
 .IP --noping
 Disable the connectivity test.
@@ -401,8 +396,8 @@ the tests that were listed in the bb-services file, plus the "dns",
 use the "bbnet" tool to test.
 
 It then runs two tasks in parallel: First, a separate process is
-started to run the "fping" tool for the connectivity tests. While 
-fping is busy doing the "ping" checks, bbtest-net runs all of the
+started to run the "hobbitping" tool for the connectivity tests. While 
+hobbitping is busy doing the "ping" checks, bbtest-net runs all of the
 TCP-based network tests.
 
 All of the TCP-based service checks are handled by a connection
@@ -466,7 +461,7 @@ setting this to "1000000" (one million).
 
 .IP FPING
 Command used to run the 
-.I fping(8) 
+.I hobbitping(1) 
 utility. Used by bbtest-net for connectivity (ping) testing.  See 
 .I hobbitserver.cfg(5)
 for more information about how to customize the program that is
@@ -543,6 +538,6 @@ test tool. It is updated only by bbtest-net during the normal
 runs, and read by bbretest-net.sh.
 
 .SH "SEE ALSO"
-bb-hosts(5), bb-services(5), hobbitserver.cfg(5), curl(1), ftp(1), 
-fping(1), ntpdate(1), rpcinfo(8)
+bb-hosts(5), bb-services(5), hobbitserver.cfg(5), hobbitping(1),
+curl(1), ftp(1), fping(1), ntpdate(1), rpcinfo(8)
 

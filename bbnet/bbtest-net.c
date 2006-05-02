@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.228 2006-05-02 15:57:07 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.229 2006-05-02 21:17:13 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -92,9 +92,9 @@ int		checktcpresponse = 0;
 int		dotraceroute = 0;
 int		fqdn = 1;
 int		dosendflags = 1;
-char		*fpingcmd = NULL;
-char		fpinglog[PATH_MAX];
-char		fpingerrlog[PATH_MAX];
+char		*pingcmd = NULL;
+char		pinglog[PATH_MAX];
+char		pingerrlog[PATH_MAX];
 int		respcheck_color = COL_YELLOW;
 int		extcmdtimeout = 30;
 
@@ -835,7 +835,7 @@ char *ip_to_test(testedhost_t *h)
 }
 
 
-void load_fping_status(void)
+void load_ping_status(void)
 {
 	FILE *statusfd;
 	char statusfn[PATH_MAX];
@@ -846,7 +846,7 @@ void load_fping_status(void)
 	RbtIterator handle;
 	testedhost_t *h;
 
-	sprintf(statusfn, "%s/fping.%s.status", xgetenv("BBTMP"), location);
+	sprintf(statusfn, "%s/ping.%s.status", xgetenv("BBTMP"), location);
 	statusfd = fopen(statusfn, "r");
 	if (statusfd == NULL) return;
 
@@ -868,14 +868,14 @@ void load_fping_status(void)
 	fclose(statusfd);
 }
 
-void save_fping_status(void)
+void save_ping_status(void)
 {
 	FILE *statusfd;
 	char statusfn[PATH_MAX];
 	testitem_t *t;
 	int didany = 0;
 
-	sprintf(statusfn, "%s/fping.%s.status", xgetenv("BBTMP"), location);
+	sprintf(statusfn, "%s/ping.%s.status", xgetenv("BBTMP"), location);
 	statusfd = fopen(statusfn, "w");
 	if (statusfd == NULL) return;
 
@@ -1037,7 +1037,7 @@ void run_rpcinfo_service(service_t *service)
 }
 
 
-int start_fping_service(service_t *service)
+int start_ping_service(service_t *service)
 {
 	testitem_t *t;
 	char *cmd;
@@ -1046,39 +1046,39 @@ int start_fping_service(service_t *service)
 	int status;
 
 	/*
-	 * The idea here is to run fping in a separate process, in parallel
+	 * The idea here is to run ping in a separate process, in parallel
 	 * with some other time-consuming task (the TCP network tests).
 	 * We cannot use the simple "popen()/pclose()" interface, because
-	 *   a) fping doesn't start the tests until EOF is reached on stdin
+	 *   a) ping doesn't start the tests until EOF is reached on stdin
 	 *   b) EOF on stdin happens with pclose(), but it will also wait
 	 *      for the process to finish.
 	 *
 	 * Therefore this slightly more complex solution, which in essence
-	 * forks a new process running "fping -Ae 2>&1 1>$BBTMP/fping.$$"
-	 * The output is then picked up by the finish_fping_service().
+	 * forks a new process running "ping -Ae 2>&1 1>$BBTMP/ping.$$"
+	 * The output is then picked up by the finish_ping_service().
 	 */
 
-	fpingcmd = strdup(getenv_default("FPING", "fping", NULL));
-	fpingcmd = realloc(fpingcmd, strlen(fpingcmd)+5);
-	strcat(fpingcmd, " -Ae");
+	pingcmd = strdup(getenv_default("FPING", "hobbitping", NULL));
+	pingcmd = realloc(pingcmd, strlen(pingcmd)+5);
+	strcat(pingcmd, " -Ae");
 
-	sprintf(fpinglog, "%s/fping-stdout.%lu", xgetenv("BBTMP"), (unsigned long)getpid());
-	sprintf(fpingerrlog, "%s/fping-stderr.%lu", xgetenv("BBTMP"), (unsigned long)getpid());
+	sprintf(pinglog, "%s/ping-stdout.%lu", xgetenv("BBTMP"), (unsigned long)getpid());
+	sprintf(pingerrlog, "%s/ping-stderr.%lu", xgetenv("BBTMP"), (unsigned long)getpid());
 
 	/* Setup command line and arguments */
-	cmdargs = setup_commandargs(fpingcmd, &cmd);
+	cmdargs = setup_commandargs(pingcmd, &cmd);
 
 	/* Get a pipe FD */
 	status = pipe(pfd);
 	if (status == -1) {
-		errprintf("Could not create pipe for fping\n");
+		errprintf("Could not create pipe for hobbitping\n");
 		return -1;
 	}
 
-	/* Now fork off the fping child-process */
+	/* Now fork off the ping child-process */
 	status = fork();
 	if (status < 0) {
-		errprintf("Could not fork() the fping child\n");
+		errprintf("Could not fork() the ping child\n");
 		return -1;
 	}
 	else if (status == 0) {
@@ -1092,8 +1092,8 @@ int start_fping_service(service_t *service)
 		 *    dump it to /dev/null, but it might be useful to see
 		 *    what went wrong.
 		 */
-		int outfile = open(fpinglog, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
-		int errfile = open(fpingerrlog, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
+		int outfile = open(pinglog, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
+		int errfile = open(pingerrlog, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
 
 		if ((outfile == -1) || (errfile == -1)) {
 			/* Ouch - cannot create our output files. Abort. */
@@ -1108,7 +1108,7 @@ int start_fping_service(service_t *service)
 		execvp(cmd, cmdargs);
 
 		/* Should never go here ... just kill the child */
-		fprintf(stderr, "fping invocation failed: %s\n", strerror(errno));
+		fprintf(stderr, "hobbitping invocation failed: %s\n", strerror(errno));
 		exit(99);
 	}
 	else {
@@ -1136,14 +1136,14 @@ int start_fping_service(service_t *service)
 			}
 		}
 
-		close(pfd[1]);	/* This is when fping starts doing tests */
+		close(pfd[1]);	/* This is when ping starts doing tests */
 	}
 
 	return 0;
 }
 
 
-int finish_fping_service(service_t *service)
+int finish_ping_service(service_t *service)
 {
 	testitem_t	*t;
 	FILE		*logfd;
@@ -1151,35 +1151,35 @@ int finish_fping_service(service_t *service)
 	char		l[MAX_LINE_LEN];
 	char		pingip[MAX_LINE_LEN];
 	int		ip1, ip2, ip3, ip4;
-	int		fpingstatus, failed = 0;
+	int		pingstatus, failed = 0;
 
 	/* 
-	 * Wait for the fping child to finish.
+	 * Wait for the ping child to finish.
 	 * If we're lucky, it will be done already since it has run
 	 * while we were doing tcp tests.
 	 */
-	wait(&fpingstatus);
-	switch (WEXITSTATUS(fpingstatus)) {
+	wait(&pingstatus);
+	switch (WEXITSTATUS(pingstatus)) {
 	  case 0: /* All hosts reachable */
 	  case 1: /* Some hosts unreachable */
 	  case 2: /* Some IP's not found (should not happen) */
 		break;
 
 	  case 3: /* Bad command-line args, or not suid-root */
-		errprintf("Execution of '%s' failed - program not suid root?\n", fpingcmd);
+		errprintf("Execution of '%s' failed - program not suid root?\n", pingcmd);
 		break;
 
 	  default:
 		failed = 1;
 		errprintf("Execution of '%s' failed with error-code %d\n", 
-			fpingcmd, WEXITSTATUS(fpingstatus));
+			pingcmd, WEXITSTATUS(pingstatus));
 	}
 
 	/* Load status of previously failed tests */
-	load_fping_status();
+	load_ping_status();
 
-	logfd = fopen(fpinglog, "r");
-	if (logfd == NULL) { errprintf("Cannot open fping output file %s\n", fpinglog); return -1; }
+	logfd = fopen(pinglog, "r");
+	if (logfd == NULL) { errprintf("Cannot open ping output file %s\n", pinglog); return -1; }
 	while (fgets(l, sizeof(l), logfd)) {
 		p = strchr(l, '\n'); if (p) *p = '\0';
 		if (sscanf(l, "%d.%d.%d.%d ", &ip1, &ip2, &ip3, &ip4) == 4) {
@@ -1212,18 +1212,18 @@ int finish_fping_service(service_t *service)
 	}
 	fclose(logfd);
 	if (!debug) {
-		unlink(fpinglog);
+		unlink(pinglog);
 		if (failed) {
 			FILE *errfd;
 			char buf[1024];
 			
-			errfd = fopen(fpingerrlog, "r");
+			errfd = fopen(pingerrlog, "r");
 			if (errfd && fgets(buf, sizeof(buf), errfd)) {
 				errprintf("%s", buf);
 			}
 			if (errfd) fclose(errfd);
 		}
-		unlink(fpingerrlog);
+		unlink(pingerrlog);
 	}
 
 	/* 
@@ -1268,7 +1268,7 @@ void run_modembank_service(service_t *service)
 		modembank_t *req = (modembank_t *)t->privdata;
 
 		p = xgetenv("FPING");
-		strcpy(cmdpath, (p ? p : "fping"));
+		strcpy(cmdpath, (p ? p : "hobbitping"));
 		strcpy(startip, u32toIP(req->startip));
 		strcpy(endip, u32toIP(req->startip + req->banksize - 1));
 		sprintf(cmd, "%s -g -Ae %s %s 2>/dev/null", cmdpath, startip, endip);
@@ -1276,7 +1276,7 @@ void run_modembank_service(service_t *service)
 		dprintf("Running command: '%s'\n", cmd);
 		cmdpipe = popen(cmd, "r");
 		if (cmdpipe == NULL) {
-			errprintf("Could not run the fping command %s\n", cmd);
+			errprintf("Could not run the hobbitping command %s\n", cmd);
 			return;
 		}
 
@@ -1912,7 +1912,7 @@ int main(int argc, char *argv[])
 	int dumpdata = 0;
 	int runtimewarn;		/* 300 = default BBSLEEP setting */
 	int servicedumponly = 0;
-	int fpingrunning = 0;
+	int pingrunning = 0;
 
 	if (init_ldap_library() != 0) {
 		errprintf("Failed to initialize ldap library\n");
@@ -2181,7 +2181,7 @@ int main(int argc, char *argv[])
 	if (dumpdata & 1) { dump_hostlist(); dump_testitems(); }
 
 	/* Ping checks first */
-	if (pingtest && pingtest->items) fpingrunning = (start_fping_service(pingtest) == 0);
+	if (pingtest && pingtest->items) pingrunning = (start_ping_service(pingtest) == 0);
 
 	/* Load current status files */
 	for (handle = rbtBegin(svctree); handle != rbtEnd(svctree); handle = rbtNext(svctree, handle)) {
@@ -2212,15 +2212,15 @@ int main(int argc, char *argv[])
 	do_tcp_tests(timeout, concurrency);
 	add_timestamp("TCP tests completed");
 
-	if (fpingrunning) {
+	if (pingrunning) {
 		char msg[512];
 
-		finish_fping_service(pingtest); 
+		finish_ping_service(pingtest); 
 		sprintf(msg, "PING test completed (%d hosts)", pingcount);
 		add_timestamp(msg);
 		combo_start();
 		send_results(pingtest, failgoesclear);
-		if (selectedhosts == 0) save_fping_status();
+		if (selectedhosts == 0) save_ping_status();
 		combo_end();
 		add_timestamp("PING test results sent");
 	}

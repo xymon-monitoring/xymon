@@ -506,11 +506,11 @@ you can change it to "FAILED" or customize it as you like.
 
 .IP FPING
 The command used to run the
-.I fping(1)
-tool for the connectivity test. This may include suid-root wrappers and
-fping options, except that you must not use the fping "-A" option which
-changes the output format.
-Default: "fping"
+.I hobbitping(1)
+tool for the connectivity test. (The name FPING is due to the fact that
+the "fping" utility was used until Hobbit version 4.2). This may include 
+suid-root wrappers and hobbitping options.
+Default: "hobbitping"
 
 .IP TRACEROUTE
 Defines the location of the "traceroute" tool and
