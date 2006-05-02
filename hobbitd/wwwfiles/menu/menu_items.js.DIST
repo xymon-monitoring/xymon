@@ -23,6 +23,7 @@ var MENU_ITEMS = [
 		['Configuring Alerts', '@BBHOSTURL@/help/hobbit-alerts.html'],
 		['Known problems', '@BBHOSTURL@/help/known-issues.html'],
 		['Tips and Tricks', '@BBHOSTURL@/help/hobbit-tips.html'],
+		['Custom graphs', '@BBHOSTURL@/help/howtograph.html'],
 		['Hobbit man-pages', '@BBHOSTURL@/help/manpages/'],
         ],
 ];
