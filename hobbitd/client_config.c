@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.33 2006-05-02 13:23:47 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.34 2006-05-02 13:34:43 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -171,6 +171,7 @@ static RbtHandle ruletree;
 
 static off_t filesize_value(char *s)
 {
+	/* s is the size in KILOBYTES */
 	char *modifier;
 	off_t result;
 
@@ -184,22 +185,19 @@ static off_t filesize_value(char *s)
 
 	switch (*modifier) {
 	  case 'K': case 'k':
-		result = (result << 10);
 		break;
 
 	  case 'M': case 'm':
-		result = (result << 20);
+		result = (result << 10);
 		break;
 
 	  case 'G': case 'g':
-		result = (result << 30);
+		result = (result << 20);
 		break;
 
-#ifdef _LARGEFILE_SOURCE
 	  case 'T': case 't':
-		result = (result << 40);
+		result = (result << 30);
 		break;
-#endif
 
 	  default:
 		break;
@@ -1409,6 +1407,19 @@ int check_file(namelist_t *hinfo, char *classname,
 #else
 				sprintf(msgline, "File has size %ld  - should be <%ld\n", 
 					fsize, rwalk->rule.fcheck.maxsize);
+#endif
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		if (rwalk->flags & FCHK_EQLSIZE) {
+			if (fsize != rwalk->rule.fcheck.eqlsize) {
+				rulecolor = rwalk->rule.fcheck.color;
+#ifdef _LARGEFILE_SOURCE
+				sprintf(msgline, "File has size %lld  - should be %lld\n", 
+					fsize, rwalk->rule.fcheck.eqlsize);
+#else
+				sprintf(msgline, "File has size %ld  - should be %ld\n", 
+					fsize, rwalk->rule.fcheck.eqlsize);
 #endif
 				addtobuffer(summarybuf, msgline);
 			}
