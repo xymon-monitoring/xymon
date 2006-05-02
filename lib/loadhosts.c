@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.56 2006-05-01 20:39:30 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.57 2006-05-02 15:57:07 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -546,7 +546,7 @@ int main(int argc, char *argv[])
 		char s[1024];
 		char *p;
 		char *hname;
-		char hostip[20];
+		char hostip[IP_ADDR_STRLEN];
 
 handlehost:
 		hname = knownhost(argv[argi], hostip, 1);

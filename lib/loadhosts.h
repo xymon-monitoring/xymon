@@ -71,7 +71,7 @@ typedef struct pagelist_t {
 } pagelist_t;
 
 typedef struct namelist_t {
-	char ip[16];
+	char ip[IP_ADDR_STRLEN];
 	char *bbhostname;	/* Name for item 2 of bb-hosts */
 	char *logname;		/* Name of the host directory in BBHISTLOGS (underscores replaces dots). */
 	int preference;		/* For host with multiple entries, mark if we have the preferred one */

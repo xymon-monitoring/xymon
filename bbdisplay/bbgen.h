@@ -146,7 +146,7 @@ typedef struct host_t {
 	char    *clientalias;
 	char	*comment;
 	char    *description;
-	char	ip[16];
+	char	ip[IP_ADDR_STRLEN];
 	int	dialup;
 	struct entry_t	*entries;
 	int	color;		/* Calculated */

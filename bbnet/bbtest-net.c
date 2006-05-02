@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.227 2006-04-25 15:40:51 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.228 2006-05-02 15:57:07 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -24,7 +24,7 @@ static char rcsid[] = "$Id: bbtest-net.c,v 1.227 2006-04-25 15:40:51 henrik Exp 
 #include <fcntl.h>
 #include <errno.h>
 
-#include "config.h"
+#include "libbbgen.h"
 
 #ifdef HAVE_RPCENT_H
 #include <rpc/rpcent.h>
@@ -1113,7 +1113,7 @@ int start_fping_service(service_t *service)
 	}
 	else {
 		/* parent */
-		char ip[20];
+		char ip[IP_ADDR_STRLEN];
 
 		close(pfd[0]);
 		pingcount = 0;
@@ -1257,7 +1257,7 @@ void run_modembank_service(service_t *service)
 {
 	testitem_t	*t;
 	char		cmd[1024];
-	char		startip[16], endip[16];
+	char		startip[IP_ADDR_STRLEN], endip[IP_ADDR_STRLEN];
 	char		*p;
 	char		cmdpath[PATH_MAX];
 	FILE		*cmdpipe;
@@ -1694,7 +1694,7 @@ void send_modembank_results(service_t *service)
 	testitem_t	*t;
 	char		msgline[1024];
 	int		i, color, inuse;
-	char		startip[16], endip[16];
+	char		startip[IP_ADDR_STRLEN], endip[IP_ADDR_STRLEN];
 
 	for (t=service->items; (t); t = t->next) {
 		modembank_t *req = (modembank_t *)t->privdata;

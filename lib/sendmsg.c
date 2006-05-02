@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.77 2006-04-19 16:50:38 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.78 2006-05-02 15:57:07 henrik Exp $";
 
 #include "config.h"
 
@@ -250,7 +250,7 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 		/* recipient is not an IP - do DNS lookup */
 
 		struct hostent *hent;
-		char hostip[16];
+		char hostip[IP_ADDR_STRLEN];
 
 		hent = gethostbyname(rcptip);
 		if (hent) {

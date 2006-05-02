@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.100 2006-03-29 16:03:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.101 2006-05-02 15:57:07 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -502,7 +502,7 @@ char *generate_info(char *hostname)
 	if (strcmp(val, "0.0.0.0") == 0) {
 		struct in_addr addr;
 		struct hostent *hent;
-		static char hostip[30];
+		static char hostip[IP_ADDR_STRLEN];
 
 		hent = gethostbyname(hostname);
 		if (hent) {

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: trimhistory.c,v 1.10 2005-12-29 16:33:11 henrik Exp $";
+static char rcsid[] = "$Id: trimhistory.c,v 1.11 2006-05-02 15:57:07 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -409,7 +409,7 @@ int main(int argc, char *argv[])
 	/* First scan the directory for all files, and pick up the ones we want to process */
 	while ((hent = readdir(histdir)) != NULL) {
 		char *hostname = NULL;
-		char hostip[20];
+		char hostip[IP_ADDR_STRLEN];
 		int ghosthandling = 1;
 
 		if (stat(hent->d_name, &st) == -1) {

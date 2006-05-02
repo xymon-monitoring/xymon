@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.224 2006-05-02 13:18:22 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.225 2006-05-02 15:57:07 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -98,7 +98,7 @@ typedef struct hobbitd_log_t {
 	char *origin;
 	int color, oldcolor, activealert, histsynced, downtimeactive;
 	char *testflags;
-	char sender[16];
+	char sender[IP_ADDR_STRLEN];
 	time_t lastchange;	/* time when the currently logged status began */
 	time_t logtime;		/* time when last update was received */
 	time_t validtime;	/* time when status is no longer valid */
@@ -117,7 +117,7 @@ typedef struct hobbitd_log_t {
 /* This is a list of the hosts we have seen reports for, and links to their status logs */
 typedef struct hobbitd_hostlist_t {
 	char *hostname;
-	char ip[16];
+	char ip[IP_ADDR_STRLEN];
 	hobbitd_log_t *logs;
 	hobbitd_log_t *pinglog; /* Points to entry in logs list, but we need it often */
 	char *clientmsg;
@@ -850,7 +850,7 @@ void get_hts(char *msg, char *sender, char *origin,
 
 	char *firstline, *p;
 	char *hosttest, *hostname, *testname, *colstr;
-	char hostip[20];
+	char hostip[IP_ADDR_STRLEN];
 	RbtIterator hosthandle, testhandle, originhandle;
 	hobbitd_hostlist_t *hwalk = NULL;
 	char *twalk = NULL;
@@ -1374,7 +1374,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 	char *twalk = NULL;
 	hobbitd_log_t *log;
 	char *p;
-	char hostip[20];
+	char hostip[IP_ADDR_STRLEN];
 
 	dprintf("->handle_enadis\n");
 
@@ -1751,7 +1751,7 @@ void free_log_t(hobbitd_log_t *zombie)
 
 void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, char *n1, char *n2)
 {
-	char hostip[20];
+	char hostip[IP_ADDR_STRLEN];
 	RbtIterator hosthandle, testhandle;
 	hobbitd_hostlist_t *hwalk;
 	char *twalk, *newt;
@@ -2082,7 +2082,7 @@ void setup_filter(char *buf, char *defaultfields,
 		else if (strncmp(tok, "acklevel=", 9) == 0) *acklevel = atoi(tok+9);
 		else {
 			/* Might be an old-style HOST.TEST request */
-			char *hname, *tname, hostip[20];
+			char *hname, *tname, hostip[IP_ADDR_STRLEN];
 
 			MEMDEFINE(hostip);
 
@@ -2293,7 +2293,7 @@ void do_message(conn_t *msg, char *origin)
 	hobbitd_log_t *log;
 	int color;
 	char *downcause;
-	char sender[20];
+	char sender[IP_ADDR_STRLEN];
 	time_t now;
 	char *msgfrom;
 
@@ -2477,7 +2477,7 @@ void do_message(conn_t *msg, char *origin)
 		*ehost = savechar;
 
 		if (hostname && testname) {
-			char *hname, hostip[20];
+			char *hname, hostip[IP_ADDR_STRLEN];
 
 			MEMDEFINE(hostip);
 
@@ -2520,7 +2520,7 @@ void do_message(conn_t *msg, char *origin)
 		if (*hostname == '\0') { errprintf("Invalid notes message from %s - blank hostname\n", sender); xfree(hostname); hostname = NULL; }
 
 		if (hostname) {
-			char *hname, hostip[20];
+			char *hname, hostip[IP_ADDR_STRLEN];
 
 			MEMDEFINE(hostip);
 
@@ -3202,7 +3202,7 @@ void do_message(conn_t *msg, char *origin)
 		}
 
 		if (hostname && clientos) {
-			char hostip[20];
+			char hostip[IP_ADDR_STRLEN];
 
 			MEMDEFINE(hostip);
 
@@ -3418,7 +3418,7 @@ void load_checkpoint(char *fn)
 	strbuffer_t *inbuf;
 	char *item;
 	int i, err;
-	char hostip[20];
+	char hostip[IP_ADDR_STRLEN];
 	RbtIterator hosthandle, testhandle, originhandle;
 	hobbitd_hostlist_t *hitem = NULL;
 	char *t = NULL;
