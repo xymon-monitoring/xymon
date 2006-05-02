@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.31 2006-05-01 20:42:44 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.32 2006-05-02 13:19:18 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -104,7 +104,7 @@ typedef struct c_file_t {
 	exprlist_t *filename;
 	int color;
 	int ftype;
-	unsigned long minsize, maxsize, eqlsize;
+	off_t minsize, maxsize, eqlsize;
 	unsigned int minlinks, maxlinks, eqllinks;
 	unsigned int fmode;
 	int ownerid, groupid;
@@ -168,6 +168,15 @@ typedef struct ruleset_t {
 static int havetree = 0;
 static RbtHandle ruletree;
 
+
+static off_t filesize_value(char *s)
+{
+#ifdef _LARGEFILE_SOURCE
+	return (off_t) str2ll(s, NULL);
+#else
+	return (off_t) atol(s);
+#endif
+}
 
 static ruleset_t *ruleset(char *hostname, char *pagename, char *classname)
 {
@@ -647,15 +656,15 @@ int load_client_config(char *configfn)
 					}
 					else if (strncasecmp(tok, "size>", 5) == 0) {
 						currule->flags |= FCHK_MINSIZE;
-						currule->rule.fcheck.minsize = atol(tok+5);
+						currule->rule.fcheck.minsize = filesize_value(tok+5);
 					}
 					else if (strncasecmp(tok, "size<", 5) == 0) {
 						currule->flags |= FCHK_MAXSIZE;
-						currule->rule.fcheck.maxsize = atol(tok+5);
+						currule->rule.fcheck.maxsize = filesize_value(tok+5);
 					}
 					else if (strncasecmp(tok, "size=", 5) == 0) {
 						currule->flags |= FCHK_EQLSIZE;
-						currule->rule.fcheck.eqlsize = atol(tok+5);
+						currule->rule.fcheck.eqlsize = filesize_value(tok+5);
 					}
 					else if (strncasecmp(tok, "links>", 6) == 0) {
 						currule->flags |= FCHK_MINLINKS;
@@ -928,12 +937,21 @@ void dump_client_config(void)
 				printf(" type=%s", ftypestr(rwalk->rule.fcheck.ftype));
 			if (rwalk->flags & FCHK_MODE) 
 				printf(" mode=%o", rwalk->rule.fcheck.fmode);
+#ifdef _LARGEFILE_SOURCE
 			if (rwalk->flags & FCHK_MINSIZE) 
-				printf(" size>%lu", rwalk->rule.fcheck.minsize);
+				printf(" size>%lld", rwalk->rule.fcheck.minsize);
 			if (rwalk->flags & FCHK_MAXSIZE) 
-				printf(" size<%lu", rwalk->rule.fcheck.maxsize);
+				printf(" size<%lld", rwalk->rule.fcheck.maxsize);
 			if (rwalk->flags & FCHK_EQLSIZE) 
-				printf(" size=%lu", rwalk->rule.fcheck.eqlsize);
+				printf(" size=%lld", rwalk->rule.fcheck.eqlsize);
+#else
+			if (rwalk->flags & FCHK_MINSIZE) 
+				printf(" size>%ld", rwalk->rule.fcheck.minsize);
+			if (rwalk->flags & FCHK_MAXSIZE) 
+				printf(" size<%ld", rwalk->rule.fcheck.maxsize);
+			if (rwalk->flags & FCHK_EQLSIZE) 
+				printf(" size=%ld", rwalk->rule.fcheck.eqlsize);
+#endif
 			if (rwalk->flags & FCHK_MINLINKS) 
 				printf(" links>%u", rwalk->rule.fcheck.minlinks);
 			if (rwalk->flags & FCHK_MAXLINKS) 
@@ -1200,7 +1218,7 @@ int scan_log(namelist_t *hinfo, char *classname,
 
 int check_file(namelist_t *hinfo, char *classname, 
 	       char *filename, char *filedata, char *section, 
-	       strbuffer_t *summarybuf, unsigned long *filesize, int *trackit, int *anyrules)
+	       strbuffer_t *summarybuf, off_t *filesize, int *trackit, int *anyrules)
 {
 	int result = COL_GREEN;
 	char *hostname, *pagename;
@@ -1209,7 +1227,7 @@ int check_file(namelist_t *hinfo, char *classname,
 	char msgline[PATH_MAX];
 
 	int exists = 1, ftype = 0;
-	unsigned long fsize = 0;
+	off_t fsize = 0;
 	unsigned int fmode = 0, linkcount = 0;
 	int ownerid = -1, groupid = -1;
 	char *ownerstr = NULL, *groupstr = NULL;
@@ -1266,7 +1284,7 @@ int check_file(namelist_t *hinfo, char *classname,
 			}
 		}
 		else if (strncmp(boln, "size:", 5) == 0) {
-			fsize = str2ll(boln+5, NULL);
+			fsize = filesize_value(boln+5);
 		}
 		else if (strncmp(boln, "clock:", 6) == 0) {
 			clock = atoi(boln+6);
@@ -1342,16 +1360,26 @@ int check_file(namelist_t *hinfo, char *classname,
 		if (rwalk->flags & FCHK_MINSIZE) {
 			if (fsize < rwalk->rule.fcheck.minsize) {
 				rulecolor = rwalk->rule.fcheck.color;
-				sprintf(msgline, "File has size %lu  - should be >%lu\n", 
+#ifdef _LARGEFILE_SOURCE
+				sprintf(msgline, "File has size %lld  - should be >%lld\n", 
 					fsize, rwalk->rule.fcheck.minsize);
+#else
+				sprintf(msgline, "File has size %ld  - should be >%ld\n", 
+					fsize, rwalk->rule.fcheck.minsize);
+#endif
 				addtobuffer(summarybuf, msgline);
 			}
 		}
 		if (rwalk->flags & FCHK_MAXSIZE) {
 			if (fsize > rwalk->rule.fcheck.maxsize) {
 				rulecolor = rwalk->rule.fcheck.color;
-				sprintf(msgline, "File has size %lu  - should be <%lu\n", 
+#ifdef _LARGEFILE_SOURCE
+				sprintf(msgline, "File has size %lld  - should be <%lld\n", 
 					fsize, rwalk->rule.fcheck.maxsize);
+#else
+				sprintf(msgline, "File has size %ld  - should be <%ld\n", 
+					fsize, rwalk->rule.fcheck.maxsize);
+#endif
 				addtobuffer(summarybuf, msgline);
 			}
 		}
