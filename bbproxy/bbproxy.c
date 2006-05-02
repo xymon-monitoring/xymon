@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.50 2005-09-20 09:15:03 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.51 2006-05-02 14:11:10 henrik Exp $";
 
 #include "config.h"
 
@@ -613,7 +613,10 @@ int main(int argc, char *argv[])
 				 * at the front of the buffer, we need to skip that when looking at
 				 * what type of message it is. Hence the "cwalk->buf+6".
 				 */
-				if ((strncmp(cwalk->buf+6, "query", 5) == 0) || (strncmp(cwalk->buf+6, "config", 6) == 0)) {
+				if ((strncmp(cwalk->buf+6, "query", 5) == 0)  ||
+				    (strncmp(cwalk->buf+6, "client", 6) == 0) ||
+				    (strncmp(cwalk->buf+6, "config", 6) == 0) ||
+				    (strncmp(cwalk->buf+6, "download", 8) == 0)) {
 					shutdown(cwalk->csocket, SHUT_RD);
 					msgs_other++;
 					cwalk->snum = 1; /* We only do these once! */
