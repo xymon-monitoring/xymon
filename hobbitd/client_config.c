@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.32 2006-05-02 13:19:18 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.33 2006-05-02 13:23:47 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -171,11 +171,41 @@ static RbtHandle ruletree;
 
 static off_t filesize_value(char *s)
 {
+	char *modifier;
+	off_t result;
+
+	modifier = (s + strspn(s, " 0123456789"));
+
 #ifdef _LARGEFILE_SOURCE
-	return (off_t) str2ll(s, NULL);
+	result = (off_t) str2ll(s, NULL);
 #else
-	return (off_t) atol(s);
+	result = (off_t) atol(s);
 #endif
+
+	switch (*modifier) {
+	  case 'K': case 'k':
+		result = (result << 10);
+		break;
+
+	  case 'M': case 'm':
+		result = (result << 20);
+		break;
+
+	  case 'G': case 'g':
+		result = (result << 30);
+		break;
+
+#ifdef _LARGEFILE_SOURCE
+	  case 'T': case 't':
+		result = (result << 40);
+		break;
+#endif
+
+	  default:
+		break;
+	}
+
+	return result;
 }
 
 static ruleset_t *ruleset(char *hostname, char *pagename, char *classname)
