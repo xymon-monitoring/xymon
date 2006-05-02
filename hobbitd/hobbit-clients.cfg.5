@@ -259,9 +259,11 @@ as listed. MODE is written in the standard octal notation, e.g.
 "644" for the rw-r--r-- permissions.
 .IP "size<MAX.SIZE and size>MIN.SIZE"
 triggers a warning it the file size is greater than MAX.SIZE or 
-less than MIN.SIZE, respectively. Filesizes are reported in KB, so 
-MAX.SIZE and MIN.SIZE must be given in KB. E.g. to warn if a file 
-grows larger than 1MB (1024 KB),use \fBsize<1024\fR.
+less than MIN.SIZE, respectively. For filesizes, you can use the
+letters "K", "M", "G" or "T" to indicate that the filesize is in
+Kilobytes, Megabytes, Gigabytes or Terabytes, respectively. If there
+is no such modifier, Kilobytes is assumed. E.g. to warn if a file 
+grows larger than 1MB, use \fBsize<1024M\fR.
 .IP "mtime>MIN.MTIME mtime<MAX.MTIME"
 checks how long ago the file was last modified (in seconds). E.g. 
 to check if a file was updated within the past 10 minutes (600 
