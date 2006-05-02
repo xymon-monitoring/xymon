@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.27 2005-07-19 20:49:27 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.28 2006-05-02 12:32:02 henrik Exp $";
 
 int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -175,7 +175,7 @@ int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			 * all of it by using the testname as part of the filename.
 			 */
 			sprintf(rrdfn, "%s%s.rrd", testname, diskname);
-			sprintf(rrdvalues, "%d:%d:%llu", (int)tstamp, pused, aused);
+			sprintf(rrdvalues, "%d:%d:%lld", (int)tstamp, pused, aused);
 			create_and_update_rrd(hostname, rrdfn, disk_params, disk_tpl);
 		}
 		if (diskname) { xfree(diskname); diskname = NULL; }
