@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.13 2006-04-15 09:35:44 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.14 2006-05-02 12:31:14 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -30,6 +30,7 @@ static char rcsid[] = "$Id: logfetch.c,v 1.13 2006-04-15 09:35:44 henrik Exp $";
 #include "libbbgen.h"
 
 /* Is it ok for these to be hardcoded ? */
+#define MAXCHECK   102400   /* When starting, dont look at more than 100 KB of data */
 #define MAXMINUTES 30
 #define POSCOUNT ((MAXMINUTES / 5) + 1)
 #define LINES_AFTER_TRIGGER 10
@@ -40,7 +41,7 @@ typedef struct logdef_t {
 	off_t lastpos[POSCOUNT];
 	char *trigger;
 	char *ignore;
-	int maxbytes;
+	off_t maxbytes;
 } logdef_t;
 
 typedef struct filedef_t {
@@ -66,7 +67,8 @@ char *logdata(char *filename, logdef_t *logdef, int *truncated)
 	char *startpos;
 	FILE *fd;
 	struct stat st;
-	off_t bufsz, n;
+	off_t bufsz;
+	size_t n;
 	int i;
 
 	*truncated = 0;
@@ -86,16 +88,24 @@ char *logdata(char *filename, logdef_t *logdef, int *truncated)
 	fstat(fileno(fd), &st);
 	if (st.st_size < logdef->lastpos[0]) {
 		/* Logfile shrank - probably it was rotated */
-		fseek(fd, 0, SEEK_SET);
+		fseeko(fd, 0, SEEK_SET);
 		for (i=0; (i < 7); i++) logdef->lastpos[i] = 0;
 	}
 	else {
-		fseek(fd, logdef->lastpos[6], SEEK_SET);
+		int newfile = 1;
+		for (i=0; (newfile && (i < 7)); i++) newfile = (newfile && (logdef->lastpos[i] == 0));
+
+		if (newfile && ((st.st_size - logdef->lastpos[6]) > MAXCHECK)) {
+			/* If we're starting fresh on a new file, only look at the last MAXCHECK KB */
+			for (i=0; (i < 7); i++) logdef->lastpos[i] = (st.st_size - MAXCHECK);
+		}
+
+		fseeko(fd, logdef->lastpos[6], SEEK_SET);
 		for (i=6; (i > 0); i--) logdef->lastpos[i] = logdef->lastpos[i-1];
 		logdef->lastpos[0] = st.st_size;
 	}
 
-	bufsz = st.st_size - ftell(fd);
+	bufsz = st.st_size - ftello(fd);
 	if (bufsz < 1024) bufsz = 1024;
 	startpos = buf = (char *)malloc(bufsz + 1);
 	n = fread(buf, 1, bufsz, fd);
@@ -334,15 +344,19 @@ void printfiledata(FILE *fd, char *fn, int domd5, int dosha1, int dormd160)
 		gr = getgrgid(st.st_gid);
 
 		fprintf(fd, "type:%o (%s)\n", 
-			(st.st_mode & S_IFMT), 
+			(unsigned int)(st.st_mode & S_IFMT), 
 			ftypestr(st.st_mode, (*linknam ? linknam : NULL)));
 		fprintf(fd, "mode:%o (%s)\n", 
-			(st.st_mode & (S_ISUID | S_ISGID | S_ISVTX | S_IRWXU | S_IRWXG | S_IRWXO)), 
+			(unsigned int)(st.st_mode & (S_ISUID | S_ISGID | S_ISVTX | S_IRWXU | S_IRWXG | S_IRWXO)), 
 			fmodestr(st.st_mode));
-		fprintf(fd, "linkcount:%d\n", st.st_nlink);
-		fprintf(fd, "owner:%u (%s)\n", st.st_uid, (pw ? pw->pw_name : ""));
-		fprintf(fd, "group:%u (%s)\n", st.st_gid, (gr ? gr->gr_name : ""));
-		fprintf(fd, "size:%lu\n", (unsigned long) (st.st_size>>10));
+		fprintf(fd, "linkcount:%d\n", (int)st.st_nlink);
+		fprintf(fd, "owner:%u (%s)\n", (unsigned int)st.st_uid, (pw ? pw->pw_name : ""));
+		fprintf(fd, "group:%u (%s)\n", (unsigned int)st.st_gid, (gr ? gr->gr_name : ""));
+#ifdef _LARGEFILE_SOURCE
+		fprintf(fd, "size:%lld\n",     (long long int)(st.st_size>>10));
+#else
+		fprintf(fd, "size:%ld\n",      (long int)(st.st_size>>10));
+#endif
 		fprintf(fd, "clock:%u (%s)\n", (unsigned int)now, timestr(now));
 		fprintf(fd, "atime:%u (%s)\n", (unsigned int)st.st_atime, timestr(st.st_atime));
 		fprintf(fd, "ctime:%u (%s)\n", (unsigned int)st.st_ctime, timestr(st.st_ctime));
@@ -600,7 +614,11 @@ void loadlogstatus(char *statfn)
 
 		for (i=0; (tok && (i < POSCOUNT)); i++) {
 			tok = strtok(NULL, ":\n");
-			if (tok) walk->check.logcheck.lastpos[i] = atol(tok);
+#ifdef _LARGEFILE_SOURCE
+			if (tok) walk->check.logcheck.lastpos[i] = (off_t)str2ll(tok, NULL);
+#else
+			if (tok) walk->check.logcheck.lastpos[i] = (off_t)atol(tok);
+#endif
 		}
 	}
 
@@ -621,7 +639,11 @@ void savelogstatus(char *statfn)
 		if (walk->checktype != C_LOG) continue;
 
 		fprintf(fd, "%s", walk->filename);
-		for (i = 0; (i < POSCOUNT); i++) fprintf(fd, ":%lu", walk->check.logcheck.lastpos[i]);
+#ifdef _LARGEFILE_SOURCE
+		for (i = 0; (i < POSCOUNT); i++) fprintf(fd, ":%lld", walk->check.logcheck.lastpos[i]);
+#else
+		for (i = 0; (i < POSCOUNT); i++) fprintf(fd, ":%ld", walk->check.logcheck.lastpos[i]);
+#endif
 		fprintf(fd, "\n");
 	}
 	fclose(fd);
