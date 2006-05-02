@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.166 2006-04-16 15:49:52 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.167 2006-05-02 12:31:38 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -426,7 +426,7 @@ void do_hosts(host_t *head, char *onlycols, char *exceptcols, FILE *output, FILE
 				char alttag[30];
 				unsigned int baseip, ip1, ip2, ip3, ip4;
 
-				sscanf(h->ip, "%d.%d.%d.%d", &ip1, &ip2, &ip3, &ip4);
+				sscanf(h->ip, "%u.%u.%u.%u", &ip1, &ip2, &ip3, &ip4);
 				baseip = IPtou32(ip1, ip2, ip3, ip4);
 
 				fprintf(output, "<TD ALIGN=CENTER><TABLE BORDER=0>");
