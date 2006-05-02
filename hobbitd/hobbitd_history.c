@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.43 2006-03-19 08:54:42 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.44 2006-05-02 12:07:00 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -249,27 +249,27 @@ int main(int argc, char *argv[])
 					 * from hobbitd. This is also needed when migrating from 
 					 * standard bbd to hobbitd.
 					 */
-					long pos = -1;
+					off_t pos = -1;
 					char l[1024];
 					int gotit;
 
 					MEMDEFINE(l);
 
-					fseek(statuslogfd, 0, SEEK_END);
-					if (ftell(statuslogfd) > 512) {
+					fseeko(statuslogfd, 0, SEEK_END);
+					if (ftello(statuslogfd) > 512) {
 						/* Go back 512 from EOF, and skip to start of a line */
-						fseek(statuslogfd, -512, SEEK_END);
+						fseeko(statuslogfd, -512, SEEK_END);
 						gotit = (fgets(l, sizeof(l)-1, statuslogfd) == NULL);
 					}
 					else {
 						/* Read from beginning of file */
-						fseek(statuslogfd, 0, SEEK_SET);
+						fseeko(statuslogfd, 0, SEEK_SET);
 						gotit = 0;
 					}
 
 
 					while (!gotit) {
-						long tmppos = ftell(statuslogfd);
+						off_t tmppos = ftello(statuslogfd);
 						time_t dur;
 						int dur_i;
 
@@ -298,14 +298,14 @@ int main(int argc, char *argv[])
 						 * and just append the data.
 						 */
 						lastchg = st.st_mtime;
-						fseek(statuslogfd, 0, SEEK_END);
+						fseeko(statuslogfd, 0, SEEK_END);
 					}
 					else {
 						/*
 						 * lastchg was updated above.
 						 * Seek to where the last line starts.
 						 */
-						fseek(statuslogfd, pos, SEEK_SET);
+						fseeko(statuslogfd, pos, SEEK_SET);
 					}
 
 					MEMUNDEFINE(l);

@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 	while (fgets(srcfn, sizeof(srcfn), stdin)) {
 		FILE *fd;
 		unsigned char buf[8192];
-		int buflen;
+		size_t buflen;
 		digestctx_t *ctx;
 		char srcmd5[40];
 		char *md5sum;

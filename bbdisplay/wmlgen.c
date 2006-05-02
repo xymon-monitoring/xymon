@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: wmlgen.c,v 1.23 2006-03-23 06:42:50 henrik Exp $";
+static char rcsid[] = "$Id: wmlgen.c,v 1.24 2006-05-02 12:07:00 henrik Exp $";
 
 #include <limits.h>
 #include <stdlib.h>
@@ -365,7 +365,7 @@ void do_wml_cards(char *webdir)
 			 * So if the card grows larger than WMLMAXCHARS, split it into 
 			 * multiple files and link from one file to the next.
 			 */
-			if (ftell(bb2fd) >= wmlmaxchars) {
+			if (ftello(bb2fd) >= wmlmaxchars) {
 				char oldbb2fn[PATH_MAX];
 
 				/* WML link is from the bb2fn except leading wmldir+'/' */

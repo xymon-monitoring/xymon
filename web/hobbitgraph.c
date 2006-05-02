@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.46 2006-04-05 08:23:53 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.47 2006-05-02 12:07:00 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -573,7 +573,7 @@ int main(int argc, char *argv[])
 			if (stat(zoomjsfn, &st) == 0) {
 				FILE *fd;
 				char *buf;
-				int n;
+				size_t n;
 				char *zoomrightoffsetmarker = "var cZoomBoxRightOffset = -";
 				char *zoomrightoffsetp;
 

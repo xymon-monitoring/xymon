@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.32 2006-04-17 08:44:39 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.33 2006-05-02 12:07:00 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -167,12 +167,12 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 		int done = 0;
 
 		/* Find a spot in the eventlog file close to where the firstevent time is */
-		fseek(eventlog, 0, SEEK_END);
+		fseeko(eventlog, 0, SEEK_END);
 		do {
 			/* Go back maxcount*80 bytes - one entry is ~80 bytes */
-			if (ftell(eventlog) > maxcount*80) {
+			if (ftello(eventlog) > maxcount*80) {
 				unsigned int uicurtime;
-				fseek(eventlog, -maxcount*80, SEEK_CUR); 
+				fseeko(eventlog, -maxcount*80, SEEK_CUR); 
 				fgets(l, sizeof(l), eventlog); /* Skip to start of line */
 				fgets(l, sizeof(l), eventlog);
 				sscanf(l, "%*s %*s %u %*u %*u %*s %*s %*d", &uicurtime);

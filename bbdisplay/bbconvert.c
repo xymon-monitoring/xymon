@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbconvert.c,v 1.11 2006-03-23 06:37:05 henrik Exp $";
+static char rcsid[] = "$Id: bbconvert.c,v 1.12 2006-05-02 12:07:00 henrik Exp $";
 
 #include <limits.h>
 #include <sys/types.h>
@@ -39,6 +39,7 @@ void dump_hobbitdchk(void)
 			FILE *logfd;
 			char *logbuf, *logenc;
 			int n;
+			size_t bytesread;
 			char *flags = NULL;
 			char *sender = NULL;
 			char *unchstr = NULL;
@@ -57,13 +58,13 @@ void dump_hobbitdchk(void)
 			logfd = fopen(logfn, "r");
 			if (logfd == NULL) continue;
 			logbuf = (char *)malloc(st.st_size+1);
-			n = fread(logbuf, 1, st.st_size, logfd);
+			bytesread = fread(logbuf, 1, st.st_size, logfd);
 			fclose(logfd);
-			if (n == -1) {
+			if (bytesread == -1) {
 				xfree(logbuf);
 				continue;
 			}
-			*(logbuf+n) = '\0';
+			*(logbuf+bytesread) = '\0';
 
 			logenc = nlencode(logbuf);
 			validtime = st.st_mtime;
@@ -93,7 +94,7 @@ void dump_hobbitdchk(void)
 			if (logfd) {
 				char l[100], colstr[20];
 				int curcol = COL_GREEN, n;
-				if (st.st_size > 130) fseek(logfd, -130, SEEK_END);
+				if (st.st_size > 130) fseeko(logfd, -130, SEEK_END);
 				while (fgets(l, sizeof(l), logfd)) {
 					n = sscanf(l+25, "%s %d", colstr, &lastchange);
 					if (n == 2) {

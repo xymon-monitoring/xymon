@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.222 2006-05-01 20:23:12 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.223 2006-05-02 12:07:00 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -159,7 +159,7 @@ typedef struct conn_t {
 	int sock;			/* Communications socket */
 	struct sockaddr_in addr;	/* Client source address */
 	unsigned char *buf, *bufp;	/* Message buffer and pointer */
-	int buflen, bufsz;		/* Active and maximum length of buffer */
+	size_t buflen, bufsz;		/* Active and maximum length of buffer */
 	int doingwhat;			/* Communications state (NOTALK, READING, RESPONDING) */
 	time_t timeout;			/* When the timeout for this connection happens */
 	struct conn_t *next;
@@ -1927,7 +1927,7 @@ unsigned char *get_filecache(char *fn)
 }
 
 
-void add_filecache(char *fn, unsigned char *buf, unsigned int buflen)
+void add_filecache(char *fn, unsigned char *buf, size_t buflen)
 {
 	RbtIterator handle;
 	filecache_t *newitem;
@@ -2011,7 +2011,7 @@ int get_binary(char *fn, conn_t *msg)
 		}
 
 		if (fstat(fd, &st) == 0) {
-			int n;
+			size_t n;
 
 			result = (unsigned char *)malloc(st.st_size);
 			n = read(fd, result, st.st_size);

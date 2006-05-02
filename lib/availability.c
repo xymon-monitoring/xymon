@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.39 2006-02-21 16:14:42 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.40 2006-05-02 12:07:00 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -246,7 +246,7 @@ static int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 				dprintf("Skipped to entry starting %lu\n", start);
 
 				if ((start + dur) < fromtime) {
-					fseek(fd, 2048, SEEK_CUR);
+					fseeko(fd, 2048, SEEK_CUR);
 					fgets(buf, bufsize, fd); /* Skip partial line */
 				}
 			}
@@ -263,10 +263,10 @@ static int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 	};
 
 	/* We know the start position of the logfile is between current pos and (current-~2048 bytes) */
-	if (ftell(fd) < 2300)
+	if (ftello(fd) < 2300)
 		rewind(fd);
 	else {
-		fseek(fd, -2300, SEEK_CUR); 
+		fseeko(fd, -2300, SEEK_CUR); 
 		fgets(buf, bufsize, fd); /* Skip partial line */
 	}
 
