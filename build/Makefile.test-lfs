@@ -1,0 +1,13 @@
+include Makefile.$(OS)
+
+all: test-lfs-std test-lfs-lfs
+
+test-lfs-std:
+	@$(CC) -o test-lfs-std test-lfs.c
+
+test-lfs-lfs:
+	@$(CC) $(CFLAGS) -o test-lfs-lfs test-lfs.c
+
+clean:
+	@rm -f test-lfs-std test-lfs-lfs
+
