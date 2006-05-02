@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char counts_rcsid[] = "$Id: do_counts.c,v 1.1 2006-04-19 16:51:28 henrik Exp $";
+static char counts_rcsid[] = "$Id: do_counts.c,v 1.2 2006-05-02 12:05:42 henrik Exp $";
 
 static char *counts_params[] = { "rrdcreate", rrdfn, "DS:count:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 static char *counts_tpl      = NULL;
@@ -23,7 +23,7 @@ int do_counts_rrd(char *counttype, char *hostname, char *testname, char *msg, ti
 
 	boln = strchr(msg, '\n'); if (boln) boln++;
 	while (boln && *boln) {
-		char *fn, *countstr;
+		char *fn, *countstr = NULL;
 
 		eoln = strchr(boln, '\n'); if (eoln) *eoln = '\0';
 
