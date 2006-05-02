@@ -1,15 +1,18 @@
 # bbgen compile-time settings for Darwin systems
 # Contributed by "Marc"
 
+# Definitions needed to enable large-file support (>2GB)
+LFSDEF = -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
+
 # NETLIBS: None needed
 NETLIBS =
 
 # Compile flags for normal build
 CC = cc
-CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT -D_BSD_SOCKLEN_T_=int
+CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT -D_BSD_SOCKLEN_T_=int $(LFSDEF) $(OSDEF)
 
 # Compile flags for debugging
-# CFLAGS = -g -DDEBUG -Wall -D_REENTRANT
+# CFLAGS = -g -DDEBUG -Wall -D_REENTRANT $(LFSDEF) $(OSDEF)
 
 # Mail program: This must support "CMD -s SUBJECT ADDRESS" to send out a mail with a subject
 # Typically, this will be "mail" or "mailx"

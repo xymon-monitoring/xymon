@@ -2,15 +2,18 @@
 
 OSDEF = -DSunOS
 
+# Definitions needed to enable large-file support (>2GB)
+LFSDEF = -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
+
 # Solaris need this
 NETLIBS = -lresolv -lsocket -lnsl
 
 # Compile flags for normal build
 CC = gcc
-CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT $(OSDEF)
+CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT $(LFSDEF) $(OSDEF)
 
 # Compile flags for debugging
-# CFLAGS = -g -DDEBUG -Wall -D_REENTRANT $(OSDEF)
+# CFLAGS = -g -DDEBUG -Wall -D_REENTRANT $(LFSDEF) $(OSDEF)
 
 # Mail program: This must support "CMD -s SUBJECT ADDRESS" to send out a mail with a subject
 # Typically, this will be "mail" or "mailx"

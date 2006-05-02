@@ -2,19 +2,22 @@
 
 OSDEF = -DLINUX
 
+# Definitions needed to enable large-file support (>2GB)
+LFSDEF = -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
+
 # NETLIBS: None needed on Linux
 NETLIBS =
 
 # Compile flags for normal build
 CC = gcc
-CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT $(OSDEF)
+CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT $(LFSDEF) $(OSDEF)
 
 ifndef PKGBUILD
 RPATH = -Wl,--rpath=
 endif
 
 # Compile flags for debugging
-# CFLAGS = -g -DDEBUG -Wall -D_REENTRANT $(OSDEF)
+# CFLAGS = -g -DDEBUG -Wall -D_REENTRANT $(LFSDEF) $(OSDEF)
 
 # Mail program: This must support "CMD -s SUBJECT ADDRESS" to send out a mail with a subject
 # Typically, this will be "mail" or "mailx"

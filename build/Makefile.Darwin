@@ -3,15 +3,18 @@
 
 OSDEF = -DDarwin
 
+# Definitions needed to enable large-file support (>2GB)
+LFSDEF = -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
+
 # NETLIBS: You may need to add -lresolv or similar to pick up network libraries
 NETLIBS =
 
 # Compile flags for normal build
 CC = gcc
-CFLAGS = -g -O -Wall -Wno-unused -D_REENTRANT -DBIND_8_COMPAT=1 $(OSDEF)
+CFLAGS = -g -O -Wall -Wno-unused -D_REENTRANT -DBIND_8_COMPAT=1 $(LFSDEF) $(OSDEF)
 
 # Compile flags for debugging
-# CFLAGS = -g -DDEBUG -D_REENTRANT -DBIND_8_COMPAT=1
+# CFLAGS = -g -DDEBUG -D_REENTRANT -DBIND_8_COMPAT=1 $(LFSDEF) $(OSDEF)
 
 # Extra environment settings for runtime stuff.
 # E.g. RUNTIMEDEFS="LD_LIBRARY_PATH=\"/opt/lib\"" to use 
