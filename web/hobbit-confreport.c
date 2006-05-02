@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-confreport.c,v 1.10 2006-04-05 08:23:53 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-confreport.c,v 1.11 2006-05-02 12:30:48 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -73,9 +73,10 @@ static int test_compare(const void *v1, const void *v2)
 
 static int is_net_test(char *tname)
 {
-	char *miscnet[] = { pingcolumn,  "http", "dns", "dig", "rpc", "ntp", "ldap", "content", "sslcert", NULL };
+	char *miscnet[] = { NULL,  "http", "dns", "dig", "rpc", "ntp", "ldap", "content", "sslcert", NULL };
 	int i;
 
+	miscnet[0] = pingcolumn; /* Cannot be computed in advance */
 	if (find_tcp_service(tname)) return 1;
 	for (i=0; (miscnet[i]); i++) if (strcmp(tname, miscnet[i]) == 0) return 1;
 
