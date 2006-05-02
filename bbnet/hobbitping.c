@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitping.c,v 1.4 2006-05-01 09:00:05 henrik Exp $";
+static char rcsid[] = "$Id: hobbitping.c,v 1.5 2006-05-02 20:59:45 henrik Exp $";
 
 #include "config.h"
 
@@ -32,6 +32,7 @@ static char rcsid[] = "$Id: hobbitping.c,v 1.4 2006-05-01 09:00:05 henrik Exp $"
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 
 #include <stdio.h>
 
@@ -341,12 +342,15 @@ void show_results(void)
 
 int main(int argc, char *argv[])
 {
-	int pingsocket, sockerr;
+	struct protoent *proto;
+	int protonumber, pingsocket = -1, sockerr;
 	int argi, sendidx, pending, tries = 3, timeout = 5;
 	uid_t uid;
 
 	/* Get a raw socket, then drop all root privs. */
-	pingsocket = socket(AF_INET, SOCK_RAW, 1); sockerr = errno;
+	proto = getprotobyname("icmp");
+	protonumber = (proto ? proto->p_proto : 1);
+	pingsocket = socket(AF_INET, SOCK_RAW, protonumber); sockerr = errno;
 	uid = getuid();
 #ifdef HPUX
 	if (uid != 0) setresuid(-1, uid, -1);
