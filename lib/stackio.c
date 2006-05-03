@@ -4,14 +4,14 @@
 /* This is a library module, part of libbbgen.                                */
 /* It contains routines for reading configuration files with "include"s.      */
 /*                                                                            */
-/* Copyright (C) 2002-2005 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: stackio.c,v 1.17 2006-03-30 06:58:50 henrik Exp $";
+static char rcsid[] = "$Id: stackio.c,v 1.18 2006-05-03 21:12:33 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>

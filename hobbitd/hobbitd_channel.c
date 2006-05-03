@@ -9,11 +9,11 @@
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
-/* Copyright (C) 2004-2005 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.45 2006-04-03 05:49:53 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.46 2006-05-03 21:12:33 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>

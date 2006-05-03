@@ -4,14 +4,14 @@
 /* This is a library module, part of libbbgen.                                */
 /* It contains routines for generating HTML version of a status log.          */
 /*                                                                            */
-/* Copyright (C) 2002-2005 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.48 2006-03-10 09:32:42 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.49 2006-05-03 21:12:33 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>

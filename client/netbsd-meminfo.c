@@ -2,14 +2,14 @@
 /* Hobbit memory information tool for NetBSD.                                 */
 /* This tool retrieves information about the total and free RAM.              */
 /*                                                                            */
-/* Copyright (C) 2005 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: netbsd-meminfo.c,v 1.2 2005-07-24 11:32:51 henrik Exp $";
+static char rcsid[] = "$Id: netbsd-meminfo.c,v 1.3 2006-05-03 21:12:33 henrik Exp $";
 
 #include <sys/param.h>
 #include <sys/types.h>

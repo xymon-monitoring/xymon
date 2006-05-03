@@ -5,14 +5,14 @@
 /* standard Hobbit-like webpage without having to deal with headers and       */
 /* footers.                                                                   */
 /*                                                                            */
-/* Copyright (C) 2004-2005 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2004-2006 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-webpage.c,v 1.7 2006-04-05 08:23:53 henrik Exp $";
+static char rcsid[] = "$Id: bb-webpage.c,v 1.8 2006-05-03 21:12:33 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>

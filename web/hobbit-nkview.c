@@ -1,14 +1,14 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit CGI for generating the Hobbit NK page                               */
 /*                                                                            */
-/* Copyright (C) 2004-2005 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2004-2006 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkview.c,v 1.16 2006-04-16 21:58:31 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkview.c,v 1.17 2006-05-03 21:12:33 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>

@@ -4,14 +4,14 @@
 /* This file contains code to generate the HTML for the Hobbit overview       */
 /* webpages.                                                                  */
 /*                                                                            */
-/* Copyright (C) 2002-2005 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.167 2006-05-02 12:31:38 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.168 2006-05-03 21:12:33 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

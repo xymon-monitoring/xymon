@@ -4,14 +4,14 @@
 /* This is a library module for Hobbit, responsible for loading the host-,    */
 /* page-, and column-links defined in the BB directory structure.             */
 /*                                                                            */
-/* Copyright (C) 2004-2005 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: links.c,v 1.11 2006-03-29 15:44:16 henrik Exp $";
+static char rcsid[] = "$Id: links.c,v 1.12 2006-05-03 21:12:33 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>

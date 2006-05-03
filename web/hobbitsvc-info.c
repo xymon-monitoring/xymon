@@ -5,14 +5,14 @@
 /* This extracts all of the static configuration info about a host contained  */
 /* in Hobbit, and displays it on one webpage.                                 */
 /*                                                                            */
-/* Copyright (C) 2002-2005 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.101 2006-05-02 15:57:07 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.102 2006-05-03 21:12:33 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

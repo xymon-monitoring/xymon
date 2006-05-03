@@ -4,14 +4,14 @@
 /* This is a library module, part of libbbgen.                                */
 /* It contains routines for timehandling.                                     */
 /*                                                                            */
-/* Copyright (C) 2002-2005 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.28 2006-03-29 21:38:25 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.29 2006-05-03 21:12:33 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>

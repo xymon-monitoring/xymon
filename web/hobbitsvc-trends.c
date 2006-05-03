@@ -7,14 +7,14 @@
 /* others (e.g. from "data" messages) are not. This generates a "trends"      */
 /* column that contains all of the graphs for a host.                         */
 /*                                                                            */
-/* Copyright (C) 2002-2005 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.67 2005-09-21 08:44:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.68 2006-05-03 21:12:33 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

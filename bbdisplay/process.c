@@ -4,14 +4,14 @@
 /* This file contains to to calculate the "color" of hosts and pages, and     */
 /* handle summary transmission.                                               */
 /*                                                                            */
-/* Copyright (C) 2002-2005 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.31 2006-03-23 06:41:45 henrik Exp $";
+static char rcsid[] = "$Id: process.c,v 1.32 2006-05-03 21:12:33 henrik Exp $";
 
 #include <limits.h>
 #include <string.h>

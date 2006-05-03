@@ -4,14 +4,14 @@
 /* This is used to launch a single Hobbit application, with the environment   */
 /* that would normally be established by hobbitlaunch.                        */
 /*                                                                            */
-/* Copyright (C) 2004-2005 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcmd.c,v 1.16 2005-12-29 16:19:45 henrik Exp $";
+static char rcsid[] = "$Id: bbcmd.c,v 1.17 2006-05-03 21:12:33 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>

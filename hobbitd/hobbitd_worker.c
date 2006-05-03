@@ -5,14 +5,14 @@
 /* from the hobbitd_channel process, and also do the decoding of messages     */
 /* that are passed on the "meta-data" first line of such a message.           */
 /*                                                                            */
-/* Copyright (C) 2004-2005 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_worker.c,v 1.23 2006-03-18 07:33:02 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_worker.c,v 1.24 2006-05-03 21:12:33 henrik Exp $";
 
 #include "config.h"
 

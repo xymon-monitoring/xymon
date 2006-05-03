@@ -3,14 +3,14 @@
 /*                                                                            */
 /* This is used to collect statistics from a BEA Weblogic server              */
 /*                                                                            */
-/* Copyright (C) 2004-2005 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: beastat.c,v 1.6 2006-04-04 21:26:43 henrik Exp $";
+static char rcsid[] = "$Id: beastat.c,v 1.7 2006-05-03 21:12:33 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>

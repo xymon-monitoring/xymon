@@ -15,14 +15,14 @@
 /* third semaphore is used as a simple counter to tell how many workers have  */
 /* attached to a channel.                                                     */
 /*                                                                            */
-/* Copyright (C) 2004-2005 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.26 2005-08-13 15:46:48 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.27 2006-05-03 21:12:33 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>

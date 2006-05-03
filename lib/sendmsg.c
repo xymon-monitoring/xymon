@@ -4,14 +4,14 @@
 /* This is a library module, part of libbbgen.                                */
 /* It contains routines for sending and receiving data to/from the BB daemon  */
 /*                                                                            */
-/* Copyright (C) 2002-2005 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.78 2006-05-02 15:57:07 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.79 2006-05-03 21:12:33 henrik Exp $";
 
 #include "config.h"
 

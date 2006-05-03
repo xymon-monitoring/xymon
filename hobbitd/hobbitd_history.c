@@ -6,14 +6,14 @@
 /* historical logfiles in bbvar/hist/ and bbvar/histlogs/ updated to keep     */
 /* track of the status changes.                                               */
 /*                                                                            */
-/* Copyright (C) 2004-2005 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.44 2006-05-02 12:07:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.45 2006-05-03 21:12:33 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>

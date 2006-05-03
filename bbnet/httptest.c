@@ -3,14 +3,14 @@
 /*                                                                            */
 /* This is used to implement the testing of HTTP service.                     */
 /*                                                                            */
-/* Copyright (C) 2003-2005 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2003-2006 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.82 2006-04-25 15:40:51 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.83 2006-05-03 21:12:33 henrik Exp $";
 
 #include <sys/types.h>
 #include <limits.h>
