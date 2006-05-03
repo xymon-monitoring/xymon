@@ -1,14 +1,14 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit RRD handler module.                                                 */
 /*                                                                            */
-/* Copyright (C) 2004-2005 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbtest_rcsid[] = "$Id: do_bbtest.c,v 1.10 2005-06-05 09:24:39 henrik Exp $";
+static char bbtest_rcsid[] = "$Id: do_bbtest.c,v 1.11 2006-05-03 21:19:24 henrik Exp $";
 
 int do_bbtest_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 { 

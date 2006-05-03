@@ -3,14 +3,14 @@
 /*                                                                            */
 /* Client backend module for Darwin / Mac OS X                                */
 /*                                                                            */
-/* Copyright (C) 2005 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char darwin_rcsid[] = "$Id: darwin.c,v 1.6 2006-05-01 20:13:15 henrik Exp $";
+static char darwin_rcsid[] = "$Id: darwin.c,v 1.7 2006-05-03 21:19:24 henrik Exp $";
 
 void handle_darwin_client(char *hostname, char *clienttype, enum ostype_t os, 
 			  namelist_t *hinfo, char *sender, time_t timestamp, 

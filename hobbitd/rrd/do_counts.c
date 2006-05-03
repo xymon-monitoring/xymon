@@ -3,14 +3,14 @@
 /*                                                                            */
 /* This module handles various "counts" messages.                             */
 /*                                                                            */
-/* Copyright (C) 2006 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char counts_rcsid[] = "$Id: do_counts.c,v 1.2 2006-05-02 12:05:42 henrik Exp $";
+static char counts_rcsid[] = "$Id: do_counts.c,v 1.3 2006-05-03 21:19:24 henrik Exp $";
 
 static char *counts_params[] = { "rrdcreate", rrdfn, "DS:count:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 static char *counts_tpl      = NULL;

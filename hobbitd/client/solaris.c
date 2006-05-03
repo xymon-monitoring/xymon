@@ -3,14 +3,14 @@
 /*                                                                            */
 /* Client backend module for Solaris                                          */
 /*                                                                            */
-/* Copyright (C) 2005 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char solaris_rcsid[] = "$Id: solaris.c,v 1.12 2006-05-01 20:13:15 henrik Exp $";
+static char solaris_rcsid[] = "$Id: solaris.c,v 1.13 2006-05-03 21:19:24 henrik Exp $";
 
 void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 			   namelist_t *hinfo, char *sender, time_t timestamp, 

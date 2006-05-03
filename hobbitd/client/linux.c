@@ -3,14 +3,14 @@
 /*                                                                            */
 /* Client backend module for Linux                                            */
 /*                                                                            */
-/* Copyright (C) 2005 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char linux_rcsid[] = "$Id: linux.c,v 1.15 2006-05-01 20:13:15 henrik Exp $";
+static char linux_rcsid[] = "$Id: linux.c,v 1.16 2006-05-03 21:19:24 henrik Exp $";
 
 void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os, 
 			 namelist_t *hinfo, char *sender, time_t timestamp,
