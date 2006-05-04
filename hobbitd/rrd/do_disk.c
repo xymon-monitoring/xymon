@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.29 2006-05-03 21:19:24 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.30 2006-05-04 13:19:34 henrik Exp $";
 
 int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -84,7 +84,9 @@ int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		 * So check if there's a slash in the NT filesystem letter - if yes,
 		 * then it's really a Unix system after all.
 		 */
-		if ((dsystype == DT_NT) && strchr(columns[0], '/') && strlen(columns[5])) dsystype = DT_UNIX;
+		if ( (dsystype == DT_NT) && (*(columns[5])) &&
+		     ((strchr(columns[0], '/')) || (strlen(columns[0]) > 1)) )
+			dsystype = DT_UNIX;
 
 		switch (dsystype) {
 		  case DT_IRIX:
