@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.33 2006-05-02 12:07:00 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.34 2006-05-04 20:31:54 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -157,12 +157,8 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 
 	sprintf(eventlogfilename, "%s/allevents", xgetenv("BBHIST"));
 	eventlog = fopen(eventlogfilename, "r");
-	if (!eventlog) {
-		errprintf("Cannot open eventlog\n");
-		return;
-	}
 
-	if (stat(eventlogfilename, &st) == 0) {
+	if (eventlog && (stat(eventlogfilename, &st) == 0)) {
 		time_t curtime;
 		int done = 0;
 
@@ -188,7 +184,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 	
 	eventhead = NULL;
 
-	while (fgets(l, sizeof(l), eventlog)) {
+	while (eventlog && (fgets(l, sizeof(l), eventlog))) {
 
 		time_t eventtime, changetime, duration;
 		unsigned int uievt, uicht, uidur;
@@ -337,7 +333,10 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 	}
 	else {
 		/* No events during the past maxminutes */
-		sprintf(title, "No events received in the last %d minutes", maxminutes);
+		if (eventlog)
+			sprintf(title, "No events received in the last %d minutes", maxminutes);
+		else
+			strcpy(title, "No events logged");
 
 		fprintf(output, "<CENTER><BR>\n");
 		fprintf(output, "<TABLE SUMMARY=\"%s\" BORDER=0>\n", title);
@@ -348,7 +347,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 		fprintf(output, "</CENTER>\n");
 	}
 
-	fclose(eventlog);
+	if (eventlog) fclose(eventlog);
 
 	if (pageregexp) pcre_free(pageregexp);
 	if (hostregexp) pcre_free(hostregexp);
