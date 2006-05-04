@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char la_rcsid[] = "$Id: do_la.c,v 1.22 2006-05-03 21:19:24 henrik Exp $";
+static char la_rcsid[] = "$Id: do_la.c,v 1.23 2006-05-04 16:06:09 henrik Exp $";
 
 int do_la_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -17,12 +17,15 @@ int do_la_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 	static pcre *as400_exp = NULL;
 	static pcre *zVM_exp = NULL;
+	static time_t starttime = 0;
 
 	char *p, *eoln = NULL;
 	int gotusers=0, gotprocs=0, gotload=0;
 	int users=0, procs=0, load=0;
+	time_t now = time(NULL);
 
 	if (la_tpl == NULL) la_tpl = setup_template(la_params);
+	if (starttime == 0) starttime = now;
 
 	if (strstr(msg, "bb-xsnmp")) {
 		/*
@@ -186,7 +189,14 @@ done_parsing:
 		create_and_update_rrd(hostname, rrdfn, la_params, la_tpl);
 	}
 
-	if (memhosts_init && (rbtFind(memhosts, hostname) == rbtEnd(memhosts))) {
+	/*
+	 * If we have run for less than 6 minutes, drop the memory updates here.
+	 * We want to be sure not to use memory statistics from the CPU report
+	 * if there is a memory add-on sending a separate memory statistics
+	 */
+	if ((now - starttime) < 360) return 0;
+
+	if (!memhosts_init || (rbtFind(memhosts, hostname) == rbtEnd(memhosts))) {
 		/* Pick up memory statistics */
 		int found, overflow, realuse, swapuse;
 		long long phystotal, physavail, pagetotal, pageavail;
