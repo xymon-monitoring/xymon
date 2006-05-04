@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.49 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.50 2006-05-04 13:17:53 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -330,6 +330,9 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		multikey = (char *)malloc(strlen(service) + 3);
 		sprintf(multikey, ",%s,", service);
 		if (strstr(multigraphs, multikey)) {
+			/* The "disk" report from the NetWare client puts a "warning light" on all entries */
+			int netwarediskreport = (strstr(firstline, "NetWare Volumes") != NULL);
+
 			/* Count how many lines are in the status message. This is needed by hobbitd_graph later */
 			linecount = 0; p = restofmsg;
 			do {
@@ -337,11 +340,12 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 				while ((*p) && (isspace((int)*p) || iscntrl((int)*p))) p++;
 				if (*p) {
 					if ((*p == '&') && (parse_color(p+1) != -1)) {
-						/* A "warninglight" line - skip it */
+						/* A "warninglight" line - skip it, unless its from a Netware box */
+						if (netwarediskreport) linecount++;
 					}
 					else {
 						/* We found something that is not blank, so one more line */
-						linecount++;
+						if (!netwarediskreport) linecount++;
 					}
 					/* Then skip forward to the EOLN */
 					p = strchr(p, '\n');
@@ -349,7 +353,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			} while (p && (*p));
 
 			/* There is probably a header line ... */
-			if (linecount > 1) linecount--;
+			if (!netwarediskreport && (linecount > 1)) linecount--;
 		}
 		xfree(multikey);
 
