@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.230 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.231 2006-05-05 06:00:42 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -1054,7 +1054,7 @@ int start_ping_service(service_t *service)
 	 *      for the process to finish.
 	 *
 	 * Therefore this slightly more complex solution, which in essence
-	 * forks a new process running "ping -Ae 2>&1 1>$BBTMP/ping.$$"
+	 * forks a new process running "hobbitping 2>&1 1>$BBTMP/ping.$$"
 	 * The output is then picked up by the finish_ping_service().
 	 */
 
@@ -1092,8 +1092,12 @@ int start_ping_service(service_t *service)
 		 *    dump it to /dev/null, but it might be useful to see
 		 *    what went wrong.
 		 */
-		int outfile = open(pinglog, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
-		int errfile = open(pingerrlog, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
+		int outfile, errfile;
+
+		outfile = open(pinglog, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
+		if (outfile == -1) errprintf("Cannot create file %s : %s\n", pinglog, strerror(errno));
+		errfile = open(pingerrlog, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
+		if (errfile == -1) errprintf("Cannot create file %s : %s\n", pingerrlog, strerror(errno));
 
 		if ((outfile == -1) || (errfile == -1)) {
 			/* Ouch - cannot create our output files. Abort. */
@@ -1167,6 +1171,14 @@ int finish_ping_service(service_t *service)
 
 	  case 3: /* Bad command-line args, or not suid-root */
 		errprintf("Execution of '%s' failed - program not suid root?\n", pingcmd);
+		break;
+
+	  case 98:
+		errprintf("hobbitping child could not create outputfiles in %s\n", xgetenv("$BBTMP"));
+		break;
+
+	  case 99:
+		errprintf("Could not run the command '%s' (exec failed)\n", pingcmd);
 		break;
 
 	  default:
