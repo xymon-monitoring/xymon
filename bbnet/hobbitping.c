@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitping.c,v 1.5 2006-05-02 20:59:45 henrik Exp $";
+static char rcsid[] = "$Id: hobbitping.c,v 1.6 2006-05-05 05:59:56 henrik Exp $";
 
 #include "config.h"
 
@@ -368,7 +368,7 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--help") == 0) {
 			fprintf(stderr, "%s [--retries=N] [--timeout=N]\n", argv[0]);
 			if (pingsocket >= 0) close(pingsocket);
-			return 1;
+			return 3;
 		}
 		else if (*(argv[argi]) == '-') {
 			/* Ignore everything else - for fping compatibility */
@@ -378,7 +378,7 @@ int main(int argc, char *argv[])
 	if (pingsocket == -1) {
 		fprintf(stderr, "Cannot get RAW socket: %s\n", strerror(sockerr));
 		if (sockerr == EPERM) fprintf(stderr, "You must run this program as root\n");
-		return 1;
+		return 3;
 	}
 
 	/* Set the socket non-blocking - we use select() exclusively */
@@ -413,7 +413,7 @@ int main(int argc, char *argv[])
 			if (n < 0) {
 				if (errno == EINTR) continue;
 				fprintf(stderr, "select failed: %s\n", strerror(errno));
-				return 1;
+				return 4;
 			}
 			else if (n == 0) {
 				/* Time out */
