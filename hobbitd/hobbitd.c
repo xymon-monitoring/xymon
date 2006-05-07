@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.226 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.227 2006-05-07 06:26:03 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -149,6 +149,7 @@ sender_t *tracelist = NULL;
 int      traceall = 0;
 int      ignoretraced = 0;
 int      save_clientlogs = 1;
+int      allow_downloads = 1;
 
 #define NOTALK 0
 #define RECEIVING 1
@@ -2549,7 +2550,7 @@ void do_message(conn_t *msg, char *origin)
 		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 		handle_enadis(0, msg->buf, sender);
 	}
-	else if (strncmp(msg->buf, "config", 6) == 0) {
+	else if (allow_downloads && (strncmp(msg->buf, "config", 6) == 0)) {
 		char *conffn, *p;
 
 		if (!oksender(statussenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
@@ -2563,7 +2564,7 @@ void do_message(conn_t *msg, char *origin)
 			msg->bufp = msg->buf;
 		}
 	}
-	else if (strncmp(msg->buf, "download", 8) == 0) {
+	else if (allow_downloads && (strncmp(msg->buf, "download", 8) == 0)) {
 		char *fn, *p;
 
 		if (!oksender(statussenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
@@ -3911,6 +3912,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--no-clientlog") == 0) {
 			 save_clientlogs = 0;
+		}
+		else if (strcmp(argv[argi], "--no-download") == 0) {
+			 allow_downloads = 0;
 		}
 		else if (argnmatch(argv[argi], "--help")) {
 			printf("Options:\n");
