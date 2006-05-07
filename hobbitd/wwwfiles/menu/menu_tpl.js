@@ -22,7 +22,7 @@ var MENU_POS = [
 },
 {
 	'height': 20,
-	'width': 150,
+	'width': 160,
 	'block_top': 23,
 	'block_left': 0,
 	'top': 21,
