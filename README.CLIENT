@@ -74,6 +74,7 @@ All of the normal configuration is done on the Hobbit SERVER.
 See the hobbit-clients.cfg(5) and client-local.cfg(5) man-
 pages on the Hobbit server.
 
+
 Hostname detection
 ------------------
 The client reports to Hobbit using the hostname taken from
@@ -83,6 +84,7 @@ qualified DNS name (myserver.foo.com) or a simple hostname
 can override the default with the "--hostname=CLIENT.HOST.NAME"
 option to the runclient.sh startup command.
 
+
 OS detection on Linux systems
 -----------------------------
 The client normally determines the operating system auto-
@@ -90,14 +92,23 @@ matically from the "uname -s" output. This results in all
 Linux systems reporting as "Linux" - which causes the
 vmstat graphs to fail for certain types of systems:
 
-	- Red Hat Enterprise Linux
-	  Should report "rhel3" instead.
-
-	- Systems running Linux kernels 2.2.x (Debian Woody)
-	  Should report "linux22" instead.
+	- Systems running Linux kernels 2.2.x (e.g. Debian Woody)
+	  Must report "linux22" instead.
+	- Red Hat Enterprise Linux 2.1
+	  Must report "linux22" instead.
+	- Red Hat Enterprise Linux 3 update 1
+	  The default is adequate
+	- Red Hat Enterprise Linux 3 update 2 or later
+	  Must report "rhel3" instead.
+	- Red Hat Enterprise Linux 4 update 2 and later
+	  The default is adequate
 
 To override the default, start the client using the 
 "--os=OSNAME" option to the runclient.sh startup command.
+
+(Thanks to Thomas Seglard Enata for providing the about the 
+ various Red Hat versions).
+
 
 Extension scripts
 -----------------
