@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.168 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.169 2006-05-09 12:00:00 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -547,18 +547,27 @@ void do_hosts(host_t *head, char *onlycols, char *exceptcols, FILE *output, FILE
 								xgetenv("BBWEB"), textrepfn);
 
 							htmlrep = fopen(htmlrepfn, "w");
+							if (!htmlrep) {
+								errprintf("Cannot create output file %s: %s\n",
+									htmlrepfn, strerror(errno));
+							}
 							textrep = fopen(textrepfn, "w");
+							if (!textrep) {
+								errprintf("Cannot create output file %s: %s\n",
+									textrepfn, strerror(errno));
+							}
 
-							/* Pre-build the test-specific report */
-							restore_replogs(e->causes);
-							generate_replog(htmlrep, textrep, textrepurl,
+							if (textrep && htmlrep) {
+								/* Pre-build the test-specific report */
+								restore_replogs(e->causes);
+								generate_replog(htmlrep, textrep, textrepurl,
 									h->hostname, e->column->name, e->color, reportstyle,
 									h->ip, h->displayname,
 									reportstart, reportend,
 									reportwarnlevel, reportgreenlevel, e->repinfo);
-
-							if (textrep) fclose(textrep);
-							if (htmlrep) fclose(htmlrep);
+								fclose(textrep);
+								fclose(htmlrep);
+							}
 
 							fprintf(output, "<A HREF=\"%s-%s%s\">\n", 
 								h->hostname, e->column->name, htmlextension);
@@ -858,8 +867,9 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 			/* We've created the directories. Now retry creating the file. */
 			output = fopen(tmpfilename, "w");
 			if (output == NULL) {
-				errprintf("Cannot open file %s (in %s): %s\n", 
+				errprintf("Cannot create file %s (in %s): %s\n", 
 					  tmpfilename, curdir, strerror(errno));
+				return;
 			}
 
 			/* 
