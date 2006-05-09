@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.70 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.71 2006-05-09 11:23:02 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -305,14 +305,6 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 			mntcol = selectcolumn(p, mnthdr);
 			xfree(p);
 			dprintf("Disk check: header '%s', columns %d and %d\n", bol, capacol, mntcol);
-
-			if ((capacol == -1) && (mntcol == -1)) {
-				diskcolor = COL_YELLOW;
-				sprintf(msgline, "&red Expected string (%s and %s) not found in df output header\n", 
-					capahdr, mnthdr);
-				addtobuffer(monmsg, msgline);
-				nl = bol = NULL; /* Abandon loop */
-			}
 		}
 		else {
 			int absolutes;
@@ -349,6 +341,14 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 		}
 
 		if (nl) { *nl = '\n'; bol = nl+1; } else bol = NULL;
+	}
+
+	if ((capacol == -1) && (mntcol == -1)) {
+		/* If this happens, we havent found our headers so no filesystems have been processed */
+		diskcolor = COL_YELLOW;
+		sprintf(msgline, "&red Expected strings (%s and %s) not found in df output header\n", 
+			capahdr, mnthdr);
+		addtobuffer(monmsg, msgline);
 	}
 
 	/* Check for filesystems that must (not) exist */
