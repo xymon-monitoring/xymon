@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.52 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.53 2006-05-09 12:36:19 henrik Exp $";
 
 #include "config.h"
 
@@ -546,8 +546,8 @@ int main(int argc, char *argv[])
 			}
 
 			p = stentry->buf;
-			p += sprintf(p, "combo\nstatus %s green %s Proxy up %s\n\nProxy statistics\n\nIncoming messages        : %10lu (%lu msgs/second)\nOutbound messages        : %10lu\n\nIncoming message distribution\n- Combo messages         : %10lu\n- Status messages        : %10lu\n  Messages merged        : %10lu\n  Resulting combos       : %10lu\n- Page messages          : %10lu\n- Other messages         : %10lu\n\nProxy ressources\n- Connection table size  : %10d\n- Buffer space           : %10lu kByte\n",
-				proxyname, timestamp, runtime_s,
+			p += sprintf(p, "combo\nstatus %s green %s Proxy up %s\n\nbbproxy for Hobbit version %s\n\nProxy statistics\n\nIncoming messages        : %10lu (%lu msgs/second)\nOutbound messages        : %10lu\n\nIncoming message distribution\n- Combo messages         : %10lu\n- Status messages        : %10lu\n  Messages merged        : %10lu\n  Resulting combos       : %10lu\n- Page messages          : %10lu\n- Other messages         : %10lu\n\nProxy ressources\n- Connection table size  : %10d\n- Buffer space           : %10lu kByte\n",
+				proxyname, timestamp, runtime_s, VERSION,
 				msgs_total, (msgs_total - msgs_total_last) / (now - laststatus),
 				msgs_delivered,
 				msgs_combo, 
