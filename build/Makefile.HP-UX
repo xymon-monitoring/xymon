@@ -9,7 +9,9 @@ LFSDEF =  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
 NETLIBS = -lnsl
 
 # Compile flags for normal build
-CC = cc
+# NOTE: HP-UX built-in compiler is horribly broken and will not compile Hobbit.
+# So you should use the GNU compiler, gcc.
+CC = gcc
 CFLAGS = -g -O -D_REENTRANT  $(LFSDEF) $(OSDEF)
 
 # Compile flags for debugging
