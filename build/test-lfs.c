@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
 
 	fileofs = 0;
 
-#ifdef _LARGEFILE_SUPPORT
+#ifdef _LARGEFILE_SOURCE
 	printf("%d:%lld\n", (sizeof(off_t) >= minsize), fileofs);
 #else
 	printf("%d:%ld\n", (sizeof(off_t) >= minsize), fileofs);
