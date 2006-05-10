@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.71 2006-05-09 11:23:02 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.72 2006-05-10 08:35:01 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -291,7 +291,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 	monmsg = newstrbuffer(0);
 	dchecks = clear_disk_counts(hinfo, clientclass);
 
-	bol = (dchecks ? dfstr : NULL);	/* No need to go through it if no disk checks defined */
+	bol = dfstr; /* Must do this always, to at least grab the column-numbers we need */
 	while (bol) {
 		char *fsname = NULL, *usestr = NULL;
 
@@ -346,9 +346,12 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 	if ((capacol == -1) && (mntcol == -1)) {
 		/* If this happens, we havent found our headers so no filesystems have been processed */
 		diskcolor = COL_YELLOW;
-		sprintf(msgline, "&red Expected strings (%s and %s) not found in df output header\n", 
+		sprintf(msgline, "&red Expected strings (%s and %s) not found in df output\n", 
 			capahdr, mnthdr);
 		addtobuffer(monmsg, msgline);
+
+		errprintf("Host %s sent incomprehensible disk report - missing columnheaders '%s' and '%s'\n%s\n",
+			  capahdr, mnthdr, dfstr);
 	}
 
 	/* Check for filesystems that must (not) exist */
