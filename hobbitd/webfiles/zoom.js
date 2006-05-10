@@ -35,7 +35,7 @@
 
 // Global constant
 
-var cURLBase = "hobbitgraph.sh?action=showzoom&graph=custom";
+var cURLBase = "hobbitgraph.sh?action=selzoom&graph=custom";
 
 // Global variables
 
