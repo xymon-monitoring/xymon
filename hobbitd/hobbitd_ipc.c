@@ -22,7 +22,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.27 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.28 2006-05-11 20:16:58 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -66,7 +66,7 @@ hobbitd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 		return NULL;
 	}
 
-	bufsz = shbufsz(chnid);
+	bufsz = 1024*shbufsz(chnid);
 	dprintf("Setting up %s channel (id=%d)\n", channelnames[chnid], chnid);
 
 	dprintf("calling ftok('%s',%d)\n", bbh, chnid);

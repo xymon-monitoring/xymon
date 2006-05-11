@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.227 2006-05-07 06:26:03 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.228 2006-05-11 20:16:58 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -566,7 +566,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 	struct timeval tstamp;
 	struct timezone tz;
 	int semerr = 0;
-	unsigned int bufsz = shbufsz(channel->channelid);
+	unsigned int bufsz = 1024*shbufsz(channel->channelid);
 
 	dprintf("-> posttochannel\n");
 

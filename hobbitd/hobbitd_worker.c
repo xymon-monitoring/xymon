@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_worker.c,v 1.24 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_worker.c,v 1.25 2006-05-11 20:16:58 henrik Exp $";
 
 #include "config.h"
 
@@ -103,7 +103,7 @@ startagain:
 		 * The extra 4KB is to allow the memmove() that will be
 		 * needed occasionally some room to work optimally.
 		 */
-		bufsz = shbufsz(chnid) + 4096;
+		bufsz = 1024*(shbufsz(chnid) + 4);
 		buf = (char *)malloc(bufsz+1);
 		*buf = '\0';
 		startpos = fillpos = buf;
