@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_buffer.c,v 1.6 2006-05-11 20:16:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_buffer.c,v 1.7 2006-05-12 05:44:52 henrik Exp $";
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -36,7 +36,12 @@ unsigned int shbufsz(enum msgchannels_t chnid)
 		  default: break;
 		}
 
-		if (v) result = atoi(v);
+		if (v) {
+			result = atoi(v);
+			/* See if it is an old setting in bytes */
+			if (result > 32*1024) result = (result / 1024);
+		}
+
 		if (result < 32) result = defvalue;
 	}
 	else {
