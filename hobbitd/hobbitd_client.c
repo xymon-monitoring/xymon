@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.72 2006-05-10 08:35:01 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.73 2006-05-14 20:04:27 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -350,8 +350,8 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 			capahdr, mnthdr);
 		addtobuffer(monmsg, msgline);
 
-		errprintf("Host %s sent incomprehensible disk report - missing columnheaders '%s' and '%s'\n%s\n",
-			  capahdr, mnthdr, dfstr);
+		errprintf("Host %s (%s) sent incomprehensible disk report - missing columnheaders '%s' and '%s'\n%s\n",
+			  hostname, osname(os), capahdr, mnthdr, dfstr);
 	}
 
 	/* Check for filesystems that must (not) exist */
