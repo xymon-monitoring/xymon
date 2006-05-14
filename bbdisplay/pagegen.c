@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.169 2006-05-09 12:00:00 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.170 2006-05-14 20:03:56 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -53,7 +53,7 @@ char *lognkstatus = NULL;
 int  nkonlyreds = 0;
 char *nkackname = "NK";
 int  wantrss = 0;
-int  bb2colors = ((1 << COL_RED) | (1 << COL_YELLOW));
+int  bb2colors = ((1 << COL_RED) | (1 << COL_YELLOW) | (1 << COL_PURPLE));
 
 /* Format strings for htaccess files */
 char *htaccess = NULL;
