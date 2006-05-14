@@ -5,14 +5,14 @@
 # This invokes the OS-specific script to build a client message, and sends   #
 # if off to the Hobbit server.                                               #
 #                                                                            #
-# Copyright (C) 2005 Henrik Storner <henrik@hswn.dk>                         #
+# Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    #
 #                                                                            #
 # This program is released under the GNU General Public License (GPL),       #
 # version 2. See the file "COPYING" for details.                             #
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient.sh,v 1.11 2006-05-01 20:34:57 henrik Exp $
+# $Id: hobbitclient.sh,v 1.12 2006-05-14 20:09:47 henrik Exp $
 
 # Must make sure the commands return standard (english) texts.
 LANG=C
@@ -32,44 +32,50 @@ if test "$BBOSSCRIPT" = ""; then
 	BBOSSCRIPT="hobbitclient-`uname -s | tr '[A-Z]' '[a-z]'`.sh"
 fi
 
-TEMPFILE="$BBTMP/msg.txt.$$"
-rm -f $TEMPFILE
-touch $TEMPFILE
+MSGFILE="$BBTMP/msg.$MACHINEDOTS.txt"
+MSGTMPFILE="$MSGFILE.$$"
+LOGFETCHCFG=$BBTMP/logfetch.$MACHINEDOTS.cfg
+LOGFETCHSTATUS=$BBTMP/logfetch.$MACHINEDOTS.status
+export LOGFETCHCFG LOGFETCHSTATUS
+
+rm -f $MSGTMPFILE
+touch $MSGTMPFILE
+
 
 CLIENTVERSION="`$BBHOME/bin/clientupdate --level`"
 
 if test "$LOCALMODE" = "yes"; then
-	echo "@@client#1|0|127.0.0.1|$MACHINEDOTS|$BBOSTYPE" >> $TEMPFILE
+	echo "@@client#1|0|127.0.0.1|$MACHINEDOTS|$BBOSTYPE" >> $MSGTMPFILE
 fi
 
-echo "client $MACHINE.$BBOSTYPE $CONFIGCLASS"  >>  $TEMPFILE
-$BBHOME/bin/$BBOSSCRIPT >> $TEMPFILE
-echo "[clientversion]"
-echo "$CLIENTVERSION" >> $TEMPFILE
+echo "client $MACHINE.$BBOSTYPE $CONFIGCLASS"  >>  $MSGTMPFILE
+$BBHOME/bin/$BBOSSCRIPT >> $MSGTMPFILE
+echo "[clientversion]" >>$MSGTMPFILE
+echo "$CLIENTVERSION" >> $MSGTMPFILE
 
 if test "$LOCALMODE" = "yes"; then
-	echo "@@" >> $TEMPFILE
-	$BBHOME/bin/hobbitd_client --local --config=$BBHOME/etc/localclient.cfg <$TEMPFILE
+	echo "@@" >> $MSGTMPFILE
+	$BBHOME/bin/hobbitd_client --local --config=$BBHOME/etc/localclient.cfg <$MSGTMPFILE
 else
-	$BB $BBDISP "@" < $TEMPFILE >$BBTMP/logfetch.cfg.tmp
-	if test -s $BBTMP/logfetch.cfg.tmp
+	$BB $BBDISP "@" < $MSGTMPFILE >$LOGFETCHCFG.tmp
+	if test -s $LOGFETCHCFG.tmp
 	then
-		mv $BBTMP/logfetch.cfg.tmp $BBTMP/logfetch.cfg
+		mv $LOGFETCHCFG.tmp $LOGFETCHCFG
 	else
-		rm $BBTMP/logfetch.cfg.tmp
+		rm $LOGFETCHCFG.tmp
 	fi
 fi
 
 # Save the latest file for debugging.
-rm -f $BBTMP/msg.txt
-mv $TEMPFILE $BBTMP/msg.txt
+rm -f $MSGFILE
+mv $MSGTMPFILE $MSGFILE
 
 if test "$LOCALMODE" != "yes"; then
 	# Check for client updates
-	SERVERVERSION=`grep "^clientversion:" $BBTMP/logfetch.cfg | cut -d: -f2`
+	SERVERVERSION=`grep "^clientversion:" $LOGFETCHCFG | cut -d: -f2`
 	if test "$SERVERVERSION" != "" -a "$SERVERVERSION" != "$CLIENTVERSION"; then
-		cp -pf $BBHOME/bin/clientupdate $BBTMP/.update
-		exec $BBTMP/.update --update=$SERVERVERSION
+		cp -pf $BBHOME/bin/clientupdate $BBTMP/.update.$MACHINE
+		exec $BBTMP/.update.$MACHINE --update=$SERVERVERSION
 	fi
 fi
 
