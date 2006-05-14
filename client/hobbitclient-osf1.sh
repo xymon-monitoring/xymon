@@ -2,14 +2,14 @@
 #----------------------------------------------------------------------------#
 # OSF1 client for Hobbit                                                     #
 #                                                                            #
-# Copyright (C) 2005 Henrik Storner <henrik@hswn.dk>                         #
+# Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    #
 #                                                                            #
 # This program is released under the GNU General Public License (GPL),       #
 # version 2. See the file "COPYING" for details.                             #
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-osf1.sh,v 1.8 2006-04-20 07:07:27 henrik Exp $
+# $Id: hobbitclient-osf1.sh,v 1.9 2006-05-14 20:08:48 henrik Exp $
 
 echo "[date]"
 date
@@ -41,11 +41,11 @@ ps -ef
 echo "[top]"
 top -b -n 1 
 # vmstat
-nohup sh -c "vmstat 300 2 1>$BBTMP/hobbit_vmstat.$$ 2>&1; mv $BBTMP/hobbit_vmstat.$$ $BBTMP/hobbit_vmstat" </dev/null >/dev/null 2>&1 &
+nohup sh -c "vmstat 300 2 1>$BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ $BBTMP/hobbit_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
 sleep 5
-if test -f $BBTMP/hobbit_vmstat; then echo "[vmstat]"; cat $BBTMP/hobbit_vmstat; rm -f $BBTMP/hobbit_vmstat; fi
+if test -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; then echo "[vmstat]"; cat $BBTMP/hobbit_vmstat.$MACHINEDOTS; rm -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; fi
 # logfiles
-$BBHOME/bin/logfetch $BBTMP/logfetch.cfg $BBTMP/logfetch.status
+$BBHOME/bin/logfetch $LOGFETCHCFG $LOGFETCHSTATUS
 
 exit
 

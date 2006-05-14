@@ -3,14 +3,14 @@
 #----------------------------------------------------------------------------#
 # Darwin (Mac OS X) client for Hobbit                                        #
 #                                                                            #
-# Copyright (C) 2005 Henrik Storner <henrik@hswn.dk>                         #
+# Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    #
 #                                                                            #
 # This program is released under the GNU General Public License (GPL),       #
 # version 2. See the file "COPYING" for details.                             #
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-darwin.sh,v 1.11 2006-04-24 05:49:13 henrik Exp $
+# $Id: hobbitclient-darwin.sh,v 1.12 2006-05-14 20:08:48 henrik Exp $
 
 echo "[date]"
 date
@@ -39,11 +39,11 @@ netstat -ibn | egrep -v "^lo|<Link"
 echo "[ports]"
 netstat -an|grep "^tcp"
 echo "[ps]"
-ps -axw
+ps -ax -ww -o pid,ppid,user,start,state,pri,pcpu,time,pmem,rss,vsz,command
 echo "[top]"
 top -l 1 -n 20
 # logfiles
-$BBHOME/bin/logfetch $BBTMP/logfetch.cfg $BBTMP/logfetch.status
+$BBHOME/bin/logfetch $LOGFETCHCFG $LOGFETCHSTATUS
 
 exit
 
