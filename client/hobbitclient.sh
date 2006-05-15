@@ -12,7 +12,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient.sh,v 1.12 2006-05-14 20:09:47 henrik Exp $
+# $Id: hobbitclient.sh,v 1.13 2006-05-15 13:25:59 henrik Exp $
 
 # Must make sure the commands return standard (english) texts.
 LANG=C
@@ -58,11 +58,14 @@ if test "$LOCALMODE" = "yes"; then
 	$BBHOME/bin/hobbitd_client --local --config=$BBHOME/etc/localclient.cfg <$MSGTMPFILE
 else
 	$BB $BBDISP "@" < $MSGTMPFILE >$LOGFETCHCFG.tmp
-	if test -s $LOGFETCHCFG.tmp
+	if test -f $LOGFETCHCFG.tmp
 	then
-		mv $LOGFETCHCFG.tmp $LOGFETCHCFG
-	else
-		rm $LOGFETCHCFG.tmp
+		if test -s $LOGFETCHCFG.tmp
+		then
+			mv $LOGFETCHCFG.tmp $LOGFETCHCFG
+		else
+			rm -f $LOGFETCHCFG.tmp
+		fi
 	fi
 fi
 
@@ -70,7 +73,7 @@ fi
 rm -f $MSGFILE
 mv $MSGTMPFILE $MSGFILE
 
-if test "$LOCALMODE" != "yes"; then
+if test "$LOCALMODE" != "yes" -a -f $LOGFETCHCFG; then
 	# Check for client updates
 	SERVERVERSION=`grep "^clientversion:" $LOGFETCHCFG | cut -d: -f2`
 	if test "$SERVERVERSION" != "" -a "$SERVERVERSION" != "$CLIENTVERSION"; then
