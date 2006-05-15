@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-netbsd.sh,v 1.11 2006-05-14 20:08:48 henrik Exp $
+# $Id: hobbitclient-netbsd.sh,v 1.12 2006-05-15 13:29:02 henrik Exp $
 
 echo "[date]"
 date
@@ -47,7 +47,10 @@ nohup sh -c "vmstat 300 2 1>$BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ 2>&1; mv $BBTMP
 sleep 5
 if test -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; then echo "[vmstat]"; cat $BBTMP/hobbit_vmstat.$MACHINEDOTS; rm -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; fi
 # logfiles
-$BBHOME/bin/logfetch $LOGFETCHCFG $LOGFETCHSTATUS
+if test -f $LOGFETCHCFG
+then
+    $BBHOME/bin/logfetch $LOGFETCHCFG $LOGFETCHSTATUS
+fi
 
 exit
 

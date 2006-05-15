@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-sunos.sh,v 1.12 2006-05-14 20:08:48 henrik Exp $
+# $Id: hobbitclient-sunos.sh,v 1.13 2006-05-15 13:29:02 henrik Exp $
 
 echo "[date]"
 date
@@ -63,7 +63,10 @@ if test -f $BBTMP/hobbit_iostatcpu.$MACHINEDOTS; then echo "[iostatcpu]"; cat $B
 if test -f $BBTMP/hobbit_iostatdisk.$MACHINEDOTS; then echo "[iostatdisk]"; cat $BBTMP/hobbit_iostatdisk.$MACHINEDOTS; rm -f $BBTMP/hobbit_iostatdisk.$MACHINEDOTS; fi
 
 # logfiles
-$BBHOME/bin/logfetch $LOGFETCHCFG $LOGFETCHSTATUS
+if test -f $LOGFETCHCFG
+then
+    $BBHOME/bin/logfetch $LOGFETCHCFG $LOGFETCHSTATUS
+fi
 
 exit
 
