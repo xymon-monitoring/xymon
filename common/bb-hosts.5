@@ -564,6 +564,10 @@ successive failures.
 
 For the other network tests, use "badftp", "badssh" etc.
 
+.IP nohttpdata
+Hide the URL and the content data so they are not displayed
+on the status page for an HTTP content check.
+
 
 .SH CONNECTIVITY (PING) TEST
 These tags affect the behaviour of the bbtest-net connectivity
@@ -990,6 +994,11 @@ reported in the column "content1", the third in "content2" etc.
 You can also specify the columnname directly in the test
 specification, by writing it as "cont=COLUMN;http://...".
 Column-names cannot include whitespace or semi-colon.
+
+The content-check status by default includes the full URL
+that was requested, and the HTML data returned by the server.
+You can hide these on a per-host (not per-test) basis by adding the
+\fBnohttpdata\fR tag to the host entry.
 
 .IP content=URL
 This syntax is deprecated. You should use the "cont"
