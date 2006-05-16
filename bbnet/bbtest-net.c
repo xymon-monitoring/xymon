@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.231 2006-05-05 06:00:42 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.232 2006-05-16 21:21:29 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -581,6 +581,8 @@ void load_tests(void)
 						s = httptest;
 						add_url_to_dns_queue(testspec);
 					}
+
+					silenttest = (bbh_item(hwalk, BBH_FLAG_NOHTTPDATA) != NULL);
 				}
 				else if (argnmatch(testspec, "apache") || argnmatch(testspec, "apache=")) {
 					char *userfmt = "cont=apache;%s;.";
