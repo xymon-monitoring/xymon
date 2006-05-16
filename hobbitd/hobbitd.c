@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.229 2006-05-16 20:44:57 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.230 2006-05-16 21:38:27 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -2798,6 +2798,7 @@ void do_message(conn_t *msg, char *origin)
 				continue;
 			}
 
+			firstlog = hwalk->logs;
 			if ((strcmp(hwalk->hostname, "summary") != 0) && (strcmp(hwalk->hostname, "dialup") != 0)) {
 				namelist_t *hinfo = hostinfo(hwalk->hostname);
 
@@ -2820,7 +2821,6 @@ void do_message(conn_t *msg, char *origin)
 				}
 			}
 
-			firstlog = hwalk->logs;
 			for (lwalk = firstlog; (lwalk); lwalk = lwalk->next) {
 				if (!match_test_filter(lwalk, stest, scolor)) continue;
 
