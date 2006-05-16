@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-statusreport.c,v 1.3 2006-04-05 08:23:53 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-statusreport.c,v 1.4 2006-05-16 10:27:08 henrik Exp $";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -27,13 +27,17 @@ int main(int argc, char *argv[])
 	char *envarea = NULL;
 	char *server = NULL;
 	char *cookie, *p, *pagefilter = "";
-	char *otherfilter = "";
-	char *testname = "mbsa";
+	char *filter = NULL;
+	char *heading = NULL;
 	int  showcolors = 1;
+	int  showcolumn = 0;
+	int  addlink = 0;
 	int  allhosts = 0;
+	int  summary = 0;
 	char *req, *board, *l;
 	int argi, res;
 
+	init_timestamp();
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
@@ -46,20 +50,49 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
 		}
-		else if (argnmatch(argv[argi], "--column=")) {
+		else if ( argnmatch(argv[argi], "--column=") || argnmatch(argv[argi], "--test=")) {
 			char *p = strchr(argv[argi], '=');
-			testname = strdup(p+1);
-		}
-		else if (argnmatch(argv[argi], "--test=")) {
-			char *p = strchr(argv[argi], '=');
-			testname = strdup(p+1);
+			int needed;
+			
+			needed = 10 + strlen(p); if (filter) needed += strlen(filter);
+			filter = (char *)(filter ? realloc(filter, needed) : calloc(1, needed));
+			sprintf(filter + strlen(filter), " test=%s", p+1);
+
+			if (!heading) {
+				heading = (char *)malloc(1024 + strlen(p));
+				sprintf(heading, "%s report on %s", p+1, timestamp);
+			}
 		}
 		else if (argnmatch(argv[argi], "--filter=")) {
 			char *p = strchr(argv[argi], '=');
-			otherfilter = strdup(p+1);
+			int needed;
+			
+			needed = 10 + strlen(p); if (filter) needed += strlen(filter);
+			filter = (char *)(filter ? realloc(filter, needed) : calloc(1, needed));
+			sprintf(filter + strlen(filter), " %s", p+1);
+		}
+		else if (argnmatch(argv[argi], "--heading=")) {
+			char *p = strchr(argv[argi], '=');
+
+			heading = strdup(p+1);
+		}
+		else if (strcmp(argv[argi], "--show-column") == 0) {
+			showcolumn = 1;
+		}
+		else if (strcmp(argv[argi], "--show-test") == 0) {
+			showcolumn = 1;
 		}
 		else if (strcmp(argv[argi], "--show-colors") == 0) {
 			showcolors = 1;
+		}
+		else if (strcmp(argv[argi], "--show-summary") == 0) {
+			summary = 1;
+		}
+		else if (strcmp(argv[argi], "--show-message") == 0) {
+			summary = 0;
+		}
+		else if (strcmp(argv[argi], "--link") == 0) {
+			addlink = 1;
 		}
 		else if (strcmp(argv[argi], "--no-colors") == 0) {
 			showcolors = 0;
@@ -81,28 +114,29 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	init_timestamp();
-	req = malloc(1024 + strlen(testname) + strlen(pagefilter) + strlen(otherfilter));
-	sprintf(req, "hobbitdboard test=%s fields=hostname,color,msg %s %s",
-		testname, pagefilter, otherfilter);
+	req = malloc(1024 + strlen(pagefilter) + strlen(filter));
+	sprintf(req, "hobbitdboard fields=hostname,testname,color,msg %s %s",
+		pagefilter, filter);
 	res = sendmessage(req, server, NULL, &board, 1, BBTALK_TIMEOUT);
 
 	if (res != BB_OK) return 1;
 
 	printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 
-	printf("<html><head><title>%s report on %s</title></head>\n", testname, timestamp);
-	printf("<body><table border=1 cellpadding=5px><tr><th>Host</th><th align=left>Status</th></tr>\n");
+	printf("<html><head><title>%s</title></head>\n", heading);
+	printf("<body><table border=1 cellpadding=5px><tr><th>%s</th><th align=left>Status</th></tr>\n",
+	       (showcolumn ? "Host/Column" : "Host"));
 	l = board;
 	while (l && *l) {
-		char *host, *colorstr = NULL, *msg = NULL, *p;
+		char *hostname, *testname = NULL, *colorstr = NULL, *msg = NULL, *p;
 		char *eoln = strchr(l, '\n');
 		if (eoln) *eoln = '\0';
 
-		host = l;
+		hostname = l;
+		p = strchr(l, '|'); if (p) { *p = '\0'; l = testname = p+1; }
 		p = strchr(l, '|'); if (p) { *p = '\0'; l = colorstr = p+1; }
 		p = strchr(l, '|'); if (p) { *p = '\0'; l = msg = p+1; }
-		if (host && colorstr&& msg) {
+		if (hostname && testname && colorstr && msg) {
 			char *msgeol;
 
 			nldecode(msg);
@@ -111,13 +145,52 @@ int main(int argc, char *argv[])
 				/* Skip the first status line */
 				msg = msgeol + 1;
 			}
-			printf("<tr><td align=left valign=top><b>%s", host);
-			if (showcolors) {
-				printf("&nbsp;-&nbsp;%s", colorstr);
+			printf("<tr><td align=left valign=top><b>");
+
+			if (addlink) 
+				printf("<a href=\"%s\">%s</a>", hostsvcurl(hostname, xgetenv("INFOCOLUMN")), hostname);
+			else 
+				printf("%s", hostname);
+
+			if (showcolumn) {
+				printf("<br>");
+				if (addlink) 
+					printf("<a href=\"%s\">%s</a>", hostsvcurl(hostname, testname), testname);
+				else
+					printf("%s", testname);
 			}
+
+			if (showcolors) printf("&nbsp;-&nbsp;%s", colorstr);
+
 			printf("</b></td>\n");
+
 			printf("<td><pre>\n");
-			printf("%s", msg);
+
+			if (summary) {
+				int firstline = 1;
+				char *bol, *eol;
+
+				bol = msg;
+				while (bol) {
+					eol = strchr(bol, '\n'); if (eol) *eol = '\0';
+
+					if (firstline) {
+						if (!isspace((int)*bol)) {
+							printf("%s\n", bol);
+							firstline = 0;
+						}
+					}
+					else if ((*bol == '&') && (strncmp(bol, "&green", 6) != 0)) {
+						printf("%s\n", bol);
+					}
+
+					bol = (eol ? eol+1 : NULL);
+				}
+			}
+			else {
+				printf("%s", msg);
+			}
+
 			printf("</pre></td></tr>\n");
 		}
 
