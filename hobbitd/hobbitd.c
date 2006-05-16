@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.228 2006-05-11 20:16:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.229 2006-05-16 20:44:57 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -2139,6 +2139,33 @@ void setup_filter(char *buf, char *defaultfields,
 	dprintf("<- setup_filter: %s\n", buf);
 }
 
+int match_host_filter(namelist_t *hinfo, char *spage, char *shost, char *snet)
+{
+	char *match;
+
+	match = bbh_item(hinfo, BBH_HOSTNAME);
+	if (shost && match && (strcmp(match, shost) != 0)) return 0;
+	match = bbh_item(hinfo, BBH_PAGEPATH);
+	if (spage && match && (strncmp(match, spage, strlen(spage)) != 0)) return 0;
+	match = bbh_item(hinfo, BBH_NET);
+	if (snet  && match && (strcmp(match, snet) != 0)) return 0;
+
+	return 1;
+}
+
+int match_test_filter(hobbitd_log_t *log, char *stest, int scolor)
+{
+	/* Testname filter */
+	if (stest && (strcmp(log->test, stest) != 0)) return 0;
+
+	/* Color filter */
+	if ((scolor != -1) && (((1 << log->color) & scolor) == 0)) return 0;
+
+	return 1;
+}
+
+
+
 void generate_outbuf(char **outbuf, char **outpos, int *outsz, 
 		     hobbitd_hostlist_t *hwalk, hobbitd_log_t *lwalk, int acklevel)
 {
@@ -2771,11 +2798,6 @@ void do_message(conn_t *msg, char *origin)
 				continue;
 			}
 
-			/* Hostname filter */
-			if (shost && (strcmp(hwalk->hostname, shost) != 0)) continue;
-
-			firstlog = hwalk->logs;
-
 			if ((strcmp(hwalk->hostname, "summary") != 0) && (strcmp(hwalk->hostname, "dialup") != 0)) {
 				namelist_t *hinfo = hostinfo(hwalk->hostname);
 
@@ -2784,8 +2806,8 @@ void do_message(conn_t *msg, char *origin)
 					continue;
 				}
 
-				/* Host pagename filter */
-				if (spage && (strncmp(hinfo->page->pagepath, spage, strlen(spage)) != 0)) continue;
+				/* Host/pagename filter */
+				if (!match_host_filter(hinfo, spage, shost, snet)) continue;
 
 				/* Handle NOINFO and NOTRENDS here */
 				if (!bbh_item(hinfo, BBH_FLAG_NOINFO)) {
@@ -2798,12 +2820,9 @@ void do_message(conn_t *msg, char *origin)
 				}
 			}
 
+			firstlog = hwalk->logs;
 			for (lwalk = firstlog; (lwalk); lwalk = lwalk->next) {
-				/* Testname filter */
-				if (stest && (strcmp(lwalk->test, stest) != 0)) continue;
-
-				/* Color filter */
-				if ((scolor != -1) && (((1 << lwalk->color) & scolor) == 0)) continue;
+				if (!match_test_filter(lwalk, stest, scolor)) continue;
 
 				if (lwalk->message == NULL) {
 					errprintf("%s.%s has a NULL message\n", lwalk->host->hostname, lwalk->test);
@@ -2855,26 +2874,24 @@ void do_message(conn_t *msg, char *origin)
 		bufp += sprintf(bufp, "<StatusBoard>\n");
 
 		for (hosthandle = rbtBegin(rbhosts); (hosthandle != rbtEnd(rbhosts)); hosthandle = rbtNext(rbhosts, hosthandle)) {
-			hwalk = gettreeitem(rbhosts, hosthandle);
+			namelist_t *hinfo;
 
-			/* Host pagename filter */
-			if (spage) {
-				namelist_t *hi = hostinfo(hwalk->hostname);
-				if (hi && (strncmp(hi->page->pagepath, spage, strlen(spage)) != 0)) continue;
+			hwalk = gettreeitem(rbhosts, hosthandle);
+			if (!hwalk) {
+				errprintf("host-tree has a record with no data\n");
+				continue;
 			}
 
-			/* Hostname filter */
-			if (shost && (strcmp(hwalk->hostname, shost) != 0)) continue;
+			hinfo = hostinfo(hwalk->hostname);
+
+			/* Host/pagename filter */
+			if (!match_host_filter(hinfo, spage, shost, snet)) continue;
 
 			for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
 				char *eoln;
 				int buflen = (bufp - buf);
-				
-				/* Testname filter */
-				if (stest && (strcmp(lwalk->test, stest) != 0)) continue;
 
-				/* Color filter */
-				if ((scolor != -1) && (lwalk->color != scolor)) continue;
+				if (!match_test_filter(lwalk, stest, scolor)) continue;
 
 				if (lwalk->message == NULL) {
 					errprintf("%s.%s has a NULL message\n", lwalk->host->hostname, lwalk->test);
@@ -2925,7 +2942,6 @@ void do_message(conn_t *msg, char *origin)
 		 *
 		 */
 		namelist_t *hinfo;
-		char *walkstr;
 		char *buf, *bufp;
 		int bufsz;
 		char *spage = NULL, *shost = NULL, *stest = NULL, *snet = NULL, *fields = NULL;
@@ -2948,26 +2964,8 @@ void do_message(conn_t *msg, char *origin)
 		}
 		bufp = buf = (char *)malloc(bufsz);
 
-		hinfo = first_host();
 		for (hinfo = first_host(); (hinfo); hinfo = hinfo->next) {
-			/* Hostname filter */
-			if (shost) {
-				walkstr = bbh_item(hinfo, BBH_HOSTNAME);
-				if (!walkstr || (strcmp(walkstr, shost) != 0)) continue;
-			}
-
-			/* Host pagename filter */
-			if (spage) {
-				walkstr = bbh_item(hinfo, BBH_PAGEPATH);
-				if (!walkstr || (strncmp(walkstr, spage, strlen(spage)) != 0)) continue;
-			}
-
-			/* Host network filter */
-			if (snet) {
-				walkstr = bbh_item(hinfo, BBH_NET);
-				if (!walkstr || (strcmp(walkstr, snet) != 0)) continue;
-			}
-
+			if (!match_host_filter(hinfo, spage, shost, snet)) continue;
 			generate_hostinfo_outbuf(&buf, &bufp, &bufsz, hinfo);
 		}
 
