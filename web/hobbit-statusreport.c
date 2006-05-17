@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-statusreport.c,v 1.4 2006-05-16 10:27:08 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-statusreport.c,v 1.5 2006-05-17 20:27:44 henrik Exp $";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -34,6 +34,7 @@ int main(int argc, char *argv[])
 	int  addlink = 0;
 	int  allhosts = 0;
 	int  summary = 0;
+	int  embedded = 0;
 	char *req, *board, *l;
 	int argi, res;
 
@@ -100,6 +101,9 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--all") == 0) {
 			allhosts = 1;
 		}
+		else if (strcmp(argv[argi], "--embedded") == 0) {
+			embedded = 1;
+		}
 	}
 
 	if (!allhosts) {
@@ -121,11 +125,15 @@ int main(int argc, char *argv[])
 
 	if (res != BB_OK) return 1;
 
-	printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
+	if (!embedded) {
+		printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 
-	printf("<html><head><title>%s</title></head>\n", heading);
-	printf("<body><table border=1 cellpadding=5px><tr><th>%s</th><th align=left>Status</th></tr>\n",
-	       (showcolumn ? "Host/Column" : "Host"));
+		printf("<html><head><title>%s</title></head>\n", heading);
+		printf("<body>");
+		printf("<table border=1 cellpadding=5px><tr><th>%s</th><th align=left>Status</th></tr>\n",
+		       (showcolumn ? "Host/Column" : "Host"));
+	}
+
 	l = board;
 	while (l && *l) {
 		char *hostname, *testname = NULL, *colorstr = NULL, *msg = NULL, *p;
@@ -196,7 +204,8 @@ int main(int argc, char *argv[])
 
 		if (eoln) l = eoln+1; else l = NULL;
 	}
-	printf("</table></body></html>\n");
+
+	if (!embedded) printf("</table></body></html>\n");
 
 	return 0;
 }
