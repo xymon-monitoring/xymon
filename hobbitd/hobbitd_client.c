@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.73 2006-05-14 20:04:27 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.74 2006-05-19 12:40:59 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -283,6 +283,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 	strbuffer_t *monmsg;
 	char *dname;
 	int dmin, dmax, dcount, dcolor;
+	char *group;
 
 	if (!dfstr) return;
 
@@ -290,6 +291,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	monmsg = newstrbuffer(0);
 	dchecks = clear_disk_counts(hinfo, clientclass);
+	clearalertgroups();
 
 	bol = dfstr; /* Must do this always, to at least grab the column-numbers we need */
 	while (bol) {
@@ -316,7 +318,8 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 			if (fsname) add_disk_count(fsname);
 
 			if (fsname && (usage != -1)) {
-				get_disk_thresholds(hinfo, clientclass, fsname, &warnlevel, &paniclevel, &absolutes);
+				get_disk_thresholds(hinfo, clientclass, fsname, 
+						    &warnlevel, &paniclevel, &absolutes, &group);
 
 				dprintf("Disk check: FS='%s' usage %lu (thresholds: %lu/%lu, abs: %d)\n",
 					fsname, usage, warnlevel, paniclevel, absolutes);
@@ -327,6 +330,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 						fsname, usage, paniclevel,
 						((absolutes & 1) ? 'K' : '%'));
 					addtobuffer(monmsg, msgline);
+					addalertgroup(group);
 				}
 				else if (usage >= warnlevel) {
 					if (diskcolor < COL_YELLOW) diskcolor = COL_YELLOW;
@@ -334,6 +338,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 						fsname, usage, warnlevel,
 						((absolutes & 2) ? 'K' : '%'));
 					addtobuffer(monmsg, msgline);
+					addalertgroup(group);
 				}
 			}
 
@@ -355,7 +360,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 	}
 
 	/* Check for filesystems that must (not) exist */
-	while ((dname = check_disk_count(&dcount, &dmin, &dmax, &dcolor)) != NULL) {
+	while ((dname = check_disk_count(&dcount, &dmin, &dmax, &dcolor, &group)) != NULL) {
 		char limtxt[1024];
 
 		*limtxt = '\0';
@@ -374,12 +379,17 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 			sprintf(msgline, "&%s Filesystem %s (found %d, req. %s)\n", 
 				colorname(dcolor), dname, dcount, limtxt);
 			addtobuffer(monmsg, msgline);
+			addalertgroup(group);
 		}
 	}
 
 	/* Now we know the result, so generate a status message */
 	init_status(diskcolor);
-	sprintf(msgline, "status %s.disk %s %s - Filesystems %s\n",
+	group = getalertgroups();
+	if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
+	addtostatus(msgline);
+
+	sprintf(msgline, "%s.disk %s %s - Filesystems %s\n",
 		commafy(hostname), colorname(diskcolor), 
 		(timestr ? timestr : "<No timestamp data>"), 
 		((diskcolor == COL_GREEN) ? "OK" : "NOT ok"));
@@ -490,11 +500,13 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 	strbuffer_t *monmsg;
 	static strbuffer_t *countdata = NULL;
 	int anycountdata = 0;
+	char *group;
 
 	if (!psstr) return;
 
 	if (!countdata) countdata = newstrbuffer(0);
 
+	clearalertgroups();
 	monmsg = newstrbuffer(0);
 
 	sprintf(msgline, "data %s.proccounts\n", commafy(hostname));
@@ -529,7 +541,7 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 		}
 
 		/* Check the number found for each monitored process */
-		while ((pname = check_process_count(&pcount, &pmin, &pmax, &pcolor, &pid, &ptrack)) != NULL) {
+		while ((pname = check_process_count(&pcount, &pmin, &pmax, &pcolor, &pid, &ptrack, &group)) != NULL) {
 			char limtxt[1024];
 
 			if (pmax == -1) {
@@ -550,6 +562,7 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 				sprintf(msgline, "&%s %s (found %d, req. %s)\n", 
 					colorname(pcolor), pname, pcount, limtxt);
 				addtobuffer(monmsg, msgline);
+				addalertgroup(group);
 			}
 
 			if (ptrack) {
@@ -569,7 +582,12 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	/* Now we know the result, so generate a status message */
 	init_status(pscolor);
-	sprintf(msgline, "status %s.procs %s %s - Processes %s\n",
+
+	group = getalertgroups();
+	if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
+	addtostatus(msgline);
+
+	sprintf(msgline, "%s.procs %s %s - Processes %s\n",
 		commafy(hostname), colorname(pscolor), 
 		(timestr ? timestr : "<No timestamp data>"), 
 		((pscolor == COL_GREEN) ? "OK" : "NOT ok"));
@@ -637,6 +655,7 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 	int msgscolor = COL_GREEN;
 	char msgline[PATH_MAX];
 	char sectionname[PATH_MAX];
+	char *group;
 
 	for (swalk = sections; (swalk && strncmp(swalk->sname, "msgs:", 5)); swalk = swalk->next) ;
 
@@ -648,6 +667,7 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 	if (!greendata) greendata = newstrbuffer(0);
 	if (!yellowdata) yellowdata = newstrbuffer(0);
 	if (!reddata) reddata = newstrbuffer(0);
+	clearalertgroups();
 
 	logsummary = newstrbuffer(0);
 
@@ -687,7 +707,12 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 	freestrbuffer(logsummary);
 
 	init_status(msgscolor);
-	sprintf(msgline, "status %s.msgs %s System logs at %s\n",
+
+	group = getalertgroups();
+	if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
+	addtostatus(msgline);
+
+	sprintf(msgline, "%s.msgs %s System logs at %s\n",
 		commafy(hostname), colorname(msgscolor), 
 		(timestr ? timestr : "<No timestamp data>"));
 	addtostatus(msgline);
@@ -742,13 +767,14 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 	char msgline[PATH_MAX];
 	char sectionname[PATH_MAX];
 	int anyszdata = 0;
+	char *group;
 
 	if (!greendata) greendata = newstrbuffer(0);
 	if (!yellowdata) yellowdata = newstrbuffer(0);
 	if (!reddata) reddata = newstrbuffer(0);
 	if (!sizedata) sizedata = newstrbuffer(0);
-
 	filesummary = newstrbuffer(0);
+	clearalertgroups();
 
 	sprintf(msgline, "data %s.filesizes\n", commafy(hostname));
 	addtobuffer(sizedata, msgline);
@@ -834,7 +860,12 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 	}
 
 	init_status(filecolor);
-	sprintf(msgline, "status %s.files %s Files status at %s\n",
+
+	group = getalertgroups();
+	if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
+	addtostatus(msgline);
+
+	sprintf(msgline, "%s.files %s Files status at %s\n",
 		commafy(hostname), colorname(filecolor), 
 		(timestr ? timestr : "<No timestamp data>"));
 	addtostatus(msgline);
@@ -939,12 +970,14 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 	static strbuffer_t *monmsg = NULL;
 	static strbuffer_t *countdata = NULL;
 	int anycountdata = 0;
+	char *group;
 
 	if (!portstr) return;
 
 	if (!monmsg) monmsg = newstrbuffer(0);
 	if (!countdata) countdata = newstrbuffer(0);
 
+	clearalertgroups();
 	pchecks = clear_port_counts(hinfo, clientclass);
 
 	sprintf(msgline, "data %s.portcounts\n", commafy(hostname));
@@ -980,7 +1013,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 		}
 
 		/* Check the number found for each monitored port */
- 		while ((pname = check_port_count(&pcount, &pmin, &pmax, &pcolor, &pid, &ptrack)) != NULL) {
+ 		while ((pname = check_port_count(&pcount, &pmin, &pmax, &pcolor, &pid, &ptrack, &group)) != NULL) {
  			char limtxt[1024];
 			
 			if (pmax == -1) {
@@ -1001,6 +1034,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 				sprintf(msgline, "&%s %s (found %d, req. %s)\n",
 					colorname(pcolor), pname, pcount, limtxt);
 				addtobuffer(monmsg, msgline);
+				addalertgroup(group);
 			}
 
 			if (ptrack) {
@@ -1015,7 +1049,12 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	/* Now we know the result, so generate a status message */
 	init_status(portcolor);
-	sprintf(msgline, "status %s.ports %s %s - Ports %s\n",
+
+	group = getalertgroups();
+	if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
+	addtostatus(msgline);
+
+	sprintf(msgline, "%s.ports %s %s - Ports %s\n",
 		commafy(hostname), colorname(portcolor), 
 		(timestr ? timestr : "<No timestamp data>"), 
 		((portcolor == COL_GREEN) ? "OK" : "NOT ok"));
@@ -1140,7 +1179,7 @@ void testmode(char *configfn)
 
 			printf("Filesystem: "); fflush(stdout);
 			fgets(s, sizeof(s), stdin); clean_instr(s);
-			cfid = get_disk_thresholds(hinfo, clientclass, s, &warnlevel, &paniclevel, &absolutes);
+			cfid = get_disk_thresholds(hinfo, clientclass, s, &warnlevel, &paniclevel, &absolutes, NULL);
 			printf("Yellow at %lu%c, red at %lu%c\n", 
 				warnlevel, ((absolutes & 1) ? 'K' : '%'),
 				paniclevel, ((absolutes & 2) ? 'K' : '%'));
@@ -1173,7 +1212,7 @@ void testmode(char *configfn)
 				}
 			} while (*s);
 
-			while ((pname = check_process_count(&pcount, &pmin, &pmax, &pcolor, &pid, &ptrack)) != NULL) {
+			while ((pname = check_process_count(&pcount, &pmin, &pmax, &pcolor, &pid, &ptrack, NULL)) != NULL) {
 				printf("Process %s color %s: Count=%d, min=%d, max=%d\n",
 					pname, colorname(pcolor), pcount, pmin, pmax);
 			}
@@ -1262,7 +1301,7 @@ void testmode(char *configfn)
 			} while (*s);
 
 			/* Check the number found for each monitored port */
- 			while ((pname = check_port_count(&pcount, &pmin, &pmax, &pcolor, &pid, &ptrack)) != NULL) {
+ 			while ((pname = check_port_count(&pcount, &pmin, &pmax, &pcolor, &pid, &ptrack, NULL)) != NULL) {
  				char limtxt[1024];
 			
 				if (pmax == -1) {
