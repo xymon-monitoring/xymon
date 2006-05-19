@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.230 2006-05-16 21:38:27 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.231 2006-05-19 12:43:15 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -98,6 +98,7 @@ typedef struct hobbitd_log_t {
 	char *origin;
 	int color, oldcolor, activealert, histsynced, downtimeactive;
 	char *testflags;
+	char *grouplist;        /* For extended status reports (e.g. from hobbitd_client) */
 	char sender[IP_ADDR_STRLEN];
 	time_t lastchange;	/* time when the currently logged status began */
 	time_t logtime;		/* time when last update was received */
@@ -709,12 +710,14 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 				if (!osname) osname = "";
 
 				n = snprintf(channel->channelbuf, (bufsz-5),
-					"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d|%s|%s\n%s", 
+					"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d|%s|%s|%s\n%s", 
 					channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 					sender, hostname, 
 					log->test, log->host->ip, (int) log->validtime, 
 					colnames[log->color], colnames[log->oldcolor], (int) log->lastchange,
-					pagepath, log->cookie, osname, classname, msg);
+					pagepath, log->cookie, osname, classname, 
+					(log->grouplist ? log->grouplist : ""),
+					msg);
 			}
 			if (n > (bufsz-5)) {
 				errprintf("Oversize page/ack/notify msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
@@ -839,7 +842,7 @@ hobbitd_log_t *find_log(char *hostname, char *testname, char *origin, hobbitd_ho
 }
 
 void get_hts(char *msg, char *sender, char *origin,
-	     hobbitd_hostlist_t **host, char **test, hobbitd_log_t **log, 
+	     hobbitd_hostlist_t **host, char **test, char **grouplist, hobbitd_log_t **log, 
 	     int *color, char **downcause, int *alltests, int createhost, int createlog)
 {
 	/*
@@ -850,7 +853,7 @@ void get_hts(char *msg, char *sender, char *origin,
 	 */
 
 	char *firstline, *p;
-	char *hosttest, *hostname, *testname, *colstr;
+	char *hosttest, *hostname, *testname, *colstr, *grp;
 	char hostip[IP_ADDR_STRLEN];
 	RbtIterator hosthandle, testhandle, originhandle;
 	hobbitd_hostlist_t *hwalk = NULL;
@@ -867,10 +870,11 @@ void get_hts(char *msg, char *sender, char *origin,
 	*test = NULL;
 	*log = NULL;
 	*color = -1;
+	if (grouplist) *grouplist = NULL;
 	if (downcause) *downcause = NULL;
 	if (alltests) *alltests = 0;
 
-	hosttest = hostname = testname = colstr = NULL;
+	hosttest = hostname = testname = colstr = grp = NULL;
 	p = strchr(msg, '\n');
 	if (p == NULL) {
 		firstline = strdup(msg);
@@ -882,6 +886,11 @@ void get_hts(char *msg, char *sender, char *origin,
 	}
 
 	p = strtok(firstline, " \t"); /* Keyword ... */
+	if (p) {
+		/* There might be a group-list */
+		grp = strstr(p, "/group:");
+		if (grp) grp += 7;
+	}
 	if (p) hosttest = strtok(NULL, " \t"); /* ... HOST.TEST combo ... */
 	if (hosttest == NULL) goto done;
 	colstr = strtok(NULL, " \t"); /* ... and the color (if any) */
@@ -978,6 +987,9 @@ done:
 			if (lwalk) lwalk->downtimeactive = 0;
 		}
 	}
+
+	if (grouplist && grp) *grouplist = strdup(grp);
+
 	xfree(firstline);
 
 	*host = hwalk;
@@ -1026,7 +1038,8 @@ void clear_cookie(hobbitd_log_t *log)
 }
 
 
-void handle_status(unsigned char *msg, char *sender, char *hostname, char *testname, hobbitd_log_t *log, int newcolor, char *downcause)
+void handle_status(unsigned char *msg, char *sender, char *hostname, char *testname, char *grouplist, 
+		   hobbitd_log_t *log, int newcolor, char *downcause)
 {
 	int validity = 30;	/* validity is counted in minutes */
 	time_t now = time(NULL);
@@ -1132,6 +1145,8 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	log->color = newcolor;
 	oldalertstatus = decide_alertstate(log->oldcolor);
 	newalertstatus = decide_alertstate(newcolor);
+	if (log->grouplist) xfree(log->grouplist);
+	if (grouplist) log->grouplist = strdup(grouplist);
 
 	if (log->acklist) {
 		ackinfo_t *awalk;
@@ -1484,7 +1499,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 				}
 				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, log, NULL);
 				/* Trigger an immediate status update */
-				handle_status(log->message, sender, log->host->hostname, log->test, log, COL_BLUE, NULL);
+				handle_status(log->message, sender, log->host->hostname, log->test, log->grouplist, log, COL_BLUE, NULL);
 			}
 		}
 		else {
@@ -1499,7 +1514,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, log, NULL);
 
 				/* Trigger an immediate status update */
-				handle_status(log->message, sender, log->host->hostname, log->test, log, COL_BLUE, NULL);
+				handle_status(log->message, sender, log->host->hostname, log->test, log->grouplist, log, COL_BLUE, NULL);
 			}
 		}
 
@@ -1745,6 +1760,7 @@ void free_log_t(hobbitd_log_t *zombie)
 	if (zombie->message) xfree(zombie->message);
 	if (zombie->dismsg) xfree(zombie->dismsg);
 	if (zombie->ackmsg) xfree(zombie->ackmsg);
+	if (zombie->grouplist) xfree(zombie->grouplist);
 	flush_acklist(zombie, 1);
 	xfree(zombie);
 	dprintf("<- free_log_t\n");
@@ -2322,6 +2338,7 @@ void do_message(conn_t *msg, char *origin)
 	int color;
 	char *downcause;
 	char sender[IP_ADDR_STRLEN];
+	char *grouplist;
 	time_t now;
 	char *msgfrom;
 
@@ -2398,12 +2415,12 @@ void do_message(conn_t *msg, char *origin)
 			}
 
 			if (statussenders) {
-				get_hts(currmsg, sender, origin, &h, &t, &log, &color, &downcause, NULL, 0, 0);
+				get_hts(currmsg, sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 0, 0);
 				if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, currmsg)) validsender = 0;
 			}
 
 			if (validsender) {
-				get_hts(currmsg, sender, origin, &h, &t, &log, &color, &downcause, NULL, 1, 1);
+				get_hts(currmsg, sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 1, 1);
 				if (h && dbgfd && dbghost && (strcasecmp(h->hostname, dbghost) == 0)) {
 					fprintf(dbgfd, "\n---- combo message from %s ----\n%s---- end message ----\n", sender, currmsg);
 					fflush(dbgfd);
@@ -2418,7 +2435,7 @@ void do_message(conn_t *msg, char *origin)
 					update_statistics(currmsg);
 
 					if (h && t && log && (color != -1) && (color != COL_PURPLE)) {
-						handle_status(currmsg, sender, h->hostname, t, log, color, downcause);
+						handle_status(currmsg, sender, h->hostname, t, grouplist, log, color, downcause);
 					}
 				}
 			}
@@ -2434,7 +2451,7 @@ void do_message(conn_t *msg, char *origin)
 			nextmsg = strstr(currmsg, "\n\nmeta");
 			if (nextmsg) { *(nextmsg+1) = '\0'; nextmsg += 2; }
 
-			get_hts(currmsg, sender, origin, &h, &t, &log, &color, NULL, NULL, 0, 0);
+			get_hts(currmsg, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
 			if (h && t && log && oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, currmsg)) {
 				handle_meta(currmsg, log);
 			}
@@ -2450,11 +2467,11 @@ void do_message(conn_t *msg, char *origin)
 		}
 
 		if (statussenders) {
-			get_hts(msg->buf, sender, origin, &h, &t, &log, &color, &downcause, NULL, 0, 0);
+			get_hts(msg->buf, sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 0, 0);
 			if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, msg->buf)) goto done;
 		}
 
-		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, &downcause, NULL, 1, 1);
+		get_hts(msg->buf, sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 1, 1);
 		if (h && dbgfd && dbghost && (strcasecmp(h->hostname, dbghost) == 0)) {
 			fprintf(dbgfd, "\n---- status message from %s ----\n%s---- end message ----\n", sender, msg->buf);
 			fflush(dbgfd);
@@ -2466,7 +2483,7 @@ void do_message(conn_t *msg, char *origin)
 		}
 		else {
 			if (h && t && log && (color != -1)) {
-				handle_status(msg->buf, sender, h->hostname, t, log, color, downcause);
+				handle_status(msg->buf, sender, h->hostname, t, grouplist, log, color, downcause);
 			}
 		}
 	}
@@ -2529,9 +2546,9 @@ void do_message(conn_t *msg, char *origin)
 	}
 	else if (strncmp(msg->buf, "summary", 7) == 0) {
 		/* Summaries are always allowed. Or should we ? */
-		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, NULL, NULL, 1, 1);
+		get_hts(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 1, 1);
 		if (h && t && log && (color != -1)) {
-			handle_status(msg->buf, sender, h->hostname, t, log, color, NULL);
+			handle_status(msg->buf, sender, h->hostname, t, NULL, log, color, NULL);
 		}
 	}
 	else if (strncmp(msg->buf, "notes", 5) == 0) {
@@ -2609,7 +2626,7 @@ void do_message(conn_t *msg, char *origin)
 		flush_filecache();
 	}
 	else if (strncmp(msg->buf, "query ", 6) == 0) {
-		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, NULL, NULL, 0, 0);
+		get_hts(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
 		if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, msg->buf)) goto done;
 
 		if (log) {
@@ -2690,7 +2707,7 @@ void do_message(conn_t *msg, char *origin)
 		 */
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
-		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, NULL, NULL, 0, 0);
+		get_hts(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
 		if (log) {
 			char *buf, *bufp;
 			int bufsz, buflen;
@@ -3031,7 +3048,7 @@ void do_message(conn_t *msg, char *origin)
 
 		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
-		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, NULL, &ackall, 0, 0);
+		get_hts(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, &ackall, 0, 0);
 		if (log) {
 			handle_ackinfo(msg->buf, sender, log);
 		}
@@ -3097,7 +3114,7 @@ void do_message(conn_t *msg, char *origin)
 	}
 	else if (strncmp(msg->buf, "notify", 6) == 0) {
 		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
-		get_hts(msg->buf, sender, origin, &h, &t, &log, &color, NULL, NULL, 0, 0);
+		get_hts(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
 		if (log) handle_notify(msg->buf, sender, log);
 	}
 	else if (strncmp(msg->buf, "schedule", 8) == 0) {
@@ -3598,10 +3615,10 @@ void load_checkpoint(char *fn)
 		else origin = gettreeitem(rborigins, originhandle);
 
 		if (hitem->logs == NULL) {
-			ltail = hitem->logs = (hobbitd_log_t *) malloc(sizeof(hobbitd_log_t));
+			ltail = hitem->logs = (hobbitd_log_t *) calloc(1, sizeof(hobbitd_log_t));
 		}
 		else {
-			ltail->next = (hobbitd_log_t *)malloc(sizeof(hobbitd_log_t));
+			ltail->next = (hobbitd_log_t *)calloc(1, sizeof(hobbitd_log_t));
 			ltail = ltail->next;
 		}
 
@@ -3718,7 +3735,7 @@ void check_purple_status(void)
 					}
 
 					handle_status(lwalk->message, "hobbitd", 
-						hwalk->hostname, lwalk->test, lwalk, newcolor, NULL);
+						hwalk->hostname, lwalk->test, lwalk->grouplist, lwalk, newcolor, NULL);
 					lwalk = lwalk->next;
 				}
 			}
@@ -4181,13 +4198,13 @@ int main(int argc, char *argv[])
 			int color;
 
 			buf = generate_stats();
-			get_hts(buf, "hobbitd", "", &h, &t, &log, &color, NULL, NULL, 1, 1);
+			get_hts(buf, "hobbitd", "", &h, &t, NULL, &log, &color, NULL, NULL, 1, 1);
 			if (!h || !t || !log) {
 				errprintf("hobbitd servername MACHINE='%s' not listed in bb-hosts, dropping hobbitd status\n",
 					  xgetenv("MACHINE"));
 			}
 			else {
-				handle_status(buf, "hobbitd", h->hostname, t, log, color, NULL);
+				handle_status(buf, "hobbitd", h->hostname, t, NULL, log, color, NULL);
 			}
 			last_stats_time = now;
 			flush_errbuf();
