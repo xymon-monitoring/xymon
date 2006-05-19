@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.160 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.161 2006-05-19 12:02:55 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -427,10 +427,10 @@ state_t *load_state(dispsummary_t **sumhead)
 	dprintf("load_state()\n");
 
 	if (!reportstart && !snapshot) {
-		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1", NULL, NULL, &board, 1, 30);
+		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1", NULL, NULL, &board, 1, BBTALK_TIMEOUT);
 	}
 	else {
-		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname", NULL, NULL, &board, 1, 30);
+		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname", NULL, NULL, &board, 1, BBTALK_TIMEOUT);
 	}
 	if ((hobbitdresult != BB_OK) || (board == NULL) || (*board == '\0')) {
 		errprintf("hobbitd status-board not available\n");

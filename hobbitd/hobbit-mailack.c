@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-mailack.c,v 1.16 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-mailack.c,v 1.17 2006-05-19 12:02:55 henrik Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	sendmessage(ackbuf, NULL, NULL, NULL, 0, 30);
+	sendmessage(ackbuf, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
 	return 0;
 }
 

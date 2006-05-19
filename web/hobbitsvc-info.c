@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.102 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.103 2006-05-19 12:02:55 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -73,7 +73,7 @@ static int fetch_status(char *hostname)
 	int haveuname = 0;
 
 	sprintf(hobbitcmd, "hobbitdboard fields=testname,color,disabletime,dismsg,client host=%s", hostname);
-	if (sendmessage(hobbitcmd, NULL, NULL, &statuslist, 1, 30) != BB_OK) {
+	if (sendmessage(hobbitcmd, NULL, NULL, &statuslist, 1, BBTALK_TIMEOUT) != BB_OK) {
 		return 1;
 	}
 
@@ -116,7 +116,7 @@ static int fetch_status(char *hostname)
 
 
 	sprintf(hobbitcmd, "schedule");
-	if (sendmessage(hobbitcmd, NULL, NULL, &statuslist, 1, 30) != BB_OK) {
+	if (sendmessage(hobbitcmd, NULL, NULL, &statuslist, 1, BBTALK_TIMEOUT) != BB_OK) {
 		return 1;
 	}
 
@@ -159,7 +159,7 @@ static int fetch_status(char *hostname)
 
 	if (haveuname) {
 		sprintf(hobbitcmd, "clientlog %s section=uname", hostname);
-		if (sendmessage(hobbitcmd, NULL, NULL, &unametxt, 1, 30) != BB_OK) {
+		if (sendmessage(hobbitcmd, NULL, NULL, &unametxt, 1, BBTALK_TIMEOUT) != BB_OK) {
 			return 1;
 		}
 	}

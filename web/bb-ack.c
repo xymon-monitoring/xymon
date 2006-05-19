@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.24 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.25 2006-05-19 12:02:55 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
 
 		bbmsg = (char *)malloc(1024 + strlen(ackmsg) + strlen(acking_user));
 		sprintf(bbmsg, "hobbitdack %d %d %s %s", acknum, validity, ackmsg, acking_user);
-		bbresult = sendmessage(bbmsg, NULL, NULL, NULL, 0, 30);
+		bbresult = sendmessage(bbmsg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
 		if (bbresult != BB_OK) {
 			respmsgfmt = "<center><h4>Could not contact %s servers</h4></center>\n";
 		}

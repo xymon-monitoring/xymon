@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: wmlgen.c,v 1.25 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: wmlgen.c,v 1.26 2006-05-19 12:02:55 henrik Exp $";
 
 #include <limits.h>
 #include <stdlib.h>
@@ -93,7 +93,7 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 	int hobbitdresult;
 
 	sprintf(hobbitdreq, "hobbitdlog %s.%s", host->hostname, entry->column->name);
-	hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &logbuf, 1, 30);
+	hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &logbuf, 1, BBTALK_TIMEOUT);
 	if ((hobbitdresult != BB_OK) || (logbuf == NULL) || (strlen(logbuf) == 0)) {
 		errprintf("WML: Status not available\n");
 		return;

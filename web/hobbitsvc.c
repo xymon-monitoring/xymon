@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.67 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.68 2006-05-19 12:02:55 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -157,7 +157,7 @@ int do_request(void)
 		sprintf(hobbitdreq, "clientlog %s", hostname);
 		if (service && *service) sprintf(hobbitdreq + strlen(hobbitdreq), " section=%s", service);
 
-		hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &log, 1, 30);
+		hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &log, 1, BBTALK_TIMEOUT);
 		if (hobbitdresult != BB_OK) {
 			char errtxt[4096];
 			sprintf(errtxt, "Status not available: Req=%s, result=%d\n", hobbitdreq, hobbitdresult);
@@ -192,7 +192,7 @@ int do_request(void)
 		char *sumline, *msg, *p;
 
 		sprintf(hobbitdreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,BBH_IP,BBH_DISPLAYNAME", hostname, service);
-		hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &log, 1, 30);
+		hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &log, 1, BBTALK_TIMEOUT);
 		if ((hobbitdresult != BB_OK) || (log == NULL) || (strlen(log) == 0)) {
 			errormsg("Status not available\n");
 			return 1;

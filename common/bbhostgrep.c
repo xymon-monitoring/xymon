@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.35 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.36 2006-05-19 12:02:55 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -34,11 +34,11 @@ static void load_hoststatus()
 	char msg[1024];
 
 	sprintf(msg, "hobbitdboard fields=hostname,testname,color test=%s", conncolumn);
-	res = sendmessage(msg, NULL, NULL, &connstatus, 1, 30);
+	res = sendmessage(msg, NULL, NULL, &connstatus, 1, BBTALK_TIMEOUT);
 
 	if ((res == BB_OK) && testcolumn) {
 		sprintf(msg, "hobbitdboard fields=hostname,testname,color test=%s", testcolumn);
-		res = sendmessage(msg, NULL, NULL, &teststatus, 1, 30);
+		res = sendmessage(msg, NULL, NULL, &teststatus, 1, BBTALK_TIMEOUT);
 	}
 
 	if (res != BB_OK) {
