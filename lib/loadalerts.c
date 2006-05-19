@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadalerts.c,v 1.10 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: loadalerts.c,v 1.11 2006-05-19 12:41:52 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -184,6 +184,10 @@ static void free_criteria(criteria_t *crit)
 	if (crit->classspecre)   pcre_free(crit->classspecre);
 	if (crit->exclassspec)   xfree(crit->exclassspec);
 	if (crit->exclassspecre) pcre_free(crit->exclassspecre);
+	if (crit->groupspec)     xfree(crit->groupspec);
+	if (crit->groupspecre)   pcre_free(crit->groupspecre);
+	if (crit->exgroupspec)   xfree(crit->exgroupspec);
+	if (crit->exgroupspecre) pcre_free(crit->exgroupspecre);
 	if (crit->timespec)      xfree(crit->timespec);
 }
 
@@ -389,6 +393,28 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				crit = setup_criteria(&currule, &currcp);
 				crit->exclassspec = strdup(val);
 				if (*(crit->exclassspec) == '%') crit->exclassspecre = compileregex(crit->exclassspec+1);
+				firsttoken = 0;
+			}
+			else if (strncasecmp(p, "GROUP=", 6) == 0) {
+				char *val;
+				criteria_t *crit;
+
+				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
+				val = strchr(p, '=')+1;
+				crit = setup_criteria(&currule, &currcp);
+				crit->groupspec = strdup(val);
+				if (*(crit->groupspec) == '%') crit->groupspecre = compileregex(crit->groupspec+1);
+				firsttoken = 0;
+			}
+			else if (strncasecmp(p, "EXGROUP=", 8) == 0) {
+				char *val;
+				criteria_t *crit;
+
+				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
+				val = strchr(p, '=')+1;
+				crit = setup_criteria(&currule, &currcp);
+				crit->exgroupspec = strdup(val);
+				if (*(crit->exgroupspec) == '%') crit->exgroupspecre = compileregex(crit->exgroupspec+1);
 				firsttoken = 0;
 			}
 			else if ((strncasecmp(p, "COLOR=", 6) == 0) || (strncasecmp(p, "COLORS=", 7) == 0)) {
@@ -678,6 +704,8 @@ static void dump_criteria(criteria_t *crit, int isrecip)
 	if (crit->exsvcspec) printf("EXSERVICE=%s ", crit->exsvcspec);
 	if (crit->classspec) printf("CLASS=%s ", crit->classspec);
 	if (crit->exclassspec) printf("EXCLASS=%s ", crit->exclassspec);
+	if (crit->groupspec) printf("GROUP=%s ", crit->groupspec);
+	if (crit->exgroupspec) printf("EXGROUP=%s ", crit->exgroupspec);
 	if (crit->colors) {
 		int i, first = 1;
 
@@ -750,16 +778,15 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 {
 	/*
 	 * See if the "crit" matches the "alert".
-	 * Match on pagespec, hostspec, svcspec, classspec, colors, timespec, minduration, maxduration, sendrecovered
+	 * Match on pagespec, hostspec, svcspec, classspec, groupspec, colors, timespec, minduration, maxduration, sendrecovered
 	 */
 
 	time_t duration = (time(NULL) - alert->eventstart);
 	int result, cfid = 0;
-	char *pgname = alert->location;
-	char *cfline = NULL;
+	char *pgname, *cfline = NULL;
 
 	/* The top-level page needs a name - cannot match against an empty string */
-	if (strlen(pgname) == 0) pgname = "/";
+	pgname = alert->location; if (strlen(pgname) == 0) pgname = "/";
 
 	if (crit) { cfid = crit->cfid; cfline = crit->cfline; }
 	if (!cfid && rulecrit) cfid = rulecrit->cfid;
@@ -777,13 +804,53 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 		}
 	}
 
-	if (crit && crit->classspec && !namematch(pgname, crit->classspec, crit->classspecre)) { 
+	if (crit && crit->classspec && !namematch(alert->classname, crit->classspec, crit->classspecre)) { 
 		traceprintf("Failed '%s' (class not in include list)\n", cfline);
 		return 0; 
 	}
-	if (crit && crit->exclassspec && namematch(pgname, crit->exclassspec, crit->exclassspecre)) { 
+	if (crit && crit->exclassspec && namematch(alert->classname, crit->exclassspec, crit->exclassspecre)) { 
 		traceprintf("Failed '%s' (class excluded)\n", cfline);
 		return 0; 
+	}
+
+	/* alert->groups is a comma-separated list of groups, so it needs some special handling */
+	if (crit && alert->groups && (*(alert->groups)) && (crit->groupspec || crit->exgroupspec)) {
+		char *grouplist = strdup(alert->groups);
+		char *tokptr;
+
+		if (crit->groupspec) {
+			char *onegroup;
+			int iswanted = 0;
+
+			onegroup = strtok_r(grouplist, ",", &tokptr);
+			while (onegroup && !iswanted) {
+				iswanted = (namematch(onegroup, crit->groupspec, crit->groupspecre));
+				onegroup = strtok_r(NULL, ",", &tokptr);
+			}
+
+			if (!iswanted) {
+				traceprintf("Failed '%s' (group not in include list)\n", cfline);
+				xfree(grouplist);
+				return 0; 
+			}
+		}
+
+		if (crit->exgroupspec) {
+			char *onegroup;
+
+			strcpy(grouplist, alert->groups); /* Might have been used in the include list */
+			onegroup = strtok_r(grouplist, ",", &tokptr);
+			while (onegroup) {
+				if (namematch(onegroup, crit->exgroupspec, crit->exgroupspecre)) { 
+					traceprintf("Failed '%s' (group excluded)\n", cfline);
+					xfree(grouplist);
+					return 0; 
+				}
+				onegroup = strtok_r(NULL, ",", &tokptr);
+			}
+		}
+
+		xfree(grouplist);
 	}
 
 	if (crit && crit->pagespec && !namematch(pgname, crit->pagespec, crit->pagespecre)) { 
