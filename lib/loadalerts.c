@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadalerts.c,v 1.11 2006-05-19 12:41:52 henrik Exp $";
+static char rcsid[] = "$Id: loadalerts.c,v 1.12 2006-05-20 16:20:33 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -537,13 +537,10 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				recip_t *newrcp;
 
 				mailcmdactive = 1;
-				newrcp = (recip_t *)malloc(sizeof(recip_t));
+				newrcp = (recip_t *)calloc(1, sizeof(recip_t));
 				newrcp->cfid = cfid;
 				newrcp->method = M_MAIL;
 				newrcp->format = ALERTFORM_TEXT;
-				newrcp->criteria = NULL;
-				newrcp->recipient = NULL;
-				newrcp->scriptname = NULL;
 
 				if (strncasecmp(p, "MAIL=", 5) == 0) {
 					p += 5;
@@ -558,10 +555,6 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				if (p) {
 					newrcp->recipient = strdup(p);
 					newrcp->interval = defaultinterval;
-					newrcp->stoprule = 0;
-					newrcp->unmatchedonly = 0;
-					newrcp->noalerts = 0;
-					newrcp->next = NULL;
 					currcp = newrcp;
 					if (curlinerecips == NULL) curlinerecips = newrcp;
 					pstate = P_RECIP;
@@ -583,12 +576,10 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				recip_t *newrcp;
 
 				scriptcmdactive = 1;
-				newrcp = (recip_t *)malloc(sizeof(recip_t));
+				newrcp = (recip_t *)calloc(1, sizeof(recip_t));
 				newrcp->cfid = cfid;
 				newrcp->method = M_SCRIPT;
 				newrcp->format = ALERTFORM_SCRIPT;
-				newrcp->criteria = NULL;
-				newrcp->scriptname = NULL;
 
 				if (strncasecmp(p, "SCRIPT=", 7) == 0) {
 					p += 7;
@@ -613,10 +604,6 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				if (p) {
 					newrcp->recipient = strdup(p);
 					newrcp->interval = defaultinterval;
-					newrcp->stoprule = 0;
-					newrcp->unmatchedonly = 0;
-					newrcp->noalerts = 0;
-					newrcp->next = NULL;
 					currcp = newrcp;
 					if (curlinerecips == NULL) curlinerecips = newrcp;
 					pstate = P_RECIP;
@@ -638,18 +625,12 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 			else if (currule && (strncasecmp(p, "IGNORE", 6) == 0)) {
 				recip_t *newrcp;
 
-				newrcp = (recip_t *)malloc(sizeof(recip_t));
+				newrcp = (recip_t *)calloc(1, sizeof(recip_t));
 				newrcp->cfid = cfid;
 				newrcp->method = M_IGNORE;
 				newrcp->format = ALERTFORM_NONE;
-				newrcp->criteria = NULL;
-				newrcp->recipient = NULL;
-				newrcp->scriptname = NULL;
 				newrcp->interval = defaultinterval;
 				newrcp->stoprule = 1;
-				newrcp->unmatchedonly = 0;
-				newrcp->noalerts = 0;
-				newrcp->next = NULL;
 				currcp = newrcp;
 				if (curlinerecips == NULL) curlinerecips = newrcp;
 				pstate = P_RECIP;
