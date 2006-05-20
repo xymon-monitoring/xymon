@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.80 2006-05-19 12:41:52 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.81 2006-05-20 16:21:13 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -284,7 +284,7 @@ void load_checkpoint(char *filename)
 
 		if (i > 9) {
 			char *key, *valid = NULL;
-			activealerts_t *newalert = (activealerts_t *)malloc(sizeof(activealerts_t));
+			activealerts_t *newalert = (activealerts_t *)calloc(1, sizeof(activealerts_t));
 			newalert->hostname = find_name(hostnames, item[0]);
 			newalert->testname = find_name(testnames, item[1]);
 			newalert->location = find_name(locations, item[2]);
@@ -415,16 +415,14 @@ int main(int argc, char *argv[])
 				testpage = "";
 			}
 
-			awalk = (activealerts_t *)malloc(sizeof(activealerts_t));
+			awalk = (activealerts_t *)calloc(1, sizeof(activealerts_t));
 			awalk->hostname = find_name(hostnames, testhost);
 			awalk->testname = find_name(testnames, testservice);
 			awalk->location = find_name(locations, testpage);
 			strcpy(awalk->ip, "127.0.0.1");
 			awalk->color = awalk->maxcolor = parse_color(testcolor);
 			awalk->pagemessage = "Test of the alert configuration";
-			awalk->ackmessage = NULL;
 			awalk->eventstart = time(NULL) - testdur*60;
-			awalk->nextalerttime = 0;
 			awalk->state = A_PAGING;
 			awalk->cookie = 12345;
 			awalk->next = NULL;
@@ -672,17 +670,13 @@ int main(int argc, char *argv[])
 			char *twalk = find_name(testnames, testname);
 			char *pwalk = find_name(locations, (metadata[5] ? metadata[5] : ""));
 
-			awalk = (activealerts_t *)malloc(sizeof(activealerts_t));
+			awalk = (activealerts_t *)calloc(1, sizeof(activealerts_t));
 			awalk->hostname = hwalk;
 			awalk->testname = twalk;
-			awalk->ip[0] = '\0';
 			awalk->location = pwalk;
-			awalk->color = 0;
 			awalk->cookie = -1;
 			awalk->pagemessage = strdup(restofmsg);
-			awalk->ackmessage = NULL;
 			awalk->eventstart = time(NULL);
-			awalk->nextalerttime = 0;
 			awalk->state = A_NOTIFY;
 			add_active(awalk->hostname, awalk);
 		}
