@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.14 2006-05-02 12:31:14 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.15 2006-05-21 11:03:35 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -38,10 +38,15 @@ static char rcsid[] = "$Id: logfetch.c,v 1.14 2006-05-02 12:31:14 henrik Exp $";
 typedef enum { C_NONE, C_LOG, C_FILE, C_DIR } checktype_t;
 
 typedef struct logdef_t {
+#ifdef _LARGEFILE_SOURCE
 	off_t lastpos[POSCOUNT];
+	off_t maxbytes;
+#else
+	long lastpos[POSCOUNT];
+	long maxbytes;
+#endif
 	char *trigger;
 	char *ignore;
-	off_t maxbytes;
 } logdef_t;
 
 typedef struct filedef_t {
@@ -67,9 +72,13 @@ char *logdata(char *filename, logdef_t *logdef, int *truncated)
 	char *startpos;
 	FILE *fd;
 	struct stat st;
-	off_t bufsz;
 	size_t n;
 	int i;
+#ifdef _LARGEFILE_SOURCE
+	off_t bufsz;
+#else
+	long bufsz;
+#endif
 
 	*truncated = 0;
 
@@ -88,7 +97,11 @@ char *logdata(char *filename, logdef_t *logdef, int *truncated)
 	fstat(fileno(fd), &st);
 	if (st.st_size < logdef->lastpos[0]) {
 		/* Logfile shrank - probably it was rotated */
+#ifdef _LARGEFILE_SOURCE
 		fseeko(fd, 0, SEEK_SET);
+#else
+		fseek(fd, 0, SEEK_SET);
+#endif
 		for (i=0; (i < 7); i++) logdef->lastpos[i] = 0;
 	}
 	else {
@@ -100,12 +113,20 @@ char *logdata(char *filename, logdef_t *logdef, int *truncated)
 			for (i=0; (i < 7); i++) logdef->lastpos[i] = (st.st_size - MAXCHECK);
 		}
 
+#ifdef _LARGEFILE_SOURCE
 		fseeko(fd, logdef->lastpos[6], SEEK_SET);
+#else
+		fseek(fd, logdef->lastpos[6], SEEK_SET);
+#endif
 		for (i=6; (i > 0); i--) logdef->lastpos[i] = logdef->lastpos[i-1];
 		logdef->lastpos[0] = st.st_size;
 	}
 
+#ifdef _LARGEFILE_SOURCE
 	bufsz = st.st_size - ftello(fd);
+#else
+	bufsz = st.st_size - ftell(fd);
+#endif
 	if (bufsz < 1024) bufsz = 1024;
 	startpos = buf = (char *)malloc(bufsz + 1);
 	n = fread(buf, 1, bufsz, fd);
@@ -353,9 +374,9 @@ void printfiledata(FILE *fd, char *fn, int domd5, int dosha1, int dormd160)
 		fprintf(fd, "owner:%u (%s)\n", (unsigned int)st.st_uid, (pw ? pw->pw_name : ""));
 		fprintf(fd, "group:%u (%s)\n", (unsigned int)st.st_gid, (gr ? gr->gr_name : ""));
 #ifdef _LARGEFILE_SOURCE
-		fprintf(fd, "size:%lld\n",     (long long int)(st.st_size>>10));
+		fprintf(fd, "size:%lld\n",     (long long int)st.st_size);
 #else
-		fprintf(fd, "size:%ld\n",      (long int)(st.st_size>>10));
+		fprintf(fd, "size:%ld\n",      (long int)st.st_size);
 #endif
 		fprintf(fd, "clock:%u (%s)\n", (unsigned int)now, timestr(now));
 		fprintf(fd, "atime:%u (%s)\n", (unsigned int)st.st_atime, timestr(st.st_atime));
@@ -382,8 +403,8 @@ void printdirdata(FILE *fd, char *fn)
 	ducmd = getenv("DU");
 	if (ducmd == NULL) ducmd = "du";
 
-	cmd = (char *)malloc(strlen(ducmd) + strlen(fn) + 2);
-	sprintf(cmd, "%s %s", ducmd, fn);
+	cmd = (char *)malloc(strlen(ducmd) + strlen(fn) + 10);
+	sprintf(cmd, "%s %s 2>&1", ducmd, fn);
 
 	cmdfd = popen(cmd, "r");
 	xfree(cmd);
@@ -617,7 +638,7 @@ void loadlogstatus(char *statfn)
 #ifdef _LARGEFILE_SOURCE
 			if (tok) walk->check.logcheck.lastpos[i] = (off_t)str2ll(tok, NULL);
 #else
-			if (tok) walk->check.logcheck.lastpos[i] = (off_t)atol(tok);
+			if (tok) walk->check.logcheck.lastpos[i] = atol(tok);
 #endif
 		}
 	}
