@@ -4,6 +4,8 @@ BBDISP="@BBHOSTIP@"             # IP address of the Hobbit server
 BBDISPLAYS=""                   # IP of multiple Hobbit servers. BBDISP must be "0.0.0.0".
 CONFIGCLASS="$BBOSTYPE"         # Default configuration class for logfiles
 
+PATH="/bin:/usr/bin:/sbin:/usr/sbin:/etc"  # PATH setting for the client scripts.
+
 # You normally dont need to modify anything below here
 BBPORT="1984"                   # Portnumber where hobbitd listens
 BBHOME="$HOBBITCLIENTHOME"      # Directory for the Hobbit client files
