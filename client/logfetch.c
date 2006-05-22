@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.15 2006-05-21 11:03:35 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.16 2006-05-22 10:46:50 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -401,7 +401,7 @@ void printdirdata(FILE *fd, char *fn)
 	int buflen;
 
 	ducmd = getenv("DU");
-	if (ducmd == NULL) ducmd = "du";
+	if (ducmd == NULL) ducmd = "du -k";
 
 	cmd = (char *)malloc(strlen(ducmd) + strlen(fn) + 10);
 	sprintf(cmd, "%s %s 2>&1", ducmd, fn);
