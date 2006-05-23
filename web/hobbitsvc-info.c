@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.103 2006-05-19 12:02:55 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.104 2006-05-23 05:40:55 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -170,7 +170,7 @@ static int fetch_status(char *hostname)
 static void generate_hobbit_alertinfo(char *hostname, strbuffer_t *buf)
 {
 	namelist_t *hi = hostinfo(hostname);
-	activealerts_t alert;
+	activealerts_t *alert;
 	char l[1024];
 	int i, rcount;
 
@@ -178,23 +178,20 @@ static void generate_hobbit_alertinfo(char *hostname, strbuffer_t *buf)
 	addtobuffer(buf, l);
 	addtobuffer(buf, "<tr><th>Service</th><th>Recipient</th><th>1st Delay</th><th>Stop after</th><th>Repeat</th><th>Time of Day</th><th>Colors</th></tr>\n");
 
-	alert.hostname = hostname;
-	alert.location = (hi ? hi->page->pagepath : "");
-	strcpy(alert.ip, "127.0.0.1");
-	alert.color = COL_RED;
-	alert.pagemessage = "";
-	alert.ackmessage = NULL;
-	alert.eventstart = 0;
-	alert.nextalerttime = 0;
-	alert.state = A_PAGING;
-	alert.cookie = 12345;
-	alert.next = NULL;
+	alert = calloc(1, sizeof(activealerts_t));
+	alert->hostname = hostname;
+	alert->location = (hi ? hi->page->pagepath : "");
+	strcpy(alert->ip, "127.0.0.1");
+	alert->color = COL_RED;
+	alert->pagemessage = "";
+	alert->state = A_PAGING;
+	alert->cookie = 12345;
 	rcount = 0;
 
 	alert_printmode(1);
 	for (i = 0; (i < testcount); i++) {
-		alert.testname = tnames[i].name;
-		if (have_recipient(&alert, NULL)) { rcount++; print_alert_recipients(&alert, buf); }
+		alert->testname = tnames[i].name;
+		if (have_recipient(alert, NULL)) { rcount++; print_alert_recipients(alert, buf); }
 	}
 
 	if (rcount == 0) {
@@ -202,6 +199,8 @@ static void generate_hobbit_alertinfo(char *hostname, strbuffer_t *buf)
 		addtobuffer(buf, "<tr><td colspan=9 align=center><b><i>No alerts defined</i></b></td></tr>\n");
 	}
 	addtobuffer(buf, "</table>\n");
+
+	xfree(alert);
 }
 
 
