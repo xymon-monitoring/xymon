@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitping.c,v 1.6 2006-05-05 05:59:56 henrik Exp $";
+static char rcsid[] = "$Id: hobbitping.c,v 1.7 2006-05-25 14:56:35 henrik Exp $";
 
 #include "config.h"
 
@@ -155,7 +155,7 @@ typedef struct pingdata_t {
 } pingdata_t;
 
 
-int send_ping(int sock, int startidx)
+int send_ping(int sock, int startidx, int minresponses)
 {
 	static unsigned char buffer[PING_PACKET_SIZE];
 	struct icmp *icmphdr;
@@ -173,7 +173,7 @@ int send_ping(int sock, int startidx)
 	 */
 
 	/* Skip the hosts that have already delivered a ping response */
-	while ((idx < hostcount) && (hosts[idx]->received > 0)) idx++;
+	while ((idx < hostcount) && (hosts[idx]->received >= minresponses)) idx++;
 	if (idx >= hostcount) return hostcount;
 
 	/* Build the packet and send it */
@@ -302,14 +302,14 @@ int get_response(int sock)
 	return pktcount;
 }
 
-int count_pending(void)
+int count_pending(int minresponses)
 {
 	int result = 0;
 	int idx;
 
 	/* Counts how many hosts we haven't seen a reply from yet. */
 	for (idx = 0; (idx < hostcount); idx++)
-		if (hosts[idx]->received == 0) result++;
+		if (hosts[idx]->received < minresponses) result++;
 
 	return result;
 }
@@ -344,7 +344,7 @@ int main(int argc, char *argv[])
 {
 	struct protoent *proto;
 	int protonumber, pingsocket = -1, sockerr;
-	int argi, sendidx, pending, tries = 3, timeout = 5;
+	int argi, sendidx, pending, minresponses = 1, tries = 3, timeout = 5;
 	uid_t uid;
 
 	/* Get a raw socket, then drop all root privs. */
@@ -360,15 +360,21 @@ int main(int argc, char *argv[])
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (strncmp(argv[argi], "--retries=", 10) == 0) {
-			tries = 1 + atoi(argv[argi]+10);
+			char *delim = strchr(argv[argi], '=');
+			tries = 1 + atoi(delim+1);
 		}
 		else if (strncmp(argv[argi], "--timeout=", 10) == 0) {
-			timeout = atoi(argv[argi]+10);
+			char *delim = strchr(argv[argi], '=');
+			timeout = atoi(delim+1);
+		}
+		else if (strncmp(argv[argi], "--responses=", 11) == 0) {
+			char *delim = strchr(argv[argi], '=');
+			minresponses = atoi(delim+1);
 		}
 		else if (strcmp(argv[argi], "--help") == 0) {
-			fprintf(stderr, "%s [--retries=N] [--timeout=N]\n", argv[0]);
 			if (pingsocket >= 0) close(pingsocket);
-			return 3;
+			fprintf(stderr, "%s [--retries=N] [--timeout=N] [--responses=N]\n", argv[0]);
+			return 0;
 		}
 		else if (*(argv[argi]) == '-') {
 			/* Ignore everything else - for fping compatibility */
@@ -385,7 +391,7 @@ int main(int argc, char *argv[])
 	fcntl(pingsocket, F_SETFL, O_NONBLOCK);
 
 	load_ips(argc, argv, stdin);
-	pending = count_pending();
+	pending = count_pending(minresponses);
 
 	while (tries) {
 		time_t cutoff = time(NULL) + timeout + 1;
@@ -425,7 +431,7 @@ int main(int argc, char *argv[])
 			else {
 				if (FD_ISSET(pingsocket, &writefds)) {
 					/* OK to send */
-					sendidx = send_ping(pingsocket, sendidx);
+					sendidx = send_ping(pingsocket, sendidx, minresponses);
 					/* Adjust the cutoff time, so we wait TIMEOUT seconds for a response */
 					cutoff = time(NULL) + timeout + 1;
 				}
@@ -437,7 +443,7 @@ int main(int argc, char *argv[])
 		}
 
 		tries--;
-		pending = count_pending();
+		pending = count_pending(minresponses);
 		if (pending == 0) {
 			/* Have got responses for all hosts - we're done */
 			tries = 0;
