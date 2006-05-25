@@ -65,6 +65,9 @@ install:
 	../build/merge-lines hobbitclient.cfg $(INSTALLROOT)$(BBHOME)/etc/hobbitclient.cfg
 ifndef PKGBUILD
 	chown -R $(BBUSER) $(INSTALLROOT)$(BBHOME)
+	chown 0 $(INSTALLROOT)$(BBHOME)/bin/logfetch
+	chgrp 0 $(INSTALLROOT)$(BBHOME)/bin/logfetch
+	chmod u+s $(INSTALLROOT)$(BBHOME)/bin/logfetch
 endif
 
 install-localclient:
