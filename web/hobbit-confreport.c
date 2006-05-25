@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-confreport.c,v 1.12 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-confreport.c,v 1.13 2006-05-25 14:30:05 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -142,7 +142,7 @@ static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 	tag_t *taghead = NULL;
 	int contidx = 0, haveping = 0;
 	char contcol[1024];
-	activealerts_t alert;
+	activealerts_t *alert;
 	strbuffer_t *buf = newstrbuffer(0); 
 
 	fprintf(stdout, "<p style=\"page-break-before: always\">\n"); 
@@ -431,22 +431,20 @@ addtolist:
 	}
 
 	/* Do the alerts */
-	alert.hostname = host->hostname;
-	alert.location = hinfo->page->pagepath;
-	strcpy(alert.ip, "127.0.0.1");
-	alert.color = COL_RED;
-	alert.pagemessage = "";
-	alert.ackmessage = NULL;
-	alert.eventstart = 0;
-	alert.nextalerttime = 0;
-	alert.state = A_PAGING;
-	alert.cookie = 12345;
-	alert.next = NULL;
+	alert = (activealerts_t *)malloc(sizeof(activealerts_t));
+	alert->hostname = host->hostname;
+	alert->location = hinfo->page->pagepath;
+	strcpy(alert->ip, "127.0.0.1");
+	alert->color = COL_RED;
+	alert->pagemessage = "";
+	alert->state = A_PAGING;
+	alert->cookie = 12345;
 	alert_printmode(2);
 	for (testi = 0; (testi < testcount); testi++) {
-		alert.testname = testnames[testi]->name;
-		if (have_recipient(&alert, NULL)) print_alert_recipients(&alert, buf);
+		alert->testname = testnames[testi]->name;
+		if (have_recipient(alert, NULL)) print_alert_recipients(alert, buf);
 	}
+	xfree(alert);
 
 	if (buf) {
 		fprintf(stdout, "<tr>\n");
