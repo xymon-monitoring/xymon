@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.45 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.46 2006-05-25 21:04:44 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -126,13 +126,16 @@ int main(int argc, char *argv[])
 		char *p;
 		char *statusdata = "";
 		char *hostname, *hostnamecommas, *testname, *dismsg;
-		time_t tstamp, lastchg, disabletime;
+		time_t tstamp, lastchg, disabletime, clienttstamp;
 		int tstamp_i, lastchg_i;
 		int newcolor, oldcolor;
 		int downtimeactive;
 		struct tm tstamptm;
 		int trend;
 		int childstat;
+
+		/* Pickup any finished child processes to avoid zombies */
+		while (wait3(&childstat, WNOHANG, NULL) > 0) ;
 
 		msg = get_hobbitd_message(C_STACHG, "hobbitd_history", &seq, NULL);
 		if (msg == NULL) {
@@ -152,7 +155,7 @@ int main(int argc, char *argv[])
 		}
 
 		if ((metacount > 9) && (strncmp(items[0], "@@stachg", 8) == 0)) {
-			/* @@stachg#seq|timestamp|sender|origin|hostname|testname|expiretime|color|prevcolor|changetime|disabletime|disablemsg|downtimeactive */
+			/* @@stachg#seq|timestamp|sender|origin|hostname|testname|expiretime|color|prevcolor|changetime|disabletime|disablemsg|downtimeactive|clienttstamp */
 			sscanf(items[1], "%d.%*d", &tstamp_i); tstamp = tstamp_i;
 			hostname = items[4];
 			testname = items[5];
@@ -162,63 +165,7 @@ int main(int argc, char *argv[])
 			disabletime = atoi(items[10]);
 			dismsg   = items[11];
 			downtimeactive = (atoi(items[12]) > 0);
-
-			if (save_histlogs) {
-				char *hostdash;
-				char fname[PATH_MAX];
-				FILE *histlogfd;
-
-				MEMDEFINE(fname);
-
-				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
-				sprintf(fname, "%s/%s", histlogdir, hostdash);
-				mkdir(fname, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
-				p = fname + sprintf(fname, "%s/%s/%s", histlogdir, hostdash, testname);
-				mkdir(fname, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
-				p += sprintf(p, "/%s", histlogtime(tstamp));
-
-				histlogfd = fopen(fname, "w");
-				if (histlogfd) {
-					/*
-					 * When a host gets disabled or goes purple, the status
-					 * message data is not changed - so it will include a
-					 * wrong color as the first word of the message.
-					 * Therefore we need to fixup this so it matches the
-					 * newcolor value.
-					 */
-					int txtcolor = parse_color(statusdata);
-					char *origstatus = statusdata;
-
-					if (txtcolor != -1) {
-						fprintf(histlogfd, "%s", colorname(newcolor));
-						statusdata += strlen(colorname(txtcolor));
-					}
-
-					if (dismsg && *dismsg) nldecode(dismsg);
-					if (disabletime > 0) {
-						fprintf(histlogfd, " Disabled until %s\n%s\n\n", 
-							ctime(&disabletime), (dismsg ? dismsg : ""));
-						fprintf(histlogfd, "Status message when disabled follows:\n\n");
-						statusdata = origstatus;
-					}
-					else if (dismsg && *dismsg) {
-						fprintf(histlogfd, " Planned downtime: %s\n\n", dismsg);
-						fprintf(histlogfd, "Original status message follows:\n\n");
-						statusdata = origstatus;
-					}
-
-					fwrite(statusdata, strlen(statusdata), 1, histlogfd);
-					fprintf(histlogfd, "Status unchanged in 0.00 minutes\n");
-					fprintf(histlogfd, "Message received from %s\n", items[2]);
-					fclose(histlogfd);
-				}
-				else {
-					errprintf("Cannot create histlog file '%s' : %s\n", fname, strerror(errno));
-				}
-				xfree(hostdash);
-
-				MEMUNDEFINE(fname);
-			}
+			clienttstamp = atoi(items[13]);
 
 			p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
 
@@ -361,6 +308,64 @@ int main(int argc, char *argv[])
 				MEMUNDEFINE(statuslogfn);
 				MEMUNDEFINE(oldcol);
 				MEMUNDEFINE(timestamp);
+			}
+
+			if (save_histlogs) {
+				char *hostdash;
+				char fname[PATH_MAX];
+				FILE *histlogfd;
+
+				MEMDEFINE(fname);
+
+				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
+				sprintf(fname, "%s/%s", histlogdir, hostdash);
+				mkdir(fname, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
+				p = fname + sprintf(fname, "%s/%s/%s", histlogdir, hostdash, testname);
+				mkdir(fname, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
+				p += sprintf(p, "/%s", histlogtime(tstamp));
+
+				histlogfd = fopen(fname, "w");
+				if (histlogfd) {
+					/*
+					 * When a host gets disabled or goes purple, the status
+					 * message data is not changed - so it will include a
+					 * wrong color as the first word of the message.
+					 * Therefore we need to fixup this so it matches the
+					 * newcolor value.
+					 */
+					int txtcolor = parse_color(statusdata);
+					char *origstatus = statusdata;
+
+					if (txtcolor != -1) {
+						fprintf(histlogfd, "%s", colorname(newcolor));
+						statusdata += strlen(colorname(txtcolor));
+					}
+
+					if (dismsg && *dismsg) nldecode(dismsg);
+					if (disabletime > 0) {
+						fprintf(histlogfd, " Disabled until %s\n%s\n\n", 
+							ctime(&disabletime), (dismsg ? dismsg : ""));
+						fprintf(histlogfd, "Status message when disabled follows:\n\n");
+						statusdata = origstatus;
+					}
+					else if (dismsg && *dismsg) {
+						fprintf(histlogfd, " Planned downtime: %s\n\n", dismsg);
+						fprintf(histlogfd, "Original status message follows:\n\n");
+						statusdata = origstatus;
+					}
+
+					fwrite(statusdata, strlen(statusdata), 1, histlogfd);
+					fprintf(histlogfd, "Status unchanged in 0.00 minutes\n");
+					fprintf(histlogfd, "Message received from %s\n", items[2]);
+					if (clienttstamp) fprintf(histlogfd, "Client data ID %d\n", (int) clienttstamp);
+					fclose(histlogfd);
+				}
+				else {
+					errprintf("Cannot create histlog file '%s' : %s\n", fname, strerror(errno));
+				}
+				xfree(hostdash);
+
+				MEMUNDEFINE(fname);
 			}
 
 			strncpy(oldcol2, ((oldcolor >= 0) ? colorname(oldcolor) : "-"), 2);
@@ -631,9 +636,6 @@ int main(int argc, char *argv[])
 			}
 			continue;
 		}
-
-		/* Pickup any finished child processes to avoid zombies */
-		while (wait3(&childstat, WNOHANG, NULL) > 0) ;
 	}
 
 	MEMUNDEFINE(newcol2);
