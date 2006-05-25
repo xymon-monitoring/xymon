@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-confreport.c,v 1.13 2006-05-25 14:30:05 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-confreport.c,v 1.14 2006-05-25 14:30:30 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -431,7 +431,7 @@ addtolist:
 	}
 
 	/* Do the alerts */
-	alert = (activealerts_t *)malloc(sizeof(activealerts_t));
+	alert = (activealerts_t *)calloc(1, sizeof(activealerts_t));
 	alert->hostname = host->hostname;
 	alert->location = hinfo->page->pagepath;
 	strcpy(alert->ip, "127.0.0.1");
