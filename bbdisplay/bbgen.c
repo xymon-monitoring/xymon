@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.223 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.224 2006-05-25 14:57:06 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -535,6 +535,9 @@ int main(int argc, char *argv[])
 
 	/* Catch a SEGV fault */
 	setup_signalhandler("bbgen");
+
+	/* Set umask to 0022 so that the generated HTML pages have world-read access */
+	umask(0022);
 
 	if (pagedir == NULL) {
 		if (xgetenv("BBWWW")) {
