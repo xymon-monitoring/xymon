@@ -112,6 +112,13 @@ in Hobbit, I strongly recommend that you create a dedicated userid for the Hobbi
 programs. This user should <em>not</em> be a member of any other groups on your
 system.</p>
 
+<p>Hobbit will install two programs as <b>setuid-root</b>: <u>hobbitping</u> (only on
+the Hobbit server), and <u>logfetch</u> (on both the Hobbit server and clients).
+Both of these have been written to run with root privileges enabled <u>only</u>
+when needed, i.e. they will drop root privileges immediately after they have
+performed the operation that requires root-privileges (typically, opening a
+file).</p>
+
 
 <h2>Building Hobbit</h2>
 <p>After unpacking Hobbit from the tar-file, run the <tt>configure</tt> script.
