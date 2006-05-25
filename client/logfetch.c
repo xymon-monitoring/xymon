@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.16 2006-05-22 10:46:50 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.17 2006-05-25 14:58:32 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -65,6 +65,35 @@ typedef struct checkdef_t {
 
 checkdef_t *checklist = NULL;
 
+
+FILE *rootopen(char *filename, int *err)
+{
+	/* Open a file using root privs */
+	uid_t myuid;
+	FILE *fd;
+	int openerr;
+
+	myuid = getuid();
+
+#ifdef HPUX
+	setresuid(-1, 0, -1);
+#else
+	seteuid(0);
+#endif
+
+	fd = fopen(filename, "r");
+	if (err) *err = errno;
+
+#ifdef HPUX
+	setresuid(-1, myuid, -1);
+#else
+	seteuid(myuid);
+#endif
+
+	return fd;
+}
+
+
 char *logdata(char *filename, logdef_t *logdef, int *truncated)
 {
 	static char *result = NULL;
@@ -73,7 +102,7 @@ char *logdata(char *filename, logdef_t *logdef, int *truncated)
 	FILE *fd;
 	struct stat st;
 	size_t n;
-	int i;
+	int openerr, i;
 #ifdef _LARGEFILE_SOURCE
 	off_t bufsz;
 #else
@@ -81,11 +110,10 @@ char *logdata(char *filename, logdef_t *logdef, int *truncated)
 #endif
 
 	*truncated = 0;
-
-	fd = fopen(filename, "r");
+	fd = rootopen(filename, &openerr);
 	if (fd == NULL) {
 		result = (char *)malloc(1024 + strlen(filename));
-		sprintf(result, "Cannot open logfile %s : %s\n", filename, strerror(errno));
+		sprintf(result, "Cannot open logfile %s : %s\n", filename, strerror(openerr));
 		return result;
 	}
 
@@ -325,11 +353,12 @@ char *filesum(char *fn, char *dtype)
 	digestctx_t *ctx;
 	FILE *fd;
 	unsigned char buf[8192];
-	int buflen;
+	int openerr, buflen;
 
         if ((ctx = digest_init(dtype)) == NULL) return "";
 
-	fd = fopen(fn, "r"); if (fd == NULL) return "";
+	fd = rootopen(fn, &openerr); 
+	if (fd == NULL) return "";
 	while ((buflen = fread(buf, 1, sizeof(buf), fd)) > 0) digest_data(ctx, buf, buflen);
 	fclose(fd);
 
@@ -675,6 +704,15 @@ int main(int argc, char *argv[])
 	char *cfgfn = argv[1];
 	char *statfn = argv[2];
 	checkdef_t *walk;
+	uid_t myuid;
+
+	/* Immediately drop all root privs, we'll regain them later if needed */
+	myuid = getuid();
+#ifdef HPUX
+	setresuid(-1, myuid, -1);
+#else
+	seteuid(myuid);
+#endif
 
 	if ((cfgfn == NULL) || (statfn == NULL)) return 1;
 
