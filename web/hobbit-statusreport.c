@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-statusreport.c,v 1.5 2006-05-17 20:27:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-statusreport.c,v 1.6 2006-05-25 14:55:41 henrik Exp $";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -156,14 +156,14 @@ int main(int argc, char *argv[])
 			printf("<tr><td align=left valign=top><b>");
 
 			if (addlink) 
-				printf("<a href=\"%s\">%s</a>", hostsvcurl(hostname, xgetenv("INFOCOLUMN")), hostname);
+				printf("<a href=\"%s\">%s</a>", hostsvcurl(hostname, xgetenv("INFOCOLUMN"), 1), hostname);
 			else 
 				printf("%s", hostname);
 
 			if (showcolumn) {
 				printf("<br>");
 				if (addlink) 
-					printf("<a href=\"%s\">%s</a>", hostsvcurl(hostname, testname), testname);
+					printf("<a href=\"%s\">%s</a>", hostsvcurl(hostname, testname, 1), testname);
 				else
 					printf("%s", testname);
 			}

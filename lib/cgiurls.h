@@ -14,7 +14,7 @@
 #include <time.h>
 #include "availability.h"
 
-extern char *hostsvcurl(char *hostname, char *service);
+extern char *hostsvcurl(char *hostname, char *service, int htmlformat);
 extern char *hostsvcclienturl(char *hostname, char *section);
 extern char *histcgiurl(char *hostname, char *service);
 extern char *histlogurl(char *hostname, char *service, time_t histtime, char *histtime_txt);

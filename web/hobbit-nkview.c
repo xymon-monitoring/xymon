@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkview.c,v 1.17 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkview.c,v 1.18 2006-05-25 14:55:41 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -227,7 +227,7 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 				htmlgroupstr = strdup(urlencode(column->config->ttgroup ? column->config->ttgroup : ""));
 				htmlextrastr = strdup(urlencode(column->config->ttextra ? column->config->ttextra : ""));
 				fprintf(output, "<A HREF=\"%s&amp;NKPRIO=%d&amp;NKTTGROUP=%s&amp;NKTTEXTRA=%s\">",
-					hostsvcurl(itm->hostname, colname),
+					hostsvcurl(itm->hostname, colname, 1),
 					prio, 
 					htmlgroupstr, htmlextrastr);
 				fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s %s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
@@ -408,7 +408,7 @@ int main(int argc, char *argv[])
 
 	redirect_cgilog("hobbit-nkview");
 
-	setdocurl(hostsvcurl("%s", xgetenv("INFOCOLUMN")));
+	setdocurl(hostsvcurl("%s", xgetenv("INFOCOLUMN"), 1));
 
 	parse_query();
 	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
