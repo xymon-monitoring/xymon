@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_buffer.c,v 1.7 2006-05-12 05:44:52 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_buffer.c,v 1.8 2006-05-25 20:53:34 henrik Exp $";
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -28,6 +28,7 @@ unsigned int shbufsz(enum msgchannels_t chnid)
 		switch (chnid) {
 		  case C_STATUS: v = getenv("MAXMSG_STATUS"); defvalue = 256; break;
 		  case C_CLIENT: v = getenv("MAXMSG_CLIENT"); defvalue = 512; break;
+		  case C_CLICHG: v = getenv("MAXMSG_CLICHG"); defvalue = shbufsz(C_CLIENT); break;
 		  case C_DATA:   v = getenv("MAXMSG_DATA");   defvalue = 256; break;
 		  case C_NOTES:  v = getenv("MAXMSG_NOTES");  defvalue = 256; break;
 		  case C_STACHG: v = getenv("MAXMSG_STACHG"); defvalue = shbufsz(C_STATUS); break;

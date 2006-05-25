@@ -22,7 +22,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.28 2006-05-11 20:16:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_ipc.c,v 1.29 2006-05-25 20:53:34 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -48,6 +48,7 @@ char *channelnames[C_LAST+1] = {
 	"notes",
 	"enadis",
 	"client",
+	"clichg",
 	NULL
 };
 
