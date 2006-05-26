@@ -1,4 +1,4 @@
-PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbit-mailack trimhistory bbcombotest hobbitreports.sh moverrd.sh
+PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbitd_hostdata hobbit-mailack trimhistory bbcombotest hobbitreports.sh moverrd.sh
 CLIENTPROGRAMS = ../client/hobbitd_client
 
 LIBOBJS = ../lib/libbbgen.a
@@ -10,6 +10,7 @@ FILESTOREOBJS = hobbitd_filestore.o hobbitd_worker.o hobbitd_buffer.o
 HISTORYOBJS   = hobbitd_history.o   hobbitd_worker.o hobbitd_buffer.o
 ALERTOBJS     = hobbitd_alert.o     hobbitd_worker.o hobbitd_buffer.o do_alert.o
 RRDOBJS       = hobbitd_rrd.o       hobbitd_worker.o hobbitd_buffer.o do_rrd.o
+HOSTDATAOBJS  = hobbitd_hostdata.o  hobbitd_worker.o hobbitd_buffer.o
 SAMPLEOBJS    = hobbitd_sample.o    hobbitd_worker.o hobbitd_buffer.o
 CLIENTOBJS    = hobbitd_client.o    hobbitd_worker.o hobbitd_buffer.o client_config.o
 COMBOTESTOBJS = bbcombotest.o
@@ -52,6 +53,9 @@ do_rrd.o: do_rrd.c do_rrd.h rrd/*.c
 
 hobbitd_sample: $(SAMPLEOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(SAMPLEOBJS) $(LIBOBJS)
+
+hobbitd_hostdata: $(HOSTDATAOBJS) $(LIBOBJS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HOSTDATAOBJS) $(LIBOBJS)
 
 hobbitd_client: $(CLIENTOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CLIENTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
