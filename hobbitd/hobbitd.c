@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.231 2006-05-19 12:43:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.232 2006-05-27 07:02:49 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -91,10 +91,15 @@ typedef struct ackinfo_t {
 	struct ackinfo_t *next;
 } ackinfo_t;
 
+typedef struct testinfo_t {
+	char *name;
+	int clientsave;
+} testinfo_t;
+
 /* This holds all information about a single status */
 typedef struct hobbitd_log_t {
 	struct hobbitd_hostlist_t *host;
-	char *test;
+	testinfo_t *test;
 	char *origin;
 	int color, oldcolor, activealert, histsynced, downtimeactive;
 	char *testflags;
@@ -121,7 +126,9 @@ typedef struct hobbitd_hostlist_t {
 	char ip[IP_ADDR_STRLEN];
 	hobbitd_log_t *logs;
 	hobbitd_log_t *pinglog; /* Points to entry in logs list, but we need it often */
+	time_t clientmsgtstamp;
 	char *clientmsg;
+	int clientmsgposted;
 } hobbitd_hostlist_t;
 
 typedef struct filecache_t {
@@ -149,7 +156,8 @@ sender_t *wwwsenders = NULL;
 sender_t *tracelist = NULL;
 int      traceall = 0;
 int      ignoretraced = 0;
-int      save_clientlogs = 1;
+int      clientsavemem = 1;	/* In memory */
+int      clientsavedisk = 0;	/* On disk via the CLICHG channel */
 int      allow_downloads = 1;
 
 #define NOTALK 0
@@ -183,6 +191,7 @@ hobbitd_channel_t *datachn   = NULL;	/* Receives raw "data" messages */
 hobbitd_channel_t *noteschn  = NULL;	/* Receives raw "notes" messages */
 hobbitd_channel_t *enadischn = NULL;	/* Receives "enable" and "disable" messages */
 hobbitd_channel_t *clientchn = NULL;	/* Receives "client" messages */
+hobbitd_channel_t *clichgchn = NULL;	/* Receives "clichg" messages */
 
 #define NO_COLOR (COL_COUNT)
 static char *colnames[COL_COUNT+1];
@@ -241,7 +250,7 @@ hobbitd_statistics_t hobbitd_stats[] = {
 enum boardfield_t { F_NONE, F_HOSTNAME, F_TESTNAME, F_COLOR, F_FLAGS, 
 		    F_LASTCHANGE, F_LOGTIME, F_VALIDTIME, F_ACKTIME, F_DISABLETIME,
 		    F_SENDER, F_COOKIE, F_LINE1,
-		    F_ACKMSG, F_DISMSG, F_MSG, F_CLIENT,
+		    F_ACKMSG, F_DISMSG, F_MSG, F_CLIENT, F_CLIENTTSTAMP,
 		    F_ACKLIST,
 		    F_HOSTINFO,
 		    F_LAST };
@@ -267,6 +276,7 @@ boardfieldnames_t boardfieldnames[] = {
 	{ "dismsg", F_DISMSG },
 	{ "msg", F_MSG },
 	{ "client", F_CLIENT },
+	{ "clntstamp", F_CLIENTTSTAMP },
 	{ "acklist", F_ACKLIST },
 	{ "BBH_", F_HOSTINFO },
 	{ NULL, F_LAST },
@@ -435,6 +445,8 @@ char *generate_stats(void)
 	bufp += sprintf(bufp, "enadis channel messages: %10ld (%d readers)\n", enadischn->msgcount, clients);
 	clients = semctl(clientchn->semid, CLIENTCOUNT, GETVAL);
 	bufp += sprintf(bufp, "client channel messages: %10ld (%d readers)\n", clientchn->msgcount, clients);
+	clients = semctl(clichgchn->semid, CLIENTCOUNT, GETVAL);
+	bufp += sprintf(bufp, "clichg channel messages: %10ld (%d readers)\n", clichgchn->msgcount, clients);
 
 	if (ghostlist) {
 		ghostlist_t *tmp;
@@ -558,6 +570,18 @@ enum alertstate_t decide_alertstate(int color)
 }
 
 
+testinfo_t *create_testinfo(char *name)
+{
+	testinfo_t *newrec;
+
+	newrec = (testinfo_t *)calloc(1, sizeof(testinfo_t));
+	newrec->name = strdup(name);
+	newrec->clientsave = clientsavedisk;
+	rbtInsert(rbtests, newrec->name, newrec);
+
+	return newrec;
+}
+
 void posttochannel(hobbitd_channel_t *channel, char *channelmarker, 
 		   char *msg, char *sender, char *hostname, hobbitd_log_t *log, char *readymsg)
 {
@@ -634,7 +658,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			n = snprintf(channel->channelbuf, (bufsz-5),
 				"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%s|%d", 
 				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
-				sender, log->origin, hostname, log->test, 
+				sender, log->origin, hostname, log->test->name, 
 				(int) log->validtime, colnames[log->color], (log->testflags ? log->testflags : ""),
 				colnames[log->oldcolor], (int) log->lastchange); 
 			if (n < (bufsz-5)) {
@@ -646,11 +670,15 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 					(int)log->enabletime, nlencode(log->dismsg));
 			}
 			if (n < (bufsz-5)) {
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d",
+					(int)log->host->clientmsgtstamp);
+			}
+			if (n < (bufsz-5)) {
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "\n%s", msg);
 			}
 			if (n > (bufsz-5)) {
 				errprintf("Oversize status msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
-					sender, hostname, log->test, n, bufsz);
+					sender, hostname, log->test->name, n, bufsz);
 			}
 			*(channel->channelbuf + bufsz - 5) = '\0';
 			break;
@@ -659,7 +687,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			n = snprintf(channel->channelbuf, (bufsz-5),
 				"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d", 
 				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
-				sender, log->origin, hostname, log->test, 
+				sender, log->origin, hostname, log->test->name, 
 				(int) log->validtime, colnames[log->color], 
 				colnames[log->oldcolor], (int) log->lastchange);
 			if (n < (bufsz-5)) {
@@ -670,13 +698,31 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d", log->downtimeactive);
 			}
 			if (n < (bufsz-5)) {
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d", 
+						(int) log->host->clientmsgtstamp);
+			}
+			if (n < (bufsz-5)) {
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "\n%s", msg);
 			}
 			if (n > (bufsz-5)) {
 				errprintf("Oversize stachg msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
-					sender, hostname, log->test, n, bufsz);
+					sender, hostname, log->test->name, n, bufsz);
 			}
 			*(channel->channelbuf + bufsz - 5) = '\0';
+			break;
+
+		  case C_CLICHG:
+			n = snprintf(channel->channelbuf, (bufsz-5),
+				"@@%s#%u|%d.%06d|%s|%s|%d\n%s",
+				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
+				sender, hostname, (int) log->host->clientmsgtstamp, 
+				log->host->clientmsg);
+			if (n > (bufsz-5)) {
+				errprintf("Oversize clichg msg from %s for %s truncated (n=%d, limit=%d)\n", 
+					sender, hostname, n, bufsz);
+			}
+			*(channel->channelbuf + bufsz - 5) = '\0';
+			log->host->clientmsgposted = 1;
 			break;
 
 		  case C_PAGE:
@@ -685,7 +731,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 					"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d\n%s", 
 					channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 					sender, hostname, 
-					log->test, log->host->ip,
+					log->test->name, log->host->ip,
 					(int) log->acktime, msg);
 			}
 			else if (strcmp(channelmarker, "notify") == 0) {
@@ -695,7 +741,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 					"@@%s#%u|%d.%06d|%s|%s|%s|%s\n%s", 
 					channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 					sender, hostname, 
-					(log->test ? log->test : ""), 
+					(log->test->name ? log->test->name : ""), 
 					(hi ? hi->page->pagepath : ""), 
 					msg);
 			}
@@ -713,7 +759,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 					"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d|%s|%s|%s\n%s", 
 					channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
 					sender, hostname, 
-					log->test, log->host->ip, (int) log->validtime, 
+					log->test->name, log->host->ip, (int) log->validtime, 
 					colnames[log->color], colnames[log->oldcolor], (int) log->lastchange,
 					pagepath, log->cookie, osname, classname, 
 					(log->grouplist ? log->grouplist : ""),
@@ -721,7 +767,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			}
 			if (n > (bufsz-5)) {
 				errprintf("Oversize page/ack/notify msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
-					sender, hostname, (log->test ? log->test : "<none>"), n, bufsz);
+					sender, hostname, (log->test->name ? log->test->name : "<none>"), n, bufsz);
 			}
 			*(channel->channelbuf + bufsz - 5) = '\0';
 			break;
@@ -738,7 +784,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 				sender, hostname, msg);
 			if (n > (bufsz-5)) {
 				errprintf("Oversize notes msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
-					sender, hostname, log->test, n, bufsz);
+					sender, hostname, log->test->name, n, bufsz);
 			}
 			*(channel->channelbuf + bufsz - 5) = '\0';
 			break;
@@ -747,10 +793,10 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			n = snprintf(channel->channelbuf, (bufsz-5),
 				"@@%s#%u|%d.%06d|%s|%s|%s|%d",
 				channelmarker, channel->seq, (int) tstamp.tv_sec, (int)tstamp.tv_usec,
-				sender, hostname, log->test, (int) log->enabletime);
+				sender, hostname, log->test->name, (int) log->enabletime);
 			if (n > (bufsz-5)) {
 				errprintf("Oversize enadis msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
-					sender, hostname, log->test, n, bufsz);
+					sender, hostname, log->test->name, n, bufsz);
 			}
 			*(channel->channelbuf + bufsz - 5) = '\0';
 			break;
@@ -820,7 +866,8 @@ hobbitd_log_t *find_log(char *hostname, char *testname, char *origin, hobbitd_ho
 {
 	RbtIterator hosthandle, testhandle, originhandle;
 	hobbitd_hostlist_t *hwalk;
-	char *owalk = NULL, *twalk;
+	char *owalk = NULL;
+	testinfo_t *twalk;
 	hobbitd_log_t *lwalk;
 
 	*host = NULL;
@@ -842,7 +889,7 @@ hobbitd_log_t *find_log(char *hostname, char *testname, char *origin, hobbitd_ho
 }
 
 void get_hts(char *msg, char *sender, char *origin,
-	     hobbitd_hostlist_t **host, char **test, char **grouplist, hobbitd_log_t **log, 
+	     hobbitd_hostlist_t **host, testinfo_t **test, char **grouplist, hobbitd_log_t **log, 
 	     int *color, char **downcause, int *alltests, int createhost, int createlog)
 {
 	/*
@@ -857,7 +904,7 @@ void get_hts(char *msg, char *sender, char *origin,
 	char hostip[IP_ADDR_STRLEN];
 	RbtIterator hosthandle, testhandle, originhandle;
 	hobbitd_hostlist_t *hwalk = NULL;
-	char *twalk = NULL;
+	testinfo_t *twalk = NULL;
 	char *owalk = NULL;
 	hobbitd_log_t *lwalk = NULL;
 
@@ -939,10 +986,7 @@ void get_hts(char *msg, char *sender, char *origin,
 
 		testhandle = rbtFind(rbtests, testname);
 		if (testhandle != rbtEnd(rbtests)) twalk = gettreeitem(rbtests, testhandle);
-		if (createlog && (twalk == NULL)) {
-			twalk = strdup(testname);
-			rbtInsert(rbtests, twalk, twalk);
-		}
+		if (createlog && (twalk == NULL)) twalk = create_testinfo(testname);
 	}
 	else {
 		if (createlog) errprintf("Bogus message from %s: No testname '%s'\n", sender, msg);
@@ -1254,6 +1298,10 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		 * (It is only seen as active if the color has been forced BLUE).
 		 */
 		if (!log->downtimeactive && (log->oldcolor != newcolor)) {
+			if (log->host->clientmsg && !log->host->clientmsgposted && (newalertstatus == A_ALERT) && log->test->clientsave) {
+				posttochannel(clichgchn, channelnames[C_CLICHG], msg, sender, 
+						hostname, log, NULL);
+			}
 			log->lastchange = time(NULL);
 		}
 	}
@@ -1387,7 +1435,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 	int alltests = 0;
 	RbtIterator hosthandle, testhandle;
 	hobbitd_hostlist_t *hwalk = NULL;
-	char *twalk = NULL;
+	testinfo_t *twalk = NULL;
 	hobbitd_log_t *log;
 	char *p;
 	char hostip[IP_ADDR_STRLEN];
@@ -1499,7 +1547,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 				}
 				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, log, NULL);
 				/* Trigger an immediate status update */
-				handle_status(log->message, sender, log->host->hostname, log->test, log->grouplist, log, COL_BLUE, NULL);
+				handle_status(log->message, sender, log->host->hostname, log->test->name, log->grouplist, log, COL_BLUE, NULL);
 			}
 		}
 		else {
@@ -1514,7 +1562,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, log, NULL);
 
 				/* Trigger an immediate status update */
-				handle_status(log->message, sender, log->host->hostname, log->test, log->grouplist, log, COL_BLUE, NULL);
+				handle_status(log->message, sender, log->host->hostname, log->test->name, log->grouplist, log, COL_BLUE, NULL);
 			}
 		}
 
@@ -1619,7 +1667,7 @@ void handle_ackinfo(char *msg, char *sender, hobbitd_log_t *log)
 
 			strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localtime(&received));
 			fprintf(ackinfologfd, "%s %s %s %s %d %d %d %d %s\n",
-				timestamp, log->host->hostname, log->test,
+				timestamp, log->host->hostname, log->test->name,
 				newack->ackedby, newack->level, 
 				(int)log->lastchange, (int)newack->received, (int)newack->validuntil, 
 				nlencode(newack->msg));
@@ -1661,7 +1709,7 @@ void handle_client(char *msg, char *sender, char *hostname, char *clientos, char
 	if (msg) { msglen = strlen(msg); buflen += msglen; } else { dprintf("  msg is NULL\n"); return; }
 	buflen += 5;
 
-	if (save_clientlogs) {
+	if (clientsavemem) {
 		hosthandle = rbtFind(rbhosts, hostname);
 		if (hosthandle != rbtEnd(rbhosts)) {
 			hobbitd_hostlist_t *hwalk;
@@ -1678,6 +1726,8 @@ void handle_client(char *msg, char *sender, char *hostname, char *clientos, char
 			else {
 				hwalk->clientmsg = strdup(msg);
 			}
+			hwalk->clientmsgtstamp = time(NULL);
+			hwalk->clientmsgposted = 0;
 		}
 	}
 
@@ -1771,7 +1821,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	char hostip[IP_ADDR_STRLEN];
 	RbtIterator hosthandle, testhandle;
 	hobbitd_hostlist_t *hwalk;
-	char *twalk, *newt;
+	testinfo_t *twalk, *newt;
 	hobbitd_log_t *lwalk;
 	char *marker = NULL;
 	char *canonhostname;
@@ -1906,8 +1956,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 
 		testhandle = rbtFind(rbtests, n2);
 		if (testhandle == rbtEnd(rbtests)) {
-			newt = strdup(n2);
-			rbtInsert(rbtests, newt, newt);
+			newt = create_testinfo(n2);
 		}
 		else {
 			newt = gettreeitem(rbtests, testhandle);
@@ -2172,7 +2221,7 @@ int match_host_filter(namelist_t *hinfo, char *spage, char *shost, char *snet)
 int match_test_filter(hobbitd_log_t *log, char *stest, int scolor)
 {
 	/* Testname filter */
-	if (stest && (strcmp(log->test, stest) != 0)) return 0;
+	if (stest && (strcmp(log->test->name, stest) != 0)) return 0;
 
 	/* Color filter */
 	if ((scolor != -1) && (((1 << log->color) & scolor) == 0)) return 0;
@@ -2242,7 +2291,7 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 		switch (f_type) {
 		  case F_NONE: break;
 		  case F_HOSTNAME: bufp += sprintf(bufp, "%s", hwalk->hostname); break;
-		  case F_TESTNAME: bufp += sprintf(bufp, "%s", lwalk->test); break;
+		  case F_TESTNAME: bufp += sprintf(bufp, "%s", lwalk->test->name); break;
 		  case F_COLOR: bufp += sprintf(bufp, "%s", colnames[lwalk->color]); break;
 		  case F_FLAGS: bufp += sprintf(bufp, "%s", (lwalk->testflags ? lwalk->testflags : "")); break;
 		  case F_LASTCHANGE: bufp += sprintf(bufp, "%d", (int)lwalk->lastchange); break;
@@ -2263,6 +2312,7 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 		  case F_DISMSG: if (lwalk->dismsg) bufp += sprintf(bufp, "%s", nlencode(lwalk->dismsg)); break;
 		  case F_MSG: bufp += sprintf(bufp, "%s", nlencode(lwalk->message)); break;
 		  case F_CLIENT: bufp += sprintf(bufp, "%s", (hwalk->clientmsg ? "Y" : "N")); break;
+		  case F_CLIENTTSTAMP: bufp += sprintf(bufp, "%ld", (hwalk->clientmsg ? (long) hwalk->clientmsgtstamp : 0)); break;
 		  case F_ACKLIST: if (acklist) bufp += sprintf(bufp, "%s", nlencode(acklist)); break;
 
 		  case F_HOSTINFO:
@@ -2333,7 +2383,7 @@ void do_message(conn_t *msg, char *origin)
 {
 	static int nesting = 0;
 	hobbitd_hostlist_t *h;
-	char *t;
+	testinfo_t *t;
 	hobbitd_log_t *log;
 	int color;
 	char *downcause;
@@ -2428,14 +2478,14 @@ void do_message(conn_t *msg, char *origin)
 
 				if (color == COL_PURPLE) {
 					errprintf("Ignored PURPLE status update from %s for %s.%s\n",
-						  sender, (h ? h->hostname : "<unknown>"), (t ? t : "unknown"));
+						  sender, (h ? h->hostname : "<unknown>"), (t ? t->name : "unknown"));
 				}
 				else {
 					/* Count individual status-messages also */
 					update_statistics(currmsg);
 
 					if (h && t && log && (color != -1) && (color != COL_PURPLE)) {
-						handle_status(currmsg, sender, h->hostname, t, grouplist, log, color, downcause);
+						handle_status(currmsg, sender, h->hostname, t->name, grouplist, log, color, downcause);
 					}
 				}
 			}
@@ -2479,11 +2529,11 @@ void do_message(conn_t *msg, char *origin)
 
 		if (color == COL_PURPLE) {
 			errprintf("Ignored PURPLE status update from %s for %s.%s\n",
-				  sender, (h ? h->hostname : "<unknown>"), (t ? t : "unknown"));
+				  sender, (h ? h->hostname : "<unknown>"), (t ? t->name : "unknown"));
 		}
 		else {
 			if (h && t && log && (color != -1)) {
-				handle_status(msg->buf, sender, h->hostname, t, grouplist, log, color, downcause);
+				handle_status(msg->buf, sender, h->hostname, t->name, grouplist, log, color, downcause);
 			}
 		}
 	}
@@ -2548,7 +2598,7 @@ void do_message(conn_t *msg, char *origin)
 		/* Summaries are always allowed. Or should we ? */
 		get_hts(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 1, 1);
 		if (h && t && log && (color != -1)) {
-			handle_status(msg->buf, sender, h->hostname, t, NULL, log, color, NULL);
+			handle_status(msg->buf, sender, h->hostname, t->name, NULL, log, color, NULL);
 		}
 	}
 	else if (strncmp(msg->buf, "notes", 5) == 0) {
@@ -2681,7 +2731,7 @@ void do_message(conn_t *msg, char *origin)
 
 			flush_acklist(log, 0);
 			if (log->message == NULL) {
-				errprintf("%s.%s has a NULL message\n", log->host->hostname, log->test);
+				errprintf("%s.%s has a NULL message\n", log->host->hostname, log->test->name);
 				log->message = strdup("");
 			}
 
@@ -2715,7 +2765,7 @@ void do_message(conn_t *msg, char *origin)
 
 			flush_acklist(log, 0);
 			if (log->message == NULL) {
-				errprintf("%s.%s has a NULL message\n", log->host->hostname, log->test);
+				errprintf("%s.%s has a NULL message\n", log->host->hostname, log->test->name);
 				log->message = strdup("");
 			}
 
@@ -2730,7 +2780,7 @@ void do_message(conn_t *msg, char *origin)
 			bufp += sprintf(bufp, "<?xml version='1.0' encoding='ISO-8859-1'?>\n");
 			bufp += sprintf(bufp, "<ServerStatus>\n");
 			bufp += sprintf(bufp, "  <ServerName>%s</ServerName>\n", h->hostname);
-			bufp += sprintf(bufp, "  <Type>%s</Type>\n", log->test);
+			bufp += sprintf(bufp, "  <Type>%s</Type>\n", log->test->name);
 			bufp += sprintf(bufp, "  <Status>%s</Status>\n", colnames[log->color]);
 			bufp += sprintf(bufp, "  <TestFlags>%s</TestFlags>\n", (log->testflags ? log->testflags : ""));
 			bufp += sprintf(bufp, "  <LastChange>%s</LastChange>\n", timestr(log->lastchange));
@@ -2776,6 +2826,7 @@ void do_message(conn_t *msg, char *origin)
 		hobbitd_hostlist_t *hwalk;
 		hobbitd_log_t *lwalk, *firstlog;
 		hobbitd_log_t infologrec, rrdlogrec;
+		testinfo_t trendstest, infotest;
 		char *buf, *bufp;
 		int bufsz;
 		char *spage = NULL, *shost = NULL, *snet = NULL, *stest = NULL, *fields = NULL;
@@ -2799,11 +2850,15 @@ void do_message(conn_t *msg, char *origin)
 		bufp = buf = (char *)malloc(bufsz);
 
 		/* Setup fake log-records for the "info" and "trends" data. */
+		memset(&infotest, 0, sizeof(infotest));
+		infotest.name = xgetenv("INFOCOLUMN");
 		memset(&infologrec, 0, sizeof(infologrec));
-		infologrec.test = xgetenv("INFOCOLUMN");
+		infologrec.test = &infotest;
 
+		memset(&trendstest, 0, sizeof(trendstest));
+		trendstest.name = xgetenv("TRENDSCOLUMN");
 		memset(&rrdlogrec, 0, sizeof(rrdlogrec));
-		rrdlogrec.test = xgetenv("TRENDSCOLUMN");
+		rrdlogrec.test = &trendstest;
 
 		infologrec.color = rrdlogrec.color = COL_GREEN;
 		infologrec.message = rrdlogrec.message = "";
@@ -2842,7 +2897,7 @@ void do_message(conn_t *msg, char *origin)
 				if (!match_test_filter(lwalk, stest, scolor)) continue;
 
 				if (lwalk->message == NULL) {
-					errprintf("%s.%s has a NULL message\n", lwalk->host->hostname, lwalk->test);
+					errprintf("%s.%s has a NULL message\n", lwalk->host->hostname, lwalk->test->name);
 					lwalk->message = strdup("");
 				}
 
@@ -2911,7 +2966,7 @@ void do_message(conn_t *msg, char *origin)
 				if (!match_test_filter(lwalk, stest, scolor)) continue;
 
 				if (lwalk->message == NULL) {
-					errprintf("%s.%s has a NULL message\n", lwalk->host->hostname, lwalk->test);
+					errprintf("%s.%s has a NULL message\n", lwalk->host->hostname, lwalk->test->name);
 					lwalk->message = strdup("");
 				}
 
@@ -2925,7 +2980,7 @@ void do_message(conn_t *msg, char *origin)
 
 				bufp += sprintf(bufp, "  <ServerStatus>\n");
 				bufp += sprintf(bufp, "    <ServerName>%s</ServerName>\n", hwalk->hostname);
-				bufp += sprintf(bufp, "    <Type>%s</Type>\n", lwalk->test);
+				bufp += sprintf(bufp, "    <Type>%s</Type>\n", lwalk->test->name);
 				bufp += sprintf(bufp, "    <Status>%s</Status>\n", colnames[lwalk->color]);
 				bufp += sprintf(bufp, "    <TestFlags>%s</TestFlags>\n", (lwalk->testflags ? lwalk->testflags : ""));
 				bufp += sprintf(bufp, "    <LastChange>%s</LastChange>\n", timestr(lwalk->lastchange));
@@ -3378,7 +3433,7 @@ void save_checkpoint(void)
 			}
 			flush_acklist(lwalk, 0);
 			iores = fprintf(fd, "@@HOBBITDCHK-V1|%s|%s|%s|%s|%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%s", 
-				lwalk->origin, hwalk->hostname, lwalk->test, lwalk->sender,
+				lwalk->origin, hwalk->hostname, lwalk->test->name, lwalk->sender,
 				colnames[lwalk->color], 
 				(lwalk->testflags ? lwalk->testflags : ""),
 				colnames[lwalk->oldcolor],
@@ -3394,7 +3449,7 @@ void save_checkpoint(void)
 
 			for (awalk = lwalk->acklist; (awalk && (iores >= 0)); awalk = awalk->next) {
 				iores = fprintf(fd, "@@HOBBITDCHK-V1|.acklist.|%s|%s|%d|%d|%d|%d|%s|%s\n",
-						hwalk->hostname, lwalk->test,
+						hwalk->hostname, lwalk->test->name,
 			 			(int)awalk->received, (int)awalk->validuntil, (int)awalk->cleartime,
 						awalk->level, awalk->ackedby, awalk->msg);
 			}
@@ -3437,7 +3492,7 @@ void load_checkpoint(char *fn)
 	char hostip[IP_ADDR_STRLEN];
 	RbtIterator hosthandle, testhandle, originhandle;
 	hobbitd_hostlist_t *hitem = NULL;
-	char *t = NULL;
+	testinfo_t *t = NULL;
 	char *origin = NULL;
 	hobbitd_log_t *ltail = NULL;
 	char *originname = NULL, *hostname = NULL, *testname = NULL, *sender = NULL, *testflags = NULL; 
@@ -3602,8 +3657,7 @@ void load_checkpoint(char *fn)
 
 		testhandle = rbtFind(rbtests, testname);
 		if (testhandle == rbtEnd(rbtests)) {
-			t = strdup(testname);
-			rbtInsert(rbtests, t, t);
+			t = create_testinfo(testname);
 		}
 		else t = gettreeitem(rbtests, testhandle);
 
@@ -3687,7 +3741,7 @@ void check_purple_status(void)
 		lwalk = hwalk->logs;
 		while (lwalk) {
 			if (lwalk->validtime < now) {
-				dprintf("Purple log from %s %s\n", hwalk->hostname, lwalk->test);
+				dprintf("Purple log from %s %s\n", hwalk->hostname, lwalk->test->name);
 				if (strcmp(hwalk->hostname, "summary") == 0) {
 					/*
 					 * A summary has gone stale. Drop it.
@@ -3735,7 +3789,7 @@ void check_purple_status(void)
 					}
 
 					handle_status(lwalk->message, "hobbitd", 
-						hwalk->hostname, lwalk->test, lwalk->grouplist, lwalk, newcolor, NULL);
+						hwalk->hostname, lwalk->test->name, lwalk->grouplist, lwalk, newcolor, NULL);
 					lwalk = lwalk->next;
 				}
 			}
@@ -3801,6 +3855,13 @@ int main(int argc, char *argv[])
 	MEMDEFINE(colnames);
 
 	boottime = time(NULL);
+
+	/* Create our trees */
+	rbhosts = rbtNew(name_compare);
+	rbtests = rbtNew(name_compare);
+	rborigins = rbtNew(name_compare);
+	rbcookies = rbtNew(int_compare);
+	rbfilecache = rbtNew(name_compare);
 
 	colnames[COL_GREEN] = "green";
 	colnames[COL_YELLOW] = "yellow";
@@ -3926,7 +3987,54 @@ int main(int argc, char *argv[])
 			ignoretraced = 1;
 		}
 		else if (strcmp(argv[argi], "--no-clientlog") == 0) {
-			 save_clientlogs = 0;
+			 clientsavemem = 0;
+			 clientsavedisk = 0;
+		}
+		else if (argnmatch(argv[argi], "--store-clientlogs")) {
+			int anypos = 0, anyneg = 0;
+			char *val = strchr(argv[argi], '=');
+
+			if (!val) {
+				clientsavedisk = 1;
+			}
+			else {
+				char *tok;
+
+				val = strdup(val+1);
+				tok = strtok(val, ",");
+				while (tok) {
+					testinfo_t *t;
+					
+					if (*tok == '!') {
+						anyneg = 1;
+						t = create_testinfo(tok+1);
+						t->clientsave = 0;
+					}
+					else {
+						anypos = 1;
+						t = create_testinfo(tok);
+						t->clientsave = 1;
+					}
+
+					tok = strtok(NULL, ",");
+				}
+				xfree(val);
+
+				/* 
+				 * If only positive testnames listed, let default
+				 * be NOT to save, and vice versa.  If mixed, 
+				 * warn about it.
+				 */
+				if (anypos && !anyneg) clientsavedisk = 0;
+				else if (anyneg && !anypos) clientsavedisk = 1;
+				else {
+					errprintf("Mixed list of testnames for --store-clientlogs option, will only save listed tests.\n");
+					clientsavedisk = 0;
+				}
+
+			}
+
+			if (anypos || clientsavedisk) clientsavemem = 1;
 		}
 		else if (strcmp(argv[argi], "--no-download") == 0) {
 			 allow_downloads = 0;
@@ -3963,13 +4071,6 @@ int main(int argc, char *argv[])
 		errprintf("No bb-hosts file specified, required when using ghosthandling\n");
 		exit(1);
 	}
-
-	/* Create our trees */
-	rbhosts = rbtNew(name_compare);
-	rbtests = rbtNew(name_compare);
-	rborigins = rbtNew(name_compare);
-	rbcookies = rbtNew(int_compare);
-	rbfilecache = rbtNew(name_compare);
 
 	errprintf("Loading hostnames\n");
 	load_hostnames(bbhostsfn, NULL, get_fqdn());
@@ -4076,6 +4177,8 @@ int main(int argc, char *argv[])
 	if (enadischn == NULL) { errprintf("Cannot setup enadis channel\n"); return 1; }
 	clientchn  = setup_channel(C_CLIENT, CHAN_MASTER);
 	if (clientchn == NULL) { errprintf("Cannot setup client channel\n"); return 1; }
+	clichgchn  = setup_channel(C_CLICHG, CHAN_MASTER);
+	if (clichgchn == NULL) { errprintf("Cannot setup clichg channel\n"); return 1; }
 
 	errprintf("Setting up logfiles\n");
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -4193,7 +4296,7 @@ int main(int argc, char *argv[])
 		if ((last_stats_time + 300) <= now) {
 			char *buf;
 			hobbitd_hostlist_t *h;
-			char *t;
+			testinfo_t *t;
 			hobbitd_log_t *log;
 			int color;
 
@@ -4204,7 +4307,7 @@ int main(int argc, char *argv[])
 					  xgetenv("MACHINE"));
 			}
 			else {
-				handle_status(buf, "hobbitd", h->hostname, t, NULL, log, color, NULL);
+				handle_status(buf, "hobbitd", h->hostname, t->name, NULL, log, color, NULL);
 			}
 			last_stats_time = now;
 			flush_errbuf();
