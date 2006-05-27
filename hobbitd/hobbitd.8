@@ -90,6 +90,18 @@ $BBSERVERLOGS/hobbitd.pid.
 .IP "--log=FILENAME"
 Redirect all output from hobbitd to FILENAME.
 
+.IP "--store-clientlogs[=[!]COLUMN]"
+Determines which status columns can cause a client message to be
+broadcast to the CLICHG channel. By default, no client messages 
+are pushed to the CLICHG channel. If this option is specified with
+no parameter list, all status columns that go into an alert state
+will trigger the client data to be sent to the CLICHG channel. If
+a paramater list is added to this option, only those status columns
+listed in the list will cause the client data to be sent to the
+CLICHG channel. Several column names can be listed, separated by
+commas. If all columns are given as "!COLUMNNAME", then all status
+columns except those listed will cause the client data to be sent.
+
 .IP "--status-senders=IP[/MASK][,IP/MASK]"
 Controls which hosts may send "status", "combo", "config" and "query"
 commands to hobbitd.
@@ -219,6 +231,14 @@ This channel is fed information about all "notes" messages.
 .BR enadis
 This channel is fed information about hosts or tests that are
 being disabled or enabled.
+.sp
+.BR client
+This channel is fed the contents of the client messages sent
+by Hobbit clients installed on the monitored servers.
+.sp
+.BR clichg
+This channel is fed the contents of a host client messages,
+whenever a status for that host goes red, yellow or purple.
 
 Information about the data stream passed on these channels is
 in the Hobbit source-tree, see the "hobbitd/new-daemon.txt" file.
