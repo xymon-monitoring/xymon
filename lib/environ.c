@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.35 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.36 2006-05-27 06:40:40 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -88,6 +88,7 @@ const static struct {
 	{ "BBALLHISTLOG", "TRUE" },
 	{ "BBHOSTHISTLOG", "TRUE" },
 	{ "SAVESTATUSLOG", "TRUE" },
+	{ "CLIENTLOGS", "$BBVAR/hostdata" },
 	{ "MAILC", "mail" },
 	{ "MAIL", "$MAILC -s" },
 	{ "SVCCODES", "disk:100,cpu:200,procs:300,svcs:350,msgs:400,conn:500,http:600,dns:800,smtp:725,telnet:723,ftp:721,pop:810,pop3:810,pop-3:810,ssh:722,imap:843,ssh1:722,ssh2:722,imap2:843,imap3:843,imap4:843,pop2:809,pop-2:809,nntp:819,test:901" },
