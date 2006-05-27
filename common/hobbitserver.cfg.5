@@ -175,6 +175,14 @@ Top-level directory for storing RRD files (the databases with
 trend-information used to generate graphs).
 Default: $BBVAR/rrd/
 
+.IP CLIENTLOGS
+Directory for storing the data sent by a Hobbit client around the
+time a status changes to a warning (yellow) or critical (red) state.
+Used by the
+.I hobbitd_hostdata(8)
+module.
+Default: $BBVAR/hostdata/
+
 
 .SH SYSTEM FILES
 
@@ -387,6 +395,13 @@ alert. There is no reason to change this setting.
 The maximum size of an "enadis" message in kB, default: 32.
 "enadis" are small messages used when enabling or disabling
 hosts and tests, so the default size should be adequate.
+
+.IP MAXMSG_CLICHG
+The maximum size of a "client change" message in kB, default: 
+Current value of the MAXMSG_CLIENT setting.  Client-change 
+messages occur when a status changes color to one of the
+alert-colors, usually red, yellow and purple. There is no 
+reason to change this setting.
 
 
 .SH HOBBITD_HISTORY SETTINGS
