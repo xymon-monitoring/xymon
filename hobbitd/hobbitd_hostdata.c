@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_hostdata.c,v 1.1 2006-05-26 08:01:56 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_hostdata.c,v 1.2 2006-05-27 07:03:45 henrik Exp $";
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -49,6 +49,12 @@ int main(int argc, char *argv[])
 			 */
 			debug = 1;
 		}
+	}
+
+	if (clientlogdir == NULL) clientlogdir = xgetenv("CLIENTLOGS");
+	if (clientlogdir == NULL) {
+		clientlogdir = (char *)malloc(strlen(xgetenv("BBVAR")) + 10);
+		sprintf(clientlogdir, "%s/hostdata", xgetenv("BBVAR"));
 	}
 
 	save_errbuf = 0;
