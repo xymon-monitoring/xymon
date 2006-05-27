@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.69 2006-05-27 07:05:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.70 2006-05-27 12:26:57 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -290,8 +290,8 @@ int do_request(void)
 		acklist = ((items[14] && *items[14]) ? strdup(items[14]) : NULL);
 
 		ip = (items[15] ? items[15] : "");
-		displayname = (items[16] ? items[16] : hostname);
-		if (items[17] && strlen(items[17])) clntstamp = atoi(items[17]);
+		displayname = ((items[16]  && *items[16]) ? items[16] : hostname);
+		clntstamp = ((items[17]  && *items[17]) ? atol(items[17]) : 0);
 
 		sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
 		sethostenv_refresh(60);
