@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.35 2006-05-19 12:40:59 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.36 2006-05-27 07:27:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -123,8 +123,11 @@ typedef struct c_dir_t {
 
 typedef struct c_port_t {
 	exprlist_t *localexp;
+	exprlist_t *exlocalexp;
 	exprlist_t *remoteexp;
+	exprlist_t *exremoteexp;
 	exprlist_t *stateexp;
+	exprlist_t *exstateexp;
 	int pmin, pmax, pcount;
 	int color;
 } c_port_t;
@@ -171,7 +174,7 @@ static RbtHandle ruletree;
 
 static off_t filesize_value(char *s)
 {
-	/* s is the size in KILOBYTES */
+	/* s is the size in BYTES */
 	char *modifier;
 	off_t result;
 
@@ -185,18 +188,19 @@ static off_t filesize_value(char *s)
 
 	switch (*modifier) {
 	  case 'K': case 'k':
-		break;
-
-	  case 'M': case 'm':
 		result = (result << 10);
 		break;
 
-	  case 'G': case 'g':
+	  case 'M': case 'm':
 		result = (result << 20);
 		break;
 
-	  case 'T': case 't':
+	  case 'G': case 'g':
 		result = (result << 30);
+		break;
+
+	  case 'T': case 't':
+		result = (result << 40);
 		break;
 
 	  default:
@@ -637,6 +641,10 @@ int load_client_config(char *configfn)
 					}
 					else if (strncasecmp(tok, "max=", 4) == 0) {
 						currule->rule.proc.pmax = atoi(tok+4);
+						/* When we have an explicit max, minimum should not be higher */
+						if (currule->rule.proc.pmax < currule->rule.proc.pmin) {
+							currule->rule.proc.pmin = currule->rule.proc.pmax;
+						}
 					}
 					else if (strncasecmp(tok, "color=", 6) == 0) {
 						currule->rule.proc.color = parse_color(tok+6);
@@ -791,39 +799,39 @@ int load_client_config(char *configfn)
 					}
 					else if (strncasecmp(tok, "mtime>", 6) == 0) {
 						currule->flags |= FCHK_MTIMEMIN;
-						currule->rule.fcheck.minmtimedif = atol(tok+5);
+						currule->rule.fcheck.minmtimedif = atol(tok+6);
 					}
 					else if (strncasecmp(tok, "mtime<", 6) == 0) {
 						currule->flags |= FCHK_MTIMEMAX;
-						currule->rule.fcheck.maxmtimedif = atol(tok+5);
+						currule->rule.fcheck.maxmtimedif = atol(tok+6);
 					}
 					else if (strncasecmp(tok, "mtime=", 6) == 0) {
 						currule->flags |= FCHK_MTIMEEQL;
-						currule->rule.fcheck.mtimeeql = atol(tok+5);
+						currule->rule.fcheck.mtimeeql = atol(tok+6);
 					}
 					else if (strncasecmp(tok, "ctime>", 6) == 0) {
 						currule->flags |= FCHK_CTIMEMIN;
-						currule->rule.fcheck.minctimedif = atol(tok+5);
+						currule->rule.fcheck.minctimedif = atol(tok+6);
 					}
 					else if (strncasecmp(tok, "ctime<", 6) == 0) {
 						currule->flags |= FCHK_CTIMEMAX;
-						currule->rule.fcheck.maxctimedif = atol(tok+5);
+						currule->rule.fcheck.maxctimedif = atol(tok+6);
 					}
 					else if (strncasecmp(tok, "ctime=", 6) == 0) {
 						currule->flags |= FCHK_CTIMEEQL;
-						currule->rule.fcheck.ctimeeql = atol(tok+5);
+						currule->rule.fcheck.ctimeeql = atol(tok+6);
 					}
 					else if (strncasecmp(tok, "atime>", 6) == 0) {
 						currule->flags |= FCHK_ATIMEMIN;
-						currule->rule.fcheck.minatimedif = atol(tok+5);
+						currule->rule.fcheck.minatimedif = atol(tok+6);
 					}
 					else if (strncasecmp(tok, "atime<", 6) == 0) {
 						currule->flags |= FCHK_ATIMEMAX;
-						currule->rule.fcheck.maxatimedif = atol(tok+5);
+						currule->rule.fcheck.maxatimedif = atol(tok+6);
 					}
 					else if (strncasecmp(tok, "atime=", 6) == 0) {
 						currule->flags |= FCHK_ATIMEEQL;
-						currule->rule.fcheck.atimeeql = atol(tok+5);
+						currule->rule.fcheck.atimeeql = atol(tok+6);
 					}
 					else if (strncasecmp(tok, "md5=", 4) == 0) {
 						currule->flags |= FCHK_MD5;
@@ -879,8 +887,11 @@ int load_client_config(char *configfn)
 				currule = setup_rule(C_PORT, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
 
 				currule->rule.port.localexp = NULL;
+				currule->rule.port.exlocalexp = NULL;
 				currule->rule.port.remoteexp = NULL;
+				currule->rule.port.exremoteexp = NULL;
 				currule->rule.port.stateexp = NULL;
+				currule->rule.port.exstateexp = NULL;
 				currule->rule.port.pmin = 1;
 				currule->rule.port.pmax = -1;
 				currule->rule.port.color = COL_RED;
@@ -892,17 +903,31 @@ int load_client_config(char *configfn)
 					if (strncasecmp(tok, "local=", 6) == 0) {
 						currule->rule.port.localexp = setup_expr(tok+6, 0);
 					}
+					else if (strncasecmp(tok, "exlocal=", 8) == 0) {
+						currule->rule.port.exlocalexp = setup_expr(tok+8, 0);
+					}
 					else if (strncasecmp(tok, "remote=", 7) == 0) {
 						currule->rule.port.remoteexp = setup_expr(tok+7, 0);
 					}
+					else if (strncasecmp(tok, "exremote=", 9) == 0) {
+						currule->rule.port.exremoteexp = setup_expr(tok+9, 0);
+					}
 					else if (strncasecmp(tok, "state=", 6) == 0) {
 						currule->rule.port.stateexp = setup_expr(tok+6, 0);
+					}
+					else if (strncasecmp(tok, "exstate=", 8) == 0) {
+						currule->rule.port.exstateexp = setup_expr(tok+8, 0);
 					}
 					else if (strncasecmp(tok, "min=", 4) == 0) {
 						currule->rule.port.pmin = atoi(tok+4);
 					}
 					else if (strncasecmp(tok, "max=", 4) == 0) {
 						currule->rule.port.pmax = atoi(tok+4);
+
+						/* When we have an explicit max, minimum should not be higher */
+						if (currule->rule.port.pmax < currule->rule.port.pmin) {
+							currule->rule.port.pmin = currule->rule.port.pmax;
+						}
 					}
 					else if (strncasecmp(tok, "col=", 4) == 0) {
 						currule->rule.port.color = parse_color(tok+4);
@@ -915,10 +940,6 @@ int load_client_config(char *configfn)
 						if (*(tok+5) == '=') currule->rrdidstr = strdup(tok+6);
 					}
 				} while (tok && (!isqual(tok)));
-
-				/* It's easy to set max=0 when you only want to define a minimum */
-				if (currule->rule.port.pmin && (currule->rule.port.pmax == 0))
-					currule->rule.port.pmax = -1;
 			}
 			else {
 				errprintf("Unknown token '%s' ignored at line %d\n", tok, cfid);
@@ -1084,10 +1105,16 @@ void dump_client_config(void)
 			printf("PORT");
 			if (rwalk->rule.port.localexp)
 				printf(" local=%s", rwalk->rule.port.localexp->pattern);
+			if (rwalk->rule.port.exlocalexp)
+				printf(" exlocal=%s", rwalk->rule.port.exlocalexp->pattern);
 			if (rwalk->rule.port.remoteexp)
 				printf(" remote=%s", rwalk->rule.port.remoteexp->pattern);
+			if (rwalk->rule.port.exremoteexp)
+				printf(" exremote=%s", rwalk->rule.port.exremoteexp->pattern);
 			if (rwalk->rule.port.stateexp)
 				printf(" state=%s", rwalk->rule.port.stateexp->pattern);
+			if (rwalk->rule.port.exstateexp)
+				printf(" exstate=%s", rwalk->rule.port.exstateexp->pattern);
 			if (rwalk->rule.port.pmin != -1)
 				printf(" min=%d", rwalk->rule.port.pmin);
 			if (rwalk->rule.port.pmax != -1)
@@ -1777,6 +1804,30 @@ static void add_count(char *pname, mon_proc_t *head)
 	}
 }
 
+static int check_expr_match(char *s, exprlist_t *inclexp, exprlist_t *exclexp)
+{
+	int inclmatch = 0;
+	int exclmatch = 0;
+
+	if (inclexp) {
+		if (namematch(s, inclexp->pattern, inclexp->exp)) inclmatch = 1;
+	}
+	else inclmatch = 1;
+
+	/* If rejected by include spec, no need to check excludes */
+	if (inclmatch == 0) return 0;
+
+	if (exclexp) {
+		if (namematch(s, exclexp->pattern, exclexp->exp)) exclmatch = 1;
+	}
+
+	/* If the exclude matched, then the whole thing does not match */
+	if (exclmatch) return 0;
+
+	/* Include- and exclude-patterns match OK, we have a match */
+	return 1;
+}
+
 static void add_count3(char *pname0, char *pname1, char *pname2 , mon_proc_t *head)
 {
 	mon_proc_t *pwalk;
@@ -1790,41 +1841,10 @@ static void add_count3(char *pname0, char *pname1, char *pname2 , mon_proc_t *he
 		switch (pwalk->rule->ruletype) {
 		  case C_PORT:
 		        mymatch = 0;
-			if (pwalk->rule->rule.port.localexp) {
-				if (!pwalk->rule->rule.port.localexp->exp) {
-					if (strstr(pname0, pwalk->rule->rule.port.localexp->pattern))
-						mymatch++;
-				}
-				else {
-					if (namematch(pname0, pwalk->rule->rule.port.localexp->pattern, pwalk->rule->rule.port.localexp->exp))
-						mymatch++;
-				}
-			}
-			else mymatch++;
 
-			if (pwalk->rule->rule.port.remoteexp) {
-				if (!pwalk->rule->rule.port.remoteexp->exp) {
-					if (strstr(pname1, pwalk->rule->rule.port.remoteexp->pattern))
-						mymatch++;
-				}
-				else {
-					if (namematch(pname1, pwalk->rule->rule.port.remoteexp->pattern, pwalk->rule->rule.port.remoteexp->exp))
-						mymatch++;
-				}
-			}
-			else mymatch++;
-
-			if (pwalk->rule->rule.port.stateexp) {
-				if (!pwalk->rule->rule.port.stateexp->exp) {
-					if (strstr(pname2, pwalk->rule->rule.port.stateexp->pattern))
-						mymatch++;
-				}
-				else {
-					if (namematch(pname2, pwalk->rule->rule.port.stateexp->pattern, pwalk->rule->rule.port.stateexp->exp))
-						mymatch++;
-				}
-			}
-			else mymatch++;
+			if (check_expr_match(pname0, pwalk->rule->rule.port.localexp, pwalk->rule->rule.port.exlocalexp)) mymatch++;
+			if (check_expr_match(pname1, pwalk->rule->rule.port.remoteexp, pwalk->rule->rule.port.exremoteexp)) mymatch++;
+			if (check_expr_match(pname2, pwalk->rule->rule.port.stateexp, pwalk->rule->rule.port.exstateexp)) mymatch++;
 
 			if (mymatch == 3) {pwalk->rule->rule.port.pcount++;}
 			break;
@@ -1875,20 +1895,32 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 			char *p;
 
 			if ((*walk)->rule->rule.port.localexp)
-				sz += strlen((*walk)->rule->rule.port.localexp->pattern) + 6;
+				sz += strlen((*walk)->rule->rule.port.localexp->pattern) + 10;
+			if ((*walk)->rule->rule.port.exlocalexp)
+				sz += strlen((*walk)->rule->rule.port.exlocalexp->pattern) + 10;
 			if ((*walk)->rule->rule.port.remoteexp)
-				sz += strlen((*walk)->rule->rule.port.remoteexp->pattern) + 7;
+				sz += strlen((*walk)->rule->rule.port.remoteexp->pattern) + 10;
+			if ((*walk)->rule->rule.port.exremoteexp)
+				sz += strlen((*walk)->rule->rule.port.exremoteexp->pattern) + 10;
 			if ((*walk)->rule->rule.port.stateexp)
-				sz += strlen((*walk)->rule->rule.port.stateexp->pattern) + 6;
+				sz += strlen((*walk)->rule->rule.port.stateexp->pattern) + 10;
+			if ((*walk)->rule->rule.port.exstateexp)
+				sz += strlen((*walk)->rule->rule.port.exstateexp->pattern) + 10;
 
 			(*walk)->rule->statustext = (char *)malloc(sz + 10);
 			p = (*walk)->rule->statustext;
 			if ((*walk)->rule->rule.port.localexp)
 				p += sprintf(p, "local=%s ", (*walk)->rule->rule.port.localexp->pattern);
+			if ((*walk)->rule->rule.port.exlocalexp)
+				p += sprintf(p, "exlocal=%s ", (*walk)->rule->rule.port.exlocalexp->pattern);
 			if ((*walk)->rule->rule.port.remoteexp)
 				p += sprintf(p, "remote=%s ", (*walk)->rule->rule.port.remoteexp->pattern);
+			if ((*walk)->rule->rule.port.exremoteexp)
+				p += sprintf(p, "exremote=%s ", (*walk)->rule->rule.port.exremoteexp->pattern);
 			if ((*walk)->rule->rule.port.stateexp)
 				p += sprintf(p, "state=%s ", (*walk)->rule->rule.port.stateexp->pattern);
+			if ((*walk)->rule->rule.port.exstateexp)
+				p += sprintf(p, "exstate=%s ", (*walk)->rule->rule.port.exstateexp->pattern);
 			*p = '\0';
 			strcat((*walk)->rule->statustext, ":");
 
