@@ -300,13 +300,19 @@ sockets match the \fBcriteria\fR listed.  The criteria you can use are:
 .IP "LOCAL=addr"
 "addr" is a (partial) local address specification in the format used on
 the output from netstat.
+.IP "EXLOCAL=addr"
+Exclude certain local adresses from the rule.
 .IP "REMOTE=addr"
 "addr" is a (partial) remote address specification in the format used on
 the output from netstat.
+.IP "EXREMOTE=addr"
+Exclude certain remote adresses from the rule.
 .IP "STATE=state"
 Causes only the sockets in the specified state to be included, "state"
 is usually LISTEN or ESTABLISHED but can be any socket state reported by
 the clients "netstat" command.
+.IP "EXSTATE=state"
+Exclude certain states from the rule.
 .LP
 "addr" is typically "10.0.0.1:80" for the IP 10.0.0.1, port 80. 
 Or "*:80" for any local address, port 80. Note that the Hobbit clients 
@@ -315,7 +321,7 @@ so you must specify the port number (e.g. "80") instead of the service
 name ("www").
 .br
 "addr" and "state" can also be a Perl-compatiable regular expression, e.g.
-"LOCAL=%(:80|:443)" can be used to find entries in the netstat local port for
+"LOCAL=%[.:](80|443)" can be used to find entries in the netstat local port for
 both http (port 80) and https (port 443). In that case, portname or state must
 begin with "%" followed by the reg.expression.
 .sp
