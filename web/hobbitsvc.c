@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.68 2006-05-19 12:02:55 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.69 2006-05-27 07:05:15 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -28,7 +28,7 @@ static char rcsid[] = "$Id: hobbitsvc.c,v 1.68 2006-05-19 12:02:55 henrik Exp $"
 #include "hobbitsvc-trends.h"
 
 /* Commandline params */
-static enum { SRC_HOBBITD, SRC_HISTLOGS, SRC_MEM } source = SRC_HOBBITD;
+static enum { SRC_HOBBITD, SRC_HISTLOGS, SRC_CLIENTLOGS } source = SRC_HOBBITD;
 static int wantserviceid = 1;
 static char *multigraphs = ",disk,inode,qtree,";
 
@@ -41,6 +41,8 @@ static enum { FRM_STATUS, FRM_CLIENT } outform = FRM_STATUS;
 static char *clienturi = NULL;
 
 static char errortxt[1000];
+static char *hostdatadir = NULL;
+
 
 static void errormsg(char *msg)
 {
@@ -141,7 +143,7 @@ int do_request(void)
 	int color = 0;
 	char timesincechange[100];
 	time_t logtime = 0, acktime = 0, disabletime = 0;
-	char *log = NULL, *firstline = NULL, *sender = NULL, *flags = NULL;	/* These are free'd */
+	char *log = NULL, *firstline = NULL, *sender = NULL, *clientid = NULL, *flags = NULL;	/* These are free'd */
 	char *restofmsg = NULL, *ackmsg = NULL, *dismsg = NULL, *acklist=NULL;	/* These are just used */
 	int ishtmlformatted = 0;
 	int clientavail = 0;
@@ -149,20 +151,48 @@ int do_request(void)
 
 	if (parse_query() != 0) return 1;
 
+	{
+		char *s = xgetenv("CLIENTLOGS");
+		if (!s) {
+			s = xgetenv("BBVAR");
+			hostdatadir = (char *)malloc(strlen(s) + strlen(hostname) + 12);
+			sprintf(hostdatadir, "%s/hostdata/%s", xgetenv("BBVAR"), hostname);
+		}
+		else {
+			hostdatadir = strdup(s);
+		}
+	}
+
 	if (outform == FRM_CLIENT) {
-		char *hobbitdreq;
-		int hobbitdresult;
+		if (source == SRC_HOBBITD) {
+			char *hobbitdreq;
+			int hobbitdresult;
 
-		hobbitdreq = (char *)malloc(1024 + strlen(hostname) + (service ? strlen(service) : 0));
-		sprintf(hobbitdreq, "clientlog %s", hostname);
-		if (service && *service) sprintf(hobbitdreq + strlen(hobbitdreq), " section=%s", service);
+			hobbitdreq = (char *)malloc(1024 + strlen(hostname) + (service ? strlen(service) : 0));
+			sprintf(hobbitdreq, "clientlog %s", hostname);
+			if (service && *service) sprintf(hobbitdreq + strlen(hobbitdreq), " section=%s", service);
 
-		hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &log, 1, BBTALK_TIMEOUT);
-		if (hobbitdresult != BB_OK) {
-			char errtxt[4096];
-			sprintf(errtxt, "Status not available: Req=%s, result=%d\n", hobbitdreq, hobbitdresult);
-			errormsg(errtxt);
-			return 1;
+			hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &log, 1, BBTALK_TIMEOUT);
+			if (hobbitdresult != BB_OK) {
+				char errtxt[4096];
+				sprintf(errtxt, "Status not available: Req=%s, result=%d\n", hobbitdreq, hobbitdresult);
+				errormsg(errtxt);
+				return 1;
+			}
+		}
+		else if (source == SRC_HISTLOGS) {
+			char logfn[PATH_MAX];
+			FILE *fd;
+
+			sprintf(logfn, "%s/%s", hostdatadir, tstamp);
+			fd = fopen(logfn, "r");
+			if (fd) {
+				struct stat st;
+				fstat(fileno(fd), &st);
+				log = (char *)malloc(st.st_size + 1);
+				fread(log, 1, st.st_size, fd);
+				fclose(fd);
+			}
 		}
 
 		restofmsg = (log ? log : strdup("<No data>\n"));
@@ -188,10 +218,10 @@ int do_request(void)
 		int hobbitdresult;
 		char *items[20];
 		int icount;
-		time_t logage;
+		time_t logage, clntstamp;
 		char *sumline, *msg, *p;
 
-		sprintf(hobbitdreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,BBH_IP,BBH_DISPLAYNAME", hostname, service);
+		sprintf(hobbitdreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,BBH_IP,BBH_DISPLAYNAME,clntstamp", hostname, service);
 		hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &log, 1, BBTALK_TIMEOUT);
 		if ((hobbitdresult != BB_OK) || (log == NULL) || (strlen(log) == 0)) {
 			errormsg("Status not available\n");
@@ -236,6 +266,7 @@ int do_request(void)
 		 * acklist		[14]
 		 * BBH_IP		[15]
 		 * BBH_DISPLAYNAME	[16]
+		 * clienttstamp         [17]
 		 */
 		color = parse_color(items[2]);
 		flags = strdup(items[3]);
@@ -256,22 +287,11 @@ int do_request(void)
 
 		if (items[13]) clientavail = (*items[13] == 'Y');
 
-		if (clientavail) {
-			char *svccomma, *clientsvcs, *clientsvcscomma;
-
-			svccomma = (char *)malloc(strlen(service) + 3);
-			sprintf(svccomma, ",%s,", service);
-			clientsvcs = xgetenv("CLIENTSVCS");
-			clientsvcscomma = (char *)malloc(strlen(clientsvcs) + 3);
-			sprintf(clientsvcscomma, ",%s,", clientsvcs);
-			clientavail = (strstr(clientsvcscomma, svccomma) != NULL);
-			xfree(svccomma); xfree(clientsvcscomma);
-		}
-
 		acklist = ((items[14] && *items[14]) ? strdup(items[14]) : NULL);
 
 		ip = (items[15] ? items[15] : "");
 		displayname = (items[16] ? items[16] : hostname);
+		if (items[17] && strlen(items[17])) clntstamp = atoi(items[17]);
 
 		sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
 		sethostenv_refresh(60);
@@ -287,7 +307,8 @@ int do_request(void)
 		 */
 		char *statusunchangedtext = "Status unchanged in ";
 		char *receivedfromtext = "Message received from ";
-		char *p, *unchangedstr, *receivedfromstr, *hostnamedash;
+		char *clientidtext = "Client data ID ";
+		char *p, *unchangedstr, *receivedfromstr, *clientidstr, *hostnamedash;
 		int n;
 
 		if (!tstamp) errormsg("Invalid request");
@@ -340,6 +361,16 @@ int do_request(void)
 		}
 
 		timesincechange[0] = '\0';
+
+		p = clientidstr = strstr(restofmsg, clientidtext);
+		if (p) {
+			p += strlen(clientidtext);
+			n = strspn(p, "0123456789");
+			clientid = (char *)malloc(n+1);
+			strncpy(clientid, p, n);
+			*(clientid+n) = '\0';
+		}
+
 		p = unchangedstr = strstr(restofmsg, statusunchangedtext);
 		if (p) {
 			p += strlen(statusunchangedtext);
@@ -367,6 +398,18 @@ int do_request(void)
 		fprintf(stdout, "%s", restofmsg);
 	}
 	else {
+		if (clientid && (source == SRC_HISTLOGS)) {
+			char logfn[PATH_MAX];
+			struct stat st;
+
+			sprintf(logfn, "%s/%s", hostdatadir, clientid);
+			clientavail = (stat(logfn, &st) == 0);
+
+			if (clientavail) {
+				sprintf(clienturi + strlen(clienturi), "&amp;TIMEBUF=%s", clientid);
+			}
+		}
+
 		fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 		generate_html_log(hostname, 
 			  displayname,
@@ -395,6 +438,7 @@ int do_request(void)
 	if (tstamp) xfree(tstamp);
 
 	/* Cleanup main vars */
+	if (clientid) xfree(clientid);
 	if (sender) xfree(sender);
 	if (flags) xfree(flags);
 	if (firstline) xfree(firstline);
