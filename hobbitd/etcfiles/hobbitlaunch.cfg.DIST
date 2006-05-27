@@ -12,7 +12,7 @@
 [hobbitd]
 	HEARTBEAT
 	ENVFILE @BBHOME@/etc/hobbitserver.cfg
-	CMD hobbitd --pidfile=$BBSERVERLOGS/hobbitd.pid --restart=$BBTMP/hobbitd.chk --checkpoint-file=$BBTMP/hobbitd.chk --checkpoint-interval=600 --log=$BBSERVERLOGS/hobbitd.log --admin-senders=127.0.0.1,$BBSERVERIP
+	CMD hobbitd --pidfile=$BBSERVERLOGS/hobbitd.pid --restart=$BBTMP/hobbitd.chk --checkpoint-file=$BBTMP/hobbitd.chk --checkpoint-interval=600 --log=$BBSERVERLOGS/hobbitd.log --admin-senders=127.0.0.1,$BBSERVERIP --store-clientlogs=!msgs
 
 
 # "bbstatus" saves status-logs in text- and html-format, like the old Big Brother 
@@ -34,6 +34,18 @@
 	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	NEEDS hobbitd
 	CMD hobbitd_channel --channel=stachg --log=$BBSERVERLOGS/history.log hobbitd_history
+
+
+# "hostdata" stores the Hobbit client messages on disk when some status for a host
+# changes. This lets you access a lot of data collected from a host around the time
+# when a problem occurred. However, it may use a significant amount of disk space
+# if you have lots of Hobbit clients.
+# Note: The --store-clientlogs option for the [hobbitd] provides control over
+#       which status-changes will cause a client message to be stored.
+[hostdata]
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	NEEDS hobbitd
+	CMD hobbitd_channel --channel=clichg --log=$BBSERVERLOGS/hostdata.log hobbitd_hostdata
 
 
 # "bbdata" saves information sent using the BB "data" protocol, like the old Big Brother 
