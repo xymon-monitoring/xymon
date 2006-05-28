@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.23 2006-05-16 21:23:40 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.24 2006-05-28 16:56:30 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -221,6 +221,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 			urlmsg = (char *)malloc(1024 + strlen(req->url));
 			sprintf(urlmsg, "\n&%s %s - ", colorname(req->httpcolor), req->url);
 			addtostatus(urlmsg);
+
 			if (req->httpcolor == COL_GREEN) addtostatus("OK");
 			else {
 				if (req->errorcause) addtostatus(req->errorcause);
@@ -418,7 +419,7 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 		addtostatus(msgline);
 
 		if (!got_data) {
-			if (req->tcptest->silenttest) {
+			if (host->hidehttp) {
 				sprintf(msgline, "\nContent check failed\n");
 			}
 			else {
@@ -427,7 +428,7 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 			}
 		}
 		else {
-			if (req->tcptest->silenttest) {
+			if (host->hidehttp) {
 				sprintf(msgline, "\n&%s Content check %s\n",
 					colorname(color), ((color == COL_GREEN) ? "OK" : "Failed"));
 			}
@@ -442,7 +443,7 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 		if (req->output == NULL) {
 			addtostatus("\nNo output received from server\n\n");
 		}
-		else if (!req->tcptest->silenttest) {
+		else if (!host->hidehttp) {
 			/* Dont flood hobbitd with data */
 			if (req->outlen > MAX_CONTENT_DATA) {
 				*(req->output + MAX_CONTENT_DATA) = '\0';
