@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-linux.sh,v 1.14 2006-05-15 13:29:02 henrik Exp $
+# $Id: hobbitclient-linux.sh,v 1.15 2006-05-28 17:55:49 henrik Exp $
 
 echo "[date]"
 date
@@ -33,7 +33,8 @@ netstat -rn
 echo "[netstat]"
 netstat -s
 echo "[ports]"
-netstat -ant
+# Bug in RedHat's netstat spews annoying error messages. 
+netstat -ant 2>/dev/null
 echo "[ifstat]"
 /sbin/ifconfig
 echo "[ps]"
