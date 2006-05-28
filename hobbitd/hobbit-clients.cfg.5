@@ -291,6 +291,18 @@ whatever unit the \fBdu\fR command on the client uses - often KB
 or diskblocks - so MAX.SIZE and MIN.SIZE must be given in the same
 unit.
 
+.LP
+Experience shows that it can be difficult to get these rules right.
+Especially when defining minimum/maximum values for file sizes, when
+they were last modified etc. The one thing you must remember when
+setting up these checks is that the rules describe criteria that must 
+be met - only when they are met will the status be green.
+
+So "mtime<600" means "the difference between current time and the mtime
+of the file must be less than 600 seconds - if not, the file status will
+go red".
+
+
 .SH PORTS STATUS COLUMN SETTINGS
 .sp
 .BR "PORT criteria [MIN=mincount] [MAX=maxcount] [COL=color] [TRACK=id] [TEXT=displaytext]"
