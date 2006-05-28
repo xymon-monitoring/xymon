@@ -15,7 +15,7 @@ for f in bbdisplay bbnet bbpatches bbproxy build common contrib docs hobbitd web
 do
         find $f/ | grep -v RCS | cpio -pdvmu $BASEDIR/debbuild/hobbit-$REL/
 done
-cp -p Changes configure configure.server configure.client COPYING CREDITS README README.CLIENT $BASEDIR/debbuild/hobbit-$REL/
+cp -p Changes configure configure.server configure.client COPYING CREDITS README README.CLIENT RELEASENOTES $BASEDIR/debbuild/hobbit-$REL/
 find $BASEDIR/debbuild/hobbit-$REL -type d|xargs chmod 755
 
 cd debbuild
