@@ -20,17 +20,25 @@ will use the configuration rules defined in the
 file to determine the color of each status message.
 
 .SH OPTIONS
+.IP "--no-clear-msgs"
+If there are no logfile checks, the "msgs" column will show a "clear"
+status. If you would rather avoid having a "msgs" column, this option
+causes hobbitd_client to not send in a clear "msgs" status.
+
+.IP "--no-clear-files"
+If there are no file checks, the "files" column will show a "clear"
+status. If you would rather avoid having a "files" column, this option
+causes hobbitd_client to not send in a clear "files" status.
+
+.IP "--no-clear-ports"
+If there are no port checks, the "ports" column will show a "clear"
+status. If you would rather avoid having a "ports" column, this option
+causes hobbitd_client to not send in a clear "ports" status.
+
 .IP "--no-ps-listing"
 Normally the "procs" status message includes the full process-listing
 received from the client. If you prefer to just have the monitored
 processes shown, this option will turn off the full ps-listing.
-
-.IP "--no-clear-msgs"
-The Hobbit client does not currently generate data for a "msgs" status
-column. To avoid any such column from going purple, hobbitd_client will
-generate a "clear" status (indicating "no data") instead. If you are
-running a separate script on your clients that generates the "msgs"
-column, you must disable this default message by using this option.
 
 .IP "--no-port-listing"
 Normally the "ports" status message includes the full netstat-listing

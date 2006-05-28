@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.74 2006-05-19 12:40:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.75 2006-05-28 11:14:50 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -39,6 +39,8 @@ sectlist_t *sections = NULL;
 int pslistinprocs = 1;
 int portlistinports = 1;
 int sendclearmsgs = 1;
+int sendclearfiles = 1;
+int sendclearports = 1;
 int localmode     = 0;
 
 void splitmsg(char *clientdata)
@@ -859,38 +861,45 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 		addtobuffer(greendata, "No files checked\n");
 	}
 
-	init_status(filecolor);
+	if ((filecolor != COL_CLEAR) || sendclearfiles) {
+		init_status(filecolor);
 
-	group = getalertgroups();
-	if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
-	addtostatus(msgline);
+		group = getalertgroups();
+		if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
+		addtostatus(msgline);
 
-	sprintf(msgline, "%s.files %s Files status at %s\n",
-		commafy(hostname), colorname(filecolor), 
-		(timestr ? timestr : "<No timestamp data>"));
-	addtostatus(msgline);
+		sprintf(msgline, "%s.files %s Files status at %s\n",
+			commafy(hostname), colorname(filecolor), 
+			(timestr ? timestr : "<No timestamp data>"));
+		addtostatus(msgline);
 
-	if (STRBUFLEN(reddata)) {
-		addtostrstatus(reddata);
+		if (STRBUFLEN(reddata)) {
+			addtostrstatus(reddata);
+			clearstrbuffer(reddata);
+			addtostatus("\n");
+		}
+
+		if (STRBUFLEN(yellowdata)) {
+			addtostrstatus(yellowdata);
+			clearstrbuffer(yellowdata);
+			addtostatus("\n");
+		}
+
+		if (STRBUFLEN(greendata)) {
+			addtostrstatus(greendata);
+			clearstrbuffer(greendata);
+			addtostatus("\n");
+		}
+
+		if (fromline && !localmode) addtostatus(fromline);
+
+		finish_status();
+	}
+	else {
 		clearstrbuffer(reddata);
-		addtostatus("\n");
-	}
-
-	if (STRBUFLEN(yellowdata)) {
-		addtostrstatus(yellowdata);
 		clearstrbuffer(yellowdata);
-		addtostatus("\n");
-	}
-
-	if (STRBUFLEN(greendata)) {
-		addtostrstatus(greendata);
 		clearstrbuffer(greendata);
-		addtostatus("\n");
 	}
-
-	if (fromline && !localmode) addtostatus(fromline);
-
-	finish_status();
 
 	if (anyszdata) sendmessage(STRBUF(sizedata), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
 	clearstrbuffer(sizedata);
@@ -964,7 +973,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 		       namelist_t *hinfo, char *fromline, char *timestr, 
 		       int localcol, int remotecol, int statecol, char *portstr)
 {
-	int portcolor = COL_GREEN;
+	int portcolor = COL_CLEAR;
 	int pchecks;
 	char msgline[4096];
 	static strbuffer_t *monmsg = NULL;
@@ -985,7 +994,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	if (pchecks == 0) {
 		/* Nothing to check */
-		addtobuffer(monmsg, "&green No port checks defined\n");
+		addtobuffer(monmsg, "&clear No port checks defined\n");
 	}
 	else {
 		/* Count how many instances of each monitored condition are found */
@@ -1047,29 +1056,34 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
  		}
 	}
 
-	/* Now we know the result, so generate a status message */
-	init_status(portcolor);
+	if ((portcolor != COL_CLEAR) || sendclearports) {
+		/* Now we know the result, so generate a status message */
+		init_status(portcolor);
 
-	group = getalertgroups();
-	if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
-	addtostatus(msgline);
+		group = getalertgroups();
+		if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
+		addtostatus(msgline);
 
-	sprintf(msgline, "%s.ports %s %s - Ports %s\n",
-		commafy(hostname), colorname(portcolor), 
-		(timestr ? timestr : "<No timestamp data>"), 
-		((portcolor == COL_GREEN) ? "OK" : "NOT ok"));
-	addtostatus(msgline);
+		sprintf(msgline, "%s.ports %s %s - Ports %s\n",
+			commafy(hostname), colorname(portcolor), 
+			(timestr ? timestr : "<No timestamp data>"), 
+			((portcolor == COL_GREEN) ? "OK" : "NOT ok"));
+		addtostatus(msgline);
 
-	/* And add the info about what's wrong */
-	addtostrstatus(monmsg);
-	addtostatus("\n");
-	clearstrbuffer(monmsg);
+		/* And add the info about what's wrong */
+		addtostrstatus(monmsg);
+		addtostatus("\n");
+		clearstrbuffer(monmsg);
 
-	/* And the full port output for those who want it */
-	if (portlistinports) addtostatus(portstr);
+		/* And the full port output for those who want it */
+		if (portlistinports) addtostatus(portstr);
 
-	if (fromline) addtostatus(fromline);
-	finish_status();
+		if (fromline) addtostatus(fromline);
+		finish_status();
+	}
+	else {
+		clearstrbuffer(monmsg);
+	}
 
 	if (anycountdata) sendmessage(STRBUF(countdata), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
 	clearstrbuffer(countdata);
@@ -1351,6 +1365,12 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--no-clear-msgs") == 0) {
 			sendclearmsgs = 0;
+		}
+		else if (strcmp(argv[argi], "--no-clear-files") == 0) {
+			sendclearfiles = 0;
+		}
+		else if (strcmp(argv[argi], "--no-clear-ports") == 0) {
+			sendclearports = 0;
 		}
 		else if (argnmatch(argv[argi], "--config=")) {
 			char *lp = strchr(argv[argi], '=');
