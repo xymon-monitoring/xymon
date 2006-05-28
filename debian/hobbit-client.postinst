@@ -25,6 +25,9 @@ case "$1" in
         # Setup permissions for the newly created "hobbit" user to write
 	# data where he needs to.
         cd /var/log/hobbit; chown hobbit:hobbit .
+	cd /usr/lib/hobbit/client; chown hobbit:hobbit logs tmp; chmod 755 logs tmp
+	cd /usr/lib/hobbit/client; chown root bin/logfetch; chmod 4755 bin/logfetch
+	cd /usr/lib/hobbit/client; chown root bin/clientupdate; chmod 4755 bin/clientupdate
 
 	# Do the debconf stuff
 	db_get hobbit-client/HOBBITSERVERS
@@ -38,7 +41,6 @@ case "$1" in
 	    -e s/^CLIENTHOSTNAME=.*/CLIENTHOSTNAME=\"${CLIENTHOSTNAME}\"/	\
 	    < $CONFIGFILE > $CONFIGFILE.tmp
 	mv -f $CONFIGFILE.tmp $CONFIGFILE
-
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

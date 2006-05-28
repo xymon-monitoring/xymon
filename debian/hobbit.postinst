@@ -32,10 +32,11 @@ case "$1" in
         cd /var/log/hobbit; chown hobbit:hobbit .
 	cd /var/lib/hobbit; chown hobbit:hobbit . acks data disabled hist histlogs hostdata logs rrd tmp www
 	cd /var/lib/hobbit/www; chown hobbit:hobbit . html notes wml rep snap; chgrp www-data rep snap; chmod g+w rep snap
-	cd /usr/lib/hobbit/client; chown hobbit:hobbit logs tmp; chmod u+w logs tmp
 	cd /etc/hobbit; chgrp www-data hobbit-nkview.cfg hobbit-nkview.cfg.bak; chmod g+w hobbit-nkview.cfg hobbit-nkview.cfg.bak
 	chown root /usr/lib/hobbit/server/bin/hobbitping; chmod 4755 /usr/lib/hobbit/server/bin/hobbitping
+	cd /usr/lib/hobbit/client; chown hobbit:hobbit logs tmp; chmod u+w logs tmp
 	chown root /usr/lib/hobbit/client/bin/logfetch; chmod 4755 /usr/lib/hobbit/client/bin/logfetch
+	chown root /usr/lib/hobbit/client/bin/clientupdate; chmod 4755 /usr/lib/hobbit/client/bin/clientupdate
 
 	# Do the debconf stuff
 	db_get hobbit/BBSERVERHOSTNAME
