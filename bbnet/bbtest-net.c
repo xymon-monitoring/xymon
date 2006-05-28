@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.233 2006-05-28 15:31:36 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.234 2006-05-28 16:41:51 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -457,6 +457,7 @@ void load_tests(void)
 		if (bbh_item(hwalk, BBH_FLAG_DIALUP)) h->dialup = 1;
 		if (bbh_item(hwalk, BBH_FLAG_NOSSLCERT)) h->nosslcert = 1;
 		if (bbh_item(hwalk, BBH_FLAG_LDAPFAILYELLOW)) h->ldapsearchfailyellow = 1;
+		if (bbh_item(hwalk, BBH_FLAG_HIDEHTTP)) h->hidehttp = 1;
 
 		p = bbh_item(hwalk, BBH_SSLDAYS);
 		if (p) sscanf(p, "%d:%d", &h->sslwarndays, &h->sslalarmdays);
@@ -581,8 +582,6 @@ void load_tests(void)
 						s = httptest;
 						add_url_to_dns_queue(testspec);
 					}
-
-					silenttest = (bbh_item(hwalk, BBH_FLAG_NOHTTPDATA) != NULL);
 				}
 				else if (argnmatch(testspec, "apache") || argnmatch(testspec, "apache=")) {
 					char *userfmt = "cont=apache;%s;.";
