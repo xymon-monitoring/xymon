@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-sunos.sh,v 1.13 2006-05-15 13:29:02 henrik Exp $
+# $Id: hobbitclient-sunos.sh,v 1.14 2006-05-28 18:12:12 henrik Exp $
 
 echo "[date]"
 date
@@ -22,14 +22,14 @@ who
 
 echo "[df]"
 # All of this because Solaris df cannot show multiple fs-types, or exclude certain fs types.
-FSTYPES=`/bin/df -n|awk '{print $3}'|egrep -v "^proc|^fd|^mntfs"|sort|uniq`
+FSTYPES=`/bin/df -n|awk '{print $3}'|egrep -v "^proc|^fd|^mntfs|^ctfs|^devfs|^objfs"|sort|uniq`
 if test "$FSTYPES" = ""; then FSTYPES="ufs"; fi
 set $FSTYPES
-/bin/df -F $1 -k
+/bin/df -F $1 -k | grep -v " /var/run"
 shift
 while test "$1" != ""; do
-	/bin/df -F $1 -k|tail +2
-	shift
+  /bin/df -F $1 -k | grep -v " /var/run" | tail +2
+  shift
 done
 
 echo "[prtconf]"
