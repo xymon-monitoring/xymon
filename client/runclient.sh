@@ -12,7 +12,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: runclient.sh,v 1.9 2006-05-14 20:10:16 henrik Exp $
+# $Id: runclient.sh,v 1.10 2006-05-28 16:03:38 henrik Exp $
 
 # Default settings for this client
 MACHINEDOTS="`uname -n`"			# This systems hostname
@@ -30,7 +30,7 @@ do
 	  	BBOSTYPE="`echo $1 | sed -e's/--os=//' | tr '[A-Z]' '[a-z]'`"
 		;;
 	  --class=*)
-	        CONFIGCLASS="`echo $1 | sed -e's/--os=//' | tr '[A-Z]' '[a-z]'`"
+	        CONFIGCLASS="`echo $1 | sed -e's/--class=//' | tr '[A-Z]' '[a-z]'`"
 		;;
 	  --help)
 	  	echo "Usage: $0 [--hostname=CLIENTNAME] [--os=rhel3|linux22] [--class=CLASSNAME] start|stop"
