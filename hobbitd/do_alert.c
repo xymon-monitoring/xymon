@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.90 2006-05-25 14:55:41 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.91 2006-05-28 15:16:51 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -382,10 +382,10 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					pclose(mailpipe);
 					if (logfd) {
 						init_timestamp();
-						fprintf(logfd, "%s %s.%s (%s) %s %d %d",
+						fprintf(logfd, "%s %s.%s (%s) %s[%d] %d %d",
 							timestamp, alert->hostname, alert->testname,
-							alert->ip, recip->recipient, (int)now, 
-							servicecode(alert->testname));
+							alert->ip, recip->recipient, recip->cfid,
+							(int)now, servicecode(alert->testname));
 						if (alert->state == A_RECOVERED) {
 							fprintf(logfd, " %d\n", (int)(now - alert->eventstart));
 						}
