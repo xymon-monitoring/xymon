@@ -12,7 +12,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient.sh,v 1.13 2006-05-15 13:25:59 henrik Exp $
+# $Id: hobbitclient.sh,v 1.14 2006-05-28 11:02:22 henrik Exp $
 
 # Must make sure the commands return standard (english) texts.
 LANG=C
@@ -77,8 +77,7 @@ if test "$LOCALMODE" != "yes" -a -f $LOGFETCHCFG; then
 	# Check for client updates
 	SERVERVERSION=`grep "^clientversion:" $LOGFETCHCFG | cut -d: -f2`
 	if test "$SERVERVERSION" != "" -a "$SERVERVERSION" != "$CLIENTVERSION"; then
-		cp -pf $BBHOME/bin/clientupdate $BBTMP/.update.$MACHINE
-		exec $BBTMP/.update.$MACHINE --update=$SERVERVERSION
+		exec $BBHOME/bin/clientupdate --update=$SERVERVERSION --reexec
 	fi
 fi
 
