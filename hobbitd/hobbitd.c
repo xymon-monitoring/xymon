@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.232 2006-05-27 07:02:49 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.233 2006-05-28 16:04:51 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -3250,7 +3250,7 @@ void do_message(conn_t *msg, char *origin)
 		}
 	}
 	else if (strncmp(msg->buf, "client ", 7) == 0) {
-		/* "client HOSTNAME.CLIENTTYPE CLIENTCONF" */
+		/* "client HOSTNAME.CLIENTOS CLIENTCLASS" */
 		char *hostname = NULL, *clientos = NULL, *clientclass = NULL;
 		char *hname = NULL;
 		char *line1, *p;
@@ -3264,7 +3264,7 @@ void do_message(conn_t *msg, char *origin)
 		p = strchr(msg->buf, '\n'); if (p) *p = '\0';
 		line1 = strdup(msg->buf); if (p) *p = '\n';
 		p = strtok(line1, " \t"); /* Skip the client keyword */
-		if (p) hostname = strtok(NULL, " \t"); /* Actually, HOSTNAME.CLIENTTYPE */
+		if (p) hostname = strtok(NULL, " \t"); /* Actually, HOSTNAME.CLIENTOS */
 		if (hostname) {
 			clientos = strrchr(hostname, '.'); 
 			if (clientos) { *clientos = '\0'; clientos++; }
@@ -3292,10 +3292,21 @@ void do_message(conn_t *msg, char *origin)
 
 				handle_client(msg->buf, sender, hname, clientos, clientclass);
 
-				/* If the client sends an explicit class, make sure we keep it */
 				if (hinfo) {
 					if (clientos) bbh_set_item(hinfo, BBH_OS, clientos);
-					if (clientclass) bbh_set_item(hinfo, BBH_CLASS, clientclass);
+					if (clientclass) {
+						/*
+						 * If the client sends an explicit class,
+						 * save it for later use unless there is an
+						 * explicit override (BBH_CLASS is alread set).
+						 */
+						char *forcedclass = bbh_item(hinfo, BBH_CLASS);
+
+						if (!forcedclass) 
+							bbh_set_item(hinfo, BBH_CLASS, clientclass);
+						else 
+							clientclass = forcedclass;
+					}
 				}
 			}
 
