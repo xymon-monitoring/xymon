@@ -21,18 +21,35 @@ logfiles have been processed already in the \fB$BBHOME/tmp/logfetch.status\fR
 file. This file is an internal file used by logfetch, and should
 not be edited. If deleted, it will be re-created automatically.
 
+.SH SUID ROOT INSTALLATION
+logfetch may be installed with suid-root privileges. This allows
+Hobbit to monitor logfiles regardless of any access restrictions
+there may be in place for these files.
+
+If logfetch is not installed suid-root, it will of course only
+be able to monitor logs that it has read-access to. But logfetch
+will function without suid-root privileges.
+
+For security reasons, logfetch drops all root privileges except
+when opening logfiles. In particular, logfetch will \fBnot\fR
+perform directory-utilitation scannings via the "du" command
+with root privileges, since an external command is used. It is
+therefore believed to be safe to install logfetch as suid-root.
+
+Note that if you choose to install logfetch with suid-root
+privileges, then the
+.I clientupdate
+utility will also need suid-root privileges, or these will be
+lost after an automated update of the client.
+
 .SH "ENVIRONMENT VARIABLES"
 .IP DU
 Command used to collect information about the size of directories.
-By default, this is the standard \fBdu\fR command. If the local
-du-command on the client does not report data in KB units, it is
-recommended that you set the DU environment variable in the 
-\fB$BBHOME/etc/hobbitclient.cfg\fR file so that it will report
-data in KB. E.g.
-.br
-    DU="du -k"
-.br
-will do this on Solaris.
+By default, this is the command \fBdu -k\fR. If the local
+du-command on the client does not recognize the "-k" option,
+you should set the DU environment variable in the 
+\fB$BBHOME/etc/hobbitclient.cfg\fR file to a command that
+does report directory sizes in kilobytes.
 
 .SH FILES
 .IP $BBHOME/tmp/logfetch.cfg
