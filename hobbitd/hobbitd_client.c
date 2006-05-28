@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.75 2006-05-28 11:14:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.76 2006-05-28 15:45:44 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -678,7 +678,14 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 
 		clearstrbuffer(logsummary);
 		sprintf(sectionname, "msgs:%s", swalk->sname+5);
-		logcolor = scan_log(hinfo, clientclass, swalk->sname+5, swalk->sdata, sectionname, logsummary);
+		if (strncmp(swalk->sdata, "Cannot open logfile ", 20) == 0) {
+			logcolor = COL_YELLOW;
+			addtobuffer(logsummary, "Logfile not accessible");
+		}
+		else {
+			logcolor = scan_log(hinfo, clientclass, swalk->sname+5, swalk->sdata, sectionname, logsummary);
+		}
+
 		if (logcolor > msgscolor) msgscolor = logcolor;
 
 		switch (logcolor) {
@@ -689,14 +696,14 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 			break;
 
 		  case COL_YELLOW: 
-			sprintf(msgline, "\nWarnings in <a href=\"%s\">%s</a>\n", 
+			sprintf(msgline, "\n&yellow Warnings in <a href=\"%s\">%s</a>\n", 
 				hostsvcclienturl(hostname, sectionname), swalk->sname+5);
 			addtobuffer(yellowdata, msgline);
 			addtostrbuffer(yellowdata, logsummary);
 			break;
 
 		  case COL_RED:
-			sprintf(msgline, "\nCritical entries in <a href=\"%s\">%s</a>\n", 
+			sprintf(msgline, "\n&red Critical entries in <a href=\"%s\">%s</a>\n", 
 				hostsvcclienturl(hostname, sectionname), swalk->sname+5);
 			addtobuffer(reddata, msgline);
 			addtostrbuffer(reddata, logsummary);
