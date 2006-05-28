@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char memory_rcsid[] = "$Id: do_memory.c,v 1.15 2006-05-03 21:19:24 henrik Exp $";
+static char memory_rcsid[] = "$Id: do_memory.c,v 1.16 2006-05-28 18:01:20 henrik Exp $";
 
 static char *memory_params[]      = { "rrdcreate", rrdfn, "DS:realmempct:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 static char *memory_tpl           = NULL;
@@ -118,7 +118,7 @@ int do_memory_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		swap = strstr(msg, "Swap"); if (swap == NULL) swap = strstr(msg, "Page");
 		actual = strstr(msg, "Actual"); if (actual == NULL) actual = strstr(msg, "Virtual");
 
-		if (phys && swap) {
+		if (phys) {
 			char *eoln;
 			int physval = -1, swapval = -1, actval = -1;
 
@@ -126,9 +126,11 @@ int do_memory_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			physval = get_mem_percent(phys);
 			if (eoln) *eoln = '\n';
 
-			eoln = strchr(swap, '\n'); if (eoln) *eoln = '\0';
-			swapval = get_mem_percent(swap);
-			if (eoln) *eoln = '\n';
+			if (swap) {
+				eoln = strchr(swap, '\n'); if (eoln) *eoln = '\0';
+				swapval = get_mem_percent(swap);
+				if (eoln) *eoln = '\n';
+			}
 
 			if (actual) {
 				eoln = strchr(actual, '\n'); if (eoln) *eoln = '\0';
