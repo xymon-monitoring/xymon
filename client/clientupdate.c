@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: clientupdate.c,v 1.2 2006-05-28 11:30:37 henrik Exp $";
+static char rcsid[] = "$Id: clientupdate.c,v 1.3 2006-05-28 13:36:01 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -27,6 +27,7 @@ static char rcsid[] = "$Id: clientupdate.c,v 1.2 2006-05-28 11:30:37 henrik Exp 
 #include "libbbgen.h"
 
 #define CLIENTVERSIONFILE "etc/clientversion.cfg"
+#define INPROGRESSFILE "tmp/.inprogress.update"
 
 
 #ifdef HPUX
@@ -59,7 +60,7 @@ void get_root(void)
 int main(int argc, char *argv[])
 {
 	int argi;
-	char *versionfn;
+	char *versionfn, *inprogressfn;
 	FILE *versionfd, *tarpipefd;
 	char version[10];
 	char *newversion = NULL;
@@ -74,6 +75,9 @@ int main(int argc, char *argv[])
 
 	versionfn = (char *)malloc(strlen(xgetenv("BBHOME")) + strlen(CLIENTVERSIONFILE) + 2);
 	sprintf(versionfn, "%s/%s", xgetenv("BBHOME"), CLIENTVERSIONFILE);
+	inprogressfn = (char *)malloc(strlen(xgetenv("BBHOME")) + strlen(INPROGRESSFILE) + 2);
+	sprintf(inprogressfn, "%s/%s", xgetenv("BBHOME"), INPROGRESSFILE);
+
 	versionfd = fopen(versionfn, "r");
 	if (versionfd) {
 		char *p;
@@ -109,22 +113,33 @@ int main(int argc, char *argv[])
 			unsigned char buf[8192];
 			long n;
 			char *newcmd;
+			struct stat st;
+			int cperr;
 
 			if (!updateparam) {
 				printf("clientupdate --reexec called with no update version\n");
 				return 1;
 			}
 
+			if ( (stat(inprogressfn, &st) == 0) && ((time(NULL) - st.st_mtime) < 3600) ) {
+				printf("Found update in progress or failed update (started %ld minutes ago)\n",
+					(long) (time(NULL)-st.st_mtime)/60);
+				return 1;
+			}
+			unlink(inprogressfn);
+			tmpfd = fopen(inprogressfn, "w"); if (tmpfd) fclose(tmpfd);
+
+			/* Copy the executable */
 			srcfn = argv[0];
+			srcfd = fopen(srcfn, "r"); cperr = errno;
 
 			sprintf(tmpfn, "%s/.update.%s.%ld.tmp", 
 				xgetenv("BBTMP"), xgetenv("MACHINEDOTS"), (long)time(NULL));
 			unlink(tmpfn);	/* To avoid symlink attacks */
+			if (srcfd) { tmpfd = fopen(tmpfn, "w"); cperr = errno; }
 
-			srcfd = fopen(srcfn, "r");
-			if (srcfd) tmpfd = fopen(tmpfn, "w");
 			if (!srcfd || !tmpfd) {
-				printf("Cannot copy executable: %s\n", strerror(errno));
+				printf("Cannot copy executable: %s\n", strerror(cperr));
 				return 1;
 			}
 
@@ -201,6 +216,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	/* Create the new version file */
 	versionfd = fopen(versionfn, "w");
 	if (versionfd) {
 		fprintf(versionfd, "%s", newversion);
@@ -221,6 +237,8 @@ int main(int argc, char *argv[])
 	chmod("bin/clientupdate", S_ISUID|S_IRUSR|S_IXUSR|S_IRGRP|S_IXGRP);
 	drop_root(myuid);
 
+	/* Remove temporary- and lock-files */
+	unlink(inprogressfn);
 	if (removeself) unlink(argv[0]);
 
 	/*
