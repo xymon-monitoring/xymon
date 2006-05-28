@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.232 2006-05-16 21:21:29 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.233 2006-05-28 15:31:36 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -1375,7 +1375,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 				  case MULTIPING_WORST:
 					  if (okcount < totalcount) {
 						  color = COL_RED;
-						  countasdown = 0;
+						  countasdown = 1;
 						  sprintf(cause, "Host responds to ping on %d of %d IP's",
 							  okcount, totalcount);
 					  }
