@@ -137,7 +137,7 @@ chkconfig --del hobbit-client
 
 
 %files
-%attr(-, root, root) %doc README README.CLIENT Changes* COPYING CREDITS
+%attr(-, root, root) %doc README README.CLIENT Changes* COPYING CREDITS RELEASENOTES
 %attr(644, root, root) %doc /usr/share/man/man*/*
 %attr(644, root, root) %config /etc/hobbit/*
 %attr(644, root, root) %config /etc/httpd/conf.d/hobbit-apache.conf
@@ -162,7 +162,7 @@ chkconfig --del hobbit-client
 %attr(4750, root, hobbit) /usr/lib/hobbit/client/bin/clientupdate
 
 %files client
-%attr(-, root, root) %doc README README.CLIENT Changes* COPYING CREDITS
+%attr(-, root, root) %doc README README.CLIENT Changes* COPYING CREDITS RELEASENOTES
 %attr(-, root, root) /usr/lib/hobbit/client
 %attr(755, root, root) /etc/init.d/hobbit-client
 %attr(644, root, root) %config /etc/default/hobbit-client
