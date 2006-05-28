@@ -37,8 +37,8 @@ case "$1" in
 	db_stop
 
         # Update configuration file
-	sed -e s/^HOBBITSERVERS=.*/HOBBITSERVERS=\"${HOBBITSERVERS}\"/		\
-	    -e s/^CLIENTHOSTNAME=.*/CLIENTHOSTNAME=\"${CLIENTHOSTNAME}\"/	\
+	sed -e 's/^HOBBITSERVERS=.*/HOBBITSERVERS=\"${HOBBITSERVERS}\"/'	\
+	    -e 's/^CLIENTHOSTNAME=.*/CLIENTHOSTNAME=\"${CLIENTHOSTNAME}\"/'	\
 	    < $CONFIGFILE > $CONFIGFILE.tmp
 	mv -f $CONFIGFILE.tmp $CONFIGFILE
     ;;
