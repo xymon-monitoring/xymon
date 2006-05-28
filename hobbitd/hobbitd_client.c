@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.76 2006-05-28 15:45:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.77 2006-05-28 21:17:20 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -980,7 +980,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 		       namelist_t *hinfo, char *fromline, char *timestr, 
 		       int localcol, int remotecol, int statecol, char *portstr)
 {
-	int portcolor = COL_CLEAR;
+	int portcolor = COL_GREEN;
 	int pchecks;
 	char msgline[4096];
 	static strbuffer_t *monmsg = NULL;
@@ -1002,6 +1002,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 	if (pchecks == 0) {
 		/* Nothing to check */
 		addtobuffer(monmsg, "&clear No port checks defined\n");
+		portcolor = COL_CLEAR;
 	}
 	else {
 		/* Count how many instances of each monitored condition are found */
@@ -1041,12 +1042,13 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 				else if (pmin == 0) sprintf(limtxt, "at most %d", pmax);
 			}
 
+			if (pcolor > portcolor) portcolor = pcolor;
+
 			if (pcolor == COL_GREEN) {
 				sprintf(msgline, "&green %s (found %d, req. %s)\n", pname, pcount, limtxt);
 				addtobuffer(monmsg, msgline);
 			}
 			else {
-				if (pcolor > portcolor) portcolor = pcolor;
 				sprintf(msgline, "&%s %s (found %d, req. %s)\n",
 					colorname(pcolor), pname, pcount, limtxt);
 				addtobuffer(monmsg, msgline);
