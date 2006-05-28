@@ -175,7 +175,6 @@ bb-hosts file. It causes incoming status reports with the
 specified hostname to be filed using the hostname defined in
 bb-hosts.
 
-
 .IP "COMMENT:Host comment"
 Adds a small text after the hostname on the webpage. This can
 be used to describe the host, without completely changing its
@@ -190,6 +189,17 @@ text that will be shown on the "Info" column page; this can
 e.g. be used to store information about the physical location
 of the device, contact persons etc. If the text contain whitespace,
 you must enclose it in double-quotes, e.g.  DESCR:"switch:4th floor Marketing switch"
+
+.IP "CLASS:Classname"
+Force the host to belong to a specific class. Class-names are used
+when configuring log-file monitoring (they can be used as references in
+.I client-local.cfg(5)
+and
+.I hobbit-clients.cfg(5)
+to group logfile checks). Normally, class-names are controlled on the 
+client by starting the Hobbit client with the "--class=Classname" option.
+If you specify it in the bb-hosts file on the Hobbit server, it overrides
+any classname that the client reports.
 
 .IP dialup
 The keyword "dialup" for a host means that it is OK for it to be
@@ -1062,6 +1072,13 @@ the content data, it checks the type of the data as given by
 the HTTP Content-Type: header. This can used to check if a
 URL returns e.g. a PDF file, regardless of what is inside the
 PDF file.
+
+.IP HIDEHTTP
+The status display for HTTP checks usually includes the URL,
+and for content checks also the actual data from the webpage.
+If you would like to hide these from view, then the HIDEHTTP
+tag will keep this information from showing up on the status
+webpages.
 
 .SH LDAP (DIRECTORY SERVER) TESTS
 .IP ldap
