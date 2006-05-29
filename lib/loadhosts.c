@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.60 2006-05-28 16:39:28 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.61 2006-05-29 13:09:43 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -176,6 +176,7 @@ static void initialize_hostlist(void)
 		if (walk->bbhostname) xfree(walk->bbhostname);
 		if (walk->groupid) xfree(walk->groupid);
 		if (walk->classname) xfree(walk->classname);
+		if (walk->osname) xfree(walk->osname);
 		if (walk->logname) xfree(walk->logname);
 		if (walk->allelems) xfree(walk->allelems);
 		if (walk->elems) xfree(walk->elems);
@@ -190,6 +191,7 @@ static void initialize_hostlist(void)
 		if (walk->bbhostname) xfree(walk->bbhostname);
 		if (walk->groupid) xfree(walk->groupid);
 		if (walk->classname) xfree(walk->classname);
+		if (walk->osname) xfree(walk->osname);
 		if (walk->logname) xfree(walk->logname);
 		if (walk->allelems) xfree(walk->allelems);
 		if (walk->elems) xfree(walk->elems);
