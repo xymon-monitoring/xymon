@@ -133,6 +133,11 @@ recommended that you use this to restrict access to these commands, so
 that monitoring of a host cannot be disabled by a rogue user - e.g. to
 hide a system compromise from the monitoring system.
 
+\fBNote:\fR If messages are sent through a proxy, the IP-address restrictions
+are of little use, since the messages will appear to originate from the
+proxy server address. It is therefore strongly recommended that you do NOT
+include the address of a server running bbproxy in the list of allowed addresses.
+
 .IP "--www-senders=IP[/MASK][,IP/MASK]"
 Controls which hosts may send commands to retrieve the state of hobbitd. These
 are the "hobbitdlog", "hobbitdboard" and "hobbitdxboard" commands, which are used
@@ -142,12 +147,22 @@ and
 .I bbcombotest(1)
 to retrieve the state of the Hobbit system so they can generate the Hobbit webpages.
 
+\fBNote:\fR If messages are sent through a proxy, the IP-address restrictions
+are of little use, since the messages will appear to originate from the
+proxy server address. It is therefore strongly recommended that you do NOT
+include the address of a server running bbproxy in the list of allowed addresses.
+
 .IP "--admin-senders=IP[/MASK][,IP/MASK]"
 Controls which hosts may send administrative commands to hobbitd. These
 commands are the "drop" and "rename" commands. Access to these should be 
 restricted, since they provide an un-authenticated means of completely
 disabling monitoring of a host, and can be used to remove all traces of e.g.
 a system compromise from the Hobbit monitor.
+
+\fBNote:\fR If messages are sent through a proxy, the IP-address restrictions
+are of little use, since the messages will appear to originate from the
+proxy server address. It is therefore strongly recommended that you do NOT
+include the address of a server running bbproxy in the list of allowed addresses.
 
 .IP "--no-download"
 Disable the "download" and "config" commands which can be used by clients
