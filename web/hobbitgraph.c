@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.48 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.49 2006-05-29 05:56:37 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -32,6 +32,10 @@ static char rcsid[] = "$Id: hobbitgraph.c,v 1.48 2006-05-03 21:12:33 henrik Exp 
 #define DAY_GRAPH   "e-12d"
 #define WEEK_GRAPH  "e-48d"
 #define MONTH_GRAPH "e-576d"
+
+#ifdef HIDE_EMPTYGRAPH
+unsigned char blankimg[] = "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a\x00\x00\x00\x0d\x49\x48\x44\x52\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\x04\x67\x41\x4d\x41\x00\x00\xb1\x8f\x0b\xfc\x61\x05\x00\x00\x00\x06\x62\x4b\x47\x44\x00\xff\x00\xff\x00\xff\xa0\xbd\xa7\x93\x00\x00\x00\x09\x70\x48\x59\x73\x00\x00\x0b\x12\x00\x00\x0b\x12\x01\xd2\xdd\x7e\xfc\x00\x00\x00\x07\x74\x49\x4d\x45\x07\xd1\x01\x14\x12\x21\x14\x7e\x4a\x3a\xd2\x00\x00\x00\x0d\x49\x44\x41\x54\x78\xda\x63\x60\x60\x60\x60\x00\x00\x00\x05\x00\x01\x7a\xa8\x57\x50\x00\x00\x00\x00\x49\x45\x4e\x44\xae\x42\x60\x82";
+#endif
 
 char *hostname = NULL;
 char **hostlist = NULL;
@@ -937,6 +941,15 @@ int main(int argc, char *argv[])
 		strftime(expirehdr, sizeof(expirehdr), "Expires: %a, %d %b %Y %H:%M:%S GMT", gmtime(&expiretime));
 		printf("%s\n", expirehdr);
 		printf("\n");
+
+#ifdef HIDE_EMPTYGRAPH
+		/* It works, but we still get the "zoom" magnifying glass which looks odd */
+		if (rrddbcount == 0) {
+			/* No graph */
+			fwrite(blankimg, 1, sizeof(blankimg), stdout);
+			return 0;
+		}
+#endif
 	}
 
 	/* All set - generate the graph */
@@ -974,15 +987,6 @@ int main(int argc, char *argv[])
 
 	gdef = gdefuser = NULL;
 	wantsingle = 0;
-
-#if 0
-	/* Why does this cause the program to crash ? */
-	for (argi=11; (argi < argcount); argi++) {
-		if (rrdargs[argi]) xfree(rrdargs[argi]);
-	}
-	xfree(rrdargs);
-	rrdargs = NULL;
-#endif
 
 	return 0;
 }
