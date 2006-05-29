@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char la_rcsid[] = "$Id: do_la.c,v 1.23 2006-05-04 16:06:09 henrik Exp $";
+static char la_rcsid[] = "$Id: do_la.c,v 1.24 2006-05-29 05:31:02 henrik Exp $";
 
 int do_la_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -52,9 +52,13 @@ int do_la_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 		goto done_parsing;
 	}
-	else if (strstr(msg, "z/VM")) {
+	else if (strstr(msg, "z/VM") || strstr(msg, "VSE/ESA") || strstr(msg, "z/VSE")) {
 		/* z/VM cpu message. Looks like this, from Rich Smrcina:
 		 * green 5 Apr 2005 20:07:34  CPU Utilization  7% z/VM Version 4 Release 4.0, service level 0402 (32-bit) AVGPROC-007% 01
+		 * VSE/ESA or z/VSE cpu message. Looks like this, from Rich Smrcina:
+		 * VSE/ESA 2.7.2 cr IPLed on ...
+		 * or
+		 * z/VSE 3.1.1 cr IPLed on ...
 		 */
 
 		int ovector[30];
