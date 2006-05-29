@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.233 2006-05-28 16:04:51 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.234 2006-05-29 21:20:22 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -1427,7 +1427,7 @@ void handle_notes(char *msg, char *sender, char *hostname)
 	dprintf("<-handle_notes\n");
 }
 
-void handle_enadis(int enabled, char *msg, char *sender)
+void handle_enadis(int enabled, conn_t *msg, char *sender)
 {
 	char *firstline = NULL, *hosttest = NULL, *durstr = NULL, *txtstart = NULL;
 	char *hname = NULL, *tname = NULL;
@@ -1444,8 +1444,8 @@ void handle_enadis(int enabled, char *msg, char *sender)
 
 	MEMDEFINE(hostip);
 
-	p = strchr(msg, '\n'); if (p) *p = '\0';
-	firstline = strdup(msg);
+	p = strchr(msg->buf, '\n'); if (p) *p = '\0';
+	firstline = strdup(msg->buf);
 	if (p) *p = '\n';
 
 	p = strtok(firstline, " \t");
@@ -1465,7 +1465,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 				expires = 60*durationvalue(durstr) + time(NULL);
 			}
 
-			txtstart = msg + (durstr + strlen(durstr) - firstline);
+			txtstart = msg->buf + (durstr + strlen(durstr) - firstline);
 			txtstart += strspn(txtstart, " \t\r\n");
 			if (*txtstart == '\0') txtstart = "(No reason given)";
 		}
@@ -1501,6 +1501,8 @@ void handle_enadis(int enabled, char *msg, char *sender)
 	}
 	else hwalk = gettreeitem(rbhosts, hosthandle);
 
+	if (!oksender(maintsenders, hwalk->ip, msg->addr.sin_addr, msg->buf)) goto done;
+
 	if (tname) {
 		testhandle = rbtFind(rbtests, tname);
 		if (testhandle == rbtEnd(rbtests)) {
@@ -1519,7 +1521,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 					xfree(log->dismsg);
 					log->dismsg = NULL;
 				}
-				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, log, NULL);
+				posttochannel(enadischn, channelnames[C_ENADIS], msg->buf, sender, log->host->hostname, log, NULL);
 			}
 		}
 		else {
@@ -1530,7 +1532,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 					xfree(log->dismsg);
 					log->dismsg = NULL;
 				}
-				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, log, NULL);
+				posttochannel(enadischn, channelnames[C_ENADIS], msg->buf, sender, log->host->hostname, log, NULL);
 			}
 		}
 	}
@@ -1545,7 +1547,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 					if (log->dismsg) xfree(log->dismsg);
 					log->dismsg = strdup(txtstart);
 				}
-				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, log, NULL);
+				posttochannel(enadischn, channelnames[C_ENADIS], msg->buf, sender, log->host->hostname, log, NULL);
 				/* Trigger an immediate status update */
 				handle_status(log->message, sender, log->host->hostname, log->test->name, log->grouplist, log, COL_BLUE, NULL);
 			}
@@ -1559,7 +1561,7 @@ void handle_enadis(int enabled, char *msg, char *sender)
 					if (log->dismsg) xfree(log->dismsg);
 					log->dismsg = strdup(txtstart);
 				}
-				posttochannel(enadischn, channelnames[C_ENADIS], msg, sender, log->host->hostname, log, NULL);
+				posttochannel(enadischn, channelnames[C_ENADIS], msg->buf, sender, log->host->hostname, log, NULL);
 
 				/* Trigger an immediate status update */
 				handle_status(log->message, sender, log->host->hostname, log->test->name, log->grouplist, log, COL_BLUE, NULL);
@@ -2637,12 +2639,10 @@ void do_message(conn_t *msg, char *origin)
 		}
 	}
 	else if (strncmp(msg->buf, "enable", 6) == 0) {
-		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
-		handle_enadis(1, msg->buf, sender);
+		handle_enadis(1, msg, sender);
 	}
 	else if (strncmp(msg->buf, "disable", 7) == 0) {
-		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
-		handle_enadis(0, msg->buf, sender);
+		handle_enadis(0, msg, sender);
 	}
 	else if (allow_downloads && (strncmp(msg->buf, "config", 6) == 0)) {
 		char *conffn, *p;
