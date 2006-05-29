@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: links.c,v 1.12 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: links.c,v 1.13 2006-05-29 20:02:15 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -87,6 +87,8 @@ static void load_links(char *directory, char *urlprefix)
 	while ((d = readdir(bblinks))) {
 		link_t *newlink;
 
+		if (*(d->d_name) == '.') continue;
+
 		strcpy(fn, d->d_name);
 		newlink = init_link(fn, urlprefix);
 		rbtInsert(linkstree, newlink->key, newlink);
@@ -153,21 +155,22 @@ static link_t *find_link(char *key)
 char *columnlink(char *colname)
 {
 	static char *linkurl = NULL;
-	link_t *link = find_link(colname);
+	link_t *link;
 
 	if (linkurl == NULL) linkurl = (char *)malloc(PATH_MAX);
 	if (!linksloaded) load_all_links();
 
-	if (columndocurl) {
-		sprintf(linkurl, columndocurl, colname);
-	}
-	else if (link) {
+	link = find_link(colname);
+	if (link) {
 		sprintf(linkurl, "%s/%s", link->urlprefix, link->filename);
 	}
-	else {
-		sprintf(linkurl, "%s/help/bb-help.html#%s", xgetenv("BBWEB"), colname);
+	else if (columndocurl) {
+		sprintf(linkurl, columndocurl, colname);
 	}
-	
+	else {
+		*linkurl = '\0';
+	}
+
 	return linkurl;
 }
 
