@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.43 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.44 2006-05-29 15:33:19 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -654,6 +654,24 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				} while (cwalk && 
 					 (strcmp(cwalk->bbhostname, bbhost->bbhostname) == 0) &&
 					 (targetpagecount < MAX_TARGETPAGES_PER_HOST) );
+
+				/*
+				 * HACK: Check if the pageset tag is present at all in the host
+				 * entry. If it isn't, then drop this incarnation of the host.
+				 *
+				 * Without this, the following bb-hosts file will have the
+				 * www.hswn.dk host listed twice on the alternate pageset:
+				 *
+				 * adminpage nyc NYC
+				 *
+				 * 127.0.0.1   localhost      # bbd http://localhost/ CLIENT:osiris
+				 * 172.16.10.2 www.hswn.dk    # http://www.hswn.dk/ ADMIN:nyc ssh noinfo
+				 *
+				 * page superdome Superdome
+				 * 172.16.10.2 www.hswn.dk # noconn
+				 *
+				 */
+				if (strstr(STRBUF(inbuf), hosttag) == NULL) targetpagecount = 0;
 			}
 
 			if (strlen(pgset) == 0) {
