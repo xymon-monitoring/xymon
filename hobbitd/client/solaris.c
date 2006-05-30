@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char solaris_rcsid[] = "$Id: solaris.c,v 1.13 2006-05-03 21:19:24 henrik Exp $";
+static char solaris_rcsid[] = "$Id: solaris.c,v 1.14 2006-05-30 21:18:25 henrik Exp $";
 
 void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 			   namelist_t *hinfo, char *sender, time_t timestamp, 
@@ -53,7 +53,7 @@ void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 	vmstatstr = getdata("vmstat");
 
 	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, whostr, psstr, topstr);
-	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Capacity", "Mounted", dfstr);
+	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "avail", "capacity", "Mounted", dfstr);
 	unix_procs_report(hostname, clienttype, os, hinfo, fromline, timestr, "CMD", "COMMAND", psstr);
 	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 0, 1, 6, portsstr);
 
