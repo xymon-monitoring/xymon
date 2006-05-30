@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.78 2006-05-30 21:23:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.79 2006-05-30 22:00:48 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -328,6 +328,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 
 				strcpy(p, bol);
 				levelstr = getcolumn(p, freecol); if (levelstr) levelabs = atol(levelstr);
+				strcpy(p, bol);
 				levelstr = getcolumn(p, capacol); if (levelstr) levelpct = atol(levelstr);
 
 				dprintf("Disk check: FS='%s' level %ld%%/%ldU (thresholds: %lu/%lu, abs: %d/%d)\n",
@@ -343,7 +344,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 					if (abspanic) msgp += sprintf(msgp, "(%lu units free)", levelabs);
 					else msgp += sprintf(msgp, "(%lu%% used)", levelpct);
 
-					msgp += sprintf(msgp, "has reached the PANIC level ");
+					msgp += sprintf(msgp, " has reached the PANIC level ");
 
 					if (abspanic) msgp += sprintf(msgp, "(%lu units)\n", paniclevel);
 					else msgp += sprintf(msgp, "(%lu%%)\n", paniclevel);
@@ -360,7 +361,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 					if (abswarn) msgp += sprintf(msgp, "(%lu units free)", levelabs);
 					else msgp += sprintf(msgp, "(%lu%% used)", levelpct);
 
-					msgp += sprintf(msgp, "has reached the WARNING level ");
+					msgp += sprintf(msgp, " has reached the WARNING level ");
 
 					if (abswarn) msgp += sprintf(msgp, "(%lu units)\n", warnlevel);
 					else msgp += sprintf(msgp, "(%lu%%)\n", warnlevel);
