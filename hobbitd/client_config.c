@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.37 2006-05-30 21:23:33 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.38 2006-05-30 22:00:19 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -563,7 +563,8 @@ int load_client_config(char *configfn)
 				switch (*(tok + strspn(tok, "0123456789"))) {
 				  case 'U':
 				  case 'u': currule->rule.disk.abswarn = 1; break;
-				  default : currule->rule.disk.abswarn = 0; break;
+				  case '%': currule->rule.disk.abswarn = 0; break;
+				  default : currule->rule.disk.abswarn = (currule->rule.disk.warnlevel > 200 ? 1 : 0); break;
 				}
 
 				tok = wstok(NULL); if (isqual(tok)) continue;
@@ -571,7 +572,8 @@ int load_client_config(char *configfn)
 				switch (*(tok + strspn(tok, "0123456789"))) {
 				  case 'U':
 				  case 'u': currule->rule.disk.abspanic = 1; break;
-				  default : currule->rule.disk.abspanic = 0; break;
+				  case '%': currule->rule.disk.abspanic = 0; break;
+				  default : currule->rule.disk.abspanic = (currule->rule.disk.paniclevel > 200 ? 1 : 0); break;
 				}
 
 				tok = wstok(NULL); if (isqual(tok)) continue;
