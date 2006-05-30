@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.104 2006-05-23 05:40:55 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.105 2006-05-30 06:46:06 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -91,7 +91,7 @@ static int fetch_status(char *hostname)
 		if ( tok && (strcmp(tok, xgetenv("INFOCOLUMN")) != 0) && (strcmp(tok, xgetenv("TRENDSCOLUMN")) != 0) ) {
 			tnames[testcount].name = strdup(tok); tok = gettok(NULL, "|"); 
 			if (tok) { tnames[testcount].color = parse_color(tok); tok = gettok(NULL, "|"); }
-			if (tok) { tnames[testcount].distime = atoi(tok); tok = gettok(NULL, "|"); }
+			if (tok) { tnames[testcount].distime = atol(tok); tok = gettok(NULL, "|"); }
 			if (tok) { tnames[testcount].dismsg = strdup(tok); tok = gettok(NULL, "|"); }
 			if (tok) { haveuname |= (*tok == 'Y'); }
 			tnames[testcount].next = NULL;
@@ -339,13 +339,14 @@ static void generate_hobbit_enable(char *hostname, strbuffer_t *buf)
 	addtobuffer(buf, "<tr><th>Test</th><th>Disabled until</th><th>Cause</th><th>&nbsp;</th></tr>\n");
 
 	for (i=0; (i < testcount); i++) {
-		if (tnames[i].distime <= 0) continue;
+		if (tnames[i].distime == 0) continue;
 
 		addtobuffer(buf, "<tr>\n");
 
 		sprintf(l, "<td>%s</td>\n", tnames[i].name);
 		addtobuffer(buf, l);
-		sprintf(l, "<td>%s</td>\n", ctime(&tnames[i].distime));
+		sprintf(l, "<td>%s</td>\n", 
+			(tnames[i].distime == -1) ? "OK" : ctime(&tnames[i].distime));
 		addtobuffer(buf, l);
 
 		/* Add an HTML'ized form of the disable-message */
@@ -771,7 +772,7 @@ char *generate_info(char *hostname)
 		addtobuffer(infobuf, "</td></tr>\n");
 		addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
-		for (i=0; (i < testcount); i++) anydisabled = (anydisabled || (tnames[i].distime > 0));
+		for (i=0; (i < testcount); i++) anydisabled = (anydisabled || (tnames[i].distime != 0));
 		if (anydisabled) {
 			addtobuffer(infobuf, "<tr><th align=left valign=top>Enable tests</th><td align=left>\n");
 			generate_hobbit_enable(hostname, infobuf);

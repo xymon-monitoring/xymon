@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.49 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.50 2006-05-30 06:46:06 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -706,10 +706,10 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 
 					hname = gettok(buf, "|");
 					if (hname) tname = gettok(NULL, "|");
-					if (tname) { p = gettok(NULL, "|"); if (p) distime = atoi(p); }
+					if (tname) { p = gettok(NULL, "|"); if (p) distime = atol(p); }
 					if (distime) dismsg = gettok(NULL, "|\n");
 
-					if (hname && tname && (distime > 0) && dismsg && wanted_host(hname)) {
+					if (hname && tname && (distime != 0) && dismsg && wanted_host(hname)) {
 						nldecode(dismsg);
 						hwalk = dhosts; hprev = NULL;
 						while (hwalk && (strcasecmp(hname, hwalk->name) > 0)) {
@@ -786,7 +786,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 							char *msg = twalk->cause;
 							msg += strspn(msg, "0123456789 ");
 							fprintf(output, "%s\n%s\nUntil: %s\n---------------------\n", 
-								twalk->name, msg, ctime(&twalk->until));
+								twalk->name, msg, 
+								(twalk->until == -1) ? "OK" : ctime(&twalk->until));
 						}
 						fprintf(output, "</textarea>\n");
 					}
