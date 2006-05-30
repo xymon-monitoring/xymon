@@ -56,13 +56,17 @@ UP 10m 4w
 .sp
 If the utilization of "filesystem" is reported to exceed "warnlevel"
 or "paniclevel", the "disk" status will go yellow or red, respectively.
-"warnlevel" and "paniclevel" are the percentage filled.
+"warnlevel" and "paniclevel" are either the percentage used, or the 
+space available as reported by the local "df" command on the host.
+For the latter type of check, the "warnlevel" must be followed by the
+letter "U", e.g. "1024U".
+
 "filesystem" is the mount-point where the filesystem is mounted, e.g.
 "/usr" or "/home". A filesystem-name that begins with "%" is interpreted
 as a Perl-compatible regular expression; e.g. "%^/oracle.*/" will match
 any filesystem whose mountpoint begins with "/oracle".
 .sp
-Defaults: warnlevel=90, paniclevel=95
+Defaults: warnlevel=90%, paniclevel=95%
 
 .SH MEMORY STATUS COLUMN SETTINGS
 .sp
