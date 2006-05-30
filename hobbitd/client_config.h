@@ -22,8 +22,13 @@ extern void addalertgroup(char *group);
 
 extern int get_cpu_thresholds(namelist_t *hinfo, char *classname, 
 			      float *loadyellow, float *loadred, int *recentlimit, int *ancientlimit);
-extern int get_disk_thresholds(namelist_t *hhinfo, char *classname, 
-				char *fsname, unsigned long *warnlevel, unsigned long *paniclevel, int *absolutes, char **group);
+
+extern int get_disk_thresholds(namelist_t *hinfo, char *classname,
+				char *fsname,
+				long *warnlevel, long *paniclevel,
+				int *abswarn, int *abspanic,
+				char **group);
+
 extern void get_memory_thresholds(namelist_t *hhinfo, char *classname,
 				  int *physyellow, int *physred, 
 				  int *swapyellow, int *swapred, 
