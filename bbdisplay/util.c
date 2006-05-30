@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.153 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.154 2006-05-30 06:45:31 henrik Exp $";
 
 #include <limits.h>
 #include <sys/types.h>
@@ -173,6 +173,8 @@ void add_to_hostlist(hostlist_t *rec)
 static RbtIterator hostlistwalk;
 hostlist_t *hostlistBegin(void)
 {
+	if (havehosttree == 0) return NULL;
+
 	hostlistwalk = rbtBegin(hosttree);
 
 	if (hostlistwalk != rbtEnd(hosttree)) {
@@ -185,6 +187,8 @@ hostlist_t *hostlistBegin(void)
 
 hostlist_t *hostlistNext(void)
 {
+	if (havehosttree == 0) return NULL;
+
 	if (hostlistwalk != rbtEnd(hosttree)) hostlistwalk = rbtNext(hosttree, hostlistwalk);
 
 	if (hostlistwalk != rbtEnd(hosttree)) {
