@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.234 2006-05-29 21:20:22 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.235 2006-05-30 16:30:58 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -3784,6 +3784,7 @@ void check_purple_status(void)
 						  case COL_RED:
 						  case COL_YELLOW:
 						  case COL_BLUE:
+						  case COL_CLEAR: /* if the "route:" tag is involved */
 							newcolor = COL_CLEAR;
 							break;
 
