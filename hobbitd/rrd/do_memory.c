@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char memory_rcsid[] = "$Id: do_memory.c,v 1.16 2006-05-28 18:01:20 henrik Exp $";
+static char memory_rcsid[] = "$Id: do_memory.c,v 1.17 2006-05-30 07:14:15 henrik Exp $";
 
 static char *memory_params[]      = { "rrdcreate", rrdfn, "DS:realmempct:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 static char *memory_tpl           = NULL;
@@ -88,29 +88,35 @@ int do_memory_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 		p = strstr(msg, "Total Cache Buffers");
 		if (p) {
-			p += strspn(p, " :");
-			val = atoi(p);
-			sprintf(rrdfn, "memory.tcb.rrd");
-			sprintf(rrdvalues, "%d:%d", (int)tstamp, val);
-			create_and_update_rrd(hostname, rrdfn, memory_params, memory_tpl);
+			p = strchr(p, ':');
+			if (p) {
+				val = atoi(p+1);
+				sprintf(rrdfn, "memory.tcb.rrd");
+				sprintf(rrdvalues, "%d:%d", (int)tstamp, val);
+				create_and_update_rrd(hostname, rrdfn, memory_params, memory_tpl);
+			}
 		}
 
 		p = strstr(msg, "Dirty Cache Buffers");
 		if (p) {
-			p += strspn(p, " :");
-			val = atoi(p);
-			sprintf(rrdfn, "memory.dcb.rrd");
-			sprintf(rrdvalues, "%d:%d", (int)tstamp, val);
-			create_and_update_rrd(hostname, rrdfn, memory_params, memory_tpl);
+			p = strchr(p, ':');
+			if (p) {
+				val = atoi(p+1);
+				sprintf(rrdfn, "memory.dcb.rrd");
+				sprintf(rrdvalues, "%d:%d", (int)tstamp, val);
+				create_and_update_rrd(hostname, rrdfn, memory_params, memory_tpl);
+			}
 		}
 
 		p = strstr(msg, "Long Term Cache Hit Percentage");
 		if (p) {
-			p += strspn(p, " :");
-			val = atoi(p);
-			sprintf(rrdfn, "memory.ltch.rrd");
-			sprintf(rrdvalues, "%d:%d", (int)tstamp, val);
-			create_and_update_rrd(hostname, rrdfn, memory_params, memory_tpl);
+			p = strchr(p, ':');
+			if (p) {
+				val = atoi(p+1);
+				sprintf(rrdfn, "memory.ltch.rrd");
+				sprintf(rrdvalues, "%d:%d", (int)tstamp, val);
+				create_and_update_rrd(hostname, rrdfn, memory_params, memory_tpl);
+			}
 		}
 	}
 	else {
