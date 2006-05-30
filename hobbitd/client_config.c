@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.36 2006-05-27 07:27:57 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.37 2006-05-30 21:23:33 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -49,8 +49,8 @@ typedef struct c_uptime_t {
 
 typedef struct c_disk_t {
 	exprlist_t *fsexp;
-	unsigned long warnlevel, paniclevel;
-	int absolutes;
+	long warnlevel, paniclevel;
+	int abswarn, abspanic;
 	int dmin, dmax, dcount;
 	int color;
 } c_disk_t;
@@ -546,10 +546,10 @@ int load_client_config(char *configfn)
 				currule->rule.load.paniclevel = atof(tok);
 			}
 			else if (strcasecmp(tok, "DISK") == 0) {
-				char modchar = '\0';
 				currule = setup_rule(C_DISK, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
-				currule->rule.disk.absolutes = 0;
+				currule->rule.disk.abswarn = 0;
 				currule->rule.disk.warnlevel = 90;
+				currule->rule.disk.abspanic = 0;
 				currule->rule.disk.paniclevel = 95;
 				currule->rule.disk.dmin = 0;
 				currule->rule.disk.dmax = -1;
@@ -560,26 +560,18 @@ int load_client_config(char *configfn)
 
 				tok = wstok(NULL); if (isqual(tok)) continue;
 				currule->rule.disk.warnlevel = atol(tok);
-				modchar = *(tok + strspn(tok, "0123456789"));
-				if (modchar && (modchar != '%')) {
-					currule->rule.disk.absolutes += 1;
-					switch (modchar) {
-					  case 'k': case 'K' : break;
-					  case 'm': case 'M' : currule->rule.disk.warnlevel *= 1024; break;
-					  case 'g': case 'G' : currule->rule.disk.warnlevel *= 1024*1024; break;
-					}
+				switch (*(tok + strspn(tok, "0123456789"))) {
+				  case 'U':
+				  case 'u': currule->rule.disk.abswarn = 1; break;
+				  default : currule->rule.disk.abswarn = 0; break;
 				}
 
 				tok = wstok(NULL); if (isqual(tok)) continue;
 				currule->rule.disk.paniclevel = atol(tok);
-				modchar = *(tok + strspn(tok, "0123456789"));
-				if (modchar && (modchar != '%')) {
-					currule->rule.disk.absolutes += 2;
-					switch (modchar) {
-					  case 'k': case 'K' : break;
-					  case 'm': case 'M' : currule->rule.disk.warnlevel *= 1024; break;
-					  case 'g': case 'G' : currule->rule.disk.warnlevel *= 1024*1024; break;
-					}
+				switch (*(tok + strspn(tok, "0123456789"))) {
+				  case 'U':
+				  case 'u': currule->rule.disk.abspanic = 1; break;
+				  default : currule->rule.disk.abspanic = 0; break;
 				}
 
 				tok = wstok(NULL); if (isqual(tok)) continue;
@@ -992,8 +984,8 @@ void dump_client_config(void)
 
 		  case C_DISK:
 			printf("DISK %s", rwalk->rule.disk.fsexp->pattern);
-			printf(" %lu%c", rwalk->rule.disk.warnlevel, (rwalk->rule.disk.absolutes & 1) ? 'K' : '%');
-			printf(" %lu%c", rwalk->rule.disk.paniclevel, (rwalk->rule.disk.absolutes & 2) ? 'K' : '%');
+			printf(" %lu%c", rwalk->rule.disk.warnlevel, (rwalk->rule.disk.abswarn ? 'U' : '%'));
+			printf(" %lu%c", rwalk->rule.disk.paniclevel, (rwalk->rule.disk.abspanic  ? 'U' : '%'));
 			printf(" %d %d %s", rwalk->rule.disk.dmin, rwalk->rule.disk.dmax, colorname(rwalk->rule.disk.color));
 			break;
 
@@ -1196,7 +1188,9 @@ int get_cpu_thresholds(namelist_t *hinfo, char *classname,
 }
 
 int get_disk_thresholds(namelist_t *hinfo, char *classname, 
-			char *fsname, unsigned long *warnlevel, unsigned long *paniclevel, int *absolutes,
+			char *fsname, 
+			long *warnlevel, long *paniclevel, 
+			int *abswarn, int *abspanic,
 			char **group)
 {
 	char *hostname, *pagename;
@@ -1207,7 +1201,8 @@ int get_disk_thresholds(namelist_t *hinfo, char *classname,
 
 	*warnlevel = 90;
 	*paniclevel = 95;
-	*absolutes = 0;
+	*abswarn = 0;
+	*abspanic = 0;
 
 	rule = getrule(hostname, pagename, classname, C_DISK);
 	while (rule && !namematch(fsname, rule->rule.disk.fsexp->pattern, rule->rule.disk.fsexp->exp)) {
@@ -1216,8 +1211,9 @@ int get_disk_thresholds(namelist_t *hinfo, char *classname,
 
 	if (rule) {
 		*warnlevel = rule->rule.disk.warnlevel;
+		*abswarn = rule->rule.disk.abswarn;
 		*paniclevel = rule->rule.disk.paniclevel;
-		*absolutes = rule->rule.disk.absolutes;
+		*abspanic = rule->rule.disk.abspanic;
 		*group = rule->groups;
 		return rule->cfid;
 	}

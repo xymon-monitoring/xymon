@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.77 2006-05-28 21:17:20 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.78 2006-05-30 21:23:33 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -273,11 +273,12 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 
 void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 		      namelist_t *hinfo, char *fromline, char *timestr, 
-		      char *capahdr, char *mnthdr, char *dfstr)
+		      char *freehdr, char *capahdr, char *mnthdr, char *dfstr)
 {
 	int diskcolor = COL_GREEN;
 
 	int dchecks = 0;
+	int freecol = -1;
 	int capacol = -1;
 	int mntcol  = -1;
 	char *p, *bol, *nl;
@@ -297,48 +298,73 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	bol = dfstr; /* Must do this always, to at least grab the column-numbers we need */
 	while (bol) {
-		char *fsname = NULL, *usestr = NULL;
-
 		nl = strchr(bol, '\n'); if (nl) *nl = '\0';
 
-		if ((capacol == -1) && (mntcol == -1)) {
+		if ((capacol == -1) && (mntcol == -1) && (freecol == -1)) {
 			/* First line: Check the header and find the columns we want */
 			p = strdup(bol);
+			freecol = selectcolumn(p, freehdr);
+			strcpy(p, bol);
 			capacol = selectcolumn(p, capahdr);
 			strcpy(p, bol);
 			mntcol = selectcolumn(p, mnthdr);
 			xfree(p);
-			dprintf("Disk check: header '%s', columns %d and %d\n", bol, capacol, mntcol);
+			dprintf("Disk check: header '%s', columns %d and %d\n", bol, freecol, capacol, mntcol);
 		}
 		else {
-			int absolutes;
-			unsigned long usage, warnlevel, paniclevel;
+			char *fsname = NULL, *levelstr = NULL;
+			int abswarn, abspanic;
+			long levelpct = -1, levelabs = -1, warnlevel, paniclevel;
 
-			p = strdup(bol); usestr = getcolumn(p, capacol);
-			if (usestr && isdigit((int)*usestr)) usage = atoi(usestr); else usage = -1;
-			strcpy(p, bol); fsname = getcolumn(p, mntcol);
-			if (fsname) add_disk_count(fsname);
+			p = strdup(bol);
+			fsname = getcolumn(p, mntcol); 
+			if (fsname) {
+				char *msgp = msgline;
 
-			if (fsname && (usage != -1)) {
+				add_disk_count(fsname);
 				get_disk_thresholds(hinfo, clientclass, fsname, 
-						    &warnlevel, &paniclevel, &absolutes, &group);
+						    &warnlevel, &paniclevel, 
+						    &abswarn, &abspanic, &group);
 
-				dprintf("Disk check: FS='%s' usage %lu (thresholds: %lu/%lu, abs: %d)\n",
-					fsname, usage, warnlevel, paniclevel, absolutes);
+				strcpy(p, bol);
+				levelstr = getcolumn(p, freecol); if (levelstr) levelabs = atol(levelstr);
+				levelstr = getcolumn(p, capacol); if (levelstr) levelpct = atol(levelstr);
 
-				if (usage >= paniclevel) {
+				dprintf("Disk check: FS='%s' level %ld%%/%ldU (thresholds: %lu/%lu, abs: %d/%d)\n",
+					fsname, levelpct, levelabs, 
+					warnlevel, paniclevel, abswarn, abspanic);
+
+				if ( (abspanic && (levelabs <= paniclevel)) || 
+				     (!abspanic && (levelpct >= paniclevel)) ) {
 					if (diskcolor < COL_RED) diskcolor = COL_RED;
-					sprintf(msgline, "&red %s (%lu) has reached the PANIC level (%lu %c)\n",
-						fsname, usage, paniclevel,
-						((absolutes & 1) ? 'K' : '%'));
+
+					msgp += sprintf(msgp, "&red %s ", fsname);
+
+					if (abspanic) msgp += sprintf(msgp, "(%lu units free)", levelabs);
+					else msgp += sprintf(msgp, "(%lu%% used)", levelpct);
+
+					msgp += sprintf(msgp, "has reached the PANIC level ");
+
+					if (abspanic) msgp += sprintf(msgp, "(%lu units)\n", paniclevel);
+					else msgp += sprintf(msgp, "(%lu%%)\n", paniclevel);
+
 					addtobuffer(monmsg, msgline);
 					addalertgroup(group);
 				}
-				else if (usage >= warnlevel) {
+				else if ( (abswarn && (levelabs <= warnlevel)) || 
+				          (!abswarn && (levelpct >= warnlevel)) ) {
 					if (diskcolor < COL_YELLOW) diskcolor = COL_YELLOW;
-					sprintf(msgline, "&yellow %s (%lu) has reached the WARNING level (%lu %c)\n",
-						fsname, usage, warnlevel,
-						((absolutes & 2) ? 'K' : '%'));
+
+					msgp += sprintf(msgp, "&yellow %s ", fsname);
+
+					if (abswarn) msgp += sprintf(msgp, "(%lu units free)", levelabs);
+					else msgp += sprintf(msgp, "(%lu%% used)", levelpct);
+
+					msgp += sprintf(msgp, "has reached the WARNING level ");
+
+					if (abswarn) msgp += sprintf(msgp, "(%lu units)\n", warnlevel);
+					else msgp += sprintf(msgp, "(%lu%%)\n", warnlevel);
+
 					addtobuffer(monmsg, msgline);
 					addalertgroup(group);
 				}
@@ -1198,14 +1224,15 @@ void testmode(char *configfn)
 		}
 		else if (strcmp(s, "disk") == 0) {
 			unsigned long warnlevel, paniclevel;
-			int absolutes;
+			int abswarn, abspanic;
 
 			printf("Filesystem: "); fflush(stdout);
 			fgets(s, sizeof(s), stdin); clean_instr(s);
-			cfid = get_disk_thresholds(hinfo, clientclass, s, &warnlevel, &paniclevel, &absolutes, NULL);
+			cfid = get_disk_thresholds(hinfo, clientclass, s, &warnlevel, &paniclevel, 
+						   &abswarn, &abspanic, NULL);
 			printf("Yellow at %lu%c, red at %lu%c\n", 
-				warnlevel, ((absolutes & 1) ? 'K' : '%'),
-				paniclevel, ((absolutes & 2) ? 'K' : '%'));
+				warnlevel, (abswarn ? 'U' : '%'),
+				paniclevel, (abspanic ? 'U' : '%'));
 		}
 		else if (strcmp(s, "proc") == 0) {
 			int pchecks = clear_process_counts(hinfo, clientclass);
