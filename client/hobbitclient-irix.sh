@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-irix.sh,v 1.1 2006-05-25 20:01:41 henrik Exp $
+# $Id: hobbitclient-irix.sh,v 1.2 2006-05-31 07:07:49 henrik Exp $
 
 echo "[date]"
 date
@@ -35,7 +35,7 @@ netstat -na -f inet6 -P tcp | tail +5
 echo "[ifstat]"
 netstat -i -n | egrep -v  "^lo|<Link"
 echo "[ps]"
-ps -axo pid,ppid,user,stime,state,nice,pcpu,time,sz,rss,vsz,args
+ps -Axo pid,ppid,user,stime,state,nice,pcpu,time,sz,rss,vsz,args
 echo "[top]"
 top -d2 -b 20 | tail +9
 
