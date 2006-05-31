@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.81 2006-05-31 20:25:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.82 2006-05-31 21:32:29 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -42,6 +42,7 @@ int sendclearmsgs = 1;
 int sendclearfiles = 1;
 int sendclearports = 1;
 int localmode     = 0;
+int noreportcolor = COL_CLEAR;
 
 void splitmsg(char *clientdata)
 {
@@ -583,7 +584,9 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	if (pchecks == 0) {
 		/* Nothing to check */
-		addtobuffer(monmsg, "&green No process checks defined\n");
+		sprintf(msgline, "&%s No process checks defined\n", colorname(noreportcolor));
+		addtobuffer(monmsg, msgline);
+		pscolor = noreportcolor;
 	}
 	else if (cmdofs >= 0) {
 		/* Count how many instances of each monitored process is running */
@@ -682,7 +685,7 @@ static void old_msgs_report(char *hostname, namelist_t *hinfo, char *fromline, c
 		if (strstr(msgsstr, "&red ")) { msgscolor = COL_RED; summary = "CRITICAL"; }
 	}
 	else if (sendclearmsgs) {
-		msgscolor = COL_CLEAR; summary = "No log data available";
+		msgscolor = noreportcolor; summary = "No log data available";
 	}
 	else 
 		return;
@@ -920,12 +923,12 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	freestrbuffer(filesummary);
 
-	if (filecolor == -1) {
-		filecolor = COL_CLEAR;
+	if ((filecolor == -1) && sendclearfiles) {
+		filecolor = noreportcolor;
 		addtobuffer(greendata, "No files checked\n");
 	}
 
-	if ((filecolor != COL_CLEAR) || sendclearfiles) {
+	if (filecolor != -1) {
 		init_status(filecolor);
 
 		group = getalertgroups();
@@ -1037,7 +1040,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 		       namelist_t *hinfo, char *fromline, char *timestr, 
 		       int localcol, int remotecol, int statecol, char *portstr)
 {
-	int portcolor = COL_GREEN;
+	int portcolor = -1;
 	int pchecks;
 	char msgline[4096];
 	static strbuffer_t *monmsg = NULL;
@@ -1056,12 +1059,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "data %s.portcounts\n", commafy(hostname));
 	addtobuffer(countdata, msgline);
 
-	if (pchecks == 0) {
-		/* Nothing to check */
-		addtobuffer(monmsg, "&clear No port checks defined\n");
-		portcolor = COL_CLEAR;
-	}
-	else {
+	if (pchecks > 0) {
 		/* Count how many instances of each monitored condition are found */
 		char *pname, *pid, *bol, *nl;
 		int pcount, pmin, pmax, pcolor, ptrack;
@@ -1122,7 +1120,13 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
  		}
 	}
 
-	if ((portcolor != COL_CLEAR) || sendclearports) {
+	if ((portcolor == -1) && sendclearports) {
+		/* Nothing to check */
+		addtobuffer(monmsg, "No port checks defined\n");
+		portcolor = noreportcolor;
+	}
+
+	if (portcolor != -1) {
 		/* Now we know the result, so generate a status message */
 		init_status(portcolor);
 
@@ -1441,6 +1445,10 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--no-clear-ports") == 0) {
 			sendclearports = 0;
+		}
+		else if (strncmp(argv[argi], "--clear-color=", 14) == 0) {
+			char *p = strchr(argv[argi], '=');
+			noreportcolor = parse_color(p+1);
 		}
 		else if (argnmatch(argv[argi], "--config=")) {
 			char *lp = strchr(argv[argi], '=');

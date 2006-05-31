@@ -20,6 +20,14 @@ will use the configuration rules defined in the
 file to determine the color of each status message.
 
 .SH OPTIONS
+.IP "--clear-color=COLOR"
+Define the color used when sending "msgs", "files" or "ports" reports
+and there are no rules to check for these statuses. The default is
+to show a "clear" status, but some people prefer to have it "green".
+If you would rather prefer not to see these status columns at all, then
+you can use the "--no-clear-msgs", "--no-clear-files" and "--no-clear-ports"
+options instead.
+
 .IP "--no-clear-msgs"
 If there are no logfile checks, the "msgs" column will show a "clear"
 status. If you would rather avoid having a "msgs" column, this option
