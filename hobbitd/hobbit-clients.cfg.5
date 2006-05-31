@@ -40,13 +40,33 @@ two hours, or "4w" for 4 weeks.
 .sp
 Defaults: bootlimit=1h, toolonglimit=-1 (infinite).
 .sp
+.sp
+.BR "CLOCK max.offset"
+.sp
+The cpu status goes yellow if the system clock on the client
+differs more than "max.offset" seconds from that of the Hobbit
+server. Note that this is not a particularly accurate test, since 
+it is affected by network delays between the client and the server,
+and the load on both systems. You should therefore not rely on this
+being accurate to more than +/- 5 seconds, but it will let you
+catch a client clock that goes completely wrong. The default is
+NOT to check the system clock.
+.br
+\fBNOTE:\fR Correct operation of this test obviously requires that
+the system clock of the Hobbit server is correct. You should therefore
+make sure that the Hobbit server is synchronized to the real clock,
+e.g. by using NTP.
+
+.sp
 Example: Go yellow if the load average exceeds 5, and red if it
 exceeds 10. Also, go yellow for 10 minutes after a reboot, and after 
-4 weeks uptime.
+4 weeks uptime. Finally, check that the system clock is at most
+15 seconds offset from the clock of the Hobbit system.
 .IP
 .nf
 LOAD 5 10
 UP 10m 4w
+CLOCK 15
 .fi
 .LP
 
