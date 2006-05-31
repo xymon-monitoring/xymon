@@ -1,8 +1,8 @@
-hobbit (4.2-alfa-20060423) unstable; urgency=low
+hobbit (4.2-alfa-20060601) unstable; urgency=low
 
-  * Alfa-2 release of 4.2
+  * Beta release of 4.2
 
- -- Henrik Stoerner <henrik@hswn.dk>  Sun, 23 Apr 2006 15:30:00 +0200
+ -- Henrik Stoerner <henrik@hswn.dk>  Wed, 31 May 2006 23:41:00 +0200
 
 hobbit (4.2-alfa-20060404) unstable; urgency=low
 
