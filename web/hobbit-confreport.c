@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-confreport.c,v 1.14 2006-05-25 14:30:30 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-confreport.c,v 1.15 2006-05-31 16:12:38 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -446,7 +446,7 @@ addtolist:
 	}
 	xfree(alert);
 
-	if (buf) {
+	if (STRBUFLEN(buf) > 0) {
 		fprintf(stdout, "<tr>\n");
 		fprintf(stdout, "<th align=left valign=top>Alerts</th>\n");
 		fprintf(stdout, "<td><table border=0 cellpadding=\"3\" cellspacing=\"5\" summary=\"%s alerts\">\n", host->hostname);
