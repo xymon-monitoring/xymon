@@ -12,10 +12,11 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.18 2006-05-31 09:38:17 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.19 2006-05-31 20:24:06 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -716,17 +717,19 @@ int main(int argc, char *argv[])
 
 	for (i=1; (i<argc); i++) {
 		if (strcmp(argv[i], "--clock") == 0) {
-			time_t now = time(NULL);
-			char timestr[50];
+			struct timeval tv;
+			struct timezone tz;
 			struct tm *tm;
+			char timestr[50];
 
-			printf("epoch: %ld\n", (long)now);
+			gettimeofday(&tv, &tz);
+			printf("epoch: %ld.%06ld\n", (long)tv.tv_sec, tv.tv_usec);
 
-			tm = localtime(&now);
+			tm = localtime(&tv.tv_sec);
 			strftime(timestr, sizeof(timestr), "local: %Y-%m-%d %H:%M:%S %Z", tm);
 			printf("%s\n", timestr);
 
-			tm = gmtime(&now);
+			tm = gmtime(&tv.tv_sec);
 			strftime(timestr, sizeof(timestr), "UTC: %Y-%m-%d %H:%M:%S %Z", tm);
 			printf("%s\n", timestr);
 			return 0;
