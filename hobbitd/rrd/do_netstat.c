@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.23 2006-05-03 21:19:24 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.24 2006-05-31 07:03:30 henrik Exp $";
 
 static char *netstat_params[] = { "rrdcreate", rrdfn, 
 	                          "DS:udpInDatagrams:DERIVE:600:0:U", 
@@ -124,16 +124,7 @@ static int handle_pcre_netstat(char *msg, pcre **pcreset, char *outp)
 	unsigned long udperrs, udperrtotal = 0;
 	char udpstr[20];
 
-	/* Skip to the start of "tcp" (udp comes after) */
-	if (strncmp(msg, "tcp:", 4) == 0) 
-		datapart = msg;
-	else {
-		datapart = strstr(msg, "\ntcp:");
-		if (datapart) datapart++;
-	}
-
-	if (!datapart) return 0;
-
+	datapart = msg;
 	while (datapart && (havedata != 11)) {
 		eoln = strchr(datapart, '\n'); if (eoln) *eoln = '\0';
 
@@ -209,6 +200,23 @@ static const char *netstat_aix_exprs[] = {
 	"^[\t ]*([0-9]+) incomplete headers$",
 	"^[\t ]*([0-9]+) bad data length fields$",
 	"^[\t ]*([0-9]+) bad checksums$"
+};
+
+/* PCRE for IRIX: Matches IRIX 6.5, possibly others. */
+static const char *netstat_irix_exprs[] = {
+	/* TCP patterns */
+	"^[\t ]*([0-9]+) data packets \\(([0-9]+) bytes\\) retransmitted$",
+	"^[\t ]*([0-9]+) data packets \\(([0-9]+) bytes\\)$",
+	"^[\t ]*([0-9]+) packets \\(([0-9]+) bytes\\) received in-sequence$",
+	"^[\t ]*([0-9]+) out-of-order packets \\(([0-9]+) bytes\\)$",
+	"^[\t ]*([0-9]+) connection requests$",
+	"^[\t ]*([0-9]+) connection accepts$",
+	/* UDP patterns */
+	"^[\t ]*([0-9]+) total datagrams received$",
+	"^[\t ]*([0-9]+) datagrams output$",
+	"^[\t ]*([0-9]+) incomplete header$",
+	"^[\t ]*([0-9]+) bad data length field$",
+	"^[\t ]*([0-9]+) bad checksum$"
 };
 
 /* PCRE for HP-UX: Matches HP-UX 11.11, possibly others */
@@ -414,6 +422,7 @@ int do_netstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	static int pcres_compiled = 0;
 	static pcre **netstat_osf_pcres = NULL;
 	static pcre **netstat_aix_pcres = NULL;
+	static pcre **netstat_irix_pcres = NULL;
 	static pcre **netstat_hpux_pcres = NULL;
 	static pcre **netstat_bsd_pcres = NULL;
 
@@ -429,6 +438,8 @@ int do_netstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 						 (sizeof(netstat_osf_exprs) / sizeof(netstat_osf_exprs[0])));
 		netstat_aix_pcres = compile_exprs("AIX", netstat_aix_exprs, 
 						 (sizeof(netstat_aix_exprs) / sizeof(netstat_aix_exprs[0])));
+		netstat_irix_pcres = compile_exprs("IRIX", netstat_irix_exprs, 
+						 (sizeof(netstat_irix_exprs) / sizeof(netstat_irix_exprs[0])));
 		netstat_hpux_pcres= compile_exprs("HP-UX", netstat_hpux_exprs, 
 						 (sizeof(netstat_hpux_exprs) / sizeof(netstat_hpux_exprs[0])));
 		netstat_bsd_pcres = compile_exprs("BSD", netstat_bsd_exprs, 
@@ -481,6 +492,10 @@ int do_netstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		if (!havedata) havedata = do_valaftermarkerequal(netstat_unix_markers, datapart, outp);
 		break;
 
+	  case OS_IRIX:
+		havedata = handle_pcre_netstat(datapart, netstat_irix_pcres, outp);
+		break;
+
 	  case OS_FREEBSD:
 	  case OS_NETBSD:
 	  case OS_OPENBSD:
@@ -504,10 +519,6 @@ int do_netstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	  case OS_WIN32:
 		havedata = do_valaftermarkerequal(netstat_win32_markers, datapart, outp);
 		break;
-
-	  case OS_IRIX:
-		errprintf("Cannot grok irix netstat from host '%s' \n", hostname);
-		return -1;
 
 	  case OS_UNKNOWN:
 		errprintf("Host '%s' reports netstat for an unknown OS\n", hostname);
