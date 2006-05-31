@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char solaris_rcsid[] = "$Id: solaris.c,v 1.15 2006-05-31 20:30:42 henrik Exp $";
+static char solaris_rcsid[] = "$Id: solaris.c,v 1.16 2006-05-31 21:47:08 henrik Exp $";
 
 void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 			   namelist_t *hinfo, char *sender, time_t timestamp, 
@@ -40,6 +40,7 @@ void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 
 	timestr = getdata("date");
 	uptimestr = getdata("uptime");
+	clockstr = getdata("clock");
 	whostr = getdata("who");
 	psstr = getdata("ps");
 	topstr = getdata("top");
