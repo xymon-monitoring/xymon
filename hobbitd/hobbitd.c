@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.235 2006-05-30 16:30:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.236 2006-05-31 08:35:06 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -3432,7 +3432,7 @@ void save_checkpoint(void)
 		hwalk = gettreeitem(rbhosts, hosthandle);
 
 		for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
-			if (lwalk->dismsg && (lwalk->enabletime < now)) {
+			if (lwalk->dismsg && (lwalk->enabletime < now) && (lwalk->enabletime != DISABLED_UNTIL_OK)) {
 				xfree(lwalk->dismsg);
 				lwalk->dismsg = NULL;
 				lwalk->enabletime = 0;
@@ -3506,10 +3506,9 @@ void load_checkpoint(char *fn)
 	testinfo_t *t = NULL;
 	char *origin = NULL;
 	hobbitd_log_t *ltail = NULL;
-	char *originname = NULL, *hostname = NULL, *testname = NULL, *sender = NULL, *testflags = NULL; 
-	char *statusmsg = NULL, *disablemsg = NULL, *ackmsg = NULL;
-	time_t logtime = 0, lastchange = 0, validtime = 0, enabletime = 0, acktime = 0, cookieexpires = 0;
-	int color = COL_GREEN, oldcolor = COL_GREEN, cookie = -1;
+	char *originname, *hostname, *testname, *sender, *testflags, *statusmsg, *disablemsg, *ackmsg; 
+	time_t logtime, lastchange, validtime, enabletime, acktime, cookieexpires;
+	int color = COL_GREEN, oldcolor = COL_GREEN, cookie;
 	int count = 0;
 
 	fd = fopen(fn, "r");
@@ -3523,8 +3522,9 @@ void load_checkpoint(char *fn)
 	inbuf = newstrbuffer(0);
 	initfgets(fd);
 	while (unlimfgets(inbuf, fd)) {
-		hostname = testname = sender = testflags = statusmsg = disablemsg = ackmsg = NULL;
-		lastchange = validtime = enabletime = acktime = 0;
+		originname = hostname = testname = sender = testflags = statusmsg = disablemsg = ackmsg = NULL;
+		logtime = lastchange = validtime = enabletime = acktime = cookieexpires = 0;
+		cookie = -1;
 		err = 0;
 
 		if (strncmp(STRBUF(inbuf), "@@HOBBITDCHK-V1|.task.|", 23) == 0) {
@@ -3706,6 +3706,7 @@ void load_checkpoint(char *fn)
 		ltail->lastchange = lastchange;
 		ltail->validtime = validtime;
 		ltail->enabletime = enabletime;
+		if (ltail->enabletime == DISABLED_UNTIL_OK) ltail->validtime = INT_MAX;
 		ltail->acktime = acktime;
 		nldecode(statusmsg);
 		ltail->message = strdup(statusmsg);
