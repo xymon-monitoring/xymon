@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char la_rcsid[] = "$Id: do_la.c,v 1.24 2006-05-29 05:31:02 henrik Exp $";
+static char la_rcsid[] = "$Id: do_la.c,v 1.25 2006-05-31 20:28:44 henrik Exp $";
 
 int do_la_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -20,8 +20,8 @@ int do_la_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	static time_t starttime = 0;
 
 	char *p, *eoln = NULL;
-	int gotusers=0, gotprocs=0, gotload=0;
-	int users=0, procs=0, load=0;
+	int gotusers=0, gotprocs=0, gotload=0, gotclock=0;
+	int users=0, procs=0, load=0, clockdiff=0;
 	time_t now = time(NULL);
 
 	if (la_tpl == NULL) la_tpl = setup_template(la_params);
@@ -164,6 +164,11 @@ int do_la_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 done_parsing:
 	if (eoln) *eoln = '\n';
 
+	p = strstr(msg, "System clock is ");
+	if (p) {
+		if (sscanf(p, "System clock is %d seconds off", &clockdiff) == 1) gotclock = 1;
+	}
+
 	if (!gotload) {
 		/* See if it's a report from the ciscocpu.pl script. */
 		p = strstr(msg, "<br>CPU 5 min average:");
@@ -190,6 +195,12 @@ done_parsing:
 	if (gotusers) {
 		sprintf(rrdfn, "users.rrd");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, users);
+		create_and_update_rrd(hostname, rrdfn, la_params, la_tpl);
+	}
+
+	if (gotclock) {
+		sprintf(rrdfn, "clock.rrd");
+		sprintf(rrdvalues, "%d:%d", (int)tstamp, clockdiff);
 		create_and_update_rrd(hostname, rrdfn, la_params, la_tpl);
 	}
 
