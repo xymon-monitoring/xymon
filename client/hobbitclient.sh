@@ -12,7 +12,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient.sh,v 1.14 2006-05-28 11:02:22 henrik Exp $
+# $Id: hobbitclient.sh,v 1.15 2006-05-31 09:38:35 henrik Exp $
 
 # Must make sure the commands return standard (english) texts.
 LANG=C
@@ -50,8 +50,10 @@ fi
 
 echo "client $MACHINE.$BBOSTYPE $CONFIGCLASS"  >>  $MSGTMPFILE
 $BBHOME/bin/$BBOSSCRIPT >> $MSGTMPFILE
-echo "[clientversion]" >>$MSGTMPFILE
-echo "$CLIENTVERSION" >> $MSGTMPFILE
+echo "[clientversion]"  >>$MSGTMPFILE
+echo "$CLIENTVERSION"   >> $MSGTMPFILE
+echo "[clock]"          >> $MSGTMPFILE
+$BBHOME/bin/logfetch --clock >> $MSGTMPFILE
 
 if test "$LOCALMODE" = "yes"; then
 	echo "@@" >> $MSGTMPFILE
