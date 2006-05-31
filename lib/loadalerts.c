@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadalerts.c,v 1.12 2006-05-20 16:20:33 henrik Exp $";
+static char rcsid[] = "$Id: loadalerts.c,v 1.13 2006-05-31 08:50:03 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -887,7 +887,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	if (anymatch) (*anymatch)++;
 
 	/* 
-	 * Time checks should be done on real paging messages only. 
+	 * Duration checks should be done on real paging messages only. 
 	 * Not on recovery- or notify-messages.
 	 */
 	if (alert->state == A_PAGING) {
@@ -900,11 +900,19 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 			traceprintf("Failed '%s' (min. duration %d<%d)\n", cfline, duration, crit->minduration);
 			if (!printmode) return 0; 
 		}
+	}
 
-		if (crit && crit->timespec && !timematch(crit->timespec)) { 
-			traceprintf("Failed '%s' (time criteria)\n", cfline);
-			if (!printmode) return 0; 
-		}
+	/*
+	 * Time restrictions apply to ALL messages.
+	 * Before 4.2, these were only applied to ALERT messages,
+	 * not RECOVERED and NOTIFY messages. This caused some
+	 * unfortunate alerts in the middle of the night because
+	 * some random system recovered ... not good. So apply
+	 * this check to all messages.
+	 */
+	if (crit && crit->timespec && !timematch(crit->timespec)) { 
+		traceprintf("Failed '%s' (time criteria)\n", cfline);
+		if (!printmode) return 0; 
 	}
 
 	/* Check color. For RECOVERED messages, this holds the color of the alert, not the recovery state */
