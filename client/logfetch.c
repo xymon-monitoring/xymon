@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.17 2006-05-25 14:58:32 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.18 2006-05-31 09:38:17 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -701,8 +701,8 @@ void savelogstatus(char *statfn)
 
 int main(int argc, char *argv[])
 {
-	char *cfgfn = argv[1];
-	char *statfn = argv[2];
+	char *cfgfn, *statfn;
+	int i;
 	checkdef_t *walk;
 	uid_t myuid;
 
@@ -713,6 +713,27 @@ int main(int argc, char *argv[])
 #else
 	seteuid(myuid);
 #endif
+
+	for (i=1; (i<argc); i++) {
+		if (strcmp(argv[i], "--clock") == 0) {
+			time_t now = time(NULL);
+			char timestr[50];
+			struct tm *tm;
+
+			printf("epoch: %ld\n", (long)now);
+
+			tm = localtime(&now);
+			strftime(timestr, sizeof(timestr), "local: %Y-%m-%d %H:%M:%S %Z", tm);
+			printf("%s\n", timestr);
+
+			tm = gmtime(&now);
+			strftime(timestr, sizeof(timestr), "UTC: %Y-%m-%d %H:%M:%S %Z", tm);
+			printf("%s\n", timestr);
+			return 0;
+		}
+		else if (i == 1) cfgfn = argv[i];
+		else if (i == 2) statfn = argv[i];
+	}
 
 	if ((cfgfn == NULL) || (statfn == NULL)) return 1;
 
