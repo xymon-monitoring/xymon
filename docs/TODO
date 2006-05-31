@@ -15,9 +15,31 @@ Bugfixes
   or implement "depends" throughout and treat "route"
   as a special-case of depends.
 
+* SMTP network check violates the SMTP protocol by sending
+  commands before the banner has appeared. Some servers 
+  recognize this as a spam-client, and refuses with a status
+  554, causing a red status.
+  The correct fix would be to implement a full expect-send
+  engine for the TCP tests (would help with other things also).
+
+* Make a common vmstat RRD layout, to allow for systems that
+  grow more advanced. Use this to add Solaris I/O wait data.
+  AIX also needs it. Will break compatibility with existing
+  RRD files, unless we look at what datasets exist and drop
+  data that cannot be stored.
+  For AIX (bug-report Nov.10-14-16 2006 from Andy France):
+  > There's a mix of "cpu_w" and "cpu_wait" definitions in the Hobbit RRD
+  > module, depending on what operating system the vmstat data comes from.
+  > But all of the graph definitions in hobbitgraph.cfg use the cpu_wait
+  > definition.
+
 
 Things I must remember to look at
 ---------------------------------
+* configuration file for NCV.
+  - filter out unwanted lines
+  - more flexible DS configuration than the env settings
+
 * Create a new hobbitd worker module off the stachg channel.
   This will dynamically receive status updates, and therefore
   it can have the full status of each PAGE without having to
