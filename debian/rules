@@ -117,7 +117,7 @@ hobbit: build install
 #	dh_installinfo
 	dh_installman
 	dh_link
-	dh_strip
+#	dh_strip
 	dh_compress
 	dh_fixperms
 #	dh_perl
@@ -148,7 +148,7 @@ hobbit-client: build install-client
 #	dh_installinfo
 	dh_installman
 	dh_link
-	dh_strip
+#	dh_strip
 	dh_compress
 	dh_fixperms
 #	dh_perl
