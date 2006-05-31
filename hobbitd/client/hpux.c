@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char hpux_rcsid[] = "$Id: hpux.c,v 1.16 2006-05-30 21:18:25 henrik Exp $";
+static char hpux_rcsid[] = "$Id: hpux.c,v 1.17 2006-05-31 20:30:42 henrik Exp $";
 
 void handle_hpux_client(char *hostname, char *clienttype, enum ostype_t os, 
 			namelist_t *hinfo, char *sender, time_t timestamp,
@@ -18,6 +18,7 @@ void handle_hpux_client(char *hostname, char *clienttype, enum ostype_t os,
 {
 	char *timestr;
 	char *uptimestr;
+	char *clockstr;
 	char *whostr;
 	char *psstr;
 	char *topstr;
@@ -40,6 +41,7 @@ void handle_hpux_client(char *hostname, char *clienttype, enum ostype_t os,
 
 	timestr = getdata("date");
 	uptimestr = getdata("uptime");
+	clockstr = getdata("clock");
 	whostr = getdata("who");
 	psstr = getdata("ps");
 	topstr = getdata("top");
@@ -52,7 +54,7 @@ void handle_hpux_client(char *hostname, char *clienttype, enum ostype_t os,
 	portsstr = getdata("ports");
 	vmstatstr = getdata("vmstat");
 
-	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, whostr, psstr, topstr);
+	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, whostr, psstr, topstr);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Available", "Capacity", "Mounted", dfstr);
 	unix_procs_report(hostname, clienttype, os, hinfo, fromline, timestr, "COMMAND", NULL, psstr);
 	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 3, 4, 5, portsstr);
