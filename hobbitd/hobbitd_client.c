@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.80 2006-05-31 06:30:34 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.81 2006-05-31 20:25:33 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -129,12 +129,12 @@ int linecount(char *msg)
 
 void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os, 
 		     namelist_t *hinfo, char *fromline, char *timestr, 
-		     char *uptimestr, char *whostr, char *psstr, char *topstr)
+		     char *uptimestr, char *clockstr, char *whostr, char *psstr, char *topstr)
 {
 	char *p;
 	float load1, load5, load15;
 	float loadyellow, loadred;
-	int recentlimit, ancientlimit;
+	int recentlimit, ancientlimit, maxclockdiff;
 	char loadresult[100];
 	long uptimesecs = -1;
 	char myupstr[100];
@@ -223,7 +223,7 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 		}
 	}
 
-	get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit);
+	get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit, &maxclockdiff);
 
 	upmsg = newstrbuffer(0);
 
@@ -244,6 +244,36 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 		if (cpucolor == COL_GREEN) cpucolor = COL_YELLOW;
 		sprintf(msgline, "&yellow Machine has been up more than %d days\n", (ancientlimit / 86400));
 		addtobuffer(upmsg, msgline);
+	}
+
+	if (clockstr) {
+		char *p;
+		struct timeval clockval;
+
+		p = strstr(clockstr, "epoch:"); 
+		if (p && (sscanf(p, "epoch: %ld.%ld", &clockval.tv_sec, &clockval.tv_usec) == 2)) {
+			struct timeval clockdiff;
+			struct timezone tz;
+
+			gettimeofday(&clockdiff, &tz);
+			clockdiff.tv_sec -= clockval.tv_sec;
+			clockdiff.tv_usec -= clockval.tv_usec;
+			if (clockdiff.tv_usec < 0) {
+				clockdiff.tv_usec += 1000000;
+				clockdiff.tv_sec -= 1;
+			}
+
+			if ((maxclockdiff > 0) && (abs(clockdiff.tv_sec) > maxclockdiff)) {
+				if (cpucolor == COL_GREEN) cpucolor = COL_YELLOW;
+				sprintf(msgline, "&yellow System clock is %ld seconds off (max %ld)\n",
+					(long) clockdiff.tv_sec, (long) maxclockdiff);
+				addtobuffer(upmsg, msgline);
+			}
+			else {
+				sprintf(msgline, "System clock is %ld seconds off\n", (long) clockdiff.tv_sec);
+				addtobuffer(upmsg, msgline);
+			}
+		}
 	}
 
 	init_status(cpucolor);
@@ -1208,12 +1238,14 @@ void testmode(char *configfn)
 		if (strcmp(s, "cpu") == 0) {
 			float loadyellow, loadred;
 			int recentlimit, ancientlimit;
+			int maxclockdiff;
 
-			cfid = get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit);
+			cfid = get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit, &maxclockdiff);
 
 			printf("Load: Yellow at %.2f, red at %.2f\n", loadyellow, loadred);
 			printf("Uptime: From boot until %s,", durationstring(recentlimit));
 			printf("and after %s uptime\n", durationstring(ancientlimit));
+			if (maxclockdiff > 0) printf("Max clock diff: %d\n", maxclockdiff);
 		}
 		else if (strcmp(s, "mem") == 0) {
 			int physyellow, physred, swapyellow, swapred, actyellow, actred;
