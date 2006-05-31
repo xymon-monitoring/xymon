@@ -21,7 +21,8 @@ extern char *getalertgroups(void);
 extern void addalertgroup(char *group);
 
 extern int get_cpu_thresholds(namelist_t *hinfo, char *classname, 
-			      float *loadyellow, float *loadred, int *recentlimit, int *ancientlimit);
+			      float *loadyellow, float *loadred, int *recentlimit, int *ancientlimit,
+			      int *maxclockdiff);
 
 extern int get_disk_thresholds(namelist_t *hinfo, char *classname,
 				char *fsname,

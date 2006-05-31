@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.38 2006-05-30 22:00:19 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.39 2006-05-31 20:24:51 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -46,6 +46,10 @@ typedef struct c_load_t {
 typedef struct c_uptime_t {
 	int recentlimit, ancientlimit;
 } c_uptime_t;
+
+typedef struct c_clock_t {
+	int maxdiff;
+} c_clock_t;
 
 typedef struct c_disk_t {
 	exprlist_t *fsexp;
@@ -132,7 +136,7 @@ typedef struct c_port_t {
 	int color;
 } c_port_t;
 
-typedef enum { C_LOAD, C_UPTIME, C_DISK, C_MEM, C_PROC, C_LOG, C_FILE, C_DIR, C_PORT } ruletype_t;
+typedef enum { C_LOAD, C_UPTIME, C_CLOCK, C_DISK, C_MEM, C_PROC, C_LOG, C_FILE, C_DIR, C_PORT } ruletype_t;
 
 typedef struct c_rule_t {
 	exprlist_t *hostexp;
@@ -149,6 +153,7 @@ typedef struct c_rule_t {
 	union {
 		c_load_t load;
 		c_uptime_t uptime;
+		c_clock_t clock;
 		c_disk_t disk;
 		c_mem_t mem;
 		c_proc_t proc;
@@ -534,6 +539,12 @@ int load_client_config(char *configfn)
 				currule->rule.uptime.recentlimit = 60*durationvalue(tok);
 				tok = wstok(NULL); if (isqual(tok)) continue;
 				currule->rule.uptime.ancientlimit = 60*durationvalue(tok);
+			}
+			else if (strcasecmp(tok, "CLOCK") == 0) {
+				currule = setup_rule(C_CLOCK, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule->rule.clock.maxdiff = 60;
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.clock.maxdiff = atoi(tok);
 			}
 			else if (strcasecmp(tok, "LOAD") == 0) {
 				currule = setup_rule(C_LOAD, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
@@ -980,6 +991,10 @@ void dump_client_config(void)
 			printf("UP %d %d", rwalk->rule.uptime.recentlimit, rwalk->rule.uptime.ancientlimit);
 			break;
 
+		  case C_CLOCK:
+			printf("CLOCK %d", rwalk->rule.clock.maxdiff);
+			break;
+
 		  case C_LOAD:
 			printf("LOAD %.2f %.2f", rwalk->rule.load.warnlevel, rwalk->rule.load.paniclevel);
 			break;
@@ -1157,7 +1172,7 @@ static c_rule_t *getrule(char *hostname, char *pagename, char *classname, rulety
 }
 
 int get_cpu_thresholds(namelist_t *hinfo, char *classname, 
-		       float *loadyellow, float *loadred, int *recentlimit, int *ancientlimit)
+		       float *loadyellow, float *loadred, int *recentlimit, int *ancientlimit, int *maxclockdiff)
 {
 	int result = 0;
 	char *hostname, *pagename;
@@ -1184,6 +1199,12 @@ int get_cpu_thresholds(namelist_t *hinfo, char *classname,
 		*recentlimit  = rule->rule.uptime.recentlimit;
 		*ancientlimit = rule->rule.uptime.ancientlimit;
 		result = rule->cfid;
+	}
+
+	*maxclockdiff = -1;
+	rule = getrule(hostname, pagename, classname, C_CLOCK);
+	if (rule) {
+		*maxclockdiff = rule->rule.clock.maxdiff;
 	}
 
 	return result;
