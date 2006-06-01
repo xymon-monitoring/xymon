@@ -1,6 +1,6 @@
 # bb-service
 #
-# $Id: bb-services,v 1.10 2006-03-06 09:38:06 henrik Exp $
+# $Id: bb-services,v 1.11 2006-06-01 19:56:19 henrik Exp $
 #
 # This file defines the way TCP services are tested by bbtest-net
 # (part of the bbgen toolkit).
@@ -178,4 +178,10 @@
    expect "RFB "
    options banner
    port 5900
+
+# CUPS print server. It answers to HTTP requests.
+[cupsd]
+   send "GET /printers\r\n"
+   expect "HTTP/1.1 200 OK"
+   port 631
 
