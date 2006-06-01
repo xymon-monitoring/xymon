@@ -29,7 +29,9 @@ extern char *eventignorecolumns;
 extern int havedoneeventlog;
 
 extern void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, char *totime, 
-			char *pagematch, char *hostmatch, char *testmatch, char *colormatch,
-			int ignoredialups);
+			char *pagematch, char *expagematch, 
+			char *hostmatch, char *exhostmatch, 
+			char *testmatch, char *extestmatch,
+			char *colormatch, int ignoredialups);
 
 #endif

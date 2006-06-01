@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-eventlog.c,v 1.32 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: bb-eventlog.c,v 1.33 2006-06-01 12:29:36 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -35,9 +35,12 @@ int	maxminutes = 240;	/* Default: for the past 4 hours */
 char	*totime = NULL;
 char	*fromtime = NULL;
 char	*hostregex = NULL;
+char	*exhostregex = NULL;
 char	*testregex = NULL;
-char	*colrregex = NULL;
+char	*extestregex = NULL;
 char	*pageregex = NULL;
+char	*expageregex = NULL;
+char	*colrregex = NULL;
 int	ignoredialups = 0;
 cgidata_t *cgidata = NULL;
 
@@ -67,14 +70,23 @@ static void parse_query(void)
 		else if (strcasecmp(cwalk->name, "HOSTMATCH") == 0) {
 			if (*(cwalk->value)) hostregex = strdup(cwalk->value);
 		}
+		else if (strcasecmp(cwalk->name, "EXHOSTMATCH") == 0) {
+			if (*(cwalk->value)) exhostregex = strdup(cwalk->value);
+		}
 		else if (strcasecmp(cwalk->name, "TESTMATCH") == 0) {
 			if (*(cwalk->value)) testregex = strdup(cwalk->value);
 		}
-		else if (strcasecmp(cwalk->name, "COLORMATCH") == 0) {
-			if (*(cwalk->value)) colrregex = strdup(cwalk->value);
+		else if (strcasecmp(cwalk->name, "EXTESTMATCH") == 0) {
+			if (*(cwalk->value)) extestregex = strdup(cwalk->value);
 		}
 		else if (strcasecmp(cwalk->name, "PAGEMATCH") == 0) {
 			if (*(cwalk->value)) pageregex = strdup(cwalk->value);
+		}
+		else if (strcasecmp(cwalk->name, "EXPAGEMATCH") == 0) {
+			if (*(cwalk->value)) expageregex = strdup(cwalk->value);
+		}
+		else if (strcasecmp(cwalk->name, "COLORMATCH") == 0) {
+			if (*(cwalk->value)) colrregex = strdup(cwalk->value);
 		}
 		else if (strcasecmp(cwalk->name, "NODIALUPS") == 0) {
 			ignoredialups = 1;
@@ -118,7 +130,9 @@ int main(int argc, char *argv[])
 
 	headfoot(stdout, "event", "", "header", COL_GREEN);
 	fprintf(stdout, "<center>\n");
-	do_eventlog(stdout, maxcount, maxminutes, fromtime, totime, pageregex, hostregex, testregex, colrregex, ignoredialups);
+	do_eventlog(stdout, maxcount, maxminutes, fromtime, totime, 
+			pageregex, expageregex, hostregex, exhostregex, testregex, extestregex,
+			colrregex, ignoredialups);
 	fprintf(stdout, "</center>\n");
 	headfoot(stdout, "event", "", "footer", COL_GREEN);
 
