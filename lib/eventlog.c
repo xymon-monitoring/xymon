@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.34 2006-05-04 20:31:54 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.35 2006-06-01 12:29:16 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -94,9 +94,11 @@ static htnames_t *getname(char *name, int createit)
 }
 
 
-void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
-		 char *totime, char *pageregex, char *hostregex, char *testregex, char *colrregex,
-		 int ignoredialups)
+void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, char *totime, 
+		char *pageregex, char *expageregex,
+		char *hostregex, char *exhostregex,
+		char *testregex, char *extestregex,
+		char *colrregex, int ignoredialups)
 {
 	FILE *eventlog;
 	char eventlogfilename[PATH_MAX];
@@ -111,8 +113,11 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 	const char *errmsg = NULL;
 	int errofs = 0;
 	pcre *pageregexp = NULL;
+	pcre *expageregexp = NULL;
 	pcre *hostregexp = NULL;
+	pcre *exhostregexp = NULL;
 	pcre *testregexp = NULL;
+	pcre *extestregexp = NULL;
 	pcre *colrregexp = NULL;
 
 	havedoneeventlog = 1;
@@ -150,10 +155,13 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 
 	if (!maxcount) maxcount = 100;
 
-	if (pageregex) pageregexp = pcre_compile(pageregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
-	if (hostregex) hostregexp = pcre_compile(hostregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
-	if (testregex) testregexp = pcre_compile(testregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
-	if (colrregex) colrregexp = pcre_compile(colrregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
+	if (pageregex && *pageregex) pageregexp = pcre_compile(pageregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
+	if (expageregex && *expageregex) expageregexp = pcre_compile(expageregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
+	if (hostregex && *hostregex) hostregexp = pcre_compile(hostregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
+	if (exhostregex && *exhostregex) exhostregexp = pcre_compile(exhostregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
+	if (testregex && *testregex) testregexp = pcre_compile(testregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
+	if (extestregex && *extestregex) extestregexp = pcre_compile(extestregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
+	if (colrregex && *colrregex) colrregexp = pcre_compile(colrregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
 
 	sprintf(eventlogfilename, "%s/allevents", xgetenv("BBHIST"));
 	eventlog = fopen(eventlogfilename, "r");
@@ -222,6 +230,15 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 				pagematch = 1;
 			if (!pagematch) continue;
 
+			if (expageregexp) {
+				char *pagename = bbh_item(eventhost, BBH_PAGEPATH);
+				pagematch = (pcre_exec(expageregexp, NULL, pagename, strlen(pagename), 0, 0, 
+						ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+			}
+			else
+				pagematch = 0;
+			if (pagematch) continue;
+
 			if (hostregexp)
 				hostmatch = (pcre_exec(hostregexp, NULL, hostname, strlen(hostname), 0, 0, 
 						ovector, (sizeof(ovector)/sizeof(int))) >= 0);
@@ -229,12 +246,26 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime,
 				hostmatch = 1;
 			if (!hostmatch) continue;
 
+			if (exhostregexp)
+				hostmatch = (pcre_exec(exhostregexp, NULL, hostname, strlen(hostname), 0, 0, 
+						ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+			else
+				hostmatch = 0;
+			if (hostmatch) continue;
+
 			if (testregexp)
 				testmatch = (pcre_exec(testregexp, NULL, svcname, strlen(svcname), 0, 0, 
 						ovector, (sizeof(ovector)/sizeof(int))) >= 0);
 			else
 				testmatch = 1;
 			if (!testmatch) continue;
+
+			if (extestregexp)
+				testmatch = (pcre_exec(extestregexp, NULL, svcname, strlen(svcname), 0, 0, 
+						ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+			else
+				testmatch = 0;
+			if (testmatch) continue;
 
 			if (colrregexp) {
 				colrmatch = ( (pcre_exec(colrregexp, NULL, newcolname, strlen(newcolname), 0, 0,
