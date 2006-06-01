@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.50 2006-05-30 06:46:06 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.51 2006-06-01 21:34:11 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -67,6 +67,8 @@ static void clearflags(RbtHandle tree)
 {
 	RbtIterator handle;
 	treerec_t *rec;
+
+	if (!tree) return;
 
 	for (handle = rbtBegin(tree); (handle != rbtEnd(tree)); handle = rbtNext(tree, handle)) {
 		rec = (treerec_t *)gettreeitem(tree, handle);
