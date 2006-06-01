@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-darwin.sh,v 1.13 2006-05-15 13:29:02 henrik Exp $
+# $Id: hobbitclient-darwin.sh,v 1.14 2006-06-01 19:54:49 henrik Exp $
 
 echo "[date]"
 date
@@ -22,7 +22,7 @@ echo "[who]"
 who
 echo "[df]"
 # The sed stuff is to make sure lines are not split into two.
-df -H -T nonfs,nullfs,cd9660,procfs,volfs,devfs,fdesc | sed -e '/^[^ 	][^ 	]*$/{
+df -H -t nonfs,nullfs,cd9660,procfs,volfs,devfs,fdesc | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }'
