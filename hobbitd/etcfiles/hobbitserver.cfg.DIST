@@ -169,7 +169,6 @@ MKBBTITLE="COLOR=\"#FFFFF0\" SIZE=\"+1\""	# Size and color of the BB titles (the
 BBDATEFORMAT="%a %b %d %H:%M:%S %Y"		# Date format
 BBRSSTITLE="Hobbit Alerts"			# Title for the RSS and WML outputs.
 ACKUNTILMSG="Next update at: %H:%M %Y-%m-%d"    # strftime format for the acknowledgement status display.
-CLIENTSVCS="cpu,disk,files,memory,msgs,ports,procs,svcs"    # If data from the Hobbit client is available, these status-messages have a link to those data
 
 # For WML output
 WMLMAXCHARS="1500"				# Max number of bytes in a WAP message
