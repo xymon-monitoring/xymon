@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.236 2006-05-31 08:35:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.237 2006-06-01 21:34:51 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -733,17 +733,6 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 					sender, hostname, 
 					log->test->name, log->host->ip,
 					(int) log->acktime, msg);
-			}
-			else if (strcmp(channelmarker, "notify") == 0) {
-				namelist_t *hi = hostinfo(hostname);
-
-				n = snprintf(channel->channelbuf, (bufsz-5),
-					"@@%s#%u|%d.%06d|%s|%s|%s|%s\n%s", 
-					channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
-					sender, hostname, 
-					(log->test->name ? log->test->name : ""), 
-					(hi ? hi->page->pagepath : ""), 
-					msg);
 			}
 			else {
 				namelist_t *hi = hostinfo(hostname);
@@ -1682,16 +1671,24 @@ void handle_ackinfo(char *msg, char *sender, hobbitd_log_t *log)
 	}
 }
 
-void handle_notify(char *msg, char *sender, hobbitd_log_t *log)
+void handle_notify(char *msg, char *sender, char *hostname, char *testname)
 {
-	char *msgtext;
+	char *msgtext, *channelmsg;
+	namelist_t *hi;
 
 	dprintf("-> handle_notify\n");
 
+	hi = hostinfo(hostname);
+
 	msgtext = msg_data(msg);
+	channelmsg = (char *)malloc(1024 + strlen(msgtext));
 
 	/* Tell the pagers */
-	posttochannel(pagechn, "notify", msgtext, sender, log->host->hostname, log, NULL);
+	sprintf(channelmsg, "%s|%s|%s\n%s", 
+		hostname, (testname ? testname : ""), (hi ? hi->page->pagepath : ""), msgtext);
+	posttochannel(pagechn, "notify", msg, sender, hostname, NULL, channelmsg);
+
+	xfree(channelmsg);
 
 	dprintf("<- handle_notify\n");
 	return;
@@ -3170,7 +3167,7 @@ void do_message(conn_t *msg, char *origin)
 	else if (strncmp(msg->buf, "notify", 6) == 0) {
 		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 		get_hts(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
-		if (log) handle_notify(msg->buf, sender, log);
+		if (h && t) handle_notify(msg->buf, sender, h->hostname, t->name);
 	}
 	else if (strncmp(msg->buf, "schedule", 8) == 0) {
 		char *cmd;
@@ -3875,6 +3872,9 @@ int main(int argc, char *argv[])
 	rborigins = rbtNew(name_compare);
 	rbcookies = rbtNew(int_compare);
 	rbfilecache = rbtNew(name_compare);
+
+	/* For wildcard notify's */
+	create_testinfo("*");
 
 	colnames[COL_GREEN] = "green";
 	colnames[COL_YELLOW] = "yellow";
