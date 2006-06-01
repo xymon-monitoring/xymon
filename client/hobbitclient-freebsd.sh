@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-freebsd.sh,v 1.12 2006-05-15 13:29:02 henrik Exp $
+# $Id: hobbitclient-freebsd.sh,v 1.13 2006-06-01 15:28:31 henrik Exp $
 
 echo "[date]"
 date
@@ -22,7 +22,7 @@ echo "[who]"
 who
 echo "[df]"
 # The sed stuff is to make sure lines are not split into two.
-df -H -tnonfs,nullfs,cd9660,procfs,devfs | sed -e '/^[^ 	][^ 	]*$/{
+df -H -tnonfs,nullfs,cd9660,procfs,devfs,linprocfs | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }'
