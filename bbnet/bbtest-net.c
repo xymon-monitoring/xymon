@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.234 2006-05-28 16:41:51 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.235 2006-06-02 16:24:27 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -593,20 +593,32 @@ void load_tests(void)
 
 					userurl = strchr(testspec, '='); 
 					if (userurl) {
+						bburl_t url;
 						userurl++;
-						statusurl = (char *)malloc(strlen(userurl) + strlen(userfmt) + 1);
-						sprintf(statusurl, userfmt, userurl);
+
+						decode_url(userurl, &url);
+						if (url.desturl->parseerror || (url.proxyurl && url.proxyurl->parseerror)) {
+							s = NULL;
+							errprintf("Invalid URL for apache test - ignored: %s\n", testspec);
+						}
+						else {
+							statusurl = (char *)malloc(strlen(userurl) + strlen(userfmt) + 1);
+							sprintf(statusurl, userfmt, userurl);
+							s = httptest;
+						}
 					}
 					else {
 						char *ip = bbh_item(hwalk, BBH_IP);
 						statusurl = (char *)malloc(strlen(deffmt) + strlen(ip) + 1);
 						sprintf(statusurl, deffmt, ip);
+						s = httptest;
 					}
 
-					testspec = statusurl;
-					s = httptest;
-					add_url_to_dns_queue(testspec);
-					sendasdata = 1;
+					if (s) {
+						testspec = statusurl;
+						add_url_to_dns_queue(testspec);
+						sendasdata = 1;
+					}
 				}
 				else if (argnmatch(testspec, "rpc")) {
 					/*
