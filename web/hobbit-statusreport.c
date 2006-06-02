@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-statusreport.c,v 1.6 2006-05-25 14:55:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-statusreport.c,v 1.7 2006-06-02 20:53:27 henrik Exp $";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 
 		printf("<html><head><title>%s</title></head>\n", heading);
 		printf("<body>");
-		printf("<table border=1 cellpadding=5px><tr><th>%s</th><th align=left>Status</th></tr>\n",
+		printf("<table border=1 cellpadding=5><tr><th>%s</th><th align=left>Status</th></tr>\n",
 		       (showcolumn ? "Host/Column" : "Host"));
 	}
 
