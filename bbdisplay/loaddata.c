@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.161 2006-05-19 12:02:55 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.162 2006-06-02 21:00:54 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -188,8 +188,8 @@ state_t *init_state(char *filename, logdata_t *log)
 		return NULL;
 	}
 
-	newstate = (state_t *) malloc(sizeof(state_t));
-	newstate->entry = (entry_t *) malloc(sizeof(entry_t));
+	newstate = (state_t *) calloc(1, sizeof(state_t));
+	newstate->entry = (entry_t *) calloc(1, sizeof(entry_t));
 	newstate->next = NULL;
 
 	newstate->entry->column = find_or_create_column(testname, 1);
@@ -316,7 +316,7 @@ dispsummary_t *init_displaysummary(char *fn, logdata_t *log)
 		char *p;
 		char *color = (char *) malloc(strlen(l));
 
-		newsum = (dispsummary_t *) malloc(sizeof(dispsummary_t));
+		newsum = (dispsummary_t *) calloc(1, sizeof(dispsummary_t));
 		newsum->url = (char *) malloc(strlen(l));
 
 		if (sscanf(l, "%s %s", color, newsum->url) == 2) {

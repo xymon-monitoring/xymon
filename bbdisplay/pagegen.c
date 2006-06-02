@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.172 2006-06-01 12:29:36 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.173 2006-06-02 21:00:54 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -168,7 +168,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols, char
 
 	/* Code de-obfuscation trick: Add a null record as the head item */
 	/* Simplifies handling since head != NULL and we never have to insert at head of list */
-	head = (col_list_t *) malloc(sizeof(col_list_t));
+	head = (col_list_t *) calloc(1, sizeof(col_list_t));
 	head->column = &null_column;
 	head->next = NULL;
 
@@ -197,7 +197,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols, char
 
 				col = find_or_create_column(p1, 0);
 				if (col) {
-					newlistitem = (col_list_t *) malloc(sizeof(col_list_t));
+					newlistitem = (col_list_t *) calloc(1, sizeof(col_list_t));
 					newlistitem->column = col;
 					newlistitem->next = NULL;
 					collist_walk->next = newlistitem;
@@ -235,7 +235,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols, char
 
 				if ((collist_walk->next == NULL) || ((col_list_t *)(collist_walk->next))->column != e->column) {
 					/* collist_walk points to the entry before the new one */
-					newlistitem = (col_list_t *) malloc(sizeof(col_list_t));
+					newlistitem = (col_list_t *) calloc(1, sizeof(col_list_t));
 					newlistitem->column = e->column;
 					newlistitem->next = collist_walk->next;
 					collist_walk->next = newlistitem;
@@ -674,23 +674,14 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 			for (s2 = sums; (s2); s2 = s2->next) {
 				
 				if (strcmp(s2->row, s->row) == 0) {
-					newentry = (entry_t *) malloc(sizeof(entry_t));
+					newentry = (entry_t *) calloc(1, sizeof(entry_t));
 
 					newentry->column = find_or_create_column(s2->column, 1);
 					newentry->color = s2->color;
 					strcpy(newentry->age, "");
 					newentry->oldage = 1; /* Use standard gifs */
-					newentry->acked = 0;
-					newentry->alert = 0;
-					newentry->onwap = 0;
 					newentry->propagate = 1;
 					newentry->sumurl = s2->url;
-					newentry->skin = NULL;
-					newentry->testflags = NULL;
-					newentry->repinfo = NULL;
-					newentry->causes = NULL;
-					newentry->histlogname = NULL;
-					newentry->shorttext = NULL;
 					newentry->next = newhost->entries;
 					newhost->entries = newentry;
 				}
@@ -1082,7 +1073,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 
 			/* We need to create a copy of the original record, */
 			/* as we will diddle with the pointers */
-			newhost = (host_t *) malloc(sizeof(host_t));
+			newhost = (host_t *) calloc(1, sizeof(host_t));
 			memcpy(newhost, h->hostentry, sizeof(host_t));
 			newhost->next = NULL;
 

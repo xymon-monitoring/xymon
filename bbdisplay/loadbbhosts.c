@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.44 2006-05-29 15:33:19 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.45 2006-06-02 21:00:54 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -53,7 +53,7 @@ void addtopagelist(bbgen_page_t *page)
 {
 	bbpagelist_t *newitem;
 
-	newitem = (bbpagelist_t *) malloc(sizeof(bbpagelist_t));
+	newitem = (bbpagelist_t *) calloc(1, sizeof(bbpagelist_t));
 	newitem->pageentry = page;
 	newitem->next = pagelisthead;
 	pagelisthead = newitem;
@@ -114,7 +114,7 @@ char *build_noprop(char *defset, char *specset)
 
 bbgen_page_t *init_page(char *name, char *title)
 {
-	bbgen_page_t *newpage = (bbgen_page_t *) malloc(sizeof(bbgen_page_t));
+	bbgen_page_t *newpage = (bbgen_page_t *) calloc(1, sizeof(bbgen_page_t));
 
 	pagecount++;
 	dprintf("init_page(%s, %s)\n", textornull(name), textornull(title));
@@ -143,7 +143,7 @@ bbgen_page_t *init_page(char *name, char *title)
 
 group_t *init_group(char *title, char *onlycols, char *exceptcols)
 {
-	group_t *newgroup = (group_t *) malloc(sizeof(group_t));
+	group_t *newgroup = (group_t *) calloc(1, sizeof(group_t));
 
 	dprintf("init_group(%s, %s)\n", textornull(title), textornull(onlycols));
 
@@ -177,7 +177,7 @@ host_t *init_host(char *hostname, int issummary,
 		  char *nopropyellowtests, char *nopropredtests, char *noproppurpletests, char *nopropacktests,
 		  int modembanksize)
 {
-	host_t 		*newhost = (host_t *) malloc(sizeof(host_t));
+	host_t 		*newhost = (host_t *) calloc(1, sizeof(host_t));
 	hostlist_t	*oldlist;
 
 	hostcount++;
@@ -260,7 +260,7 @@ host_t *init_host(char *hostname, int issummary,
 	newhost->banksize = modembanksize;
 	if (modembanksize) {
 		int i;
-		newhost->banks = (int *) malloc(modembanksize * sizeof(int));
+		newhost->banks = (int *) calloc(modembanksize, sizeof(int));
 		for (i=0; i<modembanksize; i++) newhost->banks[i] = -1;
 
 		if (comment) {
@@ -286,13 +286,13 @@ host_t *init_host(char *hostname, int issummary,
 	if (oldlist == NULL) {
 		hostlist_t *newlist;
 
-		newlist = (hostlist_t *) malloc(sizeof(hostlist_t));
+		newlist = (hostlist_t *) calloc(1, sizeof(hostlist_t));
 		newlist->hostentry = newhost;
 		newlist->clones = NULL;
 		add_to_hostlist(newlist);
 	}
 	else {
-		hostlist_t *clone = (hostlist_t *) malloc(sizeof(hostlist_t));
+		hostlist_t *clone = (hostlist_t *) calloc(1, sizeof(hostlist_t));
 
 		dprintf("Duplicate host definition for host '%s'\n", hostname);
 
@@ -417,7 +417,7 @@ summary_t *init_summary(char *name, char *receiver, char *url)
 	if ((name == NULL) || (receiver == NULL) || (url == NULL)) 
 		return NULL;
 
-	newsum = (summary_t *) malloc(sizeof(summary_t));
+	newsum = (summary_t *) calloc(1, sizeof(summary_t));
 	newsum->name = strdup(name);
 	newsum->receiver = strdup(receiver);
 	newsum->url = strdup(url);

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.154 2006-05-30 06:45:31 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.155 2006-06-02 21:00:54 henrik Exp $";
 
 #include <limits.h>
 #include <sys/types.h>
@@ -217,7 +217,7 @@ bbgen_col_t *find_or_create_column(char *testname, int create)
 	if (newcol == NULL) {
 		if (!create) return NULL;
 
-		newcol = (bbgen_col_t *) malloc(sizeof(bbgen_col_t));
+		newcol = (bbgen_col_t *) calloc(1, sizeof(bbgen_col_t));
 		newcol->name = strdup(testname);
 		newcol->listname = (char *)malloc(strlen(testname)+1+2); 
 		sprintf(newcol->listname, ",%s,", testname);
