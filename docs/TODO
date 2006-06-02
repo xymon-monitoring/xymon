@@ -36,6 +36,15 @@ Bugfixes
 
 Things I must remember to look at
 ---------------------------------
+* Scott Walters suggest larger RRA's for graphs:
+  "I think 3 RRAs is good.  A month of 5m samples, 2 years 
+  of 1 hour samples, and 7 years of one day samples.
+  This doesn't address keeping the MAXs, but is worth 
+  considering as a blanket change for all RRDs.
+  You could then generate *real* 9AM-5PM Load avareage 
+  reports for the last year Monday - Friday."
+  It will require re-generating all of the RRD's.
+
 * configuration file for NCV.
   - filter out unwanted lines
   - more flexible DS configuration than the env settings
