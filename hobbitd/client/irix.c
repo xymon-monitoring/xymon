@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char irix_rcsid[] = "$Id: irix.c,v 1.2 2006-05-31 20:30:42 henrik Exp $";
+static char irix_rcsid[] = "$Id: irix.c,v 1.3 2006-06-02 21:45:07 henrik Exp $";
 
 void handle_irix_client(char *hostname, char *clienttype, enum ostype_t os, 
 			namelist_t *hinfo, char *sender, time_t timestamp,
@@ -68,11 +68,9 @@ void handle_irix_client(char *hostname, char *clienttype, enum ostype_t os,
 		int res, i;
 		int ovector[20];
 		char w[20];
-		long memphystotal, memphysused, memphysfree,
-		     memactused, memactfree,
-		     memswaptotal, memswapused, memswapfree;
-
-		memphystotal = memswaptotal = memphysused = memswapused = memactused = memactfree = -1;
+		long memphystotal = -1, memphysused = -1, memphysfree = 0,
+		     memactused = -1, memactfree = -1,
+		     memswaptotal = -1, memswapused = -1, memswapfree = 0;
 
 		if (!memptn) {
 			memptn = compileregex("^Memory: (\\d+)M max, (\\d+)M avail, (\\d+)M free, (\\d+)M swap, (\\d+)M free swap");
