@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.31 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.32 2006-06-02 16:11:07 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -205,8 +205,13 @@ static int rrddatasets(char *hostname, char *fn, char ***dsnames)
 
 	optind = opterr = 0; rrd_clear_error();
 	result = rrd_fetch(5, fetch_params, &starttime, &endtime, &steptime, &dscount, dsnames, &rrddata);
-	free(rrddata);	/* No use for the actual data */
+	if (result == -1) {
+		errprintf("Error while retrieving RRD dataset names from %s: %s\n",
+			  filedir, rrd_get_error());
+		return 0;
+	}
 
+	free(rrddata);	/* No use for the actual data */
 	return dscount;
 }
 
