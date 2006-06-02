@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadalerts.c,v 1.13 2006-05-31 08:50:03 henrik Exp $";
+static char rcsid[] = "$Id: loadalerts.c,v 1.14 2006-06-02 11:20:33 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -1092,7 +1092,9 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 		     (recip->criteria && (recip->criteria->sendnotice == SR_WANTED)) ) notice = 1;
 
 		*codes = '\0';
-		if (recip->method == M_IGNORE) strcat(codes, "I");
+		if (recip->method == M_IGNORE) {
+			recip->recipient = "-- ignored --";
+		}
 		if (recip->noalerts) { if (strlen(codes)) strcat(codes, ",A"); else strcat(codes, "-A"); }
 		if (recovered && !recip->noalerts) { if (strlen(codes)) strcat(codes, ",R"); else strcat(codes, "R"); }
 		if (notice) { if (strlen(codes)) strcat(codes, ",N"); else strcat(codes, "N"); }
