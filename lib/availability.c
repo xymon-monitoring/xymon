@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.40 2006-05-02 12:07:00 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.41 2006-06-02 21:00:16 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -153,11 +153,11 @@ static unsigned long reportingduration(time_t eventstart, time_t eventduration)
 
 static char *parse_histlogfile(char *hostname, char *servicename, char *timespec)
 {
+	char cause[MAX_LINE_LEN];
 	char fn[PATH_MAX];
 	char *p;
 	FILE *fd;
 	char l[MAX_LINE_LEN];
-	char cause[MAX_LINE_LEN];
 	int causefull = 0;
 
 	cause[0] = '\0';
@@ -182,16 +182,28 @@ static char *parse_histlogfile(char *hostname, char *servicename, char *timespec
 			}
 		}
 
+#if 1
+		if (strlen(cause) == 0) {
+			strcpy(cause, "See detailed log");
+		}
+#else
+		/* What is this code supposed to do ? The sscanf seemingly never succeeds */
+		/* storner, 2006-06-02 */
 		if (strlen(cause) == 0) {
 			int offset;
 			rewind(fd);
 			if (fgets(l, sizeof(l), fd)) {
 				p = strchr(l, '\n'); if (p) *p = '\0';
-				sscanf(l, "%*s %*s %*s %*s %*s %*s %*s %n", &offset);
-				strncpy(cause, l+offset, sizeof(cause));
+				if (sscanf(l, "%*s %*s %*s %*s %*s %*s %*s %n", &offset) == 1) {
+					strncpy(cause, l+offset, sizeof(cause));
+				}
+				else {
+					errprintf("Scan of file %s failed, l='%s'\n", fn, l);
+				}
 				cause[sizeof(cause)-1] = '\0';
 			}
 		}
+#endif
 
 		if (causefull) {
 			cause[sizeof(cause) - strlen(" [Truncated]") - 1] = '\0';
