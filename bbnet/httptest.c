@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.84 2006-05-16 21:22:44 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.85 2006-06-02 16:24:27 henrik Exp $";
 
 #include <sys/types.h>
 #include <limits.h>
@@ -408,13 +408,20 @@ void add_http_test(testitem_t *t)
 	int  httpversion = HTTPVER_11;
 	cookielist_t *ck = NULL;
 	int firstcookie = 1;
+	char *decodedurl;
 	strbuffer_t *httprequest = newstrbuffer(0);
 
 	/* Allocate the private data and initialize it */
 	httptest = (http_data_t *) calloc(1, sizeof(http_data_t));
 	t->privdata = (void *) httptest;
 
-	httptest->url = strdup(decode_url(t->testspec, &httptest->bburl));
+	decodedurl = decode_url(t->testspec, &httptest->bburl);
+	if (!decodedurl) {
+		errprintf("Invalid URL for http check: %s\n", t->testspec);
+		return;
+	}
+
+	httptest->url = strdup(decodedurl);
 	httptest->contlen = -1;
 	httptest->parsestatus = (httptest->bburl.proxyurl ? httptest->bburl.proxyurl->parseerror : httptest->bburl.desturl->parseerror);
 
