@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_capture.c,v 1.1 2006-06-02 05:25:03 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_capture.c,v 1.2 2006-06-02 16:37:59 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 		}
 		else {
 			printf("Unknown option %s\n", argv[argi]);
-			printf("Usage: %s [--hosts=EXP] [--tests=EXP] [--exhosts=EXP] [--extests=EXP] [--color=EXP] [--outfile=FILENAME]\n");
+			printf("Usage: %s [--hosts=EXP] [--tests=EXP] [--exhosts=EXP] [--extests=EXP] [--color=EXP] [--outfile=FILENAME]\n", argv[0]);
 			return 0;
 		}
 	}
