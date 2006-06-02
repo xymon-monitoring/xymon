@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.91 2006-05-28 15:16:51 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.92 2006-06-02 11:20:46 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -87,6 +87,8 @@ static repeat_t *find_repeatinfo(activealerts_t *alert, recip_t *recip, int crea
 {
 	char *id, *method = "unknown";
 	repeat_t *walk;
+
+	if (recip->method == M_IGNORE) return NULL;
 
 	switch (recip->method) {
 	  case M_MAIL: method = "mail"; break;
@@ -325,6 +327,8 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 			 * might create here is NOT used later on.
 			 */
 			rpt = find_repeatinfo(alert, recip, 1);
+			if (!rpt) continue;	/* Happens for e.g. M_IGNORE recipients */
+
 			dprintf("  repeat %s at %d\n", rpt->recipid, rpt->nextalert);
 			if (rpt->nextalert > now) {
 				traceprintf("Recipient '%s' dropped, next alert due at %d > %d\n",
