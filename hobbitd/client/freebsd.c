@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char freebsd_rcsid[] = "$Id: freebsd.c,v 1.16 2006-05-31 20:30:42 henrik Exp $";
+static char freebsd_rcsid[] = "$Id: freebsd.c,v 1.17 2006-06-02 16:41:37 henrik Exp $";
 
 void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os, 
 			   namelist_t *hinfo, char *sender, time_t timestamp,
@@ -81,9 +81,11 @@ void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os,
 		if (swapinfostr) {
 			found++;
 			p = strchr(swapinfostr, '\n'); /* Skip the header line */
-			do {
+			while (p) {
 				long stot, sused, sfree;
-				char *bol = (p+1);
+				char *bol;
+				
+				bol = p+1;
 				p = strchr(bol, '\n'); if (p) *p = '\0';
 
 				if (sscanf(bol, "%*s %ld %ld %ld", &stot, &sused, &sfree) == 3) {
@@ -93,7 +95,7 @@ void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os,
 				}
 
 				if (p) *p = '\n';
-			} while (p);
+			}
 
 			memswaptotal /= 1024; memswapused /= 1024; memswapfree /= 1024;
 		}
