@@ -33,6 +33,12 @@ Bugfixes
   > But all of the graph definitions in hobbitgraph.cfg use the cpu_wait
   > definition.
 
+* A host cannot be configured to appear on multiple pages of an
+  alternate pageset. Configuring this will cause it to appear
+  twice on each page. Fixing this requires a complete re-design
+  of how alternate pagesets are built, and probably also quite
+  a bit of work on the internal datastructures in bbgen.
+
 
 Things I must remember to look at
 ---------------------------------
