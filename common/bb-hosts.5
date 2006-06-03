@@ -257,16 +257,21 @@ netstat3 graphs. Instead of the combined tcp graphs showing
 all services, there will be three: One for each of
 the http, conn and smtp services.
 
-.SH HOBBIT TAGS FOR THE NK OVERVIEW PAGE
+.SH HOBBIT TAGS FOR THE CRITICAL SYSTEMS OVERVIEW PAGE
+\fBNOTE:\fR The "NK" set of tags is deprecated. They will
+be supported for Hobbit 4.x, but will be dropped in version 5.
+It is recommended that you move your critical systems
+view to the
+.I hobbit-nkview.cgi(1)
+viewer, which has a separate configuration tool,
+.I hobbit-nkedit.cgi(1)
+with more facilities than the NK tags in bb-hosts.
+
 bbgen will create three sets of pages: The main page bb.html,
 the all-non-green-statuses page (bb2.html), and a specially
 reduced version of bb2.html with only selected tests (bbnk.html).
 This page includes selected tests that currently have a red
 or yellow status.
-
-(Historical note: The name "NK" comes from an in-house 
-danish abbreviation for our network monitoring center, 
-"Net Kontrollen").
 
 .IP NK:testname[,testname]
 Define the tests that you want included on the bbnk page.
