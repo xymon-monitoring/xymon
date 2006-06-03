@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.237 2006-06-01 21:34:51 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.238 2006-06-03 10:46:47 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -3334,14 +3334,12 @@ void do_message(conn_t *msg, char *origin)
 		xfree(line1);
 	}
 	else if (strncmp(msg->buf, "clientlog ", 10) == 0) {
-		char *hostname, *sect, *p;
+		char *hostname, *p;
 		RbtIterator hosthandle;
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
-		hostname = msg->buf + strlen("clientlog"); hostname += strspn(hostname, " ");
-		sect = strstr(hostname, " section="); if (sect) { *sect = '\0'; sect += 9; }
-		p = hostname + strcspn(hostname, " \t\r\n"); *p = '\0';
-		if (sect) { p = sect + strcspn(sect, " \t\r\n"); *p = '\0'; }
+		p = msg->buf + strlen("clientlog"); p += strspn(p, "\t ");
+		hostname = p; p += strcspn(p, "\t "); if (*p) { *p = '\0'; p++; }
 
 		hosthandle = rbtFind(rbhosts, hostname);
 		if (hosthandle != rbtEnd(rbhosts)) {
@@ -3349,34 +3347,46 @@ void do_message(conn_t *msg, char *origin)
 			hwalk = gettreeitem(rbhosts, hosthandle);
 
 			if (hwalk->clientmsg) {
-				if (sect) {
-					char *sectmarker = (char *)malloc(strlen(sect) + 4);
-					char *beginp, *endp;
+				char *sections = NULL;
 
-					sprintf(sectmarker, "\n[%s]", sect);
-					beginp = strstr(hwalk->clientmsg, sectmarker);
-					if (beginp) {
-						beginp += strlen(sectmarker);
-						beginp += strspn(beginp, "\r\n\t ");
+				if (strncmp(p, "section=", 8) == 0) sections = strdup(p+8);
 
-						endp = strstr(beginp, "\n[");
-						if (endp) { endp++; *endp = '\0'; }
+				xfree(msg->buf);
+				msg->buf = NULL;
+				msg->doingwhat = RESPONDING;
 
-						msg->doingwhat = RESPONDING;
-						xfree(msg->buf);
-						msg->bufp = msg->buf = strdup(beginp);
-						msg->buflen = strlen(msg->buf);
-
-						if (endp) *endp = '[';
-					}
-
-					xfree(sectmarker);
-				}
-				else {
-					msg->doingwhat = RESPONDING;
-					xfree(msg->buf);
+				if (!sections) {
 					msg->bufp = msg->buf = strdup(hwalk->clientmsg);
 					msg->buflen = strlen(msg->buf);
+				}
+				else {
+					char *onesect;
+					strbuffer_t *resp;
+
+					onesect = strtok(sections, ",");
+					resp = newstrbuffer(0);
+					while (onesect) {
+						char *sectmarker = (char *)malloc(strlen(onesect) + 4);
+						char *beginp, *endp;
+
+						sprintf(sectmarker, "\n[%s]", onesect);
+						beginp = strstr(hwalk->clientmsg, sectmarker);
+						if (beginp) {
+							beginp += 1; /* Skip the newline */
+							endp = strstr(beginp, "\n[");
+							if (endp) { endp++; *endp = '\0'; }
+							addtobuffer(resp, beginp);
+							if (endp) *endp = '[';
+						}
+
+						xfree(sectmarker);
+						onesect = strtok(NULL, ",");
+					}
+
+					msg->buflen = STRBUFLEN(resp);
+					msg->buf = grabstrbuffer(resp);
+					if (!msg->buf) msg->buf = strdup("");
+					msg->bufp = msg->buf;
 				}
 			}
 		}
