@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.105 2006-05-30 06:46:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.106 2006-06-03 10:47:38 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -158,10 +158,38 @@ static int fetch_status(char *hostname)
 	}
 
 	if (haveuname) {
-		sprintf(hobbitcmd, "clientlog %s section=uname", hostname);
-		if (sendmessage(hobbitcmd, NULL, NULL, &unametxt, 1, BBTALK_TIMEOUT) != BB_OK) {
+		char *clidata = NULL;
+		char *boln, *eoln;
+
+		sprintf(hobbitcmd, "clientlog %s section=uname,osversion", hostname);
+		if (sendmessage(hobbitcmd, NULL, NULL, &clidata, 1, BBTALK_TIMEOUT) != BB_OK) {
 			return 1;
 		}
+
+		boln = strstr(clidata, "[osversion]\n");
+		if (boln) {
+			boln = strchr(boln, '\n') + 1;
+			eoln = strchr(boln, '\n'); if (eoln) *eoln = '\0';
+			unametxt = strdup(boln);
+			if (eoln) *eoln = '\n';
+		}
+
+		boln = strstr(clidata, "[uname]\n");
+		if (boln) {
+			boln = strchr(boln, '\n') + 1;
+			eoln = strchr(boln, '\n'); if (eoln) *eoln = '\0';
+			if (unametxt) {
+				unametxt = (char *)realloc(unametxt, strlen(unametxt) + strlen(boln) + 6);
+				strcat(unametxt, "<br>\n");
+				strcat(unametxt, boln);
+			}
+			else {
+				unametxt = strdup(boln);
+			}
+			if (eoln) *eoln = '\n';
+		}
+
+		xfree(clidata);
 	}
 
 	return 0;
