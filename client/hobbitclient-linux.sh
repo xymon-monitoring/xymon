@@ -9,12 +9,26 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-linux.sh,v 1.15 2006-05-28 17:55:49 henrik Exp $
+# $Id: hobbitclient-linux.sh,v 1.16 2006-06-03 10:47:05 henrik Exp $
 
 echo "[date]"
 date
 echo "[uname]"
-uname -a
+uname -rsmn
+echo "[osversion]"
+if [ -x /bin/lsb_release ]; then
+	/bin/lsb_release -r -i -s | xargs echo
+	/bin/lsb_release -a
+elif [ -f /etc/redhat-release ]; then
+	cat /etc/redhat-release
+elif [ -f /etc/gentoo-release ]; then
+	cat /etc/gentoo-release
+elif [ -f /etc/debian_version ]; then
+	echo -en "Debian "
+	cat /etc/debian_version
+elif [ -f /etc/SuSE-release ]; then
+	grep ^SuSE /etc/SuSE-release
+fi
 echo "[uptime]"
 uptime
 echo "[who]"
