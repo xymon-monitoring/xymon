@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.32 2006-06-02 16:11:07 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.33 2006-06-04 10:53:13 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -299,6 +299,7 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	else if (strcmp(id, "filesizes") == 0)   res = do_filesizes_rrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "proccounts") == 0)  res = do_counts_rrd("processes", hostname, testname, msg, tstamp);
 	else if (strcmp(id, "portcounts") == 0)  res = do_counts_rrd("ports", hostname, testname, msg, tstamp);
+	else if (strcmp(id, "linecounts") == 0)  res = do_derives_rrd("lines", hostname, testname, msg, tstamp);
 
 	else if (extids && exthandler) {
 		int i;
