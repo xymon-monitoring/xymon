@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.238 2006-06-03 10:46:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.239 2006-06-04 11:23:43 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -930,6 +930,12 @@ void get_hts(char *msg, char *sender, char *origin,
 	if (p) hosttest = strtok(NULL, " \t"); /* ... HOST.TEST combo ... */
 	if (hosttest == NULL) goto done;
 	colstr = strtok(NULL, " \t"); /* ... and the color (if any) */
+	if (colstr) {
+		*color = parse_color(colstr);
+		/* Dont create log-entries if we get a bad color spec. */
+		if (*color == -1) createlog = 0;
+	}
+	else createlog = 0;
 
 	if (strncmp(msg, "summary", 7) == 0) {
 		/* Summary messages are handled specially */
@@ -1007,7 +1013,6 @@ void get_hts(char *msg, char *sender, char *origin,
 
 done:
 	if (colstr) {
-		*color = parse_color(colstr);
 		if ((*color == COL_RED) || (*color == COL_YELLOW)) {
 			char *cause;
 
