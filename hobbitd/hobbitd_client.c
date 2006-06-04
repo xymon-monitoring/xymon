@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.83 2006-06-04 10:53:38 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.84 2006-06-04 21:03:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1000,6 +1000,7 @@ void linecount_report(char *hostname, char *clientclass, enum ostype_t os,
 				id = strtok(boln, ":");
 				countstr = (id ? strtok(NULL, "\n") : NULL);
 				if (id && countstr) {
+					countstr += strspn(countstr, "\t ");
 					sprintf(msgline, "%s#%s:%s\n", fn, id, countstr);
 					addtobuffer(countdata, msgline);
 				}
