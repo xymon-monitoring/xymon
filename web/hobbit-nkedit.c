@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.11 2006-03-12 16:38:32 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.12 2006-06-04 21:59:52 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -83,7 +83,13 @@ static void parse_query(void)
 			if (*cwalk->value) rq_group = strdup(cwalk->value);
 		}
 		else if (strcasecmp(cwalk->name, "NKWKDAYS") == 0) {
-			if (*cwalk->value) rq_nkwkdays = strdup(cwalk->value);
+			if (*cwalk->value) {
+				if (!rq_nkwkdays) rq_nkwkdays = strdup(cwalk->value);
+				else {
+					rq_nkwkdays = (char *)realloc(rq_nkwkdays, strlen(rq_nkwkdays) + strlen(cwalk->value) + 1);
+					strcat(rq_nkwkdays, cwalk->value);
+				}
+			}
 		}
 		else if (strcasecmp(cwalk->name, "NKSTARTHOUR") == 0) {
 			if (*cwalk->value) rq_nkslastart = strdup(cwalk->value);
@@ -286,10 +292,13 @@ void updaterecord(char *hostname, char *service)
 			rec->key = strdup(key);
 		}
 		rec->priority = rq_priority;
-		if (rq_start > 0) rec->starttime = rq_start; else rec->starttime = 0;
-		if (rq_end > 0) rec->endtime = rq_end; else rec->endtime = 0;
+		rec->starttime = (rq_start > 0) ? rq_start : 0;
+		rec->endtime = (rq_end > 0) ? rq_end : 0;
 
-		if (rec->nktime) xfree(rec->nktime); rec->nktime = NULL;
+		if (rec->nktime) {
+			xfree(rec->nktime); rec->nktime = NULL;
+		}
+
 		if (rq_nktime) {
 			rec->nktime = (strcmp(rq_nktime, "*:0000:2400") == 0) ? NULL : strdup(rq_nktime);
 		}
@@ -356,7 +365,7 @@ int main(int argc, char *argv[])
 	int argi;
 	char *envarea = NULL;
 	char *configfn = NULL;
-		
+
 	operator = getenv("REMOTE_USER");
 	if (!operator) operator = "Anonymous";
 
