@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.82 2006-05-31 21:32:29 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.83 2006-06-04 10:53:38 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -971,6 +971,48 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 	if (anyszdata) sendmessage(STRBUF(sizedata), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
 	clearstrbuffer(sizedata);
 }
+
+void linecount_report(char *hostname, char *clientclass, enum ostype_t os,
+			namelist_t *hinfo, char *fromline, char *timestr)
+{
+	static strbuffer_t *countdata = NULL;
+	sectlist_t *swalk;
+	char msgline[PATH_MAX];
+	int anydata = 0;
+
+	if (!countdata) countdata = newstrbuffer(0);
+
+	sprintf(msgline, "data %s.linecounts\n", commafy(hostname));
+	addtobuffer(countdata, msgline);
+
+	for (swalk = sections; (swalk); swalk = swalk->next) {
+		if (strncmp(swalk->sname, "linecount:", 10) == 0) {
+			char *fn, *boln, *eoln, *id, *countstr;
+
+			anydata = 1;
+
+			fn = strchr(swalk->sname, ':'); fn += 1 + strspn(fn+1, "\t ");
+
+			boln = swalk->sdata;
+			while (boln) {
+				eoln = strchr(boln, '\n');
+
+				id = strtok(boln, ":");
+				countstr = (id ? strtok(NULL, "\n") : NULL);
+				if (id && countstr) {
+					sprintf(msgline, "%s#%s:%s\n", fn, id, countstr);
+					addtobuffer(countdata, msgline);
+				}
+
+				boln = (eoln ? eoln + 1 : NULL);
+			}
+		}
+	}
+
+	if (anydata) sendmessage(STRBUF(countdata), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+	clearstrbuffer(countdata);
+}
+
 
 void unix_netstat_report(char *hostname, char *clientclass, enum ostype_t os,
 		 	 namelist_t *hinfo, char *fromline, char *timestr,
