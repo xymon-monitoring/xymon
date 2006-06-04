@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.20 2006-06-04 07:40:43 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.21 2006-06-04 07:41:31 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -524,7 +524,7 @@ int loadconfig(char *cfgfn)
 		if      (strncmp(l, "log:", 4) == 0) checktype = C_LOG;
 		else if (strncmp(l, "file:", 5) == 0) checktype = C_FILE;
 		else if (strncmp(l, "dir:", 4) == 0) checktype = C_DIR;
-		else if (strncmp(l, "count:", 6) == 0) checktype = C_COUNT;
+		else if (strncmp(l, "linecount:", 10) == 0) checktype = C_COUNT;
 		else checktype = C_NONE;
 
 		if (checktype != C_NONE) {
