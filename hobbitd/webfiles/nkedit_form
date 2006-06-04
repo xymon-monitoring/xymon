@@ -1,10 +1,10 @@
 <BR>
 
 <CENTER>
-  <TABLE WIDTH="80%" BORDER=0 CELLSPACING=5 SUMMARY="NK host editor">
+  <TABLE WIDTH="80%" BORDER=0 CELLSPACING=5 SUMMARY="Critical Systems editor">
     <TR BGCOLOR="#000033">
        <TD COLSPAN=2>
-           <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1"><B>Edit NK definition</B></FONT></CENTER>
+           <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1"><B>Edit Critical Systems</B></FONT></CENTER>
        </TD>
     </TR>
     <TR>
@@ -16,7 +16,7 @@
           <TABLE BORDER=0 WIDTH="80%" SUMMARY="Host lookup">
 	     <TR>
 	        <TD>Host:&nbsp;<INPUT NAME="HOSTNAME" TYPE="TEXT" SIZE=30 VALUE="&BBHOST"></TD>
-		<TD>Status:&nbsp;<INPUT NAME="SERVICE" TYPE="TEXT" SIZE=10 VALUE="&BBSVC"></TD>
+		<TD>Test:&nbsp;<INPUT NAME="SERVICE" TYPE="TEXT" SIZE=10 VALUE="&BBSVC"></TD>
 		<TD>
 		   <INPUT TYPE="SUBMIT" NAME="Find" VALUE="Search" ALT="Find record">
 		   <INPUT TYPE="SUBMIT" NAME="Next" VALUE="Next" ALT="Next record">
@@ -43,7 +43,7 @@
              <TR><TD COLSPAN=3>&nbsp;</TD></TR>
 
              <TR>
-	        <TD>Host is MANAGED:</TD>
+	        <TD>Monitoring time:</TD>
 		<TD COLSPAN=2>
 		   <SELECT NAME="NKWKDAYS" MULTIPLE SIZE=3>
 		   &NKEDITWKDAYS
@@ -60,7 +60,7 @@
              </TR>
 
              <TR>
-	        <TD>Host becomes MANAGED</TD>
+	        <TD>Start monitoring</TD>
 		<TD COLSPAN=2>
 		   <SELECT NAME="start-day">
                    &NKEDITDAYLIST1
@@ -79,7 +79,7 @@
              </TR>
 
              <TR>
-	        <TD>Host becomes UN-MANAGED</TD>
+	        <TD>Stop monitoring</TD>
 		<TD COLSPAN=2>
 		   <SELECT NAME="end-day">
                    &NKEDITDAYLIST2

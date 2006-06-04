@@ -2,7 +2,7 @@
 <HTML>
 <HEAD>
 
-<TITLE>Hobbit - NK editor</TITLE>
+<TITLE>Hobbit - Critical Systems editor</TITLE>
 
 <!-- Styles for the menu bar -->
 <link rel="stylesheet" type="text/css" href="&BBMENUSKIN/menu.css">
@@ -21,7 +21,7 @@
     <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&HOBBITLOGO</B></FONT>
   </TD>
   <TD VALIGN=MIDDLE ALIGN=CENTER WIDTH="40%">
-    <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>NK editor</B></FONT></CENTER>
+    <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>Critical Systems editor</B></FONT></CENTER>
   </TD>
   <TD VALIGN=MIDDLE ALIGN=RIGHT WIDTH="30%">
    <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&BBDATE</B></FONT>
