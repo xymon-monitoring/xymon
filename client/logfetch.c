@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.21 2006-06-04 07:41:31 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.22 2006-06-04 07:50:37 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -870,7 +870,7 @@ int main(int argc, char *argv[])
 			break;
 
 		  case C_COUNT:
-			fprintf(stdout, "[count:%s]\n", walk->filename);
+			fprintf(stdout, "[linecount:%s]\n", walk->filename);
 			printcountdata(stdout, walk);
 			break;
 
