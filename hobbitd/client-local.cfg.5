@@ -85,6 +85,18 @@ picking out the "trigger" lines, any remaining space up to the maximum size
 is filled in with the most recent entries from the logfile. "PATTERN" is
 a regular expression.
 
+.SH COUNTING LOGENTRIES
+A special type of log-handling is possible, where the number of lines matching
+a regular expressions are merely counted. This is \fBlinecount:FILENAME\fR,
+followed by a number of lines of the form \fBID:PATTERN\fR. E.g.
+.sp
+    linecount:/var/log/messages
+.br
+    diskerrors:I/O error.*device.*hd
+.br
+    badlogins:Failed login
+.sp
+
 .SH FILE CONFIGURATION ENTRIES
 A file monitoring entry is used to watch the meta-data of a file: Owner,
 group, size, permissions, checksum etc. It looks like this:
