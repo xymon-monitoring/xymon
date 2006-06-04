@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadnkconf.c,v 1.16 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: loadnkconf.c,v 1.17 2006-06-04 21:59:18 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -392,7 +392,7 @@ int update_nkconfig(nkconf_t *rec)
 		}
 		else {
 			nkconf_t *onerec = (nkconf_t *)k2;
-			char startstr[10], endstr[10];
+			char startstr[20], endstr[20];
 
 			*startstr = *endstr = '\0';
 			if (onerec->starttime > 0) sprintf(startstr, "%d", (int)onerec->starttime);
