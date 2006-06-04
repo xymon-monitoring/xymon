@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.19 2006-05-31 20:24:06 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.20 2006-06-04 07:40:43 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -36,7 +36,7 @@ static char rcsid[] = "$Id: logfetch.c,v 1.19 2006-05-31 20:24:06 henrik Exp $";
 #define POSCOUNT ((MAXMINUTES / 5) + 1)
 #define LINES_AFTER_TRIGGER 10
 
-typedef enum { C_NONE, C_LOG, C_FILE, C_DIR } checktype_t;
+typedef enum { C_NONE, C_LOG, C_FILE, C_DIR, C_COUNT } checktype_t;
 
 typedef struct logdef_t {
 #ifdef _LARGEFILE_SOURCE
@@ -54,6 +54,13 @@ typedef struct filedef_t {
 	int domd5, dosha1, dormd160;
 } filedef_t;
 
+typedef struct countdef_t {
+	int patterncount;
+	char **patternnames;
+	char **patterns;
+	int *counts;
+} countdef_t;
+
 typedef struct checkdef_t {
 	char *filename;
 	checktype_t checktype;
@@ -61,6 +68,7 @@ typedef struct checkdef_t {
 	union {
 		logdef_t logcheck;
 		filedef_t filecheck;
+		countdef_t countcheck;
 	} check;
 } checkdef_t;
 
@@ -446,6 +454,49 @@ void printdirdata(FILE *fd, char *fn)
 	fprintf(fd, "\n");
 }
 
+void printcountdata(FILE *fd, checkdef_t *cfg)
+{
+	int openerr, idx;
+	FILE *logfd;
+	regex_t *exprs;
+	regmatch_t pmatch[1];
+	int *counts;
+	char l[8192];
+	
+	logfd = rootopen(cfg->filename, &openerr); 
+	if (logfd == NULL) {
+		fprintf(fd, "ERROR: Cannot open file %s: %s\n", cfg->filename, strerror(openerr));
+		return;
+	}
+
+	counts = (int *)calloc(cfg->check.countcheck.patterncount, sizeof(int));
+	exprs = (regex_t *)calloc(cfg->check.countcheck.patterncount, sizeof(regex_t));
+	for (idx = 0; (idx < cfg->check.countcheck.patterncount); idx++) {
+		int status;
+
+		status = regcomp(&exprs[idx], cfg->check.countcheck.patterns[idx], REG_EXTENDED|REG_NOSUB);
+		if (status != 0) { /* ... */ };
+	}
+
+	while (fgets(l, sizeof(l), logfd)) {
+		for (idx = 0; (idx < cfg->check.countcheck.patterncount); idx++) {
+			if (regexec(&exprs[idx], l, 1, pmatch, 0) == 0) counts[idx] += 1;
+		}
+	}
+
+	fclose(logfd);
+
+	for (idx = 0; (idx < cfg->check.countcheck.patterncount); idx++) {
+		fprintf(fd, "%s: %d\n", 
+			cfg->check.countcheck.patternnames[idx], counts[idx]);
+
+		regfree(&exprs[idx]);
+	}
+
+	free(counts);
+	free(exprs);
+}
+
 int loadconfig(char *cfgfn)
 {
 	FILE *fd;
@@ -462,6 +513,7 @@ int loadconfig(char *cfgfn)
 	 */
 	fd = fopen(cfgfn, "r"); if (fd == NULL) return 1;
 	while (fgets(l, sizeof(l), fd) != NULL) {
+		checktype_t checktype;
 		char *p, *filename;
 		int maxbytes, domd5, dosha1, dormd160;
 
@@ -469,26 +521,28 @@ int loadconfig(char *cfgfn)
 		p = l + strspn(l, " \t");
 		if ((*p == '\0') || (*p == '#')) continue;
 
-		if ((strncmp(l, "log:", 4) == 0) || (strncmp(l, "file:", 5) == 0) || (strncmp(l, "dir:", 4) == 0)) {
-			checktype_t checktype;
+		if      (strncmp(l, "log:", 4) == 0) checktype = C_LOG;
+		else if (strncmp(l, "file:", 5) == 0) checktype = C_FILE;
+		else if (strncmp(l, "dir:", 4) == 0) checktype = C_DIR;
+		else if (strncmp(l, "count:", 6) == 0) checktype = C_COUNT;
+		else checktype = C_NONE;
+
+		if (checktype != C_NONE) {
 			char *tok;
 
 			filename = NULL; maxbytes = -1; domd5 = dosha1 = dormd160 = 0;
-			tok = strtok(l, ":");
 
-			if (strcmp(tok, "log") == 0) checktype = C_LOG;
-			else if (strcmp(tok, "file") == 0) checktype = C_FILE;
-			else if (strcmp(tok, "dir") == 0) checktype = C_DIR;
-			else checktype = C_NONE;
-
-			filename = strtok(NULL, ":"); if (filename) tok = strtok(NULL, ":");
+			/* Skip the initial keyword token */
+			tok = strtok(l, ":"); filename = strtok(NULL, ":");
 			switch (checktype) {
 			  case C_LOG:
+				tok = (filename ? strtok(NULL, ":") : NULL);
 				if (tok) maxbytes = atoi(tok);
 				break;
 
 			  case C_FILE:
 				maxbytes = 0; /* Needed to get us into the put-into-list code */
+				tok = (filename ? strtok(NULL, ":") : NULL);
 				if (tok) {
 					if (strcmp(tok, "md5") == 0) domd5 = 1;
 					else if (strcmp(tok, "sha1") == 0) dosha1 = 1;
@@ -497,6 +551,10 @@ int loadconfig(char *cfgfn)
 				break;
 
 			  case C_DIR:
+				maxbytes = 0; /* Needed to get us into the put-into-list code */
+				break;
+
+			  case C_COUNT:
 				maxbytes = 0; /* Needed to get us into the put-into-list code */
 				break;
 
@@ -540,6 +598,11 @@ int loadconfig(char *cfgfn)
 								break;
 							  case C_DIR:
 								break;
+							  case C_COUNT:
+								newitem->check.countcheck.patterncount = 0;
+								newitem->check.countcheck.patternnames = calloc(1, sizeof(char *));
+								newitem->check.countcheck.patterns = calloc(1, sizeof(char *));
+								break;
 					  		  case C_NONE:
 								break;
 							}
@@ -576,6 +639,11 @@ int loadconfig(char *cfgfn)
 						newitem->check.filecheck.dormd160 = dormd160;
 						break;
 					  case C_DIR:
+						break;
+					  case C_COUNT:
+						newitem->check.countcheck.patterncount = 0;
+						newitem->check.countcheck.patternnames = calloc(1, sizeof(char *));
+						newitem->check.countcheck.patterns = calloc(1, sizeof(char *));
 						break;
 					  case C_NONE:
 						break;
@@ -631,6 +699,29 @@ int loadconfig(char *cfgfn)
 		}
 		else if (currcfg && (currcfg->checktype == C_DIR)) {
 			/* Nothing */
+		}
+		else if (currcfg && (currcfg->checktype == C_COUNT)) {
+			int idx;
+			char *name, *ptn;
+
+			name = strtok(l, " :");
+			if (name) ptn = strtok(NULL, "\n");
+			idx = currcfg->check.countcheck.patterncount;
+
+			if (name && ptn) {
+				currcfg->check.countcheck.patterncount += 1;
+
+				currcfg->check.countcheck.patternnames = 
+					realloc(currcfg->check.countcheck.patternnames,
+						(currcfg->check.countcheck.patterncount+1)*sizeof(char *));
+
+				currcfg->check.countcheck.patterns = 
+					realloc(currcfg->check.countcheck.patterns,
+						(currcfg->check.countcheck.patterncount+1)*sizeof(char *));
+
+				currcfg->check.countcheck.patternnames[idx] = strdup(name);
+				currcfg->check.countcheck.patterns[idx] = strdup(ptn);
+			}
 		}
 		else if (currcfg && (currcfg->checktype == C_NONE)) {
 			/* Nothing */
@@ -776,6 +867,11 @@ int main(int argc, char *argv[])
 		  case C_DIR:
 			fprintf(stdout, "[dir:%s]\n", walk->filename);
 			printdirdata(stdout, walk->filename);
+			break;
+
+		  case C_COUNT:
+			fprintf(stdout, "[count:%s]\n", walk->filename);
+			printcountdata(stdout, walk);
 			break;
 
 		  case C_NONE:
