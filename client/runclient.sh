@@ -6,13 +6,14 @@
 # extensions configured.                                                     #
 #                                                                            #
 # Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    #
+# "status" section (C) Scott Smith 2006                                      #
 #                                                                            #
 # This program is released under the GNU General Public License (GPL),       #
 # version 2. See the file "COPYING" for details.                             #
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: runclient.sh,v 1.10 2006-05-28 16:03:38 henrik Exp $
+# $Id: runclient.sh,v 1.11 2006-06-04 07:49:49 henrik Exp $
 
 # Default settings for this client
 MACHINEDOTS="`uname -n`"			# This systems hostname
@@ -45,6 +46,9 @@ do
 	  restart)
 	  	CMD=$1
 		;;
+	  status)
+	  	CMD=$1
+		;;
 	esac
 
 	shift
@@ -70,7 +74,7 @@ case "$CMD" in
 		exit 1
 	fi
 
-  	if test -f $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid; then
+  	if test -s $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid; then
 		echo "Hobbit client already running, re-starting it"
 		$0 stop
 		rm -f $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
@@ -85,7 +89,7 @@ case "$CMD" in
 	;;
 
   "stop")
-  	if test -f $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid; then
+  	if test -s $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid; then
 		kill `cat $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid`
 		echo "Hobbit client stopped"
 	else
@@ -94,7 +98,7 @@ case "$CMD" in
 	;;
 
   "restart")
-  	if test -f $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid; then
+  	if test -s $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid; then
 		$0 stop
 	else
 		echo "Hobbit client not running, continuing to start it"
@@ -102,6 +106,27 @@ case "$CMD" in
 
 	$0 start
 	;;
+
+  "status")
+	if test -s $HOBBITCLIENTHOME/logs/clientlaunch.pid
+	then
+		kill -0 `cat $HOBBITCLIENTHOME/logs/clientlaunch.pid`
+		if test $? -eq 0
+		then
+			echo "Hobbit client (clientlaunch) running with PID `cat $HOBBITCLIENTHOME/logs/clientlaunch.pid`"
+		else
+			echo "Hobbit client not running, removing stale PID file"
+			rm -f $HOBBITCLIENTHOME/logs/clientlaunch.pid
+		fi
+	else
+		echo "Hobbit client (clientlaunch) does not appear to be running"
+	fi
+	;;
+
+  *)
+	echo "Usage: $0 start|stop|restart|status"
+	break;
+
 esac
 
 exit 0
