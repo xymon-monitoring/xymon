@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.162 2006-06-02 21:00:54 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.163 2006-06-05 06:46:39 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -427,7 +427,7 @@ state_t *load_state(dispsummary_t **sumhead)
 	dprintf("load_state()\n");
 
 	if (!reportstart && !snapshot) {
-		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1", NULL, NULL, &board, 1, BBTALK_TIMEOUT);
+		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1,acklist", NULL, NULL, &board, 1, BBTALK_TIMEOUT);
 	}
 	else {
 		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname", NULL, NULL, &board, 1, BBTALK_TIMEOUT);
@@ -456,7 +456,7 @@ state_t *load_state(dispsummary_t **sumhead)
 	done = 0; nextline = board;
 	while (!done) {
 		char *bol = nextline;
-		char *onelog;
+		char *onelog, *acklist;
 		char *p;
 		int i;
 
@@ -470,6 +470,7 @@ state_t *load_state(dispsummary_t **sumhead)
 
 		memset(&log, 0, sizeof(log));
 		onelog = strdup(bol);
+		acklist = NULL;
 		p = gettok(onelog, "|"); i = 0;
 		while (p) {
 			switch (i) {
@@ -486,6 +487,7 @@ state_t *load_state(dispsummary_t **sumhead)
 			  case  9: log.sender = p; break;
 			  case 10: log.cookie = atoi(p); break;
 			  case 11: log.msg = p; break;
+			  case 12: acklist = p; break;
 			}
 
 			p = gettok(NULL, "|");
@@ -508,6 +510,18 @@ state_t *load_state(dispsummary_t **sumhead)
 			init_modembank_status(fn, &log);
 		}
 		else {
+			if (acklist && *acklist) {
+				/*
+				 * It's been acked. acklist looks like
+				 * 1149489234:1149510834:1:henrik:Joe promised to take care of this right after lunch\n
+				 * The "\n" is the delimiter between multiple acks.
+				 */
+				char *tok;
+
+				tok = strtok(acklist, ":");
+				if (tok) tok = strtok(NULL, ":");
+				if (tok) log.acktime = atol(tok);
+			}
 			newstate = init_state(fn, &log);
 			if (newstate) {
 				newstate->next = topstate;
