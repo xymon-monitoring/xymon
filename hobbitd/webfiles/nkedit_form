@@ -119,7 +119,7 @@
 	     <TR><TD COLSPAN=3><HR WIDTH="100%"></TD></TR>
           </TABLE>
 
-          <TABLE BORDER=0 WIDTH="80%" SUMMARY="Host clones" CELLPADDING="10px">
+          <TABLE BORDER=0 WIDTH="80%" SUMMARY="Host clones" CELLPADDING="10">
 	     <TR>
 	        <TD>
 		   Clones&nbsp;of&nbsp;this&nbsp;host:
