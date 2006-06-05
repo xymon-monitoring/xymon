@@ -21,6 +21,7 @@ var MENU_ITEMS = [
 		['Installing Hobbit', '@BBHOSTURL@/help/install.html'],
 		['Configuring Monitoring', '@BBHOSTURL@/help/hobbit-config.html'],
 		['Configuring Alerts', '@BBHOSTURL@/help/hobbit-alerts.html'],
+		['Critical systems', '@BBHOSTURL@/help/criticalsystems.html'],
 		['Known problems', '@BBHOSTURL@/help/known-issues.html'],
 		['Tips and Tricks', '@BBHOSTURL@/help/hobbit-tips.html'],
 		['Custom graphs', '@BBHOSTURL@/help/howtograph.html'],
