@@ -74,13 +74,13 @@ rm -rf $RPM_BUILD_ROOT
 	mkdir -p $RPM_BUILD_ROOT/etc/default
 	cp %{SOURCE4} $RPM_BUILD_ROOT/etc/default/hobbit-client
 	mkdir -p $RPM_BUILD_ROOT/usr/bin
-	cd $RPM_BUILD_ROOT/usr/bin && ln -s ../lib/hobbit/server/bin/{bb,bbcmd} .
+	cd $RPM_BUILD_ROOT/usr/bin && ln -sf ../lib/hobbit/server/bin/{bb,bbcmd} .
 	mkdir -p $RPM_BUILD_ROOT/etc/httpd/conf.d
 	mv $RPM_BUILD_ROOT/etc/hobbit/hobbit-apache.conf $RPM_BUILD_ROOT/etc/httpd/conf.d/
 	rmdir $RPM_BUILD_ROOT/usr/lib/hobbit/client/tmp
-	cd $RPM_BUILD_ROOT/usr/lib/hobbit/client && ln -s /tmp tmp
+	cd $RPM_BUILD_ROOT/usr/lib/hobbit/client && ln -sf /tmp tmp
 	rmdir $RPM_BUILD_ROOT/usr/lib/hobbit/client/logs
-	cd $RPM_BUILD_ROOT/usr/lib/hobbit/client && ln -s ../../../../var/log/hobbit logs
+	cd $RPM_BUILD_ROOT/usr/lib/hobbit/client && ln -sf ../../../../var/log/hobbit logs
 	mv $RPM_BUILD_ROOT/usr/lib/hobbit/client/etc/hobbitclient.cfg /tmp/hobbitclient.cfg.$$
 	cat /tmp/hobbitclient.cfg.$$ | sed -e's!^BBDISP=.*!include /var/run/hobbitclient-runtime.cfg!' | grep -v "^BBDISPLAYS=" >$RPM_BUILD_ROOT/usr/lib/hobbit/client/etc/hobbitclient.cfg
 	rm /tmp/hobbitclient.cfg.$$
@@ -142,7 +142,7 @@ chkconfig --del hobbit-client
 %attr(644, root, root) %config /etc/hobbit/*
 %attr(644, root, root) %config /etc/httpd/conf.d/hobbit-apache.conf
 %attr(755, root, root) %dir /etc/hobbit 
-%attr(755, root, root) %dir /etc/hobbit/download
+%attr(755, root, root) %dir /usr/lib/hobbit/server/download
 %attr(755, root, root) %dir /etc/hobbit/web
 %attr(755, hobbit, hobbit) %dir /var/log/hobbit
 %attr(755, root, root) /etc/init.d/hobbit
@@ -156,7 +156,8 @@ chkconfig --del hobbit-client
 %attr(644, root, root) %config /var/lib/hobbit/www/menu/menu_tpl.js
 %attr(644, root, root) %config /var/lib/hobbit/www/menu/menu.css
 %attr(755, hobbit, hobbit) %dir /usr/lib/hobbit/client/ext
-%attr(664, hobbit, apache) %config /etc/hobbit/hobbit-nkview.cfg /etc/hobbit/hobbit-nkview.cfg.bak
+%attr(664, hobbit, apache) %config /etc/hobbit/hobbit-nkview.cfg
+%attr(664, hobbit, apache) %config /etc/hobbit/hobbit-nkview.cfg.bak
 %attr(4750, root, hobbit) /usr/lib/hobbit/server/bin/hobbitping
 %attr(4750, root, hobbit) /usr/lib/hobbit/client/bin/logfetch
 %attr(4750, root, hobbit) /usr/lib/hobbit/client/bin/clientupdate
