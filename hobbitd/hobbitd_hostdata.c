@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_hostdata.c,v 1.2 2006-05-27 07:03:45 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_hostdata.c,v 1.3 2006-06-05 15:56:52 henrik Exp $";
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
 	char *msg;
 	int running;
 	int argi, seq;
-	char *clientlogdir;
+	char *clientlogdir = NULL;
 
 	/* Handle program options. */
 	for (argi = 1; (argi < argc); argi++) {
