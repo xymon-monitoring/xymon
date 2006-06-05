@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.22 2006-06-04 07:50:37 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.23 2006-06-05 16:38:28 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -702,7 +702,7 @@ int loadconfig(char *cfgfn)
 		}
 		else if (currcfg && (currcfg->checktype == C_COUNT)) {
 			int idx;
-			char *name, *ptn;
+			char *name, *ptn = NULL;
 
 			name = strtok(l, " :");
 			if (name) ptn = strtok(NULL, "\n");
@@ -793,7 +793,7 @@ void savelogstatus(char *statfn)
 
 int main(int argc, char *argv[])
 {
-	char *cfgfn, *statfn;
+	char *cfgfn = NULL, *statfn = NULL;
 	int i;
 	checkdef_t *walk;
 	uid_t myuid;
