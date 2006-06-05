@@ -37,7 +37,6 @@
 		   &NKEDITPRIOLIST
 		   </SELECT>
 		</TD>
-	        <TD COLSPAN=2>Resolver group:&nbsp;<INPUT NAME="GROUP" TYPE="TEXT" SIZE=20 VALUE="&NKEDITGROUP"></TD>
              </TR>
 
              <TR><TD COLSPAN=3>&nbsp;</TD></TR>
@@ -100,6 +99,9 @@
              <TR><TD COLSPAN=3>&nbsp;</TD></TR>
 
              <TR>
+	        <TD COLSPAN=2>Resolver group:&nbsp;<INPUT NAME="GROUP" TYPE="TEXT" SIZE=20 VALUE="&NKEDITGROUP"></TD>
+	      </TR>
+	      <TR>
 	        <TD COLSPAN=3>Instruction:&nbsp;<INPUT NAME="EXTRA" TYPE="TEXT" SIZE=80 VALUE="&NKEDITEXTRA"></TD>
              </TR>
 
