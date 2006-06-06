@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.84 2006-06-04 21:03:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.85 2006-06-06 16:32:29 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -874,6 +874,17 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 			sfn = swalk->sname+8;
 			sprintf(sectionname, "logfile:%s", sfn);
 			onecolor = check_file(hinfo, clientclass, sfn, swalk->sdata, sectionname, filesummary, &sz, &trackit, &anyrules);
+			if (trackit) {
+				/* Save the size data for later DATA message to track file sizes */
+#ifdef _LARGEFILE_SOURCE
+				sprintf(msgline, "%s:%lld\n", sfn, sz);
+#else
+				sprintf(msgline, "%s:%ld\n", sfn, sz);
+#endif
+				addtobuffer(sizedata, msgline);
+				anyszdata = 1;
+			}
+
 			if (!anyrules) {
 				/* Dont clutter the display with logfiles unless they have rules */
 				continue;
