@@ -121,7 +121,7 @@ changes are needed:
          CMD hobbitd_channel --channel=clichg --log=$BBSERVERLOGS/hostdata.log hobbitd_hostdata
 
 
-~hobbit/data/www/menu/menu_items.js
+~hobbit/server/www/menu/menu_items.js
 -----------------------------------
 Two new menu items have been added, and the "NK view" has been replaced by
 the new "Critical systems" view. To make this visible, change this:
@@ -134,7 +134,7 @@ the new "Critical systems" view. To make this visible, change this:
 The first part of the URL may be different, depending on your setup.
 
 
-~hobbit/data/www/menu/menu_tpl.js
+~hobbit/server/www/menu/menu_tpl.js
 ---------------------------------
 The width of menu items need to be increased slightly. Change line 25
 of this file from "'width': 150" to "'width': 160".
