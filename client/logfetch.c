@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.23 2006-06-05 16:38:28 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.24 2006-06-07 14:46:59 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -514,17 +514,18 @@ int loadconfig(char *cfgfn)
 	fd = fopen(cfgfn, "r"); if (fd == NULL) return 1;
 	while (fgets(l, sizeof(l), fd) != NULL) {
 		checktype_t checktype;
-		char *p, *filename;
+		char *bol, *filename;
 		int maxbytes, domd5, dosha1, dormd160;
 
-		p = strchr(l, '\n'); if (p) *p = '\0';
-		p = l + strspn(l, " \t");
-		if ((*p == '\0') || (*p == '#')) continue;
+		{ char *p = strchr(l, '\n'); if (p) *p = '\0'; }
 
-		if      (strncmp(l, "log:", 4) == 0) checktype = C_LOG;
-		else if (strncmp(l, "file:", 5) == 0) checktype = C_FILE;
-		else if (strncmp(l, "dir:", 4) == 0) checktype = C_DIR;
-		else if (strncmp(l, "linecount:", 10) == 0) checktype = C_COUNT;
+		bol = l + strspn(l, " \t");
+		if ((*bol == '\0') || (*bol == '#')) continue;
+
+		if      (strncmp(bol, "log:", 4) == 0) checktype = C_LOG;
+		else if (strncmp(bol, "file:", 5) == 0) checktype = C_FILE;
+		else if (strncmp(bol, "dir:", 4) == 0) checktype = C_DIR;
+		else if (strncmp(bol, "linecount:", 10) == 0) checktype = C_COUNT;
 		else checktype = C_NONE;
 
 		if (checktype != C_NONE) {
@@ -569,6 +570,7 @@ int loadconfig(char *cfgfn)
 
 				if (*filename == '`') {
 					/* Run the command to get filenames */
+					char *p;
 					char *cmd;
 					FILE *fd;
 
@@ -577,7 +579,6 @@ int loadconfig(char *cfgfn)
 					fd = popen(cmd, "r");
 					if (fd) {
 						char pline[PATH_MAX+1];
-						char *p;
 
 						while (fgets(pline, sizeof(pline), fd)) {
 							p = pline + strcspn(pline, "\r\n"); *p = '\0';
@@ -661,8 +662,10 @@ int loadconfig(char *cfgfn)
 			}
 		}
 		else if (currcfg && (currcfg->checktype == C_LOG)) {
-			if (strncmp(l, "ignore ", 7) == 0) {
-				p = l + 7; p += strspn(p, " \t");
+			if (strncmp(bol, "ignore ", 7) == 0) {
+				char *p; 
+
+				p = bol + 7; p += strspn(p, " \t");
 
 				if (firstpipeitem) {
 					/* Fill in this ignore expression on all items in this pipe set */
@@ -677,8 +680,10 @@ int loadconfig(char *cfgfn)
 					currcfg->check.logcheck.ignore = strdup(p);
 				}
 			}
-			else if (strncmp(l, "trigger ", 8) == 0) {
-				p = l + 8; p += strspn(p, " \t");
+			else if (strncmp(bol, "trigger ", 8) == 0) {
+				char *p; 
+
+				p = bol + 8; p += strspn(p, " \t");
 
 				if (firstpipeitem) {
 					/* Fill in this trigger expression on all items in this pipe set */
