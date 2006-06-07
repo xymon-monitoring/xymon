@@ -126,11 +126,16 @@ changes are needed:
 Two new menu items have been added, and the "NK view" has been replaced by
 the new "Critical systems" view. To make this visible, change this:
 - Replace the "NK view" section with
-      ['Critical systems', '/hobbit-cgi/hobbit-nkview.sh',
+      ['Critical systems', '/hobbit-cgi/hobbit-nkview.sh'],
+  Note that this requires you to migrate your current "NK" tags in
+  the bb-hosts file to the new Critical Systems configuration file.
+  See the "Critical Systems" menu item in the "Help" menu.
 - In the "Administration" menu, after the "Enable/Disable" line, add
       ['Edit critical systems', '/hobbit-seccgi/hobbit-nkedit.sh'],
 - In the "Help" menu, after the "Tips and Tricks" line, add
       ['Custom graphs', '/hobbit/help/howtograph.html'],
+- In the "Help" menu, after the "Configuring Alerts" line, add
+      ['Critical systems', '/hobbit/help/criticalsystems.html'],
 The first part of the URL may be different, depending on your setup.
 
 
