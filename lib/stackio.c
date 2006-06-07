@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: stackio.c,v 1.18 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: stackio.c,v 1.19 2006-06-07 20:42:14 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -327,7 +327,6 @@ static int namecompare(const void *v1, const void *v2)
 static void addtofnlist(char *dirname, void **v_listhead)
 {
 	filelist_t **listhead = (filelist_t **)v_listhead;
-	filelist_t *newlistitem;
 	DIR *dirfd;
 	struct dirent *d;
 	struct stat st;
@@ -344,13 +343,17 @@ static void addtofnlist(char *dirname, void **v_listhead)
 	}
 
 	/* Add the directory itself to the list of files we watch for modifications */
-	stat(dirfn, &st);
-	newlistitem = (filelist_t *)malloc(sizeof(filelist_t));
-	newlistitem->filename = strdup(dirfn);
-	newlistitem->mtime = st.st_mtime;
-	newlistitem->fsize = 0; /* We dont check sizes of directories */
-	newlistitem->next = *listhead;
-	*listhead = newlistitem;
+	if (listhead) {
+		filelist_t *newlistitem;
+
+		stat(dirfn, &st);
+		newlistitem = (filelist_t *)malloc(sizeof(filelist_t));
+		newlistitem->filename = strdup(dirfn);
+		newlistitem->mtime = st.st_mtime;
+		newlistitem->fsize = 0; /* We dont check sizes of directories */
+		newlistitem->next = *listhead;
+		*listhead = newlistitem;
+	}
 
 	while ((d = readdir(dirfd)) != NULL) {
 		int fnlen = strlen(d->d_name);
