@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: rssgen.c,v 1.22 2006-06-02 15:22:01 henrik Exp $";
+static char rcsid[] = "$Id: rssgen.c,v 1.23 2006-06-07 07:29:44 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -142,7 +142,7 @@ void do_rss_item(FILE *fd, host_t *h, entry_t *e)
 			e->column->name);
 	}
 	else {
-		fprintf(fd, "%s%s", xgetenv("BBWEB"), hostsvcurl(h->hostname, e->column->name, 1));
+		fprintf(fd, "%s%s", xgetenv("BBWEBHOST"), hostsvcurl(h->hostname, e->column->name, 1));
 	}
 	fprintf(fd, "</link>\n");
 
