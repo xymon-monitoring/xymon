@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.29 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.30 2006-06-08 20:46:33 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
 				/*  match */
 				printf("<tr>\n");
 				printf("<td align=left> %s </td>\n", displayname ? displayname : hostname);
-				printf("<td align=left> <a href=\"%s/%s#%s\">%s</a>\n",
+				printf("<td align=left> <a href=\"%s/%s/#%s\">%s</a>\n",
 	                     		xgetenv("BBWEB"), 
 					bbh_item(hostwalk, BBH_PAGEPATH),
 					hostname,
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
 
 				clonewalk = hostwalk->next;
 				while (clonewalk && (strcmp(hostwalk->bbhostname, clonewalk->bbhostname) == 0)) {
-					printf("<br><a href=\"%s/%s#%s\">%s</a>\n",
+					printf("<br><a href=\"%s/%s/#%s\">%s</a>\n",
 						xgetenv("BBWEB"), 
 						bbh_item(clonewalk, BBH_PAGEPATH),
 						clonewalk->bbhostname,

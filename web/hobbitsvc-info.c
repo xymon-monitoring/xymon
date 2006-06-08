@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.106 2006-06-03 10:47:38 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.107 2006-06-08 20:46:33 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -559,7 +559,7 @@ char *generate_info(char *hostname)
 	}
 
 	val = bbh_item(hostwalk, BBH_PAGEPATH);
-	sprintf(l, "<tr><th align=left>Page/subpage:</th><td align=left><a href=\"%s/%s\">%s</a>\n", 
+	sprintf(l, "<tr><th align=left>Page/subpage:</th><td align=left><a href=\"%s/%s/\">%s</a>\n", 
 		xgetenv("BBWEB"), val, bbh_item(hostwalk, BBH_PAGEPATHTITLE));
 	addtobuffer(infobuf, l);
 
