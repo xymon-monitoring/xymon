@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.40 2006-06-08 08:39:57 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.41 2006-06-08 11:21:14 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -574,6 +574,7 @@ int load_client_config(char *configfn)
 				tok = wstok(NULL); if (isqual(tok)) continue;
 				if (strcasecmp(tok, "ignore") == 0) {
 					currule->rule.disk.ignored = 1;
+					tok = wstok(NULL);
 					continue;
 				}
 				currule->rule.disk.warnlevel = atol(tok);
