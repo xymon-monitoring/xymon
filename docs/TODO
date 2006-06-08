@@ -69,10 +69,6 @@ Things I must remember to look at
   on *which* process/disk is in error.
 * process checks that relate to a group of host (process "foo"
   must exist on at least X of these Y nodes: HostA, HostB, HostC.
-* CLASS tags for hobbit-alerts.cfg and hobbit-clients.cfg, to get
-  away from host/page name configs. Hosts can have a CLASS tag
-  defining them as belonging to one or more classes; the client-
-  and alert-config can then trigger on a class setting.
 * Configuration of which graph(s) to show by default, including 
   limiting it to e.g. one of the 7 disk graphs. Ref. mail from
   Charles Jones 15-feb-2005.
@@ -93,6 +89,12 @@ Things I must remember to look at
   is a protocol violation (e.g. SMTP servers may refuse us because
   we send data before seeing their "220" greeting). Should do this
   right and also cater for multiple http exchanges to follow redirects.
+* Better dependencies between tests. If you have multiple http tests
+  for one host, be able to make them depend on each other - also such
+  that one http test depends on another on the same host. And direct alerts 
+  for one URL to one group, and for another URL to a different group 
+  (like GROUP in client handling).
+  See http://www.hswn.dk/hobbiton/2006/06/msg00210.html
 * Better selection of which graphs go with what statuses. 
 * Easy way of grouping hosts for multi-graphs.
 
