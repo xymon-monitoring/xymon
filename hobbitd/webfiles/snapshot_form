@@ -12,7 +12,7 @@
        <BR>
        <CENTER>
 
-       <FORM METHOD="GET" ACTION="&REQUEST_URI">
+       <FORM METHOD="GET" ACTION="&SCRIPT_NAME">
           <SELECT NAME="mon">
           &REPMONLIST
           </SELECT>

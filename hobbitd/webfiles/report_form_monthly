@@ -12,7 +12,7 @@
        <BR>
        <CENTER>
 
-       <FORM METHOD="POST" ACTION="&REQUEST_URI">
+       <FORM METHOD="POST" ACTION="&SCRIPT_NAME">
           <SELECT NAME="month">
           &REPMONLIST
           </SELECT>

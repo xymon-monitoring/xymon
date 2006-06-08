@@ -23,7 +23,7 @@
 </TD>
 
 <TD WIDTH="40%" VALIGN=TOP>
-  <FORM METHOD="POST" NAME=selectionform ACTION="&REQUEST_URI">
+  <FORM METHOD="POST" NAME=selectionform ACTION="&SCRIPT_NAME">
     <TABLE SUMMARY="Selection table" BORDER=0 WIDTH="100%">
         <TR><TD WIDTH="100%" VALIGN=TOP>
             <TABLE SUMMARY="Maintenance input" BORDER=0>
