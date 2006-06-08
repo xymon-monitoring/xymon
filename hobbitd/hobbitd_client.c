@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.86 2006-06-08 08:39:57 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.87 2006-06-08 11:22:53 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1276,9 +1276,6 @@ void testmode(char *configfn)
 			printf("Hostname (.=end, ?=dump, !=reload) [%s]: ", hostname); 
 			fflush(stdout); fgets(hostname, sizeof(hostname), stdin);
 			clean_instr(hostname);
-			printf("Hosttype (.=end, ?=dump, !=reload) [%s]: ", clientclass); 
-			fflush(stdout); fgets(clientclass, sizeof(clientclass), stdin);
-			clean_instr(clientclass);
 
 			if (strlen(hostname) == 0) {
 				hinfo = oldhinfo;
@@ -1299,6 +1296,10 @@ void testmode(char *configfn)
 			else {
 				hinfo = hostinfo(hostname);
 				if (!hinfo) printf("Unknown host\n");
+
+				printf("Hosttype [%s]: ", clientclass); 
+				fflush(stdout); fgets(clientclass, sizeof(clientclass), stdin);
+				clean_instr(clientclass);
 			}
 		}
 		oldhinfo = hinfo;
