@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.87 2006-06-08 11:22:53 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.88 2006-06-08 21:01:53 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -728,7 +728,6 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 	strbuffer_t *logsummary;
 	int msgscolor = COL_GREEN;
 	char msgline[PATH_MAX];
-	char sectionname[PATH_MAX];
 	char *group;
 
 	for (swalk = sections; (swalk && strncmp(swalk->sname, "msgs:", 5)); swalk = swalk->next) ;
@@ -749,13 +748,12 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 		int logcolor;
 
 		clearstrbuffer(logsummary);
-		sprintf(sectionname, "msgs:%s", swalk->sname+5);
 		if (strncmp(swalk->sdata, "Cannot open logfile ", 20) == 0) {
 			logcolor = COL_YELLOW;
 			addtobuffer(logsummary, "Logfile not accessible");
 		}
 		else {
-			logcolor = scan_log(hinfo, clientclass, swalk->sname+5, swalk->sdata, sectionname, logsummary);
+			logcolor = scan_log(hinfo, clientclass, swalk->sname+5, swalk->sdata, swalk->sname, logsummary);
 		}
 
 		if (logcolor > msgscolor) msgscolor = logcolor;
@@ -763,20 +761,20 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 		switch (logcolor) {
 		  case COL_GREEN:
 			sprintf(msgline, "\nNo entries in <a href=\"%s\">%s</a>\n", 
-				hostsvcclienturl(hostname, sectionname), swalk->sname+5);
+				hostsvcclienturl(hostname, swalk->sname), swalk->sname+5);
 			addtobuffer(greendata, msgline);
 			break;
 
 		  case COL_YELLOW: 
 			sprintf(msgline, "\n&yellow Warnings in <a href=\"%s\">%s</a>\n", 
-				hostsvcclienturl(hostname, sectionname), swalk->sname+5);
+				hostsvcclienturl(hostname, swalk->sname), swalk->sname+5);
 			addtobuffer(yellowdata, msgline);
 			addtostrbuffer(yellowdata, logsummary);
 			break;
 
 		  case COL_RED:
 			sprintf(msgline, "\n&red Critical entries in <a href=\"%s\">%s</a>\n", 
-				hostsvcclienturl(hostname, sectionname), swalk->sname+5);
+				hostsvcclienturl(hostname, swalk->sname), swalk->sname+5);
 			addtobuffer(reddata, msgline);
 			addtostrbuffer(reddata, logsummary);
 			break;
@@ -824,7 +822,7 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 	for (swalk = sections; (swalk && strncmp(swalk->sname, "msgs:", 5)); swalk = swalk->next) ;
 	while (swalk) {
 		sprintf(msgline, "\nFull log <a href=\"%s\">%s</a>\n", 
-			hostsvcclienturl(hostname, sectionname), swalk->sname+5);
+			hostsvcclienturl(hostname, swalk->sname), swalk->sname+5);
 		addtostatus(msgline);
 		addtostatus(swalk->sdata);
 		do { swalk=swalk->next; } while (swalk && strncmp(swalk->sname, "msgs:", 5));
