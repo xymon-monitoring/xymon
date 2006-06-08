@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.41 2006-06-08 11:21:14 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.42 2006-06-08 21:57:16 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -779,7 +779,8 @@ int load_client_config(char *configfn)
 						currule->flags |= FCHK_MODE;
 						currule->rule.fcheck.fmode = strtol(tok+5, NULL, 8);
 					}
-					else if (strncasecmp(tok, "owner=", 6) == 0) {
+					else if ((strncasecmp(tok, "owner=", 6) == 0) ||
+						 (strncasecmp(tok, "ownerid=", 8) == 0)) {
 						char *eptr;
 						int uid;
 						
@@ -794,7 +795,8 @@ int load_client_config(char *configfn)
 							currule->rule.fcheck.ownerstr = strdup(tok+6);
 						}
 					}
-					else if (strncasecmp(tok, "group=", 6) == 0) {
+					else if (strncasecmp(tok, "groupid=", 8) == 0) {
+						/* Cannot use "group" because that is reserved */
 						char *eptr;
 						int uid;
 						
