@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.239 2006-06-04 11:23:43 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.240 2006-06-08 08:36:20 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -124,6 +124,7 @@ typedef struct hobbitd_log_t {
 typedef struct hobbitd_hostlist_t {
 	char *hostname;
 	char ip[IP_ADDR_STRLEN];
+	enum { H_NORMAL, H_SUMMARY, H_DIALUP } hosttype;
 	hobbitd_log_t *logs;
 	hobbitd_log_t *pinglog; /* Points to entry in logs list, but we need it often */
 	time_t clientmsgtstamp;
@@ -570,6 +571,21 @@ enum alertstate_t decide_alertstate(int color)
 }
 
 
+hobbitd_hostlist_t *create_hostlist_t(char *hostname, char *ip)
+{
+	hobbitd_hostlist_t *hitem;
+
+	hitem = (hobbitd_hostlist_t *) calloc(1, sizeof(hobbitd_hostlist_t));
+	hitem->hostname = strdup(hostname);
+	strcpy(hitem->ip, ip);
+	if (strcmp(hostname, "summary") == 0) hitem->hosttype = H_SUMMARY;
+	else if (strcmp(hostname, "dialup") == 0) hitem->hosttype = H_DIALUP;
+	else hitem->hosttype = H_NORMAL;
+	rbtInsert(rbhosts, hitem->hostname, hitem);
+
+	return hitem;
+}
+
 testinfo_t *create_testinfo(char *name)
 {
 	testinfo_t *newrec;
@@ -964,12 +980,7 @@ void get_hts(char *msg, char *sender, char *origin,
 	else hwalk = gettreeitem(rbhosts, hosthandle);
 
 	if (createhost && (hosthandle == rbtEnd(rbhosts))) {
-		hwalk = (hobbitd_hostlist_t *)calloc(1, sizeof(hobbitd_hostlist_t));
-		hwalk->hostname = strdup(hostname);
-		strcpy(hwalk->ip, hostip);
-		if (rbtInsert(rbhosts, hwalk->hostname, hwalk)) {
-			errprintf("Insert into rbhosts failed\n");
-		}
+		hwalk = create_hostlist_t(hostname, hostip);
 		hostcount++;
 	}
 
@@ -1103,7 +1114,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		return;
 	}
 
-	issummary = (strncmp(msg, "summary", 7) == 0);
+	issummary = (log->host->hosttype == H_SUMMARY);
 
 	if (strncmp(msg, "status+", 7) == 0) {
 		validity = durationvalue(msg+7);
@@ -2872,8 +2883,12 @@ void do_message(conn_t *msg, char *origin)
 				continue;
 			}
 
+			/* If there is a hostname filter, drop the "summary" and "dialup 'hosts' */
+			if (shost && (hwalk->hosttype != H_NORMAL)) continue;
+
 			firstlog = hwalk->logs;
-			if ((strcmp(hwalk->hostname, "summary") != 0) && (strcmp(hwalk->hostname, "dialup") != 0)) {
+
+			if (hwalk->hosttype == H_NORMAL) {
 				namelist_t *hinfo = hostinfo(hwalk->hostname);
 
 				if (!hinfo) {
@@ -3666,12 +3681,7 @@ void load_checkpoint(char *fn)
 		hosthandle = rbtFind(rbhosts, hostname);
 		if (hosthandle == rbtEnd(rbhosts)) {
 			/* New host */
-			hitem = (hobbitd_hostlist_t *) calloc(1, sizeof(hobbitd_hostlist_t));
-			hitem->hostname = strdup(hostname);
-			strcpy(hitem->ip, hostip);
-			hitem->logs = NULL;
-			hitem->clientmsg = NULL;
-			rbtInsert(rbhosts, hitem->hostname, hitem);
+			hitem = create_hostlist_t(hostname, hostip);
 			hostcount++;
 		}
 		else {
@@ -3766,7 +3776,7 @@ void check_purple_status(void)
 		while (lwalk) {
 			if (lwalk->validtime < now) {
 				dprintf("Purple log from %s %s\n", hwalk->hostname, lwalk->test->name);
-				if (strcmp(hwalk->hostname, "summary") == 0) {
+				if (hwalk->hosttype == H_SUMMARY) {
 					/*
 					 * A summary has gone stale. Drop it.
 					 */
@@ -4297,7 +4307,7 @@ int main(int argc, char *argv[])
 
 				hwalk = gettreeitem(rbhosts, hosthandle);
 
-				if (strcmp(hwalk->hostname, "summary") == 0) {
+				if (hwalk->hosttype == H_SUMMARY) {
 					/* Leave the summaries as-is */
 					hosthandle = rbtNext(rbhosts, hosthandle);
 				}
