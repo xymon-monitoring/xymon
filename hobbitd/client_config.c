@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.39 2006-05-31 20:24:51 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.40 2006-06-08 08:39:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -57,6 +57,7 @@ typedef struct c_disk_t {
 	int abswarn, abspanic;
 	int dmin, dmax, dcount;
 	int color;
+	int ignored;
 } c_disk_t;
 
 typedef struct c_mem_t {
@@ -565,11 +566,16 @@ int load_client_config(char *configfn)
 				currule->rule.disk.dmin = 0;
 				currule->rule.disk.dmax = -1;
 				currule->rule.disk.color = COL_RED;
+				currule->rule.disk.ignored = 0;
 
 				tok = wstok(NULL); if (isqual(tok)) continue;
 				currule->rule.disk.fsexp = setup_expr(tok, 0);
 
 				tok = wstok(NULL); if (isqual(tok)) continue;
+				if (strcasecmp(tok, "ignore") == 0) {
+					currule->rule.disk.ignored = 1;
+					continue;
+				}
 				currule->rule.disk.warnlevel = atol(tok);
 				switch (*(tok + strspn(tok, "0123456789"))) {
 				  case 'U':
@@ -1001,9 +1007,13 @@ void dump_client_config(void)
 
 		  case C_DISK:
 			printf("DISK %s", rwalk->rule.disk.fsexp->pattern);
-			printf(" %lu%c", rwalk->rule.disk.warnlevel, (rwalk->rule.disk.abswarn ? 'U' : '%'));
-			printf(" %lu%c", rwalk->rule.disk.paniclevel, (rwalk->rule.disk.abspanic  ? 'U' : '%'));
-			printf(" %d %d %s", rwalk->rule.disk.dmin, rwalk->rule.disk.dmax, colorname(rwalk->rule.disk.color));
+			if (rwalk->rule.disk.ignored)
+				printf("IGNORE");
+			else {
+				printf(" %lu%c", rwalk->rule.disk.warnlevel, (rwalk->rule.disk.abswarn ? 'U' : '%'));
+				printf(" %lu%c", rwalk->rule.disk.paniclevel, (rwalk->rule.disk.abspanic  ? 'U' : '%'));
+				printf(" %d %d %s", rwalk->rule.disk.dmin, rwalk->rule.disk.dmax, colorname(rwalk->rule.disk.color));
+			}
 			break;
 
 		  case C_MEM:
@@ -1214,7 +1224,7 @@ int get_disk_thresholds(namelist_t *hinfo, char *classname,
 			char *fsname, 
 			long *warnlevel, long *paniclevel, 
 			int *abswarn, int *abspanic,
-			char **group)
+			int *ignored, char **group)
 {
 	char *hostname, *pagename;
 	c_rule_t *rule;
@@ -1226,6 +1236,7 @@ int get_disk_thresholds(namelist_t *hinfo, char *classname,
 	*paniclevel = 95;
 	*abswarn = 0;
 	*abspanic = 0;
+	*ignored = 0;
 
 	rule = getrule(hostname, pagename, classname, C_DISK);
 	while (rule && !namematch(fsname, rule->rule.disk.fsexp->pattern, rule->rule.disk.fsexp->exp)) {
@@ -1237,6 +1248,7 @@ int get_disk_thresholds(namelist_t *hinfo, char *classname,
 		*abswarn = rule->rule.disk.abswarn;
 		*paniclevel = rule->rule.disk.paniclevel;
 		*abspanic = rule->rule.disk.abspanic;
+		*ignored = rule->rule.disk.ignored;
 		*group = rule->groups;
 		return rule->cfid;
 	}

@@ -28,7 +28,7 @@ extern int get_disk_thresholds(namelist_t *hinfo, char *classname,
 				char *fsname,
 				long *warnlevel, long *paniclevel,
 				int *abswarn, int *abspanic,
-				char **group);
+				int *ignored, char **group);
 
 extern void get_memory_thresholds(namelist_t *hhinfo, char *classname,
 				  int *physyellow, int *physred, 

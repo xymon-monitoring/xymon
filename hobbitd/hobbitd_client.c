@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.85 2006-06-06 16:32:29 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.86 2006-06-08 08:39:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -314,7 +314,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 	int mntcol  = -1;
 	char *p, *bol, *nl;
 	char msgline[4096];
-	strbuffer_t *monmsg;
+	strbuffer_t *monmsg, *dfstr_filtered;
 	char *dname;
 	int dmin, dmax, dcount, dcolor;
 	char *group;
@@ -324,11 +324,14 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 	dprintf("Disk check host %s\n", hostname);
 
 	monmsg = newstrbuffer(0);
+	dfstr_filtered = newstrbuffer(0);
 	dchecks = clear_disk_counts(hinfo, clientclass);
 	clearalertgroups();
 
 	bol = dfstr; /* Must do this always, to at least grab the column-numbers we need */
 	while (bol) {
+		int ignored = 0;
+
 		nl = strchr(bol, '\n'); if (nl) *nl = '\0';
 
 		if ((capacol == -1) && (mntcol == -1) && (freecol == -1)) {
@@ -355,7 +358,8 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 				add_disk_count(fsname);
 				get_disk_thresholds(hinfo, clientclass, fsname, 
 						    &warnlevel, &paniclevel, 
-						    &abswarn, &abspanic, &group);
+						    &abswarn, &abspanic, 
+						    &ignored, &group);
 
 				strcpy(p, bol);
 				levelstr = getcolumn(p, freecol); if (levelstr) levelabs = atol(levelstr);
@@ -366,7 +370,10 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 					fsname, levelpct, levelabs, 
 					warnlevel, paniclevel, abswarn, abspanic);
 
-				if ( (abspanic && (levelabs <= paniclevel)) || 
+				if (ignored) {
+					/* Forget about this one */
+				}
+				else if ( (abspanic && (levelabs <= paniclevel)) || 
 				     (!abspanic && (levelpct >= paniclevel)) ) {
 					if (diskcolor < COL_RED) diskcolor = COL_RED;
 
@@ -405,6 +412,10 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 			xfree(p);
 		}
 
+		if (!ignored) {
+			addtobuffer(dfstr_filtered, bol);
+			addtobuffer(dfstr_filtered, "\n");
+		}
 		if (nl) { *nl = '\n'; bol = nl+1; } else bol = NULL;
 	}
 
@@ -462,12 +473,13 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 	}
 
 	/* And the full df output */
-	addtostatus(dfstr);
+	addtostrstatus(dfstr_filtered);
 
 	if (fromline && !localmode) addtostatus(fromline);
 	finish_status();
 
 	freestrbuffer(monmsg);
+	freestrbuffer(dfstr_filtered);
 }
 
 void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
@@ -1316,15 +1328,18 @@ void testmode(char *configfn)
 		}
 		else if (strcmp(s, "disk") == 0) {
 			unsigned long warnlevel, paniclevel;
-			int abswarn, abspanic;
+			int abswarn, abspanic, ignored;
 
 			printf("Filesystem: "); fflush(stdout);
 			fgets(s, sizeof(s), stdin); clean_instr(s);
 			cfid = get_disk_thresholds(hinfo, clientclass, s, &warnlevel, &paniclevel, 
-						   &abswarn, &abspanic, NULL);
-			printf("Yellow at %lu%c, red at %lu%c\n", 
-				warnlevel, (abswarn ? 'U' : '%'),
-				paniclevel, (abspanic ? 'U' : '%'));
+						   &abswarn, &abspanic, &ignored, NULL);
+			if (ignored) 
+				printf("Ignored\n");
+			else
+				printf("Yellow at %lu%c, red at %lu%c\n", 
+					warnlevel, (abswarn ? 'U' : '%'),
+					paniclevel, (abspanic ? 'U' : '%'));
 		}
 		else if (strcmp(s, "proc") == 0) {
 			int pchecks = clear_process_counts(hinfo, clientclass);

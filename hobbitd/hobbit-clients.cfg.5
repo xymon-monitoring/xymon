@@ -73,6 +73,7 @@ CLOCK 15
 .SH DISK STATUS COLUMN SETTINGS
 .sp
 .BR "DISK filesystem warnlevel paniclevel"
+.BR "DISK filesystem IGNORE"
 .sp
 If the utilization of "filesystem" is reported to exceed "warnlevel"
 or "paniclevel", the "disk" status will go yellow or red, respectively.
@@ -80,6 +81,11 @@ or "paniclevel", the "disk" status will go yellow or red, respectively.
 space available as reported by the local "df" command on the host.
 For the latter type of check, the "warnlevel" must be followed by the
 letter "U", e.g. "1024U".
+
+The special keyword "IGNORE" causes this filesystem to be ignored
+completely, i.e. it will not appear in the "disk" status column and
+it will not be tracked in a graph. This is useful for e.g. removable
+devices, backup-disks and similar hardware.
 
 "filesystem" is the mount-point where the filesystem is mounted, e.g.
 "/usr" or "/home". A filesystem-name that begins with "%" is interpreted
