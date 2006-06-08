@@ -24,8 +24,9 @@ case "$1" in
     configure)
         # Setup permissions for the newly created "hobbit" user to write
 	# data where he needs to.
+	# NB: Dont change the "tmp" directory, since it is a symlink to /tmp
         cd /var/log/hobbit; chown hobbit:hobbit .
-	cd /usr/lib/hobbit/client; chown hobbit:hobbit logs tmp; chmod 755 logs tmp
+	cd /usr/lib/hobbit/client; chown hobbit:hobbit logs; chmod 755 logs
 	cd /usr/lib/hobbit/client; chown root bin/logfetch; chmod 4755 bin/logfetch
 	cd /usr/lib/hobbit/client; chown root bin/clientupdate; chmod 4755 bin/clientupdate
 
