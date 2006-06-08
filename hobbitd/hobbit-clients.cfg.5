@@ -277,10 +277,10 @@ which do not exist.
 where TYPE is one of "file", "dir", "char", "block",
 "fifo", or "socket". Triggers warning if the file is not of the
 specified type.
-.IP "owner=OWNER"
+.IP "ownerid=OWNER"
 triggers a warning if the owner does not match what is listed here.
 OWNER is specified either with the numeric uid, or the user name.
-.IP "group=GROUP"
+.IP "groupid=GROUP"
 triggers a warning if the group does not match what is listed here.
 GROUP is specified either with the numeric gid, or the group name.
 .IP "mode=MODE"
@@ -476,6 +476,21 @@ Rule matching by the time-of-day. This is specified as the DOWNTIME
 time specification in the bb-hosts file.  E.g. "TIME=W:0800:2200"
 applied to a rule will make this rule active only on week-days between
 8AM and 10PM.
+
+.SH DIRECTING ALERTS TO GROUPS
+For some tests - e.g. "procs" or "msgs" - the right group of people
+to alert in case of a failure may be different, depending on which 
+of the client rules actually detected a problem. E.g. if you have
+PROCS rules for a host checking both "httpd" and "sshd" processes,
+then the Web admins should handle httpd-failures, whereas "sshd"
+failures are handled by the Unix admins.
+
+To handle this, all rules can have a "GROUP=groupname" setting.
+When a rule with this setting triggers a yellow or red status,
+the groupname is passed on to the Hobbit alerts module, so you
+can use it in the alert rule definitions in 
+.I hobbit-alerts.cfg(5)
+to direct alerts to the correct group of people.
 
 .SH RULES: APPLYING SETTINGS TO SELECTED HOSTS
 Rules must be placed after the settings, e.g.

@@ -60,6 +60,14 @@ Rule matching an alert by the service name.
 .BR "EXSERVICE=targetstring"
 Rule excluding an alert by matching the service name.
 .sp
+.BR "GROUP=groupname"
+Rule matching an alert by the group name. Groupnames are assigned to a status via the GROUP
+setting in the hobbit-clients.cfg file.
+.sp
+.BR "EXGROUP=groupname"
+Rule excluding an alert by the group name. Groupnames are assigned to a status via the GROUP
+setting in the hobbit-clients.cfg file.
+.sp
 .BR "COLOR=color[,color]"
 Rule matching an alert by color. Can be "red", "yellow", or "purple". The forms "!red", "!yellow" and "!purple" can also be used to NOT send an alert if the color is the specified one.
 .sp
@@ -75,7 +83,9 @@ Rule matches if the alert has recovered from an alert state.
 .BR NOTICE
 Rule matches if the message is a "notify" message. This type of message is sent when a host or test is disabled or enabled.
 
-The "targetstring" is either a simple pagename, hostname or servicename, OR a '%' followed by a Perl-compatible regular expression. E.g. "HOST=%www(.*)" will match any hostname that begins with "www".
+The "targetstring" is either a simple pagename, hostname or servicename, OR a '%' 
+followed by a Perl-compatible regular expression. E.g. "HOST=%www(.*)" will match 
+any hostname that begins with "www". The same for the "groupname" setting.
 
 .SH RECIPIENTS
 The recipients are listed after the initial rule. The following keywords can be used to define recipients:
