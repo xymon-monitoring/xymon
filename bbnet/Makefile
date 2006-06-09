@@ -16,7 +16,7 @@ bbtest-net: $(NETTESTOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) ../lib/libbbgen.a libcares.a $(LDAPLIBS) $(SSLLIBS) $(NETLIBS)
 
 hobbitping: $(PINGTESTOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(PINGTESTOBJS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(PINGTESTOBJS) $(NETLIBS) ../lib/libbbgen.a $(NETLIBS)
 
 bbtest-net.o: bbtest-net.c
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(LDAPFLAGS) $(SSLINCDIR) $(LDAPINCDIR) -c -o $@ bbtest-net.c
