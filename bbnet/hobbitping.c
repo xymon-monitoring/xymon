@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitping.c,v 1.7 2006-05-25 14:56:35 henrik Exp $";
+static char rcsid[] = "$Id: hobbitping.c,v 1.8 2006-06-09 14:41:36 henrik Exp $";
 
 #include "config.h"
 
@@ -35,6 +35,8 @@ static char rcsid[] = "$Id: hobbitping.c,v 1.7 2006-05-25 14:56:35 henrik Exp $"
 #include <netdb.h>
 
 #include <stdio.h>
+
+#include "libbbgen.h"
 
 #define PING_PACKET_SIZE 64
 #define PING_MINIMUM_SIZE ICMP_MINLEN
@@ -125,8 +127,9 @@ void load_ips(int argc, char *argv[], FILE *fd)
 		newitem = (hostdata_t *)calloc(1, sizeof(hostdata_t));
 
 		newitem->addr.sin_family = AF_INET;
+		newitem->addr.sin_port = 0;
 		if (inet_aton(l, &newitem->addr.sin_addr) == 0) {
-			fprintf(stderr, "Dropping %s - not an IP\n", l);
+			errprintf("Dropping %s - not an IP\n", l);
 			free(newitem); 
 			continue;
 		}
@@ -153,6 +156,37 @@ typedef struct pingdata_t {
 	int id;				/* ID for the host this belongs to */
 	struct timeval timesent;	/* time we sent this ping */
 } pingdata_t;
+
+
+void drop_root(void)
+{
+	static uid_t myuid = 0;
+	static int didwarn = 0;
+
+	if (myuid == 0) myuid = getuid();
+	if (myuid == 0) {
+		if (!didwarn) {
+			errprintf("WARNING: Running hobbit as the \"root\" user is NOT recommended.\n");
+			didwarn = 1;
+		}
+		return; /* Run by "root" */
+	}
+
+#ifdef HPUX
+	setresuid(-1, myuid, -1);
+#else
+	seteuid(myuid);
+#endif
+}
+
+void get_root(void)
+{
+#ifdef HPUX
+	setresuid(-1, 0, -1);
+#else
+	seteuid(0);
+#endif
+}
 
 
 int send_ping(int sock, int startidx, int minresponses)
@@ -195,8 +229,15 @@ int send_ping(int sock, int startidx, int minresponses)
 	sentbytes = sendto(sock, buffer, PING_PACKET_SIZE, 0, 
 			   (struct sockaddr *) &hosts[idx]->addr, sizeof(struct sockaddr_in));
 
-	if (sentbytes == PING_PACKET_SIZE) {
+	if (sentbytes == -1) {
+		if (errno != EWOULDBLOCK) errprintf("Failed to send ICMP packet: %s\n", strerror(errno));
+	}
+	else if (sentbytes == PING_PACKET_SIZE) {
 		/* We managed to send a ping! */
+		if (debug) {
+			dprintf("Sent a ping to %s: index=%d, id=%d\n",
+				inet_ntoa(hosts[idx]->addr.sin_addr), idx, myicmpid);
+		}
 		idx++;
 	}
 
@@ -207,7 +248,7 @@ int send_ping(int sock, int startidx, int minresponses)
 int get_response(int sock)
 {
 	static unsigned char buffer[4096];
-	struct sockaddr addr;
+	struct sockaddr_in addr;
 	int n, pktcount;
 	unsigned int addrlen;
 	struct ip *iphdr;
@@ -227,9 +268,9 @@ int get_response(int sock)
 	do {
 		addrlen = sizeof(addr);
 		gettimeofday(&rtt, &tz);
-		n = recvfrom(sock, buffer, sizeof(buffer), 0, &addr, &addrlen);
+		n = recvfrom(sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&addr, &addrlen);
 		if (n < 0) {
-			if (errno != EWOULDBLOCK) fprintf(stderr, "recv failed: %s\n", strerror(errno));
+			if (errno != EWOULDBLOCK) errprintf("Failed to receive packet: %s\n", strerror(errno));
 			continue;
 		}
 
@@ -237,7 +278,7 @@ int get_response(int sock)
 		iphdr = (struct ip *)buffer;
 		iphdrlen = (iphdr->ip_hl << 2);	/* IP header always aligned on 4-byte boundary */
 		if (n < (iphdrlen + PING_MINIMUM_SIZE)) {
-			fprintf(stderr, "Short packet ignored\n");
+			errprintf("Short packet ignored\n");
 			continue;
 		}
 
@@ -247,6 +288,11 @@ int get_response(int sock)
 		 */
 		icmphdr = (struct icmp *)(buffer + iphdrlen);
 		hostidx = icmphdr->icmp_seq;
+
+		if (debug) {
+			dprintf("Got packet from %s: type=%d, index=%d, id=%d\n",
+				inet_ntoa(addr.sin_addr), icmphdr->icmp_type, icmphdr->icmp_id, hostidx);
+		}
 
 		switch (icmphdr->icmp_type) {
 		  case ICMP_ECHOREPLY:
@@ -294,7 +340,7 @@ int get_response(int sock)
 
 		  default:
 			/* Shouldn't happen */
-			fprintf(stderr, "Got a packet that wasnt a reply - type %d\n", icmphdr->icmp_type);
+			errprintf("Got a packet that wasnt a reply - type %d\n", icmphdr->icmp_type);
 			break;
 		}
 	} while (n > 0);
@@ -343,20 +389,13 @@ void show_results(void)
 int main(int argc, char *argv[])
 {
 	struct protoent *proto;
-	int protonumber, pingsocket = -1, sockerr;
+	int protonumber, pingsocket = -1, sockerr = 0, binderr = 0;
 	int argi, sendidx, pending, minresponses = 1, tries = 3, timeout = 5;
-	uid_t uid;
+	char *srcip = NULL;
+	struct sockaddr_in src_addr;
 
-	/* Get a raw socket, then drop all root privs. */
-	proto = getprotobyname("icmp");
-	protonumber = (proto ? proto->p_proto : 1);
-	pingsocket = socket(AF_INET, SOCK_RAW, protonumber); sockerr = errno;
-	uid = getuid();
-#ifdef HPUX
-	if (uid != 0) setresuid(-1, uid, -1);
-#else
-	if (uid != 0) seteuid(uid);
-#endif
+	/* Immediately drop all root privileges. */
+	drop_root();
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (strncmp(argv[argi], "--retries=", 10) == 0) {
@@ -371,9 +410,16 @@ int main(int argc, char *argv[])
 			char *delim = strchr(argv[argi], '=');
 			minresponses = atoi(delim+1);
 		}
+		else if (strncmp(argv[argi], "--source=", 9) == 0) {
+			char *delim = strchr(argv[argi], '=');
+			srcip = strdup(delim+1);
+		}
+		else if (strcmp(argv[argi], "--debug") == 0) {
+			debug = 1;
+		}
 		else if (strcmp(argv[argi], "--help") == 0) {
 			if (pingsocket >= 0) close(pingsocket);
-			fprintf(stderr, "%s [--retries=N] [--timeout=N] [--responses=N]\n", argv[0]);
+			fprintf(stderr, "%s [--retries=N] [--timeout=N] [--responses=N] [--source=IP]\n", argv[0]);
 			return 0;
 		}
 		else if (*(argv[argi]) == '-') {
@@ -381,11 +427,35 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	proto = getprotobyname("icmp");
+	protonumber = (proto ? proto->p_proto : 1);
+	if (srcip != NULL) {
+		/* Setup the source address */
+		src_addr.sin_family = AF_INET;
+		src_addr.sin_addr.s_addr = inet_addr(srcip);
+		src_addr.sin_port = htons(0);
+	}
+
+	/* Get a raw socket. Requires root privs. */
+	get_root();
+	pingsocket = socket(AF_INET, SOCK_RAW, protonumber); sockerr = errno;
+	if ((pingsocket != -1) && (srcip != NULL)) {
+		/* Bind to a specific source address */
+		if (bind(pingsocket, (struct sockaddr *) &src_addr, sizeof(src_addr)) == -1) binderr = errno;
+	}
+	drop_root();
+
 	if (pingsocket == -1) {
-		fprintf(stderr, "Cannot get RAW socket: %s\n", strerror(sockerr));
-		if (sockerr == EPERM) fprintf(stderr, "You must run this program as root\n");
+		errprintf("Cannot get RAW socket: %s\n", strerror(sockerr));
+		if (sockerr == EPERM) errprintf("This program must be installed suid-root\n");
 		return 3;
 	}
+
+	if ((srcip != NULL) && (binderr != 0)) {
+		errprintf("Cannot bind to source address %s: %s\nUsing default address\n",
+			  srcip, strerror(binderr));
+	}
+
 
 	/* Set the socket non-blocking - we use select() exclusively */
 	fcntl(pingsocket, F_SETFL, O_NONBLOCK);
@@ -418,7 +488,7 @@ int main(int argc, char *argv[])
 
 			if (n < 0) {
 				if (errno == EINTR) continue;
-				fprintf(stderr, "select failed: %s\n", strerror(errno));
+				errprintf("select failed: %s\n", strerror(errno));
 				return 4;
 			}
 			else if (n == 0) {
