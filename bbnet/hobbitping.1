@@ -33,6 +33,21 @@ number of retries. With the default options, hobbitping takes
 approximately 18 seconds to ping all hosts (tested with an
 input set of 1500 IP adresses).
 
+.SH SUID-ROOT INSTALLATION REQUIRED
+hobbitping needs to be installed with suid-root privileges,
+since it requires a "raw socket" to send and receive ICMP
+Echo (ping) packets.
+
+hobbitping is implemented such that it immediately drops
+the root privileges, and only regains them to perform two
+operations: Obtaining the raw socket, and optionally binding
+it to a specific source address. These operations are performed
+as root, the rest of the time hobbitping runs with normal user
+privileges. Specifically, no user-supplied data or network data
+is used while running with root privileges. Therefore it 
+should be safe to provide hobbitping with the necessary
+suid-root privileges.
+
 .SH OPTIONS
 .IP --retries=N
 Sets the number of retries for hosts that fail to respond to
@@ -45,6 +60,23 @@ Determines the timeout (in seconds) for ping probes. If a
 host does not respond within N seconds, it is regarded as
 unavailable, unless it responds to one of the retries.
 The default is --timeout=5.
+
+.IP --responses=N
+hobbitping normally stops pinging a host after receiving a single
+response, and uses that to determine the round-trip time. If the
+first response takes longer to arrive - e.g. because of additional
+network overhead when first determining the route to the target host -
+it may skew the round-trip-time reports. You can then use this option
+to require N responses, and hobbitping will calculate the round-trip
+time as the average of all of responsetimes.
+
+.IP --source=ADDRESS
+Use ADDRESS as the source IP address of the ping packets sent.
+On multi-homed systems, allows you to select the source IP of
+the hosts going out, which might be necessary for ping to work.
+
+.IP --debug
+Enable debug output. This prints out all packets sent and received.
 
 .SH "SEE ALSO"
 hobbit(7), bbtest-net(1), fping(1)
