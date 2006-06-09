@@ -13,7 +13,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: runclient.sh,v 1.11 2006-06-04 07:49:49 henrik Exp $
+# $Id: runclient.sh,v 1.12 2006-06-09 14:40:02 henrik Exp $
 
 # Default settings for this client
 MACHINEDOTS="`uname -n`"			# This systems hostname
@@ -108,15 +108,15 @@ case "$CMD" in
 	;;
 
   "status")
-	if test -s $HOBBITCLIENTHOME/logs/clientlaunch.pid
+	if test -s $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
 	then
-		kill -0 `cat $HOBBITCLIENTHOME/logs/clientlaunch.pid`
+		kill -0 `cat $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid`
 		if test $? -eq 0
 		then
-			echo "Hobbit client (clientlaunch) running with PID `cat $HOBBITCLIENTHOME/logs/clientlaunch.pid`"
+			echo "Hobbit client (clientlaunch) running with PID `cat $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid`"
 		else
 			echo "Hobbit client not running, removing stale PID file"
-			rm -f $HOBBITCLIENTHOME/logs/clientlaunch.pid
+			rm -f $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
 		fi
 	else
 		echo "Hobbit client (clientlaunch) does not appear to be running"
