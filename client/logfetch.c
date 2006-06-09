@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.24 2006-06-07 14:46:59 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.25 2006-06-09 14:39:36 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -218,48 +218,54 @@ char *logdata(char *filename, logdef_t *logdef, int *truncated)
 		 * Check if there's a trigger string anywhere in the data - 
 		 * if there is, then we'll skip to that trigger string.
 		 */
-		if (logdef->trigger) {
-			regex_t expr;
-			regmatch_t pmatch[1];
-			int status;
+		regex_t expr;
+		regmatch_t pmatch[1];
+		int status;
 
-			status = regcomp(&expr, logdef->trigger, REG_EXTENDED|REG_ICASE);
+		status = regcomp(&expr, logdef->trigger, REG_EXTENDED|REG_ICASE);
+		if (status == 0) {
+			status = regexec(&expr, buf, 1, pmatch, 0);
 			if (status == 0) {
-				status = regexec(&expr, buf, 1, pmatch, 0);
-				if (status == 0) {
-					startpos += pmatch[0].rm_so;
-					n -= pmatch[0].rm_so;
-				}
-				regfree(&expr);
+				int dropped;
+				char *tpos = startpos + pmatch[0].rm_so;
+
+				/* Seek back from startpos until we find the start of the line. */
+				while ((tpos >= startpos) && (*tpos != '\n') && ((startpos-tpos) < 500)) tpos--;
+				if (*tpos == '\n') tpos++;
+
+				dropped = (tpos - startpos);
+				startpos += dropped;
+				n -= dropped;
+			}
+			regfree(&expr);
+		}
+
+		/* If it's still too big, show the 10 lines after the trigger, and
+		 * then skip until it will fit.
+		 */
+		if (n > logdef->maxbytes) {
+			char *eoln;
+			int count = 0;
+
+			eoln = startpos;
+			while (eoln && (count < LINES_AFTER_TRIGGER)) {
+				eoln = strchr(eoln, '\n');
+				if (eoln) eoln++;
+				count++;
 			}
 
-			/* If it's still too big, show the 10 lines after the trigger, and
-			 * then skip until it will fit.
-			 */
-			if (n > logdef->maxbytes) {
-				char *eoln;
-				int count = 0;
-
-				eoln = startpos;
-				while (eoln && (count < LINES_AFTER_TRIGGER)) {
-					eoln = strchr(eoln, '\n');
-					if (eoln) eoln++;
-					count++;
-				}
-
-				if (eoln) {
-					int used, left, keep, togo;
+			if (eoln) {
+				int used, left, keep, togo;
 					
-					left = strlen(eoln);
-					if (left > 20) {
-						memcpy(eoln, "...<TRUNCATED>...\n", 18);
-						eoln = strchr(eoln, '\n'); eoln++;
-						used = (eoln - startpos);
-						keep = (logdef->maxbytes - used);
-						togo = (left - keep);
-						memmove(eoln, eoln+togo, keep+1);
-						n = n - togo + 18;
-					}
+				left = strlen(eoln);
+				if (left > 20) {
+					memcpy(eoln, "...<TRUNCATED>...\n", 18);
+					eoln = strchr(eoln, '\n'); eoln++;
+					used = (eoln - startpos);
+					keep = (logdef->maxbytes - used);
+					togo = (left - keep);
+					memmove(eoln, eoln+togo, keep+1);
+					n = n - togo + 18;
 				}
 			}
 		}
