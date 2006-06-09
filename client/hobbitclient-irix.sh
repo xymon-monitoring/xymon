@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-irix.sh,v 1.2 2006-05-31 07:07:49 henrik Exp $
+# $Id: hobbitclient-irix.sh,v 1.3 2006-06-09 08:52:46 henrik Exp $
 
 echo "[date]"
 date
@@ -36,8 +36,15 @@ echo "[ifstat]"
 netstat -i -n | egrep -v  "^lo|<Link"
 echo "[ps]"
 ps -Axo pid,ppid,user,stime,state,nice,pcpu,time,sz,rss,vsz,args
-echo "[top]"
-top -d2 -b 20 | tail +9
+
+# $TOP must be set, the install utility should do that for us if it exists.
+if test "$TOP" != ""
+then
+    if test -x "$TOP"
+        echo "[top]"
+	$TOP -d2 -b 20 | tail +9
+    fi
+fi
 
 # vmstat and iostat do not exist on irix. SAR is your only option at this time. 
 nohup sh -c "sar 300 2 1>$BBTMP/hobbit_sar.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_sar.$MACHINEDOTS.$$ $BBTMP/hobbit_sar.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &

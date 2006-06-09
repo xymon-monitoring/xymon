@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-freebsd.sh,v 1.13 2006-06-01 15:28:31 henrik Exp $
+# $Id: hobbitclient-freebsd.sh,v 1.14 2006-06-09 08:52:46 henrik Exp $
 
 echo "[date]"
 date
@@ -42,8 +42,16 @@ echo "[ports]"
 (netstat -na -f inet; netstat -na -f inet6) | grep "^tcp"
 echo "[ps]"
 ps -ax -ww -o pid,ppid,user,start,state,pri,pcpu,cputime,pmem,rss,vsz,args
-echo "[top]"
-top -n 20
+
+# $TOP must be set, the install utility should do that for us if it exists.
+if test "$TOP" != ""
+then
+    if test -x "$TOP"
+        echo "[top]"
+	$TOP -n 20
+    fi
+fi
+
 # vmstat
 nohup sh -c "vmstat 300 2 1>$BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ $BBTMP/hobbit_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
 sleep 5

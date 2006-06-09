@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-sunos.sh,v 1.14 2006-05-28 18:12:12 henrik Exp $
+# $Id: hobbitclient-sunos.sh,v 1.15 2006-06-09 08:52:46 henrik Exp $
 
 echo "[date]"
 date
@@ -51,8 +51,16 @@ echo "[ifstat]"
 /usr/bin/kstat -p -s '[or]bytes64' | sort
 echo "[ps]"
 ps -A -o pid,ppid,user,stime,s,pri,pcpu,time,pmem,rss,vsz,args
-echo "[top]"
-top -b 20
+
+# $TOP must be set, the install utility should do that for us if it exists.
+if test "$TOP" != ""
+then
+    if test -x "$TOP"
+        echo "[top]"
+        $TOP -b 20
+    fi
+fi
+
 # vmstat and iostat (iostat -d provides a cpu utilisation with I/O wait number)
 nohup sh -c "vmstat 300 2 1>$BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ $BBTMP/hobbit_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
 nohup sh -c "iostat -c 300 2 1>$BBTMP/hobbit_iostatcpu.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_iostatcpu.$MACHINEDOTS.$$ $BBTMP/hobbit_iostatcpu.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &

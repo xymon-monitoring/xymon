@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-hp-ux.sh,v 1.17 2006-05-15 13:29:02 henrik Exp $
+# $Id: hobbitclient-hp-ux.sh,v 1.18 2006-06-09 08:52:46 henrik Exp $
 
 echo "[date]"
 date
@@ -42,11 +42,19 @@ echo "[ports]"
 netstat -an | grep "^tcp"
 echo "[ps]"
 UNIX95=1 ps -Ax -o pid,ppid,user,stime,state,pri,pcpu,time,vsz,args
-echo "[top]"
-# Cits Bogajewski 03-08-2005: redirect of top fails
-top -d 1 -f $BBHOME/tmp/top.OUT
-cat $BBHOME/tmp/top.OUT
-rm $BBHOME/tmp/top.OUT
+
+# $TOP must be set, the install utility should do that for us if it exists.
+if test "$TOP" != ""
+then
+    if test -x "$TOP"
+        echo "[top]"
+	# Cits Bogajewski 03-08-2005: redirect of top fails
+	$TOP -d 1 -f $BBHOME/tmp/top.OUT
+	cat $BBHOME/tmp/top.OUT
+	rm $BBHOME/tmp/top.OUT
+    fi
+fi
+
 # vmstat
 nohup sh -c "vmstat 300 2 1>$BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ $BBTMP/hobbit_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
 sleep 5

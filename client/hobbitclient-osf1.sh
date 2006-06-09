@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-osf1.sh,v 1.10 2006-05-15 13:29:02 henrik Exp $
+# $Id: hobbitclient-osf1.sh,v 1.11 2006-06-09 08:52:46 henrik Exp $
 
 echo "[date]"
 date
@@ -38,8 +38,16 @@ echo "[ports]"
 netstat -an|grep "^tcp"
 echo "[ps]"
 ps -ef
-echo "[top]"
-top -b -n 1 
+
+# $TOP must be set, the install utility should do that for us if it exists.
+if test "$TOP" != ""
+then
+    if test -x "$TOP"
+        echo "[top]"
+	$TOP -b -n 1 
+    fi
+fi
+
 # vmstat
 nohup sh -c "vmstat 300 2 1>$BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ $BBTMP/hobbit_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
 sleep 5

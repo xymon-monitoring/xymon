@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-aix.sh,v 1.11 2006-05-15 13:26:43 henrik Exp $
+# $Id: hobbitclient-aix.sh,v 1.12 2006-06-09 08:52:46 henrik Exp $
 
 echo "[date]"
 date
@@ -44,11 +44,16 @@ netstat -v
 echo "[ps]"
 # I think the -f and -l options are ignored with -o, but this works...
 ps -A -k -f -l -o pid,ppid,user,stat,pri,pcpu,time,etime,pmem,vsz,args
+
+# $TOP must be set, the install utility should do that for us if it exists.
 if test "$TOP" != ""
-then 
-    echo "[top]"
-    top -b 20
+then
+    if test -x "$TOP"
+        echo "[top]"
+        $TOP -b 20
+    fi
 fi
+
 # vmstat
 nohup sh -c "vmstat 300 2 1>$BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ $BBTMP/hobbit_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
 sleep 5

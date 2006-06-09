@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-linux.sh,v 1.16 2006-06-03 10:47:05 henrik Exp $
+# $Id: hobbitclient-linux.sh,v 1.17 2006-06-09 08:52:46 henrik Exp $
 
 echo "[date]"
 date
@@ -53,8 +53,16 @@ echo "[ifstat]"
 /sbin/ifconfig
 echo "[ps]"
 ps -Aw -o pid,ppid,user,start,state,pri,pcpu,time,pmem,rsz,vsz,cmd
-echo "[top]"
-top -b -n 1 
+
+# $TOP must be set, the install utility should do that for us if it exists.
+if test "$TOP" != ""
+then
+    if test -x "$TOP"
+        echo "[top]"
+	$TOP -b -n 1 
+    fi
+fi
+
 # vmstat
 nohup sh -c "vmstat 300 2 1>$BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ $BBTMP/hobbit_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
 sleep 5
