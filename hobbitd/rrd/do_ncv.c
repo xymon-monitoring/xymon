@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.9 2006-05-03 21:19:24 henrik Exp $";
+static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.10 2006-06-09 22:23:49 henrik Exp $";
 
 int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -22,7 +22,7 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	char *envnam;
 	char *dstypes = NULL;
 
-	sprintf(rrdfn, "%s.rrd", testname);
+	setupfn("%s.rrd", testname);
 	sprintf(rrdvalues, "%d", (int)tstamp);
 
 	params = (char **)calloc(8, sizeof(char *));

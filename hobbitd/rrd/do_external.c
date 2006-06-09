@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char external_rcsid[] = "$Id: do_external.c,v 1.15 2006-05-03 21:19:24 henrik Exp $";
+static char external_rcsid[] = "$Id: do_external.c,v 1.16 2006-06-09 22:23:49 henrik Exp $";
 
 int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -105,12 +105,14 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 					}
 					/* Fall through */
 				  case R_FN:
-					strcpy(rrdfn, STRBUF(inbuf));
+					strncpy(rrdfn, STRBUF(inbuf), sizeof(rrdfn)-1);
+					rrdfn[sizeof(rrdfn)-1] = '\0';
 					pstate = R_DATA;
 					break;
 
 				  case R_DATA:
-					sprintf(rrdvalues, "%d:%s", (int)tstamp, STRBUF(inbuf));
+					snprintf(rrdvalues, sizeof(rrdvalues)-1, "%d:%s", (int)tstamp, STRBUF(inbuf));
+					rrdvalues[sizeof(rrdvalues)-1] = '\0';
 					create_and_update_rrd(hostname, rrdfn, params, NULL);
 					pstate = R_NEXT;
 					break;

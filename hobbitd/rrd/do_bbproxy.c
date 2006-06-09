@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbproxy_rcsid[] = "$Id: do_bbproxy.c,v 1.11 2006-05-03 21:19:24 henrik Exp $";
+static char bbproxy_rcsid[] = "$Id: do_bbproxy.c,v 1.12 2006-06-09 22:23:49 henrik Exp $";
 
 int do_bbproxy_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 { 
@@ -23,7 +23,7 @@ int do_bbproxy_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	p = strstr(msg, "Average queue time");
 	if (p && (sscanf(p, "Average queue time : %f", &runtime) == 1)) {
 		if (strcmp("bbproxy", testname) != 0) {
-			sprintf(rrdfn, "bbproxy.%s.rrd", testname);
+			setupfn("bbproxy.%s.rrd", testname);
 		}
 		else {
 			strcpy(rrdfn, "bbproxy.rrd");

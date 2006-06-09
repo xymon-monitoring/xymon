@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char temperature_rcsid[] = "$Id: do_temperature.c,v 1.9 2006-05-03 21:19:24 henrik Exp $";
+static char temperature_rcsid[] = "$Id: do_temperature.c,v 1.10 2006-06-09 22:23:49 henrik Exp $";
 
 int do_temperature_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -81,7 +81,7 @@ int do_temperature_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			tmpC = atoi(p);
 			while ((p > bol) && isspace((int)*p)) p--;
 
-			savech = *(p+1); *(p+1) = '\0'; sprintf(rrdfn, "temperature.%s.rrd", bol); *(p+1) = savech;
+			savech = *(p+1); *(p+1) = '\0'; setupfn("temperature.%s.rrd", bol); *(p+1) = savech;
 			while ((p = strchr(rrdfn, ' ')) != NULL) *p = '_';
 
 			sprintf(rrdvalues, "%d:%d", (int)tstamp, tmpC);

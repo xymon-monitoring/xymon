@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.33 2006-06-04 10:53:13 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.34 2006-06-09 22:23:49 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -32,7 +32,6 @@ char *rrddir = NULL;
 static char *exthandler = NULL;
 static char **extids = NULL;
 
-static char rrdfn[PATH_MAX];
 static char rrdvalues[MAX_LINE_LEN];
 static char rra1[] = "RRA:AVERAGE:0.5:1:576";
 static char rra2[] = "RRA:AVERAGE:0.5:6:576";
@@ -40,14 +39,15 @@ static char rra3[] = "RRA:AVERAGE:0.5:24:576";
 static char rra4[] = "RRA:AVERAGE:0.5:288:576";
 
 static char *senderip = NULL;
-static char filedir[PATH_MAX];
+static char rrdfn[PATH_MAX];	/* This one used by the modules */
+static char filedir[PATH_MAX];	/* This one used here */
 
 void setup_exthandler(char *handlerpath, char *ids)
 {
 	char *p;
 	int idcount = 0;
 
-	MEMDEFINE(rrdfn); MEMDEFINE(rrdvalues);
+	MEMDEFINE(rrdvalues);
 
 	exthandler = strdup(handlerpath);
 	idcount=1; p = ids; while ((p = strchr(p, ',')) != NULL) { p++; idcount++; }
@@ -60,7 +60,7 @@ void setup_exthandler(char *handlerpath, char *ids)
 	}
 	extids[idcount] = NULL;
 
-	MEMUNDEFINE(rrdvalues); MEMUNDEFINE(rrdfn);
+	MEMUNDEFINE(rrdvalues);
 }
 
 static char *setup_template(char *params[])
@@ -94,6 +94,12 @@ static char *setup_template(char *params[])
 	return result;
 }
 
+static void setupfn(char *format, char *param)
+{
+	snprintf(rrdfn, sizeof(rrdfn)-1, format, param);
+	rrdfn[sizeof(rrdfn)-1] = '\0';
+}
+
 static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], char *template)
 {
 	struct stat st;
@@ -109,7 +115,7 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 		return -1;
 	}
 
-	MEMDEFINE(rrdfn); MEMDEFINE(rrdvalues);
+	MEMDEFINE(rrdvalues);
 	MEMDEFINE(filedir);
 
 	sprintf(filedir, "%s/%s", rrddir, hostname);
@@ -117,11 +123,13 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 		if (mkdir(filedir, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH) == -1) {
 			errprintf("Cannot create rrd directory %s : %s\n", filedir, strerror(errno));
 			MEMUNDEFINE(filedir);
-			MEMUNDEFINE(rrdvalues); MEMUNDEFINE(rrdfn);
+			MEMUNDEFINE(rrdvalues);
 			return -1;
 		}
 	}
-	strcat(filedir, "/"); strcat(filedir, fn);
+	/* Watch out here - "fn" may be very large. */
+	snprintf(filedir, sizeof(filedir)-1, "%s/%s/%s", rrddir, hostname, fn);
+	filedir[sizeof(filedir)-1] = '\0'; /* Make sure it is null terminated */
 	creparams[1] = filedir;	/* Icky */
 
 	if (stat(filedir, &st) == -1) {
@@ -145,7 +153,7 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 		if (result != 0) {
 			errprintf("RRD error creating %s: %s\n", filedir, rrd_get_error());
 			MEMUNDEFINE(filedir);
-			MEMUNDEFINE(rrdvalues); MEMUNDEFINE(rrdfn);
+			MEMUNDEFINE(rrdvalues);
 			return 1;
 		}
 	}
@@ -180,12 +188,12 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 			  filedir, (senderip ? senderip : "unknown"), 
 			  rrd_get_error());
 		MEMUNDEFINE(filedir);
-		MEMUNDEFINE(rrdvalues); MEMUNDEFINE(rrdfn);
+		MEMUNDEFINE(rrdvalues);
 		return 2;
 	}
 
 	MEMUNDEFINE(filedir);
-	MEMUNDEFINE(rrdvalues); MEMUNDEFINE(rrdfn);
+	MEMUNDEFINE(rrdvalues);
 
 	return 0;
 }
@@ -200,7 +208,8 @@ static int rrddatasets(char *hostname, char *fn, char ***dsnames)
 	unsigned long steptime, dscount;
 	rrd_value_t *rrddata;
 
-	sprintf(filedir, "%s/%s/%s", rrddir, hostname, fn);
+	snprintf(filedir, sizeof(filedir)-1, "%s/%s/%s", rrddir, hostname, fn);
+	filedir[sizeof(filedir)-1] = '\0';
 	if (stat(filedir, &st) == -1) return 0;
 
 	optind = opterr = 0; rrd_clear_error();
@@ -257,7 +266,7 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	int res = 0;
 	char *id;
 
-	MEMDEFINE(rrdvalues); MEMDEFINE(rrdfn);
+	MEMDEFINE(rrdvalues);
 
 	if (ldef) id = ldef->hobbitrrdname; else id = testname;
 	senderip = sender;
@@ -311,6 +320,6 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 
 	senderip = NULL;
 
-	MEMUNDEFINE(rrdvalues); MEMUNDEFINE(rrdfn);
+	MEMUNDEFINE(rrdvalues);
 }
 

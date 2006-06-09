@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbgen_rcsid[] = "$Id: do_bbgen.c,v 1.11 2006-05-03 21:19:24 henrik Exp $";
+static char bbgen_rcsid[] = "$Id: do_bbgen.c,v 1.12 2006-06-09 22:23:49 henrik Exp $";
 
 int do_bbgen_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -23,7 +23,7 @@ int do_bbgen_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	p = strstr(msg, "TIME TOTAL");
 	if (p && (sscanf(p, "TIME TOTAL %f", &runtime) == 1)) {
 		if (strcmp("bbgen", testname) != 0) {
-			sprintf(rrdfn, "bbgen.%s.rrd", testname);
+			setupfn("bbgen.%s.rrd", testname);
 		}
 		else {
 			strcpy(rrdfn, "bbgen.rrd");
