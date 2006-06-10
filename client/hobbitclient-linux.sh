@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-linux.sh,v 1.17 2006-06-09 08:52:46 henrik Exp $
+# $Id: hobbitclient-linux.sh,v 1.18 2006-06-10 15:30:26 henrik Exp $
 
 echo "[date]"
 date
@@ -58,6 +58,7 @@ ps -Aw -o pid,ppid,user,start,state,pri,pcpu,time,pmem,rsz,vsz,cmd
 if test "$TOP" != ""
 then
     if test -x "$TOP"
+    then
         echo "[top]"
 	$TOP -b -n 1 
     fi

@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-osf1.sh,v 1.11 2006-06-09 08:52:46 henrik Exp $
+# $Id: hobbitclient-osf1.sh,v 1.12 2006-06-10 15:30:26 henrik Exp $
 
 echo "[date]"
 date
@@ -43,6 +43,7 @@ ps -ef
 if test "$TOP" != ""
 then
     if test -x "$TOP"
+    then
         echo "[top]"
 	$TOP -b -n 1 
     fi

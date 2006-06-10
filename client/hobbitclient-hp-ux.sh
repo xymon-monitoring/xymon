@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-hp-ux.sh,v 1.18 2006-06-09 08:52:46 henrik Exp $
+# $Id: hobbitclient-hp-ux.sh,v 1.19 2006-06-10 15:30:26 henrik Exp $
 
 echo "[date]"
 date
@@ -47,6 +47,7 @@ UNIX95=1 ps -Ax -o pid,ppid,user,stime,state,pri,pcpu,time,vsz,args
 if test "$TOP" != ""
 then
     if test -x "$TOP"
+    then
         echo "[top]"
 	# Cits Bogajewski 03-08-2005: redirect of top fails
 	$TOP -d 1 -f $BBHOME/tmp/top.OUT

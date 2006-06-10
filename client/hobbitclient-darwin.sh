@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-darwin.sh,v 1.15 2006-06-09 08:52:46 henrik Exp $
+# $Id: hobbitclient-darwin.sh,v 1.16 2006-06-10 15:30:26 henrik Exp $
 
 echo "[date]"
 date
@@ -45,6 +45,7 @@ ps -ax -ww -o pid,ppid,user,start,state,pri,pcpu,time,pmem,rss,vsz,command
 if test "$TOP" != ""
 then
     if test -x "$TOP"
+    then
         echo "[top]"
 	$TOP -l 1 -n 20
     fi

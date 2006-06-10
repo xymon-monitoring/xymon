@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-aix.sh,v 1.12 2006-06-09 08:52:46 henrik Exp $
+# $Id: hobbitclient-aix.sh,v 1.13 2006-06-10 15:30:26 henrik Exp $
 
 echo "[date]"
 date
@@ -49,6 +49,7 @@ ps -A -k -f -l -o pid,ppid,user,stat,pri,pcpu,time,etime,pmem,vsz,args
 if test "$TOP" != ""
 then
     if test -x "$TOP"
+    then
         echo "[top]"
         $TOP -b 20
     fi

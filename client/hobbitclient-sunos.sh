@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-sunos.sh,v 1.15 2006-06-09 08:52:46 henrik Exp $
+# $Id: hobbitclient-sunos.sh,v 1.16 2006-06-10 15:30:26 henrik Exp $
 
 echo "[date]"
 date
@@ -56,6 +56,7 @@ ps -A -o pid,ppid,user,stime,s,pri,pcpu,time,pmem,rss,vsz,args
 if test "$TOP" != ""
 then
     if test -x "$TOP"
+    then
         echo "[top]"
         $TOP -b 20
     fi

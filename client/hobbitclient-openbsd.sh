@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-openbsd.sh,v 1.12 2006-06-09 08:52:46 henrik Exp $
+# $Id: hobbitclient-openbsd.sh,v 1.13 2006-06-10 15:30:26 henrik Exp $
 
 echo "[date]"
 date
@@ -45,6 +45,7 @@ ps -ax -ww -o pid,ppid,user,start,state,pri,pcpu,cputime,pmem,rss,vsz,args
 if test "$TOP" != ""
 then
     if test -x "$TOP"
+    then
         echo "[top]"
 	$TOP -n 20
     fi
