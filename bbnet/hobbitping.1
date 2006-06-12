@@ -70,6 +70,16 @@ it may skew the round-trip-time reports. You can then use this option
 to require N responses, and hobbitping will calculate the round-trip
 time as the average of all of responsetimes.
 
+.IP --max-pps=N
+Maximum number of packets per second. This limits the number of
+ICMP packets hobbitping will send per second, by enforcing a
+brief delay after each packet is sent. The default setting is
+to send a maximum of 50 packets per second. Note that increasing
+this may cause flooding of the network, and since ICMP packets
+can be discarded by routers and other network equipment, this
+can cause erratic behaviour with hosts recorded as not responding
+when they are in fact OK.
+
 .IP --source=ADDRESS
 Use ADDRESS as the source IP address of the ping packets sent.
 On multi-homed systems, allows you to select the source IP of
