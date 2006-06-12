@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitping.c,v 1.8 2006-06-09 14:41:36 henrik Exp $";
+static char rcsid[] = "$Id: hobbitping.c,v 1.9 2006-06-12 21:22:39 henrik Exp $";
 
 #include "config.h"
 
@@ -26,6 +26,7 @@ static char rcsid[] = "$Id: hobbitping.c,v 1.8 2006-06-09 14:41:36 henrik Exp $"
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
+#include <ctype.h>
 
 #include <netinet/in_systm.h>
 #include <netinet/in.h>
@@ -40,6 +41,7 @@ static char rcsid[] = "$Id: hobbitping.c,v 1.8 2006-06-09 14:41:36 henrik Exp $"
 
 #define PING_PACKET_SIZE 64
 #define PING_MINIMUM_SIZE ICMP_MINLEN
+#define SENDLIMIT 100
 
 typedef struct hostdata_t {
 	int id;
@@ -53,6 +55,7 @@ hostdata_t *hosthead = NULL;
 int hostcount = 0;
 hostdata_t **hosts = NULL;	/* Array of pointers to the hostdata records, for fast acces via ID */
 int myicmpid;
+int senddelay = (1000000 / 50);	/* Delay between sending packets, in microseconds */
 
 /* This routine more or less taken from the "fping" source. Apparently by W. Stevens (public domain) */
 int calc_icmp_checksum(unsigned short *pkt, int pktlen)
@@ -210,6 +213,15 @@ int send_ping(int sock, int startidx, int minresponses)
 	while ((idx < hostcount) && (hosts[idx]->received >= minresponses)) idx++;
 	if (idx >= hostcount) return hostcount;
 
+	/* 
+	 * Dont flood the net.
+	 * By enforcing a brief sleep here, we force a delay
+	 * between sending packets. It is easiest to do before sending
+	 * a packet, because if done after the send completes, then
+	 * it affects the RTT measurements.
+	 */
+	if (senddelay) usleep(senddelay);
+
 	/* Build the packet and send it */
 	memset(buffer, 0, PING_PACKET_SIZE);
 
@@ -217,8 +229,8 @@ int send_ping(int sock, int startidx, int minresponses)
 	icmphdr->icmp_type = ICMP_ECHO;
 	icmphdr->icmp_code = 0;
 	icmphdr->icmp_cksum = 0;
-	icmphdr->icmp_seq = idx;	/* So we can map response to our hosts */
-	icmphdr->icmp_id = myicmpid;
+	icmphdr->icmp_seq = htons(idx+1);	/* So we can map response to our hosts */
+	icmphdr->icmp_id = htons(myicmpid);
 
 	pingdata = (struct pingdata_t *)(buffer + sizeof(struct icmp));
 	pingdata->id = idx;
@@ -287,7 +299,7 @@ int get_response(int sock)
 		 * Thanks to "fping" for this neat way of matching requests and responses.
 		 */
 		icmphdr = (struct icmp *)(buffer + iphdrlen);
-		hostidx = icmphdr->icmp_seq;
+		hostidx = ntohs(icmphdr->icmp_seq)-1;
 
 		if (debug) {
 			dprintf("Got packet from %s: type=%d, index=%d, id=%d\n",
@@ -296,7 +308,7 @@ int get_response(int sock)
 
 		switch (icmphdr->icmp_type) {
 		  case ICMP_ECHOREPLY:
-			if (icmphdr->icmp_id != myicmpid) {
+			if (ntohs(icmphdr->icmp_id) != myicmpid) {
 				/* Not one of our packets. Happens if someone else does ping simultaneously. */
 				break;
 			}
@@ -414,13 +426,31 @@ int main(int argc, char *argv[])
 			char *delim = strchr(argv[argi], '=');
 			srcip = strdup(delim+1);
 		}
+		else if (strncmp(argv[argi], "--max-pps=", 10) == 0) {
+			char *delim = strchr(argv[argi], '=');
+			senddelay = (1000000 / atoi(delim+1));
+		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
 		}
 		else if (strcmp(argv[argi], "--help") == 0) {
 			if (pingsocket >= 0) close(pingsocket);
-			fprintf(stderr, "%s [--retries=N] [--timeout=N] [--responses=N] [--source=IP]\n", argv[0]);
+			fprintf(stderr, "%s [--retries=N] [--timeout=N] [--responses=N] [--max-pps=N] [--source=IP]\n", argv[0]);
 			return 0;
+		}
+
+		/* fping compatibility options */
+		else if (strncmp(argv[argi], "-i", 2) == 0) {
+			char *val = argv[argi] + 2;
+			if (isdigit((int) *val)) senddelay = atoi(val);
+		}
+		else if (strncmp(argv[argi], "-r", 2) == 0) {
+			char *val = argv[argi] + 2;
+			if (isdigit((int) *val)) tries = atoi(val);
+		}
+		else if (strncmp(argv[argi], "-S", 2) == 0) {
+			char *val = argv[argi] + 2;
+			srcip = strdup(val);
 		}
 		else if (*(argv[argi]) == '-') {
 			/* Ignore everything else - for fping compatibility */
@@ -464,11 +494,12 @@ int main(int argc, char *argv[])
 	pending = count_pending(minresponses);
 
 	while (tries) {
+		int sendnow = SENDLIMIT;
 		time_t cutoff = time(NULL) + timeout + 1;
 		sendidx = 0;
 
 		/* Change this on each iteration, so we dont mix packets from each round of pings */
-		myicmpid = ((getpid()+tries) && 0xFFFF);
+		myicmpid = ((getpid()+tries) & 0x7FFF);
 
 		/* Do one loop over the hosts we havent had responses from yet. */
 		while (pending > 0) {
@@ -480,7 +511,7 @@ int main(int argc, char *argv[])
 			FD_ZERO(&writefds);
 			FD_SET(pingsocket, &readfds);
 
-			if (sendidx < hostcount) FD_SET(pingsocket, &writefds);
+			if (sendnow && (sendidx < hostcount)) FD_SET(pingsocket, &writefds);
 
 			tmo.tv_sec = 0;
 			tmo.tv_usec = 100000;
@@ -497,17 +528,23 @@ int main(int argc, char *argv[])
 					/* No more to send and the read timed out - so we're done */
 					pending = 0;
 				}
+				sendnow = SENDLIMIT;
 			}
 			else {
-				if (FD_ISSET(pingsocket, &writefds)) {
+				if (sendnow && FD_ISSET(pingsocket, &writefds)) {
 					/* OK to send */
 					sendidx = send_ping(pingsocket, sendidx, minresponses);
+					sendnow--;
+
 					/* Adjust the cutoff time, so we wait TIMEOUT seconds for a response */
 					cutoff = time(NULL) + timeout + 1;
 				}
+
 				if (FD_ISSET(pingsocket, &readfds)) {
 					/* Grab the replies */
-					pending -= get_response(pingsocket);
+					int count = get_response(pingsocket);
+					pending -= count;
+					sendnow += count; if (sendnow > SENDLIMIT) sendnow = SENDLIMIT;
 				}
 			}
 		}
