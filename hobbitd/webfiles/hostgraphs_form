@@ -1,0 +1,68 @@
+
+<BR>
+
+<CENTER>
+  <TABLE WIDTH=80% BORDER=0 CELLSPACING=5 SUMMARY="Metrics date specification">
+    <TR BGCOLOR="#000033">
+       <TD COLSPAN=2>
+           <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1"><B>Metrics Report</B></FONT></CENTER>
+       </TD>
+    </TR>
+    <TR>
+       <TD BGCOLOR="#333333">
+       <BR>
+       <CENTER>
+
+       <FORM METHOD="GET" ACTION="&SCRIPT_NAME">
+          <SELECT NAME="start-mon">
+          &REPMONLIST
+          </SELECT>
+
+          <SELECT NAME="start-day">
+          &REPDAYLIST
+          </SELECT>
+
+          <SELECT NAME="start-yr">
+          &REPYEARLIST
+          </SELECT>
+
+          <FONT SIZE="+1" FACE="Arial, Helvetica">- to -</FONT>
+
+          <SELECT NAME="end-mon">
+          &REPMONLIST
+          </SELECT>
+
+          <SELECT NAME="end-day">
+          &REPDAYLIST
+          </SELECT>
+
+          <SELECT NAME="end-yr">
+          &REPYEARLIST
+          </SELECT>
+
+	  <br><br>
+
+	  <SELECT NAME=hostname SIZE=15>
+	  &HOSTLIST
+	  </SELECT>
+
+	  <SELECT NAME=testname MULTIPLE SIZE=15>
+	  <option value="ALL" SELECTED>ALL</option>
+	  <option value="cpu">cpu</option>
+	  <option value="disk">disk</option>
+	  <option value="memory">memory</option>
+	  <option value="conn">conn</option>
+	  </SELECT>
+
+          <BR><BR>
+          <INPUT TYPE="SUBMIT" NAME="DoReport" VALUE="Generate Report" ALT="Generate Report">
+       </FORM>
+
+       </CENTER>
+       </TD>
+      </TR>
+   </TABLE>
+</CENTER>
+
+<BR><BR><BR>
+
