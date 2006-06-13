@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-hostgraphs.c,v 1.1 2006-06-13 15:00:55 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-hostgraphs.c,v 1.2 2006-06-13 15:12:47 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -170,6 +170,16 @@ int main(int argc, char *argv[])
 	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 
 	if (action == A_SELECT) {
+                char *cookie, *p;
+
+		cookie = getenv("HTTP_COOKIE");
+		if (cookie && !pagepattern && ((p = strstr(cookie, "pagepath=")) != NULL)) {
+			p += strlen("pagepath=");
+			pagepattern = strdup(p);
+			p = strchr(pagepattern, ';'); if (p) *p = '\0';
+			if (strlen(pagepattern) == 0) { xfree(pagepattern); pagepattern = 0; }
+		}
+
 		if (hostpattern || pagepattern || ippattern)
 			sethostenv_filter(hostpattern, pagepattern, ippattern);
 		showform(stdout, "hostgraphs", "hostgraphs_form", COL_BLUE, getcurrenttime(NULL), NULL);
