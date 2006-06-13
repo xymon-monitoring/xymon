@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-hostgraphs.c,v 1.2 2006-06-13 15:12:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-hostgraphs.c,v 1.3 2006-06-13 21:59:26 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -43,7 +43,7 @@ void parse_query(void)
 {
 	cgidata_t *cgidata, *cwalk;
 	int sday = 0, smon = 0, syear = 0, eday = 0, emon = 0, eyear = 0;
-	int hostcount = 0, testcount = 0;
+	int hostcount = 0, testcount = 0, alltests = 0;
 
 	cgidata = cgi_request();
 	if (cgidata == NULL) return;
@@ -72,7 +72,7 @@ void parse_query(void)
 		else if ((strcmp(cwalk->name, "hostname") == 0)   && cwalk->value && strlen(cwalk->value)) {
 			if (!hosts) hosts = (char **) malloc(sizeof(char *));
 
-			hosts = (char **)realloc(hosts, (hostcount+1) * sizeof(char *));
+			hosts = (char **)realloc(hosts, (hostcount+2) * sizeof(char *));
 			hosts[hostcount] = strdup(cwalk->value); hostcount++;
 
 			hosts[hostcount] = NULL;
@@ -81,14 +81,10 @@ void parse_query(void)
 			if (!tests) tests = (char **) malloc(sizeof(char *));
 
 			if (strcmp(cwalk->value, "ALL") == 0) {
-				tests = (char **)realloc(tests, (testcount+4) * sizeof(char *));
-				tests[testcount] = strdup("cpu"); testcount++;
-				tests[testcount] = strdup("disk"); testcount++;
-				tests[testcount] = strdup("memory"); testcount++;
-				tests[testcount] = strdup("conn"); testcount++;
+				alltests = 1;
 			}
 			else {
-				tests = (char **)realloc(tests, (testcount+1) * sizeof(char *));
+				tests = (char **)realloc(tests, (testcount+2) * sizeof(char *));
 				tests[testcount] = strdup(cwalk->value); testcount++;
 			}
 
@@ -138,6 +134,34 @@ void parse_query(void)
 		tm.tm_sec  = 59;
 		tm.tm_isdst = -1;
 		endtime = mktime(&tm);
+	}
+
+	if (alltests) {
+		if (tests) xfree(tests); testcount = 0;
+		tests = (char **) malloc(5 * sizeof(char *));
+
+		if (hostcount == 1) {
+			tests[testcount] = strdup("cpu"); testcount++;
+			tests[testcount] = strdup("disk"); testcount++;
+			tests[testcount] = strdup("memory"); testcount++;
+			tests[testcount] = strdup("conn"); testcount++;
+		}
+		else {
+			tests[testcount] = strdup("la1"); testcount++;
+			tests[testcount] = strdup("mem"); testcount++;
+			tests[testcount] = strdup("swap"); testcount++;
+			tests[testcount] = strdup("conn-multi"); testcount++;
+		}
+
+		tests[testcount] = NULL;
+	}
+
+	if (hostcount > 1) {
+		int i;
+
+		for (i = 0; (i < testcount); i++) {
+			if (strcmp(tests[i], "conn") == 0) tests[i] = strdup("conn-multi");
+		}
 	}
 }
 
