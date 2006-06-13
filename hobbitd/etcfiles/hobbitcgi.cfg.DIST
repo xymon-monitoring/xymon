@@ -21,6 +21,9 @@ CGI_SVCHIST_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg --no-svcid"
 # hobbitgraph.cgi options
 CGI_HOBBITGRAPH_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
 
+# hobbitgraph.cgi options
+CGI_HOSTGRAPHS_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+
 # hobbit-confreport.cgi options
 CGI_HOBBITCONFREPORT_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
 
