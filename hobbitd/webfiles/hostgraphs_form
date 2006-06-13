@@ -42,7 +42,7 @@
 
 	  <br><br>
 
-	  <SELECT NAME=hostname SIZE=15>
+	  <SELECT NAME=hostname MULTIPLE SIZE=15>
 	  &HOSTLIST
 	  </SELECT>
 
