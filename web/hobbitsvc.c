@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.70 2006-05-27 12:26:57 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.71 2006-06-14 12:30:30 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -152,14 +152,17 @@ int do_request(void)
 	if (parse_query() != 0) return 1;
 
 	{
-		char *s = xgetenv("CLIENTLOGS");
-		if (!s) {
-			s = xgetenv("BBVAR");
+		char *s;
+		
+		s = xgetenv("CLIENTLOGS"); 
+		if (s) {
 			hostdatadir = (char *)malloc(strlen(s) + strlen(hostname) + 12);
-			sprintf(hostdatadir, "%s/hostdata/%s", xgetenv("BBVAR"), hostname);
+			sprintf(hostdatadir, "%s/%s", s, hostname);
 		}
 		else {
-			hostdatadir = strdup(s);
+			s = xgetenv("BBVAR");
+			hostdatadir = (char *)malloc(strlen(s) + strlen(hostname) + 12);
+			sprintf(hostdatadir, "%s/hostdata/%s", s, hostname);
 		}
 	}
 
