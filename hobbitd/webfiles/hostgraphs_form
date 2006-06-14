@@ -48,10 +48,11 @@
 
 	  <SELECT NAME=testname MULTIPLE SIZE=15>
 	  <option value="ALL" SELECTED>ALL</option>
-	  <option value="cpu">cpu</option>
-	  <option value="disk">disk</option>
-	  <option value="memory">memory</option>
-	  <option value="conn">conn</option>
+	  <option value="cpu">CPU load (Windows/Unix)</option>
+	  <option value="la1">CPU utilization (Unix)</option>
+	  <option value="disk">Disk</option>
+	  <option value="memory">RAM/Swap</option>
+	  <option value="conn">Ping times</option>
 	  </SELECT>
 
           <BR><BR>
