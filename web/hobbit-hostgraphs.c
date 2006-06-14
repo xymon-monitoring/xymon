@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-hostgraphs.c,v 1.3 2006-06-13 21:59:26 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-hostgraphs.c,v 1.4 2006-06-14 12:30:01 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -147,7 +147,7 @@ void parse_query(void)
 			tests[testcount] = strdup("conn"); testcount++;
 		}
 		else {
-			tests[testcount] = strdup("la1"); testcount++;
+			tests[testcount] = strdup("cpu"); testcount++;
 			tests[testcount] = strdup("mem"); testcount++;
 			tests[testcount] = strdup("swap"); testcount++;
 			tests[testcount] = strdup("conn-multi"); testcount++;
