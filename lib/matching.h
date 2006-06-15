@@ -17,6 +17,8 @@
 
 extern pcre *compileregex(const char *pattern);
 extern pcre *multilineregex(const char *pattern);
+extern int matchregex(char *needle, pcre *pcrecode);
+extern void freeregex(pcre *pcrecode);
 extern int namematch(char *needle, char *haystack, pcre *pcrecode);
 extern int timematch(char *tspec);
 #endif

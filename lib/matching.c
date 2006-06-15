@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: matching.c,v 1.5 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: matching.c,v 1.6 2006-06-15 12:09:26 henrik Exp $";
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -48,6 +48,24 @@ pcre *multilineregex(const char *pattern)
 	return compileregex_opts(pattern, PCRE_CASELESS|PCRE_MULTILINE);
 }
 
+int matchregex(char *needle, pcre *pcrecode)
+{
+	int ovector[30];
+	int result;
+
+	if (!needle || !pcrecode) return 0;
+
+	result = pcre_exec(pcrecode, NULL, needle, strlen(needle), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+	return (result >= 0);
+}
+
+void freeregex(pcre *pcrecode)
+{
+	if (!pcrecode) return;
+
+	pcre_free(pcrecode);
+}
+
 int namematch(char *needle, char *haystack, pcre *pcrecode)
 {
 	char *xhay;
@@ -57,10 +75,7 @@ int namematch(char *needle, char *haystack, pcre *pcrecode)
 
 	if (pcrecode) {
 		/* Do regex matching. The regex has already been compiled for us. */
-		int ovector[30];
-		result = pcre_exec(pcrecode, NULL, needle, strlen(needle), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
-		dprintf("pcre_exec returned %d\n", result);
-		return (result >= 0);
+		return matchregex(needle, pcrecode);
 	}
 
 	if (strcmp(haystack, "*") == 0) {
