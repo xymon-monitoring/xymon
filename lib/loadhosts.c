@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.61 2006-05-29 13:09:43 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.62 2006-06-15 12:07:38 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -135,6 +135,7 @@ static void bbh_item_list_setup(void)
 	bbh_item_name[BBH_PAGETITLE]           = "BBH_PAGETITLE";
 	bbh_item_name[BBH_PAGEPATHTITLE]       = "BBH_PAGEPATHTITLE";
 	bbh_item_name[BBH_GROUPID]             = "BBH_GROUPID";
+	bbh_item_name[BBH_PAGEINDEX]           = "BBH_PAGEINDEX";
 	bbh_item_name[BBH_RAW]                 = "BBH_RAW";
 
 	i = 0; while (bbh_item_key[i]) i++;
@@ -369,6 +370,7 @@ namelist_t *localhostinfo(char *hostname)
 char *bbh_item(namelist_t *host, enum bbh_item_t item)
 {
 	static char *result;
+	static char intbuf[10];
 	static char *inttxt = NULL;
 	static strbuffer_t *rawtxt = NULL;
 	char *p;
@@ -418,6 +420,10 @@ char *bbh_item(namelist_t *host, enum bbh_item_t item)
 	  case BBH_PAGEPATHTITLE:
 		  if (strlen(host->page->pagetitle)) return host->page->pagetitle;
 		  return "Top Page";
+
+	  case BBH_PAGEINDEX:
+		  sprintf(intbuf, "%d", host->pageindex);
+		  return intbuf;
 
 	  case BBH_GROUPID:
 		  return host->groupid;

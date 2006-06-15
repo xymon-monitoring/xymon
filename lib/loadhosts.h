@@ -54,11 +54,12 @@ enum bbh_item_t {
 	BBH_BANKSIZE,
 	BBH_DOCURL,
 	BBH_NOPROP,
+	BBH_PAGEINDEX,
+	BBH_GROUPID,
 	BBH_PAGENAME,
 	BBH_PAGEPATH,
 	BBH_PAGETITLE,
 	BBH_PAGEPATHTITLE,
-	BBH_GROUPID,
 	BBH_RAW,
 	BBH_CLASS,
 	BBH_OS,
@@ -80,6 +81,7 @@ typedef struct namelist_t {
 	pagelist_t *page;	/* Host location in the page/subpage/subparent tree */
 	void *data;		/* Misc. data supplied by the user of this library function */
 	struct namelist_t *defaulthost;	/* Points to the latest ".default." host */
+	int pageindex;
 	char *groupid;
 	char *classname;
 	char *osname;

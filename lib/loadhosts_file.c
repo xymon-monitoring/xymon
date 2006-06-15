@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.24 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.25 2006-06-15 12:07:38 henrik Exp $";
 
 static int get_page_name_title(char *buf, char *key, char **name, char **title)
 {
@@ -49,7 +49,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 {
 	static void *bbhfiles = NULL;
 	FILE *bbhosts;
-	int ip1, ip2, ip3, ip4, banksize, groupid;
+	int ip1, ip2, ip3, ip4, banksize, groupid, pageidx;
 	char hostname[4096];
 	strbuffer_t *inbuf;
 	pagelist_t *curtoppage, *curpage, *pgtail;
@@ -74,7 +74,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 	configloaded = 1;
 	initialize_hostlist();
 	curpage = curtoppage = pgtail = pghead;
-	groupid = 0;
+	pageidx = groupid = 0;
 
 	bbhosts = stackfopen(bbhostsfn, "r", &bbhfiles);
 	if (bbhosts == NULL) return NULL;
@@ -88,7 +88,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 			pagelist_t *newp;
 			char *name, *title;
 
-			groupid = 0;
+			pageidx = groupid = 0;
 			if (get_page_name_title(STRBUF(inbuf), "page", &name, &title) == 0) {
 				newp = (pagelist_t *)malloc(sizeof(pagelist_t));
 				newp->pagepath = strdup(name);
@@ -105,7 +105,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 			pagelist_t *newp;
 			char *name, *title;
 
-			groupid = 0;
+			pageidx = groupid = 0;
 			if (get_page_name_title(STRBUF(inbuf), "subpage", &name, &title) == 0) {
 				newp = (pagelist_t *)malloc(sizeof(pagelist_t));
 				newp->pagepath = malloc(strlen(curtoppage->pagepath) + strlen(name) + 2);
@@ -124,7 +124,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 			pagelist_t *newp, *parent;
 			char *pname, *name, *title;
 
-			groupid = 0;
+			pageidx = groupid = 0;
 			parent = NULL;
 			if (get_page_name_title(STRBUF(inbuf), "subparent", &pname, &title) == 0) {
 				for (parent = pghead; (parent && !pagematch(parent, pname)); parent = parent->next);
@@ -173,6 +173,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 			sprintf(newitem->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 			sprintf(groupidstr, "%d", groupid);
 			newitem->groupid = strdup(groupidstr);
+			newitem->pageindex = pageidx++;
 
 			newitem->bbhostname = strdup(hostname);
 			if (ip1 || ip2 || ip3 || ip4) newitem->preference = 1; else newitem->preference = 0;
@@ -298,6 +299,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 			newitem->elems[0] = NULL;
 			newitem->banksize = banksize;
 			newitem->groupid = strdup(groupidstr);
+			newitem->pageindex = pageidx++;
 			newitem->next = NULL;
 
 			if (namehead == NULL) 
