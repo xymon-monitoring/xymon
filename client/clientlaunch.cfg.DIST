@@ -16,3 +16,12 @@
 	LOGFILE $HOBBITCLIENTHOME/logs/hobbitclient.log
 	INTERVAL 5m
 
+# ORCA data collector. This is an experimental add-on module,
+# the data sent by this module are not processed by Hobbit 4.2.
+[orcadata]
+	DISABLED
+	ENVFILE $HOBBITCLIENTHOME/etc/hobbitclient.cfg
+	CMD $HOBBITCLIENTHOME/bin/orcahobbit --orca=/usr/local/orca/orcallator
+	LOGFILE $HOBBITCLIENTHOME/logs/hobbitclient.log
+	INTERVAL 5m
+
