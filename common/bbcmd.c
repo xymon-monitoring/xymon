@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcmd.c,v 1.17 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: bbcmd.c,v 1.18 2006-06-20 11:42:43 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -34,7 +34,9 @@ static void hobbit_default_envs(void)
 	if (getenv("MACHINEDOTS") == NULL) {
 		fd = popen("uname -n", "r");
 		if (fd) {
+			char *p;
 			fgets(buf, sizeof(buf), fd);
+			p = strchr(buf, '\n'); if (p) *p = '\0';
 			pclose(fd);
 		}
 		else strcpy(buf, "localhost");
