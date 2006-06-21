@@ -16,7 +16,7 @@ ifeq ($(OSTYPE),openbsd)
 	EXTRATOOLS=openbsd-meminfo
 endif
 
-PROGRAMS=hobbitlaunch logfetch clientupdate orcahobbit
+PROGRAMS=hobbitlaunch logfetch clientupdate orcahobbit msgcache
 COMMONTOOLS=bb bbcmd bbhostgrep bbhostshow bbdigest
 
 all: $(PROGRAMS) $(COMMONTOOLS) hobbitclient.cfg clientlaunch.cfg $(EXTRATOOLS)
@@ -40,6 +40,9 @@ clientupdate: clientupdate.c
 
 orcahobbit: orcahobbit.c
 	$(CC) $(CFLAGS) -o $@ orcahobbit.c ../lib/hobbitclient.a $(NETLIBS)
+
+msgcache: msgcache.c
+	$(CC) $(CFLAGS) -o $@ msgcache.c ../lib/hobbitclient.a $(NETLIBS)
 
 hpux-meminfo: hpux-meminfo.c
 	$(CC) -o $@ hpux-meminfo.c
