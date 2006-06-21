@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: errormsg.c,v 1.10 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: errormsg.c,v 1.11 2006-06-21 05:59:29 henrik Exp $";
 
 #include <sys/types.h>
 #include <string.h>
@@ -31,6 +31,7 @@ static char *errappname = NULL;
 
 int debug = 0;
 static FILE *tracefd = NULL;
+static FILE *debugfd = NULL;
 
 void errprintf(const char *fmt, ...)
 {
@@ -83,14 +84,16 @@ void dprintf(const char *fmt, ...)
 
 		MEMDEFINE(timestr);
 
+		if (!debugfd) debugfd = stdout;
+
 		strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S",
 			 localtime(&now));
-		printf("%s ", timestr);
+		fprintf(debugfd, "%s ", timestr);
 
 		va_start(args, fmt);
-		vprintf(fmt, args);
+		vfprintf(debugfd, fmt, args);
 		va_end(args);
-		fflush(stdout);
+		fflush(debugfd);
 
 		MEMUNDEFINE(timestr);
 	}
@@ -100,6 +103,16 @@ void flush_errbuf(void)
 {
 	if (errbuf) xfree(errbuf);
 	errbuf = NULL;
+}
+
+
+void set_debugfile(char *fn)
+{
+	if (debugfd && (debugfd != stdout)) fclose(debugfd);
+
+	if (fn) debugfd = fopen(fn, "w");
+
+	if (!debugfd) debugfd = stdout;
 }
 
 

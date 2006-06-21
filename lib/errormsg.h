@@ -11,6 +11,8 @@
 #ifndef __ERRORMSG_H__
 #define __ERRORMSG_H__
 
+#include <stdio.h>
+
 extern char *errbuf;
 extern int save_errbuf;
 extern int debug;
@@ -18,6 +20,7 @@ extern int debug;
 extern void errprintf(const char *fmt, ...);
 extern void dprintf(const char *fmt, ...);
 extern void flush_errbuf(void);
+extern void set_debugfile(char *fn);
 
 extern void starttrace(const char *fn);
 extern void stoptrace(void);
