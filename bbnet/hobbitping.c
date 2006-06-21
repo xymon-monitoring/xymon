@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitping.c,v 1.9 2006-06-12 21:22:39 henrik Exp $";
+static char rcsid[] = "$Id: hobbitping.c,v 1.10 2006-06-21 05:59:46 henrik Exp $";
 
 #include "config.h"
 
@@ -430,8 +430,10 @@ int main(int argc, char *argv[])
 			char *delim = strchr(argv[argi], '=');
 			senddelay = (1000000 / atoi(delim+1));
 		}
-		else if (strcmp(argv[argi], "--debug") == 0) {
+		else if (strncmp(argv[argi], "--debug", 7) == 0) {
+			char *delim = strchr(argv[argi], '=');
 			debug = 1;
+			if (delim) set_debugfile(delim+1);
 		}
 		else if (strcmp(argv[argi], "--help") == 0) {
 			if (pingsocket >= 0) close(pingsocket);
