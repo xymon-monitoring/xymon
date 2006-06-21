@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.240 2006-06-08 08:36:20 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.241 2006-06-21 05:55:20 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -2136,15 +2136,21 @@ char *timestr(time_t tstamp)
 }
 
 void setup_filter(char *buf, char *defaultfields, 
-		  char **spage, char **shost, char **snet, 
-		  char **stest, int *scolor, int *acklevel, char **fields)
+		  pcre **spage, pcre **shost, pcre **snet, 
+		  pcre **stest, int *scolor, int *acklevel, char **fields,
+		  char **chspage, char **chshost, char **chsnet, char **chstest)
 {
 	char *tok, *s;
 	int idx = 0;
 
 	dprintf("-> setup_filter: %s\n", buf);
 
-	*spage = *shost = *stest = *fields = NULL;
+	*spage = *shost = *snet = *stest = NULL;
+	if (chspage) *chspage = NULL;
+	if (chshost) *chshost = NULL;
+	if (chsnet)  *chsnet  = NULL;
+	if (chstest) *chstest = NULL;
+	*fields = NULL;
 	*scolor = -1;
 
 	tok = strtok(buf, " \t\r\n");
@@ -2152,18 +2158,36 @@ void setup_filter(char *buf, char *defaultfields,
 	while (tok) {
 		/* Get filter */
 		if (strncmp(tok, "page=", 5) == 0) {
-			*spage = tok+5;
-			if (strlen(*spage) == 0) *spage = NULL;
+			if (*(tok+5)) {
+				*spage = compileregex(tok+5);
+				if (chspage) *chspage = tok+5;
+			}
 		}
-		else if (strncmp(tok, "host=", 5) == 0) *shost = tok+5;
-		else if (strncmp(tok, "net=", 4) == 0) *snet = tok+4;
-		else if (strncmp(tok, "test=", 5) == 0) *stest = tok+5;
+		else if (strncmp(tok, "host=", 5) == 0) {
+			if (*(tok+5)) {
+				*shost = compileregex(tok+5);
+				if (chshost) *chshost = tok+5;
+			}
+		}
+		else if (strncmp(tok, "net=", 4) == 0) {
+			if (*(tok+4)) {
+				*snet = compileregex(tok+4);
+				if (chsnet) *chsnet = tok+4;
+			}
+		}
+		else if (strncmp(tok, "test=", 5) == 0) {
+			if (*(tok+5)) {
+				*stest = compileregex(tok+5);
+				if (chstest) *chstest = tok+5;
+			}
+		}
 		else if (strncmp(tok, "fields=", 7) == 0) *fields = tok+7;
 		else if (strncmp(tok, "color=", 6) == 0) *scolor = colorset(tok+6, 0);
 		else if (strncmp(tok, "acklevel=", 9) == 0) *acklevel = atoi(tok+9);
 		else {
 			/* Might be an old-style HOST.TEST request */
 			char *hname, *tname, hostip[IP_ADDR_STRLEN];
+			char *hnameexp, *tnameexp;
 
 			MEMDEFINE(hostip);
 
@@ -2172,8 +2196,21 @@ void setup_filter(char *buf, char *defaultfields,
 			if (tname) { *tname = '\0'; tname++; }
 			s = hname; while ((s = strchr(s, ',')) != NULL) *s = '.';
 
-			*shost = knownhost(hname, hostip, ghosthandling);
-			*stest = tname;
+			hname = knownhost(hname, hostip, ghosthandling);
+			if (hname) {
+				hnameexp = (char *)malloc(strlen(hname)+3);
+				sprintf(hnameexp, "^%s$", hname);
+				*shost = compileregex(hnameexp);
+				xfree(hnameexp);
+			}
+
+			tnameexp = (char *)malloc(strlen(tname)+3);
+			sprintf(tnameexp, "^%s$", tname);
+			*stest = compileregex(tnameexp);
+			xfree(tnameexp);
+
+			if (chshost) *chshost = hname;
+			if (chstest) *chstest = tname;
 		}
 
 		tok = strtok(NULL, " \t\r\n");
@@ -2219,24 +2256,24 @@ void setup_filter(char *buf, char *defaultfields,
 	dprintf("<- setup_filter: %s\n", buf);
 }
 
-int match_host_filter(namelist_t *hinfo, char *spage, char *shost, char *snet)
+int match_host_filter(namelist_t *hinfo, pcre *spage, pcre *shost, pcre *snet)
 {
 	char *match;
 
 	match = bbh_item(hinfo, BBH_HOSTNAME);
-	if (shost && match && (strcmp(match, shost) != 0)) return 0;
+	if (shost && match && !matchregex(match, shost)) return 0;
 	match = bbh_item(hinfo, BBH_PAGEPATH);
-	if (spage && match && (strncmp(match, spage, strlen(spage)) != 0)) return 0;
+	if (spage && match && !matchregex(match, spage)) return 0;
 	match = bbh_item(hinfo, BBH_NET);
-	if (snet  && match && (strcmp(match, snet) != 0)) return 0;
+	if (snet  && match && !matchregex(match, snet))  return 0;
 
 	return 1;
 }
 
-int match_test_filter(hobbitd_log_t *log, char *stest, int scolor)
+int match_test_filter(hobbitd_log_t *log, pcre *stest, int scolor)
 {
 	/* Testname filter */
-	if (stest && (strcmp(log->test->name, stest) != 0)) return 0;
+	if (stest && !matchregex(log->test->name, stest)) return 0;
 
 	/* Color filter */
 	if ((scolor != -1) && (((1 << log->color) & scolor) == 0)) return 0;
@@ -2728,16 +2765,18 @@ void do_message(conn_t *msg, char *origin)
 		 *
 		 */
 
-		char *spage = NULL, *shost = NULL, *snet = NULL, *stest = NULL, *fields = NULL;
+		pcre *spage = NULL, *shost = NULL, *snet = NULL, *stest = NULL;
+		char *chspage, *chshost, *chsnet, *chstest, *fields = NULL;
 		int scolor = -1, acklevel = -1;
 
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		setup_filter(msg->buf, 
 		 	     "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client",
-			     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields);
+			     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields,
+			     &chspage, &chshost, &chsnet, &chstest);
 
-		log = find_log(shost, stest, "", &h);
+		log = find_log(chshost, chstest, "", &h);
 		if (log) {
 			char *buf, *bufp;
 			int bufsz;
@@ -2761,6 +2800,8 @@ void do_message(conn_t *msg, char *origin)
 			msg->bufp = msg->buf = buf;
 			msg->buflen = (bufp - buf);
 		}
+
+		freeregex(spage); freeregex(shost); freeregex(snet); freeregex(stest);
 	}
 	else if (strncmp(msg->buf, "hobbitdxlog ", 12) == 0) {
 		/* 
@@ -2842,7 +2883,9 @@ void do_message(conn_t *msg, char *origin)
 		testinfo_t trendstest, infotest;
 		char *buf, *bufp;
 		int bufsz;
-		char *spage = NULL, *shost = NULL, *snet = NULL, *stest = NULL, *fields = NULL;
+		pcre *spage = NULL, *shost = NULL, *snet = NULL, *stest = NULL;
+		char *chspage = NULL, *chshost = NULL, *chsnet = NULL, *chstest = NULL;
+		char *fields = NULL;
 		int scolor = -1, acklevel = -1;
 		static unsigned int lastboardsize = 0;
 
@@ -2850,7 +2893,8 @@ void do_message(conn_t *msg, char *origin)
 
 		setup_filter(msg->buf, 
 			     "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1",
-			     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields);
+			     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields,
+			     &chspage, &chshost, &chsnet, &chstest);
 
 		if (lastboardsize <= 8192) {
 			/* A guesstimate - 8 tests per hosts, 1KB/test (only 1st line of msg) */
@@ -2928,6 +2972,8 @@ void do_message(conn_t *msg, char *origin)
 		msg->bufp = msg->buf = buf;
 		msg->buflen = (bufp - buf);
 		if (msg->buflen > lastboardsize) lastboardsize = msg->buflen;
+
+		freeregex(spage); freeregex(shost); freeregex(snet); freeregex(stest);
 	}
 	else if (strncmp(msg->buf, "hobbitdxboard", 13) == 0) {
 		/* 
@@ -2939,7 +2985,9 @@ void do_message(conn_t *msg, char *origin)
 		hobbitd_log_t *lwalk;
 		char *buf, *bufp;
 		int bufsz;
-		char *spage = NULL, *shost = NULL, *snet = NULL, *stest = NULL, *fields = NULL;
+		pcre *spage = NULL, *shost = NULL, *snet = NULL, *stest = NULL;
+		char *chspage = NULL, *chshost = NULL, *chsnet = NULL, *chstest = NULL;
+		char *fields = NULL;
 		int scolor = -1, acklevel = -1;
 		static unsigned int lastboardsize = 0;
 
@@ -2947,7 +2995,8 @@ void do_message(conn_t *msg, char *origin)
 
 		setup_filter(msg->buf,
 			     "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1",
-			     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields);
+			     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields,
+			     &chspage, &chshost, &chsnet, &chstest);
 
 		if (lastboardsize <= 8192) {
 			/* A guesstimate - 8 tests per hosts, 2KB/test (only 1st line of msg) */
@@ -3024,6 +3073,8 @@ void do_message(conn_t *msg, char *origin)
 		msg->bufp = msg->buf = buf;
 		msg->buflen = (bufp - buf);
 		if (msg->buflen > lastboardsize) lastboardsize = msg->buflen;
+
+		freeregex(spage); freeregex(shost); freeregex(snet); freeregex(stest);
 	}
 	else if (strncmp(msg->buf, "hostinfo", 8) == 0) {
 		/* 
@@ -3033,7 +3084,9 @@ void do_message(conn_t *msg, char *origin)
 		namelist_t *hinfo;
 		char *buf, *bufp;
 		int bufsz;
-		char *spage = NULL, *shost = NULL, *stest = NULL, *snet = NULL, *fields = NULL;
+		pcre *spage = NULL, *shost = NULL, *stest = NULL, *snet = NULL;
+		char *chspage = NULL, *chshost = NULL, *chsnet = NULL, *chstest = NULL;
+		char *fields = NULL;
 		int scolor = -1, acklevel = -1;
 		static unsigned int lastboardsize = 0;
 
@@ -3041,7 +3094,8 @@ void do_message(conn_t *msg, char *origin)
 
 		setup_filter(msg->buf, 
 			     "BBH_HOSTNAME,BBH_IP,BBH_BANKSIZE,BBH_RAW",
-			     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields);
+			     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields,
+			     &chspage, &chshost, &chsnet, &chstest);
 
 		if (lastboardsize == 0) {
 			/* A guesstimate - 500 bytes per host */
@@ -3065,6 +3119,8 @@ void do_message(conn_t *msg, char *origin)
 		msg->bufp = msg->buf = buf;
 		msg->buflen = (bufp - buf);
 		if (msg->buflen > lastboardsize) lastboardsize = msg->buflen;
+
+		freeregex(spage); freeregex(shost); freeregex(snet); freeregex(stest);
 	}
 
 	else if ((strncmp(msg->buf, "hobbitdack", 10) == 0) || (strncmp(msg->buf, "ack ack_event", 13) == 0)) {
