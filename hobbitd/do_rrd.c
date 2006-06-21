@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.34 2006-06-09 22:23:49 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.35 2006-06-21 08:43:58 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -261,6 +261,10 @@ static int rrddatasets(char *hostname, char *fn, char ***dsnames)
 #include "rrd/do_bea.c"
 #endif
 
+#ifdef DO_ORCA
+#include "rrd/do_orca.c"
+#endif
+
 void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *sender, hobbitrrd_t *ldef)
 {
 	int res = 0;
@@ -309,6 +313,10 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	else if (strcmp(id, "proccounts") == 0)  res = do_counts_rrd("processes", hostname, testname, msg, tstamp);
 	else if (strcmp(id, "portcounts") == 0)  res = do_counts_rrd("ports", hostname, testname, msg, tstamp);
 	else if (strcmp(id, "linecounts") == 0)  res = do_derives_rrd("lines", hostname, testname, msg, tstamp);
+
+#ifdef DO_ORCA
+	else if (strcmp(id, "orca") == 0)        res = do_orca_rrd(hostname, testname, msg, tstamp);
+#endif
 
 	else if (extids && exthandler) {
 		int i;
