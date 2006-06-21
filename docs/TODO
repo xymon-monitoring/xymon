@@ -32,6 +32,10 @@ Bugfixes
   > module, depending on what operating system the vmstat data comes from.
   > But all of the graph definitions in hobbitgraph.cfg use the cpu_wait
   > definition.
+  Also, postponed from the 4.2 release:
+  o vmstat columns on HP-UX 11.0 are different from 11.11i. Marco Avvissano March 10.
+  o vmstat columns differ between various Red Hat Enterprise versions.
+  o sar data parsing for IRIX client instead of vmstat data.
 
 * A host cannot be configured to appear on multiple pages of an
   alternate pageset. Configuring this will cause it to appear
@@ -42,6 +46,8 @@ Bugfixes
 
 Things I must remember to look at
 ---------------------------------
+* IIS6Check: Log performance data in graphs.
+
 * Scott Walters suggest larger RRA's for graphs:
   "I think 3 RRAs is good.  A month of 5m samples, 2 years 
   of 1 hour samples, and 7 years of one day samples.
