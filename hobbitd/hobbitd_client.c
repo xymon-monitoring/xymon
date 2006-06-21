@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.89 2006-06-10 15:45:37 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.90 2006-06-21 05:58:32 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -748,13 +748,7 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 		int logcolor;
 
 		clearstrbuffer(logsummary);
-		if (strncmp(swalk->sdata, "Cannot open logfile ", 20) == 0) {
-			logcolor = COL_YELLOW;
-			addtobuffer(logsummary, "Logfile not accessible");
-		}
-		else {
-			logcolor = scan_log(hinfo, clientclass, swalk->sname+5, swalk->sdata, swalk->sname, logsummary);
-		}
+		logcolor = scan_log(hinfo, clientclass, swalk->sname+5, swalk->sdata, swalk->sname, logsummary);
 
 		if (logcolor > msgscolor) msgscolor = logcolor;
 

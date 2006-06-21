@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.42 2006-06-08 21:57:16 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.43 2006-06-21 05:58:32 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -103,6 +103,7 @@ typedef struct c_log_t {
 #define FCHK_SHA1     (1 << 26)
 #define FCHK_RMD160   (1 << 27)
 
+#define CHK_OPTIONAL  (1 << 30)
 #define CHK_TRACKIT   (1 << 31)
  
 typedef struct c_file_t {
@@ -710,6 +711,9 @@ int load_client_config(char *configfn)
 					else if (strncasecmp(tok, "color=", 6) == 0) {
 						currule->rule.log.color = parse_color(tok+6);
 					}
+					else if (strcasecmp(tok, "optional") == 0) {
+						currule->flags |= CHK_OPTIONAL;
+					}
 					else if (idx == 0) {
 						currule->rule.log.logfile   = setup_expr(tok, 0);
 						idx++;
@@ -862,6 +866,9 @@ int load_client_config(char *configfn)
 					else if (strncasecmp(tok, "track", 5) == 0) {
 						currule->flags |= CHK_TRACKIT;
 						if (*(tok+5) == '=') currule->rrdidstr = strdup(tok+6);
+					}
+					else if (strcasecmp(tok, "optional") == 0) {
+						currule->flags |= CHK_OPTIONAL;
 					}
 					else {
 						int col = parse_color(tok);
@@ -1150,6 +1157,8 @@ void dump_client_config(void)
 			if (rwalk->rrdidstr) printf("=%s", rwalk->rrdidstr);
 		}
 
+		if (rwalk->flags & CHK_OPTIONAL) printf(" OPTIONAL");
+
 		if (rwalk->timespec) printf(" TIME=%s", rwalk->timespec);
 		if (rwalk->hostexp) printf(" HOST=%s", rwalk->hostexp->pattern);
 		if (rwalk->exhostexp) printf(" EXHOST=%s", rwalk->exhostexp->pattern);
@@ -1311,6 +1320,7 @@ int scan_log(namelist_t *hinfo, char *classname,
 	int result = COL_GREEN;
 	char *hostname, *pagename;
 	c_rule_t *rule;
+	int nofile = 0;
 	int firstmatch = 1;
 	int anylines = 0;
 	char *boln, *eoln;
@@ -1319,9 +1329,21 @@ int scan_log(namelist_t *hinfo, char *classname,
 	hostname = bbh_item(hinfo, BBH_HOSTNAME);
 	pagename = bbh_item(hinfo, BBH_PAGEPATH);
 	
+	nofile = (strncmp(logdata, "Cannot open logfile ", 20) == 0);
+
 	for (rule = getrule(hostname, pagename, classname, C_LOG); (rule); rule = getrule(NULL, NULL, NULL, C_LOG)) {
 		/* First, check if the filename matches */
 		if (!namematch(logname, rule->rule.log.logfile->pattern, rule->rule.log.logfile->exp)) continue;
+
+		if (nofile) {
+			if (!(rule->flags & CHK_OPTIONAL)) {
+				if (COL_YELLOW > result) result = COL_YELLOW;
+				addalertgroup(rule->groups);
+				addtobuffer(summarybuf, "&yellow Logfile not accessible \n");
+			}
+
+			continue;
+		}
 
 		/* Next, check for a match anywhere in the data*/
 		if (!namematch(logdata, rule->rule.log.matchexp->pattern, rule->rule.log.matchexp->exp)) continue;
@@ -1469,6 +1491,8 @@ int check_file(namelist_t *hinfo, char *classname,
 
 		*anyrules = 1;
 		if (!exists) {
+			if (rwalk->flags & CHK_OPTIONAL) goto nextcheck;
+
 			if (!(rwalk->flags & FCHK_NOEXIST)) {
 				/* Required file does not exist */
 				rulecolor = rwalk->rule.fcheck.color;
