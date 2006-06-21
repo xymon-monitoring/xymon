@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: clientupdate.c,v 1.3 2006-05-28 13:36:01 henrik Exp $";
+static char rcsid[] = "$Id: clientupdate.c,v 1.4 2006-06-21 08:51:44 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -112,7 +112,6 @@ int main(int argc, char *argv[])
 			FILE *tmpfd, *srcfd;
 			unsigned char buf[8192];
 			long n;
-			char *newcmd;
 			struct stat st;
 			int cperr;
 

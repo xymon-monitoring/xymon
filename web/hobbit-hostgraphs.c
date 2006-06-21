@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-hostgraphs.c,v 1.5 2006-06-21 05:56:03 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-hostgraphs.c,v 1.6 2006-06-21 08:51:44 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -30,14 +30,6 @@ char **hosts = NULL;
 char **tests = NULL;
 time_t starttime = 0;
 time_t endtime = 0;
-
-static void errormsg(char *msg)
-{
-	printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
-	printf("<html><head><title>Invalid request</title></head>\n");
-	printf("<body>%s</body></html>\n", msg);
-	exit(1);
-}
 
 void parse_query(void)
 {

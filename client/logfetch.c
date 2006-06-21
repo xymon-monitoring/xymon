@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.25 2006-06-09 14:39:36 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.26 2006-06-21 08:51:44 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -80,7 +80,6 @@ FILE *rootopen(char *filename, int *err)
 	/* Open a file using root privs */
 	uid_t myuid;
 	FILE *fd;
-	int openerr;
 
 	myuid = getuid();
 

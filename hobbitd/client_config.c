@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.43 2006-06-21 05:58:32 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.44 2006-06-21 08:51:44 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1321,7 +1321,6 @@ int scan_log(namelist_t *hinfo, char *classname,
 	char *hostname, *pagename;
 	c_rule_t *rule;
 	int nofile = 0;
-	int firstmatch = 1;
 	int anylines = 0;
 	char *boln, *eoln;
 	char msgline[PATH_MAX];
