@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: msgcache.c,v 1.1 2006-06-21 21:08:53 henrik Exp $";
+static char rcsid[] = "$Id: msgcache.c,v 1.2 2006-06-21 21:18:42 henrik Exp $";
 
 #include "config.h"
 
@@ -227,10 +227,8 @@ void senddata(conn_t *conn)
 int main(int argc, char *argv[])
 {
 	int daemonize = 1;
-	int timeout = 10;
 	int listenq = 10;
 	char *pidfile = "msgcache.pid";
-	int sockcount = 0;
 	int lsocket;
 	struct sockaddr_in laddr;
 	struct sigaction sa;
@@ -261,9 +259,9 @@ int main(int argc, char *argv[])
 				return 1;
 			}
 		}
-		else if (argnmatch(argv[opt], "--timeout=")) {
+		else if (argnmatch(argv[opt], "--max-age=")) {
 			char *p = strchr(argv[opt], '=');
-			timeout = atoi(p+1);
+			maxage = atoi(p+1);
 		}
 		else if (argnmatch(argv[opt], "--lqueue=")) {
 			char *p = strchr(argv[opt], '=');
@@ -359,6 +357,67 @@ int main(int argc, char *argv[])
 		msgqueue_t *qwalk, *qprev;
 		time_t mintstamp;
 
+		/* Remove any finished connections */
+		cwalk = chead; cprev = NULL;
+		while (cwalk) {
+			conn_t *zombie;
+
+			if (cwalk->action != C_DONE) {
+				cprev = cwalk;
+				cwalk = cwalk->next;
+				continue;
+			}
+
+			/* Close the socket */
+			close(cwalk->sockfd);
+
+			zombie = cwalk;
+			if (cprev == NULL) {
+				chead = zombie->next;
+				cwalk = chead;
+				cprev = NULL;
+			}
+			else {
+				cprev->next = zombie->next;
+				cwalk = zombie->next;
+			}
+
+			freestrbuffer(zombie->msgbuf);
+			xfree(zombie);
+		}
+		if (!chead) ctail = NULL;
+
+		/* Remove expired messages */
+		qwalk = qhead; qprev = NULL;
+		mintstamp = time(NULL) - maxage;
+		while (qwalk) {
+			msgqueue_t *zombie;
+
+			if (qwalk->tstamp > mintstamp) {
+				/* Hasn't expired yet */
+				qprev = qwalk;
+				qwalk = qwalk->next;
+				continue;
+			}
+
+			zombie = qwalk;
+			if (qprev == NULL) {
+				qhead = zombie->next;
+				qwalk = qhead;
+				qprev = NULL;
+			}
+			else {
+				qprev->next = zombie->next;
+				qwalk = zombie->next;
+			}
+
+			freestrbuffer(zombie->msgbuf);
+			xfree(zombie);
+		}
+		if (!qhead) qtail = NULL;
+
+
+		/* Now we're ready to handle some data */
 		FD_ZERO(&fdread);
 		FD_ZERO(&fdwrite);
 
@@ -420,8 +479,7 @@ int main(int argc, char *argv[])
 			newconn->sockfd = accept(lsocket, (struct sockaddr *)&newconn->caddr, &caddrsize);
 			if (newconn->sockfd == -1) {
 				/* accept() failure. Yes, it does happen! */
-				dprintf("accept failure, ignoring connection (%s), sockcount=%d\n", 
-					strerror(errno), sockcount);
+				dprintf("accept failure, ignoring connection (%s)\n", strerror(errno));
 				xfree(newconn);
 				newconn = NULL;
 			}
@@ -437,65 +495,6 @@ int main(int argc, char *argv[])
 				else chead = ctail = newconn;
 			}
 		}
-
-		/* Remove the finished connections */
-		cwalk = chead; cprev = NULL;
-		while (cwalk) {
-			conn_t *zombie;
-
-			if (cwalk->action != C_DONE) {
-				cprev = cwalk;
-				cwalk = cwalk->next;
-				continue;
-			}
-
-			/* Close the socket */
-			close(cwalk->sockfd);
-
-			zombie = cwalk;
-			if (cprev == NULL) {
-				chead = zombie->next;
-				cwalk = chead;
-				cprev = NULL;
-			}
-			else {
-				cprev->next = zombie->next;
-				cwalk = zombie->next;
-			}
-
-			freestrbuffer(zombie->msgbuf);
-			xfree(zombie);
-		}
-		if (!chead) ctail = NULL;
-
-		/* Remove expired messages */
-		qwalk = qhead; qprev = NULL;
-		mintstamp = time(NULL) - maxage;
-		while (qwalk) {
-			msgqueue_t *zombie;
-
-			if (qwalk->tstamp > mintstamp) {
-				/* Hasn't expired yet */
-				qprev = qwalk;
-				qwalk = qwalk->next;
-				continue;
-			}
-
-			zombie = qwalk;
-			if (qprev == NULL) {
-				qhead = zombie->next;
-				qwalk = qhead;
-				qprev = NULL;
-			}
-			else {
-				qprev->next = zombie->next;
-				qwalk = zombie->next;
-			}
-
-			freestrbuffer(zombie->msgbuf);
-			xfree(zombie);
-		}
-		if (!qhead) qtail = NULL;
 
 	} while (keeprunning);
 
