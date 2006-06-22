@@ -1,0 +1,40 @@
+.TH HOBBITFETCH 8 "Version 4.2-beta-20060605:  5 Jun 2006" "Hobbit Monitor"
+.SH NAME
+hobbitfetch \- fetch client data from passive clients
+.SH SYNOPSIS
+.B "hobbitfetch [--server=HOBBIT.SERVER.IP] [options]"
+
+.SH DESCRIPTION
+This utility is used to collect data from Hobbit clients.
+
+Normally, Hobbit clients will themselves take care of sending
+all of their data directly to the Hobbit server. In that case,
+you do not need this utility at all. However, in some network 
+setups clients may be prohibited from establishing a connection
+to an external server such as the Hobbit server, due to firewall 
+policies. In such a setup you can configure the client to store
+all of the client data locally by enabling the
+.I msgcache(8)
+utility on the client, and using \fBhobbitfetch\fR on the Hobbit
+server to collect data from the clients.
+
+hobbitfetch will only collect data from clients that have the
+\fBpulldata\fR tag listed in the
+.I bb-hosts(5)
+file. The IP-address listed in the bb-hosts file must be correct,
+since this is the IP-address where hobbitfetch will use to contact
+the client.
+
+.SH OPTIONS
+.IP "--server=HOBBIT.SERVER.IP"
+Defines the IP address of the Hobbit server where the collected client
+messages are forwarded to. By default, messages are sent to the
+loopback address 127.0.0.1, i.e. to a Hobbit server running on the same 
+host as hobbitfetch.
+
+.IP "--debug"
+Enable debugging output.
+
+.SH "SEE ALSO"
+msgcache(8), hobbitd(8), hobbit(7)
+
