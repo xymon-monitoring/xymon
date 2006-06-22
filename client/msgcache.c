@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: msgcache.c,v 1.4 2006-06-22 12:42:53 henrik Exp $";
+static char rcsid[] = "$Id: msgcache.c,v 1.5 2006-06-22 19:59:12 henrik Exp $";
 
 #include "config.h"
 
@@ -64,7 +64,6 @@ conn_t *ctail = NULL;
 
 typedef struct msgqueue_t {
 	time_t tstamp;
-	int saveresponse;
 	strbuffer_t *msgbuf;
 	struct msgqueue_t *next;
 } msgqueue_t;
@@ -126,6 +125,7 @@ void grabdata(conn_t *conn)
 				return;
 			}
 
+			dprintf("Got pullclient request: %s\n", STRBUF(conn->msgbuf));
 			conn->ctype = C_SERVER;
 			conn->action = C_WRITING;
 
@@ -135,6 +135,7 @@ void grabdata(conn_t *conn)
 				clientcfg++;
 				if (client_response) xfree(client_response);
 				client_response = strdup(clientcfg);
+				dprintf("Saved client response: %s\n", client_response);
 			}
 		}
 		else if (strncmp(STRBUF(conn->msgbuf), "client ", 7) == 0) {
@@ -150,8 +151,8 @@ void grabdata(conn_t *conn)
 			/* Put it on the outbound queue */
 			msgqueue_t *newq = calloc(1, sizeof(msgqueue_t));
 
+			dprintf("Queuing outbound message\n");
 			newq->tstamp = conn->tstamp;
-			newq->saveresponse = (conn->ctype == C_CLIENT_CLIENT);
 			newq->msgbuf = conn->msgbuf;
 			conn->msgbuf = NULL;
 			if (qtail) {
@@ -166,7 +167,12 @@ void grabdata(conn_t *conn)
 				/* Send the response back to the client */
 				conn->msgbuf = newstrbuffer(0);
 				addtobuffer(conn->msgbuf, client_response);
-				xfree(client_response); client_response = NULL;
+
+				/* 
+				 * Dont drop the client response data. If for some reason
+				 * the "client" request is repeated, he should still get
+				 * the right answer that we have.
+				 */
 			}
 		}
 		else {
@@ -180,13 +186,16 @@ void grabdata(conn_t *conn)
 				conn->action = C_DONE;
 			}
 			else {
+				time_t now = time(NULL);
+
 				/* Build a message of all the queued data */
 				clearstrbuffer(conn->msgbuf);
 
 				/* Index line first */
 				for (rec = q; (rec); rec = rec->next) {
 					char idx[20];
-					sprintf(idx, "%d:%ld ", STRBUFLEN(rec->msgbuf), (long)rec->tstamp);
+					sprintf(idx, "%d:%ld ", 
+						STRBUFLEN(rec->msgbuf), (long)(now - rec->tstamp));
 					addtobuffer(conn->msgbuf, idx);
 				}
 				addtobuffer(conn->msgbuf, "\n");
