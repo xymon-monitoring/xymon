@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: msgcache.c,v 1.3 2006-06-22 12:34:12 henrik Exp $";
+static char rcsid[] = "$Id: msgcache.c,v 1.4 2006-06-22 12:42:53 henrik Exp $";
 
 #include "config.h"
 
@@ -186,7 +186,7 @@ void grabdata(conn_t *conn)
 				/* Index line first */
 				for (rec = q; (rec); rec = rec->next) {
 					char idx[20];
-					sprintf(idx, "%d ", STRBUFLEN(rec->msgbuf));
+					sprintf(idx, "%d:%ld ", STRBUFLEN(rec->msgbuf), (long)rec->tstamp);
 					addtobuffer(conn->msgbuf, idx);
 				}
 				addtobuffer(conn->msgbuf, "\n");
