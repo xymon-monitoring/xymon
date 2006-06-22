@@ -48,6 +48,7 @@ typedef struct strbuffer_t {
 #include "../lib/calc.h"
 #include "../lib/cgi.h"
 #include "../lib/color.h"
+#include "../lib/clientlocal.h"
 #include "../lib/digest.h"
 #include "../lib/encoding.h"
 #include "../lib/environ.h"

@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.241 2006-06-21 05:55:20 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.242 2006-06-22 06:03:10 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -142,7 +142,6 @@ RbtHandle rbhosts;				/* The hosts we have reports from */
 RbtHandle rbtests;				/* The tests (columns) we have seen */
 RbtHandle rborigins;				/* The origins we have seen */
 RbtHandle rbcookies;				/* The cookies we use */
-RbtHandle rbconfigs;				/* The client configs */
 RbtHandle rbfilecache;
 
 typedef struct sender_t {
@@ -216,7 +215,6 @@ pid_t parentpid = 0;
 int  hostcount = 0;
 char *ackinfologfn = NULL;
 FILE *ackinfologfd = NULL;
-strbuffer_t *clientconfigs = NULL;
 
 typedef struct hobbitd_statistics_t {
 	char *cmd;
@@ -303,70 +301,6 @@ typedef struct scheduletask_t {
 } scheduletask_t;
 scheduletask_t *schedulehead = NULL;
 int nextschedid = 1;
-
-void load_clientconfig(void)
-{
-	static char *configfn = NULL;
-	static void *clientconflist = NULL;
-	FILE *fd;
-	strbuffer_t *buf;
-	char *sectstart;
-
-	if (!configfn) {
-		configfn = (char *)malloc(strlen(xgetenv("BBHOME"))+ strlen("/etc/client-local.cfg") + 1);
-		sprintf(configfn, "%s/etc/client-local.cfg", xgetenv("BBHOME"));
-	}
-
-	/* First check if there were no modifications at all */
-	if (clientconflist) {
-		if (!stackfmodified(clientconflist)){
-			dprintf("No files modified, skipping reload of %s\n", configfn);
-			return;
-		}
-		else {
-			stackfclist(&clientconflist);
-			clientconflist = NULL;
-		}
-	}
-
-	if (!clientconfigs) {
-		clientconfigs = newstrbuffer(0);
-	}
-	else {
-		rbtDelete(rbconfigs);
-		clearstrbuffer(clientconfigs);
-	}
-
-	rbconfigs = rbtNew(name_compare);
-	addtobuffer(clientconfigs, "\n");
-	buf = newstrbuffer(0);
-
-	fd = stackfopen(configfn, "r", &clientconflist); if (!fd) return;
-	while (stackfgets(buf, NULL)) addtostrbuffer(clientconfigs, buf);
-	stackfclose(fd);
-
-	sectstart = strstr(STRBUF(clientconfigs), "\n[");
-	while (sectstart) {
-		char *key, *nextsect;
-
-		sectstart += 2;
-		key = sectstart;
-
-		sectstart += strcspn(sectstart, "]\n");
-		if (*sectstart == ']') {
-			*sectstart = '\0'; sectstart++;
-			sectstart += strcspn(sectstart, "\n");
-		}
-
-		nextsect = strstr(sectstart, "\n[");
-		if (nextsect) *(nextsect+1) = '\0';
-
-		rbtInsert(rbconfigs, key, sectstart+1);
-		sectstart = nextsect;
-	}
-
-	freestrbuffer(buf);
-}
 
 void update_statistics(char *cmd)
 {
@@ -3386,23 +3320,14 @@ void do_message(conn_t *msg, char *origin)
 			MEMUNDEFINE(hostip);
 		}
 
-		if (clientconfigs && hname) {
-			RbtIterator handle;
-
-			/*
-			 * Find the client config.  Search for a HOSTNAME entry first, 
-			 * then the CLIENTCLASS, then CLIENTOS.
-			 */
-			handle = rbtFind(rbconfigs, hname);
-			if ((handle == rbtEnd(rbconfigs)) && clientclass && *clientclass)
-				handle = rbtFind(rbconfigs, clientclass);
-			if ((handle == rbtEnd(rbconfigs)) && clientos && *clientos)
-				handle = rbtFind(rbconfigs, clientos);
-
-			if (handle != rbtEnd(rbconfigs)) {
+		if (hname) {
+			char *cfg;
+			
+			cfg = get_clientconfig(hname, clientclass, clientos);
+			if (cfg) {
 				msg->doingwhat = RESPONDING;
 				xfree(msg->buf);
-				msg->bufp = msg->buf = strdup((char *)gettreeitem(rbconfigs, handle));
+				msg->bufp = msg->buf = strdup(cfg);
 				msg->buflen = strlen(msg->buf);
 			}
 		}
