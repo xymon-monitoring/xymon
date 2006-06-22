@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: msgcache.c,v 1.2 2006-06-21 21:18:42 henrik Exp $";
+static char rcsid[] = "$Id: msgcache.c,v 1.3 2006-06-22 12:34:12 henrik Exp $";
 
 #include "config.h"
 
@@ -47,6 +47,7 @@ volatile int keeprunning = 1;
 char *client_response = NULL;		/* The latest response to a "client" message */
 char *logfile = NULL;
 int maxage = 600;			/* Maximum time we will cache messages */
+sender_t *serverlist = NULL;
 
 typedef struct conn_t {
 	time_t tstamp;
@@ -118,6 +119,12 @@ void grabdata(conn_t *conn)
 		 */
 		if (strncmp(STRBUF(conn->msgbuf), "pullclient", 10) == 0) {
 			char *clientcfg;
+
+			/* Access check */
+			if (!oksender(serverlist, NULL, conn->caddr.sin_addr, STRBUF(conn->msgbuf))) {
+				conn->action = C_DONE;
+				return;
+			}
 
 			conn->ctype = C_SERVER;
 			conn->action = C_WRITING;
@@ -258,6 +265,11 @@ int main(int argc, char *argv[])
 				errprintf("Invalid listen address %s\n", locaddr);
 				return 1;
 			}
+		}
+		else if (argnmatch(argv[opt], "--server=")) {
+			/* Who is allowed to fetch cached messages */
+			char *p = strchr(argv[opt], '=');
+			serverlist = getsenderlist(p+1);
 		}
 		else if (argnmatch(argv[opt], "--max-age=")) {
 			char *p = strchr(argv[opt], '=');
