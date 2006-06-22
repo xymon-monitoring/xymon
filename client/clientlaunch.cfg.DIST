@@ -10,6 +10,16 @@
 #       are controlled by the hobbitlaunch.cfg file.
 #
 
+# msgcache is used for passive clients, that cannot connect
+# directly to the Hobbit server. This is not the default
+# setup, so this task is normally disabled.
+[msgcache]
+	DISABLED
+	ENVFILE $HOBBITCLIENTHOME/etc/hobbitclient.cfg
+	CMD $HOBBITCLIENTHOME/bin/msgcache --no-daemon --pidfile=$HOBBITCLIENTHOME/logs/msgcache.pid
+	LOGFILE $HOBBITCLIENTHOME/logs/msgcache.log
+
+# The main client task
 [client]
 	ENVFILE $HOBBITCLIENTHOME/etc/hobbitclient.cfg
 	CMD $HOBBITCLIENTHOME/bin/hobbitclient.sh @CLIENTFLAGS@
