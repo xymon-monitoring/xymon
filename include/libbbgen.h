@@ -55,6 +55,7 @@ typedef struct strbuffer_t {
 #include "../lib/errormsg.h"
 #include "../lib/files.h"
 #include "../lib/hobbitrrd.h"
+#include "../lib/ipaccess.h"
 #include "../lib/loadalerts.h"
 #include "../lib/loadhosts.h"
 #include "../lib/loadnkconf.h"
