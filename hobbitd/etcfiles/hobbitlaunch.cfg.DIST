@@ -128,6 +128,22 @@
 	CMD $BBHOME/bin/bbproxy --hobbitd --bbdisplay=YOUR.HOBBIT.SERVER.IP --report=$MACHINE.bbproxy --no-daemon --pidfile=$BBSERVERLOGS/bbproxy.pid
 	LOGFILE $BBSERVERLOGS/bbproxy.log
 
+
+# "hobbitfetch" is used when you have clients that cannot connect to your Hobbit server,
+# but the Hobbit server can connect to the client. Normally the clients will initiate
+# a connection to the Hobbit server to deliver the data they collect, but this is
+# forbidden in some firewall setups. By enabling the hobbitfetch task, hosts that have
+# the "pulldata" tag in the bb-hosts file will be polled by hobbitfetch for their data.
+#
+# NOTE: On the clients you must enable the "msgcache" task, since this is what 
+#       hobbitfetch is talking to.
+[hobbitfetch]
+	DISABLED
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	CMD $BBHOME/bin/hobbitfetch --server=YOUR.HOBBIT.SERVER.IP --no-daemon --pidfile=$BBSERVERLOGS/hobbitfetch.pid
+	LOGFILE $BBSERVERLOGS/hobbitfetch.log
+
+
 # "bbdisplay" runs the bbgen tool to generate the Hobbit webpages from the status information that
 # has been received. Big Brother updated the webpages once every 5 minutes. The default here is to
 # run it every minute for faster updates, but you can change it if you have a highly loaded server
