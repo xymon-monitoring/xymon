@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.25 2006-06-15 12:07:38 henrik Exp $";
+static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.26 2006-06-23 22:06:56 henrik Exp $";
 
 static int get_page_name_title(char *buf, char *key, char **name, char **title)
 {
@@ -84,7 +84,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 	while (stackfgets(inbuf, extrainclude)) {
 		sanitize_input(inbuf, 0, 0);
 
-		if (strncmp(STRBUF(inbuf), "page ", 5) == 0) {
+		if (strncmp(STRBUF(inbuf), "page", 4) == 0) {
 			pagelist_t *newp;
 			char *name, *title;
 
@@ -101,7 +101,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 				curpage = curtoppage = newp;
 			}
 		}
-		else if (strncmp(STRBUF(inbuf), "subpage ", 8) == 0) {
+		else if (strncmp(STRBUF(inbuf), "subpage", 7) == 0) {
 			pagelist_t *newp;
 			char *name, *title;
 
@@ -120,7 +120,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 				curpage = newp;
 			}
 		}
-		else if (strncmp(STRBUF(inbuf), "subparent ", 10) == 0) {
+		else if (strncmp(STRBUF(inbuf), "subparent", 9) == 0) {
 			pagelist_t *newp, *parent;
 			char *pname, *name, *title;
 
