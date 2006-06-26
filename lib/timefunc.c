@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.29 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.30 2006-06-26 15:09:57 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -89,7 +89,6 @@ char *timespec_text(char *spec)
 	}
 
 	sCopy = strdup(spec);
-	sCopy[strcspn(sCopy, " \t\r\n")] = '\0';
 	sItem = strtok(sCopy, ",");
 	while (sItem) {
 		char *oneday, *dtext;
