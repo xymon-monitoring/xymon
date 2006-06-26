@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.235 2006-06-02 16:24:27 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.236 2006-06-26 20:57:05 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -28,6 +28,20 @@ static char rcsid[] = "$Id: bbtest-net.c,v 1.235 2006-06-02 16:24:27 henrik Exp 
 
 #ifdef HAVE_RPCENT_H
 #include <rpc/rpcent.h>
+#endif
+
+#ifdef BROKEN_HPUX_NETDB
+/* 
+ * Some HP-UX include files fail to define RPC functions 
+ * and structs that are purely standard. At the same time,
+ * their own docs claim that the DO define them. Go figure ...
+ */
+struct rpcent {
+	char    *r_name;        /* name of server for this rpc program */
+	char    **r_aliases;    /* alias list */
+	int     r_number;       /* rpc program number */
+};
+extern struct rpcent *getrpcbyname(char *);
 #endif
 
 #include "libbbgen.h"
