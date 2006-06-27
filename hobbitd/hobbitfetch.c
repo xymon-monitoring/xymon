@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitfetch.c,v 1.2 2006-06-27 12:39:51 henrik Exp $";
+static char rcsid[] = "$Id: hobbitfetch.c,v 1.3 2006-06-27 16:13:12 henrik Exp $";
 
 #include "config.h"
 
@@ -86,7 +86,7 @@ void sigmisc_handler(int signum)
 }
 
 
-void addrequest(conntype_t ctype, char *destip, strbuffer_t *req, clients_t *client)
+void addrequest(conntype_t ctype, char *destip, int portnum, strbuffer_t *req, clients_t *client)
 {
 	conn_t *newconn;
 	int n;
@@ -107,8 +107,8 @@ void addrequest(conntype_t ctype, char *destip, strbuffer_t *req, clients_t *cli
 	newconn->action = C_WRITING;
 	newconn->tstamp = time(NULL);
 
-	/* Setup the address. FIXME: Handle non-standard ports. */
-	newconn->caddr.sin_port = htons(1984);
+	/* Setup the address. */
+	newconn->caddr.sin_port = htons(portnum);
 	newconn->caddr.sin_family = AF_INET;
 	if (inet_aton(destip, (struct in_addr *)&newconn->caddr.sin_addr.s_addr) == 0) {
 		/* Bad IP. */
@@ -184,11 +184,12 @@ void process_clientdata(conn_t *conn)
 	 */
 
 	char *mptr, *databegin, *msgbegin;
+	int portnum = atoi(xgetenv("BBPORT"));
 
 	databegin = strchr(STRBUF(conn->msgbuf), '\n');
 	if (!databegin || (STRBUFLEN(conn->msgbuf) == 0)) {
 		conn->client->busy = 0;
-		conn->client->nextpoll = time(NULL) + poll_interval;
+		conn->client->nextpoll = time(NULL) + pollinterval;
 		return;
 	}
 
@@ -205,7 +206,7 @@ void process_clientdata(conn_t *conn)
 		*(msgbegin + msgbytes) = '\0';
 		req = newstrbuffer(msgbytes+1);
 		addtobuffer(req, msgbegin);
-		addrequest(C_SERVER, serverip, req, conn->client);
+		addrequest(C_SERVER, serverip, portnum, req, conn->client);
 
 		*(msgbegin + msgbytes) = savech;
 		msgbegin += msgbytes;
@@ -284,7 +285,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--interval=")) {
 			char *p = strchr(argv[argi], '=');
-			poll_interval = atoi(p+1);
+			pollinterval = atoi(p+1);
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
@@ -346,7 +347,7 @@ int main(int argc, char *argv[])
 				 * this host is now idle. Call it again after a while.
 				 */
 				connwalk->client->busy = 0;
-				connwalk->client->nextpoll = time(NULL) + poll_interval;
+				connwalk->client->nextpoll = time(NULL) + pollinterval;
 			}
 
 			/* Close the socket */
@@ -373,6 +374,8 @@ int main(int argc, char *argv[])
 		for (handle = rbtBegin(clients); (handle != rbtEnd(clients)); handle = rbtNext(clients, handle)) {
 			clients_t *clientwalk;
 			strbuffer_t *request;
+			char *pullstr, *ip;
+			int port;
 
 			clientwalk = (clients_t *)gettreeitem(clients, handle);
 			if (clientwalk->busy) continue;
@@ -380,6 +383,21 @@ int main(int argc, char *argv[])
 
 			/* Deleted hosts stay in our tree - but should disappear from the known hosts */
 			hostwalk = hostinfo(clientwalk->hostname); if (!hostwalk) continue;
+			pullstr = bbh_item(hostwalk, BBH_FLAG_PULLDATA); if (!pullstr) continue;
+
+			ip = strchr(pullstr, '=');
+			port = atoi(xgetenv("BBPORT"));
+
+			if (!ip) {
+				ip = strdup(bbh_item(hostwalk, BBH_IP));
+			}
+			else {
+				char *p;
+
+				ip = strdup(ip++);
+				p = strchr(ip, ':');
+				if (p) { *p = '\0'; port = atoi(p+1); }
+			}
 
 			/* 
 			 * Build the "pullclient" request, which includes the latest
@@ -392,8 +410,10 @@ int main(int argc, char *argv[])
 			if (clientwalk->clientdata) addtobuffer(request, clientwalk->clientdata);
 
 			/* Put the request on the connection queue */
-			addrequest(C_CLIENT, bbh_item(hostwalk, BBH_IP), request, clientwalk);
+			addrequest(C_CLIENT, ip, port, request, clientwalk);
 			clientwalk->busy = 1;
+
+			xfree(ip);
 		}
 
 		/* Handle connection queue */

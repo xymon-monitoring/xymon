@@ -1209,10 +1209,13 @@ the URL must point to a webpage from the default set of Hobbit webpages.
 
 
 .SH OTHER TAGS
-.IP pulldata
+.IP pulldata[=[IP][:port]]
 This option is recognized by the
 .I hobbitfetch(8)
-utility, and causes it to poll the host for client data.
+utility, and causes it to poll the host for client data. The optional
+IP-address and port-number can be used if the client-side
+.I msgcache(8)
+daemon is listening on a non-standard IP-address or port-number.
 
 
 .SH FILES
