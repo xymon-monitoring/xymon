@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.30 2006-06-08 20:46:33 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.31 2006-06-27 21:53:30 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -95,6 +95,22 @@ void parse_query(void)
 }
 
 
+void print_header(void)
+{
+        /* It's ok with these hardcoded values, as they are not used for this page */
+        sethostenv("", "", "", colorname(COL_BLUE), NULL);
+	printf("Content-Type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
+        headfoot(stdout, "findhost", "", "header", COL_BLUE);
+	printf("<br><br><CENTER><TABLE CELLPADDING=5 SUMMARY=\"Hostlist\">\n");
+	printf("<tr><th align=left>Hostname (DisplayName)</th><th align=left>Location (Group Name)</th></tr>\n");
+}
+
+void print_footer(void)
+{
+	printf("</TABLE></CENTER>\n");
+        headfoot(stdout, "findhost", "", "footer", COL_BLUE);
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -102,8 +118,10 @@ int main(int argc, char *argv[])
 	int argi;
 	char *envarea = NULL;
 
+	strbuffer_t *outbuf;
+	char msgline[4096];
+	char oneurl[10240];
 	int gotany = 0;
-
 
 	/*[wm] regex support */
 	#define BUFSIZE		256
@@ -134,84 +152,85 @@ int main(int argc, char *argv[])
 
 	parse_query();
 
-	setvbuf(stdout, NULL, _IONBF, 0);   		/* [wm] unbuffer stdout */
-	printf("Content-Type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
-
-        /* It's ok with these hardcoded values, as they are not used for this page */
-        sethostenv("", "", "", colorname(COL_BLUE), NULL);
-        headfoot(stdout, "findhost", "", "header", COL_BLUE);
-
-	hosthead = load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
-
-	printf("<br><br><CENTER><TABLE CELLPADDING=5 SUMMARY=\"Hostlist\">\n");
-	printf("<tr><th align=left>Hostname (DisplayName)</th><th align=left>Location (Group Name)</th></tr>\n");
-
-
 	if ( (re_status = regcomp(&re, pSearchPat, re_flag)) != 0 ) {
 		regerror(re_status, &re, re_errstr, BUFSIZE);
 
+		print_header();
 		printf("<tr><td align=left><font color=red>%s</font></td>\n",  pSearchPat);
 		printf("<td align=left><font color=red>%s</font></td></tr>\n", re_errstr);
-	} else {
+		print_footer();
 
-		hostwalk = hosthead;
-		while (hostwalk) {
-			/* 
-			 * [wm] - Allow the search to be done on the hostname
-			 * 	also on the "displayname" and the host comment
-			 *	Maybe this should be implemented by changing the HTML form, but until than..
-			 * we're supposing that hostname will NEVER be null	
-			 */
-			char *hostname, *displayname, *comment, *ip;
+		return 0;
+	}
 
-			hostname = bbh_item(hostwalk, BBH_HOSTNAME);
-			displayname = bbh_item(hostwalk, BBH_DISPLAYNAME);
-			comment = bbh_item(hostwalk, BBH_COMMENT);
-			ip = bbh_item(hostwalk, BBH_IP);
+	outbuf = newstrbuffer(0);
+	hosthead = load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	hostwalk = hosthead;
+	while (hostwalk) {
+		/* 
+		 * [wm] - Allow the search to be done on the hostname
+		 * 	also on the "displayname" and the host comment
+		 *	Maybe this should be implemented by changing the HTML form, but until than..
+		 * we're supposing that hostname will NEVER be null	
+		 */
+		char *hostname, *displayname, *comment, *ip;
 
-	       		if ( regexec (&re, hostname, (size_t)0, NULL, 0) == 0  ||
-				(regexec(&re, ip, (size_t)0, NULL, 0) == 0)    ||
-	       			(displayname && regexec (&re, displayname, (size_t)0, NULL, 0) == 0) ||
-				(comment     && regexec (&re, comment, 	   (size_t)0, NULL, 0) == 0)   ) {
+		hostname = bbh_item(hostwalk, BBH_HOSTNAME);
+		displayname = bbh_item(hostwalk, BBH_DISPLAYNAME);
+		comment = bbh_item(hostwalk, BBH_COMMENT);
+		ip = bbh_item(hostwalk, BBH_IP);
+
+       		if ( regexec (&re, hostname, (size_t)0, NULL, 0) == 0  ||
+			(regexec(&re, ip, (size_t)0, NULL, 0) == 0)    ||
+       			(displayname && regexec (&re, displayname, (size_t)0, NULL, 0) == 0) ||
+			(comment     && regexec (&re, comment, 	   (size_t)0, NULL, 0) == 0)   ) {
 	
-				/*  match */
-				printf("<tr>\n");
-				printf("<td align=left> %s </td>\n", displayname ? displayname : hostname);
-				printf("<td align=left> <a href=\"%s/%s/#%s\">%s</a>\n",
-	                     		xgetenv("BBWEB"), 
-					bbh_item(hostwalk, BBH_PAGEPATH),
-					hostname,
-					bbh_item(hostwalk, BBH_PAGEPATHTITLE));
+			/*  match */
+			addtobuffer(outbuf, "<tr>\n");
+			sprintf(msgline, "<td align=left> %s </td>\n", displayname ? displayname : hostname);
+			addtobuffer(outbuf, msgline);
+			sprintf(oneurl, "%s/%s/#%s",
+				xgetenv("BBWEB"), bbh_item(hostwalk, BBH_PAGEPATH), hostname);
+			sprintf(msgline, "<td align=left> <a href=\"%s\">%s</a>\n",
+				oneurl, bbh_item(hostwalk, BBH_PAGEPATHTITLE));
+			addtobuffer(outbuf, msgline);
+			gotany++;
 
-				clonewalk = hostwalk->next;
-				while (clonewalk && (strcmp(hostwalk->bbhostname, clonewalk->bbhostname) == 0)) {
-					printf("<br><a href=\"%s/%s/#%s\">%s</a>\n",
-						xgetenv("BBWEB"), 
-						bbh_item(clonewalk, BBH_PAGEPATH),
-						clonewalk->bbhostname,
-						bbh_item(clonewalk, BBH_PAGEPATHTITLE));
-					clonewalk = clonewalk->next;
-				}
-
-				printf("</td>\n</tr>\n");
-	
+			clonewalk = hostwalk->next;
+			while (clonewalk && (strcmp(hostwalk->bbhostname, clonewalk->bbhostname) == 0)) {
+				sprintf(msgline, "<br><a href=\"%s/%s/#%s\">%s</a>\n",
+					xgetenv("BBWEB"), 
+					bbh_item(clonewalk, BBH_PAGEPATH),
+					clonewalk->bbhostname,
+					bbh_item(clonewalk, BBH_PAGEPATHTITLE));
+				addtobuffer(outbuf, msgline);
+				clonewalk = clonewalk->next;
 				gotany++;
-				hostwalk = clonewalk;
 			}
-			else {
-				hostwalk = hostwalk->next;
-			}
-		}
 
-		regfree (&re); 	/*[wm] - free regex compiled patern */
+			addtobuffer(outbuf, "</td>\n</tr>\n");
 	
-		if (!gotany) printf("<tr><td align=left>%s</td><td align=left>Not found</td></tr>\n", pSearchPat);
-	} 
+			hostwalk = clonewalk;
+		}
+		else {
+			hostwalk = hostwalk->next;
+		}
+	}
+	regfree (&re); 	/*[wm] - free regex compiled patern */
+	
+	if (gotany == 1) {
+		printf("Location: %s%s\n\n", xgetenv("BBWEBHOST"), oneurl);
+		return 0;
+	}
 
-
-	printf("</TABLE></CENTER>\n");
-
-        headfoot(stdout, "findhost", "", "footer", COL_BLUE);
+	print_header();
+	if (!gotany) {
+		printf("<tr><td align=left>%s</td><td align=left>Not found</td></tr>\n", pSearchPat);
+	}
+	else {
+		printf("%s", grabstrbuffer(outbuf));
+	}
+	print_footer();
 
 	/* [wm] - Free the strdup allocated memory */
 	if (pSearchPat) xfree(pSearchPat);
