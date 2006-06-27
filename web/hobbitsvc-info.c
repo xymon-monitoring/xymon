@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.107 2006-06-08 20:46:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.108 2006-06-27 12:41:11 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -46,6 +46,7 @@ typedef struct hinf_t {
 hinf_t *tnames = NULL;
 int testcount = 0;
 char *unametxt = NULL;
+char *clientvertxt = NULL;
 
 typedef struct sched_t {
 	int id;
@@ -161,7 +162,7 @@ static int fetch_status(char *hostname)
 		char *clidata = NULL;
 		char *boln, *eoln;
 
-		sprintf(hobbitcmd, "clientlog %s section=uname,osversion", hostname);
+		sprintf(hobbitcmd, "clientlog %s section=uname,osversion,clientversion", hostname);
 		if (sendmessage(hobbitcmd, NULL, NULL, &clidata, 1, BBTALK_TIMEOUT) != BB_OK) {
 			return 1;
 		}
@@ -186,6 +187,14 @@ static int fetch_status(char *hostname)
 			else {
 				unametxt = strdup(boln);
 			}
+			if (eoln) *eoln = '\n';
+		}
+
+		boln = strstr(clidata, "[clientversion]\n");
+		if (boln) {
+			boln = strchr(boln, '\n') + 1;
+			eoln = strchr(boln, '\n'); if (eoln) *eoln = '\0';
+			clientvertxt = strdup(boln);
 			if (eoln) *eoln = '\n';
 		}
 
@@ -523,6 +532,11 @@ char *generate_info(char *hostname)
 
 	if (unametxt) {
 		sprintf(l, "<tr><th align=left>OS:</th><td align=left>%s</td></tr>\n", unametxt);
+		addtobuffer(infobuf, l);
+	}
+
+	if (clientvertxt) {
+		sprintf(l, "<tr><th align=left>Client S/W:</th><td align=left>%s</td></tr>\n", clientvertxt);
 		addtobuffer(infobuf, l);
 	}
 
