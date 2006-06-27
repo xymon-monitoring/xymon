@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitfetch.c,v 1.1 2006-06-22 20:29:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitfetch.c,v 1.2 2006-06-27 12:39:51 henrik Exp $";
 
 #include "config.h"
 
@@ -36,11 +36,10 @@ static char rcsid[] = "$Id: hobbitfetch.c,v 1.1 2006-06-22 20:29:33 henrik Exp $
 
 #include "libbbgen.h"
 
-#define POLL_INTERVAL 60
-
 volatile int running = 1;
 volatile time_t reloadtime = 0;
 char *serverip = "127.0.0.1";
+int pollinterval = 60; /* Seconds */
 
 /*
  * When we send in a "client" message to the server, we get the client configuration
@@ -189,7 +188,7 @@ void process_clientdata(conn_t *conn)
 	databegin = strchr(STRBUF(conn->msgbuf), '\n');
 	if (!databegin || (STRBUFLEN(conn->msgbuf) == 0)) {
 		conn->client->busy = 0;
-		conn->client->nextpoll = time(NULL) + POLL_INTERVAL;
+		conn->client->nextpoll = time(NULL) + poll_interval;
 		return;
 	}
 
@@ -283,6 +282,10 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			serverip = strdup(p+1);
 		}
+		else if (argnmatch(argv[argi], "--interval=")) {
+			char *p = strchr(argv[argi], '=');
+			poll_interval = atoi(p+1);
+		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
 		}
@@ -343,7 +346,7 @@ int main(int argc, char *argv[])
 				 * this host is now idle. Call it again after a while.
 				 */
 				connwalk->client->busy = 0;
-				connwalk->client->nextpoll = time(NULL) + POLL_INTERVAL;
+				connwalk->client->nextpoll = time(NULL) + poll_interval;
 			}
 
 			/* Close the socket */
