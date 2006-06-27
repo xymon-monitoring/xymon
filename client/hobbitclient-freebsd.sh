@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-freebsd.sh,v 1.15 2006-06-10 15:30:26 henrik Exp $
+# $Id: hobbitclient-freebsd.sh,v 1.16 2006-06-27 12:18:23 henrik Exp $
 
 echo "[date]"
 date
@@ -41,7 +41,8 @@ netstat -s
 echo "[ports]"
 (netstat -na -f inet; netstat -na -f inet6) | grep "^tcp"
 echo "[ps]"
-ps -ax -ww -o pid,ppid,user,start,state,pri,pcpu,cputime,pmem,rss,vsz,args
+# Dont use "args". "command" works also in FreeBSD 4.x.
+ps -ax -ww -o pid,ppid,user,start,state,pri,pcpu,cputime,pmem,rss,vsz,command
 
 # $TOP must be set, the install utility should do that for us if it exists.
 if test "$TOP" != ""
