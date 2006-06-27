@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb.c,v 1.8 2006-06-21 21:08:31 henrik Exp $";
+static char rcsid[] = "$Id: bb.c,v 1.9 2006-06-27 12:39:19 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "-?") == 0) {
 			showhelp = 1;
 		}
-		else if (strncmp(argv[argi], "-", 1) == 0) {
+		else if ((*(argv[argi]) == '-') && (strlen(argv[argi]) > 1)) {
 			fprintf(stderr, "Unknown option %s\n", argv[argi]);
 		}
 		else {
