@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-sunos.sh,v 1.16 2006-06-10 15:30:26 henrik Exp $
+# $Id: hobbitclient-sunos.sh,v 1.17 2006-06-30 05:52:43 henrik Exp $
 
 echo "[date]"
 date
@@ -22,7 +22,7 @@ who
 
 echo "[df]"
 # All of this because Solaris df cannot show multiple fs-types, or exclude certain fs types.
-FSTYPES=`/bin/df -n|awk '{print $3}'|egrep -v "^proc|^fd|^mntfs|^ctfs|^devfs|^objfs"|sort|uniq`
+FSTYPES=`/bin/df -n -l|awk '{print $3}'|egrep -v "^proc|^fd|^mntfs|^ctfs|^devfs|^objfs|^nfs"|sort|uniq`
 if test "$FSTYPES" = ""; then FSTYPES="ufs"; fi
 set $FSTYPES
 /bin/df -F $1 -k | grep -v " /var/run"
