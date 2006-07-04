@@ -30,9 +30,6 @@ of the client software from the Hobbit server.
 .IP "--reexec"
 Used internally during the update process, see \fBOPERATION\fR below.
 
-.IP "--suid-setup"
-Used internally during the update process, see \fBOPERATION\fR below.
-
 .IP "--remove-self"
 Used internally during the update process. This option causes
 the running clientupdate utility to delete itself - it is used
@@ -88,7 +85,7 @@ to install the new client software. So when the client runs
 the next time, it will use the new client software.
 
 .SH OPERATION
-\fBclientupdate\fR runs in three steps:
+\fBclientupdate\fR runs in two steps:
 
 .IP "Re-exec step"
 The first step is when clientupdate is first invoked from the hobbitclient.sh 
@@ -100,34 +97,9 @@ step, the clientupdate utility automatically launches the next step
 by running the program from the file in $BBTMP.
 
 .IP "Update step"
-The next step downloads the new client software from the Hobbit server.
+The second step downloads the new client software from the Hobbit server.
 The new software must be packed into a tar file, which clientupdate then
-unpacks into the $BBHOME directory. After the new software has been
-unpacked, the clientupdate utility will setup suid-root permissions for
-the newly installed $BBHOME/bin/clientupdate utility (if possible,
-i.e. if it was originally installed as such) and launch the new
-clienupdate utility to setup files that need special permissions.
-
-.IP "Setup suid root step"
-When installing the new client software, any suid-root permissions set
-for the
-.I logfetch(1)
-utility were lost. The final step is to re-establish the suid-root
-privileges for the logfetch utility, by running the new clientupdate
-utility with the "--suid-setup" option. This sets the logfetch utility
-to suid-root, if possible.
-
-.SH SUID-ROOT OPERATION
-clientupdate will attempt to perform some operations with root privileges,
-as described above. However, if it was not installed as suid-root
-initially, these operations will fail. This does not prevent 
-clientupdate or the Hobbit client from working - it just means that
-permissions needed by the Hobbit client will have to be managed
-manually, eg. you may need to modify permissions for logfiles such
-that the
-.I logfetch(1)
-utility can read them to check the logs. The Hobbit client is
-fully capable of running without any special privileges.
+unpacks into the $BBHOME directory.
 
 .SH "ENVIRONMENT VARIABLES"
 clientupdate uses several of the standard Hobbit environment

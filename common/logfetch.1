@@ -21,26 +21,22 @@ logfiles have been processed already in the \fB$BBHOME/tmp/logfetch.status\fR
 file. This file is an internal file used by logfetch, and should
 not be edited. If deleted, it will be re-created automatically.
 
-.SH SUID ROOT INSTALLATION
-logfetch may be installed with suid-root privileges. This allows
-Hobbit to monitor logfiles regardless of any access restrictions
-there may be in place for these files.
+.SH SECURITY
+logfetch needs read access to the logfiles it should monitor. If you 
+configure monitoring of files or directories through the "file:"
+and "dir:" entries in 
+.I client-local.cfg(5)
+then logfetch will require at least read-acces to the directory
+where the file is located. If you request checksum calculation
+for a file, then it must be readable by the hobbit client user.
 
-If logfetch is not installed suid-root, it will of course only
-be able to monitor logs that it has read-access to. But logfetch
-will function without suid-root privileges.
-
-For security reasons, logfetch drops all root privileges except
-when opening logfiles. In particular, logfetch will \fBnot\fR
-perform directory-utilitation scannings via the "du" command
-with root privileges, since an external command is used. It is
-therefore believed to be safe to install logfetch as suid-root.
-
-Note that if you choose to install logfetch with suid-root
-privileges, then the
-.I clientupdate
-utility will also need suid-root privileges, or these will be
-lost after an automated update of the client.
+Do \fBNOT\fR install logfetch as suid-root. There is no
+way that logfetch can check whether the configuration file it uses
+has been tampered with, so installing logfetch with suid-root
+privileges could allow an attacker to read any file on the system
+by using a hand-crafted configuration file. In fact, logfetch will
+attempt to remove its own suid-root setup if it detects that it
+has been installed suid-root.
 
 .SH "ENVIRONMENT VARIABLES"
 .IP DU
