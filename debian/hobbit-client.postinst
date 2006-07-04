@@ -27,8 +27,6 @@ case "$1" in
 	# NB: Dont change the "tmp" directory, since it is a symlink to /tmp
         cd /var/log/hobbit; chown hobbit:hobbit .
 	cd /usr/lib/hobbit/client; chown hobbit:hobbit logs; chmod 755 logs
-	cd /usr/lib/hobbit/client; chown root bin/logfetch; chmod 4755 bin/logfetch
-	cd /usr/lib/hobbit/client; chown root bin/clientupdate; chmod 4755 bin/clientupdate
 
 	# Do the debconf stuff
 	db_get hobbit-client/HOBBITSERVERS

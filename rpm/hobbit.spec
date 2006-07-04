@@ -159,8 +159,8 @@ chkconfig --del hobbit-client
 %attr(664, hobbit, apache) %config /etc/hobbit/hobbit-nkview.cfg
 %attr(664, hobbit, apache) %config /etc/hobbit/hobbit-nkview.cfg.bak
 %attr(4750, root, hobbit) /usr/lib/hobbit/server/bin/hobbitping
-%attr(4750, root, hobbit) /usr/lib/hobbit/client/bin/logfetch
-%attr(4750, root, hobbit) /usr/lib/hobbit/client/bin/clientupdate
+%attr(750, root, hobbit) /usr/lib/hobbit/client/bin/logfetch
+%attr(750, root, hobbit) /usr/lib/hobbit/client/bin/clientupdate
 
 %files client
 %attr(-, root, root) %doc README README.CLIENT Changes* COPYING CREDITS RELEASENOTES
@@ -169,6 +169,6 @@ chkconfig --del hobbit-client
 %attr(644, root, root) %config /etc/default/hobbit-client
 %attr(755, hobbit, hobbit) %dir /var/log/hobbit
 %attr(755, hobbit, hobbit) %dir /usr/lib/hobbit/client/ext
-%attr(4750, root, hobbit) /usr/lib/hobbit/client/bin/logfetch
-%attr(4750, root, hobbit) /usr/lib/hobbit/client/bin/clientupdate
+%attr(750, root, hobbit) /usr/lib/hobbit/client/bin/logfetch
+%attr(750, root, hobbit) /usr/lib/hobbit/client/bin/clientupdate
 
