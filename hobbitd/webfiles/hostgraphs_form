@@ -26,6 +26,9 @@
           &REPYEARLIST
           </SELECT>
 
+          <!-- If you need hour/minute/second selections, add SELECT lists here with
+	       the names "start-hour", "start-min" and "start-sec" -->
+
           <FONT SIZE="+1" FACE="Arial, Helvetica">- to -</FONT>
 
           <SELECT NAME="end-mon">
@@ -39,6 +42,9 @@
           <SELECT NAME="end-yr">
           &REPYEARLIST
           </SELECT>
+
+          <!-- If you need hour/minute/second selections, add SELECT lists here with
+	       the names "end-hour", "end-min" and "end-sec" -->
 
 	  <br><br>
 
